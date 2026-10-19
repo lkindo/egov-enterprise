@@ -107,44 +107,41 @@ class EventInfoServiceTest {
         assertThat(foreign.getEvntNm()).isEqualTo("foreign event");
     }
 
+    /**
+     * [2026-10-19] 행사 승인 처리 흐름이 제품에 없어 승인 여부·승인일을 API 에서 걷었다. 종전에는 새 행사를 언제나
+     * 대기('N')로 적고 편집에서 승인 값을 바꾸면 400 이었다 — 아무도 승인할 수 없는 대기와 그것을 지키는 검사였다.
+     * 남은 물리 컬럼은 앱이 쓰지 않으므로(읽기 전용 매핑) 수정의 재빌드-merge 도 그 값을 덮지 않는다.
+     */
     @Test
-    void createStartsUnapprovedAndRejectsApprovalInjection() {
-        authorize("EVENT_CREATE");
-        given(eventInfoRepository.save(any(EventInfo.class))).willAnswer(invocation -> invocation.getArgument(0));
-        eventInfoService.createEvent("writer", EventInfoDto.builder().evntNm("새 행사").build());
-        var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
-        verify(eventInfoRepository).save(saved.capture());
-        assertThat(saved.getValue().getEvntAprvYn()).isEqualTo("N");
-        assertThat(saved.getValue().getEvntAprvYmd()).isNull();
-        org.mockito.Mockito.clearInvocations(eventInfoRepository);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.createEvent("writer",
-                EventInfoDto.builder().evntAprvYn("Y").evntAprvYmd("20260928").build()))
-                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        org.mockito.Mockito.verifyNoInteractions(eventInfoRepository);
+    @DisplayName("승인 필드는 API 계약에 없고 남은 물리 컬럼의 매핑은 읽기 전용이다 — 없는 승인 절차를 약속하지 않는다")
+    void approvalSurfaceIsRetiredAndRetainedColumnsAreReadOnly() throws Exception {
+        assertThat(java.util.Arrays.stream(EventInfoDto.class.getDeclaredFields()).map(java.lang.reflect.Field::getName))
+                .doesNotContain("evntAprvYn", "evntAprvYmd");
+        for (String column : List.of("evntAprvYn", "evntAprvYmd")) {
+            jakarta.persistence.Column mapping =
+                    EventInfo.class.getDeclaredField(column).getAnnotation(jakarta.persistence.Column.class);
+            assertThat(mapping).as(column + " 매핑").isNotNull();
+            assertThat(mapping.insertable()).as(column + " 은 앱이 쓰지 않는다(insertable)").isFalse();
+            assertThat(mapping.updatable()).as(column + " 은 앱이 쓰지 않는다(updatable)").isFalse();
+        }
     }
 
     @Test
-    void updatePreservesApprovalWhenOmittedOrResentAndRejectsChanges() {
-        authorize("EVENT_UPDATE");
-        EventInfo existing = EventInfo.builder().evntSn(1L).evntNm("기존")
-                .evntAprvYn("Y").evntAprvYmd("20260927").build();
-        given(eventInfoRepository.findByIdForUpdate(1L)).willReturn(Optional.of(existing));
+    void createAndUpdateDoNotCarryApproval() {
+        authenticate(List.of("EVENT_CREATE", "EVENT_UPDATE"), List.of());
+        given(eventInfoRepository.save(any(EventInfo.class))).willAnswer(invocation -> invocation.getArgument(0));
+        eventInfoService.createEvent("writer", EventInfoDto.builder().evntNm("새 행사").build());
+        given(eventInfoRepository.findByIdForUpdate(1L))
+                .willReturn(Optional.of(EventInfo.builder().evntSn(1L).evntNm("기존").build()));
         eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정").build());
-        eventInfoService.updateEvent(1L, "writer", EventInfoDto.builder().evntNm("정정")
-                .evntAprvYn("Y").evntAprvYmd("2026-09-27").build());
+
         var saved = org.mockito.ArgumentCaptor.forClass(EventInfo.class);
         verify(eventInfoRepository, times(2)).save(saved.capture());
         assertThat(saved.getAllValues()).allSatisfy(event -> {
-            assertThat(event.getEvntAprvYn()).isEqualTo("Y");
-            assertThat(event.getEvntAprvYmd()).isEqualTo("20260927");
+            assertThat(event.getEvntAprvYn()).isNull();
+            assertThat(event.getEvntAprvYmd()).isNull();
         });
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.updateEvent(1L, "writer",
-                EventInfoDto.builder().evntNm("변조").evntAprvYn("N").build()))
-                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> eventInfoService.updateEvent(1L, "writer",
-                EventInfoDto.builder().evntNm("변조").evntAprvYmd("").build()))
-                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
-        verify(eventInfoRepository, times(2)).save(any());
+        assertThat(saved.getAllValues()).extracting(EventInfo::getEvntNm).containsExactly("새 행사", "정정");
     }
 
     @Test

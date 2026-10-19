@@ -163,11 +163,11 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
        *   atrzr_id 는 nullable 이고 DTO 검증도 없다. 승인자가 없으면 비워 두는 것이 사실이다.
        * - frstRgtrId/lastMdfrId:'SYSTEM' — 서버 auditing 이 실제 등록자로 덮어쓰므로
        *   보내봐야 버려지고, 코드만 "시스템이 등록했다"는 오해를 남긴다.
-       * [2026-09-25 DIP I6 ③] confmAt:'N'(대기)도 걷었다 — 승인 필드는 서버가 소유하고 새 포상을
-       * 언제나 대기로 시작한다. 요청에 실어도 저장되지 않는다.
+       * [2026-09-25 DIP I6 ③] confmAt:'N'(대기)도 걷었다. [2026-10-19] 승인 절차가 제품에 없어 승인 필드는
+       * API 계약에서도 빠졌다 — 서버는 그 물리 컬럼에 쓰지 않고, 요청에 실으면 모르는 필드로 거부한다.
        */
       if (editing && editing.rwrdSn !== undefined) {
-        // 수정은 화면이 편집하는 다섯 필드만 보낸다 — 승인 상태(confmAt)는 여기서 건드리지 않는다.
+        // 수정은 화면이 편집하는 다섯 필드만 보낸다(승인 필드는 계약에 없다).
         // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 그 사이 다른 사람이 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
         await rewardAdminService.updateReward(editing.rwrdSn, { ...values, version: editing.version });
         toast('포상 기록을 수정했습니다.', 'success');

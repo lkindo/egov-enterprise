@@ -56,7 +56,6 @@ describe('page permission mapping', () => {
     ['/admin/stats', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/board', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/data-usage', 'STATS_READ', 'STATS_ADMIN_READ'],
-    ['/admin/stats/report', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/screen', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/user', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/workflow', 'APPROVAL_READ', 'WORKFLOW_READ'],

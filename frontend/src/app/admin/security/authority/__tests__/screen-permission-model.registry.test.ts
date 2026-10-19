@@ -25,7 +25,7 @@ const entryCodes = new Set<string>(SCREEN_REGISTRY.flatMap((screen) => screen.en
  * 코드, 10단계 10b)에 없는 코드는 보지 않는다 — 그 코드를 노출 술어로 둔 기여는 그 기능과 함께 빠진다.
  *   · 일괄 대상에 드는 것: 메일·문자의 주소록 조회(ADBK_READ), 협업 허브 두 화면의 쪽지·스크랩 조회(NOTE_READ·SCRAP_READ),
  *     업무 홈의 결재·팝업·배너 조회(APPROVAL_READ·POPUP_READ·BANNER_READ). 어느 화면의 진입 권한도 아니다.
- *   · 칸에만 드는 것: 통계 셸 다섯 화면의 설문 전체 조회(SURVEY_READ_ALL) — 타인 자료 권한이자 설문 관리 화면의 진입 권한이라 일괄에서
+ *   · 칸에만 드는 것: 통계 셸 네 화면의 설문 전체 조회(SURVEY_READ_ALL) — 타인 자료 권한이자 설문 관리 화면의 진입 권한이라 일괄에서
  *     빠진다. 통계 요약(/admin/stats)은 설문 탭을 그리지 않으므로 칸에도 없다.
  */
 const PREDICATE_DISPLAY: ReadonlyArray<{ route: string; bulk: readonly string[]; cellOnly: readonly string[] }> = [
@@ -34,7 +34,8 @@ const PREDICATE_DISPLAY: ReadonlyArray<{ route: string; bulk: readonly string[];
   { route: '/admin/collaboration/scraps', bulk: ['NOTE_READ', 'SCRAP_READ'], cellOnly: [] },
   { route: '/admin/collaboration/mail-send', bulk: ['ADBK_READ'], cellOnly: [] },
   { route: '/admin/uss/ion/sms', bulk: ['ADBK_READ'], cellOnly: [] },
-  ...['board', 'data-usage', 'report', 'screen', 'user'].map((tab) => ({ route: `/admin/stats/${tab}`, bulk: [], cellOnly: ['SURVEY_READ_ALL'] })),
+  // [2026-10-19 DEC-OPS-368] 보고서 통계 화면(/admin/stats/report)은 퇴역했다 — 남은 통계 셸 화면은 넷이다.
+  ...['board', 'data-usage', 'screen', 'user'].map((tab) => ({ route: `/admin/stats/${tab}`, bulk: [], cellOnly: ['SURVEY_READ_ALL'] })),
 ];
 
 /*

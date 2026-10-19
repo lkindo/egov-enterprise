@@ -47,10 +47,7 @@ public class WorkReportDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private String userNm;
     private Long atchFileSn;
-    @Schema(nullable = true, types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
-    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    @Size(max = 12)
-    private String rptSttsCd;
+    // [2026-10-19] 보고 상태(rptSttsCd)를 걷었다 — 상태를 정하거나 바꾸는 처리 흐름이 없어 늘 비어 있었다.
     @Size(max = 8)
     @Pattern(regexp = Ymd.OPTIONAL_PATTERN, message = "날짜는 유효한 yyyyMMdd 형식이어야 합니다.")
     private String rptYmd;

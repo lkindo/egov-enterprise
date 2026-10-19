@@ -12,13 +12,13 @@
  * 1) URL 조합 — `AdminService('/statistics')` 는 `ApiService` 생성자에서 선행 슬래시가 제거되고
  *    `admin/{category}/` 접두가 붙어 최종 `admin/system/statistics` 가 된다(category 기본값 'system').
  *    이 서비스는 접두를 스스로 쓰지 않으므로, 접두 규칙이나 생성자 인자가 한 글자만 어긋나도
- *    6개 엔드포인트가 동시에 404 가 된다. 특히 `/data-usage` 는 **케밥케이스**로,
+ *    5개 엔드포인트가 동시에 404 가 된다. 특히 `/data-usage` 는 **케밥케이스**로,
  *    메서드명(`getDataUsageStats`)을 따라 camelCase 로 "정리"하면 백엔드
  *    `StatisticsApiController#getDataUsageStats` 의 `@GetMapping("/data-usage")` 와 어긋난다.
  *
- * 2) 엔드포인트 격리 — 6종(summary·connect·bbs·user·report·data-usage)은 응답 스키마가
+ * 2) 엔드포인트 격리 — 5종(summary·connect·bbs·user·data-usage, report 는 2026-10-19 걷었다)은 응답 스키마가
  *    `StatsDto[]` 로 **전부 동일**하다. 경로가 하나만 뒤바뀌어도 타입 오류 없이 통과하고,
- *    화면에는 "그럴듯한 다른 지표"가 그려진다. 그래서 경로 6종을 통째로 고정한다.
+ *    화면에는 "그럴듯한 다른 지표"가 그려진다. 그래서 경로 5종을 통째로 고정한다.
  *
  * 3) params 무가공 전달 — 기간 파라미터(fromDate/toDate)를 넘기지 않는 것이 **의도된 호출**이다
  *    (백엔드 `setDefaultDates` 가 최근 1개월을 기본 적용한다. `/admin/stats/page.tsx` 주석 참조).
@@ -33,7 +33,7 @@
  *    "데이터 0건"으로 위장하는 패턴을 금지했다. 서비스 계층이 폴백을 주입하지 않고 성공값·예외를
  *    그대로 흘려보내는지 고정한다(정규화 책임은 페이지가 진다).
  *
- * ⚠ 페이징 축은 이 서비스에 **적용 대상이 아니다** — 6개 메서드 어디에도 page/size 파라미터가
+ * ⚠ 페이징 축은 이 서비스에 **적용 대상이 아니다** — 5개 메서드 어디에도 page/size 파라미터가
  *   없고 백엔드 컨트롤러도 페이징하지 않는다. 대신 `ApiService.get` 의 페이징 정규화가
  *   **끼어들지 않는다**는 사실(pageIndex/recordCountPerPage 미주입)을 반대 방향으로 고정한다.
  *
@@ -79,12 +79,11 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
   });
 
   describe('엔드포인트 URL 조합', () => {
-    it('6종 통계 경로는 서로 겹치지 않는다 — 응답 스키마가 모두 StatsDto[] 라 뒤바뀌어도 타입으로는 못 잡는다', async () => {
+    it('5종 통계 경로는 서로 겹치지 않는다 — 응답 스키마가 모두 StatsDto[] 라 뒤바뀌어도 타입으로는 못 잡는다', async () => {
       await statsAdminService.getSummary();
       await statsAdminService.getConnectStats();
       await statsAdminService.getBbsStats();
       await statsAdminService.getUserStats();
-      await statsAdminService.getReportStats();
       await statsAdminService.getDataUsageStats();
 
       expect(client.get.mock.calls.map((call) => call[0])).toEqual([
@@ -92,7 +91,6 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
         'admin/system/statistics/connect',
         'admin/system/statistics/bbs',
         'admin/system/statistics/user',
-        'admin/system/statistics/report',
         'admin/system/statistics/data-usage',
       ]);
     });
@@ -156,11 +154,11 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
 
     it('params 를 생략하면 빈 생성 query로 나가며 서비스가 기본 기간을 지어내지 않는다', async () => {
       // 기간 미지정은 의도된 호출이다: 백엔드 setDefaultDates 가 "최근 1개월"을 적용한다.
-      await statsAdminService.getReportStats();
+      await statsAdminService.getDataUsageStats();
 
       const [url, sentConfig] = client.get.mock.calls[0];
 
-      expect(url).toBe(`${BASE}/report`);
+      expect(url).toBe(`${BASE}/data-usage`);
       expect(sentConfig).toBeDefined();
       expect(sentConfig?.params).toEqual({});
     });
@@ -266,15 +264,14 @@ describe('StatsAdminService — 통계 관리자 API 계약', () => {
   });
 
   describe('읽기 전용 보장', () => {
-    it('6종 메서드는 전부 GET 만 사용한다 — 통계 조회가 쓰기 동사로 나가면 감사 로그와 권한 판정이 어긋난다', async () => {
+    it('5종 메서드는 전부 GET 만 사용한다 — 통계 조회가 쓰기 동사로 나가면 감사 로그와 권한 판정이 어긋난다', async () => {
       await statsAdminService.getSummary();
       await statsAdminService.getConnectStats();
       await statsAdminService.getBbsStats();
       await statsAdminService.getUserStats();
-      await statsAdminService.getReportStats();
       await statsAdminService.getDataUsageStats();
 
-      expect(client.get).toHaveBeenCalledTimes(6);
+      expect(client.get).toHaveBeenCalledTimes(5);
       expect(client.post).not.toHaveBeenCalled();
       expect(client.put).not.toHaveBeenCalled();
       expect(client.patch).not.toHaveBeenCalled();

@@ -1,13 +1,11 @@
 package nuri.business.service.stats;
 
-import nuri.business.domain.stats.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
 import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
@@ -29,9 +27,6 @@ class ReportStatsServiceTest {
      * 명시 생성자로 만든다 — 같은 원시 타입 {@code ObjectProvider} 두 개를 {@code @InjectMocks} 는 구분하지 못한다.
      */
     private ReportStatsService reportStatsService;
-
-    @Mock
-    private ReprtStatsRepository reprtStatsRepository;
 
     /**
      * 자료 이용 집계도 게시판 도메인이 구현하는 포트로 받는다({@code tb_dta_use_stats} 는 게시판 데이터다).
@@ -58,7 +53,7 @@ class ReportStatsServiceTest {
 
     @BeforeEach
     void setUp() {
-        reportStatsService = new ReportStatsService(reprtStatsRepository, userLogRepository, loginLogRepository,
+        reportStatsService = new ReportStatsService(userLogRepository, loginLogRepository,
                 userRepository, postStatistics, dataUsageStatistics);
     }
 
@@ -92,28 +87,6 @@ class ReportStatsServiceTest {
         verify(loginLogRepository).countLoginsByDate("20260201", "20260228");
     }
 
-    @Test
-    @DisplayName("일자별 보고서 통계 조회")
-    void getReprtStatsByDate() {
-        given(reprtStatsRepository.countByDate(anyString(), anyString())).willReturn(new ArrayList<>());
-        
-        List<Object[]> result = reportStatsService.getReprtStatsByDate("2024-01-01", "2024-01-31");
-
-        assertThat(result).isEmpty();
-    }
-
-    @Test
-    @DisplayName("보고서 통계 등록")
-    void insertReprtStats() throws Exception {
-        ReprtStats stats = ReprtStats.builder().reprtNm("Test").reprtType("A").build();
-        reportStatsService.insertReprtStats(stats);
-
-        ArgumentCaptor<ReprtStats> captor = ArgumentCaptor.forClass(ReprtStats.class);
-        verify(reprtStatsRepository).save(captor.capture());
-        assertThat(captor.getValue().getRptpSn()).isNull();
-        assertThat(captor.getValue().getReprtNm()).isEqualTo("Test");
-    }
-    
     @Test
     @DisplayName("일자별 자료 이용 현황은 자료 이용 포트의 결과를 그대로 돌려준다")
     void getDtaUseStatsByDateDelegatesToDataUsagePort() {
@@ -185,7 +158,6 @@ class ReportStatsServiceTest {
     @DisplayName("날짜 형식이 틀리면 400(INVALID_INPUT_VALUE)이고 저장소를 부르지 않는다")
     void malformedDatesAreRejectedAsInvalidInput(String malformed) {
         for (org.junit.jupiter.api.function.Executable call : List.<org.junit.jupiter.api.function.Executable>of(
-                () -> reportStatsService.getReprtStatsByDate(malformed, "2026-09-25"),
                 () -> reportStatsService.getDtaUseStatsByDate("2026-09-01", malformed),
                 () -> reportStatsService.getBbsStatsByDate(malformed, malformed),
                 () -> reportStatsService.getUserStatsByDate(malformed, "20260925"),
@@ -194,7 +166,6 @@ class ReportStatsServiceTest {
                     nuri.foundation.core.exception.BusinessException.class, call);
             assertThat(error.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
         }
-        verify(reprtStatsRepository, never()).countByDate(anyString(), anyString());
         verifyNoInteractions(dataUsageStatistics);
         verify(userLogRepository, never()).countByDate(anyString(), anyString());
         verify(loginLogRepository, never()).countLoginsByDate(anyString(), anyString());
@@ -205,11 +176,12 @@ class ReportStatsServiceTest {
     void reversedRangeIsRejectedButSingleDayIsAllowed() {
         nuri.foundation.core.exception.BusinessException error = org.junit.jupiter.api.Assertions.assertThrows(
                 nuri.foundation.core.exception.BusinessException.class,
-                () -> reportStatsService.getReprtStatsByDate("2026-09-26", "2026-09-25"));
+                () -> reportStatsService.getDtaUseStatsByDate("2026-09-26", "2026-09-25"));
         assertThat(error.getErrorCode()).isEqualTo(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
 
-        reportStatsService.getReprtStatsByDate("2026-09-25", "20260925");
-        verify(reprtStatsRepository).countByDate("2026-09-25 00:00:00", "2026-09-26 00:00:00");
+        given(dataUsageStatistics.getIfAvailable()).willReturn(dataUsageContributor);
+        reportStatsService.getDtaUseStatsByDate("2026-09-25", "20260925");
+        verify(dataUsageContributor).countDataUsageByDate("2026-09-25 00:00:00", "2026-09-26 00:00:00");
     }
 
     @ParameterizedTest
@@ -226,11 +198,9 @@ class ReportStatsServiceTest {
         given(postStatistics.getIfAvailable()).willReturn(postStatisticsContributor);
         given(dataUsageStatistics.getIfAvailable()).willReturn(dataUsageContributor);
 
-        reportStatsService.getReprtStatsByDate(day, day);
         reportStatsService.getDtaUseStatsByDate(day, day);
         reportStatsService.getBbsStatsByDate(day, day);
 
-        verify(reprtStatsRepository).countByDate(start, endExclusive);
         verify(dataUsageContributor).countDataUsageByDate(start, endExclusive);
         verify(postStatisticsContributor).countPostsByDate(start, endExclusive);
     }

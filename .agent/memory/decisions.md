@@ -463,6 +463,9 @@ refresh_triggers:
 | DEC-OPS-364 | accepted | 운영 계약 비용을 실측하고, 문서 전용 푸시의 계약 범위를 줄이지 않는다(투영 시험이 문서 트리를 입력으로 쓴다). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-364) | 2026-10-19 | - |
 | DEC-OPS-365 | accepted | V2_133 을 공유 OCI DB 에 적용한다(2026-10-19 사용자 사전 승인 — 10개 표 낙관적 잠금 버전 컬럼, PR #937 병합 뒤). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-365) | 2026-10-19 | - |
 | DEC-OPS-366 | accepted | PIT 범위를 제품 13개로 넓힌다 — 설문·참여(커뮤니티·메모 보고·일정)·사용자/조직을 더하고 설문 결과를 설문 범위로 옮긴다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-366) | 2026-10-19 | - |
+| DEC-OPS-367 | accepted | 처리 흐름 없는 상태 표면 넷(업무보고 상태·포상 승인·행사 승인·인터넷서비스안내 반영 여부)을 걷고 물리 컬럼은 읽기 전용으로 남긴다. | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-367) | 2026-10-19 | - |
+| DEC-OPS-368 | accepted | 아무도 쓰지 않는 보고서 통계 원장을 읽던 탭·라우트·조회 API 를 걷고, V2_134 가 메뉴 9040105 와 그 배정·즐겨찾기를 지운다(표는 남김). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-368) | 2026-10-19 | - |
+| DEC-OPS-369 | accepted | 프런트 커버리지 하한을 CI 실측의 정수 내림에서 1포인트 여유를 둔 85/79/82/87로 올린다(종전 71/63/64/73). | 승인·근거는 보관 원문 | [원문](../../docs/archived/operational-decisions-history.md#dec-ops-369) | 2026-10-19 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

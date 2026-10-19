@@ -4,7 +4,6 @@ import {
   getBbsStatsOperation,
   getConnectStats_1Operation,
   getDataUsageStatsOperation,
-  getReportStatsOperation,
   getSummaryOperation,
   getUserStatsOperation,
 } from '@/types/generated-operations';
@@ -75,10 +74,7 @@ class StatsAdminService extends ApiService {
     return this.executeGenerated(getUserStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
   }
 
-  /** 보고서 통계 조회 */
-  async getReportStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsDto[]> {
-    return this.executeGenerated(getReportStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
-  }
+  // [2026-10-19] 보고서 통계 조회(getReportStats)는 쓰는 쪽이 없는 원장만 읽어 API 와 함께 걷었다.
 
   /** 자료이용현황 통계 조회 */
   async getDataUsageStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsDto[]> {

@@ -5,7 +5,8 @@ import type { AxiosRequestConfig } from 'axios';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * [Phase 0c] 통계 허브 공통 탭(사용자·시스템 활성·운영 보고서·통계 개요)의 동치 기준선.
+ * [Phase 0c] 통계 허브 공통 탭(사용자·시스템 활성·통계 개요)의 동치 기준선.
+ * [2026-10-19] 운영 보고서 탭은 쓰는 쪽이 없는 원장만 읽어 라우트·조회 API·메뉴(V2_134)와 함께 걷었다.
  *
  * 통계 서비스·DTO 를 business-core 로 옮기고 허브를 core 셸 + 게시판·설문 패널로 가르는 리팩터링이
  * 화면 동작을 바꾸지 않았음을 증명하려고 지금 동작을 그대로 고정한다. 모듈 배치와 무관하게 남도록
@@ -52,7 +53,6 @@ vi.mock('@/extensions/generated-stats-panels', () => ({ statsPanels: [] }));
 
 import UserStatsPage from '../user/page';
 import ScreenStatsPage from '../screen/page';
-import ReportPage from '../report/page';
 
 const BASE = 'admin/system/statistics';
 const URL = {
@@ -60,16 +60,15 @@ const URL = {
   bbs: `${BASE}/bbs`,
   connect: `${BASE}/connect`,
   dataUsage: `${BASE}/data-usage`,
-  report: `${BASE}/report`,
 } as const;
 
-const NAV_LABELS = ['통계 개요', '사용자 통계', '시스템 활성', '운영 보고서'];
+const NAV_LABELS = ['통계 개요', '사용자 통계', '시스템 활성'];
 /*
  * 통계 개요 탭이 탭 전용으로 더 부르는 조회는 없다. [허브 분해 H4] 종전에는 게시판이 있으면 게시물 집계도 불렀지만 개요는 그 값을
  * 쓰지 않았다(쓰지 않는 조회) — 걷었다. 게시물 집계는 콘텐츠 지표 탭에서만 부른다(게시판 동등성 시험).
  */
 /** 통계 새로고침이 다시 부르는 조회 전부(꺼진 탭의 조회 포함). 기능 탭의 조회는 그 기능 소유 시험이 본다. */
-const REFRESH_URLS: string[] = [URL.user, URL.connect, URL.report];
+const REFRESH_URLS: string[] = [URL.user, URL.connect];
 const STATS_HEADERS = [
   { label: '집계 일자', key: 'statsDate' },
   { label: '집계 건수', key: 'statsCo' },
@@ -140,7 +139,6 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
     it.each([
       ['사용자', UserStatsPage, '/admin/stats/user', '', '사용자 통계 분석', '사용자 통계'],
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', '', '시스템 활성 지표', '시스템 활성'],
-      ['운영 보고서', ReportPage, '/admin/stats/report', '', '운영 보고서 아카이브', '운영 보고서'],
       ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', '통계 개요', '통계 개요'],
     ])('%s 화면은 h1 과 내비게이션을 순서대로 보이고 현재 항목만 aria-current 다', async (_name, Page, pathname, query, title, activeLabel) => {
       renderRoute(Page, pathname, query);
@@ -158,7 +156,6 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
     it.each([
       ['사용자', UserStatsPage, '/admin/stats/user', '', sorted(URL.user, URL.connect), PERIOD_EMPTY],
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', '', sorted(URL.user, URL.connect), PERIOD_EMPTY],
-      ['운영 보고서', ReportPage, '/admin/stats/report', '', sorted(URL.user, URL.connect, URL.report), UNINSTRUMENTED_EMPTY],
       ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', sorted(URL.user, URL.connect), PERIOD_EMPTY],
     ])('%s 화면은 사용자·접속을 늘 부르고 탭 전용 조회만 더한다', async (_name, Page, pathname, query, expected, settled) => {
       renderRoute(Page, pathname, query);
@@ -212,7 +209,6 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
     it.each([
       ['사용자', UserStatsPage, '/admin/stats/user', PERIOD_EMPTY],
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', PERIOD_EMPTY],
-      ['운영 보고서', ReportPage, '/admin/stats/report', UNINSTRUMENTED_EMPTY],
     ])('%s 화면의 빈 결과 문구', async (_name, Page, pathname, message) => {
       renderRoute(Page, pathname);
 
@@ -229,23 +225,27 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
   });
 
   describe('차트 오류와 다시 시도', () => {
-    it('운영 보고서 조회가 실패하면 차트만 오류이고, 다시 시도는 그 URL 만 다시 부른다', async () => {
-      failures.set(URL.report, 1);
-      responses.set(URL.report, [{ statsDate: '20261001', statsCo: 8 }]);
-      renderRoute(ReportPage, '/admin/stats/report');
+    /*
+     * [2026-10-19] 종전에는 운영 보고서 탭(차트 전용 조회)으로 보았다. 그 탭을 걷어 셸 탭의 차트는 모두 요약 카드와 같은 조회를
+     * 그린다 — 시스템 활성 탭의 접속 조회로 본다. 그 조회는 요약 카드도 쓰므로 요약 오류 알림이 함께 뜨고 함께 사라진다.
+     */
+    it('시스템 활성 차트 조회가 실패하면 차트가 오류이고, 다시 시도는 그 URL 만 다시 부른다', async () => {
+      failures.set(URL.connect, 1);
+      responses.set(URL.connect, [{ statsDate: '20261001', statsCo: 8 }]);
+      renderRoute(ScreenStatsPage, '/admin/stats/screen');
 
-      const alert = await screen.findByRole('alert');
-      expect(alert).toHaveTextContent('통계 데이터를 불러오지 못했습니다.');
+      const chartError = await screen.findByText('통계 데이터를 불러오지 못했습니다.');
+      const alert = chartError.closest('[role="alert"]') as HTMLElement;
+      expect(alert).not.toBeNull();
       expect(alert).toHaveTextContent('잠시 후 다시 시도하거나 관리자에게 문의해 주세요.');
-      expect(screen.queryByText(SUMMARY_ALERT)).not.toBeInTheDocument();
       await screen.findByText('_ 사용자 등록 요청 수');
 
       api.getRaw.mockClear();
       fireEvent.click(within(alert).getByRole('button', { name: /다시 시도$/ }));
 
       await waitFor(() => expect(screen.queryByText('통계 데이터를 불러오지 못했습니다.')).not.toBeInTheDocument());
-      expect(requestedUrls()).toEqual([URL.report]);
-      expect(screen.queryByText(UNINSTRUMENTED_EMPTY)).not.toBeInTheDocument();
+      expect(requestedUrls()).toEqual([URL.connect]);
+      expect(screen.queryByText(SUMMARY_ALERT)).not.toBeInTheDocument();
     });
   });
 
@@ -275,7 +275,6 @@ describe('통계 허브 공통 탭 동치 기준선', () => {
     it.each([
       ['사용자', UserStatsPage, '/admin/stats/user', '', 'stats_user_stats', URL.user],
       ['시스템 활성', ScreenStatsPage, '/admin/stats/screen', '', 'stats_system_stats', URL.connect],
-      ['운영 보고서', ReportPage, '/admin/stats/report', '', 'stats_reports', URL.report],
       ['통계 개요(?tab=DASHBOARD)', UserStatsPage, '/admin/stats/user', 'tab=DASHBOARD', 'stats_dashboard', URL.connect],
     ])('%s 화면은 그 탭이 그리는 집계를 stats_<탭> 파일로 내보낸다', async (_name, Page, pathname, query, filename, source) => {
       responses.set(source, [{ statsDate: '20261001', statsCo: 11 }, { statsDate: '20261002', statsCo: 0 }]);

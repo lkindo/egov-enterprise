@@ -16,7 +16,6 @@ const services = vi.hoisted(() => ({
   getBbsStats: vi.fn(),
   getConnectStats: vi.fn(),
   getDataUsageStats: vi.fn(),
-  getReportStats: vi.fn(),
 }));
 const params = vi.hoisted(() => ({ value: new URLSearchParams() }));
 
@@ -31,7 +30,6 @@ vi.mock('@/services/foundation/system/StatsAdminService', () => ({
     getBbsStats: services.getBbsStats,
     getConnectStats: services.getConnectStats,
     getDataUsageStats: services.getDataUsageStats,
-    getReportStats: services.getReportStats,
   },
 }));
 vi.mock('@/app/components/ui/observability-charts', () => ({

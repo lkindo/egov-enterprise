@@ -58,7 +58,8 @@ class SharedPostgresMigrationHarnessContractTest {
     // V2_131: 로그아웃 시각·개인정보 접근 기록 정보주체 컬럼과 새 표준 용어 검증을 추가한다.
     // V2_132: 감사 원장 세 표의 수정·선언 없는 삭제 거부와 보존 정리 삭제 허용 검증을 추가한다.
     // V2_133: 10개 표의 낙관적 잠금 버전 컬럼(기존 행 0·생략 INSERT 0·음수 거부) 검증을 추가한다(2026-10-18).
-    private static final int EXPECTED_MIGRATION_TEST_COUNT = 64;
+    // V2_134: 보고서 통계 메뉴 행·배정·즐겨찾기 삭제와 이력, 예상과 다른 행·같은 경로의 다른 행이면 멈추는 가드 검증을 추가한다(2026-10-19).
+    private static final int EXPECTED_MIGRATION_TEST_COUNT = 65;
 
     @Test
     @DisplayName("격리 database 이름은 병렬 클래스마다 고유하고 PostgreSQL 식별자 한도 안에서 안전하다")

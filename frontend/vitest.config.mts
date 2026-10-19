@@ -141,11 +141,12 @@ export default defineConfig({
       //   거버넌스 registry 의 vitest-coverage-threshold selector 가 파일의 첫 `thresholds:` 를 읽는다
       //   (scripts/governance-gates-contract.mjs). 더 앞선 블록이 생기면 조용히 엉뚱한 값을 읽는다.
       //   같은 블록 안에 키가 중복되면 fail-closed 라 그쪽은 안전하다.
+      // [2026-10-19 DEC-OPS-369] CI 실측(statements 86.01 · branches 80.18 · functions 83.15 · lines 88.31, PR #940)의 정수 내림에서 1포인트 여유를 두고 올렸다 — 종전 71/63/64/73.
       thresholds: {
-        statements: 71,
-        branches: 63,
-        functions: 64,
-        lines: 73,
+        statements: 85,
+        branches: 79,
+        functions: 82,
+        lines: 87,
       },
     },
   },

@@ -19,7 +19,6 @@ const dates = [
   ScheduleDtoRequestSchema.shape.schdlEndYmd,
   EventInfoDtoRequestSchema.shape.evntBgngYmd,
   EventInfoDtoRequestSchema.shape.evntEndYmd,
-  EventInfoDtoRequestSchema.shape.evntAprvYmd,
   SurveyInfoDtoRequestSchema.shape.srvyBgngYmd,
   SurveyInfoDtoRequestSchema.shape.srvyEndYmd,
   OnlinePollManageRequestSchema.shape.pollBgngYmd,

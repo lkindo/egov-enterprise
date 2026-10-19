@@ -96,14 +96,14 @@ class RbacAuthorizationMatrixTest {
     @Test void ordinaryStatisticsReaderCannotEnterAnyAdministrativeStatisticsEndpoint() throws Exception {
         var ordinary = nuri.business.support.AuthorizationTestPrincipal.principal("user_test", "USR_001", "USER");
         mockMvc.perform(get("/api/v1/statistics/connect").with(user(ordinary))).andExpect(status().isOk());
-        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
+        for (String suffix : List.of("bbs", "connect", "data-usage", "summary", "user")) {
             mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(ordinary)))
                     .andExpect(status().isForbidden());
         }
     }
     @Test void delegatedStatisticsPermissionAllowsAdministrativeReadsWithoutAnAdminGroup() throws Exception {
         var delegated = explicit(List.of("REPORT_AUDIT"), List.of("STATS_ADMIN_READ"));
-        for (String suffix : List.of("bbs", "connect", "data-usage", "report", "summary", "user")) {
+        for (String suffix : List.of("bbs", "connect", "data-usage", "summary", "user")) {
             mockMvc.perform(get("/api/v1/admin/system/statistics/" + suffix).with(user(delegated)))
                     .andExpect(status().isOk());
         }

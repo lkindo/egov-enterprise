@@ -110,7 +110,7 @@ describe('Demo user services', () => {
   });
 
   it('reportService rejects every server-owned report field before transport', async () => {
-    const serverOwnedFields = ['rptpSn', 'userId', 'userNm', 'rptSttsCd', 'rptTypeCd'] as const;
+    const serverOwnedFields = ['rptpSn', 'userId', 'userNm', 'rptTypeCd'] as const;
     type ServerOwnedField = Extract<keyof WorkReportInput, (typeof serverOwnedFields)[number]>;
     expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();
 

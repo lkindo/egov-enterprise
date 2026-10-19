@@ -1,7 +1,5 @@
 package nuri.business.service.stats;
 
-import nuri.business.domain.stats.ReprtStats;
-import nuri.business.domain.stats.ReprtStatsRepository;
 import lombok.RequiredArgsConstructor;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -23,13 +21,15 @@ import java.util.List;
  * 바로 {@code LocalDate.parse} 해, 형식이 틀리면 {@code DateTimeParseException} 이 500 으로 끝났다(주간 API
  * 스캔이 퍼징하는 파라미터다). 이제 형식 오류와 시작일이 종료일보다 늦은 기간은 400 이다. 컨트롤러가 부르지 않던
  * 목록·건수·유형·상태·게시판별 조회 7개와 그 전용 쿼리(없는 컬럼을 가리키던 쿼리 포함)는 걷었다.
+ *
+ * <p>[2026-10-19] 보고서 통계(날짜별 조회·등록)를 걷었다. 등록은 자기 단위 시험만 불러 제품 경로에서 한 번도 실행되지
+ * 않았고, 그래서 조회 탭은 어떤 기간에도 비어 있었다. 물리 테이블 tb_rptp_stats 는 남긴다(V2_134 는 메뉴만 걷는다).
  */
 @Service
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 public class ReportStatsService {
 
-    private final ReprtStatsRepository reprtStatsRepository;
     private final nuri.business.domain.log.UserLogRepository userLogRepository;
     private final nuri.business.domain.log.LoginLogRepository loginLogRepository;
     private final nuri.business.domain.user.repository.UserRepository userRepository;
@@ -89,29 +89,6 @@ public class ReportStatsService {
                 .totalPosts(totalPosts)
                 .todayConnects(todayConnects)
                 .build();
-    }
-
-    // ========== 보고서 통계 ==========
-
-    /**
-     * 등록 보고서 날짜별 통계
-     */
-    public List<Object[]> getReprtStatsByDate(String fromDate, String toDate) {
-        DateRange range = range(fromDate, toDate);
-        return reprtStatsRepository.countByDate(range.fromTimestamp(), range.toExclusiveTimestamp());
-    }
-
-    /**
-     * 보고서 통계 데이터 등록
-     */
-    @Transactional
-    public void insertReprtStats(ReprtStats reprtStats) throws Exception {
-        ReprtStats newStats = ReprtStats.builder()
-                .reprtNm(reprtStats.getReprtNm())
-                .reprtType(reprtStats.getReprtType())
-                .reprtSttus(reprtStats.getReprtSttus())
-                .build();
-        reprtStatsRepository.save(newStats);
     }
 
     // ========== 데이터 사용현황 ==========

@@ -135,7 +135,10 @@ class InputContractMirrorLinterTest {
     //   요청·응답에서 필드를 걷었다(GAP-PROGRAM-001). 같은 이유로 검증 대상의 소멸이다.
     // [2026-10-16 결재 동선 개선 D2] 250 -> 251. 나의 결재선 요청(ApprovalSavedLineRequest)의 결재선명을 표(V2_129 apln_nm 200)와
     //   대조한다. 중첩 +1(그 요청의 결재 단계 목록).
-    private static final int MIN_LENGTH_FIELDS = 251;
+    // [2026-10-19 쓰지 않는 상태 표면 퇴역] 251 -> 246(원장 실측). 처리 흐름 없는 상태 필드를 API 에서 걷었다 — 포상 승인
+    //   3(sanctnerId·confmAt·returnResn), 행사 승인 여부 1(evntAprvYn), 인터넷 서비스 안내 반영 여부 1(rfltYn). 물리 컬럼은
+    //   남고 엔티티 매핑은 읽기 전용이다. 같은 이유로 검증 대상의 소멸이다.
+    private static final int MIN_LENGTH_FIELDS = 246;
     private static final int MIN_ENUM_FIELDS = 18;
     private static final int MIN_NESTED_VALIDATION_FIELDS = 13;
     // [2026-09-06 병합] CommunityDto.cmntyNm·DeptJobBoxDto.deptTaskBoxNm 필수화(+2), SmsRecptnDto.rcptnTelno 해제(-1) → 37.
@@ -151,7 +154,8 @@ class InputContractMirrorLinterTest {
     // [2026-09-07] +3 (ISG itntSrvcSn/lastMdfrId/mdfcnDt).
     private static final int MIN_READ_ONLY_FIELDS = 45;
     // [2026-10-18 서버 검증 공백] 12 → 13(원장 실측). 포상 일자(rwardDe)가 길이만 보던 것을 yyyyMMdd 달력 계약으로 맞췄다.
-    private static final int MIN_CALENDAR_DATE_FIELDS = 13;
+    // [2026-10-19 쓰지 않는 상태 표면 퇴역] 13 → 12(원장 실측). 행사 승인일(evntAprvYmd)을 승인 흐름이 없어 API 에서 걷었다.
+    private static final int MIN_CALENDAR_DATE_FIELDS = 12;
 
     private static final java.util.regex.Pattern TYPE_NAME = java.util.regex.Pattern.compile(
             "[a-z][a-z0-9_]*(?:\\.[a-z][a-z0-9_]*)*\\.[A-Z][A-Za-z0-9_]*(?:\\$[A-Z][A-Za-z0-9_]*)*");

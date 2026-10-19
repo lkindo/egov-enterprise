@@ -40,15 +40,20 @@ public class RewardManage extends BaseEntity {
     @Column(length = 4000)
     private String cntrbCn;
 
-    @Column(length = 20)
+    /*
+     * [2026-10-19] 승인 필드(승인자·승인 여부·승인 일시·반려 사유·연결 결재)는 승인 절차가 제품에 없어 API·화면에서 걷었다.
+     *   물리 컬럼은 남기므로 매핑만 읽기 전용으로 둔다 — 앱은 이 컬럼들에 쓰지 않는다(새 포상의 승인 여부도 비워 둔다).
+     */
+    @Column(length = 20, insertable = false, updatable = false)
     private String atrzrId;
 
-    @Column(length = 1)
+    @Column(length = 1, insertable = false, updatable = false)
     private String confmYn;
 
+    @Column(insertable = false, updatable = false)
     private java.time.LocalDateTime aprvDt;
 
-    @Column(length = 4000)
+    @Column(length = 4000, insertable = false, updatable = false)
     private String rtnRsnCn;
     @Column(name = "atch_file_sn")
     private Long atchFileSn;
@@ -58,7 +63,7 @@ public class RewardManage extends BaseEntity {
         foreignKey = @ForeignKey(ConstraintMode.NO_CONSTRAINT))
     private nuri.business.domain.file.FileMaster fileMaster;
 
-    @Column(name = "ifml_atrz_sn")
+    @Column(name = "ifml_atrz_sn", insertable = false, updatable = false)
     private Long ifmlAtrzSn;
 
     @ManyToOne(fetch = FetchType.LAZY)
@@ -68,33 +73,25 @@ public class RewardManage extends BaseEntity {
 
     // Phase 5.2: 팩토리 파라미터 기반 private 생성자 (빌더/create() 위임 대상)
     private RewardManage(Long rwrdSn, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
-                         String cntrbCn, String atrzrId, String confmYn, java.time.LocalDateTime aprvDt,
-                         String rtnRsnCn, Long atchFileSn, Long ifmlAtrzSn) {
+                         String cntrbCn, Long atchFileSn) {
         this.rwrdSn = rwrdSn;
         this.rwrdUserId = rwrdUserId;
         this.rwrdCd = rwrdCd;
         this.rwrdYmd = rwrdYmd;
         this.rwrdNm = rwrdNm;
         this.cntrbCn = cntrbCn;
-        this.atrzrId = atrzrId;
-        this.confmYn = confmYn;
-        this.aprvDt = aprvDt;
-        this.rtnRsnCn = rtnRsnCn;
         this.atchFileSn = atchFileSn;
-        this.ifmlAtrzSn = ifmlAtrzSn;
     }
 
     /**
      * Phase 5.2: 빌더는 정적 팩토리 create() 에 배치.
      * 기존 RewardManage.builder()...build() 호출부는 그대로 동작한다.
-     * 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt)와 읽기전용 연관(fileMaster)은 제외.
+     * 감사 필드(frstRgtrId/lastMdfrId/crtDt/mdfcnDt), 읽기전용 연관(fileMaster)과 읽기 전용 승인 컬럼은 제외.
      */
     @Builder
     public static RewardManage create(Long rwrdSn, String rwrdUserId, String rwrdCd, String rwrdYmd, String rwrdNm,
-                                      String cntrbCn, String atrzrId, String confmYn, java.time.LocalDateTime aprvDt,
-                                      String rtnRsnCn, Long atchFileSn, Long ifmlAtrzSn) {
-        return new RewardManage(rwrdSn, rwrdUserId, rwrdCd, rwrdYmd, rwrdNm, cntrbCn, atrzrId, confmYn, aprvDt,
-                rtnRsnCn, atchFileSn, ifmlAtrzSn);
+                                      String cntrbCn, Long atchFileSn) {
+        return new RewardManage(rwrdSn, rwrdUserId, rwrdCd, rwrdYmd, rwrdNm, cntrbCn, atchFileSn);
     }
 
     /** 화면이 편집하는 다섯 필드를 갱신한다(2026-09-05 DEC-OPS-036 — 종전 3필드 시그니처는 호출부가 0건이었다). */

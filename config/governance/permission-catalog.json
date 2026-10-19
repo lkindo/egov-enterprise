@@ -2486,9 +2486,6 @@
     "/admin/stats/data-usage": [
       "STATS_ADMIN_READ"
     ],
-    "/admin/stats/report": [
-      "STATS_ADMIN_READ"
-    ],
     "/admin/stats/screen": [
       "STATS_ADMIN_READ"
     ],

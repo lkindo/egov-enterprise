@@ -208,6 +208,58 @@ SELECT authrt_cd, authrt_grnt_cd FROM tb_authrt_grnt_map
 
 **배정을 되살릴 때.** 지운 배정은 이력의 `authrt_cd`·`authrt_grnt_cd`로 복원할 수 있다. 다만 새 앱의 원장에는 이 코드가 없어 권한 스냅샷이 fail-closed 로 실패하므로, 구 버전 앱으로 함께 되돌릴 때만 복원한다.
 
+## 보고서 통계 메뉴 퇴역(V2_134)
+
+V2_134(`V2_134__retire_report_stats_menu.sql`)는 메뉴 `9040105`(보고서통계, 경로 `/admin/stats/report`) 행을 지운다(2026-10-19 사용자 승인). 같은 변경이 그 메뉴가 열던 통계 허브의 '운영 보고서' 탭과 라우트, 조회 API `GET /api/v1/admin/system/statistics/report`를 걷었다. 그 탭이 읽던 `tb_rptp_stats`에는 쓰는 제품 경로가 없어 값이 생긴 적이 없다. 물리 테이블은 남긴다. 함께 지우는 것은 V2_125와 같다.
+
+- 모든 그룹의 그 메뉴 배정(`NAVIGATION`): 지운 배정마다 `GROUP_GRANT`/`REMOVE` 이력(`dmnd_idntfr = 'migration:2.134'`)을 남긴다.
+- 그 메뉴의 즐겨찾기(`tb_bkmk_menu_mng_rslt`): 사용 중인 메뉴라 행이 있을 수 있다. 이력은 남지 않는다.
+
+V2_125와 달리 예상과 다른 상태면 건너뛰지 않고 **실패**한다. 같은 릴리스의 앱에는 그 라우트가 없으므로 남기면 화면 없는 메뉴가 된다. 다음 중 하나면 아무것도 지우지 않고 Flyway가 실패한다. 그 행을 메뉴 관리에서 정리(경로 변경·하위 이동·삭제)한 뒤 다시 적용한다.
+
+- `9040105`의 경로가 `/admin/stats/report`가 아니다.
+- `9040105`에 하위 메뉴가 있다.
+- 다른 메뉴 행이 `/admin/stats/report`를 가리킨다.
+
+행이 이미 없으면 아무것도 하지 않는다. 앱과 같은 릴리스로 적용한다. V2_134 없이 새 앱만 올리면 그 메뉴가 없는 화면을 가리킨다. 앱이 떠 있는 동안 적용하면 메뉴 구조 버전과 배정이 지워진 그룹의 버전이 바뀌어, 열려 있던 메뉴 관리 초안이나 그 그룹의 권한 편집은 저장 때 409로 거부될 수 있다(DEC-OPS-208).
+
+**적용 전 읽기 확인.** 병합본에서 꺼낸 마이그레이션 폴더만 쓴다. 첫 질의가 경로 `/admin/stats/report`·하위 0인 한 행이고 둘째 질의가 0행이어야 적용된다(아니면 위 실패). 셋째 질의의 행 수만큼 이력이 남고, 넷째 질의는 지워질 즐겨찾기다. 마지막 두 질의의 출력을 적용 기록(별도 DEC)에 붙인다 — 백업 다음으로 되살릴 때 쓰는 원본이다.
+
+```sql
+SELECT menu.menu_sn, menu.up_menu_sn, menu.menu_ordr, menu.menu_nm, menu.modern_route, menu.use_yn, menu.del_yn,
+       (SELECT count(*) FROM tb_menu_info child WHERE child.up_menu_sn = menu.menu_sn) AS child_count
+  FROM tb_menu_info menu
+ WHERE menu.menu_sn = 9040105;
+
+SELECT menu_sn, menu_nm FROM tb_menu_info WHERE modern_route = '/admin/stats/report' AND menu_sn <> 9040105;
+
+SELECT authrt_cd, authrt_type_cd, authrt_grnt_cd FROM tb_authrt_grnt_map
+ WHERE authrt_type_cd = 'NAVIGATION' AND authrt_grnt_cd = '9040105';
+
+SELECT menu_id, user_id FROM tb_bkmk_menu_mng_rslt WHERE menu_id = 9040105;
+
+SELECT to_jsonb(menu) FROM tb_menu_info menu WHERE menu.menu_sn = 9040105;
+
+SELECT to_jsonb(bookmark) FROM tb_bkmk_menu_mng_rslt bookmark WHERE bookmark.menu_id = 9040105;
+```
+
+**적용 후 읽기 확인.** 첫·셋째·넷째 질의가 모두 0행이고, 다음 질의가 적용 전 셋째 질의의 행 수와 같아야 한다. 메뉴 전체 수와 활성 메뉴 수가 각각 하나 줄어든다(꺼 둔 행이었다면 활성 수는 그대로다).
+
+```sql
+SELECT authrt_cd, authrt_grnt_cd, chg_rsn FROM tb_authrt_chg_hstry
+ WHERE dmnd_idntfr = 'migration:2.134' AND chg_type_cd = 'REMOVE';
+
+SELECT count(*) AS menus, count(*) FILTER (WHERE use_yn = 'Y') AS active_menus FROM tb_menu_info;
+```
+
+**되돌릴 때.** 메뉴 행과 즐겨찾기에는 감사 표가 없다. 원본은 적용 직전 pg_dump 백업이고, 그다음은 적용 기록에 붙인 `to_jsonb` 출력이다. 되살려도 새 앱에는 그 화면이 없으므로 구 버전 앱으로 함께 되돌릴 때만 의미가 있다.
+
+- 메뉴 행: 백업이나 기록한 출력이 둘 다 없으면 새 base의 값으로만 다시 만들 수 있다 — `menu_sn 9040105`, `up_menu_sn 9040402`, `menu_ordr 4`, `menu_nm '보고서통계'`, `menu_expln ''`, `modern_route '/admin/stats/report'`, `use_yn 'Y'`, `del_yn 'N'`(이 변경 전 메뉴 snapshot의 값). 감사 열과 메뉴 관리에서 바꾼 순서·설명은 알 수 없다.
+- 즐겨찾기: 백업이나 기록한 출력 없이는 되살릴 수 없다.
+- 배정: `migration:2.134` 이력의 `authrt_cd`와 `authrt_type_cd` `'NAVIGATION'`, `authrt_grnt_cd`로 넣고, 그 배정마다 `GROUP_GRANT`/`ADD` 이력을 남긴다.
+
+V2_134는 이미 적용되었으므로 되살린 행은 다시 지워지지 않는다.
+
 ## 2026-09-11 OCI 메뉴 재편 적용 결과
 
 사용자가 승인한 [ADR-0017](../02-architecture/decisions/ADR-0017-task-oriented-menu-navigation.md)의 메뉴 재편을 2026-09-11 13:09 KST에 적용했다. 실행 전 OCI에서 V2_99, 구 6개 테이블 부재와 기존 Contract 감사 1건을 확인했다. 이번 실행은 이미 완료된 Contract나 계정 활성화를 반복하지 않았다.

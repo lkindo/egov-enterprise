@@ -547,7 +547,7 @@ export const updateWorkReportOperation = /*#__PURE__*/ (() => {
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -2830,7 +2830,7 @@ export const updateRewardOperation = /*#__PURE__*/ (() => {
   requestSchema: RewardManageDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
-  requestForbiddenPaths: [["sanctnerId"],["confmAt"],["sanctnDt"],["returnResn"],["ifmlAtrzSn"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
+  requestForbiddenPaths: [["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -3248,7 +3248,7 @@ export const createWorkReportOperation = /*#__PURE__*/ (() => {
   requestSchema: WorkReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptSttsCd"],["rptTypeCd"]],
+  requestForbiddenPaths: [["rptpSn"],["userId"],["userNm"],["rptTypeCd"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -5501,7 +5501,7 @@ export const createRewardOperation = /*#__PURE__*/ (() => {
   requestSchema: RewardManageDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
-  requestForbiddenPaths: [["sanctnerId"],["confmAt"],["sanctnDt"],["returnResn"],["ifmlAtrzSn"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
+  requestForbiddenPaths: [["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -7325,25 +7325,6 @@ export const getSummaryOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => SummaryStatsDtoResponseSchema),
   envelopeSchema: ApiResponseSummaryStatsDtoResponseSchema,
-  requestForbiddenPaths: [],
-  responseForbiddenPaths: [],
-  });
-})();
-
-export const getReportStatsOperation = /*#__PURE__*/ (() => {
-  return defineGeneratedOperation({
-  id: "getReportStats",
-  method: "get",
-  path: "/api/v1/admin/system/statistics/report",
-  requestKind: "none",
-  responseKind: "json",
-  requestRequired: false,
-  multipartParts: null,
-  pathSchema: null,
-  querySchema: z.object({ "fromDate": z.string().optional(), "toDate": z.string().optional() }).strict(),
-  requestSchema: null,
-  responseSchema: z.array(z.lazy(() => StatsDtoResponseSchema)),
-  envelopeSchema: ApiResponseListStatsDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

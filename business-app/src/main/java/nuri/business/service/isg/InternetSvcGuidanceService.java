@@ -31,7 +31,6 @@ public class InternetSvcGuidanceService {
         InternetSvcGuidance isg = InternetSvcGuidance.builder()
                 .itntSvcNm(dto.getItntSvcNm())
                 .itntSvcExpln(dto.getItntSvcExpln())
-                .rfltYn(dto.getRfltYn())
                 .build();
         InternetSvcGuidance saved = internetSvcGuidanceRepository.save(Objects.requireNonNull(isg));
         return saved.getItntSrvcSn();
@@ -48,7 +47,7 @@ public class InternetSvcGuidanceService {
                 .findById(Objects.requireNonNull(dto.getItntSrvcSn()))
                 .orElseThrow(() -> new nuri.foundation.core.exception.BusinessException(
                         nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND));
-        isg.update(dto.getItntSvcNm(), dto.getItntSvcExpln(), dto.getRfltYn());
+        isg.update(dto.getItntSvcNm(), dto.getItntSvcExpln());
     }
 
     /** 존재 확인 — 수정과 같은 이유(없는 id 가 조용히 200 으로 끝나지 않게). */
@@ -75,7 +74,6 @@ public class InternetSvcGuidanceService {
                 .itntSrvcSn(isg.getItntSrvcSn())
                 .itntSvcNm(isg.getItntSvcNm())
                 .itntSvcExpln(isg.getItntSvcExpln())
-                .rfltYn(isg.getRfltYn())
                 .lastMdfrId(isg.getLastMdfrId())
                 .mdfcnDt(isg.getMdfcnDt())
                 .build();

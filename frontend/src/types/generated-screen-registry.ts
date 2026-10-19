@@ -526,18 +526,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
-    "route": "/admin/stats/report",
-    "label": "보고서통계",
-    "labelSource": "menu",
-    "shellAccess": "admin-system",
-    "dynamic": false,
-    "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
-    "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
-      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
-    ]
-  },
-  {
     "route": "/admin/stats/screen",
     "label": "화면통계",
     "labelSource": "menu",
@@ -1719,7 +1707,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/stats",
       "/admin/stats/board",
       "/admin/stats/data-usage",
-      "/admin/stats/report",
       "/admin/stats/screen",
       "/admin/stats/user",
       "/admin/system/durable-jobs",

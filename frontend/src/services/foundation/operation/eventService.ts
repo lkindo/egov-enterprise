@@ -19,8 +19,6 @@ export interface EventInfo {
   picNm?: string;
   prepMttr?: string;
   evntTypeCd?: string;
-  evntAprvYn?: string;
-  evntAprvYmd?: string;
   frstRgtrId?: string;
   crtDt?: string;
   mdfcnDt?: string;

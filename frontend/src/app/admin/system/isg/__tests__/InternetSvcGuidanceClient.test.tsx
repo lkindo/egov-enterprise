@@ -65,6 +65,12 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
     data: Array<Record<string, unknown>>;
   }) => (
     <table>
+      {/* 열 머리글도 그린다 — 화면이 어떤 열을 약속하는지(예: 걷은 '반영 여부')를 시험이 볼 수 있어야 한다. */}
+      <thead>
+        <tr>
+          {columns.map((column, columnIndex) => <th key={columnIndex} scope="col">{column.header}</th>)}
+        </tr>
+      </thead>
       <tbody>
         {data.map((item, rowIndex) => (
           <tr key={rowIndex}>
@@ -97,7 +103,6 @@ const GUIDANCE = {
   itntSrvcSn: 3,
   itntSvcNm: '민원 전자 접수',
   itntSvcExpln: '온라인으로 민원을 접수합니다.',
-  rfltYn: 'Y',
   lastMdfrId: 'ADMIN',
   mdfcnDt: '2026-09-01T10:00:00',
 };
@@ -132,7 +137,8 @@ describe('InternetSvcGuidanceClient', () => {
     renderWithClient(<InternetSvcGuidanceClient initialPage={pageOf(GUIDANCE)} />);
 
     expect(await screen.findByText('민원 전자 접수')).toBeInTheDocument();
-    expect(screen.getByText('반영')).toBeInTheDocument();
+    // [2026-10-19] 반영 여부는 읽는 화면·처리가 없어 걷었다 — 목록이 그 열로 없는 노출 처리를 약속하지 않는다.
+    expect(screen.queryByRole('columnheader', { name: /반영 여부/ })).not.toBeInTheDocument();
     await waitFor(() => expect(mocks.getGuidanceList).toHaveBeenCalled());
     expect(mocks.getGuidanceList).toHaveBeenCalledWith(
       expect.objectContaining({ page: 0, size: 10 }),
@@ -154,7 +160,6 @@ describe('InternetSvcGuidanceClient', () => {
     expect(body).toEqual({
       itntSvcNm: '전자 증명 발급',
       itntSvcExpln: '증명서를 온라인 발급합니다.',
-      rfltYn: 'Y',
     });
     // 서버 소유 감사 필드를 화면이 위조해 보내지 않는다.
     expect(body).not.toHaveProperty('itntSrvcSn');
@@ -181,7 +186,7 @@ describe('InternetSvcGuidanceClient', () => {
     const modal = await screen.findByRole('region', { name: '인터넷 서비스 안내 수정' });
     const scope = within(modal);
     expect(scope.getByRole('textbox', { name: /서비스 명칭/ })).toHaveValue('민원 전자 접수');
-    expect(scope.getByRole('combobox', { name: /반영 여부/ })).toHaveValue('Y');
+    expect(scope.queryByRole('combobox', { name: /반영 여부/ })).not.toBeInTheDocument();
 
     fireEvent.change(scope.getByRole('textbox', { name: /서비스 명칭/ }), { target: { value: '민원 온라인 접수' } });
     fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
@@ -224,14 +229,6 @@ describe('InternetSvcGuidanceClient', () => {
     fireEvent.click(await screen.findByRole('button', { name: '민원 전자 접수 삭제' }));
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledTimes(1));
     expect(mocks.deleteGuidance).not.toHaveBeenCalled();
-  });
-
-  it('반영 여부가 Y/N 어휘 밖이면 뭉개지 않고 원문을 드러낸다', async () => {
-    const odd = { ...GUIDANCE, rfltYn: 'X' };
-    mocks.getGuidanceList.mockResolvedValue(pageOf(odd));
-    renderWithClient(<InternetSvcGuidanceClient initialPage={pageOf(odd)} />);
-
-    expect(await screen.findByText('알 수 없음 (X)')).toBeInTheDocument();
   });
 });
 

@@ -8,7 +8,7 @@
  * 다시 볼 방법이 아예 없었다** — 목록 컬럼에 없고 상세 화면도 없었기 때문이다.
  *
  * 편집을 붙일 때 진짜 위험은 다른 데 있다. `PUT` 은 **전체 DTO** 를 받는데 이 폼은 다섯 필드만
- * 다룬다. 폼 값만 보내면 `picNm`·`prepMttr`·`evntTypeCd`·`evntAprvYn` 같은 화면에 없는 값이
+ * 다룬다. 폼 값만 보내면 `picNm`·`prepMttr`·`evntTypeCd` 같은 화면에 없는 값이
  * **조용히 지워진다** — 저장은 성공하고 화면도 정상으로 보이므로 아무도 눈치채지 못한다.
  * 그래서 저장 payload 가 원본을 보존하는지를 이 계약의 중심에 둔다.
  */
@@ -64,8 +64,6 @@ const DETAIL = {
   picNm: '김담당',
   prepMttr: '버스 2대 예약',
   evntTypeCd: 'WORKSHOP',
-  evntAprvYn: 'Y',
-  evntAprvYmd: '20260915',
 };
 
 function renderClient() {
@@ -116,8 +114,6 @@ describe('행사 수정', () => {
       picNm: '김담당',
       prepMttr: '버스 2대 예약',
       evntTypeCd: 'WORKSHOP',
-      evntAprvYn: 'Y',
-      evntAprvYmd: '20260915',
     });
     expect(mocks.createEvent).not.toHaveBeenCalled();
   });

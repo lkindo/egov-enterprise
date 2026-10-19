@@ -31120,85 +31120,6 @@
         }
       }
     },
-    "/api/v1/admin/system/statistics/report": {
-      "get": {
-        "tags": [
-          "Statistics"
-        ],
-        "summary": "보고서 통계 조회",
-        "operationId": "getReportStats",
-        "parameters": [
-          {
-            "name": "fromDate",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "toDate",
-            "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          }
-        ],
-        "responses": {
-          "200": {
-            "description": "OK",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListStatsDto"
-                }
-              }
-            }
-          },
-          "400": {
-            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "401": {
-            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          },
-          "500": {
-            "description": "서버 내부 오류 (code: C004/S001)",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/ApiResponseVoid"
-                }
-              }
-            }
-          }
-        }
-      }
-    },
     "/api/v1/admin/system/statistics/data-usage": {
       "get": {
         "tags": [
@@ -36950,15 +36871,6 @@
             "type": "integer",
             "format": "int64"
           },
-          "rptSttsCd": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 12,
-            "minLength": 0,
-            "readOnly": true
-          },
           "rptYmd": {
             "type": "string",
             "maxLength": 8,
@@ -39314,11 +39226,6 @@
             "maxLength": 4000,
             "minLength": 0
           },
-          "rfltYn": {
-            "type": "string",
-            "maxLength": 1,
-            "minLength": 0
-          },
           "lastMdfrId": {
             "type": [
               "string",
@@ -39937,37 +39844,9 @@
             "maxLength": 4000,
             "minLength": 0
           },
-          "sanctnerId": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0,
-            "readOnly": true
-          },
-          "confmAt": {
-            "type": "string",
-            "maxLength": 1,
-            "minLength": 0,
-            "readOnly": true
-          },
-          "sanctnDt": {
-            "type": "string",
-            "format": "date-time",
-            "readOnly": true
-          },
-          "returnResn": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 0,
-            "readOnly": true
-          },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
-          },
-          "ifmlAtrzSn": {
-            "type": "integer",
-            "format": "int64",
-            "readOnly": true
           },
           "frstRgtrId": {
             "type": "string",
@@ -40230,21 +40109,6 @@
             "example": "EVT01",
             "maxLength": 12,
             "minLength": 0
-          },
-          "evntAprvYn": {
-            "type": "string",
-            "description": "승인 여부. 신규는 N이며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.",
-            "example": "Y",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "evntAprvYmd": {
-            "type": "string",
-            "description": "승인 일자. 신규는 없으며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.",
-            "example": "20260525",
-            "maxLength": 8,
-            "minLength": 0,
-            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "frstRgtrId": {
             "type": "string",
@@ -51109,21 +50973,6 @@
             "example": "EVT01",
             "maxLength": 12,
             "minLength": 0
-          },
-          "evntAprvYn": {
-            "type": "string",
-            "description": "승인 여부. 신규는 N이며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.",
-            "example": "Y",
-            "maxLength": 1,
-            "minLength": 0
-          },
-          "evntAprvYmd": {
-            "type": "string",
-            "description": "승인 일자. 신규는 없으며 일반 편집에서는 생략하거나 기존 값만 보낼 수 있습니다.",
-            "example": "20260525",
-            "maxLength": 8,
-            "minLength": 0,
-            "pattern": "^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])"
           },
           "frstRgtrId": {
             "type": "string",

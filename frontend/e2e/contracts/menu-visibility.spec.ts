@@ -45,7 +45,8 @@ test.describe('Modernization: Hierarchical Interface Verification', () => {
             }
         };
         collect(rootNodes, 1);
-        expect(visible).toHaveLength(71);
+        // [2026-10-19 DEC-OPS-368] V2_134 가 보고서 통계 메뉴(9040105)를 퇴역해 활성 메뉴는 70개다.
+        expect(visible).toHaveLength(70);
         expect(visible.filter(node => node.modernRoute === '/admin/security/authority')).toHaveLength(1);
         expect(visible.some(node => node.menuNm === '화면 구성 예제')).toBe(false);
         console.log('>>> useYn Filtering verified via API (menus/head): PASS');

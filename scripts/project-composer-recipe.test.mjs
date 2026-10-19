@@ -59,7 +59,8 @@ test('selecting only survey generates survey alone without the board or a foreig
   for (const table of ['tb_srvy_info', 'tb_rptp_stats']) assert.ok(plan.tables.includes(table), table);
   const { menus: projected } = projectCompositionMenus({ menus: loadProjectComposerMenus(resolve(import.meta.dirname, '..')).menus, menuRoutes: plan.menuRoutes, excludedMenuTabs: plan.excludedMenuTabs });
   const menus = new Set(projected.map(row => row.menu_sn));
-  for (const kept of [9040102, 9040104, 9040105]) assert.ok(menus.has(kept), `core statistics menu ${kept}`);
+  // [2026-10-19] 보고서 통계 메뉴 9040105 는 V2_134 가 걷었다.
+  for (const kept of [9040102, 9040104]) assert.ok(menus.has(kept), `core statistics menu ${kept}`);
   for (const dropped of [9040101, 9040106]) assert.ok(!menus.has(dropped), `board statistics menu ${dropped}`);
   assert.ok(plan.frontend.removePaths.includes('src/app/admin/stats/board') && plan.frontend.removePaths.includes('src/app/admin/stats/data-usage'));
   assert.ok(!plan.frontend.removePaths.some(path => path === 'src/app/admin/stats'), 'the statistics shell is core');
