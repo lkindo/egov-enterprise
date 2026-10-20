@@ -277,7 +277,9 @@ const VERIFY_STATIC = [
 ];
 const VERIFY_BACKEND_SUITE = './gradlew compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
 const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle:check', 'pnpm -C frontend run test:coverage'];
-const VERIFY_FAST = ['./gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
+// [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
+const SAST_APPROXIMATION = 'npm run sast:approx';
+const VERIFY_FAST = [SAST_APPROXIMATION, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
 
 test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
   const expected = {
@@ -286,7 +288,7 @@ test('verify profiles run static checks before the operational contracts and sto
     push: [...VERIFY_FAST, './gradlew :api-server:harnessTest -Dfile.encoding=UTF-8'],
     be: [CONTRACTS, VERIFY_BACKEND_SUITE, crossStackCommand],
     fe: [...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
-    full: [...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
+    full: [SAST_APPROXIMATION, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
     e2e: ['pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
   };
   for (const [scope, commands] of Object.entries(expected)) {
@@ -324,10 +326,24 @@ test('verify profiles run static checks before the operational contracts and sto
   assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
 });
 
+test('verify stops on a CodeQL approximation finding first', () => {
+  for (const scope of ['fast', 'push', 'full']) {
+    assert.deepEqual(observeVerification(scope, { failCommand: SAST_APPROXIMATION }), { commands: [SAST_APPROXIMATION], exits: [1], zones: ['Asia/Seoul'] }, scope);
+  }
+  // 근사를 full 에서 걷으면 위 기대가 깨진다(red 재현).
+  const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const withoutApproximation = runner.replace("  } else if (scope === 'full') {\n    runScriptStatic();\n", "  } else if (scope === 'full') {\n");
+  assert.notEqual(withoutApproximation, runner);
+  assert.notEqual(observeVerification('full', { source: withoutApproximation }).commands[0], SAST_APPROXIMATION);
+});
+
 // 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.
 const REGEN_CHECK = 'npm run regen -- --check';
+// [2026-10-20] 소스 경로는 생성물 신선도 다음에 CodeQL 근사를 push 가 바꾼 파일에만 돈다(문서 전용 경로에는 JS·TS 가 없다).
+const SAST_APPROXIMATION_HOOK = 'npm run sast:approx -- --stdin';
 const PRE_PUSH_SOURCE_ORDER = [
   REGEN_CHECK,
+  SAST_APPROXIMATION_HOOK,
   'gradlew compileJava compileTestJava -q',
   'npx tsc --noEmit',
   'npx tsc -p tsconfig.e2e.json --noEmit',
@@ -370,8 +386,8 @@ test('pre-push runs static checks before the operational contracts and stops on 
   const backendOnly = runHook(input, hookSource, { files: [files[0]] });
   assertSuccessful(backendOnly);
   assert.deepEqual(backendOnly.commands,
-    [REGEN_CHECK, 'gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
-  for (const failCommand of ['gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
+    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
+  for (const failCommand of [SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
     const failed = runHook(input, hookSource, { files, failCommand });
     assert.notEqual(failed.status, 0, failCommand);
     assert.equal(failed.commands.at(-1), failCommand);
@@ -383,6 +399,21 @@ test('pre-push runs static checks before the operational contracts and stops on 
     .replace(/# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다\.\r?\nrun_operational_contracts\r?\n/u, '');
   assert.notEqual(contractsFirst, hookSource);
   assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
+});
+
+test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const files = ['scripts/example.mjs'];
+  const blocked = runHook(input, hookSource, { files, failCommand: SAST_APPROXIMATION_HOOK });
+  assert.notEqual(blocked.status, 0);
+  assert.deepEqual(blocked.commands, [REGEN_CHECK, SAST_APPROXIMATION_HOOK], '근사 위반은 컴파일·운영 계약을 기다리지 않고 막는다');
+  assert.ok(!runHook(input, hookSource, { files: ['docs/README.md'] }).commands.includes(SAST_APPROXIMATION_HOOK), '문서 전용 push 에는 JS·TS 가 없다');
+  // 근사는 push 가 바꾼 파일을 표준 입력으로 받는다 — 범위 밖 파일까지 보거나 아무것도 보지 않게 바뀌면 이 줄이 사라진다.
+  assert.match(hookSource, /^printf '%s\\n' "\$CHANGED_FILES" \| npm run sast:approx -- --stdin \\\r?$/mu);
+  // 실패 처리에서 exit 1 을 걷으면 근사 위반으로도 push 가 지나간다 — 위 단언이 그것을 잡는다(red 재현).
+  const swallowed = hookSource.replace('(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; exit 1; }', '(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; }');
+  assert.notEqual(swallowed, hookSource);
+  assert.equal(runHook(input, swallowed, { files, failCommand: SAST_APPROXIMATION_HOOK }).status, 0);
 });
 
 test('pre-push checks generated freshness first and stops before compilation and the operational contracts', () => {

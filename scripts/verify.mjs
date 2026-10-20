@@ -11,7 +11,7 @@
  * fast·push·fe·full·e2e 는 실패가 잦고 짧은 정적 검사(codegen·타입·lint·폼 census — fast·push 는 Java 컴파일 포함,
  * e2e 는 E2E 타입 검사만)를 운영 계약(로컬 약 11분)보다 먼저 돌려 실패를 빨리 알린다. full·be 의 Java 컴파일은
  * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 계약이 먼저다. 성공하면 같은 명령이 모두
- * 실행되므로 명령 집합과 총시간은 순서와 무관하다.
+ * 실행되므로 명령 집합과 총시간은 순서와 무관하다. fast·push·full 은 맨 앞에서 CodeQL 근사(`npm run sast:approx`, 수 초)를 돈다.
  */
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -61,7 +61,13 @@ function runFrontendStatic() {
   run('pnpm -C frontend run test:form-validation');
 }
 
+// CodeQL(secure-coding)이 반복해 막아 온 JavaScript 규칙 셋의 로컬 근사(scripts/sast-approximation.mjs). 판정 권위는 CI CodeQL 이다.
+function runScriptStatic() {
+  run('npm run sast:approx');
+}
+
 function runFastProfile() {
+  runScriptStatic();
   run(`${gradlew} compileJava compileTestJava -Dfile.encoding=UTF-8`);
   runFrontendStatic();
   runOperationalContracts();
@@ -106,6 +112,7 @@ try {
     runOperationalContracts();
     runFrontendPackaging();
   } else if (scope === 'full') {
+    runScriptStatic();
     runFrontendStatic();
     runOperationalContracts();
     runBackendSuite();

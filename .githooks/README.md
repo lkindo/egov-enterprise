@@ -26,7 +26,7 @@ pre-push와 `npm run verify`는 실패가 잦고 짧은 정적 검사를 운영 
 |---|---|---|---|
 | pre-commit | 자동 | 설치된 gitleaks의 시크릿 탐지는 차단(미설치 시 **경고 출력**)·계약 드리프트는 경고 | 낮음 |
 | pre-push 문서-only | 자동 | 생성물 신선도 → 운영 계약 catalog 전체(공용 메모리·문서 링크 포함). Atlas HTML이면 전용 docs-as-code 계약 추가 | 전체 운영 계약 비용 포함 |
-| pre-push 소스 변경 | 자동 | 생성물 신선도(계약 codegen 드리프트 포함) → 영향에 따른 온라인 Java compile, 독립 이관 compile, FE/E2E tsc·lint·폼 census → 운영 계약 → 불변식 Vitest(backend-only면 cross-stack Vitest) → `harnessTest`. 미분류 파일은 전체 실행 | 운영 계약 비용 + 영향 범위 검사 |
+| pre-push 소스 변경 | 자동 | 생성물 신선도(계약 codegen 드리프트 포함) → CodeQL 근사(바뀐 JS·TS) → 영향에 따른 온라인 Java compile, 독립 이관 compile, FE/E2E tsc·lint·폼 census → 운영 계약 → 불변식 Vitest(backend-only면 cross-stack Vitest) → `harnessTest`. 미분류 파일은 전체 실행 | 운영 계약 비용 + 영향 범위 검사 |
 | **Gradle 전수 lane** | `./gradlew localGate` | 하네스 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫. pre-push의 모든 정적 검사를 포함하는 superset은 아님 | 높음 |
 | **통합 전수 진입점** | `npm run verify` | FE codegen·타입·lint·폼 census → 운영 계약 → backend 전수 lane → FE build·bundle·coverage. E2E와 원격 ruleset은 각각 `verify:e2e`/`verify:ops` | 높음 |
 | CI | `.github/workflows/ci.yml` | 변경 scope에 따른 빌드·실PG 스키마·번들·E2E·뮤테이션과 **secret-scan**·**secure-coding(CodeQL)**. 안정 required context 6개로 결과 집계 | 가장 높음 |
@@ -35,7 +35,7 @@ pre-push와 `npm run verify`는 실패가 잦고 짧은 정적 검사를 운영 
 
 [governance gates manifest](../config/governance/gates.json)가 governance JUnit tag·ArchUnit tag·schema-validation tag와 Node/Frontend/E2E/mutation runner catalog를 중앙 등록한다. 계약 테스트는 실제 source census, 실행 task, CI/훅 소비자와 quality ratchet을 대조하고 `baseline-manifest.properties`는 보호 파일의 tamper hash를 추가로 고정한다. CI binding은 선언한 job과 step 조건까지, `scripts/verify.mjs` binding은 tier가 뜻하는 범위 분기(local-full = `full`, local-e2e = `e2e`)에서 호출을 따라가 닿는 줄인지와 조건 여부까지 대조한다. pre-push 하나를 전체 하네스 실행 증거로 간주하지 말고 변경 범위에 맞는 registry consumer 결과를 확인한다.
 
-pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 운영 계약 catalog의 SAST 정책 테스트와 실제 소스 분석을 구분한다. 로컬 분석은 `npm run verify:sast -- java` / `javascript`, 실제 탐지·거절 fixture는 `npm run verify:sast:probe -- java` / `javascript`로 실행하며 CodeQL 설치가 필요하다. [CI 시큐어코딩 안내](../docs/03-guides/cicd-pipeline.md#시큐어코딩-정적-분석-sast)를 따른다.
+pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 대신 CI CodeQL이 반복해 막아 온 세 규칙의 구문 트리 근사(`npm run sast:approx`)를 pre-push 소스 경로(생성물 신선도 다음, push가 바꾼 JS·TS만)와 `verify` fast·push·full 맨 앞에서 돌린다. 근사는 판정 권위가 아니다([CI 가이드](../docs/03-guides/cicd-pipeline.md#시큐어코딩-정적-분석-sast)). 운영 계약 catalog의 SAST 정책 테스트와 실제 소스 분석을 구분한다. 로컬 분석은 `npm run verify:sast -- java` / `javascript`, 실제 탐지·거절 fixture는 `npm run verify:sast:probe -- java` / `javascript`로 실행하며 CodeQL 설치가 필요하다. [CI 시큐어코딩 안내](../docs/03-guides/cicd-pipeline.md#시큐어코딩-정적-분석-sast)를 따른다.
 
 ### 입력 의미 계약 게이트
 

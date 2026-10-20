@@ -125,6 +125,12 @@ fi
 
 echo "[pre-push] AGENTS.md change-scoped source verification"
 
+# CI 의 CodeQL(secure-coding)이 반복해 막아 온 JavaScript 규칙 셋(file-system-race·incomplete-sanitization·redos)의 로컬 근사(수 초).
+# 세 규칙은 함수·정규식 안의 판정이라 push 가 바꾼 파일만 본다(범위를 모르면 CodeQL 경로 전체). 판정 권위는 CI CodeQL 이다.
+echo "  → sast: npm run sast:approx -- --stdin (CodeQL 근사, push 가 바꾼 JS·TS)"
+printf '%s\n' "$CHANGED_FILES" | npm run sast:approx -- --stdin \
+  || { echo "❌ CodeQL 근사 위반 — CI secure-coding 이 같은 모양을 막아 왔습니다. 고친 뒤 push 하세요(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; exit 1; }
+
 if [ "$SCOPE_BACKEND" = "true" ]; then
   echo "  → backend: ./gradlew compileJava compileTestJava"
   ./gradlew compileJava compileTestJava -q \

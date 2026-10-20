@@ -623,4 +623,6 @@ npm run verify:sast:probe -- javascript
 
 로컬 분석 로그·원본 리포트는 Git에서 제외된 `build/sast-*`에 보관한다. 실패한 탐지는 rule ID·파일·행·데이터 흐름을 확인해 수정하고 재분석한다. 규칙 비활성화, 파일 전체 제외, `continue-on-error`, 임계값 상향으로 red를 감추지 않는다.
 
+CodeQL 이 없는 기계에서도 사람 PR 의 secure-coding 실패를 거의 다 만든 세 규칙(`js/file-system-race`·`js/incomplete-sanitization`·`js/redos`)은 [근사 검사](../../scripts/sast-approximation.mjs)(`npm run sast:approx`, 수 초)가 먼저 알린다. pre-push 소스 경로는 push 가 바꾼 JS·TS 만, `npm run verify` 의 fast·push·full 은 CodeQL JavaScript 경로 전체를 본다. 근사는 CodeQL 의 데이터 흐름 분석이 아니다 — 근사를 통과해도 판정 권위는 CI CodeQL 이고, 근사 통과를 이유로 예외 원장을 늘리지 않는다. 근사가 CodeQL 이 통과시키는 코드를 막으면 근사 규칙을 좁힌다([계약](../../scripts/sast-approximation.test.mjs)).
+
 CI는 DB/API 기동 전에 `node scripts/e2e-compose-preflight.mjs`로 Compose 설정을 검증하고, 격리 runner에서 실제 컨테이너·datasource 소유권을 다시 확인한다. 환경 플래그만으로 실행을 허용하지 않는다.

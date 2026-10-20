@@ -177,6 +177,30 @@
           "job": "sast-scope"
         }
       ]
+    },
+    {
+      "id": "EXEC-SAST-APPROXIMATION",
+      "tier": [
+        "pre-push",
+        "local-full"
+      ],
+      "command": "npm run sast:approx",
+      "bindings": [
+        {
+          "source": ".githooks/pre-push",
+          "fragment": "printf '%s\\n' \"$CHANGED_FILES\" | npm run sast:approx -- --stdin \\",
+          "tiers": [
+            "pre-push"
+          ]
+        },
+        {
+          "source": "scripts/verify.mjs",
+          "fragment": "run('npm run sast:approx');",
+          "tiers": [
+            "local-full"
+          ]
+        }
+      ]
     }
   ],
   "qualityPopulations": [
