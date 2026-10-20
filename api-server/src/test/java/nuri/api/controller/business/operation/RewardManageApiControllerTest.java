@@ -138,4 +138,58 @@ class RewardManageApiControllerTest extends ControllerTestSupport {
         verify(rewardManageService, never()).createReward(any(RewardManageDto.class));
         verify(rewardManageService, never()).updateReward(anyLong(), any(RewardManageDto.class));
     }
+
+    /**
+     * [2026-10-20] 수상자 계정이 없거나 사용 중이 아니면 서비스가 거부한다 — 응답은 400 이고 화면이 그대로 보일 문구를 싣는다.
+     */
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("없거나 사용 중이 아닌 수상자의 등록·수정은 400 과 다음 행동을 적은 문구로 거부된다")
+    void createAndUpdateReward_rejectUnassignableAwardeeWith400() throws Exception {
+        String inactive = "수상자가 사용 중인 계정이 아닙니다. 사용 중인 사용자를 수상자로 선택해 주세요.";
+        given(rewardManageService.createReward(any(RewardManageDto.class))).willThrow(
+                new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, inactive));
+        given(rewardManageService.updateReward(eq(7L), any(RewardManageDto.class))).willThrow(
+                new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, inactive));
+        String body = "{\"rwardNm\":\"x\",\"rwardwnrId\":\"RETIRED\",\"rwardCode\":\"R01\",\"version\":0}";
+
+        mockMvc.perform(post("/api/v1/admin/operation/rewards")
+                        .contentType(MediaType.APPLICATION_JSON).content(body).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(inactive));
+        mockMvc.perform(put("/api/v1/admin/operation/rewards/7")
+                        .contentType(MediaType.APPLICATION_JSON).content(body).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value(inactive));
+    }
+
+    /** [2026-10-20] 수상자 이름·부서는 응답 전용이다 — 목록이 싣고, 요청에 실어 보내도 서비스에 닿지 않는다. */
+    @Test
+    @WithMockCustomUser(username = "admin", esntlId = "admin", role = "ADMIN")
+    @DisplayName("목록은 수상자 이름·부서를 싣고, 요청의 수상자 이름·부서는 바인딩하지 않는다")
+    void awardeeNameAndDepartmentAreResponseOnly() throws Exception {
+        RewardManageDto row = RewardManageDto.builder().rwrdSn(1L).rwardwnrId("U1").rwardwnrNm("홍길동")
+                .rwardwnrDeptNm("총무과").rwardNm("모범 사원상").build();
+        given(rewardManageService.getRewardList(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(row)));
+        given(rewardManageService.createReward(any(RewardManageDto.class))).willReturn(new RewardManageDto());
+
+        mockMvc.perform(get("/api/v1/admin/operation/rewards").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].rwardwnrId").value("U1"))
+                .andExpect(jsonPath("$.data.list[0].rwardwnrNm").value("홍길동"))
+                .andExpect(jsonPath("$.data.list[0].rwardwnrDeptNm").value("총무과"));
+
+        mockMvc.perform(post("/api/v1/admin/operation/rewards")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"rwardNm\":\"x\",\"rwardwnrId\":\"U1\",\"rwardCode\":\"R01\","
+                                + "\"rwardwnrNm\":\"위조\",\"rwardwnrDeptNm\":\"위조\"}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
+        org.mockito.ArgumentCaptor<RewardManageDto> sent = org.mockito.ArgumentCaptor.forClass(RewardManageDto.class);
+        verify(rewardManageService).createReward(sent.capture());
+        org.assertj.core.api.Assertions.assertThat(sent.getValue().getRwardwnrNm()).isNull();
+        org.assertj.core.api.Assertions.assertThat(sent.getValue().getRwardwnrDeptNm()).isNull();
+    }
 }

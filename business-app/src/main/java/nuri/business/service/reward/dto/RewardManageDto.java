@@ -21,9 +21,19 @@ public class RewardManageDto {
     //   DTO 필드명이 레거시(rwardwnrId 등)라 InputContractMirrorLinter 의 이름 기반 바인딩은 붙이지 못한다.
     // [2026-10-18] 수상자·포상 코드는 물리 컬럼이 NOT NULL 이다(rwrd_user_id·rwrd_cd). 종전에는 길이만 검사해 빈 값이
     //   그대로 들어가거나(빈 문자열) DB NOT NULL 로 거부됐다. 화면은 처음부터 필수로 받았다.
+    // [2026-10-20] 수상자는 사용자 내부 식별자(esntlId)다 — 화면은 자유 입력이 아니라 사용자 검색으로 고르고, 서버는 등록과 수상자를
+    //   바꾸는 수정에서 그 계정이 있고 사용 중인지 본다(RewardManageService). 이름·부서는 응답 전용이다.
     @Size(max = 20)
     @NotBlank
     private String rwardwnrId;
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY,
+            description = "수상자 이름. 서버가 수상자 계정에서 읽어 싣는다 — 계정이 없으면 비어 있다.")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String rwardwnrNm;
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY,
+            description = "수상자 소속 부서 이름. 서버가 수상자 계정에서 읽어 싣는다 — 소속이 없거나 계정이 없으면 비어 있다.")
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String rwardwnrDeptNm;
     @Size(max = 12)
     @NotBlank
     private String rwardCode;

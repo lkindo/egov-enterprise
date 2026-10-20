@@ -83,6 +83,11 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
 }));
 
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+vi.mock('@/app/components/ui/user-picker', () => ({
+  UserPicker: ({ isOpen, onSelect }: { isOpen: boolean; onSelect: (user: { esntlId?: string; userNm?: string; deptNm?: string }) => void }) => (
+    isOpen ? <button type="button" onClick={() => onSelect({ esntlId: 'USR_000000000009', userNm: '김철수', deptNm: '인사과' })}>김철수 선택</button> : null
+  ),
+}));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/operation/RewardAdminService', () => ({
   rewardAdminService: {
@@ -93,7 +98,10 @@ vi.mock('@/services/foundation/operation/RewardAdminService', () => ({
   },
 }));
 
-const REWARD = { rwrdSn: 7, rwardNm: '모범 사원상', rwardwnrId: 'USER-001', rwardCode: 'R01', rwardDe: '20260826', pblenCn: '공적 내용' };
+const REWARD = {
+  rwrdSn: 7, rwardNm: '모범 사원상', rwardwnrId: 'USER-001', rwardwnrNm: '홍길동', rwardwnrDeptNm: '총무과',
+  rwardCode: 'R01', rwardDe: '20260826', pblenCn: '공적 내용',
+};
 
 function pageOf<T>(item: T) {
   return { list: [item], total: 1, page: 1, size: 10, totalPage: 1 };
@@ -127,7 +135,8 @@ describe('RewardManageClient 행 액션', () => {
     const modal = await screen.findByRole('region', { name: '포상 기록 수정' });
     const scope = within(modal);
     expect(scope.getByRole('textbox', { name: /^포상 명칭/ })).toHaveValue('모범 사원상');
-    expect(scope.getByRole('textbox', { name: /수상자 ID/ })).toHaveValue('USER-001');
+    // [2026-10-20] 수상자는 입력 칸이 아니라 고른 사람이다 — 이름·부서가 먼저이고 식별자는 보조다.
+    expect(scope.getByRole('button', { name: '수상자 변경' })).toHaveAccessibleDescription(/홍길동.*총무과.*USER-001/);
 
     fireEvent.change(scope.getByRole('textbox', { name: /^포상 명칭/ }), { target: { value: '우수 사원상' } });
     fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
@@ -136,6 +145,33 @@ describe('RewardManageClient 행 액션', () => {
     expect(mocks.updateReward).toHaveBeenCalledWith(7, expect.objectContaining({ rwardNm: '우수 사원상', rwardCode: 'R01' }));
     expect(mocks.updateReward.mock.calls[0][1]).not.toHaveProperty('confmAt');
     expect(mocks.createReward).not.toHaveBeenCalled();
+  });
+
+  it('[2026-10-20] 목록은 수상자를 이름·부서로 보이고 식별자는 보조로 두며, 계정이 없으면 이름을 지어내지 않는다', async () => {
+    const ghost = { ...REWARD, rwrdSn: 8, rwardNm: '공로상', rwardwnrId: 'GONE-01', rwardwnrNm: undefined, rwardwnrDeptNm: undefined };
+    const page = { list: [REWARD, ghost], total: 2, page: 1, size: 10, totalPage: 1 };
+    mocks.getRewardList.mockResolvedValue(page);
+    renderWithClient(<RewardManageClient initialPage={page} />);
+
+    expect(await screen.findByText('홍길동')).toBeInTheDocument();
+    expect(screen.getByText(/총무과/)).toBeInTheDocument();
+    expect(screen.getByText('ID USER-001')).toBeInTheDocument();
+    expect(screen.getByText('계정을 찾을 수 없는 사용자')).toBeInTheDocument();
+    expect(screen.getByText('ID GONE-01')).toBeInTheDocument();
+  });
+
+  it('[2026-10-20] 수정에서 수상자를 바꾸면 새 사람의 식별자를 보낸다', async () => {
+    renderWithClient(<RewardManageClient initialPage={pageOf(REWARD)} />);
+    fireEvent.click(await screen.findByRole('button', { name: '모범 사원상 수정' }));
+    const scope = within(await screen.findByRole('region', { name: '포상 기록 수정' }));
+
+    fireEvent.click(scope.getByRole('button', { name: '수상자 변경' }));
+    fireEvent.click(screen.getByRole('button', { name: '김철수 선택' }));
+    expect(scope.getByRole('button', { name: '수상자 변경' })).toHaveAccessibleDescription(/김철수.*인사과/);
+    fireEvent.click(scope.getByRole('button', { name: '수정 저장' }));
+
+    await waitFor(() => expect(mocks.updateReward).toHaveBeenCalledTimes(1));
+    expect(mocks.updateReward).toHaveBeenCalledWith(7, expect.objectContaining({ rwardwnrId: 'USR_000000000009' }));
   });
 
   it('삭제는 확인 후 delete 를 한 번만 부르고, pending 동안 disabled·aria-busy 이며, 실패는 토스트로 드러낸다', async () => {
@@ -200,6 +236,8 @@ describe('포상 쓰기 권한 표시', () => {
     const scope = within(await screen.findByRole('region', { name: '포상 기록 상세' }));
     expect(scope.getByRole('textbox', { name: /^포상 명칭/ })).toHaveValue('모범 사원상');
     expect(scope.getByRole('textbox', { name: /^포상 명칭/ })).toBeDisabled();
+    // 조회 전용 창에서는 수상자를 바꿀 수 없다.
+    expect(scope.getByRole('button', { name: '수상자 변경' })).toBeDisabled();
     expect(screen.queryByRole('button', { name: '수정 저장' })).not.toBeInTheDocument();
     expect(screen.getByRole('button', { name: '닫기' })).toBeInTheDocument();
     expect(mocks.updateReward).not.toHaveBeenCalled();

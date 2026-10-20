@@ -1710,6 +1710,8 @@
     {
       "dto": "nuri.business.service.reward.dto.RewardManageDto",
       "fields": [
+        "rwardwnrNm",
+        "rwardwnrDeptNm",
         "frstRgtrId",
         "crtDt",
         "lastMdfrId",
