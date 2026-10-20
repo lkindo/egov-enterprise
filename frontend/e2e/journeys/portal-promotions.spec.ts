@@ -92,12 +92,15 @@ test.describe('Public Engagement & Experience', () => {
                 // 휴대폰 폭에서는 저장 좌표·크기 대신 화면 아래쪽 시트로 보인다(넘치지 않는다).
                 const phone = await actorPage({ storageState: 'playwright/.auth/user.json', viewport: { width: 390, height: 844 } });
                 const phoneDialog = await openPopupDialog(phone.page, popupTitle);
-                const sheet = await phoneDialog.getByTestId('notice-popup-panel').boundingBox();
-                const viewport = await phone.page.evaluate(() => ({ width: document.documentElement.clientWidth, height: window.innerHeight }));
-                expect(sheet, '휴대폰 시트가 보인다').not.toBeNull();
-                expect(Math.abs(sheet!.x)).toBeLessThanOrEqual(1);
-                expect(Math.abs(sheet!.width - viewport.width)).toBeLessThanOrEqual(1);
-                expect(Math.abs(sheet!.y + sheet!.height - viewport.height)).toBeLessThanOrEqual(1);
+                // 대화상자는 열릴 때 짧게 움직인다 — 자리 잡은 뒤의 위치를 잰다(허용치는 그대로 1px).
+                await expect(async () => {
+                    const sheet = await phoneDialog.getByTestId('notice-popup-panel').boundingBox();
+                    const viewport = await phone.page.evaluate(() => ({ width: document.documentElement.clientWidth, height: window.innerHeight }));
+                    expect(sheet, '휴대폰 시트가 보인다').not.toBeNull();
+                    expect(Math.abs(sheet!.x)).toBeLessThanOrEqual(1);
+                    expect(Math.abs(sheet!.width - viewport.width)).toBeLessThanOrEqual(1);
+                    expect(Math.abs(sheet!.y + sheet!.height - viewport.height)).toBeLessThanOrEqual(1);
+                }).toPass({ timeout: 5_000 });
                 // 머리의 X 단추 이름도 '<제목> 닫기' 라 정확히 '닫기' 인 아래 단추를 누른다.
                 await phoneDialog.getByRole('button', { name: '닫기', exact: true }).click();
                 await expect(phoneDialog).toBeHidden();
