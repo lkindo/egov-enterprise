@@ -869,7 +869,8 @@ export default function CommonCodeClient({
           </Button>
         ) : undefined}
         masterTitle="코드 분류 및 그룹"
-        masterDescription={`분류 ${clCodes.length}개 · 그룹 ${groups.length}개`}
+        // 건수는 다른 시험이 동시에 분류·그룹을 만들면 바뀌는 값이라 tabular-nums 로 둔다(시각 회귀 mask 가 가린다).
+        masterDescription={<>분류 <span className="tabular-nums">{clCodes.length}</span>개 · 그룹 <span className="tabular-nums">{groups.length}</span>개</>}
         masterTools={(
           <div className="flex flex-wrap items-center gap-2">
             {canCreateCode && (

@@ -38,7 +38,8 @@ export interface MasterDetailPageProps {
   /** 조회 실패·부분 실패처럼 마스터와 상세 모두에 영향을 주는 상태. */
   notice?: React.ReactNode;
   masterTitle: string;
-  masterDescription?: string;
+  /** 마스터 모집단 요약(건수 등). 바뀌는 숫자는 호출부가 `tabular-nums` 로 감싸 시각 회귀 mask 가 가리게 한다. */
+  masterDescription?: React.ReactNode;
   /** 검색·펼치기·새로고침처럼 마스터 모집단에 적용되는 도구. */
   masterTools?: React.ReactNode;
   master: React.ReactNode;
