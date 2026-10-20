@@ -3,6 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { expect,test } from '../fixtures/browser-test';
 import { collectPageCoverage } from '../fixtures/page-observation';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { anonymousCsrfRequestState } from '../fixtures/csrf';
 /**
  * [2026-10-05 반박 리뷰 반영 — blocker 회귀 방지] 단추 중심의 맨 위 요소가 단추 자신(또는 그 안)인가. 창이 낮을 때(기본 뷰포트
  * 1280×720 포함) 권한 표 상자가 편집기 안에서 넘쳐 저장 막대를 덮으면 클릭이 표 칸에 떨어진다('td intercepts pointer events').
@@ -152,7 +153,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                 throw new Error('Department authorization fixtures require the isolated loopback E2E stack.');
             }
             // Own this context so a browser timeout cannot dispose the API before fixture cleanup.
-            const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const request = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
             const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
             const suffix = randomBytes(4).toString('hex');
             const departmentName = `E2E26 Dept ${suffix}`;
@@ -304,7 +305,7 @@ test.describe('권한 변경과 충돌 제어', () => {
             if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
                 throw new Error('Authorization fixtures require the isolated loopback E2E stack.');
             }
-            const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const request = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
             const administrator = { Authorization: `Bearer ${getAdminBearerToken()}` };
             const suffix = randomBytes(4).toString('hex');
             const userId = `e2e_authz_${suffix}`;
@@ -330,7 +331,7 @@ test.describe('권한 변경과 충돌 제어', () => {
                 userCreated = created.ok();
                 expect(created.status(), '전용 사용자 생성').toBe(201);
                 // Keep the BFF's login cookie out of the context that alternates explicit bearer subjects.
-                const loginRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+                const loginRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
                 let token: string | undefined;
                 try {
                     const login = await loginRequest.post('/api/v1/auth/login', { data: { userId, password } });
@@ -643,7 +644,7 @@ test.describe('권한 변경과 충돌 제어', () => {
             if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
                 throw new Error('Authorization fixtures require the isolated loopback E2E stack.');
             }
-            const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const request = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
             const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
             const suffix = randomBytes(4).toString('hex').toUpperCase();
             const groupCode = `ROLE_E2E_${suffix}`;
@@ -797,7 +798,7 @@ test.describe('권한 변경과 충돌 제어', () => {
             if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
                 throw new Error('Authorization fixtures require the isolated loopback E2E stack.');
             }
-            const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const request = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
             const auth = { Authorization: `Bearer ${getAdminBearerToken()}` };
             const suffix = randomBytes(4).toString('hex').toUpperCase();
             const groupCode = `ROLE_E2E_${suffix}_B`;

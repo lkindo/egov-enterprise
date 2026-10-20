@@ -5,6 +5,7 @@ import { request as playwrightRequest, type APIRequestContext, type APIResponse,
 import { expect, test as baseTest } from '../fixtures/browser-test';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { anonymousCsrfRequestState } from '../fixtures/csrf';
 
 /**
  * 관측 여정 — 알려진 행동을 하고, 그 행동이 남긴 기록 행을 화면에서 찾는다(2026-10-20).
@@ -161,7 +162,7 @@ async function deleteGroup(request: APIRequestContext, headers: Headers, code: s
  */
 const test = baseTest.extend<{ subject: AuditActor; auditor: AuditActor }>({
     subject: async ({ playwright, baseURL }, use) => {
-        const fixtureRequest = await playwright.request.newContext({ baseURL: requireLoopback(baseURL), storageState: { cookies: [], origins: [] } });
+        const fixtureRequest = await playwright.request.newContext({ baseURL: requireLoopback(baseURL), ...anonymousCsrfRequestState(requireLoopback(baseURL)) });
         try {
             const subject = await createVisualAdmin(fixtureRequest, baseURL!, { group: 'ROLE_USER' });
             try {
@@ -174,7 +175,7 @@ const test = baseTest.extend<{ subject: AuditActor; auditor: AuditActor }>({
         }
     },
     auditor: async ({ playwright, baseURL }, use) => {
-        const fixtureRequest = await playwright.request.newContext({ baseURL: requireLoopback(baseURL), storageState: { cookies: [], origins: [] } });
+        const fixtureRequest = await playwright.request.newContext({ baseURL: requireLoopback(baseURL), ...anonymousCsrfRequestState(requireLoopback(baseURL)) });
         const administrator = { Authorization: `Bearer ${getAdminBearerToken()}` };
         const groupCode = `E2E_ADT_${randomBytes(4).toString('hex').toUpperCase()}`;
         let groupCreated = false;
@@ -263,7 +264,7 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
 
     test('사용자 상세 조회는 개인정보 조회 기록과 감사 원장에 남고, 감사 원장을 조건으로 찾아 사유와 함께 내보낸다', async ({ subject, auditor, actorPage, baseURL }) => {
         // 개인정보 접근 — 일회용 관리자가 정보주체의 상세(연락처·주소·생년월일)를 연다.
-        const apiRequest = await playwrightRequest.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        const apiRequest = await playwrightRequest.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
         try {
             const detail = await data<{ esntlId: string }>(
                 await apiRequest.get(`/api/v1/admin/system/users/${subject.userId}`, { headers: auditor.authorization }), '정보주체 상세 조회');

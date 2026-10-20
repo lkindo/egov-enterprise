@@ -176,7 +176,7 @@ launcher는 clean `HEAD`와 attestation commit/tree를 먼저 exact 비교하고
 
 Windows에서는 Docker Compose 플러그인 탐색에 필요한 OS 경로 변수 `ProgramFiles`·`ProgramW6432`를 추가로 보존하며, DB/JWT의 runner 전달과 `GITHUB_TOKEN`·`NODE_OPTIONS` 등 불필요한 상속 환경은 계속 차단한다.
 
-비정상 종료와 cleanup 실패에는 secret이 없는 descriptor를 남긴다. 오류에 표시된 project 또는 OS 임시 디렉터리 `egov-ui-quality-baseline-r13` 아래 exact project directory를 확인한 뒤 다음 bounded recovery만 사용한다. descriptor가 canonical launcher shape와 다르거나 path가 symlink/junction·repository 내부이면 Docker 명령 전에 red다.
+비정상 종료와 cleanup 실패에는 secret이 없는 descriptor를 남긴다. 오류에 표시된 project 또는 사용자 캐시 디렉터리 `~/.cache/egov-ui-quality-baseline-r13`(POSIX에서는 현재 사용자 소유이고 그룹·다른 사용자 쓰기 권한이 없어야 한다) 아래 exact project directory를 확인한 뒤 다음 bounded recovery만 사용한다. descriptor가 canonical launcher shape와 다르거나 path가 symlink/junction·repository 내부이면 Docker 명령 전에 red다.
 
 ```powershell
 npm run ui-quality:baseline:launch -- --recover-project egov-uiux-baseline-r13-<32-lowercase-hex> --execute confirmed

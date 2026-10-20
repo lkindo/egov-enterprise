@@ -3,6 +3,7 @@ import axios from 'axios';
 import { authLogoutResponseSchema } from '@/lib/auth/auth-bff-contract';
 import { clearMfaCookies } from '@/lib/auth/auth-session-response';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
+import { forwardedCsrfTokenHeader } from '@/lib/api/forwarded-csrf-token';
 import {
   parseGeneratedOperationRequest,
   parseGeneratedOperationResponse,
@@ -56,6 +57,8 @@ export async function POST(request: NextRequest) {
       headers: {
         'Cookie': cookieHeader,
         ...(resolvedAuthHeader ? { 'Authorization': resolvedAuthHeader } : {}),
+        // 쿠키 자격을 넘기므로 브라우저의 이중 제출 CSRF 헤더도 함께 넘긴다.
+        ...forwardedCsrfTokenHeader(request.headers),
         // 요청 제한·감사 IP 입력(ADR-0019). 신뢰 앞단 프록시가 없으면 넘기지 않는다.
         ...forwardedClientIpHeaders(request.headers),
       },

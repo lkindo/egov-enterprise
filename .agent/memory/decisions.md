@@ -92,6 +92,7 @@ refresh_triggers:
 | ADR-0035 | accepted | 로그인 요청 제한의 템플릿 기본값을 IP당 분당 30으로 낮추고 E2E 만 종전 값으로 둔다. 한도는 계속 설정으로 조정한다. | 2026-10-19 품질 평가 과제의 사용자 지시. 종전 2,000은 계정을 돌아가며 대입하는 공격을 막지 못했다. | [ADR-0035](../../docs/02-architecture/decisions/ADR-0035-login-rate-limit-default.md) | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값·관측 뒤 인하 순서 |
 | ADR-0036 | accepted | 목록은 요청·응답·URL·화면 모두 1 기반 page·size(1~100) 하나이고 잘못된 입력·옛 이름은 400, pageIndex·pageUnit 은 한 릴리스 별칭이다. 자원을 만드는 POST 는 201 과 새 식별자 본문이다. | 2026-10-19 사용자가 API 규약 초안의 권고안을 모두 승인했다(저장소 밖 소비자 없음 확인). 기준이 섞여 조용히 다른 페이지를 받는 결함이 반복됐다. | [ADR-0036](../../docs/02-architecture/decisions/ADR-0036-api-paging-and-created-status-conventions.md) | 2026-10-19 | API 가이드 §2 의 201 비강제·§3 의 v2 규칙(이 변경 한정), 프런트 아키텍처 §3 의 0-based page 별칭 정규화 |
 | ADR-0037 | accepted | 제품 PIT 는 6슬롯으로 돌고 선언 순서는 실측이 긴 범위 먼저다. 대상·75% 판정·집계는 그대로이고 효과가 없으면 4로 되돌린다. | 9분 이후 runner 가 비는데 PIT 가 4개만 돌아 full 실행의 꼬리였다(DEC-OPS-373). | [ADR-0037](../../docs/02-architecture/decisions/ADR-0037-product-pit-six-slots.md) | 2026-10-20 | ADR-0026 결정 9의 제품 PIT 4슬롯 부분 |
+| ADR-0038 | accepted | API·코어 체인에서 CSRF를 켜고, 쿠키 자격을 실은 쓰기 요청에 이중 제출 토큰(XSRF-TOKEN 쿠키 = X-XSRF-TOKEN 헤더)을 요구한다. 헤더 전용 클라이언트는 제외하고 SockJS는 허용 Origin으로 막는다. | 브라우저 경로는 쿠키가 자격이라 CSRF 비활성 예외가 보완 통제에 의존했다(2026-10-20 사용자 근본 해소 지시). | [ADR-0038](../../docs/02-architecture/decisions/ADR-0038-credential-cookie-csrf-token.md) | 2026-10-21 | DEC-OPS-075 의 SAST-FP-001·002(CSRF 비활성 예외) |
 
 ## 운영 결정 index
 

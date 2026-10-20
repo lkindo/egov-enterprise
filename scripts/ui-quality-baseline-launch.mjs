@@ -16,7 +16,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -81,6 +81,20 @@ const SAFE_SYSTEM_ENVIRONMENT_NAMES = new Set([
 ]);
 
 export const BASELINE_LAUNCH_RUNTIME_DIRECTORY = 'egov-ui-quality-baseline-r13';
+
+/**
+ * 실행 디렉터리의 기본 위치. 실행과 복구가 같은 위치를 찾아야 해서 이름이 고정이므로, 다른 로컬 사용자가 먼저 만들어 둘 수
+ * 있는 공용 임시 폴더가 아니라 사용자 캐시 폴더에 둔다.
+ */
+export function defaultBaselineRuntimeRoot() {
+  return path.join(homedir(), '.cache', BASELINE_LAUNCH_RUNTIME_DIRECTORY);
+}
+
+/** POSIX 에서는 실행 디렉터리가 현재 사용자 소유이고 그룹·다른 사용자가 쓸 수 없어야 한다. */
+export function ownerPrivateDirectory(metadata, platform = process.platform, uid = process.getuid?.()) {
+  if (platform === 'win32') return true;
+  return metadata.uid === uid && (metadata.mode & 0o022) === 0;
+}
 
 function exactObjectKeys(value, expected) {
   return value !== null
@@ -577,7 +591,7 @@ function prepareRuntimeDirectory(repositoryRoot, runtimeRoot, projectName) {
   let runtimeRealPath;
   try {
     const runtimeMetadata = lstatSync(runtimeRoot);
-    if (!runtimeMetadata.isDirectory() || runtimeMetadata.isSymbolicLink()) {
+    if (!runtimeMetadata.isDirectory() || runtimeMetadata.isSymbolicLink() || !ownerPrivateDirectory(runtimeMetadata)) {
       throw new Error('unsafe runtime root');
     }
     repositoryRealPath = realpathSync(repositoryRoot);
@@ -856,7 +870,7 @@ function executeRunner(executeCommand, repositoryRoot, environment) {
 }
 
 function runtimeRootFrom(input) {
-  return input?.runtimeRoot ?? path.join(tmpdir(), BASELINE_LAUNCH_RUNTIME_DIRECTORY);
+  return input?.runtimeRoot ?? defaultBaselineRuntimeRoot();
 }
 
 export function launchAttestedBaseline(input = {}, {
@@ -1047,6 +1061,7 @@ function readRecoverySpecification({ runtimeRoot, projectName }) {
     const runMetadata = lstatSync(runDirectory);
     if (!runtimeMetadata.isDirectory()
       || runtimeMetadata.isSymbolicLink()
+      || !ownerPrivateDirectory(runtimeMetadata)
       || !runMetadata.isDirectory()
       || runMetadata.isSymbolicLink()) throw new Error('unsafe recovery directory');
     runtimeRealPath = realpathSync(runtimeRoot);

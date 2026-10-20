@@ -73,9 +73,11 @@ test.describe('공개 포털', () => {
                 await adminPage.waitForLoadState('domcontentloaded');
                 // 동일출처 /api/v1 fetch 는 미들웨어가 HttpOnly 쿠키에서 Bearer 를 주입한다(SurveyPage 와 같다).
                 const result = await adminPage.evaluate(async ({ title }) => {
+                    // 앱의 axios 와 같이 이중 제출 CSRF 토큰을 쿠키에서 읽어 헤더로 싣는다(ADR-0038).
+                    const xsrf = document.cookie.split('; ').find((cookie) => cookie.startsWith('XSRF-TOKEN='))?.slice('XSRF-TOKEN='.length);
                     const res = await fetch('/api/v1/help/hpcm', {
                         method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
+                        headers: { 'Content-Type': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}) },
                         body: JSON.stringify({ hlpSeCd: 'GNR', hlpDfn: title, hlpExpln: 'E2E 도움말 설명' }),
                     });
                     return { ok: res.ok, status: res.status, body: await res.text() };

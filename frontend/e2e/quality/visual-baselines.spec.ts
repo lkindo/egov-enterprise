@@ -1,11 +1,12 @@
 import { expect,test } from '../fixtures/browser-test';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { anonymousCsrfRequestState } from '../fixtures/csrf';
 test.describe('Quality & Resilience', () => {
     test.describe('Global Quality (A11y & Visual)', () => {
         test.use({
             storageState: async ({ playwright, baseURL }, use) => {
-                const request = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+                const request = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
                 try {
                     const admin = await createVisualAdmin(request, baseURL!);
                     try {
@@ -23,7 +24,7 @@ test.describe('Quality & Resilience', () => {
         test('Visual Session Isolation', async ({ page, request, context, playwright, baseURL }) => {
             const sharedHeaders = { Authorization: `Bearer ${getAdminBearerToken()}` };
             // BFF는 세션 쿠키를 우선하므로 공유 계정 API에는 VRT 쿠키가 없는 별도 context를 쓴다.
-            const sharedRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+            const sharedRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
             const created = await sharedRequest.post('/api/v1/notifications', {
                 headers: sharedHeaders,
                 data: { notiTtlNm: 'E2E VRT shared notification', notiCn: 'Session isolation probe' },

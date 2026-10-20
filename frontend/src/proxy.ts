@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { canEnterRegisteredPage, loadPageAuthorization } from '@/lib/auth/page-authorization';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
+import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 
 // ────────────────────────────────────────────────────────────────────────────
 // [보안] JWT 서명 검증 (Edge 런타임 네이티브 Web Crypto, 외부 의존 없음)
@@ -237,6 +238,37 @@ function generateNonce(): string {
   return btoa(binary);
 }
 
+/**
+ * 이중 제출 CSRF 토큰 쿠키(백엔드 CredentialCookieCsrfPolicy). axios 가 이 쿠키를 읽어 같은 출처 쓰기 요청에
+ * X-XSRF-TOKEN 헤더로 되돌려 보내고, 백엔드는 쿠키 자격을 실은 쓰기 요청에서 둘이 같은지 본다. 서버 렌더링만
+ * 거친 화면의 첫 쓰기가 토큰 없이 나가지 않도록 문서 응답에서 없으면 만든다 — 값의 출처와 무관하게 쿠키와 헤더가
+ * 같아야 통과하므로 여기서 만든 값도 백엔드가 만든 값과 같은 효력이다.
+ */
+const CSRF_TOKEN_COOKIE = 'XSRF-TOKEN';
+
+function generateCsrfToken(): string {
+  const bytes = new Uint8Array(32);
+  crypto.getRandomValues(bytes);
+  let binary = '';
+  for (const byte of bytes) binary += String.fromCharCode(byte);
+  return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+}
+
+function ensureCsrfTokenCookie(request: NextRequest, response: NextResponse): void {
+  if (request.cookies.get(CSRF_TOKEN_COOKIE)?.value) return;
+  response.cookies.set(CSRF_TOKEN_COOKIE, generateCsrfToken(), {
+    // 같은 출처 JavaScript 가 읽어 헤더로 보내야 하므로 HttpOnly 가 아니다. Secure 는 세션 쿠키와 같은 정책이다(ADR-0010).
+    httpOnly: false,
+    secure: shouldUseSecureSessionCookie(
+      request,
+      process.env.NODE_ENV,
+      process.env.ALLOW_INSECURE_LOOPBACK_AUTH_COOKIE === 'true',
+    ),
+    sameSite: 'strict',
+    path: '/',
+  });
+}
+
 function buildAppCsp(nonce: string): string {
   const isProd = process.env.NODE_ENV === 'production';
   // ⚠ 'strict-dynamic' 을 쓰지 않는다 — CI run 32310837353 실측: strict-dynamic 은 host 허용
@@ -402,6 +434,7 @@ export async function proxy(request: NextRequest) {
   const withNonce = (response: NextResponse): NextResponse => {
     response.headers.set('Content-Security-Policy', csp);
     applyDocumentSecurityHeaders(response);
+    ensureCsrfTokenCookie(request, response);
     return response;
   };
   const nextWithCsp = (): NextResponse => {

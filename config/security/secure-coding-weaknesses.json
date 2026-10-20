@@ -1,0 +1,1438 @@
+{
+  "schemaVersion": 1,
+  "verifiedAt": "2026-10-20",
+  "purpose": "구현단계 보안약점 49개를 축으로 CWE·OWASP·현재 탐지 수단을 대응시킨 사전 점검 원장이다. 공식 보안약점 진단(인증 진단도구·진단원)을 대신하지 않는다.",
+  "standards": {
+    "mois": {
+      "name": "소프트웨어 개발보안 가이드 구현단계 보안약점",
+      "revision": "2021.11",
+      "itemCount": 49,
+      "source": "KISA JavaScript 시큐어코딩 가이드(2022) 부록 제1절 구현단계 보안약점 제거 기준"
+    },
+    "cweSource": {
+      "kisa": "같은 가이드 항목별 참고자료의 CWE",
+      "std": "같은 가이드에 항목이 없어 MITRE CWE 표준 대응으로 둔 값. 개발보안 가이드 원문과 대조해야 한다."
+    },
+    "owaspTop10": "2025",
+    "owaspAsvs": "5.0",
+    "codeql": {
+      "version": "2.26.4",
+      "runningSuite": "security-extended",
+      "auditSuite": "security-and-quality",
+      "minimumBlockingScore": 7,
+      "derivation": "질의의 external/cwe 태그가 항목의 matchCwe와 겹치면 대응으로 본다. Android·Electron·Angular·JHipster 전용 질의는 이 저장소에 대상 코드가 없어 뺐다."
+    }
+  },
+  "legend": {
+    "automation": {
+      "blocking": "required secure-coding이 점수 7.0 이상 탐지로 차단한다",
+      "report": "security-extended가 탐지하지만 점수 7.0 미만이라 리포트만 한다",
+      "quality-only": "security-and-quality에만 규칙이 있어 지금은 실행하지 않는다",
+      "none": "이 CodeQL 버전에 해당 규칙이 없다"
+    },
+    "review": {
+      "pending": "수동 확인 전(3단계에서 판정)"
+    }
+  },
+  "items": [
+    {
+      "id": "IV-01",
+      "category": "입력데이터 검증 및 표현",
+      "no": 1,
+      "name": "SQL 삽입",
+      "cwe": [89],
+      "cweSource": "kisa",
+      "matchCwe": [89, 564, 943],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/concatenated-sql-query", "suite": "security-extended", "blocking": true },
+          { "query": "java/sql-injection", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/sql-injection", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/test/java/nuri/api/harness/QuerydslDynamicPathLinterTest.java"],
+      "note": "JPA·QueryDSL 바인딩이 기본이다. 네이티브 SQL·JDBC 저장소(로그·메뉴·내구 작업 등)가 있다.",
+      "next": "네이티브 SQL·JDBC 저장소의 쿼리 조립(정렬·컬럼 이름 포함)을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-02",
+      "category": "입력데이터 검증 및 표현",
+      "no": 2,
+      "name": "코드 삽입",
+      "cwe": [94, 95],
+      "cweSource": "kisa",
+      "matchCwe": [94, 95, 917, 1336],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/groovy-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/insecure-bean-validation", "suite": "security-extended", "blocking": true },
+          { "query": "java/jexl-expression-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/mvel-expression-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/ognl-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/server-side-template-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/spel-expression-injection", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/bad-code-sanitization", "suite": "security-extended", "blocking": false },
+          { "query": "js/code-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/prototype-polluting-assignment", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-pollution", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-pollution-utility", "suite": "security-extended", "blocking": false },
+          { "query": "js/template-object-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/unsafe-code-construction", "suite": "security-extended", "blocking": false },
+          { "query": "js/unsafe-dynamic-method-access", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "운영 코드에 ScriptEngine·SpEL 평가·eval·new Function 사용처가 없다(2026-10-20 검색).",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-03",
+      "category": "입력데이터 검증 및 표현",
+      "no": 3,
+      "name": "경로 조작 및 자원 삽입",
+      "cwe": [22, 99],
+      "cweSource": "kisa",
+      "matchCwe": [22, 23, 36, 73, 99],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V5", "V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/partial-path-traversal", "suite": "security-extended", "blocking": true },
+          { "query": "java/partial-path-traversal-from-remote", "suite": "security-extended", "blocking": true },
+          { "query": "java/path-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/zipslip", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/path-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/template-object-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/zipslip", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["business-core/src/main/java/nuri/business/service/file/FileService.java"],
+      "note": "첨부는 저장 키로 접근한다. 개발 도구(scripts)도 CodeQL 대상이다.",
+      "next": "다운로드·저장 경로 조립을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-04",
+      "category": "입력데이터 검증 및 표현",
+      "no": 4,
+      "name": "크로스사이트 스크립트",
+      "cwe": [79],
+      "cweSource": "kisa",
+      "matchCwe": [79, 80, 116],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1", "V3"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/xss", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/bad-code-sanitization", "suite": "security-extended", "blocking": false },
+          { "query": "js/bad-tag-filter", "suite": "security-extended", "blocking": true },
+          { "query": "js/client-side-unvalidated-url-redirection", "suite": "security-extended", "blocking": false },
+          { "query": "js/code-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/double-escaping", "suite": "security-extended", "blocking": true },
+          { "query": "js/html-constructed-from-input", "suite": "security-extended", "blocking": false },
+          { "query": "js/identity-replacement", "suite": "security-extended", "blocking": false },
+          { "query": "js/incomplete-html-attribute-sanitization", "suite": "security-extended", "blocking": false },
+          { "query": "js/incomplete-multi-character-sanitization", "suite": "security-extended", "blocking": true },
+          { "query": "js/incomplete-sanitization", "suite": "security-extended", "blocking": true },
+          { "query": "js/prototype-polluting-assignment", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-pollution", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-pollution-utility", "suite": "security-extended", "blocking": false },
+          { "query": "js/reflected-xss", "suite": "security-extended", "blocking": true },
+          { "query": "js/stored-xss", "suite": "security-extended", "blocking": true },
+          { "query": "js/unsafe-code-construction", "suite": "security-extended", "blocking": false },
+          { "query": "js/unsafe-html-expansion", "suite": "security-extended", "blocking": false },
+          { "query": "js/unsafe-jquery-plugin", "suite": "security-extended", "blocking": false },
+          { "query": "js/xss", "suite": "security-extended", "blocking": true },
+          { "query": "js/xss-through-dom", "suite": "security-extended", "blocking": true },
+          { "query": "js/xss-through-exception", "suite": "security-extended", "blocking": false }
+        ]
+      },
+      "controls": ["frontend/src/lib/attachments/board-media.ts", "frontend/src/lib/attachments/__tests__/board-media.test.ts", "frontend/src/__tests__/csp-policy.test.ts"],
+      "note": "React 기본 이스케이프, 게시판 본문 정화(sanitizeBoardRichText), 요청별 nonce CSP. dangerouslySetInnerHTML 사용처 3곳.",
+      "next": "dangerouslySetInnerHTML 3곳의 입력 출처를 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-05",
+      "category": "입력데이터 검증 및 표현",
+      "no": 5,
+      "name": "운영체제 명령어 삽입",
+      "cwe": [78],
+      "cweSource": "kisa",
+      "matchCwe": [78, 88],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/command-line-injection", "suite": "security-extended", "blocking": true },
+          { "query": "java/concatenated-command-line", "suite": "security-extended", "blocking": true },
+          { "query": "java/exec-tainted-environment", "suite": "security-extended", "blocking": true },
+          { "query": "java/relative-path-command", "suite": "security-extended", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/command-line-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/indirect-command-line-injection", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-polluting-assignment", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-pollution", "suite": "security-extended", "blocking": false },
+          { "query": "js/prototype-pollution-utility", "suite": "security-extended", "blocking": false },
+          { "query": "js/second-order-command-line-injection", "suite": "security-extended", "blocking": true },
+          { "query": "js/shell-command-constructed-from-input", "suite": "security-extended", "blocking": false },
+          { "query": "js/shell-command-injection-from-environment", "suite": "security-extended", "blocking": false },
+          { "query": "js/unnecessary-use-of-cat", "suite": "security-extended", "blocking": false }
+        ]
+      },
+      "controls": [],
+      "note": "Java 운영 코드에 Runtime.exec·ProcessBuilder가 없다. child_process는 개발 도구(scripts)에만 있고 CodeQL 대상이다.",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-06",
+      "category": "입력데이터 검증 및 표현",
+      "no": 6,
+      "name": "위험한 형식 파일 업로드",
+      "cwe": [434],
+      "cweSource": "kisa",
+      "matchCwe": [434],
+      "owaspTop10": ["A06:2025"],
+      "asvs": ["V5"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "report"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": [
+          { "query": "js/http-to-file-access", "suite": "security-extended", "blocking": false }
+        ]
+      },
+      "controls": ["business-core/src/main/java/nuri/business/service/file/FileService.java", "business-core/src/test/java/nuri/business/service/file/FileServiceTest.java", "api-server/src/test/java/nuri/api/controller/SecurityHardeningRegressionTest.java"],
+      "note": "확장자 허용 목록과 파일 서명 검증이 있다. Java CodeQL 규칙은 없다.",
+      "next": "업로드 프로필별 허용 목록·크기·저장 위치·실행 권한을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-07",
+      "category": "입력데이터 검증 및 표현",
+      "no": 7,
+      "name": "신뢰되지 않는 URL 주소로 자동접속 연결",
+      "cwe": [601],
+      "cweSource": "kisa",
+      "matchCwe": [601],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V3"],
+      "applicable": true,
+      "automation": {
+        "java": "report",
+        "javascript": "report"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/unvalidated-url-redirection", "suite": "security-extended", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/client-side-unvalidated-url-redirection", "suite": "security-extended", "blocking": false },
+          { "query": "js/server-side-unvalidated-url-redirection", "suite": "security-extended", "blocking": false }
+        ]
+      },
+      "controls": ["frontend/src/lib/navigation/internal-route.ts", "frontend/src/lib/navigation/__tests__/internal-route.test.ts", "frontend/src/app/login/LoginClient.tsx"],
+      "note": "로그인 뒤 복귀 경로는 내부 경로만 받는다. CodeQL 규칙은 점수 6.1이라 리포트만 하고 차단하지 않는다.",
+      "next": "7.0 미만 탐지도 감사 목록에 넣는다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-08",
+      "category": "입력데이터 검증 및 표현",
+      "no": 8,
+      "name": "부적절한 XML 외부 개체 참조",
+      "cwe": [611],
+      "cweSource": "kisa",
+      "matchCwe": [611, 776, 827],
+      "owaspTop10": ["A02:2025"],
+      "asvs": ["V1", "V5"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/xxe", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/xml-bomb", "suite": "security-extended", "blocking": true },
+          { "query": "js/xxe", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["migration-tool/src/main/java/nuri/migration/appscan/XmlSourceReader.java"],
+      "note": "이관 도구의 XML 읽기는 DTD·외부 엔티티를 끈다.",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-09",
+      "category": "입력데이터 검증 및 표현",
+      "no": 9,
+      "name": "XML 삽입",
+      "cwe": [643],
+      "cweSource": "kisa",
+      "matchCwe": [91, 643, 652],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/xml/xpath-injection", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/xpath-injection", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "XPath·XQuery 사용처가 없다(2026-10-20 검색).",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-10",
+      "category": "입력데이터 검증 및 표현",
+      "no": 10,
+      "name": "LDAP 삽입",
+      "cwe": [90],
+      "cweSource": "kisa",
+      "matchCwe": [90],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/ldap-injection", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/sql-injection", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "LDAP 사용처가 없다(2026-10-20 검색). 도입하면 CodeQL 차단 규칙이 본다.",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-11",
+      "category": "입력데이터 검증 및 표현",
+      "no": 11,
+      "name": "크로스사이트 요청 위조",
+      "cwe": [352],
+      "cweSource": "kisa",
+      "matchCwe": [352],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V3"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/csrf-unprotected-request-type", "suite": "security-extended", "blocking": true },
+          { "query": "java/spring-disabled-csrf-protection", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/missing-token-validation", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["foundation/src/main/java/nuri/foundation/security/filter/CredentialCookieCsrfPolicy.java", "api-server/src/test/java/nuri/api/config/ApiSecurityConfigTest.java", "frontend/src/__tests__/proxy.test.ts", "frontend/src/lib/auth/__tests__/session-cookie-policy.test.ts"],
+      "note": "쿠키 자격을 실은 쓰기 요청은 이중 제출 토큰(XSRF-TOKEN 쿠키 = X-XSRF-TOKEN 헤더)을 요구한다(ADR-0038). 헤더 전용 클라이언트는 제외하고 SockJS는 허용 Origin으로 막는다. SameSite=Strict 쿠키와 Origin 검사는 함께 남는다.",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-12",
+      "category": "입력데이터 검증 및 표현",
+      "no": 12,
+      "name": "서버사이드 요청 위조",
+      "cwe": [918],
+      "cweSource": "kisa",
+      "matchCwe": [918],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V1", "V12"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/ssrf", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/client-side-request-forgery", "suite": "security-extended", "blocking": false },
+          { "query": "js/request-forgery", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/main/java/nuri/api/integration/sms/NaverSensSmsSender.java"],
+      "note": "외부 호출은 고정 출처(문자 발송)뿐이다. 프런트 서버의 fetch 대상은 API 기준 주소다.",
+      "next": "프런트 서버 측 fetch의 대상 주소가 고정인지 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-13",
+      "category": "입력데이터 검증 및 표현",
+      "no": 13,
+      "name": "HTTP 응답분할",
+      "cwe": [113],
+      "cweSource": "std",
+      "matchCwe": [93, 113],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1", "V4"],
+      "applicable": true,
+      "automation": {
+        "java": "report",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/http-response-splitting", "suite": "security-extended", "blocking": false },
+          { "query": "java/netty-http-request-or-response-splitting", "suite": "security-extended", "blocking": false }
+        ],
+        "javascript": []
+      },
+      "controls": ["api-server/src/main/java/nuri/api/controller/business/file/FileApiController.java"],
+      "note": "다운로드 파일명은 ContentDisposition 빌더로 인코딩한다. CodeQL 규칙은 점수 6.1이라 리포트만 한다.",
+      "next": "사용자 입력이 응답 헤더에 닿는 지점을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-14",
+      "category": "입력데이터 검증 및 표현",
+      "no": 14,
+      "name": "정수형 오버플로우",
+      "cwe": [190],
+      "cweSource": "std",
+      "matchCwe": [190, 191, 197, 681],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V2"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "quality-only"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/comparison-with-wider-type", "suite": "security-extended", "blocking": true },
+          { "query": "java/implicit-cast-in-compound-assignment", "suite": "security-extended", "blocking": true },
+          { "query": "java/integer-multiplication-cast-to-long", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/tainted-arithmetic", "suite": "security-extended", "blocking": true },
+          { "query": "java/tainted-numeric-cast", "suite": "security-extended", "blocking": true },
+          { "query": "java/uncontrolled-arithmetic", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/shift-out-of-range", "suite": "security-and-quality", "blocking": false }
+        ]
+      },
+      "controls": [],
+      "note": "",
+      "next": "security-extended 결과를 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-15",
+      "category": "입력데이터 검증 및 표현",
+      "no": 15,
+      "name": "보안기능 결정에 사용되는 부적절한 입력값",
+      "cwe": [807],
+      "cweSource": "kisa",
+      "matchCwe": [290, 302, 348, 807],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V2", "V8"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/tainted-permissions-check", "suite": "security-extended", "blocking": true },
+          { "query": "java/user-controlled-bypass", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/user-controlled-bypass", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/main/java/nuri/api/interceptor/OperationalAuditInterceptor.java", "api-server/src/main/java/nuri/config/websocket/WebSocketCookieAuthenticationFilter.java"],
+      "note": "클라이언트 IP는 신뢰 프록시 고정 주소에서만 받는다(ADR-0019, DEC-OPS-098). 감사 범위는 Spring 경로 매처로, SockJS 쿠키 인증은 Spring Security 표준 인증 필터로 판정한다(2026-10-21 예외 해소).",
+      "next": "요청 헤더·파라미터로 내리는 보안 판정을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-16",
+      "category": "입력데이터 검증 및 표현",
+      "no": 16,
+      "name": "메모리 버퍼 오버플로우",
+      "cwe": [119],
+      "cweSource": "std",
+      "matchCwe": [119, 120, 787, 788],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V15"],
+      "applicable": false,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "Java·TypeScript는 관리 메모리이고 JNI 선언·System.loadLibrary가 없다(2026-10-20 검색).",
+      "next": "네이티브 코드를 들이면 다시 판정한다.",
+      "review": "pending"
+    },
+    {
+      "id": "IV-17",
+      "category": "입력데이터 검증 및 표현",
+      "no": 17,
+      "name": "포맷 스트링 삽입",
+      "cwe": [134],
+      "cweSource": "std",
+      "matchCwe": [134],
+      "owaspTop10": ["A05:2025"],
+      "asvs": ["V1"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/tainted-format-string", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/tainted-format-string", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-01",
+      "category": "보안기능",
+      "no": 1,
+      "name": "적절한 인증 없는 중요 기능 허용",
+      "cwe": [306],
+      "cweSource": "kisa",
+      "matchCwe": [287, 306],
+      "owaspTop10": ["A07:2025"],
+      "asvs": ["V6", "V8"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": ["api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java", "api-server/src/test/java/nuri/api/harness/SecurePathsDeclarationSyncLinterTest.java", "api-server/src/test/java/nuri/api/harness/TestSecurityChainOverrideLinterTest.java"],
+      "note": "해당하는 CodeQL 규칙이 없다. 기능 권한 선언과 인증 배선은 하네스가 본다.",
+      "next": "인증 없이 열린 경로(permitAll) 목록을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-02",
+      "category": "보안기능",
+      "no": 2,
+      "name": "부적절한 인가",
+      "cwe": [285],
+      "cweSource": "kisa",
+      "matchCwe": [285, 639, 862, 863],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V8"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": [
+          { "query": "js/cors-misconfiguration-for-credentials", "suite": "security-extended", "blocking": true },
+          { "query": "js/empty-password-in-configuration-file", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/test/java/nuri/api/harness/SecurityAuthAnnotationLinterTest.java", "api-server/src/test/java/nuri/api/harness/PrivacyAccessCensusLinterTest.java", "config/governance/authorization-policies.json"],
+      "note": "Java CodeQL 규칙이 없고 JS 규칙(js/cors-misconfiguration-for-credentials)은 CORS 설정만 본다. 기능 권한과 자원 관계 가드는 하네스가 본다.",
+      "next": "객체 단위 인가(타인 자원 접근)를 수동 검토한다. 우선순위가 가장 높다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-03",
+      "category": "보안기능",
+      "no": 3,
+      "name": "중요한 자원에 대한 잘못된 권한 설정",
+      "cwe": [732],
+      "cweSource": "kisa",
+      "matchCwe": [276, 732],
+      "owaspTop10": ["A02:2025"],
+      "asvs": ["V13", "V14"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/local-temp-file-or-directory-information-disclosure", "suite": "security-extended", "blocking": false },
+          { "query": "java/world-writable-file-read", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "",
+      "next": "업로드 저장 디렉터리·임시 파일·컨테이너 실행 사용자 권한을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-04",
+      "category": "보안기능",
+      "no": 4,
+      "name": "취약한 암호화 알고리즘 사용",
+      "cwe": [327],
+      "cweSource": "kisa",
+      "matchCwe": [327, 328],
+      "owaspTop10": ["A04:2025"],
+      "asvs": ["V11"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/potentially-weak-cryptographic-algorithm", "suite": "security-extended", "blocking": true },
+          { "query": "java/weak-cryptographic-algorithm", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/biased-cryptographic-random", "suite": "security-extended", "blocking": true },
+          { "query": "js/weak-cryptographic-algorithm", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["foundation/src/main/java/nuri/foundation/core/config/ProjectCryptoConfig.java", "foundation/src/main/java/nuri/foundation/core/util/CryptoUtil.java", "foundation/src/test/java/nuri/foundation/core/util/CryptoUtilTest.java"],
+      "note": "양방향 암호는 eGovFrame ARIA 구현이다.",
+      "next": "공공기관이 요구하는 검증필 암호모듈(KCMVP) 해당 여부를 기관 도입 통제에서 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-05",
+      "category": "보안기능",
+      "no": 5,
+      "name": "암호화되지 않은 중요정보",
+      "cwe": [312, 319],
+      "cweSource": "kisa",
+      "matchCwe": [311, 312, 313, 315, 319, 614],
+      "owaspTop10": ["A04:2025"],
+      "asvs": ["V11", "V12", "V14"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/cleartext-storage-in-cookie", "suite": "security-extended", "blocking": false },
+          { "query": "java/cleartext-storage-in-properties", "suite": "security-extended", "blocking": true },
+          { "query": "java/insecure-basic-auth", "suite": "security-extended", "blocking": true },
+          { "query": "java/insecure-cookie", "suite": "security-extended", "blocking": false },
+          { "query": "java/insecure-ldap-auth", "suite": "security-extended", "blocking": true },
+          { "query": "java/maven/non-https-url", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/build-artifact-leak", "suite": "security-extended", "blocking": true },
+          { "query": "js/clear-text-cookie", "suite": "security-extended", "blocking": false },
+          { "query": "js/clear-text-logging", "suite": "security-extended", "blocking": true },
+          { "query": "js/clear-text-storage-of-sensitive-data", "suite": "security-extended", "blocking": true },
+          { "query": "js/insecure-dependency", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["business-core/src/main/java/nuri/business/domain/common/RrnoEncryptionConverter.java", "foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java", "business-core/src/main/java/nuri/business/domain/auth/RefreshTokenDigest.java", "foundation/src/main/java/nuri/foundation/security/util/CookieUtil.java"],
+      "note": "주민번호·MFA 비밀은 암호화하고 재발급 토큰은 해시로 저장한다. 쿠키는 Secure가 기본이다(ADR-0010).",
+      "next": "개인정보 컬럼의 암호화 대상 목록을 DB 실측과 대조한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-06",
+      "category": "보안기능",
+      "no": 6,
+      "name": "하드코드된 중요정보",
+      "cwe": [259, 321],
+      "cweSource": "kisa",
+      "matchCwe": [258, 259, 321, 798],
+      "owaspTop10": ["A07:2025"],
+      "asvs": ["V13"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": [
+          { "query": "js/empty-password-in-configuration-file", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/test/java/nuri/api/harness/SecretLiteralLinterTest.java", ".github/workflows/ci.yml", ".github/workflows/secret-scan-history.yml"],
+      "note": "Java CodeQL 규칙이 없다. JS 규칙(js/empty-password-in-configuration-file)은 설정 파일의 빈 비밀번호를 본다. 시크릿 리터럴 하네스와 gitleaks(커밋 전·CI·이력)가 소스의 비밀을 본다.",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-07",
+      "category": "보안기능",
+      "no": 7,
+      "name": "충분하지 않은 키 길이 사용",
+      "cwe": [326],
+      "cweSource": "kisa",
+      "matchCwe": [326],
+      "owaspTop10": ["A04:2025"],
+      "asvs": ["V11"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/insufficient-key-size", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/insufficient-key-size", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java"],
+      "note": "JWT 서명 키는 HMAC 키 길이 검사를 거친다.",
+      "next": "암호 키 길이 설정값을 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-08",
+      "category": "보안기능",
+      "no": 8,
+      "name": "적절하지 않은 난수 값 사용",
+      "cwe": [330],
+      "cweSource": "kisa",
+      "matchCwe": [330, 335, 338],
+      "owaspTop10": ["A04:2025"],
+      "asvs": ["V11"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/insecure-randomness", "suite": "security-extended", "blocking": true },
+          { "query": "java/predictable-seed", "suite": "security-extended", "blocking": true },
+          { "query": "java/random-used-once", "suite": "security-and-quality", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/insecure-randomness", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["foundation/src/main/java/nuri/foundation/core/util/IdGenerationUtil.java"],
+      "note": "보안 용도 난수는 SecureRandom이다. 프런트의 Math.random은 화면 진행 표시·임시 키에만 쓴다.",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-09",
+      "category": "보안기능",
+      "no": 9,
+      "name": "취약한 패스워드 허용",
+      "cwe": [521],
+      "cweSource": "kisa",
+      "matchCwe": [521],
+      "owaspTop10": ["A07:2025"],
+      "asvs": ["V6"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": ["business-core/src/test/java/nuri/business/service/user/PasswordPolicyTest.java", "frontend/src/lib/validations/__tests__/password-policy.test.ts"],
+      "note": "CodeQL 규칙이 없다. 서버·화면이 같은 비밀번호 규칙을 쓴다(DEC-OPS-136).",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-10",
+      "category": "보안기능",
+      "no": 10,
+      "name": "부적절한 전자서명 확인",
+      "cwe": [347],
+      "cweSource": "kisa",
+      "matchCwe": [347],
+      "owaspTop10": ["A08:2025"],
+      "asvs": ["V9", "V11"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/missing-jwt-signature-check", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/jwt-missing-verification", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java"],
+      "note": "JWT는 서명 검증(parseSignedClaims) 뒤에만 읽는다.",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-11",
+      "category": "보안기능",
+      "no": 11,
+      "name": "부적절한 인증서 유효성 검증",
+      "cwe": [295],
+      "cweSource": "kisa",
+      "matchCwe": [295, 297],
+      "owaspTop10": ["A04:2025"],
+      "asvs": ["V12"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/improper-webview-certificate-validation", "suite": "security-extended", "blocking": true },
+          { "query": "java/insecure-smtp-ssl", "suite": "security-extended", "blocking": false },
+          { "query": "java/insecure-trustmanager", "suite": "security-extended", "blocking": true },
+          { "query": "java/unsafe-hostname-verification", "suite": "security-extended", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/disabling-certificate-validation", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "TrustManager·HostnameVerifier를 직접 구현한 곳이 없다(2026-10-20 검색).",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-12",
+      "category": "보안기능",
+      "no": 12,
+      "name": "사용자 하드디스크에 저장되는 쿠키를 통한 정보노출",
+      "cwe": [539],
+      "cweSource": "kisa",
+      "matchCwe": [539],
+      "owaspTop10": ["A02:2025"],
+      "asvs": ["V7", "V3"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": ["foundation/src/main/java/nuri/foundation/security/util/CookieUtil.java", "frontend/src/lib/auth/__tests__/session-cookie-policy.test.ts"],
+      "note": "CodeQL 규칙이 없다. 재발급 토큰 쿠키는 만료 시각이 있는 영속 쿠키이고 HttpOnly·Secure·SameSite=Strict다.",
+      "next": "영속 쿠키에 담는 값과 만료 기간이 정책에 맞는지 수동 판정한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-13",
+      "category": "보안기능",
+      "no": 13,
+      "name": "주석문 안에 포함된 시스템 주요정보",
+      "cwe": [615],
+      "cweSource": "kisa",
+      "matchCwe": [615],
+      "owaspTop10": ["A02:2025"],
+      "asvs": ["V13"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": ["api-server/src/test/java/nuri/api/harness/SecretLiteralLinterTest.java", ".github/workflows/ci.yml"],
+      "note": "CodeQL 규칙이 없다. gitleaks는 주석의 비밀도 본다.",
+      "next": "주석의 내부 주소·계정 정보를 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-14",
+      "category": "보안기능",
+      "no": 14,
+      "name": "솔트 없이 일방향 해쉬 함수 사용",
+      "cwe": [759],
+      "cweSource": "kisa",
+      "matchCwe": [759, 760, 916],
+      "owaspTop10": ["A04:2025"],
+      "asvs": ["V11", "V6"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": [
+          { "query": "js/insufficient-password-hash", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["business-core/src/main/java/nuri/business/security/service/PasswordEncoders.java", "business-core/src/main/java/nuri/business/security/service/EgovPasswordEncoder.java", "business-core/src/main/java/nuri/business/domain/auth/RefreshTokenDigest.java"],
+      "note": "새 비밀번호는 BCrypt다. 레거시 호환 경로(사용자 ID를 솔트로 쓰는 SHA-256)가 남아 있다. Java CodeQL 규칙은 없고 JS 규칙은 프런트에서 비밀번호를 해시하는 경우만 본다.",
+      "next": "레거시 해시의 잔존·전환을 운영 데이터로 확인한다(기관 통제).",
+      "review": "pending"
+    },
+    {
+      "id": "SF-15",
+      "category": "보안기능",
+      "no": 15,
+      "name": "무결성 검사 없는 코드 다운로드",
+      "cwe": [494],
+      "cweSource": "kisa",
+      "matchCwe": [353, 494, 829, 830],
+      "owaspTop10": ["A08:2025"],
+      "asvs": ["V15", "V13"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/maven/non-https-url", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/functionality-from-untrusted-domain", "suite": "security-extended", "blocking": true },
+          { "query": "js/functionality-from-untrusted-source", "suite": "security-extended", "blocking": false },
+          { "query": "js/insecure-dependency", "suite": "security-extended", "blocking": true },
+          { "query": "js/insecure-download", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java", "gradle/wrapper/gradle-wrapper.properties"],
+      "note": "GitHub Actions는 커밋 SHA로 고정한다. Gradle wrapper 배포 체크섬(distributionSha256Sum)과 Gradle 의존성 검증 메타데이터는 없다.",
+      "next": "wrapper 체크섬과 의존성 검증 도입 여부를 정한다.",
+      "review": "pending"
+    },
+    {
+      "id": "SF-16",
+      "category": "보안기능",
+      "no": 16,
+      "name": "반복된 인증시도 제한 기능 부재",
+      "cwe": [307],
+      "cweSource": "kisa",
+      "matchCwe": [307],
+      "owaspTop10": ["A07:2025"],
+      "asvs": ["V6"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": [
+          { "query": "js/missing-rate-limiting", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": ["api-server/src/test/java/nuri/api/schema/LoginFailureCounterConcurrencyIntegrationTest.java", "business-core/src/test/java/nuri/business/security/iam/EgovAuthenticationProviderTest.java", "business-core/src/test/java/nuri/business/security/filter/RateLimitFilterTest.java", "api-server/src/test/java/nuri/api/config/RateLimitDefaultsTest.java"],
+      "note": "Java CodeQL 규칙이 없고 JS 규칙(js/missing-rate-limiting)은 Express 라우트 대상이다. 로그인 실패 잠금과 IP당 요청 제한(ADR-0035)을 시험이 고정한다.",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "TS-01",
+      "category": "시간 및 상태",
+      "no": 1,
+      "name": "경쟁조건: 검사 시점과 사용 시점",
+      "cwe": [367],
+      "cweSource": "std",
+      "matchCwe": [362, 367],
+      "owaspTop10": ["A06:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/toctou-race-condition", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/file-system-race", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "업무 데이터 경합은 행 잠금·버전으로 막는다(DEC-OPS-342·359).",
+      "next": "파일 처리의 검사·사용 사이 경합을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "TS-02",
+      "category": "시간 및 상태",
+      "no": 2,
+      "name": "종료되지 않는 반복문 또는 재귀함수",
+      "cwe": [674, 835],
+      "cweSource": "kisa",
+      "matchCwe": [674, 835],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "quality-only"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/constant-loop-condition", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/unreachable-exit-in-loop", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/inconsistent-loop-direction", "suite": "security-and-quality", "blocking": false }
+        ]
+      },
+      "controls": [],
+      "note": "",
+      "next": "계층(부서·메뉴) 재귀 처리의 순환 방지를 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "EH-01",
+      "category": "에러처리",
+      "no": 1,
+      "name": "오류 메시지 정보노출",
+      "cwe": [209],
+      "cweSource": "kisa",
+      "matchCwe": [209, 497],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V16"],
+      "applicable": true,
+      "automation": {
+        "java": "report",
+        "javascript": "report"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/error-message-exposure", "suite": "security-extended", "blocking": false },
+          { "query": "java/stack-trace-exposure", "suite": "security-extended", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/stack-trace-exposure", "suite": "security-extended", "blocking": false }
+        ]
+      },
+      "controls": ["api-server/src/main/resources/application.yml", "foundation/src/test/java/nuri/foundation/core/exception/GlobalExceptionHandlerTest.java"],
+      "note": "스택 추적·예외 클래스는 응답에 싣지 않는다. CodeQL 규칙은 점수 5.4라 리포트만 한다.",
+      "next": "오류 응답의 메시지 노출 설정과 전역 처리기를 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "EH-02",
+      "category": "에러처리",
+      "no": 2,
+      "name": "오류상황 대응 부재",
+      "cwe": [390],
+      "cweSource": "kisa",
+      "matchCwe": [390, 391],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V16"],
+      "applicable": true,
+      "automation": {
+        "java": "quality-only",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/ignored-error-status-of-call", "suite": "security-and-quality", "blocking": false }
+        ],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "실행 중인 스위트에는 규칙이 없고 품질 스위트에만 있다.",
+      "next": "품질 스위트 감사 실행으로 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "EH-03",
+      "category": "에러처리",
+      "no": 3,
+      "name": "부적절한 예외처리",
+      "cwe": [754],
+      "cweSource": "kisa",
+      "matchCwe": [248, 396, 754],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V16"],
+      "applicable": true,
+      "automation": {
+        "java": "quality-only",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/uncaught-number-format-exception", "suite": "security-and-quality", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/server-crash", "suite": "security-extended", "blocking": true },
+          { "query": "js/unvalidated-dynamic-method-call", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "JS 규칙(js/server-crash 등)은 Node HTTP·Express 서버 대상이다.",
+      "next": "품질 스위트 감사 실행과 수동 검토로 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "CE-01",
+      "category": "코드오류",
+      "no": 1,
+      "name": "Null Pointer 역참조",
+      "cwe": [476],
+      "cweSource": "kisa",
+      "matchCwe": [476],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "quality-only",
+        "javascript": "quality-only"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/dereferenced-expr-may-be-null", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/dereferenced-value-is-always-null", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/dereferenced-value-may-be-null", "suite": "security-and-quality", "blocking": false }
+        ],
+        "javascript": [
+          { "query": "js/call-to-non-callable", "suite": "security-and-quality", "blocking": false },
+          { "query": "js/property-access-on-non-object", "suite": "security-and-quality", "blocking": false }
+        ]
+      },
+      "controls": ["frontend/tsconfig.json"],
+      "note": "실행 중인 스위트에는 규칙이 없다. TypeScript는 strict 모드다.",
+      "next": "품질 스위트 감사 실행으로 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "CE-02",
+      "category": "코드오류",
+      "no": 2,
+      "name": "부적절한 자원 해제",
+      "cwe": [404],
+      "cweSource": "kisa",
+      "matchCwe": [404, 772, 775],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "quality-only",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/database-resource-leak", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/input-resource-leak", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/output-resource-leak", "suite": "security-and-quality", "blocking": false }
+        ],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "실행 중인 스위트에는 규칙이 없다.",
+      "next": "품질 스위트 감사 실행으로 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "CE-03",
+      "category": "코드오류",
+      "no": 3,
+      "name": "해제된 자원 사용",
+      "cwe": [416],
+      "cweSource": "std",
+      "matchCwe": [416, 672],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V15"],
+      "applicable": false,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "Java·JavaScript는 가비지 컬렉터가 메모리를 관리한다. 닫힌 자원의 재사용은 CE-02 감사에서 함께 본다.",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "CE-04",
+      "category": "코드오류",
+      "no": 4,
+      "name": "초기화되지 않은 변수 사용",
+      "cwe": [457],
+      "cweSource": "std",
+      "matchCwe": [457, 824],
+      "owaspTop10": ["A10:2025"],
+      "asvs": ["V15"],
+      "applicable": false,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": ["frontend/tsconfig.json"],
+      "note": "Java 컴파일러가 지역 변수의 확정 대입을 강제하고 TypeScript는 strict 모드다.",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "CE-05",
+      "category": "코드오류",
+      "no": 5,
+      "name": "신뢰할 수 없는 데이터의 역직렬화",
+      "cwe": [502],
+      "cweSource": "std",
+      "matchCwe": [502],
+      "owaspTop10": ["A08:2025"],
+      "asvs": ["V1", "V15"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "blocking"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/unsafe-deserialization", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/unsafe-deserialization", "suite": "security-extended", "blocking": true }
+        ]
+      },
+      "controls": [],
+      "note": "ObjectInputStream·Jackson 기본 타이핑 사용처가 없다(2026-10-20 검색).",
+      "next": "security-extended 결과로 충분하다.",
+      "review": "pending"
+    },
+    {
+      "id": "EN-01",
+      "category": "캡슐화",
+      "no": 1,
+      "name": "잘못된 세션에 의한 데이터 정보노출",
+      "cwe": [488],
+      "cweSource": "kisa",
+      "matchCwe": [488, 543, 567],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V7", "V15"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "CodeQL 규칙이 없다.",
+      "next": "싱글톤 빈의 가변 필드와 Next 서버 모듈 수준 상태(요청 간 공유)를 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "EN-02",
+      "category": "캡슐화",
+      "no": 2,
+      "name": "제거되지 않고 남은 디버그 코드",
+      "cwe": [489],
+      "cweSource": "kisa",
+      "matchCwe": [215, 489],
+      "owaspTop10": ["A02:2025"],
+      "asvs": ["V13"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": ["frontend/eslint.config.mjs", "api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java"],
+      "note": "해당 CodeQL 규칙은 Android 전용이다. Java 운영 코드에 printStackTrace·System.out이 없고, 프런트는 console.log를 lint로 막는다.",
+      "next": "운영 프로필의 디버그 설정·관리 엔드포인트 노출을 수동 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "EN-03",
+      "category": "캡슐화",
+      "no": 3,
+      "name": "Public 메서드로부터 반환된 Private 배열",
+      "cwe": [495],
+      "cweSource": "kisa",
+      "matchCwe": [485, 495],
+      "owaspTop10": ["A06:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "quality-only",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/abstract-to-concrete-cast", "suite": "security-and-quality", "blocking": false },
+          { "query": "java/internal-representation-exposure", "suite": "security-and-quality", "blocking": false }
+        ],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "CWE-485 태그 규칙 가운데 java/internal-representation-exposure가 직접 대응하고, java/abstract-to-concrete-cast는 같은 분류의 다른 캡슐화 경고다. 둘 다 품질 스위트에만 있다.",
+      "next": "보조 도구(SpotBugs EI_EXPOSE_REP)로 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "EN-04",
+      "category": "캡슐화",
+      "no": 4,
+      "name": "Private 배열에 Public 데이터 할당",
+      "cwe": [496],
+      "cweSource": "kisa",
+      "matchCwe": [496],
+      "owaspTop10": ["A06:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "CodeQL 규칙이 없다.",
+      "next": "보조 도구(SpotBugs EI_EXPOSE_REP2)로 확인한다.",
+      "review": "pending"
+    },
+    {
+      "id": "AM-01",
+      "category": "API 오용",
+      "no": 1,
+      "name": "DNS lookup에 의존한 보안결정",
+      "cwe": [350],
+      "cweSource": "kisa",
+      "matchCwe": [350],
+      "owaspTop10": ["A01:2025"],
+      "asvs": ["V8"],
+      "applicable": true,
+      "automation": {
+        "java": "none",
+        "javascript": "none"
+      },
+      "codeql": {
+        "java": [],
+        "javascript": []
+      },
+      "controls": [],
+      "note": "CodeQL 규칙이 없다. 역방향 DNS 조회(getHostName 등) 사용처가 없다(2026-10-20 검색).",
+      "next": "없음.",
+      "review": "pending"
+    },
+    {
+      "id": "AM-02",
+      "category": "API 오용",
+      "no": 2,
+      "name": "취약한 API 사용",
+      "cwe": [676],
+      "cweSource": "std",
+      "matchCwe": [242, 676],
+      "owaspTop10": ["A06:2025"],
+      "asvs": ["V15"],
+      "applicable": true,
+      "automation": {
+        "java": "blocking",
+        "javascript": "quality-only"
+      },
+      "codeql": {
+        "java": [
+          { "query": "java/potentially-dangerous-function", "suite": "security-extended", "blocking": true }
+        ],
+        "javascript": [
+          { "query": "js/eval-like-call", "suite": "security-and-quality", "blocking": false }
+        ]
+      },
+      "controls": [],
+      "note": "",
+      "next": "금지 API 목록을 정하고 lint 규칙과 대조한다.",
+      "review": "pending"
+    }
+  ]
+}

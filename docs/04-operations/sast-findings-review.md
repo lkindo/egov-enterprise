@@ -1,5 +1,19 @@
 # SAST 오탐 예외 검토 결과
 
+## 2026-10-21 예외의 근본 해소
+
+2026-10-20 사용자는 승인된 예외 6건을 도구 회피가 아니라 원인을 없애는 방식으로 모두 해소하라고 지시했다. 각 건은 코드를 고쳐 탐지 원인을 없애고 같은 변경에서 [승인 목록](../../config/security/false-positive-review.json)의 항목을 지웠다. 목록은 비었고 차단 임계값(7.0)과 정책 evaluator는 그대로다. 목록 항목은 실제 탐지와 정확히 한 번 짝지어져야 통과하므로, 고친 코드에서 같은 탐지가 다시 나오면 required `secure-coding`이 실패한다.
+
+| 예외 | 해소 |
+|---|---|
+| SAST-FP-001·002 CSRF 비활성 | API·코어 체인에서 CSRF를 켰다. 쿠키 자격을 실은 쓰기 요청에 이중 제출 토큰을 요구하고 SockJS는 허용 Origin으로 막는다([ADR-0038](../02-architecture/decisions/ADR-0038-credential-cookie-csrf-token.md)). |
+| SAST-FP-003 감사 범위의 사용자 입력 분기 | 원시 `getRequestURI()` 접두어 대신 인터셉터 등록·보안 체인과 같은 Spring 경로 매처로 감사 범위를 판정한다. 컨텍스트 경로 아래 배포하면 API 요청이 통째로 감사에서 빠지던 결함도 함께 닫았다. |
+| SAST-FP-006 개발 도구의 공용 임시 폴더 | 이름이 고정이라 다른 로컬 사용자가 먼저 만들 수 있던 실행 디렉터리를 사용자 캐시(`~/.cache`)로 옮기고, POSIX에서는 소유자·권한(그룹·기타 쓰기 금지)을 검사한다. |
+| SAST-FP-007 설정 파일의 빈 비밀번호 | 제품 jar에 실리던 `src/main/resources/application-test.yml`을 지웠다. 같은 이름의 테스트 리소스가 클래스패스에서 앞서 이 파일을 가리므로 시험 동작은 바뀌지 않는다. |
+| SAST-FP-008 SockJS 쿠키 인증의 사용자 입력 분기 | 직접 짠 토큰 분기를 Spring Security 표준 인증 필터(변환기·인증 제공자·실패 처리기)로 옮겼다. 성공 시 새 보안 컨텍스트를 저장하고 실패 시 비운다. 전송 경로 하네스는 공개 요청 매처로 범위를 검사한다. |
+
+각 변경은 회귀 시험의 red(옛 코드에서 실패)를 확인했다. 탐지 해소 여부는 CodeQL 2.26.4 로컬 재분석과 해당 변경의 required CI가 판정한다.
+
 ## 2026-10-17 Reporting-Endpoints 단일 소스화에 따른 보완 소스 재검토
 
 SAST-FP-001의 보완 소스 `frontend/src/proxy.ts`는 Reporting-Endpoints 그룹 정의 위의 설명 주석만 바뀌었다. 같은 변경에서 `next.config.ts`가 모든 경로에 리터럴로 달던 같은 헤더를 걷어, CSP와 그 그룹 정의를 proxy 한 곳에서만 단다. 토큰 검증·Origin 거부·Bearer 전달과 Strict·HttpOnly 쿠키 정책은 바뀌지 않았다.
@@ -370,7 +384,7 @@ H2의 테스트 전용 의존성과 메모리 DB 프로필이 유지됨을 재�
 - [API 보안 체인](../../api-server/src/main/java/nuri/api/config/ApiSecurityConfig.java), [코어 보안 체인](../../business-core/src/main/java/nuri/business/security/config/SecurityConfig.java), [Bearer 해석](../../foundation/src/main/java/nuri/foundation/security/jwt/JwtTokenProvider.java), [Origin 필터](../../foundation/src/main/java/nuri/foundation/security/filter/OriginValidationFilter.java), [refresh cookie](../../foundation/src/main/java/nuri/foundation/security/util/CookieUtil.java).
 - [감사 인터셉터](../../api-server/src/main/java/nuri/api/interceptor/OperationalAuditInterceptor.java), [권한 배치 서비스](../../business-core/src/main/java/nuri/business/service/auth/UserAuthorityManageService.java), [빈 입력·유효 권한 검증 테스트](../../business-core/src/test/java/nuri/business/service/auth/UserAuthorityManageServiceTest.java).
 - [읽기·복구 구현](../../scripts/ui-quality-baseline-launch.mjs), [실행 계약 테스트](../../scripts/ui-quality-baseline-launch-contract.test.mjs).
-- [H2 테스트 설정](../../api-server/src/main/resources/application-test.yml), [테스트 의존성](../../api-server/build.gradle).
+- H2 테스트 설정 `api-server/src/main/resources/application-test.yml`(2026-10-20 제품 리소스에서 제거, 위 「예외의 근본 해소」 참고), [테스트 의존성](../../api-server/build.gradle).
 
 ## 구현 감사 (L2)
 

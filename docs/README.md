@@ -100,6 +100,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | 문서 | 내용 |
 |---|---|
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
+| [secure-coding-weakness-baseline.md](04-operations/secure-coding-weakness-baseline.md) | 행안부 구현단계 보안약점 49개를 CWE·OWASP·현재 탐지 수단과 대응시킨 사전 점검 기준선(공식 진단을 대신하지 않음) |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |

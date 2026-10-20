@@ -10,6 +10,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.servlet.util.matcher.PathPatternRequestMatcher;
+import org.springframework.security.web.util.matcher.RequestMatcher;
 import org.springframework.stereotype.Component;
 import org.springframework.web.method.HandlerMethod;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -35,6 +37,12 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
 
     /** 핸들러를 판정할 수 없을 때 쓰는 HTTP 메서드 표기. */
     private static final String UNKNOWN_METHOD = "UNKNOWN";
+
+    /**
+     * 감사 범위. 인터셉터 등록({@code WebMvcConfig})·API 보안 체인과 같은 경로 해석(컨텍스트 경로를 뺀 파싱된 경로)으로 판정한다.
+     * 원시 {@code getRequestURI()} 접두어로 고르면 컨텍스트 경로를 붙여 배포했을 때 API 요청이 통째로 감사에서 빠진다.
+     */
+    private static final RequestMatcher AUDIT_SCOPE = PathPatternRequestMatcher.withDefaults().matcher("/api/**");
 
     private final ApplicationEventPublisher eventPublisher;
     // [W1-07] 신뢰 경계 기반 IP 판정. 정적 유틸이던 것을 foundation 빈으로 통합했다.
@@ -75,10 +83,10 @@ public class OperationalAuditInterceptor implements HandlerInterceptor {
     }
 
     private void publishAuditEvent(HttpServletRequest request, HandlerMethod handlerMethod, int statusCode) {
-        String reqURL = request.getRequestURI();
-        if (reqURL == null || !reqURL.startsWith("/api/")) {
+        if (!AUDIT_SCOPE.matches(request)) {
             return;
         }
+        String reqURL = request.getRequestURI();
 
         long durationMs = 0L;
         Object start = request.getAttribute(START_ATTR);

@@ -9,7 +9,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.test.util.ReflectionTestUtils;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -65,15 +64,16 @@ class SecurePathsDeclarationSyncLinterTest {
             sockJs++;
             String path = row.path("path").asString().replaceAll("\\{[^}]+}", "segment");
             var request = new MockHttpServletRequest(row.path("method").asString(), path);
-            Boolean skipped = ReflectionTestUtils.invokeMethod(filter, "shouldNotFilter", request);
-            if (!Boolean.FALSE.equals(skipped) || !"AUTHENTICATED".equals(row.path("access").asString())) {
+            // 필터가 쿠키 인증을 시도하는 범위는 표준 인증 필터의 요청 매처다(2026-10-20 AuthenticationFilter 전환).
+            if (!filter.getRequestMatcher().matches(request) || !"AUTHENTICATED".equals(row.path("access").asString())) {
                 problems.add("SockJS cookie 범위/인가 binding drift: " + row.path("method").asString() + " " + path);
             }
         }
         if (sockJs < 7) problems.add("명시적 SockJS transport coverage 하한 미달");
         for (String path : List.of("/api/v1/boards", "/ws/unknown", "/ws/segment/session/jsonp")) {
-            Boolean skipped = ReflectionTestUtils.invokeMethod(filter, "shouldNotFilter", new MockHttpServletRequest("GET", path));
-            if (!Boolean.TRUE.equals(skipped)) problems.add("WS cookie 인증 범위를 미등록 경로로 확대: " + path);
+            if (filter.getRequestMatcher().matches(new MockHttpServletRequest("GET", path))) {
+                problems.add("WS cookie 인증 범위를 미등록 경로로 확대: " + path);
+            }
         }
         if (!problems.isEmpty()) fail(String.join("\n", problems));
     }

@@ -9,7 +9,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -22,7 +22,9 @@ import {
   BASELINE_LAUNCH_RUNTIME_DIRECTORY,
   createBaselineComposeSpecification,
   createClosedBaselineRunnerEnvironment,
+  defaultBaselineRuntimeRoot,
   launchAttestedBaseline,
+  ownerPrivateDirectory,
   parseBaselineLaunchArguments,
   recoverAttestedBaseline,
   verifyBaselineAuthenticationTarget,
@@ -435,6 +437,22 @@ test('baseline rejects non-disposable database names before creating a runtime d
     assert.equal(executor.calls.some(({ command }) => command === 'docker'), false);
     assert.equal(existsSync(fixture.runtimeRoot), false);
   }
+});
+
+test('default runtime root is the per-user cache, not the shared OS temp directory', () => {
+  const root = defaultBaselineRuntimeRoot();
+  assert.equal(root, path.join(homedir(), '.cache', BASELINE_LAUNCH_RUNTIME_DIRECTORY));
+  assert.equal(path.resolve(root).startsWith(path.resolve(tmpdir()) + path.sep), false);
+});
+
+test('POSIX runtime root must be owned by the current user and not writable by group or others', () => {
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40700 }, 'linux', 1000), true);
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40755 }, 'linux', 1000), true);
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40770 }, 'linux', 1000), false);
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40702 }, 'linux', 1000), false);
+  assert.equal(ownerPrivateDirectory({ uid: 1001, mode: 0o40700 }, 'linux', 1000), false);
+  // Windows 는 POSIX 소유자·모드 비트가 없다 — 경로·심볼릭 링크·저장소 밖 검사가 그대로 지킨다.
+  assert.equal(ownerPrivateDirectory({ uid: 0, mode: 0o40777 }, 'win32', undefined), true);
 });
 
 test('cleanup leaves the recovery descriptor intact when the bounded runtime directory is not empty', () => {

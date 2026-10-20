@@ -483,6 +483,19 @@ describe('POST /api/auth/reissue', () => {
     expect(mockedPost.mock.calls[0][1]).toBeUndefined();
   });
 
+  it('쿠키 자격과 함께 브라우저의 이중 제출 CSRF 헤더를 백엔드로 넘기고, 없으면 지어내지 않는다', async () => {
+    mockedPost.mockResolvedValue({ status: 200, data: tokenEnvelope({ accessToken: tokenWithExp(inOneHour()) }), headers: {} });
+
+    await reissue(postRequest('/api/auth/reissue', undefined,
+      { cookie: 'refreshToken=rt-abc; XSRF-TOKEN=csrf-1', 'x-xsrf-token': 'csrf-1' }));
+    await reissue(postRequest('/api/auth/reissue', undefined, { cookie: 'refreshToken=rt-abc' }));
+
+    const headersOf = (call: number) => (mockedPost.mock.calls[call][2] as { headers: Record<string, string> }).headers;
+    expect(headersOf(0)['X-XSRF-TOKEN']).toBe('csrf-1');
+    expect(headersOf(0).Cookie).toContain('XSRF-TOKEN=csrf-1');
+    expect(headersOf(1)).not.toHaveProperty('X-XSRF-TOKEN');
+  });
+
   it('리프레시 토큰이 만료되면 401은 보존하고 백엔드 원문은 숨긴다', async () => {
     const privateMessage = 'refresh token row 42 expired for private-user@example.test';
     mockedPost.mockRejectedValue(axiosError(401, {
@@ -587,6 +600,16 @@ describe('POST /api/auth/logout', () => {
 
     const [, , config] = mockedPost.mock.calls[0];
     expect((config as { headers: Record<string, string> }).headers.Authorization).toBe('Bearer tok-123');
+  });
+
+  it('쿠키 자격과 함께 브라우저의 이중 제출 CSRF 헤더를 백엔드로 넘긴다', async () => {
+    mockedPost.mockResolvedValue({ status: 200, data: successEnvelope('Logged out successfully'), headers: {} });
+
+    await logout(postRequest('/api/auth/logout', undefined,
+      { cookie: 'refreshToken=rt; XSRF-TOKEN=csrf-2', 'x-xsrf-token': 'csrf-2' }));
+
+    const [, , config] = mockedPost.mock.calls[0];
+    expect((config as { headers: Record<string, string> }).headers['X-XSRF-TOKEN']).toBe('csrf-2');
   });
 
   it('백엔드가 실패해도 accessToken·refreshToken·session_exp 를 모두 즉시 만료시킨다 (fail-safe)', async () => {

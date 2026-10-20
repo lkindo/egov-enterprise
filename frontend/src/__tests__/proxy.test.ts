@@ -290,3 +290,37 @@ describe('rewrite 프록시 백엔드 연결 (GAP-FE-002)', () => {
     expect(response.headers.get('x-middleware-request-connection')).toBeNull();
   });
 });
+
+describe('이중 제출 CSRF 토큰 쿠키 (CredentialCookieCsrfPolicy)', () => {
+  const tokenCookie = (response: Response) =>
+    response.headers.getSetCookie().find((cookie) => cookie.startsWith('XSRF-TOKEN='));
+
+  it('토큰 쿠키가 없는 문서 응답에서 스크립트가 읽는 SameSite=Strict 쿠키를 만든다', async () => {
+    const response = await proxy(requestWith(null, '/login'));
+    const cookie = tokenCookie(response);
+    expect(cookie).toMatch(/^XSRF-TOKEN=[A-Za-z0-9_-]{43};/);
+    expect(cookie).toMatch(/SameSite=strict/i);
+    expect(cookie).toMatch(/Path=\//);
+    expect(cookie).not.toMatch(/HttpOnly/i);
+  });
+
+  it('로그인으로 되돌리는 문서 응답에도 만들고, 요청마다 다른 값을 쓴다', async () => {
+    const first = tokenCookie(await proxy(requestWith(null)));
+    const second = tokenCookie(await proxy(requestWith(null)));
+    expect(first).toBeDefined();
+    expect(second).toBeDefined();
+    expect(first).not.toBe(second);
+  });
+
+  it('이미 토큰 쿠키가 있으면 덮어쓰지 않는다 — 열린 탭의 헤더와 어긋나지 않게', async () => {
+    const response = await proxy(new NextRequestCtor('http://localhost:3001/login', {
+      headers: { cookie: 'XSRF-TOKEN=existing-token' } }));
+    expect(tokenCookie(response)).toBeUndefined();
+  });
+
+  it('백엔드로 넘기는 API 요청에서는 만들지 않는다 — 백엔드 응답의 토큰과 겹치지 않게', async () => {
+    const response = await proxy(new NextRequestCtor('http://localhost:3001/api/v1/boards/posts', {
+      headers: { cookie: 'accessToken=fixture-token' } }));
+    expect(tokenCookie(response)).toBeUndefined();
+  });
+});

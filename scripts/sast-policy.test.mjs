@@ -83,15 +83,19 @@ test('real CLI exits 0 for reviewed, 1 for high, and 2 for incomplete or invalid
   const command = path.join(repoRoot, 'scripts/sast-policy.mjs');
   const incremental = report();
   incremental.runs[0].properties = { incrementalMode: 'diff-informed' };
+  // 남은 승인 예외와 정확히 짝지은 탐지만 있는 보고서는 0. 승인 목록이 비었으면(2026-10-21) 위반 없는 보고서와 같다.
+  const entries = reviewedExceptions.findings.filter(e => e.language === 'java');
   const reviewed = report('7', false);
-  reviewed.runs[0].results = reviewedExceptions.findings.filter(e => e.language === 'java').map(e => ({
+  reviewed.runs[0].results = entries.map(e => ({
     ruleId: e.ruleId, partialFingerprints: { primaryLocationLineHash: e.fingerprint },
     locations: [{ physicalLocation: { artifactLocation: { uri: e.file }, region: { startLine: e.line } } }],
   }));
-  reviewed.runs[0].tool.driver.rules = [...new Set(reviewed.runs[0].results.map(r => r.ruleId))].map(id => ({
+  reviewed.runs[0].tool.driver.rules.push(...[...new Set(entries.map(e => e.ruleId))].map(id => ({
     id, properties: { tags: ['security'], 'security-severity': '7.8' },
-  }));
-  for (const [input, exit] of [[reviewed, 0], [report('7', false), 2], [report('7'), 1], [incremental, 2], [{}, 2]]) {
+  })));
+  // 승인 예외가 남아 있으면 그 탐지가 빠진 보고서는 누락으로 2, 없으면 위반 없는 보고서라 0 이다.
+  const clean = [report('7', false), entries.length ? 2 : 0];
+  for (const [input, exit] of [[reviewed, 0], clean, [report('7'), 1], [incremental, 2], [{}, 2]]) {
     fs.writeFileSync(file, JSON.stringify(input));
     assert.equal(spawnSync(process.execPath, [command, file, 'java']).status, exit);
   }

@@ -2,6 +2,7 @@ package nuri.api.config;
 
 import nuri.api.interceptor.OperationalAuditInterceptor;
 import nuri.business.security.iam.EgovAuthenticationProvider;
+import nuri.foundation.security.filter.CredentialCookieCsrfPolicy;
 import nuri.foundation.security.filter.CredentialRequestTargetFilter;
 import nuri.foundation.security.jwt.JwtAuthenticationFilter;
 import nuri.foundation.security.jwt.JwtTokenProvider;
@@ -91,6 +92,10 @@ public class ApiSecurityConfig {
         @org.springframework.beans.factory.annotation.Value("${cors.allowed-origins}")
         private List<String> allowedOrigins;
 
+        /** CSRF 토큰 쿠키의 Secure 여부. 세션 쿠키와 같은 설정을 따른다(ADR-0010). */
+        @org.springframework.beans.factory.annotation.Value("${jwt.cookie.secure:false}")
+        private boolean cookieSecure;
+
         @Bean
         public CorsConfigurationSource corsConfigurationSource() {
                 CorsConfiguration configuration = new CorsConfiguration();
@@ -130,7 +135,17 @@ public class ApiSecurityConfig {
                                                 pathMatcher("/ws"),
                                                 pathMatcher("/ws/**")))
                                 .cors(cors -> cors.configurationSource(corsConfigurationSource()))
-                                .csrf(csrf -> csrf.disable())
+                                // 쿠키 자격을 실은 쓰기 요청은 이중 제출 토큰(XSRF-TOKEN 쿠키 = X-XSRF-TOKEN 헤더)을 요구한다.
+                                //   브라우저 요청은 Next 프록시가 쿠키를 그대로 넘기므로 늘 여기에 든다. 헤더로만 자격을 보내는
+                                //   클라이언트는 위조 대상이 아니다(CredentialCookieCsrfPolicy). SockJS 전송은 커스텀 헤더를
+                                //   싣지 못하므로 빼고, WebSocketCookieAuthenticationFilter 가 허용 Origin 을 강제한다.
+                                //   인증 때 토큰을 바꾸는 전략은 세션 로그인용이다. 이 체인은 STATELESS 라 세션 관리 필터가 Bearer 로
+                                //   인증된 요청마다 그 전략을 불러 토큰을 바꾸고, 동시 요청의 헤더와 쿠키가 어긋난다 — 바꾸지 않는다.
+                                .csrf(csrf -> csrf.spa()
+                                                .csrfTokenRepository(CredentialCookieCsrfPolicy.tokenRepository(cookieSecure))
+                                                .requireCsrfProtectionMatcher(CredentialCookieCsrfPolicy.REQUIRES_TOKEN)
+                                                .sessionAuthenticationStrategy(new org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy())
+                                                .ignoringRequestMatchers(pathMatcher("/ws"), pathMatcher("/ws/**")))
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
@@ -168,8 +183,10 @@ public class ApiSecurityConfig {
                                                         log.warn(">>> Access denied to {}", nuri.foundation.security.util.SafeLog.text(request.getRequestURI()));
                                                         response.setContentType("application/json;charset=UTF-8");
                                                         response.setStatus(HttpStatus.FORBIDDEN.value());
-                                                        // 이 체인은 CSRF 비활성(STATELESS+JWT)이라 403은 권한 부족만을 의미 — 오해 소지의 CSRF 문구 제거.
-                                                        response.getWriter().write("{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied - Insufficient privileges\"}");
+                                                        // CSRF 토큰 누락·불일치도 403 이다. 권한 부족과 다른 원인이므로 문구를 나눈다.
+                                                        response.getWriter().write(accessDeniedException instanceof org.springframework.security.web.csrf.CsrfException
+                                                                        ? "{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied - Request verification token missing or invalid\"}"
+                                                                        : "{\"success\":false,\"status\":403,\"code\":\"C010\",\"message\":\"Access Denied - Insufficient privileges\"}");
                                                 }))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
