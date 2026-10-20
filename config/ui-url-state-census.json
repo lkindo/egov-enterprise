@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "5c69857c87249f508f0a87b19ba7abef883fdad010ebd0c02e2e4195b1c4dcf2"
+    "inventoryHash": "89f721bfc88e11011cfcd4f17bc8e2f852aff0ef150665dcc96f8e9d54e02c84"
   },
   "summary": {
-    "records": 406,
-    "syntaxOccurrences": 485,
-    "ambiguousRecords": 358,
-    "unverifiedRecords": 406,
+    "records": 405,
+    "syntaxOccurrences": 484,
+    "ambiguousRecords": 357,
+    "unverifiedRecords": 405,
     "exactPopulations": {
       "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
@@ -44,7 +44,7 @@
       "config-redirect": 13,
       "dynamic-segment": 11,
       "form-producer": 51,
-      "navigation-producer": 189,
+      "navigation-producer": 188,
       "page-redirect": 17,
       "query-builder": 23,
       "query-consumer": 53,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 396,
+      "navigation": 395,
       "request-telemetry": 10
     }
   },
@@ -12195,46 +12195,6 @@
       }
     },
     {
-      "id": "URL-064C0DB4F63C06",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "href-field",
-      "source": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
-      "producerFile": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
-      "consumerFile": null,
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-4FAEA2BB68DCA5",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -12275,7 +12235,7 @@
       }
     },
     {
-      "id": "URL-943E6A7F6A87A8",
+      "id": "URL-577072F8EB7309",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
@@ -12283,17 +12243,18 @@
       "producerFile": "frontend/src/app/components/dashboard/MemoReportHome.tsx",
       "consumerFile": null,
       "routePattern": "unresolved",
-      "targetCandidate": "/admin/operation/memo-reports",
+      "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "computed-navigation-target",
         "producer-consumer-join-unresolved",
         "route-context-unresolved"
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/operation/memo-reports",
+        "routeCandidate": null,
         "status": "unverified"
       },
       "authorizationBoundary": {
