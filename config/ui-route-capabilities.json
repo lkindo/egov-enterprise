@@ -4863,6 +4863,7 @@
       "dataSource": "mixed",
       "supportedActions": [
         "export",
+        "paginate",
         "refresh",
         "view-chart",
         "view-list",
@@ -4892,8 +4893,10 @@
           "dataSource": "admin-statistics-api",
           "actions": [
             "export",
+            "paginate",
             "refresh",
-            "view-chart"
+            "view-chart",
+            "view-summary"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
@@ -4901,7 +4904,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
@@ -4914,53 +4917,6 @@
             "frontend/src/extensions/board/stats-panels.ts",
             "frontend/src/services/foundation/system/StatsAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
-          ]
-        },
-        {
-          "id": "stats.connect-summary",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "admin-statistics-api",
-          "actions": [
-            "refresh",
-            "view-summary"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "최근 1개월 총 접속",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
-            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/board/page.tsx",
-            "frontend/src/services/foundation/system/StatsAdminService.ts",
-            "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
-          ]
-        },
-        {
-          "id": "stats.uninstrumented-summary",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "자료 이용 건수(미수집)",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
-            "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/board/page.tsx",
-            "frontend/src/extensions/board/stats-panels.ts"
           ]
         },
         {
@@ -5021,9 +4977,7 @@
       "dataSource": "mixed",
       "supportedActions": [
         "export",
-        "refresh",
-        "view-list",
-        "view-summary"
+        "view-list"
       ],
       "profileOwners": [
         "UNVERIFIED"
@@ -5055,7 +5009,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
@@ -5064,53 +5018,6 @@
             "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/board/board-stats-series.ts",
-            "frontend/src/app/admin/stats/data-usage/page.tsx",
-            "frontend/src/extensions/board/stats-panels.ts"
-          ]
-        },
-        {
-          "id": "stats.connect-summary",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "admin-statistics-api",
-          "actions": [
-            "refresh",
-            "view-summary"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "최근 1개월 총 접속",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
-            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/data-usage/page.tsx",
-            "frontend/src/services/foundation/system/StatsAdminService.ts",
-            "frontend/src/services/foundation/system/__tests__/StatsAdminService.test.ts"
-          ]
-        },
-        {
-          "id": "stats.uninstrumented-summary",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "자료 이용 건수(미수집)",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
-            "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/data-usage/page.tsx",
             "frontend/src/extensions/board/stats-panels.ts"
           ]
@@ -5170,11 +5077,13 @@
       ],
       "surface": "admin-console",
       "status": "partial",
-      "dataSource": "mixed",
+      "dataSource": "admin-statistics-connect-api",
       "supportedActions": [
         "export",
+        "paginate",
         "refresh",
-        "view-chart"
+        "view-chart",
+        "view-summary"
       ],
       "profileOwners": [
         "UNVERIFIED"
@@ -5203,8 +5112,10 @@
           "dataSource": "admin-statistics-connect-api",
           "actions": [
             "export",
+            "paginate",
             "refresh",
-            "view-chart"
+            "view-chart",
+            "view-summary"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
@@ -5212,7 +5123,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
@@ -5221,28 +5132,6 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/screen/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts"
-          ]
-        },
-        {
-          "id": "stats.uninstrumented-summary",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "자료 이용 건수(미수집)",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
-            "business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java",
-            "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/screen/page.tsx",
-            "frontend/src/extensions/board/stats-panels.ts"
           ]
         }
       ],
@@ -5273,9 +5162,10 @@
       ],
       "surface": "admin-console",
       "status": "partial",
-      "dataSource": "mixed",
+      "dataSource": "admin-statistics-user-api",
       "supportedActions": [
         "export",
+        "paginate",
         "refresh",
         "view-chart",
         "view-summary"
@@ -5307,8 +5197,10 @@
           "dataSource": "admin-statistics-user-api",
           "actions": [
             "export",
+            "paginate",
             "refresh",
-            "view-chart"
+            "view-chart",
+            "view-summary"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
@@ -5316,7 +5208,7 @@
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
@@ -5327,52 +5219,6 @@
             "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
             "frontend/src/app/admin/stats/user/page.tsx",
             "frontend/src/services/foundation/system/StatsAdminService.ts"
-          ]
-        },
-        {
-          "id": "stats.connect-summary",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "admin-statistics-connect-api",
-          "actions": [
-            "refresh",
-            "view-summary"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "최근 1개월 총 접속",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiController.java",
-            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/stats/StatisticsApiControllerTest.java",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/user/page.tsx",
-            "frontend/src/services/foundation/system/StatsAdminService.ts"
-          ]
-        },
-        {
-          "id": "stats.uninstrumented-summary",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "자료 이용 건수(미수집)",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java",
-            "frontend/src/__tests__/cross-stack/honest-affordance-contract.test.ts",
-            "frontend/src/app/admin/stats/IntelligenceHubClient.tsx",
-            "frontend/src/app/admin/stats/user/page.tsx",
-            "frontend/src/extensions/board/stats-panels.ts"
           ]
         }
       ],
