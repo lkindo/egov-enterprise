@@ -27,7 +27,7 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "985a520acee2fc6ce4caabc8e3f1f028a9d4742811cf7ba172b6f714380629d5"
+    "inventoryHash": "f6f5de98834039959f39c85840a751f37708d7339673f4023de17bafc9d8f01a"
   },
   "summary": {
     "records": 407,
@@ -9937,19 +9937,20 @@
       }
     },
     {
-      "id": "URL-77894C921C7678",
+      "id": "URL-0FAEF603BAA452",
       "surface": "navigation",
       "kind": "form-producer",
-      "operation": "intercepted-submit",
+      "operation": "implicit-or-computed-method",
       "source": "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
       "producerFile": "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/logs/audit",
       "targetCandidate": null,
       "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (prevent-default); no URL state is emitted.",
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
       "riskSignals": [],
       "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",

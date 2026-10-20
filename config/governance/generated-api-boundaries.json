@@ -29,25 +29,25 @@
   },
   "summary": {
     "total": 375,
-    "eligible": 352,
+    "eligible": 353,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 352,
+      "generated": 353,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
-      "special": 23
+      "special": 22
     },
     "bySpecialCase": {
       "auth-bff": 5,
       "auth-route-client": 5,
-      "binary": 10,
+      "binary": 9,
       "multipart": 0,
       "actuator": 3
     }
   },
-  "inventoryHash": "344b905ed02aba3ac6dfaede0d3fb612f48811f28bf45fd6b7d8a46616b8d4ea",
+  "inventoryHash": "0004e65fff6a312dec73f379fc1e8e9553ac9997de29a9ca52260d4c062e69aa",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -150,23 +150,6 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "07163bd757a05ee7c50a"
-    },
-    {
-      "file": "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
-      "owner": "submitExport",
-      "ordinal": 1,
-      "line": 130,
-      "column": 5,
-      "classification": "special",
-      "transport": "browser-navigation",
-      "callee": "navigateToDownload",
-      "method": "get",
-      "target": "/api/v1/admin/system/logs/audit/export.xlsx",
-      "operationId": "exportAuditJournal",
-      "descriptorName": "exportAuditJournalOperation",
-      "mappingStatus": "explicit-special-case",
-      "specialCase": "binary",
-      "id": "03a9b27d0d54e5c08dc4"
     },
     {
       "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
@@ -5289,7 +5272,7 @@
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.getAuditJournal",
       "ordinal": 1,
-      "line": 34,
+      "line": 47,
       "column": 26,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5304,9 +5287,26 @@
     },
     {
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
+      "owner": "<class>.exportAuditJournal",
+      "ordinal": 1,
+      "line": 68,
+      "column": 28,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "executeGeneratedOperation",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/audit/export.xlsx",
+      "operationId": "exportAuditJournal",
+      "descriptorName": "exportAuditJournalOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "1114059ecd0d1b54f70b"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.getAuditJournalOperations",
       "ordinal": 1,
-      "line": 48,
+      "line": 85,
       "column": 26,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5323,7 +5323,7 @@
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.getDurableJobs",
       "ordinal": 1,
-      "line": 60,
+      "line": 97,
       "column": 13,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5340,7 +5340,7 @@
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.retryDurableJob",
       "ordinal": 1,
-      "line": 71,
+      "line": 108,
       "column": 11,
       "classification": "generated",
       "transport": "generated-executor",

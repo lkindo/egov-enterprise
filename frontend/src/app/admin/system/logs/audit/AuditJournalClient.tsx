@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState } from 'react';
+import { useId, useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Download } from 'lucide-react';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
@@ -12,9 +12,12 @@ import { StandardDataTable, type Column } from '@/app/components/ui/standard-dat
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { useToast } from '@/app/components/ui/toast';
 import { Button } from '@/components/ui/button';
+import { FormErrorSummary } from '@/components/ui/form';
 import { Textarea } from '@/components/ui/textarea';
-import { navigateToDownload } from '@/lib/navigation/full-result-download';
-import { exportAuditJournalOperation } from '@/types/generated-operations';
+import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { useManualFormValidation } from '@/hooks/useManualFormValidation';
+import { failureMessage } from '@/lib/safe-error-log';
+import { z } from 'zod';
 import { operationsRecordAdminService, type AuditJournalEntry } from '@/services/foundation/system/OperationsRecordAdminService';
 
 const PAGE_SIZE_OPTIONS = [20, 50, 100];
@@ -47,6 +50,31 @@ export function normalizeExportReason(value: string): string {
   return normalized.trim();
 }
 
+const EXPORT_REASON_MESSAGE = `사유를 ${EXPORT_REASON_MIN}~${EXPORT_REASON_MAX}자로 입력하세요.`;
+/**
+ * 내보내기 사유 — 요청 본문 DTO 가 아니라 내보내기 연산의 query 값이라 생성 zod 스키마가 없다. MFA 코드 폼처럼
+ * 로컬 strict 스키마로 두고, 서버와 같은 정규화 뒤 길이를 본다. 서버 감사 경계가 최종 판정자다.
+ */
+const exportReasonSchema = z.strictObject({
+  reason: z.string().transform(normalizeExportReason)
+    .pipe(z.string().min(EXPORT_REASON_MIN, EXPORT_REASON_MESSAGE).max(EXPORT_REASON_MAX, EXPORT_REASON_MESSAGE)),
+});
+const EXPORT_LABELS = { reason: '내보내기 사유' };
+/** 서버의 Content-Disposition 과 같은 이름 — 인증 요청으로 받은 파일은 브라우저가 이름을 모른다. */
+const EXPORT_FILE_NAME = 'audit-journal.xlsx';
+
+function saveBlobAs(blob: Blob, fileName: string) {
+  const objectUrl = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = objectUrl;
+  anchor.download = fileName;
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  // 클릭 직후 회수하면 저장이 시작되기 전에 주소가 사라질 수 있어 다음 차례로 미룬다.
+  setTimeout(() => URL.revokeObjectURL(objectUrl), 0);
+}
+
 /**
  * 민감 작업 감사 원장(2026-10-01 결정 19).
  *
@@ -56,7 +84,8 @@ export function normalizeExportReason(value: string): string {
  *
  * [2026-10-20] 작업 종류 조건과 전체 결과 내보내기를 더했다. 작업 종류는 원장에 실제로 남은 작업 이름이다.
  * 내보내기는 목록과 같은 조건(행위자·작업·기간)으로 서버가 전량을 xlsx 로 만든다 — 사유가 필수이고, 내보내기와
- * 사유가 원장에 남는다. 권한은 열람과 같은 ADT_LOG_READ 다.
+ * 사유가 원장에 남는다. 권한은 열람과 같은 ADT_LOG_READ 다. 사유 폼은 표준 폼 검증(zod·첫 오류 초점·제출 잠금)을
+ * 따르고, 파일은 인증 요청으로 받아 서버 거부를 폼이 그대로 말한다(입력한 사유는 남는다).
  */
 export default function AuditJournalClient() {
   const { toast } = useToast();
@@ -69,7 +98,14 @@ export default function AuditJournalClient() {
   const [period, setPeriod] = useState<PeriodValue>(EMPTY_PERIOD);
   const [exportOpen, setExportOpen] = useState(false);
   const [reason, setReason] = useState('');
-  const [reasonError, setReasonError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
+  const [exportError, setExportError] = useState('');
+  const pendingExportRef = useRef(false);
+  const reasonRef = useRef<HTMLTextAreaElement>(null);
+  const exportValidation = useManualFormValidation(exportReasonSchema, {
+    labels: EXPORT_LABELS,
+    focusTargets: { reason: () => reasonRef.current },
+  });
   const appliedPeriod = period.from && period.to ? { fromDate: period.from, toDate: period.to } : {};
 
   const { data, isLoading, error, refetch } = useQuery({
@@ -116,25 +152,43 @@ export default function AuditJournalClient() {
       return;
     }
     setReason('');
-    setReasonError(null);
+    exportValidation.clearError('reason');
+    setExportError('');
     setExportOpen(true);
   };
 
-  const submitExport = () => {
-    const normalized = normalizeExportReason(reason);
-    if (normalized.length < EXPORT_REASON_MIN || normalized.length > EXPORT_REASON_MAX) {
-      setReasonError(`사유를 ${EXPORT_REASON_MIN}~${EXPORT_REASON_MAX}자로 입력하세요.`);
-      return;
-    }
-    // 화면에서 좁힌 조건과 같은 조건을 싣는다 — 다르면 파일과 화면이 어긋난다.
-    navigateToDownload(exportAuditJournalOperation, {
-      ...(actorId ? { actorId } : {}),
-      ...(operation ? { operation } : {}),
-      ...appliedPeriod,
-      reason: normalized,
-    });
+  const closeExport = () => {
+    if (pendingExportRef.current) return;
     setExportOpen(false);
-    toast('내보내기를 요청했습니다. 내보내기와 사유는 감사 원장에 남습니다.', 'success');
+  };
+
+  const submitExport = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    if (pendingExportRef.current) return;
+    const validated = exportValidation.validate({ reason });
+    if (!validated) return;
+    pendingExportRef.current = true;
+    setExporting(true);
+    setExportError('');
+    try {
+      // 화면에서 좁힌 조건과 같은 조건을 싣는다 — 다르면 파일과 화면이 어긋난다.
+      const file = await operationsRecordAdminService.exportAuditJournal({
+        ...(actorId ? { actorId } : {}),
+        ...(operation ? { operation } : {}),
+        ...appliedPeriod,
+        reason: validated.reason,
+      });
+      saveBlobAs(file, EXPORT_FILE_NAME);
+      setExportOpen(false);
+      toast('감사 원장을 내려받았습니다. 내보내기와 사유는 감사 원장에 남습니다.', 'success');
+    } catch (failure) {
+      const fieldErrors = extractFieldErrors(failure);
+      if (fieldErrors) exportValidation.setFormErrors(fieldErrors);
+      setExportError(`${failureMessage(failure, '감사 원장을 내보내지 못했습니다.')} 입력한 사유는 유지됩니다.`);
+    } finally {
+      pendingExportRef.current = false;
+      setExporting(false);
+    }
   };
 
   return (
@@ -194,14 +248,14 @@ export default function AuditJournalClient() {
 
       <StandardModal
         isOpen={exportOpen}
-        onClose={() => setExportOpen(false)}
+        onClose={closeExport}
         title="감사 원장 내보내기"
         maxWidth="lg"
         footer={
           <div className="flex w-full justify-end gap-2">
-            <Button type="button" variant="outline" onClick={() => setExportOpen(false)}>취소</Button>
-            <Button type="submit" form={`${reasonId}-export-form`} className="gap-2">
-              <Download size={16} aria-hidden="true" /> 내보내기
+            <Button type="button" variant="outline" onClick={closeExport} disabled={exporting}>취소</Button>
+            <Button type="submit" form={`${reasonId}-export-form`} className="gap-2" disabled={exporting} aria-busy={exporting || undefined}>
+              <Download size={16} aria-hidden="true" /> {exporting ? '내보내는 중…' : '내보내기'}
             </Button>
           </div>
         }
@@ -209,9 +263,12 @@ export default function AuditJournalClient() {
         <form
           id={`${reasonId}-export-form`}
           noValidate
+          aria-label="감사 원장 내보내기"
           className="space-y-3 pt-2"
-          onSubmit={(event) => { event.preventDefault(); submitExport(); }}
+          onSubmit={(event) => { void submitExport(event); }}
         >
+          <FormErrorSummary errors={exportValidation.errors} labels={EXPORT_LABELS} onNavigate={exportValidation.focusError} />
+          {exportError ? <p role="alert" className="text-sm text-destructive-emphasis">{exportError}</p> : null}
           <p className="text-sm text-muted-foreground">
             지금 조건에 맞는 {total.toLocaleString('ko-KR')}건을 xlsx 파일로 내려받습니다. 내보내기와 그 사유는 감사 원장에 남습니다.
           </p>
@@ -219,17 +276,19 @@ export default function AuditJournalClient() {
             <label htmlFor={reasonId} className="text-sm font-medium">내보내기 사유</label>
             <Textarea
               id={reasonId}
+              ref={reasonRef}
+              {...exportValidation.fieldProps('reason')}
+              aria-describedby={[`${reasonId}-hint`, exportValidation.fieldProps('reason')['aria-describedby']].filter(Boolean).join(' ')}
               value={reason}
               maxLength={EXPORT_REASON_MAX}
               rows={3}
-              aria-invalid={reasonError ? true : undefined}
-              aria-describedby={reasonError ? `${reasonId}-hint ${reasonId}-error` : `${reasonId}-hint`}
-              onChange={(event) => { setReason(event.target.value); if (reasonError) setReasonError(null); }}
+              disabled={exporting}
+              onChange={(event) => { exportValidation.clearError('reason'); setReason(event.target.value); }}
             />
             <p id={`${reasonId}-hint`} className="text-xs text-muted-foreground">
               {EXPORT_REASON_MIN}~{EXPORT_REASON_MAX}자. 예: 월간 접속기록 점검. 사유는 원장에 그대로 남으므로 개인정보를 적지 마세요.
             </p>
-            {reasonError ? <p id={`${reasonId}-error`} role="alert" className="text-xs text-destructive">{reasonError}</p> : null}
+            {exportValidation.errors.reason ? <p {...exportValidation.messageProps('reason')} className="text-xs font-bold text-destructive-emphasis" /> : null}
           </div>
         </form>
       </StandardModal>
