@@ -3641,6 +3641,30 @@
       ]
     },
     {
+      "target": "SensitiveAuditQueryService#exportEntries",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "ADT_LOG_READ"
+        }
+      ]
+    },
+    {
+      "target": "SensitiveAuditQueryService#operations",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "ADT_LOG_READ"
+        }
+      ]
+    },
+    {
       "target": "PolicyService#createPolicy",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -7326,6 +7350,20 @@
       "method": "GET",
       "path": "/api/v1/admin/system/logs/audit",
       "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#getAuditJournal",
+      "access": "PERMISSION",
+      "permission": "ADT_LOG_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/logs/audit/operations",
+      "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#getAuditJournalOperations",
+      "access": "PERMISSION",
+      "permission": "ADT_LOG_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/logs/audit/export.xlsx",
+      "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#exportAuditJournal",
       "access": "PERMISSION",
       "permission": "ADT_LOG_READ"
     },

@@ -2,6 +2,7 @@ import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { requirePageResponse } from '@/services/core/page-response';
 import {
   auditJournalListOperation,
+  auditJournalOperationsOperation,
   durableJobListOperation,
   durableJobRetryOperation,
 } from '@/types/generated-operations';
@@ -19,6 +20,8 @@ export type DurableJobStatus = z.output<typeof StatusResponseSchema>;
 
 export interface AuditJournalQuery {
   actorId?: string;
+  /** 작업 이름(원장의 작업 종류 값 그대로). */
+  operation?: string;
   fromDate?: string;
   toDate?: string;
   /** 1부터 세는 페이지 번호(ADR-0036). */
@@ -31,12 +34,19 @@ export const operationsRecordAdminService = {
     const result = await executeGeneratedOperation(auditJournalListOperation, {
       query: {
         ...(query.actorId ? { actorId: query.actorId } : {}),
+        ...(query.operation ? { operation: query.operation } : {}),
         ...(query.fromDate && query.toDate ? { fromDate: query.fromDate, toDate: query.toDate } : {}),
         page: query.page,
         size: query.size,
       },
     });
     return { list: result.list ?? [], total: Number(result.total ?? 0) };
+  },
+
+  /** [2026-10-20] 원장에 남은 작업 종류(작업 이름, 이름 순) — 조건 검색의 선택지다. */
+  async getAuditJournalOperations(): Promise<string[]> {
+    const result = await executeGeneratedOperation(auditJournalOperationsOperation, {});
+    return Array.isArray(result) ? result.filter((value): value is string => typeof value === 'string') : [];
   },
 
   /**

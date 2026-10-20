@@ -7555,6 +7555,7 @@
       "status": "partial",
       "dataSource": "admin-audit-journal-api",
       "supportedActions": [
+        "export",
         "filter",
         "search",
         "view-list"
@@ -7605,6 +7606,32 @@
             "frontend/src/app/admin/system/logs/audit/__tests__/AuditJournalClient.test.tsx",
             "frontend/src/app/admin/system/logs/audit/page.tsx",
             "frontend/src/services/foundation/system/OperationsRecordAdminService.ts"
+          ]
+        },
+        {
+          "id": "audit-journal.full-export",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-audit-journal-api",
+          "actions": [
+            "export"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN",
+          "visibleLabel": "전체 결과 내보내기",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiController.java",
+            "api-server/src/main/java/nuri/api/interceptor/SensitiveAuditInterceptor.java",
+            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiControllerTest.java",
+            "api-server/src/test/java/nuri/api/interceptor/SensitiveOperationReasonTest.java",
+            "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
+            "frontend/src/app/admin/system/logs/audit/__tests__/AuditJournalClient.test.tsx",
+            "frontend/src/app/admin/system/logs/audit/page.tsx"
           ]
         }
       ],
