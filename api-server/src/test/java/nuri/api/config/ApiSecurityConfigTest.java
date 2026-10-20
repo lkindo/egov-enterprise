@@ -283,6 +283,14 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
     }
 
     @Test
+    @WithMockCustomUser(role = "USER")
+    @DisplayName("CSRF - 인증된 요청이 토큰 쿠키를 바꾸지 않는다(STATELESS 체인, 동시 요청의 헤더·쿠키 어긋남 방지)")
+    void authenticatedRequestsKeepTheIssuedToken() throws Exception {
+        mockMvc.perform(get("/api/v1/health").cookie(new Cookie("XSRF-TOKEN", "token-a")))
+                .andExpect(cookie().doesNotExist("XSRF-TOKEN"));
+    }
+
+    @Test
     @DisplayName("CSRF - SockJS 전송은 토큰 대신 허용 Origin 을 강제한다")
     void sockJsTransportsUseOriginCheckInsteadOfCsrfToken() throws Exception {
         Cookie session = new Cookie("accessToken", "browser-session");

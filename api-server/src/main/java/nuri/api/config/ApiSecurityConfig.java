@@ -139,9 +139,12 @@ public class ApiSecurityConfig {
                                 //   브라우저 요청은 Next 프록시가 쿠키를 그대로 넘기므로 늘 여기에 든다. 헤더로만 자격을 보내는
                                 //   클라이언트는 위조 대상이 아니다(CredentialCookieCsrfPolicy). SockJS 전송은 커스텀 헤더를
                                 //   싣지 못하므로 빼고, WebSocketCookieAuthenticationFilter 가 허용 Origin 을 강제한다.
+                                //   인증 때 토큰을 바꾸는 전략은 세션 로그인용이다. 이 체인은 STATELESS 라 세션 관리 필터가 Bearer 로
+                                //   인증된 요청마다 그 전략을 불러 토큰을 바꾸고, 동시 요청의 헤더와 쿠키가 어긋난다 — 바꾸지 않는다.
                                 .csrf(csrf -> csrf.spa()
                                                 .csrfTokenRepository(CredentialCookieCsrfPolicy.tokenRepository(cookieSecure))
                                                 .requireCsrfProtectionMatcher(CredentialCookieCsrfPolicy.REQUIRES_TOKEN)
+                                                .sessionAuthenticationStrategy(new org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy())
                                                 .ignoringRequestMatchers(pathMatcher("/ws"), pathMatcher("/ws/**")))
                                 .httpBasic(httpBasic -> httpBasic.disable())
                                 .formLogin(formLogin -> formLogin.disable())

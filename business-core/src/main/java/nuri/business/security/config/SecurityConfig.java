@@ -53,9 +53,11 @@ public class SecurityConfig {
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
                                 // API 체인과 같은 규칙 — 쿠키 자격을 실은 쓰기 요청은 이중 제출 토큰을 요구한다(CredentialCookieCsrfPolicy).
+                                //   STATELESS 체인이라 인증 때 토큰을 바꾸지 않는다(API 체인과 같은 이유).
                                 .csrf(csrf -> csrf.spa()
                                                 .csrfTokenRepository(CredentialCookieCsrfPolicy.tokenRepository(cookieSecure))
-                                                .requireCsrfProtectionMatcher(CredentialCookieCsrfPolicy.REQUIRES_TOKEN))
+                                                .requireCsrfProtectionMatcher(CredentialCookieCsrfPolicy.REQUIRES_TOKEN)
+                                                .sessionAuthenticationStrategy(new org.springframework.security.web.authentication.session.NullAuthenticatedSessionStrategy()))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth
