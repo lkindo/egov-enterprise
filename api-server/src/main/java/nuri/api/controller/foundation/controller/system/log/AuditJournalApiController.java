@@ -64,8 +64,9 @@ public class AuditJournalApiController {
     /**
      * [2026-10-20] 목록과 같은 조건의 전체 결과 xlsx 내보내기.
      *
-     * <p>[감사] 내보내기 자체가 민감 작업이다. 감사 경계({@code SensitiveAuditInterceptor})가 핸들러를 부르기 전에 사유를 검사하고
-     * 시도(사유 포함)를 원장에 남긴다 — 그 기록이 실패하면 핸들러도 파일도 없다. 응답 상태는 완료 단계로 남는다.
+     * <p>[감사] 다른 로그 내보내기와 같이 개인정보 접근({@code @PrivacyAccess})이다 — 원장 행에는 행위자 로그인 ID·접속 IP 가 있다.
+     * 감사 경계({@code SensitiveAuditInterceptor})가 핸들러를 부르기 전에 사유를 검사하고 시도(사유 포함)를 원장에 남기며, 파일
+     * 바이트를 쓰기 전에 응답 준비 단계와 개인정보 접근 기록을 남긴다 — 어느 기록이 실패해도 파일은 없다. 응답 상태는 완료 단계로 남는다.
      * [상한] 로그 내보내기와 같은 {@link XlsxExport#MAX_EXPORT_ROWS} 행 상한이다. 행 수를 먼저 세고 넘으면 파일을 만들기 전에 400 이다.
      * [헌법 제6조 3항] binary/stream 예외의 세 조건(attachment · 명시 produces · 허용 census)을 따른다.
      */
@@ -76,7 +77,7 @@ public class AuditJournalApiController {
             description = "xlsx 바이너리 스트림",
             content = @Content(mediaType = XlsxExport.XLSX_MEDIA_TYPE,
                     schema = @Schema(type = "string", format = "binary")))
-    @nuri.foundation.core.annotation.SensitiveOperation(value = "민감 작업 감사 원장 내보내기", reasonParameter = "reason")
+    @nuri.foundation.core.annotation.PrivacyAccess(value = "민감 작업 감사 원장 내보내기(행위자 로그인 ID·접속 IP)", reasonParameter = "reason")
     @GetMapping(value = "/export.xlsx", produces = XlsxExport.XLSX_MEDIA_TYPE)
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#exportAuditJournal')")
     public ResponseEntity<StreamingResponseBody> exportAuditJournal(

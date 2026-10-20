@@ -42,7 +42,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 /**
  * 민감 작업 감사 원장 열람 API(2026-10-20 조건 검색·작업 종류·내보내기).
  *
- * <p>사유 검사와 원장 기록은 감사 경계({@code SensitiveAuditInterceptor})가 맡는다 — {@code SensitiveResponseAuditTest} 가
+ * <p>사유 검사와 원장 기록은 감사 경계({@code SensitiveAuditInterceptor})가 맡는다 — {@code PrivacyAccessReasonTest} 가
  * 사유 없는 내보내기는 핸들러 전에 400 이고 원장에 남지 않으며, 사유가 있으면 설명에 실려 시도·완료가 남는다는 것을 본다.
  * 여기서는 권한 바인딩, 조건 전달, 파일 모양, 상한을 본다.
  */
@@ -55,6 +55,7 @@ class AuditJournalApiControllerTest {
     @BeforeEach
     void setUp() {
         mvc = MockMvcBuilders.standaloneSetup(new AuditJournalApiController(service))
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard())
                 .setControllerAdvice(new GlobalExceptionHandler())
                 .build();
     }
@@ -73,11 +74,11 @@ class AuditJournalApiControllerTest {
     }
 
     @Test
-    @DisplayName("내보내기는 원장에 남는 민감 작업이고 사유 파라미터를 감사 경계에 선언한다")
-    void exportDeclaresItselfSensitiveWithAReason() {
-        var declared = handler("exportAuditJournal").getAnnotation(nuri.foundation.core.annotation.SensitiveOperation.class);
+    @DisplayName("내보내기는 다른 로그 내보내기와 같은 개인정보 접근이고 사유 파라미터를 감사 경계에 선언한다")
+    void exportDeclaresItselfPrivacyAccessWithAReason() {
+        var declared = handler("exportAuditJournal").getAnnotation(nuri.foundation.core.annotation.PrivacyAccess.class);
         assertThat(declared).isNotNull();
-        assertThat(declared.value()).isEqualTo("민감 작업 감사 원장 내보내기");
+        assertThat(declared.value()).startsWith("민감 작업 감사 원장 내보내기");
         assertThat(declared.reasonParameter()).isEqualTo("reason");
         // 작업 종류에는 개인정보가 없어 원장에 남기지 않는다(남기면 화면을 열 때마다 원장이 두 번 쌓인다).
         assertThat(handler("getAuditJournalOperations")

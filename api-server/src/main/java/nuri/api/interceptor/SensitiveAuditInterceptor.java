@@ -46,7 +46,7 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (!(handler instanceof HandlerMethod method) || description(method) == null
                 || request.getAttribute(SensitiveAuditPort.REQUEST_ATTRIBUTE) != null) return true;
-        // 사유를 받는 작업은 사유가 없으면 원장에 시도도 남기지 않고 핸들러 전에 400 이다(@SensitiveOperation#reasonParameter).
+        // 사유를 받는 작업은 사유가 없으면 원장에 시도도 남기지 않고 핸들러 전에 400 이다(@PrivacyAccess#reasonParameter).
         String description = withReason(method, request, description(method));
         var actorLoginId = SecurityUtil.getCurrentLoginId();
         Context context = new Context(UUID.randomUUID().toString(), operation(method),
@@ -114,13 +114,14 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
     static final int REASON_MAX_LENGTH = 200;
 
     /**
-     * [2026-10-20] 사유를 받는 작업이면 사유를 검사해 설명 뒤에 붙인다. 제어 문자는 공백으로 바꾼다(원장 설명은 한 줄이다).
-     * 사유가 없거나 길이가 맞지 않으면 핸들러를 부르기 전에 400 이다 — 사유 없는 내보내기를 원장에 남겼다가 거부하지 않는다.
+     * [2026-10-20] 사유를 받는 개인정보 접근(내보내기 등)이면 사유를 검사해 설명 뒤에 붙인다. 제어 문자는 공백으로 바꾼다(원장
+     * 설명은 한 줄이다). 사유가 없거나 길이가 맞지 않으면 핸들러를 부르기 전에 400 이다 — 사유 없는 내보내기를 원장에 남겼다가
+     * 거부하지 않는다. 시도에 붙인 설명이 응답 준비·완료 단계와 개인정보 접근 기록에도 그대로 실린다(같은 감사 문맥).
      */
     static String withReason(HandlerMethod method, HttpServletRequest request, String description) {
-        var mutation = method.getMethodAnnotation(SensitiveOperation.class);
-        if (mutation == null || mutation.reasonParameter().isEmpty()) return description;
-        String raw = request.getParameter(mutation.reasonParameter());
+        var privacy = method.getMethodAnnotation(PrivacyAccess.class);
+        if (privacy == null || privacy.reasonParameter().isEmpty()) return description;
+        String raw = request.getParameter(privacy.reasonParameter());
         String reason = raw == null ? "" : raw.replaceAll("\\p{Cntrl}", " ").strip();
         if (reason.length() < REASON_MIN_LENGTH || reason.length() > REASON_MAX_LENGTH) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,

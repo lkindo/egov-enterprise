@@ -7628,7 +7628,7 @@
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiController.java",
             "api-server/src/main/java/nuri/api/interceptor/SensitiveAuditInterceptor.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiControllerTest.java",
-            "api-server/src/test/java/nuri/api/interceptor/SensitiveOperationReasonTest.java",
+            "api-server/src/test/java/nuri/api/interceptor/PrivacyAccessReasonTest.java",
             "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
             "frontend/src/app/admin/system/logs/audit/__tests__/AuditJournalClient.test.tsx",
             "frontend/src/app/admin/system/logs/audit/page.tsx"

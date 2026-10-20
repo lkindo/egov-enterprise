@@ -227,7 +227,7 @@ export default function AuditJournalClient() {
               onChange={(event) => { setReason(event.target.value); if (reasonError) setReasonError(null); }}
             />
             <p id={`${reasonId}-hint`} className="text-xs text-muted-foreground">
-              {EXPORT_REASON_MIN}~{EXPORT_REASON_MAX}자. 예: 월간 접속기록 점검
+              {EXPORT_REASON_MIN}~{EXPORT_REASON_MAX}자. 예: 월간 접속기록 점검. 사유는 원장에 그대로 남으므로 개인정보를 적지 마세요.
             </p>
             {reasonError ? <p id={`${reasonId}-error`} role="alert" className="text-xs text-destructive">{reasonError}</p> : null}
           </div>
