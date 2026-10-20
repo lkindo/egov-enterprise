@@ -139,7 +139,12 @@ test('custom review population follows domains and fails when selected evidence 
   const output = mkdtempSync(join(tmpdir(), 'egov-governance-projection-'));
   try {
     const composition = resolveProjectRecipe({ schemaVersion: 1, project: { name: 'review-probe' }, sourceRef: 'v1.0.0', selection: { domains: ['survey'] } }, loadProjectComposerCatalog(ROOT));
-    const excluded = new Set(reviewContract.optionalPilotSources.map(row => row.source));
+    // 구성이 고르지 않은 기능의 선택 증거만 뺀다 — 고른 기능의 선택 증거(업무 홈의 참여할 설문 카드 등, 2026-10-20)는 남는다.
+    const selected = new Set(composition.resolvedDomains);
+    const excluded = new Set(reviewContract.optionalPilotSources
+      .filter(row => !row.requiredDomains.every(domain => selected.has(domain))).map(row => row.source));
+    assert.ok(reviewContract.optionalPilotSources.some(row => row.requiredDomains.includes('survey') && !excluded.has(row.source)),
+      'a survey composition keeps the survey-owned evidence of a core pilot');
     const sources = new Set([
       ...upstreamReviews.uiQuality.scenarios.flatMap(row => [...row.sourceEvidence, ...row.journeySteps.map(step => step.source)]),
       ...upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.sources),
