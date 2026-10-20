@@ -961,7 +961,7 @@ test('PIT registry and CI keep the same exact matrix catalog, and its size is pi
   assert.deepEqual(product.errors, []);
   assert.deepEqual(migration.errors, []);
   // PIT 범위 수의 유일한 확인 지점이다. 범위를 더하거나 걷는 변경은 이 수와 원장·ci.yml 을 함께 고친다(ledger-pin(DEC-OPS-371)).
-  assert.equal(pit.selector.matrixScopes.length, 21, 'PIT matrix scope count changed — update this pin with the registry and ci.yml');
+  assert.equal(pit.selector.matrixScopes.length, 23, 'PIT matrix scope count changed — update this pin with the registry and ci.yml');
   assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
   const byScope = (a, b) => a.scope.localeCompare(b.scope);
   const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);

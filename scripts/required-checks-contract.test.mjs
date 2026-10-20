@@ -146,6 +146,9 @@ const PRODUCT_PIT_LONGEST_FIRST = Object.freeze([
   'business-app-survey',
   'business-app-participation',
   'business-core-user-org',
+  // [2026-10-20 DEC-OPS-373] 업무 홈·홍보(98 변이, 354초)와 관측(202 변이, 154초)도 foundation 범위 앞에 둔다.
+  'business-app-home-promotion',
+  'business-core-observability',
 ]);
 
 function assertProductMutationLptOrder(content) {

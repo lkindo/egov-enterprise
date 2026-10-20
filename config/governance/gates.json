@@ -1758,6 +1758,20 @@
             "tests": "nuri.business.*"
           },
           {
+            "scope": "business-app-home-promotion",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.dashboard.*,nuri.business.service.promotion.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-core-observability",
+            "job": "mutation-scope",
+            "gradle": ":business-core:pitest",
+            "classes": "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*",
+            "tests": "nuri.business.*"
+          },
+          {
             "scope": "foundation-security-filter",
             "job": "mutation-scope",
             "gradle": ":foundation:pitest",

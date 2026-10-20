@@ -1404,6 +1404,20 @@ jobs:
             classes: "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
             tests: "nuri.business.*"
 
+          # [2026-10-20 DEC-OPS-373] 업무 홈 실시간 방송과 배너·팝업 — 게시 중 팝업만 사용자에게 열고, 버전 409·첨부 배정을 지킨다.
+          #   로컬 실측 98 mutations, 92%, 354초(모듈 컴파일 포함).
+          - scope: business-app-home-promotion
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.dashboard.*,nuri.business.service.promotion.*"
+            tests: "nuri.business.*"
+
+          # [2026-10-20 DEC-OPS-373] 로그 조회·감사 원장·통계 시계열(기간 상한·빈 날 0 채우기)·관리자 운영 신호의 권한별 포함.
+          #   로컬 실측 202 mutations, 78%, 154초.
+          - scope: business-core-observability
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*"
+            tests: "nuri.business.*"
+
           # 상태변경 요청의 Origin/Referer 검증 우회를 탐지하는 보안 경계다.
           - scope: foundation-security-filter
             gradle: ":foundation:pitest"
