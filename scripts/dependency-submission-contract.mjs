@@ -1,12 +1,12 @@
 import fs from 'node:fs';
-import { parseWorkflowJobs } from './required-checks-contract.mjs';
+import { parseWorkflowJobs, reviewedActionPin } from './required-checks-contract.mjs';
 
 const READINESS_SCRIPT = new URL('./dependency-snapshot-readiness.mjs', import.meta.url);
 // 검증기가 런타임에 받는 대기 상한 범위다(dependency-snapshot-readiness.mjs 의 buildRetryDelays).
 const MAX_SNAPSHOT_WAIT_SECONDS = 3600;
 
-export const GRADLE_DEPENDENCY_ACTION =
-  'gradle/actions/dependency-submission@3f5f9adaf7d9fecd50b5935e54106014257a94e6';
+// 쓰기 권한 publisher 가 실행하는 유일한 액션이라 검토 핀 원장(REVIEWED_ACTION_PINS)의 커밋과 정확히 같아야 한다.
+export const GRADLE_DEPENDENCY_ACTION = reviewedActionPin('gradle/actions/dependency-submission');
 export const DEPENDENCY_SCOPE_CONDITION =
   "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')";
 

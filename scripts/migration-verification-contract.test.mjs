@@ -16,7 +16,7 @@ import {
   verifyMigrationShardArtifacts,
   verifyMigrationShardResults,
 } from './migration-test-shard.mjs';
-import { parseWorkflowJobs } from './required-checks-contract.mjs';
+import { parseWorkflowJobs, reviewedActionPin } from './required-checks-contract.mjs';
 
 const runner = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 // [2026-09-22] workflow 도 같은 정규화를 받는다. `.gitattributes` 의 `* text=auto` 와 Windows
@@ -253,7 +253,8 @@ function validateWorkflow(source) {
   const gradleSetup = steps.find(step => step.includes('uses: gradle/actions/setup-gradle@')) ?? '';
   const cacheInputs = [...gradleSetup.matchAll(/^ {10}([a-z-]+): ([^\n]+)$/gm)]
     .map(([, key, value]) => [key, value.trim()]);
-  if (!gradleSetup.includes('uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6')
+  // 검토 핀은 REVIEWED_ACTION_PINS 한 곳이 정본이다 — 독립 이관 제품도 required-checks-contract.mjs 를 함께 복사한다.
+  if (!gradleSetup.includes(`uses: ${reviewedActionPin('gradle/actions/setup-gradle')}`)
       || JSON.stringify(cacheInputs) !== JSON.stringify([
         ['cache-provider', 'basic'], ['cache-read-only', standaloneProduct ? 'false' : 'true'],
       ]) || /^\s*(?:-\s*)?(?:if|continue-on-error):/m.test(gradleSetup)) {

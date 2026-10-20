@@ -101,7 +101,9 @@ export function installReusableVerification(output, layout = 'multi-module') {
   }
   const sourceManifest = JSON.parse(readFileSync(join(output, '.github/required-checks.json'), 'utf8'));
   const scan = sourceManifest.criticalSteps?.find(step => step.name === 'Run gitleaks (working tree + incremental)')?.run;
-  const generated = reusableArtifactEntrypoints(profile, scan);
+  // 제품 CI 의 액션 핀은 방금 남긴 원본 ci.yml 이력에서 읽는다(검증도 같은 이력을 읽는다).
+  const generated = reusableArtifactEntrypoints(profile, scan,
+    readFileSync(join(output, `${VERIFICATION_HISTORY}/.github/workflows/ci.yml`), 'utf8'));
   const makefile = projectReusableMakefile(readFileSync(join(output, 'Makefile'), 'utf8'), layout);
   // Each inactive workflow has been copied and hash-bound before this single-file removal.
   for (const workflow of workflows) {

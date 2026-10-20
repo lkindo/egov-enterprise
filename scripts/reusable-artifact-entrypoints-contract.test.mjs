@@ -8,8 +8,9 @@ import { installReusableVerification } from './generate-reusable-base-source.mjs
 import { UPSTREAM_ATLAS, pruneUpstreamAtlas } from './reusable-source-gates.mjs';
 import { applySingleModuleLayout } from './reusable-single-module.mjs';
 import { installMultiModuleMigrationRuntime, installSingleModuleRuntime } from './reusable-layout-runtime.mjs';
-import { parseWorkflowJobs } from './required-checks-contract.mjs';
-import { ARTIFACT_COMMAND, VERIFICATION_HISTORY, validateReusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
+import { parseWorkflowJobs, reviewedActionPin } from './required-checks-contract.mjs';
+import { ARTIFACT_COMMAND, PRODUCT_CI_ACTIONS, VERIFICATION_HISTORY, reusableArtifactEntrypoints, upstreamActionPins,
+  validateReusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
@@ -64,16 +65,17 @@ test('producer fixtures and the actual generated product preserve a distinct non
     assert.match(job, /gitleaks detect --source \. --no-banner/);
     assert.match(job, /github\.event\.pull_request\.base\.sha/);
     assert.match(job, /github\.event\.before/);
-    assert.match(job, /uses: gradle\/actions\/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6\n        with:\n          cache-provider: basic\n          cache-read-only: false/);
+    assert.ok(job.includes(`uses: ${reviewedActionPin('gradle/actions/setup-gradle')}\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`),
+      'product CI must use the reviewed Gradle setup pin with the basic provider as its single cache writer');
     assert.equal(json(root, '.github/required-checks.json').profile, profile);
     assert.equal(json(root, '.github/required-checks.json').remoteApplied, false);
     assert.ok(json(root, `${VERIFICATION_HISTORY}/index.json`).files.some(entry => entry.source === '.github/workflows/release.yml'));
   }
 });
 
-// Dependabot 은 워크플로 파일만 고치고 이 계약이 만드는 템플릿 문자열은 고치지 않는다. 그래서 액션을
-// 올리면 생성 제품 CI 만 옛 핀에 남는다. 템플릿이 쓰는 액션마다 원본 ci.yml 이 쓰는 핀이 하나뿐이고
-// 그 핀이 템플릿과 같아야 한다. 생성물 안에서는 원본 ci.yml 대신 생성 때 남긴 검증 이력 사본과 대조한다.
+// Dependabot 은 워크플로 파일만 고친다. 그래서 템플릿은 핀을 다시 적지 않고 원본 ci.yml 에서 읽는다(upstreamActionPins).
+// 템플릿이 쓰는 액션마다 원본 ci.yml 이 쓰는 핀이 하나뿐이고 그 핀이 템플릿과 같아야 한다 — 핀을 템플릿에 다시 적으면
+// 이 대조가 범프 때 붉다. 생성물 안에서는 원본 ci.yml 대신 생성 때 남긴 검증 이력 사본과 대조한다.
 // ci.yml 은 핀 뒤에 '# v7.1.0' 같은 판 주석을 단다. 템플릿은 주석 없이 핀만 쓴다.
 const ACTION_PIN = /^[ \t]*(?:-[ \t]+)?uses:[ \t]*([\w.-]+\/[\w./-]+)@([0-9a-f]{40})(?:[ \t]+#[^\n]*)?[ \t]*$/gm;
 function actionPins(workflow) {
@@ -114,6 +116,23 @@ test('the product CI template pins every action at the same SHA the upstream ci.
   assert.deepEqual(templatePinMismatches(template, split), [`template actions/setup-node@${setupNode} differs from ci.yml actions/setup-node@${[setupNode, 'b'.repeat(40)].sort().join(',')}`]);
   const gone = upstreamCi.replace(/^.*uses: pnpm\/action-setup@.*$/gm, '');
   assert.match(templatePinMismatches(template, gone).join('\n'), /^template pnpm\/action-setup@[0-9a-f]{40} differs from ci\.yml pnpm\/action-setup@\(none\)$/);
+  // 생성기는 핀을 원본 ci.yml 에서 읽는다 — 워크플로만 올린 범프가 워크플로 밖 수정 없이 제품 CI 에 이른다.
+  const profile = json(root, 'reusable-base-lock.json').profile;
+  const scan = json(root, `${VERIFICATION_HISTORY}/.github/required-checks.json`).criticalSteps
+    .find(step => step.name === 'Run gitleaks (working tree + incremental)').run;
+  assert.equal(reusableArtifactEntrypoints(profile, scan, upstreamCi).workflow, template);
+  assert.deepEqual(Object.keys(upstreamActionPins(upstreamCi)), [...PRODUCT_CI_ACTIONS]);
+  const followed = reusableArtifactEntrypoints(profile, scan, bumped).workflow;
+  assert.ok(followed.includes(`      - uses: actions/setup-node@${'a'.repeat(40)}\n`));
+  assert.deepEqual(templatePinMismatches(followed, bumped), []);
+  // 원본이 태그로 핀하거나, 한 액션을 두 커밋으로 쓰거나, 액션이 사라지면 제품 CI 를 만들지 않는다.
+  const tagged = upstreamCi.replaceAll(`actions/setup-node@${setupNode}`, 'actions/setup-node@v4');
+  for (const [broken, action] of [[tagged, 'actions/setup-node'], [split, 'actions/setup-node'], [gone, 'pnpm/action-setup']]) {
+    assert.notEqual(broken, upstreamCi);
+    assert.throws(() => reusableArtifactEntrypoints(profile, scan, broken),
+      new RegExp(`upstream ci\\.yml must pin ${action.replace('/', '\\/')} to exactly one 40-character commit`));
+  }
+  assert.throws(() => reusableArtifactEntrypoints(profile, scan), /upstream ci\.yml is required/);
 });
 
 test('layout identity, single project shape and executable runtime aliases are enforced by the active contract', t => {
@@ -173,7 +192,7 @@ test('product CI rejects disabled execution, altered scope, recursive generation
     value => value.replace('  pull_request:', "  pull_request:\n    paths: ['docs/**']"),
     value => value.replace('  workflow_dispatch:', "  schedule:\n    - cron: '* * * * *'\n  workflow_dispatch:"),
     value => value.replace('if-no-files-found: error', 'if-no-files-found: warn'),
-    value => value.replace('setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6', 'setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
+    value => value.replace(reviewedActionPin('gradle/actions/setup-gradle'), 'gradle/actions/setup-gradle@d9c87d481d55275bb5441eef3fe0e46805f9ef70'),
     value => value.replace('          cache-provider: basic\n', ''),
     value => value.replace('cache-provider: basic', 'cache-provider: enhanced'),
     value => value.replace('          cache-read-only: false\n', ''),

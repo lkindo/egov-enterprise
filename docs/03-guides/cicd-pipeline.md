@@ -227,6 +227,8 @@ gh workflow run reusable-nightly.yml --ref <브랜치> -f compositions="board+su
 온라인 빌드·커버리지를, 후자는 읽기 전용 cache로 물리 PostgreSQL 검증을 담당한다. action 참조는 workflow의
 검증된 commit SHA로 고정한다. 캐시 옵션과 wrapper 다운로드 재시도는 [ci.yml](../../.github/workflows/ci.yml)이 정본이다.
 
+액션 핀의 정본은 workflow 자체다. [필수 체크 계약](../../scripts/required-checks-contract.mjs)은 모든 외부 액션이 40자 commit SHA이고 한 액션 저장소가 모든 workflow에서 한 commit인지 본다. 커밋을 올릴 때 검토가 필요한 저장소(`gradle/actions`)만 같은 파일의 `REVIEWED_ACTION_PINS` 한 줄이 검토 핀을 가지며, CodeQL·dependency review의 검토 핀은 [필수 단계 명세](../../.github/required-checks.json)의 `criticalSteps`가 가진다. 그 밖의 계약·재사용 생성물 CI 템플릿·Atlas는 핀을 다시 적지 않고 workflow나 이 원장을 읽는다. 그래서 Dependabot의 액션 범프는 원장 밖 액션이면 workflow 밖 수정이 없고, 원장 안 액션이면 원장 한 줄을 검토해 고친다.
+
 ### 실행 명령어
 
 ```bash
@@ -430,7 +432,7 @@ dependencyCheck {
 ### Gradle 캐싱
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
-- **구성**: `setup-gradle` v6.4.0의 commit `3f5f9adaf7d9fecd50b5935e54106014257a94e6`와 `cache-provider: basic`을 명시한다. 캐시 제공 방식 변경은 테스트 생략 승인이 아니며 Gradle task 입력과 필수 실패 판정은 유지한다.
+- **구성**: `setup-gradle`은 검토 핀 원장(`REVIEWED_ACTION_PINS`, [필수 체크 계약](../../scripts/required-checks-contract.mjs))의 v6.4.0 commit과 `cache-provider: basic`을 명시한다. 캐시 제공 방식 변경은 테스트 생략 승인이 아니며 Gradle task 입력과 필수 실패 판정은 유지한다.
 - **저장 책임**: upstream CI는 backend 하나만 저장하고, backend가 명시적으로 false인 이관 전용 실행에서만 migration이 저장한다. 재사용·PIT·별도 이관 점검·의존성 감사·릴리스·재사용 생성물 야간 시험은 읽기 전용이다. 생성된 독립 제품은 자체 단일 writer를 유지한다. 캐시 miss에 따른 다운로드는 정상 동작이며 실패 경고를 숨기지 않는다.
 - **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
