@@ -3,9 +3,9 @@
 ## 의존성
 
 애플리케이션 의존성과 Gradle 플러그인 classpath는 별도로 검사한다. 루트 `buildscript`
-constraints는 Dependency-Check/Boot 플러그인이 사용하는 HttpClient/cache 5.6.4,
-HttpCore/h2 5.4.3을 하한으로 둔다. 애플리케이션 BOM만 바꾸면 이 경로는 보호되지 않는다.
-프론트엔드의 Hono 4.13.5, qs 6.16.0, postcss-selector-parser 7.1.3은 기존 의존 경로의 패치다.
+constraints는 Dependency-Check/Boot 플러그인 경로의 전이 패치 하한을 둔다. 애플리케이션 BOM만
+바꾸면 이 경로는 보호되지 않는다. 프런트엔드 전이 의존의 패치는 `frontend/package.json`의
+`pnpm.overrides`가 둔다. 두 곳 모두 항목별 사유와 제거 조건은 그 파일의 주석이 정본이다.
 상위 패키지가 패치 버전을 직접 공급하면 override 제거 후 실제 해석 결과와 감사를 재검증한다.
 
 Boot 3.5 시절(ADR-0024 전환 전) 측정이다. PIT 1.19.0의 JUnit Launcher 자동 탐색은 BOM override를 상속하지 않는 임시 configuration을
