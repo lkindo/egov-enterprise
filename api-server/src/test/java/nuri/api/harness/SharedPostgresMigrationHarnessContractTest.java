@@ -4,6 +4,7 @@ import nuri.api.schema.SharedPostgresMigrationTestSupport;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.mockito.InOrder;
 import org.mockito.MockedConstruction;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 import tools.jackson.databind.JsonNode;
@@ -22,6 +23,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Answers.RETURNS_SELF;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mockConstruction;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.withSettings;
@@ -124,6 +126,28 @@ class SharedPostgresMigrationHarnessContractTest {
             verify(owned).start();
             verify(owned).stop();
             assertThat(sharedServerStartCount()).isEqualTo(startsBefore);
+        }
+    }
+
+    @Test
+    @DisplayName("공용 서버는 autovacuum 없이 기동해 NOWAIT migration 이 백그라운드 잠금과 경합하지 않는다")
+    void sharedServerStartsWithoutAutovacuumSoNowaitMigrationsCannotRaceIt() throws Exception {
+        // 실제 서버를 띄우지 않도록 start 를 실패시킨다 — 기동 횟수와 종료 훅을 건드리지 않는다.
+        RuntimeException startFailure = new IllegalStateException("synthetic container start failure");
+        var start = SharedPostgresMigrationTestSupport.class.getDeclaredMethod("startSharedServer");
+        start.setAccessible(true);
+
+        try (MockedConstruction<PostgreSQLContainer> construction = mockConstruction(
+                PostgreSQLContainer.class, withSettings().defaultAnswer(RETURNS_SELF),
+                (container, context) -> doThrow(startFailure).when(container).start())) {
+            assertThrows(InvocationTargetException.class, () -> start.invoke(null));
+
+            PostgreSQLContainer owned = construction.constructed().getFirst();
+            // autovacuum 이 막 시드된 테이블을 잡은 몇 ms 사이 LOCK ... NOWAIT 가 오면 55P03 으로 실패한다
+            // (2026-09-26~10-19 CI 첫 시도 잠금 실패 17건). 기동 인자는 start 전에 정해져야 한다.
+            InOrder order = inOrder(owned);
+            order.verify(owned).withCommand("postgres", "-c", "fsync=off", "-c", "autovacuum=off");
+            order.verify(owned).start();
         }
     }
 
