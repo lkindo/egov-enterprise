@@ -17,7 +17,8 @@
 
 Gradle 플러그인은 별도 classpath를 사용한다. `dependencies`의 compile/runtime/test 결과에
 없어도 `./gradlew buildEnvironment`에서 취약 라이브러리가 해석될 수 있다. 루트 `buildscript`
-constraints는 이 경로의 HttpComponents 패치를 담당하며, 애플리케이션의 BOM override와 별개다.
+constraints는 이 경로의 전이 패치 하한을 담당하며, 애플리케이션의 BOM override와 별개다. 대상과
+제거 조건은 [루트 build.gradle](../../build.gradle)의 각 항목 주석이 정본이다.
 플러그인을 올리거나 constraints를 제거할 때 두 경로를 모두 재검증한다.
 
 PIT의 Launcher 자동 탐색도 임시 configuration을 해석한다. 현재는 Launcher를 공통

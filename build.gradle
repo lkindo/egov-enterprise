@@ -13,6 +13,9 @@ buildscript {
             classpath('com.fasterxml.jackson.core:jackson-databind:2.22.3')
             // 같은 권고의 3.x 라인(<3.1.6). Boot Gradle 플러그인 4.1.1 이 3.1.5 를 가져온다 — 플러그인 상향 때 제거.
             classpath('tools.jackson.core:jackson-databind:3.2.3')
+            // Dependency-Check 13.0.0 이 jsoup 1.23.1 을 가져온다(GHSA-65r4-943x-97jj, <1.23.2).
+            // 2026-10-21 추가, 플러그인이 1.23.2 이상을 가져오면 제거.
+            classpath('org.jsoup:jsoup:1.23.2')
         }
     }
 }
