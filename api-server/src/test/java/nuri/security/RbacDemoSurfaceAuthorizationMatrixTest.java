@@ -2,6 +2,8 @@ package nuri.security;
 
 import java.util.List;
 import java.util.stream.Stream;
+import nuri.business.domain.user.entity.User;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.foundation.security.iam.CustomUserDetailsService;
 import org.junit.jupiter.api.Tag;
@@ -57,6 +59,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class RbacDemoSurfaceAuthorizationMatrixTest {
     @Autowired private MockMvc mockMvc;
     @Autowired private ObjectMapper objectMapper;
+    @Autowired private UserRepository userRepository;
     @MockitoBean private CustomUserDetailsService customUserDetailsService;
     @MockitoBean private JwtTokenProvider jwtTokenProvider;
     /**
@@ -120,6 +123,12 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
     @MethodSource("managementSurfaces")
     @Transactional
     void exactManagementGrantsIndependentlyAllowRealHttpCrud(ManagedSurface surface) throws Exception {
+        if (surface.prefix().equals("REWARD")) {
+            // [2026-10-20] 포상 수상자는 있는 사용 중 계정이어야 한다(아니면 400). 이 H2 스키마는 엔티티로 만들어 비어 있어
+            //   RbacAuthorizationMatrixTest 의 로그인 정책 시험처럼 실제 사용자 행을 둔다.
+            userRepository.saveAndFlush(User.builder().esntlId("USR_RBAC_AWARDEE").userId("rbac_awardee")
+                    .userNm("RBAC awardee fixture").pswd("unused-test-hash").build());
+        }
         var creation = mockMvc.perform(post(surface.path())
                         .with(user(RbacAuthorizationMatrixTest.explicit("http_creator", List.of("CONTENT_OPERATORS"),
                                 List.of(surface.prefix() + "_CREATE"))))
@@ -188,7 +197,7 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
                         """, "/data", ""),
                 new ManagedSurface("/api/v1/admin/operation/rewards", "REWARD", "REWARD_READ", "rwardNm",
                         """
-                        {"rwardNm":"%s","rwardwnrId":"rbac_recipient","rwardCode":"TEST",
+                        {"rwardNm":"%s","rwardwnrId":"USR_RBAC_AWARDEE","rwardCode":"TEST",
                          "rwardDe":"20261001","pblenCn":"RBAC fixture"}
                         """, "/data/rwrdSn", ""),
                 new ManagedSurface("/api/v1/help/hpcm", "HELP", "HELP_READ", "hlpDfn",
