@@ -12,6 +12,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { GENERATORS } from './merge-main-regenerate.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const hookPath = path.join(repoRoot, '.githooks', 'pre-push');
@@ -330,14 +331,35 @@ const PRE_PUSH_SOURCE_ORDER = [
   'gradlew compileJava compileTestJava -q',
   'npx tsc --noEmit',
   'npx tsc -p tsconfig.e2e.json --noEmit',
-  'pnpm run codegen:verify',
-  'pnpm run codegen:verify:zod',
   'pnpm run lint',
   'pnpm run test:form-validation',
   CONTRACTS,
   'npx vitest run src/__tests__',
   'gradlew :api-server:harnessTest -q',
 ];
+
+// 계약 드리프트(api-docs.json ↔ 생성 타입·zod·operations)는 맨 앞의 regen --check 가 본다. 그 생성 계약 검사는 프런트
+// codegen:verify·codegen:verify:zod 와 같은 스크립트·인자라, 프런트 단계에서 다시 돌리면 한 push 안에서 같은 명령·입력이 두 번 돈다.
+// 그 전제(같은 검증기)와 훅이 계약 드리프트를 한 번만 보는지를 함께 고정한다. 검사기가 갈라지면 이 시험이 붉어 중복 제거를 다시 판단한다.
+test('pre-push checks contract drift once, through the regen check that runs the frontend codegen verifier', () => {
+  const sync = GENERATORS.find(generator => generator.id === 'sync-contract');
+  assert.deepEqual(sync.check, [['node', ['scripts/verify-generated-contracts.mjs', 'api']], ['node', ['scripts/verify-generated-contracts.mjs', 'zod']]],
+    'the regen check must run the contract verifier for both api and zod');
+  const scripts = JSON.parse(readFileSync(path.join(repoRoot, 'frontend', 'package.json'), 'utf8')).scripts;
+  assert.equal(scripts['codegen:verify'], 'node ../scripts/verify-generated-contracts.mjs api');
+  assert.equal(scripts['codegen:verify:zod'], 'node ../scripts/verify-generated-contracts.mjs zod');
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const drift = command => runHook(input, hookSource, { files: ['frontend/src/example.ts'], failCommand: command });
+  const commands = runHook(input, hookSource, { files: ['frontend/src/example.ts'] }).commands;
+  assert.deepEqual(commands.filter(command => command === REGEN_CHECK || /codegen:verify/.test(command)), [REGEN_CHECK]);
+  // 낡은 생성 계약은 regen --check 에서 멈춘다(그 뒤 아무것도 돌지 않는다).
+  assert.deepEqual(drift(REGEN_CHECK).commands, [REGEN_CHECK]);
+  assert.notEqual(drift(REGEN_CHECK).status, 0);
+  // 프런트 단계에 다시 넣으면 같은 검사가 두 번 돈다 — 위 단언과 PRE_PUSH_SOURCE_ORDER 가 그것을 잡는다(red 재현).
+  const doubled = hookSource.replace(/(\r?\n)( {2}# ESLint error는)/u, '$1  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) || exit 1$1$2');
+  assert.notEqual(doubled, hookSource);
+  assert.ok(runHook(input, doubled, { files: ['frontend/src/example.ts'] }).commands.includes('pnpm run codegen:verify'));
+});
 
 test('pre-push runs static checks before the operational contracts and stops on their failure', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
