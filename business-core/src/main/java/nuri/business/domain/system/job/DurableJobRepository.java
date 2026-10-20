@@ -16,6 +16,9 @@ import org.springframework.data.repository.query.Param;
 public interface DurableJobRepository extends JpaRepository<DurableJob, BigInteger> {
     Optional<DurableJob> findByJobMngNo(String key);
 
+    /** 그 처리 상태인 작업 수 — 관리자 홈의 운영 신호(OperationalSignalService)가 FAILED 를 센다. 본문·식별자는 읽지 않는다. */
+    long countByPrcsSttsNm(String prcsSttsNm);
+
     @Query(value = "SELECT * FROM tb_sys_job WHERE prcs_stts_nm IN ('PENDING','RETRY','RUNNING') "
             + "AND job_prnmnt_dt <= :now AND job_se_nm IN (:types) "
             + "ORDER BY job_prnmnt_dt,job_sn LIMIT 1 FOR UPDATE SKIP LOCKED", nativeQuery = true)

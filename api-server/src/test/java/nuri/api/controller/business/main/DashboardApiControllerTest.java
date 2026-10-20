@@ -2,8 +2,6 @@ package nuri.api.controller.business.main;
 
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.BoardDashboardProvider;
-import nuri.business.service.informalsanction.InformalSanctionService;
-import nuri.business.service.informalsanction.InformalSanctionDashboardProvider;
 import org.springframework.context.annotation.Import;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
@@ -30,15 +28,12 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 // board(할 일/공지)도 BoardDashboardProvider 로 역전됐으므로 함께 import 해야 taskList/notiList 가 채워진다.
 // BoardIdProperties 는 provider 가 소비하는 게시판 ID 설정 — 슬라이스에 nuri.boards.* 미설정이므로
 // 기본값(=종전 리터럴)이 쓰이고, 아래 BBSMSTR_* 리터럴 stub 매칭이 그 불변을 그대로 검증한다.
-@Import({InformalSanctionDashboardProvider.class, BoardDashboardProvider.class,
-        nuri.business.core.config.BoardIdProperties.class})
+// [2026-10-20] 결재 대기 수 공급자는 걷었다 — 읽는 화면이 없었고, 업무 홈의 결재 대기 카드는 결재 API 로 센다.
+@Import({BoardDashboardProvider.class, nuri.business.core.config.BoardIdProperties.class})
 class DashboardApiControllerTest extends ControllerTestSupport {
 
     @MockitoBean
     private BoardService boardService;
-
-    @MockitoBean
-    private InformalSanctionService approvalService;
 
     @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
@@ -57,7 +52,6 @@ class DashboardApiControllerTest extends ControllerTestSupport {
     void getDashboardData_success() throws Exception {
         // given
         when(boardService.getBoardPosts(anyString(), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
-        when(approvalService.getPendingApprovalCount(anyString())).thenReturn(0L);
 
         // when & then
         mockMvc.perform(get("/api/v1/dashboard"))
@@ -66,7 +60,8 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.taskList").isArray())
                 .andExpect(jsonPath("$.data.taskListTotal").value(0))
                 .andExpect(jsonPath("$.data.notiListTotal").value(0))
-                .andExpect(jsonPath("$.data.pendingApprovalCount").value(0));
+                // [2026-10-20] 결재 대기 수는 읽는 화면이 없어 계약에서 걷었다 — 결재 화면이 자기 API 로 센다.
+                .andExpect(jsonPath("$.data.pendingApprovalCount").doesNotExist());
     }
 
     @Test
@@ -78,8 +73,6 @@ class DashboardApiControllerTest extends ControllerTestSupport {
         when(boardService.getBoardPosts(eq("BBSMSTR_CCCCCCCCCCCC"), any())).thenThrow(new RuntimeException("Task DB Down"));
         // When notice board service works
         when(boardService.getBoardPosts(eq("BBSMSTR_AAAAAAAAAAAA"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
-        // When pending-approval query fails
-        when(approvalService.getPendingApprovalCount(anyString())).thenThrow(new RuntimeException("Approval API Error"));
 
         // when & then
         mockMvc.perform(get("/api/v1/dashboard"))
@@ -88,12 +81,9 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.taskList").isEmpty())
                 // [2026-09-26 DIP V1] 목록 조회 실패는 "글 없음(0)" 이 아니다 — 전체 글 수는 null 로 싣는다.
                 .andExpect(jsonPath("$.data.taskListTotal").value(nullValue()))
-                .andExpect(jsonPath("$.data.notiListTotal").value(0))
-                // [2026-09-15 DEC-OPS-100] 조회 실패는 0건이 아니다. 키는 싣되 값은 null(셀 수 없음)이다.
-                .andExpect(jsonPath("$.data.pendingApprovalCount").value(nullValue()));
-        
+                .andExpect(jsonPath("$.data.notiListTotal").value(0));
+
         verify(boardService, times(2)).getBoardPosts(anyString(), any());
-        verify(approvalService).getPendingApprovalCount(anyString());
     }
 
     @Test
@@ -102,7 +92,6 @@ class DashboardApiControllerTest extends ControllerTestSupport {
     void getDashboardData_totalsAreBoardTotalsNotListLength() throws Exception {
         when(boardService.getBoardPosts(anyString(), any())).thenReturn(new PageImpl<>(
                 Collections.emptyList(), org.springframework.data.domain.PageRequest.of(0, 5), 37));
-        when(approvalService.getPendingApprovalCount(anyString())).thenReturn(0L);
 
         mockMvc.perform(get("/api/v1/dashboard"))
                 .andExpect(status().isOk())

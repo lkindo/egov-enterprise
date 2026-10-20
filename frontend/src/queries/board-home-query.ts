@@ -13,7 +13,7 @@ import { getDashboardDataOperation } from '@/types/generated-operations';
  * - 권한 판정 403 만 '이 홈에서 게시판을 보지 않는다'(null)다. 그 밖의 실패는 던진다 — 서버에서는 라우트 오류 경계로 가고
  *   0건 홈으로 위장하지 않는다.
  * - 게시판 전체 글 수 null 은 조회 실패(또는 게시판 없음)이고 0 으로 바꾸지 않는다.
- * - 대시보드 응답의 결재 대기 수는 읽지 않는다 — 결재 대기 카드는 결재 기능이 자기 API 로 센다(approval-home-query.ts).
+ * - 결재 대기 수는 대시보드 응답에 없다(2026-10-20 계약에서 걷었다) — 결재 대기 카드는 결재 기능이 자기 API 로 센다(approval-home-query.ts).
  */
 type DashboardItem = components['schemas']['BoardDto'] & {
   id?: unknown;

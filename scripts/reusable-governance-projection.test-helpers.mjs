@@ -226,8 +226,9 @@ export function registerProfileProjectionTests(shard) {
         const home = readJson(output, REVIEW_MANIFEST_PATHS.visibleTerms).pilotCensus.find(row => row.id === 'content-user-home');
         assert.ok(home, 'the retained home pilot must continue to check remaining source');
         assert.deepEqual(home.findings, upstreamReviews.visibleTerms.pilotCensus.find(row => row.id === home.id).findings);
-        // 업무 홈 문구 증거: core 셸 셋(page·셸·최근 활동) + 게시판 조각 셋·실시간 둘(collaboration) + 결재 대기 카드(결재 기능 — demo·approval, Phase 2 9단계).
-        assert.equal(home.sources.length, { core: 3, custom: 3, collaboration: 8, demo: 9, survey: 3, approval: 4 }[profileName]);
+        // 업무 홈 문구 증거: core 넷(page·셸·요약 카드 틀·부서 업무 카드) + 게시판 조각 셋·실시간 둘(collaboration) + 결재 대기 카드(결재 기능 —
+        //   demo·approval, Phase 2 9단계) + 메모 보고·일정·설문 카드(각 기능 — demo, 설문은 survey 도, 2026-10-20).
+        assert.equal(home.sources.length, { core: 4, custom: 4, collaboration: 9, demo: 13, survey: 5, approval: 5 }[profileName]);
         // Upstream owner decisions reopen as awaiting input in every generated profile (ADR-0018).
         const isDecision = finding => finding.status === 'accepted-by-owner';
         assert.ok(upstreamReviews.visibleTerms.pilotCensus.flatMap(row => row.findings ?? []).some(isDecision),

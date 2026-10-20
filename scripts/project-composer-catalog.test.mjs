@@ -593,7 +593,7 @@ test('every computed Java port connection is an integration or a registration-on
     'core>board (AttachmentSourceContributor)', 'core>board (DashboardItemProvider)', 'core>board (DataUsageStatisticsContributor)',
     'core>board (LoginIdReferenceContributor)',
     'core>board (PostStatisticsContributor)', 'core>comment (LoginIdReferenceContributor)',
-    'core>community (CommunityBoardAccessPort)', 'core>informalsanction (DashboardItemProvider)',
+    'core>community (CommunityBoardAccessPort)',
     'core>mail (AttachmentSourceContributor)', 'core>mail (DurableWorkHandler)', 'core>mail (LoginIdReferenceContributor)',
     'core>memoreport (AttachmentSourceContributor)', 'core>memoreport (LoginIdReferenceContributor)',
     'core>note (AttachmentSourceContributor)', 'core>note (LoginIdReferenceContributor)',
@@ -602,7 +602,7 @@ test('every computed Java port connection is an integration or a registration-on
     'core>reward (AttachmentSourceContributor)', 'core>reward (LoginIdReferenceContributor)',
     'core>schedule (AttachmentSourceContributor)', 'core>schedule (LoginIdReferenceContributor)', 'core>scrap (LoginIdReferenceContributor)',
     'core>sms (DurableWorkHandler)', 'core>survey (LoginIdReferenceContributor)', 'dashboard>board (PostStatisticsContributor)',
-    'dashboard>notification (PendingAlertCountContributor)', 'template>board (TemplateReferenceContributor)', 'template>community (TemplateReferenceContributor)',
+    'template>board (TemplateReferenceContributor)', 'template>community (TemplateReferenceContributor)',
   ]);
   // 예외 객체가 필드로 쓰는 ErrorCode 는 빈의 주입이 아니라 연결이 아니다.
   assert.ok(!keys.some(key => key.includes('ErrorCode')));
@@ -611,10 +611,10 @@ test('every computed Java port connection is an integration or a registration-on
   assert.deepEqual([...declared].sort(), ['board>community (CommunityBoardAccessPort)', 'community>template (TemplateAssignmentPolicy)',
     'dashboard>board (PostStatisticsContributor)']);
   const canDegrade = degradationPredicate(catalog.capabilities, catalog.presets);
-  // 실시간 대시보드는 알림을 요구한다(화면 의존). 늘 함께 있는 쌍이라 분류하지 않는다.
-  assert.deepEqual(ports.connections.filter(row => !canDegrade(row.from, row.to)).map(portKey), ['dashboard>notification (PendingAlertCountContributor)']);
-  assert.deepEqual(registrationOnlyPorts.map(portKey).sort(),
-    keys.filter(key => !declared.has(key) && key !== 'dashboard>notification (PendingAlertCountContributor)'));
+  // 늘 함께 있는 쌍(요구 폐포 안이고 그 기능을 담은 시작 구성이 모두 상대도 담는 쌍)은 분류하지 않는다. 지금은 그런 포트 연결이 없다 —
+  // [2026-10-20] 실시간 대시보드 → 알림(전 사용자 미읽음 수 포트)을 걷어 하나 남은 쌍이 사라졌다.
+  assert.deepEqual(ports.connections.filter(row => !canDegrade(row.from, row.to)).map(portKey), []);
+  assert.deepEqual(registrationOnlyPorts.map(portKey).sort(), keys.filter(key => !declared.has(key)));
   for (const row of registrationOnlyPorts) assert.match(row.reason, /^[^A-Za-z]+\.$/, portKey(row));
 });
 
@@ -637,9 +637,10 @@ test('an unclassified, doubly classified, stale or never-degrading port connecti
   }
   const twice = [...registrationOnlyPorts, { from: 'board', to: 'community', port: 'CommunityBoardAccessPort', reason: '정리합니다.' }];
   assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: twice }), /port connection classified twice: board>community \(CommunityBoardAccessPort\)/);
-  const never = [...registrationOnlyPorts, { from: 'dashboard', to: 'notification', port: 'PendingAlertCountContributor', reason: '정리합니다.' }];
-  assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: never }),
-    /registration-only port connection can never degrade: dashboard>notification \(PendingAlertCountContributor\)/);
+  // 늘 함께 있는 쌍의 등록은 거부한다. 원본에는 그런 포트 연결이 없어 저하 술어를 한 쌍만 거짓으로 바꿔 증명한다.
+  const neverDegrades = (from, to) => !(from === 'core' && to === 'scrap') && base.canDegrade(from, to);
+  assert.throws(() => resolveIntegrations({ ...base, canDegrade: neverDegrades, registrationOnlyPorts: registrationOnlyPorts }),
+    /registration-only port connection can never degrade: core>scrap \(LoginIdReferenceContributor\)/);
   const stale = [...registrationOnlyPorts, { from: 'core', to: 'survey', port: 'AttachmentSourceContributor', reason: '정리합니다.' }];
   assert.throws(() => resolveIntegrations({ ...base, registrationOnlyPorts: stale }),
     /registration-only port connection has no implementation and injection: core>survey \(AttachmentSourceContributor\)/);

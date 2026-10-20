@@ -271,7 +271,9 @@ const CORE_SURVIVORS = [
   'frontend/src/app/UnifiedDashboardClient.tsx',
   'frontend/src/app/home-data-boundary.tsx',
   'frontend/src/app/home-access.ts',
-  'frontend/src/app/components/dashboard/ActivityFeed.tsx',
+  // [2026-10-20] 셸이 직접 그리는 core 카드(부서 업무)와 요약 카드 공용 틀 — 기능 코드를 import 하면 core 투영에서 연쇄로 사라진다.
+  'frontend/src/app/components/dashboard/DeptJobHomeCard.tsx',
+  'frontend/src/app/components/dashboard/HomeSummaryCard.tsx',
   'frontend/src/extensions/generated-home-sections.ts',
   'frontend/src/lib/auth/server-user.ts',
 ];

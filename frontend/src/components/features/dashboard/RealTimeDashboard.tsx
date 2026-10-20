@@ -1,39 +1,18 @@
 'use client';
 
 import { useEffect, useState, useCallback, type ReactNode } from 'react';
-import type { StompSubscription } from '@stomp/stompjs';
 import { useWebSocket } from '@/contexts/websocket-context';
-import { normalizeNotification, type Notification as ServerNotification } from '@/lib/hooks/use-notifications';
-import { Bell, TrendingUp, Users, Activity, AlertCircle } from 'lucide-react';
+import { TrendingUp, Users, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toDisplayDateTime } from '@/lib/format-date';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-
-export interface RealTimeNotification {
-  id: string;
-  type: NonNullable<ServerNotification['type']>;
-  title: string;
-  message: string;
-  timestamp: string;
-  read: boolean;
-}
+import { Card, CardContent } from '@/components/ui/card';
 
 export interface RealTimeStats {
   activeUsers: number;
   visitsPerMinute: number;
   newPosts: number;
-  alerts: number;
   newPostsAvailable: boolean;
-  alertsAvailable: boolean;
   /** 그 집계 포트 구현이 이 구성에 있는지(Phase 2 9단계). false 면 그 기능이 빠진 구성이라 카드를 그리지 않는다. */
   newPostsProvided: boolean;
-  alertsProvided: boolean;
-}
-
-interface RealTimeDashboardProps {
-  onNotification?: (notification: RealTimeNotification) => void;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -44,22 +23,21 @@ function parseStats(body: string): RealTimeStats | null {
   try {
     const value: unknown = JSON.parse(body);
     if (!isRecord(value)) return null;
-    const keys = ['activeUsers', 'visitsPerMinute', 'newPosts', 'alerts'] as const;
+    const keys = ['activeUsers', 'visitsPerMinute', 'newPosts'] as const;
     if (!keys.every((key) => typeof value[key] === 'number' && Number.isFinite(value[key]) && value[key] >= 0)) {
       return null;
     }
-    const flagKeys = ['newPostsAvailable', 'alertsAvailable', 'newPostsProvided', 'alertsProvided'] as const;
+    const flagKeys = ['newPostsAvailable', 'newPostsProvided'] as const;
     if (flagKeys.some((key) => value[key] !== undefined && typeof value[key] !== 'boolean')) {
       return null;
     }
-    // 기존 서버의 네 숫자 프레임도 읽는다. 새 서버는 조회 실패를 명시적으로 false로 보낸다.
+    // 기존 서버의 숫자만 있는 프레임도 읽는다. 새 서버는 조회 실패를 명시적으로 false로 보낸다.
     // provided 키가 없는 프레임(구서버)은 집계 구현이 있다고 읽는다 — 종전 화면 그대로다.
+    // [2026-10-20] 전 사용자의 읽지 않은 알림 합계(alerts·alertsAvailable·alertsProvided)는 읽지 않는다 — 그 카드를 걷었다.
     return {
       ...Object.fromEntries(keys.map((key) => [key, value[key]])),
       newPostsAvailable: value.newPostsAvailable !== false,
-      alertsAvailable: value.alertsAvailable !== false,
       newPostsProvided: value.newPostsProvided !== false,
-      alertsProvided: value.alertsProvided !== false,
     } as RealTimeStats;
   } catch {
     return null;
@@ -67,53 +45,21 @@ function parseStats(body: string): RealTimeStats | null {
 }
 
 /**
- * 개인 큐의 알림 프레임을 해석한다.
+ * 업무 홈 '실시간 상태' 구역의 본문 — 통계 방송(/topic/dashboard/stats) 하나만 구독한다.
  *
- * <p>[2026-09-25] 종전에는 서버가 보내지 않는 형태(`id`·`title`·`message`·`read`·`type: USER|POST…`)를
- * 요구해, 서버가 보내는 NotificationDto(`notiSn`·`notiTtlNm`·`notiCn`·`notiDt`·`readYn`)를 전부 버렸다.
- * 패널은 늘 '새로운 알림이 없습니다' 였다. 같은 큐를 읽는 헤더 알림함의 정규화를 그대로 쓴다.
+ * [2026-10-20 DEC-OPS-153 원칙] 종전에는 이 구역이 개인 알림 큐(/user/queue/notifications)를 머리글 알림함과 따로 한 번 더 구독하고,
+ * 받은 알림을 브라우저 알림으로 띄우며, 그 목록을 여는 종 단추를 따로 두었다. 같은 알림이 두 곳에 두 번 들어오고 브라우저 알림까지
+ * 겹쳤다. 실시간 구독은 머리글 한 곳(use-notifications.ts)만 둔다 — 내 알림은 머리글 알림함이 보인다. 모든 사용자의 읽지 않은 알림
+ * 합계 카드('전체 미읽음 알림')도 걷었다: 보는 사람이 처리할 수 있는 숫자가 아니었고 서버가 5초마다 전수 COUNT 를 돌렸다.
  */
-function parseNotification(body: string): RealTimeNotification | null {
-  try {
-    const notification = normalizeNotification(JSON.parse(body));
-    if (!notification) return null;
-    return {
-      id: String(notification.notiSn),
-      type: notification.type ?? 'ACTIVITY',
-      title: notification.notiTtlNm,
-      message: notification.notiCn,
-      timestamp: notification.notiDt,
-      read: notification.readYn === 'Y',
-    };
-  } catch {
-    return null;
-  }
-}
-
-export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
+export function RealTimeDashboard() {
   const { client, isConnected } = useWebSocket();
   const [stats, setStats] = useState<RealTimeStats | null>(null);
-  const [notifications, setNotifications] = useState<RealTimeNotification[]>([]);
-  const [showNotifications, setShowNotifications] = useState(false);
 
   // 실시간 통계 업데이트
   const handleStatsUpdate = useCallback((data: RealTimeStats) => {
     setStats(data);
   }, []);
-
-  // 실시간 알림 처리
-  const handleNotification = useCallback((notification: RealTimeNotification) => {
-    setNotifications(prev => [notification, ...prev].slice(0, 50)); // 최대 50 개 보관
-    onNotification?.(notification);
-
-    // 브라우저 알림
-    if ('Notification' in window && Notification.permission === 'granted') {
-      new Notification(notification.title, {
-        body: notification.message,
-        icon: '/favicon.ico'
-      });
-    }
-  }, [onNotification]);
 
   // WebSocket 구독
   useEffect(() => {
@@ -125,34 +71,15 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
       if (data) handleStatsUpdate(data);
     });
 
-    // 사용자별 개인 알림 구독 (Private)
-    // 연결 Provider는 인증 사용자가 있을 때만 Client를 활성화하므로 클라이언트 제공 ID가 필요 없다.
-    const userSubscription: StompSubscription = client.subscribe('/user/queue/notifications', (message) => {
-      const notification = parseNotification(message.body);
-      if (notification) handleNotification(notification);
-    });
-
     return () => {
       statsSubscription.unsubscribe();
-      userSubscription.unsubscribe();
     };
-  }, [client, isConnected, handleStatsUpdate, handleNotification]);
+  }, [client, isConnected, handleStatsUpdate]);
 
-  const toggleNotifications = useCallback(() => {
-    const opening = !showNotifications;
-    setShowNotifications(opening);
-    // 권한 프롬프트는 사용자 제스처 없이 페이지 진입 즉시 띄우지 않는다.
-    if (opening && 'Notification' in window && Notification.permission === 'default') {
-      void Notification.requestPermission().catch(() => undefined);
-    }
-  }, [showNotifications]);
-
-  const unreadCount = notifications.filter(n => !n.read).length;
-  // [Phase 2 9단계] 그 집계를 하는 기능(게시판·알림)이 빠진 구성이면 카드를 그리지 않는다 — 세지 않는 값을 '0 · 오늘' 로 약속하지
-  //   않는다. 첫 프레임 전에는 알 수 없으므로 종전처럼 '—' 카드를 둔다(원본 제품은 늘 두 구현이 있어 화면이 같다).
+  // [Phase 2 9단계] 그 집계를 하는 기능(게시판)이 빠진 구성이면 카드를 그리지 않는다 — 세지 않는 값을 '0 · 오늘' 로 약속하지
+  //   않는다. 첫 프레임 전에는 알 수 없으므로 종전처럼 '—' 카드를 둔다(원본 제품은 늘 구현이 있어 화면이 같다).
   const showNewPosts = !stats || stats.newPostsProvided;
-  const showAlerts = !stats || stats.alertsProvided;
-  const statColumns = STAT_COLUMNS[2 + Number(showNewPosts) + Number(showAlerts)];
+  const statColumns = STAT_COLUMNS[2 + Number(showNewPosts)];
 
   return (
     <div className="space-y-4">
@@ -160,87 +87,17 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
           [2026-09-25] 종전에는 한 문구가 연결 상태와 집계 가용 여부를 함께 말해, 연결이 멀쩡한데(초록 점)
           '일부 통계 확인 불가' 가 보였고 그 전환이 알림 영역(live region)으로 읽혔다. 연결은 이 문구가,
           집계 실패는 해당 카드가 말한다. 대기 문구는 연결됐는데 첫 통계가 아직 없을 때만 덧붙인다. */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className={cn(
-            "w-2 h-2 rounded-full",
-            isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
-          )} />
-          <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
-            {isConnected ? '실시간 연결됨' : '연결 끊김'}
-          </span>
-          {isConnected && !stats && (
-            <span className="text-sm text-muted-foreground">· 통계 수신 대기 중</span>
-          )}
-        </div>
-
-        {/* 알림 버튼 */}
-        <div className="relative">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={toggleNotifications}
-            className="relative"
-            data-testid="notif-bell"
-            aria-label={`알림 ${showNotifications ? '닫기' : '열기'}${unreadCount ? `, 읽지 않음 ${unreadCount}개` : ''}`}
-            aria-expanded={showNotifications}
-            aria-controls="realtime-notification-panel"
-          >
-            <Bell size={18} />
-            {unreadCount > 0 && (
-              <Badge
-                variant="destructive"
-                className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-sm"
-              >
-                {unreadCount}
-              </Badge>
-            )}
-          </Button>
-
-          {/* 알림 드롭다운 */}
-          {showNotifications && (
-            <Card
-              id="realtime-notification-panel"
-              role="region"
-              aria-label="실시간 알림 목록"
-              className="absolute right-0 top-12 w-80 shadow-lg z-50"
-            >
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-bold">실시간 알림</CardTitle>
-              </CardHeader>
-              <CardContent className="max-h-96 overflow-y-auto">
-                {notifications.length === 0 ? (
-                  <p className="text-sm text-muted-foreground text-center py-4">
-                    새로운 알림이 없습니다.
-                  </p>
-                ) : (
-                  <div className="space-y-2">
-                    {notifications.slice(0, 10).map((notification) => (
-                      <div
-                        key={notification.id}
-                        className={cn(
-                          "p-3 rounded-lg border text-sm space-y-1",
-                          !notification.read && "bg-primary/5 border-primary/20"
-                        )}
-                      >
-                        <div className="flex items-center gap-2">
-                          <NotificationIcon type={notification.type} />
-                          <span className="font-bold">{notification.title}</span>
-                        </div>
-                        <p className="text-muted-foreground">{notification.message}</p>
-                        <span className="text-xs text-muted-foreground">
-                          {/* [2026-09-08] toLocaleString 은 브라우저 로케일에 따라 '2026. 9. 8.' 처럼
-                              자릿수와 구분자가 달라진다. 시스템 표준 표기로 고정한다. */}
-                          {toDisplayDateTime(new Date(notification.timestamp))}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          )}
-        </div>
+      <div className="flex items-center gap-2">
+        <div className={cn(
+          "w-2 h-2 rounded-full",
+          isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
+        )} />
+        <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
+          {isConnected ? '실시간 연결됨' : '연결 끊김'}
+        </span>
+        {isConnected && !stats && (
+          <span className="text-sm text-muted-foreground">· 통계 수신 대기 중</span>
+        )}
       </div>
 
       {/* 실시간 통계 카드 */}
@@ -277,32 +134,18 @@ export function RealTimeDashboard({ onNotification }: RealTimeDashboardProps) {
             color="purple"
           />
         )}
-        {/* [2026-09-25] 서버는 모든 사용자의 읽지 않은 알림 합계(read_yn='N')를 방송한다. 종전 '알림' 제목과
-            빨간 강조는 내 알림처럼 읽혀, 벨의 내 미읽음 수와 다른 숫자가 급한 일처럼 보였다. 범위를 이름에 싣고
-            강조는 걷는다 — 보는 사람이 처리할 수 있는 숫자가 아니다. */}
-        {showAlerts && (
-          <RealTimeStatCard
-            title="전체 미읽음 알림"
-            value={stats?.alertsAvailable ? stats.alerts : null}
-            unavailableMessage={stats && !stats.alertsAvailable ? '알림 수 확인 불가' : undefined}
-            icon={<AlertCircle size={20} />}
-            trend="전체 사용자"
-            color="red"
-          />
-        )}
       </div>
     </div>
   );
 }
 
 /** 보이는 통계 카드 수 → 넓은 화면의 열 수(빈 열을 남기지 않는다). Tailwind 가 찾도록 클래스는 리터럴로 둔다. */
-const STAT_COLUMNS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3', 4: 'lg:grid-cols-4' };
+const STAT_COLUMNS: Record<number, string> = { 2: 'lg:grid-cols-2', 3: 'lg:grid-cols-3' };
 
 const statColorClasses = {
     blue: 'bg-hub-blue/10 text-hub-blue',
     green: 'bg-success/10 text-success-emphasis',
     purple: 'bg-hub-purple/10 text-hub-purple',
-    red: 'bg-destructive/10 text-destructive-emphasis'
 } as const;
 
 interface RealTimeStatCardProps {
@@ -339,15 +182,4 @@ function RealTimeStatCard({ title, description, value, icon, trend, unavailableM
       </CardContent>
     </Card>
   );
-}
-
-function NotificationIcon({ type }: { type: RealTimeNotification['type'] }) {
-  const icons: Record<RealTimeNotification['type'], ReactNode> = {
-    SECURITY: <AlertCircle size={14} className="text-destructive-emphasis" />,
-    SYSTEM: <Bell size={14} className="text-muted-foreground" />,
-    ACTIVITY: <Activity size={14} className="text-success-emphasis" />,
-    INFO: <Bell size={14} className="text-hub-blue" />,
-  };
-
-  return icons[type] || icons.SYSTEM;
 }

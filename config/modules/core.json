@@ -178,11 +178,6 @@
         "reason": "이 기능이 없으면 대시보드 응답에서 그 기능의 항목만 빠지고 다른 항목은 그대로입니다."
       },
       {
-        "to": "informalsanction",
-        "port": "DashboardItemProvider",
-        "reason": "이 기능이 없으면 대시보드 응답에서 그 기능의 항목만 빠지고 다른 항목은 그대로입니다."
-      },
-      {
         "to": "board",
         "port": "DataUsageStatisticsContributor",
         "reason": "게시판 기능이 없으면 자료 이용 통계에 셀 게시물이 없고, 그 통계를 보이던 탭도 함께 빠져 다른 통계는 그대로입니다."

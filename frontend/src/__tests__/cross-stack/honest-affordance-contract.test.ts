@@ -915,10 +915,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   it('대시보드 위젯 SPI 는 여전히 마이페이지 콘텐츠를 소비하지 않는다', () => {
     const providers = collectJavaSources(path.join(ROOT, 'business-app', 'src', 'main'))
       .filter((source) => source.includes('DashboardItemProvider'));
-    // 구현체는 게시판·결재 기능에 있다. 투영으로 빠진 구현체만 빼고 남은 것은 모두 찾아야 한다.
+    // 구현체는 게시판 기능에 있다(결재 대기 수 공급자는 읽는 화면이 없어 2026-10-20 걷었다). 투영으로 빠진 구현체만 빼고
+    // 남은 것은 모두 찾아야 한다.
     const knownProviders = keepInProjection([
       'business-app/src/main/java/nuri/business/service/board/BoardDashboardProvider.java',
-      'business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionDashboardProvider.java',
     ], relative => path.join(ROOT, relative));
     expect(providers.length, 'DashboardItemProvider 구현체를 찾지 못했다 — 계약이 vacuous 하다')
       .toBeGreaterThanOrEqual(knownProviders.length);

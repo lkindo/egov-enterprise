@@ -20,7 +20,7 @@ class DashboardStatsEventListenerTest {
     void forwardsCountAvailabilityWithTheExistingNumericFields(boolean postsAvailable) {
         var messaging = mock(SimpMessageSendingOperations.class);
         var listener = new DashboardStatsEventListener(messaging);
-        var event = new DashboardStatsUpdatedEvent(7, 3, 2, 0, postsAvailable, !postsAvailable, !postsAvailable, postsAvailable);
+        var event = new DashboardStatsUpdatedEvent(7, 3, 2, postsAvailable, !postsAvailable);
 
         listener.handleDashboardStatsUpdated(event);
 
@@ -30,10 +30,9 @@ class DashboardStatsEventListenerTest {
                 "activeUsers", 7,
                 "visitsPerMinute", 3,
                 "newPosts", 2,
-                "alerts", 0,
                 "newPostsAvailable", postsAvailable,
-                "alertsAvailable", !postsAvailable,
-                "newPostsProvided", !postsAvailable,
-                "alertsProvided", postsAvailable));
+                "newPostsProvided", !postsAvailable));
+        // [2026-10-20] 전 사용자의 읽지 않은 알림 합계(alerts·alertsAvailable·alertsProvided)는 걷었다 — 정확한 맵 대조라 그 키가
+        //   다시 실리면 이 단언이 붉다.
     }
 }

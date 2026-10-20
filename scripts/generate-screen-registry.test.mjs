@@ -1036,13 +1036,17 @@ test('the source slot predicates are attributed item by item to the screens that
     'informalsanction/home-sections.ts approval-open APPROVAL_READ → /',
     'informalsanction/home-sections.ts approval-pending APPROVAL_READ → /',
     'informalsanction/notification-actions.ts approval-approve APPROVAL_APPROVE·APPROVAL_READ → layout',
+    // [2026-10-20] 업무 홈의 처리 대기 카드 — 메모 보고·일정·설문 기여(부서 업무 카드는 core 셸의 canPermission 리터럴이다).
+    'memoreport/home-sections.ts memo-reports-received MEMO_RPT_READ → /',
     'note/home-sections.ts unread-notes NOTE_READ → /',
     `note/hub-tabs-collaboration.ts MESSAGES NOTE_READ → ${collaboration}`,
     'notification/header-widgets.ts notification-bell NOTI_READ → layout',
     'promotion/home-sections.ts popup POPUP_READ → /',
     'promotion/home-sections.ts banner BANNER_READ → /',
+    'schedule/home-sections.ts schedule-today SCHEDULE_READ → /',
     `scrap/hub-tabs-collaboration.ts SCRAPS SCRAP_READ → ${collaboration}`,
     'scrap/post-actions.ts scrap SCRAP_CREATE → /admin/community/boards/detail',
+    'survey/home-sections.ts surveys-to-answer SURVEY_READ → /',
     'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats/board, /admin/stats/data-usage, '
       + '/admin/stats/screen, /admin/stats/user',
   ]);

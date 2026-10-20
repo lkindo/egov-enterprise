@@ -5,7 +5,7 @@
   "presentation": {
     "area": "participation",
     "order": 1,
-    "summary": "업무 홈 실시간 연결·오늘 게시글·전체 미읽음 알림"
+    "summary": "업무 홈 실시간 연결 수·오늘 게시글 수"
   },
   "backend": {
     "frontendOnly": false,
@@ -30,22 +30,9 @@
     "markerBlocks": [],
     "commonCodeGroups": []
   },
-  "dependsOn": [
-    {
-      "to": "notification",
-      "kind": "ui-import",
-      "reason": "실시간 상태 구역이 개인 알림 큐의 알림을 알림 기능의 정규화로 읽는다.",
-      "evidence": "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
-      "symbol": "normalizeNotification"
-    }
-  ],
+  "dependsOn": [],
   "foreignKeys": [],
-  "requires": [
-    {
-      "to": "notification",
-      "userReason": "업무 홈 실시간 상태 구역이 내 알림을 함께 보여 줍니다."
-    }
-  ],
+  "requires": [],
   "integrates": [
     {
       "to": "board",
@@ -64,7 +51,7 @@
     "contributions": [
       {
         "path": "frontend/src/extensions/dashboard/home-sections.ts",
-        "reason": "실시간 대시보드 기능이 없으면 업무 홈의 실시간 상태 구역만 사라지고 최근 활동 구역이 전체 폭을 씁니다."
+        "reason": "실시간 대시보드 기능이 없으면 업무 홈의 실시간 상태 구역만 사라지고 다른 구역은 그대로입니다."
       }
     ],
     "ports": []

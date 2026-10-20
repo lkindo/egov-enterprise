@@ -76,7 +76,6 @@
       "supportedActions": [
         "dismiss",
         "view-list",
-        "view-notifications",
         "view-stats"
       ],
       "profileOwners": [
@@ -103,27 +102,37 @@
           "id": "home.work-summary",
           "status": "partial",
           "candidateStatus": "live",
-          "dataSource": "dashboard-api+approvals-api",
+          "dataSource": "dashboard-api+approvals-api+memo-reports-api+schedules-api+surveys-api+dept-jobs-api",
           "actions": [
             "view-list"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
-          "visibleLabel": "업무게시판 최근 글·최근 공지사항·결재 대기",
+          "visibleLabel": "업무게시판 최근 글·최근 공지사항·결재 대기·읽지 않은 받은 보고·오늘 일정·참여할 설문·내 담당 업무",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/main/DashboardApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
             "frontend/src/app/UnifiedDashboardClient.tsx",
+            "frontend/src/app/__tests__/UnifiedDashboardClient.shell.test.tsx",
             "frontend/src/app/__tests__/WorkHome.equivalence.test.tsx",
+            "frontend/src/app/admin/operation/memo-reports/__tests__/memo-report-home-sections.test.tsx",
             "frontend/src/app/components/dashboard/ApprovalHome.tsx",
             "frontend/src/app/components/dashboard/BoardHome.tsx",
+            "frontend/src/app/components/dashboard/DeptJobHomeCard.tsx",
+            "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+            "frontend/src/app/components/dashboard/MemoReportHome.tsx",
+            "frontend/src/app/components/dashboard/ScheduleHome.tsx",
+            "frontend/src/app/components/dashboard/SurveyHome.tsx",
+            "frontend/src/app/components/dashboard/__tests__/DeptJobHomeCard.test.tsx",
             "frontend/src/app/home-data-boundary.tsx",
             "frontend/src/app/page.tsx",
+            "frontend/src/app/smart-toolkit/schedule/__tests__/schedule-home-sections.test.tsx",
+            "frontend/src/app/survey/__tests__/survey-home-sections.test.tsx",
             "frontend/src/queries/approval-home-query.ts",
             "frontend/src/queries/board-home-query.ts"
           ]
@@ -134,7 +143,6 @@
           "candidateStatus": "live",
           "dataSource": "dashboard-stats-websocket",
           "actions": [
-            "view-notifications",
             "view-stats"
           ],
           "unsupportedVisibleActions": [],
@@ -143,39 +151,17 @@
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/websocket/DashboardStatsEventListener.java",
             "api-server/src/main/java/nuri/config/websocket/WebSocketAuthorizationInterceptor.java",
             "api-server/src/test/java/nuri/config/websocket/WebSocketAuthorizationInterceptorTest.java",
             "business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java",
-            "business-app/src/main/java/nuri/business/service/notification/NotificationService.java",
-            "business-app/src/main/java/nuri/business/service/notification/dto/NotificationDto.java",
             "frontend/src/app/page.tsx",
             "frontend/src/components/features/dashboard/RealTimeDashboard.tsx",
             "frontend/src/components/features/dashboard/RealTimeHomeSection.tsx",
-            "frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx",
-            "frontend/src/lib/hooks/use-notifications.ts"
-          ]
-        },
-        {
-          "id": "home.activity-feed",
-          "status": "unavailable",
-          "dataSource": "none",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
-          "visibleLabel": "최근 활동",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "frontend/src/app/UnifiedDashboardClient.tsx",
-            "frontend/src/app/components/dashboard/ActivityFeed.tsx",
-            "frontend/src/app/page.tsx"
+            "frontend/src/components/features/dashboard/__tests__/RealTimeDashboard.test.tsx"
           ]
         },
         {
@@ -272,17 +258,19 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "등록 사용자·권한 그룹·보안 감사 이력",
+          "visibleLabel": "등록 사용자·권한 그룹·실패 요청 로그",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/UserApiController.java",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorApiController.java",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/SystemLogApiController.java",
             "frontend/src/app/admin/AdminDashboardClient.tsx",
+            "frontend/src/app/admin/__tests__/AdminDashboardClient.test.tsx",
+            "frontend/src/app/admin/admin-dashboard-queries.ts",
             "frontend/src/app/admin/page.tsx",
             "frontend/src/services/foundation/system/AuditAdminService.ts",
             "frontend/src/services/foundation/system/AuthorAdminService.ts",
@@ -293,7 +281,7 @@
           ]
         },
         {
-          "id": "admin.recent-audit-log",
+          "id": "admin.recent-failed-requests",
           "status": "partial",
           "candidateStatus": "live",
           "dataSource": "system-logs-api",
@@ -303,19 +291,49 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "최근 보안 감사 이력",
+          "visibleLabel": "최근 실패 요청",
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-20",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/SystemLogApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/log/SystemLogApiControllerTest.java",
             "frontend/src/app/admin/AdminDashboardClient.tsx",
+            "frontend/src/app/admin/__tests__/AdminDashboardClient.test.tsx",
             "frontend/src/app/admin/page.tsx",
             "frontend/src/services/foundation/system/AuditAdminService.ts",
             "frontend/src/services/foundation/system/__tests__/AuditAdminService.test.ts"
+          ]
+        },
+        {
+          "id": "admin.operational-signals",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "admin-operational-signals-api",
+          "actions": [
+            "refresh",
+            "view-stats"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "운영 신호",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-20",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/dashboard/AdminDashboardApiController.java",
+            "api-server/src/test/java/nuri/api/controller/foundation/controller/system/dashboard/AdminDashboardApiControllerTest.java",
+            "api-server/src/test/java/nuri/security/RbacAuthorizationMatrixTest.java",
+            "business-core/src/main/java/nuri/business/service/system/signal/OperationalSignalService.java",
+            "business-core/src/test/java/nuri/business/service/system/signal/OperationalSignalServiceTest.java",
+            "frontend/src/app/admin/AdminDashboardClient.tsx",
+            "frontend/src/app/admin/__tests__/AdminDashboardClient.test.tsx",
+            "frontend/src/app/admin/page.tsx",
+            "frontend/src/services/foundation/system/AdminDashboardService.ts"
           ]
         }
       ],

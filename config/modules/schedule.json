@@ -23,7 +23,8 @@
       "src/components/business/schedule",
       "src/services/business/schedule",
       "src/types/business/schedule.ts",
-      "src/extensions/schedule"
+      "src/extensions/schedule",
+      "src/app/components/dashboard/ScheduleHome.tsx"
     ],
     "frontendAny": [],
     "routes": [
@@ -49,6 +50,10 @@
       {
         "path": "frontend/src/extensions/schedule/shell-links.ts",
         "reason": "일정 기능이 없으면 나의 업무 탭 줄의 일정 탭만 사라지고 업무 관리 목록은 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/schedule/home-sections.ts",
+        "reason": "일정 기능이 없으면 업무 홈의 오늘 일정 카드만 사라지고 업무 홈은 그대로입니다."
       }
     ],
     "ports": []

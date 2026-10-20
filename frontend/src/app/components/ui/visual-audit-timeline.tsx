@@ -40,7 +40,9 @@ interface VisualAuditTimelineProps {
   title?: string;
 }
 
-export function VisualAuditTimeline({ logs, className, title = "보안 감사 이력" }: VisualAuditTimelineProps) {
+// [2026-10-20] 기본 제목은 원천을 말한다 — 유일한 소비자(관리자 홈)는 시스템 로그(tb_sys_log, 4xx 이상 실패 요청)를 넘기며, 그것은
+//   보안 감사가 아니다. 검색 입력의 이름도 제목을 따른다.
+export function VisualAuditTimeline({ logs, className, title = "시스템 로그" }: VisualAuditTimelineProps) {
   const [expandedLog, setExpandedLog] = useState<string | null>(logs?.[0]?.id || null);
   const [filter, setFilter] = useState<string>('');
 
@@ -92,7 +94,7 @@ export function VisualAuditTimeline({ logs, className, title = "보안 감사 �
             <input
               className="w-full h-[var(--control-h-sm)] bg-background border border-border rounded-md pl-9 pr-3 text-[length:var(--font-size-body)] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
               placeholder="검색.."
-              aria-label="감사 로그 검색"
+              aria-label={`${title} 검색`}
               value={filter}
               onChange={(e) => setFilter(e.target.value)}
             />

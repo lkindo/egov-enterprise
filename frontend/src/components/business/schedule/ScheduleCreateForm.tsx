@@ -123,9 +123,9 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
       // ⚠ [전체 치환] PUT /schedules/{schdlSn} 는 부분 수정이 아니다 — Schedule.updateAll 이
       //   10개 필드를 통째로 덮어쓰므로, 이 폼이 묻지 않는 필드를 빠뜨리면 null 로 지워진다.
       //   담당자(schdlPicId)는 서버가 기존 값으로 고정하고 첨부(atchFileSn)는 updateAll 대상이
-      //   아니지만, 아래 3개는 전달하지 않으면 사라진다. 특히 schdlImprtCd 는
-      //   /smart-toolkit/schedule/dept 가 'A' 로 저장하는 값이라, 같은 일정을 이 모달에서
-      //   수정하면 교차 화면 데이터 유실이 된다(ReportCreateForm 의 rptSeCd 왕복과 같은 계약).
+      //   아니지만, 아래 3개는 전달하지 않으면 사라진다. 특히 schdlImprtCd(일정 중요도)는
+      //   2026-10-20 전까지 /smart-toolkit/schedule/dept 가 'A' 로 저장했고 기존 행에 그 값이 남아 있어, 같은 일정을 이
+      //   모달에서 수정하면 교차 화면 데이터 유실이 된다(ReportCreateForm 의 rptSeCd 왕복과 같은 계약).
       schdlKndCd: initialData?.schdlKndCd ?? undefined,
       schdlImprtCd: initialData?.schdlImprtCd ?? undefined,
       reptSeCd: initialData?.reptSeCd ?? undefined,

@@ -31,13 +31,12 @@ describe('업무 홈 게시판 조회', () => {
       taskList: [{ pstSn: 2, pstTtl: '할일 테스트', useYn: 'Y', userId: 'admin' }],
       taskListTotal: 1,
       notiListTotal: 1,
-      pendingApprovalCount: 10,
     }));
 
     const result = (await loadBoardHome())!;
     expect(result.initialTaskList.map(task => task.title)).toEqual(['할일 테스트']);
     expect(result.initialNotiList.map(task => task.title)).toEqual(['공지사항 테스트']);
-    // 결재 대기 수는 결재 기능이 자기 API 로 센다 — 게시판 조회는 그 값을 싣지 않는다.
+    // 결재 대기 수는 결재 기능이 자기 API 로 센다 — 대시보드 응답에는 그 값이 없다(2026-10-20 계약에서 걷었다).
     expect(result).not.toHaveProperty('pendingApprovalCount');
     // 토큰은 API 클라이언트가 붙인다(서버에서는 쿠키에서).
     expect(client.getRaw).toHaveBeenCalledWith('dashboard', undefined);
@@ -69,7 +68,6 @@ describe('업무 홈 게시판 조회', () => {
     vi.mocked(client.getRaw).mockResolvedValue(success({
       notiList: [{ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41, pstTtl: '바로 열 공지' }],
       taskList: [{ pstSn: 42, pstTtl: '게시판 정보가 없는 자료' }], taskListTotal: 1, notiListTotal: 1,
-      pendingApprovalCount: 0,
     }));
     const result = (await loadBoardHome())!;
     expect(result.initialNotiList[0]).toMatchObject({ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41 });
@@ -77,7 +75,7 @@ describe('업무 홈 게시판 조회', () => {
     expect(result.initialTaskList[0]).not.toHaveProperty('pstSn');
   });
 
-  it('응답 계약(필수 pendingApprovalCount)을 어긴 응답을 받지 않는다', async () => {
+  it('응답 계약(필수 전체 글 수)을 어긴 응답을 받지 않는다', async () => {
     vi.mocked(client.getRaw).mockResolvedValue(success({ taskList: [], notiList: [] }));
 
     await expect(loadBoardHome()).rejects.toThrow('생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.');
@@ -89,7 +87,6 @@ describe('업무 홈 게시판 조회', () => {
       notiList: [],
       taskListTotal: 1,
       notiListTotal: 0,
-      pendingApprovalCount: 0,
     }));
 
     await expect(loadBoardHome()).rejects.toThrow('생성 API 응답에 허용되지 않은 필드가 있습니다.');
@@ -103,7 +100,6 @@ describe('업무 홈 게시판 조회', () => {
       taskList: [],
       taskListTotal: null,
       notiListTotal: 12,
-      pendingApprovalCount: 0,
     }));
 
     const result = (await loadBoardHome())!;

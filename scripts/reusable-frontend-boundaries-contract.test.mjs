@@ -647,7 +647,8 @@ function hubTabViolations(entries, label, { file, hub, hubs = hubViewKeys(), mod
 
 /** home-sections 의 배치(닫힌 목록). 업무 홈 셸이 그리는 자리만 둔다. */
 const HOME_PLACEMENTS = new Set(['overlay', 'actions', 'cards', 'main', 'status', 'bottom']);
-const HOME_SECTION_KEYS = new Set(['id', 'placement', 'order', 'Component', 'prefetch', 'activityNote', 'visibleWhen']);
+// [2026-10-20] activityNote 는 걷었다 — 그 문장을 싣던 활동 구역을 걷었다. 다시 적으면 모르는 키로 붉다.
+const HOME_SECTION_KEYS = new Set(['id', 'placement', 'order', 'Component', 'prefetch', 'visibleWhen']);
 const HOME_FAILURES = new Set(['boundary', 'section']);
 
 /** frontend 기준 경로의 모듈 원문(확장자를 붙여 찾는다). 없으면 undefined. */
@@ -679,8 +680,8 @@ function startsWithUseClient(source) {
  *   서버 자식이 조회를 부를 수 없다(미리 채우기가 조용히 빠지거나 서버에서 실패한다).
  * - 규칙 2: Component 는 'use client' 모듈에서 가져온다. ssr:false 래퍼는 서버 컴포넌트에서 쓸 수 없는데(Next), 'use client' 가 없는
  *   모듈의 래퍼는 레지스트리를 통해 서버 그래프에 들어간다.
- * - placement 는 닫힌 배치 리터럴, order 는 숫자 리터럴, prefetch 는 { query: import 한 이름, failure: boundary·section } 배열,
- *   activityNote 는 비지 않은 문자열 리터럴이다. 그 밖의 키는 두지 않는다.
+ * - placement 는 닫힌 배치 리터럴, order 는 숫자 리터럴, prefetch 는 { query: import 한 이름, failure: boundary·section } 배열이다.
+ *   그 밖의 키는 두지 않는다.
  * importedFrom 은 기여의 import 이름 → 지정자, readModule 은 frontend 기준 경로 → 원문이다.
  */
 function homeSectionViolations(entries, label, { file, importedFrom, readModule = readFrontendModule }) {
@@ -715,8 +716,6 @@ function homeSectionViolations(entries, label, { file, importedFrom, readModule 
     else if (clientModule(component.text) !== true) {
       violations.push(`${label}: ${name} 의 Component(${component.text})는 'use client' 모듈에서 가져온다 — 서버 자식도 레지스트리를 읽는다`);
     }
-    const note = prop(element, 'activityNote')?.initializer;
-    if (note && !text(note)?.trim()) violations.push(`${label}: ${name} 의 activityNote 는 비지 않은 문자열 리터럴이다`);
     const prefetch = prop(element, 'prefetch')?.initializer;
     if (!prefetch) continue;
     if (!ts.isArrayLiteralExpression(prefetch) || prefetch.elements.length === 0) {
@@ -1317,11 +1316,12 @@ test('stats panels: route tabs carry their page predicate, body tabs and overvie
   assert.match(check(fixture(card().replace("placement: 'overview-card'", "placement: 'sidebar'"))), /CARD 의 placement 는 hub-tab·overview-card 리터럴이다/);
 });
 
-test('home sections: closed placements, a client Component, a server-readable prefetch and data-only notes', () => {
+test('home sections: closed placements, a client Component, a server-readable prefetch and no unknown keys', () => {
   const inputs = readProjectionInputs();
   const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
   const sections = inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(kind => kind?.kind === 'contribution' && kind.slot === 'home-sections');
-  assert.deepEqual(sections.map(row => row.owner).sort(), ['board', 'dashboard', 'informalsanction', 'note', 'promotion'], 'the work home contributions are read');
+  assert.deepEqual(sections.map(row => row.owner).sort(),
+    ['board', 'dashboard', 'informalsanction', 'memoreport', 'note', 'promotion', 'schedule', 'survey'], 'the work home contributions are read');
   const foreignOf = owner => [...paths].filter(([id]) => id !== owner).flatMap(([, list]) => list);
   const check = (source, row, readModule) => contributionViolations({ file: row.file, source, owner: row.owner, slot: 'home-sections',
     ownPaths: paths.get(row.owner), foreignPaths: foreignOf(row.owner), readModule }).join('\n');
@@ -1334,7 +1334,9 @@ test('home sections: closed placements, a client Component, a server-readable pr
     return original.replace(from, to);
   };
   assert.match(check(swap("placement: 'actions'", "placement: 'sidebar'"), board), /board-new-post 의 배치는 overlay·actions·cards·main·status·bottom 리터럴이다/);
-  assert.match(check(swap("activityNote: '공지사항과", "activityNote: '  ',\n    note: '공지사항과"), board), /board-lists 의 activityNote 는 비지 않은 문자열 리터럴이다/);
+  // 걷은 활동 문장 키(activityNote)가 되살아나면 모르는 키다.
+  assert.match(check(swap("    id: 'board-lists',", "    id: 'board-lists',\n    activityNote: '목록 안내',"), board),
+    /board-lists 에 home-sections 가 모르는 키\(activityNote\)가 있다/);
   assert.match(check(swap("failure: 'boundary' }],\n    visibleWhen: { permissions: ['DASHBOARD_READ'] },\n  },\n  {\n    id: 'board-notice-total'",
     "failure: 'later' }],\n    visibleWhen: { permissions: ['DASHBOARD_READ'] },\n  },\n  {\n    id: 'board-notice-total'"), board),
   /board-task-total 의 prefetch 항목은 \{ query: import 한 이름, failure: boundary·section \} 이다/);

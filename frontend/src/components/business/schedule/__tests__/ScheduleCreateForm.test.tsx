@@ -161,7 +161,7 @@ describe('ScheduleCreateForm validation', () => {
  * 그런데 이 폼은 6개(일정명·시작일·종료일·장소·내용·공유 범위)만 묻는다. 따라서 나머지
  * `schdlKndCd`·`schdlImprtCd`·`reptSeCd` 는 defaultValues 로 되돌려 싣는 것이 **유일한 보존 수단**이다.
  *
- * 특히 `schdlImprtCd` 는 /smart-toolkit/schedule/dept 가 'A'(전체)로 저장하는 값이다 —
+ * 특히 `schdlImprtCd`(일정 중요도)는 /smart-toolkit/schedule/dept 가 2026-10-20 전까지 'A' 로 저장했고 기존 행에 남아 있다 —
  * 빠뜨리면 그 화면에서 만든 일정을 work-hub 모달에서 이름만 고쳐도 중요도가 사라지는
  * **교차 화면 데이터 유실**이 된다. 화면 하나만 보고는 드러나지 않으므로 계약으로 고정한다.
  *

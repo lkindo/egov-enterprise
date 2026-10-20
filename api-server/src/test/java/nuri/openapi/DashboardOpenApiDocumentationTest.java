@@ -37,13 +37,14 @@ class DashboardOpenApiDocumentationTest {
     assertThat(schema.isMissingNode()).isFalse();
     assertThat(schema.path("properties").has("taskList")).isTrue();
     assertThat(schema.path("properties").has("notiList")).isTrue();
-    assertThat(schema.path("properties").has("pendingApprovalCount")).isTrue();
+    // [2026-10-20] 결재 대기 건수는 읽는 화면이 없어 걷었다 — 결재 화면이 결재 대기 API 로 센다.
+    assertThat(schema.path("properties").has("pendingApprovalCount")).isFalse();
     assertThat(schema.path("properties").has("extensions")).isFalse();
-    assertThat(required).contains("taskList", "notiList", "pendingApprovalCount");
-    // [2026-09-15 DEC-OPS-100] 결재 대기 건수는 셀 수 없으면 null 이다. 문서가 그 사실을 말해야 생성 계약이 null 을 받는다.
-    tools.jackson.databind.JsonNode pending = schema.path("properties").path("pendingApprovalCount");
-    assertThat(pending.path("nullable").asBoolean(false)
-        || (pending.path("type").isArray() && pending.path("type").toString().contains("null"))).isTrue();
+    assertThat(required).contains("taskList", "notiList", "taskListTotal", "notiListTotal");
+    // [2026-09-26 DIP V1] 게시판 전체 글 수는 셀 수 없으면 null 이다. 문서가 그 사실을 말해야 생성 계약이 null 을 받는다.
+    tools.jackson.databind.JsonNode total = schema.path("properties").path("taskListTotal");
+    assertThat(total.path("nullable").asBoolean(false)
+        || (total.path("type").isArray() && total.path("type").toString().contains("null"))).isTrue();
   }
 
 }

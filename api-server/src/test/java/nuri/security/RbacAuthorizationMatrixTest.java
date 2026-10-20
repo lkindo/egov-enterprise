@@ -124,6 +124,25 @@ class RbacAuthorizationMatrixTest {
                 .as("경로 변수가 있으면 요청을 고쳐야 한다").noneMatch(path -> path.contains("{"));
         return paths;
     }
+    /**
+     * [2026-10-20] 관리자 홈의 운영 신호 요약은 관리자 홈 권한(DASHBOARD_ADMIN_READ)으로 들어온다. 원천 조회 권한만 있으면 403 이고,
+     * 관리자 홈 권한만 있으면 신호를 하나도 싣지 않는다 — 건수는 그 원천을 조회할 권한이 있을 때만 실린다(H3). 감사 담당 묶음처럼
+     * 후속 작업·시스템 로그 조회 권한만 있으면 그 두 신호만 실린다(사용자 조회 권한이 없어 잠긴 계정 수는 빠진다).
+     */
+    @Test void adminHomeOperationalSignalsFollowTheAdminHomeAndSourcePermissions() throws Exception {
+        String path = "/api/v1/admin/dashboard/operational-signals";
+        mockMvc.perform(get(path).with(user(explicit(List.of("OPERATIONS_TEAM"), List.of("DWORK_READ", "USER_READ", "SYS_LOG_READ")))))
+                .andExpect(status().isForbidden());
+        mockMvc.perform(get(path).with(user(explicit(List.of("HOME_VIEWERS"), List.of("DASHBOARD_ADMIN_READ")))))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.signals").isEmpty());
+        mockMvc.perform(get(path).with(user(explicit(List.of("AUDIT_TEAM"), List.of("DASHBOARD_ADMIN_READ", "DWORK_READ", "SYS_LOG_READ")))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.signals[*].kind")
+                        .value(org.hamcrest.Matchers.contains("FAILED_DURABLE_JOBS", "FAILED_REQUESTS_TODAY")))
+                .andExpect(jsonPath("$.data.signals[0].count").value(0))
+                .andExpect(jsonPath("$.data.observedAt").isNotEmpty());
+        mockMvc.perform(get(path)).andExpect(status().isUnauthorized());
+    }
     @Test void unknownRouteDoesNotFallBackToAdministrativeGroup() throws Exception {
         var admin = nuri.business.support.AuthorizationTestPrincipal.principal("admin_test", "USR_999", "ADMIN");
         mockMvc.perform(get("/api/v1/admin/unregistered-operation").with(user(admin))).andExpect(status().isForbidden());

@@ -87,12 +87,13 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
   assert.match(diffSummary(diffOf({ domains: ['mail'] }, 'notification'), catalog), / · 줄어들던 동작 2건 해소$/);
   // 쪽지는 혼자 들어온다(허브 분해 H1 — 협업 허브가 core 셸이 되어 스크랩·게시판을 끌어오지 않는다).
   assert.match(diffSummary(diffOf({ domains: [] }, 'note'), catalog), /^고르면 기능 \+1 · 테이블 \+\d+ · /);
-  // 도움말은 게시판·댓글을 끌어온다. 실시간 대시보드는 알림 하나만 끌어온다(Phase 2 9단계 — 게시판은 포트로 읽는다).
+  // 도움말은 게시판·댓글을 끌어온다. 실시간 대시보드는 혼자 들어오고 게시판이 없으면 신규 게시글 카드만 줄어든다(Phase 2 9단계 —
+  //   게시판은 포트로 읽는다. 2026-10-20 실시간 구역이 내 알림을 따로 구독하지 않아 알림도 끌어오지 않는다).
   const help = diffSummary(diffOf({ domains: [] }, 'help'), catalog);
   assert.match(help, /^고르면 기능 \+3\(들어옴: 도움말·온라인 매뉴얼, 게시판·지식, 댓글\) · /);
   assert.doesNotMatch(help, /[A-Za-z]/);
   assert.match(diffSummary(diffOf({ domains: ['help'] }, 'help'), catalog), /^빼면 기능 −3\(빠짐: 도움말·온라인 매뉴얼, 게시판·지식, 댓글\) · /);
-  assert.match(diffSummary(diffOf({ domains: [] }, 'dashboard'), catalog), /^고르면 기능 \+2\(들어옴: 실시간 대시보드, 알림\) · /);
+  assert.match(diffSummary(diffOf({ domains: [] }, 'dashboard'), catalog), /^고르면 기능 \+1 · 테이블 0 · 메뉴 0 · 권한 0 · 줄어드는 동작 1건 생김$/);
   // 하나를 빼는데 다른 기능이 들어오면 양쪽을 모두 밝힌다(순 증감만 보이면 무엇이 빠지는지 알 수 없다). 시작 구성이 같은 목록의
   //   직접 선택과 같아진 뒤(11단계 C2) 해석기는 그런 차이를 만들지 않으므로 문장 규칙만 차이 값으로 본다.
   const both = { domain: 'dashboard', action: 'remove', added: ['help'], removed: ['dashboard'], retainedBy: [],
