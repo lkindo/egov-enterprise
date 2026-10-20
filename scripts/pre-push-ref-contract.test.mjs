@@ -280,6 +280,10 @@ const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle
 // [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
 const SAST_APPROXIMATION = 'npm run sast:approx';
 const VERIFY_FAST = [SAST_APPROXIMATION, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
+// [2026-10-20] 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 훅이 보지 않는 무거운 시험. 운영 계약은 부르지 않는다.
+const INTEGRATION_PRECHECK = 'node scripts/integration-precheck.mjs';
+const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', 'pnpm -C frontend exec vitest run',
+  './gradlew :api-server:test --console=plain -Dfile.encoding=UTF-8', 'node scripts/integration-precheck.mjs --run-selected'];
 
 test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
   const expected = {
@@ -290,6 +294,7 @@ test('verify profiles run static checks before the operational contracts and sto
     fe: [...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
     full: [SAST_APPROXIMATION, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
     e2e: ['pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
+    integrate: VERIFY_INTEGRATE,
   };
   for (const [scope, commands] of Object.entries(expected)) {
     const observed = observeVerification(scope);
@@ -326,15 +331,23 @@ test('verify profiles run static checks before the operational contracts and sto
   assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
 });
 
-test('verify stops on a CodeQL approximation finding first', () => {
+test('verify stops on a CodeQL approximation finding first and on a Flyway conflict before regenerating', () => {
   for (const scope of ['fast', 'push', 'full']) {
     assert.deepEqual(observeVerification(scope, { failCommand: SAST_APPROXIMATION }), { commands: [SAST_APPROXIMATION], exits: [1], zones: ['Asia/Seoul'] }, scope);
   }
-  // 근사를 full 에서 걷으면 위 기대가 깨진다(red 재현).
+  // 갈래 통합 점검은 Flyway 충돌에서 생성물을 다시 만들지 않고 멈추며, 무거운 시험이 실패해도 멈춘다. 운영 계약은 pre-push 몫이다.
+  assert.deepEqual(observeVerification('integrate', { failCommand: INTEGRATION_PRECHECK }).commands, [INTEGRATION_PRECHECK]);
+  assert.deepEqual(observeVerification('integrate', { failCommand: 'pnpm -C frontend exec vitest run' }).exits, [1]);
+  assert.ok(!observeVerification('integrate').commands.includes(CONTRACTS));
+  // 근사를 full 에서 걷거나 Flyway 점검을 regen 뒤로 옮기면 위 기대가 깨진다(red 재현).
   const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
   const withoutApproximation = runner.replace("  } else if (scope === 'full') {\n    runScriptStatic();\n", "  } else if (scope === 'full') {\n");
   assert.notEqual(withoutApproximation, runner);
   assert.notEqual(observeVerification('full', { source: withoutApproximation }).commands[0], SAST_APPROXIMATION);
+  const regenFirst = runner.replace("    run('node scripts/integration-precheck.mjs');\n    run('npm run regen');\n",
+    "    run('npm run regen');\n    run('node scripts/integration-precheck.mjs');\n");
+  assert.notEqual(regenFirst, runner);
+  assert.deepEqual(observeVerification('integrate', { source: regenFirst, failCommand: INTEGRATION_PRECHECK }).commands, ['npm run regen', INTEGRATION_PRECHECK]);
 });
 
 // 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.

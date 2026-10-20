@@ -62,6 +62,7 @@
     "verify:e2e": "node scripts/verify.mjs e2e",
     "verify:ops": "node scripts/verify.mjs ops",
     "verify:migration": "node scripts/verify.mjs migration",
+    "verify:integrate": "node scripts/verify.mjs integrate",
     "review:status": "node scripts/governance-review.mjs --product online --mode report",
     "review:adoption": "node scripts/governance-review.mjs --product online --mode adoption",
     "review:migration": "node scripts/governance-review.mjs --product migration-tool --mode report",

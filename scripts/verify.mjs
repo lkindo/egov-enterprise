@@ -12,6 +12,10 @@
  * e2e 는 E2E 타입 검사만)를 운영 계약(로컬 약 11분)보다 먼저 돌려 실패를 빨리 알린다. full·be 의 Java 컴파일은
  * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 계약이 먼저다. 성공하면 같은 명령이 모두
  * 실행되므로 명령 집합과 총시간은 순서와 무관하다. fast·push·full 은 맨 앞에서 CodeQL 근사(`npm run sast:approx`, 수 초)를 돈다.
+ *
+ * integrate 는 여러 갈래를 한 브랜치로 합친 뒤 푸시 전에 돈다(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → 생성물 재생성 →
+ * 훅이 보지 않는 무거운 시험(전체 vitest·:api-server:test·닿는 schema-validation·생성기 화면 시험). 운영 계약과 정적 검사는 곧
+ * pre-push 가 같은 커밋에서 돌므로 부르지 않는다(§6.2). 선별은 scripts/integration-precheck.mjs 가 한다.
  */
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -21,7 +25,7 @@ const isWin = platform() === 'win32';
 const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
 const requestedScope = (process.argv[2] || 'full').toLowerCase();
 const scope = requestedScope === 'all' ? 'full' : requestedScope;
-const allowedScopes = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops', 'migration']);
+const allowedScopes = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops', 'migration', 'integrate']);
 
 if (!allowedScopes.has(scope)) {
   console.error(`알 수 없는 범위 '${requestedScope}' — ${[...allowedScopes].join('|')} 중 하나여야 합니다.`);
@@ -121,6 +125,14 @@ try {
     run('pnpm -C frontend run type-check:e2e');
     runOperationalContracts();
     run('node scripts/run-isolated-e2e.mjs');
+  } else if (scope === 'integrate') {
+    // ① 기준(origin/main) 대비 Flyway 버전 중복·충돌을 막고 메뉴 스냅숏 갱신을 알린다 → ② 통합 트리에서 생성물을 한 번 다시 만든다 →
+    // ③ 훅이 보지 않는 무거운 시험. 마지막 줄이 닿는 schema-validation 시험과 생성기 화면 시험을 골라 돈다.
+    run('node scripts/integration-precheck.mjs');
+    run('npm run regen');
+    run('pnpm -C frontend exec vitest run');
+    run(`${gradlew} :api-server:test --console=plain -Dfile.encoding=UTF-8`);
+    run('node scripts/integration-precheck.mjs --run-selected');
   } else if (scope === 'ops') {
     run('node scripts/verify-branch-protection.mjs');
   } else if (scope === 'migration') {
