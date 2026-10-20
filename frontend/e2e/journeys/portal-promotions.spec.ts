@@ -98,7 +98,8 @@ test.describe('Public Engagement & Experience', () => {
                 expect(Math.abs(sheet!.x)).toBeLessThanOrEqual(1);
                 expect(Math.abs(sheet!.width - viewport.width)).toBeLessThanOrEqual(1);
                 expect(Math.abs(sheet!.y + sheet!.height - viewport.height)).toBeLessThanOrEqual(1);
-                await phoneDialog.getByRole('button', { name: '닫기' }).click();
+                // 머리의 X 단추 이름도 '<제목> 닫기' 라 정확히 '닫기' 인 아래 단추를 누른다.
+                await phoneDialog.getByRole('button', { name: '닫기', exact: true }).click();
                 await expect(phoneDialog).toBeHidden();
             });
             // 확인했으면 바로 지운다 — 게시된 모달 팝업이 다른 시험의 업무 홈을 막지 않게 한다.

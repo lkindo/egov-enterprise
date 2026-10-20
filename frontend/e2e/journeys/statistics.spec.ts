@@ -59,31 +59,30 @@ test.describe('운영 관측', () => {
             await expect(page.getByRole('heading', { level: 1, name: '시스템 활성 지표', exact: true })).toBeVisible({ timeout: 15000 });
 
             // 1) 실행 전의 사흘 — 기록이 없는 날도 행이 있고 값은 0 이다.
-            await applyPeriod(page, '/api/v1/admin/system/statistics/connect', quiet[0], quiet[2]);
+            await applyPeriod(page, quiet[0], quiet[2]);
             await expectRows(page, quiet.map((date) => [date, '0']));
             await expect(summaryValue(page, '기간 합계')).toHaveText('0');
             await expect(summaryValue(page, '가장 많은 날')).toHaveText('없음');
             await expect(page.getByTestId('report-basis')).toContainText(`집계 구간: ${quiet[0]} ~ ${quiet[2]}`);
-            // 차트 축도 같은 사흘이다(눈금은 MM-DD).
-            await expect(page.locator('.recharts-xAxis .recharts-cartesian-axis-tick-value'))
-                .toHaveText(quiet.map((date) => date.slice(5)));
+            // 차트는 표와 같은 계열 하나를 그린다 — 축 눈금의 순서·형식은 단위 시험(IntelligenceHubClient.time-axis)이 보고,
+            //   여기서는 차트 내부 클래스 이름에 기대지 않는다.
 
             // 2) 오늘 — 같은 순간의 API 응답과 화면의 표·요약이 같다.
-            await applyPeriod(page, '/api/v1/admin/system/statistics/connect', today, today);
-            await expectMatchesApi(page, adminRequest, 'api/v1/admin/system/statistics/connect', today, (data) => data);
+            await applyPeriod(page, today, today);
+            await expectMatchesApi(page, adminRequest, '/api/v1/admin/system/statistics/connect', today, (data) => data);
 
             // 3) 사용자 활동 — 요청 구분을 고르면 표가 그 계열이다. 실행 전의 날은 어느 계열이든 0 이다.
             await page.getByRole('navigation', { name: '통계 분석 뷰' }).getByRole('button', { name: /사용자 통계$/ }).click();
             await expect(page.getByRole('heading', { level: 1, name: '사용자 통계 분석', exact: true })).toBeVisible({ timeout: 15000 });
-            await applyPeriod(page, '/api/v1/admin/system/statistics/user', quiet[0], quiet[2]);
+            await applyPeriod(page, quiet[0], quiet[2]);
             const picker = page.getByRole('group', { name: '요청 구분' });
             await picker.getByRole('button', { name: '수정 요청', exact: true }).click();
             await expect(picker.getByRole('button', { name: '수정 요청', exact: true })).toHaveAttribute('aria-pressed', 'true');
             await expect(page.getByRole('columnheader', { name: '수정 요청 건수' })).toBeVisible();
             await expectRows(page, quiet.map((date) => [date, '0']));
             await picker.getByRole('button', { name: '조회 요청', exact: true }).click();
-            await applyPeriod(page, '/api/v1/admin/system/statistics/user', today, today);
-            await expectMatchesApi(page, adminRequest, 'api/v1/admin/system/statistics/user', today,
+            await applyPeriod(page, today, today);
+            await expectMatchesApi(page, adminRequest, '/api/v1/admin/system/statistics/user', today,
                 (data) => (data as { inqCnt: unknown }).inqCnt);
 
             // 4) 통계 개요로 되돌아간다 — 같은 내비게이션이 개요에도 있다.
@@ -95,16 +94,14 @@ test.describe('운영 관측', () => {
     });
 });
 
-/** 집계 기간을 직접 입력하고 그 기간의 조회 응답을 기다린다. */
-async function applyPeriod(page: Page, pathname: string, from: string, to: string) {
-    const loaded = page.waitForResponse((response) => {
-        const url = new URL(response.url());
-        return response.request().method() === 'GET' && url.pathname === pathname
-            && url.searchParams.get('fromDate') === from && url.searchParams.get('toDate') === to;
-    });
+/**
+ * 집계 기간을 직접 입력하고 화면이 그 기간을 집계 구간으로 말할 때까지 기다린다. 같은 기간을 이미 받아 두었으면(화면을 열 때의
+ * '최근 1일'이 곧 오늘 하루다) 새 요청이 나가지 않으므로 네트워크 응답을 기다리지 않는다 — 값은 뒤의 표·API 대조가 본다.
+ */
+async function applyPeriod(page: Page, from: string, to: string) {
     await page.getByLabel('집계 기간 시작일').fill(from);
     await page.getByLabel('집계 기간 종료일').fill(to);
-    expect((await loaded).status()).toBe(200);
+    await expect(page.getByTestId('report-basis')).toContainText(`집계 구간: ${from} ~ ${to}`, { timeout: 20_000 });
 }
 
 /** 원본 표의 [일자, 건수] 행. */

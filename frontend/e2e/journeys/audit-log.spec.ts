@@ -145,7 +145,8 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
 
         await test.step('개인정보 조회 기록에 그 조회가 조회자와 함께 남는다', async () => {
             await page.goto('/admin/system/logs/privacy');
-            const search = page.getByLabel('조회 대상 정보');
+            // 표의 열 머리도 같은 이름이라 검색 입력란을 역할로 고른다.
+            const search = page.getByRole('textbox', { name: '조회 대상 정보', exact: true });
             await search.fill('사용자 상세');
             await search.press('Enter');
             const row = page.getByRole('table', { name: '개인정보 접근 로그 목록' }).getByRole('row').filter({ hasText: auditor.userId });

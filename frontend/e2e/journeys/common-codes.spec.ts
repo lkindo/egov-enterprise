@@ -1,5 +1,17 @@
 import { randomBytes } from 'node:crypto';
+import type { Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+
+/** 그룹을 검색으로 좁혀 마스터 항목을 고른다 — 공통코드 화면은 주소값(?groupId=)으로 그룹을 열지 않는다. */
+async function selectGroup(page: Page, cdId: string) {
+    const master = page.getByTestId('master-detail-page').getByTestId('master-detail-master');
+    await page.getByRole('textbox', { name: '분류·그룹명 또는 코드로 검색', exact: true }).fill(cdId);
+    const group = master.locator(`[data-a2-master-item-type="group"][aria-label*="(${cdId}) 선택"]`);
+    await expect(group).toHaveCount(1, { timeout: 20_000 });
+    await group.click();
+    await expect(group).toHaveAttribute('aria-current', 'true');
+}
+
 test.describe('Modernization: Hierarchical Interface Verification', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
     test('Common Code A2 Master-Detail Interface', async ({ page }) => {
@@ -103,13 +115,15 @@ test.describe('공통코드 변경 이력과 사용처', () => {
         expect(createdGroup.status(), '여정 전용 그룹 등록').toBe(201);
         try {
             await test.step('이 제품이 읽는 그룹은 사용처를 말한다', async () => {
-                await page.goto('/admin/system/common-code?groupId=COM075');
+                await page.goto('/admin/system/common-code');
+                await selectGroup(page, 'COM075');
                 const usage = page.getByRole('region', { name: '이 제품이 읽는 그룹', exact: true });
                 await expect(usage).toBeVisible({ timeout: 20_000 });
                 await expect(usage).toContainText('결재 기안의 업무 구분 선택지');
             });
 
-            await page.goto(`/admin/system/common-code?groupId=${cdId}`);
+            await page.goto('/admin/system/common-code');
+            await selectGroup(page, cdId);
             const workArea = page.getByTestId('master-detail-page');
             await expect(workArea.getByRole('region', { name: '이 제품이 읽지 않는 그룹', exact: true })).toBeVisible({ timeout: 20_000 });
 

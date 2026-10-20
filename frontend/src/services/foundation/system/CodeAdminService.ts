@@ -114,7 +114,16 @@ function requireClCode(item: components['schemas']['CmmnClCodeDto']): CmmnClCode
         useYn: item.useYn,
         frstRgtrId: item.frstRgtrId,
         lastMdfrId: item.lastMdfrId,
+        ...versionOf(item),
     };
+}
+
+/**
+ * [2026-10-20] 낙관적 잠금 버전(V2_133)을 그대로 옮긴다. 수정 창은 목록에서 읽은 이 값을 저장에 싣는데, 종전에는 이 변환이
+ * 버전을 걸러 분류·그룹·상세 코드 수정이 늘 '버전 없음' 400 이었다.
+ */
+function versionOf(item: { version?: number | null }): { version?: number } {
+    return typeof item.version === 'number' ? { version: item.version } : {};
 }
 
 function requireCmmnCode(item: components['schemas']['CmmnCodeDto']): CmmnCode {
@@ -133,6 +142,9 @@ function requireCmmnCode(item: components['schemas']['CmmnCodeDto']): CmmnCode {
         clsfCd: item.clsfCd,
         useYn: item.useYn,
         ...(item.clsfCdNm === undefined ? {} : { clsfCdNm: item.clsfCdNm }),
+        ...versionOf(item),
+        // [2026-10-20] 이 제품이 이 그룹을 읽는 곳 — 종전에는 여기서 걸러져 읽는 그룹도 '읽지 않음'으로 보였다(E2E 가 잡았다).
+        ...(Array.isArray(item.usages) ? { usages: item.usages.filter((usage): usage is string => typeof usage === 'string') } : {}),
     };
 }
 
@@ -152,6 +164,7 @@ function requireDetailCode(item: components['schemas']['CmmnDetailCodeDto']): Cm
         dtlCdExpln: item.dtlCdExpln,
         useYn: item.useYn,
         ...(item.cdIdNm === undefined ? {} : { cdIdNm: item.cdIdNm }),
+        ...versionOf(item),
     };
 }
 

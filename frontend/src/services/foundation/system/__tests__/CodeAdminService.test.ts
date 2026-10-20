@@ -96,6 +96,28 @@ describe('CodeAdminService', () => {
       }));
     });
 
+    it('[2026-10-20] 목록 변환은 서버의 사용처와 낙관적 잠금 버전을 그대로 옮긴다', async () => {
+      // 종전 변환이 두 값을 걸러, 읽는 그룹이 '읽지 않음'으로 보이고 분류·그룹·상세 수정이 늘 '버전 없음' 400 이었다.
+      const page = (list: unknown[]) => ({ list, total: list.length, page: 1, size: 100, totalPage: 1 });
+      transport.get.mockImplementation(async (url: string) => {
+        if (url === 'admin/system/codes/cmmn') {
+          return page([{ cdId: 'COM075', cdIdNm: '업무구분', cdIdExpln: '', clsfCd: 'CL01', useYn: 'Y', version: 3, usages: ['결재 업무 구분'] }]);
+        }
+        if (url === 'admin/system/codes/cl') return page([{ clsfCd: 'CL01', clsfCdNm: '분류', clsfCdExpln: '', useYn: 'Y', version: 2 }]);
+        if (url === 'admin/system/codes/detail') {
+          return page([{ cdId: 'COM075', dtlCd: 'D1', dtlCdNm: '상세', dtlCdExpln: '', useYn: 'Y', version: 5 }]);
+        }
+        return undefined;
+      });
+
+      const groups = await codeAdminService.getCmmnCodeList({ page: 1, size: 100 });
+      expect(groups.list[0]).toMatchObject({ cdId: 'COM075', version: 3, usages: ['결재 업무 구분'] });
+      const classifications = await codeAdminService.getClCodeList({ page: 1, size: 100 });
+      expect(classifications.list[0]).toMatchObject({ clsfCd: 'CL01', version: 2 });
+      const details = await codeAdminService.getDetailCodeList({ page: 1, size: 100 });
+      expect(details.list[0]).toMatchObject({ dtlCd: 'D1', version: 5 });
+    });
+
     it('updateCmmnCode should use codeId from data', async () => {
       const data = { cdId: 'GRP01', cdIdNm: 'Group', useYn: 'Y' as const };
       await codeAdminService.updateCmmnCode('GRP01', data as any);

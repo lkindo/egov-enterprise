@@ -70,7 +70,9 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
     //   술어는 개요에만 남는다(generate-screen-registry.test.mjs 의 항목별 귀속이 본다).
     const overview = SCREEN_REGISTRY.find((screen) => screen.route === '/admin/stats');
     if (overview) {
-      const sources = overview.permissions.filter((permission) => permission.code === 'SURVEY_READ_ALL').map((permission) => permission.source);
+      // 설문이 빠진 생성물에서는 권한 코드 타입에 이 값이 없다 — 리터럴과 바로 비교하면 투영 tsc 가 '겹치지 않는 비교'로 막는다.
+      const surveyReadAll: string = 'SURVEY_READ_ALL';
+      const sources = overview.permissions.filter((permission) => permission.code === surveyReadAll).map((permission) => permission.source);
       // 원본(투영 원장 없음)에는 설문 기여가 있어 정확히 표시 출처 하나다. 설문이 빠진 생성물에는 없다.
       if (projectionRemovedFiles().size === 0) expect(sources).toEqual(['display']);
       expect(sources.filter((source) => source !== 'display')).toEqual([]);
