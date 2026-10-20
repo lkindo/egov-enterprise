@@ -3,6 +3,7 @@ package nuri.business.service.board.stats;
 import jakarta.persistence.EntityManager;
 import nuri.business.domain.log.LoginLogRepository;
 import nuri.business.service.stats.ReportStatsService;
+import nuri.business.service.stats.dto.StatsPoint;
 import nuri.business.service.stats.dto.SummaryStatsDto;
 import nuri.business.support.PersistenceTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -16,6 +17,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 
@@ -77,19 +79,14 @@ class StatisticsCompositionEquivalenceTest extends PersistenceTestSupport {
         return ((Number) em.createNativeQuery("SELECT COUNT(*) FROM " + table).getSingleResult()).longValue();
     }
 
-    /** [날짜, 건수] 행을 비교하기 쉬운 문자열로 바꾼다. 건수의 숫자 타입은 DB 마다 달라 값만 본다. */
-    private static List<String> rendered(List<Object[]> rows) {
-        return rows.stream()
-                .map(row -> {
-                    assertThat(row).hasSize(2);
-                    return row[0] + "=" + ((Number) row[1]).longValue();
-                })
-                .toList();
+    /** 일자별 칸을 비교하기 쉬운 문자열로 바꾼다. */
+    private static List<String> rendered(List<StatsPoint> points) {
+        return points.stream().map(point -> point.date() + "=" + point.value()).toList();
     }
 
     @Test
-    @DisplayName("게시물 통계는 날짜 내림차순이고 논리 삭제 글과 종료일 다음날 0시를 세지 않는다")
-    void postStatsAreDateDescendingExcludeDeletedAndUseExclusiveNextDayBound() {
+    @DisplayName("게시물 통계는 날짜 오름차순이고 논리 삭제 글과 종료일 다음날 0시를 세지 않는다")
+    void postStatsAreDateAscendingExcludeDeletedAndUseExclusiveNextDayBound() {
         insertPost("Y", LocalDateTime.of(2026, 8, 4, 23, 59, 59, 999_999_000));
         insertPost("Y", LocalDateTime.of(2026, 8, 5, 0, 0));
         insertPost("Y", LocalDateTime.of(2026, 8, 5, 15, 0));
@@ -99,15 +96,16 @@ class StatisticsCompositionEquivalenceTest extends PersistenceTestSupport {
         insertPost("Y", LocalDateTime.of(2026, 8, 7, 23, 59, 59, 999_999_000));
         insertPost("Y", LocalDateTime.of(2026, 8, 8, 0, 0));
 
-        List<String> expected = List.of("2026-08-07=1", "2026-08-06=1", "2026-08-05=2");
+        // [2026-10-20] 저장소는 최신순으로 주지만 서비스가 오름차순 한 모양으로 낸다.
+        List<String> expected = List.of("2026-08-05=2", "2026-08-06=1", "2026-08-07=1");
         assertThat(rendered(reportStatsService.getBbsStatsByDate("20260805", "20260807"))).isEqualTo(expected);
         // 화면이 보내는 ISO 날짜도 같은 구간이다.
         assertThat(rendered(reportStatsService.getBbsStatsByDate("2026-08-05", "2026-08-07"))).isEqualTo(expected);
     }
 
     @Test
-    @DisplayName("자료 이용 통계는 날짜 내림차순이고 종료일 다음날 0시를 세지 않는다")
-    void dataUseStatsAreDateDescendingAndUseExclusiveNextDayBound() {
+    @DisplayName("자료 이용 통계는 날짜 오름차순이고 종료일 다음날 0시를 세지 않는다")
+    void dataUseStatsAreDateAscendingAndUseExclusiveNextDayBound() {
         insertDataUse(LocalDateTime.of(2026, 8, 4, 23, 59, 59, 999_999_000));
         insertDataUse(LocalDateTime.of(2026, 8, 5, 0, 0));
         insertDataUse(LocalDateTime.of(2026, 8, 5, 15, 0));
@@ -115,7 +113,7 @@ class StatisticsCompositionEquivalenceTest extends PersistenceTestSupport {
         insertDataUse(LocalDateTime.of(2026, 8, 7, 23, 59, 59, 999_999_000));
         insertDataUse(LocalDateTime.of(2026, 8, 8, 0, 0));
 
-        List<String> expected = List.of("2026-08-07=1", "2026-08-06=1", "2026-08-05=2");
+        List<String> expected = List.of("2026-08-05=2", "2026-08-06=1", "2026-08-07=1");
         assertThat(rendered(reportStatsService.getDtaUseStatsByDate("20260805", "20260807"))).isEqualTo(expected);
         assertThat(rendered(reportStatsService.getDtaUseStatsByDate("2026-08-05", "2026-08-07"))).isEqualTo(expected);
     }
@@ -127,7 +125,10 @@ class StatisticsCompositionEquivalenceTest extends PersistenceTestSupport {
         insertDataUse(LocalDateTime.of(2026, 8, 6, 10, 0));
         insertDataUse(LocalDateTime.of(2026, 8, 6, 11, 0));
 
-        assertThat(rendered(reportStatsService.getBbsStatsByDate("20260801", "20260831")))
+        // 게시물은 측정하는 계열이라 8월의 날마다 한 칸이고(기록이 없는 날은 0), 자료 이용은 쓰는 쪽이 없는 계열이라 기록만 싣는다.
+        List<StatsPoint> posts = reportStatsService.getBbsStatsByDate("20260801", "20260831");
+        assertThat(posts).hasSize(31);
+        assertThat(rendered(posts.stream().filter(point -> point.value() > 0).toList()))
                 .containsExactly("2026-08-05=1");
         assertThat(rendered(reportStatsService.getDtaUseStatsByDate("20260801", "20260831")))
                 .containsExactly("2026-08-06=2");
@@ -154,9 +155,10 @@ class StatisticsCompositionEquivalenceTest extends PersistenceTestSupport {
         given(loginLogRepository.countLoginsByDate(anyString(), anyString())).willReturn(List.of(
                 new Object[]{"today", 2L}, new Object[]{"today", 3L}));
 
-        LocalDate before = LocalDate.now();
+        // 오늘은 Asia/Seoul 의 날짜다 — 시험 JVM(UTC)의 날짜가 아니다.
+        LocalDate before = LocalDate.now(ZoneId.of("Asia/Seoul"));
         SummaryStatsDto summary = reportStatsService.getSummary();
-        LocalDate after = LocalDate.now();
+        LocalDate after = LocalDate.now(ZoneId.of("Asia/Seoul"));
 
         assertThat(summary.getTotalPosts()).isEqualTo(postsBefore + 4);
         assertThat(summary.getTotalUsers()).isEqualTo(usersBefore + 1);

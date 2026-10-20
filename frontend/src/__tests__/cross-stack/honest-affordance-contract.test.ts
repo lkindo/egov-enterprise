@@ -166,7 +166,10 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     const service = readRepo(
       'business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java',
     );
-    const method = service.slice(service.indexOf('public List<Object[]> getBbsStatsByDate'));
+    // [2026-10-20] 시계열은 StatsPoint 한 모양이다 — 반환 타입이 바뀌어도 시그니처를 찾지 못하면 vacuous 하게 통과하지 않는다.
+    const start = service.indexOf('public List<StatsPoint> getBbsStatsByDate');
+    expect(start, 'getBbsStatsByDate 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const method = service.slice(start);
     const body = method.slice(0, method.indexOf('}'));
     /*
      * [2026-09-15] stats→board 직접 주입은 foundation 포트로 역전됐다(GAP-ARCH-001).
@@ -179,6 +182,8 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     expect(body).not.toContain('dtaUseStatsRepository');
     // [Phase 0c] 자료 이용 집계도 포트로 옮겼다. 옛 필드 이름만 보면 그 포트를 불러도 통과한다.
     expect(body).not.toContain('dataUsageStatistics');
+    // [2026-10-20] 게시글은 쓰는 쪽이 있는 측정 계열이라 기간의 빈 날을 0 으로 채운다 — 화면이 '기간' 문구를 쓰는 근거다.
+    expect(body).toContain('range.measured(');
 
     // 포트 구현은 게시판이 소유한다 — 게시판이 빠진 생성물에서는 구현이 없고 통계는 빈 목록이다.
     if (repoPresent('business-app/src/main/java/nuri/business/service/board/stats/BoardPostStatisticsContributor.java')) {
@@ -200,11 +205,17 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
     const service = readRepo(
       'business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java',
     );
-    const method = service.slice(service.indexOf('public List<Object[]> getDtaUseStatsByDate'));
+    const start = service.indexOf('public List<StatsPoint> getDtaUseStatsByDate');
+    expect(start, 'getDtaUseStatsByDate 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const method = service.slice(start);
     const body = method.slice(0, method.indexOf('}'));
     expect(body, '자료 이용 통계가 자료 이용 포트를 부르지 않는다').toContain('dataUsageStatistics');
     expect(body).toContain('countDataUsageByDate');
     expect(body).not.toContain('postStatistics');
+    // [2026-10-20] 쓰는 쪽이 없는 계열은 빈 날을 0 으로 채우지 않는다(DEC-OPS-100) — 채우면 화면의 '미수집' 고지 옆에서 서버가
+    //   측정하지 않은 0 을 날마다 지어낸다. 쓰는 쪽이 생기면 측정 계열로 옮기고 화면의 uninstrumented 를 함께 거둔다.
+    expect(body, '자료 이용 통계가 빈 날을 0 으로 채운다').toContain('range.recorded(');
+    expect(body).not.toContain('range.measured(');
 
     // 자료 이용 기록도 게시판이 소유한다(Phase 0c) — 게시판이 빠진 생성물에서는 구현이 없다.
     if (repoPresent('business-app/src/main/java/nuri/business/service/board/stats/BoardDataUsageStatisticsContributor.java')) {
@@ -222,7 +233,7 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
    * 2026-08-28 판정 당시 tb_user_log 에는 쓰는 코드가 없었다. 2026-09-03 에 UserActivityLogAggregator 가
    * 생겨 인증 사용자의 API 요청을 일자별로 적재하는데, 화면은 그 뒤에도 "수집되지 않는다" 고 말했다.
    * writer 가 다시 사라지면 화면이 거짓말하게 되므로(값 0 을 측정값처럼 보인다) writer 와 판독 경로를
-   * 함께 검사한다. 카드 이름도 판독 값(SUM(crt_cnt) = 등록 요청 수)에 묶는다.
+   * 함께 검사한다. 계열 이름도 판독 값(질의의 열 순서 → 서비스의 계열 → 화면의 요청 구분)에 묶는다.
    */
   it('USER_STATS 가 미수집이 아닌 이유는 사용자 활동 writer 가 실제로 적재하기 때문이다', () => {
     expect(uninstrumentedRule).not.toContain('USER_STATS');
@@ -235,15 +246,30 @@ describe('통계: 수집되지 않는 지표를 기간 탓으로 돌리지 않�
       .toContain('userLogRepository.upsertActivityCounts');
 
     const service = readRepo('business-core/src/main/java/nuri/business/service/stats/ReportStatsService.java');
-    const method = service.slice(service.indexOf('public List<Object[]> getUserStatsByDate'));
-    expect(method.slice(0, method.indexOf('}'))).toContain('userLogRepository.countByDate');
+    const start = service.indexOf('public UserActivityStats getUserStatsByDate');
+    expect(start, 'getUserStatsByDate 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const method = service.slice(start);
+    const body = method.slice(0, method.indexOf('}'));
+    expect(body).toContain('userLogRepository.countByDate');
 
+    /*
+     * [2026-10-20] 사용자 활동은 요청 구분 네 계열이다. 서비스는 질의의 열을 순서로 읽어 inqCnt·crtCnt·mdfcnCnt·delCnt 에 싣고,
+     * 화면은 그 키를 '조회·등록·수정·삭제 요청' 으로 부른다. 질의 열 순서·서비스의 열 번호·화면 이름이 함께 움직여야 한다 —
+     * 하나만 바뀌면 '조회 요청' 자리에 등록 수가 실린다(타입으로는 잡히지 않는다).
+     */
     const repository = readRepo('business-core/src/main/java/nuri/business/domain/log/UserLogRepository.java');
-    const query = repository.slice(repository.indexOf('List<Object[]> countByDate') - 600,
-      repository.indexOf('List<Object[]> countByDate'));
-    expect(query, '사용자 통계의 첫 수치 열이 등록 건수가 아니다 — 카드 이름을 함께 바꿔라')
-      .toMatch(/SUM\(crt_cnt\)\s+as\s+creatCo/);
-    expect(client).toContain('label="사용자 등록 요청 수"');
+    const signature = repository.indexOf('List<Object[]> countByDate');
+    expect(signature, 'countByDate 를 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const query = repository.slice(signature - 900, signature);
+    expect(query, '사용자 통계 질의의 열 순서가 [일자, 조회, 등록, 수정, 삭제] 가 아니다 — 서비스의 열 번호와 화면 이름을 함께 바꿔라')
+      .toMatch(/SUM\(inq_cnt\)\s+as\s+inqCnt,\s*SUM\(crt_cnt\)\s+as\s+crtCnt,\s*SUM\(mdfcn_cnt\)\s+as\s+mdfcnCnt,\s*SUM\(del_cnt\)\s+as\s+delCnt/);
+    expect(body).toMatch(/range\.measured\(rows, 1\),\s*range\.measured\(rows, 2\),\s*range\.measured\(rows, 3\),\s*range\.measured\(rows, 4\)\)/);
+    const dto = readRepo('business-core/src/main/java/nuri/business/service/stats/dto/UserActivityStats.java');
+    expect(dto).toMatch(/List<StatsPoint> inqCnt,[\s\S]*List<StatsPoint> crtCnt,[\s\S]*List<StatsPoint> mdfcnCnt,[\s\S]*List<StatsPoint> delCnt\)/);
+    expect(client).toContain("{ key: 'inqCnt', label: '조회 요청', method: 'GET·HEAD' }");
+    expect(client).toContain("{ key: 'crtCnt', label: '등록 요청', method: 'POST' }");
+    expect(client).toContain("{ key: 'mdfcnCnt', label: '수정 요청', method: 'PUT·PATCH' }");
+    expect(client).toContain("{ key: 'delCnt', label: '삭제 요청', method: 'DELETE' }");
   });
 
   it('SYSTEM_STATS 는 미수집 목록에 넣지 않는다 — 이 축만 실제 writer 가 있다', () => {
@@ -600,15 +626,16 @@ describe('미수집 축을 0으로 보여 주지 않는다', () => {
     // [2026-10-19] 셸의 미수집 목록은 걷었다(운영 보고서 퇴역) — 미수집 축은 기여의 uninstrumented 뿐이다.
     expect(statsHub, '미수집 판정을 찾지 못했다 — 계약이 vacuous 하다')
       .toMatch(/const isUninstrumentedTab = activePanel\?\.kind === 'series' && activePanel\.uninstrumented;/);
-    // [허브 분해 H4] 기능의 요약 칸(stats-panels 의 summary)은 미수집 축에만 있고(타입이 막는다), 셸은 그 칸에 '미수집' 만 찍는다.
-    expect(statsHub).toMatch(/panel\.kind === 'series' && panel\.uninstrumented && panel\.summary/);
-    expect(statsHub).toContain('label={label} value="미수집" />');
+    // [2026-10-20] 요약은 탭마다 그 탭의 계열이다(A7) — 미수집 탭의 요약은 세 칸 모두 '미수집' 이고, 셸은 그 판정을 값 계산보다
+    //   먼저 한다(값이 들어와도 숫자를 찍지 않는다). 종전의 모든 탭 요약 칸(stats-panels 의 summary)은 걷었다.
+    expect(statsHub).toMatch(/const UNMEASURED_SUMMARY = \{ total: '미수집', average: '미수집', peak: '미수집' \}/);
+    expect(statsHub).toMatch(/const summary = isUninstrumentedTab\s*\?\s*UNMEASURED_SUMMARY/);
 
     expect(statsHub).not.toContain('sumStatsCo(dataUsage)');
     // 계측 원천이 있는 축은 그대로 값을 보여 준다 — 금지만 하는 계약이 되지 않게.
     // [2026-09-25] 사용자 축은 writer 가 생겨 값을 되살렸다(위 USER_STATS 결속 케이스).
-    expect(statsHub).toContain('sumStatsCo(connectStats)');
-    expect(statsHub).toContain('sumStatsCo(userStats)');
+    // 측정하는 탭(성공 로그인·사용자 활동·게시물)은 그 계열의 값으로 요약한다.
+    expect(statsHub).toContain(': seriesSummary(points);');
   });
 });
 
@@ -915,10 +942,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   it('대시보드 위젯 SPI 는 여전히 마이페이지 콘텐츠를 소비하지 않는다', () => {
     const providers = collectJavaSources(path.join(ROOT, 'business-app', 'src', 'main'))
       .filter((source) => source.includes('DashboardItemProvider'));
-    // 구현체는 게시판·결재 기능에 있다. 투영으로 빠진 구현체만 빼고 남은 것은 모두 찾아야 한다.
+    // 구현체는 게시판 기능에 있다(결재 대기 수 공급자는 읽는 화면이 없어 2026-10-20 걷었다). 투영으로 빠진 구현체만 빼고
+    // 남은 것은 모두 찾아야 한다.
     const knownProviders = keepInProjection([
       'business-app/src/main/java/nuri/business/service/board/BoardDashboardProvider.java',
-      'business-app/src/main/java/nuri/business/service/informalsanction/InformalSanctionDashboardProvider.java',
     ], relative => path.join(ROOT, relative));
     expect(providers.length, 'DashboardItemProvider 구현체를 찾지 못했다 — 계약이 vacuous 하다')
       .toBeGreaterThanOrEqual(knownProviders.length);

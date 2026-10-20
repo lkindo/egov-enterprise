@@ -96,7 +96,10 @@ export default function ScheduleDeptClient() {
         schdlBgngYmd: format(new Date(), YMD),
         schdlEndYmd: format(new Date(), YMD),
         schdlPlcNm: '',
-        schdlImprtCd: 'A', // A: 전체, B: 부서, C: 개인
+        // [2026-10-20] schdlImprtCd 는 지어내지 않는다. 종전에는 'A'(주석은 'A: 전체, B: 부서, C: 개인')를 늘 실었지만, 그 컬럼은
+        //   일정 중요도 코드(DB 주석 '일정중요도코드', 공통코드 COM019 '일정중요도 낮음/보통/높음')이고 공개 범위가 아니다 — 공개
+        //   범위는 schdlSeCd 다. 어느 값이 어느 중요도인지 저장소에 정의가 없고 이 화면은 중요도를 묻지 않으므로, 개인 일정 폼처럼
+        //   새 일정에는 싣지 않는다(비어 있음). 수정할 때는 저장된 값을 그대로 왕복한다.
         // [필수] 이 화면은 '부서 일정'이고 GET /schedules/dept 는 schdlSeCd='1' 로 필터한다.
         //   종전에는 이 값을 보내지 않아 null 로 저장됐고, 등록에 성공해도 목록에 영영 나타나지 않았다.
         schdlSeCd: '1',
@@ -150,7 +153,6 @@ export default function ScheduleDeptClient() {
             schdlBgngYmd: format(new Date(), YMD),
             schdlEndYmd: format(new Date(), YMD),
             schdlPlcNm: '',
-            schdlImprtCd: 'A',
             schdlSeCd: '1', // 부서 일정 — GET /schedules/dept 의 필터 조건
         });
         validation.setFormErrors({}, false);
@@ -182,7 +184,8 @@ export default function ScheduleDeptClient() {
             schdlPlcNm: schedule.schdlPlcNm ?? '',
             // 이 화면은 부서 일정 전용이다 — GET /schedules/dept 가 schdlSeCd='1' 로 필터한다.
             schdlSeCd: schedule.schdlSeCd ?? '1',
-            schdlImprtCd: schedule.schdlImprtCd ?? 'A',
+            // 저장된 중요도를 그대로 왕복한다 — 비어 있으면 비워 둔다('A' 로 채우지 않는다).
+            schdlImprtCd: schedule.schdlImprtCd ?? undefined,
             schdlKndCd: schedule.schdlKndCd,
             reptSeCd: schedule.reptSeCd,
         });

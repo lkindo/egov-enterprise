@@ -328,6 +328,16 @@
       ]
     },
     {
+      "file": "reward/RewardManageService.java",
+      "owner": "reward",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.repository.UserRepository",
+        "nuri.business.service.user.dto.UserSearchDto"
+      ]
+    },
+    {
       "file": "schedule/attachment/ScheduleAttachmentSourceContributor.java",
       "owner": "schedule",
       "target": "file",

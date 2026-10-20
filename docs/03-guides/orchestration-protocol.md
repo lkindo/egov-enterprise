@@ -218,6 +218,8 @@
 
 병합이 아니어도 생성물을 아래 순서로 한 번에 다시 만들거나(`npm run regen`) 쓰지 않고 낡은 것만 보는 명령(`npm run regen -- --check`, pre-push 맨 앞)은 [CI 가이드의 생성물 재생성](cicd-pipeline.md#생성물-재생성-npm-run-regen)을 따른다.
 
+여러 갈래(브랜치)를 한 브랜치로 합쳤으면 `origin/main` 을 fetch 한 뒤 푸시 전에 `npm run verify:integrate` 를 한 번 돈다([판정](../../scripts/integration-precheck.mjs)) — ① `origin/main` 대비 Flyway 버전 중복·순서 밖 번호·적용된 마이그레이션 수정을 막고 메뉴 스냅숏이 낡았으면 `npm run project:menus:refresh` 를 알린다 ② `npm run regen` ③ 전체 vitest·`:api-server:test`·바뀐 마이그레이션·엔티티의 표 이름·버전을 쓰는 schema-validation 시험(고를 수 없으면 전체)·카탈로그가 바뀌었으면 생성기 화면 시험. §6.3 의 무거운 실행이고, 운영 계약·정적 검사는 이어지는 pre-push 가 돈다.
+
 양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
 
 | 생성물 | 다시 만드는 방법 |

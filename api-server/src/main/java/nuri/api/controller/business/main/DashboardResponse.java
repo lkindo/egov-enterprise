@@ -15,13 +15,15 @@ import java.util.Map;
  * <p>내부 {@code DashboardItemProvider} SPI는 확장 가능한 Map을 계속 사용하되, 브라우저가
  * 의존하는 핵심 필드는 이 DTO에서 타입과 필수 여부를 고정한다. 추가 provider 값은
  * {@link JsonAnyGetter}로 기존 wire 호환성을 유지한다.</p>
+ *
+ * <p>[2026-10-20] 결재 대기 건수({@code pendingApprovalCount})를 걷었다. 요청마다 결재선을 셌지만 읽는 화면이 없었다 —
+ * 업무 홈의 결재 대기 카드는 결재 기능이 자기 API(결재 대기 목록의 전체 건수)로 센다(DEC-OPS-281).</p>
  */
 @Schema(name = "DashboardResponse")
 public final class DashboardResponse {
 
     private static final String TASK_LIST = "taskList";
     private static final String NOTICE_LIST = "notiList";
-    private static final String PENDING_APPROVAL_COUNT = "pendingApprovalCount";
     private static final String TASK_LIST_TOTAL = "taskListTotal";
     private static final String NOTICE_LIST_TOTAL = "notiListTotal";
 
@@ -29,7 +31,6 @@ public final class DashboardResponse {
     private final List<BoardDto> notiList;
     private final Long taskListTotal;
     private final Long notiListTotal;
-    private final Long pendingApprovalCount;
     private final Map<String, Object> extensions;
 
     private DashboardResponse(
@@ -37,13 +38,11 @@ public final class DashboardResponse {
             List<BoardDto> notiList,
             Long taskListTotal,
             Long notiListTotal,
-            Long pendingApprovalCount,
             Map<String, Object> extensions) {
         this.taskList = taskList;
         this.notiList = notiList;
         this.taskListTotal = taskListTotal;
         this.notiListTotal = notiListTotal;
-        this.pendingApprovalCount = pendingApprovalCount;
         this.extensions = extensions;
     }
 
@@ -53,14 +52,11 @@ public final class DashboardResponse {
         List<BoardDto> notiList = boardItems(extensions.remove(NOTICE_LIST), NOTICE_LIST);
         Long taskListTotal = nonNegativeCount(extensions.remove(TASK_LIST_TOTAL), TASK_LIST_TOTAL);
         Long notiListTotal = nonNegativeCount(extensions.remove(NOTICE_LIST_TOTAL), NOTICE_LIST_TOTAL);
-        Long pendingApprovalCount = nonNegativeCount(
-                extensions.remove(PENDING_APPROVAL_COUNT), PENDING_APPROVAL_COUNT);
         return new DashboardResponse(
                 taskList,
                 notiList,
                 taskListTotal,
                 notiListTotal,
-                pendingApprovalCount,
                 Map.copyOf(extensions));
     }
 
@@ -89,18 +85,6 @@ public final class DashboardResponse {
     @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0", nullable = true, types = {"integer", "null"})
     public Long getNotiListTotal() {
         return notiListTotal;
-    }
-
-    /**
-     * 결재 대기 건수.
-     *
-     * <p>[2026-09-15 DEC-OPS-100] 셀 수 없을 때(결재 공급자가 없거나 조회에 실패했을 때)는 0 이 아니라
-     * {@code null} 이다. 0 으로 채우면 화면이 "결재 대기 0건" 이라는 사실 주장을 한다(unknownAsZero).
-     * 키는 늘 응답에 실린다(필수·nullable).</p>
-     */
-    @Schema(requiredMode = Schema.RequiredMode.REQUIRED, minimum = "0", nullable = true, types = {"integer", "null"})
-    public Long getPendingApprovalCount() {
-        return pendingApprovalCount;
     }
 
     @JsonAnyGetter

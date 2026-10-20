@@ -61,6 +61,11 @@ class CommonCodeServiceTest {
     @Spy
     private CommonCodeMapper commonCodeMapper = new CommonCodeMapperImpl();
 
+    // [2026-10-20] 사용처 — 기능 기여 하나로 조립한 실제 카탈로그(GRP1 만 읽는다).
+    @Spy
+    private CommonCodeUsageCatalog usageCatalog = new CommonCodeUsageCatalog(List.of(
+            () -> List.of(new nuri.foundation.core.code.CommonCodeUsageContributor.Usage("GRP1", "결재 업무 구분 선택지"))));
+
     @InjectMocks
     private CommonCodeService commonCodeService;
 
@@ -709,5 +714,45 @@ class CommonCodeServiceTest {
 
         assertEquals(7, commonCodeService.selectCmmnCodeList(new BaseSearchDto()).getFirst().getVersion());
         assertEquals(4, commonCodeService.selectCmmnDetailCodeList(new BaseSearchDto()).getFirst().getVersion());
+    }
+
+    @Test
+    @DisplayName("[2026-10-20] 그룹 목록은 이 제품이 그 그룹을 읽는 곳(사용처)을 싣고, 읽지 않는 그룹은 빈 목록이다")
+    void groupListCarriesUsages() {
+        given(commonCodeGroupRepository.searchCommonCodeGroups(any(), any(), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(
+                        new CommonCodeGroupProjection("GRP1", "읽는 그룹", null, "CL1", "분류", "Y", 0),
+                        new CommonCodeGroupProjection("GRP9", "레거시 그룹", null, "CL1", "분류", "Y", 0))));
+
+        List<CmmnCodeDto> result = commonCodeService.selectCmmnCodeList(new BaseSearchDto());
+
+        assertEquals(List.of("결재 업무 구분 선택지"), result.get(0).getUsages());
+        // 읽지 않는 그룹도 null 이 아니라 빈 목록이다 — 화면이 '읽지 않음'을 판정할 근거가 응답에 있다.
+        assertEquals(List.of(), result.get(1).getUsages());
+    }
+
+    @Test
+    @DisplayName("[2026-10-20] 그룹 상세도 같은 사용처를 싣는다")
+    void groupDetailCarriesUsages() {
+        given(commonCodeGroupRepository.findById("GRP1"))
+                .willReturn(Optional.of(CommonCodeGroup.builder().cdId("GRP1").cdIdNm("Name").clsfCd("CL1").build()));
+        given(commonCodeCategoryRepository.findById("CL1")).willReturn(Optional.empty());
+
+        CmmnCodeDto result = commonCodeService.selectCmmnCodeDetail(CmmnCodeDto.builder().cdId("GRP1").build());
+
+        assertEquals(List.of("결재 업무 구분 선택지"), result.getUsages());
+    }
+
+    @Test
+    @DisplayName("[2026-10-20] 그룹별 코드 조회는 캐시하지 않는다 — 다른 인스턴스가 바꾼 값을 다음 요청이 바로 읽는다")
+    void codesByGroupCarriesNoCache() throws NoSuchMethodException {
+        // 캐시를 다시 두면 여러 인스턴스 사이 무효화가 함께 있어야 한다(서비스 주석). 애노테이션이 돌아오면 이 시험이 알린다.
+        java.lang.reflect.Method method = CommonCodeService.class.getMethod("getCodesByGroup", String.class);
+        assertNull(org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation(method,
+                org.springframework.cache.annotation.Cacheable.class));
+        for (java.lang.reflect.Method declared : CommonCodeService.class.getDeclaredMethods()) {
+            assertNull(org.springframework.core.annotation.AnnotatedElementUtils.findMergedAnnotation(declared,
+                    org.springframework.cache.annotation.CacheEvict.class), declared.getName());
+        }
     }
 }

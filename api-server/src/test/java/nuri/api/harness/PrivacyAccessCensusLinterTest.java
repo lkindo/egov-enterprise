@@ -539,7 +539,9 @@ class PrivacyAccessCensusLinterTest {
     @Test
     void binaryAnnotationRemovalRemainsRedEvenWhenPrivacyRegistryIsEdited() {
         Set<String> required = requiredSensitiveBinaryHandlers(ResponseContractLinterTest.binaryAllowedHandlers(), ignored -> true);
-        assertThat(required).hasSize(6).contains("nuri.api.controller.business.file.FileApiController#downloadFile");
+        // [2026-10-20] 7 = 첨부 다운로드 1 + 로그 내보내기 5 + 민감 작업 감사 원장 내보내기 1(사유 필수). 설문 통계 반출은 면제다.
+        assertThat(required).hasSize(7).contains("nuri.api.controller.business.file.FileApiController#downloadFile",
+                "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#exportAuditJournal");
         for (String removed : required) {
             Set<String> weakened = new HashSet<>(required);
             weakened.remove(removed);

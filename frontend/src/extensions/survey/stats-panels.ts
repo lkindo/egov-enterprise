@@ -23,6 +23,8 @@ export default defineContributions('stats-panels', [
     order: 60,
     label: '설문조사 분석',
     title: '설문조사 결과 분석',
+    // 설문 목록 API 의 첫 페이지(10건)다 — 집계 기간을 따르지 않는다. 상태는 오늘 날짜로 판정한다.
+    basis: '집계 기준: 설문 목록의 첫 10건 · 상태는 오늘 날짜 기준 · 집계 기간은 적용하지 않는다 · 출처: 설문 관리',
     icon: Vote,
     queryKey: SURVEY_STATS_LIST_KEY,
     load: loadSurveyStatsList,

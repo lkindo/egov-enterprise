@@ -231,6 +231,21 @@ describe('ScheduleDeptClient 조회 실패 정직성', () => {
     expect(harness.toastError).not.toHaveBeenCalledWith('저장 중 오류가 발생했습니다.');
   });
 
+  // [2026-10-20] schdlImprtCd 는 일정 중요도(COM019)이지 공개 범위가 아니다. 이 화면은 중요도를 묻지 않으므로 새 일정에 값을
+  //   지어 싣지 않는다 — 종전에는 늘 'A' 를 실었다. 공개 범위는 schdlSeCd('1' 부서)가 말한다.
+  it('새 부서 일정에 묻지 않은 중요도 코드를 지어 싣지 않는다', async () => {
+    render(<ScheduleDeptClient />);
+    await screen.findByText('등록된 부서 일정이 존재하지 않습니다.');
+    await userEvent.click(screen.getByRole('button', { name: /일정 등록/ }));
+    fireEvent.change(screen.getByRole('textbox', { name: /일정명/ }), { target: { value: '부서 회의' } });
+    await userEvent.click(screen.getByRole('button', { name: '저장' }));
+
+    await waitFor(() => expect(harness.createDeptSchedule).toHaveBeenCalledTimes(1));
+    const [body] = harness.createDeptSchedule.mock.calls[0] as [Record<string, unknown>];
+    expect(body).toMatchObject({ schdlNm: '부서 회의', schdlSeCd: '1' });
+    expect(body.schdlImprtCd).toBeUndefined();
+  });
+
   it('저장 중 연속 클릭을 동기적으로 차단한다', async () => {
     let finishCreate: (() => void) | undefined;
     harness.createDeptSchedule.mockImplementationOnce(
@@ -485,5 +500,13 @@ describe('ScheduleDeptClient 수정 본문 계약', () => {
       schdlPlcNm: '회의실 A',
       schdlSeCd: '1',
     });
+  });
+
+  it('저장된 중요도가 비어 있으면 수정할 때도 비워 둔다 — \'A\' 로 채우지 않는다', async () => {
+    harness.getDeptScheduleList.mockResolvedValue({ list: [{ ...SERVER_SHAPED_ROW, schdlImprtCd: null }] });
+    const [, body] = await editAndSave();
+
+    expect(body.schdlImprtCd).toBeUndefined();
+    expect(body).toMatchObject({ schdlKndCd: '02', reptSeCd: '1' });
   });
 });

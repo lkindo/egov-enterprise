@@ -55,7 +55,7 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
   const catalog = loadProjectComposerCatalog(root);
   const notesFor = domains => inclusionNotes(resolveProjectRecipe({ ...recipe(), selection: { domains } }, catalog), catalog);
   // 대표 사슬은 도움말 → 게시판 → 댓글이다(쪽지 → 스크랩 → 게시판 사슬은 허브 분해 H1 에서, 대시보드 → 게시판 사슬은 Phase 2
-  //   9단계에서 사라졌다 — 쪽지는 혼자 풀리고, 실시간 대시보드는 알림만 끌어온다).
+  //   9단계에서, 대시보드 → 알림은 2026-10-20 실시간 구역의 내 알림 구독을 걷으며 사라졌다 — 쪽지·실시간 대시보드는 혼자 풀린다).
   assert.deepEqual(notesFor(['note']), []);
   const comment = notesFor(['help']).find(item => item.domain === 'comment');
   assert.equal(comment.path, '도움말·온라인 매뉴얼 → 게시판·지식 → 댓글');
@@ -65,23 +65,25 @@ test('the plan explains each automatic inclusion with a chain, one sentence per 
   assert.ok(comment.steps[1].files.includes('business-app/src/main/java/nuri/business/domain/board/Board.java'));
   assert.equal(comment.removal, '이 기능을 빼려면 도움말·온라인 매뉴얼을 해제하세요.');
   assert.deepEqual(comment.roots, ['help']);
-  const dashboard = notesFor(['dashboard']);
-  assert.deepEqual(dashboard.map(item => [item.domain, item.path]), [['notification', '실시간 대시보드 → 알림']]);
+  assert.deepEqual(notesFor(['dashboard']), []);
+  const help = notesFor(['help']);
+  assert.deepEqual(help.map(item => [item.domain, item.path]),
+    [['board', '도움말·온라인 매뉴얼 → 게시판·지식'], ['comment', '도움말·온라인 매뉴얼 → 게시판·지식 → 댓글']]);
   assert.equal(notesFor(['comment', 'scrap']).find(item => item.domain === 'board').removal, '이 기능을 빼려면 댓글, 스크랩을 모두 해제하세요.');
   // 약식 전자결재는 행사·포상 없이 생성된다(DEC-OPS-272). 그 반대는 코드 참조로 남는다.
   assert.deepEqual(notesFor(['informalsanction']), []);
   assert.equal(notesFor(['reward'])[0].removal, '이 기능을 빼려면 포상을 해제하세요.');
   assert.deepEqual(notesFor(['event']), []);
   // 대시보드 하나만 골라도 종전 사유는 1,600자를 넘었다. 화면 문장에는 영문(클래스명·id·경위 괄호)이 없다.
-  for (const item of notesFor(['dashboard'])) {
+  for (const item of help) {
     assert.doesNotMatch([item.path, item.removal, ...item.steps.map(step => step.text)].join(' '), /[A-Za-z()]/, item.domain);
   }
   for (const kind of new Set(catalog.capabilities.flatMap(capability => capability.requires.map(edge => edge.kind)))) {
     assert.ok(Object.hasOwn(REQUIRES_KIND_LABELS, kind), `kind label: ${kind}`);
   }
   assert.deepEqual(notesFor(['survey']), []);
-  const plan = createComposerEngine().plan({ ...recipe(), selection: { domains: ['dashboard'] } });
-  assert.deepEqual(plan.inclusionNotes, dashboard);
+  const plan = createComposerEngine().plan({ ...recipe(), selection: { domains: ['help'] } });
+  assert.deepEqual(plan.inclusionNotes, help);
   assert.deepEqual(createComposerEngine().plan({ ...recipe(), selection: { preset: 'collaboration' } }).inclusionNotes, []);
 });
 

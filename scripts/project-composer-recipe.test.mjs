@@ -359,7 +359,8 @@ test('auto-included features carry the shortest chain from a selection, one sent
   assert.deepEqual(help.roots, ['help']);
   // 개발자 원문 reason 은 종전 형식 그대로 남는다(호환). 그 기능으로 들어오는 모든 간선의 원문을 모은다.
   assert.ok(help.reason.includes('board: board 소스가 comment 타입을 참조한다.'), help.reason);
-  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['dashboard'] }), catalog).resolvedDomains, ['dashboard', 'notification']);
+  // 실시간 대시보드는 혼자 풀린다(2026-10-20 — 실시간 구역이 내 알림을 따로 구독하지 않아 알림을 끌어오지 않는다).
+  assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['dashboard'] }), catalog).resolvedDomains, ['dashboard']);
   // 쪽지는 혼자 풀린다.
   assert.deepEqual(resolveProjectRecipe(recipe({ domains: ['note'] }), catalog).autoIncluded, []);
   const both = resolveProjectRecipe(recipe({ domains: ['comment', 'scrap'] }), catalog).autoIncluded.find(item => item.domain === 'board');

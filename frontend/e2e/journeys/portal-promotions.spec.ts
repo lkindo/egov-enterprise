@@ -1,4 +1,4 @@
-import { APIRequestContext } from '@playwright/test';
+import { APIRequestContext, Page } from '@playwright/test';
 import fs from 'fs';
 import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
@@ -39,7 +39,9 @@ async function deletePromotionByTitle(request: APIRequestContext, kind: 'popups'
             totalPage = Number(body?.data?.totalPage ?? 1);
         }
         for (const row of rows) {
-            const rowTitle = String(row?.popupNm ?? row?.bnrNm ?? row?.title ?? '');
+            // [2026-10-20] 팝업 제목 필드는 popupTtlNm 이다 — 종전의 popupNm 은 없는 이름이라 팝업을 한 건도 지우지 못했고,
+            //   만든 팝업이 실행 끝(globalTeardown)까지 남아 다른 시험의 업무 홈에 떴다.
+            const rowTitle = String(row?.popupTtlNm ?? row?.bnrNm ?? row?.title ?? '');
             if (!rowTitle.includes(title))
                 continue;
             const id = row?.[idField];
@@ -56,38 +58,58 @@ async function deletePromotionByTitle(request: APIRequestContext, kind: 'popups'
     }
 }
 test.describe('Public Engagement & Experience', () => {
-    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage, request }) => {
+    test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage, actorPage, request }) => {
         const popupTitle = `E2E Popup ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const bannerTitle = `E2E Banner ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const promo = new PromotionPage(adminPage);
         try {
-            await test.step('Admin: Configure Layer Popup', async () => {
-                console.log(`>>> Configuring popup: ${popupTitle}`);
-                await promo.gotoBannerPopupAdmin(); // Fixed method name
-                await promo.createPopup(popupTitle);
-            });
+            /*
+              [2026-10-20] 공지 팝업은 이제 모달 대화상자다 — 떠 있는 동안 업무 홈의 다른 조작을 막는다. 같은 실행의 다른 시험(다른 worker)이
+              업무 홈을 쓰므로, 팝업이 게시돼 있는 시간을 짧게 둔다: 배너를 먼저 만들고, 팝업은 만든 직후 사용자 화면에서 확인하고 곧바로 지운다.
+            */
             await test.step('Admin: Configure Main Banner', async () => {
                 console.log(`>>> Configuring banner: ${bannerTitle}`);
+                await promo.gotoBannerPopupAdmin();
                 await promo.createBanner(bannerTitle);
             });
-            await test.step('User: Verify Promotion Visibility', async () => {
-                console.log(`>>> Verifying popup and banner on Dashboard`);
+            await test.step('Admin: Configure Layer Popup', async () => {
+                console.log(`>>> Configuring popup: ${popupTitle}`);
+                await promo.createPopup(popupTitle);
+            });
+            await test.step('User: Popup is an accessible dialog, a bottom sheet on a phone', async () => {
+                const popupDialog = await openPopupDialog(userPage, popupTitle);
+                // 모달 대화상자이고, 제목이 이름이며, 초점이 제목으로 들어온다.
+                await expect(popupDialog).toHaveAttribute('aria-modal', 'true');
+                await expect(popupDialog.getByRole('heading', { name: popupTitle })).toBeFocused();
+                // 넓은 화면에서는 저장한 좌표·크기(100, 100, 400×400)를 그대로 쓴다 — 화면 안에 들어오는 값이다.
+                const desktopBox = await popupDialog.getByTestId('notice-popup-panel').boundingBox();
+                expect(desktopBox, '팝업 패널이 보인다').not.toBeNull();
+                expect(Math.abs(desktopBox!.x - 100)).toBeLessThanOrEqual(1);
+                expect(Math.abs(desktopBox!.width - 400)).toBeLessThanOrEqual(1);
+                await userPage.keyboard.press('Escape');
+                await expect(popupDialog).toBeHidden();
+
+                // 휴대폰 폭에서는 저장 좌표·크기 대신 화면 아래쪽 시트로 보인다(넘치지 않는다).
+                const phone = await actorPage({ storageState: 'playwright/.auth/user.json', viewport: { width: 390, height: 844 } });
+                const phoneDialog = await openPopupDialog(phone.page, popupTitle);
+                // 대화상자는 열릴 때 짧게 움직인다 — 자리 잡은 뒤의 위치를 잰다(허용치는 그대로 1px).
+                await expect(async () => {
+                    const sheet = await phoneDialog.getByTestId('notice-popup-panel').boundingBox();
+                    const viewport = await phone.page.evaluate(() => ({ width: document.documentElement.clientWidth, height: window.innerHeight }));
+                    expect(sheet, '휴대폰 시트가 보인다').not.toBeNull();
+                    expect(Math.abs(sheet!.x)).toBeLessThanOrEqual(1);
+                    expect(Math.abs(sheet!.width - viewport.width)).toBeLessThanOrEqual(1);
+                    expect(Math.abs(sheet!.y + sheet!.height - viewport.height)).toBeLessThanOrEqual(1);
+                }).toPass({ timeout: 5_000 });
+                // 머리의 X 단추 이름도 '<제목> 닫기' 라 정확히 '닫기' 인 아래 단추를 누른다.
+                await phoneDialog.getByRole('button', { name: '닫기', exact: true }).click();
+                await expect(phoneDialog).toBeHidden();
+            });
+            // 확인했으면 바로 지운다 — 게시된 모달 팝업이 다른 시험의 업무 홈을 막지 않게 한다.
+            await deletePromotionByTitle(request, 'popups', popupTitle);
+            await test.step('User: Verify Banner Visibility', async () => {
+                console.log(`>>> Verifying banner on Dashboard`);
                 await userPage.goto('/');
-                // Popups might take a moment to render or require a refresh
-                const popupTitleLoc = userPage.getByText(popupTitle);
-                for (let i = 0; i < 3; i++) {
-                    const popupVisible = await popupTitleLoc.first()
-                        .waitFor({ state: 'visible', timeout: 5000 })
-                        .then(() => true)
-                        .catch(() => false);
-                    if (popupVisible)
-                        break;
-                    console.log(`>>> [Promotion] Popup not found (attempt ${i + 1}), reloading...`);
-                    await userPage.reload();
-                }
-                // [E2E 감사 B] else-warn 통과 제거 — 관리자가 만든 팝업/배너가 사용자에게 실제로 보여야 한다(무조건 단언).
-                // 보이지 않으면 생성이 조용히 실패했거나 노출 로직이 깨진 것이므로 실패 처리한다.
-                await expect(popupTitleLoc.first()).toBeVisible({ timeout: 10000 });
                 // [2026-07-27 결정적 검증] 메인 배너는 **한 번에 한 장만** 렌더하는 캐러셀이다
                 //   (BannerSlider: `banners[currentIndex]`, 5초마다 회전). 그래서 "새 배너가 보이는가"를
                 //   리로드로만 확인하면 슬라이드 순서에 운을 맡기게 된다 — 리로드는 currentIndex 를 0 으로
@@ -123,9 +145,32 @@ test.describe('Public Engagement & Experience', () => {
             });
         }
         finally {
-            // 누적이 다음 실행의 캐러셀 순회를 다시 어렵게 만들기 전에 지운다(위 주석의 7건 사고).
+            // 누적이 다음 실행의 캐러셀 순회를 다시 어렵게 만들기 전에 지운다(위 주석의 7건 사고). 팝업은 위에서 이미 지웠다면 아무것도 하지 않는다.
             await deletePromotionByTitle(request, 'popups', popupTitle);
             await deletePromotionByTitle(request, 'banners', bannerTitle);
         }
     });
 });
+
+/**
+ * 업무 홈을 열고 그 제목의 공지 팝업 대화상자를 돌려준다. 공지는 한 번에 하나씩 순서대로 뜨므로, 앞선 다른 공지가 보이면 Esc 로 넘긴다.
+ * 관리자가 만든 팝업이 사용자에게 실제로 보여야 한다(무조건 단언) — 보이지 않으면 생성이 조용히 실패했거나 노출 로직이 깨진 것이다.
+ */
+async function openPopupDialog(page: Page, title: string) {
+    const target = page.getByRole('dialog', { name: title });
+    for (let attempt = 0; attempt < 3; attempt++) {
+        await page.goto('/');
+        for (let skipped = 0; skipped < 5; skipped++) {
+            const shown = await page.getByRole('dialog').first()
+                .waitFor({ state: 'visible', timeout: 5000 })
+                .then(() => true)
+                .catch(() => false);
+            if (!shown || await target.isVisible()) break;
+            await page.keyboard.press('Escape');
+        }
+        if (await target.isVisible()) return target;
+        console.log(`>>> [Promotion] Popup not found (attempt ${attempt + 1}), reloading...`);
+    }
+    await expect(target).toBeVisible({ timeout: 10000 });
+    return target;
+}

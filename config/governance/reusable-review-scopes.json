@@ -247,6 +247,27 @@
       "requiredDomains": [
         "dashboard"
       ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/app/components/dashboard/MemoReportHome.tsx",
+      "requiredDomains": [
+        "memoreport"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/app/components/dashboard/ScheduleHome.tsx",
+      "requiredDomains": [
+        "schedule"
+      ]
+    },
+    {
+      "pilotId": "content-user-home",
+      "source": "frontend/src/app/components/dashboard/SurveyHome.tsx",
+      "requiredDomains": [
+        "survey"
+      ]
     }
   ],
   "notes": [

@@ -9,6 +9,10 @@ const asText = value => typeof value === 'string' ? value : JSON.stringify(value
 const detail = (label, value) => ({ label, value: asText(value ?? '미확인') });
 const HTTP_METHODS = new Set(['get', 'post', 'put', 'patch', 'delete', 'head', 'options', 'trace']);
 const excerpt = (text, max = 400) => text.length > max ? `${text.slice(0, max)}… [상세 원문 확인]` : text;
+// 의존성 버전과 액션 커밋 핀은 싣지 않고 이름만 싣는다. 값의 정본은 선언 파일(package.json·lockfile·build.gradle·버전 카탈로그·
+// 워크플로)이다. Atlas 가 값을 다시 적으면 Dependabot 범프마다 Atlas 재생성을 요구하는데, 봇 PR 은 재생성을 돌리지 못한다.
+// `pnpm@9.15.0` → `pnpm`, `actions/checkout@<sha>` → `actions/checkout`.
+const withoutVersion = reference => reference.replace(/(?<=.)@[^@/]*$/, '');
 const CONSTITUTIONS = [
   ['backend', '백엔드', 'backend-api-constitution'],
   ['frontend', '프론트엔드', 'frontend-ux-constitution'],
@@ -242,7 +246,7 @@ export function parseAtlasWorkflow(text, source, required = []) {
   const jobs = [...parseWorkflowJobs(normalized)].map(([id, body]) => {
     const permission = yamlSection(body, 'permissions', 4);
     const stepNames = [...body.matchAll(/^\s+-\s+name:\s*(.+)$/gm)].map(match => match[1]);
-    const actions = [...body.matchAll(/^\s+(?:-\s+)?uses:\s*([^\s#]+)/gm)].map(match => match[1]);
+    const actions = [...body.matchAll(/^\s+(?:-\s+)?uses:\s*([^\s#]+)/gm)].map(match => withoutVersion(match[1]));
     const writeIndicators = [
       ['image-push', /(?:^|\n)\s*(?:docker|podman)\s+(?:buildx\s+build[^\n]*--push|push)\b|push:\s*true/m],
       ['release-publication', /\bgh\s+release\s+(?:create|upload|edit)\b|softprops\/action-gh-release/],
@@ -290,7 +294,6 @@ export function buildAtlasCatalog(repoRoot) {
   const openapi = io.json('api-docs.json');
   const rootPackage = io.json('package.json');
   const frontendPackage = io.json('frontend/package.json');
-  const build = io.read('build.gradle');
   const settings = io.read('settings.gradle');
   const includedModules = [...settings.matchAll(/^include\s+['"]([^'"]+)['"]/gm)].map(match => match[1]);
   requireValue(includedModules.length > 0, 'no Gradle modules');
@@ -303,7 +306,7 @@ export function buildAtlasCatalog(repoRoot) {
       { dependencies, details: [detail('컴파일 의존', dependencies), detail('구성 원본', 'settings.gradle')], links: [{ label: '모듈 선언', path: 'settings.gradle' }] });
   });
   moduleRecords.push(record('frontend', 'frontend / Next.js', '백엔드와 별도 빌드되는 웹 애플리케이션', 'source-defined', 'frontend/package.json',
-    { dependencies: [], details: [detail('도구체인', frontendPackage.packageManager)] }));
+    { dependencies: [], details: [detail('도구체인', withoutVersion(frontendPackage.packageManager))] }));
 
   const domainRecords = ['business-core', 'business-app'].flatMap(module => {
     const root = `${module}/src/main/java/nuri/business/domain`;
@@ -570,11 +573,7 @@ export function buildAtlasCatalog(repoRoot) {
     waiverCount: waiverMarkers.reduce((total, count) => total + count, 0), waiverFileCount: waiverMarkers.length,
     structuredWaiverCount: waivers.waivers.length, structuredWaiverFileCount: new Set(waivers.waivers.map(item => item.path)).size,
     qualityPopulationCount: registry.qualityPopulations.length, qualityRatchetCount: registry.qualityRatchets.length,
-    nodeVersion: io.read('.nvmrc').trim(), pnpmVersion: frontendPackage.packageManager.replace(/^pnpm@/, ''),
-    nextVersion: frontendPackage.dependencies.next.replace(/^[~^]/, ''), nextVersionConstraint: frontendPackage.dependencies.next,
-    bootVersion: requireValue(build.match(/id\s+['"]org\.springframework\.boot['"]\s+version\s+['"]([^'"]+)/)?.[1], 'Boot version not found'),
-    javaVersion: requireValue(build.match(/JavaLanguageVersion\.of\((\d+)\)/)?.[1], 'Java version not found'),
-    gradleVersion: requireValue(io.read('gradle/wrapper/gradle-wrapper.properties').match(/gradle-([^/]+)-bin\.zip/)?.[1], 'Gradle version not found'),
+    // 런타임·빌드 버전(Java·Spring Boot·Gradle·Node.js·pnpm·Next.js)은 사실로 싣지 않는다 — 화면은 선언 파일로 링크한다(withoutVersion).
   };
   requireValue(rootPackage.engines?.node, 'root Node engine missing');
   const catalogs = { modules: moduleRecords, domains: domainRecords, profiles: profileRecords, features: featureRecords, generators: generatorRecords, routes: routeRecords,

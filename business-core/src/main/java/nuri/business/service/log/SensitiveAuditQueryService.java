@@ -21,6 +21,11 @@ import tools.jackson.databind.ObjectMapper;
 
 import java.time.LocalDateTime;
 import java.time.LocalTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.IntConsumer;
+import com.querydsl.core.types.Predicate;
 
 /**
  * 민감 작업 감사 원장({@code tb_sys_adt_log})을 읽는다(2026-10-01 결정 19).
@@ -41,8 +46,43 @@ public class SensitiveAuditQueryService {
 
     public Page<AuditJournalEntry> search(String actorId, String operation, String fromDate, String toDate, int page, int size) {
         SecurityUtil.assertPermission("ADT_LOG_READ");
-        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE
-                || (actorId != null && actorId.length() > 20) || (operation != null && operation.length() > 100)) {
+        if (page < 0 || size < 1 || size > MAX_PAGE_SIZE) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        return repository.findAll(condition(actorId, operation, fromDate, toDate),
+                PageRequest.of(page, size, NEWEST_FIRST)).map(this::toEntry);
+    }
+
+    /**
+     * [2026-10-20] 목록과 같은 조건의 전체 행(내보내기). 조건 해석·검증은 목록과 한 곳이다 — 둘이 갈라지면 화면에서 좁힌 조건과
+     * 다른 파일을 받는다. 행 수를 먼저 세어 {@code withinCap} 이 상한을 판정한 뒤에만 전량을 읽는다(상한 초과 요청이 힙에 전량을
+     * 올리지 않게 한다 — 로그 내보내기와 같은 규칙). 권한은 목록과 같은 {@code ADT_LOG_READ} 다(내보내기용 권한을 새로 두지 않는다).
+     */
+    public List<AuditJournalEntry> exportEntries(String actorId, String operation, String fromDate, String toDate,
+                                                 IntConsumer withinCap) {
+        SecurityUtil.assertPermission("ADT_LOG_READ");
+        Predicate where = condition(actorId, operation, fromDate, toDate);
+        long total = repository.count(where);
+        Objects.requireNonNull(withinCap, "withinCap").accept((int) Math.min(total, Integer.MAX_VALUE));
+        List<AuditJournalEntry> rows = new ArrayList<>();
+        repository.findAll(where, NEWEST_FIRST).forEach(row -> rows.add(toEntry(row)));
+        return rows;
+    }
+
+    /**
+     * [2026-10-20] 원장에 남은 작업 종류(작업 이름) — 조건 검색의 '작업 종류' 선택지다. 원장에 실제로 있는 값만 돌려주므로 고르면
+     * 언제나 그 행이 있다. 작업 이름은 코드가 정한 값(핸들러 이름·작업 코드)이라 개인정보가 없다.
+     */
+    public List<String> operations() {
+        SecurityUtil.assertPermission("ADT_LOG_READ");
+        return repository.findDistinctOperations();
+    }
+
+    private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "logSn");
+
+    /** 목록·내보내기 공통 조건. 행위자는 로그인 ID, 작업은 작업 이름과 정확히 같은 값으로, 기간은 시작·종료를 함께 주어야 거른다. */
+    private static Predicate condition(String actorId, String operation, String fromDate, String toDate) {
+        if ((actorId != null && actorId.length() > 20) || (operation != null && operation.length() > 100)) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
         }
         QSensitiveAuditLog log = QSensitiveAuditLog.sensitiveAuditLog;
@@ -61,8 +101,7 @@ public class SensitiveAuditQueryService {
             LocalDateTime end = LogSearchPeriod.toLocalDate(toDate, "toDate").atTime(LocalTime.MAX);
             where.and(log.adtDt.between(start, end));
         }
-        return repository.findAll(where, PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "logSn")))
-                .map(this::toEntry);
+        return where;
     }
 
     private AuditJournalEntry toEntry(SensitiveAuditLog row) {

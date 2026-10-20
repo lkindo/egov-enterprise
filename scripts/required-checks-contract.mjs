@@ -302,12 +302,39 @@ const GRADLE_CACHE_READ_ONLY = {
   '.github/workflows/reusable-nightly.yml': { verify: 'true' },
 };
 
+/*
+  검토한 액션 핀 원장 — 커밋을 올릴 때 사람이 검토해야 하는 액션 저장소와 그 커밋. 워크플로가 이 저장소의 액션을 쓰면 정확히 이
+  커밋이어야 한다. 이 밖의 액션은 워크플로가 핀의 정본이다: 40자 커밋 SHA 와 "한 저장소는 모든 워크플로에서 한 커밋"만 본다
+  (아래 validatePinnedWorkflowUses). 그래서 Dependabot 이 워크플로만 고친 액션 범프는 워크플로 밖 수정이 0개이고, 이 원장의
+  액션 범프는 이 줄 하나다. 핀을 다시 적던 사본(의존성 제출 계약·이관 검증 계약·재사용 생성물 CI 템플릿)은 이 원장이나
+  ci.yml 을 읽는다. CodeQL·dependency review 의 검토 핀은 필수 단계 명세(.github/required-checks.json 의 criticalSteps)가
+  소유하고, 같은 저장소의 다른 단계는 아래 한 커밋 규칙이 그 명세에 묶는다.
+*/
+export const REVIEWED_ACTION_PINS = Object.freeze({
+  // v6.4.0 — 현재 GitHub 캐시 서비스와 맞는 캐시 클라이언트다. v6 기본 제공자는 별도 라이선스의 enhanced 라 단계마다
+  // cache-provider: basic 을 따로 요구한다(아래). 쓰기 권한 publisher 의 dependency-submission 도 같은 저장소다
+  // (dependency-submission-contract.mjs). 올릴 때 캐시 클라이언트 호환과 기본 제공자를 다시 확인한다.
+  'gradle/actions': '3f5f9adaf7d9fecd50b5935e54106014257a94e6',
+});
+
+/** `owner/repo/path@ref` 의 저장소(`owner/repo`). Dependabot 은 저장소 단위로 핀을 올린다. */
+export const actionRepository = action => action.split('@')[0].split('/').slice(0, 2).join('/');
+
+/** 원장의 검토 핀을 붙인 액션 참조(`gradle/actions/setup-gradle` → `gradle/actions/setup-gradle@<sha>`). 원장 밖 저장소는 실패한다. */
+export function reviewedActionPin(action) {
+  const sha = REVIEWED_ACTION_PINS[actionRepository(action)];
+  if (!sha) throw new Error(`no reviewed pin for ${action}`);
+  return `${action}@${sha}`;
+}
+
 export function validatePinnedWorkflowUses(workflowFiles) {
   if (!Array.isArray(workflowFiles)) {
     return ['workflow action pin contract requires an array of workflow files'];
   }
 
   const errors = [];
+  // 저장소 → 커밋 → 처음 쓴 위치. 같은 저장소를 두 커밋으로 쓰면 어느 핀이 검토된 것인지 알 수 없다.
+  const commitsByRepository = new Map();
   for (const workflowFile of workflowFiles) {
     const filePath = typeof workflowFile?.path === 'string' && workflowFile.path
       ? workflowFile.path
@@ -329,11 +356,21 @@ export function validatePinnedWorkflowUses(workflowFiles) {
       const pinnedAction = /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+(?:\/[A-Za-z0-9_./-]+)?@[0-9a-fA-F]{40}$/;
       if (!pinnedAction.test(action)) {
         errors.push(`${filePath}:${index + 1} third-party action '${action}' must use a 40-character commit SHA`);
+      } else {
+        const repository = actionRepository(action);
+        const commit = action.slice(action.lastIndexOf('@') + 1);
+        if (!commitsByRepository.has(repository)) commitsByRepository.set(repository, new Map());
+        const commits = commitsByRepository.get(repository);
+        if (!commits.has(commit)) commits.set(commit, `${filePath}:${index + 1}`);
+        const reviewed = REVIEWED_ACTION_PINS[repository];
+        if (reviewed && commit !== reviewed && !action.startsWith('gradle/actions/setup-gradle@')) {
+          errors.push(`${filePath}:${index + 1} '${action}' must use the reviewed action pin ${repository}@${reviewed}`);
+        }
       }
       if (action.startsWith('gradle/actions/setup-gradle@')) {
-        // v6.4.0 uses the current cache client. Select the MIT basic provider explicitly;
+        // The reviewed pin uses the current cache client. Select the MIT basic provider explicitly;
         // the v6 default is the separately licensed enhanced provider.
-        if (action !== 'gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6') {
+        if (action !== reviewedActionPin('gradle/actions/setup-gradle')) {
           errors.push(`${filePath}:${index + 1} Gradle setup must use the reviewed cache-compatible action pin`);
         }
         const usesIndent = lines[index].match(/^\s*/)[0].length;
@@ -377,6 +414,11 @@ export function validatePinnedWorkflowUses(workflowFiles) {
       if (cacheCallCounts.get(expectedJob) !== 1) {
         errors.push(`${filePath}: ${expectedJob} must have exactly one reviewed Gradle cache setup`);
       }
+    }
+  }
+  for (const [repository, commits] of commitsByRepository) {
+    if (commits.size > 1) {
+      errors.push(`action ${repository} must use one commit across workflows: ${[...commits].map(([commit, at]) => `${commit} (${at})`).join(', ')}`);
     }
   }
   return errors;

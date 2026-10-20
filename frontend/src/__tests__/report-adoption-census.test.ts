@@ -20,6 +20,8 @@ const A7_IMPORT = /from\s+['"]@\/app\/components\/patterns\/report-page['"]/;
 // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
 const EXPECTED_IMPORTERS = keepInProjection([
   'src/app/admin/stats/AdminStatsClient.tsx',
+  // [2026-10-20] 통계 하위 화면(사용자·성공 로그인과 기능이 넘기는 탭)을 A7 셸로 옮겼다.
+  'src/app/admin/stats/IntelligenceHubClient.tsx',
   'src/app/admin/survey/stats/SurveyStatsClient.tsx',
 ], file => join(FRONTEND_DIR, file));
 
@@ -67,6 +69,33 @@ describe('A7 report adoption census', () => {
     expect(client).toContain('showBreadcrumb={!embedded}');
     // 응답 합계가 서버 전체가 아니라 현재 페이지 기준이라는 사실을 화면이 밝힌다.
     expect(client).toContain('현재 페이지');
+  });
+
+  /*
+    [2026-10-20] 통계 하위 화면은 셸 없이 직접 조립했고 장식(기울인 아이콘 상자·올라가는 카드·굵기 900 축 글자·밑줄 접두 라벨)과
+    모든 탭에 걸친 요약 카드가 있었다. A7 셸로 옮기며 걷었다 — 되살아나면 이 계약이 붉다. 통계 개요도 같은 셸이 같은 내비게이션 아래에
+    그린다(개요에서 되돌아갈 길이 끊기던 문제).
+  */
+  it('통계 하위 화면이 셸을 경유하고 내비게이션을 개요와 함께 쓰며 장식을 되살리지 않는다', () => {
+    const shell = source('src/app/admin/stats/IntelligenceHubClient.tsx');
+    const overviewPage = source('src/app/admin/stats/page.tsx');
+    const overview = source('src/app/admin/stats/AdminStatsClient.tsx');
+
+    expect(shell).toMatch(/<ReportPage\b/);
+    expect(shell).toMatch(/basis=\{/);
+    expect(shell).toMatch(/<StandardChartWrapper\b/);
+    expect(shell).toMatch(/<StandardDataTable\b/);
+    expect(shell).toMatch(/navigation=\{navigation\}/);
+    // 셸은 서버가 그린 요약 화면 둘레에 내비게이션을 둔다 — 요약 화면을 import 하지 않는다(요약 칸 귀속이 하위 화면에 번지지 않게).
+    expect(shell).toMatch(/<StatsHubNavigationProvider value=\{navigation\}>\{overview\}<\/StatsHubNavigationProvider>/);
+    expect(shell).not.toMatch(/from '\.\/AdminStatsClient'/);
+    expect(overview).toContain('useStatsHubNavigation()');
+    expect(overview).toMatch(/navigation=\{navigation\}/);
+    expect(overviewPage).toMatch(/<IntelligenceHubClient\b[\s\S]*?defaultTab="DASHBOARD"[\s\S]*?overview=\{\(\s*<AdminStatsClient\b/);
+    for (const decoration of ['skew-x-', 'hover:scale-', 'fontWeight: 900', '>_ {', 'shadow-2xl', 'framer-motion']) {
+      expect(shell, `통계 셸에 장식이 되살아났다: ${decoration}`).not.toContain(decoration);
+      expect(overview, `통계 개요에 장식이 되살아났다: ${decoration}`).not.toContain(decoration);
+    }
   });
 
   it('/admin/stats가 지표·차트·원본 표를 한 화면에서 함께 제공한다', () => {

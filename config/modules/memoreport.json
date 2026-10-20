@@ -24,7 +24,8 @@
     "frontend": [
       "src/services/business/memoreport",
       "src/app/admin/operation/memo-reports",
-      "src/extensions/memoreport"
+      "src/extensions/memoreport",
+      "src/app/components/dashboard/MemoReportHome.tsx"
     ],
     "frontendAny": [],
     "routes": [
@@ -58,7 +59,12 @@
   ],
   "registrationOnly": {
     "events": [],
-    "contributions": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/memoreport/home-sections.ts",
+        "reason": "메모 보고 기능이 없으면 업무 홈의 읽지 않은 받은 보고 카드만 사라지고 업무 홈은 그대로입니다."
+      }
+    ],
     "ports": []
   },
   "requirements": [],

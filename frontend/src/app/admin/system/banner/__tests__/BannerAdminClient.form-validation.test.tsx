@@ -4,6 +4,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BannerAdminClient from '../BannerAdminClient';
 
+/*
+  [2026-10-20] 이 시험은 셸(BannerAdminClient)을 그려 셸이 조립하는 배너 패널(BannerAssetsPanel·useBannerAssetsPanel)과
+  팝업 패널(PopupAssetsPanel·usePopupAssetsPanel)의 폼·삭제 처리기를 함께 판정한다 — 화면을 자산별 파일로 나눴어도 한 화면이다.
+*/
+
 const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
   getBanners: vi.fn(),
@@ -95,6 +100,8 @@ vi.mock('@/app/components/ui/standard-file-uploader', () => ({
 
 vi.mock('@/app/components/ui/attachment-image', () => ({
   AttachmentImage: ({ alt }: { alt: string }) => <span role="img" aria-label={alt} />,
+  // 팝업 창의 미리보기(공지 팝업 패널)가 첨부 주소를 가려낼 때 쓴다 — 이 시험의 판정 대상은 아니다.
+  extractAtchFileSn: () => null,
 }));
 
 

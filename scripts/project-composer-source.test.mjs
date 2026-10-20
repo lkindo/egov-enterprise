@@ -648,11 +648,13 @@ test('every repository skill is classified and only project skills reach generat
 });
 
 /*
- * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 21개, CI 대표 직접 선택 2개, 그리고 주소록이
+ * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 시작 구성마다, 빈 선택, 기능마다의 단독 선택, CI 대표 직접 선택 2개, 그리고 주소록이
  * 수신자 피커에 기여하는 {mail, sms, addressbook}. 판정 통일(PR-2)의 골든 diff 를 이 대조가 화면 단위로 지킨다.
+ * 기능 모집단은 기능 선언(config/modules)이 정본이고 project-composer-catalog.test.mjs 가 카탈로그와 정확한 집합으로 대조한다 —
+ * 여기서는 그 수를 다시 적지 않고 비지 않았는지만 본다(DEC-OPS-340).
  */
 test('every selectable capability preserves its declared frontend and the screens its composition expects through actual import projection', () => {
-  assert.equal(catalog.capabilities.length, 21, 'review the capability population when its declaration changes');
+  assert.ok(catalog.capabilities.length > 1, 'the declared capability population must not be empty');
   for (const feature of catalog.capabilities) {
     const result = inspectFrontendSurvival([feature.id]);
     assert.ok(result.expectedCount > 1, `${feature.id} has no declared frontend population`);
@@ -862,8 +864,10 @@ test('dashboard, notifications and optional address book blocks follow their dom
 /*
  * [Phase 2 9단계 H0] 업무 홈 투영 그물. 구성마다 업무 홈('/')에 무엇이 남는지 생성기의 실제 투영·연쇄로 재고 골든과 대조한다.
  * 업무 홈 page 에서 import 간선으로 닿고 지워지지 않은 파일을 모아, 파일 자체(팝업·배너·쪽지 카드·실시간)와 주석을 뺀 글(카드·
- * 단추·목록·활동 문장)로 조각을 판정한다 — 마커 블록으로 조립하는 화면과 슬롯 기여로 조립하는 화면에 같은 판정이 선다.
- * 접근 불가 안내는 다른 조각이 하나라도 있을 때만, 부제는 요약 카드가 있을 때만 화면에 나온다.
+ * 단추·목록)로 조각을 판정한다 — 마커 블록으로 조립하는 화면과 슬롯 기여로 조립하는 화면에 같은 판정이 선다.
+ * 접근 불가 안내는 기능의 조각(기여)이 하나라도 있을 때만, 부제는 요약 카드가 있을 때만 화면에 나온다.
+ * [2026-10-20] 늘 비어 있던 활동 구역과 그 문장(feedNote)을 걷었다. 처리 대기 카드 — 메모 보고·일정·설문 기여와 core 셸의 부서 업무
+ * 카드 — 를 더했다. core 카드는 기여가 아니라 접근 판정을 만들지 않고, 모든 구성에 남는다(부서 업무는 core 다).
  */
 const HOME_PAGE = 'frontend/src/app/page.tsx';
 const HOME_PIECES = [
@@ -876,9 +880,14 @@ const HOME_PIECES = [
   ['boardCards', { text: /업무게시판 글</ }],
   ['boardLists', { text: /title="업무게시판 최근 글"/ }],
   ['newPost', { text: /새 게시글 작성/ }],
-  ['feedNote', { text: /위 목록에서 확인할 수 있습니다/ }],
+  ['memoCard', { file: 'frontend/src/app/components/dashboard/MemoReportHome.tsx' }],
+  ['scheduleCard', { file: 'frontend/src/app/components/dashboard/ScheduleHome.tsx' }],
+  ['surveyCard', { file: 'frontend/src/app/components/dashboard/SurveyHome.tsx' }],
+  ['deptJobsCard', { file: 'frontend/src/app/components/dashboard/DeptJobHomeCard.tsx' }],
 ];
-const HOME_CARDS = ['approvalCard', 'unreadNotes', 'boardCards'];
+const HOME_CARDS = ['approvalCard', 'unreadNotes', 'boardCards', 'memoCard', 'scheduleCard', 'surveyCard', 'deptJobsCard'];
+/** core 셸이 직접 그리는 조각 — 기여가 아니라 접근 판정(등록된 기여가 있을 때만)을 만들지 않는다. */
+const HOME_CORE_PIECES = ['deptJobsCard'];
 function homeSurface(selection) {
   const composition = resolveProjectRecipe({ ...recipe([]), selection }, catalog);
   const { projected, plan } = frontendPlanFor(composition);
@@ -886,31 +895,37 @@ function homeSurface(selection) {
   for (const path of reached) for (const { to } of plan.edges.get(path) ?? []) if (!plan.removed.has(to)) reached.add(to);
   const text = [...reached].map(path => stripCode(projected.get(path) ?? '')).join('\n');
   const pieces = HOME_PIECES.filter(([, rule]) => (rule.file ? reached.has(join(root, rule.file)) : rule.text.test(text))).map(([name]) => name);
-  if (pieces.length && /업무 홈 대시보드에 접근할 권한이 없습니다/.test(text)) pieces.push('accessGate');
+  if (pieces.some(piece => !HOME_CORE_PIECES.includes(piece)) && /업무 홈 대시보드에 접근할 권한이 없습니다/.test(text)) pieces.push('accessGate');
   if (pieces.some(piece => HOME_CARDS.includes(piece)) && /확인할 일과 업무 현황입니다/.test(text)) pieces.push('subtitle');
   return { alive: reached.size > 0, pieces: pieces.sort() };
 }
 
 test('the work home keeps exactly the pieces of the features each composition selects (H0 golden, H1 slots)', () => {
-  const all = ['accessGate', 'approvalButton', 'approvalCard', 'banner', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'popup', 'realtime',
-    'subtitle', 'unreadNotes'];
-  const collaboration = all.filter(piece => !['approvalButton', 'approvalCard', 'banner', 'popup'].includes(piece));
+  const all = ['accessGate', 'approvalButton', 'approvalCard', 'banner', 'boardCards', 'boardLists', 'deptJobsCard', 'memoCard', 'newPost', 'popup',
+    'realtime', 'scheduleCard', 'subtitle', 'surveyCard', 'unreadNotes'];
+  const collaboration = all.filter(piece => !['approvalButton', 'approvalCard', 'banner', 'memoCard', 'popup', 'scheduleCard', 'surveyCard'].includes(piece));
+  // core 셸의 부서 업무 카드는 모든 구성에 남고(요약 카드라 부제를 연다), 기여가 아니라 접근 판정을 만들지 않는다(2026-10-20).
+  const core = ['deptJobsCard', 'subtitle'];
   const golden = [
-    [{ preset: 'core' }, []],
+    [{ preset: 'core' }, core],
     [{ preset: 'collaboration' }, collaboration],
     [{ preset: 'demo' }, all],
+    [{ preset: 'survey' }, ['accessGate', ...core, 'surveyCard'].sort()],
     // [H2] 실시간 대시보드는 게시판을 포트로 읽는다 — 대시보드만 고르면 게시판이 따라오지 않아 실시간 구역과 접근 판정만 남는다.
-    [{ domains: ['dashboard'] }, ['accessGate', 'realtime']],
+    [{ domains: ['dashboard'] }, ['accessGate', ...core, 'realtime'].sort()],
     // [H1] 게시판·결재·쪽지 조각은 그 기능의 home-sections 기여다 — 그 기능만 골라도 홈에 나온다(H0 에서는 대시보드 기능의 마커
     //   블록이라 나오지 않았다). 기여가 등록되면 셸이 DASHBOARD_READ 로 진입을 판정하고, 요약 카드가 있으면 부제를 그린다.
-    [{ domains: ['board'] }, ['accessGate', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],
-    [{ domains: ['informalsanction'] }, ['accessGate', 'approvalButton', 'approvalCard', 'subtitle']],
-    [{ domains: ['note'] }, ['accessGate', 'subtitle', 'unreadNotes']],
+    [{ domains: ['board'] }, ['accessGate', 'boardCards', 'boardLists', ...core, 'newPost'].sort()],
+    [{ domains: ['informalsanction'] }, ['accessGate', 'approvalButton', 'approvalCard', ...core].sort()],
+    [{ domains: ['note'] }, ['accessGate', ...core, 'unreadNotes'].sort()],
     [{ domains: ['board', 'informalsanction'] },
-      ['accessGate', 'approvalButton', 'approvalCard', 'boardCards', 'boardLists', 'feedNote', 'newPost', 'subtitle']],
-    // [H1] 홍보 조각도 기여라 접근 판정이 함께 생긴다(H0 에서는 홍보 블록만 남고 판정은 대시보드 블록이었다). 카드가 없어 부제는 없다.
-    [{ domains: ['promotion'] }, ['accessGate', 'banner', 'popup']],
-    [{ domains: ['notification'] }, []],
+      ['accessGate', 'approvalButton', 'approvalCard', 'boardCards', 'boardLists', ...core, 'newPost'].sort()],
+    // [2026-10-20] 처리 대기 카드도 그 기능의 기여다 — 그 기능만 골라도 홈에 나오고 접근 판정이 함께 생긴다.
+    [{ domains: ['memoreport'] }, ['accessGate', ...core, 'memoCard'].sort()],
+    [{ domains: ['schedule'] }, ['accessGate', ...core, 'scheduleCard'].sort()],
+    // [H1] 홍보 조각도 기여라 접근 판정이 함께 생긴다(H0 에서는 홍보 블록만 남고 판정은 대시보드 블록이었다). 부제는 core 카드가 연다.
+    [{ domains: ['promotion'] }, ['accessGate', 'banner', ...core, 'popup'].sort()],
+    [{ domains: ['notification'] }, core],
   ];
   for (const [selection, pieces] of golden) {
     const surface = homeSurface(selection);

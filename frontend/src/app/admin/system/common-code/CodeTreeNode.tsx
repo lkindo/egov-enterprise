@@ -16,6 +16,7 @@ import type { CmmnDetailCode } from '@/types/foundation/system';
 import type { GroupCode } from '@/types/foundation/code';
 import type { CodeChangeHistoryTarget } from './CommonCodeChangeHistoryDialog';
 import type { FlattenedCodeNode } from './treeUtils';
+import { codeUsagesOf, CodeUsagePanel } from './code-usage';
 
 const INDENTATION_WIDTH = 24;
 
@@ -87,6 +88,8 @@ const CodeNodeRow = ({
   dragHandleProps,
 }: CodeNodeRowProps) => {
   const isCluster = node.type === 'cluster';
+  // [2026-10-20] 이 제품이 읽는 그룹은 목록에서 바로 알아보게 한다(사용처는 상세 패널이 말한다).
+  const readByProduct = node.type === 'group' && codeUsagesOf(node.data).length > 0;
 
   return (
     <div
@@ -130,7 +133,7 @@ const CodeNodeRow = ({
         data-a2-master-item={isOverlay ? undefined : ''}
         data-a2-master-item-type={isOverlay ? undefined : node.type}
         aria-current={isSelected ? 'true' : undefined}
-        aria-label={`${node.name} (${node.id}) 선택`}
+        aria-label={`${node.name} (${node.id}) 선택${readByProduct ? ' · 제품이 읽음' : ''}`}
         className={cn(
           "relative flex min-w-0 flex-1 items-center justify-between overflow-hidden rounded-md border p-3 text-left transition-colors",
           isCluster
@@ -162,6 +165,17 @@ const CodeNodeRow = ({
               {node.id}
             </span>
           </div>
+          {readByProduct && (
+            <span
+              data-code-usage-badge=""
+              className={cn(
+                "ml-auto shrink-0 rounded border px-1.5 py-0.5 text-xs font-semibold",
+                isSelected ? "border-primary-foreground/40 text-primary-foreground" : "border-border bg-card text-foreground"
+              )}
+            >
+              제품이 읽음
+            </span>
+          )}
         </div>
       </button>
     </div>
@@ -393,6 +407,7 @@ export function CommonCodeDetailPanel({
   if (selectedNode?.type === 'group') {
     return (
       <div className="space-y-4">
+        <CodeUsagePanel usages={codeUsagesOf(selectedNode.data)} headingLevel={DetailSubheading} />
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-md bg-muted p-3">
           <div className="flex items-center gap-3">
             <Fingerprint size={18} className="text-primary" aria-hidden="true" />

@@ -3328,7 +3328,7 @@ export interface paths {
         };
         /**
          * 접속 통계 조회(사용자)
-         * @description 사용자 홈 대시보드용 접속(로그인) 추이 통계.
+         * @description 사용자 홈 대시보드용 접속(로그인) 추이 통계. 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
          */
         get: operations["getConnectStats"];
         put?: never;
@@ -3987,7 +3987,7 @@ export interface paths {
         };
         /**
          * 메인 대시보드 요약 데이터 조회
-         * @description 공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.
+         * @description 공지사항·업무게시판의 최근 글과 전체 글 수를 조회합니다.
          */
         get: operations["getDashboardData"];
         put?: never;
@@ -4508,7 +4508,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 사용자 통계 조회 */
+        /**
+         * 사용자 통계 조회
+         * @description 인증 사용자의 일자별 API 요청 수를 요청 구분(조회·등록·수정·삭제)마다 한 계열로 낸다. 네 계열은 같은 날짜 축이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
+         */
         get: operations["getUserStats"];
         put?: never;
         post?: never;
@@ -4542,7 +4545,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 자료이용현황 통계 조회 */
+        /**
+         * 자료이용현황 통계 조회
+         * @description 기록이 있는 날만 싣는다 — 자료 이용 기록에는 쓰는 경로가 없어 빈 날을 0 으로 채우지 않는다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
+         */
         get: operations["getDataUsageStats"];
         put?: never;
         post?: never;
@@ -4559,7 +4565,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 접속 통계 조회 */
+        /**
+         * 접속 통계 조회
+         * @description 일자별 성공 로그인 수(실패·결과 미상 시도 제외). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
+         */
         get: operations["getConnectStats_1"];
         put?: never;
         post?: never;
@@ -4576,7 +4585,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 게시물 통계 조회 */
+        /**
+         * 게시물 통계 조회
+         * @description 일자별 등록 게시글 수(삭제한 글 제외). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
+         */
         get: operations["getBbsStats"];
         put?: never;
         post?: never;
@@ -4886,6 +4898,46 @@ export interface paths {
          * @description 최신순이다. 행위자 로그인 ID·작업 이름은 정확히 일치하는 값으로, 기간은 시작·종료를 함께 주어야 거른다.
          */
         get: operations["auditJournalList"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/logs/audit/operations": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 민감 작업 감사 원장의 작업 종류
+         * @description 원장에 남은 작업 이름을 중복 없이 이름 순으로 돌려준다. 목록·내보내기의 operation 조건에 그대로 쓴다.
+         */
+        get: operations["auditJournalOperations"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/logs/audit/export.xlsx": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 민감 작업 감사 원장 전체 결과 xlsx 내보내기
+         * @description 조건(행위자 로그인 ID·작업 이름·기간)은 목록과 같다. 사유(reason, 2~200자)가 필수이고 내보내기 시도와 사유가 원장에 남는다. 조건 일치 전체 결과를 xlsx 로 스트리밍하며 행 수가 상한을 넘으면 400 이다.
+         */
+        get: operations["exportAuditJournal"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5212,6 +5264,26 @@ export interface paths {
          * @description DB 첨부 레코드와 저장소 실물을 대조해 어긋난 건수와 조치 대상 예시를 반환한다. 읽기 전용이며 어떤 레코드도 변경하지 않는다.
          */
         get: operations["scan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dashboard/operational-signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 운영 신호 요약 조회
+         * @description 실패한 후속 작업 수·잠긴 계정 수·오늘 실패 요청 수를 DB 에서 세어 관측 시각과 함께 돌려준다. 원천을 조회할 권한(DWORK_READ·USER_READ·SYS_LOG_READ)이 없는 신호는 싣지 않는다.
+         */
+        get: operations["adminOperationalSignals"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6469,6 +6541,8 @@ export interface components {
              * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
              */
             version?: number;
+            /** @description 이 제품이 이 그룹을 읽는 곳(사용처) 문장. 빈 목록이면 이 제품이 읽지 않는 그룹이다. 서버가 채우며 요청 값은 무시한다. */
+            readonly usages?: string[];
         };
         /** @description 공통코드 계층 일괄 저장 항목 */
         CmmnCodeHierarchyDto: {
@@ -6611,6 +6685,10 @@ export interface components {
             /** Format: int64 */
             rwrdSn?: number;
             rwardwnrId: string;
+            /** @description 수상자 이름. 서버가 수상자 계정에서 읽어 싣는다 — 계정이 없으면 비어 있다. */
+            readonly rwardwnrNm?: string;
+            /** @description 수상자 소속 부서 이름. 서버가 수상자 계정에서 읽어 싣는다 — 소속이 없거나 계정이 없으면 비어 있다. */
+            readonly rwardwnrDeptNm?: string;
             rwardCode: string;
             rwardDe?: string;
             rwardNm?: string;
@@ -7854,53 +7932,30 @@ export interface components {
             /** Format: int64 */
             respondentCount?: number;
         };
-        ApiResponseListStatsDto: {
+        ApiResponseListStatsPoint: {
             success?: boolean;
             /** Format: int32 */
             status?: number;
             code?: string;
             message?: string;
-            data?: components["schemas"]["StatsDto"][];
+            data?: components["schemas"]["StatsPoint"][];
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        StatsDto: {
-            fromDate?: string;
-            toDate?: string;
-            statsKind?: string;
-            detailStatsKind?: string;
-            pdKind?: string;
-            statsDate?: string;
-            /** Format: int32 */
-            statsCo?: number;
-            /** Format: int32 */
-            maxStatsCo?: number;
-            /** Format: int32 */
-            minStatsCo?: number;
-            /** Format: int32 */
-            creatCo?: number;
-            /** Format: int32 */
-            inqCnt?: number;
-            /** Format: int32 */
-            updtCo?: number;
-            /** Format: int32 */
-            deleteCo?: number;
-            /** Format: int32 */
-            outptCo?: number;
-            /** Format: int32 */
-            errorCo?: number;
-            /** Format: int32 */
-            totInqCnt?: number;
-            /** Format: float */
-            avrgInqCnt?: number;
-            mxmmInqireBbsId?: string;
-            mxmmInqireBbsNm?: string;
-            topNtcepersonId?: string;
-            /** Format: int32 */
-            topNtcepersonCo?: number;
-            /** Format: float */
-            maxUnit?: number;
+        /** @description 일자별 집계 한 칸 */
+        StatsPoint: {
+            /**
+             * @description 집계 일자(yyyy-MM-dd). 한 응답 안에서 오름차순이다
+             * @example 2026-10-01
+             */
+            date: string;
+            /**
+             * Format: int64
+             * @description 그날의 건수. 측정하는 계열에서 기록이 없는 날은 0 이다
+             * @example 3
+             */
+            value: number;
         };
         ApiResponsePageResponseScrapDto: {
             success?: boolean;
@@ -8809,8 +8864,6 @@ export interface components {
             taskListTotal: number | null;
             /** Format: int64 */
             notiListTotal: number | null;
-            /** Format: int64 */
-            pendingApprovalCount: number | null;
         };
         ApiResponsePageResponseCommunityDto: {
             success?: boolean;
@@ -9915,6 +9968,28 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
+        ApiResponseUserActivityStats: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["UserActivityStats"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 일자별 사용자 활동(요청 구분별 계열) */
+        UserActivityStats: {
+            /** @description 조회 요청 수(GET·HEAD) */
+            inqCnt: components["schemas"]["StatsPoint"][];
+            /** @description 등록 요청 수(POST) */
+            crtCnt: components["schemas"]["StatsPoint"][];
+            /** @description 수정 요청 수(PUT·PATCH) */
+            mdfcnCnt: components["schemas"]["StatsPoint"][];
+            /** @description 삭제 요청 수(DELETE) */
+            delCnt: components["schemas"]["StatsPoint"][];
+        };
         ApiResponseSummaryStatsDto: {
             success?: boolean;
             /** Format: int32 */
@@ -10455,6 +10530,17 @@ export interface components {
              * @description 전체 페이지 수
              */
             totalPage: number;
+        };
+        ApiResponseListString: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: string[];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
         };
         ApiResponsePageResponseLoginPolicyDto: {
             success?: boolean;
@@ -11591,6 +11677,39 @@ export interface components {
             undecidable: number;
             orphanSamples: string[];
             healthy?: boolean;
+        };
+        ApiResponseOperationalSignals: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["OperationalSignals"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 운영 신호 하나 */
+        OperationalSignal: {
+            /**
+             * @description 운영 신호 종류 — FAILED_DURABLE_JOBS 재시도 한도에 이른 후속 작업, LOCKED_ACCOUNTS 로그인 잠금 계정, FAILED_REQUESTS_TODAY 오늘(서버 날짜) 기록된 실패 요청(4xx 이상, 시스템 로그)
+             * @enum {string}
+             */
+            kind: "FAILED_DURABLE_JOBS" | "LOCKED_ACCOUNTS" | "FAILED_REQUESTS_TODAY";
+            /**
+             * Format: int64
+             * @description 건수. 조회에 실패하면 null 이다(0 으로 채우지 않는다).
+             */
+            count: number | null;
+        };
+        /** @description 관리자 홈의 운영 신호 요약. 보는 사람이 원천을 조회할 수 있는 신호만 싣는다. */
+        OperationalSignals: {
+            /**
+             * Format: date-time
+             * @description DB 에서 센 시각(UTC)
+             */
+            observedAt: string;
+            signals: components["schemas"]["OperationalSignal"][];
         };
         ApiResponsePageResponseCommunityMemberDto: {
             success?: boolean;
@@ -30782,7 +30901,9 @@ export interface operations {
     getConnectStats: {
         parameters: {
             query?: {
+                /** @description 조회 시작일(yyyy-MM-dd 또는 yyyyMMdd) */
                 fromDate?: string;
+                /** @description 조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다 */
                 toDate?: string;
             };
             header?: never;
@@ -30797,7 +30918,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsPoint"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -35062,7 +35183,9 @@ export interface operations {
     getUserStats: {
         parameters: {
             query?: {
+                /** @description 조회 시작일(yyyy-MM-dd 또는 yyyyMMdd) */
                 fromDate?: string;
+                /** @description 조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다 */
                 toDate?: string;
             };
             header?: never;
@@ -35077,7 +35200,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseUserActivityStats"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -35177,7 +35300,9 @@ export interface operations {
     getDataUsageStats: {
         parameters: {
             query?: {
+                /** @description 조회 시작일(yyyy-MM-dd 또는 yyyyMMdd) */
                 fromDate?: string;
+                /** @description 조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다 */
                 toDate?: string;
             };
             header?: never;
@@ -35192,7 +35317,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsPoint"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -35236,9 +35361,10 @@ export interface operations {
     getConnectStats_1: {
         parameters: {
             query?: {
+                /** @description 조회 시작일(yyyy-MM-dd 또는 yyyyMMdd) */
                 fromDate?: string;
+                /** @description 조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다 */
                 toDate?: string;
-                statsKind?: string;
             };
             header?: never;
             path?: never;
@@ -35252,7 +35378,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsPoint"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -35296,7 +35422,9 @@ export interface operations {
     getBbsStats: {
         parameters: {
             query?: {
+                /** @description 조회 시작일(yyyy-MM-dd 또는 yyyyMMdd) */
                 fromDate?: string;
+                /** @description 조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다 */
                 toDate?: string;
             };
             header?: never;
@@ -35311,7 +35439,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ApiResponseListStatsDto"];
+                    "application/json": components["schemas"]["ApiResponseListStatsPoint"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -36349,6 +36477,125 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponsePageResponseAuditJournalEntry"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    auditJournalOperations: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListString"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    exportAuditJournal: {
+        parameters: {
+            query: {
+                actorId?: string;
+                operation?: string;
+                fromDate?: string;
+                toDate?: string;
+                /** @description 내보내기 사유(2~200자). 원장의 내보내기 기록에 함께 남는다. */
+                reason: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description xlsx 바이너리 스트림 */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": string;
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
@@ -37446,6 +37693,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseAttachmentIntegrityReport"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    adminOperationalSignals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseOperationalSignals"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

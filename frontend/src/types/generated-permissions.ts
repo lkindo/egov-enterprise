@@ -231,7 +231,7 @@ export const PERMISSION_CODES = [
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "df0b0b15c8a02001d8b874379264b7cda47b6443d336361d755fe27d4ba35adc";
+export const PERMISSION_CATALOG_VERSION = "8e519dbb04f15f0f8a6fc24651ad432e87dc1112bfdf00bcc3e80dfcb8e4fd74";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [

@@ -34,7 +34,8 @@
       "src/services/foundation/system/SurveyAdminService.ts",
       "src/types/business/poll.ts",
       "src/types/business/survey.ts",
-      "src/extensions/survey"
+      "src/extensions/survey",
+      "src/app/components/dashboard/SurveyHome.tsx"
     ],
     "frontendAny": [],
     "routes": [
@@ -74,6 +75,10 @@
       {
         "path": "frontend/src/extensions/survey/stats-panels.ts",
         "reason": "설문 기능이 없으면 통계 화면의 설문조사 분석 탭만 사라지고 통계는 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/survey/home-sections.ts",
+        "reason": "설문 기능이 없으면 업무 홈의 참여할 설문 카드만 사라지고 업무 홈은 그대로입니다."
       }
     ],
     "ports": []

@@ -17,7 +17,7 @@ import java.util.Map;
  *
  * <p>종전 {@code DashboardApiController}(필수 메인 대시보드)가 {@code BoardService}(샘플 도메인)를
  * 직접 주입·호출하던 결합을, 이미 존재하는 {@link DashboardItemProvider} 포트(DIP)로 역전한다.
- * ({@code InformalSanctionDashboardProvider} 와 동일 패턴.) 이로써 board 도메인을 삭제해도
+ * 이로써 board 도메인을 삭제해도
  * 필수 대시보드 컨트롤러가 컴파일 붕괴하지 않는다(프레임워크 재사용성).
  */
 @Slf4j

@@ -78,8 +78,12 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"APPROVAL_READ","action":"READ","source":"display"},
       {"code":"BANNER_READ","action":"READ","source":"display"},
       {"code":"DASHBOARD_READ","action":"READ","source":"display"},
+      {"code":"DEPT_JOB_READ","action":"READ","source":"display"},
+      {"code":"MEMO_RPT_READ","action":"READ","source":"display"},
       {"code":"NOTE_READ","action":"READ","source":"display"},
-      {"code":"POPUP_READ","action":"READ","source":"display"}
+      {"code":"POPUP_READ","action":"READ","source":"display"},
+      {"code":"SCHEDULE_READ","action":"READ","source":"display"},
+      {"code":"SURVEY_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -90,7 +94,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["DASHBOARD_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"DASHBOARD_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
+      {"code":"DASHBOARD_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SYS_LOG_READ","action":"READ","source":"display"},
+      {"code":"USER_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -498,7 +505,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {

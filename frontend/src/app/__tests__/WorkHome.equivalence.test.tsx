@@ -15,12 +15,16 @@ import { NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
  * 기능권한을 서버처럼 집행한다(없으면 403). 그래서 같은 기대값이 '서버 응답으로 판정하던' 옛 홈과 '권한으로 판정하는' 새 홈에 함께 선다.
  *
  * 고정하는 것: h1·인사·부제, 머리 단추(이름·목적지), 요약 카드(순서·값), 최근 글 목록(제목·링크·날짜·전체 보기), '실시간 상태',
- * '최근 활동' 문장, 팝업·배너, 구역 순서. 권한 집합: 기본 그룹(모두), DASHBOARD_READ 없음, NOTE_READ 없음, 둘 다 없음. 실패: 대시보드
+ * 팝업·배너, 구역 순서. 권한 집합: 기본 그룹(모두), DASHBOARD_READ 없음, NOTE_READ 없음, 둘 다 없음. 실패: 대시보드
  * 500 은 오류 경계로, 게시판 전체 글 수·결재 대기 수를 셀 수 없으면 '조회 실패' 다(0건으로 위장하지 않는다).
  * 생성물에서는 투영으로 빠진 기능의 구역을 기대값에서 뺀다.
+ *
+ * [2026-10-20] 사유와 함께 바꾼 기대값: 늘 '연결되지 않았다' 고만 말하던 활동 구역을 걷었고(활동 원천이 없다), 요약 카드 줄에
+ * 메모 보고·일정·설문의 기여 카드와 core 의 부서 업무 카드를 더했다(처리 대기 모음). 기본 그룹은 네 조회 권한을 모두 가진다.
  */
 
-const ALL_PERMISSIONS = ['DASHBOARD_READ', 'NOTE_READ', 'APPROVAL_READ', 'BANNER_READ', 'POPUP_READ', 'BOARD_READ', 'NOTI_READ'] as const;
+const ALL_PERMISSIONS = ['DASHBOARD_READ', 'NOTE_READ', 'APPROVAL_READ', 'BANNER_READ', 'POPUP_READ', 'BOARD_READ', 'NOTI_READ',
+  'MEMO_RPT_READ', 'SCHEDULE_READ', 'SURVEY_READ', 'DEPT_JOB_READ'] as const;
 
 const server = vi.hoisted(() => ({
   permissions: [] as string[],
@@ -47,7 +51,6 @@ vi.mock('@/lib/api/client', () => {
         notiList: [{ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41, pstTtl: '점검 공지', crtDt: '2026-09-25T10:30:00' }],
         taskListTotal: server.taskListTotal,
         notiListTotal: 12,
-        pendingApprovalCount: server.approvalUncountable ? null : 3,
       });
     }
     if (url === 'approvals/pending') {
@@ -67,6 +70,37 @@ vi.mock('@/services/business/user/NoteService', () => ({
     getUnreadReceivedCount: async () => {
       if (!can('NOTE_READ')) throw httpError(403);
       return 2;
+    },
+  },
+}));
+// 처리 대기 카드(2026-10-20) — 오늘 일정 없음·읽지 않은 받은 보고 1건·참여할 설문 없음·내 담당 업무 없음.
+vi.mock('@/services/business/schedule/deptScheduleService', () => ({
+  getDeptScheduleMonthList: async () => {
+    if (!can('SCHEDULE_READ')) throw httpError(403);
+    return [];
+  },
+}));
+vi.mock('@/services/business/memoreport/memoReportService', () => ({
+  memoReportService: {
+    getReceivedReports: async () => {
+      if (!can('MEMO_RPT_READ')) throw httpError(403);
+      return { list: [{ memoRptSn: 5, rptTtl: '주간 보고', rptrInqDt: null }], total: 1 };
+    },
+  },
+}));
+vi.mock('@/services/foundation/survey/SurveyParticipationService', () => ({
+  surveyParticipationService: {
+    getSurveys: async () => {
+      if (!can('SURVEY_READ')) throw httpError(403);
+      return { list: [], total: 0 };
+    },
+  },
+}));
+vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
+  deptJobUserService: {
+    getDeptJobList: async () => {
+      if (!can('DEPT_JOB_READ')) throw httpError(403);
+      return { list: [], total: 0 };
     },
   },
 }));
@@ -156,6 +190,9 @@ const approvalInProjection = inProjection(FEATURE_SOURCES.approval);
 const present = {
   approval: approvalInProjection,
   note: inProjection('frontend/src/app/components/dashboard/UnreadNotesCard.tsx'),
+  memo: inProjection('frontend/src/app/components/dashboard/MemoReportHome.tsx'),
+  schedule: inProjection('frontend/src/app/components/dashboard/ScheduleHome.tsx'),
+  survey: inProjection('frontend/src/app/components/dashboard/SurveyHome.tsx'),
   realtime: inProjection('frontend/src/components/features/dashboard/RealTimeDashboard.tsx'),
   popup: inProjection('frontend/src/app/components/dashboard/PopupManager.tsx'),
   banner: inProjection('frontend/src/app/components/dashboard/BannerSlider.tsx'),
@@ -171,13 +208,22 @@ const textWithoutIcons = (element: Element) => {
   return copy.textContent?.trim();
 };
 const header = () => screen.getByRole('heading', { level: 1, name: '업무 홈' }).closest('header') as HTMLElement;
+/** 처리 대기 카드(2026-10-20) — 메모 보고 22·일정 24·설문 26·core 부서 업무 28 순서다. */
+const pendingWorkCards = () => [
+  ...(present.memo ? ['읽지 않은 받은 보고1건주간 보고'] : []),
+  ...(present.schedule ? ['오늘 일정0건'] : []),
+  ...(present.survey ? ['참여할 설문0건'] : []),
+  '내 담당 업무0건',
+];
 const summaryCards = () => [...(screen.getByText('업무게시판 글').closest('ul') as HTMLElement).children].map(item => item.textContent);
 const expectAccessDenied = async () => {
   const status = await screen.findByRole('status', undefined, LOAD);
   expect(screen.getByRole('heading', { level: 1, name: '업무 홈' })).toBeInTheDocument();
   expect(status).toHaveTextContent('업무 홈 대시보드에 접근할 권한이 없습니다.');
   expect(status).toHaveTextContent('메뉴에서 이용 가능한 업무를 선택해 주세요.');
-  for (const text of ['업무게시판 글', '결재 대기', '안 읽은 쪽지', '실시간 상태', '최근 활동']) expect(screen.queryByText(text)).toBeNull();
+  for (const text of ['업무게시판 글', '결재 대기', '안 읽은 쪽지', '읽지 않은 받은 보고', '오늘 일정', '참여할 설문', '내 담당 업무', '실시간 상태']) {
+    expect(screen.queryByText(text)).toBeNull();
+  }
   for (const name of ['새 게시글 작성', '결재함 열기']) expect(screen.queryByRole('link', { name })).toBeNull();
   expect(screen.queryByRole('region', { name: '홍보 배너' })).toBeNull();
   expect(screen.queryByText('점검 안내')).toBeNull();
@@ -197,7 +243,7 @@ if (boardInProjection) describe('업무 홈 동등성 그물 (Phase 2 H0)', () =
   });
   afterEach(() => errorSpy.mockRestore());
 
-  it('기본 그룹: 머리·요약 카드·최근 글·실시간·최근 활동·홍보를 같은 순서와 값으로 그린다', async () => {
+  it('기본 그룹: 머리·요약 카드·최근 글·실시간·홍보를 같은 순서와 값으로 그린다', async () => {
     await renderHome();
 
     expect(await screen.findByText('업무게시판 최근 글', undefined, LOAD)).toBeInTheDocument();
@@ -210,9 +256,14 @@ if (boardInProjection) describe('업무 홈 동등성 그물 (Phase 2 H0)', () =
     await waitFor(() => expect(summaryCards()).toEqual([
       ...(present.approval ? ['결재 대기3건'] : []),
       ...(present.note ? ['안 읽은 쪽지2건'] : []),
+      ...pendingWorkCards(),
       '업무게시판 글37건',
       '공지사항12건',
     ]));
+    expect(screen.getByText('내 담당 업무').closest('a')).toHaveAttribute('href', '/smart-toolkit/dept-job');
+    if (present.memo) expect(screen.getByText('읽지 않은 받은 보고').closest('a')).toHaveAttribute('href', '/admin/operation/memo-reports');
+    if (present.schedule) expect(screen.getByText('오늘 일정').closest('a')).toHaveAttribute('href', '/smart-toolkit/schedule');
+    if (present.survey) expect(screen.getByText('참여할 설문').closest('a')).toHaveAttribute('href', '/survey');
 
     const taskList = screen.getByRole('heading', { level: 2, name: '업무게시판 최근 글' }).closest('section') as HTMLElement;
     expect(within(taskList).getByRole('link', { name: '주간 업무 정리' }))
@@ -226,18 +277,16 @@ if (boardInProjection) describe('업무 홈 동등성 그물 (Phase 2 H0)', () =
     expect(within(noticeList).getByRole('link', { name: '공지 전체 보기' }))
       .toHaveAttribute('href', `/admin/community/boards/select-board-list?bbsId=${NOTICE_BOARD_ID}`);
 
-    const activity = screen.getByRole('heading', { level: 2, name: '최근 활동' }).closest('section') as HTMLElement;
-    expect(await within(activity).findByText('최근 활동 데이터가 연결되지 않았습니다.')).toBeInTheDocument();
-    expect(within(activity).getByText('공지사항과 업무게시판 최근 글은 위 목록에서 확인할 수 있습니다.')).toBeInTheDocument();
+    // 늘 비어 있던 활동 구역은 없다(2026-10-20).
+    expect(screen.queryByRole('heading', { level: 2, name: '최근 활동' })).toBeNull();
 
-    // 구역 순서: 머리 → 요약 카드 → 최근 글 → 실시간 → 최근 활동 → 배너. 팝업은 구역 밖에 떠 있다.
+    // 구역 순서: 머리 → 요약 카드 → 최근 글 → 실시간 → 배너. 팝업은 구역 밖에 떠 있다.
     const order = [header(), screen.getByText('업무게시판 글'), taskList];
     if (present.realtime) {
       const realtime = screen.getByRole('heading', { level: 2, name: '실시간 상태' }).closest('section') as HTMLElement;
       expect(await within(realtime).findByText('실시간 본문')).toBeInTheDocument();
       order.push(realtime);
     }
-    order.push(activity);
     if (present.banner) {
       const banner = await screen.findByRole('region', { name: '홍보 배너' });
       expect(within(banner).getByRole('heading', { name: '배너 1' })).toBeInTheDocument();
@@ -262,6 +311,7 @@ if (boardInProjection) describe('업무 홈 동등성 그물 (Phase 2 H0)', () =
     expect(await screen.findByText('업무게시판 최근 글', undefined, LOAD)).toBeInTheDocument();
     await waitFor(() => expect(summaryCards()).toEqual([
       ...(present.approval ? ['결재 대기3건'] : []),
+      ...pendingWorkCards(),
       '업무게시판 글37건',
       '공지사항12건',
     ]));

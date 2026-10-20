@@ -29,6 +29,7 @@ export const CmmnCodeDtoSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional(),
   lastMdfrId: z.string().optional(),
   version: z.number().int().min(0).optional(),
+  usages: z.array(z.string()).optional(),
 }))();
 export type CmmnCodeDto = z.infer<typeof CmmnCodeDtoSchema>;
 
@@ -240,6 +241,7 @@ export const CmmnCodeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   frstRgtrId: z.string().optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
   version: z.number().int().min(0).optional().nullable(),
+  usages: z.array(z.string().optional().nullable()).optional().nullable(),
 }))();
 
 export const CmmnCodeHierarchyDtoRequestSchema = /*#__PURE__*/ (() => z.object({

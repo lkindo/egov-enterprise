@@ -30,7 +30,8 @@ export class PromotionPage {
         await startDateInput.fill('2026-05-10');
         
         await endDateInput.scrollIntoViewIfNeeded();
-        await endDateInput.fill('2026-12-31');
+        // [2026-10-20] 종료일은 오늘보다 넉넉히 뒤로 둔다 — 고정 날짜(2026-12-31)는 그날이 지나면 팝업이 게시되지 않아 시험이 붉어진다.
+        await endDateInput.fill(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
 
         // Select 'YES' for 'Notice Status' (게시 설정) - It's a Select component
         console.log('>>> [Promotion] Setting Notice Status to YES');
@@ -59,6 +60,10 @@ export class PromotionPage {
         await this.page.locator('input[name="popupVrtcSz"]').fill('400');
 
         await this.uploadImage();
+        // [2026-10-20] 편집 창은 사용자 화면과 같은 패널로 미리보기를 그린다(데스크톱·휴대폰 폭).
+        const preview = this.page.getByRole('region', { name: '사용자 화면 미리보기' });
+        await expect(preview).toBeVisible();
+        await expect(preview.getByText(title).first()).toBeVisible();
         await this.clickSubmitAndWait();
     }
 

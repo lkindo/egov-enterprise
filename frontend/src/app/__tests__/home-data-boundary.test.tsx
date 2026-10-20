@@ -27,7 +27,7 @@ vi.mock('@/lib/api/client', () => {
     server.calls.push(url);
     if (url === 'dashboard') {
       if (server.dashboard === 500) throw httpError(500);
-      return ok({ taskList: [], notiList: [], taskListTotal: 37, notiListTotal: 12, pendingApprovalCount: 3 });
+      return ok({ taskList: [], notiList: [], taskListTotal: 37, notiListTotal: 12 });
     }
     if (url === 'approvals/pending') {
       if (server.approvals === 503) throw httpError(503);

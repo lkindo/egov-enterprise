@@ -13,6 +13,8 @@ import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.foundation.core.audit.SensitiveAuditPort.Context;
 import nuri.foundation.core.audit.SensitiveAuditPort.Outcome;
 import nuri.foundation.core.event.AuditEvent;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.net.ClientIpResolver;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -44,11 +46,13 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) {
         if (!(handler instanceof HandlerMethod method) || description(method) == null
                 || request.getAttribute(SensitiveAuditPort.REQUEST_ATTRIBUTE) != null) return true;
+        // 사유를 받는 작업은 사유가 없으면 원장에 시도도 남기지 않고 핸들러 전에 400 이다(@PrivacyAccess#reasonParameter).
+        String description = withReason(method, request, description(method));
         var actorLoginId = SecurityUtil.getCurrentLoginId();
         Context context = new Context(UUID.randomUUID().toString(), operation(method),
                 actorLoginId.orElse("ANONYMOUS"),
                 actorLoginId.isPresent() ? SecurityUtil.getCurrentEsntlId().orElse(null) : null,
-                clientIp.resolve(request), description(method), null);
+                clientIp.resolve(request), description, null);
         audit.attempted(context); // Failure escapes before any sensitive handler/body is run.
         request.setAttribute(SensitiveAuditPort.REQUEST_ATTRIBUTE, context);
         request.setAttribute(FINISHED, new AtomicBoolean());
@@ -103,6 +107,27 @@ public class SensitiveAuditInterceptor implements AsyncHandlerInterceptor {
         var privacy = method.getMethodAnnotation(PrivacyAccess.class);
         var mutation = method.getMethodAnnotation(SensitiveOperation.class);
         return privacy != null ? privacy.value() : mutation != null ? mutation.value() : null;
+    }
+
+    /** 사유 길이. 원장 설명(스냅숏 4000자 상한) 안에 넉넉히 들어가고, 한두 글자의 형식적 입력은 받지 않는다. */
+    static final int REASON_MIN_LENGTH = 2;
+    static final int REASON_MAX_LENGTH = 200;
+
+    /**
+     * [2026-10-20] 사유를 받는 개인정보 접근(내보내기 등)이면 사유를 검사해 설명 뒤에 붙인다. 제어 문자는 공백으로 바꾼다(원장
+     * 설명은 한 줄이다). 사유가 없거나 길이가 맞지 않으면 핸들러를 부르기 전에 400 이다 — 사유 없는 내보내기를 원장에 남겼다가
+     * 거부하지 않는다. 시도에 붙인 설명이 응답 준비·완료 단계와 개인정보 접근 기록에도 그대로 실린다(같은 감사 문맥).
+     */
+    static String withReason(HandlerMethod method, HttpServletRequest request, String description) {
+        var privacy = method.getMethodAnnotation(PrivacyAccess.class);
+        if (privacy == null || privacy.reasonParameter().isEmpty()) return description;
+        String raw = request.getParameter(privacy.reasonParameter());
+        String reason = raw == null ? "" : raw.replaceAll("\\p{Cntrl}", " ").strip();
+        if (reason.length() < REASON_MIN_LENGTH || reason.length() > REASON_MAX_LENGTH) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "사유를 " + REASON_MIN_LENGTH + "~" + REASON_MAX_LENGTH + "자로 입력하세요.");
+        }
+        return description + " — 사유: " + reason;
     }
 
     private static String operation(HandlerMethod method) {

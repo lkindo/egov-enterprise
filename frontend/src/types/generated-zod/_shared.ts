@@ -148,42 +148,22 @@ export const ApiResponseBooleanSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type ApiResponseBoolean = z.infer<typeof ApiResponseBooleanSchema>;
 
-export const ApiResponseListStatsDtoSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseListStatsPointSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => StatsDtoSchema)).optional(),
+  data: z.array(z.lazy(() => StatsPointSchema)).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
-export type ApiResponseListStatsDto = z.infer<typeof ApiResponseListStatsDtoSchema>;
+export type ApiResponseListStatsPoint = z.infer<typeof ApiResponseListStatsPointSchema>;
 
-export const StatsDtoSchema = /*#__PURE__*/ (() => z.object({
-  fromDate: z.string().min(0).max(20).optional(),
-  toDate: z.string().min(0).max(20).optional(),
-  statsKind: z.string().min(0).max(20).optional(),
-  detailStatsKind: z.string().optional(),
-  pdKind: z.string().optional(),
-  statsDate: z.string().optional(),
-  statsCo: z.number().int().optional(),
-  maxStatsCo: z.number().int().optional(),
-  minStatsCo: z.number().int().optional(),
-  creatCo: z.number().int().optional(),
-  inqCnt: z.number().int().optional(),
-  updtCo: z.number().int().optional(),
-  deleteCo: z.number().int().optional(),
-  outptCo: z.number().int().optional(),
-  errorCo: z.number().int().optional(),
-  totInqCnt: z.number().int().optional(),
-  avrgInqCnt: z.number().optional(),
-  mxmmInqireBbsId: z.string().optional(),
-  mxmmInqireBbsNm: z.string().optional(),
-  topNtcepersonId: z.string().optional(),
-  topNtcepersonCo: z.number().int().optional(),
-  maxUnit: z.number().optional(),
+export const StatsPointSchema = /*#__PURE__*/ (() => z.object({
+  date: z.string(),
+  value: z.number().int(),
 }))();
-export type StatsDto = z.infer<typeof StatsDtoSchema>;
+export type StatsPoint = z.infer<typeof StatsPointSchema>;
 
 export const BoardDtoSchema = /*#__PURE__*/ (() => z.object({
   pstSn: z.number().int().optional(),
@@ -532,74 +512,34 @@ export const ApiResponseBooleanResponseSchema = /*#__PURE__*/ (() => z.object({
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const ApiResponseListStatsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseListStatsPointRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
   code: z.string().optional(),
   message: z.string().optional(),
-  data: z.array(z.lazy(() => StatsDtoRequestSchema.strict())).optional(),
+  data: z.array(z.lazy(() => StatsPointRequestSchema.strict())).optional(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
   errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
 }))();
 
-export const ApiResponseListStatsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+export const ApiResponseListStatsPointResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional().nullable(),
   status: z.number().int().optional().nullable(),
   code: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
-  data: z.array(z.lazy(() => StatsDtoResponseSchema)).optional().nullable(),
+  data: z.array(z.lazy(() => StatsPointResponseSchema)).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();
 
-export const StatsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  fromDate: z.string().min(0).max(20).optional(),
-  toDate: z.string().min(0).max(20).optional(),
-  statsKind: z.string().min(0).max(20).optional(),
-  detailStatsKind: z.string().optional(),
-  pdKind: z.string().optional(),
-  statsDate: z.string().optional(),
-  statsCo: z.number().int().optional(),
-  maxStatsCo: z.number().int().optional(),
-  minStatsCo: z.number().int().optional(),
-  creatCo: z.number().int().optional(),
-  inqCnt: z.number().int().optional(),
-  updtCo: z.number().int().optional(),
-  deleteCo: z.number().int().optional(),
-  outptCo: z.number().int().optional(),
-  errorCo: z.number().int().optional(),
-  totInqCnt: z.number().int().optional(),
-  avrgInqCnt: z.number().optional(),
-  mxmmInqireBbsId: z.string().optional(),
-  mxmmInqireBbsNm: z.string().optional(),
-  topNtcepersonId: z.string().optional(),
-  topNtcepersonCo: z.number().int().optional(),
-  maxUnit: z.number().optional(),
+export const StatsPointRequestSchema = /*#__PURE__*/ (() => z.object({
+  date: z.string(),
+  value: z.number().int(),
 }))();
 
-export const StatsDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  fromDate: z.string().min(0).max(20).optional().nullable(),
-  toDate: z.string().min(0).max(20).optional().nullable(),
-  statsKind: z.string().min(0).max(20).optional().nullable(),
-  detailStatsKind: z.string().optional().nullable(),
-  pdKind: z.string().optional().nullable(),
-  statsDate: z.string().optional().nullable(),
-  statsCo: z.number().int().optional().nullable(),
-  maxStatsCo: z.number().int().optional().nullable(),
-  minStatsCo: z.number().int().optional().nullable(),
-  creatCo: z.number().int().optional().nullable(),
-  inqCnt: z.number().int().optional().nullable(),
-  updtCo: z.number().int().optional().nullable(),
-  deleteCo: z.number().int().optional().nullable(),
-  outptCo: z.number().int().optional().nullable(),
-  errorCo: z.number().int().optional().nullable(),
-  totInqCnt: z.number().int().optional().nullable(),
-  avrgInqCnt: z.number().optional().nullable(),
-  mxmmInqireBbsId: z.string().optional().nullable(),
-  mxmmInqireBbsNm: z.string().optional().nullable(),
-  topNtcepersonId: z.string().optional().nullable(),
-  topNtcepersonCo: z.number().int().optional().nullable(),
-  maxUnit: z.number().optional().nullable(),
+export const StatsPointResponseSchema = /*#__PURE__*/ (() => z.object({
+  date: z.string(),
+  value: z.number().int(),
 }))();
 
 export const BoardDtoRequestSchema = /*#__PURE__*/ (() => z.object({

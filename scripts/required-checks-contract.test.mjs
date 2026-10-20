@@ -10,6 +10,8 @@ import {
   compareRequiredChecks,
   compareRequiredContexts,
   parseWorkflowJobs,
+  REVIEWED_ACTION_PINS,
+  reviewedActionPin,
   validatePinnedWorkflowUses,
   validateStaticContract,
 } from './required-checks-contract.mjs';
@@ -95,8 +97,9 @@ function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
-  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 4'],
-    'product PIT must reserve custom admission capacity with exactly four concurrent batches');
+  // 6슬롯: 꼬리 구간의 빈 runner 를 쓰고 custom 입장은 막지 않는다(실측 근거는 ci.yml 의 mutation-scope 주석).
+  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 6'],
+    'product PIT must run exactly six concurrent batches');
   assert.ok(PRODUCT_PIT_SCOPE_COUNT > 0, 'the registry declares product PIT batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, PRODUCT_PIT_SCOPE_COUNT,
     'every product PIT batch declared in the registry must remain');
@@ -143,6 +146,9 @@ const PRODUCT_PIT_LONGEST_FIRST = Object.freeze([
   'business-app-survey',
   'business-app-participation',
   'business-core-user-org',
+  // [2026-10-20 DEC-OPS-373] 업무 홈·홍보(98 변이, 354초)와 관측(202 변이, 154초)도 foundation 범위 앞에 둔다.
+  'business-app-home-promotion',
+  'business-core-observability',
 ]);
 
 function assertProductMutationLptOrder(content) {
@@ -558,11 +564,11 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 
 test('E2E and PIT sources start after classification without waiting for independent builds', () => {
   assertProductMutationConcurrency(ciContent);
-  for (const replacement of ['', '      max-parallel: 3\n', '      max-parallel: 8\n', '      # max-parallel: 4\n']) {
+  for (const replacement of ['', '      max-parallel: 4\n', '      max-parallel: 5\n', '      max-parallel: 7\n', '      # max-parallel: 6\n']) {
     const changed = mutateWorkflowJob(ciContent, 'mutation-scope',
-      block => block.replace('      max-parallel: 4\n', replacement));
+      block => block.replace('      max-parallel: 6\n', replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertProductMutationConcurrency(changed), /four concurrent batches/);
+    assert.throws(() => assertProductMutationConcurrency(changed), /six concurrent batches/);
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
     block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
@@ -1236,6 +1242,51 @@ test('every third-party workflow action is pinned to a full commit SHA', () => {
   }]), []);
 });
 
+// 워크플로가 핀의 정본이다. 한 저장소는 모든 워크플로에서 한 커밋이고, 검토 핀 원장(REVIEWED_ACTION_PINS)의 저장소는 그 커밋이다.
+// 그래서 Dependabot 의 액션 범프는 원장 밖이면 워크플로 밖 수정이 0개, 원장 안이면 원장 한 줄이다.
+test('one commit per action repository across workflows and reviewed pins stay bound to the ledger', () => {
+  const directory = path.join(repoRoot, '.github/workflows');
+  const workflows = fs.readdirSync(directory).filter(name => /\.ya?ml$/.test(name))
+    .map(name => ({ path: `.github/workflows/${name}`, content: fs.readFileSync(path.join(directory, name), 'utf8').replace(/\r\n/g, '\n') }));
+  assert.deepEqual(validatePinnedWorkflowUses(workflows), []);
+  // 원장의 저장소는 실제로 쓰여야 한다 — 쓰지 않는 원장 항목은 검토 대상이 사라진 낡은 핀이다.
+  for (const [repository, commit] of Object.entries(REVIEWED_ACTION_PINS)) {
+    assert.ok(workflows.some(({ content }) => content.includes(`uses: ${repository}/`) && content.includes(`@${commit}`)),
+      `${repository} is in the reviewed pin ledger but no workflow uses it`);
+  }
+  const replacement = 'c'.repeat(40);
+  const checkout = /(uses: actions\/checkout@)([0-9a-f]{40})/;
+  const [first, second] = workflows.filter(({ content }) => checkout.test(content));
+  assert.ok(first && second, 'at least two workflows check out the repository');
+  // 한 워크플로만 올리면 두 커밋이 섞인다.
+  const drifted = workflows.map(workflow => workflow === second
+    ? { ...workflow, content: workflow.content.replaceAll(checkout.exec(workflow.content)[0], `uses: actions/checkout@${replacement}`) } : workflow);
+  assert.match(validatePinnedWorkflowUses(drifted).join('\n'), /action actions\/checkout must use one commit across workflows: .*cccccccc/);
+  // 모든 워크플로를 함께 올리면 워크플로 밖 수정 없이 통과한다(원장 밖 액션).
+  const sha = checkout.exec(first.content)[2];
+  const bumped = workflows.map(workflow => ({ ...workflow, content: workflow.content.replaceAll(`actions/checkout@${sha}`, `actions/checkout@${replacement}`) }));
+  assert.deepEqual(validatePinnedWorkflowUses(bumped), []);
+  // 원장 안 저장소를 원장과 다른 커밋으로 모두 올리면 원장과 어긋나 붉다 — 설정 단계와 의존성 제출 단계 모두.
+  const gradle = REVIEWED_ACTION_PINS['gradle/actions'];
+  const unreviewed = workflows.map(workflow => ({ ...workflow, content: workflow.content.replaceAll(`@${gradle}`, `@${replacement}`) }));
+  const errors = validatePinnedWorkflowUses(unreviewed).join('\n');
+  assert.match(errors, /Gradle setup must use the reviewed cache-compatible action pin/);
+  assert.match(errors, new RegExp(`'gradle/actions/dependency-submission@${replacement}' must use the reviewed action pin gradle/actions@${gradle}`));
+  // CodeQL·dependency review 의 검토 핀은 필수 단계 명세(criticalSteps)가 소유한다 — 워크플로만 바꾸면 붉다.
+  const ci = ciContent.replace(/\r\n/g, '\n');
+  for (const name of ['Initialize CodeQL security analysis', 'Analyze secure coding', 'Block newly introduced high-risk runtime dependencies']) {
+    const pinned = manifest.criticalSteps.find(entry => entry.name === name).uses;
+    const changed = ci.replaceAll(pinned, `${pinned.split('@')[0]}@${replacement}`);
+    assert.notEqual(changed, ci, name);
+    assert.ok(validateStaticContract({ manifest, ciContent: changed }).includes(`critical step '${name}' must use '${pinned}' exactly`), name);
+  }
+  assert.deepEqual(validatePinnedWorkflowUses([{
+    path: '.github/workflows/split.yml',
+    content: `jobs:\n  a:\n    steps:\n      - uses: actions/cache@${'1'.repeat(40)}\n  b:\n    steps:\n      - uses: actions/cache/restore@${'2'.repeat(40)}\n`,
+  }]), [`action actions/cache must use one commit across workflows: ${'1'.repeat(40)} (.github/workflows/split.yml:4), ${'2'.repeat(40)} (.github/workflows/split.yml:7)`],
+  'subpaths of one repository share its commit');
+});
+
 test('every Gradle setup rejects unreviewed cache clients, providers and writer roles', () => {
   const directory = path.join(repoRoot, '.github/workflows');
   const workflows = fs.readdirSync(directory).filter(name => /\.ya?ml$/.test(name))
@@ -1243,11 +1294,11 @@ test('every Gradle setup rejects unreviewed cache clients, providers and writer 
   assert.deepEqual(validatePinnedWorkflowUses(workflows), []);
   let checked = 0;
   for (const workflow of workflows) {
-    for (const match of workflow.content.matchAll(/gradle\/actions\/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6/g)) {
+    for (const match of workflow.content.matchAll(new RegExp(reviewedActionPin('gradle/actions/setup-gradle'), 'g'))) {
       const prefix = workflow.content.slice(0, match.index);
       const suffix = workflow.content.slice(match.index);
       for (const [changed, expected] of [
-        [suffix.replace('3f5f9adaf7d9fecd50b5935e54106014257a94e6', 'd9c87d481d55275bb5441eef3fe0e46805f9ef70'), 'cache-compatible action pin'],
+        [suffix.replace(REVIEWED_ACTION_PINS['gradle/actions'], 'd9c87d481d55275bb5441eef3fe0e46805f9ef70'), 'cache-compatible action pin'],
         [suffix.replace('cache-provider: basic', 'cache-provider: enhanced'), 'cache-provider: basic'],
         // v6.4.0 added 'external', which silently turns off the Gradle User Home cache.
         [suffix.replace('cache-provider: basic', 'cache-provider: external'), 'cache-provider: basic'],
@@ -1302,7 +1353,7 @@ test('cache writer election remains tied to selected backend and migration jobs'
     assert.notEqual(changed, normalizedCi);
     assert.ok(validatePinnedWorkflowUses([{ ...workflow, content: changed }]).length > 0);
   }
-  const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
+  const duplicated = `${normalizedCi}\n  unexpected-cache-writer:\n    steps:\n      - uses: ${reviewedActionPin('gradle/actions/setup-gradle')}\n        with:\n          cache-provider: basic\n          cache-read-only: false\n`;
   assert.match(validatePinnedWorkflowUses([{ ...workflow, content: duplicated }]).join('\n'), /no reviewed writer policy/);
 });
 
@@ -1474,7 +1525,10 @@ test('PR dependency review blocks only newly introduced high-risk runtime depend
 
   const expectedIf = "github.event_name == 'pull_request' && (needs.change-scope.outputs.backend == 'true' || needs.change-scope.outputs.migration == 'true' || needs.change-scope.outputs.frontend == 'true')";
   assert.match(step, new RegExp(`^        if: ${expectedIf.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'm'));
-  assert.match(step, /actions\/dependency-review-action@a1d282b36b6f3519aa1f3fc636f609c47dddb294/);
+  // 검토 핀은 필수 단계 명세(criticalSteps)가 소유한다 — 여기서 커밋을 다시 적지 않는다.
+  const reviewed = manifest.criticalSteps.find(entry => entry.name === 'Block newly introduced high-risk runtime dependencies').uses;
+  assert.match(reviewed, /^actions\/dependency-review-action@[0-9a-f]{40}$/);
+  assert.ok(step.includes(`uses: ${reviewed}`));
   assert.match(step, /fail-on-severity: high/);
   assert.match(step, /fail-on-scopes: runtime/);
   assert.match(step, /warn-only: false/);

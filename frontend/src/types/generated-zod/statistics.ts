@@ -4,7 +4,26 @@
 // ==========================================================================
 
 import { z } from 'zod';
-import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
+import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema, StatsPointRequestSchema, StatsPointResponseSchema, StatsPointSchema } from './_shared';
+
+export const ApiResponseUserActivityStatsSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => UserActivityStatsSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseUserActivityStats = z.infer<typeof ApiResponseUserActivityStatsSchema>;
+
+export const UserActivityStatsSchema = /*#__PURE__*/ (() => z.object({
+  inqCnt: z.array(z.lazy(() => StatsPointSchema)),
+  crtCnt: z.array(z.lazy(() => StatsPointSchema)),
+  mdfcnCnt: z.array(z.lazy(() => StatsPointSchema)),
+  delCnt: z.array(z.lazy(() => StatsPointSchema)),
+}))();
+export type UserActivityStats = z.infer<typeof UserActivityStatsSchema>;
 
 export const ApiResponseSummaryStatsDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -23,6 +42,40 @@ export const SummaryStatsDtoSchema = /*#__PURE__*/ (() => z.object({
   todayConnects: z.number().int().optional(),
 }))();
 export type SummaryStatsDto = z.infer<typeof SummaryStatsDtoSchema>;
+
+export const ApiResponseUserActivityStatsRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => UserActivityStatsRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseUserActivityStatsResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => UserActivityStatsResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const UserActivityStatsRequestSchema = /*#__PURE__*/ (() => z.object({
+  inqCnt: z.array(z.lazy(() => StatsPointRequestSchema.strict())),
+  crtCnt: z.array(z.lazy(() => StatsPointRequestSchema.strict())),
+  mdfcnCnt: z.array(z.lazy(() => StatsPointRequestSchema.strict())),
+  delCnt: z.array(z.lazy(() => StatsPointRequestSchema.strict())),
+}))();
+
+export const UserActivityStatsResponseSchema = /*#__PURE__*/ (() => z.object({
+  inqCnt: z.array(z.lazy(() => StatsPointResponseSchema)),
+  crtCnt: z.array(z.lazy(() => StatsPointResponseSchema)),
+  mdfcnCnt: z.array(z.lazy(() => StatsPointResponseSchema)),
+  delCnt: z.array(z.lazy(() => StatsPointResponseSchema)),
+}))();
 
 export const ApiResponseSummaryStatsDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),

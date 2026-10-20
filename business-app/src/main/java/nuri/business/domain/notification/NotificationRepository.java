@@ -37,8 +37,6 @@ public interface NotificationRepository extends JpaRepository<Notification, Long
     @Query("UPDATE Notification n SET n.readYn = 'Y' WHERE n.rcvrId = :rcvrId AND n.readYn = 'N'")
     int markAllAsReadByReceiver(@Param("rcvrId") String rcvrId);
 
-    long countByReadYn(String readYn);
-
     // [V2_12 결속] 사용자 삭제 시 수신 알림 일괄 정리 (fk_tb_user_noti_tb_user_info NO ACTION)
     @Modifying(clearAutomatically = true)
     @Query("DELETE FROM Notification n WHERE n.rcvrId IN :rcvrIds")

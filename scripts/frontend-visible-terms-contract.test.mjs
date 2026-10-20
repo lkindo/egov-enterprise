@@ -279,16 +279,21 @@ test('home route sources are bound to their real entry points and do not expose 
   assert.match(adminPage, /AdminDashboardClient/);
   // [Phase 2 9단계] 업무 홈은 core 셸과 기능의 home-sections 기여다. 문구 증거는 셸과, 게시판(카드·목록·활동 문장)·결재(대기 카드)·
   //   실시간(구역) 조각 파일이다 — 제거 문구의 부재 검사가 옮긴 조각까지 덮게 한다.
+  //   [2026-10-20] 늘 비어 있던 활동 구역을 걷고, 요약 카드 공용 틀·core 부서 업무 카드와 메모 보고·일정·설문 카드를 더했다.
   assert.deepEqual(rootPilot.sources, [
     'frontend/src/app/page.tsx',
     'frontend/src/app/UnifiedDashboardClient.tsx',
-    'frontend/src/app/components/dashboard/ActivityFeed.tsx',
+    'frontend/src/app/components/dashboard/HomeSummaryCard.tsx',
+    'frontend/src/app/components/dashboard/DeptJobHomeCard.tsx',
     'frontend/src/app/components/dashboard/BoardHome.tsx',
     'frontend/src/queries/board-home-query.ts',
     'frontend/src/extensions/board/home-sections.ts',
     'frontend/src/app/components/dashboard/ApprovalHome.tsx',
     'frontend/src/components/features/dashboard/RealTimeHomeSection.tsx',
     'frontend/src/components/features/dashboard/RealTimeDashboard.tsx',
+    'frontend/src/app/components/dashboard/MemoReportHome.tsx',
+    'frontend/src/app/components/dashboard/ScheduleHome.tsx',
+    'frontend/src/app/components/dashboard/SurveyHome.tsx',
   ]);
   // [2026-09-15] route 진입 파일을 sources 에 넣어 제거 문구의 부재 검사가 실제 화면 경로를 덮게 한다.
   //   InsightBanner 는 참조처 0건인 고아 컴포넌트라 이 화면의 문구 증거가 아니다.
@@ -299,7 +304,8 @@ test('home route sources are bound to their real entry points and do not expose 
     'frontend/src/app/components/ui/visual-audit-timeline.tsx',
   ]);
   assert.doesNotMatch(rootSources, /실시간 피드|보안 지수|value="안전"|시스템 활성 지표|CPU 사용률|24%|42%|홍길동|이순신 과장/);
-  assert.match(rootSources, /최근 활동 데이터가 연결되지 않았습니다/);
+  assert.doesNotMatch(rootSources, /최근 활동 데이터가 연결되지 않았습니다/);
+  assert.match(rootSources, /오늘 일정|내 담당 업무/);
   assert.doesNotMatch(adminSources, /인텔리전스 센터|지능형 데이터 분석|보안 거버넌스|AI_INSIGHT_ENGINE/);
   assert.doesNotMatch(sidebar, /_ 허브_노드_v5\.0|고급 기업용 핵심 엔진|1\.0\.2_STABLE/);
 });
@@ -393,7 +399,7 @@ test('duplicate, missing, misordered, and falsely approved content evidence are 
 
   const falseRemediation = structuredClone(contract);
   const remediatedPilot = falseRemediation.pilotCensus.find(({ route }) => route === '/');
-  remediatedPilot.findings[0].removedSourceEvidence = ['최근 활동'];
+  remediatedPilot.findings[0].removedSourceEvidence = ['내 담당 업무'];
   assert.match(validateContract(falseRemediation).join('\n'), /remediated finding source evidence still present/);
 
   const evidenceFreeRemediation = structuredClone(contract);

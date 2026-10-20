@@ -12,6 +12,7 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { GENERATORS } from './merge-main-regenerate.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const hookPath = path.join(repoRoot, '.githooks', 'pre-push');
@@ -276,7 +277,13 @@ const VERIFY_STATIC = [
 ];
 const VERIFY_BACKEND_SUITE = './gradlew compileJava compileTestJava test :api-server:harnessTest :foundation:check jacocoRootCoverageVerification :api-server:schemaValidationTest --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
 const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle:check', 'pnpm -C frontend run test:coverage'];
-const VERIFY_FAST = ['./gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
+// [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
+const SAST_APPROXIMATION = 'npm run sast:approx';
+const VERIFY_FAST = [SAST_APPROXIMATION, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
+// [2026-10-20] 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 훅이 보지 않는 무거운 시험. 운영 계약은 부르지 않는다.
+const INTEGRATION_PRECHECK = 'node scripts/integration-precheck.mjs';
+const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', 'pnpm -C frontend exec vitest run',
+  './gradlew :api-server:test --console=plain -Dfile.encoding=UTF-8', 'node scripts/integration-precheck.mjs --run-selected'];
 
 test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
   const expected = {
@@ -285,8 +292,9 @@ test('verify profiles run static checks before the operational contracts and sto
     push: [...VERIFY_FAST, './gradlew :api-server:harnessTest -Dfile.encoding=UTF-8'],
     be: [CONTRACTS, VERIFY_BACKEND_SUITE, crossStackCommand],
     fe: [...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
-    full: [...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
+    full: [SAST_APPROXIMATION, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
     e2e: ['pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
+    integrate: VERIFY_INTEGRATE,
   };
   for (const [scope, commands] of Object.entries(expected)) {
     const observed = observeVerification(scope);
@@ -323,21 +331,64 @@ test('verify profiles run static checks before the operational contracts and sto
   assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
 });
 
+test('verify stops on a CodeQL approximation finding first and on a Flyway conflict before regenerating', () => {
+  for (const scope of ['fast', 'push', 'full']) {
+    assert.deepEqual(observeVerification(scope, { failCommand: SAST_APPROXIMATION }), { commands: [SAST_APPROXIMATION], exits: [1], zones: ['Asia/Seoul'] }, scope);
+  }
+  // 갈래 통합 점검은 Flyway 충돌에서 생성물을 다시 만들지 않고 멈추며, 무거운 시험이 실패해도 멈춘다. 운영 계약은 pre-push 몫이다.
+  assert.deepEqual(observeVerification('integrate', { failCommand: INTEGRATION_PRECHECK }).commands, [INTEGRATION_PRECHECK]);
+  assert.deepEqual(observeVerification('integrate', { failCommand: 'pnpm -C frontend exec vitest run' }).exits, [1]);
+  assert.ok(!observeVerification('integrate').commands.includes(CONTRACTS));
+  // 근사를 full 에서 걷거나 Flyway 점검을 regen 뒤로 옮기면 위 기대가 깨진다(red 재현).
+  const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const withoutApproximation = runner.replace("  } else if (scope === 'full') {\n    runScriptStatic();\n", "  } else if (scope === 'full') {\n");
+  assert.notEqual(withoutApproximation, runner);
+  assert.notEqual(observeVerification('full', { source: withoutApproximation }).commands[0], SAST_APPROXIMATION);
+  const regenFirst = runner.replace("    run('node scripts/integration-precheck.mjs');\n    run('npm run regen');\n",
+    "    run('npm run regen');\n    run('node scripts/integration-precheck.mjs');\n");
+  assert.notEqual(regenFirst, runner);
+  assert.deepEqual(observeVerification('integrate', { source: regenFirst, failCommand: INTEGRATION_PRECHECK }).commands, ['npm run regen', INTEGRATION_PRECHECK]);
+});
+
 // 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.
 const REGEN_CHECK = 'npm run regen -- --check';
+// [2026-10-20] 소스 경로는 생성물 신선도 다음에 CodeQL 근사를 push 가 바꾼 파일에만 돈다(문서 전용 경로에는 JS·TS 가 없다).
+const SAST_APPROXIMATION_HOOK = 'npm run sast:approx -- --stdin';
 const PRE_PUSH_SOURCE_ORDER = [
   REGEN_CHECK,
+  SAST_APPROXIMATION_HOOK,
   'gradlew compileJava compileTestJava -q',
   'npx tsc --noEmit',
   'npx tsc -p tsconfig.e2e.json --noEmit',
-  'pnpm run codegen:verify',
-  'pnpm run codegen:verify:zod',
   'pnpm run lint',
   'pnpm run test:form-validation',
   CONTRACTS,
   'npx vitest run src/__tests__',
   'gradlew :api-server:harnessTest -q',
 ];
+
+// 계약 드리프트(api-docs.json ↔ 생성 타입·zod·operations)는 맨 앞의 regen --check 가 본다. 그 생성 계약 검사는 프런트
+// codegen:verify·codegen:verify:zod 와 같은 스크립트·인자라, 프런트 단계에서 다시 돌리면 한 push 안에서 같은 명령·입력이 두 번 돈다.
+// 그 전제(같은 검증기)와 훅이 계약 드리프트를 한 번만 보는지를 함께 고정한다. 검사기가 갈라지면 이 시험이 붉어 중복 제거를 다시 판단한다.
+test('pre-push checks contract drift once, through the regen check that runs the frontend codegen verifier', () => {
+  const sync = GENERATORS.find(generator => generator.id === 'sync-contract');
+  assert.deepEqual(sync.check, [['node', ['scripts/verify-generated-contracts.mjs', 'api']], ['node', ['scripts/verify-generated-contracts.mjs', 'zod']]],
+    'the regen check must run the contract verifier for both api and zod');
+  const scripts = JSON.parse(readFileSync(path.join(repoRoot, 'frontend', 'package.json'), 'utf8')).scripts;
+  assert.equal(scripts['codegen:verify'], 'node ../scripts/verify-generated-contracts.mjs api');
+  assert.equal(scripts['codegen:verify:zod'], 'node ../scripts/verify-generated-contracts.mjs zod');
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const drift = command => runHook(input, hookSource, { files: ['frontend/src/example.ts'], failCommand: command });
+  const commands = runHook(input, hookSource, { files: ['frontend/src/example.ts'] }).commands;
+  assert.deepEqual(commands.filter(command => command === REGEN_CHECK || /codegen:verify/.test(command)), [REGEN_CHECK]);
+  // 낡은 생성 계약은 regen --check 에서 멈춘다(그 뒤 아무것도 돌지 않는다).
+  assert.deepEqual(drift(REGEN_CHECK).commands, [REGEN_CHECK]);
+  assert.notEqual(drift(REGEN_CHECK).status, 0);
+  // 프런트 단계에 다시 넣으면 같은 검사가 두 번 돈다 — 위 단언과 PRE_PUSH_SOURCE_ORDER 가 그것을 잡는다(red 재현).
+  const doubled = hookSource.replace(/(\r?\n)( {2}# ESLint error는)/u, '$1  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) || exit 1$1$2');
+  assert.notEqual(doubled, hookSource);
+  assert.ok(runHook(input, doubled, { files: ['frontend/src/example.ts'] }).commands.includes('pnpm run codegen:verify'));
+});
 
 test('pre-push runs static checks before the operational contracts and stops on their failure', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
@@ -348,8 +399,8 @@ test('pre-push runs static checks before the operational contracts and stops on 
   const backendOnly = runHook(input, hookSource, { files: [files[0]] });
   assertSuccessful(backendOnly);
   assert.deepEqual(backendOnly.commands,
-    [REGEN_CHECK, 'gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
-  for (const failCommand of ['gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
+    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
+  for (const failCommand of [SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
     const failed = runHook(input, hookSource, { files, failCommand });
     assert.notEqual(failed.status, 0, failCommand);
     assert.equal(failed.commands.at(-1), failCommand);
@@ -361,6 +412,21 @@ test('pre-push runs static checks before the operational contracts and stops on 
     .replace(/# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다\.\r?\nrun_operational_contracts\r?\n/u, '');
   assert.notEqual(contractsFirst, hookSource);
   assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
+});
+
+test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const files = ['scripts/example.mjs'];
+  const blocked = runHook(input, hookSource, { files, failCommand: SAST_APPROXIMATION_HOOK });
+  assert.notEqual(blocked.status, 0);
+  assert.deepEqual(blocked.commands, [REGEN_CHECK, SAST_APPROXIMATION_HOOK], '근사 위반은 컴파일·운영 계약을 기다리지 않고 막는다');
+  assert.ok(!runHook(input, hookSource, { files: ['docs/README.md'] }).commands.includes(SAST_APPROXIMATION_HOOK), '문서 전용 push 에는 JS·TS 가 없다');
+  // 근사는 push 가 바꾼 파일을 표준 입력으로 받는다 — 범위 밖 파일까지 보거나 아무것도 보지 않게 바뀌면 이 줄이 사라진다.
+  assert.match(hookSource, /^printf '%s\\n' "\$CHANGED_FILES" \| npm run sast:approx -- --stdin \\\r?$/mu);
+  // 실패 처리에서 exit 1 을 걷으면 근사 위반으로도 push 가 지나간다 — 위 단언이 그것을 잡는다(red 재현).
+  const swallowed = hookSource.replace('(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; exit 1; }', '(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; }');
+  assert.notEqual(swallowed, hookSource);
+  assert.equal(runHook(input, swallowed, { files, failCommand: SAST_APPROXIMATION_HOOK }).status, 0);
 });
 
 test('pre-push checks generated freshness first and stops before compilation and the operational contracts', () => {

@@ -22,7 +22,7 @@ export const updateRewardOperation = /*#__PURE__*/ (() => {
   requestSchema: RewardManageDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
-  requestForbiddenPaths: [["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
+  requestForbiddenPaths: [["rwardwnrNm"],["rwardwnrDeptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -79,7 +79,7 @@ export const createRewardOperation = /*#__PURE__*/ (() => {
   requestSchema: RewardManageDtoRequestSchema.strict(),
   responseSchema: z.lazy(() => RewardManageDtoResponseSchema),
   envelopeSchema: ApiResponseRewardManageDtoResponseSchema,
-  requestForbiddenPaths: [["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
+  requestForbiddenPaths: [["rwardwnrNm"],["rwardwnrDeptNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"]],
   responseForbiddenPaths: [],
   });
 })();

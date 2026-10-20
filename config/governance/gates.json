@@ -177,6 +177,30 @@
           "job": "sast-scope"
         }
       ]
+    },
+    {
+      "id": "EXEC-SAST-APPROXIMATION",
+      "tier": [
+        "pre-push",
+        "local-full"
+      ],
+      "command": "npm run sast:approx",
+      "bindings": [
+        {
+          "source": ".githooks/pre-push",
+          "fragment": "printf '%s\\n' \"$CHANGED_FILES\" | npm run sast:approx -- --stdin \\",
+          "tiers": [
+            "pre-push"
+          ]
+        },
+        {
+          "source": "scripts/verify.mjs",
+          "fragment": "run('npm run sast:approx');",
+          "tiers": [
+            "local-full"
+          ]
+        }
+      ]
     }
   ],
   "qualityPopulations": [
@@ -1731,6 +1755,20 @@
             "job": "mutation-scope",
             "gradle": ":business-core:pitest",
             "classes": "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-app-home-promotion",
+            "job": "mutation-scope",
+            "gradle": ":business-app:pitest",
+            "classes": "nuri.business.service.dashboard.*,nuri.business.service.promotion.*",
+            "tests": "nuri.business.*"
+          },
+          {
+            "scope": "business-core-observability",
+            "job": "mutation-scope",
+            "gradle": ":business-core:pitest",
+            "classes": "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*",
             "tests": "nuri.business.*"
           },
           {

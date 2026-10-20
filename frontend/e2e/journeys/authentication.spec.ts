@@ -1,8 +1,27 @@
 import { readFileSync } from 'node:fs';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
-import { request as playwrightRequest } from '@playwright/test';
+import { request as playwrightRequest, type BrowserContext } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+
+type SessionCookie = Parameters<BrowserContext['addCookies']>[0][number];
+
+/**
+ * 같은 탭의 세션 쿠키를 빈 틈 없이 다른 계정으로 바꾼다. 끝난 뒤의 쿠키 집합은 `clearCookies()` → `addCookies()` 와 같다.
+ *
+ * [2026-10-18 CI 39135731869] 지운 뒤 넣는 사이 6ms 동안 화면의 알림 조회가 쿠키 없이 나가 401 → 재발급 401 →
+ * `/login?expired=true` 로 이동했고, 뒤이은 Ctrl+K 의 `/menus/head` 를 기다리던 단언이 180초 시간 초과했다.
+ * 같은 이름·도메인·경로의 쿠키는 덮어써 언제나 유효한 한 계정의 토큰이 실리게 하고, 새 집합에 없는 쿠키만 그 뒤에 지운다.
+ */
+async function replaceSessionCookies(context: BrowserContext, cookies: SessionCookie[]): Promise<void> {
+    await context.addCookies(cookies);
+    const kept = new Set(cookies.map(cookie => `${cookie.name}\u0000${cookie.domain}\u0000${cookie.path}`));
+    for (const cookie of await context.cookies()) {
+        if (!kept.has(`${cookie.name}\u0000${cookie.domain}\u0000${cookie.path}`)) {
+            await context.clearCookies({ name: cookie.name, domain: cookie.domain, path: cookie.path });
+        }
+    }
+}
 
 /** JWT 의 발급 시각(초)이 지날 때까지 기다린다 — 같은 초의 로그아웃은 그 토큰을 남기는 경계다(JwtTokenProvider). */
 async function waitPastIssuedSecond(authorization: string) {
@@ -550,8 +569,7 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
 
             // Replace real browser cookies while the same AuthProvider remains mounted.
             const sharedAdmin = JSON.parse(readFileSync('playwright/.auth/admin.json', 'utf8'));
-            await context.clearCookies();
-            await context.addCookies(sharedAdmin.cookies);
+            await replaceSessionCookies(context, sharedAdmin.cookies);
             await Promise.all([
                 page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me' && response.status() === 200),
                 settledMenus(() => page.evaluate(() => window.dispatchEvent(new Event('authorization-changed')))),
@@ -561,8 +579,7 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
             await page.keyboard.press('Escape');
             await page.evaluate(() => history.pushState({}, '', '/?command-cache-probe=1'));
             await page.goBack();
-            await context.clearCookies();
-            await context.addCookies(fixture.storageState.cookies);
+            await replaceSessionCookies(context, fixture.storageState.cookies);
             await Promise.all([
                 page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/auth/me' && response.status() === 200),
                 page.evaluate(() => window.dispatchEvent(new Event('authorization-changed'))),

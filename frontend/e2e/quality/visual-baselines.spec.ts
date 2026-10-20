@@ -102,6 +102,9 @@ test.describe('Quality & Resilience', () => {
             // ── 파일럿 ③: 공통코드 관리 A2 작업영역 (/admin/system/common-code) ────
             // 서버 컴포넌트가 Flyway seed 코드를 조회해 렌더한다 — 기준선 워크플로와 CI 모두
             // 신선한 compose DB 라 같은 seed 를 보고, 코드를 생성/삭제하는 e2e 는 없다(실측 grep).
+            // [2026-10-20] 예외 하나: 공통코드 변경 이력 여정(journeys/common-codes)이 분류·그룹을 하나씩 만든다. 식별자가
+            //   'Z' 로 시작해 탐색기 맨 뒤(마스터 스크롤 영역 밖)에 놓이므로 이 기준선에 들어오지 않는다. 상세 코드(결재 여정의
+            //   COM075 상세 등)는 그룹을 고르기 전에는 보이지 않는다. 읽는 그룹(COM009 등)의 '제품이 읽음' 표지는 마스터 목록에 보인다.
             console.log('>>> Capturing Common Code A2 Work Area Visual Snapshot');
             await page.goto('/admin/system/common-code');
             await expect(page.getByRole('heading', { level: 1, name: '코드 관리', exact: true })).toBeVisible({ timeout: 30000 });

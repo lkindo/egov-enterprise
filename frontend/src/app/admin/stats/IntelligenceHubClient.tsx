@@ -3,41 +3,33 @@
 import React from 'react';
 import { useQueries, useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import {
-  BarChart3,
-  Activity,
-  Users,
-  Monitor,
-  Database,
-  RefreshCcw,
-  Zap,
-  LayoutDashboard,
-  type LucideIcon,
-} from 'lucide-react';
+import { Database, LayoutDashboard, RefreshCcw, Users, type LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { motion, AnimatePresence } from 'framer-motion';
-import { statsAdminService } from '@/services/foundation/system/StatsAdminService';
+import { statsAdminService, type UserActivityStats } from '@/services/foundation/system/StatsAdminService';
 import { isStatsHubTab, type StatsHubTab, type StatsPanelQuery, type StatsSeriesPoint } from '@/extensions/slots';
 import { useSlotEntries } from '@/extensions/use-slot-entries';
 import { statsPanels } from '@/extensions/generated-stats-panels';
 import { useOptionalAuth } from '@/contexts/AuthContext';
-import { HubEmptyState, HubErrorState } from './StatsHubParts';
-import { StatsHubFallback } from './StatsHubFallback';
-import { XAxis,
-  YAxis,
-  CartesianGrid,
-  Tooltip as RechartsTooltip,
-  AreaChart,
-  Area } from 'recharts';
-import { HubMetricSkeleton, HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
-import { SafeResponsiveContainer } from '@/app/components/ui/observability-charts';
+import { ReportPage } from '@/app/components/patterns/report-page';
+import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
+import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { useChartColors } from '@/lib/hooks/useChartColors';
-import { toDisplayYmd } from '@/lib/format-date';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { EMPTY_PERIOD, PeriodFilter, periodProblem, type PeriodValue } from '@/app/components/patterns/period-filter';
+import { StatsHubFallback } from './StatsHubFallback';
+import { StatsHubNavigationProvider } from './StatsHubParts';
+
+/**
+ * 통계 셸 — 통계 개요(/admin/stats)와 하위 화면(/admin/stats/user·screen 과 기능이 넘기는 탭)을 같은 내비게이션 아래 A7 현황 화면
+ * (ReportPage: 조회 조건 → 요약 → 차트 → 원본 표)으로 그린다.
+ *
+ * [2026-10-20] 하위 화면을 A7 셸로 옮겼다. 종전에는 셸 없이 직접 조립했고 장식(기울인 아이콘 상자, 올라가는 카드, 굵기 900 의 축 글자,
+ * 밑줄 접두 라벨)과 모든 탭에 걸친 요약 카드·옆 카드가 있었다. 이제 요약은 그 탭이 그리는 계열의 것이고(기간 합계·일 평균·가장 많은 날),
+ * 차트와 원본 표가 같은 조회 조건을 따른다. '통계 개요' 탭은 종전에 내비게이션 없는 다른 화면으로 떨어져 되돌아갈 길이 끊겼다 — 이제
+ * 개요 라우트도 이 셸이 같은 내비게이션과 함께 그린다 — 서버가 그린 요약 화면(AdminStatsClient)을 받아 그 둘레에 내비게이션을 둔다
+ * (StatsHubNavigationProvider). 셸은 요약 화면을 import 하지 않는다 — 요약 칸(overview-card)의 귀속이 하위 화면에 번지지 않게.
+ */
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. 탭 하나만 읽는다.
@@ -48,6 +40,12 @@ import { EMPTY_PERIOD, PeriodFilter, periodProblem, type PeriodValue } from '@/a
  */
 const HUB_PARAM_KEYS = ['tab'] as const;
 
+/** 한 번에 묻는 기간의 상한(시작·종료일 포함). 서버(ReportStatsService.MAX_PERIOD_DAYS)와 같은 값이다 — 넘으면 서버가 400 이다. */
+const MAX_PERIOD_DAYS = 366;
+
+/** 원본 표의 페이지당 건수(통계 개요와 같다). */
+const TABLE_PAGE_SIZE = 10;
+
 // --- Tabs ---
 /**
  * 셸 고유 탭과 라우트 (감사 P1-7).
@@ -55,10 +53,10 @@ const HUB_PARAM_KEYS = ['tab'] as const;
  * 통계는 탭이 곧 라우트다(`/admin/stats/*` 메뉴). 따라서 탭 전환은 로컬 state 가 아니라 그 라우트로의 `router.push`
  * 로 처리해야 공유·새로고침·뒤로가기가 복원되고 사이드바 메뉴 활성 표시도 유지된다.
  *
- * [허브 분해 H4] 게시물·자료 이용(게시판)과 설문조사 분석(설문)은 그 기능의 stats-panels 기여다 — 셸은 기능 탭의 이름도 서비스도
- * 모른다. 기능이 빠진 구성에서는 기여 파일이 함께 지워져 그 탭만 사라진다. order 로 기여와 합쳐 내비게이션 순서를 정한다.
- * 전용 라우트가 없는 기능 탭(body)은 현재 경로의 `?tab=<id>` 쿼리로 연다(없는 라우트를 만들어 메뉴 SSOT 를 흔들지 않기 위함 —
- * 감사 §6 D-6).
+ * [허브 분해 H4] 기능 탭은 그 기능의 stats-panels 기여다 — 셸은 기능 탭의 이름도 서비스도 모른다. 기능이 빠진 구성에서는 기여 파일이
+ * 함께 지워져 그 탭만 사라진다. order 로 기여와 합쳐 내비게이션 순서를 정한다. 전용 라우트가 없는 기능 탭(body)은 현재 경로의
+ * `?tab=<id>` 쿼리로 연다(없는 라우트를 만들어 메뉴 SSOT 를 흔들지 않기 위함 — 감사 §6 D-6). [2026-10-20] `?tab=` 은 그 본문 탭만
+ * 고른다 — 라우트가 있는 탭은 그 라우트가 고른다(주소와 화면·메뉴 활성이 갈리지 않게).
  */
 type CoreStatsTab = 'DASHBOARD' | 'USER_STATS' | 'SYSTEM_STATS';
 
@@ -75,70 +73,86 @@ const CORE_TABS: readonly {
   { id: 'SYSTEM_STATS', order: 40, label: '시스템 활성', title: '시스템 활성 지표', icon: Database, route: '/admin/stats/screen' },
 ];
 
+/**
+ * 사용자 활동의 계열 — 요청 구분(ProcessTypeCode 의 HTTP 메서드 매핑). 서버가 같은 질의에서 네 계열을 함께 낸다(UserActivityStats).
+ * 종전에는 질의가 조회 수까지 가져오고도 등록 수 하나만 실었다(OCI 실측 조회 5,720 · 등록 31) — 이제 화면이 계열을 고른다.
+ */
+const USER_SERIES = [
+  { key: 'inqCnt', label: '조회 요청', method: 'GET·HEAD' },
+  { key: 'crtCnt', label: '등록 요청', method: 'POST' },
+  { key: 'mdfcnCnt', label: '수정 요청', method: 'PUT·PATCH' },
+  { key: 'delCnt', label: '삭제 요청', method: 'DELETE' },
+] as const satisfies readonly { key: keyof UserActivityStats; label: string; method: string }[];
+type UserSeriesKey = (typeof USER_SERIES)[number]['key'];
+
+/** 셸 탭이 그리는 계열의 이름·설명·집계 기준. 무엇을 어디서 센 값인지 A7 의 basis 가 말한다. */
+const CONNECT_SERIES = {
+  name: '성공 로그인',
+  description: '일자별 성공 로그인 수를 봅니다.',
+  basis: '집계 기준: 일자별 성공 로그인 수 · 실패·결과 미상 시도 제외 · 기록이 없는 날은 0 · 출처: 로그인 로그',
+} as const;
+
+function userSeriesMeta(key: UserSeriesKey) {
+  const series = USER_SERIES.find((item) => item.key === key) ?? USER_SERIES[0];
+  return {
+    name: series.label,
+    description: '인증 사용자의 일자별 API 요청 수를 요청 구분별로 봅니다.',
+    basis: `집계 기준: 인증 사용자의 일자별 ${series.label} 수(HTTP ${series.method}) · 실패한 요청 포함 · 기본 1분 주기로 반영`
+      + ' · 기록이 없는 날은 0 · 출처: 사용자 활동 로그',
+  };
+}
+
 /** 셸이 기능 탭만 고르는 술어. 모듈 값이라 렌더마다 같다(useSlotEntries 결과가 안정된다). */
 const isHubPanel = isStatsHubTab;
 
 /*
  * 미수집 판정. 셸 탭은 모두 값을 쓰는 쪽이 있다 — 미수집 여부는 기능 탭의 기여가 밝힌다(uninstrumented).
  *
- * 저장소 실측(2026-08-28): 이 축이 읽는 저장소에 save 호출이 저장소 전체에 0건이고 Flyway 시드에도 INSERT 가 없다.
- *   - 자료 이용(게시판 기여) → 게시판의 자료 이용 포트 → dtaUseStatsRepository.countByDate (writer 0)
- *   - [2026-10-19] 셸의 '운영 보고서'(REPORTS) 탭은 reprtStatsRepository.countByDate(writer 0)를 읽었다. 쓰는 쪽이 없어
- *     어떤 기간에도 비어 있었으므로 탭·라우트·조회 API·메뉴(V2_134)를 걷었다. 그래서 셸의 미수집 목록도 없어졌다.
- *
- * 값이 있는 탭은 셋이다.
+ * 값이 있는 셸 탭은 둘이다.
  *   - SYSTEM_STATS → loginLog. LogService 가 실제로 기록한다.
- *   - USER_STATS   → **[2026-09-25] 미수집 목록에서 뺐다.** 2026-09-03 부터
- *     UserActivityLogAggregator 가 인증 사용자의 API 요청을 tb_user_log 에 일자별로 적재한다
- *     (OCI 실측 326행). 종전 문구는 값이 있어도 "수집되지 않는다" 고 말했다. 이 탭이 세는 것은
- *     countByDate 의 SUM(crt_cnt), 즉 **등록 요청 수**다 — 조회 요청은 세지 않는다.
- *   - 콘텐츠 지표(게시판 기여) → **[2026-08-28] 미수집이 아니다.** `boardRepository.countPostsByDate` 로 게시글을
- *     실제로 센다 — 게시글은 제품이 `createPost` 로 직접 쓰므로 writer 가 명백히 존재한다.
- *     ⚠ "지금 그 표에 행이 있는가" 가 아니라 "쓰는 쪽이 있는가" 가 이 판정의 기준이다.
- *     운영 DB 가 비어 있는 것은 '미수집' 이 아니라 '아직 글이 없음' 이고, 그건 기간을 바꾸면
- *     달라질 수 있는 사실이라 '선택한 기간에 집계된 통계가 없습니다' 가 맞는 문구다.
+ *   - USER_STATS   → [2026-09-25] UserActivityLogAggregator 가 인증 사용자의 API 요청을 tb_user_log 에 일자별로 적재한다.
+ *     [2026-10-20] 조회·등록·수정·삭제 네 계열을 낸다.
+ *   ⚠ "지금 그 표에 행이 있는가" 가 아니라 "쓰는 쪽이 있는가" 가 이 판정의 기준이다. 운영 DB 가 비어 있는 것은 '미수집' 이 아니라
+ *     '아직 기록이 없음' 이고, 서버가 그 날을 0 으로 채운다.
  *
- * 미수집 탭에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이
- * 되어, 사용자가 기간만 계속 바꾸게 만든다. 수집 자체가 없다는 사실을 그대로 말한다.
- * (같은 규율의 선례: SearchClient '아직 제공되지 않습니다', observability '아직 연동되지 않았습니다')
+ * 미수집 탭에서 '선택한 기간에 집계된 통계가 없습니다' 라고 하면 **기간을 바꾸면 나온다는 뜻**이 되어, 사용자가 기간만 계속 바꾸게
+ * 만든다. 수집 자체가 없다는 사실을 그대로 말하고, 요약 값도 0 이 아니라 '미수집' 이다(측정하지 않은 값을 0 으로 말하지 않는다).
  */
+const UNINSTRUMENTED_MESSAGE = '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.';
+const PERIOD_EMPTY_MESSAGE = '선택한 기간에 집계된 통계가 없습니다.';
+const UNMEASURED_SUMMARY = { total: '미수집', average: '미수집', peak: '미수집' } as const;
 
-/**
- * X축 눈금 라벨: 'yyyyMMdd' → 'MM-DD' (표기 변환은 lib/format-date SSOT 경유).
- *
- * <p>[2026-09-08] 구분자를 점에서 시스템 표준인 '-' 로 바꿨다. ⚠ 눈금만은 연도를 떼고
- * 'MM-DD' 로 둔다 — 30일치 축에 'yyyy-MM-dd' 를 전부 넣으면 라벨이 겹쳐 읽을 수 없다.
- * 축 눈금은 문서상의 날짜 표기가 아니라 스케일 라벨이며, 연도는 조회 기간이 소유한다.
- */
-function formatAxisDate(value: unknown): string {
-  const raw = String(value ?? '');
-  const display = toDisplayYmd(raw, '');
-  return display ? display.slice(5) : raw;
+/** 시작·종료일을 포함한 일수. 형식이 틀리면 NaN 이다. */
+function periodDays(period: PeriodValue): number {
+  const toUtc = (value: string) => {
+    const [year, month, day] = value.split('-').map(Number);
+    return Date.UTC(year, month - 1, day);
+  };
+  return (toUtc(period.to) - toUtc(period.from)) / 86_400_000 + 1;
 }
 
-/**
- * 시간축 차트가 그릴 순서 — 날짜 오름차순(왼쪽이 과거, 오른쪽이 최근).
- *
- * <p>[2026-10-19] 차트는 받은 배열 순서대로 X축을 놓는다. 성공 로그인·사용자 활동 집계는 서버가 날짜 오름차순으로 주지만,
- * 게시물·자료 이용 집계(게시판 기여)는 최신순으로 줘서 '콘텐츠 지표' 탭의 시간이 오른쪽에서 왼쪽으로 흘렀다. 축의 방향은
- * 차트가 소유하므로 그리기 전에 한 곳에서 맞춘다 — 기여가 늘어도 서버 정렬에 기대지 않는다. 같은 계열의 날짜는 한 형식
- * ('yyyy-MM-dd' 또는 'yyyyMMdd')이라 문자열 비교가 곧 날짜 비교다. 날짜가 없는 행은 뒤에 둔다(원래 순서 유지).
- */
-function inTimeOrder(rows: readonly StatsSeriesPoint[]): StatsSeriesPoint[] {
-  const dateOf = (row: StatsSeriesPoint) => (typeof row.statsDate === 'string' ? row.statsDate : '');
-  return [...rows].sort((left, right) => {
-    const a = dateOf(left);
-    const b = dateOf(right);
-    if (!a || !b) return Number(!a) - Number(!b);
-    return a < b ? -1 : a > b ? 1 : 0;
-  });
+/** 요약 지표 — 기간 합계·일 평균·가장 많은 날. 표와 차트가 그리는 값과 같은 배열에서 센다(A7 합격: 차트 값과 표 합계 일치). */
+function seriesSummary(points: readonly StatsSeriesPoint[]) {
+  const total = points.reduce((sum, point) => sum + point.value, 0);
+  const peak = points.reduce<StatsSeriesPoint | null>((best, point) => (best === null || point.value > best.value ? point : best), null);
+  return {
+    total: total.toLocaleString(),
+    average: points.length === 0 ? '-' : (total / points.length).toLocaleString(undefined, { maximumFractionDigits: 1 }),
+    peak: peak === null || peak.value === 0 ? '없음' : `${peak.date} (${peak.value.toLocaleString()}건)`,
+  };
 }
 
-export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { defaultTab?: string }) {
+export default function IntelligenceHubClient({
+  defaultTab = 'DASHBOARD',
+  overview,
+}: {
+  defaultTab?: string;
+  /** 통계 개요 라우트가 서버에서 그린 요약 화면. 이 값이 있을 때만 '통계 개요' 를 연다(하위 라우트에는 없다). */
+  overview?: React.ReactNode;
+}) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const chartColors = useChartColors();
 
   // 기능 탭(stats-panels 기여). 노출은 기여의 술어(그 화면·권한)로 판정한다 — 라우트 게이트와 같은 판정이다.
   const panels: StatsHubTab[] = useSlotEntries(statsPanels, isHubPanel);
@@ -147,14 +161,19 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     ...CORE_TABS.map((tab) => ({ id: tab.id as string, order: tab.order, label: tab.label, icon: tab.icon })),
     ...panels.map((panel) => ({ id: panel.id, order: panel.order, label: panel.label, icon: panel.icon })),
   ].sort((left, right) => left.order - right.order);
-  const isTab = (value: string | null): value is string => !!value && tabs.some((tab) => tab.id === value);
 
-  // 활성 탭은 URL 파생값이다(로컬 state 금지 — 뒤로가기/공유 복원 불가). 이 구성에 없는 탭이면 페이지 기본 탭, 그것도 없으면 통계 개요다.
+  /*
+   * 활성 탭은 URL 파생값이다(로컬 state 금지 — 뒤로가기/공유 복원 불가). `?tab=` 은 본문 탭만 고르고, 나머지는 라우트의 기본 탭이다.
+   * 이 구성에 없는 탭이면(기능이 빠졌거나 노출 술어가 거부) 통계 개요로, 개요 자료가 없는 하위 라우트에서는 성공 로그인으로 연다.
+   */
   const tabParam = searchParams.get('tab');
-  const activeTab: string = isTab(tabParam) ? tabParam : isTab(defaultTab) ? defaultTab : 'DASHBOARD';
+  const hasOverview = overview != null;
+  const fallbackTab = hasOverview ? 'DASHBOARD' : 'SYSTEM_STATS';
+  const isOpenable = (id: string) => tabs.some((tab) => tab.id === id) && (id !== 'DASHBOARD' || hasOverview);
+  const isBodyTab = (id: string | null): id is string => !!id && panels.some((panel) => panel.id === id && panel.kind === 'body');
+  const activeTab: string = isBodyTab(tabParam) ? tabParam : isOpenable(defaultTab) ? defaultTab : fallbackTab;
   const activeCore = CORE_TABS.find((tab) => tab.id === activeTab);
   const activePanel = panels.find((panel) => panel.id === activeTab);
-  const activeTitle = activeCore?.title ?? activePanel?.title ?? '';
 
   const handleSelectTab = (tab: string) => {
     if (tab === activeTab) return;
@@ -170,36 +189,34 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   };
 
   /*
-   * [2026-09-26 DIP B5 F6] 집계 기간. 서버(ReportStatsService)는 이미 fromDate/toDate 를 받는데 화면이 보내지 않아
-   * 늘 서버 기본값(최근 1개월)만 보였다. 양쪽을 다 고른 올바른 기간만 보낸다 — 한쪽만 고르거나 역순이면 기본값을
-   * 집계하고 PeriodFilter 가 그 이유를 말한다. '전체' 프리셋은 두지 않는다(비우면 전체가 아니라 기본값이다).
+   * [2026-09-26 DIP B5 F6] 집계 기간. 양쪽을 다 고른 올바른 기간만 보낸다 — 한쪽만 고르거나 역순이거나 366일을 넘으면 기본값을
+   * 집계하고 그 이유를 말한다. '전체' 프리셋은 두지 않는다(비우면 전체가 아니라 기본값이다).
    */
   const [period, setPeriod] = React.useState<PeriodValue>(EMPTY_PERIOD);
-  const appliedRange = period.from && period.to && !periodProblem(period)
+  const periodTooLong = !!period.from && !!period.to && !periodProblem(period) && periodDays(period) > MAX_PERIOD_DAYS;
+  const appliedRange = period.from && period.to && !periodProblem(period) && !periodTooLong
     ? { fromDate: period.from, toDate: period.to }
     : undefined;
+  const [userSeries, setUserSeries] = React.useState<UserSeriesKey>('inqCnt');
 
   // --- Data Fetching ---
-  // ⚠ 여기서 호출하는 경로는 StatisticsApiController 에 실제로 매핑된 것만 사용한다.
-  //    (/data-usage, /bbs, /user, /connect, /summary — 2026-07-22 감사 P0-22, /report 는 2026-10-19 걷었다)
-  // 사용자/접속 2종은 모든 탭에서 노출되는 상단 요약 카드의 소스이므로 탭과 무관하게 조회한다.
-  // (탭 조건부로 두면 비활성 탭에서 값이 undefined 가 되어 "0" 이라는 거짓 지표가 표시된다.)
+  // ⚠ 여기서 호출하는 경로는 StatisticsApiController 에 실제로 매핑된 것만 사용한다(/user, /connect — 기능 탭은 기여의 로더).
+  // [2026-10-20] 요약이 탭마다 그 탭의 계열이 되어, 조회도 그 탭이 열렸을 때만 한다(종전의 모든 탭 요약 카드는 걷었다).
   const userQuery = useQuery({
     queryKey: ['admin-stats-user', appliedRange],
-    queryFn: () => statsAdminService.getUserStats(appliedRange)
+    queryFn: () => statsAdminService.getUserStats(appliedRange),
+    enabled: activeTab === 'USER_STATS',
   });
-
-  // 구 `getScreenStats()` 는 존재하지 않는 `/screen` 을 호출해 첫 진입마다 404 를 냈다.
   // `/connect` 는 성공 로그인 건수다. 화면 조회 요청이나 실패 시도는 이 집계에 포함되지 않는다.
   const connectQuery = useQuery({
     queryKey: ['admin-stats-connect', appliedRange],
-    queryFn: () => statsAdminService.getConnectStats(appliedRange)
+    queryFn: () => statsAdminService.getConnectStats(appliedRange),
+    enabled: activeTab === 'SYSTEM_STATS',
   });
 
   /*
    * 기능 탭의 조회. 셸이 한 번(useQueries)에 소유한다 — 기여는 데이터라 훅을 넘길 수 없고, 셸이 기여 수만큼 훅을 부르면 hook 규칙을
-   * 어긴다. 그 탭이 열렸을 때만 조회한다. [허브 분해 H4] 종전에는 통계 개요 탭에서도 게시물 집계를 불렀지만 개요는 그 값을 쓰지
-   * 않았다(쓰지 않는 조회) — 이제 콘텐츠 지표 탭에서만 부른다. 결과 배열은 보이는 패널 순서이고, 아래는 패널과 짝을 지어 쓴다.
+   * 어긴다. 그 탭이 열렸을 때만 조회한다. 결과 배열은 보이는 패널 순서이고, 아래는 패널과 짝을 지어 쓴다.
    */
   const panelResults = useQueries({
     queries: panels.map((panel) => (panel.kind === 'series'
@@ -210,36 +227,10 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
   const activePanelQuery = activePanel ? panelQuery(activePanel.id) : undefined;
   const activeBody = activePanel?.kind === 'body' ? activePanel : undefined;
 
-  // 요약 카드가 쓰는 값. 미수집 축(자료 이용 등)은 요약 카드가 값을 쓰지 않는다 — 조회는 차트/표가 계속 소비한다.
-  const userStats = userQuery.data;
-  const connectStats = connectQuery.data;
-
-  // 현재 탭이 실제로 그리는 시계열과 그 쿼리 상태 (로딩/에러 게이트의 단일 근거). 목록에 없는 탭은 성공 로그인이다.
-  const chartQuery: StatsPanelQuery = activePanel?.kind === 'series' && activePanelQuery
-    ? activePanelQuery
-    : activeTab === 'USER_STATS' ? userQuery : connectQuery;
-  // 시간이 왼쪽에서 오른쪽으로 흐르게 그린다 — 계열마다 서버 정렬이 다르다(inTimeOrder). 내보내기도 같은 순서다.
-  const chartData = inTimeOrder((chartQuery.data as readonly StatsSeriesPoint[] | undefined) ?? []);
-
-  const isUninstrumentedTab = activePanel?.kind === 'series' && activePanel.uninstrumented;
-  const emptyChartMessage = isUninstrumentedTab
-    ? '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.'
-    : '선택한 기간에 집계된 통계가 없습니다.';
-
-  // 요약 칸이 있는 기능 탭(미수집 축만 — 값은 늘 '미수집'). 그 조회의 로딩·오류도 요약 상태에 든다(종전 동작).
-  const summaryPanels = panels.flatMap((panel) => (panel.kind === 'series' && panel.uninstrumented && panel.summary
-    ? [{ id: panel.id, summary: panel.summary }] : []));
-
-  // 요약 카드는 실제 집계 합계만 표시한다(배열 길이는 "일수"일 뿐 지표가 아니다 — 감사 P0-22).
-  const sumStatsCo = (rows?: readonly StatsSeriesPoint[]) => (rows ?? []).reduce((acc, row) => acc + (row.statsCo ?? 0), 0);
-  const summaryQueries: StatsPanelQuery[] = [
-    userQuery,
-    connectQuery,
-    ...summaryPanels.flatMap(({ id }) => panelQuery(id) ?? []),
-  ];
-  const isSummaryLoading = summaryQueries.some((query) => query.isLoading);
-  const isSummaryError = summaryQueries.some((query) => query.isError);
-  const totalConnect = sumStatsCo(connectStats);
+  // 원본 표의 페이지 — 탭·기간·계열이 바뀌면 첫 페이지다(효과 없이 키로 되돌린다).
+  const pageKey = JSON.stringify([activeTab, appliedRange ?? null, userSeries]);
+  const [pageState, setPageState] = React.useState({ key: pageKey, page: 1 });
+  const page = pageState.key === pageKey ? pageState.page : 1;
 
   // 새로고침은 꺼진 탭의 조회까지 모두 다시 부른다(refetch 는 enabled 와 무관하게 실행한다 — invalidate 는 꺼진 조회를 건너뛴다).
   const handleForceRefresh = () => {
@@ -250,246 +241,189 @@ export default function IntelligenceHubClient({ defaultTab = 'DASHBOARD' }: { de
     ]);
   };
 
-  // 내보내기는 "지금 화면에 보이는 데이터"만 반출한다(감사 P1-6 — 죽은 버튼을 기존 자산에 배선).
-  const exportRows: Record<string, unknown>[] = activeBody
-    ? activeBody.exportRows(activePanelQuery?.data)
-    : chartData.map((row) => ({
-      statsDate: toDisplayYmd(typeof row.statsDate === 'string' ? row.statsDate : ''),
-      statsCo: row.statsCo ?? 0,
-    }));
-
-  const exportHeaders = activeBody
-    ? activeBody.exportHeaders.map((header) => ({ ...header }))
-    : [
-      { label: '집계 일자', key: 'statsDate' },
-      { label: '집계 건수', key: 'statsCo' },
-    ];
-
-  const ActiveBody = activeBody?.Body;
-
   // 권한 상태를 아직 모르면(서버가 사용자를 넘기지 못해 다시 확인하는 동안) 기능 탭이 아직 보이지 않는다. 요청한 탭(그 라우트의 기본
-  // 탭이나 `?tab=`)이 아직 탭이 아니면 통계 개요로 떨어뜨려 다른 제목·차트를 잠깐 보이지 않고 진입 골격을 그린다.
-  if (authPending && !isTab(tabParam ?? defaultTab)) return <StatsHubFallback />;
+  // 탭이나 `?tab=`)이 아직 탭이 아니면 다른 탭으로 떨어뜨려 다른 제목·차트를 잠깐 보이지 않고 진입 골격을 그린다.
+  const requestedTab = tabParam ?? defaultTab;
+  if (authPending && !tabs.some((tab) => tab.id === requestedTab)) return <StatsHubFallback />;
+
+  const navigation = <StatsHubNavigation tabs={tabs} activeTab={activeTab} onSelect={handleSelectTab} />;
+  const breadcrumbItems = [{ label: '시스템관리' }, { label: '분석 대시보드' }];
+  const refreshButton = (fetching: boolean) => (
+    <Button variant="outline" size="sm" onClick={handleForceRefresh} aria-busy={fetching || undefined} className="gap-2">
+      <RefreshCcw size={16} className={cn(fetching && 'animate-spin')} aria-hidden="true" /> 통계 새로고침
+    </Button>
+  );
+
+  // 통계 개요 — 요약 화면이 같은 내비게이션을 받는다(새로고침·반출은 그 화면이 소유한다).
+  if (activeTab === 'DASHBOARD' && hasOverview) {
+    return <StatsHubNavigationProvider value={navigation}>{overview}</StatsHubNavigationProvider>;
+  }
+
+  // 기능 본문 탭 — 본문이 원본이다. 집계 기간은 적용하지 않는다(기여의 basis 가 말한다).
+  if (activeBody && activePanelQuery) {
+    const ActiveBody = activeBody.Body;
+    return (
+      <ReportPage
+        title={activeBody.title}
+        breadcrumbItems={breadcrumbItems}
+        navigation={navigation}
+        basis={activeBody.basis}
+        actions={
+          <>
+            {refreshButton(activePanelQuery.isFetching)}
+            <DataExportExcel
+              scope="loaded"
+              data={activeBody.exportRows(activePanelQuery.data)}
+              headers={activeBody.exportHeaders.map((header) => ({ ...header }))}
+              filename={`stats_${activeTab.toLowerCase()}`}
+            />
+          </>
+        }
+      >
+        <ActiveBody query={activePanelQuery} />
+      </ReportPage>
+    );
+  }
+
+  // 일자별 계열 탭 — 셸 탭(사용자·성공 로그인) 또는 기능의 series 탭.
+  const meta = activeTab === 'USER_STATS'
+    ? userSeriesMeta(userSeries)
+    : activePanel?.kind === 'series'
+      ? { name: activePanel.label, description: undefined, basis: activePanel.basis }
+      : CONNECT_SERIES;
+  const title = activeCore?.title ?? activePanel?.title ?? '';
+  const seriesQuery: StatsPanelQuery = activeTab === 'USER_STATS'
+    ? userQuery
+    : activePanel?.kind === 'series' && activePanelQuery ? activePanelQuery : connectQuery;
+  // 서버가 날짜 오름차순으로 내고 측정하는 계열은 빈 날을 0 으로 채운다 — 받은 순서·형식 그대로 그린다(정렬·보정을 두지 않는다).
+  const points: readonly StatsSeriesPoint[] = activeTab === 'USER_STATS'
+    ? (userQuery.data?.[userSeries] ?? [])
+    : ((seriesQuery.data as readonly StatsSeriesPoint[] | undefined) ?? []);
+
+  const isUninstrumentedTab = activePanel?.kind === 'series' && activePanel.uninstrumented;
+  const emptyMessage = isUninstrumentedTab ? UNINSTRUMENTED_MESSAGE : PERIOD_EMPTY_MESSAGE;
+  const summary = isUninstrumentedTab
+    ? UNMEASURED_SUMMARY
+    : seriesQuery.isLoading
+      ? { total: '…', average: '…', peak: '…' }
+      : seriesQuery.isError
+        ? { total: '조회 실패', average: '조회 실패', peak: '조회 실패' }
+        : seriesSummary(points);
+  const periodText = appliedRange
+    ? `집계 구간: ${appliedRange.fromDate} ~ ${appliedRange.toDate}`
+    : '집계 구간: 최근 1개월(기간을 고르지 않으면 서버 기본값)';
+
+  const totalPages = Math.max(1, Math.ceil(points.length / TABLE_PAGE_SIZE));
+  const currentPage = Math.min(page, totalPages);
+  const pagedPoints = points.slice((currentPage - 1) * TABLE_PAGE_SIZE, currentPage * TABLE_PAGE_SIZE);
+  // 축 눈금은 'MM-DD' 다 — 30일치 축에 연도까지 넣으면 라벨이 겹친다. 연도는 집계 구간이 소유한다.
+  const chartData = points.map((point) => ({ name: point.date.slice(5), [meta.name]: point.value }));
+  // 내보내기는 "지금 화면에 보이는 데이터"만 반출한다(감사 P1-6).
+  const exportRows = points.map((point) => ({ date: point.date, value: point.value }));
+  const columns = [
+    { header: '집계 일자', accessor: (point: StatsSeriesPoint) => <span className="tabular-nums">{point.date}</span> },
+    {
+      header: `${meta.name} 건수`,
+      accessor: (point: StatsSeriesPoint) => <span className="font-semibold tabular-nums">{point.value.toLocaleString()}</span>,
+    },
+  ];
 
   return (
-    <div className="space-y-6 pb-8">
-      {/* --- Header --- */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 px-2 md:px-4">
-        <div className="flex items-center gap-4">
-          <div className="w-14 h-11 bg-surface-inverse rounded-lg flex items-center justify-center shadow-2xl skew-x-2">
-            <BarChart3 size={28} className="text-surface-inverse-foreground" />
-          </div>
-          <div>
-            <h1 className="text-2xl font-bold text-foreground tracking-tighter">
-              {activeTitle}
-            </h1>
-            <p className="text-xs font-bold text-muted-foreground tracking-tight mt-2">
-              기간별 집계 및 항목별 통계
-            </p>
-          </div>
-        </div>
-        <div className="flex flex-wrap gap-4">
+    <ReportPage
+      title={title}
+      description={meta.description}
+      breadcrumbItems={breadcrumbItems}
+      navigation={navigation}
+      actions={
+        <>
+          {refreshButton(seriesQuery.isFetching)}
           <DataExportExcel
             scope="loaded"
             data={exportRows}
-            headers={exportHeaders}
+            headers={[
+              { label: '집계 일자', key: 'date' },
+              { label: `${meta.name} 건수`, key: 'value' },
+            ]}
             filename={`stats_${activeTab.toLowerCase()}`}
-            className="h-11 px-6 rounded-lg border-2 border-border bg-card font-bold tracking-tight flex items-center gap-2 text-sm hover:bg-accent transition-colors"
           />
-          <Button
-            onClick={handleForceRefresh}
-            className="px-8 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-tight shadow-xl hover:-translate-y-1 transition-all gap-2"
-          >
-            <RefreshCcw size={20} className={cn(chartQuery.isFetching && 'animate-spin')} /> 통계 새로고침
-          </Button>
-        </div>
-      </div>
-
-      <div className="space-y-6">
-
-        {/* --- Left Column: Navigation (20%) --- */}
-        <div className="space-y-3">
-          {/*
-            탭이 곧 라우트이므로(각 항목이 서로 다른 URL 로 이동) role="tablist" 가 아니라
-            내비게이션 시맨틱 + aria-current 가 정확한 표현이다(감사 P2 탭 시맨틱).
-          */}
-          <nav aria-label="통계 분석 뷰" className="block">
-            <Card className="flex flex-wrap gap-2 rounded-lg border bg-card p-2">
-              {tabs.map(({ id, label, icon: Icon }) => (
-                <NavButton key={id} icon={<Icon size={20} />} label={label} active={activeTab === id} onClick={() => handleSelectTab(id)} />
-              ))}
-            </Card>
-          </nav>
-
-          <Card className="rounded-lg border bg-surface-inverse text-surface-inverse-foreground p-3 relative overflow-hidden group">
-            <div className="absolute inset-0 bg-primary opacity-0 group-hover:opacity-10 transition-opacity" />
-            <div className="relative z-10 flex flex-wrap items-center gap-3">
-              <h3 className="text-xs font-bold text-surface-inverse-muted tracking-tight leading-tight">성공 로그인</h3>
-              <div className="flex items-center gap-4">
-                <span className="text-xl font-bold tabular-nums">
-                  {isSummaryLoading ? '…' : isSummaryError ? '—' : totalConnect.toLocaleString()}
-                </span>
-                <Zap size={32} className="text-primary fill-primary" />
-              </div>
-              <p className="text-xs text-surface-inverse-muted font-bold tracking-tight">
-                {isSummaryError ? '접속 통계를 불러오지 못했습니다'
-                  : appliedRange ? '선택 기간 성공 로그인 합계' : '최근 1개월 성공 로그인 합계'}
+        </>
+      }
+      filter={
+        <div className="flex flex-wrap items-end gap-4">
+          {activeTab === 'USER_STATS' && <UserSeriesPicker value={userSeries} onChange={setUserSeries} />}
+          <div className="space-y-1">
+            <PeriodFilter label="집계 기간" value={period} onChange={setPeriod} presets={['1d', '1w', '1m']} />
+            {periodTooLong && (
+              <p role="status" className="text-xs text-destructive-emphasis">
+                조회 기간은 최대 {MAX_PERIOD_DAYS}일입니다. 기간을 줄이기 전까지 최근 1개월을 집계합니다.
               </p>
-            </div>
-          </Card>
+            )}
+          </div>
         </div>
-
-        {/* --- Center/Right Columns: Interactive Data (80%) --- */}
-        <div className="space-y-6">
-
-          {isSummaryLoading ? (
-            <HubMetricSkeleton />
-          ) : (
-            <div className="grid gap-8 md:grid-flow-col md:auto-cols-fr">
-              {/*
-                열 수는 카드 수로 정한다 — 게시판이 빠진 구성에는 자료 이용 카드(게시판 기여의 summary)가 없어 빈 열을 남기지 않는다.
-
-                [2026-08-29] 미수집 축의 카드는 0을 측정값처럼 보여 주지 않는다.
-
-                같은 화면의 차트는 미수집 축을 이미 '미수집' 으로 고지하는데(기여의 uninstrumented),
-                요약 카드만 합계 0을 숫자로 찍어 자기모순이었다. 사용자는 "활동이 0건" 으로
-                읽는다 — 실제로는 그 표에 쓰는 코드가 저장소에 없어 **아무도 기록하지 않는다**.
-                계측 원천(writer)이 생기면 그때 그 기여의 uninstrumented 를 거두고 값을 되살린다.
-
-                [2026-09-25] 사용자 축은 writer(UserActivityLogAggregator)가 생겨 값을 되살렸다. 이름은
-                세는 것 그대로 '등록 요청 수' 다 — '활동 집계' 는 조회까지 포함하는 것처럼 읽힌다.
-              */}
-              <StatSummaryCard
-                icon={<Activity size={24} />}
-                label="사용자 등록 요청 수"
-                value={userQuery.isError ? '—' : sumStatsCo(userStats).toLocaleString()}
-              />
-              <StatSummaryCard
-                icon={<Monitor size={24} />}
-                label="성공 로그인 수"
-                value={connectQuery.isError ? '—' : totalConnect.toLocaleString()}
-                color="primary"
-              />
-              {summaryPanels.map(({ id, summary: { label, icon: Icon } }) => (
-                <StatSummaryCard key={id} icon={<Icon size={24} />} label={label} value="미수집" />
-              ))}
-            </div>
-          )}
-          {isSummaryError && (
-            <p role="alert" className="px-2 text-xs font-bold tracking-tight text-rose-600">
-              일부 통계를 불러오지 못했습니다. &lsquo;통계 새로고침&rsquo;으로 다시 시도해 주세요.
-            </p>
-          )}
-
-          <Card className="rounded-lg border-0 bg-card shadow-2xl overflow-hidden ring-1 ring-border min-h-[500px] flex flex-col">
-            <CardHeader className="bg-muted/50 border-b p-6 md:p-10 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-              <div className="space-y-1">
-                <h3 className="text-xs font-bold text-muted-foreground tracking-tight">선택한 통계</h3>
-                <CardTitle className="text-2xl font-bold text-foreground tracking-tighter">
-                  {activeTitle}
-                </CardTitle>
-              </div>
-              {/*
-                과거 여기에는 핸들러 없는 '최근 30일'·'필터' 버튼이 있었고(감사 P1-6), 그 뒤로는 서버 기본값을 알리는
-                배지만 있었다. [2026-09-26 DIP B5 F6] 실제 기간 선택으로 바꾸고, 적용 중인 구간을 그대로 말한다.
-              */}
-              <div className="flex flex-col gap-1 self-start sm:self-auto">
-                <PeriodFilter label="집계 기간" value={period} onChange={setPeriod} presets={['1d', '1w', '1m']} />
-                <p className="text-xs font-bold tracking-tight text-muted-foreground">
-                  {appliedRange
-                    ? `집계 구간: ${appliedRange.fromDate} ~ ${appliedRange.toDate}`
-                    : '집계 구간: 최근 1개월(기간을 고르지 않으면 서버 기본값)'}
-                </p>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-1 overflow-y-auto p-4 md:p-8 lg:p-12">
-              <AnimatePresence mode="wait">
-                <motion.div
-                  key={activeTab}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -20 }}
-                  className="h-full"
-                >
-                  {ActiveBody && activePanelQuery ? (
-                    <ActiveBody query={activePanelQuery} />
-                  ) : chartQuery.isLoading ? (
-                    <HubListSkeleton />
-                  ) : chartQuery.isError ? (
-                    <HubErrorState message="통계 데이터를 불러오지 못했습니다." onRetry={() => void chartQuery.refetch()} />
-                  ) : chartData.length === 0 ? (
-                    <HubEmptyState message={emptyChartMessage} />
-                  ) : (
-                    <div className="h-[400px] w-full">
-                      <SafeResponsiveContainer width="100%" height="100%" minWidth={100} minHeight={100}>
-                        <AreaChart
-                          data={chartData}
-                          margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-                        >
-                          {/*
-                            축·그리드·마크 색은 하드코딩 HEX 대신 디자인 토큰 실측값을 쓴다.
-                            기존 `#cbd5e1` 눈금은 라이트 모드에서 1.6:1 로 WCAG AA 미달이었다(감사 P2).
-                          */}
-                          <defs>
-                            <linearGradient id="colorValue" x1="0" y1="0" x2="0" y2="1">
-                              <stop offset="5%" stopColor={chartColors.accent} stopOpacity={0.3}/>
-                              <stop offset="95%" stopColor={chartColors.accent} stopOpacity={0}/>
-                            </linearGradient>
-                          </defs>
-                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={chartColors.grid} />
-                          <XAxis
-                            dataKey="statsDate"
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fontWeight: 900, fill: chartColors.tick }}
-                            tickFormatter={formatAxisDate}
-                            dy={10}
-                          />
-                          <YAxis
-                            axisLine={false}
-                            tickLine={false}
-                            tick={{ fontSize: 10, fontWeight: 900, fill: chartColors.tick }}
-                          />
-                          <RechartsTooltip
-                            labelFormatter={(label) => toDisplayYmd(String(label), String(label ?? ''))}
-                            contentStyle={{
-                              borderRadius: '16px',
-                              border: 'none',
-                              background: chartColors.surface,
-                              boxShadow: '0 20px 50px rgba(0,0,0,0.1)',
-                              fontWeight: 900,
-                              fontSize: '12px'
-                            }}
-                          />
-                          {/*
-                            백엔드 convertToStatsDto 가 채우는 유일한 수치 필드는 statsCo 다.
-                            과거의 creatCo / inqCnt dataKey 는 항상 0/undefined 여서 차트가 축만 그려졌다(감사 P0-21).
-                          */}
-                          <Area
-                            type="monotone"
-                            dataKey="statsCo"
-                            name="집계 건수"
-                            stroke={chartColors.accent}
-                            strokeWidth={4}
-                            fillOpacity={1}
-                            fill="url(#colorValue)"
-                          />
-                        </AreaChart>
-                      </SafeResponsiveContainer>
-                    </div>
-                  )}
-                </motion.div>
-              </AnimatePresence>
-            </CardContent>
-          </Card>
+      }
+      summary={
+        <div className="grid gap-2 sm:grid-cols-3">
+          <SummaryStat title="기간 합계" value={summary.total} />
+          <SummaryStat title="일 평균" value={summary.average} />
+          <SummaryStat title="가장 많은 날" value={summary.peak} />
         </div>
-
-      </div>
-    </div>
+      }
+      basis={`${meta.basis} · ${periodText}`}
+      chartTitle="일자별 추이"
+      chart={!seriesQuery.isError && (seriesQuery.isLoading || points.length > 0) ? (
+        <StandardChartWrapper
+          title={`일자별 ${meta.name} 건수 추이`}
+          type="area"
+          data={chartData}
+          dataKeys={[meta.name]}
+          loading={seriesQuery.isLoading}
+          height={320}
+        />
+      ) : undefined}
+      tableTitle={`일자별 ${meta.name} 건수`}
+    >
+      {/* 조회 실패를 "데이터 없음"으로 위장하지 않는다 — error/onRetry 전달(감사 P1-1) */}
+      <StandardDataTable
+        accessibleLabel={`일자별 ${meta.name} 건수`}
+        columns={columns}
+        data={pagedPoints}
+        keyField="date"
+        loading={seriesQuery.isLoading}
+        error={seriesQuery.isError ? new Error('통계 데이터를 불러오지 못했습니다.') : null}
+        onRetry={() => void seriesQuery.refetch()}
+        pagination={{
+          currentPage,
+          totalPages,
+          onPageChange: (next) => setPageState({ key: pageKey, page: next }),
+          // 조회에 실패하면 총 건수는 0 이 아니라 알 수 없다 — 넘기지 않아 "총 0건" 을 그리지 않는다.
+          totalCount: seriesQuery.isError ? undefined : points.length,
+          pageSize: TABLE_PAGE_SIZE,
+        }}
+        emptyMessage={emptyMessage}
+      />
+    </ReportPage>
   );
 }
 
 // --- Sub-components ---
+
+/**
+ * 통계 내비게이션. 탭이 곧 라우트이므로(각 항목이 서로 다른 URL 로 이동) role="tablist" 가 아니라 내비게이션 시맨틱 + aria-current 가
+ * 정확한 표현이다(감사 P2 탭 시맨틱, DEC-OPS-361 의 '라우트 링크는 탭이 아니다').
+ */
+function StatsHubNavigation({ tabs, activeTab, onSelect }: {
+  tabs: readonly { id: string; label: string; icon: LucideIcon }[];
+  activeTab: string;
+  onSelect: (id: string) => void;
+}) {
+  return (
+    <nav aria-label="통계 분석 뷰" className="flex w-fit max-w-full flex-wrap rounded-md border border-border bg-muted/50 p-0.5">
+      {tabs.map(({ id, label, icon: Icon }) => (
+        <NavButton key={id} icon={<Icon size={14} />} label={label} active={activeTab === id} onClick={() => onSelect(id)} />
+      ))}
+    </nav>
+  );
+}
 
 function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, label: string, active: boolean, onClick: () => void }) {
   return (
@@ -498,48 +432,50 @@ function NavButton({ icon, label, active, onClick }: { icon: React.ReactNode, la
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       className={cn(
-        "group p-2 rounded-lg border transition-colors flex items-center gap-2",
-        active
-          ? "bg-surface-inverse border-surface-inverse-border text-surface-inverse-foreground shadow-xl"
-          : "bg-card border-transparent hover:border-border text-muted-foreground hover:text-foreground"
+        'flex h-[var(--control-h-sm)] items-center gap-1.5 rounded px-3 text-[length:var(--font-size-body)] transition-colors',
+        active ? 'bg-background font-semibold text-foreground shadow-sm' : 'text-muted-foreground hover:text-foreground',
       )}
     >
-      <div className={cn(
-        "w-8 h-8 rounded-md flex items-center justify-center",
-        active ? "bg-white/10 text-surface-inverse-foreground" : "bg-muted text-muted-foreground group-hover:bg-muted"
-      )}>
-        {icon}
-      </div>
-      <span className="text-xs font-bold tracking-tight">{label}</span>
+      <span className={cn('shrink-0', active ? 'text-primary' : 'text-muted-foreground')} aria-hidden="true">{icon}</span>
+      <span>{label}</span>
     </button>
   );
 }
 
-/**
- * 요약 지표 카드.
- * ⚠ 증감(trend) 배지는 두지 않는다 — 비교 기준 기간을 백엔드가 제공하지 않아
- *   과거 하드코딩 "+12%" 류가 거짓 지표가 됐다(감사 P1-5).
- */
-function StatSummaryCard({ icon, label, value, color = 'slate' }: {
-  icon: React.ReactNode;
-  label: string;
-  value: string;
-  color?: 'slate' | 'primary';
-}) {
+/** 사용자 활동의 계열 고르기. 차트·표·요약·반출이 함께 따른다(조회 조건 슬롯 하나 — A7). */
+function UserSeriesPicker({ value, onChange }: { value: UserSeriesKey; onChange: (next: UserSeriesKey) => void }) {
   return (
-    <Card className="rounded-lg border-0 bg-card shadow-2xl p-6 md:p-10 ring-1 ring-border hover:scale-[1.05] transition-all">
-      <div className="space-y-6">
-        <div className={cn(
-          "w-14 h-11 rounded-lg flex items-center justify-center shadow-lg transition-transform hover:rotate-12",
-          color === 'primary' ? "bg-primary/10 text-primary" : "bg-muted text-muted-foreground"
-        )}>
-          {icon}
-        </div>
-        <div className="space-y-2">
-          <h5 className="text-xs font-bold text-muted-foreground tracking-tight leading-tight">_ {label}</h5>
-          <span className="text-3xl font-bold tracking-tighter text-foreground tabular-nums">{value}</span>
-        </div>
+    <div className="space-y-1">
+      <span className="block text-[length:var(--font-size-body)] font-medium">요청 구분</span>
+      <div role="group" aria-label="요청 구분" className="flex rounded-md border border-border p-0.5">
+        {USER_SERIES.map((series) => (
+          <button
+            key={series.key}
+            type="button"
+            aria-pressed={value === series.key}
+            onClick={() => onChange(series.key)}
+            className={cn(
+              'flex h-[var(--control-h-sm)] items-center rounded px-3 text-xs font-bold transition-colors',
+              value === series.key ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
+            )}
+          >
+            {series.label}
+          </button>
+        ))}
       </div>
-    </Card>
+    </div>
+  );
+}
+
+/**
+ * 요약 지표 한 칸(통계 개요와 같은 모양). 값의 출처는 ReportPage 의 basis 가 설명한다.
+ * ⚠ 증감(trend) 배지는 두지 않는다 — 비교 기준 기간을 백엔드가 제공하지 않아 과거 하드코딩 "+12%" 류가 거짓 지표가 됐다(감사 P1-5).
+ */
+function SummaryStat({ title, value }: { title: string; value: string }) {
+  return (
+    <div className="rounded-md border border-border bg-card px-4 py-3">
+      <p className="text-[length:var(--font-size-body)] text-muted-foreground">{title}</p>
+      <p className="mt-1 text-2xl font-bold tabular-nums text-foreground">{value}</p>
+    </div>
   );
 }

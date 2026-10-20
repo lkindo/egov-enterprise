@@ -4,7 +4,7 @@ import { StatsHubFallback } from '../StatsHubFallback';
 
 export const metadata = {
   title: '시스템 활성 통계 | 전자정부 프레임워크',
-  description: '접속 집계 기반 시스템 활성 지표를 분석합니다',
+  description: '일자별 성공 로그인 수를 분석합니다',
 };
 
 export default function ScreenStatsPage() {

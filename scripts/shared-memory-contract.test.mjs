@@ -4,6 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import {
+  LEDGER_MEMORY_BINDINGS, TEST_SOURCE_ROOTS, decisionIndexIds, ledgerCountFacts, ledgerMemoryViolations, restatementMessage,
+  testSourceFiles, testSourceRestatements, testSourceViolations,
+} from './ledger-count-restatement.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const memoryDir = path.join(repoRoot, '.agent', 'memory');
@@ -228,68 +232,9 @@ function assertE2eShardContractMatches(context, requiredChecksText) {
 }
 
 /*
- * [2026-10-17 DEC-OPS-340] 원장이 세는 수는 원장 하나가 정본이다. 결합 census(config/governance/cross-domain-coupling-census.json,
- * DEC-OPS-090)와 배선 census(config/governance/operation-consumer-census.json 의 `expected`)를 공용 메모리 행에 다시 적으면
- * 원장이 바뀔 때마다 메모리 행을 같이 고쳐야 하고, 빠뜨리면 낡은 수가 남는다(2026-09-10 원장 갱신 371→385·32→29 가 메모리에
- * 남지 않은 것도 이 복제에서 생겼다). 그래서 수치 일치를 대조하지 않고, 행이 원장에 링크하는지와 원장 라벨 가까이의 수치 표기가
- * 어느 공용 메모리 행에도 없는지를 본다. 정본 게이트(배선 census 의 단조 래칫, 결합 원장의 edge 정확 집합)는 그대로라 판정 신호는
- * 줄지 않는다.
- * 수치 표기는 라벨 뒤에 조사·기호 하나·'수'·짧은 한글 낱말 하나를 건너 붙은 수(단위 개·건, 또는 단위 없이 날짜·ID 의 일부가 아닌 수)와
- * 'N개 라벨' 어순이다. 굵게 표시를 수의 안팎 어디에 달아도, 라벨을 띄어 쓰거나 붙여 써도, '→' 를 '->' 로 써도, 대소문자가 달라도 같다.
- * 라벨 앞뒤가 영문·경로 문자면 다른 낱말이다(docs/04-operations, operation-consumer-census). 라벨에서 떨어진 문장 속 서술
- * ('… 역전해 0이 됐다')은 보지 않는다 — 그 몫은 행이 수를 쓰지 않는다는 규약이 지킨다.
- * 입력 계약 원장(GAP-CONTRACT-001)의 라벨은 '길이'·'날짜' 처럼 다른 행에서도 원장과 무관한 수(컬럼 길이, 인덱스 수, ADR 의 표준 길이 수)
- * 곁에 쓰이는 일반 낱말이라 rowOnly 로 그 gap 행 안에서만 본다. 원장 이름이 고유한 라벨(app→core·unwired 등)은 모든 메모리 행에서 본다.
+ * [2026-10-17 DEC-OPS-340] 원장이 세는 수는 원장 하나가 정본이다. 판정(공용 메모리 행·시험 소스)은 ledger-count-restatement.mjs 하나이고
+ * 이 계약이 두 모집단을 실행하며 붉음을 증명한다. 공용 메모리 쪽 규칙의 설명도 그 모듈에 있다.
  */
-export const LEDGER_MEMORY_BINDINGS = Object.freeze([
-  Object.freeze({ id: 'GAP-ARCH-001', ledger: 'config/governance/cross-domain-coupling-census.json', labels: Object.freeze(['app→app', 'app→core']) }),
-  Object.freeze({ id: 'GAP-WIRING-001', ledger: 'config/governance/operation-consumer-census.json', labels: Object.freeze(['operation', 'unwired', '화면 고아']) }),
-  Object.freeze({ id: 'GAP-CONTRACT-001', ledger: 'config/governance/input-contract-mirror-census.json', rowOnly: true,
-    labels: Object.freeze(['길이', '필수', '읽기 전용', 'enum', '중첩 검증', '날짜']) }),
-]);
-
-const escapeRegExp = (text) => text.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&');
-// 라벨은 띄어 쓰든 붙여 쓰든, '→' 를 '->' 로 쓰든 같은 라벨이다. 앞뒤가 영문·경로 문자면 다른 낱말이다.
-const labelPattern = (label) => `(?<![A-Za-z_/.-])${escapeRegExp(label)
-  .replace(/\s*→\s*/gu, '\\s*(?:→|->)\\s*')
-  .replace(/ +/gu, '\\s*')}(?![A-Za-z_/.-])`;
-// 수는 굵게 표시를 안팎 어디에 달아도 같다. 단위(개·건)가 없으면 날짜·ID·경로의 일부가 아니어야 한다.
-const RESTATED_COUNT = String.raw`\*{0,2}\d[\d,]*\*{0,2}(?:\s*(?:개|건)|(?![\d/.:-]))`;
-// 라벨과 수 사이에는 조사·기호 하나, '수', 또는 짧은 한글 낱말 하나(뒤에 공백)까지만 둔다.
-const LABEL_COUNT_BRIDGE = String.raw`(?:(?:[은는이가의:(=]|수)\s*|[가-힣]{1,6}\s+)?`;
-const ledgerCountRestatement = (label) => new RegExp(
-  `${labelPattern(label)}\\s*\\*{0,2}\\s*${LABEL_COUNT_BRIDGE}${RESTATED_COUNT}`
-  + `|\\d[\\d,]*\\*{0,2}\\s*(?:개|건)\\*{0,2}\\s*(?:의\\s*)?${labelPattern(label)}`,
-  'iu',
-);
-
-/** files: { 'known-gaps.md': text, ... } — 공용 메모리 파일 이름과 원문. 위반 문장 목록을 돌려준다. */
-export function ledgerMemoryViolations(files) {
-  const violations = [];
-  const gapRows = (files['known-gaps.md'] ?? '').split(/\r?\n/);
-  for (const { id, ledger } of LEDGER_MEMORY_BINDINGS) {
-    const row = gapRows.find((line) => line.startsWith(`| ${id} |`));
-    if (!row) {
-      violations.push(`${id}: 활성 gap 행이 필요합니다.`);
-    } else if (!row.includes(`](../../${ledger})`)) {
-      violations.push(`${id}: 원장 링크(${ledger})가 필요합니다 — 현재 수는 원장이 정본입니다.`);
-    }
-  }
-  for (const [file, text] of Object.entries(files)) {
-    for (const line of text.split(/\r?\n/)) {
-      for (const { id, ledger, labels, rowOnly } of LEDGER_MEMORY_BINDINGS) {
-        if (rowOnly && !(file === 'known-gaps.md' && line.startsWith(`| ${id} |`))) continue;
-        for (const label of labels) {
-          if (ledgerCountRestatement(label).test(line)) {
-            violations.push(`${file}: '${label}' 수를 다시 적었습니다 — ${ledger} 가 정본이니 링크만 남기십시오.`);
-          }
-        }
-      }
-    }
-  }
-  return violations;
-}
-
 function memoryFiles() {
   return Object.fromEntries(Object.keys(documents).map((file) => [file, fs.readFileSync(path.join(memoryDir, file), 'utf8')]));
 }
@@ -328,7 +273,7 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
     );
   }
   // 다른 메모리 파일의 행에 같은 수를 옮겨 적어도 red 다.
-  const elsewhere = `${files['project-context.md']}\n| CTX-999 | unwired **10개** · app→core **39건** | [원장](../../config/governance/operation-consumer-census.json) | 2099-01-01 |\n`;
+  const elsewhere = `${files['project-context.md']}\n| CTX-999 | unwired **10개** · app→core **10건** | [원장](../../config/governance/operation-consumer-census.json) | 2099-01-01 |\n`;
   assert.equal(
     ledgerMemoryViolations({ ...files, 'project-context.md': elsewhere }).filter((message) => message.startsWith('project-context.md:')).length,
     2,
@@ -344,10 +289,10 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
     ['unwired', 'unwired 수 10개'],
     ['unwired', '10개 unwired'],
     ['unwired', 'Unwired 10개'],
-    ['app→core', 'app→core 참조 39건'],
-    ['app→core', 'app → core 39건'],
-    ['app→core', 'app->core 39건'],
-    ['app→core', 'app→core: **39**건'],
+    ['app→core', 'app→core 참조 10건'],
+    ['app→core', 'app → core 10건'],
+    ['app→core', 'app->core 10건'],
+    ['app→core', 'app→core: **10**건'],
     ['app→app', 'app→app 0'],
     ['app→app', 'app→app 은 0개'],
     ['화면 고아', '화면고아 28개'],
@@ -378,6 +323,102 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
       `재진술이 아닌 문장이 붉다: ${sentence}`,
     );
   }
+});
+
+/*
+ * [2026-10-20] 같은 원칙을 시험 소스로 넓힌다. 원장이 지금 세는 값(operation 수·메뉴 수·기능 수·시작 구성 수·schema-validation 등록 수·
+ * PIT 범위 수 등)과 같은 수를 그 라벨 가까이의 단언·비교·선언·'N개' 문자열에 적으면 원장이 바뀔 때 그 사본만 붉어진다 — 2026-10 의
+ * 고정값 실패 71(활성 메뉴)·412(operation)·22(기능)·60(migration 검증)이 모두 이 형태였다. 시험은 원장을 읽는다.
+ * 숫자 리터럴 일반은 막지 않는다. 판정 규칙과 경계는 ledger-count-restatement.mjs 머리말이 정본이다.
+ */
+test('test sources read ledger-derived counts from their ledgers instead of copying them', () => {
+  assert.deepEqual(testSourceViolations(repoRoot), []);
+});
+
+test('ledger count facts are counted from existing ledgers and the test-source population covers every test tree', () => {
+  const facts = ledgerCountFacts(repoRoot);
+  for (const id of ['operation-count', 'menu-rows', 'active-menus', 'navigation-grants', 'features', 'presets', 'schema-validation-rules', 'pit-scopes']) {
+    assert.ok(facts.some((fact) => fact.id === id), `원장 값 '${id}' 를 세지 않습니다.`);
+  }
+  for (const fact of facts) {
+    assert.ok(Number.isInteger(fact.value) && fact.value >= 0, `${fact.id}: 원장에서 센 값이 아닙니다.`);
+    assert.ok(fs.existsSync(path.join(repoRoot, fact.ledger)), `${fact.id}: 원장 ${fact.ledger} 이 없습니다.`);
+    assert.ok(fact.labels.length > 0, `${fact.id}: 라벨이 없습니다.`);
+  }
+  const files = testSourceFiles(repoRoot);
+  for (const { root } of TEST_SOURCE_ROOTS) {
+    assert.ok(files.some((file) => file.startsWith(`${root}/`)), `${root}: 시험 소스 모집단이 비었습니다.`);
+  }
+});
+
+test('a copied ledger count beside its label is red in every test language, and only the copy is red', () => {
+  const facts = ledgerCountFacts(repoRoot);
+  const decisions = decisionIndexIds(repoRoot);
+  const value = (id) => facts.find((fact) => fact.id === id).value;
+  const scan = (file, text) => testSourceRestatements(file, text, facts, decisions);
+  const violations = (file, text) => scan(file, text).filter((finding) => !finding.pinned).map(restatementMessage);
+  const active = value('active-menus');
+
+  // 활성 메뉴 수를 '메뉴' 라벨 옆 toHaveLength 에 적으면 붉다 — 위반 문장은 원장과 값의 이름을 말한다.
+  assert.deepEqual(violations('frontend/e2e/contracts/synthetic.spec.ts', `// 관리자에게 보이는 활성 메뉴\nexpect(visible).toHaveLength(${active});\n`), [
+    `frontend/e2e/contracts/synthetic.spec.ts:2: '메뉴' 가까이의 ${active} 은(는) config/project-composer-menus.json 가 세는 값(active-menus)의 사본입니다 — 시험은 원장을 읽어 기대값을 얻으십시오.`,
+  ]);
+
+  // 2026-10 의 실제 실패 형태 넷이 각자 붉다.
+  const shapes = [
+    ['api-server/src/test/java/nuri/api/schema/Synthetic.java', `assertThat(number(statement,"SELECT count(*) FROM tb_menu_info WHERE use_yn='Y'")).isEqualTo(${active});`, 'active-menus'],
+    ['scripts/synthetic.test.mjs', `assert.equal(operations.length, ${value('operation-count')});`, 'operation-count'],
+    ['scripts/synthetic.test.mjs', `const ids = { domains: [...ids] };\nassert.equal(selections.length, ${value('presets')} + 2 + ${value('features')} + 231);`, 'features'],
+    ['scripts/synthetic.test.mjs', `const pairs = [['EXPECTED_MIGRATION_TEST_COUNT = ${value('schema-validation-rules')};', 'x']];`, 'schema-validation-rules'],
+  ];
+  for (const [file, text, fact] of shapes) {
+    assert.ok(scan(file, text).some((finding) => finding.fact === fact && !finding.pinned), `${fact}: ${text} 가 붉지 않습니다.`);
+  }
+
+  // 모든 원장 값과 라벨이 TS·JS·Java 의 단언과 'N개' 문자열에서 붉다(2 미만의 값은 보지 않는다).
+  for (const fact of facts.filter(({ value: count }) => count >= 2)) {
+    for (const label of fact.labels) {
+      for (const [file, text] of [
+        ['frontend/src/__tests__/synthetic.test.ts', `// ${label}\nexpect(found).toHaveLength(${fact.value});`],
+        ['business-core/src/test/java/Synthetic.java', `// ${label}\nassertThat(found).hasSize(${fact.value});`],
+        ['scripts/synthetic.test.mjs', `assert.ok(message.includes('${label} ${fact.value}개'));`],
+      ]) {
+        assert.ok(scan(file, text).some((finding) => finding.fact === fact.id && finding.label === label),
+          `${fact.id}: '${label}' 곁의 ${fact.value} 가 ${file} 에서 붉지 않습니다.`);
+      }
+    }
+  }
+
+  // 같은 수라도 센 값 자리가 아니거나, 라벨이 멀거나, 값이 다르거나, 원장을 읽으면 사본이 아니다.
+  const green = [
+    `menu(${active}, '게시글 하나', '/admin/community/boards/12'); // 메뉴`,
+    `const options = { maxRetries: ${value('presets')} }; // 시작 구성`,
+    `// 활성 메뉴는 ${active}개다`,
+    `const replacements = ['      max-parallel: ${value('pit-scopes-mutation-scope-migration')}\\n']; // PIT`,
+    `// 메뉴\n\n\n\nexpect(visible).toHaveLength(${active});`,
+    `expect(visible).toHaveLength(${active + 1}); // 메뉴`,
+    `expect(visible).toHaveLength(adminVisibleMenuCount(MENU_SNAPSHOT)); // 메뉴`,
+  ];
+  for (const text of green) {
+    assert.deepEqual(violations('frontend/e2e/contracts/synthetic.spec.ts', text), [], `사본이 아닌데 붉다: ${text}`);
+  }
+});
+
+test('a deliberate ledger pin needs an indexed decision, so the marker alone cannot hide a copy', () => {
+  const facts = ledgerCountFacts(repoRoot);
+  const decisions = decisionIndexIds(repoRoot);
+  const pit = facts.find((fact) => fact.id === 'pit-scopes').value;
+  const line = `assert.equal(pit.selector.matrixScopes.length, ${pit}, 'PIT matrix scope count changed');`;
+  const scan = (text) => testSourceRestatements('scripts/synthetic.test.mjs', text, facts, decisions).filter((finding) => finding.fact === 'pit-scopes');
+  assert.ok(decisions.has('DEC-OPS-371'), '고정 표기가 가리킬 결정이 공용 결정 인덱스에 없습니다.');
+  assert.deepEqual(scan(`// PIT 범위 수의 유일한 확인 지점이다(ledger-pin(DEC-OPS-371)).\n${line}`).map(({ pinned }) => pinned), [true]);
+  assert.deepEqual(scan(`${line} // ledger-pin(DEC-OPS-371)`).map(({ pinned }) => pinned), [true]);
+  // 표기가 없거나, 인덱스에 없는 결정을 가리키거나, 두 줄 위에 있으면 고정이 아니다.
+  for (const text of [line, `// ledger-pin(DEC-OPS-0000)\n${line}`, `// ledger-pin(DEC-OPS-371)\n\n${line}`]) {
+    const findings = scan(text);
+    assert.deepEqual(findings.map(({ pinned }) => pinned), [false], text);
+  }
+  assert.match(restatementMessage(scan(`// ledger-pin(DEC-OPS-0000)\n${line}`)[0]), /ledger-pin\(DEC-OPS-0000\) 이 가리키는 결정이 공용 결정 인덱스에 없습니다/u);
 });
 
 /*

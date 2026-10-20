@@ -2758,8 +2758,29 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/admin/dashboard/operational-signals",
+    "handler": "nuri.api.controller.foundation.controller.system.dashboard.AdminDashboardApiController#getOperationalSignals",
+    "access": "PERMISSION",
+    "permission": "DASHBOARD_ADMIN_READ"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/admin/system/logs/audit",
     "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#getAuditJournal",
+    "access": "PERMISSION",
+    "permission": "ADT_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/audit/operations",
+    "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#getAuditJournalOperations",
+    "access": "PERMISSION",
+    "permission": "ADT_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/audit/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#exportAuditJournal",
     "access": "PERMISSION",
     "permission": "ADT_LOG_READ"
   },

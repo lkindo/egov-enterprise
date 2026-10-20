@@ -98,7 +98,7 @@ export const updateCmmnCodeOperation = /*#__PURE__*/ (() => {
   requestSchema: CmmnCodeDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["usages"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -269,7 +269,7 @@ export const createCmmnCodeOperation = /*#__PURE__*/ (() => {
   requestSchema: CmmnCodeDtoRequestSchema.strict(),
   responseSchema: z.string(),
   envelopeSchema: ApiResponseStringResponseSchema,
-  requestForbiddenPaths: [],
+  requestForbiddenPaths: [["usages"]],
   responseForbiddenPaths: [],
   });
 })();

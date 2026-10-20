@@ -261,7 +261,7 @@
 - **금지:** 차트만 있고 원본 표가 없는 화면, 하드코딩 지표(ADR-0003 `demo`·`unavailable` 위장 금지).
 - **키보드:** 조회조건은 A1과 동일 · 차트는 표로 대체 접근 가능.
 - **합격:** 차트 값과 표 합계 일치 · 지표의 데이터 출처가 화면에서 확인 가능.
-- **현재 화면:** `/admin/stats`(2026-08-25 [ReportPage](../../frontend/src/app/components/patterns/report-page.tsx) 셸로 이행 — [A7 census](../../frontend/src/__tests__/report-adoption-census.test.ts)), `/admin/survey/stats`(2026-08-25 이행), `/admin/system/logs`(대시보드), `/admin/system/monitoring`. **셸이 `children`(원본 표)과 `basis`(집계 기준·기간·출처)를 필수 prop 으로 두어 차트만 남는 화면을 구조적으로 막는다** — A4·A5 와 달리 실소비자가 여럿이라 셸이 재사용을 만든다.
+- **현재 화면:** `/admin/stats`(2026-08-25 [ReportPage](../../frontend/src/app/components/patterns/report-page.tsx) 셸로 이행 — [A7 census](../../frontend/src/__tests__/report-adoption-census.test.ts)), `/admin/stats/user`·`screen`·`board`·`data-usage`(2026-10-20 통계 셸 이행 — 요약은 그 탭의 계열, 셸의 `navigation` 슬롯으로 통계 개요와 같은 내비게이션을 쓴다), `/admin/survey/stats`(2026-08-25 이행), `/admin/system/logs`(대시보드), `/admin/system/monitoring`. **셸이 `children`(원본 표)과 `basis`(집계 기준·기간·출처)를 필수 prop 으로 두어 차트만 남는 화면을 구조적으로 막는다** — A4·A5 와 달리 실소비자가 여럿이라 셸이 재사용을 만든다. 같은 현황 영역의 화면 전환은 `navigation`(A1·A2 셸과 같은 계약 — 머리글 아래·조회조건 위)으로 둔다.
 
 ### A8. 다단계 마법사 (Wizard)
 
@@ -283,7 +283,7 @@
 | `WorkListPage`(A1) 셸 경유 | **40** | **43** | W3 wave 1~13과 이후 이행·신설(2026-09-25 41, 2026-10-01 감사 원장·후속 작업 화면 신설로 43). 셸 경유 화면이 모두 표를 쓰지는 않는다(지식 허브 등). 되돌리기는 게이트가 red |
 | 셸 없이 직접 조립 | **4** | **2** | 신규 유입은 게이트가 red. 남은 2건은 이행 대상이 아니다(아래 참조) |
 | `MasterDetailPage`(A2) 소비 | 6 | 6 | 별도 exact census 가 importer 집합을 고정 — 부서·메뉴·메일 이력·공통코드·결재함·부서별 그룹 배정 |
-| `ReportPage`(A7) 소비 | 2 | 2 | 별도 exact census 가 고정 |
+| `ReportPage`(A7) 소비 | 2 | 2 | 별도 exact census 가 고정. 2026-10-20 통계 셸(`IntelligenceHubClient`) 이행으로 3 |
 | `sortKey`(열 정렬) 채택 | 9 | 10 | G5 — 이행 전 7. **현재 구현은 클라이언트 정렬이라 범위가 현재 페이지다** — 여러 페이지 결과에서는 페이저 요약이 그 범위를 고지한다([계약](../../frontend/src/app/components/ui/__tests__/sort-scope-disclosure.test.tsx)). 서버 정렬 파라미터 도입은 별도 과제(GAP-UI-001) |
 | `onPageSizeChange` 채택 | 28 | 34 | A1 **필수**. 이행 전 6 → 14 → 28. 2026-08-25 실측에서 서버 페이징이 있는 A1 화면 15개가 컨트롤을 전달하지 않고 있었다(기능은 표가 처음부터 갖고 있었다) — [census 게이트](../../frontend/src/__tests__/page-size-adoption-census.test.ts)가 제공 여부와 queryKey 결속을 함께 고정한다 |
 | `KeywordFilter` 경유 조회 조건 | 17 | 36 | G2 — 조회 조건 조립의 단일 경로. 2026-09-26 셸 경유 12화면이 여전히 입력 디바운스로 목록을 조회하던 것을 `조회`/Enter 로 옮겼고(그때 30), [A1 census](../../frontend/src/__tests__/work-list-adoption-census.test.ts)가 셸 화면의 입력 디바운스 조회를 예외 없이 막는다(DIP C9). 2026-10-02 권한 작업대의 구성원 추가 창이, 2026-10-12 게시글 모아보기가 더해졌다(DEC-OPS-280) |

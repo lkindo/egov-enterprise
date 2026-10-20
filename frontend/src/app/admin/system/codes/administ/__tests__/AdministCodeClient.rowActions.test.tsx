@@ -2,7 +2,7 @@ import type { ReactNode } from 'react';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
-import AdministCodeClient from '../AdministCodeClient';
+import AdministCodeClient, { ADMINIST_EMPTY_MESSAGE } from '../AdministCodeClient';
 
 /**
  * 🗺️ 행정 구역 코드 정정 경로 계약.
@@ -60,11 +60,13 @@ vi.mock('@/app/components/patterns/keyword-filter', () => ({
 
 // 행 액션을 보려면 컬럼 accessor 를 실제로 렌더해야 한다.
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data }: {
+  StandardDataTable: ({ columns, data, emptyMessage }: {
     columns: { header: string; accessor: (row: Record<string, string>) => ReactNode }[];
     data: Record<string, string>[];
+    emptyMessage?: string;
   }) => (
     <table>
+      {data.length === 0 && emptyMessage ? <caption>{emptyMessage}</caption> : null}
       <tbody>
         {data.map((row) => (
           <tr key={row.admdstCd}>
@@ -212,6 +214,20 @@ describe('AdministCodeClient 정정 경로', () => {
     expect(screen.queryByRole('button', { name: /신규 등록/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '서울특별시 수정' })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: '서울특별시 삭제' })).not.toBeInTheDocument();
+  });
+
+  it('[2026-10-20] 비어 있으면 일괄 가져오기가 없고 한 건씩 등록하거나 데이터베이스에 직접 넣어야 한다고 말한다', async () => {
+    mocks.getAdministCodeList.mockResolvedValue({ list: [], total: 0, page: 1, size: 10, totalPage: 1 });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AdministCodeClient />
+      </QueryClientProvider>,
+    );
+
+    expect(await screen.findByText(ADMINIST_EMPTY_MESSAGE)).toBeInTheDocument();
+    expect(ADMINIST_EMPTY_MESSAGE).toContain('한꺼번에 가져오는 기능은 없어');
+    expect(ADMINIST_EMPTY_MESSAGE).toContain('데이터베이스에 직접 넣어야');
   });
 
   it('권한은 동작마다 따로 본다 — 수정 권한만 있으면 수정만 보인다', async () => {

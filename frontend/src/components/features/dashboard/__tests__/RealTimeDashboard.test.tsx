@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { RealTimeDashboard } from '../RealTimeDashboard';
 
@@ -17,26 +17,37 @@ vi.mock('@/contexts/websocket-context', () => ({
 
 describe('RealTimeDashboard', () => {
   const requestPermission = vi.fn(async () => 'denied' as NotificationPermission);
+  const BrowserNotification = vi.fn();
 
   beforeEach(() => {
     vi.clearAllMocks();
     handlers.clear();
     connection.isConnected = true;
-    vi.stubGlobal('Notification', { permission: 'default', requestPermission });
+    vi.stubGlobal('Notification', Object.assign(BrowserNotification, { permission: 'granted', requestPermission }));
   });
 
   afterEach(() => vi.unstubAllGlobals());
 
-  it('허용된 통계·개인 큐만 구독하고 언마운트 시 모두 해제한다', () => {
+  // [2026-10-20 DEC-OPS-153 원칙] 개인 알림 큐는 머리글(use-notifications.ts) 한 곳만 구독한다. 종전에는 이 구역이 같은 큐를
+  //   한 번 더 구독하고 브라우저 알림까지 띄웠다 — 같은 알림이 두 곳에 두 번 들어왔다.
+  it('통계 방송 하나만 구독하고 개인 알림 큐는 구독하지 않으며, 언마운트 시 해제한다', () => {
     const view = render(<RealTimeDashboard />);
 
-    expect(subscribe.mock.calls.map((call) => call[0])).toEqual([
-      '/topic/dashboard/stats',
-      '/user/queue/notifications',
-    ]);
+    expect(subscribe.mock.calls.map((call) => call[0])).toEqual(['/topic/dashboard/stats']);
 
     view.unmount();
-    expect(unsubscribe).toHaveBeenCalledTimes(2);
+    expect(unsubscribe).toHaveBeenCalledTimes(1);
+  });
+
+  it('브라우저 알림을 띄우거나 권한을 묻지 않고, 알림 목록 단추를 두지 않는다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 1, visitsPerMinute: 1, newPosts: 0 }) }));
+
+    expect(BrowserNotification).not.toHaveBeenCalled();
+    expect(requestPermission).not.toHaveBeenCalled();
+    expect(screen.queryByRole('button')).toBeNull();
+    expect(screen.queryByRole('region', { name: '실시간 알림 목록' })).toBeNull();
   });
 
   it('통계 계약을 위반한 프레임은 무시하고 정상 프레임만 반영한다', () => {
@@ -46,35 +57,47 @@ describe('RealTimeDashboard', () => {
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: -1 }) }));
     expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('—');
 
-    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
+    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2 }) }));
     expect(screen.getByText('7')).toBeInTheDocument();
     expect(screen.getByText('새 연결(이 서버, 1분마다 초기화)').previousElementSibling).toHaveTextContent('3');
+  });
+
+  // [2026-10-20] 모든 사용자의 읽지 않은 알림 합계 카드를 걷었다 — 보는 사람이 처리할 수 있는 숫자가 아니었다. 이전 서버가 그 키를
+  //   실은 프레임을 보내도 카드는 되살아나지 않는다.
+  it('전체 미읽음 알림 카드를 그리지 않고, 이전 서버 프레임의 알림 합계도 읽지 않는다', () => {
+    render(<RealTimeDashboard />);
+    const statsHandler = handlers.get('/topic/dashboard/stats')!;
+
+    act(() => statsHandler({ body: JSON.stringify({
+      activeUsers: 1, visitsPerMinute: 1, newPosts: 0, alerts: 37, alertsAvailable: true, alertsProvided: true,
+    }) }));
+
+    expect(screen.queryByText('전체 미읽음 알림')).toBeNull();
+    expect(screen.queryByText('전체 사용자')).toBeNull();
+    expect(screen.queryByText('37')).toBeNull();
+    expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('1');
   });
 
   it('🚨 집계 구현이 없는 기능(provided=false)의 카드는 그리지 않고, provided 키가 없는 구서버 프레임은 종전대로 그린다', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
-    // 첫 프레임 전에는 알 수 없으므로 두 카드를 '—' 로 둔다.
+    // 첫 프레임 전에는 알 수 없으므로 카드를 '—' 로 둔다.
     expect(screen.getByText('신규 게시글')).toBeInTheDocument();
-    expect(screen.getByText('전체 미읽음 알림')).toBeInTheDocument();
 
     act(() => statsHandler({ body: JSON.stringify({
-      activeUsers: 7, visitsPerMinute: 3, newPosts: 0, alerts: 0, newPostsAvailable: true, alertsAvailable: true,
-      newPostsProvided: false, alertsProvided: true,
+      activeUsers: 7, visitsPerMinute: 3, newPosts: 0, newPostsAvailable: true, newPostsProvided: false,
     }) }));
     expect(screen.queryByText('신규 게시글')).not.toBeInTheDocument();
-    expect(screen.getByText('전체 미읽음 알림')).toBeInTheDocument();
 
-    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
+    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2 }) }));
     expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('2');
-    expect(screen.getByText('전체 미읽음 알림').previousElementSibling).toHaveTextContent('1');
   });
 
   it('서버 초기화 전후의 새 연결 횟수를 누적으로 설명하지 않는다', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
     for (const visitsPerMinute of [3, 0, 1]) {
-      act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute, newPosts: 2, alerts: 1 }) }));
+      act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute, newPosts: 2 }) }));
       expect(screen.getByText('새 연결(이 서버, 1분마다 초기화)').previousElementSibling)
         .toHaveTextContent(String(visitsPerMinute));
       expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('7');
@@ -88,7 +111,7 @@ describe('RealTimeDashboard', () => {
   it('연결 세션 수가 이 화면이 연결된 서버의 값이며 전체 접속자·고유 사용자 수가 아님을 말한다', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
-    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 1 }) }));
+    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2 }) }));
 
     const title = screen.getByText('실시간 연결 세션(이 서버)');
     expect(title.previousElementSibling).toHaveTextContent('7');
@@ -100,23 +123,12 @@ describe('RealTimeDashboard', () => {
     expect(screen.queryByText(/접속자 수$/)).toBeNull();
   });
 
-  it('실시간 알림의 누락·손상 날짜는 현재 시각 대신 미상으로 표시한다', () => {
-    render(<RealTimeDashboard />);
-    const handler = handlers.get('/user/queue/notifications')!;
-    for (const [notiSn, notiDt] of [[1, null], [2, 'broken']] as const) {
-      act(() => handler({ body: JSON.stringify({ notiSn, notiTtlNm: `알림 ${notiSn}`, notiDt, readYn: 'N' }) }));
-    }
-    fireEvent.click(screen.getByRole('button', { name: '알림 열기, 읽지 않음 2개' }));
-    expect(screen.getAllByText('-')).toHaveLength(2);
-    expect(screen.queryByText('broken')).not.toBeInTheDocument();
-  });
-
   it('유효한 통계를 한 번도 수신하지 않은 상태를 실제 0으로 표시하지 않는다', () => {
     render(<RealTimeDashboard />);
 
     expect(screen.getByRole('status')).toHaveTextContent('실시간 연결됨');
     expect(screen.getByText('· 통계 수신 대기 중')).toBeInTheDocument();
-    expect(screen.getAllByText('—')).toHaveLength(4);
+    expect(screen.getAllByText('—')).toHaveLength(3);
   });
 
   it('연결이 끊기면 연결 상태만 말하고 대기 문구를 덧붙이지 않는다', () => {
@@ -128,32 +140,17 @@ describe('RealTimeDashboard', () => {
     expect(subscribe).not.toHaveBeenCalled();
   });
 
-  it('알림 조회 실패는 0건 대신 확인 불가로 표시하고 나머지 통계는 유지한다', () => {
-    render(<RealTimeDashboard />);
-    const statsHandler = handlers.get('/topic/dashboard/stats')!;
-
-    act(() => statsHandler({ body: JSON.stringify({
-      activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 0,
-      newPostsAvailable: true, alertsAvailable: false,
-    }) }));
-
-    expect(screen.getByText('전체 미읽음 알림').previousElementSibling).toHaveTextContent('—');
-    expect(screen.getByText('알림 수 확인 불가')).toBeInTheDocument();
-    expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('7');
-    // 집계 실패는 해당 카드가 말한다. 연결 상태 문구(live region)는 연결만 말한다.
-    expect(screen.getByRole('status')).toHaveTextContent(/^실시간 연결됨$/);
-    expect(screen.queryByText('· 통계 수신 대기 중')).not.toBeInTheDocument();
-  });
-
   it('게시글 집계 실패를 다른 정상 집계와 구분하고 복구된 실제 0건을 표시한다', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
-    const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 0, alerts: 4, alertsAvailable: true };
+    const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 0 };
 
     act(() => statsHandler({ body: JSON.stringify({ ...counts, newPostsAvailable: false }) }));
     expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('—');
     expect(screen.getByText('게시글 수 확인 불가')).toBeInTheDocument();
-    expect(screen.getByText('전체 미읽음 알림').previousElementSibling).toHaveTextContent('4');
+    expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('7');
+    // 집계 실패는 해당 카드가 말한다. 연결 상태 문구(live region)는 연결만 말한다.
+    expect(screen.getByRole('status')).toHaveTextContent(/^실시간 연결됨$/);
 
     act(() => statsHandler({ body: JSON.stringify({ ...counts, newPostsAvailable: true }) }));
     expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('0');
@@ -164,79 +161,12 @@ describe('RealTimeDashboard', () => {
   it('집계 가용 상태가 boolean이 아닌 프레임은 마지막 정상 통계를 덮어쓰지 않는다', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
-    const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 2, alerts: 4 };
+    const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 4 };
 
     act(() => statsHandler({ body: JSON.stringify(counts) }));
-    act(() => statsHandler({ body: JSON.stringify({ ...counts, alerts: 0, alertsAvailable: 'false' }) }));
+    act(() => statsHandler({ body: JSON.stringify({ ...counts, newPosts: 0, newPostsAvailable: 'false' }) }));
 
-    expect(screen.getByText('전체 미읽음 알림').previousElementSibling).toHaveTextContent('4');
+    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('4');
     expect(screen.getByRole('status')).toHaveTextContent('실시간 연결됨');
-  });
-
-  it('모든 사용자의 미읽음 합계 카드는 범위를 이름에 싣고 급한 일처럼 강조하지 않는다', () => {
-    render(<RealTimeDashboard />);
-    const statsHandler = handlers.get('/topic/dashboard/stats')!;
-
-    act(() => statsHandler({ body: JSON.stringify({ activeUsers: 1, visitsPerMinute: 1, newPosts: 0, alerts: 37 }) }));
-
-    const value = screen.getByText('전체 미읽음 알림').previousElementSibling!;
-    expect(value).toHaveTextContent('37');
-    expect(screen.getByText('전체 사용자')).toBeInTheDocument();
-    expect(value.closest('[class*="bg-destructive/5"]')).toBeNull();
-    expect(screen.queryByText('알림', { exact: true })).not.toBeInTheDocument();
-  });
-
-  it('브라우저 알림 권한은 진입 즉시가 아니라 사용자가 알림을 열 때만 요청한다', () => {
-    render(<RealTimeDashboard />);
-    expect(requestPermission).not.toHaveBeenCalled();
-
-    const button = screen.getByRole('button', { name: '알림 열기' });
-    expect(button).toHaveAttribute('aria-expanded', 'false');
-    expect(button).not.toHaveAttribute('aria-haspopup');
-    fireEvent.click(button);
-
-    expect(requestPermission).toHaveBeenCalledTimes(1);
-    expect(button).toHaveAttribute('aria-expanded', 'true');
-    expect(screen.getByRole('region', { name: '실시간 알림 목록' })).toBeInTheDocument();
-  });
-
-  // [2026-09-25] 종전 테스트는 깨진 프레임만 보내 "버린다" 만 확인했고, 서버가 실제로 보내는 알림이
-  //   표시되는지는 한 번도 보지 않았다 — 그래서 모든 알림을 버리는 결함이 통과했다. NotificationService 가
-  //   /user/queue/notifications 로 보내는 NotificationDto 형태 그대로 넣는다.
-  it('서버가 보내는 NotificationDto 프레임을 목록과 미읽음 수에 반영한다', () => {
-    render(<RealTimeDashboard />);
-    const notificationHandler = handlers.get('/user/queue/notifications')!;
-
-    act(() => notificationHandler({
-      body: JSON.stringify({
-        notiSn: 42,
-        notiTtlNm: '결재 요청',
-        notiCn: '새 결재 문서가 도착했습니다.',
-        notiDt: '2026-09-25T10:15:30',
-        notiIvlVal: null,
-        rcvrId: 'USRCNFRM_00000000001',
-        readYn: 'N',
-        linkUrl: '/approvals',
-        crtDt: '2026-09-25T10:15:30',
-      }),
-    }));
-    fireEvent.click(screen.getByRole('button', { name: '알림 열기, 읽지 않음 1개' }));
-
-    const region = screen.getByRole('region', { name: '실시간 알림 목록' });
-    expect(region).toHaveTextContent('결재 요청');
-    expect(region).toHaveTextContent('새 결재 문서가 도착했습니다.');
-    expect(region).toHaveTextContent('2026-09-25 10:15:30');
-    expect(screen.queryByText('새로운 알림이 없습니다.')).not.toBeInTheDocument();
-  });
-
-  it('형식이 깨진 개인 알림은 목록과 미읽음 수를 오염시키지 않는다', () => {
-    render(<RealTimeDashboard />);
-    const notificationHandler = handlers.get('/user/queue/notifications')!;
-
-    act(() => notificationHandler({ body: '{broken' }));
-    act(() => notificationHandler({ body: JSON.stringify({ id: '1', title: '필드 부족' }) }));
-    fireEvent.click(screen.getByRole('button', { name: '알림 열기' }));
-
-    expect(screen.getByText('새로운 알림이 없습니다.')).toBeInTheDocument();
   });
 });

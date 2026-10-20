@@ -215,6 +215,10 @@ export function loadComposerModules(root) {
       codeGroupOwners[group] = module.id;
     }
   }
+  // 필수 기반이 읽는 그룹(2026-10-20). 참조 데이터는 기능 소유(codeGroupOwners)만 보고 나머지를 core 로 싣으므로 따로 둔다 —
+  //   소유 표에 core 를 넣으면 참조 데이터 계획이 core 를 '선택하지 않은 기능'으로 보고 그 그룹을 지운다.
+  const coreCodeGroups = [...core.owns.commonCodeGroups];
+  for (const group of coreCodeGroups) if (Object.hasOwn(codeGroupOwners, group)) fail(`common code group is owned twice: ${group}`);
   const extras = {
     presentation: {
       areas: core.presentation.areas.map(area => ({ id: area.id, label: area.label,
@@ -229,6 +233,7 @@ export function loadComposerModules(root) {
       domains: modules.filter(module => module.owns.rbacMatrix).map(module => module.id), surfaces: rbacSurfaces },
     markerBlocks: composerMarkerDeclarations(files).rows,
     codeGroupOwners,
+    coreCodeGroups,
     presetExpectations: Object.fromEntries(presetsFile.presets.map(preset => [preset.id, { description: preset.description,
       gates: preset.expected.gates.map(row => ({ ...row })), gateRemovalRules: preset.expected.gateRemovalRules.map(row => ({ ...row })),
       javaCascade: [...preset.expected.javaCascade] }])),

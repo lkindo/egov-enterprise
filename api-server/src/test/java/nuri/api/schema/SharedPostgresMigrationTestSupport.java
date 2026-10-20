@@ -37,6 +37,20 @@ public abstract class SharedPostgresMigrationTestSupport {
     private static final AtomicLong DATABASE_SEQUENCE = new AtomicLong();
     private static final AtomicInteger SERVER_START_COUNT = new AtomicInteger();
 
+    /**
+     * 공용 서버 기동 인자 — Testcontainers 기본값({@code fsync=off})에 {@code autovacuum=off} 를 더한다.
+     *
+     * <p>V2_86~V2_100 과 권한 Contract SQL 은 운영 무중단을 위해 대상 테이블을 {@code LOCK ... NOWAIT} 로 잡는다.
+     * autovacuum 이 같은 격리 database 의 막 시드된 테이블(tb_menu_info 등)을 VACUUM·ANALYZE 하는 몇 ms 사이에
+     * 그 문장이 오면 SHARE UPDATE EXCLUSIVE 와 충돌해 곧바로 55P03(could not obtain lock)으로 실패한다. 기다리는
+     * 잠금이 아니라서 deadlock 검사기가 autovacuum 을 취소해 줄 틈도 없다. 2026-09-26~10-19 CI 의 첫 시도
+     * schema-validation 실패 중 잠금 실패 17건이 모두 이 NOWAIT 문장에서 났고, 로컬 재현 2건도 같은 database 의
+     * autovacuum 이 tb_menu_info 를 처리하던 그 시각에 났다. 이 서버의 database 는 클래스마다 새로 만들고 지우므로
+     * autovacuum 이 지킬 것이 없다. 실행 계획을 보는 시험은 스스로 ANALYZE 하고, 의도한 잠금 경합은 시험이 명시
+     * 세션으로 만든다.
+     */
+    private static final String[] SERVER_COMMAND = {"postgres", "-c", "fsync=off", "-c", "autovacuum=off"};
+
     private String databaseName;
 
     @BeforeAll
@@ -166,7 +180,8 @@ public abstract class SharedPostgresMigrationTestSupport {
         PostgreSQLContainer server = new PostgreSQLContainer("postgres:17-alpine");
         server.withDatabaseName("postgres")
                 .withUsername("schema_test")
-                .withPassword(UUID.randomUUID().toString());
+                .withPassword(UUID.randomUUID().toString())
+                .withCommand(SERVER_COMMAND);
         try {
             server.start();
             int starts = SERVER_START_COUNT.incrementAndGet();

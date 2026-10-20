@@ -1,6 +1,5 @@
 package nuri.business.service.dashboard;
 
-import nuri.foundation.core.dashboard.PendingAlertCountContributor;
 import nuri.foundation.core.stats.PostStatisticsContributor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -27,16 +26,6 @@ class RealTimeDashboardServiceTest {
     @Mock
     private ApplicationEventPublisher eventPublisher;
 
-    /**
-     * 대기 알림 수는 알림 도메인이 구현하는 포트로 받는다(GAP-ARCH-001 의 dashboard→notification 역전).
-     * 알림 도메인이 빠진 프로필에서도 대시보드가 뜨도록 {@code ObjectProvider} 로 주입된다.
-     */
-    @Mock
-    private ObjectProvider<PendingAlertCountContributor> pendingAlertCounts;
-
-    @Mock
-    private PendingAlertCountContributor pendingAlertCountContributor;
-
     @Mock
     private ObjectProvider<PostStatisticsContributor> postStatistics;
 
@@ -47,7 +36,7 @@ class RealTimeDashboardServiceTest {
 
     @BeforeEach
     void setUp() {
-        realTimeDashboardService = new RealTimeDashboardService(pendingAlertCounts, postStatistics, eventPublisher);
+        realTimeDashboardService = new RealTimeDashboardService(postStatistics, eventPublisher);
         realTimeDashboardService.useClock(Clock.fixed(Instant.parse("2026-09-25T00:00:00Z"), ZoneId.of("Asia/Seoul")));
     }
 
@@ -58,7 +47,7 @@ class RealTimeDashboardServiceTest {
         when(postStatisticsContributor.countPostsBetween(anyString(), anyString())).thenReturn(7L);
 
         realTimeDashboardService.broadcastRealTimeStats();
-        var restarted = new RealTimeDashboardService(pendingAlertCounts, postStatistics, eventPublisher);
+        var restarted = new RealTimeDashboardService(postStatistics, eventPublisher);
         restarted.useClock(Clock.fixed(Instant.parse("2026-09-25T00:00:00Z"), ZoneId.of("Asia/Seoul")));
         restarted.broadcastRealTimeStats();
 
@@ -66,17 +55,21 @@ class RealTimeDashboardServiceTest {
                 e.newPosts() == 7 && e.newPostsAvailable() && e.newPostsProvided()));
     }
 
+    /**
+     * [2026-10-20] 전 사용자의 읽지 않은 알림 합계는 걷었다 — 보는 사람이 처리할 수 있는 숫자가 아니었다. 프레임에는 연결 수와
+     * 오늘 게시글 수만 싣는다.
+     */
     @Test
-    @DisplayName("실시간 통계 이벤트 발행 확인")
+    @DisplayName("실시간 통계 이벤트는 연결 수와 오늘 게시글 수만 싣는다")
     void broadcastRealTimeStats_Success() {
-        when(pendingAlertCounts.getIfAvailable()).thenReturn(pendingAlertCountContributor);
-        when(pendingAlertCountContributor.countPendingAlerts()).thenReturn(5L);
-
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.broadcastRealTimeStats();
 
-        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) -> e.alerts() == 5 && e.alertsAvailable() && e.alertsProvided()));
-        verify(pendingAlertCountContributor).countPendingAlerts();
+        var event = org.mockito.ArgumentCaptor.forClass(DashboardStatsUpdatedEvent.class);
+        verify(eventPublisher).publishEvent(event.capture());
+        assertThat(event.getValue().activeUsers()).isEqualTo(1);
+        assertThat(event.getValue().toMap()).containsOnlyKeys(
+                "activeUsers", "visitsPerMinute", "newPosts", "newPostsAvailable", "newPostsProvided");
     }
 
     @Test
@@ -100,28 +93,27 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("알림 조회 실패에도 정상 접속 통계는 계속 방송한다")
-    void alertFailurePreservesOtherCounters() {
-        when(pendingAlertCounts.getIfAvailable()).thenReturn(pendingAlertCountContributor);
-        when(pendingAlertCountContributor.countPendingAlerts()).thenThrow(new RuntimeException("DB Error"));
+    @DisplayName("게시글 조회 실패에도 정상 접속 통계는 계속 방송한다")
+    void postCountFailurePreservesConnectionCounters() {
+        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString())).thenThrow(new RuntimeException("DB Error"));
         realTimeDashboardService.incrementActiveUsers();
         realTimeDashboardService.broadcastRealTimeStats();
         verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
-                e.activeUsers() == 1 && e.visitsPerMinute() == 1 && !e.alertsAvailable()));
+                e.activeUsers() == 1 && e.visitsPerMinute() == 1 && !e.newPostsAvailable()));
     }
 
     /**
-     * 알림·게시판 도메인이 base projection 에서 빠진 프로필에는 구현이 없다. 그때의 0 은 "셀 알림·게시글이 없다" 는
+     * 게시판 도메인이 base projection 에서 빠진 프로필에는 구현이 없다. 그때의 0 은 "셀 게시글이 없다" 는
      * 사실이며, 조회 실패와 달리 정상 집계 상태다. provided=false 로 함께 알려 화면이 그 카드를 그리지 않는다(Phase 2 9단계).
      */
     @Test
     @DisplayName("집계 구현이 없으면 0 과 provided=false 를 방송하고 대시보드는 계속 돈다")
     void getRealTimeStats_NoContributor() {
-        when(pendingAlertCounts.getIfAvailable()).thenReturn(null);
+        when(postStatistics.getIfAvailable()).thenReturn(null);
         realTimeDashboardService.broadcastRealTimeStats();
         verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
-                e.alerts() == 0 && e.alertsAvailable() && !e.alertsProvided()
-                        && e.newPosts() == 0 && e.newPostsAvailable() && !e.newPostsProvided()));
+                e.newPosts() == 0 && e.newPostsAvailable() && !e.newPostsProvided()));
     }
 
     @Test
@@ -138,16 +130,17 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("알림 집계 실패는 실제 0건과 구분되는 미확인 상태를 방송한다")
-    void failedAlertCountIsExplicitlyUnavailable() {
-        when(pendingAlertCounts.getIfAvailable()).thenReturn(pendingAlertCountContributor);
-        when(pendingAlertCountContributor.countPendingAlerts()).thenThrow(new IllegalStateException("count unavailable"));
+    @DisplayName("게시글 집계 실패는 실제 0건과 구분되는 미확인 상태를 방송한다")
+    void failedPostCountIsExplicitlyUnavailable() {
+        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString()))
+                .thenThrow(new IllegalStateException("count unavailable"));
 
         realTimeDashboardService.broadcastRealTimeStats();
 
         var event = org.mockito.ArgumentCaptor.forClass(DashboardStatsUpdatedEvent.class);
         verify(eventPublisher).publishEvent(event.capture());
-        assertThat(event.getValue().toMap()).containsEntry("alertsAvailable", false).containsEntry("alertsProvided", true);
+        assertThat(event.getValue().toMap()).containsEntry("newPostsAvailable", false).containsEntry("newPostsProvided", true);
     }
 
     @Test
@@ -166,21 +159,6 @@ class RealTimeDashboardServiceTest {
         verify(eventPublisher, times(2)).publishEvent(event.capture());
         assertThat(event.getAllValues()).extracting(DashboardStatsUpdatedEvent::newPosts).containsExactly(7, 2);
         assertThat(event.getAllValues()).allMatch(DashboardStatsUpdatedEvent::newPostsAvailable);
-    }
-
-    @Test
-    @DisplayName("게시글 집계 실패는 알림의 정상 집계를 가리지 않는다")
-    void postCountFailureDoesNotHideAvailableAlertCount() {
-        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
-        when(postStatisticsContributor.countPostsBetween(anyString(), anyString()))
-                .thenThrow(new IllegalStateException("count unavailable"));
-        when(pendingAlertCounts.getIfAvailable()).thenReturn(pendingAlertCountContributor);
-        when(pendingAlertCountContributor.countPendingAlerts()).thenReturn(4L);
-
-        realTimeDashboardService.broadcastRealTimeStats();
-
-        verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
-                !e.newPostsAvailable() && e.alerts() == 4 && e.alertsAvailable()));
     }
 
     /**
@@ -241,14 +219,14 @@ class RealTimeDashboardServiceTest {
     }
 
     @Test
-    @DisplayName("알림 개수가 기존 wire 정수 범위를 넘으면 음수 대신 미확인으로 표시한다")
-    void overflowingAlertCountIsUnavailableRatherThanNegative() {
-        when(pendingAlertCounts.getIfAvailable()).thenReturn(pendingAlertCountContributor);
-        when(pendingAlertCountContributor.countPendingAlerts()).thenReturn((long) Integer.MAX_VALUE + 1);
+    @DisplayName("게시글 수가 기존 wire 정수 범위를 넘으면 음수 대신 미확인으로 표시한다")
+    void overflowingPostCountIsUnavailableRatherThanNegative() {
+        when(postStatistics.getIfAvailable()).thenReturn(postStatisticsContributor);
+        when(postStatisticsContributor.countPostsBetween(anyString(), anyString())).thenReturn((long) Integer.MAX_VALUE + 1);
 
         realTimeDashboardService.broadcastRealTimeStats();
 
         verify(eventPublisher).publishEvent(argThat((DashboardStatsUpdatedEvent e) ->
-                e.alerts() == 0 && !e.alertsAvailable()));
+                e.newPosts() == 0 && !e.newPostsAvailable()));
     }
 }

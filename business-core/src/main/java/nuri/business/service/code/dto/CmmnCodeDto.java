@@ -53,5 +53,13 @@ public class CmmnCodeDto {
     @Min(0)
     private Integer version;
 
+    /*
+     * [2026-10-20] 이 제품이 이 그룹을 읽는 곳(사용처). 기능별 CommonCodeUsageContributor 기여에서 서버가 채우고, 빈 목록이면
+     * 이 제품이 읽지 않는 그룹이다. 요청에 실어 보내도 무시한다(등록·수정은 이 값을 읽지 않는다).
+     */
+    @Schema(description = "이 제품이 이 그룹을 읽는 곳(사용처) 문장. 빈 목록이면 이 제품이 읽지 않는 그룹이다. 서버가 채우며 요청 값은 무시한다.",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    private java.util.List<String> usages;
+
 }
 

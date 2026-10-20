@@ -5,10 +5,10 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 /**
  * [2026-09-26 DIP B5 F10] 탭이 쓰지 않는 통계는 조회하지 않는다.
  *
- * 자료 이용 통계는 요약 카드가 쓰지 않는 미수집 축인데 어느 탭을 열어도 불렀다. 요약 카드가 쓰는 사용자·접속
- * 통계는 탭과 무관하게 계속 조회해야 한다(비활성 탭에서 값이 비어 '0' 으로 보이는 것을 막는다).
+ * [2026-10-20] 요약이 탭마다 그 탭의 계열이 되어(A7), 사용자·접속 통계도 그 탭이 열렸을 때만 부른다 — 종전에는 모든 탭의 요약
+ * 카드가 둘을 늘 불렀다. 기간은 고르지 않으면 서버 기본값이고, 양쪽을 다 고른 올바른 기간만 보낸다.
  *
- * [허브 분해 H4] 셸 전용 시험이다 — 기능 레지스트리를 빈 배열로 대역한다. 자료 이용 탭의 조회 조건은 게시판 기여 시험이 본다
+ * [허브 분해 H4] 셸 전용 시험이다 — 기능 레지스트리를 빈 배열로 대역한다. 기능 탭의 조회 조건은 게시판 기여 시험이 본다
  * (stats/board/__tests__/BoardStatsTabs.equivalence.test.tsx).
  */
 const services = vi.hoisted(() => ({
@@ -20,8 +20,8 @@ const services = vi.hoisted(() => ({
 const params = vi.hoisted(() => ({ value: new URLSearchParams() }));
 
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn() }),
-  usePathname: () => '/admin/stats',
+  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), refresh: vi.fn() }),
+  usePathname: () => '/admin/stats/screen',
   useSearchParams: () => params.value,
 }));
 vi.mock('@/services/foundation/system/StatsAdminService', () => ({
@@ -39,64 +39,65 @@ vi.mock('@/extensions/generated-stats-panels', () => ({ statsPanels: [] }));
 
 import IntelligenceHubClient from '../IntelligenceHubClient';
 
-function renderHub(tab: string) {
-  params.value = new URLSearchParams(`tab=${tab}`);
+function renderHub(defaultTab: string | undefined, query = '') {
+  params.value = new URLSearchParams(query);
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
-  return render(<QueryClientProvider client={client}><IntelligenceHubClient /></QueryClientProvider>);
+  return render(<QueryClientProvider client={client}><IntelligenceHubClient defaultTab={defaultTab} /></QueryClientProvider>);
 }
 
 describe('통계 허브 탭별 조회', () => {
   beforeEach(() => {
     Object.values(services).forEach(fn => fn.mockReset().mockResolvedValue([]));
+    services.getUserStats.mockResolvedValue({ inqCnt: [], crtCnt: [], mdfcnCnt: [], delCnt: [] });
   });
 
-  it('요약 카드용 사용자·접속 통계는 늘 부르고, 기능 기여가 없으면 다른 통계는 부르지 않는다', async () => {
+  it('시스템 활성 탭은 성공 로그인만 부르고, 사용자 활동·기능 통계는 부르지 않는다', async () => {
     renderHub('SYSTEM_STATS');
-    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
-    expect(services.getUserStats).toHaveBeenCalled();
+    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalledWith(undefined));
+    expect(services.getUserStats).not.toHaveBeenCalled();
     expect(services.getDataUsageStats).not.toHaveBeenCalled();
     expect(services.getBbsStats).not.toHaveBeenCalled();
-    expect(screen.getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
   });
 
-  it('이 구성에 없는 탭 값(?tab=DATA_USAGE)은 기본 탭(통계 개요)을 열고 그 조회를 하지 않는다', async () => {
-    renderHub('DATA_USAGE');
-    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
-    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('통계 개요');
+  it('사용자 통계 탭은 사용자 활동만 부른다', async () => {
+    renderHub('USER_STATS');
+    await waitFor(() => expect(services.getUserStats).toHaveBeenCalledWith(undefined));
+    expect(services.getConnectStats).not.toHaveBeenCalled();
+  });
+
+  it('이 구성에 없는 탭 값(?tab=DATA_USAGE)은 무시하고 그 라우트의 탭을 열며 그 조회를 하지 않는다', async () => {
+    renderHub('USER_STATS', 'tab=DATA_USAGE');
+    await waitFor(() => expect(services.getUserStats).toHaveBeenCalled());
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('사용자 통계 분석');
     expect(services.getDataUsageStats).not.toHaveBeenCalled();
   });
 
-  it('[DIP B5 F6] 기간을 고르지 않으면 서버 기본값으로 부르고 그 사실을 말한다 — 전체 프리셋은 없다', async () => {
-    renderHub('SYSTEM_STATS');
-    await waitFor(() => expect(services.getUserStats).toHaveBeenCalledWith(undefined));
-    expect(services.getConnectStats).toHaveBeenCalledWith(undefined);
-    expect(screen.getByText('집계 구간: 최근 1개월(기간을 고르지 않으면 서버 기본값)')).toBeInTheDocument();
-    expect(screen.queryByRole('button', { name: '전체' })).not.toBeInTheDocument();
+  it('개요 자료 없이 통계 개요를 요청하면(하위 라우트) 성공 로그인 탭을 연다 — 개요는 서버가 읽은 값으로만 그린다', async () => {
+    renderHub(undefined);
+    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
+    expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('시스템 활성 지표');
   });
 
   it('[DIP B5 F6] 기간 프리셋을 고르면 그 기간으로 다시 부르고 적용 구간을 보인다', async () => {
     renderHub('SYSTEM_STATS');
-    await waitFor(() => expect(services.getUserStats).toHaveBeenCalled());
+    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalledWith(undefined));
 
     fireEvent.click(screen.getByRole('button', { name: '최근 1주' }));
 
-    await waitFor(() => expect(services.getUserStats).toHaveBeenLastCalledWith(
+    await waitFor(() => expect(services.getConnectStats).toHaveBeenLastCalledWith(
       { fromDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/), toDate: expect.stringMatching(/^\d{4}-\d{2}-\d{2}$/) }));
-    const { fromDate, toDate } = services.getUserStats.mock.lastCall![0];
+    const { fromDate, toDate } = services.getConnectStats.mock.lastCall![0];
     expect(fromDate <= toDate).toBe(true);
-    expect(services.getConnectStats).toHaveBeenLastCalledWith({ fromDate, toDate });
-    expect(screen.getByText(`집계 구간: ${fromDate} ~ ${toDate}`)).toBeInTheDocument();
-    expect(screen.getByText('선택 기간 성공 로그인 합계')).toBeInTheDocument();
-    expect(screen.queryByText('최근 1개월 성공 로그인 합계')).not.toBeInTheDocument();
+    expect(screen.getByTestId('report-basis')).toHaveTextContent(`집계 구간: ${fromDate} ~ ${toDate}`);
   });
 
   it('[DIP B5 F6] 한쪽만 고른 기간은 보내지 않고 서버 기본값을 집계한다', async () => {
     renderHub('SYSTEM_STATS');
-    await waitFor(() => expect(services.getUserStats).toHaveBeenCalled());
+    await waitFor(() => expect(services.getConnectStats).toHaveBeenCalled());
 
     fireEvent.change(screen.getByLabelText('집계 기간 시작일'), { target: { value: '2026-09-01' } });
 
     expect(await screen.findByText('시작일과 종료일을 모두 입력해야 기간이 적용됩니다.')).toBeInTheDocument();
-    expect(services.getUserStats).toHaveBeenLastCalledWith(undefined);
+    expect(services.getConnectStats).toHaveBeenLastCalledWith(undefined);
   });
 });

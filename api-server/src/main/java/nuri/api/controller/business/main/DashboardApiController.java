@@ -25,11 +25,11 @@ import java.util.Map;
 @RequiredArgsConstructor
 public class DashboardApiController {
 
-    // 모든 대시보드 위젯(할 일·공지=BoardDashboardProvider, 결재대기=InformalSanctionDashboardProvider 등)은
-    // DashboardItemProvider 포트로만 주입된다 — 특정 샘플 서비스(BoardService 등) 직접 결합 없음(§2.B 재사용성).
+    // 대시보드 위젯(할 일·공지=BoardDashboardProvider)은 DashboardItemProvider 포트로만 주입된다 — 특정 샘플
+    //   서비스(BoardService 등) 직접 결합 없음(§2.B 재사용성). 결재 대기 수는 2026-10-20 걷었다(결재 화면이 자기 API 로 센다).
     private final List<DashboardItemProvider> dashboardItemProviders;
 
-    @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.")
+    @Operation(summary = "메인 대시보드 요약 데이터 조회", description = "공지사항·업무게시판의 최근 글과 전체 글 수를 조회합니다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.main.DashboardApiController#getDashboardData')")
     public ResponseEntity<ApiResponse<DashboardResponse>> getDashboardData(@AuthenticationPrincipal UserDetails userDetails) {
@@ -41,7 +41,7 @@ public class DashboardApiController {
         log.debug(">>> [Dashboard] Fetching dashboard data");
         Map<String, Object> result = new HashMap<>();
 
-        // 등록된 모든 위젯 프로바이더가 자기 데이터를 result 에 채운다(할 일/공지/결재대기 등 동적 확장).
+        // 등록된 모든 위젯 프로바이더가 자기 데이터를 result 에 채운다(할 일/공지 등 동적 확장).
         for (DashboardItemProvider provider : dashboardItemProviders) {
             try {
                 provider.provideDashboardData(userId, result);

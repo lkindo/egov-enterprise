@@ -168,7 +168,7 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(document.querySelector('.source-digest')).toBeNull();
   });
 
-  it('binds every rendered fact occurrence to the embedded catalog and checks independent registry counts and versions', () => {
+  it('binds every rendered fact occurrence to the embedded catalog, checks independent registry counts and links versions instead of copying them', () => {
     expect(factFailures(document, current.facts)).toEqual([]);
     const registry = JSON.parse(read('config/governance/gates.json'));
     for (const [key, setId] of [['governanceCount', 'GATESET-GOVERNANCE-HARNESS'], ['architectureCount', 'GATESET-ARCHITECTURE'], ['schemaCount', 'GATESET-SCHEMA-VALIDATION']]) {
@@ -184,13 +184,13 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     expect(current.facts.requiredCount).toBe(required.length);
     const modules = [...read('settings.gradle').matchAll(/^include\s+['"]([^'"]+)['"]/gm)].map(match => match[1]);
     expect(ids(current.catalogs.modules)).toEqual([...modules, 'frontend'].sort());
-    expect(current.facts.nodeVersion).toBe(read('.nvmrc').trim());
-    const frontend = JSON.parse(read('frontend/package.json'));
-    expect(current.facts.nextVersion).toBe(frontend.dependencies.next.replace(/^[~^]/, ''));
-    expect(current.facts.nextVersionConstraint).toBe(frontend.dependencies.next);
-    expect(current.facts.pnpmVersion).toBe(frontend.packageManager.replace(/^pnpm@/, ''));
-    expect(read('build.gradle')).toContain(`version '${current.facts.bootVersion}'`);
-    expect(read('gradle/wrapper/gradle-wrapper.properties')).toContain(`gradle-${current.facts.gradleVersion}-bin.zip`);
+    // 런타임·빌드 버전은 사실로 싣지 않고 선언 파일로 링크한다. 값을 다시 적으면 Dependabot 범프마다 이 시험이 붉었다
+    // (2026-10-19 Next 16.4.0≠16.4.2). 링크한 파일의 존재는 sourceLinkFailures 가 본다.
+    expect(Object.keys(current.facts).filter(key => /version/i.test(key))).toEqual([]);
+    const declarations = [...document.querySelectorAll<HTMLAnchorElement>('#content-map details a[href]')]
+      .map(link => decodeURIComponent(new URL(link.href).pathname).replace(/^\/lkindo\/egov-enterprise\/blob\/main\//, ''));
+    expect(declarations).toEqual(expect.arrayContaining(['build.gradle', 'gradle/libs.versions.toml',
+      'gradle/wrapper/gradle-wrapper.properties', '.nvmrc', 'frontend/package.json', 'frontend/pnpm-lock.yaml']));
     // 이관 시험·공유 PostgreSQL·waiver 수의 계수 규칙 회귀는 scripts/atlas-catalog.test.mjs 의 합성 fixture 가 본다.
   });
 

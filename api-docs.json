@@ -83,6 +83,10 @@
       "description": "사용자 관리 API"
     },
     {
+      "name": "Admin Dashboard",
+      "description": "관리자 홈의 운영 신호 요약"
+    },
+    {
       "name": "LoginLog",
       "description": "로그인 로그 관리 API (Admin)"
     },
@@ -24749,12 +24753,13 @@
           "Statistics User"
         ],
         "summary": "접속 통계 조회(사용자)",
-        "description": "사용자 홈 대시보드용 접속(로그인) 추이 통계.",
+        "description": "사용자 홈 대시보드용 접속(로그인) 추이 통계. 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.",
         "operationId": "getConnectStats",
         "parameters": [
           {
             "name": "fromDate",
             "in": "query",
+            "description": "조회 시작일(yyyy-MM-dd 또는 yyyyMMdd)",
             "required": false,
             "schema": {
               "type": "string"
@@ -24763,6 +24768,7 @@
           {
             "name": "toDate",
             "in": "query",
+            "description": "조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다",
             "required": false,
             "schema": {
               "type": "string"
@@ -24775,7 +24781,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListStatsDto"
+                  "$ref": "#/components/schemas/ApiResponseListStatsPoint"
                 }
               }
             }
@@ -27908,7 +27914,7 @@
           "Dashboard"
         ],
         "summary": "메인 대시보드 요약 데이터 조회",
-        "description": "공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.",
+        "description": "공지사항·업무게시판의 최근 글과 전체 글 수를 조회합니다.",
         "operationId": "getDashboardData",
         "responses": {
           "200": {
@@ -30600,11 +30606,13 @@
           "Statistics"
         ],
         "summary": "사용자 통계 조회",
+        "description": "인증 사용자의 일자별 API 요청 수를 요청 구분(조회·등록·수정·삭제)마다 한 계열로 낸다. 네 계열은 같은 날짜 축이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.",
         "operationId": "getUserStats",
         "parameters": [
           {
             "name": "fromDate",
             "in": "query",
+            "description": "조회 시작일(yyyy-MM-dd 또는 yyyyMMdd)",
             "required": false,
             "schema": {
               "type": "string"
@@ -30613,6 +30621,7 @@
           {
             "name": "toDate",
             "in": "query",
+            "description": "조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다",
             "required": false,
             "schema": {
               "type": "string"
@@ -30625,7 +30634,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListStatsDto"
+                  "$ref": "#/components/schemas/ApiResponseUserActivityStats"
                 }
               }
             }
@@ -30740,11 +30749,13 @@
           "Statistics"
         ],
         "summary": "자료이용현황 통계 조회",
+        "description": "기록이 있는 날만 싣는다 — 자료 이용 기록에는 쓰는 경로가 없어 빈 날을 0 으로 채우지 않는다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.",
         "operationId": "getDataUsageStats",
         "parameters": [
           {
             "name": "fromDate",
             "in": "query",
+            "description": "조회 시작일(yyyy-MM-dd 또는 yyyyMMdd)",
             "required": false,
             "schema": {
               "type": "string"
@@ -30753,6 +30764,7 @@
           {
             "name": "toDate",
             "in": "query",
+            "description": "조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다",
             "required": false,
             "schema": {
               "type": "string"
@@ -30765,7 +30777,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListStatsDto"
+                  "$ref": "#/components/schemas/ApiResponseListStatsPoint"
                 }
               }
             }
@@ -30819,11 +30831,13 @@
           "Statistics"
         ],
         "summary": "접속 통계 조회",
+        "description": "일자별 성공 로그인 수(실패·결과 미상 시도 제외). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.",
         "operationId": "getConnectStats_1",
         "parameters": [
           {
             "name": "fromDate",
             "in": "query",
+            "description": "조회 시작일(yyyy-MM-dd 또는 yyyyMMdd)",
             "required": false,
             "schema": {
               "type": "string"
@@ -30832,14 +30846,7 @@
           {
             "name": "toDate",
             "in": "query",
-            "required": false,
-            "schema": {
-              "type": "string"
-            }
-          },
-          {
-            "name": "statsKind",
-            "in": "query",
+            "description": "조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다",
             "required": false,
             "schema": {
               "type": "string"
@@ -30852,7 +30859,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListStatsDto"
+                  "$ref": "#/components/schemas/ApiResponseListStatsPoint"
                 }
               }
             }
@@ -30906,11 +30913,13 @@
           "Statistics"
         ],
         "summary": "게시물 통계 조회",
+        "description": "일자별 등록 게시글 수(삭제한 글 제외). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.",
         "operationId": "getBbsStats",
         "parameters": [
           {
             "name": "fromDate",
             "in": "query",
+            "description": "조회 시작일(yyyy-MM-dd 또는 yyyyMMdd)",
             "required": false,
             "schema": {
               "type": "string"
@@ -30919,6 +30928,7 @@
           {
             "name": "toDate",
             "in": "query",
+            "description": "조회 종료일(yyyy-MM-dd 또는 yyyyMMdd). 그날을 포함한다",
             "required": false,
             "schema": {
               "type": "string"
@@ -30931,7 +30941,7 @@
             "content": {
               "application/json": {
                 "schema": {
-                  "$ref": "#/components/schemas/ApiResponseListStatsDto"
+                  "$ref": "#/components/schemas/ApiResponseListStatsPoint"
                 }
               }
             }
@@ -32852,6 +32862,174 @@
         }
       }
     },
+    "/api/v1/admin/system/logs/audit/operations": {
+      "get": {
+        "tags": [
+          "AuditJournal"
+        ],
+        "summary": "민감 작업 감사 원장의 작업 종류",
+        "description": "원장에 남은 작업 이름을 중복 없이 이름 순으로 돌려준다. 목록·내보내기의 operation 조건에 그대로 쓴다.",
+        "operationId": "auditJournalOperations",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseListString"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/logs/audit/export.xlsx": {
+      "get": {
+        "tags": [
+          "AuditJournal"
+        ],
+        "summary": "민감 작업 감사 원장 전체 결과 xlsx 내보내기",
+        "description": "조건(행위자 로그인 ID·작업 이름·기간)은 목록과 같다. 사유(reason, 2~200자)가 필수이고 내보내기 시도와 사유가 원장에 남는다. 조건 일치 전체 결과를 xlsx 로 스트리밍하며 행 수가 상한을 넘으면 400 이다.",
+        "operationId": "exportAuditJournal",
+        "parameters": [
+          {
+            "name": "actorId",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "operation",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "fromDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "toDate",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "reason",
+            "in": "query",
+            "description": "내보내기 사유(2~200자). 원장의 내보내기 기록에 함께 남는다.",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "xlsx 바이너리 스트림",
+            "content": {
+              "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/admin/system/login-policies": {
       "get": {
         "tags": [
@@ -34439,6 +34617,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseAttachmentIntegrityReport"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/dashboard/operational-signals": {
+      "get": {
+        "tags": [
+          "Admin Dashboard"
+        ],
+        "summary": "운영 신호 요약 조회",
+        "description": "실패한 후속 작업 수·잠긴 계정 수·오늘 실패 요청 수를 DB 에서 세어 관측 시각과 함께 돌려준다. 원천을 조회할 권한(DWORK_READ·USER_READ·SYS_LOG_READ)이 없는 신호는 싣지 않는다.",
+        "operationId": "adminOperationalSignals",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseOperationalSignals"
                 }
               }
             }
@@ -38501,6 +38741,14 @@
             "format": "int32",
             "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
             "minimum": 0
+          },
+          "usages": {
+            "type": "array",
+            "description": "이 제품이 이 그룹을 읽는 곳(사용처) 문장. 빈 목록이면 이 제품이 읽지 않는 그룹이다. 서버가 채우며 요청 값은 무시한다.",
+            "items": {
+              "type": "string"
+            },
+            "readOnly": true
           }
         },
         "required": [
@@ -38862,6 +39110,16 @@
             "type": "string",
             "maxLength": 20,
             "minLength": 0
+          },
+          "rwardwnrNm": {
+            "type": "string",
+            "description": "수상자 이름. 서버가 수상자 계정에서 읽어 싣는다 — 계정이 없으면 비어 있다.",
+            "readOnly": true
+          },
+          "rwardwnrDeptNm": {
+            "type": "string",
+            "description": "수상자 소속 부서 이름. 서버가 수상자 계정에서 읽어 싣는다 — 소속이 없거나 계정이 없으면 비어 있다.",
+            "readOnly": true
           },
           "rwardCode": {
             "type": "string",
@@ -42158,7 +42416,7 @@
           }
         }
       },
-      "ApiResponseListStatsDto": {
+      "ApiResponseListStatsPoint": {
         "type": "object",
         "properties": {
           "success": {
@@ -42177,7 +42435,7 @@
           "data": {
             "type": "array",
             "items": {
-              "$ref": "#/components/schemas/StatsDto"
+              "$ref": "#/components/schemas/StatsPoint"
             }
           },
           "timestamp": {
@@ -42192,95 +42450,26 @@
           }
         }
       },
-      "StatsDto": {
+      "StatsPoint": {
         "type": "object",
+        "description": "일자별 집계 한 칸",
         "properties": {
-          "fromDate": {
+          "date": {
             "type": "string",
-            "maxLength": 20,
-            "minLength": 0
+            "description": "집계 일자(yyyy-MM-dd). 한 응답 안에서 오름차순이다",
+            "example": "2026-10-01"
           },
-          "toDate": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "statsKind": {
-            "type": "string",
-            "maxLength": 20,
-            "minLength": 0
-          },
-          "detailStatsKind": {
-            "type": "string"
-          },
-          "pdKind": {
-            "type": "string"
-          },
-          "statsDate": {
-            "type": "string"
-          },
-          "statsCo": {
+          "value": {
             "type": "integer",
-            "format": "int32"
-          },
-          "maxStatsCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "minStatsCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "creatCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "inqCnt": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "updtCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "deleteCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "outptCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "errorCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "totInqCnt": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "avrgInqCnt": {
-            "type": "number",
-            "format": "float"
-          },
-          "mxmmInqireBbsId": {
-            "type": "string"
-          },
-          "mxmmInqireBbsNm": {
-            "type": "string"
-          },
-          "topNtcepersonId": {
-            "type": "string"
-          },
-          "topNtcepersonCo": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "maxUnit": {
-            "type": "number",
-            "format": "float"
+            "format": "int64",
+            "description": "그날의 건수. 측정하는 계열에서 기록이 없는 날은 0 이다",
+            "example": 3
           }
-        }
+        },
+        "required": [
+          "date",
+          "value"
+        ]
       },
       "ApiResponsePageResponseScrapDto": {
         "type": "object",
@@ -44387,20 +44576,11 @@
             ],
             "format": "int64",
             "minimum": 0
-          },
-          "pendingApprovalCount": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "minimum": 0
           }
         },
         "required": [
           "notiList",
           "notiListTotal",
-          "pendingApprovalCount",
           "taskList",
           "taskListTotal"
         ]
@@ -47142,6 +47322,77 @@
           }
         }
       },
+      "ApiResponseUserActivityStats": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/UserActivityStats"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "UserActivityStats": {
+        "type": "object",
+        "description": "일자별 사용자 활동(요청 구분별 계열)",
+        "properties": {
+          "inqCnt": {
+            "type": "array",
+            "description": "조회 요청 수(GET·HEAD)",
+            "items": {
+              "$ref": "#/components/schemas/StatsPoint"
+            }
+          },
+          "crtCnt": {
+            "type": "array",
+            "description": "등록 요청 수(POST)",
+            "items": {
+              "$ref": "#/components/schemas/StatsPoint"
+            }
+          },
+          "mdfcnCnt": {
+            "type": "array",
+            "description": "수정 요청 수(PUT·PATCH)",
+            "items": {
+              "$ref": "#/components/schemas/StatsPoint"
+            }
+          },
+          "delCnt": {
+            "type": "array",
+            "description": "삭제 요청 수(DELETE)",
+            "items": {
+              "$ref": "#/components/schemas/StatsPoint"
+            }
+          }
+        },
+        "required": [
+          "crtCnt",
+          "delCnt",
+          "inqCnt",
+          "mdfcnCnt"
+        ]
+      },
       "ApiResponseSummaryStatsDto": {
         "type": "object",
         "properties": {
@@ -48368,6 +48619,40 @@
           "total",
           "totalPage"
         ]
+      },
+      "ApiResponseListString": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
       },
       "ApiResponsePageResponseLoginPolicyDto": {
         "type": "object",
@@ -50872,6 +51157,86 @@
           "storageRoot",
           "storedFilesChecked",
           "undecidable"
+        ]
+      },
+      "ApiResponseOperationalSignals": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/OperationalSignals"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "OperationalSignal": {
+        "type": "object",
+        "description": "운영 신호 하나",
+        "properties": {
+          "kind": {
+            "type": "string",
+            "description": "운영 신호 종류 — FAILED_DURABLE_JOBS 재시도 한도에 이른 후속 작업, LOCKED_ACCOUNTS 로그인 잠금 계정, FAILED_REQUESTS_TODAY 오늘(서버 날짜) 기록된 실패 요청(4xx 이상, 시스템 로그)",
+            "enum": [
+              "FAILED_DURABLE_JOBS",
+              "LOCKED_ACCOUNTS",
+              "FAILED_REQUESTS_TODAY"
+            ]
+          },
+          "count": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "description": "건수. 조회에 실패하면 null 이다(0 으로 채우지 않는다).",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "count",
+          "kind"
+        ]
+      },
+      "OperationalSignals": {
+        "type": "object",
+        "description": "관리자 홈의 운영 신호 요약. 보는 사람이 원천을 조회할 수 있는 신호만 싣는다.",
+        "properties": {
+          "observedAt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "DB 에서 센 시각(UTC)"
+          },
+          "signals": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/OperationalSignal"
+            }
+          }
+        },
+        "required": [
+          "observedAt",
+          "signals"
         ]
       },
       "ApiResponsePageResponseCommunityMemberDto": {

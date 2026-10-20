@@ -113,6 +113,8 @@ class ResponseContractLinterTest {
      *       전량으로 덮어쓰기, 행 상한 초과 시 400, SXSSF 스트리밍.
      *       <p>이 4개가 없던 동안 화면은 <b>현재 페이지만</b> 반출할 수 있었고, A6 의 "서버측 전체
      *       내보내기" 필수 항목이 로그인 로그에서만 충족됐다.</li>
+     *   <li>{@code AuditJournalApiController#exportAuditJournal} — 민감 작업 감사 원장 전체 결과 xlsx 내보내기(2026-10-20).
+     *       목록과 같은 조건, 같은 {@code XlsxExport} 행 상한, 사유 필수(감사 경계가 핸들러 전에 사유와 시도를 원장에 남긴다).</li>
      *   <li>{@code SurveySubmissionApiController#exportStats} — 설문 결과 통계 xlsx 반출(2026-09-26 DIP B5 F6).
      *       화면 통계와 같은 문항 × 항목 행이며 응답자 이름·기타 답은 싣지 않는다. 같은 {@code XlsxExport} 규칙.</li>
      * </ul>
@@ -130,6 +132,7 @@ class ResponseContractLinterTest {
             LOG_CONTROLLER_DIR + "UserLogApiController.java#exportUserLogs",
             LOG_CONTROLLER_DIR + "WebLogApiController.java#exportWebLogs",
             LOG_CONTROLLER_DIR + "PrivacyLogApiController.java#exportPrivacyLogs",
+            LOG_CONTROLLER_DIR + "AuditJournalApiController.java#exportAuditJournal",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java#exportStats");
 
     /** 동일 바이너리 모집단을 개인정보 감사 게이트에서도 검증한다. */

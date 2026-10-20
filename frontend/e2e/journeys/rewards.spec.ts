@@ -15,15 +15,32 @@ test.describe('Operational Extension & Uncovered Modules', () => {
         const stamp = Date.now();
         const originalName = `E2E 포상 ${stamp}`;
         const renamed = `E2E 포상 정정 ${stamp}`;
+        // [2026-10-20] 수상자는 있는 사용 중 계정이어야 한다 — 종전의 'E2E_USER' 같은 아무 문자열은 이제 400 이다.
+        //   로그인한 관리자 본인을 수상자로 쓴다(사용 중인 계정이 확실하다).
+        const meRes = await request.get(`${API_BASE}/users/me`, { headers });
+        expect(meRes.ok(), `본인 조회 실패: ${meRes.status()}`).toBeTruthy();
+        const me: { esntlId?: string; userNm?: string } = (await meRes.json()).data;
+        expect(me.esntlId, '관리자 내부 식별자').toBeTruthy();
+        expect(me.userNm, '관리자 이름').toBeTruthy();
+        const ghost = await request.post(`${API_BASE}/admin/operation/rewards`, {
+            headers,
+            data: { rwardNm: `${originalName} 없는 수상자`, rwardwnrId: 'E2E_NO_SUCH_USER', rwardCode: 'E2E', rwardDe: '20260905', pblenCn: 'e2e 수상자 검사' },
+        });
+        expect(ghost.status(), '없는 수상자의 포상은 저장하지 않는다').toBe(400);
+        expect(String((await ghost.json())?.message ?? '')).toContain('수상자');
         const created = await request.post(`${API_BASE}/admin/operation/rewards`, {
             headers,
-            data: { rwardNm: originalName, rwardwnrId: 'E2E_USER', rwardCode: 'E2E', rwardDe: '20260905', pblenCn: 'e2e 정정 경로 검증' },
+            data: { rwardNm: originalName, rwardwnrId: me.esntlId, rwardCode: 'E2E', rwardDe: '20260905', pblenCn: 'e2e 정정 경로 검증' },
         });
         expect(created.ok(), `포상 등록 실패: ${created.status()}`).toBeTruthy();
         await operationalPage.gotoRewards();
         await operationalPage.searchRewards(originalName);
         await expect(operationalPage.page.getByTestId('work-list-toolbar')).toContainText('총');
         await expect(operationalPage.page.getByText(originalName)).toBeVisible();
+        // 목록은 수상자를 식별자가 아니라 이름으로 보이고, 식별자는 보조로 둔다.
+        const row = operationalPage.page.getByRole('row').filter({ hasText: originalName });
+        await expect(row).toContainText(me.userNm!);
+        await expect(row).toContainText(`ID ${me.esntlId}`);
         await operationalPage.renameReward(originalName, renamed);
         await operationalPage.searchRewards(renamed);
         await expect(operationalPage.page.getByText(renamed)).toBeVisible();

@@ -42,12 +42,38 @@ export function projectReusableMakefile(source, layout = 'multi-module') {
   return lines.join('\n');
 }
 
-export function reusableArtifactEntrypoints(profile, secretScanRun) {
+/*
+  생성 제품 CI 가 쓰는 액션. 핀은 원본 ci.yml 이 정본이라 여기에 다시 적지 않는다 — 적으면 Dependabot 이 워크플로만 올린 액션
+  범프마다 이 파일(과 이 파일을 내용 해시로 묶은 하네스 기준선)을 손으로 고쳐야 했다. 액션마다 원본 ci.yml 에 40자 커밋이
+  정확히 하나 있어야 만들고, 없거나 둘 이상이거나 태그면 만들지 않는다. 생성물 안에서는 생성 때 남긴 검증 이력의 ci.yml 을 읽는다.
+*/
+export const PRODUCT_CI_ACTIONS = Object.freeze(['actions/checkout', 'actions/setup-node', 'actions/setup-java',
+  'pnpm/action-setup', 'gradle/actions/setup-gradle', 'actions/upload-artifact']);
+
+/** 원본 ci.yml 에서 생성 제품 CI 액션마다의 핀(`action@sha`). */
+export function upstreamActionPins(upstreamCi) {
+  if (typeof upstreamCi !== 'string' || !upstreamCi.trim()) throw new Error('the upstream ci.yml is required for product CI action pins');
+  const text = upstreamCi.replace(/\r\n/g, '\n');
+  const pins = {};
+  for (const action of PRODUCT_CI_ACTIONS) {
+    const escaped = action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const pattern = new RegExp(`^[ \\t]*(?:-[ \\t]+)?uses:[ \\t]*${escaped}@([^\\s#]+)(?:[ \\t]+#[^\\n]*)?[ \\t]*$`, 'gm');
+    const refs = [...new Set([...text.matchAll(pattern)].map(match => match[1]))];
+    if (refs.length !== 1 || !/^[0-9a-f]{40}$/.test(refs[0])) {
+      throw new Error(`upstream ci.yml must pin ${action} to exactly one 40-character commit (found: ${refs.join(', ') || 'none'})`);
+    }
+    pins[action] = `${action}@${refs[0]}`;
+  }
+  return pins;
+}
+
+export function reusableArtifactEntrypoints(profile, secretScanRun, upstreamCi) {
   if (!compositionProfiles().includes(profile)) throw new Error('unknown generated profile');
   if (typeof secretScanRun !== 'string' || !secretScanRun.includes('VERSION=8.28.0')
     || !secretScanRun.includes('--no-git') || !secretScanRun.includes('--log-opts=')) {
     throw new Error('the upstream pinned working-tree and incremental secret scan is required');
   }
+  const pin = upstreamActionPins(upstreamCi);
   const workflow = `name: Reusable artifact verification
 
 on:
@@ -67,21 +93,21 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+      - uses: ${pin['actions/checkout']}
         with:
           fetch-depth: 0
           persist-credentials: false
-      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1
+      - uses: ${pin['actions/setup-node']}
         with:
           node-version: '22'
-      - uses: actions/setup-java@de7274f081f381c8f8158605e0321c36c376e2e6
+      - uses: ${pin['actions/setup-java']}
         with:
           java-version: '21'
           distribution: temurin
-      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413
+      - uses: ${pin['pnpm/action-setup']}
         with:
           version: '9.15.0'
-      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6
+      - uses: ${pin['gradle/actions/setup-gradle']}
         with:
           cache-provider: basic
           cache-read-only: false
@@ -97,7 +123,7 @@ ${secretScanRun.split('\n').map(line => `          ${line}`).join('\n')}
       - name: Verify this generated product
         run: ${ARTIFACT_COMMAND}
       - name: Retain product verification
-        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        uses: ${pin['actions/upload-artifact']}
         with:
           name: reusable-artifact-verification
           path: build/reports/reusable-base/full.json
@@ -154,7 +180,7 @@ export function validateReusableArtifactEntrypoints(root) {
       .filter(path => path.startsWith('.github/workflows/')).map(path => path.split('/').at(-1)).sort()), 'workflow history population mismatch');
     const original = JSON.parse(read(`${VERIFICATION_HISTORY}/.github/required-checks.json`));
     const scan = original.criticalSteps?.find(step => step.name === 'Run gitleaks (working tree + incremental)')?.run;
-    const expected = reusableArtifactEntrypoints(lock.profile, scan);
+    const expected = reusableArtifactEntrypoints(lock.profile, scan, read(`${VERIFICATION_HISTORY}/.github/workflows/ci.yml`));
     check(read('.github/workflows/ci.yml') === expected.workflow, 'active product CI execution differs from the declared product contract');
     check(JSON.stringify(JSON.parse(read('.github/required-checks.json'))) === JSON.stringify(expected.manifest),
       'adopter required-check template differs or claims remote approval');

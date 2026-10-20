@@ -4,7 +4,10 @@ import type { SlotContributions } from './slots';
 import board from './board/home-sections';
 import dashboard from './dashboard/home-sections';
 import informalsanction from './informalsanction/home-sections';
+import memoreport from './memoreport/home-sections';
 import note from './note/home-sections';
 import promotion from './promotion/home-sections';
+import schedule from './schedule/home-sections';
+import survey from './survey/home-sections';
 
-export const homeSections: readonly SlotContributions<'home-sections'>[] = [board, dashboard, informalsanction, note, promotion];
+export const homeSections: readonly SlotContributions<'home-sections'>[] = [board, dashboard, informalsanction, memoreport, note, promotion, schedule, survey];

@@ -19,6 +19,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
@@ -26,6 +27,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import dynamic from 'next/dynamic';
+import { UserPicker } from '@/app/components/ui/user-picker';
 
 const StandardModal = dynamic(() => import('@/app/components/ui/standard-modal').then(mod => mod.StandardModal), { ssr: false });
 
@@ -38,7 +40,8 @@ import { failureMessage } from '@/lib/safe-error-log';
 export const rewardSchema = RewardManageDtoSchema.extend({
   rwardNm: RewardManageDtoSchema.shape.rwardNm.unwrap().min(1),
   // [2026-10-18] 수상자·포상 코드는 서버 계약에서도 필수다(물리 컬럼 NOT NULL) — 생성 스키마가 optional 이 아니다.
-  rwardwnrId: RewardManageDtoSchema.shape.rwardwnrId.min(1).max(20),
+  // [2026-10-20] 수상자는 사용자 검색으로 고르는 내부 식별자(esntlId)다 — 빈 값은 "고르지 않았다" 로 말한다.
+  rwardwnrId: RewardManageDtoSchema.shape.rwardwnrId.min(1, '수상자를 선택해 주세요.').max(20),
   rwardCode: RewardManageDtoSchema.shape.rwardCode.min(1).max(12),
   rwardDe: RewardManageDtoSchema.shape.rwardDe.unwrap()
     .length(8, '포상일자 8자리를 입력하세요(예: 20260515).'),
@@ -46,6 +49,32 @@ export const rewardSchema = RewardManageDtoSchema.extend({
 });
 
 type RewardFormValues = z.infer<typeof rewardSchema>;
+
+/** 고른 수상자 — 식별자(esntlId)는 서버에 보내는 값이고 이름·부서는 화면에 보이는 값이다. */
+type Awardee = { esntlId: string; userNm?: string | null; deptNm?: string | null };
+
+/**
+ * 수상자 표시 — 이름·부서가 먼저이고 내부 식별자는 보조다(2026-10-20 — 종전에는 목록이 식별자만 보였다).
+ * 계정이 지워져 이름을 모르면 그 사실과 식별자만 보인다 — 이름을 지어내지 않는다.
+ */
+function AwardeeIdentity({ awardee }: { awardee: Awardee | null }) {
+  if (!awardee?.esntlId) return <span className="text-muted-foreground">-</span>;
+  return (
+    <span className="flex flex-col gap-0.5">
+      <span className="text-[length:var(--font-size-body)] font-medium text-foreground">
+        {awardee.userNm || '계정을 찾을 수 없는 사용자'}
+      </span>
+      <span className="text-xs text-muted-foreground">
+        {awardee.userNm ? `${awardee.deptNm || '소속 부서 없음'} · ` : ''}
+        <span className="font-mono">ID {awardee.esntlId}</span>
+      </span>
+    </span>
+  );
+}
+
+const awardeeOf = (item: Reward): Awardee | null => (item.rwardwnrId
+  ? { esntlId: item.rwardwnrId, userNm: item.rwardwnrNm, deptNm: item.rwardwnrDeptNm }
+  : null);
 
 const EMPTY_FORM: RewardFormValues = {
   rwardNm: '',
@@ -76,6 +105,13 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
   const isViewOnly = editing !== null && !canUpdateReward;
   const [deletingSn, setDeletingSn] = useState<number | null>(null);
   const deletePendingRef = useRef(false);
+  /*
+    [2026-10-20] 수상자는 사용자 검색으로 고른다. 종전에는 내부 식별자(USR_…)를 자유 입력으로 받아, 없는 사람에게도 포상이
+    기록됐다(서버도 존재를 보지 않았다). 식별자는 사람이 타이핑할 값이 아니다 — 결재·메모 보고와 같은 공용 피커를 쓴다.
+    서버는 등록과 수상자를 바꾸는 수정에서 그 계정이 있고 사용 중인지 다시 본다.
+  */
+  const [isPickerOpen, setPickerOpen] = useState(false);
+  const [awardee, setAwardee] = useState<Awardee | null>(null);
 
   const form = useAppForm(rewardSchema, {
     defaultValues: EMPTY_FORM,
@@ -89,12 +125,14 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
 
   const openCreate = () => {
     setEditing(null);
+    setAwardee(null);
     form.reset(EMPTY_FORM);
     setIsModalOpen(true);
   };
 
   const openEdit = (item: Reward) => {
     setEditing(item);
+    setAwardee(awardeeOf(item));
     form.reset({
       rwardNm: item.rwardNm ?? '',
       rwardwnrId: item.rwardwnrId ?? '',
@@ -187,7 +225,8 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
         toast(failureMessage(error, '다른 사용자가 먼저 수정했습니다. 최신 내용을 다시 불러온 뒤 고쳐 주세요.'), 'error');
         void queryClient.invalidateQueries({ queryKey: ['admin-rewards'] });
       } else if (!form.applyServerErrors(error)) {
-        toast(editing ? '포상 기록 수정 중 오류가 발생했습니다.' : '포상 기록 등록 중 오류가 발생했습니다.', 'error');
+        // 서버가 준 사유(예: 수상자가 사용 중인 계정이 아니다)를 그대로 보인다 — 무엇을 고쳐야 하는지 알 수 있어야 한다.
+        toast(failureMessage(error, editing ? '포상 기록 수정 중 오류가 발생했습니다.' : '포상 기록 등록 중 오류가 발생했습니다.'), 'error');
       }
     } finally {
       registerSubmitLock.current = false;
@@ -218,9 +257,9 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       )
     },
     {
-      header: '수상자 ID',
-      accessor: 'rwardwnrId',
-      className: 'w-32 font-mono text-xs text-muted-foreground'
+      header: '수상자',
+      accessor: (item) => <AwardeeIdentity awardee={awardeeOf(item)} />,
+      className: 'w-48'
     },
     {
       header: '포상일자',
@@ -372,7 +411,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
             <FormErrorSummary
               labels={{
                 rwardNm: '포상 명칭',
-                rwardwnrId: '수상자 ID',
+                rwardwnrId: '수상자',
                 rwardCode: '포상 코드',
                 rwardDe: '포상 일자',
                 pblenCn: '공적 내용',
@@ -393,19 +432,44 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
                 </FormItem>
               )}
             />
+            {/*
+              수상자는 텍스트가 아니라 선택값이다 — rwardwnrId 는 esntlId 축이라 사람이 타이핑할 값이 아니다. 폼 필드로 두는 것은
+              "수상자 없이 등록" 을 다른 필드와 같은 오류 요약·초점 경로로 잡기 위해서다. 오류 초점은 피커를 여는 단추가 받는다.
+            */}
             <ShadcnFormField
               control={form.control}
               name="rwardwnrId"
               required
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel className="text-[length:var(--font-size-body)] font-medium">수상자 ID</FormLabel>
-                  <FormControl>
-                    <Input {...field} maxLength={20} placeholder="USR_000000000001" className="h-[var(--control-h)]" />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
+              render={({ field }) => {
+                const label = awardee ? '수상자 변경' : '수상자 선택';
+                return (
+                  <FormItem>
+                    <FormLabel className="text-[length:var(--font-size-body)] font-medium">수상자</FormLabel>
+                    <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
+                      <FormControl>
+                        <Button
+                          ref={field.ref}
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          aria-label={label}
+                          onBlur={field.onBlur}
+                          onClick={() => setPickerOpen(true)}
+                        >
+                          {label}
+                        </Button>
+                      </FormControl>
+                      {/* 고른 사람은 단추의 설명(aria-describedby)으로도 읽힌다 — FormControl 이 설명 id 를 단추에 잇는다. */}
+                      <FormDescription aria-live="polite" className="text-[length:var(--font-size-body)]">
+                        {awardee
+                          ? <AwardeeIdentity awardee={awardee} />
+                          : '선택한 수상자가 없습니다. 이름으로 검색해 고릅니다.'}
+                      </FormDescription>
+                    </div>
+                    <FormMessage />
+                  </FormItem>
+                );
+              }}
             />
             <ShadcnFormField
               control={form.control}
@@ -458,6 +522,28 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
           </form>
         </Form>
       </StandardModal>
+
+      <UserPicker
+        isOpen={isPickerOpen}
+        onClose={() => setPickerOpen(false)}
+        title="수상자 검색 및 선택"
+        onSelect={(picked) => {
+          setPickerOpen(false);
+          /*
+            esntlId 는 검색 결과 타입에서 optional 이다. 없는 채로 담으면 서버가 '계정 없음' 으로 거부할 값을 보내게 된다 —
+            조용히 담지 않고 고를 수 없다는 사실을 그 필드의 오류로 말한다(메모 보고 받는 사람과 같다).
+          */
+          if (!picked.esntlId) {
+            form.setError('rwardwnrId', {
+              type: 'value',
+              message: '선택한 사용자의 식별자를 확인할 수 없습니다. 다른 사용자를 선택해 주세요.',
+            });
+            return;
+          }
+          form.setValue('rwardwnrId', picked.esntlId, { shouldValidate: true, shouldDirty: true });
+          setAwardee({ esntlId: picked.esntlId, userNm: picked.userNm, deptNm: picked.deptNm });
+        }}
+      />
     </WorkListPage>
   );
 }

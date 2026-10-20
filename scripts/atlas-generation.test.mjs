@@ -51,7 +51,7 @@ test('rendered artifact changes on catalog, population, style or template change
   fs.appendFileSync(style, '\n/* Source change requires regeneration. */\n');
   assert.notEqual(renderAtlas(temp, catalog), generated);
   const changed = structuredClone(catalog);
-  changed.facts.nodeVersion = `${changed.facts.nodeVersion}-changed`;
+  changed.facts.gateCount += 1;
   assert.notEqual(renderAtlas(repoRoot, changed), generated, 'a changed catalog fact must change the artifact');
   const added = structuredClone(catalog);
   added.sources.push({ path: 'docs/synthetic-new-input.md' });

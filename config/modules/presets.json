@@ -315,7 +315,6 @@
           "api-server/src/test/java/nuri/api/controller/business/approval/ApprovalApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
-          "api-server/src/test/java/nuri/api/controller/business/main/DashboardApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/memoreport/MemoReportApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/operation/EventApiControllerTest.java",
           "api-server/src/test/java/nuri/api/controller/business/operation/ExternalHrApiControllerTest.java",

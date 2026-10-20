@@ -182,7 +182,8 @@ class AssignedIdentifierCreationIntegrityIntegrationTest {
             }
             default -> throw new IllegalArgumentException("Not a common code: " + creation);
         }
-        return new CommonCodeService(details, categories, groups, mapper, changeRepository);
+        return new CommonCodeService(details, categories, groups, mapper, changeRepository,
+                new nuri.business.service.code.CommonCodeUsageCatalog(List.of()));
     }
 
     private Map<String, Object> snapshot(Creation creation) {

@@ -261,10 +261,14 @@
           "properties": { "modules": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z-]*$" } } }
         },
         "owns": {
-          "type": "object", "additionalProperties": false, "required": ["tables", "sequences"],
+          "type": "object", "additionalProperties": false, "required": ["tables", "sequences", "commonCodeGroups"],
           "properties": {
             "tables": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/table" } },
-            "sequences": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sequence" } }
+            "sequences": { "type": "array", "uniqueItems": true, "items": { "$ref": "#/$defs/sequence" } },
+            "commonCodeGroups": {
+              "description": "필수 기반의 생산 Java 가 읽는 공통코드 그룹. 기능 파일과 달리 참조 데이터에서 빠지지 않는다(필수 기반은 늘 있다) — 선언하지 않은 그룹도 core 가 싣는다. 그룹을 읽는 곳·사용처 기여(CommonCodeUsageContributor)와 같은 집합이어야 한다.",
+              "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z0-9]{1,12}$" }
+            }
           }
         },
         "presentation": {

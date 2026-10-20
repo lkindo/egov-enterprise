@@ -1,6 +1,5 @@
 package nuri.business.service.dashboard;
 
-import nuri.foundation.core.dashboard.PendingAlertCountContributor;
 import nuri.foundation.core.stats.PostStatisticsContributor;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -27,15 +26,11 @@ import java.util.concurrent.atomic.AtomicInteger;
 @RequiredArgsConstructor
 public class RealTimeDashboardService {
 
-    /**
-     * 대기 알림 수를 세는 포트. 알림 도메인이 구현하며 여기서는 개수만 받는다.
-     *
-     * <p>종전에는 {@code NotificationRepository} 를 직접 주입해 dashboard→notification 교차 도메인
-     * 결합을 만들었다(GAP-ARCH-001). {@code ObjectProvider} 로 받는 것은 알림 도메인이 base projection
-     * 에서 빠진 프로필에서도 대시보드가 뜨게 하기 위해서다 — 그때의 0 은 "세지 못했다" 가 아니라
-     * "셀 알림이 없다" 는 사실이다. 그 사실은 provided=false 로 함께 방송해 화면이 그 카드를 그리지 않게 한다(Phase 2 9단계).
+    /*
+     * [2026-10-20] 전 사용자의 읽지 않은 알림 합계(알림 도메인이 구현하던 대기 알림 수 포트)를 걷었다. 인스턴스마다 5초에 한 번
+     * 인덱스 없는 read_yn 으로 전수 COUNT 를 돌렸지만, 보는 사람이 처리할 수 있는 숫자가 아니었고 그 카드만 이 값을 읽었다.
+     * 내 알림은 머리글 알림함이 개인 큐 구독 하나로 보인다(DEC-OPS-153).
      */
-    private final ObjectProvider<PendingAlertCountContributor> pendingAlertCounts;
     private final ObjectProvider<PostStatisticsContributor> postStatistics;
     private final ApplicationEventPublisher eventPublisher;
 
@@ -68,17 +63,13 @@ public class RealTimeDashboardService {
             int currentActiveUsers = activeUsers.get();
             int currentVisits = visitsPerMinute.get();
             CountSnapshot currentPosts = getTodayPostsCount();
-            CountSnapshot pendingAlerts = getPendingAlertsCount();
 
             DashboardStatsUpdatedEvent event = new DashboardStatsUpdatedEvent(
                 currentActiveUsers,
                 currentVisits,
                 currentPosts.value(),
-                pendingAlerts.value(),
                 currentPosts.available(),
-                pendingAlerts.available(),
-                currentPosts.provided(),
-                pendingAlerts.provided()
+                currentPosts.provided()
             );
 
             eventPublisher.publishEvent(event);
@@ -102,22 +93,6 @@ public class RealTimeDashboardService {
     public void decrementActiveUsers() {
         // 0 하한 강제 — 짝 없는 disconnect/재기동 후 disconnect 로 카운터가 음수가 되어 대시보드에 음수 활성자 수가 방송되던 것 방지.
         activeUsers.updateAndGet(v -> Math.max(0, v - 1));
-    }
-
-    /**
-     * 처리 대기 중인 알림 수 조회.
-     *
-     * <p>구현이 없으면(알림 도메인이 빠진 프로필) 셀 알림 자체가 없으므로 0 이고 provided=false 다. 조회가 실패해서 0 이 되는
-     * 경우와 구분되도록 실패는 error 로그와 available=false 를 함께 방송한다.
-     */
-    private CountSnapshot getPendingAlertsCount() {
-        try {
-            PendingAlertCountContributor contributor = pendingAlertCounts.getIfAvailable();
-            return contributor == null ? CountSnapshot.notProvided() : CountSnapshot.known(contributor.countPendingAlerts());
-        } catch (Exception e) {
-            log.error("Failed to count pending alerts", e);
-            return CountSnapshot.unavailable();
-        }
     }
 
     /**

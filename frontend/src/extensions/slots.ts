@@ -164,10 +164,13 @@ export interface StatsDateRange {
   readonly toDate: string;
 }
 
-/** 일자별 집계 한 칸. 서버가 채우는 값은 일자와 건수 둘뿐이다(StatsAdminService). */
+/**
+ * 일자별 집계 한 칸 — 생성 계약 `StatsPoint` 의 모양이다(StatsAdminService). 서버가 `date`(yyyy-MM-dd)의 오름차순으로 내고, 측정하는
+ * 계열은 기간의 빈 날을 0 으로 채운다. 셸은 받은 순서·형식 그대로 그린다(정렬·형식 보정을 두지 않는다).
+ */
 export interface StatsSeriesPoint {
-  readonly statsDate?: string;
-  readonly statsCo?: number;
+  readonly date: string;
+  readonly value: number;
 }
 
 /** 통계 셸이 패널 조회로 만들어 본문 탭에 넘기는 결과. 조회는 셸이 소유한다 — 기여는 훅을 넘길 수 없다(기여는 데이터다). */
@@ -185,26 +188,31 @@ interface StatsHubTabBase extends SlotEntry {
   readonly order: number;
   /** 내비게이션 단추 글자. */
   readonly label: string;
-  /** 화면 제목(h1)과 본문 카드 제목. */
+  /** 화면 제목(h1). */
   readonly title: string;
+  /**
+   * 집계 기준과 데이터 출처 한 줄 — A7 셸(ReportPage)의 basis 다. 무엇을 어디서 센 값인지 기능만 안다. 셸이 그 뒤에 적용 중인 기간을
+   * 덧붙인다(series). [2026-10-20] 하위 화면을 A7 셸로 옮기며 둔다.
+   */
+  readonly basis: string;
   readonly icon: LucideIcon;
   /** 조회 키 접두. series 는 셸이 집계 기간을 덧붙인다. */
   readonly queryKey: readonly string[];
 }
 
 /**
- * series — 일자별 집계를 셸의 면적 차트·내보내기로 그린다. 탭이 곧 라우트라 href 를 가진다(링크 슬롯: visibleWhen 은 { page: href }).
- * 미수집 축(쓰는 쪽이 없는 집계)은 uninstrumented 이고, 빈 차트는 기간이 아니라 미수집을 말한다. 요약 칸(summary)은 미수집 축에만
- * 둔다 — 값은 늘 '미수집' 이다(측정되지 않는 값을 0 으로 보이지 않는다).
+ * series — 일자별 집계를 셸의 A7 화면(요약·차트·원본 표·내보내기)으로 그린다. 탭이 곧 라우트라 href 를 가진다(링크 슬롯: visibleWhen
+ * 은 { page: href }). 미수집 축(쓰는 쪽이 없는 집계)은 uninstrumented 이고, 빈 결과는 기간이 아니라 미수집을 말하며 요약 값은 '미수집'
+ * 이다(측정되지 않는 값을 0 으로 보이지 않는다).
+ *
+ * [2026-10-20] 미수집 축이 모든 탭에 내던 요약 칸(summary)을 걷었다 — 요약은 이제 탭마다 그 탭이 그리는 계열의 것이다(A7).
  */
 export type StatsSeriesTab = StatsHubTabBase & {
   readonly kind: 'series';
   readonly href: string;
   readonly load: (range?: StatsDateRange) => Promise<readonly StatsSeriesPoint[]>;
-} & (
-  | { readonly uninstrumented: false }
-  | { readonly uninstrumented: true; readonly summary?: { readonly label: string; readonly icon: LucideIcon } }
-);
+  readonly uninstrumented: boolean;
+};
 
 /** body — 기능이 본문을 그리는 탭. 전용 라우트가 없어 현재 경로의 `?tab=<id>` 로 연다. 내보내기 행도 기능이 만든다. */
 export interface StatsBodyTab extends StatsHubTabBase {
@@ -250,7 +258,8 @@ export interface HomePrefetch {
 
 /**
  * home-sections — 업무 홈('/')의 자리(Phase 2 9단계). 셸이 배치마다 순서대로 그린다: overlay(구역 밖에 뜨는 것) → 머리의 actions
- * (단추) → cards(요약 카드 줄, Component 는 <li> 하나를 그린다) → main(본문 목록) → status(상태 구역, '최근 활동' 옆) → bottom(홍보).
+ * (단추) → cards(요약 카드 줄, Component 는 <li> 하나를 그린다 — core 셸의 카드와 같은 order 축) → main(본문 목록) → status(상태 구역)
+ * → bottom(홍보). 2026-10-20 늘 비어 있던 활동 구역과 그 구역에 덧붙이던 activityNote 를 걷었다.
  * Component 는 기능의 'use client' 모듈에서 가져오고 기여는 그 이름만 가리킨다 — 서버 자식도 레지스트리를 읽으므로 서버에서 그릴 수 없는
  * 컴포넌트(ssr:false 래퍼)가 서버 그래프에 들어오지 않게 한다(경계 계약). 링크는 컴포넌트가 그린다(기여는 링크 키를 갖지 않는다).
  * 셸은 등록된 항목이 하나라도 있으면 DASHBOARD_READ 로 홈 진입을 판정한다(app/home-access.ts).
@@ -262,8 +271,6 @@ export interface HomeSection extends SlotEntry {
   readonly Component: ComponentType;
   /** 서버가 첫 화면 전에 채워 둘 조회. 같은 키는 한 번만 부른다. */
   readonly prefetch?: readonly HomePrefetch[];
-  /** '최근 활동' 구역에 덧붙이는 한 문장 — 이 항목이 위에 무엇을 보여 주는지 말한다. */
-  readonly activityNote?: string;
 }
 
 /** notification-actions 가 받는 알림 맥락. 호스트(머리글 알림 드로어)가 만든다. */

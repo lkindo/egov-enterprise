@@ -22,7 +22,6 @@ export const DashboardResponseSchema = /*#__PURE__*/ (() => z.object({
   notiList: z.array(z.lazy(() => BoardDtoSchema)),
   taskListTotal: z.number().int().min(0).nullable(),
   notiListTotal: z.number().int().min(0).nullable(),
-  pendingApprovalCount: z.number().int().min(0).nullable(),
 }))();
 export type DashboardResponse = z.infer<typeof DashboardResponseSchema>;
 
@@ -51,7 +50,6 @@ export const DashboardResponseRequestSchema = /*#__PURE__*/ (() => z.object({
   notiList: z.array(z.lazy(() => BoardDtoRequestSchema.strict())),
   taskListTotal: z.number().int().min(0).nullable(),
   notiListTotal: z.number().int().min(0).nullable(),
-  pendingApprovalCount: z.number().int().min(0).nullable(),
 }))();
 
 export const DashboardResponseResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -59,5 +57,4 @@ export const DashboardResponseResponseSchema = /*#__PURE__*/ (() => z.object({
   notiList: z.array(z.lazy(() => BoardDtoResponseSchema)),
   taskListTotal: z.number().int().min(0).nullable(),
   notiListTotal: z.number().int().min(0).nullable(),
-  pendingApprovalCount: z.number().int().min(0).nullable(),
 }))();

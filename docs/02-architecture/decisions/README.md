@@ -32,7 +32,7 @@
 | [ADR-0023](ADR-0023-e2e-impact-selection-and-cache-writer.md) | PR E2E 영향 선별·main 전수와 단일 캐시 writer | Accepted |
 | [ADR-0024](ADR-0024-spring-boot-4-two-phase-migration.md) | Spring Boot 4.1 두 단계 전환(Jackson 2 호환 → Jackson 3) | Accepted — 일부 DEC-OPS-124로 대체 |
 | [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md) | D01~D15 A: 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제와 검증 범위 | Accepted |
-| [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted — 일부 ADR-0027·ADR-0032, DEC-OPS-289·291로 대체 |
+| [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted — 일부 ADR-0027·ADR-0032·ADR-0037, DEC-OPS-289·291로 대체 |
 | [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — 일부 ADR-0030, DEC-OPS-291로 대체 |
 | [ADR-0028](ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 | Accepted |
 | [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 일부 ADR-0031, DEC-OPS-313·323으로 대체 |
@@ -43,3 +43,4 @@
 | [ADR-0034](ADR-0034-retire-ended-authorization-surfaces.md) | 종료한 구 인가·비공식결재 API 경로 제거와 집행 지점 없는 권한 퇴역 | Accepted |
 | [ADR-0035](ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하(IP당 분당 30) | Accepted |
 | [ADR-0036](ADR-0036-api-paging-and-created-status-conventions.md) | 목록의 1 기반 page·size 통일·잘못된 입력 400, 자원을 만드는 POST 의 201·새 식별자 본문 | Accepted |
+| [ADR-0037](ADR-0037-product-pit-six-slots.md) | 제품 PIT 여섯 슬롯과 실측 긴 순서, 효과 없으면 4로 되돌림 | Accepted |

@@ -10,7 +10,10 @@ test.describe('공개 포털', () => {
             const support = new SupportPage(adminPage);
             await test.step('Admin: Create FAQ', async () => {
                 await knowledge.gotoFAQ();
-                await expect(adminPage.locator('input[name="pstTtl"]')).toBeVisible();
+                // 사람이 보는 제목 칸 하나를 찾는다. CSS 선택자는 React 스트리밍이 아직 드러내지 않은 숨은 조각
+                // (`<div hidden id="S:n">`)의 같은 입력까지 세어, 클라이언트가 먼저 그린 폼과 함께 2개가 되면 strict 위반이 났다
+                // (CI 38563148103·38841440632·38885673767·38894795018 trace). 역할 조회는 숨은 조각을 세지 않는다.
+                await expect(adminPage.getByRole('textbox', { name: '게시글 제목', exact: true })).toBeVisible();
                 // Preserve both direct board entry and the help hub's new-registration entry.
                 await support.gotoFAQ();
                 await support.createKnowledgeEntry(faqQuestion, faqAnswer);

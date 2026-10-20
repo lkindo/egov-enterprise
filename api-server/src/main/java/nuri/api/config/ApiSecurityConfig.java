@@ -135,6 +135,12 @@ public class ApiSecurityConfig {
                                 .formLogin(formLogin -> formLogin.disable())
                                 .logout(logout -> logout.disable())
                                 .authorizeHttpRequests(auth -> {
+                                                // [2026-10-20] 스트리밍 응답(StreamingResponseBody — 로그·설문·감사 원장 xlsx 내보내기)은
+                                                //   본문을 다 쓴 뒤 ASYNC 디스패치로 같은 요청에 다시 들어온다. JWT 필터는 그 재진입에서 돌지
+                                                //   않아(OncePerRequestFilter) 인증이 비어 있고, 아래 판정이 이미 커밋된 응답을 AccessDenied 로
+                                                //   끊어 브라우저가 ERR_INCOMPLETE_CHUNKED_ENCODING 으로 파일을 버렸다(격리 E2E 실측).
+                                                //   ASYNC 디스패치는 REQUEST 디스패치에서 인가를 통과한 요청만 시작하므로 그 재진입만 연다.
+                                                auth.dispatcherTypeMatchers(jakarta.servlet.DispatcherType.ASYNC).permitAll();
                                                 // [W1-12 보완] 관리 포트가 분리된 형상에서만 스크레이프 경로를 연다.
                                                 //   securePaths 보다 **먼저** 선언해야 한다 — authorizeHttpRequests 는
                                                 //   선언 순서로 매칭하므로, 뒤에 두면 `/actuator/**` 규칙이 먼저 걸려 무효가 된다.

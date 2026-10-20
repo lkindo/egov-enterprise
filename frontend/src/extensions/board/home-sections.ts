@@ -40,7 +40,6 @@ export default defineContributions('home-sections', [
     order: 10,
     Component: BoardHomeLists,
     prefetch: [{ query: boardHomeQuery, failure: 'boundary' }],
-    activityNote: '공지사항과 업무게시판 최근 글은 위 목록에서 확인할 수 있습니다.',
     visibleWhen: { permissions: ['DASHBOARD_READ'] },
   },
 ]);

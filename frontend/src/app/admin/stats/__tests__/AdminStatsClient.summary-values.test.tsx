@@ -46,7 +46,7 @@ describe('AdminStatsClient 요약 수치', () => {
       expect(within(summaryCard(title)).getByText('조회 실패')).toBeInTheDocument();
       expect(within(summaryCard(title)).queryByText('0')).toBeNull();
     }
-    expect(screen.getByText(/수집된 일수 조회 실패/)).toBeInTheDocument();
+    expect(screen.getByText(/집계 일수 조회 실패/)).toBeInTheDocument();
     expect(renderedTotal(container)).toBeNull();
   });
 
@@ -54,7 +54,7 @@ describe('AdminStatsClient 요약 수치', () => {
     const { container } = render(
       <AdminStatsClient
         initialSummary={{ totalUsers: 1234, todayConnects: null, totalPosts: 0 }}
-        initialConnectData={[{ statsDate: '20260915', name: '09/15', statsCo: 5 }]}
+        initialConnectData={[{ date: '2026-09-15', value: 5 }]}
       />,
     );
 
@@ -63,7 +63,9 @@ describe('AdminStatsClient 요약 수치', () => {
     expect(screen.getByText(/성공 로그인만 집계/)).toBeInTheDocument();
     // 요약 응답에 게시물 수가 있어도 기능 기여가 없으면 그 칸을 그리지 않는다.
     expect(screen.queryByText('누적 게시물')).not.toBeInTheDocument();
-    expect(screen.getByText(/수집된 일수 1일/)).toBeInTheDocument();
+    // [2026-10-20] 서버가 기간의 빈 날을 0 으로 채우므로 일수는 '기록이 있는 날' 이 아니라 집계한 날이다 — 그 뜻을 함께 말한다.
+    expect(screen.getByText(/집계 일수 1일\(기록이 없는 날은 0\)/)).toBeInTheDocument();
+    expect(screen.getByRole('cell', { name: '2026-09-15' })).toBeInTheDocument();
     // 양성 대조 — 합계 문구를 실제로 찾을 수 있어야 위 실패 단언이 의미가 있다.
     expect(renderedTotal(container)?.[1]).toBe('1');
   });

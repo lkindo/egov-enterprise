@@ -45,13 +45,11 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${STATUS_COLORS})-[0-9]{2,3
 //     틴트가 말하고 글자는 전경 토큰이다.
 //   · 상태가 아니라 분류 표식인 색은 success/warning/destructive 가 아니라 hub-* 토큰으로 옮긴다 — 없는 의미를 주장하게 된다.
 const BASELINE_BY_FILE: Record<string, number> = {
-  'src/app/admin/AdminDashboardClient.tsx': 7,
   'src/app/admin/collaboration/address-book/select-address-book-detail/[id]/SelectAddressBookDetailClient.tsx': 1,
   'src/app/admin/collaboration/mail-send/MailSendHubClient.tsx': 2,
   'src/app/admin/community/templates/TemplateAdminClient.tsx': 3,
   'src/app/admin/error.tsx': 6,
   'src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx': 3,
-  'src/app/admin/stats/IntelligenceHubClient.tsx': 1,
   'src/app/admin/stats/StatsHubParts.tsx': 2,
   'src/app/admin/survey/components/StatsHubSurveyTab.tsx': 2,
   'src/app/admin/survey/hub/SurveyHubClient.tsx': 9,

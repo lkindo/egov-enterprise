@@ -61,6 +61,13 @@ type AdministCodeFormValues = z.infer<typeof administCodeSchema>;
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
 
+/*
+ * [2026-10-20] 빈 상태는 어떻게 채우는지 말한다. 법정동 코드 파일을 한꺼번에 가져오는 기능은 없고(GAP-CODE-001 계열, PD-DIP-001 ④),
+ * 이 화면의 등록(ADMCODE_CREATE)은 한 건씩이다. 종전 '등록된 행정 구역 코드가 없습니다' 는 가져오기가 있다고 기대하게 했다.
+ */
+export const ADMINIST_EMPTY_MESSAGE =
+  '등록된 행정 구역 코드가 없습니다. 법정동 코드 파일을 한꺼번에 가져오는 기능은 없어, 코드 등록 권한으로 이 화면에서 한 건씩 등록하거나 데이터베이스에 직접 넣어야 합니다.';
+
 export default function AdministCodeClient({
  initialData,
  embedded = false,
@@ -338,7 +345,7 @@ export default function AdministCodeClient({
  error={error}
  onRetry={() => refetch()}
  keyField="admdstCd"
- emptyMessage={emptyResultMessage(appliedSearch, '등록된 행정 구역 코드가 없습니다.')}
+ emptyMessage={emptyResultMessage(appliedSearch, ADMINIST_EMPTY_MESSAGE)}
  pagination={{
  currentPage: pageNumber,
  totalPages: Math.max(Math.ceil(total / pageSize), 1),

@@ -102,8 +102,12 @@ run_atlas_contract() {
 }
 
 # 생성물·해시 결속이 낡았는지 맨 앞에서 본다(npm run regen -- --check — 쓰지 않는다, 로컬 약 20초). 생성 계약·권한·슬롯·경계
-# census·화면 목록·URL census(승인 결속)·SAST 예외 해시·하네스 기준선·Atlas 의 각 검사 모드다. 모두 운영 계약·codegen 게이트가
+# census·화면 목록·URL census(승인 결속)·SAST 예외 해시·하네스 기준선·Atlas 의 각 검사 모드다. 모두 운영 계약·CI codegen 게이트가
 # 다시 보는 것이라 새 검사가 아니다 — 11분짜리 운영 계약 뒤가 아니라 처음에 알린다. 문서만 바꿔도 Atlas 가 낡으므로 두 경로 모두 돈다.
+# [계약 드리프트 게이트] 생성 계약 검사(sync-contract)는 프런트 codegen:verify·codegen:verify:zod 와 같은 스크립트·인자다
+# (scripts/verify-generated-contracts.mjs api·zod — 경로는 스크립트 위치 기준 절대 경로라 cwd 와 무관하다). index 의 api-docs.json 으로
+# 임시 재생성해 index 생성물과 비교하고, 작업 트리가 다르면 작업 트리 쌍도 비교하며, 스펙·생성물이 추적되지 않으면 실패한다.
+# 그래서 이 훅의 유일한 로컬 계약 드리프트 게이트이고 아래 프런트 단계에서 다시 돌리지 않는다. CI 는 frontend-scope 가 커밋 체크아웃에서 돈다.
 echo "  → generated: npm run regen -- --check"
 npm run regen -- --check \
   || { echo "❌ 낡은 생성물·해시 결속 — 'npm run regen' 으로 다시 만들고 diff 를 확인한 뒤 함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)"; exit 1; }
@@ -120,6 +124,12 @@ if [ -n "$CHANGED_FILES" ]; then
 fi
 
 echo "[pre-push] AGENTS.md change-scoped source verification"
+
+# CI 의 CodeQL(secure-coding)이 반복해 막아 온 JavaScript 규칙 셋(file-system-race·incomplete-sanitization·redos)의 로컬 근사(수 초).
+# 세 규칙은 함수·정규식 안의 판정이라 push 가 바꾼 파일만 본다(범위를 모르면 CodeQL 경로 전체). 판정 권위는 CI CodeQL 이다.
+echo "  → sast: npm run sast:approx -- --stdin (CodeQL 근사, push 가 바꾼 JS·TS)"
+printf '%s\n' "$CHANGED_FILES" | npm run sast:approx -- --stdin \
+  || { echo "❌ CodeQL 근사 위반 — CI secure-coding 이 같은 모양을 막아 왔습니다. 고친 뒤 push 하세요(근사를 이유로 CodeQL 예외 원장을 늘리지 않습니다)"; exit 1; }
 
 if [ "$SCOPE_BACKEND" = "true" ]; then
   echo "  → backend: ./gradlew compileJava compileTestJava"
@@ -145,18 +155,8 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   ( cd frontend && npx tsc -p tsconfig.e2e.json --noEmit ) \
     || { echo "❌ E2E TypeScript 타입 검사 실패 — 루트 tsconfig 는 e2e 를 exclude 하므로 이 게이트가 유일 관문입니다."; exit 1; }
 
-  # [계약 드리프트 게이트] api-docs.json ↔ generated-api.d.ts/generated-zod.ts/generated-operations.ts 정합.
-  # CI(ci.yml)는 커밋 체크아웃에서, 로컬 pre-push 는 빠른 드리프트 피드백을 위해 현재 index·작업 트리에서 같은 계약을
-  # 선제 검사한다 — 입력은 push 하는 커밋이 아니다(위 머리 주석).
-  # index 와 작업 트리 둘 다 본다 — index 의 api-docs.json 으로 임시 재생성해 index 생성물과 비교하고,
-  # 작업 트리가 다르면 작업 트리 쌍도 비교한다(작업 트리·index 를 쓰지 않으며 백엔드 재빌드 불요).
-  # 검증 스크립트도 미추적 생성물을 실패로 보지만, 계약 SSOT(스펙)의 추적 여부는 여기서 먼저 확인한다.
-  git ls-files --error-unmatch api-docs.json >/dev/null 2>&1 \
-    || { echo "❌ api-docs.json 이 git 에 추적되지 않습니다 — 계약 드리프트 게이트가 vacuous 통과합니다"; exit 1; }
-
-  echo "  → frontend: codegen drift gate (api-docs.json ↔ generated types/zod)"
-  ( cd frontend && pnpm run codegen:verify && pnpm run codegen:verify:zod ) \
-    || { echo "❌ codegen 드리프트 — api-docs.json 과 generated-api.d.ts/generated-zod.ts 불일치. 'pnpm -C frontend codegen:file && pnpm -C frontend codegen:zod' 로 재생성하고 api-docs.json 과 함께 stage 한 뒤 커밋하세요 (계약 드리프트 방어)"; exit 1; }
+  # 계약 드리프트(api-docs.json ↔ generated-api.d.ts/generated-zod.ts/generated-operations.ts)는 맨 앞의 regen --check 가 같은
+  # 검증 스크립트로 이미 봤다 — 여기서 codegen:verify·:zod 를 다시 돌리지 않는다(위 [계약 드리프트 게이트]).
 
   # ESLint error는 계약 위반으로 차단하고 warning은 package.json 래칫으로 관리한다.
   echo "  → frontend: pnpm run lint (error 만 차단 — warning 은 통과)"

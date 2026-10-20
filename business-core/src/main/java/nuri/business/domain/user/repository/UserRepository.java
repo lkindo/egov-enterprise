@@ -14,6 +14,9 @@ public interface UserRepository extends JpaRepository<User, String>, UserReposit
     Optional<User> findByEsntlId(String esntlId);
     Optional<User> findByUserId(String userId);
 
+    /** 로그인 잠금 값이 그 값인 계정 수 — 관리자 홈의 운영 신호가 'Y' 를 센다(사용자 목록의 로그인 잠금 조건과 같은 값). */
+    long countByLckYn(String lckYn);
+
     /** 사용자 상태 변경과 신규 수신자 배정을 같은 사용자 행에서 직렬화한다. */
     @org.springframework.data.jpa.repository.Lock(jakarta.persistence.LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT u FROM User u WHERE u.esntlId = :esntlId")
