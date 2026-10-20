@@ -520,6 +520,7 @@ test('all agent entrypoints discover the same shared memory', () => {
   for (const adapter of ['GEMINI.md', 'CLAUDE.md']) {
     const text = readRepoFile(adapter);
     assert.match(text, /@\.?\/?AGENTS\.md/u, `${adapter}: AGENTS.md import가 없습니다.`);
+    assert.ok(text.includes('](AGENTS.md#공유-워킹트리와-git)'), `${adapter}: 브랜치 완료 범위는 공통 Git 규칙에 연결해야 합니다.`);
     assert.ok(text.split(/\r?\n/).length <= 40, `${adapter}: 얇은 어댑터가 40행을 넘었습니다.`);
     assert.doesNotMatch(text, /[A-Za-z]:[\\/]Users[\\/]/u, `${adapter}: 사용자 홈 절대경로를 고정하면 안 됩니다.`);
   }
@@ -846,6 +847,9 @@ const workflowInstructionRegressions = [
   ['mandatory two-stage review', /two-stage review (?:after each|first)|two reviews per task are required/iu],
   ['unbounded retry', /Repeat until approved|re-run until it fails correctly/iu],
   ['main-agent repair forbidden', /Don't try to fix manually/iu],
+  ['mandatory completion menu', /Present exactly (?:these )?4 (?:structured )?options/iu],
+  ['repeated merge approval', /merge only when the user asks/iu],
+  ['premature PR worktree cleanup', /\*\*For Options 1, 2, 4:\*\*/u],
 ];
 
 function workflowSkillViolations(files) {
@@ -857,6 +861,9 @@ function workflowSkillViolations(files) {
     }
     if (!text.includes('](../../../docs/03-guides/orchestration-protocol.md)')) {
       violations.push(`${skill}: missing orchestration authority`);
+    }
+    if (skill === 'finishing-a-development-branch' && !text.includes('](../../../AGENTS.md#공유-워킹트리와-git)')) {
+      violations.push(`${skill}: missing branch-completion authority`);
     }
     for (const [label, pattern] of workflowInstructionRegressions) {
       if (pattern.test(text)) violations.push(`${skill}: ${label}`);
@@ -886,6 +893,10 @@ test('workflow skills reject restored conflicting instructions and missing autho
     ['subagent-driven-development', '- Repeat until approved', 'unbounded retry'],
     ['test-driven-development', 'Fix error, re-run until it fails correctly.', 'unbounded retry'],
     ['subagent-driven-development', "- Don't try to fix manually (context pollution)", 'main-agent repair forbidden'],
+    ['finishing-a-development-branch', 'Present exactly these 4 options:', 'mandatory completion menu'],
+    ['finishing-a-development-branch', '- Present exactly 4 structured options', 'mandatory completion menu'],
+    ['finishing-a-development-branch', 'Use Option 2, and merge only when the user asks.', 'repeated merge approval'],
+    ['finishing-a-development-branch', '**For Options 1, 2, 4:**', 'premature PR worktree cleanup'],
   ];
   for (const [skill, instruction, label] of regressions) {
     const mutated = { ...files, [skill]: `${files[skill]}\n${instruction}\n` };
@@ -902,6 +913,14 @@ test('workflow skills reject restored conflicting instructions and missing autho
       assert.throws(() => assert.deepEqual(workflowSkillViolations(mutated), []), { code: 'ERR_ASSERTION' });
     }
   }
+});
+
+test('finishing skill rejects removal of the branch-completion authority', () => {
+  const files = readWorkflowSkills();
+  const skill = 'finishing-a-development-branch';
+  const mutated = { ...files, [skill]: files[skill].replace('](../../../AGENTS.md#공유-워킹트리와-git)', '') };
+  assert.deepEqual(workflowSkillViolations(mutated), [`${skill}: missing branch-completion authority`]);
+  assert.throws(() => assert.deepEqual(workflowSkillViolations(mutated), []), { code: 'ERR_ASSERTION' });
 });
 
 test('constitution metadata points to the project rule SSOT, not tool adapters', () => {

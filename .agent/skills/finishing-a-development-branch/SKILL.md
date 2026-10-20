@@ -1,6 +1,6 @@
-﻿---
+---
 name: finishing-a-development-branch
-description: Use when implementation is complete, all tests pass, and you need to decide how to integrate the work - guides completion of development work by presenting structured options for merge, PR, or cleanup
+description: Use when implementation is complete to verify the work, follow the authorized PR and merge scope, and safely finish its branch
 source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
 license: MIT — Complete terms in LICENSE.txt
 ---
@@ -9,9 +9,9 @@ license: MIT — Complete terms in LICENSE.txt
 
 ## Overview
 
-Guide completion of development work by presenting clear options and handling chosen workflow.
+Complete the authorized workflow using current Git and CI evidence.
 
-**Core principle:** Verify tests → Present options → Execute choice → Clean up.
+**Core principle:** Verify scope → Verify checks → Complete the authorized workflow → Confirm branch cleanup.
 
 **Announce at start:** "I'm using the finishing-a-development-branch skill to complete this work."
 
@@ -19,185 +19,62 @@ Guide completion of development work by presenting clear options and handling ch
 
 ### Step 1: Verify Tests
 
-**Before presenting options, verify the checks required for the changed scope:**
+**Before completion, verify the checks required for the changed scope:**
 
 Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [SOP §2.3, §2.4 and §6](../../../docs/03-guides/orchestration-protocol.md). Root `npm test` runs the whole Gradle test suite; it is not the default for every branch. The main agent independently verifies delegated work. Red/green proof, hooks and required CI still apply; serialize heavy checks and avoid only the redundant full bundles described in §6.2.
 
 For example, a change to the shared-memory contract is checked with `node --test scripts/shared-memory-contract.test.mjs`. Choose the actual affected test and required scope checks, rather than copying this example for unrelated changes.
 
-**If tests fail:**
-```
-Tests failing (<N> failures). Must fix before completing:
+If checks fail, report the evidence and diagnose before proceeding. Count failures by the same cause under SOP §2.4; at three total failures, stop and report the evidence and options. Do not merge while required checks fail.
 
-[Show failures]
+### Step 2: Confirm Branch and Authorized Scope
 
-Cannot proceed with merge/PR until tests pass.
-```
+Read `git status`, the branch and diff, remotes, PR state, and `git worktree list`. Establish which changes belong to this task from the actual work performed; a branch name, prefix, current checkout or partial edit is not evidence that the whole branch belongs to this task.
 
-Diagnose the failure before proceeding. Count failures by the same cause under SOP §2.4; at three total failures, stop and report the evidence and options.
+Follow [AGENTS.md shared worktree and Git authority](../../../AGENTS.md#공유-워킹트리와-git). The user's standing approval covers completion of the branch directly worked on for their requested task. Do not request the same approval again or present a mandatory options menu for that workflow. A current instruction such as local work only, PR only, hold the merge, or keep the branch takes precedence.
 
-**If tests pass:** Continue to Step 2.
+Do not modify, integrate, delete, or switch another operator's branch or worktree under this approval. If attribution or scope is materially unclear, preserve that work and resolve only the missing information.
 
-### Step 2: Determine Base Branch
+### Step 3: Complete the Authorized Workflow
 
-```bash
-# Try common base branches
-git merge-base HEAD main 2>/dev/null || git merge-base HEAD master 2>/dev/null
-```
+For the directly worked branch covered by standing approval:
 
-Or ask: "This branch split from main - is that correct?"
+1. Verify the final diff and commit only this task's paths with `git commit --only -- <paths>`.
+2. Push normally with hooks enabled and create or update the PR against `main`. Use a body file for a multiline description; include the concrete change, validation and material limitations.
+3. Wait for required CI on the latest PR HEAD. Use [.github/required-checks.json](../../../.github/required-checks.json) and the [CI guide](../../../docs/03-guides/cicd-pipeline.md). Local tests do not replace required CI.
+4. Merge through the PR after its required CI is green and its current HEAD still matches the reviewed commit. Do not merge directly into `main`, bypass protection, or force-push.
+5. Confirm the PR is merged and its changes are included in `main`, then finish this branch under Step 4. Report the PR link, merge result and cleanup result.
 
-### Step 3: Present Options
+If the user limited the scope, stop at that boundary: keep the branch and worktree for PR-only or hold instructions. Ask for a workflow choice only when the existing instructions leave a material decision unresolved. Do not offer a local merge into `main`.
 
-Present exactly these 4 options:
+### Step 4: Finish the Branch Safely
 
-```
-Implementation complete. What would you like to do?
+Before deleting, recheck local and remote branch HEADs against the merged PR HEAD, PR merge evidence, the working tree and worktree use. Preserve unmerged additional commits and any other operator's changes. An open dependent PR or another worktree still using the branch must be resolved within the authorized scope before deletion.
 
-1. Merge back to <base-branch> locally
-2. Push and create a Pull Request
-3. Keep the branch as-is (I'll handle it later)
-4. Discard this work
+After those checks, delete the merged task branch remotely and locally without asking again. Switch only this task's clean worktree to an appropriate base or detached state first; do not switch another operator's worktree. Prefer non-forced deletion. If deletion is refused, inspect the cause rather than escalating automatically.
 
-Which option?
-```
+Branch deletion does not authorize automatic worktree directory deletion. Keep the directory and untracked evidence unless cleanup of those exact contents is separately authorized.
 
-**Don't add explanation** - keep options concise.
+## Discard Is a Separate Action
 
-### Step 4: Execute Choice
-
-#### Option 1: Merge Locally
-
-> ⚠ **This repository: do not offer Option 1 when the base branch is `main`.** `main` is merged only through a PR whose required CI is green ([.github/required-checks.json](../../../.github/required-checks.json), [CI guide](../../../docs/03-guides/cicd-pipeline.md)); required CI is the merge authority and local tests are not. Use Option 2, and merge only when the user asks (AGENTS.md "공유 워킹트리와 Git"). Local merges are only for non-`main` branches the user asked to combine.
-
-```bash
-# Switch to base branch
-git checkout <base-branch>
-
-# Pull latest
-git pull
-
-# Merge feature branch
-git merge <feature-branch>
-
-# Verify tests on merged result
-<test command>
-
-# If tests pass
-git branch -d <feature-branch>
-```
-
-Then: Cleanup worktree (Step 5)
-
-#### Option 2: Push and Create PR
-
-```bash
-# Push branch
-git push -u origin <feature-branch>
-
-# Create PR
-gh pr create --title "<title>" --body "$(cat <<'EOF'
-## Summary
-<2-3 bullets of what changed>
-
-## Test Plan
-- [ ] <verification steps>
-EOF
-)"
-```
-
-Then: Cleanup worktree (Step 5)
-
-#### Option 3: Keep As-Is
-
-Report: "Keeping branch <name>. Worktree preserved at <path>."
-
-**Don't cleanup worktree.**
-
-#### Option 4: Discard
-
-**Confirm first:**
-```
-This will permanently delete:
-- Branch <name>
-- All commits: <commit-list>
-- Worktree at <path>
-
-Type 'discard' to confirm.
-```
-
-Wait for exact confirmation.
-
-If confirmed:
-```bash
-git checkout <base-branch>
-git branch -D <feature-branch>
-```
-
-Then: Cleanup worktree (Step 5)
-
-### Step 5: Cleanup Worktree
-
-**For Options 1, 2, 4:**
-
-Check if in worktree:
-```bash
-git worktree list | grep $(git branch --show-current)
-```
-
-If yes:
-```bash
-git worktree remove <worktree-path>
-```
-
-**For Option 3:** Keep worktree.
-
-## Quick Reference
-
-| Option | Merge | Push | Keep Worktree | Cleanup Branch |
-|--------|-------|------|---------------|----------------|
-| 1. Merge locally | ✓ | - | - | ✓ |
-| 2. Create PR | - | ✓ | ✓ | - |
-| 3. Keep as-is | - | - | ✓ | - |
-| 4. Discard | - | - | - | ✓ (force) |
+Discarding unmerged work is outside normal branch completion. Before any destructive discard, identify the exact branch, commits, worktree path and affected files, then obtain explicit authorization for those contents. Do not treat approval to delete a merged branch as permission to discard work.
 
 ## Common Mistakes
 
-**Skipping test verification**
-- **Problem:** Merge broken code, create failing PR
-- **Fix:** Always verify tests before offering options
-
-**Open-ended questions**
-- **Problem:** "What should I do next?" → ambiguous
-- **Fix:** Present exactly 4 structured options
-
-**Automatic worktree cleanup**
-- **Problem:** Remove worktree when might need it (Option 2, 3)
-- **Fix:** Only cleanup for Options 1 and 4
-
-**No confirmation for discard**
-- **Problem:** Accidentally delete work
-- **Fix:** Require typed "discard" confirmation
-
-## Red Flags
-
-**Never:**
-- Proceed with failing tests
-- Merge without verifying tests on result
-- Delete work without confirmation
-- Force-push without explicit request
-
-**Always:**
-- Verify tests before offering options
-- Present exactly 4 options
-- Get typed confirmation for Option 4
-- Clean up worktree for Options 1 & 4 only
+- Repeating an approval question already answered by the user or project standing approval.
+- Treating another operator's branch as part of this task because its name looks related.
+- Merging with failed or stale required CI.
+- Deleting a branch that acquired new commits after the merge.
+- Removing a worktree and its untracked evidence as an automatic side effect of branch deletion.
+- Treating PR-only or hold instructions as authorization to merge.
 
 ## Integration
 
 **Called by:**
-- **subagent-driven-development** (Step 7) - After all tasks complete
-- **executing-plans** (Step 5) - After all batches complete
+
+- **subagent-driven-development** (Step 7) — After all tasks complete.
+- **executing-plans** (Step 5) — After all batches complete.
 
 **Pairs with:**
-- **using-git-worktrees** - Cleans up worktree created by that skill
+
+- **using-git-worktrees** — Worktree isolation; cleanup remains subject to the scope above.
