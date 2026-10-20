@@ -13,11 +13,14 @@ import { HOME_SECTION_PERMISSIONS, expectedVisibleWhen } from '@/__tests__/cross
  * - 내용: 받은 보고(최신순)에서 받은 사람이 아직 열지 않은 것(첫 열람 시각 없음)을 센다. 한 번에 받는 상한(100건)만큼 읽고, 받은
  *   보고가 그보다 많으면 범위를 밝힌다. 목적지는 받은 보고 탭(기본 탭)이다.
  */
-const api = vi.hoisted(() => ({ getReceivedReports: vi.fn() }));
+const api = vi.hoisted(() => ({
+  getReceivedReports: vi.fn(),
+  user: { id: 'user', permissions: ['MEMO_RPT_READ'], authorizationVersion: 'v1' } as { id: string; permissions: string[]; authorizationVersion: string },
+}));
 vi.mock('@/services/business/memoreport/memoReportService', () => ({
   memoReportService: { getReceivedReports: api.getReceivedReports },
 }));
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'user' } }) }));
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: api.user }) }));
 
 const { MemoReportReceivedCard } = await import('@/app/components/dashboard/MemoReportHome');
 
@@ -51,7 +54,10 @@ describe('읽지 않은 받은 보고 카드의 내용', () => {
   );
   const report = (memoRptSn: number, rptTtl: string, rptrInqDt: string | null) => ({ memoRptSn, rptTtl, rptrInqDt });
 
-  beforeEach(() => vi.clearAllMocks());
+  beforeEach(() => {
+    vi.clearAllMocks();
+    api.user = { id: 'user', permissions: ['MEMO_RPT_READ'], authorizationVersion: 'v1' };
+  });
 
   it('첫 열람이 없는 보고를 세고 최근 미열람 두 건의 제목을 덧붙이며 받은 보고 화면으로 잇는다', async () => {
     api.getReceivedReports.mockResolvedValue({
@@ -74,6 +80,15 @@ describe('읽지 않은 받은 보고 카드의 내용', () => {
     renderCard();
 
     expect(await screen.findByText('최근 받은 보고 1건에서 셌습니다.')).toBeInTheDocument();
+  });
+
+  it('받은 보고 화면에 들어갈 수 없으면 이동을 약속하지 않는다(라우트 게이트와 같은 판정)', async () => {
+    api.user = { id: 'user', permissions: [], authorizationVersion: 'v1' };
+    api.getReceivedReports.mockResolvedValue({ list: [], total: 0 });
+    renderCard();
+
+    expect(await screen.findByText('0건')).toBeInTheDocument();
+    expect(screen.queryByRole('link')).toBeNull();
   });
 
   it('조회에 실패하면 0건이 아니라 조회 실패라고 말한다', async () => {

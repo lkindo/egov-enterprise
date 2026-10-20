@@ -89,7 +89,7 @@ export default function AdminDashboardClient() {
   const { user } = useAuth();
   const canOpenUsers = canOpenPage(user, '/admin/user/manage');
   const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
-  const canOpenSystemLog = canOpenPage(user, SYSTEM_LOG_ROUTE);
+  const canOpenSystemLog = canOpenPage(user, '/admin/system/logs/system');
   // 카드·목록은 그 조회 API 의 권한이 있을 때만 부르고 그린다.
   const canReadUsers = canPermission(user, 'USER_READ');
   const canReadAuthorities = canPermission(user, 'AUTHRT_READ');
