@@ -352,7 +352,7 @@ test('domain links use module-qualified declaration references and expose unconf
 
 // 읽은 원본은 경로만 싣는다. 파일별 내용 해시를 다시 실으면 catalog 사실과 무관한 소스 한 줄 수정마다 Atlas 를 다시 만들어야 한다.
 test('catalog lists input paths without content hashes: only catalog-visible source changes alter it', () => {
-  mutate('.nvmrc', text => text.replace(/\r?\n/g, '\r\n'), () => {
+  mutate('settings.gradle', text => text.replace(/\r?\n/g, '\r\n'), () => {
     assert.deepEqual(buildAtlasCatalog(fixture), baseline);
   });
   const route = baseline.catalogs.routes[0].source;
@@ -360,9 +360,10 @@ test('catalog lists input paths without content hashes: only catalog-visible sou
   mutate(route, text => `${text}\n// catalog-invisible edit\n`, () => {
     assert.deepEqual(buildAtlasCatalog(fixture), baseline, 'a source edit that changes no catalog fact must not change the catalog');
   });
-  mutate('.nvmrc', () => '24\n', () => {
+  // catalog 가 싣는 사실(공용 메모리 행의 문서 링크 경로)이 바뀌면 catalog 도 바뀐다.
+  mutate('.agent/memory/project-context.md', text => text.replaceAll('](../../settings.gradle)', '](../../settings-renamed.gradle)'), () => {
     const changed = buildAtlasCatalog(fixture);
-    assert.equal(changed.facts.nodeVersion, '24');
+    assert.ok(changed.catalogs.memory.some(item => item.links.some(link => link.path === 'settings-renamed.gradle')));
     assert.notDeepEqual(changed, baseline);
   });
   assert.ok(baseline.sources.length > 0);
@@ -371,6 +372,41 @@ test('catalog lists input paths without content hashes: only catalog-visible sou
   assert.ok(baseline.sources.every(source => !/\.env(?:\.|$)|governance_harness_atlas\.html|frontend\/atlas\//.test(source.path)));
   assert.equal('generatedAt' in baseline, false);
   assert.equal('head' in baseline, false);
+});
+
+// Dependabot 이 고치는 값(의존성·패키지 관리자 버전, 액션 커밋 핀)은 catalog 에 싣지 않는다. 실으면 봇 PR 마다 Atlas 가 낡아
+// 생성물 계약이 붉는데 봇 PR 은 재생성을 돌리지 못한다(2026-10-19 Next 16.4.0≠16.4.2). 값의 정본은 선언 파일이고 화면은 그 파일로 링크한다.
+test('dependency versions and action commit pins never reach the catalog', () => {
+  const sourcePaths = baseline.sources.map(source => source.path);
+  // 값이 버전뿐인 선언 파일은 읽지 않는다. build.gradle 은 게이트 원장이 가리키는 원본이라 경로로 읽지만 내용은 싣지 않는다(아래 범프).
+  for (const declaration of ['.nvmrc', 'gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties',
+    'frontend/pnpm-lock.yaml', 'package-lock.json']) {
+    assert.ok(!sourcePaths.includes(declaration), `${declaration} declares versions — link it from the template instead of reading it`);
+  }
+  assert.deepEqual(Object.keys(baseline.facts).filter(key => /version/i.test(key)), [], 'no version facts');
+  const actions = baseline.catalogs.workflows.flatMap(workflow => workflow.jobs.flatMap(job => job.actions));
+  assert.ok(actions.includes('actions/checkout'), 'workflow actions are still listed by name');
+  assert.deepEqual(actions.filter(action => action.includes('@')), [], 'workflow actions carry no commit pin');
+  assert.equal(baseline.catalogs.modules.find(module => module.id === 'frontend').details.find(item => item.label === '도구체인')?.value, 'pnpm');
+  const bumpPackage = text => {
+    const pkg = JSON.parse(text);
+    for (const field of ['dependencies', 'devDependencies']) for (const name of Object.keys(pkg[field] ?? {})) pkg[field][name] = '99.0.0';
+    if (pkg.packageManager) pkg.packageManager = pkg.packageManager.replace(/@.*$/, '@99.0.0');
+    return `${JSON.stringify(pkg, null, 2)}\n`;
+  };
+  const workflow = baseline.catalogs.workflows.find(item => item.jobs.some(job => job.actions.includes('actions/checkout'))).source;
+  const bumpPins = text => text.replace(/(uses:\s*actions\/checkout@)[0-9a-f]{40}/g, `$1${'a'.repeat(40)}`);
+  assert.ok(sourcePaths.includes('build.gradle'), 'the Boot bump below must reach a read input');
+  const bumpGradle = text => text.replace(/(id 'org\.springframework\.boot' version ')[^']+/, '$199.0.0')
+    .replace(/(spring-boot-dependencies:)[^"]+/, '$199.0.0');
+  mutate('frontend/package.json', bumpPackage, () => mutate('package.json', bumpPackage, () => mutate(workflow, bumpPins,
+    () => mutate('build.gradle', bumpGradle, () => {
+      assert.match(fs.readFileSync(path.join(fixture, 'frontend/package.json'), 'utf8'), /"next": "99\.0\.0"/);
+      assert.match(fs.readFileSync(path.join(fixture, 'frontend/package.json'), 'utf8'), /"packageManager": "pnpm@99\.0\.0"/);
+      assert.match(fs.readFileSync(path.join(fixture, workflow), 'utf8'), new RegExp(`actions/checkout@${'a'.repeat(40)}`));
+      assert.match(fs.readFileSync(path.join(fixture, 'build.gradle'), 'utf8'), /id 'org\.springframework\.boot' version '99\.0\.0'/);
+      assert.deepEqual(buildAtlasCatalog(fixture), baseline, 'a dependency, package manager or action pin bump must not change the catalog');
+    }))));
 });
 
 test('new documentation and a new declared module are visible without editing the generator', () => {
