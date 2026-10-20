@@ -22,7 +22,7 @@ dependencies {
     testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
     testRuntimeOnly 'com.mysql:mysql-connector-j:26.7.0'
     testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'
-    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:13.6.0.jre11'
+    testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:13.6.1.jre11'
     testRuntimeOnly libs.postgresql
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
     // 온라인 주민번호 변환기 호환 계약 시험 전용(DEC-OPS-308). 시험이 온라인 원본(변환기·CryptoUtil·암호 설정)을
