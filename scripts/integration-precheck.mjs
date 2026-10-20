@@ -7,11 +7,11 @@
  * 순서:
  *   ① (기본 모드) 기준(기본 origin/main)과 작업 트리 사이의 Flyway 버전 중복·충돌을 막고, 메뉴 스냅숏이 낡았으면 갱신 명령을 알린다.
  *   ② `npm run regen` — 통합 트리에서 생성물을 한 번 다시 만든다(verify.mjs 가 부른다).
- *   ③ 훅이 보지 않는 무거운 시험 — 전체 vitest 와 `:api-server:test`(verify.mjs 가 부른다), 그리고 `--run-selected` 가 고르는 것:
+ *   ③ 폼 census·전체 vitest·`:api-server:test`·전체 하네스(verify.mjs 가 부른다), 그리고 `--run-selected` 가 고르는 것:
  *      바뀐 마이그레이션·엔티티가 닿는 schema-validation 시험(표 이름·버전을 원문에 쓰는 시험, 고를 수 없으면 전체)과,
- *      카탈로그·생성기 화면 입력이 바뀌었으면 `node --test tools/project-composer/ui.test.mjs`.
- * 운영 계약과 정적 검사는 곧 pre-push 가 같은 커밋에서 돈다(§6.2) — 여기서 되풀이하지 않는다. 판정 규칙은 integration-precheck.test.mjs 가
- * 고정한다.
+ *      카탈로그·생성기 화면 입력이 바뀌었으면 `node --test tools/project-composer/ui.test.mjs`, 바뀐 E2E는 공식 격리 runner로 실행한다.
+ *      E2E 삭제·이동·공용 fixture/설정/runner 변경은 전체 E2E로 물러난다. 모든 무거운 실행은 순차이며 운영 계약은 pre-push가 맡는다.
+ * 폼·하네스는 통합 실패를 push 전에 알리기 위한 명시적 중복이고 pre-push를 생략하지 않는다. 판정 규칙은 integration-precheck.test.mjs 가 고정한다.
  *
  * 사용법: node scripts/integration-precheck.mjs [--base <ref>]            # ① (기본 origin/main — 먼저 fetch 해 두라)
  *         node scripts/integration-precheck.mjs --run-selected [--base <ref>]  # ③ 의 선별 시험
@@ -34,6 +34,48 @@ export const COMPOSER_UI_INPUTS = Object.freeze([
   'config/modules/', 'config/project-composer-menus.json', 'tools/project-composer/',
   'scripts/project-composer', 'scripts/composer-modules', 'scripts/verify-reusable-artifact',
 ]);
+const ISOLATED_E2E = 'node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite';
+const E2E_SPEC = /^frontend\/e2e\/(?:contracts|journeys|quality)\/[A-Za-z0-9_./-]+\.spec\.ts$/u;
+const E2E_RUNTIME_INPUTS = new Set([
+  'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/tsconfig.e2e.json',
+  'package.json', 'package-lock.json', 'pnpm-lock.yaml',
+  'scripts/run-isolated-e2e.mjs',
+]);
+
+/**
+ * 실행할 E2E 자체의 변경만 고른다. 제품 소스의 일반 영향 분석은 required CI가 맡는다.
+ * fixture·setup·POM 등 spec 밖의 E2E 입력은 소비 관계를 추정하지 않고 전수로 실행한다.
+ */
+export function selectChangedE2e(changes) {
+  const specs = new Set();
+  // 별도 설정의 lab은 기본 두 프로젝트의 전수에도 들어가지 않는다. 성공으로 오인하지 않게 전용 실행을 요구한다.
+  const dedicated = changes.find(({ path }) => path.startsWith('frontend/e2e/enterprise-task-lab/')
+    || path === 'frontend/playwright.enterprise-task-lab.config.ts');
+  if (dedicated) {
+    throw new Error(`전용 E2E 설정 변경은 별도 검증이 필요합니다: ${dedicated.path} — `
+      + 'node scripts/run-isolated-e2e.mjs -- --config=playwright.enterprise-task-lab.config.ts --project=full-suite --workers=1');
+  }
+  const uncollected = changes.find(({ path }) => path.startsWith('frontend/e2e/') && path.endsWith('.spec.ts')
+    && !/^frontend\/e2e\/(?:contracts|journeys|quality)\//u.test(path));
+  if (uncollected) {
+    throw new Error(`기본 Playwright 프로젝트에 포함되지 않는 E2E spec입니다: ${uncollected.path} — 실행 설정을 먼저 확인하십시오.`);
+  }
+  for (const { status, path } of changes) {
+    const e2ePath = path.startsWith('frontend/e2e/');
+    const sharedInput = E2E_RUNTIME_INPUTS.has(path)
+      || /^frontend\/playwright(?:\.[A-Za-z0-9_-]+)*\.config\.[cm]?[jt]s$/u.test(path)
+      || (/^scripts\/(?:e2e-|playwright-)/u.test(path) && !path.endsWith('.test.mjs'));
+    if (!e2ePath && !sharedInput) continue;
+    const validSpec = E2E_SPEC.test(path) && !path.split('/').some(part => part === '.' || part === '..');
+    if (sharedInput || !validSpec || !['A', 'M'].includes(status)) {
+      return { mode: 'all', specs: [], reason: `공용 E2E 입력 또는 삭제·이동·미분류 변경: ${path}` };
+    }
+    specs.add(path.slice('frontend/'.length));
+  }
+  return specs.size
+    ? { mode: 'selected', specs: [...specs].sort(), reason: '추가·수정한 E2E spec' }
+    : { mode: 'none', specs: [], reason: 'E2E spec·공용 실행 입력 변경 없음' };
+}
 
 // ─── ① Flyway 버전 ─────────────────────────────────────────────────────────────────────────────────────────────────
 
@@ -90,11 +132,16 @@ export function flywayConflicts({ baseNames, headNames, changes }) {
 
 const git = (root, args) => execFileSync('git', args, { cwd: root, encoding: 'utf8', maxBuffer: 64 * 1024 * 1024 });
 
-/** 기준 ref 와 작업 트리(커밋하지 않은 변경과 추적하지 않는 새 파일 포함) 사이에서 바뀐 파일 — { status, path }. */
+/** 기준 ref 대비 index와 작업 트리를 함께 본다. staged 변경을 작업 트리에서 되돌려도 놓치지 않으며 미추적 새 파일도 포함한다. */
 export function workingTreeChanges(root, base) {
-  const changes = git(root, ['diff', '--no-renames', '--name-status', '-z', base, '--']).split('\0').filter(Boolean);
   const rows = [];
-  for (let index = 0; index + 1 < changes.length; index += 2) rows.push({ status: changes[index][0], path: changes[index + 1] });
+  for (const cached of [[], ['--cached']]) {
+    const changes = git(root, ['diff', ...cached, '--no-renames', '--name-status', '-z', base, '--']).split('\0').filter(Boolean);
+    for (let index = 0; index + 1 < changes.length; index += 2) {
+      const row = { status: changes[index][0], path: changes[index + 1] };
+      if (!rows.some(existing => existing.status === row.status && existing.path === row.path)) rows.push(row);
+    }
+  }
   for (const path of git(root, ['ls-files', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean)) {
     if (!rows.some((row) => row.path === path)) rows.push({ status: 'A', path });
   }
@@ -198,11 +245,11 @@ export function selectIntegrationChecks({ changes, readText, schemaSources }) {
   // 다른 시험 파일(scripts/project-composer-*.test.mjs)은 화면 시험이 실행하지 않는다. 화면 시험 자신은 tools/ 접두가 고른다.
   const composerUi = changes.some(({ path }) => COMPOSER_UI_INPUTS.some((prefix) => path.startsWith(prefix))
     && !(path.startsWith('scripts/') && path.endsWith('.test.mjs')));
-  return { schema, composerUi };
+  return { schema, composerUi, e2e: selectChangedE2e(changes) };
 }
 
 /** 선별 결과를 실행 명령으로. 클래스 이름은 FQCN 형식만 받는다(셸에 넘긴다). */
-export function selectedCommands({ schema, composerUi }, { windows = platform() === 'win32' } = {}) {
+export function selectedCommands({ schema, composerUi, e2e = { mode: 'none', specs: [] } }, { windows = platform() === 'win32' } = {}) {
   const gradlew = windows ? '.\\gradlew.bat' : './gradlew';
   const commands = [];
   if (schema.mode !== 'none') {
@@ -211,6 +258,15 @@ export function selectedCommands({ schema, composerUi }, { windows = platform() 
     commands.push(`${gradlew} :api-server:schemaValidationTest${filters} --console=plain -Dfile.encoding=UTF-8`);
   }
   if (composerUi) commands.push(COMPOSER_UI_TEST);
+  if (!['none', 'selected', 'all'].includes(e2e.mode)
+      || (e2e.mode === 'selected' && !e2e.specs.length)
+      || (e2e.mode !== 'selected' && e2e.specs.length)) throw new Error('E2E 선별 결과가 올바르지 않습니다');
+  for (const spec of e2e.specs) {
+    if (!E2E_SPEC.test(`frontend/${spec}`) || spec.split('/').some(part => part === '.' || part === '..')) {
+      throw new Error(`E2E spec 경로가 올바르지 않습니다: ${spec}`);
+    }
+  }
+  if (e2e.mode !== 'none') commands.push(`${ISOLATED_E2E}${e2e.mode === 'selected' ? ` ${e2e.specs.join(' ')}` : ''}`);
   return commands;
 }
 
@@ -242,6 +298,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
       const { selection, commands } = integrationSelection(REPO_ROOT, base);
       console.log(`[integrate] schema-validation: ${selection.schema.mode} — ${selection.schema.reason}${selection.schema.classes.length ? `\n  ${selection.schema.classes.join('\n  ')}` : ''}`);
       console.log(`[integrate] 생성기 화면 시험: ${selection.composerUi ? '돈다(카탈로그·생성기 화면 입력이 바뀌었다)' : '건너뛴다(입력 변경 없음)'}`);
+      console.log(`[integrate] E2E: ${selection.e2e.mode} — ${selection.e2e.reason}${selection.e2e.specs.length ? `\n  ${selection.e2e.specs.join('\n  ')}` : ''}`);
       if (args.includes('--run-selected')) {
         for (const command of commands) {
           console.log(`\n▶ ${command}`);

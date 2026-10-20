@@ -70,11 +70,13 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
         expect(goneList.find((s) => s.schdlSn === schdlSn), '삭제한 일정은 조회되지 않아야 한다').toBeFalsy();
     });
 
-    test('READ_ALL 없는 동료는 같은 부서 공유 일정만 읽고 모든 비소유 쓰기는 차단된다', async ({ adminRequest, playwright }) => {
+    test('READ_ALL 없는 동료는 같은 부서 공유 일정과 첨부만 읽고 모든 비소유 쓰기는 차단된다', async ({ adminRequest, playwright }) => {
         const target = await assertIsolatedTarget();
         const actors = await playwright.request.newContext({ baseURL: `${target.apiUrl}/`, ...anonymousCsrfRequestState(`${target.apiUrl}/`), maxRedirects: 0 });
         const suffix = randomBytes(4).toString('hex');
         const departments: string[] = []; const users: string[] = []; const schedules: number[] = [];
+        const fileGroups: number[] = [];
+        type FileItem = { atchFileSn: number; fileSn: number; orignlFileNm: string; fileMg: number };
         try {
             for (const label of ['Same', 'Other']) {
                 const response = await adminRequest.post('/api/v1/admin/system/departments', { data: { ognzNm: `E2E Schedule ${label} ${suffix}` } });
@@ -104,16 +106,39 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
                 expect(principal.permissions).toContain('SCHEDULE_READ');
                 expect(principal.permissions).not.toContain('SCHEDULE_READ_ALL');
                 expect(principal.permissions).not.toContain('SCHEDULE_WRITE_ALL');
+                expect(principal.permissions).toEqual(expect.arrayContaining(['FILE_UPLOAD', 'FILE_READ', 'FILE_DOWNLOAD', 'FILE_DELETE']));
+                expect(principal.permissions).not.toContain('FILE_READ_ALL');
+                expect(principal.permissions).not.toContain('FILE_DELETE_ALL');
             }
             const [owner, colleague, other] = authorizations;
             const ymd = '20261015'; const yearMonth = ymd.slice(0, 6);
-            const create = async (sharing: string) => {
+            const upload = async (label: string) => {
+                const name = `${PREFIX}${label}_${suffix}.txt`;
+                const bytes = Buffer.from(`Schedule attachment ${label} ${suffix}\nOnly the intended readers receive these bytes.\n`, 'utf8');
+                const response = await actors.post('/api/v1/files', { headers: owner,
+                    multipart: { files: { name, mimeType: 'text/plain', buffer: bytes } } });
+                expect(response.status()).toBe(201);
+                const atchFileSn = (await response.json()).data as number;
+                expect(Number.isSafeInteger(atchFileSn)).toBe(true); expect(atchFileSn).toBeGreaterThan(0);
+                fileGroups.push(atchFileSn);
+                const list = await actors.get(`/api/v1/files/${atchFileSn}`, { headers: owner }); expect(list.status()).toBe(200);
+                const items = (await list.json()).data as FileItem[];
+                expect(items).toHaveLength(1);
+                expect(items[0]).toMatchObject({ atchFileSn, orignlFileNm: name, fileMg: bytes.length });
+                expect(Number.isSafeInteger(items[0].fileSn)).toBe(true);
+                return { atchFileSn, fileSn: items[0].fileSn, name, bytes };
+            };
+            const create = async (sharing: string, atchFileSn: number) => {
                 const response = await actors.post(SCHEDULE_API, { headers: owner,
-                    data: { schdlNm: `${PREFIX}${sharing}_${suffix}`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: sharing } });
+                    data: { schdlNm: `${PREFIX}${sharing}_${suffix}`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: sharing, atchFileSn } });
                 expect(response.status()).toBe(201); const id = (await response.json()).data as number;
                 expect(Number.isSafeInteger(id)).toBe(true); expect(id).toBeGreaterThan(0); schedules.push(id); return id;
             };
-            const shared = await create('1'); const privateSchedule = await create('2');
+            // 공유·개인 일정이 같은 파일을 참조하면 any-readable 정책 때문에 개인 첨부 검증이 무효가 된다.
+            const sharedFile = await upload('shared'); const privateFile = await upload('private');
+            expect(sharedFile.atchFileSn).not.toBe(privateFile.atchFileSn);
+            const shared = await create('1', sharedFile.atchFileSn);
+            const privateSchedule = await create('2', privateFile.atchFileSn);
             const month = await actors.get(`${SCHEDULE_API}/monthly?yearMonth=${yearMonth}`, { headers: colleague }); expect(month.status()).toBe(200);
             const rows = (await month.json()).data as { schdlSn: number; editable: boolean; deletable: boolean }[];
             const visible = rows.find(row => row.schdlSn === shared); expect(visible).toBeTruthy();
@@ -123,24 +148,67 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
             const detail = (await readable.json()).data as { schdlNm: string; schdlDeptId: string; schdlPicId: string; editable: boolean; deletable: boolean };
             expect(detail.schdlDeptId).toBe(departments[0]); expect(detail.schdlPicId).toBe(users[0]);
             expect(detail.editable).toBe(false); expect(detail.deletable).toBe(false);
-            expect((await actors.get(`${SCHEDULE_API}/${privateSchedule}`, { headers: colleague })).status()).toBe(403);
-            expect((await actors.get(`${SCHEDULE_API}/${shared}`, { headers: other })).status()).toBe(403);
+            for (const actor of [
+                { name: 'owner', headers: owner, shared: true, private: true },
+                { name: 'same department', headers: colleague, shared: true, private: false },
+                { name: 'other department', headers: other, shared: false, private: false },
+            ]) {
+                for (const resource of [
+                    { id: shared, file: sharedFile, allowed: actor.shared },
+                    { id: privateSchedule, file: privateFile, allowed: actor.private },
+                ]) {
+                    const expectedStatus = resource.allowed ? 200 : 403;
+                    const body = await actors.get(`${SCHEDULE_API}/${resource.id}`, { headers: actor.headers });
+                    expect(body.status(), `${actor.name}: 일정 본문`).toBe(expectedStatus);
+                    const list = await actors.get(`/api/v1/files/${resource.file.atchFileSn}`, { headers: actor.headers });
+                    expect(list.status(), `${actor.name}: 일정 첨부 목록`).toBe(expectedStatus);
+                    const download = await actors.get(`/api/v1/files/${resource.file.atchFileSn}/${resource.file.fileSn}`, { headers: actor.headers });
+                    expect(download.status(), `${actor.name}: 일정 첨부 다운로드`).toBe(expectedStatus);
+                    if (resource.allowed) {
+                        expect((await body.json()).data.atchFileSn).toBe(resource.file.atchFileSn);
+                        expect((await list.json()).data).toEqual([
+                            expect.objectContaining({ atchFileSn: resource.file.atchFileSn, fileSn: resource.file.fileSn,
+                                orignlFileNm: resource.file.name, fileMg: resource.file.bytes.length }),
+                        ]);
+                        expect((await download.body()).equals(resource.file.bytes), `${actor.name}: 원본 파일 바이트`).toBe(true);
+                    }
+                }
+            }
             const otherMonth = await actors.get(`${SCHEDULE_API}/monthly?yearMonth=${yearMonth}`, { headers: other }); expect(otherMonth.status()).toBe(200);
             expect(((await otherMonth.json()).data as { schdlSn: number }[]).some(row => schedules.includes(row.schdlSn))).toBe(false);
             for (const headers of [colleague, other]) {
                 const changed = await actors.put(`${SCHEDULE_API}/${shared}`, { headers,
                     data: { schdlNm: 'forbidden edit', schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: '1' } }); expect(changed.status()).toBe(403);
                 expect((await actors.delete(`${SCHEDULE_API}/${shared}`, { headers })).status()).toBe(403);
+                expect((await actors.delete(`/api/v1/files/${sharedFile.atchFileSn}/${sharedFile.fileSn}`, { headers })).status()).toBe(403);
             }
             const preserved = await actors.get(`${SCHEDULE_API}/${shared}`, { headers: owner }); expect(preserved.status()).toBe(200);
             const after = (await preserved.json()).data;
             expect(after.schdlNm).toBe(detail.schdlNm); expect(after.schdlPicId).toBe(users[0]);
             expect(after.editable).toBe(true); expect(after.deletable).toBe(true);
         } finally {
-            await actors.dispose();
-            for (const id of schedules.reverse()) expect((await adminRequest.delete(`${SCHEDULE_API}/${id}`)).status()).toBe(200);
-            for (const id of users.reverse()) expect((await adminRequest.delete(`/api/v1/admin/system/users/${id}`)).status()).toBe(200);
-            for (const id of departments.reverse()) expect((await adminRequest.delete(`/api/v1/admin/system/departments/${id}`)).status()).toBe(200);
+            const failures: unknown[] = [];
+            const cleanup = async (operation: () => Promise<void>) => {
+                try { await operation(); } catch (error) { failures.push(error); }
+            };
+            try {
+                for (const id of schedules.reverse()) await cleanup(async () => {
+                    expect((await adminRequest.delete(`${SCHEDULE_API}/${id}`)).status()).toBe(200);
+                });
+                for (const id of fileGroups.reverse()) await cleanup(async () => {
+                    const list = await adminRequest.get(`/api/v1/files/${id}`); expect(list.status()).toBe(200);
+                    for (const item of (await list.json()).data as FileItem[]) {
+                        expect((await adminRequest.delete(`/api/v1/files/${id}/${item.fileSn}`)).status()).toBe(200);
+                    }
+                });
+                for (const id of users.reverse()) await cleanup(async () => {
+                    expect((await adminRequest.delete(`/api/v1/admin/system/users/${id}`)).status()).toBe(200);
+                });
+                for (const id of departments.reverse()) await cleanup(async () => {
+                    expect((await adminRequest.delete(`/api/v1/admin/system/departments/${id}`)).status()).toBe(200);
+                });
+            } finally { await actors.dispose(); }
+            if (failures.length) throw new AggregateError(failures, '일정 첨부 시험이 만든 자원을 모두 정리하지 못했습니다.');
         }
     });
 });

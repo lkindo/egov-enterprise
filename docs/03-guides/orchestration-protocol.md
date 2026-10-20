@@ -27,6 +27,7 @@
 - **Action**: 에이전트가 등급(L0~L2)을 제안하고 **Task Specification**을 작성한다. 현재 사용자 요청 또는 유효한 포괄 승인에 그 변경 권한이 이미 포함되면 등급·SCOPE 를 고지하고 진행하며, 포함되지 않은 L1/L2만 추가 승인을 받는다. 분석·진단 요청은 수정 권한으로 간주하지 않는다.
 - **Fast-Track (L0)**: 승인 절차 없이 즉시 구현 단계로 진입 가능하다. 단, [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당하는 작업은 L0로 분류하거나 Fast-Track으로 우회할 수 없다.
 - **포괄 승인(Standing Approval)**: 사용자가 배치/연속 작업에 대해 포괄적 진행 지시(예: "진행해", "나머지 진행해", ultracode 모드)를 준 경우, 메인 에이전트는 각 항목마다 재승인을 받지 않고 **등급·SCOPE 를 1줄로 밝힌 뒤 진행**할 수 있다. 단, [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당하는 되돌리기 어렵거나 외부 상태를 바꾸는 작업은 포괄 승인만으로 수행하지 않고 **개별 명시 승인**을 받는다. 현재 요청이 그 동작의 정확한 대상과 영향을 이미 명시 승인했다면 그 승인으로 충분하며, 범위를 벗어난 새 대상·새 동작에만 추가 승인을 받는다.
+- **작업 브랜치 마무리**: 직접 맡은 작업의 PR·병합·브랜치 삭제는 [AGENTS.md의 사용자 상시 승인과 다른 작업 보호 경계](../../AGENTS.md#공유-워킹트리와-git)를 따른다. 이미 승인된 완료 절차를 단계마다 다시 묻지 않으며, 스킬의 일반적인 선택지 제시 절차가 그 승인을 취소하지 않는다.
 
 ### [Stage 2] Execution: 자율 구현
 
@@ -194,11 +195,12 @@
   2. **push 전에** 끝 PR의 base를 `main`으로 바꾼다(`gh pr edit <N> --base main`). CI는 PR base 기준으로 변경 범위와 E2E 선별을 계산하고 base 변경만으로는 다시 돌지 않으므로, 앞 브랜치를 base로 둔 채 받은 green은 스택 전체의 검증이 아니다.
   3. required CI가 green이면 병합하고, PR 본문에 포함된 PR과 결정 ID를 적는다.
   4. 앞 PR이 자동으로 MERGED가 됐는지 확인한다. 남은 PR은 포함된 병합 커밋을 댓글로 남기고 닫는다. 스택이 남아 있는 동안 base 브랜치를 지우지 않는다(지우면 그 위의 열린 PR이 닫힌다).
-- 묶더라도 red 증명은 변경 단위로 남긴다. 결정 기록(ADR·DEC)을 쓸지와 몇 건으로 쓸지는 [AGENTS.md의 기록 기준](../../AGENTS.md#documentation-and-memory)을 따른다. 묶는 대상은 병합 비용이지 추적 단위가 아니다. 병합과 PR 닫기는 사용자가 요청한 범위에서만 한다.
+- 묶더라도 red 증명은 변경 단위로 남긴다. 결정 기록(ADR·DEC)을 쓸지와 몇 건으로 쓸지는 [AGENTS.md의 기록 기준](../../AGENTS.md#documentation-and-memory)을 따른다. 묶는 대상은 병합 비용이지 추적 단위가 아니다. 병합과 PR 닫기는 사용자가 요청한 범위에서만 하며, 직접 맡은 작업의 완료 범위는 [공유 워킹트리와 Git](../../AGENTS.md#공유-워킹트리와-git)을 따른다.
 
 ### 6.2 검증은 한 커밋에 한 번
 - 작업 중에는 영향 테스트만 실행한다.
 - 다음 재실행은 중복이 아니다: 위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3), 게이트·계약의 red 증명(green → 위반 주입 → red → 원복 → green), 이번에 바꾼 계약·게이트의 대상 테스트 실행. "미리 돌리지 않는다"는 pre-push가 곧 돌릴 묶음 전체를 같은 커밋에서 한 번 더 돌리는 경우에만 적용한다.
+- §6.4의 `verify:integrate`는 폼 census·전체 하네스의 통합 실패를 푸시 전에 드러내기 위해 이 둘을 먼저 실행한다. 이 명시적 중복은 pre-push의 같은 검사나 required CI를 생략할 근거가 아니다.
 - 넓은 로컬 검증은 최신 main을 합치고 §6.4대로 다시 만든 뒤, 푸시 직전에 한 번 한다. pre-push가 곧 실행할 묶음(운영 계약, 범위별 compile·tsc·lint·폼 census·codegen 검사, `src/__tests__` Vitest, `harnessTest` — [.githooks/README.md](../../.githooks/README.md))은 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다: 화면 파일을 지우거나 옮기거나 화면 문자열을 바꾸면 전체 Vitest, `foundation`·`business-*`에 클래스를 더하거나 고치면 그 모듈의 `check`(클래스별 커버리지), 엔티티·DDL을 바꾸면 `schemaValidationTest`, RSC 경계·의존성을 바꾸면 `pnpm -C frontend build`와 `bundle:check`, 컨트롤러·DTO를 바꾸면 `api-docs.json` 추출(§6.4). 해당하는 검사가 하나도 없을 때만 넓은 로컬 검증을 생략한다. required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.
 - `npm run verify`(기본 `full`)와 `verify:docs`·`fast`·`push`·`be`·`fe`·`e2e`는 모두 운영 계약을 돌리고 `fast`·`push`·`fe`·`full`은 정적 검사도 돌린다. push 직전이면 pre-push 묶음이 같은 커밋에서 다시 돈다 — 넓은 검증은 위 목록에서 훅이 보지 않는 검사를 고른다.
 - CI 러너는 UTC, 로컬 `npm run verify`의 기본 시간대는 KST(`Asia/Seoul`)이고 명시한 `TZ`가 이긴다. 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 한 번 더 확인한다(bash·PowerShell·cmd에서 같은 형태이고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다(그 기계의 시간대를 따른다).
@@ -218,7 +220,9 @@
 
 병합이 아니어도 생성물을 아래 순서로 한 번에 다시 만들거나(`npm run regen`) 쓰지 않고 낡은 것만 보는 명령(`npm run regen -- --check`, pre-push 맨 앞)은 [CI 가이드의 생성물 재생성](cicd-pipeline.md#생성물-재생성-npm-run-regen)을 따른다.
 
-여러 갈래(브랜치)를 한 브랜치로 합쳤으면 `origin/main` 을 fetch 한 뒤 푸시 전에 `npm run verify:integrate` 를 한 번 돈다([판정](../../scripts/integration-precheck.mjs)) — ① `origin/main` 대비 Flyway 버전 중복·순서 밖 번호·적용된 마이그레이션 수정을 막고 메뉴 스냅숏이 낡았으면 `npm run project:menus:refresh` 를 알린다 ② `npm run regen` ③ 전체 vitest·`:api-server:test`·바뀐 마이그레이션·엔티티의 표 이름·버전을 쓰는 schema-validation 시험(고를 수 없으면 전체)·카탈로그가 바뀌었으면 생성기 화면 시험. §6.3 의 무거운 실행이고, 운영 계약·정적 검사는 이어지는 pre-push 가 돈다.
+여러 갈래(브랜치)를 한 브랜치로 합쳤으면 `origin/main` 을 fetch 한 뒤 푸시 전에 `npm run verify:integrate` 를 한 번 돈다([판정](../../scripts/integration-precheck.mjs)) — ① `origin/main` 대비 Flyway 버전 중복·순서 밖 번호·적용된 마이그레이션 수정을 막고 메뉴 스냅숏이 낡았으면 `npm run project:menus:refresh` 를 알린다 ② `npm run regen` ③ 폼 census 검증 ④ 전체 Vitest·`:api-server:test`·전체 `harnessTest` ⑤ 바뀐 마이그레이션·엔티티의 표 이름·버전을 쓰는 schema-validation 시험(고를 수 없으면 전체)·카탈로그가 바뀌었으면 생성기 화면 시험·바뀐 E2E. 모두 순서대로 실행하며 실패하면 다음 단계로 넘어가지 않는다. §6.3 의 무거운 실행이고, 운영 계약·정적 검사는 이어지는 pre-push 가 돈다.
+
+E2E 선별은 기준 ref부터의 커밋 변경과 index·작업 트리·미추적 파일을 함께 본다. `frontend/e2e/contracts`·`journeys`·`quality`의 추가·수정 spec만 있으면 해당 파일을, spec 삭제·이동 또는 공용 fixture·helper·setup·Playwright 설정·격리 runner·의존성 입력 변경이 있으면 기본 두 프로젝트(`api-contract`, `full-suite`) 전체를 공식 [격리 runner](../../scripts/run-isolated-e2e.mjs)로 실행한다. 해당 변경이 없으면 E2E를 실행하지 않는다. 별도 설정의 enterprise task lab이나 기본 프로젝트 밖의 spec 변경은 오류로 알리고 전용 검증을 요구한다. `.env`·junction 등 격리 runner가 거부하는 환경에서는 점검도 실패하며 안전장치를 우회하지 않는다. 이 선별은 바뀐 테스트의 실행을 보장하는 범위이고, 제품 소스 전반의 E2E 영향 분석과 병합 판정은 required CI가 맡는다. `node scripts/integration-precheck.mjs --plan [--base <ref>]`로 실행 없이 선택을 확인할 수 있다.
 
 양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
 

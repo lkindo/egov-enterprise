@@ -13,6 +13,8 @@ When you have multiple unrelated failures (different test files, different subsy
 
 **Core principle:** Dispatch one agent per independent problem domain. Let them work concurrently.
 
+In this repository, include the delegation packet from [SOP §2.2](../../../docs/03-guides/orchestration-protocol.md) and choose checks from [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope). The main agent reviews current diffs and independently reruns the relevant gates (§2.3). Subagents may run affected tests and light static checks; the main agent serializes heavy checks after integration (§6.3). Red/green proof, hooks and required CI are not optional, and same-cause failures stop at three total failures (§2.4).
+
 ## When to Use
 
 ```dot
@@ -78,7 +80,7 @@ Task("Fix tool-approval-race-conditions.test.ts failures")
 When agents return:
 - Read each summary
 - Verify fixes don't conflict
-- Run full test suite
+- Independently run the checks required for the integrated change under SOP §2.3 and §6
 - Integrate all changes
 
 ## Agent Prompt Structure
@@ -169,7 +171,7 @@ Agent 3 → Fix tool-approval-race-conditions.test.ts
 After agents return:
 1. **Review each summary** - Understand what changed
 2. **Check for conflicts** - Did agents edit same code?
-3. **Run full suite** - Verify all fixes work together
+3. **Run required scope checks independently** - Verify the integrated changes; use SOP §6.4 when branches were combined, without repeating a full bundle for every subtask
 4. **Spot check** - Agents can make systematic errors
 
 ## Real-World Impact

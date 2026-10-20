@@ -180,7 +180,7 @@ function validateDrillBuild(source) {
 function observeMigrationCommands(source, os, failCommand, extraEnv = {}) {
   const commands = [];
   const exits = [];
-  const executable = source.replace(/^import [^\r\n]+ from 'node:[^']+';\r?$/gm, '');
+  const executable = source.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/verification-record\.mjs)';\r?$/gm, '');
   runInNewContext(executable, {
     execSync: (command) => {
       commands.push(command);
@@ -188,9 +188,11 @@ function observeMigrationCommands(source, os, failCommand, extraEnv = {}) {
     },
     platform: () => os,
     randomBytes: () => { throw new Error('frontend build environment must not run'); },
+    createRun: () => ({ runId: 'migration-contract', stepStart() {}, stepEnd() {}, finish() {} }),
     process: {
       argv: ['node', 'scripts/verify.mjs', 'migration'],
       env: extraEnv,
+      cwd: () => '/migration-contract',
       exit: (code) => exits.push(code),
     },
     console: { log() {}, warn() {}, error() {} },
@@ -461,10 +463,16 @@ test('missing or conditional execution, broad dependencies, write permissions, a
     (source) => source.replace('contents: read', 'contents: read\n  actions: write'),
     (source) => source.replace('run: node scripts/verify.mjs migration', 'shell: echo {0}\n        run: node scripts/verify.mjs migration'),
     (source) => source.replace("cron: '23 18 * * 0'", "cron: '23 18 * * 1'"),
-    (source) => source.replace('  workflow_dispatch:', '  push:\n  workflow_dispatch:'),
+    (source) => standaloneProduct
+      ? source.replace('  pull_request:\n', '')
+      : source.replace('  workflow_dispatch:', '  push:\n  workflow_dispatch:'),
     (source) => source.replace('if-no-files-found: error', 'if-no-files-found: ignore'),
     (source) => source.replace(/actions\/checkout@[a-f0-9]{40}/, 'actions/checkout@main'),
-  ]) assert.notDeepEqual(validateWorkflow(mutate(workflow)), []);
+  ]) {
+    const changed = mutate(workflow);
+    assert.notEqual(changed, workflow, 'negative workflow fixture must change its input');
+    assert.notDeepEqual(validateWorkflow(changed), []);
+  }
 });
 
 test('job, command and artifact guards keep rejecting nested bypass tokens after splitting anchored checks', () => {

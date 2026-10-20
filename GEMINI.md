@@ -19,4 +19,5 @@
 - 작업에 정확히 맞는 `.agent/skills/` 또는 사용 가능한 네이티브 스킬만 선택한다. 스킬 전수 탐색이나 이름만 맞춘 강제 호출은 하지 않는다.
 - 스킬이 헌법·`AGENTS.md`·현재 구현과 충돌하면 스킬을 적용하지 말고 상위 원본과 실제 증거를 따른다.
 - 세션 저널과 공용 메모리 승격은 [AGENTS.md Documentation and memory](AGENTS.md#documentation-and-memory)를 따른다.
+- 작업 브랜치의 승인 범위와 마무리는 [AGENTS.md 공유 워킹트리와 Git](AGENTS.md#공유-워킹트리와-git)에 연결한다.
 - 프로젝트 정책은 `AGENTS.md`에서만 바꾼다. 이 파일은 import 경로나 Gemini 전용 실행 매핑이 달라질 때만 함께 갱신한다.

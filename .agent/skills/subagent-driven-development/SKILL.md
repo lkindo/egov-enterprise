@@ -7,9 +7,11 @@ license: MIT — Complete terms in LICENSE.txt
 
 # Subagent-Driven Development
 
-Execute plan by dispatching fresh subagent per task, with two-stage review after each: spec compliance review first, then code quality review.
+Execute a plan by delegating bounded tasks, then reviewing and independently verifying their results as the main agent.
 
-**Core principle:** Fresh subagent per task + two-stage review (spec then quality) = high quality, fast iteration
+**Core principle:** Clear task ownership, sufficient context, and main-agent verification.
+
+Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [SOP §2.2–2.4 and §6](../../../docs/03-guides/orchestration-protocol.md). Additional spec or code-quality reviewers depend on risk and unresolved concerns; they are not mandatory twice for every task. The main agent's diff review and independent gate execution (§2.3), red/green proof, hooks and required CI remain required. A reviewer approval does not replace them.
 
 ## When to Use
 
@@ -34,55 +36,16 @@ digraph when_to_use {
 **vs. Executing Plans (parallel session):**
 - Same session (no context switch)
 - Fresh subagent per task (no context pollution)
-- Two-stage review after each task: spec compliance first, then code quality
+- Separate spec and code-quality reviewers when the task warrants them
 - Faster iteration (no human-in-loop between tasks)
 
 ## The Process
 
-```dot
-digraph process {
-    rankdir=TB;
-
-    subgraph cluster_per_task {
-        label="Per Task";
-        "Dispatch implementer subagent (./implementer-prompt.md)" [shape=box];
-        "Implementer subagent asks questions?" [shape=diamond];
-        "Answer questions, provide context" [shape=box];
-        "Implementer subagent implements, tests, commits, self-reviews" [shape=box];
-        "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [shape=box];
-        "Spec reviewer subagent confirms code matches spec?" [shape=diamond];
-        "Implementer subagent fixes spec gaps" [shape=box];
-        "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [shape=box];
-        "Code quality reviewer subagent approves?" [shape=diamond];
-        "Implementer subagent fixes quality issues" [shape=box];
-        "Mark task complete in TodoWrite" [shape=box];
-    }
-
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" [shape=box];
-    "More tasks remain?" [shape=diamond];
-    "Dispatch final code reviewer subagent for entire implementation" [shape=box];
-    "Use finishing-a-development-branch" [shape=box style=filled fillcolor=lightgreen];
-
-    "Read plan, extract all tasks with full text, note context, create TodoWrite" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Dispatch implementer subagent (./implementer-prompt.md)" -> "Implementer subagent asks questions?";
-    "Implementer subagent asks questions?" -> "Answer questions, provide context" [label="yes"];
-    "Answer questions, provide context" -> "Dispatch implementer subagent (./implementer-prompt.md)";
-    "Implementer subagent asks questions?" -> "Implementer subagent implements, tests, commits, self-reviews" [label="no"];
-    "Implementer subagent implements, tests, commits, self-reviews" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)";
-    "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" -> "Spec reviewer subagent confirms code matches spec?";
-    "Spec reviewer subagent confirms code matches spec?" -> "Implementer subagent fixes spec gaps" [label="no"];
-    "Implementer subagent fixes spec gaps" -> "Dispatch spec reviewer subagent (./spec-reviewer-prompt.md)" [label="re-review"];
-    "Spec reviewer subagent confirms code matches spec?" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="yes"];
-    "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" -> "Code quality reviewer subagent approves?";
-    "Code quality reviewer subagent approves?" -> "Implementer subagent fixes quality issues" [label="no"];
-    "Implementer subagent fixes quality issues" -> "Dispatch code quality reviewer subagent (./code-quality-reviewer-prompt.md)" [label="re-review"];
-    "Code quality reviewer subagent approves?" -> "Mark task complete in TodoWrite" [label="yes"];
-    "Mark task complete in TodoWrite" -> "More tasks remain?";
-    "More tasks remain?" -> "Dispatch implementer subagent (./implementer-prompt.md)" [label="yes"];
-    "More tasks remain?" -> "Dispatch final code reviewer subagent for entire implementation" [label="no"];
-    "Dispatch final code reviewer subagent for entire implementation" -> "Use finishing-a-development-branch";
-}
-```
+1. Read the current plan and disk state. Give each implementer the SOP delegation packet, file ownership, allowed checks and completion criteria.
+2. Delegate independent tasks without overlapping edits. Subagents run affected tests and light static checks; heavy checks are serialized by the main agent after integration (§6.3). Commits require the user's authorization and must include only the assigned changes.
+3. The main agent reads each current diff, checks requirements and independently reruns the relevant gates (§2.3). Request an additional reviewer for a concrete risk or unresolved concern, rather than automatically running two reviews per task.
+4. Fix findings and verify the affected behavior. Count failures by cause, including the first attempt; at three total failures, stop and report under §2.4. Main-agent repair or a replacement agent is allowed within the approved scope.
+5. Integrate the batch and perform the scope checks required by §6. Report evidence and remaining limitations before completing it; review approval alone is not completion.
 
 ## Prompt Templates
 
@@ -91,6 +54,8 @@ digraph process {
 - `./code-quality-reviewer-prompt.md` - Dispatch code quality reviewer subagent
 
 ## Example Workflow
+
+This example chooses separate reviewers for a higher-risk plan and assumes commits were authorized. It is not a required reviewer count or a replacement for the main agent's independent verification in the process above.
 
 ```
 You: I'm using Subagent-Driven Development to execute this plan.
@@ -121,7 +86,7 @@ Spec reviewer: ✅ Spec compliant - all requirements met, nothing extra
 [Get git SHAs, dispatch code quality reviewer]
 Code reviewer: Strengths: Good test coverage, clean. Issues: None. Approved.
 
-[Mark Task 1 complete]
+[Main agent reviews diff and independently runs relevant gates; mark Task 1 complete]
 
 Task 2: Recovery modes
 
@@ -155,7 +120,7 @@ Implementer: Extracted PROGRESS_INTERVAL constant
 [Code reviewer reviews again]
 Code reviewer: ✅ Approved
 
-[Mark Task 2 complete]
+[Main agent reviews diff and independently runs relevant gates; mark Task 2 complete]
 
 ...
 
@@ -187,13 +152,13 @@ Done!
 
 **Quality gates:**
 - Self-review catches issues before handoff
-- Two-stage review: spec compliance, then code quality
+- Main-agent review covers spec compliance and code quality; additional reviewers address specific risks
 - Review loops ensure fixes actually work
 - Spec compliance prevents over/under-building
 - Code quality ensures implementation is well-built
 
 **Cost:**
-- More subagent invocations (implementer + 2 reviewers per task)
+- Additional reviewers cost time and model calls; choose them for the task's risks
 - Controller does more prep work (extracting all tasks upfront)
 - Review loops add iterations
 - But catches issues early (cheaper than debugging later)
@@ -202,15 +167,14 @@ Done!
 
 **Never:**
 - Start implementation on main/master branch without explicit user consent
-- Skip reviews (spec compliance OR code quality)
+- Skip the main agent's diff review or independent verification
 - Proceed with unfixed issues
-- Dispatch multiple implementation subagents in parallel (conflicts)
+- Dispatch parallel implementers with overlapping file ownership or heavy checks
 - Make subagent read plan file (provide full text instead)
 - Skip scene-setting context (subagent needs to understand where task fits)
 - Ignore subagent questions (answer before letting them proceed)
 - Accept "close enough" on spec compliance (spec reviewer found issues = not done)
-- Skip review loops (reviewer found issues = implementer fixes = review again)
-- **Start code quality review before spec compliance is ✅** (wrong order)
+- Leave review findings unverified after correction
 - Move to next task while either review has open issues
 
 **If subagent asks questions:**
@@ -221,17 +185,17 @@ Done!
 **If reviewer finds issues:**
 - Implementer (same subagent) fixes them
 - Reviewer reviews again
-- Repeat until approved
+- Stop and report at three failures for the same cause under SOP §2.4
 - Don't skip the re-review
 
 **If subagent fails task:**
-- Dispatch fix subagent with specific instructions
-- Don't try to fix manually (context pollution)
+- Use the evidence to repair directly or delegate a targeted fix within the approved scope
+- Preserve the same-cause failure count when changing agents
 
 ## Integration
 
-**Required workflow skills:**
-- **using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+**Related workflow skills (select when relevant):**
+- **using-git-worktrees** - Use when isolation is needed; preserve the current workspace and other agents' changes
 - **writing-plans** - Creates the plan this skill executes
 - **requesting-code-review** - Code review template for reviewer subagents
 - **finishing-a-development-branch** - Complete development after all tasks

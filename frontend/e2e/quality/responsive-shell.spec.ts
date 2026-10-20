@@ -41,10 +41,9 @@ test.describe('Quality & Resilience', () => {
                 for (const route of ROUTES) {
                     await page.goto(route.path);
                     // 최상위 Suspense 폴백도 main/h1을 가지므로 일반 landmark 대기는 readiness가 아니다.
-                    // 실제 관리 셸의 고유 main과 해당 route의 정확한 최종 h1을 모두 요구한다.
+                    // 최종 h1을 먼저 기다려 로딩 셸이 스트리밍 본문과 잠시 겹치는 구간을 지난다.
+                    // 그 뒤 main의 단일성·가시성도 확인하므로 영구 중복이나 가림을 허용하지 않는다.
                     const main = page.locator('main#main-content');
-                    await expect(main, `${route.path} 최종 관리 셸 main이 하나여야 한다`).toHaveCount(1);
-                    await expect(main).toBeVisible({ timeout: 30000 });
                     const finalHeading = main.getByRole('heading', {
                         level: 1,
                         name: route.finalHeading,
@@ -52,6 +51,8 @@ test.describe('Quality & Resilience', () => {
                     });
                     await expect(finalHeading, `${route.path} 최종 h1(${route.finalHeading})이 렌더되어야 한다`).toHaveCount(1);
                     await expect(finalHeading).toBeVisible({ timeout: 30000 });
+                    await expect(main, `${route.path} 최종 관리 셸 main이 하나여야 한다`).toHaveCount(1);
+                    await expect(main).toBeVisible({ timeout: 30000 });
                     const { scrollWidth, clientWidth } = await page.evaluate(() => ({
                         scrollWidth: document.documentElement.scrollWidth,
                         clientWidth: document.documentElement.clientWidth,

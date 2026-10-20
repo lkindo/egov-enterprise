@@ -9,7 +9,7 @@
       "Static service checks prove required guard statements remain in the registered method, not full Java control-flow reachability.",
       "EXTERNAL Actuator/SockJS declarations are bound to source/runtime policy and HTTP authentication wiring; this is not a full framework transport census or live DB measurement.",
       "Historical ADMIN policy labels preserve the resource-policy taxonomy. Current access requires exact operation permissions; group names and display role fields do not confer privileges. Existing owner, participant and privacy restrictions remain additional requirements.",
-      "ScheduleService#getSchedule keeps its exact owner/SCHEDULE_READ_ALL fallback helper; before that fallback, an authenticated principal may read a shared (schdlSeCd=1) schedule in the department resolved by the server. Private/other-department reads and all writes retain the registered ownership checks."
+      "ScheduleService#getSchedule keeps its exact owner/SCHEDULE_READ_ALL fallback helper; before that fallback, an authenticated principal may read a shared (schdlSeCd=1) schedule in the department resolved by the server. Private/other-department reads and all writes retain the registered ownership checks. Schedule attachment references use the same read conditions; when those conditions deny access, another shared reference or FILE_READ_ALL cannot override that denial. The existing uploader exemption and PERSONAL-reference precedence remain, and schedule read permissions do not grant attachment deletion rights."
     ]
   },
   "policyDefinitions": {
@@ -3899,13 +3899,14 @@
       "target": "FileAccessPolicy#assertReadable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
       "policy": "REACHABILITY_WITH_PRIVACY",
-      "denyReferences": 3,
+      "denyReferences": 4,
       "requiredTokens": [
         "SecurityUtil.getCurrentLoginId()",
         "SecurityUtil.getCurrentEsntlId()",
         "if (grants.resolutionFailed())",
         "if (grants.personalReference())",
         "if (grants.personalOwnerGrant() || grants.personalReaderGrant())",
+        "} else if (grants.readDenied()) { throw new BusinessException(CommonErrorCode.ACCESS_DENIED); } else if",
         "grants.ownerGrant() || (grants.sharedGrant() && !grants.personalReference())",
         "admin && !grants.personalReference()",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
@@ -4161,6 +4162,26 @@
         "Referenced board master missing"
       ],
       "forbiddenTokens": [
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "JdbcAttachmentReferenceResolver#querySchedule",
+      "source": "business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "LEFT JOIN tb_user_info u ON u.user_id = ?",
+        "WHERE s.atch_file_sn = ?",
+        "SecurityUtil.hasPermission(\"SCHEDULE_READ_ALL\")",
+        "if (department == null || department.isBlank()) department = \"ORGNZT_0000000000000\";",
+        "shared |= readAll || (loginId != null && !loginId.isBlank() && \"1\".equals(reference.sharing()) && department.equals(reference.department()));",
+        "owner |= loginId != null && loginId.equals(reference.registrar());",
+        "return new SourceHit(!references.isEmpty(), shared, owner, false);"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasPermission(\"FILE_READ_ALL\")",
+        "owner |= readAll",
         ".orElse(\"anonymous\")"
       ]
     },

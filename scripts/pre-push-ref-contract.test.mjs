@@ -4,6 +4,7 @@ import {
   existsSync,
   mkdtempSync,
   readFileSync,
+  readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
@@ -73,11 +74,27 @@ record_command() {
 pnpm() { record_command "pnpm $*"; }
 npx() { record_command "npx $*"; }
 test_gradle() { record_command "gradlew $*"; }
+node() {
+  case "$1" in
+    */scripts/verification-record.mjs)
+      if [ "$HOOK_RECORD_FAIL" = "true" ]; then return 1; fi
+      if [ "$HOOK_REAL_RECORDS" = "true" ]; then
+        module=$1
+        shift 3
+        command node "$module" --root "$HOOK_RECORD_ROOT" "$@"
+      elif [ "$4" = "begin" ]; then
+        printf '%s\\n' '11111111-1111-4111-8111-111111111111'
+      fi
+      ;;
+    *) command node "$@" ;;
+  esac
+}
 `;
   return source.replaceAll('./gradlew ', 'test_gradle ').replace('#!/bin/sh', `#!/bin/sh${stubs}`);
 }
 
-function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '' } = {}) {
+function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
+  realRecords = false, recordFailure = false } = {}) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'pre-push-ref-contract-'));
   const gitLog = path.join(fixtureRoot, 'git.log');
   const npmLog = path.join(fixtureRoot, 'npm.log');
@@ -98,6 +115,9 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
       HOOK_FAIL_COMMAND: failCommand,
       SKIP_HOOKS: '',
       SKIP_HARNESS: '',
+      HOOK_REAL_RECORDS: String(realRecords),
+      HOOK_RECORD_FAIL: String(recordFailure),
+      HOOK_RECORD_ROOT: shellPath(fixtureRoot),
     },
   });
 
@@ -108,7 +128,13 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
     gitCalls: existsSync(gitLog) ? readFileSync(gitLog, 'utf8').trim().split(/\r?\n/u) : [],
     npmCalls: existsSync(npmLog) ? readFileSync(npmLog, 'utf8').trim().split(/\r?\n/u) : [],
     commands: existsSync(commandLog) ? readFileSync(commandLog, 'utf8').trim().split(/\r?\n/u) : [],
+    records: [],
   };
+  const recordsRoot = path.join(fixtureRoot, 'build/verification-runs');
+  if (existsSync(recordsRoot)) {
+    output.records = readdirSync(recordsRoot).filter(name => name.endsWith('.jsonl'))
+      .flatMap(name => readFileSync(path.join(recordsRoot, name), 'utf8').trim().split('\n').map(line => JSON.parse(line)));
+  }
   rmSync(fixtureRoot, { recursive: true, force: true });
   return output;
 }
@@ -192,13 +218,13 @@ const crossStackCommand = 'pnpm -C frontend exec vitest run src/__tests__/cross-
 // process.exit 는 실제처럼 실행을 멈춘다 — 기록만 하고 계속 돌면 분기 앞 조기 종료 뒤에도 명령 목록이 그대로라 놓친다.
 const EXIT_SIGNAL = Symbol('process.exit');
 
-function observeVerification(scope, { source, failCommand, env = {} } = {}) {
+function observeVerification(scope, { source, failCommand, env = {}, recordEvents = [] } = {}) {
   const commands = [];
   const exits = [];
   const zones = [];
   const runner = source ?? readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
   try {
-    runInNewContext(runner.replace(/^import [^\r\n]+ from 'node:[^']+';\r?$/gm, ''), {
+    runInNewContext(runner.replace(/^import [^\r\n]+ from '(?:node:[^']+|\.\/verification-record\.mjs)';\r?$/gm, ''), {
       execSync: (command, options) => {
         commands.push(command);
         zones.push(options?.env?.TZ);
@@ -206,9 +232,19 @@ function observeVerification(scope, { source, failCommand, env = {} } = {}) {
       },
       platform: () => 'linux',
       randomBytes: () => ({ toString: () => 'fixture-only' }),
+      createRun: (options) => {
+        recordEvents.push({ event: 'begin', ...options });
+        return {
+          runId: '11111111-1111-4111-8111-111111111111',
+          stepStart: (id) => recordEvents.push({ event: 'step-start', id }),
+          stepEnd: (id, result) => recordEvents.push({ event: 'step-end', id, ...result }),
+          finish: (result) => recordEvents.push({ event: 'finish', ...result }),
+        };
+      },
       process: {
         argv: ['node', 'scripts/verify.mjs', scope],
         env,
+        cwd: () => repoRoot,
         exit: (code) => {
           exits.push(code);
           throw EXIT_SIGNAL;
@@ -280,10 +316,12 @@ const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle
 // [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
 const SAST_APPROXIMATION = 'npm run sast:approx';
 const VERIFY_FAST = [SAST_APPROXIMATION, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
-// [2026-10-20] 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 훅이 보지 않는 무거운 시험. 운영 계약은 부르지 않는다.
+// 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 폼 census·전체 시험·하네스 → 선별 E2E. 운영 계약은 부르지 않는다.
 const INTEGRATION_PRECHECK = 'node scripts/integration-precheck.mjs';
-const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', 'pnpm -C frontend exec vitest run',
-  './gradlew :api-server:test --console=plain -Dfile.encoding=UTF-8', 'node scripts/integration-precheck.mjs --run-selected'];
+const INTEGRATION_FORMS = 'pnpm -C frontend run test:form-validation';
+const INTEGRATION_BACKEND = './gradlew :api-server:test :api-server:harnessTest --console=plain -Dfile.encoding=UTF-8';
+const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', INTEGRATION_FORMS, 'pnpm -C frontend exec vitest run',
+  INTEGRATION_BACKEND, 'node scripts/integration-precheck.mjs --run-selected'];
 
 test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
   const expected = {
@@ -348,6 +386,89 @@ test('verify stops on a CodeQL approximation finding first and on a Flyway confl
     "    run('npm run regen');\n    run('node scripts/integration-precheck.mjs');\n");
   assert.notEqual(regenFirst, runner);
   assert.deepEqual(observeVerification('integrate', { source: regenFirst, failCommand: INTEGRATION_PRECHECK }).commands, ['npm run regen', INTEGRATION_PRECHECK]);
+});
+
+test('integration runs the form census and full harness before selected E2E, and propagates their failures', () => {
+  for (const command of [INTEGRATION_FORMS, INTEGRATION_BACKEND, 'node scripts/integration-precheck.mjs --run-selected']) {
+    const failed = observeVerification('integrate', { failCommand: command });
+    assert.deepEqual(failed.exits, [1], command);
+    assert.deepEqual(failed.commands, VERIFY_INTEGRATE.slice(0, VERIFY_INTEGRATE.indexOf(command) + 1), command);
+  }
+  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  const integrateStart = source.indexOf("  } else if (scope === 'integrate') {");
+  assert.ok(integrateStart > 0);
+  const before = source.slice(0, integrateStart);
+  const integrateAndAfter = source.slice(integrateStart);
+  for (const [label, mutation] of [
+    ['census omitted', integrateAndAfter.replace("    run('pnpm -C frontend run test:form-validation');", '')],
+    ['harness omitted', integrateAndAfter.replace(':api-server:test :api-server:harnessTest', ':api-server:test')],
+  ]) {
+    assert.notEqual(mutation, integrateAndAfter, label);
+    assert.throws(() => assert.deepEqual(observeVerification('integrate', { source: before + mutation }).commands, VERIFY_INTEGRATE), label);
+  }
+});
+
+test('verify records integration stages without replacing their execution or treating failure as success', () => {
+  const events = [];
+  assert.deepEqual(observeVerification('integrate', { recordEvents: events }).commands, VERIFY_INTEGRATE);
+  assert.deepEqual(events.filter(event => event.event === 'step-start').map(event => event.id),
+    ['integration-precheck', 'regenerate', 'form-validation', 'frontend-tests', 'api-tests-and-harness', 'integration-selected']);
+  assert.equal(events.filter(event => event.event === 'step-end' && event.exitCode === 0).length, VERIFY_INTEGRATE.length);
+  assert.deepEqual(events.at(-1), { event: 'finish', exitCode: 0 });
+  const failed = [];
+  assert.deepEqual(observeVerification('integrate', { recordEvents: failed, failCommand: INTEGRATION_FORMS }).exits, [1]);
+  assert.deepEqual(failed.filter(event => event.event === 'step-start').map(event => event.id),
+    ['integration-precheck', 'regenerate', 'form-validation']);
+  assert.equal(failed.at(-2).exitCode, null, 'a command launch error without a code is unknown, never successful');
+  assert.equal(failed.at(-1).exitCode, 1);
+  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  const missing = source.replace('record.stepStart(id);', '');
+  assert.notEqual(missing, source);
+  const mutant = [];
+  observeVerification('integrate', { source: missing, recordEvents: mutant });
+  assert.throws(() => assert.deepEqual(mutant.filter(event => event.event === 'step-start').map(event => event.id),
+    events.filter(event => event.event === 'step-start').map(event => event.id)), 'removing the recording connection is red');
+});
+
+test('pre-push recording failure does not skip commands or swallow their failure', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const success = runHook(input, hookSource, { recordFailure: true });
+  assertSuccessful(success);
+  assert.deepEqual(success.commands, ['npm run regen -- --check', CONTRACTS]);
+  const failed = runHook(input, hookSource, { recordFailure: true, failCommand: CONTRACTS });
+  assert.equal(failed.status, 1);
+  assert.deepEqual(failed.commands, success.commands);
+  assert.match(failed.stderr, /기록을 시작하지 못했습니다/u);
+});
+
+test('pre-push emits real stage and run outcomes, including failures before later stages', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const passed = runHook(input, hookSource, { realRecords: true });
+  assertSuccessful(passed);
+  assert.deepEqual(passed.records.filter(event => event.event === 'step-start').map(event => event.stageId),
+    ['generated-freshness', 'operational-contracts']);
+  assert.deepEqual(passed.records.filter(event => event.event === 'step-end').map(event => [event.stageId, event.exitCode]),
+    [['generated-freshness', 0], ['operational-contracts', 0]]);
+  assert.equal(passed.records.at(-1).event, 'run-end');
+  assert.equal(passed.records.at(-1).result, 'passed');
+  assert.equal(passed.records.at(-1).recordComplete, true);
+  assert.doesNotMatch(JSON.stringify(passed.records), /HOOK_|npm run|refs\/heads|docs\/README/u);
+
+  const failed = runHook(input, hookSource, { realRecords: true, failCommand: 'npm run regen -- --check' });
+  assert.equal(failed.status, 1);
+  assert.deepEqual(failed.records.filter(event => event.event === 'step-end').map(event => [event.stageId, event.result, event.exitCode]),
+    [['generated-freshness', 'failed', 1]]);
+  assert.equal(failed.records.at(-1).result, 'failed');
+  assert.equal(failed.records.at(-1).exitCode, 1);
+  assert.equal(failed.records.some(event => event.stageId === 'operational-contracts'), false,
+    'a stage never reached must not be recorded as passed');
+
+  const mutant = hookSource.replace('record_start generated-freshness', ':');
+  assert.notEqual(mutant, hookSource);
+  const missing = runHook(input, mutant, { realRecords: true });
+  assertSuccessful(missing);
+  assert.throws(() => assert.deepEqual(missing.records.filter(event => event.event === 'step-start').map(event => event.stageId),
+    ['generated-freshness', 'operational-contracts']), 'disconnecting the recorder is red without changing the original command result');
 });
 
 // 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.
@@ -440,7 +561,7 @@ test('pre-push checks generated freshness first and stops before compilation and
     '낡은 생성물은 컴파일·운영 계약을 기다리지 않고 바로 막는다');
   // 실패 처리에서 exit 1 을 걷으면 낡은 생성물로도 다음 단계로 넘어가고, 검사를 정적 검사 뒤로 옮기면 컴파일을 먼저 기다린다 — 위 단언이 둘 다 잡는다(red 재현).
   const swallowed = hookSource.replace("함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; exit 1; }", "함께 커밋하세요(SAST 예외는 위 안내대로 재검토 뒤 결속)\"; }");
-  const regenBlock = /# 생성물·해시 결속이 낡았는지 맨 앞에서 본다[\s\S]*?exit 1; \}\n\n/u;
+  const regenBlock = /# 생성물·해시 결속이 낡았는지 맨 앞에서 본다[\s\S]*?exit 1; \}\nrecord_end 0\n\n/u;
   const block = hookSource.replace(/\r\n/g, '\n').match(regenBlock)?.[0];
   assert.ok(block, 'pre-push 의 생성물 신선도 블록을 찾지 못했다');
   const moved = hookSource.replace(/\r\n/g, '\n').replace(block, '')
