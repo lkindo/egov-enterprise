@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponsePageResponseAuditJournalEntryResponseSchema, PageResponseAuditJournalEntryResponseSchema } from '../generated-zod/auditjournal';
+import { ApiResponseListStringResponseSchema, ApiResponsePageResponseAuditJournalEntryResponseSchema, PageResponseAuditJournalEntryResponseSchema } from '../generated-zod/auditjournal';
 
 export const auditJournalListOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -21,6 +21,44 @@ export const auditJournalListOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseAuditJournalEntryResponseSchema),
   envelopeSchema: ApiResponsePageResponseAuditJournalEntryResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const auditJournalOperationsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "auditJournalOperations",
+  method: "get",
+  path: "/api/v1/admin/system/logs/audit/operations",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.array(z.string().optional().nullable()),
+  envelopeSchema: ApiResponseListStringResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const exportAuditJournalOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "exportAuditJournal",
+  method: "get",
+  path: "/api/v1/admin/system/logs/audit/export.xlsx",
+  requestKind: "none",
+  responseKind: "binary",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "actorId": z.string().optional(), "operation": z.string().optional(), "fromDate": z.string().optional(), "toDate": z.string().optional(), "reason": z.string() }).strict(),
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: null,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

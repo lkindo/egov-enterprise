@@ -40,6 +40,17 @@ export const PageResponseAuditJournalEntrySchema = /*#__PURE__*/ (() => z.object
 }))();
 export type PageResponseAuditJournalEntry = z.infer<typeof PageResponseAuditJournalEntrySchema>;
 
+export const ApiResponseListStringSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.string()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseListString = z.infer<typeof ApiResponseListStringSchema>;
+
 export const ApiResponsePageResponseAuditJournalEntryRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -100,4 +111,24 @@ export const PageResponseAuditJournalEntryResponseSchema = /*#__PURE__*/ (() => 
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
+}))();
+
+export const ApiResponseListStringRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.string()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseListStringResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.string().optional().nullable()).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
 }))();

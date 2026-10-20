@@ -474,6 +474,8 @@ export { getLoginLogListOperation } from './generated-operations/loginlog';
 export { getLoginLogOperation } from './generated-operations/loginlog';
 export { exportLoginLogsOperation } from './generated-operations/loginlog';
 export { auditJournalListOperation } from './generated-operations/auditjournal';
+export { auditJournalOperationsOperation } from './generated-operations/auditjournal';
+export { exportAuditJournalOperation } from './generated-operations/auditjournal';
 export { getLoginPolicyListOperation } from './generated-operations/loginpolicy';
 export { durableJobListOperation } from './generated-operations/durable-work';
 export { getDeptAuthoritiesOperation } from './generated-operations/department-authority-mapping';

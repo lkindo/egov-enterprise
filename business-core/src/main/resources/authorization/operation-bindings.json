@@ -2771,6 +2771,20 @@
     "permission": "ADT_LOG_READ"
   },
   {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/audit/operations",
+    "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#getAuditJournalOperations",
+    "access": "PERMISSION",
+    "permission": "ADT_LOG_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/admin/system/logs/audit/export.xlsx",
+    "handler": "nuri.api.controller.foundation.controller.system.log.AuditJournalApiController#exportAuditJournal",
+    "access": "PERMISSION",
+    "permission": "ADT_LOG_READ"
+  },
+  {
     "method": "POST",
     "path": "/api/v1/admin/system/policies/{type}",
     "handler": "nuri.api.controller.foundation.controller.system.policy.PolicyApiController#createPolicy",

@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 408,
-    "generatedDescriptorCount": 408
+    "openApiOperationCount": 409,
+    "generatedDescriptorCount": 409
   },
   "target": {
     "generatedPercent": 100,
@@ -28,7 +28,7 @@
     ]
   },
   "summary": {
-    "total": 373,
+    "total": 374,
     "eligible": 351,
     "adoptionPercent": 100,
     "complete": true,
@@ -37,17 +37,17 @@
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
-      "special": 22
+      "special": 23
     },
     "bySpecialCase": {
       "auth-bff": 5,
       "auth-route-client": 5,
-      "binary": 9,
+      "binary": 10,
       "multipart": 0,
       "actuator": 3
     }
   },
-  "inventoryHash": "2b28db39a83ed8dec35ffbbdfb2a132643ae29a9142598c224ada0b726b88a44",
+  "inventoryHash": "d6819dbc513602dfe95cfadc5b5a219bd340bbeb63f637a984cd9cffee2a99a1",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -150,6 +150,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "07163bd757a05ee7c50a"
+    },
+    {
+      "file": "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
+      "owner": "submitExport",
+      "ordinal": 1,
+      "line": 130,
+      "column": 5,
+      "classification": "special",
+      "transport": "browser-navigation",
+      "callee": "navigateToDownload",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/audit/export.xlsx",
+      "operationId": "exportAuditJournal",
+      "descriptorName": "exportAuditJournalOperation",
+      "mappingStatus": "explicit-special-case",
+      "specialCase": "binary",
+      "id": "03a9b27d0d54e5c08dc4"
     },
     {
       "file": "frontend/src/app/admin/system/logs/LogDashboardClient.tsx",
@@ -3467,23 +3484,6 @@
       "id": "ec033830c257835e1300"
     },
     {
-      "file": "frontend/src/services/foundation/system/AdminDashboardService.ts",
-      "owner": "<class>.getOperationalSignals",
-      "ordinal": 1,
-      "line": 19,
-      "column": 12,
-      "classification": "generated",
-      "transport": "generated-executor",
-      "callee": "executeGeneratedOperation",
-      "method": "get",
-      "target": "/api/v1/admin/dashboard/operational-signals",
-      "operationId": "adminOperationalSignals",
-      "descriptorName": "adminOperationalSignalsOperation",
-      "mappingStatus": "generated-operation",
-      "specialCase": null,
-      "id": "f82e427ac4826ce572be"
-    },
-    {
       "file": "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",
       "owner": "AttachmentIntegrityAdminService.scan",
       "ordinal": 1,
@@ -5272,7 +5272,7 @@
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.getAuditJournal",
       "ordinal": 1,
-      "line": 31,
+      "line": 34,
       "column": 26,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5287,9 +5287,26 @@
     },
     {
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
+      "owner": "<class>.getAuditJournalOperations",
+      "ordinal": 1,
+      "line": 48,
+      "column": 26,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "executeGeneratedOperation",
+      "method": "get",
+      "target": "/api/v1/admin/system/logs/audit/operations",
+      "operationId": "auditJournalOperations",
+      "descriptorName": "auditJournalOperationsOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "02a21301cdd8d674cbf3"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.getDurableJobs",
       "ordinal": 1,
-      "line": 50,
+      "line": 60,
       "column": 13,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5306,7 +5323,7 @@
       "file": "frontend/src/services/foundation/system/OperationsRecordAdminService.ts",
       "owner": "<class>.retryDurableJob",
       "ordinal": 1,
-      "line": 61,
+      "line": 71,
       "column": 11,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5476,7 +5493,7 @@
       "file": "frontend/src/services/foundation/system/StatsAdminService.ts",
       "owner": "StatsAdminService.getSummary",
       "ordinal": 1,
-      "line": 36,
+      "line": 49,
       "column": 28,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5493,7 +5510,7 @@
       "file": "frontend/src/services/foundation/system/StatsAdminService.ts",
       "owner": "StatsAdminService.getConnectStats",
       "ordinal": 1,
-      "line": 42,
+      "line": 58,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5510,7 +5527,7 @@
       "file": "frontend/src/services/foundation/system/StatsAdminService.ts",
       "owner": "StatsAdminService.getBbsStats",
       "ordinal": 1,
-      "line": 47,
+      "line": 66,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5527,7 +5544,7 @@
       "file": "frontend/src/services/foundation/system/StatsAdminService.ts",
       "owner": "StatsAdminService.getUserStats",
       "ordinal": 1,
-      "line": 52,
+      "line": 74,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
@@ -5544,7 +5561,7 @@
       "file": "frontend/src/services/foundation/system/StatsAdminService.ts",
       "owner": "StatsAdminService.getDataUsageStats",
       "ordinal": 1,
-      "line": 59,
+      "line": 81,
       "column": 12,
       "classification": "generated",
       "transport": "generated-executor",
