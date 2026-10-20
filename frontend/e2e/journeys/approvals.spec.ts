@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { expect, test as baseTest } from '../fixtures/browser-test';
 import { createVisualAdmin } from '../fixtures/visual-admin';
+import { anonymousCsrfRequestState } from '../fixtures/csrf';
 type ApprovalActor = Awaited<ReturnType<typeof createVisualAdmin>>;
 // 결재자는 신청자와 다른 계정이어야 한다(DEC-OPS-095 — 자기 결재 금지). 일회용 관리자는 현재 관리자와
 // 표시 이름이 같아(동명이인) 검색 결과 순서에 의존하지 않고 고유 ID 로 고르는 경로도 함께 검증한다.
@@ -12,7 +13,7 @@ const test = baseTest.extend<{
 }>({
     approver: async ({ playwright, baseURL }, use) => {
         const fixtureRequest = await playwright.request.newContext({
-            baseURL, storageState: { cookies: [], origins: [] },
+            baseURL, ...anonymousCsrfRequestState(baseURL),
         });
         try {
             const approver = await createVisualAdmin(fixtureRequest, baseURL!);
@@ -28,7 +29,7 @@ const test = baseTest.extend<{
         }
     },
     finalApprover: async ({ playwright, baseURL }, use) => {
-        const fixtureRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        const fixtureRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
         try {
             const actor = await createVisualAdmin(fixtureRequest, baseURL!);
             try {
@@ -44,7 +45,7 @@ const test = baseTest.extend<{
     },
     // [2026-10-04 D4] 결재하지 않고 읽기만 하는 참조자. 결재선과 다른 세 번째 계정이다(참조자는 같은 차수 결재선에 들 수 없다).
     referee: async ({ playwright, baseURL }, use) => {
-        const fixtureRequest = await playwright.request.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        const fixtureRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
         try {
             const actor = await createVisualAdmin(fixtureRequest, baseURL!);
             try {

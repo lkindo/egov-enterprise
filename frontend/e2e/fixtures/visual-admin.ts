@@ -2,6 +2,7 @@ import { randomBytes } from 'node:crypto';
 import { expect, request as playwrightRequest, type APIRequestContext } from '@playwright/test';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
+import { anonymousCsrfRequestState } from './csrf';
 
 /**
  * VRT가 다른 테스트의 결재·댓글 알림을 받지 않도록 실제 사용자와 세션을 분리한다.
@@ -61,7 +62,7 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
         }
 
         // BFF cookies must not replace the administrator session used by fixture cleanup.
-        const loginRequest = await playwrightRequest.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+        const loginRequest = await playwrightRequest.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
         let loginCookies: string[];
         try {
             const login = await loginRequest.post('/api/v1/auth/login', { data: { userId, password } });

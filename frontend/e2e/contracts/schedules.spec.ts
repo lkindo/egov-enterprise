@@ -2,6 +2,7 @@ import { expect,test } from '../fixtures/api-test';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { randomBytes } from 'node:crypto';
 import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
+import { anonymousCsrfRequestState } from '../fixtures/csrf';
 const SCHEDULE_API = '/api/v1/schedules';
 /** 이 스펙이 만든 자원만 지우기 위한 접두사. cleanup 정책과 충돌하지 않게 고유값을 쓴다. */
 const PREFIX = 'E2E24_';
@@ -71,7 +72,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
 
     test('READ_ALL 없는 동료는 같은 부서 공유 일정만 읽고 모든 비소유 쓰기는 차단된다', async ({ adminRequest, playwright }) => {
         const target = await assertIsolatedTarget();
-        const actors = await playwright.request.newContext({ baseURL: `${target.apiUrl}/`, storageState: { cookies: [], origins: [] }, maxRedirects: 0 });
+        const actors = await playwright.request.newContext({ baseURL: `${target.apiUrl}/`, ...anonymousCsrfRequestState(`${target.apiUrl}/`), maxRedirects: 0 });
         const suffix = randomBytes(4).toString('hex');
         const departments: string[] = []; const users: string[] = []; const schedules: number[] = [];
         try {

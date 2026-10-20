@@ -44,3 +44,4 @@
 | [ADR-0035](ADR-0035-login-rate-limit-default.md) | 로그인 요청 제한의 템플릿 기본값 인하(IP당 분당 30) | Accepted |
 | [ADR-0036](ADR-0036-api-paging-and-created-status-conventions.md) | 목록의 1 기반 page·size 통일·잘못된 입력 400, 자원을 만드는 POST 의 201·새 식별자 본문 | Accepted |
 | [ADR-0037](ADR-0037-product-pit-six-slots.md) | 제품 PIT 여섯 슬롯과 실측 긴 순서, 효과 없으면 4로 되돌림 | Accepted |
+| [ADR-0038](ADR-0038-credential-cookie-csrf-token.md) | 쿠키 자격을 실은 쓰기 요청에 이중 제출 CSRF 토큰(SockJS는 허용 Origin) | Accepted |

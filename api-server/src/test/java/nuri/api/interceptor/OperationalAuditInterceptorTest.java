@@ -117,6 +117,32 @@ class OperationalAuditInterceptorTest {
     }
 
     @Test
+    @DisplayName("afterCompletion - 컨텍스트 경로 아래 배포해도 API 요청을 감사한다(범위는 라우팅과 같은 경로 해석)")
+    void afterCompletion_auditsApiUnderContextPath() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setContextPath("/app");
+        request.setRequestURI("/app/api/v1/z");
+
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
+
+        ArgumentCaptor<AuditEvent> captor = ArgumentCaptor.forClass(AuditEvent.class);
+        verify(publisher).publishEvent(captor.capture());
+        assertEquals("/app/api/v1/z", captor.getValue().url());
+    }
+
+    @Test
+    @DisplayName("afterCompletion - 컨텍스트 경로 아래의 비 API 요청은 감사하지 않는다")
+    void afterCompletion_skipsNonApiUnderContextPath() {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setContextPath("/api");
+        request.setRequestURI("/api/actuator/health");
+
+        interceptor.afterCompletion(request, new MockHttpServletResponse(), new Object(), null);
+
+        verifyNoInteractions(publisher);
+    }
+
+    @Test
     @DisplayName("afterCompletion - 예외가 남았으면 2xx 응답도 500 실패로 감사하고 개인정보 성공 이벤트는 발행하지 않음")
     void afterCompletion_exceptionOverridesSuccessfulResponseStatus() throws NoSuchMethodException {
         MockHttpServletRequest request = new MockHttpServletRequest();

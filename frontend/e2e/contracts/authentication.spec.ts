@@ -2,6 +2,7 @@ import { createVisualAdmin } from '../fixtures/visual-admin';
 import fs from 'fs';
 import path from 'path';
 import { expect, test } from '../fixtures/api-test';
+import { anonymousCsrfRequestState, CSRF_COOKIE, E2E_CSRF_TOKEN } from '../fixtures/csrf';
 const ADMIN_AUTH = path.join(__dirname, '..', '..', 'playwright', '.auth', 'admin.json');
 // [2026-07-28 정정] 백엔드 주소를 하드코딩하고 있었다. auth.setup.ts·cleanup-db.ts 는 이미
 //   `process.env.NEXT_PUBLIC_API_URL || 기본값` 패턴을 쓰는데 이 파일만 예외였고, 그 결과
@@ -97,7 +98,7 @@ test.describe(`Token reissue ${REISSUE}`, () => {
     test('유효한 refreshToken 으로 재발급되며, 새 토큰은 바디가 아니라 HttpOnly 쿠키로만 전달된다', async ({ request, playwright, baseURL }) => {
         // Refresh는 사용자당 하나이므로 공유 계정의 로그인·로그아웃과 겹치지 않는 주체를 쓴다.
         const fixtureRequest = await playwright.request.newContext({
-            baseURL, storageState: { cookies: [], origins: [] },
+            baseURL, ...anonymousCsrfRequestState(baseURL),
         });
         let actor: Awaited<ReturnType<typeof createVisualAdmin>> | undefined;
         try {
@@ -105,7 +106,8 @@ test.describe(`Token reissue ${REISSUE}`, () => {
             const refreshToken = actor.refreshToken;
             expect(refreshToken, '일회용 관리자의 로그인에서 refreshToken을 발급해야 한다').toBeTruthy();
             const res = await request.post(REISSUE, {
-                headers: { Cookie: `refreshToken=${refreshToken}` },
+                // 쿠키 자격(refreshToken)을 직접 싣는 쓰기 요청이므로 브라우저처럼 이중 제출 토큰 쿠키도 함께 싣는다(헤더는 fixture).
+                headers: { Cookie: `refreshToken=${refreshToken}; ${CSRF_COOKIE}=${E2E_CSRF_TOKEN}` },
                 maxRedirects: 0,
             });
             expect(res.ok(), `재발급 실패: ${res.status()}`).toBeTruthy();

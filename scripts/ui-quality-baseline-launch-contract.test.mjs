@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
+  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -9,7 +10,7 @@ import {
   rmSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -22,6 +23,7 @@ import {
   BASELINE_LAUNCH_RUNTIME_DIRECTORY,
   createBaselineComposeSpecification,
   createClosedBaselineRunnerEnvironment,
+  defaultBaselineRuntimeRoot,
   launchAttestedBaseline,
   parseBaselineLaunchArguments,
   recoverAttestedBaseline,
@@ -435,6 +437,24 @@ test('baseline rejects non-disposable database names before creating a runtime d
     assert.equal(executor.calls.some(({ command }) => command === 'docker'), false);
     assert.equal(existsSync(fixture.runtimeRoot), false);
   }
+});
+
+test('default runtime root is the per-user cache, not the shared OS temp directory', () => {
+  const root = defaultBaselineRuntimeRoot();
+  assert.equal(root, path.join(homedir(), '.cache', BASELINE_LAUNCH_RUNTIME_DIRECTORY));
+  assert.equal(path.resolve(root).startsWith(path.resolve(tmpdir()) + path.sep), false);
+});
+
+test('POSIX launch rejects a runtime root that other users can write before invoking Docker', {
+  skip: process.platform === 'win32' && 'POSIX ownership and mode bits do not apply on Windows',
+}, () => {
+  const fixture = createFixture();
+  mkdirSync(fixture.runtimeRoot, { mode: 0o700 });
+  chmodSync(fixture.runtimeRoot, 0o777);
+  const executor = fakeExecutor();
+  assert.throws(() => launchAttestedBaseline(launchInput(fixture), launchDependencies(executor)),
+    /runtime directory is invalid/);
+  assert.equal(executor.calls.some(({ command }) => command === 'docker'), false);
 });
 
 test('cleanup leaves the recovery descriptor intact when the bounded runtime directory is not empty', () => {

@@ -1,5 +1,6 @@
 package nuri.business.security.config;
 
+import nuri.foundation.security.filter.CredentialCookieCsrfPolicy;
 import nuri.foundation.security.filter.CredentialRequestTargetFilter;
 import nuri.foundation.security.filter.OriginValidationFilter;
 import nuri.foundation.security.jwt.JwtAuthenticationFilter;
@@ -24,6 +25,10 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 public class SecurityConfig {
         private final JwtTokenProvider jwtTokenProvider;
 
+        /** CSRF 토큰 쿠키의 Secure 여부. 세션 쿠키와 같은 설정을 따른다(ADR-0010). */
+        @org.springframework.beans.factory.annotation.Value("${jwt.cookie.secure:false}")
+        private boolean cookieSecure;
+
         public SecurityConfig(@org.springframework.context.annotation.Lazy JwtTokenProvider jwtTokenProvider) {
                 this.jwtTokenProvider = jwtTokenProvider;
         }
@@ -47,7 +52,10 @@ public class SecurityConfig {
         @org.springframework.core.annotation.Order(2)
         public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
                 http
-                                .csrf(csrf -> csrf.disable())
+                                // API 체인과 같은 규칙 — 쿠키 자격을 실은 쓰기 요청은 이중 제출 토큰을 요구한다(CredentialCookieCsrfPolicy).
+                                .csrf(csrf -> csrf.spa()
+                                                .csrfTokenRepository(CredentialCookieCsrfPolicy.tokenRepository(cookieSecure))
+                                                .requireCsrfProtectionMatcher(CredentialCookieCsrfPolicy.REQUIRES_TOKEN))
                                 .sessionManagement(session -> session
                                                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                                 .authorizeHttpRequests(auth -> auth

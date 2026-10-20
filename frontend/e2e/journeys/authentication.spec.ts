@@ -3,6 +3,7 @@ import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { request as playwrightRequest, type BrowserContext } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { anonymousCsrfRequestState } from '../fixtures/csrf';
 
 type SessionCookie = Parameters<BrowserContext['addCookies']>[0][number];
 
@@ -38,7 +39,7 @@ async function waitPastIssuedSecond(authorization: string) {
  * 쿠키 없는 새 요청 문맥을 쓴다 — 화면 서버 프록시는 accessToken 쿠키가 있으면 Authorization 을 그 값으로 바꾼다.
  */
 async function expectAccessTokenRevoked(baseURL: string, authorization: { Authorization: string }) {
-    const isolated = await playwrightRequest.newContext({ baseURL, storageState: { cookies: [], origins: [] } });
+    const isolated = await playwrightRequest.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
     try {
         const response = await isolated.get('/api/v1/auth/me', { headers: authorization });
         expect(response.status(), '로그아웃한 사용자의 이전 access token 이 아직 서버에서 통과한다').toBe(401);

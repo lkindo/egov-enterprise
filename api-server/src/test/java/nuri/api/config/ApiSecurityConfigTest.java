@@ -22,6 +22,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.hamcrest.Matchers.containsString;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.cookie;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -32,6 +34,7 @@ import nuri.business.service.user.UserService;
 import org.springframework.data.domain.PageImpl;
 import java.util.Collections;
 import nuri.api.interceptor.OperationalAuditInterceptor;
+import jakarta.servlet.http.Cookie;
 import nuri.business.support.ControllerTestSupport;
 
 @WebMvcTest(controllers = UserApiController.class)
@@ -238,5 +241,55 @@ public class ApiSecurityConfigTest extends ControllerTestSupport {
                 .andExpect(status().isOk())
                 .andExpect(header().exists("Access-Control-Allow-Origin"))
                 .andExpect(header().string("Access-Control-Allow-Origin", "http://localhost:3000"));
+    }
+
+    @Test
+    @DisplayName("CSRF - 쿠키 자격을 실은 쓰기 요청은 이중 제출 토큰이 없거나 다르면 403, 같으면 통과한다")
+    void credentialCookieWritesRequireDoubleSubmitToken() throws Exception {
+        Cookie session = new Cookie("accessToken", "browser-session");
+        mockMvc.perform(post("/api/v1/admin/system/users").cookie(session))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(containsString("Request verification token missing or invalid")));
+        verify(operationalAuditInterceptor).publishSecurityFailure(any(), eq(403));
+
+        mockMvc.perform(post("/api/v1/admin/system/users")
+                        .cookie(session, new Cookie("XSRF-TOKEN", "token-a")).header("X-XSRF-TOKEN", "token-b"))
+                .andExpect(status().isForbidden())
+                .andExpect(content().string(containsString("Request verification token missing or invalid")));
+
+        // 토큰이 맞으면 CSRF 를 지나 인증 판정(이 쿠키는 Bearer 가 아니므로 미인증)으로 간다.
+        mockMvc.perform(post("/api/v1/admin/system/users")
+                        .cookie(session, new Cookie("XSRF-TOKEN", "token-a")).header("X-XSRF-TOKEN", "token-a"))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("CSRF - 헤더로만 자격을 보내거나 표시용 쿠키만 실은 쓰기 요청은 토큰을 요구하지 않는다")
+    void headerOnlyWritesAreNotForgeableAndSkipCsrf() throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/users").header("Authorization", "Bearer header-only"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/api/v1/admin/system/users")
+                        .cookie(new Cookie("XSRF-TOKEN", "token-a"), new Cookie("session_exp", "1")))
+                .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    @DisplayName("CSRF - API 응답은 스크립트가 읽는 SameSite=Strict 토큰 쿠키를 발급한다")
+    void apiResponsesIssueScriptReadableStrictTokenCookie() throws Exception {
+        mockMvc.perform(get("/api/v1/health"))
+                .andExpect(cookie().exists("XSRF-TOKEN"))
+                .andExpect(cookie().httpOnly("XSRF-TOKEN", false))
+                .andExpect(cookie().sameSite("XSRF-TOKEN", "Strict"));
+    }
+
+    @Test
+    @DisplayName("CSRF - SockJS 전송은 토큰 대신 허용 Origin 을 강제한다")
+    void sockJsTransportsUseOriginCheckInsteadOfCsrfToken() throws Exception {
+        Cookie session = new Cookie("accessToken", "browser-session");
+        // 허용 Origin 이면 CSRF 403 이 아니라 WebSocket 쿠키 인증 판정(무효 토큰 401)으로 간다.
+        mockMvc.perform(post("/ws/1/session/xhr_send").cookie(session).header("Origin", "http://localhost:3000"))
+                .andExpect(status().isUnauthorized());
+        mockMvc.perform(post("/ws/1/session/xhr_send").cookie(session).header("Origin", "https://other.example.test"))
+                .andExpect(status().isForbidden());
     }
 }
