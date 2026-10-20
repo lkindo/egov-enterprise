@@ -83,6 +83,8 @@ export async function createVisualAdmin(request: APIRequestContext, baseURL: str
             .map(line => /^refreshToken=([^;]+)/.exec(line.trim())?.[1]).find(Boolean);
         const refreshToken: string = refreshCookie || '';
         return {
+            // [2026-10-20] 로그인 ID — 감사 로그 여정이 행위자·조회 대상을 이 값으로 찾는다.
+            userId,
             // 결재 완주 테스트가 이 계정을 결재자로 고른다(자기 결재 금지 — DEC-OPS-095).
             esntlId,
             refreshToken,
