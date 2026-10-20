@@ -97,7 +97,7 @@ test.describe('조직 ↔ 일정 통합 사슬', () => {
                 expect(saved.ognzId).toBe(department);
                 const groups = await adminRequest.get(`/api/v1/admin/authorization/users/${saved.esntlId}/groups`); expect(groups.status()).toBe(200);
                 expect((await groups.json()).data.groups).toEqual(['ROLE_USER']);
-                const login = await actors.post('/api/v1/auth/login', { data: { userId, password } }); expect(login.status()).toBe(200);
+                const login = await actors.post('/api/v1/auth/login', { data: { userId, password } }); expect(login.status(), `로그인 실패: ${await login.text()}`).toBe(200);
                 const token = (await login.json()).data.accessToken as string; expect(typeof token).toBe('string'); expect(token.length).toBeGreaterThan(0);
                 const headers = { Authorization: `Bearer ${token}` }; authorizations.push(headers);
                 const current = await actors.get('/api/v1/auth/me', { headers }); expect(current.status()).toBe(200);

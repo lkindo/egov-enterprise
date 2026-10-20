@@ -97,9 +97,11 @@ export class SurveyPage {
         await this.page.waitForLoadState('domcontentloaded');
 
         const result = await this.page.evaluate(async ({ data }) => {
+            // 앱의 axios 와 같이 이중 제출 CSRF 토큰을 쿠키에서 읽어 헤더로 싣는다(ADR-0038).
+            const xsrf = document.cookie.split('; ').find((cookie) => cookie.startsWith('XSRF-TOKEN='))?.slice('XSRF-TOKEN='.length);
             const res = await fetch('/api/v1/polls', {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
+                headers: { 'Content-Type': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}) },
                 body: JSON.stringify(data)
             });
             return { ok: res.ok, status: res.status, body: await res.text() };
@@ -175,9 +177,11 @@ export class SurveyPage {
 
         // Cast vote via API
         const voteResult = await this.page.evaluate(async ({ pid, iid }: { pid: number, iid: number }) => {
+            // 앱의 axios 와 같이 이중 제출 CSRF 토큰을 쿠키에서 읽어 헤더로 싣는다(ADR-0038).
+            const xsrf = document.cookie.split('; ').find((cookie) => cookie.startsWith('XSRF-TOKEN='))?.slice('XSRF-TOKEN='.length);
             const res = await fetch(`/api/v1/polls/${pid}/vote/${iid}`, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json' }
+                headers: { 'Content-Type': 'application/json', ...(xsrf ? { 'X-XSRF-TOKEN': decodeURIComponent(xsrf) } : {}) }
             });
             return { ok: res.ok, status: res.status, body: await res.text() };
         }, { pid: pollSn, iid: firstItemSn });
