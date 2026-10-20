@@ -1336,16 +1336,20 @@ jobs:
     # 이 잡에는 60분이 필요한 스코프가 없다 — 그 범위는 mutation-scope-migration 이 가져갔다.
     timeout-minutes: 30
     strategy:
-      # 제품 10개 배치는 모두 실행하되 분류 직후 custom 두 layout이 입장할 슬롯을 남긴다(ADR-0027).
-      # 2026-09-29 attempt 2의 현행 분할 실측으로 4-slot LPT 종료를 10분 안쪽으로 계산했다.
-      max-parallel: 4
+      # 제품 13개 배치는 모두 실행한다. 6슬롯 근거: PIT 21범위 구성 뒤 full 실행 7건(39197910752·39211581858·39213303597·
+      # 39241700358·39243734759·39291663884·39294207891)에서 이 잡이 매번 마지막이었고(종료 중앙값 16.7분, 2등 reusable-base 14.9분),
+      # 9분 이후 꼬리 구간에는 runner 가 14개 이상 비어 있는데 PIT 는 4~6개만 돌았다. 같은 7건의 범위별 job 시간 중앙값으로 선언
+      # 순서를 빈 슬롯에 채우면 4슬롯 904초, 6슬롯 657초다(가장 긴 board 한 범위가 하한, runner 대기 제외). 종전 4슬롯은 분류 직후
+      # custom 두 layout 이 입장할 슬롯을 남기려던 것(ADR-0027)인데 지금 custom 은 7.8분에 끝나 꼬리가 아니다.
+      # 효과는 이후 green full 실행의 벽시계 중앙값으로 판정하고, 줄지 않거나 다른 잡이 늦게 입장해 꼬리가 되면 4로 되돌린다.
+      max-parallel: 6
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
         include:
-          # GitHub starts matrix entries in declaration order. Attempt 2의 job 총시간
-          # 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 둔다.
-          # 이 LPT 순서는 target이나 threshold를 바꾸지 않고 4-slot 종료 시각을 줄인다.
+          # GitHub starts matrix entries in declaration order. 2026-09-29 attempt 2의 job 총시간
+          # 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 둔다(target·threshold 는 그대로).
+          # 위 7건 중앙값으로는 순서가 조금 다르지만 6슬롯에서는 이 선언 순서로도 하한에 닿아 다시 정렬하지 않는다.
           # 종전 단일 business-app 범위는 1,279 mutations, 14분 12초였다. 현재 report를
           # 겹침 없는 세 모집단으로 나누고 각 모집단에 75%를 따로 적용해 gate를 강화한다.
           - scope: business-app-board

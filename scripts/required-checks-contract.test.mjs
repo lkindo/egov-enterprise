@@ -97,8 +97,9 @@ function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
-  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 4'],
-    'product PIT must reserve custom admission capacity with exactly four concurrent batches');
+  // 6슬롯: 꼬리 구간의 빈 runner 를 쓰고 custom 입장은 막지 않는다(실측 근거는 ci.yml 의 mutation-scope 주석).
+  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 6'],
+    'product PIT must run exactly six concurrent batches');
   assert.ok(PRODUCT_PIT_SCOPE_COUNT > 0, 'the registry declares product PIT batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, PRODUCT_PIT_SCOPE_COUNT,
     'every product PIT batch declared in the registry must remain');
@@ -560,11 +561,11 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 
 test('E2E and PIT sources start after classification without waiting for independent builds', () => {
   assertProductMutationConcurrency(ciContent);
-  for (const replacement of ['', '      max-parallel: 3\n', '      max-parallel: 8\n', '      # max-parallel: 4\n']) {
+  for (const replacement of ['', '      max-parallel: 4\n', '      max-parallel: 5\n', '      max-parallel: 7\n', '      # max-parallel: 6\n']) {
     const changed = mutateWorkflowJob(ciContent, 'mutation-scope',
-      block => block.replace('      max-parallel: 4\n', replacement));
+      block => block.replace('      max-parallel: 6\n', replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertProductMutationConcurrency(changed), /four concurrent batches/);
+    assert.throws(() => assertProductMutationConcurrency(changed), /six concurrent batches/);
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
     block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
