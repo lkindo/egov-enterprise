@@ -86,6 +86,7 @@ import {
 } from './CodeTreeNode';
 import { CodeClusterFields, CodeDetailFields, CodeGroupFields } from './CodeFormFields';
 import { CommonCodeChangeHistoryDialog, type CodeChangeHistoryTarget } from './CommonCodeChangeHistoryDialog';
+import { CODE_USAGE_DETAILS_LABEL, CodeUsageList, codeGroupLabel, codeUsagesOf } from './code-usage';
 
 /** 새 상세 코드 폼의 기본값 — 폼 생성과 등록 모달 열기가 같은 값을 쓴다. */
 const DETAIL_FORM_DEFAULTS: z.infer<typeof codeDetailFormSchema> = {
@@ -397,12 +398,30 @@ export default function CommonCodeClient({
     if (!isNew && values.useYn === 'N') {
       const affected = groupCountOf(values.clsfCd);
       if (affected > 0) {
+        // [2026-10-20] 사라질 그룹 가운데 이 제품이 읽는 그룹이 있으면 그 사용처를 함께 보인다.
+        const readGroups = flattenedNodes.filter((node): node is Extract<FlattenedCodeNode, { type: 'group' }> =>
+          node.type === 'group' && node.parentId === values.clsfCd && codeUsagesOf(node.data).length > 0);
         const ok = await confirm({
           title: '분류를 미사용으로 전환',
-          message: '이 분류를 미사용으로 바꾸면 소속 코드 그룹 ' + affected + '개가 목록에서 함께 사라집니다. 그룹과 상세 코드가 지워지는 것은 아니며, 분류를 다시 사용으로 되돌리면 그대로 나타납니다.',
+          message: '이 분류를 미사용으로 바꾸면 소속 코드 그룹 ' + affected + '개가 목록에서 함께 사라집니다. 그룹과 상세 코드가 지워지는 것은 아니며, 분류를 다시 사용으로 되돌리면 그대로 나타납니다.'
+            + (readGroups.length > 0 ? ' 이 가운데 ' + readGroups.length + '개는 이 제품이 읽는 그룹이라 아래 사용처를 확인하세요.' : ''),
           confirmText: '미사용으로 전환',
+          ...(readGroups.length > 0 ? {
+            detailsLabel: CODE_USAGE_DETAILS_LABEL,
+            details: (
+              <div className="space-y-3">
+                {readGroups.map((node) => (
+                  <div key={node.id} className="space-y-1">
+                    <p className="text-sm font-semibold text-foreground">{codeGroupLabel(node.data)}</p>
+                    <CodeUsageList usages={codeUsagesOf(node.data)} />
+                  </div>
+                ))}
+              </div>
+            ),
+          } : {}),
         });
-        if (!ok) return;
+        // 확인을 취소하면 제출 시도 잠금을 푼다 — 남겨 두면 창을 닫을 수도 다시 저장할 수도 없다.
+        if (!ok) { structureSubmitAttemptRef.current = false; return; }
       }
     }
 
@@ -433,6 +452,24 @@ export default function CommonCodeClient({
   const onSubmitGroup = async (values: z.infer<typeof codeGroupFormSchema>) => {
     if (structureSavePendingRef.current) return;
     const isNew = structureModal?.mode === 'create';
+
+    /*
+     * [2026-10-20] 이 제품이 읽는 그룹을 사용 안 함으로 바꾸기 전에 사용처를 보인다. 상세 코드 목록은 '사용' 그룹의 상세 코드만
+     * 보이므로(CommonCodeRepositoryImpl) 바꾼 뒤에는 이 화면에서 그 상세 코드를 볼 수 없다는 점도 말한다.
+     */
+    const source = isNew ? undefined : groups.find((group) => group.cdId === values.cdId);
+    const usages = codeUsagesOf(source);
+    if (!isNew && source && source.useYn !== 'N' && values.useYn === 'N' && usages.length > 0) {
+      const ok = await confirm({
+        title: '이 제품이 읽는 그룹을 사용 안 함으로 전환',
+        message: `${codeGroupLabel(source)} 그룹은 이 제품이 읽는 그룹입니다. 사용 안 함으로 바꾸면 이 화면의 상세 코드 목록에 그 상세 코드가 보이지 않습니다. 아래 사용처를 확인한 뒤 진행하세요.`,
+        details: <CodeUsageList usages={usages} />,
+        detailsLabel: CODE_USAGE_DETAILS_LABEL,
+        confirmText: '사용 안 함으로 전환',
+      });
+      if (!ok) { structureSubmitAttemptRef.current = false; return; }
+    }
+
     structureSavePendingRef.current = true;
     setIsStructureSaving(true);
     try {
@@ -626,11 +663,18 @@ export default function CommonCodeClient({
     setDeletingDetailKey(`${targetGroupId}:${detail.dtlCd}`);
 
     try {
+      /*
+       * [2026-10-20] 삭제는 행을 지우지 않고 사용 안 함으로 바꾼다(CommonCode#delete) — 종전 문구 '영구히 삭제합니다. 되돌릴 수
+       * 없습니다'는 사실과 달랐다. 이 제품이 읽는 그룹이면 사용처를 함께 보인다.
+       */
+      const usages = codeUsagesOf(targetGroup);
       const ok = await confirm({
         title: '상세 코드 삭제',
-        message: `‘${detail.dtlCdNm}’(코드 ${detail.dtlCd}) 를 ${targetGroup.cdIdNm} 그룹에서 영구히 삭제합니다. 되돌릴 수 없습니다.`,
+        message: `‘${detail.dtlCdNm}’(코드 ${detail.dtlCd}) 를 ${targetGroup.cdIdNm} 그룹에서 삭제합니다. 행은 남고 사용 안 함으로 바뀌며, 수정에서 다시 사용으로 되돌릴 수 있습니다.`
+          + (usages.length > 0 ? ' 이 제품이 읽는 그룹이라 아래 사용처에 영향이 있습니다.' : ''),
         variant: 'destructive',
-        confirmText: '삭제'
+        confirmText: '삭제',
+        ...(usages.length > 0 ? { details: <CodeUsageList usages={usages} />, detailsLabel: CODE_USAGE_DETAILS_LABEL } : {}),
       });
 
       if (!ok) return;
@@ -684,6 +728,28 @@ export default function CommonCodeClient({
       return;
     }
     const targetGroupId = modalTargetGroup.cdId;
+
+    /*
+     * [2026-10-20] 이 제품이 읽는 그룹의 상세 코드를 사용 안 함으로 바꾸거나 이름을 바꾸면 그 사용처의 선택지·검증·표시 이름이
+     * 바뀐다. 저장 전에 사용처를 보이고 확인을 받는다. 새 상세 코드 등록은 의도한 선택지 추가라 묻지 않는다.
+     */
+    const usages = codeUsagesOf(groups.find((group) => group.cdId === targetGroupId));
+    if (editingDetail && usages.length > 0) {
+      const disabling = editingDetail.useYn !== 'N' && values.useYn === 'N';
+      const renaming = (editingDetail.dtlCdNm ?? '') !== values.dtlCdNm;
+      if (disabling || renaming) {
+        const ok = await confirm({
+          title: disabling ? '이 제품이 읽는 상세 코드를 사용 안 함으로 전환' : '이 제품이 읽는 상세 코드의 이름 변경',
+          message: `${codeGroupLabel(modalTargetGroup)} 그룹은 이 제품이 읽는 그룹입니다. ‘${editingDetail.dtlCdNm}’(코드 ${editingDetail.dtlCd})의 `
+            + (disabling ? '사용 여부를 바꾸면' : '이름을 바꾸면') + ' 아래 사용처에 바로 반영됩니다.',
+          details: <CodeUsageList usages={usages} />,
+          detailsLabel: CODE_USAGE_DETAILS_LABEL,
+          confirmText: '저장',
+        });
+        if (!ok) { detailSubmitAttemptRef.current = false; return; }
+      }
+    }
+
     detailSavePendingRef.current = true;
     setIsDetailSaving(true);
     try {

@@ -14,6 +14,10 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 // 공통코드 그룹 소유는 기능 파일의 owns.commonCodeGroups 다(11단계 C7 — 생성기 상수를 걷었다).
 const modules = loadComposerModules(root);
 const CODE_GROUP_OWNERS = modules.extras.codeGroupOwners;
+// 필수 기반이 읽는 그룹(core.json owns.commonCodeGroups, 2026-10-20). 참조 데이터 계획에는 들어가지 않는다(core 는 늘 싣는다).
+const CORE_CODE_GROUPS = modules.extras.coreCodeGroups;
+/** 공통코드 사용처 포트를 구현한 파일(그룹을 읽는 곳이 아니라 읽는 곳을 말하는 곳이다). */
+const USAGE_CONTRIBUTOR = /\bimplements\s+[^{]*\bCommonCodeUsageContributor\b/u;
 const JAVA_ROOTS = ['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java'];
 
 function javaFiles(directory) {
@@ -28,24 +32,35 @@ test('code group owners match the capability that owns every production file rea
   const catalog = loadProjectComposerCatalog(root);
   const supportOwners = new Map([...modules.declarations.supportFiles()].flatMap(([domain, files]) => files.map(file => [file, domain])));
   const ownerOf = sourceOwner(supportOwners, catalog.capabilities.map(capability => capability.id), requiresClosure(catalog.capabilities));
+  // [2026-10-20] 읽는 곳과 사용처 기여(CommonCodeUsageContributor 구현)를 나눠 센다 — 기여 파일도 그룹 리터럴을 담지만
+  //   그것은 읽는 것이 아니라 읽는다고 말하는 것이다. 둘을 섞으면 기여만 남고 읽는 곳이 사라져도 녹색이 된다.
   const readers = new Map();
+  const contributions = new Map();
   for (const javaRoot of JAVA_ROOTS) for (const absolute of javaFiles(join(root, javaRoot))) {
     const source = readFileSync(absolute, 'utf8');
     const groups = [...new Set([...stripComments(source).matchAll(/"(COM\d{3})"/g)].map(match => match[1]))];
     if (!groups.length) continue;
     const path = relative(root, absolute).split(sep).join('/');
     const owner = ownerOf(path, stripComments(source, { strings: false }));
-    for (const group of groups) readers.set(group, [...(readers.get(group) ?? []), { path, owner }]);
+    const target = USAGE_CONTRIBUTOR.test(stripComments(source, { strings: false })) ? contributions : readers;
+    for (const group of groups) target.set(group, [...(target.get(group) ?? []), { path, owner }]);
   }
-  const mismatches = [...readers].flatMap(([group, files]) => files
-    .filter(file => file.owner !== (CODE_GROUP_OWNERS[group] ?? 'core'))
-    .map(file => `${group}: ${file.path} 는 ${file.owner} 소유인데 표는 ${CODE_GROUP_OWNERS[group] ?? 'core'}`));
+  // 그룹의 선언 소유 — 기능 파일(owns.commonCodeGroups) 또는 core.json(owns.commonCodeGroups). 선언 없는 그룹은 소유가 없다.
+  //   종전에는 선언 없는 그룹을 core 로 보아 core 가 읽는 COM033 이 어디에도 선언되지 않았다(2026-10-20 core 선언 추가).
+  const declaredOwner = group => CODE_GROUP_OWNERS[group] ?? (CORE_CODE_GROUPS.includes(group) ? 'core' : '선언 없음');
+  const mismatches = [...readers, ...contributions].flatMap(([group, files]) => files
+    .filter(file => file.owner !== declaredOwner(group))
+    .map(file => `${group}: ${file.path} 는 ${file.owner} 소유인데 선언은 ${declaredOwner(group)}`));
   assert.deepEqual(mismatches, []);
-  // 표의 그룹은 생산 코드가 실제로 읽는다(읽는 곳이 사라진 선언을 남기지 않는다).
-  assert.deepEqual(Object.keys(CODE_GROUP_OWNERS).filter(group => !readers.has(group)), []);
+  // 선언 = 생산 코드가 읽는 그룹 = 사용처 기여(공통코드 관리 화면이 '이 제품이 읽음'이라고 말하는 그룹). 셋 중 하나라도 어긋나면
+  //   화면이 사실과 다르게 말한다 — 읽는데 기여가 없으면 '읽지 않음', 기여만 남으면 '읽음'이라고 한다.
+  const declared = [...Object.keys(CODE_GROUP_OWNERS), ...CORE_CODE_GROUPS].sort();
+  assert.deepEqual([...readers.keys()].sort(), declared, '생산 코드가 읽는 그룹과 기능 선언(owns.commonCodeGroups)이 다르다');
+  assert.deepEqual([...contributions.keys()].sort(), declared, '사용처 기여(CommonCodeUsageContributor)와 기능 선언이 다르다');
   // 빈 스캔은 통과가 아니다 — core 그룹(COM033)과 표의 두 그룹(COM009·COM075)을 읽는다. 2026-10-10 실측은 네 그룹이었고
   //   2026-10-16 게시판 목록이 COM004 를 걷어 셋이 됐다(DEC-OPS-332 — 유형 이름은 화면 상수가 정본이다).
   assert.ok(readers.has('COM033') && readers.size >= 3, `읽힌 코드 그룹: ${[...readers.keys()].join(', ')}`);
+  assert.ok(contributions.has('COM033') && contributions.size >= 3, `사용처를 기여한 코드 그룹: ${[...contributions.keys()].join(', ')}`);
   // 게시판 유형 이름은 공통코드에서 읽지 않는다 — 다시 읽으면 화면 상수와 정본이 둘이 된다(GAP-BOARD-002).
   assert.equal(readers.has('COM004'), false, `COM004 를 읽는 생산 Java: ${(readers.get('COM004') ?? []).map(file => file.path).join(', ')}`);
   // 표의 소유자는 실제 기능이다.

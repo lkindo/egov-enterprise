@@ -60,6 +60,8 @@ export interface CmmnCode {
   clsfCdNm?: string;
   /** 낙관적 잠금 버전(V2_133). */
   version?: number;
+  /** [2026-10-20] 이 제품이 이 그룹을 읽는 곳(서버가 기능별 기여로 채운다). 빈 목록이면 이 제품이 읽지 않는 그룹이다. */
+  usages?: string[];
 }
 
 export interface CmmnDetailCode {

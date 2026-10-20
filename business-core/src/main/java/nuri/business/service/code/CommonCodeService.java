@@ -10,9 +10,6 @@ import nuri.business.service.code.dto.CommonCodeDto;
 import nuri.business.service.code.dto.CommonCodeMapper;
 import nuri.business.security.util.SecurityUtil;
 
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,12 +42,14 @@ public class CommonCodeService extends BaseAbstractService {
         private final CommonCodeGroupRepository commonCodeGroupRepository;
         private final CommonCodeMapper commonCodeMapper;
         private final CommonCodeChangeRepository changeRepository;
+        private final CommonCodeUsageCatalog usageCatalog;
 
         public CommonCodeService(CommonCodeRepository commonCodeRepository,
                         CommonCodeCategoryRepository commonCodeCategoryRepository,
                         CommonCodeGroupRepository commonCodeGroupRepository,
                         CommonCodeMapper commonCodeMapper,
-                        CommonCodeChangeRepository changeRepository) {
+                        CommonCodeChangeRepository changeRepository,
+                        CommonCodeUsageCatalog usageCatalog) {
                 this.commonCodeRepository = required(commonCodeRepository, "CommonCodeRepository 는 null 일 수 없습니다");
                 this.commonCodeCategoryRepository = required(commonCodeCategoryRepository,
                                 "CommonCodeCategoryRepository 는 null 일 수 없습니다");
@@ -58,6 +57,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 "CommonCodeGroupRepository 는 null 일 수 없습니다");
                 this.commonCodeMapper = required(commonCodeMapper, "CommonCodeMapper 는 null 일 수 없습니다");
                 this.changeRepository = required(changeRepository, "CommonCodeChangeRepository 는 null 일 수 없습니다");
+                this.usageCatalog = required(usageCatalog, "CommonCodeUsageCatalog 는 null 일 수 없습니다");
         }
 
         // --- 변경 이력(2026-09-27 DIP B5 F11) ---
@@ -102,8 +102,16 @@ public class CommonCodeService extends BaseAbstractService {
                                 .build());
         }
 
+        /*
+         * [2026-10-20] 그룹의 '사용' 상세 코드. 캐시를 두지 않는다.
+         *
+         * 종전에는 Caffeine 로컬 캐시(10분)였고 @CacheEvict 는 쓴 인스턴스의 캐시만 비웠다 — 서버가 여러 대면 다른 인스턴스는
+         * 최대 10분 동안 옛 목록으로 결재 업무 구분을 검증·표시했다(사용 안 함으로 바꾼 코드로 상신이 통과하거나 새 코드가 거부된다).
+         * 소비처는 결재(COM075) 하나이고 요청마다 한 번, (cd_id, use_yn) 조건으로 기본 키 앞부분을 쓰는 수십 행 이하의 조회다 —
+         * 결재 목록·상세·상신 요청이 이미 여러 번의 조회를 하는 것에 비하면 무시할 비용이라, 버전 키나 짧은 TTL 로 정합을 맞추는
+         * 장치를 더하지 않고 캐시를 걷어 늘 DB 를 읽는다. 다시 캐시를 둔다면 인스턴스 사이 무효화(공유 캐시·버전 키)를 함께 둔다.
+         */
         @Transactional(readOnly = true)
-        @Cacheable(value = "commonCodes", key = "#codeGroupId")
         public List<CommonCodeDto> getCodesByGroup(@NonNull String codeGroupId) {
                 return commonCodeRepository
                                 .findByCdIdAndUseYn(required(codeGroupId, "codeGroupId 는 null 일 수 없습니다"), "Y")
@@ -139,7 +147,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnClCode(@NonNull CmmnClCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_CREATE");
 
@@ -159,7 +166,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnClCode(@NonNull CmmnClCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_UPDATE");
 
@@ -184,7 +190,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnClCode(@NonNull CmmnClCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_DELETE");
 
@@ -241,7 +246,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnCode(@NonNull CmmnCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_CREATE");
 
@@ -262,7 +266,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCode(@NonNull CmmnCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_UPDATE");
 
@@ -301,7 +304,6 @@ public class CommonCodeService extends BaseAbstractService {
          * 구조적으로 발생하지 않지만, 잘못된 payload 로 인한 자기참조·유령 부모는 아래에서 명시적으로 막는다.
          */
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnCodeHierarchy(List<CmmnCodeHierarchyDto> items) {
                 SecurityUtil.assertPermission("CODE_UPDATE");
                 if (items == null || items.isEmpty()) {
@@ -343,7 +345,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnCode(@NonNull CmmnCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_DELETE");
 
@@ -366,6 +367,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .clsfCdNm(projection.getClsfCdNm())
                                 .useYn(projection.getUseYn())
                                 .version(projection.getVersion())
+                                .usages(usageCatalog.usagesOf(projection.getCdId()))
                                 .build();
         }
 
@@ -383,6 +385,7 @@ public class CommonCodeService extends BaseAbstractService {
                                 .frstRgtrId(entity.getFrstRgtrId())
                                 .lastMdfrId(entity.getLastMdfrId())
                                 .version(entity.getVersion())
+                                .usages(usageCatalog.usagesOf(entity.getCdId()))
                                 .build();
         }
 
@@ -417,7 +420,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void insertCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_CREATE");
 
@@ -441,7 +443,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void updateCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_UPDATE");
 
@@ -472,7 +473,6 @@ public class CommonCodeService extends BaseAbstractService {
         }
 
         @Transactional
-        @CacheEvict(value = "commonCodes", allEntries = true)
         public void deleteCmmnDetailCode(@NonNull CmmnDetailCodeDto dto) {
                 SecurityUtil.assertPermission("CODE_DELETE");
 

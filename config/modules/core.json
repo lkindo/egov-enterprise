@@ -57,6 +57,9 @@
       "sq_auth_cert_dmnd",
       "sq_auth_otp_cert",
       "sq_auth_rstr_cd"
+    ],
+    "commonCodeGroups": [
+      "COM033"
     ]
   },
   "databaseSnapshot": {
@@ -171,6 +174,16 @@
         "to": "schedule",
         "port": "AttachmentSourceContributor",
         "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "board",
+        "port": "CommonCodeUsageContributor",
+        "reason": "이 기능이 없으면 그 기능이 읽는 공통코드 그룹도 없어, 공통코드 관리 화면이 그 그룹의 사용처를 말하지 않을 뿐 빠지는 것이 없습니다."
+      },
+      {
+        "to": "informalsanction",
+        "port": "CommonCodeUsageContributor",
+        "reason": "이 기능이 없으면 그 기능이 읽는 공통코드 그룹도 없어, 공통코드 관리 화면이 그 그룹의 사용처를 말하지 않을 뿐 빠지는 것이 없습니다."
       },
       {
         "to": "board",
