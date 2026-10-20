@@ -491,6 +491,7 @@ export { getSmsOperation } from './generated-operations/sms-management';
 export { getSmsRecipientsOperation } from './generated-operations/sms-management';
 export { getDeliveryStatusOperation } from './generated-operations/sms-management';
 export { scanOperation } from './generated-operations/attachmentintegrity';
+export { adminOperationalSignalsOperation } from './generated-operations/admin-dashboard';
 export { getMembersOperation } from './generated-operations/community';
 export { getTemplateOptionsOperation } from './generated-operations/community';
 export { getCommunityPortletOperation } from './generated-operations/community';

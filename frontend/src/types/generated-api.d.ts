@@ -3987,7 +3987,7 @@ export interface paths {
         };
         /**
          * 메인 대시보드 요약 데이터 조회
-         * @description 공지사항, 할 일, 결재 대기 건수 등을 통합 조회합니다.
+         * @description 공지사항·업무게시판의 최근 글과 전체 글 수를 조회합니다.
          */
         get: operations["getDashboardData"];
         put?: never;
@@ -5212,6 +5212,26 @@ export interface paths {
          * @description DB 첨부 레코드와 저장소 실물을 대조해 어긋난 건수와 조치 대상 예시를 반환한다. 읽기 전용이며 어떤 레코드도 변경하지 않는다.
          */
         get: operations["scan"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/dashboard/operational-signals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 운영 신호 요약 조회
+         * @description 실패한 후속 작업 수·잠긴 계정 수·오늘 실패 요청 수를 DB 에서 세어 관측 시각과 함께 돌려준다. 원천을 조회할 권한(DWORK_READ·USER_READ·SYS_LOG_READ)이 없는 신호는 싣지 않는다.
+         */
+        get: operations["adminOperationalSignals"];
         put?: never;
         post?: never;
         delete?: never;
@@ -8813,8 +8833,6 @@ export interface components {
             taskListTotal: number | null;
             /** Format: int64 */
             notiListTotal: number | null;
-            /** Format: int64 */
-            pendingApprovalCount: number | null;
         };
         ApiResponsePageResponseCommunityDto: {
             success?: boolean;
@@ -11595,6 +11613,39 @@ export interface components {
             undecidable: number;
             orphanSamples: string[];
             healthy?: boolean;
+        };
+        ApiResponseOperationalSignals: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["OperationalSignals"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 운영 신호 하나 */
+        OperationalSignal: {
+            /**
+             * @description 운영 신호 종류 — FAILED_DURABLE_JOBS 재시도 한도에 이른 후속 작업, LOCKED_ACCOUNTS 로그인 잠금 계정, FAILED_REQUESTS_TODAY 오늘(서버 날짜) 기록된 실패 요청(4xx 이상, 시스템 로그)
+             * @enum {string}
+             */
+            kind: "FAILED_DURABLE_JOBS" | "LOCKED_ACCOUNTS" | "FAILED_REQUESTS_TODAY";
+            /**
+             * Format: int64
+             * @description 건수. 조회에 실패하면 null 이다(0 으로 채우지 않는다).
+             */
+            count: number | null;
+        };
+        /** @description 관리자 홈의 운영 신호 요약. 보는 사람이 원천을 조회할 수 있는 신호만 싣는다. */
+        OperationalSignals: {
+            /**
+             * Format: date-time
+             * @description DB 에서 센 시각(UTC)
+             */
+            observedAt: string;
+            signals: components["schemas"]["OperationalSignal"][];
         };
         ApiResponsePageResponseCommunityMemberDto: {
             success?: boolean;
@@ -37450,6 +37501,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseAttachmentIntegrityReport"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    adminOperationalSignals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseOperationalSignals"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

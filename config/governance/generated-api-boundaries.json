@@ -11,8 +11,8 @@
     ],
     "testAndDeclarationFilesExcluded": true,
     "openApiSource": "api-docs.json",
-    "openApiOperationCount": 407,
-    "generatedDescriptorCount": 407
+    "openApiOperationCount": 408,
+    "generatedDescriptorCount": 408
   },
   "target": {
     "generatedPercent": 100,
@@ -28,12 +28,12 @@
     ]
   },
   "summary": {
-    "total": 372,
-    "eligible": 350,
+    "total": 373,
+    "eligible": 351,
     "adoptionPercent": 100,
     "complete": true,
     "byClassification": {
-      "generated": 350,
+      "generated": 351,
       "legacy": 0,
       "direct": 0,
       "unmapped": 0,
@@ -47,7 +47,7 @@
       "actuator": 3
     }
   },
-  "inventoryHash": "b64e4231a697cdf27a08a61237750b3317b47c38c703336b85af03fbe77b29c1",
+  "inventoryHash": "2b28db39a83ed8dec35ffbbdfb2a132643ae29a9142598c224ada0b726b88a44",
   "records": [
     {
       "file": "frontend/src/app/actions/boardActions.ts",
@@ -3465,6 +3465,23 @@
       "mappingStatus": "generated-operation",
       "specialCase": null,
       "id": "ec033830c257835e1300"
+    },
+    {
+      "file": "frontend/src/services/foundation/system/AdminDashboardService.ts",
+      "owner": "<class>.getOperationalSignals",
+      "ordinal": 1,
+      "line": 19,
+      "column": 12,
+      "classification": "generated",
+      "transport": "generated-executor",
+      "callee": "executeGeneratedOperation",
+      "method": "get",
+      "target": "/api/v1/admin/dashboard/operational-signals",
+      "operationId": "adminOperationalSignals",
+      "descriptorName": "adminOperationalSignalsOperation",
+      "mappingStatus": "generated-operation",
+      "specialCase": null,
+      "id": "f82e427ac4826ce572be"
     },
     {
       "file": "frontend/src/services/foundation/system/AttachmentIntegrityService.ts",

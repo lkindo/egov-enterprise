@@ -765,6 +765,12 @@ export { ApiResponseAttachmentIntegrityReportSchema } from './generated-zod/atta
 export type { ApiResponseAttachmentIntegrityReport } from './generated-zod/attachmentintegrity';
 export { AttachmentIntegrityReportSchema } from './generated-zod/attachmentintegrity';
 export type { AttachmentIntegrityReport } from './generated-zod/attachmentintegrity';
+export { ApiResponseOperationalSignalsSchema } from './generated-zod/admin-dashboard';
+export type { ApiResponseOperationalSignals } from './generated-zod/admin-dashboard';
+export { OperationalSignalSchema } from './generated-zod/admin-dashboard';
+export type { OperationalSignal } from './generated-zod/admin-dashboard';
+export { OperationalSignalsSchema } from './generated-zod/admin-dashboard';
+export type { OperationalSignals } from './generated-zod/admin-dashboard';
 export { ApiResponsePageResponseCommunityMemberDtoSchema } from './generated-zod/community';
 export type { ApiResponsePageResponseCommunityMemberDto } from './generated-zod/community';
 export { CommunityMemberDtoSchema } from './generated-zod/community';
@@ -1587,6 +1593,12 @@ export { ApiResponseAttachmentIntegrityReportRequestSchema } from './generated-z
 export { ApiResponseAttachmentIntegrityReportResponseSchema } from './generated-zod/attachmentintegrity';
 export { AttachmentIntegrityReportRequestSchema } from './generated-zod/attachmentintegrity';
 export { AttachmentIntegrityReportResponseSchema } from './generated-zod/attachmentintegrity';
+export { ApiResponseOperationalSignalsRequestSchema } from './generated-zod/admin-dashboard';
+export { ApiResponseOperationalSignalsResponseSchema } from './generated-zod/admin-dashboard';
+export { OperationalSignalRequestSchema } from './generated-zod/admin-dashboard';
+export { OperationalSignalResponseSchema } from './generated-zod/admin-dashboard';
+export { OperationalSignalsRequestSchema } from './generated-zod/admin-dashboard';
+export { OperationalSignalsResponseSchema } from './generated-zod/admin-dashboard';
 export { ApiResponsePageResponseCommunityMemberDtoRequestSchema } from './generated-zod/community';
 export { ApiResponsePageResponseCommunityMemberDtoResponseSchema } from './generated-zod/community';
 export { CommunityMemberDtoRequestSchema } from './generated-zod/community';

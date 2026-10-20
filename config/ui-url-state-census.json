@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "e45954bfa0769d586e03ed9f5ca12c2ef2bcf5eacd806d2b1507b3383226422e"
+    "inventoryHash": "5c69857c87249f508f0a87b19ba7abef883fdad010ebd0c02e2e4195b1c4dcf2"
   },
   "summary": {
-    "records": 399,
-    "syntaxOccurrences": 474,
-    "ambiguousRecords": 351,
-    "unverifiedRecords": 399,
+    "records": 406,
+    "syntaxOccurrences": 485,
+    "ambiguousRecords": 358,
+    "unverifiedRecords": 406,
     "exactPopulations": {
       "filesystemRoutes": 118,
       "dynamicRoutePatterns": 11,
@@ -43,8 +43,8 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 11,
-      "form-producer": 52,
-      "navigation-producer": 181,
+      "form-producer": 51,
+      "navigation-producer": 189,
       "page-redirect": 17,
       "query-builder": 23,
       "query-consumer": 53,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 389,
+      "navigation": 396,
       "request-telemetry": 10
     }
   },
@@ -887,6 +887,121 @@
       }
     },
     {
+      "id": "URL-2D4839CDA2CF47",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
+      "producerFile": "frontend/src/app/admin/AdminDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": "/admin/system/durable-jobs",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/durable-jobs",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-C53615D0F0136D",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
+      "producerFile": "frontend/src/app/admin/AdminDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": "/admin/user/manage",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/user/manage",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-EB1322CD98D30D",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
+      "producerFile": "frontend/src/app/admin/AdminDashboardClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 3
+      }
+    },
+    {
       "id": "URL-5240C76E2966A9",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -925,7 +1040,7 @@
       }
     },
     {
-      "id": "URL-845E61AB75F83B",
+      "id": "URL-4F88B038D1598A",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "jsx-href",
@@ -933,7 +1048,7 @@
       "producerFile": "frontend/src/app/admin/AdminDashboardClient.tsx",
       "consumerFile": null,
       "routePattern": "/admin",
-      "targetCandidate": "/admin/system/audit",
+      "targetCandidate": "/admin/system/logs/system",
       "stateItems": [],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
@@ -942,7 +1057,7 @@
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/system/audit",
+        "routeCandidate": "/admin/system/logs/system",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -959,54 +1074,7 @@
       "evidence": {
         "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
         "detector": "href-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-810EAD03252987",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
-      "producerFile": "frontend/src/app/admin/AdminDashboardClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin",
-      "targetCandidate": "/admin/system/monitoring/hub?tab=security",
-      "stateItems": [
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/system/monitoring/hub",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/AdminDashboardClient.tsx",
-        "detector": "href-navigation",
-        "occurrenceCount": 1
+        "occurrenceCount": 2
       }
     },
     {
@@ -8364,6 +8432,44 @@
       }
     },
     {
+      "id": "URL-C94CE846214C40",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/banner",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 2
+      }
+    },
+    {
       "id": "URL-787F303CAE0EAD",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -8657,44 +8763,6 @@
       }
     },
     {
-      "id": "URL-D977A2D55A9CEA",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx",
-      "producerFile": "frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/banner",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx",
-        "detector": "jsx-form",
-        "occurrenceCount": 1
-      }
-    },
-    {
       "id": "URL-75FA527F77C779",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -8748,44 +8816,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/system/banner/page.tsx",
         "detector": "server-redirect-call",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-ED3B854A5D6EFF",
-      "surface": "navigation",
-      "kind": "form-producer",
-      "operation": "intercepted-submit",
-      "source": "frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx",
-      "producerFile": "frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/system/banner",
-      "targetCandidate": null,
-      "stateItems": [],
-      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx",
-        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },
@@ -12121,6 +12151,242 @@
       },
       "evidence": {
         "source": "frontend/src/app/components/dashboard/BoardHome.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-E5C08F8C9C0D77",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/dashboard/DeptJobHomeCard.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/DeptJobHomeCard.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/dept-job",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/dept-job",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/DeptJobHomeCard.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-064C0DB4F63C06",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-4FAEA2BB68DCA5",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/HomeSummaryCard.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-943E6A7F6A87A8",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/dashboard/MemoReportHome.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/MemoReportHome.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/admin/operation/memo-reports",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/operation/memo-reports",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/MemoReportHome.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-0B9A452478A847",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/dashboard/ScheduleHome.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/ScheduleHome.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/smart-toolkit/schedule",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/smart-toolkit/schedule",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/ScheduleHome.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-D127145CB15011",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/components/dashboard/SurveyHome.tsx",
+      "producerFile": "frontend/src/app/components/dashboard/SurveyHome.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": "/survey",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/survey",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/dashboard/SurveyHome.tsx",
         "detector": "href-navigation",
         "occurrenceCount": 1
       }
