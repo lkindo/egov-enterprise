@@ -14,8 +14,9 @@
  * 실행되므로 명령 집합과 총시간은 순서와 무관하다. fast·push·full 은 맨 앞에서 CodeQL 근사(`npm run sast:approx`, 수 초)를 돈다.
  *
  * integrate 는 여러 갈래를 한 브랜치로 합친 뒤 푸시 전에 돈다(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → 생성물 재생성 →
- * 훅이 보지 않는 무거운 시험(전체 vitest·:api-server:test·닿는 schema-validation·생성기 화면 시험). 운영 계약과 정적 검사는 곧
- * pre-push 가 같은 커밋에서 돌므로 부르지 않는다(§6.2). 선별은 scripts/integration-precheck.mjs 가 한다.
+ * 폼 census·전체 vitest·:api-server:test·전체 하네스·닿는 schema-validation·생성기 화면 시험·바뀐 E2E.
+ * 폼·하네스는 통합 실패를 일찍 알리기 위해 포함하며 pre-push는 그대로 유지한다. 운영 계약은 pre-push가 맡는다.
+ * 선별은 scripts/integration-precheck.mjs 가 한다.
  */
 import { execSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -127,11 +128,12 @@ try {
     run('node scripts/run-isolated-e2e.mjs');
   } else if (scope === 'integrate') {
     // ① 기준(origin/main) 대비 Flyway 버전 중복·충돌을 막고 메뉴 스냅숏 갱신을 알린다 → ② 통합 트리에서 생성물을 한 번 다시 만든다 →
-    // ③ 훅이 보지 않는 무거운 시험. 마지막 줄이 닿는 schema-validation 시험과 생성기 화면 시험을 골라 돈다.
+    // ③ 폼 census와 전체 시험·하네스 → ④ 닿는 schema-validation·생성기 화면·바뀐 E2E를 순차 실행한다.
     run('node scripts/integration-precheck.mjs');
     run('npm run regen');
+    run('pnpm -C frontend run test:form-validation');
     run('pnpm -C frontend exec vitest run');
-    run(`${gradlew} :api-server:test --console=plain -Dfile.encoding=UTF-8`);
+    run(`${gradlew} :api-server:test :api-server:harnessTest --console=plain -Dfile.encoding=UTF-8`);
     run('node scripts/integration-precheck.mjs --run-selected');
   } else if (scope === 'ops') {
     run('node scripts/verify-branch-protection.mjs');

@@ -23,6 +23,8 @@ import org.springframework.stereotype.Component;
  *   <li><b>개인 소유 근거</b> — 개인 귀속(PERSONAL) 참조가 있으면 그 참조의 소유자·당사자만 허용.
  *       같은 파일을 가리키는 공유 참조의 소유자는 개인 첨부를 열 수 없다. 열람 전용 당사자(메모보고 수신자)도 열람은
  *       하지만 삭제 근거는 아니다({@link #assertDeletable}).</li>
+ *   <li><b>비개인 참조원의 본문 제한</b> — 일정의 작성자·전체 열람 권한자·같은 부서 공유 독자가 아니면
+ *       다른 공유 참조와 FILE_READ_ALL로 첨부만 열 수 없다. 개인 참조 당사자 판정·삭제 권한은 그대로다.</li>
  *   <li><b>비개인 소유·공유 근거</b> — 개인 참조가 없을 때 참조 행 소유자 또는 공유 콘텐츠 독자 허용.</li>
  *   <li><b>관리자</b>(ADMIN/SYSTEM) → 허용. <b>단 개인 귀속(PERSONAL) 참조원이 하나라도 있으면 불허</b> —
  *       쪽지·상벌·업무보고 첨부를 관리자가 열람하는 것은 표준화가 아니라 프라이버시 회귀다(AGENTS.md Evidence guardrails H3).</li>
@@ -82,6 +84,8 @@ public class FileAccessPolicy {
             if (grants.personalOwnerGrant() || grants.personalReaderGrant()) {
                 return;
             }
+        } else if (grants.readDenied()) {
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         } else if (grants.ownerGrant() || (grants.sharedGrant() && !grants.personalReference())) {
             return;
         }

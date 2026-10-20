@@ -1,5 +1,7 @@
+import assert from 'node:assert/strict';
 import { randomBytes } from 'node:crypto';
-import { request as playwrightRequest, type APIRequestContext, type APIResponse } from '@playwright/test';
+import { inflateRawSync } from 'node:zlib';
+import { request as playwrightRequest, type APIRequestContext, type APIResponse, type Download, type Page } from '@playwright/test';
 import { expect, test as baseTest } from '../fixtures/browser-test';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
@@ -20,6 +22,116 @@ import { getAdminBearerToken } from '../utils/admin-token';
  * 날짜·기간 조건을 쓰지 않는다 — 앱은 한국 시각, 러너는 UTC 라 자정 근처에 날짜 경계가 어긋난다. 일회용 계정은 브라우저 관찰이
  * 끝난 뒤(고정 장치 정리 순서) 지운다 — 열린 화면의 주체를 먼저 지우면 화면의 다음 요청이 실패로 잡힌다.
  */
+const MAX_ENTRY_BYTES = 10 * 1024 * 1024;
+
+/** Read the ZIP directory, including POI's ZIP64 entries, without extracting files to disk. */
+function readXlsxArchive(bytes: Buffer): Map<string, string> {
+    const end = bytes.lastIndexOf(Buffer.from([0x50, 0x4b, 0x05, 0x06]));
+    assert(end >= 0 && end + 22 <= bytes.length, 'XLSX ZIP end record is missing');
+    assert.equal(end + 22 + bytes.readUInt16LE(end + 20), bytes.length, 'XLSX ZIP is truncated or has trailing bytes');
+    let count = bytes.readUInt16LE(end + 10);
+    let directorySize = bytes.readUInt32LE(end + 12);
+    let cursor = bytes.readUInt32LE(end + 16);
+    const uint64 = (offset: number) => {
+        const value = bytes.readBigUInt64LE(offset);
+        assert(value <= BigInt(Number.MAX_SAFE_INTEGER), 'XLSX ZIP64 value is too large');
+        return Number(value);
+    };
+    if (count === 0xffff || directorySize === 0xffffffff || cursor === 0xffffffff) {
+        assert.equal(bytes.readUInt32LE(end - 20), 0x07064b50, 'XLSX ZIP64 locator is missing');
+        const zip64 = uint64(end - 12);
+        assert.equal(bytes.readUInt32LE(zip64), 0x06064b50, 'XLSX ZIP64 end record is missing');
+        count = uint64(zip64 + 32);
+        directorySize = uint64(zip64 + 40);
+        cursor = uint64(zip64 + 48);
+    }
+    const directoryStart = cursor;
+    const directoryEnd = directoryStart + directorySize;
+    assert(directoryEnd <= end && count > 0 && count < 100, 'XLSX ZIP directory is invalid');
+    const entries = new Map<string, string>();
+    for (let index = 0; index < count; index++) {
+        assert.equal(bytes.readUInt32LE(cursor), 0x02014b50, 'XLSX ZIP directory entry is missing');
+        const method = bytes.readUInt16LE(cursor + 10);
+        let compressedSize = bytes.readUInt32LE(cursor + 20);
+        let size = bytes.readUInt32LE(cursor + 24);
+        const nameLength = bytes.readUInt16LE(cursor + 28);
+        const extraLength = bytes.readUInt16LE(cursor + 30);
+        const commentLength = bytes.readUInt16LE(cursor + 32);
+        let local = bytes.readUInt32LE(cursor + 42);
+        const name = bytes.toString('utf8', cursor + 46, cursor + 46 + nameLength);
+        const next = cursor + 46 + nameLength + extraLength + commentLength;
+        assert(next <= directoryEnd && !entries.has(name), 'XLSX ZIP entry bounds or names are invalid');
+        for (let extra = cursor + 46 + nameLength; extra + 4 <= next - commentLength;) {
+            const extraEnd = extra + 4 + bytes.readUInt16LE(extra + 2);
+            assert(extraEnd <= next - commentLength, 'XLSX ZIP extra field is truncated');
+            if (bytes.readUInt16LE(extra) === 1) {
+                let value = extra + 4;
+                if (size === 0xffffffff) { size = uint64(value); value += 8; }
+                if (compressedSize === 0xffffffff) { compressedSize = uint64(value); value += 8; }
+                if (local === 0xffffffff) { local = uint64(value); value += 8; }
+                assert(value <= extraEnd, 'XLSX ZIP64 entry is truncated');
+            }
+            extra = extraEnd;
+        }
+        assert(size <= MAX_ENTRY_BYTES && compressedSize <= MAX_ENTRY_BYTES, 'XLSX fixture entry exceeds its size bound');
+        assert.equal(bytes.readUInt32LE(local), 0x04034b50, 'XLSX ZIP local entry is missing');
+        const start = local + 30 + bytes.readUInt16LE(local + 26) + bytes.readUInt16LE(local + 28);
+        assert(start + compressedSize <= directoryStart, 'XLSX ZIP file data is truncated');
+        const compressed = bytes.subarray(start, start + compressedSize);
+        assert(method === 0 || method === 8, 'XLSX ZIP compression is unsupported');
+        const content = method === 8 ? inflateRawSync(compressed, { maxOutputLength: MAX_ENTRY_BYTES }) : compressed;
+        assert.equal(content.length, size, 'XLSX ZIP expanded size differs from its directory');
+        entries.set(name, content.toString('utf8'));
+        cursor = next;
+    }
+    assert.equal(cursor, directoryEnd, 'XLSX ZIP directory is incomplete');
+    for (const required of ['[Content_Types].xml', '_rels/.rels', 'xl/workbook.xml', 'xl/_rels/workbook.xml.rels']) {
+        assert(entries.has(required), `XLSX package is missing ${required}`);
+    }
+    return entries;
+}
+
+/** Await transport completion, then parse the actual workbook and worksheet cells. */
+async function downloadedXlsxRows(download: Download, page: Page, sheetName: string): Promise<string[][]> {
+    assert.equal(await download.failure(), null, 'The XLSX download did not complete');
+    const stream = await download.createReadStream();
+    assert(stream, 'The completed XLSX download has no readable stream');
+    const chunks: Buffer[] = [];
+    for await (const chunk of stream) chunks.push(Buffer.from(chunk));
+    const entries = [...readXlsxArchive(Buffer.concat(chunks))];
+    return page.evaluate(({ entries, sheetName }) => {
+        const files = new Map(entries);
+        const xml = (name: string) => {
+            const text = files.get(name);
+            if (text === undefined) throw new Error(`XLSX package is missing ${name}`);
+            const document = new DOMParser().parseFromString(text, 'application/xml');
+            if (document.querySelector('parsererror')) throw new Error(`XLSX XML is malformed: ${name}`);
+            return document;
+        };
+        const workbook = xml('xl/workbook.xml');
+        const sheets = Array.from(workbook.getElementsByTagName('sheet'));
+        if (sheets.length !== 1 || sheets[0].getAttribute('name') !== sheetName) throw new Error('Unexpected XLSX worksheet');
+        const relationshipId = sheets[0].getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+        const relationship = Array.from(xml('xl/_rels/workbook.xml.rels').getElementsByTagName('Relationship'))
+            .find(entry => entry.getAttribute('Id') === relationshipId);
+        const target = relationship?.getAttribute('Target');
+        if (!target || relationship?.getAttribute('TargetMode') === 'External') throw new Error('XLSX worksheet relationship is missing');
+        const sheetPath = new URL(target, 'https://xlsx.invalid/xl/workbook.xml').pathname.slice(1);
+        const sharedStrings = files.has('xl/sharedStrings.xml')
+            ? Array.from(xml('xl/sharedStrings.xml').getElementsByTagName('si')).map(entry => entry.textContent ?? '')
+            : [];
+        return Array.from(xml(sheetPath).getElementsByTagName('row')).map(row =>
+            Array.from(row.getElementsByTagName('c')).map(cell => {
+                if (cell.getAttribute('t') === 'inlineStr') return cell.getElementsByTagName('is')[0]?.textContent ?? '';
+                const value = cell.getElementsByTagName('v')[0]?.textContent ?? '';
+                if (cell.getAttribute('t') !== 's') return value;
+                const text = sharedStrings[Number(value)];
+                if (text === undefined) throw new Error('XLSX cell refers to a missing shared string');
+                return text;
+            }));
+    }, { entries, sheetName });
+}
+
 const AUTHORIZATION = '/api/v1/admin/authorization';
 type AuditActor = Awaited<ReturnType<typeof createVisualAdmin>>;
 type Headers = Record<string, string>;
@@ -128,6 +240,25 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
         await expect(row).toBeVisible({ timeout: 20_000 });
         await expect(row).toContainText(`/api/v1/admin/system/codes/cmmn/${marker}`);
         await expect(row).toContainText('403');
+
+        await test.step('서버에서 직접 내려받은 XLSX 끝까지 읽고 같은 실패 요청을 찾는다', async () => {
+            const [download] = await Promise.all([
+                page.waitForEvent('download'),
+                page.getByRole('button', { name: '전체 결과 엑셀 다운로드', exact: true }).click(),
+            ]);
+            const downloadUrl = new URL(download.url());
+            expect(downloadUrl.pathname).toBe('/api/v1/admin/system/logs/system/export.xlsx');
+            expect(downloadUrl.searchParams.get('searchKeyword')).toBe(marker);
+            expect(download.suggestedFilename()).toBe('system-logs.xlsx');
+            // 이 화면은 서버 URL 로 직접 이동한다. download 이벤트 뒤 전송 완료·ZIP 끝·실제 행까지 확인한다.
+            const rows = await downloadedXlsxRows(download, page, 'system-logs');
+            expect(rows[0]).toEqual(['로그 일련번호', '요청 ID', '서비스명', '메서드명', '처리구분', '처리시간',
+                '요청자 ID', '요청 IP', '발생일자', '응답코드', '오류구분', '오류코드']);
+            const records = rows.slice(1);
+            expect(records.length).toBeGreaterThan(0);
+            expect(records.every(record => record[2] === `/api/v1/admin/system/codes/cmmn/${marker}`)).toBe(true);
+            expect(records.some(record => record[9] === '403')).toBe(true);
+        });
     });
 
     test('사용자 상세 조회는 개인정보 조회 기록과 감사 원장에 남고, 감사 원장을 조건으로 찾아 사유와 함께 내보낸다', async ({ subject, auditor, actorPage, baseURL }) => {
@@ -171,7 +302,7 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
         });
 
         const reason = `E2E 월간 점검 ${randomBytes(3).toString('hex')}`;
-        await test.step('같은 조건으로 사유를 적어 내보내면 파일을 받는다', async () => {
+        await test.step('같은 조건의 XLSX를 끝까지 받아 준비한 감사 행을 읽는다', async () => {
             await page.getByRole('button', { name: /전체 결과 내보내기/ }).click();
             const dialog = page.getByRole('dialog', { name: '감사 원장 내보내기' });
             await expect(dialog).toContainText('감사 원장에 남습니다');
@@ -181,6 +312,16 @@ test.describe('관측 여정 — 행동이 남긴 기록을 찾는다', () => {
                 dialog.getByRole('button', { name: '내보내기', exact: true }).click(),
             ]);
             expect(download.suggestedFilename()).toBe('audit-journal.xlsx');
+            // 감사 화면은 응답 Blob 을 받은 뒤 저장한다. 저장된 ZIP·워크북·기대 행을 읽어
+            // 전송이 잘리거나 필터를 무시하거나 빈 파일을 내는 회귀를 함께 잡는다.
+            const rows = await downloadedXlsxRows(download, page, 'audit-journal');
+            expect(rows[0]).toEqual(['일련번호', '일시', '작업', '설명', '단계', '행위자 로그인 ID', '대상', '접속 IP', '응답 상태', '요청 ID']);
+            const records = rows.slice(1);
+            expect(records.length).toBeGreaterThan(0);
+            expect(records.every(row => row[2] === 'UserApiController#getUser' && row[5] === auditor.userId)).toBe(true);
+            const prepared = records.filter(row => row[4] === 'PREPARED' && row[6] === subject.esntlId);
+            expect(prepared).toHaveLength(1);
+            expect(prepared[0][3]).toContain('사용자 상세');
         });
 
         await test.step('내보내기 자체가 사유와 함께 원장에 남는다', async () => {

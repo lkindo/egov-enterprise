@@ -114,6 +114,40 @@ class FileAccessPolicyTest {
     }
 
     @Test
+    @DisplayName("일정 본문 제한은 공유·파일관리자 우회를 막고 기존 삭제 권한은 바꾸지 않는다")
+    void domainReadRestrictionBlocksOtherSharedGrantsAndFileAdminOnlyForReading() {
+        var grants = new AttachmentReferenceResolver.Grants(true, true, false, false, false, false, true);
+        for (String group : List.of("ROLE_USER", "ROLE_ADMIN")) {
+            authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, group);
+            assertThatExceptionOfType(BusinessException.class)
+                    .isThrownBy(() -> policy(grants).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+            assertThatCode(() -> policy(grants).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+        }
+        var restricted = new AttachmentReferenceResolver.Grants(false, false, false, false, false, false, true);
+        assertThatCode(() -> policy(restricted).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .as("기존 FILE_DELETE_ALL 대행은 읽기 제한으로 바뀌지 않는다").doesNotThrowAnyException();
+    }
+
+    @Test
+    @DisplayName("일정의 읽기 제한보다 기존 개인 참조 당사자 판정과 업로더 예외가 우선한다")
+    void domainReadRestrictionPreservesPersonalPartiesAndUploader() {
+        authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+        var personalOwner = new AttachmentReferenceResolver.Grants(false, true, true, true, false, false, true);
+        var personalReader = new AttachmentReferenceResolver.Grants(false, false, true, false, false, true, true);
+        for (var grants : List.of(personalOwner, personalReader)) {
+            assertThatCode(() -> policy(grants).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .doesNotThrowAnyException();
+        }
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> policy(personalReader).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)));
+        authenticate(UPLOADER_LOGIN_ID, "uploader-internal", "ROLE_USER");
+        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, false, false, false, false, false, true))
+                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID))).doesNotThrowAnyException();
+    }
+
+    @Test
     @DisplayName("공유 근거(비밀글 아닌 게시글 등)가 있으면 타인도 열람한다")
     void sharedContentIsReadableByAnyAuthenticatedUser() {
         authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");

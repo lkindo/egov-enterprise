@@ -70,6 +70,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         boolean personalOwner = false;
         boolean personalReader = false;
         boolean resolutionFailed = false;
+        boolean readDenied = false;
 
         for (AttachmentSource source : sources) {
             if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
@@ -78,6 +79,10 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             }
             try {
                 SourceHit hit = query(source, atchFileSn, loginId, esntlId);
+                // 일정 본문을 읽지 못하면 다른 공유 참조나 FILE_READ_ALL로 첨부만 열 수 없다.
+                // 삭제에는 이 제한을 적용하지 않으므로 owner와 별도로 집계한다.
+                readDenied |= source == AttachmentSource.SCHEDULE && hit.referenced()
+                        && !hit.shared() && !hit.owner();
                 shared |= hit.shared();
                 owner |= hit.owner();
                 boolean personalSource = source.sensitivity() == AttachmentSource.Sensitivity.PERSONAL;
@@ -90,11 +95,12 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                 resolutionFailed = true;
             }
         }
-        return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader);
+        return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader, readDenied);
     }
 
     private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {
         if (source == AttachmentSource.BOARD) return queryBoard(atchFileSn, loginId, esntlId);
+        if (source == AttachmentSource.SCHEDULE) return querySchedule(atchFileSn, loginId);
         List<Object> params = new ArrayList<>();
 
         String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
@@ -182,6 +188,34 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
 
     private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId,
             boolean active) {}
+
+    /**
+     * ScheduleService#getSchedule와 같은 열람 조건. core가 선택 기능의 엔티티에 의존하지 않도록
+     * 등록된 참조원만 SQL로 읽고, 본문/첨부의 일치는 ScheduleAttachmentAccessTest로 대조한다.
+     * 같은 부서와 전체 열람 권한은 공유 근거이며 소유(삭제) 근거로 승격하지 않는다.
+     */
+    private SourceHit querySchedule(Long fileId, String loginId) {
+        var references = jdbcTemplate.query("""
+                SELECT s.frst_rgtr_id, s.schdl_se_cd, s.schdl_dept_id, u.ognz_id
+                  FROM tb_schdl_info s LEFT JOIN tb_user_info u ON u.user_id = ?
+                 WHERE s.atch_file_sn = ?
+                """, (rs, rowNum) -> new ScheduleReference(rs.getString("frst_rgtr_id"),
+                    rs.getString("schdl_se_cd"), rs.getString("schdl_dept_id"), rs.getString("ognz_id")),
+                loginId, fileId);
+        boolean readAll = nuri.business.security.util.SecurityUtil.hasPermission("SCHEDULE_READ_ALL");
+        boolean shared = false, owner = false;
+        for (var reference : references) {
+            // 기존 본문 정책은 사용자 없음·소속 미배정(null/blank)을 기본조직으로 취급한다.
+            String department = reference.userDepartment();
+            if (department == null || department.isBlank()) department = "ORGNZT_0000000000000";
+            shared |= readAll || (loginId != null && !loginId.isBlank()
+                    && "1".equals(reference.sharing()) && department.equals(reference.department()));
+            owner |= loginId != null && loginId.equals(reference.registrar());
+        }
+        return new SourceHit(!references.isEmpty(), shared, owner, false);
+    }
+
+    private record ScheduleReference(String registrar, String sharing, String department, String userDepartment) {}
 
     /**
      * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.

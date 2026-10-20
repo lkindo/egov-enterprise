@@ -28,6 +28,8 @@ public interface AttachmentReferenceResolver {
      * @param resolutionFailed   참조원 하나라도 조회에 실패했는가 — 다른 근거보다 우선해 <b>전부 거부</b>한다
      * @param personalReaderGrant 현재 사용자가 개인 귀속 참조 행을 <b>열람만</b> 할 수 있는 당사자인가(메모보고 수신자 등).
      *                            열람 근거일 뿐 삭제 근거가 아니다
+     * @param readDenied 비개인 참조원의 본문 열람 조건을 만족하지 못했는가 — 일반 공유·FILE_READ_ALL로 우회할 수 없다.
+     *                   PERSONAL 당사자 판정과 삭제·재연결 권한에는 영향을 주지 않는다
      */
     record Grants(
             boolean sharedGrant,
@@ -35,7 +37,14 @@ public interface AttachmentReferenceResolver {
             boolean personalReference,
             boolean personalOwnerGrant,
             boolean resolutionFailed,
-            boolean personalReaderGrant) {
+            boolean personalReaderGrant,
+            boolean readDenied) {
+
+        public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,
+                boolean personalOwnerGrant, boolean resolutionFailed, boolean personalReaderGrant) {
+            this(sharedGrant, ownerGrant, personalReference, personalOwnerGrant, resolutionFailed,
+                    personalReaderGrant, false);
+        }
 
         /** 열람 전용 당사자 근거가 없는 판정. 기존 다섯 근거만 쓰는 판정 표가 그대로 읽힌다. */
         public Grants(boolean sharedGrant, boolean ownerGrant, boolean personalReference,

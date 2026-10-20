@@ -112,11 +112,13 @@ class AttachmentIntegritySchedulerTest {
         var store = mock(AttachmentIntegrityReportStore.class);
         var prometheus = new io.micrometer.prometheusmetrics.PrometheusMeterRegistry(
                 io.micrometer.prometheusmetrics.PrometheusConfig.DEFAULT);
-        new AttachmentIntegrityMetrics(store, prometheus, false, new MutableClock());
+        var health = new AttachmentIntegrityMetrics(store, prometheus, false, new MutableClock());
         assertThat(prometheus.scrape()).contains("nuri_attachment_integrity_enabled 0.0",
                 "nuri_attachment_integrity_healthy_age_seconds 0.0",
                 "nuri_attachment_integrity_last_run_unhealthy 0.0",
                 "nuri_attachment_integrity_observation_healthy 0.0");
+        // Gauge는 약한 참조다. Spring bean과 달리 이 fixture는 직접 수명을 유지해야 NaN이 되지 않는다.
+        java.lang.ref.Reference.reachabilityFence(health);
         verifyNoInteractions(store);
         try (var context = new org.springframework.context.annotation.AnnotationConfigApplicationContext()) {
             context.getEnvironment().getPropertySources().addFirst(new org.springframework.core.env.MapPropertySource("disabled", Map.of(

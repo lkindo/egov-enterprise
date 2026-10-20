@@ -280,10 +280,12 @@ const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle
 // [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
 const SAST_APPROXIMATION = 'npm run sast:approx';
 const VERIFY_FAST = [SAST_APPROXIMATION, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
-// [2026-10-20] 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 훅이 보지 않는 무거운 시험. 운영 계약은 부르지 않는다.
+// 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 폼 census·전체 시험·하네스 → 선별 E2E. 운영 계약은 부르지 않는다.
 const INTEGRATION_PRECHECK = 'node scripts/integration-precheck.mjs';
-const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', 'pnpm -C frontend exec vitest run',
-  './gradlew :api-server:test --console=plain -Dfile.encoding=UTF-8', 'node scripts/integration-precheck.mjs --run-selected'];
+const INTEGRATION_FORMS = 'pnpm -C frontend run test:form-validation';
+const INTEGRATION_BACKEND = './gradlew :api-server:test :api-server:harnessTest --console=plain -Dfile.encoding=UTF-8';
+const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', INTEGRATION_FORMS, 'pnpm -C frontend exec vitest run',
+  INTEGRATION_BACKEND, 'node scripts/integration-precheck.mjs --run-selected'];
 
 test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
   const expected = {
@@ -348,6 +350,26 @@ test('verify stops on a CodeQL approximation finding first and on a Flyway confl
     "    run('npm run regen');\n    run('node scripts/integration-precheck.mjs');\n");
   assert.notEqual(regenFirst, runner);
   assert.deepEqual(observeVerification('integrate', { source: regenFirst, failCommand: INTEGRATION_PRECHECK }).commands, ['npm run regen', INTEGRATION_PRECHECK]);
+});
+
+test('integration runs the form census and full harness before selected E2E, and propagates their failures', () => {
+  for (const command of [INTEGRATION_FORMS, INTEGRATION_BACKEND, 'node scripts/integration-precheck.mjs --run-selected']) {
+    const failed = observeVerification('integrate', { failCommand: command });
+    assert.deepEqual(failed.exits, [1], command);
+    assert.deepEqual(failed.commands, VERIFY_INTEGRATE.slice(0, VERIFY_INTEGRATE.indexOf(command) + 1), command);
+  }
+  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  const integrateStart = source.indexOf("  } else if (scope === 'integrate') {");
+  assert.ok(integrateStart > 0);
+  const before = source.slice(0, integrateStart);
+  const integrateAndAfter = source.slice(integrateStart);
+  for (const [label, mutation] of [
+    ['census omitted', integrateAndAfter.replace("    run('pnpm -C frontend run test:form-validation');", '')],
+    ['harness omitted', integrateAndAfter.replace(':api-server:test :api-server:harnessTest', ':api-server:test')],
+  ]) {
+    assert.notEqual(mutation, integrateAndAfter, label);
+    assert.throws(() => assert.deepEqual(observeVerification('integrate', { source: before + mutation }).commands, VERIFY_INTEGRATE), label);
+  }
 });
 
 // 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.

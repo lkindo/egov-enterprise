@@ -5,13 +5,13 @@
  */
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 import {
   COMPOSER_UI_TEST, MIGRATION_DIRECTORY, compareVersions, entityTables, flywayConflicts, integrationPrecheck, parseMigrationName,
-  selectIntegrationChecks, selectedCommands, testClassName, touchedTables,
+  selectChangedE2e, selectIntegrationChecks, selectedCommands, testClassName, touchedTables, workingTreeChanges,
 } from './integration-precheck.mjs';
 
 test('Flyway names and versions compare the way Flyway does', () => {
@@ -134,4 +134,127 @@ test('the selection becomes Gradle and node commands with safe test class names 
     ['.\\gradlew.bat :api-server:schemaValidationTest --console=plain -Dfile.encoding=UTF-8']);
   assert.deepEqual(selectedCommands({ schema: { mode: 'none', classes: [] }, composerUi: false }), []);
   assert.throws(() => selectedCommands({ schema: { mode: 'selected', classes: ['nuri.A; rm -rf /'] }, composerUi: false }), /시험 클래스 이름이 아닙니다/u);
+});
+
+test('changed E2E specs are selected once while unrelated product changes do not trigger E2E', () => {
+  const changes = [
+    { status: 'M', path: 'frontend/e2e/journeys/audit-log.spec.ts' },
+    { status: 'A', path: 'frontend/e2e/contracts/schedules.spec.ts' },
+    { status: 'M', path: 'frontend/e2e/quality/accessibility.spec.ts' },
+    { status: 'M', path: 'frontend/e2e/contracts/schedules.spec.ts' },
+    { status: 'M', path: 'frontend/src/app/page.tsx' },
+  ];
+  assert.deepEqual(selectChangedE2e(changes), {
+    mode: 'selected',
+    specs: ['e2e/contracts/schedules.spec.ts', 'e2e/journeys/audit-log.spec.ts', 'e2e/quality/accessibility.spec.ts'],
+    reason: '추가·수정한 E2E spec',
+  });
+  assert.equal(selectIntegrationChecks({ changes, readText: () => '', schemaSources: [] }).e2e.mode, 'selected');
+  assert.deepEqual(selectChangedE2e([
+    { status: 'M', path: 'frontend/src/app/page.tsx' },
+    { status: 'M', path: 'scripts/e2e-isolation.test.mjs' },
+    { status: 'M', path: 'scripts/integration-precheck.mjs' },
+    { status: 'M', path: 'scripts/verify.mjs' },
+    { status: 'M', path: 'docs/03-guides/cicd-pipeline.md' },
+  ]), { mode: 'none', specs: [], reason: 'E2E spec·공용 실행 입력 변경 없음' });
+});
+
+test('deleted, renamed or unclassified E2E changes and shared runtime inputs require both complete projects', () => {
+  for (const change of [
+    { status: 'D', path: 'frontend/e2e/contracts/schedules.spec.ts' },
+    { status: 'R', path: 'frontend/e2e/contracts/schedules.spec.ts' },
+    { status: 'T', path: 'frontend/e2e/contracts/schedules.spec.ts' },
+    ...[
+      'frontend/e2e/fixtures/global-setup.ts', 'frontend/e2e/scripts/cleanup-db.ts',
+      'frontend/e2e/auth.setup.ts', 'frontend/e2e/helpers/xlsx-download.ts', 'frontend/e2e/pages/schedule-page.ts',
+      'frontend/e2e/contracts/local-helper.ts', 'frontend/playwright.config.ts',
+      'frontend/package.json', 'frontend/pnpm-lock.yaml', 'frontend/tsconfig.e2e.json',
+      'package.json', 'package-lock.json', 'pnpm-lock.yaml',
+      'scripts/run-isolated-e2e.mjs', 'scripts/e2e-isolation.mjs', 'scripts/playwright-result-contract.mjs',
+    ].map(file => ({ status: 'M', path: file })),
+  ]) {
+    const result = selectChangedE2e([{ status: 'A', path: 'frontend/e2e/contracts/new.spec.ts' }, change]);
+    assert.equal(result.mode, 'all', JSON.stringify(change));
+    assert.deepEqual(result.specs, [], JSON.stringify(change));
+  }
+  assert.equal(selectChangedE2e([
+    { status: 'D', path: 'frontend/e2e/contracts/old.spec.ts' },
+    { status: 'A', path: 'frontend/e2e/contracts/new.spec.ts' },
+  ]).mode, 'all', 'git --no-renames exposes both paths of a move');
+  assert.throws(() => selectChangedE2e([{ status: 'M', path: 'frontend/e2e/enterprise-task-lab/enterprise-task-quality.spec.ts' }]),
+    /전용 E2E 설정 변경은 별도 검증이 필요합니다/u);
+  assert.throws(() => selectChangedE2e([
+    { status: 'M', path: 'scripts/run-isolated-e2e.mjs' },
+    { status: 'M', path: 'frontend/playwright.enterprise-task-lab.config.ts' },
+  ]), /전용 E2E 설정 변경은 별도 검증이 필요합니다/u, 'a shared-input fallback must not conceal a dedicated project');
+  assert.throws(() => selectChangedE2e([
+    { status: 'M', path: 'frontend/e2e/fixtures/global-setup.ts' },
+    { status: 'A', path: 'frontend/e2e/unknown/uncollected.spec.ts' },
+  ]),
+    /기본 Playwright 프로젝트에 포함되지 않는/u);
+});
+
+test('selected E2E uses the isolated runner after other checks and rejects unsafe or empty filters', () => {
+  const selection = {
+    schema: { mode: 'all', classes: [] }, composerUi: true,
+    e2e: { mode: 'selected', specs: ['e2e/contracts/schedules.spec.ts', 'e2e/journeys/audit-log.spec.ts'] },
+  };
+  const runner = 'node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite';
+  assert.deepEqual(selectedCommands(selection, { windows: false }), [
+    './gradlew :api-server:schemaValidationTest --console=plain -Dfile.encoding=UTF-8', COMPOSER_UI_TEST,
+    `${runner} e2e/contracts/schedules.spec.ts e2e/journeys/audit-log.spec.ts`,
+  ]);
+  const commands = e2e => selectedCommands({ schema: { mode: 'none', classes: [] }, composerUi: false, e2e });
+  assert.deepEqual(commands({ mode: 'all', specs: [] }), [runner]);
+  assert.deepEqual(commands({ mode: 'none', specs: [] }), []);
+  for (const e2e of [{ mode: 'selected', specs: [] }, { mode: 'invalid', specs: [] },
+    { mode: 'all', specs: ['e2e/contracts/a.spec.ts'] }, { mode: 'none', specs: ['e2e/contracts/a.spec.ts'] }]) {
+    assert.throws(() => commands(e2e), /E2E 선별 결과가 올바르지 않습니다/u);
+  }
+  for (const file of ['e2e/contracts/a.spec.ts; echo unsafe', 'e2e/contracts/../../a.spec.ts',
+    'e2e/contracts/./a.spec.ts', 'e2e/contracts/a b.spec.ts', '--grep=skip', 'e2e/unknown/a.spec.ts']) {
+    assert.throws(() => commands({ mode: 'selected', specs: [file] }), /E2E spec 경로가 올바르지 않습니다/u, file);
+  }
+});
+
+test('E2E selection includes the base range, index, working tree and untracked files, and preserves deleted rename sources', () => {
+  const root = mkdtempSync(path.join(tmpdir(), 'integration-precheck-e2e-'));
+  const git = (...args) => execFileSync('git', args, { cwd: root, encoding: 'utf8' });
+  const files = ['committed', 'staged', 'unstaged', 'rename'].map(name => `frontend/e2e/contracts/${name}.spec.ts`);
+  const put = (file, text) => writeFileSync(path.join(root, file), text);
+  try {
+    git('init', '-q');
+    git('config', 'user.email', 'test@example.invalid');
+    git('config', 'user.name', 'test');
+    git('config', 'core.autocrlf', 'false');
+    mkdirSync(path.join(root, 'frontend/e2e/contracts'), { recursive: true });
+    for (const file of files) put(file, 'base\n');
+    git('add', '.');
+    git('commit', '-q', '-m', 'base');
+    git('tag', 'base');
+    put(files[0], 'committed\n');
+    git('add', files[0]);
+    git('commit', '-q', '-m', 'branch');
+    put(files[1], 'staged\n');
+    git('add', files[1]);
+    put(files[1], 'base\n'); // base→worktree alone misses this staged change.
+    put(files[2], 'unstaged\n');
+    const untracked = 'frontend/e2e/contracts/untracked.spec.ts';
+    put(untracked, 'untracked\n');
+    const changes = workingTreeChanges(root, 'base');
+    assert.deepEqual(changes.map(row => `${row.status} ${row.path}`).sort(),
+      [...files.slice(0, 3).map(file => `M ${file}`), `A ${untracked}`].sort());
+    assert.deepEqual(selectChangedE2e(changes).specs,
+      [...files.slice(0, 3), untracked].map(file => file.slice('frontend/'.length)).sort());
+    renameSync(path.join(root, files[3]), path.join(root, 'frontend/e2e/contracts/renamed.spec.ts'));
+    const renamed = workingTreeChanges(root, 'base');
+    assert.ok(renamed.some(row => row.status === 'D' && row.path === files[3]));
+    assert.ok(renamed.some(row => row.status === 'A' && row.path.endsWith('/renamed.spec.ts')));
+    assert.equal(selectChangedE2e(renamed).mode, 'all');
+  } finally {
+    const relative = path.relative(path.resolve(tmpdir()), path.resolve(root));
+    assert.ok(relative.startsWith('integration-precheck-e2e-') && !relative.includes(path.sep) && !path.isAbsolute(relative),
+      'delete only the allocated temporary test repository');
+    rmSync(root, { recursive: true, force: true });
+  }
 });
