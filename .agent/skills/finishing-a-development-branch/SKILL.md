@@ -19,12 +19,11 @@ Guide completion of development work by presenting clear options and handling ch
 
 ### Step 1: Verify Tests
 
-**Before presenting options, verify tests pass:**
+**Before presenting options, verify the checks required for the changed scope:**
 
-```bash
-# Run project's test suite
-npm test / cargo test / pytest / go test ./...
-```
+Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [SOP §2.3, §2.4 and §6](../../../docs/03-guides/orchestration-protocol.md). Root `npm test` runs the whole Gradle test suite; it is not the default for every branch. The main agent independently verifies delegated work. Red/green proof, hooks and required CI still apply; serialize heavy checks and avoid only the redundant full bundles described in §6.2.
+
+For example, a change to the shared-memory contract is checked with `node --test scripts/shared-memory-contract.test.mjs`. Choose the actual affected test and required scope checks, rather than copying this example for unrelated changes.
 
 **If tests fail:**
 ```
@@ -35,7 +34,7 @@ Tests failing (<N> failures). Must fix before completing:
 Cannot proceed with merge/PR until tests pass.
 ```
 
-Stop. Don't proceed to Step 2.
+Diagnose the failure before proceeding. Count failures by the same cause under SOP §2.4; at three total failures, stop and report the evidence and options.
 
 **If tests pass:** Continue to Step 2.
 

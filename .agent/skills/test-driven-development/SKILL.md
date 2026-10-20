@@ -15,6 +15,12 @@ Write the test first. Watch it fail. Write minimal code to pass.
 
 **Violating the letter of the rules is violating the spirit of the rules.**
 
+## Repository verification scope
+
+Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [SOP §2.3, §2.4 and §6](../../../docs/03-guides/orchestration-protocol.md). During red/green, run the affected test; before completion, run the additional checks required by the change. Main-agent independent verification, intentional-violation red proof, hooks and required CI are preserved. Heavy checks run one at a time.
+
+The TypeScript examples below use a placeholder test path; replace it with the actual affected frontend test. Root `npm test` runs all Gradle tests and does not select a TypeScript file. For a Node contract, use `node --test scripts/shared-memory-contract.test.mjs` when that is the changed contract; for a backend test on Windows, use `.\gradlew.bat :business-core:test --tests '*AffectedTest'` with the actual module and class.
+
 ## When to Use
 
 **Always:**
@@ -117,7 +123,7 @@ Vague name, tests mock not code
 **MANDATORY. Never skip.**
 
 ```bash
-npm test path/to/test.test.ts
+pnpm -C frontend exec vitest run src/path/to/test.test.ts
 ```
 
 Confirm:
@@ -127,7 +133,7 @@ Confirm:
 
 **Test passes?** You're testing existing behavior. Fix test.
 
-**Test errors?** Fix error, re-run until it fails correctly.
+**Test errors?** Inspect the cause and make a targeted correction. Follow SOP §2.4: stop and report after three failures for the same cause, including the first; a failing setup is not the intended red proof.
 
 ### GREEN - Minimal Code
 
@@ -172,12 +178,12 @@ Don't add features, refactor other code, or "improve" beyond the test.
 **MANDATORY.**
 
 ```bash
-npm test path/to/test.test.ts
+pnpm -C frontend exec vitest run src/path/to/test.test.ts
 ```
 
 Confirm:
 - Test passes
-- Other tests still pass
+- Related tests and the checks required for the change still pass
 - Output pristine (no errors, warnings)
 
 **Test fails?** Fix code, not test.
@@ -303,7 +309,7 @@ test('rejects empty email', async () => {
 
 **Verify RED**
 ```bash
-$ npm test
+$ pnpm -C frontend exec vitest run src/path/to/test.test.ts
 FAIL: expected 'Email required', got undefined
 ```
 
@@ -319,7 +325,7 @@ function submitForm(data: FormData) {
 
 **Verify GREEN**
 ```bash
-$ npm test
+$ pnpm -C frontend exec vitest run src/path/to/test.test.ts
 PASS
 ```
 
@@ -334,7 +340,7 @@ Before marking work complete:
 - [ ] Watched each test fail before implementing
 - [ ] Each test failed for expected reason (feature missing, not typo)
 - [ ] Wrote minimal code to pass each test
-- [ ] All tests pass
+- [ ] The affected tests and required scope checks pass; unrun checks are reported separately
 - [ ] Output pristine (no errors, warnings)
 - [ ] Tests use real code (mocks only if unavoidable)
 - [ ] Edge cases and errors covered

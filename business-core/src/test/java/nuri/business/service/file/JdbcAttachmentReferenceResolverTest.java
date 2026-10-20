@@ -63,7 +63,8 @@ class JdbcAttachmentReferenceResolverTest {
                         sqls.add(invocation.getArgument(0));
                         Object[] all=invocation.getArguments();
                         params.add(java.util.Arrays.copyOfRange(all,2,all.length));
-                        var counts=countsBySource.apply(AttachmentSource.BOARD);
+                        AttachmentSource source = sourceForSql(invocation.getArgument(0));
+                        var counts=countsBySource.apply(source);
                         if (counts.refCnt()==0) return List.of();
                         ResultSet rs=mock(ResultSet.class);
                         when(rs.getString("frst_rgtr_id")).thenReturn(counts.ownerCnt()>0?LOGIN_ID:"other");
@@ -72,6 +73,9 @@ class JdbcAttachmentReferenceResolverTest {
                         when(rs.getString("master_id")).thenReturn("BOARD");
                         when(rs.getString("post_use_yn")).thenReturn("Y");
                         when(rs.getString("master_use_yn")).thenReturn("Y");
+                        when(rs.getString("schdl_se_cd")).thenReturn(counts.sharedCnt()>0?"1":"2");
+                        when(rs.getString("schdl_dept_id")).thenReturn("DEPT1");
+                        when(rs.getString("ognz_id")).thenReturn("DEPT1");
                         RowMapper<?> mapper=invocation.getArgument(1);
                         return List.of(mapper.mapRow(rs,0));
                     });
@@ -138,6 +142,7 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.paramsFor(AttachmentSource.BOARD))
                 .as("순서가 어긋나면 남의 식별자로 소유권을 판정하게 된다")
                 .containsExactly(ATCH_FILE_SN);
+        assertThat(jdbc.paramsFor(AttachmentSource.SCHEDULE)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
 
         // NOTE: loginId 1개 + esntlId 2개(발신·수신 EXISTS) + atchFileSn.
         assertThat(jdbc.paramsFor(AttachmentSource.NOTE))
@@ -375,9 +380,13 @@ class JdbcAttachmentReferenceResolverTest {
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         for (String sql : jdbc.sqls) {
-            if (!sql.contains("FROM tb_bbs_item ")) assertThat(sql).contains("COUNT(*) AS ref_cnt");
+            if (!sql.contains("FROM tb_bbs_item ") && !sql.contains("FROM tb_schdl_info ")) {
+                assertThat(sql).contains("COUNT(*) AS ref_cnt");
+            }
         }
         assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE b.atch_file_sn=?");
+        assertThat(jdbc.sqlFor(AttachmentSource.SCHEDULE))
+                .contains("u.user_id = ?", "WHERE s.atch_file_sn = ?");
         // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
                 .contains("WHERE (file_url = '/api/v1/files/' || ?");
@@ -428,6 +437,21 @@ class JdbcAttachmentReferenceResolverTest {
                 mock(JdbcTemplate.class), List.of(first, second)))
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("중복 등록");
+    }
+
+    @Test
+    void scheduleRestrictionRequiresAReferenceAndDisappearsWhenScheduleIsNotInstalled() {
+        CapturingJdbc jdbc = new CapturingJdbc(source -> source == AttachmentSource.SCHEDULE
+                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE);
+        assertThat(jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).readDenied()).isTrue();
+
+        JdbcAttachmentReferenceResolver withoutSchedule = new JdbcAttachmentReferenceResolver(jdbc.template,
+                List.of(() -> List.of(AttachmentSource.BANNER)));
+        jdbc.sqls.clear();
+        assertThat(withoutSchedule.resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).readDenied()).isFalse();
+        assertThat(jdbc.sqls).noneMatch(sql -> sql.contains("tb_schdl_info"));
+        assertThat(new CapturingJdbc(0, 0, 0).resolver()
+                .resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).readDenied()).isFalse();
     }
 
     /** 테이블 부재처럼 스키마 계열 실패를 흉내내는 최소 예외. */

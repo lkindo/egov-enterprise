@@ -67,8 +67,8 @@ public enum AttachmentSource {
     /** 배너 이미지. 공개 콘텐츠(비로그인 대시보드에도 노출되는 성격). */
     BANNER("tb_bnr_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
 
-    /** 일정. 조직 공용 일정이라 인증 사용자에게 공유된다. */
-    SCHEDULE("tb_schdl_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
+    /** 일정. resolver가 작성자·SCHEDULE_READ_ALL·같은 부서의 공유 일정 조건으로 열람을 판정한다. */
+    SCHEDULE("tb_schdl_info", Sensitivity.SHARED, null, "frst_rgtr_id = ?", null),
 
     /** 부서 업무. 부서 공용 자원이라 개인 귀속이 아니며 관리자 우회를 허용한다. */
     DEPT_TASK("tb_dept_task_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
