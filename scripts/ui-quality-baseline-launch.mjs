@@ -91,9 +91,9 @@ export function defaultBaselineRuntimeRoot() {
 }
 
 /** POSIX 에서는 실행 디렉터리가 현재 사용자 소유이고 그룹·다른 사용자가 쓸 수 없어야 한다. */
-function ownerPrivateDirectory(metadata) {
-  if (process.platform === 'win32') return true;
-  return metadata.uid === process.getuid() && (metadata.mode & 0o022) === 0;
+export function ownerPrivateDirectory(metadata, platform = process.platform, uid = process.getuid?.()) {
+  if (platform === 'win32') return true;
+  return metadata.uid === uid && (metadata.mode & 0o022) === 0;
 }
 
 function exactObjectKeys(value, expected) {

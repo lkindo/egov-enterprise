@@ -3,7 +3,7 @@
 - 상태: Accepted
 - 결정일: 2026-10-21
 - 승인: 사용자가 2026-10-20 시큐어코딩 점검에서 SAST 예외를 "모두 순서대로 근본 해소 방안으로" 처리하라고 지시했다(CSRF는 실제 토큰 도입안).
-- 대체: [DEC-OPS-075](../../.agent/memory/decisions.md)의 한정 예외 가운데 SAST-FP-001·002(API·코어 체인의 CSRF 비활성).
+- 대체: [DEC-OPS-075](../../../.agent/memory/decisions.md)의 한정 예외 가운데 SAST-FP-001·002(API·코어 체인의 CSRF 비활성).
 
 ## 배경
 

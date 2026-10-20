@@ -2,7 +2,6 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import {
-  chmodSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
@@ -25,6 +24,7 @@ import {
   createClosedBaselineRunnerEnvironment,
   defaultBaselineRuntimeRoot,
   launchAttestedBaseline,
+  ownerPrivateDirectory,
   parseBaselineLaunchArguments,
   recoverAttestedBaseline,
   verifyBaselineAuthenticationTarget,
@@ -445,16 +445,14 @@ test('default runtime root is the per-user cache, not the shared OS temp directo
   assert.equal(path.resolve(root).startsWith(path.resolve(tmpdir()) + path.sep), false);
 });
 
-test('POSIX launch rejects a runtime root that other users can write before invoking Docker', {
-  skip: process.platform === 'win32' && 'POSIX ownership and mode bits do not apply on Windows',
-}, () => {
-  const fixture = createFixture();
-  mkdirSync(fixture.runtimeRoot, { mode: 0o700 });
-  chmodSync(fixture.runtimeRoot, 0o777);
-  const executor = fakeExecutor();
-  assert.throws(() => launchAttestedBaseline(launchInput(fixture), launchDependencies(executor)),
-    /runtime directory is invalid/);
-  assert.equal(executor.calls.some(({ command }) => command === 'docker'), false);
+test('POSIX runtime root must be owned by the current user and not writable by group or others', () => {
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40700 }, 'linux', 1000), true);
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40755 }, 'linux', 1000), true);
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40770 }, 'linux', 1000), false);
+  assert.equal(ownerPrivateDirectory({ uid: 1000, mode: 0o40702 }, 'linux', 1000), false);
+  assert.equal(ownerPrivateDirectory({ uid: 1001, mode: 0o40700 }, 'linux', 1000), false);
+  // Windows 는 POSIX 소유자·모드 비트가 없다 — 경로·심볼릭 링크·저장소 밖 검사가 그대로 지킨다.
+  assert.equal(ownerPrivateDirectory({ uid: 0, mode: 0o40777 }, 'win32', undefined), true);
 });
 
 test('cleanup leaves the recovery descriptor intact when the bounded runtime directory is not empty', () => {
