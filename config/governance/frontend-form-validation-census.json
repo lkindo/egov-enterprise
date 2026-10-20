@@ -4,7 +4,7 @@
   "generatedAt": "2026-08-26",
   "expected": {
     "nativeFormOccurrences": 64,
-    "nativeFormFiles": 54,
+    "nativeFormFiles": 55,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 24,
@@ -1064,10 +1064,10 @@
       ]
     },
     {
-      "key": "native-form:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient[1]",
+      "key": "native-form:frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx#useBannerAssetsPanel[1]",
       "kind": "native-form",
-      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
-      "owner": "BannerAdminClient",
+      "file": "frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx",
+      "owner": "useBannerAssetsPanel",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useAppForm-zod",
@@ -1081,10 +1081,10 @@
       ]
     },
     {
-      "key": "native-form:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient[2]",
+      "key": "native-form:frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx#usePopupAssetsPanel[1]",
       "kind": "native-form",
-      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
-      "owner": "BannerAdminClient",
+      "file": "frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx",
+      "owner": "usePopupAssetsPanel",
       "classification": "mutation",
       "status": "compliant",
       "validationMode": "useAppForm-zod",
@@ -2364,14 +2364,13 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient.handleDelete[1]",
+      "key": "secondary-action:frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx#useBannerAssetsPanel.handleDelete[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
-      "owner": "BannerAdminClient",
+      "file": "frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx",
+      "owner": "useBannerAssetsPanel",
       "handler": "handleDelete",
       "writeSinks": [
-        "deleteBannerAction",
-        "deletePopupAction"
+        "deleteBannerAction"
       ],
       "classification": "destructive",
       "status": "compliant",
@@ -2385,13 +2384,12 @@
       ]
     },
     {
-      "key": "secondary-action:frontend/src/app/admin/system/banner/BannerAdminClient.tsx#BannerAdminClient.handleDelete[2]",
+      "key": "secondary-action:frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx#usePopupAssetsPanel.handleDelete[1]",
       "kind": "secondary-action",
-      "file": "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
-      "owner": "BannerAdminClient",
+      "file": "frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx",
+      "owner": "usePopupAssetsPanel",
       "handler": "handleDelete",
       "writeSinks": [
-        "deleteBannerAction",
         "deletePopupAction"
       ],
       "classification": "destructive",

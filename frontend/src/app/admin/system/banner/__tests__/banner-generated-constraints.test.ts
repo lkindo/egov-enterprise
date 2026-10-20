@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import { bannerSchema, popupSchema } from '../BannerAdminClient';
+import { bannerSchema } from '../BannerAssetsPanel';
+import { popupSchema } from '../PopupAssetsPanel';
 
 /*
   배너·팝업 폼 스키마의 생성 제약 보존 — 홍보 기능 소유(Phase 2 10단계 10c-1). 종전 core 의 생성 제약 보존 시험

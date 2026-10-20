@@ -6550,6 +6550,7 @@
             "frontend/src/app/actions/__tests__/promotionActions.test.ts",
             "frontend/src/app/actions/promotionActions.ts",
             "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+            "frontend/src/app/admin/system/banner/BannerAssetsPanel.tsx",
             "frontend/src/app/admin/system/banner/__tests__/BannerAdminClient.test.tsx",
             "frontend/src/app/admin/system/banner/page.tsx",
             "frontend/src/services/foundation/system/BannerAdminService.ts",
@@ -6582,7 +6583,9 @@
             "frontend/src/app/actions/__tests__/promotionActions.test.ts",
             "frontend/src/app/actions/promotionActions.ts",
             "frontend/src/app/admin/system/banner/BannerAdminClient.tsx",
+            "frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx",
             "frontend/src/app/admin/system/banner/__tests__/BannerAdminClient.test.tsx",
+            "frontend/src/app/admin/system/banner/__tests__/PopupAssetsPanel.preview.test.tsx",
             "frontend/src/app/admin/system/banner/page.tsx",
             "frontend/src/services/foundation/system/PopupAdminService.ts"
           ]

@@ -4,6 +4,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import BannerAdminClient from '../BannerAdminClient';
 import type { fileAdminService } from '@/services/foundation/system/FileAdminService';
 
+/*
+  [2026-10-20] 이 시험은 셸(BannerAdminClient)을 그려 셸이 조립하는 배너 패널(BannerAssetsPanel·useBannerAssetsPanel)과
+  팝업 패널(PopupAssetsPanel·usePopupAssetsPanel)의 폼·삭제 처리기를 함께 판정한다 — 화면을 자산별 파일로 나눴어도 한 화면이다.
+*/
+
 /**
  * 업로드 mock 이 돌려줄 값. **타입이 실제 서비스 선언에 결속돼 있다** —
  * 여기에 envelope 형태(`{ data: { data: n } }`)를 다시 넣으면 컴파일 오류다.
@@ -78,6 +83,8 @@ vi.mock('@/hooks/useAppForm', () => ({
       control: { values },
       reset: isBanner ? mocks.resetBanner : mocks.resetPopup,
       handleSubmit: (submit: (value: any) => unknown) => () => submit(values),
+      // 팝업 창의 미리보기가 입력 중인 값을 읽는다.
+      watch: () => values,
       applyServerErrors: vi.fn(() => false),
       focusError: vi.fn(),
       formState: { isSubmitting: false },
@@ -146,6 +153,8 @@ vi.mock('@/components/ui/hub/HubStatusBadge', () => ({
 }));
 vi.mock('@/app/components/ui/attachment-image', () => ({
   AttachmentImage: ({ alt }: any) => <span role="img" aria-label={alt} />,
+  // 팝업 창의 미리보기(공지 팝업 패널)가 첨부 주소를 가려낼 때 쓴다 — 이 시험의 판정 대상은 아니다.
+  extractAtchFileSn: () => null,
 }));
 vi.mock('@/app/components/ui/standard-file-uploader', () => ({
   StandardFileUploader: ({ onFilesChange }: any) => (
