@@ -34,6 +34,16 @@ type InstitutionTab = 'list' | 'reception';
 /** 페이지당 건수 기본값(A1 필수 — 사용자가 바꿀 수 있다). URL 에는 싣지 않는다. */
 const DEFAULT_PAGE_SIZE = 10;
 
+/*
+ * [2026-10-20] 빈 상태는 왜 비었는지 말한다(GAP-CODE-001). 이 제품에는 기관 코드 원장과 수신 내역에 행을 쓰는 경로가 없다 —
+ * 연계 수신·가져오기·직접 등록이 모두 없고, 행은 데이터베이스에 직접 넣어야 들어온다. '수신 처리'는 이미 있는 수신 건의 처리
+ * 상태만 바꾼다. 종전 '등록된 기관 코드가 없습니다' 는 어디서 등록하는지 찾게 했다.
+ */
+export const INSTITUTION_EMPTY_MESSAGE =
+  '등록된 기관 코드가 없습니다. 이 제품에는 기관 코드를 받아 오거나 등록하는 기능이 없어, 데이터베이스에 직접 넣어야 들어옵니다.';
+export const RECEPTION_EMPTY_MESSAGE =
+  '수신 내역이 없습니다. 이 제품은 기관 코드 변경을 받아 오지 않아, 수신 내역도 데이터베이스에 직접 넣어야 들어옵니다.';
+
 export default function InstitutionCodeClient({
   initialData,
   embedded = false,
@@ -368,7 +378,7 @@ export default function InstitutionCodeClient({
             error={listQuery.error}
             onRetry={() => listQuery.refetch()}
             keyField="instCd"
-            emptyMessage={emptyResultMessage(keyword, '등록된 기관 코드가 없습니다.')}
+            emptyMessage={emptyResultMessage(keyword, INSTITUTION_EMPTY_MESSAGE)}
             pagination={{
               currentPage: page,
               totalPages: Math.max(Math.ceil(total / pageSize), 1),
@@ -386,7 +396,7 @@ export default function InstitutionCodeClient({
             error={receptionQuery.error}
             onRetry={() => receptionQuery.refetch()}
             keyField="jobSn"
-            emptyMessage={emptyResultMessage(keyword, '수신 내역이 없습니다.')}
+            emptyMessage={emptyResultMessage(keyword, RECEPTION_EMPTY_MESSAGE)}
             pagination={{
               currentPage: page,
               totalPages: Math.max(Math.ceil(total / pageSize), 1),

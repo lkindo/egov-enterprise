@@ -49,11 +49,13 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
   }) => <main><h1>{title}</h1>{actions}{filter}{children}</main>,
 }));
 vi.mock('@/app/components/ui/standard-data-table', () => ({
-  StandardDataTable: ({ columns, data }: {
+  StandardDataTable: ({ columns, data, emptyMessage }: {
     columns: Array<{ header: string; accessor: (item: Record<string, unknown>) => ReactNode }>;
     data: Array<Record<string, unknown>>;
+    emptyMessage?: string;
   }) => (
     <div>
+      {data.length === 0 && emptyMessage ? <p>{emptyMessage}</p> : null}
       {data.map((item, row) => (
         <div key={row}>{columns.map((column, index) => (
           <span key={`${row}-${index}`}>{column.accessor(item)}</span>
@@ -63,7 +65,7 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ),
 }));
 
-import InstitutionCodeClient from '../InstitutionCodeClient';
+import InstitutionCodeClient, { INSTITUTION_EMPTY_MESSAGE, RECEPTION_EMPTY_MESSAGE } from '../InstitutionCodeClient';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 const RECEPTION = {
@@ -89,6 +91,26 @@ const openReceptionTab = async () => {
   fireEvent.click(screen.getByRole('tab', { name: /수신 이력/ }));
   await screen.findByText('서울특별시');
 };
+
+describe('기관코드 빈 상태 — 왜 비었는지 말한다(GAP-CODE-001)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    auth.permissions = FULL_PERMISSIONS;
+    mocks.getList.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
+    mocks.getReceptions.mockResolvedValue({ list: [], total: 0, totalPage: 1 });
+  });
+
+  it('기관 코드와 수신 내역이 비면 이 제품에 적재 경로가 없고 데이터베이스에 직접 넣어야 한다고 말한다', async () => {
+    renderClient();
+    expect(await screen.findByText(INSTITUTION_EMPTY_MESSAGE)).toBeInTheDocument();
+    expect(INSTITUTION_EMPTY_MESSAGE).toContain('받아 오거나 등록하는 기능이 없어');
+    expect(INSTITUTION_EMPTY_MESSAGE).toContain('데이터베이스에 직접 넣어야');
+
+    fireEvent.click(screen.getByRole('tab', { name: /수신 이력/ }));
+    expect(await screen.findByText(RECEPTION_EMPTY_MESSAGE)).toBeInTheDocument();
+    expect(RECEPTION_EMPTY_MESSAGE).toContain('데이터베이스에 직접 넣어야');
+  });
+});
 
 describe('기관코드 수신 처리 — 없는 원장 반영을 약속하지 않는다', () => {
   beforeEach(() => {
