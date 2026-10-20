@@ -6611,6 +6611,10 @@ export interface components {
             /** Format: int64 */
             rwrdSn?: number;
             rwardwnrId: string;
+            /** @description 수상자 이름. 서버가 수상자 계정에서 읽어 싣는다 — 계정이 없으면 비어 있다. */
+            readonly rwardwnrNm?: string;
+            /** @description 수상자 소속 부서 이름. 서버가 수상자 계정에서 읽어 싣는다 — 소속이 없거나 계정이 없으면 비어 있다. */
+            readonly rwardwnrDeptNm?: string;
             rwardCode: string;
             rwardDe?: string;
             rwardNm?: string;
