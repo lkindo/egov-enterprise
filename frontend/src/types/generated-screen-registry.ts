@@ -505,7 +505,8 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
-      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"}
+      {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"SURVEY_READ_ALL","action":"READ_ALL","source":"display"}
     ]
   },
   {

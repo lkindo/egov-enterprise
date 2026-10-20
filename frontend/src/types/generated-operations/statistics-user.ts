@@ -5,7 +5,7 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseListStatsDtoResponseSchema, StatsDtoResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseListStatsPointResponseSchema, StatsPointResponseSchema } from '../generated-zod/_shared';
 
 export const getConnectStatsOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -19,8 +19,8 @@ export const getConnectStatsOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: z.object({ "fromDate": z.string().optional(), "toDate": z.string().optional() }).strict(),
   requestSchema: null,
-  responseSchema: z.array(z.lazy(() => StatsDtoResponseSchema)),
-  envelopeSchema: ApiResponseListStatsDtoResponseSchema,
+  responseSchema: z.array(z.lazy(() => StatsPointResponseSchema)),
+  envelopeSchema: ApiResponseListStatsPointResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
