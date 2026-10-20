@@ -648,11 +648,13 @@ test('every repository skill is classified and only project skills reach generat
 });
 
 /*
- * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 프리셋 3개, 빈 선택, 단독 선택 21개, CI 대표 직접 선택 2개, 그리고 주소록이
+ * 화면 생존 대조(슬롯 단계 PR-1)를 커밋된 그물로 돈다: 시작 구성마다, 빈 선택, 기능마다의 단독 선택, CI 대표 직접 선택 2개, 그리고 주소록이
  * 수신자 피커에 기여하는 {mail, sms, addressbook}. 판정 통일(PR-2)의 골든 diff 를 이 대조가 화면 단위로 지킨다.
+ * 기능 모집단은 기능 선언(config/modules)이 정본이고 project-composer-catalog.test.mjs 가 카탈로그와 정확한 집합으로 대조한다 —
+ * 여기서는 그 수를 다시 적지 않고 비지 않았는지만 본다(DEC-OPS-340).
  */
 test('every selectable capability preserves its declared frontend and the screens its composition expects through actual import projection', () => {
-  assert.equal(catalog.capabilities.length, 21, 'review the capability population when its declaration changes');
+  assert.ok(catalog.capabilities.length > 1, 'the declared capability population must not be empty');
   for (const feature of catalog.capabilities) {
     const result = inspectFrontendSurvival([feature.id]);
     assert.ok(result.expectedCount > 1, `${feature.id} has no declared frontend population`);
