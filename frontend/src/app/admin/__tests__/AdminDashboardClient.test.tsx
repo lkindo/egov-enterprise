@@ -85,8 +85,9 @@ describe('관리자 홈 — 권한에 맞는 조회와 원천에 맞는 이름',
     const signals = (await screen.findByRole('heading', { level: 2, name: '운영 신호' })).closest('section') as HTMLElement;
     expect(within(signals).getByText('2건')).toBeInTheDocument();
     expect(within(signals).getByText('5건')).toBeInTheDocument();
-    // 관측 시각은 한국 시각이다(서버는 UTC 로 보낸다).
-    expect(within(signals).getByText(/관측 시각 2026-10-20 08:30:00/)).toBeInTheDocument();
+    // 관측 시각은 한국 시각이다(서버는 UTC 로 보낸다). 시각은 <time> 이 기계용 원값을 함께 싣는다.
+    expect(within(signals).getByText(/DB 에서 센 값입니다/)).toHaveTextContent('관측 시각 2026-10-20 08:30:00');
+    expect(within(signals).getByText('2026-10-20 08:30:00').tagName).toBe('TIME');
     expect(card('잠긴 계정')).toHaveAttribute('href', '/admin/user/manage');
     expect(card('오늘 실패 요청')).toHaveAttribute('href', '/admin/system/logs/system');
     // 서버가 싣지 않은 신호(후속 작업 조회 권한 없음)는 그리지 않는다.

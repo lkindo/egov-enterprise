@@ -283,7 +283,11 @@ export default function AdminDashboardClient() {
           <div>
             <h2 id="admin-operational-signals" className="text-sm font-bold text-foreground">운영 신호</h2>
             <p className="mt-0.5 text-xs font-medium text-muted-foreground">
-              DB 에서 센 값입니다. 관측 시각 {utcToSeoulDisplayDateTime(signalsData?.observedAt)}
+              {/* 관측 시각은 요청마다 바뀌는 값이라 다른 동적 숫자처럼 tabular-nums 로 둔다(시각 회귀 기준선이 이 클래스를 가린다). */}
+              DB 에서 센 값입니다. 관측 시각{' '}
+              <time dateTime={signalsData?.observedAt ?? undefined} className="tabular-nums">
+                {utcToSeoulDisplayDateTime(signalsData?.observedAt)}
+              </time>
             </p>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
