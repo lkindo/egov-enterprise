@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import { test } from 'node:test';
+import {
+  assertReplayInvocation, browserEnvironment, renderFixture, replayErrors, staticDomErrors,
+} from '../tools/agent-evaluation/visual-regression-replay.mjs';
 
 const workflowUrl = new URL('../.github/workflows/update-visual-baseline.yml', import.meta.url);
 
@@ -99,4 +102,61 @@ test('판정 근거를 파일 존재로 되돌리면 재현 가능한 red 다', 
     ).join('\n'),
     /파일 존재로는 판정할 수 없습니다/u,
   );
+});
+
+const validReplayDom = {
+  title: '코드 분류 및 그룹', labels: ['분류', '그룹'],
+  masterCount: 1, detailCount: 1, groups: ['COM001', 'COM009 제품이 읽음'],
+};
+function passingReplayObservations() {
+  const comparison = differentPixels => ({ pixels: 100, differentPixels });
+  return {
+    comparisons: {
+      countChange: comparison(10), numberMask: comparison(5), rowMask: comparison(0),
+      layoutRegression: comparison(20), maskedLabelRegression: comparison(0),
+    },
+    expectedDom: validReplayDom, changedDom: validReplayDom,
+    labelRegressionDom: { ...validReplayDom, labels: ['사용자', '그룹'] },
+    networkRequests: 0,
+  };
+}
+
+test('선택형 시각 재현은 CI·외부 입력·기준선 갱신 옵션을 받지 않고 브라우저 자격증명을 최소화한다', () => {
+  assert.doesNotThrow(() => assertReplayInvocation([], {}));
+  assert.throws(() => assertReplayInvocation([], { CI: 'true' }), /CI/);
+  for (const args of [['--update-snapshots'], ['https://example.test'], ['--output', '..']]) {
+    assert.throws(() => assertReplayInvocation(args), /인자/);
+  }
+  assert.deepEqual(browserEnvironment({
+    PATH: 'synthetic-bin', SystemRoot: 'synthetic-system', TEMP: 'synthetic-temp',
+    GOOGLE_APPLICATION_CREDENTIALS: 'must-not-pass', DATABASE_URL: 'must-not-pass',
+    OPENAI_API_KEY: 'must-not-pass', HOME: 'must-not-pass',
+  }), { PATH: 'synthetic-bin', SystemRoot: 'synthetic-system', TEMP: 'synthetic-temp', TZ: 'UTC', LANG: 'C.UTF-8' });
+  assert.throws(() => renderFixture('unknown'), /알 수 없는/);
+  assert.doesNotMatch(renderFixture('count-changed'), /(?:src|href)=["'](?:https?:|file:)/u);
+});
+
+test('시각 재현 판정은 건수 안정화와 실제 회귀 검출을 함께 요구한다', () => {
+  assert.deepEqual(replayErrors(passingReplayObservations()), []);
+  assert.ok(replayErrors({}).length > 0, '미실행·빈 결과는 성공이 아니다');
+  const hiddenLayout = passingReplayObservations();
+  hiddenLayout.comparisons.layoutRegression.differentPixels = 0;
+  assert.match(replayErrors(hiddenLayout).join('\n'), /layoutRegression/);
+  const unstableRow = passingReplayObservations();
+  unstableRow.comparisons.rowMask.differentPixels = 1;
+  assert.match(replayErrors(unstableRow).join('\n'), /rowMask/);
+  const invalidPixels = passingReplayObservations();
+  invalidPixels.comparisons.numberMask.pixels = 0;
+  assert.match(replayErrors(invalidPixels).join('\n'), /유효한 픽셀/);
+});
+
+test('행 전체 마스크가 숨긴 정적 문구 오류를 DOM 계약이 반드시 거부한다', () => {
+  assert.deepEqual(staticDomErrors(validReplayDom), []);
+  assert.match(staticDomErrors({ ...validReplayDom, labels: ['사용자', '그룹'] }).join('\n'), /레이블/);
+  const concealed = passingReplayObservations();
+  concealed.labelRegressionDom = validReplayDom;
+  assert.match(replayErrors(concealed).join('\n'), /DOM 검사가 거부하지 못했습니다/);
+  const network = passingReplayObservations();
+  network.networkRequests = 1;
+  assert.match(replayErrors(network).join('\n'), /네트워크/);
 });

@@ -1,56 +1,14 @@
 import assert from 'node:assert/strict';
 import { mkdtempSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { basename, dirname, join, relative, resolve, sep } from 'node:path';
+import { basename, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
-import { ADOPTION_CONTROLS, adoptionScope, containedFile, containedFileResolver, createPendingAdoptionReview, sha256 } from './adoption-review.mjs';
+import { containedFile, containedFileResolver } from './adoption-review.mjs';
 import { executeAdoption, executionPlan } from './adoption-execute.mjs';
+import { adoptionExecutionFixture as fixture } from './adoption-execute-fixtures.mjs';
 
-function fixture(t, layout) {
-  const base = resolve(tmpdir());
-  const root = mkdtempSync(join(base, 'egov-execution-contract-'));
-  t.after(() => {
-    assert.ok(relative(base, root).startsWith('egov-execution-contract-') && !relative(base, root).includes(sep));
-    rmSync(root, { recursive: true, force: true });
-  });
-  const write = (path, bytes) => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); };
-  write('migration-tool/build.gradle', 'dependencies {}');
-  write('migration-tool/src/main/java/Tool.java', 'class Tool {}');
-  // 승인 실행 사슬이 import 하는 구성 이름 판정(11단계 C8)은 이관 제품에도 복사된다.
-  write('scripts/composition-profiles.mjs', '// Synthetic composition profile input; the real module is imported from this repository.\n');
-  if (layout !== undefined) {
-    write('reusable-base-lock.json', JSON.stringify({ profile: 'core', layout }));
-    write('package.json', JSON.stringify({ scripts: { 'verify:migration': 'node scripts/reusable-layout-runtime.mjs --verify-migration' } }));
-    for (const file of ['scripts/reusable-layout.mjs', 'scripts/reusable-layout-runtime.mjs', 'scripts/reusable-single-module.mjs']) {
-      write(file, '// Synthetic verification input; command execution is intercepted by this test.\n');
-    }
-  }
-  write('docs/review.md', 'Synthetic evidence used only to test the execution boundary.');
-  const migration = { mode: 'dry-run', sourceAdapter: 'postgresql-pg-catalog', schemas: ['legacy'], ackSourceFreeze: true };
-  for (const role of ['jar', 'mapping', 'inventory', 'plan']) {
-    const path = `execution/${role}.${role === 'jar' ? 'jar' : 'json'}`;
-    write(path, `fixture-${role}`);
-    migration[role] = { path, sha256: sha256(readFileSync(join(root, path))) };
-  }
-  const path = 'config/governance/execution.json';
-  const plan = { schemaVersion: 1, product: 'migration-tool', profile: null, environmentId: 'fixture-env', migration };
-  const approvalPath = 'config/governance/migration-adoption-review.json';
-  const approve = (value = plan) => {
-    write(path, JSON.stringify(value));
-    const now = Date.now();
-    const review = { ...createPendingAdoptionReview({ product: 'migration-tool', profile: null }),
-      status: 'approved', environmentId: 'fixture-env', owner: 'test fixture reviewer',
-      reviewedAt: new Date(now - 60_000).toISOString(), validUntil: new Date(now + 60_000).toISOString(),
-      scopeDigest: adoptionScope(root, { product: 'migration-tool', profile: null }).digest,
-      evidence: ADOPTION_CONTROLS['migration-tool'].map(control => {
-        const evidencePath = control === 'execution-artifacts' ? path : 'docs/review.md';
-        return { control, path: evidencePath, sha256: sha256(readFileSync(join(root, evidencePath))) };
-      }) };
-    write(approvalPath, JSON.stringify(review));
-  };
-  approve();
-  return { root, path, write, plan, approve, approvalPath };
-}
+// Independent migration inputs, approvals and file boundaries also run in the exported CLI product.
+// Producer-only online and reusable-layout cases live in adoption-execute-products.test.mjs.
 
 test('default check verifies the technical scope and never launches the migration process', (t) => {
   const { root, path } = fixture(t);
@@ -76,89 +34,12 @@ test('only explicit execution after technical verification reaches the existing 
   assert.equal(calls[1][1][2], '--command=load');
 });
 
-test('single-module adoption verifies the active isolated migration runner before optional execution', t => {
-  for (const execute of [false, true]) {
-    const { root, path } = fixture(t, 'single-module');
-    const calls = [];
-    const result = executeAdoption({ root, path, environmentId: 'fixture-env', execute,
-      run: (command, args) => calls.push([command, args]) });
-    assert.deepEqual(calls[0], ['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]);
-    assert.equal(calls.length, execute ? 2 : 1);
-    assert.equal(result.executed, execute);
-    if (execute) {
-      assert.equal(calls[1][0], 'java');
-      assert.ok(calls[1][1].includes('--command=load'));
-      assert.ok(calls[1][1].includes('--ack-source-freeze'));
-    }
-  }
-});
-
-test('explicit and legacy generated multi-module locks use the product migration verifier', t => {
-  for (const legacy of [false, true]) {
-    const { root, path, write, approve } = fixture(t, 'multi-module');
-    if (legacy) { write('reusable-base-lock.json', JSON.stringify({ profile: 'core' })); approve(); }
-    const calls = [];
-    executeAdoption({ root, path, environmentId: 'fixture-env', run: (command, args) => calls.push([command, args]) });
-    assert.deepEqual(calls, [['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]]);
-  }
-});
-
-test('domain-selected (custom) generated locks use the same layout migration verifier as presets', t => {
-  for (const layout of ['multi-module', 'single-module']) {
-    const { root, path, write, approve } = fixture(t, layout);
-    write('reusable-base-lock.json', JSON.stringify({ profile: 'custom', layout }));
-    approve();
-    const calls = [];
-    executeAdoption({ root, path, environmentId: 'fixture-env', run: (command, args) => calls.push([command, args]) });
-    assert.deepEqual(calls[0], ['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]);
-  }
-});
-
-test('unknown generated layout or profile cannot fall back to a different verifier', t => {
-  for (const lock of [{ profile: 'core', layout: 'unknown' }, { profile: 'unknown', layout: 'multi-module' }]) {
-    const { root, path, write, approve } = fixture(t, 'multi-module');
-    write('reusable-base-lock.json', JSON.stringify(lock));
-    approve();
-    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-      run: () => assert.fail('invalid layout may not run verification or load') }), /invalid generated migration verification layout/);
-  }
-});
-
-test('both generated layouts bind verification sources, layout selection and aliases to approval', t => {
-  for (const layout of ['single-module', 'multi-module']) for (const file of ['scripts/reusable-layout.mjs', 'scripts/reusable-layout-runtime.mjs',
-    'scripts/reusable-single-module.mjs', 'scripts/composition-profiles.mjs', 'package.json', 'reusable-base-lock.json']) {
-    const { root, path, write } = fixture(t, layout);
-    const changed = file === 'reusable-base-lock.json'
-      ? JSON.stringify({ profile: 'core', layout: layout === 'single-module' ? 'multi-module' : 'single-module' })
-      : readFileSync(join(root, file), 'utf8') + '\nchanged';
-    write(file, changed);
-    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-      run: () => assert.fail('unreviewed verifier may not run') }), /scope digest mismatch/, file);
-  }
-  for (const file of ['scripts/reusable-layout-runtime.mjs', 'scripts/composition-profiles.mjs']) {
-    const { root, path } = fixture(t, 'single-module');
-    rmSync(join(root, file));
-    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-      run: () => assert.fail('missing verifier may not run') }), new RegExp(`missing product scope input: ${file}`), file);
-  }
+test('standalone migration approval binds the composition profile verifier source', t => {
   // 생성물이 아닌 이관 승인도 구성 이름 판정을 범위에 묶는다(트랙 C 검토 #1).
   const { root, path, write } = fixture(t);
   write('scripts/composition-profiles.mjs', `${readFileSync(join(root, 'scripts/composition-profiles.mjs'), 'utf8')}\nchanged`);
   assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
     run: () => assert.fail('unreviewed composition profiles may not run') }), /scope digest mismatch/);
-});
-
-test('verifier or layout mutation during single-module verification prevents the final load', t => {
-  for (const file of ['scripts/reusable-layout-runtime.mjs', 'reusable-base-lock.json']) {
-    const { root, path, write } = fixture(t, 'single-module');
-    const calls = [];
-    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-      run: (command, args) => {
-        calls.push([command, args]);
-        write(file, file.endsWith('.json') ? JSON.stringify({ profile: 'core', layout: 'multi-module' }) : '// changed verifier');
-      } }), /scope digest mismatch/);
-    assert.deepEqual(calls, [['node', ['scripts/reusable-layout-runtime.mjs', '--verify-migration']]]);
-  }
 });
 
 test('the control schema upgrade acknowledgement is an optional reviewed boolean that only a commit load forwards', (t) => {
@@ -246,76 +127,6 @@ test('technical failure or source/evidence change during verification blocks the
       } }), /failure|scope|hash mismatch|expired/);
     assert.equal(commands, 1);
   }
-});
-
-function onlineFixture(t) {
-  const value = fixture(t, 'multi-module');
-  const { root, path, write } = value;
-  write('frontend/package.json', '{"private":true}');
-  write('config/ui-url-state-census.json', '{}');
-  write('config/modules/presets.json', '{}');
-  const manifest = { schemaVersion: 1, revision: 'a'.repeat(40),
-    apiImage: `registry.example.org/institution/api@sha256:${'1'.repeat(64)}`,
-    frontendImage: `registry.example.org/institution/frontend@sha256:${'2'.repeat(64)}` };
-  const manifestPath = 'execution/release-manifest.json';
-  write(manifestPath, JSON.stringify(manifest));
-  const plan = { schemaVersion: 1, product: 'online', profile: 'core', environmentId: 'fixture-env',
-    images: { api: manifest.apiImage, frontend: manifest.frontendImage },
-    releaseManifest: { path: manifestPath, sha256: sha256(readFileSync(join(root, manifestPath))) } };
-  const approve = (next = plan) => {
-    write(path, JSON.stringify(next));
-    const now = Date.now();
-    write('config/governance/adoption-review.json', JSON.stringify({
-      ...createPendingAdoptionReview({ product: 'online', profile: 'core' }),
-      status: 'approved', environmentId: 'fixture-env', owner: 'test fixture reviewer',
-      reviewedAt: new Date(now - 60_000).toISOString(), validUntil: new Date(now + 60_000).toISOString(),
-      scopeDigest: adoptionScope(root, { product: 'online', profile: 'core' }).digest,
-      evidence: ADOPTION_CONTROLS.online.map(control => {
-        const evidencePath = control === 'execution-artifacts' ? path : 'docs/review.md';
-        return { control, path: evidencePath, sha256: sha256(readFileSync(join(root, evidencePath))) };
-      }),
-    }));
-  };
-  approve();
-  return { ...value, manifest, manifestPath, plan, approve };
-}
-
-test('online execution passes the reviewed complete manifest and both matching image references to deploy', (t) => {
-  const { root, path, manifestPath, plan } = onlineFixture(t);
-  const calls = [];
-  const result = executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-    run: (command, args, options) => calls.push({ command, args, options }) });
-  assert.equal(result.executed, true);
-  assert.equal(calls.length, 2);
-  assert.deepEqual(calls[1].args, ['scripts/deploy.sh', join(root, manifestPath)]);
-  assert.equal(calls[1].options.env.API_IMAGE_REF, plan.images.api);
-  assert.equal(calls[1].options.env.FRONTEND_IMAGE_REF, plan.images.frontend);
-});
-
-test('online manifest omission, tampering and image-pair mismatch fail before verification or deploy', (t) => {
-  for (const failure of ['missing', 'tampered', 'pair', 'partial']) {
-    const { root, path, write, manifest, manifestPath, plan, approve } = onlineFixture(t);
-    if (failure === 'missing') { const { releaseManifest, ...legacy } = plan; approve(legacy); }
-    if (failure === 'tampered') write(manifestPath, JSON.stringify({ ...manifest, revision: 'b'.repeat(40) }));
-    if (failure === 'pair') approve({ ...plan, images: { ...plan.images, api: `registry.example.org/other/api@sha256:${'3'.repeat(64)}` } });
-    if (failure === 'partial') {
-      write(manifestPath, JSON.stringify({ ...manifest, frontendImage: null }));
-      approve({ ...plan, releaseManifest: { path: manifestPath, sha256: sha256(readFileSync(join(root, manifestPath))) } });
-    }
-    assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-      run: () => assert.fail('invalid manifest may not reach a command') }), /fields|manifest/u);
-  }
-});
-
-test('online manifest changes during technical verification block final deploy', (t) => {
-  const { root, path, write, manifest, manifestPath } = onlineFixture(t);
-  let commands = 0;
-  assert.throws(() => executeAdoption({ root, path, environmentId: 'fixture-env', execute: true,
-    run: () => {
-      commands += 1;
-      write(manifestPath, JSON.stringify({ ...manifest, revision: 'b'.repeat(40) }));
-    } }), /manifest hash mismatch/u);
-  assert.equal(commands, 1);
 });
 
 // 생성물 무결성 검사가 소스 범위 수천 파일을 가둘 때 쓰는 resolver 는 containedFile 과 같은 판정을 한다(다른 것은 비용뿐이다).

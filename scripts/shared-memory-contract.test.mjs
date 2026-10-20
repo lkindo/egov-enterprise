@@ -830,6 +830,80 @@ test('active instructions do not recreate deleted session journals', () => {
   }
 });
 
+// Static instruction regressions only: these checks do not evaluate an agent's actual behavior.
+const workflowSkills = [
+  'verification-before-completion',
+  'finishing-a-development-branch',
+  'test-driven-development',
+  'dispatching-parallel-agents',
+  'subagent-driven-development',
+];
+const workflowInstructionRegressions = [
+  ['unscoped npm test', /^\s*(?:\$\s*)?npm test\b/mu],
+  ['unconditional full suite', /\b(?:Run|Execute) (?:the )?(?:FULL command|full test suite|full suite)\b/iu],
+  ['message-bound verification', /haven't run the verification command in this message/iu],
+  ['scoped evidence dismissed', /Partial proves nothing/iu],
+  ['mandatory two-stage review', /two-stage review (?:after each|first)|two reviews per task are required/iu],
+  ['unbounded retry', /Repeat until approved|re-run until it fails correctly/iu],
+  ['main-agent repair forbidden', /Don't try to fix manually/iu],
+];
+
+function workflowSkillViolations(files) {
+  const violations = [];
+  for (const skill of workflowSkills) {
+    const text = files[skill] ?? '';
+    if (!text.includes('](../../../AGENTS.md#verification-by-change-scope)')) {
+      violations.push(`${skill}: missing scope-verification authority`);
+    }
+    if (!text.includes('](../../../docs/03-guides/orchestration-protocol.md)')) {
+      violations.push(`${skill}: missing orchestration authority`);
+    }
+    for (const [label, pattern] of workflowInstructionRegressions) {
+      if (pattern.test(text)) violations.push(`${skill}: ${label}`);
+    }
+  }
+  return violations;
+}
+
+function readWorkflowSkills() {
+  return Object.fromEntries(workflowSkills.map((skill) => [skill, readRepoFile(`.agent/skills/${skill}/SKILL.md`)]));
+}
+
+test('workflow skills defer verification and delegation to project authorities', () => {
+  assert.deepEqual(workflowSkillViolations(readWorkflowSkills()), []);
+});
+
+test('workflow skills reject restored conflicting instructions and missing authority links', () => {
+  const files = readWorkflowSkills();
+  const regressions = [
+    ['finishing-a-development-branch', 'npm test / cargo test / pytest / go test ./...', 'unscoped npm test'],
+    ['test-driven-development', '$ npm test path/to/test.test.ts', 'unscoped npm test'],
+    ['dispatching-parallel-agents', '- Run full test suite', 'unconditional full suite'],
+    ['verification-before-completion', '2. RUN: Execute the FULL command (fresh, complete)', 'unconditional full suite'],
+    ['verification-before-completion', "If you haven't run the verification command in this message, you cannot claim it passes.", 'message-bound verification'],
+    ['verification-before-completion', '| Partial check is enough | Partial proves nothing |', 'scoped evidence dismissed'],
+    ['subagent-driven-development', 'Two-stage review after each task: spec compliance first, then code quality', 'mandatory two-stage review'],
+    ['subagent-driven-development', '- Repeat until approved', 'unbounded retry'],
+    ['test-driven-development', 'Fix error, re-run until it fails correctly.', 'unbounded retry'],
+    ['subagent-driven-development', "- Don't try to fix manually (context pollution)", 'main-agent repair forbidden'],
+  ];
+  for (const [skill, instruction, label] of regressions) {
+    const mutated = { ...files, [skill]: `${files[skill]}\n${instruction}\n` };
+    assert.deepEqual(workflowSkillViolations(mutated), [`${skill}: ${label}`]);
+    assert.throws(() => assert.deepEqual(workflowSkillViolations(mutated), []), { code: 'ERR_ASSERTION' });
+  }
+  for (const skill of workflowSkills) {
+    for (const [link, label] of [
+      ['](../../../AGENTS.md#verification-by-change-scope)', 'missing scope-verification authority'],
+      ['](../../../docs/03-guides/orchestration-protocol.md)', 'missing orchestration authority'],
+    ]) {
+      const mutated = { ...files, [skill]: files[skill].replaceAll(link, '') };
+      assert.deepEqual(workflowSkillViolations(mutated), [`${skill}: ${label}`]);
+      assert.throws(() => assert.deepEqual(workflowSkillViolations(mutated), []), { code: 'ERR_ASSERTION' });
+    }
+  }
+});
+
 test('constitution metadata points to the project rule SSOT, not tool adapters', () => {
   const metadataFiles = [
     '.agent/knowledge/backend-api-constitution/metadata.json',
