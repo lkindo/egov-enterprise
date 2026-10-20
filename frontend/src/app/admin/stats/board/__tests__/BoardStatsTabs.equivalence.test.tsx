@@ -9,15 +9,15 @@ import { inProjection } from '@/test-utils/projection';
 const SURVEY_CONTRIBUTION = 'frontend/src/extensions/survey/stats-panels.ts';
 
 /**
- * [Phase 0c] 통계 허브의 게시물·자료 이용 탭 동치 기준선.
+ * 통계 허브의 게시물·자료 이용 탭(게시판의 stats-panels 기여) 화면 계약.
  *
- * 자료 이용 집계(DtaUseStats)를 게시판 패키지로 옮기고 이 두 탭을 게시판 패널로 가르는 리팩터링이
- * 화면 동작을 바꾸지 않았음을 증명하려고 지금 동작을 그대로 고정한다. 라우트 page 모듈만 렌더하고
+ * [Phase 0c] 이 두 탭을 게시판 패널로 가른 리팩터링의 동치 기준선이었다. [2026-10-20] 하위 화면을 A7 셸로 옮기며 의도해 바꾼 것 —
+ * 요약은 그 탭의 계열(기간 합계·일 평균·가장 많은 날)이고, 미수집 축(자료 이용)은 요약 값이 '미수집' 이다. 모든 탭에 걸치던 '자료 이용
+ * 건수' 칸·옆 카드는 걷었다. 서버가 `{date, value}` 오름차순으로 내므로 셸은 받은 순서 그대로 그린다. 라우트 page 모듈만 렌더하고
  * 요청은 URL(client.getRaw) 수준에서 관측한다.
  *
- * [허브 분해 H4] 두 탭은 게시판의 stats-panels 기여다. 통계 셸은 로그인 주체로 기여의 노출 술어(그 화면에 들어갈 수 있는가)를
- * 판정하므로 통계 조회 권한을 가진 주체를 대역한다 — 대역이 없으면 탭이 조용히 숨어 '없음' 단언이 거짓 green 이 된다. 그래서
- * 탭의 존재를 양성으로 단언한다.
+ * [허브 분해 H4] 통계 셸은 로그인 주체로 기여의 노출 술어(그 화면에 들어갈 수 있는가)를 판정하므로 통계 조회 권한을 가진 주체를
+ * 대역한다 — 대역이 없으면 탭이 조용히 숨어 '없음' 단언이 거짓 green 이 된다. 그래서 탭의 존재를 양성으로 단언한다.
  */
 // 설문 탭(설문 기여)은 설문 목록 조회 권한으로 보인다(허브 분해 H5) — 전체 구성 순서를 보려고 함께 준다.
 const FULL_USER = { permissions: ['STATS_ADMIN_READ', 'SURVEY_READ_ALL'], authorizationVersion: 'test' };
@@ -45,7 +45,7 @@ const exported = vi.hoisted(() => ({ props: undefined as Record<string, unknown>
 
 vi.mock('@/lib/api/client', () => ({ default: api }));
 vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: nav.push, replace: nav.replace }),
+  useRouter: () => ({ push: nav.push, replace: nav.replace, refresh: vi.fn() }),
   usePathname: () => nav.pathname,
   useSearchParams: () => nav.params,
 }));
@@ -71,8 +71,6 @@ const URL = {
   surveys: 'admin/system/surveys',
 } as const;
 
-const SUMMARY_ALERT = /일부 통계를 불러오지 못했습니다/;
-const CHART_ERROR = '통계 데이터를 불러오지 못했습니다.';
 const PERIOD_EMPTY = '선택한 기간에 집계된 통계가 없습니다.';
 const UNINSTRUMENTED_EMPTY = '이 지표는 아직 수집되지 않습니다. 기간을 바꿔도 결과는 달라지지 않습니다.';
 
@@ -80,13 +78,11 @@ const responses = new Map<string, unknown>();
 const failures = new Map<string, number>();
 
 const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
+const points = (...pairs: [string, number][]) => pairs.map(([date, value]) => ({ date, value }));
 
+/** 통계·설문 경로로 나간 요청(경로 표시가 부르는 메뉴 조회는 뺀다). */
 function requestedUrls(): string[] {
-  return api.getRaw.mock.calls.map((call) => call[0]).sort();
-}
-
-function sorted(...urls: string[]): string[] {
-  return [...urls].sort();
+  return api.getRaw.mock.calls.map((call) => call[0]).filter((url) => url.startsWith('admin/system/')).sort();
 }
 
 function renderRoute(Page: () => React.JSX.Element, pathname: string, query = '') {
@@ -103,6 +99,10 @@ function visibleLabel(element: HTMLElement): string {
   return clone.textContent?.trim() ?? '';
 }
 
+function navLabels(): string[] {
+  return within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel);
+}
+
 function navButton(label: string): HTMLElement {
   const buttons = within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button');
   const match = buttons.find((button) => visibleLabel(button) === label);
@@ -110,15 +110,13 @@ function navButton(label: string): HTMLElement {
   return match;
 }
 
-function summaryCard(label: string): HTMLElement {
-  return screen.getByText(`_ ${label}`).parentElement as HTMLElement;
+/** 요약 칸(제목 문단 + 값 문단) 안의 값. */
+function summaryValue(title: string): string {
+  const summary = screen.getByTestId('report-summary');
+  return (within(summary).getByText(title).nextElementSibling as HTMLElement).textContent ?? '';
 }
 
-function sidebarCard(): HTMLElement {
-  return screen.getByRole('heading', { name: '성공 로그인' }).parentElement as HTMLElement;
-}
-
-describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
+describe('통계 허브 게시물·자료 이용 탭', () => {
   beforeEach(() => {
     auth.user = FULL_USER;
     auth.loading = false;
@@ -134,33 +132,37 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
         throw new Error(`요청 실패: ${url}`);
       }
       if (responses.has(url)) return envelope(responses.get(url));
-      return envelope(url === URL.surveys ? { list: [], total: 0, page: 0, size: 10, totalPage: 0 } : []);
+      if (url === URL.surveys) return envelope({ list: [], total: 0, page: 1, size: 10, totalPage: 0 });
+      if (url === URL.user) return envelope({ inqCnt: [], crtCnt: [], mdfcnCnt: [], delCnt: [] });
+      return envelope([]);
     });
   });
 
   describe('제목과 조회 범위', () => {
     it.each([
       ['게시물', BoardStatsPage, '/admin/stats/board', '콘텐츠 지표 분석', '콘텐츠 지표',
-        sorted(URL.user, URL.connect, URL.bbs), 'stats_content_stats', PERIOD_EMPTY],
+        [URL.bbs], 'stats_content_stats', PERIOD_EMPTY, '일자별 등록 게시글 수'],
       ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage', '자료이용현황 분석', '자료이용현황',
-        sorted(URL.user, URL.connect, URL.dataUsage), 'stats_data_usage', UNINSTRUMENTED_EMPTY],
-    ])('%s 화면은 h1·현재 항목·조회 URL·내보내기 파일명·빈 결과 문구를 지킨다',
-      async (_name, Page, pathname, title, activeLabel, expectedUrls, filename, emptyMessage) => {
+        [URL.dataUsage], 'stats_data_usage', UNINSTRUMENTED_EMPTY, '수집되지 않는다'],
+    ])('%s 화면은 A7 셸의 h1·현재 항목·그 탭의 조회·내보내기 파일명·빈 결과 문구·집계 기준을 지킨다',
+      async (_name, Page, pathname, title, activeLabel, expectedUrls, filename, emptyMessage, basis) => {
         renderRoute(Page, pathname);
 
+        expect(screen.getByTestId('report-page')).toBeInTheDocument();
         expect(screen.getByRole('heading', { level: 1 }).textContent).toBe(title);
         expect(navButton(activeLabel)).toHaveAttribute('aria-current', 'page');
         expect(await screen.findByText(emptyMessage)).toBeInTheDocument();
         expect(requestedUrls()).toEqual(expectedUrls);
         expect(exported.props).toMatchObject({ scope: 'loaded', filename });
+        expect(screen.getByTestId('report-basis')).toHaveTextContent(basis);
       });
   });
 
-  // 권한 상태를 아직 모르면 기능 탭이 아직 보이지 않는다 — 그 라우트를 통계 개요로 떨어뜨려 다른 제목·차트를 보이지 않는다(허브 분해 검토).
+  // 권한 상태를 아직 모르면 기능 탭이 아직 보이지 않는다 — 그 라우트를 다른 탭으로 떨어뜨려 다른 제목·차트를 보이지 않는다(허브 분해 검토).
   it.each([
     ['게시물', BoardStatsPage, '/admin/stats/board'],
     ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage'],
-  ])('%s 화면은 권한 상태를 확인하는 동안 통계 개요가 아니라 진입 골격을 그린다', (_name, Page, pathname) => {
+  ])('%s 화면은 권한 상태를 확인하는 동안 다른 탭이 아니라 진입 골격을 그린다', (_name, Page, pathname) => {
     auth.user = null;
     auth.loading = true;
     renderRoute(Page, pathname);
@@ -169,77 +171,57 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
     expect(screen.queryByRole('navigation', { name: '통계 분석 뷰' })).toBeNull();
   });
 
-  describe('자료 이용 건수 카드', () => {
-    it.each([
-      ['게시물', BoardStatsPage, '/admin/stats/board'],
-      ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage'],
-    ])('%s 화면에서도 자료 이용 집계 값과 무관하게 미수집으로 보인다', async (_name, Page, pathname) => {
-      responses.set(URL.dataUsage, [{ statsDate: '20261001', statsCo: 99 }]);
-      responses.set(URL.bbs, [{ statsDate: '20261001', statsCo: 12 }]);
-      renderRoute(Page, pathname);
+  describe('요약·원본 표', () => {
+    it('게시물 탭은 서버의 일자별 게시글 수를 그대로 표·반출에 싣고 요약은 그 값에서 센다', async () => {
+      responses.set(URL.bbs, points(['2026-10-01', 1], ['2026-10-02', 0], ['2026-10-03', 3]));
+      renderRoute(BoardStatsPage, '/admin/stats/board');
 
-      await screen.findByText('_ 자료 이용 건수');
-      await waitFor(() => expect((exported.props?.data as unknown[] | undefined)?.length).toBe(1));
-      expect(within(summaryCard('자료 이용 건수')).getByText('미수집')).toBeInTheDocument();
-      expect(within(summaryCard('자료 이용 건수')).queryByText('99')).not.toBeInTheDocument();
+      await waitFor(() => expect(exported.props?.data).toEqual(points(['2026-10-01', 1], ['2026-10-02', 0], ['2026-10-03', 3])));
+      expect(summaryValue('기간 합계')).toBe('4');
+      expect(summaryValue('가장 많은 날')).toBe('2026-10-03 (3건)');
+      expect(screen.getByRole('columnheader', { name: '콘텐츠 지표 건수' })).toBeInTheDocument();
+      expect(screen.queryByText(PERIOD_EMPTY)).not.toBeInTheDocument();
+      expect(screen.queryByText('미수집')).not.toBeInTheDocument();
     });
 
-    it('자료 이용 탭의 차트·내보내기는 자료 이용 집계를 그대로 쓴다', async () => {
-      responses.set(URL.dataUsage, [{ statsDate: '20261001', statsCo: 99 }]);
+    /*
+     * 자료 이용 기록에는 쓰는 쪽이 없다 — 요약은 0 이 아니라 '미수집' 이다(DEC-OPS-100). 기록이 들어오면(시험의 99) 표·반출은 그 값을
+     * 그대로 보이지만, 요약은 측정하는 축이 아니라는 기여의 고지를 따른다.
+     */
+    it('자료 이용 탭의 요약은 값과 무관하게 미수집이고, 표·반출은 받은 기록을 그대로 쓴다', async () => {
+      responses.set(URL.dataUsage, points(['2026-10-01', 99]));
       renderRoute(DataUsageStatsPage, '/admin/stats/data-usage');
 
-      await waitFor(() => expect(exported.props?.data).toEqual([{ statsDate: '2026-10-01', statsCo: 99 }]));
+      await waitFor(() => expect(exported.props?.data).toEqual(points(['2026-10-01', 99])));
+      for (const title of ['기간 합계', '일 평균', '가장 많은 날']) expect(summaryValue(title)).toBe('미수집');
+      expect(within(screen.getByTestId('report-summary')).queryByText('99')).not.toBeInTheDocument();
       expect(screen.queryByText(UNINSTRUMENTED_EMPTY)).not.toBeInTheDocument();
     });
 
-    it('게시물 탭의 차트·내보내기는 게시물 집계를 쓴다', async () => {
-      responses.set(URL.bbs, [{ statsDate: '20261002', statsCo: 12 }]);
-      renderRoute(BoardStatsPage, '/admin/stats/board');
+    it('자료 이용 탭은 기록이 없어도 요약에 0 을 찍지 않는다', async () => {
+      renderRoute(DataUsageStatsPage, '/admin/stats/data-usage');
 
-      await waitFor(() => expect(exported.props?.data).toEqual([{ statsDate: '2026-10-02', statsCo: 12 }]));
-      expect(screen.queryByText(PERIOD_EMPTY)).not.toBeInTheDocument();
-    });
-
-    // [2026-10-19] 게시물 집계는 서버가 최신순으로 준다(BoardRepository.countPostsByDate). 셸이 시간 순서로 맞추므로 차트와
-    //   그 내보내기는 과거에서 최근 순서다 — 그대로 그리면 '콘텐츠 지표' 탭의 시간축이 거꾸로 흘렀다.
-    it('게시물 탭은 최신순으로 온 집계를 과거에서 최근 순서로 그리고 내보낸다', async () => {
-      responses.set(URL.bbs, [{ statsDate: '2026-10-03', statsCo: 3 }, { statsDate: '2026-10-01', statsCo: 1 }]);
-      renderRoute(BoardStatsPage, '/admin/stats/board');
-
-      await waitFor(() => expect(exported.props?.data).toEqual([
-        { statsDate: '2026-10-01', statsCo: 1 },
-        { statsDate: '2026-10-03', statsCo: 3 },
-      ]));
+      expect(await screen.findByText(UNINSTRUMENTED_EMPTY)).toBeInTheDocument();
+      expect(summaryValue('기간 합계')).toBe('미수집');
+      expect(within(screen.getByTestId('report-summary')).queryByText('0')).not.toBeInTheDocument();
     });
   });
 
   describe('조회 실패', () => {
-    it('자료 이용 탭에서 자료 이용 조회가 실패하면 요약 오류 상태가 된다(현행)', async () => {
-      responses.set(URL.user, [{ statsDate: '20261001', statsCo: 5 }]);
-      responses.set(URL.connect, [{ statsDate: '20261001', statsCo: 6 }]);
-      failures.set(URL.dataUsage, Number.POSITIVE_INFINITY);
-      renderRoute(DataUsageStatsPage, '/admin/stats/data-usage');
-
-      expect(await screen.findByText(SUMMARY_ALERT)).toBeInTheDocument();
-      expect(screen.getByText(CHART_ERROR)).toBeInTheDocument();
-      // 사용자·접속 카드는 자기 조회 결과를 그대로 보인다.
-      expect(within(summaryCard('사용자 등록 요청 수')).getByText('5')).toBeInTheDocument();
-      expect(within(summaryCard('성공 로그인 수')).getByText('6')).toBeInTheDocument();
-      expect(within(summaryCard('자료 이용 건수')).getByText('미수집')).toBeInTheDocument();
-      // 왼쪽 성공 로그인 카드는 요약 오류 전체를 따른다.
-      expect(within(sidebarCard()).getByText('—')).toBeInTheDocument();
-      expect(within(sidebarCard()).getByText('접속 통계를 불러오지 못했습니다')).toBeInTheDocument();
-    });
-
-    it('게시물 탭에서 게시물 조회가 실패하면 차트만 오류이고 요약은 정상이다', async () => {
-      responses.set(URL.connect, [{ statsDate: '20261001', statsCo: 6 }]);
+    it('게시물 조회가 실패하면 표가 오류이고 요약은 조회 실패다', async () => {
       failures.set(URL.bbs, Number.POSITIVE_INFINITY);
       renderRoute(BoardStatsPage, '/admin/stats/board');
 
-      expect(await screen.findByText(CHART_ERROR)).toBeInTheDocument();
-      expect(screen.queryByText(SUMMARY_ALERT)).not.toBeInTheDocument();
-      expect(within(sidebarCard()).getByText('6')).toBeInTheDocument();
-      expect(within(sidebarCard()).getByText('최근 1개월 성공 로그인 합계')).toBeInTheDocument();
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(summaryValue('기간 합계')).toBe('조회 실패');
+    });
+
+    it('자료 이용 조회가 실패해도 요약은 미수집이다 — 측정하지 않는 축이다', async () => {
+      failures.set(URL.dataUsage, Number.POSITIVE_INFINITY);
+      renderRoute(DataUsageStatsPage, '/admin/stats/data-usage');
+
+      expect(await screen.findByRole('alert')).toBeInTheDocument();
+      expect(summaryValue('기간 합계')).toBe('미수집');
     });
   });
 
@@ -247,29 +229,27 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
     it('게시물 화면의 내비게이션에 게시판 탭 둘이 셸 탭 사이 자리에 있다', async () => {
       renderRoute(BoardStatsPage, '/admin/stats/board');
       await screen.findByText(PERIOD_EMPTY);
-      const labels = within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel);
-      expect(labels.filter((label) => label !== '설문조사 분석'))
+      expect(navLabels().filter((label) => label !== '설문조사 분석'))
         .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황']);
     });
 
     if (inProjection(SURVEY_CONTRIBUTION)) it('게시판·설문 기여가 모두 있으면 내비게이션은 종전 순서 그대로다', async () => {
       renderRoute(BoardStatsPage, '/admin/stats/board');
       await screen.findByText(PERIOD_EMPTY);
-      expect(within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel))
-        .toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '설문조사 분석']);
+      expect(navLabels()).toEqual(['통계 개요', '사용자 통계', '콘텐츠 지표', '시스템 활성', '자료이용현황', '설문조사 분석']);
     });
 
-    it('통계 조회 권한이 없는 주체에게는 게시판 탭이 보이지 않는다', async () => {
+    it('통계 조회 권한이 없는 주체에게는 게시판 탭이 보이지 않고, 그 라우트는 성공 로그인 탭으로 연다', async () => {
       const saved = auth.user;
       auth.user = { permissions: [], authorizationVersion: 'test' };
       try {
         renderRoute(BoardStatsPage, '/admin/stats/board');
         await screen.findByText(PERIOD_EMPTY);
-        const labels = within(screen.getByRole('navigation', { name: '통계 분석 뷰' })).getAllByRole('button').map(visibleLabel);
-        expect(labels).not.toContain('콘텐츠 지표');
-        expect(labels).not.toContain('자료이용현황');
-        // 탭이 없으면 기본 탭 값도 받지 않는다 — 통계 개요로 연다.
-        expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('통계 개요');
+        expect(navLabels()).not.toContain('콘텐츠 지표');
+        expect(navLabels()).not.toContain('자료이용현황');
+        // 탭이 없으면 기본 탭 값도 받지 않는다 — 개요 자료가 없는 하위 라우트라 성공 로그인 탭으로 연다.
+        expect(screen.getByRole('heading', { level: 1 }).textContent).toBe('시스템 활성 지표');
+        expect(requestedUrls()).toEqual([URL.connect]);
       } finally {
         auth.user = saved;
       }
@@ -325,6 +305,20 @@ describe('통계 허브 게시물·자료 이용 탭 동치 기준선', () => {
 
       fireEvent.click(navButton('콘텐츠 지표'));
       expect(nav.push).toHaveBeenCalledWith('/admin/stats/board', { scroll: false });
+    });
+  });
+
+  describe('조회 기간', () => {
+    it('게시물 탭은 고른 기간을 게시물 집계에 싣는다', async () => {
+      renderRoute(BoardStatsPage, '/admin/stats/board');
+      await screen.findByText(PERIOD_EMPTY);
+
+      fireEvent.change(screen.getByLabelText('집계 기간 시작일'), { target: { value: '2026-10-01' } });
+      fireEvent.change(screen.getByLabelText('집계 기간 종료일'), { target: { value: '2026-10-03' } });
+
+      await waitFor(() => expect(api.getRaw.mock.calls.some(([url, config]) => url === URL.bbs
+        && config?.params?.fromDate === '2026-10-01' && config?.params?.toDate === '2026-10-03')).toBe(true));
+      expect(screen.getByTestId('report-basis')).toHaveTextContent('집계 구간: 2026-10-01 ~ 2026-10-03');
     });
   });
 });

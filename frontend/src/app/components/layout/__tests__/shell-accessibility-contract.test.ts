@@ -261,6 +261,8 @@ describe('app shell accessibility source contract', () => {
     // A7(현황) 셸로 이행한 화면은 제목을 ReportPage 에 위임한다 — 자체 h1 을 다시 만들지 않는다.
     for (const pathParts of presentParts([
       ['admin', 'stats', 'AdminStatsClient.tsx'],
+      // [2026-10-20] 통계 하위 화면도 A7 셸로 이행했다 — 아래 '주 제목은 h1' 목록에서 이리로 옮겼다(제목 소유자가 셸이 됐다).
+      ['admin', 'stats', 'IntelligenceHubClient.tsx'],
       ['admin', 'survey', 'stats', 'SurveyStatsClient.tsx'],
     ])) {
       const source = readAppSource(...pathParts);
@@ -281,7 +283,6 @@ describe('app shell accessibility source contract', () => {
       // 제목 소유 계약은 아래 '모달 이행' 검사로 옮겼다(지운 것이 아니다).
       ['admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
       ['admin', 'sanctn', 'WorkflowHubClient.tsx'],
-      ['admin', 'stats', 'IntelligenceHubClient.tsx'],
       ['admin', 'survey', 'manage', '[id]', 'SurveyManageDetailClient.tsx'],
       ['admin', 'system', 'common-code', 'codes', 'CommonCodeCodesClient.tsx'],
       ['smart-toolkit', 'dept-job', 'create', 'DeptJobCreateClient.tsx'],

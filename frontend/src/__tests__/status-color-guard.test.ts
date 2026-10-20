@@ -50,7 +50,6 @@ const BASELINE_BY_FILE: Record<string, number> = {
   'src/app/admin/community/templates/TemplateAdminClient.tsx': 3,
   'src/app/admin/error.tsx': 6,
   'src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx': 3,
-  'src/app/admin/stats/IntelligenceHubClient.tsx': 1,
   'src/app/admin/stats/StatsHubParts.tsx': 2,
   'src/app/admin/survey/components/StatsHubSurveyTab.tsx': 2,
   'src/app/admin/survey/hub/SurveyHubClient.tsx': 9,

@@ -93,10 +93,14 @@ describe('generated system boundary wave 3', () => {
   it('StatsAdminService의 5개 조회 경계를 operation descriptor로 실행한다', async () => {
     client.getRaw
       .mockResolvedValueOnce(envelope({ totalUsers: 1, totalPosts: 2, todayConnects: 3 }))
+      .mockResolvedValueOnce(envelope([{ date: '2026-01-01', value: 1 }]))
+      .mockResolvedValueOnce(envelope([]))
+      // [2026-10-20] 사용자 활동은 요청 구분 네 계열 객체다.
+      .mockResolvedValueOnce(envelope({ inqCnt: [], crtCnt: [], mdfcnCnt: [], delCnt: [] }))
       .mockResolvedValue(envelope([]));
 
     await statsAdminService.getSummary();
-    await statsAdminService.getConnectStats({ fromDate: '20260101', statsKind: 'DAY' });
+    await statsAdminService.getConnectStats({ fromDate: '20260101' });
     await statsAdminService.getBbsStats({ fromDate: '20260101' });
     await statsAdminService.getUserStats({ toDate: '20260131' });
     await statsAdminService.getDataUsageStats();

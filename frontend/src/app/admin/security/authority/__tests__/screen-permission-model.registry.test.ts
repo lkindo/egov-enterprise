@@ -35,7 +35,8 @@ const PREDICATE_DISPLAY: ReadonlyArray<{ route: string; bulk: readonly string[];
   { route: '/admin/collaboration/mail-send', bulk: ['ADBK_READ'], cellOnly: [] },
   { route: '/admin/uss/ion/sms', bulk: ['ADBK_READ'], cellOnly: [] },
   // [2026-10-19 DEC-OPS-368] 보고서 통계 화면(/admin/stats/report)은 퇴역했다 — 남은 통계 셸 화면은 넷이다.
-  ...['board', 'data-usage', 'screen', 'user'].map((tab) => ({ route: `/admin/stats/${tab}`, bulk: [], cellOnly: ['SURVEY_READ_ALL'] })),
+  // [2026-10-20] 통계 개요(/admin/stats)도 통계 셸이 같은 내비게이션과 함께 그린다 — 설문 탭 단추가 개요에도 보인다.
+  ...['', '/board', '/data-usage', '/screen', '/user'].map((tab) => ({ route: `/admin/stats${tab}`, bulk: [], cellOnly: ['SURVEY_READ_ALL'] })),
 ];
 
 /*
@@ -64,9 +65,17 @@ describe('화면별 권한 표 모델 — 실제 화면 목록과의 정합', ()
       for (const code of registered(bulk)) expect(row.bulkCodes.other, `${route} 일괄 ${code}`).toContain(code);
       for (const code of cellOnly) expect(row.bulkCodes.other, `${route} 일괄 ${code}`).not.toContain(code);
     }
-    // 통계 요약은 설문 탭을 그리지 않는다 — 셸 디렉터리(/admin/stats)에 있다는 이유로 붙지 않는다.
+    // [2026-10-20] 통계 요약(/admin/stats)의 설문 탭 표시 권한은 셸 디렉터리에 있어서가 아니라 그 라우트가 통계 셸(내비게이션)을
+    //   그리기 때문에 붙는다 — 표시 출처로 붙고 진입 권한이 되지는 않는다. 요약 화면은 셸이 import 하지 않아 요약 칸의
+    //   술어는 개요에만 남는다(generate-screen-registry.test.mjs 의 항목별 귀속이 본다).
     const overview = SCREEN_REGISTRY.find((screen) => screen.route === '/admin/stats');
-    if (overview) expect(overview.permissions.map((permission) => permission.code)).not.toContain('SURVEY_READ_ALL');
+    if (overview) {
+      const sources = overview.permissions.filter((permission) => permission.code === 'SURVEY_READ_ALL').map((permission) => permission.source);
+      // 원본(투영 원장 없음)에는 설문 기여가 있어 정확히 표시 출처 하나다. 설문이 빠진 생성물에는 없다.
+      if (projectionRemovedFiles().size === 0) expect(sources).toEqual(['display']);
+      expect(sources.filter((source) => source !== 'display')).toEqual([]);
+      expect(overview.entry.permissions).not.toContain('SURVEY_READ_ALL');
+    }
   });
 
   it('메뉴 줄의 화면과 메뉴에 없는 화면은 화면 관리와 같은 공용 판정이다(별칭·사용 안 함 메뉴 포함)', () => {

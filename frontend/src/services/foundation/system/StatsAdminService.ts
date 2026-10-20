@@ -7,35 +7,22 @@ import {
   getSummaryOperation,
   getUserStatsOperation,
 } from '@/types/generated-operations';
+import type { StatsPoint, UserActivityStats } from '@/types/generated-zod';
 
 /**
  * 통계 관리 서비스(Admin) — `/api/v1/admin/system/statistics`
  *
- * ⚠ 백엔드 계약(2026-07-22 감사 P0-21 반영):
- * `StatisticsApiController#convertToStatsDto` 는 집계 결과에서 `statsDate`, `statsCo`
- * **2개 필드만** 빌드한다. 나머지 필드(`creatCo`/`inqCnt`/`updtCo`/`deleteCo`/`errorCo` 등)는
- * 백엔드 DTO 에 선언만 되어 있고 값이 채워지지 않아 항상 `0` 으로 직렬화된다.
- * 따라서 차트 `dataKey` 나 지표 산식에 사용해서는 안 되며, 여기서도 optional 로 선언한다.
- * (이전 버전은 이들을 non-optional 로 "거짓 선언"하여 빈 차트를 유발했다.)
+ * [2026-10-20] 시계열 응답은 생성 계약의 `StatsPoint`(`date` yyyy-MM-dd · `value`) 한 모양이다. 서버가 날짜 오름차순으로 내고,
+ * 측정하는 계열(성공 로그인·사용자 활동·게시물)은 기간의 빈 날을 0 으로 채운다. 자료 이용은 쓰는 쪽이 없어 채우지 않는다.
+ * 종전의 손으로 쓴 `StatsDto`(늘 0 이던 필드 20여 개와 index signature)와 서버가 버리던 `statsKind` 는 걷었다 — 화면은
+ * 받은 순서·형식 그대로 그린다. 사용자 활동은 요청 구분 네 계열(`UserActivityStats`)이다.
  */
-export interface StatsDto {
-  /** 집계 일자(yyyyMMdd) — 백엔드가 실제로 채우는 필드 */
-  statsDate?: string;
-  /** 집계 건수 — 백엔드가 실제로 채우는 필드 */
-  statsCo?: number;
-
-  /* --- 이하: 백엔드 DTO 에 존재하나 현재 집계 쿼리가 채우지 않음(항상 0). 신규 사용 금지. --- */
-  creatCo?: number;
-  inqCnt?: number;
-  updtCo?: number;
-  deleteCo?: number;
-  errorCo?: number;
-  [key: string]: unknown;
-}
+export type { StatsPoint, UserActivityStats };
 
 type DateRange = { fromDate?: string; toDate?: string };
 
-function toDateRange(params?: DateRange & { statsKind?: string }): DateRange {
+/** 실린 키만 보낸다 — 기간을 고르지 않으면 서버 기본값(오늘까지 최근 1개월)이다. */
+function toDateRange(params?: DateRange): DateRange {
   if (!params) return {};
   return {
     ...(params.fromDate === undefined ? {} : { fromDate: params.fromDate }),
@@ -51,34 +38,25 @@ class StatsAdminService extends ApiService {
   }
 
   /** 날짜별 성공 로그인 건수. 실패·결과 미상 시도와 화면 조회 요청은 포함하지 않는다. */
-  async getConnectStats(
-    params?: { fromDate?: string; toDate?: string; statsKind?: string },
-    config?: AxiosRequestConfig,
-  ): Promise<StatsDto[]> {
-    return this.executeGenerated(getConnectStats_1Operation, { query: params ?? {}, config }) as Promise<StatsDto[]>;
+  async getConnectStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsPoint[]> {
+    return this.executeGenerated(getConnectStats_1Operation, { query: toDateRange(params), config });
   }
 
-  /** 게시물 통계 조회 */
-  async getBbsStats(
-    params?: { fromDate?: string; toDate?: string; statsKind?: string },
-    config?: AxiosRequestConfig,
-  ): Promise<StatsDto[]> {
-    return this.executeGenerated(getBbsStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
+  /** 날짜별 등록 게시글 수(삭제한 글 제외). */
+  async getBbsStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsPoint[]> {
+    return this.executeGenerated(getBbsStatsOperation, { query: toDateRange(params), config });
   }
 
-  /** 사용자 통계 조회 */
-  async getUserStats(
-    params?: { fromDate?: string; toDate?: string; statsKind?: string },
-    config?: AxiosRequestConfig,
-  ): Promise<StatsDto[]> {
-    return this.executeGenerated(getUserStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
+  /** 날짜별 사용자 활동 — 조회·등록·수정·삭제 요청 수 네 계열(같은 날짜 축). */
+  async getUserStats(params?: DateRange, config?: AxiosRequestConfig): Promise<UserActivityStats> {
+    return this.executeGenerated(getUserStatsOperation, { query: toDateRange(params), config });
   }
 
   // [2026-10-19] 보고서 통계 조회(getReportStats)는 쓰는 쪽이 없는 원장만 읽어 API 와 함께 걷었다.
 
-  /** 자료이용현황 통계 조회 */
-  async getDataUsageStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsDto[]> {
-    return this.executeGenerated(getDataUsageStatsOperation, { query: toDateRange(params), config }) as Promise<StatsDto[]>;
+  /** 자료이용현황 통계 조회. 기록이 있는 날만 온다(빈 날을 채우지 않는다). */
+  async getDataUsageStats(params?: DateRange, config?: AxiosRequestConfig): Promise<StatsPoint[]> {
+    return this.executeGenerated(getDataUsageStatsOperation, { query: toDateRange(params), config });
   }
 }
 

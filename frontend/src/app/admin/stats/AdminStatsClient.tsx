@@ -5,29 +5,39 @@ import { ReportPage } from '@/app/components/patterns/report-page';
 import { StandardChartWrapper } from '@/app/components/ui/standard-chart-wrapper';
 import { StandardDataTable } from '@/app/components/ui/standard-data-table';
 import { DataExportExcel } from '@/app/components/ui/data-export-excel';
-import { SummaryStats, ConnectPoint } from '@/types/foundation/stats';
-import { RefreshCcw, CalendarDays, Activity } from 'lucide-react';
+import { SummaryStats } from '@/types/foundation/stats';
+import type { StatsPoint } from '@/services/foundation/system/StatsAdminService';
+import { RefreshCcw } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toDisplayYmd } from '@/lib/format-date';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { isStatsOverviewCard } from '@/extensions/slots';
 import { useSlotEntries } from '@/extensions/use-slot-entries';
 import { statsPanels } from '@/extensions/generated-stats-panels';
+import { useStatsHubNavigation } from './StatsHubParts';
 
 /** 일자별 접속 통계 표의 페이지당 건수 */
 const CONNECT_PAGE_SIZE = 10;
 
+/** 차트 계열 이름 — 도움말(tooltip)에 이 이름이 보인다. */
+const CONNECT_SERIES = '성공 로그인';
+
+/** 서버가 통계 요약(/admin/stats)에 미리 채워 넘기는 값. */
+export interface AdminStatsOverview {
+  initialSummary: SummaryStats | null;
+  /** 최근 1개월 일자별 성공 로그인 — 서버가 날짜 오름차순으로 내고 기록이 없는 날은 0 이다. */
+  initialConnectData: StatsPoint[];
+  loadError?: string | null;
+}
+
 export default function AdminStatsClient({
   initialSummary,
   initialConnectData,
-  loadError = null
-}: {
-  initialSummary: SummaryStats | null;
-  initialConnectData: ConnectPoint[];
-  loadError?: string | null;
-}) {
+  loadError = null,
+}: AdminStatsOverview) {
   const router = useRouter();
+  // 통계 하위 화면으로 가는 내비게이션 — 통계 셸이 이 화면 둘레에 둔다(셸 밖에서 그리면 없다).
+  const navigation = useStatsHubNavigation();
   // 기능이 넘기는 요약 칸(stats-panels 의 overview-card). 게시판이 있으면 게시물 수 칸이 붙는다(허브 분해 H4).
   const featureCards = useSlotEntries(statsPanels, isStatsOverviewCard);
   // [2026-09-26 DIP V9] 새로고침 표시는 실제 서버 재조회가 끝날 때까지다. 종전에는 800ms 뒤 무조건 꺼져
@@ -35,9 +45,12 @@ export default function AdminStatsClient({
   const [loading, startRefresh] = useTransition();
   const [page, setPage] = useState(1);
 
+  // [2026-10-20] 서버가 날짜 오름차순으로 내고 빈 날을 0 으로 채운다 — 화면은 정렬·형식을 고치지 않는다.
   const connectData = initialConnectData || [];
   // 상대 비중(막대 길이)은 기간 내 최댓값 기준으로만 계산한다 — 임의 상수 금지.
-  const maxConnect = Math.max(1, ...connectData.map(d => d.statsCo || 0));
+  const maxConnect = Math.max(1, ...connectData.map(d => d.value));
+  // 축 눈금은 'MM-DD' 다 — 연도는 집계 구간이 소유한다.
+  const chartData = connectData.map((point) => ({ name: point.date.slice(5), [CONNECT_SERIES]: point.value }));
 
   // 표는 앞 10건만 잘라 보여주고 나머지는 UI 로 도달 불가였다(감사 P0-28/P1-4).
   // 총 건수를 노출하고 페이저로 전 구간에 도달할 수 있게 한다.
@@ -55,40 +68,22 @@ export default function AdminStatsClient({
   const connectColumns = [
     {
       header: '집계 일자',
-      accessor: (item: ConnectPoint) => (
-        <div className="flex items-center gap-4 py-2">
-          <div className="w-12 h-12 rounded-lg bg-surface-inverse flex items-center justify-center text-surface-inverse-foreground shadow-lg transition-transform group-hover:scale-110">
-            <CalendarDays size={18} />
-          </div>
-          <div>
-            <span className="font-bold tracking-tighter text-foreground block text-lg tabular-nums leading-none">{toDisplayYmd(item.statsDate)}</span>
-            <span className="text-xs font-bold text-muted-foreground tracking-tight mt-2 block">출처: 성공 로그인 로그</span>
-          </div>
-        </div>
-      )
+      accessor: (item: StatsPoint) => <span className="tabular-nums text-foreground">{item.date}</span>,
     },
     {
       header: '성공 로그인 건수',
-      accessor: (item: ConnectPoint) => (
-        <div className="flex items-center gap-2">
-          <Activity size={14} className="text-primary opacity-100" />
-          <span className="font-mono font-bold text-primary text-lg tracking-tighter tabular-nums underline decoration-primary/20 decoration-4 underline-offset-4">{(item?.statsCo ?? 0).toLocaleString()}</span>
-        </div>
-      )
+      accessor: (item: StatsPoint) => <span className="font-semibold tabular-nums text-foreground">{item.value.toLocaleString()}</span>,
     },
     {
       header: '기간 내 상대 비중',
-      accessor: (item: ConnectPoint) => {
-        const ratio = Math.round(((item?.statsCo || 0) / maxConnect) * 100);
+      accessor: (item: StatsPoint) => {
+        const ratio = Math.round((item.value / maxConnect) * 100);
         return (
-          <div className="flex items-center gap-6 min-w-[240px]">
-            <div className="flex-1 h-3 bg-muted dark:bg-muted/30 rounded-lg overflow-hidden shadow-inner border border-border/10">
-              <div
-                className="h-full bg-gradient-to-r from-primary via-hub-indigo to-hub-purple transition-all duration-1000 ease-out shadow-[0_0_15px_-3px_rgba(59,130,246,0.5)]"
-                style={{ width: `${ratio}%` }}
-              />
+          <div className="flex min-w-[200px] items-center gap-3">
+            <div className="h-2 flex-1 overflow-hidden rounded bg-muted" aria-hidden="true">
+              <div className="h-full bg-primary" style={{ width: `${ratio}%` }} />
             </div>
-            <span className="text-[12px] font-bold text-foreground w-12 text-right tracking-tighter tabular-nums">{ratio}%</span>
+            <span className="w-12 text-right tabular-nums text-muted-foreground">{ratio}%</span>
           </div>
         );
       }
@@ -100,8 +95,9 @@ export default function AdminStatsClient({
       title="관리자 통계"
       description="누적 현황과 일자별 성공 로그인 집계를 확인합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '분석 대시보드' }]}
+      navigation={navigation}
       // A7 필수 — 무엇을·언제까지·어디서 센 값인지 없으면 지표는 검증할 수 없는 주장이 된다.
-      basis={`집계 기준: 최근 1개월 성공 로그인만 집계 · 수집된 일수 ${loadError ? '조회 실패' : `${connectData.length}일`} · 실패·결과 미상 시도 제외 · 출처: 시스템 접속 통계 API`}
+      basis={`집계 기준: 최근 1개월 성공 로그인만 집계 · 집계 일수 ${loadError ? '조회 실패' : `${connectData.length}일(기록이 없는 날은 0)`} · 실패·결과 미상 시도 제외 · 출처: 시스템 접속 통계 API`}
       notice={loadError && (
         <div role="alert" className="space-y-2 rounded-md border border-destructive/30 bg-destructive/10 p-4">
           <p className="text-sm font-semibold text-destructive-emphasis">통계 데이터 조회 실패</p>
@@ -127,8 +123,8 @@ export default function AdminStatsClient({
             scope="loaded"
             data={connectData}
             headers={[
-              { label: '집계 일자', key: 'statsDate' },
-              { label: '성공 로그인 건수', key: 'statsCo' }
+              { label: '집계 일자', key: 'date' },
+              { label: '성공 로그인 건수', key: 'value' }
             ]}
             filename="system_connect_stats"
           />
@@ -149,8 +145,8 @@ export default function AdminStatsClient({
         <StandardChartWrapper
           title="일자별 성공 로그인 건수 추이"
           type="area"
-          data={connectData}
-          dataKeys={['statsCo']}
+          data={chartData}
+          dataKeys={[CONNECT_SERIES]}
           loading={loading}
           height={350}
         />
@@ -162,6 +158,7 @@ export default function AdminStatsClient({
         accessibleLabel="일자별 성공 로그인 통계"
         columns={connectColumns}
         data={pagedConnectData}
+        keyField="date"
         loading={loading}
         error={loadError ? new Error(loadError) : null}
         onRetry={handleRefresh}

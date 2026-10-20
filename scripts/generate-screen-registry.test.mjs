@@ -1047,7 +1047,9 @@ test('the source slot predicates are attributed item by item to the screens that
     `scrap/hub-tabs-collaboration.ts SCRAPS SCRAP_READ → ${collaboration}`,
     'scrap/post-actions.ts scrap SCRAP_CREATE → /admin/community/boards/detail',
     'survey/home-sections.ts surveys-to-answer SURVEY_READ → /',
-    'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats/board, /admin/stats/data-usage, '
+    // [2026-10-20] 통계 개요(/admin/stats)도 통계 셸이 같은 내비게이션과 함께 그린다 — 설문 탭 단추가 개요에도 보인다. 요약 칸
+    //   (TOTAL_POSTS)은 셸이 요약 화면을 import 하지 않아 개요에만 남는다.
+    'survey/stats-panels.ts SURVEYS SURVEY_READ_ALL → /admin/stats, /admin/stats/board, /admin/stats/data-usage, '
       + '/admin/stats/screen, /admin/stats/user',
   ]);
 });

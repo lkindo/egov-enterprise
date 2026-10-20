@@ -27,6 +27,14 @@ export interface ReportPageProps {
   /** 무엇을 집계한 화면인지 한 줄. 마케팅 문구를 넣지 않는다. */
   description?: string;
   actions?: React.ReactNode;
+  /**
+   * 같은 현황 영역 안의 route/tab 전환(WorkListPage·MasterDetailPage 의 `navigation` 과 같은 계약).
+   *
+   * 헤더 바로 아래·조회조건 위에 둔다 — 탭은 "무엇을 볼지"를 먼저 정하므로 조회조건보다 앞이어야 하고, 주요 액션과 같은 줄에 두면
+   * 화면 전환과 반출·새로고침이 붙어 오조작이 된다. 미지정이면 슬롯 자체를 렌더하지 않아 기존 소비자의 DOM 은 그대로다.
+   * [2026-10-20] 통계 하위 화면을 이 셸로 옮기며 둔다 — 통계 개요와 하위 화면이 같은 내비게이션으로 서로 오간다.
+   */
+  navigation?: React.ReactNode;
   /** 조회 실패·부분 실패처럼 지표·차트·표 전체에 영향을 주는 상태. */
   notice?: React.ReactNode;
   /** 지표·차트·표가 **함께** 따르는 조회 조건. 슬롯이 하나뿐인 것이 계약이다. */
@@ -55,6 +63,7 @@ export function ReportPage({
   headingLevel = 1,
   description,
   actions,
+  navigation,
   notice,
   filter,
   filterLabel = '조회 조건',
@@ -97,6 +106,8 @@ export function ReportPage({
         </div>
         {actions && <div className="flex flex-wrap items-center gap-2">{actions}</div>}
       </header>
+
+      {navigation && <div data-testid="report-navigation">{navigation}</div>}
 
       {notice}
 
