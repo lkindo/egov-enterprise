@@ -17,7 +17,7 @@ export const getComments_1Operation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: null,
-  querySchema: z.object({ "searchKeyword": z.string().optional(), "bbsId": z.string().optional(), "pstSn": z.number().int().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "bbsId": z.string().optional(), "pstSn": z.number().int().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseCommentDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseCommentDtoResponseSchema,
