@@ -2250,6 +2250,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-374 | accepted | 직접 맡은 작업 브랜치의 완료 범위를 PR·최신 HEAD의 required CI·main 병합·병합 확인 후 원격/로컬 브랜치 삭제까지로 명시한다. 현재 사용자의 범위 제한이 우선하며, 다른 작업의 브랜치·WIP와 worktree 산출물을 보존한다. | 2026-10-20 사용자가 자신이 지시한 작업 브랜치는 재승인 없이 병합·삭제하되 다른 에이전트의 브랜치에 대한 임의 작업을 제한하려는 뜻이라고 명확히 하고 Markdown 반영을 요청했다. | [AGENTS Git 규칙](../../AGENTS.md#공유-워킹트리와-git), [SOP](../03-guides/orchestration-protocol.md), [마무리 스킬](../../.agent/skills/finishing-a-development-branch/SKILL.md) | 2026-10-20 | - |
 
+## DEC-OPS-375
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-375 | accepted | 부서 미배정 사용자의 '부서 공유' 일정을 기본조직으로 묶어 미배정자끼리 공유하는 현재 동작과, 일반 사용자 관리자(USER_UPDATE·USER_DEPT)가 보호 관리자 계정의 이름·연락처·부서를 바꿀 수 있는 현재 권한 의미를 유지한다(2026-10-21 사용자 결정). | 2026-10-21 소스 실측 평가가 두 동작을 결함 후보로 올렸다. 재검증에서 일정 폴백은 코드가 의도를 밝힌 설계이고 '부서 공유'로 지정한 일정만 보이며, 타인 정보 수정은 비밀번호 힌트·정답과 역할을 바꾸지 못하고 공개 비밀번호 찾기도 없어 권한 상승·탈취 경로가 없음을 확인했다. 사용자가 현 상태 유지를 정했다. 보호계정 가드는 비밀번호 초기화·잠금 해제·상태 변경·로그인 정책에 그대로 둔다. | [일정 서비스](../../business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java), [사용자 서비스](../../business-core/src/main/java/nuri/business/service/user/UserService.java) | 2026-10-21 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

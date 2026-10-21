@@ -5,6 +5,7 @@ import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
 import nuri.business.service.survey.SurveyResultService;
 import nuri.business.service.survey.dto.SurveyResultDto;
+import nuri.foundation.core.annotation.PrivacyAccess;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import org.springframework.data.domain.Page;
@@ -26,6 +27,9 @@ import org.springframework.web.bind.annotation.*;
  * 등급으로 충분하다. 그러나 <b>삭제는 되돌릴 수 없는 데이터 파괴</b>이고 설문 결과의 신뢰성에
  * 직결되므로 별도 권한으로 둔다 — 열람과 파괴를 같은 권한에 묶지 않는다. 기본 그룹은 둘 다
  * ROLE_ADMIN·ROLE_SYSTEM 이지만 열람만 주고 삭제는 주지 않는 배정이 가능하다.
+ *
+ * <p>권한 등급과 별개로 목록·단건 열람은 개인정보 접근으로 기록한다. 응답에는 연락처 같은 신상은 없지만
+ * 응답자 이름·제출자 ID 와 그 사람의 답이 함께 실린다(이름·부서만 보이는 주소록 사용자 선택도 같은 기준으로 기록한다).
  */
 @Tag(name = "SurveyResponseAdmin", description = "설문 응답 관리 API (Admin)")
 @RestController("surveyResponseAdminApiController")
@@ -38,6 +42,7 @@ public class SurveyResponseAdminApiController {
     @Operation(summary = "설문 응답 목록", description = "응답자명 부분일치로 검색한다.")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#getResponses')")
+    @PrivacyAccess("설문 응답 목록(응답자 이름·제출자 ID·응답 내용)")
     public ResponseEntity<ApiResponse<PageResponse<SurveyResultDto>>> getResponses(
             @RequestParam(required = false) String keyword,
             @PageableDefault(size = 10) Pageable pageable) {
@@ -48,6 +53,7 @@ public class SurveyResponseAdminApiController {
     @Operation(summary = "설문 응답 단건 조회")
     @GetMapping("/{srvyRspnsSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.service.survey.SurveyResponseAdminApiController#getResponse')")
+    @PrivacyAccess("설문 응답 상세(응답자 이름·제출자 ID·응답 내용)")
     public ResponseEntity<ApiResponse<SurveyResultDto>> getResponse(@PathVariable Long srvyRspnsSn) {
         return ResponseEntity.ok(ApiResponse.success(surveyResultService.getResponse(srvyRspnsSn)));
     }

@@ -260,6 +260,30 @@ class CommentServiceTest {
         assertThat(comment.getAnsCn()).isEqualTo(newContent);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"   ", "\t\n"})
+    @DisplayName("본문이 비면 등록하지 않는다 — 화면을 거치지 않은 요청도 같은 규칙이다")
+    void createComment_rejectsBlankContent(String content) {
+        CommentDto request = CommentDto.builder().pstSn(1L).bbsId("BBS_01").ansCn(content).build();
+
+        assertThatThrownBy(() -> commentService.createComment("USRCNFRM_00000000001", "홍길동", request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.mockito.Mockito.verifyNoInteractions(commentRepository, eventPublisher);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"   "})
+    @DisplayName("본문 없이 수정하면 기존 본문을 지우지 않고 거부한다")
+    void updateComment_rejectsBlankContent(String content) {
+        assertThatThrownBy(() -> commentService.updateComment(1L, content))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        org.mockito.Mockito.verifyNoInteractions(commentRepository);
+    }
+
     @Test
     @DisplayName("Update comment should throw exception when not found")
     void updateComment_NotFound() {

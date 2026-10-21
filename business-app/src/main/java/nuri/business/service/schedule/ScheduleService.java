@@ -33,6 +33,7 @@ public class ScheduleService {
      * 소속 조직 미배정(ognz_id = null) 사용자의 폴백 조직. tb_ognz_info 의 '기본조직' 이다.
      * 현재 사용자 전원이 미배정 상태라 폴백이 사실상의 기본 부서로 동작하며,
      * 추후 사용자에게 실제 부서를 배정하면 자연히 부서별로 분리된다.
+     * 미배정자끼리 '부서 공유' 일정을 보는 이 동작은 유지하기로 정했다(DEC-OPS-375).
      */
     private static final String DEFAULT_ORG_ID = "ORGNZT_0000000000000";
 
