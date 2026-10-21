@@ -10,8 +10,12 @@ import nuri.business.service.user.dto.*;
 import io.swagger.v3.oas.annotations.Operation;
 
 import io.swagger.v3.oas.annotations.Parameter;
+import io.swagger.v3.oas.annotations.media.ArraySchema;
+import io.swagger.v3.oas.annotations.media.Content;
+import io.swagger.v3.oas.annotations.media.Schema;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Size;
 import jakarta.validation.groups.Default;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -211,10 +215,16 @@ public class UserApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "사용자 다중 삭제", description = "시스템에서 여러 명의 사용자를 한꺼번에 삭제합니다. (관리자 권한)")
+    @Operation(summary = "사용자 다중 삭제", description = "시스템에서 한 번에 최대 "
+            + UserService.MAX_BULK_DELETE_USERS + "명의 사용자를 삭제합니다. (관리자 권한)")
     @DeleteMapping("/admin/system/users")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.UserApiController#deleteUsers')")
-    public ResponseEntity<ApiResponse<Void>> deleteUsers(@RequestBody List<String> userIds) {
+    public ResponseEntity<ApiResponse<Void>> deleteUsers(
+            @io.swagger.v3.oas.annotations.parameters.RequestBody(required = true,
+                    content = @Content(array = @ArraySchema(schema = @Schema(implementation = String.class),
+                            maxItems = UserService.MAX_BULK_DELETE_USERS)))
+            @RequestBody @Size(max = UserService.MAX_BULK_DELETE_USERS,
+                    message = "한 번에 삭제할 사용자 ID는 {max}개 이하여야 합니다.") List<String> userIds) {
         userService.deleteUserList(userIds);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

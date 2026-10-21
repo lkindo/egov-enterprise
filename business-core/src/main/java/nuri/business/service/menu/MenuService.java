@@ -14,6 +14,7 @@ import nuri.business.service.menu.dto.MenuStructureDto.MenuStructure;
 import nuri.business.service.menu.dto.MenuStructureDto.MenuStructureSave;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.auth.AuthorizationAdministrationService;
+import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.security.service.CustomUserDetails;
 import lombok.RequiredArgsConstructor;
@@ -51,6 +52,7 @@ public class MenuService {
     private final MenuRepository menuRepository;
     private final NavigationGrantRepository navigationGrantRepository;
     private final AuthorizationAdministrationService authorizationAdministrationService;
+    private final SensitiveAuditPort sensitiveAudit;
     /**
      * [2026-09-26 DIP B5 F10] 같은 빈 안에서 {@link #getAllMenusCached} 를 부르면 프록시를 거치지 않아 캐시가 적용되지 않는다.
      * 사이드바 트리는 이 공급자로 프록시를 거쳐 캐시를 읽는다. 없으면(단위 테스트) 저장소를 직접 읽는다.
@@ -432,6 +434,8 @@ public class MenuService {
             }
         }
         menuRepository.flush();
+        // 권한 변경이 없는 이름·위치 저장도 같은 트랜잭션의 내구 감사가 필요하다(D13).
+        sensitiveAudit.recordMutation("MENU_STRUCTURE_SAVE", "MENU_STRUCTURE");
         return MenuStructurePlan.structureOf(menuRepository.findStructureRows());
     }
 

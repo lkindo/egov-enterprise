@@ -84,9 +84,8 @@ public class AddressBookApiController {
     @DeleteMapping("/{adbkSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.addressbook.AddressBookApiController#deleteAddressBook')")
     public ResponseEntity<ApiResponse<Void>> deleteAddressBook(
-            @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "주소록 일련번호") @PathVariable Long adbkSn) {
-        addressBookService.deleteAddressBook(adbkSn, userDetails.getUsername());
+        addressBookService.deleteAddressBook(adbkSn);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

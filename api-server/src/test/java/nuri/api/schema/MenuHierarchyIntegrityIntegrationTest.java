@@ -71,6 +71,7 @@ class MenuHierarchyIntegrityIntegrationTest {
     @AfterEach
     void removeOnlyOwnFixtures() {
         SecurityContextHolder.clearContext();
+        AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?", fixtureId);
         for (String group : ownGroups) {
             AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_authrt_chg_hstry WHERE authrt_cd=?", group);
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE authrt_cd=?", group);
@@ -78,6 +79,7 @@ class MenuHierarchyIntegrityIntegrationTest {
             jdbc.update("DELETE FROM tb_authrt_info WHERE authrt_cd=?", group);
         }
         for (String user : ownUsers) {
+            AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?", user.toLowerCase());
             AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_authrt_chg_hstry WHERE chg_user_idntfr=? OR scrty_dcsn_trgt_id=?", user, user);
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=?", user);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", user);
@@ -98,6 +100,47 @@ class MenuHierarchyIntegrityIntegrationTest {
     private final List<String> ownGroups = new ArrayList<>();
     private final List<String> ownUsers = new ArrayList<>();
     @Autowired private AuthorizationAdministrationService administration;
+
+    @Test
+    @DisplayName("[D13] 이름만 바꾸는 구조 저장도 감사 INSERT 실패 시 롤백하고, 성공 시 같은 트랜잭션으로 기록한다")
+    void renameOnlyStructureSaveRollsBackWhenAuditStorageFails() {
+        var original = menuRow(id(0));
+        String version = service.getMenuStructure().version();
+        String renamed = fixtureId + "-renamed";
+        var request = new MenuStructureSave(version, List.of(), List.of(),
+                List.of(new MenuProperties(id(0), renamed, null, null, "Y")), List.of(), List.of());
+        jdbc.execute("CREATE FUNCTION test_menu_structure_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ "
+                + "BEGIN IF NEW.job_nm = 'MENU_STRUCTURE_SAVE' AND NEW.frst_rgtr_id = TG_ARGV[0] "
+                + "THEN RAISE EXCEPTION 'fixture menu audit storage failure'; END IF; RETURN NEW; END $$");
+        try {
+            // fixtureId is generated here as MH + twelve hexadecimal UUID characters, not request input.
+            jdbc.execute("CREATE TRIGGER tr_test_menu_structure_audit_failure BEFORE INSERT ON tb_sys_adt_log "
+                    + "FOR EACH ROW EXECUTE FUNCTION test_menu_structure_audit_failure('" + fixtureId + "')");
+            assertThatThrownBy(() -> service.saveMenuStructure(request))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.SERVER_OVERLOAD);
+            assertThat(menuRow(id(0))).as("감사 저장 실패는 메뉴 이름과 수정 감사 필드까지 되돌린다").isEqualTo(original);
+            assertThat(service.getMenuStructure().version()).isEqualTo(version);
+            assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?",
+                    Long.class, fixtureId)).isZero();
+        } finally {
+            jdbc.execute("DROP TRIGGER IF EXISTS tr_test_menu_structure_audit_failure ON tb_sys_adt_log");
+            jdbc.execute("DROP FUNCTION test_menu_structure_audit_failure()");
+        }
+
+        service.saveMenuStructure(request);
+
+        assertThat(menuRow(id(0))).containsEntry("menu_nm", renamed);
+        assertThat(service.getMenuStructure().version()).isNotEqualTo(version);
+        assertThat(jdbc.queryForList("SELECT prcs_stts_nm FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?",
+                String.class, fixtureId)).containsExactly("COMMITTED");
+        String audit = jdbc.queryForObject("SELECT adt_cn FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?",
+                String.class, fixtureId);
+        assertThat(audit).doesNotContain(renamed);
+        assertThat(jdbc.queryForObject("SELECT adt_cn::jsonb->>'targetId' FROM tb_sys_adt_log "
+                        + "WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?", String.class, fixtureId))
+                .isEqualTo("MENU_STRUCTURE");
+    }
 
     @Test
     @DisplayName("같은 구조 버전으로 동시에 저장하면 하나만 커밋되고 뒤 요청은 잠금을 기다린 뒤 409 로 거부된다")

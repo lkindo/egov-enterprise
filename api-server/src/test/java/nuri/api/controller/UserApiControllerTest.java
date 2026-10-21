@@ -20,6 +20,7 @@ import org.springframework.web.method.support.ModelAndViewContainer;
 import org.mockito.ArgumentCaptor;
 
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -425,6 +426,43 @@ public class UserApiControllerTest extends BaseControllerTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content("[\"user1\", \"user2\"]"))
                 .andExpect(status().isOk());
+    }
+
+    @Test
+    @DisplayName("관리자: 사용자 다중 삭제는 최대 100개 ID를 허용한다")
+    void deleteUsers_acceptsMaximumBatchSize() throws Exception {
+        List<String> userIds = IntStream.range(0, 100).mapToObj(i -> "user" + i).toList();
+
+        mockMvc.perform(delete("/api/v1/admin/system/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userIds)))
+                .andExpect(status().isOk());
+
+        verify(userService).deleteUserList(userIds);
+    }
+
+    @Test
+    @DisplayName("관리자: 사용자 다중 삭제 101개 ID는 서비스 호출 전에 거부한다")
+    void deleteUsers_rejectsOversizedBatchBeforeServiceCall() throws Exception {
+        List<String> userIds = IntStream.range(0, 101).mapToObj(i -> "user" + i).toList();
+
+        mockMvc.perform(delete("/api/v1/admin/system/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(objectMapper.writeValueAsString(userIds)))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(userService);
+    }
+
+    @Test
+    @DisplayName("관리자: 빈 사용자 다중 삭제 요청은 기존 성공 계약을 유지한다")
+    void deleteUsers_acceptsEmptyBatch() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/users")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("[]"))
+                .andExpect(status().isOk());
+
+        verify(userService).deleteUserList(List.of());
     }
 
     @Test

@@ -103,11 +103,11 @@ class HelpServiceTest {
             }
         }
         Runnable write = switch (operation) {
-            case "HPCM_CREATE" -> () -> helpService.createHpcm("foreign-writer", HpcmDto.builder().hlpDfn("new").build());
-            case "HPCM_UPDATE" -> () -> helpService.updateHpcm(1L, "foreign-writer", HpcmDto.builder().hlpDfn("changed").build());
+            case "HPCM_CREATE" -> () -> helpService.createHpcm(HpcmDto.builder().hlpDfn("new").build());
+            case "HPCM_UPDATE" -> () -> helpService.updateHpcm(1L, HpcmDto.builder().hlpDfn("changed").build());
             case "HPCM_DELETE" -> () -> helpService.deleteHpcm(1L);
-            case "MANUAL_CREATE" -> () -> helpService.createOnlineManual("foreign-writer", OnlineManualDto.builder().onlnMnlNm("new").build());
-            case "MANUAL_UPDATE" -> () -> helpService.updateOnlineManual(1L, "foreign-writer", OnlineManualDto.builder().onlnMnlNm("changed").build());
+            case "MANUAL_CREATE" -> () -> helpService.createOnlineManual(OnlineManualDto.builder().onlnMnlNm("new").build());
+            case "MANUAL_UPDATE" -> () -> helpService.updateOnlineManual(1L, OnlineManualDto.builder().onlnMnlNm("changed").build());
             default -> () -> helpService.deleteOnlineManual(1L);
         };
         org.assertj.core.api.Assertions.assertThatThrownBy(write::run)
@@ -151,7 +151,7 @@ class HelpServiceTest {
         HpcmDto dto = HpcmDto.builder().hlpDfn("New Help").build();
         when(hpcmRepository.save(any(Hpcm.class))).thenReturn(Hpcm.builder().hlpSn(1L).build());
 
-        Long hlpSn = helpService.createHpcm("user", dto);
+        Long hlpSn = helpService.createHpcm(dto);
 
         assertThat(hlpSn).isEqualTo(1L);
         verify(hpcmRepository).save(any(Hpcm.class));
@@ -166,7 +166,7 @@ class HelpServiceTest {
         when(hpcmRepository.findById(1L)).thenReturn(Optional.of(entity));
         HpcmDto dto = HpcmDto.builder().hlpDfn("Updated").build();
 
-        helpService.updateHpcm(1L, "user", dto);
+        helpService.updateHpcm(1L, dto);
 
         verify(entity).update(any(), any(), any());
         assertThat(entity.getHlpDfn()).isEqualTo("Updated");
@@ -239,7 +239,7 @@ class HelpServiceTest {
         when(onlineManualRepository.save(any(OnlineManual.class)))
                 .thenReturn(OnlineManual.builder().onlnMnlSn(1L).build());
 
-        Long onlnMnlSn = helpService.createOnlineManual("user", dto);
+        Long onlnMnlSn = helpService.createOnlineManual(dto);
 
         assertThat(onlnMnlSn).isEqualTo(1L);
         verify(onlineManualRepository).save(any(OnlineManual.class));
@@ -254,7 +254,7 @@ class HelpServiceTest {
         when(onlineManualRepository.findById(1L)).thenReturn(Optional.of(entity));
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Updated").build();
 
-        helpService.updateOnlineManual(1L, "user", dto);
+        helpService.updateOnlineManual(1L, dto);
 
         verify(entity).update(any(), any(), any(), any());
         assertThat(entity.getOnlnMnlNm()).isEqualTo("Updated");

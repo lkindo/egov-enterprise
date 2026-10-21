@@ -16,8 +16,6 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.web.PageableDefault;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 @Tag(name = "Help", description = "도움말(안내문, 온라인 매뉴얼) API")
@@ -53,7 +51,7 @@ public class HelpApiController {
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#insertHpcm')")
     public ResponseEntity<ApiResponse<Long>> insertHpcm(@Valid @RequestBody HpcmDto dto) {
-        Long hlpSn = helpService.createHpcm("ADMIN", dto);
+        Long hlpSn = helpService.createHpcm(dto);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(hlpSn));
     }
 
@@ -63,7 +61,7 @@ public class HelpApiController {
     public ResponseEntity<ApiResponse<Void>> updateHpcm(
             @PathVariable Long hlpSn,
             @Valid @RequestBody HpcmDto dto) {
-        helpService.updateHpcm(hlpSn, "ADMIN", dto);
+        helpService.updateHpcm(hlpSn, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
@@ -99,11 +97,8 @@ public class HelpApiController {
     @PostMapping("/manuals")
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.help.HelpApiController#createManual')")
-    public ResponseEntity<ApiResponse<Long>> createManual(
-            @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody OnlineManualDto dto) {
-        String username = (userDetails != null) ? userDetails.getUsername() : "anonymous";
-        Long onlnMnlSn = helpService.createOnlineManual(username, dto);
+    public ResponseEntity<ApiResponse<Long>> createManual(@Valid @RequestBody OnlineManualDto dto) {
+        Long onlnMnlSn = helpService.createOnlineManual(dto);
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(onlnMnlSn));
     }
 
@@ -113,7 +108,7 @@ public class HelpApiController {
     public ResponseEntity<ApiResponse<Void>> updateManual(
             @PathVariable Long onlnMnlSn,
             @Valid @RequestBody OnlineManualDto dto) {
-        helpService.updateOnlineManual(onlnMnlSn, "ADMIN", dto);
+        helpService.updateOnlineManual(onlnMnlSn, dto);
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
