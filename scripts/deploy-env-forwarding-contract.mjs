@@ -62,6 +62,14 @@ export const API_FORWARDED_WITHOUT_PLACEHOLDER = Object.freeze({
   SPRING_MAIL_PASSWORD: 'application-prod.yml 이 인증 릴레이 자격을 완화 바인딩으로 받으라고 안내한다. SecretLiteralLinterTest 보호 대상이다.',
 });
 
+/**
+ * 앱(Spring)이 아니라 api 이미지의 ENTRYPOINT 가 읽는 변수. 앱 읽기 원천에는 없지만 전달이 의도다.
+ * 값의 형태(고정값·비율 힙)는 ConfigSafetyLinterTest 가 따로 고정한다.
+ */
+export const API_FORWARDED_TO_ENTRYPOINT = Object.freeze({
+  JAVA_OPTS: 'api-server/Dockerfile ENTRYPOINT 가 JVM 옵션으로 읽는다. 운영 오버레이가 메모리 상한 비율 힙을 고정값으로 준다.',
+});
+
 /** 프런트 소스가 읽지만 운영 compose 로 의도적으로 전달하지 않는 변수. */
 export const FRONTEND_NOT_FORWARDED = Object.freeze({
   NODE_ENV: 'Next 가 빌드·기동 모드로 스스로 정한다. 외부에서 주입하면 production 판정이 흔들린다.',
@@ -280,6 +288,7 @@ export function evaluateDeployEnvForwarding({
   frontendSources,
   apiNotForwarded = API_NOT_FORWARDED,
   apiForwardedWithoutPlaceholder = API_FORWARDED_WITHOUT_PLACEHOLDER,
+  apiForwardedToEntrypoint = API_FORWARDED_TO_ENTRYPOINT,
   frontendNotForwarded = FRONTEND_NOT_FORWARDED,
   frontendForwardedWithoutRead = FRONTEND_FORWARDED_WITHOUT_READ,
   prodForbiddenFrontend = PROD_FORBIDDEN_FRONTEND,
@@ -304,7 +313,7 @@ export function evaluateDeployEnvForwarding({
     reads: new Map([...placeholders].map(([name, entry]) => [name, entry.locations])),
     forwarded: apiForwarded,
     notForwarded: apiNotForwarded,
-    forwardedWithoutRead: apiForwardedWithoutPlaceholder,
+    forwardedWithoutRead: { ...apiForwardedWithoutPlaceholder, ...apiForwardedToEntrypoint },
     errors,
     readNoun: (name) => `\${${name}}`,
   });
