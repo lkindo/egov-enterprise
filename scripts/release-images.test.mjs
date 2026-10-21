@@ -11,7 +11,7 @@ import { createHash } from 'node:crypto';
 import { publishReleaseImages, runDocker, scanReleaseImages, validateImageScan, validateReleaseManifest, verifyReleaseImages,
   verifyReleaseScanEvidence, validateImageArchive, readImageArchive, RELEASE_SCANNER_IMAGE, RELEASE_SCAN_RECEIPT } from './release-images.mjs';
 import { runSmokeStages, smokeCommand, rawSmokeRequest, validateEncodedSmokeProbe, validateSmokeTableCounts,
-  validateSmokeSessionCookies, validateSmokeManagementBoundary,
+  validateSmokeSessionCookies, validateSmokeManagementBoundary, readSmokeCsrfToken, withSmokeCsrf,
   internalSmokeHttp, containerSmokeRequest, INTERNAL_SMOKE_HTTP_SCRIPT, probeDirectApiEncodedPaths } from './run-isolated-release-smoke.mjs';
 import { captureHistoricalRelease, validateHistoricalMigrations, compareHistoricalConstraints, compareHistoricalColumns, runHistoricalSmokeStages, HISTORICAL_RELEASE,
   HISTORICAL_ARCHIVE_GIT_OPTIONS } from './historical-release-fixture.mjs';
@@ -195,6 +195,36 @@ test('production smoke requires protected nonempty access and refresh cookies wi
   }
 });
 
+test('production smoke reads one script-readable strict CSRF token cookie from the document response', () => {
+  const token = 'fixtureCsrfToken0123456789abcdefABCDEF';
+  const valid = `XSRF-TOKEN=${token}; Path=/; Secure; SameSite=Strict`;
+  assert.equal(readSmokeCsrfToken(['session_exp=1; Secure; SameSite=Strict', valid]), token);
+  for (const cookies of [[], [valid, valid], [valid.replace('; Secure', '')], [valid.replace('; SameSite=Strict', '')],
+    [valid.replace('Strict', 'Lax')], [`${valid}; SameSite=Lax`], [`${valid}; HttpOnly`], [valid.replace('; Path=/', '')],
+    [valid.replace(token, '')], [valid.replace(token, 'short')], [valid.replace(token, `${token.slice(1)}=`)], 'not-a-list', [1]]) {
+    assert.throws(() => readSmokeCsrfToken(cookies), /CSRF token cookie contract failed/u, JSON.stringify(cookies));
+  }
+});
+
+test('production smoke adds the double-submit token only to unsafe requests that carry cookies', () => {
+  const token = 'fixtureCsrfToken0123456789abcdefABCDEF';
+  const unsafe = { method: 'POST', headers: { Cookie: 'refreshToken=fixture', Origin: 'http://edge:8080' }, body: '{}' };
+  assert.deepEqual(withSmokeCsrf(unsafe, token), { method: 'POST', body: '{}',
+    headers: { Cookie: `refreshToken=fixture; XSRF-TOKEN=${token}`, Origin: 'http://edge:8080', 'X-XSRF-TOKEN': token } });
+  assert.equal(unsafe.headers.Cookie, 'refreshToken=fixture', 'the caller options stay unchanged');
+  assert.deepEqual(withSmokeCsrf(undefined, token), {});
+  for (const options of [{}, { headers: { Cookie: 'accessToken=fixture' } }, { method: 'HEAD', headers: { Cookie: 'a=b' } },
+    { method: 'POST', headers: { 'Content-Type': 'application/json' } }, { method: 'DELETE', headers: { Authorization: 'Bearer fixture' } }]) {
+    assert.equal(withSmokeCsrf(options, token), options);
+  }
+  for (const method of ['PUT', 'PATCH', 'DELETE', 'post']) {
+    assert.equal(withSmokeCsrf({ method, headers: { Cookie: 'a=b' } }, token).headers['X-XSRF-TOKEN'], token);
+  }
+  for (const invalid of [undefined, '', 'short', `${token};`, `${token} `]) {
+    assert.throws(() => withSmokeCsrf(unsafe, invalid), /CSRF token is invalid/u);
+  }
+});
+
 test('production smoke management boundary requires the separated public health route to be absent', () => {
   validateSmokeManagementBoundary(404);
   for (const status of [500, 502, 503, 200, 204, 301, 302, 400, 401, 403, 429, undefined, '404']) {
@@ -215,6 +245,7 @@ test('direct API encoded probes establish fresh rotated sessions and return only
   const paths = ['/api/v1/auth/%2572eissue', '/api/v1/%2561uth/login', '/api/v1/auth/%ZZreissue'];
   const calls = []; let round = 0;
   const loginBody = '{"userId":"fixture-user","password":"fixture-private-password"}';
+  const csrf = 'fixtureCsrfToken0123456789abcdefABCDEF';
   const result = await probeDirectApiEncodedPaths(async (route, options) => {
     calls.push(route);
     assert.equal(options.headers?.Origin, undefined); assert.equal(options.headers?.['X-Forwarded-For'], undefined);
@@ -222,41 +253,57 @@ test('direct API encoded probes establish fresh rotated sessions and return only
       { status: 200, headers: { 'Set-Cookie': `refreshToken=${prefix}-refresh-${round}; HttpOnly; Secure; SameSite=Strict` } }), rawPathPreserved: true });
     if (route === '/api/v1/auth/login') {
       round += 1; assert.equal(options.body, loginBody); assert.equal(options.method, 'POST');
+      assert.equal(options.headers.Cookie, undefined); assert.equal(options.headers['X-XSRF-TOKEN'], undefined);
       return tokenResponse('login');
     }
-    if (route === '/api/v1/auth/reissue') {
+    if (route === '/api/v1/auth/reissue' && options.headers['X-XSRF-TOKEN'] === undefined) {
+      // The forged control carries the same refresh cookie and nothing else.
       assert.equal(options.headers.Cookie, `refreshToken=login-refresh-${round}`); assert.equal(options.method, 'POST');
+      return { response: new Response('{"code":"C010"}', { status: 403 }), rawPathPreserved: true };
+    }
+    if (route === '/api/v1/auth/reissue') {
+      assert.equal(options.headers.Cookie, `refreshToken=login-refresh-${round}; XSRF-TOKEN=${csrf}`);
+      assert.equal(options.headers['X-XSRF-TOKEN'], csrf); assert.equal(options.method, 'POST');
       return tokenResponse('rotated');
     }
     assert.equal(options.headers.Authorization, `Bearer rotated-access-${round}`);
-    assert.equal(options.headers.Cookie, `refreshToken=rotated-refresh-${round}`);
-    if (route === '/api/v1/auth/me') return { response: new Response('{"privateUserField":"must-not-be-recorded"}', { status: 200 }), rawPathPreserved: true };
+    if (route === '/api/v1/auth/me') {
+      assert.equal(options.headers.Cookie, `refreshToken=rotated-refresh-${round}`); assert.equal(options.headers['X-XSRF-TOKEN'], undefined);
+      return { response: new Response('{"privateUserField":"must-not-be-recorded"}', { status: 200 }), rawPathPreserved: true };
+    }
+    // The encoded probe passes the CSRF boundary so only routing can reject it.
+    assert.equal(options.headers.Cookie, `refreshToken=rotated-refresh-${round}; XSRF-TOKEN=${csrf}`);
+    assert.equal(options.headers['X-XSRF-TOKEN'], csrf);
     assert.equal(route, paths[round - 1]); assert.equal(options.body, loginBody); assert.equal(options.method, 'POST');
     return { response: new Response('{"message":"private response details"}', { status: round === 2 ? 404 : 400 }), rawPathPreserved: true };
-  }, loginBody);
-  assert.deepEqual(calls, paths.flatMap(path => ['/api/v1/auth/login', '/api/v1/auth/reissue', '/api/v1/auth/me', path]));
-  assert.deepEqual(result, paths.map((path, index) => ({ path, controls: { login: 200, refresh: 200, session: 200 },
+  }, loginBody, csrf);
+  assert.deepEqual(calls, paths.flatMap(path => ['/api/v1/auth/login', '/api/v1/auth/reissue', '/api/v1/auth/reissue', '/api/v1/auth/me', path]));
+  assert.deepEqual(result, paths.map((path, index) => ({ path, controls: { login: 200, csrf: 403, refresh: 200, session: 200 },
     status: index === 1 ? 404 : 400, exposesToken: false, rawPathPreserved: true })));
   for (const privateValue of ['fixture-private-password', 'login-access', 'login-refresh', 'rotated-access', 'rotated-refresh',
-    'privateUserField', 'private response details']) assert.equal(JSON.stringify(result).includes(privateValue), false);
+    'privateUserField', 'private response details', csrf]) assert.equal(JSON.stringify(result).includes(privateValue), false);
 });
 
 test('direct API encoded probes stop on invalid controls and never accept authentication, rate-limit or token responses', async () => {
+  // Requests in order: login, refresh without the CSRF token (403 expected), refresh, session, encoded probe.
+  const tokenStages = [0, 2]; const controlStatus = [200, 403, 200, 200];
   for (const scenario of [
-    { stage: 0, status: 401 }, { stage: 1, status: 401 }, { stage: 1, status: 429 }, { stage: 2, status: 401 },
-    { stage: 0, status: 200, noAccess: true }, { stage: 1, status: 200, noCookie: true },
-    { stage: 1, status: 200, bodyRefresh: true }, { stage: 2, status: 200, normalized: true },
-    ...[200, 204, 401, 403, 429, 500, 503].map(status => ({ stage: 3, status })),
-    { stage: 3, status: 400, exposed: true }, { stage: 3, status: 400, normalized: true },
+    { stage: 0, status: 401 }, { stage: 0, status: 200, noAccess: true },
+    ...[200, 400, 401, 429, 500].map(status => ({ stage: 1, status })), { stage: 1, status: 403, normalized: true },
+    { stage: 2, status: 401 }, { stage: 2, status: 429 }, { stage: 2, status: 200, noCookie: true },
+    { stage: 2, status: 200, bodyRefresh: true }, { stage: 3, status: 401 }, { stage: 3, status: 200, normalized: true },
+    ...[200, 204, 401, 403, 429, 500, 503].map(status => ({ stage: 4, status })),
+    { stage: 4, status: 400, exposed: true }, { stage: 4, status: 400, normalized: true },
   ]) {
     let calls = 0;
     await assert.rejects(probeDirectApiEncodedPaths(async () => {
       const index = calls++; assert.ok(index <= scenario.stage, 'a failed control must not reach the next request');
-      const changed = index === scenario.stage; const status = changed ? scenario.status : 200;
-      const value = { success: true, data: index < 2 ? { accessToken: `fixture-access-${index}` } : {} };
+      const changed = index === scenario.stage; const status = changed ? scenario.status : controlStatus[index];
+      const issuesTokens = tokenStages.includes(index);
+      const value = { success: true, data: issuesTokens ? { accessToken: `fixture-access-${index}` } : {} };
       if (changed && scenario.noAccess) delete value.data.accessToken;
       if (changed && (scenario.bodyRefresh || scenario.exposed)) value.data.refreshToken = 'fixture-private-refresh';
-      const headers = index < 2 && !(changed && scenario.noCookie) ? { 'Set-Cookie': `refreshToken=fixture-${index}; HttpOnly` } : {};
+      const headers = issuesTokens && !(changed && scenario.noCookie) ? { 'Set-Cookie': `refreshToken=fixture-${index}; HttpOnly` } : {};
       return { response: new Response(status === 204 ? null : JSON.stringify(value), { status, headers }),
         rawPathPreserved: !(changed && scenario.normalized) };
     }, '{"password":"fixture-private-password"}'), /direct API .* (?:failed|contract failed)|encoded Spring path/u);
