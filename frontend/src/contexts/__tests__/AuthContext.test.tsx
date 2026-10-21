@@ -239,26 +239,6 @@ describe('AuthContext', () => {
     });
   });
 
-  it('첫 화면 직후 같은 사용자를 다시 받으면 context 값을 바꾸지 않고, 바뀐 사용자는 그대로 반영한다', async () => {
-    // 같은 내용을 새 객체로 넣으면 스트리밍 공개를 기다리는 셸 경계를 React 가 브라우저에서 다시 그린다(2026-10-21).
-    const initialUser = { id: 'test', name: 'Test User', groups: ['USER'], permissions: ['EXAMPLE_READ'], authorizationVersion: 'v1' };
-    vi.mocked(authService.getCurrentUser).mockResolvedValue({ ...initialUser });
-    const seen = new Set<unknown>();
-    const initialWrapper = ({ children }: { children: React.ReactNode }) => (
-      <QueryClientProvider client={queryClient}><AuthProvider initialUser={initialUser}>{children}</AuthProvider></QueryClientProvider>
-    );
-    const { result } = renderHook(() => { const value = useAuth(); seen.add(value); return value; }, { wrapper: initialWrapper });
-    await waitFor(() => expect(authService.getCurrentUser).toHaveBeenCalledTimes(1));
-    await act(async () => {});
-    expect(result.current.user).toBe(initialUser);
-    expect(seen.size, '같은 사용자 재조회가 context 값을 바꿨다').toBe(1);
-
-    const renamed = { ...initialUser, name: 'Renamed User' };
-    vi.mocked(authService.getCurrentUser).mockResolvedValue(renamed);
-    await act(async () => { window.dispatchEvent(new Event(AUTHORIZATION_CHANGED_EVENT)); });
-    await waitFor(() => expect(result.current.user).toEqual(renamed));
-  });
-
   it('로그인 실패 시 에러를 던져야 함', async () => {
     (authService.login as any).mockRejectedValue(new Error('Login Failed'));
 

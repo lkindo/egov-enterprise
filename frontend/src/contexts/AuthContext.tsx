@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, useCallback, useMemo, useRef } from 'react';
+import React, { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { authService, UserInfo } from '@/services/foundation/auth/authService';
 import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSignedIn, markSignedOut } from '@/lib/auth/authorization-state';
@@ -56,9 +56,6 @@ export function AuthProvider({
     }
     if (identityChanged || !nextUser) purgeBoardDraftStorage();
     if (nextUser) markSignedIn();
-    // [2026-10-21] 첫 화면 직후 재조회가 같은 사용자를 새 객체로 넣으면 context 가 바뀐다. 그때 스트리밍 공개를 기다리는
-    //   셸 경계가 있으면 React 가 그 경계를 브라우저에서 다시 그리고 서버 사본이 잠시 숨은 채 남는다 — 내용이 같으면 두지 않는다.
-    if (previous === nextUser || (previous && nextUser && JSON.stringify(previous) === JSON.stringify(nextUser))) return;
     currentUser.current = nextUser;
     setUser(nextUser);
   }, [queryClient]);
@@ -195,14 +192,8 @@ export function AuthProvider({
     };
   }, [checkAuth, commitUser, invalidateAuthCheck]);
 
-  // 값이 바뀔 때만 새 객체다 — 이 공급자는 앱 전체를 감싸므로 바뀌지 않은 값으로 아래 경계를 깨우지 않는다.
-  const value = useMemo(
-    () => ({ user, loading, mfaPending: isMfaPending, login, logout, checkAuth, enterMfaChallenge }),
-    [user, loading, isMfaPending, login, logout, checkAuth, enterMfaChallenge],
-  );
-
   return (
-    <AuthContext.Provider value={value}>
+    <AuthContext.Provider value={{ user, loading, mfaPending: isMfaPending, login, logout, checkAuth, enterMfaChallenge }}>
       {children}
     </AuthContext.Provider>
   );
