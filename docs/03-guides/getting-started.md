@@ -31,6 +31,74 @@ VS Code/Antigravity의 Java 확장은 Eclipse JDT로, Gradle은 JDK 21의 javac�
 
 외부 라이브러리의 null 계약을 추가 인식시키는 설정은 전체 소스에 영향을 준다. 적용 전후에 같은 컴파일러로 전체 진단을 비교하고, 메서드 참조의 입력 계약을 확인한다. 경고 개수만 줄이기 위한 분석 비활성화나 일괄 람다 치환은 하지 않는다.
 
+#### 외부 변경 반영과 생성 소스 동기화
+
+에이전트·Gradle·Git이 디스크를 바꿨는데 IDE의 파일·브랜치·진단이 함께 낡아 있으면 Java 오류부터 수정하지 말고 파일 감시기부터 확인한다. `Developer: Open Logs Folder`의 해당 창 `fileWatcher.log`에서 `gave up attempting to restart watcher`가 보이면 감시기가 중단된 상태다. `Developer: Reload Window` 후 Git 브랜치와 외부 파일 변경이 실제로 반영되는지 확인한다. 재시작만으로 충돌 원인이 해결됐다고 판단하지 않는다.
+
+1. 로컬 `.vscode/settings.json`을 저장소 밖에 백업하고 아래 부분 설정 예제의 관련 키만 병합한다. 객체는 항목별로, `java.import.exclusions` 배열은 기존 항목을 보존해 합친다. 이 예제는 완성된 사용자 설정이 아니다. JDK 경로·DB 연결·개인 설정을 덮어쓰거나 커밋하지 않는다.
+2. `files.watcherExclude`의 광범위한 `**/build/**`, `**/.next/**`는 예제처럼 `false`로 바꾼다. 컴파일 결과·캐시·리포트만 제외해 `build/generated/**`, `.next/types/**`, `.next/dev/types/**`를 감시 대상에 남긴다. 다른 상위 경로 제외가 있으면 함께 점검한다. 루트 `bin/**` 제외는 과거 저장소 복사본의 중복 탐색을 막는 용도다. 원본 소스나 worktree를 루트 `bin`에 두지 않는다.
+3. `java.configuration.updateBuildConfiguration: automatic`으로 Gradle 설정 변경을 자동 반영한다. QueryDSL·MapStruct는 Gradle annotation processor 구성을 JDT가 가져오도록 한다. `java.import.exclusions`는 **프로젝트 탐색** 범위이며 소스 classpath나 파일 감시 설정과 다르다. 생성 경로를 무조건 `sourceSets`에 추가하거나 `java.project.sourcePaths`로 Gradle 모델을 덮으려 하지 않는다.
+   - Gradle 9 병렬 모델 조회에서 `annotationProcessor ... without an exclusive lock`가 나면 [JDT LS #3807](https://github.com/eclipse-jdtls/eclipse.jdt.ls/issues/3807)과 대조한다. **사용자 설정**을 별도로 백업한 뒤 `"java.import.gradle.jvmArguments": "-Dorg.gradle.parallel=false"`를 적용한다. 이 키는 Java 확장 1.58에서 `machine` 범위이므로 workspace 예제에 넣지 않는다. 기존 JVM 인자는 보존해 합치되 반대 옵션을 함께 두지 않는다. AP 모델 조회가 일반 Gradle arguments를 다시 지정하므로 `--no-parallel`만 넣는 방식에 의존하지 않는다. 이 호환성 우회는 해당 IDE의 다른 Gradle 프로젝트 import에도 적용된다. 저장소 `gradle.properties`의 병렬 빌드와 CI는 그대로 유지한다. 확장의 수정판을 적용한 뒤에는 이 JVM 인자 없이 전체 모듈 갱신과 생성 타입 진단을 확인하고 제거할 수 있다.
+4. `Java: Reload Projects`에서 **루트 프로젝트와 관련 모듈**을 선택하고 import/build 완료를 기다린다. import JVM 인자 변경은 기존 빌드 연결에 바로 반영되지 않으므로 루트도 갱신해야 한다. 루트가 목록에 없으면 `Java: Import Java Projects into Workspace`로 다시 가져온다. `QAddressBook` 같은 생성 타입과 test-fixtures 의존성이 정상 해석되는지 확인한다. JDT가 만드는 각 모듈의 `bin/generated-sources/annotations`도 소스이므로 모든 `**/bin/**`을 파일 감시에서 제외하지 않는다. `NO-SOURCE`인 fixture 모듈의 출력 디렉터리를 임의로 만들어 오류를 숨기지 않는다. 갱신 실패 시 Java 출력·언어 서버 로그의 첫 원인을 확인한다.
+5. 모델 복구 후에도 생성 파일 오류가 남으면 참조하는 원본 타입이 현재 존재하는지, 최신 Gradle 생성물과 일치하는지 확인한다. 패키지 이동 전에 만들어진 Q 클래스·Mapper 구현이 JDT의 `bin/generated-sources/annotations`에 남을 수 있다. 오래된 생성물임을 확인한 파일만 저장소 밖으로 백업 이동하고 진단·대응 JDT 출력이 정리되는지 확인한다. 날짜만 보고 소스나 `bin` 전체를 지우지 않는다.
+6. 외부에서 안전한 임시 소스를 추가·수정했을 때 IDE 진단이 갱신되고, 원복하면 진단이 사라지는지 확인한다. Gradle 컴파일과 최신 IDE 진단을 따로 검증한다. Gradle 통과만으로 남은 IDE 오류를 모두 오탐으로 분류하지 않는다.
+
+<details>
+<summary>Workspace 부분 설정 예제 — 기존 설정에 항목별 병합</summary>
+
+```json
+{
+  "java.configuration.updateBuildConfiguration": "automatic",
+  "java.import.gradle.annotationProcessing.enabled": true,
+  "files.watcherExclude": {
+    "**/build/**": false,
+    "**/.next/**": false,
+    "bin/**": true,
+    "**/.gradle/**": true,
+    "**/node_modules/**": true,
+    "**/.pnpm-store/**": true,
+    "**/.tmp/**": true,
+    "**/coverage/**": true,
+    "**/playwright-report/**": true,
+    "**/test-results/**": true,
+    "**/build/classes/**": true,
+    "**/build/resources/**": true,
+    "**/build/tmp/**": true,
+    "**/build/reports/**": true,
+    "**/build/test-results/**": true,
+    "**/build/libs/**": true,
+    "**/build/jacoco/**": true,
+    "**/.next/cache/**": true,
+    "**/.next/server/**": true,
+    "**/.next/static/**": true
+  },
+  "files.exclude": {
+    "bin/**": true
+  },
+  "search.exclude": {
+    "bin/**": true
+  },
+  "java.import.exclusions": [
+    "**/node_modules/**",
+    "**/.metadata/**",
+    "**/archetype-resources/**",
+    "**/META-INF/maven/**",
+    "**/bin/**",
+    "**/build/**",
+    "**/frontend/**",
+    "**/.pnpm-store/**",
+    "**/.tmp/**",
+    "**/.gradle/**",
+    "**/playwright-report/**",
+    "**/test-results/**"
+  ]
+}
+```
+
+</details>
+
+근거: [VS Code 파일 감시기 구조](https://github.com/microsoft/vscode/wiki/File-Watcher-Internals), [Java 확장의 프로젝트 갱신·Gradle annotation processing 설정](https://github.com/redhat-developer/vscode-java#supported-vs-code-settings). 이 예제는 진단 강도나 CI 검증을 낮추지 않는다.
+
 ---
 
 ## 2. 복제 & 리브랜딩
