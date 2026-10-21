@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { parseModuleReferences } from './frontend-module-graph.mjs';
 
 const REQUIRED_CONTEXT_EXCLUSIONS = [
   '.env*',
@@ -434,6 +436,55 @@ test('frontend Docker context excludes Playwright credentials and generated evid
     [],
     'credentials, environment files, and generated evidence must not be re-included',
   );
+});
+
+// frontend 운영 이미지는 frontend/ 만 컨텍스트로 빌드한다(release-images, 격리 릴리스 스모크). 컨텍스트에 들어가는 소스가
+// frontend 밖을 import 하면 next build 의 타입 검사가 그 모듈을 찾지 못해 이미지 빌드가 깨진다. 2026-10-17 부터 계약 시험이
+// 루트 scripts/ 를 import 하면서 실제로 깨져 있었고, CI 는 frontend 를 저장소 checkout 에서 빌드해 이를 보지 못했다.
+// 그래서 시험은 컨텍스트에서 빼고, 남는 소스는 frontend 밖을 import 하지 않게 한다.
+const FRONTEND_TEST_CONTEXT_EXCLUSIONS = ['**/__tests__', '**/*.test.ts', '**/*.test.tsx'];
+const FRONTEND_ROOT = fileURLToPath(new URL('../frontend/', import.meta.url));
+// next build 가 타입 검사하는 범위 — frontend/tsconfig.json 의 include(**/*.ts·tsx·mts)와 exclude 를 따른다.
+//   frontend/scripts 의 개발 도구는 컨텍스트에 들어가도 타입 검사·이미지 실행 밖이라 대상이 아니다.
+const OUTSIDE_BUILD_TYPECHECK = new Set(['node_modules', '.next', '.pnpm-store', 'scripts', 'e2e', 'coverage', 'test-results',
+  'playwright-report', 'playwright', 'vitest.config.mts', 'vitest.setup.ts']);
+const isTestOnlyFile = (relative) => relative.split('/').includes('__tests__') || /\.test\.tsx?$/u.test(relative);
+
+function frontendContextSources(directory = FRONTEND_ROOT, prefix = '') {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (OUTSIDE_BUILD_TYPECHECK.has(relative)) return [];
+    if (entry.isDirectory()) return frontendContextSources(path.join(directory, entry.name), relative);
+    return /\.(?:tsx?|mts)$/u.test(entry.name) ? [{ relative, source: readFileSync(path.join(directory, entry.name), 'utf8') }] : [];
+  });
+}
+
+function contextImportsOutsideFrontend(files) {
+  return files.filter(({ relative }) => !isTestOnlyFile(relative)).flatMap(({ relative, source }) =>
+    parseModuleReferences(source, relative).references
+      .filter(({ specifier }) => specifier.startsWith('.')
+        && path.posix.normalize(path.posix.join(path.posix.dirname(relative), specifier)).startsWith('../'))
+      .map(({ specifier }) => `${relative} → ${specifier}`));
+}
+
+const missingTestExclusions = (dockerignore) =>
+  FRONTEND_TEST_CONTEXT_EXCLUSIONS.filter((rule) => !normalizedRules(dockerignore).has(rule));
+
+test('frontend Docker context leaves tests out and imports nothing outside frontend', () => {
+  assert.deepEqual(missingTestExclusions(readFileSync(new URL('../frontend/.dockerignore', import.meta.url), 'utf8')), [],
+    'frontend/.dockerignore must keep tests out of the image build context');
+  assert.deepEqual(contextImportsOutsideFrontend(frontendContextSources()), [],
+    'sources in the frontend Docker context must not import files outside frontend/');
+});
+
+test('a test exclusion removal or a non-test import outside frontend is a reproducible red', () => {
+  assert.deepEqual(missingTestExclusions('node_modules\n**/*.test.ts\n**/*.test.tsx\n'), ['**/__tests__']);
+  const escape = "import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';\n";
+  assert.deepEqual(contextImportsOutsideFrontend([
+    { relative: 'src/__tests__/guard.test.ts', source: escape },
+    { relative: 'src/lib/guard.ts', source: escape },
+    { relative: 'src/lib/inside.ts', source: "import { x } from '../app/x';\n" },
+  ]), ['src/lib/guard.ts → ../../../scripts/code-without-comments.mjs']);
 });
 
 test('the contract fails when the credential exclusion is removed', () => {

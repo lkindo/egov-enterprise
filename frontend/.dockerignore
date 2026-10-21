@@ -27,3 +27,8 @@ e2e
 playwright/.auth
 playwright-report
 test-results
+# 시험은 운영 이미지 밖이다. 계약 시험이 저장소 루트 scripts/ 를 import 하는데 이 컨텍스트에는 그 파일이 없어
+#   next build 의 타입 검사가 깨진다(scripts/frontend-docker-context-contract.test.mjs).
+**/__tests__
+**/*.test.ts
+**/*.test.tsx
