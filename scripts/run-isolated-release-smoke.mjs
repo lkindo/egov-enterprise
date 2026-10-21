@@ -367,8 +367,14 @@ export function withSmokeCsrf(options = {}, token) {
   const method = (options.method ?? 'GET').toUpperCase();
   const cookie = options.headers?.Cookie;
   if (['GET', 'HEAD', 'OPTIONS'].includes(method) || !cookie) return options;
-  if (typeof token !== 'string' || !/^[A-Za-z0-9_-]{32,}$/u.test(token)) throw failure('CSRF token is invalid');
-  return { ...options, headers: { ...options.headers, Cookie: `${cookie}; XSRF-TOKEN=${token}`, 'X-XSRF-TOKEN': token } };
+  // Like a browser, replay the token cookie already held: the API issues its own on the login response.
+  const carried = cookie.split(';').map(part => part.trim()).filter(part => part.startsWith('XSRF-TOKEN='));
+  if (carried.length > 1) throw failure('CSRF token is ambiguous');
+  const value = carried.length ? carried[0].slice('XSRF-TOKEN='.length) : token;
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{32,}$/u.test(value)) throw failure('CSRF token is invalid');
+  const headers = { ...options.headers, 'X-XSRF-TOKEN': value };
+  if (!carried.length) headers.Cookie = `${cookie}; XSRF-TOKEN=${value}`;
+  return { ...options, headers };
 }
 
 export function validateSmokeManagementBoundary(status) {

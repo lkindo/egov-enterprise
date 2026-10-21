@@ -223,6 +223,13 @@ test('production smoke adds the double-submit token only to unsafe requests that
   for (const invalid of [undefined, '', 'short', `${token};`, `${token} `]) {
     assert.throws(() => withSmokeCsrf(unsafe, invalid), /CSRF token is invalid/u);
   }
+  // A token cookie the API already issued is replayed as is, like a browser jar where the latest cookie wins.
+  const issued = '0f5c3b1e-6a2d-4c1f-9b7e-2d8a4e6f1c3b';
+  const held = { method: 'POST', headers: { Cookie: `accessToken=fixture; XSRF-TOKEN=${issued}; refreshToken=fixture` } };
+  assert.deepEqual(withSmokeCsrf(held, token).headers, { ...held.headers, 'X-XSRF-TOKEN': issued });
+  assert.throws(() => withSmokeCsrf({ method: 'POST', headers: { Cookie: `XSRF-TOKEN=${issued}; XSRF-TOKEN=${token}` } }, token),
+    /CSRF token is ambiguous/u);
+  assert.throws(() => withSmokeCsrf({ method: 'POST', headers: { Cookie: 'a=b; XSRF-TOKEN=short' } }, token), /CSRF token is invalid/u);
 });
 
 test('production smoke management boundary requires the separated public health route to be absent', () => {
