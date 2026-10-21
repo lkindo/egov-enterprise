@@ -96,7 +96,9 @@ test.describe('설문 응답 생명주기', () => {
                 templateId = owned[0].srvyTmpltSn;
 
                 await adminPage.goto('/admin/survey/hub?tab=questions');
-                const main = adminPage.locator('main#main-content');
+                // 보이는 본문만 본다 — 첫 화면 직후 셸을 브라우저가 다시 그리면 서버 사본이 숨은 `div#S:n` 안에 잠시 남아
+                //   본문이 두 벌이 된다(2026-10-21 strict 위반, PR #959). 이 파일의 본문 locator 는 모두 같은 이유로 좁힌다.
+                const main = adminPage.locator('main#main-content').filter({ visible: true });
                 await main.getByLabel('설문지 제목', { exact: true }).fill(surveyTitle);
                 await main.getByRole('combobox', { name: '템플릿', exact: true }).selectOption(String(templateId));
                 await main.getByLabel('설문 시작일', { exact: true }).fill(initial.begin);
@@ -116,7 +118,7 @@ test.describe('설문 응답 생명주기', () => {
             });
 
             await test.step('저장된 기간을 다시 열어 수정하고 서버 값과 재진입 값을 확인한다', async () => {
-                const main = adminPage.locator('main#main-content');
+                const main = adminPage.locator('main#main-content').filter({ visible: true });
                 await main.getByRole('combobox', { name: '설문 선택', exact: true }).selectOption(String(surveyId));
                 await main.getByRole('button', { name: `${surveyTitle} 제목·기간 수정`, exact: true }).click();
                 await expect(main.getByLabel('설문 시작일 수정', { exact: true })).toHaveValue(initial.begin);
@@ -175,7 +177,7 @@ test.describe('설문 응답 생명주기', () => {
                 const draft = await listedTitles();
                 expect(draft.status).toBe(200);
                 expect(draft.titles, '작성 중 설문은 응답자 목록에 보이지 않아야 한다').not.toContain(surveyTitle);
-                const adminMain = adminPage.locator('main#main-content');
+                const adminMain = adminPage.locator('main#main-content').filter({ visible: true });
                 await adminPage.reload();
                 await adminMain.getByRole('combobox', { name: '설문 선택', exact: true }).selectOption(String(surveyId));
                 const released = adminPage.waitForResponse(response => new URL(response.url()).pathname === `${SURVEYS}/${surveyId}`
@@ -186,7 +188,7 @@ test.describe('설문 응답 생명주기', () => {
                 await expect(adminMain.getByRole('button', { name: '공개 중단', exact: true })).toBeVisible();
                 expect((await listedTitles()).titles, '공개한 설문은 응답자 목록에 보여야 한다').toContain(surveyTitle);
                 await userPage.goto(`/survey/${surveyId}`);
-                const main = userPage.locator('main#main-content');
+                const main = userPage.locator('main#main-content').filter({ visible: true });
                 await expect(main.getByText(surveyTitle, { exact: true })).toBeVisible();
                 await expect(main.getByText(`${edited.begin} ~ ${edited.end}`, { exact: true })).toBeVisible();
                 for (const { choiceLabel } of selectedAnswers) {
@@ -226,7 +228,7 @@ test.describe('설문 응답 생명주기', () => {
                     const responseId = responseIds.get(srvyArtclSn);
                     expect(responseId, '제출한 선택 응답이 관리 API에 있어야 한다').toBeDefined();
                     await adminPage.goto('/survey/response');
-                    const main = adminPage.locator('main#main-content');
+                    const main = adminPage.locator('main#main-content').filter({ visible: true });
                     const detailSelector = `a[href="/survey/response/${responseId}"]`;
                     const detail = main.locator(detailSelector);
                     for (let page = 1; page <= pageCount; page++) {
@@ -246,7 +248,7 @@ test.describe('설문 응답 생명주기', () => {
             await test.step('한 답변에서 전체 제출을 취소하면 두 문항이 사라지고 기간 안에 다시 제출할 수 있다', async () => {
                 const anchor = responseIds.get(selectedAnswers[0].srvyArtclSn)!;
                 await adminPage.goto('/survey/response');
-                const main = adminPage.locator('main#main-content');
+                const main = adminPage.locator('main#main-content').filter({ visible: true });
                 const selector = `a[href="/survey/response/${anchor}"]`;
                 const { totalPage } = await readData<ResponsePage>(adminRequest, `${RESPONSES}?page=1&size=10`);
                 await expect(main.getByText(`1 / ${totalPage} 페이지`, { exact: true })).toBeVisible();
