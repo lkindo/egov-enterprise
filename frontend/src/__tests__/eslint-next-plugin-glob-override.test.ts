@@ -20,8 +20,8 @@ const requireFromFrontend = createRequire(join(FRONTEND_DIR, 'package.json'));
  * 동안에만 이 대체가 안전하다. 어느 쪽이 깨져도 override 를 다시 판정한다.
  */
 function pluginDir(): string {
-  const configEntry = requireFromFrontend.resolve('eslint-config-next');
-  return dirname(createRequire(configEntry).resolve('@next/eslint-plugin-next/package.json'));
+  const requireFromConfig = createRequire(requireFromFrontend.resolve('eslint-config-next'));
+  return dirname(requireFromConfig.resolve('@next/eslint-plugin-next/package.json'));
 }
 
 function jsFiles(dir: string): string[] {
@@ -48,7 +48,8 @@ function fastGlobMembers(): Set<string> {
 
 describe('Next ESLint 플러그인의 fast-glob 대체(braces 걷기)', () => {
   it('플러그인의 fast-glob 은 tinyglobby 로 해석된다', () => {
-    const resolved = createRequire(join(pluginDir(), 'package.json')).resolve('fast-glob/package.json');
+    const requireFromPlugin = createRequire(join(pluginDir(), 'package.json'));
+    const resolved = requireFromPlugin.resolve('fast-glob/package.json');
     const manifest = JSON.parse(readFileSync(resolved, 'utf8')) as { name: string };
     expect(manifest.name, 'override 가 빠졌다 — braces 가 다시 설치된다').toBe('tinyglobby');
   });
