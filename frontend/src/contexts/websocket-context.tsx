@@ -35,7 +35,7 @@ function createConnectionStore() {
 
 type ConnectionStore = ReturnType<typeof createConnectionStore>;
 
-const WebSocketContext = createContext<ConnectionStore | null>(null);
+export const WebSocketContext = createContext<ConnectionStore | null>(null);
 const noSubscription = () => () => {};
 const noConnection = () => null;
 

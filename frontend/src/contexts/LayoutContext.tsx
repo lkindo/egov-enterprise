@@ -16,8 +16,13 @@ interface LayoutContextType {
  * 그때 context 값이 바뀌면 스트리밍 공개를 기다리는 본문 경계를 React 가 브라우저에서 다시 그리고 서버 사본이 잠시 숨은 채
  * 남는다. 구독은 메뉴 번호를 읽는 소비자만 다시 그린다.
  */
+/** 서버가 그릴 때의 값. 하이드레이션은 이 값으로 그려야 서버 HTML 과 맞는다 — 머리글이 먼저 바꾼 값을 뒤늦게 깨어나는
+ *  사이드바·본문이 하이드레이션 중에 읽으면 글자가 달라져 React #418 이 난다. 바뀐 값은 하이드레이션 뒤에 다시 그린다. */
+const SERVER_ACTIVE_MENU_NO = 0;
+const serverActiveMenuNo = () => SERVER_ACTIVE_MENU_NO;
+
 function createActiveMenuStore() {
-  let menuNo = 0;
+  let menuNo = SERVER_ACTIVE_MENU_NO;
   const listeners = new Set<() => void>();
   return {
     subscribe(listener: () => void) {
@@ -80,6 +85,6 @@ export function useLayout(): LayoutContextType {
     throw new Error('useLayout must be used within a LayoutProvider');
   }
   const { activeMenu, ...sidebar } = context;
-  const activeMenuNo = useSyncExternalStore(activeMenu.subscribe, activeMenu.get, activeMenu.get);
+  const activeMenuNo = useSyncExternalStore(activeMenu.subscribe, activeMenu.get, serverActiveMenuNo);
   return { ...sidebar, activeMenuNo, setActiveMenuNo: activeMenu.set };
 }

@@ -83,11 +83,12 @@ describe('app shell accessibility source contract', () => {
     expect(sidebar).toContain('id="primary-sidebar"');
   });
 
-  it('넓은 화면 사이드바 접기는 그리기 전에 복원되고 CSS 로만 상자를 띠로 줄이며 사이드바 자리표시까지 함께 줄인다', () => {
+  it('넓은 화면 사이드바 접기는 그리기 전에 복원되고 CSS 로만 상자를 띠로 줄이며 사이드바는 셸과 함께 온다', () => {
     // [2026-10-05 DEC-OPS-228] 접힘의 화면 표현은 전부 CSS 다 — JS 로 aside 를 언마운트하거나 뷰포트를 재지 않는다(ADR-0006).
     //   ① 복원 스크립트는 요청 nonce 를 달고 본문(ThemeProvider)보다 먼저 실행돼야 첫 화면이 펼쳤다가 접히지 않는다.
     //   ② 접힘 규칙은 lg 이상 미디어쿼리 안에만 있다 — lg 미만 서랍형 사이드바는 이 표지와 무관해야 한다.
-    //   ③ 사이드바와 Suspense 자리표시 둘 다 표지를 달아야 한다 — 자리표시만 남으면 접힌 첫 화면에 사이드바 폭의 빈 띠가 생긴다.
+    //   ③ 머리글·사이드바는 따로 Suspense 자리표시를 두지 않고 셸과 함께 온다(2026-10-21 GAP-FE-003) — 따로 스트리밍하면 늦게
+    //      공개된 사이드바가 그 사이 바뀐 주소로 하이드레이션해 서버 HTML 과 어긋나고, 접힌 첫 화면에는 자리표시 폭의 빈 띠가 생긴다.
     //   ④ 본문 여백은 폭 토큰이 아니라 inset 토큰이다 — 폭을 직접 쓰면 접어도 사이드바 폭의 빈 자리가 남는다.
     //   ⑤ 접으면 사이드바 상자(랜드마크)는 남아 띠 폭이 되고 안쪽 내용 컨테이너만 숨는다 — 상자를 display:none 으로 없애면
     //      그 안의 경계선 단추도 사라져 포커스가 떨어지고 펼칠 길이 없어진다.
@@ -99,7 +100,9 @@ describe('app shell accessibility source contract', () => {
     const scriptTag = '<script nonce={nonce} dangerouslySetInnerHTML={{ __html: SIDEBAR_COLLAPSE_SCRIPT }} />';
     expect(layout).toContain(scriptTag);
     expect(layout.indexOf(scriptTag)).toBeLessThan(layout.indexOf('<ThemeProvider'));
-    expect(layout).toMatch(/<aside data-app-sidebar=""[^>]*lg:block/);
+    expect(layout).toMatch(/header=\{<Header initialMenus=\{initialMenus\} \/>\}/);
+    expect(layout).toMatch(/sidebar=\{<Sidebar initialMenus=\{initialMenus\} \/>\}/);
+    expect(layout).not.toMatch(/<Suspense\b[^>]*>\s*<(?:Header|Sidebar)\b/);
     expect(sidebar).toMatch(/<aside\s+id="primary-sidebar"\s+data-app-sidebar=""/);
     expect(sidebar).toMatch(/<div\s+id=\{SIDEBAR_CONTENT_ID\}\s+data-app-sidebar-content=""/);
     expect(frame).toContain('lg:pl-[var(--app-sidebar-inset)]');

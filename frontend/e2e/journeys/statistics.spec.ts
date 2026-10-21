@@ -1,5 +1,6 @@
 import { type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { waitForHydration } from '../fixtures/hydration';
 test.describe('협업 도구', () => {
     /**
      * Advanced Collaboration & Intelligence
@@ -99,7 +100,9 @@ test.describe('운영 관측', () => {
  * '최근 1일'이 곧 오늘 하루다) 새 요청이 나가지 않으므로 네트워크 응답을 기다리지 않는다 — 값은 뒤의 표·API 대조가 본다.
  */
 async function applyPeriod(page: Page, from: string, to: string) {
-    await page.getByLabel('집계 기간 시작일').fill(from);
+    const start = page.getByLabel('집계 기간 시작일');
+    await waitForHydration(start);
+    await start.fill(from);
     await page.getByLabel('집계 기간 종료일').fill(to);
     await expect(page.getByTestId('report-basis')).toContainText(`집계 구간: ${from} ~ ${to}`, { timeout: 20_000 });
 }

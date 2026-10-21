@@ -2,7 +2,7 @@ import React from 'react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, act } from '@testing-library/react';
 import { usePathname } from 'next/navigation';
-import { LayoutProvider, useLayout } from '../LayoutContext';
+import { LayoutContext, LayoutProvider, useLayout } from '../LayoutContext';
 
 /**
  * LayoutContext 계약 테스트.
@@ -110,6 +110,18 @@ describe('LayoutContext', () => {
 
     expect(result.current.activeMenuNo).toBe(42);
     expect(result.current.isSidebarOpen).toBe(false);
+  });
+
+  it('현재 메뉴 번호가 바뀌어도 공급자 값은 같은 객체다 — 공개를 기다리는 서버 화면을 깨우지 않는다', () => {
+    // 머리글이 첫 화면 직후 현재 메뉴를 고른다. 그때 context 값이 바뀌면 React 는 스트리밍 공개를 기다리던 경계를 브라우저에서
+    //   다시 그리고 서버 사본이 숨은 채 잠시 남는다(2026-10-21 GAP-FE-003). 메뉴 번호는 구독으로 읽는 소비자만 다시 그린다.
+    const seen = new Set<unknown>();
+    const { result } = renderHook(() => { seen.add(React.useContext(LayoutContext)); return useLayout(); }, { wrapper });
+
+    act(() => result.current.setActiveMenuNo(7));
+
+    expect(result.current.activeMenuNo).toBe(7);
+    expect(seen.size, '메뉴 번호 변경이 공급자 값을 바꿨다').toBe(1);
   });
 
   it('Provider 밖에서 useLayout 을 쓰면 명확히 실패한다', () => {
