@@ -6,7 +6,6 @@ import nuri.business.domain.config.JpaConfig;
 import nuri.business.security.audit.LoginUserAuditorAware;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.mail.EmailSender;
-import nuri.business.service.mail.MailAsyncProcessor;
 import nuri.business.service.mail.MailService;
 import nuri.business.service.mail.dto.SentMailDto;
 import nuri.business.service.user.UserContactService;
