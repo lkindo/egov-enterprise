@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState, useSyncExternalStore } from 'react';
 import { usePathname } from 'next/navigation';
 
 interface LayoutContextType {
@@ -11,11 +11,37 @@ interface LayoutContextType {
   setActiveMenuNo: (no: number) => void;
 }
 
-export const LayoutContext = createContext<LayoutContextType | undefined>(undefined);
+/**
+ * 고른 상위 메뉴는 context 값이 아니라 구독 저장소로 넘긴다(2026-10-21). 머리글이 첫 화면 직후 현재 URL 의 메뉴를 고르는데,
+ * 그때 context 값이 바뀌면 스트리밍 공개를 기다리는 본문 경계를 React 가 브라우저에서 다시 그리고 서버 사본이 잠시 숨은 채
+ * 남는다. 구독은 메뉴 번호를 읽는 소비자만 다시 그린다.
+ */
+function createActiveMenuStore() {
+  let menuNo = 0;
+  const listeners = new Set<() => void>();
+  return {
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => { listeners.delete(listener); };
+    },
+    get: () => menuNo,
+    set(next: number) {
+      if (next === menuNo) return;
+      menuNo = next;
+      listeners.forEach(listener => listener());
+    },
+  };
+}
+
+type LayoutState = Pick<LayoutContextType, 'isSidebarOpen' | 'setSidebarOpen' | 'toggleSidebar'> & {
+  activeMenu: ReturnType<typeof createActiveMenuStore>;
+};
+
+export const LayoutContext = createContext<LayoutState | undefined>(undefined);
 
 export function LayoutProvider({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [activeMenuNo, setActiveMenuNo] = useState<number>(0);
+  const [activeMenu] = useState(createActiveMenuStore);
   const pathname = usePathname();
 
   // 페이지 이동 시 사이드바 닫기 (모바일 대응).
@@ -37,25 +63,23 @@ export function LayoutProvider({ children }: { children: React.ReactNode }) {
     setSidebarOpen(false);
   }
 
-  const toggleSidebar = () => setSidebarOpen(!isSidebarOpen);
+  const toggleSidebar = useCallback(() => setSidebarOpen(open => !open), []);
+  // 값이 바뀔 때만 새 객체다 — 이 공급자는 앱 전체를 감싸므로 바뀌지 않은 값으로 아래 경계를 깨우지 않는다.
+  const value = useMemo(() => ({ isSidebarOpen, setSidebarOpen, toggleSidebar, activeMenu }), [isSidebarOpen, toggleSidebar, activeMenu]);
 
   return (
-    <LayoutContext.Provider value={{
-      isSidebarOpen,
-      setSidebarOpen,
-      toggleSidebar,
-      activeMenuNo,
-      setActiveMenuNo
-    }}>
+    <LayoutContext.Provider value={value}>
       {children}
     </LayoutContext.Provider>
   );
 }
 
-export function useLayout() {
+export function useLayout(): LayoutContextType {
   const context = useContext(LayoutContext);
   if (context === undefined) {
     throw new Error('useLayout must be used within a LayoutProvider');
   }
-  return context;
+  const { activeMenu, ...sidebar } = context;
+  const activeMenuNo = useSyncExternalStore(activeMenu.subscribe, activeMenu.get, activeMenu.get);
+  return { ...sidebar, activeMenuNo, setActiveMenuNo: activeMenu.set };
 }
