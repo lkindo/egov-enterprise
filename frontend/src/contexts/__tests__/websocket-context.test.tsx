@@ -21,7 +21,8 @@ vi.mock('next/config', () => ({
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, act } from '@testing-library/react';
 import SockJS from 'sockjs-client';
-import { WebSocketProvider, useWebSocket } from '../websocket-context';
+import React from 'react';
+import { WebSocketContext, WebSocketProvider, useWebSocket } from '../websocket-context';
 
 let authUser: { id: string; authorizationVersion?: string } | null = { id: 'U1', authorizationVersion: 'v1' };
 
@@ -173,6 +174,18 @@ describe('WebSocketProvider', () => {
       expect(created[0].subscribe).not.toHaveBeenCalled();
       expect(view.value.isConnected).toBe(true);
       expect(view.value.client).toBe(created[0]);
+    });
+
+    it('연결이 열려도 공급자 값은 같은 객체다 — 공개를 기다리는 서버 화면을 깨우지 않는다', () => {
+      // 연결은 첫 화면 직후 열린다. 그때 context 값이 바뀌면 React 는 스트리밍 공개를 기다리던 경계를 브라우저에서 다시
+      //   그리고 서버 사본이 숨은 채 잠시 남는다(2026-10-21 GAP-FE-003). 연결은 구독으로 읽는 소비자만 다시 그린다.
+      const seen = new Set<unknown>();
+      function ContextProbe() { seen.add(React.useContext(WebSocketContext)); useWebSocket(); return null; }
+      render(<WebSocketProvider><ContextProbe /></WebSocketProvider>);
+
+      act(() => { created[0].onConnect?.(); });
+
+      expect(seen.size, '연결이 공급자 값을 바꿨다').toBe(1);
     });
 
     it('STOMP 오류가 나면 연결 해제 상태로 되돌린다', () => {

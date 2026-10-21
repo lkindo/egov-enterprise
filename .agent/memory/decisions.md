@@ -394,6 +394,7 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-374 | accepted | 직접 맡은 작업 브랜치는 추가 승인 없이 PR·required CI·main 병합·원격/로컬 브랜치 삭제까지 마무리한다. 현재 사용자의 범위 제한과 다른 작업 보호를 우선한다. | 2026-10-20 | - |
 | DEC-OPS-375 | accepted | 부서 미배정 사용자의 '부서 공유' 일정을 기본조직으로 묶어 미배정자끼리 공유하는 현재 동작과, 일반 사용자 관리자(USER_UPDATE·USER_DEPT)가 보호 관리자 계정의 이름·연락처·부서를 바꿀 수 있는 현재 권한 의미를 유지한다(2026-10-21 사용자 결정). | 2026-10-21 | - |
 | DEC-OPS-376 | accepted | 운영 오버레이의 api·frontend·edge 는 리눅스 권한을 모두 빼고(`cap_drop: ALL`·`no-new-privileges`) 메모리 상한을 두며, api 힙은 고정 `JAVA_OPTS` 로 상한에 비례해 잡는다. 번들 db 는 대상 밖이고 `read_only` 는 후속이다(2026-10-21 사용자 승인). | 2026-10-21 | - |
+| DEC-OPS-377 | accepted | 첫 화면 직후 앱 전체 공급자의 context 값을 바꾸지 않고(같은 사용자 재조회는 이전 객체, 실시간 연결·현재 메뉴는 구독 저장소, 하이드레이션 중에는 서버 기준값) 머리글·사이드바를 셸과 함께 보낸다(GAP-FE-003 종료, 2026-10-22 사용자 승인). | 2026-10-22 | DEC-OPS-228 의 사이드바 Suspense 자리표시 표지 부분(자리표시를 걷었다) |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

@@ -2262,6 +2262,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-376 | accepted | 운영 오버레이의 api·frontend·edge 는 리눅스 권한을 모두 빼고(`cap_drop: ALL`·`no-new-privileges`) 메모리 상한을 두며, api 힙은 고정 `JAVA_OPTS` 로 상한에 비례해 잡는다. 번들 db 는 대상 밖이고 `read_only` 는 후속이다(2026-10-21 사용자 승인). | 2026-10-21 소스 실측 평가가 운영 컨테이너에 권한 축소·자원 상한이 없음을 지적했고 사용자가 (가)안을 골랐다. 격리 릴리스 스모크에서 강화한 컨테이너가 첫 설치·인가 전환·로그인·세션 연장·첨부·백업·복원을 통과했고 최대 메모리가 상한 안이었다(api 918MiB/1.5GiB, frontend 146MiB/768MiB, edge 13MiB/128MiB). 상한은 환경변수로 바꾸고 JVM 옵션은 호스트 환경으로 받지 않으며 `ConfigSafetyLinterTest` 가 고정한다. db 는 기동 때 권한이 필요하고 메모리 필요량이 데이터에 따라 달라 뺐다. 같은 검증이 시험 파일 때문에 깨져 있던 프런트 Docker 빌드와 ADR-0038·ADR-0036 이후 낡은 스모크 기대값을 드러내 함께 고쳤다. | [운영 오버레이](../../docker-compose.prod.yml), [설정 안전 게이트](../../api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java), [시작 가이드](../../docs/03-guides/getting-started.md) | 2026-10-21 | - |
 
+## DEC-OPS-377
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-377 | accepted | 첫 화면 직후 앱 전체 공급자의 context 값을 바꾸지 않고(같은 사용자 재조회는 이전 객체, 실시간 연결·현재 메뉴는 구독 저장소, 하이드레이션 중에는 서버 기준값) 머리글·사이드바를 셸과 함께 보낸다(GAP-FE-003 종료, 2026-10-22 사용자 승인). | React 19.2 는 서버가 보낸 Suspense 조각을 300ms 묶음으로 공개한다. 첫 화면 직후 공급자 값이 바뀌면 공개를 기다리던 경계를 브라우저가 다시 그려 서버 HTML 을 버리고, 숨은 사본이 남아 E2E 가 본문을 두 벌 셌다(PR #959). 값을 안정화하자 따로 스트리밍하던 사이드바가 빠른 이동 뒤 늦게 하이드레이션해 서버와 어긋났다(React #418). 셸이 메뉴 조회를 기다려 머리글·사이드바와 함께 오면 늦은 셸 하이드레이션이 없다 — 메뉴 조회는 같은 백엔드이고 실패하면 빈 메뉴다. 격리 E2E(CI 에서 실패했던 시험 포함 30건)에서 #418 0건을 확인했다. | [루트 레이아웃](../../frontend/src/app/layout.tsx), [레이아웃 공급자](../../frontend/src/contexts/LayoutContext.tsx), [셸 접근성 계약](../../frontend/src/app/components/layout/__tests__/shell-accessibility-contract.test.ts) | 2026-10-22 | DEC-OPS-228 의 사이드바 Suspense 자리표시 표지 부분(자리표시를 걷었다) |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
@@ -2353,3 +2359,7 @@
 ### GAP-CONTRACT-001 보강 기록
 
 GAP-CONTRACT-001의 2026-09-06 보강은 길이·필수 제약에 더해 Memo/Work 보고 13필드와 DeptJob 계열 15필드, 총 28개의 서버 소유·응답 전용 필드를 Jackson/OpenAPI read-only로 고정했다. Work 보고 등록은 [서비스](../../business-app/src/main/java/nuri/business/service/report/WorkReportService.java)가 인증 loginId를 직접 확인하고, 수정·응답의 `rptYmd` 왕복도 복원한다. 이 완료 증거는 남은 미검사 DTO·공백 의미·root validation 사각을 닫았다는 뜻이 아니다.
+
+### GAP-FE-003
+
+`GAP-FE-003`(스트리밍 공개와 하이드레이션)은 2026-10-22 종료했다([DEC-OPS-377](../../.agent/memory/decisions.md)). 첫 화면 직후 공급자 값 변경 셋(같은 사용자 재조회의 새 객체·실시간 연결·머리글의 현재 메뉴)을 없애 공개를 기다리던 경계를 브라우저가 다시 그리지 않게 했고, 그로 드러난 사이드바의 늦은 하이드레이션 불일치(빠른 이동 뒤 React #418)는 머리글·사이드바를 셸과 함께 보내 닫았다. 회귀는 공급자 단위 시험 셋과 셸 접근성 계약이 막고, 하이드레이션 전 입력은 E2E 공용 대기(`waitForHydration`)가 다룬다. 공개를 늦춰 경합을 재현한 시험과 trace 분석은 PR #959 에 있다.
