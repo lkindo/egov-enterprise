@@ -393,6 +393,7 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-373 | accepted | 1단계 배치: 검증 신호 앞당김(Atlas 버전·액션 핀 사본 제거, 시험의 원장 수 재진술 검출, CodeQL 근사, 통합 점검 명령, PIT 6슬롯·범위 둘 추가, 스키마 검증 플레이크), 얇은 도메인 보강(팝업 대화상자, 포상 수상자 검사, 업무 홈 조각·관리자 운영 신호, 통계 시계열 일원화, 공통코드 사용처, 감사 원장 사유 내보내기)(2026-10-20 사용자 지시). | 2026-10-20 | ADR-0026 결정 9 의 제품 PIT `max-parallel: 4`(ADR-0037), DEC-OPS-281 ⑤ 의 "대시보드→알림은 화면 의존", DEC-OPS-276 ③ 의 미수집 축 요약 칸 `summary`, 공통코드 조회의 인스턴스 로컬 캐시(DEC 없음) |
 | DEC-OPS-374 | accepted | 직접 맡은 작업 브랜치는 추가 승인 없이 PR·required CI·main 병합·원격/로컬 브랜치 삭제까지 마무리한다. 현재 사용자의 범위 제한과 다른 작업 보호를 우선한다. | 2026-10-20 | - |
 | DEC-OPS-375 | accepted | 부서 미배정 사용자의 '부서 공유' 일정을 기본조직으로 묶어 미배정자끼리 공유하는 현재 동작과, 일반 사용자 관리자(USER_UPDATE·USER_DEPT)가 보호 관리자 계정의 이름·연락처·부서를 바꿀 수 있는 현재 권한 의미를 유지한다(2026-10-21 사용자 결정). | 2026-10-21 | - |
+| DEC-OPS-376 | accepted | 운영 오버레이의 api·frontend·edge 는 리눅스 권한을 모두 빼고(`cap_drop: ALL`·`no-new-privileges`) 메모리 상한을 두며, api 힙은 고정 `JAVA_OPTS` 로 상한에 비례해 잡는다. 번들 db 는 대상 밖이고 `read_only` 는 후속이다(2026-10-21 사용자 승인). | 2026-10-21 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 
