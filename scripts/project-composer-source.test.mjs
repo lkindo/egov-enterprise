@@ -1115,6 +1115,9 @@ test('custom RBAC projection preserves selected assertions and removes only abse
   const promotion = projectComposerJava(file, source, { resolvedDomains: ['promotion'] }, ownership.rbac);
   // 설문이 없으면 표지를 지워 남은 표면(배너·팝업)의 단언이 연쇄 제거되지 않게 한다.
   assert.doesNotMatch(promotion, /SurveyService/);
+  // 표지의 미사용 경고 애노테이션도 함께 지워져 다음 필드에 붙지 않는다.
+  assert.match(survey, /@SuppressWarnings\("unused"\)\r?\n *private static final Class<\?> SURVEY_PACK_BOUNDARY/);
+  assert.doesNotMatch(promotion, /@SuppressWarnings\("unused"\)/, 'boundary annotation left behind');
   assert.match(promotion, /get\(path\)\.with\(user\(ordinary\)\)\)\.andExpect\(status\(\)\.isForbidden\(\)\)/);
   assert.match(promotion, /List\.of\("\/api\/v1\/admin\/system\/banners"/);
   assert.doesNotMatch(promotion, /\/api\/v1\/admin\/system\/ism\/1\/confirm/);

@@ -82,7 +82,8 @@ export function verifyCompositionDatabaseFiles(migrationDirectory, lock) {
  */
 export const RBAC = 'api-server/src/test/java/nuri/security/RbacDemoSurfaceAuthorizationMatrixTest.java';
 // 데모 매트릭스를 설문과 함께 지우는 표지. 설문을 고르지 않은 구성은 남은 표면을 지키려고 이 줄을 지운다.
-const RBAC_SURVEY_BOUNDARY = /^ *private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
+// 표지의 미사용 경고를 끄는 애노테이션 줄도 함께 지운다 — 남기면 다음 필드에 붙는다.
+const RBAC_SURVEY_BOUNDARY = /^ *(?:@SuppressWarnings\("unused"\)\r?\n *)?private static final Class<\?> SURVEY_PACK_BOUNDARY = nuri\.business\.service\.survey\.SurveyService\.class;\r?\n/m;
 
 /**
  * 생성기가 투영에 쓰는 프로필(11단계 C3). 시작 구성과 직접 선택이 같은 모양이다 — 투영은 해석된 기능 목록(resolvedDomains)과 화면
