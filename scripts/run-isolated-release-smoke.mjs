@@ -18,7 +18,8 @@ const RUN = /^[a-f0-9]{24}$/u;
 const OWNER = 'egov.release-smoke.run';
 const TREE_LABEL = 'io.egov.ui-quality.build-input-tree-sha256';
 const API_ENTRYPOINT = ['sh', '-c', 'exec java $JAVA_OPTS -jar app.jar'];
-const SAFE_JAVA_OPTION = /^(?:-Xm[sx][1-9]\d*[kKmMgG]|-Xss[1-9]\d*[kKmMgG]|-XX:\+UseParallelGC)$/u;
+// JVM 옵션은 크기·GC 선택만 받는다. 비율 힙은 운영 오버레이가 컨테이너 메모리 상한에 맞춰 준다(docker-compose.prod.yml).
+const SAFE_JAVA_OPTION = /^(?:-Xm[sx][1-9]\d*[kKmMgG]|-Xss[1-9]\d*[kKmMgG]|-XX:\+UseParallelGC|-XX:(?:Initial|Max)RAMPercentage=(?:[1-9]\d?|100))$/u;
 const BOOTSTRAP_ACK = 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE';
 const BACKEND_URL = 'http://api:8080/api/v1';
 const ENCODED_AUTH_PATHS = ['/api/v1/auth/%2572eissue', '/api/v1/%2561uth/login', '/api/v1/auth/%ZZreissue'];
