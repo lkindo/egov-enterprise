@@ -682,10 +682,6 @@ class ApprovalWorkflowIntegrationTest {
                 Integer.class, saved.temporaryDraftSn())).as("임시저장 참조자는 임시저장과 함께 지워진다").isZero();
     }
 
-    private static CustomUserDetails principal(String id) {
-        return CustomUserDetails.builder().userId(id).esntlId(id).enabled(true).build();
-    }
-
     private void seedDrafter() {
         jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
                 + "VALUES(?,?,'draft fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",

@@ -9,7 +9,6 @@ import nuri.migration.archive.ArchiveWriteException;
 import nuri.migration.domain.DomainValueRejected;
 import nuri.migration.domain.DomainViolation;
 import nuri.migration.domain.TargetValueGuard;
-import nuri.migration.etl.EtlSourceQuerySupport.ChunkLookups;
 import nuri.migration.identity.JdbcTypedValueCodec;
 import nuri.migration.identity.TargetIdentityPolicy;
 import nuri.migration.identity.TypedKeyEncoding;

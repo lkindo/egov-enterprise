@@ -36,7 +36,6 @@ import org.springframework.boot.DefaultApplicationArguments;
 import org.springframework.dao.DataAccessException;
 
 import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.sql.Connection;
