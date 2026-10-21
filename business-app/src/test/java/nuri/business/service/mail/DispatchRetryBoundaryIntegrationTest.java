@@ -1,7 +1,6 @@
 package nuri.business.service.mail;
 
 import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
-import nuri.business.domain.mail.SentMail;
 import nuri.business.domain.mail.SentMailRepository;
 import nuri.business.domain.sms.SmsRecptn;
 import nuri.business.domain.sms.SmsRecptnId;

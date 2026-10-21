@@ -31,6 +31,8 @@ VS Code/Antigravity의 Java 확장은 Eclipse JDT로, Gradle은 JDK 21의 javac�
 
 외부 라이브러리의 null 계약을 추가 인식시키는 설정은 전체 소스에 영향을 준다. 적용 전후에 같은 컴파일러로 전체 진단을 비교하고, 메서드 참조의 입력 계약을 확인한다. 경고 개수만 줄이기 위한 분석 비활성화나 일괄 람다 치환은 하지 않는다.
 
+경고는 파일의 출처와 실제 소비자를 확인해 분류한다. QueryDSL 7.7은 [생성기](https://github.com/OpenFeign/querydsl/blob/7.7/querydsl-tooling/querydsl-codegen/src/main/java/com/querydsl/codegen/DefaultEntitySerializer.java#L480-L481)가 Q 클래스마다 `StringTemplate`을 명시적으로 import한다. [JDK 21 이름 충돌 방지 변경](https://github.com/OpenFeign/querydsl/pull/481)에서 비롯된 것으로, 사용하지 않는 Q 클래스에도 JDT의 unused import 경고가 생긴다. 생성물을 손으로 고치거나 전체 미사용 진단을 끄지 말고 생성기 수정 여부를 확인한다. 직접 작성한 코드의 미사용 import·호출되지 않는 private 보조 메서드는 참조를 확인해 정리하되, `RbacDemoSurfaceAuthorizationMatrixTest.SURVEY_PACK_BOUNDARY`처럼 [프로젝트 생성기](../../scripts/project-composer-source.mjs)가 소스로 읽는 표지는 Java 호출이 없다는 이유로 삭제하지 않는다.
+
 #### 외부 변경 반영과 생성 소스 동기화
 
 에이전트·Gradle·Git이 디스크를 바꿨는데 IDE의 파일·브랜치·진단이 함께 낡아 있으면 Java 오류부터 수정하지 말고 파일 감시기부터 확인한다. `Developer: Open Logs Folder`의 해당 창 `fileWatcher.log`에서 `gave up attempting to restart watcher`가 보이면 감시기가 중단된 상태다. `Developer: Reload Window` 후 Git 브랜치와 외부 파일 변경이 실제로 반영되는지 확인한다. 재시작만으로 충돌 원인이 해결됐다고 판단하지 않는다.

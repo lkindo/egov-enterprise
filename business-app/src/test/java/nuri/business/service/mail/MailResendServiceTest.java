@@ -1,7 +1,6 @@
 package nuri.business.service.mail;
 
 import nuri.business.domain.mail.SentMail;
-import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkPort;
 import nuri.foundation.core.util.CryptoUtil;
 import nuri.business.domain.mail.SentMailRepository;

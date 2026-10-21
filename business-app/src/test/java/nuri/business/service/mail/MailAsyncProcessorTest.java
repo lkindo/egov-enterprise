@@ -150,8 +150,4 @@ class MailAsyncProcessorTest {
         processor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", "SENDER-1").join();
         verifyNoInteractions(eventPublisher);
     }
-
-    private org.assertj.core.api.AbstractAssert<?, ?> assertThat(Object actual) {
-        return org.assertj.core.api.Assertions.assertThat(actual);
-    }
 }
