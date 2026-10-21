@@ -32,3 +32,5 @@ test-results
 **/__tests__
 **/*.test.ts
 **/*.test.tsx
+# Playwright 설정은 위에서 뺀 e2e/ 를 import 한다.
+playwright*.config.ts
