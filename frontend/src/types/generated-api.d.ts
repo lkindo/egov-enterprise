@@ -2229,7 +2229,7 @@ export interface paths {
         post: operations["insertUser"];
         /**
          * 사용자 다중 삭제
-         * @description 시스템에서 여러 명의 사용자를 한꺼번에 삭제합니다. (관리자 권한)
+         * @description 시스템에서 한 번에 최대 100명의 사용자를 삭제합니다. (관리자 권한)
          */
         delete: operations["deleteUsers"];
         options?: never;
@@ -37981,7 +37981,6 @@ export interface operations {
     getComments_1: {
         parameters: {
             query?: {
-                searchKeyword?: string;
                 bbsId?: string;
                 pstSn?: number;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */

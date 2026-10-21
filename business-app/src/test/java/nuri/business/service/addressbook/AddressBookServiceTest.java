@@ -105,7 +105,7 @@ class AddressBookServiceTest {
         given(addressBookRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
         // When
-        addressBookService.deleteAddressBook(1L, "user");
+        addressBookService.deleteAddressBook(1L);
 
         // Then
         assertThat(entity.getUseYn()).isEqualTo("N");

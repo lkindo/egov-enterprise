@@ -61,7 +61,7 @@ public class HelpService {
     }
 
     @Transactional
-    public Long createHpcm(String userId, HpcmDto dto) {
+    public Long createHpcm(HpcmDto dto) {
         SecurityUtil.assertPermission("HELP_CREATE");
         Hpcm entity = Hpcm.builder()
                 .hlpSeCd(dto.getHlpSeCd())
@@ -73,7 +73,7 @@ public class HelpService {
     }
 
     @Transactional
-    public void updateHpcm(Long hlpSn, String userId, HpcmDto dto) {
+    public void updateHpcm(Long hlpSn, HpcmDto dto) {
         SecurityUtil.assertPermission("HELP_UPDATE");
         Hpcm entity = hpcmRepository.findById(Objects.requireNonNull(hlpSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
@@ -118,7 +118,7 @@ public class HelpService {
     }
 
     @Transactional
-    public Long createOnlineManual(String userId, OnlineManualDto dto) {
+    public Long createOnlineManual(OnlineManualDto dto) {
         SecurityUtil.assertPermission("HELP_CREATE");
         if (dto == null) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
@@ -136,7 +136,7 @@ public class HelpService {
     }
 
     @Transactional
-    public void updateOnlineManual(Long onlnMnlSn, String userId, OnlineManualDto dto) {
+    public void updateOnlineManual(Long onlnMnlSn, OnlineManualDto dto) {
         SecurityUtil.assertPermission("HELP_UPDATE");
         OnlineManual entity = onlineManualRepository.findById(Objects.requireNonNull(onlnMnlSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));

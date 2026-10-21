@@ -44,6 +44,9 @@ import java.util.stream.Collectors;
 @Transactional(readOnly = true)
 public class UserService extends BaseAbstractService {
 
+        /** 사용자 관리 화면의 최대 페이지 크기와 같은 입력 ID 상한. 중복 ID도 요청 건수에 포함한다. */
+        public static final int MAX_BULK_DELETE_USERS = 100;
+
         /**
          * 가입일자(yyyyMMdd) 판정의 기준 시계. 운영에서는 항상 Asia/Seoul 시스템 시계다.
          *
@@ -543,6 +546,10 @@ public class UserService extends BaseAbstractService {
                 // [보안] 관리자 권한 확인
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DELETE");
                 required(userIds, "사용자 ID 목록은 null 일 수 없습니다");
+                if (userIds.size() > MAX_BULK_DELETE_USERS) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "한 번에 삭제할 사용자 ID는 " + MAX_BULK_DELETE_USERS + "개 이하여야 합니다.");
+                }
 
                 // [버그수정] 기존 deleteAllByIdInBatch(userIds)는 PK(esntlId) 기준이라, FE(UserOrgHubClient)가
                 // 보내는 loginId 목록에서는 아무 행도 지우지 못하는 침묵 no-op 이었다. deleteUser 와 동일하게

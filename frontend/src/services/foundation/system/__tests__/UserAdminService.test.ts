@@ -302,6 +302,22 @@ describe('UserAdminService — 관리자 사용자 API 계약', () => {
 
       expect(client.delete).toHaveBeenCalledWith(BASE, { timeout: 7000, data: userIds });
     });
+
+    it.each([0, 100])('다중 삭제 %i개 입력은 생성 계약의 허용 범위다', async (count) => {
+      const userIds = Array.from({ length: count }, (_, index) => `user${index}`);
+
+      await userAdminService.deleteUsers(userIds);
+
+      expect(client.delete).toHaveBeenCalledWith(BASE, { data: userIds });
+    });
+
+    it('다중 삭제 101개 입력은 생성 계약이 전송 전에 거부한다', async () => {
+      const userIds = Array.from({ length: 101 }, (_, index) => `user${index}`);
+
+      await expect(userAdminService.deleteUsers(userIds)).rejects.toThrow();
+
+      expect(client.delete).not.toHaveBeenCalled();
+    });
   });
 
   describe('비밀번호 변경 (updatePassword)', () => {

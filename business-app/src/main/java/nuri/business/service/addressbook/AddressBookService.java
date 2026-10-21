@@ -184,7 +184,7 @@ public class AddressBookService {
     }
 
     @Transactional
-    public void deleteAddressBook(Long adbkSn, String userId) {
+    public void deleteAddressBook(Long adbkSn) {
         AddressBook entity = addressBookRepository.findByIdForUpdate(adbkSn)
                 .orElseThrow(() -> new BusinessException("삭제할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_DELETE_ALL"); // [IDOR] 소유자/관리자만 삭제(PII)

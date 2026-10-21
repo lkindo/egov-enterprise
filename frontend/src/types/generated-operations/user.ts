@@ -190,7 +190,7 @@ export const deleteUsersOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
-  requestSchema: z.array(z.string()),
+  requestSchema: z.array(z.string()).max(100),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],

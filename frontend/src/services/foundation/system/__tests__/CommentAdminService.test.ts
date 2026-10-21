@@ -40,18 +40,16 @@ describe('CommentAdminService generated contract', () => {
     });
   });
 
-  it('게시글 필터와 공개 searchWrd 별칭을 exact searchKeyword로 정규화한다', async () => {
+  it('지원하는 게시판·게시글 필터를 그대로 전달한다', async () => {
     await commentAdminService.getComments({
       pstSn: 55,
       bbsId: 'BBSMSTR_000000000001',
-      searchWrd: '스팸',
     });
 
     expect(client.getRaw).toHaveBeenCalledWith('admin/comments', {
       params: {
         pstSn: 55,
         bbsId: 'BBSMSTR_000000000001',
-        searchKeyword: '스팸',
       },
     });
   });

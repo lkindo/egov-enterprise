@@ -153,7 +153,7 @@ describe('ordinary generated boundary wave5', () => {
     });
   });
 
-  it('comment aliases map to the exact generated query and delete path', async () => {
+  it('comment filters map to the exact generated query and delete path', async () => {
     client.getRaw.mockResolvedValueOnce(success(emptyPage));
 
     await expect(commentAdminService.getComments({
@@ -161,12 +161,11 @@ describe('ordinary generated boundary wave5', () => {
       bbsId: 'BBS_1',
       page: 1,
       size: 10,
-      searchWrd: '스팸',
     })).resolves.toStrictEqual(emptyPage);
     await commentAdminService.deleteComment(8);
 
     expect(client.getRaw).toHaveBeenCalledWith('admin/comments', {
-      params: { pstSn: 5, bbsId: 'BBS_1', page: 1, size: 10, searchKeyword: '스팸' },
+      params: { pstSn: 5, bbsId: 'BBS_1', page: 1, size: 10 },
     });
     expect(client.requestRaw).toHaveBeenCalledWith({ url: 'admin/comments/8', method: 'delete' });
   });

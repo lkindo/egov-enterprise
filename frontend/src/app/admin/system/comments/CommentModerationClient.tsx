@@ -99,7 +99,7 @@ export default function CommentModerationClient() {
   });
 
   /**
-   * 댓글 삭제(복구 불가·물리 삭제)는 반드시 확인 모달을 거친다. 확인 전에 동기로 선점해 두 번 눌러도 한 번만 묻는다.
+   * 댓글 삭제는 반드시 확인 모달을 거친다. 확인 전에 동기로 선점해 두 번 눌러도 한 번만 묻는다.
    * 과거에는 서비스 경로 오조립(404)으로 삭제가 "잠복"해 있었을 뿐, 무확인 1클릭 삭제 구조였다.
    */
   const handleDeleteComment = async (comment: { ansSn?: number | null; ansCn?: string; wrterId?: string }) => {
@@ -110,9 +110,9 @@ export default function CommentModerationClient() {
     try {
       const preview = (comment.ansCn || '').trim();
       const isConfirmed = await confirm({
-        title: '댓글 영구 삭제',
-        message: `${preview ? `"${preview.length > 60 ? `${preview.slice(0, 60)}…` : preview}" ` : ''}댓글(작성자: ${comment.wrterId || '알 수 없음'})을 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-        confirmText: '영구 삭제',
+        title: '댓글 삭제',
+        message: `${preview ? `"${preview.length > 60 ? `${preview.slice(0, 60)}…` : preview}" ` : ''}댓글(작성자: ${comment.wrterId || '알 수 없음'})을 삭제하시겠습니까? 삭제한 댓글은 목록에 표시되지 않으며, 이 화면에서 복구할 수 없습니다.`,
+        confirmText: '삭제',
         variant: 'destructive',
       });
       if (!isConfirmed) return;

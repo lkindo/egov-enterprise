@@ -28,12 +28,10 @@ public class CommentApiController {
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.CommentApiController#getComments')")
     public ResponseEntity<ApiResponse<PageResponse<CommentDto>>> getComments(
-            @RequestParam(required = false) String searchKeyword,
             @RequestParam(required = false) String bbsId,
             @RequestParam(required = false) Long pstSn,
             @PageableDefault(size = 10) Pageable pageable) {
         // 게시판·글 번호는 선택 조건이다 — 없으면 전체 댓글(최신순). [2026-09-25 DIP I6 ⑥]
-        // searchKeyword 는 아직 서비스에 배선되지 않은 예약 파라미터다(키워드 검색 미지원).
         Page<CommentDto> page = commentService.getCommentsForModeration(bbsId, pstSn, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }

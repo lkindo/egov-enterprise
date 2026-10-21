@@ -22,6 +22,24 @@ class CommentOpenApiDocumentationTest {
   @Autowired private MockMvc mockMvc;
 
   @Test
+  @DisplayName("관리자 댓글 목록은 실제 지원하는 게시판·게시글 필터만 검색 계약으로 공개한다")
+  void moderationFilters_doNotAdvertiseUnsupportedKeywordSearch() throws Exception {
+    String content = mockMvc.perform(get("/v3/api-docs"))
+        .andExpect(status().isOk())
+        .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+    var parameters = tools.jackson.databind.json.JsonMapper.builder().configureForJackson2().build()
+        .readTree(content).path("paths").path("/api/v1/admin/comments").path("get").path("parameters");
+    java.util.List<String> queryNames = new java.util.ArrayList<>();
+    for (var parameter : parameters) {
+      if ("query".equals(parameter.path("in").asString())) {
+        queryNames.add(parameter.path("name").asString());
+      }
+    }
+    assertThat(queryNames).contains("bbsId", "pstSn", "page", "size")
+        .doesNotContain("searchKeyword", "searchWrd");
+  }
+
+  @Test
   @DisplayName("댓글 DTO는 내부 신원을 숨기고 표시명·편집 판정을 문서화하며 폐기된 비밀번호를 계약에 두지 않는다")
   void commentDtoNullabilityAndAccessContract_isDocumented() throws Exception {
     String content = mockMvc.perform(get("/v3/api-docs")

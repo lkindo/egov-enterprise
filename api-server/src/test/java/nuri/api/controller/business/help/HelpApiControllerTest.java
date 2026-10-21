@@ -25,7 +25,6 @@ import tools.jackson.databind.json.JsonMapper;
 import org.springframework.http.MediaType;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doNothing;
 import static org.mockito.Mockito.when;
@@ -50,20 +49,9 @@ class HelpApiControllerTest {
     @BeforeEach
     void setUp() {
         objectMapper = JsonMapper.builder().configureForJackson2().build();
-        
-        org.springframework.web.method.support.HandlerMethodArgumentResolver principalResolver = new org.springframework.web.method.support.HandlerMethodArgumentResolver() {
-            @Override
-            public boolean supportsParameter(org.springframework.core.MethodParameter parameter) {
-                return parameter.getParameterType().isAssignableFrom(org.springframework.security.core.userdetails.UserDetails.class);
-            }
-            @Override
-            public Object resolveArgument(org.springframework.core.MethodParameter parameter, org.springframework.web.method.support.ModelAndViewContainer mavContainer, org.springframework.web.context.request.NativeWebRequest webRequest, org.springframework.web.bind.support.WebDataBinderFactory binderFactory) {
-                return new org.springframework.security.core.userdetails.User("user", "password", Collections.emptyList());
-            }
-        };
 
         mockMvc = MockMvcBuilders.standaloneSetup(helpApiController)
-                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard(), principalResolver)
+                .setCustomArgumentResolvers(nuri.business.support.PageableTestResolvers.standard())
                 .build();
     }
 
@@ -96,7 +84,7 @@ class HelpApiControllerTest {
     @DisplayName("도움말 등록")
     void insertHpcmTest() throws Exception {
         HpcmDto dto = HpcmDto.builder().hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
-        when(helpService.createHpcm(anyString(), any(HpcmDto.class))).thenReturn(1L);
+        when(helpService.createHpcm(any(HpcmDto.class))).thenReturn(1L);
 
         mockMvc.perform(post("/api/v1/help/hpcm")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -110,7 +98,7 @@ class HelpApiControllerTest {
     @DisplayName("도움말 수정")
     void updateHpcmTest() throws Exception {
         HpcmDto dto = HpcmDto.builder().hlpSn(1L).hlpSeCd("H01").hlpDfn("Def").hlpExpln("Expln").build();
-        doNothing().when(helpService).updateHpcm(eq(1L), anyString(), any(HpcmDto.class));
+        doNothing().when(helpService).updateHpcm(eq(1L), any(HpcmDto.class));
 
         mockMvc.perform(put("/api/v1/help/hpcm/1")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -157,7 +145,7 @@ class HelpApiControllerTest {
     @DisplayName("온라인 매뉴얼 등록")
     void createManualTest() throws Exception {
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
-        when(helpService.createOnlineManual(anyString(), any(OnlineManualDto.class))).thenReturn(1L);
+        when(helpService.createOnlineManual(any(OnlineManualDto.class))).thenReturn(1L);
 
         mockMvc.perform(post("/api/v1/help/manuals")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -171,7 +159,7 @@ class HelpApiControllerTest {
     @DisplayName("온라인 매뉴얼 수정")
     void updateManualTest() throws Exception {
         OnlineManualDto dto = OnlineManualDto.builder().onlnMnlSn(1L).onlnMnlNm("Manual").onlnMnlSeCd("S01").build();
-        doNothing().when(helpService).updateOnlineManual(eq(1L), anyString(), any(OnlineManualDto.class));
+        doNothing().when(helpService).updateOnlineManual(eq(1L), any(OnlineManualDto.class));
 
         mockMvc.perform(put("/api/v1/help/manuals/1")
                         .contentType(MediaType.APPLICATION_JSON)
