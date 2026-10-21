@@ -66,7 +66,9 @@ class RbacDemoSurfaceAuthorizationMatrixTest {
      * 이 참조가 곧 pack 경계다 — 설문은 demo 프로필에만 들어가므로 축소 프로필에서 이 클래스가 함께 사라진다.
      * 테스트는 이 상수를 쓰지 않는다. 종전 경계였던 통계 서비스 대역이 core 로 옮겨 가며 그 자리를 잇는 표지다.
      * composer 투영은 설문을 고르지 않은 구성에서 이 줄을 지우고 남은 표면의 단언을 지킨다.
+     * 쓰지 않는 것이 의도라 IDE 미사용 경고를 끄고, 투영은 그 애노테이션 줄도 함께 지운다.
      */
+    @SuppressWarnings("unused")
     private static final Class<?> SURVEY_PACK_BOUNDARY = nuri.business.service.survey.SurveyService.class;
 
     private static final String SURVEYS = "/api/v1/admin/system/surveys";
