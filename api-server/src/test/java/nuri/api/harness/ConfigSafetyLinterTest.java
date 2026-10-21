@@ -210,6 +210,39 @@ class ConfigSafetyLinterTest {
         }
     }
 
+    /** [H5] 운영 컨테이너 격리의 red 증명. 합성 오버레이로 각 누락·우회 형태가 실제로 잡히는지 본다. */
+    @Test
+    @DisplayName("운영 api·frontend·edge 는 권한 제거·권한 상승 차단·메모리 상한을 갖고, api 힙은 상한을 따르는 고정 JVM 옵션이다")
+    void prodContainerHardeningRejectsMissingIsolation() {
+        String hardening = "    mem_limit: ${X_MEM_LIMIT:-512m}\n    cap_drop:\n      - ALL\n    security_opt:\n      - no-new-privileges:true\n";
+        String prod = "services:\n"
+                + "  db:\n    environment:\n      POSTGRES_USER: u\n"
+                + "  api:\n    environment:\n      JAVA_OPTS: \"-XX:InitialRAMPercentage=35 -XX:MaxRAMPercentage=70\"\n" + hardening
+                + "  frontend:\n    environment:\n      UI_DENSITY:\n" + hardening
+                + "  edge:\n    image: nginx\n" + hardening.replace("    cap_drop:\n      - ALL\n", "    cap_drop: [ALL]\n");
+        org.junit.jupiter.api.Assertions.assertEquals(List.of(), prodContainerHardeningViolations(prod));
+
+        Map<String, String[]> cases = new LinkedHashMap<>();
+        cases.put("edge 권한 유지", new String[] {prod.replace("    cap_drop: [ALL]\n", ""), "edge: cap_drop"});
+        cases.put("frontend 권한 상승 허용", new String[] {prod.replaceFirst(
+                "(?s)(  frontend:.*?)      - no-new-privileges:true\n", "$1      - seccomp:unconfined\n"), "frontend: security_opt"});
+        cases.put("api 메모리 상한 없음", new String[] {prod.replaceFirst("(?s)(  api:.*?)    mem_limit: [^\n]+\n", "$1"), "api: mem_limit"});
+        cases.put("api 고정 힙", new String[] {prod.replace("-XX:InitialRAMPercentage=35 -XX:MaxRAMPercentage=70", "-Xms512m -Xmx512m"),
+                "MaxRAMPercentage"});
+        cases.put("호스트 환경의 JVM 옵션", new String[] {prod.replace(
+                "\"-XX:InitialRAMPercentage=35 -XX:MaxRAMPercentage=70\"", "${API_JAVA_OPTS:--XX:MaxRAMPercentage=70}"), "호스트 환경"});
+        cases.put("JVM 옵션 누락", new String[] {prod.replaceFirst("      JAVA_OPTS: [^\n]+\n", "      SPRING_PROFILES_ACTIVE: prod\n"),
+                "JAVA_OPTS 가 없습니다"});
+        cases.put("서비스 블록 누락", new String[] {prod.replaceFirst("(?s)  edge:.*", ""), "edge 서비스 블록"});
+
+        for (Map.Entry<String, String[]> entry : cases.entrySet()) {
+            List<String> violations = prodContainerHardeningViolations(entry.getValue()[0]);
+            org.junit.jupiter.api.Assertions.assertTrue(
+                    violations.stream().anyMatch(v -> v.contains(entry.getValue()[1])),
+                    entry.getKey() + " 가 잡히지 않았습니다: " + violations);
+        }
+    }
+
     @Test
     @DisplayName("🛡️ 배포 형상 안전성 — prod 오버레이 존재·actuator 노출면·prod 기동가능성 회귀 차단 (Wave 0)")
     void auditDeploymentConfigSafety() throws IOException {
@@ -279,6 +312,9 @@ class ConfigSafetyLinterTest {
 
         // ── 12) accepted 비동기 작업이 컨테이너 재기동 중 강제 종료되지 않는가
         auditApiShutdownDrain(composeBaseSrc, apiDockerfileSrc, asyncConfigSrc, violations);
+
+        // ── 13) [2026-10-21] 운영 컨테이너 격리 — 권한 제거·권한 상승 차단·메모리 상한과 그 상한을 따르는 api 힙
+        violations.addAll(prodContainerHardeningViolations(composeProdSrc));
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -660,6 +696,80 @@ class ConfigSafetyLinterTest {
             block.append(comment ? "" : line).append('\n');
         }
         return block.toString();
+    }
+
+    /**
+     * 운영 오버레이의 api·frontend·edge 는 비루트로 돌고 1024 미만 포트도 쓰지 않아 리눅스 권한이 필요 없다. 권한을
+     * 모두 빼고(cap_drop ALL) setuid 로 권한을 얻지 못하게 하며(no-new-privileges), 메모리 상한을 둬 한 컨테이너의 누수가
+     * 호스트 전체를 잠식하지 않게 한다. db 는 공식 이미지가 root 로 시작해 postgres 사용자로 바꾸므로 대상이 아니다.
+     *
+     * <p>api 힙은 상한에 비례하는 오버레이 고정 JVM 옵션이다. 이미지 기본값(-Xms512m -Xmx512m)은 상한을 따르지 않는다.
+     * 호스트 환경에서 JVM 옵션을 받으면(${...}) -D·-javaagent 로 운영 설정의 fail-fast·datasource 경계를 우회하는 통로가
+     * 된다 — 격리 릴리스 스모크가 JAVA_TOOL_OPTIONS 등을 대체 기동 설정으로 거부하는 것과 같은 이유다.
+     */
+    static List<String> prodContainerHardeningViolations(String composeProdSrc) {
+        List<String> violations = new ArrayList<>();
+        for (String service : List.of("api", "frontend", "edge")) {
+            String block = composeServiceBlock(composeProdSrc, service);
+            if (block == null) {
+                violations.add(COMPOSE_PROD + ": " + service + " 서비스 블록이 없습니다 — 컨테이너 격리를 판정할 수 없습니다.");
+                continue;
+            }
+            List<String> capDrop = composeListValue(block, "cap_drop");
+            if (capDrop == null || !capDrop.contains("ALL")) {
+                violations.add(COMPOSE_PROD + " " + service + ": cap_drop 에 ALL 이 없습니다 — 비루트 컨테이너에 쓰지 않는 리눅스 권한이 남습니다.");
+            }
+            List<String> securityOpt = composeListValue(block, "security_opt");
+            if (securityOpt == null || !securityOpt.contains("no-new-privileges:true")) {
+                violations.add(COMPOSE_PROD + " " + service + ": security_opt 에 no-new-privileges:true 가 없습니다 — setuid 실행 파일로 권한을 얻을 수 있습니다.");
+            }
+            if (!Pattern.compile("(?m)^    mem_limit:[ \\t]*\\S").matcher(block).find()) {
+                violations.add(COMPOSE_PROD + " " + service + ": mem_limit 가 없습니다 — 한 컨테이너의 누수가 호스트 메모리 전체를 잠식합니다.");
+            }
+        }
+        String api = composeServiceBlock(composeProdSrc, "api");
+        if (api != null) {
+            Matcher javaOpts = Pattern.compile("(?m)^      JAVA_OPTS:[ \\t]*(.*)$").matcher(api);
+            if (!javaOpts.find()) {
+                violations.add(COMPOSE_PROD + " api: JAVA_OPTS 가 없습니다 — 이미지 기본 고정 힙(512m)이 메모리 상한을 따르지 않습니다.");
+            } else {
+                String value = unquote(javaOpts.group(1).trim());
+                if (value.contains("$")) {
+                    violations.add(COMPOSE_PROD + " api: JAVA_OPTS 가 호스트 환경을 치환합니다('" + value + "') — JVM 옵션 주입 통로가 됩니다."
+                            + " 오버레이 고정값으로 두고 메모리는 mem_limit 로 조정하십시오.");
+                }
+                if (!value.contains("-XX:MaxRAMPercentage=") || value.matches(".*-Xm[sx]\\S*.*")) {
+                    violations.add(COMPOSE_PROD + " api: JAVA_OPTS('" + value + "')가 메모리 상한 비율 힙(-XX:MaxRAMPercentage)이 아닙니다.");
+                }
+            }
+        }
+        return violations;
+    }
+
+    /** 서비스 블록에서 키 하나의 목록 값. 인라인 {@code [a, b]} 와 다음 줄의 {@code - a} 를 모두 읽는다. 키가 없으면 null. */
+    private static List<String> composeListValue(String block, String key) {
+        String[] lines = block.split("\n", -1);
+        String prefix = "    " + key + ":";
+        for (int i = 0; i < lines.length; i++) {
+            if (!lines[i].startsWith(prefix)) {
+                continue;
+            }
+            String rest = lines[i].substring(prefix.length()).trim();
+            List<String> values = new ArrayList<>();
+            if (rest.startsWith("[") && rest.endsWith("]")) {
+                for (String part : rest.substring(1, rest.length() - 1).split(",")) {
+                    if (!part.isBlank()) {
+                        values.add(unquote(part.trim()));
+                    }
+                }
+                return values;
+            }
+            for (int j = i + 1; j < lines.length && lines[j].startsWith("      - "); j++) {
+                values.add(unquote(lines[j].substring("      - ".length()).trim()));
+            }
+            return values;
+        }
+        return null;
     }
 
     private static Long ipv4(String value) {

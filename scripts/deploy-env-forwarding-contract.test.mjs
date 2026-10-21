@@ -46,6 +46,7 @@ function evaluate({
   frontendSource = 'const url = process.env.BACKEND_API_URL;',
   apiNotForwarded = {},
   apiForwardedWithoutPlaceholder = { SPRING_PROFILES_ACTIVE: 'profile selection' },
+  apiForwardedToEntrypoint = {},
   frontendNotForwarded = {},
   frontendForwardedWithoutRead = {},
 }) {
@@ -57,6 +58,7 @@ function evaluate({
     frontendSources: [{ file: 'frontend/src/page.tsx', text: frontendSource }],
     apiNotForwarded,
     apiForwardedWithoutPlaceholder,
+    apiForwardedToEntrypoint,
     frontendNotForwarded,
     frontendForwardedWithoutRead,
     floors: NO_FLOORS,
@@ -196,6 +198,19 @@ test('a relaxed-binding declaration must actually be forwarded and must not dupl
   });
   assert.equal(duplicate.length, 1);
   assert.match(duplicate[0], /SPRING_PROFILES_ACTIVE.*실제로 읽힙니다/);
+});
+
+test('a variable the image entrypoint reads is forwarded only with its entrypoint declaration', () => {
+  const prod = withProdApi('JAVA_OPTS: "-XX:MaxRAMPercentage=70"');
+  const undeclared = evaluate({ prod });
+  assert.equal(undeclared.length, 1);
+  assert.match(undeclared[0], /JAVA_OPTS 을 전달하지만 앱이 읽지 않습니다/);
+
+  assert.deepEqual(evaluate({ prod, apiForwardedToEntrypoint: { JAVA_OPTS: 'entrypoint' } }), []);
+
+  const stale = evaluate({ apiForwardedToEntrypoint: { JAVA_OPTS: 'entrypoint' } });
+  assert.equal(stale.length, 1);
+  assert.match(stale[0], /JAVA_OPTS.*compose 에 없습니다/);
 });
 
 test('frontend runtime reads must be forwarded, while build-time NEXT_PUBLIC variables are ignored', () => {

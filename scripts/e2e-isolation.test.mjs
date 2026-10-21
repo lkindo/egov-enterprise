@@ -371,6 +371,18 @@ test('production smoke rejects shared resources, public ports, dev seeds, mixed 
   ]) { const changed = releaseSmokeFixture(); mutate(changed); assert.throws(() => validateReleaseSmokePlan(changed.plan, changed.context, changed.credentials)); }
 });
 
+test('production smoke accepts the container-sized heap of the production overlay and nothing beyond sizing', () => {
+  const sized = releaseSmokeFixture();
+  sized.plan.services.api.environment.JAVA_OPTS = '-XX:InitialRAMPercentage=35 -XX:MaxRAMPercentage=70 -XX:+UseParallelGC';
+  validateReleaseSmokePlan(sized.plan, sized.context, sized.credentials);
+  for (const options of ['-XX:MaxRAMPercentage=0', '-XX:MaxRAMPercentage=101', '-XX:MaxRAMPercentage=7a', '-XX:MinRAMPercentage=50',
+    '-XX:MaxRAMPercentage=70 -javaagent:/shared/agent.jar', '-XX:MaxRAMPercentage=70 -Dspring.config.location=file:/shared/']) {
+    const changed = releaseSmokeFixture();
+    changed.plan.services.api.environment.JAVA_OPTS = options;
+    assert.throws(() => validateReleaseSmokePlan(changed.plan, changed.context, changed.credentials), /production boundary changed/u, options);
+  }
+});
+
 test('production smoke verifies container IDs and actual database mounts before accepting ownership', () => {
   const fixture = releaseSmokeFixture();
   const { context, plan } = fixture;

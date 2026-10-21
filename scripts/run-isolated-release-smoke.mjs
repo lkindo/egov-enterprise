@@ -18,7 +18,8 @@ const RUN = /^[a-f0-9]{24}$/u;
 const OWNER = 'egov.release-smoke.run';
 const TREE_LABEL = 'io.egov.ui-quality.build-input-tree-sha256';
 const API_ENTRYPOINT = ['sh', '-c', 'exec java $JAVA_OPTS -jar app.jar'];
-const SAFE_JAVA_OPTION = /^(?:-Xm[sx][1-9]\d*[kKmMgG]|-Xss[1-9]\d*[kKmMgG]|-XX:\+UseParallelGC)$/u;
+// JVM 옵션은 크기·GC 선택만 받는다. 비율 힙은 운영 오버레이가 컨테이너 메모리 상한에 맞춰 준다(docker-compose.prod.yml).
+const SAFE_JAVA_OPTION = /^(?:-Xm[sx][1-9]\d*[kKmMgG]|-Xss[1-9]\d*[kKmMgG]|-XX:\+UseParallelGC|-XX:(?:Initial|Max)RAMPercentage=(?:[1-9]\d?|100))$/u;
 const BOOTSTRAP_ACK = 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE';
 const BACKEND_URL = 'http://api:8080/api/v1';
 const ENCODED_AUTH_PATHS = ['/api/v1/auth/%2572eissue', '/api/v1/%2561uth/login', '/api/v1/auth/%ZZreissue'];
@@ -346,6 +347,36 @@ export function validateSmokeSessionCookies(cookies) {
   }
 }
 
+export function readSmokeCsrfToken(cookies) {
+  // ADR-0038: the document response issues a script-readable double-submit token with the session cookie policy.
+  const invalid = () => failure('CSRF token cookie contract failed');
+  if (!Array.isArray(cookies) || cookies.some(cookie => typeof cookie !== 'string')) throw invalid();
+  const matching = cookies.filter(cookie => cookie.startsWith('XSRF-TOKEN='));
+  if (matching.length !== 1) throw invalid();
+  const [pair, ...parts] = matching[0].split(';');
+  const token = pair.slice('XSRF-TOKEN='.length).trim();
+  const attributes = parts.map(part => part.trim().toLowerCase());
+  if (!/^[A-Za-z0-9_-]{32,}$/u.test(token) || attributes.includes('httponly') || !attributes.includes('secure')
+    || !attributes.includes('samesite=strict') || attributes.filter(attribute => attribute.startsWith('samesite=')).length !== 1
+    || !attributes.includes('path=/')) throw invalid();
+  return token;
+}
+
+export function withSmokeCsrf(options = {}, token) {
+  // Only unsafe requests carrying cookies need the token; header-only clients stay outside the CSRF boundary.
+  const method = (options.method ?? 'GET').toUpperCase();
+  const cookie = options.headers?.Cookie;
+  if (['GET', 'HEAD', 'OPTIONS'].includes(method) || !cookie) return options;
+  // Like a browser, replay the token cookie already held: the API issues its own on the login response.
+  const carried = cookie.split(';').map(part => part.trim()).filter(part => part.startsWith('XSRF-TOKEN='));
+  if (carried.length > 1) throw failure('CSRF token is ambiguous');
+  const value = carried.length ? carried[0].slice('XSRF-TOKEN='.length) : token;
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{32,}$/u.test(value)) throw failure('CSRF token is invalid');
+  const headers = { ...options.headers, 'X-XSRF-TOKEN': value };
+  if (!carried.length) headers.Cookie = `${cookie}; XSRF-TOKEN=${value}`;
+  return { ...options, headers };
+}
+
 export function validateSmokeManagementBoundary(status) {
   // The public health route lives on prod's management port; Next rewrites to the main application port.
   if (status !== 404) throw failure('management health was not absent from the frontend application port');
@@ -356,7 +387,8 @@ function exposesToken(value) {
     ['accessToken', 'refreshToken'].includes(key) || exposesToken(child));
 }
 
-export async function probeDirectApiEncodedPaths(request, loginBody) {
+export async function probeDirectApiEncodedPaths(send, loginBody, csrfToken = randomBytes(32).toString('base64url')) {
+  const request = (route, options) => send(route, withSmokeCsrf(options, csrfToken));
   const readTokens = async (result, stage) => {
     if (result.response.status !== 200 || result.rawPathPreserved !== true) throw failure(`direct API ${stage} control failed`);
     let value;
@@ -376,6 +408,9 @@ export async function probeDirectApiEncodedPaths(request, loginBody) {
     const login = await readTokens(await request('/api/v1/auth/login', {
       method: 'POST', headers: { 'Content-Type': 'application/json' }, body: loginBody,
     }), 'login');
+    // The same refresh cookie without the double-submit token must be refused before rotation.
+    const forged = await send('/api/v1/auth/reissue', { method: 'POST', headers: { Cookie: login.refreshCookie } });
+    if (forged.response.status !== 403 || forged.rawPathPreserved !== true) throw failure('direct API CSRF boundary failed');
     const refreshed = await readTokens(await request('/api/v1/auth/reissue', {
       method: 'POST', headers: { Cookie: login.refreshCookie },
     }), 'refresh');
@@ -386,7 +421,7 @@ export async function probeDirectApiEncodedPaths(request, loginBody) {
     let value; try { value = await result.response.json(); } catch { value = null; }
     const probe = { status: result.response.status, exposesToken: exposesToken(value), rawPathPreserved: result.rawPathPreserved };
     validateEncodedSmokeProbe(probe);
-    probes.push({ path: rawPath, controls: { login: 200, refresh: 200, session: session.response.status }, ...probe });
+    probes.push({ path: rawPath, controls: { login: 200, csrf: 403, refresh: 200, session: session.response.status }, ...probe });
   }
   return probes;
 }
@@ -669,17 +704,22 @@ export async function main(args = process.argv.slice(2)) {
   const check = (condition, category) => { if (!condition) throw failure(category); };
   const httpSmoke = async (runtime, existingFile) => {
     const origin = 'http://edge:8080';
-    const rawProbe = async (target, rawPath, options) => {
-      const { response, rawPathPreserved } = await containerSmokeRequest(runtime, docker, target, rawPath, { method: 'POST', ...options });
-      let value; try { value = await response.json(); } catch { value = null; }
-      return { status: response.status, exposesToken: exposesToken(value), rawPathPreserved };
-    };
     const direct = await probeDirectApiEncodedPaths(
       (route, options) => containerSmokeRequest(runtime, docker, 'api', route, options),
       JSON.stringify({ userId: 'webmaster', password: credentials.admin }));
     pathProbes.push(...direct.map(probe => ({ target: 'api', phase: runtime.context.phase, ...probe })));
-    const request = async (route, options = {}) => (await containerSmokeRequest(runtime, docker, 'edge', route, options)).response;
-    check((await request('/login')).status === 200, 'login page unavailable');
+    const loginPage = (await containerSmokeRequest(runtime, docker, 'edge', '/login')).response;
+    check(loginPage.status === 200, 'login page unavailable');
+    // Browser writes replay the token the document response issued, as the product client does.
+    const csrfToken = readSmokeCsrfToken(loginPage.headers.getSetCookie());
+    const request = async (route, options = {}) =>
+      (await containerSmokeRequest(runtime, docker, 'edge', route, withSmokeCsrf(options, csrfToken))).response;
+    const rawProbe = async (target, rawPath, options) => {
+      const { response, rawPathPreserved } = await containerSmokeRequest(runtime, docker, target, rawPath,
+        withSmokeCsrf({ method: 'POST', ...options }, csrfToken));
+      let value; try { value = await response.json(); } catch { value = null; }
+      return { status: response.status, exposesToken: exposesToken(value), rawPathPreserved };
+    };
     const login = await request('/api/v1/auth/login', { method: 'POST', headers: { 'Content-Type': 'application/json', Origin: origin },
       body: JSON.stringify({ userId: 'webmaster', password: credentials.admin }) });
     check(login.status === 200, 'production login failed');
@@ -722,14 +762,15 @@ export async function main(args = process.argv.slice(2)) {
       const bytes = Buffer.from('release-smoke synthetic attachment\n'); expectedFileHash = hash(bytes);
       const form = new FormData(); form.append('files', new Blob([bytes], { type: 'text/plain' }), 'smoke.txt');
       const uploaded = await request('/api/v1/files', { method: 'POST', headers: { Cookie: cookie, Origin: origin }, body: form });
-      check(uploaded.status === 200, 'nonroot attachment upload failed');
+      // Creating POST answers 201 with the new identifier (ADR-0036).
+      check(uploaded.status === 201, 'nonroot attachment upload failed');
       attachmentId = (await uploaded.json()).data;
       check(Number.isSafeInteger(attachmentId) && attachmentId > 0, 'upload contract changed');
     }
     const downloaded = await request(`/api/v1/files/${attachmentId}/1`, { headers: { Cookie: cookie } });
     check(downloaded.status === 200 && hash(Buffer.from(await downloaded.arrayBuffer())) === expectedFileHash, 'attachment content mismatch');
     validateSmokeBarrier(JSON.parse(runtime.sql(BARRIER_SQL)));
-    return { attachmentId, checks: ['nonbrowser-login-contract', 'direct-api-encoded-routes', 'login', 'token-body', 'cookie-attributes', 'session', 'encoded-route', 'origin', 'management-boundary', 'attachment', 'schema-barrier'] };
+    return { attachmentId, checks: ['nonbrowser-login-contract', 'direct-api-csrf', 'direct-api-encoded-routes', 'csrf-token-cookie', 'login', 'token-body', 'cookie-attributes', 'session', 'encoded-route', 'origin', 'management-boundary', 'attachment', 'schema-barrier'] };
   };
   const assertVolume = runtime => {
     const volume = JSON.parse(docker(['volume', 'inspect', runtime.context.volume]))[0];

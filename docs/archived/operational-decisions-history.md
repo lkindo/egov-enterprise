@@ -2256,6 +2256,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-375 | accepted | 부서 미배정 사용자의 '부서 공유' 일정을 기본조직으로 묶어 미배정자끼리 공유하는 현재 동작과, 일반 사용자 관리자(USER_UPDATE·USER_DEPT)가 보호 관리자 계정의 이름·연락처·부서를 바꿀 수 있는 현재 권한 의미를 유지한다(2026-10-21 사용자 결정). | 2026-10-21 소스 실측 평가가 두 동작을 결함 후보로 올렸다. 재검증에서 일정 폴백은 코드가 의도를 밝힌 설계이고 '부서 공유'로 지정한 일정만 보이며, 타인 정보 수정은 비밀번호 힌트·정답과 역할을 바꾸지 못하고 공개 비밀번호 찾기도 없어 권한 상승·탈취 경로가 없음을 확인했다. 사용자가 현 상태 유지를 정했다. 보호계정 가드는 비밀번호 초기화·잠금 해제·상태 변경·로그인 정책에 그대로 둔다. | [일정 서비스](../../business-app/src/main/java/nuri/business/service/schedule/ScheduleService.java), [사용자 서비스](../../business-core/src/main/java/nuri/business/service/user/UserService.java) | 2026-10-21 | - |
 
+## DEC-OPS-376
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-376 | accepted | 운영 오버레이의 api·frontend·edge 는 리눅스 권한을 모두 빼고(`cap_drop: ALL`·`no-new-privileges`) 메모리 상한을 두며, api 힙은 고정 `JAVA_OPTS` 로 상한에 비례해 잡는다. 번들 db 는 대상 밖이고 `read_only` 는 후속이다(2026-10-21 사용자 승인). | 2026-10-21 소스 실측 평가가 운영 컨테이너에 권한 축소·자원 상한이 없음을 지적했고 사용자가 (가)안을 골랐다. 격리 릴리스 스모크에서 강화한 컨테이너가 첫 설치·인가 전환·로그인·세션 연장·첨부·백업·복원을 통과했고 최대 메모리가 상한 안이었다(api 918MiB/1.5GiB, frontend 146MiB/768MiB, edge 13MiB/128MiB). 상한은 환경변수로 바꾸고 JVM 옵션은 호스트 환경으로 받지 않으며 `ConfigSafetyLinterTest` 가 고정한다. db 는 기동 때 권한이 필요하고 메모리 필요량이 데이터에 따라 달라 뺐다. 같은 검증이 시험 파일 때문에 깨져 있던 프런트 Docker 빌드와 ADR-0038·ADR-0036 이후 낡은 스모크 기대값을 드러내 함께 고쳤다. | [운영 오버레이](../../docker-compose.prod.yml), [설정 안전 게이트](../../api-server/src/test/java/nuri/api/harness/ConfigSafetyLinterTest.java), [시작 가이드](../../docs/03-guides/getting-started.md) | 2026-10-21 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

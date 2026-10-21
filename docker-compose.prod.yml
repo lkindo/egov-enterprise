@@ -44,6 +44,10 @@ services:
       SPRING_APPLICATION_JSON: '{"management":{"health":{"mail":{"enabled":false}}}}'
       # 운영에는 dev 시드(알려진 비밀번호)를 적재하지 않는다.
       SPRING_FLYWAY_LOCATIONS: classpath:db/migration
+      # [2026-10-21] 힙은 아래 mem_limit 에 비례한다(시작 35%·최대 70%, 나머지는 메타스페이스·스레드·직접 버퍼 몫).
+      #   이미지 기본값(-Xms512m -Xmx512m)은 상한을 따르지 않는다. 값은 고정이다 — 호스트 환경에서 JVM 옵션을 받으면
+      #   -D·-javaagent 로 운영 설정 경계를 우회하는 통로가 된다. 메모리는 API_MEM_LIMIT 로 조정한다(ConfigSafetyLinterTest).
+      JAVA_OPTS: "-XX:InitialRAMPercentage=35 -XX:MaxRAMPercentage=70 -XX:+UseParallelGC"
       # 미설정 시 기동 중단 — 저장소에 커밋된 dev 기본값으로 조용히 대체되는 경로를 원천 차단한다.
       DB_URL: ${DB_URL:?DB_URL 이 필요합니다}
       DB_USERNAME: ${DB_USERNAME:?DB_USERNAME 이 필요합니다}
@@ -163,6 +167,14 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+    # [2026-10-21] 컨테이너 격리. api·frontend·edge 는 비루트로 돌고 1024 미만 포트도 쓰지 않아 리눅스 권한이 필요 없다.
+    #   권한을 모두 빼고 setuid 로 권한을 얻지 못하게 하며, 메모리 상한으로 한 컨테이너의 누수가 호스트 전체를 잠식하지 않게 한다.
+    #   상한은 호스트/.env 의 *_MEM_LIMIT 로 바꾼다. db 는 공식 이미지가 root 로 시작해 사용자를 바꾸므로 대상이 아니다.
+    mem_limit: ${API_MEM_LIMIT:-1536m}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
   # [2026-09-13] 프런트 서버 런타임 변수 전달. `NEXT_PUBLIC_*` 는 빌드 시점에 번들에 인라인되므로 여기서
   #   바꿀 수 없고, 아래는 서버가 요청 시점에 읽는 변수다. 형태가 값 없는 `VAR:` 인 이유는 api 블록 주석과 같다.
@@ -183,6 +195,12 @@ services:
       UI_DENSITY:
       # BACKEND_ACTUATOR_URL 은 전달하지 않는다 — 현재 호출 경로(클라이언트 조회 → /actuator rewrite)에서 읽히지 않고,
       #   운영의 actuator 404 는 관리 포트 분리(W1-12)의 의도된 형상이다. 9090 연결은 next.config 가 금지한 권한 완화다.
+    # 컨테이너 격리 — api 블록 주석과 같다.
+    mem_limit: ${FRONTEND_MEM_LIMIT:-768m}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
 
   # [2026-09-14 ADR-0019 · GAP-SEC-004] 클라이언트 IP 신뢰 경계. 설정과 이유는 config/edge/default.conf.template 머리주석.
   #   api 8080 은 그대로 공개한다(브라우저 직접 도달 형상 — docker-compose.yml egov-net 주석). 직접 온 요청은
@@ -217,5 +235,11 @@ services:
       options:
         max-size: "50m"
         max-file: "5"
+    # 컨테이너 격리 — api 블록 주석과 같다.
+    mem_limit: ${EDGE_MEM_LIMIT:-128m}
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
     networks:
       - egov-net

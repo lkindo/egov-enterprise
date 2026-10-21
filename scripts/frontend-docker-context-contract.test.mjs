@@ -1,8 +1,10 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import path from 'node:path';
 import { test } from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { parseModuleReferences } from './frontend-module-graph.mjs';
 
 const REQUIRED_CONTEXT_EXCLUSIONS = [
   '.env*',
@@ -434,6 +436,64 @@ test('frontend Docker context excludes Playwright credentials and generated evid
     [],
     'credentials, environment files, and generated evidence must not be re-included',
   );
+});
+
+// frontend 운영 이미지는 frontend/ 만 컨텍스트로 빌드한다(release-images, 격리 릴리스 스모크). 컨텍스트에 들어가는 소스가
+// frontend 밖을 import 하면 next build 의 타입 검사가 그 모듈을 찾지 못해 이미지 빌드가 깨진다. 2026-10-17 부터 계약 시험이
+// 루트 scripts/ 를 import 하면서 실제로 깨져 있었고, CI 는 frontend 를 저장소 checkout 에서 빌드해 이를 보지 못했다.
+// 그래서 시험 도구는 컨텍스트에서 빼고, 남아서 타입 검사되는 소스는 컨텍스트에 없는 파일을 import 하지 않게 한다.
+const FRONTEND_TEST_CONTEXT_EXCLUSIONS = ['**/__tests__', '**/*.test.ts', '**/*.test.tsx', 'playwright*.config.ts'];
+const FRONTEND_ROOT = fileURLToPath(new URL('../frontend/', import.meta.url));
+// next build 가 타입 검사하는 범위 — frontend/tsconfig.json 의 include(**/*.ts·tsx·mts)와 exclude 를 따른다.
+//   frontend/scripts 의 개발 도구는 컨텍스트에 들어가도 타입 검사·이미지 실행 밖이라 대상이 아니다.
+const OUTSIDE_BUILD_TYPECHECK = new Set(['node_modules', '.next', '.pnpm-store', 'scripts', 'e2e', 'coverage', 'test-results',
+  'playwright-report', 'playwright', 'vitest.config.mts', 'vitest.setup.ts']);
+// frontend/.dockerignore 가 이미지 컨텍스트에서 빼는 자리. 타입 검사되는 소스가 여기를 가리키면 빌드가 모듈을 찾지 못한다.
+//   .next·node_modules 도 컨텍스트에서 빠지지만 이미지 빌드가 다시 만든다(next-env.d.ts 가 .next/types 를 가리킨다).
+const OUT_OF_IMAGE_CONTEXT_DIRECTORIES = new Set(['e2e', 'coverage', 'test-results', 'playwright-report']);
+const isOutOfImageContext = (relative) => OUT_OF_IMAGE_CONTEXT_DIRECTORIES.has(relative.split('/')[0])
+  || relative.split('/').includes('__tests__') || /\.test\.tsx?$/u.test(relative) || /^playwright[^/]*\.config\.ts$/u.test(relative);
+
+function frontendContextSources(directory = FRONTEND_ROOT, prefix = '') {
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const relative = prefix ? `${prefix}/${entry.name}` : entry.name;
+    if (OUTSIDE_BUILD_TYPECHECK.has(relative)) return [];
+    if (entry.isDirectory()) return frontendContextSources(path.join(directory, entry.name), relative);
+    return /\.(?:tsx?|mts)$/u.test(entry.name) ? [{ relative, source: readFileSync(path.join(directory, entry.name), 'utf8') }] : [];
+  });
+}
+
+function contextImportsMissingFromImage(files) {
+  return files.filter(({ relative }) => !isOutOfImageContext(relative)).flatMap(({ relative, source }) =>
+    parseModuleReferences(source, relative).references
+      .filter(({ specifier }) => {
+        if (!specifier.startsWith('.')) return false;
+        const target = path.posix.normalize(path.posix.join(path.posix.dirname(relative), specifier));
+        return target.startsWith('../') || isOutOfImageContext(target);
+      })
+      .map(({ specifier }) => `${relative} → ${specifier}`));
+}
+
+const missingTestExclusions = (dockerignore) =>
+  FRONTEND_TEST_CONTEXT_EXCLUSIONS.filter((rule) => !normalizedRules(dockerignore).has(rule));
+
+test('frontend Docker context leaves test tooling out and imports nothing the image context lacks', () => {
+  assert.deepEqual(missingTestExclusions(readFileSync(new URL('../frontend/.dockerignore', import.meta.url), 'utf8')), [],
+    'frontend/.dockerignore must keep test tooling out of the image build context');
+  assert.deepEqual(contextImportsMissingFromImage(frontendContextSources()), [],
+    'type-checked sources in the frontend Docker context must not import files the context lacks');
+});
+
+test('a test-tooling exclusion removal or an import the image context lacks is a reproducible red', () => {
+  assert.deepEqual(missingTestExclusions('node_modules\n**/*.test.ts\n**/*.test.tsx\nplaywright*.config.ts\n'), ['**/__tests__']);
+  const escape = "import { codeWithoutComments } from '../../../scripts/code-without-comments.mjs';\n";
+  assert.deepEqual(contextImportsMissingFromImage([
+    { relative: 'src/__tests__/guard.test.ts', source: escape },
+    { relative: 'src/lib/guard.ts', source: escape },
+    { relative: 'src/lib/inside.ts', source: "import { x } from '../app/x';\n" },
+    { relative: 'src/lib/fixture.ts', source: "import { y } from '../../e2e/helpers/y';\n" },
+    { relative: 'playwright.lab.config.ts', source: "import { z } from './e2e/helpers/z';\n" },
+  ]), ['src/lib/guard.ts → ../../../scripts/code-without-comments.mjs', 'src/lib/fixture.ts → ../../e2e/helpers/y']);
 });
 
 test('the contract fails when the credential exclusion is removed', () => {
