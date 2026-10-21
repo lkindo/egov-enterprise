@@ -32,17 +32,16 @@ function withoutConfigParams(config?: AxiosRequestConfig): AxiosRequestConfig | 
 class CommentAdminService extends ApiService {
   /**
    * 전체 댓글 목록 조회.
-   * 공개 API의 searchWrd 별칭은 OpenAPI가 정의한 searchKeyword 쿼리로 정규화한다.
+   * 게시판·게시글 필터만 지원하며 키워드 검색은 지원하지 않는다.
    * page(1부터)·size 는 서버가 받는 그대로 넘긴다(ADR-0036).
    */
-  async getComments(params: { pstSn?: number; bbsId?: string; page?: number; size?: number; searchWrd?: string }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
+  async getComments(params: { pstSn?: number; bbsId?: string; page?: number; size?: number }, config?: AxiosRequestConfig): Promise<PageResponse<CommentDetail>> {
     const response = await this.executeGenerated(getComments_1Operation, {
       query: {
         ...(params.pstSn === undefined ? {} : { pstSn: params.pstSn }),
         ...(params.bbsId === undefined ? {} : { bbsId: params.bbsId }),
         ...(params.page === undefined ? {} : { page: params.page }),
         ...(params.size === undefined ? {} : { size: params.size }),
-        ...(params.searchWrd === undefined ? {} : { searchKeyword: params.searchWrd }),
       },
       config: withoutConfigParams(config),
     });

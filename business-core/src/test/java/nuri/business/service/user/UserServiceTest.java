@@ -2,6 +2,7 @@ package nuri.business.service.user;
 
 import nuri.business.domain.user.repository.UserListFilter;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.business.domain.user.entity.User;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.user.dto.UserDto;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.*;
@@ -521,6 +523,71 @@ class UserServiceTest {
                     List.of("USR_TEST_ESNTL_0001", "USR_TEST_ESNTL_0002"));
             verify(userRepository).deleteAllInBatch(List.of(user1, user2));
         }
+    }
+
+    @Test
+    @DisplayName("사용자 다중 삭제 - 최대 100개 ID의 종속 정리와 삭제를 허용한다")
+    void deleteUserListAcceptsMaximumBatchSize() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+        List<User> users = IntStream.range(0, 100)
+                .mapToObj(i -> User.builder().userId("user" + i).esntlId("USR_BATCH_" + i).build())
+                .toList();
+        for (User user : users) {
+            given(userRepository.findByUserId(user.getUserId())).willReturn(Optional.of(user));
+        }
+        List<String> userIds = users.stream().map(User::getUserId).toList();
+        List<String> esntlIds = users.stream().map(User::getEsntlId).toList();
+
+        userService.deleteUserList(userIds);
+
+        verify(authorizationAdministration).lockAndAuthorize("USER_DELETE");
+        verify(refreshTokenRepository).deleteAllByEsntlIdIn(esntlIds);
+        verify(loginPolicyRepository).deleteAllByIdInBatch(userIds);
+        verify(userRepository).deleteAllInBatch(users);
+    }
+
+    @Test
+    @DisplayName("사용자 다중 삭제 - 중복을 포함한 입력 101개는 DB 조회와 삭제 전에 거부한다")
+    void deleteUserListRejectsOversizedBatchBeforeRepositoryAccess() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+        List<String> userIds = java.util.Collections.nCopies(101, "user1");
+
+        BusinessException error = assertThrows(BusinessException.class, () -> userService.deleteUserList(userIds));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verifyNoInteractions(userRepository, refreshTokenRepository, loginPolicyRepository,
+                userAbsenceRepository, userLogRepository, deptJobRepository,
+                authorizationAdministration, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("사용자 다중 삭제 - 빈 목록은 조회와 삭제 없이 성공한다")
+    void deleteUserListPreservesEmptyBatchNoOp() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+
+        userService.deleteUserList(List.of());
+
+        verifyNoInteractions(userRepository, refreshTokenRepository, loginPolicyRepository,
+                userAbsenceRepository, userLogRepository, deptJobRepository,
+                authorizationAdministration, eventPublisher);
+    }
+
+    @Test
+    @DisplayName("사용자 다중 삭제 - 초과 입력도 기존 삭제 권한 검사를 먼저 통과해야 한다")
+    void deleteUserListPreservesAuthorizationBeforeSizeValidation() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_USER"));
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> userService.deleteUserList(java.util.Collections.nCopies(101, "user1")));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        verifyNoInteractions(userRepository, refreshTokenRepository, loginPolicyRepository,
+                userAbsenceRepository, userLogRepository, deptJobRepository,
+                authorizationAdministration, eventPublisher);
     }
 
     @Test

@@ -3,7 +3,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
- * 댓글 및 평가 관리 화면(허브 분해 H6). 종전 감시 허브 '사용자 의견 관리' 탭의 시험을 옮겼다 — 기대값(검색 없음, 확인 후 영구 삭제,
+ * 댓글 및 평가 관리 화면(허브 분해 H6). 종전 감시 허브 '사용자 의견 관리' 탭의 시험을 옮겼다 — 기대값(검색 없음, 확인 후 삭제,
  * 동기 선점·처리 중 표시·실패 뒤 재시도, 삭제 대행 권한으로만 보이는 삭제 버튼)은 그대로다. 이 파일은 댓글 기능과 함께 지워지므로
  * 투영 게이트가 필요 없다. 화면 이름은 메뉴 이름이고, 행 동작의 접근 이름은 목록 이름('댓글')을 쓴다.
  */
@@ -93,7 +93,7 @@ describe('댓글 및 평가 관리', () => {
       .toEqual(['ansSn', 'ansCn', 'wrterId', 'wrterNm', 'crtDt', 'bbsId', 'pstSn']);
   });
 
-  it('확인 뒤 영구 삭제하고 상세를 닫는다', async () => {
+  it('목록에서 숨겨지고 화면에서 복구할 수 없음을 확인한 뒤 삭제하고 상세를 닫는다', async () => {
     renderScreen();
 
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
@@ -103,7 +103,9 @@ describe('댓글 및 평가 관리', () => {
     fireEvent.click(screen.getByRole('button', { name: '댓글 삭제' }));
 
     await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({
-      title: '댓글 영구 삭제',
+      title: '댓글 삭제',
+      message: expect.stringContaining('삭제한 댓글은 목록에 표시되지 않으며, 이 화면에서 복구할 수 없습니다.'),
+      confirmText: '삭제',
       variant: 'destructive',
     })));
     await waitFor(() => expect(mocks.deleteComment).toHaveBeenCalledWith(44));

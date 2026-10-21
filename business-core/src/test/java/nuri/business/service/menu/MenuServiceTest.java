@@ -2,6 +2,7 @@ package nuri.business.service.menu;
 import nuri.foundation.core.exception.CommonErrorCode;
 
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.business.domain.menu.NavigationGrantRepository;
 import nuri.business.service.auth.AuthorizationAdministrationService;
 import nuri.business.security.audit.LoginUserAuditorAware;
@@ -57,6 +58,9 @@ class MenuServiceTest {
 
     @Mock
     private AuthorizationAdministrationService authorizationAdministrationService;
+
+    @Mock
+    private SensitiveAuditPort sensitiveAudit;
 
     @Spy
     private LoginUserAuditorAware loginUserAuditorAware = new LoginUserAuditorAware();
@@ -1139,6 +1143,20 @@ class MenuServiceTest {
         assertThat(menu.getUpMenuSn()).isEqualTo(1L);
         assertThat(menu.getMenuOrdr()).isEqualTo(7);
         verifyNoInteractions(authorizationAdministrationService);
+        verify(sensitiveAudit).recordMutation("MENU_STRUCTURE_SAVE", "MENU_STRUCTURE");
+    }
+
+    @Test
+    @DisplayName("[D13] 이름만 바꾸는 구조 저장도 감사 실패를 호출자에게 전달한다")
+    void structureRenamePropagatesAuditFailure() {
+        String version = givenStructure();
+        doThrow(new BusinessException(CommonErrorCode.SERVER_OVERLOAD))
+                .when(sensitiveAudit).recordMutation("MENU_STRUCTURE_SAVE", "MENU_STRUCTURE");
+
+        assertThatThrownBy(() -> menuService.saveMenuStructure(structureSave(version, List.of(), List.of(),
+                List.of(new MenuProperties(2L, "Renamed", null, null, "Y")), List.of(), List.of())))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.SERVER_OVERLOAD);
     }
 
     @Test
