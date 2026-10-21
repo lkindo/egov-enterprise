@@ -178,6 +178,10 @@ public class LoginPolicyManageService {
     /**
      * 접속 허용 시간은 시작·종료가 짝이다(2026-09-26 DIP B4 P8). 한쪽만 있으면 시간창 판정이 어느 쪽도 뜻하지 않으므로
      * 둘 다 넣거나 둘 다 비우게 한다.
+     *
+     * <p>값은 로그인 판정({@link #validateLoginPolicy})이 읽을 수 있는 실제 시각(HH:mm, 또는 옛 형식 HHmm)이어야 한다.
+     * 판정은 읽지 못한 시간창을 그 사용자의 로그인 차단으로 처리하므로, 화면을 거치지 않은 잘못된 값이 저장되면
+     * 그 사용자가 이유 없이 로그인하지 못한다. DTO 는 응답에도 쓰여 형식 제약을 서비스에서 판정한다.
      */
     private static void requireTimePair(LoginPolicyDto dto) {
         boolean hasStart = dto.getBgngTm() != null && !dto.getBgngTm().isBlank();
@@ -186,7 +190,13 @@ public class LoginPolicyManageService {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                     "접속 허용 시간은 시작과 종료를 함께 입력하거나 둘 다 비워 주세요.");
         }
+        if (hasStart && !(CLOCK_TIME.matcher(dto.getBgngTm()).matches() && CLOCK_TIME.matcher(dto.getEndTm()).matches())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "접속 허용 시간은 HH:mm 형식으로 입력해 주세요.");
+        }
     }
+
+    private static final java.util.regex.Pattern CLOCK_TIME = java.util.regex.Pattern.compile("([01]\\d|2[0-3]):?[0-5]\\d");
 
     @Transactional
     public void updateLoginPolicy(LoginPolicyDto dto) {

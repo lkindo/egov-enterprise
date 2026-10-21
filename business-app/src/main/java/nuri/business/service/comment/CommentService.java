@@ -6,6 +6,7 @@ import nuri.business.domain.comment.exception.CommentErrorCode;
 import nuri.business.service.comment.dto.CommentDto;
 import nuri.foundation.core.event.PostCommentCountChangedEvent;
 import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import lombok.RequiredArgsConstructor;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.data.domain.Page;
@@ -71,7 +72,7 @@ public class CommentService {
                 .bbsId(commentDto.getBbsId())
                 .wrterId(wrterEsntlId)
                 .wrterNm(wrterNm)
-                .ansCn(commentDto.getAnsCn())
+                .ansCn(requireContent(commentDto.getAnsCn()))
                 .useYn("Y")
                 .build();
 
@@ -100,8 +101,21 @@ public class CommentService {
     public record CommentLocation(String bbsId, Long pstSn) {
     }
 
+    /**
+     * 댓글 본문은 비울 수 없다. 화면은 보내기 전에 막지만 API 를 직접 부르면 빈 댓글이 저장되고
+     * 본문 없는 수정({@code {}})이 기존 본문을 null 로 지웠다. CommentDto 는 응답에도 쓰여 DTO 에
+     * {@code @NotBlank} 를 달면 응답 계약까지 바뀌므로 서비스에서 판정한다.
+     */
+    private static String requireContent(String content) {
+        if (content == null || content.isBlank()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "댓글 내용을 입력해주세요.");
+        }
+        return content;
+    }
+
     @Transactional
     public void updateComment(Long commentNo, String content) {
+        requireContent(content);
         Comment comment = commentRepository.findById(commentNo)
                 .filter(c -> "Y".equals(c.getUseYn()))
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));

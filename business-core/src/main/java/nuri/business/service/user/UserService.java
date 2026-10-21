@@ -302,6 +302,8 @@ public class UserService extends BaseAbstractService {
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
 
                 // [보안] 본인 또는 관리자만 수정 가능 (인가 판정을 전역 잠금보다 먼저 수행)
+                // 보호계정 가드(authorizeProtectedAccountChange)는 걸지 않는다 — 이 경로는 비밀번호 힌트·정답·역할을 바꾸지 못하고,
+                //   일반 사용자 관리자가 보호 관리자의 이름·연락처·부서를 고치는 것은 허용하기로 정했다(DEC-OPS-375).
                 nuri.business.security.util.SecurityUtil.assertOwnerOrPermissionByEsntlId(user.getEsntlId(), "USER_UPDATE");
 
                 boolean isSelf = Optional.ofNullable(user.getEsntlId())

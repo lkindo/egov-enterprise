@@ -94,7 +94,7 @@ class PrivacyAccessCensusLinterTest {
             "emladdr", "email", "emailaddress",
             "mbltelno", "mobilephone", "mobilenumber", "hometelno",
             "brthymd", "brdtymd", "brdt", "birthdate", "dateofbirth",
-            "rcptntelno", "recipientphone", "rspdntnm",
+            "rcptntelno", "recipientphone", "rspdntnm", "rspnsnm",
             "homeaddr", "daddr", "residentregistrationnumber", "rrn", "ssn");
 
     // The response-contract gate independently owns the binary population. Only aggregate statistics are exempt.

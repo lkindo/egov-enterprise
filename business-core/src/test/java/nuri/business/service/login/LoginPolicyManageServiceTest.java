@@ -226,6 +226,25 @@ class LoginPolicyManageServiceTest {
         verify(loginPolicyRepository, never()).save(any());
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"9:00,18:00", "24:00,18:00", "09:00,18:60", "ab:cd,18:00", "'09:00 ',18:00", "09001,1800"})
+    @DisplayName("접속 허용 시간은 HH:mm 또는 HHmm 의 실제 시각만 저장한다 — 형식이 깨지면 그 사용자의 로그인이 막힌다")
+    void timeWindowMustBeRealClockTime(String start, String end) {
+        LoginPolicyDto dto = new LoginPolicyDto();
+        dto.setUserId("USER1");
+        dto.setBgngTm(start);
+        dto.setEndTm(end);
+
+        authenticate("policy-manager", "LOGIN_POL_UPDATE");
+        BusinessException update = assertThrows(BusinessException.class, () -> loginPolicyManageService.updateLoginPolicy(dto));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, update.getErrorCode());
+        authenticate("policy-manager", "LOGIN_POL_CREATE");
+        BusinessException insert = assertThrows(BusinessException.class, () -> loginPolicyManageService.insertLoginPolicy(dto));
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, insert.getErrorCode());
+        verify(loginPolicyRepository, never()).findById(any());
+        verify(loginPolicyRepository, never()).save(any());
+    }
+
     @Test
     @DisplayName("로그인 정책 수정 테스트 - 성공")
     void updateLoginPolicySuccessTest() {
