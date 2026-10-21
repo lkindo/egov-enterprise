@@ -762,7 +762,8 @@ export async function main(args = process.argv.slice(2)) {
       const bytes = Buffer.from('release-smoke synthetic attachment\n'); expectedFileHash = hash(bytes);
       const form = new FormData(); form.append('files', new Blob([bytes], { type: 'text/plain' }), 'smoke.txt');
       const uploaded = await request('/api/v1/files', { method: 'POST', headers: { Cookie: cookie, Origin: origin }, body: form });
-      check(uploaded.status === 200, 'nonroot attachment upload failed');
+      // Creating POST answers 201 with the new identifier (ADR-0036).
+      check(uploaded.status === 201, 'nonroot attachment upload failed');
       attachmentId = (await uploaded.json()).data;
       check(Number.isSafeInteger(attachmentId) && attachmentId > 0, 'upload contract changed');
     }
