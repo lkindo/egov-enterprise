@@ -311,4 +311,81 @@ test.describe('Quality & Resilience', () => {
             await expect(main).toHaveCSS('padding-left', RAIL_WIDTH);
         });
     });
+
+    /**
+     * 스트리밍 공개 경합 — 2026-10-21 설문 여정 strict 위반(main#main-content 두 벌)의 회귀.
+     *
+     * React 19.2 는 서버가 보낸 Suspense 조각을 프레임·300ms 간격으로 묶어 공개한다(`$RC` 가 경계를 공개 대기로 두고 `$RV` 가
+     * 옮긴다). 공개를 기다리는 경계에 위쪽 Provider 의 context 값 변경이 닿으면 React 는 그 경계를 브라우저에서 새로 그리고,
+     * 서버 사본은 공개 스크립트가 돌 때까지 숨은 채(`div#S:n[hidden]`) 남는다 — 그 사이 텍스트·CSS 조회는 화면을 두 벌 센다.
+     * 첫 묶음(공급자)만 바로 공개하고 나머지 경계는 하나씩 늦춰, 먼저 깨어난 화면이 값을 바꾸는 동안 뒤 경계가 기다리게 한다.
+     * 그래도 다시 그린 경계가 없으면 첫 화면 직후 값이 바뀌는 Provider(같은 사용자 재조회·WebSocket 연결·머리글의 현재 메뉴
+     * 선택 등)가 없다는 뜻이다 — 셋 다 실제로 이 시험을 붉게 했고, 값이 바뀌어야 하는 상태는 구독 저장소로 넘겼다.
+     */
+    test.describe('Streaming reveal (첫 화면 직후 서버 화면을 다시 그리지 않는다)', () => {
+        test.use({ storageState: 'playwright/.auth/admin.json' });
+        test('공개가 늦어도 서버가 보낸 화면을 그대로 쓰고 숨은 조각을 남기지 않는다', async ({ page }) => {
+            await page.addInitScript(() => {
+                type Reveal = (batch: Element[]) => void;
+                type Complete = (boundary: string, segment: string) => void;
+                const state = window as unknown as { __clientRendered: string[]; __delayedReveals: number };
+                state.__clientRendered = [];
+                state.__delayedReveals = 0;
+                const segments = new Map<string, string>();
+                let reveal: Reveal | undefined;
+                let complete: Complete | undefined;
+                let first = true;
+                Object.defineProperty(window, '$RV', {
+                    configurable: true,
+                    set: (value: Reveal) => { reveal = value; },
+                    get: () => reveal && ((batch: Element[]) => {
+                        if (first) { first = false; reveal?.(batch); return; }
+                        setTimeout(() => {
+                            const taken = batch.splice(0);
+                            const pairs: Element[][] = [];
+                            for (let index = 0; index < taken.length; index += 2) pairs.push(taken.slice(index, index + 2));
+                            // 셸 → 머리글·사이드바 → 본문 순서로 연다. 본문이 가장 오래 기다려야 앞서 깨어난 화면의 값 변경이 그 경계에 닿는다.
+                            const rank = ([, segment]: Element[]) => segment.querySelector('#main-content') ? 0 : segment.querySelector('header,aside') ? 1 : 2;
+                            pairs.sort((left, right) => rank(left) - rank(right)).forEach((pair, order) => {
+                                state.__delayedReveals += 1;
+                                setTimeout(() => reveal?.(pair), 1500 * order);
+                            });
+                        }, 1500);
+                    }),
+                });
+                Object.defineProperty(window, '$RC', {
+                    configurable: true,
+                    set: (value: Complete) => { complete = value; },
+                    get: () => complete && ((boundary: string, segment: string) => {
+                        segments.set(boundary, segment);
+                        complete?.(boundary, segment);
+                    }),
+                });
+                // 공개는 서버 사본을 먼저 지운다. 경계가 사라졌는데 사본이 남았으면 React 가 그 경계를 브라우저에서 그린 것이다.
+                new MutationObserver(() => {
+                    for (const [boundary, segment] of segments) {
+                        if (!document.getElementById(boundary) && document.getElementById(segment)
+                            && !state.__clientRendered.includes(boundary)) state.__clientRendered.push(boundary);
+                    }
+                }).observe(document, { childList: true, subtree: true });
+            });
+            const main = page.locator('main#main-content');
+            let delayedReveals = 0;
+            // 서버가 빨리 끝내면 경계가 첫 묶음에 함께 실려 늦출 공개가 없다 — 늦춘 공개가 생길 때까지 다시 연다.
+            for (let attempt = 0; attempt < 5 && delayedReveals === 0; attempt += 1) {
+                await page.goto('/admin');
+                await expect(main.getByRole('heading', { level: 1, name: '관리자 업무 현황', exact: true })).toBeVisible({ timeout: 30000 });
+                await expect(page.locator('div[hidden][id^="S:"]'), '늦춘 공개가 끝나면 숨은 조각이 없다').toHaveCount(0, { timeout: 30000 });
+                await expect(main).toHaveCount(1);
+                const observed = await page.evaluate(() => {
+                    const state = window as unknown as { __clientRendered: string[]; __delayedReveals: number };
+                    return { clientRendered: state.__clientRendered, delayedReveals: state.__delayedReveals };
+                });
+                expect(observed.clientRendered, '공개를 기다리던 경계를 브라우저가 다시 그렸다').toEqual([]);
+                delayedReveals = observed.delayedReveals;
+            }
+            // React 가 공개 스크립트 이름을 바꾸면 늦추기가 걸리지 않아 이 시험은 아무것도 보지 않는다 — 걸렸는지 본다.
+            expect(delayedReveals, '늦춘 공개가 없다 — React 스트리밍 공개 스크립트($RC·$RV)가 바뀌었는지 확인한다').toBeGreaterThan(0);
+        });
+    });
 });
