@@ -311,6 +311,7 @@ class ResponseContractLinterTest {
             CONTROLLER_PREFIX + "business/admin/content/popup/PopupApiController.java#createPopup",
             CONTROLLER_PREFIX + "business/approval/ApprovalApiController.java#createApproval",
             CONTROLLER_PREFIX + "business/approval/ApprovalApiController.java#createApprovalTemporaryDraft",
+            CONTROLLER_PREFIX + "business/cms/CmsPageAdminApiController.java#createPage",
             CONTROLLER_PREFIX + "business/approval/ApprovalApiController.java#createApprovalSavedLine",
             CONTROLLER_PREFIX + "business/board/BoardApiController.java#createPost",
             CONTROLLER_PREFIX + "business/board/BoardApiController.java#createPostWithFiles",

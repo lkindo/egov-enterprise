@@ -52,6 +52,29 @@
       ]
     },
     {
+      "file": "cms/attachment/CmsAttachmentSourceContributor.java",
+      "owner": "cms",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.service.file.AttachmentSource",
+        "nuri.business.service.file.AttachmentSourceContributor"
+      ]
+    },
+    {
+      "file": "cms/CmsContentFileService.java",
+      "owner": "cms",
+      "target": "file",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.file.FileDetail",
+        "nuri.business.domain.file.FileDetailRepository",
+        "nuri.business.domain.file.FileMaster",
+        "nuri.business.domain.file.FileMasterRepository",
+        "nuri.business.service.file.AttachmentAssignmentPolicy"
+      ]
+    },
+    {
       "file": "comment/listener/CommentUserDeletionCleanupListener.java",
       "owner": "comment",
       "target": "user",

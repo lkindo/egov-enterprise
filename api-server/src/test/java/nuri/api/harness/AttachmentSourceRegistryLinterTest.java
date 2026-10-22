@@ -91,6 +91,8 @@ class AttachmentSourceRegistryLinterTest {
      * 업로드 진입점은 지정한 단일 helper 호출만 허용하며, 그 helper도 독립 수집해 실제 가드를 검사한다.
      */
     private static final Map<String, AttachmentMethodRule> ATTACHMENT_METHOD_RULES = Map.ofEntries(
+            entry("business-app/src/main/java/nuri/business/service/cms/CmsContentFileService.java#claim",
+                    guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "contentFileRepository.save(")),
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#createDeptJob",
                     guarded("assertAttachmentIsAssignable(dto.getAtchFileSn())", "deptJobRepository.save(")),
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#updateDeptJob",

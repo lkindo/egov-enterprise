@@ -1,0 +1,175 @@
+{
+  "description": "콘텐츠 문서 판정의 공용 fixture(ADR-0039 결정 5). 서버 검증기(CmsDocumentValidatorTest)와 화면 정규화(frontend/src/lib/cms/__tests__/document.test.ts)가 같은 판정을 내야 한다.",
+  "hrefs": {
+    "valid": [
+      "https://www.example.go.kr",
+      "https://www.example.go.kr/path?q=1#top",
+      "/pages/service-guide",
+      "/approvals",
+      "mailto:help@example.go.kr",
+      "tel:02-123-4567",
+      "tel:+8221234567"
+    ],
+    "invalid": [
+      "javascript:alert(1)",
+      "JAVASCRIPT:alert(1)",
+      "data:text/html,hi",
+      "//evil.example",
+      "https://user:pass@evil.example",
+      "http://intranet.example",
+      "ftp://files.example",
+      "https://",
+      "/pages/a b",
+      "/pages\\evil",
+      "mailto:not-an-address",
+      "tel:abc",
+      ""
+    ]
+  },
+  "cases": [
+    {
+      "name": "가장 작은 문서",
+      "valid": true,
+      "document": {
+        "schemaVersion": 1,
+        "sections": [
+          { "id": "s1", "label": "소개", "layout": "one", "tone": "default", "spacing": "normal",
+            "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "안녕하세요" } ] } ] } } ] }
+        ]
+      },
+      "normalized": {
+        "schemaVersion": 1,
+        "sections": [
+          { "id": "s1", "label": "소개", "layout": "one", "tone": "default", "spacing": "normal",
+            "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "안녕하세요" } ] } ] } } ] }
+        ]
+      }
+    },
+    {
+      "name": "편집기 기본 속성은 걷어내고 의미 있는 속성만 남긴다",
+      "valid": true,
+      "document": {
+        "schemaVersion": 1,
+        "sections": [
+          { "id": "intro", "label": "  대표 소개  ", "layout": "two-wide", "tone": "emphasis", "spacing": "relaxed",
+            "cells": [
+              { "kind": "rich", "doc": { "type": "doc", "content": [
+                { "type": "heading", "attrs": { "level": 2, "textAlign": null }, "content": [ { "type": "text", "text": "필요한 업무를", "marks": [ { "type": "bold" }, { "type": "bold" } ] }, { "type": "hardBreak" }, { "type": "text", "text": "더 가까이" } ] },
+                { "type": "paragraph", "attrs": { "textAlign": "left" }, "content": [ { "type": "text", "text": "문의", "marks": [ { "type": "link", "attrs": { "href": " https://www.example.go.kr ", "target": "_blank", "rel": "noopener", "class": null } } ] } ] },
+                { "type": "paragraph", "attrs": { "textAlign": "center" } },
+                { "type": "orderedList", "attrs": { "start": 1, "type": null }, "content": [ { "type": "listItem", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "첫째" } ] } ] } ] }
+              ] } },
+              { "kind": "image", "atchFileSn": 41, "alt": "  업무 포털  ", "decorative": false, "caption": "" }
+            ] }
+        ]
+      },
+      "normalized": {
+        "schemaVersion": 1,
+        "sections": [
+          { "id": "intro", "label": "대표 소개", "layout": "two-wide", "tone": "emphasis", "spacing": "relaxed",
+            "cells": [
+              { "kind": "rich", "doc": { "type": "doc", "content": [
+                { "type": "heading", "attrs": { "level": 2 }, "content": [ { "type": "text", "text": "필요한 업무를", "marks": [ { "type": "bold" } ] }, { "type": "hardBreak" }, { "type": "text", "text": "더 가까이" } ] },
+                { "type": "paragraph", "content": [ { "type": "text", "text": "문의", "marks": [ { "type": "link", "attrs": { "href": "https://www.example.go.kr" } } ] } ] },
+                { "type": "paragraph", "attrs": { "textAlign": "center" } },
+                { "type": "orderedList", "content": [ { "type": "listItem", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "첫째" } ] } ] } ] }
+              ] } },
+              { "kind": "image", "atchFileSn": 41, "alt": "업무 포털", "decorative": false, "caption": "" }
+            ] }
+        ]
+      }
+    },
+    {
+      "name": "세 단과 바로가기·장식 이미지·표",
+      "valid": true,
+      "document": {
+        "schemaVersion": 1,
+        "sections": [
+          { "id": "links", "label": "주요 서비스", "layout": "three", "tone": "subtle", "spacing": "compact",
+            "cells": [
+              { "kind": "links", "items": [ { "title": "이용 안내", "url": "/pages/portal-guide" }, { "title": "문의", "url": "mailto:help@example.go.kr" } ] },
+              { "kind": "image", "atchFileSn": 7, "alt": "무시되는 설명", "decorative": true, "caption": "장식" },
+              { "kind": "rich", "doc": { "type": "doc", "content": [
+                { "type": "table", "content": [
+                  { "type": "tableRow", "content": [
+                    { "type": "tableHeader", "attrs": { "colspan": 2, "rowspan": 1, "colwidth": [ 120, 0 ] }, "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "구분" } ] } ] }
+                  ] },
+                  { "type": "tableRow", "content": [
+                    { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": null }, "content": [ { "type": "paragraph" } ] },
+                    { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [ 0 ] }, "content": [ { "type": "bulletList", "content": [ { "type": "listItem", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "담당" } ] } ] } ] } ] }
+                  ] }
+                ] }
+              ] } }
+            ] }
+        ]
+      },
+      "normalized": {
+        "schemaVersion": 1,
+        "sections": [
+          { "id": "links", "label": "주요 서비스", "layout": "three", "tone": "subtle", "spacing": "compact",
+            "cells": [
+              { "kind": "links", "items": [ { "title": "이용 안내", "url": "/pages/portal-guide" }, { "title": "문의", "url": "mailto:help@example.go.kr" } ] },
+              { "kind": "image", "atchFileSn": 7, "alt": "", "decorative": true, "caption": "장식" },
+              { "kind": "rich", "doc": { "type": "doc", "content": [
+                { "type": "table", "content": [
+                  { "type": "tableRow", "content": [
+                    { "type": "tableHeader", "attrs": { "colspan": 2, "colwidth": [ 120, 0 ] }, "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "구분" } ] } ] }
+                  ] },
+                  { "type": "tableRow", "content": [
+                    { "type": "tableCell", "content": [ { "type": "paragraph" } ] },
+                    { "type": "tableCell", "content": [ { "type": "bulletList", "content": [ { "type": "listItem", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "담당" } ] } ] } ] } ] }
+                  ] }
+                ] }
+              ] } }
+            ] }
+        ]
+      }
+    },
+    {
+      "name": "빈 본문은 빈 문단 하나가 된다",
+      "valid": true,
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc" } } ] } ] },
+      "normalized": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "paragraph" } ] } } ] } ] }
+    },
+    { "name": "형식 버전이 다르다", "valid": false, "error": "지원하지 않는 문서 형식",
+      "document": { "schemaVersion": 2, "sections": [] } },
+    { "name": "영역이 없다", "valid": false, "error": "영역 목록",
+      "document": { "schemaVersion": 1, "sections": [] } },
+    { "name": "모르는 최상위 항목", "valid": false, "error": "알 수 없는 항목",
+      "document": { "schemaVersion": 1, "css": "body{display:none}", "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc" } } ] } ] } },
+    { "name": "단 구성과 칸 수가 다르다", "valid": false, "error": "칸",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "two", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc" } } ] } ] } },
+    { "name": "영역 식별자가 겹친다", "valid": false, "error": "식별자",
+      "document": { "schemaVersion": 1, "sections": [
+        { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc" } } ] },
+        { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc" } } ] } ] } },
+    { "name": "배경에 색 이름을 쓸 수 없다", "valid": false, "error": "허용하지 않는 값",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "blue", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc" } } ] } ] } },
+    { "name": "본문 안 이미지 노드는 받지 않는다", "valid": false, "error": "쓸 수 없는 요소",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "image", "attrs": { "src": "data:image/png;base64,AAAA" } } ] } } ] } ] } },
+    { "name": "코드 블록은 받지 않는다", "valid": false, "error": "쓸 수 없는 요소",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "codeBlock", "content": [ { "type": "text", "text": "<script>" } ] } ] } } ] } ] } },
+    { "name": "제목 1 은 페이지 제목이라 본문에 쓸 수 없다", "valid": false, "error": "제목 2·제목 3",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "heading", "attrs": { "level": 1 }, "content": [ { "type": "text", "text": "큰 제목" } ] } ] } } ] } ] } },
+    { "name": "javascript 링크", "valid": false, "error": "링크 주소",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "x", "marks": [ { "type": "link", "attrs": { "href": "javascript:alert(1)" } } ] } ] } ] } } ] } ] } },
+    { "name": "모르는 글자 서식", "valid": false, "error": "글자 서식",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "x", "marks": [ { "type": "textStyle", "attrs": { "color": "red" } } ] } ] } ] } } ] } ] } },
+    { "name": "바로가기 주소가 http", "valid": false, "error": "주소는",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "links", "items": [ { "title": "내부망", "url": "http://intranet.example" } ] } ] } ] } },
+    { "name": "바로가기가 비었다", "valid": false, "error": "바로가기",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "links", "items": [] } ] } ] } },
+    { "name": "설명 없는 이미지", "valid": false, "error": "대체 텍스트",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "image", "atchFileSn": 3, "alt": "  ", "decorative": false, "caption": "" } ] } ] } },
+    { "name": "이미지 번호가 글자", "valid": false, "error": "이미지를 선택",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "image", "atchFileSn": "3", "alt": "그림", "decorative": false, "caption": "" } ] } ] } },
+    { "name": "표 열 너비가 너무 좁다", "valid": false, "error": "72~1200px",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "table", "content": [ { "type": "tableRow", "content": [ { "type": "tableCell", "attrs": { "colspan": 1, "rowspan": 1, "colwidth": [ 40 ] }, "content": [ { "type": "paragraph" } ] } ] } ] } ] } } ] } ] } },
+    { "name": "표 열 너비 수가 병합 수와 다르다", "valid": false, "error": "칸 수와 맞지 않습니다",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "table", "content": [ { "type": "tableRow", "content": [ { "type": "tableCell", "attrs": { "colspan": 2, "rowspan": 1, "colwidth": [ 100 ] }, "content": [ { "type": "paragraph" } ] } ] } ] } ] } } ] } ] } },
+    { "name": "빈 글자 조각", "valid": false, "error": "빈 글자",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "rich", "doc": { "type": "doc", "content": [ { "type": "paragraph", "content": [ { "type": "text", "text": "" } ] } ] } } ] } ] } },
+    { "name": "모르는 칸 종류", "valid": false, "error": "종류",
+      "document": { "schemaVersion": 1, "sections": [ { "id": "a", "label": "", "layout": "one", "tone": "default", "spacing": "normal", "cells": [ { "kind": "feed", "source": "notice" } ] } ] } }
+  ]
+}

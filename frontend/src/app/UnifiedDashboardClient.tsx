@@ -113,6 +113,9 @@ export default function UnifiedDashboardClient() {
         )}
       </header>
 
+      {/* 머리 바로 아래 소개(ADR-0039) — 업무 홈을 대체하지 않는다. 기여가 없거나 지정이 없으면 아무것도 그리지 않는다. */}
+      {renderSections(byPlacement(sections, 'hero'))}
+
       {/* 처리 대기 요약 — 목적지가 있는 항목만 링크한다(G10). 칸은 최소 너비(14rem)로 채우고 남는 칸을 접는다(auto-fit) — 빠진 기능의
           빈 열이 남지 않고, 카드가 많으면 다음 줄로 넘어간다(2026-10-20 카드가 여덟 장까지 늘었다). */}
       {cards.length > 0 && (

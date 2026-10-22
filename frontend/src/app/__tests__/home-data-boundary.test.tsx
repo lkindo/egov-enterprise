@@ -33,6 +33,9 @@ vi.mock('@/lib/api/client', () => {
       if (server.approvals === 503) throw httpError(503);
       return ok({ list: [], total: 3, page: 0, size: 1, totalPage: 3 });
     }
+    // 콘텐츠 페이지 소개(ADR-0039) — 지정이 없는 것이 기본이다. 응답은 늘 객체이고 page 가 비어 있다
+    //   (본문 data 를 비우면 생성 응답 계약이 위반으로 읽어 모든 사용자의 업무 홈에 '불러오지 못했습니다' 가 보였다).
+    if (url === 'content-home') return ok({ page: null });
     throw new Error(`가짜 서버에 없는 조회: ${url}`);
   };
   return { default: { getRaw, requestRaw: async (config: { url: string }) => getRaw(config.url) } };
@@ -82,7 +85,7 @@ describe('업무 홈 서버 자식', () => {
   it('보이는 기여의 조회를 한 번씩 미리 채워 첫 렌더에 값이 있고 브라우저 조회가 없다', async () => {
     const element = await boundary();
     // 게시판 기여 네 조각은 같은 조회다 — 한 번만 부른다.
-    expect([...server.calls].sort()).toEqual(['approvals/pending', 'dashboard']);
+    expect([...server.calls].sort()).toEqual(['approvals/pending', 'content-home', 'dashboard']);
     expect(element.props.state?.queries.map(query => query.queryKey)).toEqual(
       expect.arrayContaining([['home', 'board'], ['approvals', 'list', 'PENDING', { page: 1, size: 1 }]]),
     );
@@ -110,13 +113,16 @@ describe('업무 홈 서버 자식', () => {
   it('결재 대기 수 조회 실패는 삼킨다 — 그 카드가 스스로 실패를 말한다', async () => {
     server.approvals = 503;
     const element = await boundary();
-    expect(element.props.state?.queries.map(query => query.queryKey)).toEqual([['home', 'board']]);
+    const keys = element.props.state?.queries.map(query => query.queryKey);
+    expect(keys).toHaveLength(2);
+    expect(keys).toEqual(expect.arrayContaining([['home', 'board'], ['cms', 'home-intro']]));
   });
 
   it('보이지 않는 기여의 조회는 부르지 않는다', async () => {
     server.permissions = ['DASHBOARD_READ'];
     await boundary();
-    expect(server.calls).toEqual(['dashboard']);
+    // 콘텐츠 페이지 소개는 늘 보이는 기여라(로그인만 요구한다) 권한과 무관하게 부른다.
+    expect([...server.calls].sort()).toEqual(['content-home', 'dashboard']);
   });
 
   it('토큰이 없으면 로그인으로 보낸다', async () => {

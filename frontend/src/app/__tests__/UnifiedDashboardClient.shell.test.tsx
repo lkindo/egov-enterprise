@@ -115,7 +115,7 @@ describe('업무 홈 셸', () => {
       [section('lists', 'main', 10), section('task', 'cards', 30), section('new', 'actions', 10)],
       [section('realtime', 'status', 10), section('banner', 'bottom', 10), section('popup', 'overlay', 10)],
       [section('pending', 'cards', 10), section('open', 'actions', 20), section('hidden', 'cards', 5, { visibleWhen: { permissions: ['DEPT_READ'] } })],
-      [section('tied', 'cards', 28)],
+      [section('tied', 'cards', 28), section('intro', 'hero', 10)],
     ];
     await renderShell();
 
@@ -125,7 +125,7 @@ describe('업무 홈 셸', () => {
     // 같은 order(28)면 기여 카드가 core 카드 앞이다.
     expect([...screen.getByRole('list').children].map(item => item.textContent)).toEqual(['pending', 'tied', 'dept-jobs', 'task']);
     expect(screen.queryByText('hidden')).toBeNull();
-    const order = ['popup', '업무 홈', 'pending', 'lists', 'realtime', 'banner'].map(text => screen.getByText(text));
+    const order = ['popup', '업무 홈', 'intro', 'pending', 'lists', 'realtime', 'banner'].map(text => screen.getByText(text));
     for (const [index, node] of order.slice(1).entries()) {
       expect(order[index].compareDocumentPosition(node) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy();
     }

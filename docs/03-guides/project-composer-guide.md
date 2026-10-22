@@ -88,7 +88,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 
 `schemaVersion`은 `1`이다. `selection`은 `domains`와 `preset` 중 하나만 받으며, `{"preset":"collaboration"}`처럼 사용할 수 있다. `domains: []`는 Foundation/Core만 포함한다. 프로젝트명은 소문자로 시작하는 1~63자이며 영문 소문자·숫자·단어 사이 하이픈을 허용한다. Windows 예약 이름과 알 수 없는 필드는 거부한다. `backendLayout`은 `multi-module` 또는 `single-module`이며 생략하면 `multi-module`이다. DB는 `postgresql`만 지원한다. UI가 저장하는 recipe의 `sourceRef`는 해당 체크아웃의 정확한 commit이다.
 
-현재 선택 가능한 ID는 `addressbook`, `board`, `comment`, `community`, `dashboard`, `event`, `help`, `informalsanction`, `isg`, `mail`, `memoreport`, `note`, `notification`, `promotion`, `report`, `reward`, `schedule`, `scrap`, `showcase`, `sms`, `survey`, `template`이다. 저장해 둔 구성의 옛 ID `system`·`operation` 은 별칭 없이 거부된다(화면 불러오기는 빼고 알린다). 한국어 이름과 최신 의존성은 `npm run project:catalog`와 UI에서 확인한다.
+현재 선택 가능한 ID는 `addressbook`, `board`, `cms`, `comment`, `community`, `dashboard`, `event`, `help`, `informalsanction`, `mail`, `memoreport`, `note`, `notification`, `promotion`, `report`, `reward`, `schedule`, `scrap`, `showcase`, `sms`, `survey`, `template`이다. 저장해 둔 구성의 옛 ID `system`·`operation` 은 별칭 없이 거부된다(화면 불러오기는 빼고 알린다). 한국어 이름과 최신 의존성은 `npm run project:catalog`와 UI에서 확인한다.
 
 ## 결과 인수
 

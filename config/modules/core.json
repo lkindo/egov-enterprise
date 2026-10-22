@@ -63,15 +63,15 @@
     ]
   },
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_132 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process, approval-temporary-draft and approval-saved-line sequences are table-owned",
-    "checkedAt": "2026-10-18T17:45:05.141Z",
-    "physicalTableCountExcludingFlyway": 92,
-    "physicalSequenceCount": 57,
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_137 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process, approval-temporary-draft, approval-saved-line and cms content sequences are table-owned",
+    "checkedAt": "2026-10-22T01:45:28.736Z",
+    "physicalTableCountExcludingFlyway": 97,
+    "physicalSequenceCount": 61,
     "physicalStandaloneSequenceCount": 6,
     "metaRows": {
       "meta_standard_words": 3387,
-      "meta_standard_terms": 13233,
-      "meta_standard_domains": 130
+      "meta_standard_terms": 13239,
+      "meta_standard_domains": 131
     }
   },
   "presentation": {
@@ -137,6 +137,11 @@
     "ports": [
       {
         "to": "board",
+        "port": "AttachmentSourceContributor",
+        "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
+      },
+      {
+        "to": "cms",
         "port": "AttachmentSourceContributor",
         "reason": "이 기능이 없으면 그 기능의 첨부도 없어, 첨부가 어디에 쓰였는지 판정할 때 빠지는 것이 없습니다."
       },

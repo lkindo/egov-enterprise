@@ -106,6 +106,14 @@ public enum AttachmentSource {
                     + " OR EXISTS (SELECT 1 FROM tb_note_rcptn r WHERE r.note_sn = tb_note_info.note_sn AND r.rcvr_id = ?)"),
 
     /**
+     * 콘텐츠 페이지 이미지(ADR-0039 결정 8). 귀속 표 {@code tb_cms_conts_file} 이 첨부 하나를 페이지 하나에 묶는다. 판정은 리졸버의
+     * 전용 조회가 한다 — 현재 게시본이 쓰는 첨부는 로그인 사용자에게 공유되고, 초안·지난 게시본의 첨부는 콘텐츠 관리 조회 권한자만
+     * 연다. 귀속 행은 소유 근거를 만들지 않는다(업로더 본인 근거는 정책이 먼저 본다). 열람 거부(readDenied)도 만들지 않는다 — 같은
+     * 업로더가 다른 공유 참조에 함께 쓴 첨부를 그 참조의 독자에게서 닫지 않는다. 일반 파일 API 의 삭제는 귀속 행의 FK 가 막는다.
+     */
+    CMS_PAGE("tb_cms_conts_file", Sensitivity.SHARED, null, null, null),
+
+    /**
      * 자료활용 통계. <b>접근권을 부여하지 않는다(DERIVED)</b> — 이 테이블은 "누가 무엇을 받아갔는가" 를
      * 기록하는 <em>파생 로그</em>라, 여기 행이 있다는 사실이 열람 권한의 근거가 될 수 없다.
      * (근거로 삼으면 한 번 다운로드된 첨부가 영구히 전체 공개된다.)

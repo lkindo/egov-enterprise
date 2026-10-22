@@ -1907,6 +1907,69 @@
       "policy": "ADMIN_OR_SYSTEM",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.auth.MfaApiController#mfaRecoverAccount')",
       "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#createPage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#createPage')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#createPage"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/draft",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#saveDraft",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#saveDraft')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#saveDraft"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/publish",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#publish",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#publish')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#publish"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/unpublish",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#unpublish",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#unpublish')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#unpublish"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/archive",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#archive",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#archive')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#archive"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/unarchive",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#unarchive",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#unarchive')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#unarchive"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/content-home",
+      "handler": "nuri.api.controller.business.cms.CmsHomeAdminApiController#updateHome",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsHomeAdminApiController#updateHome')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsHomeService#updateHome"
     }
   ],
   "serviceGuardPolicies": [
@@ -3792,6 +3855,90 @@
           "helper": "assertOwnerByEsntlId",
           "count": 1,
           "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#createPage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#saveDraft",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#publish",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_PUBLISH"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#unpublish",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_PUBLISH"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#archive",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_PUBLISH"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#unarchive",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_PUBLISH"
+        }
+      ]
+    },
+    {
+      "target": "CmsHomeService#updateHome",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_HOME_UPDATE"
         }
       ]
     }
@@ -7583,6 +7730,104 @@
       "handler": "nuri.api.controller.business.approval.ApprovalApiController#deleteApprovalSavedLine",
       "access": "PERMISSION",
       "permission": "APPROVAL_CREATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#createPage",
+      "access": "PERMISSION",
+      "permission": "CMS_UPDATE"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/draft",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#saveDraft",
+      "access": "PERMISSION",
+      "permission": "CMS_UPDATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/publish",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#publish",
+      "access": "PERMISSION",
+      "permission": "CMS_PUBLISH"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/unpublish",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#unpublish",
+      "access": "PERMISSION",
+      "permission": "CMS_PUBLISH"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/archive",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#archive",
+      "access": "PERMISSION",
+      "permission": "CMS_PUBLISH"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/unarchive",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#unarchive",
+      "access": "PERMISSION",
+      "permission": "CMS_PUBLISH"
+    },
+    {
+      "method": "PUT",
+      "path": "/api/v1/admin/system/content-home",
+      "handler": "nuri.api.controller.business.cms.CmsHomeAdminApiController#updateHome",
+      "access": "PERMISSION",
+      "permission": "CMS_HOME_UPDATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/content-pages",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#getPages",
+      "access": "PERMISSION",
+      "permission": "CMS_ADMIN_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#getPage",
+      "access": "PERMISSION",
+      "permission": "CMS_ADMIN_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/revisions",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#getRevisions",
+      "access": "PERMISSION",
+      "permission": "CMS_ADMIN_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/revisions/{contsRvsnSn}",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#getRevision",
+      "access": "PERMISSION",
+      "permission": "CMS_ADMIN_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/content-home",
+      "handler": "nuri.api.controller.business.cms.CmsHomeAdminApiController#getHome",
+      "access": "PERMISSION",
+      "permission": "CMS_ADMIN_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/content-pages/{contsPathNm}",
+      "handler": "nuri.api.controller.business.cms.CmsPageApiController#getPublishedPage",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/content-home",
+      "handler": "nuri.api.controller.business.cms.CmsPageApiController#getHomeIntro",
+      "access": "AUTHENTICATED",
+      "permission": null
     }
   ]
 }

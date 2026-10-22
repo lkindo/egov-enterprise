@@ -2,7 +2,7 @@
 const DOMAIN_LABELS: Readonly<Record<string, string>> = {
   ABSENCE: '부재 관리', ADBK: '주소록', ADMCODE: '행정 코드', ADT_LOG: '민감 작업 감사', APPROVAL: '전자 결재',
   AUTHRT: '권한 관리', BANNER: '배너', BBS_MST: '게시판 설정', BOARD: '게시글',
-  CLASS_GRP: '사용자 분류 그룹', CODE: '공통 코드', COMMENT: '댓글', COMMUNITY: '커뮤니티',
+  CLASS_GRP: '사용자 분류 그룹', CMS: '콘텐츠 페이지', CODE: '공통 코드', COMMENT: '댓글', COMMUNITY: '커뮤니티',
   DASHBOARD: '대시보드', DEPT: '조직·부서', DEPT_BOX: '부서 업무함', DEPT_JOB: '부서 업무', DWORK: '후속 작업',
   EVENT: '행사', EXT_HR: '외부 인사 연계', FAQ: 'FAQ', FILE: '파일', HELP: '도움말',
   INST_CODE: '기관 코드', LOGIN_LOG: '로그인 이력', LOGIN_POL: '로그인 정책',
@@ -19,8 +19,8 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   APPROVE: '승인', ASSIGN: '배정', AUDIT: '감사 이력 조회', CANCEL: '취소',
   CREATE: '등록', CREATE_ALL: '관리자 등록', DELETE: '삭제', DELETE_ALL: '타인 자료 삭제',
   DEPT: '부서 변경', DISPATCH: '알림 발송', DOWNLOAD: '다운로드', DOWNLOAD_ALL: '타인 자료 다운로드',
-  EDIT: '편집', EXPORT: '내보내기', GRANT: '권한 설정', IMPORT: '가져오기', INSTRUCT: '업무 지시', JOIN: '가입',
-  LIKE: '추천', MODERATE: '관리', PASSWORD: '비밀번호 변경', READ: '조회', READ_ALL: '타인 자료 포함 조회',
+  EDIT: '편집', EXPORT: '내보내기', GRANT: '권한 설정', HOME_UPDATE: '업무 홈 지정', IMPORT: '가져오기', INSTRUCT: '업무 지시', JOIN: '가입',
+  LIKE: '추천', MODERATE: '관리', PASSWORD: '비밀번호 변경', PUBLISH: '게시', READ: '조회', READ_ALL: '타인 자료 포함 조회',
   RECOVER: '복구', REJECT: '반려', RETRY: '재처리', SEND: '발송', STATUS: '상태 변경', SUBMIT: '제출', UPDATE: '수정',
   UPDATE_ALL: '타인 자료 수정', UPLOAD: '업로드', UPLOAD_ALL: '관리자 업로드', VOTE: '투표',
 };
@@ -41,7 +41,7 @@ export interface PermissionDomainCategory {
 export const PERMISSION_DOMAIN_CATEGORIES: readonly PermissionDomainCategory[] = [
   { key: 'MY_WORK', label: '내 업무·결재', domains: ['DASHBOARD', 'APPROVAL', 'WORKFLOW', 'DEPT_JOB', 'DEPT_BOX', 'SCHEDULE', 'WORK_RPT', 'MEMO_RPT', 'ABSENCE'] },
   { key: 'COMMUNICATION', label: '소통·연락', domains: ['NOTE', 'MAIL', 'SMS', 'NOTI', 'ADBK', 'SCRAP'] },
-  { key: 'CONTENT', label: '게시·지식·커뮤니티', domains: ['BOARD', 'BBS_MST', 'NOTICE', 'FAQ', 'COMMENT', 'SATISFY', 'TEMPLATE', 'HELP', 'COMMUNITY', 'FILE'] },
+  { key: 'CONTENT', label: '게시·지식·커뮤니티', domains: ['BOARD', 'BBS_MST', 'NOTICE', 'FAQ', 'COMMENT', 'SATISFY', 'TEMPLATE', 'HELP', 'COMMUNITY', 'CMS', 'FILE'] },
   { key: 'SURVEY_EVENT', label: '설문·행사', domains: ['SURVEY', 'SURVEY_RSP', 'POLL', 'EVENT', 'EXT_HR', 'REWARD'] },
   { key: 'IDENTITY', label: '사용자·조직·권한', domains: ['USER', 'DEPT', 'CLASS_GRP', 'AUTHRT', 'LOGIN_POL', 'MFA', 'POLICY'] },
   { key: 'SYSTEM', label: '시스템 설정', domains: ['MENU', 'CODE', 'ADMCODE', 'INST_CODE', 'BANNER', 'POPUP', 'OPS', 'DWORK'] },

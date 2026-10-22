@@ -1,0 +1,64 @@
+{
+  "schemaVersion": 2,
+  "id": "cms",
+  "label": "콘텐츠 페이지",
+  "presentation": {
+    "area": "knowledge",
+    "order": 5,
+    "summary": "안내 페이지 작성·게시와 업무 홈 소개"
+  },
+  "backend": {
+    "frontendOnly": false,
+    "supportFiles": []
+  },
+  "owns": {
+    "tables": [
+      "tb_cms_conts",
+      "tb_cms_conts_file",
+      "tb_cms_conts_rvsn",
+      "tb_cms_conts_rvsn_file",
+      "tb_cms_site_stng"
+    ],
+    "sequences": [],
+    "sharedTables": [],
+    "frontend": [
+      "src/app/admin/system/content-pages",
+      "src/app/pages",
+      "src/components/cms",
+      "src/extensions/cms",
+      "src/lib/cms",
+      "src/queries/cms-query-options.ts",
+      "src/services/business/cms"
+    ],
+    "frontendAny": [],
+    "routes": [
+      "/admin/system/content-pages",
+      "/pages"
+    ],
+    "exactRoutes": [],
+    "menuTabs": [],
+    "permissionDomains": [
+      "CMS"
+    ],
+    "gates": [],
+    "rbacMatrix": null,
+    "markerBlocks": [],
+    "commonCodeGroups": []
+  },
+  "dependsOn": [],
+  "foreignKeys": [],
+  "requires": [],
+  "integrates": [],
+  "registrationOnly": {
+    "events": [],
+    "contributions": [
+      {
+        "path": "frontend/src/extensions/cms/home-sections.ts",
+        "reason": "콘텐츠 페이지 기능이 없으면 업무 홈 맨 위의 소개 영역만 사라지고 업무 홈은 그대로입니다."
+      }
+    ],
+    "ports": []
+  },
+  "requirements": [],
+  "unassignedPermissions": []
+}

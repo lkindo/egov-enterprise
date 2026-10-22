@@ -45,3 +45,4 @@
 | [ADR-0036](ADR-0036-api-paging-and-created-status-conventions.md) | 목록의 1 기반 page·size 통일·잘못된 입력 400, 자원을 만드는 POST 의 201·새 식별자 본문 | Accepted |
 | [ADR-0037](ADR-0037-product-pit-six-slots.md) | 제품 PIT 여섯 슬롯과 실측 긴 순서, 효과 없으면 4로 되돌림 | Accepted |
 | [ADR-0038](ADR-0038-credential-cookie-csrf-token.md) | 쿠키 자격을 실은 쓰기 요청에 이중 제출 CSRF 토큰(SockJS는 허용 Origin) | Accepted |
+| [ADR-0039](ADR-0039-cms-content-pages-first-scope.md) | 콘텐츠 페이지(CMS) 1차 범위 — 로그인 사용자 열람, 업무 홈 상단 조각, 서버 검증 jsonb 문서 | Accepted |

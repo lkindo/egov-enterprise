@@ -1160,6 +1160,162 @@
     "column_name": "cmnty_sn"
   },
   {
+    "table_name": "tb_cms_conts",
+    "column_name": "conts_sn"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "conts_path_nm"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "conts_ttl"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "conts_expln"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "conts_doc_cn"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "conts_rvsn_sn"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "kpng_yn"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "version"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_cms_conts",
+    "column_name": "mdfcn_dt"
+  },
+  {
+    "table_name": "tb_cms_conts_file",
+    "column_name": "conts_file_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_file",
+    "column_name": "conts_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_file",
+    "column_name": "atch_file_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_file",
+    "column_name": "atch_file_seq"
+  },
+  {
+    "table_name": "tb_cms_conts_file",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cms_conts_file",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "conts_rvsn_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "conts_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "conts_ttl"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "conts_expln"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "conts_doc_cn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "rvsn_rsn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn_file",
+    "column_name": "conts_rvsn_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn_file",
+    "column_name": "conts_file_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn_file",
+    "column_name": "conts_sn"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn_file",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cms_conts_rvsn_file",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "site_stng_sn"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "stng_cd"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "conts_sn"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "version"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "crt_dt"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "last_mdfr_id"
+  },
+  {
+    "table_name": "tb_cms_site_stng",
+    "column_name": "mdfcn_dt"
+  },
+  {
     "table_name": "tb_com_cd",
     "column_name": "clsf_cd"
   },

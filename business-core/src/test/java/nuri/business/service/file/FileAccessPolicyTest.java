@@ -398,10 +398,10 @@ class FileAccessPolicyTest {
          * 등록되지 않은 참조원은 근거를 만들지 못하는(fail-closed) 구조이기 때문이다. 목록 변천의 이력은 git 과 결정 기록에 있다.
          */
         @Test
-        @DisplayName("등록된 참조원 테이블은 중복 없이 12종이다 — 물리 스키마 실측(2026-08-05)과 일치")
+        @DisplayName("등록된 참조원 테이블은 중복 없이 13종이다 — 물리 스키마 실측(2026-08-05) 12종 + 콘텐츠 페이지 이미지(V2_137)")
         void registryMatchesMeasuredSchema() {
             List<String> tables = AttachmentSource.registeredTables();
-            assertThat(tables).hasSize(12).doesNotHaveDuplicates();
+            assertThat(tables).hasSize(13).doesNotHaveDuplicates();
         }
 
         @Test

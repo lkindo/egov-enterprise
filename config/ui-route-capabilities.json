@@ -7053,6 +7053,164 @@
       }
     },
     {
+      "route": "/admin/system/content-pages",
+      "source": "frontend/src/app/admin/system/content-pages/page.tsx",
+      "sourceShellAccess": "admin-system",
+      "shellAccess": "admin-system",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "admin-console",
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "assign",
+        "create",
+        "edit",
+        "navigate",
+        "preview",
+        "save",
+        "search",
+        "submit",
+        "upload",
+        "view-detail",
+        "view-list"
+      ],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "콘텐츠 페이지",
+      "menuExposure": "visible",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "cms.page-list",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "cms-content-pages-api",
+          "actions": [
+            "search",
+            "view-list"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "콘텐츠 페이지",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-22",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageAdminApiController.java",
+            "api-server/src/test/java/nuri/api/controller/business/cms/CmsPageAdminApiControllerTest.java",
+            "frontend/src/app/admin/system/content-pages/ContentPagesClient.tsx",
+            "frontend/src/app/admin/system/content-pages/page.tsx",
+            "frontend/src/services/business/cms/CmsService.ts"
+          ]
+        },
+        {
+          "id": "cms.page-editing",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "cms-content-pages-api",
+          "actions": [
+            "create",
+            "edit",
+            "preview",
+            "save",
+            "upload"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "페이지 작성 · 초안 저장",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-22",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageAdminApiController.java",
+            "api-server/src/test/java/nuri/api/controller/business/cms/CmsPageAdminApiControllerTest.java",
+            "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+            "frontend/src/app/admin/system/content-pages/SectionEditor.tsx",
+            "frontend/src/app/admin/system/content-pages/__tests__/ContentPagesClient.test.tsx"
+          ]
+        },
+        {
+          "id": "cms.page-publication",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "cms-content-pages-api",
+          "actions": [
+            "navigate",
+            "submit",
+            "view-detail"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "게시 · 게시 중지 · 이력 · 메뉴에 추가",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-22",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageAdminApiController.java",
+            "api-server/src/test/java/nuri/api/controller/business/cms/CmsPageAdminApiControllerTest.java",
+            "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+            "frontend/src/app/admin/system/content-pages/__tests__/ContentPagesClient.test.tsx"
+          ]
+        },
+        {
+          "id": "cms.home-intro",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "cms-home-api",
+          "actions": [
+            "assign"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "업무 홈 소개 지정",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-22",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/cms/CmsHomeAdminApiController.java",
+            "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+            "frontend/src/components/cms/CmsHomeIntro.tsx"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/modules/presets.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/admin/system/content-pages/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "journeys",
+        "profileOwners",
+        "roles"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-12-31",
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-10-22 the route, menu row (V2_137 snapshot), page heading and capability states were read from code added for ADR-0039; no live deployment was measured."
+      }
+    },
+    {
       "route": "/admin/system/durable-jobs",
       "source": "frontend/src/app/admin/system/durable-jobs/page.tsx",
       "sourceShellAccess": "admin-system",
@@ -10663,6 +10821,78 @@
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
         "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+      }
+    },
+    {
+      "route": "/pages/[slug]",
+      "source": "frontend/src/app/pages/[slug]/page.tsx",
+      "sourceShellAccess": "authenticated",
+      "shellAccess": "authenticated",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "authenticated-workspace",
+      "status": "partial",
+      "dataSource": "cms-published-page-api",
+      "supportedActions": [
+        "view-detail"
+      ],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "콘텐츠 페이지",
+      "menuExposure": "not-menued",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "cms.published-page",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "cms-published-page-api",
+          "actions": [
+            "view-detail"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "게시된 콘텐츠 페이지",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-22",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageApiController.java",
+            "frontend/src/app/pages/[slug]/page.tsx",
+            "frontend/src/components/cms/CmsDocumentView.tsx",
+            "frontend/src/components/cms/__tests__/CmsDocumentView.test.tsx",
+            "frontend/src/services/business/cms/CmsService.ts"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/modules/presets.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/pages/[slug]/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "journeys",
+        "profileOwners",
+        "roles"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-12-31",
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-10-22 the route, menu row (V2_137 snapshot), page heading and capability states were read from code added for ADR-0039; no live deployment was measured."
       }
     },
     {

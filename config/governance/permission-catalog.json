@@ -477,6 +477,46 @@
       ]
     },
     {
+      "code": "CMS_ADMIN_READ",
+      "domain": "CMS",
+      "action": "ADMIN_READ",
+      "name": "콘텐츠 페이지 · 관리 조회",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CMS_HOME_UPDATE",
+      "domain": "CMS",
+      "action": "HOME_UPDATE",
+      "name": "콘텐츠 페이지 · 업무 홈 지정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CMS_PUBLISH",
+      "domain": "CMS",
+      "action": "PUBLISH",
+      "name": "콘텐츠 페이지 · 게시",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
+      "code": "CMS_UPDATE",
+      "domain": "CMS",
+      "action": "UPDATE",
+      "name": "콘텐츠 페이지 · 작성·수정",
+      "defaultGroups": [
+        "ROLE_ADMIN",
+        "ROLE_SYSTEM"
+      ]
+    },
+    {
       "code": "CODE_CREATE",
       "domain": "CODE",
       "action": "CREATE",
@@ -2519,6 +2559,9 @@
     "/admin/system/common-code/codes": [
       "CODE_READ"
     ],
+    "/admin/system/content-pages": [
+      "CMS_ADMIN_READ"
+    ],
     "/admin/system/durable-jobs": [
       "DWORK_READ"
     ],
@@ -2613,6 +2656,7 @@
     "/help/policies/[type]": [],
     "/login": [],
     "/note": [],
+    "/pages/[slug]": [],
     "/search": [],
     "/smart-toolkit/dept-job": [],
     "/smart-toolkit/dept-job/[id]": [],

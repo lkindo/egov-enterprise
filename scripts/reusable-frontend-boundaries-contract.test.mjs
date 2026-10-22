@@ -646,7 +646,7 @@ function hubTabViolations(entries, label, { file, hub, hubs = hubViewKeys(), mod
 }
 
 /** home-sections 의 배치(닫힌 목록). 업무 홈 셸이 그리는 자리만 둔다. */
-const HOME_PLACEMENTS = new Set(['overlay', 'actions', 'cards', 'main', 'status', 'bottom']);
+const HOME_PLACEMENTS = new Set(['overlay', 'actions', 'hero', 'cards', 'main', 'status', 'bottom']);
 // [2026-10-20] activityNote 는 걷었다 — 그 문장을 싣던 활동 구역을 걷었다. 다시 적으면 모르는 키로 붉다.
 const HOME_SECTION_KEYS = new Set(['id', 'placement', 'order', 'Component', 'prefetch', 'visibleWhen']);
 const HOME_FAILURES = new Set(['boundary', 'section']);
@@ -1333,7 +1333,7 @@ test('home sections: closed placements, a client Component, a server-readable pr
     assert.ok(original.includes(from), `the fixture finds ${from}`);
     return original.replace(from, to);
   };
-  assert.match(check(swap("placement: 'actions'", "placement: 'sidebar'"), board), /board-new-post 의 배치는 overlay·actions·cards·main·status·bottom 리터럴이다/);
+  assert.match(check(swap("placement: 'actions'", "placement: 'sidebar'"), board), /board-new-post 의 배치는 overlay·actions·hero·cards·main·status·bottom 리터럴이다/);
   // 걷은 활동 문장 키(activityNote)가 되살아나면 모르는 키다.
   assert.match(check(swap("    id: 'board-lists',", "    id: 'board-lists',\n    activityNote: '목록 안내',"), board),
     /board-lists 에 home-sections 가 모르는 키\(activityNote\)가 있다/);

@@ -55,6 +55,8 @@ const SINGLE_DELETIONS = {
   //   실시간 대시보드는 게시판을 포트로 읽는다(Phase 2 9단계) — 게시판을 지워도 남는다.
   board: ['board', 'comment', 'community', 'scrap'],
   comment: ['board', 'comment', 'community', 'scrap'],
+  // 콘텐츠 페이지는 첨부 원천만 기여하고 다른 기능이 요구하지 않는다(ADR-0039).
+  cms: ['cms'],
   community: ['community'],
   dashboard: ['dashboard'],
   event: ['event'],

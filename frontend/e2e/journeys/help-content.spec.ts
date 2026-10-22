@@ -140,6 +140,58 @@ test.describe('도움말 관리', () => {
         });
     });
 });
+test.describe('콘텐츠 페이지', () => {
+    // [2026-10-22] ADR-0039 — 관리자가 만든 안내 페이지를 게시하면 로그인한 사용자 누구나 /pages/<주소> 로 읽고, 게시를 멈추면 없는 페이지가 된다.
+    //   업무 홈 소개 지정은 여기서 하지 않는다 — 지정한 동안 모든 사용자의 업무 홈 맨 위가 바뀌어 같은 실행의 업무 홈 단언·시각 회귀를 흔든다.
+    //   그 동작은 단위 시험(ContentPageEditor·UnifiedDashboardClient)이 맡는다.
+    test('콘텐츠 페이지 작성·게시 → 일반 사용자가 주소로 읽고, 게시를 멈추면 없는 페이지다', async ({ adminPage, userPage }) => {
+        const stamp = `${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+        const title = `E2E 콘텐츠 ${stamp}`;
+        const slug = `e2e-cms-${stamp}`;
+        const summary = `E2E 요약 ${stamp}`;
+        await test.step('Admin: 업무 안내 양식으로 새 페이지를 만든다', async () => {
+            await adminPage.goto('/admin/system/content-pages');
+            await adminPage.getByRole('button', { name: '새 페이지' }).click();
+            const dialog = adminPage.getByRole('dialog', { name: '새 콘텐츠 페이지' });
+            await dialog.getByRole('textbox', { name: /페이지 제목/ }).fill(title);
+            await dialog.getByRole('textbox', { name: /주소/ }).fill(slug);
+            await dialog.getByRole('radio', { name: '업무 안내' }).check();
+            await dialog.getByRole('button', { name: '초안 만들기' }).click();
+            await expect(dialog).toBeHidden();
+            await expect(adminPage.getByRole('textbox', { name: /페이지 제목/ })).toHaveValue(title);
+        });
+        await test.step('Admin: 요약을 고쳐 초안을 저장하고 게시한다', async () => {
+            await adminPage.getByRole('textbox', { name: /요약/ }).fill(summary);
+            await adminPage.getByRole('button', { name: '초안 저장' }).click();
+            await expect(adminPage.getByText('저장하지 않은 변경', { exact: true })).toHaveCount(0);
+            await adminPage.getByRole('button', { name: '게시하기' }).click();
+            const dialog = adminPage.getByRole('dialog', { name: '저장한 초안 게시' });
+            await expect(dialog.getByText(/로그인한 모든 사용자/)).toBeVisible();
+            await dialog.getByRole('textbox', { name: /변경 설명/ }).fill('E2E 첫 게시');
+            await dialog.getByRole('button', { name: '게시', exact: true }).click();
+            await expect(dialog).toBeHidden();
+            await expect(adminPage.getByText('지금 사용자에게 보이는 게시본 v1')).toBeVisible();
+        });
+        await test.step('User: 주소로 게시본을 읽는다', async () => {
+            await userPage.goto(`/pages/${slug}`);
+            const article = userPage.getByRole('article');
+            await expect(article.getByRole('heading', { level: 1, name: title })).toBeVisible();
+            await expect(article.getByText(summary)).toBeVisible();
+            await expect(article.getByRole('heading', { level: 2, name: '진행 순서' })).toBeVisible();
+            await expect(article.getByRole('listitem').filter({ hasText: '신청 내용 작성' })).toBeVisible();
+        });
+        await test.step('Admin: 게시를 멈추고 보관하면 사용자에게 없는 페이지다', async () => {
+            await adminPage.getByRole('button', { name: '게시 중지' }).click();
+            await adminPage.getByRole('dialog', { name: '게시 중지' }).getByRole('button', { name: '게시 중지' }).click();
+            await expect(adminPage.getByText('사용자에게 보이는 게시본이 없습니다')).toBeVisible();
+            await adminPage.getByRole('button', { name: '보관', exact: true }).click();
+            await adminPage.getByRole('dialog', { name: '보관' }).getByRole('button', { name: '보관', exact: true }).click();
+            await expect(adminPage.getByText('보관한 페이지입니다. 고치거나 게시하려면 보관을 해제하세요.')).toBeVisible();
+            await userPage.goto(`/pages/${slug}`);
+            await expect(userPage.getByRole('heading', { level: 1, name: '없거나 게시되지 않은 페이지입니다' })).toBeVisible();
+        });
+    });
+});
 test.describe('레거시 진입 경로', () => {
     /**
      * Business Extensions

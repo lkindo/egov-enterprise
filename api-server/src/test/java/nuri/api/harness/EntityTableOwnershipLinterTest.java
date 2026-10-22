@@ -53,14 +53,17 @@ class EntityTableOwnershipLinterTest {
     //   매핑 없는 표(tb_indv_pg_conts·tb_prgrm_lst·tb_rptp_stats·tb_intrn_svc 등)가 남는다. 그 표를 JDBC 로 보는 migration 검증은 그대로 산다.
     // 쓰기 엔티티를 더하거나 걷으면 아래 두 수를 함께 고친다. 수정되는 표는 감사 4종(BaseEntity), 추가만 하는 이력은 insert 감사
     //   2종이다(INSERT_ONLY_AUDIT_ENTITIES). 수의 증감 이력은 git 과 결정 기록에 있다.
-    private static final int EXPECTED_ENTITY_COUNT = 87;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 86;
+    private static final int EXPECTED_ENTITY_COUNT = 92;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 91;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
     // 추가만 하고 고치지 않는 이력이라 수정자 컬럼이 없다(권한 변경 이력과 같은 형태).
     private static final Map<String,String> INSERT_ONLY_AUDIT_ENTITIES = Map.of(
             "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry",
+            "nuri.business.domain.cms.CmsContentFile", "tb_cms_conts_file",
+            "nuri.business.domain.cms.CmsContentRevision", "tb_cms_conts_rvsn",
+            "nuri.business.domain.cms.CmsContentRevisionFile", "tb_cms_conts_rvsn_file",
             "nuri.business.domain.code.CommonCodeChange", "tb_com_cd_chg_hstry",
             "nuri.business.domain.informalsanction.InformalSanctionProcess", "tb_ifml_atrz_prcs_hstry",
             "nuri.business.domain.informalsanction.InformalSanctionReference", "tb_ifml_atrz_rfpr",
