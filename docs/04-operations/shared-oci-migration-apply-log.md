@@ -15,6 +15,7 @@
 | 적용일(KST) | 마이그레이션 | 사용자 승인 요지 | 병합 PR | 사전 읽기·백업·validate | 확인 쿼리 요지 | 롤백 원본 |
 |---|---|---|---|---|---|---|
 | 2026-10-20 | V2_135(인터넷서비스안내 권한 배정 정리)·V2_136(스크랩 등록자·주소 유일 제약), 반복 시드 R__zz_seed_base_admin(SERVICE_* 8행 제외) | 2026-10-20 사용자 승인 "둘 다 지금 적용"(DEC-OPS-372 의 데이터 적용) | #943 (병합 c0ded166d) | 사전 읽기: 스키마 2.134, tb_intrn_svc 0행·/admin/system/isg 메뉴 0·SERVICE_* 배정 8(모두 ROLE_ADMIN·ROLE_SYSTEM 의 OPERATION, 예상 밖 0), 스크랩 1행·(등록자, 주소) 중복 0. 적용 직전 pg_dump 백업(표 데이터 127, 영향 표 4개 목차 확인). Flyway 12.4.0 migrate 3건 → validate 161 | SERVICE_* 배정 0·REMOVE 이력(migration:2.135) 8, 제약 uk_tb_bbs_scrap_frst_rgtr_id_scrap_url 1, 스크랩 1행 유지, tb_intrn_svc 0행 유지, 메뉴 75·활성 70 그대로 | 배정은 REMOVE 이력으로 되살린다([인가 전환 런북 V2_135](authorization-cutover-runbook.md)). 제약은 DROP CONSTRAINT 로 되돌린다. 전체는 적용 직전 백업 |
+| 2026-10-22 | V2_137(콘텐츠 페이지 표 5개·표준 용어 6·도메인 1·관리 메뉴·CMS 기능 권한 기본 배정), 반복 시드 R__zz_seed_base_admin(CMS 8행 추가, 신규 base 블록이라 OCI 무변경) | 2026-10-22 사용자 승인 "승인할테니 1,2 번 진행"·"다시 허용할테니 시도해, 실제 운영하는 시스템이 아니야"(ADR-0039 의 데이터 적용) | #961 (병합 f370d969c) | 사전 읽기: 스키마 2.136, CMS 표·메뉴·용어·도메인 0, 상위 메뉴 9030000·정책 버전 행·ROLE_ADMIN·ROLE_SYSTEM 존재, 메뉴 75·활성 70, OPERATION 513·NAVIGATION 94. 적용 직전 pg_dump 백업(표 데이터 127, 영향 표 6개 목차 확인). info 대기 2건(V2_137·반복 시드) → Flyway 12.4.0 migrate 2건(validate 163) | 스키마 2.137, CMS 표 5·트리거 2·홈 소개 설정 1행(지정 없음), 메뉴 76·활성 71, OPERATION 521(CMS 4종 × 관리자·시스템 = 8)·NAVIGATION 95, 이력(migration:2.137) 9, 용어 6·도메인 1 | 새 표 5개·메뉴 1행·배정 9행(이력 migration:2.137 로 식별)·용어 6·도메인 1 을 지운다. 전체는 적용 직전 백업 |
 
 ## 이전 기록
 
