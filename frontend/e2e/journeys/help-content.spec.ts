@@ -181,10 +181,12 @@ test.describe('콘텐츠 페이지', () => {
             await expect(article.getByRole('listitem').filter({ hasText: '신청 내용 작성' })).toBeVisible();
         });
         await test.step('Admin: 게시를 멈추고 보관하면 사용자에게 없는 페이지다', async () => {
-            await adminPage.getByRole('button', { name: '게시 중지' }).click();
+            // 목록의 상태 필터에도 같은 이름('보관')의 단추가 있다 — 편집 영역 안의 단추만 누른다.
+            const editor = adminPage.getByTestId('master-detail-detail');
+            await editor.getByRole('button', { name: '게시 중지' }).click();
             await adminPage.getByRole('dialog', { name: '게시 중지' }).getByRole('button', { name: '게시 중지' }).click();
-            await expect(adminPage.getByText('사용자에게 보이는 게시본이 없습니다')).toBeVisible();
-            await adminPage.getByRole('button', { name: '보관', exact: true }).click();
+            await expect(editor.getByText('사용자에게 보이는 게시본이 없습니다')).toBeVisible();
+            await editor.getByRole('button', { name: '보관', exact: true }).click();
             await adminPage.getByRole('dialog', { name: '보관' }).getByRole('button', { name: '보관', exact: true }).click();
             await expect(adminPage.getByText('보관한 페이지입니다. 고치거나 게시하려면 보관을 해제하세요.')).toBeVisible();
             await userPage.goto(`/pages/${slug}`);
