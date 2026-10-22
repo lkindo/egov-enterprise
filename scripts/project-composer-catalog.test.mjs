@@ -594,7 +594,7 @@ test('every computed Java port connection is an integration or a registration-on
     'core>board (AttachmentSourceContributor)', 'core>board (CommonCodeUsageContributor)', 'core>board (DashboardItemProvider)',
     'core>board (DataUsageStatisticsContributor)',
     'core>board (LoginIdReferenceContributor)',
-    'core>board (PostStatisticsContributor)', 'core>comment (LoginIdReferenceContributor)',
+    'core>board (PostStatisticsContributor)', 'core>cms (AttachmentSourceContributor)', 'core>comment (LoginIdReferenceContributor)',
     'core>community (CommunityBoardAccessPort)', 'core>informalsanction (CommonCodeUsageContributor)',
     'core>mail (AttachmentSourceContributor)', 'core>mail (DurableWorkHandler)', 'core>mail (LoginIdReferenceContributor)',
     'core>memoreport (AttachmentSourceContributor)', 'core>memoreport (LoginIdReferenceContributor)',

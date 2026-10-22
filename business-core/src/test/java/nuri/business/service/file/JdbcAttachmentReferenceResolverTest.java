@@ -7,6 +7,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.context.SecurityContextHolder;
+import nuri.foundation.security.service.CustomUserDetails;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -76,6 +79,7 @@ class JdbcAttachmentReferenceResolverTest {
                         when(rs.getString("schdl_se_cd")).thenReturn(counts.sharedCnt()>0?"1":"2");
                         when(rs.getString("schdl_dept_id")).thenReturn("DEPT1");
                         when(rs.getString("ognz_id")).thenReturn("DEPT1");
+                        when(rs.getBoolean("published")).thenReturn(counts.sharedCnt()>0);
                         RowMapper<?> mapper=invocation.getArgument(1);
                         return List.of(mapper.mapRow(rs,0));
                     });
@@ -127,7 +131,7 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.sqls)
                 .as("DERIVED 참조원을 조회하면 '다운로드 이력이 곧 열람 권한' 이라는 잘못된 축이 생긴다")
                 .noneMatch(sql -> sql.contains(AttachmentSource.DATA_USE_STATS.table()));
-        // 나머지 12종은 전부 조회된다.
+        // 나머지 참조원은 전부 조회된다.
         assertThat(jdbc.sqls).hasSize(AttachmentSource.values().length - 1);
     }
 
@@ -380,13 +384,15 @@ class JdbcAttachmentReferenceResolverTest {
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         for (String sql : jdbc.sqls) {
-            if (!sql.contains("FROM tb_bbs_item ") && !sql.contains("FROM tb_schdl_info ")) {
+            if (!sql.contains("FROM tb_bbs_item ") && !sql.contains("FROM tb_schdl_info ")
+                    && !sql.contains("FROM tb_cms_conts_file ")) {
                 assertThat(sql).contains("COUNT(*) AS ref_cnt");
             }
         }
         assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE b.atch_file_sn=?");
         assertThat(jdbc.sqlFor(AttachmentSource.SCHEDULE))
                 .contains("u.user_id = ?", "WHERE s.atch_file_sn = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.CMS_PAGE)).contains("WHERE f.atch_file_sn = ?");
         // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
                 .contains("WHERE (file_url = '/api/v1/files/' || ?");
@@ -452,6 +458,40 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.sqls).noneMatch(sql -> sql.contains("tb_schdl_info"));
         assertThat(new CapturingJdbc(0, 0, 0).resolver()
                 .resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).readDenied()).isFalse();
+    }
+
+    @Test
+    @DisplayName("콘텐츠 페이지 이미지는 현재 게시본이 쓰면 공유 근거이고, 소유 근거·개인 귀속·열람 거부를 만들지 않는다(ADR-0039)")
+    void cmsImageInCurrentRevisionIsShared() {
+        AttachmentReferenceResolver.Grants grants = new CapturingJdbc(source -> source == AttachmentSource.CMS_PAGE
+                ? new SourceCounts(1, 1, 0) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+
+        assertThat(grants.sharedGrant()).isTrue();
+        assertThat(grants.ownerGrant()).isFalse();
+        assertThat(grants.personalReference()).isFalse();
+        // 같은 파일을 다른 곳에도 쓴 업로더가 콘텐츠 페이지 때문에 자기 파일을 못 여는 일이 없어야 한다.
+        assertThat(grants.readDenied()).isFalse();
+    }
+
+    @Test
+    @DisplayName("게시본이 쓰지 않는 콘텐츠 페이지 이미지(초안·지난 게시본)는 관리 열람 권한(CMS_ADMIN_READ)이 있어야 공유 근거다")
+    void cmsImageOutsideCurrentRevisionNeedsAdminRead() {
+        CapturingJdbc jdbc = new CapturingJdbc(source -> source == AttachmentSource.CMS_PAGE
+                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE);
+        try {
+            authenticate();
+            assertThat(jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).sharedGrant()).isFalse();
+            authenticate("CMS_ADMIN_READ");
+            assertThat(jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).sharedGrant()).isTrue();
+        } finally {
+            SecurityContextHolder.clearContext();
+        }
+    }
+
+    private static void authenticate(String... permissions) {
+        CustomUserDetails user = CustomUserDetails.builder().userId(LOGIN_ID).esntlId(ESNTL_ID).enabled(true)
+                .permissions(List.of(permissions)).authorizationVersion("fixture").build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
     }
 
     /** 테이블 부재처럼 스키마 계열 실패를 흉내내는 최소 예외. */

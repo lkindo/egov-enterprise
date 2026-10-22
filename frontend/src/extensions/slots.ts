@@ -258,14 +258,15 @@ export interface HomePrefetch {
 
 /**
  * home-sections — 업무 홈('/')의 자리(Phase 2 9단계). 셸이 배치마다 순서대로 그린다: overlay(구역 밖에 뜨는 것) → 머리의 actions
- * (단추) → cards(요약 카드 줄, Component 는 <li> 하나를 그린다 — core 셸의 카드와 같은 order 축) → main(본문 목록) → status(상태 구역)
- * → bottom(홍보). 2026-10-20 늘 비어 있던 활동 구역과 그 구역에 덧붙이던 activityNote 를 걷었다.
+ * (단추) → hero(머리 바로 아래 소개 — 업무 홈 제목 h1 뒤라 소개의 h2 가 제목 순서를 깨지 않는다, ADR-0039) → cards(요약 카드 줄,
+ * Component 는 <li> 하나를 그린다 — core 셸의 카드와 같은 order 축) → main(본문 목록) → status(상태 구역) → bottom(홍보).
+ * 2026-10-20 늘 비어 있던 활동 구역과 그 구역에 덧붙이던 activityNote 를 걷었다.
  * Component 는 기능의 'use client' 모듈에서 가져오고 기여는 그 이름만 가리킨다 — 서버 자식도 레지스트리를 읽으므로 서버에서 그릴 수 없는
  * 컴포넌트(ssr:false 래퍼)가 서버 그래프에 들어오지 않게 한다(경계 계약). 링크는 컴포넌트가 그린다(기여는 링크 키를 갖지 않는다).
  * 셸은 등록된 항목이 하나라도 있으면 DASHBOARD_READ 로 홈 진입을 판정한다(app/home-access.ts).
  */
 export interface HomeSection extends SlotEntry {
-  readonly placement: 'overlay' | 'actions' | 'cards' | 'main' | 'status' | 'bottom';
+  readonly placement: 'overlay' | 'actions' | 'hero' | 'cards' | 'main' | 'status' | 'bottom';
   /** 같은 배치 안의 순서(작은 값 먼저). */
   readonly order: number;
   readonly Component: ComponentType;

@@ -16,6 +16,7 @@ const EXPECTED_IMPORTERS = keepInProjection([
   'src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx',
   'src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx',
   'src/app/admin/system/common-code/CommonCodeClient.tsx',
+  'src/app/admin/system/content-pages/ContentPagesClient.tsx',
   'src/app/admin/system/menus/MenuAdminClient.tsx',
   'src/app/admin/user/UserOrgHubClient.tsx',
   'src/app/approvals/ApprovalHubClient.tsx',
@@ -35,7 +36,7 @@ function source(relativePath: string): string {
 }
 
 describe('A2 master-detail adoption census', () => {
-  it('A2 셸 importer를 부서·메뉴·메일 이력·공통코드·결재함·조직권한 여섯 소비자로 exact 고정한다', () => {
+  it('A2 셸 importer를 부서·메뉴·메일 이력·공통코드·콘텐츠 페이지·결재함·조직권한 일곱 소비자로 exact 고정한다', () => {
     const importers = screenFiles(APP_DIR)
       .filter((path) => A2_IMPORT.test(readFileSync(path, 'utf8')))
       .map((path) => relative(FRONTEND_DIR, path).split(sep).join('/'))

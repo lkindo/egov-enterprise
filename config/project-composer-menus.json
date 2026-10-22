@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "sourceMigrationHash": "690c73bb2d9f4a543d1c07a9d45a8f3a34857ee774086f073b24e878e6a125e5",
+  "sourceMigrationHash": "82785334c4034b093f65f6f91bfcc2747246d8f73f61cf7afc1b561c9f79644f",
   "menus": [
     {
       "menu_sn": 1000000,
@@ -751,6 +751,16 @@
       "modern_route": null,
       "use_yn": "Y",
       "del_yn": "N"
+    },
+    {
+      "menu_sn": 9040403,
+      "up_menu_sn": 9030000,
+      "menu_ordr": 6,
+      "menu_nm": "콘텐츠 페이지",
+      "menu_expln": "안내 페이지 작성·게시와 업무 홈 소개",
+      "modern_route": "/admin/system/content-pages",
+      "use_yn": "Y",
+      "del_yn": "N"
     }
   ],
   "navigation": [
@@ -1053,6 +1063,10 @@
     {
       "authrt_cd": "ROLE_ADMIN",
       "menu_sn": 9040402
+    },
+    {
+      "authrt_cd": "ROLE_ADMIN",
+      "menu_sn": 9040403
     },
     {
       "authrt_cd": "ROLE_USER",

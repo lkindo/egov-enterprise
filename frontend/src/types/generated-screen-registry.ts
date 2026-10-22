@@ -710,6 +710,21 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
+    "route": "/admin/system/content-pages",
+    "label": "콘텐츠 페이지",
+    "labelSource": "menu",
+    "shellAccess": "admin-system",
+    "dynamic": false,
+    "entry": {"permissions":["CMS_ADMIN_READ"],"mode":"ANY"},
+    "permissions": [
+      {"code":"CMS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
+      {"code":"CMS_HOME_UPDATE","action":"HOME_UPDATE","source":"write"},
+      {"code":"CMS_PUBLISH","action":"PUBLISH","source":"write"},
+      {"code":"CMS_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
+    ]
+  },
+  {
     "route": "/admin/system/durable-jobs",
     "label": "후속 작업 상태",
     "labelSource": "route-ledger",
@@ -1130,6 +1145,15 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"NOTE_SEND","action":"SEND","source":"write"},
       {"code":"USER_READ","action":"READ","source":"display"}
     ]
+  },
+  {
+    "route": "/pages/[slug]",
+    "label": "콘텐츠 페이지",
+    "labelSource": "route-ledger",
+    "shellAccess": "authenticated",
+    "dynamic": true,
+    "entry": {"permissions":[],"mode":"ANY"},
+    "permissions": []
   },
   {
     "route": "/search",
@@ -1638,6 +1662,23 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/banner",
       "/admin/system/hpcm",
       "/admin/uss/olh/online-manual"
+    ],
+    "relatedScreens": []
+  },
+  {
+    "id": "content-pages",
+    "name": "콘텐츠 페이지 관리",
+    "description": "콘텐츠 담당자에게 안내 페이지 작성·게시와 업무 홈 소개 지정, 그 이미지 올리기를 맡깁니다.",
+    "protected": false,
+    "permissions": [
+      "CMS_ADMIN_READ",
+      "CMS_HOME_UPDATE",
+      "CMS_PUBLISH",
+      "CMS_UPDATE",
+      "FILE_UPLOAD"
+    ],
+    "screens": [
+      "/admin/system/content-pages"
     ],
     "relatedScreens": []
   },

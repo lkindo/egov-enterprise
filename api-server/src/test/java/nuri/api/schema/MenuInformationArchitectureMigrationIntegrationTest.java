@@ -7,6 +7,7 @@ import java.nio.file.Paths;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -131,18 +132,23 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
             //   (ROLE_ADMIN·ROLE_SYSTEM × 3)을 지우고 REMOVE 이력 31행을 남긴다(ADR-0034).
             //   V2_134 가 지운 보고서 통계 메뉴의 ROLE_ADMIN 메뉴 배정 1행에 REMOVE 이력 1행을 남긴다(DEC-OPS-368).
             //   V2_135 가 퇴역한 인터넷 서비스 안내의 SERVICE_* 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을 지우고 REMOVE 이력 8행을 남긴다.
+            //   V2_137 이 콘텐츠 페이지 관리 메뉴의 ROLE_ADMIN 메뉴 배정 1행과 CMS 기능 권한 8행(ROLE_ADMIN·ROLE_SYSTEM × 4)을
+            //   더하고 ADD 이력 9행을 남긴다(ADR-0039).
             //   V2_100 자신의 효과(NAV 추가 4·제거 13)는 아래 식별자별 단언이 그대로 본다.
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8-8-31-8);
-            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8+1+31+1+8);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION'")).isEqualTo(566-8-8-31-8+8);
+            assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry")).isEqualTo(auditsBefore+17+8+6+8+1+31+1+8+1+8);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
                     + "AND chg_type_cd='ADD' AND authrt_type_cd='NAVIGATION'")).isEqualTo(4);
             assertThat(number(statement,"SELECT count(*) FROM tb_authrt_chg_hstry WHERE dmnd_idntfr='migration:2.100' "
                     + "AND chg_type_cd='REMOVE' AND authrt_type_cd='NAVIGATION'")).isEqualTo(13);
             assertThat(number(statement,"SELECT count(DISTINCT dmnd_idntfr) FROM tb_authrt_chg_hstry "
                     + "WHERE dmnd_idntfr='migration:2.100'")).isEqualTo(1);
+            // 권한 원장이 기본 그룹을 정한 기능 권한은 기존 DB 를 최신까지 올리면 모두 배정돼 있다. 메뉴가 빈 신규 base 만 채우는
+            //   R__zz_seed_base_admin 에 기대면 기존 DB 의 관리자가 새 기능에서 403 을 받는다(V2_137 이 처음 그렇게 빠졌다).
+            assertThat(missingDefaultOperationGrants(statement)).as("기본 그룹 배정이 빠진 그룹:권한").isEmpty();
             assertThat(digest(statement,"tb_authrt_info","")).isEqualTo(before.get("tb_authrt_info"));
             assertThat(digest(statement,"tb_authrt_user_map","")).isEqualTo(before.get("tb_authrt_user_map"));
-            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124','migration:2.125','migration:2.130','migration:2.134','migration:2.135')"))
+            assertThat(digest(statement,"tb_authrt_chg_hstry","WHERE dmnd_idntfr NOT IN ('migration:2.100','migration:2.104','migration:2.120','migration:2.124','migration:2.125','migration:2.130','migration:2.134','migration:2.135','migration:2.137')"))
                     .isEqualTo(before.get("tb_authrt_chg_hstry"));
         }
         var after=snapshot();
@@ -174,6 +180,25 @@ class MenuInformationArchitectureMigrationIntegrationTest extends SharedPostgres
                 + "ORDER BY to_jsonb(row)::text),'')) FROM "+table+" row "+filter)) {
             result.next(); return result.getString(1);
         }
+    }
+
+    /** 권한 원장(authorization/permission-catalog.json)의 defaultGroups 가운데 DB 에 OPERATION 배정이 없는 그룹:권한. */
+    private static List<String> missingDefaultOperationGrants(Statement statement) throws Exception {
+        JsonNode catalog;
+        try (var input=new ClassPathResource("authorization/permission-catalog.json").getInputStream()) {
+            catalog=JsonMapper.builder().build().readTree(input);
+        }
+        List<String> missing=new ArrayList<>();
+        for (JsonNode permission : catalog.path("permissions")) {
+            String code=permission.path("code").asString();
+            for (JsonNode group : permission.path("defaultGroups")) {
+                long granted=number(statement,"SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_type_cd='OPERATION' "
+                        + "AND authrt_cd='"+group.asString()+"' AND authrt_grnt_cd='"+code+"'");
+                if (granted==0) missing.add(group.asString()+":"+code);
+            }
+        }
+        assertThat(catalog.path("permissions").size()).as("권한 원장이 비었습니다").isPositive();
+        return missing;
     }
 
     private static long number(Statement statement,String sql) throws SQLException {

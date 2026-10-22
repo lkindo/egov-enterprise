@@ -110,6 +110,16 @@
       ]
     },
     {
+      "id": "content-pages",
+      "name": "콘텐츠 페이지 관리",
+      "description": "콘텐츠 담당자에게 안내 페이지 작성·게시와 업무 홈 소개 지정, 그 이미지 올리기를 맡깁니다.",
+      "protected": false,
+      "permissions": [
+        "CMS_ADMIN_READ", "CMS_HOME_UPDATE", "CMS_PUBLISH", "CMS_UPDATE",
+        "FILE_UPLOAD"
+      ]
+    },
+    {
       "id": "messaging-operations",
       "name": "메일·문자·알림 운영",
       "description": "연락 담당자에게 모든 사용자의 메일 발송 이력 조회·삭제와 문자 발송, 알림 발송을 맡깁니다.",

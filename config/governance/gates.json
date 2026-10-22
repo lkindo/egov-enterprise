@@ -799,6 +799,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/LoginFailureCounterConcurrencyIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-CMS-CONTENT",
+          "source": "api-server/src/test/java/nuri/api/schema/CmsContentMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-LOGOUT-CUTOFF-PRIVACY-SUBJECT",
           "source": "api-server/src/test/java/nuri/api/schema/LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java"
         },

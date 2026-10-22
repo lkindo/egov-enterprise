@@ -307,7 +307,7 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
 | 207 | `url` | 1 (tb_web_log) | varchar(1000) | URL URL | B(이름+길이) | 주소V2000 — 대상 용어 도메인(VARCHAR(2000)) | → URL_ADDR URL주소(기존). 1000 → 2000 확장. tb_web_log 35,518행 |
 | 208 | `user_stts_cd` | 1 (tb_user_info) | varchar(12) | USER 사용자 + STTS 상태 + CD 코드 | A | 코드C12 — VARCHAR(12) 일치, 분류어 CD 기존 5건 | 용어명: **사용자상태코드** |
 | 209 | `user_type_cd` | 1 (tb_user_info) | varchar(12) | USER 사용자 + TYPE 유형 + CD 코드 | A | 코드C12 — VARCHAR(12) 일치, 분류어 CD 기존 5건 | 용어명: **사용자유형코드** |
-| 210 | `version` | 3 (tb_bbs_item, tb_ifml_atrz_info) | integer | VERSION(단어 없음) | C | — | JPA @Version 낙관적 잠금 기술 컬럼. 단어 VERSION 미등록(단어 "버전"은 VER). 2026-10-19 V2_133(DEC-OPS-359)이 10개 표에 같은 기술 컬럼을 더한다 — 수는 OCI 적용 뒤 집계로 갱신한다 |
+| 210 | `version` | 3 (tb_bbs_item, tb_ifml_atrz_info) | integer | VERSION(단어 없음) | C | — | JPA @Version 낙관적 잠금 기술 컬럼. 단어 VERSION 미등록(단어 "버전"은 VER). 2026-10-19 V2_133(DEC-OPS-359)이 10개 표에 같은 기술 컬럼을 더한다 — 수는 OCI 적용 뒤 집계로 갱신한다. 2026-10-22 DEC-OPS-378 이 C 를 확정했다 — 새 표도 같은 기술 컬럼을 쓰고 표준 용어를 만들지 않는다 |
 | 211 | `wrter_id` | 2 (tb_adbk_manage, tb_bbs_comment) | varchar(20) | WRTER†* 작성자→WRTR + ID 아이디 | B(이름) | 명V20 — 대상 용어 도메인(VARCHAR(20)) | → WRTR_ID(대표 약어로 정정 뒤 등록). WRTER 비대표 |
 | 212 | `wrter_nm` | 1 (tb_bbs_comment) | varchar(100) | WRTER†* 작성자→WRTR + NM 명 | B(이름) | 명V100 — 대상 용어 도메인(VARCHAR(100)) | → WRTR_NM 작성자명(기존). WRTER 비대표 |
 

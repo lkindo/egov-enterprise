@@ -46,6 +46,10 @@ export const PERMISSION_CODES = [
   "CLASS_GRP_DELETE",
   "CLASS_GRP_READ",
   "CLASS_GRP_UPDATE",
+  "CMS_ADMIN_READ",
+  "CMS_HOME_UPDATE",
+  "CMS_PUBLISH",
+  "CMS_UPDATE",
   "CODE_CREATE",
   "CODE_DELETE",
   "CODE_READ",
@@ -231,7 +235,7 @@ export const PERMISSION_CODES = [
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "8e519dbb04f15f0f8a6fc24651ad432e87dc1112bfdf00bcc3e80dfcb8e4fd74";
+export const PERMISSION_CATALOG_VERSION = "8552b86156efc9f1ccd67b2469826ee2b69edf7afb9a85f28b7ce1a3eb13344f";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -407,6 +411,9 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   "/admin/system/common-code/codes": [
     "CODE_READ"
   ],
+  "/admin/system/content-pages": [
+    "CMS_ADMIN_READ"
+  ],
   "/admin/system/durable-jobs": [
     "DWORK_READ"
   ],
@@ -501,6 +508,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   "/help/policies/[type]": [],
   "/login": [],
   "/note": [],
+  "/pages/[slug]": [],
   "/search": [],
   "/smart-toolkit/dept-job": [],
   "/smart-toolkit/dept-job/[id]": [],

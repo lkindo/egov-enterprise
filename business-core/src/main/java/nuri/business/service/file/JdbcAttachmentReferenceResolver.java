@@ -101,6 +101,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {
         if (source == AttachmentSource.BOARD) return queryBoard(atchFileSn, loginId, esntlId);
         if (source == AttachmentSource.SCHEDULE) return querySchedule(atchFileSn, loginId);
+        if (source == AttachmentSource.CMS_PAGE) return queryCmsPage(atchFileSn);
         List<Object> params = new ArrayList<>();
 
         String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
@@ -213,6 +214,32 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             owner |= loginId != null && loginId.equals(reference.registrar());
         }
         return new SourceHit(!references.isEmpty(), shared, owner, false);
+    }
+
+    /**
+     * 콘텐츠 페이지 이미지(ADR-0039). 페이지의 현재 게시본이 이 첨부를 쓰면 로그인 사용자에게 공유하고, 그 밖에는 콘텐츠 관리 조회
+     * 권한자에게만 공유한다(다른 편집자의 초안 미리보기). 소유·열람 거부 근거는 만들지 않는다.
+     *
+     * <p>열람 판정은 묶음 단위인데 페이지가 쓰는 것은 그 묶음의 파일 한 건이다. 업로더가 일반 파일 API 로 같은 묶음에 파일을
+     * 덧붙이면 그 묶음은 로그인 사용자 공유를 잃는다 — 이미지 검사를 거치지 않은 파일을 모두에게 열지 않는다(fail-closed).
+     */
+    private SourceHit queryCmsPage(Long fileId) {
+        List<Boolean> published = jdbcTemplate.query("""
+                SELECT EXISTS (SELECT 1 FROM tb_cms_conts c
+                                 JOIN tb_cms_conts_rvsn_file rf
+                                   ON rf.conts_rvsn_sn = c.conts_rvsn_sn AND rf.conts_file_sn = f.conts_file_sn
+                                WHERE c.conts_sn = f.conts_sn AND c.kpng_yn = 'N')
+                       AND NOT EXISTS (SELECT 1 FROM tb_file_detail d
+                                        WHERE d.atch_file_sn = f.atch_file_sn AND d.atch_file_seq <> f.atch_file_seq) AS published
+                  FROM tb_cms_conts_file f
+                 WHERE f.atch_file_sn = ?
+                """, (rs, rowNum) -> rs.getBoolean("published"), fileId);
+        if (published.isEmpty()) {
+            return new SourceHit(false, false, false, false);
+        }
+        boolean shared = Boolean.TRUE.equals(published.get(0))
+                || nuri.business.security.util.SecurityUtil.hasPermission("CMS_ADMIN_READ");
+        return new SourceHit(true, shared, false, false);
     }
 
     private record ScheduleReference(String registrar, String sharing, String department, String userDepartment) {}

@@ -27,24 +27,24 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "f6f5de98834039959f39c85840a751f37708d7339673f4023de17bafc9d8f01a"
+    "inventoryHash": "80385fc0aa37136bd3dececbcd3ed1946d853dd45615e1c5cb7a4d8115b64d74"
   },
   "summary": {
-    "records": 407,
-    "syntaxOccurrences": 485,
-    "ambiguousRecords": 359,
-    "unverifiedRecords": 407,
+    "records": 415,
+    "syntaxOccurrences": 500,
+    "ambiguousRecords": 367,
+    "unverifiedRecords": 415,
     "exactPopulations": {
-      "filesystemRoutes": 118,
-      "dynamicRoutePatterns": 11,
+      "filesystemRoutes": 120,
+      "dynamicRoutePatterns": 12,
       "configRedirects": 13,
       "pageRedirects": 17
     },
     "byKind": {
       "config-redirect": 13,
-      "dynamic-segment": 11,
-      "form-producer": 53,
-      "navigation-producer": 188,
+      "dynamic-segment": 12,
+      "form-producer": 55,
+      "navigation-producer": 193,
       "page-redirect": 17,
       "query-builder": 23,
       "query-consumer": 53,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 397,
+      "navigation": 405,
       "request-telemetry": 10
     }
   },
@@ -9598,6 +9598,120 @@
       }
     },
     {
+      "id": "URL-08CBA356DEF667",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+      "producerFile": "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/content-pages",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-2B9D92CF1C702D",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "router.push",
+      "source": "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+      "producerFile": "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/content-pages",
+      "targetCandidate": "/admin/system/menus",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/system/menus",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/content-pages/ContentPageEditor.tsx",
+        "detector": "router-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-1AFCB63A45DA03",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/system/content-pages/ContentPagesClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/content-pages/ContentPagesClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/content-pages",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/content-pages/ContentPagesClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 2
+      }
+    },
+    {
       "id": "URL-DAA79851E8D252",
       "surface": "navigation",
       "kind": "form-producer",
@@ -14251,6 +14365,95 @@
       }
     },
     {
+      "id": "URL-589FD65C079EDD",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/pages/[slug]/not-found.tsx",
+      "producerFile": "frontend/src/app/pages/[slug]/not-found.tsx",
+      "consumerFile": null,
+      "routePattern": "/pages/[slug]",
+      "targetCandidate": "/",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/pages/[slug]/not-found.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-9B44C9E5BCDA74",
+      "surface": "navigation",
+      "kind": "dynamic-segment",
+      "operation": "consume-path-segment",
+      "source": "frontend/src/app/pages/[slug]/page.tsx",
+      "producerFile": null,
+      "consumerFile": "frontend/src/app/pages/[slug]/page.tsx",
+      "routePattern": "/pages/[slug]",
+      "targetCandidate": "/pages/[slug]",
+      "stateItems": [
+        {
+          "name": "[slug]",
+          "dataClass": "unverified",
+          "recommendation": "deny-until-reviewed",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "Filesystem route accepts one or more dynamic path segments; locator semantics are not inferred from the segment name.",
+      "riskSignals": [
+        "double-encoded-segment",
+        "record-locator-unverified",
+        "slash-or-traversal-injection"
+      ],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/pages/[slug]",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "authenticated",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/pages/[slug]/page.tsx",
+        "detector": "filesystem-route-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-0D3A6A47812CD7",
       "surface": "navigation",
       "kind": "form-producer",
@@ -16078,6 +16281,86 @@
       }
     },
     {
+      "id": "URL-4ABBED72133F68",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/components/cms/CmsDocumentView.tsx",
+      "producerFile": "frontend/src/components/cms/CmsDocumentView.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/cms/CmsDocumentView.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-1366FB9859D607",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/components/cms/CmsRichTextEditor.tsx",
+      "producerFile": "frontend/src/components/cms/CmsRichTextEditor.tsx",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/components/cms/CmsRichTextEditor.tsx",
+        "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-9AB2FD303B634D",
       "surface": "navigation",
       "kind": "navigation-producer",
@@ -17189,6 +17472,46 @@
         "source": "frontend/src/lib/auth/page-access.ts",
         "detector": "href-navigation",
         "occurrenceCount": 2
+      }
+    },
+    {
+      "id": "URL-1A30FDAD010BD7",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "href-field",
+      "source": "frontend/src/lib/cms/document.ts",
+      "producerFile": "frontend/src/lib/cms/document.ts",
+      "consumerFile": null,
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "computed-navigation-target",
+        "producer-consumer-join-unresolved",
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/lib/cms/document.ts",
+        "detector": "href-navigation",
+        "occurrenceCount": 6
       }
     },
     {

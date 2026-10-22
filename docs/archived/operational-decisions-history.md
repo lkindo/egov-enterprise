@@ -2268,6 +2268,13 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-377 | accepted | 첫 화면 직후 앱 전체 공급자의 context 값을 바꾸지 않고(같은 사용자 재조회는 이전 객체, 실시간 연결·현재 메뉴는 구독 저장소, 하이드레이션 중에는 서버 기준값) 머리글·사이드바를 셸과 함께 보낸다(GAP-FE-003 종료, 2026-10-22 사용자 승인). | React 19.2 는 서버가 보낸 Suspense 조각을 300ms 묶음으로 공개한다. 첫 화면 직후 공급자 값이 바뀌면 공개를 기다리던 경계를 브라우저가 다시 그려 서버 HTML 을 버리고, 숨은 사본이 남아 E2E 가 본문을 두 벌 셌다(PR #959). 값을 안정화하자 따로 스트리밍하던 사이드바가 빠른 이동 뒤 늦게 하이드레이션해 서버와 어긋났다(React #418). 셸이 메뉴 조회를 기다려 머리글·사이드바와 함께 오면 늦은 셸 하이드레이션이 없다 — 메뉴 조회는 같은 백엔드이고 실패하면 빈 메뉴다. 격리 E2E(CI 에서 실패했던 시험 포함 30건)에서 #418 0건을 확인했다. | [루트 레이아웃](../../frontend/src/app/layout.tsx), [레이아웃 공급자](../../frontend/src/contexts/LayoutContext.tsx), [셸 접근성 계약](../../frontend/src/app/components/layout/__tests__/shell-accessibility-contract.test.ts) | 2026-10-22 | DEC-OPS-228 의 사이드바 Suspense 자리표시 표지 부분(자리표시를 걷었다) |
 
+
+## DEC-OPS-378
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-378 | accepted | 낙관적 잠금 컬럼은 새 표에도 `version integer NOT NULL DEFAULT 0` 과 `ck_<표>_version`(>= 0)을 쓰는 기술 컬럼 예외로 둔다. 표준 용어를 새로 만들지 않는다(2026-10-22 사용자 결정). | 13개 엔티티가 이미 Integer `@Version` 이고 버전 대조 도우미도 Integer 만 받는다. 새 표준 용어(예: 잠금버전일련번호 bigint)를 두면 관례가 둘이 되어 다음 기능이 매번 고르고 타입이 어긋난다. 업무 의미가 없는 기술 컬럼이라 기존 열 이름 변경(13개 표의 Expand/Contract)은 이득이 없다. ADR-0039 첫 적용. | [처분안](../04-operations/standard-metadata-disposition.md), [EntityVersions](../../foundation/src/main/java/nuri/foundation/core/util/EntityVersions.java), [V2_133](../../api-server/src/main/resources/db/migration/V2_133__add_optimistic_version_columns.sql) | 2026-10-22 | 처분안 `version` 행의 미확정 C(예외 후보) |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
