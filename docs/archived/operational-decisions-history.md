@@ -2275,6 +2275,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-378 | accepted | 낙관적 잠금 컬럼은 새 표에도 `version integer NOT NULL DEFAULT 0` 과 `ck_<표>_version`(>= 0)을 쓰는 기술 컬럼 예외로 둔다. 표준 용어를 새로 만들지 않는다(2026-10-22 사용자 결정). | 13개 엔티티가 이미 Integer `@Version` 이고 버전 대조 도우미도 Integer 만 받는다. 새 표준 용어(예: 잠금버전일련번호 bigint)를 두면 관례가 둘이 되어 다음 기능이 매번 고르고 타입이 어긋난다. 업무 의미가 없는 기술 컬럼이라 기존 열 이름 변경(13개 표의 Expand/Contract)은 이득이 없다. ADR-0039 첫 적용. | [처분안](../04-operations/standard-metadata-disposition.md), [EntityVersions](../../foundation/src/main/java/nuri/foundation/core/util/EntityVersions.java), [V2_133](../../api-server/src/main/resources/db/migration/V2_133__add_optimistic_version_columns.sql) | 2026-10-22 | 처분안 `version` 행의 미확정 C(예외 후보) |
 
+## DEC-OPS-379
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-379 | accepted | ADR-0040 의 스키마 변경(게시판 마스터 버전 컬럼, 게시판 변경 이력 표, 예약·고정·비밀글·추천 설정 컬럼, 상단 고정 컬럼, 신규 표준 용어 6건, `BOARD_PIN`, 메뉴 표시명 데이터 변경)을 저장소 Flyway 로 일괄 승인하고, 공유 OCI 적용은 PR 이 병합될 때마다 하며, 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행은 보정하지 않는다(2026-10-23 사용자 결정). | 사용자가 A0~B3 를 이어서 구현하도록 하면서 배치마다 멈추지 않게 승인 범위를 한 번에 정했다. 모두 추가만 하는 Expand 이고 기존 컬럼을 지우거나 바꾸지 않는다. 기록용 미래 시작일 글은 지워지지 않고 시작일까지 작성자·조회 대행 권한자에게만 보인다. 게시글 버전 NULL 보정·NOT NULL 전환과 그 밖의 코어 데이터 변경은 이 승인 밖이다. | [ADR-0040](../02-architecture/decisions/ADR-0040-board-operations-management.md), [설계서 §7](../02-architecture/board-management-expansion-design.md#7-구현-배치와-검증), [적용 로그](../04-operations/shared-oci-migration-apply-log.md) | 2026-10-23 | ADR-0040 승인 줄의 배치별 스키마·OCI 승인 부분 |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

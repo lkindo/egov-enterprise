@@ -94,6 +94,7 @@ refresh_triggers:
 | ADR-0037 | accepted | 제품 PIT 는 6슬롯으로 돌고 선언 순서는 실측이 긴 범위 먼저다. 대상·75% 판정·집계는 그대로이고 효과가 없으면 4로 되돌린다. | 9분 이후 runner 가 비는데 PIT 가 4개만 돌아 full 실행의 꼬리였다(DEC-OPS-373). | [ADR-0037](../../docs/02-architecture/decisions/ADR-0037-product-pit-six-slots.md) | 2026-10-20 | ADR-0026 결정 9의 제품 PIT 4슬롯 부분 |
 | ADR-0038 | accepted | API·코어 체인에서 CSRF를 켜고, 쿠키 자격을 실은 쓰기 요청에 이중 제출 토큰(XSRF-TOKEN 쿠키 = X-XSRF-TOKEN 헤더)을 요구한다. 헤더 전용 클라이언트는 제외하고 SockJS는 허용 Origin으로 막는다. | 브라우저 경로는 쿠키가 자격이라 CSRF 비활성 예외가 보완 통제에 의존했다(2026-10-20 사용자 근본 해소 지시). | [ADR-0038](../../docs/02-architecture/decisions/ADR-0038-credential-cookie-csrf-token.md) | 2026-10-21 | DEC-OPS-075 의 SAST-FP-001·002(CSRF 비활성 예외) |
 | ADR-0039 | accepted | 콘텐츠 페이지는 선택 기능 `cms` 다. 1차는 로그인 사용자 전체 열람, 업무 홈은 대체하지 않고 맨 위 조각으로 보이며, 서버 한 곳이 검증한 jsonb 문서를 HTML 문자열 없이 그린다. 링크는 https·내부·mailto·tel, 첨부는 기존 참조원 구조를 쓴다. | 2026-10-22 사용자가 Codex 설계 적대적 점검의 권장안을 채택했다. 홈 대체는 대시보드 경로를, 그룹 열람은 새 인가 축을, 문서 안 공지 피드는 app→app 결합을 만들었다. | [ADR-0039](../../docs/02-architecture/decisions/ADR-0039-cms-content-pages-first-scope.md) | 2026-10-22 | - |
+| ADR-0040 | accepted | 게시판 운영 화면을 두고, 사용 안 함 게시판의 읽기·쓰기를 이용자에게 닫으며, 예약 게시를 날짜 기준으로 집행하고 상단 고정을 표준 컬럼과 BOARD_PIN으로 둔다. | 2026-10-22 사용자가 권고안으로 설계 확정을 위임했다. 사용 안 함이 쓰기를 막지 못했고 시작일은 집행되지 않았다. | [ADR-0040](../../docs/02-architecture/decisions/ADR-0040-board-operations-management.md) | 2026-10-22 | DEC-OPS-206의 시작일 기록 전용 부분 |
 
 ## 운영 결정 index
 
@@ -397,6 +398,7 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-376 | accepted | 운영 오버레이의 api·frontend·edge 는 리눅스 권한을 모두 빼고(`cap_drop: ALL`·`no-new-privileges`) 메모리 상한을 두며, api 힙은 고정 `JAVA_OPTS` 로 상한에 비례해 잡는다. 번들 db 는 대상 밖이고 `read_only` 는 후속이다(2026-10-21 사용자 승인). | 2026-10-21 | - |
 | DEC-OPS-377 | accepted | 첫 화면 직후 앱 전체 공급자의 context 값을 바꾸지 않고(같은 사용자 재조회는 이전 객체, 실시간 연결·현재 메뉴는 구독 저장소, 하이드레이션 중에는 서버 기준값) 머리글·사이드바를 셸과 함께 보낸다(GAP-FE-003 종료, 2026-10-22 사용자 승인). | 2026-10-22 | DEC-OPS-228 의 사이드바 Suspense 자리표시 표지 부분(자리표시를 걷었다) |
 | DEC-OPS-378 | accepted | 낙관적 잠금 컬럼은 새 표에도 `version integer NOT NULL DEFAULT 0` 과 `ck_<표>_version`(>= 0)을 쓰는 기술 컬럼 예외로 둔다. 표준 용어를 새로 만들지 않는다(2026-10-22 사용자 결정). | 2026-10-22 | 처분안 `version` 행의 미확정 C(예외 후보) |
+| DEC-OPS-379 | accepted | ADR-0040 의 스키마 변경을 저장소 Flyway 로 일괄 승인하고, 공유 OCI 적용은 PR 병합마다 하며, 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행은 보정하지 않는다(2026-10-23 사용자 결정). | 2026-10-23 | ADR-0040 승인 줄의 배치별 스키마·OCI 승인 부분 |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

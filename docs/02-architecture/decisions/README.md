@@ -46,3 +46,4 @@
 | [ADR-0037](ADR-0037-product-pit-six-slots.md) | 제품 PIT 여섯 슬롯과 실측 긴 순서, 효과 없으면 4로 되돌림 | Accepted |
 | [ADR-0038](ADR-0038-credential-cookie-csrf-token.md) | 쿠키 자격을 실은 쓰기 요청에 이중 제출 CSRF 토큰(SockJS는 허용 Origin) | Accepted |
 | [ADR-0039](ADR-0039-cms-content-pages-first-scope.md) | 콘텐츠 페이지(CMS) 1차 범위 — 로그인 사용자 열람, 업무 홈 상단 조각, 서버 검증 jsonb 문서 | Accepted |
+| [ADR-0040](ADR-0040-board-operations-management.md) | 게시판 운영 화면, 사용 안 함 게시판의 읽기·쓰기 차단, 날짜 기준 예약 게시·게시 기준일 정렬, 상단 고정 컬럼과 BOARD_PIN | Accepted |
