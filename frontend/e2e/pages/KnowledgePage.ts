@@ -9,8 +9,9 @@ export class KnowledgePage {
 
     async gotoFAQ() {
         await this.page.goto('/admin/community/boards/master');
-        // Wait for the board list to load
-        await expect(this.page.getByText(/게시판.*마스터|마스터.*콘솔/i).first()).toBeVisible();
+        // [2026-10-23 ADR-0040 §5.2] 목록 화면의 머리글은 '게시판 관리' 다 — 종전 '마스터' 문구(열 이름·삭제 안내)는 걷었다.
+        await expect(this.page.getByRole('heading', { level: 1, name: '게시판 관리', exact: true })).toBeVisible();
+        await expect(this.page.getByRole('table', { name: '게시판 관리 목록' })).toBeVisible();
         
         // Find the FAQ board (BBSMSTR_AAAAAAAAAAAA) if there are multiple, 
         // but assuming we are on the master list, we might need to click it.
