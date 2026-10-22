@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
-import { handOffScreen } from '@/lib/navigation/target-handoff';
+import { handOffMenuFocus, handOffScreen } from '@/lib/navigation/target-handoff';
 import { pageInProjection } from '@/test-utils/projection';
 
 // 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
@@ -582,6 +582,35 @@ describe('새 메뉴 — 그 자리 맨 끝에 초안으로 만들고 이름 칸
     await renderClient({ permissions: ['MENU_READ', 'MENU_UPDATE'] });
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument();
     expect(liveText()).toContain('화면을 메뉴에 추가하려면 메뉴 등록 권한과 메뉴 수정 권한이 모두 필요합니다.');
+  });
+
+  // [2026-10-23 ADR-0040 결정 8] 게시판 운영 화면이 넘긴 메뉴 — 그 영역을 열고 그 메뉴를 고른 뒤 인계를 지운다.
+  it('메뉴 인계가 있으면 그 메뉴가 있는 영역을 열어 고르고 그 행으로 스크롤한 뒤, 인계를 지운다', async () => {
+    const scroll = vi.mocked(window.Element.prototype.scrollIntoView);
+    scroll.mockClear();
+    expect(handOffMenuFocus({ menuSn: 6 })).toBe(true);
+    await renderClient();
+
+    expect(areaTab('관리')).toHaveAttribute('aria-selected', 'true');
+    expect(rowButton('시스템')).toHaveAttribute('aria-current', 'true');
+    expect(liveText()).toContain('넘겨받은 메뉴를 골랐습니다: 시스템');
+    await waitFor(() => expect(window.sessionStorage.length).toBe(0));
+    expect(scroll.mock.contexts.some((element) => (element as HTMLElement).dataset.menuNo === '6')).toBe(true);
+  });
+
+  it('메뉴 조회 권한만 있어도 고른다 — 선택은 조회이고 저장은 서버가 다시 판정한다', async () => {
+    handOffMenuFocus({ menuSn: 6 });
+    await renderClient({ permissions: ['MENU_READ'] });
+    expect(rowButton('시스템')).toHaveAttribute('aria-current', 'true');
+  });
+
+  it('없는 메뉴 번호면 고르지 않고 알리며, 인계를 지운다', async () => {
+    handOffMenuFocus({ menuSn: 999 });
+    await renderClient();
+    expect(areaTab('업무')).toHaveAttribute('aria-selected', 'true');
+    expect(screen.getByText('메뉴를 선택하세요')).toBeInTheDocument();
+    expect(liveText()).toContain('넘겨받은 메뉴를 찾지 못했습니다');
+    await waitFor(() => expect(window.sessionStorage.length).toBe(0));
   });
 });
 

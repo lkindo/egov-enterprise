@@ -30,9 +30,14 @@ function CommunityBoardContent() {
 
   const [searchWrd, setSearchWrd] = useState('');
   const [bbsId, setBbsId] = useState(searchParams.get('bbsId') || DEFAULT_BBS_ID);
-  // 선택지는 게시판 마스터에서 채운다. 하드코딩 목록에는 시드에 없는 게시판이 섞여 있었고
-  // 라벨도 실제 게시판명과 어긋나 있었다(같은 ID 를 '갤러리 게시판'/'업무게시판' 으로 각각 표기).
-  const { options: boardOptions } = useBoardOptions();
+  // 선택지는 서버의 사용자 선택지 API 에서 채운다(ADR-0040 결정 11 — 사용 중이고 내가 열 수 있는 게시판만). 하드코딩 목록에는
+  // 시드에 없는 게시판이 섞여 있었고 라벨도 실제 게시판명과 어긋나 있었다(같은 ID 를 '갤러리 게시판'/'업무게시판' 으로 각각 표기).
+  const {
+    options: boardOptions,
+    isLoading: boardOptionsLoading,
+    error: boardOptionsError,
+    refetch: refetchBoardOptions,
+  } = useBoardOptions();
   const [page, setPage] = useState(1); // 1부터 (서버 page 와 같은 번호, ADR-0036)
 
   // 조회 시점은 `조회` 또는 Enter 다(카탈로그 G2, Phase 2 커뮤니티 후속 C1b). 종전에는 입력을 300ms 디바운스해
@@ -105,8 +110,8 @@ function CommunityBoardContent() {
                 className="h-[var(--control-h)] px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
                 aria-label="게시판 선택"
               >
-                {/* 훅이 비관리자·조회 실패에도 시드 목록으로 내려가므로 비는 경우는 없다.
-     그래도 현재 선택값이 목록에 없으면 선택이 풀린 것처럼 보이므로 남겨 둔다. */}
+                {/* 현재 선택값(주소의 bbsId·기본값)이 선택지에 없으면 선택이 풀린 것처럼 보이므로 그 값을 남겨 둔다.
+     선택지가 비었거나 불러오지 못한 사실은 아래 안내가 따로 말한다. */}
                 {!boardOptions.some((option) => option.value === bbsId) && (
                   <option value={bbsId}>{bbsId}</option>
                 )}
@@ -129,6 +134,19 @@ function CommunityBoardContent() {
               </Button>
             </div>
           </KeywordFilter>
+          {/* [2026-10-23 ADR-0040 결정 11] 선택지가 비었거나 실패하면 폴백으로 덮지 않고 사실대로 알린다. */}
+          {!boardOptionsLoading && boardOptionsError ? (
+            <p role="status" className="mt-4 flex items-center gap-2 text-sm font-medium text-destructive">
+              게시판 목록을 불러오지 못했습니다.
+              <Button type="button" variant="link" className="h-auto p-0" onClick={() => void refetchBoardOptions()}>
+                다시 불러오기
+              </Button>
+            </p>
+          ) : !boardOptionsLoading && boardOptions.length === 0 ? (
+            <p role="status" className="mt-4 text-sm font-medium text-muted-foreground">
+              지금 이용할 수 있는 게시판이 없습니다.
+            </p>
+          ) : null}
         </div>
       </motion.div>
 

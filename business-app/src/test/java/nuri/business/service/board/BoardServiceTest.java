@@ -91,6 +91,11 @@ class BoardServiceTest {
                 // [2026-09-08 PD-CMTY-001] 커뮤니티 접근 포트. 대부분의 시나리오는 귀속 없는 게시판이라
                 //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
                 communityBoardAccess);
+        // [2026-10-23 ADR-0040 결정 1] 쓰기·상세·댓글 경로가 게시판 진입 판정(사용 여부 → 커뮤니티)을 먼저 지난다.
+        //   시험이 마스터를 정하지 않으면 그 bbsId 의 사용 중인 일반 게시판으로 본다. 없는·사용 안 함·커뮤니티 게시판은
+        //   시험이 직접 정한다(그 스텁이 이 기본값보다 앞선다).
+        lenient().when(boardMasterRepository.findById(anyString())).thenAnswer(invocation ->
+                Optional.of(BoardMaster.builder().bbsId(invocation.getArgument(0)).build()));
     }
 
     @org.junit.jupiter.api.AfterEach
@@ -371,7 +376,10 @@ class BoardServiceTest {
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
         BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null);
-        assertThrows(BusinessException.class, () -> boardService.updatePost("BBS1", 1L, req));
+        // 게시판 진입 판정을 지난 뒤 소유 판정에서 거부돼야 한다 — 마스터를 못 찾은 404 로 통과하면 이 시험은 아무것도 증명하지 않는다.
+        assertThatThrownBy(() -> boardService.updatePost("BBS1", 1L, req))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
     }
 
     @Test
@@ -385,7 +393,9 @@ class BoardServiceTest {
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
-        assertThrows(BusinessException.class, () -> boardService.deletePost("BBS1", 1L, "user2"));
+        assertThatThrownBy(() -> boardService.deletePost("BBS1", 1L, "user2"))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
     }
 
 

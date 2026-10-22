@@ -113,9 +113,13 @@ public class BoardService extends BaseAbstractService {
         }
 
 
+        /**
+         * 업무 홈 카드용 최근 글. [2026-10-23 ADR-0040 결정 1] 운영자 열람 예외를 두지 않는다 — 홈 카드는 이용자와 같은
+         * 결과를 보여야 일괄 사용 안 함의 영향 확인(설계서 §5.2)과 맞는다.
+         */
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
-                return getBoardPosts(bbsId, "0", "", null, null, null, null, null, null, pageable);
+                return listPosts(false, bbsId, "0", "", null, null, null, null, null, null, pageable);
         }
 
         /**
@@ -127,11 +131,26 @@ public class BoardService extends BaseAbstractService {
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
                         String dateBasis, @NonNull Pageable pageable) {
+                return listPosts(true, bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory,
+                                dateBasis, pageable);
+        }
+
+        /**
+         * @param operatorMayReadInactive 조회 대행 권한자(BOARD_READ_ALL)에게 사용 안 함 게시판의 목록을 열지. 게시판 목록 API 만
+         *                                켠다(ADR-0040 결정 1).
+         */
+        private Page<BoardDto> listPosts(boolean operatorMayReadInactive, String bbsId, String searchCnd, String searchWrd,
+                        String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
+                        String dateBasis, Pageable pageable) {
                 log.info("Fetching board posts - bbsId: {}, searchApplied: {}, orderBy: {}",
                                 nuri.foundation.security.util.SafeLog.text(bbsId), StringUtils.hasText(searchWrd), nuri.foundation.security.util.SafeLog.text(orderBy));
-                assertActiveBoardMaster(bbsId);
+                BoardMaster master = operatorMayReadInactive
+                                ? loadReadableMaster(bbsId, false)
+                                : assertActiveBoardMaster(bbsId);
                 BoardSearchCondition condition = buildArticleSearchCondition(
                                 bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory, dateBasis);
+                // 사용 안 함 게시판이 여기까지 왔다면 조회 대행 권한자다(loadReadableMaster). 그때만 마스터 조건을 푼다.
+                condition.setIncludeInactiveBoard(!"Y".equals(master.getUseYn()));
                 Page<BoardDto> page = boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(boardMapper::toDto);
                 return withRecommendedMarks(page);
@@ -207,13 +226,12 @@ public class BoardService extends BaseAbstractService {
         /**
          * 게시글 목록·상세 화면용 게시판 메타. [2026-09-26 DIP V5]
          *
-         * <p>상세·댓글과 같이 활성 여부는 보지 않는다 — 비활성 게시판의 기존 글도 제목·템플릿을 알아야 한다.
-         * 커뮤니티 귀속 게시판은 목록·상세와 같은 회원 가드를 지난다(비회원에게 제목도 알리지 않는다).
+         * <p>[2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판의 메타는 조회 대행 권한자에게만 준다(목록·상세와 같은 열람 판정).
+         * 사용 여부를 커뮤니티 가드보다 먼저 본다 — 사용 안 함 커뮤니티 게시판에서 비회원이 403 으로 존재를 알지 못하게.
          */
         @Transactional(readOnly = true)
         public nuri.business.service.board.dto.BoardMetaDto getBoardMeta(@NonNull String bbsId) {
-                BoardMaster master = findBoardMaster(bbsId);
-                assertCommunityAccess(master);
+                BoardMaster master = loadReadableMaster(bbsId, false);
                 return nuri.business.service.board.dto.BoardMetaDto.from(master, requiredEditPermissions(bbsId));
         }
 
@@ -239,11 +257,68 @@ public class BoardService extends BaseAbstractService {
                 return toStatsResponse(stats);
         }
 
-        private void assertActiveBoardMaster(String bbsId) {
+        /**
+         * 엄격한 게시판 진입 판정 — 사용 중인 게시판만 통과한다(운영자 예외 없음). 없는 게시판과 사용 안 함 게시판은 같은
+         * 404 다. 사용 여부를 커뮤니티 가드보다 먼저 본다.
+         */
+        private BoardMaster assertActiveBoardMaster(String bbsId) {
                 BoardMaster master = boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                                 .filter(candidate -> "Y".equals(candidate.getUseYn()))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
                 assertCommunityAccess(master);
+                return master;
+        }
+
+        /**
+         * 열람 판정 — 사용 중인 게시판, 또는 조회 대행 권한(BOARD_READ_ALL) 보유자에게 사용 안 함 게시판이 통과한다
+         * (ADR-0040 결정 1의 운영자 예외). 없는 게시판과 이용자에게 닫힌 사용 안 함 게시판은 같은 404 다 — 목록과 같은 응답이라
+         * 존재를 드러내지 않는다. 사용 여부를 커뮤니티 가드보다 먼저 본다(사용 안 함 커뮤니티 게시판의 비회원도 404).
+         *
+         * @param pessimisticLock 등록·답글처럼 채번을 직렬화하는 경로는 마스터 행을 잠가 읽는다. 같은 트랜잭션이 잠근 행을 읽으므로
+         *                        동시에 사용 안 함으로 바뀌어도 커밋된 값을 본다.
+         */
+        private BoardMaster loadReadableMaster(String bbsId, boolean pessimisticLock) {
+                String id = required(bbsId, "bbsId 는 null 일 수 없습니다");
+                BoardMaster master = (pessimisticLock
+                                ? boardMasterRepository.findByIdWithPessimisticLock(id)
+                                : boardMasterRepository.findById(id))
+                                .filter(candidate -> "Y".equals(candidate.getUseYn())
+                                                || SecurityUtil.hasPermission("BOARD_READ_ALL"))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
+                assertCommunityAccess(master);
+                return master;
+        }
+
+        /**
+         * 쓰기 진입 판정 — 지정 게시판 편집 가드, 사용 여부(조회 대행 권한 예외, 404), 커뮤니티 가드를 이 순서로 본다. 글 소속·
+         * 논리 삭제 판정은 호출부가 뒤이어 한다(findPostInBoard). 파일 저장보다 먼저 부른다(ADR-0040 결정 1).
+         *
+         * <p>지정 게시판 가드를 맨 앞에 두어도 존재가 드러나지 않는다 — 설정으로 알려진 ID 만 보기 때문이다. 사용 안 함 게시판에
+         * 글을 준비·정리하는 운영자도 그 동작의 권한(BOARD_CREATE·BOARD_UPDATE_ALL·BOARD_DELETE_ALL)은 따로 지난다.
+         */
+        private BoardMaster loadWritableMaster(String bbsId, boolean pessimisticLock) {
+                assertSpecialBoardEdit(bbsId);
+                return loadReadableMaster(bbsId, pessimisticLock);
+        }
+
+        /**
+         * 호출자가 이용할 수 있는 게시판 선택지(ADR-0040 결정 11). 사용 중인 게시판만 싣는다 — 조회 대행 권한자에게도 사용 안 함
+         * 게시판은 이용 선택지가 아니다(운영 화면이 따로 연다). 커뮤니티 귀속 게시판은 {@link #assertCommunityAccess} 와 같은 규칙을
+         * 거부 대신 거르기로 적용한다: 조회 대행 권한(BOARD_READ_ALL) 보유자이거나 승인 회원이어야 하고, 판정 포트가 없으면
+         * 뺀다(fail-closed). 커뮤니티마다 한 번만 판정한다. 응답에는 ID·이름만 싣는다.
+         */
+        @Transactional(readOnly = true)
+        public List<nuri.business.service.board.dto.BoardOptionDto> getBoardOptions() {
+                boolean readAll = SecurityUtil.hasPermission("BOARD_READ_ALL");
+                String esntlId = SecurityUtil.getCurrentEsntlId().orElse(null);
+                java.util.Map<Long, Boolean> memberships = new java.util.HashMap<>();
+                return boardMasterRepository.findActiveBoardOptions().stream()
+                                .filter(row -> row.cmntySn() == null || readAll
+                                                || memberships.computeIfAbsent(row.cmntySn(), cmntySn -> esntlId != null
+                                                                && communityBoardAccess != null
+                                                                && communityBoardAccess.isApprovedMember(cmntySn, esntlId)))
+                                .map(row -> new nuri.business.service.board.dto.BoardOptionDto(row.bbsId(), row.bbsTtl()))
+                                .toList();
         }
 
         /**
@@ -274,18 +349,8 @@ public class BoardService extends BaseAbstractService {
         }
 
         /**
-         * {@code bbsId} 로 게시판을 읽어 커뮤니티 접근만 판정한다 — <b>활성 여부는 보지 않는다</b>.
-         *
-         * <p>상세·댓글·수정·삭제 경로는 종전에 게시판 활성 여부를 요구하지 않았다. 여기서 함께
-         * 요구하면 비활성 게시판의 기존 글이 갑자기 404 가 되므로, 이번 변경은 커뮤니티 축만 더한다.
-         */
-        private void assertCommunityAccess(String bbsId) {
-                boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
-                                .ifPresent(this::assertCommunityAccess);
-        }
-
-        /**
-         * URL 의 게시판에 실제로 속한 글만 돌려준다 — 다르면 없는 글로 본다.
+         * URL 의 게시판에 실제로 속한 글만 돌려준다 — 다르면 없는 글로 본다. 논리 삭제된 글도 없는 글이다
+         * ([2026-10-23 ADR-0040 결정 1] findById 는 soft-delete 필터를 받지 않아 종전에는 지운 글도 고치고 다시 지웠다).
          *
          * <p>[2026-09-14 DEC-OPS-092] 수정·삭제는 커뮤니티 가드를 URL 의 {@code bbsId} 로 판정하는데,
          * 종전에는 글을 번호로만 읽어 그 글의 실제 게시판과 대조하지 않았다. 그래서 커뮤니티 게시판의 글을
@@ -297,7 +362,7 @@ public class BoardService extends BaseAbstractService {
                 Board board = boardRepository
                                 .findById(required(pstSn, "pstSn 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
-                if (!java.util.Objects.equals(bbsId, board.getBbsId())) {
+                if (!java.util.Objects.equals(bbsId, board.getBbsId()) || "N".equals(board.getUseYn())) {
                         throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
                 }
                 return board;
@@ -305,15 +370,12 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public Long createPost(@NonNull String userId, @NonNull BoardSaveRequest request) {
-                assertSpecialBoardEdit(request.bbsId());
+                // [2026-10-23 ADR-0040 결정 1] 지정 게시판 가드 → 사용 여부(운영자 예외) → 커뮤니티 가드. 채번 직렬화를 위해
+                //   마스터 행을 잠가 읽는다. [2026-09-08 PD-CMTY-001] 읽을 수 없는 게시판에는 쓸 수도 없다.
+                BoardMaster master = loadWritableMaster(request.bbsId(), true);
                 Timer.Sample sample = Timer.start(meterRegistry);
 
                 try {
-                        BoardMaster master = boardMasterRepository
-                                        .findByIdWithPessimisticLock(request.bbsId())
-                                        .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
-                        // [2026-09-08 PD-CMTY-001] 읽을 수 없는 게시판에는 쓸 수도 없다.
-                        assertCommunityAccess(master);
                         if (request.atchFileSn() != null) {
                                 attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
                                 // [2026-09-27 DIP B5 F9] 미리 올린 첨부 묶음을 붙이는 경로도 게시판 첨부 설정을 지난다.
@@ -368,12 +430,11 @@ public class BoardService extends BaseAbstractService {
         public Long createPostWithFiles(@NonNull String userId, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
-                assertSpecialBoardEdit(request.bbsId());
                 // [2026-09-25 DIP I2] 게시판·커뮤니티 검증을 업로드보다 먼저 한다. 종전에는 파일을 먼저 저장한 뒤
                 //   createPost 가 없는 게시판·비회원을 거부해, 거부된 요청마다 접근할 수 없는 파일이 디스크에 남았다.
                 //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
-                BoardMaster master = findBoardMaster(request.bbsId());
-                assertCommunityAccess(master);
+                //   [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판도 업로드 전에 거부한다.
+                BoardMaster master = loadWritableMaster(request.bbsId(), false);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 게시판 첨부 설정(허용·파일 수·파일당 크기)을 저장 전에 본다.
@@ -388,12 +449,8 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public Long replyPost(@NonNull String userId, @NonNull Long parentSn, @NonNull BoardSaveRequest request) {
-                assertSpecialBoardEdit(request.bbsId());
-                BoardMaster master = boardMasterRepository
-                                .findByIdWithPessimisticLock(request.bbsId())
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
-                // [2026-09-08 PD-CMTY-001] 등록과 같은 경계.
-                assertCommunityAccess(master);
+                // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1] 등록과 같은 경계.
+                BoardMaster master = loadWritableMaster(request.bbsId(), true);
 
                 Board parent = findReplyParent(request.bbsId(), parentSn);
                 if (request.atchFileSn() != null) {
@@ -444,14 +501,11 @@ public class BoardService extends BaseAbstractService {
         public Long replyPostWithFiles(@NonNull String userId, @NonNull Long parentSn,
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
-                assertSpecialBoardEdit(request.bbsId());
-                assertCommunityAccess(request.bbsId());
+                BoardMaster master = loadWritableMaster(request.bbsId(), false);
                 findReplyParent(request.bbsId(), parentSn);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 답글도 게시판 첨부 설정을 저장 전에 본다(등록과 같은 순서).
-                        BoardMaster master = findBoardMaster(request.bbsId());
-                        assertCommunityAccess(master);
                         assertNewFilesAllowed(master, 0, files);
                         atchFileSn = fileService.uploadBoardFiles(files);
                 }
@@ -463,10 +517,8 @@ public class BoardService extends BaseAbstractService {
 
         /** 답글은 실제 부모 게시판·열람 경계를 지나며 파일 저장보다 먼저 검사한다. */
         private Board findReplyParent(String bbsId, Long parentSn) {
+                // 논리 삭제된 부모는 findPostInBoard 가 없는 글로 거부한다.
                 Board parent = findPostInBoard(bbsId, parentSn);
-                if ("N".equals(parent.getUseYn())) {
-                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
-                }
                 if ("Y".equalsIgnoreCase(parent.getScrtYn())) {
                         SecurityUtil.assertOwnerOrPermissionByEsntlId(parent.getUserId(), "BOARD_READ_ALL");
                 }
@@ -480,20 +532,14 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional(readOnly = true)
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn, boolean countView) {
-                // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판이면 승인된 회원만 본다.
-                assertCommunityAccess(bbsId);
+                // [2026-10-23 ADR-0040 결정 1] 사용 여부(조회 대행 권한 예외)를 먼저, 커뮤니티 회원 가드를 그다음에 본다
+                //   ([2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판이면 승인된 회원만 본다).
                 // [2026-08-22 제품 결정] 논리 삭제(useYn='N') 게시글은 일반 사용자에게 404 지만
                 // **관리자에게는 열람을 허용**한다. 복구·감사 경로가 404 로 막히면 관리자가 삭제된 글의
-                // 내용을 확인할 방법이 사라진다.
-                // 확대 범위는 정확히 "관리자 × 논리 삭제 게시글" 하나이며 나머지 방어선은 그대로다:
-                //   · 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
-                //   · 비활성 게시판(BoardMaster.useYn='N')은 완화하지 않는다 — 별개 결정이다.
-                //   · '관리자' 판정은 조회 대행 권한 BOARD_READ_ALL 보유 여부다(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
-                BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
-                                .or(() -> SecurityUtil.hasPermission("BOARD_READ_ALL")
-                                                ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
-                                                : java.util.Optional.empty())
-                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+                // 내용을 확인할 방법이 사라진다. 아래 비밀글 소유권 가드는 삭제 여부와 무관하게 계속 적용된다.
+                // '관리자' 판정은 조회 대행 권한 BOARD_READ_ALL 보유 여부다(기본 그룹 ROLE_ADMIN·ROLE_SYSTEM).
+                BoardDetailResult detail = readableDetail(loadReadableMaster(bbsId, false), bbsId, pstSn,
+                                SecurityUtil.hasPermission("BOARD_READ_ALL"));
 
                 // 비밀글은 인증됐다는 사실만으로 본문을 공개하지 않는다. Board.userId 는 생성 시
                 // UserDetails.getUsername() (= esntlId)으로 고정되므로 같은 축의 owner-or-admin 가드를 쓴다.
@@ -534,9 +580,7 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional
         public void markQuestionSolved(@NonNull String bbsId, @NonNull Long pstSn) {
-                assertSpecialBoardEdit(bbsId);
-                BoardMaster master = findBoardMaster(bbsId);
-                assertCommunityAccess(master);
+                BoardMaster master = loadWritableMaster(bbsId, false);
                 if (!QNA_TEMPLATE_ID.equals(master.getTmpltId())) {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                         "Q&A 게시판의 질문만 해결됨으로 표시할 수 있습니다.");
@@ -546,8 +590,11 @@ public class BoardService extends BaseAbstractService {
         }
 
         /**
-         * 댓글 조회·등록 전에 게시글의 실제 소속과 현재 사용자의 열람 권한을 확인한다.
-         * 상세 조회와 같은 repository/비밀글 정책을 쓰되 조회수는 올리지 않는다.
+         * 댓글·만족도 등록과 추천, 댓글 수정·삭제 전에 게시글의 실제 소속과 현재 사용자의 열람 권한을 확인한다 — <b>엄격</b>
+         * 경계다. 상세 조회와 같은 repository/비밀글 정책을 쓰되 조회수는 올리지 않는다.
+         *
+         * <p>[2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판은 운영자에게도 닫는다(새 참여를 받지 않는다). 열람만 하는
+         * 경로는 {@link #assertCommentReadAccess} 를 쓴다. 이 이름이 엄격 경계로 남아 있어, 옮기지 않은 호출부는 계속 닫힌다.
          */
         @Transactional(readOnly = true)
         public void assertCommentAccess(String bbsId, Long pstSn) {
@@ -555,8 +602,8 @@ public class BoardService extends BaseAbstractService {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                         "댓글의 bbsId와 pstSn은 필수입니다.");
                 }
-                // [2026-09-08 PD-CMTY-001] 상세와 같은 경계 — 회원 전용 게시판의 댓글도 회원만 읽고 쓴다.
-                assertCommunityAccess(bbsId);
+                // [2026-09-08 PD-CMTY-001] 상세와 같은 경계 — 회원 전용 게시판의 댓글도 회원만 읽고 쓴다. 사용 여부를 먼저 본다.
+                assertActiveBoardMaster(bbsId);
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
@@ -564,6 +611,42 @@ public class BoardService extends BaseAbstractService {
                 }
                 // [2026-10-01 결정 23] 게시가 끝난 글의 댓글·추천도 상세와 같은 사람만 닿는다.
                 assertPostingVisible(detail);
+        }
+
+        /**
+         * 댓글 목록, 만족도 목록·평균, 만족도 수정·삭제 전의 <b>열람</b> 경계. 엄격 경계({@link #assertCommentAccess})와 같되
+         * 조회 대행 권한(BOARD_READ_ALL) 보유자는 사용 안 함 게시판의 글에도 닿는다(ADR-0040 결정 1의 운영자 열람 예외 —
+         * 상세 화면의 댓글·만족도 조회). 지정 게시판 편집 가드는 두지 않는다 — 일반 사용자의 '내 평가 수정' 을 새로 막는다(H3).
+         */
+        @Transactional(readOnly = true)
+        public void assertCommentReadAccess(String bbsId, Long pstSn) {
+                if (!StringUtils.hasText(bbsId) || pstSn == null) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "댓글의 bbsId와 pstSn은 필수입니다.");
+                }
+                BoardDetailResult detail = readableDetail(loadReadableMaster(bbsId, false), bbsId, pstSn, false);
+                if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
+                        SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
+                }
+                assertPostingVisible(detail);
+        }
+
+        /**
+         * 열람 판정을 지난 게시판에서 글 상세를 읽는다. 사용 중인 게시판이면 활성 경로를, 사용 안 함 게시판(이미 조회 대행 권한으로
+         * 통과했다)이면 운영자 전용 경로를 쓴다.
+         *
+         * @param includeDeleted 논리 삭제 글까지 볼지 — 호출부가 조회 대행 권한을 이미 판정한 경우에만 true 다
+         */
+        private BoardDetailResult readableDetail(BoardMaster master, String bbsId, Long pstSn, boolean includeDeleted) {
+                boolean boardInUse = "Y".equals(master.getUseYn());
+                java.util.Optional<BoardDetailResult> active = boardInUse
+                                ? boardRepository.findActiveArticleDetail(bbsId, pstSn)
+                                : boardRepository.findArticleDetailOnInactiveBoard(bbsId, pstSn, false);
+                return active
+                                .or(() -> !includeDeleted ? java.util.Optional.empty()
+                                                : boardInUse ? boardRepository.findArticleDetailIncludingDeleted(bbsId, pstSn)
+                                                : boardRepository.findArticleDetailOnInactiveBoard(bbsId, pstSn, true))
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
         }
 
         /**
@@ -643,9 +726,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
-                assertSpecialBoardEdit(bbsId);
-                required(bbsId, "bbsId 는 null 일 수 없습니다");
-                assertCommunityAccess(bbsId); // [2026-09-08 PD-CMTY-001]
+                loadWritableMaster(bbsId, false); // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
                 Board board = findOwnedPost(bbsId, pstSn);
                 updateOwnedPost(board, request, false);
         }
@@ -706,10 +787,9 @@ public class BoardService extends BaseAbstractService {
         public void updatePostWithFiles(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request,
                         List<MultipartFile> files)
                         throws IOException {
-                assertSpecialBoardEdit(bbsId);
-                required(bbsId, "bbsId 는 null 일 수 없습니다");
                 // [2026-09-14 DEC-OPS-092] JSON 수정(updatePost)과 같은 커뮤니티 가드. 이 경로에만 빠져 있었다.
-                assertCommunityAccess(bbsId);
+                //   [2026-10-23 ADR-0040 결정 1] 사용 여부도 같은 판정에서 본다.
+                BoardMaster master = loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
                 // [2026-09-25 DIP I1] 요청이 첨부 번호를 싣지 않으면 글의 기존 첨부 묶음에 더한다. 종전에는 새 묶음을
                 //   만들어 글을 그쪽으로 옮겨, 수정 중 파일 하나를 더하면 기존 첨부가 글에서 조용히 떨어져 나갔다.
@@ -724,7 +804,6 @@ public class BoardService extends BaseAbstractService {
 
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 이미 붙은 파일과 새 파일을 합쳐 게시판 첨부 설정을 본다.
-                        BoardMaster master = findBoardMaster(bbsId);
                         assertNewFilesAllowed(master, fileService.getFileList(atchFileSn).size(), files);
                         if (atchFileSn == null) {
                                 // 게시글 소유권을 먼저 확인한 뒤 이 호출에서 새로 만든 첨부는
@@ -743,8 +822,7 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void deletePost(@NonNull String bbsId, @NonNull Long pstSn, String authorId) {
-                assertSpecialBoardEdit(bbsId);
-                assertCommunityAccess(required(bbsId, "bbsId 는 null 일 수 없습니다")); // [2026-09-08 PD-CMTY-001]
+                loadWritableMaster(bbsId, false); // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
                 Board board = findPostInBoard(bbsId, pstSn);
 
                 // [보안] 권한 및 소유권 확인 (Board는 esntlId 축 사용 -> SecurityUtil.assertOwnerOrPermissionByEsntlId 기준 비교)

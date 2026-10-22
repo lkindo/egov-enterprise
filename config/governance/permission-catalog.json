@@ -2414,6 +2414,9 @@
     "/admin/community/boards/master": [
       "BBS_MST_READ"
     ],
+    "/admin/community/boards/master/[id]": [
+      "BBS_MST_READ"
+    ],
     "/admin/community/boards/select-board-list": [],
     "/admin/community/boards/write": [],
     "/admin/community/templates": [

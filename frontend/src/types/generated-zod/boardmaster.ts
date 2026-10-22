@@ -6,6 +6,20 @@
 import { z } from 'zod';
 import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
+export const BoardMasterUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
+  bbsTtl: z.string().min(0).max(100),
+  bbsExpln: z.string().min(0).max(4000).optional(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
+  atchPsbltyFileQty: z.number().int().optional(),
+  atchPsbltyFileSz: z.number().int(),
+  useYn: z.enum(["Y","N"]),
+  ansYn: z.enum(["Y","N"]).optional(),
+  stsfdgYn: z.enum(["Y","N"]).optional(),
+  version: z.number().int().min(0),
+}))();
+export type BoardMasterUpdateRequest = z.infer<typeof BoardMasterUpdateRequestSchema>;
+
 export const BoardMasterDtoSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20).optional(),
   bbsTtl: z.string().min(0).max(100),
@@ -62,6 +76,7 @@ export const BoardMasterSummaryResponseSchema = /*#__PURE__*/ (() => z.object({
   tmpltId: z.string().optional(),
   useYn: z.string(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
 }))();
 export type BoardMasterSummaryResponse = z.infer<typeof BoardMasterSummaryResponseSchema>;
 
@@ -107,8 +122,69 @@ export const BoardMasterDetailResponseSchema = /*#__PURE__*/ (() => z.object({
   stsfdgYn: z.string().optional(),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
+  version: z.number().int(),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
 }))();
 export type BoardMasterDetailResponse = z.infer<typeof BoardMasterDetailResponseSchema>;
+
+export const ApiResponsePageResponseBoardChangeDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseBoardChangeDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponseBoardChangeDto = z.infer<typeof ApiResponsePageResponseBoardChangeDtoSchema>;
+
+export const BoardChangeDtoSchema = /*#__PURE__*/ (() => z.object({
+  bbsChgHstrySn: z.number().int(),
+  chgTrgtTypeCd: z.enum(["BBS","PST"]),
+  chgTypeCd: z.enum(["SETTING","USE","PERIOD","PIN","UNPIN"]),
+  pstSn: z.number().int().optional().nullable(),
+  chgArtclNm: z.string(),
+  chgBfrCn: z.string().optional().nullable(),
+  chgAftrCn: z.string().optional().nullable(),
+  chgUserNm: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }),
+}))();
+export type BoardChangeDto = z.infer<typeof BoardChangeDtoSchema>;
+
+export const PageResponseBoardChangeDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => BoardChangeDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+export type PageResponseBoardChangeDto = z.infer<typeof PageResponseBoardChangeDtoSchema>;
+
+export const BoardMasterUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  bbsTtl: z.string().min(0).max(100),
+  bbsExpln: z.string().min(0).max(4000).optional(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
+  atchPsbltyFileQty: z.number().int().optional(),
+  atchPsbltyFileSz: z.number().int(),
+  useYn: z.enum(["Y","N"]),
+  ansYn: z.enum(["Y","N"]).optional(),
+  stsfdgYn: z.enum(["Y","N"]).optional(),
+  version: z.number().int().min(0),
+}))();
+
+export const BoardMasterUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  bbsTtl: z.string().min(0).max(100),
+  bbsExpln: z.string().min(0).max(4000).optional().nullable(),
+  ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  atchPsbltyFileQty: z.number().int().optional().nullable(),
+  atchPsbltyFileSz: z.number().int(),
+  useYn: z.enum(["Y","N"]),
+  ansYn: z.enum(["Y","N"]).optional().nullable(),
+  stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  version: z.number().int().min(0),
+}))();
 
 export const BoardMasterDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20).optional(),
@@ -205,6 +281,7 @@ export const BoardMasterSummaryResponseRequestSchema = /*#__PURE__*/ (() => z.ob
   tmpltId: z.string().optional(),
   useYn: z.string(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
 }))();
 
 export const BoardMasterSummaryResponseResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -216,6 +293,7 @@ export const BoardMasterSummaryResponseResponseSchema = /*#__PURE__*/ (() => z.o
   tmpltId: z.string().optional().nullable(),
   useYn: z.string(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK"]).optional().nullable()),
 }))();
 
 export const PageResponseBoardMasterSummaryResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -276,6 +354,8 @@ export const BoardMasterDetailResponseRequestSchema = /*#__PURE__*/ (() => z.obj
   stsfdgYn: z.string().optional(),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
+  version: z.number().int(),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
 }))();
 
 export const BoardMasterDetailResponseResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -300,4 +380,66 @@ export const BoardMasterDetailResponseResponseSchema = /*#__PURE__*/ (() => z.ob
   stsfdgYn: z.string().optional().nullable(),
   authFlag: z.string().optional().nullable(),
   tmplatCours: z.string().optional().nullable(),
+  version: z.number().int(),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK"]).optional().nullable()),
+}))();
+
+export const ApiResponsePageResponseBoardChangeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseBoardChangeDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponseBoardChangeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseBoardChangeDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const BoardChangeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  bbsChgHstrySn: z.number().int(),
+  chgTrgtTypeCd: z.enum(["BBS","PST"]),
+  chgTypeCd: z.enum(["SETTING","USE","PERIOD","PIN","UNPIN"]),
+  pstSn: z.number().int().optional().nullable(),
+  chgArtclNm: z.string(),
+  chgBfrCn: z.string().optional().nullable(),
+  chgAftrCn: z.string().optional().nullable(),
+  chgUserNm: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }),
+}))();
+
+export const BoardChangeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  bbsChgHstrySn: z.number().int(),
+  chgTrgtTypeCd: z.enum(["BBS","PST"]),
+  chgTypeCd: z.enum(["SETTING","USE","PERIOD","PIN","UNPIN"]),
+  pstSn: z.number().int().optional().nullable(),
+  chgArtclNm: z.string(),
+  chgBfrCn: z.string().optional().nullable(),
+  chgAftrCn: z.string().optional().nullable(),
+  chgUserNm: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }),
+}))();
+
+export const PageResponseBoardChangeDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => BoardChangeDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PageResponseBoardChangeDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => BoardChangeDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
 }))();

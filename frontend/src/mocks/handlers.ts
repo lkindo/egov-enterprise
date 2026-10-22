@@ -18,6 +18,16 @@ export const handlers = [
     });
   }),
 
+  // 게시판 선택지(ADR-0040 결정 11) — 아래 와일드카드보다 먼저 둔다. bare 배열이고 PageResponse 가 아니다.
+  http.get('*/api/v1/boards/options', () => {
+    return HttpResponse.json({
+      success: true,
+      code: 'S000',
+      message: '성공',
+      data: [{ bbsId: 'BBSMSTR_000000000001', bbsTtl: '공지사항' }],
+    });
+  }),
+
   // 게시판 목록 조회 Mock API (실제 서비스는 boards/:bbsId 호출 - PageResponse 구조 준수)
   http.get('*/api/v1/boards/*', () => {
     return HttpResponse.json({

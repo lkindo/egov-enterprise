@@ -10,14 +10,15 @@ export class BoardMasterPage {
 
   constructor(page: Page) {
     this.page = page;
-    this.wizardButton = page.locator('button').filter({ 
-      hasText: /NEW BOARD WIZARD|마법사|Wizard|Maker|Create/i 
+    this.wizardButton = page.locator('button').filter({
+      hasText: /게시판 만들기|NEW BOARD WIZARD|마법사|Wizard|Maker|Create/i
     }).or(page.locator('button:has(svg.lucide-rocket), button:has(.lucide-rocket)')).first();
-    
+
     this.bbsNmInput = page.locator('#bbsTtl').first();
     this.bbsIntrcnInput = page.locator('#bbsExpln').first();
     this.nextButton = page.locator('button').filter({ hasText: /다음 단계로|Next/i }).first();
-    this.deployButton = page.locator('button').filter({ hasText: /게시판 생성|Deploy|Create/i }).first();
+    // [2026-10-23 ADR-0040 §5.3] 마지막 단계(최종 확인)의 제출 단추.
+    this.deployButton = page.getByRole('button', { name: '게시판 만들기', exact: true });
   }
 
   async gotoMaster() {
@@ -31,7 +32,7 @@ export class BoardMasterPage {
   async startWizard() {
     console.log('>>> Attempting to start wizard...');
     await this.page.waitForLoadState('networkidle').catch(() => {});
-    
+
     try {
       await expect(this.wizardButton).toBeVisible({ timeout: 15000 });
       await this.wizardButton.scrollIntoViewIfNeeded();
@@ -42,7 +43,7 @@ export class BoardMasterPage {
       await expect(fallback).toBeVisible({ timeout: 10000 });
       await fallback.click();
     }
-    
+
     console.log('>>> Wizard click sent');
     await expect(this.page).toHaveURL(/.*maker/, { timeout: 15000 });
     console.log('>>> Wizard started');
@@ -54,7 +55,7 @@ export class BoardMasterPage {
     await this.bbsIntrcnInput.fill(description);
     await this.nextButton.scrollIntoViewIfNeeded();
     await this.nextButton.click();
-    await expect(this.page.getByRole('heading', { name: '템플릿 선택', exact: true }))
+    await expect(this.page.getByRole('heading', { name: '화면·기능', exact: true }))
       .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 1 completed');
   }
@@ -95,41 +96,41 @@ export class BoardMasterPage {
     console.log('>>> Clicking Next button after template selection');
     await this.nextButton.scrollIntoViewIfNeeded();
     await this.nextButton.click();
-    await expect(this.page.getByRole('heading', { name: '접근 권한 안내', exact: true }))
+    await expect(this.page.getByRole('heading', { name: '메뉴·접근 확인', exact: true }))
       .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 2 completed');
   }
 
-  async fillStep3() {
-    await expect(this.page.getByRole('heading', { name: '접근 권한 안내', exact: true }))
-      .toBeVisible({ timeout: 10000 });
-    await expect(this.nextButton).toBeVisible({ timeout: 10000 });
+  /** 3단계(메뉴·접근 확인) — 메뉴 이름을 정하고 최종 확인으로 간다. */
+  async fillStep3(menuName: string) {
+    const menuInput = this.page.getByLabel('메뉴 명칭', { exact: true });
+    await expect(menuInput).toBeVisible({ timeout: 10000 });
+    await menuInput.fill(menuName);
     await this.nextButton.scrollIntoViewIfNeeded();
     await this.nextButton.click();
-    await expect(this.page.getByRole('heading', { name: '메뉴 배포', exact: true }))
+    await expect(this.page.getByRole('heading', { name: '최종 확인', exact: true }))
       .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 3 completed');
   }
 
-  async fillStep4(menuName: string) {
-    const menuInput = this.page.getByLabel('메뉴 명칭', { exact: true });
-    await expect(menuInput).toBeVisible({ timeout: 10000 });
-    await menuInput.fill(menuName);
+  /** 4단계(최종 확인) — 사용 안 함 게시판·비활성 메뉴로 만든다. */
+  async fillStep4() {
+    await expect(this.page.getByText('게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다', { exact: false })).toBeVisible({ timeout: 10000 });
     await this.deployButton.scrollIntoViewIfNeeded();
-    await this.deployButton.click({ force: true });
-    console.log('>>> Step 4 completed - deployment initiated');
+    await this.deployButton.click();
+    console.log('>>> Step 4 completed - creation initiated');
   }
 
   async search(keyword: string) {
     const searchInput = this.page.locator('input[aria-label="데이터 검색"], input[placeholder*="검색"], input[placeholder*="Search"]').first();
     await expect(searchInput).toBeVisible({ timeout: 10000 });
-    
+
     // Clear and fill search input
     await searchInput.click();
     await this.page.keyboard.press('Control+A');
     await this.page.keyboard.press('Backspace');
     await searchInput.fill(keyword);
-    
+
     // Wait for the specific response for searching
     const responsePromise = this.page.waitForResponse(
       response => response.url().includes('/board-masters') && response.status() === 200,
@@ -137,88 +138,68 @@ export class BoardMasterPage {
     ).catch(() => null);
 
     await this.page.keyboard.press('Enter');
-    
+
     const response = await responsePromise;
     if (response) {
       console.log(`>>> Search API response received for: ${keyword}`);
     }
-    
+
     console.log(`>>> Search completed for: ${keyword}`);
   }
 
-  async openSettings(boardName: string) {
-    const row = this.page.locator('tr').filter({ hasText: boardName }).first();
-    await expect(row).toBeVisible({ timeout: 15000 });
-    
-    const settingsBtn = row.locator('button:has(svg.lucide-settings-2), button:has(.lucide-settings-2)');
-    await expect(settingsBtn).toBeVisible({ timeout: 10000 });
-    
-    await settingsBtn.click();
-    await expect(this.page.getByRole('dialog').getByRole('heading', { name: '게시판 설정', exact: true })).toBeVisible({ timeout: 15000 });
-    console.log('>>> Settings modal is visible');
+  async verifySuccess(menuName: string) {
+    // [E2E 감사 A3] 실제 생성 성공 화면의 제목과 연결된 메뉴명을 하드 단언한다.
+    // (과거: waitForSelector(...).catch(()=>{})로 실패를 삼키고 includes(menuName) console.log만 실행 →
+    //  menuName은 방금 입력한 값이라 DOM에 항상 존재 → 배포가 실패해도 그린 통과하던 false-green)
+    console.log(`>>> Verifying board/menu creation success for: ${menuName}`);
+    await expect(this.page.getByRole('heading', { name: '게시판 만들기 완료', exact: true }))
+      .toBeVisible({ timeout: 30000 });
+    await expect(this.page.getByText(`'${menuName}'`, { exact: true })).toBeVisible();
   }
 
-  async updateSettings(data: { name?: string; description?: string; useYn?: 'Y' | 'N' }) {
-    if (data.name) {
-      await this.page.locator('#modal-bbs-name').fill(data.name);
-    }
-    if (data.description) {
-      await this.page.locator('#modal-bbs-description').fill(data.description);
-    }
-    if (data.useYn) {
-      const switchEl = this.page.locator('#modal-bbs-use-at');
-      const isChecked = await switchEl.getAttribute('aria-checked') === 'true';
-      if ((data.useYn === 'Y' && !isChecked) || (data.useYn === 'N' && isChecked)) {
-        await switchEl.click();
-      }
-    }
+  /** [2026-10-23 ADR-0040 §5.3] 결과 화면의 주 동작 — 운영 화면의 메뉴·접근 탭(공개 준비)으로 간다. */
+  async continuePublicationReadiness() {
+    await this.page.getByRole('button', { name: '이 게시판 공개 준비 계속하기' }).click();
+    await expect(this.page).toHaveURL(/\/admin\/community\/boards\/master\/BBSMSTR_[A-Z0-9]{12}\?tab=access/, { timeout: 15000 });
+    await expect(this.page.getByRole('heading', { name: '공개 준비 점검' })).toBeVisible({ timeout: 15000 });
+  }
 
-    const saveBtn = this.page.getByRole('button', { name: '설정 적용하기' });
-    
+  /** 운영 화면 설정 탭에서 이름·소개·게시판 사용을 고치고 확인 표를 거쳐 저장한다(ADR-0040 §5.5). */
+  async updateSettingsOnOperations(data: { name?: string; description?: string; useYn?: 'Y' | 'N' }) {
+    await this.page.getByRole('tab', { name: '설정' }).click();
+    if (data.name) await this.page.locator('#board-settings-name').fill(data.name);
+    if (data.description) await this.page.locator('#board-settings-description').fill(data.description);
+    if (data.useYn) {
+      const switchEl = this.page.locator('#board-settings-useYn');
+      const isChecked = await switchEl.getAttribute('aria-checked') === 'true';
+      if ((data.useYn === 'Y' && !isChecked) || (data.useYn === 'N' && isChecked)) await switchEl.click();
+    }
+    await this.page.getByRole('button', { name: '변경 내용 확인' }).click();
+    const review = this.page.getByRole('dialog', { name: '변경 내용 확인' });
+    await expect(review).toBeVisible({ timeout: 10000 });
     const updateResponse = this.page.waitForResponse(
       res => res.url().includes('/board-masters/') && res.request().method() === 'PUT',
       { timeout: 15000 }
-    ).catch(() => null);
-
-    await saveBtn.click();
-    await updateResponse;
-    
-    await expect(this.page.locator('[role="alert"], .toast, :text-matches("업데이트되었습니다", "i")').first()).toBeVisible({ timeout: 10000 });
-    await expect(this.page.getByRole('dialog').getByRole('heading', { name: '게시판 설정', exact: true })).not.toBeVisible({ timeout: 15000 });
+    );
+    await review.getByRole('button', { name: '설정 저장' }).click();
+    expect((await updateResponse).status()).toBe(200);
+    await expect(this.page.getByText('게시판 설정을 저장했습니다.')).toBeVisible({ timeout: 10000 });
+    await expect(review).not.toBeVisible({ timeout: 15000 });
   }
 
-  async deleteBoard(boardName: string) {
+  /** 게시판 관리 목록에서 한 행을 골라 사용 안 함으로 바꾼다(단건 비활성화는 일괄 경로로 흡수됐다 — §5.2). */
+  async deactivateFromList(boardName: string) {
     const row = this.page.locator('tr').filter({ hasText: boardName }).first();
-    const deleteBtn = row.locator('button:has(svg.lucide-trash-2), button:has(.lucide-trash-2)');
-    await expect(deleteBtn).toBeVisible({ timeout: 10000 });
-    await deleteBtn.click();
-
-    // [2026-07-26 정정] 앱은 2단계 삭제다(BoardMasterListClient):
-    //   활성(use_yn='Y') → 확인 모달 '게시판 서비스 비활성화' / 확인 버튼 **'비활성화'** (소프트 → 대기)
-    //   대기(use_yn='N') → '게시판 영구 물리 삭제' / 확인 버튼 **'영구 삭제'** (게시글 있으면 거부)
-    // 종전 셀렉터는 '삭제' 만 찾아, 활성 게시판의 '비활성화' 버튼을 못 찾고 실패했다(로컬 재현으로 확인:
-    // 모달은 떠 있고 버튼명만 달랐다). 이 테스트는 마지막에 '대기' 를 단언하므로 소프트 경로가 의도다.
-    const confirmBtn = this.page.getByRole('button', { name: /비활성화|영구 삭제|삭제/ });
-    await expect(confirmBtn).toBeVisible({ timeout: 5000 });
-    
-    const deleteResponse = this.page.waitForResponse(
-      res => res.url().includes('/board-masters/') && res.request().method() === 'DELETE',
+    await expect(row).toBeVisible({ timeout: 15000 });
+    await row.getByRole('checkbox').check();
+    await this.page.getByRole('button', { name: /사용 안 함으로 바꾸기$/ }).first().click();
+    const dialog = this.page.getByRole('dialog');
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    const statusResponse = this.page.waitForResponse(
+      res => res.url().includes('/board-masters/batch/status') && res.request().method() === 'POST',
       { timeout: 15000 }
-    ).catch(() => null);
-
-    await confirmBtn.click();
-    await deleteResponse;
-
-    await expect(this.page.locator('[role="alert"], .toast, :text-matches("삭제되었습니다", "i")').first()).toBeVisible({ timeout: 10000 });
-  }
-
-  async verifySuccess(menuName: string) {
-    // [E2E 감사 A3] 실제 배포 성공 화면의 제목과 연결된 메뉴명을 하드 단언한다.
-    // (과거: waitForSelector(...).catch(()=>{})로 실패를 삼키고 includes(menuName) console.log만 실행 →
-    //  menuName은 방금 입력한 값이라 DOM에 항상 존재 → 배포가 실패해도 그린 통과하던 false-green)
-    console.log(`>>> Verifying board/menu deployment success for: ${menuName}`);
-    await expect(this.page.getByRole('heading', { name: '게시판 생성 완료', exact: true }))
-      .toBeVisible({ timeout: 30000 });
-    await expect(this.page.getByText(`'${menuName}'`, { exact: true })).toBeVisible();
+    );
+    await dialog.getByRole('button', { name: '사용 안 함으로 바꾸기' }).click();
+    expect((await statusResponse).status()).toBe(200);
   }
 }

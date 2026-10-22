@@ -65,4 +65,11 @@ public class BoardMasterDto {
     // Additional fields for completeness
     private String authFlag;
     private String tmplatCours;
+
+    /**
+     * 낙관적 잠금 버전(V2_139). 상세 응답이 싣고, 생성 요청에서는 받지 않는다(JSON 에 보이지 않는다). 수정은 이 DTO 가 아니라
+     * {@link BoardMasterUpdateRequest} 가 버전을 받는다(ADR-0040 결정 10).
+     */
+    @com.fasterxml.jackson.annotation.JsonIgnore
+    private Integer version;
 }

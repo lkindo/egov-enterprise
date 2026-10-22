@@ -54,7 +54,7 @@ import static org.mockito.Mockito.when;
  * 같은 방식으로, 본문 서비스와 첨부 판정이 같은 표를 읽게 하고 결과를 표로 고정한다.
  *
  * <p>의도된 비대칭(설계서 D3)도 표에 둔다. 작성자는 자기 첨부를 계속 받는다(소유 근거). 조회 대행 권한({@code BOARD_READ_ALL})은
- * 게시 기간만 면제받고, 비밀글·논리 삭제 글의 첨부는 {@code FILE_READ_ALL} 하나로만 열린다. 파일 관리자({@code FILE_READ_ALL})는
+ * 게시 기간과 게시판 사용 여부(ADR-0040 결정 1)만 면제받고, 비밀글·논리 삭제 글의 첨부는 {@code FILE_READ_ALL} 하나로만 열린다. 파일 관리자({@code FILE_READ_ALL})는
  * 본문을 못 읽어도 첨부를 받는다(기존 관리자 경로).
  */
 class BoardAttachmentAccessTest {
@@ -93,6 +93,10 @@ class BoardAttachmentAccessTest {
                 .thenAnswer(invocation -> detail(invocation.getArgument(0), invocation.getArgument(1), false));
         when(repository.findArticleDetailIncludingDeleted(anyString(), anyLong()))
                 .thenAnswer(invocation -> detail(invocation.getArgument(0), invocation.getArgument(1), true));
+        // [2026-10-23 ADR-0040 결정 1] 운영자 전용 — 사용 안 함 게시판(마스터 use_yn='N')의 글만 돌려준다.
+        when(repository.findArticleDetailOnInactiveBoard(anyString(), anyLong(), org.mockito.ArgumentMatchers.anyBoolean()))
+                .thenAnswer(invocation -> detail(invocation.getArgument(0), invocation.getArgument(1),
+                        invocation.<Boolean>getArgument(2), "N"));
         var masters = mock(BoardMasterRepository.class);
         when(masters.findById(anyString())).thenAnswer(invocation -> jdbc.query(
                 "SELECT bbs_id, cmnty_sn, use_yn FROM tb_bbs_master WHERE bbs_id = ?",
@@ -150,30 +154,41 @@ class BoardAttachmentAccessTest {
         assertFileAccess(fileReadable);
     }
 
-    @ParameterizedTest(name = "사용 안 함 게시판 × {0} → 첨부 {1}")
+    /**
+     * 사용 안 함 게시판(ADR-0040 결정 1). 이용자에게는 본문도 첨부도 닫힌다 — 작성자도 소유 근거로 자기 첨부를 받거나 지우지 못한다
+     * (D1 기각 ②: 사용 안 함에서 작성자 본인의 정리 허용). 조회 대행 권한자는 본문과 첨부 모두 연다(첨부도 게시판 사용 여부를
+     * 면제받는다). 파일 관리자는 본문 없이 첨부만 받는다.
+     */
+    @ParameterizedTest(name = "사용 안 함 게시판 × {0} → 본문 {1}, 첨부 {2}")
     @CsvSource(textBlock = """
-            other,      false
-            author,     true
+            other,      false, false
+            author,     false, false
+            boardAdmin, true,  true
+            fileAdmin,  false, true
             """)
-    void inactiveBoardSharesNothingButKeepsTheOwnerGrant(String viewer, boolean fileReadable) {
+    void inactiveBoardClosesBodyAndAttachmentsEvenToTheAuthor(String viewer, boolean bodyReadable, boolean fileReadable) {
         addMaster("N");
         addPost("open");
         authenticate(viewer);
 
-        assertBodyAccess(false);
+        assertBodyAccess(bodyReadable);
         assertFileAccess(fileReadable);
     }
 
     private Optional<BoardDetailResult> detail(String bbsId, Long pstSn, boolean includeDeleted) {
+        return detail(bbsId, pstSn, includeDeleted, "Y");
+    }
+
+    private Optional<BoardDetailResult> detail(String bbsId, Long pstSn, boolean includeDeleted, String masterUseYn) {
         return jdbc.query("""
                 SELECT b.bbs_id, b.pst_sn, b.user_id, b.scrt_yn, b.pst_end_ymd, b.use_yn
                   FROM tb_bbs_item b JOIN tb_bbs_master m ON m.bbs_id = b.bbs_id
-                 WHERE b.bbs_id = ? AND b.pst_sn = ? AND m.use_yn = 'Y'
+                 WHERE b.bbs_id = ? AND b.pst_sn = ? AND m.use_yn = ?
                    AND (? OR b.use_yn = 'Y')
                 """, (rs, row) -> BoardDetailResult.builder().bbsId(rs.getString("bbs_id"))
                 .pstSn(rs.getLong("pst_sn")).userId(rs.getString("user_id")).scrtYn(rs.getString("scrt_yn"))
                 .pstEndYmd(rs.getString("pst_end_ymd")).useYn(rs.getString("use_yn")).build(),
-                bbsId, pstSn, includeDeleted).stream().findFirst();
+                bbsId, pstSn, masterUseYn, includeDeleted).stream().findFirst();
     }
 
     private void addMaster(String useYn) {

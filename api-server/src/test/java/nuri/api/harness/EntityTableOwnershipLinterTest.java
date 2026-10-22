@@ -53,14 +53,16 @@ class EntityTableOwnershipLinterTest {
     //   매핑 없는 표(tb_indv_pg_conts·tb_prgrm_lst·tb_rptp_stats·tb_intrn_svc 등)가 남는다. 그 표를 JDBC 로 보는 migration 검증은 그대로 산다.
     // 쓰기 엔티티를 더하거나 걷으면 아래 두 수를 함께 고친다. 수정되는 표는 감사 4종(BaseEntity), 추가만 하는 이력은 insert 감사
     //   2종이다(INSERT_ONLY_AUDIT_ENTITIES). 수의 증감 이력은 git 과 결정 기록에 있다.
-    private static final int EXPECTED_ENTITY_COUNT = 92;
-    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 91;
+    private static final int EXPECTED_ENTITY_COUNT = 93;
+    private static final int EXPECTED_PHYSICAL_TABLE_COUNT = 92;
 
     private static final Set<String> AUDIT_COLUMNS = Set.of(
             "frst_rgtr_id", "crt_dt", "last_mdfr_id", "mdfcn_dt");
-    // 추가만 하고 고치지 않는 이력이라 수정자 컬럼이 없다(권한 변경 이력과 같은 형태).
+    // 추가만 하고 고치지 않는 이력이라 수정자 컬럼이 없다(권한 변경 이력과 같은 형태). Map.of 는 10쌍이 상한이다 — 하나 더
+    //   늘면 Map.ofEntries 로 바꾼다.
     private static final Map<String,String> INSERT_ONLY_AUDIT_ENTITIES = Map.of(
             "nuri.business.domain.auth.AuthorizationChange", "tb_authrt_chg_hstry",
+            "nuri.business.domain.board.BoardChange", "tb_bbs_chg_hstry",
             "nuri.business.domain.cms.CmsContentFile", "tb_cms_conts_file",
             "nuri.business.domain.cms.CmsContentRevision", "tb_cms_conts_rvsn",
             "nuri.business.domain.cms.CmsContentRevisionFile", "tb_cms_conts_rvsn_file",
@@ -229,6 +231,12 @@ class EntityTableOwnershipLinterTest {
         assertThat(auditShapeViolation(reference,"tb_ifml_atrz_rfpr",insert,false)).isNotNull();
         assertThat(auditShapeViolation(reference,"tb_ifml_atrz_rfpr",AUDIT_COLUMNS,true)).isNotNull();
         assertThat(auditShapeViolation(reference,"tb_ifml_atrz_tmpr_strg_rfpr",insert,true)).isNotNull();
+        // V2_139 게시판 변경 이력(ADR-0040 결정 9) — 추가 전용이라 @Immutable 과 insert 감사 2종이어야 한다.
+        String boardChange="nuri.business.domain.board.BoardChange";
+        assertThat(auditShapeViolation(boardChange,"tb_bbs_chg_hstry",insert,true)).isNull();
+        assertThat(auditShapeViolation(boardChange,"tb_bbs_chg_hstry",insert,false)).isNotNull();
+        assertThat(auditShapeViolation(boardChange,"tb_bbs_chg_hstry",AUDIT_COLUMNS,true)).isNotNull();
+        assertThat(auditShapeViolation(boardChange,"tb_com_cd_chg_hstry",insert,true)).isNotNull();
     }
 
     @Test

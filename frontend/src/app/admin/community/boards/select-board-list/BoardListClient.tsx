@@ -468,6 +468,12 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
      <p className="text-[length:var(--font-size-body)] text-muted-foreground">
        {masterInfo?.bbsExpln || '이 게시판의 활동내역과 최신 소식을 확인하세요.'}
      </p>
+     {/* [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판의 목록은 조회 대행 권한자에게만 열린다 — 이용자 화면과 구별되게 알린다(상세와 같은 문장). */}
+     {masterInfo?.inUse === false && (
+       <p role="note" className="text-[length:var(--font-size-body)] text-muted-foreground">
+         사용 안 함 게시판입니다. 이용자에게 닫혀 있고, 운영자는 글을 정리할 수 있습니다.
+       </p>
+     )}
      {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0개"라고 단정하지 않는다. */}
      <p className="text-xs text-muted-foreground">
        {listError ? '게시글 수를 확인할 수 없습니다.' : <>총 <span className="font-semibold tabular-nums text-foreground">{(totalCount || 0).toLocaleString()}개</span>의 게시글이 등록되어 있습니다.</>}

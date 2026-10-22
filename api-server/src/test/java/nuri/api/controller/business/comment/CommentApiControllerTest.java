@@ -116,7 +116,8 @@ class CommentApiControllerTest {
                 .andExpect(jsonPath("$.data.list[0].deletable").value(false))
                 .andExpect(jsonPath("$.data.list[0].crtDt").value(org.hamcrest.Matchers.nullValue()))
                 .andExpect(jsonPath("$.data.list[0].pswd").doesNotExist());
-        verify(boardService).assertCommentAccess("BBS_001", 1L);
+        // [2026-10-23 ADR-0040 결정 1] 목록은 열람 경계 — 조회 대행 권한자는 사용 안 함 게시판 글의 댓글도 읽는다.
+        verify(boardService).assertCommentReadAccess("BBS_001", 1L);
     }
 
     @Test
@@ -215,7 +216,7 @@ class CommentApiControllerTest {
     @DisplayName("비밀글·게시판 불일치 접근이 거부되면 댓글 조회를 실행하지 않는다")
     void getComments_deniedPostDoesNotReadComments() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentAccess("WRONG_BBS", 1L);
+                .when(boardService).assertCommentReadAccess("WRONG_BBS", 1L);
 
         mockMvc.perform(get("/api/v1/comments")
                         .param("pstSn", "1")

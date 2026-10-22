@@ -230,6 +230,41 @@ class BoardMasterRepositoryTest {
     }
 
     @Test
+    @DisplayName("[2026-10-23 ADR-0040 §5.2] 사용 여부 조건은 그 상태만 싣고 전체 건수도 같은 조건으로 센다")
+    void searchFiltersByUseYnAndCountsTheSame() {
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_UY_ON").bbsTtl("UY 사용").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").build());
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_UY_OFF").bbsTtl("UY 닫힘").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("N").build());
+        em.flush();
+
+        BoardMasterSearchCondition condition = new BoardMasterSearchCondition();
+        condition.setSearchWrd("UY ");
+        condition.setUseYn("N");
+        Page<BoardMasterSearchResult> closed = boardMasterRepository.searchBoardMasters(condition, PageRequest.of(0, 10));
+
+        assertThat(closed.getContent()).extracting(BoardMasterSearchResult::getBbsId).containsExactly("BBS_UY_OFF");
+        assertThat(closed.getTotalElements()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("[2026-10-23 ADR-0040 결정 11] 선택지 질의는 사용 중인 게시판만 ID·이름·커뮤니티 귀속으로 읽는다")
+    void activeBoardOptionsExcludeClosedBoards() {
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_OPT_ON").bbsTtl("선택지 사용").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").build());
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_OPT_CM").bbsTtl("선택지 모임").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("Y").cmntySn(5L).build());
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_OPT_OFF").bbsTtl("선택지 닫힘").bbsTypeCd("T1").bbsAtrbCd("A1").useYn("N").build());
+        em.flush();
+
+        List<BoardOptionRow> rows = boardMasterRepository.findActiveBoardOptions().stream()
+                .filter(row -> row.bbsId().startsWith("BBS_OPT_")).toList();
+
+        assertThat(rows).extracting(BoardOptionRow::bbsId).containsExactlyInAnyOrder("BBS_OPT_ON", "BBS_OPT_CM");
+        assertThat(rows).filteredOn(row -> row.bbsId().equals("BBS_OPT_CM"))
+                .singleElement().satisfies(row -> {
+                    assertThat(row.bbsTtl()).isEqualTo("선택지 모임");
+                    assertThat(row.cmntySn()).isEqualTo(5L);
+                });
+    }
+
+    @Test
     @DisplayName("미사용 보드 검색 테스트 (notUsedOnly)")
     void searchNotUsedTest() {
         // Given

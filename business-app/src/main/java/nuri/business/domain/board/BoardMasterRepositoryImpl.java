@@ -90,4 +90,14 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
 
         return new PageImpl<>(Objects.requireNonNull(results), Objects.requireNonNull(pageable), total);
     }
+
+    @Override
+    public List<BoardOptionRow> findActiveBoardOptions() {
+        return queryFactory.select(Projections.constructor(BoardOptionRow.class,
+                        boardMaster.bbsId, boardMaster.bbsTtl, boardMaster.cmntySn))
+                .from(boardMaster)
+                .where(boardMaster.useYn.eq("Y"))
+                .orderBy(boardMaster.crtDt.desc(), boardMaster.bbsId.asc())
+                .fetch();
+    }
 }

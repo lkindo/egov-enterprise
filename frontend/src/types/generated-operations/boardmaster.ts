@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseBooleanResponseSchema, ApiResponseStringResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseBoardMasterDetailResponseResponseSchema, ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema, BoardMasterBatchDeleteRequestRequestSchema, BoardMasterBatchStatusRequestRequestSchema, BoardMasterDetailResponseResponseSchema, BoardMasterDtoRequestSchema, PageResponseBoardMasterSummaryResponseResponseSchema } from '../generated-zod/boardmaster';
+import { ApiResponseBoardMasterDetailResponseResponseSchema, ApiResponsePageResponseBoardChangeDtoResponseSchema, ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema, BoardMasterBatchDeleteRequestRequestSchema, BoardMasterBatchStatusRequestRequestSchema, BoardMasterDetailResponseResponseSchema, BoardMasterDtoRequestSchema, BoardMasterUpdateRequestRequestSchema, PageResponseBoardChangeDtoResponseSchema, PageResponseBoardMasterSummaryResponseResponseSchema } from '../generated-zod/boardmaster';
 
 export const getBoardMasterOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -38,7 +38,7 @@ export const updateBoardMasterOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string() }).strict(),
   querySchema: null,
-  requestSchema: BoardMasterDtoRequestSchema.strict(),
+  requestSchema: BoardMasterUpdateRequestRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -155,6 +155,25 @@ export const isBoardMasterDeletableOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.boolean(),
   envelopeSchema: ApiResponseBooleanResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getBoardChangeHistoryOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getBoardChangeHistory",
+  method: "get",
+  path: "/api/v1/admin/system/board-masters/{bbsId}/change-history",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "bbsId": z.string() }).strict(),
+  querySchema: z.object({ "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseBoardChangeDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseBoardChangeDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

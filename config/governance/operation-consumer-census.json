@@ -14,7 +14,7 @@
     "Axis 3 is a display check only. Server authorization is unchanged, and a permission literal proves the screen looked at it, not which button it gates."
   ],
   "expected": {
-    "operationCount": 424,
+    "operationCount": 426,
     "unwiredMax": 7,
     "screenOrphanMax": 24,
     "ungatedWriteMax": 39
@@ -46,6 +46,23 @@
       "category": "unwired",
       "note": "Self-notification creation for the authenticated principal. Admin dispatch to other users goes through the separate /admin/notifications/dispatch operation (DEC-OPS-042), which is wired.",
       "evidence": []
+    },
+    {
+      "operationId": "deleteBoardMaster",
+      "category": "superseded-surface",
+      "note": "ADR-0040 §5.2: the board list absorbed the single deactivation into the bulk use-flag change, which lists the app uses of each board (notice/FAQ/work-home designations and the knowledge hub tabs that open it) before confirming, and the operations screen settings tab saves the use flag with the board version. Both reach the same state (useYn='N') and record the USE change history. The single DELETE stays for API clients — it is a no-op when the board is already unused and otherwise records the change and bumps the version — but the dead BoardAdminService.deleteBoardMaster was removed.",
+      "supersededBy": [
+        "updateBoardMasterStatusInBatch",
+        "updateBoardMaster"
+      ]
+    },
+    {
+      "operationId": "deleteBoardMastersInBatch",
+      "category": "superseded-surface",
+      "note": "ADR-0040 §5.2: permanent deletion left the board list toolbar and became a one-board procedure in the operations screen settings tab (deletable check, then DELETE …/physical). Bulk permanent deletion from a list is no longer a screen task; the dead BoardAdminService.batchDeleteBoardMastersPhysically was removed and the batch endpoint stays for API clients.",
+      "supersededBy": [
+        "deleteBoardMasterPhysically"
+      ]
     },
     {
       "operationId": "deleteClCode",

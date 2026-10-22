@@ -3,9 +3,15 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 const service = vi.hoisted(() => ({
   getBoardMasterList: vi.fn(),
   getBoardMaster: vi.fn(),
+  getBoardChangeHistory: vi.fn(),
+}));
+const userService = vi.hoisted(() => ({
+  getBoardMeta: vi.fn(),
+  getBoardOptions: vi.fn(),
 }));
 
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({ boardAdminService: service }));
+vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService: userService }));
 
 import { boardMasterKeys, boardMasterQueryOptions } from '../board-master-query-options';
 
@@ -42,20 +48,25 @@ describe('board master query ownership', () => {
     expect(service.getBoardMaster).toHaveBeenCalledWith('BBSMSTR_A');
   });
 
-  it('전체 선택지 option은 서버 상한 100으로 모든 페이지를 수집한다', async () => {
-    const firstPage = Array.from({ length: 100 }, (_, index) => ({ bbsId: `BBS_${index}` }));
-    service.getBoardMasterList
-      .mockResolvedValueOnce({ list: firstPage, total: 101 })
-      .mockResolvedValueOnce({ list: [{ bbsId: 'BBS_100' }], total: 101 });
+  // [2026-10-23 ADR-0040 결정 11] 이용 화면의 선택지는 관리 목록(전 페이지 수집)이 아니라 사용자 선택지 API 하나다.
+  it('선택지 option은 사용자 선택지 API 를 부르고 관리 목록을 부르지 않는다', async () => {
+    userService.getBoardOptions.mockResolvedValueOnce([{ bbsId: 'BBSMSTR_A', bbsTtl: '공지' }]);
 
-    const completeList = boardMasterQueryOptions.completeList();
-    await expect(completeList.queryFn?.({ queryKey: completeList.queryKey } as never))
-      .resolves.toHaveLength(101);
+    const options = boardMasterQueryOptions.options();
+    await expect(options.queryFn?.({ queryKey: options.queryKey } as never))
+      .resolves.toEqual([{ bbsId: 'BBSMSTR_A', bbsTtl: '공지' }]);
 
-    expect(completeList.queryKey).toEqual(['board-masters', 'list', 'complete']);
-    expect(service.getBoardMasterList.mock.calls).toEqual([
-      [{ page: 1, size: 100 }],
-      [{ page: 2, size: 100 }],
-    ]);
+    expect(options.queryKey).toEqual(['board-masters', 'options']);
+    expect(service.getBoardMasterList).not.toHaveBeenCalled();
+  });
+
+  it('변경 이력 option은 게시판 상세 키 아래에 쪽·크기를 담는다(설정 저장이 상세 키로 함께 무효화한다)', async () => {
+    service.getBoardChangeHistory.mockResolvedValueOnce({ list: [] });
+    const history = boardMasterQueryOptions.changeHistory('BBSMSTR_A', 2, 20);
+
+    await history.queryFn?.({ queryKey: history.queryKey } as never);
+
+    expect(history.queryKey).toEqual(['board-masters', 'detail', 'BBSMSTR_A', 'change-history', { page: 2, size: 20 }]);
+    expect(service.getBoardChangeHistory).toHaveBeenCalledWith('BBSMSTR_A', { page: 2, size: 20 });
   });
 });

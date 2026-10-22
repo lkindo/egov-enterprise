@@ -242,10 +242,13 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["BBS_MST_CREATE","BBS_MST_UPDATE"],"mode":"ANY"},
     "permissions": [
+      {"code":"AUTHRT_GRANT","action":"GRANT","source":"display"},
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_CREATE","action":"CREATE","source":"entry"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"entry"},
       {"code":"MENU_CREATE","action":"CREATE","source":"write"},
-      {"code":"MENU_READ","action":"READ","source":"display"}
+      {"code":"MENU_READ","action":"READ","source":"display"},
+      {"code":"MENU_UPDATE","action":"UPDATE","source":"display"}
     ]
   },
   {
@@ -256,10 +259,28 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": false,
     "entry": {"permissions":["BBS_MST_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_CREATE","action":"CREATE","source":"display"},
+      {"code":"BBS_MST_READ","action":"READ","source":"entry"},
+      {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
+    ]
+  },
+  {
+    "route": "/admin/community/boards/master/[id]",
+    "label": "게시판 운영",
+    "labelSource": "route-ledger",
+    "shellAccess": "admin-system",
+    "dynamic": true,
+    "entry": {"permissions":["BBS_MST_READ"],"mode":"ANY"},
+    "permissions": [
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_DELETE","action":"DELETE","source":"write"},
       {"code":"BBS_MST_READ","action":"READ","source":"entry"},
-      {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"}
+      {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -1481,6 +1502,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     "screens": [
       "/admin/community/boards/maker",
       "/admin/community/boards/master",
+      "/admin/community/boards/master/[id]",
       "/admin/community/templates",
       "/admin/sanctn/forms",
       "/admin/system/comments"

@@ -22,6 +22,16 @@
       ]
     },
     {
+      "file": "board/BoardChangeService.java",
+      "owner": "board",
+      "target": "user",
+      "module": "business-core",
+      "types": [
+        "nuri.business.domain.user.entity.User",
+        "nuri.business.domain.user.repository.UserRepository"
+      ]
+    },
+    {
       "file": "board/BoardService.java",
       "owner": "board",
       "target": "file",

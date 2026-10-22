@@ -1,7 +1,10 @@
 package nuri.api.controller.business.admin.content.board;
 
+import nuri.business.service.board.BoardChangeService;
 import nuri.business.service.board.BoardMasterService;
+import nuri.business.service.board.dto.BoardChangeDto;
 import nuri.business.service.board.dto.BoardMasterDto;
+import nuri.business.service.board.dto.BoardMasterUpdateRequest;
 import nuri.foundation.security.jwt.JwtTokenProvider;
 import nuri.business.support.ControllerTestSupport;
 import org.junit.jupiter.api.DisplayName;
@@ -30,31 +33,59 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     private BoardMasterService boardMasterService;
 
     @MockitoBean
+    private BoardChangeService boardChangeService;
+
+    @MockitoBean
     private JwtTokenProvider jwtTokenProvider;
 
     @Test
     @DisplayName("게시판 목록 조회 성공")
     void getBoardMasters_Success() throws Exception {
         Page<BoardMasterDto> page = new PageImpl<>(List.of(BoardMasterDto.builder().bbsId("BBS_001").bbsTtl("Test Board").build()));
-        given(boardMasterService.getBoardMasterList(any(), any(Pageable.class))).willReturn(page);
+        given(boardMasterService.getBoardMasterList(any(), any(), any(Pageable.class))).willReturn(page);
+        given(boardMasterService.designationsOf("BBS_001")).willReturn(List.of("NOTICE", "FAQ"));
 
         mockMvc.perform(get("/api/v1/admin/system/board-masters")
+                .param("searchUseYn", "N")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.list[0].bbsId").value("BBS_001"));
+                .andExpect(jsonPath("$.data.list[0].bbsId").value("BBS_001"))
+                // [2026-10-23 ADR-0040 §5.2] 지정 용도를 싣고, 사용 여부 조건을 서비스까지 넘긴다.
+                .andExpect(jsonPath("$.data.list[0].designations[0]").value("NOTICE"))
+                .andExpect(jsonPath("$.data.list[0].designations[1]").value("FAQ"));
+        org.mockito.Mockito.verify(boardMasterService).getBoardMasterList(any(), eq("N"), any(Pageable.class));
     }
 
     @Test
     @DisplayName("게시판 상세 조회 성공")
     void getBoardMaster_Success() throws Exception {
-        given(boardMasterService.getBoardMaster(anyString())).willReturn(BoardMasterDto.builder().bbsId("BBS_001").build());
+        given(boardMasterService.getBoardMaster(anyString())).willReturn(BoardMasterDto.builder().bbsId("BBS_001").version(7).build());
+        given(boardMasterService.designationsOf("BBS_001")).willReturn(List.of());
 
         mockMvc.perform(get("/api/v1/admin/system/board-masters/BBS_001")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true))
-                .andExpect(jsonPath("$.data.bbsId").value("BBS_001"));
+                .andExpect(jsonPath("$.data.bbsId").value("BBS_001"))
+                // [2026-10-23 ADR-0040 결정 10] 수정 요청에 돌려보낼 버전과, 지정이 없어도 늘 싣는 빈 지정 용도.
+                .andExpect(jsonPath("$.data.version").value(7))
+                .andExpect(jsonPath("$.data.designations").isEmpty());
+    }
+
+    @Test
+    @DisplayName("[2026-10-23 ADR-0040 결정 9] 게시판 변경 이력 조회 - 서비스 페이지를 그대로 싣는다")
+    void getBoardChangeHistory_Success() throws Exception {
+        BoardChangeDto row = new BoardChangeDto(3L, "BBS", "USE", null, "게시판 사용", "Y", "N", "관리자",
+                java.time.LocalDateTime.of(2026, 10, 23, 9, 0));
+        given(boardChangeService.getChanges(eq("BBS_001"), any(Pageable.class))).willReturn(new PageImpl<>(List.of(row)));
+
+        mockMvc.perform(get("/api/v1/admin/system/board-masters/BBS_001/change-history")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].chgTypeCd").value("USE"))
+                .andExpect(jsonPath("$.data.list[0].chgAftrCn").value("N"))
+                .andExpect(jsonPath("$.data.list[0].chgUserNm").value("관리자"));
     }
 
     @Test
@@ -76,10 +107,41 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
     void updateBoardMaster_Success() throws Exception {
         mockMvc.perform(put("/api/v1/admin/system/board-masters/BBS_001")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsTtl\":\"Updated Board\", \"bbsTypeCd\":\"TYPE\", \"bbsAtrbCd\":\"ATRB\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\"}")
+                .content("{\"bbsTtl\":\"Updated Board\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\", \"version\":2}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.success").value(true));
+        org.mockito.Mockito.verify(boardMasterService).updateBoardMaster(anyString(), eq("BBS_001"),
+                argThat((BoardMasterUpdateRequest request) -> "Updated Board".equals(request.getBbsTtl()) && request.getVersion() == 2));
+    }
+
+    @Test
+    @DisplayName("[2026-10-23 ADR-0040 결정 10] 버전 없이 설정을 저장하면 서비스에 닿기 전에 400 이다")
+    void updateBoardMaster_rejectsMissingVersion() throws Exception {
+        mockMvc.perform(put("/api/v1/admin/system/board-masters/BBS_001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsTtl\":\"T\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\"}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(boardMasterService);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = { "tmpltId", "bbsTypeCd", "bbsAtrbCd", "cmntySn" })
+    @DisplayName("[2026-10-23 ADR-0040 §5.5] 설정 수정 요청은 만든 뒤 바꾸지 않는 항목을 받지 않는다 — 운영 변환기 설정에서 모르는 필드다")
+    void updateRequestHasNoImmutableFields(String field) {
+        // 운영 application.yml 은 fail-on-unknown-properties 를 켠다. 테스트 yml 은 이 값을 두지 않아 MockMvc 로는 운영의 400 을
+        //   재현할 수 없으므로, 컨텍스트의 변환기(같은 Jackson 2 기본값·파라미터 이름 감지)에 그 한 값만 켜 역직렬화 계약을 직접 본다.
+        tools.jackson.databind.ObjectMapper mapper = objectMapper.rebuild()
+                .enable(tools.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES)
+                .build();
+        String base = "\"bbsTtl\":\"T\",\"atchPsbltyFileSz\":100,\"useYn\":\"Y\",\"version\":1";
+        org.assertj.core.api.Assertions.assertThat(mapper.readValue("{" + base + "}", BoardMasterUpdateRequest.class).getVersion())
+                .isEqualTo(1);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> mapper.readValue(
+                        "{" + base + ",\"" + field + "\":\"X\"}", BoardMasterUpdateRequest.class))
+                .isInstanceOf(tools.jackson.databind.exc.UnrecognizedPropertyException.class)
+                .hasMessageContaining(field);
     }
 
     @Test
@@ -225,5 +287,29 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
 
         org.mockito.Mockito.verify(boardMasterService, org.mockito.Mockito.never())
                 .deleteBoardMastersInBatch(anyString(), any());
+    }
+
+    /**
+     * [2026-10-23 ADR-0040 결정 9] 되돌릴 수 없는 영구 삭제는 민감 작업 원장(SensitiveAuditInterceptor)이 남긴다 — 게시판 변경 이력은
+     * 지운 게시판을 남기지 않으므로 표지가 빠지면 누가 지웠는지 남는 곳이 없다. 표지가 있는 핸들러만 인터셉터가 기록한다.
+     */
+    @Test
+    @DisplayName("영구 삭제 핸들러 둘은 민감 작업 원장에 남는다")
+    void permanentDeletesAreSensitiveOperations() throws Exception {
+        for (String[] handler : new String[][] {
+                {"deleteBoardMasterPhysically", "게시판 영구 삭제"},
+                {"deleteBoardMastersInBatch", "게시판 일괄 영구 삭제"}}) {
+            java.lang.reflect.Method method = java.util.Arrays.stream(BoardMasterApiController.class.getDeclaredMethods())
+                    .filter(candidate -> candidate.getName().equals(handler[0]))
+                    .findFirst().orElseThrow();
+            var declared = method.getAnnotation(nuri.foundation.core.annotation.SensitiveOperation.class);
+            org.assertj.core.api.Assertions.assertThat(declared).as(handler[0]).isNotNull();
+            org.assertj.core.api.Assertions.assertThat(declared.value()).isEqualTo(handler[1]);
+        }
+        // 비활성화는 되돌릴 수 있고 게시판 변경 이력에 남으므로 민감 작업이 아니다.
+        java.lang.reflect.Method deactivate = java.util.Arrays.stream(BoardMasterApiController.class.getDeclaredMethods())
+                .filter(candidate -> candidate.getName().equals("deleteBoardMaster")).findFirst().orElseThrow();
+        org.assertj.core.api.Assertions.assertThat(
+                deactivate.getAnnotation(nuri.foundation.core.annotation.SensitiveOperation.class)).isNull();
     }
 }

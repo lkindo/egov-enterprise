@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseIntegerResponseSchema, ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema, BoardDtoResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseBoardDtoResponseSchema, ApiResponseBoardMetaDtoResponseSchema, ApiResponseBoardStatsResponseResponseSchema, ApiResponseListBoardSearchItemResponseResponseSchema, ApiResponsePageResponseBoardDtoResponseSchema, ApiResponsePageResponsePublicFaqListItemResponseResponseSchema, ApiResponsePublicFaqDetailResponseResponseSchema, BoardMetaDtoResponseSchema, BoardSaveRequestRequestSchema, BoardSearchItemResponseResponseSchema, BoardStatsResponseResponseSchema, PageResponseBoardDtoResponseSchema, PageResponsePublicFaqListItemResponseResponseSchema, PublicFaqDetailResponseResponseSchema } from '../generated-zod/board';
+import { ApiResponseBoardDtoResponseSchema, ApiResponseBoardMetaDtoResponseSchema, ApiResponseBoardStatsResponseResponseSchema, ApiResponseListBoardOptionDtoResponseSchema, ApiResponseListBoardSearchItemResponseResponseSchema, ApiResponsePageResponseBoardDtoResponseSchema, ApiResponsePageResponsePublicFaqListItemResponseResponseSchema, ApiResponsePublicFaqDetailResponseResponseSchema, BoardMetaDtoResponseSchema, BoardOptionDtoResponseSchema, BoardSaveRequestRequestSchema, BoardSearchItemResponseResponseSchema, BoardStatsResponseResponseSchema, PageResponseBoardDtoResponseSchema, PageResponsePublicFaqListItemResponseResponseSchema, PublicFaqDetailResponseResponseSchema } from '../generated-zod/board';
 
 export const getPostOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -275,6 +275,25 @@ export const getPublicFaqDetailOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => PublicFaqDetailResponseResponseSchema),
   envelopeSchema: ApiResponsePublicFaqDetailResponseResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getBoardOptionsOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getBoardOptions",
+  method: "get",
+  path: "/api/v1/boards/options",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.array(z.lazy(() => BoardOptionDtoResponseSchema)),
+  envelopeSchema: ApiResponseListBoardOptionDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

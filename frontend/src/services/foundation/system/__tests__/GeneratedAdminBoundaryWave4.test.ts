@@ -74,16 +74,16 @@ describe('generated admin boundary wave 4', () => {
     await loginPolicyAdminService.deleteLoginPolicy('USER01');
 
     await boardAdminService.createBoardMaster(board);
-    await boardAdminService.updateBoardMaster('BBSMSTR_1', board);
-    await boardAdminService.deleteBoardMaster('BBSMSTR_1');
+    await boardAdminService.updateBoardMaster('BBSMSTR_1', {
+      bbsTtl: board.bbsTtl, atchPsbltyFileSz: board.atchPsbltyFileSz, useYn: board.useYn, version: 0,
+    });
     await boardAdminService.isBoardMasterDeletable('BBSMSTR_1');
     await boardAdminService.deleteBoardMasterPhysically('BBSMSTR_1');
     await boardAdminService.batchUpdateBoardMasterStatus(['BBSMSTR_1'], 'N');
-    await boardAdminService.batchDeleteBoardMastersPhysically(['BBSMSTR_1']);
 
     // 호출 수는 위에서 부른 경계 그대로다. 투표 관리 화면은 /api/v1/polls(PollUserService)라 business 경계 테스트가 본다.
     expect(client.getRaw).toHaveBeenCalledTimes(7);
-    expect(client.requestRaw).toHaveBeenCalledTimes(14);
+    expect(client.requestRaw).toHaveBeenCalledTimes(12);
     expect(client.getRaw).toHaveBeenCalledWith('admin/system/login-policies', {
       params: { page: 1, size: 20, searchKeyword: '홍길동' },
     });

@@ -435,6 +435,13 @@
   },
   {
     "method": "GET",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/change-history",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardChangeHistory",
+    "access": "PERMISSION",
+    "permission": "BBS_MST_READ"
+  },
+  {
+    "method": "GET",
     "path": "/api/v1/admin/system/board-masters/{bbsId}/deletable",
     "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#isBoardMasterDeletable",
     "access": "PERMISSION",
@@ -1453,6 +1460,13 @@
     "handler": "nuri.api.controller.business.admin.content.banner.BannerUserApiController#getReflectedBanners",
     "access": "PERMISSION",
     "permission": "BANNER_READ"
+  },
+  {
+    "method": "GET",
+    "path": "/api/v1/boards/options",
+    "handler": "nuri.api.controller.business.board.BoardApiController#getBoardOptions",
+    "access": "PERMISSION",
+    "permission": "BOARD_READ"
   },
   {
     "method": "POST",

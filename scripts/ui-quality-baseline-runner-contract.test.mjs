@@ -1326,7 +1326,13 @@ test('synthetic board readback and cleanup use the actual title search and pagin
     'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepositoryImpl.java'), 'utf8');
   assert.match(controller, /@ModelAttribute BaseSearchDto searchDto/);
   // [DEC-OPS-332] 검색 축은 게시판명 하나라 컨트롤러·서비스는 searchCondition 을 읽지 않는다.
-  assert.match(controller, /getBoardMasterList\(searchDto\.getSearchKeyword\(\), pageable\)/);
+  // [2026-10-23 ADR-0040 §5.2] 사용 여부 필터는 비면 전체다. 합성 게시판은 사용 안 함으로 만들어지므로 읽기 되돌림이 그 필터를 싣지 않는다.
+  assert.match(controller, /getBoardMasterList\(\s*searchDto\.getSearchKeyword\(\), searchDto\.getSearchUseYn\(\), pageable\)/);
+  assert.match(dto, /private String searchUseYn = "";/);
+  const boardReadback = runnerSource.match(/async function exactSyntheticBoards\(api, fixture\) \{([\s\S]*?)\n\}/)?.[1];
+  assert.ok(boardReadback, 'synthetic board readback must remain discoverable');
+  assert.match(boardReadback, /\{ searchKeyword: fixture\.boardTitle, page: 1, size: 100 \}/);
+  assert.doesNotMatch(boardReadback, /searchUseYn/);
   assert.doesNotMatch(controller, /getSearchCondition/);
   assert.match(controller, /Pageable pageable = searchDto\.toPageable\(\)/);
   assert.match(dto, /private int size = DEFAULT_PAGE_UNIT/);

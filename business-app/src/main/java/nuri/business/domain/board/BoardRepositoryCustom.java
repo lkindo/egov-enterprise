@@ -27,6 +27,16 @@ public interface BoardRepositoryCustom {
      */
     Optional<BoardDetailResult> findArticleDetailIncludingDeleted(@NonNull String bbsId, @NonNull Long pstSn);
 
+    /**
+     * 사용 안 함 게시판(마스터 useYn='N')의 글 상세. [2026-10-23 ADR-0040 결정 1] 운영자 열람 경로 전용이다.
+     *
+     * <p><b>이 메서드 자체는 인가를 하지 않는다</b> — 호출부가 조회 대행 권한(BOARD_READ_ALL)과 게시판의 사용 안 함을 먼저
+     * 판정해야 한다(BoardService#getPostDetail·assertCommentReadAccess). 사용 중인 게시판의 글은 돌려주지 않는다.
+     *
+     * @param includeDeleted 논리 삭제(useYn='N')된 글까지 포함할지
+     */
+    Optional<BoardDetailResult> findArticleDetailOnInactiveBoard(@NonNull String bbsId, @NonNull Long pstSn, boolean includeDeleted);
+
     /** @param today 게시 종료 판정 기준일(yyyyMMdd, Asia/Seoul) */
     Optional<BoardDetailResult> findPublicArticleDetail(@NonNull String bbsId, @NonNull Long pstSn, @NonNull String today);
 }

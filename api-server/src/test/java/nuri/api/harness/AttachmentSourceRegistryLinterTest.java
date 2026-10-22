@@ -521,7 +521,18 @@ class AttachmentSourceRegistryLinterTest {
                         Board board = findOwnedPost(bbsId, pstSn);
                         updateOwnedPost(board, request, false);
                     }
+                    public Long createPostWithFiles(Request request, Files files) {
+                        BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                        atchFileSn = fileService.uploadBoardFiles(files);
+                        return createPost(userId, request);
+                    }
+                    public Long replyPostWithFiles(Long parentSn, Request request, Files files) {
+                        BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                        atchFileSn = fileService.uploadBoardFiles(files);
+                        return replyPost(userId, parentSn, request);
+                    }
                     public void updatePostWithFiles(Long pstSn, Request request, Files files) {
+                        BoardMaster master = loadWritableMaster(bbsId, false);
                         Board board = findOwnedPost(bbsId, pstSn);
                         attachmentAssignmentPolicy.assertAssignable(atchFileSn);
                         fileService.uploadBoardFiles(files);
@@ -574,6 +585,35 @@ class AttachmentSourceRegistryLinterTest {
                         + "        board = findOwnedPost(bbsId, pstSn);");
         assertTrue(boardOwnershipOrderViolations(path, entityUpdateBeforeOwner).stream()
                 .anyMatch(value -> value.contains("updateOwnedPost(") && value.contains("소유권보다 앞")));
+
+        // [2026-10-23 ADR-0040 결정 1] 게시판 판정보다 앞선 파일 저장, 판정 자체의 소실은 등록·답글·수정 모두 red 다.
+        for (String method : List.of("createPostWithFiles", "replyPostWithFiles")) {
+            String next = method.startsWith("create") ? "return createPost(" : "return replyPost(";
+            String gateAfterUpload = good.replace(
+                    "BoardMaster master = loadWritableMaster(request.bbsId(), false);\n"
+                            + "        atchFileSn = fileService.uploadBoardFiles(files);\n        " + next,
+                    "atchFileSn = fileService.uploadBoardFiles(files);\n"
+                            + "        BoardMaster master = loadWritableMaster(request.bbsId(), false);\n        " + next);
+            assertTrue(boardOwnershipOrderViolations(path, gateAfterUpload).stream()
+                    .anyMatch(value -> value.contains("#" + method) && value.contains("uploadBoardFiles(")
+                            && value.contains("게시판 판정보다 앞")), method);
+            String gateMissing = good.replace(
+                    "BoardMaster master = loadWritableMaster(request.bbsId(), false);\n"
+                            + "        atchFileSn = fileService.uploadBoardFiles(files);\n        " + next,
+                    "BoardMaster master = findBoardMaster(request.bbsId());\n"
+                            + "        atchFileSn = fileService.uploadBoardFiles(files);\n        " + next);
+            assertTrue(boardOwnershipOrderViolations(path, gateMissing).stream()
+                    .anyMatch(value -> value.contains("#" + method) && value.contains("게시판 판정 토큰 소실")), method);
+        }
+        String updateGateLate = good.replace(
+                        "BoardMaster master = loadWritableMaster(bbsId, false);\n        Board board", "Board board")
+                .replace("fileService.updateBoardFiles(atchFileSn, files);\n        updateOwnedPost(board, request, true);",
+                        "fileService.updateBoardFiles(atchFileSn, files);\n"
+                                + "        BoardMaster master = loadWritableMaster(bbsId, false);\n"
+                                + "        updateOwnedPost(board, request, true);");
+        assertTrue(boardOwnershipOrderViolations(path, updateGateLate).stream()
+                .anyMatch(value -> value.contains("#updatePostWithFiles") && value.contains("updateBoardFiles(")
+                        && value.contains("게시판 판정보다 앞")));
     }
 
     private Map<String, String> loadAttachmentServiceSources() throws IOException {
@@ -655,24 +695,39 @@ class AttachmentSourceRegistryLinterTest {
         List<String> violations = new ArrayList<>();
         Map<String, String> methods = extractMethods(stripCommentsAndLiterals(rawSource), path, violations);
         requireTokenBeforeMutations(methods, path, "updatePost",
-                "findOwnedPost(bbsId, pstSn)", List.of("updateOwnedPost("), true, violations);
+                "findOwnedPost(bbsId, pstSn)", OWNERSHIP, List.of("updateOwnedPost("), true, violations);
         requireTokenBeforeMutations(methods, path, "updatePostWithFiles",
-                "findOwnedPost(bbsId, pstSn)",
+                "findOwnedPost(bbsId, pstSn)", OWNERSHIP,
                 List.of("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                         "fileService.uploadBoardFiles(", "fileService.updateBoardFiles(", "updateOwnedPost("),
                 true, violations);
         // 새 프로필 외에 기존 일반 진입점을 끼워 넣어도 소유권 선행 검사를 피할 수 없다.
         requireTokenBeforeMutations(methods, path, "updatePostWithFiles",
-                "findOwnedPost(bbsId, pstSn)",
+                "findOwnedPost(bbsId, pstSn)", OWNERSHIP,
                 List.of("fileService.uploadFiles(", "fileService.updateFiles("), false, violations);
+        // [2026-10-23 ADR-0040 결정 1] 게시판 쓰기 진입 판정(지정 게시판·사용 여부·커뮤니티)은 파일 저장보다 먼저다 — 닫힌
+        //   게시판에서 거부될 요청이 디스크에 파일을 남기지 않는다(DIP I2 의 순서를 사용 여부까지 넓힌다).
+        for (String[] gate : new String[][] {
+                {"createPostWithFiles", "loadWritableMaster(request.bbsId(), false)"},
+                {"replyPostWithFiles", "loadWritableMaster(request.bbsId(), false)"},
+                {"updatePostWithFiles", "loadWritableMaster(bbsId, false)"}}) {
+            requireTokenBeforeMutations(methods, path, gate[0], gate[1], BOARD_GATE,
+                    List.of("fileService.uploadBoardFiles(", "fileService.updateBoardFiles(",
+                            "fileService.uploadFiles(", "fileService.updateFiles("),
+                    false, violations);
+        }
         return violations;
     }
+
+    private static final String OWNERSHIP = "소유권";
+    private static final String BOARD_GATE = "게시판 판정";
 
     private static void requireTokenBeforeMutations(
             Map<String, String> methods,
             String path,
             String methodName,
             String ownerToken,
+            String guardLabel,
             List<String> mutationTokens,
             boolean requireMutations,
             List<String> violations) {
@@ -685,7 +740,7 @@ class AttachmentSourceRegistryLinterTest {
         String normalized = body.replaceAll("\\s+", "");
         int ownerIndex = normalized.indexOf(ownerToken.replaceAll("\\s+", ""));
         if (ownerIndex < 0) {
-            violations.add("Board 소유권 토큰 소실: " + key + " -> " + ownerToken);
+            violations.add("Board " + guardLabel + " 토큰 소실: " + key + " -> " + ownerToken);
             return;
         }
         for (String mutationToken : mutationTokens) {
@@ -695,7 +750,7 @@ class AttachmentSourceRegistryLinterTest {
                     violations.add("Board 첨부 변경 토큰 소실: " + key + " -> " + mutationToken);
                 }
             } else if (mutationIndex < ownerIndex) {
-                violations.add("Board 첨부 변경이 소유권보다 앞에 있음: " + key + " -> " + mutationToken);
+                violations.add("Board 첨부 변경이 " + guardLabel + "보다 앞에 있음: " + key + " -> " + mutationToken);
             }
         }
     }

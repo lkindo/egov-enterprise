@@ -85,38 +85,30 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
     expect(code).toContain('resolveDefaultBoardId');
   });
 
-  if (hookInProjection) it('훅은 비활성(useYn=N) 게시판을 선택지에서 제외한다', () => {
-    // 구현이 필터를 잃으면 폐지된 게시판이 다시 선택지에 오른다.
+  /*
+   * [2026-10-23 ADR-0040 결정 11] 선택지의 출처는 서버의 사용자 선택지 API 하나다. 종전 단언 넷(화면의 사용 여부 필터, 관리자에게만
+   * 관리 API, 시드 폴백의 내용, 폴백의 존재)은 그 구조가 사라져 아래 두 단언으로 바꿨다 — 같은 위험(죽은·닫힌 게시판이 선택지에
+   * 오른다, 일반 사용자가 403 으로 아무것도 못 고른다)을 더 강하게 막는다.
+   * '사용 안 함 제외'와 '커뮤니티 회원 거르기'는 이제 서버가 소유한다: BoardCommunityAccessTest$Options(회원·포트 없음·조회 대행
+   * 권한)와 BoardMasterRepositoryTest#activeBoardOptionsExcludeClosedBoards(사용 중만).
+   */
+  if (hookInProjection) it('훅은 사용자 선택지 API 를 쓰고 관리 목록 API·관리 권한 분기를 쓰지 않는다', () => {
     const code = stripComments(read(BOARD_OPTIONS_HOOK));
-    expect(code).toContain("useYn !== 'N'");
-  });
-
-  if (hookInProjection) it('훅은 관리자에게만 관리자 전용 API 를 호출한다 — 일반 사용자에게 403 으로 선택지를 비우지 않는다', () => {
-    /*
-     * 이 훅을 쓰는 화면들은 proxy.ts 의 USER_ACCESSIBLE_ADMIN_PATHS('/admin/community')로
-     * **일반 사용자에게 열려 있다.** 그런데 게시판 마스터 목록은 /api/v1/admin/** 아래에 있고
-     * ApiSecurityConfig 가 그 경로를 ROLE_ADMIN·ROLE_SYSTEM 으로 강제한다. 역할을 보지 않고
-     * 조회하면 일반 사용자에게 403 이 떨어져 선택지가 통째로 비고, "죽은 게시판이 섞여 있다"가
-     * "아무 게시판도 못 고른다"로 악화된다.
-     */
-    const code = stripComments(read(BOARD_OPTIONS_HOOK));
-    expect(code, '기능 권한 판정 SSOT 를 쓰지 않는다').toContain("canPermission(user, 'BBS_MST_READ')");
-    expect(code, '역할과 무관하게 조회한다').toMatch(/enabled:\s*isAdmin/);
-  });
-
-  if (hookInProjection) it('폴백 목록에는 시드가 실제로 INSERT 하는 게시판만 들어간다', () => {
-    // 폴백에 죽은 ID 를 넣으면 고치려던 결함이 비관리자에게 그대로 돌아온다.
-    const code = stripComments(read(BOARD_OPTIONS_HOOK));
-    for (const constant of UNSEEDED_CONSTANTS) {
-      expect(code, `폴백에 시드에 없는 ${constant} 가 들어 있다`).not.toContain(constant);
+    expect(code, '사용자 선택지 query option 을 쓰지 않는다').toContain('boardMasterQueryOptions.options()');
+    for (const adminBoundary of ['boardAdminService', 'completeList', 'getBoardMasterList', 'BBS_MST_READ', 'canPermission']) {
+      expect(code, `훅이 관리 경계(${adminBoundary})를 다시 쓴다`).not.toContain(adminBoundary);
     }
-    expect(code).toContain('NOTICE_BOARD_ID');
   });
 
-  if (hookInProjection) it('선택지가 비어 사용자가 아무것도 고르지 못하는 상태를 만들지 않는다', () => {
-    // 빈 배열을 그대로 돌려주면 select 가 비어 "게시판이 하나도 없다"고 거짓말한다.
+  if (hookInProjection) it('훅은 시드 게시판 폴백을 두지 않는다 — 빈 결과·실패는 화면이 사실대로 알린다', () => {
     const code = stripComments(read(BOARD_OPTIONS_HOOK));
-    expect(code).toContain('SEEDED_FALLBACK_OPTIONS');
+    for (const seed of ['SEEDED_FALLBACK', 'board-ids', 'NOTICE_BOARD_ID', 'TASK_BOARD_ID', 'QNA_BOARD_ID', 'WIKI_BOARD_ID',
+      ...UNSEEDED_CONSTANTS]) {
+      expect(code, `훅에 시드 폴백 흔적(${seed})이 있다`).not.toContain(seed);
+    }
+    for (const screen of present(['app/admin/community/board/CommunityBoardClient.tsx'] as const)) {
+      expect(stripComments(read(screen)), `${screen} 가 빈 선택지를 알리지 않는다`).toContain('지금 이용할 수 있는 게시판이 없습니다.');
+    }
   });
 
   it('시드에 없는 상수는 board-ids.ts 에서 경고와 함께 남는다 — 조용히 되살아나지 않도록', () => {

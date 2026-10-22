@@ -118,4 +118,25 @@ class BoardMultipartWriteApiControllerTest extends ControllerTestSupport {
 
         verify(boardService).createPost(eq("user01"), any(BoardSaveRequest.class));
     }
+
+    /**
+     * [2026-10-23 ADR-0040 결정 1] 첨부 동반 쓰기는 경로와 본문이 같은 게시판이어야 한다. 서비스는 등록에서 본문의 게시판을,
+     * 수정에서 경로의 게시판을 쓰므로, 다르면 판정한 게시판과 쓰는 게시판이 갈린다 — 서비스에 닿기 전에 400 이다.
+     */
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0} 파일 {1}")
+    @org.junit.jupiter.params.provider.CsvSource({"POST, false", "POST, true", "PUT, false", "PUT, true"})
+    @DisplayName("경로와 본문의 게시판이 다르면 등록·수정 모두 서비스에 닿지 않고 400 이다")
+    void pathAndBodyBoardMismatchIsRejectedBeforeService(String method, boolean withFile) throws Exception {
+        var request = multipart("POST".equals(method)
+                        ? "/api/v1/boards/BBSMSTR_OTHER/posts/with-files"
+                        : "/api/v1/boards/BBSMSTR_OTHER/posts/1/with-files")
+                .file(boardPart());
+        if (withFile) {
+            request.file(new MockMultipartFile("file", "test.txt", "text/plain", "content".getBytes()));
+        }
+        mockMvc.perform(request.with(r -> { r.setMethod(method); return r; }).accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+
+        org.mockito.Mockito.verifyNoInteractions(boardService);
+    }
 }

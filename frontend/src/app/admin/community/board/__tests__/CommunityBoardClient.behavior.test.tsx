@@ -9,10 +9,21 @@ import CommunityBoardClient from '../CommunityBoardClient';
  * 이 화면을 게시판 기능 소유로 옮기고 조회 시점을 조회/Enter(G2)로 바꾸는 동안 사용자에게 보이는 행동이 같아야 한다.
  * 게시판 전환·행·새 게시글 목적지·`?bbsId=` 진입·조회 실패를 고정한다. 바뀌는 것은 검색어 조회 시점 한 가지다.
  */
+const BOARD_OPTIONS = [
+  { value: 'BBSMSTR_AAAAAAAAAAAA', label: '공지사항' },
+  { value: 'BBSMSTR_CCCCCCCCCCCC', label: '업무게시판' },
+];
+
 const mocks = vi.hoisted(() => ({
   params: new Map<string, string>(),
   push: vi.fn(),
   getPosts: vi.fn(),
+  boardOptions: {
+    options: [] as { value: string; label: string }[],
+    isLoading: false,
+    error: null as Error | null,
+    refetch: vi.fn(),
+  },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -21,10 +32,7 @@ vi.mock('next/navigation', () => ({
 }));
 vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService: { getPosts: mocks.getPosts } }));
 vi.mock('@/hooks/api/use-board-options', () => ({
-  useBoardOptions: () => ({ options: [
-    { value: 'BBSMSTR_AAAAAAAAAAAA', label: '공지사항' },
-    { value: 'BBSMSTR_CCCCCCCCCCCC', label: '업무게시판' },
-  ] }),
+  useBoardOptions: () => mocks.boardOptions,
 }));
 
 const post = (pstSn: number, title: string) => ({ pstSn, bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstTtl: title, userNm: '홍길동', crtDt: '2026-10-01 09:00:00', inqCnt: 3, commentCnt: 1 });
@@ -42,6 +50,33 @@ describe('게시글 모아보기 동등성', () => {
     mocks.push.mockReset();
     mocks.getPosts.mockReset();
     mocks.getPosts.mockResolvedValue({ list: [post(7, '첫 공지')], total: 25 });
+    mocks.boardOptions.options = BOARD_OPTIONS;
+    mocks.boardOptions.isLoading = false;
+    mocks.boardOptions.error = null;
+    mocks.boardOptions.refetch.mockReset();
+  });
+
+  // [2026-10-23 ADR-0040 결정 11] 선택지가 서버에서 오므로 비거나 실패할 수 있다. 시드 폴백으로 덮지 않고 사실대로 알린다.
+  it('이용할 수 있는 게시판이 없으면 그렇게 알린다', async () => {
+    mocks.boardOptions.options = [];
+    renderScreen();
+    expect(await screen.findByText('지금 이용할 수 있는 게시판이 없습니다.')).toBeInTheDocument();
+  });
+
+  it('선택지를 불러오지 못하면 알리고 다시 불러올 수 있다', async () => {
+    mocks.boardOptions.options = [];
+    mocks.boardOptions.error = new Error('503');
+    renderScreen();
+    expect(await screen.findByText('게시판 목록을 불러오지 못했습니다.')).toBeInTheDocument();
+    expect(screen.queryByText('지금 이용할 수 있는 게시판이 없습니다.')).toBeNull();
+    fireEvent.click(screen.getByRole('button', { name: '다시 불러오기' }));
+    expect(mocks.boardOptions.refetch).toHaveBeenCalled();
+  });
+
+  it('선택지가 있으면 빈 상태 안내를 보이지 않는다', async () => {
+    renderScreen();
+    await screen.findByText('첫 공지');
+    expect(screen.queryByText('지금 이용할 수 있는 게시판이 없습니다.')).toBeNull();
   });
 
   it('주소 없이 들어오면 공지사항 1페이지를 조회한다', async () => {

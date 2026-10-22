@@ -448,6 +448,7 @@ export { getBoardMetaOperation } from './generated-operations/board';
 export { searchPostsOperation } from './generated-operations/board';
 export { getPublicFaqsOperation } from './generated-operations/board';
 export { getPublicFaqDetailOperation } from './generated-operations/board';
+export { getBoardOptionsOperation } from './generated-operations/board';
 export { getReflectedBannersOperation } from './generated-operations/banner-user';
 export { mfaStatusOperation } from './generated-operations/mfa-api-controller';
 export { getCurrentUserOperation } from './generated-operations/auth-api-controller';
@@ -499,6 +500,7 @@ export { getInstitutionCodeDetailOperation } from './generated-operations/instit
 export { getInstitutionCodeRecptnListOperation } from './generated-operations/institution-code';
 export { getChangeHistoryOperation } from './generated-operations/common-code';
 export { isBoardMasterDeletableOperation } from './generated-operations/boardmaster';
+export { getBoardChangeHistoryOperation } from './generated-operations/boardmaster';
 export { getReflectedBanners_1Operation } from './generated-operations/banner';
 export { getAuthorsOperation } from './generated-operations/authority-management';
 export { getAuthorOperation } from './generated-operations/authority-management';
