@@ -552,7 +552,7 @@ export function BoardMasterListClient() {
             currentPage: page,
             totalPages,
             onPageChange: setPage,
-            totalCount,
+            // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
             pageSize: size,
             onPageSizeChange: (next) => { setSize(next); setPage(1); },
             pageSizeOptions: [10, 20, 50],

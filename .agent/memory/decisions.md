@@ -398,7 +398,7 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 | DEC-OPS-376 | accepted | 운영 오버레이의 api·frontend·edge 는 리눅스 권한을 모두 빼고(`cap_drop: ALL`·`no-new-privileges`) 메모리 상한을 두며, api 힙은 고정 `JAVA_OPTS` 로 상한에 비례해 잡는다. 번들 db 는 대상 밖이고 `read_only` 는 후속이다(2026-10-21 사용자 승인). | 2026-10-21 | - |
 | DEC-OPS-377 | accepted | 첫 화면 직후 앱 전체 공급자의 context 값을 바꾸지 않고(같은 사용자 재조회는 이전 객체, 실시간 연결·현재 메뉴는 구독 저장소, 하이드레이션 중에는 서버 기준값) 머리글·사이드바를 셸과 함께 보낸다(GAP-FE-003 종료, 2026-10-22 사용자 승인). | 2026-10-22 | DEC-OPS-228 의 사이드바 Suspense 자리표시 표지 부분(자리표시를 걷었다) |
 | DEC-OPS-378 | accepted | 낙관적 잠금 컬럼은 새 표에도 `version integer NOT NULL DEFAULT 0` 과 `ck_<표>_version`(>= 0)을 쓰는 기술 컬럼 예외로 둔다. 표준 용어를 새로 만들지 않는다(2026-10-22 사용자 결정). | 2026-10-22 | 처분안 `version` 행의 미확정 C(예외 후보) |
-| DEC-OPS-379 | accepted | ADR-0040 의 스키마 변경을 저장소 Flyway 로 일괄 승인하고, 공유 OCI 적용은 PR 병합마다 하며, 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행은 보정하지 않는다(2026-10-23 사용자 결정). | 2026-10-23 | ADR-0040 승인 줄의 배치별 스키마·OCI 승인 부분 |
+| DEC-OPS-379 | accepted | ADR-0040 의 스키마 변경을 저장소 Flyway 로 일괄 승인하고, 공유 OCI 적용은 PR 병합마다 하며, 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행은 보정하지 않는다(2026-10-23 사용자 결정). | 2026-10-23 | - |
 
 DEC-OPS-104의 전용 이관 PIT 잡·실패 집계 결정은 유지한다. 당시 `mutationMigrationTool`이 `mutation`의 부분집합이어야 한다는 조건만 [ADR-0022](../../docs/02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)가 독립 선택으로 대체한다.
 

@@ -636,7 +636,8 @@ export function BoardMakerWizard() {
                  * 보안 오인 상태였다. 실제 통제 지점을 안내하도록 대체한다.
                  *
                  * [2026-10-23 ADR-0040 A0] 종전 안내("접근 권한은 메뉴 권한을 따른다")도 사실이 아니었다. 메뉴는 길 안내일 뿐
-                 * 게시판 이용 화면은 인증만 요구한다. 접근을 정하는 세 축(메뉴 노출·게시글 권한·회원 범위)을 그대로 말한다.
+                 * 게시판 이용 화면은 인증만 요구한다. 접근을 정하는 축(메뉴 노출·게시글 권한·회원 범위)을 그대로 말한다. 회원 범위는
+                 * 커뮤니티 기능의 축이라 커뮤니티 마커 안에 둔다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없다.
                  */
                 <div className="max-w-2xl space-y-3 text-left">
                   <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4 text-left">
@@ -645,7 +646,7 @@ export function BoardMakerWizard() {
                         <ShieldCheck size={24} aria-hidden="true" />
                       </div>
                       <div className="space-y-2 text-left">
-                        <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">이 게시판을 누가 쓸 수 있는지는 세 가지로 정해집니다</p>
+                        <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">이 게시판을 누가 쓸 수 있는지는 아래 규칙으로 정해집니다</p>
                         <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
                           게시판 단위로 이용자를 나누는 권한 설정은 제공하지 않습니다.
                         </p>
@@ -657,7 +658,9 @@ export function BoardMakerWizard() {
                       <ul className="space-y-1 text-[length:var(--font-size-body)] text-foreground list-disc pl-5">
                         <li>메뉴 노출: 메뉴는 길 안내일 뿐 접근을 막지 않습니다. 메뉴가 보이지 않아도 주소를 아는 로그인 사용자는 게시판을 엽니다.</li>
                         <li>게시글 권한: 글 보기·쓰기·고치기·지우기 권한은 모든 게시판에 함께 적용되고, 기본으로 일반 사용자 그룹에 있습니다.</li>
+                        {/* reusable-base:community:start */}
                         <li>회원 범위: 게시판마다 이용자를 나누는 수단은 커뮤니티 귀속 하나입니다. 귀속 게시판은 그 커뮤니티의 승인 회원만 씁니다.</li>
+                        {/* reusable-base:community:end */}
                         <li>로그인하지 않은 사용자는 게시판을 열 수 없습니다.</li>
                       </ul>
                     </div>

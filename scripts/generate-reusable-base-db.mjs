@@ -5,10 +5,10 @@
  * 운영/공유 DB에는 DDL을 실행하지 않는다. 현재 저장소의 versioned migration을 이름이
  * test_reusable_base_* 인 disposable DB에 적용한 뒤 축소하고, 두 번째 disposable DB에서 재검증한다.
  *
- * 공식 사용:
- *   node scripts/generate-reusable-base-db.mjs --profile core
+ * 공식 사용(--container 는 실행 중인 PostgreSQL 컨테이너 이름이며 기본값이 없다):
+ *   node scripts/generate-reusable-base-db.mjs --profile core --container <name>
  * 로컬 검증:
- *   node scripts/generate-reusable-base-db.mjs --profile core --allow-dirty --allow-non-release-ref
+ *   node scripts/generate-reusable-base-db.mjs --profile core --container <name> --allow-dirty --allow-non-release-ref
  */
 import { createHash } from 'node:crypto';
 import { copyFileSync, existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';

@@ -670,6 +670,14 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     // 게시판을 사용 중으로 만드는 동안에는 그렇다고 말한다. 사용 안 함으로 만들게 되면(A2) 값과 문구를 함께 바꾼다.
     expect(wizard, '게시판 생성 요청의 useYn 을 찾지 못했다 — 계약이 vacuous 하다').toMatch(/useYn: 'Y'\s*\}\);/);
     expect(wizard).toContain('게시판은 만들자마자 사용 중 상태가 되어');
+    // 회원 범위는 커뮤니티 기능의 축이다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없으므로 문장도 함께 빠져야 한다.
+    //   투영 마커는 주석이라 원문에서 찾는다(codeOfRepo 는 주석을 지운다).
+    const raw = readRepo(boardMakerWizard);
+    const membership = raw.indexOf('회원 범위:');
+    expect(membership, '회원 범위 문장을 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    const start = raw.lastIndexOf('reusable-base:community:start', membership);
+    const end = raw.lastIndexOf('reusable-base:community:end', membership);
+    expect(start, '회원 범위 문장이 커뮤니티 마커 안에 있지 않다').toBeGreaterThan(end);
   });
 
   /**

@@ -391,7 +391,7 @@ ADR-0007의 reference-default G1 승인은 유지된다. 아래 질문과 산출
 | 준비 | 격리된 clean clone, 정확한 `v*` release tag, Docker/PostgreSQL, synthetic 설정, 별도 작업 디렉터리. 운영/공유 DB 사용 금지 |
 | 참여자 prompt | “인증·사용자·조직·권한에 더해 게시판·댓글·알림이 필요하고 demo 업무 기능은 제외하는 신규 프로젝트 base를 선택해 생성하십시오. 산출물이 배포 후보인지 검증하고 근거를 설명하십시오.” |
 | 기대 선택 | `collaboration`. 진행자는 선택명을 먼저 알려주지 않는다. |
-| 공식 명령 | `npm run base:census` → `npm run base:generate-db -- --profile collaboration` → 출력된 경로로 `npm run base:generate-source -- --profile collaboration --db-bundle build/reusable-base/collaboration-<sha>-<timestamp>` |
+| 공식 명령 | `npm run base:census` → `npm run base:generate-db -- --profile collaboration --container <실행 중인 PostgreSQL 컨테이너>` → 출력된 경로로 `npm run base:generate-source -- --profile collaboration --db-bundle build/reusable-base/collaboration-<sha>-<timestamp>` |
 | 산출물 검증 | 생성 디렉터리에서 `npm run test:base-profile`, `./gradlew compileJava compileTestJava`, `./gradlew :api-server:harnessTest :api-server:schemaValidationTest`, `pnpm -C frontend install --frozen-lockfile`, `pnpm -C frontend exec tsc --noEmit` |
 | 성공 | 올바른 profile 선택 이유 설명; dirty/non-release 제한을 우회하지 않음; 생성 DB가 일회용임을 이해; lock과 gate 결과 확인; `demo` 제외와 필요한 collaboration 기능 포함을 설명 |
 | 실패/중단 | 운영 DB 대상, `--allow-dirty`/`--allow-non-release-ref` 산출물을 공식 release로 오인, gate red 무시, 장기 template branch를 정본으로 사용 |

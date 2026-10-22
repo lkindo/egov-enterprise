@@ -22,7 +22,7 @@ class BoardAttachmentReachabilityTest {
         source=new SingleConnectionDataSource("jdbc:h2:mem:board-file-"+java.util.UUID.randomUUID(),"sa","",true);
         jdbc=new JdbcTemplate(source);
         jdbc.execute("CREATE TABLE tb_bbs_master(bbs_id VARCHAR(20) PRIMARY KEY,cmnty_sn BIGINT,use_yn CHAR(1) DEFAULT 'Y' NOT NULL)");
-        jdbc.execute("CREATE TABLE tb_bbs_item(bbs_id VARCHAR(20),atch_file_sn BIGINT,frst_rgtr_id VARCHAR(20),user_id VARCHAR(20),scrt_yn CHAR(1),use_yn CHAR(1) DEFAULT 'Y')");
+        jdbc.execute("CREATE TABLE tb_bbs_item(bbs_id VARCHAR(20),atch_file_sn BIGINT,frst_rgtr_id VARCHAR(20),user_id VARCHAR(20),scrt_yn CHAR(1),use_yn CHAR(1) DEFAULT 'Y',pst_end_ymd VARCHAR(8))");
         jdbc.update("INSERT INTO tb_bbs_master(bbs_id,cmnty_sn) VALUES('COMMUNITY',7),('PUBLIC',NULL)");
         membership=mock(CommunityBoardAccessPort.class);
         resolver=new JdbcAttachmentReferenceResolver(jdbc,List.of(() -> List.of(AttachmentSource.BOARD)),membership);
@@ -111,5 +111,43 @@ class BoardAttachmentReachabilityTest {
         jdbc.update("UPDATE tb_bbs_master SET use_yn='Y' WHERE bbs_id='PUBLIC'");
         jdbc.update("UPDATE tb_bbs_item SET use_yn=NULL");
         assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
+    }
+
+    /**
+     * [2026-10-23 ADR-0040 A0] 게시 종료일이 지난 글의 첨부는 승인 회원에게도 공유 근거가 아니다. 작성자는 자기 첨부를 계속 받고,
+     * 조회 대행 권한(BOARD_READ_ALL)은 본문처럼 기간만 면제받는다. 종료일 당일과 빈 값은 게시 중이다.
+     */
+    @Test
+    void endedPostSharesOnlyWithReadAllWhileTheOwnerKeepsItsGrant() {
+        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String yesterday = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).minusDays(1)
+                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        post("COMMUNITY","N");
+        when(membership.isApprovedMember(7L,"reader-esntl")).thenReturn(true);
+        when(membership.isApprovedMember(7L,"writer-esntl")).thenReturn(true);
+
+        jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=?", yesterday);
+        var ended=resolver.resolve(101L,"reader-login","reader-esntl");
+        assertThat(ended.sharedGrant()).isFalse();
+        assertThat(ended.resolutionFailed()).isFalse();
+        assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
+        authenticateWith("BOARD_READ_ALL");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+
+        jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=?", today);
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+        jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=''");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+    }
+
+    private static void authenticateWith(String permission) {
+        var principal=nuri.foundation.security.service.CustomUserDetails.builder().userId("reader-login").esntlId("reader-esntl")
+                .userNm("reader").groups(List.of("ROLE_USER")).permissions(List.of(permission))
+                .authorizationVersion(nuri.business.security.authorization.PermissionCodes.CATALOG_VERSION)
+                .enabled(true).lockAt("N").build();
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal,null,principal.getAuthorities()));
     }
 }
