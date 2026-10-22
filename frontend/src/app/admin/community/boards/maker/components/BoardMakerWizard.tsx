@@ -160,6 +160,16 @@ export function BoardMakerWizard() {
   //   메뉴 권한만 없으면 게시판만 만들어진 채 멈췄다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
   const canCreateBoard = canPermission(user, 'BBS_MST_CREATE');
   const canCreateMenu = canPermission(user, 'MENU_CREATE');
+  // [2026-10-23 ADR-0040 A0] 메뉴 등록을 다시 시도할 때는 비활성 메뉴까지 담긴 전체 메뉴(MENU_READ)를 먼저 읽는다. 이 권한이
+  //   없으면 게시판만 만들어진 뒤 다시 시도가 403 으로 멈추므로, 시작하기 전에 같은 사유로 막는다.
+  const canReadMenus = canPermission(user, 'MENU_READ');
+  const missingPermissionReason = !canCreateBoard
+    ? '게시판을 만들 권한이 없습니다.'
+    : !canCreateMenu
+      ? '메뉴를 등록할 권한이 없어 게시판을 만들 수 없습니다.'
+      : !canReadMenus
+        ? '메뉴 목록을 볼 권한이 없어 게시판을 만들 수 없습니다. 메뉴 등록을 다시 시도할 때 기존 메뉴를 먼저 확인해야 합니다.'
+        : null;
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
@@ -623,7 +633,10 @@ export function BoardMakerWizard() {
                  * 이 단계에는 역할×권한 체크박스 매트릭스가 있었으나, 게시판별 권한은 저장할 테이블도
                  * API 도 존재하지 않아 선택값이 서버로 전송되지 않고 브라우저에서 사라졌다.
                  * 운영자는 '익명 쓰기 금지'를 설정했다고 믿지만 실제로는 아무 정책도 적용되지 않는
-                 * 보안 오인 상태였다. 실제 통제 지점(메뉴 권한)을 안내하도록 대체한다.
+                 * 보안 오인 상태였다. 실제 통제 지점을 안내하도록 대체한다.
+                 *
+                 * [2026-10-23 ADR-0040 A0] 종전 안내("접근 권한은 메뉴 권한을 따른다")도 사실이 아니었다. 메뉴는 길 안내일 뿐
+                 * 게시판 이용 화면은 인증만 요구한다. 접근을 정하는 세 축(메뉴 노출·게시글 권한·회원 범위)을 그대로 말한다.
                  */
                 <div className="max-w-2xl space-y-3 text-left">
                   <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4 text-left">
@@ -632,11 +645,9 @@ export function BoardMakerWizard() {
                         <ShieldCheck size={24} aria-hidden="true" />
                       </div>
                       <div className="space-y-2 text-left">
-                        <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">이 게시판의 접근 권한은 메뉴 권한을 따릅니다</p>
+                        <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">이 게시판을 누가 쓸 수 있는지는 세 가지로 정해집니다</p>
                         <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
-                          게시판은 다음 단계에서 선택하는 상위 메뉴 아래에 등록됩니다. 어떤 역할이 이 게시판을
-                          볼 수 있는지는 그 메뉴에 부여된 권한으로 결정되며, 게시판 단위의 별도 권한 설정은
-                          현재 제공하지 않습니다.
+                          게시판 단위로 이용자를 나누는 권한 설정은 제공하지 않습니다.
                         </p>
                       </div>
                     </div>
@@ -644,9 +655,10 @@ export function BoardMakerWizard() {
                     <div className="rounded-md border border-border bg-card p-3 space-y-2 text-left">
                       <p className="text-xs font-semibold text-muted-foreground">현재 적용되는 규칙</p>
                       <ul className="space-y-1 text-[length:var(--font-size-body)] text-foreground list-disc pl-5">
-                        <li>비로그인 사용자는 게시글을 작성할 수 없습니다(인증 필수).</li>
-                        <li>메뉴가 보이지 않는 역할은 해당 게시판 화면에 접근하지 않습니다.</li>
-                        <li>읽기·쓰기·댓글을 역할별로 나누어 제한하는 기능은 제공되지 않습니다.</li>
+                        <li>메뉴 노출: 메뉴는 길 안내일 뿐 접근을 막지 않습니다. 메뉴가 보이지 않아도 주소를 아는 로그인 사용자는 게시판을 엽니다.</li>
+                        <li>게시글 권한: 글 보기·쓰기·고치기·지우기 권한은 모든 게시판에 함께 적용되고, 기본으로 일반 사용자 그룹에 있습니다.</li>
+                        <li>회원 범위: 게시판마다 이용자를 나누는 수단은 커뮤니티 귀속 하나입니다. 귀속 게시판은 그 커뮤니티의 승인 회원만 씁니다.</li>
+                        <li>로그인하지 않은 사용자는 게시판을 열 수 없습니다.</li>
                       </ul>
                     </div>
 
@@ -657,7 +669,7 @@ export function BoardMakerWizard() {
                         rel="noopener noreferrer"
                         className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
                       >
-                        권한 정책 관리에서 메뉴 권한 설정하기
+                        권한 정책 관리에서 그룹별 게시글 권한 확인하기
                         <ArrowUpRight size={16} aria-hidden="true" />
                       </Link>
                     )}
@@ -668,8 +680,9 @@ export function BoardMakerWizard() {
                     <div className="space-y-1 text-left">
                       <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">게시판 생성 후 확인하세요</p>
                       <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
-                        게시판과 함께 생성된 메뉴는 기본적으로 권한이 부여되지 않은 상태일 수 있습니다.
-                        생성 직후 권한 정책 관리에서 해당 메뉴를 담당 역할에 배정해야 사용자에게 노출됩니다.
+                        게시판은 만들자마자 사용 중 상태가 되어, 주소를 아는 로그인 사용자는 바로 읽고 씁니다.
+                        함께 등록되는 메뉴는 비활성이며, 메뉴 관리에서 활성화하면 관리자 그룹에만 자동으로 보입니다.
+                        다른 그룹에 보이려면 메뉴 관리에서 활성화와 그룹 표시를 함께 저장하세요.
                       </p>
                     </div>
                   </div>
@@ -760,9 +773,9 @@ export function BoardMakerWizard() {
             </Button>
 
             {/* 권한이 없으면 첫 단계부터 사유를 보인다 — 네 단계를 다 채운 뒤에 알리지 않는다. */}
-            {!(canCreateBoard && canCreateMenu) ? (
+            {missingPermissionReason ? (
               <p role="status" className="text-[length:var(--font-size-body)] font-medium text-muted-foreground">
-                {canCreateBoard ? '메뉴를 등록할 권한이 없어 게시판을 만들 수 없습니다.' : '게시판을 만들 권한이 없습니다.'}
+                {missingPermissionReason}
               </p>
             ) : (
               <Button

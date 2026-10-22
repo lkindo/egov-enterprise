@@ -350,4 +350,40 @@ class SatisfactionServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
     }
+
+    /** [2026-10-23 ADR-0040 A0] 경로의 글에 속한 평가만 통과한다. 다른 글·게시판·없는 평가는 모두 같은 404 다. */
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}/{1} → {2}")
+    @org.junit.jupiter.params.provider.CsvSource({
+            "BBS_01, 1, true",
+            "BBS_01, 2, false",
+            "BBS_02, 1, false"})
+    @DisplayName("평가 소속 대조 - 경로의 게시판·게시글과 같을 때만 통과한다")
+    void assertLocatedAtMatchesBoardAndPost(String bbsId, long pstSn, boolean located) {
+        Satisfaction entity = Satisfaction.builder().dgstfnSn(10L).bbsId("BBS_01").pstSn(1L).dgstfnScr(5).build();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(entity));
+
+        if (located) {
+            satisfactionService.assertLocatedAt(10L, bbsId, pstSn);
+        } else {
+            assertThatThrownBy(() -> satisfactionService.assertLocatedAt(10L, bbsId, pstSn))
+                    .isInstanceOf(BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+    }
+
+    @Test
+    @DisplayName("평가 소속 대조 - 없거나 지운 평가는 같은 404 다")
+    void assertLocatedAtRejectsMissingOrDeleted() {
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.empty());
+        assertThatThrownBy(() -> satisfactionService.assertLocatedAt(10L, "BBS_01", 1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        Satisfaction deleted = Satisfaction.builder().dgstfnSn(10L).bbsId("BBS_01").pstSn(1L).dgstfnScr(5).build();
+        deleted.delete();
+        given(satisfactionRepository.findById(10L)).willReturn(Optional.of(deleted));
+        assertThatThrownBy(() -> satisfactionService.assertLocatedAt(10L, "BBS_01", 1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+    }
 }

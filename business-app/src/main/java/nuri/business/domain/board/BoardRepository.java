@@ -78,11 +78,9 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
                         @Param("fromDate") String fromDate,
                         @Param("toDate") String toDate);
 
-        @Query("SELECT COUNT(b) FROM Board b WHERE b.bbsId = :bbsId")
-        long countAllByBbsId(@Param("bbsId") String bbsId);
-
         /**
-         * 영구 삭제를 막아야 하는 게시글 보유 게시판 ID를 한 번에 조회한다.
+         * 영구 삭제를 막아야 하는 게시글 보유 게시판 ID를 조회한다. 단건 판정도 이 질의 하나를 쓴다(ADR-0040 A0 —
+         * 종전 단건 JPQL COUNT 는 soft-delete 필터에 걸려 논리 삭제 글을 빼고 셌다).
          *
          * <p>물리 FK가 보는 전체 행과 같은 집합을 봐야 하므로 native query를 사용해
          * {@code softDeleteFilter}를 우회한다. 숨김 게시글도 남아 있으면 마스터 물리 삭제는 안전하지 않다.

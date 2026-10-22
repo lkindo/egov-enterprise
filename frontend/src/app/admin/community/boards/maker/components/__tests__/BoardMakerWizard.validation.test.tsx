@@ -132,6 +132,8 @@ describe('BoardMakerWizard validation', () => {
   it.each([
     { label: '게시판 생성 권한이 없으면', permissions: [...READ_ONLY_PERMISSIONS, 'MENU_CREATE'], message: '게시판을 만들 권한이 없습니다.' },
     { label: '메뉴 등록 권한만 없으면', permissions: [...READ_ONLY_PERMISSIONS, 'BBS_MST_CREATE'], message: '메뉴를 등록할 권한이 없어 게시판을 만들 수 없습니다.' },
+    // [2026-10-23 ADR-0040 A0] 메뉴 등록 다시 시도는 전체 메뉴(MENU_READ)를 먼저 읽는다 — 없으면 게시판만 만들어진 채 멈춘다.
+    { label: '메뉴 목록 조회 권한만 없으면', permissions: ['BBS_MST_READ', 'AUTHRT_READ', 'BBS_MST_CREATE', 'MENU_CREATE'], message: '메뉴 목록을 볼 권한이 없어 게시판을 만들 수 없습니다.' },
   ])('$label 첫 단계부터 사유를 보이고 다음 단계·제출 버튼을 두지 않는다', async ({ permissions, message }) => {
     auth.permissions = permissions;
     render(<BoardMakerWizard />);

@@ -196,8 +196,18 @@ public class BoardMasterService extends BaseAbstractService {
         if (!"N".equals(master.getUseYn())) {
             return false;
         }
-        long count = boardRepository.countAllByBbsId(bbsId);
-        return count == 0;
+        return !hasAnyArticleRow(bbsId);
+    }
+
+    /**
+     * 게시글 행이 하나라도 남아 있는가 — 물리 FK 가 보는 집합 그대로다(논리 삭제 글 포함).
+     *
+     * <p>[2026-10-23 ADR-0040 A0] 종전 단건 판정은 JPQL COUNT 라 서비스 안에서 켜지는 soft-delete 필터에 걸려 논리 삭제 글을
+     * 빼고 셌다. 그래서 논리 삭제 글만 남은 게시판은 "삭제 가능" 으로 보인 뒤 물리 삭제에서 FK 로 실패했다. 일괄 판정과 같은
+     * 네이티브 질의 하나로 판정한다.
+     */
+    private boolean hasAnyArticleRow(String bbsId) {
+        return !boardRepository.findBbsIdsHavingAnyArticles(List.of(bbsId)).isEmpty();
     }
 
     @Transactional
@@ -209,8 +219,7 @@ public class BoardMasterService extends BaseAbstractService {
             throw new BusinessException(BoardErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
         }
 
-        long count = boardRepository.countAllByBbsId(bbsId);
-        if (count > 0) {
+        if (hasAnyArticleRow(bbsId)) {
             throw new BusinessException(BoardErrorCode.BOARD_HAS_ARTICLES);
         }
 

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 3,
-  "sourceMigrationHash": "82785334c4034b093f65f6f91bfcc2747246d8f73f61cf7afc1b561c9f79644f",
+  "sourceMigrationHash": "29629f4355c91165b9f9e7dedec035bc636005c5980493fbb7ff12d9cff2b20d",
   "menus": [
     {
       "menu_sn": 1000000,
@@ -546,7 +546,7 @@
       "menu_sn": 9030140,
       "up_menu_sn": 9030000,
       "menu_ordr": 1,
-      "menu_nm": "통합 게시판 마스터 콘솔",
+      "menu_nm": "게시판 관리",
       "menu_expln": "",
       "modern_route": "/admin/community/boards/master",
       "use_yn": "Y",

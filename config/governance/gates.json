@@ -887,6 +887,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/ScreenMenuRenameProgramRetirementMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-MIG-BOARD-MASTER-MENU-RENAME",
+          "source": "api-server/src/test/java/nuri/api/schema/BoardMasterMenuRenameMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-USER-SURVEY-ADMIN-NAVIGATION-RETIREMENT",
           "source": "api-server/src/test/java/nuri/api/schema/UserSurveyAdminNavigationRetirementMigrationIntegrationTest.java"
         },

@@ -38,6 +38,9 @@ class BoardRepositoryTest {
         }
     }
 
+    /** 공개 FAQ 게시 종료 판정에 넘기는 고정 기준일. */
+    private static final String TODAY = "20261023";
+
     @Autowired
     private BoardRepository boardRepository;
 
@@ -315,7 +318,7 @@ class BoardRepositoryTest {
 
         assertThat(boardRepository.findActiveArticleDetail(inactiveMaster.getBbsId(), article.getPstSn()))
                 .isEmpty();
-        assertThat(boardRepository.findPublicArticleDetail(inactiveMaster.getBbsId(), article.getPstSn()))
+        assertThat(boardRepository.findPublicArticleDetail(inactiveMaster.getBbsId(), article.getPstSn(), TODAY))
                 .isEmpty();
     }
 
@@ -352,7 +355,7 @@ class BoardRepositoryTest {
         em.clear();
 
         BoardDetailResult publicDetail = boardRepository
-                .findPublicArticleDetail(testMaster.getBbsId(), publicArticle.getPstSn())
+                .findPublicArticleDetail(testMaster.getBbsId(), publicArticle.getPstSn(), TODAY)
                 .orElseThrow();
         assertThat(publicDetail.getPstCn()).isEqualTo("public-body-marker");
         assertThat(publicDetail.getUserId()).isNull();
@@ -360,11 +363,11 @@ class BoardRepositoryTest {
         assertThat(publicDetail.getPswd()).isNull();
         assertThat(publicDetail.getAtchFileSn()).isNull();
         assertThat(publicDetail.getQnaSttsCd()).isNull();
-        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), secretArticle.getPstSn()))
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), secretArticle.getPstSn(), TODAY))
                 .isEmpty();
-        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), inactiveArticle.getPstSn()))
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), inactiveArticle.getPstSn(), TODAY))
                 .isEmpty();
-        assertThat(boardRepository.findPublicArticleDetail("BBS_WRONG", publicArticle.getPstSn()))
+        assertThat(boardRepository.findPublicArticleDetail("BBS_WRONG", publicArticle.getPstSn(), TODAY))
                 .isEmpty();
     }
 
@@ -490,12 +493,77 @@ class BoardRepositoryTest {
         em.clear();
 
         Page<BoardSearchResult> results = boardRepository.searchPublicFaqArticles(
-                testMaster.getBbsId(), "membership-marker", PageRequest.of(0, 10));
+                testMaster.getBbsId(), "membership-marker", TODAY, PageRequest.of(0, 10));
 
         assertThat(results.getContent())
                 .extracting(BoardSearchResult::getPstTtl)
                 .containsExactly("membership-marker public FAQ");
         assertThat(results.getTotalElements()).isEqualTo(1);
+    }
+
+    /**
+     * [2026-10-23 ADR-0040 A0] 공개 FAQ 는 일반 목록과 같은 게시 종료 술어를 쓴다. 종료일이 기준일 전이면 목록·상세 모두
+     * 빠지고, 기준일 당일·빈 값은 남는다. 비밀 여부가 비어 있는 글은 목록 판정과 같이 공개 글이다.
+     */
+    @Test
+    @DisplayName("공개 FAQ 목록·상세는 게시 종료 글을 빼고 종료일 당일·빈 값·비밀 여부 빈 글은 남긴다")
+    void publicFaqAppliesPostingEndDateLikeTheArticleList() {
+        Board ended = saveFaq("posting-marker ended", "N", "20261022");
+        Board endsToday = saveFaq("posting-marker ends today", "N", TODAY);
+        Board blankEnd = saveFaq("posting-marker blank end", "N", "");
+        Board noSecretFlag = saveFaq("posting-marker no secret flag", null, null);
+        em.flush();
+        em.clear();
+
+        Page<BoardSearchResult> results = boardRepository.searchPublicFaqArticles(
+                testMaster.getBbsId(), "posting-marker", TODAY, PageRequest.of(0, 10));
+
+        assertThat(results.getContent())
+                .extracting(BoardSearchResult::getPstTtl)
+                .containsExactlyInAnyOrder("posting-marker ends today", "posting-marker blank end",
+                        "posting-marker no secret flag");
+        assertThat(results.getTotalElements()).isEqualTo(3);
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), ended.getPstSn(), TODAY)).isEmpty();
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), endsToday.getPstSn(), TODAY)).isPresent();
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), blankEnd.getPstSn(), TODAY)).isPresent();
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), noSecretFlag.getPstSn(), TODAY)).isPresent();
+    }
+
+    /** [2026-10-23 ADR-0040 A0] 목록 projection 이 게시 기간을 싣지 않아 목록의 '게시 종료' 배지가 그려질 수 없었다. */
+    @Test
+    @DisplayName("목록 projection 은 게시 시작일·종료일을 싣는다")
+    void searchArticlesCarriesPostingPeriod() {
+        boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl("period-marker")
+                .pstCn("body")
+                .useYn("Y")
+                .scrtYn("N")
+                .pstBgngYmd("20261001")
+                .pstEndYmd("20261231")
+                .build());
+        em.flush();
+        em.clear();
+        BoardSearchCondition condition = new BoardSearchCondition(testMaster.getBbsId());
+        condition.setSecretPostAdminOverride(true);
+
+        Page<BoardSearchResult> results = boardRepository.searchArticles(condition, PageRequest.of(0, 10));
+
+        assertThat(results.getContent()).singleElement().satisfies(row -> {
+            assertThat(row.getPstBgngYmd()).isEqualTo("20261001");
+            assertThat(row.getPstEndYmd()).isEqualTo("20261231");
+        });
+    }
+
+    private Board saveFaq(String title, String scrtYn, String pstEndYmd) {
+        return boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl(title)
+                .pstCn("body")
+                .useYn("Y")
+                .scrtYn(scrtYn)
+                .pstEndYmd(pstEndYmd)
+                .build());
     }
 
     @Test

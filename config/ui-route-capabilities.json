@@ -2151,7 +2151,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "게시판 마스터 콘솔",
+      "visibleLabel": "게시판 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
       "routing": {

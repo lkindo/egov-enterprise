@@ -244,12 +244,13 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "permissions": [
       {"code":"BBS_MST_CREATE","action":"CREATE","source":"entry"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"entry"},
-      {"code":"MENU_CREATE","action":"CREATE","source":"write"}
+      {"code":"MENU_CREATE","action":"CREATE","source":"write"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
   {
     "route": "/admin/community/boards/master",
-    "label": "통합 게시판 마스터 콘솔",
+    "label": "게시판 관리",
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,

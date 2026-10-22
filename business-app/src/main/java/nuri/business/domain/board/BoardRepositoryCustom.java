@@ -12,8 +12,9 @@ public interface BoardRepositoryCustom {
 
     BoardStatsResult aggregateVisibleStats(@NonNull BoardSearchCondition condition);
 
+    /** @param today 게시 종료 판정 기준일(yyyyMMdd, Asia/Seoul) */
     Page<BoardSearchResult> searchPublicFaqArticles(
-            @NonNull String bbsId, String keyword, @NonNull Pageable pageable);
+            @NonNull String bbsId, String keyword, @NonNull String today, @NonNull Pageable pageable);
 
     Optional<BoardDetailResult> findActiveArticleDetail(@NonNull String bbsId, @NonNull Long pstSn);
 
@@ -26,5 +27,6 @@ public interface BoardRepositoryCustom {
      */
     Optional<BoardDetailResult> findArticleDetailIncludingDeleted(@NonNull String bbsId, @NonNull Long pstSn);
 
-    Optional<BoardDetailResult> findPublicArticleDetail(@NonNull String bbsId, @NonNull Long pstSn);
+    /** @param today 게시 종료 판정 기준일(yyyyMMdd, Asia/Seoul) */
+    Optional<BoardDetailResult> findPublicArticleDetail(@NonNull String bbsId, @NonNull Long pstSn, @NonNull String today);
 }

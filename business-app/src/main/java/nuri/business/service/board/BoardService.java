@@ -199,6 +199,7 @@ public class BoardService extends BaseAbstractService {
                 return boardRepository.searchPublicFaqArticles(
                                 boardIdProperties.getFaqId(),
                                 searchWrd,
+                                todayYmd(),
                                 required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(boardMapper::toDto);
         }
@@ -627,7 +628,7 @@ public class BoardService extends BaseAbstractService {
         @Transactional(readOnly = true)
         public BoardDto getPublicFaqDetail(@NonNull Long pstSn) {
                 BoardDetailResult detail = boardRepository
-                                .findPublicArticleDetail(boardIdProperties.getFaqId(), pstSn)
+                                .findPublicArticleDetail(boardIdProperties.getFaqId(), pstSn, todayYmd())
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 viewCountService.increaseViewCount(pstSn);

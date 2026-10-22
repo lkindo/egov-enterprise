@@ -271,4 +271,58 @@ class SatisfactionApiControllerTest {
         // 세 경로 전부 가드를 지났음을 호출 횟수로 고정한다 — 하나라도 빠지면 그 경로가 다시 열린 것이다.
         verify(boardService, org.mockito.Mockito.times(3)).assertCommentAccess("BBS_01", 1L);
     }
+
+    /**
+     * 🔒 [2026-10-23 ADR-0040 A0] 수정·삭제도 경로 글의 열람 가드를 먼저 지나고, 그다음 평가의 실제 소속을 본다.
+     * 종전에는 작성자 확인만 해서, 읽을 수 없는 글(회원 전용 게시판 탈퇴 뒤·비밀글)의 자기 평가를 고칠 수 있었다.
+     */
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PUT", "DELETE"})
+    @DisplayName("🔒 볼 수 없는 글의 평가는 수정·삭제할 수 없다 — 소속 대조와 서비스에 닿지 않는다")
+    void updateAndDeleteOnInaccessiblePostAreForbiddenBeforeService(String method) throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(boardService).assertCommentAccess("BBS_01", 99L);
+
+        mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/99/satisfactions/10"))
+                .andExpect(status().isForbidden());
+
+        verify(satisfactionService, never()).assertLocatedAt(anyLong(), anyString(), anyLong());
+        verify(satisfactionService, never()).updateSatisfaction(any());
+        verify(satisfactionService, never()).deleteSatisfaction(anyLong());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PUT", "DELETE"})
+    @DisplayName("🔒 경로의 글에 속하지 않은 평가 번호는 없는 평가와 같은 404 다")
+    void updateAndDeleteRejectSatisfactionOfAnotherPost(String method) throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND))
+                .when(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
+
+        mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/1/satisfactions/10"))
+                .andExpect(status().isNotFound());
+
+        verify(boardService).assertCommentAccess("BBS_01", 1L);
+        verify(satisfactionService, never()).updateSatisfaction(any());
+        verify(satisfactionService, never()).deleteSatisfaction(anyLong());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"PUT", "DELETE"})
+    @DisplayName("경로의 글에 속한 자기 평가는 가드와 소속 대조를 지나 수정·삭제된다")
+    void updateAndDeletePassGuardAndLocation(String method) throws Exception {
+        mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/1/satisfactions/10"))
+                .andExpect(status().isOk());
+
+        var order = org.mockito.Mockito.inOrder(boardService, satisfactionService);
+        order.verify(boardService).assertCommentAccess("BBS_01", 1L);
+        order.verify(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
+    }
+
+    private static org.springframework.test.web.servlet.request.MockHttpServletRequestBuilder modify(
+            String method, String path) {
+        return "PUT".equals(method)
+                ? org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put(path)
+                        .contentType("application/json").content("{\"dgstfnScr\":4,\"useYn\":\"Y\"}")
+                : delete(path);
+    }
 }

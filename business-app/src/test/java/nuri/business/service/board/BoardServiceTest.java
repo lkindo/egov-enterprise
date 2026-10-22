@@ -814,14 +814,15 @@ class BoardServiceTest {
                         .useYn("Y")
                         .build()));
         given(boardRepository.searchPublicFaqArticles(
-                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", pageable))
+                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", BoardPolicySupport.todayYmd(), pageable))
                 .willReturn(Page.empty(pageable));
 
         boardService.getPublicFaqPosts("secret-search-marker", pageable);
 
         verify(boardMasterRepository).findById("BBSMSTR_AAAAAAAAAAAA");
+        // 게시 종료 판정 기준일(Asia/Seoul 오늘)을 함께 넘긴다(ADR-0040 A0).
         verify(boardRepository).searchPublicFaqArticles(
-                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", pageable);
+                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", BoardPolicySupport.todayYmd(), pageable);
         verify(boardRepository, never()).searchArticles(any(), any());
     }
 
@@ -836,7 +837,7 @@ class BoardServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
 
-        verify(boardRepository, never()).searchPublicFaqArticles(anyString(), any(), any());
+        verify(boardRepository, never()).searchPublicFaqArticles(anyString(), any(), anyString(), any());
     }
 
     @Test
@@ -853,7 +854,7 @@ class BoardServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
 
-        verify(boardRepository, never()).searchPublicFaqArticles(anyString(), any(), any());
+        verify(boardRepository, never()).searchPublicFaqArticles(anyString(), any(), anyString(), any());
     }
 
     @Test
@@ -872,7 +873,7 @@ class BoardServiceTest {
                 .atchFileSn(99L)
                 .qnaSttsCd("must-not-leave-service")
                 .build();
-        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn))
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, BoardPolicySupport.todayYmd()))
                 .willReturn(Optional.of(detail));
 
         BoardDto result = boardService.getPublicFaqDetail(pstSn);
@@ -886,7 +887,7 @@ class BoardServiceTest {
         assertThat(result.pswd()).isNull();
         assertThat(result.atchFileSn()).isNull();
         assertThat(result.qnaSttsCd()).isNull();
-        verify(boardRepository).findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn);
+        verify(boardRepository).findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, BoardPolicySupport.todayYmd());
         verify(boardRepository, never()).findActiveArticleDetail(anyString(), anyLong());
         verify(viewCountService).increaseViewCount(pstSn);
     }
@@ -895,7 +896,7 @@ class BoardServiceTest {
     @DisplayName("공개 FAQ 상세가 없으면 본문과 조회수 없이 동일한 not-found로 종료한다")
     void getPublicFaqDetailDeniesSecretInactiveOrWrongBoardBeforeViewCount() {
         Long pstSn = 16L;
-        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn))
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, BoardPolicySupport.todayYmd()))
                 .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> boardService.getPublicFaqDetail(pstSn))

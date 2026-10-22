@@ -116,7 +116,7 @@ test.describe('Middleware /admin path policy (deny-by-default matrix)', () => {
         '/admin/security/authority',
         '/admin/stats',
         '/admin/workflow',
-        '/admin/community/boards/master', // 게시판 마스터 콘솔
+        '/admin/community/boards/master', // 게시판 관리
         '/admin/community/boards/maker', // 게시판 생성 마법사
         '/admin/community/templates', // 템플릿 관리
     ];

@@ -318,7 +318,7 @@ class BoardMasterServiceTest {
     void isDeletable_Success() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01"))).willReturn(List.of());
 
         boolean result = boardMasterService.isDeletable("BBS_01");
 
@@ -341,7 +341,7 @@ class BoardMasterServiceTest {
     void isDeletable_HasArticles() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(5L);
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01"))).willReturn(List.of("BBS_01"));
 
         boolean result = boardMasterService.isDeletable("BBS_01");
 
@@ -353,7 +353,7 @@ class BoardMasterServiceTest {
     void deleteBoardMasterPhysically_Success() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(0L);
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01"))).willReturn(List.of());
 
         boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01");
 
@@ -375,7 +375,7 @@ class BoardMasterServiceTest {
     void deleteBoardMasterPhysically_HasArticles() {
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(master));
-        given(boardRepository.countAllByBbsId("BBS_01")).willReturn(3L);
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01"))).willReturn(List.of("BBS_01"));
 
         assertThrows(BusinessException.class, 
             () -> boardMasterService.deleteBoardMasterPhysically("user1", "BBS_01"));
@@ -440,7 +440,6 @@ class BoardMasterServiceTest {
         verify(boardRepository).findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBS_02"));
         verify(boardMasterRepository).deleteAll(List.of(master1, master2));
         verify(boardMasterRepository, never()).findById(anyString());
-        verify(boardRepository, never()).countAllByBbsId(anyString());
         verify(boardMasterRepository, never()).delete(any(BoardMaster.class));
     }
 
