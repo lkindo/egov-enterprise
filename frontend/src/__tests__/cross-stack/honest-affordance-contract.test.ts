@@ -675,8 +675,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     const raw = readRepo(boardMakerWizard);
     const membership = raw.indexOf('회원 범위:');
     expect(membership, '회원 범위 문장을 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
-    const start = raw.lastIndexOf('reusable-base:community:start', membership);
-    const end = raw.lastIndexOf('reusable-base:community:end', membership);
+    // 마커 문자열은 실행 시점에 조립한다 — 그대로 쓰면 생성기의 마커 탐지가 이 시험 파일을 커뮤니티 블록으로 읽는다.
+    const marker = (edge: string) => ['reusable-base', 'community', edge].join(':');
+    const start = raw.lastIndexOf(marker('start'), membership);
+    const end = raw.lastIndexOf(marker('end'), membership);
     expect(start, '회원 범위 문장이 커뮤니티 마커 안에 있지 않다').toBeGreaterThan(end);
   });
 
