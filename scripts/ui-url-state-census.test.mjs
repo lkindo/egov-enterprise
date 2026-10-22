@@ -53,7 +53,7 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.ok(FILESYSTEM_ROUTE_COUNT >= 100, `route discovery collapsed: ${FILESYSTEM_ROUTE_COUNT} < 100`);
   assert.deepEqual(actual.summary.exactPopulations, {
     filesystemRoutes: FILESYSTEM_ROUTE_COUNT,
-    dynamicRoutePatterns: 11,
+    dynamicRoutePatterns: 12,
     configRedirects: 13,
     pageRedirects: 17,
   });

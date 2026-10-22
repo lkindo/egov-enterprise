@@ -176,6 +176,21 @@ describe('콘텐츠 페이지 관리(ADR-0039)', () => {
     expect(createButton).toBeEnabled();
   });
 
+  it('저장하지 않은 변경이 있으면 새 페이지를 만들기 전에 묻고, 취소하면 입력이 그대로다', async () => {
+    const title = await openPage();
+    fireEvent.change(title, { target: { value: '저장 안 한 제목' } });
+    mocks.confirm.mockResolvedValueOnce(false);
+    fireEvent.click(screen.getByRole('button', { name: /새 페이지/ }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '저장하지 않은 변경' })));
+    expect(screen.queryByRole('dialog')).toBeNull();
+    expect(title).toHaveValue('저장 안 한 제목');
+
+    mocks.confirm.mockResolvedValueOnce(true);
+    fireEvent.click(screen.getByRole('button', { name: /새 페이지/ }));
+    expect(await screen.findByRole('dialog')).toBeInTheDocument();
+  });
+
   it('게시한 페이지는 주소를 바꿀 수 없다', async () => {
     mocks.getPage.mockResolvedValue(detail({ status: 'PUBLISHED', pathLocked: true, revisionCount: 1 }));
     await openPage();

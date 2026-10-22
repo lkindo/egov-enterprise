@@ -2,6 +2,8 @@
 -- 선택 기능 cms 가 소유하는 새 표 다섯 개다. 기존 표는 바꾸지 않는다(Expand 전용, 되돌리기는 기능 중지 — 표를 지우지 않는다).
 -- 문서 정본은 jsonb 하나다(초안: tb_cms_conts, 게시본: tb_cms_conts_rvsn). 허용 구조는 서버 검증기 한 곳이 판정하고 DB 는
 --   최상위가 객체인지와 크기 상한만 본다 — 문서를 해석하는 트리거를 두지 않는다(ADR-0039 결정 5).
+--   정밀한 크기 상한(1 MiB)은 검증기가 압축 JSON 바이트로 잰다. DB 상한(2 MiB)은 검증기를 우회한 적재를 막는 안전망이다 —
+--   jsonb::text 는 구분자 뒤에 공백을 넣어 같은 문서가 최대 약 1.5배로 재진다. 같은 1 MiB 를 두면 검증을 통과한 경계 문서를 거절한다.
 -- 게시 리비전과 리비전 첨부 집합은 INSERT 만 받는다(트리거, V2_132 형식). 현재 게시 포인터는 같은 페이지의 리비전만 가리킨다
 --   (복합 FK). 보관한 페이지는 게시 포인터가 비어 있어야 한다.
 -- 첨부: 페이지가 쓰는 이미지는 기존 업로드 API 로 올린 첨부다. tb_cms_conts_file 이 첨부 하나(마스터·순서)를 페이지 하나에 묶고,
@@ -101,7 +103,7 @@ CREATE TABLE tb_cms_conts (
     CONSTRAINT ck_tb_cms_conts_conts_path_nm CHECK (conts_path_nm ~ '^[a-z0-9]+(-[a-z0-9]+)*$'),
     CONSTRAINT ck_tb_cms_conts_conts_ttl CHECK (btrim(conts_ttl) <> ''),
     CONSTRAINT ck_tb_cms_conts_conts_doc_cn CHECK (jsonb_typeof(conts_doc_cn) = 'object'
-        AND octet_length(conts_doc_cn::text) <= 1048576),
+        AND octet_length(conts_doc_cn::text) <= 2097152),
     CONSTRAINT ck_tb_cms_conts_kpng_yn CHECK (kpng_yn IN ('N', 'Y')),
     CONSTRAINT ck_tb_cms_conts_kpng_unpublished CHECK (kpng_yn = 'N' OR conts_rvsn_sn IS NULL),
     CONSTRAINT ck_tb_cms_conts_version CHECK (version >= 0)
@@ -121,7 +123,7 @@ CREATE TABLE tb_cms_conts_rvsn (
     CONSTRAINT uk_tb_cms_conts_rvsn_conts_sn_conts_rvsn_sn UNIQUE (conts_sn, conts_rvsn_sn),
     CONSTRAINT ck_tb_cms_conts_rvsn_conts_ttl CHECK (btrim(conts_ttl) <> ''),
     CONSTRAINT ck_tb_cms_conts_rvsn_conts_doc_cn CHECK (jsonb_typeof(conts_doc_cn) = 'object'
-        AND octet_length(conts_doc_cn::text) <= 1048576)
+        AND octet_length(conts_doc_cn::text) <= 2097152)
 );
 
 -- 현재 게시 포인터는 같은 페이지의 리비전만 가리킨다. 포인터가 비면(미게시·게시 중지) 검사하지 않는다(MATCH SIMPLE).
@@ -276,4 +278,21 @@ BEGIN
         authrt_type_cd, authrt_grnt_cd, chg_artcl_nm, chg_bfr_cn, chg_aftr_cn, chg_rsn, frst_rgtr_id, crt_dt)
     SELECT 'migration:2.137', catalog_version, 'GROUP_GRANT', 'ADD', authrt_cd, 'NAVIGATION', authrt_grnt_cd,
         'grant', NULL, authrt_grnt_cd, 'ADR-0039: 콘텐츠 페이지 관리 메뉴', 'SYSTEM', CURRENT_TIMESTAMP FROM added;
+
+    -- 기능 권한 4종의 기본 배정(권한 원장 defaultGroups: 관리자·시스템). 메뉴가 빈 신규 base 는 R__zz_seed_base_admin 이 같은 배정을
+    -- 넣지만 그 시드는 기존 DB 에서 돌지 않는다 — 기본 그룹이 정해진 다른 권한처럼(V2_99) 버전 마이그레이션이 기존 DB 에 넣는다.
+    -- 이미 배정된 행은 다시 넣지 않는다.
+    WITH added AS (
+        INSERT INTO tb_authrt_grnt_map(authrt_cd, authrt_type_cd, authrt_grnt_cd, frst_rgtr_id, crt_dt, last_mdfr_id, mdfcn_dt)
+        SELECT a.authrt_cd, 'OPERATION', p.code, 'SYSTEM', CURRENT_TIMESTAMP, 'SYSTEM', CURRENT_TIMESTAMP
+          FROM tb_authrt_info a
+         CROSS JOIN (VALUES ('CMS_ADMIN_READ'), ('CMS_UPDATE'), ('CMS_PUBLISH'), ('CMS_HOME_UPDATE')) AS p(code)
+         WHERE a.authrt_cd IN ('ROLE_ADMIN', 'ROLE_SYSTEM')
+           AND NOT EXISTS (SELECT 1 FROM tb_authrt_grnt_map g
+                            WHERE g.authrt_cd = a.authrt_cd AND g.authrt_type_cd = 'OPERATION' AND g.authrt_grnt_cd = p.code)
+        RETURNING authrt_cd, authrt_grnt_cd
+    ) INSERT INTO tb_authrt_chg_hstry(dmnd_idntfr, plcy_ver_no, chg_trgt_type_cd, chg_type_cd, authrt_cd,
+        authrt_type_cd, authrt_grnt_cd, chg_artcl_nm, chg_bfr_cn, chg_aftr_cn, chg_rsn, frst_rgtr_id, crt_dt)
+    SELECT 'migration:2.137', catalog_version, 'GROUP_GRANT', 'ADD', authrt_cd, 'OPERATION', authrt_grnt_cd,
+        'grant', NULL, authrt_grnt_cd, 'ADR-0039: 콘텐츠 페이지 기능 권한', 'SYSTEM', CURRENT_TIMESTAMP FROM added;
 END $cms_menu$;

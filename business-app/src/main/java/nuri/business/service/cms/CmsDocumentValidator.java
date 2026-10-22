@@ -17,6 +17,7 @@ import java.util.LinkedHashSet;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
@@ -46,7 +47,17 @@ public class CmsDocumentValidator {
     private static final Pattern SECTION_ID = Pattern.compile("^[a-z0-9-]{1,40}$");
     private static final Pattern MAILTO = Pattern.compile("^mailto:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
     private static final Pattern TEL = Pattern.compile("^tel:\\+?[0-9][0-9-]{1,30}$");
-    private static final Pattern UNSAFE_URL_CHAR = Pattern.compile("[\\s\\\\\\u0000-\\u001f\\u007f]");
+    /*
+     * 링크 주소 규칙은 화면 판정기(frontend/src/lib/cms/document.ts)와 글자 하나까지 같다. 각 쪽의 URL 해석기(java.net.URI·WHATWG URL)는
+     * 포트 범위·국제화 도메인·대괄호·잘못된 % 표기·두 번째 # 를 서로 다르게 받아, 한쪽이 저장한 링크를 다른 쪽이 거부했다.
+     * 그래서 받는 모양을 정규식으로 먼저 정하고 해석기는 마지막 확인으로만 쓴다. 공백도 양쪽이 같은 글자만 걷는다.
+     */
+    private static final Pattern URL_EDGE_SPACE = Pattern.compile("^[\\t\\n\\f\\r ]+|[\\t\\n\\f\\r ]+$");
+    private static final Pattern UNSAFE_URL_CHAR = Pattern.compile(
+            "[\\u0000-\\u0020\\u007f-\\u00a0\\u1680\\u2000-\\u200f\\u2028-\\u202f\\u205f-\\u2064\\u3000\\ufeff\\\\]");
+    private static final Pattern HTTPS_AUTHORITY = Pattern.compile(
+            "^(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\\.)*[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?::([0-9]{1,5}))?$");
+    private static final Pattern HTTPS_TAIL_FORBIDDEN = Pattern.compile("[\"<>^`{|}\\[\\]]|%(?![0-9A-Fa-f]{2})");
     private static final Pattern CONTROL = Pattern.compile("[\\u0000-\\u0008\\u000b\\u000c\\u000e-\\u001f\\u007f]");
 
     private static final Map<String, Integer> LAYOUT_CELLS = Map.of("one", 1, "two", 2, "two-wide", 2, "three", 3);
@@ -90,7 +101,7 @@ public class CmsDocumentValidator {
         if (value == null) {
             return null;
         }
-        String href = value.strip();
+        String href = URL_EDGE_SPACE.matcher(value).replaceAll("");
         if (href.isEmpty() || href.length() > MAX_URL_LENGTH || UNSAFE_URL_CHAR.matcher(href).find()) {
             return null;
         }
@@ -106,6 +117,22 @@ public class CmsDocumentValidator {
         }
         if (!lower.startsWith("https://")) {
             return null;
+        }
+        String rest = href.substring("https://".length());
+        int authorityEnd = 0;
+        while (authorityEnd < rest.length() && "/?#".indexOf(rest.charAt(authorityEnd)) < 0) {
+            authorityEnd++;
+        }
+        Matcher authority = HTTPS_AUTHORITY.matcher(rest.substring(0, authorityEnd));
+        String tail = rest.substring(authorityEnd);
+        if (!authority.matches() || HTTPS_TAIL_FORBIDDEN.matcher(tail).find() || tail.indexOf('#') != tail.lastIndexOf('#')) {
+            return null;
+        }
+        if (authority.group(1) != null) {
+            int port = Integer.parseInt(authority.group(1));
+            if (port < 1 || port > 65_535) {
+                return null;
+            }
         }
         try {
             URI uri = new URI(href);

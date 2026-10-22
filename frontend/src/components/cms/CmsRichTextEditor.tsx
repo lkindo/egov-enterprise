@@ -5,7 +5,7 @@ import { EditorContent, useEditor, useEditorState, type JSONContent } from '@tip
 import StarterKit from '@tiptap/starter-kit';
 import Link from '@tiptap/extension-link';
 import TextAlign from '@tiptap/extension-text-align';
-import { TableKit } from '@tiptap/extension-table';
+import { TableCell, TableHeader, TableKit } from '@tiptap/extension-table';
 import DOMPurify from 'isomorphic-dompurify';
 import {
   AlignCenter, AlignLeft, AlignRight, Bold, Heading2, Heading3, Italic, Link as LinkIcon, List, ListOrdered,
@@ -25,8 +25,49 @@ import { safeHref, type CmsRichDoc } from '@/lib/cms/document';
  *
  * - 붙여넣기는 통째로 거절하지 않는다. 문서 앱의 스타일·스크립트·미디어·클래스는 걷어 내고 남은 구조(문단·목록·표·링크)만 받는다.
  *   허용하지 않는 주소의 링크는 링크 서식만 빠진다(isAllowedUri).
- * - 서식 도구 줄은 탭 정지가 하나다(로빙) — 화살표·Home·End 로 도구 사이를 옮긴다.
+ * - 서식 도구 줄은 탭 정지가 하나다(로빙) — 화살표·Home·End 로 쓸 수 있는 도구 사이를 옮긴다(비활성 단추는 건너뛴다).
+ * - 편집기 스키마는 서버 검증기의 중첩 규칙과 같다 — 인용 안에는 문단만, 목록 항목과 표 칸 안에는 문단·목록만 둔다. 기본 스키마는
+ *   그 자리에 아무 블록이나 받아, 도구만 써도 서버가 거부할 문서(인용 안 제목, 표 안 제목)가 만들어졌다.
  */
+
+/** 서버 검증기(CmsDocumentValidator)의 중첩 규칙. 붙여넣은 내용도 이 스키마에 맞춰 들어온다. */
+const CONTENT_RULES: Record<string, string> = {
+  blockquote: 'paragraph+',
+  listItem: 'paragraph (paragraph | bulletList | orderedList)*',
+};
+const CELL_CONTENT = '(paragraph | bulletList | orderedList)+';
+
+/** 콘텐츠 페이지 서식 본문의 확장 목록. 화면 편집기와 스키마 시험이 같은 목록을 쓴다. */
+export function cmsRichTextExtensions() {
+  const CmsStarterKit = StarterKit.extend({
+    addExtensions() {
+      return (this.parent?.() ?? []).map((extension) => {
+        const content = CONTENT_RULES[extension.name];
+        return content ? extension.extend({ content }) : extension;
+      });
+    },
+  });
+  return [
+    CmsStarterKit.configure({
+      heading: { levels: [2, 3] },
+      link: false,
+      code: false,
+      codeBlock: false,
+      horizontalRule: false,
+    }),
+    Link.configure({
+      openOnClick: false,
+      autolink: false,
+      linkOnPaste: false,
+      isAllowedUri: (url) => safeHref(url) !== null,
+      HTMLAttributes: { class: 'text-primary underline underline-offset-4', rel: 'noopener noreferrer', target: null },
+    }),
+    TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'] }),
+    TableKit.configure({ table: { resizable: true, cellMinWidth: 72 }, tableCell: false, tableHeader: false }),
+    TableCell.extend({ content: CELL_CONTENT }),
+    TableHeader.extend({ content: CELL_CONTENT }),
+  ];
+}
 
 export function sanitizePastedCmsHtml(html: string): string {
   return DOMPurify.sanitize(html, {
@@ -58,24 +99,7 @@ interface ToolItem {
 export function CmsRichTextEditor({ value, onChange, label, readOnly = false, onNotice }: CmsRichTextEditorProps) {
   const emitted = React.useRef<CmsRichDoc | null>(value);
   const editor = useEditor({
-    extensions: [
-      StarterKit.configure({
-        heading: { levels: [2, 3] },
-        link: false,
-        code: false,
-        codeBlock: false,
-        horizontalRule: false,
-      }),
-      Link.configure({
-        openOnClick: false,
-        autolink: false,
-        linkOnPaste: false,
-        isAllowedUri: (url) => safeHref(url) !== null,
-        HTMLAttributes: { class: 'text-primary underline underline-offset-4', rel: 'noopener noreferrer', target: null },
-      }),
-      TextAlign.configure({ types: ['heading', 'paragraph'], alignments: ['left', 'center', 'right'] }),
-      TableKit.configure({ table: { resizable: true, cellMinWidth: 72 } }),
-    ],
+    extensions: cmsRichTextExtensions(),
     content: value as JSONContent,
     editable: !readOnly,
     immediatelyRender: false,
@@ -150,13 +174,18 @@ export function CmsRichTextEditor({ value, onChange, label, readOnly = false, on
     ],
     [
       { label: '본문', icon: <Type size={16} />, run: () => chain().setParagraph().run(), active: editor.isActive('paragraph') },
-      { label: '제목 2', icon: <Heading2 size={16} />, run: () => chain().toggleHeading({ level: 2 }).run(), active: editor.isActive('heading', { level: 2 }) },
-      { label: '제목 3', icon: <Heading3 size={16} />, run: () => chain().toggleHeading({ level: 3 }).run(), active: editor.isActive('heading', { level: 3 }) },
+      { label: '제목 2', icon: <Heading2 size={16} />, run: () => chain().toggleHeading({ level: 2 }).run(), active: editor.isActive('heading', { level: 2 }),
+        disabled: !editor.can().toggleHeading({ level: 2 }) },
+      { label: '제목 3', icon: <Heading3 size={16} />, run: () => chain().toggleHeading({ level: 3 }).run(), active: editor.isActive('heading', { level: 3 }),
+        disabled: !editor.can().toggleHeading({ level: 3 }) },
     ],
     [
-      { label: '글머리 기호 목록', icon: <List size={16} />, run: () => chain().toggleBulletList().run(), active: editor.isActive('bulletList') },
-      { label: '번호 목록', icon: <ListOrdered size={16} />, run: () => chain().toggleOrderedList().run(), active: editor.isActive('orderedList') },
-      { label: '인용', icon: <Quote size={16} />, run: () => chain().toggleBlockquote().run(), active: editor.isActive('blockquote') },
+      { label: '글머리 기호 목록', icon: <List size={16} />, run: () => chain().toggleBulletList().run(), active: editor.isActive('bulletList'),
+        disabled: !editor.can().toggleBulletList() },
+      { label: '번호 목록', icon: <ListOrdered size={16} />, run: () => chain().toggleOrderedList().run(), active: editor.isActive('orderedList'),
+        disabled: !editor.can().toggleOrderedList() },
+      { label: '인용', icon: <Quote size={16} />, run: () => chain().toggleBlockquote().run(), active: editor.isActive('blockquote'),
+        disabled: !editor.can().toggleBlockquote() },
     ],
     [
       { label: '왼쪽 정렬', icon: <AlignLeft size={16} />, run: () => chain().setTextAlign('left').run(), active: editor.isActive({ textAlign: 'left' }) },
@@ -169,17 +198,19 @@ export function CmsRichTextEditor({ value, onChange, label, readOnly = false, on
     ],
   ];
   const tools = groups.flat();
-  const current = Math.min(focusIndex, tools.length - 1);
+  const usable = tools.map((tool, index) => (tool.disabled ? -1 : index)).filter((index) => index >= 0);
+  const current = usable.includes(focusIndex) ? focusIndex : (usable.find((index) => index > focusIndex) ?? usable[0] ?? -1);
 
   const onToolbarKeyDown = (event: React.KeyboardEvent<HTMLDivElement>) => {
     const index = toolRefs.current.findIndex((button) => button === event.target);
-    if (index < 0) return;
+    if (index < 0 || usable.length === 0) return;
+    const at = usable.indexOf(index);
     let next: number;
     switch (event.key) {
-      case 'ArrowRight': next = (index + 1) % tools.length; break;
-      case 'ArrowLeft': next = (index - 1 + tools.length) % tools.length; break;
-      case 'Home': next = 0; break;
-      case 'End': next = tools.length - 1; break;
+      case 'ArrowRight': next = usable[(at + 1) % usable.length]; break;
+      case 'ArrowLeft': next = usable[(at - 1 + usable.length) % usable.length]; break;
+      case 'Home': next = usable[0]; break;
+      case 'End': next = usable[usable.length - 1]; break;
       default: return;
     }
     event.preventDefault();

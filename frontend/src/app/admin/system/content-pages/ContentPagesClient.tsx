@@ -56,19 +56,25 @@ export default function ContentPagesClient() {
   const pages = list.data?.list ?? [];
   const selectedSummary = pages.find((page) => page.contsSn === selected);
 
+  /** 편집 중인 페이지를 떠나기 전에 저장하지 않은 변경을 버릴지 묻는다. 변경이 없으면 묻지 않는다. */
+  const confirmLeave = async () => !dirtyRef.current || confirm({
+    title: '저장하지 않은 변경',
+    message: '지금 페이지에 저장하지 않은 변경이 있습니다. 다른 페이지로 옮기면 그 변경은 버려집니다.',
+    confirmText: '변경 버리고 옮기기',
+    variant: 'destructive',
+  });
+
   const select = async (contsSn: number) => {
     if (contsSn === selected) return;
-    if (dirtyRef.current) {
-      const ok = await confirm({
-        title: '저장하지 않은 변경',
-        message: '지금 페이지에 저장하지 않은 변경이 있습니다. 다른 페이지로 옮기면 그 변경은 버려집니다.',
-        confirmText: '변경 버리고 옮기기',
-        variant: 'destructive',
-      });
-      if (!ok) return;
-    }
+    if (!(await confirmLeave())) return;
     dirtyRef.current = false;
     setSelected(contsSn);
+  };
+
+  // 새 페이지를 만들면 편집기가 그 페이지로 바뀐다 — 목록에서 고를 때와 같이 먼저 묻는다. 취소하면 지금 입력이 그대로다.
+  const openCreate = async () => {
+    if (!(await confirmLeave())) return;
+    setCreating(true);
   };
 
   const applySearch = (event: React.FormEvent) => {
@@ -86,7 +92,7 @@ export default function ContentPagesClient() {
       description="안내 페이지를 작성·게시하고 업무 홈 맨 위 소개를 정합니다. 게시한 페이지는 로그인한 모든 사용자가 읽습니다."
       breadcrumbItems={[{ label: '관리 센터' }, { label: '콘텐츠 운영' }, { label: '콘텐츠 페이지' }]}
       actions={canCreate ? (
-        <Button type="button" onClick={() => setCreating(true)}>
+        <Button type="button" onClick={() => void openCreate()}>
           <Plus aria-hidden="true" /> 새 페이지
         </Button>
       ) : undefined}

@@ -1,6 +1,6 @@
 import { defineContributions } from '@/extensions/slots';
 import { CmsHomeIntro } from '@/components/cms/CmsHomeIntro';
-import { cmsQueryOptions } from '@/queries/cms-query-options';
+import { cmsHomeIntroQuery } from '@/queries/cms-query-options';
 
 /**
  * 콘텐츠 페이지 → 업무 홈 기여(ADR-0039 결정 2). 업무 홈을 대체하지 않고, 운영자가 지정한 게시 페이지를 머리 바로 아래 소개로 보인다.
@@ -15,7 +15,7 @@ export default defineContributions('home-sections', [
     placement: 'hero',
     order: 10,
     Component: CmsHomeIntro,
-    prefetch: [{ query: cmsQueryOptions.homeIntro(), failure: 'section' }],
+    prefetch: [{ query: cmsHomeIntroQuery, failure: 'section' }],
     visibleWhen: { always: '게시본 열람은 로그인만 요구한다 — 지정이 없거나 게시 중이 아니면 조각이 아무것도 그리지 않는다.' },
   },
 ]);

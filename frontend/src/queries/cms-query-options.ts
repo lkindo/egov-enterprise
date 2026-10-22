@@ -47,3 +47,6 @@ export const cmsQueryOptions = {
     staleTime: 60_000,
   }),
 };
+
+/** 업무 홈 소개 조회. 업무 홈 기여(extensions/cms/home-sections)가 서버에서 미리 채우고 조각이 같은 값으로 읽는다. */
+export const cmsHomeIntroQuery = cmsQueryOptions.homeIntro();

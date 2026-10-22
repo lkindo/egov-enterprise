@@ -1321,7 +1321,7 @@ test('home sections: closed placements, a client Component, a server-readable pr
   const paths = new Map(inputs.catalog.capabilities.map(capability => [capability.id, capability.frontend.paths]));
   const sections = inputs.files.map(frontendRel).map(file => slotPathKind(file)).filter(kind => kind?.kind === 'contribution' && kind.slot === 'home-sections');
   assert.deepEqual(sections.map(row => row.owner).sort(),
-    ['board', 'dashboard', 'informalsanction', 'memoreport', 'note', 'promotion', 'schedule', 'survey'], 'the work home contributions are read');
+    ['board', 'cms', 'dashboard', 'informalsanction', 'memoreport', 'note', 'promotion', 'schedule', 'survey'], 'the work home contributions are read');
   const foreignOf = owner => [...paths].filter(([id]) => id !== owner).flatMap(([, list]) => list);
   const check = (source, row, readModule) => contributionViolations({ file: row.file, source, owner: row.owner, slot: 'home-sections',
     ownPaths: paths.get(row.owner), foreignPaths: foreignOf(row.owner), readModule }).join('\n');

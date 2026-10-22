@@ -131,10 +131,12 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
       ]);
     };
     // 성공·실패 알림은 토스트가 읽어 준다(sonner 의 live region). announce 는 토스트 없이 바뀌는 편집 동작에만 쓴다.
-    const accept = async (next: CmsPageDetail, message: string) => {
+    // 응답을 기다리는 동안에도 입력할 수 있다 — 요청을 보낸 뒤 바뀐 입력은 서버 응답으로 덮지 않고, 기준만 새 버전으로 옮긴다
+    //   (그 입력은 저장하지 않은 변경으로 남는다). 요청을 보낸 때의 입력(sent)과 지금 입력이 같을 때만 응답으로 바꾼다.
+    const accept = async (next: CmsPageDetail, message: string, sent: Draft) => {
       setConflict(false);
       setBaseline(next);
-      setDraft(draftOf(next));
+      setDraft((current) => (current && !sameDraft(current, sent) ? current : draftOf(next)));
       await refresh(next);
       toast(message, 'success');
     };
@@ -152,7 +154,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
       setPending('save');
       try {
         const next = await cmsService.saveDraft(contsSn, { ...fields, document: normalized.document, version: baseline.version ?? 0 });
-        await accept(next, '초안을 저장했습니다. 게시본은 바뀌지 않았습니다.');
+        await accept(next, '초안을 저장했습니다. 게시본은 바뀌지 않았습니다.', draft);
       } catch (error) {
         const fieldErrors = extractFieldErrors(error);
         if (isConflictError(error)) setConflict(true);
@@ -176,7 +178,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
         const next = action === 'unpublish' ? await cmsService.unpublish(contsSn, version)
           : action === 'archive' ? await cmsService.archive(contsSn, version)
             : await cmsService.unarchive(contsSn, version);
-        await accept(next, STATE_MESSAGES[action]);
+        await accept(next, STATE_MESSAGES[action], draft ?? draftOf(baseline));
       } catch (error) {
         if (isConflictError(error)) setConflict(true);
         else toast(extractErrorMessage(error, '상태를 바꾸지 못했습니다.'), 'error');
@@ -442,7 +444,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
             dirty={dirty}
             hasContent={hasVisibleContent(draft.document)}
             onClose={() => setDialog(null)}
-            onPublished={(next) => { setDialog(null); void accept(next, `게시했습니다. 로그인한 모든 사용자에게 v${next.publishedRevision?.revisionNumber ?? ''}이 보입니다.`); }}
+            onPublished={(next) => { setDialog(null); void accept(next, `게시했습니다. 로그인한 모든 사용자에게 v${next.publishedRevision?.revisionNumber ?? ''}이 보입니다.`, draft); }}
             onConflict={() => { setDialog(null); setConflict(true); }}
           />
         )}

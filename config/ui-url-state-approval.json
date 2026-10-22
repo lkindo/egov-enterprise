@@ -267,6 +267,25 @@
         "securityPrivacy": null,
         "domain": null
       }
+    },
+    {
+      "classId": "content-page-path",
+      "description": "[slug] — 콘텐츠 페이지 주소(ADR-0039). 운영자가 정한 영문 소문자·숫자·하이픈 주소(100자 이내)이고 메뉴·바로가기·본문 링크로 들어온다. 서버는 게시본만 돌려주고 미게시·게시 중지·보관 페이지는 없는 주소와 같은 404 다. 사람 검토 전이다.",
+      "selector": {
+        "stateItemNames": [
+          "[slug]"
+        ]
+      },
+      "reviewState": "proposed",
+      "dataClass": "unverified",
+      "privacyReview": "unverified",
+      "authorizationReview": "unverified",
+      "owner": "security/privacy + FE/domain owner",
+      "reviewBy": "2026-12-31",
+      "approvals": {
+        "securityPrivacy": null,
+        "domain": null
+      }
     }
   ]
 }

@@ -149,6 +149,27 @@ describe('ContentPageEditor — 초안 저장(ADR-0039)', () => {
     expect(await screen.findByRole('alert')).toHaveTextContent('다른 사람이 먼저 이 페이지를 바꿨습니다');
     expect(title).toHaveValue('내가 고친 제목');
   });
+
+  it('저장 응답을 기다리는 동안 고친 입력은 응답이 덮지 않고, 다음 저장이 새 버전으로 그 입력을 보낸다', async () => {
+    renderEditor();
+    const title = await screen.findByRole('textbox', { name: /페이지 제목/ });
+    fireEvent.change(title, { target: { value: '제목 A' } });
+    const pendingSave = deferred<unknown>();
+    mocks.saveDraft.mockImplementationOnce(() => pendingSave.promise);
+    fireEvent.click(screen.getByRole('button', { name: '초안 저장' }));
+    await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(1));
+
+    fireEvent.change(title, { target: { value: '제목 B' } });
+    pendingSave.resolve(detail({ contsTtl: '제목 A', version: 4 }));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(expect.stringContaining('초안을 저장했습니다'), 'success'));
+    expect(title).toHaveValue('제목 B');
+    expect(screen.getByText('저장하지 않은 변경')).toBeInTheDocument();
+
+    mocks.saveDraft.mockResolvedValueOnce(detail({ contsTtl: '제목 B', version: 5 }));
+    fireEvent.click(screen.getByRole('button', { name: '초안 저장' }));
+    await waitFor(() => expect(mocks.saveDraft).toHaveBeenCalledTimes(2));
+    expect(mocks.saveDraft.mock.calls[1][1]).toMatchObject({ contsTtl: '제목 B', version: 4 });
+  });
 });
 
 describe('ContentPageEditor — 업무 홈 지정', () => {

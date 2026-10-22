@@ -77,7 +77,12 @@ export type CmsNormalizeResult = { ok: true; document: CmsDocument } | { ok: fal
 const SECTION_ID = /^[a-z0-9-]{1,40}$/;
 const MAILTO = /^mailto:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 const TEL = /^tel:\+?[0-9][0-9-]{1,30}$/;
-const UNSAFE_URL_CHAR = /[\s\\\u0000-\u001f\u007f]/;
+// 링크 주소 규칙은 서버 검증기(CmsDocumentValidator)와 글자 하나까지 같다 — 각 쪽의 URL 해석기는 포트 범위·국제화 도메인·대괄호·
+//   잘못된 % 표기·두 번째 # 를 서로 다르게 받아, 한쪽이 저장한 링크를 다른 쪽이 거부했다. 받는 모양을 정규식으로 먼저 정한다.
+const URL_EDGE_SPACE = /^[\t\n\f\r ]+|[\t\n\f\r ]+$/g;
+const UNSAFE_URL_CHAR = /[\u0000-\u0020\u007f-\u00a0\u1680\u2000-\u200f\u2028-\u202f\u205f-\u2064\u3000\ufeff\\]/;
+const HTTPS_AUTHORITY = /^(?:[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?\.)*[A-Za-z](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?::([0-9]{1,5}))?$/;
+const HTTPS_TAIL_FORBIDDEN = /["<>^`{|}[\]]|%(?![0-9A-Fa-f]{2})/;
 const CONTROL = /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/;
 const TONES = new Set<string>(['default', 'subtle', 'emphasis']);
 const SPACINGS = new Set<string>(['compact', 'normal', 'relaxed']);
@@ -87,13 +92,22 @@ const SIMPLE_MARKS = new Set<string>(['bold', 'italic', 'underline', 'strike']);
 /** 링크 주소 판정(ADR-0039 결정 6): https·사이트 내부 경로·mailto·tel 만. 통과하면 정리한 값, 아니면 null. */
 export function safeHref(value: unknown): string | null {
   if (typeof value !== 'string') return null;
-  const href = value.trim();
+  const href = value.replace(URL_EDGE_SPACE, '');
   if (!href || href.length > MAX_URL_LENGTH || UNSAFE_URL_CHAR.test(href)) return null;
   if (href.startsWith('/')) return href.startsWith('//') ? null : href;
   const lower = href.toLowerCase();
   if (lower.startsWith('mailto:')) return MAILTO.test(href) ? href : null;
   if (lower.startsWith('tel:')) return TEL.test(href) ? href : null;
   if (!lower.startsWith('https://')) return null;
+  const rest = href.slice('https://'.length);
+  const authorityEnd = rest.search(/[/?#]/);
+  const authority = HTTPS_AUTHORITY.exec(authorityEnd < 0 ? rest : rest.slice(0, authorityEnd));
+  const tail = authorityEnd < 0 ? '' : rest.slice(authorityEnd);
+  if (!authority || HTTPS_TAIL_FORBIDDEN.test(tail) || tail.indexOf('#') !== tail.lastIndexOf('#')) return null;
+  if (authority[1] !== undefined) {
+    const port = Number(authority[1]);
+    if (port < 1 || port > 65_535) return null;
+  }
   try {
     const url = new URL(href);
     if (url.protocol !== 'https:' || !url.hostname || url.username || url.password) return null;
