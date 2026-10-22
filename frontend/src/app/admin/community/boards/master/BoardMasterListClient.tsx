@@ -96,7 +96,10 @@ export function BoardMasterListClient() {
   const confirm = useConfirm();
   const { toast } = useToast();
   const [searchWrd, setSearchWrd] = useState('');
-  
+  // [2026-10-23 ADR-0040 A0] 서버는 1 기반 page·size 로 나눠 주는데(ADR-0036) 화면이 페이지를 묻지 않아 첫 10건만 보였다.
+  const [page, setPage] = useState(1);
+  const [size, setSize] = useState(10);
+
   // Settings Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [selectedBoard, setSelectedBoard] = useState<BoardMasterDetail | null>(null);
@@ -111,13 +114,14 @@ export function BoardMasterListClient() {
   const validation = useManualFormValidation(boardMasterEditSchema, { labels: boardMasterValidationLabels });
 
   const { data: boardData, isLoading, isError, error, refetch } = useQuery({
-    ...boardMasterQueryOptions.list({ searchKeyword: searchWrd }),
+    ...boardMasterQueryOptions.list({ searchKeyword: searchWrd, page, size }),
   });
   const boardList = boardData?.list ?? [];
 
   // 감사 P1-5: 과거 "32 / 1.2k / Optimal / L4" 는 어떤 데이터에서도 산출되지 않는 고정 문자열이었다.
   // 실제 조회 결과로 계산 가능한 지표만 남기고 나머지 카드는 삭제했다.
   const totalCount = boardData?.total ?? boardList.length;
+  const totalPages = boardData?.totalPage ?? Math.max(1, Math.ceil(totalCount / size));
   const activeCount = boardList.filter((b) => b.useYn === 'Y').length;
   const standbyCount = boardList.filter((b) => b.useYn !== 'Y').length;
 
@@ -266,7 +270,8 @@ export function BoardMasterListClient() {
         if (!deletable) {
           await confirm({
             title: '영구 삭제 불가',
-            message: `[${board.bbsTtl}] 게시판 내부에 등록된 게시글 데이터가 존재하여 완전히 삭제할 수 없습니다. 관련 게시글을 먼저 모두 삭제해주십시오.`,
+            // [2026-10-23 ADR-0040 A0] 글 삭제는 논리 삭제라 행이 남는다 — "글을 먼저 지우라" 는 따를 수 없는 안내였다.
+            message: `[${board.bbsTtl}] 게시판은 글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다. 지운 글도 기록이 남아 있습니다. 쓰지 않을 게시판은 사용 안 함 상태로 두십시오.`,
             confirmText: '확인',
             variant: 'default'
           });
@@ -492,9 +497,9 @@ export function BoardMasterListClient() {
   // 감사 P2: 루트 layout(max-w-7xl p-6/md:p-12/lg:p-16)과 겹치던 화면별 폭/여백(max-w-[1600px] mx-auto px-4) 제거.
   return (
     <WorkListPage
-      title="게시판 마스터 콘솔"
+      title="게시판 관리"
       description="생성된 게시판의 사용 여부와 설정을 조회·관리합니다."
-      breadcrumbItems={[{ label: '커뮤니티' }, { label: '게시판 관리' }, { label: '마스터 콘솔' }]}
+      breadcrumbItems={[{ label: '관리 센터' }, { label: '콘텐츠 운영' }, { label: '게시판 관리' }]}
       filterStateKey="community-board-master"
       totalCount={isError ? undefined : totalCount}
       actions={
@@ -523,16 +528,15 @@ export function BoardMasterListClient() {
           label="게시판명"
           placeholder="게시판명 검색"
           value={searchWrd}
-          onSearch={(keyword) => setSearchWrd(keyword)}
+          onSearch={(keyword) => { setPage(1); setSearchWrd(keyword); }}
         />
       }
       toolbarActions={
         /* 지표 카드 3장(hover ring 30px·아이콘 확대)을 한 줄 요약으로 수렴한다.
-           값은 모두 서버 응답에서 파생된다. */
+           값은 모두 서버 응답에서 파생된다. 페이지로 나눠 받으므로 활성·대기 수는 이 페이지의 행만 센다. */
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
-          활성 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
-          대기 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건 ·
-          조회된 <span className="font-bold text-foreground">{isLoading ? '—' : boardList.length.toLocaleString()}</span>건 기준
+          이 페이지: 활성 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
+          대기 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건
         </span>
       }
     >
@@ -544,6 +548,15 @@ export function BoardMasterListClient() {
           onRetry={() => refetch()}
           enableSelection={canUpdate || canDelete}
           keyField="bbsId"
+          pagination={{
+            currentPage: page,
+            totalPages,
+            onPageChange: setPage,
+            // totalCount 는 셸 툴바가 소유한다(표 하단 중복 표기 방지).
+            pageSize: size,
+            onPageSizeChange: (next) => { setSize(next); setPage(1); },
+            pageSizeOptions: [10, 20, 50],
+          }}
           bulkActions={[
             ...(canUpdate ? [
             {

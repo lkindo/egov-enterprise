@@ -24,8 +24,7 @@ public class BoardPredicate {
         }
 
         if (!condition.isSecretPostAdminOverride()) {
-            BooleanBuilder visiblePosts = new BooleanBuilder(
-                    QBoard.board.scrtYn.eq("N").or(QBoard.board.scrtYn.isNull()));
+            BooleanBuilder visiblePosts = new BooleanBuilder(notSecret());
             if (StringUtils.hasText(condition.getViewerEsntlId())) {
                 visiblePosts.or(QBoard.board.userId.eq(condition.getViewerEsntlId()));
             }
@@ -36,9 +35,7 @@ public class BoardPredicate {
         //   보고(화면이 '게시 종료' 로 표시), 전체 열람 권한자는 기준일이 비어 이 조건을 받지 않는다.
         //   종료일은 yyyyMMdd 문자열이라 사전순 비교가 날짜 비교와 같다. 비어 있으면 기한 없음이다.
         if (StringUtils.hasText(condition.getPostingOpenOn())) {
-            BooleanBuilder posting = new BooleanBuilder(QBoard.board.pstEndYmd.isNull()
-                    .or(QBoard.board.pstEndYmd.eq(""))
-                    .or(QBoard.board.pstEndYmd.goe(condition.getPostingOpenOn())));
+            BooleanBuilder posting = new BooleanBuilder(postingOpenOn(condition.getPostingOpenOn()));
             if (StringUtils.hasText(condition.getViewerEsntlId())) {
                 posting.or(QBoard.board.userId.eq(condition.getViewerEsntlId()));
             }
@@ -78,6 +75,21 @@ public class BoardPredicate {
         }
 
         return builder;
+    }
+
+    /**
+     * 게시 종료일이 비었거나 기준일(yyyyMMdd) 이후인 글. 목록·검색·통계와 공개 FAQ 가 같은 술어를 쓴다
+     * (2026-10-23 ADR-0040 A0 — 공개 FAQ 에만 이 조건이 없어 종료 글이 계속 보였다).
+     */
+    public static BooleanExpression postingOpenOn(String ymd) {
+        return QBoard.board.pstEndYmd.isNull()
+                .or(QBoard.board.pstEndYmd.eq(""))
+                .or(QBoard.board.pstEndYmd.goe(ymd));
+    }
+
+    /** 비밀글이 아닌 글. 값이 비어 있으면 비밀글이 아니다(목록 판정과 같다). */
+    public static BooleanExpression notSecret() {
+        return QBoard.board.scrtYn.eq("N").or(QBoard.board.scrtYn.isNull());
     }
 
     public static BooleanExpression bbsIdEq(String bbsId) {

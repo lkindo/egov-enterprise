@@ -39,7 +39,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
         @Override
         public Optional<BoardDetailResult> findPublicArticleDetail(
-                        @NonNull String bbsId, @NonNull Long pstSn) {
+                        @NonNull String bbsId, @NonNull Long pstSn, @NonNull String today) {
                 BoardDetailResult result = queryFactory
                                 .select(Projections.fields(BoardDetailResult.class,
                                                 QBoard.board.bbsId,
@@ -56,7 +56,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .where(QBoard.board.bbsId.eq(bbsId),
                                                 QBoard.board.pstSn.eq(pstSn),
                                                 QBoard.board.useYn.eq("Y"),
-                                                QBoard.board.scrtYn.eq("N"),
+                                                BoardPredicate.notSecret(),
+                                                BoardPredicate.postingOpenOn(today),
                                                 QBoardMaster.boardMaster.useYn.eq("Y"))
                                 .fetchOne();
 
@@ -174,6 +175,10 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.evntDt,
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd,
+                                                 // [2026-10-23 ADR-0040 A0] 게시 기간. 목록 템플릿의 '게시 종료' 배지가 그릴 값을
+                                                 //   받지 못해 작성자가 자기 종료 글을 목록에서 구분할 수 없었다.
+                                                 QBoard.board.pstBgngYmd,
+                                                 QBoard.board.pstEndYmd,
                                                  // [2026-08-29] 상세와 같은 이유로 목록에도 댓글 수를 싣는다.
                                                  QBoard.board.cmntCnt.as("commentCnt")))
                                 .from(QBoard.board)
@@ -233,11 +238,14 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
 
         @Override
         public Page<BoardSearchResult> searchPublicFaqArticles(
-                        @NonNull String bbsId, String keyword, @NonNull Pageable pageable) {
+                        @NonNull String bbsId, String keyword, @NonNull String today, @NonNull Pageable pageable) {
+                // [2026-10-23 ADR-0040 A0] 공개 FAQ 는 누구에게나 같은 목록이다 — 비밀글과 같이 게시 종료 글도
+                //   권한과 상관없이 뺀다. 종전에는 종료일 조건이 없어 일반 목록에서 사라진 글이 여기서 계속 보였다.
                 BooleanBuilder visibility = new BooleanBuilder()
                                 .and(QBoard.board.bbsId.eq(bbsId))
                                 .and(QBoard.board.useYn.eq("Y"))
-                                .and(QBoard.board.scrtYn.eq("N"))
+                                .and(BoardPredicate.notSecret())
+                                .and(BoardPredicate.postingOpenOn(today))
                                 .and(QBoardMaster.boardMaster.useYn.eq("Y"));
                 if (StringUtils.hasText(keyword)) {
                         visibility.and(QBoard.board.pstTtl.contains(keyword));

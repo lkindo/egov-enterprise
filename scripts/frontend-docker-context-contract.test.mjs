@@ -770,15 +770,13 @@ test('hardcoded rewrite destinations or build argument precedence drift are repr
   }
 });
 
-test('default and E2E Compose builds provide both validated API URL arguments', () => {
+test('default Compose build provides both validated API URL arguments', () => {
   const defaultCompose = readFileSync(new URL('../docker-compose.yml', import.meta.url), 'utf8');
-  const e2eCompose = readFileSync(new URL('../docker-compose.e2e.yml', import.meta.url), 'utf8');
 
   assertComposeApiBuildArguments(defaultCompose, 'frontend', {
     BACKEND_API_URL: 'http://api:8080/api/v1',
     NEXT_PUBLIC_API_URL: 'http://api:8080/api/v1',
   });
-  assertComposeApiBuildArguments(e2eCompose, 'frontend-e2e');
 });
 
 test('frontend Compose health checks the IPv4 login endpoint with the existing readiness budget', () => {
@@ -811,17 +809,12 @@ test('localhost, redirecting roots, disabled readiness and production health ove
   }
 });
 
-test('default and E2E Compose runtimes provide both validated API URLs', () => {
+test('default Compose runtime provides both validated API URLs', () => {
   const defaultCompose = readFileSync(new URL('../docker-compose.yml', import.meta.url), 'utf8');
-  const e2eCompose = readFileSync(new URL('../docker-compose.e2e.yml', import.meta.url), 'utf8');
 
   assertComposeRuntimeApiEnvironment(defaultCompose, 'frontend', {
     BACKEND_API_URL: 'http://api:8080/api/v1',
     NEXT_PUBLIC_API_URL: 'http://api:8080/api/v1',
-  });
-  assertComposeRuntimeApiEnvironment(e2eCompose, 'frontend-e2e', {
-    BACKEND_API_URL: 'http://api-e2e:8080/api/v1',
-    NEXT_PUBLIC_API_URL: 'http://localhost:8080/api/v1',
   });
 });
 

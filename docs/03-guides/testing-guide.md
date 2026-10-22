@@ -137,6 +137,10 @@ public @interface IntegrationTest {
 
 [MenuServiceIntegrationTest.java](../../business-core/src/test/java/nuri/business/service/menu/MenuServiceIntegrationTest.java)처럼 `@IntegrationTest`를 붙이고, 테스트가 소유한 데이터를 `@BeforeEach`에서 명시적으로 준비한다. 쿼리 수·캐시·권한 같은 비기능 계약을 주장하려면 그 계약을 실제로 관측하는 단언을 포함한다.
 
+### 인증 별칭 라우트 HTTP 점검(수동)
+
+`node frontend/scripts/auth-alias-http.mjs`는 현재 Next 라우트·프록시·rewrite를 합성 loopback 백엔드에 붙여 `/api/v1/auth/login`·`reissue` 별칭 라우트를 실제 HTTP로 점검한다. DB나 실제 자격 증명은 쓰지 않는다. `--without-aliases`로 별칭을 뺀 사본을 돌리면 점검이 실패해야 한다(red 증명). 핸들러를 직접 부르는 단위 시험으로는 라우트 우선순위를 입증할 수 없으므로, 이 별칭이나 rewrite 순서를 바꿀 때 실행한다. CI·훅에는 연결돼 있지 않다.
+
 ---
 
 ## E2E 테스트 (Playwright)
@@ -394,10 +398,6 @@ CI의 `backend-scope`는 classifier가 schema 영향으로 판정한 경우 같�
 ### 2. 로컬 훅 경계
 
 활성 훅은 `.githooks/pre-push`이며 클론마다 `git config core.hooksPath .githooks`로 연결한다. 훅은 빠른 범위별 피드백을 제공하지만 Docker 스키마 검증과 E2E 전체를 대신하지 않는다. 실제 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), 병합 권위는 required CI를 따른다.
-
-### 3. H2 보조 DDL
-
-`foundation/src/test/resources/db/migration/V1__init_test_schema.sql`과 [SchemaDumper.java](../../business-core/src/test/java/nuri/business/support/SchemaDumper.java)는 일부 H2 테스트를 위한 보조 자산이다. 자동 생성 결과를 운영 DDL이나 PostgreSQL 정본으로 승격하지 않는다. 갱신 시 diff를 검토하고 H2 테스트와 `schemaValidationTest`를 각각 실행한다.
 
 ---
 

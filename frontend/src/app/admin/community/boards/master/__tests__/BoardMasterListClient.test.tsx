@@ -17,6 +17,9 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   refetch: vi.fn(),
   toast: vi.fn(),
+  /** 화면이 마지막으로 요청한 목록 조회 키. 페이지 이동이 서버 조회 조건에 실리는지 본다. */
+  lastQueryKey: undefined as unknown,
+  pageInfo: { total: 2, totalPage: 1 },
   boards: [
     {
       bbsId: 'BBS-A',
@@ -41,13 +44,16 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@tanstack/react-query', () => ({
   queryOptions: <T,>(options: T) => options,
-  useQuery: () => ({
-    data: { list: mocks.boards, total: mocks.boards.length },
+  useQuery: (options: { queryKey?: unknown }) => {
+    mocks.lastQueryKey = options.queryKey;
+    return {
+    data: { list: mocks.boards, ...mocks.pageInfo },
     isLoading: false,
     isError: false,
     error: null,
     refetch: mocks.refetch,
-  }),
+    };
+  },
 }));
 
 vi.mock('next/navigation', () => ({
@@ -105,6 +111,8 @@ describe('BoardMasterListClient selection contract', () => {
     vi.clearAllMocks();
     mocks.boards[0].useYn = 'N';
     mocks.boards[1].useYn = 'N';
+    mocks.pageInfo = { total: 2, totalPage: 1 };
+    mocks.lastQueryKey = undefined;
     mocks.batchUpdateBoardMasterStatus.mockResolvedValue(undefined);
     mocks.batchDeleteBoardMastersPhysically.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
@@ -568,5 +576,43 @@ describe('BoardMasterListClient selection contract', () => {
     expect(mocks.push).toHaveBeenCalledWith(
       '/admin/community/boards/select-board-list?bbsId=BBS-A',
     );
+  });
+
+  /*
+    [2026-10-23 ADR-0040 A0] 서버는 1 기반 page·size 로 나눠 주는데 화면이 페이지를 묻지 않아 첫 10건만 보였다.
+    11건째부터는 화면에서 찾을 길이 없었다. 페이지 이동이 조회 조건에 실리고, 검색하면 첫 페이지로 돌아가야 한다.
+  */
+  it('게시판이 한 페이지를 넘으면 페이저로 다음 페이지를 조회하고, 검색은 첫 페이지로 돌아간다', async () => {
+    const user = userEvent.setup();
+    mocks.pageInfo = { total: 23, totalPage: 3 };
+    render(<BoardMasterListClient />);
+
+    expect(mocks.lastQueryKey).toEqual(expect.arrayContaining([
+      expect.objectContaining({ page: 1, size: 10, searchKeyword: '' }),
+    ]));
+    const pager = screen.getByRole('navigation', { name: '페이지 탐색' });
+    await user.click(within(pager).getByRole('button', { name: '2 페이지' }));
+    expect(mocks.lastQueryKey).toEqual(expect.arrayContaining([
+      expect.objectContaining({ page: 2, size: 10 }),
+    ]));
+
+    await user.type(screen.getByRole('textbox', { name: '게시판명' }), '공지{Enter}');
+    expect(mocks.lastQueryKey).toEqual(expect.arrayContaining([
+      expect.objectContaining({ page: 1, searchKeyword: '공지' }),
+    ]));
+  });
+
+  it('글이 있었던 게시판의 영구 삭제 불가 안내는 따를 수 있는 사실만 말한다', async () => {
+    mocks.isBoardMasterDeletable.mockResolvedValue(false);
+    render(<BoardMasterListClient />);
+
+    fireEvent.click(screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
+    const message = mocks.confirm.mock.calls[0][0].message as string;
+    expect(message).toContain('글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다');
+    // 글 삭제는 논리 삭제라 행이 남는다 — 글을 먼저 지우라는 안내는 따를 수 없다.
+    expect(message).not.toContain('먼저 모두 삭제');
+    expect(mocks.deleteBoardMasterPhysically).not.toHaveBeenCalled();
   });
 });

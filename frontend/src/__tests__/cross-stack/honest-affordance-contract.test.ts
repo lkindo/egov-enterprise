@@ -662,6 +662,26 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(wizard).toContain('메뉴 관리에서 활성화');
   });
 
+  // [2026-10-23 ADR-0040 A0] 게시판 이용 화면은 인증만 요구한다. 메뉴가 접근을 정한다는 안내는 사실이 아니었다.
+  if (wizardInProjection) it('접근을 정하는 축을 사실대로 말한다 — 메뉴는 접근을 막지 않는다', () => {
+    expect(wizard).not.toContain('메뉴 권한을 따릅니다');
+    expect(wizard).not.toContain('메뉴가 보이지 않는 역할은 해당 게시판 화면에 접근하지 않습니다');
+    expect(wizard).toContain('메뉴는 길 안내일 뿐 접근을 막지 않습니다');
+    // 게시판을 사용 중으로 만드는 동안에는 그렇다고 말한다. 사용 안 함으로 만들게 되면(A2) 값과 문구를 함께 바꾼다.
+    expect(wizard, '게시판 생성 요청의 useYn 을 찾지 못했다 — 계약이 vacuous 하다').toMatch(/useYn: 'Y'\s*\}\);/);
+    expect(wizard).toContain('게시판은 만들자마자 사용 중 상태가 되어');
+    // 회원 범위는 커뮤니티 기능의 축이다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없으므로 문장도 함께 빠져야 한다.
+    //   투영 마커는 주석이라 원문에서 찾는다(codeOfRepo 는 주석을 지운다).
+    const raw = readRepo(boardMakerWizard);
+    const membership = raw.indexOf('회원 범위:');
+    expect(membership, '회원 범위 문장을 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
+    // 마커 문자열은 실행 시점에 조립한다 — 그대로 쓰면 생성기의 마커 탐지가 이 시험 파일을 커뮤니티 블록으로 읽는다.
+    const marker = (edge: string) => ['reusable-base', 'community', edge].join(':');
+    const start = raw.lastIndexOf(marker('start'), membership);
+    const end = raw.lastIndexOf(marker('end'), membership);
+    expect(start, '회원 범위 문장이 커뮤니티 마커 안에 있지 않다').toBeGreaterThan(end);
+  });
+
   /**
    * 집행자 없는 게시판 옵션을 묻지 않는다.
    *

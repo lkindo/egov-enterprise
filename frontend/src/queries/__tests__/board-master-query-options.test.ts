@@ -21,6 +21,14 @@ describe('board master query ownership', () => {
     ]);
   });
 
+  it('목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)', () => {
+    expect(boardMasterQueryOptions.list({ searchKeyword: '', page: 2, size: 20 }).queryKey).toEqual([
+      'board-masters', 'list', { searchKeyword: '', page: 2, size: 20 },
+    ]);
+    expect(boardMasterQueryOptions.list({ searchKeyword: '', page: 2, size: 50 }).queryKey)
+      .not.toEqual(boardMasterQueryOptions.list({ searchKeyword: '', page: 2, size: 20 }).queryKey);
+  });
+
   it('query options가 generated 파라미터와 서비스 호출을 함께 소유한다', async () => {
     service.getBoardMasterList.mockResolvedValueOnce({ list: [] });
     service.getBoardMaster.mockResolvedValueOnce({ bbsId: 'BBSMSTR_A' });

@@ -105,6 +105,20 @@ public class SatisfactionService {
         return satisfactionRepository.getAverageSatisfaction(pstSn, bbsId);
     }
 
+    /**
+     * 평가가 경로의 게시판·게시글에 실제로 속하는지 본다. 다르거나 없으면 같은 404 다(2026-10-23 ADR-0040 A0).
+     *
+     * <p>종전 수정·삭제는 평가 번호로만 읽어, 읽을 수 있는 글의 경로에 다른 글(비밀글·회원 전용 게시판)의 평가 번호를
+     * 붙여도 통과했다. 호출부는 경로의 글에 대한 열람 가드를 먼저 부른 뒤 이 판정을 부른다 — 순서를 바꾸면 404/403 차이로
+     * 읽을 수 없는 글의 평가가 있는지 드러난다(댓글 DIP S8 과 같은 경계).
+     */
+    public void assertLocatedAt(Long satisfactionId, String bbsId, Long pstSn) {
+        Satisfaction entity = findOrThrow(satisfactionId);
+        if (!Objects.equals(entity.getBbsId(), bbsId) || !Objects.equals(entity.getPstSn(), pstSn)) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+    }
+
     public SatisfactionDto getSatisfaction(Long satisfactionId) {
         return satisfactionMapper.toDto(findOrThrow(satisfactionId));
     }

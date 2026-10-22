@@ -211,6 +211,8 @@ function factoryKey(sourceFile: ts.SourceFile, factory: ts.CallExpression): stri
  * 표에 없는 함수(같은 모듈의 새 함수 포함)도, 관측되지 않는 낡은 행도 red 다. 투영으로 빠진 행은 원장이 증명한다.
  */
 const FACTORY_KEY_TESTS: Readonly<Record<string, string>> = {
+  '@/queries/board-master-query-options#boardMasterQueryOptions.list':
+    '목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
   '@/queries/comment-query-options#commentQueryOptions.adminList':
     '관리자 목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
   '@/queries/scrap-query-options#scrapQueryOptions.list':

@@ -7,6 +7,9 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -163,32 +166,46 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
      * 게시글·게시판 삭제는 {@code use_yn='N'} 논리 삭제라 참조 행이 남는다 — 종전에는 이 행이 계속 공유 근거가
      * 되어, 화면에서 사라진 공개 글의 첨부를 번호만 알면 인증 사용자 누구나 내려받을 수 있었다. 소유 근거는
      * 그대로 둔다(작성자는 자기 첨부를 계속 받는다). 판정할 수 없는 값({@code NULL})은 사용 중으로 보지 않는다.
+     *
+     * <p>[2026-10-23 ADR-0040] 게시 종료일이 지난 글은 조회 대행 권한({@code BOARD_READ_ALL}) 보유자에게만 공유 근거가
+     * 된다. 본문은 종료 글을 작성자·조회 대행 권한자에게만 여는데(DEC-OPS-206 ①), 첨부는 이 조건이 없어 번호만 알면 받을 수
+     * 있었다. 조회 대행 권한은 종료일만 면제한다 — 비밀글·논리 삭제 글의 관리자 경로는 지금처럼 {@code FILE_READ_ALL} 하나다.
+     * 기준일은 본문({@code BoardPolicySupport})과 같은 Asia/Seoul 오늘이며, 두 판정의 일치는 {@code BoardAttachmentAccessTest} 가
+     * 대조한다.
      */
     private SourceHit queryBoard(Long fileId, String loginId, String esntlId) {
+        String today = LocalDate.now(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.BASIC_ISO_DATE);
+        boolean readAll = nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL");
         var references = jdbcTemplate.query("""
-                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,b.use_yn AS post_use_yn,
+                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,b.use_yn AS post_use_yn,b.pst_end_ymd,
                        m.bbs_id AS master_id,m.cmnty_sn,m.use_yn AS master_use_yn
                   FROM tb_bbs_item b LEFT JOIN tb_bbs_master m ON m.bbs_id=b.bbs_id
                  WHERE b.atch_file_sn=?
                 """, (rs,n) -> new BoardReference(rs.getString("frst_rgtr_id"),rs.getString("user_id"),
                     rs.getString("scrt_yn"),rs.getString("master_id"),rs.getObject("cmnty_sn",Long.class),
-                    "Y".equals(rs.getString("post_use_yn")) && "Y".equals(rs.getString("master_use_yn"))),fileId);
+                    "Y".equals(rs.getString("post_use_yn")) && "Y".equals(rs.getString("master_use_yn")),
+                    postingOpen(rs.getString("pst_end_ymd"), today)),fileId);
         boolean shared=false, owner=false;
         for (var reference: references) {
             if (reference.masterId()==null) throw new org.springframework.dao.DataRetrievalFailureException("Referenced board master missing");
             boolean communityAllowed=reference.communityId()==null
-                    || nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")
+                    || readAll
                     || (communityAccess!=null && esntlId!=null && communityAccess.isApprovedMember(reference.communityId(),esntlId));
             if (communityAllowed) {
-                shared |= reference.active() && !"Y".equals(reference.secret());
+                shared |= reference.active() && (reference.postingOpen() || readAll) && !"Y".equals(reference.secret());
                 owner |= (loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId()));
             }
         }
         return new SourceHit(!references.isEmpty(),shared,owner,false);
     }
 
+    /** 게시 종료일(yyyyMMdd)이 비었거나 기준일 이후인가. 사전순 비교가 날짜 비교와 같다(BoardPredicate 와 같은 규칙). */
+    private static boolean postingOpen(String pstEndYmd, String today) {
+        return pstEndYmd == null || pstEndYmd.isEmpty() || pstEndYmd.compareTo(today) >= 0;
+    }
+
     private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId,
-            boolean active) {}
+            boolean active, boolean postingOpen) {}
 
     /**
      * ScheduleService#getSchedule와 같은 열람 조건. core가 선택 기능의 엔티티에 의존하지 않도록
