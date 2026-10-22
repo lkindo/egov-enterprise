@@ -233,7 +233,7 @@ const SCHEMA_RELEVANT = [
   /^api-server\/src\/test\/java\/nuri\/api\/schema\//,
   /^api-server\/src\/test\/resources\/application-tc\.yml$/,
   /^(?:business-core|business-app|foundation)\/src\/main\/java\/.*\/domain\//,
-  /^foundation\/src\/test\/resources\/(?:db\/migration\/|application-test(?:-dump)?\.yml$)/,
+  /^foundation\/src\/test\/resources\/application-test\.yml$/,
   // ddl-auto·naming strategy·dialect 바인딩은 런타임 설정에 있다. 설정만 고치면
   // 엔티티 파일이 그대로여도 물리 스키마 정합이 달라지므로 스키마 축에 포함한다.
   /^api-server\/src\/main\/resources\/application(?:-[a-z0-9-]+)?\.ya?ml$/,

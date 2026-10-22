@@ -41,7 +41,7 @@ export function parseDbGenerationArgs(argv) {
     profile: undefined,
     composition: undefined,
     layout: undefined,
-    container: 'egov-e2e-postgres',
+    container: undefined,
     output: undefined,
     allowDirty: false,
     allowNonReleaseRef: false,
@@ -158,6 +158,8 @@ async function main() {
   // 기능 소유·원본 스키마 실측·공통코드 그룹 소유는 매니페스트 v2(config/modules)가 원천이다(11단계 C3·C7).
   const modules = loadComposerModules(ROOT);
   const databaseSnapshot = sourceDatabaseSnapshot(modules.files);
+  // 기본 컨테이너를 띄우던 docker-compose.e2e.yml 을 걷었다. 실행 중인 PostgreSQL 컨테이너를 직접 고른다.
+  if (!args.container) fail('--container <실행 중인 PostgreSQL 컨테이너 이름>을 지정한다.');
   assertContainerName(args.container);
 
   const dirty = git(['status', '--porcelain']);

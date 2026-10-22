@@ -21,10 +21,6 @@ spring:
     # Disable lazy loading for tests to avoid LazyInitializationException
     open-in-view: true
 
-  flyway:
-    enabled: true
-    locations: classpath:db/migration
-
   # H2 Console for debugging if needed
   h2:
     console:

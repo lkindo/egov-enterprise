@@ -34,7 +34,7 @@ test('composition DB requires exact default group/code grants and keeps availabl
 
 test('DB CLI resolves a preset or a composition per layout and keeps the menu snapshot refresh standalone', () => {
   assert.deepEqual(parseDbGenerationArgs(['--profile', 'core']), {
-    profile: 'core', composition: undefined, layout: undefined, container: 'egov-e2e-postgres', output: undefined,
+    profile: 'core', composition: undefined, layout: undefined, container: undefined, output: undefined,
     allowDirty: false, allowNonReleaseRef: false, writeMenuSnapshot: false,
   });
   assert.equal(parseDbGenerationArgs(['--profile', 'core', '--layout', 'single-module']).layout, 'single-module');

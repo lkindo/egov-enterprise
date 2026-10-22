@@ -167,6 +167,8 @@ test/load-tests/results/
 !**/.agent/mcp-servers/
 !**/.agent/memory/
 **/.gemini/*
+# Gemini 작업공간 공유 설정은 같은 워킹트리를 쓰는 operator 가 함께 쓴다(.claude/settings.json 과 같은 방식).
+!**/.gemini/settings.json
 !**/.claude/settings.json
 **/.claude/settings.local.json
 

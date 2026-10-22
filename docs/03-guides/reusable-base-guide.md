@@ -86,8 +86,8 @@ pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 �
 
 - 작업 트리가 깨끗해야 한다.
 - `HEAD`가 정확한 `v*` 릴리스 태그여야 한다.
-- Docker와 실행 중인 PostgreSQL 컨테이너가 필요하다. 기본 컨테이너명은
-  `egov-e2e-postgres`이며 `--container <name>`으로 바꿀 수 있다.
+- Docker와 실행 중인 PostgreSQL 컨테이너가 필요하다. 컨테이너 이름은 `--container <name>`으로 반드시
+  지정한다(기본값이 없다).
 - 생성기는 이름이 `test_reusable_base_*`인 일회용 DB만 만들고 종료 시 제거한다.
 - 원본 frontend 의존성이 설치돼 있어야 한다(`pnpm -C frontend install --frozen-lockfile`). 소스 생성기는 생성물의 API 계약을
   원본의 TypeScript·openapi-typescript 로 다시 만들며(§3.5), 없으면 출력 폴더를 만들기 전에 `TOOL_UNAVAILABLE` 로 멈춘다.
@@ -96,8 +96,8 @@ pack 순위 검사를 대신했다), 물리 테이블·독립 시퀀스는 한 �
 
 ```bash
 npm run base:census
-npm run base:generate-db -- --profile collaboration
-npm run base:generate-db -- --profile collaboration --layout single-module
+npm run base:generate-db -- --profile collaboration --container <name>
+npm run base:generate-db -- --profile collaboration --layout single-module --container <name>
 ```
 
 `--profile`은 프리셋 레시피를 만들어 [구성 해석기](../../scripts/project-composer-recipe.mjs)를 거친다
@@ -700,7 +700,7 @@ Gradle 시험과 `pnpm -C frontend install --frozen-lockfile`·`pnpm -C frontend
 
 ```bash
 npm run base:generate-db -- \
-  --profile collaboration --layout single-module --allow-dirty --allow-non-release-ref
+  --profile collaboration --layout single-module --container <name> --allow-dirty --allow-non-release-ref
 
 npm run base:generate-source -- \
   --profile collaboration \
