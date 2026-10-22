@@ -1,6 +1,5 @@
 package nuri.api.schema;
 
-import nuri.business.service.cms.CmsDocumentValidator;
 import nuri.business.service.file.AttachmentReferenceResolver;
 import nuri.business.service.file.AttachmentSource;
 import nuri.business.service.file.JdbcAttachmentReferenceResolver;
@@ -15,9 +14,7 @@ import java.sql.Connection;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -203,16 +200,23 @@ class CmsContentMigrationIntegrationTest extends SharedPostgresMigrationTestSupp
         }
     }
 
+    /*
+     * 검증기가 정밀한 상한(압축 JSON 1 MiB)을 재고, DB 상한은 검증기를 우회한 적재를 막는 안전망이다. 이 시험은 cms 기능 코드를
+     * import 하지 않는다 — 콘텐츠 페이지가 빠진 생성물에서 과거 migration 시험 규칙으로 함께 지워져야 하기 때문이다. 경계 문서가
+     * 검증기를 통과한다는 것은 CmsDocumentValidatorTest 가 본다.
+     */
+    private static final int VALIDATOR_MAX_BYTES = 1_048_576;
+
     @Test
-    @DisplayName("검증기가 1 MiB 안으로 받은 경계 문서를 DB 가 받는다 — jsonb::text 는 구분자 뒤 공백만큼 더 길게 잰다")
-    void acceptsBoundaryDocumentsTheValidatorAccepts() throws Exception {
+    @DisplayName("압축 JSON 이 1 MiB 바로 아래인 경계 문서를 DB 가 받는다 — jsonb::text 는 구분자 뒤 공백만큼 더 길게 잰다")
+    void acceptsBoundaryDocumentsUnderTheValidatorLimit() throws Exception {
         migrate();
         String json = boundaryDocument();
         try (Connection connection = openConnection(); var statement = connection.createStatement()) {
             String literal = "'" + json.replace("'", "''") + "'::jsonb";
             assertThat(number(statement, "SELECT octet_length((" + literal + ")::text)"))
                     .as("같은 문서를 jsonb::text 로 재면 1 MiB 를 넘는다 — DB 상한을 1 MiB 로 두면 이 문서를 거절한다")
-                    .isGreaterThan(CmsDocumentValidator.MAX_BYTES);
+                    .isGreaterThan(VALIDATOR_MAX_BYTES);
             statement.executeUpdate("INSERT INTO tb_cms_conts (conts_path_nm, conts_ttl, conts_doc_cn, crt_dt, mdfcn_dt)"
                     + " VALUES ('boundary-document', '제목', " + literal + ", now(), now())");
             String oversized = "'{\"pad\":\"" + "a".repeat(2_097_152) + "\"}'::jsonb";
@@ -223,26 +227,21 @@ class CmsContentMigrationIntegrationTest extends SharedPostgresMigrationTestSupp
         }
     }
 
-    /** 검증기가 정규화한 문서 가운데 압축 JSON 이 MAX_BYTES 바로 아래인 것. 문단이 많아 구분자가 많다. */
+    /** 검증기가 저장하는 모양(키 순서·압축 JSON)의 문서 가운데 바이트 수가 상한 바로 아래인 것. 문단이 많아 구분자가 많다. */
     private static String boundaryDocument() {
-        CmsDocumentValidator validator = new CmsDocumentValidator();
-        int paragraphs = 1_990;
-        String json = validator.normalize(document(paragraphs, 0)).json();
-        int room = CmsDocumentValidator.MAX_BYTES - json.getBytes(StandardCharsets.UTF_8).length;
-        json = validator.normalize(document(paragraphs, room - 8)).json();
-        assertThat(json.getBytes(StandardCharsets.UTF_8).length)
-                .isBetween(CmsDocumentValidator.MAX_BYTES - 64, CmsDocumentValidator.MAX_BYTES);
-        return json;
-    }
-
-    private static Map<String, Object> document(int paragraphs, int extra) {
-        List<Object> content = new ArrayList<>();
-        for (int index = 0; index < paragraphs; index++) {
-            String body = "가".repeat(100) + (index == paragraphs - 1 ? "a".repeat(extra) : "");
-            content.add(Map.of("type", "paragraph", "content", List.of(Map.of("type", "text", "text", body))));
+        String head = "{\"schemaVersion\":1,\"sections\":[{\"id\":\"a\",\"label\":\"\",\"layout\":\"one\",\"tone\":\"default\","
+                + "\"spacing\":\"normal\",\"cells\":[{\"kind\":\"rich\",\"doc\":{\"type\":\"doc\",\"content\":[";
+        String tail = "]}}]}]}";
+        String paragraph = "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"" + "가".repeat(100) + "\"}]}";
+        StringBuilder json = new StringBuilder(head);
+        for (int index = 0; index < 1_990; index++) {
+            json.append(index == 0 ? "" : ",").append(paragraph);
         }
-        Map<String, Object> section = Map.of("id", "a", "label", "", "layout", "one", "tone", "default", "spacing", "normal",
-                "cells", List.of(Map.of("kind", "rich", "doc", Map.of("type", "doc", "content", content))));
-        return Map.of("schemaVersion", 1, "sections", List.of(section));
+        int room = VALIDATOR_MAX_BYTES - json.toString().getBytes(StandardCharsets.UTF_8).length - tail.length() - 64;
+        String last = "{\"type\":\"paragraph\",\"content\":[{\"type\":\"text\",\"text\":\"" + "a".repeat(room) + "\"}]}";
+        String document = json.append(',').append(last).append(tail).toString();
+        assertThat(document.getBytes(StandardCharsets.UTF_8).length)
+                .isBetween(VALIDATOR_MAX_BYTES - 128, VALIDATOR_MAX_BYTES);
+        return document;
     }
 }

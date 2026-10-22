@@ -16,6 +16,7 @@ import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static java.nio.charset.StandardCharsets.UTF_8;
 
 /**
  * 콘텐츠 문서 판정(ADR-0039 결정 5). 공용 fixture 는 화면 정규화 시험도 읽는다 — 두 구현이 같은 문서를 같은 결과로 판정해야 한다.
@@ -107,5 +108,26 @@ class CmsDocumentValidatorTest {
     @Test
     void rejectsMissingDocument() {
         assertThatThrownBy(() -> validator.normalize(null)).isInstanceOf(BusinessException.class);
+    }
+
+    @Test
+    void acceptsADocumentWhoseNormalizedJsonIsExactlyTheLimitAndRejectsOneByteMore() {
+        // 정밀한 크기 상한은 검증기가 저장할 압축 JSON 의 바이트 수다. DB 상한(jsonb::text 2 MiB)은 그 위의 안전망이다.
+        int room = CmsDocumentValidator.MAX_BYTES - validator.normalize(sizedDocument(0)).json().getBytes(UTF_8).length;
+        CmsDocumentValidator.Normalized atLimit = validator.normalize(sizedDocument(room));
+        assertThat(atLimit.json().getBytes(UTF_8).length).isEqualTo(CmsDocumentValidator.MAX_BYTES);
+        assertThatThrownBy(() -> validator.normalize(sizedDocument(room + 1))).isInstanceOf(BusinessException.class);
+    }
+
+    /** 문단 1,990개(한글 100자씩)에 마지막 문단만 영문자 extra 개를 더한 문서. */
+    private static Map<String, Object> sizedDocument(int extra) {
+        List<Object> content = new ArrayList<>();
+        for (int index = 0; index < 1_990; index++) {
+            content.add(Map.of("type", "paragraph", "content", List.of(Map.of("type", "text", "text", "가".repeat(100)))));
+        }
+        content.add(Map.of("type", "paragraph", "content", List.of(Map.of("type", "text", "text", "a" + "a".repeat(extra)))));
+        Map<String, Object> section = Map.of("id", "a", "label", "", "layout", "one", "tone", "default", "spacing", "normal",
+                "cells", List.of(Map.of("kind", "rich", "doc", Map.of("type", "doc", "content", content))));
+        return Map.of("schemaVersion", 1, "sections", List.of(section));
     }
 }
