@@ -53,7 +53,7 @@
 | [db-naming-exceptions.md](02-architecture/db-naming-exceptions.md) | DB 명명 표준 **예외 대장** |
 | [legacy-migration-tool-design.md](02-architecture/legacy-migration-tool-design.md) | 다중 source→PostgreSQL 승인형 offline 이관 도구 설계·운영 경계 |
 | [pitest-mutation-testing.md](02-architecture/pitest-mutation-testing.md) | PITest Mutation Testing 연동 설계(스코프별 전체 재계산) |
-| [board-management-expansion-design.md](02-architecture/board-management-expansion-design.md) | 게시판 운영 관리 확장 설계(확정, 구현 중) — 운영 화면·사용 안 함 게시판·예약·정렬·상단 고정·설정·메뉴 연결 판정, 배치별 계약·검증, 후속 설계 선행 조건(ADR-0040) |
+| [board-management-expansion-design.md](02-architecture/board-management-expansion-design.md) | 게시판 운영 관리 확장 설계(확정, 구현 완료) — 운영 화면·사용 안 함 게시판·예약·정렬·상단 고정·설정·메뉴 연결 판정, 배치별 계약·검증, 후속 설계 선행 조건(ADR-0040) |
 
 ### 02-architecture 참조 보존 tombstone
 
