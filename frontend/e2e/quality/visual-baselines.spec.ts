@@ -64,6 +64,11 @@ test.describe('Quality & Resilience', () => {
                 + '기준선 생성: CI 에서 `pnpm exec playwright test -g "Visual Regression Baseline" --update-snapshots` '
                 + '후 생성된 e2e/quality/visual-baselines.spec.ts-snapshots/ 를 커밋한다.');
             await page.goto('/admin');
+            // [2026-10-23] 머리글의 현재 영역(나의 업무)은 하이드레이션 뒤 effect 가 정한다(HeaderSearchParamSync) — 서버 그림에는
+            //   강조가 없어, 러너가 바빠 하이드레이션이 늦으면 강조 없는 화면이 안정돼 캡처된다(PR #966 run 39933517191 첫 시도,
+            //   차이는 그 강조뿐). 기준선이 담은 상태를 먼저 기다린다(GAP-FE-003 의 하이드레이션 전 상태 경계).
+            await expect(page.getByRole('navigation', { name: '주메뉴 네비게이션' }).getByRole('link', { name: '나의 업무', exact: true }))
+                .toHaveAttribute('aria-current', 'true', { timeout: 20000 });
             console.log('>>> Capturing Dashboard Visual Snapshot');
             await expect(page).toHaveScreenshot('dashboard-baseline.png', {
                 animations: 'disabled',
