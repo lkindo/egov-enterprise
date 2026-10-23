@@ -25,8 +25,8 @@ vi.mock('../home-data-boundary', () => ({
 }));
 
 // 대시보드 본문은 이 계약의 대상이 아니다. 무거운 클라이언트를 실제로 띄우지 않는다.
-vi.mock('next/dynamic', () => ({
-  default: () => function DashboardStub() {
+vi.mock('../UnifiedDashboardClient', () => ({
+  default: function DashboardStub() {
     return <div data-testid="dashboard-body" />;
   },
 }));
@@ -90,6 +90,16 @@ describe('권한 부족 되돌림 안내', () => {
     const source = readFileSync(join(process.cwd(), 'src', 'app', 'page.tsx'), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
     expect(source.match(/\bawait\b[^;]*/g)).toEqual(['await searchParams']);
     expect(source).toMatch(/<Suspense fallback=\{<DashboardLoading \/>\}>\s*<HomeDataBoundary>/);
+  });
+
+  it('업무 홈 카드는 미리 채운 캐시와 같은 하이드레이션 단위다 — HomeDataBoundary 와 카드 사이에 next/dynamic 경계를 두지 않는다', () => {
+    // [2026-10-23] next/dynamic(loading) 은 Suspense 를 하나 더 만들어 카드만 늦게 하이드레이션시켰다. 그 사이 로그아웃이 캐시를
+    //   비우면 카드가 옛 사용자·빈 캐시로 동기 하이드레이션돼 서버의 'N건' 과 '확인 중' 이 갈렸다(React #418 text, USER 홈 E2E flaky).
+    //   같은 단위면 강제 하이드레이션에서도 HydrationBoundary 가 같은 패스에서 캐시를 다시 채운다(/admin 과 같은 구조).
+    const source = readFileSync(join(process.cwd(), 'src', 'app', 'page.tsx'), 'utf8').replace(/\/\*[\s\S]*?\*\/|\/\/[^\n]*/g, '');
+    expect(source, '업무 홈 page 가 next/dynamic 을 쓰면 카드가 미리 채운 캐시와 다른 하이드레이션 단위가 된다').not.toMatch(/from ['"]next\/dynamic['"]/);
+    expect(source).toMatch(/import UnifiedDashboardClient from '\.\/UnifiedDashboardClient';/);
+    expect(source).toMatch(/<HomeDataBoundary>\s*<UnifiedDashboardClient \/>\s*<\/HomeDataBoundary>/);
   });
 
   it('안내와 무관하게 대시보드 본문은 그대로 렌더된다', async () => {

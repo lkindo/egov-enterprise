@@ -71,7 +71,7 @@ refresh_triggers:
 종료·기관 이전의 상세 이력은 [보관 기록](../../docs/archived/operational-decisions-history.md#종료이전-gap-기록)에 둔다. 다음은 종료로 없어지지 않은 위험·재개 조건이다.
 
 - `GAP-FE-002`: CI의 flaky 감소는 반복 실행으로 확인한다. main 로그에 `socket hang up`/`ECONNRESET`이 재발하면 원인을 재검증한다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-fe-002)).
-- `GAP-FE-003`: 본문은 여전히 따로 공개되므로 서버에서 오래 걸리는 본문은 늦게 하이드레이션하고, 그 전에 넣은 입력은 React 가 되돌린다 — E2E 는 `waitForHydration` 으로 기다린다. 공급자가 첫 화면 직후 값을 다시 바꾸면 같은 경합이 돌아온다(공급자 단위 시험이 막는다)([종료 근거](../../docs/archived/operational-decisions-history.md#gap-fe-003)).
+- `GAP-FE-003`: 본문은 여전히 따로 공개되므로 서버에서 오래 걸리는 본문은 늦게 하이드레이션하고, 그 전에 넣은 입력은 React 가 되돌린다 — E2E 는 `waitForHydration` 으로 기다린다. 공급자가 첫 화면 직후 값을 다시 바꾸면 같은 경합이 돌아온다(공급자 단위 시험이 막는다). 미리 채운 캐시(HydrationBoundary)와 그 소비자를 다른 Suspense(`next/dynamic` 의 loading 등)로 나누면 로그아웃의 캐시 비움이 늦은 경계를 빈 캐시로 하이드레이션해 #418 이 난다 — 업무 홈은 한 단위로 묶었고 구조 단언이 막는다(2026-10-23)([종료 근거](../../docs/archived/operational-decisions-history.md#gap-fe-003)).
 - `GAP-MEMO-001`: 지시 작성자 컬럼이 없어 변경 전에 수신자 아닌 사람이 남긴 지시 여부는 저장소로 판별할 수 없다([인가 변경 범위](../../docs/archived/operational-decisions-history.md#gap-memo-001)).
 - `GAP-BASE-002`: T2는 required가 아니며 재실패 시 새 gap을 연다. core의 소비자 없는 게시판 DTO 3개와, 투영 원장이 의도치 않은 연쇄 제거도 기대 부재로 받아들이는 한계는 남는다([범위](../../docs/archived/operational-decisions-history.md#gap-base-002)).
 - `GAP-ETL-001`: 앞서 커밋한 chunk는 남아 전체 되돌리기는 승인된 백업 복원이다. 이후 도입된 원장 승인 예외 격리와 쓰기 오류 중단을 구분한다([현행 ADR-0031](../../docs/02-architecture/decisions/ADR-0031-migration-ledger-confirmation-followup.md), [복구 런북](../../docs/04-operations/migration-recovery-runbook.md)).
