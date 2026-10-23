@@ -399,7 +399,10 @@ describe('app shell accessibility source contract', () => {
     const boardMakerPage = readAppSourceInProjection('admin', 'community', 'boards', 'maker', 'page.tsx');
 
     expect(dashboardPage).toMatch(/DashboardLoading[\s\S]*?<h1\b/);
-    expect(dashboardPage.match(/<DashboardLoading\s*\/>/g)).toHaveLength(2);
+    // [2026-10-23] 업무 홈은 카드를 next/dynamic 으로 감싸지 않는다(미리 채운 캐시와 같은 하이드레이션 단위, dashboard-auth-error.test.tsx).
+    //   독립 로딩 화면은 page 의 Suspense fallback 하나이고, 그 화면이 위 h1 을 준다.
+    expect(dashboardPage.match(/<DashboardLoading\s*\/>/g)).toHaveLength(1);
+    expect(dashboardPage).toMatch(/<Suspense fallback=\{<DashboardLoading \/>\}>/);
     if (addressBookPage !== undefined) expect(addressBookPage).toMatch(/AddressBookListSkeleton[\s\S]*?<h1\b/);
     if (boardMasterPage !== undefined) expect(boardMasterPage).toMatch(/loading:\s*\(\)\s*=>\s*<h1\b/);
     if (boardMakerPage !== undefined) expect(boardMakerPage).toMatch(/loading:\s*\(\)\s*=>\s*<h1\b/);
