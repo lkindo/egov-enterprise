@@ -19,12 +19,11 @@
  *
  * 4) 경로 변수 치환 — update/delete 계열은 인자로 받은 bbsId 를 URL 에 박는다.
  *    여기서 다른 값을 집거나 인자 순서가 밀리면 **엉뚱한 게시판을 수정하거나 지운다**.
- *    특히 `deleteBoardMasterPhysically`(영구 물리삭제)와 `deleteBoardMaster`(논리삭제)는
- *    `/physical` 접미 하나로만 갈린다 — 되돌릴 수 없는 사고가 이 한 조각에 달려 있다.
+ *    특히 `deleteBoardMasterPhysically`(영구 물리삭제)는 `/physical` 접미 하나로 설정 수정 경로와 갈린다 —
+ *    되돌릴 수 없는 사고가 이 한 조각에 달려 있다.
  *
- * 5) 일괄(batch) 경로 — `/batch/status`(상태 일괄 변경)와 `/batch/delete`(영구 일괄 삭제)가
- *    서로 뒤바뀌면 "비활성화" 버튼이 **영구 삭제**를 실행한다. 두 메서드 모두 POST 이고
- *    본문 형태도 비슷해 타입으로는 구분되지 않는다.
+ * 5) 일괄(batch) 경로 — `/batch/status`(상태 일괄 변경)만 화면이 부른다. [2026-10-23 ADR-0040 §5.2] 단건 논리 삭제와
+ *    일괄 영구 삭제의 서비스 메서드는 걷었다(목록이 일괄 사용 상태 바꾸기로 흡수, 영구 삭제는 설정 탭의 한 건 절차).
  *
  * 6) config 전달 — 호출부가 넘긴 AxiosRequestConfig(timeout·signal 등)가 유실되면
  *    화면 이탈 시 요청 취소(AbortSignal)가 동작하지 않고 타임아웃도 기본값으로 되돌아간다.
@@ -67,6 +66,7 @@ import {
   boardAdminService,
   type BoardMaster,
   type BoardMasterSummary,
+  type BoardMasterUpdateRequest,
 } from '../BoardAdminService';
 
 const board: BoardMaster = {
@@ -88,7 +88,19 @@ const boardSummary: BoardMasterSummary = {
   bbsTypeCd: board.bbsTypeCd,
   bbsAtrbCd: board.bbsAtrbCd,
   useYn: board.useYn,
+  designations: [],
 };
+
+// [2026-10-23 ADR-0040 결정 10] 설정 수정은 생성 DTO 가 아니라 버전이 필수인 수정 요청이다.
+const updateRequest: BoardMasterUpdateRequest = {
+  bbsTtl: '수정된제목',
+  atchPsbltyFileSz: 5_242_880,
+  useYn: 'Y',
+  version: 3,
+};
+
+// 상세 응답(BoardMasterDetailResponse) — 수정 요청에 돌려보낼 버전과 지정 용도를 늘 싣는다(ADR-0040 결정 10·§5.2).
+const boardDetail = { ...board, bbsId: board.bbsId!, version: 3, designations: [] };
 
 const boardPage = {
   list: [boardSummary],
@@ -104,7 +116,7 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
     client.get.mockImplementation((url: string) => {
       if (url.endsWith('/deletable')) return Promise.resolve(false);
       if (url === 'admin/system/board-masters') return Promise.resolve(boardPage);
-      return Promise.resolve(board);
+      return Promise.resolve(boardDetail);
     });
     client.post.mockResolvedValue('BBSMSTR_CREATED');
   });
@@ -198,14 +210,15 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
 
     it('필수 generated 요청 필드가 빠지면 네트워크 호출 전에 거부한다', async () => {
       await expect(boardAdminService.createBoardMaster({ bbsTtl: '누락' } as BoardMaster)).rejects.toThrow();
-      await expect(boardAdminService.updateBoardMaster('BROKEN', { ...board, bbsTypeCd: undefined } as never)).rejects.toThrow();
+      // 버전 없는 수정은 네트워크 전에 거부한다(서버도 400 이다).
+      await expect(boardAdminService.updateBoardMaster('BROKEN', { bbsTtl: '버전 없음', atchPsbltyFileSz: 0, useYn: 'Y' } as never)).rejects.toThrow();
 
       expect(client.post).not.toHaveBeenCalled();
       expect(client.put).not.toHaveBeenCalled();
     });
 
     it('게시판 수정은 bbsId를 경로 변수로 쓰고 generated 본문·config를 보존한다', async () => {
-      const payload: BoardMaster = { ...board, bbsTtl: '수정된제목' };
+      const payload: BoardMasterUpdateRequest = updateRequest;
 
       await boardAdminService.updateBoardMaster('BBSMSTR_000000000004', payload, { timeout: 2000 });
       expect(client.put).toHaveBeenCalledWith(
@@ -215,49 +228,41 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       );
     });
 
-    it('수정 대상과 삭제 대상이 다르면 각자의 경로로만 나간다', async () => {
-      const payload: BoardMaster = { ...board, bbsTtl: '수정' };
+    it('수정 대상과 영구 삭제 대상이 다르면 각자의 경로로만 나간다', async () => {
+      const payload: BoardMasterUpdateRequest = { ...updateRequest, bbsTtl: '수정' };
       await boardAdminService.updateBoardMaster('BBSMSTR_UPDATE_ONLY', payload);
-      await boardAdminService.deleteBoardMaster('BBSMSTR_DELETE_ONLY');
+      await boardAdminService.deleteBoardMasterPhysically('BBSMSTR_DELETE_ONLY');
 
       expect(client.put).toHaveBeenCalledWith(
         'admin/system/board-masters/BBSMSTR_UPDATE_ONLY',
         payload,
         undefined,
       );
-      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_DELETE_ONLY', undefined);
+      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_DELETE_ONLY/physical', undefined);
       expect(client.delete).not.toHaveBeenCalledWith(
-        'admin/system/board-masters/BBSMSTR_UPDATE_ONLY',
+        expect.stringContaining('BBSMSTR_UPDATE_ONLY'),
         expect.anything(),
       );
     });
-  });
 
-  describe('삭제 (deleteBoardMaster / deleteBoardMasterPhysically)', () => {
-    it('논리 삭제는 서버 인증 주체를 사용하므로 userId를 전송하지 않는다', async () => {
-      await boardAdminService.deleteBoardMaster('BBSMSTR_000000000005');
+    it('변경 이력은 게시판 아래 change-history 로 쪽·크기를 실어 읽는다', async () => {
+      client.get.mockResolvedValueOnce({ list: [], total: 0, page: 2, size: 20, totalPage: 1 });
+      await boardAdminService.getBoardChangeHistory('BBSMSTR_000000000007', { page: 2, size: 20 });
 
-      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000005', undefined);
-      // axios delete 는 (url, config) 2-인자 시그니처다 — 본문 자리에 config 가 밀려 들어가지 않는다.
-      expect(client.delete.mock.calls[0]).toHaveLength(2);
-    });
-
-    it('논리 삭제 시 호출부 config가 그대로 유지된다', async () => {
-      const { signal } = new AbortController();
-
-      await boardAdminService.deleteBoardMaster('BBSMSTR_000000000005', { timeout: 3000, signal });
-
-      expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000005', {
-        timeout: 3000,
-        signal,
+      expect(client.get).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000007/change-history', {
+        params: { page: 2, size: 20 },
       });
     });
+  });
 
-    it('영구 물리삭제는 /physical 접미가 붙은 경로로만 나간다 — 접미가 빠지면 논리삭제와 구분되지 않는다', async () => {
+  describe('영구 삭제 (deleteBoardMasterPhysically)', () => {
+    it('영구 물리삭제는 /physical 접미가 붙은 경로로만 나간다 — 접미가 빠지면 단건 비활성화 경로와 구분되지 않는다', async () => {
       await boardAdminService.deleteBoardMasterPhysically('BBSMSTR_000000000006');
 
       expect(client.delete).toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000006/physical', undefined);
       expect(client.delete).not.toHaveBeenCalledWith('admin/system/board-masters/BBSMSTR_000000000006', undefined);
+      // axios delete 는 (url, config) 2-인자 시그니처다 — 본문 자리에 config 가 밀려 들어가지 않는다.
+      expect(client.delete.mock.calls[0]).toHaveLength(2);
     });
 
     it('영구 물리삭제도 호출부 config 를 그대로 전달한다', async () => {
@@ -269,7 +274,7 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
     });
   });
 
-  describe('일괄 처리 (batchUpdateBoardMasterStatus / batchDeleteBoardMastersPhysically)', () => {
+  describe('일괄 처리 (batchUpdateBoardMasterStatus)', () => {
     it('상태 일괄 변경은 /batch/status 로 bbsIds 와 useYn 을 함께 POST 한다', async () => {
       await boardAdminService.batchUpdateBoardMasterStatus(['BBSMSTR_A', 'BBSMSTR_B'], 'N');
 
@@ -280,35 +285,21 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       );
     });
 
-    it('영구 일괄 삭제는 /batch/delete 로 bbsIds 만 POST 하며 useYn 을 섞지 않는다', async () => {
-      await boardAdminService.batchDeleteBoardMastersPhysically(['BBSMSTR_C'], { timeout: 60000 });
-
-      expect(client.post).toHaveBeenCalledWith(
-        'admin/system/board-masters/batch/delete',
-        { bbsIds: ['BBSMSTR_C'] },
-        { timeout: 60000 },
-      );
-    });
-
     it('서버와 같은 1..100개 generated 배열 경계를 네트워크 전에 집행한다', async () => {
       const tooMany = Array.from({ length: 101 }, (_, index) => `BBSMSTR_${index}`);
 
       await expect(boardAdminService.batchUpdateBoardMasterStatus([], 'N')).rejects.toThrow();
       await expect(boardAdminService.batchUpdateBoardMasterStatus(tooMany, 'N')).rejects.toThrow();
-      await expect(boardAdminService.batchDeleteBoardMastersPhysically([])).rejects.toThrow();
-      await expect(boardAdminService.batchDeleteBoardMastersPhysically(tooMany)).rejects.toThrow();
       expect(client.post).not.toHaveBeenCalled();
     });
 
-    it('두 일괄 경로는 서로 뒤바뀌지 않는다 — 뒤바뀌면 비활성화 버튼이 영구 삭제를 실행한다', async () => {
-      await boardAdminService.batchUpdateBoardMasterStatus(['BBSMSTR_A'], 'Y');
-      await boardAdminService.batchDeleteBoardMastersPhysically(['BBSMSTR_B']);
+    it('사용 상태 일괄 변경은 영구 삭제 경로(/batch/delete)로 나가지 않는다', async () => {
+      await boardAdminService.batchUpdateBoardMasterStatus(['BBSMSTR_A'], 'N');
 
       const calledPaths = client.post.mock.calls.map((call) => call[0]);
-      expect(calledPaths).toEqual([
-        'admin/system/board-masters/batch/status',
-        'admin/system/board-masters/batch/delete',
-      ]);
+      expect(calledPaths).toEqual(['admin/system/board-masters/batch/status']);
+      expect(boardAdminService).not.toHaveProperty('batchDeleteBoardMastersPhysically');
+      expect(boardAdminService).not.toHaveProperty('deleteBoardMaster');
     });
   });
 

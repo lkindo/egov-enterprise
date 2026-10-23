@@ -106,6 +106,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
     enabled: !!initialData.article && hasValidPstSn,
   });
   const canEditBoard = canEditConfiguredBoard(user, masterInfo);
+  // [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판의 글은 조회 대행 권한자만 연다. 서버가 추천·댓글·새 평가를 모두 거부하므로
+  //   그 입력을 감추고 사유를 보인다. 메타를 모르면(조회 전·실패) 열린 것으로 두고 판정은 서버가 한다.
+  const boardInUse = masterInfo?.inUse !== false;
   const canUpdateArticle = canEditBoard && canManageBoardArticle(user, article?.userId, 'UPDATE');
   const canDeleteArticle = canEditBoard && canManageBoardArticle(user, article?.userId, 'DELETE');
 
@@ -305,6 +308,11 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           </h1>
           {/* [결정 23] 게시 종료일이 지난 글 — 작성자·전체 열람 권한자에게만 보인다. 제목(h1)의 이름은 바꾸지 않는다. */}
           <PostingEndedBadge pstEndYmd={article.pstEndYmd} />
+          {!boardInUse && (
+            <p role="note" className="text-[length:var(--font-size-body)] text-muted-foreground">
+              사용 안 함 게시판입니다. 이용자에게 닫혀 있고, 운영자는 글을 정리할 수 있습니다.
+            </p>
+          )}
         </div>
 
         <div className="flex shrink-0 flex-wrap items-center gap-2">
@@ -346,6 +354,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             반쪽 기능이 된다. 서버 구현은 남겨 둔다(요청 밖 삭제 금지) — 계층 표현과 함께
             설계할 때 되살릴 자산이다.
           */}
+          {boardInUse && (
           <Button
             variant="outline"
             onClick={handleLike}
@@ -358,6 +367,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           >
             <ThumbsUp size={16} className="text-primary" aria-hidden="true" /> {recommended ? '추천함' : '추천'} {(article.likeCnt ?? 0) + likeDelta}
           </Button>
+          )}
           {contributedActions.map((action) => {
             const busy = activeAction === `post:${action.id}`;
             const done = completedActions.has(action.id);
@@ -500,10 +510,11 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           totalComments={initialData.commentTotal}
           // [2026-09-27 DIP B5 F9] 게시판 설정을 모르면(조회 전·실패) 입력을 보이고 판정은 서버가 한다.
           acceptsNewComments={masterInfo?.ansYn !== 'N'}
+          boardInUse={boardInUse}
         />
 
-        {/* D-8 만족도 — 백엔드는 #302 에서 배선됐고 이 위젯이 그 짝을 맞춘다 */}
-        <SatisfactionSection bbsId={bbsId!} pstSn={pstSn} acceptsNewRatings={masterInfo?.stsfdgYn !== 'N'} />
+        {/* D-8 만족도 — 백엔드는 #302 에서 배선됐고 이 위젯이 그 짝을 맞춘다. 사용 안 함 게시판은 새 평가를 받지 않는다. */}
+        <SatisfactionSection bbsId={bbsId!} pstSn={pstSn} acceptsNewRatings={boardInUse && masterInfo?.stsfdgYn !== 'N'} />
       </div>
     </div>
   );

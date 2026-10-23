@@ -20,7 +20,7 @@ export const NOTICE_BOARD_ID = 'BBSMSTR_AAAAAAAAAAAA';
  *   sql/seed_knowledge_boards.sql 은 존재하지 않는 테이블에 INSERT 해 어떤 설치에서도 성공할 수
  *   없었다). 사용자에게 보이는 **게시판 선택지에 이 상수를 쓰지 말 것** — 고르는 순간 목록 조회가
  *   실패하고 그 게시판으로 글을 쓰면 등록이 거부된다(2026-08-28 실측으로 세 화면에서 제거).
- *   선택지는 useBoardOptions()로 게시판 마스터에서 채운다.
+ *   선택지는 useBoardOptions()로 서버의 사용자 선택지 API 에서 채운다(ADR-0040 결정 11).
  */
 export const FREE_BOARD_ID = 'BBSMSTR_BBBBBBBBBBBB';
 

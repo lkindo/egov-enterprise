@@ -2,8 +2,6 @@ import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
-import { fetchAllPages } from '@/lib/api/fetch-all-pages';
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
 import { boardUserService, type BoardMeta } from '@/services/business/user/board/BoardUserService';
 import { getPostsOperation } from '@/types/generated-operations';
 import { logErrorSafely } from '@/lib/safe-error-log';
@@ -22,11 +20,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 /**
- * bbsId 없이 진입했을 때 쓸 기본 게시판을 **실재하는 목록에서** 고른다.
+ * bbsId 없이 진입했을 때 쓸 기본 게시판을 **이 사용자가 실제로 볼 수 있는 게시판에서** 고른다.
  *
  * 종전 기본값 'BBSMSTR_000000000001' 은 Flyway 시드에도 sql/ 에도 없어(전량 grep 실측)
- * 조회가 늘 비었다. 게시판 마스터에서 사용 중인 첫 게시판을 쓰고, 목록을 못 받으면
- * 시드가 보장하는 공지 게시판으로 내려간다 — 여기서 다시 없는 ID 를 만들지 않는다.
+ * 조회가 늘 비었다. [2026-10-23 ADR-0040 결정 11] 관리 목록 API 는 일반 사용자에게 403 이라 일반 사용자는 늘 공지 게시판으로
+ * 떨어졌다 — 이제 서버가 사용 여부·커뮤니티 회원으로 거른 사용자 선택지의 첫 게시판을 쓴다(이용 화면의 출처는 선택지 API 하나).
+ * 선택지를 받지 못하거나 비어 있으면 시드가 보장하는 공지 게시판 ID 로 간다. 그 게시판을 볼 수 없으면 본 조회가 없는
+ * 게시판(404) 오류를 보이고, 조회 대행 권한자가 사용 안 함 게시판을 열면 목록 머리가 사용 안 함임을 알린다. 선택지 조회의
+ * 실패 자체는 화면에 따로 보이지 않는다(본 조회가 같은 서버에 닿으므로 대개 함께 실패한다).
  */
 export const resolveDefaultBoardId = async (): Promise<string> => {
   const cookieStore = await cookies();
@@ -34,14 +35,12 @@ export const resolveDefaultBoardId = async (): Promise<string> => {
   if (!accessToken) return NOTICE_BOARD_ID;
 
   try {
-    const boards = await fetchAllPages((page, size) =>
-      boardAdminService.getBoardMasterList({ page, size }, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      }));
-    const first = boards.find((board) => board.useYn !== 'N' && !!board.bbsId);
-    return first?.bbsId ?? NOTICE_BOARD_ID;
+    const options = await boardUserService.getBoardOptions({
+      headers: { Authorization: `Bearer ${accessToken}` },
+    });
+    return options.find((option) => !!option.bbsId)?.bbsId ?? NOTICE_BOARD_ID;
   } catch {
-    // 목록 조회 실패는 이 화면의 본 조회에서 다시 드러난다. 여기서는 조용히 시드 기본값을 쓴다.
+    // 선택지 조회 실패는 따로 알리지 않는다 — 본 조회가 같은 서버에 닿아 대개 함께 실패하고 그 오류를 보인다.
     return NOTICE_BOARD_ID;
   }
 };

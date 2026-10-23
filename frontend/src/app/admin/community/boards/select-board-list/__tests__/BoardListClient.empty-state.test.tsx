@@ -100,12 +100,12 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { BoardListClient } from '../BoardListClient';
 
-async function renderList(requiredEditPermissions: string[] = []) {
+async function renderList(requiredEditPermissions: string[] = [], inUse = true) {
   const initialData = {
     list: [],
     total: 0,
     totalPage: 0,
-    masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST', requiredEditPermissions },
+    masterInfo: { bbsTtl: '테스트 게시판', tmpltId: 'TMPLT_LIST', requiredEditPermissions, inUse },
     fetchError: null,
   };
   let result!: ReturnType<typeof render>;
@@ -124,6 +124,17 @@ describe('BoardListClient empty state (DIP B5 F9 · G15)', () => {
     mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'];
     vi.clearAllMocks();
     mocks.params = new Map([['bbsId', 'BBS-1']]);
+  });
+
+  // [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판의 목록은 조회 대행 권한자에게만 열린다 — 이용자 화면과 구별되게 알린다.
+  it('사용 안 함 게시판이면 운영자에게만 열려 있다고 알리고, 사용 중이면 알리지 않는다', async () => {
+    await renderList([], false);
+    expect(screen.getByRole('note')).toHaveTextContent('사용 안 함 게시판입니다. 이용자에게 닫혀 있고, 운영자는 글을 정리할 수 있습니다.');
+  });
+
+  it('사용 중인 게시판에는 사용 안 함 표지가 없다', async () => {
+    await renderList();
+    expect(screen.queryByText(/사용 안 함 게시판입니다/)).toBeNull();
   });
 
   it('지정 공지·FAQ에서는 두 추가 권한을 모두 가져야 글쓰기를 제공한다', async () => {

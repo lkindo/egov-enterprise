@@ -95,6 +95,8 @@ class ConfiguredBoardEditPolicyTest {
 
     @Test void editorPermissionsDoNotOverrideOwnershipOrCommunityMembership() {
         authenticate("NOTICE_EDIT", "FAQ_EDIT", "BOARD_UPDATE");
+        // [2026-10-23 ADR-0040 결정 1] 쓰기는 게시판 진입 판정(사용 여부·커뮤니티)을 지난 뒤 소유를 본다.
+        when(boards.findById("NOTICE")).thenReturn(Optional.of(BoardMaster.builder().bbsId("NOTICE").build()));
         when(posts.findById(1L)).thenReturn(Optional.of(Board.builder().bbsId("NOTICE").pstSn(1L).userId("other").build()));
         assertThatThrownBy(() -> service.updatePost("NOTICE", 1L, request("NOTICE")))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
@@ -113,6 +115,8 @@ class ConfiguredBoardEditPolicyTest {
 
     @Test void replyCannotSwitchBoardIdsOrReadSecretParentsBeforeUpload() {
         authenticate("NOTICE_EDIT", "FAQ_EDIT", "BOARD_CREATE");
+        when(boards.findById("ordinary")).thenReturn(Optional.of(BoardMaster.builder().bbsId("ordinary").build()));
+        when(boards.findById("NOTICE")).thenReturn(Optional.of(BoardMaster.builder().bbsId("NOTICE").build()));
         when(posts.findById(1L)).thenReturn(Optional.of(Board.builder().bbsId("NOTICE").pstSn(1L).build()));
         assertThatThrownBy(() -> service.replyPostWithFiles("editor-key", 1L, request("ordinary"), List.of()))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);

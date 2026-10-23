@@ -620,6 +620,50 @@
     "column_name": "mdfcn_dt"
   },
   {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "bbs_chg_hstry_sn"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "chg_trgt_type_cd"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "chg_type_cd"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "bbs_id"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "pst_sn"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "chg_artcl_nm"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "chg_bfr_cn"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "chg_aftr_cn"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "chg_user_idntfr"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "frst_rgtr_id"
+  },
+  {
+    "table_name": "tb_bbs_chg_hstry",
+    "column_name": "crt_dt"
+  },
+  {
     "table_name": "tb_bbs_comment",
     "column_name": "use_yn"
   },
@@ -862,6 +906,10 @@
   {
     "table_name": "tb_bbs_master",
     "column_name": "cmnty_sn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "version"
   },
   {
     "table_name": "tb_bbs_master_optn",

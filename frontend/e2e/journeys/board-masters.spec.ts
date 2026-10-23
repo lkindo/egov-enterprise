@@ -17,7 +17,8 @@ test.describe('Board Master Management (Admin Flow)', () => {
             await dialog.accept();
         });
     });
-    test("게시판 wizard 등록과 메뉴 배포 → 설정 수정 → 사용 중지", async ({ page }) => {
+    test("게시판 만들기(사용 안 함·메뉴 비활성) → 운영 화면 설정 저장 → 목록에서 사용 안 함으로 바꾸기", async ({ page }) => {
+        // [2026-10-23 ADR-0040 §5.2·5.3·5.5] 설정 편집은 운영 화면 설정 탭으로, 단건 비활성화는 목록의 일괄 사용 상태 바꾸기로 옮겼다.
         const uniqueId = Date.now();
         const boardName = `E2E_Console_Test_${uniqueId}`;
         const boardDesc = `Automated test board created via E2E wizard at ${new Date().toISOString()}`;
@@ -28,32 +29,26 @@ test.describe('Board Master Management (Admin Flow)', () => {
         await boardMasterPage.startWizard();
         await boardMasterPage.fillStep1(boardName, boardDesc);
         await boardMasterPage.fillStep2('지식 허브');
-        await boardMasterPage.fillStep3();
-        await boardMasterPage.fillStep4(`Menu_${boardName}`);
+        await boardMasterPage.fillStep3(`Menu_${boardName}`);
+        await boardMasterPage.fillStep4();
         await boardMasterPage.verifySuccess(`Menu_${boardName}`);
-        console.log('\n>>> Step 1: Navigating to Board Master Console');
-        await boardMasterPage.gotoMaster();
-        await expect(page).toHaveURL(/.*master/);
-        console.log(`\n>>> Step 2: Searching for test board: ${boardName}`);
-        await boardMasterPage.search(boardName);
-        await expect(page.locator('tr').filter({ hasText: boardName }).first()).toBeVisible({ timeout: 15000 });
-        console.log('\n>>> Step 3: Opening Settings Modal and Updating Information');
-        await boardMasterPage.openSettings(boardName);
-        await boardMasterPage.updateSettings({
+        console.log('\n>>> Step 1: Continuing to the operations screen (publication readiness)');
+        await boardMasterPage.continuePublicationReadiness();
+        console.log('\n>>> Step 2: Saving settings on the operations screen');
+        await boardMasterPage.updateSettingsOnOperations({
             name: updatedName,
             description: updatedDesc,
             useYn: 'Y'
         });
-        console.log('\n>>> Step 4: Verifying Update in List');
+        console.log('\n>>> Step 3: Verifying the update in the list');
+        await boardMasterPage.gotoMaster();
         await boardMasterPage.search(updatedName);
-        await expect(boardMasterPage.page.locator('tr').filter({ hasText: updatedName }).first()).toBeVisible({ timeout: 15000 });
-        console.log('\n>>> Step 5: Deleting the Board Master Permanently');
-        await boardMasterPage.deleteBoard(updatedName);
-        console.log('\n>>> Step 6: Verifying Deletion');
-        await boardMasterPage.search(updatedName);
-        // Soft delete sets use_yn='N' (rendered as "대기" in Korean UI) rather than hard deleting the row
         const row = page.locator('tr').filter({ hasText: updatedName }).first();
-        await expect(row).toContainText('대기', { timeout: 15000 });
+        await expect(row).toBeVisible({ timeout: 15000 });
+        await expect(row.getByText('사용', { exact: true })).toBeVisible({ timeout: 15000 });
+        console.log('\n>>> Step 4: Switching the board to unused from the list');
+        await boardMasterPage.deactivateFromList(updatedName);
+        await expect(row.getByText('사용 안 함', { exact: true })).toBeVisible({ timeout: 15000 });
     });
     test('Validation Edge Case: Creation Failure with Empty Name', async ({ page }) => {
         console.log('>>> Navigating to Maker to test validation failure');

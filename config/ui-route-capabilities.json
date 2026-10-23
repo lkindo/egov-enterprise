@@ -2137,9 +2137,8 @@
       "supportedActions": [
         "bulk-activate",
         "bulk-deactivate",
-        "bulk-purge",
-        "delete",
-        "edit",
+        "filter",
+        "navigate",
         "search",
         "view-list"
       ],
@@ -2161,22 +2160,24 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "board.master-list",
           "status": "partial",
           "candidateStatus": "live",
-          "dataSource": "board-masters-api",
-          "actions": [
-            "search",
-            "view-list"
-          ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "게시판 마스터 목록",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-23",
           "owner": "product/UX + domain owner",
+          "id": "board.master-list",
+          "dataSource": "board-masters-api",
+          "actions": [
+            "filter",
+            "navigate",
+            "search",
+            "view-list"
+          ],
+          "visibleLabel": "게시판 관리 목록",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/content/board/BoardMasterApiControllerTest.java",
@@ -2188,47 +2189,22 @@
           ]
         },
         {
-          "id": "board.master-edit-delete",
           "status": "partial",
           "candidateStatus": "live",
-          "dataSource": "board-masters-api",
-          "actions": [
-            "delete",
-            "edit"
-          ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "설정 편집·비활성화·영구 삭제",
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-23",
           "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
-            "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
-            "frontend/src/app/admin/community/boards/master/__tests__/BoardMasterListClient.test.tsx",
-            "frontend/src/app/admin/community/boards/master/page.tsx"
-          ]
-        },
-        {
           "id": "board.master-bulk",
-          "status": "partial",
-          "candidateStatus": "live",
           "dataSource": "board-masters-api",
           "actions": [
             "bulk-activate",
-            "bulk-deactivate",
-            "bulk-purge"
+            "bulk-deactivate"
           ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "일괄 활성화·일괄 비활성·완전 말소",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
+          "visibleLabel": "사용으로 바꾸기·사용 안 함으로 바꾸기",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
             "frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx",
@@ -2252,6 +2228,140 @@
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
         "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+      }
+    },
+    {
+      "route": "/admin/community/boards/master/[id]",
+      "source": "frontend/src/app/admin/community/boards/master/[id]/page.tsx",
+      "sourceShellAccess": "admin-system",
+      "shellAccess": "admin-system",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "admin-console",
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "delete",
+        "edit",
+        "navigate",
+        "paginate",
+        "select-detail",
+        "view-detail",
+        "view-list",
+        "view-status"
+      ],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "collaboration",
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "게시판 운영",
+      "menuExposure": "not-menued",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "status": "partial",
+          "candidateStatus": "live",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-23",
+          "owner": "product/UX + domain owner",
+          "id": "board.operations-settings",
+          "dataSource": "board-masters-api",
+          "actions": [
+            "delete",
+            "edit",
+            "view-detail"
+          ],
+          "visibleLabel": "설정",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardChangeHistoryDialog.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardOperationsClient.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardSettingsTab.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardSettingsTab.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/page.tsx"
+          ]
+        },
+        {
+          "status": "partial",
+          "candidateStatus": "live",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-23",
+          "owner": "product/UX + domain owner",
+          "id": "board.operations-posts",
+          "dataSource": "boards-api",
+          "actions": [
+            "paginate",
+            "select-detail",
+            "view-list"
+          ],
+          "visibleLabel": "게시물",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/page.tsx"
+          ]
+        },
+        {
+          "status": "partial",
+          "candidateStatus": "live",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-23",
+          "owner": "product/UX + domain owner",
+          "id": "board.operations-access",
+          "dataSource": "board-masters+menus+communities-api",
+          "actions": [
+            "navigate",
+            "view-status"
+          ],
+          "visibleLabel": "메뉴·접근",
+          "evidence": [
+            "frontend/src/app/admin/community/boards/master/[id]/BoardAccessTab.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardAccessTab.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/page.tsx",
+            "frontend/src/app/admin/community/boards/master/useBoardAccessSources.ts",
+            "frontend/src/lib/board/__tests__/board-menu-links.test.ts",
+            "frontend/src/lib/board/board-menu-links.ts"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/modules/presets.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/admin/community/boards/master/[id]/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "journeys",
+        "profileOwners",
+        "roles"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-11-30",
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. The board operations screen (ADR-0040 decision 2) was added on 2026-10-23; tab states were read from code and unit tests."
       }
     },
     {

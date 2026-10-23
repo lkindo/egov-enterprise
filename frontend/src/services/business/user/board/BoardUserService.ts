@@ -6,6 +6,7 @@ import type { components } from '@/types/generated-api';
 
 import {
   getBoardMetaOperation,
+  getBoardOptionsOperation,
   getPostsOperation,
   likePostOperation,
   markQuestionSolvedOperation,
@@ -20,6 +21,8 @@ import {
  */
 /** 게시판 제목·설명·템플릿·설정(읽기 전용). 백엔드 `BoardMetaDto` 와 1:1 대응한다. */
 export type BoardMeta = components['schemas']['BoardMetaDto'];
+/** 이용 화면의 게시판 선택지 한 건(ID·이름). 사용 여부·커뮤니티 귀속은 서버가 이미 걸렀다(ADR-0040 결정 11). */
+export type BoardOptionItem = components['schemas']['BoardOptionDto'];
 
 export interface BoardSearchResultItem {
   bbsId: string;
@@ -77,6 +80,14 @@ class BoardUserService extends ApiService {
       path: { bbsId },
       config,
     });
+  }
+
+  /**
+   * 호출자가 이용할 수 있는 게시판 선택지(ADR-0040 결정 11). 사용 중인 게시판만, 커뮤니티 귀속 게시판은 승인 회원(또는 조회
+   * 대행 권한 보유자)에게만 온다. 모든 이용 화면이 이 하나를 쓴다 — 관리자 목록 API 분기와 시드 폴백을 걷었다.
+   */
+  async getBoardOptions(config?: AxiosRequestConfig): Promise<BoardOptionItem[]> {
+    return this.executeGenerated(getBoardOptionsOperation, { config });
   }
 
   /*

@@ -62,9 +62,9 @@
     "markerBlocks": [
       {
         "file": "src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
-        "blocks": 5,
+        "blocks": 6,
         "step": "잔존(선택 외래 키 연동 칸)",
-        "reason": "커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다. 3단계 접근 안내의 회원 범위 문장도 같은 축이라 함께 빠진다(ADR-0040 A0)."
+        "reason": "커뮤니티 귀속은 선택 외래 키 연동이라 게시판 마법사 폼 안의 한 칸이다. 칸 슬롯은 종류 상한을 쓰므로 두지 않는다. 3단계 접근 안내의 회원 범위 문장과 4단계 최종 확인의 귀속 요약도 같은 축이라 함께 빠진다(ADR-0040 A0·§5.3)."
       }
     ],
     "commonCodeGroups": []

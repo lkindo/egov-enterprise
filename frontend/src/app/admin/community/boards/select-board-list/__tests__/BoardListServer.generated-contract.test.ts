@@ -11,6 +11,7 @@ const boardAdminService = vi.hoisted(() => ({
 }));
 const boardUserService = vi.hoisted(() => ({
   getBoardMeta: vi.fn(),
+  getBoardOptions: vi.fn(),
 }));
 
 vi.mock('next/headers', () => ({
@@ -40,32 +41,24 @@ describe('BoardListServer generated 경계', () => {
     cookieState.accessToken = 'token';
   });
 
-  it('게시판 기본값은 size=100으로 끝까지 조회한 generated service 결과에서 고른다', async () => {
-    const firstPage = Array.from({ length: 100 }, (_, index) => ({
-      bbsId: `DISABLED_${index}`,
-      useYn: 'N',
-    }));
-    boardAdminService.getBoardMasterList
-      .mockResolvedValueOnce({ list: firstPage, total: 101, page: 1, size: 100, totalPage: 2 })
-      .mockResolvedValueOnce({
-        list: [{ bbsId: 'BBS_ACTIVE', useYn: 'Y' }],
-        total: 101,
-        page: 2,
-        size: 100,
-        totalPage: 2,
-      });
+  // [2026-10-23 ADR-0040 결정 11] 관리 목록 API(BBS_MST_READ)는 일반 사용자에게 403 이라 늘 공지 게시판으로 떨어졌다.
+  it('게시판 기본값은 서버가 거른 사용자 선택지의 첫 게시판이고 관리 목록 API 를 부르지 않는다', async () => {
+    boardUserService.getBoardOptions.mockResolvedValueOnce([
+      { bbsId: 'BBS_VISIBLE_1', bbsTtl: '자료실' },
+      { bbsId: 'BBS_VISIBLE_2', bbsTtl: '일정' },
+    ]);
 
-    await expect(resolveDefaultBoardId()).resolves.toBe('BBS_ACTIVE');
-    expect(boardAdminService.getBoardMasterList).toHaveBeenNthCalledWith(
-      1,
-      { page: 1, size: 100 },
-      { headers: { Authorization: 'Bearer token' } },
-    );
-    expect(boardAdminService.getBoardMasterList).toHaveBeenNthCalledWith(
-      2,
-      { page: 2, size: 100 },
-      { headers: { Authorization: 'Bearer token' } },
-    );
+    await expect(resolveDefaultBoardId()).resolves.toBe('BBS_VISIBLE_1');
+    expect(boardUserService.getBoardOptions).toHaveBeenCalledWith({ headers: { Authorization: 'Bearer token' } });
+    expect(boardAdminService.getBoardMasterList).not.toHaveBeenCalled();
+  });
+
+  it('선택지가 비었거나 받지 못하면 공지 게시판 ID 로 가고 본 조회가 그 상태를 보인다', async () => {
+    boardUserService.getBoardOptions.mockResolvedValueOnce([]);
+    await expect(resolveDefaultBoardId()).resolves.toBe('BBSMSTR_AAAAAAAAAAAA');
+    boardUserService.getBoardOptions.mockRejectedValueOnce(new Error('network'));
+    await expect(resolveDefaultBoardId()).resolves.toBe('BBSMSTR_AAAAAAAAAAAA');
+    expect(boardAdminService.getBoardMasterList).not.toHaveBeenCalled();
   });
 
   it('게시글 목록은 exact getPosts operation을 쓰고 게시판 메타는 사용자용 API로 조회한다 (DIP V5)', async () => {

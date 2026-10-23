@@ -17,6 +17,10 @@ import { normalizeInternalRoute } from './internal-route';
  * [2026-10-02 D3] 화면 하나(경로·이름)를 넘기는 화면 인계를 따로 둔다 — 화면 관리의 '메뉴에 추가' 가 메뉴 관리에
  * 새 메뉴의 경로·이름을 넘긴다. 사용자 인계와 같은 원칙(sessionStorage·같은 유효 시간·URL 비노출)이고, 저장 키와
  * 형식 검사는 따로다. 사용자 인계 API 는 그대로다.
+ *
+ * [2026-10-23 ADR-0040 결정 8] 세 번째로 메뉴 하나(메뉴 번호)를 넘기는 메뉴 인계(menu-focus)를 둔다 — 게시판 운영 화면이
+ * 연결된 메뉴를 고른 상태로 메뉴 관리를 연다. 같은 원칙(URL 비노출·1분·적용 뒤 삭제)이고 저장 키·형식 검사는 따로다.
+ * 인계는 선택만 한다 — 메뉴 활성화·그룹 표시의 저장 권한은 그대로 서버가 집행한다(H3).
  */
 export type HandoffSlot = 'authority-user' | 'authority-history-user' | 'login-log-user' | 'mfa-recover-user';
 
@@ -165,4 +169,50 @@ export function clearScreenHandoff(...slots: ScreenHandoffSlot[]) {
 export function useScreenHandoff(slot: ScreenHandoffSlot = 'menu-add-screen'): ScreenHandoff | null {
   const raw = useSyncExternalStore(subscribe, () => readRaw(SCREEN_PREFIX + slot), () => null);
   return useMemo(() => parseScreen(raw), [raw]);
+}
+
+// ─── 메뉴 인계(2026-10-23 ADR-0040 결정 8) ────────────────────────────────────────────────────────────────
+
+export interface MenuFocusHandoff {
+  /** 고를 메뉴 번호(메뉴 구조 응답의 menuNo 와 같은 값). 양의 정수만 받는다. */
+  menuSn: number;
+  /** 인계 시각(epoch ms). 받는 화면이 같은 인계를 한 번만 적용하는 키로 쓴다. */
+  at: number;
+}
+
+const MENU_FOCUS_KEY = 'egov.menu-focus-handoff.v1:menu-focus';
+
+function isMenuSn(value: unknown): value is number {
+  return typeof value === 'number' && Number.isSafeInteger(value) && value > 0;
+}
+
+function parseMenuFocus(raw: string | null): MenuFocusHandoff | null {
+  if (!raw) return null;
+  try {
+    const value = JSON.parse(raw) as Partial<MenuFocusHandoff>;
+    if (!isMenuSn(value.menuSn) || typeof value.at !== 'number') return null;
+    return { menuSn: value.menuSn, at: value.at };
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * 다음 화면(메뉴 관리)에 고를 메뉴를 넘긴다. 넘기지 못하면 false 다 — 메뉴 번호가 양의 정수가 아니면 아무것도 두지 않고,
+ * 저장소를 쓸 수 없으면 이전 인계까지 지운다. 호출부는 false 일 때 이동하지 않고 그 사실을 안내한다(화면 인계와 같은 계약).
+ */
+export function handOffMenuFocus(focus: { menuSn: number }): boolean {
+  if (!isMenuSn(focus.menuSn)) return false;
+  return write(MENU_FOCUS_KEY, { menuSn: focus.menuSn });
+}
+
+/** 받은 화면이 인계를 적용했으면 지운다 — 다시 열어도 같은 메뉴를 또 고르지 않게. */
+export function clearMenuFocusHandoff() {
+  remove([MENU_FOCUS_KEY]);
+}
+
+/** 이 화면으로 넘어온 메뉴(유효 시간 1분 안). 서버 렌더와 하이드레이션 중에는 null 이다. */
+export function useMenuFocusHandoff(): MenuFocusHandoff | null {
+  const raw = useSyncExternalStore(subscribe, () => readRaw(MENU_FOCUS_KEY), () => null);
+  return useMemo(() => parseMenuFocus(raw), [raw]);
 }

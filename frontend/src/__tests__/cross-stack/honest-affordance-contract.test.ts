@@ -657,7 +657,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
 
   if (wizardInProjection) it('메뉴를 비활성으로 만들면 비활성이라고 말한다', () => {
     // 실제 값이 계약의 입력이다. 'Y' 로 바꾸는 것은 제품 결정이며, 그때 문구도 함께 바뀐다.
-    expect(wizard, "메뉴 생성의 useYn 을 찾지 못했다 — 계약이 vacuous 하다").toContain("useYn: 'N'");
+    // [2026-10-23 ADR-0040 §5.3] 게시판도 'N' 으로 만들므로 파일 전체가 아니라 메뉴 생성 호출 안의 값만 본다.
+    const createMenu = wizard.match(/menuAdminService\.createMenu\(\{[\s\S]*?\}\);/)?.[0] ?? '';
+    expect(createMenu, '메뉴 생성 호출을 찾지 못했다 — 계약이 vacuous 하다').not.toBe('');
+    expect(createMenu, "메뉴 생성의 useYn 이 'N' 이 아니다").toContain("useYn: 'N'");
     expect(wizard).not.toContain('생성 즉시 메뉴 시스템에 활성화됩니다');
     expect(wizard).toContain('메뉴 관리에서 활성화');
   });
@@ -667,9 +670,12 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(wizard).not.toContain('메뉴 권한을 따릅니다');
     expect(wizard).not.toContain('메뉴가 보이지 않는 역할은 해당 게시판 화면에 접근하지 않습니다');
     expect(wizard).toContain('메뉴는 길 안내일 뿐 접근을 막지 않습니다');
-    // 게시판을 사용 중으로 만드는 동안에는 그렇다고 말한다. 사용 안 함으로 만들게 되면(A2) 값과 문구를 함께 바꾼다.
-    expect(wizard, '게시판 생성 요청의 useYn 을 찾지 못했다 — 계약이 vacuous 하다').toMatch(/useYn: 'Y'\s*\}\);/);
-    expect(wizard).toContain('게시판은 만들자마자 사용 중 상태가 되어');
+    // [2026-10-23 ADR-0040 결정 1·§5.3] 게시판을 사용 안 함으로 만들고 그렇다고 말한다 — 값과 문구를 함께 고정한다.
+    const createBoard = wizard.match(/boardAdminService\.createBoardMaster\(\{[\s\S]*?\}\);/)?.[0] ?? '';
+    expect(createBoard, '게시판 생성 호출을 찾지 못했다 — 계약이 vacuous 하다').not.toBe('');
+    expect(createBoard, "게시판 생성의 useYn 이 'N' 이 아니다").toMatch(/useYn: 'N'\s*\}\);$/);
+    expect(wizard).not.toContain('게시판은 만들자마자 사용 중 상태가 되어');
+    expect(wizard).toContain('게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다');
     // 회원 범위는 커뮤니티 기능의 축이다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없으므로 문장도 함께 빠져야 한다.
     //   투영 마커는 주석이라 원문에서 찾는다(codeOfRepo 는 주석을 지운다).
     const raw = readRepo(boardMakerWizard);

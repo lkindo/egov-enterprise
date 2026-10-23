@@ -37,7 +37,7 @@ function forceClickLines(source: string, fileName: string): number[] {
 // 자기 가드(바로 위의 toBeEnabled·waitFor visible)를 가진 자리의 force 는 안전을 더하지 않고 신호만 지운다 — 확인한 것과
 //   force 가 건너뛰는 것(안정성·오버레이·포인터 수신)이 다르기 때문이다. 남은 자리는 각자 사유가 달라 개별 판단한다(일괄 제거는
 //   H4 가 금지하는 기계적 sweep 이다). 하향 이력은 git 에 있다.
-const FORCE_CLICK_BASELINE = 7;
+const FORCE_CLICK_BASELINE = 6;
 
 describe('E2E force-click 하향 래칫', () => {
   it('force 클릭 사용처가 baseline 을 넘지 않는다', () => {

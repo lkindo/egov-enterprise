@@ -205,7 +205,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 만족도 목록은 403 이고 서비스에 닿지 않는다")
     void listOnInaccessiblePostIsForbiddenBeforeService() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentAccess("BBS_01", 99L);
+                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/99/satisfactions"))
                 .andExpect(status().isForbidden());
@@ -217,7 +217,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 만족도 평균도 403 이다 — 집계값도 글의 존재를 드러낸다")
     void averageOnInaccessiblePostIsForbidden() throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentAccess("BBS_01", 99L);
+                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(get("/api/v1/boards/BBS_01/posts/99/satisfactions/average"))
                 .andExpect(status().isForbidden());
@@ -269,7 +269,9 @@ class SatisfactionApiControllerTest {
                 .andExpect(status().isCreated());
 
         // 세 경로 전부 가드를 지났음을 호출 횟수로 고정한다 — 하나라도 빠지면 그 경로가 다시 열린 것이다.
-        verify(boardService, org.mockito.Mockito.times(3)).assertCommentAccess("BBS_01", 1L);
+        // [2026-10-23 ADR-0040 결정 1] 조회 둘은 열람 경계, 등록은 엄격 경계다(사용 안 함 게시판은 운영자에게도 새 평가를 받지 않는다).
+        verify(boardService, org.mockito.Mockito.times(2)).assertCommentReadAccess("BBS_01", 1L);
+        verify(boardService).assertCommentAccess("BBS_01", 1L);
     }
 
     /**
@@ -281,7 +283,7 @@ class SatisfactionApiControllerTest {
     @DisplayName("🔒 볼 수 없는 글의 평가는 수정·삭제할 수 없다 — 소속 대조와 서비스에 닿지 않는다")
     void updateAndDeleteOnInaccessiblePostAreForbiddenBeforeService(String method) throws Exception {
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
-                .when(boardService).assertCommentAccess("BBS_01", 99L);
+                .when(boardService).assertCommentReadAccess("BBS_01", 99L);
 
         mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/99/satisfactions/10"))
                 .andExpect(status().isForbidden());
@@ -301,7 +303,7 @@ class SatisfactionApiControllerTest {
         mockMvc.perform(modify(method, "/api/v1/boards/BBS_01/posts/1/satisfactions/10"))
                 .andExpect(status().isNotFound());
 
-        verify(boardService).assertCommentAccess("BBS_01", 1L);
+        verify(boardService).assertCommentReadAccess("BBS_01", 1L);
         verify(satisfactionService, never()).updateSatisfaction(any());
         verify(satisfactionService, never()).deleteSatisfaction(anyLong());
     }
@@ -314,7 +316,7 @@ class SatisfactionApiControllerTest {
                 .andExpect(status().isOk());
 
         var order = org.mockito.Mockito.inOrder(boardService, satisfactionService);
-        order.verify(boardService).assertCommentAccess("BBS_01", 1L);
+        order.verify(boardService).assertCommentReadAccess("BBS_01", 1L);
         order.verify(satisfactionService).assertLocatedAt(10L, "BBS_01", 1L);
     }
 

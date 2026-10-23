@@ -21,6 +21,8 @@ const bindings = (): Binding[] => JSON.parse(read('config/governance/authorizati
 const DENIAL_VOCABULARY = ['접근 권한', '권한이 없', '권한을 요청', '접근할 수 없', '열람 권한', 'Forbidden'];
 const ROLE_NEGATION = /![\s]*(?:isAdmin\b|isAdministrativeRole\s*\()/;
 const BOARD_OPERATIONS = [
+  // [2026-10-23 ADR-0040 결정 11] 이용 화면의 게시판 선택지 — 목록과 같은 권한. 사용 여부·커뮤니티 거르기는 서비스가 한다.
+  ['GET', '/api/v1/boards/options', 'getBoardOptions', 'BOARD_READ'],
   ['POST', '/api/v1/boards/posts', 'createPost', 'BOARD_CREATE'],
   ['GET', '/api/v1/boards/public-faqs', 'getPublicFaqs', 'BOARD_READ'],
   ['GET', '/api/v1/boards/public-faqs/{pstSn}', 'getPublicFaqDetail', 'BOARD_READ'],
@@ -129,7 +131,9 @@ describe('현재 집행되는 인가와 화면 안내의 정합', () => {
     if (boardInProjection) {
       const service = read(BOARD_SERVICE);
       const detail = methodBody(service, 'getPostDetail');
-      expect(detail).toContain('assertCommunityAccess(bbsId)');
+      // [2026-10-23 ADR-0040 결정 1] 상세는 열람 판정(사용 여부 → 커뮤니티 회원)을 지난다. 커뮤니티 축은 그 판정 안에 있다.
+      expect(detail).toContain('loadReadableMaster(bbsId, false)');
+      expect(methodBody(service, 'loadReadableMaster')).toContain('assertCommunityAccess(master);');
       expect(detail).toContain('if ("Y".equalsIgnoreCase(detail.getScrtYn()))');
       expect(detail).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL")');
       expect(methodBody(service, 'findOwnedPost')).toContain('SecurityUtil.assertOwnerOrPermissionByEsntlId(board.getUserId(), "BOARD_UPDATE_ALL")');

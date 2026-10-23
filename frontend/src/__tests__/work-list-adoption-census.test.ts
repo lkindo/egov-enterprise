@@ -39,6 +39,8 @@ const ADOPTER_SCREENS = [
   'src/app/admin/collaboration/address-book/select-address-book-list/AddressBookListClient.tsx',
   'src/app/admin/collaboration/scraps/selectScrapList/ScrapListClient.tsx',
   'src/app/admin/community/boards/master/BoardMasterListClient.tsx',
+  // [2026-10-23 ADR-0040 §5.4] 게시판 운영 화면의 게시물 탭 — 상위 화면이 h1 을 갖고 탭이 h2 셸을 쓴다.
+  'src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx',
   'src/app/admin/community/templates/TemplateAdminClient.tsx',
   'src/app/admin/help/KnowledgeHubClient.tsx',
   'src/app/admin/operation/events/EventManagementClient.tsx',

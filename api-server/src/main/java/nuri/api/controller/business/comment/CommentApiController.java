@@ -29,7 +29,8 @@ public class CommentApiController {
             @RequestParam Long pstSn,
             @RequestParam String bbsId,
             @PageableDefault(size = 10) Pageable pageable) {
-        boardService.assertCommentAccess(bbsId, pstSn);
+        // [2026-10-23 ADR-0040 결정 1] 목록은 열람 경계 — 조회 대행 권한자는 사용 안 함 게시판 글의 댓글도 읽는다.
+        boardService.assertCommentReadAccess(bbsId, pstSn);
         Page<CommentDto> result = commentService.getComments(pstSn, bbsId, pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }

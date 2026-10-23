@@ -3,6 +3,7 @@ package nuri.business.service.board;
 import nuri.business.domain.board.BoardMaster;
 import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.service.board.dto.BoardMasterDto;
+import nuri.business.service.board.dto.BoardMasterUpdateRequest;
 import nuri.foundation.core.exception.BusinessException;
 import jakarta.persistence.EntityManager;
 import org.springframework.test.util.ReflectionTestUtils;
@@ -42,6 +43,14 @@ class BoardMasterServiceLogicTest {
     @Mock
     private EntityManager entityManager;
 
+    // 생성자 인자 — 목이 없으면 null 이 주입돼 생성이 실패한다.
+    @Mock
+    private BoardChangeRecorder changeRecorder;
+    @Mock
+    private nuri.business.core.config.BoardIdProperties boardIdProperties;
+    @Mock
+    private nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
+
     @InjectMocks
     private BoardMasterService boardMasterService;
 
@@ -79,15 +88,16 @@ class BoardMasterServiceLogicTest {
                 .bbsId(bbsId)
                 .bbsTtl("Old Title")
                 .build();
-        BoardMasterDto updateDto = BoardMasterDto.builder()
-                .bbsId(bbsId)
+        ReflectionTestUtils.setField(existingBoardMaster, "version", 0);
+        BoardMasterUpdateRequest updateRequest = BoardMasterUpdateRequest.builder()
                 .bbsTtl("New Title")
+                .version(0)
                 .build();
 
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.of(existingBoardMaster));
 
         // when
-        boardMasterService.updateBoardMaster("user1", updateDto);
+        boardMasterService.updateBoardMaster("user1", bbsId, updateRequest);
 
         // then
         assertThat(existingBoardMaster.getBbsTtl()).isEqualTo("New Title");
@@ -98,14 +108,12 @@ class BoardMasterServiceLogicTest {
     void updateBoardMaster_fail_notFound() {
         // given
         String bbsId = "BBS_0000000001";
-        BoardMasterDto boardMasterDto = BoardMasterDto.builder()
-                .bbsId(bbsId)
-                .build();
+        BoardMasterUpdateRequest updateRequest = BoardMasterUpdateRequest.builder().version(0).build();
 
         when(boardMasterRepository.findById(bbsId)).thenReturn(Optional.empty());
 
         // when & then
-        assertThatThrownBy(() -> boardMasterService.updateBoardMaster("user1", boardMasterDto))
+        assertThatThrownBy(() -> boardMasterService.updateBoardMaster("user1", bbsId, updateRequest))
                 .isInstanceOf(BusinessException.class);
     }
 

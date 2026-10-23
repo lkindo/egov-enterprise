@@ -2094,6 +2094,18 @@
       ]
     },
     {
+      "target": "BoardService#assertCommentReadAccess",
+      "policy": "OWNER_OR_ADMIN",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerOrPermissionByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID",
+          "permission": "BOARD_READ_ALL"
+        }
+      ]
+    },
+    {
       "target": "BoardService#deletePost",
       "policy": "OWNER_OR_ADMIN",
       "mechanisms": [
@@ -3945,6 +3957,23 @@
   ],
   "manualGuardPolicies": [
     {
+      "target": "BoardService#getBoardOptions",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "SecurityUtil.hasPermission(\"BOARD_READ_ALL\")",
+        "boardMasterRepository.findActiveBoardOptions()",
+        "row.cmntySn() == null || readAll",
+        "esntlId != null",
+        "communityBoardAccess != null",
+        "communityBoardAccess.isApprovedMember(cmntySn, esntlId)"
+      ],
+      "forbiddenTokens": [
+        "hasPermission(\"BBS_MST_READ"
+      ]
+    },
+    {
       "target": "BoardService#assertCommunityAccess",
       "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
       "policy": "PARTICIPANT_OR_ADMIN",
@@ -3959,6 +3988,50 @@
       "forbiddenTokens": [
         "communityBoardAccess != null &&",
         ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "BoardService#loadReadableMaster",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "\"Y\".equals(candidate.getUseYn())",
+        "SecurityUtil.hasPermission(\"BOARD_READ_ALL\")",
+        "BoardErrorCode.BOARD_NOT_FOUND",
+        "assertCommunityAccess(master);"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"anonymous\")",
+        "hasPermission(\"BBS_MST_READ"
+      ]
+    },
+    {
+      "target": "BoardService#loadWritableMaster",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "assertSpecialBoardEdit(bbsId);",
+        "return loadReadableMaster(bbsId, pessimisticLock);"
+      ],
+      "forbiddenTokens": [
+        ".orElse(\"anonymous\")"
+      ]
+    },
+    {
+      "target": "BoardChangeService#getChanges",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardChangeService.java",
+      "policy": "PARTICIPANT_OR_ADMIN",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "SecurityUtil.hasPermission(\"BOARD_READ_ALL\")",
+        "findByBbsIdAndChgTrgtTypeCdOrderByCrtDtDescBbsChgHstrySnDesc(",
+        "BoardChangeRecorder.TARGET_BOARD",
+        "CommonErrorCode.RESOURCE_NOT_FOUND"
+      ],
+      "forbiddenTokens": [
+        "hasPermission(\"BBS_MST_READ"
       ]
     },
     {
@@ -4306,7 +4379,9 @@
         "!\"Y\".equals(reference.secret())",
         "loginId.equals(reference.registrar())",
         "esntlId.equals(reference.userId())",
-        "Referenced board master missing"
+        "Referenced board master missing",
+        "(reference.boardInUse() || readAll)",
+        "(reference.postingOpen() || readAll)"
       ],
       "forbiddenTokens": [
         ".orElse(\"anonymous\")"
@@ -5183,6 +5258,13 @@
       "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMaster",
       "access": "PERMISSION",
       "permission": "BBS_MST_UPDATE"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/change-history",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardChangeHistory",
+      "access": "PERMISSION",
+      "permission": "BBS_MST_READ"
     },
     {
       "method": "GET",
@@ -6204,6 +6286,13 @@
       "handler": "nuri.api.controller.business.admin.content.banner.BannerUserApiController#getReflectedBanners",
       "access": "PERMISSION",
       "permission": "BANNER_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/boards/options",
+      "handler": "nuri.api.controller.business.board.BoardApiController#getBoardOptions",
+      "access": "PERMISSION",
+      "permission": "BOARD_READ"
     },
     {
       "method": "POST",

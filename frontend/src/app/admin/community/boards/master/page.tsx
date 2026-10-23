@@ -6,7 +6,7 @@ const BoardMasterListClient = dynamic(
   () => import('./BoardMasterListClient').then(mod => mod.BoardMasterListClient),
   {
     ssr: false,
-    loading: () => <h1 className="sr-only">게시판 마스터를 불러오는 중</h1>,
+    loading: () => <h1 className="sr-only">게시판 관리를 불러오는 중</h1>,
   }
 );
 

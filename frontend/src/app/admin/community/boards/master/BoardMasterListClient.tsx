@@ -1,26 +1,17 @@
 'use client';
 
 import { useRef, useState } from 'react';
-import { z } from 'zod';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'next/navigation';
-import { Plus,
-  Settings2,
-  ArrowRight,
-  Zap,
-  Trash2,
-  AlertTriangle,
-  Lock,
-  Loader2 } from 'lucide-react';
+import { Plus, Settings2, ArrowRight, Zap, Lock, Loader2 } from 'lucide-react';
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import {
   boardAdminService,
-  type BoardMasterDetail,
   type BoardMasterSummary,
 } from '@/services/foundation/system/BoardAdminService';
-import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
+import { boardMasterQueryOptions, invalidateBoardCaches } from '@/queries/board-master-query-options';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { KeywordFilter } from '@/app/components/patterns/keyword-filter';
@@ -30,379 +21,176 @@ import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { canOpenPage } from '@/lib/auth/page-access';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle, 
-  DialogDescription,
-  DialogFooter 
-} from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
+import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { boardTypeLabel, findBoardType } from '@/lib/board/board-types';
+import { findBoardMenuLinks, type BoardMenuLink, type MenuExposure } from '@/lib/board/board-menu-links';
+import { toDisplayDateTime } from '@/lib/format-date';
+import { boardOperationsHref } from './board-operations-tabs';
+import { boardUsageNotes, DESIGNATION_LABELS } from './board-usage';
+import { useBoardAccessSources } from './useBoardAccessSources';
 
-import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
-import { FormErrorSummary } from '@/components/ui/form';
-import { useManualFormValidation } from '@/hooks/useManualFormValidation';
-import { BoardMasterDtoSchema } from '@/types/generated-zod';
-import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/attachments/server-upload-limits';
-import { boardTypeLabel } from '@/lib/board/board-types';
+type BulkPendingAction = 'activate' | 'deactivate';
+type UseFilter = '' | 'Y' | 'N';
 
-export const boardMasterEditSchema = BoardMasterDtoSchema.pick({
-  bbsTtl: true,
-  bbsExpln: true,
-  useYn: true,
-}).extend({
-  bbsTtl: BoardMasterDtoSchema.shape.bbsTtl.trim()
-    .min(1, '게시판 명칭을 입력해 주세요.'),
-  bbsExpln: BoardMasterDtoSchema.shape.bbsExpln.unwrap().trim().optional(),
-  useYn: z.string().pipe(BoardMasterDtoSchema.shape.useYn),
-  // [2026-09-27 DIP B5 F9] 첨부 설정은 이제 서버가 집행한다. 0 은 게시판 상한 없음(서버 상한 20개만 적용)이다.
-  atchPsbltyFileQty: z.number({ message: '첨부 파일 수를 숫자로 입력해 주세요.' })
-    .int('첨부 파일 수는 정수여야 합니다.')
-    .min(0, '첨부 파일 수는 0 이상이어야 합니다.')
-    .max(SERVER_MAX_FILES_PER_REQUEST, `서버는 한 번에 ${SERVER_MAX_FILES_PER_REQUEST}개까지 받습니다.`),
-  atchPsbltyFileSzMb: z.number({ message: '파일당 크기를 숫자로 입력해 주세요.' })
-    .min(1, '파일당 크기는 1MB 이상이어야 합니다.')
-    .max(SERVER_MAX_FILE_SIZE_MB, `서버는 파일 하나당 ${SERVER_MAX_FILE_SIZE_MB}MB 까지 받습니다.`),
-});
+const USE_FILTER_OPTIONS: readonly { value: UseFilter; label: string }[] = [
+  { value: '', label: '전체' },
+  { value: 'Y', label: '사용' },
+  { value: 'N', label: '사용 안 함' },
+];
 
-const boardMasterValidationLabels = {
-  bbsTtl: '게시판 명칭',
-  bbsExpln: '게시판 소개',
-  useYn: '서비스 활성화 상태',
-  atchPsbltyFileQty: '첨부 파일 수',
-  atchPsbltyFileSzMb: '파일당 크기(MB)',
-};
+function basisShort(link: BoardMenuLink): string {
+  if (link.basis.kind === 'board-address') return '게시판 주소';
+  if (link.basis.kind === 'hub-tab') return `허브 탭 ?tab=${link.basis.tab}`;
+  return '허브 기본 탭(확인 불가)';
+}
 
-const BYTES_PER_MB = 1024 * 1024;
-
-type BulkPendingAction = 'activate' | 'deactivate' | 'purge';
+function exposureShort(exposure: MenuExposure): string {
+  switch (exposure.kind) {
+    case 'inactive': return '비활성';
+    case 'hidden': return '보이는 그룹 없음';
+    case 'admin-only': return '관리자 그룹만';
+    case 'general': return '일반 그룹 표시';
+    case 'no-permission': return '그룹 확인 권한 없음';
+    case 'unknown': return '그룹 확인 불가';
+  }
+}
 
 /**
- * 첨부 파일 허용 용량 기본값(5MB).
- * 백엔드 BoardMasterDto 는 atchPsbltyFileSz 에 @NotNull 을 요구하지만 물리 컬럼은 nullable 이라
- * 레거시 행은 null 일 수 있다. 생성 마법사(BoardMakerWizard)와 동일한 기본값으로 보정한다.
+ * 게시판 관리 목록(ADR-0040 §5.2). 조회 조건은 게시판 이름과 게시판 사용이고 `조회`·Enter 로 적용한다. 메뉴 연결은 서버 조회
+ * 조건이 아니라 현재 쪽의 행에 대해 화면이 계산해 보이는 칸이다(메뉴 원장을 볼 권한이 없으면 확인 권한 없음).
+ *
+ * 설정 편집·영구 삭제는 운영 화면의 설정 탭으로 옮겼다. 행의 단건 비활성화는 일괄 사용 상태 바꾸기로 흡수했다 — 사용 안 함으로
+ * 바꾸는 대상에 앱이 ID 로 직접 쓰는 게시판이 있으면 같은 확인에서 사용처를 나열한다.
  */
-const DEFAULT_ATCH_PSBLTY_FILE_SZ = 5242880;
-
-
 export function BoardMasterListClient() {
   const router = useRouter();
   const { user } = useAuth();
   const canUpdate = canPermission(user, 'BBS_MST_UPDATE');
-  const canDelete = canPermission(user, 'BBS_MST_DELETE');
   const confirm = useConfirm();
   const { toast } = useToast();
   const [searchWrd, setSearchWrd] = useState('');
-  // [2026-10-23 ADR-0040 A0] 서버는 1 기반 page·size 로 나눠 주는데(ADR-0036) 화면이 페이지를 묻지 않아 첫 10건만 보였다.
+  const [useFilter, setUseFilter] = useState<UseFilter>('');
+  const [useDraft, setUseDraft] = useState<UseFilter>('');
+  // [2026-10-23 ADR-0040 A0] 서버는 1 기반 page·size 로 나눠 준다(ADR-0036).
   const [page, setPage] = useState(1);
   const [size, setSize] = useState(10);
-
-  // Settings Modal State
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedBoard, setSelectedBoard] = useState<BoardMasterDetail | null>(null);
-  const [editData, setEditData] = useState<Partial<BoardMasterDetail>>({});
-  const [isDetailLoading, setIsDetailLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const savePendingRef = useRef(false);
-  const [deletingBoardId, setDeletingBoardId] = useState<string | null>(null);
-  const deletePendingRef = useRef(false);
   const [bulkPendingAction, setBulkPendingAction] = useState<BulkPendingAction | null>(null);
   const bulkPendingRef = useRef(false);
-  const validation = useManualFormValidation(boardMasterEditSchema, { labels: boardMasterValidationLabels });
 
-  const { data: boardData, isLoading, isError, error, refetch } = useQuery({
-    ...boardMasterQueryOptions.list({ searchKeyword: searchWrd, page, size }),
+  const queryClient = useQueryClient();
+  const canReadAllPosts = canPermission(user, 'BOARD_READ_ALL');
+  const { data: boardData, isLoading, isError, error, refetch, dataUpdatedAt } = useQuery({
+    ...boardMasterQueryOptions.list({ searchKeyword: searchWrd, searchUseYn: useFilter || undefined, page, size }),
   });
+  const { menuSource, groupSource } = useBoardAccessSources();
   const boardList = boardData?.list ?? [];
-
-  // 감사 P1-5: 과거 "32 / 1.2k / Optimal / L4" 는 어떤 데이터에서도 산출되지 않는 고정 문자열이었다.
-  // 실제 조회 결과로 계산 가능한 지표만 남기고 나머지 카드는 삭제했다.
   const totalCount = boardData?.total ?? boardList.length;
   const totalPages = boardData?.totalPage ?? Math.max(1, Math.ceil(totalCount / size));
   const activeCount = boardList.filter((b) => b.useYn === 'Y').length;
   const standbyCount = boardList.filter((b) => b.useYn !== 'Y').length;
 
-  /**
-   * 편집 모달 진입.
-   * 목록 API 의 프로젝션(BoardMasterService#toDto)은 bbsId/bbsTtl/bbsTypeCd/bbsAtrbCd/tmpltId/useYn/crtDt 만 담고
-   * bbsExpln·atchPsbltyFileSz 등은 누락한다. 따라서 상세 조회로 전체 필드를 확보한 뒤 시드해야
-   * 저장 시 필수 필드(@NotBlank bbsTypeCd/bbsAtrbCd, @NotNull atchPsbltyFileSz)가 유실되지 않는다.
-   */
-  const handleEdit = async (board: BoardMasterSummary) => {
-    if (!canUpdate) return;
-    if (
-      !board.bbsId
-      || savePendingRef.current
-      || deletePendingRef.current
-      || bulkPendingRef.current
-    ) return;
-    validation.setFormErrors({}, false);
-    setIsDetailLoading(true);
-    try {
-      const detail = await boardAdminService.getBoardMaster(board.bbsId);
-      setSelectedBoard(detail);
-      setEditData({ ...detail });
-    } catch (err) {
-      // 목록 projection에는 쓰기 필수 atchPsbltyFileSz가 없으므로 상세 실패 상태로 편집을 열지 않는다.
-      toast(extractErrorMessage(err, '게시판 상세 정보를 불러오지 못해 설정을 편집할 수 없습니다.'), 'error');
-      return;
-    } finally {
-      setIsDetailLoading(false);
-    }
-    setIsModalOpen(true);
-  };
-
-  const handleSave = async () => {
-    if (!canUpdate) return;
-    if (!selectedBoard || !selectedBoard.bbsId) return;
-    if (savePendingRef.current || deletePendingRef.current || bulkPendingRef.current) return;
-
-    // 백엔드 BoardMasterDto 는 bbsTypeCd/bbsAtrbCd(@NotBlank), atchPsbltyFileSz(@NotNull), useYn(@NotBlank) 을
-    // 모두 요구한다. 모달이 편집하는 3개 필드만 보내면 @Valid 단계에서 항상 400 이 떨어지므로 기존 값을 병합한다.
-    // 단, spring.jackson `fail-on-unknown-properties: true` 이고 crtDt/mdfcnDt 는 LocalDateTime 이므로
-    // 응답 객체를 통째로 되돌려보내지 않고 서버가 실제로 사용하는 필드만 명시적으로 조립한다.
-    const merged = { ...selectedBoard, ...editData };
-    const validated = validation.validate({
-      bbsTtl: merged.bbsTtl ?? '',
-      bbsExpln: merged.bbsExpln ?? '',
-      useYn: merged.useYn ?? '',
-      atchPsbltyFileQty: Number(merged.atchPsbltyFileQty ?? 0),
-      atchPsbltyFileSzMb: Number(merged.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ) / BYTES_PER_MB,
-    });
-    if (!validated) return;
-
-    const payload = {
-      bbsId: selectedBoard.bbsId,
-      bbsTtl: validated.bbsTtl,
-      bbsExpln: validated.bbsExpln,
-      bbsTypeCd: merged.bbsTypeCd,
-      bbsAtrbCd: merged.bbsAtrbCd,
-      ansPsbltyYn: merged.ansPsbltyYn,
-      fileAtchPsbltyYn: merged.fileAtchPsbltyYn,
-      atchPsbltyFileQty: validated.atchPsbltyFileQty,
-      atchPsbltyFileSz: Math.round(validated.atchPsbltyFileSzMb * BYTES_PER_MB),
-      tmpltId: merged.tmpltId,
-      useYn: validated.useYn,
-      ansYn: merged.ansYn,
-      stsfdgYn: merged.stsfdgYn
-    };
-
-    const missingFields = [
-      !payload.bbsTtl?.trim() ? '게시판 명칭' : null,
-      !payload.bbsTypeCd ? '게시판 유형 코드(bbsTypeCd)' : null,
-      !payload.bbsAtrbCd ? '게시판 속성 코드(bbsAtrbCd)' : null,
-      !payload.useYn ? '사용 여부' : null
-    ].filter(Boolean) as string[];
-
-    if (missingFields.length > 0) {
-      toast(`필수 항목이 누락되어 저장할 수 없습니다: ${missingFields.join(', ')}. 생성 마법사에서 게시판 기본 설정을 먼저 완료해주십시오.`, 'error');
-      return;
-    }
-
-    const parsedPayload = BoardMasterDtoSchema.safeParse(payload);
-    if (!parsedPayload.success) {
-      toast('게시판 계약 필수값이 누락되어 저장할 수 없습니다. 상세 정보를 다시 불러와 주십시오.', 'error');
-      return;
-    }
-
-    savePendingRef.current = true;
-    setIsSaving(true);
-    try {
-      await boardAdminService.updateBoardMaster(selectedBoard.bbsId, parsedPayload.data);
-      toast('게시판 설정이 업데이트되었습니다.', 'success');
-      setIsModalOpen(false);
-      refetch();
-    } catch (err) {
-      const fieldErrors = extractFieldErrors(err);
-      if (fieldErrors) validation.setFormErrors(fieldErrors);
-      else toast(extractErrorMessage(err, '업데이트 중 오류가 발생했습니다.'), 'error');
-    } finally {
-      savePendingRef.current = false;
-      setIsSaving(false);
-    }
-  };
-
-  const handleModalOpenChange = (open: boolean) => {
-    if (
-      !open
-      && (savePendingRef.current || deletePendingRef.current || bulkPendingRef.current)
-    ) return;
-    setIsModalOpen(open);
-  };
-
-  const handleDelete = async (board: BoardMasterSummary) => {
-    if (!canDelete) return;
-    if (!board.bbsId) return;
-    if (deletePendingRef.current || bulkPendingRef.current || savePendingRef.current) return;
-
-    deletePendingRef.current = true;
-    setDeletingBoardId(board.bbsId);
-
-    try {
-      if (board.useYn === 'Y') {
-        // 1. 활성 상태인 경우 -> Soft Delete (대기 상태 전환)
-        try {
-          const isConfirmed = await confirm({
-            title: '게시판 서비스 비활성화',
-            message: `[${board.bbsTtl}] 게시판을 대기 상태로 전환(비활성화)하시겠습니까?`,
-            confirmText: '비활성화',
-            variant: 'destructive'
-          });
-
-          if (!isConfirmed) return;
-
-          await boardAdminService.deleteBoardMaster(board.bbsId);
-          toast('게시판이 비활성화(대기) 상태로 전환되었습니다.', 'success');
-          refetch();
-        } catch {
-          toast('비활성화 처리 중 오류가 발생했습니다.', 'error');
-        }
-        return;
-      }
-
-      // 2. 대기(N) 상태인 경우 -> Hard Delete (물리 삭제)
-      try {
-        const deletable = await boardAdminService.isBoardMasterDeletable(board.bbsId);
-        
-        if (!deletable) {
-          await confirm({
-            title: '영구 삭제 불가',
-            // [2026-10-23 ADR-0040 A0] 글 삭제는 논리 삭제라 행이 남는다 — "글을 먼저 지우라" 는 따를 수 없는 안내였다.
-            message: `[${board.bbsTtl}] 게시판은 글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다. 지운 글도 기록이 남아 있습니다. 쓰지 않을 게시판은 사용 안 함 상태로 두십시오.`,
-            confirmText: '확인',
-            variant: 'default'
-          });
-          return;
-        }
-
-        const isConfirmed = await confirm({
-          title: '게시판 영구 물리 삭제',
-          message: `[${board.bbsTtl}] 게시판 마스터와 모든 설정을 데이터베이스에서 완전히 영구 삭제하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-          confirmText: '영구 삭제',
-          variant: 'destructive'
-        });
-
-        if (isConfirmed) {
-          await boardAdminService.deleteBoardMasterPhysically(board.bbsId);
-          toast('게시판 마스터 데이터가 완전히 말소되었습니다.', 'success');
-          refetch();
-        }
-      } catch (error) {
-        const errMsg = extractErrorMessage(error, '영구 삭제 처리 중 오류가 발생했습니다.');
-        toast(errMsg, 'error');
-      }
-    } finally {
-      deletePendingRef.current = false;
-      setDeletingBoardId(null);
-    }
-  };
-
-  const runBulkAction = async (action: BulkPendingAction, operation: () => Promise<void>) => {
-    if (bulkPendingRef.current || deletePendingRef.current || savePendingRef.current) return;
+  const handleBulkStatusChange = async (items: BoardMasterSummary[], status: 'Y' | 'N', action: BulkPendingAction) => {
+    if (!canUpdate || bulkPendingRef.current) return;
+    const targets = items.filter((item) => item.bbsId);
+    if (targets.length === 0) return;
     bulkPendingRef.current = true;
     setBulkPendingAction(action);
     try {
-      await operation();
+      const usage = status === 'N'
+        ? targets.map((item) => ({ item, notes: boardUsageNotes(item.bbsId, item.designations) })).filter(({ notes }) => notes.length > 0)
+        : [];
+      const confirmed = await confirm({
+        title: status === 'Y' ? '게시판 사용으로 바꾸기' : '게시판 사용 안 함으로 바꾸기',
+        message: status === 'Y'
+          ? `${targets.length.toLocaleString()}개 게시판을 사용으로 바꿉니다. 메뉴가 일반 그룹에 보이는지 운영 화면에서 확인하세요.`
+          : `${targets.length.toLocaleString()}개 게시판을 사용 안 함으로 바꿉니다. 이용자에게 읽기·쓰기 모두 닫힙니다.`,
+        confirmText: status === 'Y' ? '사용으로 바꾸기' : '사용 안 함으로 바꾸기',
+        variant: status === 'Y' ? 'default' : 'destructive',
+        details: (
+          <div className="space-y-2 text-[length:var(--font-size-body)]">
+            <p className="font-medium">대상: {targets.map((item) => item.bbsTtl).join(', ')}</p>
+            {usage.length > 0 && (
+              <div>
+                <p className="font-medium">앱이 직접 쓰는 게시판이 있습니다. 사용 안 함이면 아래에서 보이지 않습니다.</p>
+                <ul className="list-disc pl-5">
+                  {usage.flatMap(({ item, notes }) => notes.map((note) => <li key={`${item.bbsId}:${note}`}>[{item.bbsTtl}] {note}</li>))}
+                </ul>
+              </div>
+            )}
+          </div>
+        ),
+        detailsLabel: '대상과 사용처',
+      });
+      if (!confirmed) return;
+      await boardAdminService.batchUpdateBoardMasterStatus(targets.map((item) => item.bbsId), status);
+      toast(`${targets.length.toLocaleString()}개 게시판을 ${status === 'Y' ? '사용으로' : '사용 안 함으로'} 바꿨습니다.`, status === 'Y' ? 'success' : 'info');
+      // 사용 여부는 목록만의 값이 아니다 — 운영 화면 상세(버전)·이용 화면 메타·선택지·변경 이력·커뮤니티 게시판 목록도 다시 읽는다.
+      void invalidateBoardCaches(queryClient);
+    } catch (err) {
+      toast(extractErrorMessage(err, '게시판 사용 상태를 바꾸지 못했습니다.'), 'error');
     } finally {
       bulkPendingRef.current = false;
       setBulkPendingAction(null);
     }
   };
 
-  const handleBulkStatusChange = async (
-    items: BoardMasterSummary[],
-    status: 'Y' | 'N',
-    action: Extract<BulkPendingAction, 'activate' | 'deactivate'>,
-  ) => {
-    if (!canUpdate) return;
-    const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
-    if (ids.length === 0) return;
-
-    await runBulkAction(action, async () => {
-      try {
-        await boardAdminService.batchUpdateBoardMasterStatus(ids, status);
-        toast(
-          `${items.length}개의 게시판이 일괄 ${status === 'Y' ? '활성화' : '비활성화'}되었습니다.`,
-          status === 'Y' ? 'success' : 'info',
-        );
-        refetch();
-      } catch (err) {
-        toast(extractErrorMessage(
-          err,
-          status === 'Y' ? '일괄 활성화 중 오류가 발생했습니다.' : '일괄 비활성화 중 오류가 발생했습니다.',
-        ), 'error');
-      }
-    });
-  };
-
-  const handleBulkPurge = async (items: BoardMasterSummary[]) => {
-    if (!canDelete) return;
-    const ids = items.map(item => item.bbsId).filter(Boolean) as string[];
-    if (ids.length === 0) return;
-
-    await runBulkAction('purge', async () => {
-      try {
-        const activeBoards = items.filter(item => item.useYn === 'Y');
-        if (activeBoards.length > 0) {
-          await confirm({
-            title: '일괄 영구 삭제 불가',
-            message: `선택한 항목 중 활성 상태인 게시판([${activeBoards.map(b => b.bbsTtl).join(', ')}])이 포함되어 있습니다. 활성 상태인 게시판을 먼저 대기 상태로 변경한 후 다시 일괄 삭제를 시도해주십시오.`,
-            confirmText: '확인',
-            variant: 'default'
-          });
-          return;
-        }
-
-        const isConfirmed = await confirm({
-          title: '선택한 게시판 일괄 영구 말소',
-          message: `선택하신 ${items.length}개의 게시판과 모든 관련 설정을 데이터베이스에서 완전히 영구 말소하시겠습니까? 이 작업은 되돌릴 수 없습니다.`,
-          confirmText: '일괄 영구 삭제',
-          variant: 'destructive'
-        });
-        if (!isConfirmed) return;
-
-        await boardAdminService.batchDeleteBoardMastersPhysically(ids);
-        toast('선택한 게시판 마스터 데이터가 모두 영구 말소되었습니다.', 'success');
-        refetch();
-      } catch (err) {
-        toast(extractErrorMessage(err, '일괄 영구 삭제 중 오류가 발생했습니다.'), 'error');
-      }
-    });
+  const menuLinkCell = (board: BoardMasterSummary) => {
+    if (menuSource === null) return <span className="text-muted-foreground">확인하는 중…</span>;
+    const links = findBoardMenuLinks(board.bbsId, menuSource, groupSource ?? { status: 'failed' }, board.bbsTtl);
+    if (links.status === 'no-permission') return <span className="text-muted-foreground">확인 권한 없음</span>;
+    if (links.status === 'unknown') return <span className="text-muted-foreground">확인 불가</span>;
+    if (links.links.length === 0) return <span className="text-muted-foreground">연결 없음</span>;
+    return (
+      <ul className="space-y-0.5 text-left text-xs">
+        {links.links.map((link) => (
+          <li key={link.menuNo}>
+            <span className="font-medium text-foreground">{link.path.join(' › ')}</span>
+            {' · '}{basisShort(link)}{' · '}{exposureShort(link.exposure)}
+            {link.nameDiffers && <span className="text-muted-foreground"> · 메뉴 이름이 게시판 이름과 다름</span>}
+          </li>
+        ))}
+      </ul>
+    );
   };
 
   const columns: Column<BoardMasterSummary>[] = [
     {
-      header: '마스터 아이템',
+      header: '게시판',
       accessor: (board: BoardMasterSummary) => (
-        <div className="flex items-center">
-          <div className="min-w-0 flex-1 space-y-0.5 overflow-hidden text-left">
-            <p className="truncate text-[length:var(--font-size-body)] font-medium leading-tight text-foreground">{board.bbsTtl}</p>
-            <p className="truncate font-mono text-xs leading-tight text-muted-foreground">{board.bbsId}</p>
-          </div>
+        <div className="min-w-0 space-y-0.5 overflow-hidden text-left">
+          <p className="truncate text-[length:var(--font-size-body)] font-medium leading-tight text-foreground">{board.bbsTtl}</p>
+          <p className="truncate font-mono text-xs leading-tight text-muted-foreground">{board.bbsId}</p>
+          {board.designations.length > 0 && (
+            <div className="flex flex-wrap gap-1">
+              {board.designations.map((designation) => (
+                <Badge key={designation} variant="secondary" className="px-1.5 py-0 text-xs font-normal">{DESIGNATION_LABELS[designation] ?? designation}</Badge>
+              ))}
+            </div>
+          )}
         </div>
       ),
-      className: 'max-w-[350px]'
+      className: 'max-w-[320px]'
     },
     {
-      header: '메타 정보',
-      accessor: (board: BoardMasterSummary) => (
-        <div className="min-w-0 max-w-[400px] text-left">
-          <Badge variant="secondary" className="border border-border bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
-            {/* [2026-10-16 DEC-OPS-332] 유형 이름은 서버가 싣지 않는다 — 정본(lib/board/board-types)에서 읽는다. */}
-            {boardTypeLabel(board.bbsTypeCd, board.tmpltId)}
-          </Badge>
-        </div>
-      )
+      header: '화면 유형',
+      accessor: (board: BoardMasterSummary) => {
+        // [2026-10-16 DEC-OPS-332] 유형 이름은 정본(lib/board/board-types)에서 읽는다. 짝이 맞지 않으면 저장값과 그 사실을 보인다.
+        const mismatch = findBoardType(board.bbsTypeCd)?.templateId !== board.tmpltId;
+        return (
+          <div className="min-w-0 text-left">
+            <Badge variant="secondary" className="border border-border bg-muted px-1.5 py-0.5 text-xs font-normal text-muted-foreground">
+              {boardTypeLabel(board.bbsTypeCd, board.tmpltId)}
+            </Badge>
+            {mismatch && <p className="mt-0.5 text-xs text-muted-foreground">템플릿 짝 불일치</p>}
+          </div>
+        );
+      }
     },
     {
-      header: '상태',
+      header: '게시판 사용',
       accessor: (board: BoardMasterSummary) => (
         <div className="flex justify-center">
-          {/* 같은 행의 유형 배지와 계산된 모양이 같아지지 않게 상태 점을 함께 둔다 —
-              색만으로 구분하지 않는다는 규칙(WCAG 1.4.1)과도 같은 방향이다. */}
+          {/* 색만으로 구분하지 않는다(WCAG 1.4.1) — 점과 글자를 함께 둔다. */}
           <Badge className={cn(
             "inline-flex items-center gap-1.5 rounded-md border px-1.5 py-0.5 text-xs font-normal",
             board.useYn === 'Y'
@@ -410,95 +198,60 @@ export function BoardMasterListClient() {
               : "border-border bg-muted text-muted-foreground"
           )}>
             <span className={cn("size-1.5 rounded-full", board.useYn === 'Y' ? "bg-success" : "bg-muted-foreground")} aria-hidden="true" />
-            {board.useYn === 'Y' ? '활성' : '대기'}
+            {board.useYn === 'Y' ? '사용' : '사용 안 함'}
           </Badge>
         </div>
       ),
       className: 'text-center'
     },
-    // 감사 P1-5: '사용량' 열은 데이터 원천 없이 항상 "0 게시글 수"를 렌더해 모든 게시판이 비어 있는 것처럼
-    // 보이게 했다(게시글 수를 주는 API 가 없음). 근거가 생길 때까지 열 자체를 제거한다.
     {
-      header: '작업 컨트롤',
+      header: '메뉴 연결',
+      accessor: (board: BoardMasterSummary) => menuLinkCell(board),
+      className: 'max-w-[360px]'
+    },
+    {
+      header: '작업',
       accessor: (board: BoardMasterSummary) => {
-        const isDeleting = deletingBoardId === board.bbsId;
-        const idleLabel = board.useYn === 'Y'
-          ? `${board.bbsTtl} 대기 상태로 비활성화`
-          : `${board.bbsTtl} DB에서 영구 물리삭제`;
-        const pendingLabel = board.useYn === 'Y'
-          ? `${board.bbsTtl} 비활성화 처리 중`
-          : `${board.bbsTtl} 영구 삭제 처리 중`;
-        /*
-          [2026-09-08] 사용 중지된 게시판의 '게시글 목록 열기' 를 잠근다.
-
-          ⚠ 종전에는 useYn 과 무관하게 버튼이 열려 있었다. 비활성 게시판에서 누르면 서버가
-          BoardService.assertActiveBoardMaster(useYn='Y' 필터)에서 걸러 404 를 냈고, 메시지가
-          **'게시판을 찾을 수 없습니다'** 였다 — 방금 목록에서 보고 누른 항목이 존재하지 않는다고
-          말하는 셈이라 사용자는 데이터가 사라진 것으로 오해한다(실측: bbsId=..._2061, use_yn='N').
-
-          서버 인가는 그대로 두고 화면이 사실을 먼저 말한다 — 누르기 전에 이유를 알 수 있고,
-          화면이 할 수 없는 일을 약속하지 않는다.
-        */
-        const isOpenable = board.useYn === 'Y';
+        // [2026-09-08] 사용 안 함 게시판은 이용 화면을 열 수 없다는 사실을 누르기 전에 밝힌다.
+        // [2026-10-23 ADR-0040 결정 1] 조회 대행 권한자는 사용 안 함 게시판도 연다 — 운영 화면의 같은 단추와 같은 판정이다.
+        const isOpenable = board.useYn === 'Y' || canReadAllPosts;
         const openLabel = isOpenable
-          ? `${board.bbsTtl} 게시글 목록 열기`
-          : `${board.bbsTtl} 사용 중지된 게시판이라 게시글 목록을 열 수 없습니다`;
-
+          ? `${board.bbsTtl} 이용 화면 열기`
+          : `${board.bbsTtl} 사용 안 함 게시판이라 이용 화면을 열 수 없습니다`;
         return (
-        <div className="flex items-center justify-end gap-1">
-          {canUpdate && <Button
-            onClick={() => void handleEdit(board)}
-            disabled={isDetailLoading || isSaving || deletingBoardId !== null || bulkPendingAction !== null}
-            size="icon"
-            variant="ghost"
-            title={`${board.bbsTtl} 설정 편집`}
-            aria-label={`${board.bbsTtl} 설정 편집`}
-            className="rounded-md text-muted-foreground"
-          >
-            <Settings2 size={20} />
-          </Button>}
-          {canDelete && <Button
-            onClick={() => { void handleDelete(board); }}
-            disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
-            aria-busy={isDeleting}
-            size="icon" 
-            variant="ghost" 
-            className={cn(
-              "rounded-md text-muted-foreground",
-              board.useYn === 'Y'
-                ? "hover:bg-warning/25 hover:text-foreground"
-                : "hover:bg-destructive/10 hover:text-destructive-emphasis"
-            )}
-            title={isDeleting ? pendingLabel : idleLabel}
-            aria-label={isDeleting ? pendingLabel : idleLabel}
-          >
-            {isDeleting
-              ? <Loader2 size={20} className="animate-spin" aria-hidden="true" />
-              : <Trash2 size={20} aria-hidden="true" />}
-          </Button>}
-          <Button
-            onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
-            disabled={!isOpenable}
-            size="icon"
-            variant="ghost"
-            title={openLabel}
-            aria-label={openLabel}
-            className="rounded-md text-muted-foreground"
-          >
-            <ArrowRight size={20} />
-          </Button>
-        </div>
+          <div className="flex items-center justify-end gap-1">
+            <Button
+              onClick={() => router.push(boardOperationsHref(board.bbsId))}
+              size="sm"
+              variant="ghost"
+              aria-label={`${board.bbsTtl} 운영 화면 열기`}
+              className="gap-1.5 rounded-md"
+            >
+              <Settings2 size={16} aria-hidden="true" />
+              운영
+            </Button>
+            <Button
+              onClick={() => router.push(`/admin/community/boards/select-board-list?bbsId=${board.bbsId}`)}
+              disabled={!isOpenable}
+              size="icon"
+              variant="ghost"
+              title={openLabel}
+              aria-label={openLabel}
+              className="rounded-md text-muted-foreground"
+            >
+              <ArrowRight size={20} aria-hidden="true" />
+            </Button>
+          </div>
         );
       },
       className: 'text-right'
     }
   ];
 
-  // 감사 P2: 루트 layout(max-w-7xl p-6/md:p-12/lg:p-16)과 겹치던 화면별 폭/여백(max-w-[1600px] mx-auto px-4) 제거.
   return (
     <WorkListPage
       title="게시판 관리"
-      description="생성된 게시판의 사용 여부와 설정을 조회·관리합니다."
+      description="게시판의 사용 여부와 메뉴 연결을 조회하고, 운영 화면에서 설정·메뉴·접근을 관리합니다."
       breadcrumbItems={[{ label: '관리 센터' }, { label: '콘텐츠 운영' }, { label: '게시판 관리' }]}
       filterStateKey="community-board-master"
       totalCount={isError ? undefined : totalCount}
@@ -507,46 +260,54 @@ export function BoardMasterListClient() {
         canPermission(user, 'BBS_MST_CREATE') && canOpenPage(user, '/admin/community/boards/maker') && (
           <Button size="sm" onClick={() => router.push('/admin/community/boards/maker')} className="gap-2">
             <Plus className="w-4 h-4" aria-hidden="true" />
-            생성 마법사
+            게시판 만들기
           </Button>
         )
       }
       filter={
         /*
-          [2026-08-29] 라벨에서 '시스템 ID' 를 걷는다.
-          표 첫 열이 게시판명 아래에 bbsId 를 함께 보여 주므로 그 ID 를 붙여 넣으면 찾을 수
-          있다고 읽혔지만, 서버가 보는 축은 명칭뿐이다 — BoardMasterRepositoryImpl 은
-          [2026-10-16 DEC-OPS-332] 서버의 검색 축은 게시판명(bbsTtl) 하나다 — bbsId 축은 없다. 종전에는
-          searchCnd '0' 일 때만 게시판명에 걸었는데 이 화면은 searchCnd 를 보내지 않아 검색어가 무시됐다.
-
-          라벨을 '게시판 명칭' 이 아니라 '게시판명' 으로 둔 이유: 편집 모달에도 '게시판 명칭'
-          입력이 있어 접근 가능한 이름이 겹치면 두 컨트롤을 구분할 수 없다(실측 — 기존 스펙
-          4건이 "Found multiple elements" 로 red 가 됐다). 조회 조건과 편집 필드는 서로 다른
-          컨트롤이므로 이름도 달라야 한다.
+          [2026-10-16 DEC-OPS-332] 서버의 검색 축은 게시판명(bbsTtl) 하나다 — bbsId 축은 없다.
+          [2026-10-23 ADR-0040 §5.2] 게시판 사용 조건(전체·사용·사용 안 함)도 `조회`·Enter 로 함께 적용한다.
         */
         <KeywordFilter
           label="게시판명"
           placeholder="게시판명 검색"
           value={searchWrd}
-          onSearch={(keyword) => { setPage(1); setSearchWrd(keyword); }}
-        />
+          onSearch={(keyword) => { setPage(1); setSearchWrd(keyword); setUseFilter(useDraft); }}
+          onReset={() => { setPage(1); setSearchWrd(''); setUseDraft(''); setUseFilter(''); }}
+        >
+          <div className="space-y-1">
+            <label htmlFor="board-master-use-filter" className="text-[length:var(--font-size-body)] font-medium">게시판 사용</label>
+            <select
+              id="board-master-use-filter"
+              value={useDraft}
+              onChange={(event) => setUseDraft(event.target.value as UseFilter)}
+              className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+            >
+              {USE_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
+            </select>
+          </div>
+        </KeywordFilter>
       }
       toolbarActions={
-        /* 지표 카드 3장(hover ring 30px·아이콘 확대)을 한 줄 요약으로 수렴한다.
-           값은 모두 서버 응답에서 파생된다. 페이지로 나눠 받으므로 활성·대기 수는 이 페이지의 행만 센다. */
+        /* 값은 모두 서버 응답에서 파생된다. 페이지로 나눠 받으므로 사용·사용 안 함 수는 이 페이지의 행만 센다. */
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
-          이 페이지: 활성 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
-          대기 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건
+          이 페이지: 사용 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
+          사용 안 함 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건
+          {dataUpdatedAt > 0 && <> · 조회 시각 {toDisplayDateTime(dataUpdatedAt)}</>}
         </span>
       }
     >
+        <p className="mb-3 text-[length:var(--font-size-body)] text-muted-foreground">
+          메뉴가 보인다고 게시판을 쓸 수 있는 것은 아닙니다. 게시글 권한은 모든 게시판에 함께 적용됩니다.
+        </p>
         <StandardDataTable<BoardMasterSummary>
           columns={columns}
           data={boardList}
           loading={isLoading}
           error={isError ? error : null}
           onRetry={() => refetch()}
-          enableSelection={canUpdate || canDelete}
+          enableSelection={canUpdate}
           keyField="bbsId"
           pagination={{
             currentPage: page,
@@ -557,207 +318,30 @@ export function BoardMasterListClient() {
             onPageSizeChange: (next) => { setSize(next); setPage(1); },
             pageSizeOptions: [10, 20, 50],
           }}
-          bulkActions={[
-            ...(canUpdate ? [
+          bulkActions={canUpdate ? [
             {
-              label: '일괄 활성화',
+              label: '사용으로 바꾸기',
               icon: bulkPendingAction === 'activate'
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Zap size={16} aria-hidden="true" />,
-              disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
+              disabled: bulkPendingAction !== null,
               ariaBusy: bulkPendingAction === 'activate',
-              pendingLabel: '활성화 처리 중...',
+              pendingLabel: '사용으로 바꾸는 중...',
               onClick: (items: BoardMasterSummary[]) => { void handleBulkStatusChange(items, 'Y', 'activate'); }
             },
             {
-              label: '일괄 비활성',
+              label: '사용 안 함으로 바꾸기',
               icon: bulkPendingAction === 'deactivate'
                 ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
                 : <Lock size={16} aria-hidden="true" />,
-              disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
+              disabled: bulkPendingAction !== null,
               ariaBusy: bulkPendingAction === 'deactivate',
-              pendingLabel: '비활성화 처리 중...',
+              pendingLabel: '사용 안 함으로 바꾸는 중...',
               onClick: (items: BoardMasterSummary[]) => { void handleBulkStatusChange(items, 'N', 'deactivate'); }
-            }] : []),
-            ...(canDelete ? [
-            {
-              label: '완전 말소',
-              icon: bulkPendingAction === 'purge'
-                ? <Loader2 size={16} className="animate-spin" aria-hidden="true" />
-                : <Trash2 size={16} aria-hidden="true" />,
-              variant: 'destructive' as const,
-              disabled: isSaving || bulkPendingAction !== null || deletingBoardId !== null,
-              ariaBusy: bulkPendingAction === 'purge',
-              pendingLabel: '완전 말소 처리 중...',
-              onClick: (items: BoardMasterSummary[]) => { void handleBulkPurge(items); }
-            }] : [])
-          ]}
-          accessibleLabel="게시판 마스터 목록"
+            }] : []}
+          accessibleLabel="게시판 관리 목록"
           emptyMessage={emptyResultMessage(searchWrd, '등록된 게시판이 없습니다.')}
         />
-
-      {/*
-        [정직성·G14] 종전 이 자리에는 "Ready to scale your ecosystem?" 5xl 영문 카피와
-        400px Rocket 배경이 있었다. 같은 동작(생성 마법사)을 헤더 액션이 이미 제공하므로
-        업무 화면에서 마케팅 배너를 제거한다.
-      */}
-      {/* Settings Modal */}
-      <Dialog open={isModalOpen && canUpdate} onOpenChange={handleModalOpenChange}>
-        <DialogContent className="sm:max-w-[600px] max-h-[90vh] overflow-y-auto rounded-lg p-0 border-none shadow-lg">
-          <div className="border-b border-border bg-card pb-3 pl-5 pr-10 pt-4">
-            <DialogHeader>
-              <DialogTitle className="text-base font-semibold text-foreground">게시판 설정</DialogTitle>
-              <DialogDescription className="text-[length:var(--font-size-body)] text-muted-foreground">
-                게시판 명칭·소개·사용 여부를 수정합니다.
-              </DialogDescription>
-            </DialogHeader>
-          </div>
-          
-          <div className="space-y-[var(--form-gap)] bg-card px-5 py-4 transition-colors">
-            <FormErrorSummary
-              errors={validation.errors}
-              labels={boardMasterValidationLabels}
-              onNavigate={validation.focusError}
-            />
-            <div className="space-y-1.5">
-              <Label htmlFor="modal-bbs-name" className="text-[length:var(--font-size-body)] font-medium text-foreground">게시판 명칭</Label>
-              <Input 
-                id="modal-bbs-name"
-                {...validation.fieldProps('bbsTtl')}
-                value={editData.bbsTtl || ''} 
-                onChange={(e) => {
-                  validation.clearError('bbsTtl');
-                  setEditData({...editData, bbsTtl: e.target.value});
-                }}
-                required
-                maxLength={100}
-              />
-              {validation.errors.bbsTtl ? <p {...validation.messageProps('bbsTtl')} className="text-xs font-bold text-destructive-emphasis" /> : null}
-            </div>
-
-            <div className="space-y-1.5">
-              <Label htmlFor="modal-bbs-description" className="text-[length:var(--font-size-body)] font-medium text-foreground">게시판 소개</Label>
-              <Input 
-                id="modal-bbs-description"
-                {...validation.fieldProps('bbsExpln')}
-                value={editData.bbsExpln || ''} 
-                onChange={(e) => {
-                  validation.clearError('bbsExpln');
-                  setEditData({...editData, bbsExpln: e.target.value});
-                }}
-                maxLength={4000}
-              />
-              {validation.errors.bbsExpln ? <p {...validation.messageProps('bbsExpln')} className="text-xs font-bold text-destructive-emphasis" /> : null}
-            </div>
-
-            {/*
-              [2026-09-27 DIP B5 F9] 게시판 기능 설정. 서버가 새 댓글·새 평가·첨부를 이 값으로 거부하고, 게시글 화면이
-              같은 값으로 입력을 감춘다. 끈 뒤에도 이미 달린 댓글·평가·첨부는 그대로 보인다.
-            */}
-            <fieldset className="space-y-2 rounded-md border border-border p-3">
-              <legend className="px-1 text-[length:var(--font-size-body)] font-medium text-foreground">게시판 기능</legend>
-              {([
-                ['ansYn', '댓글 받기'],
-                ['stsfdgYn', '만족도 평가 받기'],
-                ['fileAtchPsbltyYn', '파일 첨부 허용'],
-              ] as const).map(([field, label]) => (
-                <div key={field} className="flex items-center justify-between gap-3">
-                  <label htmlFor={`modal-bbs-${field}`} className="cursor-pointer text-[length:var(--font-size-body)] text-foreground">{label}</label>
-                  <Switch
-                    id={`modal-bbs-${field}`}
-                    checked={(editData[field] ?? selectedBoard?.[field]) !== 'N'}
-                    onCheckedChange={(checked) => setEditData({ ...editData, [field]: checked ? 'Y' : 'N' })}
-                  />
-                </div>
-              ))}
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div className="space-y-1.5">
-                  <Label htmlFor="modal-bbs-file-qty" className="text-xs font-medium text-foreground">첨부 파일 수(0 은 상한 없음)</Label>
-                  <Input
-                    id="modal-bbs-file-qty"
-                    type="number"
-                    min={0}
-                    max={SERVER_MAX_FILES_PER_REQUEST}
-                    {...validation.fieldProps('atchPsbltyFileQty')}
-                    value={editData.atchPsbltyFileQty ?? selectedBoard?.atchPsbltyFileQty ?? 0}
-                    onChange={(e) => {
-                      validation.clearError('atchPsbltyFileQty');
-                      setEditData({ ...editData, atchPsbltyFileQty: e.target.value === '' ? undefined : Number(e.target.value) });
-                    }}
-                  />
-                  {validation.errors.atchPsbltyFileQty ? <p {...validation.messageProps('atchPsbltyFileQty')} className="text-xs font-bold text-destructive-emphasis" /> : null}
-                </div>
-                <div className="space-y-1.5">
-                  <Label htmlFor="modal-bbs-file-size" className="text-xs font-medium text-foreground">파일당 크기(MB)</Label>
-                  <Input
-                    id="modal-bbs-file-size"
-                    type="number"
-                    min={1}
-                    max={SERVER_MAX_FILE_SIZE_MB}
-                    step="0.5"
-                    {...validation.fieldProps('atchPsbltyFileSzMb')}
-                    value={(editData.atchPsbltyFileSz ?? selectedBoard?.atchPsbltyFileSz ?? DEFAULT_ATCH_PSBLTY_FILE_SZ) / BYTES_PER_MB}
-                    onChange={(e) => {
-                      validation.clearError('atchPsbltyFileSzMb');
-                      setEditData({ ...editData, atchPsbltyFileSz: e.target.value === '' ? undefined : Math.round(Number(e.target.value) * BYTES_PER_MB) });
-                    }}
-                  />
-                  {validation.errors.atchPsbltyFileSzMb ? <p {...validation.messageProps('atchPsbltyFileSzMb')} className="text-xs font-bold text-destructive-emphasis" /> : null}
-                </div>
-              </div>
-            </fieldset>
-
-            <div className="flex items-center justify-between rounded-md border border-border bg-muted p-3 transition-colors">
-              <div className="space-y-0.5">
-                <label htmlFor="modal-bbs-use-at" className="block cursor-pointer text-[length:var(--font-size-body)] font-medium text-foreground transition-colors">서비스 활성화 상태</label>
-                <p className="text-left text-xs text-muted-foreground transition-colors">활성화 시 모든 연결된 메뉴에서 서비스가 재개됩니다.</p>
-              </div>
-              <Switch 
-                id="modal-bbs-use-at"
-                {...validation.fieldProps('useYn')}
-                aria-required="true"
-                checked={editData.useYn === 'Y'} 
-                onCheckedChange={(checked) => {
-                  validation.clearError('useYn');
-                  setEditData({...editData, useYn: checked ? 'Y' : 'N'});
-                }}
-              />
-            </div>
-            {validation.errors.useYn ? <p {...validation.messageProps('useYn')} className="text-xs font-bold text-destructive-emphasis" /> : null}
-
-            <div className="flex items-start gap-2 rounded-md border border-warning/40 bg-warning/10 p-3 transition-colors">
-              <AlertTriangle className="mt-0.5 shrink-0 text-foreground" size={16} aria-hidden="true" />
-              <div className="space-y-0.5">
-                <p className="text-left text-[length:var(--font-size-body)] font-medium text-foreground transition-colors">주의사항</p>
-                <p className="text-left text-xs leading-relaxed text-muted-foreground transition-colors">
-                  게시판을 비활성화(대기)하면 기존 링크를 통한 접근이 차단됩니다. 
-                  영구 삭제를 원하시면 목록의 삭제(휴지통) 아이콘을 사용하십시오.
-                </p>
-              </div>
-            </div>
-          </div>
-
-          <DialogFooter className="border-t border-border bg-muted px-5 py-3 transition-colors">
-            <Button
-              type="button"
-              variant="ghost"
-              disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
-              onClick={() => handleModalOpenChange(false)}
-            >
-              취소
-            </Button>
-            <Button
-              disabled={isSaving || deletingBoardId !== null || bulkPendingAction !== null}
-              aria-busy={isSaving || undefined}
-              onClick={handleSave}
-              className="px-6"
-            >
-              {isSaving ? <Loader2 className="animate-spin" aria-hidden="true" /> : null}
-              {isSaving ? '저장 중...' : '설정 적용하기'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
     </WorkListPage>
   );
 }

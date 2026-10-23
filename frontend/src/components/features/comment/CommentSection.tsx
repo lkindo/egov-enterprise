@@ -32,6 +32,11 @@ interface CommentSectionProps {
    * 이미 달린 댓글은 그대로 보이고 작성자가 고치거나 지울 수 있다(서버도 새 댓글만 막는다).
    */
   acceptsNewComments?: boolean;
+  /**
+   * 게시판이 사용 중인가(ADR-0040 결정 1 — 게시판 메타의 inUse). 거짓이면 운영자가 열람만 하는 상태다 — 서버가 댓글 등록·수정·삭제를
+   * 모두 거부하므로 입력란과 수정·삭제 단추를 감추고 사유를 보인다. 모르면(메타 조회 전) 참으로 두고 판정은 서버가 한다.
+   */
+  boardInUse?: boolean;
 }
 
 type CommentView = CommentVO & { isOptimistic?: boolean };
@@ -44,7 +49,7 @@ import { motion } from 'framer-motion';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 
-export default function CommentSection({ pstSn, bbsId, initialComments, totalComments, acceptsNewComments = true }: CommentSectionProps) {
+export default function CommentSection({ pstSn, bbsId, initialComments, totalComments, acceptsNewComments = true, boardInUse = true }: CommentSectionProps) {
   const [, startTransition] = useTransition();
   const { toast } = useToast();
   const confirm = useConfirm();
@@ -292,7 +297,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
                           `editingId` 가 새 `ansSn` 과 어긋나 **폼이 조용히 접히며 입력이 유실된다.**
                           (카드가 이미 opacity/grayscale 로 미확정임을 알리고 있었는데, 동작만 막지 않고 있었다.)
                         */}
-                        {!comment.isOptimistic && (canManageComment(comment, 'UPDATE') || canManageComment(comment, 'DELETE')) && (
+                        {boardInUse && !comment.isOptimistic && (canManageComment(comment, 'UPDATE') || canManageComment(comment, 'DELETE')) && (
                         <div className="flex shrink-0 items-center gap-1">
                           {editingId === comment.ansSn && canManageComment(comment, 'UPDATE') ? (
                             <>
@@ -396,7 +401,11 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
       </div>
 
       {/* Comment Form */}
-      {!acceptsNewComments ? (
+      {!boardInUse ? (
+        <p role="note" className="pt-2 text-[length:var(--font-size-body)] text-muted-foreground">
+          사용 안 함 게시판이라 댓글을 쓰거나 고칠 수 없습니다.
+        </p>
+      ) : !acceptsNewComments ? (
         <p role="note" className="pt-2 text-[length:var(--font-size-body)] text-muted-foreground">
           이 게시판은 새 댓글을 받지 않습니다.
         </p>

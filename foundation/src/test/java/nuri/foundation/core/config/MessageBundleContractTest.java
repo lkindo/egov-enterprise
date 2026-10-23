@@ -51,11 +51,14 @@ class MessageBundleContractTest {
      *
      * <p>[2026-10-10 Phase 2 D6] 기능을 걷은 생성물에서는 생성기가 자기가 지운 ErrorCode 코드 수와 Bean Validation
      * 참조 수만큼 아래 두 하한을 내리고 lock 에 기록한다(reusable-source-messages). 원본의 여유 폭이 생성물에서도 같다.
+     *
+     * <p>[2026-10-23 ADR-0040 결정 10] 게시판 설정 수정 요청이 참조 5개를 더해 실측이 14 → 19 가 됐다. 게시판을 걷는
+     * 투영은 10개를 내리므로 하한 10 그대로면 0 이 된다 — 하한을 15 로 올려 여유 폭 4 를 그대로 둔다.
      */
     private static final int MIN_ERROR_CODE_SOURCES = 4;
     private static final int MIN_ERROR_CODES = 39;
     private static final int MIN_HANDLER_KEYS = 7;
-    private static final int MIN_BEAN_VALIDATION_REFS = 10;
+    private static final int MIN_BEAN_VALIDATION_REFS = 15;
 
     private static final Pattern ERROR_CODE = Pattern.compile("\"([A-Z]{1,3}\\d{2,3})\"\\s*,\\s*\"");
     private static final Pattern HANDLER_KEY = Pattern.compile("resolve\\(\\s*\"([a-z][a-z0-9_.]*)\"");

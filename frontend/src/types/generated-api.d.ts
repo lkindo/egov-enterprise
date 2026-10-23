@@ -331,7 +331,7 @@ export interface paths {
         };
         /**
          * 게시글 상세 조회
-         * @description 특정 게시판의 게시글 상세 정보를 조회합니다.
+         * @description 특정 게시판의 게시글 상세 정보를 조회합니다. 사용 안 함 게시판의 글은 조회 대행 권한 보유자만 조회합니다.
          */
         get: operations["getPost"];
         /**
@@ -360,7 +360,7 @@ export interface paths {
         get?: never;
         /**
          * 게시글 수정(첨부 포함)
-         * @description 게시글 정보와 새 첨부 파일을 함께 수정합니다.
+         * @description 게시글 정보와 새 첨부 파일을 함께 수정합니다. 경로와 본문의 게시판이 다르면 400 입니다.
          */
         put: operations["updatePostWithFiles"];
         post?: never;
@@ -1080,9 +1080,15 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 게시판 마스터 상세 조회 */
+        /**
+         * 게시판 마스터 상세 조회
+         * @description version 은 설정 수정 요청에 그대로 돌려보낼 값입니다. designations 는 목록과 같습니다.
+         */
         get: operations["getBoardMaster"];
-        /** 게시판 마스터 수정 */
+        /**
+         * 게시판 마스터 수정
+         * @description 상세 조회에서 받은 version 을 함께 보냅니다(없으면 400, 다르면 409). 템플릿·유형·속성·커뮤니티 귀속은 만든 뒤 바꾸지 않으므로 받지 않습니다(보내면 400).
+         */
         put: operations["updateBoardMaster"];
         post?: never;
         /**
@@ -1860,7 +1866,7 @@ export interface paths {
         put?: never;
         /**
          * 게시글 등록(첨부 포함)
-         * @description 게시글과 첨부 파일을 함께 등록합니다.
+         * @description 게시글과 첨부 파일을 함께 등록합니다. 경로와 본문의 게시판이 다르면 400 입니다.
          */
         post: operations["createPostWithFiles"];
         delete?: never;
@@ -2878,7 +2884,10 @@ export interface paths {
             path?: never;
             cookie?: never;
         };
-        /** 게시판 마스터 목록 조회 */
+        /**
+         * 게시판 마스터 목록 조회
+         * @description searchUseYn 을 비우면 전체, Y·N 이면 그 사용 상태만입니다(그 밖의 값은 400). designations 는 설정이 지정한 용도(NOTICE·FAQ·TASK)이며 지정이 없으면 빈 배열입니다.
+         */
         get: operations["getBoardMasterList"];
         put?: never;
         /** 게시판 마스터 등록 */
@@ -4279,7 +4288,7 @@ export interface paths {
         };
         /**
          * 게시글 목록 조회
-         * @description 특정 게시판의 게시글 목록을 페이징하여 조회합니다.
+         * @description 특정 게시판의 게시글 목록을 페이징하여 조회합니다. 사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL) 보유자만 조회하고, 그 밖에는 없는 게시판과 같은 404 입니다.
          */
         get: operations["getPosts"];
         put?: never;
@@ -4339,7 +4348,7 @@ export interface paths {
         };
         /**
          * 게시판 메타 조회
-         * @description 게시글 목록·상세 화면이 쓰는 게시판 제목·설명·템플릿·설정입니다. 커뮤니티 귀속 게시판은 회원만 조회합니다.
+         * @description 게시글 목록·상세 화면이 쓰는 게시판 제목·설명·템플릿·설정입니다. 커뮤니티 귀속 게시판은 회원만 조회합니다. 사용 안 함 게시판은 조회 대행 권한 보유자만 조회하며 그때 inUse 는 false 입니다.
          */
         get: operations["getBoardMeta"];
         put?: never;
@@ -4404,6 +4413,26 @@ export interface paths {
          * @description 활성 FAQ 게시판의 공개 글 상세만 조회합니다.
          */
         get: operations["getPublicFaqDetail"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/boards/options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 게시판 선택지 조회
+         * @description 사용 중인 게시판 가운데 호출자가 이용할 수 있는 것만 ID·이름으로 돌려줍니다. 커뮤니티 귀속 게시판은 승인 회원(또는 조회 대행 권한 보유자)에게만 보입니다.
+         */
+        get: operations["getBoardOptions"];
         put?: never;
         post?: never;
         delete?: never;
@@ -5351,6 +5380,26 @@ export interface paths {
          * @description 비활성(useYn='N') 이고 소속 게시글이 0건일 때만 true 입니다. 화면이 영구 삭제 전 사전 안내에 사용합니다.
          */
         get: operations["isBoardMasterDeletable"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/{bbsId}/change-history": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 게시판 변경 이력 조회
+         * @description 최신순입니다. 바뀐 항목마다 한 건씩 돌려줍니다 — 지금 남는 것은 설정·사용 여부 변경입니다. 게시글 대상 행(PST)은 게시물 조회 대행 권한(BOARD_READ_ALL)이 있을 때만 싣습니다. 없는 게시판이면 404 입니다.
+         */
+        get: operations["getBoardChangeHistory"];
         put?: never;
         post?: never;
         delete?: never;
@@ -6950,38 +6999,52 @@ export interface components {
              */
             mdfcnDt?: string;
         };
-        BoardMasterDto: {
-            bbsId?: string;
+        /** @description 게시판 설정 수정 요청 — 템플릿·유형·속성·커뮤니티 귀속은 바꾸지 않는다 */
+        BoardMasterUpdateRequest: {
+            /** @description 게시판 명칭 */
             bbsTtl: string;
+            /** @description 게시판 소개 */
             bbsExpln?: string;
-            bbsTypeCd: string;
-            bbsAtrbCd: string;
-            bbsAtrbCdNm?: string;
-            /** @enum {string} */
+            /**
+             * @description 답글 허용
+             * @enum {string}
+             */
             ansPsbltyYn?: "Y" | "N";
-            /** @enum {string} */
+            /**
+             * @description 파일 첨부 허용
+             * @enum {string}
+             */
             fileAtchPsbltyYn?: "Y" | "N";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description 첨부 파일 수(0 은 상한 없음)
+             */
             atchPsbltyFileQty?: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description 파일당 크기(바이트)
+             */
             atchPsbltyFileSz: number;
-            tmpltId?: string;
-            frstRgtrId?: string;
-            /** Format: date-time */
-            crtDt?: string;
-            lastMdfrId?: string;
-            /** Format: date-time */
-            mdfcnDt?: string;
-            /** @enum {string} */
+            /**
+             * @description 게시판 사용
+             * @enum {string}
+             */
             useYn: "Y" | "N";
-            /** Format: int64 */
-            cmntySn?: number;
-            /** @enum {string} */
+            /**
+             * @description 댓글 받기
+             * @enum {string}
+             */
             ansYn?: "Y" | "N";
-            /** @enum {string} */
+            /**
+             * @description 만족도 평가 받기
+             * @enum {string}
+             */
             stsfdgYn?: "Y" | "N";
-            authFlag?: string;
-            tmplatCours?: string;
+            /**
+             * Format: int32
+             * @description 화면이 읽은 게시판 버전. 다르면 다른 사람이 먼저 고친 것이라 409 다
+             */
+            version: number;
         };
         /** @description 배너 정보 */
         BannerDto: {
@@ -8026,6 +8089,39 @@ export interface components {
             cdId: string;
             /** @description 상세코드 */
             dtlCd: string;
+        };
+        BoardMasterDto: {
+            bbsId?: string;
+            bbsTtl: string;
+            bbsExpln?: string;
+            bbsTypeCd: string;
+            bbsAtrbCd: string;
+            bbsAtrbCdNm?: string;
+            /** @enum {string} */
+            ansPsbltyYn?: "Y" | "N";
+            /** @enum {string} */
+            fileAtchPsbltyYn?: "Y" | "N";
+            /** Format: int32 */
+            atchPsbltyFileQty?: number;
+            /** Format: int64 */
+            atchPsbltyFileSz: number;
+            tmpltId?: string;
+            frstRgtrId?: string;
+            /** Format: date-time */
+            crtDt?: string;
+            lastMdfrId?: string;
+            /** Format: date-time */
+            mdfcnDt?: string;
+            /** @enum {string} */
+            useYn: "Y" | "N";
+            /** Format: int64 */
+            cmntySn?: number;
+            /** @enum {string} */
+            ansYn?: "Y" | "N";
+            /** @enum {string} */
+            stsfdgYn?: "Y" | "N";
+            authFlag?: string;
+            tmplatCours?: string;
         };
         /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
         BoardMasterBatchStatusRequest: {
@@ -9558,6 +9654,8 @@ export interface components {
             ansYn?: "Y" | "N" | null;
             /** @description 일반 게시글 쓰기 권한에 추가로 모두 필요한 편집 권한. 일반 게시판은 빈 배열입니다. */
             requiredEditPermissions: string[];
+            /** @description 게시판이 사용 중인지. false 면 조회 대행 권한자가 사용 안 함 게시판을 열람하는 중이며, 서버는 새 댓글·만족도·추천을 받지 않는다(ADR-0040 결정 1). */
+            inUse: boolean;
         };
         ApiResponseListBoardSearchItemResponse: {
             success?: boolean;
@@ -9708,6 +9806,24 @@ export interface components {
              * @enum {string}
              */
             scrtYn: "N";
+        };
+        ApiResponseListBoardOptionDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["BoardOptionDto"][];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 게시판 선택지 */
+        BoardOptionDto: {
+            /** @description 게시판 ID */
+            bbsId: string;
+            /** @description 게시판 이름 */
+            bbsTtl: string;
         };
         ApiResponseListBannerPublicResponse: {
             success?: boolean;
@@ -11698,6 +11814,8 @@ export interface components {
             useYn: string;
             /** Format: date-time */
             crtDt?: string;
+            /** @description 설정이 지정한 용도(공지·FAQ·업무). 지정이 없으면 빈 배열 */
+            designations: ("NOTICE" | "FAQ" | "TASK")[];
         };
         PageResponseBoardMasterSummaryResponse: {
             /** @description 현재 페이지의 항목 */
@@ -11761,6 +11879,84 @@ export interface components {
             stsfdgYn?: string;
             authFlag?: string;
             tmplatCours?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전. 설정 수정 요청에 그대로 돌려보낸다
+             */
+            version: number;
+            /** @description 설정이 지정한 용도(공지·FAQ·업무). 지정이 없으면 빈 배열 */
+            designations: ("NOTICE" | "FAQ" | "TASK")[];
+        };
+        ApiResponsePageResponseBoardChangeDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseBoardChangeDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 게시판 변경 이력 */
+        BoardChangeDto: {
+            /**
+             * Format: int64
+             * @description 이력 일련번호
+             */
+            bbsChgHstrySn: number;
+            /**
+             * @description 변경 대상(BBS 게시판·PST 게시글)
+             * @enum {string}
+             */
+            chgTrgtTypeCd: "BBS" | "PST";
+            /**
+             * @description 변경 유형(SETTING 설정·USE 사용 여부·PERIOD 게시 기간·PIN 고정·UNPIN 고정 해제)
+             * @enum {string}
+             */
+            chgTypeCd: "SETTING" | "USE" | "PERIOD" | "PIN" | "UNPIN";
+            /**
+             * Format: int64
+             * @description 게시글 번호(게시글 행만)
+             */
+            pstSn?: number | null;
+            /** @description 바뀐 항목 */
+            chgArtclNm: string;
+            /** @description 변경 전 값 */
+            chgBfrCn?: string | null;
+            /** @description 변경 후 값 */
+            chgAftrCn?: string | null;
+            /** @description 변경자 이름 */
+            chgUserNm?: string | null;
+            /**
+             * Format: date-time
+             * @description 변경 일시
+             */
+            crtDt: string;
+        };
+        PageResponseBoardChangeDto: {
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["BoardChangeDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponsePageResponseBannerDto: {
             success?: boolean;
@@ -20537,7 +20733,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BoardMasterDto"];
+                "application/json": components["schemas"]["BoardMasterUpdateRequest"];
             };
         };
         responses: {
@@ -35396,6 +35592,62 @@ export interface operations {
             };
         };
     };
+    getBoardOptions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseListBoardOptionDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getReflectedBanners: {
         parameters: {
             query?: never;
@@ -38606,6 +38858,78 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseBoolean"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getBoardChangeHistory: {
+        parameters: {
+            query?: {
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
+            };
+            header?: never;
+            path: {
+                bbsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseBoardChangeDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

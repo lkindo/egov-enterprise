@@ -235,7 +235,7 @@ export const PERMISSION_CODES = [
   "NOTICE_EDIT"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "8552b86156efc9f1ccd67b2469826ee2b69edf7afb9a85f28b7ce1a3eb13344f";
+export const PERMISSION_CATALOG_VERSION = "895e24154e39633d09b73f4e84b724d3e66afe5d220e7d578159e9065277dca7";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -264,6 +264,9 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
     "BBS_MST_UPDATE"
   ],
   "/admin/community/boards/master": [
+    "BBS_MST_READ"
+  ],
+  "/admin/community/boards/master/[id]": [
     "BBS_MST_READ"
   ],
   "/admin/community/boards/select-board-list": [],

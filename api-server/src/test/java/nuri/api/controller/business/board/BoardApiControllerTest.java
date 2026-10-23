@@ -82,6 +82,33 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
     }
 
+    /**
+     * [2026-10-23 ADR-0040 결정 11] 게시판 선택지도 {@code /{bbsId}} 와 같은 자리의 리터럴 경로다. 응답은 bare 배열이고 ID·이름만
+     * 싣는다 — 사용 여부·커뮤니티 귀속은 서버가 이미 걸렀다.
+     */
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("게시판 선택지는 /options 리터럴 경로로 잡히고 게시판 목록 조회로 새지 않으며 ID·이름만 싣는다")
+    void getBoardOptions_resolvesLiteralPathNotBbsId() throws Exception {
+        given(boardService.getBoardOptions()).willReturn(List.of(
+                new nuri.business.service.board.dto.BoardOptionDto("BBS_001", "공지사항")));
+
+        mockMvc.perform(get("/api/v1/boards/options")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data").isArray())
+                .andExpect(jsonPath("$.data[0].bbsId").value("BBS_001"))
+                .andExpect(jsonPath("$.data[0].bbsTtl").value("공지사항"))
+                .andExpect(jsonPath("$.data[0].useYn").doesNotExist())
+                .andExpect(jsonPath("$.data[0].cmntySn").doesNotExist())
+                .andExpect(jsonPath("$.data.list").doesNotExist());
+
+        verify(boardService).getBoardOptions();
+        verify(boardService, org.mockito.Mockito.never()).getBoardPosts(
+                anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+        verify(boardService, org.mockito.Mockito.never()).getBoardMeta(anyString());
+    }
+
     @Test
     @WithMockCustomUser(username = "user01", esntlId = "user01")
     @DisplayName("통합 검색은 검색어가 없어도 400 이 아니라 빈 목록이다 — 판정은 서비스가 한다")
@@ -250,7 +277,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시판 메타는 제목·템플릿·설정만 싣고 운영 필드는 싣지 않는다 (DIP V5)")
     void getBoardMeta_ReturnsReadOnlyMeta() throws Exception {
         given(boardService.getBoardMeta("BBS_001")).willReturn(new nuri.business.service.board.dto.BoardMetaDto(
-                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N", "Y", java.util.List.of()));
+                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N", "Y", java.util.List.of(), false));
 
         mockMvc.perform(get("/api/v1/boards/BBS_001/meta")
                         .accept(MediaType.APPLICATION_JSON))
@@ -261,6 +288,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.stsfdgYn").value("N"))
                 .andExpect(jsonPath("$.data.ansYn").value("Y"))
                 .andExpect(jsonPath("$.data.requiredEditPermissions").isEmpty())
+                // [2026-10-23 ADR-0040 결정 1] 사용 여부는 원본 값이 아니라 화면이 쓰기 단추를 감출 판정(inUse)으로만 싣는다.
+                .andExpect(jsonPath("$.data.inUse").value(false))
                 .andExpect(jsonPath("$.data.frstRgtrId").doesNotExist())
                 .andExpect(jsonPath("$.data.useYn").doesNotExist());
 

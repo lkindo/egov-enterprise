@@ -1,9 +1,14 @@
 import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
-  HANDOFF_TTL_MS, clearScreenHandoff, clearTargetHandoff, handOffScreen, handOffTarget, isHandOffScreenRoute,
-  useScreenHandoff, useTargetHandoff,
+  HANDOFF_TTL_MS, clearMenuFocusHandoff, clearScreenHandoff, clearTargetHandoff, handOffMenuFocus, handOffScreen,
+  handOffTarget, isHandOffScreenRoute, useMenuFocusHandoff, useScreenHandoff, useTargetHandoff,
 } from '../target-handoff';
+
+function MenuFocusProbe() {
+  const focus = useMenuFocusHandoff();
+  return <p>{focus ? `메뉴:${focus.menuSn}` : '메뉴 없음'}</p>;
+}
 
 function Probe() {
   const target = useTargetHandoff('authority-user');
@@ -122,5 +127,69 @@ describe('화면 인계(screen handoff)', () => {
     expect(screen.getByText('쪽지:/note')).toBeInTheDocument();
     act(() => clearTargetHandoff('authority-user'));
     expect(screen.getByText('쪽지:/note')).toBeInTheDocument();
+  });
+});
+
+/** [2026-10-23 ADR-0040 결정 8] 게시판 운영 화면 → 메뉴 관리. 연결된 메뉴를 고른 상태로 연다. 저장 키·형식 검사는 따로다. */
+describe('메뉴 인계(menu-focus)', () => {
+  afterEach(() => { vi.useRealTimers(); window.sessionStorage.clear(); });
+
+  it('넘긴 메뉴 번호를 받고, 받은 화면이 지우면 사라진다 — URL 은 건드리지 않는다', () => {
+    const before = window.location.href;
+    expect(handOffMenuFocus({ menuSn: 2040000 })).toBe(true);
+    render(<MenuFocusProbe />);
+    expect(screen.getByText('메뉴:2040000')).toBeInTheDocument();
+    act(() => clearMenuFocusHandoff());
+    expect(screen.getByText('메뉴 없음')).toBeInTheDocument();
+    expect(window.location.href).toBe(before);
+  });
+
+  it('유효 시간이 지난 메뉴 인계는 받지 않는다', () => {
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-23T09:00:00Z'));
+    handOffMenuFocus({ menuSn: 2040000 });
+    vi.setSystemTime(new Date(Date.now() + HANDOFF_TTL_MS + 1));
+    render(<MenuFocusProbe />);
+    expect(screen.getByText('메뉴 없음')).toBeInTheDocument();
+  });
+
+  it.each([0, -1, 1.5, Number.NaN, Number.MAX_SAFE_INTEGER + 1])('양의 정수가 아닌 메뉴 번호(%s)는 넘기지 않는다', (menuSn) => {
+    expect(handOffMenuFocus({ menuSn })).toBe(false);
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it.each([
+    { menuSn: '12', at: 1 }, { menuSn: 0, at: 1 }, { menuSn: -1, at: 1 }, { menuSn: 1.5, at: 1 }, { menuSn: 12 }, { at: 1 },
+  ])('형식이 틀린 값(%o)은 받지 않는다', (value) => {
+    window.sessionStorage.setItem('egov.menu-focus-handoff.v1:menu-focus', JSON.stringify({ ...value, at: 'at' in value ? Date.now() : undefined }));
+    render(<MenuFocusProbe />);
+    expect(screen.getByText('메뉴 없음')).toBeInTheDocument();
+  });
+
+  it('저장소에 쓰지 못하면 false 이고 이전 메뉴 인계도 남기지 않는다', () => {
+    expect(handOffMenuFocus({ menuSn: 9030140 })).toBe(true);
+    const setItem = vi.spyOn(Storage.prototype, 'setItem').mockImplementation(() => { throw new DOMException('quota', 'QuotaExceededError'); });
+    let handedOff: boolean;
+    try {
+      handedOff = handOffMenuFocus({ menuSn: 2040000 });
+    } finally {
+      setItem.mockRestore();
+    }
+    expect(handedOff).toBe(false);
+    render(<MenuFocusProbe />);
+    expect(screen.getByText('메뉴 없음')).toBeInTheDocument();
+  });
+
+  it('사용자·화면 인계와 서로 덮지 않는다', () => {
+    handOffTarget('authority-user', { id: 'E1', loginId: 'kim', name: '김' });
+    handOffScreen({ route: '/note', label: '쪽지' });
+    handOffMenuFocus({ menuSn: 2040000 });
+    render(<><MenuFocusProbe /><ScreenProbe /><Probe /></>);
+    expect(screen.getByText('메뉴:2040000')).toBeInTheDocument();
+    expect(screen.getByText('쪽지:/note')).toBeInTheDocument();
+    expect(screen.getByText('김:kim')).toBeInTheDocument();
+    act(() => clearMenuFocusHandoff());
+    expect(screen.getByText('쪽지:/note')).toBeInTheDocument();
+    expect(screen.getByText('김:kim')).toBeInTheDocument();
   });
 });

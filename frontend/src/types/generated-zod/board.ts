@@ -95,6 +95,7 @@ export const BoardMetaDtoSchema = /*#__PURE__*/ (() => z.object({
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   requiredEditPermissions: z.array(z.string()),
+  inUse: z.boolean(),
 }))();
 export type BoardMetaDto = z.infer<typeof BoardMetaDtoSchema>;
 
@@ -172,6 +173,23 @@ export const PublicFaqDetailResponseSchema = /*#__PURE__*/ (() => z.object({
   scrtYn: z.enum(["N"]),
 }))();
 export type PublicFaqDetailResponse = z.infer<typeof PublicFaqDetailResponseSchema>;
+
+export const ApiResponseListBoardOptionDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BoardOptionDtoSchema)).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseListBoardOptionDto = z.infer<typeof ApiResponseListBoardOptionDtoSchema>;
+
+export const BoardOptionDtoSchema = /*#__PURE__*/ (() => z.object({
+  bbsId: z.string(),
+  bbsTtl: z.string(),
+}))();
+export type BoardOptionDto = z.infer<typeof BoardOptionDtoSchema>;
 
 export const BoardSaveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20),
@@ -324,6 +342,7 @@ export const BoardMetaDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   requiredEditPermissions: z.array(z.string()),
+  inUse: z.boolean(),
 }))();
 
 export const BoardMetaDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -339,6 +358,7 @@ export const BoardMetaDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   requiredEditPermissions: z.array(z.string().optional().nullable()),
+  inUse: z.boolean(),
 }))();
 
 export const ApiResponseListBoardSearchItemResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -475,4 +495,34 @@ export const PublicFaqDetailResponseResponseSchema = /*#__PURE__*/ (() => z.obje
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   useYn: z.enum(["Y"]),
   scrtYn: z.enum(["N"]),
+}))();
+
+export const ApiResponseListBoardOptionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.array(z.lazy(() => BoardOptionDtoRequestSchema.strict())).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseListBoardOptionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.array(z.lazy(() => BoardOptionDtoResponseSchema)).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const BoardOptionDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  bbsId: z.string(),
+  bbsTtl: z.string(),
+}))();
+
+export const BoardOptionDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  bbsId: z.string(),
+  bbsTtl: z.string(),
 }))();

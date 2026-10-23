@@ -32,6 +32,12 @@ public class BoardSearchCondition {
      * 작성자 본인(viewerEsntlId) 밖에서 빠진다. 전체 열람 권한자는 null 이라 모든 글을 본다.
      */
     private String postingOpenOn;
+    /**
+     * [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판(tb_bbs_master.use_yn='N')의 글도 목록에 싣는다. 게시판 한정 목록에서
+     * 호출부가 조회 대행 권한(BOARD_READ_ALL)과 사용 안 함을 이미 판정한 경우에만 켠다(BoardService.getBoardPosts).
+     * 통합 검색·통계·업무 홈 카드는 켜지 않는다 — 이용자와 같은 결과를 보인다.
+     */
+    private boolean includeInactiveBoard;
     // Default constructor for cases where full initialization isn't needed
     // immediately
     public BoardSearchCondition() {

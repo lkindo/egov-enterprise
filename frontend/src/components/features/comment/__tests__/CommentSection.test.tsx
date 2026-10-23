@@ -97,6 +97,16 @@ describe('CommentSection Component', () => {
     expect(screen.queryByRole('button', { name: /댓글 등록/ })).toBeNull();
   });
 
+  it('[2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판은 입력란과 수정·삭제 단추를 감추고 사유를 보이며, 댓글은 그대로 보인다', () => {
+    render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} boardInUse={false} />);
+
+    expect(screen.getByText('First Comment')).toBeDefined();
+    expect(screen.getByRole('note').textContent).toContain('사용 안 함 게시판이라 댓글을 쓰거나 고칠 수 없습니다');
+    expect(screen.queryByLabelText('새 댓글 작성')).toBeNull();
+    expect(screen.queryByRole('button', { name: '댓글 수정' })).toBeNull();
+    expect(screen.queryByRole('button', { name: '댓글 삭제' })).toBeNull();
+  });
+
   it('서버가 센 전체 수로 말하고, 불러오지 못한 댓글이 있으면 그 사실을 알린다 (DIP C7)', () => {
     // 상세는 첫 100개만 받는다 — 종전에는 불러온 행 수를 세어 150개짜리 글도 '댓글 1개' 라 말했다.
     render(<CommentSection pstSn={mockPstSn} bbsId={mockBbsId} initialComments={mockComments} totalComments={150} />);

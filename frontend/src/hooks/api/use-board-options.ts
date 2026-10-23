@@ -2,14 +2,6 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
-import { useUser } from '@/hooks/api/use-user';
-import { canPermission } from '@/lib/auth/permissions';
-import {
-  NOTICE_BOARD_ID,
-  QNA_BOARD_ID,
-  TASK_BOARD_ID,
-  WIKI_BOARD_ID,
-} from '@/config/board-ids';
 
 export interface BoardOption {
   value: string;
@@ -17,68 +9,30 @@ export interface BoardOption {
 }
 
 /**
- * 비관리자 폴백 — Flyway 시드(R__seed_demo.sql)가 **실제로 INSERT 하는** 게시판만 담는다.
+ * 이용 화면의 게시판 선택지를 **서버의 사용자 선택지 API** 에서 채운다(ADR-0040 결정 11).
  *
- * 시드의 VALUES 는 AAAA(공지사항)·DDDD(Q&A 게시판)·EEEE(일정 게시판)·CCCC(업무게시판) 넷이다.
- * 종전에 세 화면이 하드코딩하던 목록에 있던 BBBB('자유게시판')는 그 VALUES 에 없다 —
- * 시드 주석이 직접 "라이브에도 존재하지 않는다"고 적어 두었다. 여기에 그 ID 를 되살리면
- * 고치려던 결함이 그대로 돌아온다.
- */
-const SEEDED_FALLBACK_OPTIONS: readonly BoardOption[] = [
-  { value: NOTICE_BOARD_ID, label: '공지사항' },
-  { value: TASK_BOARD_ID, label: '업무게시판' },
-  { value: QNA_BOARD_ID, label: 'Q&A 게시판' },
-  { value: WIKI_BOARD_ID, label: '일정 게시판' },
-];
-
-/**
- * 게시판 선택지를 **게시판 마스터에서** 채운다(관리자에 한해).
+ * ── 왜 이렇게 바뀌었나 ─────────────────────────────────────────────────────────
+ * 종전에는 게시판 마스터 조회 권한(BBS_MST_READ)이 있는 사람만 관리 목록을 받아 화면이 사용 여부로 거르고, 그 밖의 사람에게는
+ * 시드 게시판 넷을 하드코딩한 폴백을 보였다. 그래서 일반 사용자는 실제로 쓰는 게시판을 고를 수 없었고, 폴백 안의 게시판이 사용
+ * 안 함이거나 회원 전용이어도 골랐다가 404·403 을 받았다.
  *
- * ── 왜 필요한가 ──────────────────────────────────────────────────────────────
- * 종전에는 세 화면이 게시판 선택지를 각각 하드코딩했고, 그 목록에 **존재하지 않는 게시판**이
- * 섞여 있었다. `BBSMSTR_BBBBBBBBBBBB`('자유게시판')는 Flyway 시드의 VALUES 에 없다. 고르는
- * 순간 목록 조회가 실패하고, 그 게시판으로 글을 쓰면 등록이 거부된다.
- *
- * 라벨도 함께 어긋나 있었다 — 같은 `BBSMSTR_CCCCCCCCCCCC`(시드 제목 '업무게시판')를 한 화면은
- * '갤러리 게시판'이라고 불렀다. 하드코딩은 ID 와 이름 두 축 모두에서 원본과 어긋난다.
- *
- * 게시판 마스터 조회 기능권한이 있는 사용자만 관리 목록을 요청한다. 그 외 사용자와 조회
- * 실패 시에는 기존 시드 선택지를 사용한다. 그룹 이름으로 조회 권한을 추정하지 않는다.
- * 서버는 매 요청의 현재 권한을 최종 판정한다.
+ * 이제 서버가 사용 중이고 호출자가 열 수 있는 게시판만 준다(커뮤니티 귀속 게시판은 승인 회원에게만). 모든 인증 사용자가 같은
+ * API 하나를 쓰고, 빈 결과·실패를 폴백으로 덮지 않는다 — 화면이 "이용할 수 있는 게시판이 없다" 나 오류를 사실대로 보인다.
  */
 export function useBoardOptions() {
-  const { data: user } = useUser();
-  const isAdmin = canPermission(user, 'BBS_MST_READ');
-
   const query = useQuery({
-    // 전체 선택지는 도메인 query option이 서버 상한(100) 안에서 모든 페이지를 수집한다.
-    ...boardMasterQueryOptions.completeList(),
+    ...boardMasterQueryOptions.options(),
     // 선택지는 자주 바뀌지 않는다. 화면을 옮겨 다닐 때마다 다시 받지 않는다.
     staleTime: 5 * 60 * 1000,
-    enabled: isAdmin,
-    // 403 은 재시도해도 달라지지 않는다.
-    retry: false,
   });
 
-  const serverOptions: BoardOption[] = (query.data ?? [])
-    .filter((board) => board.useYn !== 'N')
-    .map((board) => ({
-      value: String(board.bbsId ?? ''),
-      label: String(board.bbsTtl ?? board.bbsId ?? ''),
-    }))
+  const options: BoardOption[] = (query.data ?? [])
+    .map((board) => ({ value: board.bbsId, label: board.bbsTtl || board.bbsId }))
     .filter((option) => option.value !== '');
-
-  /*
-   * 조회에 실패했거나 비관리자면 시드 목록으로 내려간다. 빈 배열을 그대로 돌려주면
-   * select 가 비어 "게시판이 하나도 없다"고 거짓말하고 글쓰기 폼의 필수 선택이 막힌다.
-   */
-  const options = serverOptions.length > 0 ? serverOptions : [...SEEDED_FALLBACK_OPTIONS];
 
   return {
     options,
-    /** 서버 목록을 실제로 쓰고 있는지. false 면 시드 폴백이다(비관리자 또는 조회 실패). */
-    isServerSourced: serverOptions.length > 0,
-    isLoading: isAdmin && query.isLoading,
+    isLoading: query.isLoading,
     error: query.error,
     refetch: query.refetch,
   };

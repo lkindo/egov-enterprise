@@ -13,6 +13,7 @@
   },
   "owns": {
     "tables": [
+      "tb_bbs_chg_hstry",
       "tb_bbs_item",
       "tb_bbs_master",
       "tb_bbs_master_optn",

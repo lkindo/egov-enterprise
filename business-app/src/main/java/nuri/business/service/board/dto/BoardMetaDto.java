@@ -25,7 +25,9 @@ public record BoardMetaDto(
         @Schema(description = "만족도 조사 사용 여부", allowableValues = { "Y", "N" }, nullable = true) String stsfdgYn,
         @Schema(description = "댓글 사용 여부(2026-09-27 DIP B5 F9 — N 이면 새 댓글을 받지 않는다)", allowableValues = { "Y", "N" }, nullable = true) String ansYn,
         @Schema(description = "일반 게시글 쓰기 권한에 추가로 모두 필요한 편집 권한. 일반 게시판은 빈 배열입니다.", requiredMode = Schema.RequiredMode.REQUIRED)
-        java.util.List<String> requiredEditPermissions) {
+        java.util.List<String> requiredEditPermissions,
+        @Schema(description = "게시판이 사용 중인지. false 면 조회 대행 권한자가 사용 안 함 게시판을 열람하는 중이며, 서버는 새 댓글·만족도·추천을 받지 않는다(ADR-0040 결정 1).", requiredMode = Schema.RequiredMode.REQUIRED)
+        boolean inUse) {
 
     public static BoardMetaDto from(BoardMaster master, java.util.List<String> requiredEditPermissions) {
         return new BoardMetaDto(
@@ -39,6 +41,7 @@ public record BoardMetaDto(
                 master.getAtchPsbltyFileQty(),
                 master.getAtchPsbltyFileSz(),
                 master.getStsfdgYn(),
-                master.getAnsYn(), java.util.List.copyOf(requiredEditPermissions));
+                master.getAnsYn(), java.util.List.copyOf(requiredEditPermissions),
+                "Y".equals(master.getUseYn()));
     }
 }

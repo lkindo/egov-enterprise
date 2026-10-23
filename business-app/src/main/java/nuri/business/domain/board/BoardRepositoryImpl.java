@@ -28,13 +28,19 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         @Override
         public Optional<BoardDetailResult> findActiveArticleDetail(
                         @NonNull String bbsId, @NonNull Long pstSn) {
-                return findArticleDetail(bbsId, pstSn, false);
+                return findArticleDetail(bbsId, pstSn, false, false);
         }
 
         @Override
         public Optional<BoardDetailResult> findArticleDetailIncludingDeleted(
                         @NonNull String bbsId, @NonNull Long pstSn) {
-                return findArticleDetail(bbsId, pstSn, true);
+                return findArticleDetail(bbsId, pstSn, true, false);
+        }
+
+        @Override
+        public Optional<BoardDetailResult> findArticleDetailOnInactiveBoard(
+                        @NonNull String bbsId, @NonNull Long pstSn, boolean includeDeleted) {
+                return findArticleDetail(bbsId, pstSn, includeDeleted, true);
         }
 
         @Override
@@ -67,15 +73,17 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
         /**
          * @param includeDeleted 논리 삭제(useYn='N')된 게시글까지 포함할지 여부.
          *                       <b>호출부가 관리자 권한을 이미 판정한 경우에만</b> true 를 넘긴다
-         *                       (BoardService#getPostDetail 의 복구·감사 경로). 게시판 마스터의
-         *                       useYn 조건은 완화하지 않는다 — 비활성 게시판 전체 노출은 별개 결정이다.
+         *                       (BoardService#getPostDetail 의 복구·감사 경로).
+         * @param onInactiveBoard 사용 안 함 게시판(마스터 useYn='N')의 글을 읽는다. [2026-10-23 ADR-0040 결정 1] 호출부가
+         *                        조회 대행 권한(BOARD_READ_ALL)과 사용 안 함을 이미 판정한 경우에만 true 다. 사용 중인
+         *                        게시판의 글은 이 경로로 읽지 않는다(활성 경로와 섞이지 않게 마스터 useYn='N' 을 요구한다).
          */
         private Optional<BoardDetailResult> findArticleDetail(
-                        String bbsId, Long pstSn, boolean includeDeleted) {
+                        String bbsId, Long pstSn, boolean includeDeleted, boolean onInactiveBoard) {
                 BooleanBuilder visibility = new BooleanBuilder()
                                 .and(QBoard.board.bbsId.eq(bbsId))
                                 .and(QBoard.board.pstSn.eq(pstSn))
-                                .and(QBoardMaster.boardMaster.useYn.eq("Y"));
+                                .and(QBoardMaster.boardMaster.useYn.eq(onInactiveBoard ? "N" : "Y"));
 
                 if (!includeDeleted) {
                         visibility.and(QBoard.board.useYn.eq("Y"));
@@ -135,6 +143,11 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                 BooleanExpression communityScope = condition.isExcludeCommunityBoards()
                                 ? QBoardMaster.boardMaster.cmntySn.isNull()
                                 : null;
+                // [2026-10-23 ADR-0040 결정 1] 사용 중인 게시판만 싣는다. 조회 대행 권한자가 사용 안 함 게시판의 목록을 여는
+                //   경우에만 호출부가 축을 켜고, 그때는 이 조건을 걸지 않는다(null 은 where 에서 빠진다).
+                BooleanExpression boardInUse = condition.isIncludeInactiveBoard()
+                                ? null
+                                : QBoardMaster.boardMaster.useYn.eq("Y");
 
                 OrderSpecifier<?> orderSpecifier = QBoard.board.sortOrdr.desc();
 
@@ -184,7 +197,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"), communityScope)
+                                .where(builder, boardInUse, communityScope)
                                 .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
@@ -195,7 +208,7 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
-                                .where(builder, QBoardMaster.boardMaster.useYn.eq("Y"), communityScope)
+                                .where(builder, boardInUse, communityScope)
                                 .fetchOne();
 
                 return new PageImpl<>(results, pageable,

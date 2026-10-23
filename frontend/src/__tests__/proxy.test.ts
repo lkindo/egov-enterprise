@@ -184,7 +184,8 @@ describe('proxy 인증 게이트', () => {
     '/admin/work-hub/not-registered',
     '/admin/collaboration/not-registered',
     '/admin/help/faq/not-registered',
-    '/admin/community/boards/master/not-registered',
+    // [2026-10-23 ADR-0040 결정 2] master 바로 아래 한 단계는 이제 운영 화면([id], 게시판 관리 조회)이다 — 미등록 자식은 한 단계 더 깊다.
+    '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA/not-registered',
     '/admin/survey/polls/participate/not-registered',
   ])('does not inherit a parent shell allowance for a direct URL to %s', async (route) => {
     const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
@@ -218,6 +219,20 @@ describe('proxy 인증 게이트', () => {
     const response = await proxy(requestWith(token, route));
     expect(response.headers.get('x-mw-auth')).toContain('deny=permission');
     expect(new URL(response.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
+  });
+
+  // 게시판 운영 화면(동적 [id])도 그 페이지의 권한으로 막고 연다 — 관리자 역할 주장만으로는 열리지 않는다.
+  if (pageInProjection('/admin/community/boards/master/[id]')) it('the board operations screen requires its own page permission', async () => {
+    const denied = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET),
+      '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA'));
+    expect(denied.headers.get('x-mw-auth')).toContain('deny=permission');
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+      id: 'webmaster', esntlId: SUBJECT, groups: ['BOARD_OPERATOR'], permissions: [...PAGE_PERMISSIONS['/admin/community/boards/master/[id]']],
+      authorizationVersion: 'v2',
+    } })));
+    const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET),
+      '/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA'));
+    expect(allowed.status).toBe(200);
   });
 
   it('a current functional grant opens its page without an administrator role claim', async () => {

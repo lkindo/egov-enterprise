@@ -68,7 +68,7 @@ public class SatisfactionApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.SatisfactionApiController#getList')")
     public ResponseEntity<ApiResponse<List<SatisfactionDto>>> getList(
             @PathVariable String bbsId, @PathVariable Long pstSn) {
-        boardService.assertCommentAccess(bbsId, pstSn);
+        boardService.assertCommentReadAccess(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(satisfactionService.getSatisfactionList(bbsId, pstSn)));
     }
 
@@ -80,7 +80,7 @@ public class SatisfactionApiController {
             @PathVariable String bbsId, @PathVariable Long pstSn) {
         // ⚠ null 을 0.0 으로 바꾸지 않는다. 종전에는 Map.of 가 null 값을 담지 못해 그럴 수밖에
         //   없었고, 그 결과 "아무도 평가하지 않음" 과 "모두 최하점" 이 화면에서 같아졌다.
-        boardService.assertCommentAccess(bbsId, pstSn);
+        boardService.assertCommentReadAccess(bbsId, pstSn);
         Double average = satisfactionService.getAverageSatisfaction(bbsId, pstSn);
         return ResponseEntity.ok(ApiResponse.success(SatisfactionAverageResponse.of(average)));
     }
@@ -132,7 +132,9 @@ public class SatisfactionApiController {
      * 읽을 수 없는 글의 평가 번호가 있는지 404/403 차이로 드러난다.
      */
     private void assertSatisfactionAccess(String bbsId, Long pstSn, Long dgstfnSn) {
-        boardService.assertCommentAccess(bbsId, pstSn);
+        // [2026-10-23 ADR-0040 결정 1] 열람 경계 — 사용 안 함 게시판은 조회 대행 권한자만 정리한다. 지정 게시판 편집 가드는
+        //   두지 않는다(일반 사용자의 '내 평가 수정' 을 새로 막지 않는다, H3).
+        boardService.assertCommentReadAccess(bbsId, pstSn);
         satisfactionService.assertLocatedAt(dgstfnSn, bbsId, pstSn);
     }
 

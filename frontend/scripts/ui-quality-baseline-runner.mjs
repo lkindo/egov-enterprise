@@ -108,8 +108,8 @@ const READY_HEADINGS = Object.freeze({
   'admin-compose-faq': '새 게시글 작성',
   'admin-faq-readback': '자주 묻는 질문',
   'user-faq-search': '도움말 센터',
-  'wizard-ready': '게시판 생성 마법사',
-  'wizard-validation': '게시판 생성 마법사',
+  'wizard-ready': '게시판 만들기',
+  'wizard-validation': '게시판 만들기',
   [ONBOARDING_STEP_ID]: '관리자 업무 현황',
 });
 
@@ -1609,9 +1609,10 @@ async function waitForSyntheticBoardDeploy(api, fixture) {
   const expectedRoute = board?.bbsId
     ? `/admin/community/boards/select-board-list?bbsId=${board.bbsId}`
     : null;
+  // [2026-10-23 ADR-0040 §5.3] 마법사는 게시판을 사용 안 함, 메뉴를 비활성으로 만든다 — 공개는 운영 화면에서 따로 한다.
   if (!observed
     || !board?.bbsId
-    || board.useYn !== 'Y'
+    || board.useYn !== 'N'
     || menu?.useYn !== 'N'
     || menu?.modernRoute !== expectedRoute) {
     throw syntheticMutationFailure('synthetic-board-deploy-readback-failed');
@@ -1654,20 +1655,21 @@ async function syntheticBoardResidueCount(api, fixture) {
 }
 
 async function completeBoardWizard(page, fixture) {
+  // [2026-10-23 ADR-0040 §5.3] 단계는 용도·기본정보 → 화면·기능 → 메뉴·접근 확인(메뉴 이름) → 최종 확인이다.
   await page.locator('#bbsTtl').fill(fixture.boardTitle);
   await page.locator('#bbsExpln').fill(fixture.boardDescription);
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 2, name: '템플릿 선택', exact: true })
+  await page.getByRole('heading', { level: 2, name: '화면·기능', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 2, name: '접근 권한 안내', exact: true })
-    .waitFor({ state: 'visible', timeout: 10_000 });
-  await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 2, name: '메뉴 배포', exact: true })
+  await page.getByRole('heading', { level: 2, name: '메뉴·접근 확인', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
   await page.getByPlaceholder('메뉴에 표시될 이름을 입력하세요').fill(fixture.menuName);
-  await page.getByRole('button', { name: '게시판 생성 및 메뉴 배포', exact: true }).click();
-  await page.getByRole('heading', { level: 1, name: '게시판 생성 완료', exact: true })
+  await page.getByRole('button', { name: /다음 단계로/ }).click();
+  await page.getByRole('heading', { level: 2, name: '최종 확인', exact: true })
+    .waitFor({ state: 'visible', timeout: 10_000 });
+  await page.getByRole('button', { name: '게시판 만들기', exact: true }).click();
+  await page.getByRole('heading', { level: 1, name: '게시판 만들기 완료', exact: true })
     .waitFor({ state: 'visible', timeout: 30_000 });
 }
 
@@ -1900,7 +1902,7 @@ async function exerciseState(page, stateCase, preparation, { browser, baseOrigin
       await page.getByRole('button', { name: /다음 단계로/ }).click();
       const validationVisible = await visibleWithin(page.getByText('게시판 명칭을 2자 이상 입력해 주세요.', { exact: true }), 5_000);
       const firstStepStillActive = await visibleWithin(
-        page.getByRole('heading', { level: 2, name: '기본 설정', exact: true }),
+        page.getByRole('heading', { level: 2, name: '용도·기본정보', exact: true }),
         5_000,
       );
       const focusOnName = await page.locator('#bbsTtl')

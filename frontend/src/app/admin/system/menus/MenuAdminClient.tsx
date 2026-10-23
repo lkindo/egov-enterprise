@@ -15,7 +15,7 @@ import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
-import { clearScreenHandoff, useScreenHandoff } from '@/lib/navigation/target-handoff';
+import { clearMenuFocusHandoff, clearScreenHandoff, useMenuFocusHandoff, useScreenHandoff } from '@/lib/navigation/target-handoff';
 import { menuAdminService, type MenuStructure } from '@/services/foundation/system/MenuAdminService';
 import {
   isNewMenu,
@@ -170,6 +170,32 @@ export default function MenuAdminClient({
   useEffect(() => {
     if (handledHandoff !== null) clearScreenHandoff('menu-add-screen');
   }, [handledHandoff]);
+
+  /*
+    [2026-10-23 ADR-0040 결정 8] 게시판 운영 화면이 넘긴 메뉴. 받으면 그 메뉴를 고르고(그 영역 탭이 열린다) 행으로 스크롤한다 —
+    한 번만(인계 시각으로 가린다), 적용한 뒤 지운다. 선택은 조회일 뿐이고 활성화·그룹 표시 저장은 서버가 권한을 다시 판정한다.
+  */
+  const focusHandoff = useMenuFocusHandoff();
+  const [handledFocus, setHandledFocus] = useState<{ at: number; menuSn: number | null } | null>(null);
+  if (focusHandoff && focusHandoff.at !== handledFocus?.at && !authPending && baseline) {
+    const found = areaOf(draft.items, focusHandoff.menuSn) !== null;
+    setHandledFocus({ at: focusHandoff.at, menuSn: found ? focusHandoff.menuSn : null });
+    if (found) {
+      select(focusHandoff.menuSn);
+      announce(`넘겨받은 메뉴를 골랐습니다: ${menuLabel(draft.items, focusHandoff.menuSn)}`);
+    } else {
+      announce('넘겨받은 메뉴를 찾지 못했습니다. 메뉴가 지워졌거나 번호가 바뀌었을 수 있습니다.');
+    }
+  }
+  // 고른 행이 그려진 뒤 스크롤한다(렌더 중에는 ref·DOM 을 건드리지 않는다).
+  useEffect(() => {
+    if (handledFocus === null) return;
+    clearMenuFocusHandoff();
+    if (handledFocus.menuSn !== null) {
+      document.querySelector<HTMLElement>(`[data-a2-master-item][data-menu-no="${handledFocus.menuSn}"]`)
+        ?.scrollIntoView?.({ block: 'nearest' });
+    }
+  }, [handledFocus]);
 
   const locked = isSaving || reloadPending;
   // 처음 조회가 실패했어도 다시 불러오기로 구조를 받았으면 그 사유는 더는 사실이 아니다.

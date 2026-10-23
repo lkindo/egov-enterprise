@@ -1,618 +1,253 @@
-import type { ReactNode } from 'react';
 import { act, fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { BoardMasterListClient, boardMasterEditSchema } from '../BoardMasterListClient';
+import { BoardMasterListClient } from '../BoardMasterListClient';
 
+/**
+ * 게시판 관리 목록(ADR-0040 §5.2). 설정 편집·영구 삭제는 운영 화면 설정 탭으로 옮겼고(BoardSettingsTab 시험), 행의 단건 비활성화는
+ * 일괄 사용 상태 바꾸기로 흡수했다. 여기서는 조회 조건·열·일괄 사용 상태 바꾸기·운영 화면 진입을 본다.
+ */
 const mocks = vi.hoisted(() => ({
   batchUpdateBoardMasterStatus: vi.fn(),
-  batchDeleteBoardMastersPhysically: vi.fn(),
   confirm: vi.fn(),
-  deleteBoardMaster: vi.fn(),
-  deleteBoardMasterPhysically: vi.fn(),
-  getBoardMaster: vi.fn(),
-  isBoardMasterDeletable: vi.fn(),
-  updateBoardMaster: vi.fn(),
   push: vi.fn(),
   refetch: vi.fn(),
+  invalidateQueries: vi.fn(),
   toast: vi.fn(),
-  /** 화면이 마지막으로 요청한 목록 조회 키. 페이지 이동이 서버 조회 조건에 실리는지 본다. */
+  permissions: ['BBS_MST_READ', 'BBS_MST_CREATE', 'BBS_MST_UPDATE', 'BBS_MST_DELETE'] as string[],
+  /** 화면이 마지막으로 요청한 목록 조회 키. 조회 조건이 서버 조회에 실리는지 본다. */
   lastQueryKey: undefined as unknown,
   pageInfo: { total: 2, totalPage: 1 },
+  access: {
+    menuSource: { status: 'no-permission' } as unknown,
+    groupSource: { status: 'no-permission' } as unknown,
+    retry: () => undefined,
+  },
   boards: [
     {
-      bbsId: 'BBS-A',
-      bbsTtl: '첫 번째 게시판',
-      bbsExpln: '첫 번째 설명',
-      // [2026-10-16 DEC-OPS-332] 서버는 유형 이름(bbsTypeCdNm)을 싣지 않는다 — 코드와 템플릿만 온다.
-      bbsTypeCd: 'BBST04',
-      tmpltId: 'TMPLT_QNA',
-      useYn: 'N',
+      bbsId: 'BBSMSTR_AAAAAAAAAAAA',
+      bbsTtl: '공지사항',
+      // [2026-10-16 DEC-OPS-332] 서버는 유형 이름을 싣지 않는다 — 코드와 템플릿만 온다.
+      bbsTypeCd: 'BBST02',
+      bbsAtrbCd: 'BBSA01',
+      tmpltId: 'TMPLT_LIST',
+      useYn: 'Y',
+      designations: ['NOTICE', 'FAQ'],
     },
     {
-      bbsId: 'BBS-B',
-      bbsTtl: '두 번째 게시판',
-      bbsExpln: '두 번째 설명',
-      // 시드 질의응답 게시판처럼 코드와 템플릿이 정본의 짝이 아니다(BBST03 은 정본에서 갤러리다).
+      bbsId: 'BBSMSTR_EEEEEEEEEEEE',
+      bbsTtl: '일정 게시판',
+      // 시드처럼 코드와 템플릿이 정본의 짝이 아니다(BBST03 은 정본에서 갤러리다).
       bbsTypeCd: 'BBST03',
-      tmpltId: 'TMPLT_QNA',
+      bbsAtrbCd: 'BBSA01',
+      tmpltId: 'TMPLT_CALENDAR',
       useYn: 'N',
+      designations: [],
     },
   ],
 }));
 
 vi.mock('@tanstack/react-query', () => ({
   queryOptions: <T,>(options: T) => options,
+  useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: (options: { queryKey?: unknown }) => {
     mocks.lastQueryKey = options.queryKey;
     return {
-    data: { list: mocks.boards, ...mocks.pageInfo },
-    isLoading: false,
-    isError: false,
-    error: null,
-    refetch: mocks.refetch,
+      data: { list: mocks.boards, ...mocks.pageInfo },
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: mocks.refetch,
+      dataUpdatedAt: Date.UTC(2026, 9, 23, 1, 2, 3),
     };
   },
 }));
-
+vi.mock('../useBoardAccessSources', () => ({ useBoardAccessSources: () => mocks.access }));
 vi.mock('next/navigation', () => ({
   useRouter: () => ({ push: mocks.push }),
-  // [2026-08-25 A1 이행] WorkListPage 의 브레드크럼이 현재 경로·쿼리를 읽는다.
+  // WorkListPage 의 브레드크럼이 현재 경로·쿼리를 읽는다.
   usePathname: () => '/admin/community/boards/master',
   useSearchParams: () => new URLSearchParams(),
 }));
-
-// 브레드크럼은 메뉴 SSOT 를 조회한다 — 이 테스트의 대상이 아니므로 응답을 고정한다.
 vi.mock('@/services/business/user/MenuService', () => ({
   menuService: { getHeadMenus: vi.fn().mockResolvedValue([]) },
 }));
-
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { role: 'ADMIN', permissions: ['BBS_MST_READ', 'BBS_MST_CREATE', 'BBS_MST_UPDATE', 'BBS_MST_DELETE'], authorizationVersion: 'v1' } }),
+  useAuth: () => ({ user: { permissions: mocks.permissions, authorizationVersion: 'v1' } }),
 }));
-
-vi.mock('@/app/components/ui/toast', () => ({
-  useToast: () => ({ toast: mocks.toast }),
-}));
-
-vi.mock('@/app/components/ui/confirm-modal', () => ({
-  useConfirm: () => mocks.confirm,
-}));
-
+vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({
-  boardAdminService: {
-    getBoardMasterList: vi.fn(),
-    getBoardMaster: mocks.getBoardMaster,
-    updateBoardMaster: mocks.updateBoardMaster,
-    batchDeleteBoardMastersPhysically: mocks.batchDeleteBoardMastersPhysically,
-    deleteBoardMaster: mocks.deleteBoardMaster,
-    deleteBoardMasterPhysically: mocks.deleteBoardMasterPhysically,
-    isBoardMasterDeletable: mocks.isBoardMasterDeletable,
-    batchUpdateBoardMasterStatus: mocks.batchUpdateBoardMasterStatus,
-  },
+  boardAdminService: { batchUpdateBoardMasterStatus: mocks.batchUpdateBoardMasterStatus },
 }));
 
-vi.mock('@/app/components/layout/page-header', () => ({
-  PageHeader: ({ title }: { title: string }) => <h1>{title}</h1>,
-}));
+const table = () => screen.getByRole('table', { name: '게시판 관리 목록' });
+const rowOf = (name: string) => within(table()).getByText(name).closest('tr') as HTMLElement;
 
-vi.mock('@/components/ui/hub/HubHeader', () => ({
-  HubHeader: ({ title, actions }: { title: string; actions?: ReactNode }) => (
-    <header>
-      <h2>{title}</h2>
-      {actions}
-    </header>
-  ),
-}));
-
-describe('BoardMasterListClient selection contract', () => {
+describe('BoardMasterListClient', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    mocks.boards[0].useYn = 'N';
-    mocks.boards[1].useYn = 'N';
+    mocks.permissions = ['BBS_MST_READ', 'BBS_MST_CREATE', 'BBS_MST_UPDATE', 'BBS_MST_DELETE'];
     mocks.pageInfo = { total: 2, totalPage: 1 };
     mocks.lastQueryKey = undefined;
+    mocks.access = { menuSource: { status: 'no-permission' }, groupSource: { status: 'no-permission' }, retry: () => undefined };
     mocks.batchUpdateBoardMasterStatus.mockResolvedValue(undefined);
-    mocks.batchDeleteBoardMastersPhysically.mockResolvedValue(undefined);
     mocks.confirm.mockResolvedValue(true);
-    mocks.deleteBoardMaster.mockResolvedValue(undefined);
-    mocks.deleteBoardMasterPhysically.mockResolvedValue(undefined);
-    mocks.getBoardMaster.mockResolvedValue({
-      bbsId: 'BBS-A',
-      bbsTtl: '첫 번째 게시판',
-      bbsExpln: '첫 번째 설명',
-      bbsTypeCd: 'BBST01',
-      bbsAtrbCd: 'BBSA01',
-      atchPsbltyFileSz: 5242880,
-      useYn: 'N',
-    });
-    mocks.updateBoardMaster.mockResolvedValue(undefined);
-    mocks.isBoardMasterDeletable.mockResolvedValue(true);
   });
 
-  async function openSettings(user: ReturnType<typeof userEvent.setup>) {
-    render(<BoardMasterListClient />);
-    await user.click(screen.getByRole('button', { name: '첫 번째 게시판 설정 편집' }));
-    const dialog = await screen.findByRole('dialog');
-    expect(within(dialog).getByText('게시판 명칭·소개·사용 여부를 수정합니다.')).toBeInTheDocument();
-    return {
-      dialog,
-      title: await screen.findByRole('textbox', { name: '게시판 명칭' }),
-      description: screen.getByRole('textbox', { name: '게시판 소개' }),
-      cancel: screen.getByRole('button', { name: '취소' }),
-      submit: screen.getByRole('button', { name: '설정 적용하기' }),
-    };
-  }
-
-  it('선택한 단일 행의 bbsId 하나만 bulk 상태 변경에 전달한다', async () => {
+  it('선택한 행만 사용으로 바꾸고, 바꾸기 전에 대상을 확인받는다', async () => {
     const user = userEvent.setup();
     render(<BoardMasterListClient />);
-
-    // [2026-08-25 A1 이행] 표에 화면 고유 접근 이름을 부여했다(같은 페이지의 여러 표를 구분).
-    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
-    const checkboxes = within(table).getAllByRole('checkbox');
+    const checkboxes = within(table()).getAllByRole('checkbox');
     expect(checkboxes).toHaveLength(3);
 
-    await user.click(checkboxes[1]);
-    await user.click(screen.getByRole('button', { name: /일괄 활성화/ }));
+    await user.click(checkboxes[2]);
+    await user.click(screen.getByRole('button', { name: /사용으로 바꾸기$/ }));
 
     await waitFor(() => expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledOnce());
-    expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledWith(['BBS-A'], 'Y');
+    expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledWith(['BBSMSTR_EEEEEEEEEEEE'], 'Y');
+    expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '게시판 사용으로 바꾸기' }));
+    // 사용 여부는 운영 화면 상세(버전)·이용 화면 메타·선택지에도 보인다 — 목록만이 아니라 뿌리 키 전체를 다시 읽는다.
+    await waitFor(() => expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['board-masters'] }));
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-boards'] });
   });
 
-  it.each([
-    {
-      idleLabel: '일괄 활성화',
-      pendingLabel: '활성화 처리 중...',
-      status: 'Y',
-      errorMessage: '일괄 활성화 서버 오류',
-    },
-    {
-      idleLabel: '일괄 비활성',
-      pendingLabel: '비활성화 처리 중...',
-      status: 'N',
-      errorMessage: '일괄 비활성화 서버 오류',
-    },
-  ])('$idleLabel는 같은 tick의 write를 한 번만 보내고 실패 후 선택을 보존한다', async ({
-    idleLabel,
-    pendingLabel,
-    status,
-    errorMessage,
-  }) => {
-    let rejectWrite!: (reason?: unknown) => void;
-    mocks.batchUpdateBoardMasterStatus.mockReturnValueOnce(new Promise((_, reject) => {
-      rejectWrite = reject;
-    }));
+  it('확인을 취소하면 바꾸지 않는다', async () => {
+    mocks.confirm.mockResolvedValue(false);
+    const user = userEvent.setup();
     render(<BoardMasterListClient />);
-    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
-    const firstRow = within(table).getAllByRole('checkbox')[1];
-    fireEvent.click(firstRow);
-    const action = screen.getByRole('button', { name: new RegExp(`${idleLabel}$`) });
-
-    act(() => {
-      fireEvent.click(action);
-      fireEvent.click(action);
-    });
-
-    await waitFor(() => expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledTimes(1));
-    expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledWith(['BBS-A'], status);
-    expect(action).toBeDisabled();
-    expect(action).toHaveAttribute('aria-busy', 'true');
-    expect(action).toHaveAccessibleName(pendingLabel);
-    expect(screen.getByRole('button', { name: new RegExp(`${status === 'Y' ? '일괄 비활성' : '일괄 활성화'}$`) })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /완전 말소$/ })).toBeDisabled();
-
-    rejectWrite(new Error(errorMessage));
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(errorMessage, 'error'));
-    expect(firstRow).toBeChecked();
-    expect(action).not.toBeDisabled();
-    expect(action).not.toHaveAttribute('aria-busy');
-    expect(action).toHaveAccessibleName(idleLabel);
-  });
-
-  it('완전 말소는 confirm 전에 잠금하고 실패 후 선택과 제어를 복구한다', async () => {
-    let rejectDelete!: (reason?: unknown) => void;
-    mocks.batchDeleteBoardMastersPhysically.mockReturnValueOnce(new Promise((_, reject) => {
-      rejectDelete = reject;
-    }));
-    render(<BoardMasterListClient />);
-    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
-    const firstRow = within(table).getAllByRole('checkbox')[1];
-    fireEvent.click(firstRow);
-    const action = screen.getByRole('button', { name: /완전 말소$/ });
-
-    act(() => {
-      fireEvent.click(action);
-      fireEvent.click(action);
-    });
-
-    await waitFor(() => expect(mocks.batchDeleteBoardMastersPhysically).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm).toHaveBeenCalledTimes(1);
-    expect(action).toBeDisabled();
-    expect(action).toHaveAttribute('aria-busy', 'true');
-    expect(action).toHaveAccessibleName('완전 말소 처리 중...');
-    expect(screen.getByRole('button', { name: /일괄 활성화$/ })).toBeDisabled();
-    expect(screen.getByRole('button', { name: /일괄 비활성$/ })).toBeDisabled();
-
-    rejectDelete(new Error('일괄 영구 삭제 서버 오류'));
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('일괄 영구 삭제 서버 오류', 'error'));
-    expect(firstRow).toBeChecked();
-    expect(action).not.toBeDisabled();
-    expect(action).not.toHaveAttribute('aria-busy');
-    expect(action).toHaveAccessibleName('완전 말소');
-  });
-
-  it('row delete가 먼저 진입하면 같은 tick의 bulk write를 차단한다', async () => {
-    let resolveDelete!: () => void;
-    mocks.deleteBoardMasterPhysically.mockReturnValueOnce(new Promise<void>((resolve) => {
-      resolveDelete = resolve;
-    }));
-    render(<BoardMasterListClient />);
-    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
-    fireEvent.click(within(table).getAllByRole('checkbox')[1]);
-    const rowDelete = screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' });
-    const bulkActivate = screen.getByRole('button', { name: '일괄 활성화' });
-
-    act(() => {
-      fireEvent.click(rowDelete);
-      fireEvent.click(bulkActivate);
-    });
-
-    await waitFor(() => expect(mocks.deleteBoardMasterPhysically).toHaveBeenCalledTimes(1));
+    await user.click(within(table()).getAllByRole('checkbox')[1]);
+    await user.click(screen.getByRole('button', { name: /사용 안 함으로 바꾸기$/ }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
     expect(mocks.batchUpdateBoardMasterStatus).not.toHaveBeenCalled();
-    expect(rowDelete).toBeDisabled();
-    expect(rowDelete).toHaveAttribute('aria-busy', 'true');
-    expect(rowDelete).toHaveAccessibleName('첫 번째 게시판 영구 삭제 처리 중');
-    expect(bulkActivate).toBeDisabled();
-    expect(bulkActivate).not.toHaveAttribute('aria-busy');
-
-    resolveDelete();
-    await waitFor(() => expect(rowDelete).not.toBeDisabled());
   });
 
-  it('bulk write가 먼저 진입하면 같은 tick의 row delete를 차단한다', async () => {
-    let resolveBulk!: () => void;
-    mocks.batchUpdateBoardMasterStatus.mockReturnValueOnce(new Promise<void>((resolve) => {
-      resolveBulk = resolve;
-    }));
+  it('사용 안 함으로 바꾸는 대상에 앱이 직접 쓰는 게시판이 있으면 사용처를 나열한다', async () => {
+    const user = userEvent.setup();
     render(<BoardMasterListClient />);
-    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
-    fireEvent.click(within(table).getAllByRole('checkbox')[1]);
-    const bulkActivate = screen.getByRole('button', { name: '일괄 활성화' });
-    const rowDelete = screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' });
+    await user.click(within(table()).getAllByRole('checkbox')[0]);
+    await user.click(screen.getByRole('button', { name: /사용 안 함으로 바꾸기$/ }));
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
+
+    const options = mocks.confirm.mock.calls[0][0];
+    expect(options).toMatchObject({ title: '게시판 사용 안 함으로 바꾸기', variant: 'destructive' });
+    render(<>{options.details}</>);
+    expect(screen.getByText(/\[공지사항\] 공지 지정 게시판입니다/)).toBeInTheDocument();
+    expect(screen.getByText(/\[공지사항\] FAQ 지정 게시판입니다/)).toBeInTheDocument();
+    // 허브 FAQ 탭이 그리는 게시판(공지사항과 같은 ID)이다.
+    expect(screen.getByText(/\[공지사항\] 지식 허브의 자주 묻는 질문 탭이 이 게시판을 보입니다/)).toBeInTheDocument();
+    await waitFor(() => expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledWith(
+      ['BBSMSTR_AAAAAAAAAAAA', 'BBSMSTR_EEEEEEEEEEEE'], 'N'));
+  });
+
+  it('같은 tick 의 두 번째 요청은 보내지 않고, 실패하면 알리고 선택을 보존한다', async () => {
+    let rejectWrite!: (reason?: unknown) => void;
+    mocks.batchUpdateBoardMasterStatus.mockReturnValueOnce(new Promise((_, reject) => { rejectWrite = reject; }));
+    render(<BoardMasterListClient />);
+    const firstRow = within(table()).getAllByRole('checkbox')[1];
+    fireEvent.click(firstRow);
+    const action = screen.getByRole('button', { name: /사용으로 바꾸기$/ });
 
     act(() => {
-      fireEvent.click(bulkActivate);
-      fireEvent.click(rowDelete);
+      fireEvent.click(action);
+      fireEvent.click(action);
     });
 
     await waitFor(() => expect(mocks.batchUpdateBoardMasterStatus).toHaveBeenCalledTimes(1));
-    expect(mocks.isBoardMasterDeletable).not.toHaveBeenCalled();
-    expect(mocks.deleteBoardMasterPhysically).not.toHaveBeenCalled();
-    expect(bulkActivate).toBeDisabled();
-    expect(bulkActivate).toHaveAttribute('aria-busy', 'true');
-    expect(bulkActivate).toHaveAccessibleName('활성화 처리 중...');
-    expect(rowDelete).toBeDisabled();
-    expect(rowDelete).toHaveAttribute('aria-busy', 'false');
-    expect(rowDelete).toHaveAccessibleName('첫 번째 게시판 DB에서 영구 물리삭제');
-
-    resolveBulk();
-    await waitFor(() => expect(bulkActivate).not.toBeDisabled());
+    expect(action).toBeDisabled();
+    expect(action).toHaveAttribute('aria-busy', 'true');
+    rejectWrite(new Error('일괄 서버 오류'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('일괄 서버 오류', 'error'));
+    expect(firstRow).toBeChecked();
+    expect(action).not.toBeDisabled();
   });
 
-  it('[DIP B5 F9] 댓글·만족도·첨부 설정과 첨부 파일 수·파일당 크기를 저장 값에 싣는다', async () => {
-    const user = userEvent.setup();
-    const fields = await openSettings(user);
-    const comment = screen.getByRole('switch', { name: '댓글 받기' });
-    expect(comment).toHaveAttribute('aria-checked', 'true');
-    await user.click(comment);
-    await user.click(screen.getByRole('switch', { name: '파일 첨부 허용' }));
-    fireEvent.change(screen.getByLabelText(/첨부 파일 수/), { target: { value: '4' } });
-    fireEvent.change(screen.getByLabelText('파일당 크기(MB)'), { target: { value: '2' } });
-
-    await user.click(fields.submit);
-
-    await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledTimes(1));
-    expect(mocks.updateBoardMaster.mock.calls[0][1]).toMatchObject({
-      ansYn: 'N',
-      fileAtchPsbltyYn: 'N',
-      atchPsbltyFileQty: 4,
-      atchPsbltyFileSz: 2 * 1024 * 1024,
-    });
+  it('게시판 관리 수정 권한이 없으면 선택·일괄 동작을 두지 않는다', () => {
+    mocks.permissions = ['BBS_MST_READ'];
+    render(<BoardMasterListClient />);
+    expect(within(table()).queryAllByRole('checkbox')).toHaveLength(0);
+    expect(screen.queryByRole('button', { name: /사용 안 함으로 바꾸기$/ })).toBeNull();
   });
 
-  it('[DIP B5 F9] 서버 상한을 넘는 첨부 파일 수는 보내지 않는다', async () => {
+  it('게시판 사용 조건은 조회를 눌러야 적용되고 첫 페이지로 돌아가며, 초기화하면 전체다', async () => {
     const user = userEvent.setup();
-    const fields = await openSettings(user);
-    fireEvent.change(screen.getByLabelText(/첨부 파일 수/), { target: { value: '21' } });
-
-    await user.click(fields.submit);
-
-    expect(mocks.updateBoardMaster).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/20개까지/)).not.toHaveLength(0);
+    render(<BoardMasterListClient />);
+    await user.selectOptions(screen.getByRole('combobox', { name: '게시판 사용' }), 'N');
+    expect(mocks.lastQueryKey).toEqual(['board-masters', 'list', { searchKeyword: '', searchUseYn: undefined, page: 1, size: 10 }]);
+    await user.click(screen.getByRole('button', { name: '조회' }));
+    expect(mocks.lastQueryKey).toEqual(['board-masters', 'list', { searchKeyword: '', searchUseYn: 'N', page: 1, size: 10 }]);
+    await user.click(screen.getByRole('button', { name: '초기화' }));
+    expect(mocks.lastQueryKey).toEqual(['board-masters', 'list', { searchKeyword: '', searchUseYn: undefined, page: 1, size: 10 }]);
+    expect(screen.getByRole('combobox', { name: '게시판 사용' })).toHaveValue('');
   });
 
-  it('100자를 넘는 게시판 명칭을 update sink로 보내지 않는다', async () => {
-    const user = userEvent.setup();
-    const fields = await openSettings(user);
-    fireEvent.change(fields.title, { target: { value: '가'.repeat(101) } });
-
-    await user.click(fields.submit);
-
-    expect(mocks.updateBoardMaster).not.toHaveBeenCalled();
-    expect(await screen.findAllByText(/최대 100자/)).not.toHaveLength(0);
-    await waitFor(() => expect(fields.title).toHaveFocus());
+  it('지정 용도·화면 유형·짝 불일치·사용 상태를 보인다', () => {
+    render(<BoardMasterListClient />);
+    const notice = rowOf('공지사항');
+    expect(within(notice).getByText('공지 지정')).toBeInTheDocument();
+    expect(within(notice).getByText('FAQ 지정')).toBeInTheDocument();
+    expect(within(notice).getByText('Enterprise List')).toBeInTheDocument();
+    expect(within(notice).getByText('사용')).toBeInTheDocument();
+    const calendar = rowOf('일정 게시판');
+    // 짝이 아니면 정본 이름 대신 저장값과 그 사실을 보인다(DEC-OPS-332).
+    expect(within(calendar).getByText('BBST03')).toBeInTheDocument();
+    expect(within(calendar).getByText('템플릿 짝 불일치')).toBeInTheDocument();
+    expect(within(calendar).getByText('사용 안 함')).toBeInTheDocument();
   });
 
-  it('저장 pending 중 닫기를 막고 서버 필드 오류 뒤 modal·입력·summary를 보존한다', async () => {
-    let rejectUpdate!: (reason?: unknown) => void;
-    mocks.updateBoardMaster.mockReturnValueOnce(new Promise<void>((_, reject) => {
-      rejectUpdate = reject;
-    }));
-    const user = userEvent.setup();
-    const fields = await openSettings(user);
-    await user.clear(fields.title);
-    await user.type(fields.title, '변경된 게시판');
+  it('운영 화면과 이용 화면으로 간다 — 사용 안 함 게시판은 이용 화면을 열 수 없다고 미리 말한다', () => {
+    render(<BoardMasterListClient />);
+    fireEvent.click(within(rowOf('공지사항')).getByRole('button', { name: '공지사항 운영 화면 열기' }));
+    expect(mocks.push).toHaveBeenLastCalledWith('/admin/community/boards/master/BBSMSTR_AAAAAAAAAAAA');
+    fireEvent.click(within(rowOf('공지사항')).getByRole('button', { name: '공지사항 이용 화면 열기' }));
+    expect(mocks.push).toHaveBeenLastCalledWith('/admin/community/boards/select-board-list?bbsId=BBSMSTR_AAAAAAAAAAAA');
+    expect(within(rowOf('일정 게시판')).getByRole('button', { name: '일정 게시판 사용 안 함 게시판이라 이용 화면을 열 수 없습니다' }))
+      .toBeDisabled();
+  });
 
-    fireEvent.click(fields.submit);
+  // [2026-10-23 ADR-0040 결정 1] 조회 대행 권한자는 사용 안 함 게시판의 목록도 연다 — 운영 화면의 같은 단추와 같은 판정이다.
+  it('조회 대행 권한이 있으면 사용 안 함 게시판의 이용 화면도 연다', () => {
+    mocks.permissions = [...mocks.permissions, 'BOARD_READ_ALL'];
+    render(<BoardMasterListClient />);
+    fireEvent.click(within(rowOf('일정 게시판')).getByRole('button', { name: '일정 게시판 이용 화면 열기' }));
+    expect(mocks.push).toHaveBeenLastCalledWith('/admin/community/boards/select-board-list?bbsId=BBSMSTR_EEEEEEEEEEEE');
+  });
 
-    await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledTimes(1));
-    expect(fields.submit).toBeDisabled();
-    expect(fields.submit).toHaveAttribute('aria-busy', 'true');
-    expect(fields.submit).toHaveAccessibleName('저장 중...');
-    expect(fields.cancel).toBeDisabled();
-    fireEvent.click(fields.cancel);
-    fireEvent.keyDown(document, { key: 'Escape', code: 'Escape' });
-    expect(screen.getByRole('dialog')).toBeVisible();
+  it('메뉴 원장을 볼 권한이 없으면 메뉴 연결 칸은 확인 권한 없음이다', () => {
+    render(<BoardMasterListClient />);
+    expect(within(rowOf('공지사항')).getByText('확인 권한 없음')).toBeInTheDocument();
+  });
 
-    act(() => rejectUpdate({
-      response: {
-        data: { errors: [{ field: 'bbsTtl', message: '이미 사용 중인 게시판 명칭입니다.' }] },
+  it('메뉴 연결 칸은 메뉴 위치·근거·노출을 보이고, 메뉴 이름과 게시판 이름이 다르면 알린다', () => {
+    mocks.access = {
+      menuSource: {
+        status: 'ready',
+        menus: [
+          { menuNo: 2000000, menuNm: '소통·지식', upMenuSn: null, menuOrdr: 1, modernRoute: null, useYn: 'Y' },
+          { menuNo: 2040000, menuNm: '엔터프라이즈 위키', upMenuSn: 2000000, menuOrdr: 1, modernRoute: '/admin/help/faq?tab=WIKI', useYn: 'Y' },
+        ],
       },
-    }));
-
-    expect(await screen.findAllByText('이미 사용 중인 게시판 명칭입니다.')).not.toHaveLength(0);
-    expect(fields.title).toHaveValue('변경된 게시판');
-    expect(document.querySelector('[data-form-error-summary="true"]')).toHaveTextContent('이미 사용 중인 게시판 명칭입니다.');
-    expect(screen.getByRole('dialog')).toBeVisible();
-    expect(fields.cancel).toBeEnabled();
-    await waitFor(() => expect(fields.title).toHaveFocus());
-  });
-
-  it('저장 pending 중 연속 저장과 행 삭제를 모두 차단한다', async () => {
-    let resolveUpdate!: () => void;
-    mocks.updateBoardMaster.mockReturnValueOnce(new Promise<void>((resolve) => {
-      resolveUpdate = resolve;
-    }));
-    const user = userEvent.setup();
-    const fields = await openSettings(user);
-    const remove = screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' });
-
-    act(() => {
-      fields.submit.click();
-      remove.click();
-      fields.submit.click();
-    });
-
-    await waitFor(() => expect(mocks.updateBoardMaster).toHaveBeenCalledTimes(1));
-    expect(mocks.isBoardMasterDeletable).not.toHaveBeenCalled();
-    expect(fields.submit).toBeDisabled();
-    expect(fields.submit).toHaveAttribute('aria-busy', 'true');
-    expect(fields.submit).toHaveAccessibleName('저장 중...');
-    expect(remove).toBeDisabled();
-    expect(screen.getByRole('button', { name: '첫 번째 게시판 설정 편집' })).toBeDisabled();
-    resolveUpdate();
-    await waitFor(() => expect(mocks.refetch).toHaveBeenCalled());
-  });
-
-  it('행 삭제 pending 중 편집 저장을 같은 tick에 시작하지 않는다', async () => {
-    let resolveDeletable!: (value: boolean) => void;
-    mocks.isBoardMasterDeletable.mockReturnValueOnce(new Promise<boolean>((resolve) => {
-      resolveDeletable = resolve;
-    }));
-    const user = userEvent.setup();
-    const fields = await openSettings(user);
-    const remove = screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' });
-
-    act(() => {
-      remove.click();
-      fields.submit.click();
-    });
-
-    await waitFor(() => expect(mocks.isBoardMasterDeletable).toHaveBeenCalledTimes(1));
-    expect(mocks.updateBoardMaster).not.toHaveBeenCalled();
-    expect(fields.submit).toBeDisabled();
-    expect(fields.submit).not.toHaveAttribute('aria-busy');
-    resolveDeletable(true);
-    await waitFor(() => expect(mocks.deleteBoardMasterPhysically).toHaveBeenCalledTimes(1));
-  });
-
-  it('비활성화가 진행 중이면 같은 tick의 재요청을 막고 실패 후 행을 보존한다', async () => {
-    mocks.boards[0].useYn = 'Y';
-    let rejectDelete!: (reason?: unknown) => void;
-    const pendingDelete = new Promise<void>((_, reject) => {
-      rejectDelete = reject;
-    });
-    mocks.deleteBoardMaster.mockReturnValue(pendingDelete);
-    render(<BoardMasterListClient />);
-    const remove = screen.getByRole('button', { name: '첫 번째 게시판 대기 상태로 비활성화' });
-
-    act(() => {
-      fireEvent.click(remove);
-      fireEvent.click(remove);
-    });
-
-    await waitFor(() => expect(mocks.deleteBoardMaster).toHaveBeenCalledTimes(1));
-    expect(mocks.confirm).toHaveBeenCalledTimes(1);
-    expect(remove).toBeDisabled();
-    expect(remove).toHaveAttribute('aria-busy', 'true');
-    expect(remove).toHaveAccessibleName('첫 번째 게시판 비활성화 처리 중');
-
-    rejectDelete(new Error('비활성화 서버 오류'));
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('비활성화 처리 중 오류가 발생했습니다.', 'error'));
-    expect(screen.getByText('첫 번째 게시판')).toBeInTheDocument();
-    expect(remove).not.toBeDisabled();
-  });
-
-  it('영구 삭제가 진행 중이면 같은 tick의 가용성 조회와 write를 한 번만 실행한다', async () => {
-    let rejectDelete!: (reason?: unknown) => void;
-    const pendingDelete = new Promise<void>((_, reject) => {
-      rejectDelete = reject;
-    });
-    mocks.deleteBoardMasterPhysically.mockReturnValue(pendingDelete);
-    render(<BoardMasterListClient />);
-    const remove = screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' });
-
-    act(() => {
-      fireEvent.click(remove);
-      fireEvent.click(remove);
-    });
-
-    await waitFor(() => expect(mocks.deleteBoardMasterPhysically).toHaveBeenCalledTimes(1));
-    expect(mocks.isBoardMasterDeletable).toHaveBeenCalledTimes(1);
-    expect(mocks.confirm).toHaveBeenCalledTimes(1);
-    expect(remove).toBeDisabled();
-    expect(remove).toHaveAttribute('aria-busy', 'true');
-    expect(remove).toHaveAccessibleName('첫 번째 게시판 영구 삭제 처리 중');
-
-    rejectDelete(new Error('영구 삭제 서버 오류'));
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('영구 삭제 서버 오류', 'error'));
-    expect(screen.getByText('첫 번째 게시판')).toBeInTheDocument();
-    expect(remove).not.toBeDisabled();
-  });
-
-  it('일반 서버 오류는 토스트로 안내하고 편집값을 보존한다', async () => {
-    mocks.updateBoardMaster.mockRejectedValueOnce(new Error('저장 서버에 연결할 수 없습니다.'));
-    const user = userEvent.setup();
-    const fields = await openSettings(user);
-    await user.clear(fields.title);
-    await user.type(fields.title, '보존할 게시판 명칭');
-
-    await user.click(fields.submit);
-
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('저장 서버에 연결할 수 없습니다.', 'error'));
-    expect(fields.title).toHaveValue('보존할 게시판 명칭');
-  });
-
-  it('게시판 DTO의 제목/소개 경계와 Y/N 형식을 보존한다', () => {
-    const valid = {
-      bbsTtl: '가'.repeat(100),
-      bbsExpln: '나'.repeat(4000),
-      useYn: 'Y',
-      atchPsbltyFileQty: 3,
-      atchPsbltyFileSzMb: 5,
+      groupSource: { status: 'ready', groups: [{ code: 'ROLE_ADMIN', name: '관리자', grants: [{ type: 'NAVIGATION', code: '2000000' }, { type: 'NAVIGATION', code: '2040000' }] }] },
+      retry: () => undefined,
     };
-
-    expect(boardMasterEditSchema.safeParse(valid).success).toBe(true);
-    expect(boardMasterEditSchema.safeParse({ ...valid, bbsTtl: '   ' }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, bbsTtl: '가'.repeat(101) }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, bbsExpln: '나'.repeat(4001) }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, bbsTtl: 123 }).success).toBe(false);
-    // [DIP B5 F9] 첨부 설정은 서버 상한 안에서만 받는다 — 0 은 게시판 상한 없음이다.
-    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileQty: 0 }).success).toBe(true);
-    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileQty: 21 }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileQty: 1.5 }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileSzMb: 11 }).success).toBe(false);
-    expect(boardMasterEditSchema.safeParse({ ...valid, atchPsbltyFileSzMb: 0 }).success).toBe(false);
-  });
-
-  /*
-    [2026-09-08] 사용 중지된 게시판의 '게시글 목록 열기'.
-
-    ⚠ 종전에는 useYn 과 무관하게 버튼이 열려 있었고, 비활성 게시판에서 누르면 서버가
-    assertActiveBoardMaster(useYn='Y' 필터)에서 걸러 404 를 냈다. 메시지가
-    '게시판을 찾을 수 없습니다' 라 **방금 목록에서 보고 누른 항목이 없다고** 말했다
-    (실측: bbsId=BBSMSTR_000000002061, use_yn='N').
-
-    화면이 누르기 전에 사실을 말하도록 잠갔다. 이 계약이 그 잠금을 붙잡는다 —
-    disabled 를 걷으면 red 이고, 활성 게시판까지 잠가도 red 다.
-  */
-  it('사용 중지된 게시판은 게시글 목록 열기를 잠그고 이유를 라벨에 밝힌다', () => {
-    mocks.boards[0].useYn = 'N';
     render(<BoardMasterListClient />);
-
-    const blocked = screen.getByRole('button', {
-      name: '첫 번째 게시판 사용 중지된 게시판이라 게시글 목록을 열 수 없습니다',
-    });
-    expect(blocked).toBeDisabled();
-
-    fireEvent.click(blocked);
-    // 잠근 버튼이 이동을 일으키면 목적지에서 404 를 만난다.
-    expect(mocks.push).not.toHaveBeenCalled();
+    const calendar = rowOf('일정 게시판');
+    expect(within(calendar).getByText('소통·지식 › 엔터프라이즈 위키')).toBeInTheDocument();
+    expect(calendar.textContent).toContain('허브 탭 ?tab=WIKI');
+    expect(calendar.textContent).toContain('관리자 그룹만');
+    expect(calendar.textContent).toContain('메뉴 이름이 게시판 이름과 다름');
+    expect(within(rowOf('공지사항')).getByText('연결 없음')).toBeInTheDocument();
   });
 
-  /*
-    [2026-10-16 GAP-BOARD-002, DEC-OPS-332] 유형 이름은 공통코드 COM004 가 아니라 게시판 유형 정본에서 읽는다.
-    COM004 는 어디에도 없어 종전 서버 조인은 이름을 늘 비웠고 화면은 코드만 보였다. 정본의 짝이 아닌 행(시드·라이브
-    게시판)은 이름을 지어내지 않고 코드를 그대로 보인다 — 코드만으로 이름을 붙이면 질의응답 게시판을 갤러리라고 부른다.
-  */
-  it('유형 배지는 정본의 이름을 보이고, 정본의 짝이 아닌 행은 코드를 그대로 보인다', () => {
-    render(<BoardMasterListClient />);
-    const table = screen.getByRole('table', { name: '게시판 마스터 목록' });
-
-    const firstRow = within(table).getByText('첫 번째 게시판').closest('tr');
-    const secondRow = within(table).getByText('두 번째 게시판').closest('tr');
-    expect(firstRow).not.toBeNull();
-    expect(secondRow).not.toBeNull();
-    expect(within(firstRow as HTMLElement).getByText('Professional Q&A')).toBeInTheDocument();
-    expect(within(secondRow as HTMLElement).getByText('BBST03')).toBeInTheDocument();
-    expect(within(table).queryByText('Visual Gallery')).toBeNull();
-  });
-
-  it('사용 중인 게시판은 게시글 목록 열기가 열려 있고 그 게시판으로 이동한다', () => {
-    mocks.boards[0].useYn = 'Y';
-    render(<BoardMasterListClient />);
-
-    const open = screen.getByRole('button', { name: '첫 번째 게시판 게시글 목록 열기' });
-    expect(open).not.toBeDisabled();
-
-    fireEvent.click(open);
-    expect(mocks.push).toHaveBeenCalledWith(
-      '/admin/community/boards/select-board-list?bbsId=BBS-A',
-    );
-  });
-
-  /*
-    [2026-10-23 ADR-0040 A0] 서버는 1 기반 page·size 로 나눠 주는데 화면이 페이지를 묻지 않아 첫 10건만 보였다.
-    11건째부터는 화면에서 찾을 길이 없었다. 페이지 이동이 조회 조건에 실리고, 검색하면 첫 페이지로 돌아가야 한다.
-  */
   it('게시판이 한 페이지를 넘으면 페이저로 다음 페이지를 조회하고, 검색은 첫 페이지로 돌아간다', async () => {
+    mocks.pageInfo = { total: 25, totalPage: 3 };
     const user = userEvent.setup();
-    mocks.pageInfo = { total: 23, totalPage: 3 };
     render(<BoardMasterListClient />);
-
-    expect(mocks.lastQueryKey).toEqual(expect.arrayContaining([
-      expect.objectContaining({ page: 1, size: 10, searchKeyword: '' }),
-    ]));
     const pager = screen.getByRole('navigation', { name: '페이지 탐색' });
     await user.click(within(pager).getByRole('button', { name: '2 페이지' }));
-    expect(mocks.lastQueryKey).toEqual(expect.arrayContaining([
-      expect.objectContaining({ page: 2, size: 10 }),
-    ]));
-
+    expect(mocks.lastQueryKey).toEqual(['board-masters', 'list', { searchKeyword: '', searchUseYn: undefined, page: 2, size: 10 }]);
     await user.type(screen.getByRole('textbox', { name: '게시판명' }), '공지{Enter}');
-    expect(mocks.lastQueryKey).toEqual(expect.arrayContaining([
-      expect.objectContaining({ page: 1, searchKeyword: '공지' }),
-    ]));
-  });
-
-  it('글이 있었던 게시판의 영구 삭제 불가 안내는 따를 수 있는 사실만 말한다', async () => {
-    mocks.isBoardMasterDeletable.mockResolvedValue(false);
-    render(<BoardMasterListClient />);
-
-    fireEvent.click(screen.getByRole('button', { name: '첫 번째 게시판 DB에서 영구 물리삭제' }));
-
-    await waitFor(() => expect(mocks.confirm).toHaveBeenCalled());
-    const message = mocks.confirm.mock.calls[0][0].message as string;
-    expect(message).toContain('글이 한 번이라도 있었던 게시판이라 영구 삭제할 수 없습니다');
-    // 글 삭제는 논리 삭제라 행이 남는다 — 글을 먼저 지우라는 안내는 따를 수 없다.
-    expect(message).not.toContain('먼저 모두 삭제');
-    expect(mocks.deleteBoardMasterPhysically).not.toHaveBeenCalled();
+    expect(mocks.lastQueryKey).toEqual(['board-masters', 'list', { searchKeyword: '공지', searchUseYn: undefined, page: 1, size: 10 }]);
   });
 });

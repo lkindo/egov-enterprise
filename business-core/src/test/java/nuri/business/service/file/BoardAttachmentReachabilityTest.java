@@ -104,9 +104,18 @@ class BoardAttachmentReachabilityTest {
         // 작성자는 자기 첨부를 계속 받는다 — 소유 근거는 사용 여부와 무관하다.
         assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
 
+        // 조회 대행 권한도 글의 논리 삭제는 면제하지 않는다(그 관리자 경로는 FILE_READ_ALL 이다).
+        authenticateWith("BOARD_READ_ALL");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+
         jdbc.update("UPDATE tb_bbs_item SET use_yn='Y'");
         jdbc.update("UPDATE tb_bbs_master SET use_yn='N' WHERE bbs_id='PUBLIC'");
         assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
+        // [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판은 조회 대행 권한자에게 공유 근거가 된다 — 본문을 그 사람에게 여는 것과 같다.
+        authenticateWith("BOARD_READ_ALL");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
 
         jdbc.update("UPDATE tb_bbs_master SET use_yn='Y' WHERE bbs_id='PUBLIC'");
         jdbc.update("UPDATE tb_bbs_item SET use_yn=NULL");

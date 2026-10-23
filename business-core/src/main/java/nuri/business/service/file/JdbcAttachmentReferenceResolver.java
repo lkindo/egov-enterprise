@@ -172,6 +172,11 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
      * 있었다. 조회 대행 권한은 종료일만 면제한다 — 비밀글·논리 삭제 글의 관리자 경로는 지금처럼 {@code FILE_READ_ALL} 하나다.
      * 기준일은 본문({@code BoardPolicySupport})과 같은 Asia/Seoul 오늘이며, 두 판정의 일치는 {@code BoardAttachmentAccessTest} 가
      * 대조한다.
+     *
+     * <p>[2026-10-23 ADR-0040 결정 1] 조회 대행 권한은 게시판의 사용 안 함도 면제한다 — 본문이 사용 안 함 게시판의 글을
+     * 운영자에게 여는 것과 같다. 글의 논리 삭제는 면제하지 않는다(그 관리자 경로는 {@code FILE_READ_ALL} 이다).
+     * 사용 안 함 게시판에서는 작성자의 소유 근거도 닫는다 — 이용자에게 읽기·쓰기를 모두 닫고 작성자 본인의 정리도 허용하지
+     * 않는다(D1 기각 ②). 소유 근거는 첨부 열람과 삭제(FileAccessPolicy) 양쪽의 근거다.
      */
     private SourceHit queryBoard(Long fileId, String loginId, String esntlId) {
         String today = LocalDate.now(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.BASIC_ISO_DATE);
@@ -183,7 +188,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                  WHERE b.atch_file_sn=?
                 """, (rs,n) -> new BoardReference(rs.getString("frst_rgtr_id"),rs.getString("user_id"),
                     rs.getString("scrt_yn"),rs.getString("master_id"),rs.getObject("cmnty_sn",Long.class),
-                    "Y".equals(rs.getString("post_use_yn")) && "Y".equals(rs.getString("master_use_yn")),
+                    "Y".equals(rs.getString("post_use_yn")), "Y".equals(rs.getString("master_use_yn")),
                     postingOpen(rs.getString("pst_end_ymd"), today)),fileId);
         boolean shared=false, owner=false;
         for (var reference: references) {
@@ -192,8 +197,10 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                     || readAll
                     || (communityAccess!=null && esntlId!=null && communityAccess.isApprovedMember(reference.communityId(),esntlId));
             if (communityAllowed) {
-                shared |= reference.active() && (reference.postingOpen() || readAll) && !"Y".equals(reference.secret());
-                owner |= (loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId()));
+                shared |= reference.postActive() && (reference.boardInUse() || readAll)
+                        && (reference.postingOpen() || readAll) && !"Y".equals(reference.secret());
+                owner |= (reference.boardInUse() || readAll)
+                        && ((loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId())));
             }
         }
         return new SourceHit(!references.isEmpty(),shared,owner,false);
@@ -205,7 +212,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     }
 
     private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId,
-            boolean active, boolean postingOpen) {}
+            boolean postActive, boolean boardInUse, boolean postingOpen) {}
 
     /**
      * ScheduleService#getSchedule와 같은 열람 조건. core가 선택 기능의 엔티티에 의존하지 않도록

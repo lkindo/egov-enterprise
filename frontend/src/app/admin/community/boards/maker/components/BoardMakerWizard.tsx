@@ -51,12 +51,31 @@ import { useAppForm } from '@/hooks/useAppForm';
 import { FormErrorSummary } from '@/components/ui/form';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 
+/*
+  [2026-10-23 ADR-0040 §5.3] 네 단계를 용도·기본정보 → 화면·기능 → 메뉴·접근 확인 → 최종 확인으로 다시 짰다. 게시판은 사용 안 함으로,
+  메뉴는 비활성으로 만들고 결과 화면이 운영 화면의 메뉴·접근 탭(공개 준비)으로 이어 준다.
+*/
 const STEPS = [
-  { id: 1, title: '기본 설정', description: '게시판의 이름과 설명을 입력하세요', icon: Settings2 },
-  { id: 2, title: '템플릿 선택', description: '용도에 맞는 UI 스타일을 선택하세요', icon: Layout },
-  { id: 3, title: '접근 권한 안내', description: '이 게시판의 접근 권한이 어떻게 결정되는지 확인하세요', icon: ShieldCheck },
-  { id: 4, title: '메뉴 배포', description: '사이트 메뉴에 게시판을 연결하세요', icon: Rocket },
+  { id: 1, title: '용도·기본정보', description: '용도를 고르고 게시판의 이름과 소개를 입력하세요', icon: Settings2 },
+  { id: 2, title: '화면·기능', description: '화면 유형과 댓글·만족도·첨부를 정하세요', icon: Layout },
+  { id: 3, title: '메뉴·접근 확인', description: '메뉴 위치를 정하고 이용 범위가 어떻게 정해지는지 확인하세요', icon: ShieldCheck },
+  { id: 4, title: '최종 확인', description: '만든 직후의 상태를 확인하세요', icon: Rocket },
 ];
+
+/**
+ * 용도 프리셋(설계서 §5.3 표). 용도는 사용자가 아직 직접 바꾸지 않은 칸만 채운다. 파일당 크기는 용도와 무관하게 비워 둔다(전역 상한).
+ * 예약·고정·비밀글·추천 칸은 해당 배치(B1~B3)가 구현된 뒤에만 채운다.
+ */
+const BOARD_PURPOSES = [
+  { id: 'NOTICE', label: '공지형', tmpltId: 'TMPLT_LIST', ansYn: 'N', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3 },
+  { id: 'ARCHIVE', label: '자료실형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 10 },
+  { id: 'FREE', label: '자유형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3 },
+  { id: 'QNA', label: '질의응답형', tmpltId: 'TMPLT_QNA', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3 },
+] as const satisfies readonly {
+  id: string; label: string; tmpltId: BoardTemplateId; ansYn: 'Y' | 'N'; stsfdgYn: 'Y' | 'N'; fileAtchPsbltyYn: 'Y' | 'N'; atchPsbltyFileQty: number;
+}[];
+type PurposeField = 'tmpltId' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty';
+const BYTES_PER_MB = 1024 * 1024;
 
 /*
   [2026-10-16 GAP-BOARD-002, DEC-OPS-332] 유형 코드·템플릿·이름·설명의 정본은 게시판 유형 표(lib/board/board-types)다.
@@ -83,6 +102,8 @@ const TEMPLATES = BOARD_TYPES.map((type) => ({
 
 import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
+import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/attachments/server-upload-limits';
+import { boardOperationsHref } from '../../master/board-operations-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
@@ -96,8 +117,15 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
     .unwrap()
     .trim()
     .max(4000, '게시판 소개는 최대 4,000자까지 입력할 수 있습니다.'),
-  atchPsbltyFileQty: z.number().int('첨부 가능 파일 수는 정수여야 합니다.'),
-  atchPsbltyFileSz: z.number().int('첨부 가능 파일 크기는 정수여야 합니다.'),
+  atchPsbltyFileQty: z.number({ message: '첨부 파일 수를 숫자로 입력해 주세요.' })
+    .int('첨부 파일 수는 정수여야 합니다.')
+    .min(0, '첨부 파일 수는 0 이상이어야 합니다.')
+    .max(SERVER_MAX_FILES_PER_REQUEST, `서버는 한 번에 ${SERVER_MAX_FILES_PER_REQUEST}개까지 받습니다.`),
+  // 0 은 게시판 상한 없음(서버 전역 상한만 적용)이다.
+  atchPsbltyFileSz: z.number({ message: '파일당 크기를 숫자로 입력해 주세요.' })
+    .int('첨부 가능 파일 크기는 정수여야 합니다.')
+    .min(0, '파일당 크기는 0 이상이어야 합니다.')
+    .max(SERVER_MAX_FILE_SIZE_MB * BYTES_PER_MB, `서버는 파일 하나당 ${SERVER_MAX_FILE_SIZE_MB}MB 까지 받습니다.`),
   tmpltId: BoardMasterDtoSchema.shape.tmpltId.unwrap().max(20),
   menuNm: MenuDtoSchema.shape.menuNm
     .trim()
@@ -124,7 +152,9 @@ type FormValues = z.infer<typeof boardMakerFormSchema>;
 const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
   bbsTtl: '게시판 명칭',
   bbsExpln: '게시판 소개',
-  tmpltId: '템플릿',
+  tmpltId: '화면 유형',
+  atchPsbltyFileQty: '첨부 파일 수',
+  atchPsbltyFileSz: '파일당 크기',
   cmntySn: '커뮤니티 귀속',
   upperMenuNo: '상위 메뉴',
   menuNm: '메뉴 명칭',
@@ -137,10 +167,12 @@ const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
   bbsExpln: 1,
   cmntySn: 1,
   tmpltId: 2,
-  upperMenuNo: 4,
-  upMenuSn: 4,
-  menuNm: 4,
-  menuOrdr: 4,
+  atchPsbltyFileQty: 2,
+  atchPsbltyFileSz: 2,
+  upperMenuNo: 3,
+  upMenuSn: 3,
+  menuNm: 3,
+  menuOrdr: 3,
 };
 
 const BOARD_MAKER_SERVER_FIELD_ALIASES: Record<string, keyof FormValues> = {
@@ -154,7 +186,14 @@ export function BoardMakerWizard() {
   const { user } = useAuth();
   const canOpenMenus = canOpenPage(user, '/admin/system/menus');
   const canOpenBoardMasters = canOpenPage(user, '/admin/community/boards/master');
+  // [2026-10-23 ADR-0040 §5.3] 결과 화면의 주 동작은 운영 화면(게시판 관리 조회 권한)이다. 마법사 진입 권한이 그것을 함축하지 않는다.
+  const canOpenBoardOperations = canOpenPage(user, '/admin/community/boards/master/[id]');
   const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
+  // 결과 화면 '남은 일' 의 갈래(표시 판정일 뿐 서버 인가는 그대로다). 메뉴 활성화와 그룹 표시는 메뉴 구조 저장 한 번이고 MENU_UPDATE·
+  //   AUTHRT_READ·AUTHRT_GRANT 가 필요하다(MenuService#saveMenuStructure). 사용 전환은 운영 화면 설정 탭의 BBS_MST_UPDATE 다.
+  const canFinishMenu = canOpenMenus && canPermission(user, 'MENU_UPDATE') && canPermission(user, 'AUTHRT_READ')
+    && canPermission(user, 'AUTHRT_GRANT');
+  const canSwitchBoardUse = canOpenBoardOperations && canPermission(user, 'BBS_MST_UPDATE');
   // [2026-10-01] 마지막 제출은 게시판 생성(BBS_MST_CREATE)과 메뉴 등록(MENU_CREATE)을 함께 한다. 메뉴 등록은 건너뛸 수
   //   있는 단계가 아니어서, 둘 중 하나라도 없으면 제출 버튼 대신 사유를 보인다 — 종전에는 네 단계를 다 채운 뒤 403 을 만났고,
   //   메뉴 권한만 없으면 게시판만 만들어진 채 멈췄다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
@@ -182,13 +221,17 @@ export function BoardMakerWizard() {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitErrorRef = React.useRef<HTMLDivElement>(null);
   const queryClient = useQueryClient();
+  const [purpose, setPurpose] = useState<string>('');
+  // 사용자가 직접 바꾼 칸 — 용도를 바꿔도 덮지 않는다(§5.3).
+  const touchedRef = React.useRef(new Set<PurposeField>());
 
   const form = useAppForm<typeof boardMakerFormSchema>(boardMakerFormSchema, {
     defaultValues: {
       bbsTtl: '',
       bbsExpln: '',
       atchPsbltyFileQty: 3,
-      atchPsbltyFileSz: 5242880, // 5MB
+      // 비우면(0) 게시판 상한 없이 서버 전역 상한만 적용한다(설계서 §5.3 — 용도와 무관하게 비워 둔다).
+      atchPsbltyFileSz: 0,
       // [2026-09-27 DIP B5 F9] 댓글·만족도·첨부 설정은 이제 서버가 집행한다. 기본값은 지금까지의 실제 동작(받음)이다.
       ansYn: 'Y',
       stsfdgYn: 'Y',
@@ -196,7 +239,8 @@ export function BoardMakerWizard() {
       bbsTypeCd: DEFAULT_BOARD_TYPE.code,
       bbsAtrbCd: 'BBSA01',
       tmpltId: DEFAULT_BOARD_TYPE.templateId,
-      useYn: 'Y',
+      // [2026-10-23 ADR-0040 결정 1·§5.3] 사용 안 함으로 만든다 — 공개 준비를 마친 뒤 운영 화면에서 사용으로 바꾼다.
+      useYn: 'N',
       cmntySn: '',
       menuNm: '',
       upperMenuNo: '2000000',
@@ -228,6 +272,28 @@ export function BoardMakerWizard() {
   const bbsTtl = watch('bbsTtl');
   const bbsExpln = watch('bbsExpln');
 
+  const setTemplate = (templateId: BoardTemplateId) => {
+    const type = BOARD_TYPES.find((candidate) => candidate.templateId === templateId);
+    if (!type) return;
+    setValue('tmpltId', type.templateId, { shouldDirty: true });
+    setValue('bbsTypeCd', type.code, { shouldDirty: true });
+  };
+  const touch = (field: PurposeField) => { touchedRef.current.add(field); };
+  /** 용도를 고르면 아직 직접 바꾸지 않은 칸만 채운다. 고르지 않음이면 아무것도 바꾸지 않는다. */
+  const applyPurpose = (id: string) => {
+    setPurpose(id);
+    const preset = BOARD_PURPOSES.find((candidate) => candidate.id === id);
+    if (!preset) return;
+    const touched = touchedRef.current;
+    if (!touched.has('tmpltId')) setTemplate(preset.tmpltId);
+    if (!touched.has('ansYn')) setValue('ansYn', preset.ansYn, { shouldDirty: true });
+    if (!touched.has('stsfdgYn')) setValue('stsfdgYn', preset.stsfdgYn, { shouldDirty: true });
+    if (!touched.has('fileAtchPsbltyYn')) setValue('fileAtchPsbltyYn', preset.fileAtchPsbltyYn, { shouldDirty: true });
+    if (!touched.has('atchPsbltyFileQty')) setValue('atchPsbltyFileQty', preset.atchPsbltyFileQty, { shouldDirty: true });
+  };
+  const upperMenuNo = watch('upperMenuNo');
+  const fileSizeBytes = Number(watch('atchPsbltyFileSz'));
+
   React.useEffect(() => {
     if (!submitError || !submitErrorRef.current) return;
     submitErrorRef.current.scrollIntoView?.({ behavior: 'auto', block: 'center' });
@@ -244,8 +310,10 @@ export function BoardMakerWizard() {
     const fields: Array<keyof FormValues> = currentStep === 1
       ? ['bbsTtl', 'bbsExpln']
       : currentStep === 2
-        ? ['tmpltId']
-        : [];
+        ? ['tmpltId', 'atchPsbltyFileQty', 'atchPsbltyFileSz']
+        : currentStep === 3
+          ? ['upperMenuNo', 'menuNm', 'menuOrdr']
+          : [];
     const isValid = fields.length === 0 || await form.trigger(fields);
     if (!isValid) {
       const firstInvalid = fields.find((field) => form.getFieldState(field).invalid);
@@ -288,7 +356,8 @@ export function BoardMakerWizard() {
         /* reusable-base:community:start */
         ...(data.cmntySn ? { cmntySn: Number(data.cmntySn) } : {}),
         /* reusable-base:community:end */
-        useYn: 'Y'
+        // [2026-10-23 ADR-0040 결정 1·§5.3] 사용 안 함으로 만든다 — 메뉴·그룹 표시를 맞춘 뒤 운영 화면에서 사용으로 바꾼다.
+        useYn: 'N'
       });
 
       if (!bbsId) throw new Error("Failed to get bbsId");
@@ -353,13 +422,34 @@ export function BoardMakerWizard() {
             <Check size={20} strokeWidth={3} aria-hidden="true" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-xl font-bold text-foreground">게시판 생성 완료</h1>
+            <h1 className="text-xl font-bold text-foreground">게시판 만들기 완료</h1>
             <p className="mx-auto max-w-md text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">
-              게시판이 생성되었으며 <span className="text-primary">&apos;{watch('menuNm')}&apos;</span> 메뉴가 비활성 상태로 만들어졌습니다. {canOpenMenus ? '메뉴 관리에서 활성화해 주세요.' : '메뉴 관리 권한이 있는 관리자에게 활성화를 요청해 주세요.'}
+              게시판을 사용 안 함으로 만들었고 <span className="text-primary">&apos;{watch('menuNm')}&apos;</span> 메뉴를 비활성으로 등록했습니다.
             </p>
           </div>
+          <div className="w-full max-w-md rounded-md border border-border bg-muted/30 p-3 text-left text-[length:var(--font-size-body)]">
+            <p className="font-semibold text-foreground">남은 일</p>
+            <ol className="mt-1 list-decimal space-y-1 pl-5 text-muted-foreground">
+              {/* 공개 준비 점검은 관리자 그룹(ROLE_ADMIN·ROLE_SYSTEM)이 아닌 그룹에 보이는 활성 메뉴를 요구한다(board-menu-links). */}
+              <li>
+                {canFinishMenu
+                  ? '메뉴 관리에서 메뉴를 활성화하고, 관리자 그룹이 아닌 이용자 그룹에 보이도록 함께 저장하세요.'
+                  : '메뉴 관리 권한(메뉴 수정, 권한 그룹 조회·배정)이 있는 관리자에게 메뉴 활성화와 이용자 그룹 표시를 요청하세요.'}
+              </li>
+              {/* 공개 준비 점검은 게시판 사용 여부도 보므로, 사용으로 바꾼 뒤에야 통과한다. */}
+              <li>
+                {canSwitchBoardUse
+                  ? '열 준비가 되면 운영 화면 설정 탭에서 게시판을 사용으로 바꾸고, 메뉴·접근 탭의 공개 준비 점검이 통과하는지 확인하세요.'
+                  : '열 준비가 되면 게시판 관리 수정 권한이 있는 관리자에게 게시판을 사용으로 바꿔 달라고 요청하세요. 공개 준비 점검은 사용으로 바꾼 뒤에 통과합니다.'}
+              </li>
+            </ol>
+          </div>
           <div className="flex w-full max-w-sm flex-col gap-2">
-            {canOpenMenus && <Button onClick={() => router.push('/admin/system/menus')}>생성한 메뉴 설정하기</Button>}
+            {canOpenBoardOperations && createdBoardId && (
+              <Button onClick={() => router.push(boardOperationsHref(createdBoardId, 'access'))}>
+                이 게시판 공개 준비 계속하기
+              </Button>
+            )}
             {canOpenBoardMasters && (
               <Button
                 variant="outline"
@@ -383,7 +473,7 @@ export function BoardMakerWizard() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 pb-8 text-left">
-      <h1 className="sr-only">게시판 생성 마법사</h1>
+      <h1 className="sr-only">게시판 만들기</h1>
       {/* Stepper Header */}
       <div className="flex justify-between items-center px-4 relative">
         <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
@@ -455,6 +545,35 @@ export function BoardMakerWizard() {
             <div key={currentStep}>
               {currentStep === 1 && (
                 <div className="max-w-2xl space-y-4 text-left">
+                  <fieldset className="space-y-2">
+                    <legend className="text-[length:var(--font-size-body)] font-medium text-foreground">용도</legend>
+                    <p id="purpose-help" className="text-xs text-muted-foreground">
+                      용도를 고르면 화면 유형과 댓글·만족도·첨부 설정 가운데 아직 직접 바꾸지 않은 칸만 채웁니다. 다음 단계에서 바꿀 수 있습니다.
+                    </p>
+                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-describedby="purpose-help">
+                      {[{ id: '', label: '고르지 않음' }, ...BOARD_PURPOSES].map((option) => (
+                        <label
+                          key={option.id || 'none'}
+                          className={cn(
+                            "flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-[length:var(--font-size-body)]",
+                            purpose === option.id ? "border-primary bg-primary/5" : "border-border",
+                          )}
+                        >
+                          <input
+                            type="radio"
+                            name="board-purpose"
+                            value={option.id}
+                            checked={purpose === option.id}
+                            onChange={() => applyPurpose(option.id)}
+                            aria-label={option.label}
+                            className="accent-primary"
+                          />
+                          {option.label}
+                        </label>
+                      ))}
+                    </div>
+                  </fieldset>
+
                   <div className="space-y-1 text-left">
                     <Label htmlFor="bbsTtl" className="text-[length:var(--font-size-body)] font-medium text-foreground">
                       게시판 명칭
@@ -474,6 +593,11 @@ export function BoardMakerWizard() {
                       {...register('bbsTtl')}
                     />
                     {errors.bbsTtl && <p id="bbsTtl-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsTtl.message}</p>}
+                    {bbsTtl?.includes('공지') && (
+                      <p className="text-xs text-muted-foreground">
+                        이름에 &lsquo;공지&rsquo;가 들어가도 공지 게시판 편집 권한이 적용되지 않습니다. 공지 게시판은 시스템 설정이 정합니다.
+                      </p>
+                    )}
                   </div>
 
                   <div className="space-y-1 text-left">
@@ -516,34 +640,6 @@ export function BoardMakerWizard() {
                     </p>
                   </div>
                   {/* reusable-base:community:end */}
-
-                  {/*
-   [2026-08-29] 저장될 뿐 집행자가 없던 토글을 걷어냈다. [2026-09-27 DIP B5 F9] 서버가 새 댓글·새 평가·첨부를
-   이 값으로 거부하고 게시글 화면이 같은 값으로 입력을 감추므로 되살린다. 첨부 파일 수·크기는 게시판 설정에서 바꾼다.
- */}
-                  <fieldset className="space-y-2 rounded-md border border-border p-3">
-                    <legend className="px-1 text-[length:var(--font-size-body)] font-medium text-foreground">게시판 기능</legend>
-                    {([
-                      ['ansYn', '댓글 받기', '끄면 새 댓글을 받지 않습니다. 이미 달린 댓글은 그대로 보입니다.'],
-                      ['stsfdgYn', '만족도 평가 받기', '끄면 새 만족도 평가를 받지 않습니다.'],
-                      ['fileAtchPsbltyYn', '파일 첨부 허용', `켜면 글마다 파일을 ${watch('atchPsbltyFileQty')}개, 하나당 ${Math.round(Number(watch('atchPsbltyFileSz')) / (1024 * 1024))}MB 까지 받습니다.`],
-                    ] as const).map(([field, label, help]) => (
-                      <label key={field} className="flex items-start gap-2 text-[length:var(--font-size-body)] text-foreground">
-                        <input
-                          type="checkbox"
-                          className="mt-1 h-4 w-4 accent-primary"
-                          aria-label={label}
-                          checked={watch(field) !== 'N'}
-                          onChange={(event) => setValue(field, event.target.checked ? 'Y' : 'N', { shouldDirty: true })}
-                          aria-describedby={`${field}-help`}
-                        />
-                        <span>
-                          <span className="font-medium">{label}</span>
-                          <span id={`${field}-help`} className="block text-xs text-muted-foreground">{help}</span>
-                        </span>
-                      </label>
-                    ))}
-                  </fieldset>
                 </div>
               )}
 
@@ -551,8 +647,8 @@ export function BoardMakerWizard() {
                 <div className="flex flex-col gap-6 text-left lg:flex-row">
                   <div className="flex-1 space-y-4 text-left">
                     <div className="space-y-1 text-left">
-                      <h3 className="text-[length:var(--font-size-body)] font-semibold text-foreground text-left">Layout strategy select</h3>
-                      <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">비즈니스 목적에 부합하는 최적의 UI 디자인을 선택하세요.</p>
+                      <h3 className="text-[length:var(--font-size-body)] font-semibold text-foreground text-left">화면 유형</h3>
+                      <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">게시판 글을 어떤 모양으로 보일지 고르세요. 만든 뒤에는 바꿀 수 없습니다.</p>
                     </div>
                     <div className="grid grid-cols-1 gap-2">
                       {TEMPLATES.map((tpl) => {
@@ -564,15 +660,13 @@ export function BoardMakerWizard() {
                             key={tpl.id}
                             role="button"
                             tabIndex={0}
-                            onClick={() => {
-                              setValue('tmpltId', tpl.id);
-                              setValue('bbsTypeCd', tpl.typeCode);
-                            }}
+                            aria-pressed={isSelected}
+                            onClick={() => { touch('tmpltId'); setTemplate(tpl.id); }}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' || e.key === ' ') {
                                 e.preventDefault();
-                                setValue('tmpltId', tpl.id);
-                                setValue('bbsTypeCd', tpl.typeCode);
+                                touch('tmpltId');
+                                setTemplate(tpl.id);
                               }
                             }}
                             className={cn(
@@ -608,16 +702,74 @@ export function BoardMakerWizard() {
                         );
                       })}
                     </div>
-                    <div className="rounded-md border border-border bg-muted p-3 font-mono text-xs leading-relaxed text-muted-foreground text-left">
-                      디자인 최적화 활성 <br />
-                      UI 렌더링 모드: 고해상도 <br />
-                      템플릿 ID: {selectedTemplate}
-                    </div>
+
+                    {/*
+                      [2026-09-27 DIP B5 F9] 서버가 새 댓글·새 평가·첨부를 이 값으로 거부하고 게시글 화면이 같은 값으로 입력을 감춘다.
+                      [2026-10-23 §5.3] 파일 수·파일당 크기도 여기서 정한다(만든 뒤에는 운영 화면 설정 탭에서 바꾼다).
+                    */}
+                    <fieldset className="space-y-2 rounded-md border border-border p-3">
+                      <legend className="px-1 text-[length:var(--font-size-body)] font-medium text-foreground">게시판 기능</legend>
+                      {([
+                        ['ansYn', '댓글 받기', '끄면 새 댓글을 받지 않습니다. 이미 달린 댓글은 그대로 보입니다.'],
+                        ['stsfdgYn', '만족도 평가 받기', '끄면 새 만족도 평가를 받지 않습니다.'],
+                        ['fileAtchPsbltyYn', '파일 첨부 허용', '끄면 새 첨부를 받지 않습니다.'],
+                      ] as const).map(([field, label, help]) => (
+                        <label key={field} className="flex items-start gap-2 text-[length:var(--font-size-body)] text-foreground">
+                          <input
+                            type="checkbox"
+                            className="mt-1 h-4 w-4 accent-primary"
+                            aria-label={label}
+                            checked={watch(field) !== 'N'}
+                            onChange={(event) => { touch(field); setValue(field, event.target.checked ? 'Y' : 'N', { shouldDirty: true }); }}
+                            aria-describedby={`${field}-help`}
+                          />
+                          <span>
+                            <span className="font-medium">{label}</span>
+                            <span id={`${field}-help`} className="block text-xs text-muted-foreground">{help}</span>
+                          </span>
+                        </label>
+                      ))}
+                      <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
+                        <div className="space-y-1">
+                          <Label htmlFor="atchPsbltyFileQty" className="text-xs font-medium text-foreground">첨부 파일 수(0 은 상한 없음)</Label>
+                          <Input
+                            id="atchPsbltyFileQty"
+                            type="number"
+                            min={0}
+                            max={SERVER_MAX_FILES_PER_REQUEST}
+                            aria-invalid={errors.atchPsbltyFileQty ? 'true' : 'false'}
+                            aria-describedby={errors.atchPsbltyFileQty ? 'atchPsbltyFileQty-error' : undefined}
+                            value={Number.isNaN(Number(watch('atchPsbltyFileQty'))) ? '' : String(watch('atchPsbltyFileQty'))}
+                            onChange={(event) => {
+                              touch('atchPsbltyFileQty');
+                              setValue('atchPsbltyFileQty', event.target.value === '' ? Number.NaN : Number(event.target.value), { shouldDirty: true });
+                            }}
+                          />
+                          {errors.atchPsbltyFileQty && <p id="atchPsbltyFileQty-error" className="text-destructive-emphasis text-xs font-bold">{errors.atchPsbltyFileQty.message}</p>}
+                        </div>
+                        <div className="space-y-1">
+                          <Label htmlFor="atchPsbltyFileSz" className="text-xs font-medium text-foreground">파일당 크기(MB, 비우면 전역 상한 {SERVER_MAX_FILE_SIZE_MB}MB)</Label>
+                          <Input
+                            id="atchPsbltyFileSz"
+                            type="number"
+                            min={0}
+                            max={SERVER_MAX_FILE_SIZE_MB}
+                            step="0.5"
+                            aria-invalid={errors.atchPsbltyFileSz ? 'true' : 'false'}
+                            aria-describedby={errors.atchPsbltyFileSz ? 'atchPsbltyFileSz-error' : undefined}
+                            value={fileSizeBytes > 0 ? String(fileSizeBytes / BYTES_PER_MB) : ''}
+                            onChange={(event) => setValue('atchPsbltyFileSz', event.target.value === '' ? 0 : Math.round(Number(event.target.value) * BYTES_PER_MB), { shouldDirty: true })}
+                          />
+                          {errors.atchPsbltyFileSz && <p id="atchPsbltyFileSz-error" className="text-destructive-emphasis text-xs font-bold">{errors.atchPsbltyFileSz.message}</p>}
+                        </div>
+                      </div>
+                    </fieldset>
                   </div>
 
-                  <div className="sticky top-0 hidden flex-1 xl:block">
+                  {/* 미리보기는 좁은 폭에서도 보인다(§5.3) — 넓은 화면에서는 옆에, 좁은 화면에서는 아래에 둔다. */}
+                  <div className="flex-1 lg:sticky lg:top-0">
                     <div className="mb-2">
-                      <h3 className="text-xs font-medium text-muted-foreground text-right">레이아웃 미리보기 · 예시 데이터</h3>
+                      <h3 className="text-xs font-medium text-muted-foreground lg:text-right">레이아웃 미리보기 · 예시 데이터</h3>
                     </div>
                     <BoardPreview
                       tmpltId={selectedTemplate || DEFAULT_BOARD_TYPE.templateId}
@@ -629,70 +781,6 @@ export function BoardMakerWizard() {
               )}
 
               {currentStep === 3 && (
-                /*
-                 * 이 단계에는 역할×권한 체크박스 매트릭스가 있었으나, 게시판별 권한은 저장할 테이블도
-                 * API 도 존재하지 않아 선택값이 서버로 전송되지 않고 브라우저에서 사라졌다.
-                 * 운영자는 '익명 쓰기 금지'를 설정했다고 믿지만 실제로는 아무 정책도 적용되지 않는
-                 * 보안 오인 상태였다. 실제 통제 지점을 안내하도록 대체한다.
-                 *
-                 * [2026-10-23 ADR-0040 A0] 종전 안내("접근 권한은 메뉴 권한을 따른다")도 사실이 아니었다. 메뉴는 길 안내일 뿐
-                 * 게시판 이용 화면은 인증만 요구한다. 접근을 정하는 축(메뉴 노출·게시글 권한·회원 범위)을 그대로 말한다. 회원 범위는
-                 * 커뮤니티 기능의 축이라 커뮤니티 마커 안에 둔다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없다.
-                 */
-                <div className="max-w-2xl space-y-3 text-left">
-                  <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4 text-left">
-                    <div className="flex items-start gap-3">
-                      <div className="shrink-0 rounded-md border border-border bg-card p-2 text-primary">
-                        <ShieldCheck size={24} aria-hidden="true" />
-                      </div>
-                      <div className="space-y-2 text-left">
-                        <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">이 게시판을 누가 쓸 수 있는지는 아래 규칙으로 정해집니다</p>
-                        <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
-                          게시판 단위로 이용자를 나누는 권한 설정은 제공하지 않습니다.
-                        </p>
-                      </div>
-                    </div>
-
-                    <div className="rounded-md border border-border bg-card p-3 space-y-2 text-left">
-                      <p className="text-xs font-semibold text-muted-foreground">현재 적용되는 규칙</p>
-                      <ul className="space-y-1 text-[length:var(--font-size-body)] text-foreground list-disc pl-5">
-                        <li>메뉴 노출: 메뉴는 길 안내일 뿐 접근을 막지 않습니다. 메뉴가 보이지 않아도 주소를 아는 로그인 사용자는 게시판을 엽니다.</li>
-                        <li>게시글 권한: 글 보기·쓰기·고치기·지우기 권한은 모든 게시판에 함께 적용되고, 기본으로 일반 사용자 그룹에 있습니다.</li>
-                        {/* reusable-base:community:start */}
-                        <li>회원 범위: 게시판마다 이용자를 나누는 수단은 커뮤니티 귀속 하나입니다. 귀속 게시판은 그 커뮤니티의 승인 회원만 씁니다.</li>
-                        {/* reusable-base:community:end */}
-                        <li>로그인하지 않은 사용자는 게시판을 열 수 없습니다.</li>
-                      </ul>
-                    </div>
-
-                    {canOpenAuthority && (
-                      <Link
-                        href="/admin/security/authority"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
-                      >
-                        권한 정책 관리에서 그룹별 게시글 권한 확인하기
-                        <ArrowUpRight size={16} aria-hidden="true" />
-                      </Link>
-                    )}
-                  </div>
-
-                  <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/15 p-4 text-left">
-                    <Info className="size-4 shrink-0 text-foreground" aria-hidden="true" />
-                    <div className="space-y-1 text-left">
-                      <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">게시판 생성 후 확인하세요</p>
-                      <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
-                        게시판은 만들자마자 사용 중 상태가 되어, 주소를 아는 로그인 사용자는 바로 읽고 씁니다.
-                        함께 등록되는 메뉴는 비활성이며, 메뉴 관리에서 활성화하면 관리자 그룹에만 자동으로 보입니다.
-                        다른 그룹에 보이려면 메뉴 관리에서 활성화와 그룹 표시를 함께 저장하세요.
-                      </p>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {currentStep === 4 && (
                 <div className="max-w-2xl space-y-4 text-left">
                   <div className="space-y-1 text-left">
                     <Label htmlFor="upperMenuNo" className="text-[length:var(--font-size-body)] font-medium text-foreground">
@@ -712,6 +800,11 @@ export function BoardMakerWizard() {
                       </SelectContent>
                     </Select>
                     {errors.upperMenuNo && <p className="text-destructive-emphasis text-sm font-bold ml-2">{errors.upperMenuNo.message}</p>}
+                    {upperMenuNo === '2030000' && (
+                      <p role="note" className="text-xs text-muted-foreground">
+                        관리 센터 아래는 관리자용 메뉴 영역이라 일반 사용자용 게시판 위치로 맞지 않습니다.
+                      </p>
+                    )}
                   </div>
 
                   <div className="grid grid-cols-1 gap-4 text-left md:grid-cols-2">
@@ -751,11 +844,99 @@ export function BoardMakerWizard() {
 
                   <div className="rounded-md border border-border bg-muted p-3 text-left text-foreground">
                     <div className="space-y-1 text-left">
-                      <p className="text-xs font-semibold text-primary text-left">Generated Path</p>
+                      <p className="text-xs font-semibold text-primary text-left">메뉴 경로</p>
                       <p className="break-all font-mono text-[length:var(--font-size-body)] text-left">
-                        /admin/community/boards/select-board-list?bbsId=AUTO_GEN
+                        /admin/community/boards/select-board-list?bbsId=(만들 때 정해짐)
                       </p>
                       <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">메뉴는 비활성(미사용) 상태로 생성됩니다. 메뉴 관리에서 활성화해야 내비게이션에 나타납니다.</p>
+                    </div>
+                  </div>
+
+                  {/*
+                   * 이 단계에는 역할×권한 체크박스 매트릭스가 있었으나, 게시판별 권한은 저장할 테이블도
+                   * API 도 존재하지 않아 선택값이 서버로 전송되지 않고 브라우저에서 사라졌다.
+                   * 운영자는 '익명 쓰기 금지'를 설정했다고 믿지만 실제로는 아무 정책도 적용되지 않는
+                   * 보안 오인 상태였다. 실제 통제 지점을 안내하도록 대체한다.
+                   *
+                   * [2026-10-23 ADR-0040 A0] 종전 안내("접근 권한은 메뉴 권한을 따른다")도 사실이 아니었다. 메뉴는 길 안내일 뿐
+                   * 게시판 이용 화면은 인증만 요구한다. 접근을 정하는 축(메뉴 노출·게시글 권한·회원 범위)을 그대로 말한다. 회원 범위는
+                   * 커뮤니티 기능의 축이라 커뮤니티 마커 안에 둔다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없다.
+                   */}
+                  <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4 text-left">
+                    <div className="flex items-start gap-3">
+                      <div className="shrink-0 rounded-md border border-border bg-card p-2 text-primary">
+                        <ShieldCheck size={24} aria-hidden="true" />
+                      </div>
+                      <div className="space-y-2 text-left">
+                        <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">이 게시판을 누가 쓸 수 있는지는 아래 규칙으로 정해집니다</p>
+                        <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">
+                          게시판 단위로 이용자를 나누는 권한 설정은 제공하지 않습니다.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="rounded-md border border-border bg-card p-3 space-y-2 text-left">
+                      <p className="text-xs font-semibold text-muted-foreground">현재 적용되는 규칙</p>
+                      <ul className="space-y-1 text-[length:var(--font-size-body)] text-foreground list-disc pl-5">
+                        <li>메뉴 노출: 메뉴는 길 안내일 뿐 접근을 막지 않습니다. 메뉴가 보이지 않아도 주소를 아는 로그인 사용자는 사용 중인 게시판을 엽니다.</li>
+                        <li>게시글 권한: 글 보기·쓰기·고치기·지우기 권한은 모든 게시판에 함께 적용되고, 기본으로 일반 사용자 그룹에 있습니다.</li>
+                        {/* reusable-base:community:start */}
+                        <li>회원 범위: 게시판마다 이용자를 나누는 수단은 커뮤니티 귀속 하나입니다. 귀속 게시판은 그 커뮤니티의 승인 회원만 씁니다.</li>
+                        {/* reusable-base:community:end */}
+                        <li>로그인하지 않은 사용자는 게시판을 열 수 없습니다.</li>
+                      </ul>
+                    </div>
+
+                    <p className="text-xs text-muted-foreground">
+                      만들려면 게시판 만들기·메뉴 등록·메뉴 조회 권한(BBS_MST_CREATE·MENU_CREATE·MENU_READ)이 필요합니다.
+                    </p>
+
+                    {canOpenAuthority && (
+                      <Link
+                        href="/admin/security/authority"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-2 text-sm font-bold text-primary hover:underline"
+                      >
+                        권한 정책 관리에서 그룹별 게시글 권한 확인하기
+                        <ArrowUpRight size={16} aria-hidden="true" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {currentStep === 4 && (
+                <div className="max-w-2xl space-y-4 text-left">
+                  <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-md border border-border p-4 text-[length:var(--font-size-body)] sm:grid-cols-[10rem_1fr]">
+                    <dt className="text-muted-foreground">게시판</dt>
+                    <dd className="text-foreground">{bbsTtl}</dd>
+                    <dt className="text-muted-foreground">용도</dt>
+                    <dd className="text-foreground">{BOARD_PURPOSES.find((option) => option.id === purpose)?.label ?? '고르지 않음'}</dd>
+                    <dt className="text-muted-foreground">화면 유형</dt>
+                    <dd className="text-foreground">{TEMPLATES.find((tpl) => tpl.id === selectedTemplate)?.name ?? selectedTemplate}</dd>
+                    <dt className="text-muted-foreground">기능</dt>
+                    <dd className="text-foreground">
+                      댓글 {watch('ansYn') === 'N' ? '받지 않음' : '받음'} · 만족도 {watch('stsfdgYn') === 'N' ? '받지 않음' : '받음'} ·
+                      첨부 {watch('fileAtchPsbltyYn') === 'N' ? '허용 안 함' : `허용(${Number(watch('atchPsbltyFileQty')) === 0 ? '개수 상한 없음' : `${watch('atchPsbltyFileQty')}개`}, ${fileSizeBytes > 0 ? `${fileSizeBytes / BYTES_PER_MB}MB` : '전역 상한'})`}
+                    </dd>
+                    {/* reusable-base:community:start */}
+                    <dt className="text-muted-foreground">커뮤니티 귀속</dt>
+                    <dd className="text-foreground">{communityOptions.find((community) => String(community.cmntySn) === watch('cmntySn'))?.cmntyNm ?? '귀속하지 않음'}</dd>
+                    {/* reusable-base:community:end */}
+                    <dt className="text-muted-foreground">메뉴</dt>
+                    <dd className="text-foreground">{watch('menuNm')}</dd>
+                  </dl>
+
+                  <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/15 p-4 text-left">
+                    <Info className="size-4 shrink-0 text-foreground" aria-hidden="true" />
+                    <div className="space-y-1 text-left">
+                      <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">만든 직후의 상태</p>
+                      <ul className="list-disc space-y-1 pl-5 text-[length:var(--font-size-body)] text-muted-foreground">
+                        <li>게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다. 공개 준비를 마친 뒤 운영 화면에서 사용으로 바꿉니다.</li>
+                        <li>메뉴: 비활성으로 등록됩니다. 메뉴 관리에서 활성화하면 관리자 그룹에만 자동으로 보이고, 다른 그룹에 보이려면 활성화와 그룹 표시를 함께 저장합니다.</li>
+                        <li>권한: 새로 주지 않습니다. 게시글 권한은 모든 게시판에 함께 적용됩니다.</li>
+                      </ul>
                     </div>
                   </div>
                 </div>
@@ -803,7 +984,7 @@ export function BoardMakerWizard() {
                   </span>
                 ) : (
                   <span className="flex items-center gap-3">
-                    {currentStep === STEPS.length ? createdBoardId ? '메뉴 등록 다시 시도' : '게시판 생성 및 메뉴 배포' : '다음 단계로'}
+                    {currentStep === STEPS.length ? createdBoardId ? '메뉴 등록 다시 시도' : '게시판 만들기' : '다음 단계로'}
                     <ChevronRight className="size-4" aria-hidden="true" />
                   </span>
                 )}

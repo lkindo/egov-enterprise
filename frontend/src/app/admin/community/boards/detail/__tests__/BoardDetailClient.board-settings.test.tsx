@@ -29,7 +29,9 @@ vi.mock('@/app/actions/boardActions', () => ({ deleteBoardArticle: vi.fn() }));
 vi.mock('@/services/business/knowledge/knowledgeService', () => ({ knowledgeService: { getArticle: vi.fn() } }));
 vi.mock('@/services/foundation/file/FileService', () => ({ fileService: { getFileList: vi.fn() } }));
 vi.mock('@/components/features/comment/CommentSection', () => ({
-  default: ({ acceptsNewComments }: { acceptsNewComments?: boolean }) => <div data-testid="comments" data-accepts={String(acceptsNewComments)} />,
+  default: ({ acceptsNewComments, boardInUse }: { acceptsNewComments?: boolean; boardInUse?: boolean }) => (
+    <div data-testid="comments" data-accepts={String(acceptsNewComments)} data-board-in-use={String(boardInUse)} />
+  ),
 }));
 vi.mock('@/components/features/satisfaction/SatisfactionSection', () => ({
   default: ({ acceptsNewRatings }: { acceptsNewRatings?: boolean }) => <div data-testid="satisfaction" data-accepts={String(acceptsNewRatings)} />,
@@ -78,8 +80,27 @@ describe('BoardDetailClient 게시판 설정 전달 (DIP B5 F9)', () => {
   });
 
   it('켠 게시판은 입력을 받는다고 넘긴다', async () => {
-    await renderDetail(detail({ bbsTtl: '공지', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y' }));
+    await renderDetail(detail({ bbsTtl: '공지', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y', inUse: true }));
     expect(screen.getByTestId('comments').getAttribute('data-accepts')).toBe('true');
+    expect(screen.getByTestId('comments').getAttribute('data-board-in-use')).toBe('true');
     expect(screen.getByTestId('satisfaction').getAttribute('data-accepts')).toBe('true');
+    expect(screen.getByRole('button', { name: '게시글 추천' })).toBeInTheDocument();
+    expect(screen.queryByText(/사용 안 함 게시판입니다/)).toBeNull();
+  });
+
+  // [2026-10-23 ADR-0040 결정 1] 운영자가 사용 안 함 게시판의 글을 열면 서버가 추천·댓글·새 평가를 모두 거부한다 — 입력을 감추고 알린다.
+  it('사용 안 함 게시판의 글은 추천·새 평가를 감추고 댓글 섹션에 닫혔다고 넘기며 사유를 알린다', async () => {
+    await renderDetail(detail({ bbsTtl: '옛 게시판', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y', inUse: false }));
+
+    expect(screen.getByTestId('comments').getAttribute('data-board-in-use')).toBe('false');
+    expect(screen.getByTestId('satisfaction').getAttribute('data-accepts')).toBe('false');
+    expect(screen.queryByRole('button', { name: /게시글 추천/ })).toBeNull();
+    expect(screen.getByText('사용 안 함 게시판입니다. 이용자에게 닫혀 있고, 운영자는 글을 정리할 수 있습니다.')).toBeInTheDocument();
+  });
+
+  it('메타를 모르면 열린 것으로 두고 판정은 서버가 한다', async () => {
+    await renderDetail(detail(null));
+    expect(screen.getByTestId('comments').getAttribute('data-board-in-use')).toBe('true');
+    expect(screen.getByRole('button', { name: '게시글 추천' })).toBeInTheDocument();
   });
 });

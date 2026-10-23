@@ -28,6 +28,13 @@ public class BoardMaster extends BaseEntity {
     @Column(name = "bbs_id", length = 20)
     private String bbsId;
 
+    /**
+     * 낙관적 잠금 버전(V2_139, ADR-0040 결정 10). 화면이 읽은 값과 다르면 다른 사람이 먼저 고친 것이다(서비스가 409 로 거부한다).
+     * 일괄 사용 상태 변경·단건 비활성화도 이 값을 올리므로, 그 사이에 열어 둔 설정 저장은 409 가 된다.
+     */
+    @Version
+    private Integer version;
+
     @Column(nullable = false, length = 100)
     private String bbsTtl;
 

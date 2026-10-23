@@ -13,10 +13,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { knowledgeService, toKnowledgeActivities, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
 import {
-  HELP_FAQ_BOARD_ID,
   NOTICE_BOARD_ID,
-  QNA_BOARD_ID,
-  WIKI_BOARD_ID,
 } from '@/config/board-ids';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { isQnaSolved } from '@/lib/board/qna-status';
@@ -32,6 +29,7 @@ import { StandardDataTable, type Column } from '@/app/components/ui/standard-dat
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 import { parseKnowledgeTab, type KnowledgeShellTab } from './knowledge-tabs';
+import { KNOWLEDGE_SHELL_TAB_BOARDS } from './knowledge-tab-boards';
 
 /**
  * 이 라우트가 URL 에 싣는 쿼리 키 전수. `bbsId` 는 진입 전용이라 카테고리를 바꾸면 버린다(종전 delete 와 같은 결과).
@@ -49,9 +47,10 @@ const HUB_PARAM_KEYS = ['tab'] as const;
  */
 type KnowledgeTab = { readonly id: string; readonly label: string } & HubTabViews['knowledge'];
 const SHELL_TABS: readonly KnowledgeTab[] = [
-  { id: 'WIKI', label: '위키', description: '기술 사양', icon: Library, bbsId: WIKI_BOARD_ID },
-  { id: 'FAQ', label: '자주 묻는 질문', description: '빠른 답변', icon: BookOpen, bbsId: HELP_FAQ_BOARD_ID },
-  { id: 'QNA', label: '질의응답(Q&A)', description: '질문과 답변', icon: MessageCircleQuestion, bbsId: QNA_BOARD_ID },
+  // 탭 → 게시판 대응은 게시판 운영 화면의 메뉴 연결 판정과 공유한다(knowledge-tab-boards.ts, ADR-0040 결정 8).
+  { id: 'WIKI', label: '위키', description: '기술 사양', icon: Library, bbsId: KNOWLEDGE_SHELL_TAB_BOARDS.WIKI },
+  { id: 'FAQ', label: '자주 묻는 질문', description: '빠른 답변', icon: BookOpen, bbsId: KNOWLEDGE_SHELL_TAB_BOARDS.FAQ },
+  { id: 'QNA', label: '질의응답(Q&A)', description: '질문과 답변', icon: MessageCircleQuestion, bbsId: KNOWLEDGE_SHELL_TAB_BOARDS.QNA },
 ];
 
 /** 열린 탭의 머리 동작. 기여 뷰의 컴포넌트를 그대로 그린다. */
@@ -126,8 +125,9 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     그 차단은 **집행자가 없는 인가 주장**이었다. 서버의 게시판 읽기 판정은 게시판 종류를 가리지
     않는 기능 권한(BOARD_READ — 기본 배정상 ROLE_USER 포함)뿐이고 WIKI·FAQ 를 관리자에게만 여는
     판정은 없으며, 같은 사용자가 같은 데이터를 세 경로로 이미 받는다 — ① 이 화면의 인기 문서·
-    최근 활동 ② /admin/community/board 의 게시판 선택기(비관리자 폴백 목록이 WIKI 게시판을
-    '일정 게시판' 으로 **의도적으로 포함**한다: use-board-options.ts) ③ GET /boards/{bbsId} 직접 호출.
+    최근 활동 ② /admin/community/board 의 게시판 선택기(당시 비관리자 폴백 목록이 WIKI 게시판을
+    '일정 게시판' 으로 포함했다. 2026-10-23 부터 선택지는 서버가 사용 중·열람 가능 게시판으로 거른다 —
+    ADR-0040 결정 11) ③ GET /boards/{bbsId} 직접 호출.
 
     그래서 화면은 "접근 권한 없음 · 관리자에게 권한을 요청하십시오" 라고 말하면서 바로 옆에서
     그 게시판의 제목·조회수·작성자를 보여 주고 상세까지 열어 줬다. 요청할 권한도 없다.
