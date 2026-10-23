@@ -136,8 +136,75 @@ class BoardMasterServiceTest {
             String bbsId = boardMasterService.createBoardMaster("user1", dto);
 
             assertThat(bbsId).startsWith("BBSMSTR_");
-            verify(entityManager).persist(any(BoardMaster.class));
+            // [2026-10-23 ADR-0040 결정 3·6] 예약 게시를 보내지 않으면 받지 않음(N)으로 만든다.
+            //   [결정 5·6] 상단 고정 정책도 보내지 않으면 고정 안 받음·5건·30일이다(마이그레이션 기본값과 같다).
+            //   [결정 6·7] 비밀글 정책·추천 받기도 보내지 않으면 NONE·받음이다(지금 동작).
+            verify(entityManager).persist(argThat((BoardMaster bm) -> "N".equals(bm.getRsvtPstgPsbltyYn())
+                    && "N".equals(bm.getUpendFixPsbltyYn())
+                    && java.math.BigInteger.valueOf(5).equals(bm.getUpendFixUplmtNocs())
+                    && java.math.BigInteger.valueOf(30).equals(bm.getUpendFixBscDayCnt())
+                    && "NONE".equals(bm.getPrvtPstPlcyCd()) && "Y".equals(bm.getRcmdtnUseYn())));
         }
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6·7] 게시판 생성은 보낸 비밀글 정책·추천 받기를 그대로 만든다")
+    void createBoardMaster_appliesPostPolicies() {
+        try (var mockedSecurity = mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mockedSecurity.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_READ_ALL")).thenReturn(true);
+            BoardMasterDto dto = BoardMasterDto.builder().bbsTtl("질의응답").prvtPstPlcyCd("OPTIONAL").rcmdtnUseYn("N").build();
+
+            boardMasterService.createBoardMaster("user1", dto);
+
+            verify(entityManager).persist(argThat((BoardMaster bm) -> "OPTIONAL".equals(bm.getPrvtPstPlcyCd())
+                    && "N".equals(bm.getRcmdtnUseYn())));
+        }
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6·7] 비밀글 정책·추천 받기를 보내지 않거나 같은 값이면 저장값·수정자·이력이 그대로다")
+    void updateBoardMaster_postPoliciesKeepStoredValuesWhenAbsentOrSame() {
+        BoardMaster entity = BoardMaster.builder()
+                .bbsId("BBSMSTR_000000000007").bbsTtl("문의").fileAtchPsbltyYn("N").atchPsbltyFileQty(0)
+                .useYn("Y").ansYn("Y").stsfdgYn("Y").prvtPstPlcyCd("REQUIRED").rcmdtnUseYn("N").build();
+        ReflectionTestUtils.setField(entity, "version", 3);
+        entity.setLastMdfrId("previous");
+        when(boardMasterRepository.findById("BBSMSTR_000000000007")).thenReturn(Optional.of(entity));
+
+        BoardMasterUpdateRequest absent = new BoardMasterUpdateRequest();
+        absent.setUseYn("Y");
+        absent.setVersion(3);
+        boardMasterService.updateBoardMaster("user01", "BBSMSTR_000000000007", absent);
+        BoardMasterUpdateRequest same = new BoardMasterUpdateRequest();
+        same.setUseYn("Y");
+        same.setPrvtPstPlcyCd("REQUIRED");
+        same.setRcmdtnUseYn("N");
+        same.setVersion(3);
+        boardMasterService.updateBoardMaster("user01", "BBSMSTR_000000000007", same);
+
+        assertThat(entity.getPrvtPstPlcyCd()).isEqualTo("REQUIRED");
+        assertThat(entity.getRcmdtnUseYn()).isEqualTo("N");
+        assertThat(entity.getLastMdfrId()).as("바뀐 값이 없으면 수정자도 쓰지 않는다(버전이 오르지 않는다)").isEqualTo("previous");
+        // 기록기는 항목마다 불리지만 전후 값이 같아 아무것도 남기지 않는다(BoardChangeRecorderTest).
+        verify(changeRecorder, times(2)).recordBoard("BBSMSTR_000000000007", SETTING, "비밀글 정책", "REQUIRED", "REQUIRED");
+        verify(changeRecorder, times(2)).recordBoard("BBSMSTR_000000000007", SETTING, "추천 받기", "N", "N");
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6·7·10] 읽은 버전이 다르면 비밀글 정책·추천 받기도 덮지 않는다")
+    void updateBoardMaster_staleVersionDoesNotOverwritePostPolicies() {
+        BoardMaster entity = BoardMaster.builder().bbsId("BBS_02").bbsTtl("Current").useYn("Y").build();
+        ReflectionTestUtils.setField(entity, "version", 5);
+        given(boardMasterRepository.findById("BBS_02")).willReturn(Optional.of(entity));
+
+        assertThatThrownBy(() -> boardMasterService.updateBoardMaster("user1", "BBS_02",
+                BoardMasterUpdateRequest.builder().bbsTtl("Current").useYn("Y").prvtPstPlcyCd("REQUIRED")
+                        .rcmdtnUseYn("N").version(4).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(entity.getPrvtPstPlcyCd()).isEqualTo("NONE");
+        assertThat(entity.getRcmdtnUseYn()).isEqualTo("Y");
+        verifyNoInteractions(changeRecorder);
     }
 
     @Test
@@ -183,12 +250,19 @@ class BoardMasterServiceTest {
                     .bbsTtl("Full Board")
                     .ansYn("Y")
                     .stsfdgYn("Y")
+                    .rsvtPstgPsbltyYn("Y")
+                    .upendFixPsbltyYn("Y")
+                    .upendFixUplmtNocs(3)
+                    .upendFixBscDayCnt(14)
                     .build();
 
             boardMasterService.createBoardMaster("user1", dto);
 
             verify(entityManager).persist(argThat((BoardMaster bm) ->
-                "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn())
+                "Y".equals(bm.getAnsYn()) && "Y".equals(bm.getStsfdgYn()) && "Y".equals(bm.getRsvtPstgPsbltyYn())
+                && "Y".equals(bm.getUpendFixPsbltyYn())
+                && java.math.BigInteger.valueOf(3).equals(bm.getUpendFixUplmtNocs())
+                && java.math.BigInteger.valueOf(14).equals(bm.getUpendFixBscDayCnt())
             ));
         }
     }
@@ -208,6 +282,7 @@ class BoardMasterServiceTest {
                 .useYn("Y")
                 .ansYn("Y")
                 .stsfdgYn("N")
+                .rsvtPstgPsbltyYn("Y")
                 .build();
         ReflectionTestUtils.setField(entity, "version", 3);
         entity.setLastMdfrId("previous");
@@ -230,12 +305,20 @@ class BoardMasterServiceTest {
         assertThat(entity.getUseYn()).isEqualTo("Y");
         assertThat(entity.getAnsYn()).isEqualTo("Y");
         assertThat(entity.getStsfdgYn()).isEqualTo("N");
+        assertThat(entity.getRsvtPstgPsbltyYn()).as("보내지 않은 예약 게시 설정은 그대로다").isEqualTo("Y");
         // [2026-10-23 ADR-0040 결정 10] 바뀐 값이 없으면 수정자도 그대로다 — 수정자만 바뀌어도 버전이 올라 다른 운영자가 409 를 받는다.
         //   실제 변경의 수정자 기록은 appliesProvidedValues 가 본다.
         assertThat(entity.getLastMdfrId()).isEqualTo("previous");
         // 기록기에는 같은 값만 넘어간다(같은 값은 기록기가 거른다).
         verify(changeRecorder).recordBoard("BBSMSTR_000000000001", SETTING, "게시판 명칭", "Old Title", "Old Title");
         verify(changeRecorder).recordBoard("BBSMSTR_000000000001", USE, "게시판 사용", "Y", "Y");
+        verify(changeRecorder).recordBoard("BBSMSTR_000000000001", SETTING, "예약 게시", "Y", "Y");
+        // [ADR-0040 결정 5·6] 보내지 않은 상단 고정 정책도 그대로다.
+        verify(changeRecorder).recordBoard("BBSMSTR_000000000001", SETTING, "상단 고정 허용", "N", "N");
+        verify(changeRecorder).recordBoard("BBSMSTR_000000000001", SETTING, "상단 고정 상한",
+                java.math.BigInteger.valueOf(5), java.math.BigInteger.valueOf(5));
+        verify(changeRecorder).recordBoard("BBSMSTR_000000000001", SETTING, "상단 고정 기본 일수",
+                java.math.BigInteger.valueOf(30), java.math.BigInteger.valueOf(30));
     }
 
     @Test
@@ -380,6 +463,12 @@ class BoardMasterServiceTest {
         request.setUseYn("N");
         request.setAnsYn("Y");
         request.setStsfdgYn("Y");
+        request.setRsvtPstgPsbltyYn("Y");
+        request.setUpendFixPsbltyYn("Y");
+        request.setUpendFixUplmtNocs(7);
+        request.setUpendFixBscDayCnt(14);
+        request.setPrvtPstPlcyCd("REQUIRED");
+        request.setRcmdtnUseYn("N");
         request.setVersion(0);
 
         boardMasterService.updateBoardMaster("user02", "BBSMSTR_000000000001", request);
@@ -395,6 +484,8 @@ class BoardMasterServiceTest {
         assertThat(entity.getUseYn()).isEqualTo("N");
         assertThat(entity.getAnsYn()).isEqualTo("Y");
         assertThat(entity.getStsfdgYn()).isEqualTo("Y");
+        // [2026-10-23 ADR-0040 결정 3·6] 예약 게시 설정(기존 게시판 기본값 N).
+        assertThat(entity.getRsvtPstgPsbltyYn()).isEqualTo("Y");
         assertThat(entity.getLastMdfrId()).isEqualTo("user02");
         // [2026-10-23 ADR-0040 결정 9] 바뀐 항목마다 전후 값을 기록기에 넘긴다. 사용 여부는 USE 다.
         String id = "BBSMSTR_000000000001";
@@ -407,7 +498,59 @@ class BoardMasterServiceTest {
         verify(changeRecorder).recordBoard(id, SETTING, "첨부 파일 수", 1, 5);
         verify(changeRecorder).recordBoard(id, SETTING, "파일당 크기(바이트)", 100L, 999L);
         verify(changeRecorder).recordBoard(id, USE, "게시판 사용", "Y", "N");
+        verify(changeRecorder).recordBoard(id, SETTING, "예약 게시", "N", "Y");
+        // [ADR-0040 결정 5·6] 상단 고정 정책(기존 게시판 기본값 N·5·30).
+        assertThat(entity.getUpendFixPsbltyYn()).isEqualTo("Y");
+        assertThat(entity.getUpendFixUplmtNocs()).isEqualTo(java.math.BigInteger.valueOf(7));
+        assertThat(entity.getUpendFixBscDayCnt()).isEqualTo(java.math.BigInteger.valueOf(14));
+        verify(changeRecorder).recordBoard(id, SETTING, "상단 고정 허용", "N", "Y");
+        verify(changeRecorder).recordBoard(id, SETTING, "상단 고정 상한",
+                java.math.BigInteger.valueOf(5), java.math.BigInteger.valueOf(7));
+        verify(changeRecorder).recordBoard(id, SETTING, "상단 고정 기본 일수",
+                java.math.BigInteger.valueOf(30), java.math.BigInteger.valueOf(14));
+        // [ADR-0040 결정 6·7] 비밀글 정책·추천 받기(기존 게시판 기본값 NONE·Y).
+        assertThat(entity.getPrvtPstPlcyCd()).isEqualTo("REQUIRED");
+        assertThat(entity.getRcmdtnUseYn()).isEqualTo("N");
+        verify(changeRecorder).recordBoard(id, SETTING, "비밀글 정책", "NONE", "REQUIRED");
+        verify(changeRecorder).recordBoard(id, SETTING, "추천 받기", "Y", "N");
         verifyNoMoreInteractions(changeRecorder);
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 5·6] 상단 고정 정책을 같은 값으로 다시 보내면 저장값·수정자를 그대로 두고, 설정을 꺼도 정책 값만 바뀐다")
+    void updateBoardMaster_pinPolicyKeepsSameValuesAndChangesOnlyPolicy() {
+        BoardMaster entity = BoardMaster.builder()
+                .bbsId("BBSMSTR_000000000006").bbsTtl("공지").fileAtchPsbltyYn("N").atchPsbltyFileQty(0)
+                .useYn("Y").ansYn("Y").stsfdgYn("Y")
+                .upendFixPsbltyYn("Y").upendFixUplmtNocs(java.math.BigInteger.valueOf(5))
+                .upendFixBscDayCnt(java.math.BigInteger.valueOf(30)).build();
+        ReflectionTestUtils.setField(entity, "version", 4);
+        entity.setLastMdfrId("previous");
+        java.math.BigInteger storedLimit = entity.getUpendFixUplmtNocs();
+        when(boardMasterRepository.findById("BBSMSTR_000000000006")).thenReturn(Optional.of(entity));
+
+        BoardMasterUpdateRequest same = new BoardMasterUpdateRequest();
+        same.setUseYn("Y");
+        same.setUpendFixPsbltyYn("Y");
+        same.setUpendFixUplmtNocs(5);
+        same.setUpendFixBscDayCnt(30);
+        same.setVersion(4);
+        boardMasterService.updateBoardMaster("user01", "BBSMSTR_000000000006", same);
+
+        assertThat(entity.getUpendFixUplmtNocs()).as("같은 뜻이면 저장값 객체를 그대로 둔다").isSameAs(storedLimit);
+        assertThat(entity.getLastMdfrId()).isEqualTo("previous");
+
+        BoardMasterUpdateRequest off = new BoardMasterUpdateRequest();
+        off.setUseYn("Y");
+        off.setUpendFixPsbltyYn("N");
+        off.setVersion(4);
+        boardMasterService.updateBoardMaster("user01", "BBSMSTR_000000000006", off);
+
+        assertThat(entity.getUpendFixPsbltyYn()).isEqualTo("N");
+        assertThat(entity.getUpendFixUplmtNocs()).as("보내지 않은 상한은 그대로").isEqualTo(java.math.BigInteger.valueOf(5));
+        assertThat(entity.getUpendFixBscDayCnt()).isEqualTo(java.math.BigInteger.valueOf(30));
+        assertThat(entity.getLastMdfrId()).isEqualTo("user01");
+        verify(changeRecorder).recordBoard("BBSMSTR_000000000006", SETTING, "상단 고정 허용", "Y", "N");
     }
 
     @Test

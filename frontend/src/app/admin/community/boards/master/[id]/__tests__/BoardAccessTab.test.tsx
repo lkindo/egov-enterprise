@@ -75,25 +75,48 @@ describe('BoardAccessTab', () => {
   it('게시글 권한 표의 추가 조건이 서버의 쓰기·커뮤니티 판정과 같다', () => {
     renderTab({ designations: ['NOTICE'], cmntySn: 7 } as never);
     const table = screen.getByRole('table', { name: '게시글 권한' });
-    const conditionOf = (action: string) => within(table).getByRole('row', { name: new RegExp(`^${action}`) })
+    const conditionOf = (action: string) => within(table).getByRole('row', { name: new RegExp(`^${action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) })
       .querySelectorAll('td')[2].textContent ?? '';
 
-    for (const action of ['글 쓰기', '내 글 고치기·해결 표시', '내 글 지우기', '남의 글 고치기', '남의 글 지우기']) {
+    for (const action of ['글 쓰기', '내 글 고치기·해결 표시', '내 글 지우기', '남의 글 고치기', '남의 글 지우기', '게시 기간 바꾸기(운영 화면)',
+      '상단 고정·해제(운영 화면)']) {
       expect(conditionOf(action)).toContain('공지 편집 권한(NOTICE_EDIT)');
       expect(conditionOf(action)).toContain('커뮤니티 승인 회원');
     }
-    for (const action of ['글 보기', '추천', '댓글 보기', '댓글 쓰기']) {
+    for (const action of ['글 보기', '추천', '내 추천 취소', '댓글 보기', '댓글 쓰기']) {
       expect(conditionOf(action)).not.toContain('NOTICE_EDIT');
       expect(conditionOf(action)).toContain('커뮤니티 승인 회원');
     }
-    const readAll = conditionOf('비밀글·게시 종료 글·사용 안 함 게시판 보기');
+    const readAll = conditionOf('비밀글·예약·게시 종료 글·사용 안 함 게시판 보기');
     expect(readAll).not.toContain('커뮤니티 승인 회원');
     expect(readAll).toContain('사용 안 함 게시판은 이 권한으로만 본다');
-    // 시작일(예약)은 B1 전까지 집행하지 않는다 — 기간 조건은 게시 종료일만 말한다.
-    expect(conditionOf('글 보기')).toContain('게시 종료 전');
-    expect(conditionOf('글 보기')).not.toContain('게시 기간');
+    // [2026-10-23 ADR-0040 결정 3] B1 부터 시작일도 집행한다 — 글 보기 조건은 종료일만이 아니라 게시 기간 전체를 말한다.
+    expect(conditionOf('글 보기')).toContain('게시 기간 안(시작일 전·종료일 뒤 글은 글쓴이 본인만)');
+    expect(conditionOf('글 보기')).not.toContain('게시 종료 전');
+    expect(conditionOf('공개 FAQ 보기(FAQ 지정 게시판)')).toContain('게시 기간 안');
+    expect(conditionOf('글 쓰기')).toContain('예약 게시를 받아야 함');
+    expect(conditionOf('내 글 고치기·해결 표시')).toContain('게시가 시작된 글의 시작일은 게시글 전체 수정 권한(BOARD_UPDATE_ALL)도 있어야 바꿈');
+    // 운영 화면의 게시 기간 바꾸기는 관리 API 라 관리자 역할도 필요하다(URL 게이트).
+    expect(conditionOf('게시 기간 바꾸기(운영 화면)')).toContain('관리자 역할도 필요');
+    // [2026-10-23 ADR-0040 결정 5·6] 상단 고정도 관리 API 다. 설정은 새 고정만 막고 해제는 늘 되며, 답글은 고정하지 않는다.
+    expect(conditionOf('상단 고정·해제(운영 화면)')).toContain('관리자 역할도 필요');
+    expect(conditionOf('상단 고정·해제(운영 화면)')).toContain('고정은 게시판이 상단 고정을 받을 때 상한까지(해제는 늘 가능)');
+    expect(conditionOf('상단 고정·해제(운영 화면)')).toContain('원글만');
     expect(conditionOf('추천')).toContain('글을 볼 수 있어야 함');
     expect(conditionOf('댓글 쓰기')).toContain('글을 볼 수 있어야 함');
+    // [2026-10-23 ADR-0040 결정 6·7] 추천은 게시판이 추천을 받을 때만, 내 추천 취소는 설정과 무관하다. 필수 비밀글 정책은 쓰기에 붙는다.
+    expect(conditionOf('추천')).toContain('게시판이 추천을 받음');
+    expect(conditionOf('내 추천 취소')).toContain('내가 한 추천만(추천을 받지 않는 게시판에서도 가능)');
+    expect(conditionOf('내 추천 취소')).not.toContain('게시판이 추천을 받음');
+    expect(conditionOf('글 쓰기')).toContain('비밀글 정책이 필수면 비밀글로 저장');
+  });
+
+  // 추천 취소는 추천과 같은 권한(BOARD_LIKE)이다 — 서버 바인딩(cancelLikePost)과 같다.
+  it('내 추천 취소는 추천과 같은 권한을 요구한다', () => {
+    renderTab();
+    const table = screen.getByRole('table', { name: '게시글 권한' });
+    const row = within(table).getByRole('row', { name: /^내 추천 취소/ });
+    expect(within(row).getByText('BOARD_LIKE')).toBeInTheDocument();
   });
 
   // 대행 권한은 기본 권한을 포함하지 않는다 — 남의 글 고치기는 BOARD_UPDATE 와 BOARD_UPDATE_ALL 을 모두 가진 그룹만 할 수 있다.
@@ -109,6 +132,25 @@ describe('BoardAccessTab', () => {
     expect(within(row).getByText('BOARD_UPDATE + BOARD_UPDATE_ALL')).toBeInTheDocument();
     expect(within(row).getByText('편집자')).toBeInTheDocument();
     expect(within(row).queryByText(/대행만/)).toBeNull();
+  });
+
+  // [2026-10-23 ADR-0040 결정 5] 상단 고정 권한(BOARD_PIN)은 기본 배정이 없다 — 배정된 그룹이 없으면 그렇게 말하고 지어내지 않는다.
+  it('상단 고정 권한은 그 권한을 가진 그룹만 보이고, 없으면 배정된 그룹 없음이다', () => {
+    const table = () => screen.getByRole('table', { name: '게시글 권한' });
+    const { unmount } = renderTab();
+    const unassigned = within(table()).getByRole('row', { name: /^상단 고정·해제\(운영 화면\)/ });
+    expect(within(unassigned).getByText('BOARD_PIN')).toBeInTheDocument();
+    expect(within(unassigned).getByText('배정된 그룹 없음')).toBeInTheDocument();
+    unmount();
+
+    mocks.access.groupSource = { status: 'ready', groups: [
+      { code: 'ROLE_BOARD_OPS', name: '게시판 운영', grants: [{ type: 'OPERATION', code: 'BOARD_PIN' }] },
+      ADMIN,
+    ] };
+    renderTab();
+    const assigned = within(table()).getByRole('row', { name: /^상단 고정·해제\(운영 화면\)/ });
+    // 배정된 그룹 칸(필요한 권한 다음 칸)은 BOARD_PIN 을 가진 그룹만이다 — 관리자 그룹이라고 지어내지 않는다.
+    expect(within(assigned).getAllByRole('cell')[1]).toHaveTextContent(/^게시판 운영$/);
   });
 
   it('메뉴 원천이 먼저 확정돼도 그룹 조회 중이면 판정하지 않고 확인하는 중이다', () => {

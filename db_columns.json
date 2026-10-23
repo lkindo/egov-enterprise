@@ -836,6 +836,14 @@
     "column_name": "atch_file_sn"
   },
   {
+    "table_name": "tb_bbs_item",
+    "column_name": "upend_fix_yn"
+  },
+  {
+    "table_name": "tb_bbs_item",
+    "column_name": "upend_fix_end_ymd"
+  },
+  {
     "table_name": "tb_bbs_master",
     "column_name": "atch_psblty_file_qty"
   },
@@ -910,6 +918,30 @@
   {
     "table_name": "tb_bbs_master",
     "column_name": "version"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "rsvt_pstg_psblty_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "upend_fix_psblty_yn"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "upend_fix_uplmt_nocs"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "upend_fix_bsc_day_cnt"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "prvt_pst_plcy_cd"
+  },
+  {
+    "table_name": "tb_bbs_master",
+    "column_name": "rcmdtn_use_yn"
   },
   {
     "table_name": "tb_bbs_master_optn",

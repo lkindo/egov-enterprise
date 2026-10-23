@@ -336,7 +336,7 @@ export interface paths {
         get: operations["getPost"];
         /**
          * 게시글 수정
-         * @description 기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다.
+         * @description 기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다. 상세 조회에서 받은 version 을 함께 보냅니다(없으면 400, 다르면 409). 게시 기간은 보내지 않거나 비우면 지금 값을 유지합니다. 게시가 시작된 글의 시작일은 게시글 전체 수정 권한(BOARD_UPDATE_ALL)이 있어야 바꿉니다(403). 예약 게시를 받지 않는 게시판의 새 미래 시작일과, 저장값과 합쳐 종료일이 시작일보다 빠른 기간은 400 입니다. 비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다(공개 상태로 남아 있던 글도 고치면 비밀글이 됩니다).
          */
         put: operations["updatePost"];
         post?: never;
@@ -360,7 +360,7 @@ export interface paths {
         get?: never;
         /**
          * 게시글 수정(첨부 포함)
-         * @description 게시글 정보와 새 첨부 파일을 함께 수정합니다. 경로와 본문의 게시판이 다르면 400 입니다.
+         * @description 게시글 정보와 새 첨부 파일을 함께 수정합니다. 경로와 본문의 게시판이 다르면 400 입니다. 비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.
          */
         put: operations["updatePostWithFiles"];
         post?: never;
@@ -1866,7 +1866,7 @@ export interface paths {
         put?: never;
         /**
          * 게시글 등록(첨부 포함)
-         * @description 게시글과 첨부 파일을 함께 등록합니다. 경로와 본문의 게시판이 다르면 400 입니다.
+         * @description 게시글과 첨부 파일을 함께 등록합니다. 경로와 본문의 게시판이 다르면 400 입니다. 비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.
          */
         post: operations["createPostWithFiles"];
         delete?: never;
@@ -1886,7 +1886,7 @@ export interface paths {
         put?: never;
         /**
          * 게시글 등록
-         * @description 새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다.
+         * @description 새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다. 게시 기간은 8자리(yyyyMMdd)이며 종료일은 시작일보다 빠를 수 없습니다(400). 예약 게시를 받지 않는 게시판에서 오늘보다 뒤의 시작일은 400 입니다. 시작일이 오늘보다 뒤인 글은 그날까지 작성자와 조회 대행 권한자에게만 보입니다. 비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.
          */
         post: operations["createPost"];
         delete?: never;
@@ -2898,6 +2898,46 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 게시글 상단 고정·해제 일괄 처리(운영 화면)
+         * @description 고른 글 모두에 같은 고정 여부와 종료일을 씁니다 — 이미 고정 중인 글의 종료일도 바뀌고, 그 글은 상한 집계에서 새 고정으로 세지 않습니다. 권한·규칙은 단건과 같습니다(BOARD_PIN, 지정 게시판이면 그 편집 권한도). 모든 대상을 다시 판정해 하나라도 경로의 게시판에 없으면 404, 답글이 있거나 고정을 받지 않는 게시판이거나 상한을 넘으면 400 이며, 이때는 아무것도 바꾸지 않습니다. 대상은 한 번에 1~100건입니다. 게시 기간 일괄 처리(/posts/batch/period)와 권한이 달라 경로를 나눕니다.
+         */
+        post: operations["updatePostPinsInBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 게시글 게시 종료일 일괄 처리(운영 화면)
+         * @description END_DATE 는 고른 글의 종료일을 바꾸고(pstEndYmd 필요, 오늘이나 그 뒤), CLEAR_END 는 종료일을 비웁니다(pstEndYmd 없음). 권한은 빠른 편집과 같습니다(BOARD_UPDATE_ALL, 지정 게시판이면 그 편집 권한도). 모든 대상을 다시 판정해 하나라도 경로의 게시판에 없으면 404, 새 종료일이 시작일보다 앞이 되는 글이 있으면 그 글 번호와 함께 400 이며, 이때는 아무것도 바꾸지 않습니다. 그 사이 다른 사람이 같은 글을 고쳤으면 409 이고 전체가 되돌아갑니다. 대상은 한 번에 1~100건입니다.
+         */
+        post: operations["updatePostPeriodsInBatch"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/admin/system/board-masters/batch/status": {
         parameters: {
             query?: never;
@@ -3226,12 +3266,16 @@ export interface paths {
         get?: never;
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * 게시글 추천 취소
+         * @description 내 추천 이력이 있으면 지우고 추천수를 하나 줄여 새 추천수를 돌려줍니다. 내 추천이 없으면 아무것도 바꾸지 않고 지금 추천수를 돌려줍니다. 게시판이 추천을 받지 않아도 내 추천은 취소할 수 있습니다. 다른 사람의 추천이나 이력이 없는 기존 추천수는 줄이지 않습니다. 추천과 같이 글을 읽을 수 있는 사용자만 부릅니다.
+         */
+        delete: operations["cancelLikePost"];
         options?: never;
         head?: never;
         /**
          * 게시글 좋아요(추천)
-         * @description 게시글을 추천하고 추천수를 돌려줍니다. 글을 읽을 수 있는 사용자만 한 번 추천할 수 있으며, 이미 추천했으면 409 입니다.
+         * @description 게시글을 추천하고 추천수를 돌려줍니다. 글을 읽을 수 있는 사용자만 한 번 추천할 수 있으며, 이미 추천했으면 409 입니다. 추천을 받지 않는 게시판은 400 입니다(자기 추천 취소는 받습니다).
          */
         patch: operations["likePost"];
         trace?: never;
@@ -3334,6 +3378,46 @@ export interface paths {
          * @description 여러 명의 사용자 소속 부서를 한꺼번에 변경합니다. (관리자 권한)
          */
         patch: operations["moveUsersToDept"];
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/pin": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 게시글 상단 고정·해제(운영 화면)
+         * @description upendFixYn 이 Y 면 고정, N 이면 해제합니다. 게시글 상단 고정 권한(BOARD_PIN)이 필요하고, 공지·FAQ 로 지정된 게시판이면 그 편집 권한(NOTICE_EDIT·FAQ_EDIT)도 필요합니다(403). 고정은 게시판이 상단 고정을 받을 때만 되고(아니면 400), 고정 중인 글이 게시판의 상한에 이르렀으면 400 입니다. 고정 종료일은 오늘이나 그 뒤여야 하고, 비우면 오늘부터 게시판의 고정 기본 일수 뒤까지입니다. 해제에는 종료일을 보내지 않으며(보내면 400), 게시판 설정과 상관없이 언제나 됩니다. 답글은 고정할 수 없습니다(400). 경로의 게시판에 없는 글은 404, 사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL)이 없으면 404 입니다. 고정은 게시글 버전을 올리지 않습니다. 바뀐 항목은 게시판 변경 이력에 남습니다.
+         */
+        patch: operations["updatePostPin"];
+        trace?: never;
+    };
+    "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/period": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        /**
+         * 게시글 게시 기간 변경(운영 화면)
+         * @description 운영 화면의 빠른 편집입니다. 게시글 전체 수정 권한(BOARD_UPDATE_ALL)이 필요하고, 공지·FAQ 로 지정된 게시판이면 그 편집 권한(NOTICE_EDIT·FAQ_EDIT)도 필요합니다(403). 목록에서 읽은 version 을 함께 보냅니다(없으면 400, 다르면 409). 보내지 않거나 비운 날짜는 지금 값을 유지하고, 종료일 해제는 일괄 처리(CLEAR_END)로 합니다. 예약 게시를 받지 않는 게시판의 미래 시작일, 오늘보다 이른 종료일, 시작일보다 이른 종료일은 400 입니다. 경로의 게시판에 없는 글은 404, 사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL)이 없으면 404 입니다. 바뀐 항목은 게시판 변경 이력에 남습니다.
+         */
+        patch: operations["updatePostPeriod"];
         trace?: never;
     };
     "/api/v1/admin/content/community/{cmntySn}/members/{userId}/withdraw": {
@@ -4288,7 +4372,7 @@ export interface paths {
         };
         /**
          * 게시글 목록 조회
-         * @description 특정 게시판의 게시글 목록을 페이징하여 조회합니다. 사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL) 보유자만 조회하고, 그 밖에는 없는 게시판과 같은 404 입니다.
+         * @description 특정 게시판의 게시글 목록을 페이징하여 조회합니다. 사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL) 보유자만 조회하고, 그 밖에는 없는 게시판과 같은 404 입니다. 게시 기간 밖의 글(시작일 전 예약 글·종료일이 지난 글)은 작성자와 조회 대행 권한 보유자에게만 보이며, 각 글의 postingStatus 는 서버가 오늘(Asia/Seoul) 기준으로 판정합니다. 기본 정렬과 orderBy=date 는 지금 상단 고정 중인 글(pinned)을 먼저 두고, 그다음 게시 기준일(작성일자와 게시 시작일 중 늦은 값) 내림차순입니다. orderBy=views·comments 는 고정 우선을 두지 않습니다.
          */
         get: operations["getPosts"];
         put?: never;
@@ -4804,7 +4888,7 @@ export interface paths {
         };
         /**
          * 게시물 통계 조회
-         * @description 일자별 등록 게시글 수(삭제한 글 제외). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
+         * @description 작성일 기준 일자별 등록 건수(예약·비밀·게시 종료·사용 안 함 게시판 글 포함, 삭제한 글 제외). 게시 상태와 무관한 등록 사실의 집계다(ADR-0040 결정 3). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. 기간(fromDate·toDate, yyyy-MM-dd 또는 yyyyMMdd)을 비우면 오늘(Asia/Seoul)까지 최근 1개월이다. 시작·종료일을 포함해 366일까지 묻고, 넘거나 시작일이 종료일보다 늦거나 형식이 틀리면 400 이다. 응답은 날짜 오름차순이다.
          */
         get: operations["getBbsStats"];
         put?: never;
@@ -5397,7 +5481,7 @@ export interface paths {
         };
         /**
          * 게시판 변경 이력 조회
-         * @description 최신순입니다. 바뀐 항목마다 한 건씩 돌려줍니다 — 지금 남는 것은 설정·사용 여부 변경입니다. 게시글 대상 행(PST)은 게시물 조회 대행 권한(BOARD_READ_ALL)이 있을 때만 싣습니다. 없는 게시판이면 404 입니다.
+         * @description 최신순입니다. 바뀐 항목마다 한 건씩 돌려줍니다 — 지금 남는 것은 설정·사용 여부 변경과 운영 화면에서 바꾼 게시 기간·상단 고정(빠른 편집·일괄 처리)입니다. 작성 화면의 수정은 남지 않습니다. 게시글 대상 행(PST)은 게시물 조회 대행 권한(BOARD_READ_ALL)이 있을 때만 싣습니다. 없는 게시판이면 404 입니다.
          */
         get: operations["getBoardChangeHistory"];
         put?: never;
@@ -6214,9 +6298,9 @@ export interface components {
             pstTtl: string;
             /** @description 게시글 내용 */
             pstCn: string;
-            /** @description 게시 시작일자 */
+            /** @description 게시 시작일자(yyyyMMdd). 오늘보다 뒤면 그날까지 작성자와 조회 대행 권한자에게만 보인다(예약 게시를 받는 게시판만). 게시가 시작된 글의 시작일은 게시글 전체 수정 권한이 있어야 바꾼다. 수정에서 비우면 저장값을 유지한다 */
             pstBgngYmd?: string;
-            /** @description 게시 종료일자 */
+            /** @description 게시 종료일자(yyyyMMdd). 시작일보다 빠를 수 없다. 수정에서 비우면 저장값을 유지한다 */
             pstEndYmd?: string;
             /**
              * Format: int64
@@ -6238,6 +6322,11 @@ export interface components {
              * @description 폐기됨 — 게시글 비밀번호를 확인하는 경로가 없어 서버가 저장하지 않는다(보내도 무시한다).
              */
             pswd?: string;
+            /**
+             * Format: int32
+             * @description 게시글 버전 — 수정 요청에서만 쓴다. 상세 조회의 version 을 그대로 돌려보낸다(없으면 400, 다르면 409). 등록·답글에서는 쓰지 않는다
+             */
+            version?: number;
         };
         SatisfactionDto: {
             /** Format: int64 */
@@ -7040,6 +7129,36 @@ export interface components {
              * @enum {string}
              */
             stsfdgYn?: "Y" | "N";
+            /**
+             * @description 예약 게시 — Y 면 새 글의 미래 게시 시작일을 받는다. 바꿔도 이미 있는 글의 노출은 바뀌지 않는다
+             * @enum {string}
+             */
+            rsvtPstgPsbltyYn?: "Y" | "N";
+            /**
+             * @description 상단 고정 허용 — Y 면 새 고정을 받는다. 끄거나 상한을 낮춰도 이미 고정된 글은 종료일까지 그대로다
+             * @enum {string}
+             */
+            upendFixPsbltyYn?: "Y" | "N";
+            /**
+             * Format: int32
+             * @description 상단 고정 상한(고정 중인 글 수, 1~100). 새 고정만 이 상한을 따른다
+             */
+            upendFixUplmtNocs?: number;
+            /**
+             * Format: int32
+             * @description 상단 고정 기본 일수(종료일을 비우고 고정할 때, 1~365)
+             */
+            upendFixBscDayCnt?: number;
+            /**
+             * @description 비밀글 정책 — NONE 은 작성 화면에 선택이 없고 요청값을 그대로 저장, OPTIONAL 은 작성 화면에서 글쓴이가 고름, REQUIRED 는 서버가 새 글과 고친 글을 비밀글로 저장한다. 바꿔도 이미 있는 글의 비밀 여부는 그대로다
+             * @enum {string}
+             */
+            prvtPstPlcyCd?: "NONE" | "OPTIONAL" | "REQUIRED";
+            /**
+             * @description 추천 받기 — N 이면 새 추천을 받지 않는다. 이미 받은 추천 수는 그대로이고 각자 자기 추천 취소는 받는다
+             * @enum {string}
+             */
+            rcmdtnUseYn?: "Y" | "N";
             /**
              * Format: int32
              * @description 화면이 읽은 게시판 버전. 다르면 다른 사람이 먼저 고친 것이라 409 다
@@ -8120,8 +8239,62 @@ export interface components {
             ansYn?: "Y" | "N";
             /** @enum {string} */
             stsfdgYn?: "Y" | "N";
+            /**
+             * @description 예약 게시 — Y 면 새 글의 미래 게시 시작일을 받는다(비우면 N)
+             * @enum {string}
+             */
+            rsvtPstgPsbltyYn?: "Y" | "N";
+            /**
+             * @description 상단 고정 허용 — Y 면 새 고정을 받는다(비우면 N)
+             * @enum {string}
+             */
+            upendFixPsbltyYn?: "Y" | "N";
+            /**
+             * Format: int32
+             * @description 상단 고정 상한(고정 중인 글 수, 1~100, 비우면 5)
+             */
+            upendFixUplmtNocs?: number;
+            /**
+             * Format: int32
+             * @description 상단 고정 기본 일수(종료일을 비우고 고정할 때, 1~365, 비우면 30)
+             */
+            upendFixBscDayCnt?: number;
+            /**
+             * @description 비밀글 정책 — NONE 은 작성 화면에 선택이 없고 요청값을 그대로 저장, OPTIONAL 은 글쓴이가 고름, REQUIRED 는 서버가 새 글과 고친 글을 비밀글로 저장한다(비우면 NONE)
+             * @enum {string}
+             */
+            prvtPstPlcyCd?: "NONE" | "OPTIONAL" | "REQUIRED";
+            /**
+             * @description 추천 받기 — N 이면 새 추천을 받지 않는다(비우면 Y). 자기 추천 취소는 늘 받는다
+             * @enum {string}
+             */
+            rcmdtnUseYn?: "Y" | "N";
             authFlag?: string;
             tmplatCours?: string;
+        };
+        /** @description 게시글 상단 고정·해제 일괄 처리 요청(운영 화면) — 하나라도 맞지 않으면 전체를 적용하지 않는다 */
+        BoardPostPinBatchRequest: {
+            /** @description 대상 게시글 번호 목록(경로의 게시판에 속한 원글) */
+            pstSns: number[];
+            /**
+             * @description Y 고정, N 해제
+             * @enum {string}
+             */
+            upendFixYn: "Y" | "N";
+            /** @description 고정 종료일자(yyyyMMdd, 고정할 때만). 오늘이나 그 뒤여야 하고, 비우면 오늘부터 게시판의 고정 기본 일수 뒤까지다 */
+            upendFixEndYmd?: string;
+        };
+        /** @description 게시글 게시 종료일 일괄 처리 요청(운영 화면) — 하나라도 맞지 않으면 전체를 적용하지 않는다 */
+        BoardPostPeriodBatchRequest: {
+            /**
+             * @description END_DATE 종료일 바꾸기(pstEndYmd 필요), CLEAR_END 종료일 해제(pstEndYmd 없음)
+             * @enum {string}
+             */
+            action: "END_DATE" | "CLEAR_END";
+            /** @description 대상 게시글 번호 목록(경로의 게시판에 속한 글) */
+            pstSns: number[];
+            /** @description 새 게시 종료일자(yyyyMMdd, END_DATE 만). 오늘이나 그 뒤여야 한다 */
+            pstEndYmd?: string;
         };
         /** @description 게시판 마스터 사용여부 일괄 변경 요청 */
         BoardMasterBatchStatusRequest: {
@@ -8266,6 +8439,28 @@ export interface components {
         BulkDeptMoveRequest: {
             userIds: string[];
             ognzId: string;
+        };
+        /** @description 게시글 상단 고정·해제 요청(운영 화면) */
+        BoardPostPinRequest: {
+            /**
+             * @description Y 고정, N 해제
+             * @enum {string}
+             */
+            upendFixYn: "Y" | "N";
+            /** @description 고정 종료일자(yyyyMMdd, 고정할 때만). 오늘이나 그 뒤여야 하고, 비우면 오늘부터 게시판의 고정 기본 일수 뒤까지다 */
+            upendFixEndYmd?: string;
+        };
+        /** @description 게시글 게시 기간 변경 요청(운영 화면) — 보내지 않거나 비운 날짜는 지금 값을 유지한다 */
+        BoardPostPeriodRequest: {
+            /** @description 게시 시작일자(yyyyMMdd). 오늘보다 뒤면 예약 게시를 받는 게시판에서만 받는다 */
+            pstBgngYmd?: string;
+            /** @description 게시 종료일자(yyyyMMdd). 오늘이나 그 뒤여야 한다 */
+            pstEndYmd?: string;
+            /**
+             * Format: int32
+             * @description 목록에서 읽은 게시글 버전. 다르면 다른 사람이 먼저 고친 것이라 409 다
+             */
+            version: number;
         };
         ChangeGroupMembers: {
             add: string[];
@@ -9331,6 +9526,20 @@ export interface components {
             ansLv?: number | null;
             /** @description 현재 사용자가 이미 추천했는지(서버 판정, 알 수 없으면 null) */
             readonly recommended?: boolean | null;
+            /**
+             * @description 게시 상태(서버 판정, Asia/Seoul 오늘 기준) — SCHEDULED 시작일 전·POSTING 게시 중·ENDED 종료일 지남. 게시판 목록·상세에서만 싣고 그 밖은 null
+             * @enum {string|null}
+             */
+            readonly postingStatus?: "SCHEDULED" | "POSTING" | "ENDED" | null;
+            /**
+             * Format: int32
+             * @description 게시글 버전(낙관적 잠금). 수정 요청에 그대로 돌려보낸다
+             */
+            readonly version?: number | null;
+            /** @description 지금 게시판 목록 맨 위에 고정 중인지(서버 판정, Asia/Seoul 오늘 기준). 게시판 목록·상세에서만 싣고 그 밖은 null */
+            readonly pinned?: boolean | null;
+            /** @description 상단 고정 종료일(yyyyMMdd). 지금 고정 중일 때만 싣고 그 밖은 null */
+            readonly upendFixEndYmd?: string | null;
         };
         DashboardResponse: {
             taskList: components["schemas"]["BoardDto"][];
@@ -9656,6 +9865,26 @@ export interface components {
             requiredEditPermissions: string[];
             /** @description 게시판이 사용 중인지. false 면 조회 대행 권한자가 사용 안 함 게시판을 열람하는 중이며, 서버는 새 댓글·만족도·추천을 받지 않는다(ADR-0040 결정 1). */
             inUse: boolean;
+            /**
+             * @description 예약 게시(ADR-0040 결정 3·6). N 이면 서버가 오늘보다 뒤의 새 게시 시작일을 거부한다. 작성 화면이 이 값으로 안내한다.
+             * @enum {string}
+             */
+            rsvtPstgPsbltyYn: "Y" | "N";
+            /**
+             * @description 상단 고정 허용(ADR-0040 결정 5·6). N 이면 서버가 새 고정을 거부한다(해제는 받는다). 운영 화면이 이 값으로 고정 단추를 안내한다.
+             * @enum {string}
+             */
+            upendFixPsbltyYn: "Y" | "N";
+            /**
+             * @description 비밀글 정책(ADR-0040 결정 7). NONE 은 작성 화면에 선택이 없고, OPTIONAL 은 글쓴이가 고르며, REQUIRED 는 서버가 새 글과 고친 글을 비밀글로 저장한다. 작성 화면이 이 값으로 선택·안내를 정한다.
+             * @enum {string}
+             */
+            prvtPstPlcyCd: "NONE" | "OPTIONAL" | "REQUIRED";
+            /**
+             * @description 추천 받기(ADR-0040 결정 6). N 이면 서버가 새 추천을 거부한다(자기 추천 취소는 받는다). 목록·상세 화면이 이 값으로 추천 단추를 정한다.
+             * @enum {string}
+             */
+            rcmdtnUseYn: "Y" | "N";
         };
         ApiResponseListBoardSearchItemResponse: {
             success?: boolean;
@@ -11877,6 +12106,36 @@ export interface components {
             cmntySn?: number;
             ansYn?: string;
             stsfdgYn?: string;
+            /**
+             * @description 예약 게시 — Y 면 새 글의 미래 게시 시작일을 받는다(ADR-0040 결정 3·6)
+             * @enum {string}
+             */
+            rsvtPstgPsbltyYn: "Y" | "N";
+            /**
+             * @description 상단 고정 허용 — Y 면 새 고정을 받는다. 꺼도 이미 고정된 글은 종료일까지 그대로다(ADR-0040 결정 5·6)
+             * @enum {string}
+             */
+            upendFixPsbltyYn: "Y" | "N";
+            /**
+             * Format: int32
+             * @description 상단 고정 상한 — 고정 중인 글 수(새 고정만 따른다)
+             */
+            upendFixUplmtNocs: number;
+            /**
+             * Format: int32
+             * @description 상단 고정 기본 일수 — 종료일을 비우고 고정하면 오늘부터 이 일수 뒤까지다
+             */
+            upendFixBscDayCnt: number;
+            /**
+             * @description 비밀글 정책 — NONE 은 요청값 그대로, OPTIONAL 은 글쓴이가 고름, REQUIRED 는 새 글과 고친 글을 비밀글로 저장한다. 바꿔도 이미 있는 글의 비밀 여부는 그대로다(ADR-0040 결정 7)
+             * @enum {string}
+             */
+            prvtPstPlcyCd: "NONE" | "OPTIONAL" | "REQUIRED";
+            /**
+             * @description 추천 받기 — N 이면 새 추천을 받지 않는다. 이미 받은 추천 수는 그대로이고 자기 추천 취소는 받는다(ADR-0040 결정 6)
+             * @enum {string}
+             */
+            rcmdtnUseYn: "Y" | "N";
             authFlag?: string;
             tmplatCours?: string;
             /**
@@ -29790,6 +30049,148 @@ export interface operations {
             };
         };
     };
+    updatePostPinsInBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPostPinBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updatePostPeriodsInBatch: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPostPeriodBatchRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     updateBoardMasterStatusInBatch: {
         parameters: {
             query?: never;
@@ -31265,6 +31666,82 @@ export interface operations {
             };
         };
     };
+    cancelLikePost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /**
+                 * @description 게시판 ID
+                 * @example BBS_000000000001
+                 */
+                bbsId: string;
+                /**
+                 * @description 게시글 ID
+                 * @example 1
+                 */
+                pstSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseInteger"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     likePost: {
         parameters: {
             query?: never;
@@ -31641,6 +32118,150 @@ export interface operations {
             };
             /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
             403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updatePostPin: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPostPinRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    updatePostPeriod: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                bbsId: string;
+                pstSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BoardPostPeriodRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
                 headers: {
                     [name: string]: unknown;
                 };
@@ -35107,6 +35728,10 @@ export interface operations {
                  * @example EVENT
                  */
                 dateBasis?: string;
+                /** @description 게시 상태(서버 기준일 판정). 비우면 전체이고, 그 밖의 값은 400 입니다. 일반 사용자에게는 볼 수 있는 글 안에서만 좁혀집니다 */
+                postingStatus?: "SCHEDULED" | "POSTING" | "ENDED";
+                /** @description 상단 고정 조건(서버 기준일 판정). true 면 지금 고정 중인 글, false 면 그 밖의 글이고 비우면 전체입니다. 일반 사용자에게는 볼 수 있는 글 안에서만 좁혀집니다 */
+                pinned?: boolean;
                 /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
                 page?: number;
                 /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */

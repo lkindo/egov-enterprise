@@ -41,6 +41,12 @@ public class BoardDetailResult {
     private LocalDateTime evntDt;
     private String qnaSttsCd;
     private String qnaCatCd;
+    /** 게시글 버전(낙관적 잠금) — 수정 요청이 돌려보낸다(2026-10-23 ADR-0040 결정 10). */
+    private Integer version;
+    /** 상단 고정 표시(ADR-0040 결정 5). 서비스가 기준일로 '지금 고정 중' 을 판정한다 — 응답에 그대로 싣지 않는다. */
+    private String upendFixYn;
+    /** 상단 고정 종료일(yyyyMMdd). 고정 중일 때만 응답에 싣는다. */
+    private String upendFixEndYmd;
 
     // BoardMaster fields
     private String bbsTypeCd;

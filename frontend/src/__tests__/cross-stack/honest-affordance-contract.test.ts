@@ -756,12 +756,6 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
    * 고치면 다음 사람이 되돌린다. 실제 구현과 **함께** 고정한다.
    */
   /**
-   * 게시 기간이 집행되지 않는다는 사실을 화면과 술어에 함께 고정한다.
-   *
-   * 집행을 켜면 이미 기간이 지난 기존 글이 예고 없이 사라지므로 그 판단은 제품 결정이다.
-   * 술어에 두 필드가 들어오는 순간 이 계약이 red 가 되어 문구를 되살릴 시점을 알려 준다.
-   */
-  /**
    * 여론조사 참여 화면 — 조건을 보지 않는 상태 표시와 실패를 삼킨 빈 상태.
    *
    * 이 화면에는 상태 판정 SSOT(`getPollStatus`·`isPollActive`)가 이미 있는데 하단 배지만
@@ -1120,28 +1114,118 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     ).toBeLessThan(emptyAt);
   });
 
-  // [2026-10-01 결정 23] 종료일은 집행하고 시작일은 기록만 한다 — 화면 문구가 그 둘을 그대로 말해야 한다.
+  /**
+   * 게시 시작일·종료일을 모두 집행하고, 예약 게시는 게시판 설정이 정한다는 사실을 화면과 서버에 함께 고정한다.
+   *
+   * [2026-10-01 결정 23] 종료일만 집행하고 시작일은 기록만 했다 — 그때의 계약은 술어에 시작일이 들어오는 순간 red 가 되어 문구를
+   * 바꿀 시점을 알렸다. [2026-10-23 ADR-0040 결정 3] 그 집행이 생겼다. 이제는 반대 방향을 고정한다 — 서버가 시작일을 집행하는데 화면이
+   * '기록만' 이라고 말하거나, 화면이 예약을 받지 않는다고 말하는데 서버가 설정을 보지 않거나, 예약 글의 첨부가 본문보다 먼저 열리거나,
+   * 이용 화면이 서버 판정 대신 브라우저의 오늘로 상태를 다시 계산하면(DEC-OPS-140) red 다.
+   */
   if (repoPresent(
     'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx',
     'business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java',
-  )) it('게시 종료일은 집행하고 시작일은 기록만 한다는 사실을 화면이 그대로 말한다', () => {
+    'business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java',
+    'business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java',
+  )) it('게시 시작일·종료일 집행과 예약 설정을 화면이 그대로 말한다', () => {
     const write = codeOfSrc(
       'app/admin/community/boards/insert-board-article/BoardRegistClient.tsx',
     );
     expect(write, '작성 화면을 찾지 못했다 — 계약이 vacuous 하다').toContain('pstBgngYmd');
-    expect(write).toContain('종료일이 지나면 일반 사용자의 목록·상세·검색에서 보이지 않습니다');
-    expect(write).toContain('시작일은 기록만 하며 노출을 늦추지 않습니다');
+    expect(write).toContain('시작일이 오늘보다 뒤면 그날까지 작성자와 게시판 관리자에게만 보입니다');
+    expect(write).toContain('종료일이 지나면 일반 사용자의 목록·상세·검색에서');
+    expect(write, '집행하는 시작일을 기록만 한다고 말한다').not.toContain('시작일은 기록만 하며 노출을 늦추지 않습니다');
     expect(write, '집행하는 기간을 집행하지 않는다고 말한다').not.toContain('노출 여부를 자동으로 바꾸지는 않습니다');
+    // 예약을 받지 않는 게시판이면 그 사실을 말한다 — 설정 값을 화면이 실제로 읽는다.
+    expect(write, '작성 화면이 예약 설정을 읽지 않는다').toContain('rsvtPstgPsbltyYn');
+    expect(write).toContain('이 게시판은 예약 게시를 받지 않아 시작일을 오늘보다 뒤로 정할 수 없습니다');
 
     const predicate = codeOfRepo(
       'business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java',
     );
     expect(predicate, '술어 조립기를 찾지 못했다 — 계약이 vacuous 하다').toContain('searchBoard');
     expect(predicate, '게시 종료일 조건이 술어에서 사라졌다 — 화면은 집행한다고 말한다.').toContain('pstEndYmd');
+    expect(predicate, '게시 시작일 조건이 술어에서 사라졌다 — 화면은 예약 글이 그날까지 숨는다고 말한다.').toContain('pstBgngYmd');
+
+    const policy = codeOfRepo('business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java');
+    expect(policy, '서버가 예약 설정을 보지 않는다 — 화면은 받지 않는다고 말한다.').toContain('getRsvtPstgPsbltyYn');
+    expect(policy).toContain('이 게시판은 예약 게시를 받지 않습니다');
+
+    const attachments = codeOfRepo('business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java');
+    expect(attachments, '첨부 판정이 게시 시작일을 보지 않는다 — 예약 글의 첨부가 본문보다 먼저 열린다.').toContain('pst_bgng_ymd');
+
+    // 이용 화면의 게시 상태 표지는 서버 판정 그대로다 — 브라우저의 오늘로 다시 계산하지 않는다(DEC-OPS-140).
+    for (const screen of [
+      'app/admin/community/boards/select-board-list/components/BoardTemplates.tsx',
+      'app/admin/community/boards/detail/BoardDetailClient.tsx',
+    ]) {
+      const code = codeOfSrc(screen);
+      expect(code, `${screen}: 게시 상태 표지를 찾지 못했다 — 계약이 vacuous 하다`).toContain('PostingStatusBadge');
+      expect(code, `${screen}: 서버 게시 상태를 넘기지 않는다`).toContain('postingStatus');
+      expect(code, `${screen}: 화면이 오늘을 구해 게시 상태를 다시 계산한다`).not.toContain('useTodayStorageYmd');
+      expect(code, `${screen}: 날짜로 판정하던 옛 표지를 다시 쓴다`).not.toContain('PostingEndedBadge');
+    }
+    const badge = codeOfSrc('app/admin/community/boards/components/PostingStatusBadge.tsx');
+    expect(badge, '게시 상태 표지가 오늘을 구한다').not.toMatch(/useTodayStorageYmd|getTodayYmd|todayStorageYmd|new Date\(/);
+  });
+
+  /**
+   * 비밀글 정책과 추천 받기를 화면이 말하는 대로 서버가 집행한다(ADR-0040 결정 6·7).
+   *
+   * 작성 화면이 '이 게시판의 글은 비밀글로 저장됩니다'·'저장하면 비밀글로 바뀝니다' 라고 말하는데 서버의 저장값 결정이 정책을 보지
+   * 않거나 수정 경로가 그 결정을 지나지 않으면, 이용자는 비밀글이라 믿고 공개 글을 남긴다. 추천을 받지 않는 게시판에서 화면이 새 추천
+   * 단추를 감추는데 서버가 새 추천을 받거나, 화면이 '내 추천은 거둘 수 있다' 고 말하는데 취소가 설정에 막혀도 red 다.
+   */
+  if (repoPresent(
+    'frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx',
+    'frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx',
+    'frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx',
+    'business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java',
+    'business-app/src/main/java/nuri/business/service/board/BoardService.java',
+  )) it('비밀글 정책과 추천 받기를 화면이 말하는 대로 서버가 집행한다', () => {
+    /** 주석을 지운 Java 원문에서 메서드 본문(첫 여는 중괄호부터 짝이 맞는 닫는 중괄호까지)을 꺼낸다. */
+    const javaMethodBody = (source: string, name: string): string => {
+      const signature = source.search(new RegExp(`\\b(?:public|protected|private|static)\\b[^;{=]*\\b${name}\\s*\\(`));
+      expect(signature, `${name} 메서드를 찾지 못했다 — 계약이 vacuous 하다`).toBeGreaterThan(-1);
+      const open = source.indexOf('{', signature);
+      let depth = 0;
+      for (let index = open; index < source.length; index += 1) {
+        if (source[index] === '{') depth += 1;
+        if (source[index] === '}') depth -= 1;
+        if (depth === 0) return source.slice(open, index + 1);
+      }
+      throw new Error(`${name} 메서드 본문이 닫히지 않는다`);
+    };
+
+    const write = codeOfSrc('app/admin/community/boards/insert-board-article/BoardRegistClient.tsx');
+    expect(write, '작성 화면이 비밀글 정책을 읽지 않는다').toContain('prvtPstPlcyCd');
+    expect(write).toContain('이 게시판의 글은 비밀글로 저장됩니다');
+    expect(write).toContain('저장하면 비밀글로 바뀝니다');
+
+    const policy = codeOfRepo('business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java');
+    const resolveSecret = javaMethodBody(policy, 'resolveSecretYn');
+    expect(resolveSecret, '화면은 필수 정책이면 비밀글로 저장된다고 말하는데 서버가 정책을 보지 않는다').toContain('requiresPrivatePosts()');
+    expect(resolveSecret).toContain('return "Y"');
+    const service = codeOfRepo('business-app/src/main/java/nuri/business/service/board/BoardService.java');
     expect(
-      predicate,
-      '게시 시작일이 술어에 들어왔다 — 집행이 생겼으니 화면 문구를 바꾸고 이 계약을 갱신하라.',
-    ).not.toContain('pstBgngYmd');
+      javaMethodBody(service, 'updateOwnedPost'),
+      "화면은 공개 글을 고치면 비밀글로 바뀐다고 말하는데 수정 경로가 비밀글 정책을 지나지 않는다",
+    ).toContain('resolveSecretYn(');
+
+    // 추천을 받지 않는 게시판: 새 추천은 서버가 막고, 내 추천 취소는 막지 않는다.
+    expect(javaMethodBody(service, 'incrementLike'), '화면은 새 추천을 감추는데 서버가 새 추천을 받는다').toContain('assertRecommendationEnabled(');
+    const cancel = javaMethodBody(service, 'cancelLike');
+    expect(cancel, '추천 취소가 내 이력만 지우지 않는다').toContain('deleteRecommendation(');
+    expect(cancel, '화면은 추천을 꺼도 내 추천을 거둘 수 있다고 말하는데 취소가 설정에 막힌다').not.toContain('assertRecommendationEnabled(');
+
+    const detail = codeOfSrc('app/admin/community/boards/detail/BoardDetailClient.tsx');
+    expect(detail, '상세 화면이 추천 받기 설정을 읽지 않는다').toContain('rcmdtnUseYn');
+    expect(detail, '상세 화면에 추천 취소 경로가 없다').toContain('cancelLikePost');
+    expect(detail).toContain('내 추천은 거둘 수 있습니다');
+    const list = codeOfSrc('app/admin/community/boards/select-board-list/BoardListClient.tsx');
+    expect(list, '목록 화면이 추천 받기 설정을 읽지 않는다').toContain('rcmdtnUseYn');
+    // 추천 단추는 추천 권한으로 보인다(DEC-OPS-185) — 쓰기 권한 census 축 3 이 같은 리터럴을 센다.
+    for (const code of [detail, list]) expect(code).toContain("canPermission(user, 'BOARD_LIKE')");
   });
 
   it('감사 타임라인이 죽은 액션과 거짓 시스템 상태를 두지 않는다', () => {

@@ -2378,6 +2378,13 @@
       "action": "EDIT",
       "name": "공지 게시판 · 편집",
       "defaultGroups": []
+    },
+    {
+      "code": "BOARD_PIN",
+      "domain": "BOARD",
+      "action": "PIN",
+      "name": "게시글 · 상단 고정",
+      "defaultGroups": []
     }
   ],
   "pagePermissionModes": {

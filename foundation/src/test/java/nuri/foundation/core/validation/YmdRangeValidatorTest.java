@@ -48,6 +48,30 @@ class YmdRangeValidatorTest {
         }
     }
 
+    /**
+     * [2026-10-23 ADR-0040 결정 12] 게시글 저장 요청처럼 record 에도 클래스 단위 기간 검사를 건다. record 의 접근자는
+     * {@code getStart()} 가 아니라 {@code start()} 라, 검증기가 그 이름으로 값을 읽지 못하면 순서 검사가 조용히 통과한다.
+     */
+    @Test
+    void recordComponentsAreReadForTheRangeCheck() {
+        var reversed = VALIDATOR.validate(new PeriodRecord("20240301", "20240229"));
+        assertThat(reversed).hasSize(1);
+        assertThat(reversed.iterator().next().getPropertyPath().toString()).isEqualTo("end");
+        assertThat(reversed.iterator().next().getConstraintDescriptor().getAnnotation())
+                .isInstanceOf(YmdRange.class);
+
+        for (PeriodRecord period : new PeriodRecord[] {
+                new PeriodRecord("20240229", "20240301"), new PeriodRecord("20240229", "20240229"),
+                new PeriodRecord(null, "20240301"), new PeriodRecord("20240301", "")}) {
+            assertThat(VALIDATOR.validate(period)).isEmpty();
+        }
+    }
+
+    @YmdRange(start = "start", end = "end")
+    public record PeriodRecord(@Pattern(regexp = Ymd.OPTIONAL_PATTERN) String start,
+            @Pattern(regexp = Ymd.OPTIONAL_PATTERN) String end) {
+    }
+
     @YmdRange(start = "start", end = "end")
     public static class Period {
         @Pattern(regexp = Ymd.OPTIONAL_PATTERN)

@@ -203,6 +203,145 @@ describe('BoardMakerWizard validation', () => {
     });
   });
 
+  // [2026-10-23 ADR-0040 결정 3·6, §5.3] 예약 게시는 기본 받지 않음이고 공지형 용도만 켠다. 직접 바꾼 값은 용도가 덮지 않는다.
+  it('예약 게시는 기본 받지 않음이고, 공지형을 고르면 받음으로 채워 생성 요청에 싣는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '전사 공지' } });
+    fireEvent.click(screen.getByRole('radio', { name: '공지형' }));
+    await goToStep('화면·기능');
+    expect(screen.getByRole('checkbox', { name: /예약 게시 받기/ })).toBeChecked();
+    await goToStep('최종 확인');
+    expect(screen.getByText(/예약 게시 받음/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ rsvtPstgPsbltyYn: 'Y', useYn: 'N' });
+  });
+
+  it('예약 게시를 직접 끈 뒤 공지형을 골라도 끈 값이 남는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '전사 공지' } });
+    await goToStep('화면·기능');
+    const reservation = screen.getByRole('checkbox', { name: /예약 게시 받기/ });
+    expect(reservation).not.toBeChecked();
+    fireEvent.click(reservation);
+    fireEvent.click(reservation);
+    fireEvent.click(screen.getByRole('button', { name: /이전 단계/ }));
+    await screen.findByRole('heading', { name: '용도·기본정보' });
+    fireEvent.click(screen.getByRole('radio', { name: '공지형' }));
+    await goToStep('최종 확인');
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ rsvtPstgPsbltyYn: 'N' });
+  });
+
+  // [2026-10-23 ADR-0040 결정 5·6, §5.3] 상단 고정은 기본 허용 안 함(상한 5·기본 30일)이고 공지형 용도만 켠다.
+  it('상단 고정은 공지형을 고르면 허용으로 채워 상한·기본 일수와 함께 생성 요청에 싣는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '전사 공지' } });
+    fireEvent.click(screen.getByRole('radio', { name: '공지형' }));
+    await goToStep('화면·기능');
+    expect(screen.getByRole('checkbox', { name: /상단 고정 받기/ })).toBeChecked();
+    expect(screen.getByRole('spinbutton', { name: '상단 고정 상한(건)' })).toHaveValue(5);
+    expect(screen.getByRole('spinbutton', { name: '상단 고정 상한(건)' })).not.toHaveAttribute('readonly');
+    expect(screen.getByRole('spinbutton', { name: '상단 고정 기본 일수(일)' })).toHaveValue(30);
+    await goToStep('최종 확인');
+    expect(screen.getByText(/상단 고정 허용\(상한 5건 · 기본 30일\)/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({
+      upendFixPsbltyYn: 'Y', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, rsvtPstgPsbltyYn: 'Y', useYn: 'N',
+    });
+  });
+
+  it('상단 고정은 기본 허용 안 함이고, 그동안 상한·기본 일수는 읽기 전용이며 기본값으로 생성 요청에 싣는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '사내 소식' } });
+    await goToStep('화면·기능');
+    expect(screen.getByRole('checkbox', { name: /상단 고정 받기/ })).not.toBeChecked();
+    expect(screen.getByRole('spinbutton', { name: '상단 고정 상한(건)' })).toHaveAttribute('readonly');
+    await goToStep('최종 확인');
+    expect(screen.getByText(/상단 고정 허용 안 함/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30 });
+  });
+
+  it('상단 고정을 직접 바꾼 값은 용도가 덮지 않고, 생성 스키마 범위를 넘는 상한은 다음 단계로 가지 않는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '전사 공지' } });
+    await goToStep('화면·기능');
+    fireEvent.click(screen.getByRole('checkbox', { name: /상단 고정 받기/ }));
+    fireEvent.change(screen.getByRole('spinbutton', { name: '상단 고정 상한(건)' }), { target: { value: '101' } });
+    fireEvent.click(screen.getByRole('button', { name: /다음 단계로/ }));
+    expect(await screen.findByText('상단 고정 상한은 100건까지 정할 수 있습니다.')).toBeInTheDocument();
+    expect(currentStepTitle()).toBe('화면·기능');
+
+    fireEvent.change(screen.getByRole('spinbutton', { name: '상단 고정 상한(건)' }), { target: { value: '3' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /상단 고정 받기/ }));
+    fireEvent.click(screen.getByRole('button', { name: /이전 단계/ }));
+    await screen.findByRole('heading', { name: '용도·기본정보' });
+    fireEvent.click(screen.getByRole('radio', { name: '공지형' }));
+    await goToStep('최종 확인');
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    // 직접 끈 고정 허용과 직접 바꾼 상한은 공지형 용도가 덮지 않는다.
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ upendFixPsbltyYn: 'N', upendFixUplmtNocs: 3, upendFixBscDayCnt: 30 });
+  });
+
+  // [2026-10-23 ADR-0040 결정 6·7, §5.3] 비밀글 정책은 기본 없음·추천은 기본 받음이고, 질의응답형은 선택, 공지형은 추천을 받지 않는다.
+  it('비밀글 정책·추천 받기는 기본 없음·받음으로 생성 요청에 싣는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '사내 소식' } });
+    await goToStep('화면·기능');
+    expect(screen.getByRole('combobox', { name: '비밀글 정책' })).toHaveValue('NONE');
+    expect(screen.getByRole('checkbox', { name: /추천 받기/ })).toBeChecked();
+    await goToStep('최종 확인');
+    expect(screen.getByText(/비밀글 정책 없음 · 추천 받음/)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y', useYn: 'N' });
+  });
+
+  it.each([
+    ['질의응답형', { prvtPstPlcyCd: 'OPTIONAL', rcmdtnUseYn: 'Y' }, /비밀글 정책 선택 · 추천 받음/],
+    ['공지형', { prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'N' }, /비밀글 정책 없음 · 추천 받지 않음/],
+    ['자료실형', { prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y' }, /비밀글 정책 없음 · 추천 받음/],
+  ] as const)('%s 용도는 비밀글 정책·추천 받기를 설계서 표대로 채운다', async (purpose, expected, summary) => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '용도 게시판' } });
+    fireEvent.click(screen.getByRole('radio', { name: purpose }));
+    await goToStep('화면·기능');
+    expect(screen.getByRole('combobox', { name: '비밀글 정책' })).toHaveValue(expected.prvtPstPlcyCd);
+    await goToStep('최종 확인');
+    expect(screen.getByText(summary)).toBeInTheDocument();
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ ...expected, useYn: 'N' });
+  });
+
+  it('비밀글 정책·추천 받기를 직접 바꾼 값은 용도가 덮지 않는다', async () => {
+    createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
+    render(<BoardMakerWizard />);
+    fireEvent.change(screen.getByRole('textbox', { name: '게시판 명칭' }), { target: { value: '문의' } });
+    await goToStep('화면·기능');
+    fireEvent.change(screen.getByRole('combobox', { name: '비밀글 정책' }), { target: { value: 'REQUIRED' } });
+    fireEvent.click(screen.getByRole('checkbox', { name: /추천 받기/ }));
+    fireEvent.click(screen.getByRole('button', { name: /이전 단계/ }));
+    await screen.findByRole('heading', { name: '용도·기본정보' });
+    fireEvent.click(screen.getByRole('radio', { name: '질의응답형' }));
+    await goToStep('최종 확인');
+    fireEvent.click(screen.getByRole('button', { name: '게시판 만들기' }));
+    await waitFor(() => expect(createBoardMaster).toHaveBeenCalledTimes(1));
+    expect(createBoardMaster.mock.calls[0][0]).toMatchObject({ prvtPstPlcyCd: 'REQUIRED', rcmdtnUseYn: 'N', tmpltId: 'TMPLT_QNA' });
+  });
+
   it('질의응답형은 Q&A 화면 유형을 고른다 — 화면 유형을 직접 고른 뒤에는 바꾸지 않는다', async () => {
     createBoardMaster.mockResolvedValue('BBSMSTR_AAAAAAAAAAAA');
     render(<BoardMakerWizard />);

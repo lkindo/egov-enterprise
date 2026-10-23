@@ -44,6 +44,24 @@ describe('업무 홈 게시판 조회', () => {
     expect(boardHomeQuery.queryFn).toBe(loadBoardHome);
   });
 
+  // [2026-10-23 ADR-0040 결정 3] 서버 판정 게시 상태를 그대로 옮긴다 — 예약 글(작성자에게만 온다)만 시작일을 함께 싣는다.
+  it('서버의 게시 상태를 옮기고 예약 글에만 시작일을 싣는다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      notiList: [],
+      taskList: [
+        { pstSn: 2, bbsId: 'BBSMSTR_000000000002', pstTtl: '예약 글', useYn: 'Y', userId: 'admin', postingStatus: 'SCHEDULED', pstBgngYmd: '20261201' },
+        { pstSn: 3, bbsId: 'BBSMSTR_000000000002', pstTtl: '게시 중 글', useYn: 'Y', userId: 'admin', postingStatus: 'POSTING', pstBgngYmd: '20261001' },
+      ],
+      taskListTotal: 2,
+      notiListTotal: 0,
+    }));
+
+    const result = (await loadBoardHome())!;
+    expect(result.initialTaskList[0]).toMatchObject({ postingStatus: 'SCHEDULED', postingStartYmd: '20261201' });
+    expect(result.initialTaskList[1]).toMatchObject({ postingStatus: 'POSTING' });
+    expect(result.initialTaskList[1]).not.toHaveProperty('postingStartYmd');
+  });
+
   it('대시보드 API 실패를 0건 데이터로 위장하지 않고 던진다', async () => {
     vi.mocked(client.getRaw).mockRejectedValue(new Error('dashboard unavailable'));
 

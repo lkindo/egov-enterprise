@@ -44,6 +44,7 @@ class ConfiguredBoardEditPolicyTest {
     @Mock BoardViewCountService views;
     @Mock BoardRecommendationRepository recommendations;
     @Mock CommunityBoardAccessPort communities;
+    @Mock BoardChangeRecorder changes;
     BoardIdProperties ids;
     BoardService service;
 
@@ -52,7 +53,7 @@ class ConfiguredBoardEditPolicyTest {
         ids.setNoticeId("NOTICE");
         ids.setFaqId("NOTICE");
         service = new BoardService(posts, boards, users, files, attachments, events, new SimpleMeterRegistry(),
-                views, new BoardMapperImpl(), ids, recommendations, communities);
+                views, new BoardMapperImpl(), ids, recommendations, changes, communities);
     }
     @AfterEach void clear() { SecurityContextHolder.clearContext(); }
 
@@ -62,7 +63,7 @@ class ConfiguredBoardEditPolicyTest {
         SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
     }
     private BoardSaveRequest request(String board) {
-        return new BoardSaveRequest(board, "제목", "내용", null, null, null, null, null, null, null, null, null);
+        return new BoardSaveRequest(board, "제목", "내용", null, null, null, null, null, null, null, null, null, null);
     }
 
     @ParameterizedTest
@@ -82,6 +83,56 @@ class ConfiguredBoardEditPolicyTest {
         actions.forEach(action -> assertThatThrownBy(action).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED));
         verifyNoInteractions(posts, boards, users, files, attachments, events);
+    }
+
+    /**
+     * [2026-10-23 ADR-0040 §6 B1] 운영 화면의 게시 기간 변경(단건·일괄)은 게시글 전체 수정 권한(BOARD_UPDATE_ALL)에 더해 지정 게시판의
+     * 두 편집 권한을 모두 요구한다. 어느 하나가 빠지면 글을 읽거나 이력을 남기기 전에 403 이다.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"BOARD_UPDATE_ALL", "NOTICE_EDIT", "FAQ_EDIT"})
+    void operatorPeriodWritesNeedUpdateAllAndBothDesignatedEditPermissions(String missing) {
+        authenticate(List.of("BOARD_UPDATE_ALL", "NOTICE_EDIT", "FAQ_EDIT").stream()
+                .filter(permission -> !permission.equals(missing)).toArray(String[]::new));
+        List<org.assertj.core.api.ThrowableAssert.ThrowingCallable> actions = List.of(
+                () -> service.updatePostPeriod("NOTICE", 1L,
+                        new nuri.business.service.board.dto.BoardPostPeriodRequest(null, "20991231", 0)),
+                () -> service.updatePostPeriodsInBatch("NOTICE",
+                        new nuri.business.service.board.dto.BoardPostPeriodBatchRequest("END_DATE", List.of(1L), "20991231")));
+        actions.forEach(action -> assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED));
+        verifyNoInteractions(posts, boards, changes);
+    }
+
+    /**
+     * [2026-10-23 ADR-0040 §6 B2] 운영 화면의 상단 고정·해제(단건·일괄)는 게시글 상단 고정 권한(BOARD_PIN)에 더해 지정 게시판의 두
+     * 편집 권한을 모두 요구한다. 어느 하나가 빠지면 마스터를 잠그거나 글을 읽기 전에 403 이다.
+     */
+    @ParameterizedTest
+    @ValueSource(strings = {"BOARD_PIN", "NOTICE_EDIT", "FAQ_EDIT"})
+    void pinWritesNeedBoardPinAndBothDesignatedEditPermissions(String missing) {
+        authenticate(List.of("BOARD_PIN", "NOTICE_EDIT", "FAQ_EDIT").stream()
+                .filter(permission -> !permission.equals(missing)).toArray(String[]::new));
+        List<org.assertj.core.api.ThrowableAssert.ThrowingCallable> actions = List.of(
+                () -> service.updatePostPin("NOTICE", 1L, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)),
+                () -> service.updatePostPinsInBatch("NOTICE",
+                        new nuri.business.service.board.dto.BoardPostPinBatchRequest(List.of(1L), "N", null)));
+        actions.forEach(action -> assertThatThrownBy(action).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED));
+        verifyNoInteractions(posts, boards, changes);
+    }
+
+    @Test void pinOnDesignatedBoardPassesWithBoardPinAndBothEditPermissions() {
+        authenticate("BOARD_PIN", "NOTICE_EDIT", "FAQ_EDIT");
+        when(boards.findByIdWithPessimisticLock("NOTICE")).thenReturn(Optional.of(
+                BoardMaster.builder().bbsId("NOTICE").upendFixPsbltyYn("Y").build()));
+        when(posts.findById(1L)).thenReturn(Optional.of(Board.builder().bbsId("NOTICE").pstSn(1L).build()));
+        when(posts.countActivePins(eq("NOTICE"), anyString())).thenReturn(0L);
+        when(posts.updatePin(eq("NOTICE"), eq(List.of(1L)), eq("Y"), anyString())).thenReturn(1);
+
+        service.updatePostPin("NOTICE", 1L, new nuri.business.service.board.dto.BoardPostPinRequest("Y", null));
+
+        verify(posts).updatePin(eq("NOTICE"), eq(List.of(1L)), eq("Y"), anyString());
     }
 
     @Test void metadataUsesConfiguredIdsAndRequiresBothWhenTheyCoincide() {

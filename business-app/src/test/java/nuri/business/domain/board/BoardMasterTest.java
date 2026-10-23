@@ -140,5 +140,77 @@ class BoardMasterTest {
         assertThat(master.getStsfdgYn()).isEqualTo("N");
         assertThat(master.getOption().getStsfdgYn()).isEqualTo("N");
     }
-}
 
+    /** [2026-10-23 ADR-0040 결정 3·6] 예약 게시 설정은 기존 동작대로 N 으로 시작하고, Y 밖의 값은 N 이다. update 는 건드리지 않는다. */
+    @Test
+    @DisplayName("예약 게시 설정은 기본 N, Y 만 Y 이고 일반 수정(update)은 그 값을 바꾸지 않는다")
+    void reservationSettingDefaultsToNoAndOnlyAcceptsY() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_001").bbsTtl("Notice").build();
+        assertThat(master.getRsvtPstgPsbltyYn()).isEqualTo("N");
+        assertThat(BoardMaster.builder().bbsId("BBS_002").rsvtPstgPsbltyYn("Y").build().getRsvtPstgPsbltyYn()).isEqualTo("Y");
+        assertThat(BoardMaster.builder().bbsId("BBS_003").rsvtPstgPsbltyYn("X").build().getRsvtPstgPsbltyYn()).isEqualTo("N");
+
+        master.changeReservation("Y");
+        assertThat(master.getRsvtPstgPsbltyYn()).isEqualTo("Y");
+        master.update("Notice", null, "N", "N", 0, 0L, null, "Y", "Y", "Y");
+        assertThat(master.getRsvtPstgPsbltyYn()).as("설정 수정의 다른 항목은 예약 게시를 바꾸지 않는다").isEqualTo("Y");
+        master.changeReservation(null);
+        assertThat(master.getRsvtPstgPsbltyYn()).isEqualTo("N");
+    }
+
+    /** [ADR-0040 결정 5·6] 상단 고정 정책은 기존 게시판 기본값 N·5·30 으로 시작하고, update 는 건드리지 않는다. */
+    @Test
+    @DisplayName("상단 고정 정책은 기본 N·5·30, 허용은 Y 만 Y 이고 상한·기본 일수는 null 이면 그대로다")
+    void pinPolicyDefaultsAndChanges() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_001").bbsTtl("Notice").build();
+        assertThat(master.getUpendFixPsbltyYn()).isEqualTo("N");
+        assertThat(master.getUpendFixUplmtNocs()).isEqualTo(java.math.BigInteger.valueOf(5));
+        assertThat(master.getUpendFixBscDayCnt()).isEqualTo(java.math.BigInteger.valueOf(30));
+        assertThat(BoardMaster.builder().bbsId("BBS_002").upendFixPsbltyYn("X").build().getUpendFixPsbltyYn()).isEqualTo("N");
+
+        master.changePinPolicy("Y", java.math.BigInteger.valueOf(3), null);
+        assertThat(master.getUpendFixPsbltyYn()).isEqualTo("Y");
+        assertThat(master.getUpendFixUplmtNocs()).isEqualTo(java.math.BigInteger.valueOf(3));
+        assertThat(master.getUpendFixBscDayCnt()).as("null 이면 그대로").isEqualTo(java.math.BigInteger.valueOf(30));
+        master.update("Notice", null, "N", "N", 0, 0L, null, "Y", "Y", "Y");
+        assertThat(master.getUpendFixPsbltyYn()).as("설정 수정의 다른 항목은 고정 정책을 바꾸지 않는다").isEqualTo("Y");
+        master.changePinPolicy(null, null, java.math.BigInteger.valueOf(7));
+        assertThat(master.getUpendFixPsbltyYn()).isEqualTo("N");
+        assertThat(master.getUpendFixBscDayCnt()).isEqualTo(java.math.BigInteger.valueOf(7));
+    }
+
+    /**
+     * [ADR-0040 결정 6·7] 비밀글 정책·추천 받기는 기존 동작(NONE·Y)으로 시작하고, null 이면 지금 값을 둔다. update 는 건드리지
+     * 않는다. 판정 도우미는 REQUIRED 일 때만 비밀글 강제, N 일 때만 추천 거부다.
+     */
+    @Test
+    @DisplayName("비밀글 정책·추천 받기는 기본 NONE·Y 이고 null 이면 그대로, 판정 도우미는 REQUIRED·N 만 본다")
+    void postPoliciesDefaultAndChange() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBS_001").bbsTtl("Notice").build();
+        assertThat(master.getPrvtPstPlcyCd()).isEqualTo(BoardMaster.PRIVATE_POST_NONE);
+        assertThat(master.getRcmdtnUseYn()).isEqualTo("Y");
+        assertThat(master.requiresPrivatePosts()).isFalse();
+        assertThat(master.acceptsRecommendations()).isTrue();
+        BoardMaster built = BoardMaster.builder().bbsId("BBS_002").prvtPstPlcyCd(BoardMaster.PRIVATE_POST_REQUIRED)
+                .rcmdtnUseYn("N").build();
+        assertThat(built.requiresPrivatePosts()).isTrue();
+        assertThat(built.acceptsRecommendations()).isFalse();
+        assertThat(BoardMaster.builder().bbsId("BBS_003").rcmdtnUseYn("X").build().getRcmdtnUseYn())
+                .as("N 밖의 값은 받음(Y)이다").isEqualTo("Y");
+
+        master.changePostPolicies(BoardMaster.PRIVATE_POST_OPTIONAL, null);
+        assertThat(master.getPrvtPstPlcyCd()).isEqualTo(BoardMaster.PRIVATE_POST_OPTIONAL);
+        assertThat(master.requiresPrivatePosts()).as("OPTIONAL 은 서버가 강제하지 않는다").isFalse();
+        assertThat(master.getRcmdtnUseYn()).as("null 이면 그대로").isEqualTo("Y");
+        master.update("Notice", null, "N", "N", 0, 0L, null, "Y", "Y", "Y");
+        assertThat(master.getPrvtPstPlcyCd()).as("설정 수정의 다른 항목은 비밀글 정책을 바꾸지 않는다")
+                .isEqualTo(BoardMaster.PRIVATE_POST_OPTIONAL);
+        master.changePostPolicies(null, "N");
+        assertThat(master.getPrvtPstPlcyCd()).isEqualTo(BoardMaster.PRIVATE_POST_OPTIONAL);
+        assertThat(master.getRcmdtnUseYn()).isEqualTo("N");
+        assertThat(master.acceptsRecommendations()).isFalse();
+        master.changePostPolicies(BoardMaster.PRIVATE_POST_REQUIRED, "Y");
+        assertThat(master.requiresPrivatePosts()).isTrue();
+        assertThat(master.acceptsRecommendations()).isTrue();
+    }
+}

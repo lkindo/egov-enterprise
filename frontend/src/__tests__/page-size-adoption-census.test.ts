@@ -213,6 +213,9 @@ function factoryKey(sourceFile: ts.SourceFile, factory: ts.CallExpression): stri
 const FACTORY_KEY_TESTS: Readonly<Record<string, string>> = {
   '@/queries/board-master-query-options#boardMasterQueryOptions.list':
     '목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
+  // [2026-10-23 ADR-0040 §5.4 B1] 운영 화면 게시물 탭이 리터럴 queryKey 대신 상세 키 아래의 factory 로 옮겼다.
+  '@/queries/board-master-query-options#boardMasterQueryOptions.operationPosts':
+    '운영 게시물 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
   '@/queries/comment-query-options#commentQueryOptions.adminList':
     '관리자 목록 query options의 queryKey가 쪽·크기를 담는다(페이지 크기 결속 census 가 이 사실에 기댄다)',
   '@/queries/scrap-query-options#scrapQueryOptions.list':

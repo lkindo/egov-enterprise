@@ -192,6 +192,10 @@ export const BoardDtoSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
   recommended: z.boolean().optional().nullable(),
+  postingStatus: z.enum(["SCHEDULED","POSTING","ENDED"]).optional().nullable(),
+  version: z.number().int().optional().nullable(),
+  pinned: z.boolean().optional().nullable(),
+  upendFixEndYmd: z.string().optional().nullable(),
 }))();
 export type BoardDto = z.infer<typeof BoardDtoSchema>;
 
@@ -596,6 +600,10 @@ export const BoardDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   ansLv: z.number().int().optional().nullable(),
   recommended: z.boolean().optional().nullable(),
+  postingStatus: z.enum(["SCHEDULED","POSTING","ENDED"]).optional().nullable(),
+  version: z.number().int().optional().nullable(),
+  pinned: z.boolean().optional().nullable(),
+  upendFixEndYmd: z.string().optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseCommunityDtoRequestSchema = /*#__PURE__*/ (() => z.object({

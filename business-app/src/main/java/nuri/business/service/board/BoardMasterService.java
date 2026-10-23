@@ -199,6 +199,15 @@ public class BoardMasterService extends BaseAbstractService {
                 .cmntySn(dto.getCmntySn())
                 .ansYn(dto.getAnsYn())
                 .stsfdgYn(dto.getStsfdgYn())
+                // [2026-10-23 ADR-0040 결정 3·6] 비우면 N(예약 게시를 받지 않음)이다.
+                .rsvtPstgPsbltyYn(dto.getRsvtPstgPsbltyYn())
+                // [ADR-0040 결정 5·6] 비우면 고정 안 받음·5건·30일이다.
+                .upendFixPsbltyYn(dto.getUpendFixPsbltyYn())
+                .upendFixUplmtNocs(toBigInteger(dto.getUpendFixUplmtNocs()))
+                .upendFixBscDayCnt(toBigInteger(dto.getUpendFixBscDayCnt()))
+                // [ADR-0040 결정 6·7] 비우면 비밀글 정책 NONE·추천 받음이다(지금 동작).
+                .prvtPstPlcyCd(dto.getPrvtPstPlcyCd())
+                .rcmdtnUseYn(dto.getRcmdtnUseYn())
                 .build();
         // frstRgtrId 는 표준 Auditing(@CreatedBy)이 설정하므로 빌더에서 제외
         entity.registerOption(dto.getAnsYn(), dto.getStsfdgYn());
@@ -238,6 +247,20 @@ public class BoardMasterService extends BaseAbstractService {
         entity.update(bbsTtl, bbsExpln, ansPsbltyYn, fileAtchPsbltyYn,
                 atchPsbltyFileQty, atchPsbltyFileSz, entity.getTmpltId(), useYn,
                 ansYn, stsfdgYn);
+        // [2026-10-23 ADR-0040 결정 3·6] 예약 게시는 새 미래 시작일을 받을지만 정한다 — 이미 있는 글은 손대지 않는다.
+        entity.changeReservation(request.getRsvtPstgPsbltyYn() != null
+                ? request.getRsvtPstgPsbltyYn() : entity.getRsvtPstgPsbltyYn());
+        // [ADR-0040 결정 5·6] 상단 고정 정책은 새 고정만 정한다 — 끄거나 상한을 낮춰도 이미 고정된 글은 종료일까지 그대로다.
+        entity.changePinPolicy(
+                keepIfSameMeaning(entity.getUpendFixPsbltyYn(), request.getUpendFixPsbltyYn(),
+                        value -> "Y".equals(value) ? "Y" : "N"),
+                keepIfSameMeaning(entity.getUpendFixUplmtNocs(), toBigInteger(request.getUpendFixUplmtNocs()), value -> value),
+                keepIfSameMeaning(entity.getUpendFixBscDayCnt(), toBigInteger(request.getUpendFixBscDayCnt()), value -> value));
+        // [ADR-0040 결정 6·7] 비밀글 정책은 앞으로 저장하는 글에만, 추천 받기는 새 추천에만 적용된다 — 이미 있는 글의 비밀 여부와
+        //   추천 수는 손대지 않는다. 보내지 않으면 지금 값이다.
+        entity.changePostPolicies(
+                request.getPrvtPstPlcyCd() != null ? request.getPrvtPstPlcyCd() : entity.getPrvtPstPlcyCd(),
+                request.getRcmdtnUseYn() != null ? request.getRcmdtnUseYn() : entity.getRcmdtnUseYn());
 
         SettingSnapshot after = SettingSnapshot.of(entity);
         // 바뀐 값이 없으면 수정자도 쓰지 않는다 — 수정자만 바뀌어도 행이 고쳐져 버전이 올라, 그 사이 설정을 연 다른 운영자가
@@ -246,6 +269,11 @@ public class BoardMasterService extends BaseAbstractService {
             entity.setLastMdfrId(userId);
         }
         before.recordChangesTo(after, entity.getBbsId(), changeRecorder);
+    }
+
+    /** 화면의 정수 입력을 numeric 컬럼 값으로 바꾼다. 없으면 null(생성은 기본값, 수정은 지금 값)이다. */
+    private static java.math.BigInteger toBigInteger(Integer value) {
+        return value == null ? null : java.math.BigInteger.valueOf(value);
     }
 
     /** 요청값이 없거나 저장값과 뜻이 같으면 저장값, 아니면 요청값이다. */
@@ -277,13 +305,17 @@ public class BoardMasterService extends BaseAbstractService {
      * 첨부 크기는 저장 단위(바이트) 그대로 남긴다.
      */
     private record SettingSnapshot(String bbsTtl, String bbsExpln, String ansPsbltyYn, String fileAtchPsbltyYn,
-            Integer atchPsbltyFileQty, Long atchPsbltyFileSz, String ansYn, String stsfdgYn, String useYn) {
+            Integer atchPsbltyFileQty, Long atchPsbltyFileSz, String ansYn, String stsfdgYn, String useYn,
+            String rsvtPstgPsbltyYn, String upendFixPsbltyYn, java.math.BigInteger upendFixUplmtNocs,
+            java.math.BigInteger upendFixBscDayCnt, String prvtPstPlcyCd, String rcmdtnUseYn) {
         static final String USE_ITEM = "게시판 사용";
 
         static SettingSnapshot of(BoardMaster master) {
             return new SettingSnapshot(master.getBbsTtl(), master.getBbsExpln(), master.getAnsPsbltyYn(),
                     master.getFileAtchPsbltyYn(), master.getAtchPsbltyFileQty(), master.getAtchPsbltyFileSz(),
-                    master.getAnsYn(), master.getStsfdgYn(), master.getUseYn());
+                    master.getAnsYn(), master.getStsfdgYn(), master.getUseYn(), master.getRsvtPstgPsbltyYn(),
+                    master.getUpendFixPsbltyYn(), master.getUpendFixUplmtNocs(), master.getUpendFixBscDayCnt(),
+                    master.getPrvtPstPlcyCd(), master.getRcmdtnUseYn());
         }
 
         void recordChangesTo(SettingSnapshot after, String bbsId, BoardChangeRecorder recorder) {
@@ -296,6 +328,12 @@ public class BoardMasterService extends BaseAbstractService {
             recorder.recordBoard(bbsId, setting, "파일 첨부 허용", fileAtchPsbltyYn, after.fileAtchPsbltyYn);
             recorder.recordBoard(bbsId, setting, "첨부 파일 수", atchPsbltyFileQty, after.atchPsbltyFileQty);
             recorder.recordBoard(bbsId, setting, "파일당 크기(바이트)", atchPsbltyFileSz, after.atchPsbltyFileSz);
+            recorder.recordBoard(bbsId, setting, "예약 게시", rsvtPstgPsbltyYn, after.rsvtPstgPsbltyYn);
+            recorder.recordBoard(bbsId, setting, "상단 고정 허용", upendFixPsbltyYn, after.upendFixPsbltyYn);
+            recorder.recordBoard(bbsId, setting, "상단 고정 상한", upendFixUplmtNocs, after.upendFixUplmtNocs);
+            recorder.recordBoard(bbsId, setting, "상단 고정 기본 일수", upendFixBscDayCnt, after.upendFixBscDayCnt);
+            recorder.recordBoard(bbsId, setting, "비밀글 정책", prvtPstPlcyCd, after.prvtPstPlcyCd);
+            recorder.recordBoard(bbsId, setting, "추천 받기", rcmdtnUseYn, after.rcmdtnUseYn);
             recorder.recordBoard(bbsId, BoardChangeRecorder.ChangeType.USE, USE_ITEM, useYn, after.useYn);
         }
     }

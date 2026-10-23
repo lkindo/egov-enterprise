@@ -79,7 +79,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
         org.assertj.core.api.Assertions.assertThat(keyword.getValue()).isEqualTo("연차");
         // "/search" 가 bbsId 로 잡혔다면 이쪽이 불렸을 것이다.
         verify(boardService, org.mockito.Mockito.never()).getBoardPosts(
-                anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+                anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class), any());
     }
 
     /**
@@ -105,7 +105,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
 
         verify(boardService).getBoardOptions();
         verify(boardService, org.mockito.Mockito.never()).getBoardPosts(
-                anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class));
+                anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class), any());
         verify(boardService, org.mockito.Mockito.never()).getBoardMeta(anyString());
     }
 
@@ -130,7 +130,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .bbsId("BBS_001")
                 .pstTtl("Subject")
                 .build()));
-        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
+        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class), any())).willReturn(page);
 
         // When & Then
         mockMvc.perform(get("/api/v1/boards/BBS_001").param("dateBasis", "EVENT")
@@ -149,7 +149,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
 
         // 기간 기준(DIP V6)이 서비스까지 그대로 간다.
         verify(boardService).getBoardPosts(
-                eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), eq("EVENT"), any(Pageable.class));
+                eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), eq("EVENT"), any(Pageable.class),
+                eq(nuri.business.service.board.dto.BoardPostListFilter.NONE));
     }
 
     @Test
@@ -277,7 +278,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("게시판 메타는 제목·템플릿·설정만 싣고 운영 필드는 싣지 않는다 (DIP V5)")
     void getBoardMeta_ReturnsReadOnlyMeta() throws Exception {
         given(boardService.getBoardMeta("BBS_001")).willReturn(new nuri.business.service.board.dto.BoardMetaDto(
-                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N", "Y", java.util.List.of(), false));
+                "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N", "Y", java.util.List.of(), false, "Y", "Y",
+                "REQUIRED", "N"));
 
         mockMvc.perform(get("/api/v1/boards/BBS_001/meta")
                         .accept(MediaType.APPLICATION_JSON))
@@ -290,6 +292,13 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.requiredEditPermissions").isEmpty())
                 // [2026-10-23 ADR-0040 결정 1] 사용 여부는 원본 값이 아니라 화면이 쓰기 단추를 감출 판정(inUse)으로만 싣는다.
                 .andExpect(jsonPath("$.data.inUse").value(false))
+                // [2026-10-23 ADR-0040 결정 3·6] 작성 화면이 예약 게시 안내를 그릴 설정.
+                .andExpect(jsonPath("$.data.rsvtPstgPsbltyYn").value("Y"))
+                // [ADR-0040 결정 5·6] 운영 화면이 고정 단추를 안내할 설정.
+                .andExpect(jsonPath("$.data.upendFixPsbltyYn").value("Y"))
+                // [ADR-0040 결정 6·7] 작성 화면이 비밀글 선택·안내를, 목록·상세가 추천 단추를 정할 설정.
+                .andExpect(jsonPath("$.data.prvtPstPlcyCd").value("REQUIRED"))
+                .andExpect(jsonPath("$.data.rcmdtnUseYn").value("N"))
                 .andExpect(jsonPath("$.data.frstRgtrId").doesNotExist())
                 .andExpect(jsonPath("$.data.useYn").doesNotExist());
 
@@ -311,5 +320,101 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
                 .andExpect(jsonPath("$.data").value("1"));
+    }
+
+    // ── [2026-10-23 ADR-0040 B3] 추천 취소 ─────────────────────────────
+
+    @Test
+    @WithMockCustomUser(username = "user01", esntlId = "user01")
+    @DisplayName("[ADR-0040 결정 6] 추천 취소는 DELETE …/like 이고 서비스가 돌려준 새 추천수를 200 으로 싣는다")
+    void cancelLikePost_delegatesAndReturnsCount() throws Exception {
+        given(boardService.cancelLike("BBS_001", 7L)).willReturn(4);
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
+                        .delete("/api/v1/boards/BBS_001/posts/7/like")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true))
+                .andExpect(jsonPath("$.data").value(4));
+
+        verify(boardService).cancelLike("BBS_001", 7L);
+        org.mockito.Mockito.verify(boardService, org.mockito.Mockito.never()).incrementLike(anyString(), anyLong());
+    }
+
+    // ── [2026-10-23 ADR-0040 B1] 게시 상태 조건·게시 기간 입력 계약·게시글 버전 ─────────────────────────────
+
+    @Test
+    @DisplayName("[ADR-0040 결정 3] 목록의 게시 상태 조건은 서비스까지 그대로 가고, 어휘 밖의 값은 서비스 전에 400 이다")
+    void getPosts_passesPostingStatusAndRejectsUnknownValue() throws Exception {
+        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class), any()))
+                .willReturn(new PageImpl<>(List.of(BoardDto.builder().pstSn(1L)
+                        .postingStatus(nuri.business.service.board.dto.PostingStatus.SCHEDULED).version(2).build())));
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001").param("postingStatus", "SCHEDULED")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].postingStatus").value("SCHEDULED"))
+                .andExpect(jsonPath("$.data.list[0].version").value(2));
+        verify(boardService).getBoardPosts(eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(Pageable.class), eq(new nuri.business.service.board.dto.BoardPostListFilter(
+                        nuri.business.service.board.dto.PostingStatus.SCHEDULED, null)));
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001").param("postingStatus", "OPEN")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoMoreInteractions(boardService);
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 5] 목록의 상단 고정 조건은 서비스까지 그대로 가고, 응답은 서버 판정 고정 여부와 종료일을 싣는다")
+    void getPosts_passesPinnedFilterAndCarriesPinState() throws Exception {
+        given(boardService.getBoardPosts(anyString(), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class), any()))
+                .willReturn(new PageImpl<>(List.of(BoardDto.builder().pstSn(1L).pinned(true).upendFixEndYmd("20261130").build())));
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001").param("pinned", "true")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].pinned").value(true))
+                .andExpect(jsonPath("$.data.list[0].upendFixEndYmd").value("20261130"));
+        verify(boardService).getBoardPosts(eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(Pageable.class), eq(new nuri.business.service.board.dto.BoardPostListFilter(null, true)));
+
+        mockMvc.perform(get("/api/v1/boards/BBS_001").param("pinned", "false").param("postingStatus", "POSTING")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        verify(boardService).getBoardPosts(eq("BBS_001"), any(), any(), any(), any(), any(), any(), any(), any(),
+                any(Pageable.class), eq(new nuri.business.service.board.dto.BoardPostListFilter(
+                        nuri.business.service.board.dto.PostingStatus.POSTING, false)));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("[ADR-0040 결정 12] 게시 기간은 8자리만 받고 달력·순서를 검사한다 — 서비스 전에 400")
+    void createPost_rejectsMalformedOrReversedPostingPeriod() throws Exception {
+        for (String period : List.of(
+                "\"pstBgngYmd\":\"2026-11-01\"",
+                "\"pstEndYmd\":\"20260230\"",
+                "\"pstBgngYmd\":\"20261201\", \"pstEndYmd\":\"20261130\"")) {
+            mockMvc.perform(post("/api/v1/boards/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\", " + period + "}")
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(boardService);
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("[ADR-0040 결정 10] 수정 본문의 version 은 서비스까지 그대로 간다")
+    void updatePost_passesVersionToService() throws Exception {
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/boards/BBS_001/posts/5")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\", "
+                                + "\"pstBgngYmd\":\"20261101\", \"pstEndYmd\":\"20261130\", \"version\":4}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk());
+        verify(boardService).updatePost(eq("BBS_001"), eq(5L), argThat((BoardSaveRequest request) ->
+                Integer.valueOf(4).equals(request.version()) && "20261101".equals(request.pstBgngYmd())));
     }
 }

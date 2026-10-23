@@ -8,6 +8,7 @@ import {
 } from '@/lib/api/generated-api-client';
 import { revalidatePath } from 'next/cache';
 import { QNA_BOARD_ID } from '@/config/board-ids';
+import { postingPeriodErrorField } from '@/lib/board/posting-period-error';
 import {
   createPostWithFilesOperation,
   createPostOperation,
@@ -28,8 +29,20 @@ const BOARD_SAVE_ERROR = '게시글 저장 중 오류가 발생했습니다.';
 function describeSaveFailure(error: unknown): ActionResponse {
   const response = (error as { response?: { status?: number; data?: { message?: unknown } } } | null)?.response;
   const status = response?.status;
+  const serverMessage = typeof response?.data?.message === 'string' ? response.data.message.trim() : '';
+  // [2026-10-23 ADR-0040 결정 3·D-11] 게시 기간 규칙(예약 설정·공개 뒤 시작일 변경·기간 순서)의 거부는 서버가 필드 없이 사유만 준다 —
+  //   사유가 말하는 날짜 칸에 붙인다. 공개된 글의 시작일 변경은 권한 거부(403)지만 글 전체가 아니라 그 칸의 문제다.
+  const periodField = postingPeriodErrorField(serverMessage);
+  if (status === 403 && periodField) {
+    return { success: false, field: periodField, message: serverMessage };
+  }
   if (status === 403) {
     return { success: false, message: '이 게시판에 글을 쓰거나 이 글을 고칠 권한이 없습니다.' };
+  }
+  if (status === 409) {
+    // [2026-10-23 ADR-0040 결정 10] 게시글 수정은 읽은 버전을 싣는다 — 그 사이 다른 사람이 고쳤으면 덮어쓰지 않는다.
+    //   서버 안내('다시 시도')는 같은 버전으로 다시 보내면 또 거부되므로 다음 행동을 이 화면의 말로 바꾼다.
+    return { success: false, message: '다른 사용자가 먼저 이 글을 고쳐 저장하지 않았습니다. 글을 다시 열어 최신 내용을 확인한 뒤 고쳐 주세요.' };
   }
   if (status === 413) {
     return { success: false, message: '첨부 파일이 허용 크기를 넘습니다. 파일 크기를 줄여 다시 시도해 주세요.' };
@@ -43,8 +56,10 @@ function describeSaveFailure(error: unknown): ActionResponse {
     if (first) {
       return { success: false, field: first[0], message: first[1] };
     }
+    if (periodField) {
+      return { success: false, field: periodField, message: serverMessage };
+    }
   }
-  const serverMessage = typeof response?.data?.message === 'string' ? response.data.message.trim() : '';
   if (status !== undefined && status >= 400 && status < 500 && serverMessage) {
     return { success: false, message: serverMessage };
   }
@@ -75,6 +90,8 @@ interface BoardArticle {
   scrtYn?: string;
   useYn?: string;
   pswd?: string;
+  /** 게시글 버전(ADR-0040 결정 10). 수정에만 싣는다 — 없으면 서버가 400, 다르면 409 로 거부한다. */
+  version?: number;
 }
 
 function extractTargetId(response: unknown, fallbackId: string): string {
@@ -115,6 +132,9 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   const atchFileSn = typeof atchFileSnRaw === 'string' && /^\d+$/.test(atchFileSnRaw)
     ? Number(atchFileSnRaw)
     : undefined;
+  // [2026-10-23 ADR-0040 결정 10] 수정 화면이 읽은 게시글 버전. 새 글에는 싣지 않는다.
+  const versionRaw = formData.get('version');
+  const version = isEdit && typeof versionRaw === 'string' && /^\d+$/.test(versionRaw) ? Number(versionRaw) : undefined;
 
   try {
     const cookieStore = await cookies();
@@ -137,7 +157,8 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       qnaCatCd: qnaCatCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
       // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 폐기 필드다 — 종전에는 '1' 을 채워 보내 평문으로 쌓였다. 보내지 않는다.
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
-      useYn: useYn === 'N' ? 'N' : 'Y'
+      useYn: useYn === 'N' ? 'N' : 'Y',
+      ...(version !== undefined ? { version } : {}),
     };
     
     // Extract attached files

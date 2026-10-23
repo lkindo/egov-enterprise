@@ -187,6 +187,73 @@ export class BoardMasterPage {
     await expect(review).not.toBeVisible({ timeout: 15000 });
   }
 
+  /** [2026-10-23 ADR-0040 §5.4 B1] 운영 화면의 게시물 탭을 연다. */
+  async openPostsTab(bbsId: string) {
+    await this.page.goto(`/admin/community/boards/master/${bbsId}?tab=posts`, { waitUntil: 'domcontentloaded' });
+    await expect(this.page.getByRole('heading', { level: 2, name: '게시물' })).toBeVisible({ timeout: 15000 });
+  }
+
+  /**
+   * 게시물 탭의 게시 상태 조건을 고르고 `조회` 로 적용한다(조건은 URL 밖 상태다). `serverQuery` 를 주면 그 조건을 실은 목록 요청의
+   * 응답을 기다린다 — 처음 쓰는 조건이라 요청이 반드시 나간다. 앞서 받은 조건(예: '전체')으로 돌아가면 쿼리 캐시(전역 staleTime 60초)가
+   * 서버에 다시 묻지 않을 수 있어 응답을 기다리지 않는다. 그때는 호출한 쪽이 표의 행으로 결과를 확인한다(2026-10-23 CI 에서 '전체' 로
+   * 돌아가는 응답 대기가 15초를 넘겼다).
+   */
+  async filterPostsByStatus(statusLabel: '전체' | '게시 중' | '예약' | '게시 종료', serverQuery?: string) {
+    await this.page.getByRole('combobox', { name: '게시 상태' }).selectOption({ label: statusLabel });
+    await this.applyPostFilter(serverQuery);
+  }
+
+  /** [B2] 게시물 탭의 상단 고정 조건을 고르고 `조회` 로 적용한다(서버가 오늘 기준으로 판정한다). `serverQuery` 는 위와 같다. */
+  async filterPostsByPinned(pinnedLabel: '전체' | '고정 글' | '고정 아닌 글', serverQuery?: string) {
+    await this.page.getByRole('combobox', { name: '상단 고정' }).selectOption({ label: pinnedLabel });
+    await this.applyPostFilter(serverQuery);
+  }
+
+  private async applyPostFilter(serverQuery?: string) {
+    const listResponse = serverQuery
+      ? this.page.waitForResponse(
+        res => /\/api\/v1\/boards\/BBSMSTR_[A-Z0-9]{12}\?/.test(res.url()) && res.url().includes(serverQuery)
+          && res.request().method() === 'GET',
+        { timeout: 15000 }
+      )
+      : undefined;
+    await this.page.getByRole('button', { name: '조회', exact: true }).click();
+    if (listResponse) expect((await listResponse).status()).toBe(200);
+  }
+
+  /** 한 글의 일정 바꾸기(빠른 편집)로 시작일·종료일을 바꿔 저장한다. 날짜는 yyyy-MM-dd 다. */
+  async changePostPeriod(title: string, dates: { begin?: string; end?: string }) {
+    await this.page.getByRole('button', { name: `${title} 일정 바꾸기` }).click();
+    const dialog = this.page.getByRole('dialog', { name: '일정 바꾸기' });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    if (dates.begin) await dialog.getByLabel('게시 시작일', { exact: true }).fill(dates.begin);
+    if (dates.end) await dialog.getByLabel('게시 종료일', { exact: true }).fill(dates.end);
+    const periodResponse = this.page.waitForResponse(
+      res => res.url().includes('/period') && res.request().method() === 'PATCH',
+      { timeout: 15000 }
+    );
+    await dialog.getByRole('button', { name: '일정 저장', exact: true }).click();
+    expect((await periodResponse).status()).toBe(200);
+    await expect(dialog).not.toBeVisible({ timeout: 15000 });
+  }
+
+  /** 고른 글의 게시 종료일을 한꺼번에 바꾼다(선택 처리 — 서버가 전체를 다시 판정한다). 날짜는 yyyy-MM-dd 다. */
+  async bulkChangeEnd(titles: string[], end: string) {
+    for (const title of titles) await this.page.getByRole('checkbox', { name: `${title} 선택` }).check();
+    await this.page.getByRole('button', { name: /^종료일 바꾸기$/ }).click();
+    const dialog = this.page.getByRole('dialog', { name: '종료일 바꾸기' });
+    await expect(dialog).toBeVisible({ timeout: 10000 });
+    await dialog.getByLabel(/새 게시 종료일/).fill(end);
+    const batchResponse = this.page.waitForResponse(
+      res => res.url().includes('/posts/batch/period') && res.request().method() === 'POST',
+      { timeout: 15000 }
+    );
+    await dialog.getByRole('button', { name: `선택한 ${titles.length}건 종료일 바꾸기`, exact: true }).click();
+    expect((await batchResponse).status()).toBe(200);
+    await expect(dialog).not.toBeVisible({ timeout: 15000 });
+  }
+
   /** 게시판 관리 목록에서 한 행을 골라 사용 안 함으로 바꾼다(단건 비활성화는 일괄 경로로 흡수됐다 — §5.2). */
   async deactivateFromList(boardName: string) {
     const row = this.page.locator('tr').filter({ hasText: boardName }).first();

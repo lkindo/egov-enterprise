@@ -906,4 +906,317 @@ class BoardRepositoryTest {
         assertThat(results.getContent()).hasSize(1);
         assertThat(results.getContent().get(0).getPstTtl()).isEqualTo("Topic");
     }
+
+    // ── [2026-10-23 ADR-0040 결정 3·4] 예약 글 집행과 게시 기준일 정렬 ─────────────────────────────
+
+    private Board savePeriodPost(String title, String startYmd, String userId) {
+        return boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId()).pstTtl(title).pstCn("body").useYn("Y").scrtYn("N")
+                .userId(userId).pstBgngYmd(startYmd).build());
+    }
+
+    @Test
+    @DisplayName("예약 글(시작일이 기준일 뒤)은 남의 목록 content·count·통계에서 빠지고 작성자·조회 대행 권한자에게는 남는다")
+    void searchArticlesHidesScheduledPostsFromOthers() {
+        savePeriodPost("start-marker tomorrow", "20261024", "ESNTL_AUTHOR");
+        savePeriodPost("start-marker today", TODAY, "ESNTL_AUTHOR");
+        savePeriodPost("start-marker blank", "", "ESNTL_AUTHOR");
+        savePeriodPost("start-marker none", null, "ESNTL_AUTHOR");
+        savePeriodPost("start-marker yesterday", "20261022", "ESNTL_AUTHOR");
+        em.flush();
+        em.clear();
+
+        BoardSearchCondition other = visibleCondition("ESNTL_OTHER", false);
+        other.setPostingOpenOn(TODAY);
+        Page<BoardSearchResult> others = boardRepository.searchArticles(other, PageRequest.of(0, 10));
+        assertThat(others.getContent()).extracting(BoardSearchResult::getPstTtl)
+                .containsExactlyInAnyOrder("start-marker today", "start-marker blank", "start-marker none",
+                        "start-marker yesterday");
+        assertThat(others.getTotalElements()).as("count 도 같은 술어다 — 페이지 수로 예약 글이 드러나지 않는다").isEqualTo(4);
+        assertThat(boardRepository.aggregateVisibleStats(other).totalArticles())
+                .as("게시판 통계도 같은 술어다").isEqualTo(4);
+
+        BoardSearchCondition author = visibleCondition("ESNTL_AUTHOR", false);
+        author.setPostingOpenOn(TODAY);
+        assertThat(boardRepository.searchArticles(author, PageRequest.of(0, 10)).getTotalElements())
+                .as("작성자는 자기 예약 글을 본다").isEqualTo(5);
+
+        BoardSearchCondition readAll = visibleCondition(null, true);
+        assertThat(boardRepository.searchArticles(readAll, PageRequest.of(0, 10)).getTotalElements())
+                .as("조회 대행 권한자는 기준일이 비어 기간 조건을 받지 않는다").isEqualTo(5);
+    }
+
+    @Test
+    @DisplayName("게시 상태 조건은 서버 기준일로 SCHEDULED·POSTING·ENDED 를 가르고 단건 판정과 같은 우선순위다")
+    void searchArticlesFiltersByPostingStatus() {
+        savePeriodPost("status scheduled", "20261024", "ESNTL_AUTHOR");
+        Board posting = savePeriodPost("status posting", TODAY, "ESNTL_AUTHOR");
+        Board ended = savePeriodPost("status ended", null, "ESNTL_AUTHOR");
+        Board reversed = savePeriodPost("status reversed", "20261030", "ESNTL_AUTHOR");
+        em.flush();
+        em.createNativeQuery("UPDATE tb_bbs_item SET pst_end_ymd = '20261022' WHERE pst_sn IN (:ids)")
+                .setParameter("ids", List.of(ended.getPstSn(), reversed.getPstSn())).executeUpdate();
+        em.createNativeQuery("UPDATE tb_bbs_item SET pst_end_ymd = :today WHERE pst_sn = :id")
+                .setParameter("today", TODAY).setParameter("id", posting.getPstSn()).executeUpdate();
+        em.clear();
+
+        for (var expected : java.util.Map.of(
+                nuri.business.service.board.dto.PostingStatus.SCHEDULED, List.of("status scheduled"),
+                nuri.business.service.board.dto.PostingStatus.POSTING, List.of("status posting"),
+                // 시작일이 종료일보다 뒤이고 종료일이 지났으면 ENDED 다 — 종료를 먼저 본다(D-5).
+                nuri.business.service.board.dto.PostingStatus.ENDED, List.of("status ended", "status reversed")).entrySet()) {
+            BoardSearchCondition readAll = visibleCondition(null, true);
+            readAll.setBaseYmd(TODAY);
+            readAll.setPostingStatus(expected.getKey());
+            assertThat(boardRepository.searchArticles(readAll, PageRequest.of(0, 10)).getContent())
+                    .as("%s", expected.getKey())
+                    .extracting(BoardSearchResult::getPstTtl)
+                    .containsExactlyInAnyOrderElementsOf(expected.getValue());
+        }
+
+        // 일반 사용자에게는 가시성 안에서만 좁혀진다 — 남의 예약 글은 SCHEDULED 조건으로도 보이지 않는다.
+        BoardSearchCondition other = visibleCondition("ESNTL_OTHER", false);
+        other.setPostingOpenOn(TODAY);
+        other.setBaseYmd(TODAY);
+        other.setPostingStatus(nuri.business.service.board.dto.PostingStatus.SCHEDULED);
+        assertThat(boardRepository.searchArticles(other, PageRequest.of(0, 10)).getTotalElements()).isZero();
+    }
+
+    @Test
+    @DisplayName("공개 FAQ 목록·상세는 예약 글을 권한과 상관없이 뺀다")
+    void publicFaqExcludesScheduledPosts() {
+        Board scheduled = savePeriodPost("faq-start-marker tomorrow", "20261024", "ESNTL_AUTHOR");
+        Board startsToday = savePeriodPost("faq-start-marker today", TODAY, "ESNTL_AUTHOR");
+        em.flush();
+        em.clear();
+
+        assertThat(boardRepository.searchPublicFaqArticles(testMaster.getBbsId(), "faq-start-marker", TODAY,
+                PageRequest.of(0, 10)).getContent())
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("faq-start-marker today");
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), scheduled.getPstSn(), TODAY)).isEmpty();
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), startsToday.getPstSn(), TODAY)).isPresent();
+    }
+
+    /**
+     * 게시 기준일 = 작성일자와 게시 시작일 중 늦은 값. A(작성 10-01·시작 10-20)가 맨 위, 같은 기준일 10-15 의 E·D·F·C 는 작성일시
+     * 내림차순, 같은 작성일시면 작성 순번 내림차순, 기준일 10-10 의 B 가 마지막이다. 'views'·'comments' 는 그 열을 먼저 본다.
+     * 작성일시가 없는 행의 위치(NULLS LAST)는 H2 와 PostgreSQL 의 기본 NULL 정렬이 달라 BoardOperationsPostgresIntegrationTest 가 본다.
+     */
+    @Test
+    @DisplayName("기본·date·모르는 정렬은 게시 기준일 순이고 동률은 작성일시·작성 순번으로 가른다")
+    void searchArticlesOrdersByPostingBaseDate() {
+        Board a = boardRepository.save(Board.builder().bbsId(testMaster.getBbsId()).pstTtl("A").pstCn("b").useYn("Y")
+                .sortOrdr(1L).ansSn(1L).pstBgngYmd("20261020").build());
+        Board b = boardRepository.save(Board.builder().bbsId(testMaster.getBbsId()).pstTtl("B").pstCn("b").useYn("Y")
+                .sortOrdr(2L).ansSn(1L).inqCnt(5).cmntCnt(5).build());
+        Board c = boardRepository.save(Board.builder().bbsId(testMaster.getBbsId()).pstTtl("C").pstCn("b").useYn("Y")
+                .sortOrdr(3L).ansSn(1L).pstBgngYmd("").build());
+        Board d = boardRepository.save(Board.builder().bbsId(testMaster.getBbsId()).pstTtl("D").pstCn("b").useYn("Y")
+                .sortOrdr(4L).ansSn(1L).pstBgngYmd("").build());
+        Board e = boardRepository.save(Board.builder().bbsId(testMaster.getBbsId()).pstTtl("E").pstCn("b").useYn("Y")
+                .sortOrdr(5L).ansSn(1L).pstBgngYmd("20261015").build());
+        // 시작일(1012)이 작성일자(1015)보다 이른 글 — 기준일은 작성일자다. 작성일자를 8자리가 아닌 형식으로 만들면 이 글이 D 위로 간다.
+        Board f = boardRepository.save(Board.builder().bbsId(testMaster.getBbsId()).pstTtl("F").pstCn("b").useYn("Y")
+                .sortOrdr(6L).ansSn(1L).pstBgngYmd("20261012").build());
+        em.flush();
+        setCreatedAt(a, LocalDateTime.of(2026, 10, 1, 9, 0));
+        setCreatedAt(b, LocalDateTime.of(2026, 10, 10, 9, 0));
+        setCreatedAt(c, LocalDateTime.of(2026, 10, 15, 9, 0));
+        setCreatedAt(d, LocalDateTime.of(2026, 10, 15, 10, 0));
+        setCreatedAt(e, LocalDateTime.of(2026, 10, 15, 10, 0));
+        setCreatedAt(f, LocalDateTime.of(2026, 10, 15, 9, 30));
+        em.clear();
+
+        for (String orderBy : java.util.Arrays.asList(null, "date", "latest")) {
+            BoardSearchCondition condition = visibleCondition(null, true);
+            condition.setOrderBy(orderBy);
+            assertThat(boardRepository.searchArticles(condition, PageRequest.of(0, 10)).getContent())
+                    .as("orderBy=%s", orderBy)
+                    .extracting(BoardSearchResult::getPstTtl).containsExactly("A", "E", "D", "F", "C", "B");
+        }
+        for (String orderBy : List.of("views", "comments")) {
+            BoardSearchCondition condition = visibleCondition(null, true);
+            condition.setOrderBy(orderBy);
+            assertThat(boardRepository.searchArticles(condition, PageRequest.of(0, 10)).getContent())
+                    .as("orderBy=%s 는 그 열을 먼저 보고 같은 순서로 동률을 가른다", orderBy)
+                    .extracting(BoardSearchResult::getPstTtl).containsExactly("B", "A", "E", "D", "F", "C");
+        }
+        assertThat(boardRepository.searchPublicFaqArticles(testMaster.getBbsId(), null, "20261031", PageRequest.of(0, 10))
+                .getContent())
+                .as("공개 FAQ 도 같은 게시 기준일 순이다")
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("A", "E", "D", "F", "C", "B");
+    }
+
+    @Test
+    @DisplayName("목록·상세 projection 은 수정 요청이 돌려보낼 게시글 버전을 싣는다")
+    void projectionsCarryPostVersion() {
+        Board saved = savePeriodPost("version-marker", null, "ESNTL_AUTHOR");
+        em.flush();
+        em.clear();
+        BoardSearchCondition condition = visibleCondition(null, true);
+        assertThat(boardRepository.searchArticles(condition, PageRequest.of(0, 10)).getContent())
+                .singleElement().extracting(BoardSearchResult::getVersion).isEqualTo(0);
+        assertThat(boardRepository.findActiveArticleDetail(testMaster.getBbsId(), saved.getPstSn()))
+                .get().extracting(BoardDetailResult::getVersion).isEqualTo(0);
+    }
+
+    // ── [ADR-0040 결정 5] 상단 고정 — 상한 집계·고정 쓰기·고정 조건·고정 우선 정렬 ─────────────────────────────
+
+    private Board savePinPost(String bbsId, String title, String scrtYn, String startYmd, String endYmd) {
+        return boardRepository.save(Board.builder()
+                .bbsId(bbsId).pstTtl(title).pstCn("body").useYn("Y").scrtYn(scrtYn)
+                .pstBgngYmd(startYmd).pstEndYmd(endYmd).build());
+    }
+
+    private void markPinned(Board row, String yn, String endYmd) {
+        em.createNativeQuery("UPDATE tb_bbs_item SET upend_fix_yn = :yn, upend_fix_end_ymd = :endYmd WHERE pst_sn = :id")
+                .setParameter("yn", yn).setParameter("endYmd", endYmd).setParameter("id", row.getPstSn()).executeUpdate();
+    }
+
+    private BoardSearchCondition pinCondition() {
+        BoardSearchCondition condition = visibleCondition(null, true);
+        condition.setBaseYmd(TODAY);
+        condition.setPinFirst(true);
+        return condition;
+    }
+
+    @Test
+    @DisplayName("🚨 상한 집계는 기준일에 고정 중인 지우지 않은 글만 센다 — 비밀·게시 종료·예약 고정 글은 세고, 만료·삭제·다른 게시판은 뺀다")
+    void countActivePinsCountsEveryLivePinOfTheBoard() {
+        boardMasterRepository.save(BoardMaster.builder().bbsId("BBS_PIN_OTHER").bbsTtl("other")
+                .bbsTypeCd("COM004").bbsAtrbCd("COM009").useYn("Y").build());
+        String bbs = testMaster.getBbsId();
+        Board endsToday = savePinPost(bbs, "pin ends today", "N", null, null);
+        Board expired = savePinPost(bbs, "pin expired", "N", null, null);
+        Board secret = savePinPost(bbs, "pin secret", "Y", null, null);
+        Board postingEnded = savePinPost(bbs, "pin posting ended", "N", null, "20261001");
+        Board scheduled = savePinPost(bbs, "pin scheduled", "N", "20261120", null);
+        Board deleted = savePinPost(bbs, "pin deleted", "N", null, null);
+        Board unpinned = savePinPost(bbs, "not pinned", "N", null, null);
+        Board otherBoard = savePinPost("BBS_PIN_OTHER", "pin other board", "N", null, null);
+        em.flush();
+        markPinned(endsToday, "Y", TODAY);
+        markPinned(expired, "Y", "20261022");
+        for (Board row : List.of(secret, postingEnded, scheduled, deleted, otherBoard)) {
+            markPinned(row, "Y", "20261231");
+        }
+        em.createNativeQuery("UPDATE tb_bbs_item SET use_yn = 'N' WHERE pst_sn = :id")
+                .setParameter("id", deleted.getPstSn()).executeUpdate();
+        em.clear();
+
+        assertThat(boardRepository.countActivePins(bbs, TODAY))
+                .as("종료일 당일·비밀·게시 종료·예약 고정 글을 세고 만료·삭제·다른 게시판 글은 빼야 한다").isEqualTo(4);
+        assertThat(boardRepository.countActivePins(bbs, "20261024")).as("다음 날에는 오늘 끝나는 고정이 빠진다").isEqualTo(3);
+    }
+
+    @Test
+    @DisplayName("🚨 고정 쓰기는 게시글 버전·수정 시각·수정자를 바꾸지 않고, 경로 게시판의 지우지 않은 글만 바꾼다")
+    void updatePinLeavesVersionAndAuditColumnsUntouched() {
+        Board row = savePinPost(testMaster.getBbsId(), "pin write", "N", null, null);
+        Board gone = savePinPost(testMaster.getBbsId(), "pin write deleted", "N", null, null);
+        em.flush();
+        em.createNativeQuery("UPDATE tb_bbs_item SET use_yn = 'N' WHERE pst_sn = :id")
+                .setParameter("id", gone.getPstSn()).executeUpdate();
+        em.clear();
+        Object[] before = (Object[]) em.createNativeQuery(
+                        "SELECT version, mdfcn_dt, last_mdfr_id FROM tb_bbs_item WHERE pst_sn = :id")
+                .setParameter("id", row.getPstSn()).getSingleResult();
+
+        assertThat(boardRepository.updatePin(testMaster.getBbsId(), List.of(row.getPstSn()), "Y", "20261130")).isEqualTo(1);
+        assertThat(boardRepository.updatePin("BBS_ELSEWHERE", List.of(row.getPstSn()), "N", null))
+                .as("다른 게시판 경로로는 쓰지 않는다").isZero();
+        assertThat(boardRepository.updatePin(testMaster.getBbsId(), List.of(gone.getPstSn()), "Y", "20261130"))
+                .as("지운 글에는 쓰지 않는다").isZero();
+
+        Object[] after = (Object[]) em.createNativeQuery(
+                        "SELECT version, mdfcn_dt, last_mdfr_id, upend_fix_yn, upend_fix_end_ymd FROM tb_bbs_item WHERE pst_sn = :id")
+                .setParameter("id", row.getPstSn()).getSingleResult();
+        assertThat(after[0]).as("버전").isEqualTo(before[0]);
+        assertThat(after[1]).as("수정 시각").isEqualTo(before[1]);
+        assertThat(after[2]).as("수정자").isEqualTo(before[2]);
+        assertThat(String.valueOf(after[3])).isEqualTo("Y");
+        assertThat(String.valueOf(after[4])).isEqualTo("20261130");
+
+        assertThat(boardRepository.updatePin(testMaster.getBbsId(), List.of(row.getPstSn()), "N", null)).isEqualTo(1);
+        Board reread = boardRepository.findById(row.getPstSn()).orElseThrow();
+        assertThat(reread.getUpendFixYn()).isEqualTo("N");
+        assertThat(reread.getUpendFixEndYmd()).as("해제는 종료일을 비운다").isNull();
+    }
+
+    @Test
+    @DisplayName("🚨 고정 중인 글은 기본·date 정렬에서 맨 앞이고(종료일 당일 포함), 조회순·댓글순과 고정 우선을 끈 경로에서는 일반 위치다")
+    void pinnedPostsLeadDefaultOrderOnly() {
+        String bbs = testMaster.getBbsId();
+        Board pinnedOld = savePinPost(bbs, "pinned old", "N", null, null);
+        Board expiredPin = savePinPost(bbs, "expired pin", "N", null, null);
+        Board newest = boardRepository.save(Board.builder().bbsId(bbs).pstTtl("newest").pstCn("b").useYn("Y")
+                .inqCnt(9).build());
+        em.flush();
+        setCreatedAt(pinnedOld, LocalDateTime.of(2026, 10, 1, 9, 0));
+        setCreatedAt(expiredPin, LocalDateTime.of(2026, 10, 5, 9, 0));
+        setCreatedAt(newest, LocalDateTime.of(2026, 10, 20, 9, 0));
+        markPinned(pinnedOld, "Y", TODAY);
+        markPinned(expiredPin, "Y", "20261022");
+        em.clear();
+
+        for (String orderBy : java.util.Arrays.asList(null, "date")) {
+            BoardSearchCondition condition = pinCondition();
+            condition.setOrderBy(orderBy);
+            assertThat(boardRepository.searchArticles(condition, PageRequest.of(0, 10)).getContent())
+                    .as("orderBy=%s", orderBy)
+                    .extracting(BoardSearchResult::getPstTtl).containsExactly("pinned old", "newest", "expired pin");
+        }
+        BoardSearchCondition views = pinCondition();
+        views.setOrderBy("views");
+        assertThat(boardRepository.searchArticles(views, PageRequest.of(0, 10)).getContent())
+                .as("조회순은 고정 우선을 두지 않는다")
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("newest", "expired pin", "pinned old");
+        BoardSearchCondition global = pinCondition();
+        global.setPinFirst(false);
+        assertThat(boardRepository.searchArticles(global, PageRequest.of(0, 10)).getContent())
+                .as("고정 우선을 끈 경로(통합 검색)는 일반 순서다")
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("newest", "expired pin", "pinned old");
+        BoardSearchCondition tomorrow = pinCondition();
+        tomorrow.setBaseYmd("20261024");
+        assertThat(boardRepository.searchArticles(tomorrow, PageRequest.of(0, 10)).getContent())
+                .as("종료일 다음 날에는 일반 위치다")
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("newest", "expired pin", "pinned old");
+        assertThat(boardRepository.searchPublicFaqArticles(bbs, null, TODAY, PageRequest.of(0, 10)).getContent())
+                .as("공개 FAQ 도 고정 중인 글이 먼저다")
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("pinned old", "newest", "expired pin");
+
+        assertThat(boardRepository.searchArticles(pinCondition(), PageRequest.of(0, 10)).getContent())
+                .as("목록 projection 은 고정 표시와 종료일을 싣는다")
+                .filteredOn(row -> "pinned old".equals(row.getPstTtl()))
+                .singleElement().satisfies(row -> {
+                    assertThat(row.getUpendFixYn()).isEqualTo("Y");
+                    assertThat(row.getUpendFixEndYmd()).isEqualTo(TODAY);
+                });
+        assertThat(boardRepository.findActiveArticleDetail(bbs, pinnedOld.getPstSn())).get()
+                .extracting(BoardDetailResult::getUpendFixYn, BoardDetailResult::getUpendFixEndYmd)
+                .containsExactly("Y", TODAY);
+    }
+
+    @Test
+    @DisplayName("고정 조건: true 는 기준일에 고정 중인 글, false 는 그 밖의 글(종료일이 지난 옛 고정 포함)이다")
+    void pinnedFilterUsesBaseDate() {
+        String bbs = testMaster.getBbsId();
+        Board active = savePinPost(bbs, "filter active", "N", null, null);
+        Board expired = savePinPost(bbs, "filter expired", "N", null, null);
+        savePinPost(bbs, "filter plain", "N", null, null);
+        em.flush();
+        markPinned(active, "Y", TODAY);
+        markPinned(expired, "Y", "20261022");
+        em.clear();
+
+        BoardSearchCondition pinned = pinCondition();
+        pinned.setPinned(true);
+        assertThat(boardRepository.searchArticles(pinned, PageRequest.of(0, 10)).getContent())
+                .extracting(BoardSearchResult::getPstTtl).containsExactly("filter active");
+        assertThat(boardRepository.searchArticles(pinned, PageRequest.of(0, 10)).getTotalElements()).isEqualTo(1);
+        BoardSearchCondition notPinned = pinCondition();
+        notPinned.setPinned(false);
+        assertThat(boardRepository.searchArticles(notPinned, PageRequest.of(0, 10)).getContent())
+                .extracting(BoardSearchResult::getPstTtl).containsExactlyInAnyOrder("filter expired", "filter plain");
+    }
 }

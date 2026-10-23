@@ -47,6 +47,19 @@ describe('BoardUserService generated contract', () => {
     });
   });
 
+  // [2026-10-23 ADR-0040 결정 6] 추천 취소는 같은 경로의 DELETE 이고 서버가 돌려준 지금 추천 수를 그대로 돌려준다.
+  it('추천 취소를 generated operation(DELETE)으로 실행하고 서버가 준 추천 수를 돌려준다', async () => {
+    client.requestRaw.mockResolvedValueOnce(successEnvelope(3));
+
+    await expect(boardUserService.cancelLikePost('BBS01', 9)).resolves.toBe(3);
+
+    expect(client.requestRaw).toHaveBeenCalledTimes(1);
+    expect(client.requestRaw).toHaveBeenCalledWith({
+      url: 'boards/BBS01/posts/9/like',
+      method: 'delete',
+    });
+  });
+
   /*
     [2026-09-07] 상세 조회·등록·수정·삭제 계약을 이 파일에서 걷었다 — 해당 메서드가
     대체된 표면이라 제거됐기 때문이다(축 2 실측: 호출부 0).

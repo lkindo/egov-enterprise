@@ -10,8 +10,8 @@ export const BoardSaveRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20),
   pstTtl: z.string().min(1).max(256),
   pstCn: z.string().min(0).max(4000),
-  pstBgngYmd: z.string().min(0).max(10).optional(),
-  pstEndYmd: z.string().min(0).max(10).optional(),
+  pstBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   atchFileSn: z.number().int().optional(),
   evntDt: z.string().min(0).max(20).optional(),
   qnaSttsCd: z.string().min(0).max(12).optional(),
@@ -19,6 +19,7 @@ export const BoardSaveRequestSchema = /*#__PURE__*/ (() => z.object({
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   pswd: z.string().min(0).max(200).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 export type BoardSaveRequest = z.infer<typeof BoardSaveRequestSchema>;
 
@@ -96,6 +97,10 @@ export const BoardMetaDtoSchema = /*#__PURE__*/ (() => z.object({
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   requiredEditPermissions: z.array(z.string()),
   inUse: z.boolean(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]),
+  upendFixPsbltyYn: z.enum(["Y","N"]),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
+  rcmdtnUseYn: z.enum(["Y","N"]),
 }))();
 export type BoardMetaDto = z.infer<typeof BoardMetaDtoSchema>;
 
@@ -195,8 +200,8 @@ export const BoardSaveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20),
   pstTtl: z.string().min(1).max(256),
   pstCn: z.string().min(0).max(4000),
-  pstBgngYmd: z.string().min(0).max(10).optional(),
-  pstEndYmd: z.string().min(0).max(10).optional(),
+  pstBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   atchFileSn: z.number().int().optional(),
   evntDt: z.string().min(0).max(20).optional(),
   qnaSttsCd: z.string().min(0).max(12).optional(),
@@ -204,14 +209,15 @@ export const BoardSaveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   pswd: z.string().min(0).max(200).optional(),
+  version: z.number().int().min(0).optional(),
 }))();
 
 export const BoardSaveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20),
   pstTtl: z.string().min(1).max(256),
   pstCn: z.string().min(0).max(4000),
-  pstBgngYmd: z.string().min(0).max(10).optional().nullable(),
-  pstEndYmd: z.string().min(0).max(10).optional().nullable(),
+  pstBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   evntDt: z.string().min(0).max(20).optional().nullable(),
   qnaSttsCd: z.string().min(0).max(12).optional().nullable(),
@@ -219,6 +225,7 @@ export const BoardSaveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional().nullable(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional().nullable(),
   pswd: z.string().min(0).max(200).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseBoardDtoRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -343,6 +350,10 @@ export const BoardMetaDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   requiredEditPermissions: z.array(z.string()),
   inUse: z.boolean(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]),
+  upendFixPsbltyYn: z.enum(["Y","N"]),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
+  rcmdtnUseYn: z.enum(["Y","N"]),
 }))();
 
 export const BoardMetaDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -359,6 +370,10 @@ export const BoardMetaDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   requiredEditPermissions: z.array(z.string().optional().nullable()),
   inUse: z.boolean(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]),
+  upendFixPsbltyYn: z.enum(["Y","N"]),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
+  rcmdtnUseYn: z.enum(["Y","N"]),
 }))();
 
 export const ApiResponseListBoardSearchItemResponseRequestSchema = /*#__PURE__*/ (() => z.object({

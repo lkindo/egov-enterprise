@@ -9,6 +9,7 @@ import nuri.business.domain.board.exception.BoardErrorCode;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardSaveRequest;
+import nuri.business.service.board.dto.BoardPostListFilter;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.foundation.core.event.PostCreatedEvent;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
@@ -63,11 +64,23 @@ class BoardServiceTest {
     @Mock
     private nuri.business.domain.board.BoardRecommendationRepository recommendationRepository;
     @Mock
+    private BoardChangeRecorder changeRecorder;
+    @Mock
     private Timer timer;
     @Mock
     private Timer.Sample sample;
 
     private MockedStatic<nuri.business.security.util.SecurityUtil> securityUtilMock;
+
+    /**
+     * [2026-10-23 ADR-0040 결정 3] 게시 기간 판정의 고정 시계 — 2026-10-22T15:30Z 는 서울 2026-10-23 00:30 이다. 시계의 시간대(UTC)와
+     * 무관하게 서비스가 서울 날짜로 판정하는지도 함께 본다.
+     */
+    private static final java.time.Clock FIXED_CLOCK =
+            java.time.Clock.fixed(java.time.Instant.parse("2026-10-22T15:30:00Z"), java.time.ZoneOffset.UTC);
+    private static final String TODAY = "20261023";
+    private static final String YESTERDAY = "20261022";
+    private static final String TOMORROW = "20261024";
 
     @org.junit.jupiter.api.BeforeEach
     void setUp() {
@@ -88,9 +101,12 @@ class BoardServiceTest {
                 // 아래 FAQ 테스트들의 기존 리터럴 기대값을 그대로 두어 기본값 동작 불변을 검증한다.
                 new nuri.business.core.config.BoardIdProperties(),
                 recommendationRepository,
+                // [2026-10-23 ADR-0040 결정 9] 운영 화면 게시 기간 변경 이력.
+                changeRecorder,
                 // [2026-09-08 PD-CMTY-001] 커뮤니티 접근 포트. 대부분의 시나리오는 귀속 없는 게시판이라
                 //   호출되지 않으며, 귀속 게시판 테스트만 이 목의 응답을 지정한다.
                 communityBoardAccess);
+        boardService.useClock(FIXED_CLOCK);
         // [2026-10-23 ADR-0040 결정 1] 쓰기·상세·댓글 경로가 게시판 진입 판정(사용 여부 → 커뮤니티)을 먼저 지난다.
         //   시험이 마스터를 정하지 않으면 그 bbsId 의 사용 중인 일반 게시판으로 본다. 없는·사용 안 함·커뮤니티 게시판은
         //   시험이 직접 정한다(그 스텁이 이 기본값보다 앞선다).
@@ -156,7 +172,7 @@ class BoardServiceTest {
         given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
                 .willReturn(new PageImpl<BoardSearchResult>(Collections.emptyList()));
 
-        boardService.getBoardPosts(bbsId, "0", "공지", "views", "2026-01-01", "2026-12-31", "R", "CAT1", null, pageable);
+        boardService.getBoardPosts(bbsId, "0", "공지", "views", "2026-01-01", "2026-12-31", "R", "CAT1", null, pageable, BoardPostListFilter.NONE);
 
         // 한 항목이라도 전달이 끊기면 사용자가 건 필터가 조용히 무시된 채 전체 목록이 반환된다.
         BoardSearchCondition cond = captor.getValue();
@@ -187,11 +203,11 @@ class BoardServiceTest {
         given(boardRepository.searchArticles(captor.capture(), eq(pageable)))
                 .willReturn(new PageImpl<BoardSearchResult>(Collections.emptyList()));
 
-        boardService.getBoardPosts(bbsId, "0", "", null, "2026-09-01", "2026-09-30", null, null, "EVENT", pageable);
+        boardService.getBoardPosts(bbsId, "0", "", null, "2026-09-01", "2026-09-30", null, null, "EVENT", pageable, BoardPostListFilter.NONE);
         assertThat(captor.getValue().isEventDateBasis()).isTrue();
 
         assertThatThrownBy(() -> boardService.getBoardPosts(bbsId, "0", "", null, null, null, null, null,
-                "evnt_dt", pageable))
+                "evnt_dt", pageable, BoardPostListFilter.NONE))
                 .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
     }
@@ -225,21 +241,22 @@ class BoardServiceTest {
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(BoardMaster.builder().bbsId(bbsId).build()));
         org.mockito.ArgumentCaptor<BoardSearchCondition> captor = org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
         given(boardRepository.searchArticles(captor.capture(), eq(pageable))).willReturn(Page.empty(pageable));
-        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
 
         boardService.getBoardPosts(bbsId, pageable);
-        assertThat(captor.getValue().getPostingOpenOn()).isEqualTo(today);
+        assertThat(captor.getValue().getPostingOpenOn()).isEqualTo(TODAY);
+        assertThat(captor.getValue().getBaseYmd()).isEqualTo(TODAY);
 
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(true);
         boardService.getBoardPosts(bbsId, pageable);
         assertThat(captor.getValue().getPostingOpenOn()).isNull();
+        // 기준일은 뷰어와 무관하게 싣는다 — 게시 상태 조건과 고정 판정이 쓴다.
+        assertThat(captor.getValue().getBaseYmd()).isEqualTo(TODAY);
     }
 
     @Test
     @DisplayName("🚨 게시 종료일이 지난 글은 남에게 404, 작성자·전체 열람 권한자에게는 열린다 (2026-10-01 결정 23)")
     void getPostDetail_hidesEndedPostingFromOthers() {
-        String yesterday = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).minusDays(1)
-                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String yesterday = YESTERDAY;
         BoardDetailResult ended = BoardDetailResult.builder().pstSn(5L).bbsId("BBS_01").userId("ESNTL_owner")
                 .scrtYn("N").pstEndYmd(yesterday).build();
         given(boardRepository.findActiveArticleDetail("BBS_01", 5L)).willReturn(Optional.of(ended));
@@ -262,7 +279,7 @@ class BoardServiceTest {
     @Test
     @DisplayName("오늘이 종료일인 글과 종료일이 없는 글은 아직 게시 중이다")
     void getPostDetail_keepsPostingOpenOnEndDateAndWithoutEnd() {
-        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String today = TODAY;
         given(boardRepository.findActiveArticleDetail("BBS_01", 6L)).willReturn(Optional.of(
                 BoardDetailResult.builder().pstSn(6L).bbsId("BBS_01").userId("ESNTL_owner").scrtYn("N").pstEndYmd(today).build()));
         given(boardRepository.findActiveArticleDetail("BBS_01", 7L)).willReturn(Optional.of(
@@ -316,7 +333,7 @@ class BoardServiceTest {
 
         // 검증이 빠지면 항상 0건이 반환돼 "글이 없다" 는 오해를 유발한다.
         assertThatThrownBy(() -> boardService.getBoardPosts(
-                bbsId, null, null, null, "2026-12-31", "2026-01-01", null, null, null, pageable))
+                bbsId, null, null, null, "2026-12-31", "2026-01-01", null, null, null, pageable, BoardPostListFilter.NONE))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
 
@@ -337,7 +354,7 @@ class BoardServiceTest {
                 .willReturn(new PageImpl<>(Collections.singletonList(
                         BoardSearchResult.builder().pstSn(1L).build())));
 
-        Page<BoardDto> result = boardService.getBoardPosts(bbsId, "0", "공지", null, null, null, null, null, null, pageable);
+        Page<BoardDto> result = boardService.getBoardPosts(bbsId, "0", "공지", null, null, null, null, null, null, pageable, BoardPostListFilter.NONE);
 
         assertThat(result.getContent()).hasSize(1);
         assertThat(captor.getValue().getSearchWrd()).isEqualTo("공지");
@@ -354,10 +371,11 @@ class BoardServiceTest {
         given(board.getBbsId()).willReturn("BBS1");
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
+        given(board.getVersion()).willReturn(0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         
         BoardSaveRequest updateDto = new BoardSaveRequest(
             "BBS1", "update", "content", null, null, null, null, null, null, null, null, null
-        );
+        , 0);
 
         boardService.updatePost("BBS1", 1L, updateDto);
         // board.update(...) gets called with fallbacks
@@ -375,7 +393,7 @@ class BoardServiceTest {
         given(board.getUserId()).willReturn("user1");
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
 
-        BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest req = new BoardSaveRequest("BBS1", "title", "content", null, null, null, null, null, null, null, null, null, null);
         // 게시판 진입 판정을 지난 뒤 소유 판정에서 거부돼야 한다 — 마스터를 못 찾은 404 로 통과하면 이 시험은 아무것도 증명하지 않는다.
         assertThatThrownBy(() -> boardService.updatePost("BBS1", 1L, req))
                 .isInstanceOf(BusinessException.class)
@@ -424,7 +442,7 @@ class BoardServiceTest {
     void createPost() {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
 
@@ -447,7 +465,7 @@ class BoardServiceTest {
         // given
         String userId = "user1";
         Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Content", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
         UserDto user = UserDto.builder().userId(userId).userNm("Tester").build();
@@ -468,7 +486,7 @@ class BoardServiceTest {
     /** BoardSaveRequest(bbsId, pstTtl, pstCn, pstBgngYmd, pstEndYmd, atchFileSn, evntDt, qnaSttsCd, qnaCatCd, scrtYn, useYn, pswd) */
     private BoardSaveRequest saveRequest(String evntDt, String qnaSttsCd, String useYn) {
         return new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null,
-                evntDt, qnaSttsCd, null, null, useYn, null);
+                evntDt, qnaSttsCd, null, null, useYn, null, null);
     }
 
     private Board captureSavedBoard() {
@@ -498,14 +516,15 @@ class BoardServiceTest {
     void retiredPasswordIsNeitherStoredNorOverwritten() {
         givenCreatePostContext(0L);
         boardService.createPost("user1", new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null,
-                null, null, null, null, null, "1"));
+                null, null, null, null, null, "1", 0));
         assertThat(captureSavedBoard().getPswd()).isNull();
 
         securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.getCurrentEsntlId()).thenReturn(Optional.of("user1"));
         Board existing = Board.builder().bbsId("BBS_01").pstSn(5L).userId("user1").pswd("legacy").build();
         given(boardRepository.findById(5L)).willReturn(Optional.of(existing));
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         boardService.updatePost("BBS_01", 5L, new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null,
-                null, null, null, null, null, "new-secret"));
+                null, null, null, null, null, "new-secret", 0));
         assertThat(existing.getPswd()).isEqualTo("legacy");
         assertThat(existing.getPstTtl()).isEqualTo("Upd");
     }
@@ -824,7 +843,7 @@ class BoardServiceTest {
                         .useYn("Y")
                         .build()));
         given(boardRepository.searchPublicFaqArticles(
-                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", BoardPolicySupport.todayYmd(), pageable))
+                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", TODAY, pageable))
                 .willReturn(Page.empty(pageable));
 
         boardService.getPublicFaqPosts("secret-search-marker", pageable);
@@ -832,7 +851,7 @@ class BoardServiceTest {
         verify(boardMasterRepository).findById("BBSMSTR_AAAAAAAAAAAA");
         // 게시 종료 판정 기준일(Asia/Seoul 오늘)을 함께 넘긴다(ADR-0040 A0).
         verify(boardRepository).searchPublicFaqArticles(
-                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", BoardPolicySupport.todayYmd(), pageable);
+                "BBSMSTR_AAAAAAAAAAAA", "secret-search-marker", TODAY, pageable);
         verify(boardRepository, never()).searchArticles(any(), any());
     }
 
@@ -883,7 +902,7 @@ class BoardServiceTest {
                 .atchFileSn(99L)
                 .qnaSttsCd("must-not-leave-service")
                 .build();
-        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, BoardPolicySupport.todayYmd()))
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, TODAY))
                 .willReturn(Optional.of(detail));
 
         BoardDto result = boardService.getPublicFaqDetail(pstSn);
@@ -897,7 +916,7 @@ class BoardServiceTest {
         assertThat(result.pswd()).isNull();
         assertThat(result.atchFileSn()).isNull();
         assertThat(result.qnaSttsCd()).isNull();
-        verify(boardRepository).findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, BoardPolicySupport.todayYmd());
+        verify(boardRepository).findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, TODAY);
         verify(boardRepository, never()).findActiveArticleDetail(anyString(), anyLong());
         verify(viewCountService).increaseViewCount(pstSn);
     }
@@ -906,7 +925,7 @@ class BoardServiceTest {
     @DisplayName("공개 FAQ 상세가 없으면 본문과 조회수 없이 동일한 not-found로 종료한다")
     void getPublicFaqDetailDeniesSecretInactiveOrWrongBoardBeforeViewCount() {
         Long pstSn = 16L;
-        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, BoardPolicySupport.todayYmd()))
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", pstSn, TODAY))
                 .willReturn(Optional.empty());
 
         assertThatThrownBy(() -> boardService.getPublicFaqDetail(pstSn))
@@ -923,10 +942,11 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Updated", "Content", null, null, null, null, null, null, null, null, null, 0);
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).pstTtl("Old").userId(userId).build();
 
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
@@ -947,13 +967,14 @@ class BoardServiceTest {
                 .atchFileSn(100L)
                 .build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("user1"));
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(101L);
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Changed", "Content", null, null, 101L,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, 0);
 
         assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstSn, request))
                 .isInstanceOf(BusinessException.class)
@@ -974,11 +995,12 @@ class BoardServiceTest {
                 .atchFileSn(101L)
                 .build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("user1"));
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Changed", "Content", null, null, 101L,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, 0);
 
         boardService.updatePost("BBS_01", pstSn, request);
 
@@ -1096,7 +1118,7 @@ class BoardServiceTest {
         given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
 
         // when
-        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "2023-01-01", "2023-12-31", null, null, null, pageable);
+        boardService.getBoardPosts(bbsId, "0", "word", "regDate", "2023-01-01", "2023-12-31", null, null, null, pageable, BoardPostListFilter.NONE);
 
         // then
         verify(boardRepository)
@@ -1121,7 +1143,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
 
         BusinessException thrown = assertThrows(BusinessException.class, () -> boardService.getBoardPosts(
-                bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, null, pageable));
+                bbsId, "0", "word", "regDate", "invalid-date", "invalid-date", null, null, null, pageable, BoardPostListFilter.NONE));
 
         assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, thrown.getErrorCode());
         assertTrue(thrown.getMessage().contains("yyyy-MM-dd"), "형식을 알려 주지 않으면 고칠 수 없다");
@@ -1138,7 +1160,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
         given(boardRepository.searchArticles(any(), any())).willReturn(Page.empty());
 
-        boardService.getBoardPosts(bbsId, "0", "", "regDate", "2026-08-01", "2026-08-31", null, null, null, pageable);
+        boardService.getBoardPosts(bbsId, "0", "", "regDate", "2026-08-01", "2026-08-31", null, null, null, pageable, BoardPostListFilter.NONE);
 
         verify(boardRepository).searchArticles(argThat(cond ->
                 cond.getStartDate() != null
@@ -1152,7 +1174,7 @@ class BoardServiceTest {
     void createPost_UserNotFound() {
         // given
         String userId = "unknown";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
@@ -1173,7 +1195,7 @@ class BoardServiceTest {
     void createPost_UserError() {
         // given
         String userId = "errorUser";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
 
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(master));
@@ -1194,7 +1216,7 @@ class BoardServiceTest {
     void createPost_AuthorFromAuthenticatedPrincipal() {
         // given — 요청 DTO(BoardSaveRequest)에서 userId/userNm 필드를 제거해 클라이언트가 저자를 지정할 방법 자체가 없다.
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         UserDto author = UserDto.builder().userId(userId).userNm("실제작성자").build();
 
@@ -1243,7 +1265,7 @@ class BoardServiceTest {
     @Test
     @DisplayName("[DIP B5 F9] 첨부를 받지 않거나, 파일 수·파일당 크기를 넘는 첨부는 저장하기 전에 거부한다")
     void createPostWithFilesEnforcesBoardAttachmentSettingsBeforeUpload() throws IOException {
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
                 .fileAtchPsbltyYn("N").atchPsbltyFileQty(3).build()));
         assertThatThrownBy(() -> boardService.createPostWithFiles("user1", request, java.util.List.of(upload("a.txt", 1))))
@@ -1269,9 +1291,10 @@ class BoardServiceTest {
     @DisplayName("[DIP B5 F9] 수정은 이미 붙은 파일과 새 파일을 합쳐 센다 — 파일 수 상한이 0 이하면 게시판 상한이 없다")
     void updatePostWithFilesCountsExistingAttachments() throws IOException {
         Long pstSn = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null, 0);
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").atchFileSn(77L).build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
         given(fileService.getFileList(77L)).willReturn(java.util.Collections.nCopies(2, (nuri.business.service.file.dto.FileDto) null));
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
@@ -1298,7 +1321,7 @@ class BoardServiceTest {
         given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(BoardMaster.builder()
                 .bbsId("BBS_01").fileAtchPsbltyYn("Y").atchPsbltyFileQty(3).build()));
         given(fileService.getFileList(101L)).willReturn(java.util.Collections.nCopies(4, (nuri.business.service.file.dto.FileDto) null));
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> boardService.createPost("user1", request))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
@@ -1316,7 +1339,7 @@ class BoardServiceTest {
     void createPostWithFiles() throws IOException {
         // given
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -1343,7 +1366,7 @@ class BoardServiceTest {
                 .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build()));
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Subj", "Cont", null, null, 101L,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(101L);
 
@@ -1361,7 +1384,7 @@ class BoardServiceTest {
                 .willReturn(Optional.empty());
         BoardSaveRequest request = new BoardSaveRequest(
                 "MISSING", "Subj", "Cont", null, null, 101L,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> boardService.createPost("user1", request))
                 .isInstanceOf(BusinessException.class)
@@ -1377,7 +1400,7 @@ class BoardServiceTest {
         // given
         String userId = "unknown";
         Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         Board parent = Board.builder().bbsId("BBS_01").pstSn(parentId).sortOrdr(100L).ansLv(0).build();
 
@@ -1400,7 +1423,7 @@ class BoardServiceTest {
         // given
         String userId = "user1";
         Long parentId = 1L;
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Reply", "Cont", null, null, null, null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -1431,7 +1454,7 @@ class BoardServiceTest {
                 .willReturn(Optional.of(Board.builder().bbsId("BBS_01").pstSn(parentSn).sortOrdr(10L).build()));
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Reply", "Cont", null, null, 101L,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
                 .when(attachmentAssignmentPolicy).assertAssignable(101L);
 
@@ -1450,7 +1473,7 @@ class BoardServiceTest {
         given(boardRepository.findById(7L)).willReturn(Optional.empty());
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Reply", "Cont", null, null, 101L,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> boardService.replyPost("user1", 7L, request))
                 .isInstanceOf(BusinessException.class)
@@ -1468,9 +1491,10 @@ class BoardServiceTest {
         Long pstSn = 1L;
         String eventDateStr = "2023-12-25T10:00:00";
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, eventDateStr, null, null, null, null, null, 0);
         Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01").pstSn(pstSn).userId(userId).build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
@@ -1511,12 +1535,13 @@ class BoardServiceTest {
                 .scrtYn("Y")
                 .build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // 제목·본문만 담긴 요청 — 수정 화면이 실제로 보내는 형태다.
         BoardSaveRequest request = new BoardSaveRequest(
                 bbsId, "제목만 고침", "본문만 고침",
-                null, null, null, null, null, null, null, null, null);
+                null, null, null, null, null, null, null, null, null, 0);
 
         boardService.updatePost(bbsId, pstSn, request);
 
@@ -1536,9 +1561,10 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "2026-03-01", null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "2026-03-01", null, null, null, null, null, 0);
         Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01").pstSn(pstSn).userId(userId).build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         boardService.updatePost(bbsId, pstSn, request);
@@ -1554,9 +1580,10 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, "invalid-date", null, null, null, null, null, 0);
         Board board = org.mockito.Mockito.spy(Board.builder().bbsId("BBS_01").pstSn(pstSn).userId(userId).build());
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
 
         // when
@@ -1573,7 +1600,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
-                null, null);
+                null, null, 0);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -1581,6 +1608,7 @@ class BoardServiceTest {
 
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
         given(fileService.uploadBoardFiles(files)).willReturn(102L);
@@ -1599,13 +1627,14 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, null, null, null, null, null,
-                null, null);
+                null, null, 0);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(file);
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").atchFileSn(77L).build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
 
@@ -1619,7 +1648,7 @@ class BoardServiceTest {
     @Test
     @DisplayName("🚨 없는 게시판이면 파일을 저장하기 전에 거부한다 — 거부된 요청이 디스크에 파일을 남기지 않는다 (DIP I2)")
     void createPostWithFiles_rejectsMissingBoardBeforeUpload() throws IOException {
-        BoardSaveRequest request = new BoardSaveRequest("MISSING", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("MISSING", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(mock(org.springframework.web.multipart.MultipartFile.class));
         given(boardMasterRepository.findById("MISSING")).willReturn(Optional.empty());
@@ -1634,7 +1663,7 @@ class BoardServiceTest {
     @Test
     @DisplayName("🚨 회원 전용 게시판의 비회원은 파일을 저장하기 전에 거부된다 (DIP I2)")
     void createPostWithFiles_rejectsNonMemberBeforeUpload() throws IOException {
-        BoardSaveRequest request = new BoardSaveRequest("CMNTY_BBS", "Subj", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("CMNTY_BBS", "Subj", "Cont", null, null, null, null, null, null, null, null, null, null);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
                 .singletonList(mock(org.springframework.web.multipart.MultipartFile.class));
         given(boardMasterRepository.findById("CMNTY_BBS"))
@@ -1709,7 +1738,7 @@ class BoardServiceTest {
         String bbsId = "BBS_01";
         Long pstSn = 1L;
         Long atchFileSn = 101L;
-        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileSn, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest(bbsId, "Upd", "Cont", null, null, atchFileSn, null, null, null, null, null, null, 0);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.Collections
@@ -1717,6 +1746,7 @@ class BoardServiceTest {
 
         Board board = Board.builder().bbsId("BBS_01").pstSn(pstSn).userId("user1").build();
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(attachableMaster("BBS_01")));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
 
@@ -1744,7 +1774,7 @@ class BoardServiceTest {
                 .thenReturn(Optional.of("other-user"));
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Upd", "Cont", null, null, atchFileSn,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.List.of(file);
@@ -1767,7 +1797,7 @@ class BoardServiceTest {
                 .thenReturn(Optional.of("other-user"));
         BoardSaveRequest request = new BoardSaveRequest(
                 "BBS_01", "Upd", "Cont", null, null, null,
-                null, null, null, null, null, null);
+                null, null, null, null, null, null, null);
         org.springframework.web.multipart.MultipartFile file = mock(
                 org.springframework.web.multipart.MultipartFile.class);
         java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.List.of(file);
@@ -1824,7 +1854,7 @@ class BoardServiceTest {
         given(boardRepository.findById(pstSn)).willReturn(Optional.of(board));
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("other_user"));
 
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, null, null, null, null, null, null);
 
         assertThatThrownBy(() -> boardService.updatePost("BBS_01", pstSn, request))
                 .isInstanceOf(BusinessException.class)
@@ -1848,7 +1878,7 @@ class BoardServiceTest {
     @DisplayName("파일 업로드 메서드에서 files가 null 이거나 비어있을 때")
     void fileUploadMethods_EmptyFiles() throws IOException {
         String userId = "user1";
-        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null);
+        BoardSaveRequest request = new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null, 0);
         BoardMaster master = BoardMaster.builder().bbsId("BBS_01").build();
         
         // create
@@ -1862,6 +1892,7 @@ class BoardServiceTest {
         // update
         Board board = Board.builder().bbsId("BBS_01").pstSn(1L).userId(userId).build();
         given(boardRepository.findById(1L)).willReturn(Optional.of(board));
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0); // [ADR-0040 결정 10] 상세에서 읽은 버전과 같다
         securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(userId));
         
         boardService.updatePostWithFiles("BBS_01", 1L, request, null);
@@ -1990,5 +2021,800 @@ class BoardServiceTest {
 
         assertThat(captor.getValue().isSecretPostAdminOverride()).isTrue();
         assertThat(captor.getValue().getViewerEsntlId()).isNull();
+    }
+
+    // ── [2026-10-23 ADR-0040 B1] 예약 게시 집행·게시 상태·게시 기간 쓰기 규칙·운영 화면 일정 변경 ─────────────────
+
+    private static nuri.business.service.board.dto.BoardPostPeriodRequest period(String start, String end, Integer version) {
+        return new nuri.business.service.board.dto.BoardPostPeriodRequest(start, end, version);
+    }
+
+    private static nuri.business.service.board.dto.BoardPostPeriodBatchRequest batch(String action, String end, Long... pstSns) {
+        return new nuri.business.service.board.dto.BoardPostPeriodBatchRequest(action, java.util.Arrays.asList(pstSns), end);
+    }
+
+    private static Board versionedPost(String bbsId, long pstSn, String userId, String start, String end) {
+        Board board = Board.builder().bbsId(bbsId).pstSn(pstSn).userId(userId).pstTtl("제목")
+                .pstBgngYmd(start).pstEndYmd(end).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 3);
+        return board;
+    }
+
+    private static BoardSaveRequest edit(String bbsId, String start, String end, Integer version) {
+        return new BoardSaveRequest(bbsId, "고친 제목", "고친 본문", start, end, null, null, null, null, null, null, null, version);
+    }
+
+    private void allow(String... permissions) {
+        for (String permission : permissions) {
+            securityUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(permission)).thenReturn(true);
+        }
+    }
+
+    private void actAs(String esntlId) {
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of(esntlId));
+    }
+
+    @Test
+    @DisplayName("🚨 예약 글(시작일 전)은 남에게 상세·댓글·추천·만족도 경계에서 없는 글과 같은 404 이고, 작성자·조회 대행 권한자에게는 열린다 (ADR-0040 결정 3)")
+    void getPostDetail_hidesScheduledPostingFromOthers() {
+        BoardDetailResult scheduled = BoardDetailResult.builder().pstSn(8L).bbsId("BBS_01").userId("ESNTL_owner")
+                .scrtYn("N").pstBgngYmd(TOMORROW).build();
+        given(boardRepository.findActiveArticleDetail("BBS_01", 8L)).willReturn(Optional.of(scheduled));
+
+        actAs("ESNTL_other");
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 8L, false))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThatThrownBy(() -> boardService.assertCommentAccess("BBS_01", 8L))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThatThrownBy(() -> boardService.assertCommentReadAccess("BBS_01", 8L))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 8L))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        verify(viewCountService, never()).increaseViewCount(anyLong());
+        verify(recommendationRepository, never()).saveAndFlush(any());
+
+        actAs("ESNTL_owner");
+        assertThat(boardService.getPostDetail("BBS_01", 8L, false).postingStatus())
+                .isEqualTo(nuri.business.service.board.dto.PostingStatus.SCHEDULED);
+
+        actAs("ESNTL_other");
+        allow("BOARD_READ_ALL");
+        assertThat(boardService.getPostDetail("BBS_01", 8L, false).postingStatus())
+                .isEqualTo(nuri.business.service.board.dto.PostingStatus.SCHEDULED);
+    }
+
+    @Test
+    @DisplayName("🚨 KST 자정 경계: 시작일 20261023 글은 2026-10-22T14:59:59Z 에 남에게 404, 15:00:00Z 에 열린다 (ADR-0040 결정 3)")
+    void scheduledPostOpensAtSeoulMidnight() {
+        given(boardRepository.findActiveArticleDetail("BBS_01", 9L)).willReturn(Optional.of(BoardDetailResult.builder()
+                .pstSn(9L).bbsId("BBS_01").userId("ESNTL_owner").scrtYn("N").pstBgngYmd("20261023").build()));
+        actAs("ESNTL_other");
+
+        boardService.useClock(java.time.Clock.fixed(java.time.Instant.parse("2026-10-22T14:59:59Z"), java.time.ZoneOffset.UTC));
+        assertThatThrownBy(() -> boardService.getPostDetail("BBS_01", 9L, false))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        boardService.useClock(java.time.Clock.fixed(java.time.Instant.parse("2026-10-22T15:00:00Z"), java.time.ZoneOffset.UTC));
+        assertThat(boardService.getPostDetail("BBS_01", 9L, false).postingStatus())
+                .isEqualTo(nuri.business.service.board.dto.PostingStatus.POSTING);
+    }
+
+    @Test
+    @DisplayName("목록 응답에 서버 판정 게시 상태(SCHEDULED·POSTING·ENDED)를 싣는다 — 시작 '' 와 종료일 당일은 게시 중이다")
+    void getBoardPosts_carriesServerPostingStatus() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), eq(pageable))).willReturn(new PageImpl<>(java.util.List.of(
+                BoardSearchResult.builder().pstSn(1L).pstBgngYmd(TOMORROW).build(),
+                BoardSearchResult.builder().pstSn(2L).pstBgngYmd("").pstEndYmd(TODAY).build(),
+                BoardSearchResult.builder().pstSn(3L).pstEndYmd(YESTERDAY).build(),
+                BoardSearchResult.builder().pstSn(4L).pstBgngYmd("20261030").pstEndYmd(YESTERDAY).build())));
+
+        Page<BoardDto> page = boardService.getBoardPosts("BBS_01", pageable);
+
+        assertThat(page.getContent()).extracting(BoardDto::postingStatus).containsExactly(
+                nuri.business.service.board.dto.PostingStatus.SCHEDULED,
+                nuri.business.service.board.dto.PostingStatus.POSTING,
+                nuri.business.service.board.dto.PostingStatus.ENDED,
+                nuri.business.service.board.dto.PostingStatus.ENDED);
+    }
+
+    @Test
+    @DisplayName("게시 상태 조건은 서버 기준일과 함께 조건에 실린다 — 조회 대행 권한자도 기준일을 받는다")
+    void getBoardPosts_bindsPostingStatusFilterWithBaseDate() {
+        Pageable pageable = PageRequest.of(0, 10);
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor = org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), eq(pageable))).willReturn(Page.empty(pageable));
+        allow("BOARD_READ_ALL");
+
+        boardService.getBoardPosts("BBS_01", "0", "", null, null, null, null, null, null, pageable,
+                BoardPostListFilter.of("ENDED", null));
+
+        assertThat(captor.getValue().getPostingStatus()).isEqualTo(nuri.business.service.board.dto.PostingStatus.ENDED);
+        assertThat(captor.getValue().getBaseYmd()).isEqualTo(TODAY);
+        assertThat(captor.getValue().getPostingOpenOn()).as("가시성은 조회 대행 권한자에게 열려 있다").isNull();
+        assertThat(captor.getValue().isPinFirst()).as("게시판 목록은 고정 글을 앞에 둔다(B2)").isTrue();
+    }
+
+    @Test
+    @DisplayName("🚨 예약 게시를 받지 않는 게시판의 미래 시작일 등록은 채번·업로드 전에 400 이다 (ADR-0040 결정 3·6)")
+    void createPost_rejectsFutureStartWhenBoardDoesNotTakeReservations() throws IOException {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").fileAtchPsbltyYn("Y").build()));
+        BoardSaveRequest scheduled = new BoardSaveRequest("BBS_01", "예약", "본문", TOMORROW, null, null,
+                null, null, null, null, null, null, null);
+
+        assertThatThrownBy(() -> boardService.createPost("user1", scheduled))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("이 게시판은 예약 게시를 받지 않습니다");
+        assertThatThrownBy(() -> boardService.createPostWithFiles("user1", scheduled,
+                java.util.List.of(upload("a.txt", 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
+        verify(fileService, never()).uploadBoardFiles(any());
+        verify(boardRepository, never()).findMaxSortOrdr(anyString());
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
+    @DisplayName("예약 게시를 받는 게시판은 미래 시작일을 저장하고, 빈 날짜는 저장하지 않는다(null)")
+    void createPost_storesFutureStartWhenReservationsAreOnAndBlankDatesAsNull() {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").rsvtPstgPsbltyYn("Y").build()));
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+
+        boardService.createPost("user1", new BoardSaveRequest("BBS_01", "예약", "본문", TOMORROW, "", null,
+                null, null, null, null, null, null, null));
+
+        Board saved = captureSavedBoard();
+        assertThat(saved.getPstBgngYmd()).isEqualTo(TOMORROW);
+        assertThat(saved.getPstEndYmd()).isNull();
+    }
+
+    @Test
+    @DisplayName("🚨 수정은 읽은 버전을 요구한다 — 없으면 400, 다르면 409 이고 파일을 건드리지 않는다 (ADR-0040 결정 10)")
+    void updatePost_requiresCurrentVersionBeforeFiles() throws IOException {
+        Board board = versionedPost("BBS_01", 21L, "ESNTL_owner", null, null);
+        given(boardRepository.findById(21L)).willReturn(Optional.of(board));
+        actAs("ESNTL_owner");
+
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 21L, edit("BBS_01", null, null, null)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessage(nuri.foundation.core.util.EntityVersions.MISSING_VERSION_MESSAGE);
+        assertThatThrownBy(() -> boardService.updatePostWithFiles("BBS_01", 21L, edit("BBS_01", null, null, 2),
+                java.util.List.of(upload("a.txt", 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        verify(fileService, never()).uploadBoardFiles(any());
+        verify(fileService, never()).updateBoardFiles(any(), any());
+        assertThat(board.getPstTtl()).isEqualTo("제목");
+
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", null);
+        // 버전이 비어 있는 옛 행은 버전을 보내도 막는다(fail-closed). 409 가 아니라 400 이다 — 화면이 409 를 '다시 불러오면
+        //   된다' 로 읽기 때문이다(다시 불러와도 버전이 없다).
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 21L, edit("BBS_01", null, null, 3)))
+                .as("버전이 비어 있는 옛 행도 막는다(fail-closed)")
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessage(BoardPolicySupport.UNVERSIONED_POST_MESSAGE);
+    }
+
+    @Test
+    @DisplayName("수정의 기간 순서는 저장값과 합친 값으로 보고, 빈 날짜는 저장값을 지우지 않는다 (D-19)")
+    void updatePost_checksMergedPeriodAndKeepsBlankDates() {
+        Board board = versionedPost("BBS_01", 22L, "ESNTL_owner", "20261110", "20261231");
+        given(boardRepository.findById(22L)).willReturn(Optional.of(board));
+        actAs("ESNTL_owner");
+        allow("BOARD_UPDATE_ALL"); // 공개 뒤 시작일 변경 제한과 따로 순서만 본다.
+
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 22L, edit("BBS_01", null, "20261101", 3)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        boardService.updatePost("BBS_01", 22L, edit("BBS_01", "", "", 3));
+        assertThat(board.getPstBgngYmd()).isEqualTo("20261110");
+        assertThat(board.getPstEndYmd()).isEqualTo("20261231");
+        assertThat(board.getPstTtl()).isEqualTo("고친 제목");
+        verifyNoInteractions(changeRecorder); // 작성 화면 수정은 이력을 남기지 않는다(결정 9).
+    }
+
+    @Test
+    @DisplayName("🚨 시작일 판정 세 사례: 같은 값 재전송·형식만 다른 같은 날짜는 통과, 공개 글의 실제 변경은 작성자에게 403 (ADR-0040 결정 3)")
+    void updatePost_startDateRulesForAuthors() {
+        actAs("ESNTL_owner");
+        Board published = versionedPost("BBS_01", 23L, "ESNTL_owner", "20261001", null);
+        given(boardRepository.findById(23L)).willReturn(Optional.of(published));
+
+        boardService.updatePost("BBS_01", 23L, edit("BBS_01", "20261001", null, 3));
+        boardService.updatePost("BBS_01", 23L, edit("BBS_01", "2026-10-01", null, 3));
+        assertThat(published.getPstBgngYmd()).isEqualTo("20261001");
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 23L, edit("BBS_01", "20261030", null, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED)
+                .hasMessageContaining("게시가 시작된 글의 시작일은");
+        assertThat(published.getPstBgngYmd()).isEqualTo("20261001");
+
+        // 예약 게시를 받지 않는 게시판에 남은 옛 미래 시작일 글: 같은 값은 통과, 다른 미래 날짜는 400, 오늘로 당기면 통과.
+        Board scheduled = versionedPost("BBS_01", 24L, "ESNTL_owner", "20261101", null);
+        given(boardRepository.findById(24L)).willReturn(Optional.of(scheduled));
+        boardService.updatePost("BBS_01", 24L, edit("BBS_01", "20261101", null, 3));
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 24L, edit("BBS_01", "20261105", null, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
+        boardService.updatePost("BBS_01", 24L, edit("BBS_01", TODAY, null, 3));
+        assertThat(scheduled.getPstBgngYmd()).isEqualTo(TODAY);
+    }
+
+    @Test
+    @DisplayName("🚨 운영 일정 변경은 BOARD_UPDATE_ALL 이 없으면 저장소를 읽기 전에 403 이다")
+    void updatePostPeriod_requiresUpdateAllBeforeReading() {
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 30L, period(null, TOMORROW, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", TOMORROW, 30L)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(boardRepository, changeRecorder);
+        verify(boardMasterRepository, never()).findById(anyString());
+    }
+
+    @Test
+    @DisplayName("운영 일정 변경은 쓰기 진입 판정을 지난다 — 지정 게시판 편집 권한 403, 사용 안 함 게시판 404, 다른 게시판 글 404")
+    void updatePostPeriod_passesWriteGateAndBoardMembership() {
+        allow("BOARD_UPDATE_ALL");
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBSMSTR_AAAAAAAAAAAA", 30L, period(null, TOMORROW, 3)))
+                .as("공지·FAQ 지정 게시판은 그 편집 권한도 필요하다")
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        given(boardMasterRepository.findById("CLOSED")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("CLOSED").useYn("N").build()));
+        assertThatThrownBy(() -> boardService.updatePostPeriod("CLOSED", 30L, period(null, TOMORROW, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+
+        given(boardRepository.findById(30L)).willReturn(Optional.of(versionedPost("OTHER", 30L, "ESNTL_owner", null, null)));
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 30L, period(null, TOMORROW, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        verifyNoInteractions(changeRecorder);
+    }
+
+    @Test
+    @DisplayName("운영 일정 변경: 버전 409·과거 종료일 400·예약 미허용 미래 시작일 400, 통과하면 바뀐 항목만 이력에 남긴다")
+    void updatePostPeriod_validatesAndRecordsChangedItems() {
+        allow("BOARD_UPDATE_ALL");
+        Board board = versionedPost("BBS_01", 31L, "ESNTL_owner", "20261001", "20261031");
+        given(boardRepository.findById(31L)).willReturn(Optional.of(board));
+
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 31L, period(null, "20261130", 2)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 31L, period(null, YESTERDAY, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 31L, period(TOMORROW, null, 3)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
+        verifyNoInteractions(changeRecorder);
+        assertThat(board.getPstEndYmd()).isEqualTo("20261031");
+
+        // 대행 권한 경로라 공개 뒤 시작일도 바꾼다(오늘 이전). 같은 종료일은 변경이 아니다.
+        boardService.updatePostPeriod("BBS_01", 31L, period("20261015", "20261031", 3));
+
+        assertThat(board.getPstBgngYmd()).isEqualTo("20261015");
+        assertThat(board.getPstEndYmd()).isEqualTo("20261031");
+        verify(changeRecorder).recordPost("BBS_01", 31L, BoardChangeRecorder.ChangeType.PERIOD, "게시 시작일",
+                "20261001", "20261015");
+        verify(changeRecorder).recordPost("BBS_01", 31L, BoardChangeRecorder.ChangeType.PERIOD, "게시 종료일",
+                "20261031", "20261031");
+    }
+
+    @Test
+    @DisplayName("🚨 일괄 종료일: 하나라도 시작일보다 앞이 되면 글 번호와 함께 400 이고 아무것도 바꾸거나 남기지 않는다 (ADR-0040 결정 10)")
+    void updatePostPeriodsInBatch_isAllOrNothing() {
+        allow("BOARD_UPDATE_ALL");
+        Board fine = versionedPost("BBS_01", 41L, "ESNTL_a", "20261001", null);
+        Board late = versionedPost("BBS_01", 42L, "ESNTL_b", "20261205", "20261231");
+        given(boardRepository.findById(41L)).willReturn(Optional.of(fine));
+        given(boardRepository.findById(42L)).willReturn(Optional.of(late));
+
+        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 41L, 42L)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("42");
+        assertThat(fine.getPstEndYmd()).isNull();
+        assertThat(late.getPstEndYmd()).isEqualTo("20261231");
+        verifyNoInteractions(changeRecorder);
+
+        given(boardRepository.findById(43L)).willReturn(Optional.of(versionedPost("OTHER", 43L, "ESNTL_c", null, null)));
+        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 41L, 43L)))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThat(fine.getPstEndYmd()).isNull();
+        verifyNoInteractions(changeRecorder);
+    }
+
+    /**
+     * tb_bbs_item.version 은 NOT NULL 이 아니다. 버전이 비어 있는 옛 글을 저장하면 Hibernate 가 NULL 버전을 올리지 못해 500 이
+     * 된다 — 작성 화면 수정·운영 단건·운영 일괄 모두 판정 단계에서 400(INVALID_STATE)으로 막고 아무것도 바꾸거나 남기지 않는다.
+     */
+    @Test
+    @DisplayName("🚨 버전이 비어 있는 옛 글은 수정·단건·일괄 일정 변경 모두 400(INVALID_STATE)이고 아무것도 바꾸지 않는다")
+    void unversionedLegacyPostsAreRejectedBeforeAnyChange() {
+        allow("BOARD_UPDATE_ALL");
+        Board fine = versionedPost("BBS_01", 61L, "ESNTL_a", null, null);
+        Board legacy = versionedPost("BBS_01", 62L, "ESNTL_owner", null, "20261231");
+        org.springframework.test.util.ReflectionTestUtils.setField(legacy, "version", null);
+        given(boardRepository.findById(61L)).willReturn(Optional.of(fine));
+        given(boardRepository.findById(62L)).willReturn(Optional.of(legacy));
+
+        assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 61L, 62L)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("버전 정보가 없는 옛 글")
+                .hasMessageContaining("62");
+        assertThatThrownBy(() -> boardService.updatePostPeriod("BBS_01", 62L, period(null, "20261130", 0)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
+        actAs("ESNTL_owner");
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 62L, edit("BBS_01", null, null, null)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessage(BoardPolicySupport.UNVERSIONED_POST_MESSAGE);
+        assertThat(fine.getPstEndYmd()).isNull();
+        assertThat(legacy.getPstEndYmd()).isEqualTo("20261231");
+        assertThat(legacy.getPstTtl()).isEqualTo("제목");
+        verifyNoInteractions(changeRecorder);
+    }
+
+    @Test
+    @DisplayName("일괄 처리: END_DATE 는 바꾼 글만, CLEAR_END 는 종료일이 있던 글만 남기고 중복 번호는 한 번만 처리한다")
+    void updatePostPeriodsInBatch_appliesAndRecordsOncePerPost() {
+        allow("BOARD_UPDATE_ALL");
+        Board open = versionedPost("BBS_01", 51L, "ESNTL_a", null, null);
+        Board same = versionedPost("BBS_01", 52L, "ESNTL_b", null, "20261130");
+        given(boardRepository.findById(51L)).willReturn(Optional.of(open));
+        given(boardRepository.findById(52L)).willReturn(Optional.of(same));
+
+        boardService.updatePostPeriodsInBatch("BBS_01", batch("END_DATE", "20261130", 51L, 52L, 51L));
+
+        assertThat(open.getPstEndYmd()).isEqualTo("20261130");
+        verify(changeRecorder, times(1)).recordPost("BBS_01", 51L, BoardChangeRecorder.ChangeType.PERIOD, "게시 종료일",
+                null, "20261130");
+        verify(changeRecorder, never()).recordPost(eq("BBS_01"), eq(52L), any(), any(), any(), any());
+        verify(boardRepository, times(1)).findById(51L);
+
+        boardService.updatePostPeriodsInBatch("BBS_01", batch("CLEAR_END", null, 51L, 52L));
+        assertThat(open.getPstEndYmd()).isNull();
+        assertThat(same.getPstEndYmd()).isNull();
+        verify(changeRecorder).recordPost("BBS_01", 52L, BoardChangeRecorder.ChangeType.PERIOD, "게시 종료일",
+                "20261130", null);
+    }
+
+    @Test
+    @DisplayName("일괄 처리의 동작·날짜 짝: END_DATE 에 날짜 없음·과거 날짜, CLEAR_END 에 날짜가 있으면 400")
+    void updatePostPeriodsInBatch_rejectsMismatchedActionAndDate() {
+        allow("BOARD_UPDATE_ALL");
+        for (var request : java.util.List.of(batch("END_DATE", null, 61L), batch("END_DATE", YESTERDAY, 61L),
+                batch("CLEAR_END", TOMORROW, 61L))) {
+            assertThatThrownBy(() -> boardService.updatePostPeriodsInBatch("BBS_01", request))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        verify(boardRepository, never()).findById(anyLong());
+        verifyNoInteractions(changeRecorder);
+    }
+
+    // ── [2026-10-23 ADR-0040 B2] 상단 고정 — 권한·잠금·정책·상한·종료일·이력·응답 판정 ─────────────────────────────
+
+    private static nuri.business.service.board.dto.BoardPostPinRequest pin(String yn, String end) {
+        return new nuri.business.service.board.dto.BoardPostPinRequest(yn, end);
+    }
+
+    private static nuri.business.service.board.dto.BoardPostPinBatchRequest pins(String yn, String end, Long... pstSns) {
+        return new nuri.business.service.board.dto.BoardPostPinBatchRequest(java.util.Arrays.asList(pstSns), yn, end);
+    }
+
+    /** 고정 컬럼은 엔티티에서 쓰지 않으므로(updatable=false) 저장된 상태를 그대로 꾸민다. */
+    private static Board pinnablePost(String bbsId, long pstSn, String yn, String end) {
+        Board board = versionedPost(bbsId, pstSn, "ESNTL_writer", null, null);
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "upendFixYn", yn);
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "upendFixEndYmd", end);
+        return board;
+    }
+
+    private void givenPinBoard(String psbltyYn, int limit) {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(BoardMaster.builder()
+                .bbsId("BBS_01").upendFixPsbltyYn(psbltyYn).upendFixUplmtNocs(java.math.BigInteger.valueOf(limit)).build()));
+    }
+
+    @Test
+    @DisplayName("🚨 상단 고정은 BOARD_PIN 이 없으면 마스터를 잠그거나 글을 읽기 전에 403 이다 — 게시글 전체 수정 권한으로 대신하지 않는다")
+    void pin_requiresBoardPinBeforeLockingOrReading() {
+        allow("BOARD_UPDATE_ALL", "BBS_MST_UPDATE");
+
+        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 71L, pin("Y", null)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("N", null, 71L)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(boardRepository, changeRecorder);
+        verify(boardMasterRepository, never()).findByIdWithPessimisticLock(anyString());
+    }
+
+    @Test
+    @DisplayName("🚨 고정은 마스터 행을 잠근 뒤 글을 읽고, 잠근 상태에서 센 고정 수로 상한을 본 다음 한 문장으로 쓴다 (ADR-0040 결정 5)")
+    void pin_locksMasterThenCountsThenWrites() {
+        allow("BOARD_PIN");
+        givenPinBoard("Y", 5);
+        given(boardRepository.findById(71L)).willReturn(Optional.of(pinnablePost("BBS_01", 71L, "N", null)));
+        given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(2L);
+        given(boardRepository.updatePin("BBS_01", java.util.List.of(71L), "Y", "20261122")).willReturn(1);
+
+        boardService.updatePostPin("BBS_01", 71L, pin("Y", null));
+
+        org.mockito.InOrder order = inOrder(boardMasterRepository, boardRepository, changeRecorder);
+        order.verify(boardMasterRepository).findByIdWithPessimisticLock("BBS_01");
+        order.verify(boardRepository).findById(71L);
+        order.verify(boardRepository).countActivePins("BBS_01", TODAY);
+        order.verify(boardRepository).updatePin("BBS_01", java.util.List.of(71L), "Y", "20261122");
+        order.verify(changeRecorder).recordPost("BBS_01", 71L, BoardChangeRecorder.ChangeType.PIN, "상단 고정", "N", "Y");
+        order.verify(changeRecorder).recordPost("BBS_01", 71L, BoardChangeRecorder.ChangeType.PIN, "상단 고정 종료일",
+                null, "20261122");
+        verify(boardMasterRepository, never()).findById(anyString());
+    }
+
+    @Test
+    @DisplayName("고정을 받지 않는 게시판의 새 고정은 400 이고, 해제는 설정과 상관없이 된다(종료일도 비운다)")
+    void pin_rejectedWhenBoardDoesNotTakePinsButUnpinAlwaysWorks() {
+        allow("BOARD_PIN");
+        givenPinBoard("N", 5);
+        given(boardRepository.findById(72L)).willReturn(Optional.of(pinnablePost("BBS_01", 72L, "Y", "20261130")));
+
+        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 72L, pin("Y", "20261201")))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessage("이 게시판은 상단 고정을 받지 않습니다.");
+        verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
+        verifyNoInteractions(changeRecorder);
+
+        given(boardRepository.updatePin("BBS_01", java.util.List.of(72L), "N", null)).willReturn(1);
+        boardService.updatePostPinsInBatch("BBS_01", pins("N", null, 72L));
+
+        verify(boardRepository, never()).countActivePins(anyString(), anyString());
+        verify(changeRecorder).recordPost("BBS_01", 72L, BoardChangeRecorder.ChangeType.UNPIN, "상단 고정", "Y", "N");
+        verify(changeRecorder).recordPost("BBS_01", 72L, BoardChangeRecorder.ChangeType.UNPIN, "상단 고정 종료일",
+                "20261130", null);
+    }
+
+    @Test
+    @DisplayName("🚨 상한: 새로 고정 중이 되는 글만 세고, 하나라도 넘으면 전체를 거부한다 — 이미 고정 중인 글의 종료일 변경은 상한에 걸리지 않는다")
+    void pin_limitCountsOnlyNewlyActivePosts() {
+        allow("BOARD_PIN");
+        givenPinBoard("Y", 2);
+        given(boardRepository.findById(73L)).willReturn(Optional.of(pinnablePost("BBS_01", 73L, "Y", "20261130")));
+        given(boardRepository.findById(74L)).willReturn(Optional.of(pinnablePost("BBS_01", 74L, "Y", YESTERDAY)));
+        given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(2L, 2L, 1L);
+        given(boardRepository.updatePin(eq("BBS_01"), anyList(), eq("Y"), anyString())).willReturn(1);
+
+        // 73 은 이미 고정 중, 74 는 종료일이 지난 옛 고정이라 새로 센다 → 2 + 1 > 2.
+        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", "20261201", 73L, 74L)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("최대 2건까지 둡니다(지금 2건)");
+        verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
+        verifyNoInteractions(changeRecorder);
+
+        boardService.updatePostPinsInBatch("BBS_01", pins("Y", "20261201", 73L));
+        verify(boardRepository).updatePin("BBS_01", java.util.List.of(73L), "Y", "20261201");
+
+        boardService.updatePostPin("BBS_01", 74L, pin("Y", null));
+        verify(boardRepository).updatePin("BBS_01", java.util.List.of(74L), "Y", "20261122");
+    }
+
+    @Test
+    @DisplayName("고정 종료일: 오늘보다 이르면 400, 오늘은 받는다. 해제에 종료일을 보내면 400")
+    void pin_endDateRules() {
+        allow("BOARD_PIN");
+        givenPinBoard("Y", 5);
+        given(boardRepository.findById(75L)).willReturn(Optional.of(pinnablePost("BBS_01", 75L, "N", null)));
+
+        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 75L, pin("Y", YESTERDAY)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 75L, pin("N", TOMORROW)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("고정 해제에는 고정 종료일을 보내지 않습니다");
+        verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
+
+        given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(0L);
+        given(boardRepository.updatePin("BBS_01", java.util.List.of(75L), "Y", TODAY)).willReturn(1);
+        boardService.updatePostPin("BBS_01", 75L, pin("Y", TODAY));
+        verify(boardRepository).updatePin("BBS_01", java.util.List.of(75L), "Y", TODAY);
+    }
+
+    @Test
+    @DisplayName("고정 대상은 경로 게시판의 지우지 않은 원글이다 — 다른 게시판·지운 글은 404, 답글은 400 이고 아무것도 쓰지 않는다")
+    void pin_targetsMustBeLiveRootPostsOfTheBoard() {
+        allow("BOARD_PIN");
+        givenPinBoard("Y", 5);
+        given(boardRepository.findById(76L)).willReturn(Optional.of(pinnablePost("BBS_01", 76L, "N", null)));
+        given(boardRepository.findById(77L)).willReturn(Optional.of(pinnablePost("OTHER", 77L, "N", null)));
+        Board deleted = pinnablePost("BBS_01", 78L, "N", null);
+        deleted.delete();
+        given(boardRepository.findById(78L)).willReturn(Optional.of(deleted));
+        Board reply = Board.builder().bbsId("BBS_01").pstSn(79L).upPstSn(76L).build();
+        given(boardRepository.findById(79L)).willReturn(Optional.of(reply));
+
+        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 76L, 77L)))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThatThrownBy(() -> boardService.updatePostPin("BBS_01", 78L, pin("N", null)))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 76L, 79L)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("답글은 상단에 고정할 수 없습니다");
+        verify(boardRepository, never()).countActivePins(anyString(), anyString());
+        verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
+        verifyNoInteractions(changeRecorder);
+    }
+
+    @Test
+    @DisplayName("이미 그 상태인 글은 쓰지도 남기지도 않고, 중복 번호는 한 번만 다룬다")
+    void pin_isNoOpForPostsAlreadyInTargetState() {
+        allow("BOARD_PIN");
+        givenPinBoard("Y", 5);
+        given(boardRepository.findById(80L)).willReturn(Optional.of(pinnablePost("BBS_01", 80L, "Y", "20261122")));
+        given(boardRepository.findById(81L)).willReturn(Optional.of(pinnablePost("BBS_01", 81L, "N", null)));
+        given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(1L);
+
+        boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 80L, 80L));
+        boardService.updatePostPin("BBS_01", 81L, pin("N", null));
+
+        verify(boardRepository, times(1)).findById(80L);
+        verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
+        verifyNoInteractions(changeRecorder);
+    }
+
+    @Test
+    @DisplayName("판정 뒤 글이 지워져 쓴 수가 대상 수와 다르면 404 로 전체를 되돌리고 이력을 남기지 않는다")
+    void pin_rollsBackWhenAffectedRowsDiffer() {
+        allow("BOARD_PIN");
+        givenPinBoard("Y", 5);
+        given(boardRepository.findById(82L)).willReturn(Optional.of(pinnablePost("BBS_01", 82L, "N", null)));
+        given(boardRepository.findById(83L)).willReturn(Optional.of(pinnablePost("BBS_01", 83L, "N", null)));
+        given(boardRepository.countActivePins("BBS_01", TODAY)).willReturn(0L);
+        given(boardRepository.updatePin("BBS_01", java.util.List.of(82L, 83L), "Y", "20261122")).willReturn(1);
+
+        assertThatThrownBy(() -> boardService.updatePostPinsInBatch("BBS_01", pins("Y", null, 82L, 83L)))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+        verifyNoInteractions(changeRecorder);
+    }
+
+    @Test
+    @DisplayName("🚨 목록·상세 응답의 고정 여부는 서버 기준일 판정이다 — 종료일 당일까지 고정이고, 지난 옛 고정은 false 와 빈 종료일이다")
+    void listAndDetailCarryServerPinnedFlag() {
+        Pageable pageable = PageRequest.of(0, 10);
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), eq(pageable))).willReturn(new PageImpl<>(java.util.List.of(
+                BoardSearchResult.builder().pstSn(1L).upendFixYn("Y").upendFixEndYmd(TODAY).build(),
+                BoardSearchResult.builder().pstSn(2L).upendFixYn("Y").upendFixEndYmd(YESTERDAY).build(),
+                BoardSearchResult.builder().pstSn(3L).upendFixYn("N").build())));
+
+        Page<BoardDto> page = boardService.getBoardPosts("BBS_01", pageable);
+
+        assertThat(page.getContent()).extracting(BoardDto::pinned).containsExactly(true, false, false);
+        assertThat(page.getContent()).extracting(BoardDto::upendFixEndYmd).containsExactly(TODAY, null, null);
+
+        given(boardRepository.findActiveArticleDetail("BBS_01", 4L)).willReturn(Optional.of(BoardDetailResult.builder()
+                .pstSn(4L).bbsId("BBS_01").scrtYn("N").upendFixYn("Y").upendFixEndYmd(TOMORROW).build()));
+        BoardDto detail = boardService.getPostDetail("BBS_01", 4L, false);
+        assertThat(detail.pinned()).isTrue();
+        assertThat(detail.upendFixEndYmd()).isEqualTo(TOMORROW);
+    }
+
+    @Test
+    @DisplayName("고정 조건은 서버 기준일과 함께 조건에 실리고, 통합 검색은 고정 우선을 끄고 고정 여부를 싣지 않는다")
+    void pinnedFilterAndGlobalSearch() {
+        Pageable pageable = PageRequest.of(0, 10);
+        org.mockito.ArgumentCaptor<BoardSearchCondition> captor = org.mockito.ArgumentCaptor.forClass(BoardSearchCondition.class);
+        given(boardRepository.searchArticles(captor.capture(), any(Pageable.class))).willReturn(new PageImpl<>(java.util.List.of(
+                BoardSearchResult.builder().pstSn(9L).upendFixYn("Y").upendFixEndYmd(TOMORROW).build())));
+
+        boardService.getBoardPosts("BBS_01", "0", "", null, null, null, null, null, null, pageable,
+                BoardPostListFilter.of(null, true));
+        assertThat(captor.getValue().getPinned()).isTrue();
+        assertThat(captor.getValue().getBaseYmd()).isEqualTo(TODAY);
+
+        Page<BoardDto> found = boardService.searchAcrossBoards("공지", PageRequest.of(0, 20));
+        assertThat(captor.getValue().isPinFirst()).as("고정은 게시판 단위 개념이라 통합 검색에는 두지 않는다").isFalse();
+        assertThat(found.getContent()).extracting(BoardDto::pinned).containsOnlyNulls();
+        assertThat(found.getContent()).extracting(BoardDto::upendFixEndYmd).containsOnlyNulls();
+    }
+
+    // ── [2026-10-23 ADR-0040 B3] 비밀글 정책(결정 7)·추천 받기와 추천 취소(결정 6) ─────────────────────────────
+
+    private static BoardMaster policyMaster(String bbsId, String prvtPstPlcyCd, String rcmdtnUseYn) {
+        return BoardMaster.builder().bbsId(bbsId).fileAtchPsbltyYn("Y").prvtPstPlcyCd(prvtPstPlcyCd).rcmdtnUseYn(rcmdtnUseYn)
+                .build();
+    }
+
+    private static BoardSaveRequest secretRequest(String scrtYn, Integer version) {
+        return new BoardSaveRequest("BBS_01", "Subject", "Content", null, null, null, null, null, null, scrtYn, null, null,
+                version);
+    }
+
+    private Board savedAfterCreate(String policy, String requestedScrtYn) {
+        org.mockito.Mockito.reset(boardRepository);
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(policyMaster("BBS_01", policy, null)));
+        lenient().when(userService.getUserById("user1")).thenReturn(UserDto.builder().userId("user1").userNm("Tester").build());
+        given(boardRepository.findMaxSortOrdr("BBS_01")).willReturn(0L);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+        boardService.createPost("user1", secretRequest(requestedScrtYn, null));
+        return captureSavedBoard();
+    }
+
+    @Test
+    @DisplayName("🔐 비밀글 정책 REQUIRED 게시판은 등록 요청의 N·빈 값도 비밀글로 저장한다 (ADR-0040 결정 7)")
+    void createPost_requiredPolicyForcesSecret() {
+        assertThat(savedAfterCreate("REQUIRED", "N").getScrtYn()).isEqualTo("Y");
+        assertThat(savedAfterCreate("REQUIRED", null).getScrtYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀글 정책 NONE 은 요청값 그대로다 — 도움말 1:1 문의의 Y 를 지키고 N 은 N 이다(H3), OPTIONAL 도 요청값이다")
+    void createPost_noneAndOptionalKeepRequestedSecretFlag() {
+        assertThat(savedAfterCreate("NONE", "Y").getScrtYn()).as("1:1 문의는 Q&A 게시판(NONE)에 Y 로 남는다").isEqualTo("Y");
+        assertThat(savedAfterCreate("NONE", "N").getScrtYn()).isEqualTo("N");
+        assertThat(savedAfterCreate("OPTIONAL", "Y").getScrtYn()).isEqualTo("Y");
+        assertThat(savedAfterCreate("OPTIONAL", "N").getScrtYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀글 정책 REQUIRED 게시판의 답글도 비밀글로 저장한다 (ADR-0040 결정 7)")
+    void replyPost_requiredPolicyForcesSecret() {
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).scrtYn("N").build();
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(policyMaster("BBS_01", "REQUIRED", null)));
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
+        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
+        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+
+        boardService.replyPost("user1", 1L, secretRequest("N", null));
+
+        assertThat(captureSavedBoard().getScrtYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀글 정책 REQUIRED 게시판에서 글을 고치면 요청의 N·빈 값과 공개로 남아 있던 옛 글도 비밀글이 된다 (ADR-0040 결정 7)")
+    void updatePost_requiredPolicyForcesSecret() {
+        actAs("ESNTL_owner");
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(policyMaster("BBS_01", "REQUIRED", null)));
+        Board legacyPublic = versionedPost("BBS_01", 31L, "ESNTL_owner", null, null);
+        org.springframework.test.util.ReflectionTestUtils.setField(legacyPublic, "scrtYn", "N");
+        given(boardRepository.findById(31L)).willReturn(Optional.of(legacyPublic));
+
+        boardService.updatePost("BBS_01", 31L, secretRequest(null, 3));
+        assertThat(legacyPublic.getScrtYn()).as("요청이 비어 있어도 저장값 N 을 두지 않는다").isEqualTo("Y");
+
+        org.springframework.test.util.ReflectionTestUtils.setField(legacyPublic, "scrtYn", "N");
+        boardService.updatePost("BBS_01", 31L, secretRequest("N", 3));
+        assertThat(legacyPublic.getScrtYn()).as("명시한 N 도 400 이 아니라 비밀글로 저장한다").isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀글 정책 NONE 의 수정은 요청이 없으면 저장값(1:1 문의의 Y)을 지키고, 보낸 값은 그대로 쓴다 (H3)")
+    void updatePost_nonePolicyKeepsStoredSecretFlag() {
+        actAs("ESNTL_owner");
+        Board inquiry = versionedPost("BBS_01", 32L, "ESNTL_owner", null, null);
+        org.springframework.test.util.ReflectionTestUtils.setField(inquiry, "scrtYn", "Y");
+        given(boardRepository.findById(32L)).willReturn(Optional.of(inquiry));
+
+        boardService.updatePost("BBS_01", 32L, secretRequest(null, 3));
+        assertThat(inquiry.getScrtYn()).isEqualTo("Y");
+        boardService.updatePost("BBS_01", 32L, secretRequest("N", 3));
+        assertThat(inquiry.getScrtYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀글 정책 REQUIRED 게시판의 첨부 동반 수정도 비밀글로 저장한다 (ADR-0040 결정 7)")
+    void updatePostWithFiles_requiredPolicyForcesSecret() throws IOException {
+        actAs("ESNTL_owner");
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(policyMaster("BBS_01", "REQUIRED", null)));
+        Board board = versionedPost("BBS_01", 33L, "ESNTL_owner", null, null);
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "scrtYn", "N");
+        given(boardRepository.findById(33L)).willReturn(Optional.of(board));
+        java.util.List<org.springframework.web.multipart.MultipartFile> files = java.util.List.of(upload("a.txt", 1));
+        given(fileService.uploadBoardFiles(files)).willReturn(55L);
+
+        boardService.updatePostWithFiles("BBS_01", 33L, secretRequest("N", 3), files);
+
+        assertThat(board.getScrtYn()).isEqualTo("Y");
+        assertThat(board.getAtchFileSn()).isEqualTo(55L);
+    }
+
+    @Test
+    @DisplayName("🚨 추천을 받지 않는 게시판의 새 추천은 400 이고 이력·추천 수를 건드리지 않는다 (ADR-0040 결정 6)")
+    void incrementLike_rejectsWhenRecommendationsOff() {
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(policyMaster("BBS_01", null, "N")));
+        givenReadablePost("BBS_01", 1L, "writer");
+        actAs("liker");
+
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessage("이 게시판은 추천을 받지 않습니다.");
+        verify(recommendationRepository, never()).existsById(any());
+        verify(recommendationRepository, never()).saveAndFlush(any());
+        verify(boardRepository, never()).incrementLikeCntAtomic(any(Long.class));
+    }
+
+    @Test
+    @DisplayName("🔐 읽을 수 없는 남의 비밀글이면 추천을 꺼 둔 게시판이라도 설정보다 열람 거부가 먼저다 — 읽을 수 없는 글에 설정을 드러내지 않는다")
+    void incrementLike_accessCheckPrecedesRecommendationSetting() {
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(policyMaster("BBS_01", null, "N")));
+        given(boardRepository.findActiveArticleDetail("BBS_01", 1L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(1L).bbsId("BBS_01").userId("writer").scrtYn("Y").build()));
+        actAs("stranger");
+
+        assertThatThrownBy(() -> boardService.incrementLike("BBS_01", 1L))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verify(recommendationRepository, never()).saveAndFlush(any());
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6] 내 추천 취소는 이력을 한 문장으로 지웠을 때만 추천 수를 하나 줄이고, 다시 읽은 수를 돌려준다")
+    void cancelLike_decrementsOnlyWhenHistoryDeleted() {
+        givenReadablePost("BBS_01", 1L, "writer");
+        actAs("liker");
+        given(recommendationRepository.deleteRecommendation(1L, "liker")).willReturn(1);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(Board.builder().pstSn(1L).likeCnt(4).build()));
+
+        assertThat(boardService.cancelLike("BBS_01", 1L)).isEqualTo(4);
+
+        org.mockito.InOrder order = inOrder(recommendationRepository, boardRepository);
+        order.verify(recommendationRepository).deleteRecommendation(1L, "liker");
+        order.verify(boardRepository).decrementLikeCntAtomic(1L);
+        verify(recommendationRepository, never()).existsById(any());
+        verify(recommendationRepository, never()).deleteById(any());
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6] 내 추천이 없으면 취소는 아무것도 줄이지 않고 지금 수를 돌려준다 — 이력 없는 옛 추천 수는 그대로다(GAP-DOMAIN-001)")
+    void cancelLike_withoutHistoryKeepsCount() {
+        givenReadablePost("BBS_01", 1L, "writer");
+        actAs("liker");
+        given(recommendationRepository.deleteRecommendation(1L, "liker")).willReturn(0);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(Board.builder().pstSn(1L).likeCnt(5).build()));
+
+        assertThat(boardService.cancelLike("BBS_01", 1L)).isEqualTo(5);
+
+        verify(boardRepository, never()).decrementLikeCntAtomic(any(Long.class));
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6] 추천을 꺼 둔 게시판에서도 내 추천은 취소된다")
+    void cancelLike_allowedWhenRecommendationsOff() {
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(policyMaster("BBS_01", null, "N")));
+        givenReadablePost("BBS_01", 1L, "writer");
+        actAs("liker");
+        given(recommendationRepository.deleteRecommendation(1L, "liker")).willReturn(1);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(Board.builder().pstSn(1L).likeCnt(2).build()));
+
+        assertThat(boardService.cancelLike("BBS_01", 1L)).isEqualTo(2);
+        verify(boardRepository).decrementLikeCntAtomic(1L);
+    }
+
+    @Test
+    @DisplayName("🔐 읽을 수 없는 글(남의 비밀글·예약 글·사용 안 함 게시판)의 추천 취소는 이력을 건드리기 전에 거부한다")
+    void cancelLike_rejectsUnreadablePostsBeforeTouchingHistory() {
+        actAs("stranger");
+        given(boardRepository.findActiveArticleDetail("BBS_01", 1L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(1L).bbsId("BBS_01").userId("writer").scrtYn("Y").build()));
+        assertThatThrownBy(() -> boardService.cancelLike("BBS_01", 1L))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+
+        given(boardRepository.findActiveArticleDetail("BBS_01", 2L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(2L).bbsId("BBS_01").userId("writer").scrtYn("N").pstBgngYmd(TOMORROW).build()));
+        assertThatThrownBy(() -> boardService.cancelLike("BBS_01", 2L))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.ARTICLE_NOT_FOUND);
+
+        given(boardMasterRepository.findById("OFF_BOARD")).willReturn(Optional.of(
+                BoardMaster.builder().bbsId("OFF_BOARD").useYn("N").build()));
+        assertThatThrownBy(() -> boardService.cancelLike("OFF_BOARD", 3L))
+                .hasFieldOrPropertyWithValue("errorCode", BoardErrorCode.BOARD_NOT_FOUND);
+
+        verify(recommendationRepository, never()).deleteRecommendation(any(), any());
+        verify(boardRepository, never()).decrementLikeCntAtomic(any(Long.class));
+    }
+
+    @Test
+    @DisplayName("🔐 인증 주체를 알 수 없으면 추천 취소는 403 이고 이력을 건드리지 않는다")
+    void cancelLike_requiresCurrentPrincipal() {
+        givenReadablePost("BBS_01", 1L, "writer");
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.empty());
+
+        assertThatThrownBy(() -> boardService.cancelLike("BBS_01", 1L))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verify(recommendationRepository, never()).deleteRecommendation(any(), any());
     }
 }

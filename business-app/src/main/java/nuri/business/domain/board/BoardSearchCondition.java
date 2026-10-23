@@ -13,7 +13,8 @@ public class BoardSearchCondition {
     private String frstRgtrId;
     private java.time.LocalDateTime startDate;
     private java.time.LocalDateTime endDate;
-    private String orderBy; // "date", "views", "comments"
+    // "views"·"comments" 는 그 열을 먼저 보고, 그 밖(비어 있음·"date"·모르는 값)은 게시 기준일 순이다(2026-10-23 ADR-0040 결정 4).
+    private String orderBy;
     private String qnaSttsCd;
     private String qnaCatCd;
     /** 기간 조건을 행사일(없으면 작성일)로 본다. 캘린더 템플릿용(DIP V6). */
@@ -28,10 +29,28 @@ public class BoardSearchCondition {
      */
     private boolean excludeCommunityBoards;
     /**
-     * [2026-10-01 결정 23] 게시 종료일 집행 기준일(yyyyMMdd, Asia/Seoul). 값이 있으면 종료일이 이 날보다 이른 글은
-     * 작성자 본인(viewerEsntlId) 밖에서 빠진다. 전체 열람 권한자는 null 이라 모든 글을 본다.
+     * 게시 기간 집행 기준일(yyyyMMdd, Asia/Seoul) — [2026-10-01 결정 23] 종료일, [2026-10-23 ADR-0040 결정 3] 시작일. 값이 있으면
+     * 시작일이 이 날보다 뒤이거나 종료일이 이 날보다 앞인 글은 작성자 본인(viewerEsntlId) 밖에서 빠진다. 조회 대행 권한자
+     * (BOARD_READ_ALL)는 null 이라 모든 글을 본다. 이름은 종전 그대로 둔다(뜻만 기간 전체로 넓혔다).
      */
     private String postingOpenOn;
+    /**
+     * [2026-10-23 ADR-0040 결정 3] 서버 기준일(yyyyMMdd, Asia/Seoul) — 뷰어와 무관하게 늘 채운다. 게시 상태 조건과 정렬의 고정 판정이
+     * 쓴다. {@link #postingOpenOn} 은 가시성이라 조회 대행 권한자에게는 비어 있어, 상태 조건을 그 값으로 걸 수 없다.
+     */
+    private String baseYmd;
+    /** [2026-10-23 ADR-0040 결정 3] 게시 상태 조건(SCHEDULED·POSTING·ENDED). null 이면 조건 없음. 가시성과 독립이다. */
+    private nuri.business.service.board.dto.PostingStatus postingStatus;
+    /**
+     * [ADR-0040 결정 5, B2] 상단 고정 조건 — true 면 기준일({@link #baseYmd})에 고정 중인 글, false 면 그 밖의 글이다. null 이면 조건
+     * 없음. 가시성과 독립이다.
+     */
+    private Boolean pinned;
+    /**
+     * [ADR-0040 결정 5, B2] 게시판 목록의 기본·'date' 정렬(조회순·댓글순이 아닌 정렬)에서 기준일에 고정 중인 글을 앞에 둘지.
+     * 게시판 단위 목록만 켜고 통합 검색은 끈다.
+     */
+    private boolean pinFirst;
     /**
      * [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판(tb_bbs_master.use_yn='N')의 글도 목록에 싣는다. 게시판 한정 목록에서
      * 호출부가 조회 대행 권한(BOARD_READ_ALL)과 사용 안 함을 이미 판정한 경우에만 켠다(BoardService.getBoardPosts).

@@ -48,6 +48,67 @@ test.describe('게시판과 커뮤니티', () => {
             expect((await userRequest.delete(`/api/v1/boards/${generalBoardId}/posts/${pstSn}`)).status()).toBe(200);
         }
     });
+    // [2026-10-23 ADR-0040 결정 3] 게시 시작일을 집행한다 — 예약 글은 시작일까지 작성자와 조회 대행 권한자에게만 보이고, 공개된 글의
+    //   시작일은 작성자라도 게시글 전체 수정 권한이 있어야 바꾼다(정렬 조작 방지). 날짜는 앱과 같은 Asia/Seoul 로 만든다.
+    test('예약 글은 시작일까지 다른 사용자에게 보이지 않고, 공개된 글의 시작일은 작성자가 바꾸지 못한다', async ({ adminRequest, userRequest }) => {
+        const kstYmd = (offsetDays: number) => new Intl.DateTimeFormat('en-CA', {
+            timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
+        }).format(new Date(Date.now() + offsetDays * 86_400_000)).replace(/-/g, '');
+        const nextWeek = kstYmd(7);
+        const marker = `E2E예약${Date.now()}`;
+        const createdBoard = await adminRequest.post('/api/v1/admin/system/board-masters', {
+            data: {
+                bbsTtl: `E2E_예약집행_${marker}`, bbsTypeCd: 'BBST02', bbsAtrbCd: 'BBSA01', tmpltId: 'TMPLT_LIST',
+                fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, atchPsbltyFileSz: 0, useYn: 'Y', rsvtPstgPsbltyYn: 'Y',
+            },
+        });
+        expect(createdBoard.status()).toBe(201);
+        const bbsId = (await createdBoard.json()).data as string;
+        const cleanup: { request: typeof adminRequest; pstSn: number }[] = [];
+        try {
+            const scheduled = await adminRequest.post('/api/v1/boards/posts', {
+                data: { bbsId, pstTtl: `${marker} 예약 글`, pstCn: '<p>시작일까지 숨는다</p>', pstBgngYmd: nextWeek },
+            });
+            expect(scheduled.status()).toBe(201);
+            const scheduledSn = (await scheduled.json()).data as number;
+            cleanup.push({ request: adminRequest, pstSn: scheduledSn });
+
+            // 다른 사용자에게는 목록·통합 검색에서 빠지고 상세는 없는 글이다.
+            const userList = await userRequest.get(`/api/v1/boards/${bbsId}?page=1&size=100`);
+            expect(userList.status()).toBe(200);
+            expect(((await userList.json()).data.list as { pstSn: number }[]).map(post => post.pstSn)).not.toContain(scheduledSn);
+            const userSearch = await userRequest.get(`/api/v1/boards/search?keyword=${encodeURIComponent(marker)}`);
+            expect(userSearch.status()).toBe(200);
+            expect(((await userSearch.json()).data as { pstSn: number }[]).map(post => post.pstSn)).not.toContain(scheduledSn);
+            expect((await userRequest.get(`/api/v1/boards/${bbsId}/posts/${scheduledSn}?countView=false`)).status()).toBe(404);
+
+            // 작성자(조회 대행 권한도 있다)에게는 서버가 판정한 예약 상태로 온다.
+            const ownerList = await adminRequest.get(`/api/v1/boards/${bbsId}?page=1&size=100&postingStatus=SCHEDULED`);
+            expect(ownerList.status()).toBe(200);
+            expect((await ownerList.json()).data.list).toEqual(
+                expect.arrayContaining([expect.objectContaining({ pstSn: scheduledSn, postingStatus: 'SCHEDULED' })]),
+            );
+
+            // 공개된 자기 글의 시작일을 미래로 옮기는 것은 작성자라도 막힌다.
+            const own = await userRequest.post('/api/v1/boards/posts', {
+                data: { bbsId, pstTtl: `${marker} 공개 글`, pstCn: '<p>이미 공개된 글</p>' },
+            });
+            expect(own.status()).toBe(201);
+            const ownSn = (await own.json()).data as number;
+            cleanup.push({ request: userRequest, pstSn: ownSn });
+            const ownDetail = await userRequest.get(`/api/v1/boards/${bbsId}/posts/${ownSn}?countView=false`);
+            expect(ownDetail.status()).toBe(200);
+            const { version, postingStatus } = (await ownDetail.json()).data as { version: number; postingStatus: string };
+            expect(postingStatus).toBe('POSTING');
+            const moved = await userRequest.put(`/api/v1/boards/${bbsId}/posts/${ownSn}`, {
+                data: { bbsId, pstTtl: `${marker} 공개 글`, pstCn: '<p>이미 공개된 글</p>', pstBgngYmd: nextWeek, version },
+            });
+            expect(moved.status()).toBe(403);
+        } finally {
+            for (const { request, pstSn } of cleanup) await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`);
+            await adminRequest.post('/api/v1/admin/system/board-masters/batch/status', { data: { bbsIds: [bbsId], useYn: 'N' } });
+        }
+    });
     test.describe('Board & Community (Business Flow)', () => {
         // [2026-08-10 제거] `test.describe.configure({ mode: 'parallel' })`.
         //   playwright.config 는 `workers: 1` 이라(공유 DB 오염·OOM 방지) 이 선언은 **아무 효과가 없었다**.
@@ -565,14 +626,41 @@ test.describe('화면 품질', () => {
                 expect(created.ok(), '추천 검증용 게시글 생성이 성공해야 한다').toBeTruthy();
                 const pstSn = String((await created.json())?.data ?? '').trim();
                 expect(pstSn, '생성된 게시글 ID 를 받아야 한다').not.toBe('');
-                await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
-                // [E2E 감사 B] isVisible 가드 제거 — 추천 버튼이 없으면 실패시킨다(과거: 가드로 무단언 통과).
-                const likeBtn = page.locator('button').filter({ hasText: /추천|좋아요|Like/i }).first();
-                await expect(likeBtn).toBeVisible({ timeout: 15000 });
-                const initialCount = await likeBtn.innerText();
-                await likeBtn.click();
-                // 낙관적 UI: 즉시 카운트가 변해야 한다.
-                await expect(likeBtn).not.toHaveText(initialCount, { timeout: 10000 });
+                const auth = { Authorization: `Bearer ${token}` };
+                try {
+                    await page.goto(`/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`);
+                    // [E2E 감사 B] isVisible 가드 제거 — 추천 버튼이 없으면 실패시킨다(과거: 가드로 무단언 통과).
+                    const likeBtn = page.locator('button').filter({ hasText: /추천|좋아요|Like/i }).first();
+                    await expect(likeBtn).toBeVisible({ timeout: 15000 });
+                    const initialCount = await likeBtn.innerText();
+                    await expect(likeBtn).toHaveAttribute('aria-pressed', 'false');
+                    await likeBtn.click();
+                    // 낙관적 UI: 즉시 카운트가 변해야 한다.
+                    await expect(likeBtn).not.toHaveText(initialCount, { timeout: 10000 });
+                    // [2026-10-23 ADR-0040 결정 6] 추천은 토글이다 — 눌린 상태가 되고, 다시 누르면 추천을 거둬 처음 수로 돌아온다.
+                    await expect(likeBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 10000 });
+                    await expect(likeBtn).toBeEnabled({ timeout: 10000 });
+                    await likeBtn.click();
+                    await expect(likeBtn).toHaveAttribute('aria-pressed', 'false', { timeout: 10000 });
+                    await expect(likeBtn).toHaveText(initialCount, { timeout: 10000 });
+                    // 취소 뒤에는 다시 추천할 수 있다.
+                    await expect(likeBtn).toBeEnabled({ timeout: 10000 });
+                    await likeBtn.click();
+                    await expect(likeBtn).toHaveAttribute('aria-pressed', 'true', { timeout: 10000 });
+                    await expect(likeBtn).toBeEnabled({ timeout: 10000 });
+                    // 서버 계약: 취소는 내 이력이 있을 때만 줄이고, 없으면 지금 수를 그대로 돌려준다(멱등).
+                    const likeUrl = `/api/v1/boards/${bbsId}/posts/${pstSn}/like`;
+                    const cancelled = await request.delete(likeUrl, { headers: auth });
+                    expect(cancelled.ok(), '추천 취소가 성공해야 한다').toBeTruthy();
+                    const afterCancel = (await cancelled.json())?.data;
+                    expect(typeof afterCancel, '취소 응답은 지금 추천 수다').toBe('number');
+                    const again = await request.delete(likeUrl, { headers: auth });
+                    expect(again.ok(), '이력이 없는 취소도 오류가 아니다').toBeTruthy();
+                    expect((await again.json())?.data, '이력이 없는 취소는 수를 줄이지 않는다').toBe(afterCancel);
+                }
+                finally {
+                    await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
+                }
             });
         });
     });

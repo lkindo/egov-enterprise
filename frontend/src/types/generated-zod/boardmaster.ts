@@ -16,6 +16,12 @@ export const BoardMasterUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
   useYn: z.enum(["Y","N"]),
   ansYn: z.enum(["Y","N"]).optional(),
   stsfdgYn: z.enum(["Y","N"]).optional(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixUplmtNocs: z.number().int().min(1).max(100).optional(),
+  upendFixBscDayCnt: z.number().int().min(1).max(365).optional(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]).optional(),
+  rcmdtnUseYn: z.enum(["Y","N"]).optional(),
   version: z.number().int().min(0),
 }))();
 export type BoardMasterUpdateRequest = z.infer<typeof BoardMasterUpdateRequestSchema>;
@@ -40,10 +46,30 @@ export const BoardMasterDtoSchema = /*#__PURE__*/ (() => z.object({
   cmntySn: z.number().int().optional(),
   ansYn: z.enum(["Y","N"]).optional(),
   stsfdgYn: z.enum(["Y","N"]).optional(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixUplmtNocs: z.number().int().min(1).max(100).optional(),
+  upendFixBscDayCnt: z.number().int().min(1).max(365).optional(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]).optional(),
+  rcmdtnUseYn: z.enum(["Y","N"]).optional(),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
 }))();
 export type BoardMasterDto = z.infer<typeof BoardMasterDtoSchema>;
+
+export const BoardPostPinBatchRequestSchema = /*#__PURE__*/ (() => z.object({
+  pstSns: z.array(z.number().int()).min(1).max(100),
+  upendFixYn: z.enum(["Y","N"]),
+  upendFixEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+}))();
+export type BoardPostPinBatchRequest = z.infer<typeof BoardPostPinBatchRequestSchema>;
+
+export const BoardPostPeriodBatchRequestSchema = /*#__PURE__*/ (() => z.object({
+  action: z.enum(["END_DATE","CLEAR_END"]),
+  pstSns: z.array(z.number().int()).min(1).max(100),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+}))();
+export type BoardPostPeriodBatchRequest = z.infer<typeof BoardPostPeriodBatchRequestSchema>;
 
 export const BoardMasterBatchStatusRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsIds: z.array(z.string()).min(1).max(100),
@@ -55,6 +81,19 @@ export const BoardMasterBatchDeleteRequestSchema = /*#__PURE__*/ (() => z.object
   bbsIds: z.array(z.string()).min(1).max(100),
 }))();
 export type BoardMasterBatchDeleteRequest = z.infer<typeof BoardMasterBatchDeleteRequestSchema>;
+
+export const BoardPostPinRequestSchema = /*#__PURE__*/ (() => z.object({
+  upendFixYn: z.enum(["Y","N"]),
+  upendFixEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+}))();
+export type BoardPostPinRequest = z.infer<typeof BoardPostPinRequestSchema>;
+
+export const BoardPostPeriodRequestSchema = /*#__PURE__*/ (() => z.object({
+  pstBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  version: z.number().int().min(0),
+}))();
+export type BoardPostPeriodRequest = z.infer<typeof BoardPostPeriodRequestSchema>;
 
 export const ApiResponsePageResponseBoardMasterSummaryResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -120,6 +159,12 @@ export const BoardMasterDetailResponseSchema = /*#__PURE__*/ (() => z.object({
   cmntySn: z.number().int().optional(),
   ansYn: z.string().optional(),
   stsfdgYn: z.string().optional(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]),
+  upendFixPsbltyYn: z.enum(["Y","N"]),
+  upendFixUplmtNocs: z.number().int(),
+  upendFixBscDayCnt: z.number().int(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
+  rcmdtnUseYn: z.enum(["Y","N"]),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
   version: z.number().int(),
@@ -170,6 +215,12 @@ export const BoardMasterUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.obje
   useYn: z.enum(["Y","N"]),
   ansYn: z.enum(["Y","N"]).optional(),
   stsfdgYn: z.enum(["Y","N"]).optional(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixUplmtNocs: z.number().int().min(1).max(100).optional(),
+  upendFixBscDayCnt: z.number().int().min(1).max(365).optional(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]).optional(),
+  rcmdtnUseYn: z.enum(["Y","N"]).optional(),
   version: z.number().int().min(0),
 }))();
 
@@ -183,6 +234,12 @@ export const BoardMasterUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.obj
   useYn: z.enum(["Y","N"]),
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  upendFixPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  upendFixUplmtNocs: z.number().int().min(1).max(100).optional().nullable(),
+  upendFixBscDayCnt: z.number().int().min(1).max(365).optional().nullable(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]).optional().nullable(),
+  rcmdtnUseYn: z.enum(["Y","N"]).optional().nullable(),
   version: z.number().int().min(0),
 }))();
 
@@ -206,6 +263,12 @@ export const BoardMasterDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   cmntySn: z.number().int().optional(),
   ansYn: z.enum(["Y","N"]).optional(),
   stsfdgYn: z.enum(["Y","N"]).optional(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixPsbltyYn: z.enum(["Y","N"]).optional(),
+  upendFixUplmtNocs: z.number().int().min(1).max(100).optional(),
+  upendFixBscDayCnt: z.number().int().min(1).max(365).optional(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]).optional(),
+  rcmdtnUseYn: z.enum(["Y","N"]).optional(),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
 }))();
@@ -230,8 +293,38 @@ export const BoardMasterDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   cmntySn: z.number().int().optional().nullable(),
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  upendFixPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
+  upendFixUplmtNocs: z.number().int().min(1).max(100).optional().nullable(),
+  upendFixBscDayCnt: z.number().int().min(1).max(365).optional().nullable(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]).optional().nullable(),
+  rcmdtnUseYn: z.enum(["Y","N"]).optional().nullable(),
   authFlag: z.string().optional().nullable(),
   tmplatCours: z.string().optional().nullable(),
+}))();
+
+export const BoardPostPinBatchRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  pstSns: z.array(z.number().int()).min(1).max(100),
+  upendFixYn: z.enum(["Y","N"]),
+  upendFixEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+}))();
+
+export const BoardPostPinBatchRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  pstSns: z.array(z.number().int().optional().nullable()).min(1).max(100),
+  upendFixYn: z.enum(["Y","N"]),
+  upendFixEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+}))();
+
+export const BoardPostPeriodBatchRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  action: z.enum(["END_DATE","CLEAR_END"]),
+  pstSns: z.array(z.number().int()).min(1).max(100),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+}))();
+
+export const BoardPostPeriodBatchRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  action: z.enum(["END_DATE","CLEAR_END"]),
+  pstSns: z.array(z.number().int().optional().nullable()).min(1).max(100),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
 }))();
 
 export const BoardMasterBatchStatusRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -250,6 +343,28 @@ export const BoardMasterBatchDeleteRequestRequestSchema = /*#__PURE__*/ (() => z
 
 export const BoardMasterBatchDeleteRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   bbsIds: z.array(z.string().optional().nullable()).min(1).max(100),
+}))();
+
+export const BoardPostPinRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  upendFixYn: z.enum(["Y","N"]),
+  upendFixEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+}))();
+
+export const BoardPostPinRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  upendFixYn: z.enum(["Y","N"]),
+  upendFixEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+}))();
+
+export const BoardPostPeriodRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  pstBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
+  version: z.number().int().min(0),
+}))();
+
+export const BoardPostPeriodRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  pstBgngYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
+  version: z.number().int().min(0),
 }))();
 
 export const ApiResponsePageResponseBoardMasterSummaryResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -352,6 +467,12 @@ export const BoardMasterDetailResponseRequestSchema = /*#__PURE__*/ (() => z.obj
   cmntySn: z.number().int().optional(),
   ansYn: z.string().optional(),
   stsfdgYn: z.string().optional(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]),
+  upendFixPsbltyYn: z.enum(["Y","N"]),
+  upendFixUplmtNocs: z.number().int(),
+  upendFixBscDayCnt: z.number().int(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
+  rcmdtnUseYn: z.enum(["Y","N"]),
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
   version: z.number().int(),
@@ -378,6 +499,12 @@ export const BoardMasterDetailResponseResponseSchema = /*#__PURE__*/ (() => z.ob
   cmntySn: z.number().int().optional().nullable(),
   ansYn: z.string().optional().nullable(),
   stsfdgYn: z.string().optional().nullable(),
+  rsvtPstgPsbltyYn: z.enum(["Y","N"]),
+  upendFixPsbltyYn: z.enum(["Y","N"]),
+  upendFixUplmtNocs: z.number().int(),
+  upendFixBscDayCnt: z.number().int(),
+  prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
+  rcmdtnUseYn: z.enum(["Y","N"]),
   authFlag: z.string().optional().nullable(),
   tmplatCours: z.string().optional().nullable(),
   version: z.number().int(),

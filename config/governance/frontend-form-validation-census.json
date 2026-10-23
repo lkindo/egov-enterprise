@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 69,
-    "nativeFormFiles": 59,
+    "nativeFormOccurrences": 72,
+    "nativeFormFiles": 62,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 25,
-    "secondaryActionBoundaries": 79,
-    "candidateCount": 174
+    "formlessWriteBoundaries": 26,
+    "secondaryActionBoundaries": 81,
+    "candidateCount": 180
   },
   "entries": [
     {
@@ -71,6 +71,115 @@
       ]
     },
     {
+      "key": "native-form:frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx#BoardPostBatchDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx",
+      "owner": "BoardPostBatchDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:batchDateFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostBatchDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/community/boards/master/[id]/BoardPostPeriodDialog.tsx#BoardPostPeriodDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPeriodDialog.tsx",
+      "owner": "BoardPostPeriodDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:postPeriodFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostPeriodDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/community/boards/master/[id]/BoardPostPinDialog.tsx#BoardPostPinDialog[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPinDialog.tsx",
+      "owner": "BoardPostPinDialog",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "useManualFormValidation-zod",
+      "schemaSource": "generated-or-derived:postPinFormSchema",
+      "errorNavigation": "summary-inline-focus-first-invalid",
+      "serverErrors": "field-errors-mapped-with-value-retention",
+      "pendingGuard": "synchronous-submit-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostPinDialog.test.tsx",
+        "frontend/src/hooks/__tests__/useManualFormValidation.test.tsx"
+      ]
+    },
+    {
+      "key": "formless-write:frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx#BoardPostsTab",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
+      "owner": "BoardPostsTab",
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx#BoardPostsTab.bulkAction:종료일 해제하기[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
+      "owner": "BoardPostsTab",
+      "handler": "bulkAction:종료일 해제하기",
+      "triggerLabel": "종료일 해제하기",
+      "writeSinks": [
+        "boardAdminService.updatePostPeriodsInBatch"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx#BoardPostsTab.bulkAction:고정 해제하기[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
+      "owner": "BoardPostsTab",
+      "handler": "bulkAction:고정 해제하기",
+      "triggerLabel": "고정 해제하기",
+      "writeSinks": [
+        "boardAdminService.updatePostPinsInBatch"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/admin/community/boards/master/[id]/BoardSettingsTab.tsx#BoardSettingsTab[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/community/boards/master/[id]/BoardSettingsTab.tsx",
@@ -124,7 +233,9 @@
         "atchPsbltyFileQty",
         "atchPsbltyFileSzMb",
         "bbsExpln",
-        "bbsTtl"
+        "bbsTtl",
+        "upendFixBscDayCnt",
+        "upendFixUplmtNocs"
       ],
       "errorNavigation": "summary-inline-focus-first-invalid",
       "serverErrors": "field-errors-mapped-with-value-retention",
@@ -1983,6 +2094,7 @@
       "owner": "BoardDetailClient",
       "handler": "handleLike",
       "writeSinks": [
+        "boardUserService.cancelLikePost",
         "boardUserService.likePost"
       ],
       "classification": "mutation",

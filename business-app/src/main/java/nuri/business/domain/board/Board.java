@@ -112,6 +112,21 @@ public class Board extends BaseEntity implements Serializable {
     @Column(length = 1)
     private String ntcYn = "N";
 
+    /**
+     * 상단 고정(V2_141, ADR-0040 결정 5). 고정 종료일까지 게시판 목록의 기본·최신순 맨 앞에 둔다. 새 글은 N 이다.
+     *
+     * <p>{@code updatable = false} — 엔티티 저장(작성자 수정·해결 표시·삭제)은 이 컬럼을 쓰지 않는다. 쓰기는 운영 화면의 고정 경로가
+     * 부르는 한 문장 UPDATE({@code BoardRepository#updatePin}) 하나뿐이다. 그래서 고정·해제가 {@code @Version} 을 올리지 않고
+     * (그 사이 열어 둔 작성자 수정이 409 가 되지 않는다), 옛 버전으로 저장한 작성자 수정이 고정을 덮지도 않는다.
+     * DB 는 NOT NULL DEFAULT 'N' 이다 — 이 파일의 다른 Y/N 컬럼처럼 nullable 을 적지 않는다(엔티티 INSERT 는 늘 값을 싣는다).
+     */
+    @Column(name = "upend_fix_yn", length = 1, updatable = false)
+    private String upendFixYn = "N";
+
+    /** 상단 고정 종료일(yyyyMMdd, V2_141). 고정 중일 때만 있다. 쓰기 경로는 {@link #upendFixYn} 과 같다. */
+    @Column(name = "upend_fix_end_ymd", length = 8, updatable = false)
+    private String upendFixEndYmd;
+
     private Integer cmntCnt = 0;
 
     private Integer fileCnt = 0;
@@ -186,6 +201,15 @@ public class Board extends BaseEntity implements Serializable {
         this.qnaSttsCd = qnaSttsCd;
         this.qnaCatCd = qnaCatCd;
         this.scrtYn = scrtYn;
+    }
+
+    /**
+     * 게시 기간만 바꾼다 — 운영 화면의 빠른 편집·일괄 처리 전용이다(ADR-0040 결정 3·10). 값이 바뀌면 {@code @Version} 이 올라
+     * 그 사이 열어 둔 작성자 수정은 409 가 된다(종료일은 작성자 폼과 같은 컬럼이다). 호출부가 형식·순서·권한을 판정한다.
+     */
+    public void changePostingPeriod(String pstBgngYmd, String pstEndYmd) {
+        this.pstBgngYmd = pstBgngYmd;
+        this.pstEndYmd = pstEndYmd;
     }
 
     /** Q&A 해결 상태만 바꾼다 — 본문·작성자 등 다른 필드는 건드리지 않는다(DIP I3). */

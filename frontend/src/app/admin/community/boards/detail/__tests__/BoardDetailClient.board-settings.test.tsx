@@ -11,7 +11,8 @@ const mocks = vi.hoisted(() => ({
   markQuestionSolved: vi.fn(),
   invalidateQueries: vi.fn(),
   toast: vi.fn(),
-  user: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE'], authorizationVersion: 'v1' },
+  // 추천 단추는 추천 권한(BOARD_LIKE)으로 보인다(ADR-0040 결정 6) — 설정 전달을 보려고 그 권한을 준다.
+  user: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE', 'BOARD_LIKE'], authorizationVersion: 'v1' },
   searchParams: new Map<string, string>(),
 }));
 
@@ -46,9 +47,9 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { BoardDetailClient } from '../BoardDetailClient';
 
-function detail(masterInfo: Record<string, unknown> | null) {
+function detail(masterInfo: Record<string, unknown> | null, article: Record<string, unknown> = {}) {
   return {
-    article: { pstSn: 31, pstTtl: '글', pstCn: '본문', userId: 'owner-id', likeCnt: 0, inqCnt: 1 },
+    article: { pstSn: 31, pstTtl: '글', pstCn: '본문', userId: 'owner-id', likeCnt: 0, inqCnt: 1, ...article },
     masterInfo,
     initialComments: [],
     fetchError: null,
@@ -102,5 +103,16 @@ describe('BoardDetailClient 게시판 설정 전달 (DIP B5 F9)', () => {
     await renderDetail(detail(null));
     expect(screen.getByTestId('comments').getAttribute('data-board-in-use')).toBe('true');
     expect(screen.getByRole('button', { name: '게시글 추천' })).toBeInTheDocument();
+  });
+
+  // [2026-10-23 ADR-0040 결정 5] 상세 머리의 상단 고정 표지는 서버 판정(pinned)만 따른다 — 고정 종료일을 오늘과 비교하지 않는다.
+  it('서버가 고정 중이라고 한 글에만 상단 고정 표지를 종료일과 함께 붙인다', async () => {
+    await renderDetail(detail({ bbsTtl: '공지', tmpltId: 'TMPLT_LIST' }, { pinned: true, upendFixEndYmd: '20261130', postingStatus: 'POSTING' }));
+    expect(screen.getByText('상단 고정')).toHaveAttribute('title', '2026-11-30까지 게시판 목록 맨 위에 고정한 글입니다.');
+  });
+
+  it('서버가 고정 중이 아니라고 하면 종료일 값이 있어도 상단 고정 표지가 없다', async () => {
+    await renderDetail(detail({ bbsTtl: '공지', tmpltId: 'TMPLT_LIST' }, { pinned: false, upendFixEndYmd: '20991231', postingStatus: 'POSTING' }));
+    expect(screen.queryByText('상단 고정')).toBeNull();
   });
 });

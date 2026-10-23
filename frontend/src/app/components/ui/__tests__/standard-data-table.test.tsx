@@ -368,6 +368,43 @@ describe('StandardDataTable', () => {
     expect(within(screen.getByRole('table')).getAllByRole('checkbox')[0]).not.toBeChecked();
   });
 
+  // [2026-10-23 ADR-0040 §5.4] 표 밖의 조회 조건이 바뀌면 같은 키의 행이 남아 있어도 선택을 풀고, 호출부가 그 수를 알린다.
+  it('selectionScope 가 바뀌면 남은 행과 겹쳐도 선택을 풀고, 선택 수를 호출부에 알린다', async () => {
+    const user = userEvent.setup();
+    const onCount = vi.fn();
+    const table = (scope?: string) => (
+      <StandardDataTable columns={columns} data={rows} keyField="id" enableSelection selectionScope={scope}
+        onSelectionCountChange={onCount} bulkActions={[{ label: '삭제', onClick: vi.fn() }]} />
+    );
+    const { rerender } = render(table('조건-1'));
+    expect(onCount).toHaveBeenLastCalledWith(0);
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[0]);
+    expect(screen.getByRole('button', { name: '선택한 2개 항목 전체 해제' })).toBeInTheDocument();
+    await waitFor(() => expect(onCount).toHaveBeenLastCalledWith(2));
+
+    // 같은 범위로 다시 그리면 선택은 그대로다.
+    rerender(table('조건-1'));
+    expect(screen.getByRole('button', { name: '선택한 2개 항목 전체 해제' })).toBeInTheDocument();
+
+    // 범위가 바뀐 첫 렌더부터 비고(같은 행이 그대로 있어도), 선택 수 0 을 알린다.
+    rerender(table('조건-2'));
+    expect(screen.queryByRole('button', { name: '삭제' })).not.toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getAllByRole('checkbox')[1]).not.toBeChecked();
+    await waitFor(() => expect(onCount).toHaveBeenLastCalledWith(0));
+  });
+
+  it('selectionScope 를 주지 않으면 같은 행이 남는 한 선택은 종전처럼 유지된다', async () => {
+    const user = userEvent.setup();
+    const table = () => (
+      <StandardDataTable columns={columns} data={rows} keyField="id" enableSelection bulkActions={[{ label: '삭제', onClick: vi.fn() }]} />
+    );
+    const { rerender } = render(table());
+    await user.click(within(screen.getByRole('table')).getAllByRole('checkbox')[1]);
+    rerender(table());
+    expect(screen.getByRole('button', { name: '삭제' })).toBeInTheDocument();
+    expect(within(screen.getByRole('table')).getAllByRole('checkbox')[1]).toBeChecked();
+  });
+
   it('데이터가 바뀌면 사라진 행의 선택을 세지 않고, 같은 키의 행이 돌아와도 선택된 채 돌아오지 않는다 (DIP C3)', async () => {
     // 일괄 삭제 뒤 목록을 다시 읽으면 지워진 행의 키가 선택 집합에 남아 '선택 항목 N개' 라 말했다.
     const user = userEvent.setup();

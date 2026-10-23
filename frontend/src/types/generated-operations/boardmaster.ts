@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseBooleanResponseSchema, ApiResponseStringResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseBoardMasterDetailResponseResponseSchema, ApiResponsePageResponseBoardChangeDtoResponseSchema, ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema, BoardMasterBatchDeleteRequestRequestSchema, BoardMasterBatchStatusRequestRequestSchema, BoardMasterDetailResponseResponseSchema, BoardMasterDtoRequestSchema, BoardMasterUpdateRequestRequestSchema, PageResponseBoardChangeDtoResponseSchema, PageResponseBoardMasterSummaryResponseResponseSchema } from '../generated-zod/boardmaster';
+import { ApiResponseBoardMasterDetailResponseResponseSchema, ApiResponsePageResponseBoardChangeDtoResponseSchema, ApiResponsePageResponseBoardMasterSummaryResponseResponseSchema, BoardMasterBatchDeleteRequestRequestSchema, BoardMasterBatchStatusRequestRequestSchema, BoardMasterDetailResponseResponseSchema, BoardMasterDtoRequestSchema, BoardMasterUpdateRequestRequestSchema, BoardPostPeriodBatchRequestRequestSchema, BoardPostPeriodRequestRequestSchema, BoardPostPinBatchRequestRequestSchema, BoardPostPinRequestRequestSchema, PageResponseBoardChangeDtoResponseSchema, PageResponseBoardMasterSummaryResponseResponseSchema } from '../generated-zod/boardmaster';
 
 export const getBoardMasterOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -103,6 +103,44 @@ export const createBoardMasterOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const updatePostPinsInBatchOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "updatePostPinsInBatch",
+  method: "post",
+  path: "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/pin",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "bbsId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: BoardPostPinBatchRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const updatePostPeriodsInBatchOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "updatePostPeriodsInBatch",
+  method: "post",
+  path: "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/period",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "bbsId": z.string() }).strict(),
+  querySchema: null,
+  requestSchema: BoardPostPeriodBatchRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const updateBoardMasterStatusInBatchOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "updateBoardMasterStatusInBatch",
@@ -134,6 +172,44 @@ export const deleteBoardMastersInBatchOperation = /*#__PURE__*/ (() => {
   pathSchema: null,
   querySchema: null,
   requestSchema: BoardMasterBatchDeleteRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const updatePostPinOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "updatePostPin",
+  method: "patch",
+  path: "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/pin",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: BoardPostPinRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const updatePostPeriodOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "updatePostPeriod",
+  method: "patch",
+  path: "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/period",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: BoardPostPeriodRequestRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],

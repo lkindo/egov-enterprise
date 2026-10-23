@@ -114,6 +114,60 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
         int incrementLikeCntAtomic(@Param("pstSn") Long pstSn);
 
         /**
+         * 추천 수 원자 감소 — 추천 취소에서 이력 행을 실제로 지웠을 때만 부른다(ADR-0040 결정 6, {@code BoardService#cancelLike}).
+         *
+         * <p>증가({@link #incrementLikeCntAtomic})와 같은 이유로 네이티브다 — {@code version} 을 건드리지 않아 편집 중인 작성자가
+         * 409 를 받지 않는다. {@code use_yn} 조건은 두지 않는다 — 이력과 짝을 이루는 감소라, 글이 그 사이 논리 삭제돼도 되돌린다
+         * (댓글 수 {@link #adjustCmntCntAtomic} 의 감소 규칙과 같다). {@code GREATEST(..., 0)} 은 이중 방어다 — 감소는 이력 DELETE
+         * 영향 수로 한 번만 일어나지만, 어긋난 옛 값이 있어도 음수가 되지 않는다.
+         */
+        @org.springframework.transaction.annotation.Transactional
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query(value = "UPDATE tb_bbs_item SET like_cnt = GREATEST(COALESCE(like_cnt, 0) - 1, 0) WHERE pst_sn = :pstSn",
+                        nativeQuery = true)
+        int decrementLikeCntAtomic(@Param("pstSn") Long pstSn);
+
+        /**
+         * 게시판에서 기준일(yyyyMMdd)에 고정 중인 글 수 — 상단 고정 상한 판정의 재료다(ADR-0040 결정 5).
+         *
+         * <p>목록 정렬의 고정 판정({@code BoardPredicate.pinActiveOn})과 같은 조건이다: 고정 표시가 Y 이고 종료일이 기준일과 같거나
+         * 뒤다. 비밀글·게시 기간 밖의 글로는 거르지 않는다 — 누구에게 보이든 고정 칸을 차지하므로, 보이는 고정 글 수가 늘 센 수
+         * 이하다. 네이티브라 {@code softDeleteFilter} 를 받지 않으므로 {@code use_yn = 'Y'} 를 명시한다(지운 글은 세지 않는다).
+         * 호출부가 게시판 마스터 행을 잠근 뒤 부른다 — 같은 게시판의 동시 고정이 이 집계를 직렬로 본다.
+         */
+        @Query(value = """
+                        SELECT COUNT(*)
+                        FROM tb_bbs_item
+                        WHERE bbs_id = :bbsId
+                          AND use_yn = 'Y'
+                          AND upend_fix_yn = 'Y'
+                          AND upend_fix_end_ymd >= :today
+                        """, nativeQuery = true)
+        long countActivePins(@Param("bbsId") String bbsId, @Param("today") String today);
+
+        /**
+         * 상단 고정·해제를 한 문장으로 쓴다(ADR-0040 결정 5). 엔티티의 고정 컬럼은 {@code updatable = false} 라 이 경로가 유일한 쓰기다.
+         *
+         * <p><b>{@code version}·감사 컬럼을 건드리지 않는다.</b> 고정은 운영자 행위라 게시판 변경 이력이 남기고, 그 사이 열어 둔 작성자
+         * 수정이 409 가 되지 않는다(조회수·추천 수 원자 UPDATE 와 같은 이유). 경로 게시판의 지우지 않은 글만 바꾼다 — 영향 수가
+         * 대상 수와 다르면 호출부가 롤백한다(동시 삭제 경합).
+         *
+         * @param endYmd 고정 종료일(yyyyMMdd). 해제면 null 이다. null 을 형 없이 넘기지 않으려고 문자열로 형을 정한다.
+         * @return 영향 행 수
+         */
+        @org.springframework.transaction.annotation.Transactional
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query(value = """
+                        UPDATE tb_bbs_item
+                        SET upend_fix_yn = :yn, upend_fix_end_ymd = CAST(:endYmd AS VARCHAR(8))
+                        WHERE bbs_id = :bbsId
+                          AND pst_sn IN (:pstSns)
+                          AND use_yn = 'Y'
+                        """, nativeQuery = true)
+        int updatePin(@Param("bbsId") String bbsId, @Param("pstSns") List<Long> pstSns,
+                        @Param("yn") String yn, @Param("endYmd") String endYmd);
+
+        /**
          * 조회수 원자 증가. [W1-17]
          *
          * <p>[왜 네이티브인가 — 두 가지]

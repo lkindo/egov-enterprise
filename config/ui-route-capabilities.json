@@ -2242,11 +2242,19 @@
       "status": "partial",
       "dataSource": "mixed",
       "supportedActions": [
+        "bulk-change-end",
+        "bulk-clear-end",
+        "bulk-pin",
+        "bulk-unpin",
         "delete",
         "edit",
+        "filter",
         "navigate",
         "paginate",
+        "pin",
+        "search",
         "select-detail",
+        "unpin",
         "view-detail",
         "view-list",
         "view-status"
@@ -2308,16 +2316,80 @@
           "id": "board.operations-posts",
           "dataSource": "boards-api",
           "actions": [
+            "filter",
             "paginate",
+            "search",
             "select-detail",
-            "view-list"
+            "view-list",
+            "view-status"
           ],
           "visibleLabel": "게시물",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
+            "frontend/src/app/admin/community/boards/components/PostingStatusBadge.tsx",
             "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
             "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx",
-            "frontend/src/app/admin/community/boards/master/[id]/page.tsx"
+            "frontend/src/app/admin/community/boards/master/[id]/page.tsx",
+            "frontend/src/queries/board-master-query-options.ts"
+          ]
+        },
+        {
+          "status": "partial",
+          "candidateStatus": "live",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-23",
+          "owner": "product/UX + domain owner",
+          "id": "board.operations-post-period",
+          "dataSource": "board-masters-api",
+          "actions": [
+            "bulk-change-end",
+            "bulk-clear-end",
+            "edit"
+          ],
+          "visibleLabel": "일정 바꾸기·종료일 바꾸기·종료일 해제하기",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostPeriodDialog.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostBatchDialog.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostPeriodDialog.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx",
+            "frontend/src/services/foundation/system/BoardAdminService.ts"
+          ]
+        },
+        {
+          "status": "partial",
+          "candidateStatus": "live",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-23",
+          "owner": "product/UX + domain owner",
+          "id": "board.operations-post-pin",
+          "dataSource": "board-masters-api",
+          "actions": [
+            "bulk-pin",
+            "bulk-unpin",
+            "pin",
+            "unpin"
+          ],
+          "visibleLabel": "상단 고정 바꾸기·상단 고정하기·고정 해제하기",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostPinDialog.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/BoardPostsTab.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostBatchDialog.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostPinDialog.test.tsx",
+            "frontend/src/app/admin/community/boards/master/[id]/__tests__/BoardPostsTab.test.tsx",
+            "frontend/src/services/foundation/system/BoardAdminService.ts"
           ]
         },
         {
@@ -2361,7 +2433,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. The board operations screen (ADR-0040 decision 2) was added on 2026-10-23; tab states were read from code and unit tests."
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. The board operations screen (ADR-0040 decision 2) was added on 2026-10-23; tab states were read from code and unit tests. B1 (2026-10-23) added the server posting status, posts filters and the posting-period quick edit and bulk end-date actions. B2 (2026-10-23) added the pinned filter and column, the single-post pin dialog and the bulk pin/unpin actions."
       }
     },
     {
@@ -2380,6 +2452,7 @@
         "like",
         "search",
         "sort",
+        "unlike",
         "view-list"
       ],
       "profileOwners": [
@@ -2436,7 +2509,8 @@
           "candidateStatus": "live",
           "dataSource": "boards-api",
           "actions": [
-            "like"
+            "like",
+            "unlike"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "AUTHENTICATED",
@@ -2444,16 +2518,20 @@
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-23",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
             "frontend/src/app/actions/__tests__/boardActions.test.ts",
             "frontend/src/app/actions/boardActions.ts",
+            "frontend/src/app/admin/community/boards/detail/BoardDetailClient.tsx",
+            "frontend/src/app/admin/community/boards/detail/__tests__/BoardDetailClient.pending.test.tsx",
             "frontend/src/app/admin/community/boards/select-board-list/BoardListClient.tsx",
             "frontend/src/app/admin/community/boards/select-board-list/__tests__/BoardListClient.pending.test.tsx",
             "frontend/src/app/admin/community/boards/select-board-list/components/BoardTemplates.tsx",
-            "frontend/src/app/admin/community/boards/select-board-list/page.tsx"
+            "frontend/src/app/admin/community/boards/select-board-list/components/__tests__/BoardTemplates.like.test.tsx",
+            "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
+            "frontend/src/services/business/user/board/BoardUserService.ts"
           ]
         }
       ],
@@ -2471,7 +2549,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-23 (ADR-0040 decision 6) board.post-like gained unlike: the cancel toggle lives on the post detail screen (BoardDetailClient, cancelLikePost) because the detail route capability set is frozen (plan D-20); the list only shows the count when likes are closed (no BOARD_LIKE, unused board, or recommendations off)."
       }
     },
     {
@@ -4925,7 +5003,7 @@
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "누적 사용자 · 금일 접속 · 누적 게시물",
+          "visibleLabel": "누적 사용자 · 금일 접속 · 전체 등록 건수",
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",

@@ -125,11 +125,13 @@ export function RealTimeDashboard() {
           color="green"
         />
         {showNewPosts && (
+          // [2026-10-23 ADR-0040 결정 3] 작성일 기준 등록 건수다 — 예약 게시를 집행해도 '지금 보이는 글' 이 아니라는 사실을 이름이 말한다.
           <RealTimeStatCard
-            title="신규 게시글"
+            title="오늘 등록된 글"
+            description="작성일이 오늘인 글 수입니다. 예약·비밀·게시 종료 글과 사용 안 함 게시판의 글도 세고, 삭제한 글은 세지 않습니다."
             value={stats?.newPostsAvailable ? stats.newPosts : null}
             icon={<Activity size={20} />}
-            trend="오늘"
+            trend="작성일 기준"
             unavailableMessage={stats && !stats.newPostsAvailable ? '게시글 수 확인 불가' : undefined}
             color="purple"
           />

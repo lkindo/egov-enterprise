@@ -212,6 +212,11 @@ export type StatsSeriesTab = StatsHubTabBase & {
   readonly href: string;
   readonly load: (range?: StatsDateRange) => Promise<readonly StatsSeriesPoint[]>;
   readonly uninstrumented: boolean;
+  /**
+   * 차트·원본 표의 계열 이름(선택). 주지 않으면 탭 이름(label)이다. [2026-10-23 ADR-0040 결정 3] 탭 이름이 메뉴·라우트 원장과 묶여
+   * 바꿀 수 없을 때 계열이 무엇을 센 값인지(예: 작성일 기준 등록 건수) 따로 말한다.
+   */
+  readonly seriesName?: string;
 };
 
 /** body — 기능이 본문을 그리는 탭. 전용 라우트가 없어 현재 경로의 `?tab=<id>` 로 연다. 내보내기 행도 기능이 만든다. */

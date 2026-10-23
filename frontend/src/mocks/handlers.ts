@@ -44,7 +44,13 @@ export const handlers = [
             inqCnt: 0,
             userNm: '작성자',
             userId: 'admin',
-            crtDt: '2026-06-01T00:00:00'
+            crtDt: '2026-06-01T00:00:00',
+            // [2026-10-23 ADR-0040 결정 3·5·10] 서버가 목록 행마다 싣는 판정 값 — 게시 상태·버전·고정 여부와 게시 기간.
+            pstBgngYmd: null,
+            pstEndYmd: null,
+            postingStatus: 'POSTING',
+            version: 0,
+            pinned: false
           }
         ],
         total: 1,

@@ -34,7 +34,7 @@ import SatisfactionSection from '@/components/features/satisfaction/Satisfaction
 
 import { CommentVO } from '@/types/business/comment';
 import { useReturnToList } from '@/lib/navigation/use-return-to-list';
-import { PostingEndedBadge } from '../components/PostingEndedBadge';
+import { PinnedBadge, PostingStatusBadge } from '../components/PostingStatusBadge';
 
 /** 게시글 상세로 들어오는 목록 화면들. 여기서 왔으면 뒤로 가서 목록의 조건·스크롤을 살린다. */
 const BOARD_LIST_ORIGINS = ['/admin/community/boards/select-board-list', '/admin/help', '/cop/cmy/selectCommunityDetail/*', '/search', '/admin/community/board'] as const;
@@ -134,8 +134,6 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   */
   const contributedActions = React.useMemo(() => visibleEntries(user, postActions), [user]);
 
-  // 게시글 추천(좋아요) — 낙관적 UI: 클릭 즉시 카운트 증가 후 서버 반영(실패 시 롤백)
-  const [likeDelta, setLikeDelta] = useState(0);
   // React state 반영 전 같은 tick의 추천/삭제/해결 표시/부가 동작 재진입까지 막기 위해 ref를 먼저 선점한다.
   const actionPendingRef = React.useRef(false);
   const [activeAction, setActiveAction] = useState<'like' | 'delete' | 'solve' | `post:${string}` | null>(null);
@@ -160,21 +158,41 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       setActiveAction(null);
     }
   };
-  // [2026-10-01] 이미 추천한 글은 '추천함' 으로 보이고 다시 누르지 않는다 — 종전에는 알 수 없어 누를 때마다 409 로 알았다.
-  const [likedNow, setLikedNow] = useState(false);
-  const recommended = article?.recommended === true || likedNow;
+  /*
+    [2026-10-01] 이미 추천한 글(서버 판정 recommended)을 알아 409 를 미리 막는다.
+    [2026-10-23 ADR-0040 결정 6] 추천은 토글이다 — 내가 추천한 글에서 다시 누르면 추천을 거둔다(cancelLikePost). 이름은 '게시글 추천'
+    으로 두고 상태는 aria-pressed 로 전한다. 단추는 추천 권한(BOARD_LIKE)이 있을 때만 보인다(DEC-OPS-185). 게시판이 추천을 받지
+    않으면(rcmdtnUseYn 'N') 새 추천 단추 대신 수만 보이고, 이미 내가 추천한 글에는 거두는 단추를 남긴다 — 서버가 새 추천만 막고
+    취소는 받는다. 메타를 모르면 받는 쪽으로 두고 판정은 서버가 한다.
+    낙관 값은 그 값을 만든 글 응답에만 붙는다 — 글을 다시 읽으면(새 응답) 서버 값이 이긴다. 성공하면 서버가 돌려준 수를 쓰고,
+    실패하면 되돌린 뒤 글을 다시 읽는다(이미 추천함 409 처럼 서버 상태가 화면과 달랐을 수 있다).
+  */
+  const canLike = canPermission(user, 'BOARD_LIKE');
+  const acceptsLikes = masterInfo?.rcmdtnUseYn !== 'N';
+  const [likeOverride, setLikeOverride] = useState<{ base: KnowledgeDto | null | undefined; liked: boolean; count: number } | null>(null);
+  const like = likeOverride && likeOverride.base === article
+    ? likeOverride
+    : { liked: article?.recommended === true, count: article?.likeCnt ?? 0 };
+  const recommended = like.liked;
+  const showLikeToggle = boardInUse && canLike && (acceptsLikes || recommended);
   const handleLike = async () => {
-    if (actionPendingRef.current || !bbsId || !hasValidPstSn || recommended) return;
+    if (actionPendingRef.current || !bbsId || !hasValidPstSn || !article) return;
+    const cancelling = recommended;
+    if (!cancelling && !acceptsLikes) return;
+    const before = { liked: like.liked, count: like.count };
     actionPendingRef.current = true;
     setActiveAction('like');
-    setLikeDelta((d) => d + 1);
+    setLikeOverride({ base: article, liked: !cancelling, count: Math.max(0, before.count + (cancelling ? -1 : 1)) });
     try {
-      await boardUserService.likePost(bbsId, pstSn);
-      setLikedNow(true);
+      const count = cancelling
+        ? await boardUserService.cancelLikePost(bbsId, pstSn)
+        : await boardUserService.likePost(bbsId, pstSn);
+      if (typeof count === 'number') setLikeOverride({ base: article, liked: !cancelling, count });
     } catch (likeError) {
-      setLikeDelta((d) => d - 1);
+      setLikeOverride({ base: article, ...before });
       // 이미 추천했거나(409) 읽을 수 없는 글이면(403·404) 서버가 사유를 말한다(DIP I6 ④).
-      toast(extractErrorMessage(likeError, '추천 처리 중 오류가 발생했습니다.'), 'error');
+      toast(extractErrorMessage(likeError, cancelling ? '추천 취소 중 오류가 발생했습니다.' : '추천 처리 중 오류가 발생했습니다.'), 'error');
+      void queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId, pstSn] });
     } finally {
       actionPendingRef.current = false;
       setActiveAction(null);
@@ -306,8 +324,12 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
           <h1 className="text-xl font-bold leading-snug tracking-tight text-foreground">
             {article.pstTtl}
           </h1>
-          {/* [결정 23] 게시 종료일이 지난 글 — 작성자·전체 열람 권한자에게만 보인다. 제목(h1)의 이름은 바꾸지 않는다. */}
-          <PostingEndedBadge pstEndYmd={article.pstEndYmd} />
+          {/*
+            [결정 23·2026-10-23 ADR-0040 결정 3] 게시 종료일이 지났거나 시작일 전인 글 — 작성자·조회 대행 권한자에게만 온다. 상태는 서버
+            판정(postingStatus)을 그대로 쓴다(DEC-OPS-140). 제목(h1)의 이름은 바꾸지 않는다. [결정 5] 상단 고정도 서버 판정(pinned)만 그린다.
+          */}
+          <PinnedBadge pinned={article.pinned} endYmd={article.upendFixEndYmd} />
+          <PostingStatusBadge status={article.postingStatus} startYmd={article.pstBgngYmd} />
           {!boardInUse && (
             <p role="note" className="text-[length:var(--font-size-body)] text-muted-foreground">
               사용 안 함 게시판입니다. 이용자에게 닫혀 있고, 운영자는 글을 정리할 수 있습니다.
@@ -354,19 +376,30 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             반쪽 기능이 된다. 서버 구현은 남겨 둔다(요청 밖 삭제 금지) — 계층 표현과 함께
             설계할 때 되살릴 자산이다.
           */}
-          {boardInUse && (
-          <Button
-            variant="outline"
-            onClick={handleLike}
-            disabled={activeAction !== null || recommended}
-            aria-busy={activeAction === 'like' || undefined}
-            aria-pressed={recommended}
-            aria-label={activeAction === 'like' ? '게시글 추천 처리 중' : recommended ? '게시글 추천함' : '게시글 추천'}
-            size="sm"
-            className="gap-1.5"
-          >
-            <ThumbsUp size={16} className="text-primary" aria-hidden="true" /> {recommended ? '추천함' : '추천'} {(article.likeCnt ?? 0) + likeDelta}
-          </Button>
+          {showLikeToggle ? (
+            <Button
+              variant={recommended ? 'default' : 'outline'}
+              onClick={handleLike}
+              disabled={activeAction !== null}
+              aria-busy={activeAction === 'like' || undefined}
+              aria-pressed={recommended}
+              aria-label="게시글 추천"
+              aria-describedby={recommended ? 'board-detail-like-hint' : undefined}
+              size="sm"
+              className="gap-1.5"
+            >
+              <ThumbsUp size={16} className={recommended ? undefined : 'text-primary'} aria-hidden="true" /> 추천 <span className="tabular-nums">{like.count.toLocaleString()}</span>
+            </Button>
+          ) : (
+            // 추천 단추가 없을 때(권한 없음·사용 안 함 게시판·추천을 받지 않는 게시판)도 쌓인 추천 수는 그대로 보인다.
+            <span className="inline-flex items-center gap-1.5 text-[length:var(--font-size-body)] text-muted-foreground">
+              <ThumbsUp size={16} aria-hidden="true" /> 추천 <span className="tabular-nums">{like.count.toLocaleString()}</span>
+            </span>
+          )}
+          {showLikeToggle && recommended && (
+            <span id="board-detail-like-hint" className="text-xs text-muted-foreground">
+              {acceptsLikes ? '추천한 글입니다. 다시 누르면 추천을 거둡니다.' : '이 게시판은 새 추천을 받지 않습니다. 내 추천은 거둘 수 있습니다.'}
+            </span>
           )}
           {contributedActions.map((action) => {
             const busy = activeAction === `post:${action.id}`;

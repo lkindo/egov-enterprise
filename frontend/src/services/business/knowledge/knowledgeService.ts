@@ -13,6 +13,7 @@ import {
   getStats_1Operation,
 } from '@/types/generated-operations';
 import type { BoardDto, BoardStatsResponse } from '@/types/generated-zod';
+import type { BoardPostingStatus } from '@/types/business/board';
 
 /*
  * [2026-09-26 DIP V2] 레거시 필드명 폴백(`nttId`·`nttSj`·`frstRgtrId`)을 걷었다. 종전 주석은 "서버가 같은 자원을
@@ -51,8 +52,18 @@ export interface KnowledgeDto {
   commentCnt?: number;
   /** 현재 사용자가 이미 추천했는지(서버 판정, 모르면 null). */
   recommended?: boolean | null;
+  /** 게시 시작일(yyyyMMdd). 오늘보다 뒤인 글은 작성자·전체 열람 권한자에게만 온다(ADR-0040 결정 3). */
+  pstBgngYmd?: string;
   /** 게시 종료일(yyyyMMdd). 지난 글은 작성자·전체 열람 권한자에게만 온다(결정 23). */
   pstEndYmd?: string;
+  /** 게시 상태(서버 판정, ADR-0040 결정 3). 화면은 날짜로 다시 계산하지 않는다(DEC-OPS-140). */
+  postingStatus?: BoardPostingStatus | null;
+  /** 게시글 버전(ADR-0040 결정 10). 수정 화면이 저장 요청에 그대로 돌려보낸다. */
+  version?: number | null;
+  /** 지금 게시판 목록 맨 위에 고정 중인지(서버 판정, ADR-0040 결정 5). 화면은 날짜로 다시 계산하지 않는다(DEC-OPS-140). */
+  pinned?: boolean | null;
+  /** 상단 고정 종료일(yyyyMMdd). 지금 고정 중일 때만 온다. */
+  upendFixEndYmd?: string | null;
 }
 
 

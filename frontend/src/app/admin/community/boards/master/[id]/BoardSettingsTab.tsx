@@ -29,7 +29,8 @@ import {
 } from '@/services/foundation/system/BoardAdminService';
 import { BoardMasterUpdateRequestSchema } from '@/types/generated-zod';
 import { BoardChangeHistoryDialog } from './BoardChangeHistoryDialog';
-import { boardUsageNotes } from '../board-usage';
+import { boardUsageNotes, privatePostPolicyWarnings } from '../board-usage';
+import { generatedRange, pinCountSchema } from '../board-pin-count';
 
 /**
  * 게시판 운영 화면의 설정 탭(ADR-0040 §5.5·결정 9·10).
@@ -42,10 +43,27 @@ import { boardUsageNotes } from '../board-usage';
  */
 const BYTES_PER_MB = 1024 * 1024;
 
-type FieldKey = 'bbsTtl' | 'bbsExpln' | 'useYn' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty' | 'atchPsbltyFileSz';
+type FieldKey = 'bbsTtl' | 'bbsExpln' | 'useYn' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty' | 'atchPsbltyFileSz'
+  | 'rsvtPstgPsbltyYn' | 'upendFixPsbltyYn' | 'upendFixUplmtNocs' | 'upendFixBscDayCnt' | 'prvtPstPlcyCd' | 'rcmdtnUseYn';
 type Draft = Partial<Record<FieldKey, string | number>>;
+type PrivatePostPolicy = NonNullable<BoardMasterUpdateRequest['prvtPstPlcyCd']>;
 
 const yesNo = (yes: string, no: string) => (value: unknown) => (value === 'N' ? no : yes);
+/** 비밀글 정책 세 값(ADR-0040 결정 7)의 화면 이름. 어휘는 생성 스키마의 enum 이다. */
+const PRIVATE_POST_POLICY_LABELS: Readonly<Record<PrivatePostPolicy, string>> = {
+  NONE: '없음',
+  OPTIONAL: '선택',
+  REQUIRED: '필수',
+};
+/** 선택 칸의 항목 — 값마다 무엇이 달라지는지 함께 말한다. */
+const PRIVATE_POST_POLICY_OPTIONS: Readonly<Record<PrivatePostPolicy, string>> = {
+  NONE: '없음(작성 화면에 선택 없음)',
+  OPTIONAL: '선택(글쓴이가 고름)',
+  REQUIRED: '필수(늘 비밀글로 저장)',
+};
+const PRIVATE_POST_POLICIES = BoardMasterUpdateRequestSchema.shape.prvtPstPlcyCd.unwrap().options;
+const toPrivatePostPolicy = (value: unknown): PrivatePostPolicy =>
+  (PRIVATE_POST_POLICIES as readonly unknown[]).includes(value) ? value as PrivatePostPolicy : 'NONE';
 const FIELDS: readonly { key: FieldKey; label: string; format: (value: unknown) => string; impact?: (value: unknown) => string | null }[] = [
   { key: 'bbsTtl', label: '게시판 명칭', format: (value) => String(value ?? '') },
   { key: 'bbsExpln', label: '게시판 소개', format: (value) => (value ? String(value) : '없음') },
@@ -60,7 +78,52 @@ const FIELDS: readonly { key: FieldKey; label: string; format: (value: unknown) 
   { key: 'fileAtchPsbltyYn', label: '파일 첨부 허용', format: yesNo('허용', '허용 안 함'), impact: (value) => (value === 'N' ? '새 첨부만 막습니다. 이미 붙은 파일은 그대로입니다.' : null) },
   { key: 'atchPsbltyFileQty', label: '첨부 파일 수', format: (value) => (Number(value) === 0 ? '상한 없음' : `${Number(value)}개`) },
   { key: 'atchPsbltyFileSz', label: '파일당 크기', format: (value) => (Number(value) > 0 ? `${(Number(value) / BYTES_PER_MB).toLocaleString()}MB` : '전역 상한') },
+  // [2026-10-23 ADR-0040 결정 3·6] 예약 게시는 새 미래 시작일을 받을지만 정한다 — 이미 있는 글의 가시성은 바뀌지 않는다.
+  //   이름은 서버 변경 이력의 항목명('예약 게시')과 같다.
+  {
+    key: 'rsvtPstgPsbltyYn', label: '예약 게시', format: yesNo('받음', '받지 않음'),
+    impact: (value) => (value === 'N'
+      ? '새 미래 시작일만 막습니다. 이미 예약된 글은 시작일에 공개됩니다.'
+      : '새 글에 오늘보다 뒤의 시작일을 받습니다. 그 글은 시작일까지 작성자와 게시판 관리자에게만 보입니다.'),
+  },
+  // [2026-10-23 ADR-0040 결정 5·6] 상단 고정 설정은 새 고정만 정한다 — 끄거나 상한을 낮춰도 이미 고정된 글은 종료일까지 그대로다.
+  //   이름은 서버 변경 이력의 항목명('상단 고정 허용'·'상단 고정 상한'·'상단 고정 기본 일수')과 같다.
+  {
+    key: 'upendFixPsbltyYn', label: '상단 고정 허용', format: yesNo('허용', '허용 안 함'),
+    impact: (value) => (value === 'N'
+      ? '새 고정만 막습니다. 고정 중인 글은 고정 종료일까지 위에 남고 해제할 수 있습니다.'
+      : '운영 화면 게시물 탭에서 글을 상단에 고정할 수 있습니다(게시글 상단 고정 권한 필요).'),
+  },
+  {
+    key: 'upendFixUplmtNocs', label: '상단 고정 상한', format: (value) => `${Number(value).toLocaleString()}건`,
+    impact: () => '새 고정이 이 상한을 따릅니다. 줄여도 이미 고정된 글은 풀리지 않습니다.',
+  },
+  {
+    key: 'upendFixBscDayCnt', label: '상단 고정 기본 일수', format: (value) => `${Number(value).toLocaleString()}일`,
+    impact: () => '고정 종료일을 비우고 고정할 때의 기간입니다. 이미 고정된 글의 종료일은 바뀌지 않습니다.',
+  },
+  // [2026-10-23 ADR-0040 결정 6·7] 비밀글 정책은 앞으로 저장하는 글에만, 추천 받기는 새 추천에만 적용된다 — 이미 있는 비밀글은 계속
+  //   보호되고 쌓인 추천 수는 그대로다. 이름은 서버 변경 이력의 항목명('비밀글 정책'·'추천 받기')과 같다.
+  {
+    key: 'prvtPstPlcyCd', label: '비밀글 정책', format: (value) => PRIVATE_POST_POLICY_LABELS[toPrivatePostPolicy(value)],
+    impact: (value) => {
+      const policy = toPrivatePostPolicy(value);
+      if (policy === 'REQUIRED') return '앞으로 저장하는 글(새 글과 고친 글)은 늘 비밀글이 됩니다. 이미 있는 글은 고칠 때까지 그대로입니다.';
+      if (policy === 'OPTIONAL') return '작성 화면에 비밀글 선택이 생깁니다. 이미 있는 비밀글은 계속 보호됩니다.';
+      return '작성 화면에 비밀글 선택이 없습니다. 이미 있는 비밀글은 계속 보호됩니다.';
+    },
+  },
+  {
+    key: 'rcmdtnUseYn', label: '추천 받기', format: yesNo('받음', '받지 않음'),
+    impact: (value) => (value === 'N' ? '새 추천만 막습니다. 쌓인 추천 수는 그대로이고, 각자 자기 추천은 거둘 수 있습니다.' : null),
+  },
 ];
+
+// [2026-10-23 ADR-0040 결정 5] 상단 고정 상한·기본 일수의 범위는 생성 스키마(서버 @Min·@Max)에서 온다 — 화면 상수를 두지 않는다.
+const PIN_LIMIT_GENERATED = BoardMasterUpdateRequestSchema.shape.upendFixUplmtNocs.unwrap();
+const PIN_DAYS_GENERATED = BoardMasterUpdateRequestSchema.shape.upendFixBscDayCnt.unwrap();
+const PIN_LIMIT_RANGE = generatedRange(PIN_LIMIT_GENERATED);
+const PIN_DAYS_RANGE = generatedRange(PIN_DAYS_GENERATED);
 
 const settingsSchema = BoardMasterUpdateRequestSchema.pick({ bbsTtl: true, bbsExpln: true }).extend({
   bbsTtl: BoardMasterUpdateRequestSchema.shape.bbsTtl.trim().min(1, '게시판 명칭을 입력해 주세요.'),
@@ -73,6 +136,8 @@ const settingsSchema = BoardMasterUpdateRequestSchema.pick({ bbsTtl: true, bbsEx
   atchPsbltyFileSzMb: z.number({ message: '파일당 크기를 숫자로 입력해 주세요.' })
     .min(0, '파일당 크기는 0 이상이어야 합니다.')
     .max(SERVER_MAX_FILE_SIZE_MB, `서버는 파일 하나당 ${SERVER_MAX_FILE_SIZE_MB}MB 까지 받습니다.`),
+  upendFixUplmtNocs: pinCountSchema({ subject: '상단 고정 상한은', object: '상단 고정 상한을' }, '건', PIN_LIMIT_GENERATED),
+  upendFixBscDayCnt: pinCountSchema({ subject: '상단 고정 기본 일수는', object: '상단 고정 기본 일수를' }, '일', PIN_DAYS_GENERATED),
 });
 
 const settingsLabels = {
@@ -80,6 +145,8 @@ const settingsLabels = {
   bbsExpln: '게시판 소개',
   atchPsbltyFileQty: '첨부 파일 수',
   atchPsbltyFileSzMb: '파일당 크기(MB)',
+  upendFixUplmtNocs: '상단 고정 상한',
+  upendFixBscDayCnt: '상단 고정 기본 일수',
 };
 
 function baselineOf(detail: BoardMasterDetail): Record<FieldKey, string | number> {
@@ -93,6 +160,15 @@ function baselineOf(detail: BoardMasterDetail): Record<FieldKey, string | number
     atchPsbltyFileQty: detail.atchPsbltyFileQty,
     // 비어 있는 옛 게시판은 0(전역 상한)과 같은 뜻이다. 다른 값으로 채우면 저장할 때 설정이 조용히 바뀐다.
     atchPsbltyFileSz: detail.atchPsbltyFileSz ?? 0,
+    // NOT NULL DEFAULT 'N' 컬럼이라 응답에 늘 있다(D6 기존 게시판 기본값은 받지 않음). 보이는 값과 저장 요청이 같은 판정을 쓰게 Y 만 받음이다.
+    rsvtPstgPsbltyYn: detail.rsvtPstgPsbltyYn === 'Y' ? 'Y' : 'N',
+    // [2026-10-23 ADR-0040 결정 5·6] 세 값도 NOT NULL DEFAULT('N'·5·30) 컬럼이라 응답에 늘 있다 — 서버 값을 그대로 둔다.
+    upendFixPsbltyYn: detail.upendFixPsbltyYn === 'Y' ? 'Y' : 'N',
+    upendFixUplmtNocs: detail.upendFixUplmtNocs,
+    upendFixBscDayCnt: detail.upendFixBscDayCnt,
+    // [2026-10-23 ADR-0040 결정 6·7] 두 값도 NOT NULL DEFAULT('NONE'·'Y') 컬럼이라 응답에 늘 있다. 보이는 값과 저장 요청이 같은 판정을 쓴다.
+    prvtPstPlcyCd: toPrivatePostPolicy(detail.prvtPstPlcyCd),
+    rcmdtnUseYn: detail.rcmdtnUseYn === 'N' ? 'N' : 'Y',
   };
 }
 
@@ -122,6 +198,8 @@ export function BoardSettingsTab({ detail, onReload }: {
   const changes = FIELDS.filter(({ key }) => key in draft && draft[key] !== baseline[key]);
   useUnsavedChanges({ dirty: changes.length > 0, pending: saving });
   const usage = boardUsageNotes(detail.bbsId, detail.designations);
+  // 비밀글 정책의 경고는 화면에 보이는 값(바꾸는 중이면 그 값)으로 계산한다 — FAQ 지정 + 필수, 질의응답 게시판 + 없음 아님(결정 7).
+  const policyWarnings = privatePostPolicyWarnings(detail.bbsId, detail.designations, String(value('prvtPstPlcyCd')));
 
   const edit = (key: FieldKey, next: string | number) => {
     setDraft((current) => ({ ...current, [key]: next }));
@@ -134,6 +212,8 @@ export function BoardSettingsTab({ detail, onReload }: {
       bbsExpln: String(value('bbsExpln') ?? ''),
       atchPsbltyFileQty: Number(value('atchPsbltyFileQty')),
       atchPsbltyFileSzMb: Number(value('atchPsbltyFileSz')) / BYTES_PER_MB,
+      upendFixUplmtNocs: Number(value('upendFixUplmtNocs')),
+      upendFixBscDayCnt: Number(value('upendFixBscDayCnt')),
     });
     if (validated) setReviewOpen(true);
   };
@@ -146,6 +226,8 @@ export function BoardSettingsTab({ detail, onReload }: {
       bbsExpln: String(value('bbsExpln') ?? ''),
       atchPsbltyFileQty: Number(value('atchPsbltyFileQty')),
       atchPsbltyFileSzMb: Number(value('atchPsbltyFileSz')) / BYTES_PER_MB,
+      upendFixUplmtNocs: Number(value('upendFixUplmtNocs')),
+      upendFixBscDayCnt: Number(value('upendFixBscDayCnt')),
     });
     if (!validated) {
       setReviewOpen(false);
@@ -161,6 +243,12 @@ export function BoardSettingsTab({ detail, onReload }: {
       useYn: value('useYn') === 'N' ? 'N' : 'Y',
       ansYn: value('ansYn') === 'N' ? 'N' : 'Y',
       stsfdgYn: value('stsfdgYn') === 'N' ? 'N' : 'Y',
+      rsvtPstgPsbltyYn: value('rsvtPstgPsbltyYn') === 'Y' ? 'Y' : 'N',
+      upendFixPsbltyYn: value('upendFixPsbltyYn') === 'Y' ? 'Y' : 'N',
+      upendFixUplmtNocs: validated.upendFixUplmtNocs,
+      upendFixBscDayCnt: validated.upendFixBscDayCnt,
+      prvtPstPlcyCd: toPrivatePostPolicy(value('prvtPstPlcyCd')),
+      rcmdtnUseYn: value('rcmdtnUseYn') === 'N' ? 'N' : 'Y',
       version: detail.version,
     };
     pendingRef.current = true;
@@ -228,7 +316,7 @@ export function BoardSettingsTab({ detail, onReload }: {
     }
   };
 
-  const switchRow = (key: 'useYn' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn', label: string, hint?: string) => (
+  const switchRow = (key: 'useYn' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'rsvtPstgPsbltyYn' | 'upendFixPsbltyYn' | 'rcmdtnUseYn', label: string, hint?: string) => (
     <div className="flex items-center justify-between gap-3">
       <div className="space-y-0.5">
         <label htmlFor={`board-settings-${key}`} className="cursor-pointer text-[length:var(--font-size-body)] text-foreground">{label}</label>
@@ -308,9 +396,90 @@ export function BoardSettingsTab({ detail, onReload }: {
           </dl>
         </fieldset>
 
+        {/*
+          [2026-10-23 ADR-0040 결정 3·5·6, §5.5] 게시·고정 설정. 예약 게시는 새 미래 시작일만, 상단 고정 허용·상한은 새 고정만 막거나
+          연다 — 이미 있는 글의 가시성·고정은 설정으로 바뀌지 않는다. 켤 때 기록용 미래 시작일 글이 전환 진단 대상이라는 사실을 확인 표
+          아래에서 알린다. 상한·기본 일수는 고정을 받지 않는 동안 읽기 전용이다(값은 그대로 저장된다).
+        */}
         <fieldset className="space-y-[var(--form-gap)] rounded-md border border-border p-4">
-          <legend className="px-1 text-[length:var(--font-size-body)] font-semibold text-foreground">참여·첨부</legend>
-          <p className="text-xs text-muted-foreground">끄면 새 입력만 막고 이미 있는 댓글·평가·첨부는 그대로 둡니다.</p>
+          <legend className="px-1 text-[length:var(--font-size-body)] font-semibold text-foreground">게시·고정</legend>
+          {switchRow('rsvtPstgPsbltyYn', '예약 게시',
+            '켜면 새 글에 오늘보다 뒤의 시작일을 받습니다. 그 글은 시작일까지 작성자와 게시판 관리자에게만 보입니다. 기존 게시판 기본값: 받지 않음.')}
+          {switchRow('upendFixPsbltyYn', '상단 고정 허용',
+            '켜면 운영 화면에서 글을 게시판 목록 맨 위에 고정할 수 있습니다. 끄면 새 고정만 막습니다. 기존 게시판 기본값: 허용 안 함.')}
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+            <div className="space-y-1.5">
+              <Label htmlFor="board-settings-pin-limit">상단 고정 상한(건)</Label>
+              <Input
+                id="board-settings-pin-limit"
+                type="number"
+                min={PIN_LIMIT_RANGE.min ?? undefined}
+                max={PIN_LIMIT_RANGE.max ?? undefined}
+                {...validation.fieldProps('upendFixUplmtNocs')}
+                aria-describedby={[validation.fieldProps('upendFixUplmtNocs')['aria-describedby'], 'board-settings-pin-limit-hint'].filter(Boolean).join(' ')}
+                value={Number.isNaN(Number(value('upendFixUplmtNocs'))) ? '' : String(value('upendFixUplmtNocs') ?? '')}
+                readOnly={value('upendFixPsbltyYn') !== 'Y'}
+                disabled={!canUpdate || saving}
+                onChange={(event) => { validation.clearError('upendFixUplmtNocs'); edit('upendFixUplmtNocs', event.target.value === '' ? Number.NaN : Number(event.target.value)); }}
+              />
+              <p id="board-settings-pin-limit-hint" className="text-xs text-muted-foreground">
+                고정 중인 글을 이 수까지 둡니다(게시 기간 밖의 글도 셉니다). 기존 게시판 기본값: 5건.
+              </p>
+              {validation.errors.upendFixUplmtNocs ? <p {...validation.messageProps('upendFixUplmtNocs')} className="text-xs font-bold text-destructive-emphasis" /> : null}
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="board-settings-pin-days">상단 고정 기본 일수(일)</Label>
+              <Input
+                id="board-settings-pin-days"
+                type="number"
+                min={PIN_DAYS_RANGE.min ?? undefined}
+                max={PIN_DAYS_RANGE.max ?? undefined}
+                {...validation.fieldProps('upendFixBscDayCnt')}
+                aria-describedby={[validation.fieldProps('upendFixBscDayCnt')['aria-describedby'], 'board-settings-pin-days-hint'].filter(Boolean).join(' ')}
+                value={Number.isNaN(Number(value('upendFixBscDayCnt'))) ? '' : String(value('upendFixBscDayCnt') ?? '')}
+                readOnly={value('upendFixPsbltyYn') !== 'Y'}
+                disabled={!canUpdate || saving}
+                onChange={(event) => { validation.clearError('upendFixBscDayCnt'); edit('upendFixBscDayCnt', event.target.value === '' ? Number.NaN : Number(event.target.value)); }}
+              />
+              <p id="board-settings-pin-days-hint" className="text-xs text-muted-foreground">
+                고정 종료일을 비우고 고정하면 오늘부터 이 일수 뒤까지 고정합니다. 기존 게시판 기본값: 30일.
+              </p>
+              {validation.errors.upendFixBscDayCnt ? <p {...validation.messageProps('upendFixBscDayCnt')} className="text-xs font-bold text-destructive-emphasis" /> : null}
+            </div>
+          </div>
+        </fieldset>
+
+        {/*
+          [2026-10-23 ADR-0040 결정 6·7, §5.5] 비밀글 정책과 추천 받기를 '참여·첨부' 와 같은 묶음에 둔다(작성·참여). 비밀글 정책은 앞으로
+          저장하는 글에만, 추천 받기는 새 추천에만 적용된다. FAQ 지정·질의응답 게시판과 맞지 않는 정책은 칸 아래에서 바로 알린다.
+        */}
+        <fieldset className="space-y-[var(--form-gap)] rounded-md border border-border p-4">
+          <legend className="px-1 text-[length:var(--font-size-body)] font-semibold text-foreground">작성·참여·첨부</legend>
+          <p className="text-xs text-muted-foreground">끄면 새 입력만 막고 이미 있는 댓글·평가·첨부·추천은 그대로 둡니다.</p>
+          <div className="space-y-1.5">
+            <Label htmlFor="board-settings-private-policy">비밀글 정책</Label>
+            <select
+              id="board-settings-private-policy"
+              value={toPrivatePostPolicy(value('prvtPstPlcyCd'))}
+              disabled={!canUpdate || saving}
+              aria-describedby={['board-settings-private-policy-hint', policyWarnings.length > 0 ? 'board-settings-private-policy-warning' : null]
+                .filter(Boolean).join(' ')}
+              onChange={(event) => edit('prvtPstPlcyCd', toPrivatePostPolicy(event.target.value))}
+              className="h-[var(--control-h)] w-full rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
+            >
+              {PRIVATE_POST_POLICIES.map((policy) => <option key={policy} value={policy}>{PRIVATE_POST_POLICY_OPTIONS[policy]}</option>)}
+            </select>
+            <p id="board-settings-private-policy-hint" className="text-xs text-muted-foreground">
+              정책은 앞으로 저장하는 글에 적용되고, 이미 있는 비밀글은 정책을 바꿔도 계속 보호됩니다. 기존 게시판 기본값: 없음.
+            </p>
+            {policyWarnings.length > 0 && (
+              <div id="board-settings-private-policy-warning" role="note" className="rounded-md border border-warning/40 bg-warning/10 p-2 text-xs text-foreground">
+                <ul className="list-disc space-y-1 pl-5">{policyWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+              </div>
+            )}
+          </div>
+          {switchRow('rcmdtnUseYn', '추천 받기',
+            '끄면 새 추천만 막습니다. 쌓인 추천 수는 그대로이고 각자 자기 추천은 거둘 수 있습니다. 기존 게시판 기본값: 받음.')}
           {switchRow('ansYn', '댓글 받기')}
           {switchRow('stsfdgYn', '만족도 평가 받기')}
           {switchRow('fileAtchPsbltyYn', '파일 첨부 허용')}
@@ -424,6 +593,18 @@ export function BoardSettingsTab({ detail, onReload }: {
               </tbody>
             </table>
           </div>
+          {draft.rsvtPstgPsbltyYn === 'Y' && baseline.rsvtPstgPsbltyYn !== 'Y' && (
+            <p role="note" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-[length:var(--font-size-body)] text-foreground">
+              예약 게시를 켜도 이미 있는 글은 바뀌지 않습니다. 예전에 기록용으로 남긴 미래 시작일 글은 그 시작일까지 이미 숨겨져 있습니다
+              (전환 진단 대상). 그런 글을 바로 공개하려면 게시물 탭의 일정 바꾸기로 시작일을 당기세요.
+            </p>
+          )}
+          {'prvtPstPlcyCd' in draft && draft.prvtPstPlcyCd !== baseline.prvtPstPlcyCd && policyWarnings.length > 0 && (
+            <div role="note" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-[length:var(--font-size-body)]">
+              <p className="font-medium text-foreground">바꾸는 비밀글 정책이 이 게시판의 쓰임과 맞지 않을 수 있습니다.</p>
+              <ul className="mt-1 list-disc pl-5 text-muted-foreground">{policyWarnings.map((warning) => <li key={warning}>{warning}</li>)}</ul>
+            </div>
+          )}
           {draft.useYn === 'N' && usage.length > 0 && (
             <div role="note" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-[length:var(--font-size-body)]">
               <p className="font-medium text-foreground">이 게시판을 앱이 직접 씁니다. 사용 안 함으로 바꾸면 아래에서 보이지 않습니다.</p>

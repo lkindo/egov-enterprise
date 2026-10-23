@@ -36,7 +36,11 @@ public class BoardApiController {
     private final BoardService boardService;
 
     @Operation(summary = "게시글 목록 조회", description = "특정 게시판의 게시글 목록을 페이징하여 조회합니다. "
-            + "사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL) 보유자만 조회하고, 그 밖에는 없는 게시판과 같은 404 입니다.")
+            + "사용 안 함 게시판은 조회 대행 권한(BOARD_READ_ALL) 보유자만 조회하고, 그 밖에는 없는 게시판과 같은 404 입니다. "
+            + "게시 기간 밖의 글(시작일 전 예약 글·종료일이 지난 글)은 작성자와 조회 대행 권한 보유자에게만 보이며, 각 글의 "
+            + "postingStatus 는 서버가 오늘(Asia/Seoul) 기준으로 판정합니다. 기본 정렬과 orderBy=date 는 지금 상단 고정 중인 글(pinned)을 "
+            + "먼저 두고, 그다음 게시 기준일(작성일자와 게시 시작일 중 늦은 값) 내림차순입니다. orderBy=views·comments 는 고정 우선을 "
+            + "두지 않습니다.")
     @GetMapping("/{bbsId}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#getPosts')")
     public ResponseEntity<ApiResponse<PageResponse<BoardDto>>> getPosts(
@@ -50,10 +54,18 @@ public class BoardApiController {
             @RequestParam(required = false) String qnaCategory,
             @Parameter(description = "기간 기준. 비우거나 CREATED 면 작성일, EVENT 면 행사일(없으면 작성일)", example = "EVENT")
             @RequestParam(required = false) String dateBasis,
+            @Parameter(description = "게시 상태(서버 기준일 판정). 비우면 전체이고, 그 밖의 값은 400 입니다. 일반 사용자에게는 "
+                    + "볼 수 있는 글 안에서만 좁혀집니다",
+                    schema = @io.swagger.v3.oas.annotations.media.Schema(allowableValues = { "SCHEDULED", "POSTING", "ENDED" }))
+            @RequestParam(required = false) String postingStatus,
+            @Parameter(description = "상단 고정 조건(서버 기준일 판정). true 면 지금 고정 중인 글, false 면 그 밖의 글이고 비우면 전체입니다. "
+                    + "일반 사용자에게는 볼 수 있는 글 안에서만 좁혀집니다")
+            @RequestParam(required = false) Boolean pinned,
             @PageableDefault(size = 10) Pageable pageable) {
         Page<BoardDto> result = boardService.getBoardPosts(
                 bbsId, searchCnd, searchWrd, orderBy, startDate, endDate,
-                qnaStatus, qnaCategory, dateBasis, pageable);
+                qnaStatus, qnaCategory, dateBasis, pageable,
+                nuri.business.service.board.dto.BoardPostListFilter.of(postingStatus, pinned));
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(result)));
     }
 
@@ -148,7 +160,10 @@ public class BoardApiController {
         return ResponseEntity.ok(ApiResponse.success(boardService.getPostDetail(bbsId, pstSn, countView)));
     }
 
-    @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다.")
+    @Operation(summary = "게시글 등록", description = "새로운 게시글을 등록합니다. 첨부를 함께 올리려면 /{bbsId}/posts/with-files 를 사용합니다. "
+            + "게시 기간은 8자리(yyyyMMdd)이며 종료일은 시작일보다 빠를 수 없습니다(400). 예약 게시를 받지 않는 게시판에서 오늘보다 뒤의 "
+            + "시작일은 400 입니다. 시작일이 오늘보다 뒤인 글은 그날까지 작성자와 조회 대행 권한자에게만 보입니다. "
+            + "비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.")
     @PostMapping("/posts")
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPost')")
@@ -167,7 +182,8 @@ public class BoardApiController {
      * 첨부를 함께 보내는 쓰기는 등록·수정 모두 경로 끝이 {@code /with-files} 다. JSON 등록만 {@code bbsId} 를
      * 본문으로 받는 비대칭이 남지만, 소비자 이행 비용 때문에 이번 범위에서 정리하지 않는다.
      */
-    @Operation(summary = "게시글 등록(첨부 포함)", description = "게시글과 첨부 파일을 함께 등록합니다. 경로와 본문의 게시판이 다르면 400 입니다.")
+    @Operation(summary = "게시글 등록(첨부 포함)", description = "게시글과 첨부 파일을 함께 등록합니다. 경로와 본문의 게시판이 다르면 400 입니다. "
+            + "비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.")
     @PostMapping(value = "/{bbsId}/posts/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#createPostWithFiles')")
@@ -184,7 +200,11 @@ public class BoardApiController {
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(pstSn));
     }
 
-    @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다.")
+    @Operation(summary = "게시글 수정", description = "기존 게시글 정보를 수정합니다. 첨부를 함께 올리려면 같은 경로에 /with-files 를 붙입니다. "
+            + "상세 조회에서 받은 version 을 함께 보냅니다(없으면 400, 다르면 409). 게시 기간은 보내지 않거나 비우면 지금 값을 유지합니다. "
+            + "게시가 시작된 글의 시작일은 게시글 전체 수정 권한(BOARD_UPDATE_ALL)이 있어야 바꿉니다(403). 예약 게시를 받지 않는 게시판의 "
+            + "새 미래 시작일과, 저장값과 합쳐 종료일이 시작일보다 빠른 기간은 400 입니다. 비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 "
+            + "관계없이 비밀글로 저장합니다(공개 상태로 남아 있던 글도 고치면 비밀글이 됩니다).")
     @PutMapping("/{bbsId}/posts/{pstSn}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#updatePost')")
     public ResponseEntity<ApiResponse<Void>> updatePost(
@@ -204,7 +224,8 @@ public class BoardApiController {
      * 생성기(codegen-zod)가 "must declare exactly one requestBody content type" 로 fail-closed 한다.
      * 그래서 첨부 동반 쓰기는 경로 끝의 {@code /with-files} 로 구분한다(등록·수정 대칭).
      */
-    @Operation(summary = "게시글 수정(첨부 포함)", description = "게시글 정보와 새 첨부 파일을 함께 수정합니다. 경로와 본문의 게시판이 다르면 400 입니다.")
+    @Operation(summary = "게시글 수정(첨부 포함)", description = "게시글 정보와 새 첨부 파일을 함께 수정합니다. 경로와 본문의 게시판이 다르면 400 입니다. "
+            + "비밀글 정책이 REQUIRED 인 게시판은 scrtYn 과 관계없이 비밀글로 저장합니다.")
     @PutMapping(value = "/{bbsId}/posts/{pstSn}/with-files", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#updatePostWithFiles')")
     public ResponseEntity<ApiResponse<Void>> updatePostWithFiles(
@@ -246,7 +267,7 @@ public class BoardApiController {
 
     @Operation(summary = "게시글 좋아요(추천)",
             description = "게시글을 추천하고 추천수를 돌려줍니다. 글을 읽을 수 있는 사용자만 한 번 추천할 수 있으며, "
-                    + "이미 추천했으면 409 입니다.")
+                    + "이미 추천했으면 409 입니다. 추천을 받지 않는 게시판은 400 입니다(자기 추천 취소는 받습니다).")
     @PatchMapping("/{bbsId}/posts/{pstSn}/like")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#likePost')")
     public ResponseEntity<ApiResponse<Integer>> likePost(
@@ -254,6 +275,19 @@ public class BoardApiController {
             @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
         // 열람 가드·1인 1회는 서비스가 집행한다(2026-09-26 DIP I6 ④).
         return ResponseEntity.ok(ApiResponse.success(boardService.incrementLike(bbsId, pstSn)));
+    }
+
+    @Operation(summary = "게시글 추천 취소",
+            description = "내 추천 이력이 있으면 지우고 추천수를 하나 줄여 새 추천수를 돌려줍니다. 내 추천이 없으면 아무것도 바꾸지 않고 "
+                    + "지금 추천수를 돌려줍니다. 게시판이 추천을 받지 않아도 내 추천은 취소할 수 있습니다. 다른 사람의 추천이나 이력이 없는 "
+                    + "기존 추천수는 줄이지 않습니다. 추천과 같이 글을 읽을 수 있는 사용자만 부릅니다.")
+    @DeleteMapping("/{bbsId}/posts/{pstSn}/like")
+    @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#cancelLikePost')")
+    public ResponseEntity<ApiResponse<Integer>> cancelLikePost(
+            @Parameter(description = "게시판 ID", example = "BBS_000000000001") @PathVariable String bbsId,
+            @Parameter(description = "게시글 ID", example = "1") @PathVariable Long pstSn) {
+        // [2026-10-23 ADR-0040 결정 6] 열람 가드와 '내 추천만' 은 서비스가 주체 esntlId 로 집행한다.
+        return ResponseEntity.ok(ApiResponse.success(boardService.cancelLike(bbsId, pstSn)));
     }
 
     /**

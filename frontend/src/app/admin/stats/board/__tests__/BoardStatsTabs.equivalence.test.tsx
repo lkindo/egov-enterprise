@@ -141,7 +141,7 @@ describe('통계 허브 게시물·자료 이용 탭', () => {
   describe('제목과 조회 범위', () => {
     it.each([
       ['게시물', BoardStatsPage, '/admin/stats/board', '콘텐츠 지표 분석', '콘텐츠 지표',
-        [URL.bbs], 'stats_content_stats', PERIOD_EMPTY, '일자별 등록 게시글 수'],
+        [URL.bbs], 'stats_content_stats', PERIOD_EMPTY, '일자별 등록 건수(작성일 기준) · 예약·비밀·게시 종료 글과 사용 안 함 게시판 글 포함'],
       ['자료 이용', DataUsageStatsPage, '/admin/stats/data-usage', '자료이용현황 분석', '자료이용현황',
         [URL.dataUsage], 'stats_data_usage', UNINSTRUMENTED_EMPTY, '수집되지 않는다'],
     ])('%s 화면은 A7 셸의 h1·현재 항목·그 탭의 조회·내보내기 파일명·빈 결과 문구·집계 기준을 지킨다',
@@ -179,7 +179,8 @@ describe('통계 허브 게시물·자료 이용 탭', () => {
       await waitFor(() => expect(exported.props?.data).toEqual(points(['2026-10-01', 1], ['2026-10-02', 0], ['2026-10-03', 3])));
       expect(summaryValue('기간 합계')).toBe('4');
       expect(summaryValue('가장 많은 날')).toBe('2026-10-03 (3건)');
-      expect(screen.getByRole('columnheader', { name: '콘텐츠 지표 건수' })).toBeInTheDocument();
+      // [2026-10-23 ADR-0040 결정 3] 계열 이름은 무엇을 센 값인지 말한다(탭 이름 '콘텐츠 지표' 는 그대로).
+      expect(screen.getByRole('columnheader', { name: '등록(작성일 기준) 건수' })).toBeInTheDocument();
       expect(screen.queryByText(PERIOD_EMPTY)).not.toBeInTheDocument();
       expect(screen.queryByText('미수집')).not.toBeInTheDocument();
     });

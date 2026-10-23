@@ -37,7 +37,7 @@
     {
       "to": "board",
       "via": "port:PostStatisticsContributor",
-      "reason": "게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 신규 게시글 카드가 사라집니다.",
+      "reason": "게시판 기능이 없으면 업무 홈의 실시간 상태 구역에서 오늘 등록된 글 카드가 사라집니다.",
       "anchors": [
         {
           "path": "business-app/src/main/java/nuri/business/service/dashboard/RealTimeDashboardService.java",

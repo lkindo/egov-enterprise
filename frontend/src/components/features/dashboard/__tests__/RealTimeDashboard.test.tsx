@@ -82,15 +82,15 @@ describe('RealTimeDashboard', () => {
     render(<RealTimeDashboard />);
     const statsHandler = handlers.get('/topic/dashboard/stats')!;
     // 첫 프레임 전에는 알 수 없으므로 카드를 '—' 로 둔다.
-    expect(screen.getByText('신규 게시글')).toBeInTheDocument();
+    expect(screen.getByText('오늘 등록된 글')).toBeInTheDocument();
 
     act(() => statsHandler({ body: JSON.stringify({
       activeUsers: 7, visitsPerMinute: 3, newPosts: 0, newPostsAvailable: true, newPostsProvided: false,
     }) }));
-    expect(screen.queryByText('신규 게시글')).not.toBeInTheDocument();
+    expect(screen.queryByText('오늘 등록된 글')).not.toBeInTheDocument();
 
     act(() => statsHandler({ body: JSON.stringify({ activeUsers: 7, visitsPerMinute: 3, newPosts: 2 }) }));
-    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('2');
+    expect(screen.getByText('오늘 등록된 글').previousElementSibling).toHaveTextContent('2');
   });
 
   it('서버 초기화 전후의 새 연결 횟수를 누적으로 설명하지 않는다', () => {
@@ -146,14 +146,14 @@ describe('RealTimeDashboard', () => {
     const counts = { activeUsers: 7, visitsPerMinute: 3, newPosts: 0 };
 
     act(() => statsHandler({ body: JSON.stringify({ ...counts, newPostsAvailable: false }) }));
-    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('—');
+    expect(screen.getByText('오늘 등록된 글').previousElementSibling).toHaveTextContent('—');
     expect(screen.getByText('게시글 수 확인 불가')).toBeInTheDocument();
     expect(screen.getByText('실시간 연결 세션(이 서버)').previousElementSibling).toHaveTextContent('7');
     // 집계 실패는 해당 카드가 말한다. 연결 상태 문구(live region)는 연결만 말한다.
     expect(screen.getByRole('status')).toHaveTextContent(/^실시간 연결됨$/);
 
     act(() => statsHandler({ body: JSON.stringify({ ...counts, newPostsAvailable: true }) }));
-    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('0');
+    expect(screen.getByText('오늘 등록된 글').previousElementSibling).toHaveTextContent('0');
     expect(screen.queryByText('게시글 수 확인 불가')).not.toBeInTheDocument();
     expect(screen.getByRole('status')).toHaveTextContent('실시간 연결됨');
   });
@@ -166,7 +166,7 @@ describe('RealTimeDashboard', () => {
     act(() => statsHandler({ body: JSON.stringify(counts) }));
     act(() => statsHandler({ body: JSON.stringify({ ...counts, newPosts: 0, newPostsAvailable: 'false' }) }));
 
-    expect(screen.getByText('신규 게시글').previousElementSibling).toHaveTextContent('4');
+    expect(screen.getByText('오늘 등록된 글').previousElementSibling).toHaveTextContent('4');
     expect(screen.getByRole('status')).toHaveTextContent('실시간 연결됨');
   });
 });

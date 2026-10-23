@@ -7,6 +7,7 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
+import java.time.Clock;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
@@ -37,6 +38,20 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     private final JdbcTemplate jdbcTemplate;
     private final List<AttachmentSource> sources;
     private final CommunityBoardAccessPort communityAccess;
+
+    /** 게시 기간 판정의 시간대 — 본문 판정(BoardPolicySupport)과 같은 Asia/Seoul 이다. */
+    private static final ZoneId SERVICE_ZONE = ZoneId.of("Asia/Seoul");
+
+    /**
+     * 게시 기간 판정의 시계(ADR-0040 결정 3). 생성자 인자가 아니다 — Clock 빈이 없다. 본문·첨부 대조 시험이 같은 고정 시계를
+     * 두 판정에 건다.
+     */
+    private Clock clock = Clock.system(SERVICE_ZONE);
+
+    /** 날짜 경계 대조 시험에서 본문 판정과 같은 고정 시계를 건다. */
+    void useClock(Clock clock) {
+        this.clock = java.util.Objects.requireNonNull(clock, "clock");
+    }
 
     public JdbcAttachmentReferenceResolver(
             JdbcTemplate jdbcTemplate,
@@ -177,19 +192,24 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
      * 운영자에게 여는 것과 같다. 글의 논리 삭제는 면제하지 않는다(그 관리자 경로는 {@code FILE_READ_ALL} 이다).
      * 사용 안 함 게시판에서는 작성자의 소유 근거도 닫는다 — 이용자에게 읽기·쓰기를 모두 닫고 작성자 본인의 정리도 허용하지
      * 않는다(D1 기각 ②). 소유 근거는 첨부 열람과 삭제(FileAccessPolicy) 양쪽의 근거다.
+     *
+     * <p>[2026-10-23 ADR-0040 결정 3] 게시 시작일 전인 예약 글도 조회 대행 권한 보유자에게만 공유 근거가 된다 — 본문이 예약 글을
+     * 작성자·조회 대행 권한자에게만 여는 것과 같다. 종료일 조건과 따로 둔 절이다. 소유 근거는 그대로라 작성자는 자기 예약 글의
+     * 첨부를 받는다(본문과 같다). 기준일은 이 요청에서 한 번 계산한다.
      */
     private SourceHit queryBoard(Long fileId, String loginId, String esntlId) {
-        String today = LocalDate.now(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.BASIC_ISO_DATE);
+        String today = LocalDate.ofInstant(clock.instant(), SERVICE_ZONE).format(DateTimeFormatter.BASIC_ISO_DATE);
         boolean readAll = nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL");
         var references = jdbcTemplate.query("""
-                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,b.use_yn AS post_use_yn,b.pst_end_ymd,
+                SELECT b.frst_rgtr_id,b.user_id,b.scrt_yn,b.use_yn AS post_use_yn,b.pst_bgng_ymd,b.pst_end_ymd,
                        m.bbs_id AS master_id,m.cmnty_sn,m.use_yn AS master_use_yn
                   FROM tb_bbs_item b LEFT JOIN tb_bbs_master m ON m.bbs_id=b.bbs_id
                  WHERE b.atch_file_sn=?
                 """, (rs,n) -> new BoardReference(rs.getString("frst_rgtr_id"),rs.getString("user_id"),
                     rs.getString("scrt_yn"),rs.getString("master_id"),rs.getObject("cmnty_sn",Long.class),
                     "Y".equals(rs.getString("post_use_yn")), "Y".equals(rs.getString("master_use_yn")),
-                    postingOpen(rs.getString("pst_end_ymd"), today)),fileId);
+                    postingOpen(rs.getString("pst_end_ymd"), today),
+                    postingStarted(rs.getString("pst_bgng_ymd"), today)),fileId);
         boolean shared=false, owner=false;
         for (var reference: references) {
             if (reference.masterId()==null) throw new org.springframework.dao.DataRetrievalFailureException("Referenced board master missing");
@@ -198,7 +218,9 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
                     || (communityAccess!=null && esntlId!=null && communityAccess.isApprovedMember(reference.communityId(),esntlId));
             if (communityAllowed) {
                 shared |= reference.postActive() && (reference.boardInUse() || readAll)
-                        && (reference.postingOpen() || readAll) && !"Y".equals(reference.secret());
+                        && (reference.postingOpen() || readAll)
+                        && (reference.postingStarted() || readAll)
+                        && !"Y".equals(reference.secret());
                 owner |= (reference.boardInUse() || readAll)
                         && ((loginId!=null && loginId.equals(reference.registrar())) || (esntlId!=null && esntlId.equals(reference.userId())));
             }
@@ -211,8 +233,13 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         return pstEndYmd == null || pstEndYmd.isEmpty() || pstEndYmd.compareTo(today) >= 0;
     }
 
+    /** 게시 시작일(yyyyMMdd)이 비었거나 기준일 이전·당일인가(시작일 전이면 예약 글). BoardPredicate 와 같은 사전순 규칙이다. */
+    private static boolean postingStarted(String pstBgngYmd, String today) {
+        return pstBgngYmd == null || pstBgngYmd.isEmpty() || pstBgngYmd.compareTo(today) <= 0;
+    }
+
     private record BoardReference(String registrar,String userId,String secret,String masterId,Long communityId,
-            boolean postActive, boolean boardInUse, boolean postingOpen) {}
+            boolean postActive, boolean boardInUse, boolean postingOpen, boolean postingStarted) {}
 
     /**
      * ScheduleService#getSchedule와 같은 열람 조건. core가 선택 기능의 엔티티에 의존하지 않도록

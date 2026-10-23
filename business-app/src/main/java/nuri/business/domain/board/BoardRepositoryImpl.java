@@ -63,7 +63,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                 QBoard.board.pstSn.eq(pstSn),
                                                 QBoard.board.useYn.eq("Y"),
                                                 BoardPredicate.notSecret(),
-                                                BoardPredicate.postingOpenOn(today),
+                                                // [2026-10-23 ADR-0040 결정 3] 목록과 같은 게시 기간(시작일·종료일) 술어다.
+                                                BoardPredicate.postingWithin(today),
                                                 QBoardMaster.boardMaster.useYn.eq("Y"))
                                 .fetchOne();
 
@@ -114,6 +115,11 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.evntDt,
                                                  QBoard.board.qnaSttsCd,
                                                  QBoard.board.qnaCatCd,
+                                                 // [2026-10-23 ADR-0040 결정 10] 수정 요청이 돌려보낼 게시글 버전.
+                                                 QBoard.board.version,
+                                                 // [ADR-0040 결정 5] 상단 고정 — 목록과 같이 서비스가 기준일로 판정한다.
+                                                 QBoard.board.upendFixYn,
+                                                 QBoard.board.upendFixEndYmd,
                                                  // [2026-08-29] cmnt_cnt 를 실제로 가져온다. 컬럼은 BoardEventListener 가
                                                  //   PostCommentCountChangedEvent 를 받아 adjustCmntCntAtomic 으로 유지하는데,
                                                  //   목록·상세 projection 이 둘 다 이 필드를 빼고 있어 화면의 '댓글 N' 이
@@ -149,16 +155,21 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 ? null
                                 : QBoardMaster.boardMaster.useYn.eq("Y");
 
-                OrderSpecifier<?> orderSpecifier = QBoard.board.sortOrdr.desc();
+                // [2026-10-23 ADR-0040 결정 4] 일반 정렬은 게시 기준일(작성일자와 게시 시작일 중 늦은 값) 순이다 — 정렬값이 없거나
+                //   'date'·모르는 값이면 그 순서이고, 'views'·'comments' 는 그 열을 먼저 본 뒤 같은 순서로 동률을 가른다(결정적 순서).
+                //   종전 기본은 작성 순번(sortOrdr), 'date' 는 작성일시였다.
+                OrderSpecifier<?>[] orderSpecifiers = BoardPredicate.postingOrder();
+                // [ADR-0040 결정 5, D-15] 게시판 목록은 기본·최신순(정렬값 없음·'date'·모르는 값)에서 고정 중인 글을 맨 앞에 둔다.
+                //   사용자가 고른 조회순·댓글순과 고정 우선을 끈 경로(통합 검색)는 그대로다. 고정 판정의 기준일은 서버 기준일이다.
+                boolean userChosenOrder = "views".equals(condition.getOrderBy()) || "comments".equals(condition.getOrderBy());
+                if (condition.isPinFirst() && !userChosenOrder && StringUtils.hasText(condition.getBaseYmd())) {
+                        orderSpecifiers = leading(BoardPredicate.pinFirstOrder(condition.getBaseYmd()), orderSpecifiers);
+                }
 
                 if (StringUtils.hasText(condition.getOrderBy())) {
                         switch (condition.getOrderBy()) {
                                 case "views":
-                                        orderSpecifier = QBoard.board.inqCnt.desc();
-                                        break;
- 
-                                case "date":
-                                        orderSpecifier = QBoard.board.crtDt.desc();        
+                                        orderSpecifiers = leading(QBoard.board.inqCnt.desc(), orderSpecifiers);
                                         break;
 
                                 // [2026-08-29] 화면의 정렬 선택지 '댓글순'(orderBy=comments)이 여기까지
@@ -167,11 +178,15 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 //   cmnt_cnt 는 BoardEventListener 가 실제로 유지하는 값이므로
                                 //   선택지를 걷는 대신 약속대로 정렬한다(views 축과 대칭).
                                 case "comments":
-                                        orderSpecifier = QBoard.board.cmntCnt.desc();
+                                        orderSpecifiers = leading(QBoard.board.cmntCnt.desc(), orderSpecifiers);
+                                        break;
+
+                                default:
+                                        // 'date'·'latest' 등은 게시 기준일 순 그대로다.
                                         break;
                         }
                 }
- 
+
                 List<BoardSearchResult> results = queryFactory
                                 .select(Projections.fields(BoardSearchResult.class,
                                                  QBoard.board.pstSn,
@@ -192,13 +207,18 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  //   받지 못해 작성자가 자기 종료 글을 목록에서 구분할 수 없었다.
                                                  QBoard.board.pstBgngYmd,
                                                  QBoard.board.pstEndYmd,
+                                                 // [2026-10-23 ADR-0040 결정 10] 운영 화면 빠른 편집이 돌려보낼 게시글 버전.
+                                                 QBoard.board.version,
+                                                 // [ADR-0040 결정 5] 상단 고정 — 서비스가 기준일로 '지금 고정 중' 을 판정한다.
+                                                 QBoard.board.upendFixYn,
+                                                 QBoard.board.upendFixEndYmd,
                                                  // [2026-08-29] 상세와 같은 이유로 목록에도 댓글 수를 싣는다.
                                                  QBoard.board.cmntCnt.as("commentCnt")))
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
                                 .where(builder, boardInUse, communityScope)
-                                .orderBy(orderSpecifier, QBoard.board.ansSn.asc())
+                                .orderBy(orderSpecifiers)
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -254,11 +274,12 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                         @NonNull String bbsId, String keyword, @NonNull String today, @NonNull Pageable pageable) {
                 // [2026-10-23 ADR-0040 A0] 공개 FAQ 는 누구에게나 같은 목록이다 — 비밀글과 같이 게시 종료 글도
                 //   권한과 상관없이 뺀다. 종전에는 종료일 조건이 없어 일반 목록에서 사라진 글이 여기서 계속 보였다.
+                //   [결정 3] 예약 글(시작일 전)도 같은 이유로 뺀다.
                 BooleanBuilder visibility = new BooleanBuilder()
                                 .and(QBoard.board.bbsId.eq(bbsId))
                                 .and(QBoard.board.useYn.eq("Y"))
                                 .and(BoardPredicate.notSecret())
-                                .and(BoardPredicate.postingOpenOn(today))
+                                .and(BoardPredicate.postingWithin(today))
                                 .and(QBoardMaster.boardMaster.useYn.eq("Y"));
                 if (StringUtils.hasText(keyword)) {
                         visibility.and(QBoard.board.pstTtl.contains(keyword));
@@ -277,7 +298,8 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))
                                 .where(visibility)
-                                .orderBy(QBoard.board.sortOrdr.desc(), QBoard.board.ansSn.asc())
+                                // [2026-10-23 ADR-0040 결정 4·5] 게시판 목록의 기본 정렬과 같다 — 고정 중인 글이 먼저, 그다음 게시 기준일 순이다.
+                                .orderBy(leading(BoardPredicate.pinFirstOrder(today), BoardPredicate.postingOrder()))
                                 .offset(pageable.getOffset())
                                 .limit(pageable.getPageSize())
                                 .fetch();
@@ -291,6 +313,14 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                 .fetchOne();
 
                 return new PageImpl<>(results, pageable, total != null ? total : 0L);
+        }
+
+        /** 앞에 한 정렬 키를 더한 새 배열. 뒤의 키는 결정적 동률 처리다. */
+        private static OrderSpecifier<?>[] leading(OrderSpecifier<?> first, OrderSpecifier<?>[] rest) {
+                OrderSpecifier<?>[] combined = new OrderSpecifier<?>[rest.length + 1];
+                combined[0] = first;
+                System.arraycopy(rest, 0, combined, 1, rest.length);
+                return combined;
         }
 
         @Override

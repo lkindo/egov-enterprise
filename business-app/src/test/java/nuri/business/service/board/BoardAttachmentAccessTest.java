@@ -32,9 +32,9 @@ import org.springframework.jdbc.datasource.embedded.EmbeddedDatabaseType;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import java.time.LocalDate;
-import java.time.ZoneId;
-import java.time.format.DateTimeFormatter;
+import java.time.Clock;
+import java.time.Instant;
+import java.time.ZoneOffset;
 import java.util.List;
 import java.util.Optional;
 
@@ -56,14 +56,19 @@ import static org.mockito.Mockito.when;
  * <p>의도된 비대칭(설계서 D3)도 표에 둔다. 작성자는 자기 첨부를 계속 받는다(소유 근거). 조회 대행 권한({@code BOARD_READ_ALL})은
  * 게시 기간과 게시판 사용 여부(ADR-0040 결정 1)만 면제받고, 비밀글·논리 삭제 글의 첨부는 {@code FILE_READ_ALL} 하나로만 열린다. 파일 관리자({@code FILE_READ_ALL})는
  * 본문을 못 읽어도 첨부를 받는다(기존 관리자 경로).
+ *
+ * <p>[2026-10-23 ADR-0040 결정 3] 게시 시작일 전인 예약 글도 같은 표에 둔다. 본문과 첨부는 같은 고정 시계(서울 2026-10-23)로
+ * 판정한다 — 기준일을 따로 계산하면 자정 경계에서 두 판정이 갈라진다.
  */
 class BoardAttachmentAccessTest {
     private static final long FILE_ID = 301L;
     private static final long POST_ID = 1L;
     private static final String BBS_ID = "BBSMSTR_TESTBOARD001";
-    private static final String TODAY = LocalDate.now(ZoneId.of("Asia/Seoul")).format(DateTimeFormatter.BASIC_ISO_DATE);
-    private static final String YESTERDAY = LocalDate.now(ZoneId.of("Asia/Seoul")).minusDays(1)
-            .format(DateTimeFormatter.BASIC_ISO_DATE);
+    /** 2026-10-22T15:30Z 는 서울 2026-10-23 00:30 이다 — 시계의 시간대(UTC)와 무관하게 두 판정이 서울 날짜를 쓰는지도 본다. */
+    private static final Clock FIXED = Clock.fixed(Instant.parse("2026-10-22T15:30:00Z"), ZoneOffset.UTC);
+    private static final String TODAY = "20261023";
+    private static final String YESTERDAY = "20261022";
+    private static final String TOMORROW = "20261024";
 
     private EmbeddedDatabase database;
     private JdbcTemplate jdbc;
@@ -84,7 +89,7 @@ class BoardAttachmentAccessTest {
                 CREATE TABLE tb_bbs_item (
                     pst_sn BIGINT PRIMARY KEY, bbs_id VARCHAR(20), atch_file_sn BIGINT,
                     frst_rgtr_id VARCHAR(20), user_id VARCHAR(20), scrt_yn VARCHAR(1),
-                    use_yn VARCHAR(1), pst_end_ymd VARCHAR(8))
+                    use_yn VARCHAR(1), pst_bgng_ymd VARCHAR(8), pst_end_ymd VARCHAR(8))
                 """);
 
         // 본문 서비스도 첨부 판정과 같은 행을 읽는다. 저장소의 활성 상세 질의(게시판·글 use_yn='Y')를 그대로 옮겼다.
@@ -108,10 +113,14 @@ class BoardAttachmentAccessTest {
         boards = new BoardService(repository, masters, mock(UserService.class), mock(FileService.class),
                 mock(AttachmentAssignmentPolicy.class), mock(ApplicationEventPublisher.class), new SimpleMeterRegistry(),
                 mock(BoardViewCountService.class), mapper, new BoardIdProperties(),
-                mock(BoardRecommendationRepository.class), null);
+                mock(BoardRecommendationRepository.class), mock(BoardChangeRecorder.class), null);
+        boards.useClock(FIXED);
 
         AttachmentSourceContributor source = () -> List.of(AttachmentSource.BOARD);
-        files = new FileAccessPolicy(new JdbcAttachmentReferenceResolver(jdbc, List.of(source)));
+        var resolver = new JdbcAttachmentReferenceResolver(jdbc, List.of(source));
+        // 다른 패키지의 패키지 전용 시계 주입(MfaFlowIntegrationTest 선례) — 본문과 같은 시계다.
+        org.springframework.test.util.ReflectionTestUtils.invokeMethod(resolver, "useClock", FIXED);
+        files = new FileAccessPolicy(resolver);
         file = new FileMaster(FILE_ID);
         file.setFrstRgtrId("uploader");
     }
@@ -123,7 +132,8 @@ class BoardAttachmentAccessTest {
     }
 
     /**
-     * 행 상태: open(종료일 없음)·endsToday(오늘 종료)·ended(어제 종료)·secret(비밀글)·deleted(논리 삭제).
+     * 행 상태: open(종료일 없음)·endsToday(오늘 종료)·ended(어제 종료)·scheduled(내일 시작, 예약)·startsToday(오늘 시작)·
+     * secret(비밀글)·deleted(논리 삭제).
      * 사용자: other(일반)·author(작성자)·boardAdmin(BOARD_READ_ALL)·fileAdmin(FILE_READ_ALL).
      */
     @ParameterizedTest(name = "{0} × {1} → 본문 {2}, 첨부 {3}")
@@ -131,18 +141,23 @@ class BoardAttachmentAccessTest {
             other,      open,      true,  true
             other,      endsToday, true,  true
             other,      ended,     false, false
+            other,      scheduled, false, false
+            other,      startsToday, true, true
             other,      secret,    false, false
             other,      deleted,   false, false
             author,     open,      true,  true
             author,     ended,     true,  true
+            author,     scheduled, true,  true
             author,     secret,    true,  true
             author,     deleted,   false, true
             boardAdmin, open,      true,  true
             boardAdmin, ended,     true,  true
+            boardAdmin, scheduled, true,  true
             boardAdmin, secret,    true,  false
             boardAdmin, deleted,   true,  false
             fileAdmin,  open,      true,  true
             fileAdmin,  ended,     false, true
+            fileAdmin,  scheduled, false, true
             fileAdmin,  secret,    false, true
             """)
     void bodyAndAttachmentShareTheReadScope(String viewer, String state, boolean bodyReadable, boolean fileReadable) {
@@ -181,13 +196,14 @@ class BoardAttachmentAccessTest {
 
     private Optional<BoardDetailResult> detail(String bbsId, Long pstSn, boolean includeDeleted, String masterUseYn) {
         return jdbc.query("""
-                SELECT b.bbs_id, b.pst_sn, b.user_id, b.scrt_yn, b.pst_end_ymd, b.use_yn
+                SELECT b.bbs_id, b.pst_sn, b.user_id, b.scrt_yn, b.pst_bgng_ymd, b.pst_end_ymd, b.use_yn
                   FROM tb_bbs_item b JOIN tb_bbs_master m ON m.bbs_id = b.bbs_id
                  WHERE b.bbs_id = ? AND b.pst_sn = ? AND m.use_yn = ?
                    AND (? OR b.use_yn = 'Y')
                 """, (rs, row) -> BoardDetailResult.builder().bbsId(rs.getString("bbs_id"))
                 .pstSn(rs.getLong("pst_sn")).userId(rs.getString("user_id")).scrtYn(rs.getString("scrt_yn"))
-                .pstEndYmd(rs.getString("pst_end_ymd")).useYn(rs.getString("use_yn")).build(),
+                .pstBgngYmd(rs.getString("pst_bgng_ymd")).pstEndYmd(rs.getString("pst_end_ymd"))
+                .useYn(rs.getString("use_yn")).build(),
                 bbsId, pstSn, masterUseYn, includeDeleted).stream().findFirst();
     }
 
@@ -201,11 +217,17 @@ class BoardAttachmentAccessTest {
             case "ended" -> YESTERDAY;
             default -> null;
         };
+        String startYmd = switch (state) {
+            case "scheduled" -> TOMORROW;
+            case "startsToday" -> TODAY;
+            default -> null;
+        };
         jdbc.update("""
-                INSERT INTO tb_bbs_item (pst_sn, bbs_id, atch_file_sn, frst_rgtr_id, user_id, scrt_yn, use_yn, pst_end_ymd)
-                VALUES (?, ?, ?, 'author', 'author-id', ?, ?, ?)
+                INSERT INTO tb_bbs_item (pst_sn, bbs_id, atch_file_sn, frst_rgtr_id, user_id, scrt_yn, use_yn,
+                    pst_bgng_ymd, pst_end_ymd)
+                VALUES (?, ?, ?, 'author', 'author-id', ?, ?, ?, ?)
                 """, POST_ID, BBS_ID, FILE_ID, "secret".equals(state) ? "Y" : "N",
-                "deleted".equals(state) ? "N" : "Y", endYmd);
+                "deleted".equals(state) ? "N" : "Y", startYmd, endYmd);
     }
 
     private void assertBodyAccess(boolean readable) {

@@ -8,6 +8,7 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/app/components/ui/toast';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { saveBoardArticle } from '@/app/actions/boardActions';
@@ -19,6 +20,7 @@ import { z } from 'zod';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormErrorSummary,
   FormField,
   FormItem,
@@ -41,6 +43,8 @@ import { createBoardMediaFile, getBoardMediaKind, getBoardMediaReferences, type 
 import type { RichTextMediaOptions } from '@/components/ui/RichTextMedia';
 import { useWatch } from 'react-hook-form';
 import { getBoardDraftEpoch } from '@/lib/drafts/board-draft-storage';
+import { fromDateInputValue } from '@/lib/format-date';
+import type { BoardPostingStatus } from '@/types/business/board';
 
 const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
   ssr: false,
@@ -49,19 +53,34 @@ const RichTextEditor = dynamic(() => import('@/components/ui/RichTextEditor'), {
 
 import { BoardSaveRequestSchema } from '@/types/generated-zod';
 
+/*
+  [2026-10-23 ADR-0040 D12] 게시 기간 폼 값은 저장 포맷(yyyyMMdd)이고 생성 Zod(@Pattern Ymd)가 형식·달력을 본다. 시작≤종료는 서버의
+  클래스 단위 @YmdRange 라 생성 스키마로 내려오지 않아 여기서 같은 규칙을 둔다. 오늘과의 비교(예약 설정·공개 뒤 시작일 변경)는
+  하지 않는다 — 서버가 오늘(Asia/Seoul) 기준으로 판정하고 그 사유를 해당 날짜 칸에 붙인다(D-11, DEC-OPS-140).
+*/
 const boardSchema = BoardSaveRequestSchema.extend({
   pstSn: z.coerce.number().int().positive().optional(),
   pstCn: BoardSaveRequestSchema.shape.pstCn
     .min(1, '내용을 입력해 주세요.')
     .refine((value) => htmlToSemanticPlainText(value).length > 0 || getBoardMediaReferences(value).length > 0, '내용을 입력해 주세요.'),
+}).superRefine((value, context) => {
+  const start = value.pstBgngYmd ?? '';
+  const end = value.pstEndYmd ?? '';
+  if (/^\d{8}$/.test(start) && /^\d{8}$/.test(end) && start > end) {
+    context.addIssue({ code: 'custom', path: ['pstEndYmd'], message: '종료일은 시작일과 같거나 뒤여야 합니다.' });
+  }
 });
 
 type BoardFormValues = z.infer<typeof boardSchema>;
-type BoardInitialData = Partial<BoardFormValues> & {
+type BoardInitialData = Omit<Partial<BoardFormValues>, 'version'> & {
   // 상세 응답의 소유자 키이며 저장 요청 필드가 아니다.
   userId?: string;
   userNm?: string;
   pswd?: string;
+  /** 게시글 버전(ADR-0040 결정 10). 수정 저장에 그대로 돌려보낸다 — 다르면 서버가 409 로 거부한다. */
+  version?: number | null;
+  /** 서버 판정 게시 상태(ADR-0040 결정 3). 공개된 글의 시작일을 잠글지 정한다 — 날짜를 다시 계산하지 않는다. */
+  postingStatus?: BoardPostingStatus | null;
 };
 
 interface BoardRegistClientProps {
@@ -85,10 +104,15 @@ function toDateInputValue(value?: string | null): string {
   return '';
 }
 
+/** 게시 기간의 저장 포맷(yyyyMMdd). 해석할 수 없는 옛 값은 비운다 — 수정 저장에서 빈 값은 서버가 '변경 없음' 으로 본다(D-19). */
+function toPostingYmd(value?: string | null): string {
+  return fromDateInputValue(toDateInputValue(value));
+}
+
 const DATE_FIELDS = [
-  { name: 'pstBgngYmd', label: '게시 시작일' },
-  { name: 'pstEndYmd', label: '게시 종료일' },
-  { name: 'evntDt', label: '행사/이벤트 일자' },
+  { name: 'pstBgngYmd', label: '게시 시작일', storage: 'ymd' },
+  { name: 'pstEndYmd', label: '게시 종료일', storage: 'ymd' },
+  { name: 'evntDt', label: '행사/이벤트 일자', storage: 'input' },
 ] as const;
 
 function RichTextFieldControl({
@@ -201,6 +225,22 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       || Boolean(user?.esntlId && initialData?.userId === user.esntlId))
     : canPermission(user, 'BOARD_CREATE'));
   const uploadLimits = boardUploadLimits(boardMeta, attachments.length);
+  /*
+    [2026-10-23 ADR-0040 결정 3] 게시가 시작된 글의 시작일은 게시글 전체 수정 권한이 있어야 바꾼다(정렬 조작 방지). 서버 판정 게시 상태가
+    예약이 아니면 잠근다 — 상태를 모르면 잠근 쪽이다. 같은 값을 다시 보내는 것은 변경이 아니므로 readOnly 로 두어 값을 그대로 보낸다.
+    서버가 최종 판정한다(BoardPolicySupport.assertStartDateChangeAllowed).
+  */
+  const startDateLocked = Boolean(activeRecordId) && initialData?.postingStatus !== 'SCHEDULED'
+    && !canPermission(user, 'BOARD_UPDATE_ALL');
+  const reservationClosed = boardMeta?.rsvtPstgPsbltyYn === 'N';
+  /*
+    [2026-10-23 ADR-0040 결정 7] 비밀글 정책. 선택(OPTIONAL)이면 '비밀글로 쓰기' 를 둔다. 필수(REQUIRED)면 서버가 늘 비밀글로 저장하므로
+    선택을 두지 않고 그 사실만 말한다 — 공개된 글을 고치는 중이면 저장하면 비밀글로 바뀐다고 알린다(BoardPolicySupport.resolveSecretYn).
+    없음(NONE)이면 아무것도 두지 않고 저장값을 그대로 보낸다 — 도움말 1:1 문의의 비밀글이 공개로 바뀌지 않는다. 메타를 모르면 없음과
+    같다(판정은 서버가 한다).
+  */
+  const privatePostPolicy = boardMeta?.prvtPstPlcyCd;
+  const editingPublicPost = Boolean(activeRecordId) && initialData?.scrtYn !== 'Y';
 
   const handleDeleteAttachment = async (file: AttachmentItem) => {
     if (!canWrite || deletingRef.current) return;
@@ -250,9 +290,11 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
       atchFileSn: initialData?.atchFileSn ?? undefined,
       scrtYn: initialData?.scrtYn || 'N',
       useYn: initialData?.useYn || 'Y',
-      pstBgngYmd: toDateInputValue(initialData?.pstBgngYmd),
-      pstEndYmd: toDateInputValue(initialData?.pstEndYmd),
+      pstBgngYmd: toPostingYmd(initialData?.pstBgngYmd),
+      pstEndYmd: toPostingYmd(initialData?.pstEndYmd),
       evntDt: toDateInputValue(initialData?.evntDt),
+      // [2026-10-23 ADR-0040 결정 10] 수정 저장은 읽은 버전을 싣는다(새 글에는 없다).
+      version: initialData?.version ?? undefined,
     } as BoardFormValues
   });
 
@@ -508,6 +550,35 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
             />
           </div>
 
+          {/* 비밀글 정책(ADR-0040 결정 7) — 위 privatePostPolicy 주석 참고 */}
+          {privatePostPolicy === 'OPTIONAL' && (
+            <FormField
+              control={form.control}
+              name="scrtYn"
+              render={({ field }) => (
+                <FormItem className="flex items-start gap-2 space-y-0 rounded-md border border-border bg-card p-3">
+                  <FormControl>
+                    <Checkbox
+                      checked={field.value === 'Y'}
+                      onCheckedChange={(checked) => field.onChange(checked === true ? 'Y' : 'N')}
+                      className="mt-0.5"
+                    />
+                  </FormControl>
+                  <div className="space-y-1">
+                    <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">비밀글로 쓰기</FormLabel>
+                    <FormDescription className="text-xs">작성자와 게시판 관리자만 봅니다.</FormDescription>
+                  </div>
+                </FormItem>
+              )}
+            />
+          )}
+          {privatePostPolicy === 'REQUIRED' && (
+            <p role="note" className="rounded-md border border-border bg-card p-3 text-[length:var(--font-size-body)] text-muted-foreground">
+              이 게시판의 글은 비밀글로 저장됩니다. 작성자와 게시판 관리자만 봅니다.
+              {editingPublicPost ? ' 지금 공개된 글이라 저장하면 비밀글로 바뀝니다.' : ''}
+            </p>
+          )}
+
           {/* 첨부파일 */}
           <div className="space-y-2">
             <div className="flex items-center gap-2">
@@ -581,20 +652,26 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
           {/* 게시 기간 */}
           <div className="space-y-2">
             {/*
-              [2026-10-01 결정 23] 게시 종료일을 집행한다 — 종료일이 지난 글은 일반 사용자의 목록·상세·검색에서
-              보이지 않고, 작성자와 전체 열람 권한자에게는 '게시 종료' 로 보인다(BoardPredicate·BoardService).
-              시작일은 여전히 기록만 하며 노출을 늦추지 않는다. 종전(2026-08-29~)에는 둘 다 기록만 됐고 이 문구가
-              그 사실을 말했다. honest-affordance-contract 가 문구와 술어를 함께 고정한다.
+              [2026-10-01 결정 23 → 2026-10-23 ADR-0040 결정 3] 게시 시작일과 종료일을 모두 집행한다 — 시작일이 오늘(Asia/Seoul)보다
+              뒤인 글은 그날까지, 종료일이 지난 글은 그 뒤로 일반 사용자의 목록·상세·검색에서 보이지 않고, 작성자와 게시판 관리자(조회
+              대행 권한)에게는 '예약'·'게시 종료' 로 보인다(BoardPredicate·BoardService). 종전에는 시작일을 기록만 했고 이 문구가 그
+              사실을 말했다. 미래 시작일은 게시판이 예약 게시를 받을 때만 된다(설정 rsvtPstgPsbltyYn). honest-affordance-contract 가
+              문구와 술어·예약 설정을 함께 고정한다.
             */}
             <div className="flex items-center gap-2">
               <Calendar size={16} className="shrink-0 text-muted-foreground" aria-hidden="true" />
               <h2 className="text-[length:var(--font-size-body)] font-semibold text-foreground">게시 기간</h2>
             </div>
             <p className="text-xs leading-relaxed text-muted-foreground">
-              종료일이 지나면 일반 사용자의 목록·상세·검색에서 보이지 않습니다. 작성자와 게시판 관리자에게는
-              &lsquo;게시 종료&rsquo;로 표시됩니다. 시작일은 기록만 하며 노출을 늦추지 않습니다.
+              시작일이 오늘보다 뒤면 그날까지 작성자와 게시판 관리자에게만 보입니다. 종료일이 지나면 일반 사용자의 목록·상세·검색에서
+              보이지 않습니다. 작성자와 게시판 관리자에게는 &lsquo;게시 종료&rsquo;로 표시됩니다.
               {pstSn ? ' 비워 두면 기존 값은 그대로 둡니다.' : ''}
             </p>
+            {reservationClosed && (
+              <p role="note" className="text-xs leading-relaxed text-muted-foreground">
+                이 게시판은 예약 게시를 받지 않아 시작일을 오늘보다 뒤로 정할 수 없습니다.
+              </p>
+            )}
             <div className="grid grid-cols-1 gap-3 md:grid-cols-3">
               {DATE_FIELDS.map((dateField) => (
                 <FormField
@@ -605,8 +682,25 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                     <FormItem className="space-y-2">
                       <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">{dateField.label}</FormLabel>
                       <FormControl>
-                        <Input type="date" {...field} value={field.value ?? ''} className="h-[var(--control-h)] rounded-md border-border" />
+                        {dateField.storage === 'ymd' ? (
+                          // 화면은 날짜 입력(yyyy-MM-dd)이고 폼 값은 저장 포맷(yyyyMMdd)이다(D12).
+                          <Input
+                            type="date"
+                            {...field}
+                            value={toDateInputValue(field.value)}
+                            onChange={(event) => field.onChange(fromDateInputValue(event.target.value))}
+                            readOnly={dateField.name === 'pstBgngYmd' && startDateLocked}
+                            className="h-[var(--control-h)] rounded-md border-border read-only:bg-muted"
+                          />
+                        ) : (
+                          <Input type="date" {...field} value={field.value ?? ''} className="h-[var(--control-h)] rounded-md border-border" />
+                        )}
                       </FormControl>
+                      {dateField.name === 'pstBgngYmd' && startDateLocked && (
+                        <FormDescription className="text-xs">
+                          게시가 시작된 글의 시작일은 게시글 전체 수정 권한이 있어야 바꿀 수 있습니다.
+                        </FormDescription>
+                      )}
                       <FormMessage className="text-xs text-destructive-emphasis" />
                     </FormItem>
                   )}
