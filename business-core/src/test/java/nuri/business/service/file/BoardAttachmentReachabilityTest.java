@@ -22,11 +22,19 @@ class BoardAttachmentReachabilityTest {
         source=new SingleConnectionDataSource("jdbc:h2:mem:board-file-"+java.util.UUID.randomUUID(),"sa","",true);
         jdbc=new JdbcTemplate(source);
         jdbc.execute("CREATE TABLE tb_bbs_master(bbs_id VARCHAR(20) PRIMARY KEY,cmnty_sn BIGINT,use_yn CHAR(1) DEFAULT 'Y' NOT NULL)");
-        jdbc.execute("CREATE TABLE tb_bbs_item(bbs_id VARCHAR(20),atch_file_sn BIGINT,frst_rgtr_id VARCHAR(20),user_id VARCHAR(20),scrt_yn CHAR(1),use_yn CHAR(1) DEFAULT 'Y',pst_end_ymd VARCHAR(8))");
+        jdbc.execute("CREATE TABLE tb_bbs_item(bbs_id VARCHAR(20),atch_file_sn BIGINT,frst_rgtr_id VARCHAR(20),user_id VARCHAR(20),scrt_yn CHAR(1),use_yn CHAR(1) DEFAULT 'Y',pst_bgng_ymd VARCHAR(8),pst_end_ymd VARCHAR(8))");
         jdbc.update("INSERT INTO tb_bbs_master(bbs_id,cmnty_sn) VALUES('COMMUNITY',7),('PUBLIC',NULL)");
         membership=mock(CommunityBoardAccessPort.class);
         resolver=new JdbcAttachmentReferenceResolver(jdbc,List.of(() -> List.of(AttachmentSource.BOARD)),membership);
+        // [2026-10-23 ADR-0040 결정 3] 서울 2026-10-23 00:30 으로 고정한다(시계의 시간대는 UTC).
+        resolver.useClock(FIXED);
     }
+
+    private static final java.time.Clock FIXED =
+            java.time.Clock.fixed(java.time.Instant.parse("2026-10-22T15:30:00Z"), java.time.ZoneOffset.UTC);
+    private static final String TODAY = "20261023";
+    private static final String YESTERDAY = "20261022";
+    private static final String TOMORROW = "20261024";
 
     @AfterEach
     void closeDatabase() { source.destroy(); org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
@@ -128,10 +136,8 @@ class BoardAttachmentReachabilityTest {
      */
     @Test
     void endedPostSharesOnlyWithReadAllWhileTheOwnerKeepsItsGrant() {
-        String today = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"))
-                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
-        String yesterday = java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul")).minusDays(1)
-                .format(java.time.format.DateTimeFormatter.BASIC_ISO_DATE);
+        String today = TODAY;
+        String yesterday = YESTERDAY;
         post("COMMUNITY","N");
         when(membership.isApprovedMember(7L,"reader-esntl")).thenReturn(true);
         when(membership.isApprovedMember(7L,"writer-esntl")).thenReturn(true);
@@ -148,6 +154,32 @@ class BoardAttachmentReachabilityTest {
         jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=?", today);
         assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
         jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=''");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+    }
+
+    /**
+     * [2026-10-23 ADR-0040 결정 3] 게시 시작일 전인 예약 글의 첨부는 승인 회원에게도 공유 근거가 아니다. 작성자는 소유 근거로 자기
+     * 첨부를 받고(본문과 같다), 조회 대행 권한(BOARD_READ_ALL)은 본문처럼 기간을 면제받는다. 시작일 당일·빈 값은 게시 중이다.
+     * 종료일 조건과 따로 둔 절이라, 종료일이 열려 있어도 시작 전이면 닫힌다.
+     */
+    @Test
+    void scheduledPostSharesOnlyWithReadAllWhileTheOwnerKeepsItsGrant() {
+        post("COMMUNITY","N");
+        when(membership.isApprovedMember(7L,"reader-esntl")).thenReturn(true);
+        when(membership.isApprovedMember(7L,"writer-esntl")).thenReturn(true);
+
+        jdbc.update("UPDATE tb_bbs_item SET pst_bgng_ymd=?, pst_end_ymd=NULL", TOMORROW);
+        var scheduled=resolver.resolve(101L,"reader-login","reader-esntl");
+        assertThat(scheduled.sharedGrant()).isFalse();
+        assertThat(scheduled.resolutionFailed()).isFalse();
+        assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
+        authenticateWith("BOARD_READ_ALL");
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+
+        jdbc.update("UPDATE tb_bbs_item SET pst_bgng_ymd=?", TODAY);
+        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
+        jdbc.update("UPDATE tb_bbs_item SET pst_bgng_ymd=''");
         assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
     }
 

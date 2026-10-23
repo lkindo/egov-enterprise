@@ -976,7 +976,7 @@ test('partitioned consumer rows: the values are the slot type values, and every 
   assert.deepEqual(Object.keys(slotConsumerPartition('stats-panels').consumers).sort(), statsPanelPlacements(),
     'stats-panels: one row per placement of the stats panel types');
   assert.deepEqual(statsPanelPlacements(), ['hub-tab', 'overview-card']);
-  // 대조: 요약 칸의 소비자 행을 지운 표 — 게시판의 '누적 게시물' 칸을 그리는 소비자가 없다.
+  // 대조: 요약 칸의 소비자 행을 지운 표 — 게시판의 '전체 등록 건수' 칸을 그리는 소비자가 없다.
   const withoutOverview = { ...SLOT_REGISTRY_CONSUMERS, 'stats-panels': { 'hub-tab': SLOT_REGISTRY_CONSUMERS['stats-panels']['hub-tab'] } };
   const board = 'src/extensions/board/stats-panels.ts';
   if (files.has(board)) {

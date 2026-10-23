@@ -14,11 +14,11 @@ const mocks = vi.hoisted(() => ({
   saveBoardArticle: vi.fn(),
   toast: vi.fn(),
   permissions: ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'],
+  meta: { requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'] } as Record<string, unknown>,
 }));
 
 vi.mock('@/queries/board-master-query-options', () => ({ boardMasterQueryOptions: {
-  meta: () => ({ queryKey: ['board-meta-test'], initialData: { requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'] },
-    queryFn: async () => ({ requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'] }) }),
+  meta: () => ({ queryKey: ['board-meta-test'], initialData: mocks.meta, queryFn: async () => mocks.meta }),
 } }));
 
 vi.mock('next/navigation', () => ({
@@ -82,11 +82,11 @@ vi.mock('@/app/components/ui/standard-file-uploader', () => ({
   StandardFileUploader: () => <input type="file" aria-label="파일 첨부 선택" />,
 }));
 
-function renderSubject() {
+function renderSubject(props: Partial<React.ComponentProps<typeof BoardRegistClient>> = {}) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <BoardRegistClient bbsId="BBSMSTR_AAAAAAAAAAAA" />
+      <BoardRegistClient bbsId="BBSMSTR_AAAAAAAAAAAA" {...props} />
     </QueryClientProvider>,
   );
 }
@@ -101,6 +101,7 @@ describe('BoardRegistClient validation contract', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT', 'FAQ_EDIT'];
+    mocks.meta = { requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'] };
     mocks.saveBoardArticle.mockResolvedValue({ success: true, redirect: '/boards' });
   });
 
@@ -269,5 +270,80 @@ describe('BoardRegistClient validation contract', () => {
 
     await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/admin/community/boards/detail?bbsId=B&pstSn=1'));
     expect(mocks.push).not.toHaveBeenCalled();
+  });
+  // [2026-10-23 ADR-0040 D12] 게시 기간은 저장 포맷(yyyyMMdd)으로 보낸다 — 생성 Zod(@Pattern Ymd)와 서버가 같은 형식을 받는다.
+  it('게시 기간을 8자리 저장 포맷으로 보낸다', async () => {
+    renderSubject();
+    fireEvent.change(screen.getByRole('textbox', { name: '게시글 제목' }), { target: { value: '예약 공지' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /게시글 본문 내용/ }), { target: { value: '<p>본문</p>' } });
+    fireEvent.change(screen.getByLabelText('게시 시작일'), { target: { value: '2026-11-01' } });
+    fireEvent.change(screen.getByLabelText('게시 종료일'), { target: { value: '2026-11-30' } });
+    expect(screen.getByLabelText('게시 시작일')).toHaveValue('2026-11-01');
+
+    fireEvent.submit(screen.getByRole('button', { name: '게시글 등록' }).closest('form')!);
+
+    await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
+    const formData = mocks.saveBoardArticle.mock.calls[0][1] as FormData;
+    expect(formData.get('pstBgngYmd')).toBe('20261101');
+    expect(formData.get('pstEndYmd')).toBe('20261130');
+    expect(formData.get('version')).toBeNull();
+  });
+
+  it('종료일이 시작일보다 앞이면 보내지 않고 종료일 칸에 알린다', async () => {
+    renderSubject();
+    fireEvent.change(screen.getByRole('textbox', { name: '게시글 제목' }), { target: { value: '예약 공지' } });
+    fireEvent.change(screen.getByRole('textbox', { name: /게시글 본문 내용/ }), { target: { value: '<p>본문</p>' } });
+    fireEvent.change(screen.getByLabelText('게시 시작일'), { target: { value: '2026-11-30' } });
+    fireEvent.change(screen.getByLabelText('게시 종료일'), { target: { value: '2026-11-01' } });
+
+    fireEvent.submit(screen.getByRole('button', { name: '게시글 등록' }).closest('form')!);
+
+    expect((await screen.findAllByText('종료일은 시작일과 같거나 뒤여야 합니다.')).length).toBeGreaterThan(0);
+    expect(screen.getByLabelText('게시 종료일')).toHaveAttribute('aria-invalid', 'true');
+    expect(mocks.saveBoardArticle).not.toHaveBeenCalled();
+  });
+
+  // [2026-10-23 ADR-0040 결정 3] 시작일은 이제 집행한다 — 화면은 오늘을 계산하지 않고 집행 규칙과 이 게시판의 예약 설정을 말한다.
+  it('시작일 집행과 예약을 받지 않는 게시판을 사실대로 말한다', async () => {
+    mocks.meta = { requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'], rsvtPstgPsbltyYn: 'N' };
+    const { unmount } = renderSubject();
+    expect(screen.getByText(/시작일이 오늘보다 뒤면 그날까지 작성자와 게시판 관리자에게만 보입니다/)).toBeInTheDocument();
+    expect(screen.queryByText(/시작일은 기록만 하며/)).toBeNull();
+    expect(screen.getByRole('note')).toHaveTextContent('이 게시판은 예약 게시를 받지 않아 시작일을 오늘보다 뒤로 정할 수 없습니다.');
+    unmount();
+
+    mocks.meta = { requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'], rsvtPstgPsbltyYn: 'Y' };
+    renderSubject();
+    expect(screen.queryByText(/예약 게시를 받지 않아/)).toBeNull();
+  });
+
+  it.each([
+    ['게시 중인 글을 전체 수정 권한 없이 고치면 시작일을 잠근다', 'POSTING', ['BOARD_UPDATE', 'NOTICE_EDIT', 'FAQ_EDIT'], true],
+    ['예약 글은 작성자도 시작일을 바꾼다', 'SCHEDULED', ['BOARD_UPDATE', 'NOTICE_EDIT', 'FAQ_EDIT'], false],
+    ['전체 수정 권한이 있으면 게시 중인 글의 시작일도 바꾼다', 'POSTING', ['BOARD_UPDATE', 'BOARD_UPDATE_ALL', 'NOTICE_EDIT', 'FAQ_EDIT'], false],
+  ])('%s — 수정은 읽은 버전을 함께 보낸다', async (_label, postingStatus, permissions, locked) => {
+    mocks.permissions = permissions;
+    renderSubject({
+      pstSn: 31,
+      initialData: {
+        pstSn: 31, pstTtl: '기존 글', pstCn: '<p>본문</p>', userId: 'writer-owner',
+        pstBgngYmd: '2026-10-01', pstEndYmd: '20261231', version: 5, postingStatus: postingStatus as never,
+      },
+    });
+    const start = screen.getByLabelText('게시 시작일');
+    // 옛 하이픈 저장값도 날짜 입력에는 같은 날로 보인다.
+    expect(start).toHaveValue('2026-10-01');
+    if (locked) {
+      expect(start).toHaveAttribute('readonly');
+      expect(screen.getByText('게시가 시작된 글의 시작일은 게시글 전체 수정 권한이 있어야 바꿀 수 있습니다.')).toBeInTheDocument();
+    } else {
+      expect(start).not.toHaveAttribute('readonly');
+    }
+
+    fireEvent.submit(screen.getByRole('button', { name: '게시글 수정' }).closest('form')!);
+    await waitFor(() => expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1));
+    const formData = mocks.saveBoardArticle.mock.calls[0][1] as FormData;
+    expect(formData.get('version')).toBe('5');
+    expect(formData.get('pstBgngYmd')).toBe('20261001');
   });
 });

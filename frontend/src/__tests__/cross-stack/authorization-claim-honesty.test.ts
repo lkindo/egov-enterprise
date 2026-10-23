@@ -35,6 +35,8 @@ const BOARD_OPERATIONS = [
   ['GET', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'getPost', 'BOARD_READ'],
   ['PUT', '/api/v1/boards/{bbsId}/posts/{pstSn}', 'updatePost', 'BOARD_UPDATE'],
   ['PATCH', '/api/v1/boards/{bbsId}/posts/{pstSn}/like', 'likePost', 'BOARD_LIKE'],
+  // [2026-10-23 ADR-0040 결정 6] 내 추천 취소 — 추천과 같은 권한. 열람 판정(assertCommentAccess)과 본인 이력만 지우는 판정은 서비스가 한다.
+  ['DELETE', '/api/v1/boards/{bbsId}/posts/{pstSn}/like', 'cancelLikePost', 'BOARD_LIKE'],
   // [2026-09-25 DIP I3] Q&A 해결 표시 — 게시글 수정과 같은 권한·같은 소유자 가드(findOwnedPost).
   ['PATCH', '/api/v1/boards/{bbsId}/posts/{pstSn}/solved', 'markQuestionSolved', 'BOARD_UPDATE'],
   ['PUT', '/api/v1/boards/{bbsId}/posts/{pstSn}/with-files', 'updatePostWithFiles', 'BOARD_UPDATE'],

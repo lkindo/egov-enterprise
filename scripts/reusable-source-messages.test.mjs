@@ -157,5 +157,5 @@ test('투영 픽스처는 원본 번들과 계약을 바꾸지 않는다', () =>
   // 위 시험들이 임시 폴더가 아니라 원본을 고쳤다면 원본에서 게시판 키가 빠지거나 하한이 내려가 있다.
   for (const path of MESSAGE_BUNDLES) assert.ok(keysOf(read(path)).includes('B001'), path);
   assert.equal(floorOf(read(MESSAGE_CONTRACT), 'MIN_ERROR_CODES'), 39);
-  assert.equal(floorOf(read(MESSAGE_CONTRACT), 'MIN_BEAN_VALIDATION_REFS'), 15);
+  assert.equal(floorOf(read(MESSAGE_CONTRACT), 'MIN_BEAN_VALIDATION_REFS'), 29);
 });

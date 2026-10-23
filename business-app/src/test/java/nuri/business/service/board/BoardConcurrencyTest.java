@@ -214,4 +214,72 @@ class BoardConcurrencyTest {
                 .as("worker 예외를 삼키면 최종 count 단언만으로 원인을 잃는다")
                 .isEmpty();
     }
+
+    // ── [2026-10-23 ADR-0040 결정 6] 추천 취소 ─────────────────────────────
+
+    /** 이력 없이 추천 수만 올린다 — 추천 이력(V2_107) 전에 쌓인 옛 추천 수를 흉내 낸다(GAP-DOMAIN-001). */
+    private void seedLegacyLikes(int count) {
+        for (int i = 0; i < count; i++) {
+            boardRepository.incrementLikeCntAtomic(testPstSn);
+        }
+    }
+
+    @Test
+    @DisplayName("🚨 같은 사람이 동시에 열 번 취소해도 추천 수는 정확히 하나만 줄고 이력 없는 옛 수는 남는다 — 이력 DELETE 영향 수가 감소를 한 번으로 묶는다 (ADR-0040 결정 6)")
+    void cancelLike_samePersonConcurrentlyDecrementsOnce() throws InterruptedException {
+        seedLegacyLikes(5);
+        authenticateAs("same-liker", "SAME_LIKER");
+        try {
+            assertThat(boardService.incrementLike(testBbsId, testPstSn)).isEqualTo(6);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+
+        int threadCount = 10;
+        CountDownLatch startLatch = new CountDownLatch(1);
+        CountDownLatch doneLatch = new CountDownLatch(threadCount);
+        for (int i = 0; i < threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    startLatch.await();
+                    authenticateAs("same-liker", "SAME_LIKER");
+                    boardService.cancelLike(testBbsId, testPstSn);
+                } catch (Exception lockContention) {
+                    // H2 의 행 잠금 대기 시간 초과는 그 요청만 되돌린다 — 최종 값 단언이 불변식을 본다.
+                } finally {
+                    org.springframework.security.core.context.SecurityContextHolder.clearContext();
+                    doneLatch.countDown();
+                }
+            });
+        }
+        startLatch.countDown();
+        assertThat(doneLatch.await(30, TimeUnit.SECONDS)).isTrue();
+
+        assertThat(boardRepository.findById(testPstSn).orElseThrow().getLikeCnt())
+                .as("옛 수 5 에 내 추천 1 을 더한 6 에서 내 추천 하나만 빠진다 — 두 번 줄면 4 이하가 된다")
+                .isEqualTo(5);
+        assertThat(recommendationRepository.findRecommendedPstSns("SAME_LIKER", java.util.List.of(testPstSn))).isEmpty();
+    }
+
+    @Test
+    @DisplayName("[ADR-0040 결정 6] 내 추천 이력 없이 취소하면 옛 추천 수가 그대로이고, 취소한 뒤에는 다시 추천할 수 있다")
+    void cancelLike_withoutHistoryKeepsLegacyCountAndAllowsRecommendingAgain() {
+        seedLegacyLikes(5);
+        authenticateAs("other-liker", "OTHER_LIKER");
+        try {
+            assertThat(boardService.cancelLike(testBbsId, testPstSn)).isEqualTo(5);
+            assertThat(boardService.incrementLike(testBbsId, testPstSn)).isEqualTo(6);
+            assertThat(boardService.cancelLike(testBbsId, testPstSn)).isEqualTo(5);
+            assertThat(boardService.incrementLike(testBbsId, testPstSn)).as("취소 뒤 다시 추천한다").isEqualTo(6);
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
+    }
+
+    @Test
+    @DisplayName("추천 수 감소 문장은 0 에서 멈춘다 — 어긋난 옛 값이 있어도 음수가 되지 않는다")
+    void decrementLikeCount_stopsAtZero() {
+        assertThat(boardRepository.decrementLikeCntAtomic(testPstSn)).isOne();
+        assertThat(boardRepository.findById(testPstSn).orElseThrow().getLikeCnt()).isZero();
+    }
 }

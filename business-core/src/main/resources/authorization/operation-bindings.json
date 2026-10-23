@@ -413,6 +413,34 @@
     "permission": "BBS_MST_UPDATE"
   },
   {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/period",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriod",
+    "access": "PERMISSION",
+    "permission": "BOARD_UPDATE_ALL"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/period",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriodsInBatch",
+    "access": "PERMISSION",
+    "permission": "BOARD_UPDATE_ALL"
+  },
+  {
+    "method": "PATCH",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/pin",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPin",
+    "access": "PERMISSION",
+    "permission": "BOARD_PIN"
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/pin",
+    "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPinsInBatch",
+    "access": "PERMISSION",
+    "permission": "BOARD_PIN"
+  },
+  {
     "method": "DELETE",
     "path": "/api/v1/admin/system/board-masters/{bbsId}",
     "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMaster",
@@ -1542,6 +1570,13 @@
     "method": "PATCH",
     "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
     "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
+    "access": "PERMISSION",
+    "permission": "BOARD_LIKE"
+  },
+  {
+    "method": "DELETE",
+    "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
+    "handler": "nuri.api.controller.business.board.BoardApiController#cancelLikePost",
     "access": "PERMISSION",
     "permission": "BOARD_LIKE"
   },

@@ -51,7 +51,7 @@ class CollaborationInputErrorIntegrationTest {
     @DisplayName("첨부 포함 게시글 등록·수정도 JSON 경로와 같은 입력 검사를 거친다")
     void multipartBoardWritesAreValidatedLikeJson() throws Exception {
         var missingTitle = boardPart(new BoardSaveRequest("BBS_000000000001", null, "본문",
-                null, null, null, null, null, null, null, null, null));
+                null, null, null, null, null, null, null, null, null, null));
         // ZAP 은 file 에 파일이 아닌 긴 글자를 보냈다 — 검사가 없으면 서비스가 실패하고 500 이 됐다.
         var textFile = new MockMultipartFile("file", "", "text/plain",
                 "gwRfhGmPbYIWWuJkEruocLgeZoLpJEfhTeeKGcItkvmaiuySMKaOLuNZlqqg".getBytes(StandardCharsets.UTF_8));
@@ -60,7 +60,7 @@ class CollaborationInputErrorIntegrationTest {
                 .andExpect(jsonPath("$.errors[*].field", hasItem("pstTtl")));
 
         var tooLong = boardPart(new BoardSaveRequest("BBS_000000000001", "제목", "가".repeat(4001),
-                null, null, null, null, null, null, null, null, null));
+                null, null, null, null, null, null, null, null, null, null));
         mvc.perform(multipart(HttpMethod.PUT, "/api/v1/boards/BBS_000000000001/posts/1/with-files").file(tooLong))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.errors[*].field", hasItem("pstCn")));

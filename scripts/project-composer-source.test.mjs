@@ -1067,13 +1067,13 @@ test('every route literal in a marker block survives in every composition that k
 });
 
 test('the statistics shell keeps board and survey tabs only with their owning domains (Phase 0c, H4 stats-panels)', () => {
-  // [허브 분해 H4] 통계 셸·요약은 core 이고 마커가 없다. 게시물·자료 이용 탭과 누적 게시물 칸은 게시판, 설문조사 분석 탭은 설문의
+  // [허브 분해 H4] 통계 셸·요약은 core 이고 마커가 없다. 게시물·자료 이용 탭과 전체 등록 건수 칸은 게시판, 설문조사 분석 탭은 설문의
   //   stats-panels 기여다. 셸은 기능 탭의 이름도 서비스도 모른다 — 기능이 빠지면 기여 파일이 직접 지워지고 레지스트리가 다시 렌더된다.
   const shell = 'frontend/src/app/admin/stats/IntelligenceHubClient.tsx';
   const admin = 'frontend/src/app/admin/stats/AdminStatsClient.tsx';
   for (const file of [shell, admin]) {
     const source = readFileSync(join(root, file), 'utf8');
-    assert.doesNotMatch(source, /reusable-base:|SurveyAdminService|StatsHubSurveyTab|getBbsStats|getDataUsageStats|CONTENT_STATS|DATA_USAGE|'SURVEYS'|누적 게시물/, file);
+    assert.doesNotMatch(source, /reusable-base:|SurveyAdminService|StatsHubSurveyTab|getBbsStats|getDataUsageStats|CONTENT_STATS|DATA_USAGE|'SURVEYS'|전체 등록 건수/, file);
     assert.match(source, /from '@\/extensions\/generated-stats-panels'/, file);
   }
   const registry = 'frontend/src/extensions/generated-stats-panels.ts';

@@ -33,6 +33,7 @@ const mocks = vi.hoisted(() => {
     deleteArticle: vi.fn(),
     invalidateQueries: vi.fn(),
     likePost: vi.fn(),
+    cancelLikePost: vi.fn(),
     markQuestionSolved: vi.fn(),
     push: vi.fn(),
     refresh: vi.fn(),
@@ -40,6 +41,8 @@ const mocks = vi.hoisted(() => {
     // 테스트가 바꿀 수 있는 검색 파라미터. 종전 mock 은 키를 하드코딩해 pstSn 이 아닌 키는 무조건
     // null 이었고, 그래서 nttId 별칭 경로를 시험하는 것이 원리적으로 불가능했다.
     searchParams: new Map<string, string>(),
+    // [2026-10-23 ADR-0040 결정 6] 추천 단추는 추천 권한(BOARD_LIKE)으로 보인다 — 시험마다 바꿀 수 있게 둔다.
+    user: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE', 'BOARD_LIKE'], authorizationVersion: 'v1' } as Record<string, unknown>,
   };
 });
 
@@ -48,12 +51,12 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => ({ get: (key: string) => mocks.searchParams.get(key) ?? null }),
 }));
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE'], authorizationVersion: 'v1' } }),
+  useAuth: () => ({ user: mocks.user }),
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/business/user/board/BoardUserService', () => ({
-  boardUserService: { likePost: mocks.likePost, markQuestionSolved: mocks.markQuestionSolved },
+  boardUserService: { likePost: mocks.likePost, cancelLikePost: mocks.cancelLikePost, markQuestionSolved: mocks.markQuestionSolved },
 }));
 vi.mock('@/app/actions/boardActions', () => ({ deleteBoardArticle: mocks.deleteArticle }));
 // 레지스트리는 시험마다 바꿀 수 있게 getter 로 둔다(빈 레지스트리 = 기여한 기능이 빠진 구성).
@@ -124,6 +127,8 @@ describe('BoardDetailClient action pending contract', () => {
     mocks.confirm.mockResolvedValue(true);
     mocks.deleteArticle.mockResolvedValue({ success: true });
     mocks.likePost.mockResolvedValue(undefined);
+    mocks.cancelLikePost.mockResolvedValue(undefined);
+    mocks.user = { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE', 'BOARD_LIKE'], authorizationVersion: 'v1' };
     mocks.submit.mockResolvedValue(undefined);
     mocks.registry = [[mocks.probe]];
   });
@@ -248,7 +253,9 @@ describe('BoardDetailClient action pending contract', () => {
     expect(mocks.likePost).toHaveBeenCalledTimes(1);
     expect(like).toBeDisabled();
     expect(like).toHaveAttribute('aria-busy', 'true');
-    expect(like).toHaveAccessibleName('게시글 추천 처리 중');
+    // [2026-10-23 ADR-0040 결정 6] 이름은 '게시글 추천' 하나이고 상태는 aria-pressed 가 전한다(낙관 값).
+    expect(like).toHaveAccessibleName('게시글 추천');
+    expect(like).toHaveAttribute('aria-pressed', 'true');
     expect(like).toHaveTextContent('추천 3');
     expect(screen.getByRole('button', { name: '게시글 삭제' })).toBeDisabled();
 
@@ -258,10 +265,11 @@ describe('BoardDetailClient action pending contract', () => {
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('추천 처리 중 오류가 발생했습니다.', 'error'));
     expect(like).not.toBeDisabled();
     expect(like).toHaveAccessibleName('게시글 추천');
+    expect(like).toHaveAttribute('aria-pressed', 'false');
     expect(like).toHaveTextContent('추천 2');
   });
 
-  it('이미 추천한 글이면 서버 사유(409)를 그대로 알리고 추천수를 되돌린다 (DIP I6 ④)', async () => {
+  it('이미 추천한 글이면 서버 사유(409)를 그대로 알리고 추천수를 되돌린 뒤 글을 다시 읽는다 (DIP I6 ④)', async () => {
     mocks.likePost.mockRejectedValueOnce({ response: { status: 409, data: { message: '이미 추천한 게시글입니다.' } } });
     await renderDetail();
     const like = await screen.findByRole('button', { name: '게시글 추천' });
@@ -270,26 +278,114 @@ describe('BoardDetailClient action pending contract', () => {
 
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('이미 추천한 게시글입니다.', 'error'));
     expect(like).toHaveTextContent('추천 2');
+    // 화면이 서버 상태와 달랐다 — 낙관 값을 되돌린 뒤 서버 판정(recommended)을 다시 읽는다.
+    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['article-detail', 'BBS-1', 31] });
   });
 
-  it('이미 추천한 글(서버 판정)은 추천함으로 보이고 누를 수 없다 — 409 를 미리 막는다 (2026-10-01)', async () => {
+  /*
+    [2026-10-23 ADR-0040 결정 6] 2026-10-01 계약('이미 추천한 글은 누를 수 없다')을 의도적으로 뒤집는다 — 추천은 토글이고, 내가 추천한
+    글에서 누르면 추천을 거둔다(cancelLikePost). 서버는 이력이 있을 때만 줄이고 없으면 지금 수를 돌려준다(멱등).
+  */
+  it('이미 추천한 글(서버 판정)은 눌린 상태로 보이고, 누르면 추천을 거둔다', async () => {
+    mocks.cancelLikePost.mockResolvedValueOnce(1);
     await renderDetail({ recommended: true });
-    const like = await screen.findByRole('button', { name: '게시글 추천함' });
+    const like = await screen.findByRole('button', { name: '게시글 추천' });
 
-    expect(like).toBeDisabled();
+    expect(like).toBeEnabled();
     expect(like).toHaveAttribute('aria-pressed', 'true');
-    expect(like).toHaveTextContent('추천함 2');
+    expect(like).toHaveTextContent('추천 2');
+    expect(like).toHaveAccessibleDescription('추천한 글입니다. 다시 누르면 추천을 거둡니다.');
     fireEvent.click(like);
+
+    await waitFor(() => expect(mocks.cancelLikePost).toHaveBeenCalledWith('BBS-1', 31));
+    expect(mocks.likePost).not.toHaveBeenCalled();
+    await waitFor(() => expect(like).toHaveAttribute('aria-pressed', 'false'));
+    expect(like).toHaveTextContent('추천 1');
+    expect(like).toBeEnabled();
+  });
+
+  it('추천에 성공하면 눌린 상태가 되고 서버가 돌려준 수를 보이며, 다시 누르면 거둔다', async () => {
+    mocks.likePost.mockResolvedValueOnce(7);
+    mocks.cancelLikePost.mockResolvedValueOnce(6);
+    await renderDetail();
+    const like = await screen.findByRole('button', { name: '게시글 추천' });
+    fireEvent.click(like);
+
+    await waitFor(() => expect(like).toHaveTextContent('추천 7'));
+    expect(like).toHaveAttribute('aria-pressed', 'true');
+    expect(like).toBeEnabled();
+
+    fireEvent.click(like);
+    await waitFor(() => expect(mocks.cancelLikePost).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(like).toHaveTextContent('추천 6'));
+    expect(like).toHaveAttribute('aria-pressed', 'false');
+    expect(mocks.likePost).toHaveBeenCalledTimes(1);
+  });
+
+  it('추천 취소를 같은 tick에 한 번만 보내고 실패하면 눌린 상태와 수를 되돌린다', async () => {
+    let rejectCancel!: (reason?: unknown) => void;
+    mocks.cancelLikePost.mockReturnValueOnce(new Promise<number>((_, reject) => {
+      rejectCancel = reject;
+    }));
+    await renderDetail({ recommended: true });
+    const like = await screen.findByRole('button', { name: '게시글 추천' });
+
+    act(() => {
+      fireEvent.click(like);
+      fireEvent.click(like);
+    });
+
+    expect(mocks.cancelLikePost).toHaveBeenCalledTimes(1);
+    expect(like).toBeDisabled();
+    expect(like).toHaveAttribute('aria-busy', 'true');
+    expect(like).toHaveAttribute('aria-pressed', 'false');
+    expect(like).toHaveTextContent('추천 1');
+
+    rejectCancel(new Error('Request failed with status code 500'));
+
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('추천 취소 중 오류가 발생했습니다.', 'error'));
+    expect(like).toBeEnabled();
+    expect(like).toHaveAttribute('aria-pressed', 'true');
+    expect(like).toHaveTextContent('추천 2');
     expect(mocks.likePost).not.toHaveBeenCalled();
   });
 
-  it('추천에 성공하면 같은 방문에서 추천함으로 바뀐다 (2026-10-01)', async () => {
-    await renderDetail();
-    fireEvent.click(await screen.findByRole('button', { name: '게시글 추천' }));
+  // [2026-10-23 ADR-0040 결정 6·DEC-OPS-185] 추천 단추는 추천 권한(BOARD_LIKE)으로 보인다. 없으면 쌓인 수만 보인다.
+  it('추천 권한이 없으면 추천 단추 없이 수만 보인다', async () => {
+    mocks.user = { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: ['BOARD_UPDATE', 'BOARD_DELETE'], authorizationVersion: 'v1' };
+    await renderDetail({ recommended: true });
 
-    const done = await screen.findByRole('button', { name: '게시글 추천함' });
-    expect(done).toHaveTextContent('추천함 3');
-    expect(done).toBeDisabled();
+    await screen.findByRole('button', { name: '게시글 삭제' });
+    expect(screen.queryByRole('button', { name: /추천/ })).toBeNull();
+    expect(screen.getByText(/^추천/)).toHaveTextContent('추천 2');
+  });
+
+  /*
+    [2026-10-23 ADR-0040 결정 6] 게시판이 추천을 받지 않으면 새 추천 단추가 없고 수만 보인다. 서버가 새 추천만 막고 취소는 받으므로
+    내가 이미 추천한 글에는 거두는 단추를 남기고 그 사실을 말한다.
+  */
+  it('추천을 받지 않는 게시판은 추천하지 않은 글에 수만 보인다', async () => {
+    await renderDetail({}, { rcmdtnUseYn: 'N' });
+
+    await screen.findByRole('button', { name: '게시글 삭제' });
+    expect(screen.queryByRole('button', { name: /추천/ })).toBeNull();
+    expect(screen.getByText(/^추천/)).toHaveTextContent('추천 2');
+  });
+
+  it('추천을 받지 않는 게시판이어도 내가 추천한 글은 거둘 수 있다', async () => {
+    mocks.cancelLikePost.mockResolvedValueOnce(1);
+    await renderDetail({ recommended: true }, { rcmdtnUseYn: 'N' });
+    const like = await screen.findByRole('button', { name: '게시글 추천' });
+
+    expect(like).toHaveAttribute('aria-pressed', 'true');
+    expect(like).toHaveAccessibleDescription('이 게시판은 새 추천을 받지 않습니다. 내 추천은 거둘 수 있습니다.');
+    fireEvent.click(like);
+
+    await waitFor(() => expect(mocks.cancelLikePost).toHaveBeenCalledWith('BBS-1', 31));
+    // 거둔 뒤에는 새 추천을 받지 않으므로 단추가 사라지고 수만 남는다.
+    await waitFor(() => expect(screen.queryByRole('button', { name: /추천/ })).toBeNull());
+    expect(screen.getByText(/^추천/)).toHaveTextContent('추천 1');
+    expect(mocks.likePost).not.toHaveBeenCalled();
   });
 
   it('삭제를 confirm 전에 선점하고 실패 뒤 게시글과 충돌 제어를 복구한다', async () => {

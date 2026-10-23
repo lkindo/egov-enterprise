@@ -289,7 +289,7 @@ export default function IntelligenceHubClient({
   const meta = activeTab === 'USER_STATS'
     ? userSeriesMeta(userSeries)
     : activePanel?.kind === 'series'
-      ? { name: activePanel.label, description: undefined, basis: activePanel.basis }
+      ? { name: activePanel.seriesName ?? activePanel.label, description: undefined, basis: activePanel.basis }
       : CONNECT_SERIES;
   const title = activeCore?.title ?? activePanel?.title ?? '';
   const seriesQuery: StatsPanelQuery = activeTab === 'USER_STATS'

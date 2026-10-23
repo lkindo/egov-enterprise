@@ -1,10 +1,11 @@
 import type { AxiosRequestConfig } from 'axios';
 import { ApiService } from '@/services/core/ApiService';
 import { PageResponse } from '@/types/foundation/system';
-import { BoardPost } from '@/types/business/board';
+import { BoardPost, type BoardPostingStatus } from '@/types/business/board';
 import type { components } from '@/types/generated-api';
 
 import {
+  cancelLikePostOperation,
   getBoardMetaOperation,
   getBoardOptionsOperation,
   getPostsOperation,
@@ -19,6 +20,16 @@ import {
  * 본문({@code pstCn})과 게시글 비밀번호는 담기지 않는다 — 서버가 목록 표면을 의도적으로
  * 좁힌 것이니, 화면에서 필요해 보이더라도 필드를 늘리기 전에 노출면부터 따져야 한다.
  */
+/*
+  [2026-10-23 ADR-0040 결정 3] 손으로 적은 게시 상태 어휘(types/business/board 의 BoardPostingStatus — 게시판 밖 화면도 읽어 생성 스키마
+  이름을 쓰지 않는다)가 서버 계약과 같은지 타입으로 묶는다. 서버가 상태를 더하거나 바꾸면 여기서 타입 검사가 깨진다.
+*/
+type GeneratedPostingStatus = NonNullable<components['schemas']['BoardDto']['postingStatus']>;
+const POSTING_STATUS_MATCHES_CONTRACT: [BoardPostingStatus] extends [GeneratedPostingStatus]
+  ? ([GeneratedPostingStatus] extends [BoardPostingStatus] ? true : never)
+  : never = true;
+void POSTING_STATUS_MATCHES_CONTRACT;
+
 /** 게시판 제목·설명·템플릿·설정(읽기 전용). 백엔드 `BoardMetaDto` 와 1:1 대응한다. */
 export type BoardMeta = components['schemas']['BoardMetaDto'];
 /** 이용 화면의 게시판 선택지 한 건(ID·이름). 사용 여부·커뮤니티 귀속은 서버가 이미 걸렀다(ADR-0040 결정 11). */
@@ -50,7 +61,7 @@ class BoardUserService extends ApiService {
   /**
    * 게시글 목록 조회.
    * `page` 는 1부터 센다 — 화면의 페이지 번호를 그대로 넘긴다(ADR-0036).
-   * orderBy/startDate/endDate/qnaStatus/qnaCategory 는 BoardApiController#getPosts 가 지원하는 필터다.
+   * orderBy/startDate/endDate/qnaStatus/qnaCategory/postingStatus/pinned 는 BoardApiController#getPosts 가 지원하는 필터다.
    */
   async getPosts(bbsId: string, params: {
     page?: number;
@@ -64,6 +75,16 @@ class BoardUserService extends ApiService {
     qnaCategory?: string;
     /** 기간 기준. 비우면 작성일, 'EVENT' 면 행사일(없으면 작성일) — 캘린더 템플릿용(DIP V6). */
     dateBasis?: 'CREATED' | 'EVENT';
+    /**
+     * 게시 상태 조건(ADR-0040 결정 3, 운영 화면 게시물 탭). 서버가 오늘(Asia/Seoul) 기준으로 판정해 거른다 — 가시성을 넓히지
+     * 않으므로 일반 사용자에게는 이미 보이는 글 안에서만 좁혀진다.
+     */
+    postingStatus?: BoardPostingStatus;
+    /**
+     * 상단 고정 조건(ADR-0040 결정 5, 운영 화면 게시물 탭). true 면 지금 고정 중인 글, false 면 그 밖의 글이다. 서버가 오늘 기준으로
+     * 판정하고 가시성은 넓히지 않는다.
+     */
+    pinned?: boolean;
   }): Promise<PageResponse<BoardPost>> {
     return this.executeGenerated(getPostsOperation, {
       path: { bbsId },
@@ -111,6 +132,17 @@ class BoardUserService extends ApiService {
   async likePost(bbsId: string, pstSn: number): Promise<number> {
     // ApiService.patch가 이미 ApiResponse.data(=새 추천수)를 추출해 반환하므로 추가 .data 접근 금지(과거 undefined 반환 버그).
     return this.executeGenerated(likePostOperation, {
+      path: { bbsId, pstSn },
+    });
+  }
+
+  /**
+   * 내 추천 취소(ADR-0040 결정 6). 내 추천 이력이 있을 때만 그 이력을 지우고 추천 수를 하나 줄인다. 이력이 없으면 아무것도 바꾸지
+   * 않고 지금 추천 수를 돌려준다(멱등 — 이중 클릭·재시도가 오류가 되지 않는다). 게시판이 추천을 받지 않아도 내 추천은 거둘 수 있다.
+   * 판정은 서버가 한다(읽을 수 없는 글·사용 안 함 게시판은 거부).
+   */
+  async cancelLikePost(bbsId: string, pstSn: number): Promise<number> {
+    return this.executeGenerated(cancelLikePostOperation, {
       path: { bbsId, pstSn },
     });
   }

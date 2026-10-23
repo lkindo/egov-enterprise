@@ -18,9 +18,15 @@ import nuri.business.domain.board.BoardSearchCondition;
 import nuri.business.domain.board.BoardStatsResult;
 import nuri.business.service.board.dto.BoardDto;
 import nuri.business.service.board.dto.BoardMapper;
+import nuri.business.service.board.dto.BoardPostListFilter;
+import nuri.business.service.board.dto.BoardPostPeriodBatchRequest;
+import nuri.business.service.board.dto.BoardPostPeriodRequest;
+import nuri.business.service.board.dto.BoardPostPinBatchRequest;
+import nuri.business.service.board.dto.BoardPostPinRequest;
 import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.BoardStatsResponse;
 import nuri.foundation.core.event.PostCreatedEvent;
+import nuri.foundation.core.util.EntityVersions;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
@@ -40,6 +46,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
 import java.io.IOException;
+import java.time.Clock;
 import java.util.List;
 
 import static nuri.business.service.board.BoardPolicySupport.*;
@@ -82,6 +89,15 @@ public class BoardService extends BaseAbstractService {
         /** 게시글 추천 이력 — 한 사람이 한 글을 한 번만 추천한다(2026-09-26 DIP I6 ④). */
         private final BoardRecommendationRepository recommendationRepository;
 
+        /** 운영 처리 이력 — 운영 화면의 게시 기간 변경(B1)과 고정(B2)을 남긴다(ADR-0040 결정 9). */
+        private final BoardChangeRecorder changeRecorder;
+
+        /**
+         * 게시 기간 판정의 시계(ADR-0040 결정 3). 공개 메서드가 요청마다 한 번 {@link #today()} 로 기준일을 계산해 넘긴다.
+         * 생성자 인자가 아니다 — Clock 빈이 없고, 직접 생성하는 시험이 많다(RealTimeDashboardService 선례).
+         */
+        private Clock clock = Clock.system(BoardPolicySupport.SERVICE_ZONE);
+
         public BoardService(BoardRepository boardRepository,
                         BoardMasterRepository boardMasterRepository,
                         UserService userService,
@@ -93,6 +109,7 @@ public class BoardService extends BaseAbstractService {
                         BoardMapper boardMapper,
                         BoardIdProperties boardIdProperties,
                         BoardRecommendationRepository recommendationRepository,
+                        BoardChangeRecorder changeRecorder,
                         @Nullable CommunityBoardAccessPort communityBoardAccess) {
                 this.boardRepository = required(boardRepository, "boardRepository 는 null 일 수 없습니다");
                 this.boardMasterRepository = required(boardMasterRepository, "boardMasterRepository 는 null 일 수 없습니다");
@@ -107,9 +124,20 @@ public class BoardService extends BaseAbstractService {
                 this.boardIdProperties = required(boardIdProperties, "boardIdProperties 는 null 일 수 없습니다");
                 this.recommendationRepository = required(recommendationRepository,
                                 "recommendationRepository 는 null 일 수 없습니다");
+                this.changeRecorder = required(changeRecorder, "changeRecorder 는 null 일 수 없습니다");
                 // 포트는 선택 주입이다 — 커뮤니티 도메인이 없는 프로필에서는 null 이고, 그때 커뮤니티
                 // 귀속 게시판은 관리자 외에게 닫힌다(아래 assertCommunityAccess).
                 this.communityBoardAccess = communityBoardAccess;
+        }
+
+        /** 날짜 경계 회귀 시험에서 운영과 같은 시간대의 시계를 고정한다(ADR-0040 결정 3). */
+        void useClock(Clock clock) {
+                this.clock = java.util.Objects.requireNonNull(clock, "clock");
+        }
+
+        /** 게시 기간 판정의 기준일(yyyyMMdd, Asia/Seoul). 공개 메서드가 요청마다 한 번 부른다. */
+        private String today() {
+                return todayYmd(clock);
         }
 
 
@@ -119,20 +147,23 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, @NonNull Pageable pageable) {
-                return listPosts(false, bbsId, "0", "", null, null, null, null, null, null, pageable);
+                return listPosts(false, bbsId, "0", "", null, null, null, null, null, null, pageable,
+                                BoardPostListFilter.NONE);
         }
 
         /**
          * @param dateBasis 기간 조건을 어느 날짜로 볼지. 비어 있거나 {@code CREATED} 면 작성일, {@code EVENT} 면
          *                  행사일(없으면 작성일)이다. [2026-09-26 DIP V6] 캘린더 템플릿은 칸을 행사일로 배치하는데
          *                  조회는 작성일로 걸러, 지난달에 등록한 이달 행사가 달력에서 사라졌다.
+         * @param filter    [2026-10-23 ADR-0040 결정 3·5] 서버 기준일로 판정하는 운영 조건(게시 상태·고정). 가시성을 넓히지 않는다 —
+         *                  일반 사용자에게는 기존 가시성 안에서만 좁혀진다.
          */
         @Transactional(readOnly = true)
         public Page<BoardDto> getBoardPosts(@NonNull String bbsId, String searchCnd, String searchWrd,
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
-                        String dateBasis, @NonNull Pageable pageable) {
+                        String dateBasis, @NonNull Pageable pageable, @NonNull BoardPostListFilter filter) {
                 return listPosts(true, bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory,
-                                dateBasis, pageable);
+                                dateBasis, pageable, filter);
         }
 
         /**
@@ -141,35 +172,62 @@ public class BoardService extends BaseAbstractService {
          */
         private Page<BoardDto> listPosts(boolean operatorMayReadInactive, String bbsId, String searchCnd, String searchWrd,
                         String orderBy, String startDate, String endDate, String qnaStatus, String qnaCategory,
-                        String dateBasis, Pageable pageable) {
+                        String dateBasis, Pageable pageable, BoardPostListFilter filter) {
+                String today = today();
                 log.info("Fetching board posts - bbsId: {}, searchApplied: {}, orderBy: {}",
                                 nuri.foundation.security.util.SafeLog.text(bbsId), StringUtils.hasText(searchWrd), nuri.foundation.security.util.SafeLog.text(orderBy));
                 BoardMaster master = operatorMayReadInactive
                                 ? loadReadableMaster(bbsId, false)
                                 : assertActiveBoardMaster(bbsId);
                 BoardSearchCondition condition = buildArticleSearchCondition(
-                                bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory, dateBasis);
+                                bbsId, searchCnd, searchWrd, orderBy, startDate, endDate, qnaStatus, qnaCategory, dateBasis, today);
                 // 사용 안 함 게시판이 여기까지 왔다면 조회 대행 권한자다(loadReadableMaster). 그때만 마스터 조건을 푼다.
                 condition.setIncludeInactiveBoard(!"Y".equals(master.getUseYn()));
+                BoardPostListFilter conditions = required(filter, "filter 는 null 일 수 없습니다");
+                condition.setPostingStatus(conditions.postingStatus());
+                condition.setPinned(conditions.pinned());
                 Page<BoardDto> page = boardRepository.searchArticles(condition, required(pageable, "pageable 는 null 일 수 없습니다"))
-                                .map(boardMapper::toDto);
+                                .map(result -> decorate(boardMapper.toDto(result), result.getUpendFixYn(),
+                                                result.getUpendFixEndYmd(), today));
                 return withRecommendedMarks(page);
         }
 
         /**
-         * [2026-10-01] 목록의 각 글에 현재 사용자의 추천 여부를 한 번의 조회로 싣는다. 종전 화면은 알 수 없어
-         * 이미 추천한 글에도 추천 버튼이 그대로였고, 누르면 409 로 비로소 알았다. 사용자를 모르면 null 로 둔다.
+         * 목록 응답에 현재 사용자의 추천 여부를 싣는다.
+         *
+         * <p>[2026-10-01] 추천 여부는 한 번의 조회로 싣는다. 종전 화면은 알 수 없어 이미 추천한 글에도 추천 버튼이 그대로였고,
+         * 누르면 409 로 비로소 알았다. 사용자를 모르면 null 로 둔다. 게시 상태·고정은 각 글을 옮길 때 같은 기준일로 이미 판정했다
+         * ({@link #decorate(BoardDto, String, String, String)}).
          */
         private Page<BoardDto> withRecommendedMarks(Page<BoardDto> page) {
                 java.util.Optional<String> esntlId = SecurityUtil.getCurrentEsntlId();
+                java.util.Set<Long> recommended;
                 if (esntlId.isEmpty() || page.isEmpty()) {
+                        recommended = null;
+                } else {
+                        List<Long> pstSns = page.getContent().stream().map(BoardDto::pstSn)
+                                        .filter(java.util.Objects::nonNull).toList();
+                        recommended = pstSns.isEmpty() ? java.util.Set.of()
+                                        : new java.util.HashSet<>(recommendationRepository.findRecommendedPstSns(esntlId.get(), pstSns));
+                }
+                if (recommended == null) {
                         return page;
                 }
-                List<Long> pstSns = page.getContent().stream().map(BoardDto::pstSn)
-                                .filter(java.util.Objects::nonNull).toList();
-                java.util.Set<Long> recommended = pstSns.isEmpty() ? java.util.Set.of()
-                                : new java.util.HashSet<>(recommendationRepository.findRecommendedPstSns(esntlId.get(), pstSns));
                 return page.map(dto -> dto.toBuilder().recommended(recommended.contains(dto.pstSn())).build());
+        }
+
+        /**
+         * 한 글의 서버 판정 값을 싣는다 — [2026-10-23 ADR-0040 결정 3] 게시 상태, [결정 5] 지금 고정 중인지와 그 종료일. 같은 기준일로
+         * 판정하고 화면은 날짜를 다시 계산하지 않는다(DEC-OPS-140). 고정 중이 아니면(종료일이 지난 옛 고정 포함) 종료일을 비운다.
+         * 게시판 목록·상세에서만 부른다 — 통합 검색·공개 FAQ 응답은 이 값들을 싣지 않는다.
+         */
+        private static BoardDto decorate(BoardDto dto, String upendFixYn, String upendFixEndYmd, String today) {
+                boolean pinned = pinActive(upendFixYn, upendFixEndYmd, today);
+                return dto.toBuilder()
+                                .postingStatus(postingStatusOf(dto.pstBgngYmd(), dto.pstEndYmd(), today))
+                                .pinned(pinned)
+                                .upendFixEndYmd(pinned ? upendFixEndYmd : null)
+                                .build();
         }
 
         /** 통합 검색이 요구하는 최소 검색어 길이. 담당자 검색({@code UserService})과 같은 값이다. */
@@ -201,24 +259,26 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional(readOnly = true)
         public Page<BoardDto> searchAcrossBoards(String keyword, @NonNull Pageable pageable) {
+                String today = today();
                 String trimmed = keyword == null ? "" : keyword.trim();
                 Pageable capped = capGlobalSearchPageable(required(pageable, "pageable 는 null 일 수 없습니다"), GLOBAL_SEARCH_MAX_RESULTS);
                 if (trimmed.length() < GLOBAL_SEARCH_MIN_KEYWORD_LENGTH) {
                         return Page.empty(capped);
                 }
-                BoardSearchCondition condition = buildGlobalSearchCondition(trimmed);
+                BoardSearchCondition condition = buildGlobalSearchCondition(trimmed, today);
                 return boardRepository.searchArticles(condition, capped).map(boardMapper::toDto);
         }
 
         @Transactional(readOnly = true)
         public Page<BoardDto> getPublicFaqPosts(
                         String searchWrd, @NonNull Pageable pageable) {
+                String today = today();
                 assertPublicFaqBoardAvailable();
 
                 return boardRepository.searchPublicFaqArticles(
                                 boardIdProperties.getFaqId(),
                                 searchWrd,
-                                todayYmd(),
+                                today,
                                 required(pageable, "pageable 는 null 일 수 없습니다"))
                                 .map(boardMapper::toDto);
         }
@@ -249,10 +309,11 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional(readOnly = true)
         public BoardStatsResponse getBoardStats(@NonNull String bbsId) {
+                String today = today();
                 assertActiveBoardMaster(bbsId);
                 BoardSearchCondition condition = new BoardSearchCondition(bbsId);
                 condition.setUseYn("Y");
-                bindCurrentViewerVisibility(condition);
+                bindCurrentViewerVisibility(condition, today);
                 BoardStatsResult stats = boardRepository.aggregateVisibleStats(condition);
                 return toStatsResponse(stats);
         }
@@ -373,6 +434,9 @@ public class BoardService extends BaseAbstractService {
                 // [2026-10-23 ADR-0040 결정 1] 지정 게시판 가드 → 사용 여부(운영자 예외) → 커뮤니티 가드. 채번 직렬화를 위해
                 //   마스터 행을 잠가 읽는다. [2026-09-08 PD-CMTY-001] 읽을 수 없는 게시판에는 쓸 수도 없다.
                 BoardMaster master = loadWritableMaster(request.bbsId(), true);
+                // [2026-10-23 ADR-0040 결정 3·6] 예약 게시를 받지 않는 게시판은 오늘보다 뒤의 새 시작일을 채번 전에 거부한다.
+                String pstBgngYmd = requestedYmd(request.pstBgngYmd());
+                assertFutureStartAllowed(master, pstBgngYmd, today());
                 Timer.Sample sample = Timer.start(meterRegistry);
 
                 try {
@@ -403,11 +467,13 @@ public class BoardService extends BaseAbstractService {
                                         .sortOrdr(sortOrdr)
                                         .pstTtl(request.pstTtl())
                                         .pstCn(request.pstCn())
-                                        .pstBgngYmd(normalizeYmd(request.pstBgngYmd()))
-                                        .pstEndYmd(normalizeYmd(request.pstEndYmd()))
+                                        // [2026-10-23 ADR-0040 결정 12] 빈 날짜는 저장하지 않는다(null).
+                                        .pstBgngYmd(pstBgngYmd)
+                                        .pstEndYmd(requestedYmd(request.pstEndYmd()))
                                         .atchFileSn(request.atchFileSn())
                                         .qnaCatCd(request.qnaCatCd())
-                                        .scrtYn(request.scrtYn())
+                                        // [ADR-0040 결정 7] 비밀글 정책이 REQUIRED 면 요청과 관계없이 비밀글이다. 그 밖은 요청값 그대로다.
+                                        .scrtYn(resolveSecretYn(master, request.scrtYn(), null))
                                         // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 확인 경로가 없는 폐기 필드다. 화면이 '1' 을
                                         //   채워 평문으로 쌓이고 있었다 — 요청 값을 저장하지 않는다.
                                         .pswd(null)
@@ -416,7 +482,9 @@ public class BoardService extends BaseAbstractService {
                                         "boardRepository.save() 결과는 null 일 수 없습니다")
                                         .getPstSn();
 
-                        // 커밋 뒤 생성 이벤트 발행 — 저장소 안 구독자는 없고 파생 제품의 확장 지점이다(PostCreatedEvent 참조)
+                        // 커밋 뒤 생성 이벤트 발행 — 저장소 안 구독자는 없고 파생 제품의 확장 지점이다(PostCreatedEvent 참조).
+                        //   [2026-10-23 ADR-0040 결정 3] 생성은 공개가 아니다 — 시작일이 미래인 글은 그날까지 작성자·조회 대행
+                        //   권한자에게만 보인다. 구독자는 가시성을 다시 판정해야 하며, 공개 시점 이벤트는 없다.
                         nuri.foundation.core.util.TransactionUtils.runAfterCommit(
                                 () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstSn, userId)));
 
@@ -435,6 +503,8 @@ public class BoardService extends BaseAbstractService {
                 //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
                 //   [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판도 업로드 전에 거부한다.
                 BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                // [2026-10-23 ADR-0040 결정 3·6] 받지 않는 미래 시작일도 업로드 전에 거부한다(createPost 가 다시 본다).
+                assertFutureStartAllowed(master, requestedYmd(request.pstBgngYmd()), today());
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
                         // [2026-09-27 DIP B5 F9] 게시판 첨부 설정(허용·파일 수·파일당 크기)을 저장 전에 본다.
@@ -451,6 +521,9 @@ public class BoardService extends BaseAbstractService {
         public Long replyPost(@NonNull String userId, @NonNull Long parentSn, @NonNull BoardSaveRequest request) {
                 // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1] 등록과 같은 경계.
                 BoardMaster master = loadWritableMaster(request.bbsId(), true);
+                // [2026-10-23 ADR-0040 결정 3·6] 등록과 같은 예약 게시 규칙.
+                String pstBgngYmd = requestedYmd(request.pstBgngYmd());
+                assertFutureStartAllowed(master, pstBgngYmd, today());
 
                 Board parent = findReplyParent(request.bbsId(), parentSn);
                 if (request.atchFileSn() != null) {
@@ -479,11 +552,11 @@ public class BoardService extends BaseAbstractService {
                                 .ansLv(0)
                                 .pstTtl(request.pstTtl())
                                 .pstCn(request.pstCn())
-                                .pstBgngYmd(normalizeYmd(request.pstBgngYmd()))
-                                .pstEndYmd(normalizeYmd(request.pstEndYmd()))
+                                .pstBgngYmd(pstBgngYmd)
+                                .pstEndYmd(requestedYmd(request.pstEndYmd()))
                                 .atchFileSn(request.atchFileSn())
                                 .qnaCatCd(request.qnaCatCd())
-                                .scrtYn(request.scrtYn())
+                                .scrtYn(resolveSecretYn(master, request.scrtYn(), null)) // [ADR-0040 결정 7] 등록과 같은 비밀글 정책.
                                 .pswd(null) // [2026-09-27 DIP B5 F9] 폐기 필드 — 등록과 같이 저장하지 않는다.
                                 .build();
                 
@@ -491,6 +564,7 @@ public class BoardService extends BaseAbstractService {
                                 "boardRepository.save() 결과는 null 일 수 없습니다")
                                 .getPstSn();
 
+                // 생성 이벤트 — 생성은 공개가 아니다(ADR-0040 결정 3, PostCreatedEvent 참조).
                 nuri.foundation.core.util.TransactionUtils.runAfterCommit(
                                 () -> eventPublisher.publishEvent(new PostCreatedEvent(this, master.getBbsId(), pstSn, userId)));
 
@@ -502,6 +576,8 @@ public class BoardService extends BaseAbstractService {
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
                 BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                // [2026-10-23 ADR-0040 결정 3·6] 받지 않는 미래 시작일도 업로드 전에 거부한다(replyPost 가 다시 본다).
+                assertFutureStartAllowed(master, requestedYmd(request.pstBgngYmd()), today());
                 findReplyParent(request.bbsId(), parentSn);
                 Long atchFileSn = request.atchFileSn();
                 if (files != null && !files.isEmpty()) {
@@ -532,6 +608,7 @@ public class BoardService extends BaseAbstractService {
          */
         @Transactional(readOnly = true)
         public BoardDto getPostDetail(@NonNull String bbsId, @NonNull Long pstSn, boolean countView) {
+                String today = today();
                 // [2026-10-23 ADR-0040 결정 1] 사용 여부(조회 대행 권한 예외)를 먼저, 커뮤니티 회원 가드를 그다음에 본다
                 //   ([2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판이면 승인된 회원만 본다).
                 // [2026-08-22 제품 결정] 논리 삭제(useYn='N') 게시글은 일반 사용자에게 404 지만
@@ -547,9 +624,9 @@ public class BoardService extends BaseAbstractService {
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
                         SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
-                // [2026-10-01 결정 23] 게시 종료일이 지난 글은 작성자·전체 열람 권한자만 연다. 남에게는 없는 글과 같다(404) —
-                //   403 으로 답하면 번호만으로 글의 존재를 알 수 있다.
-                assertPostingVisible(detail);
+                // [2026-10-01 결정 23·2026-10-23 ADR-0040 결정 3] 게시 기간 밖의 글(시작일 전·종료일 뒤)은 작성자·전체 열람
+                //   권한자만 연다. 남에게는 없는 글과 같다(404) — 403 으로 답하면 번호만으로 글의 존재를 알 수 있다.
+                assertPostingVisible(detail, today);
 
                 // Redis 기반 쓰기 지연 처리
                 if (countView) {
@@ -558,7 +635,8 @@ public class BoardService extends BaseAbstractService {
 
                 BoardDto dto = boardMapper.toDto(detail);
                 // [2026-10-01] 이미 추천했는지 알린다 — 화면이 추천 버튼을 '추천함' 으로 바꿔 409 를 미리 막는다.
-                return dto.toBuilder()
+                //   [2026-10-23 ADR-0040 결정 3·5] 목록과 같은 기준일로 판정한 게시 상태·고정 여부를 싣는다.
+                return decorate(dto, detail.getUpendFixYn(), detail.getUpendFixEndYmd(), today).toBuilder()
                                 .recommended(SecurityUtil.getCurrentEsntlId()
                                                 .map(id -> recommendationRepository.existsById(new BoardRecommendationId(pstSn, id)))
                                                 .orElse(null))
@@ -602,6 +680,7 @@ public class BoardService extends BaseAbstractService {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                         "댓글의 bbsId와 pstSn은 필수입니다.");
                 }
+                String today = today();
                 // [2026-09-08 PD-CMTY-001] 상세와 같은 경계 — 회원 전용 게시판의 댓글도 회원만 읽고 쓴다. 사용 여부를 먼저 본다.
                 assertActiveBoardMaster(bbsId);
                 BoardDetailResult detail = boardRepository.findActiveArticleDetail(bbsId, pstSn)
@@ -609,8 +688,8 @@ public class BoardService extends BaseAbstractService {
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
                         SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
-                // [2026-10-01 결정 23] 게시가 끝난 글의 댓글·추천도 상세와 같은 사람만 닿는다.
-                assertPostingVisible(detail);
+                // [2026-10-01 결정 23·2026-10-23 ADR-0040 결정 3] 게시 기간 밖의 글의 댓글·추천·만족도도 상세와 같은 사람만 닿는다.
+                assertPostingVisible(detail, today);
         }
 
         /**
@@ -624,11 +703,12 @@ public class BoardService extends BaseAbstractService {
                         throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                                         "댓글의 bbsId와 pstSn은 필수입니다.");
                 }
+                String today = today();
                 BoardDetailResult detail = readableDetail(loadReadableMaster(bbsId, false), bbsId, pstSn, false);
                 if ("Y".equalsIgnoreCase(detail.getScrtYn())) {
                         SecurityUtil.assertOwnerOrPermissionByEsntlId(detail.getUserId(), "BOARD_READ_ALL");
                 }
-                assertPostingVisible(detail);
+                assertPostingVisible(detail, today);
         }
 
         /**
@@ -669,6 +749,17 @@ public class BoardService extends BaseAbstractService {
                 }
         }
 
+        /**
+         * 새 추천 전 게시판 설정(추천 받기 {@code rcmdtnUseYn})을 본다(ADR-0040 결정 6). 열람 판정({@link #assertCommentAccess}) 뒤에
+         * 부른다 — 읽을 수 없는 글에는 설정을 드러내지 않는다. 추천 취소({@link #cancelLike})는 부르지 않는다 — 추천을 꺼도 각자
+         * 자기 추천은 거둘 수 있어야 한다. 이미 받은 추천 수는 그대로다.
+         */
+        private void assertRecommendationEnabled(String bbsId) {
+                if (!findBoardMaster(bbsId).acceptsRecommendations()) {
+                        throw new BusinessException(CommonErrorCode.INVALID_STATE, "이 게시판은 추천을 받지 않습니다.");
+                }
+        }
+
         private BoardMaster findBoardMaster(String bbsId) {
                 return boardMasterRepository.findById(required(bbsId, "bbsId 는 null 일 수 없습니다"))
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.BOARD_NOT_FOUND));
@@ -705,13 +796,14 @@ public class BoardService extends BaseAbstractService {
                                 request.bbsId(), request.pstTtl(), request.pstCn(),
                                 request.pstBgngYmd(), request.pstEndYmd(), atchFileSn,
                                 request.evntDt(), request.qnaSttsCd(), request.qnaCatCd(),
-                                request.scrtYn(), request.useYn(), request.pswd());
+                                request.scrtYn(), request.useYn(), request.pswd(), request.version());
         }
 
         @Transactional(readOnly = true)
         public BoardDto getPublicFaqDetail(@NonNull Long pstSn) {
+                String today = today();
                 BoardDetailResult detail = boardRepository
-                                .findPublicArticleDetail(boardIdProperties.getFaqId(), pstSn, todayYmd())
+                                .findPublicArticleDetail(boardIdProperties.getFaqId(), pstSn, today)
                                 .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
 
                 viewCountService.increaseViewCount(pstSn);
@@ -726,9 +818,39 @@ public class BoardService extends BaseAbstractService {
 
         @Transactional
         public void updatePost(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardSaveRequest request) {
-                loadWritableMaster(bbsId, false); // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
+                // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
+                BoardMaster master = loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
-                updateOwnedPost(board, request, false);
+                assertPeriodChange(master, board, request);
+                updateOwnedPost(master, board, request, false);
+        }
+
+        /**
+         * 작성 화면 수정의 버전·게시 기간 규칙(ADR-0040 결정 3·10·12). 소유·존재 판정(404·403) 뒤, 첨부 판정과 파일 저장보다 먼저
+         * 부른다 — 거부된 수정이 파일을 남기지 않게.
+         *
+         * <ol>
+         *   <li>버전: 상세에서 받은 버전이 없으면 400, 다르면 409 다. 버전이 비어 있는 옛 행은 버전과 무관하게 400(INVALID_STATE)
+         *       으로 막는다(fail-closed) — 겹친 저장을 막을 근거가 없고, 저장하면 Hibernate 가 NULL 버전을 올리지 못한다.</li>
+         *   <li>시작일 변경(정규화한 값이 저장값과 다를 때만): 게시가 시작된 글의 시작일은 게시글 전체 수정 권한이 없으면 403,
+         *       예약 게시를 받지 않는 게시판의 미래 시작일은 400 이다(이 순서로 본다). 같은 시작일을 다시 보낸 수정은 변경이 아니다.</li>
+         *   <li>합친 값의 순서: 한쪽 날짜만 보내도 저장값과 합쳐 시작이 종료보다 뒤면 400 이다.</li>
+         * </ol>
+         * 작성 화면 경로의 과거 종료일은 종전대로 받는다(운영 화면 경로만 막는다, D-13). 이 경로는 게시 기간 변경 이력을 남기지
+         * 않는다(결정 9 — 작성 화면 수정 이력은 후속 설계).
+         */
+        private void assertPeriodChange(BoardMaster master, Board board, BoardSaveRequest request) {
+                assertVersioned(board);
+                EntityVersions.assertCurrent(request.version(), board.getVersion());
+                String today = today();
+                String start = requestedYmd(request.pstBgngYmd());
+                String end = requestedYmd(request.pstEndYmd());
+                if (startDateChanged(board.getPstBgngYmd(), start)) {
+                        // 바꿀 자격(403)을 값의 허용 여부(400)보다 먼저 본다 — 공개된 글의 작성자는 날짜를 고쳐도 바꿀 수 없다.
+                        assertStartDateChangeAllowed(board.getPstBgngYmd(), start, today);
+                        assertFutureStartAllowed(master, start, today);
+                }
+                assertPeriodOrder(start != null ? start : board.getPstBgngYmd(), end != null ? end : board.getPstEndYmd());
         }
 
         /** 게시글 변경 및 파일 I/O보다 먼저 현재 주체의 게시글 소유권을 확정한다. */
@@ -740,7 +862,8 @@ public class BoardService extends BaseAbstractService {
                 return board;
         }
 
-        private void updateOwnedPost(Board board, BoardSaveRequest request, boolean attachmentAlreadyValidated) {
+        private void updateOwnedPost(BoardMaster master, Board board, BoardSaveRequest request,
+                        boolean attachmentAlreadyValidated) {
                 if (!attachmentAlreadyValidated
                                 && request.atchFileSn() != null
                                 && !java.util.Objects.equals(board.getAtchFileSn(), request.atchFileSn())) {
@@ -769,18 +892,25 @@ public class BoardService extends BaseAbstractService {
                  * 프런트는 빈 문자열을 undefined 로 정규화해 보내므로(boardActions.ts) '값을
                  * 비우겠다'는 의도가 null 로 표현되지 않는다. 즉 null=미전송 으로 읽어도 안전하다.
                  * 값을 비우는 경로가 필요해지면 그때 명시적 clear 플래그를 설계한다.
+                 *
+                 * [2026-10-23 ADR-0040 결정 12, D-19] 게시 기간은 빈 문자열('')도 '바꾸지 않음'이다 — 종전에는 ''
+                 * 가 저장값을 지웠다. 종료일 해제는 운영 화면 일괄 처리의 명시적 동작(CLEAR_END)만 한다.
                  */
+                String requestedStart = requestedYmd(request.pstBgngYmd());
+                String requestedEnd = requestedYmd(request.pstEndYmd());
                 board.update(request.pstTtl(), request.pstCn(),
                                 board.getUserId(),   // 저자(userId/userNm)는 불변 — request 로 재지정 금지(정체성 위조 방지)
                                 board.getUserNm(),
                                 board.getPswd(),     // [2026-09-27 DIP B5 F9] 폐기 필드 — 요청 값으로 바꾸지 않는다(기존 값은 지우지 않는다).
-                                request.pstBgngYmd() != null ? normalizeYmd(request.pstBgngYmd()) : board.getPstBgngYmd(),
-                                request.pstEndYmd() != null ? normalizeYmd(request.pstEndYmd()) : board.getPstEndYmd(),
+                                requestedStart != null ? requestedStart : board.getPstBgngYmd(),
+                                requestedEnd != null ? requestedEnd : board.getPstEndYmd(),
                                 request.atchFileSn() != null ? request.atchFileSn() : board.getAtchFileSn(),
                                 eventDate != null ? eventDate : board.getEvntDt(),
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
                                 request.qnaCatCd() != null ? request.qnaCatCd() : board.getQnaCatCd(),
-                                request.scrtYn() != null ? request.scrtYn() : board.getScrtYn());
+                                // [ADR-0040 결정 7] 비밀글 정책이 REQUIRED 면 고친 글도 비밀글이다(공개로 남아 있던 옛 글 포함 —
+                                //   열람 범위를 좁히기만 한다). 그 밖은 지금처럼 요청값, 없으면 저장값이다.
+                                resolveSecretYn(master, request.scrtYn(), board.getScrtYn()));
         }
 
         @Transactional
@@ -791,6 +921,8 @@ public class BoardService extends BaseAbstractService {
                 //   [2026-10-23 ADR-0040 결정 1] 사용 여부도 같은 판정에서 본다.
                 BoardMaster master = loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
+                // [2026-10-23 ADR-0040 결정 3·10] 버전·게시 기간 규칙을 첨부 판정과 파일 저장보다 먼저 본다.
+                assertPeriodChange(master, board, request);
                 // [2026-09-25 DIP I1] 요청이 첨부 번호를 싣지 않으면 글의 기존 첨부 묶음에 더한다. 종전에는 새 묶음을
                 //   만들어 글을 그쪽으로 옮겨, 수정 중 파일 하나를 더하면 기존 첨부가 글에서 조용히 떨어져 나갔다.
                 Long atchFileSn = request.atchFileSn() != null ? request.atchFileSn() : board.getAtchFileSn();
@@ -817,7 +949,216 @@ public class BoardService extends BaseAbstractService {
 
                 BoardSaveRequest newRequest = withAtchFileSn(request, atchFileSn);
 
-                updateOwnedPost(board, newRequest, attachmentAlreadyValidated);
+                updateOwnedPost(master, board, newRequest, attachmentAlreadyValidated);
+        }
+
+        /**
+         * 운영 화면 빠른 편집의 게시 기간 변경(ADR-0040 결정 3·9·10, 설계서 §6 B1). 게시글 전체 수정 권한(BOARD_UPDATE_ALL)이
+         * 필요하고, 지정 게시판이면 그 편집 권한도 필요하다(쓰기 진입 판정). 제목·본문을 다시 보내지 않는다.
+         *
+         * <p>순서: 권한(403) → 게시판 쓰기 진입(지정 게시판 403·사용 여부 404·커뮤니티 403) → 경로 게시판 소속(404) → 버전(400·409)
+         * → 날짜 규칙(400). 바뀐 항목만 게시판 변경 이력(PERIOD)에 남기고, 같은 값이면 이력도 버전도 그대로다. 대행 권한자의 경로라
+         * 공개 뒤 시작일 변경 제한은 두지 않지만, 예약 게시를 받지 않는 게시판의 미래 시작일과 오늘보다 이른 종료일은 거부한다.
+         * 종료일 해제는 받지 않는다 — 일괄 처리의 CLEAR_END 가 맡는다(결정 12).
+         */
+        @Transactional
+        public void updatePostPeriod(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardPostPeriodRequest request) {
+                SecurityUtil.assertPermission("BOARD_UPDATE_ALL");
+                BoardMaster master = loadWritableMaster(bbsId, false);
+                Board board = findPostInBoard(bbsId, pstSn);
+                assertVersioned(board);
+                EntityVersions.assertCurrent(request.version(), board.getVersion());
+
+                String today = today();
+                String storedStart = board.getPstBgngYmd();
+                String storedEnd = board.getPstEndYmd();
+                String start = requestedYmd(request.pstBgngYmd());
+                String end = requestedYmd(request.pstEndYmd());
+                boolean startChanged = startDateChanged(storedStart, start);
+                boolean endChanged = end != null && !end.equals(normalizeYmd(storedEnd));
+                if (startChanged) {
+                        assertFutureStartAllowed(master, start, today);
+                }
+                if (endChanged) {
+                        assertEndNotPast(end, today);
+                }
+                String nextStart = startChanged ? start : storedStart;
+                String nextEnd = endChanged ? end : storedEnd;
+                assertPeriodOrder(nextStart, nextEnd);
+
+                changeRecorder.recordPost(bbsId, pstSn, BoardChangeRecorder.ChangeType.PERIOD, PERIOD_START_ITEM,
+                                storedStart, nextStart);
+                changeRecorder.recordPost(bbsId, pstSn, BoardChangeRecorder.ChangeType.PERIOD, PERIOD_END_ITEM,
+                                storedEnd, nextEnd);
+                board.changePostingPeriod(nextStart, nextEnd);
+        }
+
+        /**
+         * 운영 화면의 게시 종료일 일괄 처리(ADR-0040 결정 9·10·12, 설계서 §6 B1). {@code END_DATE} 는 고른 글의 종료일을 바꾸고,
+         * {@code CLEAR_END} 는 종료일을 비운다(기한 없음). 권한과 쓰기 진입 판정은 단건과 같다.
+         *
+         * <p><b>전체 미적용 원자성.</b> 모든 대상을 먼저 읽고 판정한다 — 하나라도 경로 게시판에 없거나(404) 새 종료일이 시작일보다
+         * 앞이 되면(400, 글 번호 나열) 아무것도 바꾸지 않고 이력도 남기지 않는다. 대상별 버전은 받지 않는다(결정 10). 그 사이 작성자가
+         * 같은 글을 커밋하면 저장 시점의 낙관적 잠금이 409 로 바꿔 전체를 되돌린다. 종료일이 실제로 바뀐 글만 버전이 오른다.
+         */
+        @Transactional
+        public void updatePostPeriodsInBatch(@NonNull String bbsId, @NonNull BoardPostPeriodBatchRequest request) {
+                SecurityUtil.assertPermission("BOARD_UPDATE_ALL");
+                loadWritableMaster(bbsId, false);
+
+                String today = today();
+                String end = requestedYmd(request.pstEndYmd());
+                boolean clear = BoardPostPeriodBatchRequest.CLEAR_END.equals(request.action());
+                if (clear) {
+                        if (end != null) {
+                                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                                "종료일 해제(CLEAR_END)에는 종료일을 보내지 않습니다.");
+                        }
+                } else if (BoardPostPeriodBatchRequest.END_DATE.equals(request.action())) {
+                        if (end == null) {
+                                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                                "종료일 바꾸기(END_DATE)에는 새 종료일이 필요합니다.");
+                        }
+                        assertEndNotPast(end, today);
+                } else {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                        "action 은 END_DATE 또는 CLEAR_END 여야 합니다.");
+                }
+
+                // 1단계: 모든 대상을 읽고 판정한다 — 하나라도 어긋나면 아무것도 바꾸지 않는다.
+                List<Board> targets = new java.util.ArrayList<>();
+                for (Long id : required(request.pstSns(), "pstSns 는 null 일 수 없습니다").stream().distinct().toList()) {
+                        targets.add(findPostInBoard(bbsId, id));
+                }
+                // 버전이 비어 있는 옛 글은 고치지 않는다 — 이 경로는 요청 버전을 받지 않지만 저장할 때 버전을 올리므로,
+                //   NULL 이면 Hibernate 가 버전을 늘리다 실패해 500 이 된다. 판정 단계에서 전체를 거절한다.
+                List<String> unversioned = targets.stream()
+                                .filter(target -> target.getVersion() == null)
+                                .map(target -> String.valueOf(target.getPstSn()))
+                                .toList();
+                if (!unversioned.isEmpty()) {
+                        throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                                        UNVERSIONED_POST_MESSAGE + " 아무것도 바꾸지 않았습니다: " + String.join(", ", unversioned));
+                }
+                if (!clear) {
+                        List<String> reversed = targets.stream()
+                                        .filter(target -> periodReversed(target.getPstBgngYmd(), end))
+                                        .map(target -> String.valueOf(target.getPstSn()))
+                                        .toList();
+                        if (!reversed.isEmpty()) {
+                                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                                "시작일보다 이른 종료일이 되는 글이 있어 아무것도 바꾸지 않았습니다: "
+                                                                + String.join(", ", reversed));
+                        }
+                }
+
+                // 2단계: 판정을 모두 지난 뒤에만 바꾸고 남긴다.
+                for (Board target : targets) {
+                        String storedEnd = target.getPstEndYmd();
+                        String storedMeaning = storedEnd == null || storedEnd.isEmpty() ? null : normalizeYmd(storedEnd);
+                        if (java.util.Objects.equals(storedMeaning, end)) {
+                                continue;
+                        }
+                        changeRecorder.recordPost(bbsId, target.getPstSn(), BoardChangeRecorder.ChangeType.PERIOD,
+                                        PERIOD_END_ITEM, storedEnd, end);
+                        target.changePostingPeriod(target.getPstBgngYmd(), end);
+                }
+        }
+
+        /** 게시판 변경 이력의 게시 기간 항목 이름(운영 화면의 이력 대화상자가 그대로 보인다). */
+        static final String PERIOD_START_ITEM = "게시 시작일";
+        static final String PERIOD_END_ITEM = "게시 종료일";
+
+        /** 게시판 변경 이력의 상단 고정 항목 이름(ADR-0040 결정 9). */
+        static final String PIN_ITEM = "상단 고정";
+        static final String PIN_END_ITEM = "상단 고정 종료일";
+
+        /**
+         * 운영 화면의 게시글 하나 상단 고정·해제(ADR-0040 결정 5, 설계서 §6 B2). 규칙은 일괄 처리와 같다({@link #applyPins}).
+         */
+        @Transactional
+        public void updatePostPin(@NonNull String bbsId, @NonNull Long pstSn, @NonNull BoardPostPinRequest request) {
+                applyPins(bbsId, List.of(required(pstSn, "pstSn 는 null 일 수 없습니다")),
+                                request.upendFixYn(), request.upendFixEndYmd());
+        }
+
+        /**
+         * 운영 화면의 상단 고정·해제 일괄 처리(ADR-0040 결정 5·10, 설계서 §6 B2). 고른 글 모두에 같은 고정 여부·종료일을 쓴다 —
+         * 하나라도 맞지 않으면 아무것도 바꾸지 않는다({@link #applyPins}).
+         */
+        @Transactional
+        public void updatePostPinsInBatch(@NonNull String bbsId, @NonNull BoardPostPinBatchRequest request) {
+                applyPins(bbsId, required(request.pstSns(), "pstSns 는 null 일 수 없습니다"),
+                                request.upendFixYn(), request.upendFixEndYmd());
+        }
+
+        /**
+         * 상단 고정·해제의 한 경로(ADR-0040 결정 5·9·10). 게시글 상단 고정 권한(BOARD_PIN)이 필요하고, 지정 게시판이면 그 편집 권한도
+         * 필요하다(쓰기 진입 판정).
+         *
+         * <p>순서: 권한(403) → 게시판 쓰기 진입(지정 게시판 403·사용 여부 404·커뮤니티 403)과 <b>마스터 행 잠금</b> → 모든 대상이 경로
+         * 게시판의 지우지 않은 원글인지(404·답글 400) → 고정이면 게시판이 고정을 받는지(400), 종료일(비우면 기본 일수, 오늘보다 이르면
+         * 400), 상한(400), 해제면 종료일 없음(있으면 400) → 바뀌는 글만 한 문장 UPDATE → 바뀐 항목만 변경 이력(PIN·UNPIN).
+         *
+         * <p><b>상한의 직렬화.</b> 같은 게시판의 동시 고정이 둘 다 상한 아래로 세고 함께 넘기지 않도록 집계 전에 마스터 행을 잠근다
+         * (등록·답글의 채번과 같은 잠금 — 잠금 순서는 마스터 행 → 게시글 행이다). 판정을 모두 지난 뒤에만 쓴다 — 하나라도 어긋나면
+         * 아무것도 바꾸지 않고 이력도 남기지 않는다. 쓰기는 게시글 버전을 올리지 않는다 — 운영자 행위라 작성자 수정과 다투지 않는다.
+         *
+         * <p>정책을 끄거나 상한을 낮춰도 해제는 언제나 된다. 이미 고정 중인 글은 상한 집계에서 새로 세지 않는다(종료일만 바뀐다).
+         */
+        private void applyPins(String bbsId, List<Long> pstSns, String upendFixYn, String requestedEnd) {
+                SecurityUtil.assertPermission("BOARD_PIN");
+                boolean pin = parsePinRequest(upendFixYn);
+                BoardMaster master = loadWritableMaster(bbsId, true);
+
+                List<Board> targets = new java.util.ArrayList<>();
+                for (Long id : pstSns.stream().distinct().toList()) {
+                        Board target = findPostInBoard(bbsId, id);
+                        // 고정한 답글이 원글과 떨어져 맨 위로 가지 않게 원글만 다룬다.
+                        if (target.getUpPstSn() != null) {
+                                throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                                                "답글은 상단에 고정할 수 없습니다. 원글을 골라 주세요: " + target.getPstSn());
+                        }
+                        targets.add(target);
+                }
+
+                String today = today();
+                String end;
+                if (pin) {
+                        assertPinsAccepted(master);
+                        end = pinEndYmd(master, requestedEnd, today);
+                        long newlyActive = targets.stream()
+                                        .filter(target -> !pinActive(target.getUpendFixYn(), target.getUpendFixEndYmd(), today))
+                                        .count();
+                        assertPinLimit(master, newlyActive, boardRepository.countActivePins(bbsId, today));
+                } else {
+                        if (requestedYmd(requestedEnd) != null) {
+                                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                                                "고정 해제에는 고정 종료일을 보내지 않습니다.");
+                        }
+                        end = null;
+                }
+
+                String yn = pin ? "Y" : "N";
+                List<Board> changed = targets.stream()
+                                .filter(target -> !yn.equals(target.getUpendFixYn())
+                                                || !java.util.Objects.equals(end, target.getUpendFixEndYmd()))
+                                .toList();
+                if (changed.isEmpty()) {
+                        return; // 이미 그 상태다 — 쓰지도 남기지도 않는다.
+                }
+                int affected = boardRepository.updatePin(bbsId, changed.stream().map(Board::getPstSn).toList(), yn, end);
+                if (affected != changed.size()) {
+                        // 판정 뒤 다른 요청이 글을 지웠다 — 일부만 고정하지 않고 전체를 되돌린다.
+                        throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
+                }
+                BoardChangeRecorder.ChangeType type = pin
+                                ? BoardChangeRecorder.ChangeType.PIN : BoardChangeRecorder.ChangeType.UNPIN;
+                for (Board target : changed) {
+                        changeRecorder.recordPost(bbsId, target.getPstSn(), type, PIN_ITEM, target.getUpendFixYn(), yn);
+                        changeRecorder.recordPost(bbsId, target.getPstSn(), type, PIN_END_ITEM,
+                                        target.getUpendFixEndYmd(), end);
+                }
         }
 
         @Transactional
@@ -857,6 +1198,9 @@ public class BoardService extends BaseAbstractService {
                 assertCommentAccess(bbsId, id);
                 String esntlId = SecurityUtil.getCurrentEsntlId()
                                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+                // [2026-10-23 ADR-0040 결정 6] 추천을 받지 않는 게시판은 새 추천을 400 으로 거부한다. 열람 판정 뒤라 읽을 수 없는
+                //   글에는 설정을 드러내지 않는다.
+                assertRecommendationEnabled(bbsId);
                 if (recommendationRepository.existsById(new BoardRecommendationId(id, esntlId))) {
                         throw new BusinessException(CommonErrorCode.DUPLICATE_RESOURCE, "이미 추천한 게시글입니다.");
                 }
@@ -869,6 +1213,32 @@ public class BoardService extends BaseAbstractService {
                 int affected = boardRepository.incrementLikeCntAtomic(id);
                 if (affected == 0) {
                         throw new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND);
+                }
+                return boardRepository.findById(id)
+                                .map(Board::getLikeCnt)
+                                .orElseThrow(() -> new BusinessException(BoardErrorCode.ARTICLE_NOT_FOUND));
+        }
+
+        /**
+         * 내 추천 취소(ADR-0040 결정 6, 설계서 §7 B3). 지금 사용자의 추천 이력이 있을 때만 그 이력을 지우고 추천 수를 하나 줄인다.
+         * 이력이 없으면 아무것도 바꾸지 않고 지금 추천 수를 돌려준다(멱등 — 이중 클릭·재시도가 오류가 되지 않는다). 그래서 이력이 없는
+         * 옛 추천 수와 남의 추천은 줄지 않는다(GAP-DOMAIN-001 남은 경계). 취소 뒤에는 다시 추천할 수 있다.
+         *
+         * <p>판정은 추천과 같은 엄격 경계({@link #assertCommentAccess})다 — 사용 안 함 게시판·읽을 수 없는 글(비밀글·게시 기간 밖)은
+         * 이력을 건드리기 전에 거부한다. 추천 받기 설정은 보지 않는다 — 추천을 꺼도 내 추천은 거둘 수 있다.
+         *
+         * <p>[동시성] 감소의 근거는 이력 행 DELETE 의 영향 수 하나다. 같은 사람의 동시 취소에서 두 번째 DELETE 는 첫 커밋을 기다렸다가
+         * 0행이 되므로 감소는 정확히 한 번이다. 있는지 먼저 읽고 지우는 방식(existsById → deleteById)은 둘 다 '있음' 을 보고 두 번
+         * 줄일 수 있어 쓰지 않는다. 감소 문장은 0 아래로 내려가지 않는다(이중 방어).
+         */
+        @Transactional
+        public Integer cancelLike(@NonNull String bbsId, @NonNull Long pstSn) {
+                Long id = required(pstSn, "pstSn 는 null 일 수 없습니다");
+                assertCommentAccess(bbsId, id);
+                String esntlId = SecurityUtil.getCurrentEsntlId()
+                                .orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
+                if (recommendationRepository.deleteRecommendation(id, esntlId) == 1) {
+                        boardRepository.decrementLikeCntAtomic(id);
                 }
                 return boardRepository.findById(id)
                                 .map(Board::getLikeCnt)

@@ -166,6 +166,25 @@ export const likePostOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const cancelLikePostOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "cancelLikePost",
+  method: "delete",
+  path: "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "bbsId": z.string(), "pstSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.number().int(),
+  envelopeSchema: ApiResponseIntegerResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const getPostsOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "getPosts",
@@ -176,7 +195,7 @@ export const getPostsOperation = /*#__PURE__*/ (() => {
   requestRequired: false,
   multipartParts: null,
   pathSchema: z.object({ "bbsId": z.string() }).strict(),
-  querySchema: z.object({ "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "orderBy": z.string().optional(), "startDate": z.string().optional(), "endDate": z.string().optional(), "qnaStatus": z.string().optional(), "qnaCategory": z.string().optional(), "dateBasis": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
+  querySchema: z.object({ "searchCnd": z.string().optional(), "searchWrd": z.string().optional(), "orderBy": z.string().optional(), "startDate": z.string().optional(), "endDate": z.string().optional(), "qnaStatus": z.string().optional(), "qnaCategory": z.string().optional(), "dateBasis": z.string().optional(), "postingStatus": z.enum(["SCHEDULED","POSTING","ENDED"]).optional(), "pinned": z.boolean().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional(), "sort": z.array(z.string()).optional() }).strict(),
   requestSchema: null,
   responseSchema: z.lazy(() => PageResponseBoardDtoResponseSchema),
   envelopeSchema: ApiResponsePageResponseBoardDtoResponseSchema,

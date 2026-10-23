@@ -293,6 +293,38 @@
       "routeGate": "OPERATION_PERMISSION"
     },
     {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/period",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriod",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriod')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/period",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriodsInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriodsInBatch')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/pin",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPin",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPin')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/pin",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPinsInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPinsInBatch')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
       "method": "DELETE",
       "path": "/api/v1/admin/system/board-masters/{bbsId}",
       "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMaster",
@@ -984,6 +1016,14 @@
       "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
       "policy": "AUTHENTICATED",
       "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#likePost')",
+      "routeGate": "OPERATION_PERMISSION"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
+      "handler": "nuri.api.controller.business.board.BoardApiController#cancelLikePost",
+      "policy": "AUTHENTICATED",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.board.BoardApiController#cancelLikePost')",
       "routeGate": "OPERATION_PERMISSION"
     },
     {
@@ -2138,6 +2178,42 @@
           "count": 1,
           "identityAxis": "ESNTL_ID",
           "permission": "BOARD_READ_ALL"
+        }
+      ]
+    },
+    {
+      "target": "BoardService#updatePostPeriod",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BOARD_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "BoardService#updatePostPeriodsInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BOARD_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "BoardService#applyPins",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BOARD_PIN"
         }
       ]
     },
@@ -4020,6 +4096,39 @@
       ]
     },
     {
+      "target": "BoardPolicySupport#assertStartDateChangeAllowed",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardPolicySupport.java",
+      "policy": "OWNER_OR_ADMIN",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "startDateChanged(storedStart, requestedStart)",
+        "postingNotStarted(storedStart, today)",
+        "SecurityUtil.hasPermission(\"BOARD_UPDATE_ALL\")",
+        "CommonErrorCode.ACCESS_DENIED"
+      ],
+      "forbiddenTokens": [
+        "hasPermission(\"BBS_MST_UPDATE",
+        "SecurityUtil.assert"
+      ]
+    },
+    {
+      "target": "BoardService#applyPins",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "ADMIN_OR_SYSTEM",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "BoardMaster master = loadWritableMaster(bbsId, true);",
+        "Board target = findPostInBoard(bbsId, id);",
+        "assertPinsAccepted(master);",
+        "assertPinLimit(master, newlyActive, boardRepository.countActivePins(bbsId, today));"
+      ],
+      "forbiddenTokens": [
+        "loadReadableMaster(",
+        "boardRepository.findById(",
+        "hasPermission(\"BBS_MST_UPDATE"
+      ]
+    },
+    {
       "target": "BoardChangeService#getChanges",
       "source": "business-app/src/main/java/nuri/business/service/board/BoardChangeService.java",
       "policy": "PARTICIPANT_OR_ADMIN",
@@ -4381,7 +4490,8 @@
         "esntlId.equals(reference.userId())",
         "Referenced board master missing",
         "(reference.boardInUse() || readAll)",
-        "(reference.postingOpen() || readAll)"
+        "(reference.postingOpen() || readAll)",
+        "(reference.postingStarted() || readAll)"
       ],
       "forbiddenTokens": [
         ".orElse(\"anonymous\")"
@@ -4548,9 +4658,26 @@
       "requiredTokens": [
         "assertCommentAccess(bbsId, id);",
         "SecurityUtil.getCurrentEsntlId()",
-        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))"
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))",
+        "assertRecommendationEnabled(bbsId);"
       ],
       "forbiddenTokens": []
+    },
+    {
+      "target": "BoardService#cancelLike",
+      "source": "business-app/src/main/java/nuri/business/service/board/BoardService.java",
+      "policy": "AUTHENTICATED",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "assertCommentAccess(bbsId, id);",
+        "SecurityUtil.getCurrentEsntlId()",
+        ".orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED))",
+        "recommendationRepository.deleteRecommendation(id, esntlId) == 1"
+      ],
+      "forbiddenTokens": [
+        "assertRecommendationEnabled(",
+        "SecurityUtil.hasPermission("
+      ]
     },
     {
       "target": "MenuBookmarkService#addBookmark",
@@ -5237,6 +5364,34 @@
       "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMasterStatusInBatch",
       "access": "PERMISSION",
       "permission": "BBS_MST_UPDATE"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/period",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriod",
+      "access": "PERMISSION",
+      "permission": "BOARD_UPDATE_ALL"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/period",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPeriodsInBatch",
+      "access": "PERMISSION",
+      "permission": "BOARD_UPDATE_ALL"
+    },
+    {
+      "method": "PATCH",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/{pstSn}/pin",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPin",
+      "access": "PERMISSION",
+      "permission": "BOARD_PIN"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/board-masters/{bbsId}/posts/batch/pin",
+      "handler": "nuri.api.controller.business.admin.content.board.BoardMasterApiController#updatePostPinsInBatch",
+      "access": "PERMISSION",
+      "permission": "BOARD_PIN"
     },
     {
       "method": "DELETE",
@@ -6368,6 +6523,13 @@
       "method": "PATCH",
       "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
       "handler": "nuri.api.controller.business.board.BoardApiController#likePost",
+      "access": "PERMISSION",
+      "permission": "BOARD_LIKE"
+    },
+    {
+      "method": "DELETE",
+      "path": "/api/v1/boards/{bbsId}/posts/{pstSn}/like",
+      "handler": "nuri.api.controller.business.board.BoardApiController#cancelLikePost",
       "access": "PERMISSION",
       "permission": "BOARD_LIKE"
     },

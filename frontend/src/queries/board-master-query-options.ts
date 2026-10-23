@@ -4,6 +4,20 @@ import {
   type BoardMasterListParams,
 } from '@/services/foundation/system/BoardAdminService';
 import { boardUserService } from '@/services/business/user/board/BoardUserService';
+import type { BoardPostingStatus } from '@/types/business/board';
+
+/**
+ * 운영 화면 게시물 탭의 조회 조건(ADR-0040 §5.4). URL 밖 상태이고 `조회`·Enter 로 적용한 값만 담는다. 쪽은 1 기반이다(ADR-0036).
+ * 제목 조건은 서버의 제목 검색(searchCnd '0')이고, 게시 상태·상단 고정은 서버가 오늘(Asia/Seoul) 기준으로 판정한다.
+ */
+export interface BoardOperationPostParams {
+  page: number;
+  size: number;
+  searchWrd?: string;
+  postingStatus?: BoardPostingStatus;
+  /** [2026-10-23 ADR-0040 결정 5] true 면 지금 고정 중인 글, false 면 그 밖의 글이다. 비우면 전체다. */
+  pinned?: boolean;
+}
 
 /**
  * 게시판 이름·사용 여부가 바뀐 뒤(설정 저장·일괄 사용 상태 변경·영구 삭제) 다시 읽을 캐시. 관리 뿌리 키 아래(목록·상세·이용 화면
@@ -32,6 +46,10 @@ export const boardMasterKeys = {
   changeHistories: (bbsId: string) => [...boardMasterKeys.detail(bbsId), 'change-history'] as const,
   changeHistory: (bbsId: string, page: number, size: number) =>
     [...boardMasterKeys.changeHistories(bbsId), { page, size }] as const,
+  // 운영 화면 게시물 탭의 목록(ADR-0040 §5.4). 상세 키 아래에 둬 설정 저장 뒤의 invalidateBoardCaches 가 함께 다시 읽는다.
+  operationPostsAll: (bbsId: string) => [...boardMasterKeys.detail(bbsId), 'posts'] as const,
+  operationPosts: (bbsId: string, params: BoardOperationPostParams) =>
+    [...boardMasterKeys.operationPostsAll(bbsId), params] as const,
 };
 
 export const boardMasterQueryOptions = {
@@ -58,4 +76,32 @@ export const boardMasterQueryOptions = {
     queryFn: () => boardAdminService.getBoardChangeHistory(bbsId, { page, size }),
     enabled: bbsId.length > 0,
   }),
+  /*
+    [2026-10-23 ADR-0040 결정 1·D-1] 운영 목록은 새 경로 없이 이용자 목록 API 를 쓴다 — 조회 대행 권한(BOARD_READ_ALL)이면 서버가
+    사용 안 함 게시판과 예약·종료 글까지 연다. 빈 조건은 보내지 않는다(빈 값과 '조건 없음' 을 섞지 않는다).
+  */
+  operationPosts: (bbsId: string, params: BoardOperationPostParams) => queryOptions({
+    queryKey: boardMasterKeys.operationPosts(bbsId, params),
+    queryFn: () => boardUserService.getPosts(bbsId, {
+      page: params.page,
+      size: params.size,
+      ...(params.searchWrd ? { searchCnd: '0', searchWrd: params.searchWrd } : {}),
+      ...(params.postingStatus ? { postingStatus: params.postingStatus } : {}),
+      ...(params.pinned !== undefined ? { pinned: params.pinned } : {}),
+    }),
+    enabled: bbsId.length > 0,
+  }),
 };
+
+/**
+ * 운영 화면에서 게시글의 게시 기간·상단 고정을 바꾼 뒤(ADR-0040 결정 5·9·10) 다시 읽을 캐시 — 운영 목록, 그 게시판의 변경 이력, 이용 화면의
+ * 목록·상세다. 게시판 설정·이름은 바뀌지 않으므로 관리 뿌리 전체를 다시 읽지 않는다.
+ */
+export function invalidateBoardOperationPosts(queryClient: QueryClient, bbsId: string): Promise<unknown> {
+  return Promise.all([
+    queryClient.invalidateQueries({ queryKey: boardMasterKeys.operationPostsAll(bbsId) }),
+    queryClient.invalidateQueries({ queryKey: boardMasterKeys.changeHistories(bbsId) }),
+    queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] }),
+    queryClient.invalidateQueries({ queryKey: ['article-detail', bbsId] }),
+  ]);
+}

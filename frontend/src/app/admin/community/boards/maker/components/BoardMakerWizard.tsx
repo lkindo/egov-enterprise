@@ -62,19 +62,37 @@ const STEPS = [
   { id: 4, title: '최종 확인', description: '만든 직후의 상태를 확인하세요', icon: Rocket },
 ];
 
+/** 비밀글 정책 세 값(ADR-0040 결정 7). 어휘는 생성 스키마의 enum 이다. */
+type PrivatePostPolicy = NonNullable<z.infer<typeof BoardMasterDtoSchema>['prvtPstPlcyCd']>;
+/** 비밀글 정책 선택 항목 — 값마다 무엇이 달라지는지 함께 말한다(운영 화면 설정 탭과 같은 말). */
+const PRIVATE_POST_POLICY_OPTIONS: Readonly<Record<PrivatePostPolicy, string>> = {
+  NONE: '없음(작성 화면에 선택 없음)',
+  OPTIONAL: '선택(글쓴이가 고름)',
+  REQUIRED: '필수(늘 비밀글로 저장)',
+};
+const PRIVATE_POST_POLICY_SUMMARY: Readonly<Record<PrivatePostPolicy, string>> = { NONE: '없음', OPTIONAL: '선택', REQUIRED: '필수' };
+
 /**
  * 용도 프리셋(설계서 §5.3 표). 용도는 사용자가 아직 직접 바꾸지 않은 칸만 채운다. 파일당 크기는 용도와 무관하게 비워 둔다(전역 상한).
- * 예약·고정·비밀글·추천 칸은 해당 배치(B1~B3)가 구현된 뒤에만 채운다.
+ * 예약·고정·비밀글·추천 칸은 해당 배치(B1~B3)가 구현된 뒤에만 채운다 — [2026-10-23 B1] 예약 게시(공지형만 받음)를, [B2] 상단 고정
+ * (공지형만 허용, 상한 5·기본 30일)을, [B3] 비밀글 정책(질의응답형만 선택)과 추천 받기(공지형만 받지 않음)를 채운다.
  */
 const BOARD_PURPOSES = [
-  { id: 'NOTICE', label: '공지형', tmpltId: 'TMPLT_LIST', ansYn: 'N', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3 },
-  { id: 'ARCHIVE', label: '자료실형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 10 },
-  { id: 'FREE', label: '자유형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3 },
-  { id: 'QNA', label: '질의응답형', tmpltId: 'TMPLT_QNA', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3 },
+  { id: 'NOTICE', label: '공지형', tmpltId: 'TMPLT_LIST', ansYn: 'N', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, rsvtPstgPsbltyYn: 'Y',
+    upendFixPsbltyYn: 'Y', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'N' },
+  { id: 'ARCHIVE', label: '자료실형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 10, rsvtPstgPsbltyYn: 'N',
+    upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y' },
+  { id: 'FREE', label: '자유형', tmpltId: 'TMPLT_LIST', ansYn: 'Y', stsfdgYn: 'N', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, rsvtPstgPsbltyYn: 'N',
+    upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y' },
+  { id: 'QNA', label: '질의응답형', tmpltId: 'TMPLT_QNA', ansYn: 'Y', stsfdgYn: 'Y', fileAtchPsbltyYn: 'Y', atchPsbltyFileQty: 3, rsvtPstgPsbltyYn: 'N',
+    upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'OPTIONAL', rcmdtnUseYn: 'Y' },
 ] as const satisfies readonly {
   id: string; label: string; tmpltId: BoardTemplateId; ansYn: 'Y' | 'N'; stsfdgYn: 'Y' | 'N'; fileAtchPsbltyYn: 'Y' | 'N'; atchPsbltyFileQty: number;
+  rsvtPstgPsbltyYn: 'Y' | 'N'; upendFixPsbltyYn: 'Y' | 'N'; upendFixUplmtNocs: number; upendFixBscDayCnt: number;
+  prvtPstPlcyCd: PrivatePostPolicy; rcmdtnUseYn: 'Y' | 'N';
 }[];
-type PurposeField = 'tmpltId' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty';
+type PurposeField = 'tmpltId' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty' | 'rsvtPstgPsbltyYn'
+  | 'upendFixPsbltyYn' | 'upendFixUplmtNocs' | 'upendFixBscDayCnt' | 'prvtPstPlcyCd' | 'rcmdtnUseYn';
 const BYTES_PER_MB = 1024 * 1024;
 
 /*
@@ -104,9 +122,16 @@ import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
 import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/attachments/server-upload-limits';
 import { boardOperationsHref } from '../../master/board-operations-tabs';
+import { generatedRange, pinCountSchema } from '../../master/board-pin-count';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
+
+// [2026-10-23 ADR-0040 결정 5] 상단 고정 상한·기본 일수의 범위는 생성 스키마(서버 @Min·@Max)에서 온다 — 화면 상수를 두지 않는다.
+const PIN_LIMIT_GENERATED = BoardMasterDtoSchema.shape.upendFixUplmtNocs.unwrap();
+const PIN_DAYS_GENERATED = BoardMasterDtoSchema.shape.upendFixBscDayCnt.unwrap();
+const PIN_LIMIT_RANGE = generatedRange(PIN_LIMIT_GENERATED);
+const PIN_DAYS_RANGE = generatedRange(PIN_DAYS_GENERATED);
 
 export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
   bbsTtl: BoardMasterDtoSchema.shape.bbsTtl
@@ -127,6 +152,10 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
     .min(0, '파일당 크기는 0 이상이어야 합니다.')
     .max(SERVER_MAX_FILE_SIZE_MB * BYTES_PER_MB, `서버는 파일 하나당 ${SERVER_MAX_FILE_SIZE_MB}MB 까지 받습니다.`),
   tmpltId: BoardMasterDtoSchema.shape.tmpltId.unwrap().max(20),
+  // [2026-10-23 ADR-0040 결정 5·6] 상단 고정 상한·기본 일수. 범위는 서버 @Min·@Max 가 생성 스키마로 내려온 값이고, 비우면 서버 기본값이라
+  //   생성 스키마처럼 선택이다(마법사는 늘 채워 보낸다).
+  upendFixUplmtNocs: pinCountSchema({ subject: '상단 고정 상한은', object: '상단 고정 상한을' }, '건', PIN_LIMIT_GENERATED).optional(),
+  upendFixBscDayCnt: pinCountSchema({ subject: '상단 고정 기본 일수는', object: '상단 고정 기본 일수를' }, '일', PIN_DAYS_GENERATED).optional(),
   menuNm: MenuDtoSchema.shape.menuNm
     .trim()
     .min(1, '메뉴 명칭을 입력해 주세요.')
@@ -155,6 +184,12 @@ const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
   tmpltId: '화면 유형',
   atchPsbltyFileQty: '첨부 파일 수',
   atchPsbltyFileSz: '파일당 크기',
+  rsvtPstgPsbltyYn: '예약 게시',
+  upendFixPsbltyYn: '상단 고정 허용',
+  upendFixUplmtNocs: '상단 고정 상한',
+  upendFixBscDayCnt: '상단 고정 기본 일수',
+  prvtPstPlcyCd: '비밀글 정책',
+  rcmdtnUseYn: '추천 받기',
   cmntySn: '커뮤니티 귀속',
   upperMenuNo: '상위 메뉴',
   menuNm: '메뉴 명칭',
@@ -169,6 +204,12 @@ const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
   tmpltId: 2,
   atchPsbltyFileQty: 2,
   atchPsbltyFileSz: 2,
+  rsvtPstgPsbltyYn: 2,
+  upendFixPsbltyYn: 2,
+  upendFixUplmtNocs: 2,
+  upendFixBscDayCnt: 2,
+  prvtPstPlcyCd: 2,
+  rcmdtnUseYn: 2,
   upperMenuNo: 3,
   upMenuSn: 3,
   menuNm: 3,
@@ -236,6 +277,16 @@ export function BoardMakerWizard() {
       ansYn: 'Y',
       stsfdgYn: 'Y',
       fileAtchPsbltyYn: 'Y',
+      // [2026-10-23 ADR-0040 결정 3·6] 예약 게시는 기존 게시판 기본값(받지 않음)으로 시작한다 — 공지형 용도만 켠다.
+      rsvtPstgPsbltyYn: 'N',
+      // [2026-10-23 ADR-0040 결정 5·6] 상단 고정도 기존 게시판 기본값(허용 안 함 · 5건 · 30일)으로 시작한다 — 공지형 용도만 켠다.
+      upendFixPsbltyYn: 'N',
+      upendFixUplmtNocs: 5,
+      upendFixBscDayCnt: 30,
+      // [2026-10-23 ADR-0040 결정 6·7] 비밀글 정책·추천 받기도 기존 게시판 기본값(없음·받음)으로 시작한다 — 질의응답형은 선택,
+      //   공지형은 추천을 받지 않는다.
+      prvtPstPlcyCd: 'NONE',
+      rcmdtnUseYn: 'Y',
       bbsTypeCd: DEFAULT_BOARD_TYPE.code,
       bbsAtrbCd: 'BBSA01',
       tmpltId: DEFAULT_BOARD_TYPE.templateId,
@@ -290,6 +341,12 @@ export function BoardMakerWizard() {
     if (!touched.has('stsfdgYn')) setValue('stsfdgYn', preset.stsfdgYn, { shouldDirty: true });
     if (!touched.has('fileAtchPsbltyYn')) setValue('fileAtchPsbltyYn', preset.fileAtchPsbltyYn, { shouldDirty: true });
     if (!touched.has('atchPsbltyFileQty')) setValue('atchPsbltyFileQty', preset.atchPsbltyFileQty, { shouldDirty: true });
+    if (!touched.has('rsvtPstgPsbltyYn')) setValue('rsvtPstgPsbltyYn', preset.rsvtPstgPsbltyYn, { shouldDirty: true });
+    if (!touched.has('upendFixPsbltyYn')) setValue('upendFixPsbltyYn', preset.upendFixPsbltyYn, { shouldDirty: true });
+    if (!touched.has('upendFixUplmtNocs')) setValue('upendFixUplmtNocs', preset.upendFixUplmtNocs, { shouldDirty: true });
+    if (!touched.has('upendFixBscDayCnt')) setValue('upendFixBscDayCnt', preset.upendFixBscDayCnt, { shouldDirty: true });
+    if (!touched.has('prvtPstPlcyCd')) setValue('prvtPstPlcyCd', preset.prvtPstPlcyCd, { shouldDirty: true });
+    if (!touched.has('rcmdtnUseYn')) setValue('rcmdtnUseYn', preset.rcmdtnUseYn, { shouldDirty: true });
   };
   const upperMenuNo = watch('upperMenuNo');
   const fileSizeBytes = Number(watch('atchPsbltyFileSz'));
@@ -310,7 +367,7 @@ export function BoardMakerWizard() {
     const fields: Array<keyof FormValues> = currentStep === 1
       ? ['bbsTtl', 'bbsExpln']
       : currentStep === 2
-        ? ['tmpltId', 'atchPsbltyFileQty', 'atchPsbltyFileSz']
+        ? ['tmpltId', 'atchPsbltyFileQty', 'atchPsbltyFileSz', 'upendFixUplmtNocs', 'upendFixBscDayCnt']
         : currentStep === 3
           ? ['upperMenuNo', 'menuNm', 'menuOrdr']
           : [];
@@ -351,6 +408,15 @@ export function BoardMakerWizard() {
         atchPsbltyFileQty: Number(data.atchPsbltyFileQty),
         atchPsbltyFileSz: Number(data.atchPsbltyFileSz),
         tmpltId: data.tmpltId,
+        // [2026-10-23 ADR-0040 결정 3·6] 예약 게시(새 미래 시작일을 받을지). 커뮤니티 마커 블록 앞에 둔다 — 투영에서 블록이 빠져도 남는다.
+        rsvtPstgPsbltyYn: data.rsvtPstgPsbltyYn === 'Y' ? 'Y' : 'N',
+        // [2026-10-23 ADR-0040 결정 5·6] 상단 고정 허용·상한·기본 일수. 같은 이유로 커뮤니티 마커 블록 앞에 둔다.
+        upendFixPsbltyYn: data.upendFixPsbltyYn === 'Y' ? 'Y' : 'N',
+        upendFixUplmtNocs: Number(data.upendFixUplmtNocs),
+        upendFixBscDayCnt: Number(data.upendFixBscDayCnt),
+        // [2026-10-23 ADR-0040 결정 6·7] 비밀글 정책·추천 받기. 같은 이유로 커뮤니티 마커 블록 앞에 둔다(useYn 이 마지막이다).
+        prvtPstPlcyCd: data.prvtPstPlcyCd ?? 'NONE',
+        rcmdtnUseYn: data.rcmdtnUseYn === 'N' ? 'N' : 'Y',
         // [2026-09-08 PD-CMTY-001] 빈 값은 '귀속 없음' 이라 필드를 아예 보내지 않는다.
         //   서버는 없는 커뮤니티 귀속을 404 로 거부한다.
         /* reusable-base:community:start */
@@ -713,6 +779,12 @@ export function BoardMakerWizard() {
                         ['ansYn', '댓글 받기', '끄면 새 댓글을 받지 않습니다. 이미 달린 댓글은 그대로 보입니다.'],
                         ['stsfdgYn', '만족도 평가 받기', '끄면 새 만족도 평가를 받지 않습니다.'],
                         ['fileAtchPsbltyYn', '파일 첨부 허용', '끄면 새 첨부를 받지 않습니다.'],
+                        // [2026-10-23 ADR-0040 결정 3·6] 기본은 받지 않음이다(체크 해제가 'N').
+                        ['rsvtPstgPsbltyYn', '예약 게시 받기', '켜면 오늘보다 뒤의 시작일을 받습니다. 그 글은 시작일까지 작성자와 게시판 관리자에게만 보입니다.'],
+                        // [2026-10-23 ADR-0040 결정 5·6] 기본은 허용 안 함이다. 고정하려면 게시글 상단 고정 권한(BOARD_PIN)도 있어야 한다.
+                        ['upendFixPsbltyYn', '상단 고정 받기', '켜면 운영 화면에서 글을 게시판 목록 맨 위에 고정할 수 있습니다(게시글 상단 고정 권한 필요).'],
+                        // [2026-10-23 ADR-0040 결정 6] 기본은 받음이다. 끄면 새 추천만 막고, 각자 자기 추천은 거둘 수 있다.
+                        ['rcmdtnUseYn', '추천 받기', '끄면 새 추천을 받지 않습니다. 쌓인 추천 수는 그대로이고 각자 자기 추천은 거둘 수 있습니다.'],
                       ] as const).map(([field, label, help]) => (
                         <label key={field} className="flex items-start gap-2 text-[length:var(--font-size-body)] text-foreground">
                           <input
@@ -762,6 +834,56 @@ export function BoardMakerWizard() {
                           />
                           {errors.atchPsbltyFileSz && <p id="atchPsbltyFileSz-error" className="text-destructive-emphasis text-xs font-bold">{errors.atchPsbltyFileSz.message}</p>}
                         </div>
+                      </div>
+                      {/* 상단 고정 상한·기본 일수 — 고정을 받지 않는 동안은 읽기 전용이다(값은 그대로 저장돼 나중에 켜면 쓴다). */}
+                      <div className="grid grid-cols-1 gap-3 pt-1 sm:grid-cols-2">
+                        {([
+                          ['upendFixUplmtNocs', '상단 고정 상한(건)', PIN_LIMIT_RANGE],
+                          ['upendFixBscDayCnt', '상단 고정 기본 일수(일)', PIN_DAYS_RANGE],
+                        ] as const).map(([field, label, range]) => (
+                          <div key={field} className="space-y-1">
+                            <Label htmlFor={field} className="text-xs font-medium text-foreground">{label}</Label>
+                            <Input
+                              id={field}
+                              type="number"
+                              min={range.min ?? undefined}
+                              max={range.max ?? undefined}
+                              readOnly={watch('upendFixPsbltyYn') !== 'Y'}
+                              aria-invalid={errors[field] ? 'true' : 'false'}
+                              aria-describedby={errors[field] ? `${field}-error` : undefined}
+                              value={Number.isNaN(Number(watch(field))) ? '' : String(watch(field) ?? '')}
+                              onChange={(event) => {
+                                touch(field);
+                                setValue(field, event.target.value === '' ? Number.NaN : Number(event.target.value), { shouldDirty: true });
+                              }}
+                            />
+                            {errors[field] && <p id={`${field}-error`} className="text-destructive-emphasis text-xs font-bold">{errors[field]?.message}</p>}
+                          </div>
+                        ))}
+                      </div>
+                      {/*
+                        [2026-10-23 ADR-0040 결정 7] 비밀글 정책. 없음은 작성 화면에 선택이 없고(지금 동작), 선택은 글쓴이가 고르며, 필수는
+                        서버가 늘 비밀글로 저장한다. 질의응답형 용도가 선택을 채운다. 만든 뒤에는 운영 화면 설정 탭에서 바꾼다.
+                      */}
+                      <div className="space-y-1 pt-1">
+                        <Label htmlFor="prvtPstPlcyCd" className="text-xs font-medium text-foreground">비밀글 정책</Label>
+                        <select
+                          id="prvtPstPlcyCd"
+                          value={watch('prvtPstPlcyCd') ?? 'NONE'}
+                          aria-describedby="prvtPstPlcyCd-help"
+                          onChange={(event) => {
+                            touch('prvtPstPlcyCd');
+                            setValue('prvtPstPlcyCd', event.target.value as PrivatePostPolicy, { shouldDirty: true });
+                          }}
+                          className="h-[var(--control-h)] w-full rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
+                        >
+                          {(Object.keys(PRIVATE_POST_POLICY_OPTIONS) as PrivatePostPolicy[]).map((policy) => (
+                            <option key={policy} value={policy}>{PRIVATE_POST_POLICY_OPTIONS[policy]}</option>
+                          ))}
+                        </select>
+                        <p id="prvtPstPlcyCd-help" className="text-xs text-muted-foreground">
+                          비밀글은 작성자와 게시판 관리자만 봅니다. 필수면 저장하는 글이 모두 비밀글이 됩니다.
+                        </p>
                       </div>
                     </fieldset>
                   </div>
@@ -918,7 +1040,13 @@ export function BoardMakerWizard() {
                     <dt className="text-muted-foreground">기능</dt>
                     <dd className="text-foreground">
                       댓글 {watch('ansYn') === 'N' ? '받지 않음' : '받음'} · 만족도 {watch('stsfdgYn') === 'N' ? '받지 않음' : '받음'} ·
-                      첨부 {watch('fileAtchPsbltyYn') === 'N' ? '허용 안 함' : `허용(${Number(watch('atchPsbltyFileQty')) === 0 ? '개수 상한 없음' : `${watch('atchPsbltyFileQty')}개`}, ${fileSizeBytes > 0 ? `${fileSizeBytes / BYTES_PER_MB}MB` : '전역 상한'})`}
+                      첨부 {watch('fileAtchPsbltyYn') === 'N' ? '허용 안 함' : `허용(${Number(watch('atchPsbltyFileQty')) === 0 ? '개수 상한 없음' : `${watch('atchPsbltyFileQty')}개`}, ${fileSizeBytes > 0 ? `${fileSizeBytes / BYTES_PER_MB}MB` : '전역 상한'})`} ·
+                      예약 게시 {watch('rsvtPstgPsbltyYn') === 'Y' ? '받음' : '받지 않음'} ·
+                      상단 고정 {watch('upendFixPsbltyYn') === 'Y'
+                        ? `허용(상한 ${watch('upendFixUplmtNocs')}건 · 기본 ${watch('upendFixBscDayCnt')}일)`
+                        : '허용 안 함'} ·
+                      비밀글 정책 {PRIVATE_POST_POLICY_SUMMARY[watch('prvtPstPlcyCd') ?? 'NONE']} ·
+                      추천 {watch('rcmdtnUseYn') === 'N' ? '받지 않음' : '받음'}
                     </dd>
                     {/* reusable-base:community:start */}
                     <dt className="text-muted-foreground">커뮤니티 귀속</dt>

@@ -37,6 +37,30 @@ export function boardUsageNotes(bbsId: string, designations: readonly string[] |
   return notes;
 }
 
+/**
+ * 비밀글 정책을 이 값으로 둘 때 함께 알아야 할 사실(ADR-0040 결정 7·§5.5). 없으면 빈 배열이다. 설정 탭이 정책 칸 아래와 저장 확인
+ * 표 아래에 같은 문장을 쓴다.
+ *  · FAQ 지정 게시판을 필수로 두면: 공개 FAQ 는 비밀글이 아닌 글만 싣는다 — 앞으로 저장하는 글(새 글과 고친 글)은 실리지 않는다.
+ *  · 질의응답 게시판(QNA_BOARD_ID)을 없음 밖으로 두면: 도움말 1:1 문의(비밀)와 지식 허브 질의응답(공개)이 이 게시판을 함께 쓰는
+ *    지금 동작이 의도라 없음으로 둔다(결정 7). 선택이면 작성 화면에 선택이 생기고, 필수면 공개 질문도 비밀글이 된다.
+ */
+export function privatePostPolicyWarnings(
+  bbsId: string,
+  designations: readonly string[] | null | undefined,
+  policy: string | null | undefined,
+): string[] {
+  const warnings: string[] = [];
+  if (policy === 'REQUIRED' && (designations ?? []).includes('FAQ')) {
+    warnings.push('FAQ 지정 게시판입니다 — 공개 FAQ 는 비밀글이 아닌 글만 싣습니다. 필수로 두면 앞으로 저장하는 글(새 글과 고친 글)은 공개 FAQ 에 실리지 않습니다.');
+  }
+  if (bbsId === QNA_BOARD_ID && (policy === 'OPTIONAL' || policy === 'REQUIRED')) {
+    warnings.push(policy === 'REQUIRED'
+      ? '도움말 1:1 문의(비밀)와 지식 허브 질의응답(공개)이 이 게시판을 함께 씁니다. 필수로 두면 공개 질문도 앞으로 저장할 때 비밀글이 되어 다른 사용자에게 보이지 않습니다.'
+      : '도움말 1:1 문의(비밀)와 지식 허브 질의응답(공개)이 이 게시판을 함께 씁니다. 선택으로 두면 게시글 작성 화면에 비밀글 선택이 생깁니다. 이 게시판은 없음으로 두는 것이 의도한 동작입니다.');
+  }
+  return warnings;
+}
+
 /** 지정 용도의 짧은 표지(목록·운영 화면 머리). */
 export const DESIGNATION_LABELS: Readonly<Record<string, string>> = {
   NOTICE: '공지 지정',

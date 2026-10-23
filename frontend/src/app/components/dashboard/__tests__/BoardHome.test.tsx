@@ -69,6 +69,20 @@ describe('업무 홈 게시판 조각 (DIP V1)', () => {
       .toHaveAttribute('href', `/admin/community/boards/insert-board-article?bbsId=${TASK_BOARD_ID}`);
   });
 
+  // [2026-10-23 ADR-0040 결정 3] 예약 글은 작성자에게만 온다 — 홈 목록이 서버 판정 표지로 그 사실을 말한다(날짜를 다시 계산하지 않는다).
+  it('예약 글에는 서버 판정 예약 표지를 붙이고 게시 중인 글에는 붙이지 않는다', async () => {
+    await renderBoardHome({
+      initialTaskList: [
+        { id: '7', bbsId: TASK_BOARD_ID, pstSn: 7, title: '다음 달 공지', date: '2026-10-20', isNew: false, postingStatus: 'SCHEDULED', postingStartYmd: '20261201' },
+        { id: '8', bbsId: TASK_BOARD_ID, pstSn: 8, title: '오늘 공지', date: '2026-10-21', isNew: false, postingStatus: 'POSTING' },
+      ],
+      taskListTotal: 2,
+    });
+
+    expect(screen.getByText('예약')).toHaveAttribute('title', '게시 시작일 2026-12-01 전이라 다른 사용자에게는 보이지 않습니다.');
+    expect(screen.getAllByText(/^예약/)).toHaveLength(1);
+  });
+
   it('🚨 브라우저 조회가 실패하면(404) 목록을 자리표시로 남기지 않고 조회 실패라고 말한다', async () => {
     mocks.execute.mockRejectedValue(Object.assign(new Error('Not Found'), { response: { status: 404 } }));
     const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

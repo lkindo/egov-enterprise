@@ -108,6 +108,33 @@ public record BoardDto(
     @Schema(description = "현재 사용자가 이미 추천했는지(서버 판정, 알 수 없으면 null)", nullable = true,
             types = {"boolean", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
-    Boolean recommended
+    Boolean recommended,
+
+    // [2026-10-23 ADR-0040 결정 3] 서버가 오늘(Asia/Seoul) 기준으로 판정한 게시 상태 — 화면은 날짜를 다시 계산하지 않는다
+    //   (DEC-OPS-140). 게시판 목록·상세에서만 싣고, 그 밖의 경로(통합 검색·공개 FAQ)는 null 이다.
+    @Schema(description = "게시 상태(서버 판정, Asia/Seoul 오늘 기준) — SCHEDULED 시작일 전·POSTING 게시 중·ENDED 종료일 지남. "
+            + "게시판 목록·상세에서만 싣고 그 밖은 null", nullable = true, types = {"string", "null"},
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    PostingStatus postingStatus,
+
+    // [2026-10-23 ADR-0040 결정 10] 게시글 버전 — 수정 요청(작성 화면·운영 화면 빠른 편집)이 그대로 돌려보낸다.
+    @Schema(description = "게시글 버전(낙관적 잠금). 수정 요청에 그대로 돌려보낸다", nullable = true, types = {"integer", "null"},
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    Integer version,
+
+    // [ADR-0040 결정 5] 서버가 오늘(Asia/Seoul) 기준으로 판정한 '지금 목록 맨 위에 고정 중' 여부 — 고정 표시가 있어도 종료일이 지났으면
+    //   false 다. 화면은 날짜를 다시 계산하지 않는다(DEC-OPS-140). 게시판 목록·상세에서만 싣고 그 밖은 null 이다.
+    @Schema(description = "지금 게시판 목록 맨 위에 고정 중인지(서버 판정, Asia/Seoul 오늘 기준). 게시판 목록·상세에서만 싣고 그 밖은 null",
+            nullable = true, types = {"boolean", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    Boolean pinned,
+
+    // [ADR-0040 결정 5] 고정 중인 글의 고정 종료일. 고정 중이 아니면(종료일이 지난 옛 고정 포함) null 이다.
+    @Schema(description = "상단 고정 종료일(yyyyMMdd). 지금 고정 중일 때만 싣고 그 밖은 null", nullable = true,
+            types = {"string", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    String upendFixEndYmd
 ) {
 }

@@ -1,6 +1,7 @@
 package nuri.business.service.board.dto;
 
 import io.swagger.v3.oas.annotations.media.Schema;
+import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -66,6 +67,41 @@ public class BoardMasterUpdateRequest {
     @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
     @Size(max = 1)
     private String stsfdgYn;
+
+    @Schema(description = "예약 게시 — Y 면 새 글의 미래 게시 시작일을 받는다. 바꿔도 이미 있는 글의 노출은 바뀌지 않는다",
+            allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
+    private String rsvtPstgPsbltyYn;
+
+    @Schema(description = "상단 고정 허용 — Y 면 새 고정을 받는다. 끄거나 상한을 낮춰도 이미 고정된 글은 종료일까지 그대로다",
+            allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
+    private String upendFixPsbltyYn;
+
+    @Schema(description = "상단 고정 상한(고정 중인 글 수, 1~100). 새 고정만 이 상한을 따른다")
+    @Min(1)
+    @Max(100)
+    private Integer upendFixUplmtNocs;
+
+    @Schema(description = "상단 고정 기본 일수(종료일을 비우고 고정할 때, 1~365)")
+    @Min(1)
+    @Max(365)
+    private Integer upendFixBscDayCnt;
+
+    @Schema(description = "비밀글 정책 — NONE 은 작성 화면에 선택이 없고 요청값을 그대로 저장, OPTIONAL 은 작성 화면에서 글쓴이가 고름, "
+            + "REQUIRED 는 서버가 새 글과 고친 글을 비밀글로 저장한다. 바꿔도 이미 있는 글의 비밀 여부는 그대로다",
+            allowableValues = { "NONE", "OPTIONAL", "REQUIRED" })
+    @Pattern(regexp = "^(?:NONE|OPTIONAL|REQUIRED)$", message = "{validation.pattern}")
+    @Size(max = 12)
+    private String prvtPstPlcyCd;
+
+    @Schema(description = "추천 받기 — N 이면 새 추천을 받지 않는다. 이미 받은 추천 수는 그대로이고 각자 자기 추천 취소는 받는다",
+            allowableValues = { "Y", "N" })
+    @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
+    @Size(max = 1)
+    private String rcmdtnUseYn;
 
     @Schema(description = "화면이 읽은 게시판 버전. 다르면 다른 사람이 먼저 고친 것이라 409 다")
     @NotNull

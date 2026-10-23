@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { NOTICE_BOARD_ID, TASK_BOARD_ID } from '@/config/board-ids';
 import type { DashboardTask } from '@/types/foundation/dashboard';
 import { boardHomeQuery } from '@/queries/board-home-query';
+import { PostingStatusBadge } from '@/app/admin/community/boards/components/PostingStatusBadge';
 
 /**
  * 업무 홈의 게시판 구역(Phase 2 9단계 — 종전 UnifiedDashboardClient 의 게시판 블록을 줄 단위로 옮겼다). 게시판 기능 소유이고 업무 홈
@@ -111,6 +112,8 @@ function HomeListSection({ title, items, total, moreHref, moreLabel, emptyMessag
                 {item.bbsId && item.pstSn
                   ? <Link href={`/admin/community/boards/detail?bbsId=${encodeURIComponent(item.bbsId)}&pstSn=${item.pstSn}`} className="underline-offset-4 hover:text-primary hover:underline">{item.title}</Link>
                   : item.title}
+                {/* [2026-10-23 ADR-0040 결정 3] 예약·게시 종료 글(작성자에게만 온다)은 서버 판정 표지를 붙인다. */}
+                <PostingStatusBadge status={item.postingStatus} startYmd={item.postingStartYmd} />
                 {item.isNew && (
                   <span className="ml-2 rounded bg-info px-1.5 py-0.5 text-xs font-bold text-info-foreground">신규</span>
                 )}

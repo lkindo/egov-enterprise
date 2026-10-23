@@ -161,7 +161,10 @@ describe('boardActions', () => {
       [403, { message: 'Forbidden' }, '이 게시판에 글을 쓰거나 이 글을 고칠 권한이 없습니다.'],
       [413, {}, '첨부 파일이 허용 크기를 넘습니다. 파일 크기를 줄여 다시 시도해 주세요.'],
       [415, {}, '보낼 수 없는 형식의 요청입니다. 첨부 파일 형식을 확인해 주세요.'],
-      [409, { message: '커뮤니티 회원만 이용할 수 있는 게시판입니다.' }, '커뮤니티 회원만 이용할 수 있는 게시판입니다.'],
+      // 그 밖의 4xx 는 서버 사유를 그대로 싣는다(필드를 가리키지 않는 사유).
+      [404, { message: '게시글을 찾을 수 없습니다.' }, '게시글을 찾을 수 없습니다.'],
+      // [2026-10-23 ADR-0040 결정 10] 버전 충돌(409)은 '다시 시도' 가 아니라 다시 열어 확인하라고 말한다 — 같은 버전으로는 또 거부된다.
+      [409, { message: '데이터가 이미 수정되었습니다. 다시 시도해주세요.' }, '다른 사용자가 먼저 이 글을 고쳐 저장하지 않았습니다. 글을 다시 열어 최신 내용을 확인한 뒤 고쳐 주세요.'],
     ])('🚨 저장 실패 %i 는 사유를 말한다 — 한 문장으로 뭉개지 않는다 (DIP V9)', async (status, data, expected) => {
       const formData = new FormData();
       formData.append('pstTtl', 'title');
@@ -172,6 +175,45 @@ describe('boardActions', () => {
       const result = await saveBoardArticle({}, formData);
 
       expect(result).toMatchObject({ success: false, message: expected });
+    });
+
+    // [2026-10-23 ADR-0040 결정 10] 게시글 버전은 수정에만 싣는다 — 새 글에 버전을 보내지 않는다.
+    it('수정은 폼이 실은 게시글 버전을 숫자로 보내고, 등록은 보내지 않는다', async () => {
+      const edit = new FormData();
+      edit.append('pstSn', '100');
+      edit.append('pstTtl', 'title');
+      edit.append('pstCn', 'content');
+      edit.append('bbsId', 'BBS_001');
+      edit.append('version', '4');
+      await saveBoardArticle({}, edit);
+      expect(vi.mocked(client.requestRaw).mock.calls.at(-1)?.[0]).toMatchObject({ method: 'put', data: expect.objectContaining({ version: 4 }) });
+
+      const create = new FormData();
+      create.append('pstTtl', 'title');
+      create.append('pstCn', 'content');
+      create.append('bbsId', 'BBS_001');
+      create.append('version', '4');
+      await saveBoardArticle({}, create);
+      const createCall = vi.mocked(client.requestRaw).mock.calls.at(-1)?.[0] as { method: string; data: Record<string, unknown> };
+      expect(createCall.method).toBe('post');
+      expect(createCall.data).not.toHaveProperty('version');
+    });
+
+    // [2026-10-23 ADR-0040 결정 3·D-11] 게시 기간 규칙의 서버 사유는 필드 없이 온다 — 사유가 말하는 날짜 칸에 붙인다.
+    it.each([
+      [400, '이 게시판은 예약 게시를 받지 않습니다. 게시 시작일은 오늘이나 그 이전으로 정해 주세요.', 'pstBgngYmd'],
+      [403, '게시가 시작된 글의 시작일은 게시글 전체 수정 권한이 있어야 바꿀 수 있습니다.', 'pstBgngYmd'],
+      [400, '종료일은 시작일보다 빠를 수 없습니다.', 'pstEndYmd'],
+    ])('게시 기간 사유(%i)는 그 날짜 칸에 붙인다', async (status, message, field) => {
+      const formData = new FormData();
+      formData.append('pstSn', '100');
+      formData.append('pstTtl', 'title');
+      formData.append('pstCn', 'content');
+      formData.append('bbsId', 'BBS_001');
+      formData.append('version', '1');
+      (vi.mocked(client.requestRaw)).mockRejectedValue({ response: { status, data: { message } } });
+
+      await expect(saveBoardArticle({}, formData)).resolves.toMatchObject({ success: false, field, message });
     });
 
     it('🚨 400 필드 오류는 어느 입력인지 함께 돌려준다 (DIP V9)', async () => {

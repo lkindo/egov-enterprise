@@ -76,6 +76,10 @@
         "alsoRequires": [
           "community"
         ]
+      },
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/BoardOperationsPostgresIntegrationTest.java",
+        "alsoRequires": []
       }
     ],
     "rbacMatrix": null,
@@ -146,13 +150,19 @@
       },
       {
         "path": "frontend/src/extensions/board/stats-panels.ts",
-        "reason": "게시판 기능이 없으면 통계 화면의 게시물·자료 이용 탭과 누적 게시물 칸만 사라지고 통계는 그대로입니다."
+        "reason": "게시판 기능이 없으면 통계 화면의 게시물·자료 이용 탭과 전체 등록 건수 칸만 사라지고 통계는 그대로입니다."
       }
     ],
     "ports": []
   },
   "requirements": [],
   "unassignedPermissions": [
+    {
+      "code": "BOARD_PIN",
+      "bundle": "board-community-operations",
+      "protected": false,
+      "effect": "운영 화면의 게시물 탭에서 글을 게시판 목록 맨 위에 고정하고 해제합니다. 공지·FAQ 로 지정된 게시판에서는 그 편집 권한도 함께 있어야 하며, 배정하기 전에는 관리자도 고정할 수 없습니다."
+    },
     {
       "code": "FAQ_EDIT",
       "bundle": "board-community-operations",

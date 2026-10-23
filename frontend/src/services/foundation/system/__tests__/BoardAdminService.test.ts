@@ -41,6 +41,7 @@ const client = vi.hoisted(() => {
     get: vi.fn(),
     post: vi.fn(),
     put: vi.fn(),
+    patch: vi.fn(),
     delete: vi.fn(),
   };
   const envelope = (data: unknown) => ({ success: true, code: 'S000', message: '성공', data });
@@ -53,6 +54,7 @@ const client = vi.hoisted(() => {
       let response: unknown;
       if (method === 'post') response = await legacy.post(url, data, forwardedConfig);
       else if (method === 'put') response = await legacy.put(url, data, forwardedConfig);
+      else if (method === 'patch') response = await legacy.patch(url, data, forwardedConfig);
       else if (method === 'delete') response = await legacy.delete(url, forwardedConfig);
       else throw new Error(`unexpected method: ${String(method)}`);
       return envelope(typeof url === 'string' && url.includes('/batch/') ? undefined : response);
@@ -100,7 +102,11 @@ const updateRequest: BoardMasterUpdateRequest = {
 };
 
 // 상세 응답(BoardMasterDetailResponse) — 수정 요청에 돌려보낼 버전과 지정 용도를 늘 싣는다(ADR-0040 결정 10·§5.2).
-const boardDetail = { ...board, bbsId: board.bbsId!, version: 3, designations: [] };
+// [2026-10-23 ADR-0040 결정 3·5·6·7] 게시·고정·비밀글·추천 설정은 NOT NULL DEFAULT 컬럼이라 상세 응답에 늘 있다.
+const boardDetail = {
+  ...board, bbsId: board.bbsId!, version: 3, designations: [],
+  rsvtPstgPsbltyYn: 'N', upendFixPsbltyYn: 'N', upendFixUplmtNocs: 5, upendFixBscDayCnt: 30, prvtPstPlcyCd: 'NONE', rcmdtnUseYn: 'Y',
+};
 
 const boardPage = {
   list: [boardSummary],
@@ -300,6 +306,84 @@ describe('BoardAdminService — 게시판 마스터 관리 API 계약', () => {
       expect(calledPaths).toEqual(['admin/system/board-masters/batch/status']);
       expect(boardAdminService).not.toHaveProperty('batchDeleteBoardMastersPhysically');
       expect(boardAdminService).not.toHaveProperty('deleteBoardMaster');
+    });
+  });
+
+  // [2026-10-23 ADR-0040 결정 3·10] 운영 화면의 게시 기간 변경 — 단건은 PATCH …/posts/{pstSn}/period, 일괄은 POST …/posts/batch/period.
+  describe('게시 기간 운영 처리 (updatePostPeriod / updatePostPeriodsInBatch)', () => {
+    it('단건 일정 변경은 게시판·글 번호를 경로에 싣고 바꾼 날짜와 읽은 버전만 PATCH 한다', async () => {
+      await boardAdminService.updatePostPeriod('BBSMSTR_000000000008', 7, { pstEndYmd: '20261231', version: 2 });
+
+      expect(client.patch).toHaveBeenCalledWith(
+        'admin/system/board-masters/BBSMSTR_000000000008/posts/7/period',
+        { pstEndYmd: '20261231', version: 2 },
+        undefined,
+      );
+    });
+
+    it('단건 일정 변경은 버전 없이 보내지 않는다(서버도 400 이다)', async () => {
+      await expect(boardAdminService.updatePostPeriod('BBSMSTR_000000000008', 7, { pstEndYmd: '20261231' } as never)).rejects.toThrow();
+      await expect(boardAdminService.updatePostPeriod('BBSMSTR_000000000008', 7, { pstEndYmd: '2026-12-31', version: 1 })).rejects.toThrow();
+      expect(client.patch).not.toHaveBeenCalled();
+    });
+
+    it('종료일 일괄 처리는 /posts/batch/period 로 동작·대상·날짜를 POST 한다', async () => {
+      await boardAdminService.updatePostPeriodsInBatch('BBSMSTR_000000000008', { action: 'END_DATE', pstSns: [7, 9], pstEndYmd: '20261231' });
+      await boardAdminService.updatePostPeriodsInBatch('BBSMSTR_000000000008', { action: 'CLEAR_END', pstSns: [7] });
+
+      expect(client.post).toHaveBeenNthCalledWith(1, 'admin/system/board-masters/BBSMSTR_000000000008/posts/batch/period',
+        { action: 'END_DATE', pstSns: [7, 9], pstEndYmd: '20261231' }, undefined);
+      expect(client.post).toHaveBeenNthCalledWith(2, 'admin/system/board-masters/BBSMSTR_000000000008/posts/batch/period',
+        { action: 'CLEAR_END', pstSns: [7] }, undefined);
+    });
+
+    it('서버와 같은 1..100건 경계와 동작 어휘를 네트워크 전에 집행한다', async () => {
+      const tooMany = Array.from({ length: 101 }, (_, index) => index + 1);
+
+      await expect(boardAdminService.updatePostPeriodsInBatch('BBSMSTR_A', { action: 'CLEAR_END', pstSns: [] })).rejects.toThrow();
+      await expect(boardAdminService.updatePostPeriodsInBatch('BBSMSTR_A', { action: 'CLEAR_END', pstSns: tooMany })).rejects.toThrow();
+      await expect(boardAdminService.updatePostPeriodsInBatch('BBSMSTR_A', { action: 'PIN', pstSns: [1] } as never)).rejects.toThrow();
+      expect(client.post).not.toHaveBeenCalled();
+    });
+  });
+
+  // [2026-10-23 ADR-0040 결정 5] 운영 화면의 상단 고정 — 단건은 PATCH …/posts/{pstSn}/pin, 일괄은 POST …/posts/batch/pin. 일정 경로와
+  //   권한이 달라(BOARD_PIN) 경로도 나눈다. 고정은 게시글 버전을 올리지 않으므로 본문에 버전이 없다.
+  describe('상단 고정 운영 처리 (updatePostPin / updatePostPinsInBatch)', () => {
+    it('단건 고정·해제는 게시판·글 번호를 경로에 싣고 고정 여부와 고른 종료일만 PATCH 한다', async () => {
+      await boardAdminService.updatePostPin('BBSMSTR_000000000008', 7, { upendFixYn: 'Y', upendFixEndYmd: '20261231' });
+      await boardAdminService.updatePostPin('BBSMSTR_000000000008', 7, { upendFixYn: 'N' });
+
+      expect(client.patch).toHaveBeenNthCalledWith(1, 'admin/system/board-masters/BBSMSTR_000000000008/posts/7/pin',
+        { upendFixYn: 'Y', upendFixEndYmd: '20261231' }, undefined);
+      expect(client.patch).toHaveBeenNthCalledWith(2, 'admin/system/board-masters/BBSMSTR_000000000008/posts/7/pin',
+        { upendFixYn: 'N' }, undefined);
+    });
+
+    it('단건 고정은 어휘 밖 값·하이픈 날짜를 보내지 않는다', async () => {
+      await expect(boardAdminService.updatePostPin('BBSMSTR_A', 7, { upendFixYn: 'X' } as never)).rejects.toThrow();
+      await expect(boardAdminService.updatePostPin('BBSMSTR_A', 7, { upendFixYn: 'Y', upendFixEndYmd: '2026-12-31' })).rejects.toThrow();
+      expect(client.patch).not.toHaveBeenCalled();
+    });
+
+    it('일괄 고정·해제는 /posts/batch/pin 으로 대상·고정 여부·날짜를 POST 하고 일정 일괄 경로로 나가지 않는다', async () => {
+      await boardAdminService.updatePostPinsInBatch('BBSMSTR_000000000008', { pstSns: [7, 9], upendFixYn: 'Y' });
+      await boardAdminService.updatePostPinsInBatch('BBSMSTR_000000000008', { pstSns: [7], upendFixYn: 'N' });
+
+      expect(client.post.mock.calls.map((call) => call[0])).toEqual([
+        'admin/system/board-masters/BBSMSTR_000000000008/posts/batch/pin',
+        'admin/system/board-masters/BBSMSTR_000000000008/posts/batch/pin',
+      ]);
+      expect(client.post).toHaveBeenNthCalledWith(1, expect.any(String), { pstSns: [7, 9], upendFixYn: 'Y' }, undefined);
+      expect(client.post).toHaveBeenNthCalledWith(2, expect.any(String), { pstSns: [7], upendFixYn: 'N' }, undefined);
+    });
+
+    it('서버와 같은 1..100건 경계를 네트워크 전에 집행한다', async () => {
+      const tooMany = Array.from({ length: 101 }, (_, index) => index + 1);
+
+      await expect(boardAdminService.updatePostPinsInBatch('BBSMSTR_A', { pstSns: [], upendFixYn: 'N' })).rejects.toThrow();
+      await expect(boardAdminService.updatePostPinsInBatch('BBSMSTR_A', { pstSns: tooMany, upendFixYn: 'Y' })).rejects.toThrow();
+      expect(client.post).not.toHaveBeenCalled();
     });
   });
 

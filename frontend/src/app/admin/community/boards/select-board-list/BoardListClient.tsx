@@ -208,6 +208,12 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
 
  const masterInfo = initialData.masterInfo || null;
  const canCreateArticle = canPermission(user, 'BOARD_CREATE') && canEditConfiguredBoard(user, masterInfo);
+ /*
+  [2026-10-23 ADR-0040 결정 6] 목록의 추천 단추는 추천 권한(BOARD_LIKE)이 있고(DEC-OPS-185) 게시판이 사용 중이며 추천을 받을 때만
+  연다 — 그 밖에는 쌓인 수만 보인다. 서버가 사용 안 함 게시판과 추천을 받지 않는 게시판의 새 추천을 거부한다. 메타를 모르면 열린
+  쪽으로 두고 판정은 서버가 한다. 추천 취소는 상세 화면에서 한다(목록은 토글하지 않는다).
+ */
+ const likesOpen = canPermission(user, 'BOARD_LIKE') && masterInfo?.inUse !== false && masterInfo?.rcmdtnUseYn !== 'N';
  const tmpltId = masterInfo?.tmpltId || 'TMPLT_LIST';
 
  // 실제 API 요청에 사용할 파라미터들 (URL 파라미터를 최우선으로 함)
@@ -313,7 +319,8 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
  const handleLike = async (e: React.MouseEvent, pstSn: number) => {
   e.preventDefault();
   e.stopPropagation();
-  if (likePendingRef.current) return;
+  // 추천이 닫혀 있으면 단추가 없다 — 남은 경로로 요청을 보내지 않는다(서버도 거부한다).
+  if (!likesOpen || likePendingRef.current) return;
   likePendingRef.current = true;
   setPendingLikePstSn(pstSn);
   try {
@@ -422,23 +429,23 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
    return (
      <div>
        {tmpltId === 'TMPLT_HUB' ? (
-         <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
+         <HubTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} page={queryPage} totalCount={totalCount} />
        ) : tmpltId === 'TMPLT_GALLERY' ? (
-         <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+         <GalleryTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_QNA' ? (
-         <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+         <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_CALENDAR' ? (
          <CalendarTemplate
-           list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn}
+           list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen}
            currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth}
            totalCount={totalCount}
          />
        ) : tmpltId === 'TMPLT_FAQ' ? (
-         <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+         <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_WIKI' ? (
-         <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+         <WikiTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
        ) : (
-         <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} page={queryPage} totalCount={totalCount} />
+         <DefaultTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} page={queryPage} totalCount={totalCount} />
        )}
      </div>
    );

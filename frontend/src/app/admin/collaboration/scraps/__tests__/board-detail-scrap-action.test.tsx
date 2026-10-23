@@ -15,7 +15,8 @@ import { REPO_ROOT } from '@/test-utils/projection';
  * 아니다 — 저장 API 는 서버가 같은 권한으로 막는다(H3).
  */
 type Subject = null | { id: string; esntlId: string; role: string; permissions: string[]; authorizationVersion?: string };
-const BOARD_PERMISSIONS = ['BOARD_UPDATE', 'BOARD_DELETE'];
+// 추천 단추는 추천 권한(BOARD_LIKE)으로 보인다(ADR-0040 결정 6) — 순서 시험이 추천 단추를 쓰므로 함께 준다.
+const BOARD_PERMISSIONS = ['BOARD_UPDATE', 'BOARD_DELETE', 'BOARD_LIKE'];
 const SUBJECTS = {
   granted: { id: 'writer', esntlId: 'owner-id', role: 'USER', permissions: [...BOARD_PERMISSIONS, 'SCRAP_CREATE'], authorizationVersion: 'v1' },
   // 근접 오답: 스크랩 조회·수정·삭제와 대행 권한은 있지만 등록 권한이 없다. 저장 API 는 정확히 SCRAP_CREATE 를 요구한다.
@@ -98,15 +99,15 @@ describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => 
   it.each(Object.keys(SUBJECTS) as SubjectCase[])('노출 행렬 — 주체 %s', async (subject) => {
     mocks.user = SUBJECTS[subject];
     await renderDetail();
-    // 추천은 주체와 무관하게 보인다 — 화면이 그려진 뒤에 스크랩 버튼의 유무를 본다.
-    await screen.findByRole('button', { name: '게시글 추천' });
+    // 화면이 그려진 뒤(게시글 번호)에 스크랩 버튼의 유무를 본다. 추천 단추는 권한 상태를 아는 주체에게만 보여 기준으로 쓰지 않는다.
+    await screen.findByText(/게시글 번호:/);
     expect(scrapButton() !== null).toBe(subject === 'granted');
   });
 
   it('권한 상태가 정해지면 다시 렌더할 때 버튼이 나타나고, 권한이 회수되면 사라진다', async () => {
     mocks.user = SUBJECTS.noVersion;
     const view = await renderDetail();
-    await screen.findByRole('button', { name: '게시글 추천' });
+    await screen.findByText(/게시글 번호:/);
     expect(scrapButton()).toBeNull();
     mocks.user = SUBJECTS.granted;
     view.rerender();
@@ -136,6 +137,7 @@ describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => 
     await screen.findByRole('button', { name: '게시글 스크랩' });
 
     const names = screen.getAllByRole('button').map((button) => button.getAttribute('aria-label')).filter(Boolean);
+    expect(names).toContain('게시글 추천');
     expect(names.indexOf('게시글 추천')).toBeLessThan(names.indexOf('게시글 스크랩'));
     expect(names.indexOf('게시글 스크랩')).toBeLessThan(names.indexOf('게시글 삭제'));
     expect(screen.getByRole('button', { name: '게시글 스크랩' })).toHaveTextContent('스크랩');

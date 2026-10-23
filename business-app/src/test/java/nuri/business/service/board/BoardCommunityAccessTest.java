@@ -8,6 +8,7 @@ import nuri.business.domain.board.BoardSearchResult;
 import nuri.business.service.board.dto.BoardMapperImpl;
 import nuri.business.service.board.dto.BoardMasterMapperImpl;
 import nuri.business.service.board.dto.CommunityBoardDto;
+import nuri.business.service.board.dto.BoardPostListFilter;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.file.FileService;
 import nuri.business.service.user.UserService;
@@ -106,7 +107,8 @@ class BoardCommunityAccessTest {
     private BoardService boardService(CommunityBoardAccessPort port) {
         return new BoardService(boardRepository, boardMasterRepository, userService, fileService,
                 attachmentAssignmentPolicy, eventPublisher, new SimpleMeterRegistry(), viewCountService,
-                new BoardMapperImpl(), new nuri.business.core.config.BoardIdProperties(), recommendationRepository, port);
+                new BoardMapperImpl(), new nuri.business.core.config.BoardIdProperties(), recommendationRepository,
+                org.mockito.Mockito.mock(BoardChangeRecorder.class), port);
     }
 
     private BoardMasterService boardMasterService(CommunityBoardAccessPort port) {
@@ -277,6 +279,44 @@ class BoardCommunityAccessTest {
             org.mockito.Mockito.verifyNoInteractions(fileService);
         }
 
+        /** [2026-10-23 ADR-0040 §6 B1] 운영 화면의 게시 기간 변경도 쓰기 진입 판정을 지난다 — 대행 권한이 회원 자격을 대신하지 않는다. */
+        @Test
+        @DisplayName("운영 게시 기간 변경(단건·일괄)도 같은 경계다 — 비회원은 대행 권한이 있어도 글을 읽기 전에 거부된다")
+        void operatorPeriodChangeDenied() {
+            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_UPDATE_ALL")).thenReturn(true);
+            given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
+            BoardService service = boardService(communityBoardAccess);
+
+            assertThatThrownBy(() -> service.updatePostPeriod(COMMUNITY_BBS, 1L,
+                    new nuri.business.service.board.dto.BoardPostPeriodRequest(null, "20991231", 0)))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+            assertThatThrownBy(() -> service.updatePostPeriodsInBatch(COMMUNITY_BBS,
+                    new nuri.business.service.board.dto.BoardPostPeriodBatchRequest("CLEAR_END", List.of(1L), null)))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+            verify(boardRepository, never()).findById(any());
+        }
+
+        /** [2026-10-23 ADR-0040 §6 B2] 운영 화면의 상단 고정도 쓰기 진입 판정을 지난다 — 고정 권한이 회원 자격을 대신하지 않는다. */
+        @Test
+        @DisplayName("상단 고정(단건·일괄)도 같은 경계다 — 비회원은 고정 권한이 있어도 글을 읽거나 집계하기 전에 거부된다")
+        void operatorPinDenied() {
+            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_PIN")).thenReturn(true);
+            given(boardMasterRepository.findByIdWithPessimisticLock(COMMUNITY_BBS)).willReturn(Optional.of(BoardMaster.builder()
+                    .bbsId(COMMUNITY_BBS).cmntySn(CMNTY_SN).upendFixPsbltyYn("Y").build()));
+            given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(false);
+            BoardService service = boardService(communityBoardAccess);
+
+            assertThatThrownBy(() -> service.updatePostPin(COMMUNITY_BBS, 1L,
+                    new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+            assertThatThrownBy(() -> service.updatePostPinsInBatch(COMMUNITY_BBS,
+                    new nuri.business.service.board.dto.BoardPostPinBatchRequest(List.of(1L), "N", null)))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+            verify(boardRepository, never()).findById(any());
+            verify(boardRepository, never()).countActivePins(anyString(), anyString());
+            verify(boardRepository, never()).updatePin(anyString(), any(), anyString(), any());
+        }
+
         /**
          * [2026-09-14 DEC-OPS-092] 가드는 URL 의 게시판 ID 로 판정한다. 글을 번호로만 읽으면 커뮤니티 게시판의 글을
          * 일반 게시판 ID 로 요청해 가드를 건너뛸 수 있었다. 여기서는 작성자 본인이라 소유권 검사가 통과하므로,
@@ -305,7 +345,7 @@ class BoardCommunityAccessTest {
 
     private static nuri.business.service.board.dto.BoardSaveRequest saveRequest(String bbsId) {
         return new nuri.business.service.board.dto.BoardSaveRequest(
-                bbsId, "제목", "본문", null, null, null, null, null, null, null, null, null);
+                bbsId, "제목", "본문", null, null, null, null, null, null, null, null, null, null);
     }
 
     @Nested
@@ -476,9 +516,17 @@ class BoardCommunityAccessTest {
             given(boardMasterRepository.findByIdWithPessimisticLock(MISSING)).willReturn(Optional.empty());
         }
 
+        /** 수정 요청은 상세에서 읽은 게시글 버전을 싣는다(ADR-0040 결정 10). */
+        private nuri.business.service.board.dto.BoardSaveRequest versioned(
+                nuri.business.service.board.dto.BoardSaveRequest request, int version) {
+            return new nuri.business.service.board.dto.BoardSaveRequest(request.bbsId(), request.pstTtl(), request.pstCn(),
+                    request.pstBgngYmd(), request.pstEndYmd(), request.atchFileSn(), request.evntDt(), request.qnaSttsCd(),
+                    request.qnaCatCd(), request.scrtYn(), request.useYn(), request.pswd(), version);
+        }
+
         private nuri.business.service.board.dto.BoardSaveRequest request(String bbsId) {
             return new nuri.business.service.board.dto.BoardSaveRequest(
-                    bbsId, "제목", "본문", null, null, null, null, null, null, null, null, null);
+                    bbsId, "제목", "본문", null, null, null, null, null, null, null, null, null, null);
         }
 
         private List<org.springframework.web.multipart.MultipartFile> oneFile() {
@@ -505,8 +553,8 @@ class BoardCommunityAccessTest {
 
             assertSameAsMissing(() -> service.getBoardMeta(CLOSED_COMMUNITY), () -> service.getBoardMeta(MISSING));
             assertSameAsMissing(() -> service.getBoardPosts(CLOSED_COMMUNITY, "0", "", null, null, null, null, null, null,
-                    PageRequest.of(0, 10)), () -> service.getBoardPosts(MISSING, "0", "", null, null, null, null, null,
-                    null, PageRequest.of(0, 10)));
+                    PageRequest.of(0, 10), BoardPostListFilter.NONE), () -> service.getBoardPosts(MISSING, "0", "", null, null, null, null, null,
+                    null, PageRequest.of(0, 10), BoardPostListFilter.NONE));
             assertSameAsMissing(() -> service.getPostDetail(CLOSED_COMMUNITY, 1L, true),
                     () -> service.getPostDetail(MISSING, 1L, true));
             assertSameAsMissing(() -> service.assertCommentReadAccess(CLOSED_COMMUNITY, 1L),
@@ -555,7 +603,7 @@ class BoardCommunityAccessTest {
             BoardService service = boardService(communityBoardAccess);
 
             assertThat(service.getBoardPosts(CLOSED_PLAIN, "0", "", null, null, null, null, null, null,
-                    PageRequest.of(0, 10))).hasSize(1);
+                    PageRequest.of(0, 10), BoardPostListFilter.NONE)).hasSize(1);
             ArgumentCaptor<BoardSearchCondition> condition = ArgumentCaptor.forClass(BoardSearchCondition.class);
             verify(boardRepository).searchArticles(condition.capture(), any(Pageable.class));
             assertThat(condition.getValue().isIncludeInactiveBoard()).isTrue();
@@ -574,7 +622,7 @@ class BoardCommunityAccessTest {
                     .willReturn(new PageImpl<>(List.of()));
 
             boardService(communityBoardAccess).getBoardPosts(PLAIN_BBS, "0", "", null, null, null, null, null, null,
-                    PageRequest.of(0, 10));
+                    PageRequest.of(0, 10), BoardPostListFilter.NONE);
 
             ArgumentCaptor<BoardSearchCondition> condition = ArgumentCaptor.forClass(BoardSearchCondition.class);
             verify(boardRepository).searchArticles(condition.capture(), any(Pageable.class));
@@ -583,7 +631,7 @@ class BoardCommunityAccessTest {
         }
 
         @Test
-        @DisplayName("🔒 새 참여와 업무 홈 카드·통계는 운영자에게도 닫힌다 — 댓글·만족도 등록, 추천은 엄격 경계다")
+        @DisplayName("🔒 새 참여와 업무 홈 카드·통계는 운영자에게도 닫힌다 — 댓글·만족도 등록, 추천·추천 취소는 엄격 경계다")
         void participationAndHomeStayClosedForOperators() {
             securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_READ_ALL")).thenReturn(true);
             BoardService service = boardService(communityBoardAccess);
@@ -591,6 +639,8 @@ class BoardCommunityAccessTest {
             for (org.assertj.core.api.ThrowableAssert.ThrowingCallable closed : List.<org.assertj.core.api.ThrowableAssert.ThrowingCallable>of(
                     () -> service.assertCommentAccess(CLOSED_PLAIN, 3L),
                     () -> service.incrementLike(CLOSED_PLAIN, 3L),
+                    // [ADR-0040 결정 6] 추천 취소도 추천과 같은 엄격 경계다 — 사용 안 함 게시판은 운영자에게도 닫힌다.
+                    () -> service.cancelLike(CLOSED_PLAIN, 3L),
                     () -> service.getBoardPosts(CLOSED_PLAIN, PageRequest.of(0, 5)),
                     () -> service.getBoardStats(CLOSED_PLAIN))) {
                 assertThatThrownBy(closed).isInstanceOf(BusinessException.class)
@@ -598,6 +648,7 @@ class BoardCommunityAccessTest {
             }
             verify(boardRepository, never()).searchArticles(any(), any());
             verify(recommendationRepository, never()).saveAndFlush(any());
+            verify(recommendationRepository, never()).deleteRecommendation(any(), any());
         }
 
         @Test
@@ -608,10 +659,29 @@ class BoardCommunityAccessTest {
             nuri.business.domain.board.Board post = nuri.business.domain.board.Board.builder()
                     .bbsId(CLOSED_PLAIN).pstSn(3L).userId("someone").pstTtl("옛 제목").build();
             given(boardRepository.findById(3L)).willReturn(Optional.of(post));
+            org.springframework.test.util.ReflectionTestUtils.setField(post, "version", 0); // [ADR-0040 결정 10]
 
-            boardService(communityBoardAccess).updatePost(CLOSED_PLAIN, 3L, request(CLOSED_PLAIN));
+            boardService(communityBoardAccess).updatePost(CLOSED_PLAIN, 3L, versioned(request(CLOSED_PLAIN), 0));
 
             assertThat(post.getPstTtl()).isEqualTo("제목");
+        }
+
+        @Test
+        @DisplayName("🔒 사용 안 함 게시판의 상단 고정은 조회 대행 권한이 없으면 없는 게시판과 같은 404 다 — 커뮤니티 가드보다 먼저 본다")
+        void pinOnClosedBoardIsNotFoundWithoutReadAll() {
+            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BOARD_PIN")).thenReturn(true);
+            given(boardMasterRepository.findByIdWithPessimisticLock(CLOSED_PLAIN)).willReturn(Optional.of(
+                    BoardMaster.builder().bbsId(CLOSED_PLAIN).useYn("N").upendFixPsbltyYn("Y").build()));
+            BoardService service = boardService(communityBoardAccess);
+
+            for (String board : List.of(CLOSED_PLAIN, CLOSED_COMMUNITY)) {
+                assertThatThrownBy(() -> service.updatePostPin(board, 3L,
+                        new nuri.business.service.board.dto.BoardPostPinRequest("Y", null)))
+                        .isInstanceOf(BusinessException.class)
+                        .hasFieldOrPropertyWithValue("errorCode", nuri.business.domain.board.exception.BoardErrorCode.BOARD_NOT_FOUND);
+            }
+            verify(boardRepository, never()).findById(any());
+            verify(communityBoardAccess, never()).isApprovedMember(any(), any());
         }
 
         @Test

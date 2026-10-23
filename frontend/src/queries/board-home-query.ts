@@ -45,6 +45,9 @@ function toDashboardTask(item: DashboardItem): DashboardTask {
     ...(typeof item.bbsId === 'string' && item.bbsId.length > 0 && item.bbsId.length <= 20
       && typeof item.pstSn === 'number' && Number.isSafeInteger(item.pstSn) && item.pstSn > 0
       ? { bbsId: item.bbsId, pstSn: item.pstSn } : {}),
+    // [2026-10-23 ADR-0040 결정 3] 서버 판정 게시 상태를 그대로 옮긴다 — 예약 글은 작성자에게만 오고 홈이 그 사실을 표지로 말한다.
+    ...(item.postingStatus ? { postingStatus: item.postingStatus } : {}),
+    ...(item.postingStatus === 'SCHEDULED' && item.pstBgngYmd ? { postingStartYmd: item.pstBgngYmd } : {}),
   };
 }
 

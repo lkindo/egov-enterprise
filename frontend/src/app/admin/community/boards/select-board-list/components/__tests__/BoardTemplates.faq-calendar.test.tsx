@@ -44,7 +44,7 @@ vi.mock('next/link', () => ({
 
 import { CalendarTemplate, FaqTemplate } from '../BoardTemplates';
 
-const common = { bbsId: 'BBS-FAQ', querySearchWrd: '', handleLike: vi.fn(), pendingLikePstSn: null };
+const common = { bbsId: 'BBS-FAQ', querySearchWrd: '', handleLike: vi.fn(), pendingLikePstSn: null, likesOpen: true };
 
 function renderWithClient(ui: React.ReactElement) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });

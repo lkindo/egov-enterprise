@@ -279,7 +279,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"BBS_MST_DELETE","action":"DELETE","source":"write"},
       {"code":"BBS_MST_READ","action":"READ","source":"entry"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"BOARD_PIN","action":"PIN","source":"write"},
       {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
+      {"code":"BOARD_UPDATE_ALL","action":"UPDATE_ALL","source":"write"},
       {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
@@ -1458,7 +1460,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
   {
     "id": "board-community-operations",
     "name": "게시판·커뮤니티 운영",
-    "description": "게시판 담당자에게 게시판 만들기·설정과 템플릿, 모든 게시글·댓글·만족도 평가 관리, 공지·FAQ 편집, 커뮤니티 개설과 가입 승인을 맡깁니다.",
+    "description": "게시판 담당자에게 게시판 만들기·설정과 템플릿, 모든 게시글·댓글·만족도 평가 관리, 게시글 상단 고정, 공지·FAQ 편집, 커뮤니티 개설과 가입 승인을 맡깁니다.",
     "protected": false,
     "permissions": [
       "BBS_MST_CREATE",
@@ -1469,6 +1471,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "BOARD_CREATE",
       "BOARD_DELETE",
       "BOARD_DELETE_ALL",
+      "BOARD_PIN",
       "BOARD_READ",
       "BOARD_READ_ALL",
       "BOARD_UPDATE",

@@ -232,10 +232,11 @@ export const PERMISSION_CODES = [
   "ADT_LOG_READ",
   "FAQ_EDIT",
   "MFA_RECOVER",
-  "NOTICE_EDIT"
+  "NOTICE_EDIT",
+  "BOARD_PIN"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "895e24154e39633d09b73f4e84b724d3e66afe5d220e7d578159e9065277dca7";
+export const PERMISSION_CATALOG_VERSION = "278ea98b516e80f3c7da7ff85fca5388ed9697222befa33336c488e7fd247182";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [

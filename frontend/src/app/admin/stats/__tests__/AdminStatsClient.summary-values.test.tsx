@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('@/app/components/ui/standard-chart-wrapper', () => ({
   StandardChartWrapper: () => <div data-testid="connect-chart" />,
 }));
-// 셸 전용 — 기능이 넘기는 요약 칸이 없는 구성(core)과 같다. '누적 게시물' 칸은 게시판 기여 시험이 본다(허브 분해 H4).
+// 셸 전용 — 기능이 넘기는 요약 칸이 없는 구성(core)과 같다. '전체 등록 건수' 칸은 게시판 기여 시험이 본다(허브 분해 H4).
 vi.mock('@/extensions/generated-stats-panels', () => ({ statsPanels: [] }));
 
 import AdminStatsClient from '../AdminStatsClient';
@@ -62,7 +62,7 @@ describe('AdminStatsClient 요약 수치', () => {
     expect(within(summaryCard('금일 성공 로그인')).getByText('-')).toBeInTheDocument();
     expect(screen.getByText(/성공 로그인만 집계/)).toBeInTheDocument();
     // 요약 응답에 게시물 수가 있어도 기능 기여가 없으면 그 칸을 그리지 않는다.
-    expect(screen.queryByText('누적 게시물')).not.toBeInTheDocument();
+    expect(screen.queryByText('전체 등록 건수')).not.toBeInTheDocument();
     // [2026-10-20] 서버가 기간의 빈 날을 0 으로 채우므로 일수는 '기록이 있는 날' 이 아니라 집계한 날이다 — 그 뜻을 함께 말한다.
     expect(screen.getByText(/집계 일수 1일\(기록이 없는 날은 0\)/)).toBeInTheDocument();
     expect(screen.getByRole('cell', { name: '2026-09-15' })).toBeInTheDocument();

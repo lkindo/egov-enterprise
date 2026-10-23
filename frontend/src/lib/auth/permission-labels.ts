@@ -20,7 +20,7 @@ const ACTION_LABELS: Readonly<Record<string, string>> = {
   CREATE: '등록', CREATE_ALL: '관리자 등록', DELETE: '삭제', DELETE_ALL: '타인 자료 삭제',
   DEPT: '부서 변경', DISPATCH: '알림 발송', DOWNLOAD: '다운로드', DOWNLOAD_ALL: '타인 자료 다운로드',
   EDIT: '편집', EXPORT: '내보내기', GRANT: '권한 설정', HOME_UPDATE: '업무 홈 지정', IMPORT: '가져오기', INSTRUCT: '업무 지시', JOIN: '가입',
-  LIKE: '추천', MODERATE: '관리', PASSWORD: '비밀번호 변경', PUBLISH: '게시', READ: '조회', READ_ALL: '타인 자료 포함 조회',
+  LIKE: '추천', MODERATE: '관리', PASSWORD: '비밀번호 변경', PIN: '상단 고정', PUBLISH: '게시', READ: '조회', READ_ALL: '타인 자료 포함 조회',
   RECOVER: '복구', REJECT: '반려', RETRY: '재처리', SEND: '발송', STATUS: '상태 변경', SUBMIT: '제출', UPDATE: '수정',
   UPDATE_ALL: '타인 자료 수정', UPLOAD: '업로드', UPLOAD_ALL: '관리자 업로드', VOTE: '투표',
 };

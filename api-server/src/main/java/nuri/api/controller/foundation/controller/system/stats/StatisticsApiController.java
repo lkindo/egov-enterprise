@@ -45,7 +45,8 @@ public class StatisticsApiController {
     }
 
     @Operation(summary = "게시물 통계 조회",
-            description = "일자별 등록 게시글 수(삭제한 글 제외). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. " + PERIOD_RULE)
+            description = "작성일 기준 일자별 등록 건수(예약·비밀·게시 종료·사용 안 함 게시판 글 포함, 삭제한 글 제외). 게시 상태와"
+                    + " 무관한 등록 사실의 집계다(ADR-0040 결정 3). 기간 안의 날마다 한 칸이고 기록이 없는 날은 0 이다. " + PERIOD_RULE)
     @GetMapping("/bbs")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.system.stats.StatisticsApiController#getBbsStats')")
     public ResponseEntity<ApiResponse<List<StatsPoint>>> getBbsStats(

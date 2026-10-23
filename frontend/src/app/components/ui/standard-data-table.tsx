@@ -102,6 +102,17 @@ interface StandardDataTableBaseProps<T> {
    * 구분할 수 없었다. 주지 않으면 첫 열의 값(문자열·숫자)으로, 그것도 없으면 행 순번으로 이름을 짓는다.
    */
   selectionLabel?: (item: T, index: number) => string;
+  /**
+   * [2026-10-23 ADR-0040 §5.4] 선택이 속한 범위(opt-in). 표는 선택을 페이지·적용 검색어에 묶는데, 표 밖의 조회 조건(상태 select 등)이나
+   * 일괄 처리 성공은 그 범위에 없다 — 조건이 바뀌어도 남은 행과 겹치는 선택이 살아남았다. 이 값이 바뀐 첫 렌더부터 선택이 빈다(페이지
+   * 범위와 같은 방식). 주지 않으면 동작이 종전과 같다.
+   */
+  selectionScope?: string;
+  /**
+   * 선택 수가 바뀔 때 부르는 알림(opt-in). 조건이 바뀌어 선택이 풀렸다고 화면이 알리려면 직전 선택 수를 알아야 한다 — 렌더 중에 부모
+   * 상태를 바꾸지 않도록 effect 에서 부른다. 주지 않으면 아무것도 부르지 않는다.
+   */
+  onSelectionCountChange?: (count: number) => void;
   bulkActions?: BulkAction<T>[];
   keyField?: keyof T;
   className?: string;
@@ -302,6 +313,8 @@ export function StandardDataTable<T extends object>({
   emptyMessage = "데이터가 없습니다.",
   enableSelection = false,
   selectionLabel,
+  selectionScope,
+  onSelectionCountChange,
   bulkActions = [],
   keyField: keyFieldProp,
   className,
@@ -333,26 +346,29 @@ export function StandardDataTable<T extends object>({
 
   const currentPage = pagination?.currentPage;
 
-  // 선택 집합을 페이지/적용 검색어 범위에 귀속한다. 범위가 바뀐 첫 렌더부터 빈 집합으로
+  // 선택 집합을 페이지/적용 검색어(와 호출부가 준 selectionScope) 범위에 귀속한다. 범위가 바뀐 첫 렌더부터 빈 집합으로
   // 보이므로 effect 의 후행 setState·추가 렌더 없이 이전 페이지 선택이 섞이지 않는다.
   const [selectionState, setSelectionState] = useState<{
     currentPage: number | undefined;
     appliedKeyword: string;
+    scope: string | undefined;
     ids: Set<unknown>;
-  }>(() => ({ currentPage, appliedKeyword, ids: new Set() }));
+  }>(() => ({ currentPage, appliedKeyword, scope: selectionScope, ids: new Set() }));
   const selectionMatchesScope = selectionState.currentPage === currentPage
-    && selectionState.appliedKeyword === appliedKeyword;
+    && selectionState.appliedKeyword === appliedKeyword
+    && selectionState.scope === selectionScope;
   const scopedSelectedIds = selectionMatchesScope ? selectionState.ids : EMPTY_SELECTED_IDS;
   const setSelectedIds = useCallback((action: React.SetStateAction<Set<unknown>>) => {
     setSelectionState(previous => {
       const previousIds = previous.currentPage === currentPage
         && previous.appliedKeyword === appliedKeyword
+        && previous.scope === selectionScope
         ? previous.ids
         : EMPTY_SELECTED_IDS;
       const ids = typeof action === 'function' ? action(previousIds) : action;
-      return { currentPage, appliedKeyword, ids };
+      return { currentPage, appliedKeyword, scope: selectionScope, ids };
     });
-  }, [currentPage, appliedKeyword]);
+  }, [currentPage, appliedKeyword, selectionScope]);
 
   // keyField 미전달 경고 (개발 모드 전용, 1회만)
   const keyFieldWarnedRef = React.useRef(false);
@@ -385,8 +401,14 @@ export function StandardDataTable<T extends object>({
     return new Set([...scopedSelectedIds].filter((id) => rowKeys.has(id)));
   }, [scopedSelectedIds, rowKeys]);
   if (selectionMatchesScope && selectedIds !== scopedSelectedIds) {
-    setSelectionState({ currentPage, appliedKeyword, ids: selectedIds });
+    setSelectionState({ currentPage, appliedKeyword, scope: selectionScope, ids: selectedIds });
   }
+
+  // 선택 수를 호출부에 알린다(opt-in). 렌더 중에 부모 상태를 바꾸지 않도록 effect 에서 부른다.
+  const selectedCount = selectedIds.size;
+  useEffect(() => {
+    onSelectionCountChange?.(selectedCount);
+  }, [selectedCount, onSelectionCountChange]);
 
   const selectedItems = useMemo(() =>
     (data || []).filter(item => item && selectedIds.has(item?.[keyField])),

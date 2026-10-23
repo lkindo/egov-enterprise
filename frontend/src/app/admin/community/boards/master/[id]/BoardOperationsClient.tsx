@@ -137,7 +137,7 @@ export function BoardOperationsClient({ bbsId }: { bbsId: string }) {
         panelId={PANEL_ID}
       />
       <TabPanel id={PANEL_ID} aria-labelledby={standardTabId('board-operations', activeTab)}>
-        {activeTab === 'posts' && <BoardPostsTab bbsId={detail.bbsId} boardName={detail.bbsTtl} />}
+        {activeTab === 'posts' && <BoardPostsTab detail={detail} />}
         {activeTab === 'settings' && <BoardSettingsTab detail={detail} onReload={() => detailQuery.refetch()} />}
         {activeTab === 'access' && <BoardAccessTab detail={detail} />}
       </TabPanel>

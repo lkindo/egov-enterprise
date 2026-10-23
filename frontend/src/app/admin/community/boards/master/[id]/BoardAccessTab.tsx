@@ -41,20 +41,29 @@ const READINESS_LABEL = { pass: '공개 준비 통과', fail: '공개 준비 통
  *    기본 권한을 포함하지 않는다(operation-bindings·PermissionPolicy).
  *  · community: 커뮤니티 귀속 게시판이면 승인 회원이어야 한다. 조회 대행 권한(BOARD_READ_ALL) 보유자는 면제다(assertCommunityAccess).
  *  · specialEdit: 공지·FAQ 지정 게시판이면 그 편집 권한이 더 필요하다 — 쓰기 판정(loadWritableMaster)을 지나는 동작이다.
- * 게시 시작일(예약)은 아직 집행하지 않는다 — 기간 조건은 게시 종료일만이다(ADR-0040 결정 3 은 B1 배치).
+ * [2026-10-23 ADR-0040 결정 3] 게시 기간은 시작일·종료일 모두 집행한다 — 시작일 전·종료일 뒤 글은 글쓴이 본인과 조회 대행 권한자만 본다.
+ *  운영 화면의 처리(게시 기간 바꾸기·상단 고정)는 관리 API(/api/v1/admin/**)라 관리자 역할도 있어야 한다(URL 게이트, R-10).
+ * [2026-10-23 ADR-0040 결정 6·7] 추천은 게시판이 추천을 받을 때만, 추천 취소는 설정과 무관하게 된다. 비밀글 정책이 필수인 게시판은 서버가
+ *  저장하는 글(새 글과 고친 글)을 늘 비밀글로 만든다(BoardPolicySupport.resolveSecretYn).
  */
 const READ_ALL_EXEMPTS_UNUSED = '(조회 대행 권한이 있으면 사용 안 함 게시판에도)';
+const OPERATIONS_SCREEN_ONLY = '운영 화면(관리 화면 경로라 관리자 역할도 필요)';
 const POST_PERMISSIONS: readonly { action: string; codes: string[]; condition: string; community: boolean; specialEdit: boolean }[] = [
-  { action: '글 보기', codes: ['BOARD_READ'], condition: '게시판 사용 중, 게시 종료 전, 비밀글은 글쓴이 본인만', community: true, specialEdit: false },
-  { action: '공개 FAQ 보기(FAQ 지정 게시판)', codes: ['BOARD_READ'], condition: 'FAQ 게시판 사용 중, 게시 종료 전, 비밀글이 아닌 글만', community: false, specialEdit: false },
-  { action: '글 쓰기', codes: ['BOARD_CREATE'], condition: `게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}`, community: true, specialEdit: true },
-  { action: '내 글 고치기·해결 표시', codes: ['BOARD_UPDATE'], condition: `글쓴이 본인, 게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}`, community: true, specialEdit: true },
+  { action: '글 보기', codes: ['BOARD_READ'], condition: '게시판 사용 중, 게시 기간 안(시작일 전·종료일 뒤 글은 글쓴이 본인만), 비밀글은 글쓴이 본인만', community: true, specialEdit: false },
+  { action: '공개 FAQ 보기(FAQ 지정 게시판)', codes: ['BOARD_READ'], condition: 'FAQ 게시판 사용 중, 게시 기간 안, 비밀글이 아닌 글만', community: false, specialEdit: false },
+  { action: '글 쓰기', codes: ['BOARD_CREATE'], condition: `게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}, 시작일이 오늘보다 뒤면 게시판이 예약 게시를 받아야 함, 비밀글 정책이 필수면 비밀글로 저장(고칠 때도)`, community: true, specialEdit: true },
+  { action: '내 글 고치기·해결 표시', codes: ['BOARD_UPDATE'], condition: `글쓴이 본인, 게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}, 게시가 시작된 글의 시작일은 게시글 전체 수정 권한(BOARD_UPDATE_ALL)도 있어야 바꿈`, community: true, specialEdit: true },
   { action: '내 글 지우기', codes: ['BOARD_DELETE'], condition: `글쓴이 본인, 게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}`, community: true, specialEdit: true },
   { action: '남의 글 고치기', codes: ['BOARD_UPDATE', 'BOARD_UPDATE_ALL'], condition: `게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}`, community: true, specialEdit: true },
   { action: '남의 글 지우기', codes: ['BOARD_DELETE', 'BOARD_DELETE_ALL'], condition: `게시판 사용 중${READ_ALL_EXEMPTS_UNUSED}`, community: true, specialEdit: true },
-  { action: '비밀글·게시 종료 글·사용 안 함 게시판 보기', codes: ['BOARD_READ', 'BOARD_READ_ALL'], condition: '비밀글·게시 종료 글은 글쓴이 본인도 본다. 사용 안 함 게시판은 이 권한으로만 본다. 커뮤니티 회원이 아니어도 된다', community: false, specialEdit: false },
+  { action: '게시 기간 바꾸기(운영 화면)', codes: ['BOARD_UPDATE_ALL'], condition: `${OPERATIONS_SCREEN_ONLY}, 오늘보다 이른 종료일은 받지 않음, 예약 게시를 받지 않는 게시판은 미래 시작일을 받지 않음`, community: true, specialEdit: true },
+  // [2026-10-23 ADR-0040 결정 5] 상단 고정은 새 권한(BOARD_PIN, 기본 배정 없음)이다. 설정은 새 고정만 막고 해제는 늘 된다(결정 6).
+  { action: '상단 고정·해제(운영 화면)', codes: ['BOARD_PIN'], condition: `${OPERATIONS_SCREEN_ONLY}, 고정은 게시판이 상단 고정을 받을 때 상한까지(해제는 늘 가능), 원글만, 오늘보다 이른 고정 종료일은 받지 않음`, community: true, specialEdit: true },
+  { action: '비밀글·예약·게시 종료 글·사용 안 함 게시판 보기', codes: ['BOARD_READ', 'BOARD_READ_ALL'], condition: '비밀글·예약·게시 종료 글은 글쓴이 본인도 본다. 사용 안 함 게시판은 이 권한으로만 본다. 커뮤니티 회원이 아니어도 된다', community: false, specialEdit: false },
   { action: '삭제 글 보기(상세만)', codes: ['BOARD_READ', 'BOARD_READ_ALL'], condition: '—', community: false, specialEdit: false },
-  { action: '추천', codes: ['BOARD_LIKE'], condition: '게시판 사용 중, 글을 볼 수 있어야 함, 한 사람당 한 번', community: true, specialEdit: false },
+  { action: '추천', codes: ['BOARD_LIKE'], condition: '게시판 사용 중, 게시판이 추천을 받음, 글을 볼 수 있어야 함, 한 사람당 한 번', community: true, specialEdit: false },
+  // [2026-10-23 ADR-0040 결정 6] 추천 취소는 추천과 같은 권한이다. 추천을 받지 않는 게시판에서도 내 추천은 거둔다(서버가 설정을 보지 않는다).
+  { action: '내 추천 취소', codes: ['BOARD_LIKE'], condition: '게시판 사용 중, 글을 볼 수 있어야 함, 내가 한 추천만(추천을 받지 않는 게시판에서도 가능)', community: true, specialEdit: false },
   { action: '댓글 보기', codes: ['COMMENT_READ'], condition: `글을 볼 수 있어야 함${READ_ALL_EXEMPTS_UNUSED}`, community: true, specialEdit: false },
   { action: '댓글 쓰기', codes: ['COMMENT_CREATE'], condition: '게시판 사용 중, 글을 볼 수 있어야 함, 게시판이 댓글을 받음', community: true, specialEdit: false },
 ];

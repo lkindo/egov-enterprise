@@ -44,6 +44,10 @@
             "reason": "게시판 자식과 커뮤니티 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증. 어느 한쪽 기능이 빠지면 제약도 대상 테이블도 없어 검사 대상 자체가 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest 가 모든 프로필에서 계속 본다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/BoardOperationsPostgresIntegrationTest.java",
+            "reason": "게시판 운영 질의(게시 기간 집행·게시 기준일 정렬·뒤 배치의 상단 고정·추천 취소)를 실제 PostgreSQL 로 본다 — HQL 날짜 번역과 NULL 정렬은 H2 와 다르다. 게시판 기능이 없는 구성에서는 대상 저장소·서비스와 게시판 표가 없다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java",
             "reason": "survey 응답 동시성 통합 테스트. 설문 기능이 없는 구성에서는 검사 대상 자체가 없다."
           },
@@ -452,6 +456,10 @@
             "reason": "게시판 자식과 커뮤니티 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증이다. 두 기능이 없는 구성에서는 제약도 대상 테이블도 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest가 모든 구성에서 계속 본다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/BoardOperationsPostgresIntegrationTest.java",
+            "reason": "게시판 운영 질의(게시 기간 집행·게시 기준일 정렬·뒤 배치의 상단 고정·추천 취소)를 실제 PostgreSQL 로 본다 — HQL 날짜 번역과 NULL 정렬은 H2 와 다르다. 게시판 기능이 없는 구성에서는 대상 저장소·서비스와 게시판 표가 없다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java",
             "reason": "SMS 수신 행의 발송 claim·commit 콜백·확정 영수증·중복 발송 방지 검증이다. 문자 기능이 없는 구성에서는 대상 서비스와 테이블이 없다."
           },
@@ -630,6 +638,10 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java",
             "reason": "게시판 자식과 커뮤니티 부모가 모두 있어야 성립하는 V2_102 귀속 FK 검증이다. 두 기능이 없는 구성에서는 제약도 대상 테이블도 없다. core 3축(사용자 소속·부서 계층·행정구역 계층)은 ReferenceIntegrityFkIntegrationTest가 모든 구성에서 계속 본다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/BoardOperationsPostgresIntegrationTest.java",
+            "reason": "게시판 운영 질의(게시 기간 집행·게시 기준일 정렬·뒤 배치의 상단 고정·추천 취소)를 실제 PostgreSQL 로 본다 — HQL 날짜 번역과 NULL 정렬은 H2 와 다르다. 게시판 기능이 없는 구성에서는 대상 저장소·서비스와 게시판 표가 없다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java",

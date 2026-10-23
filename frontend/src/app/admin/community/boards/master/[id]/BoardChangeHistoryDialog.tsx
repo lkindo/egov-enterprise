@@ -9,9 +9,10 @@ import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import type { BoardChange } from '@/services/foundation/system/BoardAdminService';
 
 /**
- * 게시판 변경 이력(ADR-0040 결정 9). 서버가 바뀐 항목마다 한 건씩 남긴다 — A2 에서는 설정·사용 여부 변경만 남고, 게시글 운영
- * 처리(게시 기간·고정)는 그 기능의 배치(B1·B2)가 기록을 더한다. 그 전에는 화면 문구도 그것을 말하지 않는다. 게시글 행은 게시물
- * 조회 대행 권한이 있을 때만 서버가 싣는다. 열릴 때만 마운트하므로 설정 탭은 이력을 조회하지 않는다.
+ * 게시판 변경 이력(ADR-0040 결정 9). 서버가 바뀐 항목마다 한 건씩 남긴다 — 설정·사용 여부 변경과, B1 부터 운영 화면에서 바꾼 게시
+ * 기간(빠른 편집·종료일 일괄 처리)과, B2 부터 상단 고정·해제(한 건·일괄, 고정 여부와 고정 종료일)가 남는다. 작성 화면의 글 수정은
+ * 남지 않는다(C2 범위). 게시글 행은 게시물 조회 대행 권한이 있을 때만 서버가 싣는다. 열릴 때만 마운트하므로 설정 탭은 이력을 조회하지
+ * 않는다.
  *
  * 표현은 공통코드 변경 이력과 같은 캡션 있는 기본 표 + PagePagination 이다 — 조회형 목록이 아니라 대화상자 안의 감사 기록이다.
  */
@@ -51,7 +52,8 @@ export function BoardChangeHistoryDialog({ bbsId, boardName, onClose }: {
     <StandardModal isOpen onClose={onClose} title={`${boardName} 변경 이력`} maxWidth="5xl">
       <div className="space-y-3 pt-2">
         <p className="text-sm text-muted-foreground">
-          설정·게시판 사용 변경의 이력입니다. 최신순입니다. 게시글 내용 수정과 게시판 영구 삭제는 여기에 남지 않습니다.
+          설정·게시판 사용 변경과 운영 화면에서 바꾼 게시 기간·상단 고정의 이력입니다. 최신순입니다. 작성 화면의 글 수정과 게시판 영구
+          삭제는 여기에 남지 않습니다.
         </p>
         {history.isPending && <p role="status">변경 이력을 불러오는 중입니다…</p>}
         {history.isError && (

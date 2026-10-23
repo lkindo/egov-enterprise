@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "6503a46addc6a2bbb8052de79d58c9f96533116e2df0b4d996322465d12228db"
+    "inventoryHash": "f21fd944baf4e849703b98d5e5053b802bf628c8f5fc1b45408f017474443b25"
   },
   "summary": {
-    "records": 430,
-    "syntaxOccurrences": 517,
-    "ambiguousRecords": 381,
-    "unverifiedRecords": 430,
+    "records": 433,
+    "syntaxOccurrences": 520,
+    "ambiguousRecords": 384,
+    "unverifiedRecords": 433,
     "exactPopulations": {
       "filesystemRoutes": 121,
       "dynamicRoutePatterns": 13,
@@ -43,7 +43,7 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 13,
-      "form-producer": 56,
+      "form-producer": 59,
       "navigation-producer": 200,
       "page-redirect": 17,
       "query-builder": 24,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 420,
+      "navigation": 423,
       "request-telemetry": 10
     }
   },
@@ -3906,6 +3906,120 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/boards/master/[id]/BoardOperationsClient.tsx",
         "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-D3F12815C1CDC1",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/master/[id]",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/master/[id]/BoardPostBatchDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-48F63257008D6D",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPeriodDialog.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPeriodDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/master/[id]",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPeriodDialog.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-ECCEE40D4D7075",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "intercepted-submit",
+      "source": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPinDialog.tsx",
+      "producerFile": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPinDialog.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/boards/master/[id]",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form submission is intercepted before native navigation (named-handler-prevent-default); no URL state is emitted.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/boards/master/[id]/BoardPostPinDialog.tsx",
+        "detector": "jsx-form",
         "occurrenceCount": 1
       }
     },

@@ -48,7 +48,7 @@ class BoardApiControllerTest {
         List<BoardDto> list = new ArrayList<>();
         Page<BoardDto> page = new PageImpl<>(list, PageRequest.of(0, 10), 0);
 
-        when(boardService.getBoardPosts(eq(bbsId), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class))).thenReturn(page);
+        when(boardService.getBoardPosts(eq(bbsId), any(), any(), any(), any(), any(), any(), any(), any(), any(Pageable.class), any())).thenReturn(page);
 
         mockMvc.perform(get("/api/v1/boards/" + bbsId)
                 .contentType(MediaType.APPLICATION_JSON))

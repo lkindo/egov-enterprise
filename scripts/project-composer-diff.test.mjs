@@ -87,7 +87,7 @@ test('the diff sentence uses signed counts, puts the toggled feature first and s
   assert.match(diffSummary(diffOf({ domains: ['mail'] }, 'notification'), catalog), / · 줄어들던 동작 2건 해소$/);
   // 쪽지는 혼자 들어온다(허브 분해 H1 — 협업 허브가 core 셸이 되어 스크랩·게시판을 끌어오지 않는다).
   assert.match(diffSummary(diffOf({ domains: [] }, 'note'), catalog), /^고르면 기능 \+1 · 테이블 \+\d+ · /);
-  // 도움말은 게시판·댓글을 끌어온다. 실시간 대시보드는 혼자 들어오고 게시판이 없으면 신규 게시글 카드만 줄어든다(Phase 2 9단계 —
+  // 도움말은 게시판·댓글을 끌어온다. 실시간 대시보드는 혼자 들어오고 게시판이 없으면 오늘 등록된 글 카드만 줄어든다(Phase 2 9단계 —
   //   게시판은 포트로 읽는다. 2026-10-20 실시간 구역이 내 알림을 따로 구독하지 않아 알림도 끌어오지 않는다).
   const help = diffSummary(diffOf({ domains: [] }, 'help'), catalog);
   assert.match(help, /^고르면 기능 \+3\(들어옴: 도움말·온라인 매뉴얼, 게시판·지식, 댓글\) · /);

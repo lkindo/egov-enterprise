@@ -54,11 +54,22 @@ class MessageBundleContractTest {
      *
      * <p>[2026-10-23 ADR-0040 결정 10] 게시판 설정 수정 요청이 참조 5개를 더해 실측이 14 → 19 가 됐다. 게시판을 걷는
      * 투영은 10개를 내리므로 하한 10 그대로면 0 이 된다 — 하한을 15 로 올려 여유 폭 4 를 그대로 둔다.
+     *
+     * <p>[2026-10-23 ADR-0040 B1] 예약 게시 설정 두 곳과 게시 종료일 일괄 처리 요청이 참조 5개를 더해 실측이 19 → 24 가 됐다.
+     * 모두 게시판 소유라 게시판을 걷는 투영은 15개를 내린다 — 하한을 20 으로 올려 여유 폭 4 를 그대로 둔다.
+     *
+     * <p>[2026-10-23 ADR-0040 B2] 상단 고정 설정 두 곳과 고정 요청 둘이 참조 7개를 더해 실측이 24 → 31 이 됐다. 모두 게시판
+     * 소유라 게시판을 걷는 투영은 22개를 내린다 — 하한을 27 로 올려 여유 폭 4 를 그대로 둔다.
+     *
+     * <p>[2026-10-23 ADR-0040 B3] 비밀글 정책·추천 받기 설정 두 곳이 참조 4개를 더했다. 이 시험의 계수(주석을 뺀 원문)로 잰
+     * 실측은 33 이다(하한을 잠시 36 으로 올려 '발견=33' 을 확인했다). 앞 단락들의 실측값은 주석 속 참조 2개(EgovMessageConfig)를
+     * 함께 센 값이라 2 씩 크다 — 그동안 실제 여유 폭은 2 였다. 하한을 29 로 올려 여유 폭 4 를 실제로 둔다. 게시판을 걷는 투영
+     * (core·survey·approval)은 business-app 게시판 DTO 의 참조 26개를 내려 하한 3, 투영 실측 7 이다(같은 여유 폭).
      */
     private static final int MIN_ERROR_CODE_SOURCES = 4;
     private static final int MIN_ERROR_CODES = 39;
     private static final int MIN_HANDLER_KEYS = 7;
-    private static final int MIN_BEAN_VALIDATION_REFS = 15;
+    private static final int MIN_BEAN_VALIDATION_REFS = 29;
 
     private static final Pattern ERROR_CODE = Pattern.compile("\"([A-Z]{1,3}\\d{2,3})\"\\s*,\\s*\"");
     private static final Pattern HANDLER_KEY = Pattern.compile("resolve\\(\\s*\"([a-z][a-z0-9_.]*)\"");

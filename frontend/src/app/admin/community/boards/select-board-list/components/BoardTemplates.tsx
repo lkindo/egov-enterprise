@@ -50,7 +50,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
-import { PostingEndedBadge } from '../../components/PostingEndedBadge';
+import { PinnedBadge, PostingStatusBadge } from '../../components/PostingStatusBadge';
 
 const SanitizedFaqAnswer = dynamic(() => import('./SanitizedFaqAnswer'), {
   ssr: false,
@@ -67,6 +67,11 @@ interface TemplateProps {
   querySearchWrd: string;
   handleLike: (e: React.MouseEvent, pstSn: number) => void;
   pendingLikePstSn: number | null;
+  /**
+   * 추천 단추를 열지(ADR-0040 결정 6). 호출부(BoardListClient)가 추천 권한(BOARD_LIKE)·게시판 사용·추천 받기로 판정한다. 거짓이면
+   * 수만 보인다. 기본값을 두지 않는다 — 판정을 빠뜨린 호출부가 권한 없는 사람에게 단추를 열지 않게 타입으로 요구한다.
+   */
+  likesOpen: boolean;
   page?: number;
   totalCount?: number;
 }
@@ -98,12 +103,25 @@ function PostMeta({ item }: { item: BoardPost }) {
   );
 }
 
-/** 추천 버튼. 동기 잠금과 진행 표시는 호출부(BoardListClient)가 소유한다. */
+/**
+ * 추천 버튼. 동기 잠금과 진행 표시는 호출부(BoardListClient)가 소유한다.
+ * [2026-10-23 ADR-0040 결정 6] 추천이 닫혀 있으면(likesOpen 거짓) 단추 대신 쌓인 수만 보인다. 목록은 토글하지 않는다 — 추천 취소는
+ * 상세 화면에서 한다.
+ */
 function LikeButton({
   item,
   handleLike,
   pendingLikePstSn,
-}: Pick<TemplateProps, 'handleLike' | 'pendingLikePstSn'> & { item: BoardPost }) {
+  likesOpen,
+}: Pick<TemplateProps, 'handleLike' | 'pendingLikePstSn' | 'likesOpen'> & { item: BoardPost }) {
+  if (!likesOpen) {
+    return (
+      <span className="inline-flex items-center gap-1.5 text-xs text-muted-foreground">
+        <ThumbsUp size={14} aria-hidden="true" />
+        추천 <span className="tabular-nums">{item.likeCnt || 0}</span>
+      </span>
+    );
+  }
   const pending = pendingLikePstSn === item.pstSn;
   // [2026-10-01] 이미 추천한 글은 '추천함' 으로 보이고 다시 누르지 않는다(서버 판정 recommended).
   const recommended = item.recommended === true;
@@ -170,7 +188,7 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
   );
 };
 
-export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn }: TemplateProps) => {
+export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn, likesOpen }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <div className="grid grid-cols-1 gap-2 p-[var(--filter-pad)] md:grid-cols-2 xl:grid-cols-3">
@@ -191,7 +209,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
             </div>
             <h3 className="line-clamp-2 text-[length:var(--font-size-body)] font-semibold text-foreground">
               <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
               </Link>
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -199,7 +217,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
             </p>
             <div className="mt-auto flex items-end justify-between gap-2">
               <PostMeta item={item} />
-              <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+              <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
             </div>
           </article>
         );
@@ -208,7 +226,7 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
   );
 };
 
-export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn }: TemplateProps) => {
+export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn, likesOpen }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <ul className="divide-y divide-border rounded-md border border-border bg-card">
@@ -232,7 +250,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLi
             <div className="min-w-0 flex-1 space-y-1">
               <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
                 <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
                 </Link>
               </h4>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
@@ -248,7 +266,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLi
               </div>
             </div>
 
-            <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+            <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
           </li>
         );
       })}
@@ -456,7 +474,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
               <Badge variant="outline" className="shrink-0">문서</Badge>
               <h4 className="min-w-0 text-[length:var(--font-size-body)] font-semibold text-foreground">
                 <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
                 </Link>
               </h4>
             </div>
@@ -477,7 +495,7 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
   );
 };
 
-export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn, page = 1, totalCount = 0 }: TemplateProps) => {
+export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLikePstSn, likesOpen, page = 1, totalCount = 0 }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <div className="overflow-x-auto rounded-md border border-border">
@@ -500,7 +518,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
               </TableCell>
               <TableCell>
                 <Link href={detailHref(bbsId, item.pstSn)} className="block truncate font-medium text-foreground hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PostingEndedBadge pstEndYmd={item.pstEndYmd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
                 </Link>
               </TableCell>
               <TableCell className="text-center text-muted-foreground">
@@ -514,7 +532,7 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
                 {(item.inqCnt || 0).toLocaleString()}
               </TableCell>
               <TableCell className="text-center">
-                <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} />
+                <LikeButton item={item} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
               </TableCell>
             </TableRow>
           ))}
