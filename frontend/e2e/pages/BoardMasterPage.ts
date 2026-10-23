@@ -193,26 +193,33 @@ export class BoardMasterPage {
     await expect(this.page.getByRole('heading', { level: 2, name: '게시물' })).toBeVisible({ timeout: 15000 });
   }
 
-  /** 게시물 탭의 게시 상태 조건을 고르고 `조회` 로 적용한다(조건은 URL 밖 상태다). */
-  async filterPostsByStatus(statusLabel: '전체' | '게시 중' | '예약' | '게시 종료') {
+  /**
+   * 게시물 탭의 게시 상태 조건을 고르고 `조회` 로 적용한다(조건은 URL 밖 상태다). `serverQuery` 를 주면 그 조건을 실은 목록 요청의
+   * 응답을 기다린다 — 처음 쓰는 조건이라 요청이 반드시 나간다. 앞서 받은 조건(예: '전체')으로 돌아가면 쿼리 캐시(전역 staleTime 60초)가
+   * 서버에 다시 묻지 않을 수 있어 응답을 기다리지 않는다. 그때는 호출한 쪽이 표의 행으로 결과를 확인한다(2026-10-23 CI 에서 '전체' 로
+   * 돌아가는 응답 대기가 15초를 넘겼다).
+   */
+  async filterPostsByStatus(statusLabel: '전체' | '게시 중' | '예약' | '게시 종료', serverQuery?: string) {
     await this.page.getByRole('combobox', { name: '게시 상태' }).selectOption({ label: statusLabel });
-    const listResponse = this.page.waitForResponse(
-      res => /\/api\/v1\/boards\/BBSMSTR_[A-Z0-9]{12}(\?|$)/.test(res.url()) && res.request().method() === 'GET',
-      { timeout: 15000 }
-    );
-    await this.page.getByRole('button', { name: '조회', exact: true }).click();
-    expect((await listResponse).status()).toBe(200);
+    await this.applyPostFilter(serverQuery);
   }
 
-  /** [B2] 게시물 탭의 상단 고정 조건을 고르고 `조회` 로 적용한다(서버가 오늘 기준으로 판정한다). */
-  async filterPostsByPinned(pinnedLabel: '전체' | '고정 글' | '고정 아닌 글') {
+  /** [B2] 게시물 탭의 상단 고정 조건을 고르고 `조회` 로 적용한다(서버가 오늘 기준으로 판정한다). `serverQuery` 는 위와 같다. */
+  async filterPostsByPinned(pinnedLabel: '전체' | '고정 글' | '고정 아닌 글', serverQuery?: string) {
     await this.page.getByRole('combobox', { name: '상단 고정' }).selectOption({ label: pinnedLabel });
-    const listResponse = this.page.waitForResponse(
-      res => /\/api\/v1\/boards\/BBSMSTR_[A-Z0-9]{12}(\?|$)/.test(res.url()) && res.request().method() === 'GET',
-      { timeout: 15000 }
-    );
+    await this.applyPostFilter(serverQuery);
+  }
+
+  private async applyPostFilter(serverQuery?: string) {
+    const listResponse = serverQuery
+      ? this.page.waitForResponse(
+        res => /\/api\/v1\/boards\/BBSMSTR_[A-Z0-9]{12}\?/.test(res.url()) && res.url().includes(serverQuery)
+          && res.request().method() === 'GET',
+        { timeout: 15000 }
+      )
+      : undefined;
     await this.page.getByRole('button', { name: '조회', exact: true }).click();
-    expect((await listResponse).status()).toBe(200);
+    if (listResponse) expect((await listResponse).status()).toBe(200);
   }
 
   /** 한 글의 일정 바꾸기(빠른 편집)로 시작일·종료일을 바꿔 저장한다. 날짜는 yyyy-MM-dd 다. */

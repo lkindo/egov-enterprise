@@ -90,11 +90,13 @@ test.describe('Board Master Management (Admin Flow)', () => {
             await expect(rowOf(scheduledTitle).getByText('예약', { exact: true })).toBeVisible({ timeout: 15000 });
             await expect(rowOf(postingTitle).getByText('게시 중', { exact: true })).toBeVisible();
 
-            // 게시 상태 조건은 조회로 적용한다 — 예약 글만 남는다.
-            await boardMasterPage.filterPostsByStatus('예약');
+            // 게시 상태 조건은 조회로 적용하고 서버가 거른다 — 예약 글만 남는다.
+            await boardMasterPage.filterPostsByStatus('예약', 'postingStatus=SCHEDULED');
             await expect(rowOf(scheduledTitle)).toBeVisible({ timeout: 15000 });
-            await expect(rowOf(postingTitle)).toHaveCount(0);
+            await expect(rowOf(postingTitle)).toHaveCount(0, { timeout: 15000 });
+            // 앞서 받은 '전체' 로 돌아가면 캐시가 그릴 수 있다 — 응답 대신 행으로 확인한다.
             await boardMasterPage.filterPostsByStatus('전체');
+            await expect(rowOf(postingTitle)).toBeVisible({ timeout: 15000 });
 
             // [B2] 고정을 받는 게시판이라 상한·기본 일수를 보이지만, 관리자에게 상단 고정 권한이 없어 고정 단추는 없다.
             await expect(page.getByText('고정 상한 5건 · 기본 30일')).toBeVisible();
@@ -108,8 +110,8 @@ test.describe('Board Master Management (Admin Flow)', () => {
                 data: { upendFixYn: 'Y' },
             });
             expect(pinDenied.status()).toBe(403);
-            // 상단 고정 조건도 조회로 적용한다 — 고정한 글이 없으니 빈 결과다.
-            await boardMasterPage.filterPostsByPinned('고정 글');
+            // 상단 고정 조건도 조회로 적용하고 서버가 거른다 — 고정한 글이 없으니 빈 결과다.
+            await boardMasterPage.filterPostsByPinned('고정 글', 'pinned=true');
             await expect(page.getByText('조건에 맞는 글이 없습니다.')).toBeVisible({ timeout: 15000 });
             await boardMasterPage.filterPostsByPinned('전체');
             await expect(rowOf(postingTitle)).toBeVisible({ timeout: 15000 });
