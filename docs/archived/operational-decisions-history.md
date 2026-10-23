@@ -2281,6 +2281,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-379 | accepted | ADR-0040 의 스키마 변경(게시판 마스터 버전 컬럼, 게시판 변경 이력 표, 예약·고정·비밀글·추천 설정 컬럼, 상단 고정 컬럼, 신규 표준 용어 6건, `BOARD_PIN`, 메뉴 표시명 데이터 변경)을 저장소 Flyway 로 일괄 승인하고, 공유 OCI 적용은 PR 이 병합될 때마다 하며, 예약 집행 전 진단에서 나온 미래 시작일·형식 오류 행은 보정하지 않는다(2026-10-23 사용자 결정). | 사용자가 A0~B3 를 이어서 구현하도록 하면서 배치마다 멈추지 않게 승인 범위를 한 번에 정했다. 모두 추가만 하는 Expand 이고 기존 컬럼을 지우거나 바꾸지 않는다. 기록용 미래 시작일 글은 지워지지 않고 시작일까지 작성자·조회 대행 권한자에게만 보인다. 게시글 버전 NULL 보정·NOT NULL 전환과 그 밖의 코어 데이터 변경은 이 승인 밖이다. | [ADR-0040](../02-architecture/decisions/ADR-0040-board-operations-management.md), [설계서 §7](../02-architecture/board-management-expansion-design.md#7-구현-배치와-검증), [적용 로그](../04-operations/shared-oci-migration-apply-log.md) | 2026-10-23 | - |
 
+## DEC-OPS-380
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-380 | accepted | 공유 OCI DB 의 ROLE_ADMIN 그룹에 상단 고정 권한 `BOARD_PIN` 을 배정하고 같은 트랜잭션에 GROUP_GRANT/ADD 이력 1건(`ops:2026-10-23:board-pin`, 정책 버전은 그때의 카탈로그 버전)을 남긴다(2026-10-23 사용자 승인). 템플릿 기본값(기본 그룹 없음, ADR-0040 결정 5)과 도입 기관 DB 의 자동 미배정은 그대로다. | V2_140~V2_142 를 적용한 뒤 공유 OCI 에서는 아무도 글을 고정할 수 없었다. [DEC-OPS-181](#dec-ops-181)(공지·FAQ 편집 권한)과 같은 방식으로 개발 환경에서만 기능을 쓰게 했다. 사전 읽기는 ROLE_ADMIN 배정 305·`BOARD_PIN` 0, 사후는 306·1(이력 1행)이다. 이 배정 뒤에는 #966 이전 코드(카탈로그에 `BOARD_PIN` 없음)로 공유 OCI 를 보는 앱에서 ROLE_ADMIN 사용자의 권한 스냅숏이 fail-closed 로 막힌다 — 공유 OCI 는 병합마다 main 을 따른다. 되돌리기는 그 배정 행을 지우고 GROUP_GRANT/REMOVE 이력을 남긴다. | [ADR-0040](../02-architecture/decisions/ADR-0040-board-operations-management.md), [권한 원장](../../config/governance/permission-catalog.json) | 2026-10-23 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
