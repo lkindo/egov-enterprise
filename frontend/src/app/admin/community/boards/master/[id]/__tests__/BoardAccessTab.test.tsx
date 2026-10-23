@@ -75,7 +75,7 @@ describe('BoardAccessTab', () => {
   it('게시글 권한 표의 추가 조건이 서버의 쓰기·커뮤니티 판정과 같다', () => {
     renderTab({ designations: ['NOTICE'], cmntySn: 7 } as never);
     const table = screen.getByRole('table', { name: '게시글 권한' });
-    const conditionOf = (action: string) => within(table).getByRole('row', { name: new RegExp(`^${action.replace(/[()]/g, '\\$&')}`) })
+    const conditionOf = (action: string) => within(table).getByRole('row', { name: new RegExp(`^${action.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`) })
       .querySelectorAll('td')[2].textContent ?? '';
 
     for (const action of ['글 쓰기', '내 글 고치기·해결 표시', '내 글 지우기', '남의 글 고치기', '남의 글 지우기', '게시 기간 바꾸기(운영 화면)',
