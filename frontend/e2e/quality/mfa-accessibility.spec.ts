@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { createHmac, randomBytes } from 'node:crypto';
-import { Page } from '@playwright/test';
+import { Page, type Request as PlaywrightRequest } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
 import { SITE_IDENTITY } from '../../src/config/site-identity';
 
@@ -42,6 +42,13 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
         expect(created.status(), '격리된 MFA 사용자 생성').toBe(201);
         const actor = await actorPage({ storageState: { cookies: [], origins: [] } });
         const { page, context, guard } = actor;
+        // 등록 시작은 일반 세션을 폐기한다. 그때 응답이 오지 않은 홈 조회는 401 을 받는다 — 앱은 그 401 로 등록 화면을 걷지 않지만
+        //   (lib/api/client.ts 재발급 실패 판정), 브라우저 오류로 남으므로 이 시험은 앞서 나간 API 조회가 끝난 뒤 등록을 시작한다
+        //   (run 40054825686). networkidle 은 탐색마다 한 번만 오므로 이미 지난 뒤의 조회를 기다리지 못해 요청을 직접 센다.
+        const inFlightApi = new Set<PlaywrightRequest>();
+        page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/')) inFlightApi.add(request); });
+        page.on('requestfinished', request => { inFlightApi.delete(request); });
+        page.on('requestfailed', request => { inFlightApi.delete(request); });
         guard.expectErrors([{
             id: 'E2E-MFA-LOGIN-ME-401',
             specScope: 'mfa-accessibility.spec.ts :: 선택 등록부터 추가 인증 로그인까지 제한 쿠키·키보드·오류 초점을 검증한다',
@@ -83,6 +90,7 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             await page.getByRole('button', { name: '추가 인증 관리', exact: true }).click();
             await expect(page.getByText('인증앱을 아직 등록하지 않았습니다.')).toBeVisible();
             await fillSecret('현재 비밀번호', password);
+            await expect.poll(() => inFlightApi.size, { message: '등록 시작 전에 앞서 나간 API 조회가 끝난다' }).toBe(0);
             const started = page.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/mfa/enrollment/start'
                 && response.request().method() === 'POST', { timeout: 20_000 });
             await page.getByRole('button', { name: '인증앱 등록', exact: true }).click();

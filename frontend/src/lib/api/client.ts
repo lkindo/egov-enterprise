@@ -4,7 +4,7 @@ import { cache } from 'react';
 
 import { authReissueResponseSchema } from '@/lib/auth/auth-reissue-contract';
 import { forwardedClientIpHeaders } from '@/lib/api/forwarded-client-ip';
-import { assertCurrentAuthorizationRequest, assertRequestAllowedWhileSignedOut, getAuthorizationRequestEpoch, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
+import { assertCurrentAuthorizationRequest, assertRequestAllowedWhileSignedOut, getAuthorizationRequestEpoch, isSignedOut, notifyAuthorizationChanged } from '@/lib/auth/authorization-state';
 import { isCanceledRequest } from '@/lib/safe-error-log';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
 
@@ -234,11 +234,19 @@ axiosInstance.interceptors.response.use(
         } else {
           finalReissueError = new Error('Token reissue failed');
         }
+        // [2026-10-24] 재발급을 기다리는 사이 로그아웃이나 추가 인증 등록(일반 세션을 폐기한다)으로 넘어갔으면 세션 만료가 아니다 —
+        //   그 화면을 지키고 만료 화면으로 보내지 않는다. 등록 시작 전에 나간 홈 조회가 401 을 받아 등록 모달을 걷던 경합이다(run 40054825686).
+        const superseded = isSignedOut() || (originalRequest._authorizationEpoch !== undefined
+          && originalRequest._authorizationEpoch !== getAuthorizationRequestEpoch());
+        if (superseded) {
+          finalReissueError = new Error('인증 상태가 바뀌어 재발급 실패를 세션 만료로 다루지 않았습니다.');
+          finalReissueError.name = 'CanceledError';
+        }
 
         processQueue(finalReissueError, null);
         isRetrying = false;
 
-        if (typeof window !== 'undefined') {
+        if (typeof window !== 'undefined' && !superseded) {
           // 세션 만료 시 로그인 화면으로 포워딩
           // [결정 17] 경로와 구조 키(게시판·글·탭·쪽)만 넘겨, 다시 로그인하면 보던 자리로 돌아간다.
           window.location.href = `/login?expired=true&redirect=${encodeURIComponent(loginReturnPath(window.location.pathname, window.location.search))}`;
