@@ -26,7 +26,6 @@ function inputs(overrides = {}) {
     authorizationPolicies: { operationBindings: [{ handler: 'nuri.api.controller.business.probe.ProbeApiController#getList' }] },
     permissionBundles: { bundles: [{ permissions: ['PROBE_READ'] }], excluded: [] },
     routeLedger: { routes: [{ route: '/admin/probe' }] },
-    disposition: { routes: [{ route: '/admin/probe' }] },
     inputContractCensus: {},
     ciWorkflow: '',
     ...overrides,
@@ -49,14 +48,22 @@ test('표를 만드는 마이그레이션이 없으면 빠졌다고 말한다', 
   assert.deepEqual(missing(evaluateRegistration(inputs({ migrations: {} }))), ['table:tb_probe']);
 });
 
-test('소유 접두 아래 화면이 원장에 없거나 진입 권한·처분이 없으면 빠졌다고 말한다', () => {
+test('소유 접두 아래 화면이 원장에 없거나 진입 권한이 없으면 빠졌다고 말한다', () => {
   assert.deepEqual(missing(evaluateRegistration(inputs({ routeLedger: { routes: [] } }))), ['route-ledger:/admin/probe']);
   assert.deepEqual(
     missing(evaluateRegistration(inputs({
       routeLedger: { routes: [{ route: '/admin/probe' }, { route: '/admin/probe/detail' }] },
     }))),
-    ['page-permission:/admin/probe/detail', 'disposition:/admin/probe/detail'],
+    ['page-permission:/admin/probe/detail'],
   );
+});
+
+test('IA 처분 행은 판정하지 않고 처분 계약을 가리킨다(승인 전 처분 원장을 실행 코드가 읽지 않는다)', () => {
+  const report = evaluateRegistration(inputs());
+  const disposition = report.points.filter((entry) => entry.id.startsWith('disposition'));
+  assert.deepEqual(disposition.map((entry) => [entry.id, entry.status]), [['disposition', 'review']]);
+  assert.equal(disposition[0].path, 'scripts/ui-navigation-disposition-contract.test.mjs');
+  assert.match(disposition[0].detail, /owner PR 리뷰/u);
 });
 
 test('정확 라우트로 선언한 접두는 그 화면 하나만 덮는다', () => {

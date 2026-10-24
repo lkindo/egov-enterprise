@@ -1,6 +1,7 @@
 name: Deliverables draft
 
 # [DEC-OPS-382] 감리·검수 입력 자료 초안(비규범 파생물)을 같은 커밋에서 두 번 만들어 내용 다이제스트를 대조한다.
+# DB 표(--db)는 잡 안에서 만든 일회용 PostgreSQL 17 컨테이너에 Flyway 를 단계 적용한 참조 스키마다 — 공유 DB 에 접속하지 않는다.
 # 공개 저장소라 묶음은 artifact 로 올리지 않고 실행 요약에 다이제스트·행 수만 남긴다(결정 5). required check 가 아니다.
 # 릴리스 태그 첨부는 첫 실제 릴리스에서 GHCR 발행과 함께 확인한 뒤 연결한다(결정 8).
 on:
@@ -12,7 +13,7 @@ permissions:
 jobs:
   export:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
@@ -20,14 +21,14 @@ jobs:
           node-version: '22'
       - name: Export twice and compare the content digest
         run: |
-          node scripts/export-deliverables.mjs --out build/deliverables/first
-          node scripts/export-deliverables.mjs --out build/deliverables/second
+          node scripts/export-deliverables.mjs --db --out build/deliverables/first
+          node scripts/export-deliverables.mjs --db --out build/deliverables/second
           node -e "
             const first = require('./build/deliverables/first/manifest.json');
             const second = require('./build/deliverables/second/manifest.json');
             if (first.contentDigest !== second.contentDigest) { console.error('content digest differs between two exports of one commit'); process.exit(1); }
             const lines = ['## 감리·검수 입력 자료 초안', '', '비규범 파생물이다 — 묶음은 올리지 않는다. 같은 커밋에서 \`node scripts/export-deliverables.mjs\` 로 다시 만든다.', '',
               '커밋 \`' + first.commit + '\`', '', '내용 다이제스트 \`' + first.contentDigest + '\` (두 번 생성해 같음)', '', '| 파일 | 행 수 |', '|---|---|',
-              ...first.files.map((file) => '| ' + file.path + ' | ' + file.rows + ' |')];
+              ...first.files.map((file) => '| ' + file.path + ' | ' + (file.rows ?? '그림') + ' |')];
             require('node:fs').appendFileSync(process.env.GITHUB_STEP_SUMMARY, lines.join('\n') + '\n');
           "

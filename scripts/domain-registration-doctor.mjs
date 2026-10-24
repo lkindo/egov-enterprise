@@ -66,7 +66,6 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
     authorizationPolicies: readJson(root, 'config/governance/authorization-policies.json'),
     permissionBundles: readJson(root, 'config/governance/permission-bundles.json'),
     routeLedger: readJson(root, 'config/ui-route-capabilities.json'),
-    disposition: readJson(root, 'config/ui-navigation-disposition-proposal.json'),
     inputContractCensus: readJson(root, 'config/governance/input-contract-mirror-census.json'),
     ciWorkflow: readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8'),
   };
@@ -119,19 +118,21 @@ export function evaluateRegistration(inputs) {
   const covers = (prefix, route) => (exactRoutes.has(prefix) ? route === prefix : route === prefix || route.startsWith(`${prefix}/`));
   const pagePermissions = inputs.permissionCatalog.pagePermissions ?? {};
   const ledgerRoutes = (inputs.routeLedger.routes ?? []).map((route) => route.route);
-  const dispositionRoutes = new Set((inputs.disposition.routes ?? []).map((route) => route.route));
   for (const prefix of feature.owns?.routes ?? []) {
     const screens = ledgerRoutes.filter((route) => covers(prefix, route));
     points.push(point(KINDS.HUMAN, `route-ledger:${prefix}`, 'config/ui-route-capabilities.json', screens.length > 0 ? 'ok' : 'missing',
       screens.length > 0 ? `${prefix} 아래 화면 ${screens.length}개가 라우트 원장에 있다.` : `${prefix} 아래 라우트 원장 행이 없다 — 화면(page.tsx)이 생기면 원장 행을 둔다.`));
     for (const route of screens) {
-      for (const [id, path, present, missingDetail] of [
-        ['page-permission', 'config/governance/permission-catalog.json', Object.hasOwn(pagePermissions, route), '화면 진입 권한(pagePermissions)이 없다.'],
-        ['disposition', 'config/ui-navigation-disposition-proposal.json', dispositionRoutes.has(route), 'IA 처분 행이 없다(owner PR 리뷰로 승인, ADR-0007).'],
-      ]) {
-        points.push(point(KINDS.HUMAN, `${id}:${route}`, path, present ? 'ok' : 'missing', present ? `${route} 가 등재돼 있다.` : `${route}: ${missingDetail}`));
-      }
+      const present = Object.hasOwn(pagePermissions, route);
+      points.push(point(KINDS.HUMAN, `page-permission:${route}`, 'config/governance/permission-catalog.json', present ? 'ok' : 'missing',
+        present ? `${route} 가 등재돼 있다.` : `${route}: 화면 진입 권한(pagePermissions)이 없다.`));
     }
+  }
+  // IA 처분 행은 판정하지 않고 처분 원장도 읽지 않는다 — 승인 전 처분 원장을 등록되지 않은 실행 코드가 읽는 일을 처분 계약이 막고,
+  // 화면마다 행이 있는지는 그 계약이 이미 센다(같은 불변식을 두 번 보지 않는다).
+  if ((feature.owns?.routes ?? []).length > 0) {
+    points.push(point(KINDS.HUMAN, 'disposition', 'scripts/ui-navigation-disposition-contract.test.mjs', 'review',
+      '새 화면은 IA 처분 원장에 행이 있어야 한다 — 빠지면 이 계약 시험이 붉다. 행은 owner PR 리뷰로 승인한다(ADR-0007).'));
   }
 
   const boundHandlers = new Set((inputs.authorizationPolicies.operationBindings ?? []).map((binding) => binding.handler));

@@ -18,7 +18,10 @@
  * Atlas(atlas-catalog.mjs)는 OpenAPI 만으로 연산을 그리고 인가 원장과 잇지 않는다 — 여기서 하는 조인은 Atlas 에 없으므로
  * 계산부를 나누지 않고 api-docs.json 을 직접 읽는다.
  *
- * 사용: node scripts/export-deliverables.mjs [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]
+ * 추적 표(하류 추적 보기·입력 항목 후보·시험 목록·요구사항 추적 조인)는 export-deliverables-trace.mjs, DB 표는
+ * export-deliverables-db.mjs 가 계산한다.
+ *
+ * 사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
@@ -26,6 +29,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readScreenRegistryArtifact } from './screen-registry-model.mjs';
+import { inputFieldSheet, loadTraceInputs, readRequirementFile, readRequirements, requirementSheet, testListSheet, traceSheet } from './export-deliverables-trace.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -292,10 +296,17 @@ export function falsePositiveSheet({ review }) {
 }
 
 export function buildSheets(inputs) {
-  return [
+  const sheets = [
     permissionSheet(inputs), screenSheet(inputs), capabilitySheet(inputs), interfaceSheet(inputs), serviceGuardSheet(inputs),
     accessPolicySheet(inputs), programSheet(inputs), menuSheet(inputs), weaknessSheet(inputs), falsePositiveSheet(inputs),
+    traceSheet(inputs), inputFieldSheet(inputs), testListSheet(inputs.tests),
   ];
+  if (inputs.requirements !== undefined) {
+    const capabilities = new Set(inputs.routes.routes.flatMap((route) => (route.capabilities ?? []).map((capability) => `${route.route}#${capability.id}`)));
+    sheets.push(requirementSheet(inputs.requirements, { capabilities, screens: new Set(inputs.registry.screens.map((screen) => screen.route)),
+      interfaces: new Set((inputs.policies.operationBindings ?? []).map((binding) => `${binding.method} ${binding.path}`)) }));
+  }
+  return sheets;
 }
 
 const PACKAGE_NOTICES = Object.freeze([
@@ -311,12 +322,17 @@ export function contentDigest(files) {
     .map(([path, text]) => `${path}\t${sha256(text)}\n`).join(''));
 }
 
-export function renderPackage(sheets, meta) {
+/** extras: 표가 아닌 문서(예: db-erd.md) — { path, title, text }. 표처럼 내용 다이제스트에 들어간다. */
+export function renderPackage(sheets, meta, extras = []) {
   const files = new Map();
   for (const sheet of sheets) {
     for (const notice of sheet.notices) assertNoBannedClaims(notice, `${sheet.id} notice`);
     files.set(`${sheet.id}.md`, toMarkdown(sheet));
     files.set(`${sheet.id}.csv`, toCsv(sheet));
+  }
+  for (const extra of extras) {
+    assertNoBannedClaims(extra.text, extra.path);
+    files.set(extra.path, extra.text);
   }
   const digest = contentDigest(files);
   const readme = [
@@ -325,6 +341,9 @@ export function renderPackage(sheets, meta) {
     '## 이 묶음의 성격', '', ...PACKAGE_NOTICES.map((notice) => `- ${notice}`), '',
     '## 표', '', '| 표 | Markdown | CSV | 행 수 |', '|---|---|---|---|',
     ...sheets.map((sheet) => `| ${sheet.title} | [${sheet.id}.md](${sheet.id}.md) | [${sheet.id}.csv](${sheet.id}.csv) | ${sheet.rows.length} |`), '',
+    ...(extras.length ? ['## 그림', '', ...extras.map((extra) => `- [${extra.title}](${extra.path})`), ''] : []),
+    ...(meta.database ? [`DB 표는 참조 스키마(일회용 PostgreSQL ${meta.database.postgres} 에 Flyway ${meta.database.migrations}개를 단계 적용)에서 읽었다 — 운영 DB 실측이 아니다.`, '']
+      : ['DB 표(테이블·컬럼 정의서, 외래 키, ERD, 표준 사전)는 --db 로 만든다 — 이 묶음에는 없다.', '']),
     '## 재현', '',
     `내용 다이제스트 \`${digest}\` — 표 파일로 계산한다. 커밋·시각을 넣지 않으므로 원장 값이 같으면 다른 커밋에서 \`node scripts/export-deliverables.mjs\` 로 다시 만들어도 같다.`, '',
     '입력 파일의 sha256, lockfile, 도구 버전은 manifest.json 에 있다. 공공 규범과의 대응과 이 묶음의 경계는 docs/03-guides/design-to-deliverables-guide.md 에 있다.', '',
@@ -333,8 +352,11 @@ export function renderPackage(sheets, meta) {
   files.set('README.md', readme);
   const manifest = {
     schemaVersion: 1, kind: 'non-normative-derived-deliverables', decision: 'DEC-OPS-382', commit: meta.commit, cleanTree: meta.cleanTree,
-    toolchain: meta.toolchain, inputs: meta.inputs, lockfiles: meta.lockfiles,
-    files: sheets.flatMap((sheet) => [`${sheet.id}.md`, `${sheet.id}.csv`].map((path) => ({ path, rows: sheet.rows.length, sha256: sha256(files.get(path)) }))),
+    toolchain: meta.toolchain, inputs: meta.inputs, lockfiles: meta.lockfiles, database: meta.database ?? null,
+    files: [
+      ...sheets.flatMap((sheet) => [`${sheet.id}.md`, `${sheet.id}.csv`].map((path) => ({ path, rows: sheet.rows.length, sha256: sha256(files.get(path)) }))),
+      ...extras.map((extra) => ({ path: extra.path, rows: null, sha256: sha256(extra.text) })),
+    ],
     contentDigest: digest,
   };
   files.set('manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
@@ -354,7 +376,7 @@ function inputReader(root) {
     list: () => [...inputs].sort(([left], [right]) => byText(left, right)).map(([path, digest]) => ({ path, sha256: digest })) };
 }
 
-export async function loadInputs(root = ROOT) {
+export async function loadInputs(root = ROOT, { rtm } = {}) {
   if (existsSync(join(root, GENERATED_PRODUCT_MARKER))) {
     throw new Error('export-deliverables runs on the source repository only; generated products need a projected-ledger mode first');
   }
@@ -370,6 +392,16 @@ export async function loadInputs(root = ROOT) {
   // 묶음 입력 두 개는 파일 하나가 아니라 집합의 다이제스트다 — 생산 Java(경로·내용)와 생성기 카탈로그의 기능 선언·소스 목록 해시.
   io.record(`(생산 Java ${files.length}개)`, sha256(files.map((file) => `${file.path}\t${textSha256(readFileSync(join(root, file.path), 'utf8'))}\n`).join('')));
   io.record('(생성기 카탈로그 기능 선언·소스 목록)', sha256(`${catalog.provenance.modulesHash}\n${catalog.provenance.sourceInventoryHash}\n`));
+  const { e2e, tests } = await loadTraceInputs(root, { digest: textSha256, record: io.record });
+  let requirements;
+  if (rtm !== undefined) {
+    // 기관 요구사항 추적 CSV 는 커밋하지 않는 실행 인자다. 내용의 해시만 남기고 경로는 manifest 에 싣지 않는다.
+    const text = readRequirementFile(root, resolve(rtm), { tracked: (path) => {
+      try { execFileSync('git', ['ls-files', '--error-unmatch', '--', path], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
+    } });
+    requirements = readRequirements(text);
+    io.record('(실행 인자) 기관 요구사항 추적 CSV', textSha256(text));
+  }
   return {
     inputs: {
       catalog: io.json('config/governance/permission-catalog.json'),
@@ -381,7 +413,7 @@ export async function loadInputs(root = ROOT) {
       menus: io.json('config/project-composer-menus.json'),
       weaknesses: io.json('config/security/secure-coding-weaknesses.json'),
       review: io.json('config/security/false-positive-review.json'),
-      files, ownerOf,
+      files, ownerOf, moduleFiles: modules.files, e2e, tests, requirements,
     },
     inputList: io.list(),
   };
@@ -406,14 +438,26 @@ export function resolveOutput(root, out) {
   return target;
 }
 
-export async function exportDeliverables({ root = ROOT, allowDirty = false, out } = {}) {
+export async function exportDeliverables({ root = ROOT, allowDirty = false, out, db = false, rtm } = {}) {
   const commit = git(root, ['rev-parse', 'HEAD']);
   const cleanTree = git(root, ['status', '--porcelain']) === '';
   if (!cleanTree && !allowDirty) throw new Error('working tree is not clean — commit first, or pass --allow-dirty for a preview');
   const target = resolveOutput(root, out ?? `${OUTPUT_ROOT}/${commit.slice(0, 12)}${cleanTree ? '' : '-dirty'}`);
-  const { inputs, inputList } = await loadInputs(root);
+  const { inputs, inputList } = await loadInputs(root, { rtm });
+  const sheets = buildSheets(inputs);
+  const extras = [];
+  let database;
+  if (db) {
+    // DB 모드는 Docker 로 일회용 컨테이너를 만든다(export-deliverables-db.mjs). 공유 DB 에 접속하지 않는다.
+    const loaded = await (await import('./export-deliverables-db.mjs')).loadDatabaseDeliverables(root);
+    sheets.push(...loaded.sheets);
+    extras.push(loaded.erd);
+    inputList.push(loaded.input);
+    inputList.sort((left, right) => byText(left.path, right.path));
+    database = loaded.database;
+  }
   const lockfiles = LOCKFILES.filter((path) => existsSync(join(root, path))).map((path) => ({ path, sha256: textSha256(readFileSync(join(root, path), 'utf8')) }));
-  const { files, digest } = renderPackage(buildSheets(inputs), { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles });
+  const { files, digest } = renderPackage(sheets, { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles, database }, extras);
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   for (const [path, text] of files) writeFileSync(join(target, path), text);
@@ -422,14 +466,15 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out 
 
 if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const args = process.argv.slice(2);
-  const outIndex = args.indexOf('--out');
-  const out = outIndex >= 0 ? args[outIndex + 1] : undefined;
-  const known = new Set(['--allow-dirty', ...(outIndex >= 0 ? ['--out', out] : [])]);
-  if ((outIndex >= 0 && !out) || args.some((arg) => !known.has(arg))) {
-    console.error('사용: node scripts/export-deliverables.mjs [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
+  const valueOf = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
+  const out = valueOf('--out');
+  const rtm = valueOf('--rtm');
+  const known = new Set(['--allow-dirty', '--db', ...(args.includes('--out') ? ['--out', out] : []), ...(args.includes('--rtm') ? ['--rtm', rtm] : [])]);
+  if ((args.includes('--out') && !out) || (args.includes('--rtm') && !rtm) || args.some((arg) => !known.has(arg))) {
+    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
     process.exit(2);
   }
-  const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out });
+  const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out, db: args.includes('--db'), rtm });
   console.log(`산출물 초안 ${result.files}개 파일: ${relative(ROOT, result.target).split(sep).join('/')}`);
   console.log(`내용 다이제스트: ${result.digest}`);
 }
