@@ -228,11 +228,22 @@ run_operational_contracts
 run_atlas_contract
 
 if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
-  # 빠른 저장소 불변식만 pre-push에서 실행하고 전수 Vitest/coverage는 CI가 소유한다.
+  # 빠른 저장소 불변식과 원문 계약만 pre-push에서 실행하고 전수 Vitest/coverage는 CI가 소유한다.
   echo "  → frontend: vitest src/__tests__ (저장소 불변식 게이트)"
   record_start frontend-invariants
   ( cd frontend && npx vitest run src/__tests__ ) \
     || { record_end "$?"; echo "❌ 프런트 불변식 게이트 실패 — 위반을 수정하고 하향 래칫의 개선분은 정본에 반영하세요."; exit 1; }
+  record_end 0
+
+  # src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험(원문 계약)은 import 그래프 밖이라 vitest related 로도 못 찾고 CI 전체 vitest 에서만
+  # 돌았다(PR #626·2026-09-16 layout.tsx·PR #969). 목록은 탐지기가 매번 계산한다 — 탐지 실패·0건은 생략이 아니라 차단이다.
+  echo "  → frontend: vitest 원문 계약 (node scripts/frontend-source-contracts.mjs)"
+  record_start frontend-source-contracts
+  FRONTEND_SOURCE_CONTRACTS=$(node scripts/frontend-source-contracts.mjs) \
+    || { record_end "$?"; echo "❌ 원문 계약 목록을 계산하지 못했습니다 — 탐지기 실패는 생략이 아니라 차단입니다"; exit 1; }
+  # set -f: 대괄호 경로([id] 등)가 글로브로 펼쳐지지 않게 한다. 공백 경로는 탐지기가 막는다.
+  ( cd frontend && set -f && npx vitest run $FRONTEND_SOURCE_CONTRACTS ) \
+    || { record_end "$?"; echo "❌ 원문 계약 실패 — 바꾼 소스·설정을 원문으로 읽는 시험이 어긋납니다(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; exit 1; }
   record_end 0
 fi
 

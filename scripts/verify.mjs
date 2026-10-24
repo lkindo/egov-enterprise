@@ -8,10 +8,12 @@
  * require running services or external credentials. The independent migration
  * scope verifies its CLI module without online UI governance dependencies.
  *
- * fast·push·fe·full·e2e 는 실패가 잦고 짧은 정적 검사(codegen·타입·lint·폼 census — fast·push 는 Java 컴파일 포함,
+ * fast·push·fe·full·e2e 는 실패가 잦고 짧은 정적 검사(타입·lint·폼 census — fast·push 는 Java 컴파일 포함,
  * e2e 는 E2E 타입 검사만)를 운영 계약(로컬 약 11분)보다 먼저 돌려 실패를 빨리 알린다. full·be 의 Java 컴파일은
- * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 계약이 먼저다. 성공하면 같은 명령이 모두
+ * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 그 다음 계약이 먼저다. 성공하면 같은 명령이 모두
  * 실행되므로 명령 집합은 같다. 총시간은 캐시·실행 조건에 따라 달라 실측한다. fast·push·full 은 맨 앞에서 CodeQL 근사(`npm run sast:approx`, 수 초)를 돈다.
+ * 운영 계약을 부르는 모든 범위(docs·fast·push·be·fe·full·e2e)는 맨 앞(fast·push·full 은 CodeQL 근사 다음)에서 생성물 신선도
+ * (`npm run regen -- --check`, 약 20초)를 본다 — pre-push 맨 앞과 같은 검사다. 계약 codegen 은 그 안의 sync-contract 가 한 번 본다.
  *
  * integrate 는 여러 갈래를 한 브랜치로 합친 뒤 푸시 전에 돈다(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → 생성물 재생성 →
  * 폼 census·전체 vitest·:api-server:test·전체 하네스·닿는 schema-validation·생성기 화면 시험·바뀐 E2E.
@@ -46,11 +48,11 @@ function stageId(command) {
     ['jacocoRootCoverageVerification', 'backend-suite'], ['harnessTest', 'harness'],
     ['compileJava compileTestJava', 'backend-compile'], ['test:operational-contracts', 'operational-contracts'],
     ['governance-atlas-contract', 'atlas'], ['cross-stack', 'cross-stack'], ['src/__tests__', 'frontend-invariants'],
-    ['vitest run', 'frontend-tests'], ['codegen:verify:zod', 'codegen-zod'], ['codegen:verify', 'codegen-api'],
+    ['vitest run', 'frontend-tests'],
     ['type-check:e2e', 'e2e-types'], ['tsc --noEmit', 'frontend-types'], ['run lint', 'frontend-lint'],
     ['sast:approx', 'sast'], ['bundle:check', 'frontend-bundle'], ['test:coverage', 'frontend-coverage'],
     ['frontend build', 'frontend-build'], ['run-isolated-e2e', 'isolated-e2e'],
-    ['verify-branch-protection', 'repository-policy'], ['npm run regen', 'regenerate'],
+    ['verify-branch-protection', 'repository-policy'], ['regen -- --check', 'generated-freshness'], ['npm run regen', 'regenerate'],
     ['migration-verification-contract', 'migration-contract'], ['migration-test-shard', 'migration-artifacts'],
     [':migration-tool:', 'migration-build'],
   ];
@@ -85,14 +87,20 @@ function runOperationalContracts() {
   run('npm run test:operational-contracts');
 }
 
+// 생성물·해시 결속의 낡음을 운영 계약(로컬 약 11분) 전에 본다 — pre-push 맨 앞과 같은 검사(npm run regen -- --check, 약 20초)이며
+// 새 판정이 아니다(regenerate.mjs). 그 안의 생성 계약 검사(sync-contract)가 프런트 codegen:verify·:zod 와 같은 검증기라
+// runFrontendStatic 은 그것을 다시 돌리지 않는다. 2026-10-23 verify:docs 가 11분 뒤에야 Atlas 신선도 실패를 알렸다.
+function runGeneratedFreshness() {
+  run('npm run regen -- --check');
+}
+
 function runDocumentationContracts() {
+  runGeneratedFreshness();
   runOperationalContracts();
   run('pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
 }
 
 function runFrontendStatic() {
-  run('pnpm -C frontend run codegen:verify');
-  run('pnpm -C frontend run codegen:verify:zod');
   run('pnpm -C frontend exec tsc --noEmit');
   run('pnpm -C frontend run type-check:e2e');
   run('pnpm -C frontend run lint');
@@ -106,10 +114,23 @@ function runScriptStatic() {
 
 function runFastProfile() {
   runScriptStatic();
+  runGeneratedFreshness();
   run(`${gradlew} compileJava compileTestJava -Dfile.encoding=UTF-8`);
   runFrontendStatic();
   runOperationalContracts();
   run('pnpm -C frontend exec vitest run src/__tests__');
+  runFrontendSourceContracts();
+}
+
+// src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험(원문 계약)은 import 그래프 밖이라 CI 전체 vitest 에서만 돌았다 — pre-push 와 같은
+// 목록(scripts/frontend-source-contracts.mjs 가 매번 계산)을 불변식 다음에 돈다. 전수·coverage 는 fe·full 의 test:coverage 가 소유한다.
+// 이 파일은 독립 이관 제품에도 복사되므로(migration-product) 프런트 전용 모듈을 import 하지 않고 탐지기를 따로 실행해 목록을 얻는다.
+// 탐지 실패(0건 포함)는 예외로 멈춘다 — 빈 목록으로 넘어가지 않는다.
+function runFrontendSourceContracts() {
+  const list = execSync('node scripts/frontend-source-contracts.mjs', {
+    encoding: 'utf8', env: { ...process.env, TZ: process.env.TZ || 'Asia/Seoul' },
+  }).trim().split(/\r?\n/).join(' ');
+  run(`pnpm -C frontend exec vitest run ${list}`);
 }
 
 function frontendBuildEnvironment() {
@@ -140,22 +161,26 @@ try {
     runFastProfile();
     run(`${gradlew} :api-server:harnessTest -Dfile.encoding=UTF-8`);
   } else if (scope === 'be') {
+    runGeneratedFreshness();
     runOperationalContracts();
     runBackendSuite();
     // be 단독 실행은 횡단 계약을 직접 실행한다. full에서는 frontend coverage가
     // Atlas를 포함한 같은 파일들을 실행하므로 그 한 번의 결과를 사용한다.
     run('pnpm -C frontend exec vitest run src/__tests__/cross-stack');
   } else if (scope === 'fe') {
+    runGeneratedFreshness();
     runFrontendStatic();
     runOperationalContracts();
     runFrontendPackaging();
   } else if (scope === 'full') {
     runScriptStatic();
+    runGeneratedFreshness();
     runFrontendStatic();
     runOperationalContracts();
     runBackendSuite();
     runFrontendPackaging();
   } else if (scope === 'e2e') {
+    runGeneratedFreshness();
     run('pnpm -C frontend run type-check:e2e');
     runOperationalContracts();
     run('node scripts/run-isolated-e2e.mjs');

@@ -9,6 +9,7 @@ import {
   comparePullRequestPolicy,
   compareRequiredChecks,
   compareRequiredContexts,
+  GRADLE_CACHE_READ_ONLY,
   parseWorkflowJobs,
   REVIEWED_ACTION_PINS,
   reviewedActionPin,
@@ -85,6 +86,61 @@ function assertE2eImageBuild(content) {
     'cache export is optional; the actual image build must fail the job');
   assert.match(start, /docker compose up --no-build -d db api/,
     'Compose must consume the image that Buildx loaded rather than rebuild it');
+}
+
+// [2026-10-24] Playwright 시스템 패키지(.deb) 캐시: 복원은 모든 실행, 저장은 main 첫 샤드만. 경로·키가 어긋나면 소리 없이 영영
+//   미적중이고, 적중·미적중 상한이 뒤집히거나 판정 줄의 id 가 틀리면 인프라 실패를 구별하지 못한다.
+function assertE2eSystemPackageCache(content) {
+  const job = (parseWorkflowJobs(content.replace(/\r\n/g, '\n')).get('e2e-tests') ?? '');
+  const restore = workflowStep(job, 'Restore Playwright system packages');
+  const seed = workflowStep(job, 'Seed apt archive with restored Playwright packages');
+  const collect = workflowStep(job, 'Collect Playwright system packages for the main cache');
+  const save = workflowStep(job, 'Save Playwright system packages (main only)');
+  const browsers = workflowStep(job, 'Install Playwright Browsers');
+  const deps = workflowStep(job, 'Install Playwright Dependencies (system deps)');
+  const diagnostics = workflowStep(job, 'Surface failure detail (annotations)');
+  const input = (step, key) => step.match(new RegExp(`^ {10}${key}: (.+)$`, 'm'))?.[1];
+  assert.match(restore, /uses: actions\/cache\/restore@[0-9a-f]{40}/);
+  assert.match(save, /uses: actions\/cache\/save@[0-9a-f]{40}/);
+  const cacheDir = '${{ runner.temp }}/playwright-debs';
+  assert.ok(input(restore, 'path') === cacheDir && input(save, 'path') === cacheDir && input(save, 'key') === input(restore, 'key'),
+    'restore and save must share path and key (the cache version is computed from the path)');
+  // 복원한 디렉터리를 apt 저장소로 옮기고(seed), 설치 뒤 같은 디렉터리로 모은다(collect) — 셋 중 하나만 어긋나도 영영 미적중이다.
+  assert.ok(seed, 'restored packages must be seeded into the apt archive');
+  assert.ok(seed.includes('debs=("$RUNNER_TEMP"/playwright-debs/*.deb)') && seed.includes('/var/cache/apt/archives/'),
+    'the seed step must copy the restored directory into the apt archive');
+  assert.ok(collect.includes('cp -- "${debs[@]}" "$RUNNER_TEMP/playwright-debs/"'), 'the collect step must fill the saved directory');
+  const at = name => job.indexOf(`name: ${name}`);
+  const seedAt = at('Seed apt archive with restored Playwright packages');
+  assert.ok(seedAt >= 0 && seedAt < at('Install Playwright Browsers'),
+    'restored packages must be seeded before any apt install');
+  // cache-hit 는 정확한 키에서만 참이다 — 그 조건이면 restore-keys 로 받은 부분 적중에서 seed 가 빠진다.
+  assert.match(seed, /^ {8}if: steps\.e2e-apt-restore\.outputs\.cache-matched-key != ''$/m,
+    'restored packages must be seeded on any matched key, including restore-keys');
+  // 모으기·저장은 두 설치 스텝 뒤다 — 앞이면 미적중 main 실행에서 0개라 캐시가 영영 비어 있다.
+  const collectAt = at('Collect Playwright system packages for the main cache');
+  assert.ok(collectAt > at('Install Playwright Browsers') && collectAt > at('Install Playwright Dependencies (system deps)')
+    && at('Save Playwright system packages (main only)') > collectAt, 'packages are collected after apt installs them');
+  // 조건 줄 전체를 고정한다 — 접두만 보면 끝에 `|| github.event_name == 'pull_request'` 를 붙여도 통과한다(&& 가 먼저 묶인다).
+  assert.match(collect, /^ {8}if: github\.event_name == 'push' && github\.ref == 'refs\/heads\/main' && strategy\.job-index == 0 && steps\.e2e-apt-restore\.outputs\.cache-hit != 'true'$/m,
+    'system packages are written only from main pushes');
+  assert.match(save, /^ {8}if: steps\.e2e-apt-collect\.outputs\.count != '' && steps\.e2e-apt-collect\.outputs\.count != '0'$/m,
+    'only the main-only collect step can feed the save step');
+  const minutes = step => Number(step.match(/^ {8}timeout-minutes: (\d+)$/m)?.[1]);
+  assert.equal(minutes(deps), 15, 'the hit path bound covers the slow mirror (about 30kB/s for 25.9MB)');
+  assert.ok(minutes(browsers) >= minutes(deps), 'the miss path must be at least the hit path');
+  for (const [id, label, env] of [['e2e-pw-browsers', 'pw-browsers', 'PW_BROWSERS'], ['e2e-pw-deps', 'pw-deps', 'PW_DEPS']]) {
+    assert.match(job, new RegExp(`^ {8}id: ${id}$`, 'm'));
+    assert.ok(diagnostics.includes(`/ ${label}=\${{ steps.${id}.outcome }}`), `the failed-step verdict must show ${label}`);
+    assert.ok(diagnostics.split('\n').includes(`          ${env}: \${{ steps.${id}.outcome }}`), `the infra verdict must read ${id}`);
+  }
+  // 판정 사슬의 가운데 줄 — env 와 패턴만 고정하면 주어 오타로 판정이 다시는 나오지 않는다.
+  assert.ok(diagnostics.split('\n').includes('          case "$PW_BROWSERS/$PW_DEPS" in'), 'the infra verdict must branch on both install outcomes');
+  // 스텝 시간 초과는 failure 로 남는다. cancelled(새 push·잡 상한)는 인프라 실패로 세지 않는다.
+  assert.ok(diagnostics.includes('            failure/*|*/failure)\n              echo "::error title=E2E 인프라 실패::kind=playwright-install'),
+    'install failures must be told apart from test failures');
+  assert.ok(diagnostics.includes('            cancelled/*|*/cancelled)\n              echo "::error title=E2E 설치 중 취소::'),
+    'a cancelled install is not an infrastructure failure');
 }
 
 // 제품 PIT 범위 수는 원장(gates.json matrixScopes 의 mutation-scope 소유 항목)에서 센다. 범위 수를 못 박는 곳은
@@ -736,6 +792,115 @@ test('E2E builds and loads the cached local API image with no registry or upstre
   }
 });
 
+test('E2E caches Playwright system packages from main only and tells install failures apart', () => {
+  assertE2eSystemPackageCache(ciContent);
+  for (const [before, after] of [
+    ['          path: ${{ runner.temp }}/playwright-debs\n          key: ${{ steps.e2e-apt-key.outputs.key }}\n\n',
+      '          path: ${{ runner.temp }}/apt-debs\n          key: ${{ steps.e2e-apt-key.outputs.key }}\n\n'],
+    ["        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && strategy.job-index == 0 && ",
+      "        if: strategy.job-index == 0 && "],
+    ['        id: e2e-pw-deps\n        if: steps.cache-playwright.outputs.cache-hit == \'true\'\n        timeout-minutes: 15',
+      '        id: e2e-pw-deps\n        if: steps.cache-playwright.outputs.cache-hit == \'true\'\n        timeout-minutes: 5'],
+    [' / pw-deps=${{ steps.e2e-pw-deps.outcome }}', ''],
+    // [2026-10-24 적대 검토] 아래는 종전 단언이 통과시키던 변이다.
+    ['      - name: Seed apt archive with restored Playwright packages\n', '      - name: Seed apt archive (renamed)\n'],
+    ['debs=("$RUNNER_TEMP"/playwright-debs/*.deb)', 'debs=("$RUNNER_TEMP"/apt-debs/*.deb)'],
+    ['cp -- "${debs[@]}" "$RUNNER_TEMP/playwright-debs/"', 'cp -- "${debs[@]}" "$RUNNER_TEMP/apt-debs/"'],
+    ["steps.e2e-apt-restore.outputs.cache-hit != 'true'\n", "steps.e2e-apt-restore.outputs.cache-hit != 'true' || github.event_name == 'pull_request'\n"],
+    ["        if: steps.e2e-apt-collect.outputs.count != '' && steps.e2e-apt-collect.outputs.count != '0'\n", '        if: always()\n'],
+    ['          PW_DEPS: ${{ steps.e2e-pw-deps.outcome }}', '          PW_DEPS: ${{ steps.e2e-pw-dep.outcome }}'],
+    ['            failure/*|*/failure)', '            never)'],
+    ['            cancelled/*|*/cancelled)\n              echo "::error title=E2E 설치 중 취소::', '            cancelled/*|*/cancelled)\n              echo "::error title=E2E 인프라 실패::'],
+    // [2026-10-24 재검토] 판정 주어 오타·seed 조건을 정확 적중으로 좁히기.
+    ['case "$PW_BROWSERS/$PW_DEPS" in', 'case "$PW_BROWSER/$PW_DEPS" in'],
+    ["        if: steps.e2e-apt-restore.outputs.cache-matched-key != ''\n", "        if: steps.e2e-apt-restore.outputs.cache-hit == 'true'\n"],
+  ]) {
+    const weakened = mutateWorkflowJob(ciContent, 'e2e-tests', block => block.replace(before, after));
+    assert.notEqual(weakened, ciContent.replace(/\r\n/g, '\n'), before);
+    assert.throws(() => assertE2eSystemPackageCache(weakened), undefined, before);
+  }
+  // 모으기·저장 블록을 설치 앞으로 옮기면 미적중 main 실행에서 0개를 모아 저장하지 않는다.
+  const moved = mutateWorkflowJob(ciContent, 'e2e-tests', (block) => {
+    const start = block.indexOf('      # main 첫 샤드만, 정확한 키가 없을 때 보관한다.');
+    const end = block.indexOf('      - name: Verify local composer browser flow');
+    const anchor = block.indexOf('      - name: Cache Playwright Browsers');
+    assert.ok(start > anchor && end > start && anchor > 0, 'the collect/save block must be found after the browser cache');
+    return block.slice(0, anchor) + block.slice(start, end) + block.slice(anchor, start) + block.slice(end);
+  });
+  assert.throws(() => assertE2eSystemPackageCache(moved), /packages are collected after apt installs them/u);
+});
+
+// [2026-10-24] 캐시 writer(backend-scope)가 읽기 전용 PIT 잡이 받는 외부 의존성을 받아 둔다(run 39597152074·39879169321 의 Maven Central 429·403).
+//   시험이 붉어도 캐시는 저장되므로 그때도 돌고, 실패를 숨기지 않으며, 빌드 신호를 막지 않게 Build and Test 뒤에 둔다.
+// 이관 전용 실행(backend=false)에서는 migration-test-scope 0번 샤드가 writer 다(cache-read-only 식) — 같은 예열을 같은 조건으로 둔다.
+// readOnly 는 그 잡의 캐시 정책(GRADLE_CACHE_READ_ONLY)이고, 예열 조건은 그 정책이 저장하는 경우의 정확한 여집합이다.
+const PIT_WARMING_WRITERS = Object.freeze([
+  { jobId: 'backend-scope', after: 'Build and Test with Gradle', readOnly: 'false', condition: '!cancelled()' },
+  { jobId: 'migration-test-scope', after: 'Run measured migration test shard (${{ matrix.shard }})',
+    readOnly: "${{ needs.change-scope.outputs.backend != 'false' || strategy.job-index != 0 }}",
+    condition: "!cancelled() && needs.change-scope.outputs.backend == 'false' && strategy.job-index == 0" },
+]);
+
+// writer 를 옮기거나 더하면(정책 표) 예열 목록도 같이 바뀌어야 한다 — 아니면 예열이 읽기 전용 잡에 남아 새 키가 PIT 없이 굳는다.
+function assertPitWarmingFollowsCachePolicy(policy) {
+  const writers = Object.entries(policy['.github/workflows/ci.yml']).filter(([, readOnly]) => readOnly !== 'true');
+  assert.deepEqual(writers.map(([jobId]) => jobId).sort(), PIT_WARMING_WRITERS.map(({ jobId }) => jobId).sort(),
+    'every Gradle cache writer in ci.yml must warm the PIT dependencies');
+  for (const { jobId, readOnly } of PIT_WARMING_WRITERS) {
+    assert.equal(policy['.github/workflows/ci.yml'][jobId], readOnly, `${jobId}: the warming condition must follow the cache writer policy`);
+  }
+}
+
+function assertPitDependencyWarming(content) {
+  const jobs = parseWorkflowJobs(content.replace(/\r\n/g, '\n'));
+  for (const { jobId, after, condition } of PIT_WARMING_WRITERS) {
+    const job = jobs.get(jobId) ?? '';
+    const warm = workflowStep(job, 'Resolve PIT dependencies into the Gradle cache');
+    assert.ok(warm.split('\n').includes(`        if: \${{ ${condition} }}`),
+      `${jobId}: warming must run even when tests fail, because the post step still saves the cache`);
+    assert.doesNotMatch(warm, /continue-on-error/, `${jobId}: a failed warming must stay visible`);
+    assert.match(warm, /^ {8}run: \.\/gradlew resolvePitDependencies --warning-mode fail --console=plain$/m);
+    assert.ok(job.indexOf('name: Resolve PIT dependencies into the Gradle cache') > job.indexOf(`name: ${after}`) && job.indexOf(`name: ${after}`) >= 0,
+      `${jobId}: warming must not block the build signal`);
+  }
+}
+
+test('the Gradle cache writer resolves the dependencies read-only PIT jobs need', () => {
+  assertPitDependencyWarming(ciContent);
+  assertPitWarmingFollowsCachePolicy(GRADLE_CACHE_READ_ONLY);
+  const ciPolicy = GRADLE_CACHE_READ_ONLY['.github/workflows/ci.yml'];
+  for (const [label, changed] of [
+    ['writer moved to another shard', { ...ciPolicy, 'migration-test-scope': "${{ needs.change-scope.outputs.backend != 'false' || strategy.job-index != 2 }}" }],
+    ['new writer without warming', { ...ciPolicy, 'mutation-scope': 'false' }],
+  ]) {
+    assert.throws(() => assertPitWarmingFollowsCachePolicy({ ...GRADLE_CACHE_READ_ONLY, '.github/workflows/ci.yml': changed }),
+      /must follow the cache writer policy|every Gradle cache writer in ci\.yml must warm/, label);
+  }
+  const gradle = fs.readFileSync(path.join(repoRoot, 'build.gradle'), 'utf8').replace(/\r\n/g, '\n');
+  const warmEnd = gradle.indexOf('\n    }\n', gradle.indexOf("tasks.register('resolvePitDependencies')"));
+  assert.ok(warmEnd > 0, 'the warming task block must be found');
+  const warmTask = gradle.slice(gradle.indexOf('def pitDependencyFiles'), warmEnd);
+  // business 모듈의 PIT 잡은 compileTestFixturesJava 도 돈다 — 그 classpath 를 빼면 컴파일이 먼저 멈춘 키에서 원격으로 받는다.
+  for (const name of ['pitest', 'testRuntimeClasspath', 'testFixturesCompileClasspath']) {
+    assert.ok(warmTask.includes(`'${name}'`), `the cache writer must resolve ${name}`);
+  }
+  // 받는 일을 Gradle 의 암묵 입력 방문에 맡기지 않는다 — .files 로 모든 구성을 직접 해석한다(isEmpty 는 첫 구성에서 멈춘다).
+  assert.ok(warmTask.includes('if (pitDependencyFiles.files.isEmpty()) throw new GradleException('),
+    'the warming task must resolve every configuration itself');
+  for (const [jobId, before, after] of [
+    ['backend-scope', '        if: ${{ !cancelled() }}\n        run: ./gradlew resolvePitDependencies', '        run: ./gradlew resolvePitDependencies'],
+    ['backend-scope', '        id: pit-deps\n', '        id: pit-deps\n        continue-on-error: true\n'],
+    ['migration-test-scope', "        if: ${{ !cancelled() && needs.change-scope.outputs.backend == 'false' && strategy.job-index == 0 }}\n",
+      "        if: ${{ needs.change-scope.outputs.backend == 'false' && strategy.job-index == 0 }}\n"],
+    ['migration-test-scope', '        id: pit-deps\n', '        id: pit-deps\n        continue-on-error: true\n'],
+    ['migration-test-scope', '      - name: Resolve PIT dependencies into the Gradle cache\n', '      - name: Warm nothing\n'],
+  ]) {
+    const weakened = mutateWorkflowJob(ciContent, jobId, block => block.replace(before, after));
+    assert.notEqual(weakened, ciContent.replace(/\r\n/g, '\n'), before);
+    assert.throws(() => assertPitDependencyWarming(weakened), undefined, `${jobId}: ${before}`);
+  }
+});
+
 test('backend and frontend hard build steps cannot be skipped or made advisory', () => {
   for (const [jobId, stepName] of [
     ['backend-scope', 'Build and Test with Gradle'],
@@ -1050,6 +1215,7 @@ test('Gradle verification commands fail on deprecation warnings', () => {
     './gradlew onlineBuild jacocoOnlineCoverageVerification "-Dopenapi.export.path=$GITHUB_WORKSPACE/api-docs.json" --warning-mode fail --console=plain',
     './gradlew :api-server:schemaValidationTest --warning-mode fail --console=plain',
     './gradlew ${{ matrix.gradle }} --warning-mode fail --console=plain',
+    './gradlew resolvePitDependencies --warning-mode fail --console=plain',
   ];
 
   for (const command of guardedCommands) {
