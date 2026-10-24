@@ -161,6 +161,8 @@ export const IMPACT_RULES = [
   { prefixes: ['frontend/src/app/admin/notifications/'], specs: ['journeys/notifications.spec.ts'] },
   { prefixes: ['frontend/src/app/smart-toolkit/schedule/'], specs: ['contracts/schedules.spec.ts', 'journeys/schedules.spec.ts', 'journeys/approvals.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/system/common-code/'], specs: ['journeys/common-codes.spec.ts', 'quality/visual-baselines.spec.ts'] },
+  // [2026-10-24 DEC-OPS-382] 패턴 갤러리(정적 표본) — 렌더 검사(axe·반응형)가 방문한다. 기존 파일 수정만 좁히고 새 표본 파일은 전수다.
+  { prefixes: ['frontend/src/app/admin/patterns/'], specs: ['quality/route-accessibility.spec.ts', 'quality/responsive-shell.spec.ts'] },
 ];
 
 export function buildImpactShadowPlan(changes, specs = discoverSpecs(), rules = IMPACT_RULES) {

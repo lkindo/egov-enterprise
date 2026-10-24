@@ -1,0 +1,186 @@
+#!/usr/bin/env node
+/**
+ * 새 업무 기능의 등록 지점을 점검한다 — 읽기 전용(DEC-OPS-382).
+ *
+ * 새 기능 하나는 소스 밖에서도 여러 원장·생성물에 등록돼야 한다(cms 기능 f370d969c 는 127파일 가운데 수십 개가 등록·원장·
+ * 생성물이었다). 빠진 등록은 push 뒤 게이트에서야 드러난다. 이 도구는 빠진 지점을 원장 경로와 함께 보이고, 지점마다
+ * 누가 채우는지를 나눠 말한다.
+ *
+ *   사람 판정 — 검토 원장이다. 도구가 채우지 않는다(자동으로 채우면 검토 지점이 사라진다, H2·H3).
+ *   생성기    — 원장에서 다시 만드는 생성물이다. 명령을 안내한다.
+ *   선택 등재 — 의무가 아닌 원장이다(입력 계약 원장, PIT 범위). 등재 여부만 알린다.
+ *
+ * 파일을 쓰지 않는다. 판정은 evaluateRegistration(입력) 순수 함수이고, CLI 는 디스크에서 입력만 읽는다.
+ *
+ * 사용: node scripts/domain-registration-doctor.mjs <기능 id> [--json]
+ */
+import { readFileSync, readdirSync, existsSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
+const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
+const MIGRATION_DIR = 'api-server/src/main/resources/db/migration';
+const CONTROLLER_DIR = 'api-server/src/main/java/nuri/api/controller/business';
+
+export const KINDS = Object.freeze({ HUMAN: '사람 판정', GENERATED: '생성기', OPTIONAL: '선택 등재' });
+
+/** 생성기가 다시 만드는 지점 — 판정하지 않고 명령만 안내한다. */
+export const GENERATED_POINTS = Object.freeze([
+  { id: 'regen', path: 'npm run regen', detail: '권한 생성물·화면 목록·URL census·슬롯·경계 census·생성 계약·Atlas 를 다시 만든다(검사만: npm run regen -- --check).' },
+  { id: 'api-docs', path: 'api-docs.json', detail: '컨트롤러·DTO 를 바꿨으면 OpenApiDocumentationTest 정적 추출로 다시 만든다(무거운 실행, SOP §6.4).' },
+  { id: 'operation-count', path: 'config/governance/operation-consumer-census.json', detail: 'node scripts/operation-consumer-census.mjs --json 의 operationCount 로 expected.operationCount 를 맞춘다.' },
+]);
+
+function readJson(root, path) {
+  return JSON.parse(readFileSync(join(root, path), 'utf8'));
+}
+
+function listFiles(root, directory, predicate) {
+  const absolute = join(root, directory);
+  if (!existsSync(absolute)) return [];
+  return readdirSync(absolute, { withFileTypes: true }).flatMap((entry) => {
+    const relative = `${directory}/${entry.name}`;
+    if (entry.isDirectory()) return listFiles(root, relative, predicate);
+    return predicate(entry.name) ? [relative] : [];
+  });
+}
+
+/** 디스크에서 판정 입력을 읽는다. 없는 파일은 null 로 둔다. */
+export function loadRegistrationInputs(featureId, root = ROOT) {
+  const featurePath = `config/modules/${featureId}.json`;
+  const feature = existsSync(join(root, featurePath)) ? readJson(root, featurePath) : null;
+  const migrations = Object.fromEntries(listFiles(root, MIGRATION_DIR, (name) => name.endsWith('.sql'))
+    .map((path) => [path, readFileSync(join(root, path), 'utf8')]));
+  const controllers = Object.fromEntries(listFiles(root, `${CONTROLLER_DIR}/${featureId}`, (name) => name.endsWith('.java'))
+    .map((path) => [path, readFileSync(join(root, path), 'utf8')]));
+  const dtoFiles = listFiles(root, `business-app/src/main/java/nuri/business/service/${featureId}/dto`, (name) => name.endsWith('.java'));
+  return {
+    featureId,
+    featurePath,
+    feature,
+    presets: readJson(root, 'config/modules/presets.json'),
+    migrations,
+    controllers,
+    dtoFiles,
+    permissionCatalog: readJson(root, 'config/governance/permission-catalog.json'),
+    authorizationPolicies: readJson(root, 'config/governance/authorization-policies.json'),
+    permissionBundles: readJson(root, 'config/governance/permission-bundles.json'),
+    routeLedger: readJson(root, 'config/ui-route-capabilities.json'),
+    disposition: readJson(root, 'config/ui-navigation-disposition-proposal.json'),
+    inputContractCensus: readJson(root, 'config/governance/input-contract-mirror-census.json'),
+    ciWorkflow: readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8'),
+  };
+}
+
+const point = (kind, id, path, status, detail) => ({ kind, id, path, status, detail });
+
+/** 등록 지점을 판정한다. status 는 ok·missing·review(사람이 볼 것)·info 다. */
+export function evaluateRegistration(inputs) {
+  const { featureId, featurePath, feature } = inputs;
+  const points = [];
+  if (!feature) {
+    points.push(point(KINDS.HUMAN, 'feature-file', featurePath, 'missing', '기능 선언이 없다. 스캐폴더가 출력한 초안을 검토해 둔다(형식: config/modules/_schema.json).'));
+    return { featureId, points };
+  }
+  points.push(point(KINDS.HUMAN, 'feature-file', featurePath, feature.id === featureId ? 'ok' : 'missing',
+    feature.id === featureId ? '기능 선언이 있다.' : `기능 선언의 id(${feature.id})가 파일 이름과 다르다.`));
+
+  const presetIds = (inputs.presets.presets ?? []).filter((preset) => (preset.domains ?? []).includes(featureId)).map((preset) => preset.id);
+  points.push(point(KINDS.HUMAN, 'presets', 'config/modules/presets.json', presetIds.length > 0 ? 'ok' : 'review',
+    presetIds.length > 0 ? `시작 구성 ${presetIds.join(', ')} 에 들어 있다.` : '어느 시작 구성에도 없다 — 직접 선택으로만 생성된다. 의도인지 확인한다.'));
+
+  const tables = feature.owns?.tables ?? [];
+  const migrationText = Object.values(inputs.migrations).join('\n').toLowerCase();
+  for (const table of tables) {
+    const created = new RegExp(`create\\s+table\\s+(?:if\\s+not\\s+exists\\s+)?(?:public\\.)?${table.toLowerCase()}\\b`).test(migrationText);
+    points.push(point(KINDS.HUMAN, `table:${table}`, MIGRATION_DIR, created ? 'ok' : 'missing',
+      created ? `${table} 를 만드는 마이그레이션이 있다.` : `${table} 를 만드는 마이그레이션이 없다. 컬럼은 표준 용어를 조회해 확정한다(DB 헌법 제2·9조).`));
+  }
+
+  const permissions = inputs.permissionCatalog.permissions ?? [];
+  const featureCodes = permissions.filter((permission) => (feature.owns?.permissionDomains ?? []).includes(permission.domain)).map((permission) => permission.code);
+  for (const domain of feature.owns?.permissionDomains ?? []) {
+    const count = permissions.filter((permission) => permission.domain === domain).length;
+    points.push(point(KINDS.HUMAN, `permission-domain:${domain}`, 'config/governance/permission-catalog.json', count > 0 ? 'ok' : 'missing',
+      count > 0 ? `권한 도메인 ${domain} 에 권한 ${count}개가 있다.` : `권한 도메인 ${domain} 에 권한이 없다. 권한 의미(owner-only 등)를 먼저 판정한다(H3).`));
+  }
+  const bundled = new Set([
+    ...(inputs.permissionBundles.bundles ?? []).flatMap((bundle) => bundle.permissions ?? []),
+    ...(inputs.permissionBundles.excluded ?? []).map((entry) => entry.code),
+  ]);
+  const unbundled = featureCodes.filter((code) => !bundled.has(code));
+  if (featureCodes.length > 0) {
+    points.push(point(KINDS.HUMAN, 'permission-bundles', 'config/governance/permission-bundles.json', unbundled.length === 0 ? 'ok' : 'missing',
+      unbundled.length === 0 ? '기능 권한이 모두 묶음이나 제외 목록에 있다.' : `묶음·제외 목록에 없는 권한: ${unbundled.join(', ')}`));
+  }
+
+  // 소유 라우트는 경로 접두다(exactRoutes 에 든 것만 그 화면 하나) — 생성기 카탈로그와 같은 의미다.
+  const exactRoutes = new Set(feature.owns?.exactRoutes ?? []);
+  const covers = (prefix, route) => (exactRoutes.has(prefix) ? route === prefix : route === prefix || route.startsWith(`${prefix}/`));
+  const pagePermissions = inputs.permissionCatalog.pagePermissions ?? {};
+  const ledgerRoutes = (inputs.routeLedger.routes ?? []).map((route) => route.route);
+  const dispositionRoutes = new Set((inputs.disposition.routes ?? []).map((route) => route.route));
+  for (const prefix of feature.owns?.routes ?? []) {
+    const screens = ledgerRoutes.filter((route) => covers(prefix, route));
+    points.push(point(KINDS.HUMAN, `route-ledger:${prefix}`, 'config/ui-route-capabilities.json', screens.length > 0 ? 'ok' : 'missing',
+      screens.length > 0 ? `${prefix} 아래 화면 ${screens.length}개가 라우트 원장에 있다.` : `${prefix} 아래 라우트 원장 행이 없다 — 화면(page.tsx)이 생기면 원장 행을 둔다.`));
+    for (const route of screens) {
+      for (const [id, path, present, missingDetail] of [
+        ['page-permission', 'config/governance/permission-catalog.json', Object.hasOwn(pagePermissions, route), '화면 진입 권한(pagePermissions)이 없다.'],
+        ['disposition', 'config/ui-navigation-disposition-proposal.json', dispositionRoutes.has(route), 'IA 처분 행이 없다(owner PR 리뷰로 승인, ADR-0007).'],
+      ]) {
+        points.push(point(KINDS.HUMAN, `${id}:${route}`, path, present ? 'ok' : 'missing', present ? `${route} 가 등재돼 있다.` : `${route}: ${missingDetail}`));
+      }
+    }
+  }
+
+  const boundHandlers = new Set((inputs.authorizationPolicies.operationBindings ?? []).map((binding) => binding.handler));
+  for (const [path, source] of Object.entries(inputs.controllers)) {
+    const handlers = [...source.matchAll(/@permissionPolicy\.allowed\(authentication, '([^']+)'\)/g)].map((match) => match[1]);
+    const unbound = handlers.filter((handler) => !boundHandlers.has(handler));
+    points.push(point(KINDS.HUMAN, `operation-bindings:${path}`, 'config/governance/authorization-policies.json', unbound.length === 0 ? 'ok' : 'missing',
+      unbound.length === 0 ? `${handlers.length}개 handler 가 모두 바인딩돼 있다.` : `바인딩이 없는 handler: ${unbound.map((handler) => handler.split('#')[1]).join(', ')} — 미등록은 요청 거부·린터 red 다.`));
+  }
+
+  const censusText = JSON.stringify(inputs.inputContractCensus);
+  const dtoNames = inputs.dtoFiles.map((path) => path.split('/').pop().replace(/\.java$/, ''));
+  const registeredDtos = dtoNames.filter((name) => censusText.includes(name));
+  if (dtoNames.length > 0) {
+    points.push(point(KINDS.OPTIONAL, 'input-contract', 'config/governance/input-contract-mirror-census.json', 'info',
+      `요청 DTO ${dtoNames.length}개 가운데 ${registeredDtos.length}개가 입력 계약 원장에 있다. 새 쓰기 DTO 는 저장 경로를 확인한 뒤 등재한다(GAP-CONTRACT-001).`));
+  }
+  const pit = inputs.ciWorkflow.includes(`nuri.business.service.${featureId}.`);
+  points.push(point(KINDS.OPTIONAL, 'pit-scope', '.github/workflows/ci.yml', 'info',
+    pit ? 'PIT 범위에 들어 있다.' : 'PIT 범위에 없다. 핵심 서비스면 범위 추가를 검토한다(백엔드 헌법 제16조).'));
+
+  for (const generated of GENERATED_POINTS) {
+    points.push(point(KINDS.GENERATED, generated.id, generated.path, 'info', generated.detail));
+  }
+  points.push(point(KINDS.HUMAN, 'form-census', 'config/governance/frontend-form-validation-census.json', 'review',
+    '화면에 폼이 있으면 pnpm -C frontend run check:form-validation 이 알려 주는 항목을 사람이 분류해 등재한다.'));
+  return { featureId, points };
+}
+
+export function formatReport({ featureId, points }) {
+  const lines = [`등록 점검: ${featureId}`];
+  for (const kind of Object.values(KINDS)) {
+    const group = points.filter((entry) => entry.kind === kind);
+    if (group.length === 0) continue;
+    lines.push('', `[${kind}]`);
+    for (const entry of group) lines.push(`  ${entry.status.padEnd(7)} ${entry.id} — ${entry.detail} (${entry.path})`);
+  }
+  const missing = points.filter((entry) => entry.status === 'missing').length;
+  lines.push('', missing === 0 ? '빠진 사람 판정 지점이 없다.' : `빠진 지점 ${missing}개.`);
+  return lines.join('\n');
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
+  const [featureId, ...flags] = process.argv.slice(2);
+  if (!featureId || !/^[a-z][a-z0-9-]*$/.test(featureId)) {
+    console.error('사용: node scripts/domain-registration-doctor.mjs <기능 id> [--json]');
+    process.exit(2);
+  }
+  const report = evaluateRegistration(loadRegistrationInputs(featureId));
+  console.log(flags.includes('--json') ? JSON.stringify(report, null, 2) : formatReport(report));
+  process.exitCode = report.points.some((entry) => entry.status === 'missing') ? 1 : 0;
+}
