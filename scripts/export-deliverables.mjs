@@ -14,7 +14,7 @@
  *   · 작업 트리가 깨끗해야 한다. --allow-dirty 는 미리 보기다 — 폴더 이름에 -dirty 를 붙이고 manifest·README 에 표시한다.
  *
  * 형식: 표마다 Markdown 과 CSV(UTF-8 BOM·CRLF, 수식 주입 방지). manifest.json 은 입력 sha256·lockfile·도구 버전과
- * 시각을 넣지 않은 내용 다이제스트를 싣는다 — 같은 커밋이면 다이제스트가 같다.
+ * 커밋·시각을 넣지 않은 내용 다이제스트(표 파일만)를 싣는다 — 원장 값이 같으면 커밋이 달라도 다이제스트가 같다.
  * Atlas(atlas-catalog.mjs)는 OpenAPI 만으로 연산을 그리고 인가 원장과 잇지 않는다 — 여기서 하는 조인은 Atlas 에 없으므로
  * 계산부를 나누지 않고 api-docs.json 을 직접 읽는다.
  *
@@ -89,8 +89,9 @@ export function mdCell(value) {
   return cellText(value).replace(/\\/gu, '\\\\').replace(/\|/gu, '\\|').replace(/\r?\n/gu, '<br>');
 }
 
-export function toMarkdown(sheet, { commit }) {
-  const lines = [`# ${sheet.title}`, '', `> 비규범 파생물 — 감리·검수를 대신하지 않는 초안이다. 커밋 \`${commit}\`, 원천: ${sheet.sources.map((source) => `\`${source}\``).join(', ')}.`, ''];
+/** 표 파일에는 커밋을 쓰지 않는다 — 원장 값이 같으면 커밋이 달라도 내용 다이제스트가 같게(커밋은 README·manifest 에 있다). */
+export function toMarkdown(sheet) {
+  const lines = [`# ${sheet.title}`, '', `> 비규범 파생물 — 감리·검수를 대신하지 않는 초안이다. 원천: ${sheet.sources.map((source) => `\`${source}\``).join(', ')}.`, ''];
   for (const notice of sheet.notices) lines.push(`- ${notice}`);
   lines.push('', `행 ${sheet.rows.length}개.`, '');
   if (sheet.rows.length === 0) {
@@ -304,9 +305,9 @@ const PACKAGE_NOTICES = Object.freeze([
   `빈칸은 "${BLANK}" 으로, 검토 전 값은 원장 표기(UNVERIFIED·E0~E3) 그대로 싣는다.`,
 ]);
 
-/** 내용 다이제스트 — manifest 를 뺀 파일의 경로와 sha256. 시각을 넣지 않으므로 같은 커밋이면 같다. */
+/** 내용 다이제스트 — 표 파일(README·manifest 제외)의 경로와 sha256. 커밋·시각을 넣지 않으므로 원장 값이 같으면 같다. */
 export function contentDigest(files) {
-  return sha256([...files.entries()].filter(([path]) => path !== 'manifest.json').sort(([left], [right]) => byText(left, right))
+  return sha256([...files.entries()].filter(([path]) => !['manifest.json', 'README.md'].includes(path)).sort(([left], [right]) => byText(left, right))
     .map(([path, text]) => `${path}\t${sha256(text)}\n`).join(''));
 }
 
@@ -314,7 +315,7 @@ export function renderPackage(sheets, meta) {
   const files = new Map();
   for (const sheet of sheets) {
     for (const notice of sheet.notices) assertNoBannedClaims(notice, `${sheet.id} notice`);
-    files.set(`${sheet.id}.md`, toMarkdown(sheet, meta));
+    files.set(`${sheet.id}.md`, toMarkdown(sheet));
     files.set(`${sheet.id}.csv`, toCsv(sheet));
   }
   const digest = contentDigest(files);
@@ -325,7 +326,7 @@ export function renderPackage(sheets, meta) {
     '## 표', '', '| 표 | Markdown | CSV | 행 수 |', '|---|---|---|---|',
     ...sheets.map((sheet) => `| ${sheet.title} | [${sheet.id}.md](${sheet.id}.md) | [${sheet.id}.csv](${sheet.id}.csv) | ${sheet.rows.length} |`), '',
     '## 재현', '',
-    `같은 커밋에서 \`node scripts/export-deliverables.mjs\` 를 다시 돌리면 내용 다이제스트가 같다: \`${digest}\``, '',
+    `내용 다이제스트 \`${digest}\` — 표 파일로 계산한다. 커밋·시각을 넣지 않으므로 원장 값이 같으면 다른 커밋에서 \`node scripts/export-deliverables.mjs\` 로 다시 만들어도 같다.`, '',
     '입력 파일의 sha256, lockfile, 도구 버전은 manifest.json 에 있다. 공공 규범과의 대응과 이 묶음의 경계는 docs/03-guides/design-to-deliverables-guide.md 에 있다.', '',
   ].join('\n');
   assertNoBannedClaims(readme, 'README.md');

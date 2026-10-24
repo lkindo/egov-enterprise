@@ -115,14 +115,16 @@ test('screens keep the demo marker and show the entry mode only when it decides 
 
 const SHEET = { id: 'things', title: '사물 목록', sources: ['config/things.json'], notices: ['정적 표본이다.'], columns: [['a', '가']], rows: [{ a: 'x' }] };
 
-test('the content digest ignores the manifest and file order and changes with content', () => {
-  const files = new Map([['b.csv', 'B'], ['a.md', 'A'], ['manifest.json', '{"commit":"1"}']]);
-  const reordered = new Map([['manifest.json', '{"commit":"2"}'], ['a.md', 'A'], ['b.csv', 'B']]);
+test('the content digest ignores the manifest, the README, the commit and file order and changes with content', () => {
+  const files = new Map([['b.csv', 'B'], ['a.md', 'A'], ['manifest.json', '{"commit":"1"}'], ['README.md', 'commit 1']]);
+  const reordered = new Map([['manifest.json', '{"commit":"2"}'], ['README.md', 'commit 2'], ['a.md', 'A'], ['b.csv', 'B']]);
   assert.equal(contentDigest(files), contentDigest(reordered));
   assert.notEqual(contentDigest(files), contentDigest(new Map([['a.md', 'A!'], ['b.csv', 'B']])));
   const first = renderPackage([SHEET], META);
-  const second = renderPackage([SHEET], { ...META, toolchain: { node: 'v99', typescript: '9' } });
+  const second = renderPackage([SHEET], { ...META, commit: 'b'.repeat(40), toolchain: { node: 'v99', typescript: '9' } });
   assert.equal(first.digest, second.digest);
+  assert.equal(first.files.get('things.md'), second.files.get('things.md'));
+  assert.notEqual(first.files.get('README.md'), second.files.get('README.md'));
   assert.deepEqual([...first.files.keys()].sort(), ['README.md', 'manifest.json', 'things.csv', 'things.md']);
   assert.equal(JSON.parse(first.files.get('manifest.json')).contentDigest, first.digest);
 });
