@@ -440,6 +440,39 @@ subprojects { subproject ->
             }
         }
     }
+
+    // [CI 캐시] 캐시 writer(ci.yml backend-scope)는 PIT·이관 모듈을 돌리지 않는다. 그래서 읽기 전용 PIT 잡이 캐시에
+    //   정확히 적중해도 pitest 구성을 Maven Central 에서 받다가 429·403 을 맞았다(run 39597152074·39879169321).
+    //   writer 가 PIT 잡이 받는 외부 의존성을 내려받기만 한다(프로젝트 산출물은 걸러 컴파일 의존이 생기지 않는다).
+    //   basic 캐시는 키가 같으면 저장하지 않고 키는 *.gradle 해시라, 이 파일을 바꾸는 일이 곧 키 교체다.
+    def pitDependencyFiles = files(['pitest', 'compileClasspath', 'annotationProcessor',
+            'testCompileClasspath', 'testAnnotationProcessor', 'testRuntimeClasspath'].collect { name ->
+        configurations.named(name).map { configuration ->
+            configuration.incoming.artifactView {
+                componentFilter { it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+            }.files
+        }
+    })
+    // business 모듈의 PIT 잡은 compileTestFixturesJava 도 돈다. 그 classpath 는 빌드가 그 단계까지 갔을 때만 캐시에 들어가므로
+    //   컴파일이 앞에서 멈춘 키에서는 원격으로 받는다. 플러그인을 적용한 모듈에서만 늦게 잇는다.
+    plugins.withId('java-test-fixtures') {
+        ['testFixturesCompileClasspath', 'testFixturesAnnotationProcessor'].each { name ->
+            pitDependencyFiles.from(configurations.named(name).map { configuration ->
+                configuration.incoming.artifactView {
+                    componentFilter { it instanceof org.gradle.api.artifacts.component.ModuleComponentIdentifier }
+                }.files
+            })
+        }
+    }
+    tasks.register('resolvePitDependencies') {
+        group = 'Verification'
+        description = 'Downloads the external dependencies PIT jobs resolve, for the CI Gradle cache writer'
+        inputs.files(pitDependencyFiles).withPropertyName('pitDependencyFiles')
+        // 받는 일을 Gradle 의 암묵 입력 방문에 맡기지 않는다 — .files 가 모든 구성을 해석한다(isEmpty 는 첫 비지 않은 구성에서 멈춘다).
+        doLast { task ->
+            if (pitDependencyFiles.files.isEmpty()) throw new GradleException("${task.path}: resolved no PIT dependency files")
+        }
+    }
 }
 
 // 통합 리포트와 검증 태스크가 반드시 같은 분모·실행 데이터를 쓰도록 한 곳에 고정한다.

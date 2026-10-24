@@ -433,8 +433,8 @@ dependencyCheck {
 
 - **위치**: GitHub Actions 캐시 + 로컬 `.gradle`
 - **구성**: `setup-gradle`은 검토 핀 원장(`REVIEWED_ACTION_PINS`, [필수 체크 계약](../../scripts/required-checks-contract.mjs))의 v6.4.0 commit과 `cache-provider: basic`을 명시한다. 캐시 제공 방식 변경은 테스트 생략 승인이 아니며 Gradle task 입력과 필수 실패 판정은 유지한다.
-- **저장 책임**: upstream CI는 backend 하나만 저장하고, backend가 명시적으로 false인 이관 전용 실행에서만 migration이 저장한다. 재사용·PIT·별도 이관 점검·의존성 감사·릴리스·재사용 생성물 야간 시험은 읽기 전용이다. 생성된 독립 제품은 자체 단일 writer를 유지한다. 캐시 miss에 따른 다운로드는 정상 동작이며 실패 경고를 숨기지 않는다.
-- **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다.
+- **저장 책임**: upstream CI는 backend 하나만 저장하고, backend가 명시적으로 false인 이관 전용 실행에서만 migration이 저장한다. 재사용·PIT·별도 이관 점검·의존성 감사·릴리스·재사용 생성물 야간 시험은 읽기 전용이다. 생성된 독립 제품은 자체 단일 writer를 유지한다. 캐시 miss에 따른 다운로드는 정상 동작이며 실패 경고를 숨기지 않는다. 읽기 전용 PIT 잡이 받는 외부 의존성(PIT 런처·컴파일·시험·testFixtures 컴파일 classpath)은 그 실행의 writer(backend-scope, 이관 전용 실행이면 migration-test-scope 0번 샤드)가 `resolvePitDependencies` 로 받아 둔다(2026-10-24, Maven Central 429·403 대응 — 해석만 하고 재시도하지 않는다). 새 키는 첫 writer 가 저장한 뒤 다시 저장되지 않으므로 두 writer 가 모두 받는다. 이관 전용 실행의 0번 샤드는 온라인 모듈의 의존성까지 받으므로, 원격 일시 장애(429·403)면 그 샤드를 거쳐 required `backend-build` 가 붉을 수 있다 — 실패한 잡만 다시 돌린다.
+- **키·입력**: `setup-gradle` action의 캐시 구성과 Gradle task 입력 계약을 따른다. wrapper·build 파일 두 개만으로 전체 캐시 키를 설명하지 않는다. basic 제공자는 `*.gradle` 등의 해시가 키이고 같은 키는 다시 저장하지 않으므로, 캐시 내용을 바꾸는 변경은 build 파일을 바꿔야 효과가 난다.
 - **효과 확인**: 캐시 hit 여부와 실행 시간은 대상 workflow run에서 확인한다. 과거 측정치를 현재 성능 보장으로 사용하지 않는다.
 
 ### E2E API Docker layer 캐시
@@ -452,6 +452,13 @@ E2E job은 회차별 JWT 환경과 일치하는 프론트엔드를 클린 빌드
 - **위치**: `/tmp/playwright-browsers`
 - **키**: `runner.os-playwright-{pnpm-lock.yaml 해시}`
 - **효과**: 매번 설치하지 않고 재사용
+
+### Playwright 시스템 패키지(.deb)
+
+- **이유**: 2026-10 설치 시간 초과 3건은 멈춤이 아니라 미러의 느린 `.deb` 다운로드(약 40kB/s, 21~26MB)였다. 색인 갱신은 1~11초였다.
+- **키**: `playwright-debs-{ImageOS}-{arch}-{Playwright 버전}-{ImageVersion}`. 러너 이미지가 바뀌면 이전 이미지 키로 복원한다(apt 는 이름·버전·크기가 맞는 파일만 쓴다).
+- **쓰기**: main push 의 첫 샤드만, 정확한 키가 없을 때 저장한다. PR 은 복원만 한다(저장소 캐시 한도·쓰기 경계).
+- **상한**: 적중 경로(install-deps) 15분, 미적중 경로(install --with-deps)는 그 이상. 약 30kB/s 까지 받으며 잡 상한 30분 안이다. 재시도 루프는 두지 않는다.
 
 ---
 
@@ -492,7 +499,7 @@ open build/reports/jacoco/aggregated/index.html
 
 ```bash
 npm run regen              # 다시 쓰고 바뀐 파일을 보인다 — diff 를 확인한 뒤 함께 커밋한다
-npm run regen -- --check   # 쓰지 않고 낡은 것만 본다(pre-push 맨 앞, 로컬 약 20초)
+npm run regen -- --check   # 쓰지 않고 낡은 것만 본다(pre-push·verify 맨 앞, 로컬 약 20초)
 # SAST 예외 해시가 낡았으면 regen 이 하네스 기준선 앞에서 멈춘다. 방어 경계를 재검토한 뒤 그 항목만 다시 결속한다:
 npm run regen -- --rebind-sast SAST-FP-001 --note "Re-reviewed 2026-10-19: <바뀐 것과 그대로인 방어>"
 ```
@@ -576,6 +583,19 @@ releaseRuntimeContract:
 ```bash
 pnpm -C frontend exec playwright install --with-deps chromium
 ```
+
+### E2E 시스템 의존성 설치 시간 초과
+
+**증상**: E2E 잡의 실패 스텝 판정이 `pw-deps=failure`(또는 `pw-browsers=failure`)이고 `E2E 인프라 실패 kind=playwright-install` 주석이 있으며 `run=skipped` 다. 스텝 시간 초과는 failure 로 남는다. `cancelled` 면 새 push·수동 취소·잡 시간 상한이라 `E2E 설치 중 취소` 주석이 붙고 인프라 실패로 세지 않는다.
+
+**해결**: 시험이 돌지 않은 인프라 실패다. 실패한 잡만 다시 돌린다(프로토콜 §6.2). `apt-debs=miss` 가 반복되면 main 의 시스템 패키지 캐시 저장(첫 샤드)이 됐는지 확인한다.
+
+### 재실행으로 가려진 실패 보기 (`npm run ci:flaky-report`)
+
+- **용도**: 'Java CI with Gradle' 최근 실행의 모든 시도에서 실패한 잡의 원인별 빈도(인프라·시험·미분류, 재실행으로 회복한 수)와, 실패한 E2E 샤드의 flaky·실패 시험별 빈도를 본다. 재실행·새 push 가 숨긴 반복 flaky(예: 2026-10 React #418)를 찾는 데 쓴다.
+- **옵션**: `--runs`(1~100 — 실행 목록 API 한 쪽의 상한, 기본 40)·`--branch`·`--event push|pull_request`·`--max-calls`·`--json`.
+- **분류**: 처음 멈춘 스텝이 취소면 `cancelled`(원인 아님)로 따로 센다. E2E 시험 표에는 flaky·실패 시험과 전역 오류(globalSetup·워커)가 들어간다.
+- **한계**: 시험 단위 자료는 진단 산출물 보존 기한(7일) 안의 실행만 있다. 산출물을 읽지 못했거나 실패 원인이 결과에 없거나 호출 상한에 닿으면 종료 코드 1 이다(산출물 하나가 깨져도 나머지는 보고하고, 호출 상한이면 부분 결과를 내지 않는다). 게이트·병합 증거가 아니다.
 
 ### OWASP 스캔 타임아웃
 
