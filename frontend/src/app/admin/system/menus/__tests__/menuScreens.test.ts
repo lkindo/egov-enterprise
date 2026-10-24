@@ -10,10 +10,16 @@ import { pageInProjection } from '@/test-utils/projection';
  * 권한 편집기(1단계)와 같은 판정·같은 ANY/ALL 처리다.
  */
 describe('연결 화면 목록', () => {
-  it('동적 경로가 아닌 화면만 고를 수 있고, 이름·경로로 찾는다', () => {
+  it('동적 경로도 시연 화면도 아닌 화면만 고를 수 있고, 이름·경로로 찾는다', () => {
     expect(LINKABLE_SCREENS.length).toBeGreaterThan(0);
-    expect(LINKABLE_SCREENS.every((screen) => !screen.dynamic)).toBe(true);
-    expect(LINKABLE_SCREENS.length).toBe(SCREEN_REGISTRY.filter((screen) => !screen.dynamic).length);
+    expect(LINKABLE_SCREENS.every((screen) => !screen.dynamic && !screen.demo)).toBe(true);
+    expect(LINKABLE_SCREENS.length).toBe(SCREEN_REGISTRY.filter((screen) => !screen.dynamic && !screen.demo).length);
+    // [DEC-OPS-382] 시연 화면은 새로 연결할 수 없지만, 이미 연결된 경로는 그대로 화면으로 풀린다.
+    const demo = SCREEN_REGISTRY.find((screen) => screen.demo && !screen.dynamic);
+    if (demo) {
+      expect(LINKABLE_SCREENS.some((screen) => screen.route === demo.route)).toBe(false);
+      expect(describeRoute(demo.route)).toMatchObject({ kind: 'screen' });
+    }
     expect(filterScreens('').length).toBe(LINKABLE_SCREENS.length);
     expect(filterScreens('/admin/system/MENUS').map((screen) => screen.route)).toContain('/admin/system/menus');
   });

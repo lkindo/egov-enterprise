@@ -208,12 +208,17 @@ export function buildScreenFrame(root = repoRoot, { ledger: ledgerOverride, upst
     const menuLabel = menuLabelFor(route, menuSnapshot.menus);
     const upstream = upstreamRows.get(route);
     const ledgerLabel = reviewedLabel(row) ?? (upstream?.source === source ? reviewedLabel(upstream) : null);
+    // 검토 전 원장(재사용 생성물)의 행은 status 가 unverified 라, 라벨처럼 같은 화면 파일의 원본 원장 행에서 이어받는다.
+    const statusRow = row.status === 'unverified' && upstream?.source === source ? upstream : row;
     screens.set(route, {
       route,
       label: menuLabel ?? ledgerLabel,
       labelSource: menuLabel ? 'menu' : ledgerLabel ? 'route-ledger' : null,
       shellAccess: row.shellAccess,
       dynamic: route.split('/').some(segment => DYNAMIC_SEGMENT.test(segment)),
+      // [2026-10-24 DEC-OPS-382] 라우트 원장이 시연(status demo)으로 판정한 화면. 목록에는 남겨 기존 메뉴의 경로 해석을 지키고,
+      //   메뉴 연결 선택지·화면 관리 목록·권한 묶음이 여는 화면에서는 뺀다.
+      demo: statusRow.status === 'demo',
       entry: { permissions: required.map(code => known(code, `page permissions of ${entryKey}`)), mode },
       granted: new Map(SOURCE_PRIORITY.map(origin => [origin, new Set()])),
     });
@@ -239,6 +244,7 @@ export function screenRow(screen, actions) {
     labelSource: screen.labelSource,
     shellAccess: screen.shellAccess,
     dynamic: screen.dynamic,
+    demo: screen.demo,
     entry: screen.entry,
     permissions: [...permissions.values()].sort((left, right) => byCodePoint(left.code, right.code)),
   };
@@ -399,8 +405,10 @@ export function buildPermissionBundles(ledger, { screens, catalogCodes, findRepl
       throw new Error(`Permission bundles ${signatures.get(signature)} and ${bundle.id} grant the same permissions`);
     }
     signatures.set(signature, bundle.id);
-    const opened = screens.filter(screen => grantsScreenEntry(granted, screen.entry)).map(screen => screen.route).sort(byCodePoint);
-    const related = screens.filter(screen => relatesToOpenScreen(granted, screen)).map(screen => screen.route).sort(byCodePoint);
+    // 시연 화면은 묶음이 '여는' 화면으로 세지 않는다(DEC-OPS-382) — 묶음을 더해도 업무 화면이 열린다고 말하지 않게.
+    const live = screens.filter(screen => !screen.demo);
+    const opened = live.filter(screen => grantsScreenEntry(granted, screen.entry)).map(screen => screen.route).sort(byCodePoint);
+    const related = live.filter(screen => relatesToOpenScreen(granted, screen)).map(screen => screen.route).sort(byCodePoint);
     if (opened.length === 0 && (!projected || related.length === 0)) {
       throw new Error(`Permission bundle ${bundle.id} opens no screen (no screen's entry permissions are satisfied`
         + `${projected ? ' and no open screen writes with its permissions' : ''})`);
@@ -452,6 +460,7 @@ function renderScreen(screen) {
     `    "labelSource": ${JSON.stringify(screen.labelSource)},`,
     `    "shellAccess": ${JSON.stringify(screen.shellAccess)},`,
     `    "dynamic": ${JSON.stringify(screen.dynamic)},`,
+    `    "demo": ${JSON.stringify(screen.demo)},`,
     `    "entry": ${JSON.stringify(screen.entry)},`,
     `    "permissions": ${permissions}`,
     '  }',
@@ -507,6 +516,8 @@ export interface ScreenRegistryEntry {
   labelSource: 'menu' | 'route-ledger' | null;
   shellAccess: string;
   dynamic: boolean;
+  /** 라우트 원장이 시연(status demo)으로 판정한 화면 — 메뉴 연결 선택지·화면 관리 목록·권한 묶음의 화면에서 뺀다. */
+  demo: boolean;
   entry: { permissions: PermissionCode[]; mode: 'ANY' | 'ALL' };
   permissions: ScreenPermission[];
 }
