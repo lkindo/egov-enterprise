@@ -1,5 +1,5 @@
 # Stage 1: Build
-FROM gradle:9.8.0-jdk21@sha256:4debe478645a3ad9208f3403ac021859fdf4d1a819d59970d75309b098f28f76 AS builder
+FROM gradle:9.8.2-jdk21@sha256:37110d25b7a0f866d07f7e61968347b83d2e0fd01bd6ddf74c9ae2ff04000691 AS builder
 WORKDIR /app
 # Only copy dependency files first for better caching
 COPY gradle /app/gradle
