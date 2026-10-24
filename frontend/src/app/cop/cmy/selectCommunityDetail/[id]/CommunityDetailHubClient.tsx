@@ -61,6 +61,14 @@ export default function CommunityDetailHubClient({
     queryFn: () => communityUserService.getMyMembership(cmntySn),
   });
   const membershipStatus = membership?.status;
+  // [2026-10-24] 아직 데이터가 없는 조회가 진행 중이면 TanStack Query 는 무효화해도 새로 받지 않고 그 요청을 재사용한다 — 화면을
+  //   열자마자 가입하면 가입 전에 나간 조회의 NONE 이 최종 결과가 되어 '승인 대기' 대신 신청 버튼이 다시 보였다(PR #973 run
+  //   40071454996 trace). 진행 중인 조회를 먼저 취소해 가입·탈퇴 뒤의 조회가 반드시 새로 나가게 한다.
+  const refreshMembership = async () => {
+    const queryKey = ['community-membership', cmntySn];
+    await queryClient.cancelQueries({ queryKey });
+    await queryClient.invalidateQueries({ queryKey });
+  };
 
   /*
     [2026-09-08 PD-CMTY-001] 회원 자격이 처음으로 여는 기능 — 커뮤니티 귀속 게시판 목록.
@@ -101,7 +109,7 @@ export default function CommunityDetailHubClient({
     mutationFn: () => communityUserService.joinCommunity(cmntySn),
     onSuccess: () => {
       toast('가입을 신청했습니다. 관리자가 승인하면 회원이 됩니다.', 'success');
-      void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
+      void refreshMembership();
     },
     onError: (error: unknown) => {
       toast(failureMessage(error, '가입 신청 중 오류가 발생했습니다.'), 'error');
@@ -140,7 +148,7 @@ export default function CommunityDetailHubClient({
       if (!ok) return;
       await communityUserService.leaveCommunity(cmntySn);
       toast('커뮤니티에서 탈퇴했습니다.', 'success');
-      void queryClient.invalidateQueries({ queryKey: ['community-membership', cmntySn] });
+      void refreshMembership();
     } catch (error) {
       toast(failureMessage(error, '커뮤니티 탈퇴 중 오류가 발생했습니다.'), 'error');
     } finally {
