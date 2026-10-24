@@ -60,8 +60,10 @@ describe('listedScreens', () => {
       .toEqual(['/admin/system/programs']);
   });
 
-  it('생성된 화면 목록의 모든 화면이 진입 권한 표에 있다(재사용 투영본에서 빠진 화면은 둘 다에서 빠진다)', () => {
-    expect(listedScreens().length).toBe(SCREEN_REGISTRY.length);
+  it('시연이 아닌 생성 화면은 모두 진입 권한 표에 있다(재사용 투영본에서 빠진 화면은 둘 다에서 빠진다)', () => {
+    expect(listedScreens().length).toBe(SCREEN_REGISTRY.filter((entry) => !entry.demo).length);
+    // [DEC-OPS-382] 시연(라우트 원장 status demo) 화면은 업무 화면 목록에 싣지 않는다.
+    expect(listedScreens().some((entry) => entry.demo)).toBe(false);
     // 빈 목록을 막는 하한이다. 원본은 종전 값 그대로이고, 투영 원장이 있는 재사용 생성물에서만 가장 작은 생성물에서도
     //   성립하는 값으로 낮춘다(2026-10-10 실측: 원본 92·collaboration 52·core 37개).
     expect(listedScreens().length).toBeGreaterThan(projectionRemovedFiles().size > 0 ? 30 : 50);

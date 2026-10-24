@@ -129,15 +129,18 @@ function structure(menus: ReturnType<typeof structureMenu>[]) {
   return { version: 'v-structure', menus };
 }
 
+// [DEC-OPS-382] 화면 목록은 시연(라우트 원장 status demo) 화면을 싣지 않는다 — screenList.test 가 그 규칙을 고정한다.
+const LISTED_SCREENS = SCREEN_REGISTRY.filter((entry) => !entry.demo);
+
 /** 동적 경로가 아닌 화면 중 except 를 뺀 모두를 사용 중인 메뉴에 건다. */
 function structureCoveringAllBut(...except: string[]) {
   return structure(
-    SCREEN_REGISTRY.filter((entry) => !except.includes(entry.route) && !entry.dynamic)
+    LISTED_SCREENS.filter((entry) => !except.includes(entry.route) && !entry.dynamic)
       .map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, { modernRoute: entry.route })),
   );
 }
 
-const STATIC_SCREENS = SCREEN_REGISTRY.filter((entry) => !entry.dynamic);
+const STATIC_SCREENS = LISTED_SCREENS.filter((entry) => !entry.dynamic);
 
 function row(key: string): HTMLElement {
   const found = Array.from(document.querySelectorAll<HTMLElement>('[data-row]')).find((element) => element.getAttribute('data-row') === key);
@@ -253,7 +256,7 @@ describe('ProgramAdminClient Component', () => {
    * [2026-10-02 D3] 화면 목록 — 생성된 화면 목록 중 라우트 게이트가 아는 화면. 열: 화면 이름·경로·진입 권한·연결 메뉴·구분.
    */
   describe('화면 목록', () => {
-    const LISTED = SCREEN_REGISTRY.length;
+    const LISTED = LISTED_SCREENS.length;
 
     it('화면 목록 전체를 한 쪽에 세고(기본 100개씩), 진입 권한은 이름 칩과 코드로 보인다', () => {
       renderClient(<ProgramAdminClient />);
@@ -337,7 +340,7 @@ describe('ProgramAdminClient Component', () => {
 
     it('단추로 동적 경로·로그인만 하면 열리는 화면을 거르고 단추에 그 건수를 붙인다', () => {
       renderClient(<ProgramAdminClient />);
-      const dynamic = SCREEN_REGISTRY.filter((entry) => entry.dynamic);
+      const dynamic = LISTED_SCREENS.filter((entry) => entry.dynamic);
       expect(chip('동적 경로')).toHaveAccessibleName(`동적 경로 ${dynamic.length}`);
       fireEvent.click(chip('동적 경로'));
       expect(chip('동적 경로')).toHaveAttribute('aria-pressed', 'true');
@@ -348,7 +351,7 @@ describe('ProgramAdminClient Component', () => {
       // 규칙은 screenList.test 가 합성 화면으로 고정한다(2026-10-03 실제 생성물의 이름 미확인 화면은 0개가 됐다).
       expect(cell('/smart-toolkit/dept-job/[id]', '화면 이름')).toHaveTextContent('부서 업무 상세');
 
-      const loginOnly = SCREEN_REGISTRY.filter((entry) => entry.entry.permissions.length === 0 && entry.shellAccess !== 'public');
+      const loginOnly = LISTED_SCREENS.filter((entry) => entry.entry.permissions.length === 0 && entry.shellAccess !== 'public');
       expect(chip('로그인만 하면 열리는 화면')).toHaveAccessibleName(`로그인만 하면 열리는 화면 ${loginOnly.length}`);
       fireEvent.click(chip('로그인만 하면 열리는 화면'));
       expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent(`총 ${loginOnly.length}건`);
@@ -512,7 +515,7 @@ describe('ProgramAdminClient Component', () => {
       expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true');
 
       // 동적 경로 화면은 어떤 메뉴도 열지 않지만 메뉴에 둘 수 없는 화면이라 세지 않는다.
-      expect(SCREEN_REGISTRY.some((entry) => entry.dynamic)).toBe(true);
+      expect(LISTED_SCREENS.some((entry) => entry.dynamic)).toBe(true);
       expect(within(cell('/admin/system/menus', '구분')).getByText('메뉴 없음')).toBeInTheDocument();
       expect(cell('/admin/system/menus', '연결 메뉴')).toHaveTextContent('연결 없음');
 
@@ -528,7 +531,7 @@ describe('ProgramAdminClient Component', () => {
     it('사용 안 함 메뉴만 가리키는 화면은 연결을 보이되 메뉴에 없는 화면으로 센다', async () => {
       auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
       mocks.getMenuStructure.mockResolvedValue(structure(
-        SCREEN_REGISTRY.filter((entry) => entry.route !== '/admin/system/menus' && !entry.dynamic)
+        LISTED_SCREENS.filter((entry) => entry.route !== '/admin/system/menus' && !entry.dynamic)
           .map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, {
             modernRoute: entry.route,
             useYn: entry.route === '/admin/system/programs' ? 'N' : 'Y',
@@ -690,7 +693,7 @@ describe('ProgramAdminClient Component', () => {
 
     it('거른 결과가 지금 쪽보다 짧아지면 마지막 쪽을 보인다(빈 쪽에 갇히지 않는다)', async () => {
       auth.permissions = [...BASE_PERMISSIONS, 'MENU_READ'];
-      const covered = SCREEN_REGISTRY.slice(2).map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, { modernRoute: entry.route }));
+      const covered = LISTED_SCREENS.slice(2).map((entry, index) => structureMenu(index + 1, `메뉴 ${index + 1}`, { modernRoute: entry.route }));
       mocks.getMenuStructure.mockResolvedValueOnce(structure([])).mockResolvedValueOnce(structure(covered));
       const client = createAppQueryClient();
       render(<QueryClientProvider client={client}><ProgramAdminClient /></QueryClientProvider>);
@@ -846,7 +849,7 @@ describe('ProgramAdminClient Component', () => {
       renderClient(<ProgramAdminClient />);
       // [2026-10-05 반박 리뷰 — 통합 단계에서 테스트를 구현에 맞췄다] 메뉴를 만들 수 있는 사람에게는 '메뉴에 추가' 가 왜 사라졌는지도 말한다.
       await waitFor(() => expect(screen.getByText('화면 목록은 표시했지만 연결 메뉴를 불러오지 못했습니다. 메뉴에 추가는 연결 메뉴를 불러온 뒤에 쓸 수 있습니다.')).toBeInTheDocument());
-      expect(screen.getByTestId('화면 목록-count')).toHaveTextContent(`${SCREEN_REGISTRY.length} items`);
+      expect(screen.getByTestId('화면 목록-count')).toHaveTextContent(`${LISTED_SCREENS.length} items`);
       expect(screen.queryByRole('button', { name: /^메뉴에 추가/ })).not.toBeInTheDocument();
     });
 
@@ -855,7 +858,7 @@ describe('ProgramAdminClient Component', () => {
     it('메뉴에 추가는 화면의 등록된 이름을 지어내지 않고 그대로 넘긴다', async () => {
       auth.permissions = [...BASE_PERMISSIONS, ...MENU_MANAGER];
       renderClient(<ProgramAdminClient />);
-      const entry = SCREEN_REGISTRY.find((candidate) => candidate.route === '/admin/system/programs');
+      const entry = LISTED_SCREENS.find((candidate) => candidate.route === '/admin/system/programs');
       expect(entry?.label).toBe('화면 관리');
       await waitFor(() => expect(chip('메뉴에 없는 화면')).toHaveAttribute('aria-pressed', 'true'));
       searchScreens(entry!.route);

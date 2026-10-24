@@ -13,6 +13,14 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
     testTimeout: 15000,
+    // [2026-10-24 DEC-OPS-382 ⑤] CI 에서만 시험 결과 XML 을 남긴다(ci.yml 이 보관한다). reporters 를 적으면 Vitest 가 GitHub Actions 에서
+    //   스스로 붙이던 github-actions(실패 주석) 보고가 빠지므로 함께 적는다. CI 밖에서는 적지 않아 Vitest 의 기본 선택을 그대로 둔다.
+    ...(process.env.CI
+      ? {
+          reporters: ['default', 'junit', ...(process.env.GITHUB_ACTIONS === 'true' ? ['github-actions'] : [])],
+          outputFile: { junit: './build/test-results/vitest-junit.xml' },
+        }
+      : {}),
     alias: {
       '@': path.resolve(configDirectory, './src'),
     },

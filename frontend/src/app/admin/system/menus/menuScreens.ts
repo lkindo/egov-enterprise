@@ -9,9 +9,13 @@ import { planEntryFixes, type EntryFix } from '@/app/admin/security/authority/co
  * 화면을 여는지·진입 권한이 무엇인지 말한다. 화면 목록은 생성물이다(재사용 투영에서 빠진 화면은 이미 걸러져 있다).
  */
 
-/** 메뉴에 연결할 수 있는 화면 — 동적 경로('[id]')가 아닌 화면, 이름·경로 순. */
+/**
+ * 메뉴에 연결할 수 있는 화면 — 동적 경로('[id]')가 아니고 시연 화면이 아닌 화면, 이름·경로 순.
+ * 시연(라우트 원장 status demo) 화면을 실제 메뉴로 새로 연결하면 목업이 업무 화면처럼 보인다(DEC-OPS-382). 이미 연결된 메뉴의
+ * 경로 해석(describeRoute)은 그대로 화면을 찾는다.
+ */
 export const LINKABLE_SCREENS: readonly ScreenRegistryEntry[] = SCREEN_REGISTRY
-  .filter((screen) => !screen.dynamic)
+  .filter((screen) => !screen.dynamic && !screen.demo)
   .slice()
   .sort((left, right) => (left.label ?? '￿').localeCompare(right.label ?? '￿', 'ko') || left.route.localeCompare(right.route, 'en'));
 

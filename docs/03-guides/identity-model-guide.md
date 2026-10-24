@@ -141,7 +141,7 @@ entity.setSomeOwnerId(name); // esntlId가 저장됨
 
 ## 6. 신규 도메인 추가 시 체크리스트
 
-새로운 비즈니스 도메인을 추가할 때 아래 항목을 확인한다:
+새로운 비즈니스 도메인을 추가할 때 아래 항목을 확인한다. 원장 등록 누락은 [등록 점검기](../../scripts/domain-registration-doctor.mjs)가 따로 보인다 — 아래는 점검기가 판정하지 못하는 의미 판단이다:
 
 - [ ] 소유자 컬럼의 채움 지점을 확인해 해당 값이 loginId인지 esntlId인지 판정했는가?
 - [ ] 감사컬럼(`frstRgtrId`/`lastMdfrId`) 기반 소유권은 `SecurityUtil.assertOwnerOrPermission(...)` 또는 `getCurrentLoginId()`로 비교하는가?

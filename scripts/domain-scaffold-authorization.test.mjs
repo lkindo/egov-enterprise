@@ -29,8 +29,46 @@ function assertScaffold(source) {
   assert.doesNotMatch(source, /INSERT\s+INTO\s+tb_authrt_(?:grnt|user)_map|Set-Content[^\n]*(?:permission-catalog|authorization-policies)/i);
 }
 
+// [2026-10-24 DEC-OPS-382] 스캐폴드 산출물이 저장소의 엔티티 규칙과 기능 소유 레이아웃을 따른다.
+//   종전 템플릿은 class-level @Builder·@AllArgsConstructor(GH-ENTITY-LOMBOK-SOURCE 위반)와 repository/<d>
+//   (기능 소유 판정 밖)를 찍었다. 이 저장소에서 스캐폴드가 실제로 쓰인 적이 없어 드러나지 않았다.
+function assertScaffoldLayout(source) {
+  const entity = source.match(/\$entityContent = @"\n([\s\S]*?)\n"@/)?.[1];
+  assert.ok(entity, 'entity template missing');
+  const classHeader = entity.slice(0, entity.indexOf('public class'));
+  assert.doesNotMatch(classHeader, /^@(?:Builder|SuperBuilder|AllArgsConstructor)\b/m, 'entity must not use class-level builder or all-args constructor');
+  assert.match(classHeader, /^@NoArgsConstructor\(access = AccessLevel\.PROTECTED\)$/m);
+  assert.match(entity, /@Builder\n {4}public static \$domainCap create\(/, 'builder must sit on the static create factory');
+  assert.match(source, /^\$repoDir = \$domainDir$/m, 'repository must live with the entity in domain/<d>');
+  assert.match(source, /^\$dtoDir = "\$serviceDir\/dto"$/m);
+  assert.doesNotMatch(source, /nuri\.business\.repository\b|\$baseDir\/repository\//, 'repository/<d> is outside feature ownership');
+  const dto = source.match(/\$dtoContent = @"\n([\s\S]*?)\n"@/)?.[1];
+  assert.ok(dto, 'dto template missing');
+  assert.match(dto, /^package nuri\.business\.service\.\$domainLower\.dto;$/m);
+  assert.match(dto, /public record \$\{domainCap\}Request\(\$\{sizeAnnotation\}\$FieldType \$FieldName\)/, 'request DTO must not carry the id');
+  // OpenAPI 는 중첩 타입을 단순 이름으로 싣는다 — Request·Response 같은 공용 이름은 도메인끼리 스키마를 덮어쓴다.
+  assert.match(dto, /public record \$\{domainCap\}Response\(Long id,/, 'response DTO name must be unique per domain');
+}
+
 test('domain scaffolder emits exact handler guards and requires reviewed permission registration', () => {
   assertScaffold(read());
+});
+
+test('domain scaffolder follows the entity builder rule and the feature-owned layout', () => {
+  assertScaffoldLayout(read());
+});
+
+test('class-level builder, repository/<d> layout and id-carrying requests are red', () => {
+  const source = read();
+  for (const mutation of [
+    s => s.replace('@NoArgsConstructor(access = AccessLevel.PROTECTED)\npublic class $domainCap', '@Builder\n@NoArgsConstructor(access = AccessLevel.PROTECTED)\npublic class $domainCap'),
+    s => s.replace('$repoDir = $domainDir', '$repoDir = "$baseDir/repository/$domainLower"'),
+    s => s.replace('public record ${domainCap}Request(${sizeAnnotation}$FieldType $FieldName)', 'public record ${domainCap}Request(Long id, ${sizeAnnotation}$FieldType $FieldName)'),
+  ]) {
+    const changed = mutation(source);
+    assert.notEqual(changed, source);
+    assert.throws(() => assertScaffoldLayout(changed), { name: 'AssertionError' });
+  }
 });
 
 test('missing guard, wrong handler and role-based or public fallback are red', () => {

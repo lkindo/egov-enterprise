@@ -247,6 +247,21 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     errors.push('protocol §6 must reject overlapped heavy runs as evidence either way');
   }
 
+  // [2026-10-24 DEC-OPS-382] 설계 검토 예산 — 반복 비용만 줄이고 승인 분리·신호 보존·L2 검토는 지운 채 남지 않게 고정한다.
+  const designReviewBudget = section(activeProtocol, '## 7. 설계 검토 예산');
+  if (!designReviewBudget.includes('H1~H5, red 증명, 승인 경계는 그대로다')) {
+    errors.push('protocol §7 must keep H1~H5, red proofs, and approval boundaries unchanged');
+  }
+  if (!designReviewBudget.includes('**시안 확인은 스키마·코어 데이터·인가 의미·IA 처분·메뉴 노출·운영 적용의 승인이 아니다.**')) {
+    errors.push('protocol §7 must keep prototype confirmation separate from schema, data, authorization, IA, menu, and rollout approval');
+  }
+  if (!/\| 인가·스키마·데이터를 건드리는 L2 \| 최대 2회\./u.test(designReviewBudget)) {
+    errors.push('protocol §7 must keep a bounded but present review for authorization, schema, and data L2 designs');
+  }
+  if (!taskSpecification.includes('5번 칸(DESIGN BRIEF)을 채우고 [§7 설계 검토 예산](#7-설계-검토-예산-design-review-budget)을 따른다')) {
+    errors.push('the task specification must route design-reviewed work to protocol §7');
+  }
+
   const atlasL0 = atlasGradeRow(atlas, 'L0');
   const atlasL1 = atlasGradeRow(atlas, 'L1');
   const atlasL2 = atlasGradeRow(atlas, 'L2');
@@ -481,6 +496,13 @@ test('protocol regressions become red without mutating repository files', () => 
     { ...current, protocol: current.protocol.replace(' required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.', ' required CI가 같은 범위를 돌면 생략한다.') },
     { ...current, protocol: current.protocol.replace('**push 전에** 끝 PR의 base를 `main`으로 바꾼다', 'push 한 뒤에 끝 PR의 base를 `main`으로 바꾼다') },
     { ...current, protocol: current.protocol.replace('green이든 red든 그 커밋의 증거로 쓰지 않는다', 'red일 때만 단독으로 다시 확인한다') },
+    { ...current, protocol: current.protocol.replace('H1~H5, red 증명, 승인 경계는 그대로다', '검토 상한 안에서는 red 증명을 생략할 수 있다') },
+    { ...current, protocol: current.protocol.replace(
+      '**시안 확인은 스키마·코어 데이터·인가 의미·IA 처분·메뉴 노출·운영 적용의 승인이 아니다.**',
+      '**시안 확인은 스키마·코어 데이터 승인을 겸한다.**',
+    ) },
+    { ...current, protocol: current.protocol.replace('| 인가·스키마·데이터를 건드리는 L2 | 최대 2회.', '| 인가·스키마·데이터를 건드리는 L2 | 시안 확인으로 대신한다.') },
+    { ...current, protocol: current.protocol.replace('5번 칸(DESIGN BRIEF)을 채우고 [§7 설계 검토 예산](#7-설계-검토-예산-design-review-budget)을 따른다', '5번 칸은 원하면 채운다') },
     { ...current, atlas: current.atlas.replace(
       '별도 승인 없이 실행 가능하되 AGENTS 안전 경계에는 Fast-Track 금지',
       '안전 경계도 별도 승인 없이 Fast-Track 실행',

@@ -29,6 +29,12 @@ export interface KeywordFilterProps {
   onReset?: () => void;
   /** 라벨·버튼 우측에 덧붙일 추가 조건(기간·상태 등). */
   children?: React.ReactNode;
+  /**
+   * 검색 랜드마크의 이름. 한 화면에 조회 조건이 둘 이상이면 준다 — 이름 없는 search 랜드마크가 겹치면 axe
+   * landmark-unique 위반이다(2026-10-24 패턴 갤러리 실측). 입력 라벨을 포함하지 않는 이름을 쓴다 — 포함하면 라벨로
+   * 입력을 찾는 선택자(`getByLabel`)가 폼까지 함께 잡는다.
+   */
+  landmarkLabel?: string;
 }
 
 export function KeywordFilter({
@@ -38,6 +44,7 @@ export function KeywordFilter({
   onSearch,
   onReset,
   children,
+  landmarkLabel,
 }: KeywordFilterProps) {
   const inputId = useId();
   const [draft, setDraft] = useState(value);
@@ -55,6 +62,7 @@ export function KeywordFilter({
     <form
       // 조회 조건이다 — 저장할 변경이 아니므로 모달의 미저장 확인이 이 입력을 세지 않는다(useUnsavedCloseGuard).
       role="search"
+      aria-label={landmarkLabel}
       className="flex flex-wrap items-end gap-[var(--form-gap)]"
       onSubmit={(event) => {
         event.preventDefault();

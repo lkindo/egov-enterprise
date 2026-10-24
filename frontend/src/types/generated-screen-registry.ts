@@ -46,6 +46,8 @@ export interface ScreenRegistryEntry {
   labelSource: 'menu' | 'route-ledger' | null;
   shellAccess: string;
   dynamic: boolean;
+  /** 라우트 원장이 시연(status demo)으로 판정한 화면 — 메뉴 연결 선택지·화면 관리 목록·권한 묶음의 화면에서 뺀다. */
+  demo: boolean;
   entry: { permissions: PermissionCode[]; mode: 'ANY' | 'ALL' };
   permissions: ScreenPermission[];
 }
@@ -73,6 +75,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"APPROVAL_READ","action":"READ","source":"display"},
@@ -92,6 +95,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["DASHBOARD_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_READ","action":"READ","source":"display"},
@@ -106,6 +110,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"NOTE_READ","action":"READ","source":"display"},
@@ -120,6 +125,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"ADBK_DELETE","action":"DELETE","source":"write"},
@@ -132,6 +138,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"ADBK_CREATE","action":"CREATE","source":"write"},
@@ -144,6 +151,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"MAIL_DELETE","action":"DELETE","source":"write"},
@@ -156,6 +164,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"ADBK_READ","action":"READ","source":"display"},
@@ -170,6 +179,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"NOTE_READ","action":"READ","source":"display"},
@@ -184,6 +194,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"SCRAP_CREATE","action":"CREATE","source":"write"},
@@ -197,6 +208,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -206,6 +218,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"BOARD_LIKE","action":"LIKE","source":"write"},
@@ -226,6 +239,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
@@ -240,6 +254,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["BBS_MST_CREATE","BBS_MST_UPDATE"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_GRANT","action":"GRANT","source":"display"},
@@ -257,6 +272,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["BBS_MST_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_READ","action":"READ","source":"display"},
@@ -273,6 +289,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":["BBS_MST_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_READ","action":"READ","source":"display"},
@@ -291,6 +308,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
@@ -303,6 +321,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["TEMPLATE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"TEMPLATE_CREATE","action":"CREATE","source":"write"},
@@ -317,6 +336,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
@@ -333,6 +353,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
@@ -349,6 +370,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
@@ -365,6 +387,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["NOTI_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_READ","action":"READ","source":"display"},
@@ -379,6 +402,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["EVENT_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"EVENT_CREATE","action":"CREATE","source":"write"},
@@ -393,6 +417,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["EXT_HR_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"EXT_HR_CREATE","action":"CREATE","source":"write"},
@@ -407,6 +432,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["MEMO_RPT_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"MEMO_RPT_CREATE","action":"CREATE","source":"write"},
@@ -423,6 +449,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["REWARD_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"REWARD_CREATE","action":"CREATE","source":"write"},
@@ -437,6 +464,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["EVENT_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"EVENT_READ","action":"READ","source":"entry"}
@@ -444,10 +472,11 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/patterns",
-    "label": "업무 요청 목록",
+    "label": "업무 화면 패턴 갤러리",
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": true,
     "entry": {"permissions":["OPS_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"OPS_READ","action":"READ","source":"entry"}
@@ -459,6 +488,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["TEMPLATE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"TEMPLATE_READ","action":"READ","source":"entry"}
@@ -470,6 +500,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["AUTHRT_READ","AUTHRT_AUDIT"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_ASSIGN","action":"ASSIGN","source":"write"},
@@ -487,6 +518,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["AUTHRT_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_ASSIGN","action":"ASSIGN","source":"write"},
@@ -499,6 +531,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["CLASS_GRP_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"CLASS_GRP_CREATE","action":"CREATE","source":"write"},
@@ -513,6 +546,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["LOGIN_POL_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"LOGIN_POL_CREATE","action":"CREATE","source":"write"},
@@ -527,6 +561,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -539,6 +574,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -551,6 +587,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -563,6 +600,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -575,6 +613,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["STATS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"STATS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -587,6 +626,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["SURVEY_READ_ALL","SURVEY_RSP_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"POLL_CREATE","action":"CREATE","source":"write"},
@@ -604,6 +644,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":["SURVEY_READ_ALL"],"mode":"ANY"},
     "permissions": [
       {"code":"POLL_CREATE","action":"CREATE","source":"write"},
@@ -618,6 +659,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["POLL_READ","POLL_READ_ALL"],"mode":"ALL"},
     "permissions": [
       {"code":"POLL_CREATE","action":"CREATE","source":"write"},
@@ -631,6 +673,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["POLL_READ","POLL_READ_ALL"],"mode":"ALL"},
     "permissions": [
       {"code":"POLL_READ","action":"READ","source":"entry"},
@@ -643,6 +686,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"POLL_VOTE","action":"VOTE","source":"write"}
@@ -654,6 +698,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["BANNER_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"BANNER_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -672,6 +717,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["ADMCODE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ADMCODE_CREATE","action":"CREATE","source":"write"},
@@ -686,6 +732,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["INST_CODE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"INST_CODE_IMPORT","action":"IMPORT","source":"write"},
@@ -698,6 +745,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["COMMENT_READ_ALL"],"mode":"ANY"},
     "permissions": [
       {"code":"COMMENT_DELETE_ALL","action":"DELETE_ALL","source":"write"},
@@ -710,6 +758,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["CODE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ADMCODE_CREATE","action":"CREATE","source":"write"},
@@ -728,6 +777,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["CODE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"CODE_READ","action":"READ","source":"entry"}
@@ -739,6 +789,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["CMS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"CMS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
@@ -754,6 +805,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["DWORK_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"DWORK_READ","action":"READ","source":"entry"},
@@ -766,6 +818,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["HELP_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"HELP_CREATE","action":"CREATE","source":"write"},
@@ -780,6 +833,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": true,
     "entry": {"permissions":["MENU_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"MENU_READ","action":"READ","source":"entry"}
@@ -791,6 +845,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["LOGIN_LOG_READ","SYS_LOG_READ","USER_LOG_READ","WEB_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"LOGIN_LOG_READ","action":"READ","source":"entry"},
@@ -805,6 +860,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["ADT_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ADT_LOG_READ","action":"READ","source":"entry"}
@@ -816,6 +872,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["LOGIN_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"LOGIN_LOG_READ","action":"READ","source":"entry"}
@@ -827,6 +884,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["PRIVACY_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"PRIVACY_READ","action":"READ","source":"entry"}
@@ -838,6 +896,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["SYS_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"SYS_LOG_READ","action":"READ","source":"entry"}
@@ -849,6 +908,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["USER_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"USER_LOG_READ","action":"READ","source":"entry"}
@@ -860,6 +920,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["WEB_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"WEB_LOG_READ","action":"READ","source":"entry"}
@@ -871,6 +932,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["MENU_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_GRANT","action":"GRANT","source":"display"},
@@ -887,6 +949,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["AUTHRT_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"AUTHRT_READ","action":"READ","source":"entry"}
@@ -898,6 +961,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["OPS_READ","SYS_LOG_READ","WEB_LOG_READ","LOGIN_LOG_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"LOGIN_LOG_READ","action":"READ","source":"entry"},
@@ -912,6 +976,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["POLICY_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"POLICY_READ","action":"READ","source":"entry"},
@@ -924,6 +989,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["MENU_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"MENU_READ","action":"READ","source":"entry"}
@@ -935,6 +1001,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["ABSENCE_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ABSENCE_READ","action":"READ","source":"entry"},
@@ -959,6 +1026,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["DEPT_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ABSENCE_UPDATE","action":"UPDATE","source":"write"},
@@ -983,6 +1051,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": true,
     "entry": {"permissions":["LOGIN_POL_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ABSENCE_UPDATE","action":"UPDATE","source":"write"},
@@ -1007,6 +1076,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["USER_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ABSENCE_UPDATE","action":"UPDATE","source":"write"},
@@ -1031,6 +1101,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["SMS_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ADBK_READ","action":"READ","source":"display"},
@@ -1046,6 +1117,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["HELP_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"HELP_CREATE","action":"CREATE","source":"write"},
@@ -1060,6 +1132,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_BOX_CREATE","action":"CREATE","source":"write"},
@@ -1077,6 +1150,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "admin-system",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":["WORKFLOW_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"WORKFLOW_READ","action":"READ","source":"entry"}
@@ -1088,6 +1162,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"APPROVAL_APPROVE","action":"APPROVE","source":"write"},
@@ -1101,6 +1176,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"APPROVAL_CREATE","action":"CREATE","source":"write"}
@@ -1112,6 +1188,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
@@ -1124,6 +1201,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1133,6 +1211,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"BOARD_CREATE","action":"CREATE","source":"write"}
@@ -1144,6 +1223,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1153,6 +1233,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "public",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1162,6 +1243,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_READ","action":"READ","source":"display"},
@@ -1176,6 +1258,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1185,6 +1268,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1194,6 +1278,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_BOX_CREATE","action":"CREATE","source":"write"},
@@ -1211,6 +1296,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_JOB_DELETE","action":"DELETE","source":"write"},
@@ -1223,6 +1309,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"DEPT_JOB_CREATE","action":"CREATE","source":"write"}
@@ -1234,6 +1321,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
@@ -1247,6 +1335,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"SCHEDULE_CREATE","action":"CREATE","source":"write"},
@@ -1260,6 +1349,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"WORK_RPT_CREATE","action":"CREATE","source":"write"},
@@ -1273,6 +1363,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "menu",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1282,6 +1373,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"SURVEY_SUBMIT","action":"SUBMIT","source":"write"}
@@ -1293,6 +1385,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
       {"code":"SURVEY_RSP_DELETE","action":"DELETE","source":"display"}
@@ -1304,6 +1397,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": true,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   },
@@ -1313,6 +1407,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
+    "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": []
   }
@@ -1616,7 +1711,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/security/login-policy",
       "/admin/user/absences",
       "/admin/user/departments",
-      "/admin/user/indvdl-info-policy",
       "/admin/user/manage"
     ],
     "relatedScreens": [
@@ -1652,7 +1746,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/codes/institution",
       "/admin/system/common-code",
       "/admin/system/common-code/codes",
-      "/admin/system/layout",
       "/admin/system/menus",
       "/admin/system/policies",
       "/admin/system/programs"
@@ -1758,7 +1851,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
     ],
     "screens": [
       "/admin",
-      "/admin/patterns",
       "/admin/security/authority",
       "/admin/stats",
       "/admin/stats/board",

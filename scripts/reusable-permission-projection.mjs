@@ -157,12 +157,14 @@ export function projectPermissionBundleLedger(ledger, { codes, screens }) {
   const dropped = [];
   const signatures = new Map();
   const droppedOwners = new Map(); // code → 그 코드를 품었다가 ②로 빠진 원본 묶음 이름
+  const live = screens.filter(screen => !screen.demo);
   for (const bundle of ledger.bundles ?? []) {
     const permissions = (bundle.permissions ?? []).filter(code => allowed.has(code));
     if (permissions.length === 0) { dropped.push({ id: bundle.id, reason: 'no-permission-in-composition' }); continue; }
     const granted = new Set(permissions);
-    const opens = screens.some(screen => grantsScreenEntry(granted, screen.entry));
-    const relates = screens.some(screen => relatesToOpenScreen(granted, screen));
+    // 시연 화면은 묶음이 열지 않는다(buildPermissionBundles 와 같은 판정, DEC-OPS-382).
+    const opens = live.some(screen => grantsScreenEntry(granted, screen.entry));
+    const relates = live.some(screen => relatesToOpenScreen(granted, screen));
     if (!opens && !relates) {
       dropped.push({ id: bundle.id, reason: 'no-screen-in-composition' });
       for (const code of permissions) droppedOwners.set(code, [...(droppedOwners.get(code) ?? []), bundle.name]);
@@ -216,6 +218,7 @@ export function projectScreenRegistryRows({ root, ledger, upstreamLedger, source
     }
     return {
       route: screen.route, label: screen.label, labelSource: screen.labelSource, shellAccess: screen.shellAccess, dynamic: screen.dynamic,
+      demo: screen.demo,
       entry: screen.entry, permissions: source.permissions.filter(row => codes.has(row.code)),
     };
   });

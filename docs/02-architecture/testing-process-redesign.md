@@ -192,6 +192,7 @@ Gradle action은 v6.4.0의 검증 대상 commit에 고정하고(2026-10-07 v6.3.
 | `admin/notifications/` | `notifications` |
 | `smart-toolkit/schedule/` | `schedules`, `approvals`, `contracts/schedules` |
 | `admin/system/common-code/` | `common-codes`; 외부 import 소비자가 있으면 전수 |
+| `admin/patterns/` | `quality/route-accessibility`, `quality/responsive-shell`(패턴 갤러리 정적 표본, 기존 파일 수정만. 표본 파일을 더하면 전수) |
 
 모든 좁은 선택에도 `journeys/application-shell.spec.ts`와 `quality/` 8개를 포함한다. 이 표는 공통 품질 spec을 반복해서 적지 않는다. `admin/user/`는 인증·조직·인가 경계이므로 초기 선별 대상에서 제외하고 전수로 유지한다.
 

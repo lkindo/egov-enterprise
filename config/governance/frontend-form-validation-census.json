@@ -3,13 +3,13 @@
   "authority": "frontend-form-validation-census",
   "generatedAt": "2026-08-26",
   "expected": {
-    "nativeFormOccurrences": 72,
-    "nativeFormFiles": 62,
+    "nativeFormOccurrences": 73,
+    "nativeFormFiles": 63,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
     "formlessWriteBoundaries": 26,
     "secondaryActionBoundaries": 81,
-    "candidateCount": 180
+    "candidateCount": 181
   },
   "entries": [
     {
@@ -1077,6 +1077,22 @@
       "testEvidence": [
         "frontend/src/app/admin/operation/rewards/__tests__/RewardManageClient.form-validation.test.tsx",
         "frontend/src/hooks/__tests__/useAppForm.test.tsx"
+      ]
+    },
+    {
+      "key": "native-form:frontend/src/app/admin/patterns/MasterDetailSample.tsx#GroupEditForm[1]",
+      "kind": "native-form",
+      "file": "frontend/src/app/admin/patterns/MasterDetailSample.tsx",
+      "owner": "GroupEditForm",
+      "classification": "primitive",
+      "status": "compliant",
+      "validationMode": "not-applicable",
+      "schemaSource": "not-applicable",
+      "errorNavigation": "not-applicable",
+      "serverErrors": "not-applicable",
+      "pendingGuard": "not-applicable",
+      "testEvidence": [
+        "frontend/src/app/admin/patterns/__tests__/pattern-gallery-samples.test.tsx"
       ]
     },
     {

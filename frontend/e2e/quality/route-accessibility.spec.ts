@@ -65,6 +65,8 @@ test.describe('Quality & Resilience', () => {
                 ['/admin/community/boards/insert-board-article', '게시글 작성·수정'],
                 ['/admin/help/faq', '자주 묻는 질문 관리'],
                 ['/admin/community/boards/maker', '게시판 생성'],
+                // [2026-10-24 DEC-OPS-382] 패턴 갤러리 — 실제 토큰·셸로 그린 표본의 렌더 결과 대비를 본다(정적 표본이라 결정적이다).
+                ['/admin/patterns', '업무 화면 패턴 갤러리'],
             ]) {
                 test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
                     await expectNoAxeViolations(page, route, purpose);

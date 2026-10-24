@@ -3918,11 +3918,16 @@
       "status": "demo",
       "dataSource": "static-mock",
       "supportedActions": [
+        "edit",
         "filter",
         "paginate",
         "reset",
+        "save",
         "search",
-        "sort"
+        "select-detail",
+        "sort",
+        "view-chart",
+        "view-summary"
       ],
       "profileOwners": [
         "UNVERIFIED"
@@ -3931,7 +3936,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "업무 요청 목록",
+      "visibleLabel": "업무 화면 패턴 갤러리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -3963,6 +3968,54 @@
             "frontend/src/app/admin/patterns/PatternGalleryClient.tsx",
             "frontend/src/app/admin/patterns/__tests__/pattern-gallery.test.tsx",
             "frontend/src/app/admin/patterns/page.tsx"
+          ]
+        },
+        {
+          "id": "pattern.master-detail-sample",
+          "status": "demo",
+          "dataSource": "static-mock",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-24",
+          "owner": "product/UX + domain owner",
+          "actions": [
+            "edit",
+            "reset",
+            "save",
+            "search",
+            "select-detail"
+          ],
+          "visibleLabel": "코드 그룹 관리",
+          "evidence": [
+            "frontend/src/app/admin/patterns/MasterDetailSample.tsx",
+            "frontend/src/app/admin/patterns/__tests__/pattern-gallery-samples.test.tsx"
+          ]
+        },
+        {
+          "id": "pattern.report-sample",
+          "status": "demo",
+          "dataSource": "static-mock",
+          "unsupportedVisibleActions": [],
+          "actorScope": "ADMIN|SYSTEM",
+          "primaryTask": false,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-24",
+          "owner": "product/UX + domain owner",
+          "actions": [
+            "reset",
+            "search",
+            "sort",
+            "view-chart",
+            "view-summary"
+          ],
+          "visibleLabel": "부서별 요청 처리 현황",
+          "evidence": [
+            "frontend/src/app/admin/patterns/ReportSample.tsx",
+            "frontend/src/app/admin/patterns/__tests__/pattern-gallery-samples.test.tsx"
           ]
         }
       ],

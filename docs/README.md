@@ -76,6 +76,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [orchestration-protocol.md](03-guides/orchestration-protocol.md) | **SOP** — 작업 등급·위임·감사·증거 기반 검증 |
 | [harness-improvement-pilot.md](03-guides/harness-improvement-pilot.md) | 스킬 정합·통합 하네스 중복 판단·관측용 실행 기록과 시각 회귀 행동 평가 1건의 범위 |
 | [governance-atlas-guide.md](03-guides/governance-atlas-guide.md) | Atlas 읽기·소스 생성·현행화·검증 및 증거 경계 |
+| [design-to-deliverables-guide.md](03-guides/design-to-deliverables-guide.md) | 설계 검토 예산·패턴 갤러리·토큰 키트·등록 점검기·감리·검수 입력 자료 초안 내보내기의 쓰임과 증거 경계, 공공 SW 규범 대응 |
 | [governance-review-lifecycle.md](03-guides/governance-review-lifecycle.md) | 실제 시계 검토 보고, 기관 도입 preflight, 프로필 원장·메모리 투영과 무결성, 독립 이관 검증 |
 | [testing-guide.md](03-guides/testing-guide.md) | **테스트 SSOT** — 단위/통합/E2E 전략 |
 | [e2e-test-guide.md](03-guides/e2e-test-guide.md) | E2E 운영 Runbook |

@@ -199,7 +199,9 @@ pnpm -C frontend exec tsc --noEmit        # 프론트엔드 타입 무결성
 ./scripts/generate-domain.ps1 -DomainName "product" -FieldName "title"
 ```
 
-> `business-app`에 Entity(`BaseEntity` 상속)·Dto·Repository·Service와 `api-server` Controller 골격을 생성한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
+> `business-app`의 `domain/<도메인>`에 Entity(`BaseEntity` 상속, 정적 `create` 빌더)·Repository, `service/<도메인>`에 Service와 `dto`(요청·응답 record)를, `api-server`에 Controller 골격을 생성한다. 기능 선언(`config/modules/<도메인>.json`) 초안·표준 용어 확인 SQL·다음 Flyway 번호는 파일로 쓰지 않고 콘솔에 출력한다. 생성 후 QueryDSL Q타입 재생성을 위해 `./gradlew clean :business-app:compileJava` 권장.
+
+> 빠진 등록 지점(기능 선언·시작 구성·마이그레이션·권한·화면 원장·처분·operation 바인딩·권한 묶음)은 [등록 점검기](../../scripts/domain-registration-doctor.mjs)(`node scripts/domain-registration-doctor.mjs <도메인>`, 읽기 전용)가 원장 경로와 함께 "사람 판정 / 생성기 / 선택 등재"로 나눠 보인다. 점검기는 원장을 채우지 않는다. 소유권 축 같은 의미 판단은 [식별자 모델 가이드 §6](identity-model-guide.md#6-신규-도메인-추가-시-체크리스트)을 따른다.
 
 > 스캐폴드는 명시적 CRUD를 생성한다. Service는 클래스레벨 `@Transactional(readOnly = true)`와 쓰기 메서드 트랜잭션을, Controller는 `api-server`에 배치한다. 정확한 handler `@PreAuthorize` 가드를 생성하지만, 실제 기능 카탈로그·operation binding과 기본 그룹 부여는 자동 등록하지 않는다. 도메인 정책을 검토 등록하기 전에는 요청이 거부되고 인가 린터도 red다. Flyway DDL은 버전·표준용어 충돌을 피하려고 파일로 쓰지 않고 검토용 초안만 출력한다.
 > 생성 직후에도 도메인별 소유권·인가와 표준 용어는 사람이 확정해야 하며, `./gradlew clean compileJava compileTestJava`로 검증한다.
