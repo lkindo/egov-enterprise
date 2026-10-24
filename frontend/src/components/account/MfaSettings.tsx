@@ -10,6 +10,7 @@ import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { mfaService } from '@/services/foundation/auth/mfaService';
 import { mfaBrowserRequests, type MfaEnrollment, type MfaStatus } from '@/lib/auth/mfa-bff-contract';
+import { beginSessionTransition } from '@/lib/auth/authorization-state';
 import { MfaChallengePanel, RecoveryCodes } from './MfaChallengePanel';
 import { clearTargetHandoff, useTargetHandoff } from '@/lib/navigation/target-handoff';
 
@@ -60,9 +61,16 @@ export function MfaSettings({ onCloseLockChange }: { onCloseLockChange?: (locked
     submittingRef.current = true; setPending(true); validation.setFormErrors({}); setMessage('');
     try {
       if (action === 'start') {
-        const prepared = await mfaService.start(password);
-        enterMfaChallenge();
-        setEnrollment(prepared);
+        // 등록 시작은 서버가 처리하는 순간 일반 세션을 폐기한다. 응답 전에 다른 조회의 재발급이 실패해도 세션 만료로 다루지 않게
+        //   요청 동안 표지를 세우고, 제한 세션으로 넘어간 뒤(또는 실패하면) 걷는다(lib/auth/authorization-state.ts).
+        const endTransition = beginSessionTransition();
+        try {
+          const prepared = await mfaService.start(password);
+          enterMfaChallenge();
+          setEnrollment(prepared);
+        } finally {
+          endTransition();
+        }
       }
       else {
         await mfaService.reauthenticate(password, code);
