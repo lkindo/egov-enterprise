@@ -30,6 +30,8 @@
 
 [information-architecture.md](01-product/information-architecture.md) — ADR-0007의 참조-기본 IA와 route disposition 경계. 개인정보성 업무 검색어의 현행 URL 정책은 ADR-0009가 규율한다. 별도의 비규범 `class-governed` 컨테이너에는 4개 부류의 독립 승인 기록과 3개 미해결 부류가 있다.
 
+[migration-workspace-design.md](01-product/migration-workspace-design.md) — 독립 이관 작업공간 제안과 합성 화면 시뮬레이션: DB·스키마 입력, 소스 근거·용어 검토, 기존 원장 재사용, 리허설·최종 전환·보관(운영 승인·물리 스키마 확정안 아님).
+
 
 ## 02-architecture — 설계
 
