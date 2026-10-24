@@ -284,7 +284,8 @@ function validateCriticalSteps(criticalSteps, jobs) {
 
 // These are setup-gradle callers in the producer repository. Exported products
 // bind their independent single writer in their existing product contracts.
-const GRADLE_CACHE_READ_ONLY = {
+// 값이 'true' 가 아닌 잡이 그 실행의 writer 다 — PIT 의존성 예열 계약이 같은 표에서 writer 를 읽는다.
+export const GRADLE_CACHE_READ_ONLY = Object.freeze({
   '.github/workflows/ci.yml': {
     'backend-scope': 'false',
     'backend-schema-scope': 'true',
@@ -300,7 +301,7 @@ const GRADLE_CACHE_READ_ONLY = {
   '.github/workflows/release.yml': { verify: 'true' },
   // T2 야간 검증(DEC-OPS-283)은 matrix 잡마다 캐시를 읽기만 한다. 저장소 캐시가 한도를 넘었다.
   '.github/workflows/reusable-nightly.yml': { verify: 'true' },
-};
+});
 
 /*
   검토한 액션 핀 원장 — 커밋을 올릴 때 사람이 검토해야 하는 액션 저장소와 그 커밋. 워크플로가 이 저장소의 액션을 쓰면 정확히 이

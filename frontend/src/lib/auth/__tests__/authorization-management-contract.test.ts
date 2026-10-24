@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { z } from 'zod';
 import {
   authorizationCatalogSchema, authorizationGroupSnapshotSchema, authorizationMembershipSchema,
   authorizationGroupFormSchema, hasCompleteCatalog, selectedGrants,
@@ -94,8 +95,9 @@ describe('authorization management — 2단계 계약', () => {
   });
 
   it('구성원 요청의 상한은 생성 계약(서버 @Size)과 같다 — 생성 계약이 바뀌면 이 계약도 함께 바꾼다', () => {
+    // 제약은 공개 API(JSON Schema 변환)로 읽는다 — 내부 `_zod.bag` 는 zod 4.6 에서 비었다(2026-10-24 상향).
     for (const list of [ChangeGroupMembersRequestSchema.shape.add, ChangeGroupMembersRequestSchema.shape.remove]) {
-      expect((list._zod.bag as { maximum?: number }).maximum).toBe(GROUP_MEMBERS_LIST_MAX);
+      expect((z.toJSONSchema(list) as { maxItems?: number }).maxItems).toBe(GROUP_MEMBERS_LIST_MAX);
       expect(list.element.maxLength).toBe(20);
     }
   });
@@ -137,8 +139,10 @@ describe('authorization management — 2단계 계약', () => {
 
   it('그룹 코드 규칙은 생성 계약의 규칙을 앞뒤 고정한 것이다 — 생성 계약이 바뀌면 이 계약도 함께 바꾼다', () => {
     for (const generated of [CreateGroupRequestSchema.shape.code, CopyGroupRequestSchema.shape.code]) {
-      const patterns = [...((generated._zod.bag as { patterns?: Set<RegExp> }).patterns ?? [])].map((value) => value.source);
-      expect(patterns.map((source) => `^${source}$`)).toEqual([GROUP_CODE_PATTERN.source]);
+      // 패턴이 둘 이상이면 JSON Schema 는 allOf 로 나눈다 — 생성 계약의 패턴은 정확히 하나다.
+      const json = z.toJSONSchema(generated) as { pattern?: string; allOf?: unknown[] };
+      expect(json.allOf).toBeUndefined();
+      expect(`^${json.pattern}$`).toBe(GROUP_CODE_PATTERN.source);
       expect(generated.maxLength).toBe(20);
     }
   });

@@ -136,8 +136,8 @@
 
 | 명령 | 용도와 경계 |
 |---|---|
-| `npm run verify:docs` | 운영 계약과 Atlas 문서 계약. 문서 전용 변경의 최소 fail-closed 경로 |
-| `npm run verify:fast` | docs + Java compile + FE/E2E type-check·lint·codegen + 빠른 Vitest |
+| `npm run verify:docs` | 생성물 신선도(`npm run regen -- --check`)·운영 계약·Atlas 문서 계약. 문서 전용 변경의 최소 fail-closed 경로 |
+| `npm run verify:fast` | docs + Java compile + FE/E2E type-check·lint(계약 codegen 은 생성물 신선도가 본다) + 빠른 Vitest(`src/__tests__`·원문 계약) |
 | `npm run verify:push` | fast + governance harness. 수동 사전 검증용이며 실제 pre-push 훅의 변경분 최적화와 동일하다고 가정하지 않음 |
 | `npm run verify` / `verify:full` | backend test·harness·JaCoCo·실 PostgreSQL schema-validation + frontend build·bundle·coverage. 브라우저 E2E와 원격 정책은 포함하지 않음 |
 | `npm run verify:e2e` | 운영 계약·E2E type-check 후 격리 runner가 새 일회용 DB·API·FE를 생성해 Playwright 실행. 운영 대상을 향해 실행하지 않음 |
@@ -202,7 +202,7 @@
 - 다음 재실행은 중복이 아니다: 위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3), 게이트·계약의 red 증명(green → 위반 주입 → red → 원복 → green), 이번에 바꾼 계약·게이트의 대상 테스트 실행. "미리 돌리지 않는다"는 pre-push가 곧 돌릴 묶음 전체를 같은 커밋에서 한 번 더 돌리는 경우에만 적용한다.
 - §6.4의 `verify:integrate`는 폼 census·전체 하네스의 통합 실패를 푸시 전에 드러내기 위해 이 둘을 먼저 실행한다. 이 명시적 중복은 pre-push의 같은 검사나 required CI를 생략할 근거가 아니다.
 - 넓은 로컬 검증은 최신 main을 합치고 §6.4대로 다시 만든 뒤, 푸시 직전에 한 번 한다. pre-push가 곧 실행할 묶음(운영 계약, 범위별 compile·tsc·lint·폼 census·codegen 검사, `src/__tests__` Vitest, `harnessTest` — [.githooks/README.md](../../.githooks/README.md))은 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다: 화면 파일을 지우거나 옮기거나 화면 문자열을 바꾸면 전체 Vitest, `foundation`·`business-*`에 클래스를 더하거나 고치면 그 모듈의 `check`(클래스별 커버리지), 엔티티·DDL을 바꾸면 `schemaValidationTest`, RSC 경계·의존성을 바꾸면 `pnpm -C frontend build`와 `bundle:check`, 컨트롤러·DTO를 바꾸면 `api-docs.json` 추출(§6.4). 해당하는 검사가 하나도 없을 때만 넓은 로컬 검증을 생략한다. required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.
-- `npm run verify`(기본 `full`)와 `verify:docs`·`fast`·`push`·`be`·`fe`·`e2e`는 모두 운영 계약을 돌리고 `fast`·`push`·`fe`·`full`은 정적 검사도 돌린다. push 직전이면 pre-push 묶음이 같은 커밋에서 다시 돈다 — 넓은 검증은 위 목록에서 훅이 보지 않는 검사를 고른다.
+- `npm run verify`(기본 `full`)와 `verify:docs`·`fast`·`push`·`be`·`fe`·`e2e`는 모두 맨 앞에서 생성물 신선도를 보고 운영 계약을 돌리며 `fast`·`push`·`fe`·`full`은 정적 검사도 돌린다. push 직전이면 pre-push 묶음이 같은 커밋에서 다시 돈다 — 넓은 검증은 위 목록에서 훅이 보지 않는 검사를 고른다.
 - CI 러너는 UTC, 로컬 `npm run verify`의 기본 시간대는 KST(`Asia/Seoul`)이고 명시한 `TZ`가 이긴다. 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 한 번 더 확인한다(bash·PowerShell·cmd에서 같은 형태이고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다(그 기계의 시간대를 따른다).
 - 생략했거나 CI에만 맡긴 검사는 완료 보고에 그 사실과 대신 확인할 CI 잡을 적고, 그 잡이 끝난 뒤에 완료를 선언한다.
 - CI가 red이면 실패한 잡의 로그로 원인을 판정하고 그 원인에 맞는 표적 검사만 로컬에서 다시 실행한다. 인프라 일시 장애로 판정한 경우에만 실패한 잡을 재실행한다. 같은 원인의 실패 횟수는 §2.4대로 센다.

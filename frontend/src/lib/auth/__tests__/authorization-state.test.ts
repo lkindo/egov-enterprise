@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it } from 'vitest';
 import {
   assertRequestAllowedWhileSignedOut,
   authorizationStateSchema,
+  beginSessionTransition,
+  isSessionTransitionPending,
   isSignedOut,
   markSignedIn,
   markSignedOut,
@@ -56,6 +58,23 @@ describe('authorization display state', () => {
       markSignedIn();
       expect(() => assertRequestAllowedWhileSignedOut('/admin/system/users')).not.toThrow();
     });
+  });
+
+  // 일반 세션을 스스로 폐기하는 요청 동안의 표지 — 겹쳐 세울 수 있고, 걷는 함수는 두 번 불러도 한 번만 걷는다.
+  it('session transition marker stays up until every transition ends, and ending twice does not underflow', () => {
+    expect(isSessionTransitionPending()).toBe(false);
+    const first = beginSessionTransition();
+    const second = beginSessionTransition();
+    expect(isSessionTransitionPending()).toBe(true);
+    first();
+    first();
+    expect(isSessionTransitionPending()).toBe(true);
+    second();
+    expect(isSessionTransitionPending()).toBe(false);
+    const third = beginSessionTransition();
+    expect(isSessionTransitionPending()).toBe(true);
+    third();
+    expect(isSessionTransitionPending()).toBe(false);
   });
 
   it('rejects undeclared token fields in a browser authorization response', () => {

@@ -442,6 +442,14 @@ jobs:
           git ls-files --error-unmatch -- "$GITHUB_WORKSPACE/api-docs.json"
           git diff --exit-code -- "$GITHUB_WORKSPACE/api-docs.json"
 
+      # [2026-10-24] 읽기 전용 PIT 잡이 Maven Central 에 가지 않게, 그 잡이 받는 외부 의존성을 이 writer 의 Gradle 캐시에 싣는다
+      #   (build.gradle resolvePitDependencies — run 39597152074·39879169321 의 429·403). setup-gradle 의 post 는 잡이 붉어도 저장하므로
+      #   시험 결과와 상관없이 돈다. 해석만 하고 재시도하지 않는다 — 실패는 그대로 붉다.
+      - name: Resolve PIT dependencies into the Gradle cache
+        id: pit-deps
+        if: ${{ !cancelled() }}
+        run: ./gradlew resolvePitDependencies --warning-mode fail --console=plain
+
       - name: Publish backend JUnit duration evidence
         if: always()
         run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
@@ -491,7 +499,7 @@ jobs:
             echo "::error title=$1::$MSG"
           }
           # 어떤 스텝이 실제로 실패했는지 먼저 명시 — 로그 tail 만 보면 통과한 스텝을 오인한다
-          echo "::error title=실패 스텝 판정::build-and-test=${{ steps.build-and-test.outcome }} / api-docs-gate=${{ steps.api-docs-gate.outcome }}"
+          echo "::error title=실패 스텝 판정::build-and-test=${{ steps.build-and-test.outcome }} / api-docs-gate=${{ steps.api-docs-gate.outcome }} / pit-deps=${{ steps.pit-deps.outcome }}"
           # 컴파일/태스크 오류 본문을 별도로 발췌 — tail 창에 안 잡히는 경우가 있다
           if [ -f /tmp/build-and-test.log ]; then
             echo "::error title=오류 발췌(error:/What went wrong)::$(grep -E "error:|What went wrong|Compilation failed|FAILED$" -A 3 /tmp/build-and-test.log | tail -c 2500 | paste -sd' ' -)"
@@ -598,6 +606,15 @@ jobs:
 
       - name: Run measured migration test shard (${{ matrix.shard }})
         run: node scripts/migration-test-shard.mjs --shard "${{ matrix.shard }}"
+
+      # [2026-10-24] backend writer 가 없는 이관 전용 실행에서는 이 샤드가 새 캐시 키의 유일한 writer 다. 여기서 PIT 의존성을 받지 않으면
+      #   그 키가 PIT 산출물 없이 저장되고, 같은 키는 다시 저장되지 않아 다음 *.gradle 변경까지 PIT 잡이 원격에서 받는다.
+      #   backend-scope 의 같은 스텝과 같은 규칙(시험이 붉어도 돈다, 재시도하지 않는다)이다. 루트 태스크라 온라인 모듈의 의존성까지
+      #   받으며(그 키에서 돌 온라인 PIT 잡의 몫), 원격 일시 장애로 붉으면 이관 집계를 거쳐 backend-build 가 붉다 — 실패한 잡만 다시 돌린다.
+      - name: Resolve PIT dependencies into the Gradle cache
+        id: pit-deps
+        if: ${{ !cancelled() && needs.change-scope.outputs.backend == 'false' && strategy.job-index == 0 }}
+        run: ./gradlew resolvePitDependencies --warning-mode fail --console=plain
 
       - name: Publish migration shard JUnit duration evidence
         if: always()
@@ -1126,6 +1143,39 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
+      # [2026-10-24] Playwright 시스템 패키지(.deb)를 main 에서만 캐시한다. 설치 실패 3건(run 39819698340·39938808734·39963674681 첫 시도)에서
+      #   apt-get update 는 1~11초였고, 막힌 곳은 'Need to get 21.1~25.9 MB of archives' 뒤의 미러 다운로드(약 40kB/s)였다.
+      #   apt 는 이름(버전 포함)·크기가 맞는 파일만 쓰므로 낡은 .deb 는 쓰이지 않는다. 키에 러너 이미지·Playwright 버전을 넣는다.
+      - name: Resolve Playwright system package cache key
+        id: e2e-apt-key
+        working-directory: frontend
+        run: |
+          set -euo pipefail
+          playwright=$(node -p "require('@playwright/test/package.json').version")
+          prefix="playwright-debs-${ImageOS:-unknown}-${RUNNER_ARCH}-${playwright}-"
+          echo "prefix=${prefix}" >> "$GITHUB_OUTPUT"
+          echo "key=${prefix}${ImageVersion:-unknown}" >> "$GITHUB_OUTPUT"
+
+      - name: Restore Playwright system packages
+        id: e2e-apt-restore
+        uses: actions/cache/restore@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ${{ runner.temp }}/playwright-debs
+          key: ${{ steps.e2e-apt-key.outputs.key }}
+          restore-keys: |
+            ${{ steps.e2e-apt-key.outputs.prefix }}
+
+      # actions/cache 는 runner 권한이라 root 소유 /var/cache/apt/archives 에 직접 풀지 못한다 — sudo 로 옮겨 둔다.
+      - name: Seed apt archive with restored Playwright packages
+        if: steps.e2e-apt-restore.outputs.cache-matched-key != ''
+        env:
+          MATCHED_KEY: ${{ steps.e2e-apt-restore.outputs.cache-matched-key }}
+        run: |
+          shopt -s nullglob
+          debs=("$RUNNER_TEMP"/playwright-debs/*.deb)
+          echo "복원한 .deb ${#debs[@]}개 ($MATCHED_KEY)"
+          if [ "${#debs[@]}" -gt 0 ]; then sudo cp --no-clobber -- "${debs[@]}" /var/cache/apt/archives/; fi
+
       - name: Cache Playwright Browsers
         id: cache-playwright
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
@@ -1136,10 +1186,12 @@ jobs:
             ${{ runner.os }}-playwright-
 
       # 캐시 미적중 경로도 --with-deps 라 같은 apt-get 위험을 갖는다. 브라우저 다운로드가
-      # 포함되므로 상한만 더 넉넉히 둔다.
+      # 포함되므로 상한만 더 넉넉히 둔다. 미적중 경로는 적중 경로(install-deps)의 apt 설치에 브라우저 다운로드를
+      # 더 하므로 상한이 그보다 작으면 안 된다.
       - name: Install Playwright Browsers
+        id: e2e-pw-browsers
         if: steps.cache-playwright.outputs.cache-hit != 'true'
-        timeout-minutes: 10
+        timeout-minutes: 15
         run: npx playwright install --with-deps chromium
         working-directory: frontend
 
@@ -1147,12 +1199,36 @@ jobs:
       #   미러/락 대기로 멈추면 잡 타임아웃 30분을 통째로 태우고 shard 가 cancelled 로 죽는다.
       #   실측 2회: run 32242157066 shard 1(30m11s), run 32275810178 shard 1·2(30m27s/30m28s).
       #   둘 다 테스트 실패가 아니라 이 단계에서 멈춘 것이며, 재실행하면 그대로 통과했다.
-      #   5분이면 정상 설치(캐시 적중 시 수십 초)에 충분하고, 멈춘 경우 25분을 아껴 재실행이 싸진다.
+      # [2026-10-24] 5→15분. 2026-10 실패 3건은 멈춤이 아니라 느린 진행이었다(약 40~45kB/s). 25.9MB 는 40kB/s 로 약 11분이라
+      #   12분은 여유가 없고, 15분이면 약 30kB/s 까지 받는다. 앞 단계 약 4분 + 15 + 생성기 화면·FE 빌드·실행 약 6.5분으로 잡 상한
+      #   30분 안이다. 위 .deb 캐시가 적중하면 다운로드가 거의 없다. 재시도 루프는 넣지 않는다.
       - name: Install Playwright Dependencies (system deps)
+        id: e2e-pw-deps
         if: steps.cache-playwright.outputs.cache-hit == 'true'
-        timeout-minutes: 5
+        timeout-minutes: 15
         run: npx playwright install-deps chromium
         working-directory: frontend
+
+      # main 첫 샤드만, 정확한 키가 없을 때 보관한다. PR 은 복원만 한다(저장소 캐시 한도·쓰기 경계). 설치 직후라 시험이 실패해도 보관된다.
+      - name: Collect Playwright system packages for the main cache
+        id: e2e-apt-collect
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main' && strategy.job-index == 0 && steps.e2e-apt-restore.outputs.cache-hit != 'true'
+        run: |
+          set -euo pipefail
+          sudo apt-get autoclean -qq   # 지금 색인에 없는(대체된) 버전을 버려 복원분이 세대마다 쌓이지 않게 한다
+          rm -rf "$RUNNER_TEMP/playwright-debs" && mkdir -p "$RUNNER_TEMP/playwright-debs"
+          shopt -s nullglob
+          debs=(/var/cache/apt/archives/*.deb)
+          if [ "${#debs[@]}" -gt 0 ]; then cp -- "${debs[@]}" "$RUNNER_TEMP/playwright-debs/"; fi
+          echo "count=${#debs[@]}" >> "$GITHUB_OUTPUT"
+          echo "Playwright 시스템 패키지 .deb ${#debs[@]}개를 main 캐시에 보관합니다." >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Save Playwright system packages (main only)
+        if: steps.e2e-apt-collect.outputs.count != '' && steps.e2e-apt-collect.outputs.count != '0'
+        uses: actions/cache/save@55cc8345863c7cc4c66a329aec7e433d2d1c52a9  # v6.1.0
+        with:
+          path: ${{ runner.temp }}/playwright-debs
+          key: ${{ steps.e2e-apt-key.outputs.key }}
 
       - name: Verify local composer browser flow
         if: strategy.job-index == 0
@@ -1233,8 +1309,21 @@ jobs:
       - name: Surface failure detail (annotations)
         # GitHub timeout은 failure가 아니라 cancelled이므로 두 상태를 모두 포함한다.
         if: failure() || cancelled()
+        env:
+          PW_BROWSERS: ${{ steps.e2e-pw-browsers.outcome }}
+          PW_DEPS: ${{ steps.e2e-pw-deps.outcome }}
+          APT_DEBS: ${{ steps.e2e-apt-restore.outputs.cache-matched-key }}
         run: |
-          echo "::error title=실패 스텝 판정::api-build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / api-wait=${{ steps.e2e-wait.outcome }} / fe-build=${{ steps.e2e-fe-build.outcome }} / run=${{ steps.e2e-run.outcome }}"
+          echo "::error title=실패 스텝 판정::api-build=${{ steps.e2e-build.outcome }} / compose=${{ steps.e2e-compose.outcome }} / api-wait=${{ steps.e2e-wait.outcome }} / pw-browsers=${{ steps.e2e-pw-browsers.outcome }} / pw-deps=${{ steps.e2e-pw-deps.outcome }} / fe-build=${{ steps.e2e-fe-build.outcome }} / run=${{ steps.e2e-run.outcome }}"
+          # 인프라 실패를 시험 실패와 따로 보이는 사람용 판정이다 — 설치 단계가 실패하면 E2E 는 돌지 않았다. 스텝 시간 초과는 failure 로
+          #   남고(run 39963674681·39938808734·39819698340 첫 시도), cancelled 는 새 push·수동 취소·잡 상한이라 인프라 실패로 세지 않는다.
+          #   npm run ci:flaky-report 는 이 제목이 아니라 첫 실패 스텝 이름(STEP_RULES)으로 같은 구분을 한다.
+          case "$PW_BROWSERS/$PW_DEPS" in
+            failure/*|*/failure)
+              echo "::error title=E2E 인프라 실패::kind=playwright-install / pw-browsers=$PW_BROWSERS / pw-deps=$PW_DEPS / apt-debs=${APT_DEBS:-miss} — Playwright 설치(apt 미러·브라우저 내려받기)가 실패해 E2E 를 실행하지 않았습니다. 시험 실패가 아니므로 실패한 잡만 다시 돌립니다." ;;
+            cancelled/*|*/cancelled)
+              echo "::error title=E2E 설치 중 취소::pw-browsers=$PW_BROWSERS / pw-deps=$PW_DEPS — 새 push·수동 취소·잡 시간 상한으로 설치 중에 멈췄습니다. 인프라 실패로 세지 않습니다." ;;
+          esac
           for f in /tmp/e2e-run.log /tmp/compose-up.log /tmp/next-build.log; do
             [ -f "$f" ] || continue
             echo "::error title=$(basename $f) 마지막 출력::$(tail -c 2000 "$f" | paste -sd' ' -)"

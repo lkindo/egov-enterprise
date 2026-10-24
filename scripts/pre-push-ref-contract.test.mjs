@@ -13,7 +13,14 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { runInNewContext } from 'node:vm';
+import { frontendSourceContracts } from './frontend-source-contracts.mjs';
 import { GENERATORS } from './merge-main-regenerate.mjs';
+
+// 원문 계약 목록은 탐지기가 계산한다(사본 없음). 훅의 탐지 호출은 스텁이 이 목록을 내도록 해 시험마다 다시 계산하지 않는다.
+const SOURCE_CONTRACT_FILES = frontendSourceContracts().map(({ file }) => file);
+const SOURCE_CONTRACTS_DETECT = 'node scripts/frontend-source-contracts.mjs';
+const SOURCE_CONTRACTS_RUN = `npx vitest run ${SOURCE_CONTRACT_FILES.join(' ')}`;
+const VERIFY_SOURCE_CONTRACTS = `pnpm -C frontend exec vitest run ${SOURCE_CONTRACT_FILES.join(' ')}`;
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const hookPath = path.join(repoRoot, '.githooks', 'pre-push');
@@ -76,6 +83,9 @@ npx() { record_command "npx $*"; }
 test_gradle() { record_command "gradlew $*"; }
 node() {
   case "$1" in
+    scripts/frontend-source-contracts.mjs)
+      record_command "node $*" && printf '%s\\n' "$HOOK_SOURCE_CONTRACTS"
+      ;;
     */scripts/verification-record.mjs)
       if [ "$HOOK_RECORD_FAIL" = "true" ]; then return 1; fi
       if [ "$HOOK_REAL_RECORDS" = "true" ]; then
@@ -118,6 +128,7 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
       HOOK_REAL_RECORDS: String(realRecords),
       HOOK_RECORD_FAIL: String(recordFailure),
       HOOK_RECORD_ROOT: shellPath(fixtureRoot),
+      HOOK_SOURCE_CONTRACTS: SOURCE_CONTRACT_FILES.join('\n'),
     },
   });
 
@@ -229,6 +240,8 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
         commands.push(command);
         zones.push(options?.env?.TZ);
         if (command === failCommand) throw new Error('deliberate verification failure');
+        // 원문 계약 탐지기는 목록을 돌려준다(시험이 한 번 계산한 목록).
+        if (command === SOURCE_CONTRACTS_DETECT) return `${SOURCE_CONTRACT_FILES.join('\n')}\n`;
       },
       platform: () => 'linux',
       randomBytes: () => ({ toString: () => 'fixture-only' }),
@@ -276,8 +289,8 @@ test('verify defaults to KST and lets an explicit TZ reproduce the UTC CI runner
 test('verification profiles execute the full required Vitest population exactly once', () => {
   const expected = {
     docs: [atlasCommand],
-    fast: ['pnpm -C frontend exec vitest run src/__tests__'],
-    push: ['pnpm -C frontend exec vitest run src/__tests__'],
+    fast: ['pnpm -C frontend exec vitest run src/__tests__', VERIFY_SOURCE_CONTRACTS],
+    push: ['pnpm -C frontend exec vitest run src/__tests__', VERIFY_SOURCE_CONTRACTS],
     be: [crossStackCommand],
     fe: ['pnpm -C frontend run test:coverage'],
     full: ['pnpm -C frontend run test:coverage'],
@@ -291,7 +304,22 @@ test('verification profiles execute the full required Vitest population exactly 
       assert.deepEqual(observeVerification(scope, { failCommand }).exits, [1], `${scope} must propagate ${failCommand} failure`);
     }
   }
+  // 원문 계약 탐지가 실패하면(0건 포함) 건너뛰지 않고 멈춘다 — 삼키면 원문 계약 없이 '검증 통과'로 끝난다.
+  const undetected = source => ['fast', 'push'].map(scope => observeVerification(scope, { source, failCommand: SOURCE_CONTRACTS_DETECT }));
+  for (const failed of undetected()) {
+    assert.deepEqual(failed.exits, [1], 'a failed source-contract detection must stop verification');
+    assert.equal(failed.commands.at(-1), SOURCE_CONTRACTS_DETECT);
+    assert.ok(!failed.commands.includes(VERIFY_SOURCE_CONTRACTS));
+  }
   const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  // 탐지 실패를 삼키는 변이는 위 단언에서 붉다(red 재현) — 성공 경로의 명령 목록은 그대로라 다른 단언은 못 잡는다.
+  const detection = "  const list = execSync('node scripts/frontend-source-contracts.mjs', {";
+  assert.ok(runner.includes(detection));
+  const swallowedDetection = runner.replace(detection, `  let list = '';\n  try { list = execSync('node scripts/frontend-source-contracts.mjs', {`)
+    .replace("  }).trim().split(/\\r?\\n/).join(' ');\n", "  }).trim().split(/\\r?\\n/).join(' '); } catch { return; }\n")
+    .replace("  }).trim().split(/\\r?\\n/).join(' ');\r\n", "  }).trim().split(/\\r?\\n/).join(' '); } catch { return; }\r\n");
+  assert.notEqual(swallowedDetection, runner);
+  assert.ok(undetected(swallowedDetection).every(failed => failed.exits.length === 0), 'the swallowed-detection mutant must pass silently');
   const missingCoverage = runner.replace("run('pnpm -C frontend run test:coverage');", '');
   assert.notEqual(missingCoverage, runner);
   assert.deepEqual(observeVerification('full', { source: missingCoverage }).commands.filter(command => /vitest|test:coverage/.test(command)), [],
@@ -302,10 +330,12 @@ test('verification profiles execute the full required Vitest population exactly 
 //   운영 계약(로컬 약 11분)보다 먼저 돈다. full·be 의 Java 컴파일은 backend 전수 lane(gradle 한 줄) 안에서 계약 뒤에 돌고,
 //   be·docs 는 계약이 먼저다. 운영 계약은 그것을 부르는 범위에서 한 번 돌고 ops·migration 은 부르지 않는다.
 //   명령 집합과 인자는 그대로이고 순서만 바뀐다 — 성공하면 모두 실행되고, 정적 검사가 실패하면 계약을 기다리지 않는다.
+// [2026-10-24] 생성물 신선도(npm run regen -- --check)는 pre-push 문서·소스 두 경로와, 운영 계약을 부르는 verify 범위의 맨 앞이다
+//   (fast·push·full 은 CodeQL 근사 다음) — 운영 계약이 다시 보는 검사를 앞당길 뿐이다. 그 안의 sync-contract 가 계약 codegen 을 보므로
+//   verify 의 정적 검사에서 codegen:verify(:zod)를 다시 돌리지 않는다.
+const REGEN_CHECK = 'npm run regen -- --check';
 const CONTRACTS = 'npm run test:operational-contracts';
 const VERIFY_STATIC = [
-  'pnpm -C frontend run codegen:verify',
-  'pnpm -C frontend run codegen:verify:zod',
   'pnpm -C frontend exec tsc --noEmit',
   'pnpm -C frontend run type-check:e2e',
   'pnpm -C frontend run lint',
@@ -315,7 +345,8 @@ const VERIFY_BACKEND_SUITE = './gradlew compileJava compileTestJava test :api-se
 const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle:check', 'pnpm -C frontend run test:coverage'];
 // [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
 const SAST_APPROXIMATION = 'npm run sast:approx';
-const VERIFY_FAST = [SAST_APPROXIMATION, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS, 'pnpm -C frontend exec vitest run src/__tests__'];
+const VERIFY_FAST = [SAST_APPROXIMATION, REGEN_CHECK, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS,
+  'pnpm -C frontend exec vitest run src/__tests__', SOURCE_CONTRACTS_DETECT, VERIFY_SOURCE_CONTRACTS];
 // 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 폼 census·전체 시험·하네스 → 선별 E2E. 운영 계약은 부르지 않는다.
 const INTEGRATION_PRECHECK = 'node scripts/integration-precheck.mjs';
 const INTEGRATION_FORMS = 'pnpm -C frontend run test:form-validation';
@@ -325,13 +356,13 @@ const VERIFY_INTEGRATE = [INTEGRATION_PRECHECK, 'npm run regen', INTEGRATION_FOR
 
 test('verify profiles run static checks before the operational contracts and stop on their failure', () => {
   const expected = {
-    docs: [CONTRACTS, atlasCommand],
+    docs: [REGEN_CHECK, CONTRACTS, atlasCommand],
     fast: VERIFY_FAST,
     push: [...VERIFY_FAST, './gradlew :api-server:harnessTest -Dfile.encoding=UTF-8'],
-    be: [CONTRACTS, VERIFY_BACKEND_SUITE, crossStackCommand],
-    fe: [...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
-    full: [SAST_APPROXIMATION, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
-    e2e: ['pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
+    be: [REGEN_CHECK, CONTRACTS, VERIFY_BACKEND_SUITE, crossStackCommand],
+    fe: [REGEN_CHECK, ...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
+    full: [SAST_APPROXIMATION, REGEN_CHECK, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
+    e2e: [REGEN_CHECK, 'pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
     integrate: VERIFY_INTEGRATE,
   };
   for (const [scope, commands] of Object.entries(expected)) {
@@ -363,8 +394,8 @@ test('verify profiles run static checks before the operational contracts and sto
   }
   // 계약을 정적 검사 앞으로 되돌리면 타입 오류에서도 계약을 먼저 기다린다 — 위 단언이 그것을 잡는다(red 재현).
   const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
-  const contractsFirst = runner.replace("  } else if (scope === 'fe') {\n    runFrontendStatic();\n    runOperationalContracts();\n",
-    "  } else if (scope === 'fe') {\n    runOperationalContracts();\n    runFrontendStatic();\n");
+  const contractsFirst = runner.replace("  } else if (scope === 'fe') {\n    runGeneratedFreshness();\n    runFrontendStatic();\n    runOperationalContracts();\n",
+    "  } else if (scope === 'fe') {\n    runGeneratedFreshness();\n    runOperationalContracts();\n    runFrontendStatic();\n");
   assert.notEqual(contractsFirst, runner);
   assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
 });
@@ -386,6 +417,44 @@ test('verify stops on a CodeQL approximation finding first and on a Flyway confl
     "    run('npm run regen');\n    run('node scripts/integration-precheck.mjs');\n");
   assert.notEqual(regenFirst, runner);
   assert.deepEqual(observeVerification('integrate', { source: regenFirst, failCommand: INTEGRATION_PRECHECK }).commands, ['npm run regen', INTEGRATION_PRECHECK]);
+});
+
+// [2026-10-24] 운영 계약(로컬 약 11분)을 부르는 범위는 생성물 신선도(약 20초)를 그보다 먼저 정확히 한 번 본다.
+//   verify:docs 가 11분 뒤에야 Atlas 신선도 실패를 알린 일이 있었다. 계약 codegen 은 그 안의 sync-contract 가 맡는다.
+function freshnessViolation(scope, source) {
+  const { commands } = observeVerification(scope, { source });
+  const position = commands.indexOf(REGEN_CHECK);
+  if (commands.filter(command => command === REGEN_CHECK).length !== 1) return `${scope}: generated freshness must run exactly once`;
+  if (position !== (['fast', 'push', 'full'].includes(scope) ? 1 : 0)) return `${scope}: generated freshness must lead (after the CodeQL approximation)`;
+  if (!(position < commands.indexOf(CONTRACTS))) return `${scope}: generated freshness must run before the operational contracts`;
+  if (commands.some(command => /codegen:verify/.test(command))) return `${scope}: the regen check owns contract drift`;
+  return null;
+}
+
+test('verify checks generated freshness before the operational contracts in every contract scope', () => {
+  for (const scope of ['docs', 'fast', 'push', 'be', 'fe', 'full', 'e2e']) {
+    assert.equal(freshnessViolation(scope), null);
+    const failed = observeVerification(scope, { failCommand: REGEN_CHECK });
+    assert.deepEqual(failed.exits, [1], scope);
+    assert.equal(failed.commands.at(-1), REGEN_CHECK, scope);
+    assert.ok(!failed.commands.includes(CONTRACTS), `${scope}: a stale artifact must not wait for the operational contracts`);
+  }
+  for (const scope of ['integrate', 'ops', 'migration']) assert.ok(!observeVerification(scope).commands.includes(REGEN_CHECK), scope);
+  const events = [];
+  observeVerification('docs', { recordEvents: events });
+  assert.deepEqual(events.filter(event => event.event === 'step-start').map(event => event.id), ['generated-freshness', 'operational-contracts', 'atlas']);
+  // 호출을 걷거나, 계약 뒤로 옮기거나, 프런트 codegen 중복을 되살리면 위 판정이 붉다(red 재현).
+  const runner = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  for (const [scope, from, to, message] of [
+    ['docs', 'function runDocumentationContracts() {\n  runGeneratedFreshness();\n', 'function runDocumentationContracts() {\n', /exactly once/],
+    ['be', "  } else if (scope === 'be') {\n    runGeneratedFreshness();\n    runOperationalContracts();\n",
+      "  } else if (scope === 'be') {\n    runOperationalContracts();\n    runGeneratedFreshness();\n", /must lead/],
+    ['fe', "function runFrontendStatic() {\n", "function runFrontendStatic() {\n  run('pnpm -C frontend run codegen:verify');\n", /owns contract drift/],
+  ]) {
+    const mutated = runner.replace(from, to);
+    assert.notEqual(mutated, runner, scope);
+    assert.match(freshnessViolation(scope, mutated) ?? '', message, scope);
+  }
 });
 
 test('integration runs the form census and full harness before selected E2E, and propagates their failures', () => {
@@ -471,8 +540,6 @@ test('pre-push emits real stage and run outcomes, including failures before late
     ['generated-freshness', 'operational-contracts']), 'disconnecting the recorder is red without changing the original command result');
 });
 
-// 생성물 신선도(npm run regen -- --check)는 문서·소스 두 경로 모두 맨 앞이다 — 운영 계약이 다시 보는 검사를 앞당길 뿐이다.
-const REGEN_CHECK = 'npm run regen -- --check';
 // [2026-10-20] 소스 경로는 생성물 신선도 다음에 CodeQL 근사를 push 가 바꾼 파일에만 돈다(문서 전용 경로에는 JS·TS 가 없다).
 const SAST_APPROXIMATION_HOOK = 'npm run sast:approx -- --stdin';
 const PRE_PUSH_SOURCE_ORDER = [
@@ -485,6 +552,8 @@ const PRE_PUSH_SOURCE_ORDER = [
   'pnpm run test:form-validation',
   CONTRACTS,
   'npx vitest run src/__tests__',
+  SOURCE_CONTRACTS_DETECT,
+  SOURCE_CONTRACTS_RUN,
   'gradlew :api-server:harnessTest -q',
 ];
 
@@ -591,6 +660,39 @@ test('pre-push blocks the push when the operational contracts fail on the docume
   assert.ok(blocks(swallowed).every(({ status }) => status === 0));
 });
 
+// [2026-10-24] src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험(원문 계약)은 CI 전체 vitest 에서만 돌아, 그 원문을 바꾸면 CI 에서야
+//   붉었다(PR #626·2026-09-16 layout.tsx·PR #969). 프런트 축 push 는 탐지기가 계산한 목록을 불변식 다음에 돌고, 실패·탐지 실패는 막는다.
+test('pre-push runs the file-reading contracts outside src/__tests__ on frontend pushes and blocks on their failure', () => {
+  const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
+  const frontend = ['frontend/src/app/page.tsx'];
+  const ran = runHook(input, hookSource, { files: frontend });
+  assertSuccessful(ran);
+  const after = ran.commands.slice(ran.commands.indexOf('npx vitest run src/__tests__'));
+  assert.deepEqual(after.slice(0, 3), ['npx vitest run src/__tests__', SOURCE_CONTRACTS_DETECT, SOURCE_CONTRACTS_RUN]);
+  for (const file of ['src/app/components/layout/__tests__/shell-accessibility-contract.test.ts', 'src/app/__tests__/dashboard-auth-error.test.tsx']) {
+    assert.ok(SOURCE_CONTRACT_FILES.includes(file), file);
+  }
+  for (const files of [['docs/README.md'], ['api-server/src/main/java/nuri/api/Example.java']]) {
+    const commands = runHook(input, hookSource, { files }).commands;
+    assert.ok(!commands.includes(SOURCE_CONTRACTS_DETECT) && !commands.includes(SOURCE_CONTRACTS_RUN), files.join(', '));
+  }
+  const failed = runHook(input, hookSource, { files: frontend, failCommand: SOURCE_CONTRACTS_RUN });
+  assert.notEqual(failed.status, 0);
+  assert.equal(failed.commands.at(-1), SOURCE_CONTRACTS_RUN);
+  assert.match(failed.stdout, /원문 계약 실패/u);
+  const undetected = runHook(input, hookSource, { files: frontend, failCommand: SOURCE_CONTRACTS_DETECT });
+  assert.notEqual(undetected.status, 0);
+  assert.ok(!undetected.commands.includes(SOURCE_CONTRACTS_RUN), '탐지 실패는 빈 목록으로 넘어가지 않고 막는다');
+  assert.match(undetected.stdout, /원문 계약 목록을 계산하지 못했습니다/u);
+  // 실패 처리에서 exit 1 을 걷거나 목록을 고정 사본으로 바꾸면 위 단언이 붉다(red 재현).
+  const swallowed = hookSource.replace('(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; exit 1; }', '(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; }');
+  assert.notEqual(swallowed, hookSource);
+  assert.equal(runHook(input, swallowed, { files: frontend, failCommand: SOURCE_CONTRACTS_RUN }).status, 0);
+  const pinned = hookSource.replace('FRONTEND_SOURCE_CONTRACTS=$(node scripts/frontend-source-contracts.mjs)', 'FRONTEND_SOURCE_CONTRACTS="src/app/login/__tests__/page.test.tsx"');
+  assert.notEqual(pinned, hookSource);
+  assert.ok(!runHook(input, pinned, { files: frontend }).commands.includes(SOURCE_CONTRACTS_RUN));
+});
+
 test('pre-push selects one Atlas owner and keeps its failure blocking in every scope', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const atlas = 'frontend/public/governance_harness_atlas.html';
@@ -605,7 +707,7 @@ test('pre-push selects one Atlas owner and keeps its failure blocking in every s
   for (const { files, command } of cases) {
     const result = runHook(input, hookSource, { files });
     assertSuccessful(result);
-    assert.deepEqual(result.commands.filter(value => value.includes('vitest')), [command], files.join(', '));
+    assert.deepEqual(result.commands.filter(value => value.includes('vitest') && value !== SOURCE_CONTRACTS_RUN), [command], files.join(', '));
     assert.equal(result.commands.filter(value => value === 'npm run test:operational-contracts').length, 1);
     assert.notEqual(runHook(input, hookSource, { files, failCommand: command }).status, 0,
       `${command} failure must block the push`);

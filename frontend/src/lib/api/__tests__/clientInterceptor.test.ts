@@ -260,6 +260,47 @@ describe('API 클라이언트 인터셉터', () => {
       expect(win.location.href).toContain('/login?expired=true');
     });
 
+    // [2026-10-24] 추가 인증 등록 시작은 일반 세션을 폐기한다. 그 전에 나간 조회의 401 이 재발급 실패로 이어져도, 기다리는 사이
+    //   로그아웃·등록으로 넘어갔으면 세션 만료가 아니므로 등록 화면을 지킨다(run 40054825686 의 MFA flaky).
+    it('재발급을 기다리는 사이 로그아웃·추가 인증 등록으로 넘어가면 만료 화면으로 보내지 않는다', async () => {
+      // 'pending' 은 등록 응답보다 재발급 실패가 먼저 끝나는 순서다 — 아직 서명 해제도 세대 변경도 없고 진행 중 표지만 있다.
+      for (const transition of ['signed-out', 'epoch', 'pending'] as const) {
+        const win = { location: { pathname: '/', href: '' }, dispatchEvent: vi.fn() };
+        Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
+        const { instance, captured } = await loadClient();
+        const state = await import('@/lib/auth/authorization-state');
+        let rejectReissue!: (error: Error) => void;
+        instance.post.mockReturnValueOnce(new Promise((_, reject) => { rejectReissue = reject; }));
+        const pending = captured.responseErr!({ response: { status: 401 }, config: { url: '/x', _authorizationEpoch: state.getAuthorizationRequestEpoch() } });
+        await Promise.resolve();
+        let endTransition = () => {};
+        if (transition === 'signed-out') state.markSignedOut();
+        else if (transition === 'epoch') state.advanceAuthorizationRequestEpoch();
+        else endTransition = state.beginSessionTransition();
+        rejectReissue(new Error('reissue 401'));
+        try {
+          await expect(pending).rejects.toMatchObject({ name: 'CanceledError' });
+          expect(win.location.href, transition).toBe('');
+        } finally {
+          state.markSignedIn();
+          endTransition();
+        }
+      }
+    });
+
+    // 위 판정의 대조: 브라우저 요청은 늘 세대를 싣는다. 전이가 없으면 진짜 만료라 그대로 로그인으로 보낸다 — 판정이 넓어지면 붉다.
+    it('세대를 실은 요청이라도 전이 없이 재발급이 실패하면 만료 화면으로 보낸다', async () => {
+      const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
+      Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
+      const { instance, captured } = await loadClient();
+      const config = await captured.requestOk!({ url: '/x', headers: {} }) as { _authorizationEpoch?: number };
+      expect(config._authorizationEpoch).toEqual(expect.any(Number));
+      instance.post.mockRejectedValueOnce(new Error('reissue 401'));
+      const error = await captured.responseErr!({ response: { status: 401 }, config }).catch((reason: unknown) => reason);
+      expect((error as Error).name).not.toBe('CanceledError');
+      expect(win.location.href).toContain('/login?expired=true');
+    });
+
     it('재발급 자체가 실패해도 로그인으로 보낸다', async () => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });

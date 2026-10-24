@@ -2,6 +2,7 @@ import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { MfaSettings } from '../MfaSettings';
 import { mfaService } from '@/services/foundation/auth/mfaService';
+import { isSessionTransitionPending } from '@/lib/auth/authorization-state';
 
 vi.mock('@/services/foundation/auth/mfaService', () => ({ mfaService: {
   status: vi.fn(), start: vi.fn(), reauthenticate: vi.fn(), regenerate: vi.fn(), disable: vi.fn(), recoverAccount: vi.fn(),
@@ -27,6 +28,28 @@ describe('MFA account management', () => {
     auth.logout.mockReturnValueOnce(new Promise<void>(() => {}));
     fireEvent.click(screen.getByRole('button', { name: '취소하고 다시 로그인' }));
     expect(auth.logout).toHaveBeenCalledOnce();
+  });
+
+  // 등록 시작 요청 동안에만 세션 전환 표지가 선다 — 그 사이 다른 조회의 재발급 실패가 등록 화면을 만료 로그인으로 덮지 않게 한다.
+  it('marks the session transition only while the enrollment start request is pending, on success and on failure', async () => {
+    vi.mocked(mfaService.status).mockResolvedValue({ enabled: false, required: false, available: true, recoveryCodesRemaining: 0 });
+    for (const outcome of ['resolve', 'reject'] as const) {
+      let settle!: { resolve: (value: Awaited<ReturnType<typeof mfaService.start>>) => void; reject: (error: Error) => void };
+      vi.mocked(mfaService.start).mockReturnValueOnce(new Promise((resolve, reject) => { settle = { resolve, reject }; }));
+      const view = render(<MfaSettings />);
+      fireEvent.change(await screen.findByLabelText('현재 비밀번호'), { target: { value: 'test-password' } });
+      expect(isSessionTransitionPending()).toBe(false);
+      fireEvent.click(screen.getByRole('button', { name: '인증앱 등록' }));
+      await waitFor(() => expect(mfaService.start).toHaveBeenCalled());
+      expect(isSessionTransitionPending(), outcome).toBe(true);
+      await act(async () => {
+        if (outcome === 'resolve') settle.resolve({ secret: 'FIXTURE-KEY', otpauthUri: 'otpauth://totp/fixture', expiresAt: '2026-12-31T00:00:00Z' });
+        else settle.reject(new Error('wrong password'));
+      });
+      expect(isSessionTransitionPending(), outcome).toBe(false);
+      view.unmount();
+      vi.mocked(mfaService.start).mockClear();
+    }
   });
 
   it('does not offer disabling for a protected account or recovery approval without permission', async () => {

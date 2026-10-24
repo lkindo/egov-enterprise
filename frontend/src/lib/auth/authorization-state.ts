@@ -68,6 +68,29 @@ export function isSignedOut(): boolean {
   return typeof window !== 'undefined' && signedOut;
 }
 
+/*
+ * [2026-10-24] 일반 세션을 스스로 폐기하는 요청(추가 인증 등록 시작)이 진행 중인 동안의 표지. 서버는 그 요청을 처리하는 순간 세션을
+ * 폐기하므로, 응답이 오기 전에 다른 조회가 401 을 받고 재발급까지 실패할 수 있다 — 그 실패는 세션 만료가 아니다. 인터셉터는 이 표지가
+ * 있으면 만료 화면으로 보내지 않는다(PR #972 의 MFA flaky). 요청이 끝나면(성공·실패 모두) 표지를 걷는다.
+ */
+let sessionTransitions = 0;
+
+/** 표지를 세우고, 걷는 함수를 돌려준다. 두 번 불러도 한 번만 걷는다. */
+export function beginSessionTransition(): () => void {
+  if (typeof window === 'undefined') return () => {};
+  sessionTransitions += 1;
+  let ended = false;
+  return () => {
+    if (ended) return;
+    ended = true;
+    sessionTransitions -= 1;
+  };
+}
+
+export function isSessionTransitionPending(): boolean {
+  return typeof window !== 'undefined' && sessionTransitions > 0;
+}
+
 export function assertRequestAllowedWhileSignedOut(url: string | undefined): void {
   if (!isSignedOut() || SIGNED_OUT_ALLOWED_URL.test(url ?? '')) return;
   const error = new Error('로그아웃한 뒤의 요청이라 보내지 않았습니다.');

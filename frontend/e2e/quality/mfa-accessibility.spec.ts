@@ -42,12 +42,30 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
         expect(created.status(), '격리된 MFA 사용자 생성').toBe(201);
         const actor = await actorPage({ storageState: { cookies: [], origins: [] } });
         const { page, context, guard } = actor;
+        const specScope = 'mfa-accessibility.spec.ts :: 선택 등록부터 추가 인증 로그인까지 제한 쿠키·키보드·오류 초점을 검증한다';
         guard.expectErrors([{
             id: 'E2E-MFA-LOGIN-ME-401',
-            specScope: 'mfa-accessibility.spec.ts :: 선택 등록부터 추가 인증 로그인까지 제한 쿠키·키보드·오류 초점을 검증한다',
+            specScope,
             channel: 'response', urlPattern: /\/api\/v1\/auth\/me(?:\?|$)/,
             messagePattern: null, method: 'GET', status: 401, minOccurrences: 1, maxOccurrences: 4,
             reason: '최초 비로그인 진입과 명시적 로그아웃 뒤의 세션 확인이다.', expiresAt: '2026-12-31',
+        }, {
+            // 등록 시작은 일반 세션을 폐기한다. 업무 홈 카드·머리글 조회는 첫 화면 뒤 늦게 시작해(실측 약 0.7초 뒤) 등록 시작과 겹칠 수
+            //   있고, 그때 응답 전이던 조회는 401 을 받는다 — 피할 수 없는 정상 결과다(run 40054825686·40064558263, 느린 CI 에서만 겹쳤다).
+            //   앱은 그 401 을 세션 만료로 다루지 않는다(lib/api/client.ts) — 아래 '등록 모달을 제거하지 않는다' 단언이 그 동작을 본다.
+            id: 'E2E-MFA-ENROLLMENT-REVOKED-QUERY-401',
+            specScope,
+            channel: 'response',
+            urlPattern: /\/api\/v1\/(?:notes\/received\/unread-count|memo-reports\/received|schedules\/monthly|surveys|dept-jobs|notifications(?:\/unread-count)?|menus\/bookmarks)(?:\?|$)/,
+            messagePattern: null, method: 'GET', status: 401, minOccurrences: 0, maxOccurrences: 10,
+            reason: '등록 시작이 일반 세션을 폐기할 때 응답 전이던 업무 홈 카드·머리글 조회다.', expiresAt: '2026-12-31',
+        }, {
+            // 위 조회의 401 이 등록 응답보다 먼저 오면 인터셉터가 재발급을 한 번 시도하고, 폐기된 세션이라 401 이다.
+            id: 'E2E-MFA-ENROLLMENT-REVOKED-REISSUE-401',
+            specScope,
+            channel: 'response', urlPattern: /\/api\/auth\/reissue(?:\?|$)/,
+            messagePattern: null, method: 'POST', status: 401, minOccurrences: 0, maxOccurrences: 1,
+            reason: '등록 시작 전 조회의 401 이 부른 재발급이 폐기된 세션이라 거절된 것이다.', expiresAt: '2026-12-31',
         }]);
         // A failed secret-bearing fill must not copy its value into an assertion/call log.
         const fillSecret = async (label: string, value: string) => {
