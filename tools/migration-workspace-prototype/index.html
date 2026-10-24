@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'none'; base-uri 'none'; form-action 'none'">
+  <title>이관 작업공간 · eGov Enterprise 시뮬레이션</title>
+  <link rel="stylesheet" href="./styles.css">
+  <script src="./app.js" defer></script>
+</head>
+<body class="bg-canvas font-sans text-ink antialiased">
+  <a href="#main" class="skip-link">본문으로 이동</a>
+  <div class="app-shell">
+    <aside class="sidebar">
+      <a class="brand" href="#terms"><span class="brand-symbol" aria-hidden="true">e</span><span>eGov <strong>Enterprise</strong></span></a>
+      <div class="workspace-label">도입 도구 / 독립 작업공간</div>
+      <div class="project-card"><span class="eyebrow">MIGRATION WORKSPACE</span><strong>새로운 시작, 데이터 이관</strong><span class="text-sm text-sidebar-muted">레거시 행정 포털 → 표준 프로젝트</span><span id="lifecycle" class="pill dark-pill">검토 중 · 합성 시나리오</span></div>
+      <nav id="steps" aria-label="이관 단계"></nav>
+      <div class="sidebar-bottom"><span class="small-dot" aria-hidden="true"></span> 이관 후 읽기 전용 보관<p>최종 전환은 한 번,<br>검토와 리허설은 충분히.</p></div>
+    </aside>
+    <div class="min-w-0">
+      <header class="topbar"><div class="flex flex-wrap items-center gap-3"><span class="text-muted">프로젝트 도입</span><span class="text-muted" aria-hidden="true">/</span><strong>데이터 이관</strong><span class="pill info">화면 시뮬레이션</span></div><div class="flex gap-2"><button class="button quiet" data-action="reset">예시 초기화</button><button class="button" data-action="export">검토 예시 내보내기 <span aria-hidden="true">↗</span></button></div></header>
+      <div class="demo-notice"><span class="font-semibold">DEMO</span> 모든 데이터·표준 후보·파일 근거는 합성 예시입니다. 실제 DB 연결·파일 업로드·적재는 수행하지 않습니다. 새로고침하면 초기화됩니다.</div>
+      <main id="main" tabindex="-1"></main>
+      <footer class="page-footer"><span>eGov Enterprise · 초기 이관 도구 제안</span><span>기존 CLI 재사용 / 업무 서비스와 분리 / 원장은 파일로 관리</span></footer>
+    </div>
+  </div>
+  <div id="notice" class="toast" role="status" aria-live="polite" hidden></div>
+  <dialog id="confirm-dialog" aria-labelledby="dialog-title"><div class="dialog-body"><span class="eyebrow">SIMULATION ONLY</span><h2 id="dialog-title">예시를 초기화할까요?</h2><p id="dialog-description" class="text-muted"></p><div class="mt-6 flex justify-end gap-3"><button class="button" data-action="cancel-dialog">취소</button><button class="button primary" id="dialog-accept">초기화</button></div></div></dialog>
+  <noscript>이 화면의 시뮬레이션에는 JavaScript가 필요합니다. 설계 설명은 docs/01-product/migration-workspace-design.md에서 확인할 수 있습니다.</noscript>
+</body>
+</html>
