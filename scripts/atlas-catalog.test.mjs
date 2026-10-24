@@ -5,6 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, test } from 'node:test';
 import { buildAtlasCatalog, parseAtlasWorkflow, classifyConstitutionEnforcement } from './atlas-catalog.mjs';
+import { ALL_DECISION_INDEXES, CURRENT_DECISION_INDEX, DECISION_AREA_INDEXES, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const baseline = buildAtlasCatalog(repo);
@@ -68,7 +69,7 @@ test('catalog is deterministic and covers source-owned modules, articles, gates 
   assert.equal(baseline.catalogs.modules.filter(module => module.id !== 'frontend').length,
     [...fs.readFileSync(path.join(repo, 'settings.gradle'), 'utf8').matchAll(/^include\s+/gm)].length);
   assert.equal(baseline.catalogs.decisions.length,
-    ['.agent/memory/decisions.md', 'docs/archived/operational-decisions-index-historical.md']
+    ALL_DECISION_INDEXES
       .map(file => [...fs.readFileSync(path.join(repo, file), 'utf8').matchAll(/^\| (?:ADR-\d{4}|DEC-OPS-\d{3}) \|/gm)].length)
       .reduce((sum, count) => sum + count, 0));
   assert.ok(baseline.catalogs.constitutions.every(article => article.details.some(item => item.label === '조문 원문' && item.value.length > 0)));
@@ -124,13 +125,16 @@ test('compact decision indexes preserve every archived decision body and rationa
   const history = fs.readFileSync(path.join(repo, source), 'utf8');
   const rows = [...history.matchAll(/^\| DEC-OPS-\d{3} \|.*$/gm)];
   assert.ok(rows.length > 0);
-  const historicalIds = new Set([...fs.readFileSync(path.join(repo, 'docs/archived/operational-decisions-index-historical.md'), 'utf8')
-    .matchAll(/^\| (DEC-OPS-\d{3}) \|/gm)].map(match => match[1]));
-  assert.ok(historicalIds.size > 0, 'the historical index must hold the moved decisions');
+  // 각 결정은 그 ID 를 가진 색인(공용·영역·역사) 하나에서 온다.
+  const indexOf = new Map(ALL_DECISION_INDEXES.flatMap(file => [...fs.readFileSync(path.join(repo, file), 'utf8')
+    .matchAll(/^\| (DEC-OPS-\d{3}) \|/gm)].map(match => [match[1], file])));
+  for (const file of [HISTORICAL_DECISION_INDEX, ...DECISION_AREA_INDEXES.map(({ path: areaPath }) => areaPath)]) {
+    assert.ok([...indexOf.values()].includes(file), `${file} must hold the moved decisions`);
+  }
   for (const [row] of rows) {
     const cells = row.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/).map(cell => cell.trim());
     const actual = baseline.catalogs.decisions.find(item => item.id === cells[0]);
-    assert.equal(actual.source, historicalIds.has(cells[0]) ? 'docs/archived/operational-decisions-index-historical.md' : '.agent/memory/decisions.md');
+    assert.equal(actual.source, indexOf.get(cells[0]));
     assert.equal(actual.status, cells[1]);
     assert.equal(actual.supersedes, cells[6]);
     assert.equal(actual.details.find(item => item.label === '결정 원문').value, cells[2]);
@@ -203,18 +207,20 @@ test('operational decision rows take their archive anchor from the ID and keep f
       assert.throws(() => buildAtlasCatalog(fixture), /DEC-OPS-001 decision index row requires five columns/, label);
     });
   }
+  // ADR 행도 5열이다 — 걷은 이유·정본 열을 되돌리면 붉다(DEC-OPS-381).
   mutate(memory, text => {
-    const mutated = text.replace(/^(\| ADR-0001 \| accepted \| [^|]+ \| )[^|]+ \| /m, '$1');
+    const mutated = text.replace(/^(\| ADR-0001 \| accepted \| [^|]+ \| )/m,
+      '$1probe reason | [ADR-0001](../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md) | ');
     assert.notEqual(mutated, text);
     return mutated;
   }, () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 decision index row requires seven columns/);
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 decision index row requires five columns/);
   });
 });
 
-test('current and historical decision indexes partition every archived decision exactly once', () => {
-  const memory = '.agent/memory/decisions.md';
-  const historical = 'docs/archived/operational-decisions-index-historical.md';
+test('current, area and historical decision indexes partition every archived decision exactly once', () => {
+  const memory = CURRENT_DECISION_INDEX;
+  const historical = HISTORICAL_DECISION_INDEX;
   const historicalText = fs.readFileSync(path.join(repo, historical), 'utf8');
   const row = historicalText.split(/\r?\n/).find(line => /^\| DEC-OPS-\d{3} \|/.test(line));
   assert.ok(row, 'the historical index must hold at least one decision');
@@ -231,11 +237,11 @@ test('current and historical decision indexes partition every archived decision 
   };
   // 누락: 역사 색인에서 행 하나를 빼면 어느 색인에도 없다.
   mutate(historical, withRow(historical, text => text.replace(new RegExp(`^\\| ${id} \\|.*\\r?\\n`, 'm'), '')), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} archived decision is missing from both decision indexes`));
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} archived decision is missing from every decision index`));
   });
   // 중복: 같은 결정을 현재 색인에도 두면 두 번 색인된다.
   mutate(memory, withRow(memory, text => text.replace(/^(\| DEC-OPS-001 \|.*)$/m, `$1\n| ${cells.slice(0, 5).join(' | ')} |`)), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} is indexed more than once across the current and historical decision indexes`));
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} is indexed more than once across the decision indexes`));
   });
   // 상태 불일치: 역사 색인 행도 보관 원문과 상태·시행일·supersedes 가 같아야 한다.
   for (const index of [1, 3, 4]) {
@@ -253,9 +259,33 @@ test('current and historical decision indexes partition every archived decision 
   mutate(historical, withRow(historical, text => `${text}| ADR-0001 | accepted | probe | 2026-08-15 | - | 대체됨 | probe |\n`), () => {
     assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 historical decision index accepts only operational decisions/);
   });
+  // 영역 색인도 같은 분할에 든다(DEC-OPS-381): 행 하나를 빼면 누락, 공용 색인에도 두면 중복, 원문과 다르면 불일치다.
+  const { label: areaLabel, path: area } = DECISION_AREA_INDEXES[0];
+  const areaRow = fs.readFileSync(path.join(repo, area), 'utf8').split(/\r?\n/).find(line => /^\| DEC-OPS-\d{3} \|/.test(line));
+  assert.ok(areaRow, 'the first area index must hold at least one decision');
+  const areaId = areaRow.match(/^\| (DEC-OPS-\d{3}) \|/)[1];
+  const areaCells = areaRow.replace(/^\|\s*|\s*\|$/g, '').split(/\s+\|\s+/);
+  const areaRecord = baseline.catalogs.decisions.find(item => item.id === areaId);
+  assert.equal(areaRecord.source, area);
+  assert.ok(areaRecord.details.some(item => item.label === '결정 영역' && item.value === areaLabel));
+  mutate(area, withRow(area, text => text.replace(new RegExp(`^\\| ${areaId} \\|.*\\r?\\n`, 'm'), '')), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${areaId} archived decision is missing from every decision index`));
+  });
+  mutate(memory, withRow(memory, text => text.replace(/^(\| DEC-OPS-001 \|.*)$/m, `$1\n${areaRow}`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${areaId} is indexed more than once across the decision indexes`));
+  });
+  mutate(area, withRow(area, text => text.replace(areaRow, `| ${areaCells.map((cell, at) => at === 1 ? 'drifted-probe' : cell).join(' | ')} |`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${areaId} decision history status/date/supersedes differs from index`));
+  });
+  mutate(area, withRow(area, text => text.replace(areaRow, `| ${[...areaCells, 'extra'].join(' | ')} |`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${areaId} decision index row requires five columns`));
+  });
+  mutate(area, withRow(area, text => `${text}| ADR-0001 | accepted | probe | 2026-08-15 | - |\n`), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 area decision index accepts only operational decisions/);
+  });
 });
 
-test('only an explicitly linked same-ID Accepted ADR supplies canonical search text', () => {
+test('only the registry\'s same-ID Accepted ADR supplies canonical search text', () => {
   const id = 'ADR-0001';
   const source = 'docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md';
   const record = baseline.catalogs.decisions.find(item => item.id === id);
@@ -274,10 +304,21 @@ test('only an explicitly linked same-ID Accepted ADR supplies canonical search t
     assert.ok(indexed.details.some(item => item.label === 'ADR 선언 상태' && item.value === 'Proposed'));
     assert.equal(indexed.searchText.includes('not-approved-body-probe'), false);
   });
-  mutate('.agent/memory/decisions.md', text => text.replace(
-    '(../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md)',
-    '(../../docs/02-architecture/decisions/ADR-0002-korean-first-frontend.md)'), () => {
+  // ADR 링크의 정본은 ADR 색인이다(DEC-OPS-381): 색인 링크가 다른 ADR 을 가리키거나 행이 없으면 붉다.
+  const registry = 'docs/02-architecture/decisions/README.md';
+  mutate(registry, text => {
+    const mutated = text.replace('[ADR-0001](ADR-0001-core-app-product-boundary.md)', '[ADR-0001](ADR-0002-korean-first-frontend.md)');
+    assert.notEqual(mutated, text);
+    return mutated;
+  }, () => {
     assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 must link exactly one same-ID ADR/);
+  });
+  mutate(registry, text => {
+    const mutated = text.replace(/^\| \[ADR-0001\]\(.*\r?\n/m, '');
+    assert.notEqual(mutated, text);
+    return mutated;
+  }, () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 is missing from the ADR registry/);
   });
   mutate(source, text => text.replace('# ADR-0001:', '# ADR-9999:'), () => {
     assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 canonical ADR heading differs/);

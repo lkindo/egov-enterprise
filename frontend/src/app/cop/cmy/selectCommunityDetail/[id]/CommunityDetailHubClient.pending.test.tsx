@@ -9,6 +9,7 @@ const mocks = vi.hoisted(() => ({
   getMyMembership: vi.fn(),
   toast: vi.fn(),
   invalidateQueries: vi.fn(),
+  cancelQueries: vi.fn(async () => undefined),
   // [2026-09-06 DEC-OPS-043] useQuery 목은 queryKey 로 갈라 답한다 — 상세는 initialData, 내 멤버십은 여기 값.
   membership: undefined as undefined | { cmntySn: number; status: 'NONE' | 'REQUESTED' | 'MEMBER' | 'WITHDRAWN' | 'UNKNOWN'; joinYmd: string | null },
   // [2026-09-08 PD-CMTY-001] 커뮤니티 귀속 게시판.
@@ -45,7 +46,7 @@ vi.mock('@/services/business/user/community/CommunityUserService', () => ({
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@tanstack/react-query', () => ({
-  useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
+  useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries, cancelQueries: mocks.cancelQueries }),
   useQuery: ({ initialData, queryKey, enabled }: { initialData?: unknown; queryKey: unknown[]; enabled?: boolean }) => {
     if (queryKey[0] === 'community-membership') return { data: mocks.membership };
     if (queryKey[0] === 'community-boards') {
@@ -173,8 +174,9 @@ describe('커뮤니티 가입 — 화면은 실제 승인 절차만 말한다', 
     // 아직 승인되지 않은 시점의 안내다 — 신청 직후에 '이용' 을 약속하지 않는다.
     //   (회원이 되면 무엇이 열리는지는 사이드바 안내가 소유한다.)
     expect(said).not.toMatch(/이용/);
-    // 신청 뒤 멤버십 상태를 다시 읽어 버튼을 상태 표시로 바꾼다.
-    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] });
+    // 신청 뒤 멤버십 상태를 다시 읽어 버튼을 상태 표시로 바꾼다 — 진행 중인 조회를 먼저 취소한다(재사용 방지).
+    await waitFor(() => expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] }));
+    expect(mocks.cancelQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] });
   });
 
   it('집행되지 않는 보안 정책을 표방하지 않고 실제 절차를 말한다', () => {
@@ -344,7 +346,8 @@ describe('커뮤니티 탈퇴와 재가입', () => {
 
     fireEvent.click(leave);
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('커뮤니티에서 탈퇴했습니다.', 'success'));
-    expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] });
+    await waitFor(() => expect(mocks.invalidateQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] }));
+    expect(mocks.cancelQueries).toHaveBeenCalledWith({ queryKey: ['community-membership', 9] });
   });
 
   it('회원이 아니면 탈퇴 버튼이 없다', () => {
