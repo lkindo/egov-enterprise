@@ -66,11 +66,12 @@ public final class ${domainCap}Dto {
     }
 
     /** 등록·수정 요청. */
-    public record Request(${sizeAnnotation}$FieldType $FieldName) {
+    // OpenAPI 는 중첩 타입을 단순 이름으로 싣는다 — 도메인마다 고유한 이름이어야 스키마가 서로 덮어쓰지 않는다.
+    public record ${domainCap}Request(${sizeAnnotation}$FieldType $FieldName) {
     }
 
     /** 조회 응답. */
-    public record Response(Long id, $FieldType $FieldName) {
+    public record ${domainCap}Response(Long id, $FieldType $FieldName) {
     }
 }
 "@
@@ -180,18 +181,18 @@ public class ${domainCap}Service {
 
     private final ${domainCap}Repository repository;
 
-    public Page<${domainCap}Dto.Response> getList(Pageable pageable) {
+    public Page<${domainCap}Dto.${domainCap}Response> getList(Pageable pageable) {
         return repository.findAll(pageable).map(this::toDto);
     }
 
-    public ${domainCap}Dto.Response get(Long id) {
+    public ${domainCap}Dto.${domainCap}Response get(Long id) {
         return repository.findById(id)
                 .map(this::toDto)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
     }
 
     @Transactional
-    public Long create(${domainCap}Dto.Request request) {
+    public Long create(${domainCap}Dto.${domainCap}Request request) {
         $domainCap entity = $domainCap.builder()
                 .$FieldName(request.$FieldName())
                 .build();
@@ -199,7 +200,7 @@ public class ${domainCap}Service {
     }
 
     @Transactional
-    public void update(Long id, ${domainCap}Dto.Request request) {
+    public void update(Long id, ${domainCap}Dto.${domainCap}Request request) {
         $domainCap entity = repository.findById(id)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.ENTITY_NOT_FOUND));
         entity.update(request.$FieldName());
@@ -213,8 +214,8 @@ public class ${domainCap}Service {
         repository.deleteById(id);
     }
 
-    private ${domainCap}Dto.Response toDto($domainCap entity) {
-        return new ${domainCap}Dto.Response(entity.getId(), entity.get$fieldCap());
+    private ${domainCap}Dto.${domainCap}Response toDto($domainCap entity) {
+        return new ${domainCap}Dto.${domainCap}Response(entity.getId(), entity.get$fieldCap());
     }
 }
 "@
@@ -272,17 +273,17 @@ public class ${domainCap}ApiController {
     @Operation(summary = "$domainCap 목록 조회")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#getList')")
     @GetMapping
-    public ResponseEntity<ApiResponse<PageResponse<${domainCap}Dto.Response>>> getList(
+    public ResponseEntity<ApiResponse<PageResponse<${domainCap}Dto.${domainCap}Response>>> getList(
             @PageableDefault(size = 10) Pageable pageable) {
         // ADR-0036: page 는 1 기반이고 리졸버가 0 기반 Pageable 로 바꾼다. 범위 검증은 PaginationRequestFilter 몫이다.
-        Page<${domainCap}Dto.Response> page = service.getList(pageable);
+        Page<${domainCap}Dto.${domainCap}Response> page = service.getList(pageable);
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page)));
     }
 
     @Operation(summary = "$domainCap 상세 조회")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#get')")
     @GetMapping("/{id}")
-    public ResponseEntity<ApiResponse<${domainCap}Dto.Response>> get(@PathVariable Long id) {
+    public ResponseEntity<ApiResponse<${domainCap}Dto.${domainCap}Response>> get(@PathVariable Long id) {
         return ResponseEntity.ok(ApiResponse.success(service.get(id)));
     }
 
@@ -290,7 +291,7 @@ public class ${domainCap}ApiController {
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#create')")
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
-    public ResponseEntity<ApiResponse<Long>> create(@Valid @RequestBody ${domainCap}Dto.Request request) {
+    public ResponseEntity<ApiResponse<Long>> create(@Valid @RequestBody ${domainCap}Dto.${domainCap}Request request) {
         // ADR-0036: 자원을 만드는 POST 는 201 과 새 식별자다. ResponseContractLinterTest 의 생성 census 에 등재해야 green 이다.
         return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.created(service.create(request)));
     }
@@ -298,7 +299,7 @@ public class ${domainCap}ApiController {
     @Operation(summary = "$domainCap 수정")
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.$domainLower.${domainCap}ApiController#update')")
     @PutMapping("/{id}")
-    public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @Valid @RequestBody ${domainCap}Dto.Request request) {
+    public ResponseEntity<ApiResponse<Void>> update(@PathVariable Long id, @Valid @RequestBody ${domainCap}Dto.${domainCap}Request request) {
         service.update(id, request);
         return ResponseEntity.ok(ApiResponse.success(null));
     }

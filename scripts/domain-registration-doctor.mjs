@@ -17,11 +17,15 @@
 import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { loadComposerModules } from './composer-modules.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { apiSourceOwner, requiresClosure, sourceOwner, stripComments } from './project-composer-integrations.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATION_DIR = 'api-server/src/main/resources/db/migration';
-const CONTROLLER_DIR = 'api-server/src/main/java/nuri/api/controller/business';
 const CONTROLLER_PREFIX = 'api-server/src/main/java/nuri/api/controller/';
+/** 매핑 애노테이션(그 뒤 애노테이션 줄 포함) 다음 줄의 public 메서드 이름. 선언은 한 줄 안에서만 찾는다. */
+const MAPPED_HANDLER = /@(?:Get|Post|Put|Patch|Delete|Request)Mapping\b[^\n]*\n((?:[ \t]*@[^\n]*\n)*)[ \t]*public\s+[^(\n]*?\s(\w+)\s*\(/gu;
 const HARNESS_DIR = 'api-server/src/test/java/nuri/api/harness';
 /** ResponseContractLinterTest 의 생성형 이름 판정과 같은 동사들(ADR-0036). */
 const CREATION_NAME = /^(?:create|insert|register|upload|send|signup|copy|submit)/u;
@@ -55,13 +59,33 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
   const feature = existsSync(join(root, featurePath)) ? readJson(root, featurePath) : null;
   const migrations = Object.fromEntries(listFiles(root, MIGRATION_DIR, (name) => name.endsWith('.sql'))
     .map((path) => [path, readFileSync(join(root, path), 'utf8')]));
-  const controllers = Object.fromEntries(listFiles(root, `${CONTROLLER_DIR}/${featureId}`, (name) => name.endsWith('.java'))
-    .map((path) => [path, readFileSync(join(root, path), 'utf8')]));
+  // 기능의 컨트롤러는 생성기와 같은 소유 판정으로 고른다(sourceOwner — 지원 파일 선언 → 디렉터리 → 참조 패키지). 그 판정은 생성기
+  // 카탈로그가 있어야 하므로, 카탈로그 적재가 실패하면 그 실패를 등록 지점으로 알리고 디렉터리 규칙(apiSourceOwner)으로만 고른다.
+  let ownerOf;
+  let catalogError = null;
+  try {
+    const catalog = loadProjectComposerCatalog(root);
+    const supportOwners = new Map([...loadComposerModules(root).declarations.supportFiles()].flatMap(([domain, files]) => files.map((file) => [file, domain])));
+    const owner = sourceOwner(supportOwners, catalog.capabilities.map((capability) => capability.id), requiresClosure(catalog.capabilities));
+    ownerOf = (path, source) => owner(path, stripComments(source, { strings: false }));
+  } catch (error) {
+    catalogError = error.message;
+    const featureIds = listFiles(root, 'config/modules', (name) => name.endsWith('.json') && !['_schema.json', 'presets.json'].includes(name))
+      .map((path) => path.split('/').pop().replace(/\.json$/u, ''));
+    ownerOf = (path) => apiSourceOwner(path, featureIds);
+  }
+  const controllers = Object.fromEntries(listFiles(root, CONTROLLER_PREFIX.slice(0, -1), (name) => name.endsWith('.java'))
+    .map((path) => [path, readFileSync(join(root, path), 'utf8')])
+    .filter(([path, source]) => ownerOf(path, source) === featureId));
   const dtoFiles = listFiles(root, `business-app/src/main/java/nuri/business/service/${featureId}/dto`, (name) => name.endsWith('.java'));
-  // 엔티티 모집단 census 는 린터 소스의 기대 개수와 소스의 @Entity 파일 수를 견준다(같은 네 모듈의 생산 Java).
-  const entityFileCount = ['foundation', 'business-core', 'business-app', 'api-server']
+  // 엔티티 모집단 census 는 린터 소스의 기대 개수와 소스의 @Entity 파일 수·고유 @Table 이름 수를 견준다(같은 네 모듈의 생산 Java).
+  const entitySources = ['foundation', 'business-core', 'business-app', 'api-server']
     .flatMap((module) => listFiles(root, `${module}/src/main/java`, (name) => name.endsWith('.java')))
-    .filter((path) => /^\s*@Entity\b/mu.test(readFileSync(join(root, path), 'utf8'))).length;
+    .map((path) => readFileSync(join(root, path), 'utf8'))
+    .filter((source) => /^\s*@Entity\b/mu.test(source));
+  const entityFileCount = entitySources.length;
+  const entityTableCount = new Set(entitySources
+    .map((source) => source.match(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/u)?.[1]?.toLowerCase()).filter(Boolean)).size;
   return {
     featureId,
     featurePath,
@@ -79,6 +103,8 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
     responseContractSource: readFileSync(join(root, `${HARNESS_DIR}/ResponseContractLinterTest.java`), 'utf8'),
     entityLinterSource: readFileSync(join(root, `${HARNESS_DIR}/EntityTableOwnershipLinterTest.java`), 'utf8'),
     entityFileCount,
+    entityTableCount,
+    catalogError,
     // 재사용 생성물은 기대 개수를 하네스 프로필로 투영하므로 소스 상수와 견주지 않는다.
     projectedHarness: existsSync(join(root, 'config/governance/reusable-harness-profile.json')),
   };
@@ -149,8 +175,21 @@ export function evaluateRegistration(inputs) {
   }
 
   const boundHandlers = new Set((inputs.authorizationPolicies.operationBindings ?? []).map((binding) => binding.handler));
+  if (inputs.catalogError) {
+    points.push(point(KINDS.HUMAN, 'composer-catalog', 'config/modules/', 'missing',
+      `생성기 카탈로그를 적재하지 못했다 — ${inputs.catalogError.slice(0, 300)}. 컨트롤러 귀속은 디렉터리 규칙으로만 봤다.`));
+  }
+  if (Object.keys(inputs.controllers).length === 0 && !feature.backend?.frontendOnly) {
+    points.push(point(KINDS.HUMAN, 'controllers', CONTROLLER_PREFIX, 'review',
+      `이 기능에 귀속되는 컨트롤러가 없다 — 컨트롤러는 api-server 의 ${featureId} 디렉터리 아래에 둔다(생성기 소유 규칙). 의도한 구성인지 확인한다.`));
+  }
   for (const [path, source] of Object.entries(inputs.controllers)) {
-    const handlers = [...source.matchAll(/@permissionPolicy\.allowed\(authentication, '([^']+)'\)/g)].map((match) => match[1]);
+    // 바인딩 대상 handler 는 가드 SpEL 이 가리키는 것과 매핑 애노테이션이 붙은 메서드를 함께 센다 — 가드 표기가 달라도 놓치지 않는다.
+    const declaredClass = `${source.match(/^\s*package\s+([\w.]+)\s*;/mu)?.[1]}.${path.split('/').pop().replace(/\.java$/u, '')}`;
+    const handlers = [...new Set([
+      ...[...source.matchAll(/@permissionPolicy\.allowed\(authentication, '([^']+)'\)/g)].map((match) => match[1]),
+      ...[...source.matchAll(MAPPED_HANDLER)].map((match) => `${declaredClass}#${match[2]}`),
+    ])];
     const unbound = handlers.filter((handler) => !boundHandlers.has(handler));
     points.push(point(KINDS.HUMAN, `operation-bindings:${path}`, 'config/governance/authorization-policies.json', unbound.length === 0 ? 'ok' : 'missing',
       unbound.length === 0 ? `${handlers.length}개 handler 가 모두 바인딩돼 있다.` : `바인딩이 없는 handler: ${unbound.map((handler) => handler.split('#')[1]).join(', ')} — 미등록은 요청 거부·린터 red 다.`));
@@ -158,7 +197,7 @@ export function evaluateRegistration(inputs) {
 
   // 생성 POST census(ADR-0036): 201 을 쓰거나 생성형 이름인 POST 는 CREATED_HANDLERS 나 200 유지 목록 어느 한쪽에 있어야 한다.
   for (const [path, source] of Object.entries(inputs.controllers)) {
-    const posts = [...source.matchAll(/@PostMapping[^\n]*\n((?:\s*@[^\n]*\n)*)\s*public\s+[^(]*?\s(\w+)\s*\(/gu)]
+    const posts = [...source.matchAll(/@PostMapping\b[^\n]*\n((?:[ \t]*@[^\n]*\n)*)[ \t]*public\s+[^(\n]*?\s(\w+)\s*\(/gu)]
       .filter((match) => CREATION_NAME.test(match[2]) || /HttpStatus\.CREATED/u.test(match[1])).map((match) => match[2]);
     if (posts.length === 0) continue;
     const key = path.startsWith(CONTROLLER_PREFIX) ? path.slice(CONTROLLER_PREFIX.length) : path;
@@ -168,12 +207,14 @@ export function evaluateRegistration(inputs) {
         : `분류되지 않은 POST: ${unclassified.join(', ')} — 새 식별자를 갖는 자원을 만들면 CREATED_HANDLERS, 행위형이면 CREATION_NAMED_KEEP_200 에 사유와 함께 둔다(ADR-0036).`));
   }
   if (tables.length > 0) {
-    const expected = Number(inputs.entityLinterSource.match(/EXPECTED_ENTITY_COUNT\s*=\s*(\d+)/u)?.[1]);
-    const status = inputs.projectedHarness || !Number.isInteger(expected) ? 'review' : expected === inputs.entityFileCount ? 'ok' : 'missing';
+    const constant = (name) => Number(inputs.entityLinterSource.match(new RegExp(`${name}\\s*=\\s*(\\d+)`, 'u'))?.[1]);
+    const expected = { entities: constant('EXPECTED_ENTITY_COUNT'), tables: constant('EXPECTED_PHYSICAL_TABLE_COUNT') };
+    const status = inputs.projectedHarness || !Number.isInteger(expected.entities) || !Number.isInteger(expected.tables) ? 'review'
+      : expected.entities === inputs.entityFileCount && expected.tables === inputs.entityTableCount ? 'ok' : 'missing';
     points.push(point(KINDS.HUMAN, 'entity-census', `${HARNESS_DIR}/EntityTableOwnershipLinterTest.java`, status,
-      status === 'ok' ? `엔티티 모집단 ${expected}개가 소스의 @Entity 수와 같다.`
-        : status === 'missing' ? `소스의 @Entity 는 ${inputs.entityFileCount}개, 린터 기대는 ${expected}개다 — 물리 테이블 소유권을 재판정하고 엔티티·테이블·감사 형태 census 를 고친다.`
-          : '엔티티 모집단·감사 형태 census 를 재판정한다(재사용 생성물은 하네스 프로필의 수가 정본).'));
+      status === 'ok' ? `엔티티 ${expected.entities}개·물리 테이블 ${expected.tables}개가 소스와 같다.`
+        : status === 'missing' ? `소스는 엔티티 ${inputs.entityFileCount}개·물리 테이블 ${inputs.entityTableCount}개, 린터 기대는 ${expected.entities}개·${expected.tables}개다 — 물리 테이블 소유권을 재판정하고 엔티티·테이블·감사 형태 census 를 고친다.`
+          : '엔티티 모집단·물리 테이블·감사 형태 census 를 재판정한다(재사용 생성물은 하네스 프로필의 수가 정본).'));
   }
 
   const censusText = JSON.stringify(inputs.inputContractCensus);

@@ -5,11 +5,11 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   BANNED_CLAIMS, BLANK, FORBIDDEN_INPUTS, NO_SEMANTIC_ROW, OUTPUT_ROOT,
-  assertAllowedInput, cellText, contentDigest, csvCell, interfaceSheet, loadInputs, mdCell, renderPackage, resolveOutput, screenSheet, toCsv,
+  assertAllowedInput, cellText, contentDigest, csvCell, interfaceSheet, loadInputs, mdCell, renderPackage, reproduceCommand, resolveOutput, screenSheet, toCsv,
 } from './export-deliverables.mjs';
 
 /*
- * 산출물 내보내기(DEC-OPS-382 결정 1)의 고정 입력 시험. 실제 저장소로 묶음을 만들거나 두 번 만들어 대조하는 일은
+ * 산출물 내보내기(DEC-OPS-382 ②)의 고정 입력 시험. 실제 저장소로 묶음을 만들거나 두 번 만들어 대조하는 일은
  * 비필수 workflow_dispatch(.github/workflows/deliverables.yml)가 한다 — 운영 계약 묶음에는 원장 값에 묶이지 않는 시험만 둔다.
  */
 
@@ -51,7 +51,10 @@ test('forbidden inputs are refused before they are read', () => {
     '.env', '.env.local', 'config/governance/upstream-review/project-composer-selection.json']) {
     assert.throws(() => assertAllowedInput(path), /forbidden deliverable input/u, path);
   }
-  assert.throws(() => assertAllowedInput('.agent\\memory\\known-gaps.md'), /forbidden deliverable input/u);
+  // 구분자·대소문자·./ 접두와 상관없이 같은 판정이다(어느 운영체제에서 돌아도 같다 — Windows 는 이 철자로도 같은 파일을 연다).
+  for (const path of ['.agent\\memory\\known-gaps.md', '.ENV', './.env', 'Docs/Archived/x.md', 'DOCS\\02-ARCHITECTURE\\DECISIONS\\README.MD']) {
+    assert.throws(() => assertAllowedInput(path), /forbidden deliverable input/u, path);
+  }
   for (const path of ['config/governance/permission-catalog.json', 'docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md', 'api-docs.json']) {
     assert.doesNotThrow(() => assertAllowedInput(path), path);
   }
@@ -137,6 +140,15 @@ test('fixed prose never claims completeness, and a sheet notice that does is ref
   assert.match(readme, /미리 보기이며 제출용이 아니다/u);
   assert.match(files.get('things.md'), /비규범 파생물/u);
   assert.throws(() => renderPackage([{ ...SHEET, notices: ['자동화율 100% 이다.'] }], META), /banned claim in things notice: 100%/u);
+});
+
+test('the reproduction line names the options that shaped the table set', () => {
+  assert.equal(reproduceCommand({}), 'node scripts/export-deliverables.mjs');
+  assert.equal(reproduceCommand({ database: { postgres: '17' } }), 'node scripts/export-deliverables.mjs --db');
+  assert.equal(reproduceCommand({ database: { postgres: '17' }, requirements: true }), 'node scripts/export-deliverables.mjs --db --rtm <같은 CSV>');
+  const { files } = renderPackage([SHEET], { ...META, database: { postgres: '17', migrations: 1 }, requirements: true });
+  assert.match(files.get('README.md'), /node scripts\/export-deliverables\.mjs --db --rtm <같은 CSV>/u);
+  assert.match(files.get('README.md'), /같은 CSV 를 다시 넘겨야 같다/u);
 });
 
 test('an empty sheet says so instead of printing an empty table', () => {

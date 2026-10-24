@@ -29,7 +29,7 @@ class OpenApiAuthorizationContractTest {
         assertThat(read.getResponses()).doesNotContainKeys("401", "403");
         assertThat(write.getResponses()).containsKeys("401", "403");
         assertThat(unknown.getResponses()).containsKeys("401", "403");
-        // [DEC-OPS-382 결정 11] 공개 연산만 빈 보안 요구로 전역 bearer 를 지우고, 나머지는 전역 요구를 물려받는다(null).
+        // [DEC-OPS-382 ⑦] 공개 연산만 빈 보안 요구로 전역 bearer 를 지우고, 나머지는 전역 요구를 물려받는다(null).
         assertThat(read.getSecurity()).isEmpty();
         assertThat(write.getSecurity()).isNull();
         assertThat(unknown.getSecurity()).isNull();

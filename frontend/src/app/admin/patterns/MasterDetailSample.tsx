@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { z } from 'zod';
 import { CmmnCodeDtoRequestSchema } from '@/types/generated-zod';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
@@ -100,7 +100,9 @@ function GroupEditForm({ group, formRef, onDirtyChange, onSave }: GroupEditFormP
         onSubmit={submit}
         noValidate
         onKeyDown={(event) => {
-          if (event.key !== 'Escape' || !isDirty) return;
+          if (event.key !== 'Escape' || event.defaultPrevented || !isDirty) return;
+          // 선택 목록 같은 안쪽 팝업의 Esc 는 그 팝업을 닫는 키다 — 포털로 그려져도 React 이벤트는 폼까지 올라온다.
+          if (event.target instanceof Element && event.target.closest('[role="listbox"], [role="menu"], [role="dialog"]')) return;
           event.preventDefault();
           form.reset();
         }}
@@ -201,6 +203,12 @@ export default function MasterDetailSample() {
     setSelectedId(codeId);
   };
 
+  // 변경을 취소해 폼이 깨끗해지면 옮기기 경고도 거둔다 — 버릴 변경이 없는데 '변경 버리고 이동' 을 묻지 않는다.
+  const onDirtyChange = useCallback((next: boolean) => {
+    setDirty(next);
+    if (!next) setPendingId(null);
+  }, []);
+
   const discardAndMove = () => {
     setDirty(false);
     setSavedMessage('');
@@ -286,7 +294,7 @@ export default function MasterDetailSample() {
             key={selected.codeId}
             group={selected}
             formRef={formRef}
-            onDirtyChange={setDirty}
+            onDirtyChange={onDirtyChange}
             onSave={save}
           />
         </div>

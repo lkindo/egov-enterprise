@@ -91,11 +91,45 @@ test('a requirement trace CSV tracked by the repository is refused', () => {
   try {
     const file = join(root, 'rtm.csv');
     writeFileSync(file, '요구사항 ID,대상 ID\n');
-    assert.throws(() => readRequirementFile(root, file, { tracked: () => true }), /must not be a tracked repository file: rtm\.csv/u);
-    assert.equal(readRequirementFile(root, file, { tracked: () => false }), '요구사항 ID,대상 ID\n');
+    const allow = () => {};
+    assert.throws(() => readRequirementFile(root, file, { tracked: () => true, assertAllowed: allow }), /must not be a tracked repository file: rtm\.csv/u);
+    assert.equal(readRequirementFile(root, file, { tracked: () => false, assertAllowed: allow }), '요구사항 ID,대상 ID\n');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
+});
+
+test('a requirement trace path inside the repository goes through the forbidden-input guard first', () => {
+  const root = mkdtempSync(join(tmpdir(), 'deliverables-rtm-guard-'));
+  try {
+    writeFileSync(join(root, '.env'), 'SECRET=never-read\n');
+    const seen = [];
+    const guard = (path) => { seen.push(path); if (path === '.env') throw new Error(`forbidden deliverable input: ${path}`); };
+    assert.throws(() => readRequirementFile(root, join(root, '.env'), { tracked: () => false, assertAllowed: guard }), /forbidden deliverable input: \.env/u);
+    assert.deepEqual(seen, ['.env']);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('input field candidates expand array bodies and keep bodies without fields visible', () => {
+  const sheet = inputFieldSheet({
+    policies: { operationBindings: [{ method: 'PUT', path: '/api/batch' }, { method: 'POST', path: '/api/ids' }] },
+    openapi: {
+      paths: {
+        '/api/batch': { put: { requestBody: { content: { 'application/json': { schema: { type: 'array', items: { $ref: '#/components/schemas/Item' } } } } } } },
+        '/api/ids': { post: { requestBody: { required: true, content: { 'application/json': { schema: { type: 'array', items: { type: 'string' } } } } } } },
+      },
+      components: { schemas: { Item: { type: 'object', required: ['id'], properties: { id: { type: 'integer' }, name: { type: 'string', maxLength: 10 } } } } },
+    },
+  });
+  assert.deepEqual(sheet.rows.map((row) => [row.id, row.field, row.type]), [
+    ['POST /api/ids', null, 'array(string)'],
+    ['PUT /api/batch', '[].id', 'integer'],
+    ['PUT /api/batch', '[].name', 'string'],
+  ]);
+  assert.equal(sheet.rows[1].required, true);
+  assert.equal(sheet.rows[2].maxLength, 10);
 });
 
 test('input field candidates resolve references and inheritance and skip reads', () => {

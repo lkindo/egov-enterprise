@@ -173,7 +173,7 @@ jobs:
           sarif_file: build/sast/publish/${{ matrix.language }}.sarif
           category: secure-coding/${{ matrix.language }}
 
-      # [2026-10-24 DEC-OPS-382 결정 5] main push 의 SARIF 는 90일, PR·수동 실행은 14일 보관한다.
+      # [2026-10-24 DEC-OPS-382 ⑤] main push 의 SARIF 는 90일, PR·수동 실행은 14일 보관한다.
       - name: Retain sanitized SAST evidence
         if: always() && steps.analyze.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -455,7 +455,7 @@ jobs:
         if: always()
         run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
-      # [2026-10-24 DEC-OPS-382 결정 5] 온라인 모듈의 시험 결과 XML 을 보관한다 — 산출물 시험 목록(정적 추출)의 실행 증거다.
+      # [2026-10-24 DEC-OPS-382 ⑤] 온라인 모듈의 시험 결과 XML 을 보관한다 — 산출물 시험 목록(정적 추출)의 실행 증거다.
       #   main push 는 90일, PR·수동 실행은 14일이다. PR 실행은 영향 분류로 고른 시험의 결과다. 게이트가 아니다.
       - name: Retain backend test result XML
         if: ${{ !cancelled() }}
@@ -866,7 +866,7 @@ jobs:
           pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
 
-      # [2026-10-24 DEC-OPS-382 결정 5] Vitest 결과 XML(CI 에서만 junit 보고를 켠다 — vitest.config.mts)을 보관한다. 게이트가 아니다.
+      # [2026-10-24 DEC-OPS-382 ⑤] Vitest 결과 XML(CI 에서만 junit 보고를 켠다 — vitest.config.mts)을 보관한다. 게이트가 아니다.
       - name: Retain frontend test result XML
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2

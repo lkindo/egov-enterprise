@@ -45,7 +45,9 @@ function assertScaffoldLayout(source) {
   const dto = source.match(/\$dtoContent = @"\n([\s\S]*?)\n"@/)?.[1];
   assert.ok(dto, 'dto template missing');
   assert.match(dto, /^package nuri\.business\.service\.\$domainLower\.dto;$/m);
-  assert.match(dto, /public record Request\(\$\{sizeAnnotation\}\$FieldType \$FieldName\)/, 'request DTO must not carry the id');
+  assert.match(dto, /public record \$\{domainCap\}Request\(\$\{sizeAnnotation\}\$FieldType \$FieldName\)/, 'request DTO must not carry the id');
+  // OpenAPI 는 중첩 타입을 단순 이름으로 싣는다 — Request·Response 같은 공용 이름은 도메인끼리 스키마를 덮어쓴다.
+  assert.match(dto, /public record \$\{domainCap\}Response\(Long id,/, 'response DTO name must be unique per domain');
 }
 
 test('domain scaffolder emits exact handler guards and requires reviewed permission registration', () => {
@@ -61,7 +63,7 @@ test('class-level builder, repository/<d> layout and id-carrying requests are re
   for (const mutation of [
     s => s.replace('@NoArgsConstructor(access = AccessLevel.PROTECTED)\npublic class $domainCap', '@Builder\n@NoArgsConstructor(access = AccessLevel.PROTECTED)\npublic class $domainCap'),
     s => s.replace('$repoDir = $domainDir', '$repoDir = "$baseDir/repository/$domainLower"'),
-    s => s.replace('public record Request(${sizeAnnotation}$FieldType $FieldName)', 'public record Request(Long id, ${sizeAnnotation}$FieldType $FieldName)'),
+    s => s.replace('public record ${domainCap}Request(${sizeAnnotation}$FieldType $FieldName)', 'public record ${domainCap}Request(Long id, ${sizeAnnotation}$FieldType $FieldName)'),
   ]) {
     const changed = mutation(source);
     assert.notEqual(changed, source);

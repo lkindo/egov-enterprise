@@ -220,10 +220,19 @@ export function assertReferenceSchema(snapshot, { expectedTables, metaRows }) {
  */
 export async function readReferenceSchema({ root, run = runComposerCommand }) {
   const token = randomBytes(8).toString('hex');
+  const name = `egov-deliverables-db-${token}`;
   const docker = (args, options = {}) => run('docker', args, { root, capture: true, ...options });
+  // 중단 신호(Ctrl+C·SIGTERM)로 바로 끝나지 않게 한다 — 신호를 받으면 다음 단계 앞에서 멈추고(진행 중인 docker exec 가 함께 끝나면
+  //   그 단계가 실패로 돌아온다) 아래 finally 가 컨테이너를 지운 뒤 실패로 끝낸다. 그래도 남으면 이름으로 지운다.
+  let interrupted = null;
+  const onSignal = (signal) => { interrupted = signal; };
+  process.on('SIGINT', onSignal);
+  process.on('SIGTERM', onSignal);
+  const stopIfInterrupted = () => { if (interrupted) throw new Error(`deliverables DB mode interrupted by ${interrupted}`); };
+  process.stderr.write(`[deliverables] 일회용 PostgreSQL 컨테이너 ${name} — 끝나면 지운다. 남으면: docker rm --force --volumes ${name}\n`);
   let container;
   try {
-    container = await createOwnedPostgres(docker, { name: `egov-deliverables-db-${token}`, token });
+    container = await createOwnedPostgres(docker, { name, token });
     if (!ownedContainerId(container)) throw new Error('Invalid owned database container identity');
     if (!await waitForOwnedPostgres(docker, container)) throw new Error('Owned PostgreSQL did not become ready');
     const { user } = inspectContainer(container);
@@ -235,7 +244,7 @@ export async function readReferenceSchema({ root, run = runComposerCommand }) {
       const catalogVersion = readReviewedAuthorizationCatalogVersion(reviewedSeed?.sql.toString('utf8') ?? '');
       const contractSql = readFileSync(join(root, 'api-server/src/main/resources/db/cutover/authorization-contract.sql'), 'utf8');
       runAuthorizationMigrationStages(migrations, {
-        migrate: (migration) => restore(container, user, database, `BEGIN;\n${migration.sql.toString('utf8')}\nCOMMIT;`),
+        migrate: (migration) => { stopIfInterrupted(); restore(container, user, database, `BEGIN;\n${migration.sql.toString('utf8')}\nCOMMIT;`); },
         repeatables: () => {
           for (const seed of ['R__seed_framework.sql', 'R__zz_seed_base_admin.sql']) restore(container, user, database, readFileSync(join(root, MIGRATION_DIR, seed)));
         },
@@ -254,8 +263,14 @@ export async function readReferenceSchema({ root, run = runComposerCommand }) {
       dropTemporaryDatabase(container, user, database);
     }
   } finally {
-    if (ownedContainerId(container)) await removeOwnedPostgres(docker, container, token);
-    else await removeOwnedPostgresByToken(docker, token);
+    try {
+      if (ownedContainerId(container)) await removeOwnedPostgres(docker, container, token);
+      else await removeOwnedPostgresByToken(docker, token);
+    } finally {
+      process.off('SIGINT', onSignal);
+      process.off('SIGTERM', onSignal);
+    }
+    stopIfInterrupted();
   }
 }
 

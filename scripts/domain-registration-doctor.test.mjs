@@ -29,12 +29,42 @@ function inputs(overrides = {}) {
     inputContractCensus: {},
     ciWorkflow: '',
     responseContractSource: '',
-    entityLinterSource: 'private static final int EXPECTED_ENTITY_COUNT = 1;',
+    entityLinterSource: 'private static final int EXPECTED_ENTITY_COUNT = 1;\nprivate static final int EXPECTED_PHYSICAL_TABLE_COUNT = 1;',
     entityFileCount: 1,
+    entityTableCount: 1,
+    catalogError: null,
     projectedHarness: false,
     ...overrides,
   };
 }
+
+test('물리 테이블 수가 린터 기대와 다르면 엔티티 census 재판정을 빠졌다고 말한다', () => {
+  assert.deepEqual(missing(evaluateRegistration(inputs({ entityTableCount: 2 }))), ['entity-census']);
+});
+
+test('매핑 애노테이션이 붙은 handler 는 가드 SpEL 이 달라도 바인딩 누락을 센다', () => {
+  const controller = [
+    'package nuri.api.controller.business.probe;',
+    '@PreAuthorize("@permissionPolicy.allowed(authentication, \'nuri.api.controller.business.probe.ProbeApiController#getList\')")',
+    '    @GetMapping',
+    '    public ApiResponse<Void> getList() {',
+    '    @DeleteMapping("/{id}")',
+    '    @AdminOrSystem',
+    '    public ApiResponse<Void> delete(@PathVariable Long id) {',
+  ].join('\n');
+  const report = evaluateRegistration(inputs({ controllers: { 'api-server/src/main/java/nuri/api/controller/business/probe/ProbeApiController.java': controller } }));
+  const bindings = report.points.find((entry) => entry.id.startsWith('operation-bindings:'));
+  assert.equal(bindings.status, 'missing');
+  assert.match(bindings.detail, /바인딩이 없는 handler: delete —/);
+});
+
+test('카탈로그를 적재하지 못하면 그 실패를 빠진 지점으로, 귀속된 컨트롤러가 없으면 사람 확인으로 알린다', () => {
+  const report = evaluateRegistration(inputs({ catalogError: 'unknown area', controllers: {} }));
+  assert.deepEqual(missing(report), ['composer-catalog']);
+  assert.equal(report.points.find((entry) => entry.id === 'controllers').status, 'review');
+  assert.ok(!evaluateRegistration(inputs({ controllers: {}, feature: { id: 'probe', backend: { frontendOnly: true }, owns: { tables: [], routes: [], permissionDomains: [] } } }))
+    .points.some((entry) => entry.id === 'controllers'));
+});
 
 const missing = (report) => report.points.filter((entry) => entry.status === 'missing').map((entry) => entry.id);
 

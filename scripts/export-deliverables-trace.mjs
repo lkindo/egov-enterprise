@@ -8,13 +8,13 @@
  * 감리 준비 가이드의 화면 ID·프로그램 ID·단위시험 ID·통합시험 시나리오 ID 체계는 저장소에 없다 — 경로로 쓴다. 라우트 원장의
  * journeys 칸은 제품·UX 소유 검토 칸이라 읽기만 한다.
  *
- * 기관 요구사항 추적 CSV(--rtm)는 커밋하지 않는 실행 인자다(결정 1의 예외). 저장소가 추적하는 파일은 받지 않는다. 열은
+ * 기관 요구사항 추적 CSV(--rtm)는 커밋하지 않는 실행 인자다(DEC-OPS-382 ② 의 예외). 저장소가 추적하는 파일은 받지 않는다. 열은
  * '요구사항 ID'·'대상 ID'(필수)와 '요구사항 이름'(선택)이고, 대상 ID 는 화면 ID(라우트)·역량 ID(라우트#역량)·인터페이스 ID(METHOD 경로)다.
  *
  * 시험 목록은 정적 추출이다 — 매개변수화 시험의 사례 수, 동적 제목, 조건부 건너뜀을 반영하지 않고, 통과 여부가 아니다.
  */
-import { readdirSync, readFileSync, statSync } from 'node:fs';
-import { join, relative, sep } from 'node:path';
+import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { isAbsolute, join, relative, sep } from 'node:path';
 
 const BLANK_JOIN = null;
 const toPosix = (path) => path.split(sep).join('/');
@@ -172,10 +172,19 @@ export function inputFieldSheet({ policies, openapi }) {
     const operation = openapi.paths?.[binding.path]?.[binding.method.toLowerCase()];
     const [mediaType, content] = Object.entries(operation?.requestBody?.content ?? {})[0] ?? [];
     if (!content?.schema) continue;
-    const schema = resolveSchema(openapi, content.schema);
-    for (const [field, raw] of Object.entries(schema.properties)) {
+    const id = `${binding.method} ${binding.path}`;
+    // 배열 본문(일괄 쓰기)은 항목의 필드를 `[].필드` 로 펼친다. 펼칠 필드가 없는 본문(배열·문자열 등)도 숨기지 않고 한 행을 둔다.
+    const array = content.schema.type === 'array';
+    const schema = resolveSchema(openapi, array ? content.schema.items : content.schema);
+    const fields = Object.entries(schema.properties);
+    if (fields.length === 0) {
+      rows.push({ id, mediaType, schema: schema.name, field: null, type: fieldType(openapi, content.schema), required: operation.requestBody.required ?? null,
+        minLength: null, maxLength: null, pattern: null, allowed: [], description: content.schema.description });
+      continue;
+    }
+    for (const [field, raw] of fields) {
       const property = raw.$ref ? raw : { ...raw, ...(raw.allOf?.length === 1 && raw.allOf[0].$ref ? { $ref: raw.allOf[0].$ref } : {}) };
-      rows.push({ id: `${binding.method} ${binding.path}`, mediaType, schema: schema.name, field, type: fieldType(openapi, property),
+      rows.push({ id, mediaType, schema: schema.name, field: array ? `[].${field}` : field, type: fieldType(openapi, property),
         required: schema.required.includes(field), minLength: raw.minLength, maxLength: raw.maxLength, pattern: raw.pattern,
         allowed: raw.enum ?? [], description: raw.description });
     }
@@ -183,7 +192,8 @@ export function inputFieldSheet({ policies, openapi }) {
   return {
     id: 'input-fields', title: '입력 항목 후보(요청 스키마)', sources: ['api-docs.json', 'config/governance/authorization-policies.json'],
     notices: ['GET 이 아닌 연산의 요청 본문 필드다 — 화면 입력 항목 설계의 후보이며 화면이 실제로 보이는 항목이 아니다.',
-      '중첩 객체는 한 단계만 펼친다(object(스키마) 로 적는다). 길이·패턴·허용값은 OpenAPI 에 선언된 것만이다 — 서버 검증의 전부가 아니다.'],
+      '중첩 객체는 한 단계만 펼친다(object(스키마) 로 적는다). 배열 본문은 항목의 필드를 [].필드 로 적고, 펼칠 필드가 없는 본문은 필드 칸을 비운 한 행으로 둔다.',
+      '길이·패턴·허용값은 OpenAPI 에 선언된 것만이다 — 서버 검증의 전부가 아니다.'],
     columns: [['id', '인터페이스 ID'], ['mediaType', '본문 형식'], ['schema', '요청 스키마'], ['field', '필드'], ['type', '타입'], ['required', '필수'],
       ['minLength', '최소 길이'], ['maxLength', '최대 길이'], ['pattern', '패턴'], ['allowed', '허용값'], ['description', '설명']],
     rows,
@@ -246,12 +256,15 @@ export function testListSheet(rows) {
   };
 }
 
-/** 디스크에서 E2E 색인과 시험 파일을 읽는다. record(path, digest) 로 입력 집합의 다이제스트를 남긴다. */
-export async function loadTraceInputs(root, { digest, record }) {
+/**
+ * 디스크에서 E2E 색인과 시험 파일을 읽는다. record(path, digest) 로 입력 집합의 다이제스트를 남기고, 읽는 파일마다
+ * assertAllowed(path) 로 금지 입력 판정을 지난다.
+ */
+export async function loadTraceInputs(root, { digest, record, assertAllowed }) {
   const e2eFiles = walk(root, 'frontend/e2e', (path) => path.endsWith('.ts'));
   const gotoIndex = new Map();
   const texts = new Map();
-  const read = (path) => { const text = readFileSync(join(root, path), 'utf8'); texts.set(path, text); return text; };
+  const read = (path) => { assertAllowed(path); const text = readFileSync(join(root, path), 'utf8'); texts.set(path, text); return text; };
   for (const file of e2eFiles) {
     const paths = gotoPaths(read(file));
     if (paths.length) gotoIndex.set(file, paths);
@@ -269,10 +282,17 @@ export async function loadTraceInputs(root, { digest, record }) {
   return { e2e: { gotoIndex, impactRules: IMPACT_RULES }, tests };
 }
 
-/** 기관 요구사항 추적 CSV — 저장소가 추적하는 파일은 받지 않는다(커밋하지 않는 실행 인자). */
-export function readRequirementFile(root, path, { tracked }) {
-  const inside = toPosix(relative(root, path));
-  if (!inside.startsWith('..') && tracked(inside)) throw new Error(`requirement trace CSV must not be a tracked repository file: ${inside}`);
-  if (!statSync(path).isFile()) throw new Error(`requirement trace CSV is not a file: ${path}`);
-  return readFileSync(path, 'utf8');
+/**
+ * 기관 요구사항 추적 CSV — 저장소가 추적하는 파일과 금지 입력은 받지 않는다(커밋하지 않는 실행 인자).
+ * 판정 전에 실제 경로로 정규화한다 — 대소문자만 다른 경로, junction·subst 같은 별칭으로 저장소 안 파일을 가리켜도 같은 판정을 받는다.
+ */
+export function readRequirementFile(root, path, { tracked, assertAllowed }) {
+  const real = realpathSync.native(path);
+  const inside = toPosix(relative(realpathSync.native(root), real));
+  if (inside !== '' && !inside.startsWith('..') && !isAbsolute(inside)) {
+    assertAllowed(inside);
+    if (tracked(inside)) throw new Error(`requirement trace CSV must not be a tracked repository file: ${inside}`);
+  }
+  if (!statSync(real).isFile()) throw new Error(`requirement trace CSV is not a file: ${path}`);
+  return readFileSync(real, 'utf8');
 }

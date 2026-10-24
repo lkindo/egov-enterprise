@@ -80,6 +80,35 @@ describe('A2 마스터-디테일 + A3 인라인 편집 표본', () => {
     await waitFor(() => expect(name).toHaveValue('첨부 유형'));
   });
 
+  it('선택 목록을 Esc 로 닫으면 목록만 닫히고 입력한 변경은 남는다', async () => {
+    const user = userEvent.setup();
+    render(<MasterDetailSample />);
+
+    await user.click(screen.getByRole('button', { name: /COM001/ }));
+    const name = detailPane().getByLabelText(/^이름/);
+    await user.type(name, ' 2');
+    await user.click(detailPane().getByRole('combobox', { name: /사용 여부/ }));
+    expect(await screen.findByRole('listbox')).toBeInTheDocument();
+
+    await user.keyboard('{Escape}');
+    await waitFor(() => expect(screen.queryByRole('listbox')).not.toBeInTheDocument());
+    expect(name).toHaveValue('사용 여부 2');
+  });
+
+  it('변경을 취소해 폼이 깨끗해지면 옮기기 경고를 거둔다', async () => {
+    const user = userEvent.setup();
+    render(<MasterDetailSample />);
+
+    await user.click(screen.getByRole('button', { name: /COM001/ }));
+    await user.type(detailPane().getByLabelText(/^이름/), ' 수정');
+    await user.click(screen.getByRole('button', { name: /COM005/ }));
+    expect(await screen.findByText(/저장하지 않은 변경이 있습니다/)).toBeInTheDocument();
+
+    await user.click(detailPane().getByRole('button', { name: '변경 취소' }));
+    await waitFor(() => expect(screen.queryByText(/저장하지 않은 변경이 있습니다/)).not.toBeInTheDocument());
+    expect(screen.getByRole('button', { name: /COM001/ })).toHaveAttribute('aria-current', 'true');
+  });
+
   it('조회 조건으로 마스터를 좁히고, 결과가 없으면 결과 없음을 구분해 보인다(G15)', async () => {
     const user = userEvent.setup();
     render(<MasterDetailSample />);

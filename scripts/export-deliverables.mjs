@@ -6,7 +6,7 @@
  * 기관 DB 의 실제 배정·운영 실측이 아니다. 빈칸은 '(값 없음)' 으로, 검토 전 값은 원장 표기(UNVERIFIED·E0~E3) 그대로 싣는다.
  * 도구는 초안만 내고 사람이 확정한다 — 어느 원장에도 쓰지 않는다.
  *
- * 경계(DEC-OPS-382 결정 1)
+ * 경계(DEC-OPS-382 ②)
  *   · 커밋하지 않는 build/deliverables/ 아래에만 쓴다. regen 사슬·required CI·frontend/public 에 넣지 않는다.
  *   · 실행은 수동 또는 workflow_dispatch(.github/workflows/deliverables.yml — 실행 요약에 다이제스트만 남기고 묶음은 올리지 않는다).
  *   · 금지 입력: 공용 메모리, 보관 기록, ADR 색인, 공유 OCI(.env·DB 접속), 생성물의 메뉴 스냅숏. 생성물(재사용 투영본)에서는
@@ -37,7 +37,7 @@ export const OUTPUT_ROOT = 'build/deliverables';
 export const BLANK = '(값 없음)';
 export const NO_SEMANTIC_ROW = '의미 행 없음(조회)';
 
-/** 읽지 않는 입력 — 경로 접두로 판정한다(DEC-OPS-382 결정 1). */
+/** 읽지 않는 입력 — 경로 접두로 판정한다(DEC-OPS-382 ②). */
 export const FORBIDDEN_INPUTS = Object.freeze([
   { prefix: '.agent/memory/', reason: '공용 메모리는 비규범 파생 인덱스다' },
   { prefix: 'docs/archived/', reason: '보관 기록은 현행 원장이 아니다' },
@@ -52,9 +52,11 @@ export const BANNED_CLAIMS = Object.freeze(['100%', '수기 0%', '현행화 0시
 const LOCKFILES = Object.freeze(['package-lock.json', 'frontend/pnpm-lock.yaml', 'gradle/libs.versions.toml']);
 const GENERATED_PRODUCT_MARKER = 'config/governance/upstream-review';
 
+/** 저장소 기준 경로를 판정한다. 두 구분자와 대소문자를 가리지 않는다 — Windows 파일 시스템은 `.ENV`·`.agent\memory` 도 같은 파일로 연다. */
 export function assertAllowedInput(path) {
-  const normalized = path.split(sep).join('/');
-  const hit = FORBIDDEN_INPUTS.find((rule) => normalized === rule.prefix || normalized.startsWith(rule.prefix));
+  const normalized = path.replace(/\\/gu, '/').replace(/^\.\//u, '');
+  const folded = normalized.toLowerCase();
+  const hit = FORBIDDEN_INPUTS.find((rule) => folded === rule.prefix.toLowerCase() || folded.startsWith(rule.prefix.toLowerCase()));
   if (hit) throw new Error(`forbidden deliverable input: ${normalized} (${hit.reason})`);
 }
 
@@ -137,7 +139,7 @@ export function screenSheet({ registry, routes }) {
       '화면 ID 는 라우트 경로다. 화면 ID 체계는 따로 없다.',
       '쓰기 권한은 화면이 부르는 GET 이 아닌 연산의 권한이고, 호출·import 를 이름으로 맞춘 계산이다(같은 이름은 겹칠 수 있다).',
       '표시 권한은 리터럴 canPermission 코드와 슬롯 기여의 노출 술어다. 이 목록을 인가로 쓰지 않는다(서버가 집행한다).',
-      '시연 화면은 메뉴 연결·화면 관리·권한 묶음에서 빠진다(DEC-OPS-382 결정 4). 표에는 시연 열로 남긴다.',
+      '시연 화면은 메뉴 연결·화면 관리·권한 묶음에서 빠진다(DEC-OPS-382 ④). 표에는 시연 열로 남긴다.',
     ],
     columns: [['route', '화면 ID(경로)'], ['label', '화면 이름'], ['labelSource', '이름 출처'], ['shellAccess', '셸 진입'], ['dynamic', '동적 경로'],
       ['demo', '시연'], ['entry', '진입 권한'], ['entryMode', '진입 판정'], ['write', '쓰기 권한'], ['display', '표시 권한'],
@@ -322,6 +324,11 @@ export function contentDigest(files) {
     .map(([path, text]) => `${path}\t${sha256(text)}\n`).join(''));
 }
 
+/** 이 묶음을 다시 만드는 명령 — 표 집합이 옵션마다 다르므로 옵션까지 적는다. */
+export function reproduceCommand(meta) {
+  return ['node scripts/export-deliverables.mjs', meta.database ? '--db' : null, meta.requirements ? '--rtm <같은 CSV>' : null].filter(Boolean).join(' ');
+}
+
 /** extras: 표가 아닌 문서(예: db-erd.md) — { path, title, text }. 표처럼 내용 다이제스트에 들어간다. */
 export function renderPackage(sheets, meta, extras = []) {
   const files = new Map();
@@ -345,7 +352,8 @@ export function renderPackage(sheets, meta, extras = []) {
     ...(meta.database ? [`DB 표는 참조 스키마(일회용 PostgreSQL ${meta.database.postgres} 에 Flyway ${meta.database.migrations}개를 단계 적용)에서 읽었다 — 운영 DB 실측이 아니다.`, '']
       : ['DB 표(테이블·컬럼 정의서, 외래 키, ERD, 표준 사전)는 --db 로 만든다 — 이 묶음에는 없다.', '']),
     '## 재현', '',
-    `내용 다이제스트 \`${digest}\` — 표 파일로 계산한다. 커밋·시각을 넣지 않으므로 원장 값이 같으면 다른 커밋에서 \`node scripts/export-deliverables.mjs\` 로 다시 만들어도 같다.`, '',
+    `내용 다이제스트 \`${digest}\` — 표 파일로 계산한다. 커밋·시각을 넣지 않으므로 원장 값이 같으면 다른 커밋에서 \`${reproduceCommand(meta)}\` 로 다시 만들어도 같다.`,
+    ...(meta.requirements ? ['이 묶음은 기관 요구사항 추적 CSV 를 실행 인자로 받았다 — 다이제스트에 그 내용이 들어가므로 같은 CSV 를 다시 넘겨야 같다.'] : []), '',
     '입력 파일의 sha256, lockfile, 도구 버전은 manifest.json 에 있다. 공공 규범과의 대응과 이 묶음의 경계는 docs/03-guides/design-to-deliverables-guide.md 에 있다.', '',
   ].join('\n');
   assertNoBannedClaims(readme, 'README.md');
@@ -363,7 +371,10 @@ export function renderPackage(sheets, meta, extras = []) {
   return { files, digest };
 }
 
-/** 입력을 읽고 경로·sha256 을 남긴다. 모든 입력이 여기를 지난다(금지 입력 판정 포함). */
+/**
+ * 원장을 읽고 경로·sha256 을 남긴다(금지 입력 판정 포함). 생산 Java·E2E·시험 소스와 --rtm 도 같은 판정을 지난다.
+ * 생성기 카탈로그·기능 선언(project-composer-catalog·composer-modules)은 그 모듈의 읽기를 쓰며 config/modules 와 생산 소스만 읽는다.
+ */
 function inputReader(root) {
   const inputs = new Map();
   const read = (path) => {
@@ -392,12 +403,13 @@ export async function loadInputs(root = ROOT, { rtm } = {}) {
   // 묶음 입력 두 개는 파일 하나가 아니라 집합의 다이제스트다 — 생산 Java(경로·내용)와 생성기 카탈로그의 기능 선언·소스 목록 해시.
   io.record(`(생산 Java ${files.length}개)`, sha256(files.map((file) => `${file.path}\t${textSha256(readFileSync(join(root, file.path), 'utf8'))}\n`).join('')));
   io.record('(생성기 카탈로그 기능 선언·소스 목록)', sha256(`${catalog.provenance.modulesHash}\n${catalog.provenance.sourceInventoryHash}\n`));
-  const { e2e, tests } = await loadTraceInputs(root, { digest: textSha256, record: io.record });
+  const { e2e, tests } = await loadTraceInputs(root, { digest: textSha256, record: io.record, assertAllowed: assertAllowedInput });
   let requirements;
   if (rtm !== undefined) {
     // 기관 요구사항 추적 CSV 는 커밋하지 않는 실행 인자다. 내용의 해시만 남기고 경로는 manifest 에 싣지 않는다.
-    const text = readRequirementFile(root, resolve(rtm), { tracked: (path) => {
-      try { execFileSync('git', ['ls-files', '--error-unmatch', '--', path], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
+    // 추적 판정은 대소문자를 가리지 않는다(:(icase)) — Windows 에서는 대소문자만 다른 경로도 같은 파일을 연다.
+    const text = readRequirementFile(root, resolve(rtm), { assertAllowed: assertAllowedInput, tracked: (path) => {
+      try { execFileSync('git', ['ls-files', '--error-unmatch', '--', `:(icase)${path}`], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
     } });
     requirements = readRequirements(text);
     io.record('(실행 인자) 기관 요구사항 추적 CSV', textSha256(text));
@@ -457,7 +469,8 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out,
     database = loaded.database;
   }
   const lockfiles = LOCKFILES.filter((path) => existsSync(join(root, path))).map((path) => ({ path, sha256: textSha256(readFileSync(join(root, path), 'utf8')) }));
-  const { files, digest } = renderPackage(sheets, { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles, database }, extras);
+  const { files, digest } = renderPackage(sheets, { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles, database,
+    requirements: inputs.requirements !== undefined }, extras);
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   for (const [path, text] of files) writeFileSync(join(target, path), text);
