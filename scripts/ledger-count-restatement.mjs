@@ -15,12 +15,13 @@
  * - 주석 속 수는 세지 않는다(시험을 붉게 만드는 것은 단언과 문자열이다). 라벨은 주석에 있어도 된다.
  * - 산술로 만든 사본(77-2, 5 + 2 + 22 + 231 의 231 같은 파생 수)은 보지 않는다. 그 몫은 시험이 원장을 읽는다는 규약이 지킨다.
  * - 의도한 고정(원장 수가 바뀌면 사람이 알아채게 둔 단 하나의 확인 지점)은 그 줄이나 바로 윗줄에 `ledger-pin(<결정 ID>)` 를
- *   적는다. 결정 ID 는 공용 결정 인덱스에 있어야 한다 — 표기만으로 사본을 덮을 수 없고 사용자 승인 결정이 필요하다(H2).
+ *   적는다. 결정 ID 는 지금의 작업을 제약하는 결정 색인(공용·영역, DEC-OPS-381)에 있어야 한다 — 표기만으로 사본을 덮을 수 없고 사용자 승인 결정이 필요하다(H2).
  */
 import { readFileSync, readdirSync } from 'node:fs';
 import { createRequire } from 'node:module';
 import { extname, join } from 'node:path';
 import { loadComposerModules } from './composer-modules.mjs';
+import { BINDING_DECISION_INDEXES } from './decision-indexes.mjs';
 import { stripComments } from './project-composer-integrations.mjs';
 
 /*
@@ -392,17 +393,17 @@ export function testSourceRestatements(path, text, facts, decisionIds = new Set(
       findings.push({
         file: path, line: line + 1, value, fact: fact.id, ledger: fact.ledger, label,
         pinned: Boolean(pin && decisionIds.has(pin)),
-        ...(pin && !decisionIds.has(pin) ? { pinError: `ledger-pin(${pin}) 이 가리키는 결정이 공용 결정 인덱스에 없습니다` } : {}),
+        ...(pin && !decisionIds.has(pin) ? { pinError: `ledger-pin(${pin}) 이 가리키는 결정이 지금의 작업을 제약하는 결정 색인에 없습니다` } : {}),
       });
     }
   }
   return findings;
 }
 
-/** 공용 결정 인덱스(.agent/memory/decisions.md)의 결정 ID. */
+/** 지금의 작업을 제약하는 결정 색인(공용·영역)의 결정 ID. 역사 색인의 결정은 고정 근거가 되지 못한다. */
 export function decisionIndexIds(root) {
-  const text = readFileSync(join(root, '.agent', 'memory', 'decisions.md'), 'utf8');
-  return new Set([...text.matchAll(/^\| ((?:DEC-OPS-\d{3,}|ADR-\d{4})) \|/gmu)].map((match) => match[1]));
+  return new Set(BINDING_DECISION_INDEXES.flatMap((file) =>
+    [...readFileSync(join(root, file), 'utf8').matchAll(/^\| ((?:DEC-OPS-\d{3,}|ADR-\d{4})) \|/gmu)].map((match) => match[1])));
 }
 
 /** 위반 문장. 의도한 고정(pinned)은 위반이 아니다. */

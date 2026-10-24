@@ -5,8 +5,8 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-19
-verified_against: 6a719b389ad99bcd04b8921766fe5834e0df98d9
+verified_at: 2026-10-24
+verified_against: 73f2123a7b31171027c8741cdc542eeeea1e563d
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md
@@ -70,7 +70,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | ID | 사실 | 정본/근거 | 검증일 |
 |---|---|---|---|
 | CTX-001 | Gradle 포함 모듈은 `foundation`, `business-core`, `business-app`, `api-server`, `migration-tool` 5개다. | [settings.gradle](../../settings.gradle) | 2026-08-18 |
-| CTX-002 | 백엔드는 Java 21, Spring Boot 4.1.1(Framework 7.0.9·Security 7.1.1·Hibernate 7.4·JUnit 6), eGovFrame 5.0.0 축이다. 온라인 앱의 JSON은 Jackson 3이며 `use-jackson2-defaults`와 파라미터 이름 감지로 Boot 3.5의 wire 규칙을 유지한다. migration-tool은 Jackson 2다(DEC-OPS-124). 테스트는 기술별 test starter를 쓴다(DEC-OPS-125). 4.1 라인의 OSS 지원은 2027-07-31까지다. | [build.gradle](../../build.gradle), [version catalog](../../gradle/libs.versions.toml), [ADR-0024](../../docs/02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md), [DEC-OPS-125](decisions.md) | 2026-09-25 |
+| CTX-002 | 백엔드는 Java 21, Spring Boot 4.1.1(Framework 7.0.9·Security 7.1.1·Hibernate 7.4·JUnit 6), eGovFrame 5.0.0 축이다. 온라인 앱의 JSON은 Jackson 3이며 `use-jackson2-defaults`와 파라미터 이름 감지로 Boot 3.5의 wire 규칙을 유지한다. migration-tool은 Jackson 2다(DEC-OPS-124). 테스트는 기술별 test starter를 쓴다(DEC-OPS-125). 4.1 라인의 OSS 지원은 2027-07-31까지다. | [build.gradle](../../build.gradle), [version catalog](../../gradle/libs.versions.toml), [ADR-0024](../../docs/02-architecture/decisions/ADR-0024-spring-boot-4-two-phase-migration.md), [DEC-OPS-125](../../docs/04-operations/operational-decisions-index-ci-governance.md) | 2026-09-25 |
 | CTX-003 | 루트 스크립트는 Node 22 이상과 npm lockfile을, 프런트엔드는 Node 22 이상·pnpm 9 lockfile을 사용한다. 프런트는 Next.js 16.4.2 계열·React 19.3.0 계열이다. | [package.json](../../package.json), [package-lock.json](../../package-lock.json), [frontend/package.json](../../frontend/package.json), [frontend/pnpm-lock.yaml](../../frontend/pnpm-lock.yaml), [.nvmrc](../../.nvmrc) | 2026-10-23 |
 | CTX-004 | 프론트 계약 생성의 결정적 기본 경로는 `codegen:file` 뒤 `codegen:zod`이며, live `codegen:ts`는 API 서버가 필요하다. 드리프트 검증(`codegen:verify`·`:zod`)은 index의 스펙으로 임시 디렉터리에서 다시 만들어 index 생성물과 비교하고, 작업 트리가 다르면 작업 트리 쌍도 비교하며 작업 파일·index를 쓰지 않는다(DEC-OPS-335). zod·operations 는 진입 파일 옆 같은 이름 폴더에 API 태그 묶음 모듈로 나뉘며 검증도 묶음 모듈까지 비교한다(2026-10-19, 공용 JS 축소). | [frontend/package.json](../../frontend/package.json), [API 문서 가이드](../../docs/03-guides/api-documentation-guide.md), [검증 스크립트](../../scripts/verify-generated-contracts.mjs) | 2026-10-19 |
 | CTX-005 | main 병합 명세는 `backend-build`, `frontend-build`, `secret-scan`, `e2e-test`, `mutation-test`, `secure-coding` 6개 required context와 DEC-OPS-009의 단독 운영 review policy다. CodeQL SAST는 Java·JavaScript/TypeScript의 High/Critical을 차단하며, 원격 적용 상태는 대상 SHA와 `verify:ops`로 확인한다. | [.github/required-checks.json](../../.github/required-checks.json), [CI 가이드](../../docs/03-guides/cicd-pipeline.md), [branch verifier](../../scripts/verify-branch-protection.mjs) | 2026-09-09 |
@@ -104,8 +104,8 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 
 ## 공유 워킹트리와 에이전트 인수인계
 
-여러 에이전트가 같은 디스크·Git index를 공유할 때의 커밋 범위, 도구별 진입점과 글로벌 규칙의 경계, 원시 세션·세션 저널을 공용 메모리로 옮기지 않는 규칙, 이 메모리가 실시간 claim·lock이 아니라는 경계는 [AGENTS.md](../../AGENTS.md#공유-워킹트리와-git)의 「공유 워킹트리와 Git」·「Documentation and memory」·「도구별 진입점」이 정본이다. 사용자 글로벌 규칙은 저장소 밖의 도구별 진입점에서 따로 로드되므로 clone이나 다른 PC에 자동 전파되지 않는다.
+여러 에이전트가 같은 디스크·Git index를 공유할 때의 커밋 범위, 도구별 진입점과 글로벌 규칙의 경계, 원시 세션·세션 저널을 공용 메모리로 옮기지 않는 규칙, 이 메모리가 실시간 claim·lock이 아니라는 경계, 자동 로드하는 공용 메모리와 대상 경로에 따라 읽는 영역 결정 색인의 경계는 [AGENTS.md](../../AGENTS.md#공유-워킹트리와-git)의 「작업 시작 시 필수 읽기」·「공유 워킹트리와 Git」·「Documentation and memory」·「도구별 진입점」이 정본이다. 사용자 글로벌 규칙은 저장소 밖의 도구별 진입점에서 따로 로드되므로 clone이나 다른 PC에 자동 전파되지 않는다.
 
 ## 재검증 트리거
 
-모듈 include/의존 방향, 런타임 버전, required checks, gate registry·runner selector, 의존성 감사·snapshot 신뢰 경계, load-test 실행 계약, 백업 세트 형식·복원 절차, release topology, codegen 경로, migration-tool 안전성 또는 에이전트 진입점이 바뀌면 관련 CTX 행과 `verified_at`을 같은 변경에서 갱신한다.
+모듈 include/의존 방향, 런타임 버전, required checks, gate registry·runner selector, 의존성 감사·snapshot 신뢰 경계, load-test 실행 계약, 백업 세트 형식·복원 절차, release topology, codegen 경로, migration-tool 안전성, 에이전트 진입점 또는 자동 로드 집합(공용 메모리 import·결정 색인 분할)이 바뀌면 관련 CTX 행과 `verified_at`을 같은 변경에서 갱신한다.

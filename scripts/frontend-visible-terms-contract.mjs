@@ -257,7 +257,7 @@ export function validateVisibleTerms(contract, { root = ROOT, expectedPilotRoute
 
     결정 종결은 remediated-local 과 반대로 **결정 대상 문자열이 여전히 있어야** 한다 — 결정한 뒤
     문구가 바뀌었다면 그 결정은 더 이상 지금 화면에 대한 것이 아니므로 red 다. 결정 참조와 결정일은
-    산문 사유로 대신할 수 없다. 원장(decisions.md) 실재 대조는 재사용 산출물에서도 이 모듈이 호출되므로
+    산문 사유로 대신할 수 없다. 원장(결정 색인) 실재 대조는 재사용 산출물에서도 이 모듈이 호출되므로
     생산 저장소 테스트(frontend-visible-terms-contract.test.mjs)가 맡는다.
   */
   const OWNER_DECISION_STATUS = 'accepted-by-owner';

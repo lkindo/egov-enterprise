@@ -17,8 +17,10 @@ import {
   rebindApprovalText,
   resolveHashOnlyConflicts,
   resolveMemoryTableConflicts,
+  MEMORY_TABLES,
   urlCensusSha256,
 } from './merge-main-regenerate.mjs';
+import { DECISION_AREA_INDEXES } from './decision-indexes.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
@@ -184,21 +186,21 @@ const fakeGenerator = {
   command: ['node', ['-e', "const fs=require('fs');fs.writeFileSync('census.txt', fs.readdirSync('src').sort().join(',')+'\\n')"]],
 };
 
-function divergedRepo({ decisionsOurs, decisionsTheirs, extra = () => {} }) {
+function divergedRepo({ decisionsOurs, decisionsTheirs, extra = () => {}, file = '.agent/memory/decisions.md' }) {
   const r = repo();
-  r.write('.agent/memory/decisions.md', `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n`);
+  r.write(file, `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n`);
   r.write('src/a.ts', 'a\n');
   r.write('census.txt', 'a.ts\n');
   r.git('add', '-A');
   r.git('commit', '-qm', 'base');
   r.git('checkout', '-qb', 'feature');
-  r.write('.agent/memory/decisions.md', `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${decisionsOurs}\n`);
+  r.write(file, `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${decisionsOurs}\n`);
   r.write('src/b.ts', 'b\n');
   r.write('census.txt', 'a.ts,b.ts\n');
   r.git('add', '-A');
   r.git('commit', '-qm', 'ours');
   r.git('checkout', '-q', 'main');
-  r.write('.agent/memory/decisions.md', `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${decisionsTheirs}\n`);
+  r.write(file, `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${decisionsTheirs}\n`);
   r.write('src/c.ts', 'c\n');
   r.write('census.txt', 'a.ts,c.ts\n');
   extra(r);
@@ -220,6 +222,20 @@ test('a real merge resolves memory rows and generated conflicts, regenerates, st
   assert.equal(r.git('status', '--porcelain').trim().split('\n').filter(line => !/^[MA] /.test(line)).length, 0, 'everything is staged');
   assert.ok(fs.existsSync(path.join(r.dir, '.git', 'MERGE_HEAD')), 'the merge is left for the person to review and commit');
   assert.equal(r.git('rev-list', '--count', 'HEAD').trim(), '2');
+});
+
+// 영역 결정 색인도 공용 결정 인덱스와 같은 ID 순서 병합을 받는다(DEC-OPS-381) — 빠지면 사람이 손으로 푸는 충돌이 된다.
+test('area decision index rows merge in ID order like the auto-loaded index', () => {
+  for (const file of DECISION_AREA_INDEXES.map(({ path: areaPath }) => areaPath)) {
+    assert.deepEqual(MEMORY_TABLES.get(file), { order: 'id' }, file);
+  }
+  const file = DECISION_AREA_INDEXES.at(-1).path;
+  const r = divergedRepo({ decisionsOurs: row('DEC-OPS-3'), decisionsTheirs: row('DEC-OPS-2'), file });
+  const messages = [];
+  const result = mergeMainAndRegenerate({ cwd: r.dir, base: 'main', fetch: false, generators: [fakeGenerator], log: m => messages.push(m) });
+  assert.equal(result.status, 'ready', messages.join('\n'));
+  assert.ok(result.resolved.includes(file), result.resolved.join(', '));
+  assert.equal(r.read(file), `| ID | 결정 |\n|---|---|\n${row('DEC-OPS-1')}\n${row('DEC-OPS-2')}\n${row('DEC-OPS-3')}\n`);
 });
 
 test('a generator whose tool is absent from the repository is skipped with a message, not run', () => {

@@ -103,6 +103,10 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [verification-blindspots.md](04-operations/verification-blindspots.md) | **검증 사각지대** — "빌드 성공"과 "실제 작동"의 차이 |
 | [secure-coding-weakness-baseline.md](04-operations/secure-coding-weakness-baseline.md) | 행안부 구현단계 보안약점 49개를 CWE·OWASP·현재 탐지 수단과 대응시킨 사전 점검 기준선(공식 진단을 대신하지 않음) |
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
+| [operational-decisions-index-ci-governance.md](04-operations/operational-decisions-index-ci-governance.md) | CI·훅·게이트·계약·원장·검증 도구 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
+| [operational-decisions-index-composer.md](04-operations/operational-decisions-index-composer.md) | 프로젝트 생성기·기능 소유·슬롯·재사용 투영 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
+| [operational-decisions-index-migration.md](04-operations/operational-decisions-index-migration.md) | 독립 이관 도구(migration-tool)에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
+| [operational-decisions-index-product.md](04-operations/operational-decisions-index-product.md) | 제품 백엔드·화면·스키마·권한 원장·운영 배포 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |
 | [ui-quality-assisted-accessibility.md](04-operations/ui-quality-assisted-accessibility.md) | 수동 접근성 평가를 대체하지 않는 keyboard·viewport·forced-colors·reduced-motion 자동 보조 증거 |
@@ -154,9 +158,9 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 ### 운영 결정 원문 보존
 
-[operational-decisions-history.md](archived/operational-decisions-history.md)는 짧은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 가리키는 기존 운영 결정 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
+[operational-decisions-history.md](archived/operational-decisions-history.md)는 [공용 결정 인덱스](../.agent/memory/decisions.md)와 영역 결정 색인이 가리키는 기존 운영 결정 전문과 종료 gap 근거다. 위치 이동은 승인 취소를 뜻하지 않는다. 결정의 현재 효력은 후속 ADR과 `supersedes`를 함께 확인하며, 당시 실행 결과·수치를 현재 상태로 사용하지 않는다.
 
-[operational-decisions-index-historical.md](archived/operational-decisions-index-historical.md)는 지금의 작업을 제약하지 않는 운영 결정(퇴역·전부 대체·일회성 실행·구현 기록)의 짧은 역사 색인이다. 공용 결정 인덱스와 함께 보관 원문의 모든 DEC를 한 번씩 색인하며, 에이전트 진입점은 자동으로 읽지 않는다.
+[operational-decisions-index-historical.md](archived/operational-decisions-index-historical.md)는 지금의 작업을 제약하지 않는 운영 결정(퇴역·전부 대체·일회성 실행·구현 기록)의 짧은 역사 색인이다. 공용 결정 인덱스·영역 결정 색인과 함께 보관 원문의 모든 DEC를 한 번씩 색인하며, 에이전트 진입점은 자동으로 읽지 않는다.
 
 ---
 

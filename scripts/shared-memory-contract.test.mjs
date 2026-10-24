@@ -8,6 +8,7 @@ import {
   LEDGER_MEMORY_BINDINGS, TEST_SOURCE_ROOTS, decisionIndexIds, ledgerCountFacts, ledgerMemoryViolations, restatementMessage,
   testSourceFiles, testSourceRestatements, testSourceViolations,
 } from './ledger-count-restatement.mjs';
+import { DECISION_AREA_INDEXES, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const memoryDir = path.join(repoRoot, '.agent', 'memory');
@@ -29,7 +30,7 @@ const documents = {
   'decisions.md': {
     kind: 'decisions',
     authority: 'adr-index',
-    headings: ['범위와 승격 규칙', 'Accepted ADR index', '운영 결정 index', '기록 템플릿'],
+    headings: ['범위와 승격 규칙', 'Accepted ADR index', '운영 결정 index', '영역 결정 색인', '기록 템플릿'],
   },
   'known-gaps.md': {
     kind: 'known-gaps',
@@ -40,6 +41,11 @@ const documents = {
 
 function readRepoFile(relative) {
   return fs.readFileSync(path.join(repoRoot, relative), 'utf8');
+}
+
+/** 영역 결정 색인(DEC-OPS-381) — 자동 로드하지 않지만 공용 메모리와 같은 행 규칙을 지킨다(H2: 옮긴 행을 검사 밖으로 빼지 않는다). */
+function areaIndexFiles() {
+  return Object.fromEntries(DECISION_AREA_INDEXES.map(({ path: areaPath }) => [path.posix.basename(areaPath), readRepoFile(areaPath)]));
 }
 
 function parseFrontmatter(text, file) {
@@ -127,10 +133,8 @@ function acceptedAdrIds(registry) {
 
 function decisionMemoryAdrIds(decisions) {
   const acceptedSection = markdownSection(decisions, 'Accepted ADR index', '운영 결정 index');
-  const ids = markdownTableRows(
-    acceptedSection,
-    ['ID', '상태', '결정', '이유', '정본', '시행일', 'supersedes'],
-  ).map((cells) => {
+  // ADR ID 가 ADR 색인의 키라 이유·정본 열을 두지 않는다(DEC-OPS-381) — 링크는 ADR 색인이 갖는다.
+  const ids = markdownTableRows(acceptedSection, DECISION_INDEX_HEADER).map((cells) => {
     assert.match(cells[0] ?? '', /^ADR-\d{4}$/u, 'Accepted ADR index에 잘못된 ADR ID가 있습니다.');
     assert.equal(cells[1], 'accepted', `${cells[0]}: Accepted ADR index 상태는 exact accepted여야 합니다.`);
     return cells[0];
@@ -144,12 +148,26 @@ function decisionMemoryAdrIds(decisions) {
  * ID 가 보관 원문의 앵커이고, 그 앵커가 실제 절로 풀리는지와 상태·시행일·supersedes 일치는 Atlas 카탈로그가 본다.
  */
 export const DECISION_ARCHIVE = '../../docs/archived/operational-decisions-history.md';
-// 지금의 작업을 제약하지 않는 결정은 자동 로드되지 않는 역사 색인에 있다. 두 색인의 누락·중복·원문 일치는 Atlas 카탈로그가 본다.
-export const DECISION_HISTORICAL_INDEX = '../../docs/archived/operational-decisions-index-historical.md';
-export const OPERATIONAL_DECISION_HEADER = Object.freeze(['ID', '상태', '결정', '시행일', 'supersedes']);
+// 지금의 작업을 제약하지 않는 결정은 자동 로드되지 않는 역사 색인에, 특정 경로에만 걸리는 결정은 영역 색인에 있다(DEC-OPS-381).
+// 색인 사이의 누락·중복·원문 일치는 Atlas 카탈로그가 본다.
+const fromMemory = (repoPath) => path.posix.relative('.agent/memory', repoPath);
+export const DECISION_HISTORICAL_INDEX = fromMemory(HISTORICAL_DECISION_INDEX);
+export const DECISION_INDEX_HEADER = Object.freeze(['ID', '상태', '결정', '시행일', 'supersedes']);
+
+/** 결정 색인 표(공용·영역)의 행 형식: 머리글 정확히 한 번, DEC ID·상태 어휘·시행일 형식, 표 안 중복 없음. */
+export function decisionTableIds(text, label) {
+  const ids = markdownTableRows(text, DECISION_INDEX_HEADER).map((cells) => {
+    assert.match(cells[0] ?? '', /^DEC-OPS-\d{3}$/u, `${label}에 잘못된 DEC ID가 있습니다: ${cells[0]}`);
+    assert.match(cells[1] ?? '', /^(?:accepted|superseded|rejected)$/u, `${cells[0]}: 허용되지 않은 결정 상태입니다.`);
+    assert.match(cells[3] ?? '', /^\d{4}-\d{2}-\d{2}$/u, `${cells[0]}: 시행일 열은 날짜여야 합니다.`);
+    return cells[0];
+  });
+  assert.equal(ids.length, new Set(ids).size, `${label}에 중복 DEC ID가 있습니다.`);
+  return ids;
+}
 
 export function decisionMemoryOperationalIds(decisions) {
-  const section = markdownSection(decisions, '운영 결정 index', '기록 템플릿');
+  const section = markdownSection(decisions, '운영 결정 index', '영역 결정 색인');
   assert.ok(
     section.split(/\r?\n/).some((line) => line.startsWith('ID가 보관 원문의 앵커다') && line.includes(`](${DECISION_ARCHIVE})`)),
     '운영 결정 index 에는 ID 가 보관 원문의 앵커라는 규칙 줄과 보관 기록 링크가 있어야 합니다.',
@@ -158,14 +176,23 @@ export function decisionMemoryOperationalIds(decisions) {
     section.includes(`](${DECISION_HISTORICAL_INDEX})`),
     '운영 결정 index 에는 역사 색인 링크가 있어야 합니다 — 옮긴 결정을 찾는 길은 그 링크뿐입니다.',
   );
-  const ids = markdownTableRows(section, OPERATIONAL_DECISION_HEADER).map((cells) => {
-    assert.match(cells[0] ?? '', /^DEC-OPS-\d{3}$/u, `운영 결정 index에 잘못된 DEC ID가 있습니다: ${cells[0]}`);
-    assert.match(cells[1] ?? '', /^(?:accepted|superseded|rejected)$/u, `${cells[0]}: 허용되지 않은 결정 상태입니다.`);
-    assert.match(cells[3] ?? '', /^\d{4}-\d{2}-\d{2}$/u, `${cells[0]}: 시행일 열은 날짜여야 합니다.`);
-    return cells[0];
-  });
-  assert.equal(ids.length, new Set(ids).size, '운영 결정 index에 중복 DEC ID가 있습니다.');
-  return ids;
+  return decisionTableIds(section, '운영 결정 index');
+}
+
+/*
+ * 「영역 결정 색인」 표는 경로를 영역 색인에 잇는다. 영역 색인은 자동으로 읽히지 않으므로 이 표가 그리로 가는 유일한 길이다 —
+ * 링크 집합은 결정 색인 경로 원장(scripts/decision-indexes.mjs)과 정확히 같아야 하고, 어느 행에도 걸리지 않는 경로는 넷을 모두
+ * 읽게 하는 행(fail-closed)이 있어야 한다.
+ */
+export function decisionAreaRoutes(decisions) {
+  const section = markdownSection(decisions, '영역 결정 색인', '기록 템플릿');
+  const rows = markdownTableRows(section, ['영역 색인', '이 경로를 고치면 읽는다']);
+  const linked = rows.flatMap(([cell]) => [...cell.matchAll(/^\[[^\]]+\]\(([^)\s]+)\)$/gu)].map((match) => match[1]));
+  assert.deepEqual(linked, DECISION_AREA_INDEXES.map(({ path: areaPath }) => fromMemory(areaPath)),
+    '영역 결정 색인 표의 링크가 결정 색인 경로 원장과 다릅니다 — 영역 색인을 더하거나 옮기면 둘을 함께 고친다.');
+  assert.ok(rows.some(([cell, routes]) => cell === '넷 모두' && /어느 행에도 걸리지 않는/u.test(routes)),
+    '영역 결정 색인 표에는 어느 행에도 걸리지 않는 경로를 넷 모두로 보내는 행이 있어야 합니다(fail-closed).');
+  return linked;
 }
 
 function assertExactAdrSet(registryIds, memoryIds) {
@@ -239,8 +266,20 @@ function memoryFiles() {
   return Object.fromEntries(Object.keys(documents).map((file) => [file, fs.readFileSync(path.join(memoryDir, file), 'utf8')]));
 }
 
+/** 행 규칙(원장 재진술·행 길이·공개 안전·ID 유일성)을 받는 모집단: 자동 로드 세 파일과 영역 결정 색인(DEC-OPS-381). */
+function memoryRuleFiles() {
+  return { ...memoryFiles(), ...areaIndexFiles() };
+}
+
+test('row rules cover the auto-loaded memory and every area decision index', () => {
+  // 행을 자동 로드 밖으로 옮겨 검사를 피하지 않는다(H2) — 영역 색인이 이 모집단에서 빠지면 붉다.
+  assert.deepEqual(Object.keys(memoryRuleFiles()).sort(),
+    [...Object.keys(documents), ...DECISION_AREA_INDEXES.map(({ path: areaPath }) => path.posix.basename(areaPath))].sort());
+});
+
 test('ledger-derived counts stay in their ledgers and memory rows link to them', () => {
-  assert.deepEqual(ledgerMemoryViolations(memoryFiles()), []);
+  // 영역 결정 색인도 같은 검출을 받는다(DEC-OPS-381) — 행을 자동 로드 밖으로 옮겨 재진술 검사를 피하지 않는다.
+  assert.deepEqual(ledgerMemoryViolations(memoryRuleFiles()), []);
 });
 
 test('ledger memory bindings are red for restated counts, a missing link and a missing row', () => {
@@ -418,7 +457,14 @@ test('a deliberate ledger pin needs an indexed decision, so the marker alone can
     const findings = scan(text);
     assert.deepEqual(findings.map(({ pinned }) => pinned), [false], text);
   }
-  assert.match(restatementMessage(scan(`// ledger-pin(DEC-OPS-0000)\n${line}`)[0]), /ledger-pin\(DEC-OPS-0000\) 이 가리키는 결정이 공용 결정 인덱스에 없습니다/u);
+  assert.match(restatementMessage(scan(`// ledger-pin(DEC-OPS-0000)\n${line}`)[0]), /ledger-pin\(DEC-OPS-0000\) 이 가리키는 결정이 지금의 작업을 제약하는 결정 색인에 없습니다/u);
+  // 영역 색인의 결정은 고정 근거가 되고(지금의 작업을 제약한다), 역사 색인에만 있는 결정은 되지 않는다(DEC-OPS-381).
+  const firstId = (file) => readRepoFile(file).match(/^\| (DEC-OPS-\d{3}) \|/mu)[1];
+  const areaId = firstId(DECISION_AREA_INDEXES[0].path);
+  const historicalId = firstId(HISTORICAL_DECISION_INDEX);
+  assert.ok(decisions.has(areaId) && !decisions.has(historicalId));
+  assert.deepEqual(scan(`// ledger-pin(${areaId})\n${line}`).map(({ pinned }) => pinned), [true]);
+  assert.deepEqual(scan(`// ledger-pin(${historicalId})\n${line}`).map(({ pinned }) => pinned), [false]);
 });
 
 /*
@@ -588,12 +634,23 @@ test('operational decision index keeps the five-column schema and its archive an
   const ids = decisionMemoryOperationalIds(decisions);
   assert.ok(ids.length > 0, '운영 결정 index 가 비었습니다.');
 
-  // 걷은 이유·정본 열을 되돌리면 머리글이 다시 7열이 되어 붉다.
-  const sevenColumns = decisions
-    .replace('| ID | 상태 | 결정 | 시행일 | supersedes |\r\n|---|---|---|---|---|', '| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |\r\n|---|---|---|---|---|---|---|')
-    .replace('| ID | 상태 | 결정 | 시행일 | supersedes |\n|---|---|---|---|---|', '| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |\n|---|---|---|---|---|---|---|');
+  // 걷은 이유·정본 열을 되돌리면 머리글이 다시 7열이 되어 붉다. ADR 표도 같은 5열 머리글이라 절 안에서만 바꾼다.
+  const sevenColumnHeader = (text, heading) => {
+    const [head, ...rest] = text.split(new RegExp(`(?=^## ${heading}\\r?$)`, 'mu'));
+    assert.equal(rest.length, 1, `'${heading}' 절이 하나여야 합니다.`);
+    return head + rest[0].replace(/\| ID \| 상태 \| 결정 \| 시행일 \| supersedes \|(\r?\n)\|---\|---\|---\|---\|---\|/u,
+      '| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |$1|---|---|---|---|---|---|---|');
+  };
+  const sevenColumns = sevenColumnHeader(decisions, '운영 결정 index');
   assert.notEqual(sevenColumns, decisions, '합성 7열 머리글 mutation 이 적용되지 않았습니다.');
   assert.throws(() => decisionMemoryOperationalIds(sevenColumns), /markdown table header가 정확히 한 번 있어야 합니다: ID \| 상태 \| 결정 \| 시행일 \| supersedes/u);
+  const sevenColumnAdr = sevenColumnHeader(decisions, 'Accepted ADR index');
+  assert.notEqual(sevenColumnAdr, decisions, '합성 ADR 7열 머리글 mutation 이 적용되지 않았습니다.');
+  assert.throws(() => decisionMemoryAdrIds(sevenColumnAdr), /markdown table header가 정확히 한 번 있어야 합니다: ID \| 상태 \| 결정 \| 시행일 \| supersedes/u);
+  const adrRow = decisions.split(/\r?\n/).find((line) => line.startsWith('| ADR-0001 |'));
+  const adrCells = markdownTableCells(adrRow);
+  assert.throws(() => decisionMemoryAdrIds(decisions.replace(adrRow, `| ${[...adrCells.slice(0, 3), 'probe reason', '[ADR-0001](x.md)', ...adrCells.slice(3)].join(' | ')} |`)),
+    /markdown table data 열 수가 header와 다릅니다/u);
 
   // 한 행만 옛 형식(이유·정본 열)으로 쓰면 열 수가 달라 붉다.
   const row = decisions.split(/\r?\n/).find((line) => line.startsWith(`| ${ids[0]} |`));
@@ -609,6 +666,46 @@ test('operational decision index keeps the five-column schema and its archive an
   const historicalLink = `](${DECISION_HISTORICAL_INDEX})`;
   assert.ok(decisions.includes(historicalLink));
   assert.throws(() => decisionMemoryOperationalIds(decisions.split(historicalLink).join('](../../docs/README.md)')), /역사 색인 링크가 있어야 합니다/u);
+});
+
+test('area decision indexes keep the operational row schema and are reachable from the auto-loaded index', () => {
+  const decisions = readRepoFile('.agent/memory/decisions.md');
+  assert.equal(decisionAreaRoutes(decisions).length, DECISION_AREA_INDEXES.length);
+  const universal = new Set(decisionMemoryOperationalIds(decisions));
+  const seen = new Set();
+  for (const { path: areaPath } of DECISION_AREA_INDEXES) {
+    const text = readRepoFile(areaPath);
+    const ids = decisionTableIds(text, areaPath);
+    assert.ok(ids.length > 0, `${areaPath}: 영역 색인이 비었습니다.`);
+    for (const id of ids) {
+      assert.ok(!universal.has(id) && !seen.has(id), `${id}: 결정은 색인 하나에만 둔다(공용·영역 중복).`);
+      seen.add(id);
+    }
+    // 영역 색인도 ID 가 보관 원문의 앵커라는 규칙 줄과 공용·역사 색인 링크를 갖는다 — 자동 로드 밖에서 읽는 사람이 길을 잃지 않는다.
+    assert.ok(text.split(/\r?\n/).some((line) => line.startsWith('ID가 보관 원문의 앵커다') && line.includes('](../archived/operational-decisions-history.md)')),
+      `${areaPath}: 보관 원문 앵커 규칙 줄이 필요합니다.`);
+    assert.ok(text.includes('](../../.agent/memory/decisions.md)') && text.includes('](../archived/operational-decisions-index-historical.md)'),
+      `${areaPath}: 공용·역사 색인 링크가 필요합니다.`);
+    assert.match(text, /^> 상태: 영역 결정 색인 — .*upstream 이력이며 도입 기관의 현재 결정이 아니다\.$/mu,
+      `${areaPath}: 생성물에서도 참인 상태 줄이 필요합니다 — 복사된 원본 결정을 도입 기관의 현재 결정으로 읽지 않게 한다.`);
+  }
+  // red 재현: 상태 어휘·시행일·중복은 영역 색인에서도 붉고, 링크 표가 원장과 다르거나 fail-closed 행이 없으면 붉다.
+  const { path: firstArea } = DECISION_AREA_INDEXES[0];
+  const areaText = readRepoFile(firstArea);
+  const row = areaText.split(/\r?\n/).find((line) => /^\| DEC-OPS-\d{3} \|/u.test(line));
+  const cells = markdownTableCells(row);
+  for (const [label, changed, pattern] of [
+    ['상태 오타', row.replace(` | ${cells[1]} | `, ' | acepted | '), /허용되지 않은 결정 상태/u],
+    ['시행일 형식', `| ${cells.map((cell, at) => at === 3 ? '2026-1-5' : cell).join(' | ')} |`, /시행일 열은 날짜여야/u],
+    ['중복', `${row}\n${row}`, /중복 DEC ID/u],
+  ]) {
+    assert.notEqual(changed, row, label);
+    assert.throws(() => decisionTableIds(areaText.replace(row, changed), firstArea), pattern, label);
+  }
+  const routeRow = decisions.split(/\r?\n/).find((line) => line.startsWith('| [') && line.includes(fromMemory(firstArea)));
+  assert.throws(() => decisionAreaRoutes(decisions.replace(routeRow, '')), /결정 색인 경로 원장과 다릅니다/u);
+  const closing = decisions.split(/\r?\n/).find((line) => line.startsWith('| 넷 모두 |'));
+  assert.throws(() => decisionAreaRoutes(decisions.replace(closing, '')), /넷 모두로 보내는 행/u);
 });
 
 test('memory truth bindings fail closed for synthetic shard and ADR drift', () => {
@@ -668,7 +765,7 @@ test('memory truth bindings fail closed for synthetic shard and ADR drift', () =
   assert.ok(!registryIds.includes(ghostId), `${ghostId}는 합성 ghost ID로 사용할 수 없습니다.`);
   const ghostDecision = decisions.replace(
     /\r?\n\r?\n## 운영 결정 index/u,
-    `\n| ${ghostId} | accepted | synthetic ghost | synthetic reason | synthetic source | 2099-01-01 | - |\n\n## 운영 결정 index`,
+    `\n| ${ghostId} | accepted | synthetic ghost | 2099-01-01 | - |\n\n## 운영 결정 index`,
   );
   assert.notEqual(ghostDecision, decisions, '합성 ghost ADR mutation이 Accepted ADR 구간에 적용되지 않았습니다.');
   assert.throws(
@@ -711,9 +808,6 @@ test('memory truth bindings fail closed for synthetic shard and ADR drift', () =
 });
 
 test('memory registries use unique IDs and allowed gap states', () => {
-  const allText = Object.keys(documents)
-    .map((file) => fs.readFileSync(path.join(memoryDir, file), 'utf8'))
-    .join('\n');
   /*
     `| GAP-ID |` 는 표 머리글이지 memory ID 가 아니다 — 바로 아래 행 검사가 이미 `(?!ID\b)` 로
     그렇게 본다. 종전 수집기만 그 예외를 몰라, 표가 둘이 되면(활성 registry + 외부 증거 대기)
@@ -722,7 +816,8 @@ test('memory registries use unique IDs and allowed gap states', () => {
   */
   const collectIds = (text) =>
     [...text.matchAll(/^\| ((?:CTX|ADR|DEC|GAP)-(?!ID\b)[A-Z0-9-]+) \|/gm)].map((match) => match[1]);
-  const ids = collectIds(allText);
+  // 영역 결정 색인의 DEC 도 공용 메모리 ID 와 겹치지 않는다(한 결정은 색인 하나에만).
+  const ids = collectIds(Object.values(memoryRuleFiles()).join('\n'));
   assert.equal(ids.length, new Set(ids).size, `중복 memory ID가 있습니다: ${ids.join(', ')}`);
 
   // 머리글은 몇 개가 있어도 ID 가 아니고, 실제 ID 중복은 반드시 잡힌다.
@@ -771,13 +866,44 @@ export function memoryRowLengthViolations(text) {
 }
 
 test('shared memory rows stay index-sized', () => {
-  const violations = Object.keys(documents)
-    .flatMap((file) => memoryRowLengthViolations(fs.readFileSync(path.join(memoryDir, file), 'utf8')));
+  const violations = Object.values(memoryRuleFiles()).flatMap((text) => memoryRowLengthViolations(text));
   assert.deepEqual(violations, []);
 
   const agents = readRepoFile('AGENTS.md');
   assert.match(agents, /## 거버넌스 총량 관리/u, 'AGENTS.md 에 거버넌스 총량 규칙이 있어야 이 상한의 근거가 선다.');
   assert.ok(agents.includes('(scripts/shared-memory-contract.test.mjs)'), 'AGENTS.md 규칙은 집행 계약을 가리켜야 한다(H5).');
+});
+
+/**
+ * [2026-10-24 DEC-OPS-381] 진입점이 매 세션 읽는 세 파일의 전체 크기 상한. 행 상한은 행 수가 느는 것을 못 잡는다.
+ * 단위는 행 상한과 같은 문자 수(CRLF 를 LF 로 맞춘 뒤) — 작업 트리는 CRLF·CI 는 LF 라 맞추지 않으면 판정이 갈린다.
+ * 상한에 닿으면 행을 줄이거나 기준상 더는 늘 걸리지 않게 된 행만 옮긴다. 늘 걸리는 행을 크기 때문에 옮기거나 상한을 올리는 것은
+ * H2 판단이다(AGENTS.md 거버넌스 총량 관리).
+ */
+export const MEMORY_FILE_LIMITS = Object.freeze({ 'project-context.md': 20000, 'decisions.md': 20000, 'known-gaps.md': 34000 });
+export const memoryFileSize = (text) => text.replace(/\r\n?/gu, '\n').length;
+
+export function memoryFileSizeViolations(files) {
+  return Object.entries(files).flatMap(([file, text]) => {
+    const limit = MEMORY_FILE_LIMITS[file];
+    if (!Number.isInteger(limit)) return [`${file}: 파일 크기 상한이 없습니다 — 자동 로드되는 공용 메모리 파일은 상한이 필요합니다.`];
+    const size = memoryFileSize(text);
+    return size > limit ? [`${file}: ${size}자 > 상한 ${limit}자 — 경위·실측은 링크 문서로, 더는 늘 걸리지 않는 행은 영역·역사 색인으로 옮기십시오.`] : [];
+  });
+}
+
+test('auto-loaded shared memory files stay within their size budget', () => {
+  assert.deepEqual(Object.keys(MEMORY_FILE_LIMITS).sort(), Object.keys(documents).sort(), '자동 로드되는 파일마다 상한이 하나씩 있어야 합니다.');
+  assert.deepEqual(memoryFileSizeViolations(memoryFiles()), []);
+  // red 재현: 상한 경계, 줄 끝 정규화, 상한이 없는 파일.
+  for (const [file, limit] of Object.entries(MEMORY_FILE_LIMITS)) {
+    assert.deepEqual(memoryFileSizeViolations({ [file]: 'x'.repeat(limit) }), [], `${file}: 상한과 같은 크기는 통과한다`);
+    assert.equal(memoryFileSizeViolations({ [file]: 'x'.repeat(limit + 1) }).length, 1, `${file}: 상한을 넘으면 붉다`);
+  }
+  assert.equal(memoryFileSize('a\r\nb\r\n'), memoryFileSize('a\nb\n'), 'CRLF 와 LF 의 크기가 같아야 한다');
+  assert.match(memoryFileSizeViolations({ 'new-memory.md': 'x' })[0], /파일 크기 상한이 없습니다/u);
+  const decisions = memoryFiles()['decisions.md'];
+  assert.match(memoryFileSizeViolations({ 'decisions.md': `${decisions}${'x'.repeat(MEMORY_FILE_LIMITS['decisions.md'])}` })[0], /decisions\.md: \d+자 > 상한 20000자/u);
 });
 
 test('memory row limits are red for oversized new rows and leave accepted history alone', () => {
@@ -791,9 +917,7 @@ test('memory row limits are red for oversized new rows and leave accepted histor
 });
 
 test('shared memory is public-repository safe', () => {
-  const text = Object.keys(documents)
-    .map((file) => fs.readFileSync(path.join(memoryDir, file), 'utf8'))
-    .join('\n');
+  const text = Object.values(memoryRuleFiles()).join('\n');
   const forbidden = [
     /file:\/\//iu,
     /[A-Za-z]:[\\/]Users[\\/]/u,
