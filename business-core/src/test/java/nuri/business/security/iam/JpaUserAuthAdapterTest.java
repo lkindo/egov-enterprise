@@ -58,6 +58,21 @@ class JpaUserAuthAdapterTest {
     }
 
     @Test
+    @DisplayName("등록을 시작한 적 없는 자격 행은 세션 버전을 비우고, 해제한 행은 새 버전으로 묶는다")
+    void unenrolledCredentialKeepsPasswordOnlySessionButDisabledCredentialDoesNotReviveIt() {
+        user(null);
+        var credential = nuri.business.domain.auth.mfa.MfaCredential.create("USR_ESNTL_1");
+        when(mfaCredentials.findBySubject("USR_ESNTL_1")).thenReturn(Optional.of(credential));
+
+        assertThat(((CustomUserDetails) adapter.loadUserByUsername("USR_ESNTL_1")).getMfaCredentialVersion()).isNull();
+
+        credential.revoke(false);
+        assertThat(credential.getState()).isEqualTo("NONE");
+        assertThat(((CustomUserDetails) adapter.loadUserByUsername("USR_ESNTL_1")).getMfaCredentialVersion())
+                .isNotNull().isEqualTo(credential.getCredentialVersion());
+    }
+
+    @Test
     void signedSubjectCannotResolveToAnotherAccountsCollidingLoginId() {
         user(null);
         var collision = User.builder().esntlId("OTHER_INTERNAL_ID").userId("USR_ESNTL_1")

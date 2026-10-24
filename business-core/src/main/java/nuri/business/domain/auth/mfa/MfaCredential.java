@@ -15,6 +15,9 @@ import nuri.foundation.domain.common.BaseEntity;
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class MfaCredential extends BaseEntity {
+    /** 등록을 시작한 적 없는 행의 버전. 등록 시작·해제·복구는 늘 새 UUID 로 바꾸므로 이 값으로 돌아오지 않는다. */
+    private static final String UNENROLLED_VERSION = "UNENROLLED";
+
     @Id
     @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "mfaCredentialSequence")
     @SequenceGenerator(name = "mfaCredentialSequence", sequenceName = "sq_auth_otp_cert", allocationSize = 1)
@@ -41,10 +44,17 @@ public class MfaCredential extends BaseEntity {
         MfaCredential credential = new MfaCredential();
         credential.subject = subject;
         credential.state = "NONE";
-        credential.credentialVersion = UUID.randomUUID().toString();
+        // 비밀번호 확인 전에 실패 횟수를 담으려고 만든 행이 기존 비밀번호 전용 세션을 끊지 않게 한다.
+        credential.credentialVersion = UNENROLLED_VERSION;
         credential.failureCount = BigDecimal.ZERO;
         return credential;
     }
+
+    /**
+     * 세션 토큰이 묶이는 버전. 등록을 시작한 적 없는 행은 행이 없는 것과 같다(null). 해제한 NONE 행은 새 버전을
+     * 가지므로 등록 때 폐기한 비밀번호 전용 세션이 해제 뒤에 되살아나지 않는다.
+     */
+    public String sessionVersion() { return UNENROLLED_VERSION.equals(credentialVersion) ? null : credentialVersion; }
 
     public boolean isActive() { return "ACTIVE".equals(state); }
     public boolean requiresEnrollment() { return "RECOVER".equals(state); }
