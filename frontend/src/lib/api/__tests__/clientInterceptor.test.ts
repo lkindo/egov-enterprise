@@ -283,6 +283,19 @@ describe('API 클라이언트 인터셉터', () => {
       }
     });
 
+    // 위 판정의 대조: 브라우저 요청은 늘 세대를 싣는다. 전이가 없으면 진짜 만료라 그대로 로그인으로 보낸다 — 판정이 넓어지면 붉다.
+    it('세대를 실은 요청이라도 전이 없이 재발급이 실패하면 만료 화면으로 보낸다', async () => {
+      const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
+      Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
+      const { instance, captured } = await loadClient();
+      const config = await captured.requestOk!({ url: '/x', headers: {} }) as { _authorizationEpoch?: number };
+      expect(config._authorizationEpoch).toEqual(expect.any(Number));
+      instance.post.mockRejectedValueOnce(new Error('reissue 401'));
+      const error = await captured.responseErr!({ response: { status: 401 }, config }).catch((reason: unknown) => reason);
+      expect((error as Error).name).not.toBe('CanceledError');
+      expect(win.location.href).toContain('/login?expired=true');
+    });
+
     it('재발급 자체가 실패해도 로그인으로 보낸다', async () => {
       const win = { location: { pathname: '/admin', href: '' }, dispatchEvent: vi.fn() };
       Object.defineProperty(globalThis, 'window', { value: win, configurable: true, writable: true });
