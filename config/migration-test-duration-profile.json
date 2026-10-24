@@ -195,6 +195,7 @@
     "nuri.migration.workflow.WorkflowReviewLoaderTest": 16,
     "nuri.migration.WorkflowCliOptionsTest": 7,
     "nuri.migration.WorkflowCollectionCommandTest": 4933,
+    "nuri.migration.WorkflowFailureDiagnosticTest": 14,
     "nuri.migration.suggest.ConformanceEstimatorTest": 90,
     "nuri.migration.suggest.LedgerDraftWriterTest": 800,
     "nuri.migration.suggest.TermSuggesterTest": 360,

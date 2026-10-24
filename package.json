@@ -43,6 +43,8 @@
     "base:generate-source": "node scripts/generate-reusable-base-source.mjs",
     "base:verify": "node scripts/verify-reusable-base.mjs",
     "migration:export": "node scripts/generate-migration-product.mjs",
+    "migration:ui": "node tools/migration-workspace/server.mjs",
+    "test:migration-workspace": "node --test scripts/migration-workspace.test.mjs",
     "verify": "node scripts/verify.mjs full",
     "atlas:build": "node scripts/build-atlas.mjs",
     "atlas:check": "node scripts/build-atlas.mjs --check",

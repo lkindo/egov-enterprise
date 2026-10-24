@@ -24,6 +24,8 @@
 
 ## 01-product — 기획
 
+[migration-workspace-design.md](01-product/migration-workspace-design.md) — 승인된 독립 로컬 이관 작업공간 설계와 합성 시뮬레이션(A1~A8, ADR-0041).
+
 [01-product/README.md](01-product/README.md) — 현행 제품 정의의 상태와 이력 원본 위치.
 
 [ui-ux-modernization-brief.md](01-product/ui-ux-modernization-brief.md) — 참조 구현·재사용 base의 adopter/end-user 분리 제품 brief와 사용자 연구 protocol(승인 전 Draft).
@@ -32,6 +34,8 @@
 
 
 ## 02-architecture — 설계
+
+[ADR-0041](02-architecture/decisions/ADR-0041-local-migration-workspace-and-ai.md) — 로컬 이관 UI·기존 CLI 결합, 제한된 AI 문맥과 읽기 진행 승인.
 
 | 문서 | 내용 |
 |---|---|
@@ -69,6 +73,8 @@
 ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이다. Accepted ADR은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 같은 집합으로 색인하며 계약이 둘을 대조한다.
 
 ## 03-guides — 개발 지침
+
+[migration-workspace-guide.md](03-guides/migration-workspace-guide.md) — 실제 로컬 실행기 시작, 연결·소스·검토·실행 순서와 AI 설정·현재 한계.
 
 | 문서 | 내용 |
 |---|---|

@@ -257,7 +257,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             rethrowJvmFatal(failure);
             String stage = command == null ? "workflow" : command.name().toLowerCase();
             throw new MigrationExecutionException(
-                    stage + " 실패 — 상세정보는 보안상 제거되었습니다.");
+                    stage + " 실패 — 상세정보는 보안상 제거되었습니다. MW_DIAGNOSTIC="
+                            + WorkflowFailureDiagnostic.classify(failure).name());
         }
     }
 
@@ -368,7 +369,8 @@ public final class MigrationWorkflowRunner implements ApplicationRunner {
             artifact = collectionCodec.writeSuggestions(report);
             if (options.ledgerDraft() != null) {
                 TermLedger ledger = ledgerDrafts.draft(report);
-                draft = ledgerDrafts.write(ledger);
+                draft = options.ledgerDraft().getFileName().toString().toLowerCase(java.util.Locale.ROOT)
+                        .endsWith(".json") ? ledgerDrafts.writeJson(ledger) : ledgerDrafts.write(ledger);
                 draftValues = ledgerDrafts.values(ledger);
             }
         } catch (IllegalArgumentException refused) {
