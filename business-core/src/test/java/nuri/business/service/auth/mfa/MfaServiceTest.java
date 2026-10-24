@@ -250,6 +250,8 @@ class MfaServiceTest {
     void enrollmentPasswordFailureConsumesAccountBudget(String password) {
         assertThatThrownBy(() -> service.startEnrollment(password)).isInstanceOf(MfaRejectedException.class);
         assertThat(credentialRows.get(SUBJECT).failures()).isEqualTo(1);
+        // 실패 횟수를 담는 첫 행이 기존 비밀번호 전용 세션의 버전(없음)을 바꾸지 않는다.
+        assertThat(credentialRows.get(SUBJECT).sessionVersion()).isNull();
         assertThat(challengeRows).isEmpty();
         verifyNoInteractions(refreshTokens, audit);
     }
@@ -627,7 +629,8 @@ class MfaServiceTest {
     private MfaCredential activeCredential(User row) {
         MfaCredential credential = MfaCredential.create(row.getEsntlId());
         ReflectionTestUtils.setField(credential, "id", nextCredentialId++);
-        String version = credential.getCredentialVersion();
+        // 서비스의 등록 시작처럼 새 버전으로 등록한다.
+        String version = java.util.UUID.randomUUID().toString();
         credential.beginEnrollment(settings.cipher().encrypt(RFC6238_SHA1_BASE32_VECTOR, row.getEsntlId(), version), version);
         credential.activate();
         credentialRows.put(row.getEsntlId(), credential);
