@@ -229,6 +229,7 @@ export default function MasterDetailSample() {
       masterTools={(
         <KeywordFilter
           label="코드·이름"
+          landmarkLabel="코드 그룹 조회 조건"
           value={keyword}
           onSearch={setKeyword}
           onReset={() => setKeyword('')}

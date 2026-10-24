@@ -100,7 +100,7 @@ describe('A7 현황 + 원본 표 표본', () => {
     expect(screen.getByTestId('report-basis')).toHaveTextContent('정적 표본');
     expect(screen.getAllByTestId(/^pattern-gallery-report-row/)).toHaveLength(5);
 
-    await user.type(within(screen.getByRole('search')).getByLabelText('부서'), '민원');
+    await user.type(within(screen.getByRole('search', { name: '처리 현황 조회 조건' })).getByLabelText('부서'), '민원');
     await user.click(screen.getByRole('button', { name: '조회' }));
 
     expect(screen.getAllByTestId(/^pattern-gallery-report-row/)).toHaveLength(1);

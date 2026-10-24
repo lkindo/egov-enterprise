@@ -60,6 +60,7 @@ export default function ReportSample() {
       filter={(
         <KeywordFilter
           label="부서"
+          landmarkLabel="처리 현황 조회 조건"
           value={keyword}
           onSearch={setKeyword}
           onReset={() => setKeyword('')}
