@@ -44,11 +44,22 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
         const { page, context, guard } = actor;
         // 등록 시작은 일반 세션을 폐기한다. 그때 응답이 오지 않은 홈 조회는 401 을 받는다 — 앱은 그 401 로 등록 화면을 걷지 않지만
         //   (lib/api/client.ts 재발급 실패 판정), 브라우저 오류로 남으므로 이 시험은 앞서 나간 API 조회가 끝난 뒤 등록을 시작한다
-        //   (run 40054825686). networkidle 은 탐색마다 한 번만 오므로 이미 지난 뒤의 조회를 기다리지 못해 요청을 직접 센다.
-        const inFlightApi = new Set<PlaywrightRequest>();
-        page.on('request', request => { if (new URL(request.url()).pathname.startsWith('/api/')) inFlightApi.add(request); });
-        page.on('requestfinished', request => { inFlightApi.delete(request); });
+        //   (run 40054825686). networkidle 은 탐색마다 한 번만 오므로 이미 지난 뒤의 조회를 기다리지 못해 요청을 직접 센다. 서버가 처리했는지가
+        //   기준이라 응답이 오면 끝난 것으로 본다. 로그인 뒤 문서를 통째로 다시 받으면(LoginClient 의 하드 전환) 이전 문서의 요청은
+        //   응답·실패 이벤트 없이 사라지므로, 새 문서가 열리면 그 앞 탐색 전에 나간 요청을 뺀다(같은 문서 안의 주소 변경은 빼지 않는다).
+        const inFlightApi = new Map<PlaywrightRequest, number>();
+        let requestSequence = 0;
+        let documentStart = 0;
+        page.on('request', request => {
+            requestSequence += 1;
+            if (new URL(request.url()).pathname.startsWith('/api/')) inFlightApi.set(request, requestSequence);
+        });
+        page.on('response', response => { inFlightApi.delete(response.request()); });
         page.on('requestfailed', request => { inFlightApi.delete(request); });
+        page.on('framenavigated', frame => { if (frame === page.mainFrame()) documentStart = requestSequence; });
+        page.on('domcontentloaded', () => {
+            for (const [request, sequence] of inFlightApi) if (sequence <= documentStart) inFlightApi.delete(request);
+        });
         guard.expectErrors([{
             id: 'E2E-MFA-LOGIN-ME-401',
             specScope: 'mfa-accessibility.spec.ts :: 선택 등록부터 추가 인증 로그인까지 제한 쿠키·키보드·오류 초점을 검증한다',
@@ -90,7 +101,8 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             await page.getByRole('button', { name: '추가 인증 관리', exact: true }).click();
             await expect(page.getByText('인증앱을 아직 등록하지 않았습니다.')).toBeVisible();
             await fillSecret('현재 비밀번호', password);
-            await expect.poll(() => inFlightApi.size, { message: '등록 시작 전에 앞서 나간 API 조회가 끝난다' }).toBe(0);
+            await expect.poll(() => [...inFlightApi.keys()].map(request => `${request.method()} ${request.url()} (${request.resourceType()})`),
+                { message: '등록 시작 전에 앞서 나간 API 조회가 끝난다' }).toEqual([]);
             const started = page.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/mfa/enrollment/start'
                 && response.request().method() === 'POST', { timeout: 20_000 });
             await page.getByRole('button', { name: '인증앱 등록', exact: true }).click();
