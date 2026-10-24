@@ -28,6 +28,10 @@ function inputs(overrides = {}) {
     routeLedger: { routes: [{ route: '/admin/probe' }] },
     inputContractCensus: {},
     ciWorkflow: '',
+    responseContractSource: '',
+    entityLinterSource: 'private static final int EXPECTED_ENTITY_COUNT = 1;',
+    entityFileCount: 1,
+    projectedHarness: false,
     ...overrides,
   };
 }
@@ -83,6 +87,34 @@ test('바인딩이 없는 handler 와 묶음·제외 목록 밖의 권한을 빠
     missing(evaluateRegistration(inputs({ permissionBundles: { bundles: [], excluded: [] } }))),
     ['permission-bundles'],
   );
+});
+
+const CREATE_CONTROLLER = {
+  'api-server/src/main/java/nuri/api/controller/business/probe/ProbeApiController.java': [
+    '    @PostMapping',
+    '    @ResponseStatus(HttpStatus.CREATED)',
+    '    public ApiResponse<Long> create(@Valid @RequestBody ProbeDto.Request request) {',
+    '    @PostMapping("/{id}/archive")',
+    '    public ApiResponse<Void> archive(@PathVariable Long id) {',
+  ].join('\n'),
+};
+
+test('분류되지 않은 생성 POST 를 빠졌다고 말하고, 행위형 POST 는 보지 않는다(ADR-0036)', () => {
+  const report = evaluateRegistration(inputs({ controllers: CREATE_CONTROLLER }));
+  const census = report.points.find((entry) => entry.id.startsWith('created-post-census:'));
+  assert.equal(census.status, 'missing');
+  assert.match(census.detail, /분류되지 않은 POST: create —/);
+  assert.doesNotMatch(census.detail, /archive/);
+  const classified = evaluateRegistration(inputs({ controllers: CREATE_CONTROLLER,
+    responseContractSource: 'CONTROLLER_PREFIX + "business/probe/ProbeApiController.java#create",' }));
+  assert.equal(classified.points.find((entry) => entry.id.startsWith('created-post-census:')).status, 'ok');
+});
+
+test('엔티티 수가 린터 기대와 다르면 census 재판정을 빠졌다고 말하고, 생성물은 사람 확인으로 둔다', () => {
+  assert.equal(evaluateRegistration(inputs()).points.find((entry) => entry.id === 'entity-census').status, 'ok');
+  assert.deepEqual(missing(evaluateRegistration(inputs({ entityFileCount: 2 }))), ['entity-census']);
+  assert.equal(evaluateRegistration(inputs({ entityFileCount: 2, projectedHarness: true }))
+    .points.find((entry) => entry.id === 'entity-census').status, 'review');
 });
 
 test('생성기 지점과 선택 등재는 판정하지 않고 안내만 한다', () => {

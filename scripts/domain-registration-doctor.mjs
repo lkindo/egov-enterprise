@@ -21,6 +21,10 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATION_DIR = 'api-server/src/main/resources/db/migration';
 const CONTROLLER_DIR = 'api-server/src/main/java/nuri/api/controller/business';
+const CONTROLLER_PREFIX = 'api-server/src/main/java/nuri/api/controller/';
+const HARNESS_DIR = 'api-server/src/test/java/nuri/api/harness';
+/** ResponseContractLinterTest 의 생성형 이름 판정과 같은 동사들(ADR-0036). */
+const CREATION_NAME = /^(?:create|insert|register|upload|send|signup|copy|submit)/u;
 
 export const KINDS = Object.freeze({ HUMAN: '사람 판정', GENERATED: '생성기', OPTIONAL: '선택 등재' });
 
@@ -54,6 +58,10 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
   const controllers = Object.fromEntries(listFiles(root, `${CONTROLLER_DIR}/${featureId}`, (name) => name.endsWith('.java'))
     .map((path) => [path, readFileSync(join(root, path), 'utf8')]));
   const dtoFiles = listFiles(root, `business-app/src/main/java/nuri/business/service/${featureId}/dto`, (name) => name.endsWith('.java'));
+  // 엔티티 모집단 census 는 린터 소스의 기대 개수와 소스의 @Entity 파일 수를 견준다(같은 네 모듈의 생산 Java).
+  const entityFileCount = ['foundation', 'business-core', 'business-app', 'api-server']
+    .flatMap((module) => listFiles(root, `${module}/src/main/java`, (name) => name.endsWith('.java')))
+    .filter((path) => /^\s*@Entity\b/mu.test(readFileSync(join(root, path), 'utf8'))).length;
   return {
     featureId,
     featurePath,
@@ -68,6 +76,11 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
     routeLedger: readJson(root, 'config/ui-route-capabilities.json'),
     inputContractCensus: readJson(root, 'config/governance/input-contract-mirror-census.json'),
     ciWorkflow: readFileSync(join(root, '.github/workflows/ci.yml'), 'utf8'),
+    responseContractSource: readFileSync(join(root, `${HARNESS_DIR}/ResponseContractLinterTest.java`), 'utf8'),
+    entityLinterSource: readFileSync(join(root, `${HARNESS_DIR}/EntityTableOwnershipLinterTest.java`), 'utf8'),
+    entityFileCount,
+    // 재사용 생성물은 기대 개수를 하네스 프로필로 투영하므로 소스 상수와 견주지 않는다.
+    projectedHarness: existsSync(join(root, 'config/governance/reusable-harness-profile.json')),
   };
 }
 
@@ -141,6 +154,26 @@ export function evaluateRegistration(inputs) {
     const unbound = handlers.filter((handler) => !boundHandlers.has(handler));
     points.push(point(KINDS.HUMAN, `operation-bindings:${path}`, 'config/governance/authorization-policies.json', unbound.length === 0 ? 'ok' : 'missing',
       unbound.length === 0 ? `${handlers.length}개 handler 가 모두 바인딩돼 있다.` : `바인딩이 없는 handler: ${unbound.map((handler) => handler.split('#')[1]).join(', ')} — 미등록은 요청 거부·린터 red 다.`));
+  }
+
+  // 생성 POST census(ADR-0036): 201 을 쓰거나 생성형 이름인 POST 는 CREATED_HANDLERS 나 200 유지 목록 어느 한쪽에 있어야 한다.
+  for (const [path, source] of Object.entries(inputs.controllers)) {
+    const posts = [...source.matchAll(/@PostMapping[^\n]*\n((?:\s*@[^\n]*\n)*)\s*public\s+[^(]*?\s(\w+)\s*\(/gu)]
+      .filter((match) => CREATION_NAME.test(match[2]) || /HttpStatus\.CREATED/u.test(match[1])).map((match) => match[2]);
+    if (posts.length === 0) continue;
+    const key = path.startsWith(CONTROLLER_PREFIX) ? path.slice(CONTROLLER_PREFIX.length) : path;
+    const unclassified = posts.filter((name) => !inputs.responseContractSource.includes(`"${key}#${name}"`));
+    points.push(point(KINDS.HUMAN, `created-post-census:${path}`, `${HARNESS_DIR}/ResponseContractLinterTest.java`, unclassified.length === 0 ? 'ok' : 'missing',
+      unclassified.length === 0 ? '생성 POST 가 모두 분류돼 있다.'
+        : `분류되지 않은 POST: ${unclassified.join(', ')} — 새 식별자를 갖는 자원을 만들면 CREATED_HANDLERS, 행위형이면 CREATION_NAMED_KEEP_200 에 사유와 함께 둔다(ADR-0036).`));
+  }
+  if (tables.length > 0) {
+    const expected = Number(inputs.entityLinterSource.match(/EXPECTED_ENTITY_COUNT\s*=\s*(\d+)/u)?.[1]);
+    const status = inputs.projectedHarness || !Number.isInteger(expected) ? 'review' : expected === inputs.entityFileCount ? 'ok' : 'missing';
+    points.push(point(KINDS.HUMAN, 'entity-census', `${HARNESS_DIR}/EntityTableOwnershipLinterTest.java`, status,
+      status === 'ok' ? `엔티티 모집단 ${expected}개가 소스의 @Entity 수와 같다.`
+        : status === 'missing' ? `소스의 @Entity 는 ${inputs.entityFileCount}개, 린터 기대는 ${expected}개다 — 물리 테이블 소유권을 재판정하고 엔티티·테이블·감사 형태 census 를 고친다.`
+          : '엔티티 모집단·감사 형태 census 를 재판정한다(재사용 생성물은 하네스 프로필의 수가 정본).'));
   }
 
   const censusText = JSON.stringify(inputs.inputContractCensus);
