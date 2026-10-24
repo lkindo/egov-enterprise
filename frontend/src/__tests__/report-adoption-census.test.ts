@@ -19,6 +19,8 @@ const A7_IMPORT = /from\s+['"]@\/app\/components\/patterns\/report-page['"]/;
  */
 // 선택하지 않은 기능의 파일은 생성물에서 투영으로 빠진다 — 원장에 있고 실제로 없는 파일만 뺀다(원본에서는 그대로다).
 const EXPECTED_IMPORTERS = keepInProjection([
+  // [2026-10-24 DEC-OPS-382] 패턴 갤러리의 A7 표본(정적 표본, 시연 기능 소유).
+  'src/app/admin/patterns/ReportSample.tsx',
   'src/app/admin/stats/AdminStatsClient.tsx',
   // [2026-10-20] 통계 하위 화면(사용자·성공 로그인과 기능이 넘기는 탭)을 A7 셸로 옮겼다.
   'src/app/admin/stats/IntelligenceHubClient.tsx',

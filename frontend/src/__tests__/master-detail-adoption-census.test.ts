@@ -14,6 +14,8 @@ const FORBIDDEN_SELECTION_IDS = new Set(['menuId', 'menuNo', 'ognzId', 'deptId',
 const inFrontend = (file: string) => join(FRONTEND_DIR, file);
 const EXPECTED_IMPORTERS = keepInProjection([
   'src/app/admin/collaboration/mail-history/MailHistoryHubClient.tsx',
+  // [2026-10-24 DEC-OPS-382] 패턴 갤러리의 A2 + A3 인라인 편집 표본(정적 표본, 시연 기능 소유).
+  'src/app/admin/patterns/MasterDetailSample.tsx',
   'src/app/admin/security/dept-authority/SecurityDeptAuthorityClient.tsx',
   'src/app/admin/system/common-code/CommonCodeClient.tsx',
   'src/app/admin/system/content-pages/ContentPagesClient.tsx',
@@ -36,7 +38,7 @@ function source(relativePath: string): string {
 }
 
 describe('A2 master-detail adoption census', () => {
-  it('A2 셸 importer를 부서·메뉴·메일 이력·공통코드·콘텐츠 페이지·결재함·조직권한 일곱 소비자로 exact 고정한다', () => {
+  it('A2 셸 importer를 부서·메뉴·메일 이력·공통코드·콘텐츠 페이지·결재함·조직권한 일곱 소비자와 갤러리 표본으로 exact 고정한다', () => {
     const importers = screenFiles(APP_DIR)
       .filter((path) => A2_IMPORT.test(readFileSync(path, 'utf8')))
       .map((path) => relative(FRONTEND_DIR, path).split(sep).join('/'))

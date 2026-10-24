@@ -10,6 +10,7 @@
     "dev": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next dev -p 3001",
     "build": "cross-env NODE_OPTIONS=--max-old-space-size=8192 next build",
     "bundle:check": "node scripts/check-bundle-budget.mjs",
+    "prototype:kit": "node scripts/prototype-token-kit.mjs",
     "build:instrumented": "node scripts/build-instrumented.js",
     "start": "next start",
     "start:3001": "next start -p 3001",
