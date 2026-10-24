@@ -13,6 +13,9 @@ export default defineConfig({
     setupFiles: ['./vitest.setup.ts'],
     include: ['**/*.test.{ts,tsx}'],
     testTimeout: 15000,
+    // [2026-10-24 DEC-OPS-382 결정 5] CI 에서만 시험 결과 XML 을 남긴다(ci.yml 이 보관한다). 로컬 출력은 그대로다.
+    reporters: process.env.CI ? ['default', 'junit'] : ['default'],
+    outputFile: { junit: './build/test-results/vitest-junit.xml' },
     alias: {
       '@': path.resolve(configDirectory, './src'),
     },

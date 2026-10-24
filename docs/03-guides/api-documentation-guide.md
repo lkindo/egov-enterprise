@@ -98,7 +98,7 @@ public record CommonCodeResponse(
 
 ### 3. JWT 인증 설정
 
-현재 `OpenApiConfig`의 `bearerAuth`는 HTTP bearer scheme이다. Swagger UI의 `Authorize`에는 raw JWT를 입력하고, 실제 요청의 `Authorization` 헤더가 `Bearer <token>`으로 구성되는지 UI의 request preview에서 확인한다. 토큰을 문서·로그·스크린샷에 남기지 않으며, scheme 또는 Swagger UI 버전이 바뀌면 현재 생성 스펙과 요청 헤더가 정본이다.
+현재 `OpenApiConfig`의 `bearerAuth`는 HTTP bearer scheme이다. 전역 보안 요구는 `bearerAuth` 이고, 연산 바인딩에서 PUBLIC 인 연산만 `security: []` 로 전역 요구를 지운다(DEC-OPS-382 결정 11 — 401·403 을 붙이지 않는 판정과 같다). Swagger UI의 `Authorize`에는 raw JWT를 입력하고, 실제 요청의 `Authorization` 헤더가 `Bearer <token>`으로 구성되는지 UI의 request preview에서 확인한다. 토큰을 문서·로그·스크린샷에 남기지 않으며, scheme 또는 Swagger UI 버전이 바뀌면 현재 생성 스펙과 요청 헤더가 정본이다.
 
 ---
 
