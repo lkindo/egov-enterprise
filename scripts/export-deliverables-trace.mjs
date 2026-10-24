@@ -13,8 +13,9 @@
  *
  * 시험 목록은 정적 추출이다 — 매개변수화 시험의 사례 수, 동적 제목, 조건부 건너뜀을 반영하지 않고, 통과 여부가 아니다.
  */
-import { readdirSync, readFileSync, realpathSync, statSync } from 'node:fs';
+import { readdirSync, readFileSync, realpathSync } from 'node:fs';
 import { isAbsolute, join, relative, sep } from 'node:path';
+import { readRegularFile } from './read-regular-file.mjs';
 
 const BLANK_JOIN = null;
 const toPosix = (path) => path.split(sep).join('/');
@@ -293,6 +294,10 @@ export function readRequirementFile(root, path, { tracked, assertAllowed }) {
     assertAllowed(inside);
     if (tracked(inside)) throw new Error(`requirement trace CSV must not be a tracked repository file: ${inside}`);
   }
-  if (!statSync(real).isFile()) throw new Error(`requirement trace CSV is not a file: ${path}`);
-  return readFileSync(real, 'utf8');
+  // 확인한 기술자로만 읽는다 — 확인과 읽기 사이에 경로가 바뀌어도 다른 파일을 읽지 않는다(CodeQL js/file-system-race).
+  try {
+    return readRegularFile(real, { encoding: 'utf8' });
+  } catch (error) {
+    throw new Error(`requirement trace CSV is not a readable regular file: ${path} (${error.message})`);
+  }
 }

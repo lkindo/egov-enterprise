@@ -56,7 +56,13 @@ function listFiles(root, directory, predicate) {
 /** 디스크에서 판정 입력을 읽는다. 없는 파일은 null 로 둔다. */
 export function loadRegistrationInputs(featureId, root = ROOT) {
   const featurePath = `config/modules/${featureId}.json`;
-  const feature = existsSync(join(root, featurePath)) ? readJson(root, featurePath) : null;
+  // 있는지 따로 확인하지 않고 바로 읽는다(확인과 읽기 사이 경합을 두지 않는다). 없으면 null 이다.
+  let feature = null;
+  try {
+    feature = readJson(root, featurePath);
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error;
+  }
   const migrations = Object.fromEntries(listFiles(root, MIGRATION_DIR, (name) => name.endsWith('.sql'))
     .map((path) => [path, readFileSync(join(root, path), 'utf8')]));
   // 기능의 컨트롤러는 생성기와 같은 소유 판정으로 고른다(sourceOwner — 지원 파일 선언 → 디렉터리 → 참조 패키지). 그 판정은 생성기

@@ -468,7 +468,15 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out,
     inputList.sort((left, right) => byText(left.path, right.path));
     database = loaded.database;
   }
-  const lockfiles = LOCKFILES.filter((path) => existsSync(join(root, path))).map((path) => ({ path, sha256: textSha256(readFileSync(join(root, path), 'utf8')) }));
+  // 있는지 따로 확인하지 않고 바로 읽는다 — 확인과 읽기 사이 경합을 두지 않는다. 없는 lockfile 은 싣지 않는다.
+  const lockfiles = LOCKFILES.flatMap((path) => {
+    try {
+      return [{ path, sha256: textSha256(readFileSync(join(root, path), 'utf8')) }];
+    } catch (error) {
+      if (error.code === 'ENOENT') return [];
+      throw error;
+    }
+  });
   const { files, digest } = renderPackage(sheets, { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles, database,
     requirements: inputs.requirements !== undefined }, extras);
   rmSync(target, { recursive: true, force: true });
