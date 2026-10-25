@@ -388,7 +388,7 @@
   }
   function unresolvedFields(row) {
     const registration = state.dispositions[row.id] === 'register';
-    return `<label class="field mb-3">처리 방향<select class="input" id="disposition" ${disabled(locked())}><option value="archive" ${!registration ? 'selected' : ''}>기한을 정해 외부 보관</option><option value="register" ${registration ? 'selected' : ''}>표준 용어 등록 요청 · 실행 보류</option></select></label>${registration ? '<div class="callout warn">표준 담당자 확인과 실제 등록·메타 재조회 전까지 실행을 보류합니다.</div>' : `<label class="field mb-3">예시 보존 기한<input class="input" type="date" id="retention" value="${state.retention}" ${disabled(locked())}></label>`}`;
+    return `<label class="field mb-3">처리 방향<select class="input" id="disposition" ${disabled(locked())}><option value="archive" ${!registration ? 'selected' : ''}>기한을 정해 외부 보관</option><option value="register" ${registration ? 'selected' : ''}>표준 용어 등록 요청 · 실행 보류</option></select></label>${registration ? '<div class="callout warn">표준 담당자 확인과 실제 등록·메타 재조회 전까지 실행을 보류합니다.</div>' : `<label class="field mb-3">예시 보존 기한<input class="input" type="date" id="retention" value="${escape(state.retention)}" ${disabled(locked())}></label>`}`;
   }
   function termsPage() {
     const row = rows.find(item => item.id === state.selected);
@@ -553,7 +553,7 @@
     if (input.id === 'ai-consent') { state.ai.consentKey = input.checked && aiAllowed() && state.ai.previewKey === aiKey() ? aiKey() : null; render(); return; }
     if (input.id.startsWith('db-') && !locked()) {
       const key = input.id.slice(3);
-      if (key === 'vendor') state.db = defaultDb(input.value); else state.db[key] = input.value;
+      if (key === 'vendor') { const vendor = Object.keys(dbProfiles).find(name => name === input.value); if (vendor) state.db = defaultDb(vendor); } else state.db[key] = input.value;
       invalidateConnection(); render(); return;
     }
     if (input.name === 'source-kind' && !locked()) { state.sourceKind = input.value; state.archiveCase = 'normal'; invalidateSource(); render(); return; }
@@ -562,7 +562,7 @@
     if (input.name === 'source-mode' && !locked()) return changeMode(input.value);
     if (input.name === 'candidate' && !locked()) { state.choices[state.selected] = Number(input.value); state.notes[state.selected] = ''; delete state.reviewed[state.selected]; invalidate(`${state.selected} 표준 후보 변경`); render(); }
     if (input.id === 'disposition' && !locked()) { state.dispositions[state.selected] = input.value; delete state.reviewed[state.selected]; invalidate('미확정 컬럼 처리 변경'); render(); }
-    if (input.id === 'retention' && !locked()) { state.retention = input.value; delete state.reviewed[state.selected]; invalidate('보존 기한 변경'); render(); }
+    if (input.id === 'retention' && !locked()) { state.retention = /^\d{4}-\d{2}-\d{2}$/.test(input.value) ? input.value : ''; delete state.reviewed[state.selected]; invalidate('보존 기한 변경'); render(); }
     if (input.dataset.rule && !locked() && state.mode !== 'ddl') { state.rules[input.dataset.rule] = input.checked; invalidate('변환 규칙 검토 변경', true); render(); }
     if (input.dataset.check && state.dryRun && !locked()) { state.checks[input.dataset.check] = input.checked; render(); }
     if (input.dataset.acceptance && state.execution === 'done' && !state.archived) { state.acceptance[input.dataset.acceptance] = input.checked; render(); }
