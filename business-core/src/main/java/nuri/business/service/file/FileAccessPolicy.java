@@ -102,6 +102,14 @@ public class FileAccessPolicy {
     }
 
     /**
+     * 어느 업무 참조원이든 이 첨부를 가리키는가(첨부 묶음을 통째로 지울지 판정할 때, ADR-0042). 조회에 실패하면 참조가 있는 것으로
+     * 본다 — 지우지 않는다. PostgreSQL 에서는 그 실패가 호출자 트랜잭션을 중단시키므로 호출한 작업 전체가 되돌아간다.
+     */
+    public boolean referenced(Long atchFileSn) {
+        return referenceResolver.referenced(atchFileSn);
+    }
+
+    /**
      * 현재 인증 주체가 이 첨부를 <b>삭제</b>할 수 있는지 검증한다.
      *
      * <p>[열람과 다른 점] <b>공유 근거는 삭제 근거가 아니다.</b> 비밀글이 아닌 게시글의 첨부는 인증
@@ -118,11 +126,6 @@ public class FileAccessPolicy {
      * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
      * @throws BusinessException ACCESS_DENIED(403) — 삭제 근거가 없을 때
      */
-    /** 어느 업무 참조원이든 이 첨부를 가리키는가. 조회 실패는 참조가 있는 것으로 본다(지우지 않는다). */
-    public boolean referenced(Long atchFileSn) {
-        return referenceResolver.referenced(atchFileSn);
-    }
-
     public void assertDeletable(FileMaster master) {
         Long atchFileSn = master.getAtchFileSn();
         String loginId = SecurityUtil.getCurrentLoginId().orElse(null);

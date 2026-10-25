@@ -135,6 +135,32 @@ describe('SectionEditor — ImageCellEditor 이미지 올리기', () => {
     expect(screen.getByText('이미지를 올리려면 파일 올리기 권한이 필요합니다.')).toBeInTheDocument();
   });
 
+  it('이미지를 고르지 않았어도 설명을 적어 둔 칸은 종류를 바꾸기 전에 묻는다', () => {
+    const { onChange } = renderSection({ section: sectionWith({ kind: 'image', atchFileSn: 0, alt: '안내도', decorative: false, caption: '' }) });
+    fireEvent.change(screen.getByLabelText('안내 1단 내용'), { target: { value: 'rich' } });
+    expect(onChange).not.toHaveBeenCalled();
+    expect(screen.getByRole('alert')).toHaveTextContent('지금 내용을 지우고 본문·표(으)로 바꿀까요?');
+  });
+
+  it('영역 이름이 같아도 칸 오류 id 는 영역마다 다르다', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    const common = { index: 0, total: 2, readOnly: false, canUpload: true, onChange: vi.fn(), onLayoutChange: vi.fn(),
+      onMove: vi.fn(), onRemove: vi.fn(), onNotice: vi.fn() };
+    mocks.uploadFiles.mockRejectedValue(transportError());
+    render(
+      <QueryClientProvider client={client}>
+        <SectionEditor {...common} section={{ ...sectionWith(imageCell()), id: 'a' }} />
+        <SectionEditor {...common} section={{ ...sectionWith(imageCell()), id: 'b' }} />
+      </QueryClientProvider>,
+    );
+    for (const input of screen.getAllByLabelText('안내 1단 이미지 파일')) {
+      fireEvent.change(input, { target: { files: [imageFile()] } });
+    }
+    await waitFor(() => expect(screen.getAllByRole('alert')).toHaveLength(2));
+    const ids = screen.getAllByRole('alert').map((alert) => alert.id);
+    expect(new Set(ids).size).toBe(2);
+  });
+
   it('올린 파일 번호를 칸에 넣는다', async () => {
     const { onChange } = renderSection();
     mocks.uploadFiles.mockResolvedValue(41);

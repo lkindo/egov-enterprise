@@ -237,10 +237,12 @@ public class CmsPageAdminService {
             throw new BusinessException(CommonErrorCode.INVALID_STATE,
                     "게시한 적이 있는 페이지는 지울 수 없습니다. 보관하거나, 지워야 할 내용이 있으면 파기 권한자에게 요청해 주세요");
         }
+        String path = content.getContsPathNm();
         contentFileService.releaseAll(contsSn);
         contentRepository.delete(content);
         contentRepository.flush();
-        sensitiveAudit.recordMutation("CMS_PAGE_DELETE", contsSn.toString());
+        // 행이 사라지므로 감사 대상에 주소를 함께 남긴다 — 번호만으로는 어느 페이지였는지 알 수 없다(주소는 [a-z0-9-] 식별자다).
+        sensitiveAudit.recordMutation("CMS_PAGE_DELETE", auditTarget(contsSn, path));
     }
 
     /**
@@ -270,7 +272,8 @@ public class CmsPageAdminService {
         if (homeReleased) {
             sensitiveAudit.recordMutation("CMS_HOME_UPDATE", "NONE");
         }
-        sensitiveAudit.recordReferencedMutation("CMS_PAGE_PURGE", contsSn.toString(), request.getCaseReference());
+        sensitiveAudit.recordReferencedMutation("CMS_PAGE_PURGE", auditTarget(contsSn, content.getContsPathNm()),
+                request.getCaseReference());
     }
 
     /**
@@ -288,7 +291,14 @@ public class CmsPageAdminService {
             throw new BusinessException(CommonErrorCode.INVALID_STATE,
                     "지금 사용자에게 보이는 게시본은 파기할 수 없습니다. 고친 본을 다시 게시하거나 게시를 중지한 뒤 파기해 주세요");
         }
+        // 마지막 게시본까지 지우면 '한 번도 게시하지 않은 초안' 으로 보여 주소 잠금이 풀리고 작성 권한 삭제가 열린다 — 페이지 파기로 보낸다.
+        if (revisionRepository.countByContsSn(contsSn) <= 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_STATE,
+                    "남은 게시본이 하나뿐입니다. 이 게시본까지 지워야 하면 페이지 파기를 써 주세요");
+        }
         Set<Long> draftAttachments = validator.normalizeJson(content.getContsDocCn(), Mode.DRAFT).attachments();
+        // 버전을 올린다 — 파기한 본을 불러온 편집기가 409 없이 그 내용을 초안으로 되살려 저장하지 않게 한다.
+        content.markHistoryChanged(LocalDateTime.now());
         revisionRepository.allowPurgeInCurrentTransaction();
         revisionRepository.purgeRevisionFiles(contsSn, contsRvsnSn);
         revisionRepository.purgeRevision(contsSn, contsRvsnSn);
@@ -368,6 +378,11 @@ public class CmsPageAdminService {
     static String likeLiteral(String keyword) {
         String stripped = keyword == null ? "" : keyword.strip();
         return stripped.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+    }
+
+    /** 지워지는 페이지의 감사 대상 — 번호와 주소. */
+    private static String auditTarget(Long contsSn, String contsPathNm) {
+        return contsSn + ":" + contsPathNm;
     }
 
     private CmsContent find(Long contsSn) {

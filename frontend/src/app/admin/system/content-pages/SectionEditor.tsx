@@ -78,7 +78,7 @@ export interface SectionEditorProps {
 
 /** 지금 내용을 버려도 잃는 것이 없는 칸 — 종류를 바꿀 때 확인을 묻지 않는다. */
 function cellIsEmpty(cell: CmsCell): boolean {
-  if (cell.kind === 'image') return !cell.atchFileSn;
+  if (cell.kind === 'image') return !cell.atchFileSn && !cell.alt.trim() && !cell.caption.trim();
   if (cell.kind === 'links') return cell.items.every((item) => !item.title && !item.url);
   if (cell.kind === 'files') return cell.items.length === 0;
   return JSON.stringify(cell.doc).indexOf('"text"') < 0;
@@ -109,6 +109,19 @@ function defaultFileTitle(fileName: string): string {
 function useLatest<T>(value: T): React.RefObject<T> {
   const ref = React.useRef(value);
   React.useEffect(() => { ref.current = value; });
+  return ref;
+}
+
+/**
+ * 칸이 아직 화면에 있는가. 올리는 동안 칸 종류를 바꾸거나 영역을 지우면 이 칸은 사라진다 — 그때 끝난 올리기는 결과를 버린다.
+ * 사라진 칸의 마지막 onChange 로 쓰면 그 시점의 초안으로 문서 전체를 덮어 지운 영역을 되살리고 그 뒤의 입력을 지운다(ADR-0042 검토).
+ */
+function useMounted(): React.RefObject<boolean> {
+  const ref = React.useRef(false);
+  React.useEffect(() => {
+    ref.current = true;
+    return () => { ref.current = false; };
+  }, []);
   return ref;
 }
 
@@ -255,6 +268,7 @@ export function SectionEditor({
             cellIndex={cellIndex}
             label={`${name} ${cellIndex + 1}단`}
             issues={issues.filter((issue) => issue.cell === cellIndex)}
+            idPrefix={`${idBase}-cell-${cellIndex}`}
             issueId={`${idBase}-cell-${cellIndex}-issues`}
             readOnly={readOnly}
             canUpload={canUpload}
@@ -271,6 +285,8 @@ interface CellEditorProps {
   cell: CmsCell;
   cellIndex: number;
   label: string;
+  /** 이 칸의 요소 id 접두 — 영역 id 기준이라 영역 이름이 겹쳐도 id 가 겹치지 않는다. */
+  idPrefix: string;
   issues: readonly SectionIssue[];
   /** 이 칸의 문제 목록 id(문제가 있을 때만 그린다). */
   issueId: string;
@@ -283,12 +299,13 @@ interface CellEditorProps {
 /** 칸 편집기들이 함께 받는 값. issueId 는 이 칸에 문제가 있을 때만 있다. */
 interface CellContentProps {
   label: string;
+  idPrefix: string;
   readOnly: boolean;
   issueId?: string;
   onChange: (cell: CmsCell) => void;
 }
 
-function CellEditor({ cell, cellIndex, label, issues, issueId, readOnly, canUpload, onChange, onNotice }: CellEditorProps) {
+function CellEditor({ cell, cellIndex, label, idPrefix, issues, issueId, readOnly, canUpload, onChange, onNotice }: CellEditorProps) {
   const [pendingKind, setPendingKind] = React.useState<CmsCell['kind'] | null>(null);
   const invalid = issues.length > 0;
   const activeIssueId = invalid ? issueId : undefined;
@@ -346,19 +363,19 @@ function CellEditor({ cell, cellIndex, label, issues, issueId, readOnly, canUplo
         />
       )}
       {cell.kind === 'image' && (
-        <ImageCellEditor cell={cell} label={label} readOnly={readOnly} canUpload={canUpload} issueId={activeIssueId}
+        <ImageCellEditor cell={cell} label={label} idPrefix={idPrefix} readOnly={readOnly} canUpload={canUpload} issueId={activeIssueId}
           onChange={onChange} onNotice={onNotice} />
       )}
-      {cell.kind === 'links' && <LinksCellEditor cell={cell} label={label} readOnly={readOnly} issueId={activeIssueId} onChange={onChange} />}
+      {cell.kind === 'links' && <LinksCellEditor cell={cell} label={label} idPrefix={idPrefix} readOnly={readOnly} issueId={activeIssueId} onChange={onChange} />}
       {cell.kind === 'files' && (
-        <FilesCellEditor cell={cell} label={label} readOnly={readOnly} canUpload={canUpload} issueId={activeIssueId}
+        <FilesCellEditor cell={cell} label={label} idPrefix={idPrefix} readOnly={readOnly} canUpload={canUpload} issueId={activeIssueId}
           onChange={onChange} onNotice={onNotice} />
       )}
     </div>
   );
 }
 
-function ImageCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, onNotice }: CellContentProps & {
+function ImageCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, onChange, onNotice }: CellContentProps & {
   cell: Extract<CmsCell, { kind: 'image' }>;
   canUpload: boolean;
   onNotice: (message: string) => void;
@@ -369,7 +386,8 @@ function ImageCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, 
   const pendingUploadRef = React.useRef(false);
   const latestCell = useLatest(cell);
   const latestOnChange = useLatest(onChange);
-  const errorId = `${label}-image-error`.replace(/\s+/g, '-');
+  const mounted = useMounted();
+  const errorId = `${idPrefix}-image-error`;
   const fail = (message: string) => {
     setUploadError(message);
     onNotice(message);
@@ -386,6 +404,10 @@ function ImageCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, 
     setUploadError(null);
     try {
       const atchFileSn = await fileService.uploadFiles([file]);
+      if (!mounted.current) {
+        onNotice('이미지를 올리는 동안 그 칸이 바뀌거나 지워져, 올린 이미지를 넣지 않았습니다. 필요하면 다시 올려 주세요.');
+        return;
+      }
       latestOnChange.current({ ...latestCell.current, atchFileSn });
       onNotice('이미지를 올렸습니다. 초안을 저장하면 이 페이지에 연결됩니다.');
     } catch (error) {
@@ -445,7 +467,7 @@ function ImageCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, 
   );
 }
 
-function LinksCellEditor({ cell, label, readOnly, issueId, onChange }: CellContentProps & {
+function LinksCellEditor({ cell, idPrefix, readOnly, issueId, onChange }: CellContentProps & {
   cell: Extract<CmsCell, { kind: 'links' }>;
 }) {
   const [pickerIndex, setPickerIndex] = React.useState<number | null>(null);
@@ -460,7 +482,7 @@ function LinksCellEditor({ cell, label, readOnly, issueId, onChange }: CellConte
     const named = current && current.title.trim() === '' && title ? { title: title.slice(0, 100) } : {};
     setItem(pickerIndex, { url: path, ...named });
   };
-  const idBase = `${label}-link`.replace(/\s+/g, '-');
+  const idBase = `${idPrefix}-link`;
   return (
     <div className="space-y-2">
       <ul className="space-y-2">
@@ -515,7 +537,7 @@ function LinksCellEditor({ cell, label, readOnly, issueId, onChange }: CellConte
   );
 }
 
-function FilesCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, onNotice }: CellContentProps & {
+function FilesCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, onChange, onNotice }: CellContentProps & {
   cell: Extract<CmsCell, { kind: 'files' }>;
   canUpload: boolean;
   onNotice: (message: string) => void;
@@ -526,8 +548,9 @@ function FilesCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, 
   const pendingUploadRef = React.useRef(false);
   const latestCell = useLatest(cell);
   const latestOnChange = useLatest(onChange);
+  const mounted = useMounted();
   const full = cell.items.length >= MAX_FILES;
-  const idBase = `${label}-file`.replace(/\s+/g, '-');
+  const idBase = `${idPrefix}-file`;
   const errorId = `${idBase}-error`;
   const setItems = (items: CmsFileItem[]) => onChange({ kind: 'files', items });
   const move = (index: number, direction: -1 | 1) => {
@@ -551,6 +574,10 @@ function FilesCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, 
     setUploadError(null);
     try {
       const atchFileSn = await fileService.uploadFiles([file]);
+      if (!mounted.current) {
+        onNotice('파일을 올리는 동안 그 칸이 바뀌거나 지워져, 올린 파일을 넣지 않았습니다. 필요하면 다시 올려 주세요.');
+        return;
+      }
       latestOnChange.current({ kind: 'files', items: [...latestCell.current.items, { atchFileSn, title: defaultFileTitle(file.name) }] });
       onNotice('파일을 올렸습니다. 초안을 저장하면 이 페이지에 연결됩니다.');
     } catch (error) {
@@ -612,6 +639,7 @@ function FilesCellEditor({ cell, label, readOnly, canUpload, issueId, onChange, 
           <p className="text-sm text-muted-foreground">
             {CMS_FILE_EXTENSIONS.join('·')} 파일을 하나씩 올립니다(파일 하나에 {SERVER_MAX_FILE_SIZE_MB}MB 까지, 한 칸에 {MAX_FILES}개까지).
             {full ? ` ${MAX_FILES}개를 모두 채웠습니다. 더 올리려면 하나를 지우세요.` : ''} 다른 페이지에 쓴 파일은 다시 올려 주세요.
+            {' '}목록에는 적은 이름이 보이고, 내려받는 파일은 올린 파일의 원래 이름을 씁니다.
           </p>
         </>
       ) : (

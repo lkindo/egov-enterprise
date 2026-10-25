@@ -1,5 +1,7 @@
 'use client';
 
+import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { useMenuAccessSources, type MenuAccessSources } from '@/lib/navigation/use-menu-access-sources';
 
 export type BoardAccessSources = MenuAccessSources;
@@ -12,5 +14,9 @@ export type BoardAccessSources = MenuAccessSources;
  * 화면을 열 때마다 다시 읽는다. 게시판 화면과 시험은 이 이름으로 부른다.
  */
 export function useBoardAccessSources(): BoardAccessSources {
-  return useMenuAccessSources();
+  const { user } = useAuth();
+  return useMenuAccessSources({
+    canReadMenus: canPermission(user, 'MENU_READ'),
+    canReadGroups: canPermission(user, 'AUTHRT_READ'),
+  });
 }

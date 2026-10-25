@@ -147,7 +147,10 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
     const confirm = useConfirm();
     const detail = useQuery(cmsQueryOptions.detail(contsSn));
     const home = useQuery(cmsQueryOptions.home());
-    const { menuSource, groupSource, retry: retryMenus } = useMenuAccessSources();
+    const { menuSource, groupSource, retry: retryMenus } = useMenuAccessSources({
+      canReadMenus: canPermission(user, 'MENU_READ'),
+      canReadGroups: canPermission(user, 'AUTHRT_READ'),
+    });
 
     const [baseline, setBaseline] = React.useState<CmsPageDetail | null>(null);
     const [draft, setDraft] = React.useState<Draft | null>(null);
@@ -193,6 +196,8 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
         queryClient.invalidateQueries({ queryKey: cmsKeys.home() }),
         queryClient.invalidateQueries({ queryKey: cmsKeys.revisions(contsSn) }),
         queryClient.invalidateQueries({ queryKey: cmsKeys.homeIntro() }),
+        // 사용자용 안내 페이지 목록·바로가기 주소 점검이 읽는 게시 목록 — 게시·게시 중지·파기가 바꾼다.
+        queryClient.invalidateQueries({ queryKey: [...cmsKeys.all, 'published'] }),
       ]);
     };
     // 성공·실패 알림은 토스트가 읽어 준다(sonner 의 live region). announce 는 토스트 없이 바뀌는 편집 동작에만 쓴다.
@@ -306,6 +311,17 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
     const menuNote = menuNoteOf(menuLinks);
     const menuState = menuLinks === null ? null : generalMenuState(menuLinks);
     const setDocument = (document: CmsDocument) => setDraft({ ...draft, document });
+    /**
+     * 영역 하나를 바꾼다 — 지금의 초안에서 영역 식별자로 찾아 바꾼다(함수형). 늦게 끝난 올리기처럼 렌더 뒤에 오는 변경이 그사이의 다른
+     * 편집을 덮지 않고, 그사이 지운 영역을 되살리지 않는다.
+     */
+    const updateSection = (next: CmsSection) => setDraft((current) => current && ({
+      ...current,
+      document: {
+        ...current.document,
+        sections: current.document.sections.map((item) => (item.id === next.id ? next : item)),
+      },
+    }));
 
     // 칸에 보일 문제. 초안 판정이 실패하면 그 하나가 먼저다(형식이 깨진 문서의 게시 문제는 뜻이 없다).
     const draftResult = draftCheck ? normalizeCmsDocument(draft.document, 'draft') : null;
@@ -379,6 +395,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
         queryClient.invalidateQueries({ queryKey: cmsKeys.lists() }),
         queryClient.invalidateQueries({ queryKey: cmsKeys.home() }),
         queryClient.invalidateQueries({ queryKey: cmsKeys.homeIntro() }),
+        queryClient.invalidateQueries({ queryKey: [...cmsKeys.all, 'published'] }),
       ]);
       onDeleted?.();
     };
@@ -439,7 +456,11 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
         variant: 'destructive',
       });
       if (!ok) return;
-      setDocument({ ...draft.document, sections: sections.filter((_, position) => position !== index) });
+      // 확인을 기다리는 동안 다른 변경(늦게 끝난 올리기 등)이 왔을 수 있다 — 지금의 초안에서 이 영역만 뺀다.
+      setDraft((current) => current && ({
+        ...current,
+        document: { ...current.document, sections: current.document.sections.filter((item) => item.id !== target.id) },
+      }));
       announce('영역을 지웠습니다.');
       focusSectionStart(Math.min(index, sections.length - 2));
     };
@@ -489,6 +510,8 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
       if (!ok) return;
       setConflict(false);
       setDraftCheck(false);
+      setPublishCheck(false);
+      validation.setFormErrors({}, false);
       setDraft(draftOf(baseline));
       announce('저장된 초안으로 되돌렸습니다.');
     };
@@ -514,6 +537,8 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
       if (!latest) return;
       setConflict(false);
       setDraftCheck(false);
+      setPublishCheck(false);
+      validation.setFormErrors({}, false);
       setBaseline(latest);
       setDraft(draftOf(latest));
       announce('최신 초안을 불러왔습니다.');
@@ -531,7 +556,14 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
       const latest = await fetchLatest();
       if (!latest) return;
       setBaseline(latest);
-      await performSave(latest, draft, 'overwrite');
+      // 그사이 처음 게시돼 주소가 고정됐으면 내가 바꾼 주소는 저장할 수 없다 — 고정된 주소로 되돌리고 나머지 변경으로 덮어쓴다.
+      let value = draft;
+      if (latest.pathLocked && latest.contsPathNm && draft.contsPathNm !== latest.contsPathNm) {
+        value = { ...draft, contsPathNm: latest.contsPathNm };
+        setDraft((current) => current && ({ ...current, contsPathNm: latest.contsPathNm ?? current.contsPathNm }));
+        toast('그사이 게시돼 주소가 고정됐습니다. 주소는 게시된 주소로 되돌리고 나머지 변경으로 덮어씁니다.', 'info');
+      }
+      await performSave(latest, value, 'overwrite');
     };
 
     const loadRevision = async (revision: LoadableRevision) => {
@@ -542,6 +574,8 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
         variant: 'destructive',
       }))) return;
       setDialog(null);
+      setDraftCheck(false);
+      validation.setFormErrors({}, false);
       setDraft((current) => current && ({
         ...current,
         contsTtl: revision.contsTtl ?? current.contsTtl,
@@ -747,7 +781,7 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
               readOnly={readOnly}
               canUpload={canUpload}
               issues={sectionIssues.get(index)}
-              onChange={(next) => setDocument({ ...draft.document, sections: sections.map((item, position) => (position === index ? next : item)) })}
+              onChange={updateSection}
               onLayoutChange={(layout) => changeLayout(index, layout)}
               onMove={(direction) => moveSection(index, direction)}
               onRemove={() => void removeSection(index)}
@@ -800,8 +834,8 @@ export const ContentPageEditor = React.forwardRef<ContentPageEditorHandle, Conte
               setDialog(null);
               setPublishCheck(false);
               const number = next.publishedRevision?.revisionNumber;
-              void accept(next, `게시했습니다. 주소를 아는 로그인 사용자는 이제 v${number ?? ''} 게시본을 봅니다.`
-                + `${menuState === 'pass' ? '' : ' 사용자가 찾을 수 있게 메뉴에 연결하세요.'}`, draftOf(next));
+              void accept(next, `게시했습니다. 로그인 사용자는 이제 주소와 안내 페이지 목록에서 v${number ?? ''} 게시본을 봅니다.`
+                + `${menuState === 'pass' ? '' : ' 사이드바에서 찾게 하려면 메뉴에 연결하세요.'}`, draftOf(next));
             }}
             onConflict={() => { setDialog(null); setConflict(true); }}
             onGoToIssue={goToIssue}

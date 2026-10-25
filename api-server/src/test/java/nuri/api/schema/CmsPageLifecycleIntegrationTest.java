@@ -221,6 +221,7 @@ class CmsPageLifecycleIntegrationTest {
         publish(page);
         List<CmsRevisionSummaryDto> before = adminService.getRevisions(page);
         Long oldRevision = before.get(1).contsRvsnSn();
+        Integer versionBefore = adminService.getPage(page).version();
 
         CmsPageDetailDto after = adminService.purgeRevision(page, oldRevision, CmsRevisionPurgeRequest.builder()
                 .version(adminService.getPage(page).version()).caseReference("INC-" + suffix).build());
@@ -228,6 +229,7 @@ class CmsPageLifecycleIntegrationTest {
         assertThat(count("SELECT count(*) FROM tb_cms_conts_rvsn WHERE conts_rvsn_sn = ?", oldRevision)).isZero();
         assertThat(after.revisionCount()).isEqualTo(1);
         assertThat(after.publishedRevision().revisionNumber()).as("뒤 번호가 당겨진다").isEqualTo(1);
+        assertThat(after.version()).as("열린 편집기가 409 로 다시 읽도록 버전이 오른다").isGreaterThan(versionBefore);
         assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm = 'CMS_REVISION_PURGE'"
                 + " AND adt_cn LIKE ?", "%reference=INC-" + suffix + "%")).isEqualTo(1);
         assertThatThrownBy(() -> adminService.purgeRevision(page, after.publishedRevision().contsRvsnSn(),
@@ -235,6 +237,14 @@ class CmsPageLifecycleIntegrationTest {
                         .caseReference("INC-" + suffix).build()))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("지금 사용자에게 보이는 게시본");
+        adminService.unpublish(page, CmsPageStateRequest.builder().version(adminService.getPage(page).version()).build());
+        assertThatThrownBy(() -> adminService.purgeRevision(page, after.publishedRevision().contsRvsnSn(),
+                CmsRevisionPurgeRequest.builder().version(adminService.getPage(page).version())
+                        .caseReference("INC-" + suffix).build()))
+                .as("남은 마지막 게시본은 페이지 파기로만 지운다")
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("남은 게시본이 하나뿐");
+        assertThat(adminService.getPage(page).status()).isEqualTo("UNPUBLISHED");
     }
 
     @Test
@@ -260,7 +270,8 @@ class CmsPageLifecycleIntegrationTest {
         assertThat(count("SELECT count(*) FROM tb_cms_conts_file WHERE conts_sn = ?", page)).isZero();
         assertThat(count("SELECT count(*) FROM tb_file_master WHERE atch_file_sn = ?", image)).isZero();
         assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm = 'CMS_PAGE_PURGE'"
-                + " AND adt_cn LIKE ?", "%reference=INC-" + suffix + "%")).isEqualTo(1);
+                + " AND adt_cn LIKE ? AND adt_cn LIKE ?", "%reference=INC-" + suffix + "%", "%purge-page-" + suffix + "%"))
+                .as("감사에 근거 번호와 지운 페이지의 주소가 남는다").isEqualTo(1);
     }
 
     @Test

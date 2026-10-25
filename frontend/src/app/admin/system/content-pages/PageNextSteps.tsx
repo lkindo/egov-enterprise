@@ -21,9 +21,9 @@ export interface PageNextStepsProps {
 }
 
 /**
- * 게시 중인 페이지의 다음 단계(ADR-0042). 게시는 주소를 아는 로그인 사용자가 읽을 수 있게 할 뿐이다 — 사용자가 찾게 하려면 메뉴에
- * 연결해야 한다. 그래서 게시본 확인·주소 전달·메뉴 연결·업무 홈 소개를 한곳에 둔다. 메뉴 관리 권한이 없으면 메뉴 연결을 맡을 사람에게
- * 주소를 전하도록 안내한다.
+ * 게시 중인 페이지의 다음 단계(ADR-0042). 게시하면 로그인 사용자 누구나 주소와 안내 페이지 목록(/pages)으로 이 페이지를 찾는다 —
+ * 메뉴 표시를 끈다고 숨겨지지 않는다. 사이드바에서 찾게 하려면 메뉴에 연결한다. 그래서 게시본 확인·주소 전달·메뉴 연결·업무 홈 소개를
+ * 한곳에 둔다. 메뉴 관리 권한이 없으면 메뉴 연결을 맡을 사람에게 주소를 전하도록 안내한다.
  */
 export function PageNextSteps({ contsPathNm, menuState, canAddMenu, onAddToMenu, home }: PageNextStepsProps) {
   const { toast } = useToast();
@@ -63,8 +63,8 @@ export function PageNextSteps({ contsPathNm, menuState, canAddMenu, onAddToMenu,
       )}
       {menuState === 'fail' && (
         <p className="rounded-md border border-warning/40 bg-warning/10 px-3 py-2 text-sm text-foreground">
-          일반 사용자가 볼 수 있는 메뉴가 없습니다 — 메뉴를 일반 사용자 그룹이 보는 영역에 두고 그 그룹의 메뉴 표시를 켜세요.
-          지금은 주소를 아는 사람만 이 페이지를 엽니다.
+          일반 사용자가 볼 수 있는 메뉴가 없습니다 — 사이드바에서 찾게 하려면 메뉴를 일반 사용자 그룹이 보는 영역에 두고 그 그룹의 메뉴 표시를 켜세요.
+          메뉴가 없어도 로그인 사용자는 안내 페이지 목록과 주소로 이 페이지를 찾을 수 있습니다.
         </p>
       )}
     </section>

@@ -145,7 +145,7 @@ describe('ContentPageEditor — 게시 대화상자(PublishDialog)', () => {
 
     pendingPublish.resolve(published({ version: 4 }));
     await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith(
-      '게시했습니다. 주소를 아는 로그인 사용자는 이제 v1 게시본을 봅니다. 사용자가 찾을 수 있게 메뉴에 연결하세요.', 'success'));
+      '게시했습니다. 로그인 사용자는 이제 주소와 안내 페이지 목록에서 v1 게시본을 봅니다. 사이드바에서 찾게 하려면 메뉴에 연결하세요.', 'success'));
   });
 
   it('주소 고정 안내는 상태가 아니라 주소가 고정됐는지로 정한다', async () => {
@@ -373,7 +373,7 @@ describe('ContentPageEditor — 게시한 뒤 할 일(PageNextSteps)', () => {
     menuAccess.groupSource = groups;
     mocks.getPage.mockResolvedValue(published());
     const { unmount } = renderEditor();
-    expect(await screen.findByText(/일반 사용자가 볼 수 있는 메뉴가 없습니다 — 메뉴를 일반 사용자 그룹이 보는 영역에 두고 그 그룹의 메뉴 표시를 켜세요/))
+    expect(await screen.findByText(/일반 사용자가 볼 수 있는 메뉴가 없습니다 — 사이드바에서 찾게 하려면 메뉴를 일반 사용자 그룹이 보는 영역에 두고 그 그룹의 메뉴 표시를 켜세요/))
       .toBeInTheDocument();
     unmount();
 
@@ -397,7 +397,7 @@ describe('ContentPageEditor — 게시한 뒤 할 일(PageNextSteps)', () => {
     const dialog = await openPublish();
     fireEvent.click(within(dialog).getByRole('button', { name: '게시' }));
 
-    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('게시했습니다. 주소를 아는 로그인 사용자는 이제 v1 게시본을 봅니다.', 'success'));
+    await waitFor(() => expect(mocks.toast).toHaveBeenCalledWith('게시했습니다. 로그인 사용자는 이제 주소와 안내 페이지 목록에서 v1 게시본을 봅니다.', 'success'));
   });
 
   it('게시 중이 아니면 할 일을 보이지 않는다', async () => {

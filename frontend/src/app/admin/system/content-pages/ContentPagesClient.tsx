@@ -84,6 +84,7 @@ export default function ContentPagesClient() {
   const queryClient = useQueryClient();
   const editorRef = React.useRef<ContentPageEditorHandle>(null);
   const dirtyRef = React.useRef(false);
+  const keywordRef = React.useRef<HTMLInputElement>(null);
 
   const [keywordInput, setKeywordInput] = React.useState('');
   const [params, setParams] = React.useState<CmsPageListParams>({ keyword: '', status: 'ACTIVE', page: 1, size: PAGE_SIZE });
@@ -93,7 +94,10 @@ export default function ContentPagesClient() {
 
   const list = useQuery({ ...cmsQueryOptions.list(params), placeholderData: keepPreviousData });
   const home = useQuery(cmsQueryOptions.home());
-  const { menuSource, groupSource } = useMenuAccessSources();
+  const { menuSource, groupSource } = useMenuAccessSources({
+    canReadMenus: canPermission(user, 'MENU_READ'),
+    canReadGroups: canPermission(user, 'AUTHRT_READ'),
+  });
   const listData = list.data;
   const pages = listData?.list ?? [];
   const selectedSummary = pages.find((page) => page.contsSn === selected);
@@ -198,11 +202,13 @@ export default function ContentPagesClient() {
     setParams((current) => ({ ...current, keyword: '', status: 'ACTIVE', page: 1 }));
   };
 
-  // 편집기가 초안을 지우거나 페이지를 파기했다 — 고른 페이지를 비우고 목록을 다시 읽는다.
+  // 편집기가 초안을 지우거나 페이지를 파기했다 — 고른 페이지를 비우고 목록을 다시 읽는다. 편집기가 사라져 포커스가 몸통으로
+  // 떨어지지 않게 목록 찾기 칸으로 옮긴다. 확인 대화상자가 포커스를 되돌린 다음 차례에 옮겨 되돌림에 덮이지 않게 한다.
   const handleDeleted = async () => {
     dirtyRef.current = false;
     setSelection(null);
     await queryClient.invalidateQueries({ queryKey: cmsKeys.lists() });
+    window.setTimeout(() => keywordRef.current?.focus(), 0);
   };
 
   const activeHint = STATUS_FILTERS.find((filter) => filter.value === params.status)?.hint;
@@ -245,7 +251,7 @@ export default function ContentPagesClient() {
           <div className="flex gap-2">
             <div className="relative flex-1">
               <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
-              <Input aria-label="제목 또는 주소" className="pl-9" value={keywordInput}
+              <Input ref={keywordRef} aria-label="제목 또는 주소" className="pl-9" value={keywordInput}
                 onChange={(event) => setKeywordInput(event.target.value)} placeholder="제목 또는 주소" />
             </div>
             <Button type="submit" variant="outline">조회</Button>

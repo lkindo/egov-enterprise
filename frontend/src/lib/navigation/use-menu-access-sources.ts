@@ -3,7 +3,6 @@
 import { useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
-import { canPermission } from '@/lib/auth/permissions';
 import { summarizeError } from '@/lib/safe-error-log';
 import type { GroupSource, MenuSource } from '@/lib/navigation/route-menu-links';
 import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
@@ -34,12 +33,14 @@ export interface MenuAccessSources {
  * 권한이 없으면 조회를 보내지 않는다 — 보내면 서버에 403 거부 기록(보안 실패 감사·WARN)이 남는다. 권한이 없거나 서버가 403
  * 으로 거부하면 '확인 권한 없음', 그 밖의 실패는 '확인 불가' 다. 로그인 정보를 확인하는 중에는 권한 없음으로 단정하지 않는다.
  * 메뉴는 화면을 열 때마다 다시 읽는다 — 메뉴 관리에서 활성화·그룹 표시를 저장하고 돌아오면 바뀐 연결이 보여야 한다.
+ *
+ * 두 권한(MENU_READ·AUTHRT_READ)의 판정은 이 훅을 쓰는 화면이 해서 넘긴다 — 화면 목록 생성기는 화면 쪽 canPermission 리터럴로
+ * 그 화면이 보는 권한을 기록한다(공용 lib 의 리터럴은 어느 화면의 것인지 모른다). 화면은 늘 같은 두 판정을 넘긴다.
  */
-export function useMenuAccessSources(): MenuAccessSources {
+export function useMenuAccessSources({ canReadMenus, canReadGroups }: { canReadMenus: boolean; canReadGroups: boolean }):
+  MenuAccessSources {
   const { user, loading: authLoading } = useAuth();
   const authPending = Boolean(authLoading) && !user;
-  const canReadMenus = canPermission(user, 'MENU_READ');
-  const canReadGroups = canPermission(user, 'AUTHRT_READ');
   const menuQuery = useQuery({
     queryKey: [QUERY_ROOT, 'menu-structure', user?.id, user?.authorizationVersion],
     queryFn: () => menuAdminService.getMenuStructure(QUIET),

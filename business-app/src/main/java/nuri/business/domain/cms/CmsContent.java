@@ -88,6 +88,14 @@ public class CmsContent extends BaseEntity {
         this.contsRvsnSn = null;
     }
 
+    /**
+     * 게시 이력이 바뀌었다(지난 게시본 파기, ADR-0042). 초안 필드는 그대로 두고 수정 시각을 옮겨 낙관적 잠금 버전을 올린다 — 열려 있던
+     * 편집기와 진행 중인 초안 저장이 409 로 최신 이력을 다시 읽게 한다(파기한 본을 불러온 편집기가 그 내용을 되살려 저장하지 않게).
+     */
+    public void markHistoryChanged(java.time.LocalDateTime when) {
+        this.mdfcnDt = Objects.requireNonNull(when);
+    }
+
     public void archive() {
         this.kpngYn = "Y";
     }

@@ -365,7 +365,7 @@ class CmsPageAdminServiceTest {
         InOrder order = inOrder(contentFileService, contentRepository, sensitiveAudit);
         order.verify(contentFileService).releaseAll(1L);
         order.verify(contentRepository).delete(draft);
-        order.verify(sensitiveAudit).recordMutation("CMS_PAGE_DELETE", "1");
+        order.verify(sensitiveAudit).recordMutation("CMS_PAGE_DELETE", "1:guide");
     }
 
     @Test
@@ -402,7 +402,7 @@ class CmsPageAdminServiceTest {
         order.verify(revisionRepository).purgeAllRevisions(1L);
         order.verify(contentFileService).releaseAll(1L);
         order.verify(contentRepository).deleteById(1L);
-        order.verify(sensitiveAudit).recordReferencedMutation("CMS_PAGE_PURGE", "1", "INC-2026-7");
+        order.verify(sensitiveAudit).recordReferencedMutation("CMS_PAGE_PURGE", "1:guide", "INC-2026-7");
     }
 
     @Test
@@ -420,14 +420,32 @@ class CmsPageAdminServiceTest {
     }
 
     @Test
-    void purgeRevisionKeepsTheFilesTheDraftStillUses() {
+    void purgeRevisionRefusesTheLastRemainingRevision() {
+        // 마지막 게시본까지 지우면 '한 번도 게시하지 않은 초안' 처럼 보여 주소 잠금이 풀린다 — 페이지 파기로 보낸다(ADR-0042).
+        when(contentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(content(1L, DOCUMENT_JSON, 3)));
+        when(revisionRepository.findByContsRvsnSnAndContsSn(10L, 1L))
+                .thenReturn(Optional.of(revision(10L, 1L, "안내", DOCUMENT_JSON)));
+        when(revisionRepository.countByContsSn(1L)).thenReturn(1L);
+
+        assertThatThrownBy(() -> service.purgeRevision(1L, 10L, revisionPurge()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("남은 게시본이 하나뿐입니다");
+        verify(revisionRepository, never()).allowPurgeInCurrentTransaction();
+    }
+
+    @Test
+    void purgeRevisionKeepsTheFilesTheDraftStillUsesAndBumpsTheVersion() {
         CmsContent draft = content(1L, IMAGE_DOCUMENT_JSON, 3);
         when(contentRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(draft));
         when(contentRepository.findById(1L)).thenReturn(Optional.of(draft));
         when(revisionRepository.findByContsRvsnSnAndContsSn(10L, 1L))
                 .thenReturn(Optional.of(revision(10L, 1L, "안내", IMAGE_DOCUMENT_JSON)));
+        when(revisionRepository.countByContsSn(1L)).thenReturn(2L);
 
         service.purgeRevision(1L, 10L, revisionPurge());
+
+        // 수정 시각을 옮겨 엔티티를 바꾼다 — 커밋 때 낙관적 잠금 버전이 올라 열린 편집기가 409 로 최신 이력을 다시 읽는다.
+        assertThat(draft.getMdfcnDt()).isNotNull();
 
         InOrder order = inOrder(revisionRepository, contentFileService, sensitiveAudit);
         order.verify(revisionRepository).allowPurgeInCurrentTransaction();

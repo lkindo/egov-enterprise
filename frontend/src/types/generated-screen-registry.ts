@@ -275,10 +275,12 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["BBS_MST_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_CREATE","action":"CREATE","source":"display"},
       {"code":"BBS_MST_READ","action":"READ","source":"entry"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"}
+      {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -290,12 +292,14 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["BBS_MST_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_DELETE","action":"DELETE","source":"write"},
       {"code":"BBS_MST_READ","action":"READ","source":"entry"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"},
       {"code":"BOARD_PIN","action":"PIN","source":"write"},
       {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
-      {"code":"BOARD_UPDATE_ALL","action":"UPDATE_ALL","source":"write"}
+      {"code":"BOARD_UPDATE_ALL","action":"UPDATE_ALL","source":"write"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -788,12 +792,14 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["CMS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"CMS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
       {"code":"CMS_HOME_UPDATE","action":"HOME_UPDATE","source":"write"},
       {"code":"CMS_PUBLISH","action":"PUBLISH","source":"write"},
       {"code":"CMS_PURGE","action":"PURGE","source":"write"},
       {"code":"CMS_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
   {
