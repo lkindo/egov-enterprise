@@ -12,6 +12,8 @@ import { buildJdbcProfile, createEngine } from './engine.mjs';
 import { openWorkspace } from './store.mjs';
 
 const hash = value => createHash('sha256').update(value).digest('hex');
+// configure() 의 기본 세션 비밀번호와 같은 값이다. 산출물에 섞이면 엔진이 SENSITIVE_CONTENT 로 거부해야 한다.
+const LEAK_MARKER = 'local-fixture-password';
 const source = { vendor: 'postgresql', host: '127.0.0.1', port: 5432, database: 'legacy', schema: 'public', username: 'reader', tlsMode: 'disable' };
 const target = { ...source, database: 'standard', username: 'writer' };
 const standardColumns = [{ table_name: 'public.tb_synthetic', column_name: 'synthetic_id' }];
@@ -45,7 +47,7 @@ function fakeCli({ hold = false, noArtifact = false, badDigest = false, failure 
         for (const chunk of diagnosticChunks) child[diagnosticStream].write(chunk);
         if (!noArtifact && !failed) {
           if (parsed.command === 'discover') {
-            let content = evidence('catalog-inventory', { objects: [], marker: leaking ? options.env.MW_SOURCE_PASSWORD : 'safe' }, 'schemaVersion', 4);
+            let content = evidence('catalog-inventory', { objects: [], marker: leaking ? LEAK_MARKER : 'safe' }, 'schemaVersion', 4);
             if (badDigest) content = content.replace(/"payloadDigest":"[a-f0-9]+"/, '"payloadDigest":"' + '0'.repeat(64) + '"');
             await writeFile(parsed.inventory, content);
           }

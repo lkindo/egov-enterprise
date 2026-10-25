@@ -38,8 +38,12 @@
     connected: true, scanned: true, collected: true, selected: 'USER_NM', filter: 'all', search: '',
     choices: {}, notes: {}, reviewed: {}, dispositions: {}, retention: '2027-10-24', rules: {}, checks: {}, dryRun: false, execution: 'idle', chunk: 0, acceptance: {}, archived: false, revision: 1, history: [] });
   let state = initial();
-  const knownStage = key => ['start', 'assistant', 'guided'].includes(key) || stages.some(([name]) => name === key);
-  let stage = knownStage(location.hash.slice(1)) ? location.hash.slice(1) : 'start';
+  // 주소의 # 값은 알려진 화면 이름 상수로만 바꿔 쓴다 — 주소 문자열 자체를 화면 상태로 들고 다니지 않는다.
+  const stageFromHash = () => {
+    const key = location.hash.slice(1);
+    return ['start', 'assistant', 'guided', ...stages.map(([name]) => name)].find(name => name === key);
+  };
+  let stage = stageFromHash() ?? 'start';
   if (stages.some(([key]) => key === stage)) state.lastManual = stage;
   let toastTimer;
   let dialogAction;
@@ -92,7 +96,7 @@
     $('#lifecycle').textContent = state.archived ? '읽기 전용 보관 · 예시' : state.execution === 'done' ? '인수 대기 · 예시' : state.execution === 'running' ? '모의 전환 진행 중' : ['paused', 'failed'].includes(state.execution) ? '중단 지점 보존 · 예시' : '검토 중 · 합성 시나리오';
     $('#ai-nav').setAttribute('aria-current', stage === 'assistant' ? 'page' : 'false');
     $('#ai-nav-status').textContent = state.ai.status === 'ready' ? '예시 연결됨' : state.ai.status === 'expired' ? '재인증 필요' : '선택 연결';
-    $('#main').innerHTML = stage === 'start' ? startPage() : modeSwitch() + (stage === 'guided' ? guidedPage() : stage === 'assistant' ? assistantPage() : aiQuickHelp() + aiPanel() + ({ collect: collectPage, analyze: analyzePage, terms: termsPage, mapping: mappingPage, rehearse: rehearsePage, report: reportPage })[stage]());
+    $('#main').innerHTML = stage === 'start' ? startPage() : modeSwitch() + (stage === 'guided' ? guidedPage() : stage === 'assistant' ? assistantPage() : aiQuickHelp() + aiPanel() + manualPage(stage));
     const conversation = $('.guided-conversation');
     if (conversation) conversation.scrollTop = conversation.scrollHeight;
     if (focus) ($(focus) || (stage === 'guided' ? $('#guided-question') : null))?.focus({ preventScroll: true });
@@ -340,6 +344,17 @@
       <details class="advanced"><summary>압축 해제 · 보관 정책 설계</summary><p class="mt-3 text-xs text-muted">선택 → 목록 검사 → 사용자가 해제 → 기존 app-scan 순서입니다. 경로 이탈·절대경로·Windows 특수 경로·심볼릭 링크를 차단하고, 중첩·암호화 ZIP은 초기 버전에서 제외합니다. 작업 종료 시 추출 소스와 임시 자료의 보존 기한·삭제 대상을 보여주고, 검토 원장과 원본은 별도로 관리합니다. 지금 CLI는 ZIP을 자동 해제하지 않습니다.</p></details>
     </div></section>`;
   }
+  function manualPage(name) {
+    switch (name) {
+      case 'collect': return collectPage();
+      case 'analyze': return analyzePage();
+      case 'terms': return termsPage();
+      case 'mapping': return mappingPage();
+      case 'rehearse': return rehearsePage();
+      case 'report': return reportPage();
+      default: return '';
+    }
+  }
   function collectPage() {
     return title('01 / COLLECT', '원천 자료는 로컬에서, 검토는 한 화면에서.', 'DB별 연결 조건과 소스 준비 과정을 먼저 확인합니다. 모든 입력·진단·파일은 합성 예시이며 실제 연결이나 해제는 발생하지 않습니다.') + `
       <section class="local-architecture mb-5"><div><span class="eyebrow">RECOMMENDED / LOCAL FIRST</span><h2>내 PC의 전용 작업공간</h2><p class="mt-1 text-xs text-muted">브라우저 화면 → 로컬 실행기(JDBC · CLI · 압축 해제) → 원천 / 대상 DB</p></div>${badge('실행기 연동: 신규 설계','info')}
@@ -557,6 +572,6 @@
       setNavigation(false); $('#navigation-toggle').focus();
     }
   });
-  window.addEventListener('hashchange', () => { const key = location.hash.slice(1); if (knownStage(key) && stage !== key) goto(key); });
+  window.addEventListener('hashchange', () => { const key = stageFromHash(); if (key && stage !== key) goto(key); });
   render();
 })();

@@ -38,6 +38,17 @@ const ENDPOINT_IDENTITY = ['vendor', 'host', 'port', 'database', 'username', 'or
 const EVIDENCE_LIMIT = 20;
 const EVIDENCE_TIME = /^\d{4}-\d{2}-\d{2}T[0-9:.]{2,18}(?:Z|[+-]\d{2}:\d{2})$/;
 const fail = (code, message) => { throw new WorkspaceError(code, message); };
+// 가져온 산출물을 둘 칸 이름은 요청 값을 속성 이름으로 쓰지 않고 여기서 고른 상수로만 정한다(js/remote-property-injection).
+function artifactSlot(kind) {
+  switch (kind) {
+    case 'skeleton': return 'skeleton';
+    case 'ledger': return 'ledger';
+    case 'confirmed-ledger': return 'confirmedLedger';
+    case 'review': return 'review';
+    case 'standard-columns': return 'standardColumns';
+    default: return fail('INVALID_ARTIFACT_KIND', '지원하는 가져오기 종류를 선택하세요.');
+  }
+}
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const json = value => JSON.stringify(value);
 const clone = value => structuredClone(value);
@@ -392,7 +403,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       const state = await store.read(); checkRevision(state, revision); requireIdle(state);
       const metadata = await saveArtifact(kind, kind === 'skeleton' ? Buffer.from(json(value)) : bytes);
       return publicState(await store.update(revision, draft => {
-        invalidateReview(draft, kind); draft.artifacts[kind === 'confirmed-ledger' ? 'confirmedLedger' : kind === 'standard-columns' ? 'standardColumns' : kind] = metadata;
+        invalidateReview(draft, kind); draft.artifacts[artifactSlot(kind)] = metadata;
         if (kind === 'ledger') delete draft.artifacts.confirmedLedger;
         if (kind === 'confirmed-ledger') draft.ledger = { reviewSource: 'institution-git-import', confirmedDigest: metadata.sha256, gitCommit: gitReview.commit, gitBlob: gitReview.blob };
       }));
