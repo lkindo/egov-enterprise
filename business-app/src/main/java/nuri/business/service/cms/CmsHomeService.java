@@ -3,6 +3,8 @@ package nuri.business.service.cms;
 import lombok.RequiredArgsConstructor;
 import nuri.business.domain.cms.CmsContent;
 import nuri.business.domain.cms.CmsContentRepository;
+import nuri.business.domain.cms.CmsContentRevision;
+import nuri.business.domain.cms.CmsContentRevisionRepository;
 import nuri.business.domain.cms.CmsSiteSetting;
 import nuri.business.domain.cms.CmsSiteSettingRepository;
 import nuri.business.security.util.SecurityUtil;
@@ -30,8 +32,12 @@ public class CmsHomeService {
 
     private final CmsSiteSettingRepository siteSettingRepository;
     private final CmsContentRepository contentRepository;
+    private final CmsContentRevisionRepository revisionRepository;
     private final SensitiveAuditPort sensitiveAudit;
 
+    /**
+     * 지금 지정. 제목은 사용자가 보는 게시본의 제목이다 — 저장만 한 초안 제목을 보이면 관리 화면과 업무 홈이 다른 이름을 말한다(ADR-0042).
+     */
     public CmsHomeDto getHome() {
         CmsSiteSetting setting = siteSettingRepository.findByStngCd(CmsSiteSetting.HOME_INTRO).orElse(null);
         if (setting == null) {
@@ -39,8 +45,12 @@ public class CmsHomeService {
         }
         CmsContent content = setting.getContsSn() == null ? null
                 : contentRepository.findById(setting.getContsSn()).orElse(null);
-        return new CmsHomeDto(setting.getContsSn(), content == null ? null : content.getContsPathNm(),
-                content == null ? null : content.getContsTtl(), setting.getVersion());
+        String title = content == null ? null : content.isPublished()
+                ? revisionRepository.findById(content.getContsRvsnSn()).map(CmsContentRevision::getContsTtl)
+                        .orElse(content.getContsTtl())
+                : content.getContsTtl();
+        return new CmsHomeDto(setting.getContsSn(), content == null ? null : content.getContsPathNm(), title,
+                setting.getVersion());
     }
 
     @Transactional

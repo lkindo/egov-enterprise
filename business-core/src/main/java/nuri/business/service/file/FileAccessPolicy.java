@@ -118,6 +118,11 @@ public class FileAccessPolicy {
      * @param master 대상 첨부 마스터(존재 검증은 호출부에서 이미 수행)
      * @throws BusinessException ACCESS_DENIED(403) — 삭제 근거가 없을 때
      */
+    /** 어느 업무 참조원이든 이 첨부를 가리키는가. 조회 실패는 참조가 있는 것으로 본다(지우지 않는다). */
+    public boolean referenced(Long atchFileSn) {
+        return referenceResolver.referenced(atchFileSn);
+    }
+
     public void assertDeletable(FileMaster master) {
         Long atchFileSn = master.getAtchFileSn();
         String loginId = SecurityUtil.getCurrentLoginId().orElse(null);

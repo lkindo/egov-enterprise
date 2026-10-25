@@ -81,7 +81,8 @@
         "nuri.business.domain.file.FileDetailRepository",
         "nuri.business.domain.file.FileMaster",
         "nuri.business.domain.file.FileMasterRepository",
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
+        "nuri.business.service.file.AttachmentAssignmentPolicy",
+        "nuri.business.service.file.FileService"
       ]
     },
     {

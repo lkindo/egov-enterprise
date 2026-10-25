@@ -111,6 +111,35 @@ class FileDeletionTransactionTest {
         assertThat(file).exists();
     }
 
+    @Test
+    void discardRemovesAnUnreferencedAttachmentAndSchedulesItsPhysicalDeletion() {
+        when(masters.findByIdForUpdate(123L)).thenReturn(Optional.of(master));
+        when(details.findByFileMaster(master)).thenReturn(java.util.List.of(detail));
+        when(policy.referenced(123L)).thenReturn(false);
+
+        Boolean discarded = transaction.execute(status -> service.discardUnreferencedAttachment(123L));
+
+        assertThat(discarded).isTrue();
+        verify(details).delete(detail);
+        verify(masters).delete(master);
+        verify(work).enqueue(any());
+        assertThat(file).exists();
+    }
+
+    @Test
+    void discardKeepsAnAttachmentThatAnotherFeatureStillReferences() {
+        // 같은 업로더가 게시글 등 다른 업무에 함께 건 첨부는 지우지 않는다 — 참조 조회 실패도 참조로 본다(ADR-0042).
+        when(masters.findByIdForUpdate(123L)).thenReturn(Optional.of(master));
+        when(policy.referenced(123L)).thenReturn(true);
+
+        Boolean discarded = transaction.execute(status -> service.discardUnreferencedAttachment(123L));
+
+        assertThat(discarded).isFalse();
+        verify(details, org.mockito.Mockito.never()).delete(any());
+        verify(masters, org.mockito.Mockito.never()).delete(any());
+        verify(work, org.mockito.Mockito.never()).enqueue(any());
+    }
+
     private void deleteOne() {
         try {
             service.deleteFile(123L, 1);

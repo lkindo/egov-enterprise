@@ -116,6 +116,25 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         return new Grants(shared, owner, personal, personalOwner, resolutionFailed, personalReader, readDenied);
     }
 
+    @Override
+    public boolean referenced(Long atchFileSn) {
+        for (AttachmentSource source : sources) {
+            if (source.sensitivity() == AttachmentSource.Sensitivity.DERIVED) {
+                continue;
+            }
+            try {
+                if (query(source, atchFileSn, null, null).referenced()) {
+                    return true;
+                }
+            } catch (DataAccessException ex) {
+                log.error("[FileAccess] 참조원 조회 실패 — 참조가 있는 것으로 본다. source={} table={} atchFileSn={}",
+                        source, source.table(), atchFileSn, ex);
+                return true;
+            }
+        }
+        return false;
+    }
+
     private SourceHit query(AttachmentSource source, Long atchFileSn, String loginId, String esntlId) {
         if (source == AttachmentSource.BOARD) return queryBoard(atchFileSn, loginId, esntlId);
         if (source == AttachmentSource.SCHEDULE) return querySchedule(atchFileSn, loginId);

@@ -4,6 +4,8 @@ import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotNull;
 import lombok.RequiredArgsConstructor;
 import nuri.api.support.PageRequests;
 import nuri.api.support.UnsortedPageable;
@@ -12,9 +14,11 @@ import nuri.business.service.cms.dto.CmsPageCreateRequest;
 import nuri.business.service.cms.dto.CmsPageDetailDto;
 import nuri.business.service.cms.dto.CmsPageDraftRequest;
 import nuri.business.service.cms.dto.CmsPagePublishRequest;
+import nuri.business.service.cms.dto.CmsPagePurgeRequest;
 import nuri.business.service.cms.dto.CmsPageStateRequest;
 import nuri.business.service.cms.dto.CmsPageSummaryDto;
 import nuri.business.service.cms.dto.CmsRevisionDetailDto;
+import nuri.business.service.cms.dto.CmsRevisionPurgeRequest;
 import nuri.business.service.cms.dto.CmsRevisionSummaryDto;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
@@ -23,6 +27,7 @@ import org.springframework.data.web.PageableDefault;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -46,7 +51,7 @@ public class CmsPageAdminApiController {
 
     private final CmsPageAdminService cmsPageAdminService;
 
-    @Operation(summary = "콘텐츠 페이지 목록", description = "제목·주소와 상태(ACTIVE·DRAFT·PUBLISHED·ARCHIVED)로 좁혀 최근 수정 순으로 조회합니다.")
+    @Operation(summary = "콘텐츠 페이지 목록", description = "제목·주소와 상태(ACTIVE·PENDING·DRAFT·PUBLISHED·UNPUBLISHED·ARCHIVED)로 좁혀 최근 수정 순으로 조회합니다.")
     @GetMapping
     @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#getPages')")
     public ResponseEntity<ApiResponse<PageResponse<CmsPageSummaryDto>>> getPages(
@@ -111,6 +116,32 @@ public class CmsPageAdminApiController {
     public ResponseEntity<ApiResponse<CmsPageDetailDto>> unarchive(
             @PathVariable Long contsSn, @Valid @RequestBody CmsPageStateRequest request) {
         return ResponseEntity.ok(ApiResponse.success(cmsPageAdminService.unarchive(contsSn, request)));
+    }
+
+    @Operation(summary = "초안 페이지 삭제", description = "한 번도 게시하지 않은 페이지와 그 첨부를 지웁니다. 게시한 적이 있으면 400 입니다. 읽은 버전과 다르면 409 입니다.")
+    @DeleteMapping("/{contsSn}")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#deleteDraftPage')")
+    public ResponseEntity<ApiResponse<Void>> deleteDraftPage(
+            @PathVariable Long contsSn, @RequestParam @NotNull @Min(0) Integer version) {
+        cmsPageAdminService.deleteDraftPage(contsSn, version);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "페이지 파기", description = "게시를 중지한 페이지의 초안·모든 게시본·첨부를 되돌릴 수 없게 지웁니다. 주소 확인과 처리 근거 번호가 필요합니다.")
+    @PostMapping("/{contsSn}/purge")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#purgePage')")
+    public ResponseEntity<ApiResponse<Void>> purgePage(
+            @PathVariable Long contsSn, @Valid @RequestBody CmsPagePurgeRequest request) {
+        cmsPageAdminService.purgePage(contsSn, request);
+        return ResponseEntity.ok(ApiResponse.success(null));
+    }
+
+    @Operation(summary = "게시본 파기", description = "지난 게시본 하나를 되돌릴 수 없게 지웁니다. 지금 보이는 게시본은 파기할 수 없습니다. 뒤의 판 번호는 하나씩 당겨집니다.")
+    @PostMapping("/{contsSn}/revisions/{contsRvsnSn}/purge")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#purgeRevision')")
+    public ResponseEntity<ApiResponse<CmsPageDetailDto>> purgeRevision(
+            @PathVariable Long contsSn, @PathVariable Long contsRvsnSn, @Valid @RequestBody CmsRevisionPurgeRequest request) {
+        return ResponseEntity.ok(ApiResponse.success(cmsPageAdminService.purgeRevision(contsSn, contsRvsnSn, request)));
     }
 
     @Operation(summary = "게시 이력", description = "게시본 목록을 최신 순으로 조회합니다.")

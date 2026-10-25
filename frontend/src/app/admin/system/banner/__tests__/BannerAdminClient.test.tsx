@@ -95,6 +95,7 @@ vi.mock('@/hooks/useAppForm', () => ({
 vi.mock('@/components/ui/form', () => ({
   Form: ({ children }: any) => children,
   FormControl: ({ children }: any) => children,
+  FormDescription: ({ children }: any) => <p>{children}</p>,
   FormErrorSummary: () => null,
   FormField: ({ control, name, render: renderField }: any) => renderField({
     field: {

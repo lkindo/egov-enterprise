@@ -8,12 +8,19 @@ import nuri.business.domain.cms.CmsContentRevisionRepository;
 import nuri.business.domain.cms.CmsSiteSetting;
 import nuri.business.domain.cms.CmsSiteSettingRepository;
 import nuri.business.service.cms.dto.CmsPublishedPageDto;
+import nuri.business.service.cms.dto.CmsPublishedPageSummaryDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 import java.util.regex.Pattern;
 
 /**
@@ -37,6 +44,20 @@ public class CmsPageReadService {
                 ? Optional.empty() : contentRepository.findByContsPathNm(contsPathNm);
         return content.flatMap(this::published)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "게시된 페이지가 없습니다"));
+    }
+
+    /**
+     * 안내 페이지 목록(ADR-0042). 게시 중인 페이지의 현재 게시본 제목·요약을 최근 게시 순으로 준다 — 메뉴에 걸지 않은 페이지도 사용자가
+     * 찾을 수 있게 한다. 열람 범위는 게시본과 같다(로그인 사용자 전체).
+     */
+    public Page<CmsPublishedPageSummaryDto> getPublishedPages(String keyword, Pageable pageable) {
+        Page<CmsContentRevision> revisions = revisionRepository.searchPublished(
+                CmsPageAdminService.likeLiteral(keyword), Objects.requireNonNull(pageable));
+        Map<Long, CmsContent> contents = contentRepository.findAllById(revisions.getContent().stream()
+                        .map(CmsContentRevision::getContsSn).toList()).stream()
+                .collect(Collectors.toMap(CmsContent::getContsSn, Function.identity()));
+        return revisions.map(revision -> new CmsPublishedPageSummaryDto(contents.get(revision.getContsSn()).getContsPathNm(),
+                revision.getContsTtl(), revision.getContsExpln(), revision.getCrtDt()));
     }
 
     /** 업무 홈 맨 위에 보일 게시본. 지정이 없거나 게시 중이 아니면 비어 있다. */

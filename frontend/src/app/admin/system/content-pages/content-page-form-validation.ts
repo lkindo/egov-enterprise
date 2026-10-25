@@ -26,9 +26,14 @@ export const contentPageCreateFormSchema = CmsPageCreateRequestRequestSchema
   .pick({ contsTtl: true, contsPathNm: true })
   .extend({ contsTtl: titleSchema, contsPathNm: pathSchema });
 
+/**
+ * 새 페이지 대화상자의 칸 이름. `copySource` 는 시작 양식 '기존 페이지 복사' 에서 고를 페이지다(ADR-0042) — 요청 본문의 칸이
+ * 아니라 화면이 문서를 읽어 올 원본이라 스키마에 두지 않고, 대화상자가 고름 여부를 따로 판정해 같은 오류 요약에 싣는다.
+ */
 export const contentPageCreateValidationLabels = {
   contsTtl: '페이지 제목',
   contsPathNm: '주소',
+  copySource: '복사할 페이지',
 };
 
 /** 초안 저장의 페이지 정보 칸. 본문 문서는 normalizeCmsDocument 가 따로 판정한다. */

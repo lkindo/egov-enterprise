@@ -1,11 +1,45 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { ImageOff } from 'lucide-react';
 import { fileService } from '@/services/foundation/file/FileService';
 import { cn } from '@/lib/utils';
 
 type LoadState = 'loading' | 'ready' | 'error' | 'empty';
+
+/**
+ * 첨부 이미지 캐시의 query key — 첨부 묶음 번호 하나에 그 묶음 첫 파일의 바이트(Blob)가 붙는다.
+ *
+ * <p>사용자 id 를 key 에 넣지 않는다. 로그인 사용자가 바뀌거나(로그아웃 포함) 권한 판이 바뀌면
+ * `AuthContext` 의 `commitUser` 가 진행 중 조회를 취소하고 query 캐시 전체를 비운다 — 다른 사람에게 남지 않는다.
+ */
+export const attachmentImageQueryKey = (atchFileSn: number) => ['attachment-image', atchFileSn] as const;
+
+/*
+ * [2026-10-26 ADR-0042] 같은 이미지를 화면 안에서 다시 받지 않는다. 종전에는 마운트마다 목록 조회와 다운로드를
+ *   다시 해, 배너가 5초마다 넘어갈 때·관리 표와 미리보기가 같은 이미지를 그릴 때마다 받았고 그때마다 개인정보
+ *   접속기록이 쌓였다. 열람 감사 정책은 그대로다 — 서버는 받은 만큼 기록하고, 화면이 덜 받을 뿐이다.
+ *   - staleTime: 한 화면을 오래 열어 두거나 화면을 오가도 다시 받지 않을 만큼 길게, 묶음의 파일이 바뀌었을 때
+ *     옛 이미지를 끝없이 붙들지 않을 만큼만 둔다.
+ *   - gcTime: 아무도 그리지 않는 이미지의 바이트는 몇 분 뒤 메모리에서 버린다.
+ */
+const ATTACHMENT_IMAGE_STALE_MS = 30 * 60 * 1000;
+const ATTACHMENT_IMAGE_GC_MS = 5 * 60 * 1000;
+
+/** 묶음 첫 파일의 바이트. 묶음에 파일이 없으면 null(빈 첨부). */
+async function loadAttachmentImage(atchFileSn: number): Promise<Blob | null> {
+  /*
+   * [2026-08-26] 실패는 **이 컴포넌트가 대체 표시로 처리한다** — 전역 토스트로 올리지 않는다.
+   * 배너처럼 주기적으로 다시 그리는 자리에서는 같은 404 가 반복 토스트가 되어 화면을 가린다
+   * (실측: 5초 간격 `Request failed with status code 404`).
+   */
+  const quiet = { suppressErrorToast: true } as const;
+  const files = await fileService.getFileList(atchFileSn, quiet);
+  const first = files?.[0];
+  if (!first) return null;
+  return fileService.fetchBlob(atchFileSn, first.fileSn, quiet);
+}
 
 /**
  * 첨부 이미지를 **blob 으로 받아** 렌더한다.
@@ -35,64 +69,42 @@ export function AttachmentImage({
   className?: string;
   fallbackClassName?: string;
 }) {
-  const [src, setSrc] = useState<string | null>(null);
-  const [state, setState] = useState<LoadState>(atchFileSn ? 'loading' : 'empty');
-  const [prevAtchFileSn, setPrevAtchFileSn] = useState(atchFileSn);
-  if (atchFileSn !== prevAtchFileSn) {
-    setPrevAtchFileSn(atchFileSn);
-    if (!atchFileSn) {
-      setSrc(null);
-      setState('empty');
-    } else {
-      setSrc(null);
-      setState('loading');
-    }
-  }
+  const enabled = Boolean(atchFileSn);
+  const { data: blob, isError } = useQuery({
+    queryKey: attachmentImageQueryKey(atchFileSn ?? 0),
+    queryFn: () => loadAttachmentImage(atchFileSn ?? 0),
+    enabled,
+    staleTime: ATTACHMENT_IMAGE_STALE_MS,
+    gcTime: ATTACHMENT_IMAGE_GC_MS,
+    // 종전처럼 실패하면 한 번에 대체 표시로 넘어간다 — 앱 기본값의 한 번 재시도는 같은 실패를 한 번 더 받는다.
+    retry: false,
+    // 앱 기본값은 5xx 최초 실패를 오류 경계로 올려 화면 전체를 바꾼다. 이미지 하나의 실패는 이 자리의 대체 표시다.
+    throwOnError: false,
+  });
+  // 권한 없음(403)·부재(404)·네트워크 실패를 구분해 표시하지는 않는다 —
+  // 사용자에게 의미 있는 차이가 아니고, 구분해 보여주면 존재 여부가 새어 나간다.
+  const state: LoadState = !enabled ? 'empty'
+    : blob ? 'ready'
+    : blob === null ? 'empty'
+    : isError ? 'error'
+    : 'loading';
 
-  useEffect(() => {
-    if (!atchFileSn) return;
+  /*
+   * object URL 은 캐시가 아니라 **그리는 자리마다** 만들고 그 자리가 사라지면 회수한다 — 캐시의 Blob 은 여러 자리가
+   * 함께 쓰므로, 한 자리의 회수가 다른 자리의 이미지를 끊으면 안 된다. ref 정리 함수(React 19)로 붙였다 떼어
+   * 이미지 요소의 수명과 URL 의 수명을 같게 둔다(Strict Mode 의 이중 부착도 새 URL 을 만든다).
+   */
+  const attachObjectUrl = useCallback((image: HTMLImageElement | null) => {
+    if (!image || !blob) return undefined;
+    const objectUrl = URL.createObjectURL(blob);
+    image.src = objectUrl;
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [blob]);
 
-    let objectUrl: string | null = null;
-    let cancelled = false;
-
-    (async () => {
-      try {
-        /*
-         * [2026-08-26] 실패는 **이 컴포넌트가 대체 표시로 처리한다** — 전역 토스트로 올리지 않는다.
-         * 배너처럼 주기적으로 다시 그리는 자리에서는 같은 404 가 반복 토스트가 되어 화면을 가린다
-         * (실측: 5초 간격 `Request failed with status code 404`).
-         */
-        const quiet = { suppressErrorToast: true } as const;
-        const files = await fileService.getFileList(atchFileSn, quiet);
-        const first = files?.[0];
-        if (!first) {
-          if (!cancelled) setState('empty');
-          return;
-        }
-        const blob = await fileService.fetchBlob(atchFileSn, first.fileSn, quiet);
-        if (cancelled) return;
-        objectUrl = URL.createObjectURL(blob);
-        setSrc(objectUrl);
-        setState('ready');
-      } catch {
-        // 권한 없음(403)·부재(404)·네트워크 실패를 구분해 표시하지는 않는다 —
-        // 사용자에게 의미 있는 차이가 아니고, 구분해 보여주면 존재 여부가 새어 나간다.
-        if (!cancelled) setState('error');
-      }
-    })();
-
-    return () => {
-      cancelled = true;
-      if (objectUrl) {
-        URL.revokeObjectURL(objectUrl);
-      }
-    };
-  }, [atchFileSn]);
-
-  if (state === 'ready' && src) {
+  if (state === 'ready') {
     return (
       // eslint-disable-next-line @next/next/no-img-element -- blob: URL 은 next/image 최적화 대상이 아니다(위 주석 참조).
-      <img src={src} alt={alt} className={className} />
+      <img ref={attachObjectUrl} alt={alt} className={className} />
     );
   }
 

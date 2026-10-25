@@ -11065,6 +11065,84 @@
       }
     },
     {
+      "route": "/pages",
+      "source": "frontend/src/app/pages/page.tsx",
+      "sourceShellAccess": "authenticated",
+      "shellAccess": "authenticated",
+      "roles": [
+        "UNVERIFIED"
+      ],
+      "surface": "authenticated-workspace",
+      "status": "partial",
+      "dataSource": "cms-published-pages-api",
+      "supportedActions": [
+        "keyword-search",
+        "list",
+        "navigate",
+        "paginate"
+      ],
+      "profileOwners": [
+        "UNVERIFIED"
+      ],
+      "directProjectionProfiles": [
+        "demo"
+      ],
+      "journeys": [],
+      "visibleLabel": "안내 페이지",
+      "menuExposure": "not-menued",
+      "decisionSafe": false,
+      "routing": {
+        "kind": "page"
+      },
+      "observedPageRedirectCalls": [],
+      "owner": "product/UX + domain owner",
+      "capabilities": [
+        {
+          "id": "cms.published-page-list",
+          "status": "partial",
+          "candidateStatus": "live",
+          "dataSource": "cms-published-pages-api",
+          "actions": [
+            "keyword-search",
+            "list",
+            "navigate",
+            "paginate"
+          ],
+          "unsupportedVisibleActions": [],
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "게시된 안내 페이지 목록",
+          "primaryTask": true,
+          "decisionSafe": false,
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-10-26",
+          "owner": "product/UX + domain owner",
+          "evidence": [
+            "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageApiController.java",
+            "frontend/src/app/pages/PublishedPagesClient.tsx",
+            "frontend/src/app/pages/__tests__/PublishedPagesClient.test.tsx",
+            "frontend/src/app/pages/page.tsx",
+            "frontend/src/services/business/cms/CmsService.ts"
+          ]
+        }
+      ],
+      "evidence": [
+        "config/modules/presets.json",
+        "frontend/next.config.ts",
+        "frontend/src/app/pages/page.tsx",
+        "frontend/src/proxy.ts"
+      ],
+      "unverifiedFields": [
+        "journeys",
+        "profileOwners",
+        "roles"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-12-31",
+        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-10-26 the route, footer and header shell links, page heading and capability states were read from code added for ADR-0042; the list is not a menu row (menu rows were not changed) and no live deployment was measured."
+      }
+    },
+    {
       "route": "/pages/[slug]",
       "source": "frontend/src/app/pages/[slug]/page.tsx",
       "sourceShellAccess": "authenticated",

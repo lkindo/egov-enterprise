@@ -20735,7 +20735,7 @@
           "CmsPageAdmin"
         ],
         "summary": "콘텐츠 페이지 목록",
-        "description": "제목·주소와 상태(ACTIVE·DRAFT·PUBLISHED·ARCHIVED)로 좁혀 최근 수정 순으로 조회합니다.",
+        "description": "제목·주소와 상태(ACTIVE·PENDING·DRAFT·PUBLISHED·UNPUBLISHED·ARCHIVED)로 좁혀 최근 수정 순으로 조회합니다.",
         "operationId": "getPages",
         "parameters": [
           {
@@ -21031,6 +21031,201 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseCmsPageDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/content-pages/{contsSn}/revisions/{contsRvsnSn}/purge": {
+      "post": {
+        "tags": [
+          "CmsPageAdmin"
+        ],
+        "summary": "게시본 파기",
+        "description": "지난 게시본 하나를 되돌릴 수 없게 지웁니다. 지금 보이는 게시본은 파기할 수 없습니다. 뒤의 판 번호는 하나씩 당겨집니다.",
+        "operationId": "purgeRevision",
+        "parameters": [
+          {
+            "name": "contsSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "contsRvsnSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CmsRevisionPurgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseCmsPageDetailDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/admin/system/content-pages/{contsSn}/purge": {
+      "post": {
+        "tags": [
+          "CmsPageAdmin"
+        ],
+        "summary": "페이지 파기",
+        "description": "게시를 중지한 페이지의 초안·모든 게시본·첨부를 되돌릴 수 없게 지웁니다. 주소 확인과 처리 근거 번호가 필요합니다.",
+        "operationId": "purgePage",
+        "parameters": [
+          {
+            "name": "contsSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/CmsPagePurgeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
                 }
               }
             }
@@ -29243,6 +29438,101 @@
         }
       }
     },
+    "/api/v1/content-pages": {
+      "get": {
+        "tags": [
+          "CmsPage"
+        ],
+        "summary": "안내 페이지 목록",
+        "description": "게시 중인 콘텐츠 페이지를 최근 게시 순으로 조회합니다. 검색어는 제목·요약 부분 일치입니다.",
+        "operationId": "getPublishedPages",
+        "parameters": [
+          {
+            "name": "keyword",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "description": "1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            }
+          },
+          {
+            "name": "size",
+            "in": "query",
+            "description": "페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정).",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "maximum": 100,
+              "minimum": 1
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponsePageResponseCmsPublishedPageSummaryDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/content-pages/{contsPathNm}": {
       "get": {
         "tags": [
@@ -35056,6 +35346,97 @@
             }
           }
         }
+      },
+      "delete": {
+        "tags": [
+          "CmsPageAdmin"
+        ],
+        "summary": "초안 페이지 삭제",
+        "description": "한 번도 게시하지 않은 페이지와 그 첨부를 지웁니다. 게시한 적이 있으면 400 입니다. 읽은 버전과 다르면 409 입니다.",
+        "operationId": "deleteDraftPage",
+        "parameters": [
+          {
+            "name": "contsSn",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int64"
+            }
+          },
+          {
+            "name": "version",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "format": "int32",
+              "minimum": 0
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "대상을 찾을 수 없음 (code: C003/C007)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
       }
     },
     "/api/v1/admin/system/content-pages/{contsSn}/revisions": {
@@ -40583,6 +40964,7 @@
             "enum": [
               "DRAFT",
               "PUBLISHED",
+              "UNPUBLISHED",
               "ARCHIVED"
             ]
           },
@@ -43543,6 +43925,57 @@
           }
         },
         "required": [
+          "version"
+        ]
+      },
+      "CmsRevisionPurgeRequest": {
+        "type": "object",
+        "description": "콘텐츠 게시본 파기 요청",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "화면이 읽은 페이지 버전"
+          },
+          "caseReference": {
+            "type": "string",
+            "description": "처리 근거 번호(민원·사고 접수 번호 등). 영문·숫자·. _ - 만",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "[A-Za-z0-9][A-Za-z0-9._-]{0,199}"
+          }
+        },
+        "required": [
+          "caseReference",
+          "version"
+        ]
+      },
+      "CmsPagePurgeRequest": {
+        "type": "object",
+        "description": "콘텐츠 페이지 파기 요청",
+        "properties": {
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "화면이 읽은 페이지 버전"
+          },
+          "contsPathNm": {
+            "type": "string",
+            "description": "확인용으로 다시 입력한 주소(/pages/ 뒤)",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "caseReference": {
+            "type": "string",
+            "description": "처리 근거 번호(민원·사고 접수 번호 등). 영문·숫자·. _ - 만",
+            "maxLength": 200,
+            "minLength": 1,
+            "pattern": "[A-Za-z0-9][A-Za-z0-9._-]{0,199}"
+          }
+        },
+        "required": [
+          "caseReference",
+          "contsPathNm",
           "version"
         ]
       },
@@ -47131,6 +47564,95 @@
           "notiListTotal",
           "taskList",
           "taskListTotal"
+        ]
+      },
+      "ApiResponsePageResponseCmsPublishedPageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/PageResponseCmsPublishedPageSummaryDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "CmsPublishedPageSummaryDto": {
+        "type": "object",
+        "description": "게시된 콘텐츠 페이지 목록 행",
+        "properties": {
+          "contsPathNm": {
+            "type": "string"
+          },
+          "contsTtl": {
+            "type": "string"
+          },
+          "contsExpln": {
+            "type": "string"
+          },
+          "publishedAt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
+      "PageResponseCmsPublishedPageSummaryDto": {
+        "type": "object",
+        "properties": {
+          "list": {
+            "type": "array",
+            "description": "현재 페이지의 항목",
+            "items": {
+              "$ref": "#/components/schemas/CmsPublishedPageSummaryDto"
+            }
+          },
+          "total": {
+            "type": "integer",
+            "format": "int64",
+            "description": "전체 건수"
+          },
+          "page": {
+            "type": "integer",
+            "format": "int32",
+            "description": "현재 페이지 번호(1부터, 요청의 page 와 같다)"
+          },
+          "size": {
+            "type": "integer",
+            "format": "int32",
+            "description": "페이지당 건수"
+          },
+          "totalPage": {
+            "type": "integer",
+            "format": "int32",
+            "description": "전체 페이지 수"
+          }
+        },
+        "required": [
+          "list",
+          "page",
+          "size",
+          "total",
+          "totalPage"
         ]
       },
       "ApiResponseCmsPublishedPageDto": {
@@ -51979,6 +52501,7 @@
             "enum": [
               "DRAFT",
               "PUBLISHED",
+              "UNPUBLISHED",
               "ARCHIVED"
             ]
           },
@@ -51993,6 +52516,10 @@
             "format": "int32"
           },
           "mdfcnDt": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "publishedAt": {
             "type": "string",
             "format": "date-time"
           }

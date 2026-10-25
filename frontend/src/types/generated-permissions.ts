@@ -49,6 +49,7 @@ export const PERMISSION_CODES = [
   "CMS_ADMIN_READ",
   "CMS_HOME_UPDATE",
   "CMS_PUBLISH",
+  "CMS_PURGE",
   "CMS_UPDATE",
   "CODE_CREATE",
   "CODE_DELETE",
@@ -236,7 +237,7 @@ export const PERMISSION_CODES = [
   "BOARD_PIN"
 ] as const;
 export type PermissionCode = (typeof PERMISSION_CODES)[number];
-export const PERMISSION_CATALOG_VERSION = "278ea98b516e80f3c7da7ff85fca5388ed9697222befa33336c488e7fd247182";
+export const PERMISSION_CATALOG_VERSION = "fe1afb98fe28f491ec249f9cc5df933dcd3878c0898a1e846270ab0e2370fdee";
 export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]>> = {
   "/": [],
   "/admin": [
@@ -512,6 +513,7 @@ export const PAGE_PERMISSIONS: Readonly<Record<string, readonly PermissionCode[]
   "/help/policies/[type]": [],
   "/login": [],
   "/note": [],
+  "/pages": [],
   "/pages/[slug]": [],
   "/search": [],
   "/smart-toolkit/dept-job": [],

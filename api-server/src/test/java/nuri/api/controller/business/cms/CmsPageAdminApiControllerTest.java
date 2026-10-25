@@ -16,6 +16,7 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -79,5 +80,54 @@ class CmsPageAdminApiControllerTest extends ControllerTestSupport {
                         .content("{\"version\":4,\"rvsnRsn\":\"문의처 변경\"}"))
                 .andExpect(status().isOk());
         verify(cmsPageAdminService).publish(eq(3L), any());
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("초안 삭제는 읽은 버전을 쿼리로 받는다 — 없으면 서비스 전에 400(ADR-0042)")
+    void deleteRequiresTheReadVersion() throws Exception {
+        mockMvc.perform(delete("/api/v1/admin/system/content-pages/3").with(csrf()))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(cmsPageAdminService);
+
+        mockMvc.perform(delete("/api/v1/admin/system/content-pages/3").param("version", "2").with(csrf()))
+                .andExpect(status().isOk());
+        verify(cmsPageAdminService).deleteDraftPage(3L, 2);
+    }
+
+    @Test
+    @WithMockCustomUser
+    @DisplayName("파기는 주소 확인과 처리 근거 번호가 있어야 하고, 근거 번호에 자유 서술을 받지 않는다(ADR-0042)")
+    void purgeRequiresTheTypedPathAndACaseReference() throws Exception {
+        for (String body : new String[]{
+                "{\"version\":2,\"caseReference\":\"INC-1\"}",
+                "{\"version\":2,\"contsPathNm\":\"guide\"}",
+                "{\"version\":2,\"contsPathNm\":\"guide\",\"caseReference\":\"주민번호 노출\"}",
+                "{\"contsPathNm\":\"guide\",\"caseReference\":\"INC-1\"}"}) {
+            mockMvc.perform(post("/api/v1/admin/system/content-pages/3/purge")
+                            .with(csrf())
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        mockMvc.perform(post("/api/v1/admin/system/content-pages/3/revisions/7/purge")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2,\"caseReference\":\"요청서 참고\"}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(cmsPageAdminService);
+
+        mockMvc.perform(post("/api/v1/admin/system/content-pages/3/purge")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2,\"contsPathNm\":\"guide\",\"caseReference\":\"INC-2026.001\"}"))
+                .andExpect(status().isOk());
+        verify(cmsPageAdminService).purgePage(eq(3L), any());
+        mockMvc.perform(post("/api/v1/admin/system/content-pages/3/revisions/7/purge")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"version\":2,\"caseReference\":\"INC-2026.001\"}"))
+                .andExpect(status().isOk());
+        verify(cmsPageAdminService).purgeRevision(eq(3L), eq(7L), any());
     }
 }

@@ -325,6 +325,26 @@ class JdbcAttachmentReferenceResolverTest {
     }
 
     @Test
+    @DisplayName("참조 여부 — 참조 행이 없으면 지워도 되고, 한 참조원이라도 행이 있으면 지우지 않는다(ADR-0042)")
+    void referencedReportsAnySourceRow() {
+        assertThat(new CapturingJdbc(0, 0, 0).resolver().referenced(ATCH_FILE_SN)).isFalse();
+        assertThat(new CapturingJdbc(source -> source == AttachmentSource.BOARD
+                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE).resolver().referenced(ATCH_FILE_SN)).isTrue();
+        assertThat(new CapturingJdbc(source -> source == AttachmentSource.CMS_PAGE
+                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE).resolver().referenced(ATCH_FILE_SN)).isTrue();
+    }
+
+    @Test
+    @DisplayName("🚨 참조 여부 조회 실패는 '참조 있음' 이다 — 모르는 첨부를 지우지 않는다")
+    void referencedTreatsQueryFailureAsReferenced() {
+        JdbcTemplate template = mock(JdbcTemplate.class);
+        when(template.queryForObject(anyString(), ArgumentMatchers.<RowMapper<Object>>any(), any(Object[].class)))
+                .thenThrow(new QueryTimeoutException("db down"));
+
+        assertThat(resolver(template).referenced(ATCH_FILE_SN)).isTrue();
+    }
+
+    @Test
     @DisplayName("🚨 조회 실패는 fail-closed 다 — 근거를 만들지 않고 관리자 우회까지 막는다")
     void queryFailureIsFailClosed() {
         JdbcTemplate template = mock(JdbcTemplate.class);

@@ -1,13 +1,35 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from 'lucide-react';
+import { ArrowRight, ChevronLeft, ChevronRight, ExternalLink, Pause, Play } from 'lucide-react';
 import { bannerService } from '@/services/business/user/BannerService';
 import { isCanceledRequest } from '@/lib/safe-error-log';
 import { PublicBanner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
 import Image from 'next/image';
+import Link from 'next/link';
 import { AttachmentImage } from '@/app/components/ui/attachment-image';
+
+/**
+ * 사이트 안 경로 — '/' 로 시작하되 '//'·'/\' 가 아니다(브라우저는 둘 다 다른 사이트 주소로 읽는다). 공백·제어 문자·
+ * 역슬래시는 어디에도 받지 않는다 — 브라우저가 지우거나 '/' 로 바꿔 읽어 '//다른 사이트' 가 될 수 있다.
+ */
+const SITE_PATH = /^\/(?![/\\])[^\s\\\p{Cc}]*$/u;
+
+type BannerLink = { kind: 'internal' | 'external'; href: string };
+
+/**
+ * 배너 '자세히 보기' 의 대상(2026-10-26 ADR-0042). linkUrl 은 관리자 자유입력값이라 아는 모양만 링크로 그린다 —
+ * javascript:/data: 같은 다른 스킴은 저장형 XSS 가 되므로 그리지 않는다.
+ * - 사이트 안 경로(/pages/… 등): 같은 창으로 옮긴다. 종전에는 http(s) 만 그려 안내 페이지로 보내는 배너를 만들 수 없었다.
+ * - http(s) 바깥 주소: 종전처럼 새 창.
+ */
+function bannerLink(linkUrl?: string | null): BannerLink | null {
+  if (!linkUrl) return null;
+  if (/^https?:\/\//i.test(linkUrl)) return { kind: 'external', href: linkUrl };
+  const path = linkUrl.trim();
+  return SITE_PATH.test(path) ? { kind: 'internal', href: path } : null;
+}
 
 export function BannerSlider() {
   const [banners, setBanners] = useState<PublicBanner[]>([]);
@@ -74,6 +96,7 @@ export function BannerSlider() {
   // `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 원리적으로 401 이다.
   // (종전 코드는 백엔드에 존재하지도 않는 `/api/v1/files/download?fileId=` 를 불렀다.)
   const externalUrl = currentBanner.bnrImgNm?.startsWith('http') ? currentBanner.bnrImgNm : null;
+  const link = bannerLink(currentBanner.linkUrl);
 
   return (
     <div
@@ -118,10 +141,19 @@ export function BannerSlider() {
         <p className="text-sm md:text-base text-white/80 mb-6 max-w-md animate-in slide-in-from-left delay-100 duration-500">
           {currentBanner.bnrExpln}
         </p>
-        {/* linkUrl 은 관리자 자유입력값 — javascript:/data: 스킴 저장형 XSS 방지를 위해 http(s)만 앵커 렌더 */}
-        {currentBanner.linkUrl && /^https?:\/\//i.test(currentBanner.linkUrl) && (
+        {/* linkUrl 은 관리자 자유입력값 — 사이트 안 경로와 http(s) 만 링크로 그린다(bannerLink). */}
+        {link?.kind === 'internal' && (
+          <Link
+            href={link.href}
+            aria-label={`${currentBanner.bnrNm} 자세히 보기`}
+            className="flex items-center gap-2 w-fit px-4 py-2 bg-card text-foreground rounded-lg font-bold hover:bg-primary hover:text-white transition-all text-sm"
+          >
+            자세히 보기 <ArrowRight size={14} aria-hidden="true" />
+          </Link>
+        )}
+        {link?.kind === 'external' && (
           <a
-            href={currentBanner.linkUrl}
+            href={link.href}
             target="_blank"
             rel="noopener noreferrer"
             aria-label={`${currentBanner.bnrNm} 자세히 보기 새창 열림`}

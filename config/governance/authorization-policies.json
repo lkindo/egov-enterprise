@@ -2003,6 +2003,33 @@
       "guardRef": "CmsPageAdminService#unarchive"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#deleteDraftPage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#deleteDraftPage')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#deleteDraftPage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/purge",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#purgePage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#purgePage')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#purgePage"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/revisions/{contsRvsnSn}/purge",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#purgeRevision",
+      "policy": "ADMIN_OR_SYSTEM",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.cms.CmsPageAdminApiController#purgeRevision')",
+      "routeGate": "OPERATION_PERMISSION",
+      "guardRef": "CmsPageAdminService#purgeRevision"
+    },
+    {
       "method": "PUT",
       "path": "/api/v1/admin/system/content-home",
       "handler": "nuri.api.controller.business.cms.CmsHomeAdminApiController#updateHome",
@@ -4015,6 +4042,42 @@
           "count": 1,
           "identityAxis": "PERMISSION",
           "permission": "CMS_PUBLISH"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#deleteDraftPage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#purgePage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_PURGE"
+        }
+      ]
+    },
+    {
+      "target": "CmsPageAdminService#purgeRevision",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CMS_PURGE"
         }
       ]
     },
@@ -8060,11 +8123,39 @@
       "permission": "CMS_ADMIN_READ"
     },
     {
+      "method": "DELETE",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#deleteDraftPage",
+      "access": "PERMISSION",
+      "permission": "CMS_UPDATE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/purge",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#purgePage",
+      "access": "PERMISSION",
+      "permission": "CMS_PURGE"
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/admin/system/content-pages/{contsSn}/revisions/{contsRvsnSn}/purge",
+      "handler": "nuri.api.controller.business.cms.CmsPageAdminApiController#purgeRevision",
+      "access": "PERMISSION",
+      "permission": "CMS_PURGE"
+    },
+    {
       "method": "GET",
       "path": "/api/v1/admin/system/content-home",
       "handler": "nuri.api.controller.business.cms.CmsHomeAdminApiController#getHome",
       "access": "PERMISSION",
       "permission": "CMS_ADMIN_READ"
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/content-pages",
+      "handler": "nuri.api.controller.business.cms.CmsPageApiController#getPublishedPages",
+      "access": "AUTHENTICATED",
+      "permission": null
     },
     {
       "method": "GET",

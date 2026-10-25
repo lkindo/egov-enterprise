@@ -1,9 +1,19 @@
 import { queryOptions } from '@tanstack/react-query';
 import { cmsService } from '@/services/business/cms/CmsService';
 
+/**
+ * 관리 목록 조건(ADR-0042). ACTIVE 는 보관하지 않은 전체, PENDING 은 게시를 기다리는 페이지(한 번도 게시하지 않은 초안과 게시본과
+ * 다른 저장 초안이 있는 게시 중 페이지), UNPUBLISHED 는 게시를 중지한 페이지다.
+ */
 export interface CmsPageListParams {
   keyword: string;
-  status: 'ACTIVE' | 'DRAFT' | 'PUBLISHED' | 'ARCHIVED';
+  status: 'ACTIVE' | 'PENDING' | 'DRAFT' | 'PUBLISHED' | 'UNPUBLISHED' | 'ARCHIVED';
+  page: number;
+  size: number;
+}
+
+export interface CmsPublishedListParams {
+  keyword: string;
   page: number;
   size: number;
 }
@@ -17,6 +27,7 @@ export const cmsKeys = {
   revision: (contsSn: number, contsRvsnSn: number) => [...cmsKeys.all, 'revision', contsSn, contsRvsnSn] as const,
   home: () => [...cmsKeys.all, 'home'] as const,
   homeIntro: () => [...cmsKeys.all, 'home-intro'] as const,
+  published: (params: CmsPublishedListParams) => [...cmsKeys.all, 'published', params] as const,
 };
 
 export const cmsQueryOptions = {
@@ -39,6 +50,11 @@ export const cmsQueryOptions = {
   home: () => queryOptions({
     queryKey: cmsKeys.home(),
     queryFn: () => cmsService.getHome(),
+  }),
+  /** 사용자 화면의 안내 페이지 목록(ADR-0042). */
+  published: (params: CmsPublishedListParams) => queryOptions({
+    queryKey: cmsKeys.published(params),
+    queryFn: () => cmsService.getPublishedPages(params),
   }),
   /** 업무 홈 맨 위 소개. 지정이 없으면 null 이고 조각을 그리지 않는다. */
   homeIntro: () => queryOptions({

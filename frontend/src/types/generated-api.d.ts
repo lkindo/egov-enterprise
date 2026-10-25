@@ -2693,7 +2693,7 @@ export interface paths {
         };
         /**
          * 콘텐츠 페이지 목록
-         * @description 제목·주소와 상태(ACTIVE·DRAFT·PUBLISHED·ARCHIVED)로 좁혀 최근 수정 순으로 조회합니다.
+         * @description 제목·주소와 상태(ACTIVE·PENDING·DRAFT·PUBLISHED·UNPUBLISHED·ARCHIVED)로 좁혀 최근 수정 순으로 조회합니다.
          */
         get: operations["getPages"];
         put?: never;
@@ -2742,6 +2742,46 @@ export interface paths {
          * @description 보관한 페이지를 초안 목록으로 되돌립니다. 다시 게시하지 않습니다.
          */
         post: operations["unarchive"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/content-pages/{contsSn}/revisions/{contsRvsnSn}/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 게시본 파기
+         * @description 지난 게시본 하나를 되돌릴 수 없게 지웁니다. 지금 보이는 게시본은 파기할 수 없습니다. 뒤의 판 번호는 하나씩 당겨집니다.
+         */
+        post: operations["purgeRevision"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/v1/admin/system/content-pages/{contsSn}/purge": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 페이지 파기
+         * @description 게시를 중지한 페이지의 초안·모든 게시본·첨부를 되돌릴 수 없게 지웁니다. 주소 확인과 처리 근거 번호가 필요합니다.
+         */
+        post: operations["purgePage"];
         delete?: never;
         options?: never;
         head?: never;
@@ -4239,6 +4279,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/content-pages": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 안내 페이지 목록
+         * @description 게시 중인 콘텐츠 페이지를 최근 게시 순으로 조회합니다. 검색어는 제목·요약 부분 일치입니다.
+         */
+        get: operations["getPublishedPages"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/content-pages/{contsPathNm}": {
         parameters: {
             query?: never;
@@ -5335,7 +5395,11 @@ export interface paths {
         get: operations["getPage"];
         put?: never;
         post?: never;
-        delete?: never;
+        /**
+         * 초안 페이지 삭제
+         * @description 한 번도 게시하지 않은 페이지와 그 첨부를 지웁니다. 게시한 적이 있으면 400 입니다. 읽은 버전과 다르면 409 입니다.
+         */
+        delete: operations["deleteDraftPage"];
         options?: never;
         head?: never;
         patch?: never;
@@ -6913,7 +6977,7 @@ export interface components {
             /** @description 초안 문서(형식 v1) */
             document?: unknown;
             /** @enum {string} */
-            status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            status?: "DRAFT" | "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
             unpublishedChanges?: boolean;
             home?: boolean;
             pathLocked?: boolean;
@@ -8107,6 +8171,28 @@ export interface components {
              * @description 화면이 읽은 페이지 버전
              */
             version: number;
+        };
+        /** @description 콘텐츠 게시본 파기 요청 */
+        CmsRevisionPurgeRequest: {
+            /**
+             * Format: int32
+             * @description 화면이 읽은 페이지 버전
+             */
+            version: number;
+            /** @description 처리 근거 번호(민원·사고 접수 번호 등). 영문·숫자·. _ - 만 */
+            caseReference: string;
+        };
+        /** @description 콘텐츠 페이지 파기 요청 */
+        CmsPagePurgeRequest: {
+            /**
+             * Format: int32
+             * @description 화면이 읽은 페이지 버전
+             */
+            version: number;
+            /** @description 확인용으로 다시 입력한 주소(/pages/ 뒤) */
+            contsPathNm: string;
+            /** @description 처리 근거 번호(민원·사고 접수 번호 등). 영문·숫자·. _ - 만 */
+            caseReference: string;
         };
         /** @description 저장된 초안 게시 요청 */
         CmsPagePublishRequest: {
@@ -9548,6 +9634,49 @@ export interface components {
             taskListTotal: number | null;
             /** Format: int64 */
             notiListTotal: number | null;
+        };
+        ApiResponsePageResponseCmsPublishedPageSummaryDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["PageResponseCmsPublishedPageSummaryDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 게시된 콘텐츠 페이지 목록 행 */
+        CmsPublishedPageSummaryDto: {
+            contsPathNm?: string;
+            contsTtl?: string;
+            contsExpln?: string;
+            /** Format: date-time */
+            publishedAt?: string;
+        };
+        PageResponseCmsPublishedPageSummaryDto: {
+            /** @description 현재 페이지의 항목 */
+            list: components["schemas"]["CmsPublishedPageSummaryDto"][];
+            /**
+             * Format: int64
+             * @description 전체 건수
+             */
+            total: number;
+            /**
+             * Format: int32
+             * @description 현재 페이지 번호(1부터, 요청의 page 와 같다)
+             */
+            page: number;
+            /**
+             * Format: int32
+             * @description 페이지당 건수
+             */
+            size: number;
+            /**
+             * Format: int32
+             * @description 전체 페이지 수
+             */
+            totalPage: number;
         };
         ApiResponseCmsPublishedPageDto: {
             success?: boolean;
@@ -11563,13 +11692,15 @@ export interface components {
             contsPathNm?: string;
             contsTtl?: string;
             /** @enum {string} */
-            status?: "DRAFT" | "PUBLISHED" | "ARCHIVED";
+            status?: "DRAFT" | "PUBLISHED" | "UNPUBLISHED" | "ARCHIVED";
             unpublishedChanges?: boolean;
             home?: boolean;
             /** Format: int32 */
             version?: number;
             /** Format: date-time */
             mdfcnDt?: string;
+            /** Format: date-time */
+            publishedAt?: string;
         };
         PageResponseCmsPageSummaryDto: {
             /** @description 현재 페이지의 항목 */
@@ -29217,6 +29348,149 @@ export interface operations {
             };
         };
     };
+    purgeRevision: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contsSn: number;
+                contsRvsnSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmsRevisionPurgeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseCmsPageDetailDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    purgePage: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                contsSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CmsPagePurgeRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     publish: {
         parameters: {
             query?: never;
@@ -35253,6 +35527,68 @@ export interface operations {
             };
         };
     };
+    getPublishedPages: {
+        parameters: {
+            query?: {
+                keyword?: string;
+                /** @description 1부터 시작하는 페이지 번호(1..N). 옛 이름 pageIndex 는 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                page?: number;
+                /** @description 페이지당 건수(1~100). 옛 이름 pageUnit 은 한 릴리스 동안 별칭으로 받는다(폐기 예정). */
+                size?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponsePageResponseCmsPublishedPageSummaryDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getPublishedPage: {
         parameters: {
             query?: never;
@@ -39017,6 +39353,75 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseCmsPageDetailDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 대상을 찾을 수 없음 (code: C003/C007) */
+            404: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    deleteDraftPage: {
+        parameters: {
+            query: {
+                version: number;
+            };
+            header?: never;
+            path: {
+                contsSn: number;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
 @Schema(description = "콘텐츠 페이지 상세(초안)")
 public record CmsPageDetailDto(Long contsSn, String contsPathNm, String contsTtl, String contsExpln,
                                @Schema(description = "초안 문서(형식 v1)") Object document,
-                               @Schema(allowableValues = {"DRAFT", "PUBLISHED", "ARCHIVED"}) String status,
+                               @Schema(allowableValues = {"DRAFT", "PUBLISHED", "UNPUBLISHED", "ARCHIVED"}) String status,
                                boolean unpublishedChanges, boolean home, boolean pathLocked, Integer version,
                                CmsRevisionSummaryDto publishedRevision, long revisionCount, LocalDateTime mdfcnDt) {
 }

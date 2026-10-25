@@ -507,6 +507,13 @@
       ]
     },
     {
+      "code": "CMS_PURGE",
+      "domain": "CMS",
+      "action": "PURGE",
+      "name": "콘텐츠 페이지 · 파기",
+      "defaultGroups": []
+    },
+    {
       "code": "CMS_UPDATE",
       "domain": "CMS",
       "action": "UPDATE",
@@ -2666,6 +2673,7 @@
     "/help/policies/[type]": [],
     "/login": [],
     "/note": [],
+    "/pages": [],
     "/pages/[slug]": [],
     "/search": [],
     "/smart-toolkit/dept-job": [],

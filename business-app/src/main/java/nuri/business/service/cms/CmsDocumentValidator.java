@@ -24,9 +24,13 @@ import java.util.regex.Pattern;
  * 콘텐츠 문서의 유일한 허용 판정(ADR-0039 결정 5). 초안 저장·게시가 모두 이것을 거치고, 통과한 정규화 문서만 저장한다.
  *
  * <p>문서 형식 v1: {@code {schemaVersion:1, sections:[...]}}. 영역은 단 구성(1단·2단 50:50·2단 40:60·3단)과 같은 수의 칸을 갖고,
- * 칸은 서식 본문(TipTap JSON)·이미지(페이지 소유 첨부)·바로가기 목록 중 하나다. 배경·간격은 의미 토큰 이름만 받는다.
+ * 칸은 서식 본문(TipTap JSON)·이미지(페이지 소유 첨부)·바로가기 목록·내려받기 파일 목록 중 하나다. 배경·간격은 의미 토큰 이름만 받는다.
  * 모르는 노드·표시(mark)·칸 종류·키는 거부한다 — 조용히 버려 저장하지 않는다. 알려진 노드의 모르는 속성은 그리지 않는 표시
  * 힌트(편집기가 덧붙이는 기본값 등)라 정규화에서 뺀다.
+ *
+ * <p>판정 수준은 둘이다(ADR-0042). 초안 저장({@link Mode#DRAFT})은 아직 채우지 않은 칸 — 고르지 않은 이미지, 설명 없는 이미지,
+ * 이름·주소가 빈 바로가기, 파일이 없는 내려받기 칸 — 을 받는다. 게시({@link Mode#PUBLISH})는 모든 칸이 완성돼야 한다. 채운 값의
+ * 형식(링크 규칙·길이·노드 구조)은 두 수준 모두 같게 본다 — 초안이라도 허용하지 않는 주소는 저장하지 않는다.
  *
  * <p>화면 렌더러({@code frontend/src/lib/cms/document.ts})는 같은 판정을 따르고, 두 구현은 같은 fixture
  * ({@code cms-document-fixtures.json})로 대조한다.
@@ -42,7 +46,14 @@ public class CmsDocumentValidator {
     static final int MAX_TABLE_ROWS = 100;
     static final int MAX_TABLE_COLUMNS = 20;
     static final int MAX_LINKS = 12;
+    static final int MAX_FILES = 10;
     static final int MAX_URL_LENGTH = 2_000;
+
+    /** 판정 수준(ADR-0042). 초안 저장은 미완성 칸을 받고, 게시는 모든 칸이 완성돼야 한다. */
+    public enum Mode {
+        DRAFT,
+        PUBLISH
+    }
 
     private static final Pattern SECTION_ID = Pattern.compile("^[a-z0-9-]{1,40}$");
     private static final Pattern MAILTO = Pattern.compile("^mailto:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$");
@@ -69,21 +80,31 @@ public class CmsDocumentValidator {
     private static final JsonNodeFactory NODES = JsonNodeFactory.instance;
     private static final JsonMapper MAPPER = JsonMapper.builder().build();
 
-    /** 검증을 통과한 문서. {@code json} 은 저장할 정규화 JSON, {@code images} 는 이미지 칸이 가리키는 첨부 번호다. */
-    public record Normalized(String json, ObjectNode document, Set<Long> images) {
+    /**
+     * 검증을 통과한 문서. {@code json} 은 저장할 정규화 JSON, {@code images} 는 이미지 칸이, {@code files} 는 내려받기 칸이 가리키는
+     * 첨부 번호다. 두 집합은 겹치지 않는다(한 첨부를 이미지와 내려받기 파일로 함께 쓰지 않는다).
+     */
+    public record Normalized(String json, ObjectNode document, Set<Long> images, Set<Long> files) {
+
+        /** 문서가 가리키는 모든 첨부(이미지 먼저, 문서 순서). */
+        public Set<Long> attachments() {
+            Set<Long> all = new LinkedHashSet<>(images);
+            all.addAll(files);
+            return Set.copyOf(all);
+        }
     }
 
     /** 요청 본문에서 받은 문서(Map·List 트리)를 검증한다. */
-    public Normalized normalize(Object raw) {
+    public Normalized normalize(Object raw, Mode mode) {
         if (raw == null) {
             throw invalid("문서", "문서가 비어 있습니다");
         }
-        return normalizeTree(MAPPER.valueToTree(raw));
+        return normalizeTree(MAPPER.valueToTree(raw), mode);
     }
 
     /** 저장된 JSON 을 다시 검증한다(게시 직전 — 검증 규칙이 바뀌었어도 지금 규칙을 통과한 문서만 게시한다). */
-    public Normalized normalizeJson(String json) {
-        return normalizeTree(MAPPER.readTree(json));
+    public Normalized normalizeJson(String json, Mode mode) {
+        return normalizeTree(MAPPER.readTree(json), mode);
     }
 
     /** 두 문서가 같은 내용인지 본다. 저장 방식(jsonb 키 순서·공백)의 차이는 같다고 본다. */
@@ -146,14 +167,14 @@ public class CmsDocumentValidator {
         }
     }
 
-    private Normalized normalizeTree(JsonNode root) {
-        Context context = new Context();
+    private Normalized normalizeTree(JsonNode root, Mode mode) {
+        Context context = new Context(mode);
         ObjectNode document = document(root, context);
         String json = MAPPER.writeValueAsString(document);
         if (json.getBytes(StandardCharsets.UTF_8).length > MAX_BYTES) {
             throw invalid("문서", "문서가 너무 큽니다(1MiB 초과). 영역이나 표를 나눠 주세요");
         }
-        return new Normalized(json, document, Set.copyOf(context.images));
+        return new Normalized(json, document, Set.copyOf(context.images), Set.copyOf(context.files));
     }
 
     private ObjectNode document(JsonNode root, Context context) {
@@ -202,7 +223,8 @@ public class CmsDocumentValidator {
         if (node == null || !node.isObject()) {
             throw invalid(path, "칸 형식이 올바르지 않습니다");
         }
-        String kind = token(node.get("kind"), path + " 종류", Set.of("rich", "image", "links"));
+        String kind = token(node.get("kind"), path + " 종류", Set.of("rich", "image", "links", "files"));
+        boolean publish = context.mode == Mode.PUBLISH;
         ObjectNode result = NODES.objectNode();
         result.put("kind", kind);
         switch (kind) {
@@ -212,24 +234,49 @@ public class CmsDocumentValidator {
             }
             case "image" -> {
                 object(node, path, Set.of("kind", "atchFileSn", "alt", "decorative", "caption"));
+                // 초안은 아직 고르지 않은 이미지(0·빈 값)를 받는다. 게시는 이미지가 있어야 한다.
                 JsonNode sn = node.get("atchFileSn");
-                if (sn == null || !sn.isIntegralNumber() || sn.longValue() <= 0) {
+                boolean unselected = sn == null || sn.isNull() || (sn.isIntegralNumber() && sn.longValue() == 0);
+                if (unselected ? publish : !sn.isIntegralNumber() || sn.longValue() < 0) {
                     throw invalid(path, "이미지를 선택해 주세요");
                 }
+                long atchFileSn = unselected ? 0 : sn.longValue();
                 JsonNode decorativeNode = node.get("decorative");
                 boolean decorative = decorativeNode != null && decorativeNode.isBoolean() && decorativeNode.booleanValue();
                 if (decorativeNode != null && !decorativeNode.isBoolean()) {
                     throw invalid(path, "장식 이미지 여부가 올바르지 않습니다");
                 }
                 String alt = text(node.get("alt"), path + " 대체 텍스트", 300, false);
-                if (!decorative && alt.isBlank()) {
+                if (publish && !decorative && alt.isBlank()) {
                     throw invalid(path, "이미지 설명(대체 텍스트)을 입력하거나 장식 이미지로 지정해 주세요");
                 }
-                result.put("atchFileSn", sn.longValue());
+                result.put("atchFileSn", atchFileSn);
                 result.put("alt", decorative ? "" : alt);
                 result.put("decorative", decorative);
                 result.put("caption", text(node.get("caption"), path + " 설명", 300, false));
-                context.images.add(sn.longValue());
+                if (atchFileSn > 0) {
+                    attachment(context, context.images, atchFileSn, path);
+                }
+            }
+            case "files" -> {
+                object(node, path, Set.of("kind", "items"));
+                ArrayNode items = array(node.get("items"), path + " 내려받기 파일", publish ? 1 : 0, MAX_FILES);
+                ArrayNode outItems = result.putArray("items");
+                for (int i = 0; i < items.size(); i++) {
+                    String itemPath = path + " 내려받기 파일 " + (i + 1);
+                    JsonNode item = items.get(i);
+                    object(item, itemPath, Set.of("atchFileSn", "title"));
+                    // 파일 항목은 올린 뒤에만 생긴다 — 초안이라도 첨부 번호가 있어야 한다.
+                    JsonNode sn = item.get("atchFileSn");
+                    if (sn == null || !sn.isIntegralNumber() || sn.longValue() <= 0) {
+                        throw invalid(itemPath, "파일을 올려 주세요");
+                    }
+                    String title = text(item.get("title"), itemPath + " 이름", 200, publish);
+                    attachment(context, context.files, sn.longValue(), itemPath);
+                    ObjectNode outItem = outItems.addObject();
+                    outItem.put("atchFileSn", sn.longValue());
+                    outItem.put("title", title);
+                }
             }
             default -> {
                 object(node, path, Set.of("kind", "items"));
@@ -239,8 +286,10 @@ public class CmsDocumentValidator {
                     String itemPath = path + " 바로가기 " + (i + 1);
                     JsonNode item = items.get(i);
                     object(item, itemPath, Set.of("title", "url"));
-                    String title = text(item.get("title"), itemPath + " 이름", 100, true);
-                    String url = safeHref(text(item.get("url"), itemPath + " 주소", MAX_URL_LENGTH, true));
+                    // 초안은 이름·주소가 빈 바로가기를 받는다. 채운 주소는 초안이라도 허용 규칙을 지나야 저장한다.
+                    String title = text(item.get("title"), itemPath + " 이름", 100, publish);
+                    String rawUrl = text(item.get("url"), itemPath + " 주소", MAX_URL_LENGTH, publish);
+                    String url = rawUrl.isEmpty() ? "" : safeHref(rawUrl);
                     if (url == null) {
                         throw invalid(itemPath, "주소는 https 주소, /로 시작하는 사이트 내부 경로, mailto·tel 만 쓸 수 있습니다");
                     }
@@ -251,6 +300,15 @@ public class CmsDocumentValidator {
             }
         }
         return result;
+    }
+
+    /** 칸이 가리키는 첨부를 모은다. 한 첨부를 이미지와 내려받기 파일로 함께 쓰거나, 내려받기 목록에 두 번 넣지 않는다. */
+    private static void attachment(Context context, Set<Long> target, long atchFileSn, String path) {
+        Set<Long> other = target == context.images ? context.files : context.images;
+        if (other.contains(atchFileSn) || (target == context.files && context.files.contains(atchFileSn))) {
+            throw invalid(path, "같은 파일을 두 곳에 쓸 수 없습니다");
+        }
+        target.add(atchFileSn);
     }
 
     // ---- TipTap 문서 -------------------------------------------------------------------------------------------
@@ -574,7 +632,13 @@ public class CmsDocumentValidator {
     }
 
     private static final class Context {
+        private final Mode mode;
         private final Set<Long> images = new LinkedHashSet<>();
+        private final Set<Long> files = new LinkedHashSet<>();
         private int blocks;
+
+        private Context(Mode mode) {
+            this.mode = mode;
+        }
     }
 }

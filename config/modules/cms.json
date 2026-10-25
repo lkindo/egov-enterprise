@@ -55,6 +55,10 @@
       {
         "path": "frontend/src/extensions/cms/home-sections.ts",
         "reason": "콘텐츠 페이지 기능이 없으면 업무 홈 맨 위의 소개 영역만 사라지고 업무 홈은 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/cms/shell-links.ts",
+        "reason": "콘텐츠 페이지 기능이 없으면 머리글·바닥글에서 안내 페이지 목록으로 가는 링크만 사라지고 셸은 그대로입니다."
       }
     ],
     "ports": []

@@ -154,6 +154,15 @@ describe('공개 준비 점검', () => {
     expect(result.checks.map((item) => item.state)).toEqual(['pass', 'unknown', 'unknown']);
   });
 
+  it('탭 없는 허브 주소만 연결이면 확인 불가이고, 그 메뉴가 사용 안 함이면 실패다', () => {
+    const hub = (useYn: string) => ready([menu(2000000, '소통·지식', null, null), menu(2050000, '지식 허브', 2000000, '/admin/help', useYn)]);
+    const userSeesHub = groups(ADMIN, group('ROLE_USER', '사용자', nav(2000000, 2050000)));
+    expect(check(WIKI, { menus: hub('Y'), groups: userSeesHub }).checks.find((item) => item.id === 'general-menu')?.state)
+      .toBe('unknown');
+    expect(check(WIKI, { menus: hub('N'), groups: userSeesHub }).checks.find((item) => item.id === 'general-menu')?.state)
+      .toBe('fail');
+  });
+
   it('연결된 메뉴가 없으면 실패다', () => {
     expect(check(NEW_BOARD, { menus: ready(MENUS.filter((item) => item.menuNo !== 3000100)) }).state).toBe('fail');
   });
