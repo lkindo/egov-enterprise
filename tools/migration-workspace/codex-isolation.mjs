@@ -3,9 +3,23 @@ import { once } from 'node:events';
 import { mkdtemp, rm } from 'node:fs/promises';
 import { homedir, tmpdir } from 'node:os';
 import path from 'node:path';
-import { openCodex } from './codex-adapter.mjs';
+import { openCodex, inspectCodexHome } from './codex-adapter.mjs';
 
 const validModel = model => typeof model === 'string' && /^[a-zA-Z0-9._-]{1,80}$/.test(model);
+
+// 합성 검사가 실제 세션과 다른 조건은 이것뿐이다: 로컬 합성 provider, 인증 정보를 저장하지 않는 저장소, 압축 끔.
+// 나머지 제한(CODEX_RESTRICTIONS)은 openCodex 가 같은 값으로 붙인다. 계약 시험이 이 차이를 고정한다.
+export function probeConfig(port, model) {
+  return {
+    model, model_provider: 'migration_probe',
+    'model_providers.migration_probe.name': 'Local synthetic isolation check',
+    'model_providers.migration_probe.base_url': `http://127.0.0.1:${port}/v1`,
+    'model_providers.migration_probe.wire_api': 'responses',
+    'model_providers.migration_probe.requires_openai_auth': false,
+    'features.enable_request_compression': false,
+    cli_auth_credentials_store: 'ephemeral',
+  };
+}
 
 /** Inspect the captured synthetic wire body; never return its prompt or machine paths. */
 export function assessCodexRequest(captured, localRoots, expectedModel) {
@@ -29,8 +43,14 @@ export function assessCodexRequest(captured, localRoots, expectedModel) {
 }
 
 /** Synthetic local provider probe: no login, real model request, or institutional data leaves the PC. */
-export async function inspectCodexIsolation(executable, selectedModel) {
+export async function inspectCodexIsolation(executable, selectedModel, { home } = {}) {
   if (!validModel(selectedModel)) return { qualified: false, code: 'CODEX_MODEL_UNCONFIRMED', tools: [] };
+  // 검사는 빈 임시 홈에서 돈다. 실제 세션 홈에 설정·지시 입력이 있으면 결과를 그 홈에 옮길 수 없으므로 통과시키지 않는다.
+  if (home !== undefined) {
+    let homeInput;
+    try { homeInput = typeof home === 'string' && home ? await inspectCodexHome(home) : 'CODEX_HOME_UNREADABLE'; } catch (error) { homeInput = /^CODEX_[A-Z_]+$/.test(error?.code) ? error.code : 'CODEX_HOME_UNREADABLE'; }
+    if (homeInput) return { qualified: false, code: homeInput, model: selectedModel, tools: [] };
+  }
   const directory = await mkdtemp(path.join(tmpdir(), 'migration-ai-probe-'));
   let client, captured, hasCredentials = false;
   const server = createServer(async (request, response) => {
@@ -45,15 +65,7 @@ export async function inspectCodexIsolation(executable, selectedModel) {
   server.listen(0, '127.0.0.1'); await once(server, 'listening');
   let reason = 'CODEX_PROBE_FAILED';
   try {
-    client = await openCodex({ executable, directory, testConfig: {
-      model: selectedModel, model_provider: 'migration_probe',
-      'model_providers.migration_probe.name': 'Local synthetic isolation check',
-      'model_providers.migration_probe.base_url': `http://127.0.0.1:${server.address().port}/v1`,
-      'model_providers.migration_probe.wire_api': 'responses',
-      'model_providers.migration_probe.requires_openai_auth': false,
-      'features.enable_request_compression': false,
-      cli_auth_credentials_store: 'ephemeral',
-    } });
+    client = await openCodex({ executable, directory, testConfig: probeConfig(server.address().port, selectedModel) });
     let timeout;
     try { await Promise.race([client.complete('Synthetic migration fixture only. Return a message.', { type: 'object', properties: { message: { type: 'string' } }, required: ['message'], additionalProperties: false }).catch(error => { reason = error.code; }), new Promise(resolve => { timeout = setTimeout(resolve, 20000); })]); } finally { clearTimeout(timeout); }
     if (hasCredentials) return { qualified: false, code: 'CODEX_PROBE_AUTH_PRESENT', model: selectedModel, tools: [] };

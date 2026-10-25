@@ -63,6 +63,7 @@ eGov Enterprise는 Java 21·eGovFrame 5 기반의 재사용 가능한 엔터프�
 | `business-app` | 제품별 업무 도메인 | `business-core` 방향 | [build.gradle](../../build.gradle) |
 | `api-server` | REST/API 실행 진입점 | 세 라이브러리 모듈을 조립하는 `bootJar` | [api-server/build.gradle](../../api-server/build.gradle) |
 | `migration-tool` | 레거시→표준 스키마 offline ETL | foundation 미의존 독립 `bootJar`; 선택 실행 | [migration-tool/build.gradle](../../migration-tool/build.gradle) |
+| `tools/migration-workspace` | 로컬 이관 작업공간(ADR-0041) | Node 22 loopback 실행기가 `migration-tool` JAR를 자식 프로세스로 호출; 온라인 앱 밖 선택 실행 | [실행 안내](../../docs/03-guides/migration-workspace-guide.md) |
 | `frontend` | Next.js App Router UI | 별도 pnpm 애플리케이션 | [frontend/package.json](../../frontend/package.json) |
 
 ## 검증된 현재 사실

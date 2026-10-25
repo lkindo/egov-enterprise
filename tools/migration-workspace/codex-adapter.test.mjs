@@ -1,14 +1,16 @@
 import assert from 'node:assert/strict';
 import { EventEmitter } from 'node:events';
-import { mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
+import { mkdir, mkdtemp, readdir, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { createInterface } from 'node:readline';
 import { PassThrough } from 'node:stream';
 import { setImmediate as nextTick } from 'node:timers/promises';
 import { test } from 'node:test';
-import { openCodex } from './codex-adapter.mjs';
+import { openCodex, CODEX_HOME_INPUTS } from './codex-adapter.mjs';
 
+// thread 생성 전 홈 재검사가 실제 파일 I/O 를 한 번 거치므로 틱 수가 아니라 시간으로 기다린다.
+const until = async (predicate, ms = 2000) => { const end = Date.now() + ms; while (!predicate() && Date.now() < end) await new Promise(resolve => setTimeout(resolve, 5)); };
 const privateEmail = 'synthetic-private-account@example.invalid';
 const privateToken = 'synthetic-private-oauth-value';
 const privateError = `provider diagnostics ${privateEmail} ${privateToken}`;
@@ -103,7 +105,7 @@ test('Codex child starts without a shell in an empty private directory with rest
     const value = invocation.args[++index], at = value.indexOf('=');
     settings[value.slice(0, at)] = JSON.parse(value.slice(at + 1));
   }
-  for (const key of ['include_environment_context', 'include_permissions_instructions', 'skills.include_instructions', 'skills.bundled.enabled', 'features.shell_tool', 'features.shell_snapshot', 'features.apps', 'features.remote_plugin', 'features.multi_agent', 'features.hooks', 'features.memories', 'features.goals', 'features.code_mode.enabled', 'features.skill_mcp_dependency_install', 'agents.enabled', 'apps._default.enabled', 'analytics.enabled', 'feedback.enabled', 'check_for_update_on_startup']) assert.equal(settings[key], false, key);
+  for (const key of ['include_environment_context', 'include_permissions_instructions', 'skills.include_instructions', 'skills.bundled.enabled', 'features.shell_tool', 'features.shell_snapshot', 'features.apps', 'features.remote_plugin', 'features.multi_agent', 'features.hooks', 'features.memories', 'features.goals', 'features.code_mode.enabled', 'features.skill_mcp_dependency_install', 'features.plugins', 'agents.enabled', 'apps._default.enabled', 'analytics.enabled', 'feedback.enabled', 'check_for_update_on_startup']) assert.equal(settings[key], false, key);
   for (const [key, value] of Object.entries({ web_search: 'disabled', approval_policy: 'never', sandbox_mode: 'read-only', 'history.persistence': 'none', 'shell_environment_policy.inherit': 'none', cli_auth_credentials_store: 'keyring' })) assert.equal(settings[key], value, key);
   assert.deepEqual(fake.calls.map(call => call.method), ['initialize', 'initialized']);
 });
@@ -210,7 +212,7 @@ test('a disconnected child exposes closed to the owner and rejects an active tur
   assert.equal(adapter.closed, false);
   const completion = adapter.complete('Synthetic fixture only.', { type: 'object' });
   const rejected = assert.rejects(completion, { code: 'CODEX_DISCONNECTED' });
-  for (let attempt = 0; attempt < 10 && !fake.calls.some(call => call.method === 'turn/start'); attempt++) await nextTick();
+  await until(() => fake.calls.some(call => call.method === 'turn/start'));
   assert.ok(fake.calls.some(call => call.method === 'turn/start'));
   const start = fake.calls.find(call => call.method === 'thread/start');
   assert.equal(start.params.model, 'synthetic-default-model');
@@ -271,7 +273,7 @@ test('the local synthetic provider uses its explicit model without any account o
   const { adapter, fake } = await fixture(t, {}, { model: 'synthetic-probe-model' });
   const completion = adapter.complete('Synthetic fixture only.', { type: 'object' });
   const rejected = assert.rejects(completion, { code: 'CODEX_DISCONNECTED' });
-  for (let attempt = 0; attempt < 10 && !fake.calls.some(call => call.method === 'turn/start'); attempt++) await nextTick();
+  await until(() => fake.calls.some(call => call.method === 'turn/start'));
   assert.equal(fake.calls.find(call => call.method === 'thread/start')?.params.model, 'synthetic-probe-model');
   assert.equal(fake.calls.filter(call => ['account/read', 'model/list'].includes(call.method)).length, 0);
   fake.child.kill(); await rejected;
@@ -290,4 +292,52 @@ test('an account update during thread creation prevents the prompt from being se
   const { adapter, fake } = await fixture(t, { account: chatgptAccount, accountChangesDuringThread: true });
   await assert.rejects(adapter.complete('Synthetic fixture only.', { type: 'object' }, 'synthetic-default-model'), { code: 'CODEX_ACCOUNT_CHANGED' });
   assert.equal(fake.calls.filter(call => call.method === 'turn/start').length, 0);
+});
+
+async function homeFixture(t, entries) {
+  const root = await mkdtemp(path.join(tmpdir(), 'migration-codex-home-'));
+  t.after(async () => {
+    const target = path.resolve(root);
+    assert.equal(path.dirname(target), path.resolve(tmpdir()));
+    assert.ok(path.basename(target).startsWith('migration-codex-home-'));
+    await rm(target, { recursive: true, force: true });
+  });
+  const executable = path.join(root, 'fake.exe'), directory = path.join(root, 'isolated-codex');
+  await writeFile(executable, 'synthetic executable; never executed');
+  for (const entry of entries) {
+    const target = path.join(directory, entry.replace(/\/$/, ''));
+    if (entry.endsWith('/')) await mkdir(target, { recursive: true });
+    else { await mkdir(path.dirname(target), { recursive: true }); await writeFile(target, 'synthetic inherited input'); }
+  }
+  return { executable, directory };
+}
+
+test('a Codex home holding configuration or instruction inputs the launcher did not create is refused before start', async t => {
+  const cases = [...CODEX_HOME_INPUTS.map(name => ['config.toml', 'managed_config.toml', 'requirements.toml', 'agents.md', 'agents.override.md', 'instructions.md', 'hooks.json', '.env'].includes(name) ? name : `${name}/`),
+    'CONFIG.TOML', 'Agents.md', 'Skills/', 'empty/AGENTS.md', 'empty/.codex/config.toml'];
+  for (const entry of cases) {
+    const { executable, directory } = await homeFixture(t, [entry]);
+    const fake = fakeServer();
+    await assert.rejects(openCodex({ executable, directory, spawnImpl: fake.spawnImpl }), { code: 'CODEX_HOME_CONFIG_PRESENT' }, entry);
+    assert.equal(fake.invocations.length, 0, entry);
+  }
+});
+
+test('state files Codex creates itself do not block reopening the same home', async t => {
+  // Codex 0.162.1 이 빈 홈에서 initialize·thread/start 뒤 남긴 항목(2026-10-25 실측).
+  const { executable, directory } = await homeFixture(t, ['state_5.sqlite', 'state_5.sqlite-wal', 'logs_2.sqlite', 'goals_1.sqlite', 'memories_1.sqlite', 'queue_1.sqlite', 'installation_id', '.sandbox_migration', '.tmp/', 'empty/']);
+  const fake = fakeServer();
+  const adapter = await openCodex({ executable, directory, spawnImpl: fake.spawnImpl });
+  t.after(() => adapter.close());
+  assert.equal(fake.invocations.length, 1);
+});
+
+test('a configuration input added after start blocks the next request before any thread or prompt', async t => {
+  const { adapter, fake, directory } = await fixture(t, { account: chatgptAccount });
+  await writeFile(path.join(directory, 'config.toml'), 'developer_instructions = "synthetic inherited instruction"\n');
+  // 가짜 서버는 turn 을 끝내지 않으므로, 검사가 빠지면 완료 대신 대기 시간 초과로 붉어진다.
+  let timer;
+  const stalled = new Promise((resolve, reject) => { timer = setTimeout(() => reject(Object.assign(new Error('TEST_STALLED'), { code: 'TEST_STALLED' })), 2000); });
+  try { await assert.rejects(Promise.race([adapter.complete('Synthetic fixture only.', { type: 'object' }, 'synthetic-default-model'), stalled]), { code: 'CODEX_HOME_CONFIG_PRESENT' }); } finally { clearTimeout(timer); }
+  assert.equal(fake.calls.filter(call => ['thread/start', 'turn/start'].includes(call.method)).length, 0);
 });

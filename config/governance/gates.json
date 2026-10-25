@@ -1236,6 +1236,20 @@
               ".test.js"
             ],
             "recursive": false
+          },
+          {
+            "root": "tools/migration-workspace",
+            "suffixes": [
+              ".test.mjs"
+            ],
+            "recursive": false
+          },
+          {
+            "root": "tools/migration-workspace-prototype",
+            "suffixes": [
+              ".test.mjs"
+            ],
+            "recursive": false
           }
         ],
         "supportRoots": [
@@ -1250,7 +1264,7 @@
         "packageScript": {
           "source": "package.json",
           "name": "test:operational-contracts",
-          "command": "node --test \"scripts/*.test.mjs\" \".agent/scripts/*.test.js\""
+          "command": "node --test \"scripts/*.test.mjs\" \".agent/scripts/*.test.js\" \"tools/migration-workspace/*.test.mjs\" \"tools/migration-workspace-prototype/*.test.mjs\""
         },
         "commandBindings": [
           {
@@ -1291,6 +1305,8 @@
       "inputs": [
         "scripts/*.test.mjs",
         ".agent/scripts/*.test.js",
+        "tools/migration-workspace/*.test.mjs",
+        "tools/migration-workspace-prototype/*.test.mjs",
         "package.json"
       ],
       "evidence": [

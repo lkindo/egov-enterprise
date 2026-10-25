@@ -34,6 +34,9 @@ const RETIRE_ARTIFACTS = {
   plan: ['plan', 'execution'], 'dry-run': ['execution'], commit: ['execution'],
 };
 const ENDPOINT_IDENTITY = ['vendor', 'host', 'port', 'database', 'username', 'oracleMode', 'instance', 'driverJar', 'driverClass'];
+// 결과 불명 작업 하나에 대조하는 실행 증거 파일 수의 상한. 실제 적재 한 번은 증거 파일 하나를 만든다.
+const EVIDENCE_LIMIT = 20;
+const EVIDENCE_TIME = /^\d{4}-\d{2}-\d{2}T[0-9:.]{2,18}(?:Z|[+-]\d{2}:\d{2})$/;
 const fail = (code, message) => { throw new WorkspaceError(code, message); };
 const digest = bytes => createHash('sha256').update(bytes).digest('hex');
 const json = value => JSON.stringify(value);
@@ -136,6 +139,32 @@ async function boundedFile(path) {
 async function writeNew(path, bytes) {
   const handle = await open(path, 'wx', 0o600);
   try { await handle.writeFile(bytes); await handle.sync(); } finally { await handle.close(); }
+}
+// 사람이 실행 증거를 확인했다고 기록하지 않은 결과 불명 작업. 확인 기록은 결과를 성공으로 바꾸지 않는다.
+const unresolvedUnknown = job => job.status === 'unknown' && !job.acknowledgement;
+// 이전 프로세스가 아직 대상에 쓰고 있을 수 있는 작업. 실행기 재시작 복구(store.mjs 의 recoverJobs)는 끊긴 읽기를
+// interrupted, 끊긴 적재를 unknown 으로 두되 pid 는 그대로 남긴다. Linux·macOS 에서는 부모 Node 가 죽어도 Java 자식이
+// 계속 쓸 수 있으므로 unknown 적재도 pid 의 생존을 본다. 확인 기록이 있는 unknown 작업은 기록할 때 그 pid 의 종료를
+// 확인했으므로 다시 보지 않는다(나중에 같은 pid 를 받은 다른 프로세스를 이전 작업으로 오인하지 않는다).
+const lingeringCandidate = job => Number.isSafeInteger(job.pid) && (job.status === 'interrupted' || unresolvedUnknown(job));
+// 이전 프로세스의 생존 판정. 신호 0 은 프로세스를 건드리지 않고 존재만 묻는다. ESRCH 만 종료로 보고, 권한 부족(EPERM)처럼
+// 판정할 수 없는 경우는 살아 있는 것과 같이 막는다(fail closed).
+function previousProcess(pid) {
+  try { process.kill(pid, 0); return 'alive'; } catch (error) { return error.code === 'ESRCH' ? 'exited' : 'undetermined'; }
+}
+// 실행 증거에서 판정에 필요한 고정 항목만 옮긴다. 행 값·키·경로·원문은 작업 색인에 들이지 않는다.
+function evidenceSummary(record) {
+  const value = record && typeof record === 'object' && !Array.isArray(record) ? record : {};
+  const time = item => typeof item === 'string' && EVIDENCE_TIME.test(item) ? item : null;
+  const tables = Array.isArray(value.tables) ? value.tables : null;
+  const written = tables?.every(table => Number.isSafeInteger(table?.written) && table.written >= 0) ? tables.reduce((sum, table) => sum + table.written, 0) : null;
+  return {
+    schemaVersion: Number.isSafeInteger(value.schemaVersion) ? value.schemaVersion : null,
+    mode: ['DRY_RUN', 'COMMIT'].includes(value.mode) ? value.mode : null,
+    status: ['STARTED', 'PASS', 'FAILED'].includes(value.status) ? value.status : 'UNREADABLE',
+    startedAt: time(value.startedAt), updatedAt: time(value.updatedAt),
+    tables: tables ? tables.length : null, written: Number.isSafeInteger(written) ? written : null,
+  };
 }
 
 export function buildJdbcProfile(role, input) {
@@ -484,8 +513,15 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
         }
       }
     } catch (error) { status = 'failed'; code = error instanceof WorkspaceError ? error.code : 'ARTIFACT_INVALID'; }
-    // A started load can have committed chunks even when the process or evidence collection fails.
-    if (LOADS.has(job.operation) && status !== 'succeeded') status = 'unknown';
+    // 시작한 COMMIT 은 프로세스나 증거 수집이 실패해도 앞 chunk 가 커밋됐을 수 있어 결과 불명으로 둔다.
+    // DRY_RUN 은 대상 DB·이관 제어 스키마에 쓰지 않으므로 실패를 그대로 failed 로 둔다. migration-tool 근거:
+    //   etl.MigrationMode 의 DRY_RUN 정의(변환·카운트만, 쓰기 없음), MigrationWorkflowRunner.fingerprintTarget(대상 연결을
+    //   setReadOnly(true) 로 연다)·executeApproved(대상 JDBC·live target 검증·제어 스키마 점검은 mode == COMMIT 일 때만),
+    //   etl.EtlExecutor.execute 의 commit 조건(keymap 소유 KeyMapRegistry·MigrationStateStore·requireOriginRole·
+    //   initializeCommitState·planTargetSequences 는 commit 일 때만이고, 비어 있는 시퀀스 계획은 synchronizeTargetSequences 가
+    //   바로 돌려보낸다)·runTable(대상 쓰기 연결 targetDs.getConnection() 은 commit 일 때만). DRY_RUN 이 남기는 것은 작업공간의
+    //   로컬 증거 파일(.load-*.json)뿐이다. CLI 가 바뀌어 DRY_RUN 이 대상에 쓰게 되면 이 판정도 함께 바꾼다.
+    if (job.operation === 'commit' && status !== 'succeeded') status = 'unknown';
     await exclusive(async () => {
       const current = await store.read();
       await store.update(current.revision, draft => {
@@ -520,18 +556,22 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       const prior = state.jobs.find(job => job.requestId === request.requestId);
       if (prior) { if (prior.requestDigest !== requestDigest) fail('REQUEST_ID_REUSED', '같은 요청 ID를 다른 작업에 사용할 수 없습니다.'); return clone(prior); }
       checkRevision(state, request.revision); requireIdle(state);
-      for (const recovered of state.jobs) {
-        if (recovered.status === 'unknown') fail('JOB_RESULT_UNKNOWN', '이전 작업 결과를 CLI 실행 증거와 대조하기 전에는 새 작업을 시작할 수 없습니다.');
-        if (recovered.status === 'interrupted' && Number.isSafeInteger(recovered.pid)) {
-          try { process.kill(recovered.pid, 0); fail('JOB_RESULT_UNKNOWN', '이전 프로세스가 남아 있습니다. 종료와 산출물을 먼저 확인하세요.'); }
-          catch (error) { if (error instanceof WorkspaceError) throw error; if (error.code !== 'ESRCH') fail('JOB_RESULT_UNKNOWN', '이전 프로세스의 종료 여부를 확인하지 못했습니다.'); }
-        }
+      // 이전 실행기의 작업 프로세스가 살아 있거나 종료를 판정할 수 없으면 읽기·적재를 가리지 않고 모든 작업을 막는다(ADR-0041 결정 10).
+      for (const recovered of state.jobs.filter(lingeringCandidate)) {
+        const liveness = previousProcess(recovered.pid);
+        if (liveness === 'alive') fail('PREVIOUS_PROCESS_ALIVE', '이전 프로세스가 남아 있습니다. 종료와 산출물을 먼저 확인하세요.');
+        if (liveness === 'undetermined') fail('PREVIOUS_PROCESS_ALIVE', '이전 프로세스의 종료 여부를 확인하지 못했습니다.');
       }
+      // 결과 불명 작업은 새 적재(DRY_RUN·COMMIT)만 막는다(ADR-0041 결정 10). 읽기 단계는 대상에 쓰지 않아 계속 쓸 수 있다.
+      if (LOADS.has(request.operation) && state.jobs.some(unresolvedUnknown)) fail('JOB_RESULT_UNKNOWN', '결과 불명 적재가 있습니다. 실행 증거를 확인하고 확인 기록을 남기기 전에는 새 리허설·적재를 시작할 수 없습니다.');
       if (store.readOnly) fail('WORKSPACE_READ_ONLY', '이 작업공간은 읽기 전용입니다.');
       const runtime = await preflight();
       const prepared = await buildJob(request.operation, options, state, runtime);
       const beforeFiles = new Set(await readdir(join(store.directory, 'artifacts')));
-      const job = { id: randomUUID(), requestId: request.requestId, requestDigest, operation: request.operation, status: 'starting', inputDigest: inputDigest(state, runtime.jarDigest), jarDigest: runtime.jarDigest, inputRevision: state.inputRevision ?? 0, startedAt: new Date().toISOString(), capability: LOADS.has(request.operation) ? 'no-safe-pause' : 'cancel-after-process-close' };
+      // 적재는 계획 파일 이름과 시작 전에 있던 그 계획의 증거 파일을 남긴다. 결과가 불명해져도 이 작업이 만든
+      // 증거(.load-*.json)만 골라 사람 확인에 대조할 수 있다.
+      const loadBinding = LOADS.has(request.operation) ? { planFile: state.artifacts.plan.file, evidenceBefore: [...beforeFiles].filter(name => name.startsWith(`${state.artifacts.plan.file}.load-`)).sort() } : {};
+      const job = { id: randomUUID(), requestId: request.requestId, requestDigest, operation: request.operation, status: 'starting', inputDigest: inputDigest(state, runtime.jarDigest), jarDigest: runtime.jarDigest, inputRevision: state.inputRevision ?? 0, startedAt: new Date().toISOString(), capability: LOADS.has(request.operation) ? 'no-safe-pause' : 'cancel-after-process-close', ...loadBinding };
       await store.update(state.revision, draft => {
         draft.jobs.push(job); draft.activeJobId = job.id;
         retire(draft, job.operation);
@@ -585,6 +625,63 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
       return { id, status: 'cancelling' };
     });
   }
+  // 결과 불명 적재가 만든 실행 증거(.load-*.json)를 찾아 digest 와 고정 요약만 돌려준다. 시작 전에 있던 증거는 뺀다.
+  async function loadEvidence(job) {
+    if (!LOADS.has(job.operation) || typeof job.planFile !== 'string') return { located: false, files: [] };
+    const prefix = `${job.planFile}.load-`, before = new Set(Array.isArray(job.evidenceBefore) ? job.evidenceBefore : []);
+    const names = (await readdir(join(store.directory, 'artifacts'))).filter(name => name.startsWith(prefix) && name.endsWith('.json') && !before.has(name)).sort();
+    if (names.length > EVIDENCE_LIMIT) fail('EXECUTION_EVIDENCE_AMBIGUOUS', '이 작업에 대조할 실행 증거가 너무 많습니다. 작업공간의 증거 파일을 직접 확인하세요.');
+    const files = [];
+    for (const name of names) {
+      const bytes = await boundedFile(await store.resolveArtifact(name));
+      const content = bytes.toString('utf8');
+      for (const secret of credentials.values()) if (secret.length >= 4 && content.includes(secret)) fail('SENSITIVE_CONTENT', '실행 증거에서 접속 비밀이 탐지되었습니다.');
+      let record;
+      try { record = parseJson(content).parsed; } catch { record = null; }
+      files.push({ file: name, sha256: digest(bytes), bytes: bytes.length, ...evidenceSummary(record) });
+    }
+    return { located: true, files };
+  }
+  async function jobEvidence(id) {
+    return exclusive(async () => {
+      text(id, 100); const state = await store.read(); const job = state.jobs.find(item => item.id === id);
+      if (!job) fail('JOB_NOT_FOUND', '작업을 찾을 수 없습니다.');
+      if (job.status !== 'unknown') fail('JOB_NOT_UNKNOWN', '결과 불명 작업의 실행 증거만 대조합니다.');
+      const evidence = await loadEvidence(job);
+      return { id: job.id, operation: job.operation, status: job.status, errorCode: job.errorCode ?? null, startedAt: job.startedAt ?? null, finishedAt: job.finishedAt ?? null, acknowledgement: job.acknowledgement ?? null, evidenceLocated: evidence.located, evidence: evidence.files };
+    });
+  }
+  // 사람이 실행 증거와 대상 상태를 확인했다는 기록이다. 결과를 성공으로 바꾸지도, 적재를 이어 가지도 않는다.
+  // 앞서 커밋된 chunk 는 되돌아가지 않으며 전체 복구는 기관 백업·복구 계획을 따른다. 기록 뒤에야 새 적재를 받는다.
+  async function acknowledgeJob(id, input) {
+    return exclusive(async () => {
+      text(id, 100);
+      exact(input, ['revision', 'note'], ['revision', 'note']);
+      const note = typeof input.note === 'string' ? input.note.trim() : '';
+      if (!note || note.length > 1000 || /[\x00-\x08\x0b\x0c\x0e-\x1f\x7f]/.test(note)) fail('INVALID_INPUT', '확인 메모를 1~1000자로 적으세요.');
+      for (const secret of credentials.values()) if (secret.length >= 4 && note.includes(secret)) fail('SENSITIVE_CONTENT', '확인 메모에 접속 비밀을 적을 수 없습니다.');
+      const state = await store.read(); checkRevision(state, input.revision); requireIdle(state);
+      if (store.readOnly) fail('WORKSPACE_READ_ONLY', '이 작업공간은 읽기 전용입니다.');
+      const job = state.jobs.find(item => item.id === id);
+      if (!job) fail('JOB_NOT_FOUND', '작업을 찾을 수 없습니다.');
+      if (job.status !== 'unknown') fail('JOB_NOT_UNKNOWN', '결과 불명 작업만 확인 기록을 남길 수 있습니다.');
+      if (job.acknowledgement) fail('JOB_ALREADY_ACKNOWLEDGED', '이미 확인 기록을 남긴 작업입니다.');
+      // 재시작으로 끊긴 적재의 Java 프로세스가 아직 쓰는 중이면 STARTED 증거는 마지막 상태가 아니다. 그 프로세스가 끝난 것을
+      // 확인하기 전에는 기록을 받지 않는다 — 기록 뒤의 새 DRY_RUN→COMMIT 이 고아 COMMIT 과 함께 대상에 쓰지 않게 한다.
+      if (Number.isSafeInteger(job.pid)) {
+        const liveness = previousProcess(job.pid);
+        if (liveness === 'alive') fail('PREVIOUS_PROCESS_ALIVE', '이 작업의 이전 프로세스가 아직 남아 있어 확인 기록을 남길 수 없습니다. 종료와 산출물을 먼저 확인하세요.');
+        if (liveness === 'undetermined') fail('PREVIOUS_PROCESS_ALIVE', '이 작업의 이전 프로세스 종료 여부를 확인하지 못해 확인 기록을 남길 수 없습니다.');
+      }
+      const evidence = await loadEvidence(job);
+      const acknowledgement = { at: new Date().toISOString(), note, evidenceLocated: evidence.located, evidence: evidence.files };
+      return publicState(await store.update(input.revision, draft => {
+        draft.jobs.find(item => item.id === id).acknowledgement = acknowledgement;
+        // 확인 기록은 자동 재개가 아니다. 결과 불명 COMMIT 뒤의 다음 COMMIT 은 새 리허설을 다시 통과해야 한다.
+        if (job.operation === 'commit') { delete draft.readiness.dryRun; delete draft.readiness.committed; }
+      }));
+    });
+  }
   function publicState(state) {
     const result = clone(state);
     for (const job of result.jobs) if (active.get(job.id)?.completionError) { job.status = 'unknown'; job.errorCode = active.get(job.id).completionError; }
@@ -593,12 +690,11 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     const common = [];
     if (store.readOnly) common.push('WORKSPACE_READ_ONLY');
     if (result.activeJobId) common.push('JOB_ACTIVE');
-    const unknown = result.jobs.some(job => {
-      if (job.status === 'unknown') return true;
-      if (job.status !== 'interrupted' || !Number.isSafeInteger(job.pid)) return false;
-      try { process.kill(job.pid, 0); return true; } catch (error) { return error.code !== 'ESRCH'; }
-    });
-    if (unknown) common.push('JOB_RESULT_UNKNOWN');
+    // 재시작으로 복구한 interrupted·확인 기록 없는 unknown 작업의 프로세스가 살아 있거나 판정할 수 없으면 모든 단계를 막는다.
+    const lingering = result.jobs.some(job => lingeringCandidate(job) && previousProcess(job.pid) !== 'exited');
+    if (lingering) common.push('PREVIOUS_PROCESS_ALIVE');
+    // 확인 기록이 없는 결과 불명 작업은 새 적재(DRY_RUN·COMMIT)만 막는다.
+    const unknown = result.jobs.some(unresolvedUnknown);
     const currentReadiness = key => {
       const marker = state.readiness[key];
       const job = marker && state.jobs.find(item => item.id === marker.jobId);
@@ -607,6 +703,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     };
     result.operationReadiness = Object.fromEntries([...OPERATIONS].map(operation => {
       const blockers = [...common];
+      if (unknown && LOADS.has(operation)) blockers.push('JOB_RESULT_UNKNOWN');
       const profileRoles = operation === 'mapping-generate' ? ['source', 'target'] : JOB_ROLES[operation];
       for (const role of profileRoles) {
         if (!state.profiles[role]) blockers.push(`${role.toUpperCase()}_PROFILE_REQUIRED`);
@@ -624,7 +721,7 @@ export function createEngine({ store, jarPath, javaPath, gitPath, spawnImpl = sp
     }));
     return result;
   }
-  return { configureProfile, configureInputs, importArtifact, saveLedger, startJob, cancelJob, preflight,
+  return { configureProfile, configureInputs, importArtifact, saveLedger, startJob, cancelJob, jobEvidence, acknowledgeJob, preflight,
     state: async () => publicState(await store.read()),
     getArtifact: async kind => { if (!['inventory', 'profile', 'appUsage', 'suggestions', 'ledgerDraft', 'ledger', 'confirmedLedger', 'mapping', 'skeleton', 'standardColumns', 'plan', 'review', 'execution'].includes(kind)) fail('INVALID_ARTIFACT_KIND', '지원하는 산출물 종류가 아닙니다.'); const found = await artifact(kind); return { kind, ...found.metadata, content: found.bytes.toString('utf8') }; },
     close: async () => { if (active.size) fail('JOB_ACTIVE', '실행 중 작업이 있어 종료할 수 없습니다.'); credentials.clear(); await store.close(); },

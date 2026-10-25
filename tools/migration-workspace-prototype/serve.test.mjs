@@ -3,9 +3,10 @@ import { spawn } from 'node:child_process';
 import { once } from 'node:events';
 import { readFile } from 'node:fs/promises';
 import { request } from 'node:http';
+import { win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { test } from 'node:test';
-import { parseArguments, startSimulationServer } from './serve.mjs';
+import { browserCommand, parseArguments, startSimulationServer } from './serve.mjs';
 
 const script = fileURLToPath(new URL('./serve.mjs', import.meta.url));
 const close = server => new Promise((resolveClose, reject) => {
@@ -128,6 +129,18 @@ test('CLI arguments stay bounded and do not echo unexpected values', () => {
     ['--port', '8700', '--port', '8701'], ['--root', 'sensitive-placeholder']]) {
     assert.throws(() => parseArguments(args), error => !error.message.includes('sensitive-placeholder'));
   }
+});
+
+test('Windows browser launch uses the absolute System32 rundll32, never a bare name searched from the current folder', () => {
+  const url = 'http://127.0.0.1:8769/index.html#start';
+  assert.deepEqual(browserCommand(url, { platform: 'win32', env: { SystemRoot: 'D:\\Win' } }), ['D:\\Win\\System32\\rundll32.exe', ['url.dll,FileProtocolHandler', url]]);
+  for (const env of [{}, { SystemRoot: 'Windows' }, { SystemRoot: 'C:' }, { SystemRoot: '\\\\server\\share' }, { SystemRoot: 7 }]) {
+    assert.deepEqual(browserCommand(url, { platform: 'win32', env }), ['C:\\Windows\\System32\\rundll32.exe', ['url.dll,FileProtocolHandler', url]], JSON.stringify(env));
+  }
+  const [command] = browserCommand(url, { platform: 'win32', env: process.env });
+  assert.ok(win32.isAbsolute(command), command);
+  assert.match(command, /\\System32\\rundll32\.exe$/i);
+  assert.deepEqual(browserCommand(url, { platform: 'linux', env: {} }), ['xdg-open', [url]]);
 });
 
 test('import has no startup side effect; port conflicts fail clearly; close releases the port', async () => {

@@ -18,8 +18,8 @@ async function fixture(t) {
   });
   return {
     directory,
-    async open(path = directory) {
-      const store = await openWorkspace({ directory: path });
+    async open(path = directory, options = {}) {
+      const store = await openWorkspace({ directory: path, ...options });
       stores.push(store);
       return store;
     },
@@ -127,9 +127,10 @@ test('independent read-only pollers see complete snapshots during atomic replace
   assert.equal((await readdir(f.directory)).filter((name) => name.endsWith('.tmp')).length, 0);
 });
 
-test('Windows snapshot replacement tolerates bounded contention without deleting the committed index', { skip: process.platform !== 'win32' }, async (t) => {
+// Windows 교체 경합 분기는 플랫폼을 주입해 모든 OS 에서 실행한다 — 필수 CI(Linux)에서 건너뛰지 않는다.
+test('Windows snapshot replacement tolerates bounded contention without deleting the committed index', async (t) => {
   const f = await fixture(t);
-  const store = await f.open();
+  const store = await f.open(f.directory, { platform: 'win32' });
   const index = join(f.directory, 'workspace.json');
   const committed = await readFile(index, 'utf8');
   const originalRename = filesystem.rename;
@@ -151,9 +152,9 @@ test('Windows snapshot replacement tolerates bounded contention without deleting
   } finally { mocked.mock.restore(); syncBuiltinESMExports(); }
 });
 
-test('Windows persistent contention fails boundedly and keeps the old revision available for retry', { skip: process.platform !== 'win32' }, async (t) => {
+test('Windows persistent contention fails boundedly and keeps the old revision available for retry', async (t) => {
   const f = await fixture(t);
-  const store = await f.open();
+  const store = await f.open(f.directory, { platform: 'win32' });
   const index = join(f.directory, 'workspace.json');
   const committed = await readFile(index, 'utf8');
   const originalRename = filesystem.rename;
@@ -171,6 +172,59 @@ test('Windows persistent contention fails boundedly and keeps the old revision a
     assert.equal((await readdir(f.directory)).some(name => name.endsWith('.tmp')), false);
   } finally { mocked.mock.restore(); syncBuiltinESMExports(); }
   assert.equal((await store.update(0, state => { state.name = 'retry succeeded'; })).revision, 1);
+});
+
+// Linux 의 동시 교체에서 lstat 가 끊긴 이전 inode(nlink 0)를 돌려주는 경합을 결정적으로 재현한다. 교체 중은 다시 읽고(유한),
+// 하드 링크(nlink 2)는 그대로 거부한다. 두 판정을 합치면 폴러 시험이 Linux 에서 가끔 UNSAFE_PATH 로 붉어진다.
+test('a reader retries an index replaced during lookup but still rejects hard links', async (t) => {
+  const f = await fixture(t);
+  const writer = await f.open();
+  await writer.update(0, (state) => { state.readiness.sequence = 1; });
+  const reader = await f.open();
+  const index = join(f.directory, 'workspace.json');
+  const originalLstat = filesystem.lstat;
+  let nlink = 0;
+  let remaining = 1;
+  const mocked = t.mock.method(filesystem, 'lstat', async (path, ...rest) => {
+    const stat = await originalLstat(path, ...rest);
+    if (path !== index || remaining === 0) return stat;
+    remaining -= 1;
+    return Object.assign(Object.create(Object.getPrototypeOf(stat)), stat, { nlink });
+  });
+  syncBuiltinESMExports();
+  try {
+    assert.deepEqual((await reader.read()).readiness, { sequence: 1 });
+    assert.equal(remaining, 0);
+    remaining = Infinity;
+    await assert.rejects(reader.read(), code('SNAPSHOT_BUSY'));
+    nlink = 2;
+    remaining = 1;
+    await assert.rejects(reader.read(), code('UNSAFE_PATH'));
+  } finally { mocked.mock.restore(); syncBuiltinESMExports(); }
+  assert.equal((await reader.read()).revision, 1);
+});
+
+// 부정 사례: 재시도는 Windows 에만 있다. 다른 플랫폼의 같은 오류는 한 번에 원래 오류로 실패하고 이전 판을 남긴다.
+// 주입이 무시되거나 재시도가 모든 OS 로 넓어지면 이 시험이 붉어진다.
+test('non-Windows rename errors are not retried and keep the committed index', async (t) => {
+  const f = await fixture(t);
+  const store = await f.open(f.directory, { platform: 'linux' });
+  const index = join(f.directory, 'workspace.json');
+  const committed = await readFile(index, 'utf8');
+  const originalRename = filesystem.rename;
+  let attempts = 0;
+  const mocked = t.mock.method(filesystem, 'rename', async (source, destination) => {
+    if (destination === index) { attempts++; throw Object.assign(new Error('synthetic contention'), { code: 'EBUSY' }); }
+    return originalRename(source, destination);
+  });
+  syncBuiltinESMExports();
+  try {
+    await assert.rejects(store.update(0, state => { state.name = 'never committed'; }), (error) => error.code === 'EBUSY' && !(error instanceof WorkspaceError));
+    assert.equal(attempts, 1);
+    assert.equal(await readFile(index, 'utf8'), committed);
+    assert.equal((await readdir(f.directory)).some(name => name.endsWith('.tmp')), false);
+  } finally { mocked.mock.restore(); syncBuiltinESMExports(); }
+  await assert.rejects(openWorkspace({ directory: join(f.directory, 'other'), platform: '' }), code('INVALID_PLATFORM'));
 });
 
 test('reclaims a confirmed dead process once and preserves unknown or guarded locks', async (t) => {

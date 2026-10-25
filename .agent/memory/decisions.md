@@ -98,7 +98,7 @@ ADR ID 가 ADR 색인의 키다: 각 ADR 의 링크·이유·전문은 [ADR 색�
 | ADR-0038 | accepted | API·코어 체인에서 CSRF를 켜고, 쿠키 자격을 실은 쓰기 요청에 이중 제출 토큰(XSRF-TOKEN 쿠키 = X-XSRF-TOKEN 헤더)을 요구한다. 헤더 전용 클라이언트는 제외하고 SockJS는 허용 Origin으로 막는다. | 2026-10-21 | DEC-OPS-075 의 SAST-FP-001·002(CSRF 비활성 예외) |
 | ADR-0039 | accepted | 콘텐츠 페이지는 선택 기능 `cms` 다. 1차는 로그인 사용자 전체 열람, 업무 홈은 대체하지 않고 맨 위 조각으로 보이며, 서버 한 곳이 검증한 jsonb 문서를 HTML 문자열 없이 그린다. 링크는 https·내부·mailto·tel, 첨부는 기존 참조원 구조를 쓴다. | 2026-10-22 | - |
 | ADR-0040 | accepted | 게시판 운영 화면을 두고, 사용 안 함 게시판의 읽기·쓰기를 이용자에게 닫으며, 예약 게시를 날짜 기준으로 집행하고 상단 고정을 표준 컬럼과 BOARD_PIN으로 둔다. | 2026-10-22 | DEC-OPS-206의 시작일 기록 전용 부분 |
-| ADR-0041 | accepted | 별도 URL의 로컬 이관 작업공간에서 기존 CLI와 기관 Git 원장을 재사용하고, 직접 입력·제한된 AI 질문/읽기 진행을 같은 상태로 제공한다. 기관 전송 승인·사람 확정·운영 적재 경계는 유지한다. | 2026-10-24 | ADR-0029 결정 5의 LLM 문맥 제한 중 승인된 확장 모드 |
+| ADR-0041 | accepted | 별도 URL의 로컬 이관 작업공간에서 기존 CLI와 기관 Git 원장을 재사용하고, 직접 입력·제한된 AI 질문/읽기 진행을 같은 상태로 제공한다. 실행 비밀로 세션을 열고, AI 전송은 기록한 뒤에만 하며, 결과 불명 적재는 사람 확인 전까지 새 적재를 막는다(2026-10-25 보완). 기관 전송 승인·사람 확정·운영 적재 경계는 유지한다. | 2026-10-24 | ADR-0029 결정 5의 LLM 문맥 제한 중 승인된 확장 모드와 이 경로의 승인 기록 위치(이관 승인 원장 → 기관 AI 전송 승인 파일·작업공간 전송 기록), DEC-OPS-313 ⑤의 외부 LLM 경로 부재 |
 
 ## 운영 결정 index
 
@@ -134,7 +134,7 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 |---|---|
 | [CI·검증·거버넌스](../../docs/04-operations/operational-decisions-index-ci-governance.md) | `.github/`, `.githooks/`, `.zap/`, `.agent/scripts/`, `.agent/skills/`, `config/governance/`, `config/security/`, `scripts/`(아래 두 행의 도구는 그 행도 읽는다), `api-server/src/test/`, `frontend/e2e/`, `frontend/scripts/`, `frontend/*.config.*`, `test/load-tests/`, `package.json`·lockfile, `gradle/`, `*.gradle`, `api-server/src/main/resources/db/migration/`(무중단 waiver) |
 | [프로젝트 생성기·재사용 투영](../../docs/04-operations/operational-decisions-index-composer.md) | `config/modules/`, `tools/project-composer/`, `frontend/src/extensions/`, `scripts/project-composer*`, `scripts/composer-*`, `scripts/reusable-*`, `scripts/generate-reusable-base-*`, `scripts/verify-reusable-*`, `scripts/slot-registry*`, `scripts/domain-deletion-*`, `scripts/frontend-reachability-census*`, 기능 마커(`config/modules/*.json` 의 `markerBlocks`)가 가리키는 화면, 한 기능이 다른 기능의 코드를 새로 import 하는 변경 |
-| [레거시 이관 도구](../../docs/04-operations/operational-decisions-index-migration.md) | `migration-tool/`, `scripts/*migration*`, `docs/02-architecture/legacy-migration-tool-design.md`, `docs/04-operations/migration-recovery-runbook.md` |
+| [레거시 이관 도구](../../docs/04-operations/operational-decisions-index-migration.md) | `migration-tool/`, `tools/migration-workspace/`, `tools/migration-workspace-prototype/`, `scripts/*migration*`, `docs/02-architecture/legacy-migration-tool-design.md`, `docs/03-guides/migration-workspace-guide.md`, `docs/04-operations/migration-recovery-runbook.md` |
 | [제품 동작·화면·도메인](../../docs/04-operations/operational-decisions-index-product.md) | `foundation/`, `business-core/`, `business-app/`, `api-server/src/main/`(Flyway 새 표·컬럼 포함), `api-server/src/test/`, `frontend/src/`, `frontend/next.config.*`, `config/governance/` 의 권한·인가 원장, `config/frontend-visible-terms.json`, `config/ui-*.json`, `docker-compose*.yml`, `config/edge/`, `config/observability/` |
 | 넷 모두 | 위 어느 행에도 걸리지 않는 경로, 또는 걸리는지 판단이 서지 않을 때 |
 

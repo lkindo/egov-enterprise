@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { createHash } from 'node:crypto';
-import { EventEmitter } from 'node:events';
+import { spawn } from 'node:child_process';
+import { createHash, randomUUID } from 'node:crypto';
+import { EventEmitter, once } from 'node:events';
 import { mkdtemp, mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
@@ -15,7 +16,7 @@ const source = { vendor: 'postgresql', host: '127.0.0.1', port: 5432, database: 
 const target = { ...source, database: 'standard', username: 'writer' };
 const standardColumns = [{ table_name: 'public.tb_synthetic', column_name: 'synthetic_id' }];
 const evidence = (artifactType, payload, versionKey = 'envelopeVersion', version = 1) => JSON.stringify({ [versionKey]: version, artifactType, digestAlgorithm: 'SHA-256', payloadDigest: hash(JSON.stringify(payload)), payload });
-function fakeCli({ hold = false, noArtifact = false, badDigest = false, failure = false, leaking = false, diagnosticChunks = [], diagnosticStream = 'stderr', uniqueLoadEvidence = false, gitBlobMismatch = false, gitIndexMismatch = false, draftStatus = 'PROPOSED', draftHistory = [] } = {}) {
+function fakeCli({ hold = false, noArtifact = false, badDigest = false, failure = false, leaking = false, diagnosticChunks = [], diagnosticStream = 'stderr', uniqueLoadEvidence = false, failedLoadEvidence = false, gitBlobMismatch = false, gitIndexMismatch = false, draftStatus = 'PROPOSED', draftHistory = [] } = {}) {
   const calls = [], children = [], loadEvidencePaths = [];
   const failingOperations = new Set();
   let loadSequence = 0;
@@ -62,6 +63,13 @@ function fakeCli({ hold = false, noArtifact = false, badDigest = false, failure 
             await writeFile(path, JSON.stringify({ schemaVersion: 5, planDigest: plan.payloadDigest, mappingDigest: plan.payload.mappingDigest, targetDigest: plan.payload.targetSchemaDigest, mode: parsed.mode === 'commit' ? 'COMMIT' : 'DRY_RUN', status: 'PASS', tables: [] }));
             loadEvidencePaths.push(path);
           }
+        }
+        if (failed && failedLoadEvidence && parsed.command === 'load') {
+          // A real load writes STARTED evidence before any target write; a crash leaves it as the last record.
+          const plan = JSON.parse(await readFile(parsed.plan, 'utf8'));
+          const path = `${parsed.plan}.load-failed-${++loadSequence}.json`;
+          await writeFile(path, JSON.stringify({ schemaVersion: 5, planDigest: plan.payloadDigest, mappingDigest: plan.payload.mappingDigest, targetDigest: plan.payload.targetSchemaDigest, mode: parsed.mode === 'commit' ? 'COMMIT' : 'DRY_RUN', status: 'STARTED', startedAt: '2026-10-25T01:02:03Z', updatedAt: '2026-10-25T01:02:04Z', tables: [{ source: 'legacy.person', target: 'tb_synthetic', read: 5, written: 3, errors: 0, targetRows: 3, status: 'RUNNING', isolated: 0 }] }));
+          loadEvidencePaths.push(path);
         }
         child.emit('close', failed ? 1 : 0, null);
       } catch { child.emit('close', 1, null); }
@@ -221,15 +229,20 @@ test('failed cancellation persistence cannot mark an uncancelled successful chil
   assert.equal((await settle(engine, job.id)).status, 'succeeded');
 });
 
-test('missing JAR and recovered unknown jobs fail before any new CLI process', async t => {
+test('missing JAR and an unresolved unknown load fail before any new load process; reads continue', async t => {
   const { store, javaPath, fake, engine } = await fixture(t);
   await configure(engine, 'source', source);
   const missing = createEngine({ store, jarPath: join(store.directory, 'missing.jar'), javaPath, spawnImpl: fake.spawnImpl });
   await assert.rejects(missing.startJob({ operation: 'discover', requestId: 'missing-jar', revision: (await store.read()).revision }), { code: 'CLI_JAR_UNAVAILABLE' });
   const state = await store.read();
   await store.update(state.revision, draft => { draft.jobs.push({ id: 'unknown-load', operation: 'commit', status: 'unknown' }); });
-  await assert.rejects(engine.startJob({ operation: 'discover', requestId: 'after-crash', revision: (await store.read()).revision }), { code: 'JOB_RESULT_UNKNOWN' });
+  for (const operation of ['dry-run', 'commit']) {
+    await assert.rejects(engine.startJob({ operation, requestId: `after-crash-${operation}`, revision: (await store.read()).revision }), { code: 'JOB_RESULT_UNKNOWN' });
+  }
   assert.equal(fake.calls.length, 0);
+  // ADR-0041 decision 10: an unknown result blocks new loads only. A read stage never writes the target.
+  assert.equal((await run(engine, 'discover')).status, 'succeeded');
+  assert.equal(fake.calls.filter(call => call.args.includes('--command=load')).length, 0);
 });
 
 test('ledger import preserves institution Git distinction; drafts cannot create human confirmation', async t => {
@@ -462,9 +475,11 @@ test('operation readiness describes current role, artifact and process blockers 
   await store.update((await store.read()).revision, draft => { draft.jobs.push({ id: 'unknown-load', operation: 'commit', status: 'unknown' }); });
   const uncertain = await engine.state();
   for (const operation of uncertain.capabilities.operations) {
-    assert.equal(uncertain.operationReadiness[operation].ready, false);
-    assert.ok(uncertain.operationReadiness[operation].blockers.includes('JOB_RESULT_UNKNOWN'));
+    assert.equal(uncertain.operationReadiness[operation].blockers.includes('JOB_RESULT_UNKNOWN'), ['dry-run', 'commit'].includes(operation), operation);
+    if (['dry-run', 'commit'].includes(operation)) assert.equal(uncertain.operationReadiness[operation].ready, false);
   }
+  assert.equal(uncertain.operationReadiness.discover.ready, true);
+  assert.equal(uncertain.operationReadiness.profile.ready, true);
   assert.doesNotMatch(JSON.stringify(uncertain.operationReadiness), /local-fixture-password/);
 });
 
@@ -641,6 +656,153 @@ test('DRY_RUN then COMMIT succeed only with distinct fresh evidence bound to the
     assert.deepEqual(call.args.filter(arg => arg.startsWith('-Dmigration.db-columns-path=')), [property]);
     assert.ok(call.args.indexOf(property) < call.args.indexOf('-jar'));
   }
+});
+
+const loadOptions = { ackAdapter: 'postgresql-pg-catalog', ackFreeze: true };
+async function preparedPipeline(t, fakeOptions) {
+  const prepared = await fixture(t, fakeOptions);
+  const { root, engine } = prepared;
+  await configure(engine, 'source', source); await configure(engine, 'target', target);
+  const repository = join(root, 'reviewed'); await mkdir(join(repository, '.git'), { recursive: true });
+  const ledgerPath = join(repository, 'ledger.json'); await writeFile(ledgerPath, '{"schemaVersion":2,"entries":[]}');
+  const skeletonPath = join(root, 'skeleton.json'); await writeFile(skeletonPath, JSON.stringify({ tables: [], run: { runId: 'synthetic-unknown', sourceNamespace: 'synthetic' } }));
+  await engine.importArtifact('skeleton', skeletonPath, (await engine.state()).revision);
+  await engine.importArtifact('confirmed-ledger', ledgerPath, (await engine.state()).revision);
+  await importColumns(engine, root);
+  for (const operation of ['discover', 'profile', 'term-suggest', 'mapping-generate', 'plan', 'validate']) {
+    const result = await run(engine, operation); assert.equal(result.status, 'succeeded', `${operation}: ${result.errorCode}`);
+  }
+  const archiveDirectory = join(root, 'external-archive'); await mkdir(archiveDirectory);
+  return { ...prepared, commitOptions: { ...loadOptions, confirm: true, targetPhrase: 'COMMIT standard', archiveDirectory } };
+}
+const loadCalls = fake => fake.calls.filter(call => call.args.includes('--command=load')).length;
+
+test('a failed DRY_RUN stays failed because the CLI dry-run never writes the target or control schema', async t => {
+  const { engine, fake } = await preparedPipeline(t, { diagnosticChunks: ['\nMW_DIAGNOSTIC=DB_AUTH_FAILED\n'] });
+  fake.failingOperations.add('load');
+  const failed = await run(engine, 'dry-run', loadOptions);
+  assert.equal(failed.status, 'failed');
+  assert.equal(failed.errorCode, 'DB_AUTH_FAILED');
+  const state = await engine.state();
+  for (const operation of state.capabilities.operations) assert.equal(state.operationReadiness[operation].blockers.includes('JOB_RESULT_UNKNOWN'), false, operation);
+  assert.ok(state.operationReadiness.commit.blockers.includes('DRY_RUN_REQUIRED'));
+  await assert.rejects(engine.jobEvidence(failed.id), { code: 'JOB_NOT_UNKNOWN' });
+  fake.failingOperations.delete('load');
+  assert.equal((await run(engine, 'dry-run', loadOptions)).status, 'succeeded');
+});
+
+test('an unknown COMMIT blocks only new loads until a person records the checked evidence, then a fresh rehearsal is required', async t => {
+  const { engine, store, fake, commitOptions } = await preparedPipeline(t, { uniqueLoadEvidence: true, failedLoadEvidence: true });
+  const rehearsal = await run(engine, 'dry-run', loadOptions);
+  assert.equal(rehearsal.status, 'succeeded');
+  const rehearsalEvidence = await engine.getArtifact('execution');
+  fake.failingOperations.add('load');
+  const commit = await run(engine, 'commit', commitOptions);
+  assert.equal(commit.status, 'unknown');
+  assert.equal(commit.errorCode, 'CLI_FAILED');
+  const uncertain = await engine.state();
+  for (const operation of uncertain.capabilities.operations) assert.equal(uncertain.operationReadiness[operation].blockers.includes('JOB_RESULT_UNKNOWN'), ['dry-run', 'commit'].includes(operation), operation);
+  const loadsBefore = loadCalls(fake);
+  for (const operation of ['dry-run', 'commit']) {
+    await assert.rejects(engine.startJob({ operation, requestId: `blocked-${operation}`, revision: uncertain.revision, options: operation === 'commit' ? commitOptions : loadOptions }), { code: 'JOB_RESULT_UNKNOWN' });
+  }
+  assert.equal(loadCalls(fake), loadsBefore);
+  assert.equal((await run(engine, 'validate')).status, 'succeeded');
+
+  // Only the evidence this job created is offered; the earlier rehearsal record is excluded.
+  const evidence = await engine.jobEvidence(commit.id);
+  assert.equal(evidence.evidenceLocated, true);
+  assert.equal(evidence.evidence.length, 1);
+  const [record] = evidence.evidence;
+  assert.equal(record.file, basename(fake.loadEvidencePaths.at(-1)));
+  assert.notEqual(record.file, rehearsalEvidence.file);
+  assert.equal(record.sha256, hash(await readFile(fake.loadEvidencePaths.at(-1))));
+  assert.deepEqual({ status: record.status, mode: record.mode, written: record.written, tables: record.tables, startedAt: record.startedAt }, { status: 'STARTED', mode: 'COMMIT', written: 3, tables: 1, startedAt: '2026-10-25T01:02:03Z' });
+
+  const before = await store.read();
+  for (const [id, input, code] of [
+    [commit.id, { revision: before.revision - 1, note: '대상 제어 기록 확인' }, 'REVISION_CONFLICT'],
+    [commit.id, { revision: 'latest', note: '대상 제어 기록 확인' }, 'REVISION_CONFLICT'],
+    [commit.id, { revision: before.revision, note: '   ' }, 'INVALID_INPUT'],
+    [commit.id, { revision: before.revision }, 'INVALID_INPUT'],
+    [commit.id, { revision: before.revision, note: '확인', resume: true }, 'INVALID_INPUT'],
+    [commit.id, { revision: before.revision, note: '비밀번호 local-fixture-password 로 확인' }, 'SENSITIVE_CONTENT'],
+    [rehearsal.id, { revision: before.revision, note: '대상 제어 기록 확인' }, 'JOB_NOT_UNKNOWN'],
+    ['00000000-0000-0000-0000-000000000000', { revision: before.revision, note: '대상 제어 기록 확인' }, 'JOB_NOT_FOUND'],
+  ]) {
+    await assert.rejects(engine.acknowledgeJob(id, input), { code }, code);
+    assert.deepEqual(await store.read(), before);
+  }
+
+  const acknowledged = await engine.acknowledgeJob(commit.id, { revision: before.revision, note: '  증거는 STARTED 에서 멈춤. 대상 checkpoint 와 행 수를 기관 절차로 확인함.  ' });
+  const saved = acknowledged.jobs.find(job => job.id === commit.id);
+  assert.equal(saved.status, 'unknown');
+  assert.equal(saved.acknowledgement.note, '증거는 STARTED 에서 멈춤. 대상 checkpoint 와 행 수를 기관 절차로 확인함.');
+  assert.match(saved.acknowledgement.at, /^\d{4}-\d{2}-\d{2}T/);
+  assert.deepEqual(saved.acknowledgement.evidence.map(item => item.sha256), [record.sha256]);
+  assert.equal(acknowledged.readiness.dryRun, undefined);
+  assert.equal(acknowledged.operationReadiness['dry-run'].ready, true);
+  assert.ok(!acknowledged.operationReadiness.commit.blockers.includes('JOB_RESULT_UNKNOWN'));
+  assert.ok(acknowledged.operationReadiness.commit.blockers.includes('DRY_RUN_REQUIRED'));
+  await assert.rejects(engine.acknowledgeJob(commit.id, { revision: acknowledged.revision, note: '다시 확인' }), { code: 'JOB_ALREADY_ACKNOWLEDGED' });
+  // The acknowledgement is not an automatic resume: COMMIT still needs a fresh rehearsal.
+  await assert.rejects(engine.startJob({ operation: 'commit', requestId: 'commit-without-new-rehearsal', revision: acknowledged.revision, options: commitOptions }), { code: 'REHEARSAL_REQUIRED' });
+  assert.equal(loadCalls(fake), loadsBefore);
+
+  fake.failingOperations.delete('load');
+  assert.equal((await run(engine, 'dry-run', loadOptions)).status, 'succeeded');
+  assert.equal((await run(engine, 'commit', commitOptions)).status, 'succeeded');
+  const index = await readFile(join(store.directory, 'workspace.json'), 'utf8');
+  assert.equal(JSON.parse(index).jobs.find(job => job.id === commit.id).acknowledgement.evidence[0].sha256, record.sha256);
+  assert.doesNotMatch(index, /local-fixture-password/);
+});
+
+test('a launcher-restart unknown COMMIT whose process still runs blocks every job and its acknowledgement until the process exits', async t => {
+  const { store, fake, jarPath, javaPath } = await fixture(t);
+  // 실행기가 죽어도 Linux·macOS 의 Java 자식은 계속 쓸 수 있다. 살아 있는 실제 프로세스를 그 고아 COMMIT 으로 쓴다.
+  const orphan = spawn(process.execPath, ['-e', 'setInterval(() => {}, 1000)'], { stdio: 'ignore', windowsHide: true });
+  const exited = once(orphan, 'exit');
+  t.after(async () => { if (orphan.exitCode === null && orphan.signalCode === null) { orphan.kill(); await exited; } });
+  await once(orphan, 'spawn');
+  const id = randomUUID();
+  await store.update((await store.read()).revision, draft => {
+    draft.jobs.push({ id, requestId: 'orphan-commit', operation: 'commit', status: 'running', pid: orphan.pid, startedAt: '2026-10-25T01:02:03.000Z', capability: 'no-safe-pause' });
+    draft.activeJobId = id;
+  });
+  await store.close();
+  const restarted = await openWorkspace({ directory: store.directory });
+  t.after(() => restarted.close());
+  const recovered = (await restarted.read()).jobs.find(job => job.id === id);
+  assert.deepEqual({ status: recovered.status, recoveryReason: recovered.recoveryReason, pid: recovered.pid }, { status: 'unknown', recoveryReason: 'launcher-restarted', pid: orphan.pid });
+  const engine = createEngine({ store: restarted, jarPath, javaPath, spawnImpl: fake.spawnImpl });
+  await configure(engine, 'source', source);
+
+  const alive = await engine.state();
+  for (const operation of alive.capabilities.operations) assert.ok(alive.operationReadiness[operation].blockers.includes('PREVIOUS_PROCESS_ALIVE'), `${operation}: 살아 있는 고아 적재는 모든 단계를 막는다`);
+  // 결과 불명이 막지 않는 읽기 단계까지 막는다. 적재도 결과 불명보다 이전 프로세스 생존을 먼저 알린다.
+  for (const operation of ['discover', 'dry-run', 'commit']) {
+    await assert.rejects(engine.startJob({ operation, requestId: `while-orphan-${operation}`, revision: alive.revision }), { code: 'PREVIOUS_PROCESS_ALIVE' }, `${operation}: 고아 적재가 도는 동안 새 작업 거부`);
+  }
+  const before = await restarted.read();
+  await assert.rejects(engine.acknowledgeJob(id, { revision: before.revision, note: '증거는 STARTED 에서 멈춤. 대상 상태를 확인함.' }), { code: 'PREVIOUS_PROCESS_ALIVE' }, '고아 적재가 도는 동안 확인 기록 거부');
+  assert.deepEqual(await restarted.read(), before);
+  assert.equal(fake.calls.length, 0);
+
+  orphan.kill(); await exited;
+  assert.throws(() => process.kill(orphan.pid, 0), error => error.code === 'ESRCH');
+  const ended = await engine.state();
+  for (const operation of ended.capabilities.operations) assert.equal(ended.operationReadiness[operation].blockers.includes('PREVIOUS_PROCESS_ALIVE'), false, operation);
+  // 프로세스가 끝나도 결과는 여전히 불명이다. 확인 기록 전에는 새 적재만 막는다.
+  assert.ok(ended.operationReadiness['dry-run'].blockers.includes('JOB_RESULT_UNKNOWN'));
+  await assert.rejects(engine.startJob({ operation: 'dry-run', requestId: 'after-orphan-dry-run', revision: ended.revision, options: loadOptions }), { code: 'JOB_RESULT_UNKNOWN' });
+  assert.equal((await run(engine, 'discover')).status, 'succeeded');
+  const acknowledged = await engine.acknowledgeJob(id, { revision: (await engine.state()).revision, note: '이전 프로세스 종료를 확인하고 대상 checkpoint 와 행 수를 기관 절차로 확인함.' });
+  assert.equal(acknowledged.jobs.find(job => job.id === id).status, 'unknown');
+  assert.ok(acknowledged.jobs.find(job => job.id === id).acknowledgement);
+  assert.ok(!acknowledged.operationReadiness['dry-run'].blockers.includes('JOB_RESULT_UNKNOWN'));
+  // 확인 기록은 그 pid 의 종료를 확인한 뒤에만 남는다. 뒤에 같은 pid 를 받은 다른 프로세스를 이전 작업으로 오인하지 않는다.
+  await restarted.update(acknowledged.revision, draft => { draft.jobs.find(job => job.id === id).pid = process.pid; });
+  assert.equal((await engine.state()).operationReadiness.discover.blockers.includes('PREVIOUS_PROCESS_ALIVE'), false, '확인 기록 뒤 재사용된 pid');
 });
 
 test('API envelopes reject unknown fields and unsafe file paths', async t => {

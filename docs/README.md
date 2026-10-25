@@ -24,18 +24,16 @@
 
 ## 01-product — 기획
 
-[migration-workspace-design.md](01-product/migration-workspace-design.md) — 승인된 독립 로컬 이관 작업공간 설계와 합성 시뮬레이션(A1~A8, ADR-0041).
-
 [01-product/README.md](01-product/README.md) — 현행 제품 정의의 상태와 이력 원본 위치.
 
 [ui-ux-modernization-brief.md](01-product/ui-ux-modernization-brief.md) — 참조 구현·재사용 base의 adopter/end-user 분리 제품 brief와 사용자 연구 protocol(승인 전 Draft).
 
 [information-architecture.md](01-product/information-architecture.md) — ADR-0007의 참조-기본 IA와 route disposition 경계. 개인정보성 업무 검색어의 현행 URL 정책은 ADR-0009가 규율한다. 별도의 비규범 `class-governed` 컨테이너에는 4개 부류의 독립 승인 기록과 3개 미해결 부류가 있다.
 
+[migration-workspace-design.md](01-product/migration-workspace-design.md) — 승인된 독립 로컬 이관 작업공간 설계와 합성 시뮬레이션(A1~A8, ADR-0041).
+
 
 ## 02-architecture — 설계
-
-[ADR-0041](02-architecture/decisions/ADR-0041-local-migration-workspace-and-ai.md) — 로컬 이관 UI·기존 CLI 결합, 제한된 AI 문맥과 읽기 진행 승인.
 
 | 문서 | 내용 |
 |---|---|
@@ -74,8 +72,6 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 
 ## 03-guides — 개발 지침
 
-[migration-workspace-guide.md](03-guides/migration-workspace-guide.md) — 실제 로컬 실행기 시작, 연결·소스·검토·실행 순서와 AI 설정·현재 한계.
-
 | 문서 | 내용 |
 |---|---|
 | [getting-started.md](03-guides/getting-started.md) | **온보딩 런북** — 새 프로젝트 시작 |
@@ -91,6 +87,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [api-documentation-guide.md](03-guides/api-documentation-guide.md) | API 설계·문서화 (OpenAPI) |
 | [db-standardization-manual.md](03-guides/db-standardization-manual.md) | DB 표준화·거버넌스 매뉴얼 |
 | [legacy-non-data-migration-guide.md](03-guides/legacy-non-data-migration-guide.md) | 레거시 이관의 권한·메뉴·첨부·시퀀스·공통코드·암호 컬럼 등 비데이터 객체 처리 절차 |
+| [migration-workspace-guide.md](03-guides/migration-workspace-guide.md) | 로컬 이관 작업공간 실행기 시작(실행 비밀 주소), 연결·소스·검토·실행 순서, 결과 불명 작업 확인, AI 설정·전송 기록과 현재 한계(ADR-0041) |
 | [identity-model-guide.md](03-guides/identity-model-guide.md) | 정체성 모델 사용 규약 |
 | [security-hardening-playbook.md](03-guides/security-hardening-playbook.md) | 보안 강화·인증 플레이북 |
 | [cross-cutting-conventions.md](03-guides/cross-cutting-conventions.md) | 횡단관심사 관례 |
@@ -112,7 +109,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [pending-decisions.md](04-operations/pending-decisions.md) | 사용자 결정 대기 항목 트래커 |
 | [operational-decisions-index-ci-governance.md](04-operations/operational-decisions-index-ci-governance.md) | CI·훅·게이트·계약·원장·검증 도구 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [operational-decisions-index-composer.md](04-operations/operational-decisions-index-composer.md) | 프로젝트 생성기·기능 소유·슬롯·재사용 투영 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
-| [operational-decisions-index-migration.md](04-operations/operational-decisions-index-migration.md) | 독립 이관 도구(migration-tool)에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
+| [operational-decisions-index-migration.md](04-operations/operational-decisions-index-migration.md) | 독립 이관 도구(migration-tool)와 로컬 이관 작업공간에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [operational-decisions-index-product.md](04-operations/operational-decisions-index-product.md) | 제품 백엔드·화면·스키마·권한 원장·운영 배포 경로에 걸리는 현재 운영 결정의 영역 색인 — 자동 로드하지 않으며 읽는 조건은 [공용 결정 인덱스](../.agent/memory/decisions.md)의 「영역 결정 색인」 표 |
 | [url-state-class-approval-evidence.md](04-operations/url-state-class-approval-evidence.md) | URL-state 부류별 owner 승인 근거와 현재 판정 — 비규범 컨테이너 안의 4개 독립 승인(`search-input`만 ADR-0009 `accepted-risk`), 3개 미해결 |
 | [ui-ux-baseline-protocol.md](04-operations/ui-ux-baseline-protocol.md) | 긴급 수리 후·파일럿 전 8개 대표 시나리오 reference baseline·접근성·성능·증거 수집 프로토콜 |

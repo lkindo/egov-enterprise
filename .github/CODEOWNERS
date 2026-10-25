@@ -38,6 +38,8 @@
 /config/governance/    @lkindo
 /scripts/              @lkindo
 /.agent/scripts/         @lkindo
+/tools/migration-workspace/*.test.mjs @lkindo
+/tools/migration-workspace-prototype/*.test.mjs @lkindo
 /build.gradle          @lkindo
 /settings.gradle       @lkindo
 /gradle/               @lkindo

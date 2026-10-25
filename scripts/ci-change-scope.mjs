@@ -311,6 +311,11 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
   // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
   { path: 'tools/project-composer/', axes: ['e2e'] },
+  // [DEC-OPS-383] 로컬 이관 작업공간과 정적 시안(ADR-0041). 시험은 늘 도는 운영 계약(secret-scan)에서, 코드는 SAST 에서 본다.
+  // 이관 축은 켜지 않는다 — 작업공간은 migration-tool JAR 를 실행할 뿐 migration-tool 의 빌드·시험·PIT 입력이 아니고, 두 쪽의
+  // CLI 계약(cli-contract.test.mjs)은 운영 계약이라 어느 쪽만 바꾼 변경에서도 돈다. 생성물에 복사되므로 재사용 검증은 남는다.
+  { path: 'tools/migration-workspace/', axes: [] },
+  { path: 'tools/migration-workspace-prototype/', axes: [] },
 ].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
 
 export function generatorToolEntry(file) {

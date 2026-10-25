@@ -79,7 +79,17 @@ final class ExternalDriverDataSource implements DataSource {
             throw failure;
         } catch (Throwable failure) {
             JvmFailureBoundary.rethrowIfFatal(failure);
-            throw SourceDriverException.connection();
+            throw SourceDriverException.connection(classifyInsideBoundary(failure));
+        }
+    }
+
+    /** 원인 예외는 경계 밖으로 내보내지 않는다. driver 문맥 안에서 고정 분류만 남기고 버린다. */
+    private ConnectionFailureDiagnostic classifyInsideBoundary(Throwable failure) {
+        try {
+            return ContextClassLoaders.call(loader, () -> ConnectionFailureDiagnostic.classifyConnecting(failure));
+        } catch (Throwable unreadable) {
+            JvmFailureBoundary.rethrowIfFatal(unreadable);
+            return ConnectionFailureDiagnostic.UNCLASSIFIED;
         }
     }
 

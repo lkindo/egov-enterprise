@@ -32,7 +32,8 @@ const jobErrors = {
   CLI_FAILED: ['이관 CLI가 작업을 완료하지 못했습니다.', '앞 단계 결과와 입력·승인 조건, 정형 진행 기록을 확인하세요. 실패 원인이 해결된 뒤 다시 실행하세요.'],
 };
 const readinessReasons = {
-  WORKSPACE_READ_ONLY: '읽기 전용 작업공간입니다.', JOB_ACTIVE: '현재 작업이 끝난 뒤 진행하세요.', JOB_RESULT_UNKNOWN: '이전 작업 결과를 먼저 확인하세요.',
+  WORKSPACE_READ_ONLY: '읽기 전용 작업공간입니다.', JOB_ACTIVE: '현재 작업이 끝난 뒤 진행하세요.', JOB_RESULT_UNKNOWN: '결과 불명 적재가 있습니다. 작업 기록에서 실행 증거를 확인하고 확인 기록을 남겨야 새 리허설·적재를 시작할 수 있습니다.',
+  PREVIOUS_PROCESS_ALIVE: '이전 실행기의 CLI 프로세스가 아직 남아 있거나 종료 여부를 확인하지 못했습니다. 그 프로세스가 끝날 때까지 모든 단계와 결과 불명 작업의 확인 기록을 막습니다. 종료와 산출물을 먼저 확인하세요.',
   SOURCE_PROFILE_REQUIRED: '원천 DB 설정을 저장하세요.', SOURCE_CREDENTIALS_REQUIRED: '원천 DB 세션 비밀번호를 입력하고 저장하세요.',
   TARGET_PROFILE_REQUIRED: '대상 DB 설정을 저장하세요.', TARGET_CREDENTIALS_REQUIRED: '대상 DB 세션 비밀번호를 입력하고 저장하세요.',
   SOURCE_DRIVER_REQUIRED: '원천 DB에 맞는 외부 JDBC JAR를 준비하세요.', SOURCE_REQUIRED: '소스 폴더 또는 검사한 ZIP을 등록하세요.',
@@ -41,6 +42,15 @@ const readinessReasons = {
   STANDARD_COLUMNS_REQUIRED: '대상 컬럼 스냅샷(db_columns.json)을 가져오세요.', MAPPING_REQUIRED: '현재 확정 원장으로 매핑을 생성하세요.', PLAN_REQUIRED: '현재 입력으로 실행 계획을 작성하세요.',
   VALIDATION_REQUIRED: '현재 입력의 계획 검증을 통과해야 합니다.', DRY_RUN_REQUIRED: '현재 입력의 리허설을 통과해야 합니다.', COMMIT_UNVERIFIED: '현재 원천 DBMS는 공개 실제 적재 자격이 없습니다.',
 };
+// 서버가 고정 코드만 돌려주는 요청 오류(AI 연결·전송 등)의 안내. 코드는 괄호로 함께 보인다. 판정은 서버가 한다.
+const requestErrors = {
+  AI_TRANSMISSION_RECORD_FAILED: '작업공간에 AI 전송 기록을 남기지 못해 자료를 보내지 않았습니다. 작업공간 상태와 읽기 전용 여부를 확인한 뒤 다시 시도하세요.',
+  AI_TRANSMISSION_LOG_FULL: '이 작업공간의 AI 전송 기록이 가득 차 더는 보내지 않습니다. 기록은 지우지 않으므로 새 작업공간에서 이어가세요.',
+  AI_PROFILE_ROW_LIMIT_REQUIRED: '데이터 품질 집계를 허용하려면 표당 행 한도를 1~100000 정수로 입력하세요.',
+  AI_READ_PLAN_INVALID: '읽기 계획의 형식이 맞지 않습니다. 표당 행 한도는 데이터 품질 집계를 허용할 때만 함께 보냅니다. 선택을 다시 확인하세요.',
+  CODEX_HOME_CONFIG_PRESENT: '작업공간의 official-codex-client 폴더에 Codex 설정·지시 파일이 있어 공식 Codex를 열지 않았습니다. 실행기가 만들지 않은 설정·지시 파일을 치운 뒤 다시 시도하세요.',
+};
+function codeGuidance(code) { return typeof code === 'string' && Object.hasOwn(requestErrors, code) ? `${requestErrors[code]} (${code})` : code; }
 let state;
 let ready = false;
 let busy = false;
@@ -87,7 +97,8 @@ function artifacts() {
 }
 function jobs() { return Array.isArray(state?.jobs) ? state.jobs : []; }
 function activeJob() { return jobs().find(job => activeStatuses.has(job.status)); }
-function unresolvedJob() { return activeJob() ?? jobs().find(job => job.status === 'unknown'); }
+// 사람 확인 기록이 없는 결과 불명 작업. 새 적재만 막고 읽기 단계는 막지 않는다(서버 단계별 준비 조건이 최종 판정).
+function unacknowledgedUnknown() { return jobs().find(job => job.status === 'unknown' && !job.acknowledgement); }
 function artifactId(item) { return String(item.id ?? item.kind); }
 function artifactLabel(item) {
   const names = { inventory: '원천 DB 구조', profile: '데이터 품질 분석', appUsage: '소스 사용 근거', suggestions: '표준 용어 후보', ledgerDraft: '분석에서 생성한 원장 초안', ledger: '편집 중인 용어 원장', confirmedLedger: '기관 검토 확정 원장', mapping: '변환 매핑', skeleton: '대상 구조와 적재 범위', standardColumns: '표준 컬럼 스냅샷', plan: '실행 계획', review: '실행 검토 기록', execution: '실행·대사 결과', ddl: '가져온 스키마 초안' };
@@ -110,7 +121,7 @@ function operationStatus(operation) {
   if (!ready) return { ready: false, message: '실행기 상태를 먼저 확인하세요.' };
   if (!supports(operation)) return { ready: false, message: '현재 실행기에서 이 단계를 지원하지 않습니다.' };
   if (busy) return { ready: false, message: '현재 요청을 처리 중입니다.' };
-  if (unresolvedJob()) return { ready: false, message: activeJob() ? readinessReasons.JOB_ACTIVE : readinessReasons.JOB_RESULT_UNKNOWN };
+  if (activeJob()) return { ready: false, message: readinessReasons.JOB_ACTIVE };
   const roles = ['discover', 'profile'].includes(operation) ? ['source'] : operation === 'term-suggest' ? ['target'] : ['mapping-generate', 'plan', 'dry-run', 'commit'].includes(operation) ? ['source', 'target'] : [];
   const dirty = roles.filter(role => hasDirtyProfiles(role));
   if (dirty.length) return { ready: false, message: `${dirty.map(role => role === 'source' ? '원천' : '대상').join('·')} 연결에 미저장 입력이 있습니다. 먼저 저장하세요.` };
@@ -166,10 +177,11 @@ function updateButtons() {
 function setBusy(value) { busy = value; $('main').setAttribute('aria-busy', String(value)); updateButtons(); }
 function clearError() { $('global-error').hidden = true; $('global-error').textContent = ''; }
 function showError(error, target) {
-  const message = `${error.message || '요청을 처리하지 못했습니다.'}${error.code ? ` (${error.code})` : ''}`;
+  const guidance = typeof error.code === 'string' && Object.hasOwn(requestErrors, error.code) ? requestErrors[error.code] : undefined;
+  const message = `${guidance ?? (error.message || '요청을 처리하지 못했습니다.')}${error.code ? ` (${error.code})` : ''}`;
   if (target) feedback(target, message, true);
   else { $('global-error').hidden = false; $('global-error').textContent = message; }
-  if (['CONNECTION_LOST', 'SESSION_UNAVAILABLE', 'RESPONSE_TIMEOUT'].includes(error.code)) {
+  if (['CONNECTION_LOST', 'SESSION_UNAVAILABLE', 'RESPONSE_TIMEOUT', 'LAUNCH_REQUIRED'].includes(error.code)) {
     $('connection-state').textContent = '연결 확인 필요';
     $('connection-state').className = 'pill warning';
   }
@@ -221,7 +233,8 @@ function updateGuidance() {
   let next;
   if (!ready) next = ['start', '실행기 상태 확인', '실행기에 연결한 뒤 현재 입력과 단계별 준비 조건을 확인합니다.'];
   else if (workspaceReadOnly()) next = ['results', '읽기 전용 결과 확인', '이 작업공간에서는 저장·실행할 수 없습니다. 기존 작업 기록과 산출물을 확인하세요.'];
-  else if (unresolvedJob()) next = ['pipeline', '진행 기록 확인', activeJob() ? '현재 작업이 실행 중입니다. 완료 결과를 확인한 뒤 다음 단계를 결정하세요.' : '이전 작업 결과가 불명확합니다. 실행 증거를 확인하기 전에는 새 단계를 시작할 수 없습니다.'];
+  else if (activeJob()) next = ['pipeline', '진행 기록 확인', '현재 작업이 실행 중입니다. 완료 결과를 확인한 뒤 다음 단계를 결정하세요.'];
+  else if (unacknowledgedUnknown()) next = ['pipeline', '결과 불명 적재 확인', '이전 적재의 결과가 불명확합니다. 작업 기록에서 실행 증거와 대상 상태를 확인하고 확인 기록을 남기기 전에는 새 리허설·적재를 시작할 수 없습니다. 읽기 단계는 계속 진행할 수 있습니다.'];
   else if (hasDirtyProfiles()) next = ['connect', '미저장 연결 확인', '화면의 연결 변경을 먼저 저장하세요. 기존에 저장된 값으로 실행하지 않도록 해당 단계를 보류했습니다.'];
   else if (latestJob?.status === 'failed' && latestJob.inputRevision === state.inputRevision) next = ['pipeline', '실패 원인 확인', '최근 작업이 실패했습니다. 작업 기록의 원인·조치를 확인한 뒤 해당 단계를 다시 실행하세요.'];
   else if (!state.profiles?.source || !state.profiles.source.credentialReady) next = ['connect', '원천 DB 연결 준비', '원천 설정과 세션 비밀번호를 저장하세요. 구조 조사에는 대상 DB나 소스 폴더가 필요하지 않습니다.'];
@@ -259,6 +272,56 @@ function renderCapabilities() {
     for (const operation of cap.operations ?? []) list.append(element('li', { text: operationNames[operation] ?? operation }));
     container.append(list);
   }
+}
+function evidenceLine(item) {
+  const status = { STARTED: '시작만 기록(중단 가능성)', PASS: '통과 기록', FAILED: '실패 기록', UNREADABLE: '읽을 수 없는 증거' }[item.status] ?? '상태 확인 필요';
+  return [item.mode ?? '모드 미상', status, item.updatedAt ?? item.startedAt, Number.isSafeInteger(item.written) ? `기록된 적재 ${item.written.toLocaleString()}행` : null, typeof item.sha256 === 'string' ? `SHA-256 ${item.sha256.slice(0, 16)}…` : null].filter(Boolean).join(' · ');
+}
+// 결과 불명 적재의 사람 확인. 확인 기록은 결과를 성공으로 바꾸거나 적재를 이어 가지 않는다.
+function unknownJobPanel(job) {
+  const ack = job.acknowledgement;
+  const panel = element('div', { className: ack ? 'callout form-stack' : 'callout warning form-stack' });
+  if (ack) {
+    panel.append(element('strong', { text: '사람 확인 기록됨' }),
+      element('p', { className: 'subtext', text: `${typeof ack.at === 'string' ? ack.at : '시각 미상'} · 대조한 실행 증거 ${Array.isArray(ack.evidence) ? ack.evidence.length : 0}개${ack.evidenceLocated === false ? ' · 이 작업의 증거 위치를 알 수 없었습니다' : ''}` }),
+      element('p', { text: typeof ack.note === 'string' ? ack.note : '' }),
+      element('p', { className: 'subtext', text: '이 기록은 적재 결과를 성공으로 바꾸지 않습니다. 다음 실제 적재 전에는 리허설을 다시 통과해야 합니다.' }));
+    return panel;
+  }
+  panel.append(element('strong', { text: '결과 불명 적재 · 사람 확인 필요' }),
+    element('p', { text: '앞서 커밋된 chunk 는 되돌아가지 않으며 전체 복구는 기관 백업·복구 계획을 따릅니다. 실행기는 적재를 자동으로 재개하지 않습니다.' }),
+    element('p', { className: 'subtext', text: '실행 증거(.load-*.json)의 STARTED·최종 상태와 대상 DB의 이관 제어 기록(checkpoint)을 확인한 뒤 확인 내용을 기록하세요. 기록하기 전에는 새 리허설·적재를 시작할 수 없고, 읽기 단계는 계속 진행할 수 있습니다.' }));
+  const evidenceList = element('ul', { 'aria-label': '이 작업의 실행 증거' });
+  const status = element('p', { className: 'subtext', role: 'status' });
+  const load = element('button', { type: 'button', className: 'button', text: '실행 증거 불러오기' });
+  const noteId = `ack-note-${job.id}`, consentId = `ack-consent-${job.id}`;
+  const note = element('textarea', { id: noteId, className: 'input', rows: '3', maxlength: '1000', required: true, placeholder: '예: 증거는 STARTED 에서 멈춤. 대상 제어 기록의 checkpoint 와 행 수를 기관 절차로 확인함.' });
+  const consent = element('input', { id: consentId, type: 'checkbox' });
+  const submit = element('button', { type: 'button', className: 'button primary', text: '확인 기록 남기기' });
+  let evidenceLoaded = false;
+  const sync = () => { submit.disabled = busy || !ready || !evidenceLoaded || !consent.checked || !note.value.trim(); };
+  load.addEventListener('click', async () => {
+    load.disabled = true; status.textContent = '실행 증거를 확인하는 중입니다.';
+    try {
+      const result = await api.jobEvidence(job.id);
+      evidenceList.replaceChildren();
+      for (const item of Array.isArray(result.evidence) ? result.evidence : []) evidenceList.append(element('li', { text: evidenceLine(item) }));
+      status.textContent = result.evidenceLocated === false ? '이 작업의 증거 위치를 알 수 없습니다. 작업공간의 증거 파일과 대상 DB를 직접 확인하세요.'
+        : Array.isArray(result.evidence) && result.evidence.length ? `이 작업이 남긴 실행 증거 ${result.evidence.length}개입니다. 확인 기록에는 각 파일의 SHA-256 이 함께 남습니다.`
+          : '이 작업이 남긴 실행 증거가 없습니다. CLI 는 증거를 쓰지 못하면 적재를 시작하지 않지만, 대상 DB 상태를 직접 확인하세요.';
+      evidenceLoaded = true;
+    } catch (error) { status.textContent = `${error.message}${error.code ? ` (${error.code})` : ''}`; }
+    finally { load.disabled = false; sync(); }
+  });
+  note.addEventListener('input', sync);
+  consent.addEventListener('change', sync);
+  submit.addEventListener('click', () => mutation(() => api.acknowledge(job.id, { revision: state.revision, note: note.value.trim() }), { success: '확인 기록을 남겼습니다. 실제 적재 전에 리허설을 다시 실행하세요.' }));
+  sync();
+  panel.append(element('div', { className: 'actions' }, load), status, evidenceList,
+    element('label', { className: 'field', for: noteId }, element('span', { text: '확인 내용' }), note),
+    element('label', { className: 'check', for: consentId }, consent, element('span', { text: '실행 증거와 대상 DB의 이관 제어 기록을 기관 절차로 확인했습니다. 이 확인은 적재 성공이나 복구 승인이 아닙니다.' })),
+    element('div', { className: 'actions' }, submit));
+  return panel;
 }
 function renderJobs() {
   const signature = JSON.stringify(jobs());
@@ -302,6 +365,7 @@ function renderJobs() {
       }
       details.append(lines); item.append(details);
     }
+    if (job.status === 'unknown') item.append(unknownJobPanel(job));
     if (activeStatuses.has(job.status)) {
       const isLoad = ['commit', 'dry-run', 'load'].includes(job.operation);
       const cancel = element('button', { type: 'button', className: 'button', text: isLoad ? '적재 중단은 CLI 복구 절차 확인' : '중단 요청', ...(isLoad ? {} : { 'data-cancel-job': job.id, 'data-status': job.status }) });
@@ -345,7 +409,7 @@ function renderState() {
   $('summary-source').textContent = state.profiles?.source?.vendor ?? '설정 필요';
   $('summary-target').textContent = state.profiles?.target?.database ?? '설정 필요';
   $('summary-jobs').textContent = String(jobs().length);
-  $('summary-running').textContent = activeJob() ? '실행 중인 작업이 있습니다.' : unresolvedJob() ? '이전 실행 결과 확인 필요 · 새 실행 차단' : '실행 중인 작업 없음';
+  $('summary-running').textContent = activeJob() ? '실행 중인 작업이 있습니다.' : unacknowledgedUnknown() ? '결과 불명 적재 확인 필요 · 새 리허설·적재 차단' : '실행 중인 작업 없음';
   $('summary-artifacts').textContent = String(artifacts().length);
   $('pipeline-revision').textContent = String(state.revision);
   $('input-summary').textContent = Object.keys(state.inputs ?? {}).length ? displayJson(state.inputs) : '아직 등록된 자료가 없습니다.';
@@ -589,12 +653,12 @@ function renderAiStatus() {
   $('ai-test-status').setAttribute('aria-busy', String(testState === 'running'));
   $('ai-test-provider').textContent = `${apiMode ? 'OpenAI API' : '공식 Codex'}${aiStatus.model ? ` · ${aiStatus.model}` : ''}`;
   $('ai-test-prompt').textContent = aiStatus.testPrompt ?? '실행기가 검사 문구를 제공하지 않았습니다.';
-  $('ai-test-details').textContent = [test.checkedAt ? `확인 시각 ${test.checkedAt}` : null, test.code, test.message, aiStatus.testAvailable !== true ? `검사 준비 필요: ${aiStatus.testBlockedReason ?? '실행기 상태 확인 필요'}` : null].filter(Boolean).join(' · ');
+  $('ai-test-details').textContent = [test.checkedAt ? `확인 시각 ${test.checkedAt}` : null, codeGuidance(test.code), test.message, aiStatus.testAvailable !== true ? `검사 준비 필요: ${codeGuidance(aiStatus.testBlockedReason) ?? '실행기 상태 확인 필요'}` : null].filter(Boolean).join(' · ');
   $('ai-approval-status').textContent = aiStatus.approval?.valid ? '기관 전송 승인 확인됨' : '기관 전송 승인 필요';
   $('ai-approval-status').className = `pill ${aiStatus.approval?.valid ? 'good' : 'warning'}`;
   $('ai-workspace-id').textContent = aiStatus.workspaceId ?? '실행기 확인 필요';
   $('ai-policy-version').textContent = aiStatus.policy ?? '실행기 확인 필요';
-  $('ai-inference-status').replaceChildren(element('strong', { text: aiStatus.inferenceAvailable === true ? '기관 자료로 제안 요청 가능' : '기관 자료로 제안 요청 차단·준비 필요' }), element('p', { text: [aiStatus.blockedReason, aiStatus.approval?.valid ? '기관 승인 확인됨' : `기관 승인 확인 필요: ${aiStatus.approval?.reason ?? '승인 상태 미확인'}`, aiStatus.message].filter(Boolean).join(' · ') }));
+  $('ai-inference-status').replaceChildren(element('strong', { text: aiStatus.inferenceAvailable === true ? '기관 자료로 제안 요청 가능' : '기관 자료로 제안 요청 차단·준비 필요' }), element('p', { text: [codeGuidance(aiStatus.blockedReason), aiStatus.approval?.valid ? '기관 승인 확인됨' : `기관 승인 확인 필요: ${aiStatus.approval?.reason ?? '승인 상태 미확인'}`, aiStatus.message].filter(Boolean).join(' · ') }));
   if (!providerDirty) {
     $('ai-provider').value = aiStatus.provider ?? 'codex';
     const apiMode = aiStatus.provider === 'openai-api';
@@ -606,9 +670,25 @@ function renderAiStatus() {
   if (!readPlanDirty) {
     const plan = aiStatus.readPlan;
     document.querySelectorAll('[name="read-operation"]').forEach(input => { input.checked = !!plan?.operations?.includes(input.value); });
+    $('ai-profile-row-limit').value = Number.isSafeInteger(plan?.profileRowLimit) ? String(plan.profileRowLimit) : '';
+    syncProfileRowLimit();
     $('ai-read-plan-result').hidden = !plan;
-    if (plan) $('ai-read-plan-result').textContent = displayJson({ operations: plan.operations, inputRevision: plan.inputRevision, provider: plan.provider, expires: plan.expires });
+    if (plan) $('ai-read-plan-result').textContent = displayJson(readPlanView(plan));
   }
+}
+function readPlanView(plan) {
+  return { operations: plan.operations, profileRowLimit: plan.profileRowLimit, inputRevision: plan.inputRevision, provider: plan.provider, expires: plan.expires };
+}
+// 데이터 품질 집계(profile)를 고르면 표당 행 한도가 필수가 된다. 고르지 않으면 숨기고 보내지 않는다(서버는 profile 없는 한도를 거부한다).
+function syncProfileRowLimit() {
+  const required = !!document.querySelector('[name="read-operation"][value="profile"]')?.checked;
+  $('ai-profile-row-limit-field').hidden = !required;
+  $('ai-profile-row-limit').required = required;
+  $('ai-profile-row-limit').disabled = !required;
+}
+function profileRowLimitValue() {
+  const input = $('ai-profile-row-limit'), text = input.value.trim(), value = Number(text);
+  return /^[1-9][0-9]*$/.test(text) && Number.isSafeInteger(value) && value >= Number(input.min) && value <= Number(input.max) ? value : undefined;
 }
 function renderLoginLink(value) {
   const link = $('ai-login-link');
@@ -782,11 +862,15 @@ $('ai-read-plan-form').addEventListener('submit', event => {
   event.preventDefault();
   const selected = [...document.querySelectorAll('[name="read-operation"]:checked')].map(input => input.value);
   if (!selected.length) { feedback('ai-read-plan-feedback', '허용할 읽기 단계를 하나 이상 선택하세요.', true); return; }
-  mutation(() => api.aiReadPlan({ revision: state.revision, operations: selected }), { target: 'ai-read-plan-feedback', success: '선택한 읽기 범위를 실행기에 등록했습니다. 이후 AI 추천의 실제 실행 여부는 서버가 판정합니다.', after: result => { readPlanDirty = false; $('ai-read-plan-result').textContent = displayJson(result); $('ai-read-plan-result').hidden = false; } });
+  const profileRowLimit = selected.includes('profile') ? profileRowLimitValue() : undefined;
+  if (selected.includes('profile') && profileRowLimit === undefined) { feedback('ai-read-plan-feedback', requestErrors.AI_PROFILE_ROW_LIMIT_REQUIRED, true); $('ai-profile-row-limit').focus(); return; }
+  mutation(() => api.aiReadPlan({ revision: state.revision, operations: selected, profileRowLimit }), { target: 'ai-read-plan-feedback', success: '선택한 읽기 범위를 실행기에 등록했습니다. 이후 AI 추천의 실제 실행 여부는 서버가 판정합니다.', after: result => { readPlanDirty = false; $('ai-read-plan-result').textContent = displayJson(readPlanView(result)); $('ai-read-plan-result').hidden = false; } });
 });
-document.querySelectorAll('[name="read-operation"]').forEach(input => input.addEventListener('change', () => { readPlanDirty = true; invalidatePreview(); feedback('ai-read-plan-feedback', '허용 범위를 다시 확인하거나 실행 허용을 해제한 뒤 AI 요청을 이어가세요.'); }));
+const readPlanChanged = () => { readPlanDirty = true; invalidatePreview(); feedback('ai-read-plan-feedback', '허용 범위를 다시 확인하거나 실행 허용을 해제한 뒤 AI 요청을 이어가세요.'); };
+document.querySelectorAll('[name="read-operation"]').forEach(input => input.addEventListener('change', () => { syncProfileRowLimit(); readPlanChanged(); }));
+$('ai-profile-row-limit').addEventListener('input', readPlanChanged);
 $('ai-revoke-plan').addEventListener('click', () => mutation(() => api.aiReadPlan({ revision: state.revision, operations: [] }), { target: 'ai-read-plan-feedback', success: 'AI가 읽기 단계를 실행하도록 허용한 범위를 해제했습니다.', after: () => {
-  readPlanDirty = false; document.querySelectorAll('[name="read-operation"]').forEach(input => { input.checked = false; }); $('ai-read-plan-result').hidden = true; invalidatePreview();
+  readPlanDirty = false; document.querySelectorAll('[name="read-operation"]').forEach(input => { input.checked = false; }); $('ai-profile-row-limit').value = ''; syncProfileRowLimit(); $('ai-read-plan-result').hidden = true; invalidatePreview();
 } }));
 $('ai-mode').addEventListener('change', () => {
   const expanded = $('ai-mode').value === 'expanded';

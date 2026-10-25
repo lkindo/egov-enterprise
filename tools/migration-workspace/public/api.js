@@ -1,4 +1,24 @@
 let token;
+let launchSecret;
+const LAUNCH_STORAGE_KEY = 'migration-workspace-launch';
+const LAUNCH_SECRET = /^[A-Za-z0-9_-]{43}$/;
+
+// 실행기 터미널 주소의 조각(#launch=)에서 실행 비밀을 읽고 바로 주소에서 지운다. 조각은 서버로 전송되지 않는다.
+// sessionStorage 는 이 포트의 origin·이 탭에만 남아 새로고침 뒤에도 쓰이고, 다른 포트의 페이지는 읽지 못한다.
+function captureLaunchSecret() {
+  if (location.hash.startsWith('#launch=')) {
+    const candidate = location.hash.slice('#launch='.length);
+    history.replaceState(history.state, '', `${location.pathname}${location.search}`);
+    if (LAUNCH_SECRET.test(candidate)) {
+      launchSecret = candidate;
+      try { sessionStorage.setItem(LAUNCH_STORAGE_KEY, candidate); } catch { /* 저장할 수 없으면 이 탭 메모리에만 둔다. */ }
+      return;
+    }
+  }
+  if (launchSecret) return;
+  try { const stored = sessionStorage.getItem(LAUNCH_STORAGE_KEY); if (stored && LAUNCH_SECRET.test(stored)) launchSecret = stored; } catch { /* 저장소를 쓸 수 없는 환경 */ }
+}
+captureLaunchSecret();
 
 export class WorkspaceError extends Error {
   constructor(code, message, status = 0) {
@@ -39,7 +59,17 @@ async function request(path, { method = 'GET', body, headers = {}, raw = false, 
 }
 
 export async function openSession() {
-  const session = await request('/api/session');
+  captureLaunchSecret();
+  let session;
+  try {
+    session = await request('/api/session', { headers: launchSecret ? { 'X-Migration-Workspace-Launch': launchSecret } : {} });
+  } catch (error) {
+    if (error.code !== 'LAUNCH_REQUIRED') throw error;
+    // 실행기를 다시 시작하면 비밀이 바뀐다. 맞지 않는 비밀은 지우고 터미널의 새 주소로 다시 열게 한다.
+    launchSecret = undefined;
+    try { sessionStorage.removeItem(LAUNCH_STORAGE_KEY); } catch { /* 저장소를 쓸 수 없는 환경 */ }
+    throw new WorkspaceError('LAUNCH_REQUIRED', '실행기 터미널에 표시된 주소로 다시 여세요. 주소 끝의 #launch= 부분까지 그대로 열어야 연결됩니다.', error.status);
+  }
   if (typeof session.csrfToken !== 'string' || !session.csrfToken) throw new WorkspaceError('SESSION_UNAVAILABLE', '로컬 세션을 시작하지 못했습니다. 실행기를 확인해 주세요.');
   token = session.csrfToken;
 }
@@ -51,6 +81,8 @@ export const api = {
   upload: (kind, file, revision) => request(`/api/uploads?kind=${encodeURIComponent(kind)}`, { method: 'POST', raw: true, body: file, headers: { 'Content-Type': 'application/octet-stream', 'X-Workspace-Revision': String(revision) }, timeout: 120000 }),
   job: body => request('/api/jobs', { method: 'POST', body }),
   cancel: id => request(`/api/jobs/${encodeURIComponent(id)}/cancel`, { method: 'POST', body: {} }),
+  jobEvidence: id => request(`/api/jobs/${encodeURIComponent(id)}/evidence`),
+  acknowledge: (id, body) => request(`/api/jobs/${encodeURIComponent(id)}/acknowledge`, { method: 'POST', body }),
   artifact: id => request(`/api/artifacts/${encodeURIComponent(id)}`),
   ledger: body => request('/api/ledger', { method: 'PUT', body }),
   aiStatus: () => request('/api/ai/status'),

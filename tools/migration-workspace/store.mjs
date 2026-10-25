@@ -49,9 +49,13 @@ async function checkDirectory(directory, create = false) {
   }
 }
 
-async function checkedFile(path, { missing = false } = {}) {
+const REPLACED = Symbol('replaced');
+async function checkedFile(path, { missing = false, replaced = false } = {}) {
   const stat = await statOrNull(path);
   if (!stat && missing) return null;
+  // Linux 의 lstat 는 경로를 찾은 뒤 동시 rename 으로 끊긴 이전 inode 를 돌려줄 수 있다(nlink 0). 하드 링크가 아니라
+  // 교체 중이라는 뜻이므로, 읽는 쪽(replaced)은 실패 대신 다시 읽을 신호로 받는다. 하드 링크(nlink 2 이상)는 그대로 거부한다.
+  if (replaced && stat && !stat.isSymbolicLink() && stat.isFile() && stat.nlink === 0) return REPLACED;
   if (!stat || stat.isSymbolicLink() || !stat.isFile() || stat.nlink !== 1) fail('UNSAFE_PATH', 'Workspace files must be regular, unlinked files.');
   return stat;
 }
@@ -112,7 +116,8 @@ async function readSnapshot(directory) {
   const path = join(directory, INDEX);
   for (let attempt = 0; attempt < 3; attempt++) {
     await checkDirectory(directory);
-    const stat = await checkedFile(path, { missing: true });
+    const stat = await checkedFile(path, { missing: true, replaced: true });
+    if (stat === REPLACED) continue;
     if (!stat) return defaultState();
     if (stat.size > MAX_BYTES) fail('INDEX_TOO_LARGE', 'The workspace index exceeds its size limit.');
     const handle = await open(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
@@ -129,7 +134,8 @@ async function readSnapshot(directory) {
     // Windows readers can block rename. Close immediately after reading bytes;
     // filesystem rechecks and CPU-only JSON validation must not hold the handle.
     await checkDirectory(directory);
-    await checkedFile(path);
+    // 다 읽은 뒤의 교체(REPLACED)는 읽은 이전 판을 무효로 만들지 않는다. 링크·다른 종류로 바뀐 경로만 실패한다.
+    await checkedFile(path, { replaced: true });
     if (content === undefined) continue;
     // A normal replacement after our read does not invalidate the complete old
     // snapshot. Only an identity change between the initial check and open retries.
@@ -145,7 +151,8 @@ async function readSnapshot(directory) {
   fail('SNAPSHOT_BUSY', 'The workspace snapshot changed repeatedly; retry the read.');
 }
 
-async function atomicSnapshot(directory, state) {
+// platform 은 Windows 교체 재시도 분기를 다른 OS 의 시험에서도 실행하게 하는 주입점이다(재시도 판정에만 쓴다). 운영 호출은 process.platform 이다.
+async function atomicSnapshot(directory, state, platform) {
   validateState(state);
   await checkDirectory(directory);
   await checkedFile(join(directory, INDEX), { missing: true });
@@ -162,7 +169,7 @@ async function atomicSnapshot(directory, state) {
       await checkedFile(join(directory, INDEX), { missing: true });
       try { await rename(temporary, join(directory, INDEX)); break; }
       catch (error) {
-        if (process.platform !== 'win32' || !['EPERM', 'EBUSY'].includes(error.code)) throw error;
+        if (platform !== 'win32' || !['EPERM', 'EBUSY'].includes(error.code)) throw error;
         if (attempt >= 11) fail('SNAPSHOT_BUSY', 'The workspace snapshot is in use; retry the save.');
         // Windows readers can briefly prevent replacement. Keep the previous index
         // intact and retry the same atomic rename, never delete it to make space.
@@ -172,6 +179,7 @@ async function atomicSnapshot(directory, state) {
       }
     }
     // Directory fsync is not available on Windows. File contents are synced before rename.
+    // 디렉터리 fsync 는 실제 OS 의 능력이라 주입한 platform 이 아니라 process.platform 으로 가른다.
     if (process.platform !== 'win32') {
       const directoryHandle = await open(directory, 'r');
       try { await directoryHandle.sync(); } finally { await directoryHandle.close(); }
@@ -230,8 +238,9 @@ function recoverJobs(state) {
   return changed;
 }
 
-export async function openWorkspace({ directory } = {}) {
+export async function openWorkspace({ directory, platform = process.platform } = {}) {
   if (typeof directory !== 'string' || !isAbsolute(directory) || directory.includes('\0') || /^[/\\]{2}/.test(directory)) fail('DIRECTORY_REQUIRED', 'Choose an absolute local directory outside Git.');
+  if (typeof platform !== 'string' || !platform) fail('INVALID_PLATFORM', 'The workspace platform must be a Node platform name.');
   directory = resolve(directory);
   await checkDirectory(directory, true);
   await checkDirectory(join(directory, 'artifacts'), true);
@@ -248,7 +257,7 @@ export async function openWorkspace({ directory } = {}) {
   function ensureOpen() { if (closed) fail('CLOSED', 'The workspace is closed.'); }
   try {
     const state = await readSnapshot(directory);
-    if (writable && (recoverJobs(state) || !(await statOrNull(join(directory, INDEX))))) await atomicSnapshot(directory, state);
+    if (writable && (recoverJobs(state) || !(await statOrNull(join(directory, INDEX))))) await atomicSnapshot(directory, state, platform);
   } catch (error) { await release(); throw error; }
   return {
     directory,
@@ -274,7 +283,7 @@ export async function openWorkspace({ directory } = {}) {
         if (!plainObject(next) || typeof next?.then === 'function') fail('INVALID_UPDATE', 'An internal synchronous updater is required.');
         if (next.revision !== current.revision || next.schemaVersion !== 1) fail('INVALID_UPDATE', 'Revision and schema version are managed by the workspace.');
         next.revision += 1;
-        await atomicSnapshot(directory, next);
+        await atomicSnapshot(directory, next, platform);
         return structuredClone(next);
       });
       queue = result.catch(() => {});

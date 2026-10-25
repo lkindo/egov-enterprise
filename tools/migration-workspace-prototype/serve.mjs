@@ -1,7 +1,8 @@
 import { spawn } from 'node:child_process';
-import { lstat, readFile } from 'node:fs/promises';
+import { constants as fsConstants } from 'node:fs';
+import { lstat, open } from 'node:fs/promises';
 import { createServer } from 'node:http';
-import { resolve } from 'node:path';
+import { resolve, win32 } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const HOST = '127.0.0.1';
@@ -42,15 +43,27 @@ export function parseArguments(args) {
   return { port, open };
 }
 
+// 정적 자산은 연 기술자로만 읽는다. 확인(lstat) 뒤 같은 경로를 다시 열면 그 사이 링크로 바뀔 수 있다(js/file-system-race).
+async function readRegularAsset(url) {
+  const handle = await open(url, fsConstants.O_RDONLY | (fsConstants.O_NOFOLLOW ?? 0));
+  try {
+    const stat = await handle.stat();
+    const link = await lstat(url);
+    if (!stat.isFile() || link.isSymbolicLink() || link.dev !== stat.dev || link.ino !== stat.ino) {
+      throw new Error('정적 화면 파일은 일반 파일이어야 합니다.');
+    }
+    return await handle.readFile();
+  } finally {
+    await handle.close();
+  }
+}
+
 /** A static simulator only. No path-derived file access, API, credentials, or migration execution. */
 export async function startSimulationServer({ port = DEFAULT_PORT } = {}) {
   if (!Number.isInteger(port) || port < 0 || port > 65535) throw new Error('유효하지 않은 포트입니다.');
   const assets = new Map();
   for (const [name, type] of FILES) {
-    const path = new URL(name, import.meta.url);
-    const stat = await lstat(path);
-    if (!stat.isFile() || stat.isSymbolicLink()) throw new Error('정적 화면 파일은 일반 파일이어야 합니다.');
-    assets.set(`/${name}`, { body: await readFile(path), type });
+    assets.set(`/${name}`, { body: await readRegularAsset(new URL(name, import.meta.url)), type });
   }
   assets.set('/', assets.get('/index.html'));
 
@@ -98,12 +111,25 @@ export async function startSimulationServer({ port = DEFAULT_PORT } = {}) {
   return server;
 }
 
-function openBrowser(url) {
-  const [command, args] = process.platform === 'win32'
-    ? ['rundll32.exe', ['url.dll,FileProtocolHandler', url]]
-    : process.platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
-  const child = spawn(command, args, { shell: false, windowsHide: true, detached: true, stdio: 'ignore' });
+export function browserCommand(url, { platform = process.platform, env = process.env } = {}) {
+  if (platform === 'win32') {
+    // 실행 파일 이름만 주면 Windows 는 현재 폴더를 PATH 보다 먼저 찾는다. 내려받은 폴더의 같은 이름 파일이
+    // 대신 실행되지 않도록 %SystemRoot%\System32 의 전체 경로로 실행한다. 값이 없거나 로컬 절대 경로가 아니면 C:\Windows.
+    const configured = env.SystemRoot ?? env.SYSTEMROOT;
+    const systemRoot = typeof configured === 'string' && win32.isAbsolute(configured) && !/^[\\/]{2}/.test(configured) ? configured : 'C:\\Windows';
+    return [win32.join(systemRoot, 'System32', 'rundll32.exe'), ['url.dll,FileProtocolHandler', url]];
+  }
+  return platform === 'darwin' ? ['open', [url]] : ['xdg-open', [url]];
+}
+
+async function openBrowser(url) {
+  const [command, args] = browserCommand(url);
   const warn = () => console.error('브라우저를 자동으로 열지 못했습니다. 위 주소를 직접 열어 주세요.');
+  if (process.platform === 'win32') {
+    // 링크가 아닌 일반 파일일 때만 실행한다.
+    try { const stat = await lstat(command); if (!stat.isFile() || stat.isSymbolicLink()) throw new Error(); } catch { warn(); return; }
+  }
+  const child = spawn(command, args, { shell: false, windowsHide: true, detached: true, stdio: 'ignore' });
   child.once('error', warn);
   child.once('exit', code => { if (code !== null && code !== 0) warn(); });
   child.unref();
@@ -133,7 +159,7 @@ async function main() {
   };
   process.on('SIGINT', stop);
   process.on('SIGTERM', stop);
-  if (options.open) openBrowser(url);
+  if (options.open) await openBrowser(url);
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

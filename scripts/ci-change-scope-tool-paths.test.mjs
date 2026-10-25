@@ -358,6 +358,25 @@ test('a synthetic PR touching only generator-tool paths skips backend, migration
     'a pull request still verifies every preset it does not leave to main once');
 });
 
+// [DEC-OPS-383] 로컬 이관 작업공간은 migration-tool JAR 를 실행하지만 migration-tool 의 빌드·시험·PIT 입력이 아니다. 작업공간만 바꾸면
+// 이관·PIT·화면 축을 돌지 않고, 시험(운영 계약)·SAST·재사용 검증만 남는다. migration-tool 을 함께 바꾸면 이관 축이 그대로 켜진다.
+test('a migration workspace change runs its contracts, SAST and reuse checks but not migration, PIT or product lanes', () => {
+  for (const files of [['tools/migration-workspace/engine.mjs', 'tools/migration-workspace/public/styles.css'], ['tools/migration-workspace-prototype/serve.mjs']]) {
+    const result = classifyChangedFiles(files, { event: 'pull_request' });
+    assert.deepEqual(result.unknownFiles, [], files.join(','));
+    for (const field of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[field], false, `${files}: ${field}`);
+    for (const field of ['reusable', 'sast', 'secretScan']) assert.equal(result[field], true, `${files}: ${field}`);
+    assert.deepEqual(result.reusableProfiles, PRESET_IDS);
+  }
+  const paired = classifyChangedFiles(['tools/migration-workspace/engine.mjs', 'migration-tool/src/main/java/nuri/migration/WorkflowCliOptions.java']);
+  assert.equal(paired.migration, true);
+  assert.equal(paired.mutationMigrationTool, true);
+  for (const near of ['tools/migration-workspacex/a.js', 'tools/migration-workspace.mjs']) {
+    assert.equal(generatorToolEntry(near), null, near);
+    assert.deepEqual(classifyChangedFiles([near]).unknownFiles, [near], near);
+  }
+});
+
 test('generator scripts and feature declarations keep only the axes their readers run in and still skip migration, PIT and frontend', () => {
   for (const file of ['scripts/project-composer-diff.mjs', 'scripts/reusable-source-java.mjs', 'config/modules/board.json',
     'scripts/generate-reusable-base-db.mjs', 'scripts/verify-reusable-base.mjs', 'config/project-composer-menus.json']) {

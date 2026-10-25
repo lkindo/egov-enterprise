@@ -1327,7 +1327,7 @@ test('one operational-contract catalog runs in required CI and before the docs f
   const rootPackage = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
   assert.equal(
     rootPackage.scripts?.['test:operational-contracts'],
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"',
+    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
   );
   const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   const operationalGate = prePush.indexOf('npm run test:operational-contracts');
