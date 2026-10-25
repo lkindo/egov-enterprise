@@ -803,6 +803,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/CmsContentMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-CMS-PAGE-LIFECYCLE",
+          "source": "api-server/src/test/java/nuri/api/schema/CmsPageLifecycleIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-LOGOUT-CUTOFF-PRIVACY-SUBJECT",
           "source": "api-server/src/test/java/nuri/api/schema/LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java"
         },

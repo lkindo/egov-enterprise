@@ -160,7 +160,12 @@ test.describe('콘텐츠 페이지', () => {
             await expect(dialog).toBeHidden();
             await expect(adminPage.getByRole('textbox', { name: /페이지 제목/ })).toHaveValue(title);
         });
-        await test.step('Admin: 요약을 고쳐 초안을 저장하고 게시한다', async () => {
+        await test.step('Admin: 양식의 작성 안내 문장을 실제 안내로 바꾸고 요약을 고쳐 초안을 저장하고 게시한다', async () => {
+            // [2026-10-26] ADR-0042 — 시작 양식의 '…작성해 주세요' 문장이 남으면 게시가 막힌다. 첫 본문 칸을 실제 안내로 바꾼다.
+            const body = adminPage.getByRole('textbox', { name: '안내 1단 본문' });
+            await body.click();
+            await adminPage.keyboard.press('ControlOrMeta+A');
+            await adminPage.keyboard.type(`E2E 안내 본문 ${stamp}`);
             await adminPage.getByRole('textbox', { name: /요약/ }).fill(summary);
             await adminPage.getByRole('button', { name: '초안 저장' }).click();
             await expect(adminPage.getByText('저장하지 않은 변경', { exact: true })).toHaveCount(0);
@@ -177,8 +182,16 @@ test.describe('콘텐츠 페이지', () => {
             const article = userPage.getByRole('article');
             await expect(article.getByRole('heading', { level: 1, name: title })).toBeVisible();
             await expect(article.getByText(summary)).toBeVisible();
+            await expect(article.getByText(`E2E 안내 본문 ${stamp}`)).toBeVisible();
             await expect(article.getByRole('heading', { level: 2, name: '진행 순서' })).toBeVisible();
             await expect(article.getByRole('listitem').filter({ hasText: '신청 내용 작성' })).toBeVisible();
+        });
+        await test.step('User: 메뉴가 없어도 안내 페이지 목록에서 찾는다', async () => {
+            await userPage.goto('/pages');
+            const search = userPage.getByRole('search', { name: '안내 페이지 찾기' });
+            await search.getByRole('textbox', { name: '제목·요약' }).fill(title);
+            await search.getByRole('button', { name: '조회' }).click();
+            await expect(userPage.getByRole('link', { name: title })).toBeVisible();
         });
         await test.step('Admin: 게시를 멈추고 보관하면 사용자에게 없는 페이지다', async () => {
             // 목록의 상태 필터에도 같은 이름('보관')의 단추가 있다 — 편집 영역 안의 단추만 누른다.

@@ -20,7 +20,7 @@ function editorWith(content: JSONContent | string) {
 const passesServerRules = (doc: JSONContent) => normalizeCmsDocument({
   schemaVersion: 1,
   sections: [{ id: 'a', label: '', layout: 'one', tone: 'default', spacing: 'normal', cells: [{ kind: 'rich', doc: doc as CmsRichDoc }] }],
-}).ok;
+}, 'publish').ok;
 
 const paragraph = (text: string): JSONContent => ({ type: 'paragraph', content: [{ type: 'text', text }] });
 

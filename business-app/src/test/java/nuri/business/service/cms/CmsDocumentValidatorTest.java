@@ -1,5 +1,6 @@
 package nuri.business.service.cms;
 
+import nuri.business.service.cms.CmsDocumentValidator.Mode;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.DynamicTest;
@@ -45,18 +46,25 @@ class CmsDocumentValidatorTest {
         List<DynamicTest> tests = new ArrayList<>();
         for (JsonNode fixture : fixtures().get("cases")) {
             String name = fixture.get("name").stringValue();
+            // mode 가 없는 사례는 게시 판정이다(ADR-0039 의 원래 규칙). 초안 판정은 ADR-0042 가 넓힌 수준이다.
+            Mode mode = fixture.has("mode") ? Mode.valueOf(fixture.get("mode").stringValue().toUpperCase(java.util.Locale.ROOT))
+                    : Mode.PUBLISH;
             tests.add(DynamicTest.dynamicTest(name, () -> {
                 Map<String, Object> document = asMap(fixture.get("document"));
                 if (fixture.get("valid").booleanValue()) {
-                    CmsDocumentValidator.Normalized result = validator.normalize(document);
+                    CmsDocumentValidator.Normalized result = validator.normalize(document, mode);
                     JsonNode expected = fixture.get("normalized");
                     if (expected != null) {
                         assertThat(MAPPER.readTree(result.json())).isEqualTo(expected);
                     }
                     // 정규화는 멱등이다 — 저장본을 다시 검증해도 같은 문서다(게시 직전 재검증의 전제).
-                    assertThat(validator.normalizeJson(result.json()).document()).isEqualTo(result.document());
+                    assertThat(validator.normalizeJson(result.json(), mode).document()).isEqualTo(result.document());
+                    if (mode == Mode.PUBLISH) {
+                        // 초안 판정은 게시 판정을 넓힐 뿐이다 — 게시할 수 있는 문서는 초안으로도 같은 모양으로 저장된다.
+                        assertThat(validator.normalize(document, Mode.DRAFT).json()).isEqualTo(result.json());
+                    }
                 } else {
-                    assertThatThrownBy(() -> validator.normalize(document))
+                    assertThatThrownBy(() -> validator.normalize(document, mode))
                             .isInstanceOf(BusinessException.class)
                             .satisfies(error -> assertThat(((BusinessException) error).getErrorCode())
                                     .isEqualTo(CommonErrorCode.INVALID_INPUT_VALUE))
@@ -81,7 +89,7 @@ class CmsDocumentValidatorTest {
     @Test
     void imageCellsAreCollectedForOwnershipChecks() {
         JsonNode fixture = fixtures().get("cases").get(2);
-        CmsDocumentValidator.Normalized result = validator.normalize(asMap(fixture.get("document")));
+        CmsDocumentValidator.Normalized result = validator.normalize(asMap(fixture.get("document")), Mode.PUBLISH);
         assertThat(result.images()).containsExactly(7L);
     }
 
@@ -100,23 +108,23 @@ class CmsDocumentValidatorTest {
                 "id", "a", "label", "", "layout", "one", "tone", "default", "spacing", "normal",
                 "cells", List.of(Map.of("kind", "rich", "doc", Map.of("type", "doc", "content", List.of(
                         Map.of("type", "paragraph", "content", List.of(Map.of("type", "text", "text", longText))))))))));
-        assertThatThrownBy(() -> validator.normalize(document))
+        assertThatThrownBy(() -> validator.normalize(document, Mode.PUBLISH))
                 .isInstanceOf(BusinessException.class)
                 .hasMessageContaining("1MiB");
     }
 
     @Test
     void rejectsMissingDocument() {
-        assertThatThrownBy(() -> validator.normalize(null)).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> validator.normalize(null, Mode.DRAFT)).isInstanceOf(BusinessException.class);
     }
 
     @Test
     void acceptsADocumentWhoseNormalizedJsonIsExactlyTheLimitAndRejectsOneByteMore() {
         // 정밀한 크기 상한은 검증기가 저장할 압축 JSON 의 바이트 수다. DB 상한(jsonb::text 2 MiB)은 그 위의 안전망이다.
-        int room = CmsDocumentValidator.MAX_BYTES - validator.normalize(sizedDocument(0)).json().getBytes(UTF_8).length;
-        CmsDocumentValidator.Normalized atLimit = validator.normalize(sizedDocument(room));
+        int room = CmsDocumentValidator.MAX_BYTES - validator.normalize(sizedDocument(0), Mode.PUBLISH).json().getBytes(UTF_8).length;
+        CmsDocumentValidator.Normalized atLimit = validator.normalize(sizedDocument(room), Mode.PUBLISH);
         assertThat(atLimit.json().getBytes(UTF_8).length).isEqualTo(CmsDocumentValidator.MAX_BYTES);
-        assertThatThrownBy(() -> validator.normalize(sizedDocument(room + 1))).isInstanceOf(BusinessException.class);
+        assertThatThrownBy(() -> validator.normalize(sizedDocument(room + 1), Mode.PUBLISH)).isInstanceOf(BusinessException.class);
     }
 
     /** 문단 1,990개(한글 100자씩)에 마지막 문단만 영문자 extra 개를 더한 문서. */

@@ -19,6 +19,15 @@ public interface AttachmentReferenceResolver {
     Grants resolve(Long atchFileSn, String loginId, String esntlId);
 
     /**
+     * 어느 업무 참조원이든 이 첨부를 가리키는가(파생 로그 제외). 첨부 묶음을 통째로 지울지 판정할 때 쓴다 — 조회에 실패한 참조원이
+     * 하나라도 있으면 참조가 있는 것으로 본다(fail-closed, 지우지 않는다). 같은 트랜잭션에서 조회하므로 PostgreSQL 에서는 그 실패가
+     * 트랜잭션을 중단시켜 호출한 작업 전체가 되돌아간다(아무것도 지우지 않는다). 기본 구현은 늘 참조가 있다고 답한다.
+     */
+    default boolean referenced(Long atchFileSn) {
+        return true;
+    }
+
+    /**
      * 참조원 조회 결과를 열람 근거와 실패 상태로 압축한 값.
      *
      * @param sharedGrant        공유 콘텐츠(비밀글 아님 등)로서 인증 사용자에게 열람 근거가 있는가

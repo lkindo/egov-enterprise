@@ -55,4 +55,24 @@ class SensitiveAuditServiceTest {
         assertThatThrownBy(() -> service.recordMfaRecovery("target", "person@example.com")).isInstanceOf(IllegalArgumentException.class);
         verifyNoInteractions(repository);
     }
+
+    @Test
+    void caseReferenceRejectsFreeTextReasonsBeforePersistence() {
+        // 파기 같은 업무 커밋은 처리 근거 번호만 남긴다 — 사유 본문(개인정보가 담길 수 있다)은 감사에 싣지 않는다(ADR-0042).
+        assertThatThrownBy(() -> service.recordReferencedMutation("CMS_PAGE_PURGE", "1", "주민번호 노출 사고"))
+                .isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> service.recordReferencedMutation("CMS_PAGE_PURGE", "1", null))
+                .isInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(repository);
+    }
+
+    @Test
+    void caseReferenceIsKeptInTheCommittedSnapshot() {
+        service.recordReferencedMutation("CMS_PAGE_PURGE", "1", "INC-2026.001");
+        var saved = ArgumentCaptor.forClass(SensitiveAuditLog.class);
+        org.mockito.Mockito.verify(repository).saveAndFlush(saved.capture());
+        assertThat(saved.getValue().getJobNm()).isEqualTo("CMS_PAGE_PURGE");
+        assertThat(saved.getValue().getPrcsSttsNm()).isEqualTo("COMMITTED");
+        assertThat(saved.getValue().getAdtCn()).contains("reference=INC-2026.001").contains("\"targetId\":\"1\"");
+    }
 }

@@ -32,6 +32,7 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
@@ -443,7 +444,11 @@ export function useBannerAssetsPanel({
                           <Input {...field} maxLength={512} className="pl-16 rounded-lg font-mono text-xs font-bold shadow-inner" placeholder="/pages/..." />
                         </FormControl>
                       </div>
-                      <p className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">클릭 시 이동할 프론트엔드 라우트 또는 외부 경로</p>
+                      {/* [2026-10-26 ADR-0042] 대시보드 배너(BannerSlider)가 실제로 그리는 값만 안내한다 — 그 밖의 값은 링크가 보이지 않는다.
+                          입력의 aria-describedby 가 가리키는 설명으로 둔다(종전 문단은 id 가 없어 연결이 비어 있었다). */}
+                      <FormDescription className="text-xs font-bold text-muted-foreground px-1 mt-1 leading-relaxed">
+                        사이트 안 주소(/pages/… 등) 또는 https 주소를 넣습니다. 사이트 안 주소는 같은 창, https 주소는 새 창으로 열립니다.
+                      </FormDescription>
                       <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
                     </FormItem>
                   )}

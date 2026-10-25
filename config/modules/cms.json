@@ -40,7 +40,12 @@
     "permissionDomains": [
       "CMS"
     ],
-    "gates": [],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/CmsPageLifecycleIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
     "rbacMatrix": null,
     "markerBlocks": [],
     "commonCodeGroups": []
@@ -55,10 +60,21 @@
       {
         "path": "frontend/src/extensions/cms/home-sections.ts",
         "reason": "콘텐츠 페이지 기능이 없으면 업무 홈 맨 위의 소개 영역만 사라지고 업무 홈은 그대로입니다."
+      },
+      {
+        "path": "frontend/src/extensions/cms/shell-links.ts",
+        "reason": "콘텐츠 페이지 기능이 없으면 머리글·바닥글에서 안내 페이지 목록으로 가는 링크만 사라지고 셸은 그대로입니다."
       }
     ],
     "ports": []
   },
   "requirements": [],
-  "unassignedPermissions": []
+  "unassignedPermissions": [
+    {
+      "code": "CMS_PURGE",
+      "bundle": null,
+      "protected": false,
+      "effect": "잘못 게시한 콘텐츠 페이지나 지난 게시본을 처리 근거 번호와 함께 되돌릴 수 없게 지웁니다. 관리 화면을 열려면 콘텐츠 페이지 관리 조회 권한도 함께 있어야 하고, 처리하는 동안만 담당자 그룹에 주었다가 끝나면 회수하기를 권합니다."
+    }
+  ]
 }

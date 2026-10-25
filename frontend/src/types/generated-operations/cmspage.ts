@@ -5,7 +5,26 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseCmsHomeIntroDtoResponseSchema, ApiResponseCmsPublishedPageDtoResponseSchema, CmsHomeIntroDtoResponseSchema, CmsPublishedPageDtoResponseSchema } from '../generated-zod/cmspage';
+import { ApiResponseCmsHomeIntroDtoResponseSchema, ApiResponseCmsPublishedPageDtoResponseSchema, ApiResponsePageResponseCmsPublishedPageSummaryDtoResponseSchema, CmsHomeIntroDtoResponseSchema, CmsPublishedPageDtoResponseSchema, PageResponseCmsPublishedPageSummaryDtoResponseSchema } from '../generated-zod/cmspage';
+
+export const getPublishedPagesOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getPublishedPages",
+  method: "get",
+  path: "/api/v1/content-pages",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: z.object({ "keyword": z.string().optional(), "page": z.number().int().min(1).optional(), "size": z.number().int().min(1).max(100).optional() }).strict(),
+  requestSchema: null,
+  responseSchema: z.lazy(() => PageResponseCmsPublishedPageSummaryDtoResponseSchema),
+  envelopeSchema: ApiResponsePageResponseCmsPublishedPageSummaryDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
 
 export const getPublishedPageOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({

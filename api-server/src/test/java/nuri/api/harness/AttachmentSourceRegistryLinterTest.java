@@ -93,6 +93,12 @@ class AttachmentSourceRegistryLinterTest {
     private static final Map<String, AttachmentMethodRule> ATTACHMENT_METHOD_RULES = Map.ofEntries(
             entry("business-app/src/main/java/nuri/business/service/cms/CmsContentFileService.java#claim",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "contentFileRepository.save(")),
+            // [ADR-0042] 귀속 해제 — 페이지 귀속 행만 지우고 파일 삭제는 파일 서비스의 '남은 참조 없음' 판정에 맡긴다.
+            //   파일 표를 직접 지우지 않는다. 미사용 해제는 그 해제 하나에만 위임한다.
+            entry("business-app/src/main/java/nuri/business/service/cms/CmsContentFileService.java#release",
+                    delegate("fileService.discardUnreferencedAttachment(", "fileDetailRepository.", "fileMasterRepository.")),
+            entry("business-app/src/main/java/nuri/business/service/cms/CmsContentFileService.java#releaseUnused",
+                    delegate("release(unused)", "contentFileRepository.delete", "fileService.")),
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#createDeptJob",
                     guarded("assertAttachmentIsAssignable(dto.getAtchFileSn())", "deptJobRepository.save(")),
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#updateDeptJob",

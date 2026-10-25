@@ -1,9 +1,13 @@
 /**
- * 콘텐츠 페이지 문서 형식 v1(ADR-0039 결정 4·5).
+ * 콘텐츠 페이지 문서 형식 v1(ADR-0039 결정 4·5, ADR-0042).
  *
  * 허용 구조의 정본 판정은 서버 검증기(business-app `CmsDocumentValidator`)다. 이 모듈은 같은 판정을 화면에서 미리 해 저장 전에
  * 오류를 알리고, 편집기가 덧붙이는 기본 속성을 걷어 "저장한 문서와 같은가" 를 정확히 본다. 두 구현은 같은 fixture
  * (`cms-document-fixtures.json`)로 대조한다 — 한쪽만 바꾸면 양쪽 시험이 함께 붉어진다.
+ *
+ * 판정 수준은 둘이다(ADR-0042). 초안 저장(`'draft'`)은 아직 채우지 않은 칸 — 고르지 않은 이미지, 설명 없는 이미지, 이름·주소가 빈
+ * 바로가기, 파일이 없는 내려받기 칸 — 을 받고, 게시(`'publish'`)는 모든 칸이 완성돼야 한다. 채운 값의 형식은 두 수준 모두 같게 본다.
+ * 호출부는 수준을 늘 명시한다 — 게시 검사에 초안 판정이 쓰이지 않게 기본값을 두지 않는다.
  */
 
 export const CMS_SCHEMA_VERSION = 1;
@@ -14,7 +18,16 @@ const MAX_BLOCKS = 2_000;
 const MAX_TABLE_ROWS = 100;
 const MAX_TABLE_COLUMNS = 20;
 const MAX_LINKS = 12;
+const MAX_FILES = 10;
 const MAX_URL_LENGTH = 2_000;
+
+/** 이미지 칸이 받는 확장자. 서버 귀속 검사(CmsContentFileService)와 같다 — 일반 업로드가 받는 이미지 형식 가운데 SVG·bmp 를 뺀 것. */
+export const CMS_IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'gif'] as const;
+/** 내려받기 파일 칸이 받는 확장자. 서버 귀속 검사와 같다 — 일반 업로드가 받는 문서 형식이고 압축 파일은 받지 않는다. */
+export const CMS_FILE_EXTENSIONS = ['pdf', 'hwp', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'txt'] as const;
+
+/** 판정 수준(ADR-0042). */
+export type CmsValidationMode = 'draft' | 'publish';
 
 export type CmsLayout = 'one' | 'two' | 'two-wide' | 'three';
 export type CmsTone = 'default' | 'subtle' | 'emphasis';
@@ -53,10 +66,17 @@ export interface CmsLinkItem {
   url: string;
 }
 
+export interface CmsFileItem {
+  atchFileSn: number;
+  title: string;
+}
+
+/** 이미지 칸의 atchFileSn 0 은 아직 고르지 않은 이미지다(초안에서만 저장된다). */
 export type CmsCell =
   | { kind: 'rich'; doc: CmsRichDoc }
   | { kind: 'image'; atchFileSn: number; alt: string; decorative: boolean; caption: string }
-  | { kind: 'links'; items: CmsLinkItem[] };
+  | { kind: 'links'; items: CmsLinkItem[] }
+  | { kind: 'files'; items: CmsFileItem[] };
 
 export interface CmsSection {
   id: string;
@@ -72,7 +92,19 @@ export interface CmsDocument {
   sections: CmsSection[];
 }
 
-export type CmsNormalizeResult = { ok: true; document: CmsDocument } | { ok: false; error: string };
+/** 문제가 난 위치. 영역·칸 번호는 0부터다(화면이 그 칸으로 데려갈 때 쓴다). */
+export interface CmsDocumentLocation {
+  section?: number;
+  cell?: number;
+}
+
+export interface CmsDocumentIssue extends CmsDocumentLocation {
+  message: string;
+}
+
+export type CmsNormalizeResult =
+  | { ok: true; document: CmsDocument }
+  | { ok: false; error: string; location: CmsDocumentLocation };
 
 const SECTION_ID = /^[a-z0-9-]{1,40}$/;
 const MAILTO = /^mailto:[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
@@ -167,8 +199,11 @@ function text(node: unknown, path: string, max: number, required: boolean): stri
 }
 
 interface Context {
+  mode: CmsValidationMode;
   images: Set<number>;
+  files: Set<number>;
   blocks: number;
+  location: CmsDocumentLocation;
 }
 
 function nodeType(node: unknown, path: string): string {
@@ -353,37 +388,61 @@ function richDocument(raw: unknown, path: string, context: Context): CmsRichDoc 
   return { type: 'doc', content: content.length ? content : [{ type: 'paragraph' }] };
 }
 
+/** 칸이 가리키는 첨부를 모은다. 한 첨부를 이미지와 내려받기 파일로 함께 쓰거나, 내려받기 목록에 두 번 넣지 않는다. */
+function attachment(context: Context, kind: 'images' | 'files', atchFileSn: number, path: string) {
+  const other = kind === 'images' ? context.files : context.images;
+  if (other.has(atchFileSn) || (kind === 'files' && context.files.has(atchFileSn))) {
+    fail(path, '같은 파일을 두 곳에 쓸 수 없습니다');
+  }
+  context[kind].add(atchFileSn);
+}
+
 function cell(raw: unknown, path: string, context: Context): CmsCell {
   if (!isObject(raw)) fail(path, '칸 형식이 올바르지 않습니다');
   const node = raw as Record<string, unknown>;
-  const kind = token<'rich' | 'image' | 'links'>(node.kind, `${path} 종류`, new Set(['rich', 'image', 'links']));
+  const publish = context.mode === 'publish';
+  const kind = token<CmsCell['kind']>(node.kind, `${path} 종류`, new Set(['rich', 'image', 'links', 'files']));
   if (kind === 'rich') {
     object(node, path, ['kind', 'doc']);
     return { kind, doc: richDocument(node.doc, path, context) };
   }
   if (kind === 'image') {
     object(node, path, ['kind', 'atchFileSn', 'alt', 'decorative', 'caption']);
-    if (!isInteger(node.atchFileSn) || node.atchFileSn <= 0) fail(path, '이미지를 선택해 주세요');
+    // 초안은 아직 고르지 않은 이미지(0·빈 값)를 받는다. 게시는 이미지가 있어야 한다.
+    const sn = node.atchFileSn;
+    const unselected = sn === undefined || sn === null || sn === 0;
+    if (unselected ? publish : !isInteger(sn) || sn < 0) fail(path, '이미지를 선택해 주세요');
+    const atchFileSn = unselected ? 0 : sn as number;
     if (node.decorative !== undefined && typeof node.decorative !== 'boolean') fail(path, '장식 이미지 여부가 올바르지 않습니다');
     const decorative = node.decorative === true;
     const alt = text(node.alt, `${path} 대체 텍스트`, 300, false);
-    if (!decorative && !alt) fail(path, '이미지 설명(대체 텍스트)을 입력하거나 장식 이미지로 지정해 주세요');
-    context.images.add(node.atchFileSn as number);
-    return {
-      kind,
-      atchFileSn: node.atchFileSn as number,
-      alt: decorative ? '' : alt,
-      decorative,
-      caption: text(node.caption, `${path} 설명`, 300, false),
-    };
+    if (publish && !decorative && !alt) fail(path, '이미지 설명(대체 텍스트)을 입력하거나 장식 이미지로 지정해 주세요');
+    const caption = text(node.caption, `${path} 설명`, 300, false);
+    if (atchFileSn > 0) attachment(context, 'images', atchFileSn, path);
+    return { kind, atchFileSn, alt: decorative ? '' : alt, decorative, caption };
+  }
+  if (kind === 'files') {
+    object(node, path, ['kind', 'items']);
+    const items = array(node.items, `${path} 내려받기 파일`, publish ? 1 : 0, MAX_FILES).map((item, index) => {
+      const itemPath = `${path} 내려받기 파일 ${index + 1}`;
+      const record = object(item, itemPath, ['atchFileSn', 'title']);
+      // 파일 항목은 올린 뒤에만 생긴다 — 초안이라도 첨부 번호가 있어야 한다.
+      if (!isInteger(record.atchFileSn) || record.atchFileSn <= 0) fail(itemPath, '파일을 올려 주세요');
+      const title = text(record.title, `${itemPath} 이름`, 200, publish);
+      attachment(context, 'files', record.atchFileSn as number, itemPath);
+      return { atchFileSn: record.atchFileSn as number, title };
+    });
+    return { kind, items };
   }
   object(node, path, ['kind', 'items']);
   const items = array(node.items, `${path} 바로가기`, 1, MAX_LINKS).map((item, index) => {
     const itemPath = `${path} 바로가기 ${index + 1}`;
     const record = object(item, itemPath, ['title', 'url']);
-    const title = text(record.title, `${itemPath} 이름`, 100, true);
-    const url = safeHref(text(record.url, `${itemPath} 주소`, MAX_URL_LENGTH, true));
-    if (!url) fail(itemPath, '주소는 https 주소, /로 시작하는 사이트 내부 경로, mailto·tel 만 쓸 수 있습니다');
+    // 초안은 이름·주소가 빈 바로가기를 받는다. 채운 주소는 초안이라도 허용 규칙을 지나야 저장한다.
+    const title = text(record.title, `${itemPath} 이름`, 100, publish);
+    const rawUrl = text(record.url, `${itemPath} 주소`, MAX_URL_LENGTH, publish);
+    const url = rawUrl === '' ? '' : safeHref(rawUrl);
+    if (url === null) fail(itemPath, '주소는 https 주소, /로 시작하는 사이트 내부 경로, mailto·tel 만 쓸 수 있습니다');
     return { title, url: url as string };
   });
   return { kind, items };
@@ -400,35 +459,107 @@ function section(raw: unknown, path: string, ids: Set<string>, context: Context)
   const spacing = token<CmsSpacing>(node.spacing, `${path} 간격`, SPACINGS);
   const expected = CMS_LAYOUT_CELLS[layout];
   const cells = array(node.cells, `${path} 칸`, expected, expected)
-    .map((child, index) => cell(child, `${path} ${index + 1}단`, context));
+    .map((child, index) => {
+      context.location.cell = index;
+      return cell(child, `${path} ${index + 1}단`, context);
+    });
+  context.location.cell = undefined;
   return { id, label, layout, tone, spacing, cells };
 }
 
-/** 서버 검증기와 같은 판정으로 문서를 정규화한다. */
-export function normalizeCmsDocument(raw: unknown): CmsNormalizeResult {
+const newContext = (mode: CmsValidationMode): Context =>
+  ({ mode, images: new Set(), files: new Set(), blocks: 0, location: {} });
+
+/** 서버 검증기와 같은 판정으로 문서를 정규화한다. 실패하면 처음 걸린 문제와 그 위치(영역·칸)를 준다. */
+export function normalizeCmsDocument(raw: unknown, mode: CmsValidationMode): CmsNormalizeResult {
+  const context = newContext(mode);
   try {
     if (raw === undefined || raw === null) fail('문서', '문서가 비어 있습니다');
     const root = object(raw, '문서', ['schemaVersion', 'sections']);
     if (root.schemaVersion !== CMS_SCHEMA_VERSION) fail('문서', '지원하지 않는 문서 형식입니다');
-    const context: Context = { images: new Set(), blocks: 0 };
     const ids = new Set<string>();
     const sections = array(root.sections, '영역 목록', 1, MAX_SECTIONS)
-      .map((child, index) => section(child, `영역 ${index + 1}`, ids, context));
+      .map((child, index) => {
+        context.location.section = index;
+        return section(child, `영역 ${index + 1}`, ids, context);
+      });
+    context.location = {};
     const document: CmsDocument = { schemaVersion: 1, sections };
     if (new TextEncoder().encode(JSON.stringify(document)).length > CMS_MAX_BYTES) {
       fail('문서', '문서가 너무 큽니다(1MiB 초과). 영역이나 표를 나눠 주세요');
     }
     return { ok: true, document };
   } catch (error) {
-    if (error instanceof CmsDocumentError) return { ok: false, error: error.message };
+    if (error instanceof CmsDocumentError) return { ok: false, error: error.message, location: { ...context.location } };
     throw error;
   }
 }
 
+/**
+ * 게시를 막는 문제를 칸마다 모두 모은다(초안 판정을 통과한 문서 대상). 서버 게시 검증은 처음 걸린 하나만 알리므로, 화면은 이것으로
+ * 고칠 칸을 한 번에 보인다. 보이는 내용이 하나도 없으면 문서 단위 문제 하나를 더한다.
+ */
+export function cmsPublishIssues(document: CmsDocument): CmsDocumentIssue[] {
+  const issues: CmsDocumentIssue[] = [];
+  const context = newContext('publish');
+  document.sections.forEach((item, sectionIndex) => {
+    item.cells.forEach((entry, cellIndex) => {
+      try {
+        cell(entry, `영역 ${sectionIndex + 1} ${cellIndex + 1}단`, context);
+      } catch (error) {
+        if (!(error instanceof CmsDocumentError)) throw error;
+        issues.push({ section: sectionIndex, cell: cellIndex, message: error.message });
+      }
+    });
+  });
+  if (!hasVisibleContent(document)) issues.push({ message: '보이는 내용이 없습니다. 본문을 작성해 주세요.' });
+  return issues;
+}
+
+/** 시작 양식이 넣은 작성 안내 문장. 그대로 게시하면 사용자에게 '작성해 주세요' 가 보인다. */
+export const CMS_TEMPLATE_INSTRUCTIONS: readonly string[] = ['안내할 내용을 작성해 주세요.', '내용을 작성해 주세요.'];
+
+/** 시작 양식의 작성 안내 문장이 그대로 남은 칸. */
+export function templateInstructionIssues(document: CmsDocument): CmsDocumentIssue[] {
+  const issues: CmsDocumentIssue[] = [];
+  const walk = (node: CmsRichNode): boolean =>
+    (node.type === 'text' && CMS_TEMPLATE_INSTRUCTIONS.includes((node.text ?? '').trim())) || (node.content ?? []).some(walk);
+  document.sections.forEach((item, sectionIndex) => item.cells.forEach((entry, cellIndex) => {
+    if (entry.kind === 'rich' && entry.doc.content.some(walk)) {
+      issues.push({ section: sectionIndex, cell: cellIndex, message: '시작 양식의 작성 안내 문장이 남아 있습니다' });
+    }
+  }));
+  return issues;
+}
+
+/** 아무것도 그리지 않는 칸(빈 본문·고르지 않은 이미지·빈 바로가기·빈 내려받기). 게시하면 빈 단으로 보인다. */
+export function emptyCellLocations(document: CmsDocument): CmsDocumentLocation[] {
+  const locations: CmsDocumentLocation[] = [];
+  document.sections.forEach((item, sectionIndex) => item.cells.forEach((entry, cellIndex) => {
+    if (!cellHasContent(entry)) locations.push({ section: sectionIndex, cell: cellIndex });
+  }));
+  return locations;
+}
+
+/** 다른 페이지의 내용을 새 페이지의 시작점으로 쓸 때 첨부를 뗀다 — 한 첨부는 한 페이지에만 속한다(ADR-0039 결정 8). */
+export function withoutAttachments(document: CmsDocument): CmsDocument {
+  return {
+    schemaVersion: 1,
+    sections: document.sections.map((item) => ({
+      ...item,
+      cells: item.cells.map((entry): CmsCell => {
+        if (entry.kind === 'image') return { ...entry, atchFileSn: 0 };
+        if (entry.kind === 'files') return { kind: 'files', items: [] };
+        return entry;
+      }),
+    })),
+  };
+}
+
 /** 키 순서와 무관하게 같은 문서인가(편집기 기본 속성은 정규화로 걷힌다). */
 export function sameCmsDocument(left: unknown, right: unknown): boolean {
-  const a = normalizeCmsDocument(left);
-  const b = normalizeCmsDocument(right);
+  const a = normalizeCmsDocument(left, 'draft');
+  const b = normalizeCmsDocument(right, 'draft');
   if (!a.ok || !b.ok) return stableStringify(left) === stableStringify(right);
   return stableStringify(a.document) === stableStringify(b.document);
 }
@@ -491,12 +622,19 @@ export function changeSectionLayout(sections: readonly CmsSection[], index: numb
   return { sections: result, moved: overflow.length };
 }
 
-/** 본문 텍스트가 하나라도 있는가(빈 문서 게시를 막는 화면 안내용). */
-export function hasVisibleContent(document: CmsDocument): boolean {
+/** 칸이 무엇이든 그리는가 — 글자 있는 본문, 고른 이미지, 이름·주소가 있는 바로가기, 파일이 있는 내려받기 목록. */
+export function cellHasContent(entry: CmsCell): boolean {
   const walk = (node: CmsRichNode): boolean =>
     (node.type === 'text' && Boolean(node.text?.trim())) || (node.content ?? []).some(walk);
-  return document.sections.some((item) => item.cells.some((entry) =>
-    entry.kind !== 'rich' || entry.doc.content.some(walk)));
+  if (entry.kind === 'rich') return entry.doc.content.some(walk);
+  if (entry.kind === 'image') return entry.atchFileSn > 0;
+  if (entry.kind === 'links') return entry.items.some((item) => item.title.trim() !== '' && item.url.trim() !== '');
+  return entry.items.length > 0;
+}
+
+/** 보이는 내용이 하나라도 있는가(빈 문서 게시를 막는 화면 안내용). */
+export function hasVisibleContent(document: CmsDocument): boolean {
+  return document.sections.some((item) => item.cells.some(cellHasContent));
 }
 
 // ---- 시작 양식 ---------------------------------------------------------------------------------------------------

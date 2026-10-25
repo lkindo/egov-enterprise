@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "443a9da3c1352f9eec2d028f303e895180e01fc8cfe4f5a710f575bcf7bd1d46"
+    "sha256": "a79ffa85078bfe18cc6c9eb3cd6664ad2292b1462aa596e928ef7542cf85bba3"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -2781,6 +2781,24 @@
       "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
+      "approvals": {
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
+      }
+    },
+    {
+      "route": "/pages",
+      "reviewState": "proposed",
+      "disposition": "retain-canonical",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
+      "owner": "product/UX + domain owner",
+      "reviewBy": "2026-12-31",
       "approvals": {
         "domain": null,
         "productIa": null,

@@ -32,7 +32,7 @@ export const CmsPageDetailDtoSchema = /*#__PURE__*/ (() => z.object({
   contsTtl: z.string().optional(),
   contsExpln: z.string().optional(),
   document: z.any().optional(),
-  status: z.enum(["DRAFT","PUBLISHED","ARCHIVED"]).optional(),
+  status: z.enum(["DRAFT","PUBLISHED","UNPUBLISHED","ARCHIVED"]).optional(),
   unpublishedChanges: z.boolean().optional(),
   home: z.boolean().optional(),
   pathLocked: z.boolean().optional(),
@@ -67,6 +67,19 @@ export const CmsPageStateRequestSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type CmsPageStateRequest = z.infer<typeof CmsPageStateRequestSchema>;
 
+export const CmsRevisionPurgeRequestSchema = /*#__PURE__*/ (() => z.object({
+  version: z.number().int(),
+  caseReference: z.string().min(1).max(200).regex(new RegExp("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")),
+}))();
+export type CmsRevisionPurgeRequest = z.infer<typeof CmsRevisionPurgeRequestSchema>;
+
+export const CmsPagePurgeRequestSchema = /*#__PURE__*/ (() => z.object({
+  version: z.number().int(),
+  contsPathNm: z.string().min(0).max(100),
+  caseReference: z.string().min(1).max(200).regex(new RegExp("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")),
+}))();
+export type CmsPagePurgeRequest = z.infer<typeof CmsPagePurgeRequestSchema>;
+
 export const CmsPagePublishRequestSchema = /*#__PURE__*/ (() => z.object({
   version: z.number().int(),
   rvsnRsn: z.string().min(0).max(4000).optional(),
@@ -88,11 +101,12 @@ export const CmsPageSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
   contsSn: z.number().int().optional(),
   contsPathNm: z.string().optional(),
   contsTtl: z.string().optional(),
-  status: z.enum(["DRAFT","PUBLISHED","ARCHIVED"]).optional(),
+  status: z.enum(["DRAFT","PUBLISHED","UNPUBLISHED","ARCHIVED"]).optional(),
   unpublishedChanges: z.boolean().optional(),
   home: z.boolean().optional(),
   version: z.number().int().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  publishedAt: z.iso.datetime({ offset: true, local: true }).optional(),
 }))();
 export type CmsPageSummaryDto = z.infer<typeof CmsPageSummaryDtoSchema>;
 
@@ -181,7 +195,7 @@ export const CmsPageDetailDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   contsTtl: z.string().optional(),
   contsExpln: z.string().optional(),
   document: z.any().optional(),
-  status: z.enum(["DRAFT","PUBLISHED","ARCHIVED"]).optional(),
+  status: z.enum(["DRAFT","PUBLISHED","UNPUBLISHED","ARCHIVED"]).optional(),
   unpublishedChanges: z.boolean().optional(),
   home: z.boolean().optional(),
   pathLocked: z.boolean().optional(),
@@ -197,7 +211,7 @@ export const CmsPageDetailDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   contsTtl: z.string().optional().nullable(),
   contsExpln: z.string().optional().nullable(),
   document: z.any().optional().nullable(),
-  status: z.enum(["DRAFT","PUBLISHED","ARCHIVED"]).optional().nullable(),
+  status: z.enum(["DRAFT","PUBLISHED","UNPUBLISHED","ARCHIVED"]).optional().nullable(),
   unpublishedChanges: z.boolean().optional().nullable(),
   home: z.boolean().optional().nullable(),
   pathLocked: z.boolean().optional().nullable(),
@@ -249,6 +263,28 @@ export const CmsPageStateRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   version: z.number().int(),
 }))();
 
+export const CmsRevisionPurgeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  version: z.number().int(),
+  caseReference: z.string().min(1).max(200).regex(new RegExp("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")),
+}))();
+
+export const CmsRevisionPurgeRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  version: z.number().int(),
+  caseReference: z.string().min(1).max(200).regex(new RegExp("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")),
+}))();
+
+export const CmsPagePurgeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  version: z.number().int(),
+  contsPathNm: z.string().min(0).max(100),
+  caseReference: z.string().min(1).max(200).regex(new RegExp("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")),
+}))();
+
+export const CmsPagePurgeRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  version: z.number().int(),
+  contsPathNm: z.string().min(0).max(100),
+  caseReference: z.string().min(1).max(200).regex(new RegExp("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")),
+}))();
+
 export const CmsPagePublishRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   version: z.number().int(),
   rvsnRsn: z.string().min(0).max(4000).optional(),
@@ -283,22 +319,24 @@ export const CmsPageSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   contsSn: z.number().int().optional(),
   contsPathNm: z.string().optional(),
   contsTtl: z.string().optional(),
-  status: z.enum(["DRAFT","PUBLISHED","ARCHIVED"]).optional(),
+  status: z.enum(["DRAFT","PUBLISHED","UNPUBLISHED","ARCHIVED"]).optional(),
   unpublishedChanges: z.boolean().optional(),
   home: z.boolean().optional(),
   version: z.number().int().optional(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  publishedAt: z.iso.datetime({ offset: true, local: true }).optional(),
 }))();
 
 export const CmsPageSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   contsSn: z.number().int().optional().nullable(),
   contsPathNm: z.string().optional().nullable(),
   contsTtl: z.string().optional().nullable(),
-  status: z.enum(["DRAFT","PUBLISHED","ARCHIVED"]).optional().nullable(),
+  status: z.enum(["DRAFT","PUBLISHED","UNPUBLISHED","ARCHIVED"]).optional().nullable(),
   unpublishedChanges: z.boolean().optional().nullable(),
   home: z.boolean().optional().nullable(),
   version: z.number().int().optional().nullable(),
   mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  publishedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
 export const PageResponseCmsPageSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({

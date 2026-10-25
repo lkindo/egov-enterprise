@@ -61,11 +61,23 @@ public class SensitiveAuditService implements SensitiveAuditPort {
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
     public void recordMfaRecovery(String targetId, String verificationReference) {
-        if (verificationReference == null || !verificationReference.matches("[A-Za-z0-9][A-Za-z0-9._-]{0,199}")) {
+        if (verificationReference == null || !verificationReference.matches(CASE_REFERENCE)) {
             throw new IllegalArgumentException("Invalid verification reference");
         }
         recordCommitted("MFA_RECOVERY_APPROVAL", targetId, "verificationReference=" + verificationReference);
     }
+
+    @Override
+    @Transactional(propagation = Propagation.MANDATORY)
+    public void recordReferencedMutation(String operation, String targetId, String reference) {
+        if (reference == null || !reference.matches(CASE_REFERENCE)) {
+            throw new IllegalArgumentException("Invalid case reference");
+        }
+        recordCommitted(operation, targetId, "reference=" + reference);
+    }
+
+    /** 처리 근거 번호(민원·사고 접수 번호 등). 자유 서술을 감사에 싣지 않도록 모양을 좁힌다. */
+    private static final String CASE_REFERENCE = "[A-Za-z0-9][A-Za-z0-9._-]{0,199}";
 
     private void recordCommitted(String operation, String targetId, String description) {
         Context request = null;

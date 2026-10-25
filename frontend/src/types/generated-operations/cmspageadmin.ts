@@ -5,8 +5,8 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseLongResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseCmsPageDetailDtoResponseSchema, ApiResponseCmsRevisionDetailDtoResponseSchema, ApiResponseListCmsRevisionSummaryDtoResponseSchema, ApiResponsePageResponseCmsPageSummaryDtoResponseSchema, CmsPageCreateRequestRequestSchema, CmsPageDetailDtoResponseSchema, CmsPageDraftRequestRequestSchema, CmsPagePublishRequestRequestSchema, CmsPageStateRequestRequestSchema, CmsRevisionDetailDtoResponseSchema, CmsRevisionSummaryDtoResponseSchema, PageResponseCmsPageSummaryDtoResponseSchema } from '../generated-zod/cmspageadmin';
+import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseCmsPageDetailDtoResponseSchema, ApiResponseCmsRevisionDetailDtoResponseSchema, ApiResponseListCmsRevisionSummaryDtoResponseSchema, ApiResponsePageResponseCmsPageSummaryDtoResponseSchema, CmsPageCreateRequestRequestSchema, CmsPageDetailDtoResponseSchema, CmsPageDraftRequestRequestSchema, CmsPagePublishRequestRequestSchema, CmsPagePurgeRequestRequestSchema, CmsPageStateRequestRequestSchema, CmsRevisionDetailDtoResponseSchema, CmsRevisionPurgeRequestRequestSchema, CmsRevisionSummaryDtoResponseSchema, PageResponseCmsPageSummaryDtoResponseSchema } from '../generated-zod/cmspageadmin';
 
 export const saveDraftOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -103,6 +103,44 @@ export const unarchiveOperation = /*#__PURE__*/ (() => {
   });
 })();
 
+export const purgeRevisionOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "purgeRevision",
+  method: "post",
+  path: "/api/v1/admin/system/content-pages/{contsSn}/revisions/{contsRvsnSn}/purge",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "contsSn": z.number().int(), "contsRvsnSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: CmsRevisionPurgeRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => CmsPageDetailDtoResponseSchema),
+  envelopeSchema: ApiResponseCmsPageDetailDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const purgePageOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "purgePage",
+  method: "post",
+  path: "/api/v1/admin/system/content-pages/{contsSn}/purge",
+  requestKind: "json",
+  responseKind: "void",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: z.object({ "contsSn": z.number().int() }).strict(),
+  querySchema: null,
+  requestSchema: CmsPagePurgeRequestRequestSchema.strict(),
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
 export const publishOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
   id: "publish",
@@ -155,6 +193,25 @@ export const getPageOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.lazy(() => CmsPageDetailDtoResponseSchema),
   envelopeSchema: ApiResponseCmsPageDetailDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const deleteDraftPageOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "deleteDraftPage",
+  method: "delete",
+  path: "/api/v1/admin/system/content-pages/{contsSn}",
+  requestKind: "none",
+  responseKind: "void",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: z.object({ "contsSn": z.number().int() }).strict(),
+  querySchema: z.object({ "version": z.number().int().min(0) }).strict(),
+  requestSchema: null,
+  responseSchema: null,
+  envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

@@ -6,6 +6,34 @@
 import { z } from 'zod';
 import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
+export const ApiResponsePageResponseCmsPublishedPageSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCmsPublishedPageSummaryDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePageResponseCmsPublishedPageSummaryDto = z.infer<typeof ApiResponsePageResponseCmsPublishedPageSummaryDtoSchema>;
+
+export const CmsPublishedPageSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  contsPathNm: z.string().optional(),
+  contsTtl: z.string().optional(),
+  contsExpln: z.string().optional(),
+  publishedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type CmsPublishedPageSummaryDto = z.infer<typeof CmsPublishedPageSummaryDtoSchema>;
+
+export const PageResponseCmsPublishedPageSummaryDtoSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => CmsPublishedPageSummaryDtoSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+export type PageResponseCmsPublishedPageSummaryDto = z.infer<typeof PageResponseCmsPublishedPageSummaryDtoSchema>;
+
 export const ApiResponseCmsPublishedPageDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -42,6 +70,56 @@ export const CmsHomeIntroDtoSchema = /*#__PURE__*/ (() => z.object({
   page: z.lazy(() => CmsPublishedPageDtoSchema).optional(),
 }))();
 export type CmsHomeIntroDto = z.infer<typeof CmsHomeIntroDtoSchema>;
+
+export const ApiResponsePageResponseCmsPublishedPageSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PageResponseCmsPublishedPageSummaryDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponsePageResponseCmsPublishedPageSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => PageResponseCmsPublishedPageSummaryDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const CmsPublishedPageSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  contsPathNm: z.string().optional(),
+  contsTtl: z.string().optional(),
+  contsExpln: z.string().optional(),
+  publishedAt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const CmsPublishedPageSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  contsPathNm: z.string().optional().nullable(),
+  contsTtl: z.string().optional().nullable(),
+  contsExpln: z.string().optional().nullable(),
+  publishedAt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+}))();
+
+export const PageResponseCmsPublishedPageSummaryDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => CmsPublishedPageSummaryDtoRequestSchema.strict())),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
+
+export const PageResponseCmsPublishedPageSummaryDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  list: z.array(z.lazy(() => CmsPublishedPageSummaryDtoResponseSchema)),
+  total: z.number().int(),
+  page: z.number().int(),
+  size: z.number().int(),
+  totalPage: z.number().int(),
+}))();
 
 export const ApiResponseCmsPublishedPageDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),

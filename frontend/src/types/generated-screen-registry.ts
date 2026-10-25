@@ -792,11 +792,14 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["CMS_ADMIN_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"CMS_ADMIN_READ","action":"ADMIN_READ","source":"entry"},
       {"code":"CMS_HOME_UPDATE","action":"HOME_UPDATE","source":"write"},
       {"code":"CMS_PUBLISH","action":"PUBLISH","source":"write"},
+      {"code":"CMS_PURGE","action":"PURGE","source":"write"},
       {"code":"CMS_UPDATE","action":"UPDATE","source":"write"},
-      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"}
+      {"code":"FILE_UPLOAD","action":"UPLOAD","source":"write"},
+      {"code":"MENU_READ","action":"READ","source":"display"}
     ]
   },
   {
@@ -1253,6 +1256,18 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
+    "route": "/pages",
+    "label": "안내 페이지",
+    "labelSource": "route-ledger",
+    "shellAccess": "authenticated",
+    "dynamic": false,
+    "demo": false,
+    "entry": {"permissions":[],"mode":"ANY"},
+    "permissions": [
+      {"code":"CMS_ADMIN_READ","action":"ADMIN_READ","source":"display"}
+    ]
+  },
+  {
     "route": "/pages/[slug]",
     "label": "콘텐츠 페이지",
     "labelSource": "route-ledger",
@@ -1260,7 +1275,9 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "dynamic": true,
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
-    "permissions": []
+    "permissions": [
+      {"code":"CMS_ADMIN_READ","action":"ADMIN_READ","source":"display"}
+    ]
   },
   {
     "route": "/search",
@@ -1793,6 +1810,21 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "CMS_ADMIN_READ",
       "CMS_HOME_UPDATE",
       "CMS_PUBLISH",
+      "CMS_UPDATE",
+      "FILE_UPLOAD"
+    ],
+    "screens": [
+      "/admin/system/content-pages"
+    ],
+    "relatedScreens": []
+  },
+  {
+    "id": "content-page-writing",
+    "name": "콘텐츠 페이지 작성",
+    "description": "작성 담당자에게 안내 페이지 초안 작성과 그 이미지·파일 올리기를 맡깁니다. 게시와 업무 홈 지정은 게시 담당자가 합니다.",
+    "protected": false,
+    "permissions": [
+      "CMS_ADMIN_READ",
       "CMS_UPDATE",
       "FILE_UPLOAD"
     ],

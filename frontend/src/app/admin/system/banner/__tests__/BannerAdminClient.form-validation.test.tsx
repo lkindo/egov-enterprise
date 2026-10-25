@@ -193,6 +193,16 @@ describe('BannerAdminClient useAppForm 소비', () => {
     expect(mocks.saveBanner).not.toHaveBeenCalled();
   });
 
+  it('Banner: 랜딩 페이지 입력은 배너가 실제로 여는 주소 모양을 설명으로 읽어 준다(ADR-0042)', async () => {
+    renderWithClient(<BannerAdminClient initialBanners={[]} initialPopups={[]} />);
+    fireEvent.click(screen.getByRole('button', { name: /신규 배너 등록/ }));
+
+    // 대시보드 배너는 사이트 안 주소를 같은 창, http(s) 주소를 새 창으로 열고 그 밖의 값은 링크로 그리지 않는다.
+    expect(screen.getByRole('textbox', { name: /랜딩 페이지/ })).toHaveAccessibleDescription(
+      '사이트 안 주소(/pages/… 등) 또는 https 주소를 넣습니다. 사이트 안 주소는 같은 창, https 주소는 새 창으로 열립니다.',
+    );
+  });
+
   it('Banner: Server Action fieldErrors를 summary와 필드에 연결한다', async () => {
     const message = '배너 명칭이 중복되었습니다.';
     mocks.saveBanner.mockResolvedValueOnce({

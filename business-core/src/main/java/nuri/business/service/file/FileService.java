@@ -170,6 +170,32 @@ public class FileService extends BaseAbstractService {
     }
 
     /**
+     * 어떤 업무 참조도 남지 않은 첨부 묶음을 통째로 지운다(ADR-0042 — 콘텐츠 페이지 파기·미사용 첨부 정리).
+     *
+     * <p>일반 파일 API 의 삭제와 달리 업로더·관리자 판정을 다시 보지 않는다. 호출자는 업무 권한을 확인하고 자기 참조 행을 먼저 지운 뒤
+     * (JPA 변경을 flush 한 뒤) 부른다. 다른 참조원이 하나라도 가리키면 지우지 않고 false 를 준다 — 같은 업로더가 다른 업무에 함께 건
+     * 첨부를 깨지 않는다. 참조원 조회 자체가 실패하면 PostgreSQL 이 트랜잭션을 중단시키므로 호출한 작업 전체가 되돌아간다(아무것도
+     * 지우지 않는다). 메타데이터 삭제와 실물 삭제 의도를 같은 트랜잭션에 커밋한다(실물은 커밋 뒤 내구 작업).
+     *
+     * @return 지웠으면 true, 첨부가 없거나 아직 참조가 남아 지우지 않았으면 false
+     */
+    @Transactional
+    public boolean discardUnreferencedAttachment(Long atchFileSn) {
+        FileMaster master = fileMasterRepository.findByIdForUpdate(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
+                .orElse(null);
+        if (master == null || accessPolicy.referenced(atchFileSn)) {
+            return false;
+        }
+        for (FileDetail detail : fileDetailRepository.findByFileMaster(master)) {
+            fileDetailRepository.delete(required(detail, "detail 는 null 일 수 없습니다"));
+            scheduleStoredFileDeletion(detail);
+        }
+        fileDetailRepository.flush();
+        fileMasterRepository.delete(master);
+        return true;
+    }
+
+    /**
      * 메타데이터 삭제와 의도를 함께 커밋한다. 저장 실패는 업무를 롤백하고, 물리 삭제 실패는
      * 내구 작업의 재시도 대상이다. 재시도는 최초 실물 식별자를 검증해 교체 파일을 보존한다.
      */
