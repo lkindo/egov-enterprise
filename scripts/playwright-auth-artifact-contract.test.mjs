@@ -6,7 +6,7 @@ import { createRequire } from 'node:module';
 import { test } from 'node:test';
 import { authenticate } from '../frontend/e2e/fixtures/auth-state.mjs';
 
-const OPERATIONAL_RUNNER = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"';
+const OPERATIONAL_RUNNER = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"';
 const CONTRACT_ASSET = 'scripts/playwright-auth-artifact-contract.test.mjs';
 const requireFromFrontend = createRequire(new URL('../frontend/package.json', import.meta.url));
 const ts = requireFromFrontend('typescript');

@@ -54,6 +54,8 @@ import nuri.migration.workflow.WorkflowReviewLoader;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.InOrder;
 import org.springframework.boot.DefaultApplicationArguments;
@@ -1160,6 +1162,27 @@ class MigrationWorkflowRunnerTest {
             }
         }
         return null;
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"The server does not support SSL.", "서버가 SSL을 지원하지 않습니다."})
+    void connectionFailureExposesOnlyTheFixedDiagnosticAndNeverItsCauseOrInventory(String message) throws Exception {
+        Path inventory = temp.resolve("tls-refused-inventory.json");
+        given(sourceDataSource.getConnection()).willThrow(new SQLException(
+                message + " jdbc:private://sentinel-host/db sentinel-source-password",
+                "08004", new IllegalStateException("sentinel-private-cause")));
+
+        Throwable failure = catchThrowable(() -> runner.run(args(
+                "--command=discover", "--mapping=" + mappingPath, "--inventory=" + inventory)));
+
+        assertThat(failure).isInstanceOf(MigrationExecutionException.class).hasNoCause()
+                .hasMessage("discover 실패 — 상세정보는 보안상 제거되었습니다. MW_DIAGNOSTIC=DB_TLS_UNSUPPORTED");
+        java.io.StringWriter trace = new java.io.StringWriter();
+        failure.printStackTrace(new java.io.PrintWriter(trace));
+        assertThat(trace.toString()).doesNotContain("sentinel-host", "sentinel-source-password", "sentinel-private-cause");
+        assertThat(inventory).doesNotExist();
+        verify(adapter, never()).discover(any(), any());
+        verify(sourceEndpoint).close();
     }
 
     @Test

@@ -697,7 +697,7 @@ export function validateSchemaDefinition(schema) {
 
 export function validateOperationalBinding({ packageJson, registry, governanceTestSource }) {
   const errors = [];
-  const expectedCommand = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"';
+  const expectedCommand = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"';
   if (packageJson?.scripts?.['test:operational-contracts'] !== expectedCommand) {
     errors.push('package operational runner no longer covers scripts/*.test.mjs exactly');
   }

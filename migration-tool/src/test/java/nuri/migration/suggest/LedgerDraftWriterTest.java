@@ -128,6 +128,24 @@ class LedgerDraftWriterTest {
     }
 
     @Test
+    void jsonDraftUsesTheSameLedgerContractAndNeverCreatesConfirmation() {
+        TermLedger draft = writer.draft(report(List.of(
+                column("PUBLIC.LEGACY_USER", "REGDT", "EXACT", List.of(candidate("100.0"))),
+                column("PUBLIC.LEGACY_USER", "UNKNOWN", "UNKNOWN", List.of()))));
+
+        String json = writer.writeJson(draft);
+
+        assertThat(json).startsWith("{").contains("\"schemaVersion\":2").doesNotContain("\"target\"");
+        TermLedger loaded = new TermLedgerLoader().load(json);
+        assertThat(loaded).isEqualTo(new TermLedgerLoader().load(writer.write(draft)));
+        assertThat(loaded.entries()).allSatisfy(entry -> {
+            assertThat(entry.status()).isEqualTo("PROPOSED");
+            assertThat(entry.history()).isEmpty();
+        });
+        assertThat(new TermLedgerValidator().validate(loaded)).isEmpty();
+    }
+
+    @Test
     void theValuesForTheCredentialCheckLeaveOutTheFixedKeys() {
         TermLedger draft = writer.draft(report(List.of(
                 column("legacy.tb_user", "reg_ymd", "EXACT", List.of(candidate("100.0"))))));
@@ -146,10 +164,12 @@ class LedgerDraftWriterTest {
                 List.of())));
 
         assertThatThrownBy(() -> writer.write(writer.draft(report))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> writer.writeJson(writer.draft(report))).isInstanceOf(IllegalArgumentException.class);
 
         SuggestionReport credential = report(List.of(column("PUBLIC.LEGACY_USER", "password=legacy1", "UNKNOWN",
                 List.of())));
         assertThatThrownBy(() -> writer.write(writer.draft(credential))).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> writer.writeJson(writer.draft(credential))).isInstanceOf(IllegalArgumentException.class);
     }
 
     private TermLedger.Load load(String hint) {

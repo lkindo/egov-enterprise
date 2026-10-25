@@ -311,7 +311,7 @@ test('UI/UX foundation contract assets remain present in the required Node catal
   );
   assert.equal(
     operational.selector.packageScript.command,
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"',
+    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
   );
   assert.ok([
     'config/ui-quality-evidence-policy.json',

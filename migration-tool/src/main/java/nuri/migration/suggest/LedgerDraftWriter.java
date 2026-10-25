@@ -3,6 +3,7 @@ package nuri.migration.suggest;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.node.ObjectNode;
+import com.fasterxml.jackson.databind.json.JsonMapper;
 import com.fasterxml.jackson.dataformat.yaml.YAMLGenerator;
 import com.fasterxml.jackson.dataformat.yaml.YAMLMapper;
 import nuri.migration.artifact.ArtifactRedactionGuard;
@@ -39,6 +40,7 @@ public final class LedgerDraftWriter {
     private static final Pattern ID = Pattern.compile("[A-Za-z0-9_.-]{1,64}");
     private static final String SKIPPED_IDENTIFIER = "SKIPPED_IDENTIFIER";
     private final LoadCapabilities capabilities = new LoadCapabilities();
+    private final JsonMapper json = JsonMapper.builder().build();
     private final YAMLMapper yaml = YAMLMapper.builder()
             .disable(YAMLGenerator.Feature.WRITE_DOC_START_MARKER)
             .enable(YAMLGenerator.Feature.MINIMIZE_QUOTES)
@@ -101,12 +103,21 @@ public final class LedgerDraftWriter {
 
     /** 원장 초안을 YAML 로 쓴다. 자격·개인정보로 보이는 값이 남아 있으면 쓰지 않는다. */
     public String write(TermLedger ledger) {
+        return write(ledger, false);
+    }
+
+    /** 로컬 검토 UI도 같은 원장·redaction 검증을 거친 JSON 초안을 사용한다. */
+    public String writeJson(TermLedger ledger) {
+        return write(ledger, true);
+    }
+
+    private String write(TermLedger ledger, boolean asJson) {
         Objects.requireNonNull(ledger, "ledger");
         JsonNode tree = withoutNulls(yaml.valueToTree(ledger));
         ArtifactRedactionGuard.assertSafe(tree);
         ArtifactRedactionGuard.assertNoPersonalValues(tree);
         try {
-            return yaml.writeValueAsString(tree);
+            return asJson ? json.writeValueAsString(tree) : yaml.writeValueAsString(tree);
         } catch (JsonProcessingException impossible) {
             throw new IllegalStateException("원장 초안을 쓰지 못했습니다");
         }

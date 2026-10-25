@@ -21,7 +21,7 @@ const REQUIRED_PRIVATE_MATERIAL_EXCLUSIONS = [
   '.kube', '**/.kube',
   '.gnupg', '**/.gnupg',
 ];
-const OPERATIONAL_RUNNER = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"';
+const OPERATIONAL_RUNNER = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"';
 
 function normalizedRules(source) {
   return source

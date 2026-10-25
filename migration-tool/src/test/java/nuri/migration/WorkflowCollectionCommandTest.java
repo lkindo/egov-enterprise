@@ -209,7 +209,7 @@ class WorkflowCollectionCommandTest {
         assertThatThrownBy(() -> runner.run(args("--command=mapping-generate", "--skeleton=" + skeleton,
                 "--ledger=" + ledger, "--inventory=" + temp.resolve("missing.json"), "--mapping=" + second)))
                 .isInstanceOf(MigrationExecutionException.class)
-                .hasMessage("mapping_generate 실패 — 상세정보는 보안상 제거되었습니다.");
+                .hasMessage("mapping_generate 실패 — 상세정보는 보안상 제거되었습니다. MW_DIAGNOSTIC=CLI_FAILED");
     }
 
     @Test
@@ -234,7 +234,7 @@ class WorkflowCollectionCommandTest {
         assertThatThrownBy(() -> runner.run(args("--command=app-scan",
                 "--app-source=" + temp.resolve("missing"), "--app-usage=" + temp.resolve("out.json"))))
                 .isInstanceOf(MigrationExecutionException.class)
-                .hasMessage("app_scan 실패 — 상세정보는 보안상 제거되었습니다.");
+                .hasMessage("app_scan 실패 — 상세정보는 보안상 제거되었습니다. MW_DIAGNOSTIC=CLI_FAILED");
         assertThat(temp.resolve("out.json")).doesNotExist();
     }
 

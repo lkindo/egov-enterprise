@@ -35,7 +35,7 @@
 | [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) | backend/schema 병렬화, 재사용 profile 영향 선별과 실행시간 증거 수집 | Accepted — 일부 ADR-0027·ADR-0032·ADR-0037, DEC-OPS-289·291로 대체 |
 | [ADR-0027](ADR-0027-ci-reusable-admission-layout-and-nightly.md) | 재사용 검증의 분류 직후 custom 입장, PR 의 시작 구성당 한 레이아웃·main 전수와 생성물 야간 시험(T2) | Accepted — 일부 ADR-0030, DEC-OPS-291로 대체 |
 | [ADR-0028](ADR-0028-presets-are-named-domain-lists.md) | 시작 구성은 이름 붙은 기능 목록이고 같은 목록은 같은 결과(해석·소스 투영)를 낸다 | Accepted |
-| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 일부 ADR-0031, DEC-OPS-313·323으로 대체 |
+| [ADR-0029](ADR-0029-legacy-standardization-migration.md) | 레거시 표준화 이관 — 도구가 후보·근거를 만들고 사람이 용어 매핑 원장으로 확정, L1~L4 단계 | Accepted — 일부 ADR-0031·ADR-0041, DEC-OPS-313·323으로 대체 |
 | [ADR-0030](ADR-0030-reusable-ci-selection-followup.md) | 기존 승인에 따른 재사용 PR 제외 선언과 야간 중복 구성 제거 | Accepted |
 | [ADR-0031](ADR-0031-migration-ledger-confirmation-followup.md) | 기존 승인에 따른 이관 원장 확정 조건과 chunk 실패 처리 | Accepted |
 | [ADR-0032](ADR-0032-migration-pit-two-slots.md) | 이관 PIT 여덟 범위의 두 슬롯 실행과 실측 긴 순서 | Accepted |
@@ -47,3 +47,4 @@
 | [ADR-0038](ADR-0038-credential-cookie-csrf-token.md) | 쿠키 자격을 실은 쓰기 요청에 이중 제출 CSRF 토큰(SockJS는 허용 Origin) | Accepted |
 | [ADR-0039](ADR-0039-cms-content-pages-first-scope.md) | 콘텐츠 페이지(CMS) 1차 범위 — 로그인 사용자 열람, 업무 홈 상단 조각, 서버 검증 jsonb 문서 | Accepted |
 | [ADR-0040](ADR-0040-board-operations-management.md) | 게시판 운영 화면, 사용 안 함 게시판의 읽기·쓰기 차단, 날짜 기준 예약 게시·게시 기준일 정렬, 상단 고정 컬럼과 BOARD_PIN | Accepted |
+| [ADR-0041](ADR-0041-local-migration-workspace-and-ai.md) | 독립 로컬 이관 작업공간, 직접 입력과 제한된 AI 질문·읽기 진행, 기관 전송 승인과 실행 경계 | Accepted |

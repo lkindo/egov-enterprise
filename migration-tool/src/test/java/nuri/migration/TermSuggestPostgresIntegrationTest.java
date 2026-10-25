@@ -123,6 +123,14 @@ class TermSuggestPostgresIntegrationTest {
         assertThat(ledger.entries()).extracting(TermLedger.Entry::id)
                 .containsExactly("public.legacy_user.wrt_dt", "public.legacy_user.stli_nm");
         assertThat(ledger.entries()).extracting(entry -> entry.source().table()).containsOnly("public.legacy_user");
+
+        Path jsonDraft = temp.resolve("term-ledger.draft.json");
+        runner().run(args("--command=term-suggest", "--mapping=" + temp.resolve("mapping.yml"),
+                "--profile=" + profile, "--suggestions=" + temp.resolve("suggestions-for-ui.json"),
+                "--ledger-draft=" + jsonDraft));
+        String json = Files.readString(jsonDraft);
+        assertThat(json).startsWith("{").doesNotContain(POSTGRES.getPassword()).doesNotContain(POSTGRES.getJdbcUrl());
+        assertThat(new TermLedgerLoader().load(json)).isEqualTo(ledger);
     }
 
     @Test

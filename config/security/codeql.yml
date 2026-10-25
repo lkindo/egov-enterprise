@@ -3,12 +3,16 @@ queries:
   - uses: security-extended
 # Java is traced from all five modules' production compilation. These paths
 # constrain the JavaScript/TypeScript extractor, including operational scripts.
+# The local migration workspace handles credentials, child processes, ZIP
+# extraction and external AI calls, so its runner and prototype are scanned too.
 paths:
   - frontend/src
   - frontend/scripts
   - frontend/next.config.ts
   - scripts
   - .agent/scripts
+  - tools/migration-workspace
+  - tools/migration-workspace-prototype
   - foundation/src/main
   - business-core/src/main
   - business-app/src/main

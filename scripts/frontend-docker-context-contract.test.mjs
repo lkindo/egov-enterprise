@@ -539,7 +539,7 @@ test('the root operational runner binds this contract without a narrowed file li
   );
   assert.equal(
     packageJson.scripts?.['test:operational-contracts'],
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js"',
+    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
   );
 });
 

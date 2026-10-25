@@ -1,7 +1,7 @@
 # ADR-0029 — 레거시 표준화 이관은 도구가 후보와 근거를 만들고 사람이 용어 매핑 원장으로 확정한다
 
 - 상태: Accepted
-- 후속 결정: 원장 확정·비표준 대상·허용값 미확인 조건, 쓰기 실패 처리 시점과 L3 실행 경계는 [ADR-0031](ADR-0031-migration-ledger-confirmation-followup.md)을 따른다. L2 단계 표의 '결정 5의 가드 포함'은 [DEC-OPS-313](../../archived/operational-decisions-history.md#dec-ops-313)이 외부 LLM 전송 경로를 둘 때 함께 만드는 것으로 대체했고(현재 경로 없음), 실행 단계 규칙 '각 단계는 앞 단계가 병합된 뒤 시작한다'의 L4 착수 시점은 [DEC-OPS-323](../../archived/operational-decisions-history.md#dec-ops-323)이 예외로 승인했다. 아래 본문은 당시 승인 기록이며 후속 결정의 대체 범위를 함께 읽는다.
+- 후속 결정: 원장 확정·비표준 대상·허용값 미확인 조건, 쓰기 실패 처리 시점과 L3 실행 경계는 [ADR-0031](ADR-0031-migration-ledger-confirmation-followup.md)을 따른다. L2 단계 표의 '결정 5의 가드 포함'은 [DEC-OPS-313](../../archived/operational-decisions-history.md#dec-ops-313)이 외부 LLM 전송 경로를 둘 때 함께 만드는 것으로 대체했고, 그 경로는 [ADR-0041](ADR-0041-local-migration-workspace-and-ai.md)이 로컬 이관 작업공간에 둔다(`term-suggest` CLI는 외부 LLM을 쓰지 않는다). 결정 5 가운데 이름·코멘트만 보내는 문맥 제한은 ADR-0041의 승인된 확장 모드에 한해, 외부 전송 승인을 이관 승인 원장에 기록한다는 부분은 그 경로에서 기관 AI 전송 승인 파일과 작업공간 전송 기록으로 대체됐다. 보낸 범위 digest 기록·전송 전 검사·사람 확정은 그대로다. 실행 단계 규칙 '각 단계는 앞 단계가 병합된 뒤 시작한다'의 L4 착수 시점은 [DEC-OPS-323](../../archived/operational-decisions-history.md#dec-ops-323)이 예외로 승인했다. 아래 본문은 당시 승인 기록이며 후속 결정의 대체 범위를 함께 읽는다.
 - 결정일: 2026-10-13
 - 승인 범위: 사용자 결정(2026-10-13 — 설계 초안을 ADR 로 채택, 결정 대기 Q1~Q4, 같은 날 17:50 의 Q5 제어 테이블 변경 승인과 Q8~Q10)과
   위임 결정(Q5 의 표현 방식·Q6·Q7, 표준 스키마 메타 불일치의 gap 등록 — Claude 권고안). 인덱스는 DEC-OPS-305 다.

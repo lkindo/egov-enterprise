@@ -13,7 +13,10 @@ test.describe('Quality & Resilience', () => {
      * (01-core-base 의 2026-07-27 스피너 오감사 선례).
      */
     test.describe('Scenario Route Accessibility (axe)', () => {
-        const LOADING_TEXT = /불러오는 중|준비하는 중|확인하는 중|로딩 중/;
+        // [2026-10-25 PR #977 flaky] 진행 문구는 '…는 중'과 '…고 있습니다' 두 형태다. 게시글 작성 화면은 게시판 편집 권한을
+        //   받기 전까지 '게시판 편집 권한을 확인하고 있습니다.'를 보이며 입력 영역(fieldset)을 비활성으로 두는데, 이 패턴이
+        //   '확인하는 중'만 잡아 권한 응답이 늦으면 비활성(50% 투명) 단추를 color-contrast 위반으로 감사했다(첫 시도만 실패).
+        const LOADING_TEXT = /(불러오|준비하|확인하|가져오)(는 중|고 있습니다)|로딩 중/;
         async function expectContentReady(page: Page) {
             await expect(page.getByRole('heading', { level: 1 }).filter({ hasNotText: LOADING_TEXT }).first())
                 .toBeVisible({ timeout: 30000 });

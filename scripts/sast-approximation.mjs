@@ -10,7 +10,7 @@
  * - 근사가 CodeQL 이 통과시키는 코드를 막으면 근사 규칙을 좁힌다. 이 파일에 예외 목록·무시 표기를 두지 않는다.
  *
  * 모집단은 CodeQL 이 JavaScript 로 읽는 경로(config/security/codeql.yml 의 paths)의 JS·TS 파일이다 — 근사가 CodeQL 이 보지 않는
- * 파일(tools/ 등)을 따로 막지 않게, 그리고 CodeQL 이 넓어지면 함께 넓어지게 그 설정을 읽는다.
+ * 파일(tools/project-composer 등)을 따로 막지 않게, 그리고 CodeQL 이 넓어지면(tools/migration-workspace 등) 함께 넓어지게 그 설정을 읽는다.
  * 실행: pre-push 는 push 가 바꾼 파일만(`--stdin`), `npm run verify`(fast·push·full)는 모집단 전체를 본다(`npm run sast:approx`).
  * CI 는 이 근사를 돌리지 않는다 — CI 에는 CodeQL 자체가 있다. 근사 규칙의 붉음 증명은 운영 계약(sast-approximation.test.mjs)이 CI 에서도 돈다.
  *
