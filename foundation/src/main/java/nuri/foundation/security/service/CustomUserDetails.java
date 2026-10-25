@@ -48,7 +48,10 @@ public class CustomUserDetails implements UserDetails {
      * 알 수 없으면 null 이며, 그때는 이 기준으로 거부하지 않는다.
      */
     private final java.time.Instant credentialsChangedAt;
-    /** 현재 DB 자격 버전. 등록·복구·비활성화 후 이전 JWT를 거부하는 기준이다. */
+    /**
+     * 세션 토큰이 묶이는 MFA 자격 버전. 자격 행이 없거나 등록을 시작한 적 없는 행이면 null 이다(DB 값과 다를 수 있다).
+     * 등록·복구·비활성화 후 이전 JWT를 거부하는 기준이다.
+     */
     private final String mfaCredentialVersion;
     private final boolean mfaRequired;
     /**

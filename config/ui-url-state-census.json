@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "f21fd944baf4e849703b98d5e5053b802bf628c8f5fc1b45408f017474443b25"
+    "inventoryHash": "6532ee311b00d10a7e84667e257cab032281c74eca58ed0d85344e7fe47aa77c"
   },
   "summary": {
-    "records": 433,
-    "syntaxOccurrences": 520,
-    "ambiguousRecords": 384,
-    "unverifiedRecords": 433,
+    "records": 434,
+    "syntaxOccurrences": 521,
+    "ambiguousRecords": 385,
+    "unverifiedRecords": 434,
     "exactPopulations": {
       "filesystemRoutes": 121,
       "dynamicRoutePatterns": 13,
@@ -43,7 +43,7 @@
     "byKind": {
       "config-redirect": 13,
       "dynamic-segment": 13,
-      "form-producer": 59,
+      "form-producer": 60,
       "navigation-producer": 200,
       "page-redirect": 17,
       "query-builder": 24,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 423,
+      "navigation": 424,
       "request-telemetry": 10
     }
   },
@@ -7284,6 +7284,45 @@
       },
       "evidence": {
         "source": "frontend/src/app/admin/operation/rewards/RewardManageClient.tsx",
+        "detector": "jsx-form",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-4E417F534B5AA5",
+      "surface": "navigation",
+      "kind": "form-producer",
+      "operation": "implicit-or-computed-method",
+      "source": "frontend/src/app/admin/patterns/MasterDetailSample.tsx",
+      "producerFile": "frontend/src/app/admin/patterns/MasterDetailSample.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/patterns",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "Form has no statically explicit GET/POST contract; submit interception and URL effects require review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "form-method-or-interception-unresolved",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/patterns/MasterDetailSample.tsx",
         "detector": "jsx-form",
         "occurrenceCount": 1
       }

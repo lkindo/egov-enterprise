@@ -300,6 +300,10 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   // scripts/ 는 하네스 두 개(FlywaySchemaOwnershipLinterTest·SecretLiteralLinterTest)가 디렉터리째 읽어 backend 를 끄지 못한다.
   { path: 'scripts/composer-modules', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/domain-deletion-plan', axes: ['backend', 'e2e', 'schema'] },
+  // [2026-10-24 DEC-OPS-382] 새 기능 등록 점검기, 도메인 스캐폴더, 감리·검수 입력 자료 초안 내보내기 — 읽기 전용·비커밋 도구다.
+  { path: 'scripts/domain-registration-doctor', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/export-deliverables', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/generate-domain', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/generate-reusable-base-', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/project-composer', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/reusable-', axes: ['backend', 'e2e', 'schema'] },

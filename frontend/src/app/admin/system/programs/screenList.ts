@@ -23,9 +23,12 @@ import type { MenuStructureSource } from './menuStructureSource';
 /** 화면 이름이 생성 목록에 없을 때의 표시. 이름을 지어내지 않는다. */
 export const UNKNOWN_SCREEN_LABEL = '이름 미확인';
 
-/** 화면 목록 모집단. 생성 목록 순서(경로 코드 포인트 순)를 그대로 쓴다. */
+/**
+ * 화면 목록 모집단. 생성 목록 순서(경로 코드 포인트 순)를 그대로 쓴다.
+ * 시연(라우트 원장 status demo) 화면은 업무 화면이 아니므로 뺀다(DEC-OPS-382) — 목록에는 남아 기존 메뉴의 경로 해석은 그대로다.
+ */
 export function listedScreens(registry: readonly ScreenRegistryEntry[] = SCREEN_REGISTRY): ScreenRegistryEntry[] {
-  return registry.filter((screen) => registeredPagePermissions(screen.route) !== null);
+  return registry.filter((screen) => !screen.demo && registeredPagePermissions(screen.route) !== null);
 }
 
 /** 별칭 목록(경로 순). */

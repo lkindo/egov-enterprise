@@ -17,10 +17,19 @@ describe('업무 화면 패턴 갤러리', () => {
     expect(screen.getByRole('note')).toHaveTextContent('정적 표본 데이터');
   });
 
+  it('갤러리가 h1 하나를 갖고 실재하는 셸의 표본을 h2 로 넣는다', () => {
+    render(<PatternGalleryClient />);
+
+    expect(screen.getAllByRole('heading', { level: 1 })).toHaveLength(1);
+    expect(screen.getByRole('heading', { level: 1, name: '업무 화면 패턴 갤러리' })).toBeInTheDocument();
+    for (const sample of ['업무 요청 목록', '코드 그룹 관리', '부서별 요청 처리 현황']) {
+      expect(screen.getByRole('heading', { level: 2, name: sample })).toBeInTheDocument();
+    }
+  });
+
   it('A1 골격과 총 건수를 렌더한다', () => {
     render(<PatternGalleryClient />);
 
-    expect(screen.getByRole('heading', { level: 1, name: '업무 요청 목록' })).toBeInTheDocument();
     expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 12건');
     expect(screen.getAllByTestId(/^pattern-gallery-row/)).toHaveLength(10);
   });
@@ -36,8 +45,9 @@ describe('업무 화면 패턴 갤러리', () => {
     const user = userEvent.setup();
     render(<PatternGalleryClient />);
 
-    await user.type(screen.getByLabelText('검색어'), '민원');
-    await user.click(screen.getByRole('button', { name: '조회' }));
+    const a1 = within(screen.getByTestId('work-list-page'));
+    await user.type(a1.getByLabelText('검색어'), '민원');
+    await user.click(a1.getByRole('button', { name: '조회' }));
 
     const toolbar = screen.getByTestId('work-list-toolbar');
     expect(toolbar).toHaveTextContent('총 2건');
@@ -48,8 +58,9 @@ describe('업무 화면 패턴 갤러리', () => {
     const user = userEvent.setup();
     render(<PatternGalleryClient />);
 
-    await user.type(screen.getByLabelText('검색어'), '존재하지않는키워드');
-    await user.click(screen.getByRole('button', { name: '조회' }));
+    const a1 = within(screen.getByTestId('work-list-page'));
+    await user.type(a1.getByLabelText('검색어'), '존재하지않는키워드');
+    await user.click(a1.getByRole('button', { name: '조회' }));
 
     expect(screen.getByTestId('work-list-toolbar')).toHaveTextContent('총 0건');
     const table = screen.getByRole('table', { name: '업무 요청 표본 목록' });

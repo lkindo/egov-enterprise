@@ -173,6 +173,7 @@ jobs:
           sarif_file: build/sast/publish/${{ matrix.language }}.sarif
           category: secure-coding/${{ matrix.language }}
 
+      # [2026-10-24 DEC-OPS-382 ⑤] main push 의 SARIF 는 90일, PR·수동 실행은 14일 보관한다.
       - name: Retain sanitized SAST evidence
         if: always() && steps.analyze.outcome == 'success'
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -180,7 +181,7 @@ jobs:
           name: sast-${{ matrix.language }}
           path: build/sast/sanitized/${{ matrix.language }}.sarif
           if-no-files-found: error
-          retention-days: 14
+          retention-days: ${{ github.event_name == 'push' && 90 || 14 }}
 
   secure-coding:
     needs: [change-scope, sast-scope]
@@ -453,6 +454,23 @@ jobs:
       - name: Publish backend JUnit duration evidence
         if: always()
         run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+
+      # [2026-10-24 DEC-OPS-382 ⑤] 온라인 모듈의 시험 결과 XML 을 보관한다 — 산출물 시험 목록(정적 추출)의 실행 증거다.
+      #   main push 는 90일, PR·수동 실행은 14일이다. PR 실행은 영향 분류로 고른 시험의 결과다. 게이트가 아니다.
+      - name: Retain backend test result XML
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: backend-test-results
+          path: |
+            foundation/build/test-results/**/*.xml
+            business-core/build/test-results/**/*.xml
+            business-app/build/test-results/**/*.xml
+            api-server/build/test-results/**/*.xml
+          if-no-files-found: warn
+          retention-days: ${{ github.event_name == 'push' && 90 || 14 }}
+          overwrite: true
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
       - name: Check OpenAPI Spec Changes
         id: openapi-changes
@@ -847,6 +865,18 @@ jobs:
           set -o pipefail
           pnpm run test:coverage 2>&1 | tee /tmp/fe-test.log
         working-directory: frontend
+
+      # [2026-10-24 DEC-OPS-382 ⑤] Vitest 결과 XML(CI 에서만 junit 보고를 켠다 — vitest.config.mts)을 보관한다. 게이트가 아니다.
+      - name: Retain frontend test result XML
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: frontend-test-results
+          path: frontend/build/test-results/vitest-junit.xml
+          if-no-files-found: warn
+          retention-days: ${{ github.event_name == 'push' && 90 || 14 }}
+          overwrite: true
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
       - name: Surface coverage failure detail (annotations)
         if: failure()

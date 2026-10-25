@@ -20,7 +20,7 @@ type Permission = readonly [code: string, action: string, source: ScreenPermissi
 
 function screenOf(route: string, label: string, entry: readonly string[], mode: 'ANY' | 'ALL', permissions: readonly Permission[], dynamic = false): ScreenRegistryEntry {
   return {
-    route, label, labelSource: 'menu', shellAccess: 'admin-system', dynamic,
+    route, label, labelSource: 'menu', shellAccess: 'admin-system', dynamic, demo: false,
     entry: { permissions: entry as PermissionCode[], mode },
     permissions: permissions.map(([code, action, source]) => ({ code: code as PermissionCode, action, source })),
   };

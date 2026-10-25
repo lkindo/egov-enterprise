@@ -322,7 +322,7 @@ A2는 [채택 census 게이트](../../frontend/src/__tests__/master-detail-adopt
 
 **VRT 기준선 재생성(완료, 2026-08-24):** `/admin/system/logs/login` 을 A1 으로 이행하면서 시각 회귀 기준선 4장 중 하나(DEC-OPS-017: 무매칭 검색 empty-state)가 어긋났고, `update-visual-baseline` workflow_dispatch(commit=true)로 리눅스 기준선을 다시 만들어 커밋했다(`chore(e2e): 비주얼 회귀 기준선 갱신 (linux)`). win32 로컬 스냅샷 커밋은 폰트 렌더 차이로 금지다. e2e 캡처 스텝의 placeholder 셀렉터도 조회 조건 이행에 맞춰 함께 갱신했다. 이후 wave 11~13 은 기준선 4장이 캡처하는 화면(`/admin`·로그인 로그·공통코드 허브·로그인)을 건드리지 않았고, PR CI 의 `e2e-test` 가 green 이다.
 
-**A1 참조 구현:** `/admin/patterns`. 정적 표본 데이터만 쓰므로 세션·시드와 무관하게 결정적으로 렌더되고, 조회·정렬·페이지당 건수가 표본 위에서 실제로 동작한다(죽은 컨트롤 금지 G10이 갤러리 자신에게도 적용된다). 시각 판단은 이 화면에서만 한다.
+**참조 구현(패턴 갤러리):** `/admin/patterns`. 정적 표본 데이터만 쓰므로 세션·시드와 무관하게 결정적으로 렌더되고, 조회·정렬·페이지당 건수·편집이 표본 위에서 실제로 동작한다(죽은 컨트롤 금지 G10이 갤러리 자신에게도 적용된다). 시각 판단은 이 화면에서만 한다. 표본은 셸이 실재하는 archetype 만 둔다 — A1, A2 + A3 인라인 편집(§A3-1 의 인라인 그릇), A7(2026-10-24 DEC-OPS-382). 갤러리가 h1 을 갖고 표본 셸은 h2 로 들어간다. axe 명암비·반응형 검사가 이 화면을 방문한다([axe](../../frontend/e2e/quality/route-accessibility.spec.ts)·[반응형](../../frontend/e2e/quality/responsive-shell.spec.ts)) — 앱 안에 있다는 것만으로는 검사되지 않으므로, 표본을 더하면 이 화면에 두어 같은 검사를 받게 한다. 저장소 밖 시안(비규범 아티팩트)은 의사소통 자료이며 승인 근거가 아니다. 시안은 [토큰 키트](../../frontend/scripts/prototype-token-kit.mjs)(`pnpm -C frontend run prototype:kit`)의 값과 시맨틱 짝만 쓰고 색을 새로 고르지 않는다.
 
 **소비 계약(W2 이후):** archetype이 존재하는 화면 유형은 `StandardDataTable`을 직접 조립하지 않고 archetype 컴포넌트를 경유한다. 직접 소비 화면을 census 목록으로 동결하고 이행마다 목록에서 빼 되돌아가지 못하게 한다(H2 — baseline을 비우거나 올리지 않는다).
 

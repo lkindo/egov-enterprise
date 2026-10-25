@@ -146,6 +146,30 @@ class MfaFlowIntegrationTest {
     }
 
     @Test
+    void rejectedFirstEnrollmentStartKeepsPasswordOnlySessionAndDisablingNeverRevivesIt() {
+        TokenResponse passwordOnly = login(subject);
+        authenticate(passwordOnly);
+        assertThatThrownBy(() -> mfa.startEnrollment("Wrong-fixture-only-482!")).isInstanceOf(MfaRejectedException.class);
+        assertThat(state()).isEqualTo("NONE");
+        assertThat(jdbc.queryForObject("SELECT fail_nmtm FROM tb_auth_otp_cert WHERE user_insd_idntfr=?", Integer.class, subject)).isEqualTo(1);
+        assertThat(jwt.getAuthentication(passwordOnly.getAccessToken()).isAuthenticated()).isTrue();
+        TokenResponse refreshed = auth.reissue(passwordOnly.getRefreshToken(), IP);
+        assertThat(jwt.getAuthentication(refreshed.getAccessToken()).isAuthenticated()).isTrue();
+
+        // A correct start still revokes the session, and disabling MFA (NONE again) must not revive it.
+        authenticate(refreshed);
+        var setup = mfa.startEnrollment(PASSWORD);
+        assertThatThrownBy(() -> jwt.getAuthentication(refreshed.getAccessToken())).isInstanceOf(CredentialsExpiredException.class);
+        SecurityContextHolder.clearContext();
+        authenticate(auth.confirmMfaEnrollment(setup.challengeToken(), code(setup.secret()), IP));
+        advance(30);
+        mfa.disable(mfa.reauthenticate(PASSWORD, code(setup.secret())).reauthToken(), IP);
+        assertThat(state()).isEqualTo("NONE");
+        assertThatThrownBy(() -> jwt.getAuthentication(passwordOnly.getAccessToken())).isInstanceOf(CredentialsExpiredException.class);
+        assertThatThrownBy(() -> jwt.getAuthentication(refreshed.getAccessToken())).isInstanceOf(CredentialsExpiredException.class);
+    }
+
+    @Test
     void passwordLoginCannotIssueTokensAndRefreshPreservesCompletedMfaEvidence() {
         Enrolled enrolled = enroll(subject);
         TokenResponse challenge = login(subject);

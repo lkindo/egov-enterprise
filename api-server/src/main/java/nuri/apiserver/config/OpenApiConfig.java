@@ -148,6 +148,9 @@ public class OpenApiConfig {
      *   <li>{@code 400}·{@code 500} — 모든 오퍼레이션. 검증 실패와 서버 오류는 어느 경로에서나 난다.</li>
      *   <li>{@code 401}·{@code 403} — <b>operation binding에서 PUBLIC이 아닌</b> method/path만. 공개 경로는
      *       미인증으로 401 을 내지 않으므로 붙이면 오히려 틀린 문서가 된다.</li>
+     *   <li>{@code security: []} — <b>PUBLIC</b> 연산은 빈 보안 요구로 전역 {@code bearerAuth} 를 지운다(2026-10-24
+     *       DEC-OPS-382 ⑦). 그대로 두면 공개 연산을 토큰이 필요한 연산으로 광고해 생성 클라이언트·API 스캐너가 틀리게 읽는다.
+     *       판정은 401·403 과 같은 operation binding 이다.</li>
      *   <li>{@code 404} — <b>경로 변수를 가진</b> 오퍼레이션만. 식별자로 조회하지 않는 목록 API 에
      *       404 를 광고할 이유가 없다.</li>
      *   <li>{@code 409} — <b>붙이지 않는다.</b> 중복·낙관적 락 충돌은 도메인마다 성립 조건이 달라
@@ -159,6 +162,10 @@ public class OpenApiConfig {
      *
      * <p>{@code OperationCustomizer} 가 아니라 {@code OpenApiCustomizer} 인 이유: 401/404 판정에
      * <b>경로 문자열</b>이 필요한데, {@code Operation} 객체는 자신이 어느 경로에 속하는지 모른다.
+     *
+     * <p>적용 범위: 이 customizer 와 이 클래스의 operation customizer 들은 기본 문서({@code /v3/api-docs} — 커밋하는
+     * {@code api-docs.json} 계약 정본)에 걸린다. {@code GroupedOpenApi} 그룹 문서(Swagger UI 탐색용)는 Global* customizer 가
+     * 아니면 받지 않으므로 오류 응답·{@code security: []} 표기가 없다. 그룹 문서까지 맞추려면 네 customizer 를 함께 Global* 로 옮긴다.
      */
     @Bean
     public org.springdoc.core.customizers.OpenApiCustomizer commonErrorResponsesCustomizer(
@@ -178,6 +185,9 @@ public class OpenApiConfig {
                     boolean isPublic = permissionPolicy.bindings().stream().anyMatch(binding ->
                             binding.method().equals(method.name()) && binding.path().equals(path)
                                     && "PUBLIC".equals(binding.access()));
+                    if (isPublic) {
+                        operation.setSecurity(new java.util.ArrayList<>());
+                    }
                     io.swagger.v3.oas.models.responses.ApiResponses responses = operation.getResponses();
                     if (responses == null) {
                         return;

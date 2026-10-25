@@ -26,6 +26,8 @@ test.describe('Quality & Resilience', () => {
         const ROUTES = [
             { path: '/admin', finalHeading: '관리자 업무 현황' },
             { path: '/admin/work-hub', finalHeading: '업무 관리' },
+            // [2026-10-24 DEC-OPS-382] 패턴 갤러리 — A1·A2·A7 표본이 좁은 화면에서도 가로로 넘치지 않는지 본다.
+            { path: '/admin/patterns', finalHeading: '업무 화면 패턴 갤러리' },
         ] as const;
         // Tailwind 기본 브레이크포인트 기준: sm 640 · md 768 · lg 1024 · xl 1280.
         const VIEWPORTS = [

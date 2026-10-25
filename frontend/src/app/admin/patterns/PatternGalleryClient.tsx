@@ -13,17 +13,21 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import MasterDetailSample from './MasterDetailSample';
+import ReportSample from './ReportSample';
 
 /**
- * 업무 화면 패턴 갤러리 — A1(조회형 목록) 참조 구현.
+ * 업무 화면 패턴 갤러리 — 실재하는 archetype 셸의 참조 구현.
  *
- * 정본 스펙: docs/02-architecture/work-screen-grammar-catalog.md §5 A1.
+ * 정본 스펙: docs/02-architecture/work-screen-grammar-catalog.md §5·§7.
  * 이 화면의 목적은 **시각 판단을 한 곳에 모으는 것**이다. 밀도·간격·문구를 화면마다 눈으로
  * 재발명하지 않도록, 카탈로그가 글로 규정한 문법이 실제로 어떻게 보이는지를 여기서만 확인한다.
+ * 표본은 셸이 실재하는 archetype 만 둔다 — A1(이 파일), A2 + A3 인라인 편집(MasterDetailSample), A7(ReportSample).
+ * 갤러리가 h1 을 갖고 표본 셸은 h2 로 넣는다(허브가 h1 을 가진 활성 패널과 같은 규칙).
  *
- * 데이터는 전부 이 파일 안의 정적 표본이다 — 서버·DB 를 타지 않으므로 실행 순서·시드 상태와
+ * 데이터는 전부 정적 표본이다 — 서버·DB 를 타지 않으므로 실행 순서·시드 상태와
  * 무관하게 항상 같은 화면이 나온다(시각 회귀 기준선 후보 조건, DEC-OPS-017 참조).
- * 죽은 버튼을 두지 않기 위해(G10) 조회·정렬·페이지당 건수는 표본 위에서 실제로 동작하며,
+ * 죽은 버튼을 두지 않기 위해(G10) 조회·정렬·페이지당 건수·편집은 표본 위에서 실제로 동작하며,
  * 서버 계약이 필요한 내보내기는 이 갤러리의 범위가 아니라 아예 노출하지 않는다.
  */
 
@@ -112,19 +116,26 @@ export default function PatternGalleryClient() {
   };
 
   return (
-    <div className="space-y-4">
-      <p
-        role="note"
-        className="rounded-md border border-border bg-muted/40 px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] text-muted-foreground"
-      >
-        정적 표본 데이터로 동작하는 <strong className="font-semibold text-foreground">참조 화면</strong>입니다. 실제 업무
-        데이터가 아니며, 조회·정렬·페이지당 건수만 표본 위에서 동작합니다. 규칙 정본은 저장소 문서
-        <span className="font-mono"> docs/02-architecture/work-screen-grammar-catalog.md </span>
-        입니다.
-      </p>
+    <div className="space-y-10">
+      <header className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight text-foreground">업무 화면 패턴 갤러리</h1>
+        <p className="text-[length:var(--font-size-body)] text-muted-foreground">
+          A1 조회형 목록, A2 마스터-디테일과 A3 인라인 편집, A7 현황 + 원본 표를 실제 디자인 토큰과 셸로 보입니다.
+        </p>
+        <p
+          role="note"
+          className="rounded-md border border-border bg-muted/40 px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] text-muted-foreground"
+        >
+          정적 표본 데이터로 동작하는 <strong className="font-semibold text-foreground">참조 화면</strong>입니다. 실제 업무
+          데이터가 아니며, 조회·정렬·페이지당 건수·편집은 표본 위에서만 동작합니다. 규칙 정본은 저장소 문서
+          <span className="font-mono"> docs/02-architecture/work-screen-grammar-catalog.md </span>
+          입니다.
+        </p>
+      </header>
 
       <WorkListPage
         title="업무 요청 목록"
+        headingLevel={2}
         description="A1 조회형 목록 archetype — 페이지 헤더 → 조회 조건 → 결과 툴바 → 표 순서를 고정합니다."
         filterStateKey="pattern-gallery-work-list"
         showBreadcrumb={false}
@@ -203,6 +214,10 @@ export default function PatternGalleryClient() {
           }}
         />
       </WorkListPage>
+
+      <MasterDetailSample />
+
+      <ReportSample />
     </div>
   );
 }

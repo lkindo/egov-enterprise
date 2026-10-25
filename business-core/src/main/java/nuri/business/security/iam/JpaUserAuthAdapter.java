@@ -34,7 +34,7 @@ public class JpaUserAuthAdapter implements UserAuthPort {
                 .authorCode(snapshot.groups().stream().findFirst().orElse(null))
                 .groups(snapshot.groups()).permissions(snapshot.permissions())
                 .authorizationVersion(snapshot.authorizationVersion())
-                .mfaCredentialVersion(mfa == null ? null : mfa.getCredentialVersion())
+                .mfaCredentialVersion(mfa == null ? null : mfa.sessionVersion())
                 .mfaRequired((mfa != null && (mfa.isActive() || mfa.requiresEnrollment()))
                         || (mfaSettings.requireProtected() && protectedAccount))
                 .passwordChangeRequired(user.isTemporaryPassword())

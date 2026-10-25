@@ -18,6 +18,18 @@ import {
   validateDurationProfile,
 } from './e2e-shard-plan.mjs';
 
+test('a pattern gallery edit selects only the shell and quality consumers, and a new sample file stays full', () => {
+  // [2026-10-24 DEC-OPS-382] 갤러리는 axe·반응형 검사가 방문하는 정적 표본이다 — 업무 journey 는 그 화면에 닿지 않는다.
+  const edit = buildImpactShadowPlan([{ status: 'M', path: 'frontend/src/app/admin/patterns/PatternGalleryClient.tsx' }]);
+  assert.equal(edit.fullFallback, false, edit.reasons.join('; '));
+  assert.ok(edit.selectedSpecs.includes('quality/route-accessibility.spec.ts'));
+  assert.ok(edit.selectedSpecs.includes('quality/responsive-shell.spec.ts'));
+  assert.ok(edit.selectedSpecs.includes('journeys/application-shell.spec.ts'));
+  assert.ok(edit.selectedSpecs.every(spec => spec.startsWith('quality/') || spec === 'journeys/application-shell.spec.ts'));
+  const added = buildImpactShadowPlan([{ status: 'A', path: 'frontend/src/app/admin/patterns/WizardSample.tsx' }]);
+  assert.equal(added.fullFallback, true);
+});
+
 test('shadow maps online polls to their owner and leaves full execution authoritative', () => {
   const plan = buildImpactShadowPlan([{ status: 'M', path: 'frontend/src/app/admin/survey/polls/page.tsx' }]);
   assert.equal(plan.executes, 'full');

@@ -647,6 +647,7 @@ test('screens, aliases, labels, entry modes, and write/display permissions are d
     labelSource: 'menu',
     shellAccess: 'admin-system',
     dynamic: false,
+    demo: false,
     entry: { permissions: ['THING_READ'], mode: 'ANY' },
     permissions: [
       { code: 'THING_CREATE', action: 'CREATE', source: 'write' },
@@ -658,7 +659,7 @@ test('screens, aliases, labels, entry modes, and write/display permissions are d
   // 루트 화면은 원장 라벨을 쓰고(삭제된 메뉴·라우트 없는 메뉴는 보지 않는다), 동적 import 로 여는 자기 클라이언트의
   // 권한을 갖되 전역 헤더의 쓰기(THING_DELETE)·표시(THING_EXPORT) 권한은 갖지 않는다.
   assert.deepEqual(byRoute(registry, '/'), {
-    route: '/', label: '업무 홈', labelSource: 'route-ledger', shellAccess: 'authenticated', dynamic: false,
+    route: '/', label: '업무 홈', labelSource: 'route-ledger', shellAccess: 'authenticated', dynamic: false, demo: false,
     entry: { permissions: [], mode: 'ANY' }, permissions: [{ code: 'THING_READ', action: 'READ', source: 'display' }],
   });
   // 허브 클라이언트의 쓰기·표시 권한은 그것을 여는 두 하위 화면의 것이다 — 가장 가까운 page(/admin)의 것이 아니다.
@@ -671,7 +672,7 @@ test('screens, aliases, labels, entry modes, and write/display permissions are d
   }
   // 탭 메뉴 이름은 화면 라벨이 아니고 원장 라벨도 미확인이면 지어내지 않는다.
   assert.deepEqual(byRoute(registry, '/admin/things/[id]'), {
-    route: '/admin/things/[id]', label: null, labelSource: null, shellAccess: 'authenticated', dynamic: true,
+    route: '/admin/things/[id]', label: null, labelSource: null, shellAccess: 'authenticated', dynamic: true, demo: false,
     entry: { permissions: [], mode: 'ANY' }, permissions: [],
   });
 });
@@ -1093,6 +1094,21 @@ test('permission bundles keep ledger order, sort their permissions, and open the
       permissions: ['AUTHRT_GRANT', 'THING_READ'], screens: GATED, relatedScreens: [] },
   ]);
   assert.deepEqual(readScreenRegistryArtifact(registry.text).bundles, registry.bundles);
+  assert.deepEqual(validateScreenRegistry(readScreenRegistryArtifact(registry.text), dir), []);
+});
+
+// [2026-10-24 DEC-OPS-382] 시연(status demo) 화면은 목록에 남되(기존 메뉴의 경로 해석) 묶음이 여는 화면으로 세지 않는다.
+test('a demo screen stays in the registry with its marker and no bundle opens it', t => {
+  const { dir, mutate } = fixture(t);
+  mutate(SCREEN_REGISTRY_INPUTS.routes, ledger => {
+    ledger.routes.find(row => row.route === '/admin/things').status = 'demo';
+  });
+  const registry = buildScreenRegistry(dir);
+  assert.equal(registry.screens.find(screen => screen.route === '/admin/things').demo, true);
+  assert.ok(registry.screens.filter(screen => screen.route !== '/admin/things').every(screen => screen.demo === false));
+  for (const bundle of registry.bundles) {
+    assert.deepEqual(bundle.screens, GATED.filter(route => route !== '/admin/things'), bundle.id);
+  }
   assert.deepEqual(validateScreenRegistry(readScreenRegistryArtifact(registry.text), dir), []);
 });
 
