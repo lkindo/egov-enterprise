@@ -60,6 +60,8 @@ class CmsPageLifecycleIntegrationTest {
     private String login;
     private final List<Long> pages = new ArrayList<>();
     private final List<Long> attachments = new ArrayList<>();
+    /** 시험이 만든 파일 상세 id. 파기·초안 정리가 파일을 지우면 이 id 로 실물 삭제 작업(FILE_DELETE)이 쌓인다. */
+    private final List<String> fileDetails = new ArrayList<>();
 
     @BeforeEach
     void signIn() {
@@ -87,6 +89,11 @@ class CmsPageLifecycleIntegrationTest {
             for (Long attachment : attachments) {
                 jdbc.update("DELETE FROM tb_file_detail WHERE atch_file_sn = ?", attachment);
                 jdbc.update("DELETE FROM tb_file_master WHERE atch_file_sn = ?", attachment);
+            }
+            // 남은 실물 삭제 작업을 지운다 — 같은 DB 를 쓰는 다른 시험의 dispatchOne() 이 가장 오래된 대기 작업으로 이것을 집어
+            // 자기 작업을 처리하지 못한다(FileDeletionDurabilityIntegrationTest 가 이 시험 뒤에 돌면 실패했다).
+            for (String fileDetail : fileDetails) {
+                jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm = 'FILE_DELETE' AND job_mng_no = ?", fileDetail);
             }
         });
     }
@@ -125,9 +132,9 @@ class CmsPageLifecycleIntegrationTest {
     private long uploadedImage() {
         long atchFileSn = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn, frst_rgtr_id) VALUES ('Y', ?)"
                 + " RETURNING atch_file_sn", Long.class, login);
-        jdbc.update("INSERT INTO tb_file_detail (atch_file_sn, atch_file_seq, file_sz, strg_file_nm, orgnl_file_nm,"
-                + " file_strg_path, file_estn) VALUES (?, 1, 10, ?, 'a.png', 'general/cms-it', 'png')",
-                atchFileSn, "cms-it-" + atchFileSn + ".png");
+        fileDetails.add(jdbc.queryForObject("INSERT INTO tb_file_detail (atch_file_sn, atch_file_seq, file_sz, strg_file_nm,"
+                + " orgnl_file_nm, file_strg_path, file_estn) VALUES (?, 1, 10, ?, 'a.png', 'general/cms-it', 'png')"
+                + " RETURNING file_detail_id::text", String.class, atchFileSn, "cms-it-" + atchFileSn + ".png"));
         attachments.add(atchFileSn);
         return atchFileSn;
     }
