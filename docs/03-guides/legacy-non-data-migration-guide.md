@@ -61,7 +61,7 @@ HTTP 대응은 [정책 원장](../../config/governance/authorization-policies.js
 ### 절차
 
 1. **역할 대응표.** 레거시 역할마다 대상 그룹(복수 가능)·사유·승인자를 적은 표를 기관 이관 저장소에 둔다. 입력은 `app-scan` 의 요청 경로·보안 설정 접근 규칙과 레거시 역할 표다. 기본 그룹(`ROLE_ADMIN`·`ROLE_SYSTEM`·`ROLE_USER`)으로 부족하면 권한 작업대의 [권한 묶음](../../config/governance/permission-bundles.json)으로 새 그룹을 만든다(그룹 코드는 대문자로 시작하는 20자 이내).
-2. **기본 그룹이 없는 권한.** `NOTICE_EDIT`·`FAQ_EDIT`·`BOARD_PIN`·`DWORK_READ`·`DWORK_RETRY`·`MFA_RECOVER`·`ADT_LOG_READ` 는 어느 기본 그룹에도 없다. 공지·FAQ 쓰기와 게시글 상단 고정은 배정 전까지 관리자도 거부되므로 담당 그룹을 정해 배정한다([검토 수명 가이드 §3](governance-review-lifecycle.md#3-온라인-제품의-기관-도입) `authorization`).
+2. **기본 그룹이 없는 권한.** `NOTICE_EDIT`·`FAQ_EDIT`·`BOARD_PIN`·`DWORK_READ`·`DWORK_RETRY`·`MFA_RECOVER`·`ADT_LOG_READ`·`CMS_PURGE` 는 어느 기본 그룹에도 없다. 공지·FAQ 쓰기와 게시글 상단 고정은 배정 전까지 관리자도 거부되므로 담당 그룹을 정해 배정한다([검토 수명 가이드 §3](governance-review-lifecycle.md#3-온라인-제품의-기관-도입) `authorization`).
 3. **사용자 키.** 배정은 esntlId 로 한다. 도구가 esntlId 를 새로 만들었으면 `migration_control.tb_migration_key_map`(레거시 키 → 새 키)에서 얻는다. 이 대응은 식별자라 작업 파일로만 두고 커밋하지 않는다.
 4. **배정은 앱 API 로 한다.** 부트스트랩 관리자로 로그인해 [권한 관리 API](../../api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java)를 부른다. 그룹 쪽 일괄 추가 `PATCH /api/v1/admin/authorization/groups/{code}/members`(한 번에 500명), 부서 단위 `PUT …/departments/{departmentId}/memberships`, 사용자 단위 `PUT …/users/{userId}/groups` 가 있다. 이 경로는 동시 변경 확인·변경 이력(같은 트랜잭션)·마지막 관리자 보호를 지나고 민감 작업으로 기록된다. 접속 토큰은 명령행·로그·근거 파일에 남기지 않는다.
 5. **SQL 로 할 수밖에 없을 때**(예: 수만 명). 사전 설명과 승인을 받고, 배정 행과 `tb_authrt_chg_hstry` 행(`chg_trgt_type_cd='USER_GROUP'`, `chg_type_cd='MIGRATE'`, `dmnd_idntfr` 에 실행 식별자, `plcy_ver_no` 에 카탈로그 버전)을 한 트랜잭션에 쓴다. V2_98 이 같은 형태로 이력을 남겼다. 카탈로그에 없는 `OPERATION` 코드는 넣지 않는다 — 그 그룹 사용자의 권한 스냅숏이 인증을 막는다(DEC-OPS-224).
