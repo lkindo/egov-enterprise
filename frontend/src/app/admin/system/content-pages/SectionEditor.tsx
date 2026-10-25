@@ -115,8 +115,9 @@ function useLatest<T>(value: T): React.RefObject<T> {
 /**
  * 칸이 아직 화면에 있는가. 올리는 동안 칸 종류를 바꾸거나 영역을 지우면 이 칸은 사라진다 — 그때 끝난 올리기는 결과를 버린다.
  * 사라진 칸의 마지막 onChange 로 쓰면 그 시점의 초안으로 문서 전체를 덮어 지운 영역을 되살리고 그 뒤의 입력을 지운다(ADR-0042 검토).
+ * 렌더를 가르지 않는 ref 다 — 첫 그림을 미루는 hydration 용 gate 가 아니다(ADR-0006, p1-frontend-safety-contract).
  */
-function useMounted(): React.RefObject<boolean> {
+function useAliveRef(): React.RefObject<boolean> {
   const ref = React.useRef(false);
   React.useEffect(() => {
     ref.current = true;
@@ -386,7 +387,7 @@ function ImageCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
   const pendingUploadRef = React.useRef(false);
   const latestCell = useLatest(cell);
   const latestOnChange = useLatest(onChange);
-  const mounted = useMounted();
+  const alive = useAliveRef();
   const errorId = `${idPrefix}-image-error`;
   const fail = (message: string) => {
     setUploadError(message);
@@ -404,7 +405,7 @@ function ImageCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
     setUploadError(null);
     try {
       const atchFileSn = await fileService.uploadFiles([file]);
-      if (!mounted.current) {
+      if (!alive.current) {
         onNotice('이미지를 올리는 동안 그 칸이 바뀌거나 지워져, 올린 이미지를 넣지 않았습니다. 필요하면 다시 올려 주세요.');
         return;
       }
@@ -548,7 +549,7 @@ function FilesCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
   const pendingUploadRef = React.useRef(false);
   const latestCell = useLatest(cell);
   const latestOnChange = useLatest(onChange);
-  const mounted = useMounted();
+  const alive = useAliveRef();
   const full = cell.items.length >= MAX_FILES;
   const idBase = `${idPrefix}-file`;
   const errorId = `${idBase}-error`;
@@ -574,7 +575,7 @@ function FilesCellEditor({ cell, label, idPrefix, readOnly, canUpload, issueId, 
     setUploadError(null);
     try {
       const atchFileSn = await fileService.uploadFiles([file]);
-      if (!mounted.current) {
+      if (!alive.current) {
         onNotice('파일을 올리는 동안 그 칸이 바뀌거나 지워져, 올린 파일을 넣지 않았습니다. 필요하면 다시 올려 주세요.');
         return;
       }
