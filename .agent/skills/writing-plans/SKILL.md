@@ -15,7 +15,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Announce at start:** "I'm using the writing-plans skill to create the implementation plan."
 
-**Context:** This should be run in a dedicated worktree (created by brainstorming skill).
+**Context:** Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [the orchestration SOP](../../../docs/03-guides/orchestration-protocol.md) (§3 Stage 1 approval, §2.3 audit, §2.4 failure recovery, §6 time budget). Use a separate worktree when isolation is needed (another operator's concurrent work — [AGENTS.md 공유 워킹트리와 Git](../../../AGENTS.md#공유-워킹트리와-git)).
 
 **Where plans live (this repository):** there is no `docs/plans/`. Keep a task plan in the conversation, the PR description, or a scratch file outside the repository; promote only durable design to a kebab-case doc under `docs/01-product`·`02-architecture`·`03-guides`·`04-operations` with the `docs/README.md` index updated (AGENTS.md "Documentation and memory"). Session plans and TODOs never go into `.agent/memory/`.
 
@@ -37,7 +37,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 ```markdown
 # [Feature Name] Implementation Plan
 
-> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.
+> Execute in this session (subagent-driven-development or directly). Use executing-plans only when the user asked for a separate session with review checkpoints.
 
 **Goal:** [One sentence describing what this builds]
 
@@ -100,21 +100,21 @@ git commit --only -m "feat: add specific feature" -- tests/path/test.py src/path
 
 ## Execution Handoff
 
-After saving the plan, offer execution choice:
+If the user's current request or standing approval already covers implementation, continue in this session without asking. Offer a choice only when the user asked for checkpoints:
 
 **"Plan complete (in <where the plan lives>). Two execution options:**
 
-**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review between tasks, fast iteration
+**1. Subagent-Driven (this session)** - I dispatch fresh subagent per task, review by risk (subagent-driven-development), fast iteration
 
 **2. Parallel Session (separate)** - Open new session with executing-plans, batch execution with checkpoints
 
-**Which approach?"**
+**Pick one?"**
 
 **If Subagent-Driven chosen:**
-- **REQUIRED SUB-SKILL:** Use subagent-driven-development
+- Use subagent-driven-development
 - Stay in this session
-- Fresh subagent per task + code review
+- Fresh subagent per task; reviews by risk (subagent-driven-development)
 
 **If Parallel Session chosen:**
 - Guide them to open new session in worktree
-- **REQUIRED SUB-SKILL:** New session uses executing-plans
+- New session uses executing-plans

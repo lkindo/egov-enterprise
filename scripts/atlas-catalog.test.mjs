@@ -256,8 +256,9 @@ test('current, area and historical decision indexes partition every archived dec
   mutate(historical, withRow(historical, text => text.replace(row, `| ${cells.slice(0, 5).join(' | ')} |`)), () => {
     assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${id} historical decision index row requires seven columns`));
   });
-  mutate(historical, withRow(historical, text => `${text}| ADR-0001 | accepted | probe | 2026-08-15 | - | 대체됨 | probe |\n`), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 historical decision index accepts only operational decisions/);
+  // 다른 색인에 없는 ID 로 본다 — 이미 색인된 ADR 이면 중복 검사가 먼저 붉다.
+  mutate(historical, withRow(historical, text => `${text}| ADR-9999 | accepted | probe | 2026-08-15 | - | 대체됨 | probe |\n`), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), /ADR-9999 historical decision index accepts only operational decisions/);
   });
   // 영역 색인도 같은 분할에 든다(DEC-OPS-381): 행 하나를 빼면 누락, 공용 색인에도 두면 중복, 원문과 다르면 불일치다.
   const { label: areaLabel, path: area } = DECISION_AREA_INDEXES[0];
@@ -280,8 +281,16 @@ test('current, area and historical decision indexes partition every archived dec
   mutate(area, withRow(area, text => text.replace(areaRow, `| ${[...areaCells, 'extra'].join(' | ')} |`)), () => {
     assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${areaId} decision index row requires five columns`));
   });
-  mutate(area, withRow(area, text => `${text}| ADR-0001 | accepted | probe | 2026-08-15 | - |\n`), () => {
-    assert.throws(() => buildAtlasCatalog(fixture), /ADR-0001 area decision index accepts only operational decisions/);
+  // 특정 경로에만 걸리는 Accepted ADR 은 영역 색인 표 맨 위에 있고(DEC-OPS-385) 영역 라벨을 단다. 공용 색인에도 두면 중복이다.
+  const areaAdrRow = fs.readFileSync(path.join(repo, area), 'utf8').split(/\r?\n/).find(line => /^\| ADR-\d{4} \|/.test(line));
+  assert.ok(areaAdrRow, 'the first area index must hold at least one Accepted ADR');
+  const areaAdrId = areaAdrRow.match(/^\| (ADR-\d{4}) \|/)[1];
+  const areaAdr = baseline.catalogs.decisions.find(item => item.id === areaAdrId);
+  assert.equal(areaAdr.source, area);
+  assert.ok(areaAdr.details.some(item => item.label === '결정 영역' && item.value === areaLabel));
+  assert.ok(areaAdr.links.some(link => link.path.startsWith(`docs/02-architecture/decisions/${areaAdrId}-`)));
+  mutate(memory, withRow(memory, text => text.replace(/^(\| ADR-0001 \|.*)$/m, `$1\n${areaAdrRow}`)), () => {
+    assert.throws(() => buildAtlasCatalog(fixture), new RegExp(`${areaAdrId} is indexed more than once across the decision indexes`));
   });
 });
 

@@ -246,6 +246,47 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   if (!protocolBatchBudget.includes('green이든 red든 그 커밋의 증거로 쓰지 않는다')) {
     errors.push('protocol §6 must reject overlapped heavy runs as evidence either way');
   }
+  // [2026-10-26 DEC-OPS-385] 문서 전용 변경의 넓은 경로를 작업 중 최소 검사로 읽거나, 병렬 에이전트와 겹친 무거운 검증을 허용하지 않는다.
+  if (!protocolBatchBudget.includes('병렬 에이전트·워크플로(읽기 전용 검토 포함)가 도는 동안에는 메인도 무거운 검증을 시작하지 않는다')) {
+    errors.push('protocol §6.3 must keep the main agent from overlapping heavy runs with parallel agents');
+  }
+  if (!activeProtocol.includes('문서 전용 변경의 **넓은** 경로다 — 작업 중 최소 검사가 아니다')) {
+    errors.push('protocol must not present verify:docs as the minimum check during work');
+  }
+  // [2026-10-26 DEC-OPS-385] 공유 워킹트리: 섞인 경로는 --only 로 커밋하지 않고, 동시 작업은 작업 트리로 떼며, 잠금은 두지 않는다.
+  // [2026-10-26 DEC-OPS-385] 영역 색인으로 옮긴 ADR 행은 경로 라우팅만으로는 닿지 않는다 — 제목으로 읽는 의무를 규범에 둔다.
+  if (!activeAgents.includes('Accepted ADR 은 [decisions.md](.agent/memory/decisions.md)의 영역별 ID·제목 목록에서 작업과 닿는 것을 영역과 상관없이 읽는다')) {
+    errors.push('AGENTS must make agents read Accepted ADRs whose titles touch the task, whatever their area');
+  }
+  if (!agentGitRules.includes('그 경로에 다른 작업의 변경이 섞여 있으면 `--only`도 파일 전체를 담으므로 커밋하지 않고 멈춰 섞인 경로와 선택지를 보고한다')) {
+    errors.push('AGENTS must stop instead of committing a path that also holds another task\'s changes');
+  }
+  if (!agentGitRules.includes('동시에 작업하고 있으면 별도 작업 트리에서 작업한다([SOP §6.6](docs/03-guides/orchestration-protocol.md#66-작업-트리))')) {
+    errors.push('AGENTS must send concurrent work to a separate worktree via protocol §6.6');
+  }
+  // [2026-10-26 DEC-OPS-385] 의미를 바꾸는 변경의 검토자는 재진술보다 사용자 원문과 diff 를 먼저 받고, 그 관점은 채택률로 줄이지 않는다.
+  const audit = section(activeProtocol, '#### 2.3 Audit 귀속 원칙', '#### 2.4 실패 복구 프로토콜');
+  if (!audit.includes('병합 전에 독립 적대 검토를 한 번 둔다') || !audit.includes('보다 먼저 **사용자 원문 요청(그대로 인용)과 diff** 를 주고')) {
+    errors.push('protocol §2.3 must keep one pre-merge independent review that reads the user request and diff before the restatement');
+  }
+  // §7 의 설계 검토는 구현 전 재진술을 본다 — 설계를 검토했다는 이유로 구현 diff 검토를 면제하지 않는다.
+  if (!audit.includes('§7 의 설계 검토는 구현 전의 재진술을 보므로 구현 diff 에 대한 이 검토를 대신하지 않는다')
+    || /(?:설계 문서|§7)[^\n]{0,120}이를 대신한다/u.test(audit)) {
+    errors.push('protocol §2.3 must not let a design review replace the pre-merge review of the diff');
+  }
+  if (!activeProtocol.includes('식별자 축, 동시성·잠금, 게이트 의미를 보는 관점은 채택률로 줄이지 않는다')) {
+    errors.push('protocol §7.4 must not let adoption rates retire high-severity review lenses');
+  }
+  const worktreeSection = section(activeProtocol, '### 6.6 작업 트리', '## 7. 설계 검토 예산');
+  if (!worktreeSection.includes('실행 잠금은 두지 않는다')) {
+    errors.push('protocol §6.6 must keep the no-lock boundary');
+  }
+  if (!worktreeSection.includes('상대 경로 `.githooks`')) {
+    errors.push('protocol §6.6 must keep the relative hooks path');
+  }
+  if (!worktreeSection.includes('직접 만들지 않은 작업 트리는') || !worktreeSection.includes('지우기 전에 묻는다')) {
+    errors.push('protocol §6.6 must ask before deleting a worktree it did not create');
+  }
 
   // [2026-10-24 DEC-OPS-382] 설계 검토 예산 — 반복 비용만 줄이고 승인 분리·신호 보존·L2 검토는 지운 채 남지 않게 고정한다.
   const designReviewBudget = section(activeProtocol, '## 7. 설계 검토 예산');
@@ -526,6 +567,30 @@ test('protocol regressions become red without mutating repository files', () => 
       'synthetic protocol mutant must change at least one governed source',
     );
     assert.notDeepEqual(protocolTruthErrors(mutant), []);
+  }
+});
+
+// [2026-10-26 DEC-OPS-385] 각 변이는 아무 오류가 아니라 그 문장을 지키는 검사의 오류로 붉어야 한다.
+test('DEC-OPS-385 protocol pins fail with their own message', () => {
+  const cases = [
+    ['protocol', '병렬 에이전트·워크플로(읽기 전용 검토 포함)가 도는 동안에는 메인도 무거운 검증을 시작하지 않는다', '병렬 에이전트가 도는 동안에도 메인은 무거운 검증을 시작할 수 있다', 'overlapping heavy runs with parallel agents'],
+    ['protocol', '문서 전용 변경의 **넓은** 경로다 — 작업 중 최소 검사가 아니다', '문서 전용 변경의 최소 검사다', 'verify:docs as the minimum check'],
+    ['agents', '그 경로에 다른 작업의 변경이 섞여 있으면 `--only`도 파일 전체를 담으므로 커밋하지 않고 멈춰 섞인 경로와 선택지를 보고한다', '그 경로에 다른 작업의 변경이 섞여 있어도 `--only`로 커밋한다', "path that also holds another task's changes"],
+    ['agents', '동시에 작업하고 있으면 별도 작업 트리에서 작업한다', '동시에 작업해도 같은 워킹트리에서 작업한다', 'concurrent work to a separate worktree'],
+    ['agents', '작업과 닿는 것을 영역과 상관없이 읽는다', '대상 경로가 걸릴 때만 읽는다', 'Accepted ADRs whose titles touch the task'],
+    ['protocol', '병합 전에 독립 적대 검토를 한 번 둔다', '원하면 검토를 둔다', 'one pre-merge independent review'],
+    ['protocol', '보다 먼저 **사용자 원문 요청(그대로 인용)과 diff** 를 주고', '와 함께 diff 를 주고', 'one pre-merge independent review'],
+    ['protocol', '§7 의 설계 검토는 구현 전의 재진술을 보므로 구현 diff 에 대한 이 검토를 대신하지 않는다', '설계 문서를 두고 검토한 작업은 §7 의 검토 예산과 결정 카드의 부정 시험 열이 이를 대신한다', 'design review replace the pre-merge review'],
+    ['protocol', '게이트 의미를 보는 관점은 채택률로 줄이지 않는다', '게이트 의미를 보는 관점도 채택률이 낮으면 줄인다', 'adoption rates retire high-severity review lenses'],
+    ['protocol', '실행 잠금은 두지 않는다', '실행 잠금 파일을 둔다', 'no-lock boundary'],
+    ['protocol', '상대 경로 `.githooks`', '절대 경로', 'relative hooks path'],
+    ['protocol', '직접 만들지 않은 작업 트리는', '오래된 작업 트리는', 'worktree it did not create'],
+    ['protocol', '지우기 전에 묻는다', '바로 지운다', 'worktree it did not create'],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
+    const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
+    assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
   }
 });
 

@@ -175,7 +175,7 @@ Done!
 - Ignore subagent questions (answer before letting them proceed)
 - Accept "close enough" on spec compliance (spec reviewer found issues = not done)
 - Leave review findings unverified after correction
-- Move to next task while either review has open issues
+- Move to next task while a review you requested has open findings
 
 **If subagent asks questions:**
 - Answer clearly and completely
@@ -184,9 +184,8 @@ Done!
 
 **If reviewer finds issues:**
 - Implementer (same subagent) fixes them
-- Reviewer reviews again
+- Reviewer re-checks major findings; verify minor fixes yourself (§2.3)
 - Stop and report at three failures for the same cause under SOP §2.4
-- Don't skip the re-review
 
 **If subagent fails task:**
 - Use the evidence to repair directly or delegate a targeted fix within the approved scope

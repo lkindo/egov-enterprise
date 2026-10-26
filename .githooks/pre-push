@@ -82,7 +82,8 @@ RECORD_ROOT=$(pwd)
 RECORD_SCRIPT="$RECORD_ROOT/scripts/verification-record.mjs"
 RECORD_SCOPE=source
 [ "$SCOPE_DOCS_ONLY" = "true" ] && RECORD_SCOPE=docs
-RECORD_ID=$(node "$RECORD_SCRIPT" --root "$RECORD_ROOT" begin pre-push "$RECORD_SCOPE" 2>/dev/null) || RECORD_ID=""
+# 시작 시점의 겹친 실행 경고는 바로 보여 준다(stderr) — 끝날 때까지 기다리지 않고 멈출 수 있게 한다.
+RECORD_ID=$(node "$RECORD_SCRIPT" --root "$RECORD_ROOT" begin pre-push "$RECORD_SCOPE") || RECORD_ID=""
 if [ -n "$RECORD_ID" ]; then
   echo "  → execution record: build/verification-runs/$RECORD_ID.jsonl"
 else

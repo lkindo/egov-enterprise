@@ -189,6 +189,8 @@ try {
     // ③ 폼 census와 전체 시험·하네스 → ④ 닿는 schema-validation·생성기 화면·바뀐 E2E를 순차 실행한다.
     run('node scripts/integration-precheck.mjs');
     run('npm run regen');
+    // regen 은 추적 생성물을 의도적으로 다시 쓴다 — 뒤 시험은 그 트리를 검증하므로 입력 비교 기준을 여기로 옮긴다(DEC-OPS-385).
+    record.rebaseInputs();
     run('pnpm -C frontend run test:form-validation');
     run('pnpm -C frontend exec vitest run');
     run(`${gradlew} :api-server:test :api-server:harnessTest --console=plain -Dfile.encoding=UTF-8`);

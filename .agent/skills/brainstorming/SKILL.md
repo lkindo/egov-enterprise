@@ -1,6 +1,6 @@
 ---
 name: brainstorming
-description: "You MUST use this before any creative work - creating features, building components, adding functionality, or modifying behavior. Explores user intent, requirements and design before implementation."
+description: "Use when the user asks to explore an idea or a design before implementation, or when the intent is ambiguous enough to change the result. Explores user intent, requirements and design."
 source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
 license: MIT — Complete terms in LICENSE.txt
 ---
@@ -11,7 +11,9 @@ license: MIT — Complete terms in LICENSE.txt
 
 Help turn ideas into fully formed designs and specs through natural collaborative dialogue.
 
-Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design in small sections (200-300 words), checking after each section whether it looks right so far.
+Start by understanding the current project context, then ask questions one at a time to refine the idea. Once you understand what you're building, present the design in small sections (200-300 words).
+
+**In this repository:** Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [the orchestration SOP](../../../docs/03-guides/orchestration-protocol.md) (§3 Stage 1 approval, §2.3 audit, §2.4 failure recovery, §6 time budget). Ask only the questions whose answers change the result; when the request is clear or a standing approval covers the work, state your assumptions and proceed. A design document under review follows SOP §7 (review budget, decision cards with negative tests) instead of section-by-section approval.
 
 ## The Process
 
@@ -30,7 +32,7 @@ Start by understanding the current project context, then ask questions one at a 
 **Presenting the design:**
 - Once you believe you understand what you're building, present the design
 - Break it into sections of 200-300 words
-- Ask after each section whether it looks right so far
+- Ask for confirmation only where an answer would change the design
 - Cover: architecture, components, data flow, error handling, testing
 - Be ready to go back and clarify if something doesn't make sense
 
@@ -42,8 +44,8 @@ Start by understanding the current project context, then ask questions one at a 
 - Commit only when the user asked for it, and only your own paths with `git commit --only -- <paths>` (AGENTS.md "공유 워킹트리와 Git")
 
 **Implementation (if continuing):**
-- Ask: "Ready to set up for implementation?"
-- Use using-git-worktrees to create isolated workspace
+- If the request or a standing approval covers implementation, continue; otherwise ask whether to implement
+- Use using-git-worktrees when isolation is needed
 - Use writing-plans to create detailed implementation plan
 
 ## Key Principles
@@ -52,5 +54,5 @@ Start by understanding the current project context, then ask questions one at a 
 - **Multiple choice preferred** - Easier to answer than open-ended when possible
 - **YAGNI ruthlessly** - Remove unnecessary features from all designs
 - **Explore alternatives** - Always propose 2-3 approaches before settling
-- **Incremental validation** - Present design in sections, validate each
+- **Incremental validation** - Present design in sections; confirm only what changes the design
 - **Be flexible** - Go back and clarify when something doesn't make sense

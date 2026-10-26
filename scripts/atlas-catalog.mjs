@@ -470,7 +470,8 @@ export function buildAtlasCatalog(repoRoot) {
   const decisionHistory = new Map(historyRows.map(row => [row.cells[0], row]));
   // Operational decisions are split between the auto-loaded current index (decisions that bind every change), the area
   // indexes read when their paths change (DEC-OPS-381) and a historical index (retired, fully superseded, one-off runs,
-  // implementation records). Together they index every archived decision exactly once.
+  // implementation records). Together they index every archived decision exactly once. Accepted ADRs sit in the current index
+  // when they bind every change and at the top of an area index otherwise (DEC-OPS-385); an ID appears in one index only.
   const historicalIndexSource = HISTORICAL_DECISION_INDEX;
   const HISTORICAL_KINDS = new Set(['퇴역', '대체됨', '일회성 실행', '구현 기록']);
   const indexRowPrefix = '(?:ADR-\\d{4}|DEC-OPS-\\d{3}) \\|';
@@ -480,11 +481,12 @@ export function buildAtlasCatalog(repoRoot) {
       tableRows(io.read(source), indexRowPrefix).map(row => ({ ...row, source, historical: false, area: label }))),
     ...tableRows(io.read(historicalIndexSource), indexRowPrefix).map(row => ({ ...row, source: historicalIndexSource, historical: true })),
   ];
-  const indexedDecisionIds = decisionIndexRows.map(row => row.cells[0]).filter(id => id.startsWith('DEC-'));
-  for (const id of new Set(indexedDecisionIds)) {
-    requireValue(indexedDecisionIds.filter(other => other === id).length === 1,
+  const indexedIds = decisionIndexRows.map(row => row.cells[0]);
+  for (const id of new Set(indexedIds)) {
+    requireValue(indexedIds.filter(other => other === id).length === 1,
       `${id} is indexed more than once across the decision indexes`);
   }
+  const indexedDecisionIds = indexedIds.filter(id => id.startsWith('DEC-'));
   for (const id of decisionHistory.keys()) {
     requireValue(indexedDecisionIds.includes(id), `${id} archived decision is missing from every decision index`);
   }
@@ -502,7 +504,6 @@ export function buildAtlasCatalog(repoRoot) {
     // the ADR registry key, so neither repeats its reason or source (DEC-OPS-381). Historical rows add 분류 | 근거 after them.
     const isDecision = id.startsWith('DEC-');
     if (historical) requireValue(isDecision, `${id} historical decision index accepts only operational decisions`);
-    if (area) requireValue(isDecision, `${id} area decision index accepts only operational decisions`);
     const columns = historical ? 7 : 5;
     requireValue(cells.length === columns,
       `${id} ${historical ? 'historical ' : ''}decision index row requires ${columns === 5 ? 'five' : 'seven'} columns`);

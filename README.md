@@ -122,7 +122,7 @@ pnpm dev
 
 다음은 생산 저장소의 명령이다. 온라인 생성물의 명령·CI 범위는 아래 별도 설명과 [재사용 Base 가이드 §4](./docs/03-guides/reusable-base-guide.md#4-산출물-검증)를 따른다.
 
-- `npm run verify:docs` / `verify:fast` / `verify:push` / `verify:full`: 비용 순으로 중첩된 로컬 프로파일. 변경 범위에 맞는 최소 프로파일을 고른다. `verify:full`은 실 PostgreSQL 스키마 검증을 포함해 Docker가 필요하다.
+- `npm run verify:docs` / `verify:fast` / `verify:push` / `verify:full`: 비용 순으로 중첩된 로컬 프로파일. 넓은 검증이 필요할 때 변경 범위에 맞는 가장 가벼운 프로파일을 고른다 — 작업 중 검사는 영향 테스트이고, pre-push 가 곧 돌릴 묶음은 같은 커밋에서 미리 돌리지 않는다([SOP §6.2](./docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)). `verify:full`은 실 PostgreSQL 스키마 검증을 포함해 Docker가 필요하다.
 - `npm run verify:e2e`: 브라우저 E2E. runner가 새 격리 DB와 자신이 소유한 앱 프로세스를 만들며, 저장소 루트나 `frontend/`에 `.env`·`.env.local`이 있으면 시작하지 않는다. `make bootstrap`을 실행한 개발 클론이 아니라 `.env`가 없는 격리 worktree에서 실행한다([E2E 운영 Runbook](./docs/03-guides/e2e-test-guide.md)).
 - `npm run base:verify -- --profile core`: 새 격리 PostgreSQL과 소스 산출물을 만들고 산출물의 계약·Java 하네스·실 DB 스키마·프런트 타입·lint·build를 검증한다. [시작 구성](./config/modules/presets.json) 다섯(`core`·`collaboration`·`demo`·`survey`·`approval`)이 같은 경로를 사용한다. [재사용 Base 가이드](./docs/03-guides/reusable-base-guide.md)를 따른다.
 - `npm run verify:migration`: 온라인 UI 없이 독립 이관 모듈의 테스트·bootJar를 검증한다.
