@@ -27,7 +27,7 @@ describe('핸들러 없는 요청', () => {
     await expect(fetch(url)).rejects.toThrow();
 
     expect(hits).toBe(0);
-    // 기록을 이 시험이 비운다 — 공용 afterEach 가 이 의도된 요청을 실패로 올리지 않게 한다.
-    expect(takeUnhandledRequests()).toEqual([`GET ${url}`]);
+    // 기록을 이 시험이 비운다 — 공용 afterEach 가 이 의도된 요청을 실패로 올리지 않게 한다. 기록에는 출처 시험 이름이 붙는다.
+    expect(takeUnhandledRequests()).toEqual([`GET ${url} (시험: 핸들러 없는 요청 > 실제 네트워크로 나가지 않고 기록된다)`]);
   });
 });

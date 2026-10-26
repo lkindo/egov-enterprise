@@ -12,13 +12,18 @@ import { assertNoUnhandledRequests, watchUnhandledRequests } from './src/mocks/u
  */
 watchUnhandledRequests(server);
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
-afterEach(() => {
+// 미처리 기록은 요청 뒤 핸들러 탐색을 마친 다음(마이크로태스크 여러 틱 뒤)에 생긴다. 한 번 양보한 뒤 검사해 그 시험의 요청을 그 시험에
+//   귀속시키고, 마지막 시험의 요청도 서버를 닫기 전에 본다(닫은 뒤에는 이벤트가 오지 않는다).
+const settle = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+afterEach(async () => {
   server.resetHandlers();
+  await settle();
   assertNoUnhandledRequests();
 });
-afterAll(() => {
-  server.close();
+afterAll(async () => {
+  await settle();
   assertNoUnhandledRequests();
+  server.close();
 });
 
 // ============================================

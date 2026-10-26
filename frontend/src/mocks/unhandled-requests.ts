@@ -11,7 +11,9 @@ export function watchUnhandledRequests(server: SetupServerApi): void {
   if (watched.has(server)) return;
   watched.add(server);
   server.events.on('request:unhandled', ({ request }) => {
-    pending.push(`${request.method} ${request.url}`);
+    // 어느 시험에서 나간 요청인지 함께 적는다 — 늦게 기록된 요청이 다음 시험에서 드러나도 출처를 찾을 수 있다.
+    const source = (globalThis as { expect?: { getState?: () => { currentTestName?: string } } }).expect?.getState?.().currentTestName;
+    pending.push(`${request.method} ${request.url}${source ? ` (시험: ${source})` : ''}`);
   });
 }
 

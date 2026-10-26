@@ -157,6 +157,9 @@ class PageableConstructionLinterTest {
                 .size());
         assertEquals(1, directPageParamViolations("fixture.java",
                 "class X { String u = \"http://a\"; void x(@RequestParam(\"page\") int p) {} }").size());
+        // 문자열 속 '@RequestParam(' 에서 시작한 일치가 뒤의 실제 파라미터까지 삼켜도, 그 일치를 버린 뒤 실제 위반을 다시 찾는다.
+        assertEquals(1, directPageParamViolations("fixture.java",
+                "class X { String s = \"@RequestParam(\"; void f(@RequestParam(\"x\") int page) {} }").size());
     }
 
     @Test
@@ -322,9 +325,15 @@ class PageableConstructionLinterTest {
         //   아니라 코드인지는 문자열까지 가린 원문에서 본다 — 같은 오프셋이다.
         String code = HarnessSourceIndex.maskNonCode(source);
         Matcher matcher = DIRECT_PAGE_REQUEST_PARAM.matcher(HarnessSourceIndex.maskComments(source));
-        while (matcher.find()) {
-            if (code.charAt(matcher.start()) != '@') continue;
+        int from = 0;
+        while (from < code.length() && matcher.find(from)) {
+            // 문자열 안에서 시작한 일치는 버리되 그 바로 뒤부터 다시 찾는다 — 일치가 삼킨 뒤쪽 코드의 실제 위반을 놓치지 않는다.
+            if (code.charAt(matcher.start()) != '@') {
+                from = matcher.start() + 1;
+                continue;
+            }
             violations.add(relative + " — 페이지 값 직접 수신: `" + squeeze(source.substring(matcher.start(), matcher.end())) + "`");
+            from = matcher.end();
         }
         return violations;
     }
