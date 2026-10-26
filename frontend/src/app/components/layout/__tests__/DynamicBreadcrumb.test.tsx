@@ -27,7 +27,7 @@ const crumbs = () => within(screen.getByRole('navigation', { name: '현재 위�
 describe('DynamicBreadcrumb', () => {
   beforeEach(() => {
     nav.pathname = '/admin/system/menus';
-    nav.getHeadMenus.mockResolvedValue(menus);
+    nav.getHeadMenus.mockReset().mockResolvedValue(menus);
   });
 
   it('메뉴에 있는 화면은 화면이 넘긴 옛 이름 대신 메뉴 트리 이름을 보인다', async () => {
@@ -41,6 +41,14 @@ describe('DynamicBreadcrumb', () => {
     render(<DynamicBreadcrumb customItems={[{ name: '운영지원' }, { name: '메뉴 상세' }]} />);
     await waitFor(() => expect(crumbs()).toEqual(['홈', '관리 센터', '메뉴 관리', '메뉴 상세']));
     expect(screen.getByText('메뉴 상세')).toHaveAttribute('aria-current', 'page');
+  });
+
+  // 위 대역의 useSearchParams 는 렌더마다 새 객체다. 조회 조건을 객체로 비교하면 메뉴 조회가 끝없이 다시 돌아 시험이 멈췄다.
+  it('같은 주소면 렌더가 거듭돼도 메뉴를 한 번만 읽는다', async () => {
+    render(<DynamicBreadcrumb customItems={[{ name: '메뉴 관리' }]} />);
+    await waitFor(() => expect(crumbs()).toEqual(['홈', '관리 센터', '메뉴 관리']));
+    await new Promise((resolve) => setTimeout(resolve, 50));
+    expect(nav.getHeadMenus).toHaveBeenCalledTimes(1);
   });
 
   it('메뉴 트리에 없는 화면이면 화면이 넘긴 경로를 대체값으로 쓴다', async () => {

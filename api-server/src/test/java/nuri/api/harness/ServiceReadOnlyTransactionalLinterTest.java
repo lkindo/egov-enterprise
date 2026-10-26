@@ -13,11 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
 import java.util.stream.Collectors;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.fail;
 
 /**
@@ -45,7 +47,8 @@ class ServiceReadOnlyTransactionalLinterTest {
      * [동결 베이스라인] 클래스레벨 @Transactional(readOnly=true) 를 갖지 않은 기존 @Service.
      * 파일 IO/쓰기 전용/별도 tx 등 정당한 예외와, readOnly 검토가 필요한 잔여가 섞여 있다. <b>신규 추가 금지</b> —
      * 신규 @Service 는 클래스레벨 readOnly=true 를 사용하고, 불가피하면 사유와 함께 이 목록에 추가한다.
-     * (1차 census 실행으로 채운다 — 엔티티 단순명 기준)
+     * (1차 census 실행으로 채운다.) [2026-10-26] 항목은 <b>패키지를 포함한 전체 클래스명</b>이다 — 단순 이름으로 대조하면 다른
+     * 패키지에 같은 이름의 서비스(예: 새 {@code BoardService})가 생겼을 때 그 서비스가 이 예외를 조용히 물려받는다.
      */
     private static final Set<String> GRANDFATHERED = new TreeSet<>(Arrays.asList(
             // [동결 2026-07-18, 축소 2026-08-30] 클래스레벨 readOnly 누락 @Service 11종 중
@@ -63,25 +66,25 @@ class ServiceReadOnlyTransactionalLinterTest {
             // stale 이 떴다면 먼저 그 클래스에 readOnly 가 왜 붙었는지부터 확인한다.
 
             // 쓰기 혼재 — 조회와 쓰기가 한 서비스에 있고 메서드 레벨로 경계를 잡는다.
-            "BoardService",
+            "nuri.business.service.board.BoardService",
 
             // ⛔ readOnly 를 붙이면 조회수 반영이 죽는다. @Scheduled syncViewCountsToDb 가 읽기전용
             //    트랜잭션을 열면, REQUIRED 인 BoardRepository#increaseInqCntAtomic(@Modifying 네이티브
             //    UPDATE)이 그 트랜잭션에 참여해 PostgreSQL 이 UPDATE 를 거부한다. catch 가 예외를
             //    삼키므로 조회수는 영구 0 이 되고 버퍼만 늘어난다 — 테스트는 H2 라 CI 는 green 이다.
             //    건별 트랜잭션은 결함 수정으로 **의도적으로** 도입한 설계다(서비스 javadoc 참조).
-            "BoardViewCountService",
+            "nuri.business.service.board.BoardViewCountService",
 
             // 쓰기 혼재 — BoardService 와 같은 축.
-            "CommentService",
+            "nuri.business.service.comment.CommentService",
 
             // DB 미접근 — 파일 IO 전용. Repository·EntityManager 주입이 0 이라 트랜잭션을 열 대상이 없다.
-            "LocalFileStorageService",
+            "nuri.business.service.file.LocalFileStorageService",
 
             // [2026-10-06] 생산 호출이 없는 OtpService는 MFA의 TotpVerifier로 대체되어 구현과 예외를 제거했다.
 
             // 비-DB 실시간 카운터 — 방송 주기에 AtomicInteger 를 읽고, 알림 건수만 리포지토리로 센다.
-            "RealTimeDashboardService"
+            "nuri.business.service.dashboard.RealTimeDashboardService"
     ));
 
     @Test
@@ -101,7 +104,7 @@ class ServiceReadOnlyTransactionalLinterTest {
                 Transactional txn = AnnotationUtils.findAnnotation(clazz, Transactional.class);
                 boolean classReadOnly = txn != null && txn.readOnly();
                 if (!classReadOnly) {
-                    nonReadOnly.add(clazz.getSimpleName());
+                    nonReadOnly.add(clazz.getName());
                 }
             } catch (ClassNotFoundException | LinkageError ex) {
                 log.warn("[ServiceReadOnlyGate] 서비스 로드 실패(스캔 제외): {} ({})", className, ex.getMessage());
@@ -113,10 +116,7 @@ class ServiceReadOnlyTransactionalLinterTest {
             fail("게이트 무결성 파손: @Service 스캔 건수(" + totalServices + ")가 예상 하한(20) 미만 — 스캔/클래스패스 파손 의심.");
         }
 
-        List<String> violations = nonReadOnly.stream()
-                .filter(name -> !GRANDFATHERED.contains(name))
-                .sorted()
-                .collect(Collectors.toList());
+        List<String> violations = newViolations(nonReadOnly, GRANDFATHERED);
         List<String> staleGrandfathered = GRANDFATHERED.stream()
                 .filter(ReusableHarnessProfile.current()::retainsType)
                 .filter(name -> !nonReadOnly.contains(name))
@@ -146,5 +146,24 @@ class ServiceReadOnlyTransactionalLinterTest {
             log.info("✅ 신규 readOnly 누락 @Service 없음(스캔 {}건, 동결 {}건). tx 경계 규약 준수.",
                     totalServices, GRANDFATHERED.size());
         }
+    }
+
+    /** 동결에 없는 미준수 서비스. 동결은 전체 클래스명에 결속한다 — 같은 단순 이름의 다른 클래스는 예외를 물려받지 않는다. */
+    static List<String> newViolations(Collection<String> nonReadOnlyClassNames, Set<String> grandfathered) {
+        return nonReadOnlyClassNames.stream()
+                .filter(name -> !grandfathered.contains(name))
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    @Test
+    @DisplayName("동결은 전체 클래스명에 결속한다 — 다른 패키지의 같은 단순 이름 클래스는 예외를 물려받지 않는다")
+    void grandfatheringIsBoundToFullyQualifiedClassName() {
+        // java.util.Date 를 동결했어도 단순 이름이 같은 java.sql.Date 는 새 위반이다.
+        assertThat(newViolations(List.of(java.sql.Date.class.getName()), Set.of(java.util.Date.class.getName())))
+                .containsExactly(java.sql.Date.class.getName());
+        assertThat(newViolations(List.of(java.util.Date.class.getName()), Set.of(java.util.Date.class.getName()))).isEmpty();
+        // 동결 항목이 단순 이름으로 되돌아가면 위 결속이 무너진다 — 항목은 모두 패키지를 포함한다.
+        assertThat(GRANDFATHERED).allSatisfy(name -> assertThat(name).startsWith("nuri."));
     }
 }

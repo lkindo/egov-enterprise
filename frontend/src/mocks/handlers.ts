@@ -1,6 +1,15 @@
 import { http, HttpResponse } from 'msw';
 
 export const handlers = [
+  // [2026-10-26] 공용 레이아웃(브레드크럼·사이드바)이 배경으로 부르는 메뉴 조회. 시험의 검증 대상이 아니므로 빈 목록이다 — 종전에는
+  //   핸들러가 없어 실제 네트워크로 나갔고, CI 에서는 실패해 빈 목록과 같은 표시가 됐다. 응답 모양은 생성 계약이 대조한다.
+  http.get('*/api/v1/menus/head', () => {
+    return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: { list: [] } });
+  }),
+  http.get('*/api/v1/menus/bookmarks', () => {
+    return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: [] });
+  }),
+
   // 사용자 정보 조회 Mock API (실제 서비스는 users/me 호출)
   http.get('*/api/v1/users/me', () => {
     return HttpResponse.json({

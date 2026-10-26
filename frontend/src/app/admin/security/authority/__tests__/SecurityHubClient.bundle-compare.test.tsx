@@ -42,8 +42,6 @@ vi.mock('@/types/generated-screen-registry', async (importOriginal) => {
   };
   return { ...fixture.withFixtureScreenRegistry(await importOriginal()), PERMISSION_BUNDLES: [bundle, recovery] };
 });
-// 전역 설정(vitest.setup.ts)은 탭을 children 통과 mock 으로 바꾼다. 편집기·비교는 비활성 탭을 숨기는 것이 계약이므로 실제 탭을 쓴다.
-vi.unmock('@/components/ui/tabs');
 
 type Grant = { type: 'OPERATION' | 'NAVIGATION'; code: string };
 type Snapshot = { code: string; name: string; description: string | null; version: string; complete: true; grants: Grant[] };

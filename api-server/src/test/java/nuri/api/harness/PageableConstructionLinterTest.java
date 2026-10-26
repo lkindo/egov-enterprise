@@ -145,6 +145,31 @@ class PageableConstructionLinterTest {
         }
     }
 
+    /*
+     * [2026-10-26] 종전 주석 제거는 문자열을 구별하지 않는 정규식이라 같은 줄의 "https://…" 뒤 코드를 주석으로 지웠고(놓침),
+     * 금지 호출을 설명하는 문자열은 코드로 셌다(오탐). 판정은 공용 마스킹(주석·문자열·text block 을 같은 길이로 가림)으로 한다.
+     */
+    @Test
+    @DisplayName("red proof: 같은 줄의 URL 문자열 뒤 위반을 놓치지 않는다 — 문자열 속 // 는 주석이 아니다")
+    void keepsCodeAfterUrlStrings() {
+        assertEquals(1, findViolations("fixture.java",
+                "class X { void x(BaseSearchDto s) { String u = \"https://example.test\"; int p = Math.max(0, s.getPageIndex() - 1); } }")
+                .size());
+        assertEquals(1, directPageParamViolations("fixture.java",
+                "class X { String u = \"http://a\"; void x(@RequestParam(\"page\") int p) {} }").size());
+    }
+
+    @Test
+    @DisplayName("red proof: 문자열·text block 속 금지 호출 예시는 위반으로 세지 않는다")
+    void ignoresExamplesInsideStrings() {
+        assertTrue(findViolations("fixture.java",
+                "class X { String hint = \"Math.max(0, s.getPageIndex() - 1) 로 바꾸지 마십시오\"; }").isEmpty());
+        assertTrue(findViolations("fixture.java",
+                "class X { String hint = \"\"\"\n PageRequest.of(s.getPageIndex() - 1, s.getPageUnit())\n \"\"\"; }").isEmpty());
+        assertTrue(directPageParamViolations("fixture.java",
+                "class X { String doc = \"@RequestParam int page 대신 Pageable 을 받는다\"; }").isEmpty());
+    }
+
     @Test
     @DisplayName("red proof: BaseSearchDto 와 무관한 고정 PageRequest 는 허용한다")
     void allowsFixedPageRequestConstruction() {
@@ -200,7 +225,7 @@ class PageableConstructionLinterTest {
 
         for (Path source : HarnessSourceIndex.productionJavaSources("api-server")) {
             String relative = root.relativize(source).toString().replace('\\', '/');
-            String code = stripComments(HarnessSourceIndex.read(source));
+            String code = HarnessSourceIndex.maskNonCode(HarnessSourceIndex.read(source));
             int sourceAll = count(BASE_SEARCH_MODEL_ATTRIBUTE, code);
             int sourceValidated = count(VALID_BASE_SEARCH_MODEL_ATTRIBUTE, code);
             all += sourceAll;
@@ -293,9 +318,13 @@ class PageableConstructionLinterTest {
 
     static List<String> directPageParamViolations(String relative, String source) {
         List<String> violations = new ArrayList<>();
-        Matcher matcher = DIRECT_PAGE_REQUEST_PARAM.matcher(stripComments(source));
+        // 파라미터 이름을 문자열 값(@RequestParam("page"))으로도 받으므로 주석만 가린다. 찾은 @RequestParam 이 문자열 안의 예시가
+        //   아니라 코드인지는 문자열까지 가린 원문에서 본다 — 같은 오프셋이다.
+        String code = HarnessSourceIndex.maskNonCode(source);
+        Matcher matcher = DIRECT_PAGE_REQUEST_PARAM.matcher(HarnessSourceIndex.maskComments(source));
         while (matcher.find()) {
-            violations.add(relative + " — 페이지 값 직접 수신: `" + squeeze(matcher.group()) + "`");
+            if (code.charAt(matcher.start()) != '@') continue;
+            violations.add(relative + " — 페이지 값 직접 수신: `" + squeeze(source.substring(matcher.start(), matcher.end())) + "`");
         }
         return violations;
     }
@@ -407,6 +436,9 @@ class PageableConstructionLinterTest {
         assertTrue(unsortedPassThroughViolations("Fixture.java",
                 "class X { Object x(@nuri.api.support.UnsortedPageable Pageable page) {"
                         + " return svc.list(PageRequests.unsorted(page), page.getPageNumber(), page.getPageSize()); } }").isEmpty());
+        // [2026-10-26] 문자열 속 중괄호는 본문의 끝이 아니다 — 종전에는 "}" 에서 본문을 끊어 그 뒤의 정렬째 전달을 놓쳤다.
+        assertEquals(1, unsortedPassThroughViolations("Fixture.java",
+                "class X { Object x(@UnsortedPageable Pageable page) { String s = \"}\"; return repo.find(page); } }").size());
     }
 
     @Test
@@ -417,7 +449,7 @@ class PageableConstructionLinterTest {
         int found = 0;
         for (Path source : HarnessSourceIndex.javaSources(root.resolve("api-server/src/main/java/nuri/api/controller"))) {
             String code = HarnessSourceIndex.read(source);
-            found += count(UNSORTED_PAGEABLE_PARAM, stripComments(code));
+            found += count(UNSORTED_PAGEABLE_PARAM, HarnessSourceIndex.maskNonCode(code));
             violations.addAll(unsortedPassThroughViolations(root.relativize(source).toString().replace('\\', '/'), code));
         }
         if (!ReusableHarnessProfile.current().projected() && found == 0) {
@@ -430,7 +462,7 @@ class PageableConstructionLinterTest {
     }
 
     static List<String> unsortedPassThroughViolations(String relative, String source) {
-        String code = stripComments(source);
+        String code = HarnessSourceIndex.maskNonCode(source);
         List<String> violations = new ArrayList<>();
         Matcher param = UNSORTED_PAGEABLE_PARAM.matcher(code);
         while (param.find()) {
@@ -602,32 +634,33 @@ class PageableConstructionLinterTest {
     }
 
     static List<String> findViolations(String relative, String source) {
-        String code = stripComments(source);
+        // 판정은 주석·문자열을 가린 코드로 하고, 메시지 발췌는 같은 오프셋의 원문에서 뽑는다(가린 문자열이 빈칸으로 보이지 않게).
+        String code = HarnessSourceIndex.maskNonCode(source);
         List<String> violations = new ArrayList<>();
 
         Matcher idx = MANUAL_PAGE_INDEX.matcher(code);
         while (idx.find()) {
             violations.add(relative + " — 1-based→0-based 변환을 손수 구현: `"
-                    + squeeze(idx.group()) + "`");
+                    + squeeze(source.substring(idx.start(), idx.end())) + "`");
         }
 
         Matcher unit = MANUAL_PAGE_UNIT.matcher(code);
         while (unit.find()) {
             violations.add(relative + " — 페이지 크기 기본값 분기를 손수 구현: `"
-                    + squeeze(unit.group()) + "`");
+                    + squeeze(source.substring(unit.start(), unit.end())) + "`");
         }
 
         Matcher direct = DIRECT_PAGE_REQUEST_GETTER.matcher(code);
         while (direct.find()) {
             violations.add(relative + " — PageRequest.of 에 BaseSearchDto getter 직접 전달: `"
-                    + squeeze(direct.group()) + "`");
+                    + squeeze(source.substring(direct.start(), direct.end())) + "`");
         }
 
         if (STATIC_PAGE_REQUEST_OF_IMPORT.matcher(code).find()) {
             Matcher staticCall = STATIC_OF_GETTER.matcher(code);
             while (staticCall.find()) {
                 violations.add(relative + " — static PageRequest.of 에 BaseSearchDto getter 직접 전달: `"
-                        + squeeze(staticCall.group()) + "`");
+                        + squeeze(source.substring(staticCall.start(), staticCall.end())) + "`");
             }
         }
         return violations;
@@ -638,15 +671,6 @@ class PageableConstructionLinterTest {
         Matcher matcher = pattern.matcher(source);
         while (matcher.find()) count++;
         return count;
-    }
-
-    /**
-     * 줄 주석과 블록 주석을 제거한다. 주석에 적힌 예시 코드까지 위반으로 세면
-     * <b>이 클래스의 javadoc 자체가 위반</b>이 되는 자기모순이 생긴다.
-     */
-    private static String stripComments(String src) {
-        String noBlock = src.replaceAll("(?s)/\\*.*?\\*/", " ");
-        return noBlock.replaceAll("(?m)//.*$", " ");
     }
 
     /** 위반 메시지에 넣기 위해 줄바꿈·연속 공백을 한 칸으로 줄인다. */

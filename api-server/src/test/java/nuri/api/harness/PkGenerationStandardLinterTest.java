@@ -15,6 +15,7 @@ import org.springframework.core.type.filter.AnnotationTypeFilter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Set;
 import java.util.TreeSet;
@@ -53,7 +54,8 @@ class PkGenerationStandardLinterTest {
     /**
      * [동결 베이스라인] 기존 수동 PK 엔티티(서비스레이어 채번: egov IdGnr / IdGenerationUtil / nextval /
      * MAX+1 / 수동 할당). 데이터가 영속돼 전략 교체가 D1(위험) 이므로 동결한다. <b>신규 추가 금지</b> —
-     * 신규 엔티티는 @GeneratedValue 사용. (엔티티 단순명 기준)
+     * 신규 엔티티는 @GeneratedValue 사용. [2026-10-26] 항목은 <b>패키지를 포함한 전체 클래스명</b>이다 — 단순 이름으로 대조하면 다른
+     * 패키지에 같은 이름의 엔티티가 생겼을 때 그 엔티티가 이 동결을 조용히 물려받는다(전략 변경·소실 판정도 같은 키다).
      */
     private static final Set<String> GRANDFATHERED = new TreeSet<>(Arrays.asList(
             // [동결 2026-07-17] 린터 최초 실행 census — 현재 수동 PK 엔티티 69종(≈93%). 코드베이스 규범이
@@ -171,9 +173,9 @@ class PkGenerationStandardLinterTest {
             // [2026-08-14 제거] Sms — V2_83에서 sms_trsm_sn BIGINT IDENTITY로 전환하고
             //   수신자 복합 PK/FK·조회 인덱스를 숫자 관계로 백필·검증했다. E2E 부모·자식 2행,
             //   고아 0건이며 JPA/API/프론트 계약과 SMS_ 수동 채번을 함께 이관했다.
-            "AdministCode", "Authority",
-            "BoardMaster", "BoardMasterOption", "CommonCodeCategory", "CommonCodeGroup",
-            "DeptManage",
+            "nuri.business.domain.code.AdministCode", "nuri.business.domain.auth.Authority",
+            "nuri.business.domain.board.BoardMaster", "nuri.business.domain.board.BoardMasterOption", "nuri.business.domain.code.CommonCodeCategory", "nuri.business.domain.code.CommonCodeGroup",
+            "nuri.business.domain.user.entity.DeptManage",
             // [2026-08-05 제거] "Faq" — 엔티티가 삭제됐다(PK 전략 변경이 아니다).
             //   FAQ 는 게시판(tb_bbs_item, bbs_id='BBSMSTR_AAAAAAAAAAAA')으로 통합돼 운영 중이고
             //   전용 도메인은 死자산이었다. 라이브 실측: tb_faq_info 0행 / 게시판 FAQ 281행,
@@ -187,15 +189,15 @@ class PkGenerationStandardLinterTest {
             //   ⚠ 물리 테이블은 건드리지 않았다 — 테이블 삭제는 스키마 변경이라 별도 승인이 필요하다.
             //     현재 상태는 "엔티티 없는 빈 테이블 2개" 이며 그 처분은 미결로 남는다.
             //   ⚠ 이 제거는 '완화' 가 아니다 — 목록이 지키던 대상 자체가 사라졌다(위 Faq 선례와 동일).
-            "GroupManage", "InstitutionCode",
-            "LoginPolicy", "OrganizationManage",
+            "nuri.business.domain.group.GroupManage", "nuri.business.domain.code.InstitutionCode",
+            "nuri.business.domain.login.LoginPolicy", "nuri.business.domain.organization.OrganizationManage",
             // 승인된 권한 단순화: RoleInfo는 Contract로 퇴역하고 UserAuthority는
             // V2_98 tb_authrt_user_map의 (사용자,그룹) 복합 조인 키로 전환한다.
             // OCI 원본 보존 및 PostgreSQL Expand/Contract/FK 회귀로 검증; 감사 PK는 IDENTITY.
             // 2026-10-04 프로그램 목록 퇴역: "Program" 엔티티를 걷어 목록에서 뺐다. 대상이 사라진 것이라 완화가 아니다(Faq 선례).
-            "RefreshToken",
-            "SystemPolicy", "Template",
-            "User", "UserAbsence"
+            "nuri.business.domain.auth.RefreshToken",
+            "nuri.business.domain.system.policy.SystemPolicy", "nuri.business.domain.template.Template",
+            "nuri.business.domain.user.entity.User", "nuri.business.domain.user.entity.UserAbsence"
     ));
 
     @Test
@@ -214,12 +216,12 @@ class PkGenerationStandardLinterTest {
             try {
                 Class<?> clazz = Class.forName(className);
                 totalEntities++;
-                allEntityNames.add(clazz.getSimpleName());
+                allEntityNames.add(clazz.getName());
                 if (isManualSinglePk(clazz)) {
-                    manualPkEntities.add(clazz.getSimpleName());
+                    manualPkEntities.add(clazz.getName());
                 }
             } catch (ClassNotFoundException | NoClassDefFoundError ex) {
-                loadFailures.add(simpleNameOf(className));
+                loadFailures.add(className);
                 log.warn("[PkGenLinter] 엔티티 로드 실패(스캔 제외): {} ({})", className, ex.getMessage());
             }
         }
@@ -270,10 +272,7 @@ class PkGenerationStandardLinterTest {
             fail(sb.toString());
         }
 
-        List<String> violations = manualPkEntities.stream()
-                .filter(name -> !GRANDFATHERED.contains(name))
-                .sorted()
-                .collect(Collectors.toList());
+        List<String> violations = newViolations(manualPkEntities, GRANDFATHERED);
 
         if (!violations.isEmpty()) {
             StringBuilder sb = new StringBuilder();
@@ -293,9 +292,23 @@ class PkGenerationStandardLinterTest {
         }
     }
 
-    private static String simpleNameOf(String fqcn) {
-        int idx = fqcn.lastIndexOf('.');
-        return idx >= 0 ? fqcn.substring(idx + 1) : fqcn;
+    /** 동결에 없는 수동 PK 엔티티. 동결은 전체 클래스명에 결속한다 — 같은 단순 이름의 다른 클래스는 예외를 물려받지 않는다. */
+    static List<String> newViolations(Collection<String> manualPkClassNames, Set<String> grandfathered) {
+        return manualPkClassNames.stream()
+                .filter(name -> !grandfathered.contains(name))
+                .sorted()
+                .collect(Collectors.toList());
+    }
+
+    @Test
+    @DisplayName("동결은 전체 클래스명에 결속한다 — 다른 패키지의 같은 단순 이름 엔티티는 예외를 물려받지 않는다")
+    void grandfatheringIsBoundToFullyQualifiedClassName() {
+        // java.util.Date 를 동결했어도 단순 이름이 같은 java.sql.Date 는 새 위반이다.
+        assertThat(newViolations(List.of(java.sql.Date.class.getName()), Set.of(java.util.Date.class.getName())))
+                .containsExactly(java.sql.Date.class.getName());
+        assertThat(newViolations(List.of(java.util.Date.class.getName()), Set.of(java.util.Date.class.getName()))).isEmpty();
+        // 동결 항목이 단순 이름으로 되돌아가면 위 결속이 무너진다 — 항목은 모두 패키지를 포함한다.
+        assertThat(GRANDFATHERED).allSatisfy(name -> assertThat(name).startsWith("nuri."));
     }
 
     @Test

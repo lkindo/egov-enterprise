@@ -8,7 +8,8 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  applyPushBaseCheck, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, pushBaseWasVerified, reusableMatrix,
+  applyPushBaseCheck, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, PROTECTED_COLUMN_CONTENT, pushBaseWasVerified,
+  reusableMatrix,
 } from './ci-change-scope.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
@@ -248,6 +249,44 @@ test('an online source that newly declares a protected column selects the migrat
   // The default reader looks at the working tree.
   assert.equal(classifyChangedFiles(['business-core/src/main/java/nuri/business/service/auth/mfa/MfaSettings.java']).migration,
     true);
+});
+
+test('the content trigger counts the same forms as the online encryption contract', () => {
+  // OnlineRrnoConverterContractTest counts wildcard static imports of CryptoUtil and
+  // autoApply converters wherever they are declared; a narrower trigger lets a PR that
+  // adds one merge without running the contract.
+  const service = 'business-app/src/main/java/nuri/business/service/x/SecretService.java';
+  const entity = 'business-app/src/main/java/nuri/business/domain/x/Resident.java';
+  assert.equal(classifyChangedFiles([service],
+    { readSource: () => 'import static nuri.foundation.core.util.CryptoUtil.*;\nString v = encrypt(x);' }).migration, true,
+  'wildcard static import of CryptoUtil');
+  assert.equal(classifyChangedFiles([entity],
+    { readSource: () => '@jakarta.persistence.Converter(autoApply = true)\nclass ResidentCodec {}' }).migration, true,
+  'autoApply converter outside a *Converter.java path');
+  assert.equal(classifyChangedFiles([service],
+    { readSource: () => 'import static nuri.foundation.core.util.CryptoUtil.decrypt;\nString v = decrypt(x);' }).migration, false,
+  'decryption alone does not change the protected columns');
+});
+
+test('every online source holding protected-column content is also pinned by path', () => {
+  // Content is read after the change only. A removed call or a deleted file leaves
+  // nothing to read, so the contract's sources must be selected by path as well —
+  // otherwise removing one merges without running the contract that compares them.
+  const roots = ['foundation', 'business-core', 'business-app', 'api-server'].map(module => `${module}/src/main/java`);
+  const walk = (dir, out = []) => {
+    for (const entry of fs.readdirSync(path.join(repoRoot, dir), { withFileTypes: true })) {
+      const relative = `${dir}/${entry.name}`;
+      if (entry.isDirectory()) walk(relative, out);
+      else if (entry.name.endsWith('.java')) out.push(relative);
+    }
+    return out;
+  };
+  const holders = roots.flatMap(root => walk(root))
+    .filter(file => PROTECTED_COLUMN_CONTENT.test(fs.readFileSync(path.join(repoRoot, file), 'utf8')));
+  assert.ok(holders.length >= 5, `protected-column census is vacuous: ${holders.join(', ')}`);
+  const contentOnly = holders.filter(file => !classifyChangedFiles([file], { readSource: () => null }).migration);
+  assert.deepEqual(contentOnly, [],
+    'content-only protected source — pin its path in SHARED_PROTECTED_COLUMN_CONTRACT so removing it still runs the contract');
 });
 
 test('target standard catalog and unknown toolchain inputs retain full fallback', () => {
@@ -848,6 +887,19 @@ test('push base with its own main CI run keeps the diff scope', async () => {
   assert.equal(await verify(jsonResponse({ workflow_runs: [run({})] })), true);
   assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: null })] })), true, 'an in-progress run still verifies its commit');
   assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: 'failure' })] })), true, 'a red run is a visible verification');
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: 'timed_out' })] })), true, 'a timed-out run is red too');
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: null, status: 'in_progress' })] })), true);
+});
+
+test('a base run that judged no axis does not verify its commit', async () => {
+  // Only cancellation used to be excluded, so runs that never ran a job counted as verification.
+  for (const conclusion of ['startup_failure', 'action_required', 'stale', 'skipped', 'neutral']) {
+    assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion })] })), false, `${conclusion} judged no axis`);
+  }
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: null, status: 'completed' })] })), false,
+    'a completed run without a conclusion judged nothing');
+  assert.equal(await verify(jsonResponse({ workflow_runs: [run({ conclusion: 'skipped' }), run({ conclusion: 'success' })] })), true,
+    'any judging run of the commit is enough');
 });
 
 test('missing, cancelled, foreign or unreadable base runs fail closed', async () => {

@@ -26,8 +26,6 @@ vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({ autho
 // [2026-10-05] 영역 단추는 셸의 navigation 슬롯에 있다 — 모의 셸도 그 슬롯을 그린다(빠뜨리면 영역 단추가 사라져 영역 전환 시험이 빈 검사가 된다).
 // fill 은 셸 루트의 data-work-fill 표지로 옮긴다(실제 셸과 같은 표지) — 영역마다 업무면 fill 셸을 쓰는지 본다(2026-10-05 과제 B).
 vi.mock('@/app/components/patterns/work-list-page', () => ({ WorkListPage: ({ title, actions, navigation, filter, children, fill }: { title: string; actions: ReactNode; navigation?: ReactNode; filter: ReactNode; children: ReactNode; fill?: boolean }) => <main data-work-fill={fill ? '' : undefined}><h1>{title}</h1>{actions}{navigation}{filter}{children}</main> }));
-// 전역 설정(vitest.setup.ts)은 탭을 children 통과 mock 으로 바꾼다. 편집기는 비활성 탭을 숨기는 것이 계약이므로 실제 탭을 쓴다.
-vi.unmock('@/components/ui/tabs');
 
 type Grant = { type: string; code: string };
 type Snapshot = { code: string; name: string; description: string | null; version: string; complete: boolean; grants: Grant[] };
