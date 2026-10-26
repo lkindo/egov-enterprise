@@ -6,9 +6,11 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Predicate;
 import java.util.stream.Stream;
@@ -230,8 +232,21 @@ final class HarnessSourceIndex {
      * 오프셋이 그대로이므로, 가린 결과에서 찾은 위치를 원문 진단에 바로 쓸 수 있다.
      */
     static String maskNonCode(String source) {
+        return mask(source, EnumSet.allOf(NonCode.class));
+    }
+
+    /**
+     * 주석만 같은 길이의 공백으로 가리고 문자열·text block 은 남긴다. 애너테이션의 문자열 값(예: 요청 파라미터 이름)을 읽는
+     * 판정용이다. 문자열 안의 예시를 코드로 세지 않으려면, 찾은 위치가 {@link #maskNonCode(String)} 결과에서도 코드인지 함께 본다.
+     */
+    static String maskComments(String source) {
+        return mask(source, EnumSet.of(NonCode.COMMENT));
+    }
+
+    private static String mask(String source, Set<NonCode> kinds) {
         StringBuilder code = new StringBuilder(source);
         forEachNonCode(source, (kind, start, end) -> {
+            if (!kinds.contains(kind)) return;
             for (int index = start; index < end; index++) {
                 if (source.charAt(index) != '\n' && source.charAt(index) != '\r') code.setCharAt(index, ' ');
             }

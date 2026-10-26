@@ -14,7 +14,6 @@ vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { id: 'operat
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
 vi.mock('@/services/foundation/system/AuthorizationAdminService', () => ({ authorizationAdminService: mocks }));
-vi.unmock('@/components/ui/tabs');
 
 const page = (list: unknown[], total = list.length) => ({ list, total, page: 1, size: 20, totalPage: Math.ceil(total / 20) });
 const conflict = (message: string) => Object.assign(new Error('Request failed with status code 409'), { isAxiosError: true, response: { status: 409, data: { message } } });

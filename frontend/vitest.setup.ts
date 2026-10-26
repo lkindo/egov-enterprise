@@ -2,10 +2,29 @@ import '@testing-library/jest-dom';
 import { vi, beforeAll, afterAll, afterEach } from 'vitest';
 import React from 'react';
 import { server } from './src/mocks/server';
+import { assertNoUnhandledRequests, watchUnhandledRequests } from './src/mocks/unhandled-requests';
 
-beforeAll(() => server.listen({ onUnhandledRequest: 'warn' }));
-afterEach(() => server.resetHandlers());
-afterAll(() => server.close());
+/*
+ * [2026-10-26] 핸들러 없는 요청은 시험 실패다. 종전 'warn' 은 그 요청을 실제 네트워크(jsdom 기준 http://localhost:3000)로
+ * 통과시켜, 그 포트에 서버가 떠 있으면 시험 결과가 주변 서버의 응답에 따라 바뀌었다. 'error' 는 요청을 막지만 로그만 남기고 앱 코드가
+ * 그 실패를 삼키므로 시험은 붉어지지 않는다 — 그래서 미처리 요청을 모아 시험이 끝날 때 실패로 올린다. 실제 요청이 필요한 시험은
+ * server.use(http.X(url, () => passthrough())) 로 밝힌다.
+ */
+watchUnhandledRequests(server);
+beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
+// 미처리 기록은 요청 뒤 핸들러 탐색을 마친 다음(마이크로태스크 여러 틱 뒤)에 생긴다. 한 번 양보한 뒤 검사해 그 시험의 요청을 그 시험에
+//   귀속시키고, 마지막 시험의 요청도 서버를 닫기 전에 본다(닫은 뒤에는 이벤트가 오지 않는다).
+const settle = () => new Promise<void>((resolve) => { setTimeout(resolve, 0); });
+afterEach(async () => {
+  server.resetHandlers();
+  await settle();
+  assertNoUnhandledRequests();
+});
+afterAll(async () => {
+  await settle();
+  assertNoUnhandledRequests();
+  server.close();
+});
 
 // ============================================
 // Environment Variables Setup
@@ -16,19 +35,24 @@ Object.assign(process.env, {
 });
 
 // Mock Next.js Navigation
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({
-    push: vi.fn(),
-    replace: vi.fn(),
-    prefetch: vi.fn(),
-    back: vi.fn(),
-    forward: vi.fn(),
-    refresh: vi.fn(),
-  }),
-  usePathname: () => '/',
-  useSearchParams: () => new URLSearchParams(),
-  useParams: () => ({}),
-}));
+vi.mock('next/navigation', () => {
+  // 실제 Next 의 useSearchParams 는 렌더 사이에 같은 객체다. 렌더마다 새 객체를 주면 searchParams 를 의존성으로 둔 effect 가
+  //   끝없이 다시 돌아, 공용 브레드크럼의 메뉴 조회처럼 시험 하나가 수백 건을 요청했다(2026-10-26 실측 약 1,500건).
+  const searchParams = new URLSearchParams();
+  return {
+    useRouter: () => ({
+      push: vi.fn(),
+      replace: vi.fn(),
+      prefetch: vi.fn(),
+      back: vi.fn(),
+      forward: vi.fn(),
+      refresh: vi.fn(),
+    }),
+    usePathname: () => '/',
+    useSearchParams: () => searchParams,
+    useParams: () => ({}),
+  };
+});
 
 // Mock useToast with stable object
 const toastMock = {
@@ -185,21 +209,8 @@ vi.mock('@/components/ui/dialog', () => {
   };
 });
 
-vi.mock('@/components/ui/dropdown-menu', () => ({
-  DropdownMenu: ({ children }: any) => children,
-  DropdownMenuTrigger: ({ children }: any) => children,
-  DropdownMenuContent: ({ children }: any) => children,
-  DropdownMenuItem: ({ children }: any) => children,
-  DropdownMenuSeparator: () => null,
-  DropdownMenuLabel: ({ children }: any) => children,
-}));
-
-vi.mock('@/components/ui/tabs', () => ({
-  Tabs: ({ children }: any) => children,
-  TabsList: ({ children }: any) => children,
-  TabsTrigger: ({ children }: any) => children,
-  TabsContent: ({ children }: any) => children,
-}));
+// [2026-10-26] 탭·드롭다운의 전역 children 통과 mock 을 걷었다. 탭 mock 은 선택 상태·숨김·키보드·ARIA 를 지워, 실물을 검사한다고
+//   믿은 탭 단위 시험이 mock 을 검사했고(실물 0% 실행) 탭 화면 시험은 하나하나 vi.unmock 으로 되돌려야 했다. 드롭다운 모듈은 없다.
 
 // Mock framer-motion without leaking animation-only props onto real DOM nodes.
 const MOTION_ONLY_PROPS = new Set([

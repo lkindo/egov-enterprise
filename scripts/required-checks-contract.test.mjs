@@ -1862,6 +1862,27 @@ test('release evidence remains success-only for every stable manifest context', 
   assert.doesNotMatch(release, /\$3 == "skipped"/);
 });
 
+// [2026-10-26 DEC-OPS-384] 태그 SHA 의 초록은 앞 main 커밋의 실패를 덮지 않는다 — verify 잡이 직전 릴리스 이후 main 이력을 본다.
+test('release verify checks every main commit since the previous release before publishing', () => {
+  const release = fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'release.yml'), 'utf8');
+  // 최상위 permissions 블록을 줄로 읽는다(반복 안팎이 같은 글자를 읽는 정규식은 역추적이 지수로 는다).
+  const releaseLines = release.split(/\r?\n/);
+  const permissionsAt = releaseLines.indexOf('permissions:');
+  const permissions = [];
+  for (let index = permissionsAt + 1; permissionsAt >= 0 && index < releaseLines.length && releaseLines[index].startsWith('  '); index += 1) {
+    permissions.push(releaseLines[index]);
+  }
+  assert.ok(permissions.some(line => /^ {2}actions: read\b/.test(line)), 'the history check reads Actions runs');
+  const verify = parseWorkflowJobs(release).get('verify');
+  assert.ok(verify, 'release verify job must exist');
+  const step = verify.match(/- name: Require no unresolved red main run since the previous release\r?\n[\s\S]*?run: node scripts\/release-main-history\.mjs --tag-sha "\$GITHUB_SHA"/)?.[0];
+  assert.ok(step, 'verify must run the release history check against the tagged SHA');
+  assert.match(step, /if: github\.event_name == 'push' && startsWith\(github\.ref, 'refs\/tags\/v'\)/);
+  assert.match(step, /GH_TOKEN: \$\{\{ github\.token \}\}/);
+  assert.ok(verify.indexOf('actions/setup-node@') < verify.indexOf('scripts/release-main-history.mjs'), 'node must be ready before the check');
+  assert.match(release, /^ {2}build-and-push:\r?\n {4}needs: verify$/m, 'publishing waits for verify');
+});
+
 test('E2E matrix has an always-running fail-closed aggregate for stable branch protection', () => {
   const aggregateJob = ciContent.match(
     /^  e2e-test:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,

@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "2d0fc52a96542548ccedb32d1ca17df5e270fc175445214fe483443be322c6b5"
+    "inventoryHash": "82550ba9db174f1bd26527187f653c5de5120e2b38254378620a5ec605ad1a44"
   },
   "summary": {
-    "records": 472,
-    "syntaxOccurrences": 575,
-    "ambiguousRecords": 423,
-    "unverifiedRecords": 472,
+    "records": 473,
+    "syntaxOccurrences": 576,
+    "ambiguousRecords": 424,
+    "unverifiedRecords": 473,
     "exactPopulations": {
       "filesystemRoutes": 122,
       "dynamicRoutePatterns": 13,
@@ -46,14 +46,14 @@
       "form-producer": 62,
       "navigation-producer": 230,
       "page-redirect": 17,
-      "query-builder": 24,
+      "query-builder": 25,
       "query-consumer": 58,
       "query-producer": 45,
       "request-query-producer": 3,
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 462,
+      "navigation": 463,
       "request-telemetry": 10
     }
   },
@@ -14673,6 +14673,44 @@
       "evidence": {
         "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
         "detector": "href-navigation",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-2B13EEA8B3781E",
+      "surface": "navigation",
+      "kind": "query-builder",
+      "operation": "construct-query",
+      "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
+      "producerFile": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
+      "consumerFile": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
+      "routePattern": "unresolved",
+      "targetCandidate": null,
+      "stateItems": [],
+      "currentBehavior": "A URLSearchParams builder is created; its complete key population needs review.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "route-context-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "unverified",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/components/layout/DynamicBreadcrumb.tsx",
+        "detector": "url-search-params-constructor",
         "occurrenceCount": 1
       }
     },

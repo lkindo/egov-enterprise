@@ -178,16 +178,29 @@ const SHARED_PROTECTED_COLUMN_CONTRACT = [
   /^business-core\/src\/main\/java\/nuri\/business\/domain\/(?:user\/entity\/User|auth\/mfa\/MfaCredential)\.java$/,
   // A new JPA converter may encrypt another column; the contract counts every @Convert.
   /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\/.*Converter\.java$/,
+  // The contract also compares the exact set of online encryption users (ENCRYPTION_USERS).
+  // Removing a call from one of them or deleting it leaves no content to read, so the
+  // path itself must select the contract.
+  /^business-app\/src\/main\/java\/nuri\/business\/service\/mail\/MailDeliveryWorkHandler\.java$/,
+  /^business-core\/src\/main\/java\/nuri\/business\/service\/auth\/mfa\/MfaSettings\.java$/,
 ];
 
 // The paths above cannot see an entity that newly declares @Convert or a service
 // that newly calls the online ciphers, so an online main source is also selected
 // by its content — the same four roots and forms the contract test counts
-// (FQN @jakarta.persistence.Convert, any argument order, static imports).
-// A deleted file has no content to read; deleting one of the known files above
-// is still selected by its path.
+// (FQN @jakarta.persistence.Convert, any argument order, explicit and wildcard
+// static imports, @Converter(autoApply = true)). Content is read after the change
+// only: a removed call or a deleted file has none, so every source that holds this
+// content today must also be pinned by path above — ci-change-scope.test.mjs
+// enforces that invariant over the online roots.
 const ONLINE_MAIN_JAVA = /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\/.+\.java$/;
-const PROTECTED_COLUMN_CONTENT = /@(?:jakarta\.persistence\.)?Convert\s*\(|\bCryptoUtil\s*\.\s*encrypt\b|\bMfaSecretCipher\b/;
+export const PROTECTED_COLUMN_CONTENT = new RegExp([
+  String.raw`@(?:jakarta\.persistence\.)?Convert\s*\(`,
+  String.raw`@(?:jakarta\.persistence\.)?Converter\s*\([^)]*autoApply\s*=\s*true`,
+  String.raw`\bCryptoUtil\s*\.\s*encrypt\b`,
+  String.raw`import\s+static\s+[\w.]*\bCryptoUtil\s*\.\s*(?:encrypt|\*)`,
+  String.raw`\bMfaSecretCipher\b`,
+].join('|'));
 
 function readRepositorySource(file) {
   try {
@@ -500,27 +513,48 @@ export function githubOutputs(result) {
 }
 
 /**
+ * 그 커밋의 축을 실제로 돌려 결과를 남긴 결론. 성공·실패·시간 초과는 초록이든 빨강이든 그 커밋에 보이는 판정이다(DEC-OPS-183).
+ * [2026-10-26] 시작하지 못했거나(startup_failure) 승인을 기다리거나(action_required) 잡이 모두 건너뛰어진(skipped) 실행,
+ * stale·neutral, 끝났는데 결론이 없는 실행은 어느 축도 판정하지 않았다 — 종전에는 취소만 걸러 이들도 검증으로 셌다.
+ */
+const JUDGED_CONCLUSIONS = new Set(['success', 'failure', 'timed_out']);
+
+function verifiesCommit(run) {
+  if (JUDGED_CONCLUSIONS.has(run?.conclusion)) return true;
+  // 진행 중인 실행은 아직 결론이 없다 — 그 실행이 이 커밋을 스스로 판정한다.
+  return run?.conclusion == null && run?.status !== 'completed';
+}
+
+/**
  * main push 의 변경 범위는 직전 main SHA(event.before)와의 차이다. 그 SHA 가 자기 main CI 실행을 갖지 못하면
  * (GitHub 가 push 이벤트를 누락한 #795 병합 ac2508c96 처럼) 그 커밋의 변경은 어떤 main 실행에서도 검사되지 않는다.
- * 그래서 base 에 취소되지 않은 main push 실행이 있음을 Actions API 로 확인하고, 없거나 확인할 수 없으면 false 를
- * 돌려 전수 검증을 고른다(fail-closed). 진행 중인 실행도 그 커밋을 스스로 검증하므로 있음으로 본다.
+ * 그래서 base 에 그 커밋을 판정한(또는 판정 중인) main push 실행이 있음을 Actions API 로 확인하고, 없거나 확인할 수
+ * 없으면 false 를 돌려 전수 검증을 고른다(fail-closed). 진행 중인 실행도 그 커밋을 스스로 검증하므로 있음으로 본다.
  */
 export async function pushBaseWasVerified({ sha, repository, token, workflow = 'ci.yml', branch = 'main', fetchImpl = globalThis.fetch }) {
+  const runs = await listMainPushRuns({ sha, repository, token, workflow, branch, fetchImpl });
+  return runs !== null && runs.some(verifiesCommit);
+}
+
+/**
+ * 커밋 하나의 main `ci.yml` push 실행 목록(Actions API). 입력이 형식에 맞지 않거나 조회에 실패하면 null 이다 — 호출부는 이것을
+ * '확인하지 못함'으로 다룬다(fail-closed). 릴리스 이력 검증(scripts/release-main-history.mjs)도 같은 조회를 쓴다.
+ */
+export async function listMainPushRuns({ sha, repository, token, workflow = 'ci.yml', branch = 'main', fetchImpl = globalThis.fetch }) {
   if (!/^[0-9a-f]{40}$/u.test(sha ?? '') || !/^[\w.-]+\/[\w.-]+$/u.test(repository ?? '') || !token || typeof fetchImpl !== 'function') {
-    return false;
+    return null;
   }
   try {
     const url = `https://api.github.com/repos/${repository}/actions/workflows/${workflow}/runs?head_sha=${sha}&event=push&branch=${branch}&per_page=20`;
     const response = await fetchImpl(url, {
       headers: { accept: 'application/vnd.github+json', authorization: `Bearer ${token}`, 'x-github-api-version': '2022-11-28' },
     });
-    if (!response?.ok) return false;
+    if (!response?.ok) return null;
     const body = await response.json();
-    const runs = Array.isArray(body?.workflow_runs) ? body.workflow_runs : [];
-    return runs.some(run => run?.head_sha === sha && run?.event === 'push' && run?.head_branch === branch
-      && run?.conclusion !== 'cancelled');
+    if (!Array.isArray(body?.workflow_runs)) return null;
+    return body.workflow_runs.filter(run => run?.head_sha === sha && run?.event === 'push' && run?.head_branch === branch);
   } catch {
-    return false;
+    return null;
   }
 }
 

@@ -28,6 +28,9 @@ interface BreadcrumbItem {
 export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customItems?: BreadcrumbItem[]; currentLabel?: string }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  // [2026-10-26] 조회 조건은 값으로 비교한다. 객체로 비교하면 렌더마다 새 객체를 주는 호출자(시험 대역 등)에서 메뉴 조회가 끝없이
+  //   다시 돌았다 — 같은 주소면 다시 읽지 않는다.
+  const searchKey = searchParams?.toString() ?? '';
   const [items, setItems] = useState<BreadcrumbItem[]>([]);
   // 메뉴 트리에서 찾은 경로가 현재 화면 자체(정확 일치)인지, 그 상위 메뉴인지.
   const [exactMatch, setExactMatch] = useState(false);
@@ -43,7 +46,7 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
           return;
         }
         
-        const match = findActiveMenu(menus, pathname || '', searchParams);
+        const match = findActiveMenu(menus, pathname || '', new URLSearchParams(searchKey));
         for (const menu of match?.path ?? []) {
           path.push({ name: menu.menuNm, href: resolveMenuInternalRoute(menu) ?? undefined });
         }
@@ -59,7 +62,7 @@ export function DynamicBreadcrumb({ customItems = [], currentLabel }: { customIt
     };
 
     fetchPath();
-  }, [pathname, searchParams]);
+  }, [pathname, searchKey]);
 
   // 하위 화면의 마지막 한 단계 — 화면 제목이 있으면 그것을, 없으면 화면이 넘긴 경로의 마지막 항목을 쓴다.
   const lastStep = currentLabel ? { name: currentLabel } : customItems.at(-1);
