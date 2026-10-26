@@ -2,6 +2,7 @@ package nuri.api.controller.business.admin.content.board;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
+import nuri.business.service.board.dto.BoardMasterCommunity;
 import nuri.business.service.board.dto.BoardMasterDto;
 
 import io.swagger.v3.oas.annotations.media.ArraySchema;
@@ -47,11 +48,13 @@ public record BoardMasterDetailResponse(
         String tmplatCours,
         @Schema(description = "낙관적 잠금 버전. 설정 수정 요청에 그대로 돌려보낸다",
                 requiredMode = Schema.RequiredMode.REQUIRED) Integer version,
-        @ArraySchema(arraySchema = @Schema(description = "설정이 지정한 용도(공지·FAQ·업무). 지정이 없으면 빈 배열",
-                requiredMode = Schema.RequiredMode.REQUIRED),
-                schema = @Schema(allowableValues = { "NOTICE", "FAQ", "TASK" })) List<String> designations
+        @ArraySchema(arraySchema = @Schema(description = "설정이 지정한 용도(공지·FAQ·업무·Q&A·위키). 지정이 없으면 빈 배열. "
+                + "지정 게시판은 영구 삭제할 수 없다(ADR-0043 결정 4)", requiredMode = Schema.RequiredMode.REQUIRED),
+                schema = @Schema(allowableValues = { "NOTICE", "FAQ", "TASK", "QNA", "WIKI" })) List<String> designations,
+        // [2026-10-26 ADR-0043 결정 3] 귀속 커뮤니티의 이름·이용 가능 여부. 귀속이 없으면 싣지 않는다.
+        @Schema(description = "귀속 커뮤니티 요약. 귀속이 없으면 싣지 않는다") BoardMasterCommunity community
 ) {
-    static BoardMasterDetailResponse from(BoardMasterDto dto, List<String> designations) {
+    static BoardMasterDetailResponse from(BoardMasterDto dto, List<String> designations, BoardMasterCommunity community) {
         return new BoardMasterDetailResponse(
                 dto.getBbsId(), dto.getBbsTtl(), dto.getBbsExpln(),
                 dto.getBbsTypeCd(),
@@ -68,6 +71,6 @@ public record BoardMasterDetailResponse(
                 dto.getPrvtPstPlcyCd() != null ? dto.getPrvtPstPlcyCd() : "NONE",
                 "N".equals(dto.getRcmdtnUseYn()) ? "N" : "Y",
                 dto.getAuthFlag(), dto.getTmplatCours(),
-                dto.getVersion(), List.copyOf(designations));
+                dto.getVersion(), List.copyOf(designations), community);
     }
 }

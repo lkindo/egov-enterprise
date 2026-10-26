@@ -81,7 +81,10 @@ class DashboardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data.taskList").isEmpty())
                 // [2026-09-26 DIP V1] 목록 조회 실패는 "글 없음(0)" 이 아니다 — 전체 글 수는 null 로 싣는다.
                 .andExpect(jsonPath("$.data.taskListTotal").value(nullValue()))
-                .andExpect(jsonPath("$.data.notiListTotal").value(0));
+                .andExpect(jsonPath("$.data.notiListTotal").value(0))
+                // [2026-10-26 ADR-0043, SET-07] 조회 실패는 '운영하지 않음' 이 아니다.
+                .andExpect(jsonPath("$.data.taskListUnavailable").value(false))
+                .andExpect(jsonPath("$.data.notiListUnavailable").value(false));
 
         verify(boardService, times(2)).getBoardPosts(anyString(), any());
     }
@@ -108,5 +111,33 @@ class DashboardApiControllerTest extends ControllerTestSupport {
 
         assertThat(json.has("extensions")).isFalse();
         assertThat(json.path("customWidget").asString()).isEqualTo("value");
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("[2026-10-26 ADR-0043, SET-07] 지정 게시판이 사용 안 함(BOARD_NOT_FOUND)이면 조회 실패가 아니라 '이용할 수 없음' 으로 싣는다")
+    void getDashboardData_inactiveDesignatedBoardIsUnavailableNotFailure() throws Exception {
+        when(boardService.getBoardPosts(eq("BBSMSTR_AAAAAAAAAAAA"), any())).thenThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.business.domain.board.exception.BoardErrorCode.BOARD_NOT_FOUND));
+        when(boardService.getBoardPosts(eq("BBSMSTR_CCCCCCCCCCCC"), any())).thenReturn(new PageImpl<>(Collections.emptyList()));
+
+        mockMvc.perform(get("/api/v1/dashboard"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.notiList").isEmpty())
+                // 글 수는 비운다 — 0 은 '글이 없다' 는 사실 주장이다.
+                .andExpect(jsonPath("$.data.notiListTotal").value(nullValue()))
+                .andExpect(jsonPath("$.data.notiListUnavailable").value(true))
+                .andExpect(jsonPath("$.data.taskListUnavailable").value(false))
+                .andExpect(jsonPath("$.data.taskListTotal").value(0));
+    }
+
+    @Test
+    @DisplayName("[2026-10-26 ADR-0043, SET-07] 공급자가 표지를 싣지 않으면 false 이고, 불리언이 아니면 계약 위반이다")
+    void dashboardUnavailableFlagsDefaultToFalse() {
+        DashboardResponse response = DashboardResponse.from(Map.of());
+        assertThat(response.isTaskListUnavailable()).isFalse();
+        assertThat(response.isNotiListUnavailable()).isFalse();
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> DashboardResponse.from(Map.of("notiListUnavailable", "Y")))
+                .isInstanceOf(IllegalStateException.class);
     }
 }

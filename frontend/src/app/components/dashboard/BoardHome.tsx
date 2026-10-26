@@ -1,5 +1,6 @@
 'use client';
 
+import { useId } from 'react';
 import Link from 'next/link';
 import { useQuery } from '@tanstack/react-query';
 import { Plus } from 'lucide-react';
@@ -23,8 +24,16 @@ function useBoardHome() {
   return useQuery(boardHomeQuery);
 }
 
-function totalValue(total: number | null | undefined, pending: boolean) {
+/*
+  [2026-10-26 ADR-0043 SET-07] 지정 게시판을 사용 안 함으로 두면(또는 없으면) 서버가 *ListUnavailable 로 알린다. 그 게시판은 의도된
+  운영 상태이지 장애가 아니므로 '조회 실패·잠시 후 다시' 라고 말하지 않고, 글쓰기·전체 보기처럼 닫힌 게시판으로 보내는 단추를 감춘다.
+  조회 실패(목록 []·전체 수 null 이고 표지 false)는 지금처럼 실패라고 말한다 — 둘을 합치지 않는다.
+*/
+const UNAVAILABLE_BOARD_MESSAGE = '지금 이 게시판을 운영하지 않습니다.';
+
+function totalValue(total: number | null | undefined, pending: boolean, unavailable: boolean) {
   if (pending) return '확인 중';
+  if (unavailable) return '운영 안 함';
   return total === null || total === undefined ? '조회 실패' : `${total}건`;
 }
 
@@ -41,7 +50,7 @@ export function BoardTaskTotalCard() {
   return (
     <li className="rounded-md border border-border bg-card px-4 py-3">
       <span className="text-[length:var(--font-size-body)] text-muted-foreground">업무게시판 글</span>
-      <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{totalValue(home.data?.taskListTotal, home.isPending)}</span>
+      <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{totalValue(home.data?.taskListTotal, home.isPending, home.data?.taskListUnavailable === true)}</span>
     </li>
   );
 }
@@ -52,7 +61,7 @@ export function BoardNoticeTotalCard() {
   return (
     <li className="rounded-md border border-border bg-card px-4 py-3">
       <span className="text-[length:var(--font-size-body)] text-muted-foreground">공지사항</span>
-      <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{totalValue(home.data?.notiListTotal, home.isPending)}</span>
+      <span className="mt-1 block text-2xl font-bold tabular-nums text-foreground">{totalValue(home.data?.notiListTotal, home.isPending, home.data?.notiListUnavailable === true)}</span>
     </li>
   );
 }
@@ -65,6 +74,8 @@ export function BoardNoticeTotalCard() {
 export function BoardNewPostAction() {
   const home = useBoardHome();
   if (home.data === null) return null;
+  // [2026-10-26 ADR-0043 SET-07] 업무게시판을 운영하지 않으면 글쓰기 단추가 닫힌 게시판의 작성 화면으로 보낸다 — 단추를 감춘다.
+  if (home.data?.taskListUnavailable) return null;
   return (
     <Button asChild size="sm" variant="outline">
       <Link href={`/admin/community/boards/insert-board-article?bbsId=${TASK_BOARD_ID}`}>
@@ -79,6 +90,8 @@ interface HomeListSectionProps {
   items: DashboardTask[];
   /** 게시판 전체 글 수. null 은 조회 실패 — 빈 목록을 "글이 없다" 로 말하지 않는다(DIP V1). */
   total: number | null;
+  /** 서버가 이 게시판을 지금 운영하지 않는다고 알렸다(사용 안 함·없음). 조회 실패와 다르게 말하고 전체 보기를 감춘다(SET-07). */
+  unavailable: boolean;
   moreHref: string;
   moreLabel: string;
   emptyMessage: string;
@@ -88,8 +101,12 @@ interface HomeListSectionProps {
  * 서버가 제공한 게시판·게시글 식별자가 있는 항목만 상세로 연결한다.
  * 식별자가 없는 응답에 임의 목적지를 붙이지 않고 전체 보기로 안내한다.
  */
-function HomeListSection({ title, items, total, moreHref, moreLabel, emptyMessage }: HomeListSectionProps) {
-  const headingId = `home-section-${moreLabel}`;
+function HomeListSection({ title, items, total, unavailable, moreHref, moreLabel, emptyMessage }: HomeListSectionProps) {
+  /*
+    [2026-10-26] 종전 id 는 `home-section-${moreLabel}` 이라 '공지 전체 보기' 의 공백이 그대로 들어갔다. aria-labelledby 는 공백을 ID
+    구분자로 읽으므로 구역이 이름을 잃어 보조기술에 'region' 으로 드러나지 않았다. 공백 없는 React id 를 쓴다(서버·브라우저가 같다).
+  */
+  const headingId = useId();
 
   return (
     <section aria-labelledby={headingId} className="rounded-md border border-border bg-card">
@@ -97,14 +114,20 @@ function HomeListSection({ title, items, total, moreHref, moreLabel, emptyMessag
         <h2 id={headingId} className="text-[length:var(--font-size-body)] font-semibold text-foreground">
           {title}
         </h2>
-        <Link
-          href={moreHref}
-          className="text-[length:var(--font-size-body)] text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
-        >
-          {moreLabel}
-        </Link>
+        {unavailable ? null : (
+          <Link
+            href={moreHref}
+            className="text-[length:var(--font-size-body)] text-muted-foreground underline-offset-4 hover:text-primary hover:underline"
+          >
+            {moreLabel}
+          </Link>
+        )}
       </div>
-      {items.length > 0 ? (
+      {unavailable ? (
+        <p className="px-4 py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">
+          {UNAVAILABLE_BOARD_MESSAGE}
+        </p>
+      ) : items.length > 0 ? (
         <ul className="divide-y divide-border">
           {items.slice(0, 6).map((item, index) => (
             <li key={item.id || `${title}-${index}`} className="flex items-baseline justify-between gap-3 px-4 py-2">
@@ -154,6 +177,7 @@ export function BoardHomeLists() {
         title="업무게시판 최근 글"
         items={data?.initialTaskList ?? []}
         total={data ? data.taskListTotal : null}
+        unavailable={data?.taskListUnavailable === true}
         moreHref={`/admin/community/boards/select-board-list?bbsId=${TASK_BOARD_ID}`}
         moreLabel="업무게시판 전체 보기"
         emptyMessage="업무게시판에 등록된 글이 없습니다."
@@ -162,6 +186,7 @@ export function BoardHomeLists() {
         title="최근 공지사항"
         items={data?.initialNotiList ?? []}
         total={data ? data.notiListTotal : null}
+        unavailable={data?.notiListUnavailable === true}
         moreHref={`/admin/community/boards/select-board-list?bbsId=${NOTICE_BOARD_ID}`}
         moreLabel="공지 전체 보기"
         emptyMessage="새 공지사항이 없습니다."

@@ -95,7 +95,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [frontend-content-style.md](03-guides/frontend-content-style.md) | 한국어 우선 UI 문구·오류·복구·도메인 용어 계약 |
 | [frontend-form-validation-loop.md](03-guides/frontend-form-validation-loop.md) | 입력·수정 화면의 제약 보존, 오류 위치 이동, 서버 field error, 중복 제출 잠금과 exact census 운영 루프 |
 | [ui-ux-task-flow-optimization.md](03-guides/ui-ux-task-flow-optimization.md) | 로그인·공통 셸·편집 이동 보호·지식 탐색·게시판 부분 성공·설문 결과 선택, 관리 콘솔의 메뉴 관리·화면 관리·권한 작업대의 현재 구현과 검증 경계 |
-| [content-operations-guide.md](03-guides/content-operations-guide.md) | 운영자·도입 담당자용 콘텐츠 운영 안내 — 콘텐츠 종류별 관리 화면과 메뉴 위치, 콘텐츠 페이지 작성·게시·게시 중지·보관·삭제, 작성자·게시자 분담, 개인정보 오게시 사고 대응(파기), 첨부 규칙(ADR-0039·ADR-0042) |
+| [content-operations-guide.md](03-guides/content-operations-guide.md) | 운영자·도입 담당자용 콘텐츠 운영 안내 — 콘텐츠 종류별 관리 화면과 메뉴 위치, 콘텐츠 페이지 작성·게시·게시 중지·보관·삭제, 작성자·게시자 분담, 개인정보 오게시 사고 대응(파기), 첨부 규칙, 게시판 공개 절차·설정 변경 영향·지정 게시판·정정 절차(ADR-0039·ADR-0042·ADR-0040·ADR-0043) |
 | [reusable-base-guide.md](03-guides/reusable-base-guide.md) | 릴리스 생성과 시작 구성 다섯의 DB·소스 기술 검증, 근거 투영·기관 도입 경계 |
 | [project-composer-guide.md](03-guides/project-composer-guide.md) | 로컬 UI·recipe로 도메인과 출력 구조를 선택하여 독립 PostgreSQL 프로젝트 생성 |
 

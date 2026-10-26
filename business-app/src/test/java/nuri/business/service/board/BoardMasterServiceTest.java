@@ -602,15 +602,22 @@ class BoardMasterServiceTest {
     }
 
     @Test
-    @DisplayName("[2026-10-23 ADR-0040 §5.2] 지정 용도는 설정을 따라 공지·FAQ·업무 순서로 싣고, 같은 게시판이면 여럿이다")
+    @DisplayName("[2026-10-23 ADR-0040 §5.2·2026-10-26 ADR-0043 결정 4] 지정 용도는 설정을 따라 공지·FAQ·업무·Q&A·위키 순서로 싣고, 같은 게시판이면 여럿이다")
     void designationsFollowConfiguredBoardIds() {
         assertThat(boardMasterService.designationsOf("BBSMSTR_AAAAAAAAAAAA")).containsExactly("NOTICE", "FAQ");
         assertThat(boardMasterService.designationsOf("BBSMSTR_CCCCCCCCCCCC")).containsExactly("TASK");
+        // [ADR-0043 결정 4] 화면 상수와 같은 기본값으로 Q&A·위키도 서버가 안다.
+        assertThat(boardMasterService.designationsOf("BBSMSTR_DDDDDDDDDDDD")).containsExactly("QNA");
+        assertThat(boardMasterService.designationsOf("BBSMSTR_EEEEEEEEEEEE")).containsExactly("WIKI");
         assertThat(boardMasterService.designationsOf("BBSMSTR_ZZZZZZZZZZZZ")).isEmpty();
 
         boardIdProperties.setFaqId("BBSMSTR_FFFFFFFFFFFF");
         assertThat(boardMasterService.designationsOf("BBSMSTR_AAAAAAAAAAAA")).containsExactly("NOTICE");
         assertThat(boardMasterService.designationsOf("BBSMSTR_FFFFFFFFFFFF")).containsExactly("FAQ");
+
+        boardIdProperties.setWikiId("BBSMSTR_DDDDDDDDDDDD");
+        assertThat(boardMasterService.designationsOf("BBSMSTR_DDDDDDDDDDDD")).containsExactly("QNA", "WIKI");
+        assertThat(boardMasterService.designationsOf("BBSMSTR_EEEEEEEEEEEE")).isEmpty();
     }
 
     @Test
@@ -891,5 +898,155 @@ class BoardMasterServiceTest {
 
         verify(boardRepository, never()).findBbsIdsHavingAnyArticles(anyList());
         verify(boardMasterRepository, never()).deleteAll(anyList());
+    }
+
+    // ── [2026-10-26 ADR-0043 결정 4] 지정 게시판 영구 삭제 거부 ─────────────────────────────
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "BBSMSTR_AAAAAAAAAAAA", "BBSMSTR_CCCCCCCCCCCC", "BBSMSTR_DDDDDDDDDDDD", "BBSMSTR_EEEEEEEEEEEE"})
+    @DisplayName("[ADR-0043 결정 4] 지정 게시판은 사용 안 함이고 글이 없어도 단건 영구 삭제를 409 로 거부하고 지우거나 원장에 남기지 않는다")
+    void deleteBoardMasterPhysically_rejectsDesignatedBoard(String bbsId) {
+        BoardMaster master = BoardMaster.builder().bbsId(bbsId).bbsTtl("지정 게시판").useYn("N").build();
+        given(boardMasterRepository.findById(bbsId)).willReturn(Optional.of(master));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of(bbsId))).willReturn(List.of());
+
+        assertThatThrownBy(() -> boardMasterService.deleteBoardMasterPhysically("user1", bbsId))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode",
+                        nuri.business.domain.board.exception.BoardErrorCode.DESIGNATED_BOARD_NOT_PURGEABLE)
+                .hasMessageContaining("[지정 게시판] 게시판은 앱이")
+                .hasMessageContaining("영구 삭제할 수 없습니다");
+        verify(boardMasterRepository, never()).deleteById(anyString());
+        verifyNoInteractions(sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 4] 거부 사유는 지정 용도를 사람말로 모두 싣는다 — 기본 설정의 공지 게시판은 공지와 FAQ 둘이다")
+    void deleteBoardMasterPhysically_reasonNamesEveryDesignation() {
+        BoardMaster master = BoardMaster.builder().bbsId("BBSMSTR_AAAAAAAAAAAA").bbsTtl("공지사항").useYn("N").build();
+        given(boardMasterRepository.findById("BBSMSTR_AAAAAAAAAAAA")).willReturn(Optional.of(master));
+
+        assertThatThrownBy(() -> boardMasterService.deleteBoardMasterPhysically("user1", "BBSMSTR_AAAAAAAAAAAA"))
+                .hasMessage("[공지사항] 게시판은 앱이 공지사항(업무 홈 공지 카드), 자주 묻는 질문(공개 FAQ·도움말) 용도로 지정해 쓰고 "
+                        + "있어 영구 삭제할 수 없습니다. 쓰지 않으려면 사용 안 함으로 두십시오.");
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 4] 일괄 영구 삭제에 지정 게시판이 하나라도 섞이면 409 이고 어느 대상도 지우지 않는다")
+    void deleteBoardMastersInBatch_rejectsWhenAnyTargetIsDesignated() {
+        BoardMaster plain = BoardMaster.builder().bbsId("BBS_01").useYn("N").build();
+        BoardMaster wiki = BoardMaster.builder().bbsId("BBSMSTR_EEEEEEEEEEEE").bbsTtl("일정 게시판").useYn("N").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBSMSTR_EEEEEEEEEEEE")))
+                .willReturn(List.of(plain, wiki));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBSMSTR_EEEEEEEEEEEE"))).willReturn(List.of());
+
+        assertThatThrownBy(() -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBSMSTR_EEEEEEEEEEEE")))
+                .hasFieldOrPropertyWithValue("errorCode",
+                        nuri.business.domain.board.exception.BoardErrorCode.DESIGNATED_BOARD_NOT_PURGEABLE)
+                .hasMessageContaining("[일정 게시판]")
+                .hasMessageContaining("위키(지식 허브 위키 탭)");
+        verify(boardMasterRepository, never()).deleteAll(anyList());
+        verifyNoInteractions(sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 4] 일괄 영구 삭제는 요청 순서와 상관없이 지정 게시판을 먼저 판정한다 — 앞쪽 대상이 사용 중이어도 409 다")
+    void deleteBoardMastersInBatch_rejectsDesignatedBeforeOtherChecks() {
+        BoardMaster active = BoardMaster.builder().bbsId("BBS_01").useYn("Y").build();
+        BoardMaster qna = BoardMaster.builder().bbsId("BBSMSTR_DDDDDDDDDDDD").bbsTtl("Q&A 게시판").useYn("N").build();
+        given(boardMasterRepository.findAllWithOptionByBbsIdIn(List.of("BBS_01", "BBSMSTR_DDDDDDDDDDDD")))
+                .willReturn(List.of(active, qna));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBS_01", "BBSMSTR_DDDDDDDDDDDD"))).willReturn(List.of("BBS_01"));
+
+        assertThatThrownBy(() -> boardMasterService.deleteBoardMastersInBatch("user1", List.of("BBS_01", "BBSMSTR_DDDDDDDDDDDD")))
+                .hasFieldOrPropertyWithValue("errorCode",
+                        nuri.business.domain.board.exception.BoardErrorCode.DESIGNATED_BOARD_NOT_PURGEABLE)
+                .hasMessageContaining("[Q&A 게시판]");
+        verify(boardMasterRepository, never()).deleteAll(anyList());
+        verifyNoInteractions(sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 4] 지정을 다른 게시판으로 옮기면 옛 지정 게시판은 다시 영구 삭제할 수 있다 — 판정은 설정을 따른다")
+    void deleteBoardMasterPhysically_followsConfiguredDesignations() {
+        boardIdProperties.setQnaId("BBSMSTR_QQQQQQQQQQQQ");
+        BoardMaster master = BoardMaster.builder().bbsId("BBSMSTR_DDDDDDDDDDDD").useYn("N").build();
+        given(boardMasterRepository.findById("BBSMSTR_DDDDDDDDDDDD")).willReturn(Optional.of(master));
+        given(boardRepository.findBbsIdsHavingAnyArticles(List.of("BBSMSTR_DDDDDDDDDDDD"))).willReturn(List.of());
+
+        boardMasterService.deleteBoardMasterPhysically("user1", "BBSMSTR_DDDDDDDDDDDD");
+
+        verify(boardMasterRepository).deleteById("BBSMSTR_DDDDDDDDDDDD");
+    }
+
+    // ── [2026-10-26 ADR-0043 결정 3] 귀속 커뮤니티 요약 ─────────────────────────────
+
+    private BoardMasterService serviceWithCommunityPort(nuri.foundation.core.community.CommunityBoardAccessPort port) {
+        return new BoardMasterService(boardMasterRepository, boardRepository, boardMasterMapper, port, changeRecorder,
+                boardIdProperties, sensitiveAudit);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 3] 귀속 커뮤니티 요약은 포트가 알려 준 이름·이용 가능 여부를 싣고, 귀속이 없으면 싣지 않는다")
+    void communityOf_usesCommunityPort() {
+        var port = mock(nuri.foundation.core.community.CommunityBoardAccessPort.class);
+        given(port.summary(7L)).willReturn(Optional.of(
+                new nuri.foundation.core.community.CommunityBoardAccessPort.CommunitySummary("독서 모임", false)));
+        BoardMasterService service = serviceWithCommunityPort(port);
+
+        assertThat(service.communityOf(7L))
+                .isEqualTo(new nuri.business.service.board.dto.BoardMasterCommunity(7L, "독서 모임", false));
+        assertThat(service.communityOf(null)).isNull();
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 3] 커뮤니티 기능이 없거나 커뮤니티를 찾지 못하면 이름·이용 가능 여부가 null 이다(확인 불가, 통과로 추정하지 않는다)")
+    void communityOf_isUnknownWithoutPortOrSummary() {
+        assertThat(serviceWithCommunityPort(null).communityOf(7L))
+                .isEqualTo(new nuri.business.service.board.dto.BoardMasterCommunity(7L, null, null));
+
+        var port = mock(nuri.foundation.core.community.CommunityBoardAccessPort.class);
+        given(port.summary(7L)).willReturn(Optional.empty());
+        assertThat(serviceWithCommunityPort(port).communityOf(7L))
+                .isEqualTo(new nuri.business.service.board.dto.BoardMasterCommunity(7L, null, null));
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 3] 한 쪽의 요약은 커뮤니티마다 한 번만 묻고 귀속이 없는 게시판은 건너뛴다")
+    void communitiesOf_asksOncePerCommunity() {
+        var port = mock(nuri.foundation.core.community.CommunityBoardAccessPort.class);
+        given(port.summary(anyLong())).willReturn(Optional.of(
+                new nuri.foundation.core.community.CommunityBoardAccessPort.CommunitySummary("모임", true)));
+        java.util.List<Long> cmntySns = new java.util.ArrayList<>(java.util.Arrays.asList(7L, null, 7L, 8L));
+
+        var communities = serviceWithCommunityPort(port).communitiesOf(cmntySns);
+
+        assertThat(communities).containsOnlyKeys(7L, 8L);
+        verify(port).summary(7L);
+        verify(port).summary(8L);
+        verifyNoMoreInteractions(port);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 3] 목록 투영의 귀속 번호를 목록 DTO 로 옮긴다")
+    void boardMasterListCarriesCommunityId() {
+        BoardMasterSearchResult row = BoardMasterSearchResult.builder().bbsId("BBS_C").bbsTtl("모임 게시판").cmntySn(7L).build();
+        given(boardMasterRepository.searchBoardMasters(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(row)));
+
+        Page<BoardMasterDto> page = boardMasterService.getBoardMasterList("", null, org.springframework.data.domain.PageRequest.of(0, 10));
+
+        assertThat(page.getContent().get(0).getCmntySn()).isEqualTo(7L);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043, ATTR-15] 게시판 첨부 상한의 최댓값은 서버 전역 상한(요청당 파일 수·파일당 크기)과 같다")
+    void boardAttachmentLimitMaximumsMatchServerLimits() throws Exception {
+        java.lang.reflect.Field count = nuri.business.service.file.FileService.class.getDeclaredField("MAX_FILES_PER_REQUEST");
+        java.lang.reflect.Field bytes = nuri.business.service.file.FileService.class.getDeclaredField("MAX_FILE_SIZE_BYTES");
+        count.setAccessible(true);
+        bytes.setAccessible(true);
+        assertThat(BoardMasterDto.MAX_ATTACHMENT_FILE_COUNT).isEqualTo(count.getInt(null));
+        assertThat(BoardMasterDto.MAX_ATTACHMENT_FILE_BYTES).isEqualTo(bytes.getLong(null));
     }
 }

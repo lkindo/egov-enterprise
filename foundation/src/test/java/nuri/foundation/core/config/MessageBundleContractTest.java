@@ -65,11 +65,16 @@ class MessageBundleContractTest {
      * 실측은 33 이다(하한을 잠시 36 으로 올려 '발견=33' 을 확인했다). 앞 단락들의 실측값은 주석 속 참조 2개(EgovMessageConfig)를
      * 함께 센 값이라 2 씩 크다 — 그동안 실제 여유 폭은 2 였다. 하한을 29 로 올려 여유 폭 4 를 실제로 둔다. 게시판을 걷는 투영
      * (core·survey·approval)은 business-app 게시판 DTO 의 참조 26개를 내려 하한 3, 투영 실측 7 이다(같은 여유 폭).
+     *
+     * <p>[2026-10-26 ADR-0043] 게시판 생성 요청의 게시판 ID 형식·화면 유형 템플릿, 게시글 저장 요청의 Q&A 상태, 게시판 사용 여부
+     * 일괄 변경의 필수 사용 여부가 참조 4개를 더해 실측이 33 → 37 이 됐다(하한을 잠시 999 로 올려 '발견=37' 을 확인했다). 모두
+     * 게시판 소유라 게시판을 걷는 투영도 그만큼 더 내린다 — 하한을 33 으로 올려 여유 폭 4 를 그대로 둔다. 게시판 오류 코드 B007(지정
+     * 게시판 영구 삭제 거부)로 ErrorCode 실측은 42 가 됐고 그 하한은 그대로다.
      */
     private static final int MIN_ERROR_CODE_SOURCES = 4;
     private static final int MIN_ERROR_CODES = 39;
     private static final int MIN_HANDLER_KEYS = 7;
-    private static final int MIN_BEAN_VALIDATION_REFS = 29;
+    private static final int MIN_BEAN_VALIDATION_REFS = 33;
 
     private static final Pattern ERROR_CODE = Pattern.compile("\"([A-Z]{1,3}\\d{2,3})\"\\s*,\\s*\"");
     private static final Pattern HANDLER_KEY = Pattern.compile("resolve\\(\\s*\"([a-z][a-z0-9_.]*)\"");

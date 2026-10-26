@@ -166,7 +166,10 @@ describe('HelpUserService QNA generated contract', () => {
       qaId: '42',
       qstnTtl: '문의 제목',
       wrterNm: '작성자',
+      authorId: 'writer-1',
       qnaSttsCd: 'OPEN',
+      // [2026-10-26 ADR-0043 UX-04] 등록일은 yyyy-MM-dd 다 — 전송 문자열(T·시각)을 보이지 않는다.
+      writngDe: '2026-08-30',
     });
   });
 
@@ -205,17 +208,26 @@ describe('HelpUserService QNA generated contract', () => {
     );
   });
 
-  it('nullable 표시 필드는 작성자 ID fallback과 속성 생략으로 정규화한다', async () => {
+  /*
+    [2026-10-26 ADR-0043 0차] 이름이 비면 종전에는 작성자 ID(esntlId)를 이름 칸에 보였다 — 공개 질문이면 다른 사용자에게 남의 내부 키가
+    드러났다. 이름 칸은 중립 표기만 받고, 내부 식별자는 표시하지 않는 소유 판정 필드(authorId)에만 남는다.
+  */
+  it.each([
+    ['null', null],
+    ['빈 문자열', ''],
+    ['공백', '   '],
+  ])('작성자 이름이 %s 이면 내부 식별자 대신 중립 표기를 쓰고, 나머지 nullable 필드는 생략한다', async (_label, userNm) => {
     vi.mocked(client.getRaw).mockResolvedValueOnce(successEnvelope({
       list: [{
         pstSn: 42,
         pstTtl: '문의 제목',
         pstCn: '문의 본문',
         userId: 'writer-1',
-        userNm: null,
+        userNm,
         useYn: 'Y',
         qnaSttsCd: null,
         scrtYn: null,
+        crtDt: null,
       }],
       total: 1,
       page: 1,
@@ -225,7 +237,10 @@ describe('HelpUserService QNA generated contract', () => {
 
     const result = await helpUserService.getQnas({ page: 1, size: 10 });
 
-    expect(result.list[0]).toMatchObject({ wrterNm: 'writer-1' });
+    expect(result.list[0].wrterNm).toBe('이름 없음');
+    expect(result.list[0].wrterNm).not.toContain('writer-1');
+    expect(result.list[0].authorId).toBe('writer-1');
+    expect(result.list[0].writngDe).toBe('');
     expect(result.list[0]).not.toHaveProperty('qnaSttsCd');
     expect(result.list[0]).not.toHaveProperty('scrtYn');
   });

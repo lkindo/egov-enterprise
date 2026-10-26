@@ -46,6 +46,7 @@
 | [ADR-0037](ADR-0037-product-pit-six-slots.md) | 제품 PIT 여섯 슬롯과 실측 긴 순서, 효과 없으면 4로 되돌림 | Accepted |
 | [ADR-0038](ADR-0038-credential-cookie-csrf-token.md) | 쿠키 자격을 실은 쓰기 요청에 이중 제출 CSRF 토큰(SockJS는 허용 Origin) | Accepted |
 | [ADR-0039](ADR-0039-cms-content-pages-first-scope.md) | 콘텐츠 페이지(CMS) 1차 범위 — 로그인 사용자 열람, 업무 홈 상단 조각, 서버 검증 jsonb 문서 | Accepted — 일부 ADR-0042로 대체 |
-| [ADR-0040](ADR-0040-board-operations-management.md) | 게시판 운영 화면, 사용 안 함 게시판의 읽기·쓰기 차단, 날짜 기준 예약 게시·게시 기준일 정렬, 상단 고정 컬럼과 BOARD_PIN | Accepted |
+| [ADR-0040](ADR-0040-board-operations-management.md) | 게시판 운영 화면, 사용 안 함 게시판의 읽기·쓰기 차단, 날짜 기준 예약 게시·게시 기준일 정렬, 상단 고정 컬럼과 BOARD_PIN | Accepted — 일부 ADR-0043으로 대체 |
 | [ADR-0041](ADR-0041-local-migration-workspace-and-ai.md) | 독립 로컬 이관 작업공간, 직접 입력과 제한된 AI 질문·읽기 진행, 기관 전송 승인과 실행 경계 | Accepted |
 | [ADR-0042](ADR-0042-cms-operations-follow-up.md) | 콘텐츠 페이지 운영 보완 — 초안·게시 판정 분리, 내려받기 파일 칸, 게시 중지 상태, 초안 삭제·사고 대응 파기(V2_143), 안내 페이지 목록 | Accepted |
+| [ADR-0043](ADR-0043-board-publish-flow-and-designated-boards.md) | 게시판 공개 동선 — 메뉴와 분리한 생성, 사용 전환으로 공개, 공개 준비 기준(찾는 길 하나 이상), 지정 게시판 영구 삭제 거부, 템플릿 기준 화면 유형 이름 | Accepted |

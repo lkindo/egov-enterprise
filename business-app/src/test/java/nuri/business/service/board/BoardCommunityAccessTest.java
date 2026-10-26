@@ -216,7 +216,28 @@ class BoardCommunityAccessTest {
 
             assertThat(meta.bbsTtl()).isEqualTo("자유게시판");
             assertThat(meta.tmpltId()).isEqualTo("TMPLT_FAQ");
+            // [2026-10-26 ADR-0043 1차 UX-09] 귀속이 없으면 커뮤니티 요약은 null 이다 — 작성 화면이 '로그인한 모든 사용자'라고 말한다.
+            assertThat(meta.community()).isNull();
             verify(communityBoardAccess, never()).isApprovedMember(any(), anyString());
+        }
+
+        @Test
+        @DisplayName("귀속 게시판의 메타는 커뮤니티 이름·이용 가능 여부를 싣고, 포트가 없으면 확인 불가 요약이다 (ADR-0043 1차 UX-09)")
+        void metaCarriesCommunitySummary() {
+            given(communityBoardAccess.isApprovedMember(CMNTY_SN, VIEWER)).willReturn(true);
+            given(communityBoardAccess.summary(CMNTY_SN))
+                    .willReturn(Optional.of(new nuri.foundation.core.community.CommunityBoardAccessPort.CommunitySummary("신규 입사자", true)));
+
+            nuri.business.service.board.dto.BoardMetaDto meta = boardService(communityBoardAccess).getBoardMeta(COMMUNITY_BBS);
+
+            assertThat(meta.community()).isNotNull();
+            assertThat(meta.community().cmntySn()).isEqualTo(CMNTY_SN);
+            assertThat(meta.community().cmntyNm()).isEqualTo("신규 입사자");
+            assertThat(meta.community().inUse()).isTrue();
+
+            given(communityBoardAccess.summary(CMNTY_SN)).willReturn(Optional.empty());
+            assertThat(boardService(communityBoardAccess).getBoardMeta(COMMUNITY_BBS).community())
+                    .isEqualTo(nuri.business.service.board.dto.BoardMasterCommunity.unknown(CMNTY_SN));
         }
 
         @Test

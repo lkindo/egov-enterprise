@@ -4,15 +4,15 @@
 // ==========================================================================
 
 import { z } from 'zod';
-import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
+import { BoardMasterCommunityRequestSchema, BoardMasterCommunityResponseSchema, BoardMasterCommunitySchema, FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
 export const BoardMasterUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsTtl: z.string().min(0).max(100),
   bbsExpln: z.string().min(0).max(4000).optional(),
   ansPsbltyYn: z.enum(["Y","N"]).optional(),
   fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
-  atchPsbltyFileQty: z.number().int().optional(),
-  atchPsbltyFileSz: z.number().int(),
+  atchPsbltyFileQty: z.number().int().min(0).max(20).optional(),
+  atchPsbltyFileSz: z.number().int().min(0).max(10485760),
   useYn: z.enum(["Y","N"]),
   ansYn: z.enum(["Y","N"]).optional(),
   stsfdgYn: z.enum(["Y","N"]).optional(),
@@ -27,7 +27,7 @@ export const BoardMasterUpdateRequestSchema = /*#__PURE__*/ (() => z.object({
 export type BoardMasterUpdateRequest = z.infer<typeof BoardMasterUpdateRequestSchema>;
 
 export const BoardMasterDtoSchema = /*#__PURE__*/ (() => z.object({
-  bbsId: z.string().min(0).max(20).optional(),
+  bbsId: z.string().min(0).max(20).regex(new RegExp("^BBSMSTR_[A-Z0-9]{12}$")).optional(),
   bbsTtl: z.string().min(0).max(100),
   bbsExpln: z.string().min(0).max(4000).optional(),
   bbsTypeCd: z.string().min(0).max(12),
@@ -35,9 +35,9 @@ export const BoardMasterDtoSchema = /*#__PURE__*/ (() => z.object({
   bbsAtrbCdNm: z.string().optional(),
   ansPsbltyYn: z.enum(["Y","N"]).optional(),
   fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
-  atchPsbltyFileQty: z.number().int().optional(),
-  atchPsbltyFileSz: z.number().int(),
-  tmpltId: z.string().min(0).max(20).optional(),
+  atchPsbltyFileQty: z.number().int().min(0).max(20).optional(),
+  atchPsbltyFileSz: z.number().int().min(0).max(10485760),
+  tmpltId: z.enum(["TMPLT_HUB","TMPLT_LIST","TMPLT_GALLERY","TMPLT_QNA","TMPLT_CALENDAR","TMPLT_FAQ","TMPLT_WIKI"]),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
@@ -73,7 +73,7 @@ export type BoardPostPeriodBatchRequest = z.infer<typeof BoardPostPeriodBatchReq
 
 export const BoardMasterBatchStatusRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsIds: z.array(z.string()).min(1).max(100),
-  useYn: z.enum(["Y","N"]).optional(),
+  useYn: z.enum(["Y","N"]),
 }))();
 export type BoardMasterBatchStatusRequest = z.infer<typeof BoardMasterBatchStatusRequestSchema>;
 
@@ -115,7 +115,8 @@ export const BoardMasterSummaryResponseSchema = /*#__PURE__*/ (() => z.object({
   tmpltId: z.string().optional(),
   useYn: z.string(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK","QNA","WIKI"])),
+  community: z.lazy(() => BoardMasterCommunitySchema).optional(),
 }))();
 export type BoardMasterSummaryResponse = z.infer<typeof BoardMasterSummaryResponseSchema>;
 
@@ -168,7 +169,8 @@ export const BoardMasterDetailResponseSchema = /*#__PURE__*/ (() => z.object({
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
   version: z.number().int(),
-  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK","QNA","WIKI"])),
+  community: z.lazy(() => BoardMasterCommunitySchema).optional(),
 }))();
 export type BoardMasterDetailResponse = z.infer<typeof BoardMasterDetailResponseSchema>;
 
@@ -210,8 +212,8 @@ export const BoardMasterUpdateRequestRequestSchema = /*#__PURE__*/ (() => z.obje
   bbsExpln: z.string().min(0).max(4000).optional(),
   ansPsbltyYn: z.enum(["Y","N"]).optional(),
   fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
-  atchPsbltyFileQty: z.number().int().optional(),
-  atchPsbltyFileSz: z.number().int(),
+  atchPsbltyFileQty: z.number().int().min(0).max(20).optional(),
+  atchPsbltyFileSz: z.number().int().min(0).max(10485760),
   useYn: z.enum(["Y","N"]),
   ansYn: z.enum(["Y","N"]).optional(),
   stsfdgYn: z.enum(["Y","N"]).optional(),
@@ -229,8 +231,8 @@ export const BoardMasterUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.obj
   bbsExpln: z.string().min(0).max(4000).optional().nullable(),
   ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
   fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
-  atchPsbltyFileQty: z.number().int().optional().nullable(),
-  atchPsbltyFileSz: z.number().int(),
+  atchPsbltyFileQty: z.number().int().min(0).max(20).optional().nullable(),
+  atchPsbltyFileSz: z.number().int().min(0).max(10485760),
   useYn: z.enum(["Y","N"]),
   ansYn: z.enum(["Y","N"]).optional().nullable(),
   stsfdgYn: z.enum(["Y","N"]).optional().nullable(),
@@ -244,7 +246,7 @@ export const BoardMasterUpdateRequestResponseSchema = /*#__PURE__*/ (() => z.obj
 }))();
 
 export const BoardMasterDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  bbsId: z.string().min(0).max(20).optional(),
+  bbsId: z.string().min(0).max(20).regex(new RegExp("^BBSMSTR_[A-Z0-9]{12}$")).optional(),
   bbsTtl: z.string().min(0).max(100),
   bbsExpln: z.string().min(0).max(4000).optional(),
   bbsTypeCd: z.string().min(0).max(12),
@@ -252,9 +254,9 @@ export const BoardMasterDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsAtrbCdNm: z.string().optional(),
   ansPsbltyYn: z.enum(["Y","N"]).optional(),
   fileAtchPsbltyYn: z.enum(["Y","N"]).optional(),
-  atchPsbltyFileQty: z.number().int().optional(),
-  atchPsbltyFileSz: z.number().int(),
-  tmpltId: z.string().min(0).max(20).optional(),
+  atchPsbltyFileQty: z.number().int().min(0).max(20).optional(),
+  atchPsbltyFileSz: z.number().int().min(0).max(10485760),
+  tmpltId: z.enum(["TMPLT_HUB","TMPLT_LIST","TMPLT_GALLERY","TMPLT_QNA","TMPLT_CALENDAR","TMPLT_FAQ","TMPLT_WIKI"]),
   frstRgtrId: z.string().optional(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   lastMdfrId: z.string().optional(),
@@ -274,7 +276,7 @@ export const BoardMasterDtoRequestSchema = /*#__PURE__*/ (() => z.object({
 }))();
 
 export const BoardMasterDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  bbsId: z.string().min(0).max(20).optional().nullable(),
+  bbsId: z.string().min(0).max(20).regex(new RegExp("^BBSMSTR_[A-Z0-9]{12}$")).optional().nullable(),
   bbsTtl: z.string().min(0).max(100),
   bbsExpln: z.string().min(0).max(4000).optional().nullable(),
   bbsTypeCd: z.string().min(0).max(12),
@@ -282,9 +284,9 @@ export const BoardMasterDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   bbsAtrbCdNm: z.string().optional().nullable(),
   ansPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
   fileAtchPsbltyYn: z.enum(["Y","N"]).optional().nullable(),
-  atchPsbltyFileQty: z.number().int().optional().nullable(),
-  atchPsbltyFileSz: z.number().int(),
-  tmpltId: z.string().min(0).max(20).optional().nullable(),
+  atchPsbltyFileQty: z.number().int().min(0).max(20).optional().nullable(),
+  atchPsbltyFileSz: z.number().int().min(0).max(10485760),
+  tmpltId: z.enum(["TMPLT_HUB","TMPLT_LIST","TMPLT_GALLERY","TMPLT_QNA","TMPLT_CALENDAR","TMPLT_FAQ","TMPLT_WIKI"]),
   frstRgtrId: z.string().optional().nullable(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   lastMdfrId: z.string().optional().nullable(),
@@ -329,12 +331,12 @@ export const BoardPostPeriodBatchRequestResponseSchema = /*#__PURE__*/ (() => z.
 
 export const BoardMasterBatchStatusRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsIds: z.array(z.string()).min(1).max(100),
-  useYn: z.enum(["Y","N"]).optional(),
+  useYn: z.enum(["Y","N"]),
 }))();
 
 export const BoardMasterBatchStatusRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   bbsIds: z.array(z.string().optional().nullable()).min(1).max(100),
-  useYn: z.enum(["Y","N"]).optional().nullable(),
+  useYn: z.enum(["Y","N"]),
 }))();
 
 export const BoardMasterBatchDeleteRequestRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -396,7 +398,8 @@ export const BoardMasterSummaryResponseRequestSchema = /*#__PURE__*/ (() => z.ob
   tmpltId: z.string().optional(),
   useYn: z.string(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK","QNA","WIKI"])),
+  community: z.lazy(() => BoardMasterCommunityRequestSchema.strict()).optional(),
 }))();
 
 export const BoardMasterSummaryResponseResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -408,7 +411,8 @@ export const BoardMasterSummaryResponseResponseSchema = /*#__PURE__*/ (() => z.o
   tmpltId: z.string().optional().nullable(),
   useYn: z.string(),
   crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  designations: z.array(z.enum(["NOTICE","FAQ","TASK"]).optional().nullable()),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK","QNA","WIKI"]).optional().nullable()),
+  community: z.lazy(() => BoardMasterCommunityResponseSchema).optional().nullable(),
 }))();
 
 export const PageResponseBoardMasterSummaryResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -476,7 +480,8 @@ export const BoardMasterDetailResponseRequestSchema = /*#__PURE__*/ (() => z.obj
   authFlag: z.string().optional(),
   tmplatCours: z.string().optional(),
   version: z.number().int(),
-  designations: z.array(z.enum(["NOTICE","FAQ","TASK"])),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK","QNA","WIKI"])),
+  community: z.lazy(() => BoardMasterCommunityRequestSchema.strict()).optional(),
 }))();
 
 export const BoardMasterDetailResponseResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -508,7 +513,8 @@ export const BoardMasterDetailResponseResponseSchema = /*#__PURE__*/ (() => z.ob
   authFlag: z.string().optional().nullable(),
   tmplatCours: z.string().optional().nullable(),
   version: z.number().int(),
-  designations: z.array(z.enum(["NOTICE","FAQ","TASK"]).optional().nullable()),
+  designations: z.array(z.enum(["NOTICE","FAQ","TASK","QNA","WIKI"]).optional().nullable()),
+  community: z.lazy(() => BoardMasterCommunityResponseSchema).optional().nullable(),
 }))();
 
 export const ApiResponsePageResponseBoardChangeDtoRequestSchema = /*#__PURE__*/ (() => z.object({

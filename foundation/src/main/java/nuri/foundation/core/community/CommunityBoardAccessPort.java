@@ -1,5 +1,7 @@
 package nuri.foundation.core.community;
 
+import java.util.Optional;
+
 /**
  * 커뮤니티 귀속 게시판의 접근 판정을 커뮤니티 도메인에 묻는 포트.
  *
@@ -25,4 +27,30 @@ public interface CommunityBoardAccessPort {
 
     /** 해당 커뮤니티가 존재하는지. 게시판을 없는 커뮤니티에 귀속시키는 것을 막는 데 쓴다. */
     boolean exists(Long cmntySn);
+
+    /**
+     * 게시판 운영 화면이 귀속 커뮤니티를 알릴 때 쓰는 요약(이름·이용 가능 여부).
+     *
+     * <p>[2026-10-26 ADR-0043 결정 3] 공개 준비 점검은 귀속 게시판의 입구를 '사용 중인 커뮤니티 화면'으로 센다. 귀속
+     * 커뮤니티가 사용 중지면 이용자가 들어올 입구가 없다. 게시판은 커뮤니티 표를 직접 읽지 않고(GAP-ARCH-001) 이 포트로 묻는다.
+     *
+     * <p><b>모르면 비운다.</b> 커뮤니티가 없거나 구현이 요약을 주지 않으면 {@link Optional#empty()} 다. 호출부는 이것을
+     * '확인 불가' 로 다루고 입구가 있다고 추정하지 않는다(fail-closed). 기본 구현은 늘 비운다 — 이 메서드를 모르는 구현이
+     * 있어도 확인 불가로 끝난다.
+     *
+     * @param cmntySn 커뮤니티 일련번호
+     */
+    default Optional<CommunitySummary> summary(Long cmntySn) {
+        return Optional.empty();
+    }
+
+    /**
+     * 커뮤니티 요약.
+     *
+     * @param cmntyNm 커뮤니티 이름(비어 있을 수 있다)
+     * @param inUse   이용자가 커뮤니티 화면을 열 수 있는지 — 사용 중이고 정식 등록된 커뮤니티만 true 다
+     *                (이용자 상세 화면과 같은 판정)
+     */
+    record CommunitySummary(String cmntyNm, boolean inUse) {
+    }
 }

@@ -2,13 +2,13 @@
 
 import React, { use, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient, type QueryClient, type QueryKey } from '@tanstack/react-query';
 import {
   ArrowLeft, Edit3, Trash2,
   Download,
   Calendar, Eye, User,
   FileText, Quote, AlertTriangle,
-  Package, ThumbsUp
+  Package, ThumbsUp, CircleCheck, Tag
 } from 'lucide-react';
 import { BoardRichTextContent } from '@/components/ui/BoardRichTextContent';
 import { cn } from '@/lib/utils';
@@ -34,10 +34,40 @@ import SatisfactionSection from '@/components/features/satisfaction/Satisfaction
 
 import { CommentVO } from '@/types/business/comment';
 import { useReturnToList } from '@/lib/navigation/use-return-to-list';
+import { matchesRoute, previousRoute } from '@/lib/navigation/previous-route';
+import { qnaCategoryLabel, qnaStatusLabel } from '@/lib/board/qna-status';
+import { boardMasterKeys } from '@/queries/board-master-query-options';
+import { commentKeys } from '@/queries/comment-query-options';
 import { PinnedBadge, PostingStatusBadge } from '../components/PostingStatusBadge';
 
-/** 게시글 상세로 들어오는 목록 화면들. 여기서 왔으면 뒤로 가서 목록의 조건·스크롤을 살린다. */
-const BOARD_LIST_ORIGINS = ['/admin/community/boards/select-board-list', '/admin/help', '/cop/cmy/selectCommunityDetail/*', '/search', '/admin/community/board'] as const;
+/**
+ * 게시글 상세로 들어오는 목록 화면들. 여기서 왔으면 뒤로 가서 목록의 조건·스크롤을 살린다.
+ * [2026-10-26 ADR-0043 1차 OPS-01·OPS-06] 운영 화면 게시물 탭(`/admin/community/boards/master/{bbsId}?tab=posts`)과 댓글 관리
+ * (`/admin/system/comments`)도 이 상세를 연다 — 거기서 왔으면 그 화면으로 돌아간다. 운영 탭은 조건·쪽을 세션 목록 상태로, 댓글 관리는
+ * 주소(page·bbsId·pstSn)로 되살린다.
+ */
+const BOARD_LIST_ORIGINS = [
+  '/admin/community/boards/select-board-list',
+  '/admin/help',
+  '/cop/cmy/selectCommunityDetail/*',
+  '/search',
+  '/admin/community/board',
+  '/admin/community/boards/master/*',
+  '/admin/system/comments',
+  // [2026-10-26 ADR-0043 1차 UX-04] 도움말 센터의 1:1 문의 내역도 이 상세를 연다 — 탭·쪽·검색어는 세션 목록 상태로 되살린다.
+  '/help',
+] as const;
+
+/**
+ * 글을 지운 뒤 돌아갈 수 있는 목록(BOARD_LIST_ORIGINS)의 캐시 — 이용 목록·운영 게시물 탭·지식 허브(목록·인기 문서·통계)·게시글
+ * 모아보기·댓글 관리. 뒤로 가기는 남은 캐시로 그리므로 함께 무효화하지 않으면 지운 글이 다시 보인다. 통합 검색과 도움말 센터는 캐시가
+ * 아니라 화면이 다시 조회한다. 지운 글의 상세는 다시 읽지 않는다(404).
+ */
+function invalidateDeletedPostLists(queryClient: QueryClient, bbsId: string | null) {
+  const keys: QueryKey[] = [['boardList', bbsId], ['knowledge-articles'], ['hot-articles'], ['knowledge-stats'], commentKeys.adminLists()];
+  if (bbsId) keys.push(boardMasterKeys.operationPostsAll(bbsId), ['community-board', bbsId]);
+  for (const queryKey of keys) void queryClient.invalidateQueries({ queryKey });
+}
 
 interface BoardDetailClientProps {
   dataPromise: Promise<{
@@ -76,10 +106,23 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const bbsId = searchParams.get('bbsId');
   // [2026-10-01] '목록으로' — 게시판 목록·지식 허브·커뮤니티·통합 검색에서 왔으면 뒤로 가 조건을 살리고,
   //   딥링크·새 탭이면 이 글의 게시판 목록으로 간다. 방문 기록 밖으로 나가는 router.back() 을 직접 부르지 않는다.
-  const returnToList = useReturnToList({
-    fallback: bbsId ? `/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(bbsId)}` : '/admin/help',
-    origins: BOARD_LIST_ORIGINS,
-  });
+  const listFallback = bbsId ? `/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(bbsId)}` : '/admin/help';
+  const returnToList = useReturnToList({ fallback: listFallback, origins: BOARD_LIST_ORIGINS });
+  /*
+    [2026-10-26 ADR-0043 1차 OPS-01·UX-16] 삭제한 뒤의 복귀 — '목록으로' 와 같은 판정이다. 목록(운영 게시물 탭 포함)에서 왔으면 뒤로 가
+    그 목록의 조건·쪽을 살린다. 아니면 이 글의 게시판 목록으로 가되, 지운 글의 상세를 방문 기록에 남기지 않게 바꿔 끼운다(replace) —
+    종전에는 늘 조건 없는 이용자 목록으로 push 해서 운영 화면에서 지운 운영자가 작업 맥락을 잃었다.
+  */
+  const leaveAfterDelete = () => {
+    const previous = previousRoute();
+    if (previous && BOARD_LIST_ORIGINS.some((origin) => matchesRoute(previous, origin))) {
+      router.back();
+      return;
+    }
+    // 목적지를 글자로 적는다 — URL 상태 census 가 목적지와 그 키(bbsId)를 읽는다(종전 push 와 같은 목적지).
+    if (bbsId) router.replace(`/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(bbsId)}`);
+    else router.replace('/admin/help');
+  };
   // [PD-UX-002 Q4] 서버와 같은 키 공간을 읽는다.
   //   page.tsx 는 `params.pstSn || params.nttId` 로 **두 키를 다 받는데** 여기는 pstSn 만 읽었다.
   //   그래서 `?nttId=` 로 들어오면 서버는 글을 제대로 렌더하지만 클라이언트는 pstSn=0 으로 동작했다 —
@@ -247,10 +290,23 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       const res = await deleteBoardArticle(null, formData);
       if (res.success) {
         toast('게시글이 삭제되었습니다.', 'success');
-        queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
-        router.push(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
+        // 돌아갈 목록이 지운 글을 다시 그리지 않게 한다 — 뒤로 가는 출처 목록 모두다.
+        invalidateDeletedPostLists(queryClient, bbsId);
+        leaveAfterDelete();
       } else {
-        toast(res.message || '게시글 삭제에 실패했습니다.', 'error');
+        /*
+          [2026-10-26 ADR-0043 1차 UX-16] 실패 사유를 상태별로 말한다 — 권한이 없어진 것(403)과 글이 이미 없는 것(404)은 할 일이 다르다.
+          서버 액션이 상태를 싣지 않으면(종전 응답) 액션의 문장을 그대로 쓴다. 어느 쪽이든 글과 화면은 그대로다.
+        */
+        const status = 'status' in res && typeof res.status === 'number' ? res.status : undefined;
+        if (status === 403) {
+          toast('이 게시글을 삭제할 권한이 없습니다. 권한이 바뀌었을 수 있습니다. 게시글은 그대로입니다.', 'error');
+        } else if (status === 404) {
+          if (bbsId) void queryClient.invalidateQueries({ queryKey: ['boardList', bbsId] });
+          toast('이미 삭제됐거나 찾을 수 없는 게시글입니다. 목록으로 돌아가 확인하세요.', 'error');
+        } else {
+          toast(res.message || '게시글을 삭제하지 못했습니다. 잠시 후 다시 시도하세요.', 'error');
+        }
       }
     } catch {
       toast('게시글 삭제 중 오류가 발생했습니다.', 'error');
@@ -455,17 +511,28 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       {/* --- Meta Info Bar --- */}
       {/* 감사 P1-5: 'Integrity: Verified Node' 는 어떤 검증도 수행하지 않는 고정 문구라 카드 자체를 삭제하고,
           실제 응답 필드로 계산 가능한 3개만 남긴다. */}
+      {/* [2026-10-26 ADR-0043 1차 UX-16] 등록일은 'yyyy-MM-dd HH:mm' 이다(DEC-OPS-100 — 초는 뜻이 없다). 전송 원문('T')을 보이지 않는다. */}
       <dl className="flex flex-wrap items-center gap-x-6 gap-y-2 rounded-md border border-border bg-card px-3 py-2">
         <MetaItem icon={<User size={14} />} label="작성자" value={article.userNm || '-'} />
-        <MetaItem icon={<Calendar size={14} />} label="등록일" value={article.crtDt || '-'} />
+        <MetaItem icon={<Calendar size={14} />} label="등록일" value={formatPostedAt(article.crtDt)} />
         <MetaItem icon={<Eye size={14} />} label="조회수" value={`${(article.inqCnt || 0).toLocaleString()}회`} />
+        {/*
+          [ADR-0043 1차 OPS-02·UX-05·UX-16] Q&A 의 해결 상태와 분류. 상태 이름은 정본 표(qna-status.ts)의 '미해결 / 해결됨' 이다. 분류
+          체계(C1)를 정하기 전이라 'CAT01' 같은 코드는 보이지 않고 '일반' 이라 부른다 — 목록과 상세가 같은 이름을 쓴다.
+        */}
+        {tmpltId === 'TMPLT_QNA' && (
+          <>
+            <MetaItem icon={<CircleCheck size={14} />} label="해결 상태" value={qnaStatusLabel(article.qnaSttsCd)} />
+            <MetaItem icon={<Tag size={14} />} label="분류" value={qnaCategoryLabel(article.qnaCatCd)} />
+          </>
+        )}
       </dl>
 
       {/* --- CONTENT AREA --- */}
       <section aria-label="본문" className="rounded-md border border-border bg-card p-4 md:p-6">
         <h2 className="mb-3 flex items-center gap-2 border-b border-border pb-2 text-[length:var(--font-size-body)] font-semibold text-muted-foreground">
           <Quote size={14} className="text-primary" aria-hidden="true" />
-          {tmpltId === 'TMPLT_QNA' ? (article.qnaCatCd || 'Q&A') : '본문'}
+          {tmpltId === 'TMPLT_QNA' ? '질문' : '본문'}
         </h2>
 
         <BoardRichTextContent
@@ -551,6 +618,17 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
       </div>
     </div>
   );
+}
+
+/**
+ * [2026-10-26 ADR-0043 1차 UX-16] 서버 일시 → 'yyyy-MM-dd HH:mm'. 게시글 일시는 서버가 Asia/Seoul 로 시간대 표기 없이 준다 — Date 로
+ * 바꾸면 브라우저 시간대로 옮겨질 수 있어 문자열로만 자른다. 날짜만 오면 날짜만, 해석할 수 없으면 '-' 다(없는 시각을 지어내지 않는다).
+ */
+export function formatPostedAt(value?: string | null): string {
+  const text = value?.trim() ?? '';
+  const dateTime = /^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2})/.exec(text);
+  if (dateTime) return `${dateTime[1]} ${dateTime[2]}`;
+  return /^\d{4}-\d{2}-\d{2}$/.test(text) ? text : '-';
 }
 
 /** 바이트 단위 파일 크기를 사람이 읽는 표기로 변환한다. */

@@ -52,7 +52,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     @DisplayName("통합 검색은 /search 리터럴 경로로 잡히고 게시판 목록 조회로 새지 않는다")
     void searchPosts_resolvesLiteralPathNotBbsId() throws Exception {
         Page<BoardDto> page = new PageImpl<>(List.of(BoardDto.builder()
-                .pstSn(7L).bbsId("BBS_001").pstTtl("연차 신청 안내").userNm("홍길동").inqCnt(3)
+                .pstSn(7L).bbsId("BBS_001").bbsTtl("업무게시판").pstTtl("연차 신청 안내").userNm("홍길동").inqCnt(3)
                 .pstCn("<p>본문</p>").pswd("secret")
                 .build()));
         given(boardService.searchAcrossBoards(any(), any(Pageable.class))).willReturn(page);
@@ -67,6 +67,8 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(jsonPath("$.data[0].pstTtl").value("연차 신청 안내"))
                 .andExpect(jsonPath("$.data[0].userNm").value("홍길동"))
                 .andExpect(jsonPath("$.data[0].inqCnt").value(3))
+                // [2026-10-26 ADR-0043, NAV-10] 어느 게시판의 글인지 게시판 이름을 싣는다.
+                .andExpect(jsonPath("$.data[0].bbsTtl").value("업무게시판"))
                 // 좁힌 projection — 본문 HTML 과 게시글 비밀번호는 목록 표면에 실리지 않는다.
                 .andExpect(jsonPath("$.data[0].pstCn").doesNotExist())
                 .andExpect(jsonPath("$.data[0].pswd").doesNotExist())
@@ -279,7 +281,7 @@ class BoardApiControllerTest extends ControllerTestSupport {
     void getBoardMeta_ReturnsReadOnlyMeta() throws Exception {
         given(boardService.getBoardMeta("BBS_001")).willReturn(new nuri.business.service.board.dto.BoardMetaDto(
                 "BBS_001", "자유게시판", "설명", "BBST01", "TMPLT_FAQ", "Y", "Y", 3, 1048576L, "N", "Y", java.util.List.of(), false, "Y", "Y",
-                "REQUIRED", "N"));
+                "REQUIRED", "N", null));
 
         mockMvc.perform(get("/api/v1/boards/BBS_001/meta")
                         .accept(MediaType.APPLICATION_JSON))
@@ -416,5 +418,31 @@ class BoardApiControllerTest extends ControllerTestSupport {
                 .andExpect(status().isOk());
         verify(boardService).updatePost(eq("BBS_001"), eq(5L), argThat((BoardSaveRequest request) ->
                 Integer.valueOf(4).equals(request.version()) && "20261101".equals(request.pstBgngYmd())));
+    }
+
+    @Test
+    @WithMockCustomUser(username = "testUser", esntlId = "testUser")
+    @DisplayName("[2026-10-26 ADR-0043] Q&A 상태는 OPEN·SOLVED 만 받는다 — 그 밖의 값은 등록·수정 모두 서비스 전에 400")
+    void qnaStatusVocabularyIsCheckedBeforeService() throws Exception {
+        for (String status : List.of("QA01", "open", "CLOSED")) {
+            mockMvc.perform(post("/api/v1/boards/posts")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\", \"qnaSttsCd\":\"" + status + "\"}")
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put("/api/v1/boards/BBS_001/posts/5")
+                            .contentType(MediaType.APPLICATION_JSON)
+                            .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\", \"version\":1, \"qnaSttsCd\":\"" + status + "\"}")
+                            .accept(MediaType.APPLICATION_JSON))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(boardService);
+
+        given(boardService.createPost(anyString(), any(BoardSaveRequest.class))).willReturn(1L);
+        mockMvc.perform(post("/api/v1/boards/posts")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"bbsId\":\"BBS_001\", \"pstTtl\":\"Subject\", \"pstCn\":\"Content\", \"qnaSttsCd\":\"OPEN\"}")
+                        .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
     }
 }

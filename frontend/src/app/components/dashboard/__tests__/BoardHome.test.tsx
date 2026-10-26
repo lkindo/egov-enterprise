@@ -20,7 +20,8 @@ vi.mock('@/lib/api/generated-api-client', () => ({ executeGeneratedOperation: mo
 function renderBoardHome(data: Partial<BoardHomeData> | null) {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false, staleTime: Infinity } } });
   client.setQueryData(boardHomeQuery.queryKey, data === null ? null : {
-    initialNotiList: [], initialTaskList: [], notiListTotal: 0, taskListTotal: 0, ...data,
+    initialNotiList: [], initialTaskList: [], notiListTotal: 0, taskListTotal: 0,
+    notiListUnavailable: false, taskListUnavailable: false, ...data,
   });
   return act(async () => {
     render(
@@ -98,6 +99,38 @@ describe('업무 홈 게시판 조각 (DIP V1)', () => {
     expect(screen.getByText('업무게시판 글').closest('li')).toHaveTextContent('조회 실패');
     expect(screen.queryByText('업무게시판에 등록된 글이 없습니다.')).toBeNull();
     expect(screen.queryByText('새 공지사항이 없습니다.')).toBeNull();
+  });
+
+  /*
+   * [2026-10-26 ADR-0043 SET-07] 지정 게시판을 사용 안 함으로 두면(또는 없으면) 서버가 운영 안 함 표지를 싣는다. 이것은 의도된 운영
+   * 상태라 '조회 실패·잠시 후 다시' 라고 말하지 않고, 닫힌 게시판으로 보내는 글쓰기·전체 보기 단추를 감춘다. 다른 게시판은 그대로다.
+   */
+  it('🚨 업무게시판을 운영하지 않으면 조회 실패가 아니라 운영하지 않는다고 말하고 글쓰기·전체 보기를 감춘다', async () => {
+    await renderBoardHome({ taskListTotal: null, taskListUnavailable: true, notiListTotal: 4 });
+
+    const taskSection = screen.getByRole('region', { name: '업무게시판 최근 글' });
+    expect(taskSection).toHaveTextContent('지금 이 게시판을 운영하지 않습니다.');
+    expect(screen.getByText('업무게시판 글').closest('li')).toHaveTextContent('운영 안 함');
+    expect(screen.queryByText(/조회 실패/)).toBeNull();
+    expect(screen.queryByText('목록을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.')).toBeNull();
+    expect(screen.queryByText('업무게시판에 등록된 글이 없습니다.')).toBeNull();
+    expect(screen.queryByRole('link', { name: '업무게시판 전체 보기' })).toBeNull();
+    expect(screen.queryByRole('link', { name: /새 게시글 작성/ })).toBeNull();
+    // 공지 게시판은 운영 중이라 종전대로다.
+    expect(screen.getByText('공지사항').closest('li')).toHaveTextContent('4건');
+    expect(screen.getByRole('link', { name: '공지 전체 보기' })).toBeInTheDocument();
+  });
+
+  it('공지 게시판만 운영하지 않으면 공지 전체 보기만 감추고 업무게시판 글쓰기는 남긴다', async () => {
+    await renderBoardHome({ notiListTotal: null, notiListUnavailable: true, taskListTotal: 2 });
+
+    expect(screen.getByRole('region', { name: '최근 공지사항' })).toHaveTextContent('지금 이 게시판을 운영하지 않습니다.');
+    expect(screen.getByText('공지사항').closest('li')).toHaveTextContent('운영 안 함');
+    expect(screen.queryByRole('link', { name: '공지 전체 보기' })).toBeNull();
+    expect(screen.queryByText('새 공지사항이 없습니다.')).toBeNull();
+    expect(screen.getByRole('link', { name: '업무게시판 전체 보기' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: /새 게시글 작성/ })).toBeInTheDocument();
+    expect(screen.getByText('업무게시판 글').closest('li')).toHaveTextContent('2건');
   });
 
   it('서버가 게시판을 주지 않으면(403) 카드·목록·단추를 그리지 않는다', async () => {

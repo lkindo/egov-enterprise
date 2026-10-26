@@ -46,6 +46,8 @@ const BOARD_CHOICE_SCREENS = [
   'app/admin/help/KnowledgeHubClient.tsx',
   // 지식 허브 커뮤니티 탭의 게시판 ID 를 정하는 기여 뷰(허브 분해 H2)
   'components/business/community/knowledge-community-tab.tsx',
+  // [2026-10-26 ADR-0043 1차 UX-09] 게시판 없이 들어온 작성 화면이 쓸 게시판을 고르는 화면
+  'app/admin/community/boards/insert-board-article/BoardWritePicker.tsx',
 ] as const;
 
 /** 주석 안의 이름을 참조로 세면 "주석만 남기면 통과"가 되어 계약이 무력해진다. */
@@ -73,7 +75,10 @@ describe('게시판 선택지는 서버 목록에서 온다', () => {
     // [2026-09-05 DEC-OPS-034] 종전 세 화면 중 boards/[id] 작성 폼은 정본 작성 화면으로 수렴돼 삭제됐다.
     // [2026-09-25 DEC-OPS-130] /admin/community/[id] 도 정본 커뮤니티 상세로의 redirect 가 되어 선택 화면이
     //   하나 남는다. 목록 위치로 자르지 않고 이름으로 적는다 — 앞 항목이 빠지면 서버 기본값 화면이 끌려온다.
-    const selectScreens = ['app/admin/community/board/CommunityBoardClient.tsx'] as const;
+    const selectScreens = [
+      'app/admin/community/board/CommunityBoardClient.tsx',
+      'app/admin/community/boards/insert-board-article/BoardWritePicker.tsx',
+    ] as const;
     for (const screen of present(selectScreens)) {
       const code = stripComments(read(screen));
       expect(code, `${screen} 가 게시판 목록을 서버에서 받지 않는다`).toContain('useBoardOptions');

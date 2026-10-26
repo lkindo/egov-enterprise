@@ -66,7 +66,9 @@ public class BoardMasterRepositoryImpl implements BoardMasterRepositoryCustom {
                 boardMaster.bbsTtl,
                 boardMaster.tmpltId,
                 boardMaster.useYn,
-                boardMaster.crtDt.as("crtDt")))
+                boardMaster.crtDt.as("crtDt"),
+                // [2026-10-26 ADR-0043 결정 3] 귀속 번호만 싣는다 — 커뮤니티 표는 잇지 않는다(이름은 커뮤니티 포트가 알려 준다).
+                boardMaster.cmntySn))
                 .from(boardMaster)
                 .leftJoin(commonCodeAttr)
                 .on(boardMaster.bbsAtrbCd.eq(commonCodeAttr.dtlCd).and(commonCodeAttr.cdId.eq("COM009")));

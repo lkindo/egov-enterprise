@@ -137,26 +137,45 @@ describe('BoardListClient empty state (DIP B5 F9 · G15)', () => {
     expect(screen.queryByText(/사용 안 함 게시판입니다/)).toBeNull();
   });
 
+  // [2026-10-26 ADR-0043 UX-15] 글쓰기는 링크 하나다(종전 Link > button 은 초점이 두 번 걸렸다). 부재 단언은 역할을 가리지 않고 이름으로
+  //   본다 — 역할만 바뀌어 부재가 저절로 성립하지 않게 한다.
+  const writeEntry = () => screen.queryByText('글쓰기')?.closest('a, button') ?? null;
+
   it('지정 공지·FAQ에서는 두 추가 권한을 모두 가져야 글쓰기를 제공한다', async () => {
     mocks.permissions = ['BOARD_CREATE', 'NOTICE_EDIT'];
     await renderList(['NOTICE_EDIT', 'FAQ_EDIT']);
-    expect(screen.queryByRole('button', { name: '글쓰기' })).not.toBeInTheDocument();
+    expect(writeEntry()).toBeNull();
   });
 
   it('일반 게시판의 기존 작성 권한은 글쓰기를 계속 제공한다', async () => {
     mocks.permissions = ['BOARD_CREATE'];
     await renderList([]);
-    expect(screen.getByRole('button', { name: '글쓰기' })).toBeVisible();
+    const write = screen.getByRole('link', { name: '글쓰기' });
+    expect(write).toBeVisible();
+    expect(write).toHaveAttribute('href', '/admin/community/boards/insert-board-article?bbsId=BBS-1');
+    expect(write.querySelector('button')).toBeNull();
+  });
+
+  // [2026-10-26 ADR-0043 NAV-03] 서버가 사용 안 함 게시판의 새 글을 거부한다(ADR-0040 결정 1) — 열어 두면 막다른 길이다.
+  it('사용 안 함 게시판에서는 작성 권한이 있어도 글쓰기를 두지 않는다', async () => {
+    mocks.permissions = ['BOARD_CREATE'];
+    await renderList([], false);
+    expect(writeEntry()).toBeNull();
   });
 
   it('조건 없이 0건이면 게시글이 아직 없다고 말한다', async () => {
     await renderList();
     expect(screen.getByText('게시글이 아직 없습니다.')).toBeInTheDocument();
+    expect(screen.getByText(/게시글이 등록되어 있습니다/)).toHaveTextContent('총 0개의 게시글이 등록되어 있습니다.');
   });
 
   it('기간만 고른 0건은 조건에 맞는 글이 없다고 말하고 필터 초기화를 준다', async () => {
     mocks.params = new Map([['bbsId', 'BBS-1'], ['startDate', '2026-09-01'], ['endDate', '2026-09-10']]);
     await renderList();
+
+    // [2026-10-26 ADR-0043 UX-15] 조건이 걸린 수는 게시판 전체가 아니라 검색 결과다.
+    expect(screen.getByText(/검색 결과/)).toHaveTextContent('검색 결과 0건');
+    expect(screen.queryByText(/게시글이 등록되어 있습니다/)).toBeNull();
 
     expect(screen.getByText('선택한 기간에 해당하는 게시글이 없습니다.')).toBeInTheDocument();
     expect(screen.queryByText('게시글이 아직 없습니다.')).not.toBeInTheDocument();

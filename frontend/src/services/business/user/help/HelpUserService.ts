@@ -36,7 +36,14 @@ export interface QNA {
   qstnCn: string;
   ansCn?: string;
   writngPassword?: string;
+  /** 작성자 이름. 이름이 없으면 중립 표기(UNNAMED_AUTHOR)다 — 내부 식별자를 이름 대신 보이지 않는다. */
   wrterNm: string;
+  /**
+   * 작성자 내부 식별자(esntlId). 화면은 '내 문의' 판정에만 쓰고 표시하지 않는다(2026-10-26 ADR-0043 0차) — 공개 질문은 다른
+   * 사용자에게도 보이므로 이 값을 화면에 그리면 남의 내부 키가 드러난다.
+   */
+  authorId?: string;
+  /** 등록일(yyyy-MM-dd). 해석할 수 없으면 빈 문자열이다 — 전송 문자열(T·시각)을 그대로 보이지 않는다. */
   writngDe: string;
   /**
    * 서버가 내려주는 Q&A 상태 코드.
@@ -67,6 +74,18 @@ type GuideQuery = { keyword?: string; page?: number; size?: number };
 
 // 해결 상태 판정은 지식 허브(게시판 셸)와 함께 쓰므로 core 모듈에 둔다(허브 분해 H2). 도움말 화면은 이 이름으로 계속 쓴다.
 export { isQnaSolved } from '@/lib/board/qna-status';
+
+/**
+ * [2026-10-26 ADR-0043 0차] 이름이 없는 작성자의 표기. 종전에는 이름이 비면 작성자 ID(esntlId)를 대신 보였다 — 공개 질문이면
+ * 다른 사용자에게 내부 키가 드러났다. 이름을 지어내지 않고 '없다' 는 사실만 말한다.
+ */
+export const UNNAMED_AUTHOR = '이름 없음';
+
+/** 서버 등록 시각(LocalDateTime, `yyyy-MM-ddTHH:mm:ss`)의 날짜 부분. 형식이 다르면 빈 문자열이다(DEC-OPS-100 표시 형식). */
+function toDisplayYmdPart(value?: string | null): string {
+  const text = typeof value === 'string' ? value : '';
+  return /^\d{4}-\d{2}-\d{2}/.test(text) ? text.slice(0, 10) : '';
+}
 
 /**
  * 도움말 데이터 서비스 (User)
@@ -181,8 +200,9 @@ class HelpUserService extends ApiService {
         qstnTtl: item.pstTtl ?? '',
         qstnCn: item.pstCn ?? '',
         ansCn: item.pstCn ?? '',
-        wrterNm: item.userNm || item.userId,
-        writngDe: item.crtDt ?? '',
+        wrterNm: item.userNm?.trim() || UNNAMED_AUTHOR,
+        authorId: item.userId,
+        writngDe: toDisplayYmdPart(item.crtDt),
         ...(item.qnaSttsCd == null ? {} : { qnaSttsCd: item.qnaSttsCd }),
         ...(item.scrtYn == null ? {} : { scrtYn: item.scrtYn }),
       };

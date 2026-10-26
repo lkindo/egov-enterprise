@@ -1,10 +1,8 @@
 import { z } from 'zod';
 import { ApiService } from '@/services/core/ApiService';
 import type { AxiosRequestConfig } from 'axios';
-import type { components } from '@/types/generated-api';
 import { MenuStructureItemResponseSchema, MenuStructureResponseSchema } from '@/types/generated-zod';
 import {
-  createMenuOperation,
   getAllMenusOperation,
   getMenuOperation,
   getMenuStructureOperation,
@@ -23,8 +21,6 @@ export interface Menu {
   modernRoute?: string;
   useYn?: string;
 }
-
-type MenuWire = components['schemas']['MenuDto'];
 
 /**
  * [2026-10-02 D1·D2] 메뉴 구조 한 줄(GET /menus/structure). 캐시를 거치지 않은 DB 기준이고, 사용 안 함 메뉴도 들어 있다.
@@ -53,29 +49,6 @@ export type MenuStructure = z.infer<typeof menuStructureSchema>;
 export type MenuStructureItem = z.infer<typeof menuStructureItemSchema>;
 /** 저장 요청(PUT /menus/structure). 바뀐 부모의 형제 전체 1..n, 바뀐 기존 메뉴의 속성 네 칸 전체, 삭제, 그룹별 메뉴 표시 변경. */
 export type MenuStructureSave = GeneratedOperationRequest<'saveMenuStructure'>;
-
-function toMenuRequest(data: Partial<Menu>): MenuWire {
-  const source = data as Partial<MenuWire> & Partial<Menu> & {
-    children?: Partial<Menu>[];
-    upperMenuId?: number | null;
-    upMenuSn?: number | null;
-  };
-  const {
-    menuExpln,
-    upMenuSn,
-    upperMenuId,
-    children,
-    ...rest
-  } = source;
-
-  return {
-    ...rest,
-    ...(menuExpln !== undefined ? { menuExpln } : {}),
-    ...(upMenuSn == null ? {} : { upMenuSn }),
-    ...(upperMenuId == null ? {} : { upperMenuId }),
-    ...(children === undefined ? {} : { children: children.map(toMenuRequest) }),
-  } as MenuWire;
-}
 
 /**
  * 메뉴 관리 서비스 (Admin)
@@ -117,14 +90,6 @@ class MenuAdminService extends ApiService {
     return this.executeGenerated(getMenuOperation, { path: { menuNo }, config }) as Promise<Menu>;
   }
 
-  /** 메뉴 등록 */
-  async createMenu(data: Partial<Menu>, config?: AxiosRequestConfig): Promise<void> {
-    await this.executeGenerated(createMenuOperation, {
-      body: toMenuRequest(data) as GeneratedOperationRequest<'createMenu'>,
-      config,
-    });
-  }
-
   /*
    * [2026-10-02 D2] 메뉴 한 건 수정·순서 일괄 수정·삭제 메서드는 걷었다 — 메뉴 화면은 구조·속성·그룹 표시를 한 초안으로
    * saveMenuStructure 한 번에 저장한다. 서버 API(updateMenu·updateMenuOrder·deleteMenu)는 남아 있고 operation 원장에
@@ -133,6 +98,10 @@ class MenuAdminService extends ApiService {
    * [2026-10-16 DEC-OPS-336] 페이지 검색 목록(getMenuList)과 권한별 메뉴 생성 관리(getMenuCreationManageList·
    * saveMenuCreation)도 걷었다 — 화면은 전체 트리(getAllMenus·getMenuStructure)로 그리고, 권한별 메뉴는
    * 권한 화면(getAuthors·getAuthorMenus)이 읽으며, 권한별 메뉴 할당 저장은 서버가 늘 거부한다(통합 권한 화면 저장).
+   *
+   * [2026-10-26 ADR-0043 결정 1] 메뉴 단건 등록(createMenu)도 걷었다 — 화면 호출자는 게시판 만들기 마법사 하나였고, 마법사는 이제
+   * 메뉴를 만들지 않는다(게시판만 만들고 '메뉴에 붙이기'로 메뉴 관리에 넘긴다). 새 메뉴는 메뉴 관리의 구조 저장(creations)이 만들어
+   * 버전 대조·3단계 제한·민감 작업 원장을 거친다. 서버 API(POST /menus)는 남고 operation 원장에 대체된 표면으로 적는다.
    */
 }
 

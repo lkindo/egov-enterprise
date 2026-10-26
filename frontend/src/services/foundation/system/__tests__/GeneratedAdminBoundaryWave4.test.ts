@@ -23,6 +23,7 @@ const board: BoardMaster = {
   bbsTtl: '공지사항',
   bbsTypeCd: 'BBST01',
   bbsAtrbCd: 'BBSA01',
+  tmpltId: 'TMPLT_HUB',
   atchPsbltyFileSz: 1024,
   useYn: 'Y',
 };

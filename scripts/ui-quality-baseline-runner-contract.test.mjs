@@ -963,12 +963,12 @@ test('wizard probes follow the actual step heading level and validation message'
   const steps = source.match(/const STEPS = \[([\s\S]*?)\n\];/)?.[1];
   assert.ok(steps, 'the wizard must declare its ordered steps');
   const titles = [...steps.matchAll(/title: '([^']+)'/g)].map((match) => match[1]);
-  assert.equal(titles.length, 4);
+  assert.equal(titles.length, 3);
   const heading = source.match(/<h([1-6])\b[^>]*>\s*\{STEPS\[currentStep - 1\]\.title\}\s*<\/h\1>/);
   assert.ok(heading, 'the real step heading must have a semantic level');
   const consumers = [...runnerSource.matchAll(/getByRole\('heading', \{ level: ([1-6]), name: '([^']+)', exact: true \}\)/g)]
     .filter((match) => titles.includes(match[2]));
-  assert.equal(consumers.length, titles.length, 'all four step heading consumers must remain covered');
+  assert.equal(consumers.length, titles.length, 'all three step heading consumers must remain covered');
   assert.deepEqual(new Set(consumers.map((match) => match[2])), new Set(titles));
   for (const match of consumers) assert.equal(match[1], heading[1], 'the probe must use the rendered heading level');
   const message = source.match(/bbsTtl: BoardMasterDtoSchema\.shape\.bbsTtl[\s\S]*?\.min\(2, '([^']+)'\)/)?.[1];

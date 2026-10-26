@@ -33,6 +33,8 @@ const FAQ_LIST_ITEM = {
 describe('HelpClient FAQ detail', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // [2026-10-26 ADR-0043 UX-04] 화면이 탭·쪽·검색어를 세션에 기억한다 — 시험마다 새 탭에서 시작한다.
+    window.sessionStorage.clear();
     harness.getFaqs.mockResolvedValue({ list: [FAQ_LIST_ITEM] });
     harness.getQnas.mockResolvedValue({ list: [] });
   });

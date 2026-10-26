@@ -7,6 +7,9 @@
  * 저장·응답하고 이름을 싣지 않는다(이름이 두 곳에 있으면 갈린다).
  *
  * 화면 배치는 유형 코드가 아니라 템플릿 ID(tmplt_id)로 갈린다(BoardListClient·BoardPreview).
+ *
+ * [2026-10-26 ADR-0043 결정 5] 화면 유형 이름은 실제 화면을 정하는 템플릿으로 정한다(boardTypeDisplay). 정본 표는 여전히 이
+ * 표 하나다 — 목록·운영 화면 머리·설정 탭·마법사가 같은 함수로 이름을 읽는다.
  */
 export const BOARD_TYPES = [
   {
@@ -65,16 +68,52 @@ export function findBoardType(code: string | null | undefined): BoardType | unde
   return BOARD_TYPES.find((type) => type.code === code);
 }
 
+/** 템플릿(내장 레이아웃)으로 정본 항목을 찾는다. 내장 레이아웃이 아니면 undefined 다. */
+export function findBoardTypeByTemplate(tmpltId: string | null | undefined): BoardType | undefined {
+  return BOARD_TYPES.find((type) => type.templateId === tmpltId);
+}
+
 /**
- * 목록에 보일 유형 표기. 저장된 유형 코드와 템플릿이 정본의 짝과 같을 때만 이름을 보이고, 아니면 저장된 코드를 그대로
- * 보인다(코드도 없으면 빈 문자열).
- *
- * 시드·라이브 게시판(R__seed_demo.sql 의 BBSMSTR_* 4개)은 코드와 템플릿을 다른 짝으로 저장했다 — 예를 들어 질의응답
- * 게시판이 BBST03 + TMPLT_QNA 다. 코드만으로 이름을 붙이면 질의응답 게시판을 'Visual Gallery' 라고 부르게 된다. 없는
- * 사실을 말하지 않으려고 짝이 맞을 때만 이름을 붙인다(데이터를 맞추는 일은 별도 승인 대상이다 — DEC-OPS-332).
+ * 내장 레이아웃이 아닌 템플릿(예: 시드의 `TMPLAT_BOARD_DEFAULT`)이나 템플릿이 없는 게시판의 이름. 이용 화면은 그런 게시판을
+ * 기본 목록으로 그린다(BoardListClient 의 마지막 분기).
  */
+export const DEFAULT_LAYOUT_NAME = '기본 목록형(레이아웃 미지정)';
+
+/** 유형 코드와 템플릿이 정본의 짝이 아닐 때 이름 옆에 덧붙이는 보조 문구. */
+export const BOARD_TYPE_PAIR_MISMATCH = '유형 코드 짝 불일치';
+
+/** 템플릿이 정하는 화면 유형 이름. 내장 레이아웃이 아니면 '기본 목록형(레이아웃 미지정)' 이다. 마법사 요약도 이 함수를 쓴다. */
+export function boardTemplateName(tmpltId: string | null | undefined): string {
+  return findBoardTypeByTemplate(tmpltId)?.name ?? DEFAULT_LAYOUT_NAME;
+}
+
+export interface BoardTypeDisplay {
+  /** 화면 유형 이름 — 템플릿으로 정한다. */
+  name: string;
+  /** 저장된 유형 코드와 템플릿이 정본의 짝이 아닌가(코드가 표에 없거나 비어 있는 경우 포함). */
+  pairMismatch: boolean;
+  /** 저장된 유형 코드(없으면 빈 문자열) — 짝이 맞지 않을 때 함께 보인다. */
+  storedCode: string;
+}
+
+/**
+ * [2026-10-26 ADR-0043 결정 5] 목록·운영 화면 머리·설정 탭에 보일 화면 유형. 이름은 실제 화면을 정하는 템플릿으로 정하고,
+ * 유형 코드와 템플릿이 정본의 짝이 아니면 그 사실을 함께 돌려준다 — 화면은 이름 옆에 '유형 코드 짝 불일치' 를 덧붙인다.
+ *
+ * 종전(DEC-OPS-332 ②)에는 짝이 맞을 때만 이름을, 아니면 저장된 코드를 보였다. 시드·라이브 게시판(R__seed_demo.sql 의
+ * BBSMSTR_* 4개)은 코드와 템플릿을 다른 짝으로 저장해(예: 질의응답 게시판이 BBST03 + TMPLT_QNA) 주요 게시판이 'BBST03' 같은
+ * 코드로 보였다. 코드만으로 이름을 붙이면 질의응답 게시판을 갤러리라고 부르게 되므로 이름의 근거는 템플릿이다. 데이터를 맞추는
+ * 일은 여전히 별도 승인 대상이다.
+ */
+export function boardTypeDisplay(bbsTypeCd: string | null | undefined, tmpltId: string | null | undefined): BoardTypeDisplay {
+  return {
+    name: boardTemplateName(tmpltId),
+    pairMismatch: findBoardType(bbsTypeCd)?.templateId !== tmpltId,
+    storedCode: bbsTypeCd ?? '',
+  };
+}
+
+/** 화면 유형 이름만(짝 불일치 표시 없이). boardTypeDisplay(...).name 과 같다. */
 export function boardTypeLabel(bbsTypeCd: string | null | undefined, tmpltId: string | null | undefined): string {
-  const type = findBoardType(bbsTypeCd);
-  if (type && type.templateId === tmpltId) return type.name;
-  return bbsTypeCd ?? '';
+  return boardTypeDisplay(bbsTypeCd, tmpltId).name;
 }

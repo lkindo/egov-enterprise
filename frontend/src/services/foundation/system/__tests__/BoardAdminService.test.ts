@@ -76,6 +76,7 @@ const board: BoardMaster = {
   bbsTtl: '공지사항',
   bbsTypeCd: 'BBST01',
   bbsAtrbCd: 'BBSA01',
+  tmpltId: 'TMPLT_HUB',
   fileAtchPsbltyYn: 'Y',
   atchPsbltyFileQty: 5,
   atchPsbltyFileSz: 5_242_880,

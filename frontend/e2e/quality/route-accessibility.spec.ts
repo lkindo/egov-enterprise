@@ -65,6 +65,9 @@ test.describe('Quality & Resilience', () => {
             for (const [route, purpose] of [
                 ['/admin/system/logs/user', '사용자 로그'],
                 ['/admin/user/manage', '사용자 관리'],
+                // [2026-10-26 ADR-0043 1차 UX-09] 게시판 없이 들어오면 공지사항 작성 폼 대신 게시판 고르기를 보인다 — 작성 폼 감사를 유지하려고
+                //   종전 기본값이던 공지사항을 명시하고, 고르기 화면은 따로 감사한다.
+                ['/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA', '게시글 작성·수정'],
                 ['/admin/community/boards/insert-board-article', '게시글 작성·수정'],
                 ['/admin/help/faq', '자주 묻는 질문 관리'],
                 ['/admin/community/boards/maker', '게시판 생성'],

@@ -547,6 +547,9 @@ class BoardServiceTest {
     @DisplayName("게시글 생성 - 전송된 플래그는 기본값을 덮어쓴다")
     void createPost_honorsExplicitFlags() {
         givenCreatePostContext(0L);
+        // [2026-10-26 ADR-0043] Q&A 상태는 Q&A 게시판의 글에만 둘 수 있다 — 상태를 보내는 이 시험은 Q&A 게시판에 쓴다.
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").tmpltId("TMPLT_QNA").build()));
 
         boardService.createPost("user1", saveRequest(null, "SOLVED", "N"));
 
@@ -2816,5 +2819,137 @@ class BoardServiceTest {
         assertThatThrownBy(() -> boardService.cancelLike("BBS_01", 1L))
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
         verify(recommendationRepository, never()).deleteRecommendation(any(), any());
+    }
+
+    // ── [2026-10-26 ADR-0043] 미리 올린 첨부 묶음의 게시판 첨부 설정(SET-02)·Q&A 상태 ─────────────────────────────
+
+    private static nuri.business.service.file.dto.FileDto storedFile(Long atchFileSn, long bytes) {
+        return nuri.business.service.file.dto.FileDto.builder().atchFileSn(atchFileSn).fileSn(1).fileMg(bytes).build();
+    }
+
+    /** 첨부 묶음 77 이 붙은 user1 의 글 1번(버전 0). 수정 시험이 공유한다. */
+    private Board givenOwnedPostWithGroup77() {
+        Board board = Board.builder().bbsId("BBS_01").pstSn(1L).userId("user1").atchFileSn(77L).build();
+        org.springframework.test.util.ReflectionTestUtils.setField(board, "version", 0);
+        given(boardRepository.findById(1L)).willReturn(Optional.of(board));
+        securityUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId).thenReturn(Optional.of("user1"));
+        return board;
+    }
+
+    @Test
+    @DisplayName("[ADR-0043, SET-02] 묶음을 바꾸는 JSON 수정은 새 묶음으로 첨부 허용·파일당 크기를 본다 — 첨부를 끈 게시판에 붙지 않는다")
+    void updatePostWithChangedGroupEnforcesBoardAttachmentSettings() {
+        Board board = givenOwnedPostWithGroup77();
+        given(fileService.getFileList(88L)).willReturn(java.util.List.of(storedFile(88L, 2L * 1024 * 1024)));
+        BoardSaveRequest changed = new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, 88L, null, null, null, null, null, null, 0);
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("N").build()));
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 1L, changed))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE)
+                .hasMessageContaining("파일 첨부를 받지 않습니다");
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("Y").atchPsbltyFileQty(3).atchPsbltyFileSz(1024L * 1024L).build()));
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 1L, changed))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("최대 1MB");
+        assertThat(board.getAtchFileSn()).isEqualTo(77L);
+        assertThat(board.getPstTtl()).isNull();
+    }
+
+    @Test
+    @DisplayName("[ADR-0043, SET-02] 같은 묶음 번호를 다시 보내는 화면 수정은 첨부 설정을 다시 보지 않는다 — 설정을 줄여도 이미 붙은 파일은 그대로다")
+    void updatePostWithSameGroupDoesNotRecheckAttachments() {
+        Board board = givenOwnedPostWithGroup77();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("N").build()));
+
+        boardService.updatePost("BBS_01", 1L,
+                new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, 77L, null, null, null, null, null, null, 0));
+
+        assertThat(board.getPstTtl()).isEqualTo("Upd");
+        assertThat(board.getAtchFileSn()).isEqualTo(77L);
+        verify(fileService, never()).getFileList(any());
+    }
+
+    @Test
+    @DisplayName("[ADR-0043, SET-02] 첨부 포함 수정도 새 파일 없이 묶음만 바꾸면 그 묶음으로 첨부 설정을 본다")
+    void updatePostWithFilesChecksChangedGroupWithoutNewFiles() throws IOException {
+        givenOwnedPostWithGroup77();
+        given(fileService.getFileList(88L)).willReturn(java.util.List.of(storedFile(88L, 10)));
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .fileAtchPsbltyYn("N").build()));
+
+        assertThatThrownBy(() -> boardService.updatePostWithFiles("BBS_01", 1L,
+                new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, 88L, null, null, null, null, null, null, 0),
+                java.util.List.of()))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_STATE);
+        verify(fileService, never()).updateBoardFiles(any(), any());
+    }
+
+    @Test
+    @DisplayName("[ADR-0043, SET-02] 미리 올린 묶음을 붙이는 등록은 파일 수에 더해 파일당 크기도 본다")
+    void createPostWithAssignedGroupEnforcesFileSize() {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01")).willReturn(Optional.of(BoardMaster.builder()
+                .bbsId("BBS_01").fileAtchPsbltyYn("Y").atchPsbltyFileQty(3).atchPsbltyFileSz(1024L * 1024L).build()));
+        given(fileService.getFileList(101L)).willReturn(java.util.List.of(storedFile(101L, 1024L * 1024L + 1)));
+
+        assertThatThrownBy(() -> boardService.createPost("user1",
+                new BoardSaveRequest("BBS_01", "Subj", "Cont", null, null, 101L, null, null, null, null, null, null, null)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("최대 1MB");
+        verify(boardRepository, never()).save(any(Board.class));
+    }
+
+    @Test
+    @DisplayName("[ADR-0043] Q&A 상태는 Q&A 게시판(TMPLT_QNA)의 글에만 받는다 — 다른 게시판의 등록·첨부 등록·수정은 400 이고 저장하지 않는다")
+    void qnaStatusIsRejectedOutsideQnaBoards() throws IOException {
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01").build())); // 화면 유형이 없는 게시판
+        assertThatThrownBy(() -> boardService.createPost("user1", saveRequest(null, "OPEN", null)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
+                .hasMessageContaining("Q&A 상태는 Q&A 게시판의 글에만");
+        verify(boardRepository, never()).save(any(Board.class));
+
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .tmpltId("TMPLT_LIST").fileAtchPsbltyYn("Y").build()));
+        assertThatThrownBy(() -> boardService.createPostWithFiles("user1", saveRequest(null, "SOLVED", null),
+                java.util.List.of(upload("a.txt", 1))))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        verify(fileService, never()).uploadBoardFiles(any());
+
+        Board board = givenOwnedPostWithGroup77();
+        assertThatThrownBy(() -> boardService.updatePost("BBS_01", 1L,
+                new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, "SOLVED", null, null, null, null, 0)))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(board.getPstTtl()).isNull();
+    }
+
+    @Test
+    @DisplayName("[ADR-0043] Q&A 게시판은 상태를 받고, 상태를 보내지 않은 다른 게시판의 글은 지금처럼 저장한다(도움말 1:1 문의 경로)")
+    void qnaStatusIsAcceptedOnQnaBoardsAndOmittedElsewhere() {
+        givenCreatePostContext(0L);
+        boardService.createPost("user1", saveRequest(null, null, null));
+        assertThat(captureSavedBoard().getQnaSttsCd()).isEqualTo("OPEN");
+
+        Board board = givenOwnedPostWithGroup77();
+        given(boardMasterRepository.findById("BBS_01")).willReturn(Optional.of(BoardMaster.builder().bbsId("BBS_01")
+                .tmpltId("TMPLT_QNA").build()));
+        boardService.updatePost("BBS_01", 1L,
+                new BoardSaveRequest("BBS_01", "Upd", "Cont", null, null, null, null, "SOLVED", null, null, null, null, 0));
+        assertThat(board.getQnaSttsCd()).isEqualTo("SOLVED");
+    }
+
+    @Test
+    @DisplayName("[ADR-0043, NAV-10] 통합 검색은 결과마다 게시판 이름을 싣고, 게시판 목록은 싣지 않는다(매퍼가 옮기지 않는다)")
+    void searchAcrossBoardsCarriesBoardNameOnlyInSearch() {
+        BoardSearchResult row = BoardSearchResult.builder().pstSn(7L).bbsId("BBS_01").bbsTtl("업무게시판").pstTtl("연차 신청 안내").build();
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.singletonList(row)));
+
+        assertThat(boardService.searchAcrossBoards("연차", PageRequest.of(0, 20)).getContent().get(0).bbsTtl())
+                .isEqualTo("업무게시판");
+        assertThat(new BoardMapperImpl().toDto(row).bbsTtl()).as("목록·상세 경로는 게시판 이름을 싣지 않는다").isNull();
     }
 }

@@ -1082,7 +1082,7 @@ export interface paths {
         };
         /**
          * 게시판 마스터 상세 조회
-         * @description version 은 설정 수정 요청에 그대로 돌려보낼 값입니다. designations 는 목록과 같습니다.
+         * @description version 은 설정 수정 요청에 그대로 돌려보낼 값입니다. designations·community 는 목록과 같습니다.
          */
         get: operations["getBoardMaster"];
         /**
@@ -2926,11 +2926,14 @@ export interface paths {
         };
         /**
          * 게시판 마스터 목록 조회
-         * @description searchUseYn 을 비우면 전체, Y·N 이면 그 사용 상태만입니다(그 밖의 값은 400). designations 는 설정이 지정한 용도(NOTICE·FAQ·TASK)이며 지정이 없으면 빈 배열입니다.
+         * @description searchUseYn 을 비우면 전체, Y·N 이면 그 사용 상태만입니다(그 밖의 값은 400). designations 는 설정이 지정한 용도(NOTICE·FAQ·TASK·QNA·WIKI)이며 지정이 없으면 빈 배열입니다. community 는 귀속 커뮤니티의 번호·이름·이용 가능 여부이고, 귀속이 없으면 싣지 않습니다(이름·이용 가능 여부를 알 수 없으면 null).
          */
         get: operations["getBoardMasterList"];
         put?: never;
-        /** 게시판 마스터 등록 */
+        /**
+         * 게시판 마스터 등록
+         * @description tmpltId 는 내장 레이아웃 일곱 개(TMPLT_HUB·TMPLT_LIST·TMPLT_GALLERY·TMPLT_QNA·TMPLT_CALENDAR·TMPLT_FAQ·TMPLT_WIKI)만 받습니다. bbsId 는 비우면 서버가 채번하고, 보낼 때는 BBSMSTR_ 뒤에 영문 대문자·숫자 12자입니다. 첨부 파일 수는 0~20, 파일당 크기는 0~10485760 바이트입니다(0 은 게시판 상한 없음·서버 전역 상한). 어긋나면 400 입니다.
+         */
         post: operations["createBoardMaster"];
         delete?: never;
         options?: never;
@@ -2987,7 +2990,10 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** 게시판 마스터 사용여부 일괄 변경 */
+        /**
+         * 게시판 마스터 사용여부 일괄 변경
+         * @description useYn 은 필수이고 Y·N 만 받습니다(없거나 그 밖의 값은 400). 지정 게시판도 사용 안 함으로 바꿀 수 있습니다.
+         */
         post: operations["updateBoardMasterStatusInBatch"];
         delete?: never;
         options?: never;
@@ -3006,7 +3012,7 @@ export interface paths {
         put?: never;
         /**
          * 게시판 마스터 일괄 영구 삭제
-         * @description 대상마다 비활성·게시글 0건을 재검증하며, 하나라도 어긋나면 전체가 롤백됩니다.
+         * @description 대상마다 지정 용도 없음·비활성·게시글 0건을 재검증하며, 하나라도 어긋나면 전체가 롤백됩니다. 없는 대상이 있으면 404 이고 다른 검사보다 먼저입니다. 지정 게시판이 섞이면 요청 순서와 상관없이 409(B007), 사용 중·글 있음은 400 입니다.
          */
         post: operations["deleteBoardMastersInBatch"];
         delete?: never;
@@ -5987,7 +5993,7 @@ export interface paths {
         post?: never;
         /**
          * 게시판 마스터 영구 삭제
-         * @description 행을 물리 삭제합니다. 활성 게시판이거나 게시글이 남아 있으면 거부됩니다(서비스 레이어 재검증).
+         * @description 행을 물리 삭제합니다. 설정이 지정한 용도(designations)가 있는 게시판은 409(B007)이고 사유에 용도를 싣습니다. 활성 게시판이거나 게시글이 남아 있으면 400 입니다(서비스 레이어 재검증).
          */
         delete: operations["deleteBoardMasterPhysically"];
         options?: never;
@@ -6373,8 +6379,11 @@ export interface components {
             atchFileSn?: number;
             /** @description 행사 일자 */
             evntDt?: string;
-            /** @description Q&A 상태 코드 (OPEN/SOLVED) */
-            qnaSttsCd?: string;
+            /**
+             * @description Q&A 상태 코드 — OPEN(미해결)·SOLVED(해결됨). 해결 여부는 작성자·전체 수정 권한자의 표시이지 답변 여부가 아니다. Q&A 게시판(TMPLT_QNA)에만 보낸다(다른 게시판이면 400). 등록에서 비우면 OPEN, 수정에서 비우면 저장값을 유지한다
+             * @enum {string}
+             */
+            qnaSttsCd?: "OPEN" | "SOLVED";
             /** @description Q&A 카테고리 */
             qnaCatCd?: string;
             /** @description 비밀글 여부 (Y/N) */
@@ -7170,12 +7179,12 @@ export interface components {
             fileAtchPsbltyYn?: "Y" | "N";
             /**
              * Format: int32
-             * @description 첨부 파일 수(0 은 상한 없음)
+             * @description 첨부 파일 수(0~20, 0 은 게시판 상한 없음 — 서버 전역 상한 적용)
              */
             atchPsbltyFileQty?: number;
             /**
              * Format: int64
-             * @description 파일당 크기(바이트)
+             * @description 파일당 크기(바이트, 0~10485760, 0 은 서버 전역 상한)
              */
             atchPsbltyFileSz: number;
             /**
@@ -8296,6 +8305,7 @@ export interface components {
             dtlCd: string;
         };
         BoardMasterDto: {
+            /** @description 게시판 ID — 비우면 서버가 채번한다. 보낼 때는 BBSMSTR_ 뒤에 영문 대문자·숫자 12자 */
             bbsId?: string;
             bbsTtl: string;
             bbsExpln?: string;
@@ -8306,11 +8316,21 @@ export interface components {
             ansPsbltyYn?: "Y" | "N";
             /** @enum {string} */
             fileAtchPsbltyYn?: "Y" | "N";
-            /** Format: int32 */
+            /**
+             * Format: int32
+             * @description 첨부 파일 수(0~20, 0 은 게시판 상한 없음 — 서버 전역 상한 적용)
+             */
             atchPsbltyFileQty?: number;
-            /** Format: int64 */
+            /**
+             * Format: int64
+             * @description 파일당 크기(바이트, 0~10485760, 0 은 서버 전역 상한)
+             */
             atchPsbltyFileSz: number;
-            tmpltId?: string;
+            /**
+             * @description 화면 유형 템플릿(내장 레이아웃 일곱 개). 만든 뒤에는 바꾸지 않는다
+             * @enum {string}
+             */
+            tmpltId: "TMPLT_HUB" | "TMPLT_LIST" | "TMPLT_GALLERY" | "TMPLT_QNA" | "TMPLT_CALENDAR" | "TMPLT_FAQ" | "TMPLT_WIKI";
             frstRgtrId?: string;
             /** Format: date-time */
             crtDt?: string;
@@ -8390,7 +8410,7 @@ export interface components {
              * @description 사용여부(Y: 활성, N: 비활성)
              * @enum {string}
              */
-            useYn?: "Y" | "N";
+            useYn: "Y" | "N";
         };
         /** @description 게시판 마스터 일괄 영구 삭제 요청 */
         BoardMasterBatchDeleteRequest: {
@@ -9531,6 +9551,8 @@ export interface components {
             pstSn?: number;
             /** @description 게시판 ID */
             bbsId?: string;
+            /** @description 게시판 이름. 통합 검색에서만 싣고 그 밖은 null */
+            readonly bbsTtl?: string | null;
             /**
              * Format: int64
              * @description 답글 번호
@@ -9634,6 +9656,10 @@ export interface components {
             taskListTotal: number | null;
             /** Format: int64 */
             notiListTotal: number | null;
+            /** @description 업무게시판으로 지정한 게시판을 지금 이용할 수 없음(사용 안 함이거나 없음). 조회 실패는 false */
+            taskListUnavailable: boolean;
+            /** @description 공지 게시판으로 지정한 게시판을 지금 이용할 수 없음(사용 안 함이거나 없음). 조회 실패는 false */
+            notiListUnavailable: boolean;
         };
         ApiResponsePageResponseCmsPublishedPageSummaryDto: {
             success?: boolean;
@@ -9948,6 +9974,18 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
+        /** @description 게시판이 귀속된 커뮤니티 요약. 이름·이용 가능 여부를 알 수 없으면(커뮤니티 기능 없음·찾지 못함) 둘 다 null 이다 */
+        BoardMasterCommunity: {
+            /**
+             * Format: int64
+             * @description 커뮤니티 일련번호
+             */
+            cmntySn: number;
+            /** @description 커뮤니티 이름. 알 수 없으면 null */
+            cmntyNm: string | null;
+            /** @description 이용자가 커뮤니티 화면을 열 수 있는지(사용 중이고 정식 등록). 알 수 없으면 null */
+            inUse: boolean | null;
+        };
         /** @description 게시판 메타(읽기 전용) */
         BoardMetaDto: {
             /** @description 게시판 ID */
@@ -10014,6 +10052,8 @@ export interface components {
              * @enum {string}
              */
             rcmdtnUseYn: "Y" | "N";
+            /** @description 귀속 커뮤니티 요약(ADR-0043 1차 UX-09). 귀속이 없으면 null 이다 — 작성 화면이 '누가 이 글을 보는지'를 말한다. 커뮤니티 기능이 없거나 찾지 못하면 이름·이용 가능 여부가 null 인 요약이다(확인 불가). */
+            community?: components["schemas"]["BoardMasterCommunity"];
         };
         ApiResponseListBoardSearchItemResponse: {
             success?: boolean;
@@ -10029,6 +10069,8 @@ export interface components {
         BoardSearchItemResponse: {
             /** @description 게시판 ID */
             bbsId: string;
+            /** @description 게시판 이름 */
+            bbsTtl?: string | null;
             /**
              * Format: int64
              * @description 게시글 ID
@@ -12174,8 +12216,10 @@ export interface components {
             useYn: string;
             /** Format: date-time */
             crtDt?: string;
-            /** @description 설정이 지정한 용도(공지·FAQ·업무). 지정이 없으면 빈 배열 */
-            designations: ("NOTICE" | "FAQ" | "TASK")[];
+            /** @description 설정이 지정한 용도(공지·FAQ·업무·Q&A·위키). 지정이 없으면 빈 배열. 지정 게시판은 영구 삭제할 수 없다(ADR-0043 결정 4) */
+            designations: ("NOTICE" | "FAQ" | "TASK" | "QNA" | "WIKI")[];
+            /** @description 귀속 커뮤니티 요약. 귀속이 없으면 싣지 않는다 */
+            community?: components["schemas"]["BoardMasterCommunity"];
         };
         PageResponseBoardMasterSummaryResponse: {
             /** @description 현재 페이지의 항목 */
@@ -12274,8 +12318,10 @@ export interface components {
              * @description 낙관적 잠금 버전. 설정 수정 요청에 그대로 돌려보낸다
              */
             version: number;
-            /** @description 설정이 지정한 용도(공지·FAQ·업무). 지정이 없으면 빈 배열 */
-            designations: ("NOTICE" | "FAQ" | "TASK")[];
+            /** @description 설정이 지정한 용도(공지·FAQ·업무·Q&A·위키). 지정이 없으면 빈 배열. 지정 게시판은 영구 삭제할 수 없다(ADR-0043 결정 4) */
+            designations: ("NOTICE" | "FAQ" | "TASK" | "QNA" | "WIKI")[];
+            /** @description 귀속 커뮤니티 요약. 귀속이 없으면 싣지 않는다 */
+            community?: components["schemas"]["BoardMasterCommunity"];
         };
         ApiResponsePageResponseBoardChangeDto: {
             success?: boolean;

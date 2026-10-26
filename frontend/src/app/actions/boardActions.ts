@@ -72,6 +72,8 @@ interface ActionResponse {
   message: string;
   field?: string;
   redirect?: string;
+  /** 실패한 요청의 HTTP 상태(있을 때만). 화면이 403·404 를 나눠 말한다(ADR-0043 1차). */
+  status?: number;
 }
 
 /**
@@ -85,7 +87,8 @@ interface BoardArticle {
   pstEndYmd?: string;
   atchFileSn?: number;
   evntDt?: string;
-  qnaSttsCd?: string;
+  /** Q&A 상태 — 서버는 미해결(OPEN)·해결됨(SOLVED)만 받고, Q&A 화면 유형이 아닌 게시판에서는 값을 거부한다(ADR-0043 0차). */
+  qnaSttsCd?: 'OPEN' | 'SOLVED';
   qnaCatCd?: string;
   scrtYn?: string;
   useYn?: string;
@@ -120,7 +123,8 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
   if (!pstCn || pstCn.trim() === '') return { success: false, message: '내용을 입력해주세요.', field: 'pstCn' };
 
   const evntDt = formData.get('evntDt') as string;
-  const qnaSttsCd = formData.get('qnaSttsCd') as string;
+  const qnaSttsCdRaw = formData.get('qnaSttsCd');
+  const qnaSttsCd = qnaSttsCdRaw === 'OPEN' || qnaSttsCdRaw === 'SOLVED' ? qnaSttsCdRaw : undefined;
   const qnaCatCd = formData.get('qnaCatCd') as string;
   const scrtYn = formData.get('scrtYn') as string || 'N';
   const useYn = formData.get('useYn') as string || 'Y';
@@ -152,8 +156,10 @@ export async function saveBoardArticle(prevState: unknown, formData: FormData): 
       // [2026-09-25 DIP I3] Q&A 기본 상태·분류는 **등록할 때만** 채운다. 수정 폼은 이 두 값을 보내지 않으므로
       //   종전처럼 기본값을 채우면 해결된 질문이 제목 오타 하나 고친 뒤 '접수' 로 되돌아갔다.
       //   서버는 값이 없으면 기존 값을 유지한다(BoardService.updateOwnedPost).
-      //   [2026-10-01 결정 20] 답변 대기 값은 엔티티 기본값과 같은 OPEN 하나다 — 종전 QA01 은 V2_116 이 맞췄다.
-      qnaSttsCd: qnaSttsCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'OPEN' : undefined),
+      //   [2026-10-01 결정 20] 미해결 값은 엔티티 기본값과 같은 OPEN 하나다 — 종전 QA01 은 V2_116 이 맞췄다.
+      //   [2026-10-26 ADR-0043] 등록 때 상태를 채우지 않는다 — 서버가 값이 없으면 OPEN 으로 둔다(BoardService.createPost). 서버는 Q&A
+      //   상태를 Q&A 화면 유형(TMPLT_QNA) 게시판에만 받으므로, 채워 보내면 기관이 Q&A 지정 게시판을 다른 유형으로 바꿨을 때 등록이 400 이 된다.
+      qnaSttsCd,
       qnaCatCd: qnaCatCd || (!isEdit && bbsId === QNA_BOARD_ID ? 'CAT01' : undefined),
       // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 폐기 필드다 — 종전에는 '1' 을 채워 보내 평문으로 쌓였다. 보내지 않는다.
       scrtYn: scrtYn === 'Y' ? 'Y' : 'N',
@@ -235,8 +241,10 @@ export async function deleteBoardArticle(prevState: unknown, formData: FormData)
     
     revalidatePath(`/admin/community/boards/select-board-list`);
     return { success: true, message: '게시글이 성공적으로 삭제되었습니다.' };
-  } catch {
-    return { success: false, message: BOARD_DELETE_ERROR };
+  } catch (error) {
+    // 상태만 싣는다 — 화면이 권한 없음(403)과 이미 지워짐(404)을 나눠 말한다. 서버 원문은 싣지 않는다.
+    const status = (error as { response?: { status?: unknown } } | null)?.response?.status;
+    return { success: false, message: BOARD_DELETE_ERROR, ...(typeof status === 'number' ? { status } : {}) };
   }
 }
 

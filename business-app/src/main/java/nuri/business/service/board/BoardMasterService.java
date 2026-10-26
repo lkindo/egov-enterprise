@@ -8,6 +8,7 @@ import nuri.business.domain.board.BoardMasterRepository;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardMasterSearchResult;
 import nuri.business.core.config.BoardIdProperties;
+import nuri.business.service.board.dto.BoardMasterCommunity;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterMapper;
 import nuri.business.service.board.dto.BoardMasterUpdateRequest;
@@ -76,19 +77,71 @@ public class BoardMasterService extends BaseAbstractService {
     public static final String DESIGNATION_NOTICE = "NOTICE";
     public static final String DESIGNATION_FAQ = "FAQ";
     public static final String DESIGNATION_TASK = "TASK";
+    /** [2026-10-26 ADR-0043 결정 4] Q&A(도움말 센터 1:1 문의·지식 허브 질의응답), 위키(지식 허브 위키 탭). */
+    public static final String DESIGNATION_QNA = "QNA";
+    public static final String DESIGNATION_WIKI = "WIKI";
 
     /**
-     * 설정({@code nuri.boards.*})이 이 게시판을 어느 용도로 지정했는지 정해진 순서(공지·FAQ·업무)로 돌려준다. 같은 게시판이
-     * 여러 용도면 모두 싣는다 — 기본 설정은 공지와 FAQ 가 한 게시판이다. 지정 게시판은 사용 안 함으로 바꾸거나 지우기 전에
-     * 운영자가 알아야 한다(ADR-0040 §5.2). 게시글 편집 권한 판정({@code BoardService#requiredEditPermissions})과 뜻이 다른
-     * 축이라 합치지 않는다(H4).
+     * 설정({@code nuri.boards.*})이 이 게시판을 어느 용도로 지정했는지 정해진 순서(공지·FAQ·업무·Q&A·위키)로 돌려준다. 같은
+     * 게시판이 여러 용도면 모두 싣는다 — 기본 설정은 공지와 FAQ 가 한 게시판이다. 지정 게시판은 사용 안 함으로 바꾸기 전에 운영자가
+     * 알아야 하고(ADR-0040 §5.2), 영구 삭제할 수 없다(ADR-0043 결정 4). 게시글 편집 권한 판정
+     * ({@code BoardService#requiredEditPermissions})과 뜻이 다른 축이라 합치지 않는다(H4).
      */
     public List<String> designationsOf(String bbsId) {
-        List<String> designations = new java.util.ArrayList<>(3);
+        List<String> designations = new java.util.ArrayList<>(5);
         if (Objects.equals(bbsId, boardIdProperties.getNoticeId())) designations.add(DESIGNATION_NOTICE);
         if (Objects.equals(bbsId, boardIdProperties.getFaqId())) designations.add(DESIGNATION_FAQ);
         if (Objects.equals(bbsId, boardIdProperties.getTaskId())) designations.add(DESIGNATION_TASK);
+        if (Objects.equals(bbsId, boardIdProperties.getQnaId())) designations.add(DESIGNATION_QNA);
+        if (Objects.equals(bbsId, boardIdProperties.getWikiId())) designations.add(DESIGNATION_WIKI);
         return List.copyOf(designations);
+    }
+
+    /** 지정 용도의 사람말 이름 — 영구 삭제 거부 사유에 쓴다. */
+    private static String designationLabel(String designation) {
+        return switch (designation) {
+            case DESIGNATION_NOTICE -> "공지사항(업무 홈 공지 카드)";
+            case DESIGNATION_FAQ -> "자주 묻는 질문(공개 FAQ·도움말)";
+            case DESIGNATION_TASK -> "업무게시판(업무 홈 카드)";
+            case DESIGNATION_QNA -> "질의응답(도움말 1:1 문의·지식 허브)";
+            case DESIGNATION_WIKI -> "위키(지식 허브 위키 탭)";
+            default -> designation;
+        };
+    }
+
+    /**
+     * 지정 게시판의 영구 삭제를 거부한다(ADR-0043 결정 4). 지우면 업무 홈 카드·공개 FAQ·도움말 1:1 문의·지식 허브 탭이 게시판을
+     * 잃는다. 사용 안 함 전환은 막지 않는다 — 쓰지 않으려면 그쪽을 쓴다. 사유에는 어느 용도인지를 사람말로 싣는다.
+     */
+    private void assertNotDesignated(BoardMaster master) {
+        List<String> designations = designationsOf(master.getBbsId());
+        if (designations.isEmpty()) {
+            return;
+        }
+        String uses = designations.stream().map(BoardMasterService::designationLabel).collect(Collectors.joining(", "));
+        String title = master.getBbsTtl() == null ? master.getBbsId() : master.getBbsTtl().replaceAll("\\p{Cntrl}", " ");
+        throw new BusinessException(BoardErrorCode.DESIGNATED_BOARD_NOT_PURGEABLE,
+                "[" + title + "] 게시판은 앱이 " + uses + " 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다. "
+                        + "쓰지 않으려면 사용 안 함으로 두십시오.");
+    }
+
+    /**
+     * 게시판이 귀속된 커뮤니티의 요약(ADR-0043 결정 3). 귀속이 없으면 {@code null} 이다. 커뮤니티 기능이 없거나(포트 없음) 커뮤니티를
+     * 찾지 못하면 이름·이용 가능 여부를 비운 요약(확인 불가)이다 — 입구가 있다고 추정하지 않는다.
+     */
+    public @Nullable BoardMasterCommunity communityOf(@Nullable Long cmntySn) {
+        return BoardMasterCommunity.of(cmntySn, communityBoardAccess);
+    }
+
+    /** 한 쪽의 게시판들이 귀속된 커뮤니티 요약 — 커뮤니티마다 한 번만 묻는다. 귀속이 없는 게시판은 담지 않는다. */
+    public Map<Long, BoardMasterCommunity> communitiesOf(java.util.Collection<Long> cmntySns) {
+        Map<Long, BoardMasterCommunity> communities = new java.util.HashMap<>();
+        for (Long cmntySn : cmntySns) {
+            if (cmntySn != null) {
+                communities.computeIfAbsent(cmntySn, this::communityOf);
+            }
+        }
+        return communities;
     }
 
     @PersistenceContext
@@ -366,6 +419,9 @@ public class BoardMasterService extends BaseAbstractService {
         BoardMaster master = boardMasterRepository.findById(bbsId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
+        // [2026-10-26 ADR-0043 결정 4] 지정 게시판은 사용 여부·글 수와 상관없이 영구 삭제하지 않는다(409).
+        assertNotDesignated(master);
+
         if (!"N".equals(master.getUseYn())) {
             throw new BusinessException(BoardErrorCode.CANNOT_DELETE_ACTIVE_BOARD);
         }
@@ -409,6 +465,11 @@ public class BoardMasterService extends BaseAbstractService {
         Set<String> bbsIdsHavingArticles = new HashSet<>(
                 boardRepository.findBbsIdsHavingAnyArticles(distinctBbsIds));
 
+        // [2026-10-26 ADR-0043 결정 4] 지정 게시판이 하나라도 있으면 어느 대상도 지우지 않는다(409). 다른 대상의 사용·글 검사보다
+        //   먼저 모두 본다 — 요청 순서에 따라 400(사용 중·글 있음)과 409 가 갈리지 않게 한다.
+        for (BoardMaster master : masters) {
+            assertNotDesignated(master);
+        }
         // 모든 대상을 먼저 검증한 뒤 삭제를 시작해, 뒤쪽 대상의 실패가 앞쪽 엔티티 삭제를
         // 이미 예약하는 부분 성공 상태를 만들지 않게 한다.
         for (BoardMaster master : masters) {
@@ -451,6 +512,8 @@ public class BoardMasterService extends BaseAbstractService {
                 .tmpltId(projection.getTmpltId())
                 .useYn(projection.getUseYn())
                 .crtDt(projection.getCrtDt())
+                // [2026-10-26 ADR-0043 결정 3] 목록이 귀속 커뮤니티(이용 범위)를 알리도록 귀속 번호를 옮긴다.
+                .cmntySn(projection.getCmntySn())
                 .build();
     }
 }

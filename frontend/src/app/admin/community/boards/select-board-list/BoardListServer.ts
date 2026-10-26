@@ -1,3 +1,4 @@
+import { cache } from 'react';
 import { cookies } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { executeGeneratedOperation } from '@/lib/api/generated-api-client';
@@ -29,7 +30,8 @@ function isRecord(value: unknown): value is Record<string, unknown> {
  * 게시판(404) 오류를 보이고, 조회 대행 권한자가 사용 안 함 게시판을 열면 목록 머리가 사용 안 함임을 알린다. 선택지 조회의
  * 실패 자체는 화면에 따로 보이지 않는다(본 조회가 같은 서버에 닿으므로 대개 함께 실패한다).
  */
-export const resolveDefaultBoardId = async (): Promise<string> => {
+// [2026-10-26 ADR-0043 UX-15] 문서 제목(generateMetadata)과 화면이 같은 요청에서 기본값을 고른다 — React cache 로 선택지 조회를 한 번만 한다.
+export const resolveDefaultBoardId = cache(async (): Promise<string> => {
   const cookieStore = await cookies();
   const accessToken = cookieStore.get('accessToken')?.value;
   if (!accessToken) return NOTICE_BOARD_ID;
@@ -42,6 +44,29 @@ export const resolveDefaultBoardId = async (): Promise<string> => {
   } catch {
     // 선택지 조회 실패는 따로 알리지 않는다 — 본 조회가 같은 서버에 닿아 대개 함께 실패하고 그 오류를 보인다.
     return NOTICE_BOARD_ID;
+  }
+});
+
+/**
+ * 사용자용 게시판 메타. 첫 목록(getInitialBoardData)과 문서 제목(getBoardTitle)이 같은 요청에서 부르므로 React cache 로 한 번만 받는다.
+ * 실패는 호출부가 판정한다(목록은 부가 정보로, 제목은 일반 제목으로 떨어진다).
+ */
+const loadBoardMeta = cache((bbsId: string, accessToken: string) =>
+  boardUserService.getBoardMeta(bbsId, { headers: { Authorization: `Bearer ${accessToken}` } }));
+
+/**
+ * 문서 제목에 쓸 게시판 이름(ADR-0043 UX-15). 토큰이 없거나 메타를 받지 못하면(없는 게시판·권한 없음·장애) null 이다 — 화면은 일반
+ * 제목을 쓴다. 이름을 지어내지 않는다.
+ */
+export const getBoardTitle = async (bbsId: string): Promise<string | null> => {
+  const cookieStore = await cookies();
+  const accessToken = cookieStore.get('accessToken')?.value;
+  if (!accessToken) return null;
+  try {
+    const meta = await loadBoardMeta(bbsId, accessToken);
+    return meta?.bbsTtl?.trim() || null;
+  } catch {
+    return null;
   }
 };
 
@@ -87,7 +112,7 @@ export const getInitialBoardData = async (params: {
       }),
       // [2026-09-26 DIP V5] 사용자용 메타 API 로 읽는다 — 관리자 API 는 일반 사용자에게 403 이라
       //   제목·설명·템플릿이 늘 비었다.
-      boardUserService.getBoardMeta(bbsId, axiosConfig).catch((err: unknown) => {
+      loadBoardMeta(bbsId, accessToken).catch((err: unknown) => {
         logErrorSafely('BoardListServer: Failed to fetch board master info', err);
         return null;
       }),

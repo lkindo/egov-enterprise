@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import KnowledgeHubClient from '../KnowledgeHubClient';
 
 export const metadata: Metadata = {
-  title: `질문과 답변 관리 | ${SITE_IDENTITY.frameworkName}`,
+  title: `질의응답 · 지식 허브 | ${SITE_IDENTITY.frameworkName}`,
 };
 
 export default function QNAPage() {

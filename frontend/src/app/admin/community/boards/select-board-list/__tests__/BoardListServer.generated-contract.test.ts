@@ -26,7 +26,7 @@ vi.mock('@/lib/api/client', () => ({ default: client }));
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({ boardAdminService }));
 vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserService }));
 
-import { getInitialBoardData, resolveDefaultBoardId } from '../BoardListServer';
+import { getBoardTitle, getInitialBoardData, resolveDefaultBoardId } from '../BoardListServer';
 
 const success = <T,>(data: T) => ({
   success: true as const,
@@ -97,6 +97,26 @@ describe('BoardListServer generated 경계', () => {
     );
     // 관리자 API(BBS_MST_READ)는 일반 사용자에게 403 이라 제목·템플릿이 늘 비었다.
     expect(boardAdminService.getBoardMaster).not.toHaveBeenCalled();
+  });
+
+  /*
+    [2026-10-26 ADR-0043 UX-15] 문서 제목은 '게시판 이름 | 사이트 이름' 이다. 이름은 화면 머리와 같은 사용자용 메타에서 읽고, 받지
+    못하면(없는 게시판·권한 없음·장애·토큰 없음) null 이라 화면이 일반 제목을 쓴다 — 이름을 지어내지 않는다.
+  */
+  it('문서 제목의 게시판 이름은 사용자용 메타에서 읽고, 받지 못하면 null 이다', async () => {
+    boardUserService.getBoardMeta.mockResolvedValueOnce({ bbsId: 'BBS_1', bbsTtl: '  자료실  ' });
+    await expect(getBoardTitle('BBS_1')).resolves.toBe('자료실');
+    expect(boardUserService.getBoardMeta).toHaveBeenLastCalledWith('BBS_1', { headers: { Authorization: 'Bearer token' } });
+
+    boardUserService.getBoardMeta.mockRejectedValueOnce(Object.assign(new Error('not found'), { response: { status: 404 } }));
+    await expect(getBoardTitle('BBS_GONE')).resolves.toBeNull();
+
+    boardUserService.getBoardMeta.mockResolvedValueOnce({ bbsId: 'BBS_2', bbsTtl: '   ' });
+    await expect(getBoardTitle('BBS_2')).resolves.toBeNull();
+
+    cookieState.accessToken = undefined;
+    await expect(getBoardTitle('BBS_1')).resolves.toBeNull();
+    expect(boardUserService.getBoardMeta).toHaveBeenCalledTimes(3);
   });
 
   it('토큰이 없으면 어떤 HTTP 경계도 실행하지 않는다', async () => {

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it } from 'vitest';
-import { PinnedBadge, PostingStatusBadge, PostingStatusLabel } from '../PostingStatusBadge';
+import { PinnedBadge, PostingStatusBadge, PostingStatusLabel, QnaStatusLabel } from '../PostingStatusBadge';
 
 /**
  * 게시 상태 표지(ADR-0040 결정 3·DEC-OPS-140). 상태는 서버 판정 그대로다 — 화면이 날짜로 다시 계산하면, 서버가 게시 중이라고 한 글의
@@ -64,5 +64,18 @@ describe('PinnedBadge', () => {
     expect(container).toBeEmptyDOMElement();
     rerender(<PinnedBadge />);
     expect(container).toBeEmptyDOMElement();
+  });
+});
+
+/** [2026-10-26 ADR-0043 1차 OPS-02] 운영 게시물 탭의 Q&A 해결 상태 칸 — 정본 이름(미해결 / 해결됨)을 점과 글자로 그린다. */
+describe('QnaStatusLabel', () => {
+  it('서버 해결 상태를 정본 이름으로 그리고 답변 대기라 부르지 않는다', () => {
+    const { rerender } = render(<QnaStatusLabel qnaSttsCd="SOLVED" />);
+    expect(screen.getByText('해결됨')).toBeInTheDocument();
+    rerender(<QnaStatusLabel qnaSttsCd="OPEN" />);
+    expect(screen.getByText('미해결')).toBeInTheDocument();
+    rerender(<QnaStatusLabel qnaSttsCd={null} />);
+    expect(screen.getByText('미해결')).toBeInTheDocument();
+    expect(screen.queryByText('답변 대기')).toBeNull();
   });
 });

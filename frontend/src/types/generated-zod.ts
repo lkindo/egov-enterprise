@@ -493,6 +493,8 @@ export { SatisfactionAverageResponseSchema } from './generated-zod/satisfaction'
 export type { SatisfactionAverageResponse } from './generated-zod/satisfaction';
 export { ApiResponseBoardMetaDtoSchema } from './generated-zod/board';
 export type { ApiResponseBoardMetaDto } from './generated-zod/board';
+export { BoardMasterCommunitySchema } from './generated-zod/_shared';
+export type { BoardMasterCommunity } from './generated-zod/_shared';
 export { BoardMetaDtoSchema } from './generated-zod/board';
 export type { BoardMetaDto } from './generated-zod/board';
 export { ApiResponseListBoardSearchItemResponseSchema } from './generated-zod/board';
@@ -1397,6 +1399,8 @@ export { SatisfactionAverageResponseRequestSchema } from './generated-zod/satisf
 export { SatisfactionAverageResponseResponseSchema } from './generated-zod/satisfaction';
 export { ApiResponseBoardMetaDtoRequestSchema } from './generated-zod/board';
 export { ApiResponseBoardMetaDtoResponseSchema } from './generated-zod/board';
+export { BoardMasterCommunityRequestSchema } from './generated-zod/_shared';
+export { BoardMasterCommunityResponseSchema } from './generated-zod/_shared';
 export { BoardMetaDtoRequestSchema } from './generated-zod/board';
 export { BoardMetaDtoResponseSchema } from './generated-zod/board';
 export { ApiResponseListBoardSearchItemResponseRequestSchema } from './generated-zod/board';

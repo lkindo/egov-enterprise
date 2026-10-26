@@ -1,31 +1,63 @@
 'use client';
 
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Copy, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/app/components/ui/toast';
 import { useAuth } from '@/contexts/AuthContext';
+import { canPermission } from '@/lib/auth/permissions';
 import { canOpenPage } from '@/lib/auth/page-access';
-import { handOffMenuFocus } from '@/lib/navigation/target-handoff';
+import { handOffMenuFocus, handOffScreen, type HandoffReturn } from '@/lib/navigation/target-handoff';
 import {
   boardMenuRoute,
   findBoardMenuLinks,
   publicationReadiness,
+  type BoardEntryPaths,
   type BoardMenuLink,
   type CheckState,
   type GroupSource,
   type MenuExposure,
+  type ReadinessWarning,
 } from '@/lib/board/board-menu-links';
 import type { BoardMasterDetail } from '@/services/foundation/system/BoardAdminService';
+import { boardOperationsHref } from '../board-operations-tabs';
+import { HOME_CARD_LABELS, boardAudience, boardCommunityOf, knowledgeTabLabel } from '../board-usage';
 import { useBoardAccessSources } from '../useBoardAccessSources';
 
 /**
  * 게시판 운영 화면의 메뉴·접근 탭(ADR-0040 결정 8·§5.6). 메뉴 연결과 그룹 표시는 계산해 보이기만 하고, 바꾸기는 메뉴 관리에서
  * 한다 — 연결된 메뉴는 그 메뉴를 고른 상태로 메뉴 관리를 연다(menu-focus 인계). 메뉴 원장(MENU_READ)·그룹(AUTHRT_READ)을 읽을
  * 권한이 없으면 "확인 권한 없음", 조회에 실패하면 "확인 불가" 로 보이고 연결 없음·모두에게 보임으로 추정하지 않는다.
+ *
+ * [2026-10-26 ADR-0043 결정 1·3] 공개 준비는 '사용 중 + 이용자가 찾는 길 하나 이상'이다. 항목마다 고치는 곳으로 가는 동작을 두고,
+ * 이용자가 이미 닿는 길(통합 검색·업무 홈 카드·지식 허브 탭·커뮤니티 화면)을 따로 보인다. 연결된 메뉴가 없으면 '메뉴에 붙이기'
+ * 로 게시판 이용 화면 주소·이름·돌아갈 곳을 메뉴 관리에 넘긴다 — 메뉴 저장은 메뉴 관리의 구조 저장이 권한을 집행한다. 커뮤니티
+ * 귀속 게시판은 메뉴 대신 커뮤니티 화면이 입구다.
  */
+const READINESS_RETURN_LABEL = '게시판 공개 준비로 돌아가기';
+
+const CHECK_NAMES: Readonly<Record<string, string>> = {
+  'board-in-use': '게시판 사용',
+  'entry-path': '이용자가 찾는 길',
+  'edit-permission': '지정 게시판 편집 권한 배정',
+};
+
+const WARNING_TEXT: Readonly<Record<ReadinessWarning, string>> = {
+  'community-general-menu': '커뮤니티 귀속 게시판인데 일반 그룹에 보이는 메뉴가 있습니다. 회원이 아닌 사용자는 그 메뉴로 들어와도 거부됩니다 — 입구는 커뮤니티 화면입니다.',
+  'closed-board-general-menu': '사용 안 함 게시판인데 일반 그룹에 보이는 활성 메뉴가 있습니다. 이용자에게는 열리지 않는 메뉴가 보입니다.',
+};
+
+/** 찾는 길로 센 것들의 이름(공개 준비 통과 설명). 귀속이 아닌 게시판만 쓴다. */
+function foundPathNames(paths: BoardEntryPaths): string[] {
+  return [
+    ...(paths.generalMenu === 'pass' ? ['일반 그룹에 보이는 메뉴'] : []),
+    ...paths.hubTabs.map((tab) => `지식 허브 ${knowledgeTabLabel(tab)} 탭`),
+    ...paths.homeCards.map((card) => HOME_CARD_LABELS[card] ?? card),
+  ];
+}
+
 const STATE_LABEL: Readonly<Record<CheckState, string>> = {
   pass: '통과',
   fail: '통과하지 못함',
@@ -96,14 +128,34 @@ function groupsHolding(groupSource: GroupSource | null, codes: readonly string[]
   return names.length > 0 ? names.join(', ') : '배정된 그룹 없음';
 }
 
+/** 메뉴 관리에 직접 등록할 게시판 주소와 복사 단추. */
+function AddressBlock({ route, onCopy }: { route: string; onCopy: () => void }) {
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <code className="break-all rounded bg-muted px-2 py-1 font-mono text-xs">{route}</code>
+      <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={onCopy}>
+        <Copy className="size-4" aria-hidden="true" />
+        주소 복사
+      </Button>
+    </div>
+  );
+}
+
 export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
   const router = useRouter();
   const { toast } = useToast();
   const { user } = useAuth();
   const canOpenMenus = canOpenPage(user, '/admin/system/menus');
   const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
+  // [ADR-0043 결정 1] 메뉴에 붙이기는 메뉴 관리가 새 메뉴를 추가·저장할 수 있을 때만 넘긴다(MENU_CREATE·MENU_UPDATE) — 그룹
+  //   표시(AUTHRT_GRANT)는 메뉴 관리가 따로 판정한다. 마법사 결과 화면과 같은 판정이다.
+  const canAttachMenu = canOpenMenus && canPermission(user, 'MENU_CREATE') && canPermission(user, 'MENU_UPDATE');
   const { menuSource, groupSource, retry } = useBoardAccessSources();
+  const [menuHandoffFailed, setMenuHandoffFailed] = useState(false);
   const boardInUse = detail.useYn === 'Y';
+  const community = boardCommunityOf(detail);
+  const audience = boardAudience(community);
+  const returnTo: HandoffReturn = { route: boardOperationsHref(detail.bbsId, 'access'), label: READINESS_RETURN_LABEL };
 
   // 두 원천이 모두 확정된 뒤에 판정한다 — 그룹 조회가 아직 진행 중인데 '불러오지 못함'으로 판정하지 않는다(권한이 없으면
   //   useBoardAccessSources 가 조회 없이 바로 확인 권한 없음으로 확정한다).
@@ -112,11 +164,20 @@ export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
     : findBoardMenuLinks(detail.bbsId, menuSource, groupSource, detail.bbsTtl)),
   [detail.bbsId, detail.bbsTtl, menuSource, groupSource]);
   const readiness = links === null || groupSource === null ? null
-    : publicationReadiness({ boardInUse, links, groupSource, designations: detail.designations });
+    : publicationReadiness({ bbsId: detail.bbsId, boardInUse, links, groupSource, designations: detail.designations, community });
 
   const openMenu = (link: BoardMenuLink) => {
-    if (!handOffMenuFocus({ menuSn: link.menuNo })) {
+    if (!handOffMenuFocus({ menuSn: link.menuNo, returnTo })) {
       toast('메뉴를 넘기지 못했습니다. 브라우저 저장소를 쓸 수 없는 상태입니다. 메뉴 관리에서 직접 찾아 주세요.', 'error');
+      return;
+    }
+    router.push('/admin/system/menus');
+  };
+
+  /** 메뉴에 붙이기 — 게시판 이용 화면 주소·이름·돌아갈 곳을 넘기고 메뉴 관리를 연다. 넘기지 못하면 이동하지 않고 주소를 안내한다. */
+  const attachMenu = () => {
+    if (!handOffScreen({ route: boardMenuRoute(detail.bbsId), label: detail.bbsTtl, returnTo })) {
+      setMenuHandoffFailed(true);
       return;
     }
     router.push('/admin/system/menus');
@@ -131,19 +192,59 @@ export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
     }
   };
 
+  const noMenuLinks = links?.status === 'ready' && links.links.length === 0;
+
+  /** 공개 준비 점검에서 메뉴 연결 절로 옮겨 간다 — 주소(해시)를 바꾸지 않고 절 제목에 초점을 둔다. */
+  const showMenuLinks = () => {
+    const heading = document.getElementById('board-access-menus');
+    heading?.scrollIntoView?.({ block: 'start' });
+    heading?.focus();
+  };
+
   const checkDetail = (id: string, state: CheckState, missing?: string[]): string => {
-    if (id === 'board-in-use') return state === 'pass' ? '사용 중' : '사용 안 함 — 설정 탭에서 바꿉니다.';
-    if (id === 'general-menu') {
-      if (state === 'pass') return '일반 그룹에 보이는 활성 메뉴가 있습니다.';
-      if (state === 'fail') return '일반 그룹에 보이는 활성 메뉴가 없습니다.';
+    if (id === 'board-in-use') return state === 'pass' ? '사용 중' : '사용 안 함 — 이용자에게 읽기·쓰기 모두 닫혀 있습니다.';
+    if (id === 'entry-path') {
+      if (community !== null) {
+        if (state === 'pass') return `귀속 커뮤니티 화면으로 회원이 들어옵니다(${audience.label}).`;
+        if (state === 'fail') return '귀속 커뮤니티가 사용 중지라 이용자가 들어갈 입구가 없습니다. 커뮤니티를 다시 사용으로 바꿔야 회원에게 열립니다.';
+        return '귀속 커뮤니티의 사용 여부를 확인할 수 없습니다(커뮤니티 기능이 없거나 커뮤니티를 찾지 못했습니다).';
+      }
+      if (state === 'pass') return `있음 — ${readiness ? foundPathNames(readiness.paths).join(', ') : ''}`;
+      if (state === 'fail') return '일반 그룹에 보이는 활성 메뉴·지식 허브 탭·업무 홈 카드가 없습니다. 관리자 그룹에만 보이는 메뉴는 세지 않습니다.';
       return menuSource?.status === 'no-permission' || groupSource?.status === 'no-permission'
-        ? '메뉴 원장이나 그룹을 볼 권한이 없어 확인할 수 없습니다.'
+        ? '메뉴 원장이나 그룹을 볼 권한이 없어 메뉴로 닿는지 확인할 수 없습니다.'
         : '메뉴 원장이나 그룹을 불러오지 못했거나, 판정할 수 없는 메뉴 주소가 있습니다.';
     }
     if (state === 'pass') return '지정 게시판의 편집 권한이 그룹에 배정돼 있습니다.';
     if (state === 'fail') return `어느 그룹에도 배정되지 않은 편집 권한: ${(missing ?? []).join(', ')}`;
     return '그룹을 볼 권한이 없거나 불러오지 못해 확인할 수 없습니다.';
   };
+
+  /** 항목마다 고치는 곳(ADR-0043 결정 3·설계서 §5.6). 통과한 항목에는 두지 않는다. */
+  const checkAction = (id: string, state: CheckState) => {
+    if (state === 'pass' || state === 'not-applicable') return null;
+    if (id === 'board-in-use') {
+      return (
+        <Button type="button" variant="outline" size="xs" onClick={() => router.push(boardOperationsHref(detail.bbsId, 'settings'))}>
+          설정 탭에서 사용으로 바꾸기
+        </Button>
+      );
+    }
+    if (id === 'edit-permission') {
+      return canOpenAuthority
+        ? <Button type="button" variant="outline" size="xs" onClick={() => router.push('/admin/security/authority')}>권한 관리에서 배정하기</Button>
+        : null;
+    }
+    // 이용자가 찾는 길 — 귀속 게시판의 입구는 커뮤니티 화면이라 메뉴로 고치지 않는다. 메뉴 원장을 못 읽었으면 고칠 곳을 모른다.
+    if (community !== null || links?.status !== 'ready') return null;
+    if (noMenuLinks) {
+      return canAttachMenu ? <Button type="button" variant="outline" size="xs" onClick={attachMenu}>메뉴에 붙이기</Button> : null;
+    }
+    // 연결된 메뉴가 있으면(관리자 그룹만·비활성 등) 아래 메뉴 연결 표의 '메뉴 관리에서 열기' 가 고치는 곳이다.
+    return <Button type="button" variant="link" size="xs" onClick={showMenuLinks}>메뉴 연결 보기</Button>;
+  };
+
+  const paths = readiness?.paths ?? null;
 
   return (
     <div className="space-y-6">
@@ -157,25 +258,77 @@ export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
         {readiness !== null && (
           <ul className="space-y-1.5 text-[length:var(--font-size-body)]">
             {readiness.checks.filter((check) => check.state !== 'not-applicable').map((check) => (
-              <li key={check.id} className="flex flex-wrap gap-2">
-                <span className="font-medium text-foreground">
-                  {check.id === 'board-in-use' ? '게시판 사용' : check.id === 'general-menu' ? '일반 그룹에 보이는 활성 메뉴' : '지정 게시판 편집 권한 배정'}
-                </span>
+              <li key={check.id} className="flex flex-wrap items-center gap-2">
+                <span className="font-medium text-foreground">{CHECK_NAMES[check.id] ?? check.id}</span>
                 <span>{STATE_LABEL[check.state]}</span>
                 <span className="text-muted-foreground">{checkDetail(check.id, check.state, check.missing)}</span>
+                {checkAction(check.id, check.state)}
               </li>
             ))}
           </ul>
         )}
+        {readiness !== null && readiness.warnings.length > 0 && (
+          <div role="note" aria-label="공개 준비 경고" className="rounded-md border border-warning/40 bg-warning/10 p-3 text-[length:var(--font-size-body)] text-foreground">
+            <ul className="list-disc space-y-1 pl-5">
+              {readiness.warnings.map((warning) => <li key={warning}>{WARNING_TEXT[warning]}</li>)}
+            </ul>
+          </div>
+        )}
         <p className="text-xs text-muted-foreground">
+          메뉴는 길 안내일 뿐 접근을 막지 않습니다. 관리자 그룹(ROLE_ADMIN·ROLE_SYSTEM)에만 보이는 메뉴는 이용자가 찾는 길로 세지 않습니다.
           메뉴 활성화와 그룹 표시는 메뉴 관리에서 함께 저장합니다(메뉴 조회·수정, 권한 그룹 조회·배정 권한 — MENU_READ·MENU_UPDATE·AUTHRT_READ·AUTHRT_GRANT).
           상위 메뉴도 같은 그룹에 보여야 사이드바에 나타납니다.
         </p>
       </section>
 
+      {/* [2026-10-26 ADR-0043, NAV-07] 메뉴가 없어도 사용 중인 게시판에 닿는 길. 공개 준비 판정과 같은 값을 쓴다. */}
+      <section aria-labelledby="board-access-paths" className="space-y-3">
+        <h2 id="board-access-paths" className="text-[length:var(--font-size-body)] font-semibold text-foreground">이용자가 이미 닿는 길</h2>
+        {paths === null
+          ? <p role="status" className="text-sm text-muted-foreground">확인하는 중…</p>
+          : (
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-md border border-border p-4 text-[length:var(--font-size-body)] sm:grid-cols-[9rem_1fr]">
+              <dt className="text-muted-foreground">통합 검색</dt>
+              <dd className="text-foreground">
+                {paths.search
+                  ? '나옵니다 — 사용 중인 게시판의 글은 메뉴가 없어도 통합 검색 결과에 나옵니다.'
+                  : community !== null
+                    ? '나오지 않습니다 — 커뮤니티 귀속 게시판은 통합 검색에서 빠집니다.'
+                    : '나오지 않습니다 — 사용 안 함 게시판입니다.'}
+              </dd>
+              <dt className="text-muted-foreground">업무 홈 카드</dt>
+              <dd className="text-foreground">
+                {paths.homeCards.length > 0 ? paths.homeCards.map((card) => HOME_CARD_LABELS[card] ?? card).join(', ') : '없음'}
+              </dd>
+              <dt className="text-muted-foreground">지식 허브 탭</dt>
+              <dd className="text-foreground">
+                {paths.hubTabs.length + paths.contributedHubTabs.length > 0
+                  ? [
+                    ...paths.hubTabs.map((tab) => `${knowledgeTabLabel(tab)} 탭`),
+                    ...paths.contributedHubTabs.map((tab) => `${knowledgeTabLabel(tab)} 탭(${knowledgeTabLabel(tab)} 기능을 넣은 구성에서)`),
+                  ].join(', ')
+                  : '없음'}
+              </dd>
+              <dt className="text-muted-foreground">커뮤니티 화면</dt>
+              <dd className="text-foreground">
+                {community === null
+                  ? '해당 없음 — 커뮤니티 귀속 게시판이 아닙니다.'
+                  : audience.kind === 'community' && audience.state === 'in-use'
+                    ? `${audience.label}이 커뮤니티 화면에서 이 게시판에 들어옵니다.`
+                    : audience.kind === 'community' && audience.state === 'stopped'
+                      ? '귀속 커뮤니티가 사용 중지라 입구가 없습니다.'
+                      : '귀속 커뮤니티를 확인할 수 없습니다.'}
+              </dd>
+            </dl>
+          )}
+        {!boardInUse && (
+          <p className="text-sm text-muted-foreground">지금은 사용 안 함이라 위 길로 들어와도 이용자에게 닫혀 있습니다.</p>
+        )}
+      </section>
+
       <section aria-labelledby="board-access-menus" className="space-y-3">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 id="board-access-menus" className="text-[length:var(--font-size-body)] font-semibold text-foreground">메뉴 연결</h2>
+          <h2 id="board-access-menus" tabIndex={-1} className="text-[length:var(--font-size-body)] font-semibold text-foreground">메뉴 연결</h2>
           {(menuSource?.status === 'failed' || groupSource?.status === 'failed') && (
             <Button type="button" variant="outline" size="sm" onClick={retry}>다시 불러오기</Button>
           )}
@@ -218,23 +371,36 @@ export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
             </table>
           </div>
         )}
-        {links?.status === 'ready' && links.links.length === 0 && (
+        {noMenuLinks && (
           <div className="space-y-2 rounded-md border border-border p-4 text-[length:var(--font-size-body)]">
             <p className="font-medium text-foreground">이 게시판을 가리키는 메뉴가 없습니다(연결 없음).</p>
-            <p className="text-muted-foreground">메뉴 관리에서 새 메뉴를 추가하고 아래 주소를 메뉴 경로로 등록하세요.</p>
-            <div className="flex flex-wrap items-center gap-2">
-              <code className="break-all rounded bg-muted px-2 py-1 font-mono text-xs">{boardMenuRoute(detail.bbsId)}</code>
-              <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void copyAddress()}>
-                <Copy className="size-4" aria-hidden="true" />
-                주소 복사
-              </Button>
-              {canOpenMenus && (
-                <Button type="button" variant="ghost" size="sm" className="gap-1.5" onClick={() => router.push('/admin/system/menus')}>
-                  <ExternalLink className="size-4" aria-hidden="true" />
-                  메뉴 관리 열기
-                </Button>
-              )}
-            </div>
+            {community !== null ? (
+              /* [ADR-0043 결정 1] 귀속 게시판의 입구는 커뮤니티 화면이다 — 메뉴를 붙이라고 안내하지 않는다. */
+              <p className="text-muted-foreground">
+                이 게시판의 입구는 커뮤니티 화면입니다. 승인 회원만 열 수 있어 메뉴를 따로 붙이지 않습니다.
+              </p>
+            ) : canAttachMenu ? (
+              <div className="space-y-2">
+                <p className="text-muted-foreground">
+                  메뉴는 길 안내일 뿐이라 없어도 사용 중인 게시판은 위 길로 열립니다. 메뉴 관리에서 위치를 고르고, 이용자 그룹에 보이도록 함께
+                  저장합니다(그룹 표시는 권한 배정 권한이 필요합니다). 저장한 뒤 메뉴 관리의 돌아가기 단추로 이 화면에 돌아옵니다.
+                </p>
+                <Button type="button" variant="outline" size="sm" onClick={attachMenu}>메뉴에 붙이기</Button>
+                {menuHandoffFailed && (
+                  <div role="alert" className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-destructive-emphasis">
+                    <p>메뉴 관리에 게시판을 넘기지 못했습니다. 브라우저 저장소를 쓸 수 없는 상태입니다. 메뉴 관리에서 새 메뉴를 추가하고 아래 주소를 직접 등록하세요.</p>
+                    <AddressBlock route={boardMenuRoute(detail.bbsId)} onCopy={() => void copyAddress()} />
+                  </div>
+                )}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-muted-foreground">
+                  메뉴 연결은 메뉴 관리 권한(메뉴 등록·수정)이 있는 관리자에게 요청하세요. 요청할 때 아래 게시판 주소를 함께 전하세요.
+                </p>
+                <AddressBlock route={boardMenuRoute(detail.bbsId)} onCopy={() => void copyAddress()} />
+              </div>
+            )}
           </div>
         )}
       </section>
@@ -266,7 +432,7 @@ export function BoardAccessTab({ detail }: { detail: BoardMasterDetail }) {
                   <td className="p-3">{groupsHolding(groupSource, row.codes)}</td>
                   <td className="p-3 text-muted-foreground">
                     {row.condition}
-                    {detail.cmntySn && row.community ? ' · 커뮤니티 승인 회원(조회 대행 권한은 면제)' : ''}
+                    {community !== null && row.community ? ' · 커뮤니티 승인 회원(조회 대행 권한은 면제)' : ''}
                     {row.specialEdit && detail.designations.includes('NOTICE') ? ' · 공지 편집 권한(NOTICE_EDIT)' : ''}
                     {row.specialEdit && detail.designations.includes('FAQ') ? ' · FAQ 편집 권한(FAQ_EDIT)' : ''}
                   </td>

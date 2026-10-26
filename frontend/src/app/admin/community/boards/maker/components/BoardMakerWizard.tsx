@@ -4,21 +4,14 @@ import React, { useState } from 'react';
 import { useUnsavedChanges } from '@/contexts/UnsavedChangesContext';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { BoardPreview } from './BoardPreview';
+import { BoardPreview, type BoardPreviewFeatures } from './BoardPreview';
 import * as z from 'zod';
 import { Card, CardContent, CardHeader, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { boardAdminService } from '@/services/foundation/system/BoardAdminService';
+import { boardAdminService, type BoardMasterSummary } from '@/services/foundation/system/BoardAdminService';
 import { useQueryClient } from "@tanstack/react-query";
 /* reusable-base:community:start */
 import { useQuery } from "@tanstack/react-query";
@@ -42,25 +35,44 @@ import {
   ImageIcon,
   ArrowUpRight,
   Info,
+  Copy,
   type LucideIcon
 } from "lucide-react";
-import { BOARD_TYPES, DEFAULT_BOARD_TYPE, type BoardTemplateId } from '@/lib/board/board-types';
+import { BOARD_TYPES, DEFAULT_BOARD_TYPE, boardTemplateName, type BoardTemplateId } from '@/lib/board/board-types';
 import { cn } from "@/lib/utils";
-import { menuAdminService } from '@/services/foundation/system/MenuAdminService';
 import { useAppForm } from '@/hooks/useAppForm';
 import { FormErrorSummary } from '@/components/ui/form';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { useConfirm } from '@/app/components/ui/confirm-modal';
+import { useToast } from '@/app/components/ui/toast';
+import { DynamicBreadcrumb } from '@/app/components/layout/DynamicBreadcrumb';
+import { handOffScreen } from '@/lib/navigation/target-handoff';
+import { boardMenuRoute } from '@/lib/board/board-menu-links';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 
 /*
-  [2026-10-23 ADR-0040 §5.3] 네 단계를 용도·기본정보 → 화면·기능 → 메뉴·접근 확인 → 최종 확인으로 다시 짰다. 게시판은 사용 안 함으로,
-  메뉴는 비활성으로 만들고 결과 화면이 운영 화면의 메뉴·접근 탭(공개 준비)으로 이어 준다.
+  [2026-10-23 ADR-0040 §5.3] 단계를 다시 짰다. 게시판은 사용 안 함으로 만들고 결과 화면이 운영 화면의 메뉴·접근 탭(공개 준비)으로 이어 준다.
+  [2026-10-26 ADR-0043 결정 1·2] 메뉴 단계를 걷었다 — 마법사는 게시판만 만들고(BBS_MST_CREATE 하나), 메뉴는 결과 화면이나 운영 화면의
+  '메뉴에 붙이기'로 메뉴 관리에 넘긴다(메뉴 저장 권한은 메뉴 관리의 구조 저장이 집행한다). 공개는 결과 화면의 '지금 사용으로 바꾸기'로 한다.
+  단계는 용도·기본정보 → 화면·기능 → 최종 확인 셋이다.
 */
 const STEPS = [
   { id: 1, title: '용도·기본정보', description: '용도를 고르고 게시판의 이름과 소개를 입력하세요', icon: Settings2 },
   { id: 2, title: '화면·기능', description: '화면 유형과 댓글·만족도·첨부를 정하세요', icon: Layout },
-  { id: 3, title: '메뉴·접근 확인', description: '메뉴 위치를 정하고 이용 범위가 어떻게 정해지는지 확인하세요', icon: ShieldCheck },
-  { id: 4, title: '최종 확인', description: '만든 직후의 상태를 확인하세요', icon: Rocket },
+  { id: 3, title: '최종 확인', description: '만들 설정과 만든 직후의 상태를 확인하세요', icon: Rocket },
 ];
+
+/** 게시판 관리 목록 — '만들기 취소'와 결과 화면의 목록 이동이 간다. */
+const BOARD_MASTER_LIST_ROUTE = '/admin/community/boards/master';
+
+/**
+ * [2026-10-26 ADR-0043] 마법사의 요청은 실패를 화면 안(오류 상자)에서 사유와 함께 보인다 — 같은 실패를 전역 토스트로 한 번 더 띄우지
+ * 않는다(DEC-OPS-184 실패 한 번에 알림 하나).
+ */
+const QUIET = { suppressErrorToast: true } as const;
+
+/** 생성 응답을 받지 못했을 때 '방금 만든 게시판'으로 볼 만든 시각의 범위(서버·브라우저 시계 차이를 함께 품는다). */
+const RECOVERY_WINDOW_MS = 10 * 60 * 1000;
 
 /** 비밀글 정책 세 값(ADR-0040 결정 7). 어휘는 생성 스키마의 enum 이다. */
 type PrivatePostPolicy = NonNullable<z.infer<typeof BoardMasterDtoSchema>['prvtPstPlcyCd']>;
@@ -91,8 +103,26 @@ const BOARD_PURPOSES = [
   rsvtPstgPsbltyYn: 'Y' | 'N'; upendFixPsbltyYn: 'Y' | 'N'; upendFixUplmtNocs: number; upendFixBscDayCnt: number;
   prvtPstPlcyCd: PrivatePostPolicy; rcmdtnUseYn: 'Y' | 'N';
 }[];
+type BoardPurpose = (typeof BOARD_PURPOSES)[number];
 type PurposeField = 'tmpltId' | 'ansYn' | 'stsfdgYn' | 'fileAtchPsbltyYn' | 'atchPsbltyFileQty' | 'rsvtPstgPsbltyYn'
   | 'upendFixPsbltyYn' | 'upendFixUplmtNocs' | 'upendFixBscDayCnt' | 'prvtPstPlcyCd' | 'rcmdtnUseYn';
+/**
+ * [2026-10-26 ADR-0043 WIZ-10] 용도가 채우는 칸과 그 화면 이름. 순서는 2단계 화면의 순서다 — 용도를 고르면 직접 바꾼 칸을 이 이름으로
+ * 알린다. 이름은 2단계의 칸 이름과 같게 둔다.
+ */
+const PURPOSE_FIELD_LABELS: ReadonlyArray<readonly [PurposeField, string]> = [
+  ['tmpltId', '화면 유형'],
+  ['ansYn', '댓글 받기'],
+  ['stsfdgYn', '만족도 평가 받기'],
+  ['fileAtchPsbltyYn', '파일 첨부 허용'],
+  ['rsvtPstgPsbltyYn', '예약 게시 받기'],
+  ['upendFixPsbltyYn', '상단 고정 받기'],
+  ['rcmdtnUseYn', '추천 받기'],
+  ['atchPsbltyFileQty', '첨부 파일 수'],
+  ['upendFixUplmtNocs', '상단 고정 상한'],
+  ['upendFixBscDayCnt', '상단 고정 기본 일수'],
+  ['prvtPstPlcyCd', '비밀글 정책'],
+];
 const BYTES_PER_MB = 1024 * 1024;
 
 /*
@@ -118,8 +148,26 @@ const TEMPLATES = BOARD_TYPES.map((type) => ({
   ...TEMPLATE_PRESENTATION[type.templateId],
 }));
 
-import { BoardMasterDtoSchema, MenuDtoSchema } from '@/types/generated-zod';
-import { boardMasterKeys } from '@/queries/board-master-query-options';
+// [2026-10-26 ADR-0043 결정 5] 화면 유형 이름은 정본 함수 하나(board-types)가 템플릿으로 정한다.
+const templateName = (templateId: string | undefined) => boardTemplateName(templateId);
+const yesNo = (value: string | undefined, yes = '받음', no = '받지 않음') => (value === 'N' ? no : yes);
+
+/** [WIZ-10] 용도가 무엇을 채우는지 한 줄로 — 프리셋 값에서 만들어 표와 갈리지 않는다. */
+function describePurpose(preset: BoardPurpose): string {
+  return [
+    `화면 유형 ${templateName(preset.tmpltId)}`,
+    `댓글 ${yesNo(preset.ansYn)}`,
+    `만족도 ${yesNo(preset.stsfdgYn)}`,
+    `추천 ${yesNo(preset.rcmdtnUseYn)}`,
+    `첨부 ${preset.fileAtchPsbltyYn === 'Y' ? `${preset.atchPsbltyFileQty}개` : '허용 안 함'}`,
+    `예약 게시 ${yesNo(preset.rsvtPstgPsbltyYn)}`,
+    `상단 고정 ${preset.upendFixPsbltyYn === 'Y' ? `허용(${preset.upendFixUplmtNocs}건·${preset.upendFixBscDayCnt}일)` : '허용 안 함'}`,
+    `비밀글 ${PRIVATE_POST_POLICY_SUMMARY[preset.prvtPstPlcyCd]}`,
+  ].join(' · ');
+}
+
+import { BoardMasterDtoSchema } from '@/types/generated-zod';
+import { boardMasterKeys, invalidateBoardCaches } from '@/queries/board-master-query-options';
 import { SERVER_MAX_FILE_SIZE_MB, SERVER_MAX_FILES_PER_REQUEST } from '@/lib/attachments/server-upload-limits';
 import { boardOperationsHref } from '../../master/board-operations-tabs';
 import { generatedRange, pinCountSchema } from '../../master/board-pin-count';
@@ -151,17 +199,11 @@ export const boardMakerFormSchema = BoardMasterDtoSchema.extend({
     .int('첨부 가능 파일 크기는 정수여야 합니다.')
     .min(0, '파일당 크기는 0 이상이어야 합니다.')
     .max(SERVER_MAX_FILE_SIZE_MB * BYTES_PER_MB, `서버는 파일 하나당 ${SERVER_MAX_FILE_SIZE_MB}MB 까지 받습니다.`),
-  tmpltId: BoardMasterDtoSchema.shape.tmpltId.unwrap().max(20),
+  tmpltId: BoardMasterDtoSchema.shape.tmpltId,
   // [2026-10-23 ADR-0040 결정 5·6] 상단 고정 상한·기본 일수. 범위는 서버 @Min·@Max 가 생성 스키마로 내려온 값이고, 비우면 서버 기본값이라
   //   생성 스키마처럼 선택이다(마법사는 늘 채워 보낸다).
   upendFixUplmtNocs: pinCountSchema({ subject: '상단 고정 상한은', object: '상단 고정 상한을' }, '건', PIN_LIMIT_GENERATED).optional(),
   upendFixBscDayCnt: pinCountSchema({ subject: '상단 고정 기본 일수는', object: '상단 고정 기본 일수를' }, '일', PIN_DAYS_GENERATED).optional(),
-  menuNm: MenuDtoSchema.shape.menuNm
-    .trim()
-    .min(1, '메뉴 명칭을 입력해 주세요.')
-    .max(100, '메뉴 명칭은 최대 100자까지 입력할 수 있습니다.'),
-  upperMenuNo: z.enum(['0', '2000000', '2030000'], { message: '상위 메뉴를 선택해 주세요.' }),
-  menuOrdr: MenuDtoSchema.shape.menuOrdr.int('메뉴 순서는 정수여야 합니다.'),
   /*
     [2026-09-08 PD-CMTY-001] 커뮤니티 귀속(선택).
 
@@ -191,9 +233,6 @@ const BOARD_MAKER_FORM_LABELS: Record<string, string> = {
   prvtPstPlcyCd: '비밀글 정책',
   rcmdtnUseYn: '추천 받기',
   cmntySn: '커뮤니티 귀속',
-  upperMenuNo: '상위 메뉴',
-  menuNm: '메뉴 명칭',
-  menuOrdr: '메뉴 순서',
   'root.server': '저장 오류',
 };
 
@@ -210,59 +249,110 @@ const BOARD_MAKER_FIELD_STEPS: Record<string, number> = {
   upendFixBscDayCnt: 2,
   prvtPstPlcyCd: 2,
   rcmdtnUseYn: 2,
-  upperMenuNo: 3,
-  upMenuSn: 3,
-  menuNm: 3,
-  menuOrdr: 3,
 };
 
-const BOARD_MAKER_SERVER_FIELD_ALIASES: Record<string, keyof FormValues> = {
-  upMenuSn: 'upperMenuNo',
-};
+/** 만든 게시판(결과 화면의 대상). communityBound 는 커뮤니티 귀속 여부다 — 입구가 커뮤니티 화면이라 메뉴 안내를 건너뛴다(결정 1). */
+interface CreatedBoard {
+  bbsId: string;
+  bbsTtl: string;
+  communityBound: boolean;
+  inUse: boolean;
+}
+
+/**
+ * [2026-10-26 WIZ-15] 생성 응답을 받지 못했을 때 같은 이름으로 방금 만든 게시판을 찾은 결과. 찾으면 그 게시판으로 이어 가자고
+ * 제안한다 — 다시 만들면 같은 게시판이 하나 더 생긴다.
+ */
+type Recovery =
+  | { status: 'searching' }
+  | { status: 'found'; board: BoardMasterSummary }
+  | { status: 'none' }
+  | { status: 'failed' }
+  | { status: 'unavailable' };
+
+/** 응답의 HTTP 상태. 응답이 없으면(연결 끊김·시간 초과) null 이다. */
+function responseStatus(error: unknown): number | null {
+  if (!error || typeof error !== 'object') return null;
+  const response = (error as { response?: { status?: unknown } }).response;
+  return typeof response?.status === 'number' ? response.status : null;
+}
+
+/** 쓰기 결과를 모르는가 — 응답이 없거나 서버 오류(5xx)면 서버에 반영됐을 수 있다(게시판 생성·사용 전환). 4xx 는 서버가 거부한 확정 결과다. */
+function writeOutcomeUnknown(error: unknown): boolean {
+  const status = responseStatus(error);
+  return status === null || status >= 500;
+}
+
+/** 목록 응답의 만든 시각(시간대 표기 없는 서버 현지 시각 = Asia/Seoul)을 epoch 밀리초로. 해석할 수 없으면 null. */
+function seoulEpoch(value: string | null | undefined): number | null {
+  const raw = value?.trim();
+  if (!raw) return null;
+  const iso = raw.replace(' ', 'T');
+  const time = Date.parse(/(?:Z|[+-]\d{2}:?\d{2})$/i.test(iso) ? iso : `${iso}+09:00`);
+  return Number.isNaN(time) ? null : time;
+}
+
+/** 만든 시각 표시('yyyy-MM-dd HH:mm:ss'). 서버 현지 시각 문자열을 그대로 자른다. */
+function displayCreatedAt(value: string | null | undefined): string {
+  const match = value?.trim().match(/^(\d{4}-\d{2}-\d{2})[T ](\d{2}:\d{2}:\d{2})/);
+  return match ? `${match[1]} ${match[2]}` : '알 수 없음';
+}
+
+/**
+ * 방금 만든 것으로 볼 게시판 — 이름·화면 유형이 같고, 사용 안 함이며, 만든 시각이 지금에서 RECOVERY_WINDOW_MS 안이다. 만든 시각을 해석할
+ * 수 없으면 고르지 않는다(추정으로 남의 게시판을 이어 가지 않는다).
+ */
+export function findJustCreatedBoard(
+  list: readonly BoardMasterSummary[],
+  draft: { bbsTtl: string; tmpltId: string; cmntySn?: number | null },
+  now: number = Date.now(),
+): BoardMasterSummary | null {
+  return list.find((board) => {
+    if (board.bbsTtl !== draft.bbsTtl || board.tmpltId !== draft.tmpltId || board.useYn !== 'N') return false;
+    // 귀속 커뮤니티도 같아야 한다 — 같은 이름·유형이라도 귀속이 다르면 이 마법사가 만든 게시판이 아니다.
+    if ((board.community?.cmntySn ?? null) !== (draft.cmntySn ?? null)) return false;
+    const createdAt = seoulEpoch(board.crtDt);
+    return createdAt !== null && Math.abs(now - createdAt) <= RECOVERY_WINDOW_MS;
+  }) ?? null;
+}
 
 export function BoardMakerWizard() {
   const router = useRouter();
+  const confirm = useConfirm();
+  const { toast } = useToast();
   // [2026-09-26 DIP B4 P1] 게시판을 만들 수 있다고 메뉴·권한 화면에 들어갈 수 있는 것은 아니다.
   //   다른 화면으로 가는 길은 라우트 게이트와 같은 판정으로만 보인다.
   const { user } = useAuth();
   const canOpenMenus = canOpenPage(user, '/admin/system/menus');
-  const canOpenBoardMasters = canOpenPage(user, '/admin/community/boards/master');
+  const canOpenBoardMasters = canOpenPage(user, BOARD_MASTER_LIST_ROUTE);
   // [2026-10-23 ADR-0040 §5.3] 결과 화면의 주 동작은 운영 화면(게시판 관리 조회 권한)이다. 마법사 진입 권한이 그것을 함축하지 않는다.
   const canOpenBoardOperations = canOpenPage(user, '/admin/community/boards/master/[id]');
   const canOpenAuthority = canOpenPage(user, '/admin/security/authority');
-  // 결과 화면 '남은 일' 의 갈래(표시 판정일 뿐 서버 인가는 그대로다). 메뉴 활성화와 그룹 표시는 메뉴 구조 저장 한 번이고 MENU_UPDATE·
-  //   AUTHRT_READ·AUTHRT_GRANT 가 필요하다(MenuService#saveMenuStructure). 사용 전환은 운영 화면 설정 탭의 BBS_MST_UPDATE 다.
-  const canFinishMenu = canOpenMenus && canPermission(user, 'MENU_UPDATE') && canPermission(user, 'AUTHRT_READ')
-    && canPermission(user, 'AUTHRT_GRANT');
-  const canSwitchBoardUse = canOpenBoardOperations && canPermission(user, 'BBS_MST_UPDATE');
-  // [2026-10-01] 마지막 제출은 게시판 생성(BBS_MST_CREATE)과 메뉴 등록(MENU_CREATE)을 함께 한다. 메뉴 등록은 건너뛸 수
-  //   있는 단계가 아니어서, 둘 중 하나라도 없으면 제출 버튼 대신 사유를 보인다 — 종전에는 네 단계를 다 채운 뒤 403 을 만났고,
-  //   메뉴 권한만 없으면 게시판만 만들어진 채 멈췄다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
+  // [2026-10-26 ADR-0043 결정 1] 마법사는 게시판만 만든다 — 필요한 권한은 게시판 만들기(BBS_MST_CREATE) 하나다. 메뉴 권한이 없는
+  //   게시판 운영 담당자도 게시판을 만든다. 표시 판정일 뿐이며 서버 인가는 그대로 집행된다(H3).
   const canCreateBoard = canPermission(user, 'BBS_MST_CREATE');
-  const canCreateMenu = canPermission(user, 'MENU_CREATE');
-  // [2026-10-23 ADR-0040 A0] 메뉴 등록을 다시 시도할 때는 비활성 메뉴까지 담긴 전체 메뉴(MENU_READ)를 먼저 읽는다. 이 권한이
-  //   없으면 게시판만 만들어진 뒤 다시 시도가 403 으로 멈추므로, 시작하기 전에 같은 사유로 막는다.
-  const canReadMenus = canPermission(user, 'MENU_READ');
-  const missingPermissionReason = !canCreateBoard
-    ? '게시판을 만들 권한이 없습니다.'
-    : !canCreateMenu
-      ? '메뉴를 등록할 권한이 없어 게시판을 만들 수 없습니다.'
-      : !canReadMenus
-        ? '메뉴 목록을 볼 권한이 없어 게시판을 만들 수 없습니다. 메뉴 등록을 다시 시도할 때 기존 메뉴를 먼저 확인해야 합니다.'
-        : null;
+  // 결과 화면의 갈래(표시 판정). 사용 전환은 기존 사용 상태 바꾸기 경로(BBS_MST_UPDATE)다(결정 2). 메뉴에 붙이기는 메뉴 관리의 새 메뉴
+  //   추가와 저장(MENU_CREATE·MENU_UPDATE)을 할 수 있을 때만 넘긴다 — 그룹 표시(AUTHRT_GRANT)는 메뉴 관리가 따로 판정한다.
+  const canSwitchBoardUse = canPermission(user, 'BBS_MST_UPDATE');
+  const canAttachMenu = canOpenMenus && canPermission(user, 'MENU_CREATE') && canPermission(user, 'MENU_UPDATE');
+  // [WIZ-15] 생성 결과를 모를 때 같은 이름의 게시판을 찾는 목록 조회(BBS_MST_READ). 없으면 찾지 않고 목록 확인을 안내한다.
+  const canReadBoardMasters = canPermission(user, 'BBS_MST_READ');
+  const missingPermissionReason = !canCreateBoard ? '게시판을 만들 권한이 없습니다.' : null;
   const [currentStep, setCurrentStep] = useState(1);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isSuccess, setIsSuccess] = useState(false);
-  const [status, setStatus] = useState('');
   const submittingRef = React.useRef(false);
-  const createdBoardRef = React.useRef<string | null>(null);
-  const [createdBoardId, setCreatedBoardId] = useState<string | null>(null);
+  const [createdBoard, setCreatedBoard] = useState<CreatedBoard | null>(null);
   // 감사 P1-1/삼킴 금지: 배포 실패 시 status 문자열만 바꿨는데 그 문자열은 isSubmitting 중에만 렌더돼
   // 제출이 끝나는 순간 사라졌다(= 실패가 화면에 전혀 남지 않음). 별도 상태로 오류를 계속 노출한다.
   const [submitError, setSubmitError] = useState<string | null>(null);
   const submitErrorRef = React.useRef<HTMLDivElement>(null);
+  const [recovery, setRecovery] = useState<Recovery | null>(null);
+  const [switchPending, setSwitchPending] = useState(false);
+  const switchingRef = React.useRef(false);
+  const [menuHandoffFailed, setMenuHandoffFailed] = useState(false);
   const queryClient = useQueryClient();
   const [purpose, setPurpose] = useState<string>('');
+  const [purposeNotice, setPurposeNotice] = useState('');
   // 사용자가 직접 바꾼 칸 — 용도를 바꿔도 덮지 않는다(§5.3).
   const touchedRef = React.useRef(new Set<PurposeField>());
 
@@ -290,12 +380,9 @@ export function BoardMakerWizard() {
       bbsTypeCd: DEFAULT_BOARD_TYPE.code,
       bbsAtrbCd: 'BBSA01',
       tmpltId: DEFAULT_BOARD_TYPE.templateId,
-      // [2026-10-23 ADR-0040 결정 1·§5.3] 사용 안 함으로 만든다 — 공개 준비를 마친 뒤 운영 화면에서 사용으로 바꾼다.
+      // [2026-10-23 ADR-0040 결정 1·§5.3] 사용 안 함으로 만든다 — 공개 준비를 마친 뒤 사용으로 바꾼다.
       useYn: 'N',
       cmntySn: '',
-      menuNm: '',
-      upperMenuNo: '2000000',
-      menuOrdr: 1,
     }
   }, {
     revealField: async (fieldName) => {
@@ -304,7 +391,10 @@ export function BoardMakerWizard() {
     },
   });
   const { register, handleSubmit, formState: { errors, isDirty }, watch, setValue } = form;
-  useUnsavedChanges(() => ({ dirty: !isSuccess && (isDirty || createdBoardRef.current !== null), pending: submittingRef.current }));
+  useUnsavedChanges(() => ({
+    dirty: createdBoard === null && isDirty,
+    pending: submittingRef.current || switchingRef.current,
+  }));
 
   /*
     [2026-09-08 PD-CMTY-001] 귀속 후보 목록. 관리자 화면이므로 관리자용 목록을 쓴다
@@ -330,11 +420,18 @@ export function BoardMakerWizard() {
     setValue('bbsTypeCd', type.code, { shouldDirty: true });
   };
   const touch = (field: PurposeField) => { touchedRef.current.add(field); };
-  /** 용도를 고르면 아직 직접 바꾸지 않은 칸만 채운다. 고르지 않음이면 아무것도 바꾸지 않는다. */
+  /**
+   * 용도를 고르면 아직 직접 바꾸지 않은 칸만 채운다. 고르지 않음이면 아무것도 바꾸지 않는다.
+   * [2026-10-26 WIZ-10] 무엇을 채웠고 무엇을 남겼는지 바로 알린다 — 종전에는 조용히 값만 바꿔, 2단계를 지나치면 모르는 사이에
+   *   예약·고정·추천 설정이 정해졌다.
+   */
   const applyPurpose = (id: string) => {
     setPurpose(id);
     const preset = BOARD_PURPOSES.find((candidate) => candidate.id === id);
-    if (!preset) return;
+    if (!preset) {
+      setPurposeNotice('용도를 고르지 않았습니다. 지금 칸의 값은 그대로입니다.');
+      return;
+    }
     const touched = touchedRef.current;
     if (!touched.has('tmpltId')) setTemplate(preset.tmpltId);
     if (!touched.has('ansYn')) setValue('ansYn', preset.ansYn, { shouldDirty: true });
@@ -347,9 +444,29 @@ export function BoardMakerWizard() {
     if (!touched.has('upendFixBscDayCnt')) setValue('upendFixBscDayCnt', preset.upendFixBscDayCnt, { shouldDirty: true });
     if (!touched.has('prvtPstPlcyCd')) setValue('prvtPstPlcyCd', preset.prvtPstPlcyCd, { shouldDirty: true });
     if (!touched.has('rcmdtnUseYn')) setValue('rcmdtnUseYn', preset.rcmdtnUseYn, { shouldDirty: true });
+    const kept = PURPOSE_FIELD_LABELS.filter(([field]) => touched.has(field)).map(([, label]) => label);
+    setPurposeNotice(kept.length > 0
+      ? `직접 바꾼 항목(${kept.join(', ')})은 그대로 두고 나머지를 ${preset.label} 추천값으로 채웠습니다.`
+      : `화면 유형과 기능 칸을 ${preset.label} 추천값으로 채웠습니다.`);
   };
-  const upperMenuNo = watch('upperMenuNo');
   const fileSizeBytes = Number(watch('atchPsbltyFileSz'));
+  const attachmentSummary = watch('fileAtchPsbltyYn') === 'N'
+    ? '허용 안 함'
+    : `허용(${Number(watch('atchPsbltyFileQty')) === 0 ? '개수 상한 없음' : `${watch('atchPsbltyFileQty')}개까지`} · 파일당 ${fileSizeBytes > 0 ? `${fileSizeBytes / BYTES_PER_MB}MB` : `전역 상한 ${SERVER_MAX_FILE_SIZE_MB}MB`})`;
+  // [2026-10-26 WIZ-09] 미리보기는 고른 기능을 그대로 받는다 — 끈 기능의 표지를 그리지 않는다.
+  const previewFeatures: BoardPreviewFeatures = {
+    comments: watch('ansYn') !== 'N',
+    recommendations: watch('rcmdtnUseYn') !== 'N',
+    satisfaction: watch('stsfdgYn') !== 'N',
+    attachments: {
+      allowed: watch('fileAtchPsbltyYn') !== 'N',
+      maxFiles: Number(watch('atchPsbltyFileQty')) || 0,
+      maxFileBytes: fileSizeBytes > 0 ? fileSizeBytes : 0,
+    },
+    privatePostPolicy: watch('prvtPstPlcyCd') ?? 'NONE',
+    reservation: watch('rsvtPstgPsbltyYn') === 'Y',
+    pinning: watch('upendFixPsbltyYn') === 'Y',
+  };
 
   React.useEffect(() => {
     if (!submitError || !submitErrorRef.current) return;
@@ -357,20 +474,12 @@ export function BoardMakerWizard() {
     submitErrorRef.current.focus({ preventScroll: true });
   }, [submitError]);
 
-  const nextStep = () => {
-    if (currentStep === 1 && !watch('menuNm')) {
-      setValue('menuNm', bbsTtl, { shouldDirty: true });
-    }
-    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
-  };
   const handleNextStep = async () => {
     const fields: Array<keyof FormValues> = currentStep === 1
       ? ['bbsTtl', 'bbsExpln']
       : currentStep === 2
         ? ['tmpltId', 'atchPsbltyFileQty', 'atchPsbltyFileSz', 'upendFixUplmtNocs', 'upendFixBscDayCnt']
-        : currentStep === 3
-          ? ['upperMenuNo', 'menuNm', 'menuOrdr']
-          : [];
+        : [];
     const isValid = fields.length === 0 || await form.trigger(fields);
     if (!isValid) {
       const firstInvalid = fields.find((field) => form.getFieldState(field).invalid);
@@ -378,9 +487,38 @@ export function BoardMakerWizard() {
       return;
     }
     setSubmitError(null);
-    nextStep();
+    setCurrentStep((prev) => Math.min(prev + 1, STEPS.length));
   };
   const prevStep = () => setCurrentStep((prev) => Math.max(prev - 1, 1));
+  // [2026-10-26 ADR-0043] 만들기 취소 — 목록으로 간다. 라우터 이동은 미저장 보호(useUnsavedChanges)를 거친다.
+  const cancelWizard = () => {
+    if (canOpenBoardMasters) router.push(BOARD_MASTER_LIST_ROUTE);
+    else router.back();
+  };
+
+  /** [WIZ-15] 생성 결과를 모를 때 같은 이름으로 방금 만든 게시판을 목록에서 찾는다. 목록을 볼 수 없으면 찾지 않는다. */
+  const searchJustCreated = async (draft: { bbsTtl: string; tmpltId: string; cmntySn: number | null }) => {
+    if (!canReadBoardMasters) {
+      setRecovery({ status: 'unavailable' });
+      return;
+    }
+    setRecovery({ status: 'searching' });
+    try {
+      const page = await boardAdminService.getBoardMasterList({ searchKeyword: draft.bbsTtl, searchUseYn: 'N', page: 1, size: 20 }, QUIET);
+      const board = findJustCreatedBoard(page.list, draft);
+      setRecovery(board ? { status: 'found', board } : { status: 'none' });
+    } catch {
+      setRecovery({ status: 'failed' });
+    }
+  };
+
+  const continueWithFound = (board: BoardMasterSummary) => {
+    void queryClient.invalidateQueries({ queryKey: boardMasterKeys.lists() });
+    setSubmitError(null);
+    setRecovery(null);
+    // 귀속은 지금 폼 값이 아니라 찾은 게시판의 값이다 — 찾은 뒤 이전 단계에서 귀속을 바꿔도 결과 화면이 틀리지 않는다.
+    setCreatedBoard({ bbsId: board.bbsId, bbsTtl: board.bbsTtl, communityBound: board.community != null, inUse: board.useYn === 'Y' });
+  };
 
   const onSubmit = async (data: FormValues) => {
     if (submittingRef.current) return;
@@ -388,12 +526,10 @@ export function BoardMakerWizard() {
     submittingRef.current = true;
     setIsSubmitting(true);
     setSubmitError(null);
-    setStatus(createdBoardRef.current ? '생성된 게시판의 메뉴를 확인하는 중...' : '게시판을 생성하는 중...');
+    setRecovery(null);
 
     try {
-      // 1. Create Board Master
-      const retryingMenu = createdBoardRef.current !== null;
-      const bbsId = createdBoardRef.current ?? await boardAdminService.createBoardMaster({
+      const bbsId = await boardAdminService.createBoardMaster({
         bbsTtl: data.bbsTtl,
         bbsExpln: data.bbsExpln,
         bbsTypeCd: data.bbsTypeCd,
@@ -422,57 +558,36 @@ export function BoardMakerWizard() {
         /* reusable-base:community:start */
         ...(data.cmntySn ? { cmntySn: Number(data.cmntySn) } : {}),
         /* reusable-base:community:end */
-        // [2026-10-23 ADR-0040 결정 1·§5.3] 사용 안 함으로 만든다 — 메뉴·그룹 표시를 맞춘 뒤 운영 화면에서 사용으로 바꾼다.
+        // [2026-10-23 ADR-0040 결정 1·§5.3] 사용 안 함으로 만든다 — 글을 준비한 뒤 결과 화면이나 운영 화면에서 사용으로 바꾼다.
         useYn: 'N'
-      });
+      }, QUIET);
 
-      if (!bbsId) throw new Error("Failed to get bbsId");
-      createdBoardRef.current = bbsId;
-      setCreatedBoardId(bbsId);
-      const route = `/admin/community/boards/select-board-list?bbsId=${bbsId}`;
-      // A response can be lost after the menu was committed. Check the full administrative
-      // list (including inactive menus) before retrying; a failed read must not become an insert.
-      const existingMenus = retryingMenu ? await menuAdminService.getAllMenus() : [];
-      const existingMenu = existingMenus.some((menu) => menu.modernRoute === route);
-      setStatus('비활성 메뉴를 등록하는 중...');
-
-      if (!existingMenu) await menuAdminService.createMenu({
-        menuNm: data.menuNm || data.bbsTtl,
-        upMenuSn: Number(data.upperMenuNo),
-        menuOrdr: data.menuOrdr,
-        modernRoute: route,
-        menuExpln: `Auto-generated menu for board ${data.bbsTtl}`,
-        useYn: 'N'
-      });
-
-      setStatus('배포 완료. 목록을 갱신하는 중...');
-
-      queryClient.invalidateQueries({ queryKey: boardMasterKeys.lists() });
-      queryClient.invalidateQueries({ queryKey: ["menus"] });
-
-      setIsSuccess(true);
+      // 식별자 없는 성공 응답은 결과를 모르는 것과 같다 — 아래 결과 모름 경로로 같은 이름의 게시판을 찾는다.
+      if (!bbsId) throw new Error('board id missing');
+      void queryClient.invalidateQueries({ queryKey: boardMasterKeys.lists() });
+      // [2026-10-26 ADR-0043 결정 1] 메뉴는 만들지 않는다 — 결과 화면이 '메뉴에 붙이기'로 메뉴 관리에 넘긴다.
+      setCreatedBoard({ bbsId, bbsTtl: data.bbsTtl, communityBound: Boolean(data.cmntySn), inUse: false });
     } catch (error: unknown) {
-      setStatus('');
-      if (createdBoardRef.current) {
-        setCurrentStep(4);
-        setSubmitError('게시판은 생성되었습니다. 메뉴 등록 결과를 확인하지 못했습니다. 메뉴 등록 다시 시도는 기존 메뉴를 먼저 조회하며 게시판을 새로 만들지 않습니다.');
-      }
       const serverErrors = extractFieldErrors(error);
       if (serverErrors && Object.keys(serverErrors).length > 0) {
         let firstNavigableField: string | null = null;
         for (const [serverField, message] of Object.entries(serverErrors)) {
-          const alias = BOARD_MAKER_SERVER_FIELD_ALIASES[serverField];
-          const fieldName: string = alias ?? (
-            Object.prototype.hasOwnProperty.call(BOARD_MAKER_FIELD_STEPS, serverField)
-              ? serverField as keyof FormValues
-              : 'root.server'
-          );
+          const fieldName = Object.prototype.hasOwnProperty.call(BOARD_MAKER_FIELD_STEPS, serverField) ? serverField : 'root.server';
           form.setError(fieldName as never, { type: 'server', message });
           if (!firstNavigableField && fieldName !== 'root.server') firstNavigableField = fieldName;
         }
         if (firstNavigableField) void form.focusError(firstNavigableField, 'server');
       } else if (!form.applyServerErrors(error)) {
-        if (!createdBoardRef.current) setSubmitError('게시판 생성 결과를 확인하지 못했습니다. 게시판 목록에서 생성 여부를 확인한 뒤 다시 시도해 주세요. 입력값은 유지됩니다.');
+        // [2026-10-26 WIZ-03·15] 서버 사유를 화면 문구로도 보인다. 결과를 모르면(응답 없음·5xx) 같은 이름으로 방금 만든 게시판을 찾는다.
+        const reason = responseStatus(error) === null ? undefined : userFacingErrorMessage(error);
+        const detail = reason ? ` ${reason}` : '';
+        if (writeOutcomeUnknown(error)) {
+          setSubmitError(`게시판 생성 결과를 확인하지 못했습니다.${detail} 입력값은 유지됩니다.`);
+          // 찾기가 끝날 때까지 제출 잠금을 유지한다 — '확인하는 중'에 다시 만들면 같은 게시판이 하나 더 생긴다.
+          await searchJustCreated({ bbsTtl: data.bbsTtl, tmpltId: data.tmpltId, cmntySn: data.cmntySn ? Number(data.cmntySn) : null });
+        } else {
+          setSubmitError(`게시판을 만들지 못했습니다.${detail} 입력값은 유지됩니다.`);
+        }
       }
     } finally {
       submittingRef.current = false;
@@ -480,97 +595,271 @@ export function BoardMakerWizard() {
     }
   };
 
-  if (isSuccess) {
+  /**
+   * [2026-10-26 ADR-0043 결정 2] 지금 사용으로 바꾸기. 기존 사용 상태 바꾸기 경로(BBS_MST_UPDATE, 변경 이력·버전)를 쓴다 — 마법사가
+   * 사용 중으로 만들지 않는다(ADR-0040 결정 1). 이용자에게 여는 동작이라 확인을 거친다.
+   */
+  const switchBoardToUse = async () => {
+    if (!createdBoard || switchingRef.current) return;
+    const { bbsId, bbsTtl: name, communityBound } = createdBoard;
+    const confirmed = await confirm({
+      title: '게시판 사용으로 바꾸기',
+      message: communityBound
+        ? `'${name}' 게시판을 사용으로 바꿉니다. 귀속 커뮤니티의 승인 회원과 관리자가 이 게시판을 열고 글을 쓸 수 있게 됩니다.`
+        : `'${name}' 게시판을 사용으로 바꿉니다. 게시글 권한이 있는 로그인 사용자는 누구나 주소·통합 검색·게시판 선택지로 이 게시판을 열고 글을 쓸 수 있게 됩니다.`,
+      confirmText: '사용으로 바꾸기',
+      details: (
+        <ul className="list-disc space-y-1 pl-5 text-[length:var(--font-size-body)]">
+          <li>{communityBound
+            ? '이 게시판의 입구는 커뮤니티 화면입니다. 메뉴를 따로 붙이지 않습니다.'
+            : '메뉴는 따로 붙입니다. 메뉴는 길 안내일 뿐이라 메뉴가 없어도 위 경로로 열립니다.'}</li>
+          <li>되돌리려면 운영 화면 설정 탭이나 게시판 목록에서 사용 안 함으로 바꿉니다.</li>
+        </ul>
+      ),
+      detailsLabel: '사용으로 바꾸면 달라지는 것',
+    });
+    if (!confirmed) return;
+    switchingRef.current = true;
+    setSwitchPending(true);
+    try {
+      await boardAdminService.batchUpdateBoardMasterStatus([bbsId], 'Y');
+      setCreatedBoard((current) => (current && current.bbsId === bbsId ? { ...current, inUse: true } : current));
+      toast(`'${name}' 게시판을 사용으로 바꿨습니다.`, 'success');
+      // 사용 여부는 목록만의 값이 아니다 — 운영 화면 상세·이용 화면 메타·선택지·변경 이력도 다시 읽는다.
+      void invalidateBoardCaches(queryClient);
+    } catch (error: unknown) {
+      // 화면이 실패의 주인이다 — 전역 실패 알림을 이 문구로 바꾸고 서버 사유는 설명 줄에 싣는다(DEC-OPS-184).
+      //   응답이 없거나 5xx 면 서버에서 바뀌었을 수 있다 — '그대로'라고 단정하지 않고 상태를 다시 읽는다(WIZ-15 와 같은 판정).
+      if (writeOutcomeUnknown(error)) {
+        toast('사용 전환 결과를 확인하지 못했습니다. 운영 화면에서 상태를 확인하거나 다시 시도하세요.', 'error');
+        void invalidateBoardCaches(queryClient);
+        // 결과 화면의 상태 줄이 틀리지 않게 서버 값을 다시 읽는다. 읽지 못하면 종전 표시를 둔다(위 알림이 확인하라고 말한다).
+        try {
+          const detail = await boardAdminService.getBoardMaster(bbsId, QUIET);
+          setCreatedBoard((current) => (current && current.bbsId === bbsId ? { ...current, inUse: detail.useYn === 'Y' } : current));
+        } catch { /* 재조회 실패는 위 알림으로 충분하다 */ }
+      } else {
+        toast('게시판을 사용으로 바꾸지 못했습니다. 게시판은 사용 안 함 그대로입니다.', 'error');
+      }
+    } finally {
+      switchingRef.current = false;
+      setSwitchPending(false);
+    }
+  };
+
+  /**
+   * [2026-10-26 ADR-0043 결정 1] 메뉴에 붙이기 — 게시판 이용 화면 주소와 이름, 돌아갈 곳을 메뉴 관리에 넘긴다. 메뉴 관리가 새 메뉴 위치
+   * 고르기를 열고, 저장은 메뉴 관리의 구조 저장이 권한을 집행한다. 넘기지 못하면 이동하지 않고 주소를 직접 등록하도록 안내한다.
+   */
+  const attachMenu = () => {
+    if (!createdBoard) return;
+    const handedOff = handOffScreen({
+      route: boardMenuRoute(createdBoard.bbsId),
+      label: createdBoard.bbsTtl,
+      returnTo: canOpenBoardOperations
+        ? { route: boardOperationsHref(createdBoard.bbsId, 'access'), label: '게시판 공개 준비로 돌아가기' }
+        : null,
+    });
+    if (!handedOff) {
+      setMenuHandoffFailed(true);
+      return;
+    }
+    router.push('/admin/system/menus');
+  };
+
+  const copyBoardAddress = async (route: string) => {
+    try {
+      await navigator.clipboard.writeText(route);
+      toast('게시판 주소를 복사했습니다.', 'success');
+    } catch {
+      toast('주소를 복사하지 못했습니다. 직접 선택해 복사하세요.', 'error');
+    }
+  };
+
+  /** 다른 게시판 만들기 — 새로 읽지 않고 처음 단계로 되돌린다. */
+  const startOver = () => {
+    form.reset();
+    touchedRef.current = new Set();
+    setPurpose('');
+    setPurposeNotice('');
+    setSubmitError(null);
+    setRecovery(null);
+    setMenuHandoffFailed(false);
+    setCurrentStep(1);
+    setCreatedBoard(null);
+  };
+
+  const breadcrumb = (
+    <DynamicBreadcrumb
+      customItems={[
+        { name: '관리 센터' },
+        { name: '콘텐츠 운영' },
+        { name: '게시판 관리', href: canOpenBoardMasters ? BOARD_MASTER_LIST_ROUTE : undefined },
+        { name: '게시판 만들기' },
+      ]}
+      currentLabel="게시판 만들기"
+    />
+  );
+
+  if (createdBoard) {
+    const { bbsId, bbsTtl: createdTitle, communityBound, inUse } = createdBoard;
+    const menuRoute = boardMenuRoute(bbsId);
+    const addressBlock = (
+      <div className="flex flex-wrap items-center gap-2">
+        <code className="break-all rounded bg-muted px-2 py-1 font-mono text-xs">{menuRoute}</code>
+        <Button type="button" variant="outline" size="sm" className="gap-1.5" onClick={() => void copyBoardAddress(menuRoute)}>
+          <Copy className="size-4" aria-hidden="true" />
+          주소 복사
+        </Button>
+      </div>
+    );
     return (
-      <Card className="mx-auto mt-6 max-w-3xl overflow-hidden rounded-md border border-border bg-card py-0 shadow-none">
-        <CardContent className="flex flex-col items-center gap-4 p-6 text-center">
-          <div className="flex size-10 items-center justify-center rounded-md bg-success text-success-foreground">
-            <Check size={20} strokeWidth={3} aria-hidden="true" />
-          </div>
-          <div className="space-y-2">
-            <h1 className="text-xl font-bold text-foreground">게시판 만들기 완료</h1>
-            <p className="mx-auto max-w-md text-[length:var(--font-size-body)] leading-relaxed text-muted-foreground">
-              게시판을 사용 안 함으로 만들었고 <span className="text-primary">&apos;{watch('menuNm')}&apos;</span> 메뉴를 비활성으로 등록했습니다.
-            </p>
-          </div>
-          <div className="w-full max-w-md rounded-md border border-border bg-muted/30 p-3 text-left text-[length:var(--font-size-body)]">
-            <p className="font-semibold text-foreground">남은 일</p>
-            <ol className="mt-1 list-decimal space-y-1 pl-5 text-muted-foreground">
-              {/* 공개 준비 점검은 관리자 그룹(ROLE_ADMIN·ROLE_SYSTEM)이 아닌 그룹에 보이는 활성 메뉴를 요구한다(board-menu-links). */}
-              <li>
-                {canFinishMenu
-                  ? '메뉴 관리에서 메뉴를 활성화하고, 관리자 그룹이 아닌 이용자 그룹에 보이도록 함께 저장하세요.'
-                  : '메뉴 관리 권한(메뉴 수정, 권한 그룹 조회·배정)이 있는 관리자에게 메뉴 활성화와 이용자 그룹 표시를 요청하세요.'}
-              </li>
-              {/* 공개 준비 점검은 게시판 사용 여부도 보므로, 사용으로 바꾼 뒤에야 통과한다. */}
-              <li>
-                {canSwitchBoardUse
-                  ? '열 준비가 되면 운영 화면 설정 탭에서 게시판을 사용으로 바꾸고, 메뉴·접근 탭의 공개 준비 점검이 통과하는지 확인하세요.'
-                  : '열 준비가 되면 게시판 관리 수정 권한이 있는 관리자에게 게시판을 사용으로 바꿔 달라고 요청하세요. 공개 준비 점검은 사용으로 바꾼 뒤에 통과합니다.'}
-              </li>
-            </ol>
-          </div>
-          <div className="flex w-full max-w-sm flex-col gap-2">
-            {canOpenBoardOperations && createdBoardId && (
-              <Button onClick={() => router.push(boardOperationsHref(createdBoardId, 'access'))}>
-                이 게시판 공개 준비 계속하기
+      <div className="mx-auto mt-6 max-w-3xl space-y-4 text-left">
+        {breadcrumb}
+        <Card className="overflow-hidden rounded-md border border-border bg-card py-0 shadow-none">
+          <CardContent className="space-y-5 p-6">
+            <div className="flex items-start gap-3">
+              <div className="flex size-10 shrink-0 items-center justify-center rounded-md bg-success text-success-foreground">
+                <Check size={20} strokeWidth={3} aria-hidden="true" />
+              </div>
+              <div className="space-y-1">
+                <h1 className="text-xl font-bold text-foreground">게시판 만들기 완료</h1>
+                <p className="text-[length:var(--font-size-body)] text-muted-foreground">
+                  게시판을 사용 안 함으로 만들었습니다. 메뉴는 만들지 않았습니다.
+                </p>
+              </div>
+            </div>
+
+            <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-md border border-border p-4 text-[length:var(--font-size-body)] sm:grid-cols-[8rem_1fr]">
+              <dt className="text-muted-foreground">게시판 이름</dt>
+              <dd className="break-all text-foreground">{createdTitle}</dd>
+              <dt className="text-muted-foreground">게시판 ID</dt>
+              <dd className="break-all font-mono text-foreground">{bbsId}</dd>
+              <dt className="text-muted-foreground">상태</dt>
+              <dd className="text-foreground">
+                <span role="status">
+                  {inUse
+                    ? communityBound
+                      ? '사용 중 — 귀속 커뮤니티의 승인 회원에게 열려 있습니다'
+                      : '사용 중 — 게시글 권한이 있는 로그인 사용자에게 열려 있습니다'
+                    : '사용 안 함 — 이용자에게 닫혀 있습니다'}
+                </span>
+              </dd>
+            </dl>
+
+            {/* [2026-10-26 ADR-0043 결정 2, WIZ-04] 남은 일은 글 준비 → 사용 전환 → (선택) 메뉴 순서다 — 열리지 않는 게시판을 가리키는
+                메뉴가 먼저 보이지 않게 한다. */}
+            <section aria-labelledby="board-maker-next-steps" className="space-y-3">
+              <h2 id="board-maker-next-steps" className="text-[length:var(--font-size-body)] font-semibold text-foreground">남은 일</h2>
+              <ol className="list-decimal space-y-3 pl-5 text-[length:var(--font-size-body)] text-muted-foreground">
+                <li>
+                  <p className="font-medium text-foreground">글 준비</p>
+                  <p>
+                    이용자에게 열기 전에 첫 글이나 안내 글을 올려 둡니다. 사용 안 함인 동안에는 글 쓰기 권한과 게시물 조회 대행 권한(BOARD_READ_ALL)이
+                    함께 있는 관리자만 글을 쓸 수 있습니다.
+                  </p>
+                </li>
+                <li>
+                  <p className="font-medium text-foreground">사용 전환</p>
+                  {inUse ? (
+                    <p>사용으로 바꿨습니다.</p>
+                  ) : canSwitchBoardUse ? (
+                    <div className="space-y-2">
+                      <p>준비가 되면 사용으로 바꿉니다. 나중에 운영 화면 설정 탭에서 바꿔도 됩니다.</p>
+                      <Button type="button" onClick={() => void switchBoardToUse()} disabled={switchPending} aria-busy={switchPending || undefined}>
+                        {switchPending ? '사용으로 바꾸는 중…' : '지금 사용으로 바꾸기'}
+                      </Button>
+                    </div>
+                  ) : (
+                    <p>게시판을 사용으로 바꾸려면 게시판 관리 수정 권한(BBS_MST_UPDATE)이 있는 관리자에게 요청하세요.</p>
+                  )}
+                </li>
+                <li>
+                  <p className="font-medium text-foreground">(선택) 메뉴에 붙이기</p>
+                  {communityBound ? (
+                    <p>이 게시판의 입구는 커뮤니티 화면입니다. 승인 회원만 열 수 있어 메뉴를 따로 붙이지 않습니다.</p>
+                  ) : canAttachMenu ? (
+                    <div className="space-y-2">
+                      <p>
+                        메뉴는 길 안내일 뿐이라 없어도 사용 중인 게시판은 주소·통합 검색으로 열립니다. 메뉴 관리에서 위치를 고르고, 이용자 그룹에
+                        보이도록 함께 저장합니다(그룹 표시는 권한 배정 권한이 필요합니다).
+                      </p>
+                      <Button type="button" variant="outline" onClick={attachMenu}>메뉴에 붙이기</Button>
+                      {menuHandoffFailed && (
+                        <div role="alert" className="space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-destructive-emphasis">
+                          <p>메뉴 관리에 게시판을 넘기지 못했습니다. 브라우저 저장소를 쓸 수 없는 상태입니다. 메뉴 관리에서 새 메뉴를 추가하고 아래 주소를 직접 등록하세요.</p>
+                          {addressBlock}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <div className="space-y-2">
+                      <p>메뉴 연결은 메뉴 관리 권한이 있는 관리자에게 요청하세요. 요청할 때 아래 게시판 주소를 함께 전하세요.</p>
+                      {addressBlock}
+                    </div>
+                  )}
+                </li>
+              </ol>
+            </section>
+
+            <div className="flex flex-wrap gap-2">
+              {canOpenBoardOperations && (
+                <Button onClick={() => router.push(boardOperationsHref(bbsId, 'access'))}>
+                  운영 화면에서 공개 준비 계속하기
+                </Button>
+              )}
+              {canOpenBoardMasters && (
+                <Button variant="outline" onClick={() => router.push(BOARD_MASTER_LIST_ROUTE)}>
+                  게시판 목록 보기
+                </Button>
+              )}
+              <Button variant="ghost" onClick={startOver} className="text-muted-foreground hover:text-primary">
+                다른 게시판 만들기
               </Button>
-            )}
-            {canOpenBoardMasters && (
-              <Button
-                variant="outline"
-                onClick={() => router.push('/admin/community/boards/master')}
-              >
-                게시판 목록 보기
-              </Button>
-            )}
-            <Button
-              variant="ghost"
-              onClick={() => window.location.reload()}
-              className="text-muted-foreground hover:text-primary"
-            >
-              다른 게시판 추가하기
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
     <div className="mx-auto max-w-5xl space-y-4 pb-8 text-left">
+      {breadcrumb}
       <h1 className="sr-only">게시판 만들기</h1>
-      {/* Stepper Header */}
-      <div className="flex justify-between items-center px-4 relative">
-        <div className="absolute top-1/2 left-0 w-full h-0.5 bg-muted -translate-y-1/2 z-0" />
-        {STEPS.map((step) => {
-          const Icon = step.icon;
-          const isActive = currentStep === step.id;
-          const isCompleted = currentStep > step.id;
+      {/* 단계 표시 — 지금 단계는 aria-current="step" 으로 알린다(시각 표시만으로 전하지 않는다). */}
+      <div className="relative px-4">
+        <div className="absolute left-0 top-4 z-0 h-0.5 w-full bg-muted" aria-hidden="true" />
+        <ol aria-label="게시판 만들기 단계" className="relative z-10 flex items-start justify-between">
+          {STEPS.map((step) => {
+            const Icon = step.icon;
+            const isActive = currentStep === step.id;
+            const isCompleted = currentStep > step.id;
 
-          return (
-            <div key={step.id} className="relative z-10 flex flex-col items-center gap-1.5">
-              <div
-                className={cn(
-                  "flex size-8 items-center justify-center rounded-md border transition-colors",
-                  isActive ? "bg-primary border-primary text-primary-foreground" :
-                    isCompleted ? "bg-success border-success text-success-foreground" :
-                      "bg-card border-border text-muted-foreground"
-                )}
-              >
-                {isCompleted ? <Check className="size-4" aria-hidden="true" /> : <Icon className="size-4" aria-hidden="true" />}
-              </div>
-              <div className="text-center">
-                <p className={cn("text-xs", isActive ? "text-primary" : "text-muted-foreground")}>
-                  STEP 0{step.id}
-                </p>
-                <p className={cn("whitespace-nowrap text-[length:var(--font-size-body)] font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>
-                  {step.title}
-                </p>
-              </div>
-            </div>
-          );
-        })}
+            return (
+              <li key={step.id} aria-current={isActive ? 'step' : undefined} className="flex flex-col items-center gap-1.5">
+                <div
+                  className={cn(
+                    "flex size-8 items-center justify-center rounded-md border transition-colors",
+                    isActive ? "bg-primary border-primary text-primary-foreground" :
+                      isCompleted ? "bg-success border-success text-success-foreground" :
+                        "bg-card border-border text-muted-foreground"
+                  )}
+                >
+                  {isCompleted ? <Check className="size-4" aria-hidden="true" /> : <Icon className="size-4" aria-hidden="true" />}
+                </div>
+                <div className="text-center">
+                  <p className={cn("text-xs", isActive ? "text-primary" : "text-muted-foreground")}>
+                    {step.id}단계{isCompleted && <span className="sr-only">(마침)</span>}
+                  </p>
+                  <p className={cn("whitespace-nowrap text-[length:var(--font-size-body)] font-medium", isActive ? "text-foreground" : "text-muted-foreground")}>
+                    {step.title}
+                  </p>
+                </div>
+              </li>
+            );
+          })}
+        </ol>
       </div>
 
       {/* Main Content Card */}
@@ -587,13 +876,40 @@ export function BoardMakerWizard() {
             className="mx-4 mt-4"
           />
           {submitError ? (
-            <div
-              ref={submitErrorRef}
-              role="alert"
-              tabIndex={-1}
-              className="mx-4 mt-4 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-[length:var(--font-size-body)] font-medium text-destructive-emphasis"
-            >
-              {submitError}
+            <div className="mx-4 mt-4 space-y-2 rounded-md border border-destructive/40 bg-destructive/10 p-3 text-[length:var(--font-size-body)]">
+              <div
+                ref={submitErrorRef}
+                role="alert"
+                tabIndex={-1}
+                className="font-medium text-destructive-emphasis"
+              >
+                {submitError}
+              </div>
+              {recovery && (
+                <div role="status" className="space-y-2 text-foreground">
+                  {recovery.status === 'searching' && <p>같은 이름으로 방금 만든 게시판이 있는지 게시판 목록에서 확인하는 중…</p>}
+                  {recovery.status === 'found' && (
+                    <>
+                      <p>
+                        같은 이름으로 방금 만든 게시판이 있습니다 — {recovery.board.bbsTtl}(ID {recovery.board.bbsId}, 만든 시각 {displayCreatedAt(recovery.board.crtDt)}).
+                        이 게시판이 방금 만든 것이면 이어서 진행하세요. 다시 만들면 같은 이름의 게시판이 하나 더 생깁니다.
+                      </p>
+                      <Button type="button" size="sm" onClick={() => continueWithFound(recovery.board)}>
+                        이 게시판으로 계속하기
+                      </Button>
+                    </>
+                  )}
+                  {recovery.status === 'none' && (
+                    <p>같은 이름으로 방금 만든 게시판을 찾지 못했습니다. 게시판 목록에서 생성 여부를 확인한 뒤 다시 시도해 주세요.</p>
+                  )}
+                  {recovery.status === 'failed' && (
+                    <p>게시판 목록을 불러오지 못해 생성 여부를 확인하지 못했습니다. 게시판 목록에서 생성 여부를 확인한 뒤 다시 시도해 주세요.</p>
+                  )}
+                  {recovery.status === 'unavailable' && (
+                    <p>게시판 목록을 볼 권한이 없어 생성 여부를 확인할 수 없습니다. 게시판 관리 조회 권한이 있는 관리자에게 생성 여부를 확인한 뒤 다시 시도해 주세요.</p>
+                  )}
+                </div>
+              )}
             </div>
           ) : null}
           <CardHeader className="relative border-b border-border bg-muted p-4 text-foreground">
@@ -614,14 +930,18 @@ export function BoardMakerWizard() {
                   <fieldset className="space-y-2">
                     <legend className="text-[length:var(--font-size-body)] font-medium text-foreground">용도</legend>
                     <p id="purpose-help" className="text-xs text-muted-foreground">
-                      용도를 고르면 화면 유형과 댓글·만족도·첨부 설정 가운데 아직 직접 바꾸지 않은 칸만 채웁니다. 다음 단계에서 바꿀 수 있습니다.
+                      용도를 고르면 화면 유형과 기능 칸(댓글·만족도·추천·첨부·예약 게시·상단 고정·비밀글) 가운데 아직 직접 바꾸지 않은 칸만 채웁니다.
+                      다음 단계에서 바꿀 수 있습니다.
                     </p>
-                    <div className="flex flex-wrap gap-2" role="radiogroup" aria-describedby="purpose-help">
-                      {[{ id: '', label: '고르지 않음' }, ...BOARD_PURPOSES].map((option) => (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2" role="radiogroup" aria-describedby="purpose-help">
+                      {[
+                        { id: '', label: '고르지 않음', description: '지금 칸의 값을 그대로 둡니다.' },
+                        ...BOARD_PURPOSES.map((preset) => ({ id: preset.id, label: preset.label, description: describePurpose(preset) })),
+                      ].map((option) => (
                         <label
                           key={option.id || 'none'}
                           className={cn(
-                            "flex cursor-pointer items-center gap-2 rounded-md border px-3 py-2 text-[length:var(--font-size-body)]",
+                            "flex cursor-pointer items-start gap-2 rounded-md border px-3 py-2 text-[length:var(--font-size-body)]",
                             purpose === option.id ? "border-primary bg-primary/5" : "border-border",
                           )}
                         >
@@ -632,12 +952,17 @@ export function BoardMakerWizard() {
                             checked={purpose === option.id}
                             onChange={() => applyPurpose(option.id)}
                             aria-label={option.label}
-                            className="accent-primary"
+                            aria-describedby={`purpose-${option.id || 'none'}-help`}
+                            className="mt-1 accent-primary"
                           />
-                          {option.label}
+                          <span>
+                            <span className="font-medium text-foreground">{option.label}</span>
+                            <span id={`purpose-${option.id || 'none'}-help`} className="block text-xs text-muted-foreground">{option.description}</span>
+                          </span>
                         </label>
                       ))}
                     </div>
+                    <p id="purpose-notice" role="status" className="min-h-4 text-xs text-foreground">{purposeNotice}</p>
                   </fieldset>
 
                   <div className="space-y-1 text-left">
@@ -897,6 +1222,7 @@ export function BoardMakerWizard() {
                       tmpltId={selectedTemplate || DEFAULT_BOARD_TYPE.templateId}
                       bbsTtl={bbsTtl}
                       bbsExpln={bbsExpln || ''}
+                      features={previewFeatures}
                     />
                   </div>
                 </div>
@@ -904,78 +1230,61 @@ export function BoardMakerWizard() {
 
               {currentStep === 3 && (
                 <div className="max-w-2xl space-y-4 text-left">
-                  <div className="space-y-1 text-left">
-                    <Label htmlFor="upperMenuNo" className="text-[length:var(--font-size-body)] font-medium text-foreground">
-                      상위 메뉴 선택
-                    </Label>
-                    <Select
-                      value={watch('upperMenuNo')}
-                      onValueChange={(val) => setValue('upperMenuNo', val as FormValues['upperMenuNo'], { shouldDirty: true, shouldValidate: true })}
-                    >
-                      <SelectTrigger id="upperMenuNo" aria-required="true" aria-invalid={errors.upperMenuNo ? 'true' : 'false'} className="border-border text-[length:var(--font-size-body)] text-left">
-                        <SelectValue placeholder="상위 메뉴를 선택하세요" className="text-left" />
-                      </SelectTrigger>
-                      <SelectContent className="rounded-md">
-                        <SelectItem value="2000000" className="text-[length:var(--font-size-body)]">소통·지식</SelectItem>
-                        <SelectItem value="2030000" className="text-[length:var(--font-size-body)]">관리 센터 &gt; 업무 지원</SelectItem>
-                        <SelectItem value="0" className="text-[length:var(--font-size-body)]">ROOT (최상위 메뉴)</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    {errors.upperMenuNo && <p className="text-destructive-emphasis text-sm font-bold ml-2">{errors.upperMenuNo.message}</p>}
-                    {upperMenuNo === '2030000' && (
-                      <p role="note" className="text-xs text-muted-foreground">
-                        관리 센터 아래는 관리자용 메뉴 영역이라 일반 사용자용 게시판 위치로 맞지 않습니다.
-                      </p>
-                    )}
-                  </div>
+                  {/* [2026-10-26 ADR-0043 WIZ 6] 만들 설정을 빠짐없이 보인다 — 화면 유형·귀속은 만든 뒤 바꿀 수 없다. */}
+                  <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-md border border-border p-4 text-[length:var(--font-size-body)] sm:grid-cols-[10rem_1fr]">
+                    <dt className="text-muted-foreground">게시판 이름</dt>
+                    <dd className="break-all text-foreground">{bbsTtl}</dd>
+                    <dt className="text-muted-foreground">게시판 소개</dt>
+                    <dd className="break-all text-foreground">{bbsExpln?.trim() ? bbsExpln : '입력하지 않음'}</dd>
+                    <dt className="text-muted-foreground">용도</dt>
+                    <dd className="text-foreground">{BOARD_PURPOSES.find((option) => option.id === purpose)?.label ?? '고르지 않음'}</dd>
+                    <dt className="text-muted-foreground">화면 유형</dt>
+                    <dd className="text-foreground">{templateName(selectedTemplate)} <span className="text-muted-foreground">(만든 뒤 바꿀 수 없음)</span></dd>
+                    <dt className="text-muted-foreground">댓글</dt>
+                    <dd className="text-foreground">{yesNo(watch('ansYn'))}</dd>
+                    <dt className="text-muted-foreground">만족도 평가</dt>
+                    <dd className="text-foreground">{yesNo(watch('stsfdgYn'))}</dd>
+                    <dt className="text-muted-foreground">추천</dt>
+                    <dd className="text-foreground">{yesNo(watch('rcmdtnUseYn'))}</dd>
+                    <dt className="text-muted-foreground">파일 첨부</dt>
+                    <dd className="text-foreground">{attachmentSummary}</dd>
+                    <dt className="text-muted-foreground">예약 게시</dt>
+                    <dd className="text-foreground">{watch('rsvtPstgPsbltyYn') === 'Y' ? '받음' : '받지 않음'}</dd>
+                    <dt className="text-muted-foreground">상단 고정</dt>
+                    <dd className="text-foreground">
+                      {watch('upendFixPsbltyYn') === 'Y'
+                        ? `허용(상한 ${watch('upendFixUplmtNocs')}건 · 기본 ${watch('upendFixBscDayCnt')}일)`
+                        : '허용 안 함'}
+                    </dd>
+                    <dt className="text-muted-foreground">비밀글 정책</dt>
+                    <dd className="text-foreground">{PRIVATE_POST_POLICY_SUMMARY[watch('prvtPstPlcyCd') ?? 'NONE']}</dd>
+                    {/* reusable-base:community:start */}
+                    <dt className="text-muted-foreground">커뮤니티 귀속</dt>
+                    <dd className="text-foreground">
+                      {communityOptions.find((community) => String(community.cmntySn) === watch('cmntySn'))?.cmntyNm ?? '귀속하지 않음'}
+                      {' '}<span className="text-muted-foreground">(만든 뒤 바꿀 수 없음)</span>
+                    </dd>
+                    {/* reusable-base:community:end */}
+                    <dt className="text-muted-foreground">만든 직후 상태</dt>
+                    <dd className="text-foreground">사용 안 함</dd>
+                    <dt className="text-muted-foreground">메뉴</dt>
+                    <dd className="text-foreground">만들지 않음</dd>
+                  </dl>
 
-                  <div className="grid grid-cols-1 gap-4 text-left md:grid-cols-2">
+                  <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/15 p-4 text-left">
+                    <Info className="size-4 shrink-0 text-foreground" aria-hidden="true" />
                     <div className="space-y-1 text-left">
-                      <Label htmlFor="menuNm" className="text-[length:var(--font-size-body)] font-medium text-foreground">
-                        메뉴 명칭
-                      </Label>
-                      <Input
-                        id="menuNm"
-                        maxLength={100}
-                        aria-required="true"
-                        aria-invalid={errors.menuNm ? 'true' : 'false'}
-                        aria-describedby={errors.menuNm ? 'menuNm-error' : undefined}
-                        placeholder="메뉴에 표시될 이름을 입력하세요"
-                        className="border-border bg-card text-[length:var(--font-size-body)] text-left"
-                        {...register('menuNm')}
-                      />
-                      {errors.menuNm && <p id="menuNm-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.menuNm.message}</p>}
-                    </div>
-                    <div className="space-y-1 text-left">
-                      <Label htmlFor="menuOrdr" className="text-[length:var(--font-size-body)] font-medium text-foreground text-left">
-                        메뉴 순서
-                      </Label>
-                      <Input
-                        id="menuOrdr"
-                        type="number"
-                        step="1"
-                        aria-required="true"
-                        aria-invalid={errors.menuOrdr ? 'true' : 'false'}
-                        aria-describedby={errors.menuOrdr ? 'menuOrdr-error' : undefined}
-                        className="border-border bg-card text-[length:var(--font-size-body)] text-left"
-                        {...register('menuOrdr', { valueAsNumber: true })}
-                      />
-                      {errors.menuOrdr && <p id="menuOrdr-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.menuOrdr.message}</p>}
-                    </div>
-                  </div>
-
-                  <div className="rounded-md border border-border bg-muted p-3 text-left text-foreground">
-                    <div className="space-y-1 text-left">
-                      <p className="text-xs font-semibold text-primary text-left">메뉴 경로</p>
-                      <p className="break-all font-mono text-[length:var(--font-size-body)] text-left">
-                        /admin/community/boards/select-board-list?bbsId=(만들 때 정해짐)
-                      </p>
-                      <p className="text-[length:var(--font-size-body)] text-muted-foreground text-left">메뉴는 비활성(미사용) 상태로 생성됩니다. 메뉴 관리에서 활성화해야 내비게이션에 나타납니다.</p>
+                      <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">만든 직후의 상태</p>
+                      <ul className="list-disc space-y-1 pl-5 text-[length:var(--font-size-body)] text-muted-foreground">
+                        <li>게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다. 글을 준비한 뒤 결과 화면이나 운영 화면 설정 탭에서 사용으로 바꿉니다.</li>
+                        <li>메뉴: 만들지 않습니다. 필요하면 만든 뒤 결과 화면이나 운영 화면 메뉴·접근 탭에서 메뉴에 붙입니다.</li>
+                        <li>권한: 새로 주지 않습니다. 게시글 권한은 모든 게시판에 함께 적용됩니다.</li>
+                      </ul>
                     </div>
                   </div>
 
                   {/*
-                   * 이 단계에는 역할×권한 체크박스 매트릭스가 있었으나, 게시판별 권한은 저장할 테이블도
+                   * 종전 3단계에는 역할×권한 체크박스 매트릭스가 있었으나, 게시판별 권한은 저장할 테이블도
                    * API 도 존재하지 않아 선택값이 서버로 전송되지 않고 브라우저에서 사라졌다.
                    * 운영자는 '익명 쓰기 금지'를 설정했다고 믿지만 실제로는 아무 정책도 적용되지 않는
                    * 보안 오인 상태였다. 실제 통제 지점을 안내하도록 대체한다.
@@ -983,6 +1292,7 @@ export function BoardMakerWizard() {
                    * [2026-10-23 ADR-0040 A0] 종전 안내("접근 권한은 메뉴 권한을 따른다")도 사실이 아니었다. 메뉴는 길 안내일 뿐
                    * 게시판 이용 화면은 인증만 요구한다. 접근을 정하는 축(메뉴 노출·게시글 권한·회원 범위)을 그대로 말한다. 회원 범위는
                    * 커뮤니티 기능의 축이라 커뮤니티 마커 안에 둔다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없다.
+                   * [2026-10-26 ADR-0043] 메뉴 단계를 걷으면서 이 안내를 최종 확인으로 옮겼다.
                    */}
                   <div className="space-y-3 rounded-md border border-border bg-muted/30 p-4 text-left">
                     <div className="flex items-start gap-3">
@@ -1010,7 +1320,7 @@ export function BoardMakerWizard() {
                     </div>
 
                     <p className="text-xs text-muted-foreground">
-                      만들려면 게시판 만들기·메뉴 등록·메뉴 조회 권한(BBS_MST_CREATE·MENU_CREATE·MENU_READ)이 필요합니다.
+                      만들려면 게시판 만들기 권한(BBS_MST_CREATE)이 필요합니다. 메뉴 권한은 필요하지 않습니다.
                     </p>
 
                     {canOpenAuthority && (
@@ -1027,64 +1337,34 @@ export function BoardMakerWizard() {
                   </div>
                 </div>
               )}
-
-              {currentStep === 4 && (
-                <div className="max-w-2xl space-y-4 text-left">
-                  <dl className="grid grid-cols-1 gap-x-6 gap-y-2 rounded-md border border-border p-4 text-[length:var(--font-size-body)] sm:grid-cols-[10rem_1fr]">
-                    <dt className="text-muted-foreground">게시판</dt>
-                    <dd className="text-foreground">{bbsTtl}</dd>
-                    <dt className="text-muted-foreground">용도</dt>
-                    <dd className="text-foreground">{BOARD_PURPOSES.find((option) => option.id === purpose)?.label ?? '고르지 않음'}</dd>
-                    <dt className="text-muted-foreground">화면 유형</dt>
-                    <dd className="text-foreground">{TEMPLATES.find((tpl) => tpl.id === selectedTemplate)?.name ?? selectedTemplate}</dd>
-                    <dt className="text-muted-foreground">기능</dt>
-                    <dd className="text-foreground">
-                      댓글 {watch('ansYn') === 'N' ? '받지 않음' : '받음'} · 만족도 {watch('stsfdgYn') === 'N' ? '받지 않음' : '받음'} ·
-                      첨부 {watch('fileAtchPsbltyYn') === 'N' ? '허용 안 함' : `허용(${Number(watch('atchPsbltyFileQty')) === 0 ? '개수 상한 없음' : `${watch('atchPsbltyFileQty')}개`}, ${fileSizeBytes > 0 ? `${fileSizeBytes / BYTES_PER_MB}MB` : '전역 상한'})`} ·
-                      예약 게시 {watch('rsvtPstgPsbltyYn') === 'Y' ? '받음' : '받지 않음'} ·
-                      상단 고정 {watch('upendFixPsbltyYn') === 'Y'
-                        ? `허용(상한 ${watch('upendFixUplmtNocs')}건 · 기본 ${watch('upendFixBscDayCnt')}일)`
-                        : '허용 안 함'} ·
-                      비밀글 정책 {PRIVATE_POST_POLICY_SUMMARY[watch('prvtPstPlcyCd') ?? 'NONE']} ·
-                      추천 {watch('rcmdtnUseYn') === 'N' ? '받지 않음' : '받음'}
-                    </dd>
-                    {/* reusable-base:community:start */}
-                    <dt className="text-muted-foreground">커뮤니티 귀속</dt>
-                    <dd className="text-foreground">{communityOptions.find((community) => String(community.cmntySn) === watch('cmntySn'))?.cmntyNm ?? '귀속하지 않음'}</dd>
-                    {/* reusable-base:community:end */}
-                    <dt className="text-muted-foreground">메뉴</dt>
-                    <dd className="text-foreground">{watch('menuNm')}</dd>
-                  </dl>
-
-                  <div className="flex items-start gap-3 rounded-md border border-warning/40 bg-warning/15 p-4 text-left">
-                    <Info className="size-4 shrink-0 text-foreground" aria-hidden="true" />
-                    <div className="space-y-1 text-left">
-                      <p className="font-semibold text-foreground text-[length:var(--font-size-body)] text-left">만든 직후의 상태</p>
-                      <ul className="list-disc space-y-1 pl-5 text-[length:var(--font-size-body)] text-muted-foreground">
-                        <li>게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다. 공개 준비를 마친 뒤 운영 화면에서 사용으로 바꿉니다.</li>
-                        <li>메뉴: 비활성으로 등록됩니다. 메뉴 관리에서 활성화하면 관리자 그룹에만 자동으로 보이고, 다른 그룹에 보이려면 활성화와 그룹 표시를 함께 저장합니다.</li>
-                        <li>권한: 새로 주지 않습니다. 게시글 권한은 모든 게시판에 함께 적용됩니다.</li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
-              )}
             </div>
           </CardContent>
 
           <CardFooter className="flex items-center justify-between border-t border-border bg-muted/50 p-4 text-left">
-            <Button
-              type="button"
-              variant="ghost"
-              size="lg"
-              onClick={prevStep}
-              disabled={currentStep === 1 || isSubmitting || createdBoardId !== null}
-              className="flex items-center gap-2 font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground disabled:invisible"
-            >
-              <ChevronLeft className="size-4" aria-hidden="true" /> 이전 단계
-            </Button>
+            <div className="flex items-center gap-1">
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                onClick={prevStep}
+                disabled={currentStep === 1 || isSubmitting}
+                className="flex items-center gap-2 font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground disabled:invisible"
+              >
+                <ChevronLeft className="size-4" aria-hidden="true" /> 이전 단계
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="lg"
+                onClick={cancelWizard}
+                disabled={isSubmitting}
+                className="font-medium text-muted-foreground transition-colors hover:bg-card hover:text-foreground"
+              >
+                만들기 취소
+              </Button>
+            </div>
 
-            {/* 권한이 없으면 첫 단계부터 사유를 보인다 — 네 단계를 다 채운 뒤에 알리지 않는다. */}
+            {/* 권한이 없으면 첫 단계부터 사유를 보인다 — 단계를 다 채운 뒤에 알리지 않는다. */}
             {missingPermissionReason ? (
               <p role="status" className="text-[length:var(--font-size-body)] font-medium text-muted-foreground">
                 {missingPermissionReason}
@@ -1108,11 +1388,12 @@ export function BoardMakerWizard() {
                 {isSubmitting ? (
                   <span className="flex items-center gap-2">
                     <Loader2 className="size-4 animate-spin" aria-hidden="true" />
-                    <span className="text-left font-semibold">{status || 'Processing..'}</span>
+                    {/* 결과를 모를 때는 다시 보내지 않고 방금 만든 게시판을 찾는 중이다 — 그동안 잠긴 단추가 그 일을 말한다. */}
+                    <span className="text-left font-semibold">{recovery?.status === 'searching' ? '생성 여부 확인 중…' : '게시판 만드는 중…'}</span>
                   </span>
                 ) : (
                   <span className="flex items-center gap-3">
-                    {currentStep === STEPS.length ? createdBoardId ? '메뉴 등록 다시 시도' : '게시판 만들기' : '다음 단계로'}
+                    {currentStep === STEPS.length ? '게시판 만들기' : '다음 단계로'}
                     <ChevronRight className="size-4" aria-hidden="true" />
                   </span>
                 )}
@@ -1121,10 +1402,6 @@ export function BoardMakerWizard() {
           </CardFooter>
         </form>
       </Card>
-
-      <p className="text-center text-xs text-muted-foreground">
-        &ldquo;마지막 클릭이 새로운 소통의 시작입니다&rdquo; - Board Master Maker v1.0
-      </p>
     </div>
   );
 }

@@ -642,27 +642,44 @@ describe('미수집 축을 0으로 보여 주지 않는다', () => {
 /**
  * 생성 마법사가 실제로 만드는 상태를 말한다.
  *
- * 게시판 생성 마법사는 메뉴를 `useYn: 'N'`(미사용)으로 만든다. 그런데 안내는 '생성 즉시
+ * 게시판 생성 마법사는 메뉴를 `useYn: 'N'`(미사용)으로 만들었다. 그런데 안내는 '생성 즉시
  * 메뉴 시스템에 활성화됩니다', 완료 화면은 '메뉴에 성공적으로 연결되었습니다' 라고 했다.
  * 관리자는 메뉴가 나타날 것으로 믿고 기다렸고, 나타나지 않는 이유를 알 방법이 없었다.
  *
  * 문구만 검사하면 다음 사람이 `useYn` 을 'Y' 로 바꾸면서 문구를 되돌릴 수 있다 — 그건
  * 권한 축을 우회해 전 관리자에게 즉시 노출되는 제품 결정이다. 그래서 **소스의 실제 값과
  * 화면 문구를 함께** 고정한다.
+ *
+ * [2026-10-26 ADR-0043 결정 1·2] 마법사는 이제 메뉴를 만들지 않는다 — 게시판만 사용 안 함으로 만들고, 메뉴는 '메뉴에 붙이기'로
+ * 메뉴 관리에 넘긴다(저장 권한은 메뉴 관리의 구조 저장이 집행한다). 공개는 결과 화면의 사용 전환이 확인을 거쳐 기존 경로로 한다.
  */
 describe('생성 마법사가 만드는 상태를 사실대로 말한다', () => {
   const boardMakerWizard = 'frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
   const wizardInProjection = repoPresent(boardMakerWizard);
   const wizard = wizardInProjection ? codeOfRepo(boardMakerWizard) : '';
 
-  if (wizardInProjection) it('메뉴를 비활성으로 만들면 비활성이라고 말한다', () => {
-    // 실제 값이 계약의 입력이다. 'Y' 로 바꾸는 것은 제품 결정이며, 그때 문구도 함께 바뀐다.
-    // [2026-10-23 ADR-0040 §5.3] 게시판도 'N' 으로 만들므로 파일 전체가 아니라 메뉴 생성 호출 안의 값만 본다.
-    const createMenu = wizard.match(/menuAdminService\.createMenu\(\{[\s\S]*?\}\);/)?.[0] ?? '';
-    expect(createMenu, '메뉴 생성 호출을 찾지 못했다 — 계약이 vacuous 하다').not.toBe('');
-    expect(createMenu, "메뉴 생성의 useYn 이 'N' 이 아니다").toContain("useYn: 'N'");
+  if (wizardInProjection) it('메뉴를 만들지 않고, 만들지 않는다고 말한다 — 메뉴는 메뉴 관리로 넘긴다(ADR-0043 결정 1)', () => {
+    // 실제 호출이 계약의 입력이다. 마법사가 메뉴 서비스를 다시 부르면(단건 등록·구조 저장 모두) 결정 1 을 바꾸는 일이다.
+    expect(wizard, '마법사가 메뉴 서비스를 부른다 — 메뉴는 메뉴 관리가 만든다').not.toMatch(/menuAdminService|MenuAdminService/);
     expect(wizard).not.toContain('생성 즉시 메뉴 시스템에 활성화됩니다');
-    expect(wizard).toContain('메뉴 관리에서 활성화');
+    expect(wizard).not.toContain('메뉴 관리에서 활성화');
+    expect(wizard).not.toContain('비활성으로 등록');
+    expect(wizard).toContain('메뉴: 만들지 않습니다');
+    expect(wizard).toContain('메뉴는 만들지 않았습니다');
+    // 메뉴 연결은 게시판 이용 화면 주소를 화면 인계로 넘기는 것뿐이다.
+    expect(wizard, '메뉴에 붙이기가 화면 인계로 게시판 주소를 넘기지 않는다').toMatch(/handOffScreen\(\{\s*route: boardMenuRoute\(/);
+  });
+
+  // [2026-10-26 ADR-0043 결정 2] 공개는 결과 화면의 사용 전환이다. 이용자에게 여는 동작이라 확인을 거친 뒤 기존 사용 상태 경로로 바꾼다.
+  if (wizardInProjection) it('사용 전환은 확인을 거쳐 기존 사용 상태 경로로 한다', () => {
+    const switchToUse = wizard.match(/const switchBoardToUse = async \(\) => \{[\s\S]*?\n {2}\};/)?.[0] ?? '';
+    expect(switchToUse, '사용 전환 함수를 찾지 못했다 — 계약이 vacuous 하다').not.toBe('');
+    const confirmAt = switchToUse.indexOf('await confirm(');
+    const cancelAt = switchToUse.indexOf('if (!confirmed) return;');
+    const switchAt = switchToUse.indexOf("boardAdminService.batchUpdateBoardMasterStatus([bbsId], 'Y')");
+    expect(confirmAt, '사용 전환이 확인을 묻지 않는다').toBeGreaterThan(-1);
+    expect(cancelAt, '확인을 취소해도 사용 전환이 이어진다').toBeGreaterThan(confirmAt);
+    expect(switchAt, '사용 전환이 확인보다 먼저이거나 기존 사용 상태 경로가 아니다').toBeGreaterThan(cancelAt);
   });
 
   // [2026-10-23 ADR-0040 A0] 게시판 이용 화면은 인증만 요구한다. 메뉴가 접근을 정한다는 안내는 사실이 아니었다.
@@ -671,9 +688,10 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     expect(wizard).not.toContain('메뉴가 보이지 않는 역할은 해당 게시판 화면에 접근하지 않습니다');
     expect(wizard).toContain('메뉴는 길 안내일 뿐 접근을 막지 않습니다');
     // [2026-10-23 ADR-0040 결정 1·§5.3] 게시판을 사용 안 함으로 만들고 그렇다고 말한다 — 값과 문구를 함께 고정한다.
-    const createBoard = wizard.match(/boardAdminService\.createBoardMaster\(\{[\s\S]*?\}\);/)?.[0] ?? '';
+    // [2026-10-26 ADR-0043] 생성 요청은 실패를 화면이 보이도록 요청 설정(QUIET)을 함께 넘긴다 — 본문의 마지막 값은 여전히 useYn 'N' 이다.
+    const createBoard = wizard.match(/boardAdminService\.createBoardMaster\(\{[\s\S]*?\}(?:, QUIET)?\);/)?.[0] ?? '';
     expect(createBoard, '게시판 생성 호출을 찾지 못했다 — 계약이 vacuous 하다').not.toBe('');
-    expect(createBoard, "게시판 생성의 useYn 이 'N' 이 아니다").toMatch(/useYn: 'N'\s*\}\);$/);
+    expect(createBoard, "게시판 생성의 useYn 이 'N' 이 아니다").toMatch(/useYn: 'N'\s*\}(?:, QUIET)?\);$/);
     expect(wizard).not.toContain('게시판은 만들자마자 사용 중 상태가 되어');
     expect(wizard).toContain('게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다');
     // 회원 범위는 커뮤니티 기능의 축이다 — 커뮤니티 없이 만든 생성물에는 귀속 입력도 그 축도 없으므로 문장도 함께 빠져야 한다.

@@ -7,6 +7,7 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { PagePagination } from '@/components/common/PagePagination';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
 import type { BoardChange } from '@/services/foundation/system/BoardAdminService';
+import { describeBoardChange } from './board-setting-values';
 
 /**
  * 게시판 변경 이력(ADR-0040 결정 9). 서버가 바뀐 항목마다 한 건씩 남긴다 — 설정·사용 여부 변경과, B1 부터 운영 화면에서 바꾼 게시
@@ -15,6 +16,9 @@ import type { BoardChange } from '@/services/foundation/system/BoardAdminService
  * 않는다.
  *
  * 표현은 공통코드 변경 이력과 같은 캡션 있는 기본 표 + PagePagination 이다 — 조회형 목록이 아니라 대화상자 안의 감사 기록이다.
+ *
+ * [2026-10-26 ADR-0043 1차 SET-08] 값은 설정 탭과 같은 말(받음/받지 않음, MB, '필수(늘 비밀글로 저장)', yyyy-MM-dd)로 보이고, 바꿔
+ * 보인 행에는 서버가 남긴 저장값을 보조로 함께 둔다(board-setting-values.ts). 기록 자체는 바꾸지 않는다.
  */
 const PAGE_SIZE = 10;
 const COLUMNS = ['변경 일시', '대상', '변경', '항목', '변경 전 → 후', '변경자'];
@@ -71,17 +75,25 @@ export function BoardChangeHistoryDialog({ bbsId, boardName, onClose }: {
                 <tr>{COLUMNS.map((title) => <th key={title} scope="col" className="p-3">{title}</th>)}</tr>
               </thead>
               <tbody>
-                {rows.map((item) => (
-                  <tr key={item.bbsChgHstrySn} className="border-t border-border">
-                    <td className="p-3 tabular-nums">{formatChangedAt(item.crtDt)}</td>
-                    <td className="p-3">{targetText(item)}</td>
-                    <td className="p-3">{CHANGE_LABEL[item.chgTypeCd] ?? item.chgTypeCd}</td>
-                    <td className="p-3">{item.chgArtclNm}</td>
-                    <td className="max-w-sm whitespace-pre-wrap break-words p-3">{item.chgBfrCn ?? '—'} → {item.chgAftrCn ?? '—'}</td>
-                    {/* 변경자 이름을 찾지 못하면(퇴사·삭제·시스템 처리) 식별자 대신 그렇게 말한다. */}
-                    <td className="p-3">{item.chgUserNm ?? '알 수 없는 사용자'}</td>
-                  </tr>
-                ))}
+                {rows.map((item) => {
+                  const values = describeBoardChange(item.chgArtclNm, item.chgBfrCn, item.chgAftrCn);
+                  return (
+                    <tr key={item.bbsChgHstrySn} className="border-t border-border align-top">
+                      <td className="p-3 tabular-nums">{formatChangedAt(item.crtDt)}</td>
+                      <td className="p-3">{targetText(item)}</td>
+                      <td className="p-3">{CHANGE_LABEL[item.chgTypeCd] ?? item.chgTypeCd}</td>
+                      <td className="p-3">{values.label}</td>
+                      <td className="max-w-sm whitespace-pre-wrap break-words p-3">
+                        {values.before} → {values.after}
+                        {values.stored !== null && (
+                          <span className="mt-1 block text-xs text-muted-foreground">저장값: {values.stored}</span>
+                        )}
+                      </td>
+                      {/* 변경자 이름을 찾지 못하면(퇴사·삭제·시스템 처리) 식별자 대신 그렇게 말한다. */}
+                      <td className="p-3">{item.chgUserNm ?? '알 수 없는 사용자'}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

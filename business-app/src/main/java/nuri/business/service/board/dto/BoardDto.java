@@ -18,6 +18,13 @@ public record BoardDto(
     @Size(max = 20)
     String bbsId,
 
+    // [2026-10-26 ADR-0043, NAV-10] 통합 검색 결과가 어느 게시판의 글인지 알리는 게시판 이름. 검색 질의가 이미 잇는 게시판 마스터의
+    //   값이다. 통합 검색에서만 싣고 그 밖의 경로(게시판 목록·상세·업무 홈)는 null 이다 — 그 화면들은 게시판 메타로 이름을 안다.
+    @Schema(description = "게시판 이름. 통합 검색에서만 싣고 그 밖은 null", nullable = true, types = {"string", "null"},
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    String bbsTtl,
+
     @Schema(description = "답글 번호", nullable = true, types = {"integer", "null"})
     Long ansSn,
 

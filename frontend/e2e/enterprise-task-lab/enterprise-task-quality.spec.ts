@@ -187,10 +187,10 @@ async function boardWorkflow(context: Context): Promise<Workflow> {
   };
   return { route: `/admin/community/boards/select-board-list?bbsId=${board}`, ready: async () => {
     await expect(page.getByRole('heading', { name: metadata.bbsTtl, exact: true })).toBeVisible();
-    await expect(page.getByRole('button', { name: '글쓰기', exact: true })).toBeVisible();
+    await expect(page.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
   },
     execute: async () => {
-      await observation.enter(page.getByRole('button', { name: '글쓰기', exact: true }));
+      await observation.enter(page.getByRole('link', { name: '글쓰기', exact: true }));
       await observation.fill(page.locator('input[name="pstTtl"]'), title);
       await observation.fill(page.locator('.ProseMirror'), '합성 게시글 내용');
       const save = page.getByRole('button', { name: '게시글 등록', exact: true }); await observation.tabTo(save);

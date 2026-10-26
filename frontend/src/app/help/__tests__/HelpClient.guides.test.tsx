@@ -39,6 +39,8 @@ const page = <T,>(list: T[]) => ({ list, total: list.length, size: 10, page: 1, 
 describe('HelpClient 도움말·온라인 매뉴얼 열람', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // [2026-10-26 ADR-0043 UX-04] 화면이 탭·쪽·검색어를 세션에 기억한다 — 시험마다 새 탭에서 시작한다.
+    window.sessionStorage.clear();
     harness.getFaqs.mockResolvedValue(page([]));
     harness.getQnas.mockResolvedValue(page([]));
   });

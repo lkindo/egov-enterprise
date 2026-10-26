@@ -1,22 +1,30 @@
 'use client';
 
 import React, { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useQuery } from '@tanstack/react-query';
 import {
   Plus,
   Library, BookOpen, MessageCircleQuestion,
   TrendingUp, History,
-  User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight
+  User, Eye, Settings2, AlertTriangle, RefreshCcw, ChevronRight, List,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 import { knowledgeService, toKnowledgeActivities, type KnowledgeDto, type KnowledgeActivityItem } from '@/services/business/knowledge/knowledgeService';
+import { boardUserService } from '@/services/business/user/board/BoardUserService';
+import { boardMasterKeys } from '@/queries/board-master-query-options';
 import {
   NOTICE_BOARD_ID,
 } from '@/config/board-ids';
 import { canOpenPage } from '@/lib/auth/page-access';
-import { isQnaSolved } from '@/lib/board/qna-status';
+import { canPermission } from '@/lib/auth/permissions';
+import { canEditConfiguredBoard } from '@/lib/auth/board-edit-permissions';
+import { QNA_STATUS_LABELS, isQnaSolved } from '@/lib/board/qna-status';
+import type { BoardPost } from '@/types/business/board';
+import { PinnedBadge } from '@/app/admin/community/boards/components/PostingStatusBadge';
+import { PostStateBadges } from '@/app/admin/community/boards/select-board-list/components/BoardTemplates';
 import { Button } from '@/components/ui/button';
 import { PagePagination } from '@/components/common/PagePagination';
 import { visibleEntries, type HubTabViews } from '@/extensions/slots';
@@ -60,6 +68,18 @@ function ContributedActions({ view: { Actions } }: { view: HubTabViews['knowledg
 
 const PAGE_SIZE = 20;
 
+/** 이용 화면 경로(게시판 전체 화면). 허브 탭 하나는 그 게시판의 제목 목록만 보인다. */
+const BOARD_LIST_ROUTE = '/admin/community/boards/select-board-list';
+
+/**
+ * 허브 목록의 한 행. 서버 응답(BoardDto)은 비밀글 여부(scrtYn)도 싣는데 KnowledgeDto 가 그 이름을 적지 않아 여기서 더한다 — 값은
+ * 서버가 준 그대로다.
+ */
+type KnowledgeRow = KnowledgeDto & Pick<BoardPost, 'scrtYn'>;
+
+/** 메타 조회 실패는 화면 안(글쓰기 단추를 열지 않음·일반 설명)으로 드러난다 — 전역 실패 토스트를 띄우지 않는다(DEC-OPS-184). */
+const QUIET = { suppressErrorToast: true } as const;
+
 export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: KnowledgeShellTab }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -82,7 +102,7 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
   // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.
   const [searchQuery, setSearchQuery] = useState('');
   const [sortBy, setSortBy] = useState<'latest' | 'views'>('latest');
-  // [2026-10-01 결정 20] Q&A 탭에서만 '미해결만'(OPEN) 으로 좁힌다. 답변 대기 값은 V2_116 이 OPEN 하나로 맞췄다.
+  // [2026-10-01 결정 20] Q&A 탭에서만 '미해결만'(OPEN) 으로 좁힌다. 미해결 값은 V2_116 이 OPEN 하나로 맞췄다.
   const [unsolvedOnly, setUnsolvedOnly] = useState(false);
   const [pagination, setPagination] = useState({ context: '', page: 1 });
 
@@ -118,6 +138,30 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
    * DEFAULT/NOTICE 라는 주석의 의도대로 실재하는 공지 게시판을 쓴다.
    */
   const currentBbsId = activeTab.bbsId ?? NOTICE_BOARD_ID;
+
+  /*
+    [2026-10-26 ADR-0043 0차 NAV-03·UX-10] 열린 탭 게시판의 사용자용 메타. 종전 '신규 등록' 단추는 권한을 보지 않아, 공지·FAQ 처럼 추가
+    편집 권한이 필요한 게시판에서 일반 사용자를 쓸 수 없는 작성 화면으로 보냈다(목록 화면에는 이미 있던 판정이 허브에만 빠졌다).
+    글쓰기는 이용 목록과 같은 판정 — 글쓰기 권한(BOARD_CREATE) ∧ 게시판의 추가 편집 권한(canEditConfiguredBoard) ∧ 게시판 사용 중 —
+    일 때만 연다. 메타를 받지 못하면 열지 않는다(판정 근거가 없다). 같은 메타의 게시판 이름은 탭이 실제로 보여 주는 게시판을 알린다
+    (NAV-01 A안 — '자주 묻는 질문' 탭은 공지사항 게시판을 연다).
+  */
+  const {
+    data: boardMeta,
+    isPending: isBoardMetaPending,
+  } = useQuery({
+    // 키는 이용 목록·상세·작성 화면의 메타(boardMasterQueryOptions.meta)와 같다 — 설정 저장 뒤 invalidateBoardCaches 가 함께 다시 읽는다.
+    queryKey: boardMasterKeys.meta(currentBbsId),
+    queryFn: () => boardUserService.getBoardMeta(currentBbsId, QUIET),
+    enabled: currentBbsId.length > 0,
+  });
+  const canWriteHere = canPermission(user, 'BOARD_CREATE')
+    && canEditConfiguredBoard(user, boardMeta)
+    && boardMeta?.inUse !== false;
+  const boardName = boardMeta?.bbsTtl?.trim() || null;
+  // 이름이 이미 '게시판' 으로 끝나면(업무게시판·Q&A 게시판) 덧붙이지 않는다.
+  const boardLabel = boardName && (boardName.endsWith('게시판') ? boardName : `${boardName} 게시판`);
+  const canOpenBoardList = boardName !== null && canOpenPage(user, BOARD_LIST_ROUTE);
 
   /*
     [2026-08-29] 비관리자의 WIKI·FAQ 차단(isAccessRestricted)을 제거했다.
@@ -174,6 +218,8 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
 
   // [2026-09-26 DIP B5 F10] 최근 활동은 기본 목록(최신순 1쪽)과 같은 조회다 — 같은 키를 써서 한 번만 요청한다.
   //   종전에는 기본 화면에서 같은 게시판을 두 번 불렀다. 검색·정렬·쪽을 바꿔도 피드는 기본 목록에 머문다.
+  // [2026-10-26 ADR-0043] 기본 목록은 상단 고정 글을 먼저 싣는다(서버 정렬, 바꾸지 않는다). 그래서 오래된 고정 글이 '최근 활동' 맨 위에
+  //   최신 글처럼 보였다 — 고정 글에는 상단 고정 표지를 붙이고(서버 판정 pinned 만 본다) 절 설명이 그 순서를 말한다.
   const { data: activityData, isError: isActivityError } = useQuery({
     queryKey: ['knowledge-articles', activeCategory, '', 'latest', 1, 'ALL'],
     queryFn: () => knowledgeService.getArticles({
@@ -185,10 +231,14 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
       searchCnd: undefined,
       searchWrd: undefined,
     }),
-    select: (res) => toKnowledgeActivities(res.list ?? []),
+    select: (res) => (res.list ?? []).map((item) => ({
+      ...toKnowledgeActivities([item])[0],
+      pinned: item.pinned === true,
+      pinnedEndYmd: item.upendFixEndYmd ?? null,
+    })),
   });
 
-  const displayItems: KnowledgeDto[] = articlesData?.list || [];
+  const displayItems: KnowledgeRow[] = articlesData?.list || [];
 
   const hotItems: KnowledgeDto[] = hotData?.list || [];
   const isSearching = isFetching;
@@ -201,19 +251,24 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
    * 열 구성. Q&A 에만 상태 열이 붙는다 — 다른 카테고리에는 저장할 상태 컬럼 자체가 없어
    * 열을 만들면 빈 칸이 '상태 없음' 이 아니라 '상태 모름' 으로 읽힌다(StatusBadge 주석 참조).
    */
-  const columns: Column<KnowledgeDto>[] = [
+  const columns: Column<KnowledgeRow>[] = [
     {
       header: '제목',
       className: 'w-full max-w-0',
-      accessor: (item: KnowledgeDto) => (
-        <button
-          type="button"
-          onClick={() => openArticle(item)}
-          aria-label={`${item.pstTtl} 상세 보기`}
-          className="block w-full truncate text-left font-medium text-foreground hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
-        >
-          {item.pstTtl}
-        </button>
+      // [2026-10-26 ADR-0043 UX-02·03·14] 비밀글·상단 고정·예약·게시 종료 표지를 이용 목록과 같은 묶음으로 보인다. 표지는 잘리는 제목
+      //   밖에 둔다 — 긴 제목이 표지를 가리지 않는다. 서버 값만 읽는다(DEC-OPS-140).
+      accessor: (item: KnowledgeRow) => (
+        <div className="flex min-w-0 items-center">
+          <button
+            type="button"
+            onClick={() => openArticle(item)}
+            aria-label={`${item.pstTtl} 상세 보기`}
+            className="block min-w-0 truncate text-left font-medium text-foreground hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+          >
+            {item.pstTtl}
+          </button>
+          <PostStateBadges item={item} />
+        </div>
       ),
     },
     ...(activeCategory === 'QNA'
@@ -250,7 +305,11 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
     <>
       <WorkListPage
         title={activeTab.label}
-        description="문서를 검색하고 필요한 내용을 확인하세요."
+        // [2026-10-26 ADR-0043 NAV-01 A안] 탭 이름과 실제 게시판 이름이 다를 수 있다('자주 묻는 질문' 탭 = 공지사항 게시판). 탭 머리에서
+        //   이 탭이 어느 게시판의 글인지 함께 말한다. 메타를 받지 못하면 이름을 지어내지 않고 종전 설명만 둔다.
+        description={boardLabel
+          ? `${boardLabel}의 글을 보여 줍니다. 제목으로 검색할 수 있습니다.`
+          : '문서를 검색하고 필요한 내용을 확인하세요.'}
         filterStateKey="knowledge-hub"
         // 조회 실패 시에는 총계를 말하지 않는다 — '총 0건' 은 "없다" 라는 사실 주장이 된다.
         totalCount={isArticlesError ? undefined : articlesData?.total}
@@ -259,7 +318,21 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
             {canReadBoardMasters && <Button variant="outline" size="sm" onClick={() => router.push('/admin/community/boards/master')}><Settings2 size={16} aria-hidden="true" /> 게시판 관리</Button>}
             {/* 기여 탭이 열렸으면 그 기여의 머리 동작(커뮤니티: 목록·가입, 관리)을 둔다. 탭을 바꾸면 다시 마운트된다. */}
             <ContributedActions key={activeTab.id} view={activeTab} />
-            <Button size="sm" onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`)}><Plus size={16} aria-hidden="true" /> 신규 등록</Button>
+            {/* [ADR-0043 NAV-01 A안] 허브 탭은 제목 목록만 보인다 — 게시판 화면 유형(갤러리·캘린더 등)과 기간·작성자 검색은 전체 화면에 있다. */}
+            {canOpenBoardList && (
+              <Button asChild variant="outline" size="sm">
+                <Link href={`${BOARD_LIST_ROUTE}?bbsId=${currentBbsId}`}>
+                  <List size={16} aria-hidden="true" /> 이 게시판 전체 화면으로 보기
+                </Link>
+              </Button>
+            )}
+            {canWriteHere && (
+              <Button asChild size="sm">
+                <Link href={`/admin/community/boards/insert-board-article?bbsId=${currentBbsId}`}>
+                  <Plus size={16} aria-hidden="true" /> 글쓰기
+                </Link>
+              </Button>
+            )}
           </>
         }
         navigation={
@@ -292,6 +365,37 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
         }
       >
         <TabPanel id={KNOWLEDGE_PANEL_ID} aria-labelledby={knowledgeTabId(activeTab.id)} className="space-y-3">
+          {/*
+            [2026-10-26 ADR-0043 UX-10] FAQ 탭에서 글을 쓸 수 없는 사람에게 막다른 길 대신 질문할 곳을 알린다. 탭 전환은 화면 안 동작이라
+            단추로 둔다(허브 URL 은 tab 하나만 싣는다 — HUB_PARAM_KEYS).
+            [NAV-11] 같은 Q&A 게시판에 입구가 둘(지식 허브 질의응답·도움말 센터 1:1 문의)이고 두 화면이 서로를 안내하지 않았다 — 나만 볼
+            문의의 자리를 알린다. 도움말 센터는 도움말 기능의 화면이라, 그 기능을 고르지 않은 구성에서는 안내 문장과 링크가 함께 빠진다.
+          */}
+          {activeCategory === 'FAQ' && !isBoardMetaPending && !canWriteHere && (
+            <p role="note" className="rounded-md border border-border bg-muted/40 px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] text-muted-foreground">
+              질문은{' '}
+              <button type="button" onClick={() => selectCategory('QNA')} className="font-medium text-primary underline underline-offset-2 hover:text-primary/80 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring">
+                질의응답(Q&amp;A) 탭
+              </button>
+              에 남겨 주세요.
+              {/* reusable-base:help:start */}
+              {' '}나만 볼 문의는{' '}
+              <Link href="/help" className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">도움말 센터의 1:1 문의</Link>
+              를 이용하세요.
+              {/* reusable-base:help:end */}
+            </p>
+          )}
+          {activeCategory === 'QNA' && (
+            <p role="note" className="rounded-md border border-border bg-muted/40 px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] text-muted-foreground empty:hidden">
+              {/* 공개 범위는 게시판의 비밀글 정책(서버 값)으로만 말한다 — 정책을 모르면 말하지 않는다. */}
+              {boardMeta?.prvtPstPlcyCd === 'NONE' ? '이 탭에 쓴 질문은 로그인한 모든 사용자가 볼 수 있습니다. ' : null}
+              {/* reusable-base:help:start */}
+              나만 볼 문의는{' '}
+              <Link href="/help" className="font-medium text-primary underline underline-offset-2 hover:text-primary/80">도움말 센터의 1:1 문의</Link>
+              를 이용하세요.
+              {/* reusable-base:help:end */}
+            </p>
+          )}
           {isArticlesError ? (
             // 조회 실패를 '데이터 없음'으로 위장하지 않는다.
             <div role="alert" className="flex flex-col items-center justify-center gap-3 rounded-md border border-destructive/40 bg-destructive/5 p-8">
@@ -349,16 +453,19 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
             )}
           </AsideSection>
 
-          <AsideSection title="최근 활동" description="최근 등록된 문서 흐름" icon={History}>
+          <AsideSection title="최근 활동" description="상단 고정 글을 먼저, 그다음 최근 등록 순" icon={History}>
             {isActivityError ? (
               <p role={isArticlesError ? undefined : 'alert'} className="py-6 text-center text-[length:var(--font-size-body)] text-destructive-emphasis">{/* 최근 활동은 기본 목록과 같은 조회라, 목록이 이미 실패를 알렸으면 같은 실패를 한 번 더 알리지 않는다. */}최근 활동을 불러오지 못했습니다.</p>
             ) : (activityData || []).length === 0 ? (
               <p className="py-6 text-center text-[length:var(--font-size-body)] text-muted-foreground">표시할 활동이 없습니다.</p>
             ) : (
               <ul className="divide-y divide-border">
-                {(activityData || []).slice(0, 5).map((activity: KnowledgeActivityItem) => (
+                {(activityData || []).slice(0, 5).map((activity: KnowledgeActivityItem & { pinned: boolean; pinnedEndYmd: string | null }) => (
                   <li key={activity.id} className="px-1 py-1.5">
-                    <p className="truncate text-[length:var(--font-size-body)] text-foreground">{activity.title}</p>
+                    <div className="flex min-w-0 items-center">
+                      <p className="min-w-0 truncate text-[length:var(--font-size-body)] text-foreground">{activity.title}</p>
+                      <PinnedBadge pinned={activity.pinned} endYmd={activity.pinnedEndYmd} />
+                    </div>
                     <div className="mt-0.5 flex items-center gap-2 text-xs text-muted-foreground">
                       <span className="truncate">{activity.user}</span>
                       <span aria-hidden="true">·</span>
@@ -475,7 +582,7 @@ function StatusBadge({ status, type }: { status?: string, type: string }) {
       "inline-flex items-center rounded border px-1.5 py-0.5 text-xs",
       isSolved ? "border-success/40 bg-success/15 text-foreground" : "border-warning/40 bg-warning/15 text-foreground"
     )}>
-      {isSolved ? '해결됨' : '답변 대기'}
+      {isSolved ? QNA_STATUS_LABELS.SOLVED : QNA_STATUS_LABELS.OPEN}
     </span>
   );
 }

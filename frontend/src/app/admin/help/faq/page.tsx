@@ -4,7 +4,7 @@ import { Suspense } from 'react';
 import KnowledgeHubClient from '../KnowledgeHubClient';
 
 export const metadata: Metadata = {
-  title: `자주 묻는 질문 관리 | ${SITE_IDENTITY.frameworkName}`,
+  title: `자주 묻는 질문 · 지식 허브 | ${SITE_IDENTITY.frameworkName}`,
 };
 
 export default function FAQPage() {

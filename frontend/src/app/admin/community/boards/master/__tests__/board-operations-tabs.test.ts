@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  BOARD_OPERATIONS_TAB_LABELS,
   BOARD_OPERATIONS_TABS,
   DEFAULT_BOARD_OPERATIONS_TAB,
   TAB_HUB,
@@ -14,6 +15,11 @@ describe('board-operations-tabs', () => {
     expect(BOARD_OPERATIONS_TABS).toEqual(['posts', 'settings', 'access']);
     expect(DEFAULT_BOARD_OPERATIONS_TAB).toBe('settings');
     expect(TAB_HUB.routes).toEqual(['/admin/community/boards/master/[id]']);
+  });
+
+  // 운영 화면의 탭과 목록의 행별 바로가기가 같은 이름을 쓴다(ADR-0043, G4).
+  it('탭마다 이름이 하나씩 있다', () => {
+    expect(BOARD_OPERATIONS_TAB_LABELS).toEqual({ posts: '게시물', settings: '설정', access: '메뉴·접근' });
   });
 
   it.each(['posts', 'settings', 'access'])('알려진 탭(%s)은 그대로 받는다', (tab) => {

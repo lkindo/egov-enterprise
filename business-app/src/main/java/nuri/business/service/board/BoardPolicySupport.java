@@ -401,6 +401,43 @@ final class BoardPolicySupport {
         }
     }
 
+    /**
+     * 미리 올린 첨부 묶음을 글에 새로 붙일 때 게시판 첨부 설정(허용·파일 수·파일당 크기)을 지키는가.
+     *
+     * <p>[2026-10-26 ADR-0043, SET-02] 종전에는 등록만 파일 수를 보고 크기는 보지 않았고, JSON 수정은 묶음을 바꿔도 설정을 전혀 보지
+     * 않았다. 그래서 첨부를 끄거나 줄인 게시판에도 미리 올린 묶음으로 파일이 붙었다(DEC-OPS-173 ②의 집행 빈틈). 묶음이 바뀔 때만
+     * 부른다 — 화면은 수정에서 같은 묶음 번호를 다시 보내므로, 이미 붙은 파일은 설정을 줄여도 그대로 둔다(전향 적용).
+     *
+     * @param fileSizes 묶음 안 파일의 크기(바이트). 크기를 모르는 항목은 null 이고 크기 검사에서 뺀다
+     */
+    static void assertAttachedGroupAllowed(BoardMaster master, List<Long> fileSizes) {
+        List<Long> sizes = fileSizes == null ? List.of() : fileSizes;
+        assertAttachmentPolicy(master, 0, sizes.size());
+        Long maxBytes = master.getAtchPsbltyFileSz();
+        if (maxBytes != null && maxBytes > 0) {
+            for (Long size : sizes) {
+                if (size != null && size > maxBytes) {
+                    throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                            "이 게시판은 파일 하나당 최대 " + describeBytes(maxBytes) + "까지 받습니다.");
+                }
+            }
+        }
+    }
+
+    /** Q&A 화면 유형 템플릿 — 해결 상태를 가진 게시판은 이것뿐이다(화면 BoardTemplates 와 같은 판정). */
+    static final String QNA_TEMPLATE_ID = nuri.business.service.board.dto.BoardLayoutIds.QNA;
+
+    /**
+     * Q&A 상태 값을 이 게시판이 받는가. [2026-10-26 ADR-0043] 상태 값은 Q&A 화면 유형 게시판의 글만 가진다 — 다른 게시판에 보낸 값은
+     * 400 이다. 보내지 않으면(null) 통과한다(등록은 기본값, 수정은 저장값). 값의 어휘(OPEN·SOLVED)는 요청 검사가 본다.
+     */
+    static void assertQnaStatusAllowed(BoardMaster master, String qnaSttsCd) {
+        if (qnaSttsCd != null && !QNA_TEMPLATE_ID.equals(master.getTmpltId())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "Q&A 상태는 Q&A 게시판의 글에만 둘 수 있습니다.");
+        }
+    }
+
     static String describeBytes(long bytes) {
         long mb = 1024L * 1024L;
         return bytes % mb == 0 ? (bytes / mb) + "MB" : bytes + "바이트";

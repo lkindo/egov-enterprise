@@ -266,7 +266,10 @@ public class BoardService extends BaseAbstractService {
                         return Page.empty(capped);
                 }
                 BoardSearchCondition condition = buildGlobalSearchCondition(trimmed, today);
-                return boardRepository.searchArticles(condition, capped).map(boardMapper::toDto);
+                // [2026-10-26 ADR-0043, NAV-10] 결과마다 게시판 이름을 싣는다 — 메뉴가 없는 게시판은 검색이 거의 유일한 발견 경로인데
+                //   결과가 어느 게시판의 글인지 말하지 않았다. 값은 검색 질의가 이미 잇는 게시판 마스터에서 온다.
+                return boardRepository.searchArticles(condition, capped)
+                                .map(result -> boardMapper.toDto(result).toBuilder().bbsTtl(result.getBbsTtl()).build());
         }
 
         @Transactional(readOnly = true)
@@ -292,7 +295,8 @@ public class BoardService extends BaseAbstractService {
         @Transactional(readOnly = true)
         public nuri.business.service.board.dto.BoardMetaDto getBoardMeta(@NonNull String bbsId) {
                 BoardMaster master = loadReadableMaster(bbsId, false);
-                return nuri.business.service.board.dto.BoardMetaDto.from(master, requiredEditPermissions(bbsId));
+                return nuri.business.service.board.dto.BoardMetaDto.from(master, requiredEditPermissions(bbsId),
+                                nuri.business.service.board.dto.BoardMasterCommunity.of(master.getCmntySn(), communityBoardAccess));
         }
 
         /** 두 설정이 같은 게시판을 가리키면 두 편집 권한이 모두 필요하다. */
@@ -434,6 +438,8 @@ public class BoardService extends BaseAbstractService {
                 // [2026-10-23 ADR-0040 결정 1] 지정 게시판 가드 → 사용 여부(운영자 예외) → 커뮤니티 가드. 채번 직렬화를 위해
                 //   마스터 행을 잠가 읽는다. [2026-09-08 PD-CMTY-001] 읽을 수 없는 게시판에는 쓸 수도 없다.
                 BoardMaster master = loadWritableMaster(request.bbsId(), true);
+                // [2026-10-26 ADR-0043] Q&A 상태는 Q&A 게시판의 글에만 둔다.
+                assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·6] 예약 게시를 받지 않는 게시판은 오늘보다 뒤의 새 시작일을 채번 전에 거부한다.
                 String pstBgngYmd = requestedYmd(request.pstBgngYmd());
                 assertFutureStartAllowed(master, pstBgngYmd, today());
@@ -443,7 +449,8 @@ public class BoardService extends BaseAbstractService {
                         if (request.atchFileSn() != null) {
                                 attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
                                 // [2026-09-27 DIP B5 F9] 미리 올린 첨부 묶음을 붙이는 경로도 게시판 첨부 설정을 지난다.
-                                assertAttachmentPolicy(master, 0, fileService.getFileList(request.atchFileSn()).size());
+                                //   [2026-10-26 ADR-0043, SET-02] 파일 수에 더해 파일당 크기도 본다.
+                                assertGroupAttachable(master, request.atchFileSn());
                         }
 
                         // 사용자 정보 조회 (실패 시 익명 처리)
@@ -503,6 +510,8 @@ public class BoardService extends BaseAbstractService {
                 //   (그 뒤 단계의 실패는 FileService 가 트랜잭션 롤백 때 이번 호출로 저장한 파일을 지운다.)
                 //   [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판도 업로드 전에 거부한다.
                 BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                // [2026-10-26 ADR-0043] Q&A 상태도 업로드 전에 거부한다(createPost 가 다시 본다).
+                assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·6] 받지 않는 미래 시작일도 업로드 전에 거부한다(createPost 가 다시 본다).
                 assertFutureStartAllowed(master, requestedYmd(request.pstBgngYmd()), today());
                 Long atchFileSn = request.atchFileSn();
@@ -521,6 +530,8 @@ public class BoardService extends BaseAbstractService {
         public Long replyPost(@NonNull String userId, @NonNull Long parentSn, @NonNull BoardSaveRequest request) {
                 // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1] 등록과 같은 경계.
                 BoardMaster master = loadWritableMaster(request.bbsId(), true);
+                // [2026-10-26 ADR-0043] 등록과 같은 Q&A 상태 규칙.
+                assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·6] 등록과 같은 예약 게시 규칙.
                 String pstBgngYmd = requestedYmd(request.pstBgngYmd());
                 assertFutureStartAllowed(master, pstBgngYmd, today());
@@ -528,6 +539,8 @@ public class BoardService extends BaseAbstractService {
                 Board parent = findReplyParent(request.bbsId(), parentSn);
                 if (request.atchFileSn() != null) {
                         attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
+                        // [2026-10-26 ADR-0043, SET-02] 미리 올린 묶음을 붙이는 답글도 등록과 같이 게시판 첨부 설정을 지난다.
+                        assertGroupAttachable(master, request.atchFileSn());
                 }
 
                 // 사용자 정보 조회 (실패 시 익명 처리)
@@ -576,6 +589,8 @@ public class BoardService extends BaseAbstractService {
                         @NonNull BoardSaveRequest request,
                         List<MultipartFile> files) throws IOException {
                 BoardMaster master = loadWritableMaster(request.bbsId(), false);
+                // [2026-10-26 ADR-0043] Q&A 상태도 업로드 전에 거부한다(replyPost 가 다시 본다).
+                assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·6] 받지 않는 미래 시작일도 업로드 전에 거부한다(replyPost 가 다시 본다).
                 assertFutureStartAllowed(master, requestedYmd(request.pstBgngYmd()), today());
                 findReplyParent(request.bbsId(), parentSn);
@@ -643,8 +658,7 @@ public class BoardService extends BaseAbstractService {
                                 .build();
         }
 
-        /** Q&A 템플릿 게시판 — 해결 상태를 가진 게시판은 이것뿐이다(화면 BoardTemplates 와 같은 판정). */
-        private static final String QNA_TEMPLATE_ID = "TMPLT_QNA";
+        // Q&A 템플릿 게시판 판정(QNA_TEMPLATE_ID)은 BoardPolicySupport 가 등록·수정의 상태 검사와 함께 쓴다(2026-10-26 ADR-0043).
 
         /** Q&A 해결 상태 값(화면 isQnaSolved 와 같은 값). */
         private static final String QNA_SOLVED = "SOLVED";
@@ -788,6 +802,17 @@ public class BoardService extends BaseAbstractService {
         }
 
         /**
+         * 미리 올린 첨부 묶음을 글에 새로 붙여도 되는지 그 묶음의 파일 목록으로 본다(2026-10-26 ADR-0043, SET-02). 판정은
+         * {@link BoardPolicySupport#assertAttachedGroupAllowed} 가 하고, 이 메서드는 파일 도메인에서 크기만 꺼내 넘긴다.
+         */
+        private void assertGroupAttachable(BoardMaster master, Long atchFileSn) {
+                List<Long> sizes = fileService.getFileList(atchFileSn).stream()
+                                .map(file -> file == null ? null : file.getFileMg())
+                                .toList();
+                assertAttachedGroupAllowed(master, sizes);
+        }
+
+        /**
          * 첨부 번호만 바꾼 요청 사본. 나머지 필드는 그대로 옮긴다 — 요청 필드가 늘면 이 한 곳만 함께 고친다
          * (종전에는 첨부 포함 등록·답글·수정이 같은 복사를 따로 써, 한 곳을 빠뜨리면 그 필드가 조용히 사라졌다).
          */
@@ -821,6 +846,8 @@ public class BoardService extends BaseAbstractService {
                 // [2026-09-08 PD-CMTY-001·2026-10-23 ADR-0040 결정 1]
                 BoardMaster master = loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
+                // [2026-10-26 ADR-0043] Q&A 상태는 Q&A 게시판의 글에만 둔다(소유·존재 판정 뒤).
+                assertQnaStatusAllowed(master, request.qnaSttsCd());
                 assertPeriodChange(master, board, request);
                 updateOwnedPost(master, board, request, false);
         }
@@ -868,6 +895,10 @@ public class BoardService extends BaseAbstractService {
                                 && request.atchFileSn() != null
                                 && !java.util.Objects.equals(board.getAtchFileSn(), request.atchFileSn())) {
                         attachmentAssignmentPolicy.assertAssignable(request.atchFileSn());
+                        // [2026-10-26 ADR-0043, SET-02] 묶음을 바꾸는 JSON 수정도 새 묶음의 파일로 게시판 첨부 설정(허용·파일 수·
+                        //   파일당 크기)을 본다. 종전에는 이 경로만 설정을 거치지 않아, 첨부를 끈 게시판에도 미리 올린 묶음이 붙었다.
+                        //   화면은 같은 묶음 번호를 다시 보내므로 이 판정에 오지 않는다.
+                        assertGroupAttachable(master, request.atchFileSn());
                 }
 
                 // [2026-08-27] 전용 파서를 걷어내고 createPost(:217)·replyPost 와 같은 헬퍼로 통일한다.
@@ -921,6 +952,8 @@ public class BoardService extends BaseAbstractService {
                 //   [2026-10-23 ADR-0040 결정 1] 사용 여부도 같은 판정에서 본다.
                 BoardMaster master = loadWritableMaster(bbsId, false);
                 Board board = findOwnedPost(bbsId, pstSn);
+                // [2026-10-26 ADR-0043] JSON 수정과 같은 Q&A 상태 규칙 — 파일 저장보다 먼저 본다.
+                assertQnaStatusAllowed(master, request.qnaSttsCd());
                 // [2026-10-23 ADR-0040 결정 3·10] 버전·게시 기간 규칙을 첨부 판정과 파일 저장보다 먼저 본다.
                 assertPeriodChange(master, board, request);
                 // [2026-09-25 DIP I1] 요청이 첨부 번호를 싣지 않으면 글의 기존 첨부 묶음에 더한다. 종전에는 새 묶음을
@@ -931,6 +964,9 @@ public class BoardService extends BaseAbstractService {
                 // 클라이언트가 기존 첨부 식별자를 골랐다면 물리 파일 변경보다 먼저 원 업로더인지 확인한다.
                 if (atchFileSn != null && !java.util.Objects.equals(board.getAtchFileSn(), atchFileSn)) {
                         attachmentAssignmentPolicy.assertAssignable(atchFileSn);
+                        // [2026-10-26 ADR-0043, SET-02] 바꿔 붙일 묶음 자체도 게시판 첨부 설정을 지난다 — 종전에는 새 파일이
+                        //   없으면 이 묶음의 허용·파일 수·크기를 아무도 보지 않았다. 새 파일은 아래에서 합쳐 센다.
+                        assertGroupAttachable(master, atchFileSn);
                         attachmentAlreadyValidated = true;
                 }
 

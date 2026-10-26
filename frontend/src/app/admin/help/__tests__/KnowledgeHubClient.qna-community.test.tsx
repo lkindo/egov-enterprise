@@ -14,6 +14,12 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(`tab=${mocks.tab}`),
 }));
 vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['BOARD_READ'] } }) }));
+// [2026-10-26 ADR-0043] 허브는 열린 탭 게시판의 사용자용 메타를 읽는다(글쓰기 판정·실제 게시판 이름) — 실제 요청을 보내지 않게 대역을 둔다.
+vi.mock('@/services/business/user/board/BoardUserService', () => ({
+  boardUserService: {
+    getBoardMeta: async (bbsId: string) => ({ bbsId, bbsTtl: '시험 게시판', inUse: true, requiredEditPermissions: [], prvtPstPlcyCd: 'NONE' }),
+  },
+}));
 vi.mock('@/services/business/knowledge/knowledgeService', async (importOriginal) => ({
   ...(await importOriginal<typeof import('@/services/business/knowledge/knowledgeService')>()),
   knowledgeService: { getArticles: mocks.getArticles, getHotArticles: async () => ({ list: [] }), getStats: async () => ({}) },

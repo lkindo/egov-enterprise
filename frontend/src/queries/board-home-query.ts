@@ -12,7 +12,8 @@ import { getDashboardDataOperation } from '@/types/generated-operations';
  *
  * - 권한 판정 403 만 '이 홈에서 게시판을 보지 않는다'(null)다. 그 밖의 실패는 던진다 — 서버에서는 라우트 오류 경계로 가고
  *   0건 홈으로 위장하지 않는다.
- * - 게시판 전체 글 수 null 은 조회 실패(또는 게시판 없음)이고 0 으로 바꾸지 않는다.
+ * - 게시판 전체 글 수 null 은 조회 실패(또는 게시판 없음)이고 0 으로 바꾸지 않는다. 게시판을 운영하지 않아(사용 안 함·없음) null 인
+ *   경우는 서버가 *ListUnavailable 로 따로 알린다(2026-10-26 ADR-0043 SET-07).
  * - 결재 대기 수는 대시보드 응답에 없다(2026-10-20 계약에서 걷었다) — 결재 대기 카드는 결재 기능이 자기 API 로 센다(approval-home-query.ts).
  */
 type DashboardItem = components['schemas']['BoardDto'] & {
@@ -26,6 +27,12 @@ export interface BoardHomeData {
   initialTaskList: DashboardTask[];
   notiListTotal: number | null;
   taskListTotal: number | null;
+  /**
+   * [2026-10-26 ADR-0043 SET-07] 지정 게시판(공지·업무)을 지금 운영하지 않는다(사용 안 함이거나 없다) — 서버 판정이다. 이때 목록은
+   * 비고 전체 글 수는 null 이지만 조회 실패가 아니다. 조회 실패·공급자 없음은 false 다.
+   */
+  notiListUnavailable: boolean;
+  taskListUnavailable: boolean;
 }
 
 /**
@@ -63,9 +70,12 @@ export async function loadBoardHome(): Promise<BoardHomeData | null> {
   return {
     initialNotiList: dashboardResponse.notiList.slice(0, 6).map(toDashboardTask),
     initialTaskList: dashboardResponse.taskList.slice(0, 6).map(toDashboardTask),
-    // 게시판 전체 글 수. null 은 조회 실패(또는 게시판 없음)이며 0 으로 바꾸지 않는다.
+    // 게시판 전체 글 수. null 은 조회 실패 또는 운영하지 않는 게시판이며 0 으로 바꾸지 않는다.
     notiListTotal: dashboardResponse.notiListTotal ?? null,
     taskListTotal: dashboardResponse.taskListTotal ?? null,
+    // 운영하지 않는 게시판은 서버가 따로 알린다 — 화면은 이것을 '조회 실패' 와 다르게 말한다(SET-07).
+    notiListUnavailable: dashboardResponse.notiListUnavailable === true,
+    taskListUnavailable: dashboardResponse.taskListUnavailable === true,
   };
 }
 

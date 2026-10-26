@@ -4,7 +4,7 @@
 // ==========================================================================
 
 import { z } from 'zod';
-import { BoardDtoRequestSchema, BoardDtoResponseSchema, BoardDtoSchema, FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
+import { BoardDtoRequestSchema, BoardDtoResponseSchema, BoardDtoSchema, BoardMasterCommunityRequestSchema, BoardMasterCommunityResponseSchema, BoardMasterCommunitySchema, FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
 export const BoardSaveRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string().min(0).max(20),
@@ -14,7 +14,7 @@ export const BoardSaveRequestSchema = /*#__PURE__*/ (() => z.object({
   pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   atchFileSn: z.number().int().optional(),
   evntDt: z.string().min(0).max(20).optional(),
-  qnaSttsCd: z.string().min(0).max(12).optional(),
+  qnaSttsCd: z.enum(["OPEN","SOLVED"]).optional(),
   qnaCatCd: z.string().min(0).max(12).optional(),
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
@@ -101,6 +101,7 @@ export const BoardMetaDtoSchema = /*#__PURE__*/ (() => z.object({
   upendFixPsbltyYn: z.enum(["Y","N"]),
   prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
   rcmdtnUseYn: z.enum(["Y","N"]),
+  community: z.lazy(() => BoardMasterCommunitySchema).optional().nullable(),
 }))();
 export type BoardMetaDto = z.infer<typeof BoardMetaDtoSchema>;
 
@@ -117,6 +118,7 @@ export type ApiResponseListBoardSearchItemResponse = z.infer<typeof ApiResponseL
 
 export const BoardSearchItemResponseSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string(),
+  bbsTtl: z.string().optional().nullable(),
   pstSn: z.number().int(),
   pstTtl: z.string().optional().nullable(),
   userNm: z.string().optional().nullable(),
@@ -204,7 +206,7 @@ export const BoardSaveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional(),
   atchFileSn: z.number().int().optional(),
   evntDt: z.string().min(0).max(20).optional(),
-  qnaSttsCd: z.string().min(0).max(12).optional(),
+  qnaSttsCd: z.enum(["OPEN","SOLVED"]).optional(),
   qnaCatCd: z.string().min(0).max(12).optional(),
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional(),
@@ -220,7 +222,7 @@ export const BoardSaveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   pstEndYmd: z.string().min(0).max(8).regex(new RegExp("^(?:|(?!0000)(?:[0-9]{4}(?:(?:0[13578]|1[02])(?:0[1-9]|[12][0-9]|3[01])|(?:0[469]|11)(?:0[1-9]|[12][0-9]|30)|02(?:0[1-9]|1[0-9]|2[0-8]))|(?:[0-9]{2}(?:0[48]|[2468][048]|[13579][26])|(?:0[48]|[2468][048]|[13579][26])00)0229))(?![\\s\\S])")).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
   evntDt: z.string().min(0).max(20).optional().nullable(),
-  qnaSttsCd: z.string().min(0).max(12).optional().nullable(),
+  qnaSttsCd: z.enum(["OPEN","SOLVED"]).optional().nullable(),
   qnaCatCd: z.string().min(0).max(12).optional().nullable(),
   scrtYn: z.string().regex(new RegExp("^[YN]$")).optional().nullable(),
   useYn: z.string().regex(new RegExp("^[YN]$")).optional().nullable(),
@@ -354,6 +356,7 @@ export const BoardMetaDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   upendFixPsbltyYn: z.enum(["Y","N"]),
   prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
   rcmdtnUseYn: z.enum(["Y","N"]),
+  community: z.lazy(() => BoardMasterCommunityRequestSchema.strict()).optional().nullable(),
 }))();
 
 export const BoardMetaDtoResponseSchema = /*#__PURE__*/ (() => z.object({
@@ -374,6 +377,7 @@ export const BoardMetaDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   upendFixPsbltyYn: z.enum(["Y","N"]),
   prvtPstPlcyCd: z.enum(["NONE","OPTIONAL","REQUIRED"]),
   rcmdtnUseYn: z.enum(["Y","N"]),
+  community: z.lazy(() => BoardMasterCommunityResponseSchema).optional().nullable(),
 }))();
 
 export const ApiResponseListBoardSearchItemResponseRequestSchema = /*#__PURE__*/ (() => z.object({
@@ -398,6 +402,7 @@ export const ApiResponseListBoardSearchItemResponseResponseSchema = /*#__PURE__*
 
 export const BoardSearchItemResponseRequestSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string(),
+  bbsTtl: z.string().optional().nullable(),
   pstSn: z.number().int(),
   pstTtl: z.string().optional().nullable(),
   userNm: z.string().optional().nullable(),
@@ -407,6 +412,7 @@ export const BoardSearchItemResponseRequestSchema = /*#__PURE__*/ (() => z.objec
 
 export const BoardSearchItemResponseResponseSchema = /*#__PURE__*/ (() => z.object({
   bbsId: z.string(),
+  bbsTtl: z.string().optional().nullable(),
   pstSn: z.number().int(),
   pstTtl: z.string().optional().nullable(),
   userNm: z.string().optional().nullable(),

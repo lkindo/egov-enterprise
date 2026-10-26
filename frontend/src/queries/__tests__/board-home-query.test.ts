@@ -31,6 +31,8 @@ describe('업무 홈 게시판 조회', () => {
       taskList: [{ pstSn: 2, pstTtl: '할일 테스트', useYn: 'Y', userId: 'admin' }],
       taskListTotal: 1,
       notiListTotal: 1,
+      taskListUnavailable: false,
+      notiListUnavailable: false,
     }));
 
     const result = (await loadBoardHome())!;
@@ -54,6 +56,8 @@ describe('업무 홈 게시판 조회', () => {
       ],
       taskListTotal: 2,
       notiListTotal: 0,
+      taskListUnavailable: false,
+      notiListUnavailable: false,
     }));
 
     const result = (await loadBoardHome())!;
@@ -86,6 +90,7 @@ describe('업무 홈 게시판 조회', () => {
     vi.mocked(client.getRaw).mockResolvedValue(success({
       notiList: [{ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41, pstTtl: '바로 열 공지' }],
       taskList: [{ pstSn: 42, pstTtl: '게시판 정보가 없는 자료' }], taskListTotal: 1, notiListTotal: 1,
+      taskListUnavailable: false, notiListUnavailable: false,
     }));
     const result = (await loadBoardHome())!;
     expect(result.initialNotiList[0]).toMatchObject({ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41 });
@@ -105,6 +110,8 @@ describe('업무 홈 게시판 조회', () => {
       notiList: [],
       taskListTotal: 1,
       notiListTotal: 0,
+      taskListUnavailable: false,
+      notiListUnavailable: false,
     }));
 
     await expect(loadBoardHome()).rejects.toThrow('생성 API 응답에 허용되지 않은 필드가 있습니다.');
@@ -118,11 +125,38 @@ describe('업무 홈 게시판 조회', () => {
       taskList: [],
       taskListTotal: null,
       notiListTotal: 12,
+      taskListUnavailable: false,
+      notiListUnavailable: false,
     }));
 
     const result = (await loadBoardHome())!;
     expect(result.initialNotiList[0].date).toBe('2026-09-25');
     expect(result.taskListTotal).toBeNull();
     expect(result.notiListTotal).toBe(12);
+    // 조회 실패는 운영하지 않는 게시판이 아니다 — 두 상태를 합치지 않는다(SET-07).
+    expect(result.taskListUnavailable).toBe(false);
+  });
+
+  // [2026-10-26 ADR-0043 SET-07] 지정 게시판을 사용 안 함으로 두면(또는 없으면) 서버가 표지로 알린다 — 그대로 옮겨 화면이 '조회 실패' 와
+  //   다르게 말하게 한다. 한쪽 표지가 다른 쪽으로 새지 않는다.
+  it('🚨 서버의 게시판 운영 안 함 표지를 게시판별로 옮긴다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValue(success({
+      notiList: [{ pstSn: 7, pstTtl: '공지', crtDt: '2026-09-25T10:30:00' }],
+      taskList: [],
+      taskListTotal: null,
+      notiListTotal: 1,
+      taskListUnavailable: true,
+      notiListUnavailable: false,
+    }));
+
+    const result = (await loadBoardHome())!;
+    expect(result).toMatchObject({ taskListUnavailable: true, notiListUnavailable: false, taskListTotal: null, notiListTotal: 1 });
+    expect(result.initialTaskList).toEqual([]);
+  });
+
+  it('운영 안 함 표지가 빠진 응답은 계약 위반으로 받지 않는다', async () => {
+    vi.mocked(client.getRaw).mockResolvedValue(success({ taskList: [], notiList: [], taskListTotal: 0, notiListTotal: 0 }));
+
+    await expect(loadBoardHome()).rejects.toThrow('생성 API 응답이 OpenAPI 계약과 일치하지 않습니다.');
   });
 });

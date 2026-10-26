@@ -4,7 +4,8 @@ import { describe, expect, it, vi } from 'vitest';
 import { BoardMakerWizard } from '../BoardMakerWizard';
 
 // 다른 관리 화면으로 가는 길은 라우트와 같은 판정(canOpenPage)으로 보인다 — 목적지 권한을 가진 관리자로 렌더한다.
-vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['MENU_READ', 'BBS_MST_READ', 'AUTHRT_READ', 'BBS_MST_CREATE', 'MENU_CREATE'], authorizationVersion: 'v1' } }) }));
+// [2026-10-26 ADR-0043 결정 1] 마법사는 게시판만 만든다 — 게시판 만들기 권한만으로 연다.
+vi.mock('@/contexts/AuthContext', () => ({ useAuth: () => ({ user: { permissions: ['BBS_MST_READ', 'BBS_MST_CREATE'], authorizationVersion: 'v1' } }) }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: vi.fn() }),
   // [2026-09-08 PD-CMTY-001] 마법사가 커뮤니티 귀속 후보를 조회한다.
@@ -14,11 +15,9 @@ vi.mock('@/services/business/user/community/CommunityUserService', () => ({
   communityUserService: { getCommunityList: vi.fn() },
 }));
 vi.mock('@/services/foundation/system/BoardAdminService', () => ({
-  boardAdminService: { createBoard: vi.fn() },
+  boardAdminService: { createBoardMaster: vi.fn() },
 }));
-vi.mock('@/services/foundation/system/MenuAdminService', () => ({
-  menuAdminService: { createMenu: vi.fn() },
-}));
+vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav aria-label="현재 위치" /> }));
 vi.mock('../BoardPreview', () => ({ BoardPreview: () => null }));
 
 /**

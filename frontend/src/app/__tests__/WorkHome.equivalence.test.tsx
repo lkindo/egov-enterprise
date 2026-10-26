@@ -51,6 +51,9 @@ vi.mock('@/lib/api/client', () => {
         notiList: [{ bbsId: 'BBSMSTR_AAAAAAAAAAAA', pstSn: 41, pstTtl: '점검 공지', crtDt: '2026-09-25T10:30:00' }],
         taskListTotal: server.taskListTotal,
         notiListTotal: 12,
+        // [2026-10-26 ADR-0043 1차 SET-07] 지정 게시판을 운영하지 않음 — 이 그물은 운영 중인 상태만 본다.
+        taskListUnavailable: false,
+        notiListUnavailable: false,
       });
     }
     if (url === 'approvals/pending') {

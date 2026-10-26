@@ -1,9 +1,12 @@
 import { Suspense } from 'react';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import CommentModerationClient from './CommentModerationClient';
 
+// [2026-10-26 ADR-0043 1차 OPS-06] 문서 제목은 다른 관리 화면과 같은 '화면 이름 | 사이트' 다 — 종전 '시스템 관리' 는 메뉴 위치(관리 센터 ›
+//   콘텐츠 운영)와 달랐다.
 export const metadata = {
-  title: '댓글 및 평가 관리 | 시스템 관리',
-  description: '게시물에 등록된 댓글을 조회하고 관리합니다.',
+  title: `댓글 및 평가 관리 | ${SITE_IDENTITY.frameworkName}`,
+  description: '게시물에 등록된 댓글을 게시판·글로 걸러 조회하고 관리합니다.',
 };
 
 /*

@@ -257,12 +257,10 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["BBS_MST_CREATE","BBS_MST_UPDATE"],"mode":"ANY"},
     "permissions": [
-      {"code":"AUTHRT_GRANT","action":"GRANT","source":"display"},
-      {"code":"AUTHRT_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_CREATE","action":"CREATE","source":"entry"},
+      {"code":"BBS_MST_READ","action":"READ","source":"display"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"entry"},
-      {"code":"MENU_CREATE","action":"CREATE","source":"write"},
-      {"code":"MENU_READ","action":"READ","source":"display"},
+      {"code":"MENU_CREATE","action":"CREATE","source":"display"},
       {"code":"MENU_UPDATE","action":"UPDATE","source":"display"}
     ]
   },
@@ -296,10 +294,13 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
       {"code":"BBS_MST_DELETE","action":"DELETE","source":"write"},
       {"code":"BBS_MST_READ","action":"READ","source":"entry"},
       {"code":"BBS_MST_UPDATE","action":"UPDATE","source":"write"},
+      {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
       {"code":"BOARD_PIN","action":"PIN","source":"write"},
       {"code":"BOARD_READ_ALL","action":"READ_ALL","source":"display"},
       {"code":"BOARD_UPDATE_ALL","action":"UPDATE_ALL","source":"write"},
-      {"code":"MENU_READ","action":"READ","source":"display"}
+      {"code":"MENU_CREATE","action":"CREATE","source":"display"},
+      {"code":"MENU_READ","action":"READ","source":"display"},
+      {"code":"MENU_UPDATE","action":"UPDATE","source":"display"}
     ]
   },
   {
@@ -339,6 +340,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
       {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
       {"code":"COMMUNITY_CREATE_ALL","action":"CREATE_ALL","source":"write"},
       {"code":"COMMUNITY_DELETE_ALL","action":"DELETE_ALL","source":"write"},
@@ -356,6 +358,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
       {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
       {"code":"COMMUNITY_CREATE_ALL","action":"CREATE_ALL","source":"write"},
       {"code":"COMMUNITY_DELETE_ALL","action":"DELETE_ALL","source":"write"},
@@ -373,6 +376,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":[],"mode":"ANY"},
     "permissions": [
+      {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
       {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
       {"code":"COMMUNITY_CREATE_ALL","action":"CREATE_ALL","source":"write"},
       {"code":"COMMUNITY_DELETE_ALL","action":"DELETE_ALL","source":"write"},
@@ -748,6 +752,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["COMMENT_READ_ALL"],"mode":"ANY"},
     "permissions": [
+      {"code":"BOARD_READ","action":"READ","source":"display"},
       {"code":"COMMENT_DELETE_ALL","action":"DELETE_ALL","source":"write"},
       {"code":"COMMENT_READ_ALL","action":"READ_ALL","source":"entry"}
     ]

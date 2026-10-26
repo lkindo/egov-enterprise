@@ -24,9 +24,12 @@ public interface BoardMapper {
 
     // [ADR-0040 결정 5] 고정 여부(pinned)와 고정 종료일(upendFixEndYmd)은 서버 기준일로 판정한 값이라 매퍼가 옮기지 않는다 —
     //   BoardService 가 게시판 목록·상세에서만 채운다. 그대로 옮기면 종료일이 지난 옛 고정의 날짜가 다른 경로(통합 검색 등)로 나간다.
+    // [2026-10-26 ADR-0043, NAV-10] 게시판 이름(bbsTtl)은 통합 검색만 싣는다 — BoardService#searchAcrossBoards 가 채운다. 매퍼가
+    //   옮기면 게시판 목록·상세 응답의 모든 글에 같은 이름이 실린다.
     @Mapping(target = "commentCnt", source = "cmntCnt")
     @Mapping(target = "pinned", ignore = true)
     @Mapping(target = "upendFixEndYmd", ignore = true)
+    @Mapping(target = "bbsTtl", ignore = true)
     BoardDto toDto(Board entity);
 
     @Mapping(target = "userId", source = "frstRgtrId")
@@ -36,10 +39,12 @@ public interface BoardMapper {
     @Mapping(target = "fileCnt", ignore = true)
     @Mapping(target = "pinned", ignore = true)
     @Mapping(target = "upendFixEndYmd", ignore = true)
+    @Mapping(target = "bbsTtl", ignore = true)
     BoardDto toDto(BoardSearchResult result);
 
     @Mapping(target = "fileCnt", ignore = true)
     @Mapping(target = "pinned", ignore = true)
     @Mapping(target = "upendFixEndYmd", ignore = true)
+    @Mapping(target = "bbsTtl", ignore = true)
     BoardDto toDto(BoardDetailResult detail);
 }

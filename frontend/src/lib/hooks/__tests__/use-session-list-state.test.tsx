@@ -1,6 +1,6 @@
 import { act, renderHook } from '@testing-library/react';
 import { beforeEach, describe, expect, it } from 'vitest';
-import { useSessionListState } from '../use-session-list-state';
+import { purgeSessionListState, useSessionListState } from '../use-session-list-state';
 
 /**
  * [2026-10-01] 목록 조건을 이 탭 동안 기억한다 — 상세에 다녀와 목록이 새로 마운트돼도 검색어·페이지·범위가 남는다.
@@ -20,6 +20,30 @@ describe('useSessionListState', () => {
 
     const again = renderHook(() => useSessionListState('dept-job-list:test', DEFAULTS));
     expect(again.result.current[0]).toEqual({ searchKeyword: '보고', jobPage: 3, jobScope: 'dept' });
+  });
+
+  it('로그아웃 정리는 목록 조건만 지우고, 열린 목록은 기본값으로 돌아간다', () => {
+    window.sessionStorage.setItem('other-feature', 'keep');
+    const list = renderHook(() => useSessionListState('help-center', DEFAULTS));
+    act(() => list.result.current[1]({ searchKeyword: '급여 정정' }));
+    list.unmount();
+    act(() => purgeSessionListState());
+    expect(window.sessionStorage.getItem('egov.list-session.v1:help-center')).toBeNull();
+    expect(window.sessionStorage.getItem('other-feature')).toBe('keep');
+    const again = renderHook(() => useSessionListState('help-center', DEFAULTS));
+    expect(again.result.current[0]).toEqual(DEFAULTS);
+  });
+
+  // 다른 탭의 로그인으로 신원이 바뀌어도 열린 채인 목록이 앞 사용자의 조건을 그리지 않는다.
+  it('열린 목록도 정리하면 앞에서 고른 조건을 버리고 기본값으로 돌아간다', () => {
+    const list = renderHook(() => useSessionListState('help-center', DEFAULTS));
+    act(() => list.result.current[1]({ searchKeyword: '급여 정정', jobPage: 2 }));
+    expect(list.result.current[0].searchKeyword).toBe('급여 정정');
+    act(() => purgeSessionListState());
+    expect(list.result.current[0]).toEqual(DEFAULTS);
+    // 정리 뒤에 고른 조건은 다시 기억한다.
+    act(() => list.result.current[1]({ jobPage: 3 }));
+    expect(list.result.current[0]).toEqual({ ...DEFAULTS, jobPage: 3 });
   });
 
   it('화면 키가 다르면 섞이지 않는다', () => {

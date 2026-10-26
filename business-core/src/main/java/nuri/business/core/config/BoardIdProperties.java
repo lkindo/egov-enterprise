@@ -18,6 +18,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>주의(H3/H4): 같은 인스턴스 ID라도 사용처 의미가 다르다 — {@code BBSMSTR_AAAAAAAAAAAA}는
  * 공지 게시판이면서 FAQ 통합 게시판이기도 하다. 값 변경 시 의미 축별로 따로 판정할 것.
+ *
+ * <p>[2026-10-26 ADR-0043 결정 4] 지정 용도는 다섯이다(공지·FAQ·업무·Q&A·위키). 지정 게시판은 영구 삭제를 거부한다. 화면도 같은
+ * 대응을 상수({@code frontend/src/config/board-ids.ts})로 들고 있어, 지정을 바꾸려면 이 설정과 화면 상수를 함께 바꾼다. 두 기본값이
+ * 같은지는 {@code frontend/src/__tests__/cross-stack/designated-board-ids-contract.test.ts} 가 대조한다(과도기 가드 — 환경별로 바꾼 값은 이 설정이 정본이다).
  */
 @Getter
 @Setter
@@ -33,4 +37,10 @@ public class BoardIdProperties {
 
     /** FAQ 통합 게시판 ID — 데모 시드에서는 공지 게시판과 같은 인스턴스로 통합돼 있다. */
     private String faqId = "BBSMSTR_AAAAAAAAAAAA";
+
+    /** Q&A 게시판 ID — 도움말 센터 1:1 문의(비밀글)와 지식 허브 질의응답 탭이 쓴다(ADR-0043 결정 4). */
+    private String qnaId = "BBSMSTR_DDDDDDDDDDDD";
+
+    /** 위키 게시판 ID — 지식 허브 위키 탭이 쓴다. 데모 시드에서는 '일정 게시판' 인스턴스다(ADR-0043 결정 4). */
+    private String wikiId = "BBSMSTR_EEEEEEEEEEEE";
 }

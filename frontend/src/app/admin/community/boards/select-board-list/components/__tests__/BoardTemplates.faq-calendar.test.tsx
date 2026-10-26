@@ -135,6 +135,26 @@ describe('캘린더 템플릿', () => {
     render(<CalendarTemplate {...props} totalCount={1} list={[{ pstSn: 1, pstTtl: '행사', evntDt: '2026-09-15T10:00:00' } as never]} />);
 
     expect(screen.queryByRole('status')).toBeNull();
-    expect(screen.getByRole('link', { name: '행사' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: '9월 15일: 행사' })).toBeInTheDocument();
+  });
+
+  /*
+    [2026-10-26 ADR-0043 UX-13] 칸의 날짜 숫자는 링크와 프로그램으로 이어지지 않아 화면낭독기는 제목만 읽었다 — 같은 제목의 행사가
+    여러 날에 있으면 어느 날인지 알 수 없었다. 링크 이름이 날짜를 담고, 보이는 제목도 이름 안에 그대로 있다(WCAG 2.5.3).
+  */
+  it('일정 링크의 접근 이름이 날짜를 담는다 — 같은 제목이 여러 날에 있어도 구별된다', () => {
+    render(
+      <CalendarTemplate
+        {...props}
+        totalCount={2}
+        list={[
+          { pstSn: 1, pstTtl: '정기 점검', evntDt: '2026-09-03T10:00:00' } as never,
+          { pstSn: 2, pstTtl: '정기 점검', evntDt: '2026-09-24T10:00:00' } as never,
+        ]}
+      />,
+    );
+
+    expect(screen.getAllByRole('link').map((link) => link.textContent)).toEqual(['9월 3일: 정기 점검', '9월 24일: 정기 점검']);
+    expect(screen.getByRole('link', { name: '9월 24일: 정기 점검' })).toHaveAttribute('href', '/admin/community/boards/detail?bbsId=BBS-FAQ&pstSn=2');
   });
 });

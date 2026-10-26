@@ -2,7 +2,9 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import React from 'react';
+import { AppRouterContext } from 'next/dist/shared/lib/app-router-context.shared-runtime';
 import { handOffMenuFocus, handOffScreen } from '@/lib/navigation/target-handoff';
+import { UnsavedChangesProvider } from '@/contexts/UnsavedChangesContext';
 import { pageInProjection } from '@/test-utils/projection';
 
 // 기능 예시(모두 충족 판정·별칭·쪽지함 등)에 기대는 시험은 그 화면이 투영으로 빠진 생성물에서 등록하지 않는다 — page 파일이 원장에 있고 실제로 없을 때다(원본에서는 그대로다).
@@ -20,15 +22,22 @@ const mocks = vi.hoisted(() => ({
   reload: vi.fn(),
   matrix: vi.fn(),
   refresh: vi.fn(),
+  push: vi.fn(),
 }));
 const auth = vi.hoisted(() => ({ permissions: [] as string[], loading: false }));
 const dnd = vi.hoisted(() => ({ event: null as null | Record<string, unknown> }));
 
-vi.mock('next/navigation', () => ({
-  useRouter: () => ({ push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), refresh: mocks.refresh, back: vi.fn() }),
-  usePathname: () => '/admin/system/menus',
-  useSearchParams: () => new URLSearchParams(),
-}));
+vi.mock('next/navigation', async () => {
+  const { useContext } = await import('react');
+  const { AppRouterContext } = await import('next/dist/shared/lib/app-router-context.shared-runtime');
+  return {
+    // 이동 보호 공급자 안에서 렌더하면 그 공급자가 감싼 라우터를 돌려준다(실제 앱의 useRouter 와 같다). 밖에서는 시험 라우터다.
+    useRouter: () => useContext(AppRouterContext)
+      ?? ({ push: mocks.push, replace: vi.fn(), prefetch: vi.fn(), refresh: mocks.refresh, back: vi.fn() }),
+    usePathname: () => '/admin/system/menus',
+    useSearchParams: () => new URLSearchParams(),
+  };
+});
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav aria-label="현재 위치" /> }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
@@ -116,14 +125,23 @@ function deferred<T>() {
 }
 
 type Loaded = { data: ReturnType<typeof structure> | null; error: string | null };
-async function renderClient(options: { menus?: ReturnType<typeof menu>[]; version?: string; error?: string; permissions?: string[] } = {}) {
+async function renderClient(options: {
+  menus?: ReturnType<typeof menu>[];
+  version?: string;
+  error?: string;
+  permissions?: string[];
+  wrap?: (node: React.ReactNode) => React.ReactNode;
+} = {}) {
   auth.permissions = options.permissions ?? FULL;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const wrap = options.wrap ?? ((node: React.ReactNode) => node);
   const tree = (loaded: Promise<Loaded>) => (
     <QueryClientProvider client={client}>
-      <React.Suspense fallback={<p>불러오는 중</p>}>
-        <MenuAdminClient structurePromise={loaded} />
-      </React.Suspense>
+      {wrap(
+        <React.Suspense fallback={<p>불러오는 중</p>}>
+          <MenuAdminClient structurePromise={loaded} />
+        </React.Suspense>,
+      )}
     </QueryClientProvider>
   );
   const first: Promise<Loaded> = Promise.resolve(options.error
@@ -602,6 +620,55 @@ describe('새 메뉴 — 그 자리 맨 끝에 초안으로 만들고 이름 칸
     handOffMenuFocus({ menuSn: 6 });
     await renderClient({ permissions: ['MENU_READ'] });
     expect(rowButton('시스템')).toHaveAttribute('aria-current', 'true');
+  });
+
+  // [2026-10-26 ADR-0043 결정 1] 인계가 실은 '돌아갈 곳' — 머리에 돌아가기 단추를 두고, 누르면 그 경로로 간다.
+  it('메뉴 인계가 돌아갈 곳을 실으면 돌아가기 단추를 두고 그 경로로 이동한다', async () => {
+    mocks.push.mockClear();
+    const returnTo = { route: '/admin/community/boards/master/BBSMSTR_000000000001?tab=access', label: '게시판 공개 준비로 돌아가기' };
+    expect(handOffMenuFocus({ menuSn: 6, returnTo })).toBe(true);
+    await renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: '게시판 공개 준비로 돌아가기' }));
+    await waitFor(() => expect(mocks.push).toHaveBeenCalledWith(returnTo.route));
+  });
+
+  // 화면 라우터는 이동 보호가 감싼 라우터다 — 확인 안에서 그 라우터를 다시 부르면 두 번째 확인이 이동을 버린다. 실제 공급자로 고정한다.
+  it('저장하지 않은 변경이 있어도 변경을 버리기로 하면 돌아갈 곳으로 이동한다', async () => {
+    const returnTo = { route: '/admin/community/boards/master/BBSMSTR_000000000001?tab=access', label: '게시판 공개 준비로 돌아가기' };
+    expect(handOffMenuFocus({ menuSn: 6, returnTo })).toBe(true);
+    const base = { push: vi.fn(), replace: vi.fn(), prefetch: vi.fn(), refresh: vi.fn(), back: vi.fn(), forward: vi.fn(), hmrRefresh: vi.fn() };
+    await renderClient({
+      wrap: (node) => (
+        <AppRouterContext.Provider value={base as unknown as React.ContextType<typeof AppRouterContext>}>
+          <UnsavedChangesProvider>{node}</UnsavedChangesProvider>
+        </AppRouterContext.Provider>
+      ),
+    });
+    fireEvent.change(screen.getByRole('textbox', { name: '메뉴 이름' }), { target: { value: '시스템 운영' } });
+    expect(screen.getByRole('button', { name: '변경 1건' })).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole('button', { name: '게시판 공개 준비로 돌아가기' }));
+
+    await waitFor(() => expect(mocks.confirm).toHaveBeenCalledWith(expect.objectContaining({ title: '저장하지 않은 변경' })));
+    await waitFor(() => expect(base.push).toHaveBeenCalledWith(returnTo.route));
+    expect(mocks.confirm).toHaveBeenCalledTimes(1);
+  });
+
+  it('돌아갈 곳이 없는 인계는 돌아가기 단추를 두지 않는다', async () => {
+    handOffMenuFocus({ menuSn: 6 });
+    await renderClient();
+    expect(rowButton('시스템')).toHaveAttribute('aria-current', 'true');
+    expect(screen.queryByRole('button', { name: /돌아가기/ })).not.toBeInTheDocument();
+  });
+
+  it('게시판 운영 화면이 넘긴 쿼리 붙은 주소로 새 메뉴 위치 고르기를 열고, 조회 권한만 있어도 돌아가기 단추를 둔다', async () => {
+    const route = '/admin/community/boards/select-board-list?bbsId=BBSMSTR_000000000001';
+    const returnTo = { route: '/admin/community/boards/master/BBSMSTR_000000000001?tab=access', label: '게시판 공개 준비로 돌아가기' };
+    expect(handOffScreen({ route, label: '부서 자료실', returnTo })).toBe(true);
+    await renderClient();
+    const dialog = within(await screen.findByRole('dialog', { name: '새 메뉴 위치 고르기' }));
+    expect(dialog.getByText(/부서 자료실 화면\(\/admin\/community\/boards\/select-board-list\?bbsId=BBSMSTR_000000000001\)을 연결한 새 메뉴를 만들 곳을 고르세요/)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '게시판 공개 준비로 돌아가기' })).toBeInTheDocument();
   });
 
   it('없는 메뉴 번호면 고르지 않고 알리며, 인계를 지운다', async () => {

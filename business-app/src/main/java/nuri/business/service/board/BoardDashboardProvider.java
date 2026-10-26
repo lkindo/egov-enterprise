@@ -3,7 +3,9 @@ package nuri.business.service.board;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import nuri.business.core.config.BoardIdProperties;
+import nuri.business.domain.board.exception.BoardErrorCode;
 import nuri.business.service.board.dto.BoardDto;
+import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.dashboard.DashboardItemProvider;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -38,19 +40,41 @@ public class BoardDashboardProvider implements DashboardItemProvider {
      */
     @Override
     public void provideDashboardData(String userId, Map<String, Object> result) {
-        putRecentPosts(result, "taskList", "taskListTotal", boardIdProperties.getTaskId());
-        putRecentPosts(result, "notiList", "notiListTotal", boardIdProperties.getNoticeId());
+        putRecentPosts(result, "taskList", "taskListTotal", "taskListUnavailable", boardIdProperties.getTaskId());
+        putRecentPosts(result, "notiList", "notiListTotal", "notiListUnavailable", boardIdProperties.getNoticeId());
     }
 
-    private void putRecentPosts(Map<String, Object> result, String listKey, String totalKey, String bbsId) {
+    /**
+     * [2026-10-26 ADR-0043, SET-07] 지정 게시판을 사용 안 함으로 둔(또는 없는) 상태는 장애가 아니라 운영 상태다. 종전에는 조회 실패와
+     * 같이 다뤄 카드가 '불러오지 못했습니다·잠시 후 다시'로 오안내했고 요청마다 오류 로그를 남겼다. 게시판 없음(BOARD_NOT_FOUND)만
+     * 따로 잡아 목록을 비우고 '이용할 수 없음' 표지를 싣고 경고로만 남긴다. 전체 글 수는 비운다 — 0 은 '글이 없다'는 사실 주장이다.
+     * 그 밖의 실패는 지금처럼 오류로 남기고 표지는 false 다(DEC-OPS-140 — 실패를 0건이나 운영 상태로 위장하지 않는다).
+     */
+    private void putRecentPosts(Map<String, Object> result, String listKey, String totalKey, String unavailableKey,
+            String bbsId) {
         try {
             Page<BoardDto> page = boardService.getBoardPosts(bbsId, PageRequest.of(0, 5));
             result.put(listKey, page.getContent());
             result.put(totalKey, page.getTotalElements());
-        } catch (Exception e) {
-            log.error("Failed to fetch dashboard {}", listKey, e);
+            result.put(unavailableKey, false);
+        } catch (BusinessException e) {
+            if (e.getErrorCode() != BoardErrorCode.BOARD_NOT_FOUND) {
+                fail(result, listKey, totalKey, unavailableKey, e);
+                return;
+            }
+            log.warn("업무 홈 {} 게시판을 지금 이용할 수 없습니다(사용 안 함이거나 없음).", listKey);
             result.put(listKey, List.of());
             result.put(totalKey, null);
+            result.put(unavailableKey, true);
+        } catch (Exception e) {
+            fail(result, listKey, totalKey, unavailableKey, e);
         }
+    }
+
+    private static void fail(Map<String, Object> result, String listKey, String totalKey, String unavailableKey, Exception e) {
+        log.error("Failed to fetch dashboard {}", listKey, e);
+        result.put(listKey, List.of());
+        result.put(totalKey, null);
+        result.put(unavailableKey, false);
     }
 }
