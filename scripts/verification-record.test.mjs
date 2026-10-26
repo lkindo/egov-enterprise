@@ -56,7 +56,9 @@ test('records step outcomes, explicit skips and diagnostic Git changes without e
   assert.equal(run.skip('changed-e2e', 'no-selected-specs'), true);
   writeFileSync(join(root, 'tracked.txt'), 'private-source-content\n');
   writeFileSync(join(root, 'private-untracked-name.txt'), 'private-untracked-content\n');
-  assert.equal(run.finish({ exitCode: 0 }), true);
+  const finished = warningsDuring(() => run.finish({ exitCode: 0 }));
+  assert.equal(finished.value, true);
+  assert.ok(finished.warnings.every(warning => !warning.includes('private')), 'the input-change warning carries no file values');
 
   const events = records(root, run.runId);
   assert.deepEqual(events.map(event => event.event), ['run-start', 'step-start', 'step-end', 'step-skipped', 'run-end']);
@@ -130,10 +132,13 @@ test('finish is idempotent and a subsequent commit is captured without treating 
   const headBefore = records(root, run.runId)[0].git.head;
   writeFileSync(join(root, 'tracked.txt'), 'changed\n');
   commit(root);
-  run.finish({ exitCode: 0 });
+  // Capture the input-change warning so it is asserted here instead of printed into the operational contracts' output.
+  const finished = warningsDuring(() => run.finish({ exitCode: 0 }));
+  assert.equal(finished.warnings.length, 1);
   run.finish({ exitCode: 1 });
   const events = records(root, run.runId);
   assert.equal(events.filter(event => event.event === 'run-end').length, 1);
+  assert.equal(events.at(-1).inputChanged, true);
   assert.notEqual(events.at(-1).git.head, headBefore);
   assert.equal(events.at(-1).exitCode, 0);
   assert.equal(events[0].authority, 'diagnostic-only');
@@ -347,7 +352,7 @@ test('step samples, staged changes and a deliberate rewrite are seen; an unknown
   assert.deepEqual(steppedEvents[1].concurrentKinds, ['playwright']);
   assert.deepEqual([steppedEvents.at(-1).concurrentSuspected, steppedEvents.at(-1).concurrentKinds], [true, ['playwright']]);
   assert.equal(stepWarnings.warnings.length, 1);
-  const repeat = createRun(sampled([['vitest'], ['vitest']]));
+  const repeat = warningsDuring(() => createRun(sampled([['vitest'], ['vitest']]))).value;
   const repeatWarnings = warningsDuring(() => repeat.stepStart('compile'));
   assert.deepEqual(repeatWarnings.warnings, [], 'a kind already reported is not repeated at each step');
   repeat.stepEnd('compile', { exitCode: 0 });
