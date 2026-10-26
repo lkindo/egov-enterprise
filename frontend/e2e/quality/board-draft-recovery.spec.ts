@@ -17,6 +17,10 @@ test.describe('Quality & Resilience', () => {
             expect(await persistentDraftKeys()).toEqual([]);
             // Next 클라이언트 이동으로 같은 문서 안에서만 복구한다.
             await page.getByRole('button', { name: '취소', exact: true }).click();
+            // [2026-10-26 ADR-0043 1차 UX-07] 고친 입력이 있으면 앱 안 이동 전에 묻는다 — 앱의 확인 창이라 위 dialog 수락이 닿지 않는다.
+            //   변경을 버리고 나가도 같은 탭의 초안은 남아, 다시 들어오면 복구를 묻는다.
+            await page.getByRole('dialog', { name: '저장하지 않은 변경', exact: true })
+                .getByRole('button', { name: '변경 버리고 이동', exact: true }).click();
             await page.getByRole('link', { name: '글쓰기', exact: true }).click();
             const restoreDialog = page.getByRole('dialog').filter({ hasText: '임시저장 데이터 복구' });
             await expect(restoreDialog).toBeVisible();

@@ -69,7 +69,8 @@ test.describe('Quality & Resilience', () => {
                 //   종전 기본값이던 공지사항을 명시하고, 고르기 화면은 따로 감사한다.
                 ['/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA', '게시글 작성·수정'],
                 ['/admin/community/boards/insert-board-article', '게시글 작성·수정'],
-                ['/admin/help/faq', '자주 묻는 질문 관리'],
+                // [2026-10-26 ADR-0043 0차 NAV-01] 허브 탭 화면의 제목은 '탭 · 지식 허브' 다(관리 전용 화면이 아니다).
+                ['/admin/help/faq', '자주 묻는 질문 · 지식 허브'],
                 ['/admin/community/boards/maker', '게시판 생성'],
                 // [2026-10-24 DEC-OPS-382] 패턴 갤러리 — 실제 토큰·셸로 그린 표본의 렌더 결과 대비를 본다(정적 표본이라 결정적이다).
                 ['/admin/patterns', '업무 화면 패턴 갤러리'],
