@@ -2037,6 +2037,7 @@
       "dataSource": "mixed",
       "supportedActions": [
         "create",
+        "navigate",
         "preview-template"
       ],
       "profileOwners": [
@@ -2060,28 +2061,28 @@
           "id": "board.master-create-wizard",
           "status": "partial",
           "candidateStatus": "live",
-          "dataSource": "board-masters+menus+communities-api",
+          "dataSource": "board-masters+communities-api",
           "actions": [
-            "create"
+            "create",
+            "navigate"
           ],
           "unsupportedVisibleActions": [],
           "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "게시판 생성·메뉴 배포",
+          "visibleLabel": "게시판 만들기·사용 전환·메뉴에 붙이기",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-10-26",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
-            "api-server/src/main/java/nuri/api/controller/foundation/controller/system/MenuApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/content/board/BoardMasterApiControllerTest.java",
             "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
             "frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx",
             "frontend/src/app/admin/community/boards/maker/page.tsx",
             "frontend/src/services/business/user/community/CommunityUserService.ts",
             "frontend/src/services/foundation/system/BoardAdminService.ts",
-            "frontend/src/services/foundation/system/MenuAdminService.ts"
+            "frontend/src/lib/navigation/target-handoff.ts"
           ]
         },
         {

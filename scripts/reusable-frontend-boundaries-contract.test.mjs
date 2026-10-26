@@ -75,7 +75,9 @@ function boundaryErrors(source, profile, feature, moderation = moderationSource)
     }
   }
   if (feature === 'maker') {
-    if (!text.includes('boardAdminService.createBoardMaster(') || !text.includes('menuAdminService.createMenu(')) errors.push('included board creation was removed');
+    if (!text.includes('boardAdminService.createBoardMaster(')) errors.push('included board creation was removed');
+    // [2026-10-26 ADR-0043 결정 1] 마법사는 게시판만 만들고 메뉴를 만들지 않는다 — 메뉴는 메뉴 관리 인계로 붙인다.
+    if (text.includes('menuAdminService')) errors.push('the board wizard creates menus again');
     if (!domains.has('community') && /communityUserService|communityOptions|htmlFor: ['"]cmntySn['"]/.test(text)) errors.push(`excluded community ownership leaked into ${profile}`);
     if (domains.has('community') && !text.includes('communityUserService.getCommunityList(')) errors.push('included community selection was removed');
   }

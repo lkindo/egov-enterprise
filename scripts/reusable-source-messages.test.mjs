@@ -65,7 +65,7 @@ test('ErrorCode·Bean Validation 정규식은 메시지 번들 계약의 원문�
   assert.match(contract, /List\.of\("foundation", "business-core", "business-app", "api-server"\)/);
   assert.deepEqual(MESSAGE_SCAN_MODULES, ['foundation', 'business-core', 'business-app', 'api-server']);
   // B003(댓글 없음)은 게시판이 아니라 댓글 ErrorCode 가 정의한다.
-  assert.deepEqual(errorCodesIn(read(BOARD)), ['B001', 'B002', 'B004', 'B005', 'B006']);
+  assert.deepEqual(errorCodesIn(read(BOARD)), ['B001', 'B002', 'B004', 'B005', 'B006', 'B007']);
   assert.deepEqual(errorCodesIn(read('business-app/src/main/java/nuri/business/domain/comment/exception/CommentErrorCode.java')), ['B003']);
 });
 
@@ -119,7 +119,7 @@ test('하한은 지운 몫만큼만 내리고, 상수가 없거나 1 아래로 �
 test('core 투영은 게시판·댓글 ErrorCode 의 키를 걷고, 계약 하한을 원본과 같은 여유 폭으로 내린다', () => {
   const { output, java } = projectedTree('core');
   try {
-    assert.deepEqual(java.prunedMessageKeys, ['B001', 'B002', 'B003', 'B004', 'B005', 'B006']);
+    assert.deepEqual(java.prunedMessageKeys, ['B001', 'B002', 'B003', 'B004', 'B005', 'B006', 'B007']);
     const [ko, en] = MESSAGE_BUNDLES.map(path => readFileSync(join(output, path), 'utf8'));
     for (const text of [ko, en]) {
       assert.ok(!keysOf(text).some(key => /^B00\d$/.test(key)), '게시판 키가 남았다');
@@ -157,5 +157,5 @@ test('투영 픽스처는 원본 번들과 계약을 바꾸지 않는다', () =>
   // 위 시험들이 임시 폴더가 아니라 원본을 고쳤다면 원본에서 게시판 키가 빠지거나 하한이 내려가 있다.
   for (const path of MESSAGE_BUNDLES) assert.ok(keysOf(read(path)).includes('B001'), path);
   assert.equal(floorOf(read(MESSAGE_CONTRACT), 'MIN_ERROR_CODES'), 39);
-  assert.equal(floorOf(read(MESSAGE_CONTRACT), 'MIN_BEAN_VALIDATION_REFS'), 29);
+  assert.equal(floorOf(read(MESSAGE_CONTRACT), 'MIN_BEAN_VALIDATION_REFS'), 33);
 });

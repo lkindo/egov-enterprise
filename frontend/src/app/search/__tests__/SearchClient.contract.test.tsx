@@ -1,4 +1,4 @@
-import { fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { SearchResultsContent } from '../SearchClient';
 import { inProjection } from '@/test-utils/projection';
@@ -204,6 +204,29 @@ describe('SearchResultsContent 사용자 검색 계약', () => {
 
     expect(await screen.findByText('연차 신청 안내')).toBeInTheDocument();
     expect(mocks.searchPosts).toHaveBeenCalledWith('연차');
+  });
+
+  /*
+   * [2026-10-26 ADR-0043 NAV-10] 메뉴가 없는 게시판은 통합 검색이 사실상 유일한 발견 경로다 — 결과 카드가 어느 게시판의 글인지
+   * 서버가 준 게시판 이름(bbsTtl)으로 말한다. 이름이 없거나 빈 문자열이면 배지를 그리지 않는다(짐작해 채우지 않는다).
+   */
+  if (boardAxisInProjection) it('게시글 결과 카드에 서버가 준 게시판 이름을 배지로 보이고, 이름이 없으면 배지를 그리지 않는다', async () => {
+    mocks.searchPosts.mockResolvedValue([
+      { bbsId: 'BBS_01', bbsTtl: '업무게시판', pstSn: 7, pstTtl: '연차 신청 안내' },
+      { bbsId: 'BBS_02', bbsTtl: null, pstSn: 8, pstTtl: '연차 사용 기준' },
+      { bbsId: 'BBS_03', bbsTtl: '  ', pstSn: 9, pstTtl: '연차 이월 문의' },
+    ]);
+
+    render(<SearchResultsContent initialResults={emptyResults} query="연차" />);
+
+    const named = await screen.findByRole('link', { name: /연차 신청 안내/ });
+    expect(named).toHaveAccessibleName(expect.stringContaining('게시판 업무게시판'));
+    expect(within(named).getByTitle('업무게시판')).toHaveTextContent('업무게시판');
+    for (const title of ['연차 사용 기준', '연차 이월 문의']) {
+      const card = screen.getByRole('link', { name: new RegExp(title) });
+      expect(card).not.toHaveAccessibleName(expect.stringContaining('게시판 '));
+      expect(card.querySelector('[data-slot="badge"]')).toBeNull();
+    }
   });
 
   it('게시글 탭에 기능 부재가 아니라 검색 범위를 안내한다', async () => {

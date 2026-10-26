@@ -44,4 +44,20 @@ public class CommunityBoardAccessAdapter implements CommunityBoardAccessPort {
     public boolean exists(Long cmntySn) {
         return cmntySn != null && communityRepository.existsById(cmntySn);
     }
+
+    /**
+     * [2026-10-26 ADR-0043 결정 3] 게시판 운영 화면에 귀속 커뮤니티의 이름과 이용 가능 여부를 알린다. 이용 가능은 이용자 상세
+     * ({@code CommunityService#getActiveCommunity})와 같은 판정이다 — 사용 중이고 정식 등록({@code REGC01})이어야 한다.
+     * 없는 커뮤니티는 비운다(호출부가 확인 불가로 다룬다).
+     */
+    @Override
+    @Transactional(readOnly = true)
+    public java.util.Optional<CommunitySummary> summary(Long cmntySn) {
+        if (cmntySn == null) {
+            return java.util.Optional.empty();
+        }
+        return communityRepository.findById(cmntySn)
+                .map(community -> new CommunitySummary(community.getCmntyNm(),
+                        "Y".equals(community.getUseYn()) && "REGC01".equals(community.getRegSeCd())));
+    }
 }

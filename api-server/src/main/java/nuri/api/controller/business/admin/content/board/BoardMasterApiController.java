@@ -7,6 +7,7 @@ import nuri.business.service.board.BoardChangeService;
 import nuri.business.service.board.BoardMasterService;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardChangeDto;
+import nuri.business.service.board.dto.BoardMasterBatchStatusRequest;
 import nuri.business.service.board.dto.BoardMasterDto;
 import nuri.business.service.board.dto.BoardMasterUpdateRequest;
 import nuri.business.service.board.dto.BoardPostPeriodBatchRequest;
@@ -41,7 +42,8 @@ public class BoardMasterApiController {
 
     @Operation(summary = "게시판 마스터 목록 조회",
             description = "searchUseYn 을 비우면 전체, Y·N 이면 그 사용 상태만입니다(그 밖의 값은 400). "
-                    + "designations 는 설정이 지정한 용도(NOTICE·FAQ·TASK)이며 지정이 없으면 빈 배열입니다.")
+                    + "designations 는 설정이 지정한 용도(NOTICE·FAQ·TASK·QNA·WIKI)이며 지정이 없으면 빈 배열입니다. "
+                    + "community 는 귀속 커뮤니티의 번호·이름·이용 가능 여부이고, 귀속이 없으면 싣지 않습니다(이름·이용 가능 여부를 알 수 없으면 null).")
     @GetMapping
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardMasterList')")
     public ResponseEntity<ApiResponse<PageResponse<BoardMasterSummaryResponse>>> getBoardMasterList(
@@ -50,18 +52,23 @@ public class BoardMasterApiController {
         // 검색 축은 게시판명 하나라 searchCondition 은 읽지 않는다(DEC-OPS-332).
         Page<BoardMasterDto> page = boardMasterService.getBoardMasterList(
                 searchDto.getSearchKeyword(), searchDto.getSearchUseYn(), pageable);
+        // [2026-10-26 ADR-0043 결정 3] 한 쪽의 귀속 커뮤니티 요약을 커뮤니티마다 한 번만 묻는다.
+        java.util.Map<Long, nuri.business.service.board.dto.BoardMasterCommunity> communities = boardMasterService.communitiesOf(
+                page.getContent().stream().map(BoardMasterDto::getCmntySn).toList());
         return ResponseEntity.ok(ApiResponse.success(PageResponse.of(page.map(dto ->
-                BoardMasterSummaryResponse.from(dto, boardMasterService.designationsOf(dto.getBbsId()))))));
+                BoardMasterSummaryResponse.from(dto, boardMasterService.designationsOf(dto.getBbsId()),
+                        dto.getCmntySn() == null ? null : communities.get(dto.getCmntySn()))))));
     }
 
     @Operation(summary = "게시판 마스터 상세 조회",
-            description = "version 은 설정 수정 요청에 그대로 돌려보낼 값입니다. designations 는 목록과 같습니다.")
+            description = "version 은 설정 수정 요청에 그대로 돌려보낼 값입니다. designations·community 는 목록과 같습니다.")
     @GetMapping("/{bbsId}")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#getBoardMaster')")
     public ResponseEntity<ApiResponse<BoardMasterDetailResponse>> getBoardMaster(@PathVariable String bbsId) {
         BoardMasterDto result = boardMasterService.getBoardMaster(bbsId);
         return ResponseEntity.ok(ApiResponse.success(
-                BoardMasterDetailResponse.from(result, boardMasterService.designationsOf(result.getBbsId()))));
+                BoardMasterDetailResponse.from(result, boardMasterService.designationsOf(result.getBbsId()),
+                        boardMasterService.communityOf(result.getCmntySn()))));
     }
 
     @Operation(summary = "게시판 변경 이력 조회",
@@ -77,7 +84,10 @@ public class BoardMasterApiController {
                 boardChangeService.getChanges(bbsId, PageRequests.unsorted(pageable)))));
     }
 
-    @Operation(summary = "게시판 마스터 등록")
+    @Operation(summary = "게시판 마스터 등록",
+            description = "tmpltId 는 내장 레이아웃 일곱 개(TMPLT_HUB·TMPLT_LIST·TMPLT_GALLERY·TMPLT_QNA·TMPLT_CALENDAR·TMPLT_FAQ·"
+                    + "TMPLT_WIKI)만 받습니다. bbsId 는 비우면 서버가 채번하고, 보낼 때는 BBSMSTR_ 뒤에 영문 대문자·숫자 12자입니다. "
+                    + "첨부 파일 수는 0~20, 파일당 크기는 0~10485760 바이트입니다(0 은 게시판 상한 없음·서버 전역 상한). 어긋나면 400 입니다.")
     @PostMapping
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#createBoardMaster')")
@@ -117,7 +127,8 @@ public class BoardMasterApiController {
     }
 
     @Operation(summary = "게시판 마스터 영구 삭제",
-            description = "행을 물리 삭제합니다. 활성 게시판이거나 게시글이 남아 있으면 거부됩니다(서비스 레이어 재검증).")
+            description = "행을 물리 삭제합니다. 설정이 지정한 용도(designations)가 있는 게시판은 409(B007)이고 사유에 용도를 싣습니다. "
+                    + "활성 게시판이거나 게시글이 남아 있으면 400 입니다(서비스 레이어 재검증).")
     @DeleteMapping("/{bbsId}/physical")
     // [2026-10-23 ADR-0040 결정 9] 되돌릴 수 없는 삭제라 민감 작업 원장에 남긴다 — 게시판 변경 이력은 지운 게시판을 남기지 않는다.
     @nuri.foundation.core.annotation.SensitiveOperation("게시판 영구 삭제")
@@ -128,7 +139,8 @@ public class BoardMasterApiController {
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    @Operation(summary = "게시판 마스터 사용여부 일괄 변경")
+    @Operation(summary = "게시판 마스터 사용여부 일괄 변경",
+            description = "useYn 은 필수이고 Y·N 만 받습니다(없거나 그 밖의 값은 400). 지정 게시판도 사용 안 함으로 바꿀 수 있습니다.")
     @PostMapping("/batch/status")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#updateBoardMasterStatusInBatch')")
     public ResponseEntity<ApiResponse<Void>> updateBoardMasterStatusInBatch(
@@ -139,7 +151,8 @@ public class BoardMasterApiController {
     }
 
     @Operation(summary = "게시판 마스터 일괄 영구 삭제",
-            description = "대상마다 비활성·게시글 0건을 재검증하며, 하나라도 어긋나면 전체가 롤백됩니다.")
+            description = "대상마다 지정 용도 없음·비활성·게시글 0건을 재검증하며, 하나라도 어긋나면 전체가 롤백됩니다. 없는 대상이 "
+                    + "있으면 404 이고 다른 검사보다 먼저입니다. 지정 게시판이 섞이면 요청 순서와 상관없이 409(B007), 사용 중·글 있음은 400 입니다.")
     @PostMapping("/batch/delete")
     @nuri.foundation.core.annotation.SensitiveOperation("게시판 일괄 영구 삭제")
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.board.BoardMasterApiController#deleteBoardMastersInBatch')")

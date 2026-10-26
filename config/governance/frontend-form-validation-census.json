@@ -7,9 +7,9 @@
     "nativeFormFiles": 65,
     "memberFormOccurrences": 1,
     "memberFormFiles": 1,
-    "formlessWriteBoundaries": 26,
-    "secondaryActionBoundaries": 82,
-    "candidateCount": 185
+    "formlessWriteBoundaries": 27,
+    "secondaryActionBoundaries": 83,
+    "candidateCount": 187
   },
   "entries": [
     {
@@ -2802,6 +2802,22 @@
       ]
     },
     {
+      "key": "formless-write:frontend/src/app/admin/system/comments/CommentModerationClient.tsx#CommentModerationClient",
+      "kind": "formless-write",
+      "file": "frontend/src/app/admin/system/comments/CommentModerationClient.tsx",
+      "owner": "CommentModerationClient",
+      "classification": "destructive",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/system/comments/__tests__/CommentModerationClient.test.tsx"
+      ]
+    },
+    {
       "key": "native-form:frontend/src/app/admin/system/content-pages/PurgeDialogs.tsx#PurgePageDialog[1]",
       "kind": "native-form",
       "file": "frontend/src/app/admin/system/content-pages/PurgeDialogs.tsx",
@@ -3613,6 +3629,26 @@
       "pendingGuard": "action-pending-lock-and-disabled",
       "testEvidence": [
         "frontend/src/components/features/satisfaction/__tests__/SatisfactionSection.test.tsx"
+      ]
+    },
+    {
+      "key": "secondary-action:frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx#BoardMakerWizard.switchBoardToUse[1]",
+      "kind": "secondary-action",
+      "file": "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
+      "owner": "BoardMakerWizard",
+      "handler": "switchBoardToUse",
+      "writeSinks": [
+        "boardAdminService.batchUpdateBoardMasterStatus"
+      ],
+      "classification": "mutation",
+      "status": "compliant",
+      "validationMode": "action-only-no-editable-payload",
+      "schemaSource": "not-applicable:no-editable-payload",
+      "errorNavigation": "not-applicable-action-only",
+      "serverErrors": "action-error-feedback-preserves-state",
+      "pendingGuard": "action-pending-lock-and-disabled",
+      "testEvidence": [
+        "frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx"
       ]
     }
   ],

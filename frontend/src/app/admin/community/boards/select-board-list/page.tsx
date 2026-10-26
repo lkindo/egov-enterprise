@@ -1,22 +1,37 @@
-import { Metadata } from 'next';
+import type { Metadata } from 'next';
+import { SITE_IDENTITY } from '@/config/site-identity';
 import { BoardListClient } from './BoardListClient';
-import { getInitialBoardData } from './BoardListServer';
+import { getBoardTitle, getInitialBoardData } from './BoardListServer';
 import { resolveDefaultBoardId } from './BoardListServer';
-
-export const metadata: Metadata = {
-  title: '전체 게시글 - 전자정부 프레임워크',
-  description: '전자정부 소프트웨어 프레임워크 프로젝트의 전체 게시글 목록입니다.',
-};
 
 function toSingleString(val: string | string[] | undefined): string | undefined {
   if (Array.isArray(val)) return val[0];
   return val;
 }
 
+type BoardListSearchParams = Promise<Record<string, string | string[] | undefined>>;
+
+/**
+ * 문서 제목은 '게시판 이름 | 사이트 이름' 이다.
+ *
+ * [2026-10-26 ADR-0043 UX-15] 종전 고정 제목('전체 게시글 - 전자정부 프레임워크')은 어느 게시판을 열어도 같아, 탭·방문 기록·화면낭독기가
+ * 지금 어느 게시판인지 말하지 못했다. 이름은 화면 머리와 같은 사용자용 메타에서 읽고(같은 요청에서 한 번만 받는다), 받지 못하면
+ * 일반 제목('게시판')을 쓴다 — 이름을 지어내지 않는다.
+ */
+export async function generateMetadata({ searchParams }: { searchParams: BoardListSearchParams }): Promise<Metadata> {
+  const resolvedSearchParams = await searchParams;
+  const bbsId = toSingleString(resolvedSearchParams.bbsId) || await resolveDefaultBoardId();
+  const boardTitle = await getBoardTitle(bbsId);
+  return {
+    title: `${boardTitle ?? '게시판'} | ${SITE_IDENTITY.frameworkName}`,
+    description: boardTitle ? `${boardTitle}의 글 목록입니다.` : '게시판의 글 목록입니다.',
+  };
+}
+
 /**
  * 서버 컴포넌트: 페이지 진입점
  */
-export default async function BoardListPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
+export default async function BoardListPage({ searchParams }: { searchParams: BoardListSearchParams }) {
   const resolvedSearchParams = await searchParams;
   /*
    * 종전 기본값 LEGACY_DEFAULT_BOARD_ID('BBSMSTR_000000000001')는 **어떤 시드에도 없다**

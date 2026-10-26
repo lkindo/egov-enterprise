@@ -15,6 +15,24 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BoardMasterDto {
 
+    /**
+     * 게시판 첨부 파일 수 상한의 최댓값 — 서버 전역 상한(요청당 20개, {@code FileService.MAX_FILES_PER_REQUEST})과 같다.
+     * [2026-10-26 ADR-0043, ATTR-15] 종전에는 범위 검사가 없어 음수·전역보다 큰 값이 저장됐다. 0 은 '게시판 상한 없음'이다(DEC-OPS-173 ②).
+     */
+    public static final int MAX_ATTACHMENT_FILE_COUNT = 20;
+
+    /** 게시판 파일당 크기 상한의 최댓값(바이트) — 서버 전역 상한(10MB, {@code FileService.MAX_FILE_SIZE_BYTES})과 같다. 0 은 전역 상한이다. */
+    public static final long MAX_ATTACHMENT_FILE_BYTES = 10L * 1024 * 1024;
+
+    /** 게시판 ID 형식(운영 화면 경로와 같다). */
+    public static final String BBS_ID_PATTERN = "^BBSMSTR_[A-Z0-9]{12}$";
+
+    /**
+     * 생성 요청의 게시판 ID. 비우면 서버가 채번한다. [2026-10-26 ADR-0043, ATTR-07] 보낼 때는 운영 화면이 여는 형식
+     * ({@code BBSMSTR_} + 영문 대문자·숫자 12자)만 받는다 — 다른 형식으로 만든 게시판은 운영 화면이 열지 못했다.
+     */
+    @Schema(description = "게시판 ID — 비우면 서버가 채번한다. 보낼 때는 BBSMSTR_ 뒤에 영문 대문자·숫자 12자")
+    @Pattern(regexp = BBS_ID_PATTERN, message = "{validation.pattern}")
     @Size(max = 20)
     private String bbsId;
     @Size(max = 100)
@@ -38,9 +56,24 @@ public class BoardMasterDto {
     @Pattern(regexp = "^(?:Y|N)$", message = "{validation.pattern}")
     @Size(max = 1)
     private String fileAtchPsbltyYn;
+    @Schema(description = "첨부 파일 수(0~20, 0 은 게시판 상한 없음 — 서버 전역 상한 적용)", minimum = "0", maximum = "20")
+    @Min(0)
+    @Max(MAX_ATTACHMENT_FILE_COUNT)
     private Integer atchPsbltyFileQty;
+    @Schema(description = "파일당 크기(바이트, 0~10485760, 0 은 서버 전역 상한)", minimum = "0", maximum = "10485760")
     @NotNull
+    @Min(0)
+    @Max(MAX_ATTACHMENT_FILE_BYTES)
     private Long atchPsbltyFileSz;
+    /**
+     * 화면 유형 템플릿 — 실제 화면을 정하는 값이다. [2026-10-26 ADR-0043 결정 5] 생성 요청은 내장 레이아웃 일곱 개만 받는다
+     * ({@link BoardLayoutIds}). 만든 뒤에는 바꾸지 않는다(설정 수정 요청에 없다).
+     */
+    @Schema(description = "화면 유형 템플릿(내장 레이아웃 일곱 개). 만든 뒤에는 바꾸지 않는다",
+            allowableValues = { BoardLayoutIds.HUB, BoardLayoutIds.LIST, BoardLayoutIds.GALLERY, BoardLayoutIds.QNA,
+                    BoardLayoutIds.CALENDAR, BoardLayoutIds.FAQ, BoardLayoutIds.WIKI })
+    @Pattern(regexp = BoardLayoutIds.PATTERN, message = "{validation.pattern}")
+    @NotBlank
     @Size(max = 20)
     private String tmpltId;
     private String frstRgtrId;

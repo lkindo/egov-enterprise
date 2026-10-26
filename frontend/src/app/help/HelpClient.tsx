@@ -2,8 +2,13 @@
 
 import { useEffect, useRef, useState } from 'react';
 import dynamic from 'next/dynamic';
+import Link from 'next/link';
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
-import { helpUserService, isQnaSolved, FAQ, QNA, type HelpGuide } from '@/services/business/user/help/HelpUserService';
+import { helpUserService, FAQ, QNA, type HelpGuide } from '@/services/business/user/help/HelpUserService';
+import { isQnaSolved, QNA_STATUS_LABELS } from '@/lib/board/qna-status';
+import { QNA_BOARD_ID } from '@/config/board-ids';
+import { useOptionalAuth } from '@/contexts/AuthContext';
+import { useSessionListState } from '@/lib/hooks/use-session-list-state';
 import { useToast } from '@/app/components/ui/toast';
 import { HelpCircle, MessageCircle, ChevronDown, PlusCircle, BookOpen, FileText } from 'lucide-react';
 import { HelpGuideList, GUIDE_TAB_COPY, type GuideTab } from './HelpGuideList';
@@ -71,17 +76,39 @@ const ASK_FORM_LABELS = { pstTtl: '제목', pstCn: '내용' };
  * 읽기만 한다(2026-10-19). 종전에는 등록만 되고 일반 사용자가 읽는 화면이 없었다.
  */
 type HelpTab = 'faq' | 'qna' | GuideTab;
+const HELP_TABS: readonly HelpTab[] = ['faq', 'qna', 'guide', 'manual'];
+const isHelpTab = (value: string): value is HelpTab => (HELP_TABS as readonly string[]).includes(value);
+
+/**
+ * [2026-10-26 ADR-0043 UX-04] 탭·쪽·검색어는 이 탭이 살아 있는 동안 기억한다(useSessionListState — URL·서버로 나가지 않는다).
+ * 1:1 문의 내역의 행을 열면 게시글 상세로 가고, 상세의 '목록으로' 는 뒤로 가기로 돌아온다. 이 화면은 그때 새로 마운트되므로
+ * 컴포넌트 상태에만 두면 늘 자주 묻는 질문 탭 1쪽으로 돌아와, 방금 보던 문의 내역을 다시 찾아야 했다.
+ */
+const HELP_LIST_STATE_DEFAULTS = { tab: 'faq', page: 1, keyword: '' };
+
+/** 1:1 문의 내역 한 건의 구분. 비밀글은 작성자와 관리자에게만 오므로, 내 글이 아닌 비밀글은 관리자 화면에서만 보인다. */
+function qnaKindLabel(item: QNA, viewerId: string | undefined): string {
+  if (item.scrtYn !== 'Y') return '공개 질문';
+  return viewerId && item.authorId === viewerId ? '내 1:1 문의' : '1:1 문의';
+}
+
+/** 1:1 문의·공개 질문은 Q&A 게시판의 글이다 — 상세는 게시글 상세 화면이 연다(댓글로 단 답변도 거기서 읽는다). */
+const qnaDetailHref = (item: QNA) =>
+  `/admin/community/boards/detail?bbsId=${encodeURIComponent(QNA_BOARD_ID)}&pstSn=${encodeURIComponent(item.qaId)}`;
 
 export default function HelpClient() {
   const { toast } = useToast();
-  const [tab, setTab] = useState<HelpTab>('faq');
+  const viewerId = useOptionalAuth()?.user?.esntlId;
+  const [listState, updateListState] = useSessionListState('help-center', HELP_LIST_STATE_DEFAULTS);
+  const tab: HelpTab = isHelpTab(listState.tab) ? listState.tab : 'faq';
+  const page = Number.isSafeInteger(listState.page) && listState.page > 0 ? listState.page : 1;
+  const searchKeyword = listState.keyword;
+  const setPage = (nextPage: number) => updateListState({ page: nextPage });
   const [faqs, setFaqs] = useState<FAQ[]>([]);
   const [qnas, setQnas] = useState<QNA[]>([]);
   const [guides, setGuides] = useState<HelpGuide[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadError, setLoadError] = useState<{ tab: HelpTab; message: string } | null>(null);
-  const [searchKeyword, setSearchKeyword] = useState('');
-  const [page, setPage] = useState(1);
   const [pageInfo, setPageInfo] = useState({ total: 0, size: 10 });
   const [requestSize, setRequestSize] = useState(10);
   const [expandedFaq, setExpandedFaq] = useState<string | null>(null);
@@ -143,8 +170,7 @@ export default function HelpClient() {
 
   const changeTab = (nextTab: HelpTab) => {
     if (nextTab === tab) return;
-    setTab(nextTab);
-    setPage(1);
+    updateListState({ tab: nextTab, page: 1 });
     setRequestSize(10);
     setExpandedFaq(null);
     setLoading(true);
@@ -191,10 +217,31 @@ export default function HelpClient() {
     }
   });
 
+  /*
+    [2026-10-26 ADR-0043 UX-04] 종전 문의 내역은 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고, 내 문의와 남의 공개 질문이
+    같은 모양이었다. 제목으로 게시글 상세를 열고, 구분 열이 '내 1:1 문의'·'공개 질문' 을 말한다(서버 값 scrtYn·작성자만 읽는다).
+    등록일은 yyyy-MM-dd 다. 상태 이름은 게시판 정본(QNA_STATUS_LABELS)을 쓴다 — '답변 대기' 는 답이 달려도 해결로 표시하기 전까지
+    남는 상태라 실제 의미와 달랐다(UX-05).
+  */
   const qnaColumns = [
     {
+      header: '구분',
+      accessor: (item: QNA) => (
+        <span className="whitespace-nowrap rounded border border-border px-2 py-0.5 text-xs text-muted-foreground">
+          {qnaKindLabel(item, viewerId)}
+        </span>
+      ),
+    },
+    {
       header: '제목',
-      accessor: (item: QNA) => <span className="font-bold text-foreground/80">{item.qstnTtl}</span>,
+      accessor: (item: QNA) => (
+        <Link
+          href={qnaDetailHref(item)}
+          className="font-bold text-foreground/80 hover:text-primary hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+        >
+          {item.qstnTtl}
+        </Link>
+      ),
     },
     {
       header: '작성자',
@@ -202,14 +249,14 @@ export default function HelpClient() {
     },
     {
       header: '등록일',
-      accessor: (item: QNA) => <span className="text-muted-foreground font-mono text-xs">{item.writngDe}</span>
+      accessor: (item: QNA) => <span className="text-muted-foreground tabular-nums text-xs">{item.writngDe || '-'}</span>
     },
     {
       header: '상태',
       accessor: (item: QNA) => (
         <StatusBadge
           status={isQnaSolved(item.qnaSttsCd) ? 'Y' : 'R'}
-          labels={{ Y: '답변완료', R: '답변 대기' }}
+          labels={{ Y: QNA_STATUS_LABELS.SOLVED, R: QNA_STATUS_LABELS.OPEN }}
         />
       )
     }
@@ -288,8 +335,7 @@ export default function HelpClient() {
             placeholder="키워드로 검색"
             value={searchKeyword}
             onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-              setSearchKeyword(e.target.value);
-              setPage(1);
+              updateListState({ keyword: e.target.value, page: 1 });
               setExpandedFaq(null);
               setLoading(true);
             }}
@@ -390,6 +436,19 @@ export default function HelpClient() {
                       <h3 className="text-2xl font-bold tracking-tight">문의 내역</h3>
                       <p className="text-xs font-medium text-muted-foreground">
                         내가 남긴 1:1 문의와 공개된 문의를 함께 보여 줍니다. 1:1 문의는 작성자와 관리자만 볼 수 있습니다.
+                        제목을 누르면 문의와 답변을 봅니다.
+                      </p>
+                      {/*
+                        [2026-10-26 ADR-0043 UX-04·NAV-11] 같은 Q&A 게시판에 입구가 둘이다 — 여기(나만 볼 1:1 문의)와 지식 허브 질의응답
+                        (모두가 보는 공개 질문). 지식 허브가 이 화면을 안내하듯 이 화면도 그쪽을 안내한다. 도움말 기능은 게시판 기능을
+                        요구하므로(config/modules/help.json) 이 링크는 도움말이 있는 구성에서 늘 닿는다.
+                      */}
+                      <p className="text-xs font-medium text-muted-foreground">
+                        모두에게 묻고 답하려면{' '}
+                        <Link href="/admin/help/qna" className="text-primary underline underline-offset-2 hover:text-primary/80">
+                          지식 허브 질의응답
+                        </Link>
+                        을 이용하세요.
                       </p>
                   </div>
                   {/* 종전에는 onClick 도 대상 라우트도 없는 死버튼이었다(카탈로그 G10). */}

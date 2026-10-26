@@ -1,5 +1,6 @@
 import { cn } from '@/lib/utils';
 import { toDisplayYmd } from '@/lib/format-date';
+import { isQnaSolved, qnaStatusLabel } from '@/lib/board/qna-status';
 import type { BoardPostingStatus } from '@/types/business/board';
 
 /*
@@ -34,6 +35,8 @@ export function PostingStatusBadge({ status, startYmd }: {
       >
         예약
         {start ? <span className="sr-only"> · 게시 시작일 {start}</span> : null}
+        {/* [2026-10-26 ADR-0043 1차 UX-14] 설명을 마우스 올림(title)에만 두지 않는다 — 화면 낭독기에도 전한다. */}
+        <span className="sr-only"> · 다른 사용자에게는 아직 보이지 않습니다</span>
       </span>
     );
   }
@@ -41,6 +44,7 @@ export function PostingStatusBadge({ status, startYmd }: {
     return (
       <span className={cn(BADGE_CLASS, 'bg-muted text-muted-foreground')} title={ENDED_NOTE}>
         게시 종료
+        <span className="sr-only"> · 다른 사용자에게는 보이지 않습니다</span>
       </span>
     );
   }
@@ -64,6 +68,7 @@ export function PinnedBadge({ pinned, endYmd }: { pinned?: boolean | null; endYm
     >
       상단 고정
       {end ? <span className="sr-only"> · {end}까지</span> : null}
+      <span className="sr-only"> · 게시판 목록 맨 위에 고정한 글</span>
     </span>
   );
 }
@@ -90,6 +95,20 @@ export function PostingStatusLabel({ status }: { status?: BoardPostingStatus | n
     <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border px-1.5 py-0.5 text-xs text-foreground">
       <span className={cn('size-1.5 rounded-full', DOT_CLASS[status])} aria-hidden="true" />
       {LABELS[status]}
+    </span>
+  );
+}
+
+/**
+ * [2026-10-26 ADR-0043 1차 OPS-02] 운영 화면 게시물 탭의 Q&A 해결 상태 칸. 이름은 정본 표(qna-status.ts)의 '미해결 / 해결됨' 이다 —
+ * '답변 대기' 로 부르지 않는다(해결 표시는 답변 여부가 아니다). 게시 상태 칸과 같게 점과 글자로 그려 색만으로 구분하지 않는다(WCAG 1.4.1).
+ */
+export function QnaStatusLabel({ qnaSttsCd }: { qnaSttsCd?: string | null }) {
+  const solved = isQnaSolved(qnaSttsCd ?? undefined);
+  return (
+    <span className="inline-flex items-center gap-1.5 whitespace-nowrap rounded-md border border-border px-1.5 py-0.5 text-xs text-foreground">
+      <span className={cn('size-1.5 rounded-full', solved ? 'bg-success' : 'bg-warning')} aria-hidden="true" />
+      {qnaStatusLabel(qnaSttsCd)}
     </span>
   );
 }

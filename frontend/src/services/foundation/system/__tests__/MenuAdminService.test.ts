@@ -20,27 +20,14 @@ vi.mock('@/lib/api/client', () => ({
   }
 }));
 
-describe('MenuAdminService', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(client.getRaw).mockResolvedValue({
-      success: true,
-      code: 'S000',
-      message: '성공',
-      data: { list: [], total: 0, page: 1, size: 10, totalPage: 0 },
-    });
-    // [ADR-0036] 자원을 만드는 POST 는 새 식별자를 data 로 돌려준다 — 메뉴 등록은 새 메뉴 번호다.
-    vi.mocked(client.requestRaw).mockResolvedValue({ success: true, code: 'S000', message: '성공', data: 8 });
-  });
-
-  it('createMenu should call post', async () => {
-    const data = { menuNm: 'Test', menuOrdr: 1 };
-    await menuAdminService.createMenu(data);
-    expect(client.requestRaw).toHaveBeenCalledWith({
-      url: 'admin/system/menus',
-      method: 'post',
-      data,
-    });
+/*
+ * [2026-10-26 ADR-0043 결정 1] 메뉴 단건 등록(createMenu)을 걷었다 — 화면 호출자였던 게시판 만들기 마법사가 메뉴를 만들지 않는다.
+ *   새 메뉴는 구조 저장(creations)으로만 만든다. 걷은 메서드가 되살아나면 이 시험이 붉어진다.
+ */
+describe('MenuAdminService — 메뉴 단건 등록 없음', () => {
+  it('메뉴를 만드는 길은 구조 저장 하나다', () => {
+    expect(menuAdminService).not.toHaveProperty('createMenu');
+    expect(typeof menuAdminService.saveMenuStructure).toBe('function');
   });
 });
 

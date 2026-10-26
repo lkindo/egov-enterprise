@@ -17,8 +17,9 @@ test.describe('Board Master Management (Admin Flow)', () => {
             await dialog.accept();
         });
     });
-    test("게시판 만들기(사용 안 함·메뉴 비활성) → 운영 화면 설정 저장 → 목록에서 사용 안 함으로 바꾸기", async ({ page }) => {
+    test("게시판 만들기(사용 안 함·메뉴 없음) → 운영 화면 설정 저장 → 목록에서 사용 안 함으로 바꾸기", async ({ page }) => {
         // [2026-10-23 ADR-0040 §5.2·5.3·5.5] 설정 편집은 운영 화면 설정 탭으로, 단건 비활성화는 목록의 일괄 사용 상태 바꾸기로 옮겼다.
+        // [2026-10-26 ADR-0043 결정 1] 마법사는 메뉴를 만들지 않는다 — 단계는 용도·기본정보 → 화면·기능 → 최종 확인 셋이다.
         const uniqueId = Date.now();
         const boardName = `E2E_Console_Test_${uniqueId}`;
         const boardDesc = `Automated test board created via E2E wizard at ${new Date().toISOString()}`;
@@ -29,9 +30,8 @@ test.describe('Board Master Management (Admin Flow)', () => {
         await boardMasterPage.startWizard();
         await boardMasterPage.fillStep1(boardName, boardDesc);
         await boardMasterPage.fillStep2('지식 허브');
-        await boardMasterPage.fillStep3(`Menu_${boardName}`);
-        await boardMasterPage.fillStep4();
-        await boardMasterPage.verifySuccess(`Menu_${boardName}`);
+        await boardMasterPage.fillStep3();
+        await boardMasterPage.verifySuccess(boardName);
         console.log('\n>>> Step 1: Continuing to the operations screen (publication readiness)');
         await boardMasterPage.continuePublicationReadiness();
         console.log('\n>>> Step 2: Saving settings on the operations screen');

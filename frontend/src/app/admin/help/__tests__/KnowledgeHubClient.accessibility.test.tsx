@@ -61,6 +61,13 @@ vi.mock('@tanstack/react-query', () => ({
           ...common,
           data: { totalViews: 3, topContributor: '합성 작성자' },
         };
+      // [2026-10-26 ADR-0043] 열린 탭 게시판의 사용자용 메타(글쓰기 판정·실제 게시판 이름).
+      case 'board-masters':
+        return {
+          ...common,
+          isPending: false,
+          data: { bbsId: 'BBSMSTR_AAAAAAAAAAAA', bbsTtl: '공지사항', inUse: true, requiredEditPermissions: ['NOTICE_EDIT', 'FAQ_EDIT'], prvtPstPlcyCd: 'NONE' },
+        };
       default:
         throw new Error(`unexpected query: ${queryKey[0]}`);
     }
@@ -81,7 +88,8 @@ describe('KnowledgeHubClient accessibility semantics', () => {
     render(<KnowledgeHubClient defaultTab="FAQ" />);
 
     expect(screen.getByRole('heading', { level: 1, name: '자주 묻는 질문' })).toBeVisible();
-    expect(screen.getByText('문서를 검색하고 필요한 내용을 확인하세요.')).toHaveClass('text-muted-foreground');
+    // [2026-10-26 ADR-0043 NAV-01 A안] 설명은 탭이 실제로 보여 주는 게시판을 말한다('자주 묻는 질문' 탭 = 공지사항 게시판).
+    expect(screen.getByText('공지사항 게시판의 글을 보여 줍니다. 제목으로 검색할 수 있습니다.')).toHaveClass('text-muted-foreground');
     /*
      * [2026-09-20] A1 셸 이행으로 총계의 소유자가 화면에서 WorkListPage 결과 툴바로 옮겼다.
      * 셸은 수치만 강조하려고 `총 <span>N</span>건` 으로 쪼개 렌더하므로 getByText('총 1건')

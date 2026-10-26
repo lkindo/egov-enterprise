@@ -110,6 +110,8 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
   */
  /** 캘린더가 한 달에 한 번에 받는 일정 수 상한(DIP V6). 넘으면 화면이 일부만 보인다고 말한다. */
  const CALENDAR_MONTH_LIMIT = 100;
+ /** 목록 한 쪽의 글 수. 서버 첫 목록(BoardListServer)도 같은 크기로 받는다. */
+ const LIST_PAGE_SIZE = 10;
 
  const LIST_PARAM_KEYS = ['bbsId', 'searchWrd', 'searchCnd', 'orderBy', 'startDate', 'endDate', 'page'] as const;
  const { toast } = useToast();
@@ -207,7 +209,11 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
  // 마스터 정보 및 템플릿 확인
 
  const masterInfo = initialData.masterInfo || null;
- const canCreateArticle = canPermission(user, 'BOARD_CREATE') && canEditConfiguredBoard(user, masterInfo);
+ /*
+  [2026-10-26 ADR-0043 NAV-03] 글쓰기는 사용 중인 게시판에서만 연다 — 서버가 사용 안 함 게시판의 새 글을 업로드 전에 거부한다(ADR-0040
+  결정 1). 지식 허브의 글쓰기와 같은 판정이다. 메타를 모르면 canEditConfiguredBoard 가 이미 닫는다.
+ */
+ const canCreateArticle = canPermission(user, 'BOARD_CREATE') && canEditConfiguredBoard(user, masterInfo) && masterInfo?.inUse !== false;
  /*
   [2026-10-23 ADR-0040 결정 6] 목록의 추천 단추는 추천 권한(BOARD_LIKE)이 있고(DEC-OPS-185) 게시판이 사용 중이며 추천을 받을 때만
   연다 — 그 밖에는 쌓인 수만 보인다. 서버가 사용 안 함 게시판과 추천을 받지 않는 게시판의 새 추천을 거부한다. 메타를 모르면 열린
@@ -263,7 +269,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
   : {
     bbsId,
     page: queryPage,
-    size: 10,
+    size: LIST_PAGE_SIZE,
     searchWrd: querySearchWrd,
     searchCnd: querySearchCnd,
     orderBy: queryOrderBy,
@@ -335,7 +341,6 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
 
  const list: BoardPost[] = data?.list || [];
  const totalCount = data?.total || 0;
- const totalPages = data?.totalPage || 0;
 
  // URL 파라미터로 캘린더 상태 관리
  // 검증을 통과한 값만 쓴다 — 종전에는 여기서도 원문을 new Date 에 넣어, 잘못된 값이면
@@ -392,7 +397,9 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
      );
    }
 
-   if (list.length === 0) {
+   // [2026-10-26 ADR-0043 UX-13] 캘린더는 빈 달에도 달력을 그린다 — 달 이동이 그 안에 있어, 빈 상태로 바꾸면 다른 달로 갈 길이 없다
+   //   (기간 선택도 캘린더에서는 두지 않는다). 빈 달이라는 사실은 달력 위에서 말한다.
+   if (list.length === 0 && !isCalendar) {
      return (
        <div className="overflow-hidden rounded-md border border-border bg-card">
          <div className="flex flex-col items-center justify-center gap-3 px-[var(--filter-pad)] py-10 text-muted-foreground">
@@ -435,11 +442,20 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
        ) : tmpltId === 'TMPLT_QNA' ? (
          <QnaTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_CALENDAR' ? (
-         <CalendarTemplate
-           list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen}
-           currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth}
-           totalCount={totalCount}
-         />
+         <>
+           {list.length === 0 && (
+             <p role="status" className="mb-2 rounded-md border border-border bg-muted/40 px-[var(--filter-pad)] py-2 text-[length:var(--font-size-body)] text-muted-foreground">
+               {querySearchWrd
+                 ? <>&ldquo;{querySearchWrd}&rdquo;에 맞는 이 달의 일정이 없습니다. 이전 달·다음 달로 옮기거나 검색어를 바꿔 보세요.</>
+                 : '이 달에 등록된 일정이 없습니다. 이전 달·다음 달로 옮겨 볼 수 있습니다.'}
+             </p>
+           )}
+           <CalendarTemplate
+             list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen}
+             currentViewDate={currentViewDate} onPrevMonth={handlePrevMonth} onNextMonth={handleNextMonth}
+             totalCount={totalCount}
+           />
+         </>
        ) : tmpltId === 'TMPLT_FAQ' ? (
          <FaqTemplate list={list} bbsId={bbsId} querySearchWrd={querySearchWrd} handleLike={handleLike} pendingLikePstSn={pendingLikePstSn} likesOpen={likesOpen} />
        ) : tmpltId === 'TMPLT_WIKI' ? (
@@ -481,24 +497,35 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
          사용 안 함 게시판입니다. 이용자에게 닫혀 있고, 운영자는 글을 정리할 수 있습니다.
        </p>
      )}
-     {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0개"라고 단정하지 않는다. */}
+     {/* 감사 P1-5: 조회가 실패한 상태에서 "총 0개"라고 단정하지 않는다.
+         [2026-10-26 ADR-0043 UX-15] 조건(검색어·기간)이 걸린 수는 게시판 전체가 아니라 검색 결과다. 캘린더는 보이는 달의 일정 수다. */}
      <p className="text-xs text-muted-foreground">
-       {listError ? '게시글 수를 확인할 수 없습니다.' : <>총 <span className="font-semibold tabular-nums text-foreground">{(totalCount || 0).toLocaleString()}개</span>의 게시글이 등록되어 있습니다.</>}
+       {listError
+         ? '게시글 수를 확인할 수 없습니다.'
+         : isCalendar
+           ? <>이 달의 일정 <span className="font-semibold tabular-nums text-foreground">{(totalCount || 0).toLocaleString()}건</span></>
+           : querySearchWrd || queryHasPeriod
+             ? <>검색 결과 <span className="font-semibold tabular-nums text-foreground">{(totalCount || 0).toLocaleString()}건</span></>
+             : <>총 <span className="font-semibold tabular-nums text-foreground">{(totalCount || 0).toLocaleString()}개</span>의 게시글이 등록되어 있습니다.</>}
      </p>
    </div>
+   {/* [2026-10-26 ADR-0043 UX-15] 이동 동작은 링크 하나다 — 종전에는 링크 안에 단추를 넣어(Link > button) 키보드 초점이 두 번 걸리고
+       보조기술이 같은 동작을 두 겹으로 읽었다. */}
    <div className="flex shrink-0 flex-wrap items-center gap-2">
      {canReadBoardMasters && (
-       <Link href="/admin/community/boards/master">
-         <Button variant="outline" size="sm" className="gap-1.5" aria-label="게시판 관리">
+       <Button asChild variant="outline" size="sm" className="gap-1.5">
+         <Link href="/admin/community/boards/master">
            <Settings2 size={16} aria-hidden="true" /> 게시판 관리
-         </Button>
-       </Link>
-     )}
-     {canCreateArticle && <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
-       <Button size="sm" className="gap-1.5" aria-label="글쓰기">
-         <Plus size={16} aria-hidden="true" /> 글쓰기
+         </Link>
        </Button>
-     </Link>}
+     )}
+     {canCreateArticle && (
+       <Button asChild size="sm" className="gap-1.5">
+         <Link href={`/admin/community/boards/insert-board-article?bbsId=${bbsId}`}>
+           <Plus size={16} aria-hidden="true" /> 글쓰기
+         </Link>
+       </Button>
+     )}
    </div>
  </div>
  {/* 분리된 필터 영역 */}
@@ -515,14 +542,18 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
    setEndDate={setEndDate}
    onSearch={handleSearch}
    onReset={handleReset}
+   // [2026-10-26 ADR-0043 UX-13] 캘린더는 달 이동이 기간이다 — 목록용 기간 선택을 함께 두면 고른 시작일이 보이는 달을 바꿔 버린다.
+   showPeriod={!isCalendar}
  />
 
 
  {/* 템플릿 렌더링 영역 */}
  {renderTemplate()}
 
- {/* 분리된 페이지네이션 영역 */}
- <BoardPagination totalPages={totalPages} currentPage={queryPage} onPageChange={handlePageChange} />
+ {/* 분리된 페이지네이션 영역. 캘린더는 한 달을 한 번에 받으므로 쪽이 없다 — 달 이동만 둔다(UX-13). */}
+ {!isCalendar && (
+   <BoardPagination totalCount={totalCount} pageSize={LIST_PAGE_SIZE} currentPage={queryPage} onPageChange={handlePageChange} />
+ )}
  </div>
  );
 };

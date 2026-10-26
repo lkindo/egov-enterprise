@@ -38,6 +38,13 @@ vi.mock('@tanstack/react-query', () => ({
         return { ...common, data: { list: [] } };
       case 'knowledge-stats':
         return { ...common, data: { totalViews: 0, topContributor: '-' } };
+      // [2026-10-26 ADR-0043 0차 NAV-03] 허브가 열린 탭 게시판의 이용자 메타를 읽어 글쓰기 단추를 판정한다.
+      case 'board-masters':
+        return {
+          ...common,
+          isPending: false,
+          data: { bbsId: 'BBSMSTR_CCCCCCCCCCCC', bbsTtl: '업무게시판', inUse: true, requiredEditPermissions: [], prvtPstPlcyCd: 'NONE' },
+        };
       default:
         throw new Error(`unexpected query: ${queryKey[0]}`);
     }

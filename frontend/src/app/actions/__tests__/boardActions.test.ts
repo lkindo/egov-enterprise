@@ -282,7 +282,8 @@ describe('boardActions', () => {
       expect(request.data.qnaCatCd).toBeUndefined();
     });
 
-    it('Q&A 등록은 접수 상태·기본 분류로 시작한다', async () => {
+    // [2026-10-26 ADR-0043] 상태는 서버가 등록 때 OPEN 으로 둔다 — 화면이 채우면 Q&A 화면 유형이 아닌 지정 게시판에서 400 이 된다.
+    it('Q&A 등록은 기본 분류로 시작하고 상태는 서버 기본값(OPEN)에 맡긴다', async () => {
       const formData = new FormData();
       formData.append('pstTtl', 'question');
       formData.append('pstCn', 'body');
@@ -292,7 +293,7 @@ describe('boardActions', () => {
       await saveBoardArticle({}, formData);
 
       const request = vi.mocked(client.requestRaw).mock.calls[0][0] as { data: Record<string, unknown> };
-      expect(request.data.qnaSttsCd).toBe('OPEN');
+      expect(request.data.qnaSttsCd).toBeUndefined();
       expect(request.data.qnaCatCd).toBe('CAT01');
     });
 

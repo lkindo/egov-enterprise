@@ -59,7 +59,8 @@ export class SupportPage {
 
     async createKnowledgeEntry(title: string, content: string) {
         console.log(`>>> [Support] Creating Knowledge Entry: ${title}`);
-        await this.page.getByRole('button', { name: /신규 등록/i }).click();
+        // [2026-10-26 ADR-0043 0차] 허브의 '신규 등록' 단추는 권한·사용 여부로 판정한 '글쓰기' 링크가 됐다.
+        await this.page.getByRole('link', { name: '글쓰기', exact: true }).click();
         
         const titleInput = this.page.locator('input[name="pstTtl"]').first();
         await titleInput.waitFor({ state: 'visible' });

@@ -99,7 +99,7 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
 
         mockMvc.perform(post("/api/v1/admin/system/board-masters")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("{\"bbsTtl\":\"New Board\", \"bbsExpln\":\"Description\", \"bbsTypeCd\":\"TYPE\", \"bbsAtrbCd\":\"ATRB\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\"}")
+                .content("{\"bbsTtl\":\"New Board\", \"bbsExpln\":\"Description\", \"bbsTypeCd\":\"TYPE\", \"bbsAtrbCd\":\"ATRB\", \"atchPsbltyFileSz\":100, \"useYn\":\"Y\", \"tmpltId\":\"TMPLT_LIST\"}")
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isCreated())
                 .andExpect(jsonPath("$.success").value(true))
@@ -622,5 +622,133 @@ class BoardMasterApiControllerTest extends ControllerTestSupport {
                 .accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest());
         org.mockito.Mockito.verifyNoInteractions(boardMasterService);
+    }
+
+    // ── [2026-10-26 ADR-0043] 생성 입력 검사·일괄 사용 상태 필수·귀속 커뮤니티 요약 ─────────────────────────────
+
+    /** 생성 요청의 최소 유효 본문 — 아래 시험이 한 항목씩 어긋나게 바꾼다. */
+    private static String createBody(String extra) {
+        return "{\"bbsTtl\":\"새 게시판\",\"bbsTypeCd\":\"BBST02\",\"bbsAtrbCd\":\"BBSA01\",\"atchPsbltyFileSz\":0,"
+                + "\"useYn\":\"N\"" + extra + "}";
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "TMPLT_HUB", "TMPLT_LIST", "TMPLT_GALLERY", "TMPLT_QNA", "TMPLT_CALENDAR", "TMPLT_FAQ", "TMPLT_WIKI"})
+    @DisplayName("[ADR-0043 결정 5] 생성 요청은 내장 레이아웃 일곱 개를 받는다")
+    void createBoardMaster_acceptsBuiltInLayouts(String tmpltId) throws Exception {
+        given(boardMasterService.createBoardMaster(anyString(), any(BoardMasterDto.class))).willReturn("BBSMSTR_NEW000000001");
+
+        mockMvc.perform(post("/api/v1/admin/system/board-masters")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createBody(",\"tmpltId\":\"" + tmpltId + "\",\"bbsId\":\"BBSMSTR_ABC123DEF456\","
+                        + "\"atchPsbltyFileQty\":20,\"atchPsbltyFileSz\":10485760"))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated());
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "",
+            ",\"tmpltId\":\"TMPLAT_BOARD_DEFAULT\"",
+            ",\"tmpltId\":\"tmplt_list\"",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"bbsId\":\"BBS_001\"",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"bbsId\":\"BBSMSTR_abc123def456\"",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"bbsId\":\"BBSMSTR_ABC123DEF45\"",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"atchPsbltyFileQty\":21",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"atchPsbltyFileQty\":-1",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"atchPsbltyFileSz\":10485761",
+            ",\"tmpltId\":\"TMPLT_LIST\",\"atchPsbltyFileSz\":-1"})
+    @DisplayName("[ADR-0043 결정 5·ATTR-07·ATTR-15] 템플릿 없음·내장 밖 템플릿·형식 밖 게시판 ID·범위 밖 첨부 수·크기는 서비스 전에 400")
+    void createBoardMaster_rejectsInvalidInput(String extra) throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(createBody(extra))
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(boardMasterService);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "\"atchPsbltyFileQty\":21,\"atchPsbltyFileSz\":0",
+            "\"atchPsbltyFileQty\":-1,\"atchPsbltyFileSz\":0",
+            "\"atchPsbltyFileSz\":10485761",
+            "\"atchPsbltyFileSz\":-1"})
+    @DisplayName("[ADR-0043, ATTR-15] 설정 수정도 첨부 파일 수 0~20·파일당 크기 0~10MB 밖이면 서비스 전에 400")
+    void updateBoardMaster_rejectsAttachmentLimitsOutOfRange(String limits) throws Exception {
+        mockMvc.perform(put("/api/v1/admin/system/board-masters/BBS_001")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"bbsTtl\":\"T\",\"useYn\":\"Y\",\"version\":1," + limits + "}")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(boardMasterService);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest(name = "{0}")
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "{\"bbsIds\":[\"BBS_001\"]}",
+            "{\"bbsIds\":[\"BBS_001\"],\"useYn\":\"\"}",
+            "{\"bbsIds\":[\"BBS_001\"],\"useYn\":null}"})
+    @DisplayName("[ADR-0043, SET-12] 사용여부 일괄 변경은 useYn 이 없거나 비면 서비스 전에 400 이다")
+    void updateBoardMasterStatusInBatch_requiresUseYn(String body) throws Exception {
+        mockMvc.perform(post("/api/v1/admin/system/board-masters/batch/status")
+                .contentType(MediaType.APPLICATION_JSON)
+                .content(body)
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(boardMasterService);
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 3] 목록은 귀속 게시판에만 커뮤니티 요약을 싣고, 귀속이 없는 게시판에는 싣지 않는다")
+    void getBoardMasters_carriesCommunitySummary() throws Exception {
+        Page<BoardMasterDto> page = new PageImpl<>(List.of(
+                BoardMasterDto.builder().bbsId("BBS_C").bbsTtl("모임 게시판").cmntySn(7L).build(),
+                BoardMasterDto.builder().bbsId("BBS_P").bbsTtl("전체 게시판").build()));
+        given(boardMasterService.getBoardMasterList(any(), any(), any(Pageable.class))).willReturn(page);
+        given(boardMasterService.designationsOf(anyString())).willReturn(List.of());
+        given(boardMasterService.communitiesOf(any())).willReturn(java.util.Map.of(7L,
+                new nuri.business.service.board.dto.BoardMasterCommunity(7L, "독서 모임", false)));
+
+        mockMvc.perform(get("/api/v1/admin/system/board-masters").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].community.cmntySn").value(7))
+                .andExpect(jsonPath("$.data.list[0].community.cmntyNm").value("독서 모임"))
+                .andExpect(jsonPath("$.data.list[0].community.inUse").value(false))
+                .andExpect(jsonPath("$.data.list[1].community").doesNotExist());
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 3] 상세는 커뮤니티를 확인할 수 없으면 이름·이용 가능 여부를 null 로 싣는다(통과로 추정하지 않는다)")
+    void getBoardMaster_carriesUnknownCommunityAsNulls() throws Exception {
+        given(boardMasterService.getBoardMaster(anyString())).willReturn(BoardMasterDto.builder().bbsId("BBS_C")
+                .cmntySn(9L).version(1).build());
+        given(boardMasterService.designationsOf("BBS_C")).willReturn(List.of());
+        given(boardMasterService.communityOf(9L))
+                .willReturn(nuri.business.service.board.dto.BoardMasterCommunity.unknown(9L));
+
+        String body = mockMvc.perform(get("/api/v1/admin/system/board-masters/BBS_C").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andReturn().getResponse().getContentAsString(java.nio.charset.StandardCharsets.UTF_8);
+        tools.jackson.databind.JsonNode community = objectMapper.readTree(body).path("data").path("community");
+        org.assertj.core.api.Assertions.assertThat(community.path("cmntySn").asLong()).isEqualTo(9L);
+        org.assertj.core.api.Assertions.assertThat(community.has("cmntyNm") && community.get("cmntyNm").isNull()).isTrue();
+        org.assertj.core.api.Assertions.assertThat(community.has("inUse") && community.get("inUse").isNull()).isTrue();
+    }
+
+    @Test
+    @DisplayName("[ADR-0043 결정 4] 지정 게시판 영구 삭제 거부는 409·B007 과 사유 문장으로 답한다")
+    void deleteBoardMasterPhysically_designatedBoardIs409() throws Exception {
+        org.mockito.BDDMockito.willThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.business.domain.board.exception.BoardErrorCode.DESIGNATED_BOARD_NOT_PURGEABLE,
+                        "[공지사항] 게시판은 앱이 공지사항(업무 홈 공지 카드) 용도로 지정해 쓰고 있어 영구 삭제할 수 없습니다."))
+                .given(boardMasterService).deleteBoardMasterPhysically(anyString(), eq("BBSMSTR_AAAAAAAAAAAA"));
+
+        mockMvc.perform(delete("/api/v1/admin/system/board-masters/BBSMSTR_AAAAAAAAAAAA/physical")
+                .accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.code").value("B007"))
+                .andExpect(jsonPath("$.message").value(org.hamcrest.Matchers.containsString("지정해 쓰고 있어")));
     }
 }

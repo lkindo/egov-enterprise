@@ -1,5 +1,5 @@
 import React, { act, Suspense } from 'react';
-import { render } from '@testing-library/react';
+import { render, screen } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -29,8 +29,10 @@ vi.mock('@/services/business/user/board/BoardUserService', () => ({ boardUserSer
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: vi.fn() }) }));
 vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({ DynamicBreadcrumb: () => <nav /> }));
 vi.mock('@/hooks/api/use-board-list', () => ({ useBoardList: mocks.useBoardList }));
-vi.mock('../components/BoardListFilters', () => ({ BoardListFilters: () => <div /> }));
-vi.mock('../components/BoardPagination', () => ({ BoardPagination: () => <div /> }));
+vi.mock('../components/BoardListFilters', () => ({
+  BoardListFilters: ({ showPeriod }: { showPeriod?: boolean }) => <div data-testid="filters" data-show-period={String(showPeriod ?? true)} />,
+}));
+vi.mock('../components/BoardPagination', () => ({ BoardPagination: () => <div data-testid="pagination" /> }));
 vi.mock('../components/BoardTemplates', () => {
   const Template = () => <div data-testid="template" />;
   return {
@@ -112,5 +114,40 @@ describe('캘린더 템플릿 조회 조건 (DIP V6)', () => {
     expect(params).toMatchObject({ size: 10, startDate: '2026-09-01' });
     expect(params).not.toHaveProperty('dateBasis');
     expect(params.endDate).toBeUndefined();
+  });
+
+  /*
+    [2026-10-26 ADR-0043 UX-13] 캘린더는 한 달을 한 번에 받는다 — 쪽 이동은 늘 1쪽이라 뜻이 없고, 기간 선택의 시작일은 보이는 달을
+    바꿔 달 이동과 서로 덮었다. 달 이동만 남긴다. 머리의 수는 게시판 전체가 아니라 보이는 달의 일정 수다.
+  */
+  it('캘린더에서는 쪽 이동과 기간 선택을 두지 않고 머리에 이 달의 일정 수를 말한다', async () => {
+    mocks.useBoardList.mockReturnValue({
+      data: { list: [], total: 7, totalPage: 1 },
+      isLoading: false,
+      isError: false,
+      error: null,
+      refetch: vi.fn(),
+    });
+    await renderList('TMPLT_CALENDAR');
+
+    expect(screen.queryByTestId('pagination')).toBeNull();
+    expect(screen.getByTestId('filters')).toHaveAttribute('data-show-period', 'false');
+    expect(screen.getByText(/이 달의 일정/)).toHaveTextContent('이 달의 일정 7건');
+  });
+
+  // 달 이동은 달력 안에 있다 — 빈 달을 '게시글 없음' 빈 상태로 바꾸면 다른 달로 갈 길이 없다(캘린더는 기간 선택도 두지 않는다).
+  it('일정이 없는 달에도 달력(달 이동)을 그리고 빈 달이라고 말한다', async () => {
+    await renderList('TMPLT_CALENDAR');
+
+    expect(screen.getByTestId('template')).toBeInTheDocument();
+    expect(screen.getByRole('status')).toHaveTextContent('이 달에 등록된 일정이 없습니다. 이전 달·다음 달로 옮겨 볼 수 있습니다.');
+    expect(screen.queryByText('게시글이 아직 없습니다.')).toBeNull();
+  });
+
+  it('대조군: 일반 목록은 쪽 이동과 기간 선택을 둔다', async () => {
+    await renderList('TMPLT_LIST');
+
+    expect(screen.getByTestId('pagination')).toBeInTheDocument();
+    expect(screen.getByTestId('filters')).toHaveAttribute('data-show-period', 'true');
   });
 });

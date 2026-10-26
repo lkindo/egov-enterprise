@@ -11,6 +11,16 @@ export type BoardOperationsTab = (typeof BOARD_OPERATIONS_TABS)[number];
 
 export const DEFAULT_BOARD_OPERATIONS_TAB: BoardOperationsTab = 'settings';
 
+/**
+ * 탭 이름. 운영 화면의 탭과 게시판 관리 목록의 행별 탭 바로가기가 같은 이름을 쓴다(ADR-0043, G4).
+ * 게시물 탭은 게시물 조회 대행 권한(BOARD_READ_ALL)이 있을 때만 두고, 그 판정은 화면이 한다.
+ */
+export const BOARD_OPERATIONS_TAB_LABELS: Readonly<Record<BoardOperationsTab, string>> = {
+  posts: '게시물',
+  settings: '설정',
+  access: '메뉴·접근',
+};
+
 /** 운영 화면이 받는 게시판 ID 형식 — `BBSMSTR_` 뒤 대문자·숫자 12자(생성기·이관 도구·시드가 만드는 ID). 아니면 없는 화면이다. */
 export const BOARD_OPERATIONS_ID_PATTERN = /^BBSMSTR_[A-Z0-9]{12}$/;
 

@@ -1655,16 +1655,13 @@ async function syntheticBoardResidueCount(api, fixture) {
 }
 
 async function completeBoardWizard(page, fixture) {
-  // [2026-10-23 ADR-0040 §5.3] 단계는 용도·기본정보 → 화면·기능 → 메뉴·접근 확인(메뉴 이름) → 최종 확인이다.
+  // [2026-10-26 ADR-0043 결정 1] 단계는 용도·기본정보 → 화면·기능 → 최종 확인이다. 마법사는 메뉴를 만들지 않는다 — 아래 정리의
+  //   합성 메뉴 조회(exactSyntheticMenus)는 옛 실행이 남긴 메뉴를 치우는 용도로만 남는다.
   await page.locator('#bbsTtl').fill(fixture.boardTitle);
   await page.locator('#bbsExpln').fill(fixture.boardDescription);
   await page.getByRole('button', { name: /다음 단계로/ }).click();
   await page.getByRole('heading', { level: 2, name: '화면·기능', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });
-  await page.getByRole('button', { name: /다음 단계로/ }).click();
-  await page.getByRole('heading', { level: 2, name: '메뉴·접근 확인', exact: true })
-    .waitFor({ state: 'visible', timeout: 10_000 });
-  await page.getByPlaceholder('메뉴에 표시될 이름을 입력하세요').fill(fixture.menuName);
   await page.getByRole('button', { name: /다음 단계로/ }).click();
   await page.getByRole('heading', { level: 2, name: '최종 확인', exact: true })
     .waitFor({ state: 'visible', timeout: 10_000 });

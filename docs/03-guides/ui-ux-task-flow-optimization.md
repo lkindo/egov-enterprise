@@ -40,8 +40,8 @@ flowchart TD
 | UX09 홈 진입 | 서버가 제공하는 `bbsId`·`pstSn` 보존, 홈 업무·공지 제목을 상세로 연결. 전체 보기도 해당 게시판으로 연결 | board-home-query·BoardHome(Phase 2 9단계에서 dashboard-data·UnifiedDashboardClient 의 게시판 부분을 옮겼다) |
 | UX10 관리 홈 | 서비스에 연결되지 않은 InsightBanner의 상단 배치 제거, 사용자·권한·감사 경로 제공, 역할 수를 권한 그룹 수로 표시 | AdminDashboardClient |
 | UX11 설문 개념 | 여론조사 목록과 만족도 등록 동작, 문항형 설문, 온라인 투표를 구분. 문항형 진행 순서 제공 | SurveyHubClient |
-| UX12 생성기 메뉴명 | 기존 허용 부모를 OCI 현행 이름인 소통·지식/관리 센터 > 업무 지원으로 안내 | BoardMakerWizard; 허용 부모·ROOT 정책은 동일 |
-| UX13 부분 성공 | 생성된 게시판 식별자를 유지하고 메뉴 단계만 재시도. 재시도 전 비활성 메뉴까지 조회 | BoardMakerWizard |
+| UX12 생성기 메뉴 | 2026-10-26부터 마법사는 게시판만 만들고 메뉴 단계가 없다([ADR-0043](../02-architecture/decisions/ADR-0043-board-publish-flow-and-designated-boards.md) 결정 1). 결과 화면의 '메뉴에 붙이기'가 메뉴 관리의 새 메뉴로 경로를 넘긴다(종전: 허용 부모를 소통·지식/관리 센터 > 업무 지원으로 안내) | BoardMakerWizard·target-handoff |
+| UX13 부분 성공 | 생성 결과를 모르면 같은 이름·화면 유형의 사용 안 함 게시판을 10분 안에서 찾아 이어 간다. 찾지 못하면 다시 만들지 않고 목록 확인을 안내한다(종전: 게시판 식별자를 유지하고 메뉴 단계만 재시도) | BoardMakerWizard |
 | UX14 결과 확인 | 설문 결과의 번호 입력을 이름 검색/페이지 선택으로 변경. 기존 기안의 생성 결과 선택·업무 등록의 상세 이동은 유지 | SurveyStatsClient·ApprovalHubClient·DeptJobCreateClient |
 | UX15 탐색 | 헤더에 기존 통합 검색 경로를 연결, 통계 중복 세로 탐색 축소, 4개 대분류 유지 | Header·IntelligenceHubClient |
 | UX16 푸터 | 중복 설명과 여백 축소 | 공개 정책 원문·공개 읽기 API는 별도 결정 사항 |
@@ -91,21 +91,20 @@ flowchart LR
 
 ## 4. 생성 실패를 안전하게 이어서 처리
 
+2026-10-26부터 마법사는 게시판만 만든다([ADR-0043](../02-architecture/decisions/ADR-0043-board-publish-flow-and-designated-boards.md) 결정 1·2). 메뉴 등록 단계와 그 재시도는 없어졌고, 메뉴는 결과 화면의 '메뉴에 붙이기'로 메뉴 관리에서 붙인다.
+
 ```mermaid
 flowchart TD
-  Draft[게시판 설정 입력] --> Create[게시판 생성 요청]
-  Create -->|식별자 수신| Remember[현재 마법사에 게시판 식별자 유지]
-  Create -->|결과 불명| Check[목록에서 생성 여부 확인 안내]
-  Remember --> Menu[비활성 메뉴 등록]
-  Menu -->|성공| Done[생성 완료 · 메뉴 설정으로 이동]
-  Menu -->|실패 또는 응답 유실| Retry[메뉴 등록 다시 시도]
-  Retry --> Read[전체 관리자 메뉴 조회]
-  Read -->|같은 게시판 경로 존재| Done
-  Read -->|없음| Menu
-  Read -->|조회 실패| Retain[입력과 게시판 식별자 유지 · 등록 요청 금지]
+  Draft[게시판 설정 입력] --> Create[게시판 생성 요청 · 사용 안 함]
+  Create -->|식별자 수신| Done[결과 화면 · 운영 화면 · 지금 사용으로 바꾸기 · 메뉴에 붙이기]
+  Create -->|결과 불명| Search[같은 이름·화면 유형의 사용 안 함 게시판을 10분 안에서 조회]
+  Search -->|찾음| Found[그 게시판으로 이어 가기]
+  Found --> Done
+  Search -->|없음 또는 조회 실패| Check[다시 만들지 않고 목록에서 생성 여부 확인 안내 · 입력 유지]
+  Done -->|메뉴에 붙이기| Menu[메뉴 관리의 새 메뉴 · 경로 인계 · 돌아오기 단추]
 ```
 
-게시판을 다시 만들지 않는 보장은 **게시판 식별자를 수신한 동일 마법사 세션의 메뉴 재시도**에 적용된다. 최초 게시판 생성 응답 자체가 유실되거나 페이지를 새로고침한 뒤까지 보장하는 서버 멱등성 키는 이번 변경에 포함하지 않는다. 사용자에게 목록 확인을 안내하며, 이미 저장된 게시판을 자동 삭제하거나 생성 전체를 롤백하지 않는다.
+게시판을 두 번 만들지 않는 보장은 **결과를 모를 때 다시 보내지 않고 목록에서 찾는 것**이다. 찾는 기준(이름·화면 유형·사용 안 함·만든 시각 10분 이내)에 맞는 게시판이 없거나 목록 조회가 실패하면 다시 만들지 않고 목록 확인을 안내한다. 서버 멱등성 키는 이번 변경에 포함하지 않으며, 이미 저장된 게시판을 자동 삭제하거나 생성 전체를 롤백하지 않는다.
 
 ## 5. 설문과 결과 탐색
 
@@ -129,7 +128,7 @@ flowchart TD
 
 ## 7. 검증과 유지보수
 
-핵심 회귀는 [권한 편집/선택](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx), [게시판 부분 실패](../../frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx), [지식 서버 페이지/정렬](../../frontend/src/app/admin/help/__tests__/KnowledgeHubClient.pagination.test.tsx), [설문 선택](../../frontend/src/app/survey/stats/SurveyStatsClient.selection.test.tsx), [기안 pending](../../frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx), [공개 레이아웃](../../frontend/src/app/components/layout/__tests__/ApplicationFrame.test.tsx)으로 검증한다. §2.1의 관리 콘솔 화면은 [메뉴 보드 편집기](../../frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx)·[메뉴 초안 모델](../../frontend/src/app/admin/system/menus/__tests__/menuDraft.test.ts)·[실제 키보드 끌기](../../frontend/src/app/admin/system/menus/__tests__/MenuBoard.keyboard-dnd.test.tsx), [화면 목록](../../frontend/src/app/admin/system/programs/__tests__/ProgramAdminClient.test.tsx)·[화면 목록 판정](../../frontend/src/app/admin/system/programs/__tests__/screenList.test.ts), [두 권한 표의 A5 계약](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx), [권한 묶음·그룹 비교](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.bundle-compare.test.tsx)가 검증하고, 브라우저 여정은 [메뉴 관리](../../frontend/e2e/journeys/menu-administration.spec.ts)·[권한 관리](../../frontend/e2e/journeys/security-administration.spec.ts)다.
+핵심 회귀는 [권한 편집/선택](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.test.tsx), [게시판 생성 결과 불명](../../frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx), [지식 서버 페이지/정렬](../../frontend/src/app/admin/help/__tests__/KnowledgeHubClient.pagination.test.tsx), [설문 선택](../../frontend/src/app/survey/stats/SurveyStatsClient.selection.test.tsx), [기안 pending](../../frontend/src/app/approvals/__tests__/ApprovalDraftDialog.test.tsx), [공개 레이아웃](../../frontend/src/app/components/layout/__tests__/ApplicationFrame.test.tsx)으로 검증한다. §2.1의 관리 콘솔 화면은 [메뉴 보드 편집기](../../frontend/src/app/admin/system/menus/__tests__/MenuAdminClient.test.tsx)·[메뉴 초안 모델](../../frontend/src/app/admin/system/menus/__tests__/menuDraft.test.ts)·[실제 키보드 끌기](../../frontend/src/app/admin/system/menus/__tests__/MenuBoard.keyboard-dnd.test.tsx), [화면 목록](../../frontend/src/app/admin/system/programs/__tests__/ProgramAdminClient.test.tsx)·[화면 목록 판정](../../frontend/src/app/admin/system/programs/__tests__/screenList.test.ts), [두 권한 표의 A5 계약](../../frontend/src/app/admin/security/authority/__tests__/matrix-a5-contract.test.tsx), [권한 묶음·그룹 비교](../../frontend/src/app/admin/security/authority/__tests__/SecurityHubClient.bundle-compare.test.tsx)가 검증하고, 브라우저 여정은 [메뉴 관리](../../frontend/e2e/journeys/menu-administration.spec.ts)·[권한 관리](../../frontend/e2e/journeys/security-administration.spec.ts)다.
 
 실제 Chromium의 합성 편집 화면에서는 공통 이동 어댑터와 실제 확인 모달을 사용해 Back/Forward 취소·승인, 내부 링크, replace, pending 차단, 같은 화면 hash 이동과 두 단계 Back을 포함한 9개 시나리오를 확인했다. 실제 권한/지식 컴포넌트에 합성 조회 데이터를 제공한 1366px·390px 화면에서도 가로 넘침 없음·제목 1개·헤더 56px·데스크톱 사이드바 256px와 그룹 이동 취소 시 입력 보존을 확인했다. 인증 없는 현재 로그인 화면은 1440×900·1024×768·390×844에서 확인했다. 합성 편집 검증은 OCI의 인증된 권한 수정이나 실제 메일 발송 E2E를 대신하지 않는다.
 
@@ -149,6 +148,6 @@ URL census 비교에서는 기존 검색 승인 대상의 내용 변경 없이 �
 | 서버/클라이언트 경계 | 서버 레이아웃과 데이터 조회를 유지하고 경로별 표시 및 이동 확인을 상호작용 경계에 둔다. 신규 상태 관리 라이브러리는 추가하지 않았다. |
 | 입력·URL 보호 | 새 검색어 URL 허용이나 본문 영속 저장을 추가하지 않았다. history에는 이동 위치 숫자만 기록한다. 기존 조회 식별자와 승인된 검색 계약을 보존한다. |
 | 인가·충돌 의미 | 기능권한/메뉴표시 독립성, 여러 그룹 합집합, 부모 선택 규칙, 완전한 카탈로그와 버전 확인을 유지한다. 서버 확인 전에 권한 저장 성공으로 표시하지 않는다. |
-| 회복·재시도 | 저장 중 닫기/이동을 차단하고 실패 시 입력을 보존한다. 게시판 부분 성공은 완료된 생성 단계를 다시 실행하지 않으며 메뉴 확인 조회 실패도 숨기지 않는다. |
+| 회복·재시도 | 저장 중 닫기/이동을 차단하고 실패 시 입력을 보존한다. 게시판 생성 결과를 모르면 다시 보내지 않고 목록에서 찾으며, 찾는 조회의 실패도 숨기지 않는다(2026-10-26 메뉴 단계 제거, ADR-0043). |
 | 디자인·접근성 | 셸 치수와 색상에 시맨틱 토큰을 사용하고 로그인 모달 오용을 제거했다. 긴 제목 줄바꿈과 모바일 가로 넘침을 확인했다. 전체 보조기술 수동 감사 완료를 주장하지 않는다. |
 | 검증 신호 | census를 실제 변경에 맞게 갱신하고 정적 상한을 낮췄다. 제외·skip을 추가하지 않았으며 변경된 색상 게이트의 의도적 위반 실패를 확인했다. |

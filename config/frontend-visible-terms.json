@@ -465,7 +465,8 @@
       "roles": ["USER", "ADMIN", "SYSTEM"],
       "sources": [
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
-        "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx"
+        "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+        "frontend/src/app/admin/community/boards/insert-board-article/BoardWritePicker.tsx"
       ],
       "evidenceLevel": "static-source-and-contract-test",
       "status": "remediated-local",

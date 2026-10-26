@@ -168,6 +168,7 @@ export type StatsPoint = z.infer<typeof StatsPointSchema>;
 export const BoardDtoSchema = /*#__PURE__*/ (() => z.object({
   pstSn: z.number().int().optional(),
   bbsId: z.string().min(0).max(20).optional(),
+  bbsTtl: z.string().optional().nullable(),
   ansSn: z.number().int().optional().nullable(),
   pstTtl: z.string().min(0).max(256).optional().nullable(),
   pstCn: z.string().min(0).max(4000).optional().nullable(),
@@ -238,6 +239,13 @@ export const PageResponseCommentDtoSchema = /*#__PURE__*/ (() => z.object({
   totalPage: z.number().int(),
 }))();
 export type PageResponseCommentDto = z.infer<typeof PageResponseCommentDtoSchema>;
+
+export const BoardMasterCommunitySchema = /*#__PURE__*/ (() => z.object({
+  cmntySn: z.number().int(),
+  cmntyNm: z.string().nullable(),
+  inUse: z.boolean().nullable(),
+}))();
+export type BoardMasterCommunity = z.infer<typeof BoardMasterCommunitySchema>;
 
 export const ApiResponseListMenuCreateDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -577,6 +585,7 @@ export const BoardDtoRequestSchema = /*#__PURE__*/ (() => z.object({
 export const BoardDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   pstSn: z.number().int().optional().nullable(),
   bbsId: z.string().min(0).max(20).optional().nullable(),
+  bbsTtl: z.string().optional().nullable(),
   ansSn: z.number().int().optional().nullable(),
   pstTtl: z.string().min(0).max(256).optional().nullable(),
   pstCn: z.string().min(0).max(4000).optional().nullable(),
@@ -676,6 +685,18 @@ export const PageResponseCommentDtoResponseSchema = /*#__PURE__*/ (() => z.objec
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
+}))();
+
+export const BoardMasterCommunityRequestSchema = /*#__PURE__*/ (() => z.object({
+  cmntySn: z.number().int(),
+  cmntyNm: z.string().nullable(),
+  inUse: z.boolean().nullable(),
+}))();
+
+export const BoardMasterCommunityResponseSchema = /*#__PURE__*/ (() => z.object({
+  cmntySn: z.number().int(),
+  cmntyNm: z.string().nullable(),
+  inUse: z.boolean().nullable(),
 }))();
 
 export const ApiResponseListMenuCreateDtoRequestSchema = /*#__PURE__*/ (() => z.object({

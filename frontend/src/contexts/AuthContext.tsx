@@ -7,6 +7,7 @@ import { advanceAuthorizationRequestEpoch, AUTHORIZATION_CHANGED_EVENT, markSign
 import type { AuthLoginData } from '@/lib/auth/auth-bff-contract';
 import { loginErrorMessage } from '@/lib/auth/login-error';
 import { announceSession, listenSession } from '@/lib/auth/session-broadcast';
+import { purgeSessionListState } from '@/lib/hooks/use-session-list-state';
 import {
   purgeBoardDraftStorage,
   purgePersistedBoardDraftStorage,
@@ -54,7 +55,11 @@ export function AuthProvider({
       void queryClient.cancelQueries();
       queryClient.clear();
     }
-    if (identityChanged || !nextUser) purgeBoardDraftStorage();
+    if (identityChanged || !nextUser) {
+      purgeBoardDraftStorage();
+      // 목록 조건(검색어 포함)도 사용자 귀속이다 — 다음 사용자가 이어받지 않게 함께 지운다.
+      purgeSessionListState();
+    }
     if (nextUser) markSignedIn();
     // [2026-10-21] 첫 화면 직후 재조회가 같은 사용자를 새 객체로 넣으면 context 가 바뀐다. 그때 스트리밍 공개를 기다리는
     //   셸 경계가 있으면 React 가 그 경계를 브라우저에서 다시 그리고 서버 사본이 잠시 숨은 채 남는다 — 내용이 같으면 두지 않는다.
@@ -153,6 +158,7 @@ export function AuthProvider({
       // 게시글 본문은 사용자 귀속 데이터다. 원격 로그아웃 성공 여부와 무관하게 현재 브라우저의
       // scoped/legacy 초안을 함께 지워 다음 로그인 사용자가 복원하지 못하게 한다.
       purgeBoardDraftStorage();
+      purgeSessionListState();
       announceSession({ type: 'signed-out' });
     }
   }, [commitUser]);

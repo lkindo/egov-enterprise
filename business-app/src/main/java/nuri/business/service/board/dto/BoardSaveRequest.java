@@ -38,7 +38,13 @@ public record BoardSaveRequest(
 
                 @Schema(description = "행사 일자") @Size(max = 20) String evntDt,
 
-                @Schema(description = "Q&A 상태 코드 (OPEN/SOLVED)") @Size(max = 12) String qnaSttsCd,
+                // [2026-10-26 ADR-0043] 값은 OPEN·SOLVED 만 받고(그 밖은 400), Q&A 화면 유형(TMPLT_QNA)이 아닌 게시판에 보내면 400 이다
+                //   (BoardPolicySupport#assertQnaStatusAllowed). 종전에는 아무 값이나 저장돼 해결 표시·목록 조건이 그 글을 놓쳤다.
+                @Schema(description = "Q&A 상태 코드 — OPEN(미해결)·SOLVED(해결됨). 해결 여부는 작성자·전체 수정 권한자의 표시이지 답변 여부가 아니다. "
+                                + "Q&A 게시판(TMPLT_QNA)에만 보낸다(다른 게시판이면 400). "
+                                + "등록에서 비우면 OPEN, 수정에서 비우면 저장값을 유지한다", allowableValues = { "OPEN", "SOLVED" })
+                @Pattern(regexp = "^(?:OPEN|SOLVED)$", message = "{validation.pattern}")
+                @Size(max = 12) String qnaSttsCd,
 
                 @Schema(description = "Q&A 카테고리") @Size(max = 12) String qnaCatCd,
 

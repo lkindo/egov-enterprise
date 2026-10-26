@@ -35,7 +35,7 @@ export class CommunityPage {
     async verifyCOPList() {
         console.log('>>> [Community] Verifying COP (Community) List');
         await this.selectCategory('COMMUNITY');
-        await expect(this.page.locator('button:has-text("신규 등록")')).toBeVisible();
+        await expect(this.page.getByRole('link', { name: '글쓰기', exact: true })).toBeVisible();
         
         // Check for "커뮤니티" specific items if any
         const articles = this.page.locator('button.group');

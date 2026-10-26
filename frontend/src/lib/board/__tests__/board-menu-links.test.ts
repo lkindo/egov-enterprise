@@ -1,8 +1,11 @@
 import { describe, expect, it } from 'vitest';
 import {
+  boardEntryPaths,
   boardMenuRoute,
   findBoardMenuLinks,
   publicationReadiness,
+  summarizeBoardMenuLinks,
+  type BoardCommunityInput,
   type BoardGroupInput,
   type BoardMenuInput,
   type GroupSource,
@@ -103,35 +106,127 @@ describe('메뉴 연결', () => {
   });
 });
 
+describe('메뉴 상태 요약(ADR-0043, G4·G5)', () => {
+  const summary = (bbsId: string, menus: MenuSource = ready(), groupSource: GroupSource = groups(ADMIN, USER)) =>
+    summarizeBoardMenuLinks(findBoardMenuLinks(bbsId, menus, groupSource));
+
+  it('일반 그룹에 보이는 활성 메뉴 수를 센다', () => {
+    expect(summary(WIKI)).toEqual({ kind: 'general', count: 1 });
+  });
+
+  it('관리자 그룹에만 보이면 관리자 그룹만, 비활성만이면 비활성, 아무 그룹에도 안 보이면 보이는 그룹 없음이다', () => {
+    expect(summary(WIKI, ready(), groups(ADMIN))).toEqual({ kind: 'admin-only' });
+    expect(summary(NEW_BOARD)).toEqual({ kind: 'inactive' });
+    expect(summary(WIKI, ready(), groups(group('OPS_TEAM', '운영팀', nav(2040000))))).toEqual({ kind: 'hidden' });
+  });
+
+  it('연결이 없으면 연결 없음, 원장을 못 읽으면 확인 권한 없음·확인 불가, 그룹을 못 읽으면 확인 불가다', () => {
+    expect(summary(NOTICE, ready(MENUS.slice(0, 2)))).toEqual({ kind: 'none' });
+    expect(summary(WIKI, { status: 'no-permission' })).toEqual({ kind: 'no-permission' });
+    expect(summary(WIKI, { status: 'failed' })).toEqual({ kind: 'unknown' });
+    expect(summary(WIKI, ready(), { status: 'no-permission' })).toEqual({ kind: 'unknown' });
+  });
+
+  it('탭 없는 허브 주소는 일반 그룹에 보여도 일반 그룹 표시로 세지 않는다(확인 불가)', () => {
+    const hub = ready([menu(2000000, '소통·지식', null, null), menu(2050000, '지식 허브', 2000000, '/admin/help')]);
+    expect(summary(WIKI, hub, groups(ADMIN, group('ROLE_USER', '사용자', nav(2000000, 2050000))))).toEqual({ kind: 'unknown' });
+  });
+});
+
+/**
+ * 공개 준비 점검(ADR-0043 결정 3 — 사용 중 + 이용자가 찾는 길 하나 이상). 찾는 길은 일반 그룹 메뉴·지식 허브 탭·업무 홈 카드·
+ * 사용 중인 커뮤니티 화면(귀속 게시판)이다. 관리자 그룹 전용 메뉴·사용 중지 커뮤니티·판정 불가는 통과하지 않는다(부정 시험).
+ */
 describe('공개 준비 점검', () => {
-  const check = (bbsId: string, options: { inUse?: boolean; menus?: MenuSource; groups?: GroupSource; designations?: string[] } = {}) => {
+  const check = (bbsId: string, options: {
+    inUse?: boolean; menus?: MenuSource; groups?: GroupSource; designations?: string[]; community?: BoardCommunityInput | null;
+  } = {}) => {
     const groupSource = options.groups ?? groups(ADMIN, USER);
     return publicationReadiness({
+      bbsId,
       boardInUse: options.inUse ?? true,
       links: findBoardMenuLinks(bbsId, options.menus ?? ready(), groupSource),
       groupSource,
       designations: options.designations ?? [],
+      community: options.community ?? null,
     });
   };
+  const entry = (result: ReturnType<typeof check>) => result.checks.find((item) => item.id === 'entry-path')?.state;
+  const WITHOUT_NEW_MENU = ready(MENUS.filter((item) => item.menuNo !== 3000100));
 
   it('사용 중이고 일반 그룹에 보이는 활성 메뉴가 있으면 통과다', () => {
-    expect(check(WIKI).state).toBe('pass');
+    expect(check(NEW_BOARD, { menus: ready([...MENUS.slice(0, 5), menu(3000100, '새 게시판', 3000000, boardMenuRoute(NEW_BOARD))]),
+      groups: groups(ADMIN, group('ROLE_USER', '사용자', nav(3000000, 3000100))) }).state).toBe('pass');
   });
 
-  it('관리자 그룹에만 보이면 통과가 아니다(수용 시나리오 4)', () => {
-    const result = check(WIKI, { groups: groups(ADMIN) });
+  it('관리자 그룹에만 보이는 메뉴는 찾는 길이 아니다(수용 시나리오 4)', () => {
+    const adminOnly = ready([...MENUS.slice(0, 5), menu(3000100, '새 게시판', 3000000, boardMenuRoute(NEW_BOARD))]);
+    const result = check(NEW_BOARD, { menus: adminOnly, groups: groups(ADMIN, group('ROLE_USER', '사용자', [])) });
     expect(result.state).toBe('fail');
-    expect(result.checks.find((item) => item.id === 'general-menu')?.state).toBe('fail');
+    expect(entry(result)).toBe('fail');
+  });
+
+  it('메뉴가 없어도 지식 허브 탭이 그리는 게시판이면 통과다 — 메뉴는 접근을 막지 않는다', () => {
+    const result = check(WIKI, { menus: ready([]) });
+    expect(result.state).toBe('pass');
+    expect(result.paths.hubTabs).toEqual(['WIKI']);
+  });
+
+  it('메뉴가 없어도 업무 홈 카드가 보이는 게시판(공지·업무 지정)이면 통과다', () => {
+    const result = check('BBSMSTR_HOMECARD0001', { menus: ready([]), designations: ['TASK'] });
+    expect(result.state).toBe('pass');
+    expect(result.paths.homeCards).toEqual(['TASK']);
+  });
+
+  it('메뉴 원장을 읽을 권한이 없고 다른 길도 없으면 확인 불가로 끝난다 — 통과로도 실패로도 추정하지 않는다', () => {
+    const result = check(NEW_BOARD, { menus: { status: 'no-permission' } });
+    expect(result.state).toBe('unknown');
+    expect(entry(result)).toBe('unknown');
+    expect(entry(check(NEW_BOARD, { menus: { status: 'failed' } }))).toBe('unknown');
+  });
+
+  it('메뉴를 판정하지 못해도 허브 탭이 있으면 그 길로 통과다', () => {
+    expect(entry(check(WIKI, { menus: { status: 'no-permission' } }))).toBe('pass');
   });
 
   it('사용 안 함 게시판은 다른 항목과 무관하게 실패다', () => {
     expect(check(WIKI, { inUse: false }).state).toBe('fail');
   });
 
-  it('메뉴 원장을 읽을 권한이 없으면 확인 불가로 끝난다 — 연결 없음으로 실패시키지 않는다', () => {
-    const result = check(WIKI, { menus: { status: 'no-permission' } });
+  it('귀속 게시판은 커뮤니티가 이용 가능하면 메뉴 없이 통과다', () => {
+    const result = check(NEW_BOARD, { menus: WITHOUT_NEW_MENU, community: { cmntySn: 7, cmntyNm: '개발 모임', inUse: true } });
+    expect(result.state).toBe('pass');
+    expect(result.paths.search).toBe(false);
+  });
+
+  it('귀속 커뮤니티가 사용 중지면 입구가 없어 통과하지 못한다 — 일반 그룹 메뉴가 있어도 그렇다', () => {
+    const community = { cmntySn: 7, cmntyNm: '개발 모임', inUse: false };
+    expect(entry(check(NEW_BOARD, { menus: WITHOUT_NEW_MENU, community }))).toBe('fail');
+    const generalMenu = ready([...MENUS.slice(0, 5), menu(3000100, '새 게시판', 3000000, boardMenuRoute(NEW_BOARD))]);
+    const withMenu = check(NEW_BOARD, { menus: generalMenu, groups: groups(ADMIN, group('ROLE_USER', '사용자', nav(3000000, 3000100))), community });
+    expect(withMenu.state).toBe('fail');
+    expect(entry(withMenu)).toBe('fail');
+  });
+
+  it('귀속 커뮤니티를 확인할 수 없으면(커뮤니티 기능 없음·찾지 못함) 확인 불가다', () => {
+    const result = check(NEW_BOARD, { menus: WITHOUT_NEW_MENU, community: { cmntySn: 7, cmntyNm: null, inUse: null } });
     expect(result.state).toBe('unknown');
-    expect(result.checks.find((item) => item.id === 'general-menu')?.state).toBe('unknown');
+    expect(entry(result)).toBe('unknown');
+  });
+
+  it('귀속 게시판에 일반 그룹에 보이는 메뉴가 있으면 경고한다', () => {
+    const generalMenu = ready([...MENUS.slice(0, 5), menu(3000100, '새 게시판', 3000000, boardMenuRoute(NEW_BOARD))]);
+    const result = check(NEW_BOARD, {
+      menus: generalMenu, groups: groups(ADMIN, group('ROLE_USER', '사용자', nav(3000000, 3000100))),
+      community: { cmntySn: 7, cmntyNm: '개발 모임', inUse: true },
+    });
+    expect(result.state).toBe('pass');
+    expect(result.warnings).toEqual(['community-general-menu']);
+    expect(check(WIKI).warnings).toEqual([]);
+  });
+
+  it('사용 안 함 게시판에 일반 그룹에 보이는 메뉴가 있으면 경고한다', () => {
+    expect(check(WIKI, { inUse: false }).warnings).toEqual(['closed-board-general-menu']);
   });
 
   it('공지·FAQ 지정 게시판은 그 편집 권한이 어느 그룹엔가 있어야 하고, 빠진 권한을 알린다', () => {
@@ -148,8 +243,9 @@ describe('공개 준비 점검', () => {
     expect(check(WIKI, { designations: ['TASK'] }).checks.find((item) => item.id === 'edit-permission')?.state).toBe('not-applicable');
   });
 
-  it('그룹을 읽을 권한이 없으면 노출·편집 권한 모두 확인 불가다', () => {
-    const result = check(WIKI, { groups: { status: 'no-permission' }, designations: ['FAQ'] });
+  it('그룹을 읽을 권한이 없으면 메뉴로만 닿는 게시판의 찾는 길·편집 권한 모두 확인 불가다', () => {
+    const activeMenu = ready([...MENUS.slice(0, 5), menu(3000100, '새 게시판', 3000000, boardMenuRoute(NEW_BOARD))]);
+    const result = check(NEW_BOARD, { menus: activeMenu, groups: { status: 'no-permission' }, designations: ['FAQ'] });
     expect(result.state).toBe('unknown');
     expect(result.checks.map((item) => item.state)).toEqual(['pass', 'unknown', 'unknown']);
   });
@@ -157,13 +253,34 @@ describe('공개 준비 점검', () => {
   it('탭 없는 허브 주소만 연결이면 확인 불가이고, 그 메뉴가 사용 안 함이면 실패다', () => {
     const hub = (useYn: string) => ready([menu(2000000, '소통·지식', null, null), menu(2050000, '지식 허브', 2000000, '/admin/help', useYn)]);
     const userSeesHub = groups(ADMIN, group('ROLE_USER', '사용자', nav(2000000, 2050000)));
-    expect(check(WIKI, { menus: hub('Y'), groups: userSeesHub }).checks.find((item) => item.id === 'general-menu')?.state)
-      .toBe('unknown');
-    expect(check(WIKI, { menus: hub('N'), groups: userSeesHub }).checks.find((item) => item.id === 'general-menu')?.state)
-      .toBe('fail');
+    // 허브 탭이 그리지 않는 게시판으로 본다 — 탭 없는 허브 주소가 그 게시판의 연결인지는 판정할 수 없다.
+    expect(entry(check(NEW_BOARD, { menus: hub('Y'), groups: userSeesHub }))).toBe('fail');
+    expect(boardEntryPaths({ bbsId: WIKI, boardInUse: true, designations: [], community: null,
+      links: findBoardMenuLinks(WIKI, hub('Y'), userSeesHub) }).generalMenu).toBe('unknown');
+    expect(boardEntryPaths({ bbsId: WIKI, boardInUse: true, designations: [], community: null,
+      links: findBoardMenuLinks(WIKI, hub('N'), userSeesHub) }).generalMenu).toBe('fail');
   });
 
-  it('연결된 메뉴가 없으면 실패다', () => {
-    expect(check(NEW_BOARD, { menus: ready(MENUS.filter((item) => item.menuNo !== 3000100)) }).state).toBe('fail');
+  it('연결된 메뉴도 다른 길도 없으면 실패다', () => {
+    expect(check(NEW_BOARD, { menus: WITHOUT_NEW_MENU }).state).toBe('fail');
+  });
+});
+
+describe('이용자가 이미 닿는 길(NAV-07)', () => {
+  const paths = (bbsId: string, options: { inUse?: boolean; designations?: string[]; community?: BoardCommunityInput | null } = {}) =>
+    boardEntryPaths({
+      bbsId, boardInUse: options.inUse ?? true, designations: options.designations ?? [], community: options.community ?? null,
+      links: findBoardMenuLinks(bbsId, ready(), groups(ADMIN, USER)),
+    });
+
+  it('통합 검색은 사용 중이고 귀속이 아닌 게시판만이다', () => {
+    expect(paths(NEW_BOARD).search).toBe(true);
+    expect(paths(NEW_BOARD, { inUse: false }).search).toBe(false);
+    expect(paths(NEW_BOARD, { community: { cmntySn: 7, cmntyNm: '개발 모임', inUse: true } }).search).toBe(false);
+  });
+
+  it('업무 홈 카드는 공지·업무 지정만이고, 기여 허브 탭(커뮤니티)은 따로 둔다', () => {
+    expect(paths(TASK, { designations: ['TASK', 'QNA'] })).toMatchObject({ homeCards: ['TASK'], hubTabs: [], contributedHubTabs: ['COMMUNITY'] });
+    expect(paths(NOTICE, { designations: ['NOTICE', 'FAQ'] })).toMatchObject({ homeCards: ['NOTICE'], hubTabs: ['FAQ'] });
   });
 });

@@ -54,4 +54,31 @@ class CommunityBoardAccessAdapterTest {
         assertThat(adapter.isApprovedMember(10L, "ESNTL_1")).isFalse();
         verifyNoInteractions(communityUserRepository);
     }
+
+    @Test
+    @DisplayName("[2026-10-26 ADR-0043 결정 3] 요약은 이름과, 이용자 상세와 같은 판정(사용 중·정식 등록)의 이용 가능 여부를 싣는다")
+    void summaryCarriesNameAndUserVisibleState() {
+        given(communityRepository.findById(10L)).willReturn(Optional.of(
+                Community.builder().cmntySn(10L).cmntyNm("독서 모임").regSeCd("REGC01").useYn("Y").build()));
+        given(communityRepository.findById(11L)).willReturn(Optional.of(
+                Community.builder().cmntySn(11L).cmntyNm("닫은 모임").regSeCd("REGC01").useYn("N").build()));
+        given(communityRepository.findById(12L)).willReturn(Optional.of(
+                Community.builder().cmntySn(12L).cmntyNm("신청 중").regSeCd("REGC02").useYn("Y").build()));
+
+        assertThat(adapter.summary(10L)).contains(
+                new nuri.foundation.core.community.CommunityBoardAccessPort.CommunitySummary("독서 모임", true));
+        assertThat(adapter.summary(11L)).contains(
+                new nuri.foundation.core.community.CommunityBoardAccessPort.CommunitySummary("닫은 모임", false));
+        assertThat(adapter.summary(12L)).contains(
+                new nuri.foundation.core.community.CommunityBoardAccessPort.CommunitySummary("신청 중", false));
+    }
+
+    @Test
+    @DisplayName("[2026-10-26 ADR-0043 결정 3] 없는 커뮤니티·번호 없음은 비운다 — 호출부가 확인 불가로 다룬다")
+    void summaryIsEmptyForMissingCommunity() {
+        given(communityRepository.findById(99L)).willReturn(Optional.empty());
+
+        assertThat(adapter.summary(99L)).isEmpty();
+        assertThat(adapter.summary(null)).isEmpty();
+    }
 }

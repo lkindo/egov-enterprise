@@ -2,7 +2,7 @@
 
 import { use, useEffect, useId, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Loader2, Save, Search } from 'lucide-react';
+import { ArrowLeft, Loader2, Save, Search } from 'lucide-react';
 import { MasterDetailPage } from '@/app/components/patterns/master-detail-page';
 import { WORK_FILL_REGION_CLASS } from '@/app/components/patterns/work-fill';
 import { useToast } from '@/app/components/ui/toast';
@@ -15,7 +15,13 @@ import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
-import { clearMenuFocusHandoff, clearScreenHandoff, useMenuFocusHandoff, useScreenHandoff } from '@/lib/navigation/target-handoff';
+import {
+  clearMenuFocusHandoff,
+  clearScreenHandoff,
+  useMenuFocusHandoff,
+  useScreenHandoff,
+  type HandoffReturn,
+} from '@/lib/navigation/target-handoff';
 import { menuAdminService, type MenuStructure } from '@/services/foundation/system/MenuAdminService';
 import {
   isNewMenu,
@@ -152,7 +158,19 @@ export default function MenuAdminClient({
   } = useMenuStructureReload({ adopt, selectedMenuNo, reloadGroups, announce });
 
   // 저장하지 않은 변경이 있으면 화면을 떠나기 전에 확인한다.
-  useUnsavedChanges({ dirty: hasChanges });
+  const guardedNavigate = useUnsavedChanges({ dirty: hasChanges });
+  /**
+   * [2026-10-26 ADR-0043 결정 1] 인계가 실은 곳으로 돌아간다. 이동 확인을 거친 원래 라우터로 옮긴다 — 화면 라우터(useRouter)는 이동
+   * 보호가 감싼 라우터라, 확인 중에 다시 부르면 '변경 버리고 이동'을 골라도 이동을 버린다(BoardSettingsTab.openMenu 와 같다). 이름을
+   * router 로 두어 URL 상태 census 가 이 이동(router.push)을 그대로 센다.
+   */
+  const goBackToOrigin = (target: HandoffReturn) => {
+    const screenRouter = router;
+    void guardedNavigate((approvedRouter) => {
+      const router = approvedRouter ?? screenRouter;
+      router.push(target.route);
+    });
+  };
   // 변경 목록 여닫기 — '변경 n건' 단추만 연다(저절로 펼치지 않는다, 변경이 모두 사라지면 접는다).
   const { changePanelId, changeToggleRef, changesOpen, toggleChanges } = useMenuChangePanel(hasChanges);
 
@@ -160,10 +178,16 @@ export default function MenuAdminClient({
     [D3] 화면 관리의 '메뉴에 추가' 가 넘긴 화면. 받으면 '새 메뉴 위치 고르기' 대화상자를 연다(한 번만 — 인계 시각으로 가린다).
     인계는 적용한 뒤 지운다(URL 에 싣지 않는다 — target-handoff).
   */
+  /*
+    [2026-10-26 ADR-0043] 인계가 '돌아갈 곳'을 실었으면 머리에 돌아가기 단추를 둔다(이 화면에 머무는 동안). 미저장 변경 보호를
+    거쳐 이동한다 — 메뉴를 고친 뒤 저장하지 않고 돌아가면 확인을 묻는다.
+  */
+  const [returnTo, setReturnTo] = useState<HandoffReturn | null>(null);
   const handoff = useScreenHandoff('menu-add-screen');
   const [handledHandoff, setHandledHandoff] = useState<number | null>(null);
   if (handoff && handoff.at !== handledHandoff && !authPending && baseline) {
     setHandledHandoff(handoff.at);
+    if (handoff.returnTo) setReturnTo(handoff.returnTo);
     if (canCreate) setMoveDialog({ kind: 'create', route: handoff.route, label: handoff.label });
     else announce('화면을 메뉴에 추가하려면 메뉴 등록 권한과 메뉴 수정 권한이 모두 필요합니다.');
   }
@@ -180,6 +204,7 @@ export default function MenuAdminClient({
   if (focusHandoff && focusHandoff.at !== handledFocus?.at && !authPending && baseline) {
     const found = areaOf(draft.items, focusHandoff.menuSn) !== null;
     setHandledFocus({ at: focusHandoff.at, menuSn: found ? focusHandoff.menuSn : null });
+    if (focusHandoff.returnTo) setReturnTo(focusHandoff.returnTo);
     if (found) {
       select(focusHandoff.menuSn);
       announce(`넘겨받은 메뉴를 골랐습니다: ${menuLabel(draft.items, focusHandoff.menuSn)}`);
@@ -301,19 +326,34 @@ export default function MenuAdminClient({
         title="시스템 메뉴 관리"
         description="메뉴 영역·섹션·화면의 배치와 이름·연결 화면·보이는 그룹을 한 초안에서 고치고 한 번에 저장합니다."
         breadcrumbItems={[{ label: '시스템 관리' }, { label: '메뉴 관리' }]}
-        actions={canUpdate ? (
-          <Button
-            type="button"
-            onClick={handleSaveChanges}
-            disabled={!saveReady || isSaving}
-            aria-busy={isSaving || undefined}
-            aria-describedby={hasChanges ? noteId : undefined}
-            aria-keyshortcuts="Control+S"
-            className="gap-2 font-semibold"
-          >
-            {isSaving ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
-            {isSaving ? '변경 저장 중…' : '변경 저장'}
-          </Button>
+        actions={(canUpdate || returnTo) ? (
+          <>
+            {returnTo && (
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => goBackToOrigin(returnTo)}
+                className="gap-2"
+              >
+                <ArrowLeft size={16} aria-hidden="true" />
+                {returnTo.label}
+              </Button>
+            )}
+            {canUpdate && (
+              <Button
+                type="button"
+                onClick={handleSaveChanges}
+                disabled={!saveReady || isSaving}
+                aria-busy={isSaving || undefined}
+                aria-describedby={hasChanges ? noteId : undefined}
+                aria-keyshortcuts="Control+S"
+                className="gap-2 font-semibold"
+              >
+                {isSaving ? <Loader2 className="size-4 animate-spin" aria-hidden="true" /> : <Save size={16} aria-hidden="true" />}
+                {isSaving ? '변경 저장 중…' : '변경 저장'}
+              </Button>
+            )}
+          </>
         ) : undefined}
         notice={(visibleLoadError || reloadError || staleMessage || shownSaveError) ? (
           <MenuAdminNotices

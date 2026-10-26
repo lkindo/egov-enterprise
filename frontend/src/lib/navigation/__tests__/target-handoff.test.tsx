@@ -2,12 +2,18 @@ import { act, render, screen } from '@testing-library/react';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   HANDOFF_TTL_MS, clearMenuFocusHandoff, clearScreenHandoff, clearTargetHandoff, handOffMenuFocus, handOffScreen,
-  handOffTarget, isHandOffScreenRoute, useMenuFocusHandoff, useScreenHandoff, useTargetHandoff,
+  handOffTarget, isHandOffMenuRoute, isHandOffReturnRoute, isHandOffScreenRoute, useMenuFocusHandoff, useScreenHandoff,
+  useTargetHandoff,
 } from '../target-handoff';
 
 function MenuFocusProbe() {
   const focus = useMenuFocusHandoff();
-  return <p>{focus ? `메뉴:${focus.menuSn}` : '메뉴 없음'}</p>;
+  return <p>{focus ? `메뉴:${focus.menuSn}${focus.returnTo ? ` 돌아갈 곳:${focus.returnTo.label}@${focus.returnTo.route}` : ''}` : '메뉴 없음'}</p>;
+}
+
+function ScreenReturnProbe() {
+  const screen = useScreenHandoff();
+  return <p>{screen ? `${screen.route} 돌아갈 곳:${screen.returnTo ? `${screen.returnTo.label}@${screen.returnTo.route}` : '없음'}` : '화면 없음'}</p>;
 }
 
 function Probe() {
@@ -106,7 +112,7 @@ describe('화면 인계(screen handoff)', () => {
   });
 
   it.each([
-    'admin/system/menus', '//evil.invalid/admin', 'https://evil.invalid/admin', '/admin/system/menus?tab=GROUPS',
+    'admin/system/menus', '//evil.invalid/admin', 'https://evil.invalid/admin',
     '/admin/system/menus#top', '/smart-toolkit/dept-job/[id]', '/admin/../login', '/admin/system/menus ',
   ])('메뉴에 연결할 수 없는 경로(%s)는 넘기지도 받지도 않는다', (route) => {
     expect(isHandOffScreenRoute(route)).toBe(false);
@@ -115,6 +121,64 @@ describe('화면 인계(screen handoff)', () => {
     window.sessionStorage.setItem('egov.screen-handoff.v1:menu-add-screen', JSON.stringify({ route, label: '화면', at: Date.now() }));
     render(<ScreenProbe />);
     expect(screen.getByText('화면 없음')).toBeInTheDocument();
+  });
+
+  /*
+    [2026-10-26 ADR-0043 결정 1] 메뉴 경로 인계는 식별자 쿼리(이름=값, 셋까지)를 받는다 — 게시판 이용 화면처럼 쿼리가 붙은 주소를
+    메뉴에 붙인다. 화면 경로 검사(isHandOffScreenRoute)는 그대로 쿼리를 거부한다(화면 관리의 '메뉴에 추가' 판정).
+  */
+  it.each([
+    '/admin/community/boards/select-board-list?bbsId=BBSMSTR_000000000001',
+    '/admin/system/menus?tab=GROUPS',
+    '/admin/help?tab=FAQ&bbsId=BBSMSTR_AAAAAAAAAAAA',
+  ])('식별자 쿼리가 붙은 메뉴 경로(%s)는 넘기고 받는다', (route) => {
+    expect(isHandOffScreenRoute(route)).toBe(false);
+    expect(isHandOffMenuRoute(route)).toBe(true);
+    expect(handOffScreen({ route, label: '게시판' })).toBe(true);
+    render(<ScreenProbe />);
+    expect(screen.getByText(`게시판:${route}`)).toBeInTheDocument();
+  });
+
+  it.each([
+    '/admin/community/boards/select-board-list?searchWrd=%EA%B9%80', '/admin/help?keyword=a b', '/admin/help?keyword=김철수',
+    '/admin/help?tab=FAQ&tab=QNA', '/admin/help?a=1&b=2&c=3&d=4', '/admin/help?=x', '/admin/help?tab=', '/admin/help?tab=a=b',
+    '/admin/help?tab', '/admin/help?', '//evil.invalid/x?tab=FAQ', '/admin/help?tab=FAQ#top', '/admin/x/[id]?tab=FAQ',
+    '/admin/help?1tab=FAQ',
+  ])('자유 입력·겹친 이름·형식이 틀린 쿼리(%s)는 메뉴 경로로 넘기지도 받지도 않는다', (route) => {
+    expect(isHandOffMenuRoute(route)).toBe(false);
+    expect(handOffScreen({ route, label: '화면' })).toBe(false);
+    expect(window.sessionStorage.length).toBe(0);
+    window.sessionStorage.setItem('egov.screen-handoff.v1:menu-add-screen', JSON.stringify({ route, label: '화면', at: Date.now() }));
+    render(<ScreenProbe />);
+    expect(screen.getByText('화면 없음')).toBeInTheDocument();
+  });
+
+  it('돌아갈 곳을 함께 넘기고 받는다 — 쿼리가 붙은 내부 경로도 받는다', () => {
+    const returnTo = { route: '/admin/community/boards/master/BBSMSTR_000000000001?tab=access', label: '게시판 공개 준비로 돌아가기' };
+    expect(isHandOffReturnRoute(returnTo.route)).toBe(true);
+    expect(handOffScreen({ route: '/admin/community/boards/select-board-list?bbsId=BBSMSTR_000000000001', label: '자료실', returnTo })).toBe(true);
+    render(<ScreenReturnProbe />);
+    expect(screen.getByText(`/admin/community/boards/select-board-list?bbsId=BBSMSTR_000000000001 돌아갈 곳:${returnTo.label}@${returnTo.route}`)).toBeInTheDocument();
+  });
+
+  it.each([
+    { route: '//evil.invalid/x', label: '돌아가기' },
+    { route: 'https://evil.invalid/x', label: '돌아가기' },
+    { route: '/admin/x#top', label: '돌아가기' },
+    { route: '/admin/../login', label: '돌아가기' },
+    { route: '/admin/x', label: '' },
+    { route: '/admin/x', label: '가'.repeat(41) },
+  ])('형식이 틀린 돌아갈 곳(%o)은 넘기지 않는다', (returnTo) => {
+    expect(handOffScreen({ route: '/note', label: '쪽지', returnTo })).toBe(false);
+    expect(handOffMenuFocus({ menuSn: 2040000, returnTo })).toBe(false);
+    expect(window.sessionStorage.length).toBe(0);
+  });
+
+  it('저장된 돌아갈 곳이 틀리면 인계는 받되 돌아갈 곳은 버린다', () => {
+    window.sessionStorage.setItem('egov.screen-handoff.v1:menu-add-screen',
+      JSON.stringify({ route: '/note', label: '쪽지', returnTo: { route: '//evil.invalid', label: '돌아가기' }, at: Date.now() }));
+    render(<ScreenReturnProbe />);
+    expect(screen.getByText('/note 돌아갈 곳:없음')).toBeInTheDocument();
   });
 
   it('형식이 틀린 값과 사용자 인계는 화면 인계로 받지 않는다 — 두 인계는 서로 덮지 않는다', () => {
@@ -178,6 +242,13 @@ describe('메뉴 인계(menu-focus)', () => {
     expect(handedOff).toBe(false);
     render(<MenuFocusProbe />);
     expect(screen.getByText('메뉴 없음')).toBeInTheDocument();
+  });
+
+  it('돌아갈 곳을 함께 넘기고 받는다(ADR-0043)', () => {
+    const returnTo = { route: '/admin/community/boards/master/BBSMSTR_000000000001?tab=access', label: '게시판 공개 준비로 돌아가기' };
+    expect(handOffMenuFocus({ menuSn: 2040000, returnTo })).toBe(true);
+    render(<MenuFocusProbe />);
+    expect(screen.getByText(`메뉴:2040000 돌아갈 곳:${returnTo.label}@${returnTo.route}`)).toBeInTheDocument();
   });
 
   it('사용자·화면 인계와 서로 덮지 않는다', () => {

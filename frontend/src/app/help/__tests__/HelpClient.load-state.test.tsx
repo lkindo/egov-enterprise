@@ -36,6 +36,8 @@ import HelpClient from '../HelpClient';
 describe('HelpClient 조회 상태', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    // [2026-10-26 ADR-0043 UX-04] 화면이 탭·쪽·검색어를 세션에 기억한다 — 시험마다 새 탭에서 시작한다.
+    window.sessionStorage.clear();
   });
 
   it.each([['faq', 10], ['qna', 4]] as const)('페이지 탐색: %s 11번째 항목에 도달하고 검색·탭 전환은 첫 페이지로 돌아간다', async (tab, pageSize) => {

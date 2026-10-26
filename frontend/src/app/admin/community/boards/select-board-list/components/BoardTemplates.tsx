@@ -24,6 +24,10 @@
  *
  * ⚠ e2e(03-board-community)가 각 글을 `a[href*="pstSn="]` + 제목 텍스트로 찾는다 — 제목을 감싸는
  *   `Link` 와 그 href 형태를 바꾸지 않는다.
+ *
+ * [2026-10-26 ADR-0043 1차 UX-02·03·14] 일곱 템플릿 모두 글 상태 표지(비밀글·상단 고정·예약·게시 종료)를 같은 묶음(PostStateBadges)
+ *   으로 보인다. 종전에는 허브형·캘린더·FAQ 가 표지를 그리지 않았고, 나머지는 표지를 제목 링크 안(잘림 영역)에 넣어 긴 제목에서
+ *   표지가 잘렸다. 표지는 링크 밖, 잘림 영역 밖에 둔다. 값은 서버 판정만 읽는다(DEC-OPS-140 — 날짜를 다시 계산하지 않는다).
  */
 import React, { useState } from 'react';
 import dynamic from 'next/dynamic';
@@ -36,7 +40,7 @@ import { format } from 'date-fns';
 import { ko } from 'date-fns/locale';
 import {
   BookOpen, Clock, Eye, MessageSquare, ChevronRight, ThumbsUp,
-  HelpCircle, CheckCircle2, ChevronDown, Paperclip,
+  HelpCircle, CheckCircle2, ChevronDown, Paperclip, Lock,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -50,7 +54,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
+import type { BoardPostingStatus } from '@/types/business/board';
 import { PinnedBadge, PostingStatusBadge } from '../../components/PostingStatusBadge';
+import { QNA_STATUS_LABELS, isQnaSolved, qnaCategoryLabel } from '@/lib/board/qna-status';
 
 const SanitizedFaqAnswer = dynamic(() => import('./SanitizedFaqAnswer'), {
   ssr: false,
@@ -82,6 +88,49 @@ const toDisplayDate = (value: string | undefined) =>
 
 const detailHref = (bbsId: string, pstSn: number) =>
   `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`;
+
+/** 글 상태 표지가 읽는 서버 값. 게시판 목록 응답(BoardDto)과 지식 허브 목록이 같은 이름으로 싣는다. */
+export interface PostStateFields {
+  scrtYn?: string | null;
+  pinned?: boolean | null;
+  upendFixEndYmd?: string | null;
+  postingStatus?: BoardPostingStatus | null;
+  pstBgngYmd?: string | null;
+}
+
+/**
+ * 비밀글 표지(UX-03). 열람 범위가 다른 글을 같은 모양으로 보이지 않는다 — 아이콘과 글자가 함께 말하고(WCAG 1.4.1), 누가 볼 수 있는지는
+ * 마우스 올림이 아니라 화면낭독기 문장으로 전한다(UX-14). 서버 값(scrtYn)만 읽는다.
+ */
+export function SecretBadge({ secret }: { secret: boolean }) {
+  if (!secret) return null;
+  return (
+    <span className="ml-1.5 inline-flex shrink-0 items-center gap-0.5 rounded border border-border bg-muted px-1.5 py-0.5 align-middle text-xs font-semibold text-foreground">
+      <Lock size={12} aria-hidden="true" />
+      비밀글
+      <span className="sr-only"> · 작성자와 관리자만 볼 수 있습니다</span>
+    </span>
+  );
+}
+
+/** 표지가 하나라도 그려지는지. 아래 묶음이 그리는 조건과 같다 — 빈 묶음이 자리(줄)만 차지하지 않게 한다. */
+export const hasPostState = (item: PostStateFields): boolean =>
+  item.scrtYn === 'Y' || item.pinned === true || item.postingStatus === 'SCHEDULED' || item.postingStatus === 'ENDED';
+
+/**
+ * 글 상태 표지 묶음 — 비밀글·상단 고정·예약·게시 종료. 제목 링크 밖, 잘림 영역 밖에 둔다(UX-14). 지식 허브 목록도 같은 묶음을 쓴다.
+ * 게시 상태와 고정은 서버 판정(postingStatus·pinned)만 그리고 날짜로 다시 계산하지 않는다(DEC-OPS-140).
+ */
+export function PostStateBadges({ item, className }: { item: PostStateFields; className?: string }) {
+  if (!hasPostState(item)) return null;
+  return (
+    <span className={cn('inline-flex shrink-0 flex-wrap items-center gap-y-1', className)}>
+      <SecretBadge secret={item.scrtYn === 'Y'} />
+      <PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} />
+      <PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
+    </span>
+  );
+}
 
 /** 목록 카드·행이 공유하는 메타 한 줄. 라벨은 아이콘이 아니라 글로도 읽힌다. */
 function PostMeta({ item }: { item: BoardPost }) {
@@ -144,7 +193,7 @@ function LikeButton({
   );
 }
 
-export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
+export const HubTemplate = ({ list, bbsId, querySearchWrd, page = 1 }: TemplateProps) => {
   if (list.length === 0) return null;
   const [lead, ...rest] = list;
   const cards = page === 1 ? rest : list;
@@ -157,8 +206,9 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
           <Badge variant="secondary" className="mb-2">대표 게시글</Badge>
           <h3 className="text-base font-semibold text-foreground">
             <Link href={detailHref(bbsId, lead.pstSn)} className="hover:text-primary hover:underline">
-              {lead.pstTtl}
+              <HighlightText text={lead.pstTtl} highlight={querySearchWrd} />
             </Link>
+            <PostStateBadges item={lead} />
           </h3>
           <p className="mt-1 text-[length:var(--font-size-body)] text-muted-foreground">
             {lead.userNm}
@@ -172,9 +222,11 @@ export const HubTemplate = ({ list, bbsId, page = 1 }: TemplateProps) => {
       <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
         {cards.map((item) => (
           <article key={item.pstSn} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
-            <h4 className="line-clamp-2 text-[length:var(--font-size-body)] font-semibold text-foreground">
-              <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                {item.pstTtl}
+            {/* 표지는 두 줄로 줄이는 제목 밖, 제목 위 한 줄에 둔다(UX-14) — 긴 제목이 표지를 가리지 않는다. */}
+            <PostStateBadges item={item} className="-ml-1.5" />
+            <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
+              <Link href={detailHref(bbsId, item.pstSn)} className="line-clamp-2 hover:text-primary hover:underline">
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
               </Link>
             </h4>
             <p className="text-xs text-muted-foreground">{item.userNm}</p>
@@ -207,9 +259,10 @@ export const GalleryTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
                 {attachments > 0 ? <>첨부 <span className="tabular-nums">{attachments}</span></> : '첨부 없음'}
               </span>
             </div>
-            <h3 className="line-clamp-2 text-[length:var(--font-size-body)] font-semibold text-foreground">
-              <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
+            <PostStateBadges item={item} className="-ml-1.5" />
+            <h3 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
+              <Link href={detailHref(bbsId, item.pstSn)} className="line-clamp-2 hover:text-primary hover:underline">
+                <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
               </Link>
             </h3>
             <p className="text-xs text-muted-foreground">
@@ -231,7 +284,7 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLi
   return (
     <ul className="divide-y divide-border rounded-md border border-border bg-card">
       {list.map((item) => {
-        const solved = item.qnaSttsCd === 'SOLVED';
+        const solved = isQnaSolved(item.qnaSttsCd);
         return (
           <li key={item.pstSn} className="flex flex-wrap items-start gap-3 p-3">
             {/* 상태는 색만으로 전달하지 않는다 — 아이콘과 글자가 함께 말한다(WCAG 1.4.1). */}
@@ -244,17 +297,19 @@ export const QnaTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendingLi
               {solved
                 ? <CheckCircle2 size={14} aria-hidden="true" />
                 : <HelpCircle size={14} aria-hidden="true" />}
-              {solved ? '해결됨' : '답변 대기'}
+              {solved ? QNA_STATUS_LABELS.SOLVED : QNA_STATUS_LABELS.OPEN}
             </span>
 
             <div className="min-w-0 flex-1 space-y-1">
               <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">
                 <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </Link>
+                <PostStateBadges item={item} />
               </h4>
               <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-muted-foreground">
-                <span>{item.qnaCatCd || '일반 문의'}</span>
+                {/* [2026-10-26 ADR-0043 UX-15·16] 분류 이름은 상세와 같은 정본(qna-status)에서 읽는다 — 정의된 이름이 없는 코드는 내보이지 않는다. */}
+                <span>분류 {qnaCategoryLabel(item.qnaCatCd)}</span>
                 <span>
                   <HighlightText text={item.userNm} highlight={querySearchWrd} />
                 </span>
@@ -361,14 +416,22 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
               )}
               <div className="space-y-0.5">
                 {dayPosts.map((post) => (
-                  <Link
-                    key={post.pstSn}
-                    href={detailHref(bbsId, post.pstSn)}
-                    className="block truncate rounded bg-muted px-1.5 py-0.5 text-xs text-foreground hover:bg-primary hover:text-primary-foreground"
-                    title={post.pstTtl}
-                  >
-                    {post.pstTtl}
-                  </Link>
+                  <div key={post.pstSn}>
+                    {/*
+                      [2026-10-26 ADR-0043 UX-13] 칸 안의 날짜 숫자는 링크와 관계가 프로그램으로 이어지지 않아 화면낭독기는 제목만 읽었다.
+                      링크 이름 앞에 날짜를 붙인다('10월 26일: 제목') — 보이는 제목은 그대로라 이름이 화면 글자를 담는다(WCAG 2.5.3).
+                    */}
+                    <Link
+                      href={detailHref(bbsId, post.pstSn)}
+                      className="block truncate rounded bg-muted px-1.5 py-0.5 text-xs text-foreground hover:bg-primary hover:text-primary-foreground"
+                      title={post.pstTtl}
+                    >
+                      {/* 띄어쓰기는 숨긴 날짜 밖에 둔다 — 안에 두면 접근 이름 계산이 끝 공백을 지워 '15일:제목' 이 된다. */}
+                      <span className="sr-only">{`${month + 1}월 ${day}일:`}</span>{' '}
+                      {post.pstTtl}
+                    </Link>
+                    <PostStateBadges item={post} className="-ml-1.5" />
+                  </div>
                 ))}
               </div>
             </div>
@@ -388,7 +451,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
  * [2026-09-26 DIP V6] 답은 **펼칠 때 상세 API 로 받는다.** 목록 응답에는 본문(pstCn)이 없어 종전에는
  * 모든 답이 빈 칸이었다. 본문은 에디터 HTML 이라 게시글 상세와 같은 살균기를 거쳐 그린다.
  */
-const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
+const FAQItem = ({ item, bbsId, querySearchWrd }: { item: BoardPost; bbsId: string; querySearchWrd: string }) => {
   const [isOpen, setIsOpen] = useState(false);
   const answer = useQuery({
     queryKey: ['boardArticle', bbsId, item.pstSn],
@@ -407,7 +470,10 @@ const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
       >
         <span className="flex min-w-0 items-center gap-2">
           <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs font-semibold text-muted-foreground">Q</span>
-          <span className="min-w-0 text-[length:var(--font-size-body)] font-medium text-foreground">{item.pstTtl}</span>
+          <span className="min-w-0 text-[length:var(--font-size-body)] font-medium text-foreground">
+            <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
+            <PostStateBadges item={item} />
+          </span>
         </span>
         <ChevronDown
           size={16}
@@ -451,12 +517,12 @@ const FAQItem = ({ item, bbsId }: { item: BoardPost; bbsId: string }) => {
   );
 };
 
-export const FaqTemplate = ({ list, bbsId }: TemplateProps) => {
+export const FaqTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => {
   if (list.length === 0) return null;
   return (
     <ul className="divide-y divide-border rounded-md border border-border">
       {list.map((item) => (
-        <FAQItem key={item.pstSn} item={item} bbsId={bbsId} />
+        <FAQItem key={item.pstSn} item={item} bbsId={bbsId} querySearchWrd={querySearchWrd} />
       ))}
     </ul>
   );
@@ -474,8 +540,9 @@ export const WikiTemplate = ({ list, bbsId, querySearchWrd }: TemplateProps) => 
               <Badge variant="outline" className="shrink-0">문서</Badge>
               <h4 className="min-w-0 text-[length:var(--font-size-body)] font-semibold text-foreground">
                 <Link href={detailHref(bbsId, item.pstSn)} className="hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
+                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
                 </Link>
+                <PostStateBadges item={item} />
               </h4>
             </div>
             {/* [2026-09-26 DIP V6] 본문 미리보기 줄을 걷었다 — 목록 응답에 본문이 없어 늘 빈 줄이었다. 문서는 제목 링크로 연다. */}
@@ -513,13 +580,21 @@ export const DefaultTemplate = ({ list, bbsId, querySearchWrd, handleLike, pendi
         <TableBody>
           {list.map((item, idx) => (
             <TableRow key={item.pstSn}>
+              {/*
+                [2026-10-26 ADR-0043 UX-15] 번호는 표시 순서로 센 수다. 상단 고정 글은 기본 정렬에서 맨 위에 오므로 가장 큰 번호를 받아
+                최신 글처럼 보였다 — 고정 글은 번호 대신 '고정' 이라고 쓴다(서버 판정 pinned 만 본다). 나머지 글의 번호는 그대로다.
+              */}
               <TableCell className="text-center tabular-nums text-muted-foreground">
-                {totalCount - ((page - 1) * 10) - idx}
+                {item.pinned === true ? '고정' : totalCount - ((page - 1) * 10) - idx}
               </TableCell>
               <TableCell>
-                <Link href={detailHref(bbsId, item.pstSn)} className="block truncate font-medium text-foreground hover:text-primary hover:underline">
-                  <HighlightText text={item.pstTtl} highlight={querySearchWrd} /><PinnedBadge pinned={item.pinned} endYmd={item.upendFixEndYmd} /><PostingStatusBadge status={item.postingStatus} startYmd={item.pstBgngYmd} />
-                </Link>
+                {/* 표지는 잘리는 제목 링크 밖에 둔다(UX-14) — 긴 제목이 표지를 밀어내지 않는다. */}
+                <div className="flex min-w-0 items-center">
+                  <Link href={detailHref(bbsId, item.pstSn)} className="min-w-0 truncate font-medium text-foreground hover:text-primary hover:underline">
+                    <HighlightText text={item.pstTtl} highlight={querySearchWrd} />
+                  </Link>
+                  <PostStateBadges item={item} />
+                </div>
               </TableCell>
               <TableCell className="text-center text-muted-foreground">
                 <HighlightText text={item.userNm} highlight={querySearchWrd} />

@@ -10,6 +10,8 @@ import { redirect } from 'next/navigation';
  *
  * 식별자를 게시판 ID 로 해석해 `?bbsId=` 로 넘기지 않는다 — 종전 화면이 그 값을 쓰지 않았으므로
  * 어떤 의미였는지 확정할 근거가 없고, 잘못 해석하면 엉뚱한 게시판에 글이 등록된다(H4).
+ * [2026-10-26 ADR-0043 1차 UX-09] 그래서 정본은 식별자 없이 열린다 — 정본이 공지사항으로 정하지 않고 글을 쓸 수 있는 게시판을
+ * 고르게 한다(`BoardWritePicker`).
  */
 export default function CommunityBoardsLegacyIdRedirectPage() {
   redirect('/admin/community/boards/insert-board-article');

@@ -24,6 +24,11 @@ interface BoardListFiltersProps {
   setEndDate: (date?: Date) => void;
   onSearch: (e: React.FormEvent) => void;
   onReset: () => void;
+  /**
+   * 기간 선택을 보일지(기본 보임). [2026-10-26 ADR-0043 UX-13] 캘린더 템플릿은 달 이동이 곧 기간이라 끈다 — 기간 선택의 시작일이
+   * 보이는 달을 바꿔 두 조작이 서로 덮었다.
+   */
+  showPeriod?: boolean;
 }
 
 export const BoardListFilters = ({
@@ -38,7 +43,8 @@ export const BoardListFilters = ({
   endDate,
   setEndDate,
   onSearch,
-  onReset
+  onReset,
+  showPeriod = true,
 }: BoardListFiltersProps) => {
   return (
     <div className="flex flex-row items-center gap-3 mb-4 bg-muted/50 p-6 rounded-lg border border-border shadow-inner">
@@ -88,6 +94,7 @@ export const BoardListFilters = ({
 
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
           <div className="flex items-center gap-2 flex-1 w-full overflow-x-auto">
+            {showPeriod && (
             <Popover>
                 <PopoverTrigger asChild>
                   <Button
@@ -125,26 +132,36 @@ export const BoardListFilters = ({
                       <X size={12} className="mr-1" /> 초기화
                     </Button>
                   </div>
+                  {/*
+                    [2026-10-26 ADR-0043 UX-15] 두 달력에 무엇을 고르는지 제목을 단다 — 종전에는 같은 모양의 달력 둘이 이름 없이 나란히
+                    있어 어느 쪽이 시작일인지 알 수 없었다. 처음 초점은 시작일 달력 하나에만 둔다(둘 다 autoFocus 면 뒤의 것이 가져간다).
+                  */}
                   <div className="flex flex-col md:flex-row divide-y md:divide-y-0 md:divide-x">
-                    <Calendar
-                      mode="single"
-                      selected={startDate}
-                      onSelect={setStartDate}
-                      autoFocus
-                      locale={ko}
-                      className="p-3"
-                    />
-                    <Calendar
-                      mode="single"
-                      selected={endDate}
-                      onSelect={setEndDate}
-                      autoFocus
-                      locale={ko}
-                      className="p-3"
-                    />
+                    <div role="group" aria-labelledby="board-period-start-label">
+                      <p id="board-period-start-label" className="px-3 pt-3 text-xs font-semibold text-foreground">시작일</p>
+                      <Calendar
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        autoFocus
+                        locale={ko}
+                        className="p-3"
+                      />
+                    </div>
+                    <div role="group" aria-labelledby="board-period-end-label">
+                      <p id="board-period-end-label" className="px-3 pt-3 text-xs font-semibold text-foreground">종료일</p>
+                      <Calendar
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        locale={ko}
+                        className="p-3"
+                      />
+                    </div>
                   </div>
                 </PopoverContent>
             </Popover>
+            )}
 
             <Select value={orderBy} onValueChange={setOrderBy}>
                 <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-[var(--filter-control-h)] rounded-lg border border-border bg-card font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">

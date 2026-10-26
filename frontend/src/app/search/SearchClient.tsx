@@ -20,7 +20,8 @@ import { StandardTabs, TabPanel, standardTabId } from '@/app/components/ui/stand
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 /* reusable-base:board:start */
-import { boardUserService } from '@/services/business/user/board/BoardUserService';
+import { boardUserService, type BoardSearchResultItem } from '@/services/business/user/board/BoardUserService';
+import type { components } from '@/types/generated-api';
 /* reusable-base:board:end */
 import { menuService } from '@/services/business/user/MenuService';
 import { useOptionalAuth } from '@/contexts/AuthContext';
@@ -39,6 +40,8 @@ import { SEARCH_URL_STATE } from '@/lib/navigation/search-url-state';
  */
 interface SearchArticle {
     bbsId: string;
+    /** [2026-10-26 ADR-0043 NAV-10] 글이 속한 게시판 이름. 서버가 주지 않으면 비워 두고 짐작해 채우지 않는다. */
+    bbsTtl?: string;
     pstSn: number;
     pstTtl: string;
     crtDt?: string;
@@ -69,8 +72,13 @@ interface SearchResultsContentProps {
 const EMPTY_RESULTS: SearchResults = { articles: [], users: [], menus: [] };
 const articleSearchProviders: Array<(query: string) => Promise<SearchArticle[]>> = [
     /* reusable-base:board:start */
-    async (query) => (await boardUserService.searchPosts(query)).map(item => ({
+    /*
+      [2026-10-26 ADR-0043 NAV-10] 게시판 이름(bbsTtl)은 서버 검색 응답 계약(BoardSearchItemResponse)이 싣는다. 메뉴가 없는 게시판은
+      통합 검색이 사실상 유일한 발견 경로라, 결과 카드가 어느 게시판의 글인지 말해야 한다. 빈 이름은 배지를 그리지 않는다.
+    */
+    async (query) => (await boardUserService.searchPosts(query)).map((item: BoardSearchResultItem & Pick<components['schemas']['BoardSearchItemResponse'], 'bbsTtl'>) => ({
         bbsId: item.bbsId,
+        ...(item.bbsTtl?.trim() ? { bbsTtl: item.bbsTtl.trim() } : {}),
         pstSn: item.pstSn,
         pstTtl: item.pstTtl ?? '(제목 없음)',
         crtDt: item.crtDt,
@@ -462,9 +470,19 @@ function ArticleResultItem({ item }: { item: SearchArticle }) {
                 낮췄다. 목록에서 여러 장이 세로로 쌓이는 카드라 한 장이 화면을 차지하면 훑기 어렵다. */}
             <div className="rounded-md border border-border bg-card p-4 transition-colors group-hover:border-primary/30 group-hover:bg-muted/30">
                 <div className="mb-2 flex items-start justify-between gap-3">
-                    <h4 className="line-clamp-1 text-[length:var(--font-size-body)] font-bold transition-colors group-hover:text-primary">
-                        {item.pstTtl}
-                    </h4>
+                    {/* [2026-10-26 ADR-0043 NAV-10] 제목 앞에 글이 속한 게시판 이름 배지를 둔다. 긴 이름은 줄이고 전체 이름은 title 로 보인다. */}
+                    <div className="flex min-w-0 items-center gap-2">
+                        {item.bbsTtl ? (
+                            <Badge variant="secondary" title={item.bbsTtl} className="max-w-[12rem] rounded-md text-xs font-bold">
+                                {/* 화면 낭독기는 카드 링크 이름을 '게시판 {이름} {제목}…' 으로 읽는다. 사이 공백은 flex 안이라 보이지 않는다. */}
+                                <span className="sr-only">게시판</span>{' '}
+                                <span className="truncate">{item.bbsTtl}</span>
+                            </Badge>
+                        ) : null}
+                        <h4 className="line-clamp-1 min-w-0 text-[length:var(--font-size-body)] font-bold transition-colors group-hover:text-primary">
+                            {item.pstTtl}
+                        </h4>
+                    </div>
                     <span className="shrink-0 rounded bg-muted px-1.5 py-0.5 text-xs tabular-nums text-muted-foreground">
                         {item.crtDt?.substring(0, 10)}
                     </span>

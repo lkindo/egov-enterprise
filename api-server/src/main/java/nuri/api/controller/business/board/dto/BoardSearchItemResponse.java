@@ -16,6 +16,9 @@ import nuri.business.service.board.dto.BoardDto;
 public record BoardSearchItemResponse(
         @Schema(description = "게시판 ID", requiredMode = Schema.RequiredMode.REQUIRED)
         String bbsId,
+        // [2026-10-26 ADR-0043, NAV-10] 결과가 어느 게시판의 글인지 — 메뉴가 없는 게시판은 검색이 거의 유일한 발견 경로다.
+        @Schema(description = "게시판 이름", nullable = true, types = {"string", "null"})
+        String bbsTtl,
         @Schema(description = "게시글 ID", requiredMode = Schema.RequiredMode.REQUIRED)
         Long pstSn,
         @Schema(description = "게시글 제목", nullable = true, types = {"string", "null"})
@@ -30,6 +33,7 @@ public record BoardSearchItemResponse(
     public static BoardSearchItemResponse from(BoardDto source) {
         return new BoardSearchItemResponse(
                 source.bbsId(),
+                source.bbsTtl(),
                 source.pstSn(),
                 source.pstTtl(),
                 source.userNm(),

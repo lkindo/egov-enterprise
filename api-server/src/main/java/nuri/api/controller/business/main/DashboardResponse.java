@@ -26,11 +26,15 @@ public final class DashboardResponse {
     private static final String NOTICE_LIST = "notiList";
     private static final String TASK_LIST_TOTAL = "taskListTotal";
     private static final String NOTICE_LIST_TOTAL = "notiListTotal";
+    private static final String TASK_LIST_UNAVAILABLE = "taskListUnavailable";
+    private static final String NOTICE_LIST_UNAVAILABLE = "notiListUnavailable";
 
     private final List<BoardDto> taskList;
     private final List<BoardDto> notiList;
     private final Long taskListTotal;
     private final Long notiListTotal;
+    private final boolean taskListUnavailable;
+    private final boolean notiListUnavailable;
     private final Map<String, Object> extensions;
 
     private DashboardResponse(
@@ -38,11 +42,15 @@ public final class DashboardResponse {
             List<BoardDto> notiList,
             Long taskListTotal,
             Long notiListTotal,
+            boolean taskListUnavailable,
+            boolean notiListUnavailable,
             Map<String, Object> extensions) {
         this.taskList = taskList;
         this.notiList = notiList;
         this.taskListTotal = taskListTotal;
         this.notiListTotal = notiListTotal;
+        this.taskListUnavailable = taskListUnavailable;
+        this.notiListUnavailable = notiListUnavailable;
         this.extensions = extensions;
     }
 
@@ -52,11 +60,15 @@ public final class DashboardResponse {
         List<BoardDto> notiList = boardItems(extensions.remove(NOTICE_LIST), NOTICE_LIST);
         Long taskListTotal = nonNegativeCount(extensions.remove(TASK_LIST_TOTAL), TASK_LIST_TOTAL);
         Long notiListTotal = nonNegativeCount(extensions.remove(NOTICE_LIST_TOTAL), NOTICE_LIST_TOTAL);
+        boolean taskListUnavailable = flag(extensions.remove(TASK_LIST_UNAVAILABLE), TASK_LIST_UNAVAILABLE);
+        boolean notiListUnavailable = flag(extensions.remove(NOTICE_LIST_UNAVAILABLE), NOTICE_LIST_UNAVAILABLE);
         return new DashboardResponse(
                 taskList,
                 notiList,
                 taskListTotal,
                 notiListTotal,
+                taskListUnavailable,
+                notiListUnavailable,
                 Map.copyOf(extensions));
     }
 
@@ -87,6 +99,26 @@ public final class DashboardResponse {
         return notiListTotal;
     }
 
+    /**
+     * 업무게시판으로 지정한 게시판을 지금 이용할 수 없는지(사용 안 함이거나 없음).
+     *
+     * <p>[2026-10-26 ADR-0043, SET-07] 운영 상태와 조회 실패를 가른다 — true 면 목록은 비고 전체 글 수는 {@code null} 이며, 화면은
+     * '지금 이 게시판을 운영하지 않습니다'로 그린다. 조회 실패나 게시판 공급자가 없으면 false 다(그때 목록이 비고 전체 글 수가
+     * {@code null} 이면 '불러오지 못했습니다').</p>
+     */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+            description = "업무게시판으로 지정한 게시판을 지금 이용할 수 없음(사용 안 함이거나 없음). 조회 실패는 false")
+    public boolean isTaskListUnavailable() {
+        return taskListUnavailable;
+    }
+
+    /** 공지 게시판으로 지정한 게시판을 지금 이용할 수 없는지. 의미는 {@link #isTaskListUnavailable()} 와 같다. */
+    @Schema(requiredMode = Schema.RequiredMode.REQUIRED,
+            description = "공지 게시판으로 지정한 게시판을 지금 이용할 수 없음(사용 안 함이거나 없음). 조회 실패는 false")
+    public boolean isNotiListUnavailable() {
+        return notiListUnavailable;
+    }
+
     @JsonAnyGetter
     @Schema(hidden = true)
     public Map<String, Object> getExtensions() {
@@ -108,6 +140,17 @@ public final class DashboardResponse {
             items.add(item);
         }
         return List.copyOf(items);
+    }
+
+    /** 공급자가 싣지 않았으면 false(이용할 수 없다고 말할 근거가 없다)다. */
+    private static boolean flag(Object value, String field) {
+        if (value == null) {
+            return false;
+        }
+        if (!(value instanceof Boolean bool)) {
+            throw new IllegalStateException("대시보드 " + field + " 계약이 올바르지 않습니다.");
+        }
+        return bool;
     }
 
     private static Long nonNegativeCount(Object value, String field) {

@@ -40,6 +40,11 @@ public class BoardSearchResult {
     private String upendFixYn;
     /** 상단 고정 종료일(yyyyMMdd). 고정 중일 때만 응답에 싣는다. */
     private String upendFixEndYmd;
+    /**
+     * 게시판 이름 — 목록 질의가 이미 잇는 게시판 마스터의 값이다(새 조인 없음). [2026-10-26 ADR-0043, NAV-10] 통합 검색 응답만
+     * 싣는다(BoardService#searchAcrossBoards).
+     */
+    private String bbsTtl;
 
 
 }

@@ -17,7 +17,7 @@ export class BoardMasterPage {
     this.bbsNmInput = page.locator('#bbsTtl').first();
     this.bbsIntrcnInput = page.locator('#bbsExpln').first();
     this.nextButton = page.locator('button').filter({ hasText: /다음 단계로|Next/i }).first();
-    // [2026-10-23 ADR-0040 §5.3] 마지막 단계(최종 확인)의 제출 단추.
+    // [2026-10-23 ADR-0040 §5.3] 마지막 단계(최종 확인)의 제출 단추. [2026-10-26 ADR-0043] 단계는 셋이고 마지막이 최종 확인이다.
     this.deployButton = page.getByRole('button', { name: '게시판 만들기', exact: true });
   }
 
@@ -96,29 +96,19 @@ export class BoardMasterPage {
     console.log('>>> Clicking Next button after template selection');
     await this.nextButton.scrollIntoViewIfNeeded();
     await this.nextButton.click();
-    await expect(this.page.getByRole('heading', { name: '메뉴·접근 확인', exact: true }))
+    // [2026-10-26 ADR-0043 결정 1] 메뉴 단계를 걷었다 — 화면·기능 다음은 최종 확인이다.
+    await expect(this.page.getByRole('heading', { name: '최종 확인', exact: true }))
       .toBeVisible({ timeout: 10000 });
     console.log('>>> Step 2 completed');
   }
 
-  /** 3단계(메뉴·접근 확인) — 메뉴 이름을 정하고 최종 확인으로 간다. */
-  async fillStep3(menuName: string) {
-    const menuInput = this.page.getByLabel('메뉴 명칭', { exact: true });
-    await expect(menuInput).toBeVisible({ timeout: 10000 });
-    await menuInput.fill(menuName);
-    await this.nextButton.scrollIntoViewIfNeeded();
-    await this.nextButton.click();
-    await expect(this.page.getByRole('heading', { name: '최종 확인', exact: true }))
-      .toBeVisible({ timeout: 10000 });
-    console.log('>>> Step 3 completed');
-  }
-
-  /** 4단계(최종 확인) — 사용 안 함 게시판·비활성 메뉴로 만든다. */
-  async fillStep4() {
+  /** 3단계(최종 확인) — 사용 안 함 게시판으로 만든다. 메뉴는 만들지 않는다(ADR-0043 결정 1). */
+  async fillStep3() {
     await expect(this.page.getByText('게시판: 사용 안 함으로 만들어져 이용자에게 닫혀 있습니다', { exact: false })).toBeVisible({ timeout: 10000 });
+    await expect(this.page.getByText('메뉴: 만들지 않습니다', { exact: false })).toBeVisible();
     await this.deployButton.scrollIntoViewIfNeeded();
     await this.deployButton.click();
-    console.log('>>> Step 4 completed - creation initiated');
+    console.log('>>> Step 3 completed - creation initiated');
   }
 
   async search(keyword: string) {
@@ -147,19 +137,22 @@ export class BoardMasterPage {
     console.log(`>>> Search completed for: ${keyword}`);
   }
 
-  async verifySuccess(menuName: string) {
-    // [E2E 감사 A3] 실제 생성 성공 화면의 제목과 연결된 메뉴명을 하드 단언한다.
+  async verifySuccess(boardName: string) {
+    // [E2E 감사 A3] 실제 생성 성공 화면의 제목과 만든 게시판을 하드 단언한다.
     // (과거: waitForSelector(...).catch(()=>{})로 실패를 삼키고 includes(menuName) console.log만 실행 →
     //  menuName은 방금 입력한 값이라 DOM에 항상 존재 → 배포가 실패해도 그린 통과하던 false-green)
-    console.log(`>>> Verifying board/menu creation success for: ${menuName}`);
+    // [2026-10-26 ADR-0043] 결과 화면은 만든 게시판의 이름·ID·상태를 보인다 — 입력 화면은 이미 사라졌으므로 이름은 결과 요약에서만 나온다.
+    console.log(`>>> Verifying board creation success for: ${boardName}`);
     await expect(this.page.getByRole('heading', { name: '게시판 만들기 완료', exact: true }))
       .toBeVisible({ timeout: 30000 });
-    await expect(this.page.getByText(`'${menuName}'`, { exact: true })).toBeVisible();
+    await expect(this.page.getByRole('definition').filter({ hasText: boardName }).first()).toBeVisible();
+    await expect(this.page.getByRole('definition').filter({ hasText: /^BBSMSTR_[A-Z0-9]{12}$/ })).toBeVisible();
+    await expect(this.page.getByText('사용 안 함 — 이용자에게 닫혀 있습니다', { exact: true })).toBeVisible();
   }
 
   /** [2026-10-23 ADR-0040 §5.3] 결과 화면의 주 동작 — 운영 화면의 메뉴·접근 탭(공개 준비)으로 간다. */
   async continuePublicationReadiness() {
-    await this.page.getByRole('button', { name: '이 게시판 공개 준비 계속하기' }).click();
+    await this.page.getByRole('button', { name: '운영 화면에서 공개 준비 계속하기' }).click();
     await expect(this.page).toHaveURL(/\/admin\/community\/boards\/master\/BBSMSTR_[A-Z0-9]{12}\?tab=access/, { timeout: 15000 });
     await expect(this.page.getByRole('heading', { name: '공개 준비 점검' })).toBeVisible({ timeout: 15000 });
   }

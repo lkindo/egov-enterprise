@@ -1,5 +1,6 @@
 package nuri.business.service.board.dto;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import io.swagger.v3.oas.annotations.media.Schema;
 import nuri.business.domain.board.BoardMaster;
 
@@ -40,9 +41,14 @@ public record BoardMetaDto(
         String prvtPstPlcyCd,
         @Schema(description = "추천 받기(ADR-0040 결정 6). N 이면 서버가 새 추천을 거부한다(자기 추천 취소는 받는다). 목록·상세 화면이 이 값으로 추천 단추를 정한다.",
                 allowableValues = { "Y", "N" }, requiredMode = Schema.RequiredMode.REQUIRED)
-        String rcmdtnUseYn) {
+        String rcmdtnUseYn,
+        @Schema(description = "귀속 커뮤니티 요약(ADR-0043 1차 UX-09). 귀속이 없으면 null 이다 — 작성 화면이 '누가 이 글을 보는지'를 말한다. "
+                + "커뮤니티 기능이 없거나 찾지 못하면 이름·이용 가능 여부가 null 인 요약이다(확인 불가).",
+                nullable = true, types = {"object", "null"})
+        @JsonInclude(JsonInclude.Include.ALWAYS)
+        BoardMasterCommunity community) {
 
-    public static BoardMetaDto from(BoardMaster master, java.util.List<String> requiredEditPermissions) {
+    public static BoardMetaDto from(BoardMaster master, java.util.List<String> requiredEditPermissions, BoardMasterCommunity community) {
         return new BoardMetaDto(
                 master.getBbsId(),
                 master.getBbsTtl(),
@@ -59,6 +65,7 @@ public record BoardMetaDto(
                 "Y".equals(master.getRsvtPstgPsbltyYn()) ? "Y" : "N",
                 "Y".equals(master.getUpendFixPsbltyYn()) ? "Y" : "N",
                 master.getPrvtPstPlcyCd() != null ? master.getPrvtPstPlcyCd() : BoardMaster.PRIVATE_POST_NONE,
-                master.acceptsRecommendations() ? "Y" : "N");
+                master.acceptsRecommendations() ? "Y" : "N",
+                community);
     }
 }

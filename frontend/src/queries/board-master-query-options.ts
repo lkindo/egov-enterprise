@@ -14,9 +14,13 @@ export interface BoardOperationPostParams {
   page: number;
   size: number;
   searchWrd?: string;
+  /** [2026-10-26 ADR-0043 1차] 검색 구분 — '0' 제목·'1' 본문·'2' 작성자 표시 이름. 검색어가 있을 때만 싣고, 비우면 제목이다. */
+  searchCnd?: '0' | '1' | '2';
   postingStatus?: BoardPostingStatus;
   /** [2026-10-23 ADR-0040 결정 5] true 면 지금 고정 중인 글, false 면 그 밖의 글이다. 비우면 전체다. */
   pinned?: boolean;
+  /** [2026-10-26 ADR-0043 1차] Q&A 해결 상태 — 미해결(OPEN)·해결됨(SOLVED). 비우면 전체다. */
+  qnaStatus?: 'OPEN' | 'SOLVED';
 }
 
 /**
@@ -85,9 +89,10 @@ export const boardMasterQueryOptions = {
     queryFn: () => boardUserService.getPosts(bbsId, {
       page: params.page,
       size: params.size,
-      ...(params.searchWrd ? { searchCnd: '0', searchWrd: params.searchWrd } : {}),
+      ...(params.searchWrd ? { searchCnd: params.searchCnd ?? '0', searchWrd: params.searchWrd } : {}),
       ...(params.postingStatus ? { postingStatus: params.postingStatus } : {}),
       ...(params.pinned !== undefined ? { pinned: params.pinned } : {}),
+      ...(params.qnaStatus ? { qnaStatus: params.qnaStatus } : {}),
     }),
     enabled: bbsId.length > 0,
   }),

@@ -237,10 +237,15 @@ nuri:
   #   값은 데모 시드(R__seed_demo.sql)의 인스턴스 ID와 동일하며, 미설정 시에도 같은 기본값으로
   #   거동이 완전히 같다. 다른 제품은 코어 수정 없이 이 값만 자기 게시판 ID로 바꾼다.
   #   ⚠ faq-id 는 데모 시드에서 공지 게시판과 같은 인스턴스로 통합돼 있다(FAQ 통합 축).
+  #   [2026-10-26 ADR-0043 결정 4] 지정 용도는 공지·FAQ·업무·Q&A(도움말 1:1 문의·지식 허브 질의응답)·위키(지식 허브 위키 탭)
+  #   다섯이고, 지정 게시판은 영구 삭제를 거부한다. 화면 상수(frontend/src/config/board-ids.ts)도 같은 대응을 들고 있으므로
+  #   지정을 바꾸면 두 곳을 함께 바꾼다 — 기본값이 같은지는 frontend/src/__tests__/cross-stack/designated-board-ids-contract.test.ts 가 대조한다.
   boards:
     notice-id: BBSMSTR_AAAAAAAAAAAA
     task-id: BBSMSTR_CCCCCCCCCCCC
     faq-id: BBSMSTR_AAAAAAAAAAAA
+    qna-id: BBSMSTR_DDDDDDDDDDDD
+    wiki-id: BBSMSTR_EEEEEEEEEEEE
 
 logging:
   level:

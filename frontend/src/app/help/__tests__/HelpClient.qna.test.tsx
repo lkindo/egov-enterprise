@@ -33,6 +33,11 @@ const harness = vi.hoisted(() => ({
   getQnas: vi.fn(),
   createQna: vi.fn(),
   toast: vi.fn(),
+  viewer: undefined as { esntlId: string } | undefined,
+}));
+
+vi.mock('@/contexts/AuthContext', () => ({
+  useOptionalAuth: () => (harness.viewer ? { user: harness.viewer } : undefined),
 }));
 
 vi.mock('@/services/business/user/help/HelpUserService', () => ({
@@ -67,6 +72,8 @@ const contentInput = () => document.querySelector<HTMLTextAreaElement>('textarea
 describe('도움말 Q&A — 문의 등록', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
+    harness.viewer = undefined;
     harness.getFaqs.mockResolvedValue({ list: [] });
     harness.getQnas.mockResolvedValue({ list: [] });
     harness.createQna.mockResolvedValue(undefined);
@@ -161,25 +168,100 @@ describe('도움말 Q&A — 문의 등록', () => {
 describe('도움말 Q&A — 상태와 범위를 사실대로 말한다', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    window.sessionStorage.clear();
+    harness.viewer = undefined;
     harness.getFaqs.mockResolvedValue({ list: [] });
     harness.createQna.mockResolvedValue(undefined);
   });
 
-  it('상태는 서버 값에서 읽는다 — 답글 깊이로 지어내지 않는다', async () => {
+  /*
+    [2026-10-26 ADR-0043 UX-05] 상태 이름은 게시판 정본(qna-status.ts)을 쓴다. 두 상태는 '해결로 표시했는가' 라서, 답이 달려도 해결로
+    표시하기 전까지 남는 상태를 '답변 대기' 로 부르면 사실과 다르다.
+  */
+  it('상태는 서버 값에서 읽고 정본 이름(미해결·해결됨)으로 말한다 — 답글 깊이로 지어내지 않는다', async () => {
     const user = userEvent.setup();
     harness.getQnas.mockResolvedValue({
       list: [
-        { qaId: '1', qstnTtl: '답변 끝난 문의', wrterNm: '김', writngDe: '20260828', qnaSttsCd: 'SOLVED' },
-        { qaId: '2', qstnTtl: '기다리는 문의', wrterNm: '박', writngDe: '20260828', qnaSttsCd: 'OPEN' },
+        { qaId: '1', qstnTtl: '답변 끝난 문의', wrterNm: '김', writngDe: '2026-08-28', qnaSttsCd: 'SOLVED' },
+        { qaId: '2', qstnTtl: '기다리는 문의', wrterNm: '박', writngDe: '2026-08-28', qnaSttsCd: 'OPEN' },
       ],
     });
     render(<HelpClient />);
     await openQnaTab(user);
 
-    expect(await screen.findByText('답변완료')).toBeVisible();
-    expect(screen.getByText('답변 대기')).toBeVisible();
+    expect(await screen.findByText('해결됨')).toBeVisible();
+    expect(screen.getByText('미해결')).toBeVisible();
+    expect(screen.queryByText('답변 대기')).not.toBeInTheDocument();
+    expect(screen.queryByText('답변완료')).not.toBeInTheDocument();
     // 결재 어휘를 답변 상태에 쓰지 않는다.
     expect(screen.queryByText('승인')).not.toBeInTheDocument();
+  });
+
+  /*
+    [2026-10-26 ADR-0043 UX-04] 종전에는 행을 열 수 없어 1:1 문의에 달린 답을 읽을 길이 없었고, 내 문의와 남의 공개 질문이 같은
+    모양이었다. 제목이 게시글 상세로 가고, 구분이 서버 값(비밀글·작성자)으로 정해진다.
+  */
+  it('제목으로 게시글 상세를 열고, 구분 열이 내 1:1 문의·공개 질문을 가른다', async () => {
+    const user = userEvent.setup();
+    harness.viewer = { esntlId: 'me' };
+    harness.getQnas.mockResolvedValue({
+      list: [
+        { qaId: '11', qstnTtl: '내 비밀 문의', wrterNm: '나', authorId: 'me', writngDe: '2026-10-26', qnaSttsCd: 'OPEN', scrtYn: 'Y' },
+        { qaId: '12', qstnTtl: '남의 공개 질문', wrterNm: '박', authorId: 'other', writngDe: '2026-10-25', qnaSttsCd: 'OPEN', scrtYn: 'N' },
+        // 관리자에게만 오는 남의 비밀 문의 — '내' 문의라고 부르지 않는다.
+        { qaId: '13', qstnTtl: '남의 비밀 문의', wrterNm: '최', authorId: 'other', writngDe: '2026-10-24', qnaSttsCd: 'OPEN', scrtYn: 'Y' },
+      ],
+    });
+    render(<HelpClient />);
+    await openQnaTab(user);
+
+    const mine = (await screen.findByRole('link', { name: '내 비밀 문의' })).closest('tr')!;
+    expect(screen.getByRole('link', { name: '내 비밀 문의' }))
+      .toHaveAttribute('href', '/admin/community/boards/detail?bbsId=BBSMSTR_DDDDDDDDDDDD&pstSn=11');
+    expect(within(mine).getByText('내 1:1 문의')).toBeVisible();
+    expect(within(mine).getByText('2026-10-26')).toBeVisible();
+    const publicRow = screen.getByRole('link', { name: '남의 공개 질문' }).closest('tr')!;
+    expect(within(publicRow).getByText('공개 질문')).toBeVisible();
+    const othersSecret = screen.getByRole('link', { name: '남의 비밀 문의' }).closest('tr')!;
+    expect(within(othersSecret).getByText('1:1 문의')).toBeVisible();
+    expect(within(othersSecret).queryByText('내 1:1 문의')).toBeNull();
+  });
+
+  it('로그인 사용자를 모르면 어떤 비밀 문의도 내 문의라고 부르지 않는다', async () => {
+    const user = userEvent.setup();
+    harness.getQnas.mockResolvedValue({
+      list: [{ qaId: '11', qstnTtl: '비밀 문의', wrterNm: '나', authorId: 'me', writngDe: '2026-10-26', scrtYn: 'Y' }],
+    });
+    render(<HelpClient />);
+    await openQnaTab(user);
+
+    const row = (await screen.findByRole('link', { name: '비밀 문의' })).closest('tr')!;
+    expect(within(row).getByText('1:1 문의')).toBeVisible();
+    expect(screen.queryByText('내 1:1 문의')).toBeNull();
+  });
+
+  it('모두에게 묻는 공개 질문의 자리(지식 허브 질의응답)를 안내한다', async () => {
+    const user = userEvent.setup();
+    harness.getQnas.mockResolvedValue({ list: [] });
+    render(<HelpClient />);
+    await openQnaTab(user);
+
+    expect(screen.getByRole('link', { name: '지식 허브 질의응답' })).toHaveAttribute('href', '/admin/help/qna');
+  });
+
+  it('상세에 다녀와 다시 마운트돼도 보던 탭으로 돌아온다', async () => {
+    const user = userEvent.setup();
+    harness.getQnas.mockResolvedValue({
+      list: [{ qaId: '11', qstnTtl: '돌아올 문의', wrterNm: '나', writngDe: '2026-10-26', scrtYn: 'N' }],
+    });
+    const { unmount } = render(<HelpClient />);
+    await openQnaTab(user);
+    await screen.findByRole('link', { name: '돌아올 문의' });
+    unmount();
+
+    render(<HelpClient />);
+    expect(screen.getByRole('tab', { name: /1:1 Q&A 문의/ })).toHaveAttribute('aria-selected', 'true');
+    expect(await screen.findByRole('link', { name: '돌아올 문의' })).toBeVisible();
   });
 
   it('목록 범위를 개인 목록으로 과장하지 않는다', async () => {

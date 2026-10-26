@@ -33,7 +33,6 @@ const PATTERN = new RegExp(`${VARIANT}(?:${UTIL})-(?:${NEUTRAL_AND_BRAND})-[0-9]
 //   옮기면 이 표만 고친다. 기준선 증감의 이력은 git 과 결정 기록에 있다.
 // ⚠ 이 가드는 주석도 센다 — 이행 설명에 클래스 이름을 적으면 그만큼 수치가 남는다(실측).
 const BASELINE_BY_FILE: Record<string, number> = {
-  'src/app/admin/community/boards/select-board-list/components/BoardPagination.tsx': 1,
   'src/app/admin/community/templates/TemplateAdminClient.tsx': 1,
   'src/app/cop/sms/selectSmsList/SmsHubClient.tsx': 1,
   'src/app/global-error.tsx': 4,

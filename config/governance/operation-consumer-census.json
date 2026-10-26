@@ -33,6 +33,14 @@
       "evidence": []
     },
     {
+      "operationId": "createMenu",
+      "category": "superseded-surface",
+      "note": "The single-menu POST was used only by the board creation wizard, which registered an inactive admin-only menu right after creating the board. ADR-0043 decision 1 separated board creation from menu linking: the wizard now creates the board only, and menus are attached in menu management through the screen handoff, which saves with the versioned menu structure (depth check, sensitive-operation ledger). MenuAdminService.createMenu was removed with its only caller. Retiring the endpoint itself is a backend decision — see GAP-WIRING-001.",
+      "supersededBy": [
+        "saveMenuStructure"
+      ]
+    },
+    {
       "operationId": "createMenuCreation",
       "category": "superseded-surface",
       "note": "The legacy authority→menu \"creation\" surface predates the explicit NAVIGATION grants of ADR-0016. The menus-by-authority screen reads groups and their menus through getAuthors and getAuthorMenus, and grants are saved through the versioned authorization API or the menu structure draft. This handler calls the two-argument MenuService.insertMenuCreatList, which always rejects with INVALID_INPUT_VALUE and points to the unified authorization screen, so it cannot succeed. DEC-OPS-352 removed the dead MenuAdminService.saveMenuCreation; retiring the endpoint is a backend decision — see GAP-WIRING-001.",

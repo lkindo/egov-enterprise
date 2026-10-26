@@ -163,6 +163,9 @@ describe('AuthContext', () => {
     localStorage.setItem('egov-draft-board_insert_BBS-1', 'legacy');
     localStorage.setItem('autosave_bbs_write', 'legacy');
     localStorage.setItem('unrelated-preference', 'keep');
+    // 목록 조건(도움말 센터 검색어 등)도 사용자 귀속이다 — 같은 탭의 다음 사용자가 이어받지 않는다.
+    sessionStorage.setItem('egov.list-session.v1:help-center', JSON.stringify({ keyword: '급여 정정 문의' }));
+    sessionStorage.setItem('unrelated-session-preference', 'keep');
 
     const { result } = renderHook(() => useAuth(), { wrapper });
 
@@ -170,6 +173,9 @@ describe('AuthContext', () => {
       await result.current.logout();
     });
 
+    expect(sessionStorage.getItem('egov.list-session.v1:help-center')).toBeNull();
+    expect(sessionStorage.getItem('unrelated-session-preference')).toBe('keep');
+    sessionStorage.removeItem('unrelated-session-preference');
     expect(authService.logout).toHaveBeenCalled();
     expect(result.current.user).toBeNull();
     expect(localStorage.getItem('egov-board-draft:v2:user-1:BBS-1:create:new')).toBeNull();

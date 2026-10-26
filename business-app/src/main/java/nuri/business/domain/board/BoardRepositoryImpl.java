@@ -213,7 +213,10 @@ public class BoardRepositoryImpl implements BoardRepositoryCustom {
                                                  QBoard.board.upendFixYn,
                                                  QBoard.board.upendFixEndYmd,
                                                  // [2026-08-29] 상세와 같은 이유로 목록에도 댓글 수를 싣는다.
-                                                 QBoard.board.cmntCnt.as("commentCnt")))
+                                                 QBoard.board.cmntCnt.as("commentCnt"),
+                                                 // [2026-10-26 ADR-0043, NAV-10] 이미 잇는 게시판 마스터의 이름 — 통합 검색 결과가
+                                                 //   어느 게시판의 글인지 알린다(새 조인 없음, 응답은 통합 검색만 싣는다).
+                                                 QBoardMaster.boardMaster.bbsTtl.as("bbsTtl")))
                                 .from(QBoard.board)
                                 .innerJoin(QBoardMaster.boardMaster)
                                 .on(QBoard.board.bbsId.eq(QBoardMaster.boardMaster.bbsId))

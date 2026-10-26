@@ -45,7 +45,20 @@
         "/api/v1/help/manuals"
       ]
     },
-    "markerBlocks": [],
+    "markerBlocks": [
+      {
+        "file": "src/app/admin/help/KnowledgeHubClient.tsx",
+        "blocks": 2,
+        "step": "잔존(도움말 센터 1:1 문의 안내 문장·링크)",
+        "reason": "지식 허브 FAQ·질의응답 탭이 나만 볼 문의를 도움말 센터(/help)의 1:1 문의로 안내한다(ADR-0043 1차 UX-10·NAV-11). 도움말 기능이 없는 구성에서는 그 안내 문장과 링크만 빠지고 탭 전환 안내·공개 범위 문장은 남는다."
+      },
+      {
+        "file": "src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+        "blocks": 2,
+        "step": "잔존(도움말 화면 안내)",
+        "reason": "게시판 작성 화면이 Q&A 게시판의 공개 글에 나만 볼 문의의 자리로 도움말 센터 1:1 문의(/help)를 링크한다(ADR-0043 1차 UX-06). 도움말을 고르지 않은 구성에서는 안내 링크와 그 next/link import 가 함께 빠진다."
+      }
+    ],
     "commonCodeGroups": []
   },
   "dependsOn": [

@@ -15,6 +15,8 @@ import { useCallback, useMemo, useState, useSyncExternalStore } from 'react';
  */
 const KEY_PREFIX = 'egov.list-session.v1:';
 const listeners = new Set<() => void>();
+/** 정리 세대 — 정리할 때마다 올라가고, 열린 목록은 앞 세대에 고른 조건(메모리)을 버린다. */
+let generation = 0;
 
 type Primitive = string | number;
 
@@ -47,17 +49,40 @@ function sanitize<T extends Record<string, Primitive>>(raw: string | null, defau
   }
 }
 
+/**
+ * [2026-10-26] 로그아웃·계정 전환 때 이 탭의 목록 조건을 모두 지운다. 검색어는 사용자가 친 자유 텍스트라(도움말 센터의 문의 검색 등)
+ * 같은 탭에서 다음에 로그인한 사용자가 앞 사용자의 검색어·쪽을 이어받으면 안 된다 — 게시글 초안 정리(purgeBoardDraftStorage)와 같은 때다.
+ */
+export function purgeSessionListState(storage?: Storage): void {
+  try {
+    const target = storage ?? window.sessionStorage;
+    const keys: string[] = [];
+    for (let index = 0; index < target.length; index += 1) {
+      const key = target.key(index);
+      if (key?.startsWith(KEY_PREFIX)) keys.push(key);
+    }
+    for (const key of keys) target.removeItem(key);
+  } catch {
+    // 저장소를 쓸 수 없으면 지울 것이 없다 — 열린 목록의 메모리 조건은 아래 세대로 버린다.
+  }
+  // 다른 탭의 로그인으로 신원이 바뀌면 열린 채인 목록도 앞 사용자의 조건을 그리지 않아야 한다 — 세대를 올려 메모리 조건을 버린다.
+  generation += 1;
+  for (const listener of listeners) listener();
+}
+
 export function useSessionListState<T extends Record<string, Primitive>>(
   screenKey: string,
   defaults: T,
 ): [T, (patch: Partial<T>) => void] {
   const raw = useSyncExternalStore(subscribe, () => readRaw(screenKey), () => null);
-  const [chosen, setChosen] = useState<Partial<T> | null>(null);
+  const currentGeneration = useSyncExternalStore(subscribe, () => generation, () => 0);
+  const [chosen, setChosen] = useState<{ generation: number; patch: Partial<T> } | null>(null);
   const defaultsKey = JSON.stringify(defaults);
   const stored = useMemo(() => sanitize(raw, JSON.parse(defaultsKey) as T), [raw, defaultsKey]);
+  const activePatch = chosen && chosen.generation === currentGeneration ? chosen.patch : null;
   const value = useMemo(
-    () => ({ ...(JSON.parse(defaultsKey) as T), ...stored, ...(chosen ?? {}) }),
-    [defaultsKey, stored, chosen],
+    () => ({ ...(JSON.parse(defaultsKey) as T), ...stored, ...(activePatch ?? {}) }),
+    [defaultsKey, stored, activePatch],
   );
 
   const update = useCallback((patch: Partial<T>) => {
@@ -67,7 +92,10 @@ export function useSessionListState<T extends Record<string, Primitive>>(
     } catch {
       // 기억하지 못해도 조회는 그대로 한다 — 이 화면 안의 상태는 아래가 소유한다.
     }
-    setChosen((current) => ({ ...(current ?? {}), ...patch }));
+    setChosen((current) => ({
+      generation,
+      patch: { ...(current && current.generation === generation ? current.patch : {}), ...patch },
+    }));
   }, [screenKey, defaultsKey]);
 
   return [value, update];

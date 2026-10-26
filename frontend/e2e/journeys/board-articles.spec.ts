@@ -15,7 +15,7 @@ test.describe('게시판과 커뮤니티', () => {
         expect(permissions).not.toContain('FAQ_EDIT');
 
         await userPage.goto(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
-        await expect(userPage.getByRole('button', { name: '글쓰기', exact: true })).toHaveCount(0);
+        await expect(userPage.getByRole('link', { name: '글쓰기', exact: true })).toHaveCount(0);
         await userPage.goto(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`);
         await expect(userPage.getByText('이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.', { exact: true })).toBeVisible();
         await expect(userPage.locator('input[name="pstTtl"]')).toBeDisabled();

@@ -45,11 +45,16 @@ public class BoardMasterUpdateRequest {
     @Size(max = 1)
     private String fileAtchPsbltyYn;
 
-    @Schema(description = "첨부 파일 수(0 은 상한 없음)")
+    /** [2026-10-26 ADR-0043, ATTR-15] 생성 요청과 같은 범위다({@link BoardMasterDto#MAX_ATTACHMENT_FILE_COUNT}). */
+    @Schema(description = "첨부 파일 수(0~20, 0 은 게시판 상한 없음 — 서버 전역 상한 적용)", minimum = "0", maximum = "20")
+    @Min(0)
+    @Max(BoardMasterDto.MAX_ATTACHMENT_FILE_COUNT)
     private Integer atchPsbltyFileQty;
 
-    @Schema(description = "파일당 크기(바이트)")
+    @Schema(description = "파일당 크기(바이트, 0~10485760, 0 은 서버 전역 상한)", minimum = "0", maximum = "10485760")
     @NotNull
+    @Min(0)
+    @Max(BoardMasterDto.MAX_ATTACHMENT_FILE_BYTES)
     private Long atchPsbltyFileSz;
 
     @Schema(description = "게시판 사용", allowableValues = { "Y", "N" })
