@@ -140,6 +140,9 @@ function decisionMemoryAdrIds(decisions) {
     return cells[0];
   });
   assert.equal(ids.length, new Set(ids).size, `decisions memory에 중복 ADR ID가 있습니다: ${ids.join(', ')}`);
+  // 표 밖(목록 뒤 등)에 놓인 ADR 행은 표 파서가 세지 않는다 — 집합 대조를 빠져나가지 않게 붉힌다.
+  const rowLines = acceptedSection.split(/\r?\n/).filter((line) => /^\| ADR-\d{4} \|/u.test(line)).length;
+  assert.equal(rowLines, ids.length, 'Accepted ADR index 의 ADR 행은 표 안에만 둔다.');
   return ids;
 }
 
@@ -154,16 +157,85 @@ const fromMemory = (repoPath) => path.posix.relative('.agent/memory', repoPath);
 export const DECISION_HISTORICAL_INDEX = fromMemory(HISTORICAL_DECISION_INDEX);
 export const DECISION_INDEX_HEADER = Object.freeze(['ID', '상태', '결정', '시행일', 'supersedes']);
 
+function decisionRowId(cells, label) {
+  assert.match(cells[0] ?? '', /^DEC-OPS-\d{3}$/u, `${label}에 잘못된 DEC ID가 있습니다: ${cells[0]}`);
+  assert.match(cells[1] ?? '', /^(?:accepted|superseded|rejected)$/u, `${cells[0]}: 허용되지 않은 결정 상태입니다.`);
+  assert.match(cells[3] ?? '', /^\d{4}-\d{2}-\d{2}$/u, `${cells[0]}: 시행일 열은 날짜여야 합니다.`);
+  return cells[0];
+}
+
 /** 결정 색인 표(공용·영역)의 행 형식: 머리글 정확히 한 번, DEC ID·상태 어휘·시행일 형식, 표 안 중복 없음. */
 export function decisionTableIds(text, label) {
-  const ids = markdownTableRows(text, DECISION_INDEX_HEADER).map((cells) => {
-    assert.match(cells[0] ?? '', /^DEC-OPS-\d{3}$/u, `${label}에 잘못된 DEC ID가 있습니다: ${cells[0]}`);
-    assert.match(cells[1] ?? '', /^(?:accepted|superseded|rejected)$/u, `${cells[0]}: 허용되지 않은 결정 상태입니다.`);
-    assert.match(cells[3] ?? '', /^\d{4}-\d{2}-\d{2}$/u, `${cells[0]}: 시행일 열은 날짜여야 합니다.`);
-    return cells[0];
-  });
+  const ids = markdownTableRows(text, DECISION_INDEX_HEADER).map((cells) => decisionRowId(cells, label));
   assert.equal(ids.length, new Set(ids).size, `${label}에 중복 DEC ID가 있습니다.`);
   return ids;
+}
+
+/**
+ * [2026-10-26 DEC-OPS-385] 영역 색인 표는 그 영역 경로에만 걸리는 Accepted ADR 행을 맨 위(운영 결정 행 앞)에 두고 운영 결정 행이
+ * 뒤따른다. ADR 행은 공용 인덱스의 ADR 표와 같은 형식(exact accepted)이고, 운영 결정 행은 decisionTableIds 와 같은 규칙이다.
+ */
+export function areaIndexIds(text, label) {
+  const rows = markdownTableRows(text, DECISION_INDEX_HEADER);
+  const adrCount = rows.findIndex(([id]) => !/^ADR-/u.test(id ?? ''));
+  const adr = rows.slice(0, adrCount === -1 ? rows.length : adrCount).map((cells) => {
+    assert.match(cells[0] ?? '', /^ADR-\d{4}$/u, `${label}에 잘못된 ADR ID가 있습니다: ${cells[0]}`);
+    assert.equal(cells[1], 'accepted', `${cells[0]}: 영역 색인의 ADR 상태는 exact accepted여야 합니다.`);
+    return cells[0];
+  });
+  const dec = rows.slice(adr.length).map((cells) => {
+    assert.ok(!/^ADR-/u.test(cells[0] ?? ''), `${label}: ADR 행(${cells[0]})은 표 맨 위, 운영 결정 행 앞에 둔다.`);
+    return decisionRowId(cells, label);
+  });
+  assert.equal(adr.length, new Set(adr).size, `${label}에 중복 ADR ID가 있습니다.`);
+  assert.equal(dec.length, new Set(dec).size, `${label}에 중복 DEC ID가 있습니다.`);
+  const rowLines = text.split(/\r?\n/).filter((line) => /^\| (?:ADR-\d{4}|DEC-OPS-\d{3}) \|/u.test(line)).length;
+  assert.equal(rowLines, rows.length, `${label}: 결정 행은 표 안에만 둔다.`);
+  return { adr, dec };
+}
+
+/**
+ * [2026-10-26 DEC-OPS-385] 공용 인덱스의 영역별 ADR 목록. 영역에 둔 ADR 대부분이 집행 계약·시험 때문에 다른 영역 경로에도 걸려
+ * 경로 라우팅만으로는 닿지 않으므로, 자동 로드되는 이 목록이 모든 ADR 의 ID·제목을 싣는다. 영역 줄은 그 영역 색인의 ADR 행과 같다.
+ */
+export const ADR_DIRECTORY_READING_RULE = '대상 경로가 그 영역에 걸리지 않아도 제목이 작업과 닿으면 그 행을 읽는다';
+
+export function decisionMemoryAdrDirectory(decisions) {
+  const section = markdownSection(decisions, 'Accepted ADR index', '운영 결정 index');
+  // 이 목록은 읽기 규칙과 함께여야 쓸모가 있다 — 규칙 문장을 지우면 42개 ADR 행이 '경로가 맞을 때만' 읽히는 상태로 조용히 바뀐다.
+  assert.ok(section.includes(ADR_DIRECTORY_READING_RULE), 'ADR 목록에는 제목이 작업과 닿으면 행을 읽는다는 규칙 문장이 있어야 합니다.');
+  const directory = new Map();
+  for (const line of section.split(/\r?\n/)) {
+    const match = /^- \[[^\]]+\]\(([^)\s]+)\): (.+)$/u.exec(line);
+    if (!match) continue;
+    assert.ok(!directory.has(match[1]), `ADR 목록에 같은 영역 줄이 두 번 있습니다: ${match[1]}`);
+    directory.set(match[1], [...match[2].matchAll(/\bADR-\d{4}\b/gu)].map((id) => id[0]));
+  }
+  return directory;
+}
+
+function assertAdrDirectoryMatchesAreas(decisions, areaTexts) {
+  const directory = decisionMemoryAdrDirectory(decisions);
+  const links = DECISION_AREA_INDEXES.map(({ path: areaPath }) => fromMemory(areaPath));
+  assert.deepEqual([...directory.keys()], links, 'ADR 목록의 영역 줄은 영역 색인마다 하나씩, 경로 원장 순서로 둔다.');
+  for (const { path: areaPath } of DECISION_AREA_INDEXES) {
+    const rows = areaIndexIds(areaTexts[path.posix.basename(areaPath)], areaPath).adr;
+    assert.deepEqual(directory.get(fromMemory(areaPath)), rows,
+      `${areaPath}: 공용 인덱스 ADR 목록의 영역 줄이 영역 색인의 ADR 행과 다릅니다 — 행을 옮기거나 더하면 목록도 함께 고친다.`);
+  }
+}
+
+/** 공용 인덱스와 영역 색인이 나눠 가진 Accepted ADR — 한 ADR 은 색인 하나에만 있다(DEC-OPS-385). */
+function bindingAdrIds(decisions, areaTexts) {
+  const indexed = [
+    ...decisionMemoryAdrIds(decisions).map((id) => [id, 'decisions.md']),
+    ...Object.entries(areaTexts).flatMap(([file, text]) => areaIndexIds(text, file).adr.map((id) => [id, file])),
+  ];
+  for (const [id, file] of indexed) {
+    const holders = indexed.filter(([other]) => other === id).map(([, holder]) => holder);
+    assert.equal(holders.length, 1, `${id}: ADR 은 공용·영역 색인 가운데 한 곳에만 둔다(${holders.join(', ')}, ${file}).`);
+  }
+  return indexed.map(([id]) => id);
 }
 
 export function decisionMemoryOperationalIds(decisions) {
@@ -621,12 +693,39 @@ test('project context E2E shard count and coordinates match the authoritative re
   );
 });
 
-test('decision memory exactly indexes every plain and qualified Accepted ADR', () => {
+test('decision memory and area indexes together index every plain and qualified Accepted ADR once', () => {
   const registry = readRepoFile('docs/02-architecture/decisions/README.md');
   const decisions = readRepoFile('.agent/memory/decisions.md');
   const accepted = acceptedAdrIds(registry);
   assert.ok(accepted.length > 0, 'Accepted ADR census가 0건입니다.');
-  assertExactAdrSet(accepted, decisionMemoryAdrIds(decisions));
+  assertExactAdrSet(accepted, bindingAdrIds(decisions, areaIndexFiles()));
+  // 자동 로드 인덱스에는 어느 경로를 고치든 걸리는 ADR 의 행만 남고, 나머지는 영역 줄 목록으로 ID·제목만 싣는다(DEC-OPS-385).
+  assert.ok(decisionMemoryAdrIds(decisions).length < accepted.length, '나머지 ADR 의 행은 영역 색인에 둔다.');
+  assertAdrDirectoryMatchesAreas(decisions, areaIndexFiles());
+});
+
+test('the auto-loaded ADR directory is red when it drifts from the area rows', () => {
+  const decisions = readRepoFile('.agent/memory/decisions.md');
+  const areas = areaIndexFiles();
+  const lines = decisions.split(/\r?\n/);
+  const first = lines.find((line) => line.startsWith('- [') && /: ADR-\d{4} /u.test(line));
+  assert.ok(first, '합성 변이를 넣을 ADR 목록 줄이 없습니다.');
+  const firstId = first.match(/: (ADR-\d{4}) /u)[1];
+  for (const [label, mutated, pattern] of [
+    ['목록에서 빠짐', decisions.replace(first, first.replace(`${firstId} `, '')), /영역 색인의 ADR 행과 다릅니다/u],
+    ['유령 ID', decisions.replace(first, `${first} · ADR-9999 유령`), /영역 색인의 ADR 행과 다릅니다/u],
+    ['영역 줄 없음', decisions.replace(`${first}\n`, '').replace(`${first}\r\n`, ''), /영역 색인마다 하나씩/u],
+    ['영역 줄 중복', decisions.replace(first, `${first}\n${first}`), /같은 영역 줄이 두 번/u],
+    ['읽기 규칙 삭제', decisions.replace(ADR_DIRECTORY_READING_RULE, '목록을 참고한다'), /행을 읽는다는 규칙 문장/u],
+  ]) {
+    assert.notEqual(mutated, decisions, label);
+    assert.throws(() => assertAdrDirectoryMatchesAreas(mutated, areas), pattern, label);
+  }
+  // 영역 색인에 행을 더했는데 목록을 고치지 않으면 붉다.
+  const [areaFile, areaText] = Object.entries(areas)[0];
+  const adrRow = areaText.split(/\r?\n/).find((line) => /^\| ADR-\d{4} \|/u.test(line));
+  const extra = areaText.replace(adrRow, `| ADR-0001 | accepted | probe | 2026-08-15 | - |\n${adrRow}`);
+  assert.throws(() => assertAdrDirectoryMatchesAreas(decisions, { ...areas, [areaFile]: extra }), /영역 색인의 ADR 행과 다릅니다/u);
 });
 
 test('operational decision index keeps the five-column schema and its archive anchor rule', () => {
@@ -675,8 +774,8 @@ test('area decision indexes keep the operational row schema and are reachable fr
   const seen = new Set();
   for (const { path: areaPath } of DECISION_AREA_INDEXES) {
     const text = readRepoFile(areaPath);
-    const ids = decisionTableIds(text, areaPath);
-    assert.ok(ids.length > 0, `${areaPath}: 영역 색인이 비었습니다.`);
+    const { adr: areaAdrs, dec: ids } = areaIndexIds(text, areaPath);
+    assert.ok(areaAdrs.length + ids.length > 0, `${areaPath}: 영역 색인이 비었습니다.`);
     for (const id of ids) {
       assert.ok(!universal.has(id) && !seen.has(id), `${id}: 결정은 색인 하나에만 둔다(공용·영역 중복).`);
       seen.add(id);
@@ -700,8 +799,24 @@ test('area decision indexes keep the operational row schema and are reachable fr
     ['중복', `${row}\n${row}`, /중복 DEC ID/u],
   ]) {
     assert.notEqual(changed, row, label);
-    assert.throws(() => decisionTableIds(areaText.replace(row, changed), firstArea), pattern, label);
+    assert.throws(() => areaIndexIds(areaText.replace(row, changed), firstArea), pattern, label);
   }
+  // 영역 색인의 ADR 행(DEC-OPS-385): 상태는 exact accepted, 표 맨 위에만, 공용 인덱스와 겹치면 붉다.
+  const adrRow = areaText.split(/\r?\n/).find((line) => /^\| ADR-\d{4} \|/u.test(line));
+  assert.ok(adrRow, `${firstArea}: 합성 변이를 넣을 ADR 행이 없습니다.`);
+  const adrId = adrRow.match(/^\| (ADR-\d{4}) \|/u)[1];
+  // 줄째로 지운다 — 빈 줄을 남기면 표가 거기서 끝나 뒤 행을 읽지 않는다.
+  const withoutLine = (text, line) => text.split(/(?<=\n)/u).filter((part) => part.replace(/\r?\n$/u, '') !== line).join('');
+  assert.throws(() => areaIndexIds(areaText.replace(adrRow, adrRow.replace(' | accepted | ', ' | superseded | ')), firstArea),
+    /영역 색인의 ADR 상태는 exact accepted여야/u);
+  assert.throws(() => areaIndexIds(withoutLine(areaText, adrRow).replace(row, `${row}\n${adrRow}`), firstArea),
+    /표 맨 위, 운영 결정 행 앞에 둔다/u);
+  const duplicated = decisions.replace(/^(\| ADR-0001 \|.*)$/mu, `$1\n${adrRow}`);
+  assert.notEqual(duplicated, decisions, '합성 공용·영역 ADR 중복 mutation 이 적용되지 않았습니다.');
+  assert.throws(() => bindingAdrIds(duplicated, areaIndexFiles()), new RegExp(`${adrId}: ADR 은 공용·영역 색인 가운데 한 곳에만`, 'u'));
+  const dropped = { ...areaIndexFiles(), [path.posix.basename(firstArea)]: withoutLine(areaText, adrRow) };
+  assert.throws(() => assertExactAdrSet(acceptedAdrIds(readRepoFile('docs/02-architecture/decisions/README.md')), bindingAdrIds(decisions, dropped)),
+    new RegExp(`missing=\\[${adrId}\\]`, 'u'));
   const routeRow = decisions.split(/\r?\n/).find((line) => line.startsWith('| [') && line.includes(fromMemory(firstArea)));
   assert.throws(() => decisionAreaRoutes(decisions.replace(routeRow, '')), /결정 색인 경로 원장과 다릅니다/u);
   const closing = decisions.split(/\r?\n/).find((line) => line.startsWith('| 넷 모두 |'));
@@ -747,7 +862,7 @@ test('memory truth bindings fail closed for synthetic shard and ADR drift', () =
   );
   assert.notEqual(missingDecision, decisions, '합성 missing ADR mutation이 적용되지 않았습니다.');
   assert.throws(
-    () => assertExactAdrSet(registryIds, decisionMemoryAdrIds(missingDecision)),
+    () => assertExactAdrSet(registryIds, bindingAdrIds(missingDecision, areaIndexFiles())),
     new RegExp(`missing=\\[${removedId}\\]`, 'u'),
   );
 
@@ -763,15 +878,19 @@ test('memory truth bindings fail closed for synthetic shard and ADR drift', () =
 
   const ghostId = 'ADR-9999';
   assert.ok(!registryIds.includes(ghostId), `${ghostId}는 합성 ghost ID로 사용할 수 없습니다.`);
-  const ghostDecision = decisions.replace(
-    /\r?\n\r?\n## 운영 결정 index/u,
-    `\n| ${ghostId} | accepted | synthetic ghost | 2099-01-01 | - |\n\n## 운영 결정 index`,
-  );
-  assert.notEqual(ghostDecision, decisions, '합성 ghost ADR mutation이 Accepted ADR 구간에 적용되지 않았습니다.');
+  const ghostRow = `| ${ghostId} | accepted | synthetic ghost | 2099-01-01 | - |`;
+  const ghostDecision = decisions.replace(/^(\| ADR-0001 \|.*)$/mu, `$1\n${ghostRow}`);
+  assert.notEqual(ghostDecision, decisions, '합성 ghost ADR mutation이 Accepted ADR 표에 적용되지 않았습니다.');
   assert.throws(
-    () => assertExactAdrSet(registryIds, decisionMemoryAdrIds(ghostDecision)),
+    () => assertExactAdrSet(registryIds, bindingAdrIds(ghostDecision, areaIndexFiles())),
     new RegExp(`ghost=\\[${ghostId}\\]`, 'u'),
   );
+  // 절 끝(목록 뒤)처럼 표 밖에 둔 행도 붉다 — 표 파서가 세지 않아도 빠져나가지 못한다.
+  const strayDecision = decisions.replace(/\r?\n\r?\n## 운영 결정 index/u, `\n${ghostRow}\n\n## 운영 결정 index`);
+  assert.notEqual(strayDecision, decisions, '합성 표 밖 ADR 행 mutation이 Accepted ADR 구간에 적용되지 않았습니다.');
+  assert.throws(() => decisionMemoryAdrIds(strayDecision), /ADR 행은 표 안에만 둔다/u);
+  const [areaFile, areaText] = Object.entries(areaIndexFiles())[0];
+  assert.throws(() => areaIndexIds(`${areaText}\n\n${ghostRow}\n`, areaFile), /결정 행은 표 안에만 둔다/u);
 
   const qualifiedRegistry = [
     '| ADR | 결정 | 상태 |',
@@ -845,13 +964,14 @@ test('memory registries use unique IDs and allowed gap states', () => {
  * 경위·실측 로그·red 증명 상세는 커밋·PR·링크 문서에 둔다. 결정 행은 소급 편집하지 않으므로 상한은
  * FIRST_CAPPED_DECISION 이후 행에만 적용한다. gap·context 행은 현재 상태라 전부 적용한다.
  */
-export const MEMORY_ROW_LIMITS = Object.freeze({ DEC: 1200, GAP: 1600, CTX: 700 });
+// [2026-10-26 DEC-OPS-385] ADR 행은 요지·시행일·대체 범위만 둔다 — 이유·전문은 ADR 색인이 가리키는 ADR 문서에 있다.
+export const MEMORY_ROW_LIMITS = Object.freeze({ DEC: 1200, GAP: 1600, CTX: 700, ADR: 400 });
 export const FIRST_CAPPED_DECISION = 97;
 
 export function memoryRowLengthViolations(text) {
   const violations = [];
   for (const row of text.split(/\r?\n/)) {
-    const id = row.match(/^\| ((DEC|GAP|CTX)-[A-Z0-9-]+) \|/);
+    const id = row.match(/^\| ((DEC|GAP|CTX|ADR)-[A-Z0-9-]+) \|/);
     if (!id || id[1] === 'GAP-ID') continue;
     const kind = id[2];
     if (kind === 'DEC') {
@@ -913,6 +1033,8 @@ test('memory row limits are red for oversized new rows and leave accepted histor
   assert.equal(memoryRowLengthViolations(`| DEC-OPS-120 | accepted | ${pad(1000)} |`).length, 0);
   assert.equal(memoryRowLengthViolations(`| GAP-NEW-001 | P2 | open | ${pad(1700)} |`).length, 1);
   assert.equal(memoryRowLengthViolations(`| CTX-099 | ${pad(800)} |`).length, 1);
+  assert.equal(memoryRowLengthViolations(`| ADR-0099 | accepted | ${pad(400)} | 2026-10-26 | - |`).length, 1);
+  assert.equal(memoryRowLengthViolations(`| ADR-0099 | accepted | ${pad(300)} | 2026-10-26 | - |`).length, 0);
   assert.equal(memoryRowLengthViolations(`| GAP-ID | 우선순위 | ${pad(2000)} |`).length, 0, '표 머리글은 행이 아니다');
 });
 
@@ -962,6 +1084,12 @@ const workflowSkills = [
   'test-driven-development',
   'dispatching-parallel-agents',
   'subagent-driven-development',
+  // [2026-10-26] 남은 실행 스킬도 상위 권위를 가리키고 승인·중단·검토 횟수를 SOP 에 맡긴다.
+  'executing-plans',
+  'requesting-code-review',
+  'writing-plans',
+  'using-git-worktrees',
+  'brainstorming',
 ];
 const workflowInstructionRegressions = [
   ['unscoped npm test', /^\s*(?:\$\s*)?npm test\b/mu],
@@ -974,6 +1102,17 @@ const workflowInstructionRegressions = [
   ['mandatory completion menu', /Present exactly (?:these )?4 (?:structured )?options/iu],
   ['repeated merge approval', /merge only when the user asks/iu],
   ['premature PR worktree cleanup', /\*\*For Options 1, 2, 4:\*\*/u],
+  ['wait between batches', /Between batches: just report and wait|Say: "Ready for feedback\."/u],
+  ['stop at first blocker', /STOP executing immediately/u],
+  ['review after every task', /Review after EACH task|\*\*Mandatory:\*\*\s*\n- After each task/u],
+  ['forced separate-session executor', /REQUIRED SUB-SKILL:(?:\*\*)? (?:Use|New session uses) executing-plans/u],
+  ['worktree before every task', /REQUIRED before executing any tasks/u],
+  ['mandatory brainstorming', /You MUST use this before any creative work/u],
+  ['approval after every section', /Ask after each section whether it looks right/u],
+  ['implementation readiness prompt', /Ready to set up for implementation\?/u],
+  ['baseline failures need permission', /get explicit permission to proceed/u],
+  ['mandatory re-review', /Don't skip the re-review/u],
+  ['generated code needs a human', /Exceptions \(ask your human partner\)/u],
 ];
 
 function workflowSkillViolations(files) {
@@ -1021,6 +1160,20 @@ test('workflow skills reject restored conflicting instructions and missing autho
     ['finishing-a-development-branch', '- Present exactly 4 structured options', 'mandatory completion menu'],
     ['finishing-a-development-branch', 'Use Option 2, and merge only when the user asks.', 'repeated merge approval'],
     ['finishing-a-development-branch', '**For Options 1, 2, 4:**', 'premature PR worktree cleanup'],
+    ['executing-plans', '- Between batches: just report and wait', 'wait between batches'],
+    ['executing-plans', '- Say: "Ready for feedback."', 'wait between batches'],
+    ['executing-plans', '**STOP executing immediately when:**', 'stop at first blocker'],
+    ['requesting-code-review', '- Review after EACH task', 'review after every task'],
+    ['requesting-code-review', '**Mandatory:**\n- After each task in subagent-driven development', 'review after every task'],
+    ['writing-plans', '> **For Claude:** REQUIRED SUB-SKILL: Use executing-plans to implement this plan task-by-task.', 'forced separate-session executor'],
+    ['writing-plans', '- **REQUIRED SUB-SKILL:** New session uses executing-plans', 'forced separate-session executor'],
+    ['using-git-worktrees', '- **subagent-driven-development** - REQUIRED before executing any tasks', 'worktree before every task'],
+    ['brainstorming', 'description: "You MUST use this before any creative work - creating features"', 'mandatory brainstorming'],
+    ['brainstorming', '- Ask after each section whether it looks right so far', 'approval after every section'],
+    ['brainstorming', '- Ask: "Ready to set up for implementation?"', 'implementation readiness prompt'],
+    ['using-git-worktrees', '- **Fix:** Report failures, get explicit permission to proceed', 'baseline failures need permission'],
+    ['subagent-driven-development', "- Don't skip the re-review", 'mandatory re-review'],
+    ['test-driven-development', '**Exceptions (ask your human partner):**', 'generated code needs a human'],
   ];
   for (const [skill, instruction, label] of regressions) {
     const mutated = { ...files, [skill]: `${files[skill]}\n${instruction}\n` };

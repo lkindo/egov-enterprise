@@ -1,13 +1,25 @@
 # 운영 결정 영역 색인 — CI·검증·거버넌스
 
-> 상태: 영역 결정 색인 — 이 저장소(원본)에서 CI·훅·게이트·계약·원장·검증 도구 경로를 고칠 때 읽는 운영 결정의 짧은 색인이다. 에이전트 진입점이 자동으로 읽지 않으며, 읽는 조건은 [공용 결정 인덱스](../../.agent/memory/decisions.md)의 「영역 결정 색인」 표가 정한다. 생성물(재사용 base·이관 제품)에 복사된 이 파일은 upstream 이력이며 도입 기관의 현재 결정이 아니다.
+> 상태: 영역 결정 색인 — 이 저장소(원본)에서 CI·훅·게이트·계약·원장·검증 도구 경로를 고칠 때 읽는 Accepted ADR·운영 결정의 짧은 색인이다. 에이전트 진입점이 자동으로 읽지 않으며, 읽는 조건은 [공용 결정 인덱스](../../.agent/memory/decisions.md)의 「영역 결정 색인」 표가 정한다. 생성물(재사용 base·이관 제품)에 복사된 이 파일은 upstream 이력이며 도입 기관의 현재 결정이 아니다.
 
-ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [보관 기록](../archived/operational-decisions-history.md)의 `#<ID 소문자>` 절에 있다. 어느 경로를 고치든 걸리는 결정과 Accepted ADR 은 [공용 결정 인덱스](../../.agent/memory/decisions.md)에, 지금의 작업을 제약하지 않는 결정은 [역사 색인](../archived/operational-decisions-index-historical.md)에 있다. 공용·영역·역사 색인은 보관 원문의 DEC 를 겹치지 않게 나눠 가지며, 누락·중복과 상태·시행일·supersedes 일치는 Atlas 생성기가 검사한다. 행은 2026-10-24 공용 결정 인덱스에서 옮긴 그대로다(DEC-OPS-381).
+ID가 보관 원문의 앵커다: 운영 결정 행의 전문·이유·승인 근거는 [보관 기록](../archived/operational-decisions-history.md)의 `#<ID 소문자>` 절에 있다. 어느 경로를 고치든 걸리는 결정·Accepted ADR 은 [공용 결정 인덱스](../../.agent/memory/decisions.md)에, 지금의 작업을 제약하지 않는 결정은 [역사 색인](../archived/operational-decisions-index-historical.md)에 있다. 공용·영역·역사 색인은 보관 원문의 DEC 를 겹치지 않게 나눠 가지며, 누락·중복과 상태·시행일·supersedes 일치는 Atlas 생성기가 검사한다. 행은 2026-10-24 공용 결정 인덱스에서 옮긴 그대로다(DEC-OPS-381). 표 맨 위의 ADR 행은 어느 경로를 고치든 걸리지는 않는 Accepted ADR 가운데 이 영역에 둔 것이고, ADR ID 가 [ADR 색인](../02-architecture/decisions/README.md)의 키다 — 2026-10-26 공용 결정 인덱스에서 옮긴 그대로다(DEC-OPS-385). 대부분은 집행하는 계약·시험이 다른 영역 경로에도 있으므로 공용 결정 인덱스가 모든 ADR 의 ID·제목을 영역별로 싣는다. ADR 이 어느 경로를 고치든 걸리게 되면 공용 결정 인덱스로 옮긴다.
 
 일반 UI 검토 일정의 현재 처리는 [ADR-0018](../02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md)이 DEC-OPS-027 ③·DEC-OPS-087 ②의 달력 기반 기술 차단 부분을 대체한다. 다른 통제와 실제 예외 만료는 유지한다.
 
 | ID | 상태 | 결정 | 시행일 | supersedes |
 |---|---|---|---|---|
+| ADR-0005 | accepted | UI 품질 증거는 digest-derived versioned compact summary와 tracked index로 보존하고 기존 summary를 덮어쓰지 않는다. | 2026-08-21 | - |
+| ADR-0015 | accepted | CodeQL SAST의 High/Critical 차단을 CI·릴리스 필수 체크에 연결한다. | 2026-09-09 | - |
+| ADR-0018 | accepted | 일반 검토 최신성·기술 계약·기관 승인을 분리한다. 세 프로필 실제 산출물 검증, 명시 소유권 기반 원장·메모리 투영과 무결성, 기관별 실행 artifact 결속을 적용한다. 원본 운영 사실은 upstream 이력이며 기관 승인은 pending에서 시작한다. | 2026-09-14 | DEC-OPS-027 ③·DEC-OPS-087 ②·UI quality 및 E2E duration의 일반 최신성 차단, DEC-OPS-077 ⑤의 축소 프로필 red 허용 기대치 |
+| ADR-0021 | accepted | 테스트를 API 계약·사용자 과업·횡단 품질로 재편하고 로컬·CI의 격리 소유권을 검증한다. 전체 E2E와 영향 shadow를 병행한다. | 2026-09-21 | - |
+| ADR-0022 | accepted | PR·통합 push의 영향 분류를 통일하고 온라인·이관 build/PIT와 커버리지를 분리한다. Gradle 캐시 provider를 명시한다. | 2026-09-21 | ADR-0021 결정 4의 main 전수 강제·DEC-OPS-104의 PIT 부분집합 조건 |
+| ADR-0023 | accepted | PR의 검토된 화면만 E2E spec 선별, main 전수·전체 discovery 대조와 Gradle 단일 writer를 유지한다. | 2026-09-21 | ADR-0021의 E2E shadow·ADR-0022 결정 8 |
+| ADR-0024 | accepted | Spring Boot 4.1로 두 단계 전환한다. 1단계는 Jackson 2 호환 모듈로 API 계약을 유지하고 2단계에서 Jackson 3으로 옮긴다. | 2026-09-24 | - |
+| ADR-0026 | accepted | backend와 schema 검증을 병렬화하고, 증명된 변경만 재사용 profile을 선별하며 CI 시간을 계측한다. | 2026-09-29 | - |
+| ADR-0027 | accepted | 사용자 구성 검증을 분류 직후 시작하고 PR 은 시작 구성마다 한 레이아웃만 검증하며(main 은 두 레이아웃 전수), 생성물의 일반 테스트는 별도 T2 워크플로가 돈다. | 2026-10-12 | ADR-0026 결정 1의 PR 두 layout 부분·결정 10의 custom 입장(custom 두 layout 의 결정 2 는 유지) |
+| ADR-0030 | accepted | ADR-0027 이후 승인된 PR 제외 선언과 시작 구성에 덮인 야간 단독 폐포 제거를 후속 ADR로 승격한다. 기존 실행·실패 경계는 유지한다. | 2026-10-13 | ADR-0027 결정 2·4의 해당 부분 |
+| ADR-0032 | accepted | 이관 PIT 여덟 범위를 두 슬롯에서 실측 긴 순서로 돌린다. `sast-scope` 한 슬롯과 대상·판정·집계는 그대로다. | 2026-10-17 | ADR-0026 결정 10의 이관 PIT 한 슬롯 부분 |
+| ADR-0037 | accepted | 제품 PIT 는 6슬롯으로 돌고 선언 순서는 실측이 긴 범위 먼저다. 대상·75% 판정·집계는 그대로이고 효과가 없으면 4로 되돌린다. | 2026-10-20 | ADR-0026 결정 9의 제품 PIT 4슬롯 부분 |
 | DEC-OPS-003 | accepted | 프론트 도구체인은 Node 22+와 pnpm 9를 단일 축으로 사용하고 계약 생성은 offline-first로 한다. | 2026-08-18 | - |
 | DEC-OPS-006 | accepted | 하네스의 논리 규칙 ID는 유지하되 발견·실행·품질 하한은 중앙 `gates.json`과 소수 runner/task로 통합한다. | 2026-08-19 | - |
 | DEC-OPS-008 | accepted | 조건부 heavy job은 내부 `*-scope`로 두고 브랜치 보호에는 항상 완료되는 안정 aggregate context만 노출한다. | 2026-08-19 | - |

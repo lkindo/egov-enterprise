@@ -68,7 +68,7 @@
 
 ### 02-architecture/decisions — ADR
 
-ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이다. Accepted ADR은 [공용 결정 인덱스](../.agent/memory/decisions.md)가 같은 집합으로 색인하며 계약이 둘을 대조한다.
+ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decisions/README.md)가 정본이다. Accepted ADR의 행은 [공용 결정 인덱스](../.agent/memory/decisions.md)(어느 경로를 고치든 걸리는 것)와 그 「영역 결정 색인」 표가 가리키는 영역 색인(나머지)이 겹치지 않게 나눠 갖고, 공용 결정 인덱스는 나머지의 ID·제목도 영역별로 싣는다. 계약이 둘의 합을 ADR 색인과 대조한다.
 
 ## 03-guides — 개발 지침
 

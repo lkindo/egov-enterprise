@@ -9,14 +9,18 @@ license: MIT — Complete terms in LICENSE.txt
 
 Dispatch code-reviewer subagent to catch issues before they cascade.
 
-**Core principle:** Review early, review often.
+**Core principle:** Review where the risk is, with input that cannot inherit your misreading.
+
+**In this repository:** Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [the orchestration SOP](../../../docs/03-guides/orchestration-protocol.md) (§3 Stage 1 approval, §2.3 audit, §2.4 failure recovery, §6 time budget). Reviews are chosen by risk; the main agent's diff audit and independent gate runs (§2.3), red/green proof, hooks and required CI stay required, and a reviewer approval does not replace them.
 
 ## When to Request Review
 
-**Mandatory:**
-- After each task in subagent-driven development
-- After completing major feature
-- Before merge to main
+**Required:**
+- Before merge to main when the change alters authorization or privacy (H3), physical schema (H1), identifier axes or gate meaning — one adversarial review whose reviewer gets the user's original request and the diff before your restatement (SOP §2.3)
+
+**By risk (subagent-driven development decides per task):**
+- After a task with a concrete unresolved risk
+- After completing a major feature
 
 **Optional but valuable:**
 - When stuck (fresh perspective)
@@ -36,11 +40,11 @@ HEAD_SHA=$(git rev-parse HEAD)
 Use Task tool with code-reviewer type, fill template at `code-reviewer.md`
 
 **Placeholders:**
-- `{WHAT_WAS_IMPLEMENTED}` - What you just built
-- `{PLAN_OR_REQUIREMENTS}` - What it should do
+- `{USER_REQUEST}` - The user's original request, quoted word for word (not your restatement)
 - `{BASE_SHA}` - Starting commit
 - `{HEAD_SHA}` - Ending commit
-- `{DESCRIPTION}` - Brief summary
+- `{WHAT_WAS_IMPLEMENTED}` - What you just built, with a brief summary (the reviewer reads it after the diff)
+- `{PLAN_OR_REQUIREMENTS}` - What it should do
 
 **3. Act on feedback:**
 - Fix Critical issues immediately
@@ -59,11 +63,11 @@ BASE_SHA=$(git log --oneline | grep "Task 1" | head -1 | awk '{print $1}')
 HEAD_SHA=$(git rev-parse HEAD)
 
 [Dispatch code-reviewer subagent]
-  WHAT_WAS_IMPLEMENTED: Verification and repair functions for conversation index
-  PLAN_OR_REQUIREMENTS: Task 2 from <계획 문서 경로>
+  USER_REQUEST: <the user's words, quoted>
   BASE_SHA: a7981ec
   HEAD_SHA: 3df7661
-  DESCRIPTION: Added verifyIndex() and repairIndex() with 4 issue types
+  WHAT_WAS_IMPLEMENTED: Added verifyIndex() and repairIndex() with 4 issue types
+  PLAN_OR_REQUIREMENTS: Task 2 from <계획 문서 경로>
 
 [Subagent returns]:
   Strengths: Clean architecture, real tests
@@ -79,22 +83,20 @@ You: [Fix progress indicators]
 ## Integration with Workflows
 
 **Subagent-Driven Development:**
-- Review after EACH task
-- Catch issues before they compound
-- Fix before moving to next task
+- Review a task when its risk calls for it (subagent-driven-development), not automatically after each
+- Fix open findings of a requested review before moving on
 
 **Executing Plans:**
-- Review after each batch (3 tasks)
-- Get feedback, apply, continue
+- Review at a batch boundary when risk or a pending decision calls for it
 
 **Ad-Hoc Development:**
-- Review before merge
+- Review before merge when Required (above) applies; otherwise by risk
 - Review when stuck
 
 ## Red Flags
 
 **Never:**
-- Skip review because "it's simple"
+- Skip a required review (above) because "it's simple"
 - Ignore Critical issues
 - Proceed with unfixed Important issues
 - Argue with valid technical feedback

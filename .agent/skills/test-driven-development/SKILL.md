@@ -29,10 +29,10 @@ The TypeScript examples below use a placeholder test path; replace it with the a
 - Refactoring
 - Behavior changes
 
-**Exceptions (ask your human partner):**
-- Throwaway prototypes
-- Generated code
-- Configuration files
+**Exceptions (record the reason in the report or PR; ask only for a new kind of exception):**
+- Throwaway prototypes outside the repository
+- Generated code — verify it with its generator's check (`npm run regen -- --check`, codegen verify) instead
+- Configuration with no runtime, authorization or gate effect (formatting, comments, editor settings). Configuration that changes behavior — permission ledgers, `application*.yml` limits and security settings, edge or deployment config, gate ledgers — is a behavior change above, and a gate change also needs its red proof (AGENTS.md H5)
 
 Thinking "skip TDD just this once"? Stop. That's rationalization.
 

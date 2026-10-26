@@ -3,19 +3,16 @@
 You are reviewing code changes for production readiness.
 
 **Your task:**
-1. Review {WHAT_WAS_IMPLEMENTED}
-2. Compare against {PLAN_OR_REQUIREMENTS}
-3. Check code quality, architecture, testing
-4. Categorize issues by severity
-5. Assess production readiness
+1. Read the user's original request and the diff below, and write one or two counterexamples — user actions whose result would show it was misread — before reading the implementer's summary or the plan
+2. Review the diff in the git range
+3. Compare against the user's words first, then the summary and the plan; report any place where the plan, the summary or the code departs from the user's words
+4. Check code quality, architecture, testing
+5. Categorize issues by severity
+6. Assess production readiness
 
-## What Was Implemented
+## User's Original Request (verbatim)
 
-{DESCRIPTION}
-
-## Requirements/Plan
-
-{PLAN_REFERENCE}
+{USER_REQUEST}
 
 ## Git Range to Review
 
@@ -26,6 +23,14 @@ You are reviewing code changes for production readiness.
 git diff --stat {BASE_SHA}..{HEAD_SHA}
 git diff {BASE_SHA}..{HEAD_SHA}
 ```
+
+## What Was Implemented (the implementer's summary — read after the diff)
+
+{WHAT_WAS_IMPLEMENTED}
+
+## Requirements/Plan
+
+{PLAN_OR_REQUIREMENTS}
 
 ## Review Checklist
 

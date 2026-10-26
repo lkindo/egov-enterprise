@@ -10,9 +10,23 @@ Task tool (general-purpose):
   prompt: |
     You are reviewing whether an implementation matches its specification.
 
-    ## What Was Requested
+    ## What the User Asked (verbatim)
+
+    [The user's original request, quoted word for word — not a restatement]
+
+    ## The Change
+
+    [Git range (base..head) or the diff of this task — read it before the restatement below]
+
+    Before reading anything below, write one or two counterexamples: user actions whose
+    result would show the request was misread. Check them against the code.
+
+    ## Task Specification (the main agent's restatement)
 
     [FULL TEXT of task requirements]
+
+    Where this restatement departs from the user's words, report it as a requirement
+    interpretation issue — the restatement can carry the same misreading as the code.
 
     ## What Implementer Claims They Built
 

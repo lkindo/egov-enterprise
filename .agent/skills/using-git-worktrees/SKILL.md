@@ -1,6 +1,6 @@
 ---
 name: using-git-worktrees
-description: Use when starting feature work that needs isolation from current workspace or before executing implementation plans - creates isolated git worktrees with smart directory selection and safety verification
+description: Use when work needs isolation from the current workspace — in this repository when another operator works in the same worktree at the same time (SOP §6.6) - creates isolated git worktrees with directory selection and safety verification
 source: obra/superpowers (https://github.com/obra/superpowers, 이 저장소에서 수정함)
 license: MIT — Complete terms in LICENSE.txt
 ---
@@ -14,6 +14,8 @@ Git worktrees create isolated workspaces sharing the same repository, allowing w
 **Core principle:** Systematic directory selection + safety verification = reliable isolation.
 
 **Announce at start:** "I'm using the using-git-worktrees skill to set up an isolated workspace."
+
+**In this repository:** Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [the orchestration SOP](../../../docs/03-guides/orchestration-protocol.md) (§3 Stage 1 approval, §2.3 audit, §2.4 failure recovery, §6 time budget). Use a worktree when another operator works in the same period ([AGENTS.md 공유 워킹트리와 Git](../../../AGENTS.md#공유-워킹트리와-git)). Where to create it, how to install dependencies and how to remove it follow [SOP §6.6](../../../docs/03-guides/orchestration-protocol.md#66-작업-트리), which replaces the Directory Selection Process and the creation command below: create it outside the checkout as `wt-<short name>` from `origin/main` (after `git fetch origin`), even if `.worktrees/` exists — do not ask the user for a location. The rest of this skill describes other projects unless it says "in this repository".
 
 ## Directory Selection Process
 
@@ -41,7 +43,7 @@ grep -i "worktree.*director" AGENTS.md 2>/dev/null
 
 ### 3. Ask User
 
-If no directory exists and no AGENTS.md preference:
+In this repository the location is set by SOP §6.6 — skip this step. In other projects, if no directory exists and no AGENTS.md preference:
 
 ```
 No worktree directory found. Where should I create worktrees?
@@ -97,7 +99,7 @@ case $LOCATION in
     ;;
 esac
 
-# Create worktree with new branch
+# Create worktree with new branch (in this repository: git fetch origin, then add it from origin/main — SOP §6.6)
 git worktree add "$path" -b "$BRANCH_NAME"
 cd "$path"
 ```
@@ -127,17 +129,16 @@ if [ -f go.mod ]; then go mod download; fi
 
 Run tests to ensure worktree starts clean.
 
-In this repository, pick the minimum check for the scope you will change from [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) (cheapest first: `npm run verify:docs` < `verify:fast` < `verify:push` < `verify:full`). Root `npm test` runs the whole Gradle test suite — a heavy run; do not overlap it with other heavy runs. Generic examples for other projects:
+In this repository, pick the minimum check for the scope you will change from [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope). For docs-only work that is the related contracts and link check (`npm run regen -- --check` plus the `node --test` contracts that read the changed files), not `npm run verify:docs` — that is the broad docs path with the full operational contracts, which pre-push runs again on the same commit ([SOP §6.2](../../../docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)). Broader entry points, cheapest first: `verify:docs` < `verify:fast` < `verify:push` < `verify:full`. Root `npm test` runs the whole Gradle test suite — a heavy run; do not overlap it with other heavy runs. Scoped baselines in this repository:
 
 ```bash
-# Examples - use project-appropriate command
-npm test
-cargo test
-pytest
-go test ./...
+# Pick the ones that match the scope you will change (AGENTS.md Verification by change scope)
+npm run regen -- --check                # docs, shared memory and generated artifacts
+pnpm -C frontend exec tsc --noEmit      # frontend sources
+./gradlew compileJava compileTestJava   # backend sources
 ```
 
-**If tests fail:** Report failures, ask whether to proceed or investigate.
+**If tests fail:** Record the failures with their output so new ones can be told apart; investigate under SOP §2.4 when they touch your scope, and ask only when a new permission or decision is needed.
 
 **If tests pass:** Report ready.
 
@@ -153,12 +154,12 @@ Ready to implement <feature-name>
 
 | Situation | Action |
 |-----------|--------|
-| `.worktrees/` exists | Use it (verify ignored) |
-| `worktrees/` exists | Use it (verify ignored) |
-| Both exist | Use `.worktrees/` |
-| Neither exists | Check CLAUDE.md → Ask user |
-| Directory not ignored | Add to .gitignore + commit |
-| Tests fail during baseline | Report failures + ask |
+| `.worktrees/` exists | Other projects: use it (verify ignored). This repository: SOP §6.6 |
+| `worktrees/` exists | Other projects: use it (verify ignored). This repository: SOP §6.6 |
+| Both exist | Other projects: use `.worktrees/`. This repository: SOP §6.6 |
+| Neither exists | Check AGENTS.md → ask (this repository: SOP §6.6, no question) |
+| Directory not ignored | Add to .gitignore; commit only on request |
+| Tests fail during baseline | Record failures; diagnose under SOP §2.4 |
 | No package.json/Cargo.toml | Skip dependency install |
 
 ## Common Mistakes
@@ -171,12 +172,12 @@ Ready to implement <feature-name>
 ### Assuming directory location
 
 - **Problem:** Creates inconsistency, violates project conventions
-- **Fix:** Follow priority: existing > CLAUDE.md > ask
+- **Fix:** In this repository follow SOP §6.6; elsewhere follow priority: existing > AGENTS.md > ask
 
 ### Proceeding with failing tests
 
 - **Problem:** Can't distinguish new bugs from pre-existing issues
-- **Fix:** Report failures, get explicit permission to proceed
+- **Fix:** Record the baseline failures with their output so new failures can be told apart; diagnose them under SOP §2.4 when they touch your scope, and ask only when a new permission or decision is needed
 
 ### Hardcoding setup commands
 
@@ -204,12 +205,12 @@ Ready to implement auth feature
 **Never:**
 - Create worktree without verifying it's ignored (project-local)
 - Skip baseline test verification
-- Proceed with failing tests without asking
-- Assume directory location when ambiguous
-- Skip CLAUDE.md check
+- Proceed with failing tests without recording them
+- Assume directory location when ambiguous (in this repository SOP §6.6 sets it)
+- Skip the AGENTS.md/SOP location check
 
 **Always:**
-- Follow directory priority: existing > CLAUDE.md > ask
+- Follow directory priority: SOP §6.6 in this repository; elsewhere existing > AGENTS.md > ask
 - Verify directory is ignored for project-local
 - Auto-detect and run project setup
 - Verify clean test baseline
@@ -217,10 +218,10 @@ Ready to implement auth feature
 ## Integration
 
 **Called by:**
-- **brainstorming** (Phase 4) - REQUIRED when design is approved and implementation follows
-- **subagent-driven-development** - REQUIRED before executing any tasks
-- **executing-plans** - REQUIRED before executing any tasks
+- **brainstorming** (Phase 4) - when isolation is needed for the implementation
+- **subagent-driven-development** - when isolation is needed
+- **executing-plans** - when isolation is needed
 - Any skill needing isolated workspace
 
 **Pairs with:**
-- **finishing-a-development-branch** - REQUIRED for cleanup after work complete
+- **finishing-a-development-branch** - for completion; deleting the branch and removing the worktree directory are separate (AGENTS.md 공유 워킹트리와 Git)

@@ -251,6 +251,7 @@ function observeVerification(scope, { source, failCommand, env = {}, recordEvent
           runId: '11111111-1111-4111-8111-111111111111',
           stepStart: (id) => recordEvents.push({ event: 'step-start', id }),
           stepEnd: (id, result) => recordEvents.push({ event: 'step-end', id, ...result }),
+          rebaseInputs: () => recordEvents.push({ event: 'inputs-rebased' }),
           finish: (result) => recordEvents.push({ event: 'finish', ...result }),
         };
       },
@@ -484,13 +485,23 @@ test('verify records integration stages without replacing their execution or tre
     ['integration-precheck', 'regenerate', 'form-validation', 'frontend-tests', 'api-tests-and-harness', 'integration-selected']);
   assert.equal(events.filter(event => event.event === 'step-end' && event.exitCode === 0).length, VERIFY_INTEGRATE.length);
   assert.deepEqual(events.at(-1), { event: 'finish', exitCode: 0 });
+  // regen 이 추적 생성물을 다시 쓴 뒤에 입력 비교 기준을 옮긴다 — 뒤 시험이 읽는 트리가 새 기준이다(DEC-OPS-385).
+  const baselineOrder = (list) => list.filter(event => event.event === 'step-start' || event.event === 'inputs-rebased')
+    .map(event => event.id ?? event.event);
+  assert.deepEqual(baselineOrder(events).slice(1, 4), ['regenerate', 'inputs-rebased', 'form-validation']);
+  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
+  const unrebased = [];
+  const withoutRebase = source.replace('record.rebaseInputs();', '');
+  assert.notEqual(withoutRebase, source);
+  observeVerification('integrate', { source: withoutRebase, recordEvents: unrebased });
+  assert.throws(() => assert.deepEqual(baselineOrder(unrebased).slice(1, 4), ['regenerate', 'inputs-rebased', 'form-validation']),
+    'dropping the rebase after regen is red');
   const failed = [];
   assert.deepEqual(observeVerification('integrate', { recordEvents: failed, failCommand: INTEGRATION_FORMS }).exits, [1]);
   assert.deepEqual(failed.filter(event => event.event === 'step-start').map(event => event.id),
     ['integration-precheck', 'regenerate', 'form-validation']);
   assert.equal(failed.at(-2).exitCode, null, 'a command launch error without a code is unknown, never successful');
   assert.equal(failed.at(-1).exitCode, 1);
-  const source = readFileSync(path.join(repoRoot, 'scripts/verify.mjs'), 'utf8');
   const missing = source.replace('record.stepStart(id);', '');
   assert.notEqual(missing, source);
   const mutant = [];

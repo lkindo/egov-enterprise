@@ -1,11 +1,35 @@
 # 운영 결정 영역 색인 — 제품 동작·화면·도메인
 
-> 상태: 영역 결정 색인 — 이 저장소(원본)에서 제품 백엔드·화면·스키마·권한 원장·운영 배포 경로를 고칠 때 읽는 운영 결정의 짧은 색인이다. 에이전트 진입점이 자동으로 읽지 않으며, 읽는 조건은 [공용 결정 인덱스](../../.agent/memory/decisions.md)의 「영역 결정 색인」 표가 정한다. 생성물(재사용 base·이관 제품)에 복사된 이 파일은 upstream 이력이며 도입 기관의 현재 결정이 아니다.
+> 상태: 영역 결정 색인 — 이 저장소(원본)에서 제품 백엔드·화면·스키마·권한 원장·운영 배포 경로를 고칠 때 읽는 Accepted ADR·운영 결정의 짧은 색인이다. 에이전트 진입점이 자동으로 읽지 않으며, 읽는 조건은 [공용 결정 인덱스](../../.agent/memory/decisions.md)의 「영역 결정 색인」 표가 정한다. 생성물(재사용 base·이관 제품)에 복사된 이 파일은 upstream 이력이며 도입 기관의 현재 결정이 아니다.
 
-ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [보관 기록](../archived/operational-decisions-history.md)의 `#<ID 소문자>` 절에 있다. 어느 경로를 고치든 걸리는 결정과 Accepted ADR 은 [공용 결정 인덱스](../../.agent/memory/decisions.md)에, 지금의 작업을 제약하지 않는 결정은 [역사 색인](../archived/operational-decisions-index-historical.md)에 있다. 공용·영역·역사 색인은 보관 원문의 DEC 를 겹치지 않게 나눠 가지며, 누락·중복과 상태·시행일·supersedes 일치는 Atlas 생성기가 검사한다. 행은 2026-10-24 공용 결정 인덱스에서 옮긴 그대로다(DEC-OPS-381).
+ID가 보관 원문의 앵커다: 운영 결정 행의 전문·이유·승인 근거는 [보관 기록](../archived/operational-decisions-history.md)의 `#<ID 소문자>` 절에 있다. 어느 경로를 고치든 걸리는 결정·Accepted ADR 은 [공용 결정 인덱스](../../.agent/memory/decisions.md)에, 지금의 작업을 제약하지 않는 결정은 [역사 색인](../archived/operational-decisions-index-historical.md)에 있다. 공용·영역·역사 색인은 보관 원문의 DEC 를 겹치지 않게 나눠 가지며, 누락·중복과 상태·시행일·supersedes 일치는 Atlas 생성기가 검사한다. 행은 2026-10-24 공용 결정 인덱스에서 옮긴 그대로다(DEC-OPS-381). 표 맨 위의 ADR 행은 어느 경로를 고치든 걸리지는 않는 Accepted ADR 가운데 이 영역에 둔 것이고, ADR ID 가 [ADR 색인](../02-architecture/decisions/README.md)의 키다 — 2026-10-26 공용 결정 인덱스에서 옮긴 그대로다(DEC-OPS-385). 대부분은 집행하는 계약·시험이 다른 영역 경로에도 있으므로 공용 결정 인덱스가 모든 ADR 의 ID·제목을 영역별로 싣는다. ADR 이 어느 경로를 고치든 걸리게 되면 공용 결정 인덱스로 옮긴다.
 
 | ID | 상태 | 결정 | 시행일 | supersedes |
 |---|---|---|---|---|
+| ADR-0002 | accepted | UI는 한국어 우선이고 API의 ko/en 메시지 계약은 유지한다. | 2026-08-15 | - |
+| ADR-0003 | accepted | 프런트엔드 UX 현대화는 사용자 과업을 우선하고, 브랜드 중립 프로필·WCAG 2.2·측정 기반 데이터 소유권·위험 기반 복구와 mutation 원칙을 적용한다. | 2026-08-20 | - |
+| ADR-0004 | accepted | 과업 중심 기본 내비게이션과 명시적 관리 센터를 결합한 하이브리드 IA를 prototype·research의 잠정 방향으로 채택하고 canonical URL과 route-level blocker는 유지한다. | 2026-08-21 | - |
+| ADR-0006 | accepted | 반응형 표현은 단일 SSR DOM 위에서 CSS로만 전환한다. 같은 데이터를 두 벌 렌더해 `hidden`/`md:hidden`으로 한쪽만 보이거나, `matchMedia`·`useSyncExternalStore`·`next/dynamic ssr:false` 로 본문 데이터 표현을 분기하지 않는다. | 2026-08-22 | - |
+| ADR-0007 | accepted | 2026-08-23 G1 워크숍(참석: lkindo, 세 owner 역할)에서 하이브리드 IA를 참조-기본(reference-default) IA로 승인하고, 연구·live DB census·AT 증거 요건은 기관 채택 시점의 재검증 의무로 이전한다. route별 disposition은 일괄 승인되지 않으며 owner PR 리뷰로 개별 승인한다. PD-UX-002는 보류 유지. | 2026-08-23 | - |
+| ADR-0009 | accepted | 업무상 개인정보가 포함될 수 있는 사용자 검색어는 화면별 route·query allowlist와 로그 비복제 조건 아래 URL에 둘 수 있다. 앱은 자격증명·고위험 개인정보·응답 원문용 URL state를 설계하거나 검색창에서 입력을 유도하지 않으며, 자유 입력에 예상 밖 값이 들어올 가능성은 잔여 위험이다. | 2026-09-05 | ADR-0003 §5의 검색어 절대 금지 부분 |
+| ADR-0010 | accepted | 프론트엔드 `accessToken`·`session_exp` 쿠키의 `Secure`는 기본·배포 필수 속성으로 유지하고, 명시적으로 opt-in한 평문 HTTP local loopback 개발·검증에만 미설정을 허용한다. `accessToken`의 `HttpOnly`와 두 쿠키의 `SameSite=Strict`는 환경과 관계없이 유지한다. | 2026-09-05 | - |
+| ADR-0011 | accepted | 익명 만족도와 비밀번호 소유 증명을 지원하지 않고, 만족도 수정·삭제를 인증된 owner-or-admin으로 제한한다. 공개 삭제 API의 `pswd` query와 DTO·서비스·엔티티 애플리케이션 매핑의 휴면 비밀번호 경로를 제거한다. credential-like 이름은 전역 경계가 query 요청을, 정적 API 계약이 path/query 선언을, 프론트 source 계약이 명시적 query producer를 차단하며 물리 컬럼은 별도 DB 결정 전까지 보존한다. | 2026-09-05 | - |
+| ADR-0012 | accepted | 블로그 생산 도메인·게시판 귀속 계약·재사용 profile·비사용 물리 스키마를 제거한다. 새 Flyway는 쓰기를 먼저 차단하고 데이터나 참조가 있으면 제거를 거부하며 과거 migration과 공유 표준 사전은 보존한다. | 2026-09-08 | DEC-OPS-072의 블로그 유지 및 DEC-OPS-047의 블로그 기여자 부분 |
+| ADR-0013 | accepted | 설계 보류 6개를 제외한 표준 길이 24개를 DB·백엔드·프론트에서 맞추고 SMS 수신번호를 숫자 문자열로 정규화한다. 단계별 배포와 데이터 보존 검증을 이행한다. | 2026-09-09 | - |
+| ADR-0014 | accepted | 프로그램 키 300자와 선택적 메뉴 FK, 변경일자와 분리된 HHmmss, USER_ENRRNO/V256 암호화 표준으로 보류 6개를 정합한다. | 2026-09-09 | ADR-0013의 6개 보류 |
+| ADR-0016 | accepted | 인가를 그룹·복수 사용자배정·유형별 기능/메뉴배정 3개와 같은 트랜잭션 감사 1개로 통합하고 구 writer 종료 후 수동 전환한다. | 2026-09-10 | DEC-OPS-023 ②·037·042·046·064의 역할 판정과 DEC-OPS-067의 구 권한·롤 UI 부분 |
+| ADR-0017 | accepted | 현재 제품을 과업 중심 4개 메뉴 영역으로 재편하고 중복 진입점을 통합하며 기존 기능 권한을 보존한다. | 2026-09-11 | - |
+| ADR-0019 | accepted | 운영 오버레이에 X-Forwarded-For를 접속 주소로 덮어쓰는 비루트 nginx edge를 두고 Next 공개 포트를 비운다. Next는 `TRUSTED_EDGE_PROXY=true`일 때만 인증 BFF와 서버 측 API 호출에 사용자 IP를 싣고, 요청 제한 한도는 설정 속성으로 받는다(기본값은 종전 동작). | 2026-09-14 | - |
+| ADR-0025 | accepted | 개선 결정 D01~D15 A와 F01~F08을 채택한다. 보호계정·최소 응답·업무 규칙·MFA·내구 알림/감사/삭제를 구현·검증한다. | 2026-09-28 | 겹치는 이전 정책 제안의 선택 대기 상태 |
+| ADR-0033 | accepted | 메일 자동 복구용 접수 당시 주소를 암호화해 작업에 보관하고 완료 후 지운다. | 2026-10-18 | - |
+| ADR-0034 | accepted | 410만 돌려주던 구 인가 쓰기 API 와 결재 API 로 대체된 비공식결재 API 의 경로를 걷고, 집행 지점이 없어진 INFORMAL_*·INST_CODE 쓰기 권한과 그 배정을 퇴역한다. | 2026-10-18 | ADR-0016 '영향과 검증'의 종료 API 무변경 거부(410) 부분 |
+| ADR-0035 | accepted | 로그인 요청 제한의 템플릿 기본값을 IP당 분당 30으로 낮추고 E2E 만 종전 값으로 둔다. 한도는 계속 설정으로 조정한다. | 2026-10-19 | ADR-0019 결정 6의 로그인 기본값·관측 뒤 인하 순서 |
+| ADR-0036 | accepted | 목록은 요청·응답·URL·화면 모두 1 기반 page·size(1~100) 하나이고 잘못된 입력·옛 이름은 400, pageIndex·pageUnit 은 한 릴리스 별칭이다. 자원을 만드는 POST 는 201 과 새 식별자 본문이다. | 2026-10-19 | API 가이드 §2 의 201 비강제·§3 의 v2 규칙(이 변경 한정), 프런트 아키텍처 §3 의 0-based page 별칭 정규화 |
+| ADR-0038 | accepted | API·코어 체인에서 CSRF를 켜고, 쿠키 자격을 실은 쓰기 요청에 이중 제출 토큰(XSRF-TOKEN 쿠키 = X-XSRF-TOKEN 헤더)을 요구한다. 헤더 전용 클라이언트는 제외하고 SockJS는 허용 Origin으로 막는다. | 2026-10-21 | DEC-OPS-075 의 SAST-FP-001·002(CSRF 비활성 예외) |
+| ADR-0039 | accepted | 콘텐츠 페이지는 선택 기능 `cms` 다. 1차는 로그인 사용자 전체 열람, 업무 홈은 대체하지 않고 맨 위 조각으로 보이며, 서버 한 곳이 검증한 jsonb 문서를 HTML 문자열 없이 그린다. 링크는 https·내부·mailto·tel, 첨부는 기존 참조원 구조를 쓴다. | 2026-10-22 | - |
+| ADR-0040 | accepted | 게시판 운영 화면을 두고, 사용 안 함 게시판의 읽기·쓰기를 이용자에게 닫으며, 예약 게시를 날짜 기준으로 집행하고 상단 고정을 표준 컬럼과 BOARD_PIN으로 둔다. | 2026-10-22 | DEC-OPS-206의 시작일 기록 전용 부분 |
+| ADR-0042 | accepted | 콘텐츠 페이지 초안은 미완성 칸을 받고 게시만 완성을 요구한다. 내려받기 파일 칸, 게시 중지 상태·게시 대기 목록, 미게시 초안 삭제, CMS_PURGE·근거 번호 파기(트리거는 그 트랜잭션의 삭제만 허용), 안내 페이지 목록·작성자 묶음을 둔다. | 2026-10-26 | ADR-0039 결정 5의 초안 저장 수준·결정 7의 게시본 삭제 금지 부분·유보의 영구 삭제·미사용 업로드 정리 |
+| ADR-0043 | accepted | 게시판은 메뉴 없이 만들고(BBS_MST_CREATE만) 사용 전환으로 공개하며 메뉴는 인계로 붙인다. 공개 준비는 사용 중 + 찾는 길 하나 이상, 지정 게시판(공지·FAQ·업무·Q&A·위키) 영구 삭제는 서버가 거부, 화면 유형 이름은 템플릿 기준이다. | 2026-10-26 | ADR-0040 결정 8의 일반 그룹 메뉴 필수·설계서 §5.3 마법사 메뉴 단계·§5.6 메뉴 경로 인계 범위, DEC-OPS-332 ②의 짝 일치 때만 이름 표시 |
 | DEC-OPS-010 | accepted | 설문 열람(목록·상세·문항)과 제출은 인증 사용자(`@Authenticated`)에게 개방하고, 설문·템플릿·문항·항목의 관리 뮤테이션은 `@AdminOrSystem`으로 유지한다. | 2026-08-20 | - |
 | DEC-OPS-011 | accepted | production CSP의 `script-src`에서 `unsafe-inline`을 요청별 nonce로 대체하고, 그 전제로 PPR(cacheComponents)을 포기해 전 페이지를 동적 렌더로 전환한다. | 2026-08-20 | - |
 | DEC-OPS-015 | accepted | 직교 data-density 축(comfortable·compact)을 신설한다 — 서버 env `UI_DENSITY`를 allowlist 검증해 `<html data-density>` 전역 1곳에 배선하고, ERP 밀도는 globals.css 의 compact 무레이어 오버라이드 블록 한 곳으로 전달한다. | 2026-08-23 | - |

@@ -50,7 +50,7 @@
 1. 원본 또는 frontend/atlas의 설명·스타일·동작 수정
 2. npm run atlas:build
 3. npm run atlas:check
-4. npm run verify:docs
+4. node --test scripts/atlas-catalog.test.mjs scripts/atlas-generation.test.mjs, 화면·동작을 바꿨으면 pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts (나머지 운영 계약은 pre-push 가 돈다)
 5. UI 동작 변경 시 실제 브라우저·키보드·모바일·인쇄 확인
 ```
 

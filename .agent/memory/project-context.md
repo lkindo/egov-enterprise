@@ -5,8 +5,8 @@ status: active
 authority: derived-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-24
-verified_against: 73f2123a7b31171027c8741cdc542eeeea1e563d
+verified_at: 2026-10-26
+verified_against: cdd6764f71e2fadc962cd2f5873f5225388a6010
 canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0032-migration-pit-two-slots.md
   - ../../docs/02-architecture/decisions/ADR-0030-reusable-ci-selection-followup.md

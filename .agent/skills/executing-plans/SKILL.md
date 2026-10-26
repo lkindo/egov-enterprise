@@ -13,6 +13,8 @@ Load plan, review critically, execute tasks in batches, report for review betwee
 
 **Core principle:** Batch execution with checkpoints for architect review.
 
+**In this repository:** Use [AGENTS.md Verification by change scope](../../../AGENTS.md#verification-by-change-scope) and [the orchestration SOP](../../../docs/03-guides/orchestration-protocol.md) (§3 Stage 1 approval, §2.3 audit, §2.4 failure recovery, §6 time budget). When the user's current request or standing approval covers the work, report at batch boundaries and keep going — wait only for a new permission or user decision. A failing test is diagnosed and fixed (cause hypothesis → targeted evidence → minimal fix → re-verify); stop and report after three failures from the same cause.
+
 **Announce at start:** "I'm using the executing-plans skill to implement this plan."
 
 ## The Process
@@ -36,7 +38,7 @@ For each task:
 When batch complete:
 - Show what was implemented
 - Show verification output
-- Say: "Ready for feedback."
+- If the plan was handed to this session for review checkpoints and nothing approves continuing, ask for feedback; otherwise continue
 
 ### Step 4: Continue
 Based on feedback:
@@ -48,18 +50,17 @@ Based on feedback:
 
 After all tasks complete and verified:
 - Announce: "I'm using the finishing-a-development-branch skill to complete this work."
-- **REQUIRED SUB-SKILL:** Use finishing-a-development-branch
-- Follow that skill to verify tests, present options, execute choice
+- Use finishing-a-development-branch
+- Follow its standing-approval path ([AGENTS.md 공유 워킹트리와 Git](../../../AGENTS.md#공유-워킹트리와-git)); present options only when the user's current instruction limits the scope
 
 ## When to Stop and Ask for Help
 
-**STOP executing immediately when:**
-- Hit a blocker mid-batch (missing dependency, test fails, instruction unclear)
-- Plan has critical gaps preventing starting
-- You don't understand an instruction
-- Verification fails repeatedly
+**Stop and report when:**
+- The same cause has failed three times (first failure included) under SOP §2.4
+- A step needs a new permission, a destructive or outward-facing action, or a user decision
+- The plan has gaps that change the result and cannot be settled from the code or the request
 
-**Ask for clarification rather than guessing.**
+A failing test or an already-declared dependency that is not installed is a cause to diagnose and fix within the approved scope, not a reason to stop at once. Adding a new dependency (manifest, lockfile, version catalog) is a decision to report, not a fix. Ask only questions whose answers change the result.
 
 ## When to Revisit Earlier Steps
 
@@ -67,20 +68,20 @@ After all tasks complete and verified:
 - Partner updates the plan based on your feedback
 - Fundamental approach needs rethinking
 
-**Don't force through blockers** - stop and ask.
+**Don't force through blockers** - diagnose them; stop and ask only on the conditions above.
 
 ## Remember
 - Review plan critically first
 - Follow plan steps exactly
 - Don't skip verifications
 - Reference skills when plan says to
-- Between batches: just report and wait
-- Stop when blocked, don't guess
+- Between batches: report; wait only when a decision is pending
+- Stop on the conditions above, don't guess
 - Never start implementation on main/master branch without explicit user consent
 
 ## Integration
 
 **Required workflow skills:**
-- **using-git-worktrees** - REQUIRED: Set up isolated workspace before starting
+- **using-git-worktrees** - Use when isolation is needed (concurrent work by another operator — AGENTS.md 공유 워킹트리와 Git)
 - **writing-plans** - Creates the plan this skill executes
 - **finishing-a-development-branch** - Complete development after all tasks
