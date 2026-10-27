@@ -98,7 +98,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 
 | 도구 | 자동 진입점 | 스킬 안내 | 실행 전 가드 | 역할 |
 |---|---|---|---|---|
-| Codex 및 AGENTS 지원 도구 | `AGENTS.md` | `.agents/skills/` | `.codex/hooks.json`(`/hooks` 에서 신뢰해야 돈다) | 이 파일을 직접 상속 |
+| Codex 및 AGENTS 지원 도구 | `AGENTS.md` | `.agents/skills/` | `.codex/hooks.json`(`/hooks` 에서 신뢰해야 돈다. Windows 는 사용자 설정의 프로젝트 신뢰 경로가 드라이브 대소문자까지 맞아야 이 파일을 읽는다) | 이 파일을 직접 상속 |
 | Antigravity/Gemini | [GEMINI.md](GEMINI.md)·`AGENTS.md` | `.agents/skills/` | `.agents/hooks.json` | 글로벌 Gemini 규칙 + 이 파일·공용 메모리 연결 |
 | Claude Code | [CLAUDE.md](CLAUDE.md) | `.claude/skills/` | `.claude/settings.json` | 이 파일·공용 메모리 연결 + Claude 실행 어댑터 |
 | 그 밖의 도구 | `AGENTS.md`를 명시 로드 | `.agent/skills/` 를 직접 읽는다 | 없음 — git 훅·required CI 가 받친다 | 별도 정책 복제 없이 동일 계약 적용 |
