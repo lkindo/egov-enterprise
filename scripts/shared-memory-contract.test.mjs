@@ -1133,6 +1133,11 @@ function workflowSkillViolations(files) {
     if (skill === 'finishing-a-development-branch' && !text.includes('](../../../AGENTS.md#공유-워킹트리와-git)')) {
       violations.push(`${skill}: missing branch-completion authority`);
     }
+    // [2026-10-27 DEC-OPS-387] 다른 회사 검토자는 메인 에이전트 기준·모델 기준이다 — 그 문장이 빠지면 어느 판으로 되돌려도 붉다.
+    if (skill === 'requesting-code-review' && (!text.includes('the model you — the main agent doing the work — run on')
+      || !text.includes('Judge the vendor by the model, not by the CLI'))) {
+      violations.push(`${skill}: missing main-agent-relative reviewer vendor`);
+    }
     for (const [label, pattern] of workflowInstructionRegressions) {
       if (pattern.test(text)) violations.push(`${skill}: ${label}`);
     }
@@ -1196,6 +1201,22 @@ test('workflow skills reject restored conflicting instructions and missing autho
       assert.throws(() => assert.deepEqual(workflowSkillViolations(mutated), []), { code: 'ERR_ASSERTION' });
     }
   }
+});
+
+test('review skill rejects removal of the main-agent-relative reviewer vendor rule', () => {
+  const files = readWorkflowSkills();
+  const skill = 'requesting-code-review';
+  // 두 번째 커밋 직전의 판(Claude 메인만 가정한 문장)으로 되돌린 경우도 같은 오류로 붉어야 한다(2026-10-27 Codex 재검토).
+  const previous = 'For the required review above, prefer a model from a different vendor when one is installed — check with `agy --help` / `codex --help` first';
+  for (const [from, to] of [
+    ['the model you — the main agent doing the work — run on', 'the model of this agent'],
+    ['Judge the vendor by the model, not by the CLI', 'Judge the vendor by the CLI'],
+  ]) {
+    const mutated = { ...files, [skill]: files[skill].replace(from, to) };
+    assert.deepEqual(workflowSkillViolations(mutated), [`${skill}: missing main-agent-relative reviewer vendor`]);
+  }
+  const reverted = { ...files, [skill]: files[skill].replace(/A reviewer on the same model tends to share your blind spots\.[^\n]*/u, `A reviewer on the same model tends to share your blind spots. ${previous}.`) };
+  assert.deepEqual(workflowSkillViolations(reverted), [`${skill}: missing main-agent-relative reviewer vendor`]);
 });
 
 test('finishing skill rejects removal of the branch-completion authority', () => {
