@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import type { APIRequestContext } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { screenYmd } from '../helpers/screen-date';
 test.describe('공개 포털', () => {
     test.describe('Public Engagement & Experience', () => {
         test("일반 사용자 설문 목록과 개인 결재함 제목을 표시한다", async ({ userPage }) => {
@@ -52,7 +53,7 @@ test.describe('설문 응답 생명주기', () => {
             choiceLabel: `문항 ${index}에서 선택한 답변 ${unique}`,
             unselectedLabel: `문항 ${index}에서 선택하지 않은 답변 ${unique}`,
         }));
-        const year = new Date().getUTCFullYear();
+        const year = Number(screenYmd().slice(0, 4));
         const initial = { begin: `${year - 1}-01-02`, end: `${year + 1}-12-30` };
         const edited = { begin: `${year - 1}-01-03`, end: `${year + 1}-12-29` };
         let templateId: number | undefined;

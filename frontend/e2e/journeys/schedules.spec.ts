@@ -1,5 +1,6 @@
 import { expect,test } from '../fixtures/browser-test';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { screenYmd } from '../helpers/screen-date';
 test.describe('부서 일정 진입', () => {
     /**
      * Enterprise Workflow & Productivity
@@ -55,11 +56,8 @@ test.describe('캘린더 조작', () => {
             //   이전 달에 남아 목록이 비었다 — schedule-edit 이 존재하지 않아 실패한다.
             //   실측: CI UTC 2026-08-31T23:07 = KST 2026-09-01 08:07 → 화면 202609 / 픽스처 202608.
             //   main 의 마지막 e2e(8/30)는 KST 로도 8월이라 통과했으므로 회귀가 아니라 날짜 폭탄이다.
-            //   화면과 같은 기준(Asia/Seoul)으로 달을 고른다 — 앱이 TZ 를 바꾸면 여기도 함께 바뀐다.
-            const seoulToday = new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-            }).format(new Date()).replaceAll('-', '');
-            const ymd = `${seoulToday.slice(0, 6)}15`;
+            //   화면과 같은 기준(앱의 getTodayYmd)으로 달을 고른다 — 앱이 TZ 를 바꾸면 여기도 함께 바뀐다.
+            const ymd = `${screenYmd().slice(0, 6)}15`;
             const res = await request.post(SCHEDULE_API, {
                 headers: auth,
                 data: { schdlNm: `${PREFIX}UiFixture`, schdlBgngYmd: ymd, schdlEndYmd: ymd, schdlSeCd: '2' },

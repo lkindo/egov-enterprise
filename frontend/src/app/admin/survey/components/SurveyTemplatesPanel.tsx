@@ -62,9 +62,10 @@ export default function SurveyTemplatesPanel() {
   const onError = (e: unknown) => setError(extractErrorMessage(e, '처리에 실패했습니다.'));
 
   const create = useMutation({
-    mutationFn: (payload: { srvyTmpltTypeCd: string; srvyTmpltExpln: string }) =>
-      editing?.srvyTmpltSn
-        ? surveyAdminService.updateTemplate(editing.srvyTmpltSn, {
+    // 수정 대상도 변수로 받는다 — 클로저의 editing 은 '수정'을 누른 직후 저장하면 한 렌더 전 값(null)이라 새로 만든다.
+    mutationFn: ({ payload, target }: { payload: { srvyTmpltTypeCd: string; srvyTmpltExpln: string }; target: SurveyTemplate | null }) =>
+      target?.srvyTmpltSn
+        ? surveyAdminService.updateTemplate(target.srvyTmpltSn, {
           ...payload,
           /*
             화면에 입력칸이 없는 이미지 경로를 상세에서 읽어 되돌려 싣는다 — 전체 치환이라
@@ -77,7 +78,7 @@ export default function SurveyTemplatesPanel() {
             템플릿은 전부 null 이다** — 걸러 내지 않으면 그 템플릿은 수정이 영영 막힌다.
             차단은 `parseGeneratedOperationRequest` 안이라 서버 로그에 흔적이 없다.
           */
-          srvyTmpltPathNm: editing.srvyTmpltPathNm ?? undefined,
+          srvyTmpltPathNm: target.srvyTmpltPathNm ?? undefined,
         })
         : surveyAdminService.createTemplate(payload),
     onSuccess: () => {
@@ -168,7 +169,7 @@ export default function SurveyTemplatesPanel() {
           if (!validated) return;
           setError(null);
           createPendingRef.current = true;
-          create.mutate(validated);
+          create.mutate({ payload: validated, target: editing });
         }}
         noValidate
         className="space-y-2"

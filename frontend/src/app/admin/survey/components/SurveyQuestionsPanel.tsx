@@ -221,7 +221,8 @@ export default function SurveyQuestionsPanel() {
   });
 
   const removeQuestion = useMutation({
-    mutationFn: (srvyQstnSn: number) => surveyAdminService.deleteQuestion(srvySn!, srvyQstnSn),
+    mutationFn: ({ srvySn: targetSrvySn, srvyQstnSn }: { srvySn: number; srvyQstnSn: number }) =>
+      surveyAdminService.deleteQuestion(targetSrvySn, srvyQstnSn),
     onSuccess: () => {
       setError(null);
       invalidate();
@@ -872,7 +873,7 @@ function SurveyQuestionCard({
   editItem: Mutation<{ srvyArtclSn: number; body: SurveyItemUpdate }>;
   addQuestion: Mutation<{ srvySn: number; qstnCn: string; qstnTypeCd: string; qstnSn: number; maxChcCnt: number }>;
   addItem: Mutation<{ srvyQstnSn: number; srvySn: number; artclCn: string }>;
-  removeQuestion: Mutation<number>;
+  removeQuestion: Mutation<{ srvySn: number; srvyQstnSn: number }>;
   removeItem: Mutation<number>;
   deletingTarget: string | null;
   beginDelete: (target: string, remove: () => void) => void;
@@ -977,7 +978,7 @@ function SurveyQuestionCard({
                       className="text-destructive-emphasis hover:bg-destructive/10 shrink-0"
                       onClick={() => beginDelete(
                         `question-${q.srvyQstnSn}`,
-                        () => removeQuestion.mutate(q.srvyQstnSn),
+                        () => removeQuestion.mutate({ srvySn, srvyQstnSn: q.srvyQstnSn }),
                       )}
                     >
                       {deletingTarget === `question-${q.srvyQstnSn}`

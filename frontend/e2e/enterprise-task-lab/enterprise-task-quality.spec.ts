@@ -9,6 +9,7 @@ import { buildSpecScope, type ConsoleErrorGuard } from '../fixtures/error-detect
 import { assertIsolatedTarget } from '../../../scripts/e2e-isolation.mjs';
 import { ENTERPRISE_TASKS, EnterpriseObservation, LAB_CONTEXT, persistTaskMeasurement,
   type CacheMode, type EnterpriseTask } from '../helpers/enterprise-task-observation';
+import { screenYmd } from '../helpers/screen-date';
 
 const USERS = '/api/v1/admin/system/users';
 const DEPARTMENTS = '/api/v1/admin/system/departments';
@@ -351,7 +352,7 @@ async function reportWorkflow(context: Context): Promise<Workflow> {
 
 async function scheduleWorkflow(context: Context): Promise<Workflow> {
   const { page, api, suffix, observation, defer } = context; const title = `Lab Schedule ${suffix}`; const updated = `${title} Updated`;
-  const yearMonth = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit' }).format(new Date()).replaceAll('-', '');
+  const yearMonth = screenYmd().slice(0, 6);
   let id: number | null = null;
   defer(async () => { if (id !== null) await safeDelete(api, `/api/v1/schedules/${id}`); });
   return { route: '/smart-toolkit/schedule?e2e=true', ready: async () => {
@@ -398,7 +399,7 @@ async function surveyWorkflow(context: Context): Promise<Workflow> {
   const templates = await read<{ list: { srvyTmpltSn: number; srvyTmpltTypeCd: string }[] }>(api, `${SURVEYS}/templates?keyword=${templateCode}&page=1&size=10`);
   const template = templates.list.find(row => row.srvyTmpltTypeCd === templateCode)!; expect(template).toBeTruthy();
   defer(async () => { await safeDelete(api, `${SURVEYS}/templates/${template.srvyTmpltSn}`); });
-  const title = `Lab Survey ${suffix}`; const year = new Date().getUTCFullYear();
+  const title = `Lab Survey ${suffix}`; const year = Number(screenYmd().slice(0, 4));
   await created(api, SURVEYS, { srvyTtl: title, srvyTmpltSn: template.srvyTmpltSn, srvyBgngYmd: `${year - 1}0101`, srvyEndYmd: `${year + 1}1231` });
   const surveys = await read<{ list: { srvySn: number; srvyTtl: string; version: number }[] }>(api, `${SURVEYS}?keyword=${encodeURIComponent(title)}&page=1&size=10`);
   const survey = surveys.list.find(row => row.srvyTtl === title)!; expect(survey).toBeTruthy();

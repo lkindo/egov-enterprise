@@ -171,6 +171,8 @@ npm run backend          # gradlew :api-server:bootRun
 pnpm -C frontend dev
 ```
 
+> **원격 DB 로 기동할 때**: 루트 `.env` 의 `DB_URL` 이 이 기계(`localhost`·`127.0.0.1`·`::1`)가 아니면 `npm run dev` 는 Flyway 자동 적용을 끄고 띄웁니다. 작업 브랜치의 미병합 마이그레이션이 공유 DB 에 들어가지 않게 하려는 것이며, 엔티티가 쓰는 표·컬럼이 아직 없으면 기동이 스키마 검증(`ddl-auto: validate`)에서 멈춥니다. 공유 DB 적용은 [적용 로그](../04-operations/shared-oci-migration-apply-log.md)의 절차를 따릅니다. 일부러 적용할 때만 `DEV_REMOTE_FLYWAY=migrate` 를 주며, 그때도 개발 시드(`db/seed-dev`)는 넣지 않습니다.
+
 컴파일·타입 게이트([AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope)):
 
 ```bash

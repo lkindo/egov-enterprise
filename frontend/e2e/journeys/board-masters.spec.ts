@@ -1,5 +1,6 @@
 import { expect,test } from '../fixtures/browser-test';
 import { BoardMasterPage } from '../pages/BoardMasterPage';
+import { screenDate } from '../helpers/screen-date';
 test.describe('Board Master Management (Admin Flow)', () => {
     // Inject Admin Session
     test.use({ storageState: 'playwright/.auth/admin.json' });
@@ -55,12 +56,9 @@ test.describe('Board Master Management (Admin Flow)', () => {
     // [B2] 관리자에게는 상단 고정 권한(BOARD_PIN)이 기본 배정되지 않는다(결정 5) — 고정을 받는 게시판이어도 고정 단추가 없고
     //   고정 API 는 403 이다. 고정 성공 경로(상한·만료)는 단위·백엔드 통합 시험이 맡는다(R-11).
     test('운영 화면 게시물 탭 — 예약 글 조회·일정 바꾸기로 공개·종료일 일괄 바꾸기·상단 고정 기본 상태', async ({ page, adminRequest }) => {
-        const kstYmd = (offsetDays: number) => new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-        }).format(new Date(Date.now() + offsetDays * 86_400_000));
-        const today = kstYmd(0);
-        const nextWeek = kstYmd(7);
-        const nextMonth = kstYmd(30);
+        const today = screenDate(0);
+        const nextWeek = screenDate(7);
+        const nextMonth = screenDate(30);
         const uniqueId = Date.now();
         const boardName = `E2E_예약게시판_${uniqueId}`;
         const scheduledTitle = `E2E 예약 글 ${uniqueId}`;

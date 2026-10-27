@@ -1,6 +1,7 @@
 import { type APIRequestContext, type Locator, type Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
 import { waitForHydration } from '../fixtures/hydration';
+import { screenDate } from '../helpers/screen-date';
 test.describe('협업 도구', () => {
     /**
      * Advanced Collaboration & Intelligence
@@ -50,11 +51,8 @@ test.describe('운영 관측', () => {
          * 날짜는 앱과 같은 Asia/Seoul 기준이다 — 러너(UTC)의 날짜로 만들면 KST 자정~09시에 하루가 갈린다.
          */
         test("기간을 바꾸면 성공 로그인·사용자 활동의 표와 차트가 그 기간으로 바뀌고 기록이 없는 날은 0 이다", async ({ page, adminRequest }) => {
-            const seoulDay = (offsetDays: number) => new Intl.DateTimeFormat('en-CA', {
-                timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-            }).format(new Date(Date.now() + offsetDays * 86_400_000));
-            const quiet = [seoulDay(-9), seoulDay(-8), seoulDay(-7)];
-            const today = seoulDay(0);
+            const quiet = [screenDate(-9), screenDate(-8), screenDate(-7)];
+            const today = screenDate(0);
 
             await page.goto('/admin/stats/screen');
             await expect(page.getByRole('heading', { level: 1, name: '시스템 활성 지표', exact: true })).toBeVisible({ timeout: 15000 });

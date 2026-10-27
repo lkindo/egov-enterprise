@@ -139,3 +139,46 @@ describe('E2E harness dead-asset contract', () => {
     expect(() => assertAnonymousLoginCapture(mutated)).toThrow();
   });
 });
+
+/**
+ * 화면·API 와 대조하는 E2E 날짜는 화면과 같은 기준(e2e/helpers/screen-date.ts → 앱의 getTodayYmd)으로만 만든다.
+ * 러너 시간으로 고른 날짜(toISOString 의 앞 10자·지역/UTC getter·toLocaleDateString)는 CI(UTC)에서 한국 시각 자정~09시에
+ * 하루, 월초면 한 달이 갈린다 — 2026-09-01 일정 픽스처가 그렇게 터졌다(1db6f5bf1). 시각 문자열 전체(toISOString())와
+ * Date.now() 는 날짜를 고르지 않으므로 세지 않는다.
+ */
+const RUNNER_DATE_PATTERNS = [
+  /\.toISOString\(\)\s*\.\s*(?:slice|substring|substr)\(\s*0\s*,\s*(?:7|10)\s*\)/g,
+  /\.toISOString\(\)\s*\.\s*split\(\s*['"]T['"]\s*\)/g,
+  /\.get(?:UTC)?(?:FullYear|Month|Date|Day)\(\)/g,
+  /\.toLocaleDateString\(/g,
+];
+
+function runnerDateLines(source: string, fileName: string): number[] {
+  const code = codeWithoutComments(source, fileName);
+  const lines = RUNNER_DATE_PATTERNS.flatMap(pattern =>
+    [...code.matchAll(pattern)].map(match => code.slice(0, match.index).split('\n').length));
+  return [...new Set(lines)].sort((a, b) => a - b);
+}
+
+describe('E2E 날짜는 화면과 같은 기준으로 만든다', () => {
+  it('러너 시간으로 날짜를 고르는 E2E 코드가 없다', () => {
+    const offenders = filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.ts').flatMap(path =>
+      runnerDateLines(readFileSync(path, 'utf8'), path).map(line =>
+        `${path.replace(FRONTEND_DIR, '').replace(/\\/g, '/')}:${line}`));
+    expect(
+      offenders,
+      '러너 시간(CI 는 UTC)으로 날짜를 만들었습니다 — e2e/helpers/screen-date.ts 의 screenYmd()·screenDate() 를 쓰세요.',
+    ).toEqual([]);
+  });
+
+  it('실제로 터진 픽스처 모양을 잡고 시각 문자열·주석은 세지 않는다', () => {
+    const source = [
+      "const ymd = `${today.getFullYear()}${String(today.getMonth() + 1).padStart(2, '0')}15`;",
+      "memoRptYmd: new Date().toISOString().slice(0, 10).replaceAll('-', ''),",
+      'const name = `E2E ${new Date().toISOString()}`;',
+      '// new Date().getMonth() 는 쓰지 않는다',
+      'const marker = `E2E${Date.now()}`;',
+    ].join('\n');
+    expect(runnerDateLines(source, 'synthetic.spec.ts'), '러너 시간 날짜를 놓쳤거나 허용한 형태를 셌다').toEqual([1, 2]);
+  });
+});
