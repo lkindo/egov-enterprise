@@ -70,3 +70,6 @@ frontend/public/governance_harness_atlas.html text eol=lf
 frontend/src/types/generated-*.ts text working-tree-encoding=UTF-8 eol=lf
 # zod·operations 의 태그 묶음 모듈(진입 파일 옆 같은 이름 폴더, codegen-zod.js)도 같은 생성물이다.
 frontend/src/types/generated-*/*.ts text working-tree-encoding=UTF-8 eol=lf
+# 스킬 안내 파일은 생성기(scripts/agent-skill-adapters.mjs)가 LF 로 쓴다 — autocrlf 작업 트리에서 줄 끝만 다른 diff 가 생기지 않게 고정한다.
+.agents/skills/** text working-tree-encoding=UTF-8 eol=lf
+.claude/skills/** text working-tree-encoding=UTF-8 eol=lf

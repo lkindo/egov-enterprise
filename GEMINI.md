@@ -16,7 +16,8 @@
 
 ## Gemini 실행 어댑터
 
-- 작업에 정확히 맞는 `.agent/skills/` 또는 사용 가능한 네이티브 스킬만 선택한다. 스킬 전수 탐색이나 이름만 맞춘 강제 호출은 하지 않는다.
+- 작업에 정확히 맞는 저장소 스킬(`.agents/skills/` 안내 파일 → 정본 `.agent/skills/`) 또는 사용 가능한 네이티브 스킬만 선택한다. 스킬 전수 탐색이나 이름만 맞춘 강제 호출은 하지 않는다.
+- 셸 명령은 `.agents/hooks.json`의 PreToolUse 가드(scripts/agent-guard.mjs)를 거친다. 막히면 돌려받은 이유와 대신 쓸 방법을 따르고, 우회하지 않는다.
 - 스킬이 헌법·`AGENTS.md`·현재 구현과 충돌하면 스킬을 적용하지 말고 상위 원본과 실제 증거를 따른다.
 - 세션 저널과 공용 메모리 승격은 [AGENTS.md Documentation and memory](AGENTS.md#documentation-and-memory)를 따른다.
 - 작업 브랜치의 승인 범위와 마무리는 [AGENTS.md 공유 워킹트리와 Git](AGENTS.md#공유-워킹트리와-git)에 연결한다.

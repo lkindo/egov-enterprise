@@ -169,8 +169,14 @@ test/load-tests/results/
 **/.gemini/*
 # Gemini 작업공간 공유 설정은 같은 워킹트리를 쓰는 operator 가 함께 쓴다(.claude/settings.json 과 같은 방식).
 !**/.gemini/settings.json
+# Claude Code 는 공유 설정(훅)과 스킬 안내 파일만 추적한다 — 작업 트리(.claude/worktrees) 같은 로컬 산출물이 섞이지 않게 내용물을 무시한다.
+**/.claude/*
 !**/.claude/settings.json
+!/.claude/skills/
 **/.claude/settings.local.json
+# Codex 는 프로젝트 훅만 공유한다(config.toml 등 로컬 설정은 추적하지 않는다).
+**/.codex/*
+!/.codex/hooks.json
 
 # ----- Upload/Storage -----
 **/upload/
@@ -232,8 +238,11 @@ database/dumps/
 
 # ----- 에이전트 세션 산출물 (저장소 자산 아님) -----
 # 오케스트레이터/서브에이전트 작업 상태. 이중 오퍼레이터 환경에서 타 세션 상태가
-# `git add -A` 로 혼입되는 것을 막는다.
-.agents/
+# `git add -A` 로 혼입되는 것을 막는다. 폴더째 무시하면 아래 예외를 적용할 수 없어 내용물만 무시한다.
+# 추적하는 것은 Codex·Antigravity 가 읽는 스킬 안내 파일(npm run regen 생성물)과 Antigravity 작업 공간 훅이다.
+**/.agents/*
+!/.agents/skills/
+!/.agents/hooks.json
 
 # 일회성 a11y 감사 스캔 스크립트·리포트 (재발 방지는 eslint jsx-a11y 규칙이 담당)
 frontend/a11y_report.json
