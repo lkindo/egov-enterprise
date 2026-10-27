@@ -30,12 +30,17 @@ const CASES = {
       "git commit --only -F - -- a.txt <<'EOF'\n본문에 적은 git push --force 는 명령이 아니다\nEOF"],
   },
   'git-discard-worktree': {
-    hit: ['git reset --hard origin/main', 'git clean -fdx', 'git checkout -- .', 'git checkout .', 'git restore .', 'git branch -D feat/x', 'git stash drop'],
+    // 2026-10-27 독립 검토(Antigravity)가 찾은 미탐: 따옴표 속 `<<`·주석 속 아포스트로피가 뒤 줄의 실제 명령을 지웠다.
+    hit: ['git reset --hard origin/main', 'git clean -fdx', 'git checkout -- .', 'git checkout .', 'git restore .', 'git branch -D feat/x', 'git stash drop',
+      'git commit --only -m "Fix << EOF parser" -- a.txt\ngit reset --hard', "# Let's check\ngit reset --hard\n# It's done",
+      'node -e "console.log(1 << shift)"\ngit reset --hard'],
     pass: ['git reset --soft HEAD~1', 'git checkout main', 'git restore --staged .', 'git restore -- scripts/dev.mjs', 'git branch -d feat/x', 'git stash list'],
   },
   'git-commit-without-only': {
-    hit: ['git commit -am "x"', 'git commit -m "x"', 'cd frontend && git commit -m "x"'],
-    pass: ['git commit --only -m "x" -- a.txt', 'git commit --dry-run', 'git log -1'],
+    hit: ['git commit -am "x"', 'git commit -m "x"', 'cd frontend && git commit -m "x"', 'MSYS_NO_PATHCONV=1 git commit -m "x"', '& git commit -m "x"'],
+    // git 이 명령 자리에 있을 때만 git 호출이다 — 검색어·인자로 쓴 git 은 막지 않는다(독립 검토가 찾은 오탐).
+    pass: ['git commit --only -m "x" -- a.txt', 'git commit --dry-run', 'git log -1', 'rg git commit docs', 'grep -rn "git commit" docs/',
+      'echo git commit -am x', 'git commit --only -m "Use `"--no-verify`" carefully" -- a.txt'],
   },
   'powershell-herestring-commit': {
     hit: ["@'\n제목\n\n본문\n'@ | git commit --only -F - -- a.txt", "git commit --only -F - @'\n제목\n'@ -- a.txt"],
@@ -47,13 +52,16 @@ const CASES = {
       'git commit --only -m "flyway migrate 에 seed-dev 를 섞지 않는다" -- a.txt'],
   },
   'openapi-relative-export-path': {
-    hit: ['./gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" -Dopenapi.export.path="api-docs.json" --rerun-tasks'],
+    hit: ['./gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" -Dopenapi.export.path="api-docs.json" --rerun-tasks',
+      '.\\gradlew.bat :api-server:test --tests nuri.openapi.OpenApiDocumentationTest "-Dopenapi.export.path=api-docs.json"'],
     // 2026-10-27 실측 오탐: 다른 에이전트에게 준 프롬프트 문자열 속 플래그를 명령으로 읽어 막았다.
     pass: ['./gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" -Dopenapi.export.path="D:/project/egov-enterprise/api-docs.json" --rerun-tasks',
       'agy -p "Run this command: echo -Dopenapi.export.path=api-docs.json"'],
   },
   'tagged-test-on-default-task': {
-    hit: ['./gradlew :api-server:test --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"', './gradlew :api-server:test --tests "*AnnotationLinterTest"'],
+    hit: ['./gradlew :api-server:test --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"', './gradlew :api-server:test --tests "*AnnotationLinterTest"',
+      './gradlew :api-server:test --warning-mode fail --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"',
+      './gradlew :api-server:test --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest.someMethod"'],
     pass: ['./gradlew :api-server:harnessTest --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"',
       './gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" :api-server:harnessTest --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"'],
   },
@@ -118,6 +126,9 @@ test('gitleaks-worktree-mount: .git 이 파일인 작업 트리 마운트만 막
     const scan = (dir) => `docker run --rm -v "${dir.replaceAll('\\', '/')}:/repo" zricethezav/gitleaks:v8.28.0 git /repo --log-opts="origin/main..feat/x"`;
     assert.ok(ruleOf(scan(worktree)).includes('gitleaks-worktree-mount'));
     assert.ok(!ruleOf(scan(checkout)).includes('gitleaks-worktree-mount'));
+    // `$PWD` 마운트와 `cd <작업 트리> &&` 뒤의 상대 마운트도 그 디렉터리로 판정한다.
+    assert.ok(ruleOf(scan('$PWD'), worktree).includes('gitleaks-worktree-mount'));
+    assert.ok(ruleOf(`cd "${worktree}" && ${scan('.')}`).includes('gitleaks-worktree-mount'));
   } finally {
     rmSync(worktree, { recursive: true, force: true });
     rmSync(checkout, { recursive: true, force: true });
@@ -135,8 +146,12 @@ test('막는 판정이 묻는 판정보다 앞서고, 걸린 규칙의 이유와
 
 test('도구마다 입력을 읽고 그 도구의 형식으로 답한다', () => {
   assert.deepEqual(readHookInput('claude', { tool_name: 'Bash', tool_input: { command: 'git status' }, cwd: 'D:/r' }), { command: 'git status', cwd: 'D:/r' });
+  // Codex 의 셸 래퍼 배열은 셸에 넘긴 스크립트를 판정한다 — 이어 붙이면 git 이 명령 자리에서 밀려나 아무 규칙도 걸리지 않는다.
   assert.deepEqual(readHookInput('codex', { tool_input: { command: ['powershell.exe', '-Command', 'git status'] }, cwd: 'D:/r' }),
-    { command: 'powershell.exe -Command git status', cwd: 'D:/r' });
+    { command: 'git status', cwd: 'D:/r' });
+  assert.deepEqual(readHookInput('codex', { tool_input: { command: ['bash', '-lc', 'git commit -am x'] }, cwd: 'D:/r' }),
+    { command: 'git commit -am x', cwd: 'D:/r' });
+  assert.deepEqual(readHookInput('codex', { tool_input: { command: ['git', 'status'] }, cwd: 'D:/r' }), { command: 'git status', cwd: 'D:/r' });
   assert.deepEqual(readHookInput('antigravity', { toolCall: { name: 'run_command', args: { CommandLine: 'git status', Cwd: 'D:/r' } } }),
     { command: 'git status', cwd: 'D:/r' });
   assert.equal(readHookInput('claude', { tool_name: 'Read', tool_input: { file_path: 'a' } }), null);

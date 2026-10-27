@@ -48,6 +48,13 @@ test('원격 DB 면 Flyway 자동 적용을 끄고 그 사실을 알린다', () 
   assert.match(result.notice, /DEV_REMOTE_FLYWAY=migrate/);
 });
 
+test('DB_URL 을 덮어쓰는 Spring 환경 변수가 원격이어도 Flyway 를 끈다', () => {
+  for (const key of ['SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_JDBC_URL', 'SPRING_FLYWAY_URL']) {
+    const result = backendEnvironment({ [key]: REMOTE });
+    assert.equal(result.env.SPRING_FLYWAY_ENABLED, 'false', `${key} 로 원격 DB 를 주면 가드를 건너뜁니다.`);
+  }
+});
+
 test('옵트인해도 원격 DB 에 개발 시드는 넣지 않는다', () => {
   const env = { DB_URL: REMOTE, DEV_REMOTE_FLYWAY: 'migrate', SPRING_PROFILES_ACTIVE: 'dev' };
   const result = backendEnvironment(env);

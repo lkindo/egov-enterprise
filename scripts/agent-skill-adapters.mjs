@@ -72,7 +72,7 @@ export function renderAdapter({ name, description }) {
 export function expectedAdapters(cwd = ROOT, files = sourceSkillFiles(cwd)) {
   const sources = files
     .map((file) => file.replaceAll('\\', '/'))
-    .filter((file) => new RegExp(`^${SOURCE_ROOT}/[^/]+/SKILL\\.md$`, 'u').test(file))
+    .filter((file) => file.startsWith(`${SOURCE_ROOT}/`) && /^[^/]+\/SKILL\.md$/u.test(file.slice(SOURCE_ROOT.length + 1)))
     .sort();
   const expected = new Map();
   for (const source of sources) {
@@ -102,9 +102,15 @@ function presentAdapterFiles(cwd) {
 export function adapterDrift(cwd = ROOT, expected = expectedAdapters(cwd)) {
   const problems = [];
   for (const [file, content] of expected) {
-    const path = join(cwd, file);
-    if (!existsSync(path)) problems.push(`빠짐: ${file}`);
-    else if (lf(readFileSync(path, 'utf8')) !== content) problems.push(`낡음: ${file}`);
+    let current;
+    try {
+      current = readFileSync(join(cwd, file), 'utf8');
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+      problems.push(`빠짐: ${file}`);
+      continue;
+    }
+    if (lf(current) !== content) problems.push(`낡음: ${file}`);
   }
   for (const file of presentAdapterFiles(cwd)) {
     if (expected.has(file)) continue;

@@ -39,9 +39,12 @@ export function isLocalDatabaseUrl(dbUrl) {
   return LOCAL_DB_HOSTS.has(match[1].replace(/^\[|\]$/g, '').toLowerCase());
 }
 
+/** 백엔드가 접속할 수 있는 DB 주소들 — application.yml 의 DB_URL 과, 그것을 덮어쓰는 Spring 환경 변수. */
+const DATABASE_URL_KEYS = ['DB_URL', 'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_JDBC_URL', 'SPRING_FLYWAY_URL'];
+
 /** 백엔드 자식 프로세스에 넘길 환경. 원격 DB 면 Flyway 를 끄고(옵트인 시 seed-dev 만 뺀다) 그 사유를 돌려준다. */
 export function backendEnvironment(env) {
-  if (isLocalDatabaseUrl(env.DB_URL)) return { env, notice: null };
+  if (DATABASE_URL_KEYS.every((key) => isLocalDatabaseUrl(env[key]))) return { env, notice: null };
   if (env.DEV_REMOTE_FLYWAY === 'migrate') {
     return {
       env: { ...env, SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration' },

@@ -28,6 +28,17 @@ test('documentation and Atlas-only changes run governance without heavy leaves',
   assert.equal(result.atlas, true);
   assert.equal(result.governance, true);
   assert.equal(result.secretScan, true);
+
+  // 스킬 설명 한 줄을 고치면 정본과 regen 이 만든 두 안내 파일이 함께 바뀐다 — 전체 파이프라인을 돌릴 변경이 아니다.
+  const skill = classifyChangedFiles([
+    '.agent/skills/ci-triage/SKILL.md',
+    '.agents/skills/ci-triage/SKILL.md',
+    '.claude/skills/ci-triage/SKILL.md',
+  ]);
+  assert.equal(skill.docsOnly, true, '스킬 안내 파일이 미지 경로로 분류되면 전체 CI 가 돈다');
+  assert.deepEqual(skill.unknownFiles ?? [], []);
+  // 안내 경로의 다른 파일(훅·설정)은 문서가 아니다.
+  assert.equal(classifyChangedFiles(['.agents/hooks.json']).docsOnly, false);
   assert.equal(result.backend, false);
   assert.equal(result.migration, false);
   assert.equal(result.frontend, false);

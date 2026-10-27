@@ -22,6 +22,22 @@ import { fileURLToPath } from 'node:url';
 
 const AGENTS = new Set(['claude', 'codex', 'antigravity']);
 
+/** 한 줄에서 heredoc 시작(`<<EOF`·`<<-'EOF'`)의 구분자. 같은 줄에서 닫히는 문자열 안의 `<<`(예: `-m "Fix << EOF"`)는 세지 않는다. */
+function heredocDelimiter(line) {
+  const literals = [];
+  for (const match of line.matchAll(/'[^']*'|"(?:\\.|[^"\\])*"/g)) {
+    // `<<'EOF'` 의 따옴표는 구분자 표기라 문자열 리터럴이 아니다.
+    if (/<<-?\s*$/.test(line.slice(0, match.index))) continue;
+    literals.push([match.index, match.index + match[0].length]);
+  }
+  for (const match of line.matchAll(/<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1/g)) {
+    if (line[match.index - 1] === '<') continue; // `<<<` here-string
+    if (literals.some(([start, end]) => match.index > start && match.index < end)) continue;
+    return match[2];
+  }
+  return null;
+}
+
 /**
  * heredoc·PowerShell here-string 의 본문을 지운다 — 커밋 메시지 속 문구가 규칙에 걸리지 않게 한다.
  * here-string 끝줄의 뒤쪽(`'@ | git commit -F -`)은 명령이라 남긴다.
@@ -37,18 +53,44 @@ export function withoutHeredocBodies(command) {
       if (end) terminator = null;
       continue;
     }
-    out.push(line);
-    const heredoc = /<<-?\s*(['"]?)([A-Za-z_][\w-]*)\1/.exec(line);
-    if (heredoc) { terminator = new RegExp(`^\\s*${heredoc[2]}\\s*$`); continue; }
+    const delimiter = heredocDelimiter(line);
+    if (delimiter) { out.push(line); terminator = new RegExp(`^\\s*${delimiter}\\s*$`); continue; }
     const hereString = /@(['"])\s*$/.exec(line);
+    // 여는 표시(`@'`)도 공백으로 바꾼다 — 남기면 따옴표 가리기가 그 `'` 를 문자열 시작으로 읽어 뒤를 모두 가린다.
+    // here-string 규칙은 원문 전체(command)에서 여는 표시를 따로 본다.
+    out.push(hereString ? line.slice(0, hereString.index) + ' '.repeat(line.length - hereString.index) : line);
     if (hereString) terminator = new RegExp(`^${hereString[1]}@(.*)$`);
   }
   return out.join('\n');
 }
 
-/** 따옴표 안의 내용을 같은 길이의 밑줄로 가린다 — `-m "… --no-verify …"` 같은 메시지 속 문구를 플래그로 읽지 않는다. */
+/**
+ * 따옴표 안의 내용은 같은 길이의 밑줄로, 셸 주석(`#` 뒤)은 공백으로 가린다 — 메시지·주석 속 문구를 명령으로 읽지 않는다.
+ * 문자를 하나씩 읽어 주석 속 아포스트로피(`# Let's …`)가 다음 줄 명령까지 문자열로 삼키지 않게 한다.
+ * 큰따옴표 안의 `\"`·PowerShell 의 `` `" `` 는 문자열을 닫지 않는다.
+ */
 export function maskQuoted(text) {
-  return text.replace(/'[^']*'|"(?:\\.|[^"\\])*"/g, (quoted) => quoted[0] + '_'.repeat(Math.max(0, quoted.length - 2)) + quoted.at(-1));
+  let out = '';
+  let quote = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote) {
+      if (quote === '"' && (char === '\\' || char === '`') && index + 1 < text.length) { out += '__'; index += 1; continue; }
+      if (char === quote) { out += char; quote = null; continue; }
+      out += '_';
+      continue;
+    }
+    if (char === '#' && (index === 0 || /\s/.test(text[index - 1]))) {
+      const end = text.indexOf('\n', index);
+      const stop = end < 0 ? text.length : end;
+      out += ' '.repeat(stop - index);
+      index = stop - 1;
+      continue;
+    }
+    if (char === '\'' || char === '"') quote = char;
+    out += char;
+  }
+  return out;
 }
 
 /** 셸 구분자(&&·||·;·|·줄바꿈)로 나눈 명령 조각. 원문(heredoc 본문 제외)과 따옴표를 가린 판을 짝으로 돌려준다. */
@@ -69,15 +111,29 @@ export function segments(command) {
 const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
 const unquote = (value) => value.replace(/^(['"])(.*)\1$/s, '$2');
 
-/** git 호출이면 하위 명령과 그 뒤 인자. `git -C dir -c k=v commit …` 형태를 읽는다. */
+/** 조각의 명령 단어 위치 — 앞의 환경 변수 대입(`K=V`)과 PowerShell 호출 연산자(`&`)를 건너뛴다. */
+function commandAt(words) {
+  let index = 0;
+  while (index < words.length && (/^[A-Za-z_]\w*=/.test(words[index]) || words[index] === '&')) index += 1;
+  return index;
+}
+
+/**
+ * git 호출이면 하위 명령·인자와 `-C` 디렉터리. `git -C dir -c k=v commit …` 형태를 읽는다.
+ * git 은 명령 자리에 있을 때만 센다 — `rg git commit docs` 의 git 은 검색어다.
+ */
 export function gitInvocation(code) {
   const words = tokens(code);
-  const at = words.findIndex((word) => /(^|[\\/])git(\.exe)?$/i.test(word));
-  if (at < 0) return null;
+  const at = commandAt(words);
+  if (!/(^|[\\/])git(\.exe)?$/i.test(words[at] ?? '')) return null;
   let index = at + 1;
-  while (index < words.length && words[index].startsWith('-')) index += ['-C', '-c'].includes(words[index]) ? 2 : 1;
+  let dir = null;
+  while (index < words.length && words[index].startsWith('-')) {
+    if (words[index] === '-C') dir = words[index + 1] ?? null;
+    index += ['-C', '-c'].includes(words[index]) ? 2 : 1;
+  }
   if (index >= words.length) return null;
-  return { sub: words[index], args: words.slice(index + 1) };
+  return { sub: words[index], args: words.slice(index + 1), dir };
 }
 
 const hasFlag = (args, ...flags) => args.some((arg) => flags.includes(arg) || flags.some((flag) => flag.startsWith('--') && arg.startsWith(`${flag}=`)));
@@ -98,9 +154,7 @@ function mergeInProgress(cwd) {
   return result.status === 0 && existsSync(resolve(cwd, result.stdout.trim()));
 }
 
-/** 기본 test 태스크에서 빠지는 태그와 그 태그만 돌리는 태스크(api-server/build.gradle). */
-const TAGGED_TASKS = Object.freeze({ 'governance-harness': 'harnessTest', 'schema-validation': 'schemaValidationTest' });
-
+/** 기본 test 태스크에서 빠지는 태그(api-server/build.gradle 의 excludeTags)가 붙은 시험 클래스. */
 function taggedClasses(cwd) {
   const top = repoTop(cwd);
   const base = top && join(top, 'api-server', 'src', 'test', 'java');
@@ -120,6 +174,11 @@ function taggedClasses(cwd) {
   return found;
 }
 
+/** 값을 다음 단어로 받는 Gradle 옵션 — 그 값(`--warning-mode fail` 의 fail)을 태스크로 읽지 않는다. */
+const GRADLE_VALUE_OPTIONS = new Set(['--warning-mode', '--console', '-p', '--project-dir', '-x', '--exclude-task', '-I', '--init-script',
+  '-c', '--settings-file', '-b', '--build-file', '-g', '--gradle-user-home', '--include-build', '--priority', '-F',
+  '--dependency-verification', '--max-workers', '-D', '-P']);
+
 /** `--tests` 값마다 그 값을 받는 Gradle 태스크(바로 앞 태스크)를 짝짓는다. */
 function gradleTestFilters(raw) {
   const words = tokens(raw);
@@ -129,10 +188,21 @@ function gradleTestFilters(raw) {
     const word = words[index];
     if (word === '--tests' && index + 1 < words.length) { pairs.push({ task, filter: unquote(words[index + 1]) }); index += 1; }
     else if (word.startsWith('--tests=')) pairs.push({ task, filter: unquote(word.slice('--tests='.length)) });
+    else if (GRADLE_VALUE_OPTIONS.has(word)) index += 1;
     else if (!word.startsWith('-') && !/gradlew/i.test(word)) task = word;
   }
   return pairs;
 }
+
+/** 하네스·스키마 태그 시험을 가리키는 필터인가. `Class`·`pkg.Class`·`pkg.Class.method`·`*Class*` 를 받는다. */
+function namesTaggedClass(filter, tagged) {
+  const parts = filter.split('.').map((part) => part.replace(/\*/g, ''));
+  const candidates = parts.slice(-2).filter(Boolean);
+  return candidates.some((simple) => [...tagged.keys()].some((name) => name === simple || (filter.includes('*') && name.includes(simple))));
+}
+
+/** `$PWD`·`${PWD}`·`$(pwd)`·`%cd%` 로 시작하는 마운트 원천을 작업 디렉터리로 바꾼다. */
+const expandWorkingDir = (source, cwd) => source.replace(/^(?:\$\{?PWD\}?|\$\(pwd\)|%cd%)/i, cwd.replaceAll('\\', '/'));
 
 /**
  * 규칙 표. 각 규칙은 명령 조각 하나와 맥락(cwd·원문 전체)을 받아 걸리면 사유를 돌려준다.
@@ -202,12 +272,14 @@ export const RULES = Object.freeze([
     id: 'openapi-relative-export-path', decision: 'deny',
     why: 'test JVM 의 작업 디렉터리는 api-server/ 라 상대 경로를 주면 루트 api-docs.json 은 그대로이고 api-server/api-docs.json 이 새로 생긴다(2026-09-08).',
     fix: '-Dopenapi.export.path 에 저장소 루트 기준 절대 경로를 준다.',
-    // 플래그는 따옴표를 가린 판에서 찾고 값만 같은 자리의 원문에서 읽는다 — 프롬프트·메시지 속 문구를 명령으로 읽지 않는다.
+    // gradlew 를 부르는 조각에서만 본다 — 다른 에이전트에게 준 프롬프트 속 플래그를 명령으로 읽지 않는다. 값은 원문 단어에서
+    // 따옴표를 벗겨 읽어 PowerShell 의 `"-Dopenapi.export.path=…"` 형태도 잡는다.
     match: ({ raw, code }) => {
-      const at = code.search(/-Dopenapi\.export\.path=/);
-      if (at < 0) return false;
-      const value = /^-Dopenapi\.export\.path=("[^"]*"|'[^']*'|\S+)/.exec(raw.slice(at))?.[1];
-      return value !== undefined && !/^([A-Za-z]:[\\/]|\/)/.test(unquote(value));
+      if (!/gradlew/i.test(code)) return false;
+      return tokens(raw).map(unquote).some((word) => {
+        const value = /^-Dopenapi\.export\.path=(.*)$/.exec(word)?.[1];
+        return value !== undefined && !/^([A-Za-z]:[\\/]|\/)/.test(unquote(value));
+      });
     },
   },
   {
@@ -219,10 +291,7 @@ export const RULES = Object.freeze([
       const filters = gradleTestFilters(raw).filter(({ task }) => task && /(^|:)test$/.test(task));
       if (!filters.length) return false;
       const tagged = taggedClasses(cwd);
-      return filters.some(({ filter }) => {
-        const simple = filter.split('.').at(-1).replace(/\*/g, '');
-        return simple && [...tagged.keys()].some((name) => name === simple || (filter.includes('*') && name.includes(simple)));
-      });
+      return filters.some(({ filter }) => namesTaggedClass(filter, tagged));
     },
   },
   {
@@ -252,7 +321,7 @@ export const RULES = Object.freeze([
       if (!/gitleaks/i.test(code) || !/\bdocker\b/.test(code)) return false;
       const mounts = [...raw.matchAll(/(?:-v|--volume)(?:\s+|=)("[^"]+"|'[^']+'|\S+)/g)].map((match) => unquote(match[1]));
       return mounts.some((mount) => {
-        const source = mount.replace(/:[\\/][^:]*(?::[a-z]+)?$/i, '')
+        const source = expandWorkingDir(mount, cwd).replace(/:[\\/][^:]*(?::[a-z]+)?$/i, '')
           .replace(/^\/([A-Za-z])\//, process.platform === 'win32' ? '$1:/' : '/$1/');
         const dir = isAbsolute(source) || /^[A-Za-z]:/.test(source) ? source : resolve(cwd, source);
         try { return statSync(join(dir, '.git')).isFile(); } catch { return false; }
@@ -265,8 +334,18 @@ export const RULES = Object.freeze([
 export function evaluate(command, { cwd = process.cwd() } = {}) {
   if (typeof command !== 'string' || !command.trim()) return null;
   const hits = [];
+  let here = cwd;
   for (const part of segments(command)) {
-    const context = { command, raw: part.raw, code: part.code, git: gitInvocation(part.code), cwd };
+    // `cd <dir> && …`·`git -C <dir> …` 이 가리키는 디렉터리에서 판정한다(병합 중 여부·작업 트리 판정).
+    const words = tokens(part.raw);
+    if (/^(cd|pushd|set-location|sl)$/i.test(words[0] ?? '') && words[1]) {
+      const target = expandWorkingDir(unquote(words.slice(1).filter((word) => !word.startsWith('-'))[0] ?? '.'), here);
+      here = resolve(here, process.platform === 'win32' ? target.replace(/^\/([A-Za-z])(\/|$)/, '$1:/') : target);
+      continue;
+    }
+    const git = gitInvocation(part.code);
+    const gitDir = git?.dir ? /\s-C\s+("[^"]+"|'[^']+'|\S+)/.exec(part.raw)?.[1] : null;
+    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here };
     for (const rule of RULES) {
       if (hits.some((hit) => hit.id === rule.id)) continue;
       let matched = false;
@@ -290,7 +369,10 @@ export function readHookInput(agent, input) {
     return typeof command === 'string' ? { command, cwd: args.Cwd ?? args.cwd ?? input.workspacePaths?.[0] ?? process.cwd() } : null;
   }
   const raw = input?.tool_input?.command ?? input?.tool_input?.cmd;
-  const command = Array.isArray(raw) ? raw.join(' ') : raw;
+  // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
+  const wrapped = Array.isArray(raw) && raw.length >= 3 && /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.test(raw[0])
+    && /^(-Command|-c|-lc|\/c)$/i.test(raw.at(-2));
+  const command = Array.isArray(raw) ? (wrapped ? raw.at(-1) : raw.join(' ')) : raw;
   return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
 }
 
