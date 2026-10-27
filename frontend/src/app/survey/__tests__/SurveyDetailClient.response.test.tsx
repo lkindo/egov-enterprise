@@ -262,6 +262,50 @@ describe('설문 응답 제출', () => {
     });
   });
 
+  it('🚨 주관식 문항은 글 입력 칸으로 답하고, 글을 적어야 제출되며 답변 칸 번호와 함께 나간다 (2026-10-27)', async () => {
+    mocks.getQuestions.mockResolvedValue([
+      ...QUESTIONS,
+      {
+        ...QUESTIONS[0],
+        srvyQstnSn: 13,
+        qstnSn: 2,
+        qstnTypeCd: '2',
+        qstnCn: '개선할 점을 적어 주세요',
+        items: [{ ...QUESTIONS[0].items[0], srvyArtclSn: 301, srvyQstnSn: 13, artclCn: '자유 응답' }],
+      },
+    ]);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('radio', { name: '만족' }));
+    // 주관식은 답변 칸을 고르는 선택지로 보이지 않는다.
+    expect(screen.queryByRole('radio', { name: '자유 응답' })).not.toBeInTheDocument();
+    const written = screen.getByLabelText('개선할 점을 적어 주세요 답변');
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeDisabled();
+    fireEvent.change(written, { target: { value: '   ' } });
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeDisabled();
+
+    fireEvent.change(written, { target: { value: ' 회의를 줄였으면 합니다 ' } });
+    fireEvent.click(screen.getByRole('button', { name: '응답 제출' }));
+
+    await waitFor(() => expect(mocks.submitAnswers).toHaveBeenCalledTimes(1));
+    expect(mocks.submitAnswers.mock.calls[0][1].answers).toEqual([
+      { srvyQstnSn: 13, srvyArtclSn: 301, rspdntAnsCn: '회의를 줄였으면 합니다' },
+      { srvyQstnSn: 11, srvyArtclSn: 101 },
+    ]);
+  });
+
+  it('답변 칸이 없는 주관식 문항은 답할 수 없다고 알리고 필수에서 뺀다 — 서버 판정과 같다', async () => {
+    mocks.getQuestions.mockResolvedValue([
+      ...QUESTIONS,
+      { ...QUESTIONS[0], srvyQstnSn: 14, qstnSn: 2, qstnTypeCd: '2', qstnCn: '자유롭게 적어 주세요', items: [] },
+    ]);
+    renderClient();
+
+    fireEvent.click(await screen.findByRole('radio', { name: '만족' }));
+    expect(screen.getByText('답변 칸이 아직 없어 응답할 수 없는 문항입니다. 설문 관리자에게 알려 주세요.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '응답 제출' })).toBeEnabled();
+  });
+
   it("'기타' 항목을 고르면 자유 입력이 나타나고 그 값이 함께 나간다", async () => {
     renderClient();
 

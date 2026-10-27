@@ -371,6 +371,39 @@ describe('SurveyQuestionsPanel', () => {
     expect(mocked.createQuestion.mock.calls[0][1]).toEqual(expect.objectContaining({ maxChcCnt: 1 }));
   });
 
+  it('🚨 글로 답하기를 고르면 주관식 유형으로 만든다 — 종전에는 화면이 늘 객관식만 만들었다 (2026-10-27)', async () => {
+    mocked.createQuestion.mockResolvedValueOnce(undefined);
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+    await user.type(await screen.findByLabelText('새 문항 내용'), '개선할 점을 적어 주세요');
+    await user.selectOptions(screen.getByLabelText('선택 방식'), 'free-text');
+    expect(screen.queryByLabelText('최대 선택 수')).not.toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: /문항 추가/ }));
+
+    await waitFor(() => expect(mocked.createQuestion).toHaveBeenCalledTimes(1));
+    expect(mocked.createQuestion.mock.calls[0][1]).toEqual(expect.objectContaining({ qstnTypeCd: '2', maxChcCnt: 1 }));
+  });
+
+  it('🚨 주관식 문항은 글로 답한다고 보이고 항목 추가를 내놓지 않는다 — 칸 없는 기존 문항은 답변 칸을 만들 수 있다', async () => {
+    mocked.createItem.mockResolvedValueOnce(undefined as any);
+    mocked.getQuestions.mockResolvedValue([
+      { ...QUESTION_WITH_ITEM, qstnTypeCd: '2', qstnCn: '개선할 점', items: [{ ...QUESTION_WITH_ITEM.items[0], artclCn: '자유 응답' }] },
+      { ...QUESTION_WITHOUT_ITEMS, srvyQstnSn: 302, qstnSn: 2, qstnTypeCd: '2', qstnCn: '칸 없는 주관식' },
+    ] as any);
+    const user = userEvent.setup();
+    renderPanel();
+    await selectSurvey(user);
+
+    expect(await screen.findByText('응답자는 이 문항에 글로 답합니다.')).toBeInTheDocument();
+    expect(screen.getByText('답변 칸이 없어 응답자가 이 문항에 답할 수 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /항목 추가/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('button', { name: '답변 칸 만들기' }));
+    await waitFor(() => expect(mocked.createItem).toHaveBeenCalledTimes(1));
+    expect(mocked.createItem.mock.calls[0]).toEqual([302, expect.objectContaining({ srvyQstnSn: 302, srvySn: 201, artclCn: '자유 응답' })]);
+  });
+
   it('문항 pending 시작 전 동기 잠금으로 같은 submit을 한 번만 보낸다', async () => {
     let resolveCreate!: () => void;
     mocked.createQuestion.mockReturnValueOnce(new Promise<void>((resolve) => {

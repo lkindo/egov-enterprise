@@ -5,7 +5,7 @@
     "lengthFields": 269,
     "enumFields": 37,
     "nestedValidationFields": 13,
-    "requiredFields": 106,
+    "requiredFields": 107,
     "readOnlyFields": 42,
     "calendarDateFields": 19
   },
@@ -1563,6 +1563,11 @@
         {
           "field": "status",
           "constraint": "NotBlank",
+          "groups": []
+        },
+        {
+          "field": "version",
+          "constraint": "NotNull",
           "groups": []
         }
       ]

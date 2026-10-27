@@ -42,7 +42,8 @@ export interface ApprovalDecision {
   ifmlAtrzSn: number;
   status: Extract<SanctionStatusCode, 'C' | 'R'>;
   reason?: string;
-  version?: number;
+  /** 상세·목록에서 받은 문서 버전. 서버가 필수로 대조한다. */
+  version: number;
 }
 
 export const approvalKeys = {

@@ -9,7 +9,7 @@ import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorIt
 export const ApprovalConfirmRequestSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional(),
-  version: z.number().int().min(0).optional(),
+  version: z.number().int().min(0),
 }))();
 export type ApprovalConfirmRequest = z.infer<typeof ApprovalConfirmRequestSchema>;
 
@@ -405,13 +405,13 @@ export type ApprovalSuggestionsDto = z.infer<typeof ApprovalSuggestionsDtoSchema
 export const ApprovalConfirmRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional(),
-  version: z.number().int().min(0).optional(),
+  version: z.number().int().min(0),
 }))();
 
 export const ApprovalConfirmRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   status: z.enum(["C","R"]),
   reason: z.string().min(0).max(4000).optional().nullable(),
-  version: z.number().int().min(0).optional().nullable(),
+  version: z.number().int().min(0),
 }))();
 
 export const ApproverReplaceRequestRequestSchema = /*#__PURE__*/ (() => z.object({
