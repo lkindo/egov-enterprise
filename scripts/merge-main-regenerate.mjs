@@ -28,6 +28,7 @@ import path from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 // 매니페스트는 경로·줄 형식 모듈만 읽는다(node 내장만 쓴다). 계산 도구는 재사용 투영 그래프를 끌어와, 병합 중 그 안에 충돌 표기가
 // 남으면 이 도구가 시작도 못 한다 — 계산값은 다른 충돌이 다 풀렸을 때 하위 프로세스로만 얻는다.
+import { adapterOutputs } from './agent-skill-adapters.mjs';
 import { ALL_DECISION_INDEXES } from './decision-indexes.mjs';
 import { MANIFEST_PATH, parseManifest } from './harness-baseline-manifest-format.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
@@ -136,6 +137,15 @@ export const GENERATORS = [
     command: ['node', ['scripts/ui-url-state-census.mjs', '--write']],
     check: [['node', ['scripts/ui-url-state-census.mjs', '--check']]],
     rebindUrlApproval: true,
+  },
+  {
+    // 스킬 정본(.agent/skills)을 에이전트마다 찾는 경로(.agents/skills·.claude/skills)에 안내 파일로 노출한다. 다른 생성물을 읽지 않는다.
+    id: 'agent-skill-adapters',
+    requires: 'scripts/agent-skill-adapters.mjs',
+    inputs: under('.agent/skills', '.agents/skills', '.claude/skills'),
+    get outputs() { return adapterOutputs(repoRoot); },
+    command: ['node', ['scripts/agent-skill-adapters.mjs', '--write']],
+    check: [['node', ['scripts/agent-skill-adapters.mjs', '--check']]],
   },
   {
     id: 'atlas',

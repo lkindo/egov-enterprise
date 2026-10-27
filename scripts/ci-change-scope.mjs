@@ -106,6 +106,8 @@ const DOCUMENTATION_ONLY = [
   /^docs\/.*\.(?:md|mdx|txt|csv|png|jpe?g|gif|svg|webp|ico|pdf|woff2?|ttf|eot|mp4|webm)$/i,
   /^\.agent\/memory\/(?:project-context|decisions|known-gaps)\.md$/,
   /^\.agent\/(?:knowledge|skills)\/.*\.md$/,
+  // 스킬 안내 파일은 .agent/skills 정본에서 npm run regen 이 만든다(scripts/agent-skill-adapters.mjs) — 정본과 함께 바뀌는 문서다.
+  /^\.(?:agents|claude)\/skills\/[^/]+\/SKILL\.md$/,
   /^frontend\/public\/governance_harness_atlas\.html$/,
 ];
 

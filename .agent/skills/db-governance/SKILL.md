@@ -1,6 +1,6 @@
 ---
 name: db-governance
-description: DB 오브젝트 변경을 live 메타 표준, 물리 스키마, Flyway, JPA 매핑과 대조해 설계한다.
+description: DB 표·컬럼·인덱스·제약을 새로 만들거나 바꿀 때 쓴다 — live 메타 표준·물리 스키마·Flyway·JPA 매핑과 대조해 설계한다.
 version: 2.0.0
 ---
 

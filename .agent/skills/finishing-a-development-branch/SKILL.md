@@ -41,7 +41,7 @@ For the directly worked branch covered by standing approval:
 
 1. Verify the final diff and commit only this task's paths with `git commit --only -- <paths>`.
 2. Push normally with hooks enabled and create or update the PR against `main`. Use a body file for a multiline description; include the concrete change, validation and material limitations.
-3. Wait for required CI on the latest PR HEAD. Use [.github/required-checks.json](../../../.github/required-checks.json) and the [CI guide](../../../docs/03-guides/cicd-pipeline.md). Local tests do not replace required CI.
+3. Wait for required CI on the latest PR HEAD. Use [.github/required-checks.json](../../../.github/required-checks.json) and the [CI guide](../../../docs/03-guides/cicd-pipeline.md). Local tests do not replace required CI. Judge settlement and red checks with [ci-triage](../ci-triage/SKILL.md) — required aggregates register late, and infrastructure failures are re-run only after evidence.
 4. Merge through the PR after its required CI is green and its current HEAD still matches the reviewed commit. Do not merge directly into `main`, bypass protection, or force-push.
 5. Confirm the PR is merged and its changes are included in `main`, then finish this branch under Step 4. Report the PR link, merge result and cleanup result.
 

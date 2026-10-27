@@ -2,6 +2,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { Page, expect } from '@playwright/test';
+import { screenDate } from '../helpers/screen-date';
 
 export class PromotionPage {
     constructor(private page: Page) {}
@@ -31,7 +32,7 @@ export class PromotionPage {
         
         await endDateInput.scrollIntoViewIfNeeded();
         // [2026-10-20] 종료일은 오늘보다 넉넉히 뒤로 둔다 — 고정 날짜(2026-12-31)는 그날이 지나면 팝업이 게시되지 않아 시험이 붉어진다.
-        await endDateInput.fill(new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10));
+        await endDateInput.fill(screenDate(365));
 
         // Select 'YES' for 'Notice Status' (게시 설정) - It's a Select component
         console.log('>>> [Promotion] Setting Notice Status to YES');

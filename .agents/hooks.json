@@ -1,0 +1,12 @@
+{
+  "egov-agent-guard": {
+    "PreToolUse": [
+      {
+        "matcher": "run_command",
+        "hooks": [
+          { "type": "command", "command": "node ../scripts/agent-guard.mjs --agent antigravity", "timeout": 10 }
+        ]
+      }
+    ]
+  }
+}

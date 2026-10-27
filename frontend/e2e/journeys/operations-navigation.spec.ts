@@ -1,6 +1,7 @@
 import { expect,test } from '../fixtures/browser-test';
 import type { Page } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { screenYmd } from '../helpers/screen-date';
 test.describe('Operational Extension & Uncovered Modules', () => {
     test.use({ storageState: 'playwright/.auth/admin.json' });
     test("외부 인사 목록을 검색하고 등록 버튼을 표시한다", async ({ operationalPage }) => {
@@ -34,7 +35,7 @@ test.describe('Operational Extension & Uncovered Modules', () => {
         const corrected = `${title} corrected`;
         const created = await adminRequest.post(memos, { data: {
             rptTtl: title, rptCn: 'Recipient fixed and first read preserved', rptrId: recipient,
-            memoRptYmd: new Date().toISOString().slice(0, 10).replaceAll('-', ''),
+            memoRptYmd: screenYmd(),
         } });
         expect(created.status()).toBe(201);
         const memoId = (await created.json()).data as number;

@@ -1,5 +1,6 @@
 import { expect,test } from '../fixtures/browser-test';
 import { getAdminBearerToken } from '../utils/admin-token';
+import { screenYmd } from '../helpers/screen-date';
 test.describe('게시판과 커뮤니티', () => {
     test('일반 게시판 작성자는 지정 공지·FAQ 작성 화면과 직접 요청에서 차단된다', async ({ userPage, userRequest }) => {
         // 기본 격리 환경은 공지와 FAQ가 같은 게시판이다. 두 권한을 모두 요구한다.
@@ -51,10 +52,7 @@ test.describe('게시판과 커뮤니티', () => {
     // [2026-10-23 ADR-0040 결정 3] 게시 시작일을 집행한다 — 예약 글은 시작일까지 작성자와 조회 대행 권한자에게만 보이고, 공개된 글의
     //   시작일은 작성자라도 게시글 전체 수정 권한이 있어야 바꾼다(정렬 조작 방지). 날짜는 앱과 같은 Asia/Seoul 로 만든다.
     test('예약 글은 시작일까지 다른 사용자에게 보이지 않고, 공개된 글의 시작일은 작성자가 바꾸지 못한다', async ({ adminRequest, userRequest }) => {
-        const kstYmd = (offsetDays: number) => new Intl.DateTimeFormat('en-CA', {
-            timeZone: 'Asia/Seoul', year: 'numeric', month: '2-digit', day: '2-digit',
-        }).format(new Date(Date.now() + offsetDays * 86_400_000)).replace(/-/g, '');
-        const nextWeek = kstYmd(7);
+        const nextWeek = screenYmd(7);
         const marker = `E2E예약${Date.now()}`;
         const createdBoard = await adminRequest.post('/api/v1/admin/system/board-masters', {
             data: {

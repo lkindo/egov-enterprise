@@ -621,10 +621,13 @@ function skillDistributionViolations(skillFiles, read, distribution = SKILL_DIST
 test('every repository skill is classified and only project skills reach generated outputs', () => {
   const read = file => readFileSync(join(root, file), 'utf8');
   assert.deepEqual(skillDistributionViolations(files, read), []);
-  for (const [skill, kind] of Object.entries(SKILL_DISTRIBUTION)) {
-    assert.equal(isReusableSkillPath(`.agent/skills/${skill}/SKILL.md`), kind === 'project', `${skill} (${kind})`);
+  // 에이전트별 안내 파일(scripts/agent-skill-adapters.mjs)도 정본과 같은 분류를 따른다 — 정본이 빠진 안내 파일은 가리킬 곳이 없다.
+  for (const skillRoot of ['.agent/skills', '.agents/skills', '.claude/skills']) {
+    for (const [skill, kind] of Object.entries(SKILL_DISTRIBUTION)) {
+      assert.equal(isReusableSkillPath(`${skillRoot}/${skill}/SKILL.md`), kind === 'project', `${skillRoot}/${skill} (${kind})`);
+    }
+    assert.equal(isReusableSkillPath(`${skillRoot}/unlisted-generic/SKILL.md`), false);
   }
-  assert.equal(isReusableSkillPath('.agent/skills/unlisted-generic/SKILL.md'), false);
   assert.equal(isReusableSkillPath('docs/README.md'), true);
 
   // red: 분류하지 않은 새 스킬, 라이선스 표기·파일이 없는 외부 스킬, source 를 적은 저장소 스킬, 사라진 project 스킬.

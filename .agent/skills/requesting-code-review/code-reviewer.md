@@ -86,6 +86,18 @@ git diff {BASE_SHA}..{HEAD_SHA}
 - What's wrong
 - Why it matters
 - How to fix (if not obvious)
+- How far you proved it (evidence step below)
+
+### Safety Claims
+[Most changes that look risky are safe because of one or two facts — e.g. "this query only reads rows the caller owns". Name those facts. For each, say how far down this ladder you got and show the proof. Stop at 1–2 means **unproven**; say so.]
+
+1. Said so — worthless on its own.
+2. Pointed at the line — a real `file:line`, or the library's own source.
+3. Walked the failure path step by step and showed it cannot reach.
+4. Ran real code (a script or test) that fails loudly if the claim is wrong — paste what happened.
+5. Reproduced it in the running app (isolated stack, never the shared DB).
+
+**Cleared:** risks you checked and why they are fine, listed separately from the issues. A search that finds nothing is still an answer — say what you searched.
 
 ### Recommendations
 [Improvements for code quality, architecture, or process]
@@ -107,6 +119,7 @@ git diff {BASE_SHA}..{HEAD_SHA}
 
 **DON'T:**
 - Say "looks good" without checking
+- Present a safety claim as proven when it stopped at "said so" or "pointed at the line"
 - Mark nitpicks as Critical
 - Give feedback on code you didn't review
 - Be vague ("improve error handling")

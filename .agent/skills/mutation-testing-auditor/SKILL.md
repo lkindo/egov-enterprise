@@ -1,6 +1,6 @@
 ---
 name: mutation-testing-auditor
-description: 테스트 변경이 실제 결함을 탐지하는지 기존 mutation 게이트와 좁은 음성 검증으로 확인한다.
+description: 테스트를 추가·수정해 그 테스트가 실제 결함을 잡는지 확인할 때 쓴다 — 기존 mutation 게이트와 좁은 음성 검증으로 판정한다.
 version: 2.0.0
 ---
 

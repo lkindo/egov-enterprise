@@ -1,6 +1,6 @@
 ---
 name: zero-downtime-migration-planner
-description: PostgreSQL 스키마 변경을 단계별 Expand–Sync–Redirect–Contract 배포와 검증 가능한 rollback 조건으로 설계한다.
+description: 운영 중인 PostgreSQL 스키마를 바꾸는 마이그레이션을 계획할 때 쓴다 — Expand–Sync–Redirect–Contract 단계와 검증 가능한 rollback 조건으로 설계한다.
 version: 2.0.0
 ---
 

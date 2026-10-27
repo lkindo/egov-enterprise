@@ -1,4 +1,5 @@
 import { Page, Locator, expect } from '@playwright/test';
+import { screenYmd } from '../helpers/screen-date';
 
 export class SurveyPage {
     readonly page: Page;
@@ -62,23 +63,14 @@ export class SurveyPage {
         });
 
         // ── API-based creation (bypasses flaky datepicker UI) ──
-        const today = new Date();
-        const beginDe = new Date(today); // 오늘부터 투표 가능
-        const endDe = new Date(today);
-        endDe.setMonth(today.getMonth() + 3);
-
-        // Use local date (not UTC) to avoid timezone offset issues
-        const fmt = (d: Date) => {
-            const y = d.getFullYear();
-            const m = String(d.getMonth() + 1).padStart(2, '0');
-            const day = String(d.getDate()).padStart(2, '0');
-            return `${y}${m}${day}`; // YYYYMMDD (8 chars)
-        };
+        // 오늘부터 투표 가능 — 화면과 같은 기준의 날짜다(러너 시간이면 CI 의 한국 시각 자정~09시에 시작일이 어제가 된다).
+        const beginYmd = screenYmd();
+        const endYmd = screenYmd(92);
 
         const payload = {
             pollNm: title,
-            pollBgngYmd: fmt(beginDe),
-            pollEndYmd: fmt(endDe),
+            pollBgngYmd: beginYmd,
+            pollEndYmd: endYmd,
             pollKndCd: '001',
             pollDsuseYn: 'N',
             pollArticles: [
@@ -89,7 +81,7 @@ export class SurveyPage {
             ]
         };
 
-        console.log(`>>> [Survey] Creating via API: begin=${fmt(beginDe)}, end=${fmt(endDe)}`);
+        console.log(`>>> [Survey] Creating via API: begin=${beginYmd}, end=${endYmd}`);
 
         // 인증된 페이지로 이동. 동일출처 /api/v1 fetch 는 미들웨어가 HttpOnly accessToken 쿠키에서
         // Bearer 를 주입하므로 토큰을 수동 추출/첨부하지 않는다(HttpOnly 전환 정합).

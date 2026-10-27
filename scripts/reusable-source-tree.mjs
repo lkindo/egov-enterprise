@@ -13,8 +13,11 @@ export const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
  * source·license 를 적고 LICENSE 파일을 둔다)과 이 저장소에서 쓴 범용 스킬(`repository-only`)은 복사하지 않는다. 표에 없는 스킬도
  * 복사하지 않으며 project-composer-source 계약이 분류를 요구한다. 재배포 제한 스킬(docx·pdf·pptx·xlsx, DEC-OPS-182)은 원본도
  * 추적하지 않고, 로컬에 남은 사본은 표에 없으므로 산출물로 새지 않는다. 이 표는 나머지 자산의 라이선스 검토를 대신하지 않는다.
+ * 에이전트별 스킬 안내 파일(`.agents/skills/`·`.claude/skills/`, scripts/agent-skill-adapters.mjs)도 같은 표를 따른다 — 정본이
+ * 복사되지 않는 스킬의 안내 파일만 산출물에 남으면 가리킬 곳이 없다.
  */
 const SKILLS_ROOT = '.agent/skills/';
+const SKILL_ROOTS = Object.freeze([SKILLS_ROOT, '.agents/skills/', '.claude/skills/']);
 export const SKILL_DISTRIBUTION = Object.freeze({
   'api-contract-guardian': 'project',
   'db-governance': 'project',
@@ -25,6 +28,8 @@ export const SKILL_DISTRIBUTION = Object.freeze({
   'resilience-debugger': 'project',
   'visual-auditor': 'project',
   'zero-downtime-migration-planner': 'project',
+  'verify-app': 'project',
+  'ci-triage': 'project',
   'explain-diff': 'repository-only',
   brainstorming: 'external',
   'dispatching-parallel-agents': 'external',
@@ -42,9 +47,10 @@ export const SKILL_DISTRIBUTION = Object.freeze({
 
 /** 생성물로 복사하는 스킬 경로인가. 스킬 밖 경로는 true 다. */
 export function isReusableSkillPath(normalized) {
-  if (!normalized.startsWith(SKILLS_ROOT)) return true;
-  const skill = normalized.slice(SKILLS_ROOT.length).split('/')[0];
-  return SKILL_DISTRIBUTION[skill] === 'project' && normalized.length > SKILLS_ROOT.length + skill.length;
+  const root = SKILL_ROOTS.find((prefix) => normalized.startsWith(prefix));
+  if (!root) return true;
+  const skill = normalized.slice(root.length).split('/')[0];
+  return SKILL_DISTRIBUTION[skill] === 'project' && normalized.length > root.length + skill.length;
 }
 
 export function fail(message) {

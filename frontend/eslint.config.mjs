@@ -79,6 +79,71 @@ const localThemePlugin = {
   },
 };
 
+// [2026-10-27] mutationFn 이 렌더 상태를 클로저로 읽지 못하게 한다.
+//
+// TanStack Query v5 의 useMutation 은 옵션을 패시브 이펙트(observer.setOptions)에서 갱신한다. 렌더는 커밋됐지만
+// 이펙트가 아직 흐르지 않은 순간에 저장을 누르면 mutationFn 은 한 렌더 전의 클로저다 — 화면은 새 상태인데 요청은
+// 직전 상태를 보낸다. 전체 교체 저장이면 실패가 아니라 "롤이 하나도 없는 권한" 같은 성공으로 끝나 아무도 모른다
+// (2026-09 권한 매핑 저장 본문 [] 간헐 실패, 75e7ef349 에서 mutate(variables) 로 고침).
+// 그래서 같은 컴포넌트의 useState·useReducer 상태값을 mutationFn 이 읽으면 막는다. setter·props·경로 값은 보지 않는다.
+// 한계: mutationFn 에 미리 만든 함수(`mutationFn: save`)를 넘기거나 상태에서 파생한 값(useMemo)을 읽으면 보지 못한다.
+const STATE_HOOKS = new Set(["useState", "useReducer"]);
+
+function hookName(callee) {
+  if (callee.type === "Identifier") return callee.name;
+  if (callee.type === "MemberExpression" && !callee.computed && callee.property.type === "Identifier") return callee.property.name;
+  return null;
+}
+
+function isRenderState(variable) {
+  const def = variable.defs[0];
+  if (!def || def.type !== "Variable" || def.node.type !== "VariableDeclarator") return false;
+  const { id, init } = def.node;
+  if (!init || init.type !== "CallExpression" || !STATE_HOOKS.has(hookName(init.callee))) return false;
+  if (id.type !== "ArrayPattern") return false;
+  const first = id.elements[0];
+  const binding = first?.type === "AssignmentPattern" ? first.left : first;
+  return binding?.type === "Identifier" && binding.name === variable.name;
+}
+
+const noRenderStateInMutationFnRule = {
+  meta: {
+    type: "problem",
+    docs: { description: "mutationFn must take its payload from mutate(variables), not from render state" },
+    schema: [],
+  },
+  create(context) {
+    return {
+      CallExpression(node) {
+        if (hookName(node.callee) !== "useMutation") return;
+        const options = node.arguments[0];
+        if (!options || options.type !== "ObjectExpression") return;
+        const property = options.properties.find(
+          (p) => p.type === "Property" && !p.computed && p.key.type === "Identifier" && p.key.name === "mutationFn",
+        );
+        const fn = property?.value;
+        if (!fn || (fn.type !== "ArrowFunctionExpression" && fn.type !== "FunctionExpression")) return;
+        const reported = new Set();
+        for (const reference of context.sourceCode.getScope(fn).through) {
+          const variable = reference.resolved;
+          if (!variable || reported.has(variable) || !isRenderState(variable)) continue;
+          reported.add(variable);
+          context.report({
+            node: reference.identifier,
+            message: `mutationFn 이 렌더 상태 '${variable.name}' 를 클로저로 읽습니다 — useMutation 은 옵션을 이펙트에서 갱신하므로 저장 직전 클릭에 한 렌더 전 값이 나갑니다. 값을 mutate(variables) 로 넘기고 mutationFn 의 매개변수로 받으세요.`,
+          });
+        }
+      },
+    };
+  },
+};
+
+const localQueryPlugin = {
+  rules: {
+    "no-render-state-in-mutation-fn": noRenderStateInMutationFnRule,
+  },
+};
+
 // eslint-config-next 16 은 네이티브 flat config 배열을 export 한다. (ESLint 9 + next 16)
 // 이전의 FlatCompat("next/core-web-vitals", "next/typescript") 방식은 @eslint/eslintrc 검증기에서
 // 순환 구조 크래시를 일으켜, 네이티브 flat config 직접 spread 로 전환한다.
@@ -96,9 +161,11 @@ const eslintConfig = [
   {
     plugins: {
       "local-theme": localThemePlugin,
+      "local-query": localQueryPlugin,
     },
     rules: {
       "local-theme/enforce-design-tokens": "warn",
+      "local-query/no-render-state-in-mutation-fn": "error",
       "@typescript-eslint/no-explicit-any": "warn",
       "@typescript-eslint/no-unused-vars": [
         "warn",

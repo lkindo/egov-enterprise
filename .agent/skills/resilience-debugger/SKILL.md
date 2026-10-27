@@ -1,6 +1,6 @@
 ---
 name: resilience-debugger
-description: 빌드·런타임·DB·E2E 실패를 원인→증거→최소 수정→재검증 순서로 진단하며 환경 상태를 안전하게 다룬다.
+description: 빌드·런타임·DB·E2E 가 실패했을 때 쓴다 — 원인→증거→최소 수정→재검증 순서로 진단하며 환경 상태를 안전하게 다룬다.
 version: 2.0.0
 ---
 
