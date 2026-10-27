@@ -277,6 +277,10 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     || /(?:설계 문서|§7)[^\n]{0,120}이를 대신한다/u.test(audit)) {
     errors.push('protocol §2.3 must not let a design review replace the pre-merge review of the diff');
   }
+  // [2026-10-27 DEC-OPS-387] 다른 회사 모델은 메인 에이전트 기준이고 모델로 가린다 — `agy` 는 Claude 모델도 내준다.
+  if (!audit.includes('메인 에이전트와 다른 회사의 모델로 두고 모델을 명시한다') || !audit.includes('회사는 실행 CLI 가 아니라 모델로 가린다')) {
+    errors.push('protocol §2.3 must pick the other-vendor reviewer relative to the main agent, by model');
+  }
   if (!activeProtocol.includes('식별자 축, 동시성·잠금, 게이트 의미를 보는 관점은 채택률로 줄이지 않는다')) {
     errors.push('protocol §7.4 must not let adoption rates retire high-severity review lenses');
   }
@@ -618,6 +622,8 @@ test('DEC-OPS-387 approval and transmission pins fail with their own message', (
     ['agents', '사용자가 맡긴 변경 작업은 아래 완료 범위까지가 그 요청이다', '커밋은 매번 따로 묻는다', 'completion scope of assigned work'],
     ['agents', '비밀·토큰·쿠키·개인정보·운영 데이터·`.env` 내용은 보내지 않으며, 원문에 그런 내용이 있으면 빼거나 먼저 묻는다', '무엇이든 보낸다', 'cross-vendor review transmission'],
     ['protocol', '예외는 사용자가 그 우회를 명시적으로 지시한 경우뿐', '예외는 에이전트가 필요하다고 판단한 경우', 'hook bypass to an explicit user instruction'],
+    ['protocol', '메인 에이전트와 다른 회사의 모델로 두고 모델을 명시한다', '다른 회사 모델(codex·agy)로 두고', 'relative to the main agent, by model'],
+    ['protocol', '회사는 실행 CLI 가 아니라 모델로 가린다', '회사는 실행 CLI 로 가린다', 'relative to the main agent, by model'],
   ];
   for (const [source, from, to, expected] of cases) {
     assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);

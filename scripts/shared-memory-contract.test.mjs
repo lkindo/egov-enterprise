@@ -1116,6 +1116,8 @@ const workflowInstructionRegressions = [
   ['baseline failures need permission', /get explicit permission to proceed/u],
   ['mandatory re-review', /Don't skip the re-review/u],
   ['generated code needs a human', /Exceptions \(ask your human partner\)/u],
+  // [2026-10-27 DEC-OPS-387] 다른 회사 검토자는 메인 에이전트 기준이다 — Claude 메인만 가정한 고정 목록으로 되돌리지 않는다.
+  ['reviewer vendor fixed to one main agent', /this machine has Codex \(`codex exec`\) and Antigravity/u],
 ];
 
 function workflowSkillViolations(files) {
@@ -1177,6 +1179,7 @@ test('workflow skills reject restored conflicting instructions and missing autho
     ['using-git-worktrees', '- **Fix:** Report failures, get explicit permission to proceed', 'baseline failures need permission'],
     ['subagent-driven-development', "- Don't skip the re-review", 'mandatory re-review'],
     ['test-driven-development', '**Exceptions (ask your human partner):**', 'generated code needs a human'],
+    ['requesting-code-review', 'prefer a model from a different vendor when one is installed — this machine has Codex (`codex exec`) and Antigravity (`agy -p`)', 'reviewer vendor fixed to one main agent'],
   ];
   for (const [skill, instruction, label] of regressions) {
     const mutated = { ...files, [skill]: `${files[skill]}\n${instruction}\n` };
