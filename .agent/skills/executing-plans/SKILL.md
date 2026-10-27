@@ -77,7 +77,7 @@ A failing test or an already-declared dependency that is not installed is a caus
 - Reference skills when plan says to
 - Between batches: report; wait only when a decision is pending
 - Stop on the conditions above, don't guess
-- Never start implementation on main/master branch without explicit user consent
+- Never start implementation on main/master — create a work branch first (AGENTS.md "공유 워킹트리와 Git")
 
 ## Integration
 

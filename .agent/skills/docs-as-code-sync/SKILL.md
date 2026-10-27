@@ -15,7 +15,7 @@ version: 2.0.0
 1. 변경의 소비자와 문서 영향 반경을 검색한다.
 2. 정본을 하나만 정하고 다른 문서는 요약과 링크만 둔다.
 3. 흐름이나 경계가 바뀌었을 때만 Mermaid와 예시를 갱신한다.
-4. accepted 아키텍처 결정은 ADR에 기록하고 `.agent/memory/decisions.md`는 인덱스만 갱신한다.
+4. accepted 아키텍처 결정은 ADR에 기록하고 [ADR 색인](../../../docs/02-architecture/decisions/README.md)에 링크한 뒤, 5열 한 줄을 [decisions.md 기록 템플릿](../../memory/decisions.md)이 정한 곳에 둔다 — 어느 경로를 고치든 걸리면 `decisions.md` 의 ADR 표, 아니면 그 ADR 이 주로 걸리는 영역 색인 표 맨 위와 `decisions.md` 목록의 그 영역 줄(ID·제목). 색인이 바뀌면 `npm run regen` 으로 Atlas 를 다시 만든다.
 5. 지속적인 사실·gap이 달라졌을 때만 `.agent/memory/` 3종을, 운영 결정은 [AGENTS.md 기록 기준](../../../AGENTS.md#documentation-and-memory)이 정한 결정 색인(기본은 걸리는 경로의 영역 결정 색인)을 같은 변경 세트로 갱신한다.
 6. 헌법 변경이 필요하면 제안과 근거를 먼저 제시하고 사용자의 명시 승인 전에는 본문을 수정하지 않는다.
 7. 링크·문서 계약과 관련 코드 검증을 실행하고, 확인하지 못한 외부 상태를 분리한다.

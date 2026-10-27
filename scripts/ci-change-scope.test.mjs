@@ -47,6 +47,29 @@ test('documentation and Atlas-only changes run governance without heavy leaves',
   assert.equal(result.mutation, false);
 });
 
+// [2026-10-27 DEC-OPS-387] 에이전트 하네스만 바꾼 변경은 미분류 전수가 아니다 — 이관·PIT 는 돌지 않고, 읽는 시험의 축과 운영 계약만 돈다.
+test('agent harness guard, skill adapter generator and hook adapters select only their reader axes', () => {
+  const guard = classifyChangedFiles(['scripts/agent-guard.mjs', 'scripts/agent-guard.test.mjs', 'scripts/agent-skill-adapters.mjs']);
+  assert.deepEqual(guard.unknownFiles, []);
+  assert.equal(guard.secretScan, true);
+  assert.equal(guard.backend, true);
+  assert.equal(guard.migration, false);
+  assert.equal(guard.mutation, false);
+  assert.equal(guard.mutationMigrationTool, false);
+  assert.equal(guard.frontend, false);
+  const hooks = classifyChangedFiles(['.claude/settings.json', '.codex/hooks.json', '.agents/hooks.json']);
+  assert.deepEqual(hooks.unknownFiles, []);
+  assert.equal(hooks.backend, false);
+  assert.equal(hooks.migration, false);
+  assert.equal(hooks.mutation, false);
+  // 훅 어댑터를 읽는 시험은 늘 도는 운영 계약뿐이다 — 루트를 가리키는 프런트 시험은 읽기로 세지 않는다(2026-10-27 독립 검토).
+  assert.equal(hooks.frontend, false);
+  assert.equal(hooks.e2e, false);
+  assert.equal(hooks.secretScan, true);
+  // 실행 기록은 verify.mjs·pre-push 가 import 하는 실행 경로라 표에 없다 — 미분류 전수로 남는다.
+  assert.deepEqual(classifyChangedFiles(['scripts/verification-record.mjs']).unknownFiles, ['scripts/verification-record.mjs']);
+});
+
 test('backend production changes select backend, e2e, and mutation', () => {
   const result = classifyChangedFiles([
     'business-core/src/main/java/nuri/business/service/auth/AuthServiceImpl.java',

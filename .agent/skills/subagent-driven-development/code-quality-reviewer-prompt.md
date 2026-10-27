@@ -7,7 +7,7 @@ Use this template when dispatching a code quality reviewer subagent.
 **If you also run a spec compliance review, dispatch this after it passes.** Pass the user's original request as `USER_REQUEST`.
 
 ```
-Task tool (code-reviewer):
+Subagent (general-purpose; Claude Code: Agent tool — there is no code-reviewer type):
   Use template at requesting-code-review/code-reviewer.md
 
   USER_REQUEST: [the user's original request, quoted word for word]

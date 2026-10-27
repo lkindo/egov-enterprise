@@ -26,8 +26,8 @@
 ### [Stage 1] Dispatch: 등급 판정 및 Spec 발행
 - **Action**: 에이전트가 등급(L0~L2)을 제안하고 **Task Specification**을 작성한다. 현재 사용자 요청 또는 유효한 포괄 승인에 그 변경 권한이 이미 포함되면 등급·SCOPE 를 고지하고 진행하며, 포함되지 않은 L1/L2만 추가 승인을 받는다. 분석·진단 요청은 수정 권한으로 간주하지 않는다.
 - **Fast-Track (L0)**: 승인 절차 없이 즉시 구현 단계로 진입 가능하다. 단, [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당하는 작업은 L0로 분류하거나 Fast-Track으로 우회할 수 없다.
-- **포괄 승인(Standing Approval)**: 사용자가 배치/연속 작업에 대해 포괄적 진행 지시(예: "진행해", "나머지 진행해", ultracode 모드)를 준 경우, 메인 에이전트는 각 항목마다 재승인을 받지 않고 **등급·SCOPE 를 1줄로 밝힌 뒤 진행**할 수 있다. 단, [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당하는 되돌리기 어렵거나 외부 상태를 바꾸는 작업은 포괄 승인만으로 수행하지 않고 **개별 명시 승인**을 받는다. 현재 요청이 그 동작의 정확한 대상과 영향을 이미 명시 승인했다면 그 승인으로 충분하며, 범위를 벗어난 새 대상·새 동작에만 추가 승인을 받는다.
-- **작업 브랜치 마무리**: 직접 맡은 작업의 PR·병합·브랜치 삭제는 [AGENTS.md의 사용자 상시 승인과 다른 작업 보호 경계](../../AGENTS.md#공유-워킹트리와-git)를 따른다. 이미 승인된 완료 절차를 단계마다 다시 묻지 않으며, 스킬의 일반적인 선택지 제시 절차가 그 승인을 취소하지 않는다.
+- **포괄 승인(Batch Approval)**: 사용자가 배치/연속 작업에 대해 포괄적 진행 지시(예: "진행해", "나머지 진행해")를 준 경우, 메인 에이전트는 각 항목마다 재승인을 받지 않고 **등급·SCOPE 를 1줄로 밝힌 뒤 진행**할 수 있다. 단, [AGENTS.md의 안전 경계](../../AGENTS.md#공통-작업-원칙)에 해당하는 되돌리기 어렵거나 외부 상태를 바꾸는 작업은 포괄 승인만으로 수행하지 않고 **개별 명시 승인**을 받는다. 현재 요청이 그 동작의 정확한 대상과 영향을 이미 명시 승인했다면 그 승인으로 충분하며, 범위를 벗어난 새 대상·새 동작에만 추가 승인을 받는다.
+- **작업 브랜치 마무리**: 직접 맡은 작업의 PR·병합·브랜치 삭제는 [AGENTS.md의 사용자 상시 승인과 다른 작업 보호 경계](../../AGENTS.md#공유-워킹트리와-git)를 따른다. 이 상시 승인은 위 포괄 승인과 별개다 — 포괄 승인이 안전 경계를 넘지 못한다는 규칙은 이 완료 범위를 줄이지 않고, 상시 승인도 그 밖의 안전 경계 작업을 허락하지 않는다. 이미 승인된 완료 절차를 단계마다 다시 묻지 않으며, 스킬의 일반적인 선택지 제시 절차가 그 승인을 취소하지 않는다.
 
 ### [Stage 2] Execution: 자율 구현
 
@@ -37,7 +37,7 @@
 - **Direct**: 메인 에이전트가 직접 구현 — 대부분 작업의 기본값.
 - **위임(Delegation)**: 작업의 규모·성격에 따라 아래 수단에 위임한다. *수단은 오퍼레이터별 매핑 사항일 뿐, 그 자체가 규범은 아니다.*
   - *단일 서브에이전트* — 깊은 탐색·정밀 디버깅·다중 파일 조사 등 하나의 집중 작업. (Claude Code: Agent 도구 / Antigravity: 네이티브 서브에이전트·스킬)
-  - *워크플로우(다중 에이전트 팬아웃)* — 대규모·기계적 반복 작업(일괄 리팩터, 전수 감사·트리아지, 마이그레이션 스윕). parallel/pipeline + verify/repair 내장. (Claude Code: Workflow 도구, 사용자 opt-in[포괄 승인/ultracode] 하에서만)
+  - *워크플로우(다중 에이전트 팬아웃)* — 대규모·기계적 반복 작업(일괄 리팩터, 전수 감사·트리아지, 마이그레이션 스윕). parallel/pipeline + verify/repair 내장. (Claude Code: Workflow 도구 — 사용자가 `ultracode` 를 쓰거나 워크플로·다중 에이전트 실행을 직접 요청했을 때만. "진행해" 같은 포괄 승인은 이 동의가 아니다 — 도구의 플랫폼 규칙이 이 문서보다 위다)
 
 > **위임의 불변 규칙(실제로 강제되는 것)**: 무엇을 어떤 수단으로 위임하든 — ① 위임 대상에 **컨텍스트 패킷(§2.2)** 을 전달하고, ② **메인 에이전트가 산출물을 직접 재검증(§2.3)** 해야 완료로 인정한다. 위임은 이 두 규칙의 준수로만 의미를 가지며, "어떤 모드인가"라는 라벨링은 요구하지 않는다.
 
@@ -64,7 +64,7 @@
 #### 2.3 Audit 귀속 원칙
 - **구현은 위임해도, 감사(Stage 3)와 검증(Stage 4)은 반드시 메인 에이전트가 수행한다.**
 - 서브에이전트/CLI/**워크플로우가 자체 검증(내부 verify) 통과를 보고하더라도**, 메인 에이전트는 이를 완료 증거로 신뢰하지 않는다. 반드시 **독립적으로 게이트(§4.1)를 직접 재실행**하고 산출물(Diff)을 직접 검토한 후에만 Stage 3으로 진입·완료를 선언한다. *(워크플로우의 내부 verify 결과 ≠ 완료 증거.)*
-- **의미를 바꾸는 변경의 독립 검토**: 인가·개인정보(H3), 물리 스키마(H1), 식별자 축(예: 소유를 `esntlId` 로 판정할지 로그인 ID 로 판정할지, DEC-OPS-358), 게이트 의미(예: `gates.json` 항목이나 census 가 무엇을 단언하는지)를 바꾸는 변경은 병합 전에 독립 적대 검토를 한 번 둔다. 검토자에게는 메인 에이전트의 Task Spec 보다 먼저 **사용자 원문 요청(그대로 인용)과 diff** 를 주고, 검토자는 재진술을 읽기 전에 오해를 드러낼 반례 1~2개를 적는다 — 재진술에 든 오해가 검토자에게 그대로 옮겨 가지 않게 한다. 감사·검증 책임은 그대로 메인 에이전트에 있다. 설계 문서를 두고 검토한 작업도 마찬가지다 — §7 의 설계 검토는 구현 전의 재진술을 보므로 구현 diff 에 대한 이 검토를 대신하지 않는다. 템플릿은 [.agent/skills/subagent-driven-development/spec-reviewer-prompt.md](../../.agent/skills/subagent-driven-development/spec-reviewer-prompt.md)·[code-reviewer.md](../../.agent/skills/requesting-code-review/code-reviewer.md)다.
+- **의미를 바꾸는 변경의 독립 검토**: 인가·개인정보(H3), 물리 스키마(H1), 식별자 축(예: 소유를 `esntlId` 로 판정할지 로그인 ID 로 판정할지, DEC-OPS-358), 게이트 의미(예: `gates.json` 항목이나 census 가 무엇을 단언하는지)를 바꾸는 변경은 병합 전에 독립 적대 검토를 한 번 둔다. 검토자에게는 메인 에이전트의 Task Spec 보다 먼저 **사용자 원문 요청(그대로 인용)과 diff** 를 주고, 검토자는 재진술을 읽기 전에 오해를 드러낼 반례 1~2개를 적는다 — 재진술에 든 오해가 검토자에게 그대로 옮겨 가지 않게 한다. 감사·검증 책임은 그대로 메인 에이전트에 있다. 설계 문서를 두고 검토한 작업도 마찬가지다 — §7 의 설계 검토는 구현 전의 재진술을 보므로 구현 diff 에 대한 이 검토를 대신하지 않는다. 검토자는 가능하면 다른 회사 모델로 두고(DEC-OPS-386 ⑥), 보내도 되는 것과 안 되는 것은 [AGENTS.md 안전 경계의 예외](../../AGENTS.md#공통-작업-원칙)를 따른다. 템플릿은 [.agent/skills/subagent-driven-development/spec-reviewer-prompt.md](../../.agent/skills/subagent-driven-development/spec-reviewer-prompt.md)·[code-reviewer.md](../../.agent/skills/requesting-code-review/code-reviewer.md)다.
 
 #### 2.4 실패 복구 프로토콜 (Failure Recovery)
 위임한 작업이 실패하거나 헌법 위반 코드를 생산한 경우:
@@ -144,7 +144,7 @@
 | `npm run verify:e2e` | 운영 계약·E2E type-check 후 격리 runner가 새 일회용 DB·API·FE를 생성해 Playwright 실행. 운영 대상을 향해 실행하지 않음 |
 | `npm run verify:ops` | `.github/required-checks.json`과 현재 GitHub ruleset exact-match. 네트워크와 admin read 권한 필요 |
 
-> **게이트 계층**: pre-commit은 빠른 경고, pre-push는 변경 범위별 로컬 차단, `localGate`는 Docker를 포함한 넓은 Gradle 검증, required CI는 병합 권위다. 하네스 목록·실행 소비자는 [governance gates manifest](../../config/governance/gates.json), 훅의 정확한 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), required check·review 정책은 [.github/required-checks.json](../../.github/required-checks.json)을 따른다.
+> **게이트 계층**: pre-commit은 빠른 경고, pre-push는 변경 범위별 로컬 차단, `npm run verify`(기본 `full`)는 Docker를 포함한 넓은 로컬 검증(`./gradlew localGate` 는 그 Gradle 부분집합이다), required CI는 병합 권위다. 하네스 목록·실행 소비자는 [governance gates manifest](../../config/governance/gates.json), 훅의 정확한 포함 task와 우회 경계는 [.githooks/README.md](../../.githooks/README.md), required check·review 정책은 [.github/required-checks.json](../../.github/required-checks.json)을 따른다.
 >
 > ⚠ **pre-push 에는 E2E 가 없다.** 로컬 게이트 전부 그린이어도 E2E 는 검증되지 않은 상태다.
 > UI 를 건드리는 변경은 과거 문서나 로컬 결과로 CI 상태를 추정하지 말고, **현재 required CI와 E2E 결과를 직접 확인한 뒤에** 완료로 선언한다.
@@ -210,7 +210,7 @@
 - CI 러너는 UTC, 로컬 `npm run verify`의 기본 시간대는 KST(`Asia/Seoul`)이고 명시한 `TZ`가 이긴다. 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 한 번 더 확인한다(bash·PowerShell·cmd에서 같은 형태이고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다(그 기계의 시간대를 따른다).
 - 생략했거나 CI에만 맡긴 검사는 완료 보고에 그 사실과 대신 확인할 CI 잡을 적고, 그 잡이 끝난 뒤에 완료를 선언한다.
 - CI가 red이면 실패한 잡의 로그로 원인을 판정하고 그 원인에 맞는 표적 검사만 로컬에서 다시 실행한다. 인프라 일시 장애로 판정한 경우에만 실패한 잡을 재실행한다. 같은 원인의 실패 횟수는 §2.4대로 센다.
-- 훅을 우회하지 않는다(`--no-verify`, `SKIP_HARNESS=1` 포함). 같은 검사를 이미 수동으로 돌렸어도 마찬가지다. pre-push에는 E2E가 없으므로 UI 변경의 완료는 required CI 결과로 판단한다(§4.1).
+- 훅을 우회하지 않는다(`--no-verify`, `SKIP_HARNESS=1` 포함). 같은 검사를 이미 수동으로 돌렸어도 마찬가지다. 예외는 사용자가 그 우회를 명시적으로 지시한 경우뿐이며, 실행 전 가드가 우회 플래그·환경 변수·`core.hooksPath` 변경을 보고 묻는다. pre-push에는 E2E가 없으므로 UI 변경의 완료는 required CI 결과로 판단한다(§4.1).
 
 ### 6.3 무거운 검증은 하나씩
 - 다음은 한 기계에서 동시에 하나만 실행한다: 전체 Vitest, Gradle 전체 테스트·`harnessTest`·`schemaValidationTest`, `npm run verify`, 재사용 base 생성·검증(`npm run base:verify`, `base:generate-db`·`base:generate-source`, 메뉴 snapshot 갱신), 격리 E2E, 그리고 이들을 실행하는 pre-push. 워크트리가 여러 개여도 CPU·메모리·Docker를 함께 쓰므로 마찬가지다.

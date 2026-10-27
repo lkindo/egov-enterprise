@@ -43,7 +43,8 @@ const OUTPUT_AXIS = {
 };
 const JS_SOURCE = /\.(?:mjs|cjs|js|ts|tsx|mts|cts)$/;
 const DEPENDENCY_CACHE = new Map();
-const ROOT_PATH = /(?:scripts|config|tools)\/[\w.\-*$/]*/g;
+// 에이전트 하네스의 훅 어댑터(`.claude/`·`.codex/`·`.agents/`)도 표 경로다 — 그 문자열을 가리키는 시험도 읽기로 센다(DEC-OPS-387).
+const ROOT_PATH = /(?:scripts|config|tools|\.(?:claude|codex|agents))\/[\w.\-*$/]*/g;
 const DIRECTORIES = new Set(['scripts', 'config/modules', 'tools', 'tools/project-composer']);
 
 /** Java 소스를 리터럴(문자열·텍스트 블록)과 그 사이 코드 조각으로 나눈다. 주석과 문자 리터럴은 버린다. */
@@ -121,7 +122,9 @@ function sourceDependencies(file, source, fileSet) {
     const bare = target.replace(/\/+$/, '');
     if (!continues && DIRECTORIES.has(bare)) result.directories.add(bare);
     for (const token of pathTokens(value)) result.paths.add(token);
-    if (relative && !target.startsWith('..')) result.paths.add(target);
+    // 저장소 루트 자체(`'../..'` 가 '.' 로 풀린 것)는 경로 읽기가 아니다 — 접두 비교에서 '.' 은 점으로 시작하는 경로만 덮어
+    // 훅 어댑터에 읽지도 않는 축을 붙였다(2026-10-27 독립 검토). 디렉터리째 읽기는 DIRECTORIES 가 따로 센다.
+    if (relative && target !== '.' && !target.startsWith('..')) result.paths.add(target);
   };
   let spawnsNode = false;
   if (file.endsWith('.java')) {
@@ -316,6 +319,21 @@ test('a harness test that starts reading a table path makes the table red until 
   // 축을 켜면 다시 녹색이다 — 계약은 축이 사실과 같기를 요구하지 표를 막지 않는다.
   const table = GENERATOR_TOOL_PATHS.map(entry => (entry.path === 'tools/project-composer/' ? { ...entry, axes: ['backend', 'e2e'] } : entry));
   assert.deepEqual(toolPathMismatches({ files, read, table }), []);
+});
+
+test('a test that starts reading an agent hook adapter makes the table red, while a bare repository-root reference does not', () => {
+  // 의존성은 파일 이름으로 캐시되므로 두 사례는 서로 다른 합성 파일을 쓴다.
+  const withReader = (reader, body) => ({
+    files: [...repositoryFiles, reader],
+    read: file => (file === reader ? body : readRepository(file)),
+  });
+  const problems = toolPathMismatches(withReader('frontend/src/__tests__/synthetic-hook-reader.test.ts',
+    "const hooks = readFileSync(join(root, '.codex/hooks.json'), 'utf8');"));
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /^\.codex\/hooks\.json: frontend 를 켜야 한다\(읽는 소스: .*synthetic-hook-reader\.test\.ts\)$/);
+  // 루트만 가리키는 상대 경로는 점으로 시작하는 표 경로를 읽은 것으로 세지 않는다.
+  assert.deepEqual(toolPathMismatches(withReader('frontend/src/__tests__/synthetic-root-reference.test.ts',
+    "const root = resolve(__dirname, '../../..');")), []);
 });
 
 test('directory reads, joined literals and execution chains inside the table count as reads', () => {

@@ -24,6 +24,23 @@ const CASES = {
       'git push origin feat/x',
       "git commit --only -F - -- a.txt <<'EOF'\n가드가 git commit --no-verify 를 묻는다\nEOF"],
   },
+  // 2026-10-27 감사: `--no-verify` 만 잡고 환경 변수·hooksPath 우회는 그대로 통과했다(.githooks/README.md 「우회」).
+  'git-hook-bypass': {
+    hit: ['SKIP_HOOKS=1 git push', 'SKIP_HARNESS=1 git push origin feat/x', 'export SKIP_HOOKS=1', '$env:SKIP_HARNESS = "1"', 'set SKIP_HOOKS=1',
+      'git -c core.hooksPath=/dev/null push', 'git config --unset core.hooksPath', 'git config core.hooksPath D:/project/egov-enterprise/.githooks',
+      // 2026-10-27 독립 검토(Argon)가 찾은 미탐: Git 2.46 하위 명령 형태·섹션째 지우기·--config-env·cross-env·따옴표 친 -c 값.
+      'git config unset core.hooksPath', 'git config set core.hooksPath D:/x', 'git config --remove-section core',
+      'git --config-env=core.hooksPath=HOOKS_DIR push', 'git -c "core.hooksPath=/dev/null" push', 'npx cross-env SKIP_HOOKS=1 git push',
+      // 2026-10-27 독립 검토(Codex)가 찾은 미탐: 값을 붙인 -c, 값 자체가 get 인 설정, CMD 의 따옴표 친 set, 하위 명령 형태의 섹션 지우기.
+      'git -ccore.hooksPath=/dev/null push', 'git config core.hooksPath get', 'set "SKIP_HOOKS=1"', 'set "SKIP_HARNESS=1" && git push',
+      'git config remove-section core'],
+    pass: ['git push origin feat/x', 'SKIP_HOOKS= git push', '$env:SKIP_HARNESS=""', 'grep -n SKIP_HOOKS=1 .githooks/pre-push',
+      'echo "SKIP_HARNESS=1 git push 는 묻는다"', 'git config core.hooksPath .githooks', 'git config --get core.hooksPath',
+      'NO_HOOK_INSTALL=1 ./gradlew compileJava', 'git config get core.hooksPath', 'git config set core.hooksPath .githooks',
+      'git config --remove-section alias', 'npx cross-env TZ=UTC npm run verify:fast',
+      // 같은 검토가 찾은 오탐: 메시지에 적은 -c core.hooksPath 는 명령이 아니다.
+      'git commit --only -m "guard: ask on git -c core.hooksPath=/dev/null" -- scripts/agent-guard.mjs'],
+  },
   'git-force-push': {
     hit: ['git push --force-with-lease origin feat/x', 'git push -f origin feat/x', 'git push origin +feat/x'],
     pass: ['git push -u origin feat/x', 'git push origin --delete feat/old', 'git commit --only -m "정리; git push --force 는 쓰지 않는다" -- a.txt',
@@ -33,14 +50,27 @@ const CASES = {
     // 2026-10-27 독립 검토(Antigravity)가 찾은 미탐: 따옴표 속 `<<`·주석 속 아포스트로피가 뒤 줄의 실제 명령을 지웠다.
     hit: ['git reset --hard origin/main', 'git clean -fdx', 'git checkout -- .', 'git checkout .', 'git restore .', 'git branch -D feat/x', 'git stash drop',
       'git commit --only -m "Fix << EOF parser" -- a.txt\ngit reset --hard', "# Let's check\ngit reset --hard\n# It's done",
-      'node -e "console.log(1 << shift)"\ngit reset --hard'],
-    pass: ['git reset --soft HEAD~1', 'git checkout main', 'git restore --staged .', 'git restore -- scripts/dev.mjs', 'git branch -d feat/x', 'git stash list'],
+      'node -e "console.log(1 << shift)"\ngit reset --hard',
+      // 작업 트리 디렉터리와 미추적 산출물 삭제는 브랜치 삭제와 별개로 승인을 받는다(SOP §6.6).
+      'git worktree remove D:\\wt-board', 'git worktree remove --force D:\\wt-board', 'git branch -df feat/x', 'git branch -fd feat/x',
+      // 값을 띄어 쓴 전역 옵션(`--git-dir <경로>`)을 하위 명령으로 읽으면 규칙이 아예 걸리지 않았다.
+      'git --git-dir D:/elsewhere/.git branch -D feat/x'],
+    pass: ['git reset --soft HEAD~1', 'git checkout main', 'git restore --staged .', 'git restore -- scripts/dev.mjs', 'git branch -d feat/x', 'git stash list',
+      'git worktree list', 'git worktree prune'],
   },
   'git-commit-without-only': {
-    hit: ['git commit -am "x"', 'git commit -m "x"', 'cd frontend && git commit -m "x"', 'MSYS_NO_PATHCONV=1 git commit -m "x"', '& git commit -m "x"'],
+    hit: ['git commit -am "x"', 'git commit -m "x"', 'cd frontend && git commit -m "x"', 'MSYS_NO_PATHCONV=1 git commit -m "x"', '& git commit -m "x"',
+      // --only 여도 작업 트리 전체 경로나 -a 면 다른 작업의 변경이 모두 들어간다(2026-10-27 감사).
+      'git commit --only -m "x" -- .', 'git commit --only -m "x" .', 'git commit --only -m "x" -- ":/"', 'git commit -o -am "x" -- a.txt',
+      // 독립 검토(Argon)가 찾은 미탐: `--` 없이 따옴표 친 경로, PowerShell `.\`, 상위 디렉터리, `:(top)`.
+      'git commit --only -m "x" ":/"', 'git commit --only -m "x" "."', 'git commit --only -m "x" -- .\\', 'git commit --only -m "x" -- ..',
+      'git commit --only -m "x" -- ":(top)"'],
     // git 이 명령 자리에 있을 때만 git 호출이다 — 검색어·인자로 쓴 git 은 막지 않는다(독립 검토가 찾은 오탐).
     pass: ['git commit --only -m "x" -- a.txt', 'git commit --dry-run', 'git log -1', 'rg git commit docs', 'grep -rn "git commit" docs/',
-      'echo git commit -am x', 'git commit --only -m "Use `"--no-verify`" carefully" -- a.txt'],
+      'echo git commit -am x', 'git commit --only -m "Use `"--no-verify`" carefully" -- a.txt',
+      'git commit --only -m . -- a.txt', 'git commit --only -m "x" -- docs/a.md scripts/b.mjs',
+      // 같은 검토가 찾은 오탐: 경로 뒤 주석의 `.`, 메시지 `--`.
+      'git commit --only -m "x" -- a.txt # .', 'git commit --only -m "--" -- a.txt'],
   },
   'powershell-herestring-commit': {
     hit: ["@'\n제목\n\n본문\n'@ | git commit --only -F - -- a.txt", "git commit --only -F - @'\n제목\n'@ -- a.txt"],
@@ -67,7 +97,8 @@ const CASES = {
   },
   'worktree-name-collides-with-e2e': {
     hit: ['git worktree add D:\\wt-quality -b fix/x origin/main', 'git worktree add -b fix/x ../wt-contracts origin/main'],
-    pass: ['git worktree add D:\\wt-board -b fix/x origin/main', 'git worktree list'],
+    // setup 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다(2026-10-27 감사).
+    pass: ['git worktree add D:\\wt-board -b fix/x origin/main', 'git worktree list', 'git worktree add D:\\wt-setup -b fix/x origin/main'],
   },
 };
 
@@ -96,6 +127,54 @@ test('git-commit-without-only: 병합 충돌을 푼 커밋은 막지 않는다',
     assert.ok(!ruleOf('git commit --no-edit', root).includes('git-commit-without-only'));
   } finally {
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('git-discard-worktree: 끝 커밋이 원격 추적 ref 에 있는 브랜치의 강제 삭제는 묻지 않는다', () => {
+  const root = tempDir('agent-guard-branch-');
+  const git = (...args) => execFileSync('git', ['-c', 'user.email=guard@test', '-c', 'user.name=guard', ...args], { cwd: root, encoding: 'utf8' });
+  try {
+    git('init', '-q', '-b', 'main');
+    git('commit', '-q', '--allow-empty', '-m', 'base');
+    git('switch', '-q', '-c', 'feat-x');
+    git('commit', '-q', '--allow-empty', '-m', 'work');
+    git('update-ref', 'refs/remotes/origin/feat-x', 'HEAD');
+    git('switch', '-q', 'main');
+    // squash 병합 뒤의 로컬 정리: -d 는 거부되고 -D 만 된다 — 잃을 커밋이 없으면 AGENTS 상시 승인 범위다.
+    assert.ok(!ruleOf('git branch -D feat-x', root).includes('git-discard-worktree'));
+    assert.ok(!ruleOf('git branch --delete --force feat-x', root).includes('git-discard-worktree'));
+    git('switch', '-q', 'feat-x');
+    git('commit', '-q', '--allow-empty', '-m', 'local only');
+    git('switch', '-q', 'main');
+    assert.ok(ruleOf('git branch -D feat-x', root).includes('git-discard-worktree'), '원격에 없는 커밋을 잃으면 묻는다');
+    assert.ok(ruleOf('git branch -D missing', root).includes('git-discard-worktree'), '판정할 수 없으면 묻는다');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+// 2026-10-27 독립 검토(Codex): cwd 저장소의 같은 이름 브랜치가 원격에 있어도, 다른 저장소를 고른 호출은 그 저장소의 브랜치를 지운다.
+test('git-discard-worktree: 다른 저장소를 고른 강제 삭제는 cwd 판정으로 면제하지 않는다', () => {
+  const pushed = tempDir('agent-guard-repo-a-');
+  const local = tempDir('agent-guard-repo-b-');
+  const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.email=guard@test', '-c', 'user.name=guard', ...args], { cwd, encoding: 'utf8' });
+  try {
+    for (const [root, onRemote] of [[pushed, true], [local, false]]) {
+      git(root, 'init', '-q', '-b', 'main');
+      git(root, 'commit', '-q', '--allow-empty', '-m', 'base');
+      git(root, 'switch', '-q', '-c', 'topic');
+      git(root, 'commit', '-q', '--allow-empty', '-m', 'work');
+      if (onRemote) git(root, 'update-ref', 'refs/remotes/origin/topic', 'HEAD');
+      git(root, 'switch', '-q', 'main');
+    }
+    const other = join(local, '.git').replaceAll('\\', '/');
+    assert.ok(!ruleOf('git branch -D topic', pushed).includes('git-discard-worktree'));
+    for (const command of [`git --git-dir=${other} branch -D topic`, `git --git-dir ${other} branch -D topic`, `GIT_DIR=${other} git branch -D topic`]) {
+      assert.ok(ruleOf(command, pushed).includes('git-discard-worktree'), `다른 저장소를 고르면 묻는다: ${command}`);
+    }
+  } finally {
+    rmSync(pushed, { recursive: true, force: true });
+    rmSync(local, { recursive: true, force: true });
   }
 });
 
@@ -155,6 +234,9 @@ test('도구마다 입력을 읽고 그 도구의 형식으로 답한다', () =>
   assert.deepEqual(readHookInput('antigravity', { toolCall: { name: 'run_command', args: { CommandLine: 'git status', Cwd: 'D:/r' } } }),
     { command: 'git status', cwd: 'D:/r' });
   assert.equal(readHookInput('claude', { tool_name: 'Read', tool_input: { file_path: 'a' } }), null);
+  // Codex 의 apply_patch 는 파일 편집이다 — 본문의 명령 같은 줄을 판정하면 문서 편집이 막힌다.
+  assert.equal(readHookInput('codex', { tool_input: { command: ['apply_patch', '*** Begin Patch\n+git commit -m x\n*** End Patch'] }, cwd: 'D:/r' }), null);
+  assert.equal(readHookInput('codex', { tool_input: { command: ['C:\\codex\\apply_patch.exe', '*** Begin Patch\n+git commit -m x\n'] }, cwd: 'D:/r' }), null);
 
   const ask = { decision: 'ask', rules: ['git-force-push'], reason: 'r' };
   assert.equal(JSON.parse(renderVerdict('claude', ask)).hookSpecificOutput.permissionDecision, 'ask');

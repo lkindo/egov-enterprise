@@ -122,6 +122,10 @@ function commandAt(words) {
  * git 호출이면 하위 명령·인자와 `-C` 디렉터리. `git -C dir -c k=v commit …` 형태를 읽는다.
  * git 은 명령 자리에 있을 때만 센다 — `rg git commit docs` 의 git 은 검색어다.
  */
+/** 값을 다음 단어로 받는 git 전역 옵션 — 그 값(`--git-dir <경로>` 의 경로)을 하위 명령으로 읽지 않는다. */
+// `--exec-path` 는 값 없이 쓰면 경로를 출력하고 `--config-env` 는 `=` 형태만 받으므로 넣지 않는다.
+const GIT_VALUE_OPTIONS = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--super-prefix']);
+
 export function gitInvocation(code) {
   const words = tokens(code);
   const at = commandAt(words);
@@ -130,7 +134,7 @@ export function gitInvocation(code) {
   let dir = null;
   while (index < words.length && words[index].startsWith('-')) {
     if (words[index] === '-C') dir = words[index + 1] ?? null;
-    index += ['-C', '-c'].includes(words[index]) ? 2 : 1;
+    index += GIT_VALUE_OPTIONS.has(words[index]) ? 2 : 1;
   }
   if (index >= words.length) return null;
   return { sub: words[index], args: words.slice(index + 1), dir };
@@ -148,6 +152,81 @@ function repoTop(cwd) {
   const result = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', windowsHide: true });
   return result.status === 0 ? result.stdout.trim() : null;
 }
+
+/**
+ * 지우려는 로컬 브랜치의 끝 커밋이 모두 원격 추적 ref 에 있는가 — 그러면 강제 삭제(-D)로 잃는 로컬 전용 커밋이 없다.
+ * squash 병합 뒤에는 `git branch -d` 가 "not fully merged" 로 거부하므로, 병합한 브랜치의 로컬 정리는 이 판정으로 묻지 않고 통과한다.
+ * 이름을 읽지 못하거나 git 이 실패하면 false(묻는다)다.
+ */
+function branchTipsPushed(args, cwd) {
+  const names = args.filter((arg) => !arg.startsWith('-'));
+  if (!names.length) return false;
+  return names.every((name) => {
+    const tip = spawnSync('git', ['rev-parse', '--verify', '--quiet', `refs/heads/${name}`], { cwd, encoding: 'utf8', windowsHide: true });
+    if (tip.status !== 0) return false;
+    const remotes = spawnSync('git', ['for-each-ref', '--contains', tip.stdout.trim(), '--format=%(refname)', 'refs/remotes'],
+      { cwd, encoding: 'utf8', windowsHide: true });
+    return remotes.status === 0 && remotes.stdout.trim().length > 0;
+  });
+}
+
+/**
+ * 이 조각이 훅을 끄는 환경 변수(SKIP_HOOKS·SKIP_HARNESS — .githooks 는 값이 비어 있지 않으면 건너뛴다)를 비어 있지 않은 값으로 정하는가.
+ * 명령 자리의 대입만 본다: 명령 앞 `K=V`, `export`·`set`·`env` 뒤의 `K=V`, PowerShell `$env:K = V`. 검색어·인자 속 문구는 세지 않는다.
+ */
+function setsHookSkipVariable(raw) {
+  const words = tokens(raw);
+  const skip = /^(SKIP_HOOKS|SKIP_HARNESS)$/i;
+  const empty = (value) => value === undefined || ['', '""', "''"].includes(value);
+  const ps = /^\$env:([A-Za-z_]\w*)\s*=\s*(.*)$/i.exec(raw.trim());
+  if (ps) return skip.test(ps[1]) && !empty(ps[2].trim());
+  // `export`·`set`·`env` 와, SOP §6.2 가 가르치는 셸 공용 형태 `npx cross-env K=V …` 의 앞 단어를 건너뛴다.
+  let index = 0;
+  while (index < words.length && ['export', 'set', 'env', 'npx', 'cross-env', 'cross-env-shell'].includes(words[index].toLowerCase())) index += 1;
+  // CMD 의 `set "K=V"` 처럼 따옴표 친 대입도 같은 대입이다.
+  for (; index < words.length && /^[A-Za-z_]\w*=/.test(unquote(words[index])); index += 1) {
+    const [name, ...rest] = unquote(words[index]).split('=');
+    if (skip.test(name) && !empty(rest.join('='))) return true;
+  }
+  return false;
+}
+
+/**
+ * 따옴표를 가린 판(code)의 단어 경계로 원문(raw)을 자른다. 가리기는 길이를 보존하므로 따옴표 속 공백이 단어를 나누지 않고,
+ * 가린 주석은 단어가 되지 않는다. 각 단어는 판정용 가린 판(`code`)과 따옴표를 벗긴 원문 값(`value`)을 함께 갖는다.
+ */
+function alignedWords(code, raw) {
+  return [...code.matchAll(/\S+/g)].map((match) => ({ code: match[0], value: unquote(raw.slice(match.index, match.index + match[0].length)) }));
+}
+
+/** git 호출의 하위 명령 앞 전역 옵션 값(`-c k=v`·`--config-env=…`)과 하위 명령 뒤 인자를 원문 단어로 돌려준다(gitInvocation 과 같은 자리). */
+function gitWords(code, raw) {
+  const words = alignedWords(code, raw);
+  let index = commandAt(words.map((word) => word.code)) + 1;
+  const options = [];
+  while (index < words.length && words[index].code.startsWith('-')) {
+    const width = GIT_VALUE_OPTIONS.has(words[index].code) ? 2 : 1;
+    options.push(...words.slice(index, index + width).map((word) => word.value));
+    index += width;
+  }
+  return { options, args: words.slice(index + 1) };
+}
+
+/**
+ * 이 git 호출이 작업 디렉터리가 아닌 저장소를 고르는가 — `--git-dir`·`--work-tree` 옵션이나 명령 앞 `GIT_DIR=`·`GIT_WORK_TREE=` 대입.
+ * 그러면 cwd 로 본 판정(브랜치 끝 커밋이 원격에 있는가)이 실제 대상과 다를 수 있다. `-C` 는 evaluate 가 cwd 로 이미 옮긴다.
+ */
+function selectsOtherRepository(code, raw) {
+  const { options } = gitWords(code, raw);
+  if (options.some((option) => /^--(?:git-dir|work-tree)(?:=|$)/i.test(option))) return true;
+  const words = alignedWords(code, raw);
+  const at = commandAt(words.map((word) => word.code));
+  return words.slice(0, at).some((word) => /^GIT_(?:DIR|WORK_TREE|COMMON_DIR)=/i.test(word.value));
+}
+
+/** 작업 트리 전체를 가리키는 pathspec — 이 경로로 `--only` 커밋하면 다른 작업의 변경이 모두 들어간다. */
+const WHOLE_TREE_PATHSPECS = new Set(['.', './', './*', '..', '../', '*', ':', ':/', ':/*', ':(top)', ':(top).', ':(top)/', ':(top)*']);
+const isWholeTreePathspec = (value) => WHOLE_TREE_PATHSPECS.has(value.replaceAll('\\', '/').toLowerCase());
 
 function mergeInProgress(cwd) {
   const result = spawnSync('git', ['rev-parse', '--git-path', 'MERGE_HEAD'], { cwd, encoding: 'utf8', windowsHide: true });
@@ -217,6 +296,35 @@ export const RULES = Object.freeze([
       && (hasFlag(git.args, '--no-verify') || (git.sub === 'commit' && hasShortFlag(git.args, 'n'))),
   },
   {
+    id: 'git-hook-bypass', decision: 'ask',
+    why: '`--no-verify` 말고도 훅을 끄는 길이 있다 — SKIP_HOOKS·SKIP_HARNESS 환경 변수, `git -c core.hooksPath=…`, core.hooksPath 해제·변경(.githooks/README.md 「우회」). SOP §6.2 는 사용자가 명시적으로 지시한 경우만 허락한다.',
+    fix: '훅이 막은 원인을 고친다. 우회가 꼭 필요하면 사용자에게 설명하고 지시를 받는다. core.hooksPath 는 상대 경로 `.githooks` 로만 둔다(SOP §6.6).',
+    match: ({ git, code, raw }) => {
+      if (setsHookSkipVariable(raw)) return true;
+      if (!git) return false;
+      // 하위 명령 앞 전역 옵션만 본다 — 커밋 메시지에 적은 `-c core.hooksPath=…` 는 명령이 아니다.
+      const { options, args } = gitWords(code, raw);
+      // `-c k=v` 와 값을 붙인 `-ck=v`, `--config-env=k=ENV` 를 모두 읽는다.
+      if (options.some((option) => /^(?:-c|--config-env=)?core\.hookspath=/i.test(option))) return true;
+      if (git.sub !== 'config') return false;
+      // 값은 원문에서 읽고 동작은 위치로 가린다 — 값 자체가 `get` 인 `git config core.hooksPath get` 은 설정이다.
+      // Git 2.46 의 하위 명령 형태(`get`·`set`·`unset`)와 섹션째 지우기·이름 바꾸기도 본다.
+      const flags = args.filter((word) => word.code.startsWith('-')).map((word) => word.value.toLowerCase());
+      const positional = args.filter((word) => !word.code.startsWith('-')).map((word) => word.value);
+      const verbs = ['get', 'set', 'unset', 'list', 'remove-section', 'rename-section'];
+      const verb = verbs.includes(positional[0]?.toLowerCase()) ? positional.shift().toLowerCase() : null;
+      const lower = positional.map((value) => value.toLowerCase());
+      const sectionOp = ['remove-section', 'rename-section'].includes(verb) || flags.some((flag) => /^--(?:remove|rename)-section$/.test(flag));
+      if (sectionOp) return lower[0] === 'core';
+      const at = lower.indexOf('core.hookspath');
+      if (at < 0) return false;
+      if (['get', 'list'].includes(verb) || flags.some((flag) => ['--get', '--get-all', '--get-regexp', '--list', '-l'].includes(flag))) return false;
+      if (verb === 'unset' || flags.some((flag) => ['--unset', '--unset-all'].includes(flag))) return true;
+      // 읽기(값 없음)와 상대 경로 `.githooks` 로 되돌리는 설정만 통과한다.
+      return positional[at + 1] !== undefined && positional[at + 1] !== '.githooks';
+    },
+  },
+  {
     id: 'git-force-push', decision: 'ask',
     why: '강제 푸시는 원격 이력을 덮는다 — AGENTS.md 가 사전 설명과 승인을 요구한다.',
     fix: '대상 브랜치·덮이는 커밋을 사용자에게 설명하고 승인을 받는다.',
@@ -226,25 +334,45 @@ export const RULES = Object.freeze([
   {
     id: 'git-discard-worktree', decision: 'ask',
     why: '작업 트리·브랜치를 되돌릴 수 없게 지운다 — 같은 워킹트리를 쓰는 다른 에이전트·사용자의 WIP 가 함께 사라진다(AGENTS 공유 워킹트리).',
-    fix: '지울 대상을 git status·git diff 로 확인해 사용자에게 보이고 승인을 받는다. 자기 변경만 되돌리려면 경로를 지정한다.',
-    match: ({ git }) => {
+    fix: '지울 대상을 git status·git diff 로 확인해 사용자에게 보이고 승인을 받는다. 자기 변경만 되돌리려면 경로를 지정한다. 병합한 브랜치는 끝 커밋이 원격 추적 ref 에 남아 있을 때(git fetch --prune 전) -D 로 지우면 묻지 않는다. 작업 트리 디렉터리(git worktree remove)는 그 삭제의 승인을 따로 받는다.',
+    match: ({ git, cwd, code, raw }) => {
       if (!git) return false;
       const { sub, args } = git;
       if (sub === 'reset') return hasFlag(args, '--hard');
       if (sub === 'clean') return hasFlag(args, '--force') || hasShortFlag(args, 'f');
       if (sub === 'checkout') return args.includes('.') || (args.includes('--') && args[args.indexOf('--') + 1] === '.');
       if (sub === 'restore') return args.includes('.') && !(hasFlag(args, '--staged', '-S') && !hasFlag(args, '--worktree', '-W'));
-      if (sub === 'branch') return args.includes('-D') || (hasFlag(args, '--delete', '-d') && hasFlag(args, '--force', '-f'));
+      // 병합한 작업 브랜치의 로컬 정리는 AGENTS 상시 승인 범위다 — 끝 커밋이 원격에 있으면 묻지 않는다(DEC-OPS-387).
+      if (sub === 'branch') {
+        const forced = args.includes('-D')
+          || ((hasFlag(args, '--delete') || hasShortFlag(args, 'd')) && (hasFlag(args, '--force') || hasShortFlag(args, 'f')));
+        // 다른 저장소를 고르는 호출은 cwd 판정이 대상과 다를 수 있으니 면제하지 않는다(2026-10-27 독립 검토).
+        return forced && (selectsOtherRepository(code, raw) || !branchTipsPushed(args, cwd));
+      }
       if (sub === 'stash') return ['drop', 'clear'].includes(args[0]);
+      // 작업 트리 디렉터리와 그 안의 미추적 산출물 삭제는 브랜치 삭제와 별개로 사용자 승인이 필요하다(AGENTS 공유 워킹트리와 Git, SOP §6.6).
+      if (sub === 'worktree') return args[0] === 'remove';
       return false;
     },
   },
   {
     id: 'git-commit-without-only', decision: 'deny',
     why: '공유 워킹트리에서 index 전체를 커밋하면 다른 작업의 변경이 섞인다(AGENTS 공유 워킹트리와 Git).',
-    fix: '자기 경로만 git commit --only -m "…" -- <paths> 로 커밋한다(-m 은 -- 앞에 둔다). 병합 충돌을 푼 커밋은 그대로 된다.',
-    match: ({ git, cwd }) => git?.sub === 'commit' && !hasFlag(git.args, '--only') && !hasShortFlag(git.args, 'o')
-      && !hasFlag(git.args, '--dry-run') && !mergeInProgress(cwd),
+    fix: '자기 경로만 git commit --only -m "…" -- <paths> 로 커밋한다(-m 은 -- 앞에 둔다). `.`·`:/` 같은 작업 트리 전체 경로와 -a 는 쓰지 않는다. 병합 충돌을 푼 커밋은 그대로 된다.',
+    match: ({ git, cwd, raw, code }) => {
+      if (git?.sub !== 'commit' || hasFlag(git.args, '--dry-run') || mergeInProgress(cwd)) return false;
+      if (!hasFlag(git.args, '--only') && !hasShortFlag(git.args, 'o')) return true;
+      // `--only` 여도 경로가 작업 트리 전체(`.`·`:/`·`..`·`:(top)` 등)이거나 -a 를 함께 주면 다른 작업의 변경이 모두 들어간다.
+      if (hasFlag(git.args, '--all') || hasShortFlag(git.args, 'a')) return true;
+      // 경로는 원문 값으로 읽고(`":/"`·`.\`), `--` 구분자와 옵션은 가린 판으로 가린다 — 메시지 `-m "--"` 나 주석 `# .` 를 경로로 읽지 않는다.
+      const valued = new Set(['-m', '-F', '-C', '-c', '-t', '--author', '--date', '--fixup', '--squash', '--template', '--file', '--message']);
+      const { args } = gitWords(code, raw);
+      const dashes = args.findIndex((word) => word.code === '--');
+      const paths = dashes >= 0
+        ? args.slice(dashes + 1)
+        : args.filter((word, index) => !word.code.startsWith('-') && !valued.has(args[index - 1]?.code));
+      return paths.some((word) => isWholeTreePathspec(word.value));
+    },
   },
   {
     id: 'powershell-herestring-commit', decision: 'deny',
@@ -296,8 +424,9 @@ export const RULES = Object.freeze([
   },
   {
     id: 'worktree-name-collides-with-e2e', decision: 'deny',
-    why: 'Playwright 매처와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로 이름에 quality·journeys·contracts·setup 이 있으면 소유가 모호하다고 붉다(2026-10-19).',
-    fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 넷으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
+    // `setup` 프로젝트 매처는 `/.*\.setup\.ts/` 라 디렉터리 이름으로는 걸리지 않는다 — 디렉터리에 걸리는 셋만 본다.
+    why: 'Playwright 매처(`contracts/…spec.ts`·`(journeys|quality)/…spec.ts`)와 E2E 선별 계획기가 spec 의 절대 경로에 정규식을 적용해, 경로의 디렉터리 이름이 quality·journeys·contracts 로 끝나면 소유가 모호하다고 붉다(2026-10-19).',
+    fix: '작업 트리는 D:\\wt-<짧은 이름> 으로 두되 그 셋으로 끝나는 디렉터리 이름을 쓰지 않는다(SOP §6.6).',
     match: ({ git, raw }) => {
       if (git?.sub !== 'worktree' || git.args[0] !== 'add') return false;
       const words = tokens(raw);
@@ -310,7 +439,7 @@ export const RULES = Object.freeze([
         path = unquote(words[index]);
         break;
       }
-      return path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts|setup)$/i.test(part));
+      return path !== null && path.split(/[\\/]/).some((part) => /(quality|journeys|contracts)$/i.test(part));
     },
   },
   {
@@ -369,6 +498,8 @@ export function readHookInput(agent, input) {
     return typeof command === 'string' ? { command, cwd: args.Cwd ?? args.cwd ?? input.workspacePaths?.[0] ?? process.cwd() } : null;
   }
   const raw = input?.tool_input?.command ?? input?.tool_input?.cmd;
+  // Codex 의 apply_patch 는 셸 명령이 아니라 파일 편집이다 — 본문의 `git commit …` 같은 줄을 명령으로 읽지 않는다.
+  if (Array.isArray(raw) && /(^|[\\/])apply_patch(\.exe)?$/i.test(raw[0] ?? '')) return null;
   // Codex 는 명령을 셸 래퍼 배열(["powershell.exe","-Command","…"]·["bash","-lc","…"])로 넘긴다 — 셸에 넘긴 스크립트를 판정한다.
   const wrapped = Array.isArray(raw) && raw.length >= 3 && /(^|[\\/])(powershell|pwsh|bash|sh|zsh|cmd)(\.exe)?$/i.test(raw[0])
     && /^(-Command|-c|-lc|\/c)$/i.test(raw.at(-2));

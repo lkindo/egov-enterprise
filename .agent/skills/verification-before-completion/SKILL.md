@@ -81,7 +81,7 @@ Skip any step = lying, not verifying
 
 **Tests:**
 ```
-✅ [Run affected tests] [See: 34/34 pass] "The selected 34 tests pass; remaining checks are listed separately"
+✅ [Run affected tests] [See: 34/34 pass] "The selected 34 tests pass; the remaining checks are listed with the CI job that covers them, and completion waits for that job (SOP §6.2)"
 ❌ "Should pass now" / "Looks correct"
 ```
 

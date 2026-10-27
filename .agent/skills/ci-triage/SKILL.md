@@ -29,11 +29,11 @@ description: PR·main CI 나 정기 워크플로가 붉을 때 쓴다 — 기반
 |---|---|---|
 | `mutation-scope` 가 수십 초 만에 plugins.gradle.org 해석 실패·`Cache service responded with 400` | 설비 | `gh run rerun <run-id> --failed`. 수 분 이상 돌았거나 PIT 결과가 남아 있으면 이 판정을 쓰지 않는다 |
 | E2E 샤드가 'Install Playwright Dependencies' 단계 시간 초과(시험 단계는 skipped) | 설비 — 시험은 돌지 않았다 | 실패 잡만 재실행 |
-| `schemaValidationTest` 간헐 실패, 내 커밋이 Java·`db/migration` 을 안 건드림 | flake 의심 | 직전 커밋의 같은 잡·main 최근 연속 통과·같은 run 의 설비 저하를 대조한 뒤 실패 잡만 재실행 |
+| `schemaValidationTest` 간헐 실패, 내 커밋이 Java·`db/migration` 을 안 건드림 | flake 의심 | 직전 커밋의 같은 잡·main 최근 연속 통과·같은 run 의 설비 저하를 대조한다. 설비 저하가 확인될 때만 실패 잡을 재실행하고(SOP §6.2), 아니면 로그로 실패 시험을 특정해 불안정한 시험으로 다룬다 |
 | `frontend-scope` 가 2분 안에 audit 정책으로 실패 | 새 보안 권고 게시 — 코드와 무관하게 모든 PR 이 붉다 | 권고를 확인해 의존성 갱신을 별도 작업으로 다룬다(재실행으로 안 풀린다) |
 | `secret-scan` 이 PR 의 이전 커밋에서 오탐 | 증분 스캔은 PR 의 모든 커밋을 본다 — 문구 수정으로 안 사라진다 | `.gitleaksignore` 등록을 사용자와 판정한다. 푸시 전 원본 저장소 경로로 gitleaks 를 돌려 예방한다 |
 | gitleaks 내려받기 `gzip: stdin: not in gzip format` | 설비 | 실패 잡만 재실행 |
-| VRT 기준선이 문구 변경 화면에서 붉음 | 기준선 갱신 필요 | 기준선 워크플로를 돌린 뒤 봇 커밋은 PR CI 를 시작하지 않으므로 PR 을 닫았다 다시 연다 |
+| VRT 기준선이 문구 변경 화면에서 붉음 | 의도한 화면 변경이면 기준선 갱신 | 차이 이미지가 이번 변경의 의도와 같은지 먼저 보고 PR 에 남긴다 — 기준선은 현재 화면을 정답으로 굳히므로 의도하지 않은 차이는 코드를 고친다(GAP-UIF-001: 다시 만든 기준선은 사람이 검토한다). 기준선 워크플로를 돌린 뒤 봇 커밋은 PR CI 를 시작하지 않으므로 PR 을 닫았다 다시 연다 |
 | CodeQL(`secure-coding`) 경고의 메시지가 비어 원인이 안 보임 | 흐름 확인 필요 | `gh run download <run-id> -n sast-javascript` 의 SARIF `codeFlows` 로 출처→싱크 줄을 본다 |
 | E2E 재시도 통과(flaky)·늦은 포커스·ECONNRESET·하이드레이션 전 캡처 | 시험 또는 앱의 타이밍 결함 | 재시도로 덮지 않는다. trace·요청 시각으로 순서를 증명한 뒤 고친다 |
 

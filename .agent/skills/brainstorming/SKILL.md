@@ -41,7 +41,7 @@ Start by understanding the current project context, then ask questions one at a 
 **Documentation:**
 - In this repository there is no `docs/plans/`. Keep a one-off design in the conversation or PR description; a durable design goes in a kebab-case file under `docs/01-product`·`02-architecture`·`03-guides`·`04-operations` with the `docs/README.md` index updated (AGENTS.md "Documentation and memory")
 - Use elements-of-style:writing-clearly-and-concisely skill if available
-- Commit only when the user asked for it, and only your own paths with `git commit --only -- <paths>` (AGENTS.md "공유 워킹트리와 Git")
+- Commit within the user's request (for directly assigned work, through its completion scope), only your own paths with `git commit --only -- <paths>`, and stop instead if another task's changes share a path (AGENTS.md "공유 워킹트리와 Git")
 
 **Implementation (if continuing):**
 - If the request or a standing approval covers implementation, continue; otherwise ask whether to implement

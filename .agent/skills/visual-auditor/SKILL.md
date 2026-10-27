@@ -28,7 +28,7 @@ graph TD
 ## 2. Real-Time Verification Flow
 
 ### Phase 1: Environment Readiness
-Resolve the app URL and startup command from current project configuration. Do not kill unrelated processes or assume a port; inspect ownership and use the repository's normal startup path.
+Resolve the app URL and startup command from current project configuration. Do not kill unrelated processes or assume a port; inspect ownership. In this repository, interact only with the isolated stack that [verify-app](../verify-app/SKILL.md) brings up — `npm run dev` loads `.env` and can reach the shared DB, where interaction states would write data (AGENTS.md safety boundary). Reading an already-running page without changing data is fine; anything that submits, toggles or saves goes through verify-app.
 
 ### Phase 2: Dispatching the Browser Subagent
 Use an available browser-capable tool or the repository's Playwright setup. Capture representative desktop, tablet, and mobile widths; test keyboard focus, zoom/reflow, light/dark themes, reduced motion, and relevant interaction states.
@@ -64,8 +64,8 @@ After completing the audit, return the report in the current task/PR evidence or
 
 ```markdown
 ### 🎨 [VISUAL AUDIT REPORT] - [Page Name/URL] ###
-- **Target URL**: `http://localhost:3001/...`
-- **Audit Screen Recording**: `artifacts/recording_name.webp`
+- **Target URL**: `<isolated stack base URL>/...`
+- **Audit Screen Recording**: `<ignored test-artifact directory, e.g. frontend/test-results/>/recording_name.webp`
 - **Visual Compliance Assessment**:
   - [ ] **Tokens & hierarchy**: Existing design system and semantic structure preserved?
   - [ ] **Contrast & focus**: Theme contrast and keyboard-visible focus verified?

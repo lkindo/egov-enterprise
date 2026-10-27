@@ -387,7 +387,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 # Docker 필요: 빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate validate
 ./gradlew :api-server:schemaValidationTest
 
-# 병합 전 전체 로컬 게이트에도 포함
+# 넓은 로컬 검증(npm run verify)과 그 Gradle 부분집합 localGate 에도 포함
 ./gradlew localGate
 ```
 
