@@ -1,8 +1,6 @@
 ---
 name: deep-context-mapper
-description: >-
-  Builds an evidence-backed map of the relevant multi-module topology, physical database schema,
-  DTO contracts, and governance sources before a cross-cutting change.
+description: 여러 모듈·DB·DTO 계약에 걸친 변경을 설계하기 전에 쓴다 — 관련 모듈 구조, 물리 스키마, DTO 계약, 거버넌스 원본을 근거와 함께 지도로 만든다.
 ---
 
 <!-- npm run regen 이 만든 안내 파일이다(scripts/agent-skill-adapters.mjs). 고치려면 정본을 고친다. -->

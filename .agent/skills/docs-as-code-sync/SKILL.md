@@ -1,6 +1,6 @@
 ---
 name: docs-as-code-sync
-description: 코드·설정·API·DB 변경이 영향을 주는 현행 문서와 파생 메모리를 찾아 최소 범위로 동기화한다.
+description: 코드·설정·API·DB 변경을 마무리할 때 쓴다 — 그 변경이 영향을 주는 현행 문서와 파생 메모리를 찾아 최소 범위로 맞춘다.
 version: 2.0.0
 ---
 

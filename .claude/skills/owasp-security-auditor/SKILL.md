@@ -1,6 +1,6 @@
 ---
 name: owasp-security-auditor
-description: 인증·인가·입력·민감 데이터 변경을 공격 경로와 음성 테스트 중심으로 감사한다.
+description: 인증·인가·입력 검증·민감 데이터 처리를 바꿀 때 쓴다 — 공격 경로와 음성 테스트 중심으로 감사한다.
 ---
 
 <!-- npm run regen 이 만든 안내 파일이다(scripts/agent-skill-adapters.mjs). 고치려면 정본을 고친다. -->

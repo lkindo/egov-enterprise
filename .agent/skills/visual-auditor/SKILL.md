@@ -1,8 +1,6 @@
 ---
 name: visual-auditor
-description: >-
-  Performs tool-neutral rendered UI review across responsive breakpoints, interaction states,
-  accessibility constraints, and project design-system contracts with reproducible evidence.
+description: 화면 변경을 마무리하기 전에 렌더 결과를 확인할 때 쓴다 — 반응형 구간·상호작용 상태·접근성·디자인 시스템 계약을 도구 중립으로 검토한다.
 version: 1.1.0
 ---
 

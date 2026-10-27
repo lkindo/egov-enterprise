@@ -28,6 +28,8 @@ export const SKILL_DISTRIBUTION = Object.freeze({
   'resilience-debugger': 'project',
   'visual-auditor': 'project',
   'zero-downtime-migration-planner': 'project',
+  'verify-app': 'project',
+  'ci-triage': 'project',
   'explain-diff': 'repository-only',
   brainstorming: 'external',
   'dispatching-parallel-agents': 'external',

@@ -1,6 +1,6 @@
 ---
 name: api-contract-guardian
-description: Backend DTO 또는 Controller의 외부 계약 변경이 OpenAPI, 생성 TypeScript/Zod, 프런트 소비 코드와 함께 안전하게 바뀌는지 검증한다.
+description: 백엔드 DTO·Controller 의 요청·응답 계약을 바꿀 때 쓴다 — OpenAPI·생성 TypeScript/Zod·프런트 소비 코드가 함께 안전하게 바뀌는지 검증한다.
 version: 2.0.0
 ---
 
