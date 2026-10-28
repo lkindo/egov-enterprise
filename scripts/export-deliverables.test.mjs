@@ -48,7 +48,7 @@ test('markdown cells escape the table separator and line breaks', () => {
 
 test('forbidden inputs are refused before they are read', () => {
   for (const path of ['.agent/memory/decisions.md', 'docs/archived/operational-decisions-history.md', 'docs/02-architecture/decisions/README.md',
-    '.env', '.env.local', 'config/governance/upstream-review/project-composer-selection.json']) {
+    'docs/04-operations/known-gaps-detail.md', '.env', '.env.local', 'config/governance/upstream-review/project-composer-selection.json']) {
     assert.throws(() => assertAllowedInput(path), /forbidden deliverable input/u, path);
   }
   // 구분자·대소문자·./ 접두와 상관없이 같은 판정이다(어느 운영체제에서 돌아도 같다 — Windows 는 이 철자로도 같은 파일을 연다).
@@ -58,7 +58,7 @@ test('forbidden inputs are refused before they are read', () => {
   for (const path of ['config/governance/permission-catalog.json', 'docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md', 'api-docs.json']) {
     assert.doesNotThrow(() => assertAllowedInput(path), path);
   }
-  assert.equal(FORBIDDEN_INPUTS.length, 5);
+  assert.equal(FORBIDDEN_INPUTS.length, 6);
 });
 
 test('a generated product is refused until a projected-ledger mode exists', async () => {
