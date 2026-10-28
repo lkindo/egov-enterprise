@@ -511,6 +511,9 @@ test.describe('게시판과 커뮤니티', () => {
                     .evaluate((element) => (element as HTMLImageElement).naturalWidth)).toBe(768);
                 await expect(page.getByRole('cell', { name: '첨부와 표 보존', exact: true })).toBeVisible();
             } finally {
+                // 게시글 상세(본문 첨부 이미지 포함)를 먼저 떠난다 — 열린 화면의 재조회가 지운 글·첨부를 404 로 받으면 브라우저 오류
+                //   감시가 실패로 잡는다(PR #930 의 설문 정리와 같은 순서).
+                await page.goto('about:blank');
                 // 저장은 끝났지만 화면 전환이 실패한 경우도 고유 제목으로 찾아 정리한다.
                 const ids = new Set<number>(pstSn ? [pstSn] : []);
                 if (saveAttempted && !pstSn) {
@@ -598,6 +601,8 @@ test.describe('게시판과 커뮤니티', () => {
                     .not.toContain(edited);
             }
             finally {
+                // 게시글 상세를 먼저 떠난 뒤 지운다 — 댓글 변경 뒤의 재조회가 지운 글을 404 로 받지 않게(PR #930).
+                await page.goto('about:blank');
                 await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
             }
         });
@@ -657,6 +662,8 @@ test.describe('화면 품질', () => {
                     expect((await again.json())?.data, '이력이 없는 취소는 수를 줄이지 않는다').toBe(afterCancel);
                 }
                 finally {
+                    // 게시글 상세를 먼저 떠난 뒤 지운다 — 추천 토글 뒤의 재조회가 지운 글을 404 로 받지 않게(PR #930).
+                    await page.goto('about:blank');
                     await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
                 }
             });
