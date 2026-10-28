@@ -7,8 +7,13 @@
 # [전제] security-update(취약점 기반 긴급 PR)는 저장소의 Dependabot alerts 가 켜져 있어야 발생한다.
 #   version-update 만으로는 CVE 대응이 되지 않는다.
 #
-# [주의] directories 는 실측 경로다 — Dependabot 은 Gradle 서브프로젝트를 자동 재귀하지 않는다.
+# [주의] Gradle 은 루트(/) 하나로 settings.gradle 의 서브프로젝트까지 읽는다 — 2026-10-28 #990 이 '/' 설정만으로
+#   migration-tool/build.gradle 을 고쳤고, 서브프로젝트 디렉터리를 따로 적은 설정이 같은 갱신을 #992 로 한 번 더 열었다.
 #   open-pull-requests-limit 을 낮게 유지한다. 첫 주에 PR 이 폭증하면 아무도 보지 않는 노이즈가 된다.
+#
+# [일정] 모든 생태계는 업무 외 시각(일요일 03:00 KST)에 돈다. 평일 낮에 열리면 사용자 PR 과 러너 상한(20)을 나눠 써
+#   대기가 길어진다(2026-10-28 Dependabot PR 38~45분의 대부분이 러너 대기). 이 파일을 고친 변경이 main 에 병합되면
+#   Dependabot 이 곧바로 다시 도므로, 이 파일의 변경도 업무 외 시각에 병합한다(DEC-OPS-388 감사 후속).
 
 version: 2
 updates:
@@ -17,8 +22,11 @@ updates:
   #   임의 코드가 실행된다. release.yml 의 SHA 핀과 세트로 동작해야 핀이 방치로 굳지 않는다.
   - package-ecosystem: "github-actions"
     directory: "/"
+    # 액션 SHA 는 계약 스크립트 여럿과 재사용 제품 CI 템플릿에 exact 로 고정돼 있어 갱신마다 핀 재결속이 따른다 — 월 1회로 모은다.
     schedule:
-      interval: "weekly"
+      interval: "monthly"
+      time: "03:00"
+      timezone: "Asia/Seoul"
     open-pull-requests-limit: 5
     groups:
       # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
@@ -36,6 +44,9 @@ updates:
       - "/frontend"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Asia/Seoul"
     open-pull-requests-limit: 3
     groups:
       # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
@@ -59,15 +70,13 @@ updates:
   #     maven 항목이 있어야 발생한다**. 그 그래프는 .github/workflows/dependency-submission.yml 이
   #     채운다 — 그 워크플로가 죽으면 백엔드 CVE 가시성이 조용히 0으로 돌아간다.
   - package-ecosystem: "gradle"
-    directories:
-      - "/"
-      - "/api-server"
-      - "/business-app"
-      - "/business-core"
-      - "/foundation"
-      - "/migration-tool"
+    # 루트 하나가 settings.gradle 의 서브프로젝트까지 읽는다(머리주석 [주의]) — 서브프로젝트를 따로 적으면 같은 갱신이 PR 두 개로 열린다.
+    directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Asia/Seoul"
     open-pull-requests-limit: 5
     ignore:
       # [2026-10-07] Gradle wrapper 9.8.0 이상은 제안하지 않는다(DEC-OPS-237). PIT 플러그인
@@ -86,6 +95,12 @@ updates:
       #   의존성 갱신이 아니라 SQL Server 재실측이다(#970 이 SQL Server 시험 13건을 붉게 했다). testRuntimeOnly 라 실행
       #   산출물에는 들어가지 않는다. 재개 조건: 새 드라이버로 재실측해 허용 판을 바꿀 때 이 규칙을 같은 변경에서 걷는다.
       - dependency-name: "com.microsoft.sqlserver:mssql-jdbc"
+      # [2026-10-29] MariaDB·Oracle 드라이버도 같은 이유로 제안하지 않는다. 시험이 실측한 판을 정확히 단언한다
+      #   (MariaDbMetadataIntegrationTest 의 3.5.10, OraclePostgresTestSupport 의 23.26.3.0.0) — #990·#992(MariaDB 4.0.0)가
+      #   그 단언과 이관 시험 샤드를 붉게 했다. testRuntimeOnly 라 실행 산출물에는 들어가지 않는다. 재개 조건: 새 판으로
+      #   재실측해 단언을 바꿀 때 이 규칙을 같은 변경에서 걷는다. ignore 는 보안 업데이트에도 걸리므로 드라이버 보안 공지는 따로 본다.
+      - dependency-name: "org.mariadb.jdbc:mariadb-java-client"
+      - dependency-name: "com.oracle.database.jdbc:ojdbc11"
     groups:
       # 카탈로그 한 줄이 다중 모듈을 동시에 깨뜨릴 수 있으므로, 관련 업데이트를 묶어
       # CI 가 한 번에 판정하게 한다.
@@ -118,11 +133,20 @@ updates:
     directory: "/frontend"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Asia/Seoul"
     open-pull-requests-limit: 5
     # [2026-10-24] zod 4.5 이상을 막던 ignore 를 걷었다. 4.6.6 미만의 운영 경로 high 권고(1243066)가 감사로 모든 PR 을 막았고,
     #   생성 스키마를 태그 묶음 모듈로 나눈 뒤(2026-10-19) zod 4.6.7 빌드도 단일 청크·공용 JS 예산 안이다
     #   (경위: frontend/scripts/check-bundle-budget.mjs 머리주석).
     groups:
+      # [2026-10-29] vitest 컴포넌트 axe(axe-core)와 E2E axe(@axe-core/playwright)는 같은 판이어야 한다 — 시험이 판 일치를
+      #   단언하므로 둘을 한 PR 로 올린다(major 포함). minor-and-patch 보다 앞에 둬야 이 그룹이 먼저 잡는다.
+      axe:
+        patterns:
+          - "axe-core"
+          - "@axe-core/*"
       # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —
       #   실측 22건 중 20건이 단건이었고, 이 파일 머리주석(11행)이 경계한 '아무도 보지 않는
       #   노이즈' 가 그대로 실현됐다. minor/patch 를 한 덩어리로 접고 major 만 개별로 남긴다
@@ -135,6 +159,9 @@ updates:
     directory: "/"
     schedule:
       interval: "weekly"
+      day: "sunday"
+      time: "03:00"
+      timezone: "Asia/Seoul"
     open-pull-requests-limit: 2
     groups:
       # [2026-08-03] 그룹핑이 gradle 에만 있어 나머지 생태계가 패키지당 1 PR 을 냈다 —

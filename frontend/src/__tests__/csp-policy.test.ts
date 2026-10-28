@@ -74,7 +74,7 @@ describe('CSP nonce 계약', () => {
    *
    * - **framer-motion 12.43.0**: `document.createElement("style")` 직후
    *   `if (nonce) style.nonce = nonce` 가 있다 — **nonce 를 지원한다.** 주입은
-   *   AnimatePresence popLayout 경로에 한정된다. 2026-10-28 14.5.0 에서도 그 경로는 같다.
+   *   AnimatePresence popLayout 경로에 한정된다. 2026-10-28 14.5.0·2026-10-29 14.6.0 에서도 그 경로는 같다.
    *   14 에서 생긴 AnimateView 경로는 nonce 없이 주입하지만 앱이 쓰지 않는다.
    * - **sonner 2.0.7**: 모듈 최상위에서 `__insertCSS(...)` 를 2회 호출해 전체 스타일시트를
    *   `<style>` 로 삽입하는데, 패키지 전체에 `nonce` 문자열이 **0건**이다 — 끌 수도, nonce 를
