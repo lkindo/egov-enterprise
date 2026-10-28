@@ -81,7 +81,7 @@ function renderHeader(user: (Omit<UserInfo, 'groups' | 'permissions' | 'authoriz
 
 async function openAccountMenu() {
   const user = userEvent.setup();
-  await user.click(await screen.findByRole('button', { name: '사용자 계정 메뉴' }));
+  await user.click(await screen.findByRole('button', { name: /사용자 계정 메뉴$/ }));
 }
 
 function queryAccountLink(href: string) {

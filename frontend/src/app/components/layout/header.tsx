@@ -299,8 +299,9 @@ export function Header({
           <div className="flex items-center gap-2 pl-2 md:pl-3 border-l ml-1 md:ml-2">
             {user ? (
                 <Popover>
+                  {/* 이름은 보이는 글자(이름·'사용자')로 시작해야 한다 — 음성 입력은 보이는 글자로 단추를 부른다(WCAG 2.5.3). */}
                   <PopoverTrigger asChild>
-                    <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 hover:bg-muted rounded-[var(--radius-hub-item)] border border-transparent hover:border-border transition-all" aria-label="사용자 계정 메뉴">
+                    <Button variant="ghost" className="flex items-center gap-2.5 pl-2 pr-1.5 hover:bg-muted rounded-[var(--radius-hub-item)] border border-transparent hover:border-border transition-all" aria-label={`${user.name} 사용자 계정 메뉴`.trim()}>
                       <div className="w-7 h-7 rounded-lg bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
                         <User size={16} />
                       </div>
