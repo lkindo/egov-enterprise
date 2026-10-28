@@ -29,6 +29,11 @@ import java.util.Objects;
 @Transactional(readOnly = true)
 public class NoteService {
 
+    /** 한 번에 보내는 쪽지의 수신자 상한 — 화면(note-form-validation.ts)·메일 수신자 상한과 같다. */
+    static final int MAX_RECEIVERS = 100;
+    /** 수신자 ID 하나의 길이 상한 — tb_note_rcptn.rcvr_id varchar(20). */
+    static final int MAX_RECEIVER_ID_LENGTH = 20;
+
     private final NoteDomainRepository noteRepository;
     private final NoteTrnsmitDomainRepository noteTrnsmitRepository;
     private final NoteRecptnDomainRepository noteRecptnRepository;
@@ -171,6 +176,16 @@ public class NoteService {
                     .toList();
             if (receiverIds.isEmpty()) {
                 throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+            }
+            // [2026-10-27] 화면(note-form-validation.ts)과 같은 경계를 서버도 지킨다 — 화면을 거치지 않은 요청이 수만 명을 실으면
+            //   아래 IN 조회가 바인드 수 한도를 넘어 500 이 됐다. 개별 ID 는 tb_note_rcptn.rcvr_id varchar(20) 이다.
+            if (receiverIds.size() > MAX_RECEIVERS) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "수신자는 최대 " + MAX_RECEIVERS + "명까지 지정할 수 있습니다.");
+            }
+            if (receiverIds.stream().anyMatch(id -> id.length() > MAX_RECEIVER_ID_LENGTH)) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "수신자 식별자가 올바르지 않습니다 (개별 최대 " + MAX_RECEIVER_ID_LENGTH + "자).");
             }
             // 피커를 우회한 요청도 저장 전에 모든 수신자의 현재 사용 중 상태를 확인한다.
             // 조회만 중복을 제거하고, 기존 수신행·알림의 순서와 중복 의미는 유지한다.

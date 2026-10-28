@@ -138,7 +138,7 @@ describe('ordinary generated boundary wave5', () => {
       page: 1,
       size: 10,
     });
-    await approvalUserService.confirm(9, SANCTION_STATUS.REJECTED, '자료 보완');
+    await approvalUserService.confirm(9, SANCTION_STATUS.REJECTED, '자료 보완', 2);
 
     expect(client.getRaw).toHaveBeenNthCalledWith(1, 'approvals/pending', {
       params: { page: 1, size: 10 },
@@ -149,7 +149,7 @@ describe('ordinary generated boundary wave5', () => {
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'approvals/9/confirm',
       method: 'put',
-      data: { status: 'R', reason: '자료 보완' },
+      data: { status: 'R', reason: '자료 보완', version: 2 },
     });
   });
 

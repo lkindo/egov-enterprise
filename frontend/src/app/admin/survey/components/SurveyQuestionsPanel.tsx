@@ -31,6 +31,8 @@ import {
 } from './survey-panel-form-validation';
 import {
   EMPTY_PERIOD,
+  FREE_TEXT,
+  FREE_TEXT_ANSWER_SLOT,
   MULTIPLE_CHOICE,
   PERIOD_FIELDS,
   SURVEYS_FOR_QUESTIONS_KEY,
@@ -80,6 +82,7 @@ export default function SurveyQuestionsPanel() {
   const [newQuestion, setNewQuestion] = useState('');
   /** [DIP B4 P6] 새 문항의 선택 방식 — 하나만 고르기(1) 또는 여러 개 고르기(2 이상). */
   const [newQuestionMultiple, setNewQuestionMultiple] = useState(false);
+  const [newQuestionFreeText, setNewQuestionFreeText] = useState(false);
   const [newQuestionMaxChoice, setNewQuestionMaxChoice] = useState('2');
   const [newItemFor, setNewItemFor] = useState<number | null>(null);
   const [newItemText, setNewItemText] = useState('');
@@ -205,6 +208,7 @@ export default function SurveyQuestionsPanel() {
     onSuccess: () => {
       setNewQuestion('');
       setNewQuestionMultiple(false);
+      setNewQuestionFreeText(false);
       setNewQuestionMaxChoice('2');
       setError(null);
       questionValidation.setFormErrors({}, false);
@@ -387,6 +391,8 @@ export default function SurveyQuestionsPanel() {
             setNewQuestion={setNewQuestion}
             newQuestionMultiple={newQuestionMultiple}
             setNewQuestionMultiple={setNewQuestionMultiple}
+            newQuestionFreeText={newQuestionFreeText}
+            setNewQuestionFreeText={setNewQuestionFreeText}
             newQuestionMaxChoice={newQuestionMaxChoice}
             setNewQuestionMaxChoice={setNewQuestionMaxChoice}
             questionValidation={questionValidation}
@@ -708,6 +714,8 @@ function SurveyQuestionCreateForm({
   setNewQuestion,
   newQuestionMultiple,
   setNewQuestionMultiple,
+  newQuestionFreeText,
+  setNewQuestionFreeText,
   newQuestionMaxChoice,
   setNewQuestionMaxChoice,
   questionValidation,
@@ -725,6 +733,8 @@ function SurveyQuestionCreateForm({
   setNewQuestion: (value: string) => void;
   newQuestionMultiple: boolean;
   setNewQuestionMultiple: (value: boolean) => void;
+  newQuestionFreeText: boolean;
+  setNewQuestionFreeText: (value: boolean) => void;
   newQuestionMaxChoice: string;
   setNewQuestionMaxChoice: (value: string) => void;
   questionValidation: QuestionCreateValidation;
@@ -747,9 +757,9 @@ function SurveyQuestionCreateForm({
               const validated = questionValidation.validate({
                 srvySn,
                 qstnCn: newQuestion,
-                qstnTypeCd: MULTIPLE_CHOICE,
+                qstnTypeCd: newQuestionFreeText ? FREE_TEXT : MULTIPLE_CHOICE,
                 qstnSn: nextQstnSn,
-                maxChcCnt: newQuestionMultiple ? Number(newQuestionMaxChoice) : 1,
+                maxChcCnt: !newQuestionFreeText && newQuestionMultiple ? Number(newQuestionMaxChoice) : 1,
               });
               if (!validated) return;
               setError(null);
@@ -794,14 +804,16 @@ function SurveyQuestionCreateForm({
                 <select
                   aria-label="선택 방식"
                   className="h-[var(--control-h)] rounded-md border border-border bg-background px-2 text-sm"
-                  value={newQuestionMultiple ? 'multiple' : 'single'}
+                  value={newQuestionFreeText ? 'free-text' : newQuestionMultiple ? 'multiple' : 'single'}
                   onChange={(e) => {
                     questionValidation.clearError('maxChcCnt');
+                    setNewQuestionFreeText(e.target.value === 'free-text');
                     setNewQuestionMultiple(e.target.value === 'multiple');
                   }}
                 >
                   <option value="single">하나만 고르기</option>
                   <option value="multiple">여러 개 고르기</option>
+                  <option value="free-text">글로 답하기(주관식)</option>
                 </select>
               </label>
               {newQuestionMultiple && (
@@ -950,7 +962,7 @@ function SurveyQuestionCard({
                       <>
                         <span className="font-bold text-foreground flex-1 min-w-0 break-words">{q.qstnCn}</span>
                         <span className="text-xs font-bold px-2 py-0.5 rounded bg-hub-blue/10 text-hub-blue shrink-0">
-                          {q.qstnTypeCd === MULTIPLE_CHOICE ? '객관식' : '주관식'}
+                          {q.qstnTypeCd === FREE_TEXT ? '주관식' : '객관식'}
                         </span>
                         {canUpdateSurvey && (
                         <Button
@@ -989,9 +1001,39 @@ function SurveyQuestionCard({
                   </div>
 
                   <div className="p-4 space-y-2">
+                    {/* 주관식도 답변 칸 하나가 있어야 답할 수 있다(응답 결과의 항목 컬럼이 NOT NULL) — 칸 없는 문항은 응답 화면에서
+                        건너뛰어져 아무도 답하지 못했다(2026-10-27). 서버가 새 주관식 문항에 칸을 만들고, 칸 없이 남은 기존 문항은 여기서 만든다. */}
                     {(q.items ?? []).length === 0 ? (
+                      q.qstnTypeCd === FREE_TEXT ? (
+                        <div className="flex flex-wrap items-center gap-2 text-xs">
+                          <p className="font-bold text-destructive-emphasis flex items-center gap-2">
+                            <MessageSquareText size={12} /> 답변 칸이 없어 응답자가 이 문항에 답할 수 없습니다.
+                          </p>
+                          {canCreateSurvey && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="text-xs"
+                              disabled={addItem.isPending || addQuestion.isPending || deletingTarget !== null}
+                              onClick={() => {
+                                if (itemPendingRef.current || questionPendingRef.current || deletePendingRef.current) return;
+                                setError(null);
+                                itemPendingRef.current = true;
+                                addItem.mutate({ srvyQstnSn: q.srvyQstnSn, srvySn, artclCn: FREE_TEXT_ANSWER_SLOT });
+                              }}
+                            >
+                              답변 칸 만들기
+                            </Button>
+                          )}
+                        </div>
+                      ) : (
+                        <p className="text-xs text-muted-foreground flex items-center gap-2">
+                          <MessageSquareText size={12} /> 선택 항목이 없습니다 — 항목을 추가해야 응답자가 이 문항에 답할 수 있습니다.
+                        </p>
+                      )
+                    ) : q.qstnTypeCd === FREE_TEXT ? (
                       <p className="text-xs text-muted-foreground flex items-center gap-2">
-                        <MessageSquareText size={12} /> 선택 항목이 없습니다 (주관식이면 정상입니다).
+                        <MessageSquareText size={12} /> 응답자는 이 문항에 글로 답합니다.
                       </p>
                     ) : (
                       <ul className="space-y-1">
@@ -1144,7 +1186,7 @@ function SurveyQuestionCard({
                           <p {...itemValidation.messageProps('artclCn')} className="text-xs font-bold text-destructive-emphasis" />
                         ) : null}
                       </form>
-                    ) : canCreateSurvey ? (
+                    ) : canCreateSurvey && q.qstnTypeCd !== FREE_TEXT ? (
                       <Button
                         variant="ghost"
                         size="sm"

@@ -26,29 +26,36 @@ describe('ApprovalUserService generated contract', () => {
   });
 
   it('승인은 서버 열거형 값 C를 exact generated body로 보낸다', async () => {
-    await approvalUserService.confirm(42, SANCTION_STATUS.APPROVED);
+    await approvalUserService.confirm(42, SANCTION_STATUS.APPROVED, undefined, 3);
 
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'approvals/42/confirm',
       method: 'put',
-      data: { status: 'C', reason: undefined },
+      data: { status: 'C', reason: undefined, version: 3 },
     });
   });
 
   it('반려는 R과 사유를 함께 보낸다', async () => {
-    await approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '예산 코드 누락');
+    await approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '예산 코드 누락', 5);
 
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'approvals/7/confirm',
       method: 'put',
-      data: { status: 'R', reason: '예산 코드 누락' },
+      data: { status: 'R', reason: '예산 코드 누락', version: 5 },
     });
   });
 
   it('공백 반려 사유와 generated 최대 길이 위반을 전송 전에 거부한다', async () => {
-    await expect(approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '   ')).rejects.toThrow();
+    await expect(approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '   ', 1)).rejects.toThrow();
     await expect(
-      approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '가'.repeat(4001)),
+      approvalUserService.confirm(7, SANCTION_STATUS.REJECTED, '가'.repeat(4001), 1),
+    ).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it('🚨 버전 없는 승인은 보내지 않는다 — 서버가 필수로 대조하는 동시 처리 보호를 건너뛴다 (2026-10-27)', async () => {
+    await expect(
+      approvalUserService.confirm(42, SANCTION_STATUS.APPROVED, undefined, undefined as unknown as number),
     ).rejects.toThrow();
     expect(client.requestRaw).not.toHaveBeenCalled();
   });

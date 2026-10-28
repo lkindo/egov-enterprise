@@ -39,18 +39,20 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"status":"C"}
+                                {"status":"C","version":3}
                                 """))
                 .andExpect(status().isOk());
 
-        verify(approvalService).confirmInformalSanction(7L, "C", null, null);
+        verify(approvalService).confirmInformalSanction(7L, "C", null, 3);
     }
 
     @Test
     @WithMockCustomUser
     @DisplayName("상태 코드가 없거나 승인·반려 코드가 아니면 서비스 전에 400")
     void rejectsMissingOrUnknownStatus() throws Exception {
-        for (String body : new String[]{"{}", "{\"status\":\"A\"}", "{\"status\":\"UNKNOWN\"}"}) {
+        // 버전 없는 승인도 400 이다 — 다른 결재 쓰기와 같이 필수이고, 비우면 동시 처리 대조를 건너뛰었다(2026-10-27).
+        for (String body : new String[]{"{}", "{\"status\":\"A\",\"version\":1}", "{\"status\":\"UNKNOWN\",\"version\":1}",
+                "{\"status\":\"C\"}"}) {
             mockMvc.perform(put("/api/v1/approvals/7/confirm")
                             .with(csrf())
                             .contentType(MediaType.APPLICATION_JSON)
@@ -69,7 +71,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("""
-                                {"status":"R","reason":"   "}
+                                {"status":"R","reason":"   ","version":1}
                                 """))
                 .andExpect(status().isBadRequest());
 
@@ -206,7 +208,7 @@ class ApprovalApiControllerTest extends ControllerTestSupport {
                         .with(csrf())
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(
-                                java.util.Map.of("status", "R", "reason", reason))))
+                                java.util.Map.of("status", "R", "reason", reason, "version", 1))))
                 .andExpect(status().isBadRequest());
 
         verifyNoInteractions(approvalService);

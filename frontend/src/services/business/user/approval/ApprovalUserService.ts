@@ -222,10 +222,11 @@ class ApprovalUserService extends ApiService {
   async confirm(
     ifmlAtrzSn: number,
     aprvYn: typeof SANCTION_STATUS.APPROVED | typeof SANCTION_STATUS.REJECTED,
-    rjctRsnCn?: string,
-    version?: number,
+    rjctRsnCn: string | undefined,
+    version: number,
   ): Promise<void> {
-    const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn, ...(version === undefined ? {} : { version }) });
+    // 버전은 필수다 — 다른 결재 쓰기와 같이 서버가 대조해 낡은 화면의 처리를 409 로 막는다(2026-10-27).
+    const request = ApprovalDecisionRequestSchema.parse({ status: aprvYn, reason: rjctRsnCn, version });
     return this.executeGenerated(confirmOperation, {
       path: { id: ifmlAtrzSn },
       body: request,

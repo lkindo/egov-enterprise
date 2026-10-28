@@ -39501,7 +39501,8 @@
           }
         },
         "required": [
-          "status"
+          "status",
+          "version"
         ]
       },
       "ApproverReplaceRequest": {

@@ -297,7 +297,26 @@ public class SurveyService {
                 .srvyTmpltSn(survey.getSrvyTmpltSn())
                 .build());
         qesitmRepository.save(question);
+        ensureFreeTextArticle(question);
         return question.getSrvyQstnSn();
+    }
+
+    /**
+     * 주관식 문항에 답변 칸(항목)이 없으면 하나 만든다. 응답 결과의 항목 컬럼이 NOT NULL 이라 칸이 없으면 응답자가 답할 수 없고,
+     * 필수 응답 판정에서도 빠져 그 질문이 조용히 건너뛰어졌다(2026-10-27 실측: 공유 DB 의 주관식 1개가 칸 없이 있었다).
+     */
+    private void ensureFreeTextArticle(SurveyQuestion question) {
+        if (!question.isFreeText() || !iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(question.getSrvyQstnSn()).isEmpty()) {
+            return;
+        }
+        iemRepository.save(Objects.requireNonNull(SurveyArticle.builder()
+                .srvyQstnSn(question.getSrvyQstnSn())
+                .srvySn(question.getSrvySn())
+                .artclSn(1L)
+                .artclCn(SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT)
+                .etcAnsYn("N")
+                .srvyTmpltSn(question.getSrvyTmpltSn())
+                .build()));
     }
 
     @Transactional
@@ -312,6 +331,8 @@ public class SurveyService {
             assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
         }
         entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), dto.getMaxChcCnt());
+        // 유형을 주관식으로 바꾸면 답변 칸이 있어야 한다 — 유형 변경은 응답이 없을 때만 지나온다(위 meaningChanged).
+        ensureFreeTextArticle(entity);
     }
 
     /** 응답 판정과 같은 규칙 — NULL·0·음수는 하나만 고른다(SurveyResultService#submitResponse). */
@@ -351,6 +372,11 @@ public class SurveyService {
     public Long insertItem(SurveyArticleDto dto) {
         SurveyQuestion question = questionAfterSurveyLock(dto.getSrvyQstnSn());
         assertNoResponses(question.getSrvySn());
+        // 주관식은 답변 칸 하나에 글로 답한다 — 칸을 더하면 응답 화면이 어느 칸에 답을 담을지 정할 수 없다.
+        if (question.isFreeText() && !iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(question.getSrvyQstnSn()).isEmpty()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "주관식 문항에는 답변 칸이 하나만 있습니다. 선택지가 필요하면 객관식 문항으로 만들어 주세요.");
+        }
         SurveyArticle item = Objects.requireNonNull(SurveyArticle.builder()
                 .srvyQstnSn(question.getSrvyQstnSn())
                 .srvySn(question.getSrvySn())
@@ -377,6 +403,11 @@ public class SurveyService {
     public void deleteItem(Long srvyArtclSn) {
         SurveyArticle item = itemAfterSurveyLock(srvyArtclSn);
         assertNoResponses(rsltRepository.countBySrvyArtclSn(item.getSrvyArtclSn()), "선택 항목");
+        boolean freeText = qesitmRepository.findById(item.getSrvyQstnSn()).map(SurveyQuestion::isFreeText).orElse(false);
+        if (freeText && iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(item.getSrvyQstnSn()).size() <= 1) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "주관식 문항의 답변 칸은 지울 수 없습니다. 문항이 필요 없으면 문항을 삭제해 주세요.");
+        }
         // [V2_13 결속] 항목 삭제 시 해당 항목 응답 선정리 (기존 fk_tb_srvy_rslt_tb_srvy_artcl 기왕 부채 해소)
         rsltRepository.deleteBySrvyArtclSn(srvyArtclSn);
         iemRepository.deleteById(srvyArtclSn);

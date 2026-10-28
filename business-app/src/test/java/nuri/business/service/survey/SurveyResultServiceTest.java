@@ -419,6 +419,47 @@ class SurveyResultServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 주관식 문항은 답변 칸에 글로 답한다 — 빈 답은 거부하고, 적은 답은 그 칸의 응답 내용으로 저장한다 (2026-10-27)")
+    void submitFreeTextRequiresWrittenAnswer() {
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));
+        given(resultRepository.existsBySrvySnAndFrstRgtrId(anyLong(), anyString())).willReturn(false);
+        given(questionRepository.findBySrvySnOrderByQstnSnAsc(201L))
+                .willReturn(List.of(question(301L, "만족하십니까", "1"), question(302L, "개선할 점을 적어 주세요", "2")));
+        given(articleRepository.findBySrvyQstnSnInOrderBySrvyQstnSnAscArtclSnAsc(any()))
+                .willReturn(List.of(article(401L, 301L, "예"), article(402L, 302L, "자유 응답")));
+
+        try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
+            mocked.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
+                    .thenReturn(java.util.Optional.of("user1"));
+
+            for (String blank : new String[] {null, "", "   "}) {
+                SurveyResponseSubmitDto empty = new SurveyResponseSubmitDto(null, List.of(
+                        new SurveyResponseSubmitDto.Answer(301L, 401L, null, null),
+                        new SurveyResponseSubmitDto.Answer(302L, 402L, blank, null)));
+                assertThatThrownBy(() -> service.submitResponse(201L, empty))
+                        .isInstanceOf(BusinessException.class)
+                        .hasMessageContaining("주관식 문항에 답을 적어 주세요")
+                        .hasMessageContaining("개선할 점을 적어 주세요");
+            }
+            verify(resultRepository, never()).saveAll(any());
+
+            service.submitResponse(201L, new SurveyResponseSubmitDto(null, List.of(
+                    new SurveyResponseSubmitDto.Answer(301L, 401L, null, null),
+                    new SurveyResponseSubmitDto.Answer(302L, 402L, "회의를 줄였으면 합니다", null))));
+        }
+
+        @SuppressWarnings("unchecked")
+        org.mockito.ArgumentCaptor<List<SurveyResult>> captor = org.mockito.ArgumentCaptor.forClass(List.class);
+        verify(resultRepository).saveAll(captor.capture());
+        assertThat(captor.getValue()).filteredOn(r -> r.getSrvyQstnSn().equals(302L))
+                .singleElement()
+                .satisfies(r -> {
+                    assertThat(r.getSrvyArtclSn()).isEqualTo(402L);
+                    assertThat(r.getRspdntAnsCn()).isEqualTo("회의를 줄였으면 합니다");
+                });
+    }
+
+    @Test
     @DisplayName("제출 - 답변 N건이 응답 행 N개가 된다")
     void submitCreatesOneRowPerAnswer() {
         given(infoRepository.findByIdForSubmission(201L)).willReturn(java.util.Optional.of(openSurvey()));

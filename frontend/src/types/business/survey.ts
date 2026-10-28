@@ -17,6 +17,14 @@ export interface Survey {
   version?: number | null;
 }
 
+/**
+ * 주관식 문항 유형(서버 SurveyQuestion.TYPE_FREE_TEXT 와 같다). 주관식도 답변 칸 하나를 갖고(응답 결과의 항목 컬럼이 NOT NULL),
+ * 응답자는 그 칸에 글로 답한다. 서버가 문항을 만들 때 칸을 함께 만든다.
+ */
+export const FREE_TEXT_QUESTION_TYPE = '2';
+/** 주관식 답변 칸의 문구(서버 SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT 와 같다). */
+export const FREE_TEXT_ANSWER_SLOT = '자유 응답';
+
 export interface SurveyQuestion {
   srvyQstnSn: number;
   srvySn: number;
