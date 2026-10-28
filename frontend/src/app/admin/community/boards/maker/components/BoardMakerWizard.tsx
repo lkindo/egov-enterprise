@@ -1061,8 +1061,6 @@ export function BoardMakerWizard() {
                               }
                             }}
                             className={cn(
-                              // group relative p-8 은 e2e page object(BoardMasterPage.fillStep2)가 템플릿 카드를 찾는
-                              // 셀렉터다(.group.relative.p-8). 이 세 클래스 이름은 바꾸지 않는다.
                               "group relative p-8 rounded-md border cursor-pointer flex items-center gap-3 transition-colors",
                               isSelected ? "border-primary bg-primary/5" : "border-border bg-muted/30 hover:border-primary"
                             )}

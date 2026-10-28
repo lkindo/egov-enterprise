@@ -77,7 +77,15 @@ export function expectedAdapters(cwd = ROOT, files = sourceSkillFiles(cwd)) {
   const expected = new Map();
   for (const source of sources) {
     const dir = source.split('/')[2];
-    const fields = frontmatterFields(readFileSync(join(cwd, source), 'utf8'), source);
+    let text;
+    try {
+      text = readFileSync(join(cwd, source), 'utf8');
+    } catch (error) {
+      // git ls-files --cached 는 아직 stage하지 않은 삭제·이름 변경의 옛 경로도 돌려준다.
+      if (error.code === 'ENOENT') continue;
+      throw error;
+    }
+    const fields = frontmatterFields(text, source);
     if (fields.name !== dir) throw new Error(`${source}: name(${fields.name})이 폴더 이름(${dir})과 다르다 — 도구들이 스킬을 폴더 이름으로 찾는다`);
     const content = renderAdapter(fields);
     for (const root of ADAPTER_ROOTS) expected.set(`${root}/${dir}/SKILL.md`, content);

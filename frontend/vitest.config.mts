@@ -145,10 +145,8 @@ export default defineConfig({
       //   486행이다. 분모가 준 것이 아니라 표시가 다른 것이다. 근거로는 표가 아니라
       //   `Coverage summary` 총계(로컬) 또는 CI 의 `All files` 행을 쓴다.
       //
-      // ⚠ thresholds 블록은 이 파일에 **하나만** 두고 coverage 블록 안에 유지할 것.
-      //   거버넌스 registry 의 vitest-coverage-threshold selector 가 파일의 첫 `thresholds:` 를 읽는다
-      //   (scripts/governance-gates-contract.mjs). 더 앞선 블록이 생기면 조용히 엉뚱한 값을 읽는다.
-      //   같은 블록 안에 키가 중복되면 fail-closed 라 그쪽은 안전하다.
+      // 거버넌스 registry는 유일한 coverage 블록의 직접 thresholds 객체와 숫자 literal을 읽는다.
+      //   중복 속성·간접 변수·spread는 거부한다(scripts/governance-gates-contract.mjs).
       // [2026-10-19 DEC-OPS-369] CI 실측(statements 86.01 · branches 80.18 · functions 83.15 · lines 88.31, PR #940)의 정수 내림에서 1포인트 여유를 두고 올렸다 — 종전 71/63/64/73.
       thresholds: {
         statements: 85,

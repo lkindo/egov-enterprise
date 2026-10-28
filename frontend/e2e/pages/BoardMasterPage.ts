@@ -63,34 +63,12 @@ export class BoardMasterPage {
   async fillStep2(templateName: string = '지식 허브') {
     console.log(`>>> Step 2: Selecting template [${templateName}]`);
 
-    // Step 2 is ready only when at least one template card is visible.
-    const templateCards = this.page.locator('.group.relative.p-8, .p-8.rounded-3xl');
-    await expect(templateCards.first()).toBeVisible({ timeout: 25000 });
-
-    const selectors = [
-      this.page.getByText(templateName, { exact: true }).first(),
-      this.page.locator('h4').filter({ hasText: templateName }).first(),
-      this.page.locator('.group.relative.p-8').first()
-    ];
-
-    let found = false;
-    for (const selector of selectors) {
-      if (await selector.isVisible().catch(() => false)) {
-        console.log(`>>> Found template selector: ${selector}`);
-        await selector.scrollIntoViewIfNeeded();
-        await selector.click({ force: true });
-        found = true;
-        break;
-      }
-    }
-
-    if (!found) {
-      console.log('>>> Warning: Specific template not found visible, trying fallback (first card)...');
-      const fallback = this.page.locator('.group.relative.p-8, .p-8.rounded-3xl').first();
-      await expect(fallback).toBeVisible({ timeout: 5000 });
-      await fallback.scrollIntoViewIfNeeded();
-      await fallback.click({ force: true });
-    }
+    const templateCard = this.page.getByRole('button').filter({
+      has: this.page.getByRole('heading', { name: templateName, exact: true })
+    });
+    await expect(templateCard).toHaveCount(1, { timeout: 25000 });
+    await templateCard.click();
+    await expect(templateCard).toHaveAttribute('aria-pressed', 'true');
 
     await expect(this.nextButton).toBeEnabled({ timeout: 10000 });
     console.log('>>> Clicking Next button after template selection');

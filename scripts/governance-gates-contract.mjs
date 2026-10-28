@@ -1284,6 +1284,49 @@ function uniqueNamedBlock(source, mask, pattern, label) {
     : { openIndex, closeIndex };
 }
 
+/** Read direct named members only; spreads, computed keys and duplicates are ambiguous. */
+function directObjectProperties(mask, openIndex, closeIndex) {
+  const properties = new Map();
+  let start = openIndex + 1;
+  const add = end => {
+    if (!mask.slice(start, end).trim()) return true;
+    const member = /^\s*([A-Za-z_$][\w$]*)\s*:/.exec(mask.slice(start, end));
+    if (!member || properties.has(member[1])) return false;
+    properties.set(member[1], { start: start + member[0].length, end });
+    return true;
+  };
+  for (let index = start; index < closeIndex; index++) {
+    const closeToken = { '{': '}', '[': ']', '(': ')' }[mask[index]];
+    if (closeToken) {
+      const end = matchingDelimiter(mask, index, mask[index], closeToken);
+      if (end < 0 || end >= closeIndex) return null;
+      index = end;
+    } else if (mask[index] === ',') {
+      if (!add(index)) return null;
+      start = index + 1;
+    }
+  }
+  return add(closeIndex) ? properties : null;
+}
+
+/** The same unique coverage-block boundary as population discovery, not a TypeScript evaluator. */
+function readVitestThreshold(source, key) {
+  const mask = javaCodeMask(source);
+  const invalid = { error: `Vitest ${key} requires one direct literal coverage.thresholds value` };
+  if (!uniqueCodeMatch(mask, /\bcoverage\s*:/)) return invalid;
+  const coverage = uniqueNamedBlock(source, mask, /\bcoverage\s*:\s*\{/, 'Vitest coverage');
+  if (coverage.error) return invalid;
+  const thresholdProperty = directObjectProperties(mask, coverage.openIndex, coverage.closeIndex)?.get('thresholds');
+  if (!thresholdProperty) return invalid;
+  const thresholdMask = mask.slice(thresholdProperty.start, thresholdProperty.end).trim();
+  if (!thresholdMask.startsWith('{')
+    || matchingDelimiter(thresholdMask, 0, '{', '}') !== thresholdMask.length - 1) return invalid;
+  const value = directObjectProperties(thresholdMask, 0, thresholdMask.length - 1)?.get(key);
+  const literal = value ? thresholdMask.slice(value.start, value.end).trim() : '';
+  if (!/^\d(?:_?\d)*(?:\.\d(?:_?\d)*)?$/.test(literal)) return invalid;
+  return { value: numeric(literal) };
+}
+
 export function validatePitResultCheck(source) {
   const code = stripJavaComments(source);
   const mask = javaCodeMask(code);
@@ -1500,13 +1543,10 @@ function readObservedConsumerValue(repoRoot, ratchet, snapshot) {
   }
 
   if (selector.type === 'vitest-coverage-threshold') {
-    const marker = executable.indexOf('thresholds:');
-    const block = marker < 0 ? null : braceBlock(executable, marker);
-    const key = selector.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const raw = block ? singleMatch(block, new RegExp(`\\b${key}\\s*:\\s*([0-9._]+)`)) : null;
-    return raw === null
-      ? { error: `ghost quality selector for ${ratchet.id}: Vitest ${selector.key}` }
-      : { value: numeric(raw) };
+    const observed = readVitestThreshold(content, selector.key);
+    return observed.error
+      ? { error: `ghost quality selector for ${ratchet.id}: ${observed.error}` }
+      : observed;
   }
 
   if (selector.type === 'package-script-flag') {
