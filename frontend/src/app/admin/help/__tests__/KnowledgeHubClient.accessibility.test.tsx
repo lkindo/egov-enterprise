@@ -1,5 +1,7 @@
-import { render, screen, within } from '@testing-library/react';
+import { act, render, screen, within } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { menuService } from '@/services/business/user/MenuService';
+import { expectNoAxeViolations } from '@/test-utils/axe';
 
 const harness = vi.hoisted(() => ({
   push: vi.fn(),
@@ -84,8 +86,9 @@ describe('KnowledgeHubClient accessibility semantics', () => {
     harness.articlesError = null;
   });
 
-  it('uses semantic foregrounds on matching card surfaces and preserves truthful FAQ status', () => {
-    render(<KnowledgeHubClient defaultTab="FAQ" />);
+  it('uses semantic foregrounds on matching card surfaces and preserves truthful FAQ status', async () => {
+    const headMenus = vi.spyOn(menuService, 'getHeadMenus');
+    const { container } = render(<KnowledgeHubClient defaultTab="FAQ" />);
 
     expect(screen.getByRole('heading', { level: 1, name: '자주 묻는 질문' })).toBeVisible();
     // [2026-10-26 ADR-0043 NAV-01 A안] 설명은 탭이 실제로 보여 주는 게시판을 말한다('자주 묻는 질문' 탭 = 공지사항 게시판).
@@ -129,6 +132,13 @@ describe('KnowledgeHubClient accessibility semantics', () => {
       .find((button) => button.querySelector('[data-testid="hot-article-rank"]'));
     expect(hotItem, '인기 문서 항목을 찾지 못했다 — 단언이 vacuous 하다').toBeDefined();
     expect(hotItem?.querySelector('[data-testid="hot-article-rank"]')).toHaveClass('text-muted-foreground');
+
+    // [2026-10-28 D6-2] 인기 문서 단추(순위·제목·조회수)와 목록·현황 카드를 axe 로도 본다 — 보이는 글자가 이름에 없는 단추
+    //   (axe 4.14 label-content-name-mismatch) 같은 결함을 격리 E2E 전에 잡는다. 위치 표시(DynamicBreadcrumb)의 메뉴 조회가 끝나
+    //   다시 그린 뒤 감사한다 — 감사 도중 DOM 이 바뀌지 않게(그 갱신은 act 밖에서 끝나 경고도 남겼다).
+    expect(headMenus).toHaveBeenCalledOnce();
+    await act(async () => { await headMenus.mock.results[0]?.value?.catch(() => undefined); });
+    await expectNoAxeViolations(container);
   });
 
   /**
