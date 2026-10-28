@@ -1,8 +1,8 @@
 import { randomBytes } from 'node:crypto';
 import { createRequire } from 'node:module';
 import type { APIRequestContext, BrowserContextOptions, Locator, Page } from '@playwright/test';
-import AxeBuilder from '@axe-core/playwright';
 import { test, expect } from '../fixtures/browser-test';
+import { auditAccessibility } from '../fixtures/accessibility';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { DeptJobPage } from '../pages/DeptJobPage';
 import { buildSpecScope, type ConsoleErrorGuard } from '../fixtures/error-detector';
@@ -511,7 +511,8 @@ for (const task of ENTERPRISE_TASKS) for (const cache of cacheModes) for (let it
       // Axe is a separate observation even when workflow or performance assertions are red.
       for (const observed of [observation, ...observation.observedActors()].filter(item => item.measurement.cdp.actualPage)) {
         try {
-          const accessibility = await new AxeBuilder({ page: observed.page }).analyze();
+          // Keep the measured LAB_CONTEXT: no readiness wait or motion stabilisation, audit the observed page as it is.
+          const accessibility = await auditAccessibility(observed.page, { ready: false, stabilize: false });
           Object.assign(observed.measurement.accessibility, { observed: true, violations: accessibility.violations.map(violation => ({ id: violation.id,
             impact: violation.impact ?? null, nodes: violation.nodes.length })) });
           expect(accessibility.violations.map(violation => violation.id), 'Separate axe stage').toEqual([]);
