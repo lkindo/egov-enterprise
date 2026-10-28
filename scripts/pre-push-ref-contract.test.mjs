@@ -64,6 +64,13 @@ function instrumentHook(source) {
 git() {
   printf '%s\\n' "$*" >> "$HOOK_GIT_LOG"
   if [ "$1" = "diff" ]; then
+    for argument in "$@"; do
+      if [ "$argument" = "$HOOK_FAIL_DIFF_RANGE" ]; then
+        printf '%s\\n' "$HOOK_FAILED_DIFF_OUTPUT"
+        return 128
+      fi
+      if [ "$argument" = "$HOOK_EMPTY_DIFF_RANGE" ]; then return 0; fi
+    done
     printf '%s\\n' "$HOOK_CHANGED_FILES"
   elif [ "$1" = "rev-parse" ] && [ "$2" = "--abbrev-ref" ]; then
     printf '%s\\n' 'origin/main'
@@ -104,7 +111,7 @@ node() {
 }
 
 function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
-  realRecords = false, recordFailure = false } = {}) {
+  realRecords = false, recordFailure = false, failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '' } = {}) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'pre-push-ref-contract-'));
   const gitLog = path.join(fixtureRoot, 'git.log');
   const npmLog = path.join(fixtureRoot, 'npm.log');
@@ -123,6 +130,9 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
       HOOK_COMMAND_LOG: shellPath(commandLog),
       HOOK_CHANGED_FILES: files.join('\n'),
       HOOK_FAIL_COMMAND: failCommand,
+      HOOK_FAIL_DIFF_RANGE: failDiffRange,
+      HOOK_EMPTY_DIFF_RANGE: emptyDiffRange,
+      HOOK_FAILED_DIFF_OUTPUT: failedDiffOutput.join('\n'),
       SKIP_HOOKS: '',
       SKIP_HARNESS: '',
       HOOK_REAL_RECORDS: String(realRecords),
@@ -567,6 +577,63 @@ const PRE_PUSH_SOURCE_ORDER = [
   SOURCE_CONTRACTS_RUN,
   'gradlew :api-server:harnessTest -q',
 ];
+
+test('pre-push does not display an empty file when a successful ref has no changes', () => {
+  const secondLocal = '3'.repeat(40);
+  const secondRemote = '4'.repeat(40);
+  const input = [
+    pushLine('refs/heads/docs', LOCAL_OID, 'refs/heads/docs', REMOTE_OID),
+    pushLine('refs/heads/empty', secondLocal, 'refs/heads/empty', secondRemote),
+  ].join('\n') + '\n';
+  const result = runHook(input, hookSource, { emptyDiffRange: `${secondRemote}..${secondLocal}` });
+  assertSuccessful(result);
+  assert.match(result.stdout, /Fast-pass/);
+  assert.match(result.stdout, /- docs\/README\.md/);
+  assert.doesNotMatch(result.stdout, /^\s+-\s*$/m);
+});
+
+test('pre-push discards every partial diff result and runs the full gates when any ref diff fails', () => {
+  const secondLocal = '3'.repeat(40);
+  const secondRemote = '4'.repeat(40);
+  const input = [
+    pushLine('refs/heads/first', LOCAL_OID, 'refs/heads/first', REMOTE_OID),
+    pushLine('refs/heads/second', secondLocal, 'refs/heads/second', secondRemote),
+  ].join('\n') + '\n';
+  const ranges = [`${REMOTE_OID}..${LOCAL_OID}`, `${secondRemote}..${secondLocal}`];
+  const assertFullFallback = result => {
+    assertSuccessful(result);
+    assert.deepEqual(result.commands, PRE_PUSH_SOURCE_ORDER,
+      'a missing ref must not retain a documentation fast-pass from any successful or partial diff');
+    assert.match(result.stdout, /docsOnly=false \/ backend=true \/ migration=true \/ frontend=true/);
+    assert.doesNotMatch(result.stdout, /Fast-pass/);
+  };
+  // 원래 pipeline은 sort의 성공으로 앞선 diff 실패를 숨긴다. 그 회귀가 같은 단언에서 red임을 확인한다.
+  const swallowed = hookSource.replace(
+    /  for r in \$RANGES; do\r?\n[\s\S]*?\r?\n  done\r?\n  CHANGED_FILES=[^\r\n]+/u,
+    '  CHANGED_FILES=$(for r in $RANGES; do git diff --no-renames --name-only --diff-filter=ACMRD $r 2>/dev/null; done | sort -u)',
+  );
+  assert.notEqual(swallowed, hookSource, 'the mutant must restore the original diff pipeline');
+
+  for (const failDiffRange of ranges) {
+    for (const failedDiffOutput of [[], ['docs/partial.md']]) {
+      const result = runHook(input, hookSource, { failDiffRange, failedDiffOutput });
+      assertFullFallback(result);
+      assert.match(result.stderr, /부분 목록을 버리고 전체 게이트를 실행/);
+      const partial = runHook(input, swallowed, { failDiffRange, failedDiffOutput });
+      assertSuccessful(partial);
+      // 첫 ref가 출력 없이 실패하면 dash는 errexit로 루프를 멈추지만 Bash는 다음 ref를 읽는다.
+      // 나머지 세 조합은 두 셸 모두 부분 목록이 남으므로 반드시 같은 단언에서 red여야 한다.
+      const stoppedBeforeNextRef = failDiffRange === ranges[0] && failedDiffOutput.length === 0
+        && !partial.stdout.includes('docsOnly=true');
+      if (stoppedBeforeNextRef) {
+        assertFullFallback(partial);
+      } else {
+        assert.match(partial.stdout, /docsOnly=true/);
+        assert.throws(() => assertFullFallback(partial), assert.AssertionError);
+      }
+    }
+  }
+});
 
 // 계약 드리프트(api-docs.json ↔ 생성 타입·zod·operations)는 맨 앞의 regen --check 가 본다. 그 생성 계약 검사는 프런트
 // codegen:verify·codegen:verify:zod 와 같은 스크립트·인자라, 프런트 단계에서 다시 돌리면 한 push 안에서 같은 명령·입력이 두 번 돈다.

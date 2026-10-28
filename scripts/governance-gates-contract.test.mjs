@@ -383,6 +383,62 @@ test('coverage population selectors ignore comment, quoted-string, and template-
   assert.deepEqual(parsed, { include: ['src/real/**'], exclude: ['src/types/**'] });
 });
 
+test('Vitest threshold selectors bind the unique literal coverage child instead of decoys', async (t) => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const configPath = path.join(repoRoot, 'frontend/vitest.config.mts');
+  const original = readFileSync(configPath, 'utf8');
+  const thresholds = Object.fromEntries(registry.qualityRatchets
+    .filter(({ selector }) => selector.type === 'vitest-coverage-threshold')
+    .map(({ selector, current }) => [selector.key, current]));
+  const values = Object.entries(thresholds).map(([key, value]) => `${key}: ${value}`).join(', ');
+  const block = /thresholds:\s*\{\s*statements:\s*\d+,\s*branches:\s*\d+,\s*functions:\s*\d+,\s*lines:\s*\d+,?\s*\}/;
+  const replaceThresholds = replacement => {
+    const changed = original.replace(block, replacement);
+    assert.notEqual(changed, original, 'the probe must change the executable thresholds');
+    return changed;
+  };
+  const inspect = source => {
+    const fileSystem = { ...fs, readFileSync: (file, ...args) =>
+      path.resolve(String(file)) === configPath ? source : fs.readFileSync(file, ...args) };
+    return validateGovernanceRegistry({ registry, repoRoot, analysis,
+      snapshot: createGovernanceRepositorySnapshot({ repoRoot, fileSystem, analysis }) });
+  };
+
+  await t.test('the current config and its unrelated conditional reporter spread stay valid', () => {
+    assert.deepEqual(inspect(original), []);
+  });
+  await t.test('a leading unused object cannot conceal actual zero thresholds', () => {
+    const source = `const unused = { thresholds: { ${values} } };\n`
+      + replaceThresholds('thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 }');
+    assert.equal(inspect(source).filter(error => /QUALITY-FRONTEND-.*consumer value 0/.test(error)).length, 4);
+  });
+  await t.test('comment and string decoys cannot shadow the actual values', () => {
+    const source = [
+      '// thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 }',
+      'const quoted = "thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 }";',
+      'const templated = `thresholds: { statements: 0, branches: 0, functions: 0, lines: 0 }`;',
+      original,
+    ].join('\n');
+    assert.deepEqual(inspect(source), []);
+  });
+  const invalid = [
+    ['duplicate thresholds', replaceThresholds(`thresholds: { ${values} }, thresholds: { statements: 0 }`)],
+    ['shared variable', `const shared = { ${values} }; const unused = { thresholds: { ${values} } };\n`
+      + replaceThresholds('thresholds: shared')],
+    ['nested thresholds', replaceThresholds(`nested: { thresholds: { ${values} } }`)],
+    ['numeric expression', replaceThresholds(`thresholds: { ${values.replace(/statements: \d+/, 'statements: 85 - 85')} }`)],
+    ['spread override', replaceThresholds(`thresholds: { ${values}, ...shared }`)],
+    ['duplicate metric', replaceThresholds(`thresholds: { ${values}, statements: 0 }`)],
+    ['quoted duplicate metric', replaceThresholds(`thresholds: { ${values}, 'statements': 0 }`)],
+    ['coverage spread override', original.replace(/\bcoverage:\s*\{/, 'coverage: { ...shared,')],
+  ];
+  for (const [name, source] of invalid) {
+    await t.test(`${name} fails closed`, () => {
+      assert.match(inspect(source).join('\n'), /QUALITY-FRONTEND-.*Vitest/);
+    });
+  }
+});
+
 test('PIT population selector cannot be satisfied by comment or string decoys', () => {
   const parsed = readPopulationConsumer(`
     def quoted = 'pitest { excludedClasses = ["**/*"]; failWhenNoMutations = true }'

@@ -61,7 +61,7 @@ pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 
 
 ### pre-push fast-pass 정책
 
-삭제-only push는 로컬 object가 없어 코드 검증 대상이 아니므로 운영 계약 실행 전에 종료한다. 삭제와 일반 ref update가 섞이면 삭제 ref만 범위에서 빼고 object를 전송하는 update를 정상 검증한다. stdin이 없거나 범위를 알 수 없는 경우의 fail-closed fallback은 그대로 유지한다.
+삭제-only push는 로컬 object가 없어 코드 검증 대상이 아니므로 운영 계약 실행 전에 종료한다. 삭제와 일반 ref update가 섞이면 삭제 ref만 범위에서 빼고 object를 전송하는 update를 정상 검증한다. stdin이 없거나 범위를 알 수 없는 경우의 fail-closed fallback은 그대로 유지한다. ref 하나의 변경 조회라도 실패하면 성공한 조회와 실패한 조회의 부분 출력을 모두 버리고 전체 게이트를 실행한다.
 
 공용 [변경 분류기](../scripts/ci-change-scope.mjs)가 경로·확장자·삭제·rename 이전 경로를 함께 판정한다. 일반 문서·이미지·폰트는 fast-pass 대상이지만 `.githooks/`, 헌법, baseline manifest, Gradle 설정, wrapper, Dockerfile, 실행 스크립트처럼 게이트·규범에 영향을 주는 경로는 Markdown이라도 소스 경로를 탄다. `frontend/public/governance_harness_atlas.html`은 전용 계약 테스트가 통과한 경우에만 fast-pass한다.
 

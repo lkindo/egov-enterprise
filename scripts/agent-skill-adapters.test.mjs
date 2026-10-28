@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import test from 'node:test';
@@ -53,6 +53,69 @@ test('빠지거나 낡거나 정본이 사라진 안내 파일을 잡고, 쓰기
     writeAdapters(root);
     assert.deepEqual(adapterDrift(root), []);
     assert.equal(existsSync(join(root, '.agents/skills/gone')), false);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+for (const change of ['delete', 'rename']) {
+  for (const staged of [false, true]) {
+    test(`추적된 정본의 ${change}를 ${staged ? 'stage한 뒤에도' : 'stage하기 전에도'} 작업 트리에서 반영한다`, () => {
+      const root = fixtureRepo({ '.agent/skills/mapper/SKILL.md': folded });
+      try {
+        execFileSync('git', ['add', '--', '.agent/skills/mapper/SKILL.md'], { cwd: root });
+        writeAdapters(root);
+        if (change === 'rename') {
+          renameSync(join(root, '.agent/skills/mapper'), join(root, '.agent/skills/renamed'));
+          writeFileSync(join(root, '.agent/skills/renamed/SKILL.md'), folded.replace('name: mapper', 'name: renamed'));
+        } else {
+          rmSync(join(root, '.agent/skills/mapper/SKILL.md'));
+        }
+        if (staged) execFileSync('git', ['add', '-A', '--', '.agent/skills'], { cwd: root });
+
+        assert.deepEqual(adapterDrift(root), [
+          ...(change === 'rename' ? ADAPTER_ROOTS.map((adapterRoot) => `빠짐: ${adapterRoot}/renamed/SKILL.md`) : []),
+          ...ADAPTER_ROOTS.map((adapterRoot) => `남음: ${adapterRoot}/mapper/SKILL.md`),
+        ]);
+        writeAdapters(root);
+        assert.deepEqual(adapterDrift(root), []);
+        for (const adapterRoot of ADAPTER_ROOTS) {
+          assert.equal(existsSync(join(root, adapterRoot, 'mapper')), false);
+          if (change === 'rename') {
+            const text = readFileSync(join(root, adapterRoot, 'renamed/SKILL.md'), 'utf8');
+            assert.match(text, /name: renamed/u);
+            assert.match(text, /\.agent\/skills\/renamed\/SKILL\.md/u);
+          }
+        }
+      } finally {
+        rmSync(root, { recursive: true, force: true });
+      }
+    });
+  }
+}
+
+test('삭제된 추적 정본의 안내 경로에 직접 쓴 스킬은 보존하고 멈춘다', () => {
+  const root = fixtureRepo({ '.agent/skills/mapper/SKILL.md': folded });
+  const foreign = '---\nname: mapper\ndescription: written here\n---\n';
+  try {
+    execFileSync('git', ['add', '--', '.agent/skills/mapper/SKILL.md'], { cwd: root });
+    writeAdapters(root);
+    writeFileSync(join(root, '.agents/skills/mapper/SKILL.md'), foreign);
+    rmSync(join(root, '.agent/skills/mapper/SKILL.md'));
+    assert.throws(() => writeAdapters(root), /생성물이 아님: \.agents\/skills\/mapper\/SKILL\.md/u);
+    assert.equal(readFileSync(join(root, '.agents/skills/mapper/SKILL.md'), 'utf8'), foreign);
+    assert.equal(existsSync(join(root, '.claude/skills/mapper/SKILL.md')), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('정본 읽기의 ENOENT 외 오류는 삭제로 처리하지 않는다', () => {
+  const root = fixtureRepo({ '.agent/skills/mapper/SKILL.md': folded });
+  try {
+    rmSync(join(root, '.agent/skills/mapper/SKILL.md'));
+    mkdirSync(join(root, '.agent/skills/mapper/SKILL.md'));
+    assert.throws(() => expectedAdapters(root, ['.agent/skills/mapper/SKILL.md']), { code: 'EISDIR' });
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
