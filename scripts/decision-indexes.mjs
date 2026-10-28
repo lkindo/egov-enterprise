@@ -50,7 +50,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'AGENTS.md', 'CLAUDE.md', 'GEMINI.md', 'Makefile', 'start-dev.ps1',
       '.editorconfig', '.gitattributes', '.gitignore', '.gitleaks.toml', '.nvmrc', 'lombok.config',
       'config/governance/**', 'config/security/**', 'config/dependency-check/**', 'config/migration-test-duration-profile.json',
-      'scripts/**', 'tools/agent-evaluation/**', 'api-server/src/test/**', 'api-server/src/main/resources/db/migration/**',
+      'config/pit-duration-profile.json', 'scripts/**', 'tools/agent-evaluation/**', 'api-server/src/test/**', 'api-server/src/main/resources/db/migration/**',
       'frontend/e2e/**', 'frontend/scripts/**', 'frontend/atlas/**', 'frontend/*.config.*', 'frontend/tsconfig*.json',
       'frontend/vitest.setup.ts', 'frontend/lighthouserc.json', 'frontend/.gitignore', 'frontend/.nvmrc', 'test/load-tests/**',
       'package.json', 'package-lock.json', 'frontend/package.json', 'frontend/pnpm-lock.yaml',
