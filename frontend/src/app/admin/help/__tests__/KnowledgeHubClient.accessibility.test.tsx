@@ -125,7 +125,7 @@ describe('KnowledgeHubClient accessibility semantics', () => {
      * [2026-09-20] 인기 문서 순위 숫자의 선택자를 크기 클래스(span.text-3xl — 30px 장식)에서
      * 의미 훅으로 옮겼다. 검사하는 것은 크기가 아니라 **대비**였고, 그 단언은 그대로다.
      */
-    const hotItem = screen.getAllByRole('button', { name: '합성 FAQ 문서 상세 보기' })
+    const hotItem = screen.getAllByRole('button', { name: /합성 FAQ 문서.*상세 보기$/ })
       .find((button) => button.querySelector('[data-testid="hot-article-rank"]'));
     expect(hotItem, '인기 문서 항목을 찾지 못했다 — 단언이 vacuous 하다').toBeDefined();
     expect(hotItem?.querySelector('[data-testid="hot-article-rank"]')).toHaveClass('text-muted-foreground');

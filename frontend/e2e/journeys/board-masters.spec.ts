@@ -130,8 +130,12 @@ test.describe('Board Master Management (Admin Flow)', () => {
             await expect(rowOf(postingTitle)).toContainText(nextMonth);
 
             // 운영 화면에서 바꾼 게시 기간은 게시판 변경 이력에 남는다.
+            // 탭은 URL 로 바뀌어 한 박자 늦게 그려지고, '변경 이력' 단추는 게시물 탭에도 있다. 패널이 바뀌기 전에 누르면 사라질
+            //   게시물 탭의 단추를 눌러 대화상자가 탭과 함께 닫힌다(2026-10-28 CI trace) — 설정 패널 안의 단추를 누른다.
             await page.getByRole('tab', { name: '설정' }).click();
-            await page.getByRole('button', { name: '변경 이력' }).click();
+            const settingsPanel = page.getByRole('tabpanel', { name: '설정' });
+            await expect(settingsPanel).toBeVisible({ timeout: 10000 });
+            await settingsPanel.getByRole('button', { name: '변경 이력' }).click();
             const history = page.getByRole('dialog', { name: `${boardName} 변경 이력` });
             await expect(history).toBeVisible({ timeout: 10000 });
             await expect(history.getByRole('cell', { name: '게시 기간', exact: true }).first()).toBeVisible({ timeout: 15000 });

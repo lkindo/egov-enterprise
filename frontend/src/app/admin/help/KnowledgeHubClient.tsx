@@ -434,17 +434,21 @@ export default function KnowledgeHubClient({ defaultTab }: { defaultTab?: Knowle
               <ul className="divide-y divide-border">
                 {hotItems.map((item, idx) => (
                   <li key={item.pstSn}>
+                    {/* 이름은 aria-label 이 아니라 내용(순위·제목·조회수)에서 나온다. aria-label 로 덮으면 보이는 순위·조회수가 이름에
+                        없고(axe 4.14 label-content-name-mismatch, WCAG 2.5.3), span 사이의 공백(flex 안이라 그려지지 않는다)이 없으면
+                        보이는 글자가 한 낱말로 붙는다. 화면 밖 글자는 숫자의 뜻을 말한다. */}
                     <button
                       type="button"
                       onClick={() => openArticle(item)}
-                      aria-label={`${item.pstTtl} 상세 보기`}
                       className="group flex w-full items-center gap-3 px-1 py-1.5 text-left hover:bg-muted"
                     >
                       <span data-testid="hot-article-rank" className="w-5 shrink-0 text-right text-[length:var(--font-size-body)] font-semibold tabular-nums text-muted-foreground">{idx + 1}</span>
-                      <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground group-hover:text-primary">{item.pstTtl}</span>
+                      <span className="sr-only">위</span>{' '}
+                      <span className="min-w-0 flex-1 truncate text-[length:var(--font-size-body)] text-foreground group-hover:text-primary">{item.pstTtl}</span>{' '}
                       <span className="inline-flex shrink-0 items-center gap-1 text-xs tabular-nums text-muted-foreground">
-                        <Eye size={12} aria-hidden="true" />{(item.inqCnt || 0).toLocaleString()}
+                        <Eye size={12} aria-hidden="true" /><span className="sr-only">조회 </span>{(item.inqCnt || 0).toLocaleString()}
                       </span>
+                      <span className="sr-only">, 상세 보기</span>
                       <ChevronRight size={14} className="shrink-0 text-muted-foreground" aria-hidden="true" />
                     </button>
                   </li>
