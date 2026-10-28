@@ -302,7 +302,8 @@ export function parseMutationScopeMatrix(source, jobName = 'mutation-scope') {
       continue;
     }
     if (/^    steps:\s*$/.test(line)) break;
-    const fieldMatch = /^            (gradle|classes|tests):\s*(.+?)\s*$/.exec(line);
+    // threshold 는 범위별 PIT 하한이다(ADR-0044). 필수 여부와 값은 validateMutationScopeFloors 가 원장과 대조한다.
+    const fieldMatch = /^            (gradle|classes|tests|threshold):\s*(.+?)\s*$/.exec(line);
     if (fieldMatch && current) {
       if (Object.hasOwn(current, fieldMatch[1])) {
         errors.push(`CI mutation matrix scope ${current.scope ?? '(missing)'} duplicates field ${fieldMatch[1]}`);
@@ -436,6 +437,70 @@ function validateMutationScopeCatalog(selector, repoRoot, errors, setLabel, snap
   for (const scope of actualByScope.keys()) {
     if (!expectedByScope.has(scope)) {
       errors.push(`${setLabel}: unregistered CI mutation matrix scope '${scope}'`);
+    }
+  }
+}
+
+/**
+ * [2026-10-29 ADR-0044] 범위별 PIT 하한. 변이가 많은 범위는 실측 점수에서 여유를 뺀 하한을 쓰고, 그 정본은 mutation ratchet 의
+ * scopeFloors 다(없는 범위는 ratchet current = 헌법 하한). 확장한 래칫이라 기존 래칫과 같은 규칙을 범위마다 건다 — current 는
+ * baseline 아래로 못 내리고(하한 낮추기 금지), 헌법 하한 아래·100 위는 둘 수 없다. CI 행렬의 범위마다 threshold 가 그 값과 같아야
+ * 한다(빠지면 빈 값이 build.gradle 에서 75 로 떨어져 큰 범위의 하한이 조용히 내려간다).
+ */
+function validateMutationScopeFloors({ registry, ratchet, repoRoot, snapshot, errors }) {
+  const id = ratchet.id;
+  const floors = ratchet.scopeFloors ?? {};
+  if (typeof floors !== 'object' || floors === null || Array.isArray(floors)) {
+    errors.push(`${id}: scopeFloors must be an object keyed by PIT scope`);
+    return;
+  }
+  const catalogs = (registry?.gateSets ?? []).filter((set) => Array.isArray(set?.selector?.matrixScopes));
+  if (catalogs.length !== 1) {
+    errors.push(`${id}: scope floors need exactly one PIT matrix catalog`);
+    return;
+  }
+  const registered = new Map(catalogs[0].selector.matrixScopes.map((entry) => [entry?.scope, entry?.job]));
+  const minimum = ratchet.current;
+  for (const [scope, floor] of Object.entries(floors)) {
+    if (!registered.has(scope)) errors.push(`${id}: scope floor '${scope}' is not a registered PIT matrix scope`);
+    if (!Number.isInteger(floor?.current) || !Number.isInteger(floor?.baseline)) {
+      errors.push(`${id}: scope floor '${scope}' requires integer current and baseline`);
+      continue;
+    }
+    if (floor.current < floor.baseline) {
+      errors.push(`${id}: scope floor '${scope}' weakened below baseline (${floor.current} < ${floor.baseline})`);
+    }
+    if (floor.current < minimum || floor.current > 100) {
+      errors.push(`${id}: scope floor '${scope}' must stay within the constitution minimum ${minimum} and 100 (${floor.current})`);
+    }
+  }
+  const workflowPath = path.join(repoRoot, '.github', 'workflows', 'ci.yml');
+  if (!snapshot.isFile(workflowPath)) {
+    errors.push(`${id}: CI workflow is missing for the PIT scope floors`);
+    return;
+  }
+  const workflow = snapshot.read(workflowPath);
+  const scopeEnvironment = ratchet.selector?.scopeEnvironment;
+  if (Object.keys(floors).length > 0 && typeof scopeEnvironment !== 'string') {
+    errors.push(`${id}: scope floors require selector.scopeEnvironment so that build.gradle consumes them`);
+  }
+  for (const job of [...new Set(registered.values())].filter((value) => typeof value === 'string' && value !== '')) {
+    // 행렬 값은 이 환경 변수로만 build.gradle 에 닿는다 — 이름이 어긋나면 빈 값이 헌법 하한으로 떨어진다.
+    const lines = workflow.split(/\r?\n/);
+    const start = lines.findIndex((line) => line === `  ${job}:`);
+    const end = start < 0 ? -1 : lines.findIndex((line, index) => index > start && /^  [A-Za-z0-9_-]+:\s*$/.test(line));
+    const block = start < 0 ? [] : lines.slice(start, end < 0 ? lines.length : end);
+    if (typeof scopeEnvironment === 'string'
+      && block.filter((line) => line === `          ${scopeEnvironment}: \${{ matrix.threshold }}`).length !== 1) {
+      errors.push(`${id}: ${job} must pass matrix.threshold to the PIT step as ${scopeEnvironment} exactly once`);
+    }
+    for (const entry of parseMutationScopeMatrix(workflow, job).scopes) {
+      const expected = floors[entry.scope]?.current ?? minimum;
+      if (entry.threshold === undefined) {
+        errors.push(`${id}: PIT matrix scope '${entry.scope}' must declare threshold ${expected}`);
+      } else if (!/^[0-9]+$/.test(String(entry.threshold)) || Number(entry.threshold) !== expected) {
+        errors.push(`${id}: PIT matrix scope '${entry.scope}' threshold ${entry.threshold} does not match the ratchet floor ${expected}`);
+      }
     }
   }
 }
@@ -1531,12 +1596,22 @@ function readObservedConsumerValue(repoRoot, ratchet, snapshot) {
   if (selector.type === 'gradle-mutation-threshold') {
     const environment = String(selector.environment ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
     const strictValue = String(selector.strictValue ?? '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    // [2026-10-29 ADR-0044] 범위별 하한: 엄격 분기는 Math.max(하한, (범위 값 ?: '하한') as int) 이어야 한다 — 하한 아래로는 못 내리고,
+    //   범위 값이 비면 하한으로 돌아간다(그 대체값이 하한과 다르면 빈 행렬 값이 조용히 다른 하한이 된다). 범위 값은 아래
+    //   validateMutationScopeFloors 가 CI 행렬과 원장 scopeFloors 로 대조한다.
+    const scopeEnvironment = selector.scopeEnvironment === undefined ? null
+      : String(selector.scopeEnvironment).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+    const strictBranch = scopeEnvironment === null ? '([0-9_]+)'
+      : `Math\\.max\\(\\s*([0-9_]+)\\s*,\\s*\\(\\s*System\\.getenv\\(\\s*['"]${scopeEnvironment}['"]\\s*\\)\\s*\\?:\\s*['"]([0-9_]+)['"]\\s*\\)\\s*as\\s+int\\s*\\)`;
     const pattern = new RegExp(
-      `mutationThreshold\\s*=\\s*System\\.getenv\\(\\s*['"]${environment}['"]\\s*\\)\\s*==\\s*['"]${strictValue}['"]\\s*\\?\\s*([0-9_]+)\\s*:\\s*([0-9_]+)`,
+      `mutationThreshold\\s*=\\s*System\\.getenv\\(\\s*['"]${environment}['"]\\s*\\)\\s*==\\s*['"]${strictValue}['"]\\s*\\?\\s*${strictBranch}\\s*:\\s*([0-9_]+)`,
       'g',
     );
     const matches = [...executable.matchAll(pattern)];
-    if (matches.length !== 1 || numeric(matches[0][2]) !== selector.relaxedValue) {
+    const assignments = executable.match(/\bmutationThreshold\s*=/g)?.length ?? 0;
+    const relaxed = matches[0]?.at(-1);
+    if (matches.length !== 1 || assignments !== 1 || numeric(relaxed) !== selector.relaxedValue
+        || (scopeEnvironment !== null && numeric(matches[0][2]) !== numeric(matches[0][1]))) {
       return { error: `ghost quality selector for ${ratchet.id}: fail-closed mutationThreshold condition` };
     }
     return { value: numeric(matches[0][1]) };
@@ -2380,6 +2455,9 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
       else if (!sameValue(consumer.value, ratchet.current)) {
         errors.push(`${id}: consumer value ${consumer.value} does not match registry current ${ratchet.current}`);
       }
+    }
+    if (ratchet.selector?.type === 'gradle-mutation-threshold') {
+      validateMutationScopeFloors({ registry, ratchet, repoRoot, snapshot, errors });
     }
   }
 

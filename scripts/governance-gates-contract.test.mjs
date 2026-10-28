@@ -1021,7 +1021,8 @@ test('PIT registry and CI keep the same exact matrix catalog, and its size is pi
   assert.deepEqual(pit.selector.sourceJobIds, ['mutation-scope', 'mutation-scope-migration']);
   const byScope = (a, b) => a.scope.localeCompare(b.scope);
   const declared = pit.selector.matrixScopes.map(({ job, ...rest }) => rest).sort(byScope);
-  assert.deepEqual([...product.scopes, ...migration.scopes].sort(byScope), declared);
+  // threshold 는 범위 하한이라 정본이 mutation ratchet 의 scopeFloors 다(ADR-0044) — 그 대조는 범위 하한 시험이 본다.
+  assert.deepEqual([...product.scopes, ...migration.scopes].map(({ threshold, ...rest }) => rest).sort(byScope), declared);
   // 소유 잡 태그가 실제 잡과 어긋나면 안 된다.
   const owners = new Map(pit.selector.matrixScopes.map(({ scope, job }) => [scope, job]));
   for (const entry of product.scopes) assert.equal(owners.get(entry.scope), 'mutation-scope');
@@ -1156,6 +1157,92 @@ test('mutation threshold condition is bound to STRICT_MUTATION equals true and r
   relaxed.qualityRatchets.find(({ id }) => id === 'QUALITY-BACKEND-MUTATION-SCORE')
     .selector.relaxedValue = 75;
   assert.match(validate(relaxed).join('\n'), /fail-closed mutationThreshold condition/i);
+});
+
+// [2026-10-29 ADR-0044] 범위별 PIT 하한 — build.gradle 은 행렬이 넘긴 범위 값을 읽되 헌법 하한 아래로 내려가지 않고, 원장 scopeFloors 는
+//   내릴 수 없으며, CI 행렬의 범위마다 threshold 가 그 값과 같아야 한다. 디스크를 바꾸는 변이는 fileSystem 주입으로 읽힌다.
+function validateWithFiles(registry, replacements) {
+  const resolved = new Map(Object.entries(replacements).map(([relative, content]) => [path.join(repoRoot, relative), content]));
+  const fileSystem = { ...fs, readFileSync: (file, ...rest) => (resolved.has(path.resolve(String(file)))
+    ? resolved.get(path.resolve(String(file))) : fs.readFileSync(file, ...rest)) };
+  return validateGovernanceRegistry({ registry, repoRoot,
+    snapshot: createGovernanceRepositorySnapshot({ analysis, fileSystem, repoRoot }) }).join('\n');
+}
+const MUTATION_RATCHET = 'QUALITY-BACKEND-MUTATION-SCORE';
+const mutationRatchet = registry => registry.qualityRatchets.find(({ id }) => id === MUTATION_RATCHET);
+
+test('the strict mutation threshold reads the scope floor variable and cannot fall back below the floor', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const gradle = readFileSync(path.join(repoRoot, 'build.gradle'), 'utf8');
+  assert.doesNotMatch(validate(registry).join('\n'), new RegExp(MUTATION_RATCHET));
+
+  const renamed = clone(registry);
+  mutationRatchet(renamed).selector.scopeEnvironment = 'OTHER_THRESHOLD';
+  assert.match(validate(renamed).join('\n'), /fail-closed mutationThreshold condition/i);
+
+  for (const [label, from, to, expected] of [
+    // 빈 행렬 값이 하한이 아닌 값으로 떨어지면 큰 범위의 하한이 조용히 내려간다.
+    ['fallback below the floor', "?: '75')", "?: '70')", /fail-closed mutationThreshold condition/i],
+    // 하한 자체를 내리면 원장 current 와 어긋난다.
+    ['lowered floor', "Math.max(75, (System.getenv('PIT_MUTATION_THRESHOLD') ?: '75')", "Math.max(70, (System.getenv('PIT_MUTATION_THRESHOLD') ?: '70')",
+      /QUALITY-BACKEND-MUTATION-SCORE: consumer value 70 does not match registry current 75/],
+    // 범위 값을 읽지 않는 고정 분기로 되돌리면 행렬 값이 버려진다.
+    ['scope value ignored', "Math.max(75, (System.getenv('PIT_MUTATION_THRESHOLD') ?: '75') as int)", '75', /fail-closed mutationThreshold condition/i],
+    // 뒤에서 다시 덮어쓰면 첫 할당만 보는 대조가 속는다.
+    ['second assignment', 'enableDefaultIncrementalAnalysis = false', 'enableDefaultIncrementalAnalysis = false\n        mutationThreshold = 0',
+      /fail-closed mutationThreshold condition/i],
+  ]) {
+    const changed = gradle.replace(from, to);
+    assert.notEqual(changed, gradle, label);
+    assert.match(validateWithFiles(registry, { 'build.gradle': changed }), expected, label);
+  }
+});
+
+test('per-scope PIT floors cannot be lowered and every CI matrix threshold must equal its floor', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const floors = mutationRatchet(registry).scopeFloors;
+  const [scope, floor] = Object.entries(floors)[0];
+  assert.ok(floor.current > mutationRatchet(registry).current, 'a scope floor raises the constitution minimum');
+
+  const lowered = clone(registry);
+  mutationRatchet(lowered).scopeFloors[scope].current = floor.baseline - 1;
+  assert.match(validate(lowered).join('\n'), new RegExp(`scope floor '${scope}' weakened below baseline`));
+
+  const belowMinimum = clone(registry);
+  mutationRatchet(belowMinimum).scopeFloors[scope] = { current: 74, baseline: 74 };
+  assert.match(validate(belowMinimum).join('\n'), new RegExp(`scope floor '${scope}' must stay within the constitution minimum 75`));
+
+  const unknown = clone(registry);
+  mutationRatchet(unknown).scopeFloors['business-app-unregistered'] = { current: 80, baseline: 80 };
+  assert.match(validate(unknown).join('\n'), /scope floor 'business-app-unregistered' is not a registered PIT matrix scope/);
+
+  const unconsumed = clone(registry);
+  delete mutationRatchet(unconsumed).selector.scopeEnvironment;
+  assert.match(validate(unconsumed).join('\n'), /scope floors require selector\.scopeEnvironment/);
+
+  // 원장만 올리고 행렬을 그대로 두면 CI 는 옛 하한으로 돈다.
+  const raised = clone(registry);
+  Object.assign(mutationRatchet(raised).scopeFloors[scope], { current: floor.current + 1, baseline: floor.current + 1 });
+  assert.match(validate(raised).join('\n'),
+    new RegExp(`PIT matrix scope '${scope}' threshold ${floor.current} does not match the ratchet floor ${floor.current + 1}`));
+
+  const ci = readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const entry = new RegExp(`(- scope: ${scope}\\n(?: {12}(?!threshold:).+\\n)*? {12}threshold: )\\d+`);
+  const defaulted = ci.replace(entry, '$175');
+  assert.notEqual(defaulted, ci);
+  assert.match(validateWithFiles(registry, { '.github/workflows/ci.yml': defaulted }),
+    new RegExp(`PIT matrix scope '${scope}' threshold 75 does not match the ratchet floor ${floor.current}`));
+
+  const small = mutationRatchet(registry).current;
+  const missing = ci.replace(/(- scope: foundation-jwt\n(?: {12}.+\n)*?) {12}threshold: \d+\n/, '$1');
+  assert.notEqual(missing, ci);
+  assert.match(validateWithFiles(registry, { '.github/workflows/ci.yml': missing }),
+    new RegExp(`PIT matrix scope 'foundation-jwt' must declare threshold ${small}`));
+
+  const detached = ci.replace('          PIT_MUTATION_THRESHOLD: ${{ matrix.threshold }}\n', '');
+  assert.notEqual(detached, ci);
+  assert.match(validateWithFiles(registry, { '.github/workflows/ci.yml': detached }),
+    /must pass matrix\.threshold to the PIT step as PIT_MUTATION_THRESHOLD exactly once/);
 });
 
 test('every gate must map to a required CI context that exists in the current manifest', () => {

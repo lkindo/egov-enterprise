@@ -4,6 +4,7 @@
 - 결정일: 2026-10-17
 - 승인 근거: [DEC-OPS-337](../../archived/operational-decisions-history.md#dec-ops-337). 2026-10-17 사용자의 계약·하네스·파이프라인 효율 점검 요청과 2026-08-23 결정 위임에 따른다.
 - 대체: [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) 결정 10 가운데 `mutation-scope-migration`의 `max-parallel: 1`. 같은 결정의 `sast-scope` 1슬롯과 재사용·secret-scan 입장 규칙은 유지한다(custom 입장은 이미 ADR-0027이 대체했다).
+- 후속 결정: 결정 1의 슬롯 수·선언 순서 값과 결정 3의 정확값 대조·75% 판정은 [ADR-0044](ADR-0044-ci-tuning-values-and-pit-scope-floors.md)가 대체한다 — 값은 ci.yml·실측 profile 이 정본이고 계약은 양의 슬롯 수와 profile 순서만 본다. 하한은 범위별이다.
 - 관련: [CI 가이드](../../03-guides/cicd-pipeline.md), [필수 체크 계약](../../../scripts/required-checks-contract.test.mjs).
 
 ## 맥락

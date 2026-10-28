@@ -1456,7 +1456,8 @@ jobs:
           SOURCE_RESULT: ${{ needs.e2e-tests.result }}
         run: node scripts/aggregate-required-check.mjs
 
-  # PIT 대상·테스트 패턴은 gates.json과 exact-match하며 임계값 SSOT는 build.gradle이다.
+  # PIT 대상·테스트 패턴은 gates.json과 exact-match한다. 하한은 범위마다 matrix 의 threshold 로 넘기고, 그 정본은
+  # gates.json QUALITY-BACKEND-MUTATION-SCORE(scopeFloors, 없으면 헌법 하한 75)이며 build.gradle 이 75 아래로는 내리지 않는다.
   # mutation-scope는 병렬 실행하고 안정 required context mutation-test가 결과를 fail-closed 집계한다.
   # 실패 시 scope·임계값을 축소하지 말고 살아남은 뮤턴트에 단언을 추가한다.
   mutation-scope:
@@ -1466,73 +1467,45 @@ jobs:
     # 이 잡에는 60분이 필요한 스코프가 없다 — 그 범위는 mutation-scope-migration 이 가져갔다.
     timeout-minutes: 30
     strategy:
-      # 제품 13개 배치는 모두 실행한다. 6슬롯 근거: PIT 21범위 구성 뒤 full 실행 7건(39197910752·39211581858·39213303597·
-      # 39241700358·39243734759·39291663884·39294207891)에서 이 잡이 매번 마지막이었고(종료 중앙값 16.7분, 2등 reusable-base 14.9분),
-      # 9분 이후 꼬리 구간에는 runner 가 14개 이상 비어 있는데 PIT 는 4~6개만 돌았다. 같은 7건의 범위별 job 시간 중앙값으로 선언
-      # 순서를 빈 슬롯에 채우면 4슬롯 904초, 6슬롯 657초다(가장 긴 board 한 범위가 하한, runner 대기 제외). 종전 4슬롯은 분류 직후
-      # custom 두 layout 이 입장할 슬롯을 남기려던 것(ADR-0027)인데 지금 custom 은 7.8분에 끝나 꼬리가 아니다.
-      # 효과는 이후 green full 실행의 벽시계 중앙값으로 판정하고, 줄지 않거나 다른 잡이 늦게 입장해 꼬리가 되면 4로 되돌린다.
+      # 슬롯 수와 선언 순서는 검증 강도가 아닌 벽시계 튜닝값이다(ADR-0044). 정본은 이 주석과 실측 profile
+      # (config/pit-duration-profile.json)이고, 바꾸면 PR 설명에 실측 run id 를 남긴다 — ADR·DEC 는 만들지 않는다.
+      # 필수 체크 계약은 max-parallel 이 양의 정수로 한 번 선언됐는지와 선언 순서가 profile 의 긴 순서인지만 본다.
+      # 6슬롯 근거: PIT 21범위 구성 뒤 full 실행 7건(39197910752·39211581858·39213303597·39241700358·39243734759·
+      # 39291663884·39294207891)에서 이 잡이 매번 마지막이었고(종료 중앙값 16.7분, 2등 reusable-base 14.9분), 9분 이후
+      # 꼬리 구간에는 runner 가 14개 이상 비어 있는데 PIT 는 4~6개만 돌았다. 종전 4슬롯은 분류 직후 custom 두 layout 이
+      # 입장할 슬롯을 남기려던 것(ADR-0027)인데 custom 은 약 7.8분에 끝나 꼬리가 아니다.
       max-parallel: 6
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
       matrix:
         include:
-          # GitHub starts matrix entries in declaration order. 2026-09-29 attempt 2의 job 총시간
-          # 391·384·332·288·178·171초 순으로 긴 여섯 scope를 먼저 둔다(target·threshold 는 그대로).
-          # 위 7건 중앙값으로는 순서가 조금 다르지만 6슬롯에서는 이 선언 순서로도 하한에 닿아 다시 정렬하지 않는다.
+          # GitHub starts matrix entries in declaration order. 선언 순서는 config/pit-duration-profile.json 의 범위별 job 시간
+          # 중앙값이 긴 범위부터다(LPT). threshold 는 그 범위의 PIT 하한이다 — 거버넌스 계약이 gates.json 과 같은지 대조한다.
           # 종전 단일 business-app 범위는 1,279 mutations, 14분 12초였다. 현재 report를
           # 겹침 없는 세 모집단으로 나누고 각 모집단에 75%를 따로 적용해 gate를 강화한다.
           - scope: business-app-board
             gradle: ":business-app:pitest"
             classes: "nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*"
             tests: "nuri.business.*"
-
-          - scope: business-core-file
-            gradle: ":business-core:pitest"
-            classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
-            tests: "nuri.business.*"
-
-          - scope: business-app-workflow
-            gradle: ":business-app:pitest"
-            classes: "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
-            tests: "nuri.business.*"
+            threshold: 86
 
           - scope: business-app-delivery-operation
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.sms.*,nuri.business.service.mail.*,nuri.business.service.event.*,nuri.business.service.reward.*"
             tests: "nuri.business.*"
+            threshold: 75
 
-          # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
-          - scope: business-core-auth
+          - scope: business-core-file
             gradle: ":business-core:pitest"
-            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.service.menu.MenuStructurePlan,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter"
+            classes: "nuri.business.domain.file.*,nuri.business.service.file.*,nuri.business.service.code.*,nuri.business.domain.log.*,nuri.business.service.deptjob.*"
             tests: "nuri.business.*"
+            threshold: 75
 
-          # QueryDSL 조건 누락으로 전체 조회·계정 열거가 되는 회귀와 공용 paging 경계를 검증한다.
-          # 같은 공통 범위의 주민번호 암복호화 변환도 함께 보호한다.
-          - scope: business-core-code-user-common
-            gradle: ":business-core:pitest"
-            classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
-            tests: "nuri.business.*"
-
-          # [2026-10-19 DEC-OPS-366] 설문 전체 — 제출자·중복·기간·문항/항목 소속과 응답 표시(SurveyResultService 를 배송·운영에서 옮겼다).
-          - scope: business-app-survey
+          - scope: business-app-workflow
             gradle: ":business-app:pitest"
-            classes: "nuri.business.service.survey.*"
+            classes: "nuri.business.service.note.*,nuri.business.service.notification.*,nuri.business.service.informalsanction.*"
             tests: "nuri.business.*"
-
-          # [2026-10-19 DEC-OPS-366] 커뮤니티 가입·회원·메모 보고 지시·일정의 소유·상태 판정.
-          - scope: business-app-participation
-            gradle: ":business-app:pitest"
-            classes: "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*"
-            tests: "nuri.business.*"
-
-          # [2026-10-19 DEC-OPS-366] 사용자·그룹·부서·정책·부재 — 관리자 변경의 권한 재확인·보호 계정·토큰 폐기·감사.
-          #   영속 작업(system.job)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT 가 변이를 잡을 수 없어 넣지 않는다.
-          - scope: business-core-user-org
-            gradle: ":business-core:pitest"
-            classes: "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
-            tests: "nuri.business.*"
+            threshold: 80
 
           # [2026-10-20 DEC-OPS-373] 업무 홈 실시간 방송과 배너·팝업 — 게시 중 팝업만 사용자에게 열고, 버전 409·첨부 배정을 지킨다.
           #   로컬 실측 98 mutations, 92%, 354초(모듈 컴파일 포함).
@@ -1540,6 +1513,44 @@ jobs:
             gradle: ":business-app:pitest"
             classes: "nuri.business.service.dashboard.*,nuri.business.service.promotion.*"
             tests: "nuri.business.*"
+            threshold: 75
+
+          # [2026-10-19 DEC-OPS-366] 커뮤니티 가입·회원·메모 보고 지시·일정의 소유·상태 판정.
+          - scope: business-app-participation
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.community.*,nuri.business.service.memoreport.*,nuri.business.service.schedule.*"
+            tests: "nuri.business.*"
+            threshold: 75
+
+          # 로그인 IP·시간 정책, refresh 회전, 감사·OTP와 인증 provider·요청 제한·메뉴 순환을 검증한다.
+          - scope: business-core-auth
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.service.auth.*,nuri.business.service.login.*,nuri.business.security.util.*,nuri.business.service.menu.MenuService,nuri.business.service.menu.MenuStructurePlan,nuri.business.security.iam.EgovAuthenticationProvider,nuri.business.security.filter.RateLimitFilter"
+            tests: "nuri.business.*"
+            threshold: 83
+
+          # QueryDSL 조건 누락으로 전체 조회·계정 열거가 되는 회귀와 공용 paging 경계를 검증한다.
+          # 같은 공통 범위의 주민번호 암복호화 변환도 함께 보호한다.
+          - scope: business-core-code-user-common
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.domain.code.*,nuri.business.domain.user.repository.*,nuri.business.domain.common.*"
+            tests: "nuri.business.*"
+            threshold: 75
+
+          # [2026-10-19 DEC-OPS-366] 설문 전체 — 제출자·중복·기간·문항/항목 소속과 응답 표시(SurveyResultService 를 배송·운영에서 옮겼다).
+          - scope: business-app-survey
+            gradle: ":business-app:pitest"
+            classes: "nuri.business.service.survey.*"
+            tests: "nuri.business.*"
+            threshold: 75
+
+          # [2026-10-19 DEC-OPS-366] 사용자·그룹·부서·정책·부재 — 관리자 변경의 권한 재확인·보호 계정·토큰 폐기·감사.
+          #   영속 작업(system.job)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT 가 변이를 잡을 수 없어 넣지 않는다.
+          - scope: business-core-user-org
+            gradle: ":business-core:pitest"
+            classes: "nuri.business.service.user.*,nuri.business.service.group.*,nuri.business.service.department.*,nuri.business.service.system.policy.*,nuri.business.service.system.user.*"
+            tests: "nuri.business.*"
+            threshold: 75
 
           # [2026-10-20 DEC-OPS-373] 로그 조회·감사 원장·통계 시계열(기간 상한·빈 날 0 채우기)·관리자 운영 신호의 권한별 포함.
           #   로컬 실측 202 mutations, 78%, 154초.
@@ -1547,30 +1558,35 @@ jobs:
             gradle: ":business-core:pitest"
             classes: "nuri.business.service.log.*,nuri.business.service.stats.*,nuri.business.service.system.signal.*"
             tests: "nuri.business.*"
+            threshold: 75
 
           # 상태변경 요청의 Origin/Referer 검증 우회를 탐지하는 보안 경계다.
           - scope: foundation-security-filter
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.filter.*"
             tests: "nuri.foundation.*"
-
-          # PII 마스킹과 고유 ID 재시도처럼 조용히 데이터 노출·PK 충돌을 만드는 공통 경계를 검증한다.
-          - scope: foundation-core-util
-            gradle: ":foundation:pitest"
-            classes: "nuri.foundation.core.util.*"
-            tests: "nuri.foundation.*"
+            threshold: 75
 
           # refresh token 검증과 프론트가 대조하는 secret 지문 형식의 회귀를 탐지한다.
           - scope: foundation-jwt
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.jwt.*"
             tests: "nuri.foundation.*"
+            threshold: 75
+
+          # PII 마스킹과 고유 ID 재시도처럼 조용히 데이터 노출·PK 충돌을 만드는 공통 경계를 검증한다.
+          - scope: foundation-core-util
+            gradle: ":foundation:pitest"
+            classes: "nuri.foundation.core.util.*"
+            tests: "nuri.foundation.*"
+            threshold: 75
 
           # 레이트리밋·로그인 제한·감사 로그가 공유하는 client IP와 신뢰 XFF 경계를 검증한다.
           - scope: foundation-client-ip
             gradle: ":foundation:pitest"
             classes: "nuri.foundation.security.net.*"
             tests: "nuri.foundation.*"
+            threshold: 75
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1612,6 +1628,7 @@ jobs:
           PIT_TARGET_CLASSES: ${{ matrix.classes }}
           PIT_TARGET_TESTS: ${{ matrix.tests }}
           STRICT_MUTATION: "true"
+          PIT_MUTATION_THRESHOLD: ${{ matrix.threshold }}
 
       - name: Upload PIT report
         if: always()
@@ -1635,13 +1652,12 @@ jobs:
     # 여덟 scope 모두 30분 안에 끝나야 한다. 종전 결합 범위의 60분 예외는 샤딩으로 제거한다.
     timeout-minutes: 30
     strategy:
-      # 슬롯 2개로 실측 긴 순서(LPT)대로 입장한다. 대상·테스트·75% gate·fail-fast 는 그대로고 바뀌는 것은 입장 순서와 동시 수뿐이다.
+      # 슬롯 2개로 실측 긴 순서(LPT)대로 입장한다. 대상·테스트·범위별 하한·fail-fast 는 그대로고 바뀌는 것은 입장 순서와 동시 수뿐이다.
+      # 슬롯 수와 순서는 튜닝값이다(ADR-0044) — 정본은 이 주석과 config/pit-duration-profile.json 이고, 바꾸면 PR 설명에 실측 run id 를 남긴다.
       # 종전 슬롯 1개는 합산 약 4분 12초(run 36575378891, ADR-0029 L4 전)를 전제로 초기 runner 를 E2E/reusable 에 양보했다. L4 뒤
       # main run 38985970318(af79c310f)에서는 8개 job 합이 1005초라 하나씩 이어 돌아 마지막 범위가 1486초에 끝났고, 나머지 job 은
       # 모두 1025초 안에 끝나 이 잡이 전수 CI 의 임계 경로가 됐다. 슬롯이 1개인 한 범위를 나눠도 합계는 그대로다.
-      # 순서는 같은 실행의 job 시간이다: verify 209·validate 197·standardize 176·collect 171·protect 72·runtime-state 64·
-      # registry 61·converter 55초. 이 순서로 두 슬롯에 넣으면 사슬별 job 시간 합은 505·500초다(위 job 시간으로 계산한
-      # 값으로 runner 대기는 빠졌고, 두 슬롯의 벽시계는 아직 CI 로 재지 않았다). 범위의 시간이 크게 바뀌면 다시 재고 순서를 고친다.
+      # 선언 순서는 profile 의 범위별 job 시간 중앙값이 긴 범위부터다. 범위의 시간이 크게 바뀌면 다시 재고 profile 과 순서를 함께 고친다.
       max-parallel: 2
       # 한 스코프가 깨져도 나머지를 끝까지 돌린다 — 어디까지 무너졌는지 한 번에 봐야 한다.
       fail-fast: false
@@ -1661,6 +1677,7 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.verify.*"
             tests: "nuri.migration.verify.MigrationVerifierTest,nuri.migration.verify.MigrationVerifierTypedIdentityTest,nuri.migration.MigrationSafetyIntegrationTest,nuri.migration.verify.ReconciliationJudgeTest,nuri.migration.verify.ReconciliationRunTest,nuri.migration.verify.ReconciliationPlannerTest,nuri.migration.verify.ColumnClassifierTest,nuri.migration.verify.SourceAggregateQueryTest,nuri.migration.verify.ReconciliationValuesTest,nuri.migration.verify.TargetTallyTest,nuri.migration.verify.DomainConformanceTest,nuri.migration.verify.ColumnReplayTest,nuri.migration.verify.ConstraintProofTest,nuri.migration.verify.ReferenceChecksTest,nuri.migration.verify.CodeSetReconcilerTest"
+            threshold: 88
 
           # 매핑·fkRef와 이관 행 수 검증을 뒤집어 유실·고아 데이터를 PASS로 판정하는 회귀를 차단한다.
           # [ADR-0029 L4-B] 고정 길이 문자 소스 codemap 앞 trim 판정(R3, LoadCapabilities)을 생성기와 coverage 가 함께 쓴다 —
@@ -1670,6 +1687,7 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.validate.*"
             tests: "nuri.migration.validate.MappingValidatorTest,nuri.migration.validate.MappingValidatorTypedIdentityTest,nuri.migration.validate.TargetStandardValidatorTest,nuri.migration.MigrationPipelineTest,nuri.migration.validate.ledger.TermLedgerValidatorTest,nuri.migration.validate.ledger.TermLedgerLoaderTest,nuri.migration.validate.ledger.LoadCapabilitiesTest,nuri.migration.validate.VerifyReferenceRulesTest,nuri.migration.validate.CodeSetPrecheckTest,nuri.migration.validate.CodeSetTargetsTest"
+            threshold: 89
 
           # [ADR-0029 L3a-1] 표준 도메인 변환기. 이 경계가 뒤집히면 자리표시·달력 오류 날짜가 표준 값으로 적재되거나
           # 추정기가 위반으로 센 값이 실행에서 통과한다(DomainParityTest). 2026-10-15 로컬 실측 116 mutations, 100%, 10초다.
@@ -1694,6 +1712,7 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.domain.*,nuri.migration.generate.*,nuri.migration.discovery.InventoryTables,nuri.migration.isolate.*,nuri.migration.archive.*"
             tests: "nuri.migration.domain.DomainValuesTest,nuri.migration.domain.DomainParityTest,nuri.migration.domain.DomainCategoryTest,nuri.migration.generate.MappingGeneratorTest,nuri.migration.generate.SkeletonReaderTest,nuri.migration.discovery.InventoryTablesTest,nuri.migration.domain.TargetValueGuardTest,nuri.migration.isolate.RowIsolationPolicyTest,nuri.migration.isolate.IsolationTallyTest,nuri.migration.archive.ArchiveFileWriterTest,nuri.migration.archive.ArchiveLocationGuardTest,nuri.migration.archive.ArchiveRunTest"
+            threshold: 87
 
           # [DEC-OPS-311] 수집 명령(profile·app-scan). 이 경계가 뒤집히면 개인정보 값이 프로파일 빈도표로 새거나
           # 사용처가 조용히 빠진다. 2026-10-15 로컬 실측(ADR-0029 L3a-2 뒤) 1004 mutations, 91%, 92초다.
@@ -1705,6 +1724,13 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.profile.*,nuri.migration.appscan.*,nuri.migration.suggest.*"
             tests: "nuri.migration.profile.ColumnProfilerTest,nuri.migration.profile.SourceProfilerTest,nuri.migration.appscan.AppSourceScannerTest,nuri.migration.appscan.SqlUsageExtractorTest,nuri.migration.suggest.ConformanceEstimatorTest,nuri.migration.suggest.TermSuggesterTest,nuri.migration.suggest.LedgerDraftWriterTest"
+            threshold: 86
+
+          - scope: migration-transform-converter
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.TypeConverter,nuri.migration.transform.CodeTranslator"
+            tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
+            threshold: 75
 
           # [DEC-OPS-308] 주민번호 암호화·평문 차단·보호 선언 대조. 이 경계가 뒤집히면 평문이 대상 DB 에 남는다.
           # ADR-0029 L3d 뒤(조회 키도 키 소스로 센다) 로컬 실측 191 mutations, 98%, 17초다.
@@ -1714,6 +1740,13 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.protect.*"
             tests: "nuri.migration.protect.AriaEngineTest,nuri.migration.protect.EgovAriaColumnCipherTest,nuri.migration.protect.ColumnProtectionPlanTest,nuri.migration.protect.ColumnProtectorTest"
+            threshold: 75
+
+          - scope: migration-transform-registry
+            gradle: ":migration-tool:pitest"
+            classes: "nuri.migration.transform.TransformerRegistry"
+            tests: "nuri.migration.transform.TransformerRegistryTest,nuri.migration.artifact.MigrationExecutionContractTest"
+            threshold: 75
 
           # [ADR-0029 L3c, DEC-OPS-319] 매핑 키·keymap 소유 매핑 판정, 매핑 단위 실행 순서, checkpoint 의 mapping_id 범위와
           # 재개 가드. 뒤집히면 한 소스를 나눈 매핑 하나가 조용히 빠지거나, 형제 매핑을 거치는 의존이 순환으로 막히거나,
@@ -1724,16 +1757,7 @@ jobs:
             gradle: ":migration-tool:pitest"
             classes: "nuri.migration.mapping.*,nuri.migration.state.MigrationStateStore,nuri.migration.etl.TableOrderer,nuri.migration.lookup.*"
             tests: "nuri.migration.mapping.MappingIndexTest,nuri.migration.etl.TableOrdererTest,nuri.migration.state.MigrationStateStoreTest,nuri.migration.lookup.LookupResolverTest,nuri.migration.lookup.LookupRulesTest"
-
-          - scope: migration-transform-registry
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.TransformerRegistry"
-            tests: "nuri.migration.transform.TransformerRegistryTest,nuri.migration.artifact.MigrationExecutionContractTest"
-
-          - scope: migration-transform-converter
-            gradle: ":migration-tool:pitest"
-            classes: "nuri.migration.transform.TypeConverter,nuri.migration.transform.CodeTranslator"
-            tests: "nuri.migration.transform.TypeConverterTest,nuri.migration.transform.CodeTranslatorTest,nuri.migration.MigrationSafetyIntegrationTest"
+            threshold: 75
 
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
@@ -1775,6 +1799,7 @@ jobs:
           PIT_TARGET_CLASSES: ${{ matrix.classes }}
           PIT_TARGET_TESTS: ${{ matrix.tests }}
           STRICT_MUTATION: "true"
+          PIT_MUTATION_THRESHOLD: ${{ matrix.threshold }}
 
       - name: Upload PIT report
         if: always()
