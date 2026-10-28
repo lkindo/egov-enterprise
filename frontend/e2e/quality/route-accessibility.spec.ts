@@ -40,8 +40,10 @@ test.describe('Quality & Resilience', () => {
             // 'E2E' 접두사는 전역 정리(e2e/scripts/cleanup-db.ts)가 이 게시판에서 거두는 표식이다 — 중간에 죽어도 남지 않는다.
             const title = `E2E 접근성 감사 FAQ ${randomBytes(4).toString('hex')}`;
             const answer = '접근성 감사가 펼친 답변까지 함께 검사합니다.';
+            // 작성 화면처럼 공개(scrtYn 'N')를 밝혀 보낸다. 빠뜨리면 비밀 여부가 NULL 로 저장되고, 공개 FAQ 목록은 그 글을 싣되 응답 계약
+            //   (scrtYn 'N')과 어긋나 도움말 FAQ 목록 전체가 '불러오지 못했습니다'가 된다(2026-10-28 격리 E2E 실측 — 서버 결함, 통합자 후속).
             const created = await adminRequest.post('/api/v1/boards/posts', {
-                data: { bbsId: HELP_FAQ_BOARD_ID, pstTtl: title, pstCn: `<p>${answer}</p>` },
+                data: { bbsId: HELP_FAQ_BOARD_ID, pstTtl: title, pstCn: `<p>${answer}</p>`, scrtYn: 'N' },
             });
             expect(created.status(), '감사용 FAQ 생성').toBe(201);
             const faq = { pstSn: (await created.json()).data as number, title, answer };
