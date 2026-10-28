@@ -19,7 +19,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
+import { basename, delimiter, dirname, isAbsolute, join, normalize, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const AGENTS = new Set(['claude', 'codex', 'antigravity']);
@@ -108,17 +108,20 @@ export function segments(command) {
   return splitSegments(withoutHeredocBodies(command));
 }
 
-/** heredoc 본문을 이미 지운 원문을 조각으로 나눈다. withoutHeredocBodies 는 두 번 적용하면 안 된다(끝줄을 지운 뒤라 뒤를 모두 본문으로 읽는다). */
+/**
+ * heredoc 본문을 이미 지운 원문을 조각으로 나눈다. withoutHeredocBodies 는 두 번 적용하면 안 된다(끝줄을 지운 뒤라 뒤를 모두 본문으로 읽는다).
+ * 각 조각은 원문 안의 위치(start·end)도 갖는다 — 명령 치환이 어느 조각 뒤에서 실행되는지 가른다.
+ */
 function splitSegments(raw) {
   const masked = maskQuoted(raw);
   const parts = [];
   let start = 0;
   const separator = /&&|\|\||[;|\n]/g;
   for (let match; (match = separator.exec(masked));) {
-    parts.push({ raw: raw.slice(start, match.index), code: masked.slice(start, match.index) });
+    parts.push({ raw: raw.slice(start, match.index), code: masked.slice(start, match.index), start, end: match.index });
     start = match.index + match[0].length;
   }
-  parts.push({ raw: raw.slice(start), code: masked.slice(start) });
+  parts.push({ raw: raw.slice(start), code: masked.slice(start), start, end: raw.length });
   return parts.filter((part) => part.code.trim());
 }
 
@@ -265,7 +268,19 @@ export function wrappedScript(code, raw) {
   return null;
 }
 
-/** `$(` 바로 뒤(from)에서 시작해 짝이 맞는 `)` 의 위치. 따옴표 안의 괄호는 세지 않는다. 닫히지 않으면 끝 위치다. */
+/**
+ * 따옴표 밖의 이 `#` 이 셸 주석을 여는가 — 단어의 첫 글자일 때만이다(bash·PowerShell 공통). 앞이 공백·`;`·`&`·`|`·`(` 이거나 텍스트 처음이면
+ * 주석이고, `a#b`·`$#`·`${#x}`·`)#` 처럼 단어 중간이면 아니다.
+ */
+const opensComment = (text, index) => text[index] === '#' && (index === 0 || /[\s;&|(]/.test(text[index - 1]));
+
+/** 주석이 끝나는 위치(줄바꿈 바로 앞). 줄바꿈이 없으면 텍스트 끝이다. */
+const commentEnd = (text, index) => {
+  const end = text.indexOf('\n', index);
+  return end < 0 ? text.length : end;
+};
+
+/** `$(` 바로 뒤(from)에서 시작해 짝이 맞는 `)` 의 위치. 따옴표·주석 안의 괄호는 세지 않는다. 닫히지 않으면 끝 위치다. */
 function closingParen(text, from) {
   let depth = 1;
   let quote = null;
@@ -277,6 +292,7 @@ function closingParen(text, from) {
       continue;
     }
     if (char === '\\' || char === '`') { index += 1; continue; }
+    if (opensComment(text, index)) { index = commentEnd(text, index) - 1; continue; }
     if (char === '\'' || char === '"') quote = char;
     else if (char === '(') depth += 1;
     else if (char === ')' && (depth -= 1) === 0) return index;
@@ -285,10 +301,11 @@ function closingParen(text, from) {
 }
 
 /**
- * 명령 치환 `$( … )` 의 안쪽 명령들(바깥 치환만, 안쪽 치환은 재귀 판정이 다시 찾는다).
- * 큰따옴표 안의 치환은 bash·PowerShell 이 실행하므로 센다. 작은따옴표 안과 `\$`·`` `$ `` 로 이스케이프한 `$` 는 치환이 아니다.
+ * 명령 치환 `$( … )` 들의 위치(`$` 의 start, 닫는 `)` 의 end)와 안쪽 명령(text). 바깥 치환만 돌려주고 안쪽 치환은 재귀 판정이 다시 찾는다.
+ * 큰따옴표 안의 치환은 bash·PowerShell 이 실행하므로 센다. 작은따옴표 안, `\$`·`` `$ `` 로 이스케이프한 `$`, 따옴표 밖 셸 주석
+ * (`git status # $(…)`) 안은 치환이 아니다.
  */
-export function commandSubstitutions(text) {
+function substitutionSpans(text) {
   const found = [];
   let quote = null;
   for (let index = 0; index < text.length; index += 1) {
@@ -299,13 +316,19 @@ export function commandSubstitutions(text) {
     }
     if (char === '\\' || char === '`') { index += 1; continue; }
     if (char === '"') { quote = quote ? null : '"'; continue; }
-    if (char === '\'' && !quote) { quote = '\''; continue; }
+    if (!quote && char === '\'') { quote = '\''; continue; }
+    if (!quote && opensComment(text, index)) { index = commentEnd(text, index) - 1; continue; }
     if (char !== '$' || text[index + 1] !== '(') continue;
     const end = closingParen(text, index + 2);
-    found.push(text.slice(index + 2, end));
+    found.push({ start: index, end, text: text.slice(index + 2, end) });
     index = end;
   }
   return found;
+}
+
+/** 명령 치환 `$( … )` 의 안쪽 명령들(substitutionSpans 의 text). */
+export function commandSubstitutions(text) {
+  return substitutionSpans(text).map((span) => span.text);
 }
 
 /** git 호출의 하위 명령 앞 전역 옵션 값(`-c k=v`·`--config-env=…`)과 하위 명령 뒤 인자를 원문 단어로 돌려준다(gitInvocation 과 같은 자리). */
@@ -422,6 +445,20 @@ function deletesWorktree(target, layout) {
   if (layout.trees.some((tree) => tree === path || tree.startsWith(inside))) return true;
   if (/^wt-/i.test(basename(path)) && layout.parents.includes(dirname(path))) return true;
   try { return statSync(join(path, '.git')).isFile(); } catch { return false; }
+}
+
+/**
+ * 작업 디렉터리를 정할 수 없을 때(`cd $dir` 뒤 등) 이 상대 삭제 대상이 작업 트리일 수 있는가 — 보수적으로 묻는다. 지우는 마지막 이름이
+ * 등록된 작업 트리의 이름이거나 `wt-*` 이면, 또는 이름 없이 디렉터리 자체(`.`·`..`·`*`)를 지우면 그렇다. 절대 경로는 cwd 와 무관해
+ * deletesWorktree 가 그대로 본다.
+ */
+function mayDeleteWorktreeFromUnknownCwd(value, layout) {
+  const path = fromMsysPath(value.replace(/^(?:\$\{?PWD\}?|\$\(pwd\)|%cd%)(?=[\\/]|$)/i, '.'));
+  if (isAbsolute(path) || /^[A-Za-z]:/.test(path)) return false;
+  const name = basename(normalize(path.replace(/[\\/]\*$/, '')));
+  if (['', '.', '..', '*'].includes(name)) return true;
+  const comparable = process.platform === 'win32' ? name.toLowerCase() : name;
+  return /^wt-/i.test(name) || layout.trees.some((tree) => basename(tree) === comparable);
 }
 
 /** 삭제 대상 원문 값을 cwd 기준 절대 경로로 바꾼다. 디렉터리 안 전체(`dir/*`·`*`)는 그 디렉터리를 비우는 것이라 디렉터리로 본다. */
@@ -571,11 +608,13 @@ export const RULES = Object.freeze([
     id: 'worktree-recursive-delete', decision: 'ask',
     why: '작업 트리 디렉터리를 재귀로 지운다 — 안의 node_modules 같은 링크(junction)를 먼저 끊지 않으면 링크 너머 원본 checkout 의 파일까지 지울 수 있고, 다른 도구(Codex 등)가 쓰는 작업 트리는 프로세스 목록에 드러나지 않는다(2026-10-25).',
     fix: '링크(junction)를 먼저 끊고 그 작업 트리가 직접 만든 것인지 확인한 뒤 사용자 승인을 받는다(SOP §6.6). 저장소 안의 build/·임시 디렉터리 삭제는 묻지 않는다.',
-    match: ({ code, raw, cwd, root }) => {
+    match: ({ code, raw, cwd, root, cwdUnknown }) => {
       const targets = recursiveDeleteTargets(code, raw);
       if (!targets.length) return false;
       const layout = worktreeLayout([...new Set([cwd, root])]);
-      return targets.some((value) => deletesWorktree(deleteTargetPath(value, cwd), layout));
+      // 변수·명령 치환·`cd -` 로 옮긴 뒤에는 cwd 를 모른다 — 상대 대상은 이름으로 보수적으로 판정한다(2026-10-29 교차 검토).
+      return targets.some((value) => deletesWorktree(deleteTargetPath(value, cwd), layout)
+        || (cwdUnknown && mayDeleteWorktreeFromUnknownCwd(value, layout)));
     },
   },
   {
@@ -721,29 +760,60 @@ function guarded(state, where, action) {
  * 명령 텍스트 하나를 판정해 state.hits 에 걸린 규칙을 더한다. 원문 조각을 그대로 본 뒤, 줄 이음을 합친 판을 한 번 더 본다 —
  * 합친 판만 보면 PowerShell 에서 줄 끝 `\` 로 끝나는 경로(`cd D:\x\`) 뒤의 다음 명령을 놓친다.
  */
-function inspect(command, cwd, depth, state) {
+function inspect(command, cwd, depth, state, cwdUnknown = false) {
   const raw = withoutHeredocBodies(command);
-  inspectView(raw, command, cwd, depth, state);
+  inspectView(raw, command, cwd, depth, state, cwdUnknown);
   guarded(state, 'line-continuation', () => {
     const joined = joinContinuations(raw);
-    if (joined !== raw) inspectView(joined, command, cwd, depth, state);
+    if (joined !== raw) inspectView(joined, command, cwd, depth, state, cwdUnknown);
   });
 }
 
-function inspectView(view, command, cwd, depth, state) {
-  let here = cwd;
+/** 디렉터리를 옮기는 명령(`cd`·`chdir`·`Set-Location`·`sl`, 스택을 쓰는 `pushd`·`Push-Location` 과 `popd`·`Pop-Location`). */
+const CHANGES_DIRECTORY = /^(cd|chdir|set-location|sl|pushd|push-location|popd|pop-location)$/i;
+
+/**
+ * 디렉터리를 옮기는 조각 뒤의 작업 디렉터리. 대상이 변수·명령 치환·`~`(`cd $dir`·`cd "$(…)"`)이거나 `cd -`·인자 없는 `cd`·빈 스택의
+ * `popd` 처럼 정할 수 없으면 unknown 이다. here 는 종전처럼 원문을 이어 붙인 값으로 두어 다른 규칙의 판정을 바꾸지 않는다.
+ */
+function changeDirectory(words, at, { here, unknown }, stack) {
+  const verb = words[at].value.toLowerCase();
+  if (verb === 'popd' || verb === 'pop-location') return stack.pop() ?? { here, unknown: true };
+  const args = words.slice(at + 1);
+  const operand = args.find((word) => !word.code.startsWith('-'));
+  if (verb === 'pushd' || verb === 'push-location') stack.push({ here, unknown });
+  if (!operand || args.some((word) => ['-', '+'].includes(word.value))) return { here, unknown: true };
+  const target = fromMsysPath(expandWorkingDir(operand.value, here));
+  const next = resolve(here, target);
+  if (/[$%`]|^~/.test(target)) return { here: next, unknown: true };
+  // 절대 경로로 옮기면 다시 알게 된다. 상대 경로는 모르는 곳에서 옮기면 여전히 모른다.
+  return { here: next, unknown: isAbsolute(target) || /^[A-Za-z]:/.test(target) ? false : unknown };
+}
+
+function inspectView(view, command, cwd, depth, state, cwdUnknown = false) {
+  let location = { here: cwd, unknown: cwdUnknown };
+  const stack = [];
+  // 명령 치환은 그 자리 앞에서 끝난 조각들의 cd 만 반영해 판정한다 — 같은 조각의 cd(`cd "$(…)"`)는 치환을 먼저 실행한 뒤 옮기고,
+  // 뒤의 cd 는 아직 일어나지 않았다(2026-10-29 교차 검토: `cd ..; Write-Output $(Remove-Item -Recurse wt-x)` 를 처음 cwd 로 읽었다).
+  const moves = [];
+  let substitutions = [];
+  guarded(state, 'command-substitution', () => { substitutions = substitutionSpans(view); });
   for (const part of splitSegments(view)) {
     // `cd <dir> && …`·`git -C <dir> …` 이 가리키는 디렉터리에서 판정한다(병합 중 여부·작업 트리 판정).
     const words = alignedWords(part.code, part.raw);
     const at = commandAt(words.map((word) => word.code));
-    if (/^(cd|pushd|set-location|sl)$/i.test(words[at]?.value ?? '') && words[at + 1]) {
-      const target = expandWorkingDir(words.slice(at + 1).find((word) => !word.code.startsWith('-'))?.value ?? '.', here);
-      here = resolve(here, fromMsysPath(target));
+    if (CHANGES_DIRECTORY.test(words[at]?.value ?? '')) {
+      // 치환 안의 cd 는 그 하위 셸만 옮긴다 — 바깥 조각의 cwd 는 그대로이고, 안쪽은 재귀 판정이 따로 따라간다.
+      if (substitutions.some((span) => part.start > span.start && part.start < span.end)) continue;
+      location = changeDirectory(words, at, location, stack);
+      moves.push({ end: part.end, ...location });
       continue;
     }
+    const { here } = location;
     const git = gitInvocation(part.code);
     const gitDir = git?.dir ? /\s-C\s+("[^"]+"|'[^']+'|\S+)/.exec(part.raw)?.[1] : null;
-    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root };
+    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root,
+      cwdUnknown: location.unknown };
     for (const rule of state.rules) {
       if (state.hits.some((hit) => hit.id === rule.id)) continue;
       let matched = false;
@@ -754,14 +824,18 @@ function inspectView(view, command, cwd, depth, state) {
     if (depth < MAX_NESTING) {
       guarded(state, 'shell-wrapper', () => {
         const script = wrappedScript(part.code, part.raw);
-        if (script?.trim()) inspect(script, here, depth + 1, state);
+        if (script?.trim()) inspect(script, here, depth + 1, state, location.unknown);
       });
     }
   }
   // 명령 치환 `$( … )` 의 안쪽은 셸이 먼저 실행한다 — 조각 경계(`;`)를 넘는 치환도 있어 조각이 아니라 텍스트 전체에서 찾는다.
   if (depth < MAX_NESTING) {
     guarded(state, 'command-substitution', () => {
-      for (const inner of commandSubstitutions(view)) if (inner.trim()) inspect(inner, cwd, depth + 1, state);
+      for (const span of substitutions) {
+        if (!span.text.trim()) continue;
+        const before = moves.filter((move) => move.end <= span.start).at(-1) ?? { here: cwd, unknown: cwdUnknown };
+        inspect(span.text, before.here, depth + 1, state, before.unknown);
+      }
     });
   }
 }

@@ -186,10 +186,11 @@ describe('E2E 날짜는 화면과 같은 기준으로 만든다', () => {
 /**
  * [2026-10-28 감사 D6-7] E2E axe 감사는 e2e/fixtures/accessibility.ts 가 준비(진행 문구 대기·동작·투명도 안정)하고 실행한다.
  * spec 이 AxeBuilder 를 직접 만들면 준비가 spec 마다 다시 갈라진다 — 종전에 한 spec 에서 고친 경합(PR #977 의 진행 문구, 2026-09-14 의
- * JS 페이드)이 다른 spec 에는 남아 있었다. fixtures 밖에서 @axe-core/playwright 를 import 하거나 AxeBuilder 를 만들면 붉어진다.
+ * JS 페이드)이 다른 spec 에는 남아 있었다. 그 fixture 밖에서 @axe-core/playwright 를 import 하거나 AxeBuilder 를 만들면 붉어진다.
+ * 예외는 그 파일 하나다 — 다른 fixture 파일에서 만들어도 준비가 갈라지므로 fixtures/ 전체를 빼지 않는다(2026-10-29 교차 검토).
  */
 const AXE_BUILDER_PATTERN = /['"]@axe-core\/playwright['"]|\bnew\s+AxeBuilder\b/g;
-const AXE_FIXTURE_ROOT = '/e2e/fixtures/';
+const AXE_FIXTURE_FILE = '/e2e/fixtures/accessibility.ts';
 
 function axeBuilderLines(source: string, fileName: string): number[] {
   const code = codeWithoutComments(source, fileName);
@@ -197,10 +198,10 @@ function axeBuilderLines(source: string, fileName: string): number[] {
 }
 
 describe('E2E axe 감사는 공용 fixture 로만 만든다', () => {
-  it('e2e/fixtures 밖에서 AxeBuilder 를 만들거나 @axe-core/playwright 를 import 하지 않는다', () => {
+  it('e2e/fixtures/accessibility.ts 밖에서(다른 fixture 포함) AxeBuilder 를 만들거나 @axe-core/playwright 를 import 하지 않는다', () => {
     const offenders = [...filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.ts'), ...filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.mjs')]
       .map(path => ({ path, file: path.replace(FRONTEND_DIR, '').replace(/\\/g, '/') }))
-      .filter(({ file }) => !file.startsWith(AXE_FIXTURE_ROOT))
+      .filter(({ file }) => file !== AXE_FIXTURE_FILE)
       .flatMap(({ path, file }) => axeBuilderLines(readFileSync(path, 'utf8'), path).map(line => `${file}:${line}`));
     expect(
       offenders,

@@ -512,21 +512,24 @@ test.describe('게시판과 커뮤니티', () => {
                 await expect(page.getByRole('cell', { name: '첨부와 표 보존', exact: true })).toBeVisible();
             } finally {
                 // 게시글 상세(본문 첨부 이미지 포함)를 먼저 떠난다 — 열린 화면의 재조회가 지운 글·첨부를 404 로 받으면 브라우저 오류
-                //   감시가 실패로 잡는다(PR #930 의 설문 정리와 같은 순서).
-                await page.goto('about:blank');
-                // 저장은 끝났지만 화면 전환이 실패한 경우도 고유 제목으로 찾아 정리한다.
-                const ids = new Set<number>(pstSn ? [pstSn] : []);
-                if (saveAttempted && !pstSn) {
-                    const response = await adminRequest.get(`/api/v1/boards/${bbsId}`, {
-                        params: { searchCnd: '0', searchWrd: title, size: 100 },
-                    });
-                    expect(response.status()).toBe(200);
-                    const articles = (await response.json()).data.list as { pstSn: number; pstTtl: string }[];
-                    articles.filter((article) => article.pstTtl === title || article.pstTtl === updatedTitle)
-                        .forEach((article) => ids.add(article.pstSn));
-                }
-                for (const id of ids) {
-                    expect((await adminRequest.delete(`/api/v1/boards/${bbsId}/posts/${id}`)).status()).toBe(200);
+                //   감시가 실패로 잡는다(PR #930 의 설문 정리와 같은 순서). 떠나기가 실패해도(페이지 종료·크래시) 정리는 한다.
+                try {
+                    await page.goto('about:blank');
+                } finally {
+                    // 저장은 끝났지만 화면 전환이 실패한 경우도 고유 제목으로 찾아 정리한다.
+                    const ids = new Set<number>(pstSn ? [pstSn] : []);
+                    if (saveAttempted && !pstSn) {
+                        const response = await adminRequest.get(`/api/v1/boards/${bbsId}`, {
+                            params: { searchCnd: '0', searchWrd: title, size: 100 },
+                        });
+                        expect(response.status()).toBe(200);
+                        const articles = (await response.json()).data.list as { pstSn: number; pstTtl: string }[];
+                        articles.filter((article) => article.pstTtl === title || article.pstTtl === updatedTitle)
+                            .forEach((article) => ids.add(article.pstSn));
+                    }
+                    for (const id of ids) {
+                        expect((await adminRequest.delete(`/api/v1/boards/${bbsId}/posts/${id}`)).status()).toBe(200);
+                    }
                 }
             }
         });
@@ -601,9 +604,12 @@ test.describe('게시판과 커뮤니티', () => {
                     .not.toContain(edited);
             }
             finally {
-                // 게시글 상세를 먼저 떠난 뒤 지운다 — 댓글 변경 뒤의 재조회가 지운 글을 404 로 받지 않게(PR #930).
-                await page.goto('about:blank');
-                await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
+                // 게시글 상세를 먼저 떠난 뒤 지운다 — 댓글 변경 뒤의 재조회가 지운 글을 404 로 받지 않게(PR #930). 떠나기가 실패해도 지운다.
+                try {
+                    await page.goto('about:blank');
+                } finally {
+                    await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
+                }
             }
         });
     });
@@ -662,9 +668,12 @@ test.describe('화면 품질', () => {
                     expect((await again.json())?.data, '이력이 없는 취소는 수를 줄이지 않는다').toBe(afterCancel);
                 }
                 finally {
-                    // 게시글 상세를 먼저 떠난 뒤 지운다 — 추천 토글 뒤의 재조회가 지운 글을 404 로 받지 않게(PR #930).
-                    await page.goto('about:blank');
-                    await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
+                    // 게시글 상세를 먼저 떠난 뒤 지운다 — 추천 토글 뒤의 재조회가 지운 글을 404 로 받지 않게(PR #930). 떠나기가 실패해도 지운다.
+                    try {
+                        await page.goto('about:blank');
+                    } finally {
+                        await request.delete(`/api/v1/boards/${bbsId}/posts/${pstSn}`, { headers: auth });
+                    }
                 }
             });
         });

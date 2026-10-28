@@ -27,7 +27,7 @@
 ### 2. 데이터 관리 및 명명 규칙 (Naming Convention)
 - **Prefix**: 생성 데이터는 해당 spec이 소유하는 고유 접두사를 사용한다. `user_test_`·`test_` 외에도 `E2E26_`, `ROLE_E2E_` 등 자원별 계약이 있으므로 현재 spec과 `cleanup-db.ts`를 대조한다.
 - **Cleanup**: 자신이 생성한 ID를 보존해 `finally`/teardown에서 삭제한다. 공용 cleanup은 명시된 접두사와 API만 처리하므로 신규 자원이 자동 정리된다고 가정하지 않고 대응 경로와 실패 검증을 함께 추가한다.
-  그 자원을 보이는 화면(page·actor page)은 지우기 **전에** 떠나거나 닫는다(`page.goto('about:blank')`·`context.close()`) — 열린 화면의 재조회가 지운 자원을 404 로 받으면 fixture 의 브라우저 오류 감시가 실패로 잡는다(PR #930).
+  그 자원을 보이는 화면(page·actor page)은 지우기 **전에** 떠나거나 닫는다(`page.goto('about:blank')`·`context.close()`) — 열린 화면의 재조회가 지운 자원을 404 로 받으면 fixture 의 브라우저 오류 감시가 실패로 잡는다(PR #930). 떠나기가 실패해도(페이지 종료·크래시) 지우도록 `try { 떠나기 } finally { 지우기 }` 로 묶는다.
 
 ### 3. 구조적 설계 (POM & Fixtures)
 - **Page Object Model (POM)**: 복수 spec이 공유하거나 복잡한 화면 의미를 재사용할 때만 `e2e/pages`에 둔다. hygiene 계약은 이미 제거한 미사용 POM·fixture의 재유입을 차단하며, 모든 POM의 소비자 수를 검사하지는 않는다.

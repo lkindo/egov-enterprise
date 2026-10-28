@@ -49,12 +49,18 @@ const CASES = {
       'powershell -Command "git push -f"', 'pwsh -NoProfile -c "git push --force origin feat/x"', 'cmd /c "git push -f origin feat/x"',
       "bash -lc 'cd frontend && git push -f origin feat/x'", 'x=$(git push -f origin feat/x)',
       // 줄 이음으로 나눈 한 명령(bash `\`, PowerShell 백틱).
-      'git push origin feat/x \\\n  --force-with-lease', 'git push origin feat/x `\r\n  --force'],
+      'git push origin feat/x \\\n  --force-with-lease', 'git push origin feat/x `\r\n  --force',
+      // 2026-10-29 교차 검토: 주석을 건너뛰어도 단어 중간의 `#`·큰따옴표 안의 `#`·주석 다음 줄의 치환은 실행된다.
+      'echo a#$(git push -f origin feat/x)', 'echo "# $(git push -f origin feat/x)"', 'git status # 확인\nx=$(git push -f origin feat/x)',
+      'echo $(echo a # )\ngit push -f origin feat/x)'],
     pass: ['git push -u origin feat/x', 'git push origin --delete feat/old', 'git commit --only -m "정리; git push --force 는 쓰지 않는다" -- a.txt',
       "git commit --only -F - -- a.txt <<'EOF'\n본문에 적은 git push --force 는 명령이 아니다\nEOF",
       'git push -o "+ci.skip" origin feat/x', 'powershell -Command "git push origin feat/x"', "bash -lc 'git push origin feat/x'",
       'git commit --only -m "pwsh -c git push -f 는 묻는다" -- a.txt', "echo 'literal $(git push -f origin feat/x)'",
-      'git commit --only -m "\\$(git push -f) 는 치환이 아니다" -- a.txt'],
+      'git commit --only -m "\\$(git push -f) 는 치환이 아니다" -- a.txt',
+      // 2026-10-29 교차 검토(Codex) 오탐: 셸 주석 속 `$( … )` 를 명령 치환으로 읽어 승인을 요구했다(bash·PowerShell 공통 `#`).
+      'git status # $(git push --force origin main)', 'git status;# $(git push -f origin main)', '# $(git push -f origin main)\ngit status',
+      "Write-Output 'ok' # 나중에 $(git push -f) 를 쓰지 않는다"],
   },
   'git-discard-worktree': {
     // 2026-10-27 독립 검토(Antigravity)가 찾은 미탐: 따옴표 속 `<<`·주석 속 아포스트로피가 뒤 줄의 실제 명령을 지웠다.
@@ -168,12 +174,14 @@ test('git-commit-without-only: 병합·cherry-pick·revert·rebase 가 충돌로
   }
 });
 
-test('worktree-recursive-delete: 작업 트리 디렉터리의 재귀 삭제만 묻고 저장소 안 build·임시 디렉터리는 통과한다', () => {
+const slash = (path) => path.replaceAll('\\', '/');
+
+/** 원본 checkout(repo)과 나란한 작업 트리(wt-alpha), 등록이 풀린 잔재·다른 디렉터리·다른 저장소의 작업 트리를 둔 임시 배치에서 run 을 돈다. */
+function withWorktreeLayout(run) {
   const base = tempDir('agent-guard-trees-');
   const git = (cwd, ...args) => execFileSync('git', ['-c', 'user.email=guard@test', '-c', 'user.name=guard', ...args], { cwd, encoding: 'utf8' });
   const repo = join(base, 'repo');
   const tree = join(base, 'wt-alpha');
-  const slash = (path) => path.replaceAll('\\', '/');
   try {
     mkdirSync(repo);
     git(repo, 'init', '-q', '-b', 'main');
@@ -185,6 +193,15 @@ test('worktree-recursive-delete: 작업 트리 디렉터리의 재귀 삭제만 
     mkdirSync(join(base, 'other'));
     mkdirSync(join(base, 'foreign', 'tree'), { recursive: true });
     writeFileSync(join(base, 'foreign', 'tree', '.git'), 'gitdir: D:/elsewhere/.git/worktrees/tree\n'); // 다른 저장소의 작업 트리 표지
+    run({ base, repo, tree });
+  } finally {
+    try { git(repo, 'worktree', 'remove', '--force', tree); } catch { /* 이미 지워졌으면 아래에서 함께 지운다 */ }
+    rmSync(base, { recursive: true, force: true });
+  }
+}
+
+test('worktree-recursive-delete: 작업 트리 디렉터리의 재귀 삭제만 묻고 저장소 안 build·임시 디렉터리는 통과한다', () => {
+  withWorktreeLayout(({ base, repo, tree }) => {
     const hit = [`Remove-Item -Recurse -Force ${tree}`, `rm -rf ${slash(tree)}`, 'rm -rf ../wt-alpha', `rmdir /s /q ${tree}`, `rd /S ${tree}`,
       `Remove-Item -LiteralPath "${tree}" -Recurse`, `node -e "require('fs').rmSync('${slash(tree)}', { recursive: true, force: true })"`,
       `node -e "require('node:fs').rmdirSync('${tree.replaceAll('\\', '\\\\')}', {recursive:true})"`,
@@ -199,10 +216,40 @@ test('worktree-recursive-delete: 작업 트리 디렉터리의 재귀 삭제만 
     for (const command of hit) assert.ok(ruleOf(command, repo).includes('worktree-recursive-delete'), `걸려야 한다: ${command}`);
     for (const command of pass) assert.ok(!ruleOf(command, repo).includes('worktree-recursive-delete'), `통과해야 한다: ${command}`);
     assert.equal(decide(`rm -rf ${slash(tree)}`, repo).decision, 'ask', '삭제 승인은 사용자에게 묻는다');
-  } finally {
-    try { git(repo, 'worktree', 'remove', '--force', tree); } catch { /* 이미 지워졌으면 아래에서 함께 지운다 */ }
-    rmSync(base, { recursive: true, force: true });
-  }
+  });
+});
+
+// 2026-10-29 교차 검토(Codex): `$( … )` 안의 삭제를 처음 cwd 로 읽어, 앞의 `cd ..` 뒤 상대 경로로 지우는 작업 트리를 놓쳤다.
+test('worktree-recursive-delete: 명령 치환은 그 자리 앞의 cd 로 판정하고, cwd 를 정할 수 없으면 이름으로 묻는다', () => {
+  withWorktreeLayout(({ base, repo }) => {
+    const other = slash(join(base, 'other'));
+    const hit = [
+      // 치환 앞의 cd(;·&&), 큰따옴표 안 치환, Set-Location·pushd, 중첩 치환, 치환 안의 cd 뒤 중첩 치환.
+      'cd ..; Write-Output $(Remove-Item -Recurse -Force wt-alpha)', 'cd .. && echo "$(rm -rf wt-alpha)"',
+      'Set-Location ..; $x = $(Remove-Item -Recurse wt-alpha)', 'pushd ..; echo $(rm -rf wt-alpha); popd',
+      'cd ..; echo $(echo $(rm -rf wt-alpha))', 'echo $(cd ..; echo $(rm -rf wt-alpha))',
+      // 치환 안 주석의 `)` 는 치환을 닫지 않는다 — 다음 줄의 삭제도 치환 안의 cd 뒤에서 실행된다.
+      'echo $(cd .. # )\nrm -rf wt-alpha)',
+      // cwd 를 정할 수 없는 cd(변수·명령 치환·cd -·빈 스택의 popd) 뒤의 상대 삭제는 이름이 등록 작업 트리·wt-* 이거나 이름 없이
+      // 디렉터리를 지우면 묻는다.
+      'cd $env:TEMP; Remove-Item -Recurse -Force wt-alpha', 'cd "$(git rev-parse --show-toplevel)/.." && rm -rf wt-alpha',
+      'cd $dir && rm -rf ../wt-beta', 'cd -; rm -rf ./*', 'cd $dir; echo $(rm -rf wt-alpha)', 'cd $dir; cd sub; rm -rf .',
+      'popd; rm -rf wt-alpha'];
+    const pass = [
+      // 치환 뒤의 cd 는 치환에 닿지 않는다(마지막 cwd 로 읽으면 이 줄이 걸린다).
+      'Write-Output $(Remove-Item -Recurse -Force wt-alpha); cd ..', 'echo $(rm -rf wt-alpha) && cd .. && echo done',
+      // 치환 앞의 cd 뒤라도 작업 트리가 아닌 상대 삭제.
+      'cd ..; Write-Output $(Remove-Item -Recurse -Force other)', 'cd ..; echo $(rm -rf repo/build/x)',
+      // 치환 안의 cd 는 그 하위 셸만 옮긴다 — 바깥 조각의 cwd 는 그대로다.
+      'echo $(true; cd ..;); rm -rf wt-alpha',
+      // cwd 를 정할 수 없어도 이름이 작업 트리와 무관하면 통과하고, 절대 경로로 다시 옮기면 다시 안다.
+      'cd $env:TEMP; Remove-Item -Recurse -Force build', 'cd "$(git rev-parse --show-toplevel)" && rm -rf build/x',
+      'cd $dir; rm -rf node_modules/.cache', `cd $dir; cd ${other}; rm -rf ./*`,
+      // popd 는 pushd 앞의 디렉터리(repo)로 돌아간다.
+      `pushd ${slash(base)}; popd; rm -rf wt-alpha`];
+    for (const command of hit) assert.ok(ruleOf(command, repo).includes('worktree-recursive-delete'), `걸려야 한다: ${command}`);
+    for (const command of pass) assert.ok(!ruleOf(command, repo).includes('worktree-recursive-delete'), `통과해야 한다: ${command}`);
+  });
 });
 
 test('git-discard-worktree: 끝 커밋이 원격 추적 ref 에 있는 브랜치의 강제 삭제는 묻지 않는다', () => {
