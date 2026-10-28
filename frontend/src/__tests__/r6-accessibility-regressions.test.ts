@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
-import { inProjection } from '@/test-utils/projection';
+import { inProjection, keepInProjection } from '@/test-utils/projection';
 
 const SRC = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -139,7 +139,9 @@ describe('r6 accessibility regressions', () => {
       ['app/admin/system/monitoring/components/HarnessAtlasPanels.tsx', ['flex-col', 'justify-between', 'bg-muted', 'px-3']],
       ['app/admin/system/monitoring/components/HarnessAtlasPanels.tsx', ['w-full', 'justify-between', 'px-3', 'text-left']],
     ];
-    for (const [file, marker] of buttons) {
+    // 노트·모니터링(쇼케이스) 화면은 기능 소유라 생성물에서 투영으로 빠질 수 있다 — 원장에 있고 실제로 없는 파일만 뺀다(원본은 6행 그대로).
+    // core 소유 3행(사용자·부서·보안 그룹 폼)은 늘 남아 이 단언이 공허해지지 않는다.
+    for (const [file, marker] of keepInProjection(buttons, ([file]) => join(SRC, file))) {
       const classes = source(file).split(/["'`]/)
         .map((segment) => segment.split(/\s+/))
         .filter((tokens) => marker.every((token) => tokens.includes(token)));
