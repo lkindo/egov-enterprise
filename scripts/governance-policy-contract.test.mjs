@@ -340,6 +340,24 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     errors.push('Atlas must show the three-failure boundary');
   }
 
+  // [DEC-OPS-389] L2 는 다중 모듈 연동을 유지하면서 §2.3 의 의미 변경 범주를 포함하고, L2 Audit 리포트는 PR 설명의 고정 절이다.
+  const l2Row = grading.split('\n').find((line) => line.startsWith('| **L2** |')) ?? '';
+  if (!['다중 모듈 연동', '물리 스키마 H1', '인가·개인정보 H3', '식별자 축', '게이트 의미'].every((term) => l2Row.includes(term))) {
+    errors.push('protocol §2 L2 must keep multi-module work and include the §2.3 semantic-change categories');
+  }
+  const auditLevels = section(activeProtocol, '#### 3.3 등급별 감사 수준', '#### 3.4 위반 대응');
+  if (!auditLevels.includes('Audit 리포트는 PR 설명의 고정 절 `## Audit 리포트(L2)`')
+    || !['① H 범주', '② 대조한 헌법 조항', '③ §2.3 독립 검토의 검토 모델', '④ red 증명이 있는 곳'].every((item) => auditLevels.includes(item))) {
+    errors.push('protocol §3.3 must define the L2 Audit report as a fixed PR-description section with its four items');
+  }
+  if (!atlasL2.includes('의미 변경(H1·H3·식별자 축·게이트 의미)') || !atlasL2.includes('PR 설명의 Audit 리포트 절')) {
+    errors.push('Atlas must show the L2 semantic-change scope and the PR Audit report section');
+  }
+  // [DEC-OPS-389] 승인된 운영 결정은 규칙 계층 5 에 ADR 과 나란히 있다 — 전문 정본은 보관 원문의 같은 ID 절이다.
+  if (!hierarchy.includes('5. Accepted ADR, 승인된 운영 결정(DEC, 전문 정본은 보관 원문의 같은 ID 절)')) {
+    errors.push('AGENTS rule hierarchy must rank approved operational decisions with Accepted ADRs');
+  }
+
   return errors;
 }
 
@@ -634,6 +652,23 @@ test('DEC-OPS-387 approval and transmission pins fail with their own message', (
   assert.ok(protocolTruthErrors({ ...current, protocol: restored }).some(error => error.includes('Workflow tool opt-in')));
 });
 
+test('DEC-OPS-389 grade, audit report and hierarchy pins fail with their own message', () => {
+  const cases = [
+    ['protocol', '(물리 스키마 H1·인가·개인정보 H3·식별자 축·게이트 의미 — §2.3)', '', 'semantic-change categories'],
+    ['protocol', 'DB 스키마 변경, 다중 모듈 연동, 보안 관련 핵심 로직, 의미를', 'DB 스키마 변경, 보안 관련 핵심 로직, 의미를', 'semantic-change categories'],
+    ['protocol', 'Audit 리포트는 PR 설명의 고정 절 `## Audit 리포트(L2)`', 'Audit 리포트는 필요하면 따로 쓴다', 'fixed PR-description section'],
+    ['protocol', '④ red 증명이 있는 곳', '④ 기타', 'fixed PR-description section'],
+    ['atlas', '의미 변경(H1·H3·식별자 축·게이트 의미)', '의미 변경', 'L2 semantic-change scope'],
+    ['atlas', 'PR 설명의 Audit 리포트 절', '별도 Audit 문서', 'L2 semantic-change scope'],
+    ['agents', '승인된 운영 결정(DEC, 전문 정본은 보관 원문의 같은 ID 절), ', '', 'approved operational decisions'],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
+    const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
+    assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
+  }
+});
+
 test('backend constitution enforcement links resolve to exact registered source gates', () => {
   assert.deepEqual(backendEnforcementErrors(current), []);
 });
@@ -709,7 +744,7 @@ test('the required operational runner includes this contract through the full sc
   const rootPackage = JSON.parse(read(files.rootPackage));
   assert.equal(
     rootPackage.scripts?.['test:operational-contracts'],
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
+    `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"`,
   );
   const operational = current.registry.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
   assert.ok(operational);

@@ -5,7 +5,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { after, test } from 'node:test';
 import { buildAtlasCatalog, parseAtlasWorkflow, classifyConstitutionEnforcement } from './atlas-catalog.mjs';
-import { ALL_DECISION_INDEXES, CURRENT_DECISION_INDEX, DECISION_AREA_INDEXES, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
+import { ALL_DECISION_INDEXES, CURRENT_DECISION_INDEX, DECISION_ARCHIVE, DECISION_AREA_INDEXES, GAP_DETAIL, GAP_INDEX, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
 
 const repo = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const baseline = buildAtlasCatalog(repo);
@@ -76,6 +76,46 @@ test('catalog is deterministic and covers source-owned modules, articles, gates 
   assert.ok(baseline.catalogs.gaps.every(gap => /^GAP-[A-Z]+-\d{3}$/.test(gap.id)));
   assert.ok(baseline.catalogs.documents.some(doc => doc.id === 'docs/archived/PRD.MD'));
   assert.ok(baseline.catalogs.documents.some(doc => doc.id === 'docs/archived/TRD.MD'));
+});
+
+// [DEC-OPS-389] gap 카탈로그는 자동 로드 표에 남은 전문 행과 영역 상세로 옮긴 행을 함께 싣고, 레지스트리 줄은 싣지 않는다.
+test('gap catalog reads full rows from the auto-loaded index and the gap area detail', () => {
+  const full = (file) => fs.readFileSync(path.join(repo, file), 'utf8').split(/\r?\n/)
+    .filter(line => /^\| GAP-[A-Z]+-\d{3} \|/.test(line) && line.trim().slice(1, -1).split('|').length === 9)
+    .map(line => line.match(/^\| (GAP-[A-Z]+-\d{3}) \|/)[1]);
+  const kept = full(GAP_INDEX);
+  const moved = full(GAP_DETAIL);
+  assert.ok(kept.length > 0 && moved.length > 0);
+  assert.deepEqual(baseline.catalogs.gaps.map(gap => gap.id).sort(), [...kept, ...moved].sort());
+  assert.ok(baseline.catalogs.gaps.filter(gap => moved.includes(gap.id)).every(gap => gap.source === GAP_DETAIL));
+  // red 재현: 상세 행을 지우면 카탈로그에서 빠진다 — 레지스트리 줄이 남아도 그 줄로 대신 싣지 않는다.
+  const [first] = moved;
+  mutate(GAP_DETAIL, text => text.split(/(?<=\n)/).filter(line => !line.startsWith(`| ${first} |`)).join(''), () => {
+    assert.ok(!buildAtlasCatalog(fixture).catalogs.gaps.some(gap => gap.id === first));
+  });
+});
+
+// [DEC-OPS-389] 역방향 대체: 뒤 결정의 supersedes 칸이 인용한 결정에 그 뒤 결정 ID 를 보인다(색인 행은 고치지 않는다).
+test('decision records show the later decisions whose supersedes cell cites them', () => {
+  const byId = new Map(baseline.catalogs.decisions.map(item => [item.id, item]));
+  assert.ok(byId.get('DEC-OPS-381').supersededBy.includes('DEC-OPS-385'));
+  assert.ok(byId.get('DEC-OPS-381').details.some(item => item.label === '뒤 결정의 대체 범위에 인용' && item.value.includes('DEC-OPS-385')));
+  const cited = new Set(baseline.catalogs.decisions.flatMap(item => (String(item.supersedes ?? '').match(/\b(?:ADR-\d{4}|DEC-OPS-\d{3})\b/g) ?? [])
+    .filter(id => id !== item.id)));
+  for (const item of baseline.catalogs.decisions) {
+    assert.equal(Boolean(item.supersededBy), cited.has(item.id), `${item.id}: 역방향 표시는 뒤 결정의 supersedes 인용과 같아야 합니다.`);
+  }
+  // red 재현: DEC-OPS-385 의 supersedes 에서 DEC-OPS-381 인용을 지우면 381 의 역방향 표시도 사라진다.
+  // 색인 행과 보관 원문의 supersedes 는 같아야 하므로(카탈로그가 대조한다) 둘을 함께 바꾼다.
+  const citation = "| DEC-OPS-381 의 '공용 결정 인덱스에는 Accepted ADR(5열)' 가운데";
+  const uncite = text => {
+    assert.equal(text.split(citation).length, 2, 'DEC-OPS-385 의 supersedes 인용이 한 번 있어야 합니다.');
+    return text.replace(citation, "| 앞 결정의 '공용 결정 인덱스에는 Accepted ADR(5열)' 가운데");
+  };
+  mutate(CURRENT_DECISION_INDEX, uncite, () => mutate(DECISION_ARCHIVE, uncite, () => {
+    const mutated = buildAtlasCatalog(fixture).catalogs.decisions.find(item => item.id === 'DEC-OPS-381');
+    assert.ok(!(mutated.supersededBy ?? []).includes('DEC-OPS-385'));
+  }));
 });
 
 test('route uncertainty and historical decisions retain their source status', () => {

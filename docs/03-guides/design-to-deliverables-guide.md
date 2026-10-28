@@ -61,7 +61,7 @@ README 가 제출용이 아니라고 적는다. `--out` 은 `build/deliverables/
 | 요구사항 추적 조인 | `--rtm` 으로 받은 기관 CSV | `--rtm` 을 줄 때만 생긴다 |
 | 테이블·컬럼 정의서, 외래 키 목록, 기능별 물리 ERD, 표준 용어·단어·도메인 사전 | 참조 스키마(`--db`) | 표지(설명 없음·용어 없음·폐기 용어·타입 대조·외래 키 없음)는 이름 대응 표시이지 표준 판정이 아니다. ERD 는 키 컬럼과 물리 외래 키만 그린다 |
 
-**읽지 않는 입력.** 공용 메모리(`.agent/memory`), 보관 기록(`docs/archived`), ADR 색인, 공유 OCI(`.env`·DB 접속), 생성물의 검토 전
+**읽지 않는 입력.** 공용 메모리(`.agent/memory`, 거기서 옮긴 [gap 영역 상세](../04-operations/known-gaps-detail.md) 포함), 보관 기록(`docs/archived`), ADR 색인, 공유 OCI(`.env`·DB 접속), 생성물의 검토 전
 원장·메뉴 스냅숏(`config/governance/upstream-review`)이다. 원장·생산 Java·E2E·시험 소스와 `--rtm` 은 한 판정 함수를 지나며 거기서
 거부한다(구분자·대소문자를 가리지 않는다). 생성기 카탈로그·기능 선언은 그 모듈의 읽기를 쓰며 `config/modules` 와 생산 소스만 읽는다.
 생성물(재사용 투영본)에서는 아직 돌지 않는다.

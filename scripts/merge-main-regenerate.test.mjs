@@ -20,7 +20,7 @@ import {
   MEMORY_TABLES,
   urlCensusSha256,
 } from './merge-main-regenerate.mjs';
-import { DECISION_AREA_INDEXES } from './decision-indexes.mjs';
+import { DECISION_AREA_INDEXES, GAP_DETAIL, GAP_INDEX } from './decision-indexes.mjs';
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
@@ -229,6 +229,8 @@ test('area decision index rows merge in ID order like the auto-loaded index', ()
   for (const file of DECISION_AREA_INDEXES.map(({ path: areaPath }) => areaPath)) {
     assert.deepEqual(MEMORY_TABLES.get(file), { order: 'id' }, file);
   }
+  // gap 인덱스와 영역 상세(DEC-OPS-389)도 행 단위로 합친다 — 상세가 빠지면 옮긴 gap 행의 충돌이 손으로 푸는 충돌이 된다.
+  for (const file of [GAP_INDEX, GAP_DETAIL]) assert.deepEqual(MEMORY_TABLES.get(file), { order: 'keep' }, file);
   const file = DECISION_AREA_INDEXES.at(-1).path;
   const r = divergedRepo({ decisionsOurs: row('DEC-OPS-3'), decisionsTheirs: row('DEC-OPS-2'), file });
   const messages = [];

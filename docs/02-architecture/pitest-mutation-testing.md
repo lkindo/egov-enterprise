@@ -11,13 +11,13 @@
 | 엔진·플러그인 | PIT 엔진 `1.25.9` 명시 고정, 루트 Gradle 플러그인 `1.19.0`, JUnit 5 플러그인 `1.2.1`; 하위 Java 모듈에 공통 적용 |
 | 대상 | `PIT_TARGET_CLASSES`·`PIT_TARGET_TESTS`의 쉼표 구분 클래스명 glob. 미설정 시 각각 `nuri.*` |
 | CI | 제품 스코프(`mutation-scope`, DEC-OPS-366 으로 설문·참여·사용자/조직 셋, DEC-OPS-373 으로 업무 홈·홍보와 관측 둘 추가)와 이관 도구 스코프(`mutation-scope-migration`, DEC-OPS-104·180·308·311, ADR-0029 L3a-1·L3a-2·L3b·L3c·L3d·L3e)를 병렬 실행하고 안정 required context `mutation-test`가 두 잡을 집계. 스코프 목록은 [gate registry](../../config/governance/gates.json)의 `matrixScopes`가 정본이다 |
-| 하한 | `STRICT_MUTATION=true`일 때 75%, 미설정 로컬 실행은 threshold 0의 리포트 모드. `CI=true`만으로 활성화되지 않음 |
+| 하한 | `STRICT_MUTATION=true`일 때 범위 하한(`PIT_MUTATION_THRESHOLD`, 없거나 75 미만이면 75), 미설정 로컬 실행은 threshold 0의 리포트 모드. `CI=true`만으로 활성화되지 않음. 범위 하한의 정본은 gate registry `QUALITY-BACKEND-MUTATION-SCORE` 의 `scopeFloors`(변이 800개 이상 범위는 실측 −5)이고 CI matrix 의 `threshold` 가 같은 값을 넘긴다([ADR-0044](decisions/ADR-0044-ci-tuning-values-and-pit-scope-floors.md)) |
 | 빈 모집단 | `failWhenNoMutations = true`이므로 대상 오타·과도한 제외로 mutation이 0건이면 로컬도 실패 |
 | 결과 | 모듈별 `build/reports/pitest`의 HTML/XML; 정확한 하위 경로는 해당 실행 출력 확인 |
 | 실행 오류 | 기존 `pitest` 후처리가 해당 태스크 `reportDir/mutations.xml`을 검사한다. `RUN_ERROR` 또는 누락·손상·빈 XML이면 로컬 리포트 모드도 실패한다. `TIMED_OUT`의 기존 PIT 판정과 75% 하한은 유지한다. |
 | 변이 재계산 | `enableDefaultIncrementalAnalysis = false`, history 입출력·CI 전용 캐시 없음. PIT가 실행되는 선택 스코프의 변이를 이전 판정 재사용 없이 재계산 |
 
-기존 `business-core-auth` 스코프는 인증·로그인·보안 유틸에 더해 `MenuService`, `EgovAuthenticationProvider`, business-core의 `RateLimitFilter` 세 클래스를 명시적으로 검사한다. 메뉴 순환·배치의 최종 부모 그래프, 비밀번호/계정 상태/인증 장애 구분, 요청 한도 분기의 테스트 탐지력을 확인하기 위한 범위다. 종전 `business-app` 대상은 board, workflow, delivery/operation의 겹침 없는 세 scope로 나뉜다. 2026-10-19(DEC-OPS-366) 세 scope를 더했다. `business-app-survey`는 설문 전체이며 배송·운영 scope에 있던 `SurveyResultService`(제출자·중복·기간·문항/항목 소속 검증과 응답 표시의 선택항목 노출 경계)를 옮겨 겹치지 않게 했다. `business-app-participation`은 커뮤니티·메모 보고·일정, `business-core-user-org`는 사용자·그룹·부서·정책·부재 서비스다. 영속 작업(`system.job`)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT가 변이를 잡을 수 없어 넣지 않았다. 로컬 실측(non-strict)은 설문 84%(380 변이)·참여 85%(282)·사용자/조직 84%(237, 관리자 변경의 보안 부작용 시험 6건 보강 뒤 — 영속 작업을 넣었을 때는 66%)·배송·운영 86%(482, 설문 결과를 뺀 뒤)다. 모든 scope가 같은 테스트 glob과 75% 하한을 독립 적용한다. registry/workflow 계약은 21개 scope(제품 13·이관 8)의 정확한 일치와 핵심 대상(`SurveyResultService`, `UserService`, `LoginIdReuseGuard` 포함)을 검사하며 양쪽에서 함께 제거해도 실패한다. 첫 CI 실측(PR #939)은 제품 PIT 잡 13개의 벽시계 15.0분(합 57분, 동시 4개)으로, 전체 CI 15.6분의 임계 경로가 됐다(그 전 PR #937 은 프런트 빌드 13.2분이 임계 경로). 동시 실행 수 4 는 ADR-0027 이 재사용 생성물 잡의 러너 몫으로 정한 값이라 이번에 바꾸지 않았다 — 바꾸려면 후속 ADR 로 러너 예산을 다시 정한다.
+기존 `business-core-auth` 스코프는 인증·로그인·보안 유틸에 더해 `MenuService`, `EgovAuthenticationProvider`, business-core의 `RateLimitFilter` 세 클래스를 명시적으로 검사한다. 메뉴 순환·배치의 최종 부모 그래프, 비밀번호/계정 상태/인증 장애 구분, 요청 한도 분기의 테스트 탐지력을 확인하기 위한 범위다. 종전 `business-app` 대상은 board, workflow, delivery/operation의 겹침 없는 세 scope로 나뉜다. 2026-10-19(DEC-OPS-366) 세 scope를 더했다. `business-app-survey`는 설문 전체이며 배송·운영 scope에 있던 `SurveyResultService`(제출자·중복·기간·문항/항목 소속 검증과 응답 표시의 선택항목 노출 경계)를 옮겨 겹치지 않게 했다. `business-app-participation`은 커뮤니티·메모 보고·일정, `business-core-user-org`는 사용자·그룹·부서·정책·부재 서비스다. 영속 작업(`system.job`)은 api-server 통합 시험이 다뤄 business-core 모듈 PIT가 변이를 잡을 수 없어 넣지 않았다. 로컬 실측(non-strict)은 설문 84%(380 변이)·참여 85%(282)·사용자/조직 84%(237, 관리자 변경의 보안 부작용 시험 6건 보강 뒤 — 영속 작업을 넣었을 때는 66%)·배송·운영 86%(482, 설문 결과를 뺀 뒤)다. 모든 scope가 같은 테스트 glob과 범위별 하한(최저 75%)을 독립 적용한다. registry/workflow 계약은 21개 scope(제품 13·이관 8)의 정확한 일치와 핵심 대상(`SurveyResultService`, `UserService`, `LoginIdReuseGuard` 포함)을 검사하며 양쪽에서 함께 제거해도 실패한다. 첫 CI 실측(PR #939)은 제품 PIT 잡 13개의 벽시계 15.0분(합 57분, 동시 4개)으로, 전체 CI 15.6분의 임계 경로가 됐다(그 전 PR #937 은 프런트 빌드 13.2분이 임계 경로). 동시 실행 수는 이후 6으로 늘었다(ADR-0037). 슬롯 수와 선언 순서는 튜닝값이라 지금은 ci.yml·실측 profile 이 정본이고, 바꾸면 PR 설명에 실측 run id 를 남긴다(ADR-0044).
 
 이 클래스들의 PIT 결과가 실제 PostgreSQL 행 잠금·native SQL·트랜잭션 원자성을 대신하지는 않는다. 특히 메뉴 순환의 무한 반복 mutant는 timeout으로 탐지될 수 있으므로 결과의 `KILLED`와 `TIMED_OUT`을 구분하고 관련 DB 통합 테스트 증거를 함께 남긴다. 대상 편입은 실행 성공이나 점수 확보의 증거가 아니며 해당 변경 SHA의 리포트와 소요시간으로 판정한다.
 
@@ -48,13 +48,14 @@ converter 35, validate 220, verify 162개로 같았다. 세 scope의 상태는 �
 # 모듈 전체 리포트: 환경변수 미설정 시 threshold 0
 ./gradlew :foundation:pitest
 
-# CI와 같은 foundation-security-filter 스코프·75% 하한
+# CI와 같은 foundation-security-filter 스코프·하한(값은 ci.yml 그 matrix 항목의 threshold)
 $env:PIT_TARGET_CLASSES = 'nuri.foundation.security.filter.*'
 $env:PIT_TARGET_TESTS = 'nuri.foundation.*'
 $env:STRICT_MUTATION = 'true'
+$env:PIT_MUTATION_THRESHOLD = '75'
 ./gradlew :foundation:pitest --warning-mode fail --console=plain
 ```
 
-환경변수는 같은 PowerShell 세션의 다음 실행에도 남는다. 이후 다른 스코프를 실행할 때는 값을 명시적으로 다시 설정하거나 별도 셸을 사용한다. 모듈/클래스가 존재하는지 먼저 확인하고, 실행 대상·mutation 수·점수·survivor와 실제 종료 코드를 함께 기록한다. 로컬의 선택 스코프 green을 CI 18개(제품 10 + 이관 8) 전체 통과로 보고하지 않는다.
+환경변수는 같은 PowerShell 세션의 다음 실행에도 남는다. 이후 다른 스코프를 실행할 때는 값을 명시적으로 다시 설정하거나 별도 셸을 사용한다. 모듈/클래스가 존재하는지 먼저 확인하고, 실행 대상·mutation 수·점수·survivor와 실제 종료 코드를 함께 기록한다. 로컬의 선택 스코프 green을 CI 전체 범위의 통과로 보고하지 않는다. 큰 범위는 하한이 75보다 높으니 `PIT_MUTATION_THRESHOLD` 를 빼고 돌린 green 을 CI 와 같은 판정으로 보지 않는다([CI 가이드](../03-guides/cicd-pipeline.md)).
 
 *Verified against current Gradle configuration, CI and gate registry: 2026-10-15.*

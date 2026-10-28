@@ -40,6 +40,8 @@ export const NO_SEMANTIC_ROW = '의미 행 없음(조회)';
 /** 읽지 않는 입력 — 경로 접두로 판정한다(DEC-OPS-382 ②). */
 export const FORBIDDEN_INPUTS = Object.freeze([
   { prefix: '.agent/memory/', reason: '공용 메모리는 비규범 파생 인덱스다' },
+  // known-gaps 에서 옮긴 경로 전용 gap 행(DEC-OPS-389) — 공용 메모리 밖으로 옮겼다고 산출물 원천이 되지 않는다.
+  { prefix: 'docs/04-operations/known-gaps-detail.md', reason: 'gap 영역 상세는 공용 메모리에서 옮긴 비규범 파생 인덱스다' },
   { prefix: 'docs/archived/', reason: '보관 기록은 현행 원장이 아니다' },
   { prefix: 'docs/02-architecture/decisions/README.md', reason: 'ADR 색인은 결정의 목록이지 산출물 원천이 아니다' },
   { prefix: '.env', reason: '공유 OCI 접속 정보를 읽지 않는다' },

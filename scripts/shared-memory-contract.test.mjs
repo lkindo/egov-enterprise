@@ -5,10 +5,13 @@ import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import {
-  LEDGER_MEMORY_BINDINGS, TEST_SOURCE_ROOTS, decisionIndexIds, ledgerCountFacts, ledgerMemoryViolations, restatementMessage,
+  GAP_FILES, LEDGER_MEMORY_BINDINGS, TEST_SOURCE_ROOTS, decisionIndexIds, ledgerCountFacts, ledgerMemoryViolations, restatementMessage,
   testSourceFiles, testSourceRestatements, testSourceViolations,
 } from './ledger-count-restatement.mjs';
-import { DECISION_AREA_INDEXES, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
+import {
+  DECISION_AREA_INDEXES, DECISION_AREA_ROUTES, GAP_DETAIL, HISTORICAL_DECISION_INDEX, NO_EXTRA_INDEX_PATHS, UNASSIGNED_TOP_LEVEL,
+  adrHolders, decisionReadingPlan, decisionRoute, matchesGlob, unassignedTopLevels,
+} from './decision-indexes.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const memoryDir = path.join(repoRoot, '.agent', 'memory');
@@ -35,7 +38,7 @@ const documents = {
   'known-gaps.md': {
     kind: 'known-gaps',
     authority: 'derived-active-index',
-    headings: ['범위·상태 정의', '활성 Gap registry', '재검증 대기', '해결 규칙'],
+    headings: ['범위·상태 정의', '활성 Gap registry', '재검증 대기', '영역 상세 gap 레지스트리', '해결 규칙'],
   },
 };
 
@@ -262,9 +265,47 @@ export function decisionAreaRoutes(decisions) {
   const linked = rows.flatMap(([cell]) => [...cell.matchAll(/^\[[^\]]+\]\(([^)\s]+)\)$/gu)].map((match) => match[1]));
   assert.deepEqual(linked, DECISION_AREA_INDEXES.map(({ path: areaPath }) => fromMemory(areaPath)),
     '영역 결정 색인 표의 링크가 결정 색인 경로 원장과 다릅니다 — 영역 색인을 더하거나 옮기면 둘을 함께 고친다.');
-  assert.ok(rows.some(([cell, routes]) => cell === '넷 모두' && /어느 행에도 걸리지 않는/u.test(routes)),
+  assert.ok(rows.some(([cell, routes]) => cell === '넷 모두' && /어느 행에도[^|]*걸리지 않는/u.test(routes)),
     '영역 결정 색인 표에는 어느 행에도 걸리지 않는 경로를 넷 모두로 보내는 행이 있어야 합니다(fail-closed).');
   return linked;
+}
+
+/*
+ * [DEC-OPS-389] 경로 → 영역 색인 판정의 정본은 scripts/decision-indexes.mjs 의 DECISION_AREA_ROUTES 다. 표는 사람용 요약이므로
+ * 영역 행의 경로 패턴(백틱)이 원장의 `paths` 와 정확히 같고, 경로가 아닌 조건 문장이 그대로 있으며, '추가 색인 없음' 행이 원장의
+ * NO_EXTRA_INDEX_PATHS 와 같아야 한다 — 표에만 있는 경로는 읽기를 빠뜨리게 하고(안전 쪽 위반), 원장에만 있는 경로는 표만 보는
+ * 에이전트가 넷 모두를 읽게 한다(낭비).
+ */
+const backtickTokens = (cell) => [...cell.matchAll(/`([^`]+)`/gu)].map((match) => match[1]);
+function setDrift(label, shown, canonical) {
+  const extra = shown.filter((glob) => !canonical.includes(glob));
+  const missing = canonical.filter((glob) => !shown.includes(glob));
+  const duplicated = shown.filter((glob, index) => shown.indexOf(glob) !== index);
+  return extra.length + missing.length + duplicated.length === 0 ? []
+    : [`${label}: 표와 경로 원장이 다릅니다 — 표에만 [${extra.join(', ')}], 원장에만 [${missing.join(', ')}], 중복 [${duplicated.join(', ')}]`];
+}
+
+export function decisionRouteTableViolations(decisions) {
+  const section = markdownSection(decisions, '영역 결정 색인', '기록 템플릿');
+  const rows = markdownTableRows(section, ['영역 색인', '이 경로를 고치면 읽는다']);
+  const violations = [];
+  for (const { area, label, path: areaPath } of DECISION_AREA_INDEXES) {
+    const row = rows.find(([cell]) => cell === `[${label}](${fromMemory(areaPath)})`);
+    if (!row) {
+      violations.push(`${area}: 영역 행이 없습니다.`);
+      continue;
+    }
+    let cell = row[1];
+    for (const condition of DECISION_AREA_ROUTES[area].conditions) {
+      if (!cell.includes(condition)) violations.push(`${area}: 경로가 아닌 조건 '${condition}' 이 표에 없습니다.`);
+      cell = cell.split(condition).join('');
+    }
+    violations.push(...setDrift(area, backtickTokens(cell), DECISION_AREA_ROUTES[area].paths));
+  }
+  const derived = rows.find(([cell]) => cell === '추가 색인 없음');
+  if (!derived) violations.push('추가 색인 없음 행이 없습니다 — 생성물·공용 메모리·결정 색인을 입력 경로로 판정한다는 규칙이 표에서 사라진다.');
+  else violations.push(...setDrift('추가 색인 없음', backtickTokens(derived[1]), NO_EXTRA_INDEX_PATHS));
+  return violations;
 }
 
 function assertExactAdrSet(registryIds, memoryIds) {
@@ -338,15 +379,23 @@ function memoryFiles() {
   return Object.fromEntries(Object.keys(documents).map((file) => [file, fs.readFileSync(path.join(memoryDir, file), 'utf8')]));
 }
 
-/** 행 규칙(원장 재진술·행 길이·공개 안전·ID 유일성)을 받는 모집단: 자동 로드 세 파일과 영역 결정 색인(DEC-OPS-381). */
-function memoryRuleFiles() {
-  return { ...memoryFiles(), ...areaIndexFiles() };
+/** gap 영역 상세(DEC-OPS-389) — 자동 로드하지 않지만 옮긴 gap 행이 공용 메모리와 같은 행 규칙을 받는다. */
+function gapDetailFiles() {
+  return { [path.posix.basename(GAP_DETAIL)]: readRepoFile(GAP_DETAIL) };
 }
 
-test('row rules cover the auto-loaded memory and every area decision index', () => {
-  // 행을 자동 로드 밖으로 옮겨 검사를 피하지 않는다(H2) — 영역 색인이 이 모집단에서 빠지면 붉다.
+/** 행 규칙(원장 재진술·행 길이·공개 안전·ID 유일성)을 받는 모집단: 자동 로드 세 파일, 영역 결정 색인(DEC-OPS-381), gap 영역 상세(DEC-OPS-389). */
+function memoryRuleFiles() {
+  return { ...memoryFiles(), ...areaIndexFiles(), ...gapDetailFiles() };
+}
+
+test('row rules cover the auto-loaded memory, every area decision index and the gap area detail', () => {
+  // 행을 자동 로드 밖으로 옮겨 검사를 피하지 않는다(H2) — 영역 색인이나 gap 상세가 이 모집단에서 빠지면 붉다.
   assert.deepEqual(Object.keys(memoryRuleFiles()).sort(),
-    [...Object.keys(documents), ...DECISION_AREA_INDEXES.map(({ path: areaPath }) => path.posix.basename(areaPath))].sort());
+    [...Object.keys(documents), ...DECISION_AREA_INDEXES.map(({ path: areaPath }) => path.posix.basename(areaPath)),
+      path.posix.basename(GAP_DETAIL)].sort());
+  // 원장 재진술 검출이 gap 행을 찾는 두 파일이 이 모집단의 이름과 같다 — 이름이 갈라지면 상세 행이 검출에서 조용히 빠진다.
+  assert.deepEqual([...GAP_FILES].sort(), ['known-gaps.md', path.posix.basename(GAP_DETAIL)].sort());
 });
 
 test('ledger-derived counts stay in their ledgers and memory rows link to them', () => {
@@ -354,35 +403,54 @@ test('ledger-derived counts stay in their ledgers and memory rows link to them',
   assert.deepEqual(ledgerMemoryViolations(memoryRuleFiles()), []);
 });
 
+/** gap 전문 행(9열)을 가진 파일과 그 행 — 자동 로드 표에 남았거나 영역 상세로 옮겼다(DEC-OPS-389). */
+function fullGapRow(files, id) {
+  const holders = GAP_FILES.flatMap((file) => (files[file] ?? '').split(/\r?\n/)
+    .filter((line) => line.startsWith(`| ${id} |`) && markdownTableCells(line).length === 9).map((line) => [file, line]));
+  assert.equal(holders.length, 1, `${id}: gap 전문 행이 정확히 하나여야 합니다.`);
+  return holders[0];
+}
+
 test('ledger memory bindings are red for restated counts, a missing link and a missing row', () => {
-  const files = memoryFiles();
+  const files = { ...memoryFiles(), ...gapDetailFiles() };
   const gaps = files['known-gaps.md'];
   for (const { id, ledger, labels } of LEDGER_MEMORY_BINDINGS) {
-    const row = gaps.split(/\r?\n/).find((line) => line.startsWith(`| ${id} |`));
-    assert.ok(row, `${id}: 합성 변이를 넣을 행이 없습니다.`);
+    // 행이 자동 로드 표에 있든 영역 상세로 옮겼든 같은 검출을 받는다.
+    const [holder, row] = fullGapRow(files, id);
+    const text = files[holder];
     for (const [label, restated] of labels.flatMap((name) => [[name, `${name} **10개**`], [name, `${name} 39건`]])) {
       const cells = row.split(' | ');
       cells[4] = `${restated} ${cells[4]}`;
-      const mutated = gaps.replace(row, cells.join(' | '));
-      assert.notEqual(mutated, gaps);
+      const mutated = text.replace(row, cells.join(' | '));
+      assert.notEqual(mutated, text);
       assert.ok(
-        ledgerMemoryViolations({ ...files, 'known-gaps.md': mutated }).some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
-        `${id}: '${restated}' 재진술이 red 가 아닙니다.`,
+        ledgerMemoryViolations({ ...files, [holder]: mutated }).some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
+        `${id}: '${restated}' 재진술이 red 가 아닙니다(${holder}).`,
       );
     }
-    const unlinked = gaps.replace(row, row.split(`](../../${ledger})`).join('](../../config/governance/unrelated.json)'));
-    assert.notEqual(unlinked, gaps);
+    const unlinked = text.replace(row, row.split(`](../../${ledger})`).join('](../../config/governance/unrelated.json)'));
+    assert.notEqual(unlinked, text);
     assert.ok(
-      ledgerMemoryViolations({ ...files, 'known-gaps.md': unlinked }).some((message) => message.startsWith(`${id}: 원장 링크`)),
-      `${id}: 원장 링크를 지워도 red 가 아닙니다.`,
+      ledgerMemoryViolations({ ...files, [holder]: unlinked }).some((message) => message.startsWith(`${id}: 원장 링크`)),
+      `${id}: 원장 링크를 지워도 red 가 아닙니다(${holder}).`,
     );
-    const missing = gaps.replace(`${row}\n`, '').replace(`${row}\r\n`, '');
-    assert.notEqual(missing, gaps);
+    const missing = text.replace(`${row}\n`, '').replace(`${row}\r\n`, '');
+    assert.notEqual(missing, text);
     assert.ok(
-      ledgerMemoryViolations({ ...files, 'known-gaps.md': missing }).some((message) => message === `${id}: 활성 gap 행이 필요합니다.`),
-      `${id}: 행을 지워도 red 가 아닙니다.`,
+      ledgerMemoryViolations({ ...files, [holder]: missing }).some((message) => message === `${id}: 활성 gap 행이 필요합니다.`),
+      `${id}: 행을 지워도 red 가 아닙니다(${holder}) — 레지스트리 줄이 남아도 전문 행이 없으면 붉다.`,
     );
+    // 옮긴 행의 레지스트리 줄(자동 로드)에 수를 적어도 붉다.
+    const registryLine = gaps.split(/\r?\n/).find((line) => line.startsWith(`| ${id} |`) && markdownTableCells(line).length === 6);
+    if (registryLine) {
+      const restated = gaps.replace(registryLine, registryLine.replace(' | [상세](', ` ${labels[0]} 39건 | [상세](`));
+      assert.notEqual(restated, gaps);
+      assert.ok(ledgerMemoryViolations({ ...files, 'known-gaps.md': restated }).some((message) => message.startsWith('known-gaps.md:')),
+        `${id}: 레지스트리 줄의 재진술이 red 가 아닙니다.`);
+    }
   }
+  assert.ok(LEDGER_MEMORY_BINDINGS.some(({ id }) => fullGapRow(files, id)[0] !== 'known-gaps.md'),
+    '영역 상세로 옮긴 원장 결속 행이 하나 이상 있어야 이 시험이 상세 쪽 검출을 증명한다.');
   // 다른 메모리 파일의 행에 같은 수를 옮겨 적어도 red 다.
   const elsewhere = `${files['project-context.md']}\n| CTX-999 | unwired **10개** · app→core **10건** | [원장](../../config/governance/operation-consumer-census.json) | 2099-01-01 |\n`;
   assert.equal(
@@ -390,7 +458,8 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
     2,
   );
   // 표기를 바꿔도 같은 재진술이다 — 조사·기호·'수'·짧은 낱말을 건너거나, 어순·굵게 표시·띄어쓰기·화살표·대소문자를 바꿔도 붉다.
-  const wiringRow = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-WIRING-001 |'));
+  const [wiringHolder, wiringRow] = fullGapRow(files, 'GAP-WIRING-001');
+  const wiringText = files[wiringHolder];
   for (const [label, restated] of [
     ['operation', 'operation **436**개'],
     ['operation', 'operation은 437개'],
@@ -411,10 +480,10 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
   ]) {
     const cells = wiringRow.split(' | ');
     cells[4] = `${restated} ${cells[4]}`;
-    const mutated = gaps.replace(wiringRow, cells.join(' | '));
-    assert.notEqual(mutated, gaps);
+    const mutated = wiringText.replace(wiringRow, cells.join(' | '));
+    assert.notEqual(mutated, wiringText);
     assert.ok(
-      ledgerMemoryViolations({ ...files, 'known-gaps.md': mutated }).some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
+      ledgerMemoryViolations({ ...files, [wiringHolder]: mutated }).some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
       `'${restated}' 재진술이 red 가 아닙니다.`,
     );
   }
@@ -551,14 +620,13 @@ test('the documentation index points to the ADR registry instead of copying it',
 });
 
 test('the input contract row is red for the ledger counts it used to restate, and its generic labels stay row-scoped', () => {
-  const files = memoryFiles();
+  const files = { ...memoryFiles(), ...gapDetailFiles() };
   const gaps = files['known-gaps.md'];
-  const row = gaps.split(/\r?\n/).find((line) => line.startsWith('| GAP-CONTRACT-001 |'));
-  assert.ok(row, 'GAP-CONTRACT-001: 합성 변이를 넣을 행이 없습니다.');
-  // 이 행이 2026-10-19 까지 적던 형태 그대로다.
+  const [holder, row] = fullGapRow(files, 'GAP-CONTRACT-001');
+  // 이 행이 2026-10-19 까지 적던 형태 그대로다(행을 영역 상세로 옮겨도 같은 검출을 받는다).
   const cells = row.split(' | ');
   cells[4] = `원장 기준 길이 246·필수 95·읽기 전용 62필드, enum 18·중첩 검증 13개, 날짜 12필드의 달력 형식을 검사한다. ${cells[4]}`;
-  const messages = ledgerMemoryViolations({ ...files, 'known-gaps.md': gaps.replace(row, cells.join(' | ')) });
+  const messages = ledgerMemoryViolations({ ...files, [holder]: files[holder].replace(row, cells.join(' | ')) });
   for (const label of ['길이', '필수', '읽기 전용', 'enum', '중첩 검증', '날짜']) {
     assert.ok(messages.some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
       `GAP-CONTRACT-001 의 '${label}' 재진술이 red 가 아닙니다.`);
@@ -823,6 +891,114 @@ test('area decision indexes keep the operational row schema and are reachable fr
   assert.throws(() => decisionAreaRoutes(decisions.replace(closing, '')), /넷 모두로 보내는 행/u);
 });
 
+test('the area route table shows exactly the path patterns of the routing ledger', () => {
+  const decisions = readRepoFile('.agent/memory/decisions.md');
+  assert.deepEqual(decisionRouteTableViolations(decisions), []);
+  // red 재현: 표에만 있는 경로, 원장에만 있는 경로, 빠진 조건 문장, 빠진 '추가 색인 없음' 행이 각자 붉다.
+  const section = markdownSection(decisions, '영역 결정 색인', '기록 템플릿');
+  const ciRow = section.split('\n').find((line) => line.startsWith('| [CI·검증·거버넌스]'));
+  const composerRow = section.split('\n').find((line) => line.startsWith('| [프로젝트 생성기·재사용 투영]'));
+  const derivedRow = section.split('\n').find((line) => line.startsWith('| 추가 색인 없음 |'));
+  const [condition] = DECISION_AREA_ROUTES.composer.conditions;
+  for (const [label, mutated, expected] of [
+    ['표에만 있는 경로', decisions.replace(ciRow, ciRow.replace('`.zap/**`', '`.zap/**`, `ghost/**`')), '표에만 [ghost/**]'],
+    ['원장에만 있는 경로', decisions.replace(ciRow, ciRow.replace('`.zap/**`, ', '')), '원장에만 [.zap/**]'],
+    ['중복 경로', decisions.replace(ciRow, ciRow.replace('`.zap/**`', '`.zap/**`, `.zap/**`')), '중복 [.zap/**]'],
+    ['조건 문장 삭제', decisions.replace(composerRow, composerRow.replace(condition, '화면')), '경로가 아닌 조건'],
+    ['추가 색인 없음 행 삭제', decisions.replace(`${derivedRow}\n`, '').replace(`${derivedRow}\r\n`, ''), '추가 색인 없음 행이 없습니다'],
+    ['추가 색인 없음에 영역 경로', decisions.replace(derivedRow, derivedRow.replace('`api-docs.json`', '`api-docs.json`, `scripts/**`')), '추가 색인 없음: 표와 경로 원장이 다릅니다'],
+  ]) {
+    assert.notEqual(mutated, decisions, label);
+    const messages = decisionRouteTableViolations(mutated);
+    assert.ok(messages.some((message) => message.includes(expected)), `${label}: ${JSON.stringify(messages)}`);
+  }
+});
+
+/*
+ * [DEC-OPS-389] fail-closed 를 지키면서 넷 모두로 떨어지는 집합을 고정한다. 어느 원장에도 걸리지 않는 추적 파일의 최상위 이름은
+ * UNASSIGNED_TOP_LEVEL 과 같아야 한다 — 새 최상위 디렉터리가 미배정으로 생기면 붉고, 원장의 경로·문서 패턴이 아무 파일에도 맞지
+ * 않으면(이름이 바뀐 문서 등) 붉다.
+ */
+function trackedFiles() {
+  return execFileSync('git', ['ls-files', '-z', '--cached'], { cwd: repoRoot, encoding: 'utf8' }).split('\0').filter(Boolean);
+}
+
+export function routeLedgerGhosts(files, routes = DECISION_AREA_ROUTES, derived = NO_EXTRA_INDEX_PATHS) {
+  const ghosts = [];
+  for (const [area, { paths, documents }] of Object.entries(routes)) {
+    for (const glob of paths) if (!files.some((file) => matchesGlob(file, glob))) ghosts.push(`${area}: ${glob}`);
+    for (const document of documents) if (!files.includes(document)) ghosts.push(`${area}: ${document}`);
+  }
+  for (const glob of derived) if (!files.some((file) => matchesGlob(file, glob))) ghosts.push(`추가 색인 없음: ${glob}`);
+  return ghosts;
+}
+
+test('every tracked path routes to an area, a no-extra-index rule or a fixed fail-closed top-level set', () => {
+  const files = trackedFiles();
+  const holders = adrHolders(readRepoFile);
+  assert.deepEqual(unassignedTopLevels(files, holders), [...UNASSIGNED_TOP_LEVEL].sort(),
+    '넷 모두로 떨어지는 경로의 최상위 집합이 바뀌었습니다 — 새 경로를 scripts/decision-indexes.mjs 에 배정하거나, 넷 모두가 맞으면 UNASSIGNED_TOP_LEVEL 에 더한다.');
+  assert.deepEqual(routeLedgerGhosts(files), [], '경로 원장의 패턴이 아무 파일에도 맞지 않습니다.');
+  // red 재현: 미배정 새 최상위 디렉터리, 이름이 바뀐 문서 배정.
+  assert.deepEqual(unassignedTopLevels([...files, 'newtool/run.mjs'], holders), [...UNASSIGNED_TOP_LEVEL, 'newtool'].sort());
+  const renamed = files.filter((file) => file !== DECISION_AREA_ROUTES.product.documents[0]);
+  assert.deepEqual(routeLedgerGhosts(renamed), [`product: ${DECISION_AREA_ROUTES.product.documents[0]}`]);
+});
+
+test('routing keeps derived outputs on their inputs, ADR documents on their holder index and unassigned paths on all four', () => {
+  const holders = adrHolders(readRepoFile);
+  const areaOf = (file) => decisionRoute(file, holders);
+  assert.deepEqual(areaOf('.agent/memory/known-gaps.md'), { kind: 'derived' });
+  assert.deepEqual(areaOf(GAP_DETAIL), { kind: 'derived' });
+  assert.deepEqual(areaOf('frontend/src/types/generated-zod/board.ts'), { kind: 'derived' }, '생성물은 frontend/src/** 보다 먼저 판정한다');
+  assert.deepEqual(areaOf('frontend/src/app/page.tsx'), { kind: 'areas', areas: ['product'] });
+  assert.deepEqual(areaOf('frontend/src/extensions/hub.tsx'), { kind: 'areas', areas: ['composer', 'product'] });
+  assert.deepEqual(areaOf('scripts\\reusable-x.mjs'), { kind: 'areas', areas: ['ci-governance', 'composer'] }, '역슬래시 경로도 같다');
+  assert.deepEqual(areaOf('docs/03-guides/orchestration-protocol.md'), { kind: 'areas', areas: ['ci-governance'] });
+  // ADR 문서는 그 행이 있는 색인으로 간다 — 공용 인덱스의 ADR 은 추가 색인이 없고, 행이 없는 ADR 은 넷 모두다.
+  const adrFiles = fs.readdirSync(path.join(repoRoot, 'docs/02-architecture/decisions'));
+  const documentOf = (id) => `docs/02-architecture/decisions/${adrFiles.find((name) => name.startsWith(`${id}-`))}`;
+  const [areaAdr, areaHolder] = [...holders].find(([, holder]) => holder !== 'common');
+  assert.deepEqual(areaOf(documentOf(areaAdr)), { kind: 'areas', areas: [areaHolder] });
+  assert.deepEqual(areaOf(documentOf('ADR-0001')), { kind: 'common' });
+  assert.deepEqual(areaOf('docs/02-architecture/decisions/ADR-9999-unindexed.md'), { kind: 'unassigned' });
+  assert.deepEqual(decisionRoute(documentOf(areaAdr), new Map()), { kind: 'unassigned' }, '색인을 읽지 못하면 넷 모두다');
+  // 하나라도 미배정이면 넷 모두다.
+  const plan = decisionReadingPlan(['frontend/src/app/page.tsx', 'docs/04-operations/readiness-followups.md'], holders);
+  assert.equal(plan.all, true);
+  assert.deepEqual(plan.areas.map(({ area }) => area), DECISION_AREA_INDEXES.map(({ area }) => area));
+  assert.ok(plan.areas.every(({ gapDetail }) => gapDetail.startsWith(`${GAP_DETAIL}#`)));
+  const narrow = decisionReadingPlan(['frontend/src/app/page.tsx', '.agent/memory/decisions.md'], holders);
+  assert.equal(narrow.all, false);
+  assert.deepEqual(narrow.areas.map(({ area }) => area), ['product']);
+});
+
+/** AGENTS 필수 읽기 3 이 대상 경로의 정의와 판정 명령을 갖는다(DEC-OPS-389). */
+export const AGENTS_TARGET_PATH_DEFINITION = '대상 경로는 작업이 직접 고치는 입력 파일이다(생성물·공용 메모리·결정 색인 제외';
+export const AGENTS_ROUTE_COMMAND = '`node scripts/decision-indexes.mjs --for <경로…>`';
+export function agentsRoutingViolations(agents) {
+  const reading = markdownSection(agents, '작업 시작 시 필수 읽기', '공통 작업 원칙');
+  return [
+    ...(reading.includes(AGENTS_TARGET_PATH_DEFINITION) ? [] : ['AGENTS 필수 읽기에 대상 경로의 정의가 없습니다.']),
+    ...(reading.includes(AGENTS_ROUTE_COMMAND) ? [] : ['AGENTS 필수 읽기에 경로 판정 명령이 없습니다.']),
+    ...(reading.includes('](docs/04-operations/known-gaps-detail.md)') ? [] : ['AGENTS 필수 읽기가 gap 영역 상세를 가리키지 않습니다.']),
+  ];
+}
+
+test('AGENTS defines the target path and points to the routing command and the gap area detail', () => {
+  const agents = readRepoFile('AGENTS.md');
+  assert.deepEqual(agentsRoutingViolations(agents), []);
+  for (const [from, expected] of [
+    [AGENTS_TARGET_PATH_DEFINITION, '대상 경로의 정의'],
+    [AGENTS_ROUTE_COMMAND, '경로 판정 명령'],
+    ['](docs/04-operations/known-gaps-detail.md)', 'gap 영역 상세'],
+  ]) {
+    const mutated = agents.split(from).join('');
+    assert.notEqual(mutated, agents);
+    assert.ok(agentsRoutingViolations(mutated).some((message) => message.includes(expected)), from);
+  }
+});
+
 test('memory truth bindings fail closed for synthetic shard and ADR drift', () => {
   const requiredChecks = readRepoFile('.github/required-checks.json');
   const context = readRepoFile('.agent/memory/project-context.md');
@@ -926,6 +1102,32 @@ test('memory truth bindings fail closed for synthetic shard and ADR drift', () =
   );
 });
 
+/*
+ * [DEC-OPS-389] known-gaps 분할. 자동 로드 파일에는 모든 작업에 걸리거나 글로만 지켜지고 어기면 피해가 큰 금지가 있는 행의 전문과,
+ * 특정 경로에서만 필요한 행의 레지스트리 줄(6열)을 둔다. 그 행의 전문은 gap 영역 상세의 영역 절에 있다. 레지스트리와 상세는 ID 가
+ * 양방향으로 같고 우선순위·상태·영역이 같으며, 레지스트리 줄의 링크는 그 행이 있는 영역 절을 가리킨다. 행 길이·원장 재진술·공개
+ * 안전은 memoryRuleFiles 모집단으로 상세 행에도 그대로 적용된다.
+ */
+export const GAP_STATES = /^(?:open|blocked-external|deferred|accepted-risk|needs-revalidation)$/u;
+export const GAP_ROW_HEADER = Object.freeze(['GAP-ID', '우선순위', '상태', '영역', '요약', '근거', '다음 행동/재개 조건', '결정권자', '검증일']);
+export const GAP_REGISTRY_HEADER = Object.freeze(['GAP-ID', '우선순위', '상태', '영역', '한 줄 요약', '상세']);
+export const GAP_SUMMARY_LIMIT = 160;
+const GAP_LINE = /^\| GAP-(?!ID\b)[A-Z0-9-]+ \|/u;
+const gapDetailLink = (area) => `[상세](${fromMemory(GAP_DETAIL)}#${area})`;
+
+function withoutGapRegistryLines(text) {
+  return text.split(/\r?\n/).filter((line) => !(GAP_LINE.test(line) && markdownTableCells(line).length === 6)).join('\n');
+}
+
+const assertionMessage = (action) => {
+  try {
+    action();
+    return null;
+  } catch (error) {
+    return error.message.split('\n')[0];
+  }
+};
+
 test('memory registries use unique IDs and allowed gap states', () => {
   /*
     `| GAP-ID |` 는 표 머리글이지 memory ID 가 아니다 — 바로 아래 행 검사가 이미 `(?!ID\b)` 로
@@ -935,8 +1137,10 @@ test('memory registries use unique IDs and allowed gap states', () => {
   */
   const collectIds = (text) =>
     [...text.matchAll(/^\| ((?:CTX|ADR|DEC|GAP)-(?!ID\b)[A-Z0-9-]+) \|/gm)].map((match) => match[1]);
-  // 영역 결정 색인의 DEC 도 공용 메모리 ID 와 겹치지 않는다(한 결정은 색인 하나에만).
-  const ids = collectIds(Object.values(memoryRuleFiles()).join('\n'));
+  // 영역 결정 색인의 DEC 도 공용 메모리 ID 와 겹치지 않는다(한 결정은 색인 하나에만). 영역 상세로 옮긴 gap 의 레지스트리 줄(6열)은
+  // 상세 행을 가리키는 요약이라 한 번 빼고 센다 — 전문 행이 자동 로드 표와 상세에 함께 있으면 그대로 중복이다.
+  const ruleTexts = Object.entries(memoryRuleFiles()).map(([file, text]) => (file === 'known-gaps.md' ? withoutGapRegistryLines(text) : text));
+  const ids = collectIds(ruleTexts.join('\n'));
   assert.equal(ids.length, new Set(ids).size, `중복 memory ID가 있습니다: ${ids.join(', ')}`);
 
   // 머리글은 몇 개가 있어도 ID 가 아니고, 실제 ID 중복은 반드시 잡힌다.
@@ -945,17 +1149,117 @@ test('memory registries use unique IDs and allowed gap states', () => {
   assert.equal(duplicated.length, 2);
   assert.equal(new Set(duplicated).size, 1, '합성 중복이 잡히지 않으면 이 검사는 무력하다');
 
-  const gaps = fs.readFileSync(path.join(memoryDir, 'known-gaps.md'), 'utf8');
-  const rows = gaps.split(/\r?\n/).filter((line) => /^\| GAP-(?!ID\b)/.test(line));
+  // 전문 행은 자동 로드 표와 영역 상세 어디에 있든 같은 어휘·근거·재개 조건을 갖는다.
+  const rows = Object.entries({ ...memoryFiles(), ...gapDetailFiles() })
+    .filter(([file]) => GAP_FILES.includes(file))
+    .flatMap(([, text]) => text.split(/\r?\n/).filter((line) => GAP_LINE.test(line) && markdownTableCells(line).length === 9));
   assert.ok(rows.length >= 3, '활성 gap registry가 비정상적으로 작습니다.');
   for (const row of rows) {
-    const cells = row.split('|').slice(1, -1).map((cell) => cell.trim());
+    const cells = markdownTableCells(row);
     assert.match(cells[0], /^GAP-[A-Z0-9-]+$/);
     assert.match(cells[1], /^P[0-3]$/);
-    assert.match(cells[2], /^(open|blocked-external|deferred|accepted-risk|needs-revalidation)$/);
+    assert.match(cells[2], GAP_STATES);
     assert.match(cells[5], /\]\([^)]*\)/, `${cells[0]}: 근거 링크가 필요합니다.`);
     assert.ok(cells[6].length >= 10, `${cells[0]}: 다음 행동/재개 조건이 필요합니다.`);
     assert.match(cells[8], /^\d{4}-\d{2}-\d{2}$/);
+  }
+});
+
+/** gap 영역 상세의 행 — 영역 앵커 절마다 9열 표 하나. */
+export function gapDetailRows(detail) {
+  const violations = [];
+  const text = detail.replace(/\r\n?/gu, '\n');
+  const anchors = [...text.matchAll(/^<a id="([^"]+)"><\/a>$/gmu)];
+  if (anchors.map((match) => match[1]).join(',') !== DECISION_AREA_INDEXES.map(({ area }) => area).join(',')) {
+    violations.push('gap 상세의 절 앵커는 영역 결정 색인마다 하나씩, 경로 원장 순서로 둔다.');
+  }
+  const rows = [];
+  anchors.forEach((match, index) => {
+    const section = text.slice(match.index, anchors[index + 1]?.index ?? text.length);
+    const label = DECISION_AREA_INDEXES.find(({ area }) => area === match[1])?.label;
+    if (!label || !section.includes(`\n## ${label}\n`)) violations.push(`${match[1]}: 절 제목이 영역 결정 색인 이름과 다릅니다.`);
+    let cells = [];
+    const problem = assertionMessage(() => { cells = markdownTableRows(section, GAP_ROW_HEADER); });
+    if (problem) violations.push(`${match[1]}: ${problem}`);
+    for (const row of cells) rows.push({ id: row[0], area: match[1], cells: row });
+  });
+  if (text.split('\n').filter((line) => GAP_LINE.test(line)).length !== rows.length) {
+    violations.push('gap 상세의 행은 영역 절의 표 안에만 둔다.');
+  }
+  if (!/^> 상태: gap 영역 상세 — .*upstream 이력이며 도입 기관의 현재 위험이 아니다\.$/mu.test(text)) {
+    violations.push('gap 상세에는 생성물에서도 참인 상태 줄이 필요합니다 — 복사된 원본 위험을 도입 기관의 현재 위험으로 읽지 않게 한다.');
+  }
+  return { rows, violations };
+}
+
+/** 자동 로드 gap 인덱스와 영역 상세의 일대일 대응 위반 문장들. */
+export function gapSplitViolations(knownGaps, detail) {
+  const violations = [];
+  let registry = [];
+  const problem = assertionMessage(() => {
+    registry = markdownTableRows(markdownSection(knownGaps, '영역 상세 gap 레지스트리', '해결 규칙'), GAP_REGISTRY_HEADER);
+  });
+  if (problem) violations.push(`known-gaps.md: ${problem}`);
+  const gapLines = knownGaps.split(/\r?\n/).filter((line) => GAP_LINE.test(line));
+  const fullIds = gapLines.filter((line) => markdownTableCells(line).length === 9).map((line) => markdownTableCells(line)[0]);
+  const registryLines = gapLines.filter((line) => markdownTableCells(line).length === 6);
+  for (const line of gapLines.filter((row) => ![6, 9].includes(markdownTableCells(row).length))) {
+    violations.push(`${markdownTableCells(line)[0]}: gap 줄은 전문(9열) 또는 레지스트리(6열)여야 합니다.`);
+  }
+  if (registryLines.length !== registry.length) violations.push('레지스트리 줄은 「영역 상세 gap 레지스트리」 표 안에만 둔다.');
+  const detailParsed = gapDetailRows(detail);
+  violations.push(...detailParsed.violations);
+  const detailById = new Map(detailParsed.rows.map((row) => [row.id, row]));
+  const registryIds = registry.map(([id]) => id);
+  if (registryIds.length !== new Set(registryIds).size) violations.push('레지스트리에 같은 gap ID 가 두 번 있습니다.');
+  for (const [id, priority, state, area, summary, link] of registry) {
+    const detailRow = detailById.get(id);
+    if (!detailRow) {
+      violations.push(`${id}: 레지스트리 줄이 가리키는 상세 행이 없습니다.`);
+      continue;
+    }
+    if (priority !== detailRow.cells[1] || state !== detailRow.cells[2] || area !== detailRow.cells[3]) {
+      violations.push(`${id}: 레지스트리의 우선순위·상태·영역이 상세 행과 다릅니다.`);
+    }
+    if (link !== gapDetailLink(detailRow.area)) violations.push(`${id}: 상세 링크는 그 행이 있는 영역 절(${gapDetailLink(detailRow.area)})을 가리켜야 합니다.`);
+    if (!summary || summary.length > GAP_SUMMARY_LIMIT) violations.push(`${id}: 한 줄 요약은 1~${GAP_SUMMARY_LIMIT}자입니다(${summary.length}자).`);
+  }
+  for (const { id } of detailParsed.rows) {
+    if (!registryIds.includes(id)) violations.push(`${id}: 상세 행에 맞는 레지스트리 줄이 없습니다 — 자동 로드에서 그 gap 이 사라진다.`);
+    if (fullIds.includes(id)) violations.push(`${id}: 전문 행은 자동 로드 표나 영역 상세 가운데 한 곳에만 둔다.`);
+  }
+  return violations;
+}
+
+test('the auto-loaded gap registry and the gap area detail stay one-to-one', () => {
+  const knownGaps = readRepoFile('.agent/memory/known-gaps.md');
+  const detail = readRepoFile(GAP_DETAIL);
+  assert.deepEqual(gapSplitViolations(knownGaps, detail), []);
+  assert.ok(gapDetailRows(detail).rows.length > 0, 'gap 상세가 비었습니다 — 분할을 되돌렸으면 이 시험도 함께 고친다.');
+
+  // red 재현: 각 변이가 그 규칙의 문장으로 붉다.
+  const registryLine = knownGaps.split(/\r?\n/).find((line) => GAP_LINE.test(line) && markdownTableCells(line).length === 6);
+  const [id, priority, state] = markdownTableCells(registryLine);
+  const { area } = gapDetailRows(detail).rows.find((row) => row.id === id);
+  const detailRow = detail.split(/\r?\n/).find((line) => line.startsWith(`| ${id} |`));
+  const otherArea = DECISION_AREA_INDEXES.find((index) => index.area !== area).area;
+  const fullRow = knownGaps.split(/\r?\n/).find((line) => GAP_LINE.test(line) && markdownTableCells(line).length === 9);
+  const dropLine = (text, line) => text.split(/(?<=\n)/u).filter((part) => part.replace(/\r?\n$/u, '') !== line).join('');
+  const cases = [
+    ['레지스트리 줄 삭제', dropLine(knownGaps, registryLine), detail, '레지스트리 줄이 없습니다'],
+    ['상세 행 삭제', knownGaps, dropLine(detail, detailRow), '가리키는 상세 행이 없습니다'],
+    ['다른 영역 절 링크', knownGaps.replace(registryLine, registryLine.replace(`#${area})`, `#${otherArea})`)), detail, '영역 절'],
+    ['상태 불일치', knownGaps.replace(registryLine, registryLine.replace(` | ${priority} | ${state} | `, ` | ${priority} | deferred | `)), detail, '상세 행과 다릅니다'],
+    ['긴 요약', knownGaps.replace(registryLine, registryLine.replace(' | [상세](', ` ${'가'.repeat(GAP_SUMMARY_LIMIT)} | [상세](`)), detail, '한 줄 요약은'],
+    ['표 밖 레지스트리 줄', knownGaps.replace(fullRow, `${fullRow}\n${registryLine}`), detail, '표 안에만 둔다'],
+    ['전문 행 중복', knownGaps, detail.replace(detailRow, `${detailRow}\n${fullRow}`), '한 곳에만 둔다'],
+    ['상태 줄 삭제', knownGaps, detail.replace(/^> 상태: .*$/mu, '> 상태: 메모'), '상태 줄'],
+    ['절 앵커 삭제', knownGaps, detail.replace(`<a id="${otherArea}"></a>`, ''), '절 앵커'],
+  ];
+  for (const [label, gaps, details, expected] of cases) {
+    assert.ok(gaps !== knownGaps || details !== detail, `${label}: 변이가 적용되지 않았습니다.`);
+    const messages = gapSplitViolations(gaps, details);
+    assert.ok(messages.some((message) => message.includes(expected)), `${label}: ${JSON.stringify(messages)}`);
   }
 });
 
@@ -999,8 +1303,9 @@ test('shared memory rows stay index-sized', () => {
  * 단위는 행 상한과 같은 문자 수(CRLF 를 LF 로 맞춘 뒤) — 작업 트리는 CRLF·CI 는 LF 라 맞추지 않으면 판정이 갈린다.
  * 상한에 닿으면 행을 줄이거나 기준상 더는 늘 걸리지 않게 된 행만 옮긴다. 늘 걸리는 행을 크기 때문에 옮기거나 상한을 올리는 것은
  * H2 판단이다(AGENTS.md 거버넌스 총량 관리).
+ * [DEC-OPS-389] known-gaps.md 는 특정 경로에서만 필요한 행을 gap 영역 상세로 옮긴 뒤(약 28.6k → 17.5k자) 실측 근처로 내렸다.
  */
-export const MEMORY_FILE_LIMITS = Object.freeze({ 'project-context.md': 20000, 'decisions.md': 20000, 'known-gaps.md': 34000 });
+export const MEMORY_FILE_LIMITS = Object.freeze({ 'project-context.md': 20000, 'decisions.md': 20000, 'known-gaps.md': 19000 });
 export const memoryFileSize = (text) => text.replace(/\r\n?/gu, '\n').length;
 
 export function memoryFileSizeViolations(files) {

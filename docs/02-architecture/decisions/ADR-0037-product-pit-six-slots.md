@@ -4,6 +4,7 @@
 - 결정일: 2026-10-20
 - 승인 근거: 2026-10-20 사용자 지시 "바로 가능한 작업 우선 진행"(검증 비용·얇은 도메인 연구 보고서의 1단계, [DEC-OPS-373](../../archived/operational-decisions-history.md#dec-ops-373))과 2026-08-23 결정 위임.
 - 대체: [ADR-0026](ADR-0026-ci-critical-path-and-reusable-impact.md) 결정 9 가운데 `mutation-scope` 의 `max-parallel: 4`. ADR-0027 맥락의 "제품 PIT 는 4슬롯" 서술도 함께 대체한다. 대상·임계값·LPT 선언 순서, `sast-scope` 와 `mutation-scope-migration` 의 슬롯은 그대로다.
+- 후속 결정: 결정 1·2의 여섯 슬롯·선언 순서와 "board 657초 하한" 전제, 결정 3의 "값이 정확히 6"·75% 판정, 결정 4의 되돌림 규칙은 [ADR-0044](ADR-0044-ci-tuning-values-and-pit-scope-floors.md)가 대체한다 — 값은 ci.yml·실측 profile 이 정본이고 바꾸면 PR 설명에 실측 run id 를 남긴다. 하한은 범위별이다.
 - 관련: [CI 가이드](../../03-guides/cicd-pipeline.md), [필수 체크 계약](../../../scripts/required-checks-contract.test.mjs), [ADR-0032](ADR-0032-migration-pit-two-slots.md).
 
 ## 맥락

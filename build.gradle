@@ -386,8 +386,13 @@ subprojects { subproject ->
         //
         // 정리하면:
         //   · 로컬(`./gradlew :module:pitest`) — 환경변수 미설정 → threshold 0, 리포트 전용
-        //   · CI(mutation-test 잡)        — STRICT_MUTATION=true → threshold 75, 미달 시 빌드 파손
-        mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? 75 : 0
+        //   · CI(mutation-test 잡)        — STRICT_MUTATION=true → 범위 하한, 미달 시 빌드 파손
+        //
+        // [2026-10-29 ADR-0044] 범위별 하한 — CI 행렬이 범위마다 PIT_MUTATION_THRESHOLD 를 넘긴다. 값의 정본은 gates.json
+        //   QUALITY-BACKEND-MUTATION-SCORE 의 scopeFloors(변이 800개 이상 범위의 실측 −5, 없으면 75)이고 거버넌스 계약이
+        //   행렬 값과 대조한다. 헌법의 75 는 최저선이라 더 낮은 값·빈 값은 75 가 되고, 숫자가 아니면 구성이 실패한다.
+        //   로컬에서 한 범위를 CI 와 같게 돌리려면 STRICT_MUTATION=true 와 그 범위의 PIT_MUTATION_THRESHOLD 를 함께 준다.
+        mutationThreshold = System.getenv('STRICT_MUTATION') == 'true' ? Math.max(75, (System.getenv('PIT_MUTATION_THRESHOLD') ?: '75') as int) : 0
     }
 
     // PIT counts RUN_ERROR as detected; a crashed minion is not test detection evidence.
