@@ -116,9 +116,10 @@ describe('approval query ownership', () => {
       ifmlAtrzSn: 17,
       status: 'R',
       reason: '예산 코드 누락',
+      version: 4,
     }, {} as never);
 
-    expect(service.confirm).toHaveBeenCalledWith(17, 'R', '예산 코드 누락', undefined);
+    expect(service.confirm).toHaveBeenCalledWith(17, 'R', '예산 코드 누락', 4);
     expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.lists() });
     expect(invalidate).not.toHaveBeenCalledWith({ queryKey: approvalKeys.all });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: approvalKeys.detail(17) });

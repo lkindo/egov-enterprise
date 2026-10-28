@@ -250,6 +250,11 @@ public class SurveyResultService {
                 throw new BusinessException("해당 문항의 항목이 아닙니다: " + a.srvyArtclSn(),
                         CommonErrorCode.INVALID_INPUT_VALUE);
             }
+            // 주관식은 답변 칸을 고르는 것이 아니라 그 칸에 글로 답한다 — 빈 답은 답하지 않은 것과 같다(전 문항 필수, DEC-OPS-157).
+            if (q.isFreeText() && (a.rspdntAnsCn() == null || a.rspdntAnsCn().isBlank())) {
+                throw new BusinessException("주관식 문항에 답을 적어 주세요: " + q.getQstnCn(),
+                        CommonErrorCode.INVALID_INPUT_VALUE);
+            }
             rows.add(SurveyResult.builder()
                     .srvySn(srvySn)
                     .srvyTmpltSn(q.getSrvyTmpltSn())

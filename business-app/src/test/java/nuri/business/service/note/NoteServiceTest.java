@@ -98,4 +98,31 @@ class NoteServiceTest {
         verify(noteRepository).save(noteCaptor.capture());
         org.assertj.core.api.Assertions.assertThat(noteCaptor.getValue().getAtchFileSn()).isEqualTo(777L);
     }
+
+    @Test
+    @DisplayName("🚨 화면을 거치지 않은 요청도 수신자 100명·ID 20자 경계에서 400 이고 사용자 조회 전에 멈춘다 (2026-10-27)")
+    void sendNote_rejectsReceiverListBeyondScreenBounds() {
+        String tooMany = java.util.stream.IntStream.rangeClosed(1, 101)
+                .mapToObj(i -> "USR" + i).collect(java.util.stream.Collectors.joining(","));
+        String tooLong = "U".repeat(21);
+
+        for (String[] c : new String[][]{{tooMany, "최대 100명"}, {tooLong, "개별 최대 20자"}}) {
+            nuri.business.service.note.dto.NoteDto dto = nuri.business.service.note.dto.NoteDto.builder()
+                    .rcverId(c[0]).noteSj("제목").noteCn("내용").build();
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> noteService.sendNote("USR_SNDR_1", dto))
+                    .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE)
+                    .hasMessageContaining(c[1]);
+        }
+        org.mockito.Mockito.verifyNoInteractions(userRepository);
+
+        // 경계값(100명·20자)은 통과해 사용자 조회로 간다.
+        String hundred = java.util.stream.IntStream.rangeClosed(1, 100)
+                .mapToObj(i -> String.format("%020d", i)).collect(java.util.stream.Collectors.joining(","));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> noteService.sendNote("USR_SNDR_1",
+                        nuri.business.service.note.dto.NoteDto.builder().rcverId(hundred).noteSj("제목").noteCn("내용").build()))
+                .hasMessageNotContaining("최대 100명")
+                .hasMessageNotContaining("개별 최대 20자");
+        verify(userRepository).findByEsntlIdIn(org.mockito.ArgumentMatchers.anyList());
+    }
 }

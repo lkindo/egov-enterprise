@@ -21,8 +21,10 @@ export type SurveyQuestionUpdate = Pick<SurveyQuestion, 'qstnCn'>
   & Partial<Pick<SurveyQuestion, 'qstnSn' | 'qstnTypeCd' | 'maxChcCnt'>>;
 export type SurveyItemUpdate = { artclSn?: number; artclCn: string; etcAnsYn?: string };
 
-/** '1' = 객관식. 그 외는 주관식으로 취급한다(백엔드 통계 DTO 와 같은 규약). */
+/** '1' = 객관식. */
 export const MULTIPLE_CHOICE = '1';
+/** '2' = 주관식 — 응답 화면과 같은 정의를 쓴다(@/types/business/survey). */
+export { FREE_TEXT_QUESTION_TYPE as FREE_TEXT, FREE_TEXT_ANSWER_SLOT } from '@/types/business/survey';
 export const PERIOD_FIELDS = ['srvyBgngYmd', 'srvyEndYmd'] as const;
 export const EMPTY_PERIOD = { srvyBgngYmd: '', srvyEndYmd: '' };
 export type SurveyPeriod = typeof EMPTY_PERIOD;

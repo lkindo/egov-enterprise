@@ -163,6 +163,11 @@ export function useApprovalUndoQueue({
     if (id === undefined) return;
     const title = documentLabel(item);
     const version = item.version;
+    // 버전 없이 보내지 않는다 — 서버가 필수로 대조한다(2026-10-27).
+    if (typeof version !== 'number') {
+      toast(`‘${title}’ 의 문서 버전을 확인할 수 없어 처리하지 않았습니다. 목록을 새로 고쳐 주세요.`, 'error');
+      return;
+    }
     const accepted = scheduleApprovalCommit(id, async () => {
       setCommittingIds(current => [...current, id]);
       try {

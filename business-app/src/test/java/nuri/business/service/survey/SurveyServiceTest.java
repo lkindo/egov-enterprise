@@ -733,6 +733,65 @@ class SurveyServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 주관식 문항을 만들면 답변 칸 하나를 함께 만든다 — 칸이 없으면 응답자가 답할 수 없다 (2026-10-27)")
+    void insertQuestion_freeTextCreatesAnswerSlot() {
+        given(infoRepository.findByIdForSubmission(201L)).willReturn(Optional.of(
+                SurveyInfo.builder().srvySn(201L).srvyTmpltSn(101L).build()));
+        given(qesitmRepository.save(any(SurveyQuestion.class))).willAnswer(inv -> {
+            SurveyQuestion saved = inv.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(saved, "srvyQstnSn", 501L);
+            return saved;
+        });
+
+        surveyService.insertQuestion(SurveyQuestionDto.builder().srvySn(201L).qstnTypeCd("2").qstnCn("개선할 점").build());
+
+        org.mockito.ArgumentCaptor<SurveyArticle> captor = org.mockito.ArgumentCaptor.forClass(SurveyArticle.class);
+        verify(iemRepository).save(captor.capture());
+        assertThat(captor.getValue().getSrvyQstnSn()).isEqualTo(501L);
+        assertThat(captor.getValue().getArtclCn()).isEqualTo(SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT);
+        assertThat(captor.getValue().getSrvyTmpltSn()).isEqualTo(101L);
+
+        org.mockito.Mockito.clearInvocations(iemRepository);
+        surveyService.insertQuestion(SurveyQuestionDto.builder().srvySn(201L).qstnTypeCd("1").qstnCn("만족하십니까").build());
+        verify(iemRepository, never()).save(any());
+    }
+
+    @Test
+    @DisplayName("🚨 유형을 주관식으로 바꾸면 답변 칸이 없을 때 하나 만든다")
+    void updateQuestion_toFreeTextCreatesAnswerSlot() {
+        givenQuestionSurvey(301L);
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).qstnTypeCd("1").qstnCn("질문").srvyTmpltSn(101L).build()));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of());
+
+        surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).qstnTypeCd("2").qstnCn("질문").build());
+
+        verify(iemRepository).save(any(SurveyArticle.class));
+    }
+
+    @Test
+    @DisplayName("🚨 주관식 문항의 답변 칸은 하나다 — 더 만들거나 마지막 칸을 지우면 400")
+    void freeTextAnswerSlotIsExactlyOne() {
+        givenQuestionSurvey(301L);
+        SurveyQuestion freeText = SurveyQuestion.builder().srvyQstnSn(301L).srvySn(201L).qstnTypeCd("2").srvyTmpltSn(101L).build();
+        SurveyArticle slot = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(freeText));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(slot));
+
+        assertThatThrownBy(() -> surveyService.insertItem(SurveyArticleDto.builder().srvyQstnSn(301L).artclCn("둘째 칸").build()))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("답변 칸이 하나만");
+
+        givenItemSurvey(401L);
+        given(iemRepository.findById(401L)).willReturn(Optional.of(slot));
+        assertThatThrownBy(() -> surveyService.deleteItem(401L))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("답변 칸은 지울 수 없습니다");
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteById(any());
+    }
+
+    @Test
     @DisplayName("설문 항목 수정 - 성공")
     void updateItem_Success() {
         SurveyArticle item = SurveyArticle.builder()

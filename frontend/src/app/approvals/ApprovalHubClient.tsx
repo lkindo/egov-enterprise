@@ -88,7 +88,8 @@ const APPROVAL_DECISION_LABELS = {
   status: '결재 상태',
 };
 
-const approvalDecisionSchema = ApprovalConfirmRequestSchema
+// 화면이 입력받는 것은 상태와 사유다 — 버전은 문서에서 와서 제출 때 싣는다(서버 필수, 2026-10-27).
+const approvalDecisionSchema = ApprovalConfirmRequestSchema.omit({ version: true })
   .transform((request) => ({ ...request, reason: request.reason?.trim() }))
   .superRefine((request, context) => {
     if (request.status === SANCTION_STATUS.REJECTED && !request.reason) {
@@ -415,6 +416,11 @@ function useApprovalDocumentActions({
           failures.push(`‘${documentLabel(item)}’: 이미 처리 예정에 올라 있어 보내지 않았습니다.`);
           continue;
         }
+        // 버전 없이 보내지 않는다 — 서버가 필수로 대조한다(2026-10-27).
+        if (typeof item.version !== 'number') {
+          failures.push(`‘${documentLabel(item)}’: 문서 버전을 확인할 수 없어 보내지 않았습니다. 목록을 새로 고쳐 주세요.`);
+          continue;
+        }
         try {
           await confirmMutation.mutateAsync({ ifmlAtrzSn: item.ifmlAtrzSn as number, status: SANCTION_STATUS.APPROVED, version: item.version });
         } catch (error) {
@@ -675,6 +681,11 @@ export default function ApprovalHubClient() {
       toast('문서 번호를 확인할 수 없어 처리할 수 없습니다.', 'error');
       return;
     }
+    const version = item.version;
+    if (typeof version !== 'number') {
+      toast('문서 버전을 확인할 수 없어 처리할 수 없습니다. 목록을 새로 고쳐 주세요.', 'error');
+      return;
+    }
 
     const validatedDecision = decisionValidation.validate({
       status: aprvYn,
@@ -704,7 +715,7 @@ export default function ApprovalHubClient() {
         ifmlAtrzSn: item.ifmlAtrzSn,
         status: validatedDecision.status,
         reason: validatedDecision.reason,
-        version: item.version,
+        version,
       });
       toast(`성공적으로 ${actionNm}되었습니다.`, 'success');
       setRejectReason('');

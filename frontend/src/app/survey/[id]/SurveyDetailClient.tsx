@@ -10,7 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
 import { surveyParticipationService } from '@/services/foundation/survey/SurveyParticipationService';
-import type { Survey, SurveyQuestion, SurveyResponseSubmit } from '@/types/business/survey';
+import { FREE_TEXT_QUESTION_TYPE, type Survey, type SurveyQuestion, type SurveyResponseSubmit } from '@/types/business/survey';
 import { todayStorageYmd } from '@/lib/format-date';
 import {
   SURVEY_STATUS_LABEL,
@@ -58,6 +58,8 @@ export default function SurveyDetailClient({
   const [selected, setSelected] = useState<Record<number, number[]>>({});
   /** '기타' 항목을 고른 문항의 자유 입력. key = srvyQstnSn. */
   const [etcText, setEtcText] = useState<Record<number, string>>({});
+  /** 주관식 문항의 답. key = srvyQstnSn. 답은 그 문항의 답변 칸(첫 항목)에 담겨 제출된다. */
+  const [writtenAnswer, setWrittenAnswer] = useState<Record<number, string>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -106,8 +108,12 @@ export default function SurveyDetailClient({
   // [2026-09-26 DIP B4 P6, D4] 전 문항 응답이 필수다 — 고를 선택지가 있는 문항에 모두 답해야 제출할 수 있다(서버도 400).
   //   종전에는 한 문항만 골라도 제출돼 통계의 문항별 응답 수가 설문 응답 수와 어긋났다.
   const answerableQuestions = questionList.filter((question) => (question.items ?? []).length > 0);
+  // 주관식은 글을 적어야 답한 것이다 — 빈 답은 서버도 400 이다.
+  const isFreeText = (question: SurveyQuestion) => question.qstnTypeCd === FREE_TEXT_QUESTION_TYPE;
   const unansweredCount = answerableQuestions
-    .filter((question) => (selected[question.srvyQstnSn] ?? []).length === 0).length;
+    .filter((question) => (isFreeText(question)
+      ? !(writtenAnswer[question.srvyQstnSn] ?? '').trim()
+      : (selected[question.srvyQstnSn] ?? []).length === 0)).length;
   const canSubmit = isOpen && answerableQuestions.length > 0 && unansweredCount === 0 && !isSubmitting && !answered;
 
   const handleSelectOption = (question: SurveyQuestion, articleSn: number) => {
@@ -146,21 +152,29 @@ export default function SurveyDetailClient({
 
     try {
       const payload: SurveyResponseSubmit = {
-        answers: Object.entries(selected).flatMap(([questionSn, articleSns]) => {
-          const srvyQstnSn = Number(questionSn);
-          const question = questionList.find((q) => q.srvyQstnSn === srvyQstnSn);
-          const etc = etcText[srvyQstnSn]?.trim();
+        answers: [
+          ...answerableQuestions.filter(isFreeText).map((question) => ({
+            srvyQstnSn: question.srvyQstnSn,
+            srvyArtclSn: (question.items ?? [])[0].srvyArtclSn,
+            rspdntAnsCn: (writtenAnswer[question.srvyQstnSn] ?? '').trim(),
+          })),
+          ...Object.entries(selected).flatMap(([questionSn, articleSns]) => {
+            const srvyQstnSn = Number(questionSn);
+            const question = questionList.find((q) => q.srvyQstnSn === srvyQstnSn);
+            if (question && isFreeText(question)) return [];
+            const etc = etcText[srvyQstnSn]?.trim();
 
-          return articleSns.map((articleSn) => {
-            const item = question?.items?.find((it) => it.srvyArtclSn === articleSn);
-            const isEtc = item?.etcAnsYn === 'Y';
-            return {
-              srvyQstnSn,
-              srvyArtclSn: articleSn,
-              ...(isEtc && etc ? { etcAnsCn: etc } : {}),
-            };
-          });
-        }),
+            return articleSns.map((articleSn) => {
+              const item = question?.items?.find((it) => it.srvyArtclSn === articleSn);
+              const isEtc = item?.etcAnsYn === 'Y';
+              return {
+                srvyQstnSn,
+                srvyArtclSn: articleSn,
+                ...(isEtc && etc ? { etcAnsCn: etc } : {}),
+              };
+            });
+          }),
+        ],
       };
 
       await surveyParticipationService.submitAnswers(srvySn, payload);
@@ -274,7 +288,28 @@ export default function SurveyDetailClient({
                     </legend>
 
                     {items.length === 0 ? (
-                      <p className="text-xs text-muted-foreground">선택 항목이 없어 응답할 수 없는 문항입니다.</p>
+                      <p className="text-xs text-muted-foreground">
+                        {isFreeText(question)
+                          ? '답변 칸이 아직 없어 응답할 수 없는 문항입니다. 설문 관리자에게 알려 주세요.'
+                          : '선택 항목이 없어 응답할 수 없는 문항입니다.'}
+                      </p>
+                    ) : isFreeText(question) ? (
+                      <div className="space-y-1.5">
+                        <label htmlFor={`${groupName}-written`} className="sr-only">
+                          {question.qstnCn} 답변
+                        </label>
+                        <Textarea
+                          id={`${groupName}-written`}
+                          value={writtenAnswer[question.srvyQstnSn] ?? ''}
+                          onChange={(event) => {
+                            setSubmitError(null);
+                            setWrittenAnswer((prev) => ({ ...prev, [question.srvyQstnSn]: event.target.value }));
+                          }}
+                          maxLength={4000}
+                          placeholder="답을 적어 주세요 (최대 4000자)"
+                          className="min-h-[96px]"
+                        />
+                      </div>
                     ) : (
                       <div className="space-y-2">
                         {items.map((item) => {

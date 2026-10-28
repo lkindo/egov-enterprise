@@ -6427,7 +6427,7 @@ export interface components {
              * Format: int32
              * @description 상세 조회 시 받은 문서 버전. 달라졌으면 최신 상태를 확인해야 합니다.
              */
-            version?: number;
+            version: number;
         };
         /** @description 결재자 바꾸기 요청 */
         ApproverReplaceRequest: {

@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.AssertTrue;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import nuri.business.domain.informalsanction.SanctionStatus;
@@ -22,7 +23,10 @@ public class ApprovalConfirmRequest {
     @Size(max = 4000)
     private String reason;
 
+    // [2026-10-27] 다른 결재 쓰기(재상신·보완·결재자 교체)와 같이 필수다 — 비우면 서비스가 버전 대조를 건너뛰어,
+    //   다른 사람이 먼저 처리한 문서를 낡은 화면으로 덮을 수 있었다. 화면의 두 경로(결재함·알림 카드)는 늘 보낸다.
     @Schema(description = "상세 조회 시 받은 문서 버전. 달라졌으면 최신 상태를 확인해야 합니다.")
+    @NotNull
     @jakarta.validation.constraints.Min(0)
     private Integer version;
 
