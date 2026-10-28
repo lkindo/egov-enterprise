@@ -671,6 +671,7 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 
 백엔드 9건은 [DEC-OPS-257](../../.agent/memory/decisions.md)로 닫았다. 기능 단언은 기능 타입을 참조하는 클래스로 옮겨 기능과 함께 빠지게 하고,
 생성기가 지운 ErrorCode 가 소유한 메시지 키를 번들에서 걷고 메시지 번들 계약의 하한을 지운 코드·참조 수만큼 내린다(lock `java.prunedMessageKeys`·`java.messageContractFloors`). 원본 하한은 그대로라 여유 폭이 원본과 같다. 런타임 문서를 세는 자격증명 검사의 하한은 core 아래로 둔다.
+Bean Validation 키(`message = "{키}"`)도 지운 스캔 대상 소스만 참조했고 남는 소스·ErrorCode·handler 키 어느 것도 읽지 않으면 걷는다(lock `java.prunedValidationMessageKeys`, 2026-10-29 — 게시판 DTO 만 쓰는 `validation.pattern` 이 게시판 없는 생성물에서 고아 키로 붉었다). 원본에서 이미 고아인 키는 계속 붉다. 투영한 core 트리의 고아·빠진 키는 `scripts/reusable-source-messages.test.mjs` 가 PR 시점에 본다.
 프런트 계약은 생성기가 남기는 투영 원장(`reusable-projection-ledger.json`, lock `projectionLedger`)으로 투영이 지운 기능 파일을 거른다([DEC-OPS-258](../../.agent/memory/decisions.md)).
 시험은 `@/test-utils/projection` 의 `inProjection`·`keepInProjection`·`readInProjection` 을 쓰고, 원장에 있고 실제로 없는 파일만 뺀다.
 원장에 없는 부재는 그대로 ENOENT 로 붉고, 원장에 있는데 파일이 있으면 실패한다. skip 대신 그 시험을 등록하지 않으며, 대상 전체가 빠질 수 있는
@@ -681,6 +682,8 @@ red 수는 그대로다(남은 red 는 위 세 부류). `demo` 는 90건 전부 
 생성물에서는 `frozenInProjection`·`keepInProjection` 으로 원장으로 빠진 파일 몫만 뺀다. 빈 스캔을 막는 하한은 원본 값을 두고 원장이 있을 때만
 가장 작은 생성물에서도 성립하는 값으로 내리며, 실측을 주석에 남긴다. 빠진 화면을 예시로 쓰는 시험은 `pageInProjection(경로)` 로 거르되, core 계약은 모든 생성물에 남는 예시로 늘 등록하고,
 마커 블록으로 걷히거나 다른 기능이 넘기는 화면 부분은 그 블록과 함께 빠지는 같은 기능 파일로 거른다(마커 블록 자체는 원장에 남지 않는다).
+권한 코드(생성물마다 원장에서 다시 만들고 원장에 없는 코드는 늘 거부한다)·화면 목록 라우트·기능 소유 API 경로·다른 기능의 마커 블록 문장을 예시로 쓰는 시험도 같은 방식으로 거른다 —
+core 규약은 core 예시로 바꾸고, 기능 단언은 그 기능과 함께 빠지는 시험 디렉터리로 옮기며, 마커 블록 문장은 그 기능 소유 파일로 갈라 기능이 없을 때는 부재를 단언한다(2026-10-29 T2 수리).
 2026-10-10 core 실제 생성물의 vitest 는 801개(파일이 아니라 `numTotalTestSuites` 로 센 suite 수로 보인다 — 위 표 아래 설명) 2,575건이 모두 통과한다. 수리 뒤 T2 예약 실행 연속 두 번이 모든 구성의 두 레이아웃에서 녹색이었다(2026-10-16, [GAP-BASE-002 종료](../../.agent/memory/known-gaps.md)).
 
 다시 재려면 `npm run base:verify -- --profile <프로필>` 로 만든 생성물을 **짧은 경로로 복사**한 뒤(`node_modules`·`build` 제외) 그 안에서
