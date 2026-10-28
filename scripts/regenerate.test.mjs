@@ -181,3 +181,29 @@ test('CLI 는 세 형태만 받는다', async () => {
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   assert.equal(pkg.scripts.regen, 'node scripts/regenerate.mjs');
 });
+
+// PowerShell 의 npm 래퍼는 `npm run regen -- --check` 의 `--` 를 지운다 — npm 이 `--check` 를 npm_config_check 로 먹고 스크립트는
+// 인자 없이 돈다. 인자 없는 실행은 쓰기 재생성이라, 검사만 하려던 명령이 생성물을 다시 쓴다. 그 흔적이 있으면 쓰지 않고 멈춘다.
+test('npm 이 플래그를 삼켜 인자 없이 불리면 쓰기 재생성 대신 직접 호출을 안내하고 종료 코드 2 로 멈춘다', async () => {
+  const run = async (env) => {
+    const errors = [];
+    let wrote = 0;
+    const code = await main([], { env, log: () => {}, error: line => errors.push(line),
+      write: () => { wrote += 1; return { status: 'ready' }; } });
+    return { code, wrote, errors: errors.join('\n') };
+  };
+  for (const flag of ['npm_config_check', 'npm_config_rebind_sast', 'npm_config_note']) {
+    const swallowed = await run({ npm_lifecycle_event: 'regen', [flag]: 'true' });
+    assert.equal(swallowed.code, 2, `${flag}: npm 이 삼킨 플래그가 남은 인자 없는 실행은 종료 코드 2 로 멈춰야 한다`);
+    assert.equal(swallowed.wrote, 0, `${flag}: 쓰기 재생성을 돌리지 않는다`);
+    assert.match(swallowed.errors, new RegExp(flag));
+    assert.match(swallowed.errors, /node scripts\/regenerate\.mjs --check/);
+  }
+  // 그 흔적이 없으면 평소의 `npm run regen`(쓰기)이고, npm 밖에서 직접 부른 실행도 그대로다.
+  for (const env of [{ npm_lifecycle_event: 'regen' }, { npm_config_check: 'true' }]) {
+    const normal = await run(env);
+    assert.deepEqual([normal.code, normal.wrote], [0, 1], JSON.stringify(env));
+  }
+  // 인자가 있으면(sh 의 `npm run regen -- --check`) 그 인자를 따른다 — 모르는 인자는 흔적과 상관없이 사용법으로 거절한다.
+  assert.equal(await main(['--write'], { env: { npm_lifecycle_event: 'regen', npm_config_check: 'true' }, log: () => {}, error: () => {} }), 2);
+});

@@ -251,8 +251,31 @@ export async function checkGenerated({ cwd = repoRoot, steps = regenerationSteps
 
 const USAGE = '사용법: npm run regen [-- --check | -- --rebind-sast <id,…> --note "Re-reviewed YYYY-MM-DD: …"]';
 
-export async function main(argv, { cwd = repoRoot, log = console.log, error = console.error } = {}) {
-  if (argv.length === 0) return regenerate({ cwd, log }).status === 'ready' ? 0 : 1;
+/*
+ * npm 이 이 명령의 플래그를 자기 설정으로 삼킨 흔적. PowerShell 의 npm 래퍼는 `npm run regen -- --check` 의 `--` 를 지워, npm 이
+ * `--check` 를 `npm_config_check=true` 로 먹고 스크립트에는 인자가 하나도 오지 않는다(2026-10-28 npm 11.6 실측). 인자 없는 실행은
+ * 쓰기 재생성이므로, 검사만 하려던 명령이 생성물을 조용히 다시 쓴다. `--rebind-sast`·`--note` 도 같은 길로 사라질 수 있다.
+ */
+const NPM_SWALLOWED_FLAGS = Object.freeze(['npm_config_check', 'npm_config_rebind_sast', 'npm_config_note']);
+
+/** npm 스크립트로 인자 없이 불렸는데 이 명령의 플래그가 npm 설정으로 남았으면 그 이름들 — 비었으면 정상 실행이다. */
+export function swallowedNpmFlags(argv, env) {
+  if (argv.length !== 0 || !env.npm_lifecycle_event) return [];
+  return NPM_SWALLOWED_FLAGS.filter(name => env[name] !== undefined);
+}
+
+export async function main(argv, { cwd = repoRoot, log = console.log, error = console.error, env = process.env,
+  write = options => regenerate(options) } = {}) {
+  const swallowed = swallowedNpmFlags(argv, env);
+  if (swallowed.length) {
+    error([
+      `npm 이 이 명령의 인자를 설정(${swallowed.join(', ')})으로 삼켜 인자 없이 불렸다 — 쓰기 재생성을 돌리지 않고 멈춘다.`,
+      'PowerShell 의 npm 래퍼는 `--` 를 지운다. 검사는 `node scripts/regenerate.mjs --check` 로 직접 부르고,',
+      'SAST 재결속은 `node scripts/regenerate.mjs --rebind-sast <id,…> --note "Re-reviewed YYYY-MM-DD: …"` 로 부른다.',
+    ].join('\n'));
+    return 2;
+  }
+  if (argv.length === 0) return write({ cwd, log }).status === 'ready' ? 0 : 1;
   if (argv.length === 1 && argv[0] === '--check') return (await checkGenerated({ cwd, log })).ok ? 0 : 1;
   const at = name => argv.indexOf(name);
   if (argv.length === 4 && at('--rebind-sast') >= 0 && at('--note') >= 0) {
