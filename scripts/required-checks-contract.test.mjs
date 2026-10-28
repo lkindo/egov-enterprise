@@ -151,33 +151,33 @@ const PRODUCT_PIT_SCOPE_COUNT = JSON.parse(fs.readFileSync(path.join(repoRoot, '
   .gateSets.find(({ id }) => id === 'GATESET-PIT-MUTATION-AGGREGATE')
   .selector.matrixScopes.filter(({ job }) => job === 'mutation-scope').length;
 
+// [2026-10-29 ADR-0044] PIT·정적 분석의 동시 수와 PIT 선언 순서는 검증 강도가 아닌 벽시계 튜닝값이다. 값의 정본은 ci.yml(주석의
+// 실측 근거)과 실측 profile 이고, 바꾸면 PR 설명에 실측 run id 를 남긴다. 계약은 정확한 값 대신 다음만 본다: max-parallel 이
+// 한 번 선언된 양의 정수인가(빠지거나 0·주석 처리면 무제한 입장이나 실행 불가가 된다), 선언 순서가 profile 의 긴 순서인가.
+const THROTTLED_MATRIX_JOBS = Object.freeze(['mutation-scope', 'mutation-scope-migration', 'sast-scope']);
+const PIT_DURATION_PROFILE = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config', 'pit-duration-profile.json'), 'utf8'));
+
+function assertPositiveRunnerSlots(content, jobId) {
+  const job = parseWorkflowJobs(content).get(jobId) ?? '';
+  const declared = job.match(/^ {6}max-parallel:.*$/gm) ?? [];
+  assert.equal(declared.length, 1, `${jobId} must declare max-parallel exactly once`);
+  assert.match(declared[0], /^ {6}max-parallel: [1-9][0-9]*$/, `${jobId} max-parallel must be a positive integer`);
+}
+
 function assertProductMutationConcurrency(content) {
   const jobs = parseWorkflowJobs(content);
   const product = jobs.get('mutation-scope') ?? '';
   const migration = jobs.get('mutation-scope-migration') ?? '';
-  // 6슬롯: 꼬리 구간의 빈 runner 를 쓰고 custom 입장은 막지 않는다(실측 근거는 ci.yml 의 mutation-scope 주석).
-  assert.deepEqual(product.match(/^ {6}max-parallel:.*$/gm), ['      max-parallel: 6'],
-    'product PIT must run exactly six concurrent batches');
+  assertPositiveRunnerSlots(content, 'mutation-scope');
   assert.ok(PRODUCT_PIT_SCOPE_COUNT > 0, 'the registry declares product PIT batches');
   assert.equal([...product.matchAll(/^ {10}- scope: \S+$/gm)].length, PRODUCT_PIT_SCOPE_COUNT,
     'every product PIT batch declared in the registry must remain');
   for (const job of [product, migration]) assert.match(job, /^ {4}needs: \[change-scope\]$/m);
 }
 
-// 행렬마다 정확한 동시 수다. 정적 분석은 짧아 한 슬롯이고, 이관 PIT 는 한 슬롯이면 전수 CI 의 임계 경로가 돼
-// 실측 LPT 순서로 두 슬롯이다(CI-PIT-MIGRATION-SERIAL-CRITICAL-PATH, main run 38985970318).
-const RUNNER_SLOTS = Object.freeze({ 'sast-scope': 1, 'mutation-scope-migration': 2 });
-const MIGRATION_PIT_LPT_ORDER = Object.freeze(['migration-verify', 'migration-validate', 'migration-standardize',
-  'migration-collect', 'migration-protect', 'migration-runtime-state', 'migration-transform-registry',
-  'migration-transform-converter']);
-
 function assertRunnerAdmissionControl(content) {
   const jobs = parseWorkflowJobs(content);
-  for (const [jobId, slots] of Object.entries(RUNNER_SLOTS)) {
-    const job = jobs.get(jobId) ?? '';
-    assert.deepEqual(job.match(/^ {6}max-parallel:.*$/gm), [`      max-parallel: ${slots}`],
-      `${jobId} must consume exactly ${slots} runner slot(s) at a time`);
-  }
+  for (const jobId of THROTTLED_MATRIX_JOBS) assertPositiveRunnerSlots(content, jobId);
   const reusable = jobs.get('reusable-base') ?? '';
   assert.match(reusable, /^ {4}needs: \[change-scope, frontend-scope\]$/m,
     'reusable-base must wait until frontend production releases its runner');
@@ -192,35 +192,22 @@ function assertRunnerAdmissionControl(content) {
     'reusable-custom must enter the idle runners right after classification');
 }
 
-// 실측이 긴 제품 PIT 범위 — 짧은 foundation 범위보다 먼저 여섯 runner(ADR-0037 의 제품 PIT 슬롯)에 들어가야 한다.
-const PRODUCT_PIT_LONGEST_FIRST = Object.freeze([
-  'business-app-board',
-  'business-core-file',
-  'business-app-workflow',
-  'business-app-delivery-operation',
-  'business-core-auth',
-  'business-core-code-user-common',
-  // [2026-10-19 DEC-OPS-366] 새 범위 셋 — 로컬 실측(설문 380·참여 282·사용자/조직 237 변이)으로 foundation 범위 앞에 둔다.
-  'business-app-survey',
-  'business-app-participation',
-  'business-core-user-org',
-  // [2026-10-20 DEC-OPS-373] 업무 홈·홍보(98 변이, 354초)와 관측(202 변이, 154초)도 foundation 범위 앞에 둔다.
-  'business-app-home-promotion',
-  'business-core-observability',
-]);
-
-function assertProductMutationLptOrder(content) {
-  const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
-  const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
-  assert.deepEqual(scopes.slice(0, PRODUCT_PIT_LONGEST_FIRST.length), PRODUCT_PIT_LONGEST_FIRST,
-    'the measured longest PIT batches must enter the six-runner pool before short foundation batches');
-}
-
-function assertMigrationMutationLptOrder(content) {
-  const migration = parseWorkflowJobs(content).get('mutation-scope-migration') ?? '';
-  const scopes = [...migration.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
-  assert.deepEqual(scopes, MIGRATION_PIT_LPT_ORDER,
-    'migration PIT scopes must enter the two-runner pool in measured longest-first order');
+// PIT 행렬의 범위 집합이 profile 의 범위 집합과 같고, 선언 순서가 profile 의 job 시간이 긴 범위부터인가(같은 값은 어느 순서든 된다).
+function assertMutationOrderMatchesProfile(content, jobId, profile = PIT_DURATION_PROFILE) {
+  const job = parseWorkflowJobs(content).get(jobId) ?? '';
+  const scopes = [...job.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
+  const runIds = profile?.source?.runIds;
+  assert.ok(Array.isArray(runIds) && runIds.length > 0 && runIds.every(id => Number.isSafeInteger(id) && id > 0),
+    'the PIT duration profile must name the measured run ids');
+  const measured = profile?.jobs?.[jobId] ?? {};
+  assert.deepEqual([...scopes].sort(), Object.keys(measured).sort(),
+    `${jobId}: every PIT scope must have exactly one measured duration in the profile`);
+  for (const [scope, seconds] of Object.entries(measured)) {
+    assert.ok(Number.isFinite(seconds) && seconds > 0, `${jobId}: measured duration of ${scope} must be positive`);
+  }
+  const contradiction = scopes.findIndex((scope, index) => index > 0 && measured[scopes[index - 1]] < measured[scope]);
+  assert.equal(contradiction, -1,
+    `${jobId}: declaration order must follow the measured profile longest first (${scopes[contradiction - 1]} before ${scopes[contradiction]})`);
 }
 
 const baselineRunner = 'node ../scripts/run-isolated-e2e.mjs --ci-compose -- --project=full-suite e2e/quality/visual-baselines.spec.ts -g "Visual Regression Baseline" --update-snapshots';
@@ -437,6 +424,14 @@ test('a second aggregate source is validated with the same strictness as the fir
     block => block.replace('          STRICT_MUTATION: "true"\n', ''));
   assert.match(validateStaticContract({ manifest, ciContent: weakStrict }).join('\n'),
     /env keys must exactly match|STRICT_MUTATION/i);
+  // (a') 범위 하한을 넘기는 줄을 빼면 빈 값이 build.gradle 에서 헌법 하한 75 가 된다 — 두 소스 모두 red(ADR-0044).
+  for (const jobId of ['mutation-scope', 'mutation-scope-migration']) {
+    const unfloored = mutateWorkflowJob(ciContent, jobId,
+      block => block.replace('          PIT_MUTATION_THRESHOLD: ${{ matrix.threshold }}\n', ''));
+    assert.notEqual(unfloored, ciContent.replace(/\r\n/g, '\n'));
+    assert.match(validateStaticContract({ manifest, ciContent: unfloored }).join('\n'),
+      /aggregate source step 'Mutation Test \(\$\{\{ matrix\.scope \}\}\)' env keys must exactly match the manifest/, jobId);
+  }
 
   // (b) 두 번째 소스 잡이 통째로 사라지면 red.
   const withoutJob = ciContent.replace(/\n  mutation-scope-migration:\r?\n[\s\S]*?(?=\n  [a-z][a-z0-9-]*:\r?\n)/, '');
@@ -622,11 +617,19 @@ test('stable backend and frontend contexts aggregate conditional source jobs fai
 
 test('E2E and PIT sources start after classification without waiting for independent builds', () => {
   assertProductMutationConcurrency(ciContent);
-  for (const replacement of ['', '      max-parallel: 4\n', '      max-parallel: 5\n', '      max-parallel: 7\n', '      # max-parallel: 6\n']) {
-    const changed = mutateWorkflowJob(ciContent, 'mutation-scope',
-      block => block.replace('      max-parallel: 6\n', replacement));
+  // ADR-0044: 슬롯 수는 튜닝값이라 다른 양의 정수는 통과하고, 빠지거나 0·음수·주석·표현식·중복 선언은 붉다.
+  const slotLine = /^ {6}max-parallel: [0-9]+\n/m;
+  for (const replacement of ['      max-parallel: 4\n', '      max-parallel: 9\n']) {
+    const tuned = mutateWorkflowJob(ciContent, 'mutation-scope', block => block.replace(slotLine, replacement));
+    assert.notEqual(tuned, ciContent.replace(/\r\n/g, '\n'));
+    assertProductMutationConcurrency(tuned);
+  }
+  for (const replacement of ['', '      max-parallel: 0\n', '      max-parallel: -1\n', '      # max-parallel: 6\n',
+    '      max-parallel: ${{ matrix.slots }}\n', '      max-parallel: 6\n      max-parallel: 6\n']) {
+    const changed = mutateWorkflowJob(ciContent, 'mutation-scope', block => block.replace(slotLine, replacement));
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-    assert.throws(() => assertProductMutationConcurrency(changed), /six concurrent batches/);
+    assert.throws(() => assertProductMutationConcurrency(changed),
+      /mutation-scope (?:must declare max-parallel exactly once|max-parallel must be a positive integer)/, JSON.stringify(replacement));
   }
   const removedBatch = mutateWorkflowJob(ciContent, 'mutation-scope',
     block => block.replace(/^ {10}- scope: business-app-board\n(?: {12}.+\n)+/m, ''));
@@ -739,44 +742,60 @@ test('backend required context binds independent migration verification fail clo
     /^          persist-credentials: false\n          # verify\.mjs reruns the profile provenance contract after artifact download\.\n          fetch-depth: 0$/m));
 });
 
-test('product PIT uses measured longest-processing-time ordering without changing its population', () => {
-  assertProductMutationLptOrder(ciContent);
-  const weakened = ciContent
-    .replace('- scope: business-core-auth', '- scope: temporary-order-placeholder')
-    .replace('- scope: foundation-security-filter', '- scope: business-core-auth')
-    .replace('- scope: temporary-order-placeholder', '- scope: foundation-security-filter');
-  assert.notEqual(weakened, ciContent);
-  assert.throws(() => assertProductMutationLptOrder(weakened), /measured longest PIT batches/);
-});
-
-test('migration PIT uses measured longest-processing-time ordering without changing its population', () => {
-  assertMigrationMutationLptOrder(ciContent);
-  // 범위의 집합·개수·순서는 이 deepEqual 이, 범위 내용(gradle·classes·tests)과 소유 잡은 gate registry 의
-  // matrixScopes 양방향 대조가 본다. 그래서 이름을 바꾸거나 모르는 범위를 더한 변이도 여기서 붉어야 한다.
-  const swapped = mutateWorkflowJob(ciContent, 'mutation-scope-migration', block => block
-    .replace('- scope: migration-verify', '- scope: temporary-order-placeholder')
-    .replace('- scope: migration-transform-converter', '- scope: migration-verify')
-    .replace('- scope: temporary-order-placeholder', '- scope: migration-transform-converter'));
-  assert.notEqual(swapped, ciContent.replace(/\r\n/g, '\n'));
-  assert.throws(() => assertMigrationMutationLptOrder(swapped), /measured longest-first order/);
-  const removed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
-    block => block.replace(/^ {10}- scope: migration-protect\n(?: {12}.+\n)+/m, ''));
-  assert.notEqual(removed, ciContent.replace(/\r\n/g, '\n'));
-  assert.throws(() => assertMigrationMutationLptOrder(removed), /measured longest-first order/);
-  const renamed = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
-    block => block.replace(/^( {10}- scope: )migration-collect$/m, '$1migration-collect-renamed'));
-  assert.notEqual(renamed, ciContent.replace(/\r\n/g, '\n'));
-  assert.throws(() => assertMigrationMutationLptOrder(renamed), /measured longest-first order/);
-  const added = mutateWorkflowJob(ciContent, 'mutation-scope-migration',
-    block => block.replace(/^( {10}- scope: migration-transform-converter\n(?: {12}.+\n)+)/m, [
-      '$1          - scope: migration-unregistered',
-      '            gradle: ":migration-tool:pitest"',
-      '            classes: "nuri.migration.unregistered.*"',
-      '            tests: "nuri.migration.unregistered.UnregisteredTest"',
-      '',
-    ].join('\n')));
-  assert.notEqual(added, ciContent.replace(/\r\n/g, '\n'));
-  assert.throws(() => assertMigrationMutationLptOrder(added), /measured longest-first order/);
+// ADR-0044: 순서의 정본은 실측 profile 이다 — 계약은 고정 목록 대신 profile 의 긴 순서와 맞는지만 본다. 범위의 집합도 profile 과
+// 같아야 해서, 이름을 바꾸거나 빼거나 모르는 범위를 더한 변이도 붉다(범위 내용과 소유 잡은 gate registry 의 양방향 대조가 본다).
+test('PIT matrices enter their runner pools in the measured profile order without changing their population', () => {
+  for (const jobId of ['mutation-scope', 'mutation-scope-migration']) assertMutationOrderMatchesProfile(ciContent, jobId);
+  const normalized = ciContent.replace(/\r\n/g, '\n');
+  const product = Object.keys(PIT_DURATION_PROFILE.jobs['mutation-scope']);
+  const swap = (block, first, second) => block
+    .replace(`- scope: ${first}\n`, '- scope: temporary-order-placeholder\n')
+    .replace(`- scope: ${second}\n`, `- scope: ${first}\n`)
+    .replace('- scope: temporary-order-placeholder\n', `- scope: ${second}\n`);
+  // 가장 긴 범위를 가장 짧은 범위 뒤로 보내면 profile 과 어긋난다.
+  const contradicted = mutateWorkflowJob(ciContent, 'mutation-scope', block => swap(block, product[0], product.at(-1)));
+  assert.notEqual(contradicted, normalized);
+  assert.throws(() => assertMutationOrderMatchesProfile(contradicted, 'mutation-scope'),
+    /mutation-scope: declaration order must follow the measured profile longest first/);
+  // 같은 순서라도 profile 의 값이 바뀌면(다시 잰 결과) 행렬도 함께 고쳐야 한다.
+  const remeasured = structuredClone(PIT_DURATION_PROFILE);
+  remeasured.jobs['mutation-scope'][product.at(-1)] = remeasured.jobs['mutation-scope'][product[0]] + 1;
+  assert.throws(() => assertMutationOrderMatchesProfile(ciContent, 'mutation-scope', remeasured),
+    /declaration order must follow the measured profile/);
+  const migration = Object.keys(PIT_DURATION_PROFILE.jobs['mutation-scope-migration']);
+  const swapped = mutateWorkflowJob(ciContent, 'mutation-scope-migration', block => swap(block, migration[0], migration.at(-1)));
+  assert.notEqual(swapped, normalized);
+  assert.throws(() => assertMutationOrderMatchesProfile(swapped, 'mutation-scope-migration'),
+    /mutation-scope-migration: declaration order must follow the measured profile/);
+  for (const [label, changed] of [
+    ['removed', mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+      block => block.replace(new RegExp(`^ {10}- scope: ${migration[1]}\\n(?: {12}.+\\n)+`, 'm'), ''))],
+    ['renamed', mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+      block => block.replace(new RegExp(`^( {10}- scope: )${migration[2]}$`, 'm'), `$1${migration[2]}-renamed`))],
+    ['added', mutateWorkflowJob(ciContent, 'mutation-scope-migration',
+      block => block.replace(new RegExp(`^( {10}- scope: ${migration.at(-1)}\\n(?: {12}.+\\n)+)`, 'm'), [
+        '$1          - scope: migration-unregistered',
+        '            gradle: ":migration-tool:pitest"',
+        '            classes: "nuri.migration.unregistered.*"',
+        '            tests: "nuri.migration.unregistered.UnregisteredTest"',
+        '            threshold: 75',
+        '',
+      ].join('\n')))],
+  ]) {
+    assert.notEqual(changed, normalized, label);
+    assert.throws(() => assertMutationOrderMatchesProfile(changed, 'mutation-scope-migration'),
+      /every PIT scope must have exactly one measured duration in the profile/, label);
+  }
+  const stale = structuredClone(PIT_DURATION_PROFILE);
+  stale.jobs['mutation-scope']['business-app-retired'] = 1;
+  assert.throws(() => assertMutationOrderMatchesProfile(ciContent, 'mutation-scope', stale),
+    /every PIT scope must have exactly one measured duration in the profile/);
+  const unsourced = structuredClone(PIT_DURATION_PROFILE);
+  unsourced.source.runIds = [];
+  assert.throws(() => assertMutationOrderMatchesProfile(ciContent, 'mutation-scope', unsourced), /must name the measured run ids/);
+  const zero = structuredClone(PIT_DURATION_PROFILE);
+  zero.jobs['mutation-scope'][product.at(-1)] = 0;
+  assert.throws(() => assertMutationOrderMatchesProfile(ciContent, 'mutation-scope', zero), /must be positive/);
 });
 
 test('E2E builds and loads the cached local API image with no registry or upstream artifact dependency', () => {
@@ -1261,16 +1280,19 @@ test('sharded PIT jobs keep the common bounded timeout', () => {
   }
 });
 
-test('throttled matrices keep their exact runner slots without dropping validation', () => {
+test('throttled matrices keep a positive runner slot count without dropping validation', () => {
   assertRunnerAdmissionControl(ciContent);
-  for (const [jobId, slots] of Object.entries(RUNNER_SLOTS)) {
-    const replacements = ['', `      max-parallel: ${slots + 1}\n`, `      # max-parallel: ${slots}\n`,
-      ...(slots > 1 ? [`      max-parallel: ${slots - 1}\n`] : [])];
-    for (const replacement of replacements) {
-      const changed = mutateWorkflowJob(ciContent, jobId,
-        block => block.replace(`      max-parallel: ${slots}\n`, replacement));
+  // ADR-0044: 값 자체는 튜닝값이라 고정하지 않는다 — 빠지거나 0·주석이면 붉고, 다른 양의 정수는 통과한다.
+  const slotLine = /^ {6}max-parallel: [0-9]+\n/m;
+  for (const jobId of THROTTLED_MATRIX_JOBS) {
+    const tuned = mutateWorkflowJob(ciContent, jobId, block => block.replace(slotLine, '      max-parallel: 3\n'));
+    assert.notEqual(tuned, ciContent.replace(/\r\n/g, '\n'));
+    assertRunnerAdmissionControl(tuned);
+    for (const replacement of ['', '      max-parallel: 0\n', '      # max-parallel: 2\n']) {
+      const changed = mutateWorkflowJob(ciContent, jobId, block => block.replace(slotLine, replacement));
       assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
-      assert.throws(() => assertRunnerAdmissionControl(changed), new RegExp(`${jobId} must consume exactly ${slots} runner slot`));
+      assert.throws(() => assertRunnerAdmissionControl(changed),
+        new RegExp(`${jobId} (?:must declare max-parallel exactly once|max-parallel must be a positive integer)`), `${jobId} ${JSON.stringify(replacement)}`);
     }
   }
   for (const replacement of [

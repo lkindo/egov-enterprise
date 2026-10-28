@@ -317,7 +317,8 @@
           "sourceEnv": {
             "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
             "PIT_TARGET_TESTS": "${{ matrix.tests }}",
-            "STRICT_MUTATION": "true"
+            "STRICT_MUTATION": "true",
+            "PIT_MUTATION_THRESHOLD": "${{ matrix.threshold }}"
           },
           "aggregateStepName": "뮤테이션 스코프 결과 집계",
           "aggregateRun": "node scripts/aggregate-required-check.mjs",
@@ -339,7 +340,8 @@
           "sourceEnv": {
             "PIT_TARGET_CLASSES": "${{ matrix.classes }}",
             "PIT_TARGET_TESTS": "${{ matrix.tests }}",
-            "STRICT_MUTATION": "true"
+            "STRICT_MUTATION": "true",
+            "PIT_MUTATION_THRESHOLD": "${{ matrix.threshold }}"
           },
           "aggregateStepName": "이관 도구 뮤테이션 결과 집계",
           "aggregateRun": "node scripts/aggregate-required-check.mjs",

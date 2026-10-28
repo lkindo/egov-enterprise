@@ -54,6 +54,8 @@ Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않
 
 `secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다. 내려받은 gitleaks tarball은 공식 릴리스 `checksums.txt`의 SHA-256을 단계에 고정해 `sha256sum -c`로 확인한 뒤에만 풀고 실행한다(판을 올리면 그 릴리스의 `checksums.txt`에서 값을 함께 바꾼다). 필수 체크 계약이 명세와 워크플로를 함께 바꾼 경우에도 이 확인 순서를 따로 판정한다.
 
+운영 계약 실행(`npm run test:operational-contracts`)은 콘솔에 spec 출력을 내면서 파일별 JUnit 보고서 `build/operational-contracts/junit.xml` 을 남긴다([보고자](../../scripts/node-test-junit-reporter.mjs) — Node 22 의 내장 junit 보고자는 시험의 파일을 적지 않아 따로 둔다). CI 는 `Summarize operational contract durations` 단계가 파일별 시간 합과 가장 느린 시험을 step summary 에 싣는다. 로컬에서는 `node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit.xml` 로 같은 표를 본다. 보고서와 요약에는 파일 경로·시험 이름·시간·상태만 있고 명령·출력·오류 원문은 없다.
+
 ```
 dependency-submission.yml (pull_request, contents:read)
     └─ Gradle graph 생성·artifact upload
@@ -69,12 +71,27 @@ dependency-submission.yml (pull_request, contents:read)
 > - **계약 드리프트 (HARD, CI FAIL)**: `backend-build` 의 `git diff --exit-code api-docs.json`(커밋된 스펙이 실제 DTO/컨트롤러와 어긋나면 실패) 과 `frontend-build` 의 `codegen:verify`/`codegen:verify:zod`(스펙 대비 생성 타입·Zod 미갱신 시 실패).
 > - **스키마 무결성 (HARD, CI FAIL)**: classifier가 schema 영향으로 판정하면 `Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)`이 Flyway 전량 적용 + Hibernate `ddl-auto:validate`로 물리 정합성을 검증한다. `:foundation:test --no-build-cache`를 재실행하는 `Cache-bypass regression gate (foundation, main only)`는 같은 schema 조건에 더해 `refs/heads/main`에서만 실행한다.
 > - **프론트엔드 정적 품질 (HARD, CI FAIL)**: ESLint error 0건과 `frontend/package.json`의 warning 상한을 함께 강제한다(`pnpm run lint`). 의존성 감사는 `pnpm audit --json` 전체 보고서와 `--prod` 운영 보고서를 정책 evaluator가 함께 판정해 Critical 전체와 운영 의존성 High를 차단하고(pnpm 9 는 finding 에 dev 표시가 없어 운영 여부는 `--prod` 보고서로 정한다), 개발 전용 High는 warning으로 남기며 형식·네트워크 오류는 실패 처리한다.
-> - **변경 영향별 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 각각에 `STRICT_MUTATION=true`를 주입해 Mutation Score 75%를 강제한다. 제품 범위는 `mutation-scope`, 이관 범위는 `mutation-scope-migration`이 소유하며(범위 목록과 수는 [gate registry](../../config/governance/gates.json)가 정본이다) 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
+> - **변경 영향별 뮤테이션 (HARD, CI FAIL)**: PIT 스코프 각각에 `STRICT_MUTATION=true`와 그 범위의 하한(`PIT_MUTATION_THRESHOLD`, matrix 의 `threshold`)을 주입해 Mutation Score 하한을 강제한다. 하한은 범위별이다 — 변이 800개 이상 범위는 실측 점수에서 5를 뺀 값, 나머지는 헌법 하한 75이며, 정본은 [gate registry](../../config/governance/gates.json) `QUALITY-BACKEND-MUTATION-SCORE` 의 `scopeFloors` 다([ADR-0044](../02-architecture/decisions/ADR-0044-ci-tuning-values-and-pit-scope-floors.md)). 제품 범위는 `mutation-scope`, 이관 범위는 `mutation-scope-migration`이 소유하며(범위 목록과 수는 [gate registry](../../config/governance/gates.json)가 정본이다) 독립된 영향 출력으로 선택한다. 이관 출력은 더 이상 온라인 `mutation`의 부분집합이 아니다([ADR-0022](../02-architecture/decisions/ADR-0022-ci-independent-module-impact-and-cache.md)). `mutation-test`는 소스마다 기대 실행·명시적 skip을 fail-closed로 집계한다. 로컬 PIT는 `STRICT_MUTATION` 미설정 시 threshold 0의 리포트 전용이다.
 > - **OWASP Dependency-Check 분리**: 기존 의존성 전수 검사는 별도의 주간·수동 워크플로우(`.github/workflows/dependency-check.yml`)가 담당한다. 모듈 리포트 누락은 실패하지만 scan step 자체는 `continue-on-error`라 취약점 outcome은 PR 차단이 아니며, required 증분 review와 같은 강도로 해석하지 않는다.
 
 제품·이관 PIT job의 실행 상한은 모두 30분이다. 종전 결합 `migration-validate-verify`가 60분 상한에서도
 취소된 뒤 빠른 단위 테스트가 식별자·정렬 경계의 변이를 보완했고, 2026-09-29 성공 보고서의 validate·verify
-모집단과 점수를 근거로 두 scope를 분리했다. 상한 확대 대신 각 scope의 75%를 독립 적용한다.
+모집단과 점수를 근거로 두 scope를 분리했다. 상한 확대 대신 각 scope의 하한을 독립 적용한다.
+
+CI 에서만 붉어지지 않도록, 한 범위를 CI 와 같은 하한으로 로컬에서 돌릴 때는 그 범위의 matrix 값(`classes`·`tests`·`threshold`)을
+그대로 넘긴다. 하한을 빼면 build.gradle 이 헌법 하한 75 로 돌아가 큰 범위의 판정이 CI 보다 느슨해진다.
+
+```powershell
+# 예: business-app-board(2026-10-29 값) — 범위의 값은 ci.yml 의 그 matrix 항목이 정본이니 돌리기 전에 거기서 복사한다
+$env:PIT_TARGET_CLASSES = 'nuri.business.domain.board.*,nuri.business.service.board.*,nuri.business.service.comment.*'
+$env:PIT_TARGET_TESTS = 'nuri.business.*'
+$env:STRICT_MUTATION = 'true'
+$env:PIT_MUTATION_THRESHOLD = '86'
+./gradlew :business-app:pitest --warning-mode fail --console=plain
+```
+
+환경변수는 같은 PowerShell 세션에 남으니 다른 범위를 돌릴 때는 네 값을 모두 다시 준다. Git Bash 에서는
+`PIT_TARGET_CLASSES=... PIT_TARGET_TESTS=... STRICT_MUTATION=true PIT_MUTATION_THRESHOLD=... ./gradlew <gradle 값> --warning-mode fail --console=plain` 으로 준다. 하한을 넘지 못하면 PIT 가 `Mutation score of N is below threshold of M` 으로 실패한다 — 하한을 내리지 말고 살아남은 변이에 단언을 더한다.
 [JUnit 5 PIT 플러그인](https://github.com/pitest/pitest-junit5-plugin/blob/1.2.1/src/main/java/org/pitest/junit5/JUnit5TestUnit.java)은
 커버리지 측정과 개별 변이 실행에서 클래스 초기화를 다시 수행하므로,
 DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 설명이 각 CI 타임아웃의 원인을 확정하지는 않는다.
@@ -83,7 +100,7 @@ DB 초기화 비용이 짧은 시험의 시간 예산을 넘을 수 있다. 이 
 현재 [PIT 설정](../02-architecture/pitest-mutation-testing.md)은 엔진 `1.25.9`를 고정하고
 history 입출력·기본 증분 분석·CI history 전용 캐시를 사용하지 않는다.
 선택한 스코프의 변이를 이전 결과 재사용 없이 재계산하므로 반복 실행 비용이 늘 수 있다.
-대상 클래스·DB 시험·75% 임계값·전체 결과의 실패 집계는 유지한다.
+대상 클래스·DB 시험·범위별 하한·전체 결과의 실패 집계는 유지한다.
 작업별 시간 표현식은 [GitHub의 matrix 지원](https://docs.github.com/en/actions/reference/workflows-and-actions/contexts#context-availability)을 사용하며
 기존 required-checks 계약이 다른 범위 확대·상한 변경·삭제·주석 대체·중복 키를 실패로 확인한다.
 
@@ -105,19 +122,18 @@ PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main
 
 생성기·도구 전용 경로(`config/modules/**`, `config/project-composer-menus.json`, `scripts/` 의 `project-composer*`·`reusable-*`·`generate-reusable-base-*`·`verify-reusable-*`·`verify-project-composer*`·`composer-modules*`·`domain-deletion-plan*`, `tools/project-composer/**`, Atlas 도구 `scripts/atlas-*`·`scripts/build-atlas.mjs` 와 operation 소비 원장 `config/governance/operation-consumer-census.json`, 로컬 이관 작업공간과 시안 `tools/migration-workspace/**`·`tools/migration-workspace-prototype/**`, 에이전트 하네스의 실행 전 가드 `scripts/agent-guard*`·스킬 안내 생성기 `scripts/agent-skill-adapters*`·훅 어댑터 `.claude/settings.json`·`.codex/hooks.json`·`.agents/hooks.json`)는 미분류 전수 대신 모든 시작 구성의 재사용 검증과 표에 적힌 축만 고른다(11단계 C11, DEC-OPS-297, Atlas 도구 3항목은 DEC-OPS-336, 이관 작업공간 두 경로는 DEC-OPS-383 — 축이 없고 시험은 늘 도는 운영 계약에서, 코드는 CodeQL 에서 본다. 에이전트 하네스 다섯 경로는 DEC-OPS-387 — 가드·스킬 안내 생성기는 `scripts/` 를 읽는 하네스·생성기 시험 때문에 backend·schema·E2E 가 남고 이관·PIT 를 건너뛴다. 훅 어댑터는 읽는 시험이 늘 도는 운영 계약뿐이라 축이 없다(표 계약은 저장소 루트만 가리키는 상대 경로를 읽기로 세지 않고, `.claude/`·`.codex/`·`.agents/` 문자열은 읽기로 센다). 실행 기록 `scripts/verification-record.mjs` 는 `verify.mjs`·pre-push 의 실행 경로라 전수다). 축은 그 경로를 문자열로 가리키거나 디렉터리째 읽거나 실행하는 시험·조건부 CI 진입점이 도는 축이며, [표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 `ci.yml` 에서 다시 계산해 항목마다 정확히 같은지 본다. `scripts/` 는 하네스 두 개가 디렉터리째 읽어 backend 를, 기본 관리자 시드 스키마 검증과 생성기 화면 시험이 생성기를 실행해 schema·E2E 를 끄지 못한다 — 이 경로만 바꾼 변경이 건너뛰는 것은 이관·PIT·frontend 다. 생성기 화면(`tools/project-composer/**`)만 바꾼 변경은 재사용 검증과 E2E 축만 고른다. E2E 축은 생성기 화면 시험(`tools/project-composer/ui.test.mjs`, E2E 첫 샤드에서 돈다) 때문에 켜지지만, 켜지면 Playwright 전체 샤드가 돈다 — E2E 영향 선별이 이 경로를 화면 spec 에 잇지 못해 전수로 물러난다(DEC-OPS-301). 화면 시험만 가벼운 잡에서 돌려 E2E 축을 끄는 일은 후속이다. Atlas 도구 3항목만 바꾼 변경도 이관·PIT·frontend 를 건너뛰며, 남는 축은 항목마다 다르다. Atlas 도구 두 경로는 재사용 생성기의 Atlas 제거 규칙(`UPSTREAM_ATLAS`, [게이트 투영](../../scripts/reusable-source-gates.mjs))이 그 경로 이름을 적어, 생성기 화면 시험과 기본 관리자 시드 스키마 검증이 표 안 사슬로 읽으므로 E2E·schema 가 남는다. 소비 원장은 backend 만 남고 E2E·schema 는 꺼진다. Atlas 원천이 바뀌면 늘 도는 생성물 신선도 계약([Atlas 가이드](governance-atlas-guide.md))이 낡은 HTML 을 잡는다. 분류기 자신이 읽는 `scripts/composition-profiles.mjs` 와 표 밖 스크립트는 종전대로 전수다.
 
-제품 PIT는 종전 대상의 정확한 합집합을 겹치지 않는 범위로 나눠 실행하고(범위 목록은 [gate registry](../../config/governance/gates.json)가 정본) `mutation-scope`의 `max-parallel: 6`을 사용한다. 처음에는 분류 직후 custom composition 두 layout의 입장 여유를 남기려고 4슬롯이었다(5슬롯 실행은 backend 완료 뒤 custom이 최대 1분 54초 runner를 기다리게 했다). PIT 21범위 구성 뒤 full 실행 7건에서는 이 잡이 매번 마지막(종료 중앙값 16.7분)이었고, 9분 이후에는 runner가 14개 이상 비어 있는데 PIT는 4~6개만 돌았다. 같은 7건의 범위별 job 시간 중앙값으로 선언 순서를 빈 슬롯에 채우면 4슬롯 904초, 6슬롯 657초(가장 긴 범위 하나가 하한, runner 대기 제외)이며, custom은 그 사이 약 7.8분에 끝나 꼬리가 아니다. 실행 근거와 7건의 run ID는 [ci.yml](../../.github/workflows/ci.yml)의 `mutation-scope` 주석에 있다. 효과는 이후 green full 실행의 벽시계 중앙값으로 판정하고, 줄지 않거나 다른 잡이 늦게 입장해 꼬리가 되면 4슬롯으로 되돌린다. 선언 순서는 2026-09-29 실측 job 총시간 391·384·332·288·178·171초 순으로 긴 범위를 먼저 둔 것이고 6슬롯에서도 하한에 닿아 다시 정렬하지 않는다. 이 순서와 동시 수는 모집단·테스트·75% 게이트를 바꾸지 않는다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
+제품 PIT는 종전 대상의 정확한 합집합을 겹치지 않는 범위로 나눠 실행하고(범위 목록은 [gate registry](../../config/governance/gates.json)가 정본) `mutation-scope`의 `max-parallel: 6`을 사용한다. 처음에는 분류 직후 custom composition 두 layout의 입장 여유를 남기려고 4슬롯이었다(5슬롯 실행은 backend 완료 뒤 custom이 최대 1분 54초 runner를 기다리게 했다). PIT 21범위 구성 뒤 full 실행 7건에서는 이 잡이 매번 마지막(종료 중앙값 16.7분)이었고, 9분 이후에는 runner가 14개 이상 비어 있는데 PIT는 4~6개만 돌았다. 같은 7건의 범위별 job 시간 중앙값으로 선언 순서를 빈 슬롯에 채우면 4슬롯 904초, 6슬롯 657초(가장 긴 범위 하나가 하한, runner 대기 제외)이며, custom은 그 사이 약 7.8분에 끝나 꼬리가 아니다. 실행 근거와 7건의 run ID는 [ci.yml](../../.github/workflows/ci.yml)의 `mutation-scope` 주석에 있다. 슬롯 수와 선언 순서는 벽시계 튜닝값이라 ADR 규범이 아니다([ADR-0044](../02-architecture/decisions/ADR-0044-ci-tuning-values-and-pit-scope-floors.md)). 값의 정본은 ci.yml 과 [PIT 실측 profile](../../config/pit-duration-profile.json)(범위별 job 시간 중앙값과 그 run ID)이고, 선언 순서는 profile 의 긴 순서다. 바꾸면 PR 설명에 실측 run ID 를 남기고 ADR·DEC 는 만들지 않는다. 필수 체크 계약은 `max-parallel` 이 양의 정수로 한 번 선언됐는지, 순서와 범위 집합이 profile 과 맞는지만 본다. 이 순서와 동시 수는 모집단·테스트·하한 게이트를 바꾸지 않는다. `business-app` 세 분할과 이관 네 분할은 기존 성공 보고서에서 각 집합이 75%를 넘는 것을 확인했으며, 새 required 실행의 성공과 시간은 별도로 확인한다. 관측값을 관리 설정의 runner 상한으로 해석하지 않는다.
 
 동시 20개 runner를 사용하는 전체 변경에서는 [실행 36575378891](https://github.com/lkindo/egov-enterprise/actions/runs/36575378891)처럼
 E2E와 재사용 검증이 5분 이상 배정을 기다릴 수 있다. `sast-scope`의 두 언어는 `max-parallel: 1`,
 `mutation-scope-migration`의 여덟 scope는 `max-parallel: 2`로 입장을 제한해 초기 슬롯을 임계 작업에
-남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 여덟 모집단과 각 75% 판정을 모두
+남긴다. 이는 검증 삭제나 nightly 이관이 아니며 CodeQL 양언어, 이관 PIT 여덟 모집단과 각 범위 하한 판정을 모두
 같은 required 실행에서 끝낸다. CodeQL의 1슬롯은 그 실행의 실제 작업 합계 약 7분 20초를 근거로 한다. 이관 PIT도
 처음에는 합계 약 4분 12초를 근거로 1슬롯이었으나, ADR-0029 L4 뒤 [main 실행 38985970318](https://github.com/lkindo/egov-enterprise/actions/runs/38985970318)에서
 여덟 job 합이 1005초로 늘어 하나씩 이어 돈 마지막 범위가 1486초에 끝났고(나머지 job은 1025초 안), 이 잡이 전수 CI의
-임계 경로가 됐다. 그래서 2슬롯으로 늘리고 같은 실행의 job 시간이 긴 순서(verify·validate·standardize·collect·protect·
-runtime-state·registry·converter)로 선언한다([ADR-0032](../02-architecture/decisions/ADR-0032-migration-pit-two-slots.md), DEC-OPS-337). 슬롯 수와 순서는 [필수 체크 계약](../../scripts/required-checks-contract.test.mjs)이
-정확히 대조한다. 벽시계 효과는 같은 SHA 연속 green 실행의 중앙값으로 판정하고, 범위의 시간이 크게 바뀌면 다시 재고
-순서를 고친다. 각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
+임계 경로가 됐다. 그래서 2슬롯으로 늘리고 job 시간이 긴 순서로 선언한다([ADR-0032](../02-architecture/decisions/ADR-0032-migration-pit-two-slots.md), DEC-OPS-337). 순서의 정본은 지금 [PIT 실측 profile](../../config/pit-duration-profile.json)이고, [필수 체크 계약](../../scripts/required-checks-contract.test.mjs)은
+양의 슬롯 수와 profile 순서만 본다([ADR-0044](../02-architecture/decisions/ADR-0044-ci-tuning-values-and-pit-scope-floors.md)). 범위의 시간이 크게 바뀌면 다시 재고
+profile 과 순서를 같은 PR 에서 고친다. 각 job의 30/40분 안전 상한과 fail-fast 비활성화도 유지한다. 후속 [실행 36579753346](https://github.com/lkindo/egov-enterprise/actions/runs/36579753346)에서
 재사용 여덟 job은 즉시 시작했지만 migration 3번 shard가 5분 20초 기다렸다. 다음
 [실행 36583969340](https://github.com/lkindo/egov-enterprise/actions/runs/36583969340)에서 `reusable-base`를
 다섯 개로 제한하자 migration 대기는 줄었지만 뒤로 밀린 `demo/single-module`이 7분 52초 걸려 전체가
@@ -509,7 +525,7 @@ npm run regen -- --rebind-sast SAST-FP-001 --note "Re-reviewed 2026-10-19: <바�
 node scripts/regenerate.mjs --check
 ```
 
-`--check`는 생성기 검사 모드에 더해, `regen`이 고치지 않는 손 결속 원장 — operation census의 수·래칫(`config/governance/operation-consumer-census.json`의 `expected`)과 IA 처분 제안의 라우트 원장 결속 해시 — 를 같은 CLI로 먼저 확인한다. 운영 계약이 같은 판정을 다시 보므로 새 판정이 아니며, 실패하면 출력대로 원장이나 원인을 고친다. 새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
+`--check`는 생성기 검사 모드에 더해, `regen`이 고치지 않는 손 결속 원장 — operation census의 수·래칫(`config/governance/operation-consumer-census.json`의 `expected`)과 IA 처분 제안의 라우트 원장 결속 해시 — 를 같은 CLI로 먼저 확인한다. 운영 계약이 같은 판정을 다시 보므로 새 판정이 아니며, 실패하면 출력대로 원장이나 원인을 고친다. 새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. 등록 점검기(`node scripts/domain-registration-doctor.mjs <기능 id>`)는 원장에 없는 `@Tag("schema-validation")` 시험을 찾아 `gates.json`·기능 파일(`config/modules/<기능>.json` 의 `owns.gates`)에 붙여 넣을 항목을 보인다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
 
 ### 로컬 사전 게이트 (git hooks)
 

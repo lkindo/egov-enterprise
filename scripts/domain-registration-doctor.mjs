@@ -18,6 +18,7 @@ import { readFileSync, readdirSync, existsSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { loadComposerModules } from './composer-modules.mjs';
+import { hasClassAnnotation } from './governance-gates-contract.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { apiSourceOwner, requiresClosure, sourceOwner, stripComments } from './project-composer-integrations.mjs';
 
@@ -29,6 +30,16 @@ const MAPPED_HANDLER = /@(?:Get|Post|Put|Patch|Delete|Request)Mapping\b[^\n]*\n(
 const HARNESS_DIR = 'api-server/src/test/java/nuri/api/harness';
 /** ResponseContractLinterTest 의 생성형 이름 판정과 같은 동사들(ADR-0036). */
 const CREATION_NAME = /^(?:create|insert|register|upload|send|signup|copy|submit)/u;
+const SCHEMA_VALIDATION_GATESET = 'GATESET-SCHEMA-VALIDATION';
+
+/** 새 schema-validation 시험의 규칙 id 제안 — 클래스 이름의 낱말을 대문자 kebab 으로 잇는다. 기존 id 와 겹치면 번호를 붙인다. */
+export function proposeSchemaRuleId(className, existingIds) {
+  const words = className.replace(/(?:Integration)?Test$/u, '').match(/[A-Z]+(?![a-z])|[A-Z]?[a-z]+|\d+/gu) ?? ['SCHEMA'];
+  const base = `DB-${words.join('-').toUpperCase()}`;
+  let candidate = base;
+  for (let suffix = 2; existingIds.has(candidate); suffix += 1) candidate = `${base}-${suffix}`;
+  return candidate;
+}
 
 export const KINDS = Object.freeze({ HUMAN: '사람 판정', GENERATED: '생성기', OPTIONAL: '선택 등재' });
 
@@ -92,6 +103,15 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
   const entityFileCount = entitySources.length;
   const entityTableCount = new Set(entitySources
     .map((source) => source.match(/@Table\s*\(\s*name\s*=\s*"([^"]+)"/u)?.[1]?.toLowerCase()).filter(Boolean)).size;
+  // schema-validation 태그 시험은 게이트 원장에 손으로 등록한다(DEC-OPS-371 ②). 태그 판정은 거버넌스 계약과 같은 함수를 쓴다.
+  const schemaGate = readJson(root, 'config/governance/gates.json').gateSets?.find((set) => set.id === SCHEMA_VALIDATION_GATESET);
+  const selector = schemaGate?.selector ?? {};
+  const schemaValidation = {
+    rules: (schemaGate?.rules ?? []).map(({ id, source }) => ({ id, source })),
+    tagged: (selector.roots ?? []).flatMap((directory) => listFiles(root, directory, (name) => name.endsWith('.java')))
+      .filter((path) => hasClassAnnotation(readFileSync(join(root, path), 'utf8'), selector.annotation, selector.value,
+        path.split('/').pop().replace(/\.java$/u, ''))),
+  };
   return {
     featureId,
     featurePath,
@@ -110,6 +130,7 @@ export function loadRegistrationInputs(featureId, root = ROOT) {
     entityLinterSource: readFileSync(join(root, `${HARNESS_DIR}/EntityTableOwnershipLinterTest.java`), 'utf8'),
     entityFileCount,
     entityTableCount,
+    schemaValidation,
     catalogError,
     // 재사용 생성물은 기대 개수를 하네스 프로필로 투영하므로 소스 상수와 견주지 않는다.
     projectedHarness: existsSync(join(root, 'config/governance/reusable-harness-profile.json')),
@@ -221,6 +242,21 @@ export function evaluateRegistration(inputs) {
       status === 'ok' ? `엔티티 ${expected.entities}개·물리 테이블 ${expected.tables}개가 소스와 같다.`
         : status === 'missing' ? `소스는 엔티티 ${inputs.entityFileCount}개·물리 테이블 ${inputs.entityTableCount}개, 린터 기대는 ${expected.entities}개·${expected.tables}개다 — 물리 테이블 소유권을 재판정하고 엔티티·테이블·감사 형태 census 를 고친다.`
           : '엔티티 모집단·물리 테이블·감사 형태 census 를 재판정한다(재사용 생성물은 하네스 프로필의 수가 정본).'));
+  }
+
+  // 새 schema-validation 시험은 게이트 원장 등록이 빠지면 운영 계약(수 분)이나 하네스 단계에서야 붉다. 붙여 넣을 항목을 그대로 보인다.
+  // 어느 기능 소유인지는 사람이 정한다 — 이 기능이 그 시험의 대상일 때만 이 기능 파일의 owns.gates 에 둔다.
+  const schema = inputs.schemaValidation ?? { rules: [], tagged: [] };
+  const registeredSchema = new Set(schema.rules.map(({ source }) => source));
+  const ruleIds = new Set(schema.rules.map(({ id }) => id));
+  const ownedGates = new Set((feature.owns?.gates ?? []).map((gate) => gate.file));
+  for (const path of schema.tagged.filter((source) => !registeredSchema.has(source))) {
+    const className = path.split('/').pop().replace(/\.java$/u, '');
+    const id = proposeSchemaRuleId(className, ruleIds);
+    ruleIds.add(id);
+    const moduleEntry = ownedGates.has(path) ? '' : ` 이 기능(${featureId})의 시험이면 ${featurePath} 의 owns.gates 에 ${JSON.stringify({ file: path, alsoRequires: [] })} 를 둔다(다른 기능의 시험이면 그 기능 파일에).`;
+    points.push(point(KINDS.HUMAN, `schema-gate:${className}`, 'config/governance/gates.json', 'missing',
+      `@Tag("schema-validation") 시험이 게이트 원장에 없다 — ${SCHEMA_VALIDATION_GATESET} 의 rules 에 ${JSON.stringify({ id, source: path })} 를 둔다(id 는 제안이다).${moduleEntry} 그다음 npm run regen 으로 하네스 기준선·Atlas 를 다시 만든다.`));
   }
 
   const censusText = JSON.stringify(inputs.inputContractCensus);

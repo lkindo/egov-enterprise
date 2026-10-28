@@ -218,6 +218,9 @@ function declaresProtectedColumn(file, readSource) {
   return typeof source === 'string' && PROTECTED_COLUMN_CONTENT.test(source);
 }
 
+// [2026-10-29 ADR-0044 결정 5] api-server 를 빼지 않는다. 어느 PIT 범위도 api-server 를 변이하지 않지만, foundation 범위의
+// 시험 집합(nuri.foundation.*)에 든 MessageBundleContractTest 가 실행 중 api-server/src/main/java 를 읽고, 모든 PIT 잡이
+// --warning-mode fail 로 api-server/build.gradle 까지 구성한다. 제품 PIT 선택은 범위 묶음 하나(mutation)라 그 범위만 고를 수 없다.
 const MUTATION_RELEVANT = [
   ...BACKEND_PRODUCTION,
   /^(?:foundation|business-core|business-app|api-server)\/src\/test\/java\//,

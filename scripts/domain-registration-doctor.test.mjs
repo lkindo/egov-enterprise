@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { evaluateRegistration, formatReport, KINDS, loadRegistrationInputs } from './domain-registration-doctor.mjs';
+import { evaluateRegistration, formatReport, KINDS, loadRegistrationInputs, proposeSchemaRuleId } from './domain-registration-doctor.mjs';
 
 // 등록 점검기(DEC-OPS-382)의 판정 논리. 점검기는 게이트가 아니라 안내 도구다 — 실제 저장소의 등록 상태는 각 원장의 계약이
 // 이미 검사하므로, 여기서는 합성 입력으로 '빠진 지점을 빠졌다고 말하는가'만 고정한다(같은 불변식을 두 번 검사하지 않는다).
@@ -160,4 +160,36 @@ test('CLI 입력 읽기는 저장소 파일만 읽고 쓰지 않는다(실제 �
   const report = evaluateRegistration(loadRegistrationInputs('scrap'));
   assert.equal(report.featureId, 'scrap');
   assert.ok(report.points.some((entry) => entry.id === 'feature-file' && entry.status === 'ok'));
+});
+
+// 새 schema-validation 시험(D4-1 ②): 게이트 원장에 없으면 붙여 넣을 항목을 그대로 보인다. 등록된 시험은 말하지 않는다.
+test('등록되지 않은 schema-validation 시험은 게이트 원장·기능 파일에 붙여 넣을 항목과 함께 빠졌다고 말한다', () => {
+  const source = 'api-server/src/test/java/nuri/api/schema/ProbeConcurrencyIntegrationTest.java';
+  const registered = { id: 'DB-PROBE-EXISTING', source: 'api-server/src/test/java/nuri/api/schema/ProbeExistingIntegrationTest.java' };
+  const report = evaluateRegistration(inputs({ schemaValidation: { rules: [registered], tagged: [registered.source, source] } }));
+  assert.deepEqual(missing(report), ['schema-gate:ProbeConcurrencyIntegrationTest']);
+  const detail = report.points.find((entry) => entry.id === 'schema-gate:ProbeConcurrencyIntegrationTest').detail;
+  assert.ok(detail.includes(JSON.stringify({ id: 'DB-PROBE-CONCURRENCY', source })), detail);
+  assert.ok(detail.includes(`config/modules/probe.json 의 owns.gates 에 ${JSON.stringify({ file: source, alsoRequires: [] })}`), detail);
+  // 기능 파일에 이미 있으면 그 항목은 다시 말하지 않는다.
+  const owned = evaluateRegistration(inputs({
+    schemaValidation: { rules: [], tagged: [source] },
+    feature: { id: 'probe', owns: { tables: ['tb_probe'], routes: ['/admin/probe'], exactRoutes: [], permissionDomains: ['PROBE'], gates: [{ file: source, alsoRequires: [] }] } },
+  }));
+  assert.doesNotMatch(owned.points.find((entry) => entry.id === 'schema-gate:ProbeConcurrencyIntegrationTest').detail, /owns\.gates/u);
+  assert.deepEqual(missing(evaluateRegistration(inputs({ schemaValidation: { rules: [registered], tagged: [registered.source] } }))), []);
+});
+
+test('제안 id 는 게이트 원장의 규칙 id 형식이고 기존 id 와 겹치지 않는다', () => {
+  assert.equal(proposeSchemaRuleId('ApprovalSavedLineConcurrencyIntegrationTest', new Set()), 'DB-APPROVAL-SAVED-LINE-CONCURRENCY');
+  assert.equal(proposeSchemaRuleId('V2Bigint8Test', new Set()), 'DB-V-2-BIGINT-8');
+  assert.equal(proposeSchemaRuleId('ProbeIntegrationTest', new Set(['DB-PROBE'])), 'DB-PROBE-2');
+  for (const id of ['DB-APPROVAL-SAVED-LINE-CONCURRENCY', 'DB-PROBE-2']) assert.match(id, /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/u);
+});
+
+test('실제 저장소의 schema-validation 시험은 모두 게이트 원장에 있다(점검기가 태그를 거버넌스 계약과 같게 읽는다)', () => {
+  const { schemaValidation } = loadRegistrationInputs('scrap');
+  assert.ok(schemaValidation.tagged.length > 0, 'the doctor finds tagged schema tests');
+  const registered = new Set(schemaValidation.rules.map(({ source }) => source));
+  assert.deepEqual(schemaValidation.tagged.filter((source) => !registered.has(source)), []);
 });

@@ -1,0 +1,49 @@
+{
+  "schemaVersion": 1,
+  "description": "PIT 범위별 job 시간(started_at→completed_at, runner 대기 제외)의 초 단위 중앙값이다. ci.yml 의 PIT matrix 는 이 값이 긴 범위부터 선언한다(LPT, ADR-0044). 다시 재면 PR 설명에 실측 run id 를 남긴다.",
+  "source": {
+    "workflow": ".github/workflows/ci.yml",
+    "branch": "main",
+    "event": "push",
+    "metric": "median job seconds",
+    "runIds": [
+      40353142815,
+      40462663514,
+      40609164225,
+      40617167225,
+      40661427051,
+      40692324711,
+      40740257406
+    ],
+    "measuredAt": "2026-10-29"
+  },
+  "jobs": {
+    "mutation-scope": {
+      "business-app-board": 735,
+      "business-app-delivery-operation": 482,
+      "business-core-file": 461,
+      "business-app-workflow": 421,
+      "business-app-home-promotion": 372,
+      "business-app-participation": 329,
+      "business-core-auth": 311,
+      "business-core-code-user-common": 250,
+      "business-app-survey": 223,
+      "business-core-user-org": 169,
+      "business-core-observability": 146,
+      "foundation-security-filter": 72,
+      "foundation-jwt": 70,
+      "foundation-core-util": 69,
+      "foundation-client-ip": 55
+    },
+    "mutation-scope-migration": {
+      "migration-verify": 278,
+      "migration-validate": 188,
+      "migration-standardize": 169,
+      "migration-collect": 168,
+      "migration-transform-converter": 79,
+      "migration-protect": 73,
+      "migration-transform-registry": 68,
+      "migration-runtime-state": 66
+    }
+  }
+}

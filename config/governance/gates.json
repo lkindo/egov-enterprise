@@ -1268,7 +1268,7 @@
         "packageScript": {
           "source": "package.json",
           "name": "test:operational-contracts",
-          "command": "node --test \"scripts/*.test.mjs\" \".agent/scripts/*.test.js\" \"tools/migration-workspace/*.test.mjs\" \"tools/migration-workspace-prototype/*.test.mjs\""
+          "command": "node -e \"require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})\" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml \"scripts/*.test.mjs\" \".agent/scripts/*.test.js\" \"tools/migration-workspace/*.test.mjs\" \"tools/migration-workspace-prototype/*.test.mjs\""
         },
         "commandBindings": [
           {
@@ -1311,10 +1311,11 @@
         ".agent/scripts/*.test.js",
         "tools/migration-workspace/*.test.mjs",
         "tools/migration-workspace-prototype/*.test.mjs",
-        "package.json"
+        "package.json",
+        "scripts/node-test-junit-reporter.mjs"
       ],
       "evidence": [
-        "Node test TAP output and process exit status"
+        "Node test spec output, per-file JUnit build/operational-contracts/junit.xml and process exit status"
       ],
       "redProof": "Remove or narrow the package glob runner, or detach the aggregate runner from pre-push, local-full, or CI; the registry contract must fail."
     },
@@ -2010,11 +2011,42 @@
         "type": "gradle-mutation-threshold",
         "environment": "STRICT_MUTATION",
         "strictValue": "true",
-        "relaxedValue": 0
+        "relaxedValue": 0,
+        "scopeEnvironment": "PIT_MUTATION_THRESHOLD"
       },
       "executionProfile": "EXEC-BACKEND-MUTATION",
       "current": 75,
       "baseline": 75,
+      "scopeFloors": {
+        "business-app-board": {
+          "current": 86,
+          "baseline": 86
+        },
+        "business-app-workflow": {
+          "current": 80,
+          "baseline": 80
+        },
+        "business-core-auth": {
+          "current": 83,
+          "baseline": 83
+        },
+        "migration-collect": {
+          "current": 86,
+          "baseline": 86
+        },
+        "migration-standardize": {
+          "current": 87,
+          "baseline": 87
+        },
+        "migration-validate": {
+          "current": 89,
+          "baseline": 89
+        },
+        "migration-verify": {
+          "current": 88,
+          "baseline": 88
+        }
+      },
       "direction": "minimum",
       "tier": [
         "ci"
@@ -2030,7 +2062,7 @@
       "evidence": [
         "*/build/reports/pitest"
       ],
-      "redProof": "Lower mutationThreshold below 75 or lower registry current below baseline; the contract must fail."
+      "redProof": "Lower mutationThreshold below 75, lower registry current below baseline, lower a scopeFloors current below its baseline, or let a CI PIT matrix threshold differ from its floor; the contract must fail."
     },
     {
       "id": "QUALITY-FOUNDATION-INSTRUCTION-COVERAGE",

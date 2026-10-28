@@ -140,6 +140,20 @@ test('runtime resources retain PIT evidence without selecting unrelated migratio
   }
 });
 
+// ADR-0044 결정 5: api-server 를 변이하는 PIT 범위는 없지만 두 경로는 제품 PIT 결과에 닿는다 — foundation 범위의 시험
+// (MessageBundleContractTest)이 실행 중 api-server 생산 Java 를 읽고, PIT 잡의 Gradle(--warning-mode fail)이 api-server 빌드
+// 스크립트를 구성한다. 선택은 제품 PIT 묶음 하나라, api-server 만 바꾼 변경도 제품 PIT 를 고른다.
+test('api-server sources read by product PIT runs keep selecting product PIT', () => {
+  for (const file of [
+    'api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java',
+    'api-server/build.gradle',
+  ]) {
+    const result = classifyChangedFiles([file]);
+    assert.equal(result.mutation, true, file);
+    assert.equal(result.mutationMigrationTool, false, file);
+  }
+});
+
 test('shared Gradle inputs retain every PIT scope', () => {
   for (const file of [
     'build.gradle',
