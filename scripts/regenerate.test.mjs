@@ -14,7 +14,8 @@ import { fileURLToPath } from 'node:url';
 
 import { GENERATORS, HARNESS_MANIFEST, HARNESS_MANIFEST_TOOL, URL_APPROVAL, URL_CENSUS } from './merge-main-regenerate.mjs';
 import {
-  ATLAS_STEP, SAST_LEDGER, checkGenerated, checkTasks, main, rebindSastLedgerText, regenerate, regenerationSteps, staleSastExceptions,
+  ATLAS_STEP, LEDGER_CHECKS, SAST_LEDGER, checkGenerated, checkTasks, main, rebindSastLedgerText, regenerate, regenerationSteps,
+  staleSastExceptions,
 } from './regenerate.mjs';
 import { sourceHash } from './sast-exceptions.mjs';
 
@@ -80,6 +81,43 @@ test('모든 생성기가 쓰지 않는 검사 명령을 갖고, 그 명령은 �
   // 검사 명령이 빠진 생성기는 낡았는지 알 수 없으므로 통과시키지 않는다.
   const unchecked = regenerationSteps([{ ...GENERATORS[0], check: [] }]);
   assert.throws(() => checkTasks(ROOT, unchecked), /검사 명령\(check\)이 없다/);
+});
+
+// 재생성이 고치지 않는 손 결속 값(operation 수·소비 래칫, IA 처분 결속 해시)을 잊으면 운영 계약 뒤에야 붉었다. --check 가 같은 CLI 를
+// 먼저 부른다 — 읽기만 하는 명령이어야 하고, 그 스크립트가 없는 저장소(재사용 생성물)에서는 돌지 않는다.
+test('--check 는 손 결속 원장(operation census·IA 처분 결속)을 쓰지 않는 CLI 로 먼저 본다', () => {
+  const ids = LEDGER_CHECKS.map(check => check.id);
+  assert.deepEqual(ids, ['operation-consumer-census', 'ia-disposition-binding']);
+  for (const { id, command: [command, args] } of LEDGER_CHECKS) {
+    assert.equal(command, 'node', `${id}: 확인은 node 스크립트다`);
+    assert.ok(existsSync(join(ROOT, args[0])), `${id}: ${args[0]} 이 없다`);
+    assert.deepEqual(args.filter(arg => arg.startsWith('--')), [], `${id}: 쓰기·초기화 모드 인자 없이 확인만 한다`);
+  }
+  const tasks = checkTasks(ROOT).map(task => task.id);
+  for (const id of ids) assert.ok(tasks.includes(id), `--check 가 원장 확인 ${id} 를 부르지 않는다`);
+  // 스크립트가 없는 저장소에서는 건너뛴다(없는 스크립트를 실패로 보지 않는다).
+  assert.deepEqual(checkTasks(join(ROOT, 'scripts'), [], LEDGER_CHECKS), []);
+});
+
+test('원장 확인이 실패하면 판정 줄만 추려 보이고 regen 이 고치지 않는다고 안내한다', async () => {
+  const fail = (id, script, excerpt) => ({ id, requires: undefined, command: ['node', ['-e', script]], excerpt, hint: `${id} 는 손으로 맞춘다` });
+  const census = LEDGER_CHECKS.find(check => check.id === 'operation-consumer-census');
+  const disposition = LEDGER_CHECKS.find(check => check.id === 'ia-disposition-binding');
+  const censusOutput = "process.stderr.write('❌ operation consumer census failed (2):\\n  - [OPERATION_COUNT_DRIFT] (census): expected.operationCount=9, actual=8\\n"
+    + "  - [SCREEN_REACHABILITY_RATCHET] (census): service methods with no screen caller 3 exceed the frozen maximum 2\\n      a.ts\\n      b.ts\\n'); process.exit(1)";
+  const dispositionOutput = "console.log(JSON.stringify({ structuralErrors: ['manifestRef.sha256 drifted from the current manifest: expected abc'],"
+    + " acceptanceBlockerSample: Array.from({ length: 20 }, (_, i) => 'blocker ' + i) }, null, 2)); process.exitCode = 1";
+  const tasks = checkTasks(ROOT, [], [fail('census', censusOutput, census.excerpt), fail('disposition', dispositionOutput, disposition.excerpt)]);
+  const logs = [];
+  const result = await checkGenerated({ cwd: ROOT, tasks, log: line => logs.push(line) });
+  assert.equal(result.ok, false);
+  const [censusResult, dispositionResult] = result.results;
+  assert.equal(censusResult.output, '  - [OPERATION_COUNT_DRIFT] (census): expected.operationCount=9, actual=8\n'
+    + '  - [SCREEN_REACHABILITY_RATCHET] (census): service methods with no screen caller 3 exceed the frozen maximum 2\n→ census 는 손으로 맞춘다');
+  assert.equal(dispositionResult.output, 'manifestRef.sha256 drifted from the current manifest: expected abc\n→ disposition 는 손으로 맞춘다');
+  assert.match(logs.join('\n'), /OPERATION_COUNT_DRIFT[\s\S]*drifted from the current manifest: expected abc/);
+  const passing = checkTasks(ROOT, [], [fail('ok', 'process.exit(0)', census.excerpt)]);
+  assert.equal((await checkGenerated({ cwd: ROOT, tasks: passing, log: () => {} })).ok, true);
 });
 
 test('regen 은 단계를 순서대로 돌리고 바뀐 파일만 보이며, URL 승인 해시를 다시 결속한다', (t) => {
@@ -180,4 +218,30 @@ test('CLI 는 세 형태만 받는다', async () => {
   assert.match(errors[0], /사용법: npm run regen/);
   const pkg = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8'));
   assert.equal(pkg.scripts.regen, 'node scripts/regenerate.mjs');
+});
+
+// PowerShell 의 npm 래퍼는 `npm run regen -- --check` 의 `--` 를 지운다 — npm 이 `--check` 를 npm_config_check 로 먹고 스크립트는
+// 인자 없이 돈다. 인자 없는 실행은 쓰기 재생성이라, 검사만 하려던 명령이 생성물을 다시 쓴다. 그 흔적이 있으면 쓰지 않고 멈춘다.
+test('npm 이 플래그를 삼켜 인자 없이 불리면 쓰기 재생성 대신 직접 호출을 안내하고 종료 코드 2 로 멈춘다', async () => {
+  const run = async (env) => {
+    const errors = [];
+    let wrote = 0;
+    const code = await main([], { env, log: () => {}, error: line => errors.push(line),
+      write: () => { wrote += 1; return { status: 'ready' }; } });
+    return { code, wrote, errors: errors.join('\n') };
+  };
+  for (const flag of ['npm_config_check', 'npm_config_rebind_sast', 'npm_config_note']) {
+    const swallowed = await run({ npm_lifecycle_event: 'regen', [flag]: 'true' });
+    assert.equal(swallowed.code, 2, `${flag}: npm 이 삼킨 플래그가 남은 인자 없는 실행은 종료 코드 2 로 멈춰야 한다`);
+    assert.equal(swallowed.wrote, 0, `${flag}: 쓰기 재생성을 돌리지 않는다`);
+    assert.match(swallowed.errors, new RegExp(flag));
+    assert.match(swallowed.errors, /node scripts\/regenerate\.mjs --check/);
+  }
+  // 그 흔적이 없으면 평소의 `npm run regen`(쓰기)이고, npm 밖에서 직접 부른 실행도 그대로다.
+  for (const env of [{ npm_lifecycle_event: 'regen' }, { npm_config_check: 'true' }]) {
+    const normal = await run(env);
+    assert.deepEqual([normal.code, normal.wrote], [0, 1], JSON.stringify(env));
+  }
+  // 인자가 있으면(sh 의 `npm run regen -- --check`) 그 인자를 따른다 — 모르는 인자는 흔적과 상관없이 사용법으로 거절한다.
+  assert.equal(await main(['--write'], { env: { npm_lifecycle_event: 'regen', npm_config_check: 'true' }, log: () => {}, error: () => {} }), 2);
 });

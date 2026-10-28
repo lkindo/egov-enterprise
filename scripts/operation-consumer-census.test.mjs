@@ -16,6 +16,7 @@ import {
   isAliasDuplicate,
   isServiceFile,
   isTestFile,
+  operationCountErrors,
   outermostFunctionAt,
   owningMethodAt,
   pathSuffix,
@@ -307,6 +308,19 @@ test('operation 총계 드리프트와 잘못된 래칫 값이 red 다', () => {
       .errors.map((error) => error.code)[0],
     'INVALID_RATCHET',
   );
+  // 같은 수를 맞추면 드리프트가 없다 — 드리프트 판정이 늘 붉은 것이 아니다.
+  assert.deepEqual(
+    analyze({ apiDoc, boundaries, ledger: { expected: { operationCount: 1, unwiredMax: 0 }, entries: [] } }).errors, []);
+});
+
+// operation 수의 확인 지점은 이 census 하나다(생성 operation 계약의 같은 단언은 2026-10-28 걷었다). 드리프트 대조는 값이 숫자일 때만
+// 돌므로, 저장소 원장에서 키가 빠지거나 숫자가 아니면 runCensus 가 따로 붉힌다 — 걷은 단언이 잡던 그 경우다.
+test('저장소 원장의 operation 수가 빠지거나 정수가 아니면 red 다 — 드리프트 대조가 조용히 사라지지 않는다', () => {
+  for (const expected of [{}, { operationCount: '1' }, { operationCount: 1.5 }, { operationCount: -1 }, { operationCount: null }]) {
+    assert.deepEqual(operationCountErrors({ expected }).map((error) => error.code), ['INVALID_OPERATION_COUNT'], JSON.stringify(expected));
+  }
+  assert.deepEqual(operationCountErrors({}).map((error) => error.code), ['INVALID_OPERATION_COUNT']);
+  assert.deepEqual(operationCountErrors({ expected: { operationCount: 0 } }), []);
 });
 
 test('operationId 가 없는 문서는 조용히 넘어가지 않고 fail-closed 한다', () => {

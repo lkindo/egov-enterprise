@@ -314,7 +314,9 @@ export function Header({
                       <ChevronDown size={14} className="text-muted-foreground hidden sm:block" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent className="w-56 p-2 mt-1" align="end">
+                  {/* Radix 팝오버 내용은 role="dialog" 다 — 이름이 없으면 화면낭독기가 무엇이 열렸는지 말하지 못한다(axe aria-dialog-name,
+                      2026-10-28 컴포넌트 axe 가 처음 잡았다. E2E 감사는 메뉴를 닫은 채 돌아 보지 못했다). */}
+                  <PopoverContent className="w-56 p-2 mt-1" align="end" aria-label="사용자 계정 메뉴">
                     <div className="px-3 py-2 border-b mb-1">
                       <p className="text-sm font-bold">{user.name}</p>
                       <p className="text-sm text-muted-foreground truncate">{user.id}</p>

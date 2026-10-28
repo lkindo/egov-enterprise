@@ -12,6 +12,10 @@ jobs:
   review:
     runs-on: ubuntu-latest
     timeout-minutes: 10
+    # 예약 워크플로 표가 Actions 실행 목록을 읽는다(GET 만). 이 잡에만 준다 — 잡 권한은 워크플로 권한을 통째로 대체하므로 contents 도 다시 적는다.
+    permissions:
+      contents: read
+      actions: read
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
@@ -29,3 +33,12 @@ jobs:
           path: build/reports/governance/review.json
           if-no-files-found: error
           retention-days: 30
+      # [2026-10-29] 예약 워크플로마다 예약 실행의 마지막 결론과 연속 비성공 수를 요약에 싣는다(읽기 전용 보고, 게이트 아님).
+      #   주간 이관 회귀가 2026-10-04~25 네 번 연속 붉었는데 아무도 몰랐다 — 예약 실행은 PR·main CI 에 보이지 않는다.
+      #   2회 이상 연속이면 green 이 될 때까지 known-gaps 행으로 추적한다(오케스트레이션 프로토콜 §6.2).
+      #   위 검토 보고가 실패해도 이 표는 낸다. 붉은 예약 실행이 있어도 이 단계는 성공한다 — 조회 실패만 실패다.
+      - name: Report scheduled workflow streaks
+        if: ${{ !cancelled() }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: node scripts/ci-flaky-report.mjs --scheduled-only >> "$GITHUB_STEP_SUMMARY"

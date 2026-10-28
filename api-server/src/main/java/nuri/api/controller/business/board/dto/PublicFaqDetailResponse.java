@@ -32,6 +32,7 @@ public record PublicFaqDetailResponse(
                 source.inqCnt(),
                 source.crtDt(),
                 source.useYn(),
-                source.scrtYn());
+                // [2026-10-29] 목록 응답(PublicFaqListItemResponse)과 같이 비어 있으면 'N' 이다 — 계약은 'N' 만 받는다.
+                source.scrtYn() != null ? source.scrtYn() : "N");
     }
 }

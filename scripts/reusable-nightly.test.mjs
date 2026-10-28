@@ -9,7 +9,8 @@ import { resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { judgeJUnit, judgeVitest, summarize } from './reusable-nightly-judge.mjs';
 import { parseWorkflowJobs, validatePinnedWorkflowUses } from './required-checks-contract.mjs';
 import {
-  CONTRACT_CHECKS, catalogPlanInput, contractsOption, generatePreset, generateSelection, gradleTestArgs, nightlyPlan, REPORT_DIRECTORY, runItem,
+  CONTRACT_CHECKS, catalogPlanInput, contractsOption, generatePreset, generateSelection, generationDiagnostics, gradleTestArgs, nightlyPlan,
+  REPORT_DIRECTORY, runItem,
   runArguments, settingsModules, TEST_EXCLUSIONS, testPlan, testPlanErrors, testUnits, validateItem,
 } from './reusable-nightly.mjs';
 
@@ -287,6 +288,24 @@ function fakeRun(t, { layout = 'single-module', ran = 'all', vitest = vitestRepo
   };
   return { root, artifact, commands, generators, run };
 }
+
+test('a VERIFY_FAILED generation records the failed step and a masked log tail; other failures keep the plain shape', async (t) => {
+  const { root, commands, run } = fakeRun(t);
+  const verifyFailed = Object.assign(new Error('Command failed: node'), { code: 'VERIFY_FAILED', details: { step: 'frontend-build' },
+    logTail: ['> next build', 'Error: password=hunter2hunter2 rejected', 42] });
+  const failing = async () => { throw verifyFailed; };
+  const report = await runItem({ id: 'select-survey', kind: 'selection', target: 'survey', domains: 'survey', layout: 'single-module',
+    migrationTests: false }, { root, run, generators: { preset: failing, selection: failing } });
+  assert.equal(report.result, 'failed');
+  assert.equal(report.stages.generate.code, 'VERIFY_FAILED');
+  assert.equal(report.stages.generate.step, 'frontend-build');
+  assert.equal(report.stages.generate.logTail.length, 2, 'only string lines are kept');
+  assert.equal(report.stages.generate.logTail[0], '> next build');
+  assert.doesNotMatch(report.stages.generate.logTail.join(' '), /hunter2/, 'the log tail is masked again');
+  assert.equal(commands.length, 0, 'nothing runs after a failed generation');
+  assert.deepEqual(generationDiagnostics(Object.assign(new Error('x'), { code: 'SOURCE_SURVIVAL', logTail: ['a'], details: { step: 's' } })), {});
+  assert.deepEqual(generationDiagnostics(Object.assign(new Error('x'), { code: 'VERIFY_FAILED' })), {});
+});
 
 test('run generates, tests and records a passing report', async (t) => {
   const { root, commands, generators, run } = fakeRun(t);

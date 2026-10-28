@@ -293,13 +293,20 @@ final class BoardPolicySupport {
      * 요청값, 요청이 없으면 저장값이다 — NONE 은 도움말 1:1 문의가 보내는 'Y' 를 그대로 지킨다(Q&A 게시판, H3). 선택 UI 를 두는
      * 것(OPTIONAL)은 화면의 몫이라 서버 동작은 NONE 과 같다.
      *
+     * <p>[2026-10-29] 요청도 저장값도 없으면 'N' 이다(등록·답글, 또는 NULL 로 남은 옛 글의 수정). 종전에는 NULL 로 저장돼 공개 FAQ 응답
+     * 계약(scrtYn 'N')과 어긋났다. 열람 판정은 모두 NULL 을 공개 글로 보므로 'N' 저장은 열람 범위를 바꾸지 않는다. 저장값이 있으면
+     * 지금처럼 그 값을 둔다.
+     *
      * @param stored 수정이면 지금 저장값, 등록·답글이면 null
      */
     static String resolveSecretYn(BoardMaster master, String requested, String stored) {
         if (master.requiresPrivatePosts()) {
             return "Y";
         }
-        return requested != null ? requested : stored;
+        if (requested != null) {
+            return requested;
+        }
+        return stored != null ? stored : "N";
     }
 
     // ── 상단 고정 규칙(ADR-0040 결정 5) ─────────────────────────────────────────────

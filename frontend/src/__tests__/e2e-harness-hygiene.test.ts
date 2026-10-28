@@ -182,3 +182,45 @@ describe('E2E 날짜는 화면과 같은 기준으로 만든다', () => {
     expect(runnerDateLines(source, 'synthetic.spec.ts'), '러너 시간 날짜를 놓쳤거나 허용한 형태를 셌다').toEqual([1, 2]);
   });
 });
+
+/**
+ * [2026-10-28 감사 D6-7] E2E axe 감사는 e2e/fixtures/accessibility.ts 가 준비(진행 문구 대기·동작·투명도 안정)하고 실행한다.
+ * spec 이 AxeBuilder 를 직접 만들면 준비가 spec 마다 다시 갈라진다 — 종전에 한 spec 에서 고친 경합(PR #977 의 진행 문구, 2026-09-14 의
+ * JS 페이드)이 다른 spec 에는 남아 있었다. 그 fixture 밖에서 @axe-core/playwright 를 import 하거나 AxeBuilder 를 만들면 붉어진다.
+ * 예외는 그 파일 하나다 — 다른 fixture 파일에서 만들어도 준비가 갈라지므로 fixtures/ 전체를 빼지 않는다(2026-10-29 교차 검토).
+ */
+const AXE_BUILDER_PATTERN = /['"]@axe-core\/playwright['"]|\bnew\s+AxeBuilder\b/g;
+const AXE_FIXTURE_FILE = '/e2e/fixtures/accessibility.ts';
+
+function axeBuilderLines(source: string, fileName: string): number[] {
+  const code = codeWithoutComments(source, fileName);
+  return [...code.matchAll(AXE_BUILDER_PATTERN)].map(match => code.slice(0, match.index).split('\n').length);
+}
+
+describe('E2E axe 감사는 공용 fixture 로만 만든다', () => {
+  it('e2e/fixtures/accessibility.ts 밖에서(다른 fixture 포함) AxeBuilder 를 만들거나 @axe-core/playwright 를 import 하지 않는다', () => {
+    const offenders = [...filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.ts'), ...filesEndingWith(join(FRONTEND_DIR, 'e2e'), '.mjs')]
+      .map(path => ({ path, file: path.replace(FRONTEND_DIR, '').replace(/\\/g, '/') }))
+      .filter(({ file }) => file !== AXE_FIXTURE_FILE)
+      .flatMap(({ path, file }) => axeBuilderLines(readFileSync(path, 'utf8'), path).map(line => `${file}:${line}`));
+    expect(
+      offenders,
+      'AxeBuilder 를 spec 에서 직접 만들었습니다 — e2e/fixtures/accessibility.ts 의 expectNoAccessibilityViolations·auditAccessibility 를 쓰고, '
+        + '필요한 선택지(감사 범위·정착 강제·준비 대기 생략)는 그 fixture 에 더하세요.',
+    ).toEqual([]);
+  });
+
+  it('공용 fixture 가 AxeBuilder 를 만드는 유일한 자리로 남아 있다', () => {
+    const fixture = readFileSync(join(FRONTEND_DIR, 'e2e/fixtures/accessibility.ts'), 'utf8');
+    expect(axeBuilderLines(fixture, 'accessibility.ts'), '공용 axe fixture 가 사라졌거나 AxeBuilder 를 만들지 않는다').toHaveLength(2);
+  });
+
+  it('import 와 생성을 잡고 주석 속 언급은 세지 않는다', () => {
+    const source = [
+      "import AxeBuilder from '@axe-core/playwright';",
+      '// new AxeBuilder({ page }) 는 spec 에서 쓰지 않는다',
+      'const results = await new AxeBuilder({ page }).include("main").analyze();',
+    ].join('\n');
+    expect(axeBuilderLines(source, 'synthetic.spec.ts'), 'AxeBuilder import·생성을 놓쳤거나 주석을 셌다').toEqual([1, 3]);
+  });
+});

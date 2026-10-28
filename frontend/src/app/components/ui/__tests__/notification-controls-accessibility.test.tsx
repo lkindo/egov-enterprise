@@ -1,9 +1,33 @@
 import { createEvent, fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { expectNoAxeViolations } from '@/test-utils/axe';
 import { AppNotificationDrawer } from '../app-notification-drawer';
 
 describe('notification controls accessibility', () => {
+  // [2026-10-28 D6-2] 카드 세 갈래(읽음 처리 단추·업무 링크·읽은 알림)와 삭제·일괄 읽음·센터 링크를 한 렌더에서 axe 로 본다.
+  //   드로어는 Portal 로 body 에 그려지므로 container 가 아니라 대화상자를 대상으로 삼는다.
+  it('알림 드로어의 카드·단추·링크에 axe 위반이 없다', async () => {
+    render(
+      <AppNotificationDrawer
+        isOpen
+        onClose={vi.fn()}
+        onMarkRead={vi.fn()}
+        onMarkAllRead={vi.fn()}
+        onDelete={vi.fn()}
+        unreadCount={2}
+        centerHref="/admin/notifications"
+        notifications={[
+          { id: 31, title: '시스템 공지', message: '점검 안내입니다.', time: '방금 전', isRead: false, type: 'SYSTEM' },
+          { id: 32, title: '새 쪽지', message: '확인할 쪽지가 있습니다.', time: '방금 전', isRead: false, type: 'ACTIVITY', linkUrl: '/note' },
+          { id: 33, title: '확인 완료 공지', message: '이미 확인한 알림입니다.', time: '조금 전', isRead: true, type: 'SYSTEM' },
+        ]}
+      />,
+    );
+
+    await expectNoAxeViolations(screen.getByRole('dialog'));
+  });
+
   // [2026-09-26 DIP B4 P2] 알림 센터 목록의 계약은 smart-notification-hub.test.tsx 로 옮겼다(서버 페이지 조회로 바뀌었다).
   /*
     [2026-09-08] 삭제 버튼은 카드 **바깥**에 둔다.

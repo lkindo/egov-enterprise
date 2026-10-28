@@ -9,7 +9,9 @@ import {
   comparePullRequestPolicy,
   compareRequiredChecks,
   compareRequiredContexts,
+  GITLEAKS_SCAN_STEP,
   GRADLE_CACHE_READ_ONLY,
+  gitleaksDownloadViolations,
   parseWorkflowJobs,
   REVIEWED_ACTION_PINS,
   reviewedActionPin,
@@ -190,7 +192,7 @@ function assertRunnerAdmissionControl(content) {
     'reusable-custom must enter the idle runners right after classification');
 }
 
-// 실측이 긴 제품 PIT 범위 — 짧은 foundation 범위보다 먼저 네 runner 에 들어가야 한다.
+// 실측이 긴 제품 PIT 범위 — 짧은 foundation 범위보다 먼저 여섯 runner(ADR-0037 의 제품 PIT 슬롯)에 들어가야 한다.
 const PRODUCT_PIT_LONGEST_FIRST = Object.freeze([
   'business-app-board',
   'business-core-file',
@@ -211,7 +213,7 @@ function assertProductMutationLptOrder(content) {
   const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
   const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
   assert.deepEqual(scopes.slice(0, PRODUCT_PIT_LONGEST_FIRST.length), PRODUCT_PIT_LONGEST_FIRST,
-    'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
+    'the measured longest PIT batches must enter the six-runner pool before short foundation batches');
 }
 
 function assertMigrationMutationLptOrder(content) {
@@ -1324,11 +1326,9 @@ test('one operational-contract catalog runs in required CI and before the docs f
   assert.ok(secretScanJob, 'secret-scan job must exist');
   assert.match(secretScanJob, /npm run test:operational-contracts/);
 
-  const rootPackage = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-  assert.equal(
-    rootPackage.scripts?.['test:operational-contracts'],
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
-  );
+  // 실행기 명령(package.json 의 test:operational-contracts)의 catalog 범위는 gate registry 가 소유한다 — registry 계약이 package.json 과
+  // 원장의 packageScript.command 를 대조하고(ghost runner selector) governance-gates 계약이 그 원장 값을 고정한다. 같은 리터럴을 여기
+  // 다시 적지 않는다(2026-10-28 중복 정리).
   const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   const operationalGate = prePush.indexOf('npm run test:operational-contracts');
   const atlasGate = prePush.indexOf('vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
@@ -1822,6 +1822,48 @@ test('snapshot readiness wait binds the CI step value to the verifier default, n
     assert.notDeepEqual(mutation, current, 'negative fixture must change the contract input');
     assert.match(validateDependencySubmissionContract(mutation).join('\n'), expected);
   }
+});
+
+// [2026-10-28] secret-scan 은 내려받은 gitleaks 를 실행한다 — tarball 을 고정 SHA-256 으로 확인한 뒤에만 푼다. criticalSteps 의 exact run
+//   결속은 명세와 워크플로를 함께 바꾸면 통과하므로, 아래 변이는 둘을 같이 바꿔 무결성 판정만이 잡는지 본다.
+test('secret scanning verifies the gitleaks tarball against a pinned SHA-256 before extracting it', () => {
+  const scanRun = manifest.criticalSteps.find(step => step.name === GITLEAKS_SCAN_STEP).run;
+  assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
+  assert.deepEqual(gitleaksDownloadViolations(scanRun), []);
+  const indent = run => run.split('\n').map(line => (line ? `          ${line}` : line)).join('\n');
+  const ciLf = ciContent.replace(/\r\n/g, '\n');
+  assert.ok(ciLf.includes(indent(scanRun)), 'the manifest run must be the workflow step body');
+  const withScanRun = (from, to) => {
+    const run = scanRun.replace(from, to);
+    assert.notEqual(run, scanRun, `fixture must change the scan: ${from}`);
+    return { manifest: { ...manifest, criticalSteps: manifest.criticalSteps.map(step => (step.name === GITLEAKS_SCAN_STEP ? { ...step, run } : step)) },
+      ciContent: ciLf.replace(indent(scanRun), indent(run)) };
+  };
+  const pin = /^SHA256=[0-9a-f]{64}$/m;
+  const check = /^echo "\$\{SHA256\} {2}\$\{ARCHIVE\}" \| sha256sum -c -$/m;
+  const extract = /^tar -xzf "\$ARCHIVE" gitleaks$/m;
+  const download = /^curl -sSfL -o "\$ARCHIVE" (\S+)$/m;
+  for (const [label, from, to, detail] of [
+    ['former pipe', /^SHA256=[\s\S]*^tar -xzf "\$ARCHIVE" gitleaks$/m,
+      'curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \\\n  | tar -xz gitleaks',
+      /piped straight into tar/],
+    ['unpinned', pin, 'SHA256="${GITLEAKS_SHA256}"', /exactly one SHA256=/],
+    ['check removed', check, 'true', /checked with sha256sum -c/],
+    ['extract before check', /^(echo "\$\{SHA256\}.*)\n(tar -xzf .*)$/m, '$2\n$1', /tar runs before the checksum check/],
+    ['other file checked', check, 'echo "${SHA256}  ${RUNNER_TEMP}/other.tar.gz" | sha256sum -c -', /cover the file curl wrote/],
+    ['other file extracted', extract, 'tar -xzf "${RUNNER_TEMP}/other.tar.gz" gitleaks', /extract the verified file/],
+    ['download not checked', download, 'curl -sSfL -o "${RUNNER_TEMP}/fresh.tar.gz" $1', /cover the file curl wrote/],
+  ]) {
+    const errors = validateStaticContract(withScanRun(from, to));
+    assert.ok(!errors.some(error => /manifest command exactly/.test(error)), `${label}: the exact-run binding must stay green so only the integrity check decides`);
+    assert.match(errors.join('\n'), /must verify the downloaded tarball against a pinned SHA-256 before extracting it/, label);
+    assert.match(errors.join('\n'), detail, label);
+  }
+  // 차단하지 않는 관측 워크플로(secret-scan-history)도 같은 판·같은 고정 값으로 같은 확인을 거친다.
+  const history = fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'secret-scan-history.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const downloadLines = scanRun.split('\n').filter(line => /^(VERSION=|SHA256=|ARCHIVE=|curl |echo "\$\{SHA256\}|tar )/.test(line));
+  assert.deepEqual(gitleaksDownloadViolations(downloadLines.join('\n')), []);
+  for (const line of downloadLines) assert.ok(history.includes(`\n          ${line}\n`), `secret-scan-history must download gitleaks the same way: ${line}`);
 });
 
 test('secret scanning reports before dependency installation and operational contract execution', () => {

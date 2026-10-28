@@ -52,7 +52,7 @@ push/PR / workflow_dispatch
 
 Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않도록 다음 신뢰 경계로 분리한다.
 
-`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다.
+`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다. 내려받은 gitleaks tarball은 공식 릴리스 `checksums.txt`의 SHA-256을 단계에 고정해 `sha256sum -c`로 확인한 뒤에만 풀고 실행한다(판을 올리면 그 릴리스의 `checksums.txt`에서 값을 함께 바꾼다). 필수 체크 계약이 명세와 워크플로를 함께 바꾼 경우에도 이 확인 순서를 따로 판정한다.
 
 ```
 dependency-submission.yml (pull_request, contents:read)
@@ -502,12 +502,14 @@ open build/reports/jacoco/aggregated/index.html
 
 ```bash
 npm run regen              # 다시 쓰고 바뀐 파일을 보인다 — diff 를 확인한 뒤 함께 커밋한다
-npm run regen -- --check   # 쓰지 않고 낡은 것만 본다(pre-push·verify 맨 앞, 로컬 약 20초)
+npm run regen -- --check   # 쓰지 않고 낡은 것과 손 결속 원장의 어긋남만 본다(pre-push·verify 맨 앞, 로컬 약 20초)
 # SAST 예외 해시가 낡았으면 regen 이 하네스 기준선 앞에서 멈춘다. 방어 경계를 재검토한 뒤 그 항목만 다시 결속한다:
 npm run regen -- --rebind-sast SAST-FP-001 --note "Re-reviewed 2026-10-19: <바뀐 것과 그대로인 방어>"
+# PowerShell 의 npm 래퍼는 `--` 를 지운다 — 인자를 넘길 때는 node 로 직접 부른다(npm 이 플래그를 삼키면 쓰지 않고 종료 코드 2로 멈춘다):
+node scripts/regenerate.mjs --check
 ```
 
-새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
+`--check`는 생성기 검사 모드에 더해, `regen`이 고치지 않는 손 결속 원장 — operation census의 수·래칫(`config/governance/operation-consumer-census.json`의 `expected`)과 IA 처분 제안의 라우트 원장 결속 해시 — 를 같은 CLI로 먼저 확인한다. 운영 계약이 같은 판정을 다시 보므로 새 판정이 아니며, 실패하면 출력대로 원장이나 원인을 고친다. 새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
 
 ### 로컬 사전 게이트 (git hooks)
 
@@ -596,9 +598,11 @@ pnpm -C frontend exec playwright install --with-deps chromium
 ### 재실행으로 가려진 실패 보기 (`npm run ci:flaky-report`)
 
 - **용도**: 'Java CI with Gradle' 최근 실행의 모든 시도에서 실패한 잡의 원인별 빈도(인프라·시험·미분류, 재실행으로 회복한 수)와, 실패한 E2E 샤드의 flaky·실패 시험별 빈도를 본다. 재실행·새 push 가 숨긴 반복 flaky(예: 2026-10 React #418)를 찾는 데 쓴다.
-- **옵션**: `--runs`(1~100 — 실행 목록 API 한 쪽의 상한, 기본 40)·`--branch`·`--event push|pull_request`·`--max-calls`·`--json`.
-- **분류**: 처음 멈춘 스텝이 취소면 `cancelled`(원인 아님)로 따로 센다. E2E 시험 표에는 flaky·실패 시험과 전역 오류(globalSetup·워커)가 들어간다.
-- **한계**: 시험 단위 자료는 진단 산출물 보존 기한(7일) 안의 실행만 있다. 산출물을 읽지 못했거나 실패 원인이 결과에 없거나 호출 상한에 닿으면 종료 코드 1 이다(산출물 하나가 깨져도 나머지는 보고하고, 호출 상한이면 부분 결과를 내지 않는다). 게이트·병합 증거가 아니다.
+- **옵션**: `--runs`(1~100 — 실행 목록 API 한 쪽의 상한, 기본 40)·`--branch`·`--event push|pull_request`·`--max-calls`·`--json`·`--scheduled-only`(예약 워크플로 표만).
+- **분류**: 처음 멈춘 스텝이 취소면 `cancelled`(원인 아님)로 따로 센다. 샤드 결과를 모으는 스텝(`Require every migration test shard to succeed`)은 파생이라 세지 않는다. Gradle·Maven 의존성 해석이 4xx·5xx(429 포함)로 멈췄으면 그 스텝의 잡 로그 구간을 읽어 `infra:dependency-resolution` 으로 바꾼다. Dependabot 이 연 실행의 실패는 별도 표로 센다. E2E 시험 표에는 flaky·실패 시험과 전역 오류(globalSetup·워커)가 들어간다.
+- **러너 대기**: 잡 시작 − max(잡 생성, `needs` 잡 완료)를 잡별 표본·중앙값·최댓값으로 낸다. `needs` 는 ci.yml 에서 읽는다. 매트릭스 `max-parallel`(PIT 슬롯 등)로 기다린 시간도 들어가므로 그 잡의 큰 값은 러너 부족이 아니라 슬롯 대기일 수 있다.
+- **예약 워크플로 표**: `on.schedule` 을 선언한 워크플로마다 예약 실행만 보고 마지막 결론·시각·연속 비성공(실패·시간 초과·기동 실패·취소) 수를 낸다. 2회 이상 연속이면 green 까지 known-gaps 행으로 추적한다([오케스트레이션 프로토콜 §6.2](orchestration-protocol.md#62-검증은-한-커밋에-한-번)). 주간 [거버넌스 검토 워크플로](../../.github/workflows/governance-review.yml)가 같은 표를 요약에 싣는다(그 잡에만 `actions: read`).
+- **한계**: 시험 단위 자료는 진단 산출물 보존 기한(7일) 안의 실행만 있다. 산출물이나 판정에 필요한 잡 로그를 읽지 못했거나 실패 원인이 결과에 없거나 호출 상한에 닿으면 종료 코드 1 이다(산출물 하나가 깨져도 나머지는 보고하고, 호출 상한이면 부분 결과를 내지 않는다). 붉은 예약 실행 자체는 종료 코드를 바꾸지 않는다. 게이트·병합 증거가 아니다.
 
 ### OWASP 스캔 타임아웃
 

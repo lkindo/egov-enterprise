@@ -236,6 +236,12 @@ function validateWorkflow(source) {
   if (!/^    runs-on: ubuntu-latest\s*$/m.test(job)
       || !/^    timeout-minutes: 60\s*$/m.test(job)) errors.push('migration verification needs its bounded Docker-capable runner');
   const steps = job.split(/(?=^      - )/m).slice(1);
+  // 프로필 출처(위 duration profile 시험의 cat-file·merge-base)는 profile.source.commit 까지의 이력이 있어야 닿는다.
+  // 얕은 checkout 이면 Gradle 회귀 전에 계약이 붉다 — 2026-10-04~25 주간 실행 4회가 그렇게 멈췄다(ci.yml 이관 두 잡과 같은 규칙).
+  const checkout = steps.find((step) => /^      - uses: actions\/checkout@/m.test(step)) ?? '';
+  if (!/^          fetch-depth: 0\s*$/m.test(checkout)) {
+    errors.push('migration checkout must fetch the full history that binds the duration profile provenance');
+  }
   const runSteps = steps.filter((step) => /^        run:/m.test(step));
   const commands = runSteps.map((step) => step.match(/^        run: (.*)$/m)?.[1]?.trim());
   if (JSON.stringify(commands) !== JSON.stringify(['chmod +x gradlew',
@@ -435,6 +441,17 @@ test('migration scope propagates contract and Gradle failure before claiming com
 
 test('migration CI binds the real runner without online dependencies or operational publication', () => {
   assert.deepEqual(validateWorkflow(workflow), []);
+  // 얕은 checkout 은 프로필 출처 커밋을 받지 못한다 — 줄 삭제·깊이 1·주석 처리·다른 단계로 옮기기 모두 같은 문구로 붉다.
+  for (const changed of [
+    workflow.replace('          fetch-depth: 0\n', ''),
+    workflow.replace('          fetch-depth: 0', '          fetch-depth: 1'),
+    workflow.replace('          fetch-depth: 0', '          # fetch-depth: 0'),
+    workflow.replace('          fetch-depth: 0\n', '').replace('          if-no-files-found: error\n',
+      '          if-no-files-found: error\n          fetch-depth: 0\n'),
+  ]) {
+    assert.notEqual(changed, workflow);
+    assert.ok(validateWorkflow(changed).some((error) => error.includes('duration profile provenance')));
+  }
 });
 
 test('migration cache rejects missing, inverted, disabled or overridden reader/writer roles', () => {

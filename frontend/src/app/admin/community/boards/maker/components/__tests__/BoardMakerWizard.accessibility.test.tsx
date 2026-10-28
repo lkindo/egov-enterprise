@@ -1,5 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { describe, expect, it, vi } from 'vitest';
+import { expectNoAxeViolations } from '@/test-utils/axe';
 
 import { BoardMakerWizard } from '../BoardMakerWizard';
 
@@ -46,5 +47,12 @@ describe('BoardMakerWizard 는 집행되지 않는 게시판 옵션을 묻지 �
     expect(screen.queryByRole('switch', { name: '파일 첨부 여부' })).toBeNull();
     // 라벨을 바꿔 되살리는 우회도 막는다 — 이 화면에는 스위치 자체가 없다.
     expect(screen.queryAllByRole('switch')).toHaveLength(0);
+  });
+
+  // [2026-10-28 D6-2] 1단계 입력·단계 표시·이동 단추를 axe 로 본다(라벨 결속·이름·ARIA 속성). 대비는 E2E 가 본다.
+  it('1단계 화면에 axe 위반이 없다', async () => {
+    const { container } = render(<BoardMakerWizard />);
+    expect(screen.getByText('게시판 명칭')).toBeInTheDocument();
+    await expectNoAxeViolations(container);
   });
 });

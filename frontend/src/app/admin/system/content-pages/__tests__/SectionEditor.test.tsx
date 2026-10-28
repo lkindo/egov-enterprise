@@ -417,11 +417,14 @@ describe('SectionEditor — 바로가기 주소', () => {
   });
 
   it('주소에 번호가 들어가는 화면은 고를 수 없음을 표시한다', async () => {
+    // 화면 목록은 생성물마다 구성으로 다시 만든다 — 예시는 모든 생성물에 남는 core 동적 화면(부서 업무 상세)으로 둔다(가이드 §4.2).
+    //   기능 소유 화면(예: 설문 응답 '/survey/[id]')을 쓰면 그 기능이 빠진 구성에서 목록에 없어 붉다.
+    const dynamicRoute = '/smart-toolkit/dept-job/[id]';
     renderSection({ section: sectionWith(linksCell({ title: '', url: '' })) });
     const dialog = await openPicker();
     fireEvent.click(within(dialog).getByRole('tab', { name: '앱 화면' }));
-    fireEvent.change(within(dialog).getByLabelText('화면 찾기'), { target: { value: '/survey/[id]' } });
-    const row = within(dialog).getByText('/survey/[id]').closest('li');
+    fireEvent.change(within(dialog).getByLabelText('화면 찾기'), { target: { value: dynamicRoute } });
+    const row = within(dialog).getByText(dynamicRoute).closest('li');
     expect(row).toHaveTextContent('번호 직접 입력');
     expect(within(row as HTMLElement).queryByRole('button')).toBeNull();
   });

@@ -15,6 +15,13 @@ jobs:
       #   스캔 환경에서만 한도를 올린다. 요청 제한 자체는 RateLimitFilter 테스트가 따로 검증한다.
       RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
       RATE_LIMIT_LOGIN_REQUESTS_PER_MINUTE: '1000000'
+      # [2026-10-29] 스캔에 넘기는 OpenAPI 사본에서 빼는 연산(세미콜론 구분, 'METHOD 경로'). 세션을 끝내는 연산만 둔다.
+      #   ZAP 은 정의를 가져오면서 연산마다 요청을 하나씩 보내고, 그 요청에도 스캐너 토큰이 붙는다. 로그아웃은
+      #   2026-10-19(97bdac2e2)부터 설계대로 그 시각 이전에 발급된 액세스 토큰을 거부하므로, 2026-10-25 실행은
+      #   가져오기 도중 스캐너 세션이 끊겨 나머지 스캔이 인증 없이 돌았다(401 3,809건, 세션 확인 단계 red).
+      #   로그아웃은 파라미터·본문이 없고 입력은 ZAP 이 갖지 않는 refresh 쿠키뿐이라 빼도 공격 표면 손실이 작다.
+      #   서버 동작은 의도된 보안 수정이라 바꾸지 않는다. 목록은 WorkflowManifestLinterTest 가 정확히 고정한다.
+      ZAP_SESSION_ENDING_OPERATIONS: 'POST /api/v1/auth/logout'
     name: Scan the application
     steps:
       - name: Checkout
@@ -28,24 +35,6 @@ jobs:
       #   `--wait` 는 모든 서비스가 healthy 가 될 때까지 기다린다(frontend healthcheck 신설분 포함).
       - name: Start Docker Infrastructure
         run: docker compose up -d --wait db api frontend
-          
-      # [2026-08-08 신설] 실패 진단. 이 워크플로에는 **진단 스텝이 하나도 없었다.**
-      #   그래서 2026-08-08 실행에서 `container egov-frontend is unhealthy` 로 죽었을 때
-      #   컨테이너 로그가 남지 않아 원인을 추정할 수밖에 없었다(`docker compose down` 이
-      #   always 로 돌면서 흔적까지 지웠다).
-      #   실패했을 때 무엇을 볼 수 있는지가 게이트의 값을 결정한다.
-      - name: Diagnose on failure
-        if: failure()
-        run: |
-          echo '===== compose ps ====='
-          docker compose ps -a
-          for svc in db api frontend; do
-            echo "===== logs: $svc ====="
-            docker compose logs --tail 120 "$svc" || true
-            echo "===== inspect health: $svc ====="
-            cid=$(docker compose ps -aq "$svc" || true)
-            [ -n "$cid" ] && docker inspect --format '{{json .State}}' "$cid" || true
-          done
 
       - name: ZAP Baseline Scan
         uses: zaproxy/action-baseline@de8ad967d3548d44ef623df22cf95c3b0baf8b25  # v0.15.0
@@ -90,15 +79,48 @@ jobs:
             echo "SCANNER_TOKEN=$token"
           } >> "$GITHUB_ENV"
 
+      # 위 ZAP_SESSION_ENDING_OPERATIONS 의 연산만 뺀 정의 사본을 작업 공간에 만든다(ZAP 컨테이너의 /zap/wrk).
+      #   목록의 연산이 정의에 없으면 실패한다 — 경로가 바뀐 낡은 제외가 조용히 아무것도 빼지 않게 두지 않는다.
+      - name: Prepare API definition without session-ending operations
+        run: |
+          set -euo pipefail
+          curl -fsS http://localhost:8080/v3/api-docs -o "$RUNNER_TEMP/api-docs.json"
+          node -e '
+            const fs = require("node:fs");
+            const [source, target] = process.argv.slice(1);
+            const spec = JSON.parse(fs.readFileSync(source, "utf8"));
+            const listed = (process.env.ZAP_SESSION_ENDING_OPERATIONS ?? "").split(";").map((entry) => entry.trim()).filter(Boolean);
+            if (listed.length === 0) { console.log("::error::ZAP_SESSION_ENDING_OPERATIONS 가 비어 있다."); process.exit(1); }
+            const methods = ["get", "put", "post", "delete", "options", "head", "patch", "trace"];
+            for (const entry of listed) {
+              const [method, path, extra] = entry.split(" ");
+              const key = (method ?? "").toLowerCase();
+              const item = spec.paths?.[path];
+              if (extra !== undefined || !methods.includes(key) || !item || !Object.hasOwn(item, key)) {
+                console.log(`::error::스캔에서 뺄 연산이 정의에 없다(낡은 제외): ${entry}`);
+                process.exit(1);
+              }
+              delete item[key];
+              if (!methods.some((name) => Object.hasOwn(item, name))) delete spec.paths[path];
+            }
+            fs.writeFileSync(target, JSON.stringify(spec));
+          ' "$RUNNER_TEMP/api-docs.json" zap-api-docs.json
+          {
+            echo "### ZAP API 스캔 정의"
+            echo "- 세션을 끝내 스캔 정의에서 뺀 연산: $ZAP_SESSION_ENDING_OPERATIONS"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       # 능동 스캔은 40분에서 끊는다. 액세스 토큰 유효시간이 60분(jwt.access-token-validity-ms 기본값)이라
       #   그보다 길면 중간부터 조용히 로그인 없이 스캔하게 된다. 끊긴 범위는 리포트와 아래 요약에 남는다.
+      #   대상은 위 단계가 만든 파일이다(zap-api-scan.py 가 /zap/wrk 기준으로 연다). 정의의 첫 servers 가 상대 경로('/')라
+      #   -O 로 대상 호스트를 준다.
       - name: ZAP API Scan
         uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d  # v0.10.0
         with:
-          target: 'http://localhost:8080/v3/api-docs'
+          target: 'zap-api-docs.json'
           format: openapi
           rules_file_name: '.zap/rules.tsv'
-          cmd_options: '-z "-config scanner.maxScanDurationInMins=40"'
+          cmd_options: '-O http://localhost:8080 -z "-config scanner.maxScanDurationInMins=40"'
           allow_issue_writing: false
           artifact_name: zap_api_scan
 
@@ -116,6 +138,29 @@ jobs:
             echo "::error::스캔 도중 스캐너 세션이 끊겼다(HTTP $code). 이후 요청은 인증 없이 나갔으므로 이 결과를 인증 스캔으로 읽으면 안 된다."
             exit 1
           fi
+
+      # [2026-08-08 신설] 실패 진단. 이 워크플로에는 **진단 스텝이 하나도 없었다.**
+      #   그래서 2026-08-08 실행에서 `container egov-frontend is unhealthy` 로 죽었을 때
+      #   컨테이너 로그가 남지 않아 원인을 추정할 수밖에 없었다(`docker compose down` 이
+      #   always 로 돌면서 흔적까지 지웠다).
+      #   실패했을 때 무엇을 볼 수 있는지가 게이트의 값을 결정한다.
+      # [2026-10-29] 기동 직후에서 정리 직전으로 옮겼다. 2026-10-25 세션 확인 실패 때 이 단계가 기동 뒤에만 있어
+      #   api 로그가 남지 않았고, 거부 사유를 보고서의 경고 순서로 추정해야 했다. 지금은 어느 단계가 실패해도 돈다.
+      #   api 는 꼬리 로그와 함께 전체 로그에서 인증 거부·로그아웃 줄을 따로 보인다.
+      - name: Diagnose on failure
+        if: failure()
+        run: |
+          echo '===== compose ps ====='
+          docker compose ps -a
+          for svc in db api frontend; do
+            echo "===== logs: $svc ====="
+            docker compose logs --tail 120 "$svc" || true
+            echo "===== inspect health: $svc ====="
+            cid=$(docker compose ps -aq "$svc" || true)
+            [ -n "$cid" ] && docker inspect --format '{{json .State}}' "$cid" || true
+          done
+          echo '===== api: authentication rejections and logouts ====='
+          docker compose logs api 2>&1 | grep -E '\[JwtFilter\] Authentication rejected|\[Logout\]' | tail -n 50 || true
 
       - name: Stop Docker Infrastructure
         if: always()
