@@ -941,6 +941,20 @@ export function loadJson(repoRoot, relativePath) {
 }
 
 /** `ts` 를 넘기지 않으면 `repoRoot` 의 frontend 에서 읽는다. 생성기는 생성물을 원본 frontend 의 TypeScript 로 잰다. */
+/**
+ * 저장소 원장의 operation 수는 빠지거나 정수가 아니면 안 된다. analyze 의 드리프트 대조(OPERATION_COUNT_DRIFT)는 값이 숫자일 때만 돌아,
+ * 키가 빠지면 대조가 조용히 사라진다. 생성 operation 계약의 같은 수 단언을 걷으면서(2026-10-28) 그 몫 — 키 부재·숫자 아닌 값도 붉다 —
+ * 을 이 판정이 받았다. 조각 원장을 쓰는 단위 시험은 analyze 를 직접 부르므로 이 판정은 저장소 원장을 읽는 runCensus 에만 둔다.
+ */
+export function operationCountErrors(ledger) {
+  const expected = ledger.expected?.operationCount;
+  return typeof expected === 'number' && Number.isInteger(expected) && expected >= 0 ? [] : [{
+    code: 'INVALID_OPERATION_COUNT',
+    operationId: null,
+    message: 'expected.operationCount must be a non-negative integer — it is the single place that fixes the operation count',
+  }];
+}
+
 export function runCensus(repoRoot = DEFAULT_REPO_ROOT, { ts: suppliedTs } = {}) {
   const boundaries = loadJson(repoRoot, BOUNDARY_PATH);
   const ledger = loadJson(repoRoot, LEDGER_PATH);
@@ -950,6 +964,7 @@ export function runCensus(repoRoot = DEFAULT_REPO_ROOT, { ts: suppliedTs } = {})
     ledger,
     repoRoot,
   });
+  result.errors.push(...operationCountErrors(ledger));
 
   // 축 2 — TypeScript 는 프런트 워크스페이스에만 있으므로 여기서 지연 로드한다.
   const ts = suppliedTs ?? createRequire(resolve(repoRoot, 'frontend', 'package.json'))('typescript');

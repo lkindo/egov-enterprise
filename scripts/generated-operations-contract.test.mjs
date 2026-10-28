@@ -19,8 +19,8 @@ const generatedOperationsPath = join(
   'types',
   'generated-operations.ts',
 );
-// operation 수의 확인 지점은 배선 census 원장의 expected.operationCount 하나다. 표면을 더하거나 걷는 변경은 그 값을 고친다.
-const operationCensusPath = join(repoRoot, 'config', 'governance', 'operation-consumer-census.json');
+// operation 수의 확인 지점은 배선 census 원장의 expected.operationCount 하나이고, 그 대조는 배선 census(OPERATION_COUNT_DRIFT·
+// INVALID_OPERATION_COUNT, scripts/operation-consumer-census.mjs)가 소유한다. 이 시험은 생성물과 스펙의 operation 집합만 대조한다.
 const methods = ['get', 'post', 'put', 'patch', 'delete'];
 
 function specOperations(spec) {
@@ -286,10 +286,7 @@ test('generated operation descriptor가 OpenAPI의 모든 operationId·method·p
   const generatedIds = [...generated.matchAll(/^export const ([A-Za-z_$][\w$]*)Operation =/gm)]
     .map((match) => match[1]);
 
-  // 수는 배선 census 원장 하나가 정한다 — 표면 증감의 이력은 git 과 결정 기록에 있다.
-  const { expected } = JSON.parse(readFileSync(operationCensusPath, 'utf8'));
-  assert.equal(operations.length, expected.operationCount,
-    'OpenAPI operation 수가 operation-consumer-census.json 의 expected.operationCount 와 다르다');
+  // 수는 배선 census 원장 하나가 정하고 그 대조는 배선 census 가 한다(위 머리 주석) — 여기서는 집합만 본다.
   assert.equal(new Set(generatedIds).size, operations.length);
   assert.deepEqual(new Set(generatedIds), new Set(operations.map(({ id }) => id)));
 
