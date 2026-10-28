@@ -709,7 +709,7 @@ test('the required operational runner includes this contract through the full sc
   const rootPackage = JSON.parse(read(files.rootPackage));
   assert.equal(
     rootPackage.scripts?.['test:operational-contracts'],
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
+    `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"`,
   );
   const operational = current.registry.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
   assert.ok(operational);

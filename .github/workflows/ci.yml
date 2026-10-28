@@ -313,6 +313,12 @@ jobs:
           UI_QUALITY_INDEX_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
         run: npm run test:operational-contracts
 
+      # 운영 계약의 파일별 시간 합과 느린 시험(scripts/node-test-junit-reporter.mjs 가 쓴 보고서). 파일 경로·시험 이름·시간만 싣고
+      # 명령·출력 원문은 싣지 않는다. 실패한 실행에서도 남기며, 보고서가 없으면 그 사실만 적고 성공한다(결과 판정은 위 단계다).
+      - name: Summarize operational contract durations
+        if: always()
+        run: node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit.xml >> "$GITHUB_STEP_SUMMARY"
+
       - name: Verify Prometheus alert firing and recovery
         run: npm run verify:alerts
 

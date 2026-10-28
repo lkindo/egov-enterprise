@@ -54,6 +54,8 @@ Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않
 
 `secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다. 내려받은 gitleaks tarball은 공식 릴리스 `checksums.txt`의 SHA-256을 단계에 고정해 `sha256sum -c`로 확인한 뒤에만 풀고 실행한다(판을 올리면 그 릴리스의 `checksums.txt`에서 값을 함께 바꾼다). 필수 체크 계약이 명세와 워크플로를 함께 바꾼 경우에도 이 확인 순서를 따로 판정한다.
 
+운영 계약 실행(`npm run test:operational-contracts`)은 콘솔에 spec 출력을 내면서 파일별 JUnit 보고서 `build/operational-contracts/junit.xml` 을 남긴다([보고자](../../scripts/node-test-junit-reporter.mjs) — Node 22 의 내장 junit 보고자는 시험의 파일을 적지 않아 따로 둔다). CI 는 `Summarize operational contract durations` 단계가 파일별 시간 합과 가장 느린 시험을 step summary 에 싣는다. 로컬에서는 `node scripts/ci-junit-duration-summary.mjs --node-junit build/operational-contracts/junit.xml` 로 같은 표를 본다. 보고서와 요약에는 파일 경로·시험 이름·시간·상태만 있고 명령·출력·오류 원문은 없다.
+
 ```
 dependency-submission.yml (pull_request, contents:read)
     └─ Gradle graph 생성·artifact upload

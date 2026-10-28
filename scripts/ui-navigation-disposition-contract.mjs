@@ -697,7 +697,7 @@ export function validateSchemaDefinition(schema) {
 
 export function validateOperationalBinding({ packageJson, registry, governanceTestSource }) {
   const errors = [];
-  const expectedCommand = 'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"';
+  const expectedCommand = `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"`;
   if (packageJson?.scripts?.['test:operational-contracts'] !== expectedCommand) {
     errors.push('package operational runner no longer covers scripts/*.test.mjs exactly');
   }
