@@ -1,6 +1,8 @@
-import AxeBuilder from '@axe-core/playwright';
-import { Page } from '@playwright/test';
+import { randomBytes } from 'node:crypto';
+import type { APIRequestContext, Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { expectContentReady, expectNoAccessibilityViolations } from '../fixtures/accessibility';
+import { HELP_FAQ_BOARD_ID } from '../../src/config/board-ids';
 test.describe('Quality & Resilience', () => {
     /**
      * [2026-09-14 GAP-UIQ-001] UI 품질 시나리오 8개가 쓰는 화면 중 axe 자동 검사가 없던 곳을 채운다.
@@ -10,58 +12,73 @@ test.describe('Quality & Resilience', () => {
      *   대신하지 않으며, 이 통과를 `measured` 증거로 쓰지 않는다(ADR-0005).
      *
      * 로딩 중인 폴백을 검사하지 않도록, 폴백이 아닌 h1 이 보이고 로딩 상태가 사라진 뒤 감사한다
-     * (01-core-base 의 2026-07-27 스피너 오감사 선례).
+     * (01-core-base 의 2026-07-27 스피너 오감사 선례). 준비·동작 멈춤·감사는 e2e/fixtures/accessibility.ts 가 한다.
      */
     test.describe('Scenario Route Accessibility (axe)', () => {
-        // [2026-10-25 PR #977 flaky] 진행 문구는 '…는 중'과 '…고 있습니다' 두 형태다. 게시글 작성 화면은 게시판 편집 권한을
-        //   받기 전까지 '게시판 편집 권한을 확인하고 있습니다.'를 보이며 입력 영역(fieldset)을 비활성으로 두는데, 이 패턴이
-        //   '확인하는 중'만 잡아 권한 응답이 늦으면 비활성(50% 투명) 단추를 color-contrast 위반으로 감사했다(첫 시도만 실패).
-        const LOADING_TEXT = /(불러오|준비하|확인하|가져오)(는 중|고 있습니다)|로딩 중/;
-        async function expectContentReady(page: Page) {
-            await expect(page.getByRole('heading', { level: 1 }).filter({ hasNotText: LOADING_TEXT }).first())
-                .toBeVisible({ timeout: 30000 });
-            await expect(page.locator('[role="status"]').filter({ hasText: LOADING_TEXT })).toHaveCount(0);
-        }
         async function expectPurposeTitle(page: Page, purpose: string) {
             await expect(page).toHaveTitle(new RegExp(`^${purpose} \\| `));
         }
-        async function expectNoAxeViolations(page: Page, route: string, purpose: string) {
+        /** 화면을 열고 제목까지 확인한 뒤, 감사할 상태를 만드는 단계(beforeAudit)를 거쳐 axe 로 감사한다. */
+        async function auditRoute(page: Page, route: string, purpose: string, beforeAudit?: () => Promise<void>) {
             await page.emulateMedia({ reducedMotion: 'reduce' });
             await page.goto(route);
             await expectContentReady(page);
             await expectPurposeTitle(page, purpose);
-            await page.addStyleTag({
-                content: '*, *::before, *::after { animation-duration: 0s !important; animation-delay: 0s !important; transition-duration: 0s !important; transition-delay: 0s !important; }',
-            });
-            await page.evaluate(() => new Promise<void>((resolve) => {
-                requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-            }));
-            // [2026-09-14 main CI flaky] 위 CSS 는 JS 로 구동되는 진입 모션을 멈추지 못한다. MotionConfig reducedMotion="user" 도
-            //   이동만 끄고 투명도 페이드는 남기므로, 페이드 도중에 감사하면 반투명 글자가 color-contrast 위반으로 잡혔다
-            //   (게시글 작성 화면, 첫 시도만 실패·재시도 통과). 인라인 투명도가 여러 번 연속 같고 실행 중인 애니메이션이
-            //   없을 때 감사한다. 고정 반투명(예: 배너 0.8)은 값이 변하지 않으므로 대기를 막지 않고, 영구 대비 결함은 그대로 잡힌다.
-            await page.waitForFunction(() => {
-                const state = window as unknown as {
-                    __axeOpacity?: string;
-                    __axeStableSamples?: number;
-                };
-                const opacities = Array.from(document.querySelectorAll<HTMLElement>('[style*="opacity"]'))
-                    .map((element) => element.style.opacity)
-                    .join('|');
-                const animating = document.getAnimations().some((animation) => animation.playState === 'running');
-                if (animating || opacities !== state.__axeOpacity) {
-                    state.__axeOpacity = opacities;
-                    state.__axeStableSamples = 0;
-                    return false;
-                }
-                state.__axeStableSamples = (state.__axeStableSamples ?? 0) + 1;
-                return state.__axeStableSamples >= 3;
-            }, undefined, { polling: 100, timeout: 10000 });
-            const a11y = await new AxeBuilder({ page }).analyze();
-            expect(a11y.violations, `${route}: ${JSON.stringify(a11y.violations.map((v) => `${v.id}(${v.nodes.length})`))}`).toEqual([]);
+            await beforeAudit?.();
+            await expectNoAccessibilityViolations(page, route);
         }
+
+        /*
+         * [2026-10-28 감사 D6-1] FAQ 를 그리는 두 화면(지식 허브 FAQ 탭의 인기 문서·문서 목록, 도움말의 질문 목록)은 감사할 행을
+         *   스스로 만든다. 종전에는 다른 시험이 만든 FAQ 에 기댔다 — 행이 없으면 인기 문서가 빈 상태 문구만 그려 행 단추를 한 번도
+         *   감사하지 않은 채 통과했고(false green), 행이 있으면 그 단추의 결함으로 붉어졌다(실행 순서에 따라 갈렸다).
+         *   지식 허브 FAQ 탭과 도움말은 같은 게시판(HELP_FAQ_BOARD_ID)을 그린다. 정리는 화면을 먼저 떠난 뒤 한다 — 열린 화면의
+         *   재조회가 지운 글을 404 로 받으면 브라우저 오류 감시가 실패로 잡는다(PR #930).
+         */
+        type OwnedFaq = { pstSn: number; title: string; answer: string };
+        async function withOwnedFaq(adminRequest: APIRequestContext, page: Page, body: (faq: OwnedFaq) => Promise<void>) {
+            // 'E2E' 접두사는 전역 정리(e2e/scripts/cleanup-db.ts)가 이 게시판에서 거두는 표식이다 — 중간에 죽어도 남지 않는다.
+            const title = `E2E 접근성 감사 FAQ ${randomBytes(4).toString('hex')}`;
+            const answer = '접근성 감사가 펼친 답변까지 함께 검사합니다.';
+            // 비밀 여부를 보내지 않는다 — 서버가 빈 값을 공개('N')로 저장하고 옛 NULL 행도 'N' 으로 낸다(DEC-OPS-388 ⑦). 이 감사가 그 경로도 함께 지킨다.
+            const created = await adminRequest.post('/api/v1/boards/posts', {
+                data: { bbsId: HELP_FAQ_BOARD_ID, pstTtl: title, pstCn: `<p>${answer}</p>` },
+            });
+            expect(created.status(), '감사용 FAQ 생성').toBe(201);
+            const faq = { pstSn: (await created.json()).data as number, title, answer };
+            try {
+                await body(faq);
+            } finally {
+                try {
+                    await page.goto('about:blank');
+                } finally {
+                    const removed = await adminRequest.delete(`/api/v1/boards/${HELP_FAQ_BOARD_ID}/posts/${faq.pstSn}`);
+                    expect(removed.status(), '감사용 FAQ 정리').toBe(200);
+                }
+            }
+        }
+        /**
+         * 인기 문서는 조회수 순 상위 5건이라(조회수는 1분마다 반영된다) 그 다섯이 누구의 글인지는 정할 수 없다. 정할 수 있는 것은
+         * 이 게시판에 글이 하나 이상 있다는 것이다 — 감사용 FAQ 가 있으므로 인기 문서는 비지 않고, 감사가 행 단추를 반드시 본다.
+         */
+        async function expectFaqHubRows(page: Page, faq: OwnedFaq) {
+            await expect(page.getByRole('button', { name: `${faq.title} 상세 보기`, exact: true })).toBeVisible();
+            const popular = page.locator('section').filter({ has: page.getByRole('heading', { level: 2, name: '인기 문서', exact: true }) });
+            await expect(popular.getByRole('listitem').first().getByRole('button')).toBeVisible();
+            await expect(popular.getByText('표시할 문서가 없습니다.')).toHaveCount(0);
+        }
+        /** 도움말은 최신 FAQ 를 앞에 둔다. 감사용 FAQ 를 펼쳐 질문 단추(aria-expanded)와 답변 영역까지 감사한다. */
+        async function expandOwnedFaq(page: Page, faq: OwnedFaq) {
+            const question = page.getByRole('button', { name: faq.title });
+            await expect(question).toBeVisible();
+            await question.click();
+            await expect(question).toHaveAttribute('aria-expanded', 'true');
+            await expect(page.getByRole('region', { name: faq.title })).toContainText(faq.answer);
+        }
+
         test.describe('관리자 화면', () => {
             test.use({ storageState: 'playwright/.auth/admin.json' });
+            const FAQ_HUB_ROUTE = '/admin/help/faq';
             for (const [route, purpose] of [
                 ['/admin/system/logs/user', '사용자 로그'],
                 ['/admin/user/manage', '사용자 관리'],
@@ -70,13 +87,17 @@ test.describe('Quality & Resilience', () => {
                 ['/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA', '게시글 작성·수정'],
                 ['/admin/community/boards/insert-board-article', '게시글 작성·수정'],
                 // [2026-10-26 ADR-0043 0차 NAV-01] 허브 탭 화면의 제목은 '탭 · 지식 허브' 다(관리 전용 화면이 아니다).
-                ['/admin/help/faq', '자주 묻는 질문 · 지식 허브'],
+                [FAQ_HUB_ROUTE, '자주 묻는 질문 · 지식 허브'],
                 ['/admin/community/boards/maker', '게시판 생성'],
                 // [2026-10-24 DEC-OPS-382] 패턴 갤러리 — 실제 토큰·셸로 그린 표본의 렌더 결과 대비를 본다(정적 표본이라 결정적이다).
                 ['/admin/patterns', '업무 화면 패턴 갤러리'],
             ]) {
-                test(`${route} 에 axe 위반이 없다`, async ({ page }) => {
-                    await expectNoAxeViolations(page, route, purpose);
+                test(`${route} 에 axe 위반이 없다`, async ({ page, adminRequest }) => {
+                    if (route !== FAQ_HUB_ROUTE) {
+                        await auditRoute(page, route, purpose);
+                        return;
+                    }
+                    await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, route, purpose, () => expectFaqHubRows(page, faq)));
                 });
             }
             test('문서 제목은 실제 링크 이동·뒤로가기·레거시 redirect 목적지에 맞게 갱신된다', async ({ page }) => {
@@ -102,8 +123,8 @@ test.describe('Quality & Resilience', () => {
         });
         test.describe('일반 사용자 화면', () => {
             test.use({ storageState: 'playwright/.auth/user.json' });
-            test('/help 에 axe 위반이 없다', async ({ page }) => {
-                await expectNoAxeViolations(page, '/help', '도움말');
+            test('/help 에 axe 위반이 없다', async ({ page, adminRequest }) => {
+                await withOwnedFaq(adminRequest, page, (faq) => auditRoute(page, '/help', '도움말', () => expandOwnedFaq(page, faq)));
             });
             test('클라이언트 쪽지함은 서버 layout의 문서 제목을 사용한다', async ({ page }) => {
                 await page.goto('/note');

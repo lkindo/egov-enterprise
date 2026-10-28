@@ -257,6 +257,35 @@ class BoardApiControllerTest extends ControllerTestSupport {
         verify(boardService).getPublicFaqDetail(42L);
     }
 
+    /**
+     * [2026-10-29] 비밀 여부가 비어 있는(NULL) FAQ 한 건이 응답 계약(scrtYn 'N')을 깨 도움말 FAQ 목록 전체가 '불러오지 못했습니다'
+     * 였다(격리 E2E 실측). 공개 FAQ 응답은 비어 있는 값을 'N' 으로 싣는다 — 열람 판정이 모두 NULL 을 공개 글로 보는 것과 같다.
+     */
+    @Test
+    @DisplayName("공개 FAQ 목록·상세는 비밀 여부가 비어 있는 글도 계약대로 scrtYn N 으로 싣는다")
+    void publicFaqs_NullSecretFlagHonoursContract() throws Exception {
+        given(boardService.getPublicFaqPosts(eq(""), any(Pageable.class)))
+                .willReturn(new PageImpl<>(List.of(BoardDto.builder()
+                        .pstSn(7L)
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .pstTtl("API 로 만든 FAQ")
+                        .useYn("Y")
+                        .build())));
+        given(boardService.getPublicFaqDetail(7L))
+                .willReturn(BoardDto.builder()
+                        .pstSn(7L)
+                        .bbsId("BBSMSTR_AAAAAAAAAAAA")
+                        .useYn("Y")
+                        .build());
+
+        mockMvc.perform(get("/api/v1/boards/public-faqs").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.list[0].scrtYn").value("N"));
+        mockMvc.perform(get("/api/v1/boards/public-faqs/7").accept(MediaType.APPLICATION_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.scrtYn").value("N"));
+    }
+
     @Test
     @DisplayName("게시판 통계 응답은 viewer-scoped 서비스 집계 필드를 그대로 노출한다")
     void getStats_UsesViewerScopedServiceResponse() throws Exception {

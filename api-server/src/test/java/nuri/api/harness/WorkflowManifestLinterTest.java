@@ -773,6 +773,13 @@ class WorkflowManifestLinterTest {
      * 성공했다. 스캔이 "돌았다" 는 것과 "API 를 두드렸다" 는 것은 다르므로 형태를 고정한다:
      * OpenAPI 를 읽는 API 스캔, 그 앞의 스캐너 로그인과 토큰 확인, 토큰 유효시간 안의 능동 스캔 상한,
      * 그 뒤의 세션 유지 확인, 그리고 스캐너 요청이 429 로 막히지 않도록 잡에서 올린 요청 제한 한도.
+     *
+     * <p>[2026-10-29] 2026-10-25 실행은 정의를 가져오는 도중 스캐너 토큰을 실은 {@code POST /api/v1/auth/logout} 이
+     * 그 토큰을 무효화해(97bdac2e2 이후 설계 동작) 나머지가 인증 없이 돌았고, 세션 확인 단계가 정확히 붉었다.
+     * 그래서 스캔은 정의 URL 을 직접 읽지 않고, 세션을 끝내는 연산만 뺀 사본을 읽는다. 뺄 연산 목록은
+     * {@link #SESSION_ENDING_OPERATIONS} 와 정확히 같아야 한다 — 목록을 넓혀 스캔 범위를 조용히 줄이는 것도,
+     * 목록을 비워 같은 실패로 되돌아가는 것도 붉다. 목록의 연산은 커밋된 {@code api-docs.json} 에 있어야 한다
+     * (경로가 바뀌면 주간 실행 전에 PR 에서 드러난다).
      */
     @Test
     @DisplayName("🛡️ 주간 ZAP 은 OpenAPI 로 API 를 로그인한 상태로 스캔하고 세션이 끝까지 살아 있었는지 확인한다")
@@ -790,40 +797,97 @@ class WorkflowManifestLinterTest {
         if (!violations.isEmpty()) {
             fail("zap-scan.yml 이 API 를 인증 상태로 스캔하지 않습니다:\n  - " + String.join("\n  - ", violations));
         }
+        Path specPath = repoRoot.resolve("api-docs.json");
+        if (!Files.isRegularFile(specPath)) {
+            fail("게이트 무결성 파손: 커밋된 api-docs.json 을 찾을 수 없습니다 — " + specPath.toAbsolutePath());
+        }
+        ObjectMapper json = JsonMapper.builder().build();
+        JsonNode spec = json.readTree(HarnessSourceIndex.read(specPath));
+        assertThat(missingSpecOperations(spec, SESSION_ENDING_OPERATIONS))
+                .as("스캔에서 빼는 세션 종료 연산은 커밋된 OpenAPI 정의에 있어야 한다 — 없으면 주간 정의 준비 단계가 실패한다")
+                .isEmpty();
+        JsonNode withoutLogout = json.readTree("{\"paths\":{\"/api/v1/auth/logout\":{\"get\":{}},\"/api/v1/auth/login\":{\"post\":{}}}}");
+        assertThat(missingSpecOperations(withoutLogout, SESSION_ENDING_OPERATIONS))
+                .as("정의에서 사라진(또는 메서드가 바뀐) 제외 연산은 red")
+                .containsExactly("POST /api/v1/auth/logout");
 
         String compliant = """
                 jobs:
                   zap_scan:
                     env:
                       RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'
+                      ZAP_SESSION_ENDING_OPERATIONS: 'POST /api/v1/auth/logout'
                     steps:
                       - name: Authenticate API scanner
                         run: |
                           code=$(curl -H "Authorization: Bearer $token" http://localhost:8080/api/v1/auth/me)
                           echo "ZAP_AUTH_HEADER_VALUE=Bearer $token" >> "$GITHUB_ENV"
+                      - name: Prepare API definition without session-ending operations
+                        run: |
+                          curl -fsS http://localhost:8080/v3/api-docs -o "$RUNNER_TEMP/api-docs.json"
+                          node -e 'const listed = process.env.ZAP_SESSION_ENDING_OPERATIONS; process.exit(1)' "$RUNNER_TEMP/api-docs.json" zap-api-docs.json
                       - name: ZAP API Scan
                         uses: zaproxy/action-api-scan@5158fe4d9d8fcc75ea204db81317cce7f9e5453d  # v0.10.0
                         with:
-                          target: 'http://localhost:8080/v3/api-docs'
+                          target: 'zap-api-docs.json'
                           format: openapi
-                          cmd_options: '-z "-config scanner.maxScanDurationInMins=40"'
+                          cmd_options: '-O http://localhost:8080 -z "-config scanner.maxScanDurationInMins=40"'
                       - name: Verify scanner session survived
                         run: |
                           code=$(curl -H "Authorization: Bearer $SCANNER_TOKEN" http://localhost:8080/api/v1/auth/me)
                           exit 1
                 """;
         assertThat(zapScanViolations(compliant)).as("적합한 형태는 통과한다").isEmpty();
-        Map<String, String> mutations = new java.util.LinkedHashMap<>();
-        mutations.put("문서 URL 크롤링으로 되돌림", compliant.replace("zaproxy/action-api-scan@", "zaproxy/action-full-scan@"));
-        mutations.put("OpenAPI 형식 누락", compliant.replace("format: openapi", "format: soap"));
-        mutations.put("로그인 단계 제거", compliant.replace("ZAP_AUTH_HEADER_VALUE", "NOT_AUTH"));
-        mutations.put("능동 스캔 상한 제거", compliant.replace("scanner.maxScanDurationInMins=40", "scanner.threadPerHost=2"));
-        mutations.put("상한이 토큰 유효시간 이상", compliant.replace("maxScanDurationInMins=40", "maxScanDurationInMins=60"));
-        mutations.put("세션 확인 제거", compliant.replace("$SCANNER_TOKEN", "$OTHER"));
-        mutations.put("세션 확인이 실패하지 않음", compliant.replace("          exit 1\n", ""));
-        mutations.put("요청 제한 한도를 올리지 않음", compliant.replace("RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'", "OTHER: '1'"));
-        mutations.forEach((label, source) -> assertThat(zapScanViolations(source)).as(label).isNotEmpty());
-        log.info("✅ ZAP API 스캔: OpenAPI·로그인·상한·세션 확인 결속, 변형 {}종 red.", mutations.size());
+        String prepareStep = compliant.substring(compliant.indexOf("      - name: Prepare API definition"),
+                compliant.indexOf("      - name: ZAP API Scan"));
+        Map<String, String[]> mutations = new java.util.LinkedHashMap<>();
+        mutations.put("문서 URL 크롤링으로 되돌림", new String[]{compliant.replace("zaproxy/action-api-scan@", "zaproxy/action-full-scan@"), "full-scan"});
+        mutations.put("OpenAPI 형식 누락", new String[]{compliant.replace("format: openapi", "format: soap"), "OpenAPI 형식"});
+        mutations.put("로그인 단계 제거", new String[]{compliant.replace("ZAP_AUTH_HEADER_VALUE", "NOT_AUTH"), "스캐너 로그인"});
+        mutations.put("능동 스캔 상한 제거", new String[]{compliant.replace("scanner.maxScanDurationInMins=40", "scanner.threadPerHost=2"), "능동 스캔 상한"});
+        mutations.put("상한이 토큰 유효시간 이상", new String[]{compliant.replace("maxScanDurationInMins=40", "maxScanDurationInMins=60"), "능동 스캔 상한"});
+        mutations.put("세션 확인 제거", new String[]{compliant.replace("$SCANNER_TOKEN", "$OTHER"), "세션 유지"});
+        mutations.put("세션 확인이 실패하지 않음", new String[]{compliant.replace("          exit 1\n", ""), "세션 유지"});
+        mutations.put("요청 제한 한도를 올리지 않음", new String[]{compliant.replace("RATE_LIMIT_REQUESTS_PER_MINUTE: '1000000'", "OTHER: '1'"), "요청 제한 한도"});
+        mutations.put("제외 목록에 연산 추가", new String[]{compliant.replace("'POST /api/v1/auth/logout'",
+                "'POST /api/v1/auth/logout; POST /api/v1/auth/login'"), "세션 종료 연산 목록"});
+        mutations.put("제외 목록을 다른 연산으로", new String[]{compliant.replace("'POST /api/v1/auth/logout'", "'POST /api/v1/auth/login'"), "세션 종료 연산 목록"});
+        mutations.put("제외 목록 비움", new String[]{compliant.replace("'POST /api/v1/auth/logout'", "''"), "세션 종료 연산 목록"});
+        mutations.put("제외 목록 삭제", new String[]{compliant.replace("      ZAP_SESSION_ENDING_OPERATIONS: 'POST /api/v1/auth/logout'\n", ""), "세션 종료 연산 목록"});
+        mutations.put("제외 없이 정의 URL 을 직접 스캔", new String[]{compliant.replace("target: 'zap-api-docs.json'",
+                "target: 'http://localhost:8080/v3/api-docs'"), "정의 사본"});
+        mutations.put("다른 대상 파일", new String[]{compliant.replace("target: 'zap-api-docs.json'", "target: 'other-api-docs.json'"), "정의 사본"});
+        mutations.put("대상 호스트 지정(-O) 누락", new String[]{compliant.replace("-O http://localhost:8080 ", ""), "-O http://localhost:8080"});
+        mutations.put("정의 준비 단계 제거", new String[]{compliant.replace(prepareStep, ""), "정의를 준비하는 단계"});
+        mutations.put("정의 준비 단계를 스캔 뒤로 이동", new String[]{compliant.replace(prepareStep, "")
+                .replace("      - name: Verify scanner session survived", prepareStep + "      - name: Verify scanner session survived"), "정의를 준비하는 단계"});
+        mutations.put("정의 준비 단계가 목록을 읽지 않음", new String[]{compliant.replace("const listed = process.env.ZAP_SESSION_ENDING_OPERATIONS; ", ""), "정의를 준비하는 단계"});
+        mutations.put("정의 준비 단계가 낡은 제외에도 성공", new String[]{compliant.replace("process.exit(1)' ", "process.exit(0)' "), "낡은 제외"});
+        mutations.put("정의 준비 단계를 건너뛸 수 있음", new String[]{compliant.replace("      - name: Prepare API definition without session-ending operations\n",
+                "      - name: Prepare API definition without session-ending operations\n        continue-on-error: true\n"), "낡은 제외"});
+        mutations.forEach((label, fixture) -> {
+            assertThat(fixture[0]).as(label + " 변형은 입력을 바꿔야 한다").isNotEqualTo(compliant);
+            assertThat(zapScanViolations(fixture[0])).as(label).anyMatch(violation -> violation.contains(fixture[1]));
+        });
+        log.info("✅ ZAP API 스캔: OpenAPI 사본·세션 종료 연산 제외 목록·로그인·상한·세션 확인 결속, 변형 {}종 red.", mutations.size());
+    }
+
+    /** 주간 ZAP 이 정의 사본에서 빼는 연산의 정확한 목록이다. 넓히거나 줄이려면 이 상수와 사유를 함께 바꾼다. */
+    private static final List<String> SESSION_ENDING_OPERATIONS = List.of("POST /api/v1/auth/logout");
+
+    /** 스캔이 읽는 정의 사본 — 앞선 준비 단계가 작업 공간에 쓰고 ZAP 컨테이너가 /zap/wrk 에서 연다. */
+    private static final String ZAP_DEFINITION_COPY = "zap-api-docs.json";
+
+    private List<String> missingSpecOperations(JsonNode spec, List<String> operations) {
+        List<String> missing = new ArrayList<>();
+        for (String operation : operations) {
+            String[] parts = operation.split(" ");
+            JsonNode item = spec.path("paths").path(parts.length == 2 ? parts[1] : "");
+            if (parts.length != 2 || !item.has(parts[0].toLowerCase(java.util.Locale.ROOT))) {
+                missing.add(operation);
+            }
+        }
+        return missing;
     }
 
     private List<String> zapScanViolations(String source) {
@@ -831,13 +895,23 @@ class WorkflowManifestLinterTest {
         Map<?, ?> job = asMap(asMap(asMap(parsed).get("jobs")).get("zap_scan"));
         List<?> steps = asList(job.get("steps"));
         List<String> violations = new ArrayList<>();
-        String limit = Objects.toString(asMap(job.get("env")).get("RATE_LIMIT_REQUESTS_PER_MINUTE"), "");
+        Map<?, ?> env = asMap(job.get("env"));
+        String limit = Objects.toString(env.get("RATE_LIMIT_REQUESTS_PER_MINUTE"), "");
         if (!limit.matches("\\d+") || Long.parseLong(limit) < 100_000) {
             violations.add("스캔 잡이 요청 제한 한도를 올리지 않는다 — 스캐너 요청이 429 로 막혀 공격이 핸들러에 닿지 않는다");
+        }
+        List<String> excluded = java.util.Arrays.stream(Objects.toString(env.get("ZAP_SESSION_ENDING_OPERATIONS"), "").split(";"))
+                .map(String::trim)
+                .filter(entry -> !entry.isEmpty())
+                .toList();
+        if (!excluded.equals(SESSION_ENDING_OPERATIONS)) {
+            violations.add("스캔 정의에서 빼는 세션 종료 연산 목록(ZAP_SESSION_ENDING_OPERATIONS)이 " + SESSION_ENDING_OPERATIONS
+                    + " 와 정확히 같지 않다 — 넓히면 스캔 범위가 조용히 줄고, 비우면 가져오기 단계가 스캐너 세션을 끊는다: " + excluded);
         }
         int scan = -1;
         int auth = -1;
         int session = -1;
+        int prepare = -1;
         for (int i = 0; i < steps.size(); i++) {
             Map<?, ?> step = asMap(steps.get(i));
             String uses = Objects.toString(step.get("uses"), "");
@@ -849,15 +923,28 @@ class WorkflowManifestLinterTest {
             if (uses.startsWith("zaproxy/action-api-scan@")) {
                 scan = i;
                 Map<?, ?> with = asMap(step.get("with"));
-                if (!"openapi".equals(Objects.toString(with.get("format"), ""))
-                        || !Objects.toString(with.get("target"), "").endsWith("/v3/api-docs")) {
-                    violations.add("API 스캔이 OpenAPI 정의(/v3/api-docs)를 읽지 않는다");
+                if (!"openapi".equals(Objects.toString(with.get("format"), ""))) {
+                    violations.add("API 스캔이 OpenAPI 형식으로 정의를 읽지 않는다");
+                }
+                if (!ZAP_DEFINITION_COPY.equals(Objects.toString(with.get("target"), ""))) {
+                    violations.add("API 스캔이 세션 종료 연산을 뺀 정의 사본(" + ZAP_DEFINITION_COPY + ")을 읽지 않는다 — /v3/api-docs 를 직접 읽으면"
+                            + " 가져오기 단계의 POST /api/v1/auth/logout 이 스캐너 토큰을 끊는다(2026-10-25)");
+                }
+                String options = Objects.toString(with.get("cmd_options"), "");
+                if (!(" " + options + " ").contains(" -O http://localhost:8080 ")) {
+                    violations.add("파일 정의를 읽는 API 스캔에 대상 호스트(-O http://localhost:8080)가 없다 — 정의의 servers 가 상대 경로다");
                 }
                 java.util.regex.Matcher cap = java.util.regex.Pattern
                         .compile("scanner\\.maxScanDurationInMins=(\\d+)")
-                        .matcher(Objects.toString(with.get("cmd_options"), ""));
+                        .matcher(options);
                 if (!cap.find() || Integer.parseInt(cap.group(1)) >= 60) {
                     violations.add("능동 스캔 상한이 없거나 액세스 토큰 유효시간(60분) 이상이다 — 중간부터 로그인 없이 스캔한다");
+                }
+            }
+            if (run.contains("/v3/api-docs") && run.contains("ZAP_SESSION_ENDING_OPERATIONS") && run.contains(ZAP_DEFINITION_COPY)) {
+                prepare = i;
+                if (!run.contains("process.exit(1)") || step.containsKey("if") || step.containsKey("continue-on-error")) {
+                    violations.add("정의 준비 단계가 낡은 제외(정의에 없는 연산)에서 실패하지 않거나 건너뛸 수 있다");
                 }
             }
             if (run.contains("ZAP_AUTH_HEADER_VALUE") && run.contains("GITHUB_ENV") && run.contains("/auth/me")) {
@@ -870,6 +957,10 @@ class WorkflowManifestLinterTest {
         if (scan < 0) {
             violations.add("OpenAPI 를 읽는 API 스캔(zaproxy/action-api-scan) 단계가 없다");
             return violations;
+        }
+        if (prepare < 0 || prepare > scan) {
+            violations.add("API 스캔 앞에 /v3/api-docs 를 받아 ZAP_SESSION_ENDING_OPERATIONS 를 빼고 " + ZAP_DEFINITION_COPY
+                    + " 를 만드는 정의를 준비하는 단계가 없다");
         }
         if (auth < 0 || auth > scan) {
             violations.add("API 스캔 앞에 스캐너 로그인·토큰 확인 단계가 없다");

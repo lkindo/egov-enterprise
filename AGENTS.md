@@ -105,4 +105,4 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 | 그 밖의 도구 | `AGENTS.md`를 명시 로드 | `.agent/skills/` 를 직접 읽는다 | 없음 — git 훅·required CI 가 받친다 | 별도 정책 복제 없이 동일 계약 적용 |
 
 - 스킬 정본은 `.agent/skills/` 하나다. 도구별 안내 파일은 [생성기](scripts/agent-skill-adapters.mjs)가 `npm run regen` 으로 만들므로 직접 고치지 않는다.
-- 실행 전 가드의 규칙·근거·대신 쓸 방법은 [agent-guard](scripts/agent-guard.mjs)의 규칙 표가 정본이고, 세 어댑터는 그것을 부르기만 한다. 반복된 실수는 기억·문서보다 먼저 가드·lint·계약으로 막고, 새 규칙은 실제 사례가 붉어지는 시험과 함께 둔다. 가드는 앞단의 보조이며 병합 권위는 required CI 다.
+- 실행 전 가드의 규칙·근거·대신 쓸 방법은 [agent-guard](scripts/agent-guard.mjs)의 규칙 표가 정본이고, 세 어댑터는 그것을 부르기만 한다. 반복된 실수는 기억·문서보다 먼저 가드·lint·계약으로 막고, 새 규칙은 실제 사례가 붉어지는 시험과 함께 둔다. 가드는 앞단의 보조이며 병합 권위는 required CI 다. 가드는 판정하지 못하면 조용히 통과하므로, 세션을 시작하거나 어댑터를 바꾼 뒤 `echo AGENT_GUARD_CANARY` 를 한 번 실행해 막히는지 본다 — 막히지 않으면 그 도구의 어댑터가 끊긴 것이다.

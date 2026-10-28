@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor, within } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { inProjection } from '@/test-utils/projection';
 
 /**
  * [2026-10-26 ADR-0043] 지식 허브의 글쓰기·안내·게시판 이름·글 상태 표지.
@@ -36,6 +37,12 @@ vi.mock('@/services/business/knowledge/knowledgeService', async (importOriginal)
 }));
 
 import KnowledgeHubClient from '../KnowledgeHubClient';
+
+/**
+ * 도움말 센터 1:1 문의 안내(문장·링크)는 도움말 기능의 마커 블록 안에 있다 — 도움말을 고르지 않은 생성물에서는 투영이 그 블록을 걷는다.
+ * 그 블록과 함께 빠지는 도움말 소유 파일로 도움말이 구성에 있는지 가르고(가이드 §4.2), 없으면 안내가 없음을 단언한다. 원본은 늘 있다.
+ */
+const helpInProjection = inProjection('frontend/src/app/help/HelpClient.tsx');
 
 const FAQ_BOARD = 'BBSMSTR_AAAAAAAAAAAA';
 const QNA_BOARD = 'BBSMSTR_DDDDDDDDDDDD';
@@ -107,13 +114,25 @@ describe('지식 허브 글쓰기 (NAV-03·UX-10)', () => {
 });
 
 describe('FAQ 탭의 질문 안내 (UX-10)', () => {
-  it('글을 쓸 수 없으면 질의응답 탭과 도움말 센터 1:1 문의를 안내하고, 탭 단추는 질의응답 탭을 연다', async () => {
+  if (helpInProjection) it('글을 쓸 수 없으면 질의응답 탭과 도움말 센터 1:1 문의를 안내하고, 탭 단추는 질의응답 탭을 연다', async () => {
     mocks.user = { ...mocks.user, permissions: ['BOARD_READ'] };
     renderHub();
 
     const note = await screen.findByRole('note');
     expect(note).toHaveTextContent('질문은 질의응답(Q&A) 탭에 남겨 주세요. 나만 볼 문의는 도움말 센터의 1:1 문의를 이용하세요.');
     expect(within(note).getByRole('link', { name: '도움말 센터의 1:1 문의' })).toHaveAttribute('href', '/help');
+
+    fireEvent.click(within(note).getByRole('button', { name: '질의응답(Q&A) 탭' }));
+    expect(mocks.replace).toHaveBeenCalledWith('/admin/help?tab=QNA', { scroll: false });
+  });
+
+  if (!helpInProjection) it('도움말이 없는 구성: 글을 쓸 수 없으면 질의응답 탭만 안내하고 1:1 문의는 말하지 않는다', async () => {
+    mocks.user = { ...mocks.user, permissions: ['BOARD_READ'] };
+    renderHub();
+
+    const note = await screen.findByRole('note');
+    expect(note).toHaveTextContent(/^질문은 질의응답\(Q&A\) 탭에 남겨 주세요\.$/);
+    expect(screen.queryByRole('link', { name: '도움말 센터의 1:1 문의' })).toBeNull();
 
     fireEvent.click(within(note).getByRole('button', { name: '질의응답(Q&A) 탭' }));
     expect(mocks.replace).toHaveBeenCalledWith('/admin/help?tab=QNA', { scroll: false });
@@ -128,7 +147,7 @@ describe('FAQ 탭의 질문 안내 (UX-10)', () => {
 });
 
 describe('질의응답 탭의 1:1 문의 안내 (NAV-11)', () => {
-  it('나만 볼 문의의 자리를 알리고, 비밀글 정책이 없음이면 이 탭의 글이 모두에게 보인다고 말한다', async () => {
+  if (helpInProjection) it('나만 볼 문의의 자리를 알리고, 비밀글 정책이 없음이면 이 탭의 글이 모두에게 보인다고 말한다', async () => {
     mocks.getBoardMeta.mockResolvedValue(meta({ bbsId: QNA_BOARD, bbsTtl: 'Q&A 게시판', prvtPstPlcyCd: 'NONE' }));
     renderHub('tab=QNA');
 
@@ -138,7 +157,7 @@ describe('질의응답 탭의 1:1 문의 안내 (NAV-11)', () => {
     expect(within(note).getByRole('link', { name: '도움말 센터의 1:1 문의' })).toHaveAttribute('href', '/help');
   });
 
-  it('비밀글 정책이 없음이 아니거나 모르면 공개 범위를 말하지 않는다', async () => {
+  if (helpInProjection) it('비밀글 정책이 없음이 아니거나 모르면 공개 범위를 말하지 않는다', async () => {
     mocks.getBoardMeta.mockResolvedValue(meta({ bbsId: QNA_BOARD, prvtPstPlcyCd: 'OPTIONAL' }));
     renderHub('tab=QNA');
 
@@ -146,6 +165,27 @@ describe('질의응답 탭의 1:1 문의 안내 (NAV-11)', () => {
     await metaSettled();
     expect(note).toHaveTextContent('나만 볼 문의는 도움말 센터의 1:1 문의를 이용하세요.');
     expect(note).not.toHaveTextContent('로그인한 모든 사용자');
+  });
+
+  // 도움말이 없는 구성: 안내 문장·링크가 블록과 함께 빠지고 공개 범위 문장만 남는다. 정책이 없음이 아니면 단락이 비어 화면에서는
+  // empty:hidden 으로 숨는다 — jsdom 은 CSS 를 적용하지 않으므로 글자로 부재를 본다.
+  if (!helpInProjection) it('도움말이 없는 구성: 질의응답 탭은 공개 범위만 말하고 1:1 문의를 안내하지 않는다', async () => {
+    mocks.getBoardMeta.mockResolvedValue(meta({ bbsId: QNA_BOARD, bbsTtl: 'Q&A 게시판', prvtPstPlcyCd: 'NONE' }));
+    const { unmount } = renderHub('tab=QNA');
+
+    await metaSettled();
+    const note = await screen.findByText(/로그인한 모든 사용자가/);
+    expect(note).toHaveTextContent(/^이 탭에 쓴 질문은 로그인한 모든 사용자가 볼 수 있습니다\.$/);
+    expect(screen.queryByRole('link', { name: '도움말 센터의 1:1 문의' })).toBeNull();
+    unmount();
+
+    mocks.getBoardMeta.mockResolvedValue(meta({ bbsId: QNA_BOARD, prvtPstPlcyCd: 'OPTIONAL' }));
+    renderHub('tab=QNA');
+    const empty = await screen.findByRole('note');
+    await metaSettled();
+    expect(empty).not.toHaveTextContent('나만 볼 문의');
+    expect(empty).not.toHaveTextContent('로그인한 모든 사용자');
+    expect(screen.queryByRole('link', { name: '도움말 센터의 1:1 문의' })).toBeNull();
   });
 });
 

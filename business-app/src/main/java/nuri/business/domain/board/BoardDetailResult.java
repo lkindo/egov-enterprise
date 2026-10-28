@@ -55,5 +55,11 @@ public class BoardDetailResult {
     private Integer atchPsbltyFileQty;
     private String bbsTtl;
 
-
+    /**
+     * 비밀글 여부. 저장값이 비어 있으면(NULL) {@code 'N'} 이다 — {@link BoardSearchResult#getScrtYn()} 과 같은 규칙이다. 상세·댓글·
+     * 답글의 비밀글 판정({@code "Y".equalsIgnoreCase})도 이 값을 읽지만 NULL 과 'N' 은 둘 다 비밀글이 아니라 판정이 같다.
+     */
+    public String getScrtYn() {
+        return scrtYn != null ? scrtYn : "N";
+    }
 }

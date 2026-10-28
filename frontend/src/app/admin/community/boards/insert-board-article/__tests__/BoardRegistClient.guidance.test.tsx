@@ -2,6 +2,7 @@ import * as React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { inProjection } from '@/test-utils/projection';
 import { BoardRegistClient } from '../BoardRegistClient';
 
 /**
@@ -297,12 +298,23 @@ describe('UX-09 게시판 이름·공개 범위·날짜 칸', () => {
 });
 
 describe('UX-06 Q&A 게시판의 공개 범위 안내', () => {
-  it('공개 글이면 모두가 본다는 사실과 나만 볼 문의(도움말 센터 1:1 문의)의 자리를 함께 알린다', () => {
+  // 1:1 문의 안내(문장·링크)는 도움말 기능의 마커 블록 안에 있다 — 도움말을 고르지 않은 생성물에서는 투영이 그 블록을 걷는다.
+  // 그 블록과 함께 빠지는 도움말 소유 파일로 도움말이 구성에 있는지 가르고(가이드 §4.2), 없으면 안내가 없음을 단언한다. 원본은 늘 있다.
+  const helpInProjection = inProjection('frontend/src/app/help/HelpClient.tsx');
+
+  if (helpInProjection) it('공개 글이면 모두가 본다는 사실과 나만 볼 문의(도움말 센터 1:1 문의)의 자리를 함께 알린다', () => {
     mocks.meta = { requiredEditPermissions: [], tmpltId: 'TMPLT_QNA', prvtPstPlcyCd: 'NONE', community: null };
     renderSubject();
     const audience = screen.getByTestId('article-audience');
     expect(audience).toHaveTextContent('이 글은 로그인한 모든 사용자가 봅니다. 나만 볼 문의는 도움말 센터 1:1 문의를 쓰세요.');
     expect(screen.getByRole('link', { name: '도움말 센터 1:1 문의' })).toHaveAttribute('href', '/help');
+  });
+
+  if (!helpInProjection) it('도움말이 없는 구성: 공개 글이면 모두가 본다는 사실만 알리고 1:1 문의를 권하지 않는다', () => {
+    mocks.meta = { requiredEditPermissions: [], tmpltId: 'TMPLT_QNA', prvtPstPlcyCd: 'NONE', community: null };
+    renderSubject();
+    expect(screen.getByTestId('article-audience')).toHaveTextContent(/^이 글은 로그인한 모든 사용자가 봅니다[.]$/);
+    expect(screen.queryByRole('link', { name: '도움말 센터 1:1 문의' })).toBeNull();
   });
 
   it('비밀글로 저장되는 글에는 1:1 문의를 권하지 않는다', () => {

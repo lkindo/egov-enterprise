@@ -5,6 +5,7 @@
 import { randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs';
 import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
+import { setTimeout as delay } from 'node:timers/promises';
 import { ComposerError } from './project-composer-errors.mjs';
 import { createLogMasker } from './project-composer-command.mjs';
 import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
@@ -19,6 +20,26 @@ export const PREFLIGHT_TIMEOUT_MS = 10_000;
 // 임시 DB 정리 명령의 시간 제한. 정리는 취소 신호를 받지 않으므로, 멈춘 Docker 엔진이 작업을 '취소하는 중' 에 묶어 두지 않게 한다.
 // 넘기면 정리 실패로 남기고 다음 기동의 정리가 다시 본다.
 const CLEANUP_TIMEOUT_MS = 60_000;
+
+/*
+ * Windows 에서 방금 쓴 폴더를 옮기면 백신·색인기가 그 안의 파일을 잠깐 쥐고 있어 rename 이 EPERM·EACCES·EBUSY 로 실패할 수 있다(운영 계약
+ * 시험의 임시 폴더 rename EPERM 과 같은 원인). 수 분 걸린 생성 작업을 그 일시 잠금 하나로 버리지 않게, Windows 에서 그 세 코드만 짧게 다시
+ * 시도한다 — 최대 10회, 50ms 에서 두 배씩 800ms 까지(대기 합 4.75초, 5초 이하). 다른 오류·다른 플랫폼은 바로 던지고, 끝내 실패하면
+ * 마지막 원래 오류를 그대로 던진다. 시도 사이에 경로를 다시 확인하지 않는다(확인 뒤 같은 경로를 다시 쓰는 경합을 만들지 않는다).
+ */
+const TRANSIENT_RENAME_CODES = new Set(['EPERM', 'EACCES', 'EBUSY']);
+export const RENAME_RETRY_DELAYS_MS = Object.freeze([50, 100, 200, 400, 800, 800, 800, 800, 800]);
+
+export async function renameWithRetry(from, to, { rename = renameSync, platform = process.platform, wait = delay } = {}) {
+  for (let attempt = 0; ; attempt += 1) {
+    try {
+      return rename(from, to);
+    } catch (error) {
+      if (platform !== 'win32' || !TRANSIENT_RENAME_CODES.has(error?.code) || attempt >= RENAME_RETRY_DELAYS_MS.length) throw error;
+      await wait(RENAME_RETRY_DELAYS_MS[attempt]);
+    }
+  }
+}
 
 export function composerOutputPaths(root, name, token) {
   if (!/^[a-z][a-z0-9-]{0,63}$/.test(name) || !/^[a-f0-9]{16}$/.test(token)) throw new Error('Invalid output identity');
@@ -182,7 +203,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
       if (existsSync(paths.projectDirectory)) {
         throw new ComposerError('OUTPUT_CONFLICT', { path: toRepositoryPath(outputRoot, paths.projectDirectory) }, 'Final output unexpectedly exists');
       }
-      renameSync(paths.stagingDirectory, paths.projectDirectory);
+      await renameWithRetry(paths.stagingDirectory, paths.projectDirectory);
       report.result = 'verifying';
       writeFileSync(join(paths.projectDirectory, 'project-generation-report.json'), `${JSON.stringify(report, null, 2)}\n`);
       progress('install');

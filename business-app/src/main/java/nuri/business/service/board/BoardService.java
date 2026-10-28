@@ -479,7 +479,8 @@ public class BoardService extends BaseAbstractService {
                                         .pstEndYmd(requestedYmd(request.pstEndYmd()))
                                         .atchFileSn(request.atchFileSn())
                                         .qnaCatCd(request.qnaCatCd())
-                                        // [ADR-0040 결정 7] 비밀글 정책이 REQUIRED 면 요청과 관계없이 비밀글이다. 그 밖은 요청값 그대로다.
+                                        // [ADR-0040 결정 7] 비밀글 정책이 REQUIRED 면 요청과 관계없이 비밀글이다. 그 밖은 요청값 그대로이고,
+                                        //   요청이 비어 있으면 'N' 이다(2026-10-29 — NULL 로 저장하지 않는다).
                                         .scrtYn(resolveSecretYn(master, request.scrtYn(), null))
                                         // [2026-09-27 DIP B5 F9] 게시글 비밀번호는 확인 경로가 없는 폐기 필드다. 화면이 '1' 을
                                         //   채워 평문으로 쌓이고 있었다 — 요청 값을 저장하지 않는다.
@@ -940,7 +941,7 @@ public class BoardService extends BaseAbstractService {
                                 request.qnaSttsCd() != null ? request.qnaSttsCd() : board.getQnaSttsCd(),
                                 request.qnaCatCd() != null ? request.qnaCatCd() : board.getQnaCatCd(),
                                 // [ADR-0040 결정 7] 비밀글 정책이 REQUIRED 면 고친 글도 비밀글이다(공개로 남아 있던 옛 글 포함 —
-                                //   열람 범위를 좁히기만 한다). 그 밖은 지금처럼 요청값, 없으면 저장값이다.
+                                //   열람 범위를 좁히기만 한다). 그 밖은 지금처럼 요청값, 없으면 저장값이다(저장값도 NULL 이면 'N').
                                 resolveSecretYn(master, request.scrtYn(), board.getScrtYn()));
         }
 

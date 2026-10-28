@@ -193,10 +193,12 @@ test('executable axe specs keep color contrast enabled and a disabled-rule fixtu
     true,
     'the deliberate disabled-rule fixture must be detected',
   );
-  const offenders = collectFiles(e2eRoot, (path) => path.endsWith('.spec.ts'))
+  // [2026-10-28 감사 D6-7] AxeBuilder 는 spec 이 아니라 공용 fixture(frontend/e2e/fixtures/accessibility.ts)가 만든다 — spec 만 보면
+  //   그 fixture 에서 끈 color-contrast 를 놓친다. fixture·helper 를 포함한 e2e 의 모든 TS 를 본다.
+  const offenders = collectFiles(e2eRoot, (path) => path.endsWith('.ts'))
     .filter((path) => disablesColorContrast(readFileSync(path, 'utf8')))
     .map((path) => relative(repoRoot, path).replaceAll('\\', '/'));
-  assert.deepEqual(offenders, [], `color-contrast is disabled in executable specs: ${offenders.join(', ')}`);
+  assert.deepEqual(offenders, [], `color-contrast is disabled in executable E2E sources: ${offenders.join(', ')}`);
 });
 
 test('temporary fixtures prove malformed or unbounded unknown evidence turns red', () => {

@@ -234,17 +234,19 @@ class BoardPostingStatusTest {
     /**
      * [ADR-0040 결정 7] 저장할 비밀글 여부 — 정책 3 × 요청(Y·N·null) × 저장값. REQUIRED 는 늘 Y(요청 N·null, 공개로 남아 있던 옛
      * 글을 고칠 때도), NONE·OPTIONAL 은 요청값, 요청이 없으면 저장값이다. NONE 이 Y 를 지키는 것이 도움말 1:1 문의 보존이다(H3).
+     * [2026-10-29] 요청도 저장값도 없으면 NULL 이 아니라 N 이다 — 열람 판정이 모두 NULL 을 공개 글로 보므로 열람 범위는 같다.
      */
     @ParameterizedTest(name = "정책 {0} · 요청 {1} · 저장값 {2} → {3}")
     @CsvSource(nullValues = "NULL", textBlock = """
             NONE,     Y,    NULL, Y
             NONE,     N,    NULL, N
-            NONE,     NULL, NULL, NULL
+            NONE,     NULL, NULL, N
             NONE,     NULL, Y,    Y
             NONE,     N,    Y,    N
             OPTIONAL, Y,    NULL, Y
             OPTIONAL, N,    NULL, N
             OPTIONAL, NULL, N,    N
+            OPTIONAL, NULL, NULL, N
             REQUIRED, Y,    NULL, Y
             REQUIRED, N,    NULL, Y
             REQUIRED, NULL, NULL, Y

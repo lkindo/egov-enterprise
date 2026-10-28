@@ -164,8 +164,14 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             await expect(page.getByText(String(deptTaskSn)).first(), '상세에 식별자가 표시되어야 한다').toBeVisible();
         }
         finally {
-            if (deptTaskSn)
-                await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+            // 방금 착지한 업무 상세를 먼저 떠난 뒤 지운다 — 열린 상세의 재조회가 지운 업무를 404 로 받으면 브라우저 오류 감시가
+            //   실패로 잡는다(PR #930). 떠나기가 실패해도(페이지 종료·크래시) 지운다.
+            try {
+                await page.goto('about:blank');
+            } finally {
+                if (deptTaskSn)
+                    await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+            }
         }
     });
     test('부서 업무 상세에서 수정·삭제할 수 있다', async ({ page, request }) => {

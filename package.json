@@ -73,7 +73,7 @@
     "review:adoption:migration": "node scripts/governance-review.mjs --product migration-tool --mode adoption",
     "adoption:check": "node scripts/adoption-execute.mjs",
     "ci:flaky-report": "node scripts/ci-flaky-report.mjs",
-    "//ci:flaky-report": "읽기 전용 보고 도구다(게이트·병합 증거 아님). gh 로그인이 필요하고 GitHub 에 쓰지 않는다. 'Java CI with Gradle' 최근 실행의 모든 시도에서 실패한 잡을 첫 실패 스텝으로 분류하고, 실패한 E2E 샤드의 e2e-results.json 에서 flaky·실패 시험을 모아 원인별·시험별 빈도를 낸다. 시험 단위 자료는 진단 산출물 보존 기한(7일) 안의 실행만 있다.",
+    "//ci:flaky-report": "읽기 전용 보고 도구다(게이트·병합 증거 아님). gh 로그인이 필요하고 GitHub 에 쓰지 않는다. 'Java CI with Gradle' 최근 실행의 모든 시도에서 실패한 잡을 첫 실패 스텝으로 분류하고, 실패한 E2E 샤드의 e2e-results.json 에서 flaky·실패 시험을 모아 원인별·시험별 빈도를 낸다. 의존성 해석 4xx·5xx 는 잡 로그로 인프라 판정하고, Dependabot 실행은 따로 세며, 러너 대기와 예약 워크플로(on.schedule)의 연속 비성공 표도 낸다(--scheduled-only 는 표만). 시험 단위 자료는 진단 산출물 보존 기한(7일) 안의 실행만 있다.",
     "//verify:ops": ".github/required-checks.json ↔ ci.yml 잡·매트릭스 ↔ GitHub 실제 브랜치 보호 설정 대조. required status check 가 빠지면 하네스가 강제력 없는 권고로 강등되므로 병합·릴리스 전에 명시 실행한다. ruleset 조회에 admin 읽기 권한이 필요해 `verify all` 에는 넣지 않았다(AGENTS H5: 조용한 skip 금지 → 별도 스코프).",
     "test:e2e:isolated": "node scripts/run-isolated-e2e.mjs",
     "test:e2e:enterprise-task-lab": "node scripts/run-isolated-e2e.mjs -- --config=playwright.enterprise-task-lab.config.ts --project=full-suite --workers=1"

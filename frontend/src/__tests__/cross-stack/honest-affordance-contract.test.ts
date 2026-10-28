@@ -657,6 +657,8 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
   const boardMakerWizard = 'frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx';
   const wizardInProjection = repoPresent(boardMakerWizard);
   const wizard = wizardInProjection ? codeOfRepo(boardMakerWizard) : '';
+  // 회원 범위 문장은 커뮤니티 마커 블록 안에 있다 — 그 블록과 함께 빠지는 커뮤니티 소유 파일로 커뮤니티가 구성에 있는지 가른다(가이드 §4.2).
+  const communityInProjection = repoPresent('frontend/src/app/admin/community/page.tsx');
 
   if (wizardInProjection) it('메뉴를 만들지 않고, 만들지 않는다고 말한다 — 메뉴는 메뉴 관리로 넘긴다(ADR-0043 결정 1)', () => {
     // 실제 호출이 계약의 입력이다. 마법사가 메뉴 서비스를 다시 부르면(단건 등록·구조 저장 모두) 결정 1 을 바꾸는 일이다.
@@ -698,6 +700,11 @@ describe('생성 마법사가 만드는 상태를 사실대로 말한다', () =>
     //   투영 마커는 주석이라 원문에서 찾는다(codeOfRepo 는 주석을 지운다).
     const raw = readRepo(boardMakerWizard);
     const membership = raw.indexOf('회원 범위:');
+    if (!communityInProjection) {
+      // 커뮤니티 없는 생성물: 투영이 블록을 걷어 귀속도 회원 범위 축도 없다 — 문장이 남아 있으면 없는 축을 말하는 것이다.
+      expect(membership, '커뮤니티가 없는 구성에 회원 범위 문장이 남았다 — 커뮤니티 마커 밖으로 나갔다').toBe(-1);
+      return;
+    }
     expect(membership, '회원 범위 문장을 찾지 못했다 — 계약이 vacuous 하다').toBeGreaterThan(-1);
     // 마커 문자열은 실행 시점에 조립한다 — 그대로 쓰면 생성기의 마커 탐지가 이 시험 파일을 커뮤니티 블록으로 읽는다.
     const marker = (edge: string) => ['reusable-base', 'community', edge].join(':');

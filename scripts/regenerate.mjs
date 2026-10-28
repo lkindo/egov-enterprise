@@ -21,9 +21,9 @@
  * 등록(gates.json)과 고정 수 시험의 값은 사람이 정한다 — 이 명령은 그 결과를 해시할 뿐이다. 재생성으로 래칫 수치가 오르거나 새 예외가
  * 생기면 받아들이지 않고 원인을 본다(§6.4·H2). 바뀐 파일 목록과 diff 를 확인한 뒤 함께 커밋한다.
  *
- * --check 는 각 생성기 자신의 검사 모드(GENERATORS 의 check)를 병렬로 부르고, URL 승인 결속과 SAST 예외 해시를 함께 본다. 새 판정을
- * 더하지 않는다 — 운영 계약·codegen 게이트가 같은 생성물을 다시 본다. pre-push 가 이것을 맨 앞에서 돌려, 낡은 생성물을 11분짜리
- * 운영 계약 뒤가 아니라 수십 초 안에 알린다.
+ * --check 는 각 생성기 자신의 검사 모드(GENERATORS 의 check)를 병렬로 부르고, URL 승인 결속과 SAST 예외 해시, 재생성이 고치지 않는
+ * 손 결속 원장 확인(LEDGER_CHECKS)을 함께 본다. 새 판정을 더하지 않는다 — 운영 계약·codegen 게이트가 같은 생성물·원장을 다시 본다.
+ * pre-push 가 이것을 맨 앞에서 돌려, 낡은 생성물과 잊은 손 결속 값을 11분짜리 운영 계약 뒤가 아니라 수십 초 안에 알린다.
  */
 import { spawn, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
@@ -40,6 +40,51 @@ export const SAST_LEDGER = 'config/security/false-positive-review.json';
 /** 마지막 생성기. 하네스 기준선을 이 앞에 끼운다. */
 export const ATLAS_STEP = 'atlas';
 const REVIEW_NOTE = /^Re-reviewed \d{4}-\d{2}-\d{2}: \S.{19,}$/s;
+
+/** 배선 census 는 위반마다 `  - [코드] operation: 메시지` 머리줄을 쓴다 — 긴 목록이 붙어도 머리줄은 남긴다. */
+function censusErrorHeadlines(output) {
+  const headlines = output.split(/\r?\n/).filter(line => /^ {2}- \[[A-Z_]+\]/.test(line));
+  return headlines.length ? headlines.join('\n') : output;
+}
+
+/** IA 처분 계약 CLI 는 JSON 요약을 쓴다 — 실패 판정인 structuralErrors 만 꺼낸다(뒤의 승인 차단 표본은 판정이 아니다). */
+function dispositionStructuralErrors(output) {
+  try {
+    const errors = JSON.parse(output.slice(output.indexOf('{'), output.lastIndexOf('}') + 1)).structuralErrors;
+    if (Array.isArray(errors) && errors.length) return errors.join('\n');
+  } catch { /* 요약을 읽지 못하면 원래 출력을 보인다. */ }
+  return output;
+}
+
+/*
+ * 손 결속 원장 확인(--check 전용, 쓰지 않는다). 재생성이 고치지 않는 사람이 맞추는 수·해시 — 배선 census 원장의 operation 수와 소비 래칫
+ * (config/governance/operation-consumer-census.json 의 expected, OPERATION_COUNT_DRIFT 등), IA 처분 제안 원장의 라우트 원장 결속 해시
+ * (manifestRef.sha256 ← config/ui-route-capabilities.json) — 를 잊은 push 가 운영 계약
+ * (약 8~14분) 뒤에야 붉었다. 같은 CLI 를 운영 계약의 시험(operation-consumer-census.test.mjs·ui-navigation-disposition-contract.test.mjs)이
+ * 그대로 다시 보므로 새 판정이 아니고 운영 계약에서 걷지 않는다. 둘 다 읽기만 하고 단독 실행이 수 초다(2026-10-28 실측 약 4초·1초 미만).
+ * 게이트 원장의 Java 태그 집합 대조(governance-gates-contract)는 단독으로 싸게 부를 진입점이 없어 넣지 않았다.
+ * 실패는 regen 으로 고쳐지지 않는다 — 출력대로 원장이나 원인을 고친다. 래칫을 올리거나 해시만 다시 결속해 신호를 지우지 않는다(H2).
+ * 이 파일은 처분 제안 원장의 파일 이름을 적지 않는다 — 처분 계약은 그 이름을 담은 실행 소스를 미등록 소비자로 막는다(이 명령은 CLI 를
+ * 부를 뿐 원장을 읽지 않는다).
+ */
+export const LEDGER_CHECKS = Object.freeze([
+  Object.freeze({
+    id: 'operation-consumer-census',
+    requires: 'scripts/operation-consumer-census.mjs',
+    command: ['node', ['scripts/operation-consumer-census.mjs']],
+    excerpt: censusErrorHeadlines,
+    hint: 'operation 수·래칫은 config/governance/operation-consumer-census.json 의 expected 가 정본이다 — regen 이 고치지 않는다.'
+      + ' 표면 증감이면 expected.operationCount 를 맞추고, 래칫 초과는 원인을 고친다(상한을 올리면 사유를 남긴다, H2).',
+  }),
+  Object.freeze({
+    id: 'ia-disposition-binding',
+    requires: 'scripts/ui-navigation-disposition-contract.mjs',
+    command: ['node', ['scripts/ui-navigation-disposition-contract.mjs']],
+    excerpt: dispositionStructuralErrors,
+    hint: 'IA 처분 제안 원장의 결속은 regen 밖이다 — 라우트 원장의 처분 범위가 정당하게 바뀌었을 때만 출력의 expected 값으로'
+      + ' 다시 결속한다(오케스트레이션 프로토콜 §6.4).',
+  }),
+]);
 
 function generatorStep(generator) {
   return {
@@ -190,8 +235,16 @@ export function regenerate({ cwd = repoRoot, steps = regenerationSteps(), runCom
   return { status: 'ready', changed: result };
 }
 
-/** 검사할 일 목록. 검사 명령이 없는 생성기는 낡았는지 알 수 없으므로 통과시키지 않는다. */
-export function checkTasks(cwd, steps = regenerationSteps()) {
+/** 손 결속 원장 확인 하나의 검사 일. 실패하면 판정 줄만 추리고 regen 이 고치지 않는다는 안내를 끝에 붙인다. */
+function ledgerTask(cwd, check) {
+  return { id: check.id, label: [check.command[0], ...check.command[1]].join(' '), run: async () => {
+    const result = await runAsync(cwd, check.command);
+    return result.ok ? result : { ok: false, output: `${check.excerpt(result.output).trimEnd()}\n→ ${check.hint}` };
+  } };
+}
+
+/** 검사할 일 목록. 검사 명령이 없는 생성기는 낡았는지 알 수 없으므로 통과시키지 않는다. 원장 확인은 그 스크립트가 있는 저장소에서만 돈다. */
+export function checkTasks(cwd, steps = regenerationSteps(), ledgerChecks = LEDGER_CHECKS) {
   const tasks = [];
   for (const step of steps) {
     if (!available(cwd, step)) continue;
@@ -214,6 +267,7 @@ export function checkTasks(cwd, steps = regenerationSteps()) {
       } });
     }
   }
+  for (const check of ledgerChecks) if (available(cwd, check)) tasks.push(ledgerTask(cwd, check));
   return tasks;
 }
 
@@ -251,8 +305,31 @@ export async function checkGenerated({ cwd = repoRoot, steps = regenerationSteps
 
 const USAGE = '사용법: npm run regen [-- --check | -- --rebind-sast <id,…> --note "Re-reviewed YYYY-MM-DD: …"]';
 
-export async function main(argv, { cwd = repoRoot, log = console.log, error = console.error } = {}) {
-  if (argv.length === 0) return regenerate({ cwd, log }).status === 'ready' ? 0 : 1;
+/*
+ * npm 이 이 명령의 플래그를 자기 설정으로 삼킨 흔적. PowerShell 의 npm 래퍼는 `npm run regen -- --check` 의 `--` 를 지워, npm 이
+ * `--check` 를 `npm_config_check=true` 로 먹고 스크립트에는 인자가 하나도 오지 않는다(2026-10-28 npm 11.6 실측). 인자 없는 실행은
+ * 쓰기 재생성이므로, 검사만 하려던 명령이 생성물을 조용히 다시 쓴다. `--rebind-sast`·`--note` 도 같은 길로 사라질 수 있다.
+ */
+const NPM_SWALLOWED_FLAGS = Object.freeze(['npm_config_check', 'npm_config_rebind_sast', 'npm_config_note']);
+
+/** npm 스크립트로 인자 없이 불렸는데 이 명령의 플래그가 npm 설정으로 남았으면 그 이름들 — 비었으면 정상 실행이다. */
+export function swallowedNpmFlags(argv, env) {
+  if (argv.length !== 0 || !env.npm_lifecycle_event) return [];
+  return NPM_SWALLOWED_FLAGS.filter(name => env[name] !== undefined);
+}
+
+export async function main(argv, { cwd = repoRoot, log = console.log, error = console.error, env = process.env,
+  write = options => regenerate(options) } = {}) {
+  const swallowed = swallowedNpmFlags(argv, env);
+  if (swallowed.length) {
+    error([
+      `npm 이 이 명령의 인자를 설정(${swallowed.join(', ')})으로 삼켜 인자 없이 불렸다 — 쓰기 재생성을 돌리지 않고 멈춘다.`,
+      'PowerShell 의 npm 래퍼는 `--` 를 지운다. 검사는 `node scripts/regenerate.mjs --check` 로 직접 부르고,',
+      'SAST 재결속은 `node scripts/regenerate.mjs --rebind-sast <id,…> --note "Re-reviewed YYYY-MM-DD: …"` 로 부른다.',
+    ].join('\n'));
+    return 2;
+  }
+  if (argv.length === 0) return write({ cwd, log }).status === 'ready' ? 0 : 1;
   if (argv.length === 1 && argv[0] === '--check') return (await checkGenerated({ cwd, log })).ok ? 0 : 1;
   const at = name => argv.indexOf(name);
   if (argv.length === 4 && at('--rebind-sast') >= 0 && at('--note') >= 0) {
