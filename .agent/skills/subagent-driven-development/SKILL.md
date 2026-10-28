@@ -42,7 +42,7 @@ digraph when_to_use {
 ## The Process
 
 1. Read the current plan and disk state. Give each implementer the SOP delegation packet, file ownership, allowed checks and completion criteria.
-2. Delegate independent tasks without overlapping edits. Subagents run affected tests and light static checks; heavy checks are serialized by the main agent after integration (§6.3). Commits require the user's authorization and must include only the assigned changes.
+2. Delegate independent tasks without overlapping edits. Subagents run affected tests and light static checks; heavy checks are serialized by the main agent after integration (§6.3). Commits follow AGENTS.md "공유 워킹트리와 Git" — the user's request, which for directly assigned work runs through its completion scope — and include only the assigned changes; if another task's changes share a path, stop instead of committing it with `--only`.
 3. The main agent reads each current diff, checks requirements and independently reruns the relevant gates (§2.3). Request an additional reviewer for a concrete risk or unresolved concern, rather than automatically running two reviews per task.
 4. Fix findings and verify the affected behavior. Count failures by cause, including the first attempt; at three total failures, stop and report under §2.4. Main-agent repair or a replacement agent is allowed within the approved scope.
 5. Integrate the batch and perform the scope checks required by §6. Report evidence and remaining limitations before completing it; review approval alone is not completion.
@@ -166,7 +166,7 @@ Done!
 ## Red Flags
 
 **Never:**
-- Start implementation on main/master branch without explicit user consent
+- Start implementation on main/master — create a work branch first (AGENTS.md "공유 워킹트리와 Git")
 - Skip the main agent's diff review or independent verification
 - Proceed with unfixed issues
 - Dispatch parallel implementers with overlapping file ownership or heavy checks

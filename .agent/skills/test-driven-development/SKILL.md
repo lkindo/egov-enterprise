@@ -42,7 +42,7 @@ Thinking "skip TDD just this once"? Stop. That's rationalization.
 NO PRODUCTION CODE WITHOUT A FAILING TEST FIRST
 ```
 
-Write code before the test? Delete it. Start over.
+Write code before the test? Delete it — your own untested code from this task, never another operator's work or code outside the task (AGENTS.md). Start over.
 
 **No exceptions:**
 - Don't keep it as "reference"
@@ -188,7 +188,7 @@ Confirm:
 
 **Test fails?** Fix code, not test.
 
-**Other tests fail?** Fix now.
+**Other tests fail?** If your change broke them, fix now. If they were already failing, record and report them, and fix them only within the task's scope (SOP §3.5).
 
 ### REFACTOR - Clean Up
 
@@ -293,7 +293,7 @@ Tests-first force edge case discovery before implementing. Tests-after verify yo
 - "TDD is dogmatic, I'm being pragmatic"
 - "This is different because..."
 
-**All of these mean: Delete code. Start over with TDD.**
+**All of these mean: Delete the untested code you wrote for this task. Start over with TDD.**
 
 ## Example: Bug Fix
 
@@ -376,4 +376,4 @@ Production code → test exists and failed first
 Otherwise → not TDD
 ```
 
-No exceptions without your human partner's permission.
+Exceptions are only the ones listed under "When to Use" — record the reason in the report or PR, and ask only for a new kind of exception.

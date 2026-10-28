@@ -331,6 +331,15 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   // CLI 계약(cli-contract.test.mjs)은 운영 계약이라 어느 쪽만 바꾼 변경에서도 돈다. 생성물에 복사되므로 재사용 검증은 남는다.
   { path: 'tools/migration-workspace/', axes: [] },
   { path: 'tools/migration-workspace-prototype/', axes: [] },
+  // [2026-10-27 DEC-OPS-387] 에이전트 하네스(DEC-OPS-386) — 실행 전 가드·스킬 안내 생성기와 세 도구의 훅 어댑터. 시험은 늘 도는 운영
+  // 계약(agent-guard·agent-skill-adapters·project-composer-source)이고, 생성물에 복사되므로 재사용 검증은 남는다. 축은 운영 계약이
+  // 그 경로를 읽는 시험에서 계산한 값이다(훅 어댑터를 읽는 시험은 운영 계약뿐이다). 이관·PIT 는 켜지 않는다. 실행 기록
+  // (verification-record.mjs)은 verify.mjs·pre-push 가 import 하는 실행 경로라 넣지 않는다.
+  { path: 'scripts/agent-guard', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/agent-skill-adapters', axes: ['backend', 'e2e', 'schema'] },
+  { path: '.claude/settings.json', axes: [] },
+  { path: '.codex/hooks.json', axes: [] },
+  { path: '.agents/hooks.json', axes: [] },
 ].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
 
 export function generatorToolEntry(file) {

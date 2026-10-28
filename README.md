@@ -128,7 +128,7 @@ pnpm dev
 - `npm run verify:migration`: 온라인 UI 없이 독립 이관 모듈의 테스트·bootJar를 검증한다.
 - `npm run migration:export`: 프런트·온라인 모듈 없이 이관 CLI의 독립 소스 제품을 새 디렉터리에 생성한다. 생성 후 해당 제품에서 기술 검증과 기관 검토를 수행한다.
 - `npm run review:status` / `review:migration`: 일반 검토 기한 경과와 미검토 상태를 별도 보고한다. 기관 배포·이관 승인은 [검토 수명 가이드](./docs/03-guides/governance-review-lifecycle.md)의 제품·환경별 원장으로 따로 확인한다.
-- `.\gradlew.bat localGate`: Docker 기반 PostgreSQL 스키마 검증, 전 모듈 테스트, JaCoCo, 프론트 단위 검증을 포함하는 병합 전 로컬 게이트.
+- `.\gradlew.bat localGate`: Docker 기반 PostgreSQL 스키마 검증, 전 모듈 테스트, JaCoCo, 프론트 단위 검증을 묶은 Gradle 전수 lane. 생성물 신선도·운영 계약·정적 검사·프런트 build 까지 보는 넓은 로컬 검증은 `npm run verify` 다.
 - `npm run verify:ops`: 원격 ruleset 등 네트워크·관리 권한이 필요한 운영 점검.
 - 최종 병합 권위는 [.github/required-checks.json](./.github/required-checks.json)에 결속된 required CI다.
 
@@ -242,8 +242,8 @@ make bootstrap
    npm run verify:push   # verify:fast + 거버넌스 하네스
    make verify           # == npm run verify:full — 실 PostgreSQL 스키마 검증 포함(Docker 필요)
 
-   # Docker 사용 가능 시 병합 전 전수 로컬 게이트
-   .\gradlew.bat localGate
+   # Docker 사용 가능 시 넓은 로컬 검증(Gradle 부분만 보려면 .\gradlew.bat localGate)
+   npm run verify
    ```
 
 2. **코드 포맷**

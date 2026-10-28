@@ -79,7 +79,7 @@ Docker 없는 환경을 깨지 않도록 기본 `api-server:test`에서는 `sche
 
 > `docker version`은 성공하지만 Testcontainers가 엔진을 찾지 못하면 현재 Docker context와 `DOCKER_HOST` / `DOCKER_API_VERSION` 오버라이드를 확인한다. 특정 Docker 버전의 과거 기본값을 그대로 가정하지 않는다.
 
-> `business-*` 모듈 전수 테스트와 프론트 전체 coverage는 pre-push에서 제외하고 `localGate`가 소유한다. 따라서 pre-push green만으로 해당 범위가 검증됐다고 보고하지 않는다.
+> `business-*` 모듈 전수 테스트와 프론트 전체 coverage는 pre-push에서 제외하고 `npm run verify`(기본 `full`)와 그 Gradle 부분집합인 `localGate`가 소유한다. 따라서 pre-push green만으로 해당 범위가 검증됐다고 보고하지 않는다.
 
 ## 훅 자동 설치
 
@@ -90,6 +90,8 @@ Docker 없는 환경을 깨지 않도록 기본 `api-server:test`에서는 `sche
 - 세션 우회: `SKIP_HOOKS=1 git push`
 - 하네스만 우회: `SKIP_HARNESS=1 git push` (컴파일·계약 게이트는 유지)
 - 완전 해제: `git config --unset core.hooksPath`
+
+> 에이전트는 사용자가 명시적으로 지시한 경우에만 우회한다([SOP §6.2](../docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)). 실행 전 가드([agent-guard](../scripts/agent-guard.mjs))가 위 넷과 `git -c core.hooksPath=…` 를 보고 묻는다.
 
 > pre-commit이 드리프트를 **경고만** 하는 이유: `api-docs.json` 자체가 stale이면 재생성이 오탐을 낳는다. 차단은 결정론적인 pre-push 게이트(컴파일 + 계약 codegen 드리프트)에만 둔다.
 

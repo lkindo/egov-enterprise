@@ -19,7 +19,7 @@ Assume they are a skilled developer, but know almost nothing about our toolset o
 
 **Where plans live (this repository):** there is no `docs/plans/`. Keep a task plan in the conversation, the PR description, or a scratch file outside the repository; promote only durable design to a kebab-case doc under `docs/01-product`·`02-architecture`·`03-guides`·`04-operations` with the `docs/README.md` index updated (AGENTS.md "Documentation and memory"). Session plans and TODOs never go into `.agent/memory/`.
 
-**Commits (this repository):** the "Commit" steps below are checkpoints, not permission. Commit only when the user asked for it, and only your own paths with `git commit --only -- <paths>` (AGENTS.md "공유 워킹트리와 Git").
+**Commits (this repository):** the "Commit" steps below are checkpoints, not permission. Commit within the user's request — for directly assigned work that runs through its completion scope — and only your own paths with `git commit --only -- <paths>`; if another task's changes share a path, stop and report instead (AGENTS.md "공유 워킹트리와 Git").
 
 ## Bite-Sized Task Granularity
 
@@ -86,7 +86,7 @@ Expected: PASS
 **Step 5: Commit**
 
 ```bash
-# only when the user asked for commits
+# within the commit scope of AGENTS.md "공유 워킹트리와 Git"
 git commit --only -m "feat: add specific feature" -- tests/path/test.py src/path/file.py
 ```
 ```

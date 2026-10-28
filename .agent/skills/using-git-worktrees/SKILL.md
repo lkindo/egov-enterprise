@@ -69,7 +69,7 @@ git check-ignore -q .worktrees 2>/dev/null || git check-ignore -q worktrees 2>/d
 
 Per Jesse's rule "Fix broken things immediately":
 1. Add appropriate line to .gitignore
-2. Report the change; commit it only when the user asked for commits, with `git commit --only -- .gitignore` ([AGENTS.md 공유 워킹트리와 Git](../../../AGENTS.md#공유-워킹트리와-git))
+2. Report the change; commit it within the commit scope below, with `git commit --only -- .gitignore` ([AGENTS.md 공유 워킹트리와 Git](../../../AGENTS.md#공유-워킹트리와-git))
 3. Proceed with worktree creation
 
 **Why critical:** Prevents accidentally committing worktree contents to repository.
@@ -158,7 +158,7 @@ Ready to implement <feature-name>
 | `worktrees/` exists | Other projects: use it (verify ignored). This repository: SOP §6.6 |
 | Both exist | Other projects: use `.worktrees/`. This repository: SOP §6.6 |
 | Neither exists | Check AGENTS.md → ask (this repository: SOP §6.6, no question) |
-| Directory not ignored | Add to .gitignore; commit only on request |
+| Directory not ignored | Add to .gitignore; commit within the AGENTS commit scope |
 | Tests fail during baseline | Record failures; diagnose under SOP §2.4 |
 | No package.json/Cargo.toml | Skip dependency install |
 

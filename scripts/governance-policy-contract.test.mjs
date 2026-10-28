@@ -234,6 +234,9 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   if (!protocolBatchBudget.includes('훅을 우회하지 않는다(`--no-verify`, `SKIP_HARNESS=1` 포함)')) {
     errors.push('protocol §6 must keep local hooks mandatory, including the harness skip switch');
   }
+  if (!protocolBatchBudget.includes('예외는 사용자가 그 우회를 명시적으로 지시한 경우뿐')) {
+    errors.push('protocol §6.2 must limit hook bypass to an explicit user instruction');
+  }
   if (!protocolBatchBudget.includes('위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3)')) {
     errors.push('protocol §6 must keep delegated-output re-verification outside the duplicate rule');
   }
@@ -274,6 +277,10 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     || /(?:설계 문서|§7)[^\n]{0,120}이를 대신한다/u.test(audit)) {
     errors.push('protocol §2.3 must not let a design review replace the pre-merge review of the diff');
   }
+  // [2026-10-27 DEC-OPS-387] 다른 회사 모델은 메인 에이전트 기준이고 모델로 가린다 — `agy` 는 Claude 모델도 내준다.
+  if (!audit.includes('메인 에이전트와 다른 회사의 모델로 두고 모델을 명시한다') || !audit.includes('회사는 실행 CLI 가 아니라 모델로 가린다')) {
+    errors.push('protocol §2.3 must pick the other-vendor reviewer relative to the main agent, by model');
+  }
   if (!activeProtocol.includes('식별자 축, 동시성·잠금, 게이트 의미를 보는 관점은 채택률로 줄이지 않는다')) {
     errors.push('protocol §7.4 must not let adoption rates retire high-severity review lenses');
   }
@@ -301,6 +308,20 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   }
   if (!taskSpecification.includes('5번 칸(DESIGN BRIEF)을 채우고 [§7 설계 검토 예산](#7-설계-검토-예산-design-review-budget)을 따른다')) {
     errors.push('the task specification must route design-reviewed work to protocol §7');
+  }
+  // [2026-10-27 DEC-OPS-387] 승인 어휘의 두 뜻을 가르고, 플랫폼의 워크플로 동의와 다른 회사 모델 전송의 경계를 지운 채 남지 않게 고정한다.
+  const delegation = section(activeProtocol, '#### 2.1 실행 방식', '#### 2.2 위임 패킷');
+  if (!delegation.includes('"진행해" 같은 포괄 승인은 이 동의가 아니다') || /opt-in\[포괄 승인/u.test(delegation)) {
+    errors.push('protocol §2.1 must not let batch approval stand in for the Workflow tool opt-in');
+  }
+  if (!dispatch.includes('이 상시 승인은 위 포괄 승인과 별개다')) {
+    errors.push('protocol Stage 1 must keep batch approval and the completion standing approval apart');
+  }
+  if (!agentGitRules.includes('사용자가 맡긴 변경 작업은 아래 완료 범위까지가 그 요청이다')) {
+    errors.push('AGENTS must tie user-scoped commits to the completion scope of assigned work');
+  }
+  if (!agentPrinciples.includes('비밀·토큰·쿠키·개인정보·운영 데이터·`.env` 내용은 보내지 않으며, 원문에 그런 내용이 있으면 빼거나 먼저 묻는다')) {
+    errors.push('AGENTS must bound the cross-vendor review transmission exception');
   }
 
   const atlasL0 = atlasGradeRow(atlas, 'L0');
@@ -592,6 +613,25 @@ test('DEC-OPS-385 protocol pins fail with their own message', () => {
     const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
     assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
   }
+});
+
+test('DEC-OPS-387 approval and transmission pins fail with their own message', () => {
+  const cases = [
+    ['protocol', '"진행해" 같은 포괄 승인은 이 동의가 아니다', '포괄 승인도 이 동의로 본다', 'Workflow tool opt-in'],
+    ['protocol', '이 상시 승인은 위 포괄 승인과 별개다', '이 상시 승인은 위 포괄 승인과 같다', 'completion standing approval apart'],
+    ['agents', '사용자가 맡긴 변경 작업은 아래 완료 범위까지가 그 요청이다', '커밋은 매번 따로 묻는다', 'completion scope of assigned work'],
+    ['agents', '비밀·토큰·쿠키·개인정보·운영 데이터·`.env` 내용은 보내지 않으며, 원문에 그런 내용이 있으면 빼거나 먼저 묻는다', '무엇이든 보낸다', 'cross-vendor review transmission'],
+    ['protocol', '예외는 사용자가 그 우회를 명시적으로 지시한 경우뿐', '예외는 에이전트가 필요하다고 판단한 경우', 'hook bypass to an explicit user instruction'],
+    ['protocol', '메인 에이전트와 다른 회사의 모델로 두고 모델을 명시한다', '다른 회사 모델(codex·agy)로 두고', 'relative to the main agent, by model'],
+    ['protocol', '회사는 실행 CLI 가 아니라 모델로 가린다', '회사는 실행 CLI 로 가린다', 'relative to the main agent, by model'],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
+    const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
+    assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
+  }
+  const restored = current.protocol.replace('"진행해" 같은 포괄 승인은 이 동의가 아니다', '사용자 opt-in[포괄 승인/ultracode] 하에서만. "진행해" 같은 포괄 승인은 이 동의가 아니다');
+  assert.ok(protocolTruthErrors({ ...current, protocol: restored }).some(error => error.includes('Workflow tool opt-in')));
 });
 
 test('backend constitution enforcement links resolve to exact registered source gates', () => {

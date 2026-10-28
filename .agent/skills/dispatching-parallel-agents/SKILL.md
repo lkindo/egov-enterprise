@@ -61,8 +61,8 @@ Each domain is independent - fixing tool approval doesn't affect abort tests.
 
 Each agent gets:
 - **Specific scope:** One test file or subsystem
-- **Clear goal:** Make these tests pass
-- **Constraints:** Don't change other code
+- **Clear goal:** Find why these tests fail and fix the cause
+- **Constraints:** Don't change other code. Do not weaken a test, baseline, allow-list or threshold to turn it green; report instead (AGENTS.md H2)
 - **Expected output:** Summary of what you found and fixed
 
 ### 3. Dispatch in Parallel
@@ -78,7 +78,7 @@ Task("Fix tool-approval-race-conditions.test.ts failures")
 ### 4. Review and Integrate
 
 When agents return:
-- Read each summary
+- Read each summary, then review each agent's diff yourself — the summary is not evidence (SOP §2.3)
 - Verify fixes don't conflict
 - Independently run the checks required for the integrated change under SOP §2.3 and §6
 - Integrate all changes
@@ -104,7 +104,7 @@ These are timing/race condition issues. Your task:
 3. Fix by:
    - Replacing arbitrary timeouts with event-based waiting
    - Fixing bugs in abort implementation if found
-   - Adjusting test expectations if testing changed behavior
+   - Adjusting test expectations only when the behavior change was intended and approved — say which change and where it was approved; otherwise report the failure (AGENTS.md H2)
 
 Do NOT just increase timeouts - find the real issue.
 
@@ -172,7 +172,7 @@ After agents return:
 1. **Review each summary** - Understand what changed
 2. **Check for conflicts** - Did agents edit same code?
 3. **Run required scope checks independently** - Verify the integrated changes; use SOP §6.4 when branches were combined, without repeating a full bundle for every subtask
-4. **Spot check** - Agents can make systematic errors
+4. **Review every diff** - Agents can make systematic errors; a spot check of summaries does not replace the main agent's diff review (SOP §2.3)
 
 ## Real-World Impact
 
