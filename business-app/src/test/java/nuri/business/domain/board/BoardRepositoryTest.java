@@ -529,6 +529,41 @@ class BoardRepositoryTest {
         assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), noSecretFlag.getPstSn(), TODAY)).isPresent();
     }
 
+    /**
+     * [2026-10-29] 비밀 여부가 비어 있는(NULL) 글은 남의 목록·공개 FAQ 목록·상세에 지금처럼 남고(열람 범위 그대로), 조회 결과의
+     * scrtYn 은 'N' 으로 읽힌다. 저장된 값은 NULL 그대로다 — 표현만 열람 판정의 의미에 맞춘다.
+     */
+    @Test
+    @DisplayName("비밀 여부가 NULL 인 글은 남의 목록·공개 FAQ 에 그대로 남고 조회 결과의 scrtYn 은 N 이며 저장값은 NULL 그대로다")
+    void nullSecretFlagStaysPublicAndProjectsAsN() {
+        Board legacy = boardRepository.save(Board.builder()
+                .bbsId(testMaster.getBbsId())
+                .pstTtl("null-secret-marker")
+                .pstCn("body")
+                .userId("ESNTL_LEGACY_OWNER")
+                .useYn("Y")
+                .build());
+        em.flush();
+        em.clear();
+
+        Page<BoardSearchResult> others = boardRepository.searchArticles(
+                visibleCondition("ESNTL_OTHER", false), PageRequest.of(0, 10));
+        assertThat(others.getContent()).extracting(BoardSearchResult::getPstTtl).containsExactly("null-secret-marker");
+        assertThat(others.getContent()).extracting(BoardSearchResult::getScrtYn).containsExactly("N");
+        assertThat(boardRepository.searchPublicFaqArticles(testMaster.getBbsId(), "null-secret-marker", TODAY,
+                        PageRequest.of(0, 10)).getContent())
+                .extracting(BoardSearchResult::getScrtYn).containsExactly("N");
+        assertThat(boardRepository.findPublicArticleDetail(testMaster.getBbsId(), legacy.getPstSn(), TODAY)
+                .orElseThrow().getScrtYn()).isEqualTo("N");
+        assertThat(boardRepository.findActiveArticleDetail(testMaster.getBbsId(), legacy.getPstSn())
+                .orElseThrow().getScrtYn()).isEqualTo("N");
+
+        Object stored = em.createNativeQuery("SELECT scrt_yn FROM tb_bbs_item WHERE pst_sn = :id")
+                .setParameter("id", legacy.getPstSn())
+                .getSingleResult();
+        assertThat(stored).as("읽기는 저장값을 바꾸지 않는다").isNull();
+    }
+
     /** [2026-10-23 ADR-0040 A0] 목록 projection 이 게시 기간을 싣지 않아 목록의 '게시 종료' 배지가 그려질 수 없었다. */
     @Test
     @DisplayName("목록 projection 은 게시 시작일·종료일을 싣는다")

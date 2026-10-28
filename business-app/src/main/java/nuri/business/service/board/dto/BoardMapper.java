@@ -26,7 +26,10 @@ public interface BoardMapper {
     //   BoardService 가 게시판 목록·상세에서만 채운다. 그대로 옮기면 종료일이 지난 옛 고정의 날짜가 다른 경로(통합 검색 등)로 나간다.
     // [2026-10-26 ADR-0043, NAV-10] 게시판 이름(bbsTtl)은 통합 검색만 싣는다 — BoardService#searchAcrossBoards 가 채운다. 매퍼가
     //   옮기면 게시판 목록·상세 응답의 모든 글에 같은 이름이 실린다.
+    // [2026-10-29] 엔티티의 비밀글 여부가 비어 있으면(NULL) 'N' 으로 싣는다 — 조회 결과(BoardSearchResult·BoardDetailResult)의 getter 와
+    //   같은 규칙이다. 열람 판정은 모두 NULL 을 공개 글로 본다.
     @Mapping(target = "commentCnt", source = "cmntCnt")
+    @Mapping(target = "scrtYn", source = "scrtYn", defaultValue = "N")
     @Mapping(target = "pinned", ignore = true)
     @Mapping(target = "upendFixEndYmd", ignore = true)
     @Mapping(target = "bbsTtl", ignore = true)
