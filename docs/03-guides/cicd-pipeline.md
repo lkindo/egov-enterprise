@@ -52,7 +52,7 @@ push/PR / workflow_dispatch
 
 Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않도록 다음 신뢰 경계로 분리한다.
 
-`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다.
+`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다. 내려받은 gitleaks tarball은 공식 릴리스 `checksums.txt`의 SHA-256을 단계에 고정해 `sha256sum -c`로 확인한 뒤에만 풀고 실행한다(판을 올리면 그 릴리스의 `checksums.txt`에서 값을 함께 바꾼다). 필수 체크 계약이 명세와 워크플로를 함께 바꾼 경우에도 이 확인 순서를 따로 판정한다.
 
 ```
 dependency-submission.yml (pull_request, contents:read)

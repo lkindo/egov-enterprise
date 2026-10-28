@@ -9,7 +9,9 @@ import {
   comparePullRequestPolicy,
   compareRequiredChecks,
   compareRequiredContexts,
+  GITLEAKS_SCAN_STEP,
   GRADLE_CACHE_READ_ONLY,
+  gitleaksDownloadViolations,
   parseWorkflowJobs,
   REVIEWED_ACTION_PINS,
   reviewedActionPin,
@@ -1820,6 +1822,48 @@ test('snapshot readiness wait binds the CI step value to the verifier default, n
     assert.notDeepEqual(mutation, current, 'negative fixture must change the contract input');
     assert.match(validateDependencySubmissionContract(mutation).join('\n'), expected);
   }
+});
+
+// [2026-10-28] secret-scan 은 내려받은 gitleaks 를 실행한다 — tarball 을 고정 SHA-256 으로 확인한 뒤에만 푼다. criticalSteps 의 exact run
+//   결속은 명세와 워크플로를 함께 바꾸면 통과하므로, 아래 변이는 둘을 같이 바꿔 무결성 판정만이 잡는지 본다.
+test('secret scanning verifies the gitleaks tarball against a pinned SHA-256 before extracting it', () => {
+  const scanRun = manifest.criticalSteps.find(step => step.name === GITLEAKS_SCAN_STEP).run;
+  assert.deepEqual(validateStaticContract({ manifest, ciContent }), []);
+  assert.deepEqual(gitleaksDownloadViolations(scanRun), []);
+  const indent = run => run.split('\n').map(line => (line ? `          ${line}` : line)).join('\n');
+  const ciLf = ciContent.replace(/\r\n/g, '\n');
+  assert.ok(ciLf.includes(indent(scanRun)), 'the manifest run must be the workflow step body');
+  const withScanRun = (from, to) => {
+    const run = scanRun.replace(from, to);
+    assert.notEqual(run, scanRun, `fixture must change the scan: ${from}`);
+    return { manifest: { ...manifest, criticalSteps: manifest.criticalSteps.map(step => (step.name === GITLEAKS_SCAN_STEP ? { ...step, run } : step)) },
+      ciContent: ciLf.replace(indent(scanRun), indent(run)) };
+  };
+  const pin = /^SHA256=[0-9a-f]{64}$/m;
+  const check = /^echo "\$\{SHA256\} {2}\$\{ARCHIVE\}" \| sha256sum -c -$/m;
+  const extract = /^tar -xzf "\$ARCHIVE" gitleaks$/m;
+  const download = /^curl -sSfL -o "\$ARCHIVE" (\S+)$/m;
+  for (const [label, from, to, detail] of [
+    ['former pipe', /^SHA256=[\s\S]*^tar -xzf "\$ARCHIVE" gitleaks$/m,
+      'curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \\\n  | tar -xz gitleaks',
+      /piped straight into tar/],
+    ['unpinned', pin, 'SHA256="${GITLEAKS_SHA256}"', /exactly one SHA256=/],
+    ['check removed', check, 'true', /checked with sha256sum -c/],
+    ['extract before check', /^(echo "\$\{SHA256\}.*)\n(tar -xzf .*)$/m, '$2\n$1', /tar runs before the checksum check/],
+    ['other file checked', check, 'echo "${SHA256}  ${RUNNER_TEMP}/other.tar.gz" | sha256sum -c -', /cover the file curl wrote/],
+    ['other file extracted', extract, 'tar -xzf "${RUNNER_TEMP}/other.tar.gz" gitleaks', /extract the verified file/],
+    ['download not checked', download, 'curl -sSfL -o "${RUNNER_TEMP}/fresh.tar.gz" $1', /cover the file curl wrote/],
+  ]) {
+    const errors = validateStaticContract(withScanRun(from, to));
+    assert.ok(!errors.some(error => /manifest command exactly/.test(error)), `${label}: the exact-run binding must stay green so only the integrity check decides`);
+    assert.match(errors.join('\n'), /must verify the downloaded tarball against a pinned SHA-256 before extracting it/, label);
+    assert.match(errors.join('\n'), detail, label);
+  }
+  // 차단하지 않는 관측 워크플로(secret-scan-history)도 같은 판·같은 고정 값으로 같은 확인을 거친다.
+  const history = fs.readFileSync(path.join(repoRoot, '.github', 'workflows', 'secret-scan-history.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const downloadLines = scanRun.split('\n').filter(line => /^(VERSION=|SHA256=|ARCHIVE=|curl |echo "\$\{SHA256\}|tar )/.test(line));
+  assert.deepEqual(gitleaksDownloadViolations(downloadLines.join('\n')), []);
+  for (const line of downloadLines) assert.ok(history.includes(`\n          ${line}\n`), `secret-scan-history must download gitleaks the same way: ${line}`);
 });
 
 test('secret scanning reports before dependency installation and operational contract execution', () => {
