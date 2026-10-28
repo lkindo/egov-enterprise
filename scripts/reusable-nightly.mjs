@@ -205,6 +205,19 @@ export async function generateSelection({ root, item }, { createEngine = createC
 
 const exitCodeOf = (action) => { try { action(); return 0; } catch (error) { return error.exitCode ?? 'spawn'; } };
 
+/**
+ * 생성 실패의 진단 — 산출물 검증 실패(VERIFY_FAILED)면 분류기가 붙인 실패 단계와 로그 끝부분을 보고서에 싣는다(판정은 그대로다).
+ * 종전에는 코드만 실어 'verify 23%' 뒤 실패의 원인(인프라·코드)을 보고서로 가를 수 없었다(T2 2026-10-20 select-promotion).
+ * 로그 끝부분은 분류기가 이미 비밀을 가리고 경로를 지운 줄이며, 보고서의 다른 줄과 같은 가리개를 한 번 더 거친다.
+ */
+export function generationDiagnostics(error, masker = createLogMasker()) {
+  if (error?.code !== 'VERIFY_FAILED') return {};
+  const step = typeof error.details?.step === 'string' ? error.details.step : undefined;
+  const logTail = Array.isArray(error.logTail)
+    ? error.logTail.filter((line) => typeof line === 'string').map((line) => masker.line(line).slice(0, 500)) : [];
+  return { ...(step ? { step } : {}), ...(logTail.length ? { logTail } : {}) };
+}
+
 export async function runItem(item, { root = ROOT, contracts = false, run = runCommand,
   generators = { preset: generatePreset, selection: generateSelection } } = {}) {
   validateItem(item);
@@ -217,7 +230,7 @@ export async function runItem(item, { root = ROOT, contracts = false, run = runC
     let artifact;
     try { artifact = await generators[item.kind]({ root, item }); report.stages.generate = { result: 'passed' }; }
     catch (error) {
-      report.stages.generate = { result: 'failed', code: error.code ?? null };
+      report.stages.generate = { result: 'failed', code: error.code ?? null, ...generationDiagnostics(error, masker) };
       throw error;
     }
     report.artifact = relative(root, artifact).replaceAll('\\', '/');
