@@ -190,7 +190,7 @@ function assertRunnerAdmissionControl(content) {
     'reusable-custom must enter the idle runners right after classification');
 }
 
-// 실측이 긴 제품 PIT 범위 — 짧은 foundation 범위보다 먼저 네 runner 에 들어가야 한다.
+// 실측이 긴 제품 PIT 범위 — 짧은 foundation 범위보다 먼저 여섯 runner(ADR-0037 의 제품 PIT 슬롯)에 들어가야 한다.
 const PRODUCT_PIT_LONGEST_FIRST = Object.freeze([
   'business-app-board',
   'business-core-file',
@@ -211,7 +211,7 @@ function assertProductMutationLptOrder(content) {
   const product = parseWorkflowJobs(content).get('mutation-scope') ?? '';
   const scopes = [...product.matchAll(/^ {10}- scope: (\S+)$/gm)].map(match => match[1]);
   assert.deepEqual(scopes.slice(0, PRODUCT_PIT_LONGEST_FIRST.length), PRODUCT_PIT_LONGEST_FIRST,
-    'the measured longest PIT batches must enter the four-runner pool before short foundation batches');
+    'the measured longest PIT batches must enter the six-runner pool before short foundation batches');
 }
 
 function assertMigrationMutationLptOrder(content) {
@@ -1324,11 +1324,9 @@ test('one operational-contract catalog runs in required CI and before the docs f
   assert.ok(secretScanJob, 'secret-scan job must exist');
   assert.match(secretScanJob, /npm run test:operational-contracts/);
 
-  const rootPackage = JSON.parse(fs.readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
-  assert.equal(
-    rootPackage.scripts?.['test:operational-contracts'],
-    'node --test "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"',
-  );
+  // 실행기 명령(package.json 의 test:operational-contracts)의 catalog 범위는 gate registry 가 소유한다 — registry 계약이 package.json 과
+  // 원장의 packageScript.command 를 대조하고(ghost runner selector) governance-gates 계약이 그 원장 값을 고정한다. 같은 리터럴을 여기
+  // 다시 적지 않는다(2026-10-28 중복 정리).
   const prePush = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   const operationalGate = prePush.indexOf('npm run test:operational-contracts');
   const atlasGate = prePush.indexOf('vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts');
