@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import {
   BEAN_VALIDATION_PATTERN, ERROR_CODE_PATTERN, HANDLER_KEY_PATTERN, MESSAGE_BUNDLES, MESSAGE_CONTRACT, MESSAGE_HANDLER_SOURCE,
   MESSAGE_SCAN_MODULES, beanValidationKeysIn, beanValidationRefsIn, errorCodesIn, handlerKeysIn, isErrorCodeSource, lowerContractFloors,
-  orphanedValidationKeys, ownedMessageKeys, pruneBundleText, pruneOwnedMessageKeys,
+  orphanedValidationKeys, ownedMessageKeys, pruneBundleText, pruneOwnedMessageKeys, validationKeysToPrune,
 } from './reusable-source-messages.mjs';
 import { pruneJava, stripJavaComments } from './reusable-source-java.mjs';
 import { composerOwnership, loadComposerModules } from './composer-modules.mjs';
@@ -119,6 +119,19 @@ test('지운 소스만 참조하던 Bean Validation 키만 고르고, 남는 소
   // 주석을 걷은 원문을 받는다 — 호출자가 걷지 않으면 주석 속 참조도 남는 참조로 세어 덜 걷는다(계약도 주석을 걷고 센다).
   assert.deepEqual(beanValidationKeysIn('message = "{a.b}", message="{c}"'), ['a.b', 'c']);
   assert.deepEqual(handlerKeysIn('resolve( "handler.not_found", x); resolve("Upper.key")'), ['handler.not_found']);
+});
+
+test('걷을 후보가 없으면 handler 를 읽지 않고, 후보가 있는데 handler 가 없으면 실패한다', () => {
+  const removed = ['message = "{validation.only.removed}" message = "{handler.shared}"'];
+  let reads = 0;
+  const handler = source => () => { reads += 1; return source; };
+  // 번들·handler 가 없는 합성 저장소(생성기 시험): 지운 소스에 키 참조가 없으면 handler 없이도 투영된다.
+  assert.deepEqual(validationKeysToPrune(['class MailService {}'], [], { readHandler: handler(undefined) }), []);
+  assert.equal(reads, 0, '후보가 없으면 handler 를 읽지 않는다');
+  assert.throws(() => validationKeysToPrune(removed, [], { readHandler: handler(undefined) }),
+    new RegExp(`메시지 해석 경로\\(handler\\) 소스가 없다: ${MESSAGE_HANDLER_SOURCE.replaceAll('.', '\\.')}`));
+  assert.deepEqual(validationKeysToPrune(removed, [], { readHandler: handler('resolve("handler.shared")') }), ['validation.only.removed'],
+    'handler 가 읽는 키는 남긴다');
 });
 
 test('번들에서 키 줄과 그 enum 의 머리 주석만 지우고 줄 끝 형식을 지킨다', () => {

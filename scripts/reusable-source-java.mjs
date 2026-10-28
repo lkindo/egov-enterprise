@@ -10,8 +10,8 @@ import { basename, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { findJavaStatementEnd, isJavaGateSource, skipJavaLiteral, stripJavaComments } from './harness-baseline-manifest.mjs';
 import { projectComposerJava } from './project-composer-source.mjs';
 import {
-  MESSAGE_HANDLER_SOURCE, beanValidationRefsIn, errorCodesIn, handlerKeysIn, isErrorCodeSource, isScannedSource,
-  lowerMessageContractFloors, orphanedValidationKeys, ownedMessageKeys, pruneOwnedMessageKeys,
+  MESSAGE_HANDLER_SOURCE, beanValidationRefsIn, errorCodesIn, isErrorCodeSource, isScannedSource,
+  lowerMessageContractFloors, ownedMessageKeys, pruneOwnedMessageKeys, validationKeysToPrune,
 } from './reusable-source-messages.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
 
@@ -241,13 +241,14 @@ export function pruneJava(output, ownership, profile) {
     .sort((left, right) => left.file.localeCompare(right.file));
   const owned = ownedMessageKeys(removedErrorCodes, survivingErrorCodes);
   const prunedMessageKeys = pruneOwnedMessageKeys(output, owned);
-  // 계약은 handler 키를 이 파일 하나에서 읽는다. 없으면 경로가 바뀐 것이라 계약도 붉다 — 조용히 넘기지 않는다.
-  const handlerSource = readTextIfPresent(join(output, MESSAGE_HANDLER_SOURCE));
-  if (handlerSource === undefined) fail(`메시지 해석 경로(handler) 소스가 없다: ${MESSAGE_HANDLER_SOURCE}`);
-  const prunedValidationMessageKeys = pruneOwnedMessageKeys(output, {
-    keys: orphanedValidationKeys(removedStripped, survivingStripped, {
-      errorCodes: survivingErrorCodes.flatMap(({ source }) => errorCodesIn(source)), handlerKeys: handlerKeysIn(handlerSource) }),
-    owners: [] });
+  // 계약은 handler 키를 이 파일 하나에서 읽는다. 걷을 후보가 있는데 없으면 경로가 바뀐 것이라 계약도 붉다 — 조용히 넘기지 않는다.
+  let validationKeys;
+  try {
+    validationKeys = validationKeysToPrune(removedStripped, survivingStripped, {
+      errorCodes: survivingErrorCodes.flatMap(({ source }) => errorCodesIn(source)),
+      readHandler: () => readTextIfPresent(join(output, MESSAGE_HANDLER_SOURCE)) });
+  } catch (error) { fail(error.message); }
+  const prunedValidationMessageKeys = pruneOwnedMessageKeys(output, { keys: validationKeys, owners: [] });
   const messageContractFloors = lowerMessageContractFloors(output,
     { errorCodes: owned.keys.length, beanValidationRefs: removedBeanValidationRefs });
   return { excludedDomains: excludedDomains.sort(), removedFiles: removed.size, removedGates, cascadeRemoved,

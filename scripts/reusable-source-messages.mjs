@@ -70,6 +70,18 @@ export function orphanedValidationKeys(removedStripped, survivingStripped, { err
 }
 
 /**
+ * 걷을 Bean Validation 키. handler 키는 후보를 줄이기만 하므로 후보가 없으면 handler 를 읽지 않는다 — 번들·handler 가 없는 합성
+ * 저장소(생성기 시험)도 그대로 투영된다. 후보가 있는데 handler 원문이 없으면 계약이 읽는 경로가 바뀐 것이라 조용히 넘기지 않는다.
+ * `readHandler` 는 handler 원문을 돌려주고, 없으면 undefined 다.
+ */
+export function validationKeysToPrune(removedStripped, survivingStripped, { errorCodes = [], readHandler }) {
+  if (!orphanedValidationKeys(removedStripped, survivingStripped, { errorCodes }).length) return [];
+  const handlerSource = readHandler();
+  if (handlerSource === undefined) throw new Error(`메시지 해석 경로(handler) 소스가 없다: ${MESSAGE_HANDLER_SOURCE}`);
+  return orphanedValidationKeys(removedStripped, survivingStripped, { errorCodes, handlerKeys: handlerKeysIn(handlerSource) });
+}
+
+/**
  * 지울 ErrorCode 소스의 코드에서 남는 ErrorCode 소스의 코드를 뺀 키와, 그 enum 이름의 머리 주석을 고른다.
  * `removedSources`·`survivingSources` 는 `{ path, source }` 목록이다.
  */
