@@ -22,7 +22,7 @@ buildscript {
 
 plugins {
     id 'java'
-    id 'org.springframework.boot' version '4.1.1' apply false
+    id 'org.springframework.boot' version '4.1.2' apply false
     id 'io.spring.dependency-management' version '1.1.7'
     id 'io.freefair.lombok' version '9.8.2' apply false
     id 'jacoco'
@@ -259,7 +259,7 @@ subprojects { subproject ->
 
     dependencyManagement {
         imports {
-            mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.1"
+            mavenBom "org.springframework.boot:spring-boot-dependencies:4.1.2"
             // [2026-09-24 ADR-0024] junit-bom 5.12.2 import 제거. Boot 4 BOM 이 JUnit 6.0.3 을 관리하고
             //   Spring 7 의 SpringExtension 은 JUnit 6 API 를 요구한다 — 5.x 로 고정하면 컨텍스트 테스트가 기동하지 않는다.
         }
