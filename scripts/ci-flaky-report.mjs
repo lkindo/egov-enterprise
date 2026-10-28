@@ -545,7 +545,7 @@ export function renderText(report) {
   }
   const waits = summarizeQueueWaits(report.queueWaits ?? []);
   if (waits.length) {
-    lines.push('', '## 러너 대기(초 = 잡 시작 − max(잡 생성, needs 잡 완료), 최댓값 큰 순)');
+    lines.push('', '## 러너 대기(초 = 잡 시작 − max(잡 생성, needs 잡 완료), 최댓값 큰 순 — 매트릭스 max-parallel 슬롯 대기도 들어간다)');
     for (const wait of waits) lines.push(`- ${wait.job}: 표본 ${wait.count} · 중앙 ${wait.median} · 최대 ${wait.max}`);
   }
   if ((report.scheduled ?? []).length) lines.push('', ...renderScheduled(report.scheduled));

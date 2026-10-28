@@ -598,7 +598,7 @@ pnpm -C frontend exec playwright install --with-deps chromium
 - **용도**: 'Java CI with Gradle' 최근 실행의 모든 시도에서 실패한 잡의 원인별 빈도(인프라·시험·미분류, 재실행으로 회복한 수)와, 실패한 E2E 샤드의 flaky·실패 시험별 빈도를 본다. 재실행·새 push 가 숨긴 반복 flaky(예: 2026-10 React #418)를 찾는 데 쓴다.
 - **옵션**: `--runs`(1~100 — 실행 목록 API 한 쪽의 상한, 기본 40)·`--branch`·`--event push|pull_request`·`--max-calls`·`--json`·`--scheduled-only`(예약 워크플로 표만).
 - **분류**: 처음 멈춘 스텝이 취소면 `cancelled`(원인 아님)로 따로 센다. 샤드 결과를 모으는 스텝(`Require every migration test shard to succeed`)은 파생이라 세지 않는다. Gradle·Maven 의존성 해석이 4xx·5xx(429 포함)로 멈췄으면 그 스텝의 잡 로그 구간을 읽어 `infra:dependency-resolution` 으로 바꾼다. Dependabot 이 연 실행의 실패는 별도 표로 센다. E2E 시험 표에는 flaky·실패 시험과 전역 오류(globalSetup·워커)가 들어간다.
-- **러너 대기**: 잡 시작 − max(잡 생성, `needs` 잡 완료)를 잡별 표본·중앙값·최댓값으로 낸다. `needs` 는 ci.yml 에서 읽는다.
+- **러너 대기**: 잡 시작 − max(잡 생성, `needs` 잡 완료)를 잡별 표본·중앙값·최댓값으로 낸다. `needs` 는 ci.yml 에서 읽는다. 매트릭스 `max-parallel`(PIT 슬롯 등)로 기다린 시간도 들어가므로 그 잡의 큰 값은 러너 부족이 아니라 슬롯 대기일 수 있다.
 - **예약 워크플로 표**: `on.schedule` 을 선언한 워크플로마다 예약 실행만 보고 마지막 결론·시각·연속 비성공(실패·시간 초과·기동 실패·취소) 수를 낸다. 2회 이상 연속이면 green 까지 known-gaps 행으로 추적한다([오케스트레이션 프로토콜 §6.2](orchestration-protocol.md#62-검증은-한-커밋에-한-번)). 주간 [거버넌스 검토 워크플로](../../.github/workflows/governance-review.yml)가 같은 표를 요약에 싣는다(그 잡에만 `actions: read`).
 - **한계**: 시험 단위 자료는 진단 산출물 보존 기한(7일) 안의 실행만 있다. 산출물이나 판정에 필요한 잡 로그를 읽지 못했거나 실패 원인이 결과에 없거나 호출 상한에 닿으면 종료 코드 1 이다(산출물 하나가 깨져도 나머지는 보고하고, 호출 상한이면 부분 결과를 내지 않는다). 붉은 예약 실행 자체는 종료 코드를 바꾸지 않는다. 게이트·병합 증거가 아니다.
 
