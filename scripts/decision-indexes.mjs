@@ -108,6 +108,8 @@ export const DECISION_AREA_ROUTES = Object.freeze({
       'config/governance/permission-bundles.json', 'config/governance/privacy-access-census.json',
       'config/frontend-visible-terms.json', 'config/ui-*.json', 'config/ui-quality-baseline/**', 'config/krds-profile-mapping.json',
       'config/db/**', 'config/edge/**', 'config/observability/**', 'docker-compose*.yml', '.dockerignore', '.env.example', 'README.md',
+      // 이관 도구의 표준 대조기는 온라인 표준 스키마 결정(GAP-STD-001, 제품 절)을 집행한다 — 이관 색인과 함께 읽는다.
+      'migration-tool/src/main/java/nuri/migration/validate/TargetStandardValidator.java',
     ]),
     documents: Object.freeze([
       'docs/01-product/README.md', 'docs/01-product/information-architecture.md', 'docs/01-product/ui-ux-modernization-brief.md',

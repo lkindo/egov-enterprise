@@ -34,6 +34,31 @@ test('events are grouped by test file with top-level totals and nested names', (
   }]);
 });
 
+test('a suite that fails on its own is recorded, a suite failing only through its children is not repeated', () => {
+  const cwd = path.resolve('/repo');
+  const file = path.join(cwd, 'scripts', 'b.test.mjs');
+  const subtests = Object.assign(new Error('x'), { failureType: 'subtestsFailed' });
+  const hook = Object.assign(new Error('after hook'), { failureType: 'hookFailed' });
+  const events = [
+    { type: 'test:start', data: { name: 'hooked', nesting: 0, file } },
+    { type: 'test:start', data: { name: 'ok', nesting: 1, file } },
+    { type: 'test:pass', data: { name: 'ok', nesting: 1, file, details: { duration_ms: 1, type: 'test' } } },
+    { type: 'test:fail', data: { name: 'hooked', nesting: 0, file, details: { duration_ms: 2, type: 'suite', error: hook } } },
+    { type: 'test:start', data: { name: 'parent', nesting: 0, file } },
+    { type: 'test:start', data: { name: 'bad', nesting: 1, file } },
+    { type: 'test:fail', data: { name: 'bad', nesting: 1, file, details: { duration_ms: 1, type: 'test' } } },
+    { type: 'test:fail', data: { name: 'parent', nesting: 0, file, details: { duration_ms: 1, type: 'suite', error: subtests } } },
+    // 불러오지 못한 파일: Node 는 절대 경로를 이름으로 쓴다 — 이 컴퓨터의 경로를 남기지 않는다.
+    { type: 'test:fail', data: { name: path.join(cwd, 'scripts', 'broken.test.mjs'), nesting: 0, file: path.join(cwd, 'scripts', 'broken.test.mjs'),
+      details: { duration_ms: 1, type: 'test' } } },
+  ];
+  const [b, broken] = collectNodeTestEvents(events, { cwd });
+  assert.deepEqual(b.tests.map(test => [test.name, test.status]),
+    [['hooked > ok', 'passed'], ['hooked', 'failed'], ['parent > bad', 'failed']], 'the own suite failure is kept once');
+  assert.deepEqual(broken.tests.map(test => test.name), ['scripts/broken.test.mjs'], 'an absolute file name is made relative');
+  assert.match(renderNodeTestJUnit([b]), /failures="2"/);
+});
+
 test('attribute escaping keeps the XML well formed', () => {
   assert.equal(xmlAttribute('a<b>&"c"\n\u0001d'), 'a&lt;b&gt;&amp;&quot;c&quot; d');
   const xml = renderNodeTestJUnit([{ name: 'x "y".test.mjs', seconds: 1, tests: [{ name: 'a > b', seconds: 1, status: 'passed' }] }]);

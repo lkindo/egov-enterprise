@@ -29,6 +29,12 @@ function relativeFile(file, cwd) {
 
 const seconds = durationMs => (Number.isFinite(durationMs) && durationMs >= 0 ? durationMs / 1000 : 0);
 
+// 불러오지 못한 파일은 절대 경로를 시험 이름으로 보고한다 — 이 컴퓨터의 경로를 남기지 않게 파일 이름처럼 상대화한다.
+const testName = (name, cwd) => {
+  const text = String(name ?? '');
+  return path.isAbsolute(text) ? relativeFile(text, cwd) : text;
+};
+
 /** 보고 사건을 파일별 집계로 모은다. 순수 함수라 시험이 합성 사건으로 판정을 고정한다. */
 export function collectNodeTestEvents(events, { cwd = process.cwd() } = {}) {
   const files = new Map();
@@ -52,10 +58,13 @@ export function collectNodeTestEvents(events, { cwd = process.cwd() } = {}) {
     const nesting = Number.isInteger(data.nesting) && data.nesting >= 0 ? data.nesting : 0;
     const duration = seconds(data.details?.duration_ms);
     if (nesting === 0) entry.seconds += duration;
-    if (data.details?.type === 'suite') continue;
-    const parents = (stacks.get(file) ?? []).slice(0, nesting).filter(name => typeof name === 'string');
+    // suite 는 시험이 아니다. 다만 suite 자체가 실패한 경우(after 훅·불러오기 실패)는 자식 실패의 반복이 아니므로 남긴다 —
+    // 빠지면 자식이 모두 성공한 suite 의 실패가 failures="0" 으로 보인다(종료 코드는 그래도 실패다).
+    const ownSuiteFailure = event.type === 'test:fail' && data.details?.error?.failureType !== 'subtestsFailed';
+    if (data.details?.type === 'suite' && !ownSuiteFailure) continue;
+    const parents = (stacks.get(file) ?? []).slice(0, nesting).filter(name => typeof name === 'string').map(name => testName(name, cwd));
     entry.tests.push({
-      name: [...parents, String(data.name ?? '')].join(' > '),
+      name: [...parents, testName(data.name, cwd)].join(' > '),
       seconds: duration,
       status: data.skip || data.todo ? 'skipped' : event.type === 'test:fail' ? 'failed' : 'passed',
     });

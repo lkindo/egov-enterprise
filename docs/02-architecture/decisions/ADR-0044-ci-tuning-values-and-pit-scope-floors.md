@@ -29,6 +29,7 @@ PIT 동시 수 하나를 바꾼 a5da67e21 은 ci.yml 14줄을 바꾸려고 파�
    - 정본: gates.json `QUALITY-BACKEND-MUTATION-SCORE` 의 `scopeFloors`(범위마다 `current`·`baseline`)다.
    - 전달: ci.yml matrix 의 `threshold` 를 `PIT_MUTATION_THRESHOLD` 로 넘기고, build.gradle 이 `Math.max(75, 값)` 으로 받는다. 빈 값이면 75 이고, 숫자가 아니면 구성이 실패한다.
    - 거버넌스 계약이 막는 것: `current < baseline`, 75 아래나 100 위의 값, 원장에 없는 범위, 행렬 값과 원장의 불일치(빠진 값 포함), 행렬 값을 build.gradle 에 넘기지 않는 단계, 대체값이 하한과 다른 build.gradle.
+   - 계약이 막지 못하는 것: 범위의 하한 행을 지우는 변경(그 범위는 75 로 돌아간다)과 `current`·`baseline` 을 함께 낮추는 변경. 원장 하나 안에서는 기준과 현재를 같이 바꾼 것을 구분할 수 없다 — 이 둘은 diff 리뷰가 H2 로 판정한다(교차 검토 2026-10-29).
 5. **PIT 영향 선별은 바꾸지 않는다.** api-server 경로는 계속 제품 PIT 를 고른다. 근거는 다음과 같다.
    - foundation 네 범위의 시험 집합 `nuri.foundation.*` 에는 `MessageBundleContractTest` 가 든다. 이 시험은 실행 중에 `api-server/src/main/java` 를 읽는다. api-server 를 바꿔 이 시험이 깨지면, 그 범위의 PIT 는 변이 없는 기준 실행에서 실패한다.
    - 모든 PIT 잡은 `--warning-mode fail` 로 Gradle 을 돌린다. Gradle 은 다중 프로젝트의 모든 build.gradle 을 구성하므로 `api-server/build.gradle` 도 결과에 닿는다.
