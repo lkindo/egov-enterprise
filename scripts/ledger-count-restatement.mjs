@@ -60,10 +60,20 @@ const ledgerCountRestatement = (label) => new RegExp(
   'iu',
 );
 
+/*
+ * gap 행은 자동 로드되는 known-gaps.md 의 전문 표나, 특정 경로에만 걸려 옮긴 영역 상세(docs/04-operations/known-gaps-detail.md)에
+ * 있다(DEC-OPS-389). known-gaps.md 의 레지스트리 줄(6열)은 상세 행을 가리키는 요약이라 원장 링크를 요구하지 않는다 — 원장 링크와
+ * 행 범위(rowOnly) 검출은 두 파일의 전문 행(9열)을 본다. 수치 재진술 검출은 레지스트리 줄을 포함한 모든 줄을 그대로 본다.
+ */
+export const GAP_FILES = Object.freeze(['known-gaps.md', 'known-gaps-detail.md']);
+const GAP_ROW_CELLS = 9;
+const tableCellCount = (line) => line.trim().slice(1, -1).split('|').length;
+
 /** files: { 'known-gaps.md': text, ... } — 공용 메모리 파일 이름과 원문. 위반 문장 목록을 돌려준다. */
 export function ledgerMemoryViolations(files) {
   const violations = [];
-  const gapRows = (files['known-gaps.md'] ?? '').split(/\r?\n/);
+  const gapRows = GAP_FILES.flatMap((file) => (files[file] ?? '').split(/\r?\n/))
+    .filter((line) => tableCellCount(line) === GAP_ROW_CELLS);
   for (const { id, ledger } of LEDGER_MEMORY_BINDINGS) {
     const row = gapRows.find((line) => line.startsWith(`| ${id} |`));
     if (!row) {
@@ -75,7 +85,7 @@ export function ledgerMemoryViolations(files) {
   for (const [file, text] of Object.entries(files)) {
     for (const line of text.split(/\r?\n/)) {
       for (const { id, ledger, labels, rowOnly } of LEDGER_MEMORY_BINDINGS) {
-        if (rowOnly && !(file === 'known-gaps.md' && line.startsWith(`| ${id} |`))) continue;
+        if (rowOnly && !(GAP_FILES.includes(file) && line.startsWith(`| ${id} |`))) continue;
         for (const label of labels) {
           if (ledgerCountRestatement(label).test(line)) {
             violations.push(`${file}: '${label}' 수를 다시 적었습니다 — ${ledger} 가 정본이니 링크만 남기십시오.`);

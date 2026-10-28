@@ -5,9 +5,10 @@ status: active
 authority: adr-index
 scope: repository
 sensitivity: public-repo-safe
-verified_at: 2026-10-27
-verified_against: e83d0e69569eebc551403d7113ad64041eb596e0
+verified_at: 2026-10-29
+verified_against: 47ff9721ccd0076ed11825d5607519be12652327
 canonical_sources:
+  - ../../scripts/decision-indexes.mjs
   - ../../docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md
   - ../../docs/archived/operational-decisions-history.md
   - ../../docs/04-operations/operational-decisions-index-ci-governance.md
@@ -84,15 +85,16 @@ ID가 보관 원문의 앵커다: 각 행의 전문·이유·승인 근거는 [�
 
 ## 영역 결정 색인
 
-이 표의 색인은 자동으로 읽히지 않는다. 읽는 의무는 [AGENTS.md 작업 시작 시 필수 읽기](../../AGENTS.md#작업-시작-시-필수-읽기)가 정하고, 이 표는 경로를 색인에 잇는다. 경로가 여러 행에 걸리면 걸린 색인을 모두 읽고, 어느 행에도 걸리지 않으면 넷을 모두 읽는다.
+이 표의 색인과 [gap 영역 상세](../../docs/04-operations/known-gaps-detail.md)의 같은 영역 절은 자동으로 읽히지 않는다. 읽는 의무는 [AGENTS.md 작업 시작 시 필수 읽기](../../AGENTS.md#작업-시작-시-필수-읽기)가 정하고, 이 표는 경로를 색인에 잇는다. 판정의 정본은 [경로 원장](../../scripts/decision-indexes.mjs)이고 이 표는 그 경로 패턴을 그대로 보인다(공용 메모리 계약이 대조한다). 문서(`docs/`)의 영역 배정은 원장에만 둔다 — `node scripts/decision-indexes.mjs --for <경로…>`(또는 `--diff <base>`)가 읽을 색인과 gap 상세 절을 출력한다. `**` 는 하위 경로 전부, `*` 는 한 단계 안의 임의 문자열이다. 경로가 여러 행에 걸리면 걸린 색인을 모두 읽고, 어느 행에도 걸리지 않으면 넷을 모두 읽는다.
 
 | 영역 색인 | 이 경로를 고치면 읽는다 |
 |---|---|
-| [CI·검증·거버넌스](../../docs/04-operations/operational-decisions-index-ci-governance.md) | `.github/`, `.githooks/`, `.zap/`, `.agent/scripts/`, `.agent/skills/`, `config/governance/`, `config/security/`, `scripts/`(아래 두 행의 도구는 그 행도 읽는다), `api-server/src/test/`, `frontend/e2e/`, `frontend/scripts/`, `frontend/*.config.*`, `test/load-tests/`, `package.json`·lockfile, `gradle/`, `*.gradle`, `api-server/src/main/resources/db/migration/`(무중단 waiver) |
-| [프로젝트 생성기·재사용 투영](../../docs/04-operations/operational-decisions-index-composer.md) | `config/modules/`, `tools/project-composer/`, `frontend/src/extensions/`, `scripts/project-composer*`, `scripts/composer-*`, `scripts/reusable-*`, `scripts/generate-reusable-base-*`, `scripts/verify-reusable-*`, `scripts/slot-registry*`, `scripts/domain-deletion-*`, `scripts/frontend-reachability-census*`, 기능 마커(`config/modules/*.json` 의 `markerBlocks`)가 가리키는 화면, 한 기능이 다른 기능의 코드를 새로 import 하는 변경 |
-| [레거시 이관 도구](../../docs/04-operations/operational-decisions-index-migration.md) | `migration-tool/`, `tools/migration-workspace/`, `tools/migration-workspace-prototype/`, `scripts/*migration*`, `docs/02-architecture/legacy-migration-tool-design.md`, `docs/03-guides/migration-workspace-guide.md`, `docs/04-operations/migration-recovery-runbook.md` |
-| [제품 동작·화면·도메인](../../docs/04-operations/operational-decisions-index-product.md) | `foundation/`, `business-core/`, `business-app/`, `api-server/src/main/`(Flyway 새 표·컬럼 포함), `api-server/src/test/`, `frontend/src/`, `frontend/next.config.*`, `config/governance/` 의 권한·인가 원장, `config/frontend-visible-terms.json`, `config/ui-*.json`, `docker-compose*.yml`, `config/edge/`, `config/observability/` |
-| 넷 모두 | 위 어느 행에도 걸리지 않는 경로, 또는 걸리는지 판단이 서지 않을 때 |
+| [CI·검증·거버넌스](../../docs/04-operations/operational-decisions-index-ci-governance.md) | `.github/**`, `.githooks/**`, `.zap/**`, `.agent/scripts/**`, `.agent/skills/**`, `.agent/knowledge/**`, `.agents/hooks.json`, `.claude/settings.json`, `.codex/hooks.json`, `.gemini/settings.json`, `AGENTS.md`, `CLAUDE.md`, `GEMINI.md`, `Makefile`, `start-dev.ps1`, `.editorconfig`, `.gitattributes`, `.gitignore`, `.gitleaks.toml`, `.nvmrc`, `lombok.config`, `config/governance/**`, `config/security/**`, `config/dependency-check/**`, `config/migration-test-duration-profile.json`, `scripts/**`(아래 두 행의 도구는 그 행도 읽는다), `tools/agent-evaluation/**`, `api-server/src/test/**`, `api-server/src/main/resources/db/migration/**`(무중단 waiver), `frontend/e2e/**`, `frontend/scripts/**`, `frontend/atlas/**`, `frontend/*.config.*`, `frontend/tsconfig*.json`, `frontend/vitest.setup.ts`, `frontend/lighthouserc.json`, `frontend/.gitignore`, `frontend/.nvmrc`, `test/load-tests/**`, `package.json`, `package-lock.json`, `frontend/package.json`, `frontend/pnpm-lock.yaml`, `gradle/**`, `**/*.gradle`, `gradle.properties`, `gradlew`, `gradlew.bat` |
+| [프로젝트 생성기·재사용 투영](../../docs/04-operations/operational-decisions-index-composer.md) | `config/modules/**`, `config/project-composer-menus.json`, `tools/project-composer/**`, `frontend/src/extensions/**`, `scripts/project-composer*`, `scripts/composer-*`, `scripts/reusable-*`, `scripts/generate-reusable-base-*`, `scripts/verify-reusable-*`, `scripts/slot-registry*`, `scripts/domain-deletion-*`, `scripts/frontend-reachability-census*` — 경로가 아닌 조건: 기능 마커(`config/modules/*.json` 의 `markerBlocks`)가 가리키는 화면, 한 기능이 다른 기능의 코드를 새로 import 하는 변경 |
+| [레거시 이관 도구](../../docs/04-operations/operational-decisions-index-migration.md) | `migration-tool/**`, `tools/migration-workspace/**`, `tools/migration-workspace-prototype/**`, `scripts/*migration*`, `config/migration-test-duration-profile.json` |
+| [제품 동작·화면·도메인](../../docs/04-operations/operational-decisions-index-product.md) | `foundation/**`, `business-core/**`, `business-app/**`, `api-server/src/main/**`(Flyway 새 표·컬럼 포함), `api-server/src/test/**`, `api-server/Dockerfile`, `frontend/src/**`, `frontend/public/**`, `frontend/next.config.*`, `frontend/next-env.d.ts`, `frontend/components.json`, `frontend/Dockerfile`, `frontend/.dockerignore`, `frontend/.env.example`, `frontend/README.md`, `frontend/AGENTS.md`, `frontend/CLAUDE.md`, `.agent/knowledge/**`, `lombok.config`, `db_columns.json`, `config/governance/permission-catalog.json`, `config/governance/authorization-policies.json`, `config/governance/permission-bundles.json`, `config/governance/privacy-access-census.json`, `config/frontend-visible-terms.json`, `config/ui-*.json`, `config/ui-quality-baseline/**`, `config/krds-profile-mapping.json`, `config/db/**`, `config/edge/**`, `config/observability/**`, `docker-compose*.yml`, `.dockerignore`, `.env.example`, `README.md` |
+| 추가 색인 없음 | `.agent/memory/**`, `docs/04-operations/known-gaps-detail.md`, `docs/04-operations/operational-decisions-index-*.md`, `docs/archived/operational-decisions-*.md`, `docs/02-architecture/decisions/README.md`, `docs/README.md`, `.agents/skills/**`, `.claude/skills/**`, `frontend/public/governance_harness_atlas.html`, `api-docs.json`, `frontend/src/types/generated-**`, `frontend/src/extensions/generated-*`, `config/governance/generated-*`, `config/ui-url-state-census.json`, `business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java`, `business-core/src/main/resources/authorization/*.json` — 생성물·공용 메모리·결정 색인은 그 변경을 부른 입력 경로로 판정한다. ADR 문서는 그 ADR 행이 있는 색인을 읽는다(공용 인덱스의 ADR 은 추가 색인이 없다) |
+| 넷 모두 | 위 어느 행에도, 경로 원장의 문서 배정에도 걸리지 않는 경로, 또는 걸리는지 판단이 서지 않을 때 |
 
 ## 기록 템플릿
 

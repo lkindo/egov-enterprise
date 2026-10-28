@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
-import { CURRENT_DECISION_INDEX, DECISION_ARCHIVE, DECISION_AREA_INDEXES, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
+import { CURRENT_DECISION_INDEX, DECISION_ARCHIVE, DECISION_AREA_INDEXES, GAP_DETAIL, GAP_INDEX, HISTORICAL_DECISION_INDEX } from './decision-indexes.mjs';
 import { parseWorkflowJobs } from './required-checks-contract.mjs';
 import { BACKEND_LAYOUTS } from './reusable-layout.mjs';
 
@@ -556,10 +556,11 @@ export function buildAtlasCatalog(repoRoot) {
       searchText: [...searchCells, adrText].join('\n'),
     });
   });
-  const gapSource = '.agent/memory/known-gaps.md';
-  const gapRecords = tableRows(io.read(gapSource), 'GAP-[A-Z]+-\\d{3} \\|').map(({ raw, cells }) =>
-    record(cells[0], `${cells[0]} · ${cells[3]}`, cells[4], cells[2], gapSource,
-      { priority: cells[1], verifiedAt: cells.at(-1), details: [detail('다음 행동 / 재개 조건', cells[6]), detail('결정권자', cells[7]), detail('기록된 검증일', cells.at(-1))], links: localLinks(raw, gapSource) }));
+  // 자동 로드 표에 남은 행과 영역 상세로 옮긴 행(DEC-OPS-389)의 전문(9열)만 싣는다 — 레지스트리 줄(6열)은 상세 행의 요약이다.
+  const gapRecords = [GAP_INDEX, GAP_DETAIL].flatMap(gapSource => tableRows(io.read(gapSource), 'GAP-[A-Z]+-\\d{3} \\|')
+    .filter(({ cells }) => cells.length === 9).map(({ raw, cells }) =>
+      record(cells[0], `${cells[0]} · ${cells[3]}`, cells[4], cells[2], gapSource,
+        { priority: cells[1], verifiedAt: cells.at(-1), details: [detail('다음 행동 / 재개 조건', cells[6]), detail('결정권자', cells[7]), detail('기록된 검증일', cells.at(-1))], links: localLinks(raw, gapSource) })));
   const contextSource = '.agent/memory/project-context.md';
   const memoryRecords = tableRows(io.read(contextSource), 'CTX-\\d{3} \\|').map(({ raw, cells }) =>
     record(cells[0], cells[0], cells[1], 'derived-fact', contextSource,
