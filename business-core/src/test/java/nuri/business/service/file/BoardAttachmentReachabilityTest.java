@@ -10,7 +10,13 @@ import nuri.foundation.core.community.CommunityBoardAccessPort;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-/** Actual reference SQL plus the same community membership port used by board reads. */
+/**
+ * Actual reference SQL plus the same community membership port used by board reads.
+ *
+ * <p>조회 대행 권한(BOARD_READ_ALL)에 기대는 논리 삭제·게시 종료·예약 글 단언은 게시판 소유 권한이라 게시판과 함께 빠지는
+ * business-app 의 {@code BoardAttachmentReadAllReachabilityTest} 로 옮겼다(T2 2026-10-23~, DEC-OPS-257 ①). 이 클래스는 권한 원장을
+ * 보지 않는 단언만 둬 모든 생성물에서 그대로 돈다.
+ */
 class BoardAttachmentReachabilityTest {
     private JdbcTemplate jdbc;
     private SingleConnectionDataSource source;
@@ -32,9 +38,6 @@ class BoardAttachmentReachabilityTest {
 
     private static final java.time.Clock FIXED =
             java.time.Clock.fixed(java.time.Instant.parse("2026-10-22T15:30:00Z"), java.time.ZoneOffset.UTC);
-    private static final String TODAY = "20261023";
-    private static final String YESTERDAY = "20261022";
-    private static final String TOMORROW = "20261024";
 
     @AfterEach
     void closeDatabase() { source.destroy(); org.springframework.security.core.context.SecurityContextHolder.clearContext(); }
@@ -99,96 +102,5 @@ class BoardAttachmentReachabilityTest {
     void ordinaryPublicPostStillCreatesSharedReachability() {
         post("PUBLIC","N");
         assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-    }
-
-    /** [DIP S7, GAP-DOMAIN-001 ②] 논리 삭제된 공개 글의 첨부는 번호를 알아도 공유 근거가 되지 않는다. */
-    @Test
-    void logicallyDeletedPostOrBoardNoLongerSharesItsAttachment() {
-        post("PUBLIC","N");
-        jdbc.update("UPDATE tb_bbs_item SET use_yn='N'");
-        var deletedPost=resolver.resolve(101L,"reader-login","reader-esntl");
-        assertThat(deletedPost.sharedGrant()).isFalse();
-        assertThat(deletedPost.resolutionFailed()).isFalse();
-        // 작성자는 자기 첨부를 계속 받는다 — 소유 근거는 사용 여부와 무관하다.
-        assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
-
-        // 조회 대행 권한도 글의 논리 삭제는 면제하지 않는다(그 관리자 경로는 FILE_READ_ALL 이다).
-        authenticateWith("BOARD_READ_ALL");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
-        org.springframework.security.core.context.SecurityContextHolder.clearContext();
-
-        jdbc.update("UPDATE tb_bbs_item SET use_yn='Y'");
-        jdbc.update("UPDATE tb_bbs_master SET use_yn='N' WHERE bbs_id='PUBLIC'");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
-        // [2026-10-23 ADR-0040 결정 1] 사용 안 함 게시판은 조회 대행 권한자에게 공유 근거가 된다 — 본문을 그 사람에게 여는 것과 같다.
-        authenticateWith("BOARD_READ_ALL");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-        org.springframework.security.core.context.SecurityContextHolder.clearContext();
-
-        jdbc.update("UPDATE tb_bbs_master SET use_yn='Y' WHERE bbs_id='PUBLIC'");
-        jdbc.update("UPDATE tb_bbs_item SET use_yn=NULL");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isFalse();
-    }
-
-    /**
-     * [2026-10-23 ADR-0040 A0] 게시 종료일이 지난 글의 첨부는 승인 회원에게도 공유 근거가 아니다. 작성자는 자기 첨부를 계속 받고,
-     * 조회 대행 권한(BOARD_READ_ALL)은 본문처럼 기간만 면제받는다. 종료일 당일과 빈 값은 게시 중이다.
-     */
-    @Test
-    void endedPostSharesOnlyWithReadAllWhileTheOwnerKeepsItsGrant() {
-        String today = TODAY;
-        String yesterday = YESTERDAY;
-        post("COMMUNITY","N");
-        when(membership.isApprovedMember(7L,"reader-esntl")).thenReturn(true);
-        when(membership.isApprovedMember(7L,"writer-esntl")).thenReturn(true);
-
-        jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=?", yesterday);
-        var ended=resolver.resolve(101L,"reader-login","reader-esntl");
-        assertThat(ended.sharedGrant()).isFalse();
-        assertThat(ended.resolutionFailed()).isFalse();
-        assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
-        authenticateWith("BOARD_READ_ALL");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-        org.springframework.security.core.context.SecurityContextHolder.clearContext();
-
-        jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=?", today);
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-        jdbc.update("UPDATE tb_bbs_item SET pst_end_ymd=''");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-    }
-
-    /**
-     * [2026-10-23 ADR-0040 결정 3] 게시 시작일 전인 예약 글의 첨부는 승인 회원에게도 공유 근거가 아니다. 작성자는 소유 근거로 자기
-     * 첨부를 받고(본문과 같다), 조회 대행 권한(BOARD_READ_ALL)은 본문처럼 기간을 면제받는다. 시작일 당일·빈 값은 게시 중이다.
-     * 종료일 조건과 따로 둔 절이라, 종료일이 열려 있어도 시작 전이면 닫힌다.
-     */
-    @Test
-    void scheduledPostSharesOnlyWithReadAllWhileTheOwnerKeepsItsGrant() {
-        post("COMMUNITY","N");
-        when(membership.isApprovedMember(7L,"reader-esntl")).thenReturn(true);
-        when(membership.isApprovedMember(7L,"writer-esntl")).thenReturn(true);
-
-        jdbc.update("UPDATE tb_bbs_item SET pst_bgng_ymd=?, pst_end_ymd=NULL", TOMORROW);
-        var scheduled=resolver.resolve(101L,"reader-login","reader-esntl");
-        assertThat(scheduled.sharedGrant()).isFalse();
-        assertThat(scheduled.resolutionFailed()).isFalse();
-        assertThat(resolver.resolve(101L,"writer-login","writer-esntl").ownerGrant()).isTrue();
-        authenticateWith("BOARD_READ_ALL");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-        org.springframework.security.core.context.SecurityContextHolder.clearContext();
-
-        jdbc.update("UPDATE tb_bbs_item SET pst_bgng_ymd=?", TODAY);
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-        jdbc.update("UPDATE tb_bbs_item SET pst_bgng_ymd=''");
-        assertThat(resolver.resolve(101L,"reader-login","reader-esntl").sharedGrant()).isTrue();
-    }
-
-    private static void authenticateWith(String permission) {
-        var principal=nuri.foundation.security.service.CustomUserDetails.builder().userId("reader-login").esntlId("reader-esntl")
-                .userNm("reader").groups(List.of("ROLE_USER")).permissions(List.of(permission))
-                .authorizationVersion(nuri.business.security.authorization.PermissionCodes.CATALOG_VERSION)
-                .enabled(true).lockAt("N").build();
-        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
-                new org.springframework.security.authentication.UsernamePasswordAuthenticationToken(principal,null,principal.getAuthorities()));
     }
 }

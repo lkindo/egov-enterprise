@@ -7,9 +7,6 @@ import org.springframework.dao.DataAccessException;
 import org.springframework.dao.QueryTimeoutException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.context.SecurityContextHolder;
-import nuri.foundation.security.service.CustomUserDetails;
 
 import java.sql.ResultSet;
 import java.util.ArrayList;
@@ -480,6 +477,10 @@ class JdbcAttachmentReferenceResolverTest {
                 .resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).readDenied()).isFalse();
     }
 
+    /**
+     * 권한을 보지 않는 CMS 단언만 둔다. 관리 열람 권한(CMS_ADMIN_READ)에 기대는 단언은 콘텐츠 페이지 기능 소유라 그 기능과 함께 빠지는
+     * business-app 의 {@code CmsAttachmentAdminReadTest} 에 있다(T2 2026-10-23~, DEC-OPS-257 ①).
+     */
     @Test
     @DisplayName("콘텐츠 페이지 이미지는 현재 게시본이 쓰면 공유 근거이고, 소유 근거·개인 귀속·열람 거부를 만들지 않는다(ADR-0039)")
     void cmsImageInCurrentRevisionIsShared() {
@@ -491,27 +492,6 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(grants.personalReference()).isFalse();
         // 같은 파일을 다른 곳에도 쓴 업로더가 콘텐츠 페이지 때문에 자기 파일을 못 여는 일이 없어야 한다.
         assertThat(grants.readDenied()).isFalse();
-    }
-
-    @Test
-    @DisplayName("게시본이 쓰지 않는 콘텐츠 페이지 이미지(초안·지난 게시본)는 관리 열람 권한(CMS_ADMIN_READ)이 있어야 공유 근거다")
-    void cmsImageOutsideCurrentRevisionNeedsAdminRead() {
-        CapturingJdbc jdbc = new CapturingJdbc(source -> source == AttachmentSource.CMS_PAGE
-                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE);
-        try {
-            authenticate();
-            assertThat(jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).sharedGrant()).isFalse();
-            authenticate("CMS_ADMIN_READ");
-            assertThat(jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).sharedGrant()).isTrue();
-        } finally {
-            SecurityContextHolder.clearContext();
-        }
-    }
-
-    private static void authenticate(String... permissions) {
-        CustomUserDetails user = CustomUserDetails.builder().userId(LOGIN_ID).esntlId(ESNTL_ID).enabled(true)
-                .permissions(List.of(permissions)).authorizationVersion("fixture").build();
-        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(user, null, user.getAuthorities()));
     }
 
     /** 테이블 부재처럼 스키마 계열 실패를 흉내내는 최소 예외. */
