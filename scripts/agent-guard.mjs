@@ -8,7 +8,9 @@
  * `.agents/hooks.json`(Antigravity PreToolUse). 판정은 모두 이 파일이 한다.
  *
  * 병합 권위는 required CI 이고, 이 가드는 그 앞에서 같은 실수를 일찍 막는 보조다. 그래서 입력을 읽지 못하거나 판정 중 오류가 나면
- * 아무 판정도 내지 않는다(평소 권한 흐름 그대로). 막지 않은 명령에도 승인을 대신 내리지 않는다.
+ * 아무 판정도 내지 않는다(평소 권한 흐름 그대로). 막지 않은 명령에도 승인을 대신 내리지 않는다. 다만 "걸린 규칙 없음"과 구분되도록
+ * 실패한 규칙 id(또는 단계 이름)와 오류 이름만 stderr 에 한 줄 남긴다 — 명령 원문·인자·오류 메시지는 비밀이 섞일 수 있어 남기지 않는다.
+ * 어댑터가 살아 있는지는 `echo AGENT_GUARD_CANARY` 가 막히는지로 본다(guard-canary 규칙).
  *
  *   deny — 막고 이유와 대신 쓸 방법을 에이전트에게 돌려준다.
  *   ask  — 사용자에게 묻는다(AGENTS.md 가 사전 승인을 요구하는 작업). Codex 는 묻는 판정이 없어 막고 "사용자 승인 후 직접 실행"을 안내한다.
@@ -17,7 +19,7 @@
  */
 import { spawnSync } from 'node:child_process';
 import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
-import { delimiter, isAbsolute, join, resolve } from 'node:path';
+import { basename, delimiter, dirname, isAbsolute, join, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const AGENTS = new Set(['claude', 'codex', 'antigravity']);
@@ -93,9 +95,21 @@ export function maskQuoted(text) {
   return out;
 }
 
+/**
+ * 줄 이음(bash 의 `\`+줄바꿈, PowerShell 의 `` ` ``+줄바꿈)을 같은 길이의 공백으로 바꾼다 — 여러 줄로 쓴 한 명령을 한 조각으로 읽는다.
+ * 길이를 보존해 원문과 가린 판의 위치가 그대로 맞는다. heredoc 본문을 지운 뒤에 쓴다(본문 끝의 `\` 가 끝줄을 삼키지 않게).
+ */
+export function joinContinuations(text) {
+  return text.replace(/[\\`]\r?\n/g, (match) => ' '.repeat(match.length));
+}
+
 /** 셸 구분자(&&·||·;·|·줄바꿈)로 나눈 명령 조각. 원문(heredoc 본문 제외)과 따옴표를 가린 판을 짝으로 돌려준다. */
 export function segments(command) {
-  const raw = withoutHeredocBodies(command);
+  return splitSegments(withoutHeredocBodies(command));
+}
+
+/** heredoc 본문을 이미 지운 원문을 조각으로 나눈다. withoutHeredocBodies 는 두 번 적용하면 안 된다(끝줄을 지운 뒤라 뒤를 모두 본문으로 읽는다). */
+function splitSegments(raw) {
   const masked = maskQuoted(raw);
   const parts = [];
   let start = 0;
@@ -111,12 +125,18 @@ export function segments(command) {
 const tokens = (text) => text.trim().split(/\s+/).filter(Boolean);
 const unquote = (value) => value.replace(/^(['"])(.*)\1$/s, '$2');
 
-/** 조각의 명령 단어 위치 — 앞의 환경 변수 대입(`K=V`)과 PowerShell 호출 연산자(`&`)를 건너뛴다. */
+/** 뒤 단어를 명령 자리에 두는 셸 예약어 — `for …; do git …`·`if …; then …; else …` 의 조각은 예약어 다음이 명령이다. */
+const SHELL_KEYWORDS = new Set(['do', 'then', 'else', 'elif', 'if', 'while', 'until']);
+
+/** 조각의 명령 단어 위치 — 앞의 환경 변수 대입(`K=V`), PowerShell 호출 연산자(`&`), 셸 예약어를 건너뛴다. */
 function commandAt(words) {
   let index = 0;
-  while (index < words.length && (/^[A-Za-z_]\w*=/.test(words[index]) || words[index] === '&')) index += 1;
+  while (index < words.length && (/^[A-Za-z_]\w*=/.test(words[index]) || words[index] === '&' || SHELL_KEYWORDS.has(words[index]))) index += 1;
   return index;
 }
+
+/** Git Bash 의 `/d/…` 경로를 Windows 경로(`d:/…`)로 바꾼다. 다른 플랫폼은 그대로다. */
+const fromMsysPath = (path) => (process.platform === 'win32' ? path.replace(/^\/([A-Za-z])(\/|$)/, '$1:/') : path);
 
 /**
  * git 호출이면 하위 명령·인자와 `-C` 디렉터리. `git -C dir -c k=v commit …` 형태를 읽는다.
@@ -196,7 +216,96 @@ function setsHookSkipVariable(raw) {
  * 가린 주석은 단어가 되지 않는다. 각 단어는 판정용 가린 판(`code`)과 따옴표를 벗긴 원문 값(`value`)을 함께 갖는다.
  */
 function alignedWords(code, raw) {
-  return [...code.matchAll(/\S+/g)].map((match) => ({ code: match[0], value: unquote(raw.slice(match.index, match.index + match[0].length)) }));
+  return [...code.matchAll(/\S+/g)].map((match) => {
+    const end = match.index + match[0].length;
+    const text = raw.slice(match.index, end);
+    return { code: match[0], text, value: unquote(text), end };
+  });
+}
+
+/** 셸 단어 하나를 그 셸이 넘길 값으로 푼다 — 작은따옴표는 그대로, 큰따옴표는 `\"`·`` `" `` 같은 이스케이프를 푼다. */
+function shellWordValue(text) {
+  const single = /^'(.*)'$/s.exec(text);
+  if (single) return single[1];
+  const double = /^"(.*)"$/s.exec(text);
+  return double ? double[1].replace(/\\(["\\$`])|`(["`$])/g, '$1$2') : text;
+}
+
+const SHELL_WRAPPER = /(?:^|[\\/])(bash|sh|zsh|dash|pwsh|powershell|cmd)(?:\.exe)?$/i;
+
+/**
+ * 명시적 셸 래퍼(`bash -c '…'`·`pwsh -Command "…"`·`cmd /c …`)가 실행할 스크립트. 래퍼가 아니거나 스크립트를 넘기지 않으면 null.
+ * bash 계열은 `-c`(·`-lc` 같은 묶음) 다음 한 단어가 스크립트이고, PowerShell·cmd 는 `-Command`·`/c` 뒤 나머지 전체가 명령이다.
+ * 일반 셸 파서가 아니다 — `xargs`·`env`·`sudo` 같은 접두 명령은 보지 않는다.
+ */
+export function wrappedScript(code, raw) {
+  const words = alignedWords(code, raw);
+  const at = commandAt(words.map((word) => word.code));
+  const shell = SHELL_WRAPPER.exec(words[at]?.value ?? '')?.[1].toLowerCase();
+  if (!shell) return null;
+  const rest = (index) => {
+    const tail = words.slice(index + 1);
+    if (!tail.length) return null;
+    return tail.length === 1 ? shellWordValue(tail[0].text) : raw.slice(words[index].end).trim();
+  };
+  for (let index = at + 1; index < words.length; index += 1) {
+    const option = words[index].code;
+    if (shell === 'cmd') {
+      if (/^\/[ck]$/i.test(option)) return rest(index);
+      continue;
+    }
+    if (shell === 'pwsh' || shell === 'powershell') {
+      if (/^-(?:c|command)$/i.test(option)) return rest(index);
+      continue;
+    }
+    if (/^[-+]o$/i.test(option)) { index += 1; continue; } // `-o pipefail` 의 값
+    if (/^-[A-Za-z]*c[A-Za-z]*$/.test(option)) return words[index + 1] ? shellWordValue(words[index + 1].text) : null;
+    if (!/^[-+]/.test(option)) return null; // 스크립트 파일을 실행한다
+  }
+  return null;
+}
+
+/** `$(` 바로 뒤(from)에서 시작해 짝이 맞는 `)` 의 위치. 따옴표 안의 괄호는 세지 않는다. 닫히지 않으면 끝 위치다. */
+function closingParen(text, from) {
+  let depth = 1;
+  let quote = null;
+  for (let index = from; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote) {
+      if (char === quote) quote = null;
+      else if (quote === '"' && (char === '\\' || char === '`')) index += 1;
+      continue;
+    }
+    if (char === '\\' || char === '`') { index += 1; continue; }
+    if (char === '\'' || char === '"') quote = char;
+    else if (char === '(') depth += 1;
+    else if (char === ')' && (depth -= 1) === 0) return index;
+  }
+  return text.length;
+}
+
+/**
+ * 명령 치환 `$( … )` 의 안쪽 명령들(바깥 치환만, 안쪽 치환은 재귀 판정이 다시 찾는다).
+ * 큰따옴표 안의 치환은 bash·PowerShell 이 실행하므로 센다. 작은따옴표 안과 `\$`·`` `$ `` 로 이스케이프한 `$` 는 치환이 아니다.
+ */
+export function commandSubstitutions(text) {
+  const found = [];
+  let quote = null;
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quote === '\'') {
+      if (char === '\'') quote = null;
+      continue;
+    }
+    if (char === '\\' || char === '`') { index += 1; continue; }
+    if (char === '"') { quote = quote ? null : '"'; continue; }
+    if (char === '\'' && !quote) { quote = '\''; continue; }
+    if (char !== '$' || text[index + 1] !== '(') continue;
+    const end = closingParen(text, index + 2);
+    found.push(text.slice(index + 2, end));
+    index = end;
+  }
+  return found;
 }
 
 /** git 호출의 하위 명령 앞 전역 옵션 값(`-c k=v`·`--config-env=…`)과 하위 명령 뒤 인자를 원문 단어로 돌려준다(gitInvocation 과 같은 자리). */
@@ -228,9 +337,97 @@ function selectsOtherRepository(code, raw) {
 const WHOLE_TREE_PATHSPECS = new Set(['.', './', './*', '..', '../', '*', ':', ':/', ':/*', ':(top)', ':(top).', ':(top)/', ':(top)*']);
 const isWholeTreePathspec = (value) => WHOLE_TREE_PATHSPECS.has(value.replaceAll('\\', '/').toLowerCase());
 
-function mergeInProgress(cwd) {
-  const result = spawnSync('git', ['rev-parse', '--git-path', 'MERGE_HEAD'], { cwd, encoding: 'utf8', windowsHide: true });
-  return result.status === 0 && existsSync(resolve(cwd, result.stdout.trim()));
+/**
+ * 이 git 호출의 경로 인자(`--` 가 있으면 그 뒤 전부, 없으면 옵션과 옵션 값이 아닌 단어) 가운데 작업 트리 전체를 가리키는 것이 있는가.
+ * 값은 원문에서 읽어 따옴표 친 `":/"`·`'*'` 도 잡고, 옵션·`--` 는 가린 판으로 가려 메시지·주석 속 문구를 경로로 읽지 않는다.
+ */
+function namesWholeTree(code, raw, valued = new Set()) {
+  const { args } = gitWords(code, raw);
+  const dashes = args.findIndex((word) => word.code === '--');
+  const paths = dashes >= 0
+    ? args.slice(dashes + 1)
+    : args.filter((word, index) => !word.code.startsWith('-') && !valued.has(args[index - 1]?.code));
+  return paths.some((word) => isWholeTreePathspec(word.value));
+}
+
+/**
+ * 병합·cherry-pick·revert·rebase(·am)가 충돌로 멈춘 상태인가. 이때 git 은 경로를 준 부분 커밋을 거부하므로
+ * ("cannot do a partial commit during a merge/cherry-pick/rebase") `--only <경로>` 를 요구하면 안 된다.
+ */
+function sequencerInProgress(cwd) {
+  const markers = ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-merge', 'rebase-apply'];
+  const result = spawnSync('git', ['rev-parse', ...markers.flatMap((marker) => ['--git-path', marker])], { cwd, encoding: 'utf8', windowsHide: true });
+  if (result.status !== 0) return false;
+  return result.stdout.split(/\r?\n/).filter(Boolean).some((path) => existsSync(resolve(cwd, path.trim())));
+}
+
+/** bash `rm` 의 짧은 옵션 묶음 가운데 재귀(-r·-R)를 담은 것(-rf·-fR …). PowerShell `-Force` 는 다른 글자가 섞여 걸리지 않는다. */
+const RM_RECURSIVE_CLUSTER = /^-[rRfidIv]*[rR][rRfidIv]*$/;
+/** PowerShell 의 `-Recurse` 와 그 접두 약어(`-r`·`-rec`), `-Recurse:$true`. */
+const PS_RECURSE = /^-r(?:e(?:c(?:u(?:r(?:s(?:e)?)?)?)?)?)?(?::\$true)?$/i;
+
+/**
+ * 이 조각이 재귀로 지우는 대상 경로들(원문 값). 재귀 삭제가 아니면 빈 목록이다.
+ * `rm -r`·`Remove-Item -Recurse`(별칭 ri·rd·rmdir·del·erase)·cmd `rmdir /s`, 그리고 `recursive: true` 를 준 node `rmSync`·`rmdirSync`·`rm` 을 본다.
+ */
+function recursiveDeleteTargets(code, raw) {
+  const words = alignedWords(code, raw);
+  const at = commandAt(words.map((word) => word.code));
+  const name = (words[at]?.value ?? '').replace(/^.*[\\/]/, '').replace(/\.exe$/i, '').toLowerCase();
+  const args = words.slice(at + 1);
+  if (name === 'node') {
+    if (!/\b(?:rmSync|rmdirSync|rm|rmdir)\s*\(/.test(raw) || !/\brecursive\s*:\s*true\b/.test(raw)) return [];
+    // 스크립트 속 문자열 리터럴은 따옴표 종류마다 따로 짝지어 읽는다(바깥 큰따옴표가 안쪽 작은따옴표 경로를 삼키지 않게).
+    const literals = ['\'', '"', '`'].flatMap((quote) => [...raw.matchAll(new RegExp(`${quote}([^${quote}]*)${quote}`, 'g'))].map((match) => match[1]));
+    const absolute = [...raw.matchAll(/[A-Za-z]:[\\/][^'"`\s,;()]*/g)].map((match) => match[0]);
+    return [...literals, ...absolute].map((value) => value.replace(/\\\\/g, '\\'));
+  }
+  if (name === 'rm') {
+    const recursive = args.some((word) => RM_RECURSIVE_CLUSTER.test(word.code) || /^--recursive$/i.test(word.code) || PS_RECURSE.test(word.code));
+    return recursive ? args.filter((word) => !word.code.startsWith('-')).map((word) => word.value) : [];
+  }
+  if (['remove-item', 'ri', 'rd', 'rmdir', 'del', 'erase'].includes(name)) {
+    // cmd 스위치는 띄어 쓰거나 붙여 쓴다(`/s /q`·`/s/q`).
+    const switches = (word) => /^(?:\/[a-z])+$/i.test(word.code);
+    const recursive = args.some((word) => PS_RECURSE.test(word.code) || (switches(word) && /\/s/i.test(word.code)));
+    return recursive ? args.filter((word) => !word.code.startsWith('-') && !switches(word)).map((word) => word.value) : [];
+  }
+  return [];
+}
+
+/** 경로 비교용 정규형 — 절대 경로, 끝 구분자 없음, Windows 는 대소문자를 무시한다. */
+function comparablePath(path) {
+  const absolute = resolve(path).replace(/[\\/]+$/, '');
+  return process.platform === 'win32' ? absolute.toLowerCase() : absolute;
+}
+
+/** 이 저장소의 작업 트리들(`git worktree list --porcelain`, 원본 checkout 포함)과 그 부모 디렉터리. 저장소가 아니면 빈 목록이다. */
+function worktreeLayout(cwds) {
+  const trees = new Set();
+  for (const cwd of cwds) {
+    const result = spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', windowsHide: true });
+    if (result.status !== 0) continue;
+    for (const line of result.stdout.split(/\r?\n/)) if (line.startsWith('worktree ')) trees.add(comparablePath(line.slice('worktree '.length)));
+  }
+  return { trees: [...trees], parents: [...new Set([...trees].map((tree) => dirname(tree)))] };
+}
+
+/**
+ * 이 경로를 재귀로 지우면 작업 트리가 사라지는가 — 등록된 작업 트리이거나 그 조상, 작업 트리와 나란한 `wt-*` 디렉터리(등록이 풀린 잔재 포함),
+ * `.git` 이 파일인 디렉터리(다른 저장소의 작업 트리). 저장소 안의 build/·임시 디렉터리는 해당하지 않는다.
+ */
+function deletesWorktree(target, layout) {
+  const path = comparablePath(target);
+  const inside = path.endsWith(sep) ? path : `${path}${sep}`;
+  if (layout.trees.some((tree) => tree === path || tree.startsWith(inside))) return true;
+  if (/^wt-/i.test(basename(path)) && layout.parents.includes(dirname(path))) return true;
+  try { return statSync(join(path, '.git')).isFile(); } catch { return false; }
+}
+
+/** 삭제 대상 원문 값을 cwd 기준 절대 경로로 바꾼다. 디렉터리 안 전체(`dir/*`·`*`)는 그 디렉터리를 비우는 것이라 디렉터리로 본다. */
+function deleteTargetPath(value, cwd) {
+  const path = fromMsysPath(expandWorkingDir(value, cwd));
+  return resolve(cwd, path === '*' ? '.' : path.replace(/[\\/]\*$/, ''));
 }
 
 /** 기본 test 태스크에서 빠지는 태그(api-server/build.gradle 의 excludeTags)가 붙은 시험 클래스. */
@@ -257,6 +454,9 @@ function taggedClasses(cwd) {
 const GRADLE_VALUE_OPTIONS = new Set(['--warning-mode', '--console', '-p', '--project-dir', '-x', '--exclude-task', '-I', '--init-script',
   '-c', '--settings-file', '-b', '--build-file', '-g', '--gradle-user-home', '--include-build', '--priority', '-F',
   '--dependency-verification', '--max-workers', '-D', '-P']);
+
+/** 태그 시험을 빼는 기본 test 태스크(api-server/build.gradle 의 excludeTags)와, 그것을 포함하는 루트 집계 test 를 부르는 이름. */
+const DEFAULT_TEST_TASKS = new Set(['test', ':test', 'api-server:test', ':api-server:test']);
 
 /** `--tests` 값마다 그 값을 받는 Gradle 태스크(바로 앞 태스크)를 짝짓는다. */
 function gradleTestFilters(raw) {
@@ -328,8 +528,14 @@ export const RULES = Object.freeze([
     id: 'git-force-push', decision: 'ask',
     why: '강제 푸시는 원격 이력을 덮는다 — AGENTS.md 가 사전 설명과 승인을 요구한다.',
     fix: '대상 브랜치·덮이는 커밋을 사용자에게 설명하고 승인을 받는다.',
-    match: ({ git }) => git?.sub === 'push' && (hasFlag(git.args, '--force', '--force-with-lease', '--force-if-includes')
-      || hasShortFlag(git.args, 'f') || git.args.some((arg) => arg.startsWith('+'))),
+    match: ({ git, code, raw }) => {
+      if (git?.sub !== 'push') return false;
+      if (hasFlag(git.args, '--force', '--force-with-lease', '--force-if-includes') || hasShortFlag(git.args, 'f')) return true;
+      // refspec 앞의 `+` 는 그 ref 를 강제로 덮는다. 값은 원문에서 읽어 따옴표 친 `"+main"` 도 잡고, 값을 받는 옵션의 값(`-o "+x"`)은 refspec 이 아니다.
+      const valued = new Set(['-o', '--push-option', '--repo', '--receive-pack', '--exec']);
+      const { args } = gitWords(code, raw);
+      return args.some((word, index) => !word.code.startsWith('-') && !valued.has(args[index - 1]?.code) && word.value.startsWith('+'));
+    },
   },
   {
     id: 'git-discard-worktree', decision: 'ask',
@@ -340,8 +546,14 @@ export const RULES = Object.freeze([
       const { sub, args } = git;
       if (sub === 'reset') return hasFlag(args, '--hard');
       if (sub === 'clean') return hasFlag(args, '--force') || hasShortFlag(args, 'f');
-      if (sub === 'checkout') return args.includes('.') || (args.includes('--') && args[args.indexOf('--') + 1] === '.');
-      if (sub === 'restore') return args.includes('.') && !(hasFlag(args, '--staged', '-S') && !hasFlag(args, '--worktree', '-W'));
+      // 강제 전환은 로컬 변경을 버린다(checkout -f·switch -f·--discard-changes).
+      if ((sub === 'checkout' || sub === 'switch') && (hasFlag(args, '--force', '--discard-changes') || hasShortFlag(args, 'f'))) return true;
+      // `.` 말고도 `:/`·`*`·`..`·`./*`·`:(top)` 같은 작업 트리 전체 경로(따옴표 친 형태 포함)가 있다. `frontend/` 같은 디렉터리는 전체가 아니다.
+      if (sub === 'checkout') return namesWholeTree(code, raw, new Set(['-b', '-B', '--orphan', '--conflict', '--pathspec-from-file']));
+      if (sub === 'restore') {
+        return namesWholeTree(code, raw, new Set(['-s', '--source', '--conflict', '--pathspec-from-file']))
+          && !(hasFlag(args, '--staged', '-S') && !hasFlag(args, '--worktree', '-W'));
+      }
       // 병합한 작업 브랜치의 로컬 정리는 AGENTS 상시 승인 범위다 — 끝 커밋이 원격에 있으면 묻지 않는다(DEC-OPS-387).
       if (sub === 'branch') {
         const forced = args.includes('-D')
@@ -356,11 +568,22 @@ export const RULES = Object.freeze([
     },
   },
   {
+    id: 'worktree-recursive-delete', decision: 'ask',
+    why: '작업 트리 디렉터리를 재귀로 지운다 — 안의 node_modules 같은 링크(junction)를 먼저 끊지 않으면 링크 너머 원본 checkout 의 파일까지 지울 수 있고, 다른 도구(Codex 등)가 쓰는 작업 트리는 프로세스 목록에 드러나지 않는다(2026-10-25).',
+    fix: '링크(junction)를 먼저 끊고 그 작업 트리가 직접 만든 것인지 확인한 뒤 사용자 승인을 받는다(SOP §6.6). 저장소 안의 build/·임시 디렉터리 삭제는 묻지 않는다.',
+    match: ({ code, raw, cwd, root }) => {
+      const targets = recursiveDeleteTargets(code, raw);
+      if (!targets.length) return false;
+      const layout = worktreeLayout([...new Set([cwd, root])]);
+      return targets.some((value) => deletesWorktree(deleteTargetPath(value, cwd), layout));
+    },
+  },
+  {
     id: 'git-commit-without-only', decision: 'deny',
     why: '공유 워킹트리에서 index 전체를 커밋하면 다른 작업의 변경이 섞인다(AGENTS 공유 워킹트리와 Git).',
-    fix: '자기 경로만 git commit --only -m "…" -- <paths> 로 커밋한다(-m 은 -- 앞에 둔다). `.`·`:/` 같은 작업 트리 전체 경로와 -a 는 쓰지 않는다. 병합 충돌을 푼 커밋은 그대로 된다.',
+    fix: '자기 경로만 git commit --only -m "…" -- <paths> 로 커밋한다(-m 은 -- 앞에 둔다). `.`·`:/` 같은 작업 트리 전체 경로와 -a 는 쓰지 않는다. 병합·cherry-pick·revert·rebase 가 충돌로 멈춘 동안의 커밋은 그대로 된다(git 이 그때 부분 커밋을 거부한다).',
     match: ({ git, cwd, raw, code }) => {
-      if (git?.sub !== 'commit' || hasFlag(git.args, '--dry-run') || mergeInProgress(cwd)) return false;
+      if (git?.sub !== 'commit' || hasFlag(git.args, '--dry-run') || sequencerInProgress(cwd)) return false;
       if (!hasFlag(git.args, '--only') && !hasShortFlag(git.args, 'o')) return true;
       // `--only` 여도 경로가 작업 트리 전체(`.`·`:/`·`..`·`:(top)` 등)이거나 -a 를 함께 주면 다른 작업의 변경이 모두 들어간다.
       if (hasFlag(git.args, '--all') || hasShortFlag(git.args, 'a')) return true;
@@ -385,9 +608,12 @@ export const RULES = Object.freeze([
     id: 'jq-not-installed', decision: 'deny',
     why: '이 PC 에는 jq 가 없다 — `gh … --json | jq` 감시는 오류 없이 빈 출력으로 계속 돌아 "아직 대기 중"과 "감시가 죽음"을 구분하지 못한다(2026-09-04).',
     fix: 'gh 의 --jq 옵션이나 node -e 로 JSON 을 읽는다. gh pr checks 는 탭 구분 기본 출력을 awk -F"\\t" 로 읽는다.',
+    // 명령 자리만 본다 — 파이프 뒤는 조각 나누기, `$( … )` 안은 재귀 판정이 명령 자리로 만든다. bash 의 백틱 치환은 PowerShell 의
+    // 이스케이프 문자와 겹쳐 일반 재귀로 읽지 않고 jq 에 한해 백틱 바로 뒤의 jq 를 본다.
     match: ({ code }) => {
-      const words = tokens(code).filter((word) => !/^\w+=/.test(word));
-      return /(^|[\\/])jq(\.exe)?$/i.test(words[0] ?? '') && !onPath('jq');
+      const words = tokens(code);
+      const head = /(^|[\\/])jq(\.exe)?$/i.test(words[commandAt(words)] ?? '');
+      return (head || /`\s*(?:\S*[\\/])?jq(?:\.exe)?(?=[\s`]|$)/i.test(code)) && !onPath('jq');
     },
   },
   {
@@ -416,7 +642,9 @@ export const RULES = Object.freeze([
     fix: '하네스 시험은 :api-server:harnessTest --tests, 스키마 시험은 :api-server:schemaValidationTest --tests 로 돌린다(한 호출에 함께 걸 수 있다).',
     match: ({ raw, code, cwd }) => {
       if (!/gradlew/i.test(code) || !/--tests/.test(code)) return false;
-      const filters = gradleTestFilters(raw).filter(({ task }) => task && /(^|:)test$/.test(task));
+      // excludeTags 는 api-server 의 test 태스크에만 있다 — 그 태스크와 그것을 포함하는 루트 집계 `test` 만 본다.
+      // `:business-core:test --tests "*Authorization*"` 처럼 다른 모듈의 test 는 태그 시험과 이름이 겹쳐도 통과한다.
+      const filters = gradleTestFilters(raw).filter(({ task }) => DEFAULT_TEST_TASKS.has(task));
       if (!filters.length) return false;
       const tagged = taggedClasses(cwd);
       return filters.some(({ filter }) => namesTaggedClass(filter, tagged));
@@ -457,31 +685,96 @@ export const RULES = Object.freeze([
       });
     },
   },
+  {
+    id: 'guard-canary', decision: 'deny',
+    why: '가드가 살아 있는지 보는 무해한 확인 명령이다 — 가드는 판정하지 못하면 조용히 통과하므로(fail-open) 어댑터가 끊긴 것을 평소 명령으로는 알 수 없다.',
+    fix: '막혔으면 이 도구의 어댑터가 동작한다. 통과해 AGENT_GUARD_CANARY 가 출력되면 어댑터가 끊긴 것이니 그 도구의 훅 설정(AGENTS.md 도구별 진입점)을 확인한다.',
+    match: ({ raw }) => raw.trim() === 'echo AGENT_GUARD_CANARY',
+  },
 ]);
 
-/** 명령 하나를 판정한다. 걸린 규칙이 없으면 null, 있으면 가장 강한 판정(deny > ask)과 사유들. */
-export function evaluate(command, { cwd = process.cwd() } = {}) {
-  if (typeof command !== 'string' || !command.trim()) return null;
-  const hits = [];
+/** 오류의 이름만 고른다. 이름이 식별자 꼴이 아니면(명령 문구를 이름에 넣은 오류 등) 종류만 남긴다. */
+function errorName(error) {
+  const name = error?.name;
+  return typeof name === 'string' && /^[A-Za-z_$][\w$]{0,63}$/.test(name) ? name : typeof error;
+}
+
+/**
+ * 판정 실패를 stderr 에 한 줄로 남긴다 — 고정 식별자(규칙 id·단계 이름)와 오류 이름만 쓴다. 명령 원문·인자·오류 메시지는 비밀이 섞일 수 있어
+ * 쓰지 않는다. 판정은 그대로 fail-open 이다(DEC-OPS-386 ②). 같은 식별자는 한 번만 알린다.
+ */
+function reportFailure(where, error, reported) {
+  if (reported?.has(where)) return;
+  reported?.add(where);
+  try { process.stderr.write(`[agent-guard] ${where} 판정 실패(${errorName(error)}) — 막지 않고 통과한다(fail-open)\n`); } catch { /* 진단을 못 써도 판정 흐름은 그대로다 */ }
+}
+
+/** 셸 래퍼·명령 치환을 따라 들어가는 깊이 상한 — 비정상 입력이 판정 시간을 늘리지 않게 한다. */
+const MAX_NESTING = 4;
+
+/** 정규화를 보태는 단계는 실패해도 기본 판정을 지우지 않도록 따로 감싼다. */
+function guarded(state, where, action) {
+  try { action(); } catch (error) { reportFailure(where, error, state.reported); }
+}
+
+/**
+ * 명령 텍스트 하나를 판정해 state.hits 에 걸린 규칙을 더한다. 원문 조각을 그대로 본 뒤, 줄 이음을 합친 판을 한 번 더 본다 —
+ * 합친 판만 보면 PowerShell 에서 줄 끝 `\` 로 끝나는 경로(`cd D:\x\`) 뒤의 다음 명령을 놓친다.
+ */
+function inspect(command, cwd, depth, state) {
+  const raw = withoutHeredocBodies(command);
+  inspectView(raw, command, cwd, depth, state);
+  guarded(state, 'line-continuation', () => {
+    const joined = joinContinuations(raw);
+    if (joined !== raw) inspectView(joined, command, cwd, depth, state);
+  });
+}
+
+function inspectView(view, command, cwd, depth, state) {
   let here = cwd;
-  for (const part of segments(command)) {
+  for (const part of splitSegments(view)) {
     // `cd <dir> && …`·`git -C <dir> …` 이 가리키는 디렉터리에서 판정한다(병합 중 여부·작업 트리 판정).
-    const words = tokens(part.raw);
-    if (/^(cd|pushd|set-location|sl)$/i.test(words[0] ?? '') && words[1]) {
-      const target = expandWorkingDir(unquote(words.slice(1).filter((word) => !word.startsWith('-'))[0] ?? '.'), here);
-      here = resolve(here, process.platform === 'win32' ? target.replace(/^\/([A-Za-z])(\/|$)/, '$1:/') : target);
+    const words = alignedWords(part.code, part.raw);
+    const at = commandAt(words.map((word) => word.code));
+    if (/^(cd|pushd|set-location|sl)$/i.test(words[at]?.value ?? '') && words[at + 1]) {
+      const target = expandWorkingDir(words.slice(at + 1).find((word) => !word.code.startsWith('-'))?.value ?? '.', here);
+      here = resolve(here, fromMsysPath(target));
       continue;
     }
     const git = gitInvocation(part.code);
     const gitDir = git?.dir ? /\s-C\s+("[^"]+"|'[^']+'|\S+)/.exec(part.raw)?.[1] : null;
-    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here };
-    for (const rule of RULES) {
-      if (hits.some((hit) => hit.id === rule.id)) continue;
+    const context = { command, raw: part.raw, code: part.code, git, cwd: gitDir ? resolve(here, unquote(gitDir)) : here, root: state.root };
+    for (const rule of state.rules) {
+      if (state.hits.some((hit) => hit.id === rule.id)) continue;
       let matched = false;
-      try { matched = Boolean(rule.match(context)); } catch { matched = false; }
-      if (matched) hits.push(rule);
+      try { matched = Boolean(rule.match(context)); } catch (error) { reportFailure(rule.id, error, state.reported); }
+      if (matched) state.hits.push(rule);
+    }
+    // 명시적 셸 래퍼(`bash -c '…'`·`pwsh -Command "…"`·`cmd /c …`)가 실행하는 스크립트도 같은 규칙으로 판정한다.
+    if (depth < MAX_NESTING) {
+      guarded(state, 'shell-wrapper', () => {
+        const script = wrappedScript(part.code, part.raw);
+        if (script?.trim()) inspect(script, here, depth + 1, state);
+      });
     }
   }
+  // 명령 치환 `$( … )` 의 안쪽은 셸이 먼저 실행한다 — 조각 경계(`;`)를 넘는 치환도 있어 조각이 아니라 텍스트 전체에서 찾는다.
+  if (depth < MAX_NESTING) {
+    guarded(state, 'command-substitution', () => {
+      for (const inner of commandSubstitutions(view)) if (inner.trim()) inspect(inner, cwd, depth + 1, state);
+    });
+  }
+}
+
+/**
+ * 명령 하나를 판정한다. 걸린 규칙이 없으면 null, 있으면 가장 강한 판정(deny > ask)과 사유들.
+ * `rules` 는 시험이 던지는 규칙을 끼워 넣을 때만 준다.
+ */
+export function evaluate(command, { cwd = process.cwd(), rules = RULES } = {}) {
+  if (typeof command !== 'string' || !command.trim()) return null;
+  const state = { rules, root: cwd, hits: [], reported: new Set() };
+  inspect(command, cwd, 0, state);
+  const { hits } = state;
   if (!hits.length) return null;
   return {
     decision: hits.some((hit) => hit.decision === 'deny') ? 'deny' : 'ask',
@@ -537,8 +830,9 @@ async function main(argv) {
   try {
     const hook = readHookInput(agent, JSON.parse(await readStdin()));
     if (hook) output = renderVerdict(agent, evaluate(hook.command, { cwd: hook.cwd }));
-  } catch {
-    // 판정할 수 없으면 막지 않는다 — 병합 권위는 CI 다.
+  } catch (error) {
+    // 판정할 수 없으면 막지 않는다 — 병합 권위는 CI 다. "걸린 규칙 없음"과 구분되게 단계 이름과 오류 이름만 남긴다.
+    reportFailure('input', error);
   }
   if (output) process.stdout.write(output);
 }
