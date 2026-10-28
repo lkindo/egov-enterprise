@@ -621,8 +621,16 @@ test('pre-push discards every partial diff result and runs the full gates when a
       assert.match(result.stderr, /부분 목록을 버리고 전체 게이트를 실행/);
       const partial = runHook(input, swallowed, { failDiffRange, failedDiffOutput });
       assertSuccessful(partial);
-      assert.match(partial.stdout, /docsOnly=true/);
-      assert.throws(() => assertFullFallback(partial), assert.AssertionError);
+      // 첫 ref가 출력 없이 실패하면 dash는 errexit로 루프를 멈추지만 Bash는 다음 ref를 읽는다.
+      // 나머지 세 조합은 두 셸 모두 부분 목록이 남으므로 반드시 같은 단언에서 red여야 한다.
+      const stoppedBeforeNextRef = failDiffRange === ranges[0] && failedDiffOutput.length === 0
+        && !partial.stdout.includes('docsOnly=true');
+      if (stoppedBeforeNextRef) {
+        assertFullFallback(partial);
+      } else {
+        assert.match(partial.stdout, /docsOnly=true/);
+        assert.throws(() => assertFullFallback(partial), assert.AssertionError);
+      }
     }
   }
 });
