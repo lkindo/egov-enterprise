@@ -146,7 +146,7 @@ export default defineConfig({
       //   `Coverage summary` 총계(로컬) 또는 CI 의 `All files` 행을 쓴다.
       //
       // 거버넌스 registry는 유일한 coverage 블록의 직접 thresholds 객체와 숫자 literal을 읽는다.
-      //   중복 속성·간접 변수·spread는 거부한다(scripts/governance-gates-contract.mjs).
+      //   coverage·thresholds 블록 안의 중복 속성·간접 변수·spread는 거부한다(scripts/governance-gates-contract.mjs).
       // [2026-10-19 DEC-OPS-369] CI 실측(statements 86.01 · branches 80.18 · functions 83.15 · lines 88.31, PR #940)의 정수 내림에서 1포인트 여유를 두고 올렸다 — 종전 71/63/64/73.
       thresholds: {
         statements: 85,

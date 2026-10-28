@@ -69,6 +69,7 @@ git() {
         printf '%s\\n' "$HOOK_FAILED_DIFF_OUTPUT"
         return 128
       fi
+      if [ "$argument" = "$HOOK_EMPTY_DIFF_RANGE" ]; then return 0; fi
     done
     printf '%s\\n' "$HOOK_CHANGED_FILES"
   elif [ "$1" = "rev-parse" ] && [ "$2" = "--abbrev-ref" ]; then
@@ -110,7 +111,7 @@ node() {
 }
 
 function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
-  realRecords = false, recordFailure = false, failDiffRange = '', failedDiffOutput = [] } = {}) {
+  realRecords = false, recordFailure = false, failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '' } = {}) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'pre-push-ref-contract-'));
   const gitLog = path.join(fixtureRoot, 'git.log');
   const npmLog = path.join(fixtureRoot, 'npm.log');
@@ -130,6 +131,7 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
       HOOK_CHANGED_FILES: files.join('\n'),
       HOOK_FAIL_COMMAND: failCommand,
       HOOK_FAIL_DIFF_RANGE: failDiffRange,
+      HOOK_EMPTY_DIFF_RANGE: emptyDiffRange,
       HOOK_FAILED_DIFF_OUTPUT: failedDiffOutput.join('\n'),
       SKIP_HOOKS: '',
       SKIP_HARNESS: '',
@@ -576,6 +578,20 @@ const PRE_PUSH_SOURCE_ORDER = [
   'gradlew :api-server:harnessTest -q',
 ];
 
+test('pre-push does not display an empty file when a successful ref has no changes', () => {
+  const secondLocal = '3'.repeat(40);
+  const secondRemote = '4'.repeat(40);
+  const input = [
+    pushLine('refs/heads/docs', LOCAL_OID, 'refs/heads/docs', REMOTE_OID),
+    pushLine('refs/heads/empty', secondLocal, 'refs/heads/empty', secondRemote),
+  ].join('\n') + '\n';
+  const result = runHook(input, hookSource, { emptyDiffRange: `${secondRemote}..${secondLocal}` });
+  assertSuccessful(result);
+  assert.match(result.stdout, /Fast-pass/);
+  assert.match(result.stdout, /- docs\/README\.md/);
+  assert.doesNotMatch(result.stdout, /^\s+-\s*$/m);
+});
+
 test('pre-push discards every partial diff result and runs the full gates when any ref diff fails', () => {
   const secondLocal = '3'.repeat(40);
   const secondRemote = '4'.repeat(40);
@@ -603,12 +619,10 @@ test('pre-push discards every partial diff result and runs the full gates when a
       const result = runHook(input, hookSource, { failDiffRange, failedDiffOutput });
       assertFullFallback(result);
       assert.match(result.stderr, /부분 목록을 버리고 전체 게이트를 실행/);
-      if (failedDiffOutput.length > 0) {
-        const partial = runHook(input, swallowed, { failDiffRange, failedDiffOutput });
-        assertSuccessful(partial);
-        assert.match(partial.stdout, /docsOnly=true/);
-        assert.throws(() => assertFullFallback(partial), assert.AssertionError);
-      }
+      const partial = runHook(input, swallowed, { failDiffRange, failedDiffOutput });
+      assertSuccessful(partial);
+      assert.match(partial.stdout, /docsOnly=true/);
+      assert.throws(() => assertFullFallback(partial), assert.AssertionError);
     }
   }
 });

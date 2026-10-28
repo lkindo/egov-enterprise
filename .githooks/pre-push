@@ -54,8 +54,10 @@ if [ -n "$RANGES" ]; then
   # 일부 문서 경로만으로 fast-pass할 수 있으므로, 하나라도 실패하면 목록 전체를 버린다.
   for r in $RANGES; do
     if RANGE_FILES=$(git diff --no-renames --name-only --diff-filter=ACMRD "$r" 2>/dev/null); then
-      CHANGED_FILES="${CHANGED_FILES:+$CHANGED_FILES
+      if [ -n "$RANGE_FILES" ]; then
+        CHANGED_FILES="${CHANGED_FILES:+$CHANGED_FILES
 }$RANGE_FILES"
+      fi
     else
       echo "[pre-push] ℹ 변경 범위를 읽지 못했습니다 — 부분 목록을 버리고 전체 게이트를 실행합니다(안전측)." >&2
       CHANGED_FILES=""
