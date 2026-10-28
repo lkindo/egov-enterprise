@@ -65,6 +65,8 @@ A reviewer on the same model tends to share your blind spots. For the required r
 
 Check what is installed first (`agy --help`, `codex --help`, `claude --version`); list ids with `agy models` / `codex debug models`. On 2026-10-27 `agy` and `claude` were on PATH; `codex` was not, but the OpenAI IDE extension bundles it as `<extensions dir>/openai.chatgpt-*/bin/windows-x86_64/codex.exe`, run as `codex.exe exec -m gpt-6-astra -c model_reasoning_effort='"high"' -s read-only -C <repo> "<instructions>"`. If no other-vendor model is available (not installed, out of quota), fall back to a fresh-context subagent of your own tool and say so in the PR.
 
+When the reviewer is Codex on Windows PowerShell, start the reviewer instructions with `[Console]::OutputEncoding=[Text.Encoding]::UTF8; $OutputEncoding=[Text.Encoding]::UTF8` and tell it to take line numbers from `rg -n` or `git show <rev>:<path>` rather than console dumps — on 2026-10-28 Codex read the Korean docs as U+FFFD in 450 log lines without it. Its sandbox could not reach GitHub, so pass anything that needs `gh` (PR numbers, check results, review comments) as files you fetched first.
+
 Sending the diff and the user's original request this way needs no per-use approval ([AGENTS.md safety-boundary exception](../../../AGENTS.md#공통-작업-원칙), DEC-OPS-387). Never send secrets, tokens, cookies, personal data, operational data or `.env` contents; if the user's request contains any, cut it or ask first.
 
 1. Write the filled `code-reviewer.md` template and the diff to files in your scratch directory — `git diff BASE_SHA..HEAD_SHA > review.diff`. Put the user's original request first, the diff second, and your summary last, exactly as the template orders them.

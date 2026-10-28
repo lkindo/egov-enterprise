@@ -19,7 +19,8 @@ def validate_skill(skill_path):
         return False, "SKILL.md not found"
 
     # Read and validate frontmatter
-    content = skill_md.read_text()
+    # Read as UTF-8 explicitly (BOM tolerated): the platform default (cp949 on Korean Windows) cannot decode the repository's skills.
+    content = skill_md.read_text(encoding='utf-8-sig')
     if not content.startswith('---'):
         return False, "No YAML frontmatter found"
 
@@ -39,7 +40,8 @@ def validate_skill(skill_path):
         return False, f"Invalid YAML in frontmatter: {e}"
 
     # Define allowed properties
-    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility'}
+    # 'source' and 'version' are this repository's provenance keys (.agent/skills/*/SKILL.md).
+    ALLOWED_PROPERTIES = {'name', 'description', 'license', 'allowed-tools', 'metadata', 'compatibility', 'source', 'version'}
 
     # Check for unexpected properties (excluding nested keys under metadata)
     unexpected_keys = set(frontmatter.keys()) - ALLOWED_PROPERTIES
