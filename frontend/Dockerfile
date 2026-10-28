@@ -1,6 +1,6 @@
 # Stage 1: Dependencies
 # Node 22 LTS와 Alpine 3.24를 유지하고 세 스테이지에 같은 태그·다이제스트를 쓴다.
-# 2026-09-28 registry-1.docker.io의 library/node:22-alpine3.24 manifest list를 실조회했다.
+# 2026-10-29 registry-1.docker.io의 library/node:22-alpine3.24 manifest list를 실조회했다.
 # 실제 이미지 내용은 다이제스트가 결정하므로 갱신할 때 태그와 다이제스트를 함께 확인한다.
 FROM node:22-alpine3.24@sha256:fe4f6d74e20370acb04ad889077d14d0f64a9c8ea6a42bc60cddf1e844699914 AS deps
 RUN apk add --no-cache libc6-compat
