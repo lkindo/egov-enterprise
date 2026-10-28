@@ -12,7 +12,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
    - [백엔드 헌법](.agent/knowledge/backend-api-constitution/artifacts/constitution.md)
    - [프론트엔드 헌법](.agent/knowledge/frontend-ux-constitution/artifacts/constitution.md)
    - [DB 헌법](.agent/knowledge/db-standard-constitution/artifacts/constitution.md)
-5. Accepted ADR, 현재 코드·설정·DB 실측 — 결정과 현재 상태의 증거
+5. Accepted ADR, 승인된 운영 결정(DEC, 전문 정본은 보관 원문의 같은 ID 절), 현재 코드·설정·DB 실측 — 결정과 현재 상태의 증거
 6. [.agent/memory](.agent/memory/) — 위 원본을 요약한 비규범 파생 인덱스
 
 상위 규칙과 충돌하면 상위 규칙을 따른다. 글로벌 규칙은 저장소에 복사하지 않는다. 모든 에이전트에 공통이어야 하는 규칙만 이 파일에 둔다. 3대 헌법과 이 파일의 실질 정책 변경은 사용자의 명시적 요청 없이 하지 않는다.
@@ -59,7 +59,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 | API/DB/양단 계약 | 백엔드·프론트 계약 생성물과 양쪽 검증 |
 | 게이트·CI·훅 | 해당 계약 테스트 + 의도적 위반 red 증명 |
 
-로컬 훅은 빠른 피드백이며 `--no-verify`로 우회 가능하다 — 에이전트는 사용자가 명시적으로 지시한 경우에만 우회한다([§6.2](docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)). 병합 권위는 required CI다. 더 넓은 검증이 필요하면 `npm run verify`, 운영 ruleset은 `npm run verify:ops`를 사용한다. `npm run verify`를 push 직전에 돌리면 운영 계약을 포함한 pre-push 묶음이 같은 커밋에서 다시 돈다 — 그때는 훅이 보지 않는 검사만 골라 실행한다([§6.2](docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)).
+로컬 훅은 빠른 피드백이며 `--no-verify`로 우회 가능하다 — 에이전트는 사용자가 명시적으로 지시한 경우에만 우회한다([§6.2](docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)). 병합 권위는 required CI다. 더 넓은 검증이 필요하면 `npm run verify`, 운영 ruleset은 `npm run verify:ops`를 사용한다. pre-push 가 같은 커밋에서 실행한 항목은 위 최소 검증을 충족한 것으로 보며, push 직전에 고를 넓은 검증은 [연속 작업의 시간 예산](#연속-작업의-시간-예산)을 따른다([§6.2](docs/03-guides/orchestration-protocol.md#62-검증은-한-커밋에-한-번)).
 
 ## 거버넌스 총량 관리
 

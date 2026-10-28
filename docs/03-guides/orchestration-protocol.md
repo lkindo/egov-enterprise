@@ -15,7 +15,7 @@
 |:---:|:---|:---:|:---|
 | **L0** | 단순 오타, 스타일(CSS) 수정, 주석 추가 등 저위험 작업 | **Fast-Track** | Audit(약식), Verification |
 | **L1** | 단일 파일 로직 수정, 신규 컴포넌트 작성, 버그 수정 | **Standard** | Dispatch, Audit, Verification |
-| **L2** | DB 스키마 변경, 다중 모듈 연동, 보안 관련 핵심 로직 | **Strict-SOP** | 전 단계 (Full Pipeline) |
+| **L2** | DB 스키마 변경, 다중 모듈 연동, 보안 관련 핵심 로직, 의미를 바꾸는 변경(물리 스키마 H1·인가·개인정보 H3·식별자 축·게이트 의미 — §2.3) | **Strict-SOP** | 전 단계 (Full Pipeline) |
 
 > 등급은 **모든 변경 작업에서 판정·명시**한다. 현재 사용자 요청이나 포괄 승인(§3 Stage 1)이 변경 권한을 이미 포함하더라도 등급과 SCOPE 는 축약된 형태(1줄)로 밝힌다.
 
@@ -86,7 +86,7 @@
 
 #### 3.1 사전 검증 (Pre-Audit)
 모든 개발 및 수정 작업 착수 전:
-1. **실증적(Evidence-Based) 표준 조회**: 새로운 테이블/필드를 설계하거나 쿼리를 작성할 때, 에이전트의 지레짐작(Assumption)을 엄격히 금지한다. 반드시 로컬 DB 브리지(`node .agent/scripts/db-bridge.js`)로 표준 메타 테이블(`meta_standard_words`/`meta_standard_terms`/`meta_standard_domains` — DB 헌법 제2조의 유일 SSOT)과 `information_schema`를 실시간 조회하여 **"실제 존재하는"** 물리 스키마와 표준 명칭을 눈으로 확인한 뒤 실행한다.
+1. **실증적(Evidence-Based) 표준 조회**: 새 표·컬럼·물리 이름을 정하거나 메타 표준을 판정할 때, 에이전트의 지레짐작(Assumption)을 엄격히 금지한다([AGENTS.md H1](../../AGENTS.md#evidence-guardrails)). 반드시 DB 브리지(`node --env-file=.env .agent/scripts/db-bridge.js` — `.env` 의 `DB_*` 가 가리키는 DB 를 읽으며, 그 DB 는 로컬이 아니라 공유 DB 일 수 있다)로 표준 메타 테이블(`meta_standard_words`/`meta_standard_terms`/`meta_standard_domains` — DB 헌법 제2조의 유일 SSOT)과 `information_schema`를 실시간 조회하여 **"실제 존재하는"** 물리 스키마와 표준 명칭을 눈으로 확인한 뒤 실행한다.
 2. **인프라 상태도 가정 금지**: DB·백엔드 서버·네트워크·포트 등 **인프라의 가용성은 착수·재개 시점에 실측**한다. 과거 세션이나 직전 단계의 상태를 그대로 가정하지 않는다. 예: DB 접속이 필요한 작업은 `db-bridge` 로 실제 응답(예: `SELECT now()`)을 먼저 확인한 뒤 진행하고, "이전에 안 됐으니 지금도 안 될 것"/"이전에 됐으니 지금도 될 것" 같은 추정으로 단정하지 않는다.
 3. **헌법 위반 예측**: 요청된 작업이 헌법 조항과 충돌할 가능성이 있는지 분석한다.
 4. **대응**: 표준 메타에 필요한 단어·용어가 없으면 임의로 설계하지 않고 사용자에게 상황을 보고해 새 표준 단어·용어의 등록을 요청한다(DB 헌법 제9조). 그 밖의 헌법 위반이 예상되면 해당 변경 경로를 멈추고 합치 대안을 먼저 찾으며, 대안이 승인 범위·제품 의미·규범을 바꿀 때만 사용자에게 결정 근거와 선택지를 보고한다.
@@ -99,7 +99,7 @@
 
 #### 3.3 등급별 감사 수준
 - **L0/L1**: 주요 체크포인트(3.2) 기반 약식 검사.
-- **L2**: 헌법 전문 대조 및 상세 Audit 리포트 발행 필수.
+- **L2**: 관련 헌법 전문 대조와 Audit 리포트 필수. Audit 리포트는 PR 설명의 고정 절 `## Audit 리포트(L2)` 이며 별도 파일로 발행하지 않는다. 네 항목을 적는다 — ① H 범주(H1·H3·식별자 축·게이트 의미 가운데 해당하는 것과 판정 근거), ② 대조한 헌법 조항(예: 백엔드 헌법 제8조), ③ §2.3 독립 검토의 검토 모델(회사·모델명)과 반영 결과, ④ red 증명이 있는 곳(커밋·시험 이름·CI 잡).
 
 #### 3.4 위반 대응 (Hard-Stop & Report)
 1. **작업 중단**: 위반이 명확한 경우 해당 코드 작성을 즉시 멈춘다.
@@ -205,8 +205,7 @@
 - 작업 중에는 영향 테스트만 실행한다.
 - 다음 재실행은 중복이 아니다: 위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3), 게이트·계약의 red 증명(green → 위반 주입 → red → 원복 → green), 이번에 바꾼 계약·게이트의 대상 테스트 실행. "미리 돌리지 않는다"는 pre-push가 곧 돌릴 묶음 전체를 같은 커밋에서 한 번 더 돌리는 경우에만 적용한다.
 - §6.4의 `verify:integrate`는 폼 census·전체 하네스의 통합 실패를 푸시 전에 드러내기 위해 이 둘을 먼저 실행한다. 이 명시적 중복은 pre-push의 같은 검사나 required CI를 생략할 근거가 아니다.
-- 넓은 로컬 검증은 최신 main을 합치고 §6.4대로 다시 만든 뒤, 푸시 직전에 한 번 한다. pre-push가 곧 실행할 묶음(운영 계약, 범위별 compile·tsc·lint·폼 census·codegen 검사, `src/__tests__` Vitest, `harnessTest` — [.githooks/README.md](../../.githooks/README.md))은 같은 커밋에서 미리 돌리지 않는다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다: 화면 파일을 지우거나 옮기거나 화면 문자열을 바꾸면 전체 Vitest, `foundation`·`business-*`에 클래스를 더하거나 고치면 그 모듈의 `check`(클래스별 커버리지), 엔티티·DDL을 바꾸면 `schemaValidationTest`, RSC 경계·의존성을 바꾸면 `pnpm -C frontend build`와 `bundle:check`, 컨트롤러·DTO를 바꾸면 `api-docs.json` 추출(§6.4). 해당하는 검사가 하나도 없을 때만 넓은 로컬 검증을 생략한다. required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.
-- `npm run verify`(기본 `full`)와 `verify:docs`·`fast`·`push`·`be`·`fe`·`e2e`는 모두 맨 앞에서 생성물 신선도를 보고 운영 계약을 돌리며 `fast`·`push`·`fe`·`full`은 정적 검사도 돌린다. push 직전이면 pre-push 묶음이 같은 커밋에서 다시 돈다 — 넓은 검증은 위 목록에서 훅이 보지 않는 검사를 고른다.
+- 넓은 로컬 검증은 최신 main을 합치고 §6.4대로 다시 만든 뒤, 푸시 직전에 한 번 한다. pre-push가 곧 실행할 묶음(운영 계약, 범위별 compile·tsc·lint·폼 census·codegen 검사, `src/__tests__` Vitest, `harnessTest` — [.githooks/README.md](../../.githooks/README.md))은 같은 커밋에서 미리 돌리지 않는다 — `npm run verify`(기본 `full`)와 `verify:docs`·`fast`·`push`·`be`·`fe`·`e2e` 도 맨 앞에서 생성물 신선도와 운영 계약을(`fast`·`push`·`fe`·`full` 은 정적 검사도) 돌리므로 push 직전에 그대로 돌리면 이 묶음이 같은 커밋에서 다시 돈다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다: 화면 파일을 지우거나 옮기거나 화면 문자열을 바꾸면 전체 Vitest, `foundation`·`business-*`에 클래스를 더하거나 고치면 그 모듈의 `check`(클래스별 커버리지), 엔티티·DDL을 바꾸면 `schemaValidationTest`, RSC 경계·의존성을 바꾸면 `pnpm -C frontend build`와 `bundle:check`, 컨트롤러·DTO를 바꾸면 `api-docs.json` 추출(§6.4). 해당하는 검사가 하나도 없을 때만 넓은 로컬 검증을 생략한다. required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.
 - CI 러너는 UTC, 로컬 `npm run verify`의 기본 시간대는 KST(`Asia/Seoul`)이고 명시한 `TZ`가 이긴다. 날짜 경계에 닿는 변경은 `npx cross-env TZ=UTC npm run verify:<범위>`로 한 번 더 확인한다(bash·PowerShell·cmd에서 같은 형태이고 셸 세션에 `TZ`를 남기지 않는다). pre-push는 시간대를 강제하지 않는다(그 기계의 시간대를 따른다).
 - 생략했거나 CI에만 맡긴 검사는 완료 보고에 그 사실과 대신 확인할 CI 잡을 적고, 그 잡이 끝난 뒤에 완료를 선언한다.
 - CI가 red이면 실패한 잡의 로그로 원인을 판정하고 그 원인에 맞는 표적 검사만 로컬에서 다시 실행한다. 인프라 일시 장애로 판정한 경우에만 실패한 잡을 재실행한다. 같은 원인의 실패 횟수는 §2.4대로 센다. 예약 워크플로가 두 번 연속 red이면 다시 green이 될 때까지 `known-gaps.md` 행(또는 같은 추적 기록)을 둔다. 연속 실패 수는 주간 거버넌스 검토 요약과 `npm run ci:flaky-report`의 예약 워크플로 표가 보여 준다.
@@ -220,31 +219,25 @@
 - 기다리는 동안에는 읽기·편집·다음 배치 준비 같은 가벼운 작업을 한다.
 
 ### 6.4 main 최신화 뒤 생성물 재생성
-`npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성 계약·권한 생성물·슬롯 레지스트리·경계 census·화면 목록·URL census(승인 해시 재결속)·Atlas 를 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출과 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다. 하네스 manifest 의 같은 키 충돌은 양쪽 값이 다른 키를 보이고, 다른 충돌이 모두 풀렸으면 그 키의 계산값을 함께 보인 뒤 멈춘다 — 값은 사람이 옮긴다.
+`npm run merge:main`([스크립트](../../scripts/merge-main-regenerate.mjs), DEC-OPS-178)이 아래 표의 기계적인 부분을 한 번에 한다 — `--no-commit` 으로 main 을 합치고, 공용 메모리 표의 충돌을 행 단위로 합치며(같은 ID 를 양쪽이 고쳤거나 같은 새 ID 를 쓰면 멈춘다), 양쪽이 입력을 바꾼 생성물을 [생성기 목록](../../scripts/merge-main-regenerate.mjs)(`GENERATORS`)의 의존 순서대로 다시 만들고 stage 한다. 손으로 풀 충돌이 남으면 목록을 보이고 멈추며, 풀고 `git add` 한 뒤 `npm run merge:main -- --continue` 로 이어 간다. 커밋은 하지 않으므로 `git diff --cached` 로 아래 확인을 한 뒤 직접 커밋한다. `api-docs.json` 추출과 메뉴 snapshot 은 무거운 실행이라 스크립트가 하지 않는다. 하네스 manifest 의 같은 키 충돌은 양쪽 값이 다른 키를 보이고, 다른 충돌이 모두 풀렸으면 그 키의 계산값을 함께 보인 뒤 멈춘다 — 값은 사람이 옮긴다.
 
-병합이 아니어도 생성물을 아래 순서로 한 번에 다시 만들거나(`npm run regen`) 쓰지 않고 낡은 것만 보는 명령(`npm run regen -- --check`, pre-push 맨 앞)은 [CI 가이드의 생성물 재생성](cicd-pipeline.md#생성물-재생성-npm-run-regen)을 따른다.
+병합이 아니어도 생성물을 같은 생성기 목록의 순서로 한 번에 다시 만들거나(`npm run regen`) 쓰지 않고 낡은 것만 보는 명령(`npm run regen -- --check`, pre-push 맨 앞)은 [CI 가이드의 생성물 재생성](cicd-pipeline.md#생성물-재생성-npm-run-regen)을 따른다.
 
 여러 갈래(브랜치)를 한 브랜치로 합쳤으면 `origin/main` 을 fetch 한 뒤 푸시 전에 `npm run verify:integrate` 를 한 번 돈다([판정](../../scripts/integration-precheck.mjs)) — ① `origin/main` 대비 Flyway 버전 중복·순서 밖 번호·적용된 마이그레이션 수정을 막고 메뉴 스냅숏이 낡았으면 `npm run project:menus:refresh` 를 알린다 ② `npm run regen` ③ 폼 census 검증 ④ 전체 Vitest·`:api-server:test`·전체 `harnessTest` ⑤ 바뀐 마이그레이션·엔티티의 표 이름·버전을 쓰는 schema-validation 시험(고를 수 없으면 전체)·카탈로그가 바뀌었으면 생성기 화면 시험·바뀐 E2E. 모두 순서대로 실행하며 실패하면 다음 단계로 넘어가지 않는다. §6.3 의 무거운 실행이고, 운영 계약·정적 검사는 이어지는 pre-push 가 돈다.
 
 E2E 선별은 기준 ref부터의 커밋 변경과 index·작업 트리·미추적 파일을 함께 본다. `frontend/e2e/contracts`·`journeys`·`quality`의 추가·수정 spec만 있으면 해당 파일을, spec 삭제·이동 또는 공용 fixture·helper·setup·Playwright 설정·격리 runner·의존성 입력 변경이 있으면 기본 두 프로젝트(`api-contract`, `full-suite`) 전체를 공식 [격리 runner](../../scripts/run-isolated-e2e.mjs)로 실행한다. 해당 변경이 없으면 E2E를 실행하지 않는다. 별도 설정의 enterprise task lab이나 기본 프로젝트 밖의 spec 변경은 오류로 알리고 전용 검증을 요구한다. `.env`·junction 등 격리 runner가 거부하는 환경에서는 점검도 실패하며 안전장치를 우회하지 않는다. 이 선별은 바뀐 테스트의 실행을 보장하는 범위이고, 제품 소스 전반의 E2E 영향 분석과 병합 판정은 required CI가 맡는다. `node scripts/integration-precheck.mjs --plan [--base <ref>]`로 실행 없이 선택을 확인할 수 있다.
 
-양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 아래 순서로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
+양쪽이 입력(소스·원장·카탈로그)을 바꾼 생성물은 텍스트 충돌이 없어도 다시 만든다. 충돌한 생성물은 한쪽을 고르거나 손으로 섞지 않는다. 입력의 충돌을 먼저 풀고 생성기로 다시 만든 뒤, 결과 diff가 두 쪽 변경의 합과 같은지 확인한다. 합을 넘는 변화(래칫 수치 상승, 새 예외, 새 분류·승인이 필요한 항목)는 재생성으로 받아들이지 않고 원인을 본다(H2).
 
 | 생성물 | 다시 만드는 방법 |
 |---|---|
-| 공용 메모리 표(`decisions.md`·영역 결정 색인·결정 역사 색인·`known-gaps.md`) | `decisions.md`, 그 「영역 결정 색인」 표가 가리키는 영역 색인(`docs/04-operations/operational-decisions-index-*.md`), [결정 역사 색인](../archived/operational-decisions-index-historical.md)은 양쪽 행을 모두 남기고 ID 순서로 합친다. 한 결정은 이 색인들 가운데 한 곳에만 있어야 한다 — 양쪽이 같은 결정을 서로 다른 색인으로 옮겼으면 한 곳으로 정하고, 두 곳에 남으면 Atlas 생성기가 red다. `known-gaps.md` 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
+| 생성기가 다시 만드는 생성물(생성 계약·권한 생성물·슬롯 레지스트리·경계 census·화면 목록과 권한 묶음·URL census 와 승인 해시·스킬 안내 파일·Atlas) | 병합은 `npm run merge:main`, 그 밖에는 `npm run regen` 이 [생성기 목록](../../scripts/merge-main-regenerate.mjs)(`GENERATORS`)의 의존 순서대로 다시 만든다 — 생성기별 명령·입력·검사 모드의 정본은 그 목록이고, 한쪽을 고르거나 손으로 섞지 않는다. URL 승인 파일은 해시만 다시 결속하고 승인 항목은 손대지 않는다. 생성이 원장 판단을 요구하며 실패하면(예: 새 권한을 어느 권한 묶음에도 넣지 않았다) 생성물이 아니라 원장을 고친다. |
+| 공용 메모리 표(`decisions.md`·영역 결정 색인·결정 역사 색인·`known-gaps.md`·gap 영역 상세) | `decisions.md`, 그 「영역 결정 색인」 표가 가리키는 영역 색인(`docs/04-operations/operational-decisions-index-*.md`), [결정 역사 색인](../archived/operational-decisions-index-historical.md)은 양쪽 행을 모두 남기고 ID 순서로 합친다. 한 결정은 이 색인들 가운데 한 곳에만 있어야 한다 — 양쪽이 같은 결정을 서로 다른 색인으로 옮겼으면 한 곳으로 정하고, 두 곳에 남으면 Atlas 생성기가 red다. `known-gaps.md` 와 [gap 영역 상세](../04-operations/known-gaps-detail.md) 표는 ID 순서가 아니므로 기존 순서를 유지하고 새 행은 해당 표 끝에 둔다. 상세 행과 레지스트리 줄은 ID·우선순위·상태가 같아야 한다. 같은 ID 행을 양쪽이 고쳤으면 두 변경을 한 행으로 합친다(같은 ID가 두 줄이면 [공용 메모리 계약](../../scripts/shared-memory-contract.test.mjs)이 red다). 두 쪽이 같은 새 ID를 썼으면 나중에 병합하는 쪽이 다음 번호로 바꾸고 참조도 함께 고친다. |
 | `api-docs.json` | 합친 소스에서 `OpenApiDocumentationTest` 정적 추출로 다시 만든다([API 문서 가이드](api-documentation-guide.md)). `-Dopenapi.export.path`는 절대 경로로 준다(상대 경로는 모듈 디렉터리 기준이다). pre-push는 이 파일과 백엔드 코드의 정합을 보지 않고 CI의 `api-docs-gate`만 보므로, 양쪽이 컨트롤러·DTO를 바꿨으면 로컬에서 추출한다. |
-| 생성 계약(`generated-api.d.ts`·`generated-zod.ts`·`generated-operations.ts`) | `pnpm -C frontend run syncContract`(`npm run merge:main`이 실행하는 명령). 단계 구성은 `frontend/package.json`, 계약 재생성 절차의 정본은 [API 문서 가이드](api-documentation-guide.md)다. |
-| 슬롯 레지스트리(`frontend/src/extensions/generated-*.ts`) | `npm run slots:generate`(`node scripts/slot-registry.mjs --write`, 검사: `npm run slots:check`). 기여 파일에서 만들며 레지스트리도 `frontend/src` 소스라 그것을 읽는 경계 census·화면 목록보다 먼저 만든다. |
-| `config/governance/generated-api-boundaries.json` | `node scripts/generated-boundary-census.mjs --write` |
-| 화면 목록과 권한 묶음(`frontend/src/types/generated-screen-registry.ts`) | 화면·권한 카탈로그·인가 정책(`config/governance/authorization-policies.json`)·권한 묶음 원장(`config/governance/permission-bundles.json`)·화면 용어 원장(`config/frontend-visible-terms.json`, 묶음 문구 검사)·라우트 원장·메뉴 snapshot을 합치고 경계 census를 다시 만든 뒤 `node scripts/generate-screen-registry.mjs`(검사: `--check`). 묶음이 여는 화면(진입 권한)과 관련 화면(진입 권한이 빈 화면 중 쓰기 귀속이 묶음 권한인 화면)은 원장에 적지 않고 화면 목록으로 계산하므로, 화면·카탈로그만 바뀌어도 묶음 결과가 달라진다. 새 권한을 카탈로그에 더하면 어떤 묶음에 넣거나 원장의 `excluded` 에 사유와 함께 적어야 생성이 통과한다 — 재생성으로 맞추고, 묶음이 여는 화면이 없어지는 등 원장 검증이 실패하면 원장을 고친다. 경계 census의 출력을 읽으므로 그 뒤, 이 파일을 읽는 URL census 앞에 만든다. 라벨을 메뉴 snapshot에서 읽으므로, 아래 `config/project-composer-menus.json` 행으로 snapshot을 다시 만들었으면 그 뒤에 한 번 더 실행한다. |
 | operation 수 | `node scripts/operation-consumer-census.mjs --json`의 `operationCount`로 `config/governance/operation-consumer-census.json`의 `expected.operationCount`를 맞춘다 — 그 대조는 배선 census 하나가 소유하고(`regen -- --check`가 먼저 본다) 생성 operation 계약은 집합만 대조한다. 원장의 unwired·화면 고아 상한도 합친 결과로 맞추며, 상한을 올려야 하면 사유를 남긴다(H2). `known-gaps.md` GAP-WIRING-001은 수치를 적지 않고 원장에 링크하므로 고치지 않는다(DEC-OPS-340). |
-| 권한 생성물(`PermissionCodes.java`·`generated-permissions.ts`·`operation-bindings.json` 등) | 원장(`config/governance/permission-catalog.json`·`authorization-policies.json`)을 합친 뒤 `node scripts/generate-permissions.mjs` |
-| `config/ui-url-state-census.json`과 승인 결속 | `node scripts/ui-url-state-census.mjs --write` 뒤 `config/ui-url-state-approval.json`의 해시만 새 census의 승인 결속 범위(개수뿐인 `summary`를 뺀 본문, [결속 함수](../../scripts/ui-url-state-approval-binding.mjs))의 SHA-256으로 다시 결속한다. 개수만 바뀌었으면 해시는 그대로다. 승인 항목은 손대지 않는다. |
-| `config/project-composer-menus.json`의 `sourceMigrationHash` | 메뉴 inventory(메뉴 행과 그룹별 NAVIGATION 배정)에 닿을 수 있는 SQL 입력의 해시다(형식 v2) — 반복 시드 둘과 인가 Contract는 늘, versioned migration은 [검증기](../../scripts/project-composer-menu-preview.mjs) 머리 주석의 규칙이 고른 것만 넣는다(DEC-OPS-339). 인덱스나 메뉴와 무관한 업무 테이블만 바꾼 migration은 갱신이 필요 없다. 운영 계약의 메뉴 미리보기 시험이 해시가 낡았다고 붉을 때만 `npm run project:menus:refresh`로 다시 만든다. 이 명령이 일회용 PostgreSQL 컨테이너를 만들어 쓰고 지운다([프로젝트 생성기 가이드](project-composer-guide.md)). §6.3의 무거운 실행이다. 스냅숏 내용이 실제 적용 결과와 같은지는 DB 번들 생성의 내용 대조가 본다. |
+| `config/project-composer-menus.json`의 `sourceMigrationHash` | 메뉴 inventory(메뉴 행과 그룹별 NAVIGATION 배정)에 닿을 수 있는 SQL 입력의 해시다(형식 v2) — 반복 시드 둘과 인가 Contract는 늘, versioned migration은 [검증기](../../scripts/project-composer-menu-preview.mjs) 머리 주석의 규칙이 고른 것만 넣는다(DEC-OPS-339). 인덱스나 메뉴와 무관한 업무 테이블만 바꾼 migration은 갱신이 필요 없다. 운영 계약의 메뉴 미리보기 시험이 해시가 낡았다고 붉을 때만 `npm run project:menus:refresh`로 다시 만든다. 이 명령이 일회용 PostgreSQL 컨테이너를 만들어 쓰고 지운다([프로젝트 생성기 가이드](project-composer-guide.md)). §6.3의 무거운 실행이다. 화면 목록이 메뉴 라벨을 이 스냅숏에서 읽으므로 다시 만들었으면 `npm run regen` 을 한 번 더 돈다. 스냅숏 내용이 실제 적용 결과와 같은지는 DB 번들 생성의 내용 대조가 본다. |
 | 하네스 `baseline-manifest.properties` | 서로 다른 키가 바뀌었으면 양쪽 줄을 모두 살린다. 같은 키를 양쪽이 바꿨으면 다른 충돌을 모두 푼 뒤 `node scripts/harness-baseline-manifest.mjs --keys <충돌한 키…>`로 계산값을 보고(`npm run merge:main`이 그 키와 계산값을 보인다) 그 키의 값만 옮긴다. 그 키의 입력 변경이 양쪽 모두 정당한지 확인하고(H2) 다른 키까지 통째로 다시 쓰지 않는다 — 충돌 표기가 남아 있으면 `--write`는 거부한다. 병합 뒤 `--check`로 계산값과 같은지 본다. 계산은 이 도구 하나이고, CI 에서는 운영 계약(`secret-scan`)과 하네스 메타 게이트(`backend-build`, 같은 도구의 `--check` 실행)가 대조한다. manifest 가 작업 트리에 없거나(양쪽이 다른 이름으로 옮겼거나 손으로 지웠다) 충돌 표기 없이 남으면(한쪽이 지우고 다른 쪽이 고쳤거나 이미 손으로 풀었다) `npm run merge:main` 은 키 없이 그 사정을 안내한다 — 남길지 지울지 정하고, 남기면 `--check` 로 대조한다. |
 | 그 밖의 해시 결속·수치(disposition overlay의 `manifestRef.sha256` ← `config/ui-route-capabilities.json`, 재사용 base `databaseSnapshot` 수 등) | 실패한 계약이 가리키는 생성 명령과 기대값을 따른다. 해시는 입력이 정당하게 바뀐 경우에만 다시 결속하고, 수치는 양쪽 변경을 합산하거나 실측으로 다시 구한다. 래칫을 올려야 하면 재생성이 아니라 H2 판단이다. |
-| `frontend/public/governance_harness_atlas.html` | 마지막에 `npm run atlas:build`를 실행한다. 문서·공용 메모리·게이트 원장을 읽으므로 다른 재생성보다 뒤에 한다. |
 
 재생성 결과는 대부분 pre-push의 운영 계약과 codegen 검사가 확인한다. 예외는 위 `api-docs.json` 행이다.
 
