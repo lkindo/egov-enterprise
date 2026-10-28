@@ -104,7 +104,7 @@ function renderHeader() {
 }
 
 async function openProfileDialog(user: ReturnType<typeof userEvent.setup>) {
-  await user.click(await screen.findByRole('button', { name: '사용자 계정 메뉴' }));
+  await user.click(await screen.findByRole('button', { name: /사용자 계정 메뉴$/ }));
   await user.click(screen.getByRole('button', { name: '내 정보 수정' }));
   return screen.findByRole('button', { name: '저장' });
 }
@@ -164,7 +164,7 @@ describe('Header 내 정보 수정 경계', () => {
     testState.getMe.mockRejectedValue(new Error('조회 실패'));
 
     renderHeader();
-    await user.click(await screen.findByRole('button', { name: '사용자 계정 메뉴' }));
+    await user.click(await screen.findByRole('button', { name: /사용자 계정 메뉴$/ }));
     await user.click(screen.getByRole('button', { name: '내 정보 수정' }));
 
     await waitFor(() => expect(testState.toast).toHaveBeenCalledWith(expect.stringContaining('조회 실패'), 'error'));
@@ -184,7 +184,7 @@ describe('Header 비밀번호 변경 뒤 세션 처리', () => {
   });
 
   async function submitPasswordChange(user: ReturnType<typeof userEvent.setup>) {
-    await user.click(await screen.findByRole('button', { name: '사용자 계정 메뉴' }));
+    await user.click(await screen.findByRole('button', { name: /사용자 계정 메뉴$/ }));
     await user.click(screen.getByRole('button', { name: '비밀번호 변경' }));
     await user.type(await screen.findByLabelText('현재 비밀번호'), 'Oldpass1!');
     await user.type(screen.getByLabelText('새 비밀번호'), 'Newpass1!');

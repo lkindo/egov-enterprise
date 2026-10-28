@@ -112,7 +112,7 @@ describe('셸 링크·머리글 위젯 슬롯', () => {
     if (inProjection(BELL)) {
       const bell = screen.getByRole('button', { name: '알림' });
       expect(precedes(screen.getByRole('button', { name: '테마 변경' }), bell)).toBe(true);
-      expect(precedes(bell, screen.getByRole('button', { name: '사용자 계정 메뉴' }))).toBe(true);
+      expect(precedes(bell, screen.getByRole('button', { name: /사용자 계정 메뉴$/ }))).toBe(true);
       expect(testState.useNotifications).toHaveBeenCalled();
     } else {
       expect(screen.queryByRole('button', { name: '알림' })).not.toBeInTheDocument();

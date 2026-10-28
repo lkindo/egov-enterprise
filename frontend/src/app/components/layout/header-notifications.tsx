@@ -52,13 +52,15 @@ export function HeaderNotifications() {
         variant="ghost"
         size="icon"
         onClick={() => setIsOpen(true)}
-        aria-label={unreadCount > 0 ? `알림, 읽지 않음 ${unreadCount}건` : '알림'}
         className={cn(
           'relative text-muted-foreground transition-all group',
           unreadCount > 0 && 'text-primary bg-primary/5 ring-4 ring-primary/5',
         )}
       >
-        <Bell size={20} className={cn(unreadCount > 0 && 'animate-bounce-subtle')} />
+        {/* 이름은 aria-label 이 아니라 내용에서 나온다. aria-label 로 덮으면 보이는 배지 숫자(3·9+)가 이름의 낱말이 아니라
+            보이는 글자가 이름에 없는 단추가 된다(axe 4.14 label-content-name-mismatch, WCAG 2.5.3). 배지는 상태 표시라 이름에서 뺀다. */}
+        <span className="sr-only">{unreadCount > 0 ? `알림, 읽지 않음 ${unreadCount}건` : '알림'}</span>
+        <Bell size={20} aria-hidden="true" className={cn(unreadCount > 0 && 'animate-bounce-subtle')} />
         {unreadCount > 0 && (
           <Badge aria-hidden="true" className="absolute -top-1 -right-1 h-5 w-5 p-0 flex items-center justify-center bg-rose-500 text-white border-2 border-background font-bold text-xs shadow-lg">
             {unreadCount > 9 ? '9+' : unreadCount}

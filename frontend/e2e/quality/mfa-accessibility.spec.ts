@@ -98,8 +98,8 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             await page.emulateMedia({ reducedMotion: 'reduce' });
             await openAnonymousLogin(page, '/login');
             await login();
-            await expect(page.getByRole('button', { name: '사용자 계정 메뉴' })).toBeVisible();
-            await page.getByRole('button', { name: '사용자 계정 메뉴' }).click();
+            await expect(page.getByRole('button', { name: /사용자 계정 메뉴$/ })).toBeVisible();
+            await page.getByRole('button', { name: /사용자 계정 메뉴$/ }).click();
             await page.getByRole('button', { name: '추가 인증 관리', exact: true }).click();
             await expect(page.getByText('인증앱을 아직 등록하지 않았습니다.')).toBeVisible();
             await fillSecret('현재 비밀번호', password);
@@ -119,8 +119,8 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             expect(await page.getByRole('list', { name: '일회용 복구 코드' }).getByRole('listitem').count()).toBeGreaterThan(0);
             expect(await key.count(), '등록 완료 후 등록 키 제거').toBe(0);
             await page.getByRole('button', { name: '복구 코드를 보관했습니다' }).click();
-            await expect(page.getByRole('button', { name: '사용자 계정 메뉴' })).toBeVisible();
-            await page.getByRole('button', { name: '사용자 계정 메뉴' }).click();
+            await expect(page.getByRole('button', { name: /사용자 계정 메뉴$/ })).toBeVisible();
+            await page.getByRole('button', { name: /사용자 계정 메뉴$/ }).click();
             await page.getByRole('button', { name: '로그아웃', exact: true }).click();
             await expect(page).toHaveURL(/\/login/);
             await login();
@@ -152,7 +152,7 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             while (Math.floor(Date.now() / 30_000) <= enrollmentStep) await new Promise(resolve => setTimeout(resolve, 250));
             await fillSecret('인증앱 코드', fixtureTotp(secret, Math.floor(Date.now() / 30_000)));
             await page.getByRole('button', { name: '인증 확인' }).click();
-            await expect(page.getByRole('button', { name: '사용자 계정 메뉴' })).toBeVisible();
+            await expect(page.getByRole('button', { name: /사용자 계정 메뉴$/ })).toBeVisible();
             const authenticated = await context.cookies();
             expect(authenticated.some(cookie => cookie.name === 'accessToken' && cookie.httpOnly)).toBe(true);
             expect(authenticated.some(cookie => cookie.name === 'mfa_challenge')).toBe(false);

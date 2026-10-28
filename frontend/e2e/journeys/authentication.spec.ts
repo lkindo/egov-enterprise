@@ -76,7 +76,7 @@ test.describe('공통 셸과 인증', () => {
                     //   서버 무효화를 결정적으로 보려고 이 토큰의 발급 초가 지난 뒤에 로그아웃한다.
                     await waitPastIssuedSecond(fixture.authorization.Authorization);
                     console.log('>>> Step 1: Triggering User Menu');
-                    const profileTrigger = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
+                    const profileTrigger = page.locator('button[aria-label$="사용자 계정 메뉴"]').first();
                     await expect(profileTrigger).toBeVisible({ timeout: 15000 });
                     await profileTrigger.click();
                     console.log('>>> Step 2: Logout Action');
@@ -132,7 +132,7 @@ test.describe('공통 셸과 인증', () => {
                     // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)
                     console.log('>>> Step 1: Opening User Account Menu');
                     // 공유 헤더(header.tsx)의 계정 버튼 aria-label — 관리자 로그아웃 테스트와 동일 셀렉터로 정합.
-                    const profileButton = page.locator('button[aria-label="사용자 계정 메뉴"]').first();
+                    const profileButton = page.locator('button[aria-label$="사용자 계정 메뉴"]').first();
                     await expect(profileButton).toBeVisible({ timeout: 15000 });
                     await profileButton.click();
                     console.log('>>> Step 2: Logout Action');
@@ -229,7 +229,7 @@ test.describe('세션과 전역 탐색', () => {
             await page.goto('/admin/community/boards/master');
             await expect(page).toHaveURL(/.*master/);
             // main CI 34477985094: URL 도착 직후 쿠키를 지우면 첫 메뉴 조회가 hydration 뒤 401이 된다.
-            await expect(page.getByRole('button', { name: '사용자 계정 메뉴', exact: true })).toBeVisible();
+            await expect(page.getByRole('button', { name: /사용자 계정 메뉴$/ })).toBeVisible();
             await expect(page.getByRole('navigation', { name: '주메뉴 네비게이션', exact: true }).getByRole('link').first()).toBeVisible();
             await expect(page.getByRole('heading', { name: '게시판 관리', exact: true })).toBeVisible();
             // SSR initialData가 메뉴 조회를 생략해도 실제 인증 상태를 확인할 수 있도록 같은 출처로 조회한다.
@@ -456,7 +456,7 @@ test.describe('명령 센터의 현재 계정·권한 경계', () => {
                 reason: '권한·계정 변경에서 이전 주체의 실행 중 메뉴 조회를 AbortSignal로 취소하는 반례다.', expiresAt: '2026-12-31',
             }]);
             await page.goto('/');
-            await expect(page.getByRole('button', { name: '사용자 계정 메뉴', exact: true })).toBeVisible();
+            await expect(page.getByRole('button', { name: /사용자 계정 메뉴$/ })).toBeVisible();
             await page.waitForLoadState('networkidle');
             const dialog = page.getByRole('dialog', { name: '글로벌 커맨드 센터', exact: true });
             type Node = { menuNm: string; modernRoute?: string; url?: string; children?: Node[] };

@@ -386,10 +386,10 @@ function DashboardStatCard({
       {/* [2026-09-22] 카드 안의 카드(아이콘 상자 border-2·shadow-inner)와 5% 불투명 워터마크
           아이콘을 걷고 여백을 밀도 계약에 맞췄다 — 실측 약 250px 였다(카탈로그 §A1·§4). */}
       <div className="flex items-center justify-between mb-4">
-        <div className={cn("p-2 rounded-md", colorMap[color])}>
+        <div className={cn("p-2 rounded-md", colorMap[color])} aria-hidden="true">
           {icon}
         </div>
-        {link && <ArrowUpRight size={16} className="text-muted-foreground transition-colors group-hover:text-primary" />}
+        {link && <ArrowUpRight size={16} aria-hidden="true" className="text-muted-foreground transition-colors group-hover:text-primary" />}
       </div>
 
       <div className="space-y-2">
@@ -418,7 +418,9 @@ function DashboardStatCard({
   return (
     <Tooltip>
       <TooltipTrigger asChild>
-        <Link href={link} aria-label={`${title} — ${description}. 상세 화면으로 이동`}>
+        {/* 이름은 카드 내용(제목·값·설명)에서 나온다. aria-label 로 덮으면 보이는 값이 이름에서 빠진다
+            (axe 4.14 label-content-name-mismatch, WCAG 2.5.3) — 화면 낭독기도 숫자를 듣지 못했다. */}
+        <Link href={link}>
           <motion.div
             whileHover={{ y: -4, boxShadow: "0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)" }}
             whileTap={{ scale: 0.98 }}
@@ -426,6 +428,7 @@ function DashboardStatCard({
             className="p-4 md:p-5 h-full rounded-md bg-card border border-border hover:border-primary/30 transition-colors cursor-pointer group"
           >
             {body}
+            <span className="sr-only">, 상세 화면으로 이동</span>
           </motion.div>
         </Link>
       </TooltipTrigger>

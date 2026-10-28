@@ -81,6 +81,11 @@ updates:
       #   PR 로 알려 주지 않으므로 Gradle 보안 공지를 따로 확인한다.
       - dependency-name: "gradle-wrapper"
         versions: [">=9.8.0"]
+      # [2026-10-28] 이관 도구의 SQL Server 드라이버는 제안하지 않는다. 운영 코드가 실측 조합(13.6.0.0)만 허용하고 시험이
+      #   다른 판을 거부해야 한다고 고정하므로(SqlServerSourceAdapter·SqlServerDiscoveryVisibilityProof), 판을 올리는 일은
+      #   의존성 갱신이 아니라 SQL Server 재실측이다(#970 이 SQL Server 시험 13건을 붉게 했다). testRuntimeOnly 라 실행
+      #   산출물에는 들어가지 않는다. 재개 조건: 새 드라이버로 재실측해 허용 판을 바꿀 때 이 규칙을 같은 변경에서 걷는다.
+      - dependency-name: "com.microsoft.sqlserver:mssql-jdbc"
     groups:
       # 카탈로그 한 줄이 다중 모듈을 동시에 깨뜨릴 수 있으므로, 관련 업데이트를 묶어
       # CI 가 한 번에 판정하게 한다.
