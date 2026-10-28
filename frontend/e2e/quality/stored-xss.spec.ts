@@ -71,6 +71,8 @@ test.describe('Deep Security Guard', () => {
                 expect(xssDialogFired, 'XSS payload가 스크립트 dialog를 발생시킴 — 새니타이제이션 실패').toBe(false);
             }
             finally {
+                // 게시글 상세를 먼저 떠난 뒤 지운다 — 열린 화면의 재조회가 지운 글을 404 로 받으면 브라우저 오류 감시가 실패로 잡는다(PR #930).
+                await page.goto('about:blank');
                 // 정리. deletePost 는 논리 삭제(use_yn='N')이며 댓글은 함께 지워지지 않는다 —
                 // 남는 댓글은 이 임시 게시글에만 매달리므로 실 데이터를 오염시키지 않는다.
                 await request.delete(`${BOARD_API}/${bbsId}/posts/${pstSn}`, { headers: auth });

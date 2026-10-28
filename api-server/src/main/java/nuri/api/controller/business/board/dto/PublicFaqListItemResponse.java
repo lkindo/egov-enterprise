@@ -29,6 +29,8 @@ public record PublicFaqListItemResponse(
                 source.inqCnt(),
                 source.crtDt(),
                 source.useYn(),
-                source.scrtYn());
+                // [2026-10-29] 계약은 'N' 만 받는다 — 비어 있으면 'N' 이다(열람 판정이 모두 NULL 을 공개 글로 보는 것과 같은 규칙). 종전에는
+                //   NULL 한 건이 화면의 응답 검사를 깨 도움말 FAQ 목록 전체가 '불러오지 못했습니다' 였다.
+                source.scrtYn() != null ? source.scrtYn() : "N");
     }
 }

@@ -2714,6 +2714,97 @@ class BoardServiceTest {
         assertThat(board.getAtchFileSn()).isEqualTo(55L);
     }
 
+    // ── [2026-10-29] 비밀 여부가 비어 있는(NULL) 글 — 열람 판정은 모두 NULL 을 공개 글로 본다. 표현과 새 저장만 'N' 으로 맞춘다 ──────────
+
+    @Test
+    @DisplayName("🔐 비밀 여부를 보내지 않은 등록은 NULL 이 아니라 N 으로 저장한다 — REQUIRED 는 그대로 Y 다")
+    void createPost_omittedSecretFlagStoresN() {
+        assertThat(savedAfterCreate(null, null).getScrtYn()).as("정책 미설정 게시판").isEqualTo("N");
+        assertThat(savedAfterCreate("NONE", null).getScrtYn()).isEqualTo("N");
+        assertThat(savedAfterCreate("OPTIONAL", null).getScrtYn()).isEqualTo("N");
+        assertThat(savedAfterCreate("REQUIRED", null).getScrtYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀 여부를 보내지 않은 답글도 N 으로 저장하고, 비밀 여부가 NULL 인 부모에는 지금처럼 남도 답글을 단다")
+    void replyPost_omittedSecretFlagStoresN() {
+        Board parent = Board.builder().bbsId("BBS_01").pstSn(1L).sortOrdr(100L).ansLv(0).userId("ESNTL_owner").build();
+        given(boardMasterRepository.findByIdWithPessimisticLock("BBS_01"))
+                .willReturn(Optional.of(policyMaster("BBS_01", "NONE", null)));
+        given(boardRepository.findById(1L)).willReturn(Optional.of(parent));
+        given(userService.getUserById("user1")).willReturn(UserDto.builder().userId("user1").userNm("Tester").build());
+        given(boardRepository.findMaxAnsSn("BBS_01", 100L)).willReturn(0L);
+        given(boardRepository.save(any(Board.class))).willAnswer(invocation -> persistWithGeneratedPstSn(invocation.getArgument(0)));
+
+        boardService.replyPost("user1", 1L, secretRequest(null, null));
+
+        assertThat(captureSavedBoard().getScrtYn()).isEqualTo("N");
+        assertThat(parent.getScrtYn()).as("부모 행은 읽기만 한다").isNull();
+    }
+
+    @Test
+    @DisplayName("🔐 비밀 여부가 NULL 로 남은 옛 글을 비밀 여부 없이 고치면 N 으로 저장한다 — 저장값이 있으면 지금처럼 둔다")
+    void updatePost_omittedSecretFlagOnNullRowStoresN() {
+        actAs("ESNTL_owner");
+        Board legacy = versionedPost("BBS_01", 34L, "ESNTL_owner", null, null);
+        assertThat(legacy.getScrtYn()).as("전제: 저장값이 NULL").isNull();
+        given(boardRepository.findById(34L)).willReturn(Optional.of(legacy));
+
+        boardService.updatePost("BBS_01", 34L, secretRequest(null, 3));
+
+        assertThat(legacy.getScrtYn()).isEqualTo("N");
+    }
+
+    @Test
+    @DisplayName("비밀 여부가 NULL 인 조회 결과는 scrtYn N 으로 읽힌다 — Y·N 은 그대로다")
+    void nullSecretFlagResultsReadAsN() {
+        assertThat(BoardSearchResult.builder().build().getScrtYn()).isEqualTo("N");
+        assertThat(BoardSearchResult.builder().scrtYn("Y").build().getScrtYn()).isEqualTo("Y");
+        assertThat(BoardDetailResult.builder().build().getScrtYn()).isEqualTo("N");
+        assertThat(BoardDetailResult.builder().scrtYn("Y").build().getScrtYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("엔티티에서 옮긴 게시글 DTO 도 비어 있는 비밀 여부를 N 으로 싣고 Y 는 그대로 둔다")
+    void mapperCarriesNullEntitySecretFlagAsN() {
+        BoardMapperImpl mapper = new BoardMapperImpl();
+        assertThat(mapper.toDto(Board.builder().bbsId("BBS_01").build()).scrtYn()).as("엔티티 경로").isEqualTo("N");
+        assertThat(mapper.toDto(Board.builder().bbsId("BBS_01").scrtYn("Y").build()).scrtYn()).isEqualTo("Y");
+    }
+
+    @Test
+    @DisplayName("비밀 여부가 NULL 인 글은 게시판 목록·통합 검색·공개 FAQ 목록 응답에서 scrtYn N 이다")
+    void nullSecretFlagListsAsN() {
+        BoardSearchResult legacy = BoardSearchResult.builder().pstSn(1L).bbsId("BBSMSTR_AAAAAAAAAAAA").pstTtl("옛 FAQ")
+                .useYn("Y").build();
+        given(boardMasterRepository.findById("BBSMSTR_AAAAAAAAAAAA"))
+                .willReturn(Optional.of(BoardMaster.builder().bbsId("BBSMSTR_AAAAAAAAAAAA").useYn("Y").build()));
+        given(boardRepository.searchPublicFaqArticles(eq("BBSMSTR_AAAAAAAAAAAA"), any(), eq(TODAY), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.singletonList(legacy)));
+        given(boardRepository.searchArticles(any(BoardSearchCondition.class), any(Pageable.class)))
+                .willReturn(new PageImpl<>(Collections.singletonList(legacy)));
+
+        assertThat(boardService.getPublicFaqPosts("", PageRequest.of(0, 10)).getContent())
+                .extracting(BoardDto::scrtYn).containsExactly("N");
+        assertThat(boardService.getBoardPosts("BBSMSTR_AAAAAAAAAAAA", PageRequest.of(0, 10)).getContent())
+                .extracting(BoardDto::scrtYn).containsExactly("N");
+        assertThat(boardService.searchAcrossBoards("옛 FAQ", PageRequest.of(0, 20)).getContent())
+                .extracting(BoardDto::scrtYn).containsExactly("N");
+    }
+
+    @Test
+    @DisplayName("🔐 비밀 여부가 NULL 인 글의 상세는 지금처럼 남에게도 열리고 scrtYn N 으로 나간다 — 공개 FAQ 상세도 N 이다")
+    void nullSecretFlagDetailReadsAsN() {
+        actAs("ESNTL_stranger");
+        given(boardRepository.findActiveArticleDetail("BBS_01", 5L)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(5L).bbsId("BBS_01").userId("ESNTL_owner").useYn("Y").build()));
+        given(boardRepository.findPublicArticleDetail("BBSMSTR_AAAAAAAAAAAA", 15L, TODAY)).willReturn(Optional.of(
+                BoardDetailResult.builder().pstSn(15L).bbsId("BBSMSTR_AAAAAAAAAAAA").useYn("Y").build()));
+
+        assertThat(boardService.getPostDetail("BBS_01", 5L, false).scrtYn()).isEqualTo("N");
+        assertThat(boardService.getPublicFaqDetail(15L).scrtYn()).isEqualTo("N");
+    }
+
     @Test
     @DisplayName("🚨 추천을 받지 않는 게시판의 새 추천은 400 이고 이력·추천 수를 건드리지 않는다 (ADR-0040 결정 6)")
     void incrementLike_rejectsWhenRecommendationsOff() {

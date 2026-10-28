@@ -4,6 +4,7 @@ import userEvent from '@testing-library/user-event';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { UserInfo } from '@/services/foundation/auth/authService';
 import type { MenuInfo } from '@/types/foundation/menu';
+import { expectNoAxeViolations } from '@/test-utils/axe';
 import { Header } from '../header';
 import { HeaderNotifications } from '../header-notifications';
 
@@ -13,6 +14,7 @@ const testState = vi.hoisted(() => ({
   routerPush: vi.fn(),
   routerReplace: vi.fn(),
   setActiveMenuNo: vi.fn(),
+  unreadCount: 0,
 }));
 
 vi.mock('next-themes', () => ({
@@ -39,7 +41,7 @@ vi.mock('@/contexts/LayoutContext', () => ({
 vi.mock('@/lib/hooks/use-notifications', () => ({
   useNotifications: () => ({
     notifications: [],
-    unreadCount: 0,
+    unreadCount: testState.unreadCount,
     error: null,
     markAsRead: vi.fn(),
     markAllAsRead: vi.fn(),
@@ -91,9 +93,26 @@ function queryAccountLink(href: string) {
 describe('Header account navigation authorization', () => {
   beforeEach(() => {
     testState.user = null;
+    testState.unreadCount = 0;
     testState.logout.mockClear();
     testState.routerPush.mockClear();
     testState.routerReplace.mockClear();
+  });
+
+  /*
+    [2026-10-28 D6-2] 모든 화면이 공유하는 셸 머리글을 axe 로 본다 — 계정 메뉴 단추(보이는 이름·'사용자'가 이름 안에 있어야 한다)와
+    읽지 않은 배지가 있는 알림 벨, 열린 계정 메뉴의 항목. 종전에는 axe 4.14 의 label-content-name-mismatch 를 격리 E2E 에서야
+    알았다(#987). 계정 메뉴는 Popover Portal 로 body 에 그려지므로 body 전체를 대상으로 삼는다.
+  */
+  it('계정 메뉴를 연 머리글과 읽지 않은 알림 벨에 axe 위반이 없다', async () => {
+    testState.unreadCount = 3;
+    renderHeader({ id: 'menu-reader', name: '메뉴 조회 사용자', role: 'USER', permissions: ['MENU_READ', 'NOTI_READ'], authorizationVersion: 'v2' });
+
+    expect(await screen.findByRole('button', { name: '알림, 읽지 않음 3건' })).toBeInTheDocument();
+    await openAccountMenu();
+    expect(screen.getByRole('button', { name: '로그아웃' })).toBeInTheDocument();
+
+    await expectNoAxeViolations(document.body);
   });
 
   it('320px header keeps its controls while using compact row spacing', async () => {

@@ -1,7 +1,7 @@
-import AxeBuilder from '@axe-core/playwright';
 import { createHmac, randomBytes } from 'node:crypto';
 import { Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { expectNoAccessibilityViolations } from '../fixtures/accessibility';
 import { SITE_IDENTITY } from '../../src/config/site-identity';
 
 // Scope worker-level artifact options to this synthetic-secret workflow only.
@@ -146,8 +146,8 @@ test.describe('실제 추가 인증과 키보드 접근성', () => {
             await expect(page.getByRole('region', { name: '추가 인증', exact: true }).getByRole('alert')).toContainText('6자리');
             await expect(page.getByLabel('인증앱 코드', { exact: true })).toBeFocused();
             expect(verificationRequests).toBe(0);
-            const accessibility = await new AxeBuilder({ page }).include('main').analyze();
-            expect(accessibility.violations.map(violation => violation.id)).toEqual([]);
+            // 감사할 상태(오류 문구·초점)는 바로 위에서 단언했다 — 공용 감사는 준비 대기 없이 동작만 멈추고 본문을 감사한다.
+            await expectNoAccessibilityViolations(page, '추가 인증 오류 상태', { include: 'main', ready: false });
             // Enrollment consumed its counter. Wait for a new real counter instead of weakening replay checks.
             while (Math.floor(Date.now() / 30_000) <= enrollmentStep) await new Promise(resolve => setTimeout(resolve, 250));
             await fillSecret('인증앱 코드', fixtureTotp(secret, Math.floor(Date.now() / 30_000)));

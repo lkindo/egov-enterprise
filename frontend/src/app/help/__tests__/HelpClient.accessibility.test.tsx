@@ -1,6 +1,7 @@
 import { act, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
+import { expectNoAxeViolations } from '@/test-utils/axe';
 
 const harness = vi.hoisted(() => ({
   getFaqs: vi.fn().mockResolvedValue({
@@ -33,8 +34,9 @@ describe('HelpClient accessibility semantics', () => {
   it('uses a contrast-safe large-text marker when an FAQ answer is expanded', async () => {
     // Drive the actual 300ms search debounce; wall-clock scheduling under coverage is unrelated to contrast.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
+    let container: HTMLElement;
     try {
-      render(<HelpClient />);
+      ({ container } = render(<HelpClient />));
       await act(async () => { await vi.advanceTimersByTimeAsync(300); });
       expect(harness.getFaqs).toHaveBeenCalledWith({ page: 1, size: 10, keyword: '' });
     } finally {
@@ -47,5 +49,7 @@ describe('HelpClient accessibility semantics', () => {
     expect(screen.getByText('A.')).toHaveClass('text-primary');
     expect(screen.getByText('A.')).not.toHaveClass('text-primary/20');
     expect(screen.getByText('합성 접근성 답변')).toBeVisible();
+    // [2026-10-28 D6-2] 펼친 질문 단추·답변 영역(aria-controls·aria-labelledby)을 axe 로도 본다.
+    await expectNoAxeViolations(container);
   });
 });

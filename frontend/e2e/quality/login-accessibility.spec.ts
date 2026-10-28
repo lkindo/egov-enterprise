@@ -1,6 +1,6 @@
-import AxeBuilder from '@axe-core/playwright';
 import { Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
+import { expectNoAccessibilityViolations } from '../fixtures/accessibility';
 import { SITE_IDENTITY } from '../../src/config/site-identity';
 
 async function openAnonymousLogin(page: Page, url: string) {
@@ -17,22 +17,6 @@ async function openAnonymousLogin(page: Page, url: string) {
 }
 
 test.describe('공통 셸과 인증', () => {
-    async function stabilizeAccessibilityAudit(page: Page) {
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await page.addStyleTag({
-            content: `
-            *, *::before, *::after {
-                animation-duration: 0s !important;
-                animation-delay: 0s !important;
-                transition-duration: 0s !important;
-                transition-delay: 0s !important;
-            }
-        `,
-        });
-        await page.evaluate(() => new Promise<void>((resolve) => {
-            requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
-        }));
-    }
     test.describe('Core Base (Auth & Dashboard)', () => {
         test('Accessibility Audit for Login Page', async ({ page, consoleGuard }) => {
             // 비로그인 상태의 로그인 화면은 AuthContext 가 세션 유무를 확인하며 401 을 받는다.
@@ -57,12 +41,9 @@ test.describe('공통 셸과 인증', () => {
             await expect(page.getByRole('dialog')).toHaveCount(0);
             await expect(page.locator('header, #primary-sidebar')).toHaveCount(0);
             await expect(page.getByRole('textbox', { name: '아이디' })).toBeVisible();
-            await expect(page.locator('[role="status"]').filter({
-                hasText: /^(?:로딩 중|로그인 화면을 불러오는 중|애플리케이션을 준비하는 중|보안 세션을 확인하는 중)/,
-            })).toHaveCount(0);
-            await stabilizeAccessibilityAudit(page);
-            const a11y = await new AxeBuilder({ page }).analyze();
-            expect(a11y.violations, JSON.stringify(a11y.violations.map((v) => v.id))).toEqual([]);
+            // 진행 상태가 사라지기를 기다리는 것과 동작 멈춤은 공용 감사가 한다 — 그 진행 문구 패턴이 종전 이 spec 의 네 문구
+            //   ('로딩 중'·'로그인 화면을 불러오는 중'·'애플리케이션을 준비하는 중'·'보안 세션을 확인하는 중')를 모두 덮는다.
+            await expectNoAccessibilityViolations(page, '/login?e2e=true');
         });
         // [2026-09-16 GAP-UIF-001] 번들한 Pretendard 가 실제로 쓰이는지는 선언이 아니라 계산된
         //   글꼴로만 알 수 있다. 변수를 body 에 두면 :root 에서 계산되는 --font-sans 별칭이 무효가
@@ -119,17 +100,15 @@ test.describe('인증 경계', () => {
             // 대기만으로는 부족했다(2.5s + 조상 opacity 검사에도 부하 시 재발). 감사 대상 영역의 진입
             // 애니메이션을 명시적으로 무력화해 **정착 상태를 강제**한 뒤 감사한다 — 사용자가 실제로 보는
             // 상태를 재는 것이 이 테스트의 의도이며, 과도기 프레임을 재는 것은 의도가 아니다.
+            //
+            // 이 감사는 reduced-motion 을 켜지 않는다(stabilize: false) — 위 'Core Base' 감사와 motion 조건이 다른 것이 두 감사를
+            // 따로 두는 이유다(testing-process-redesign 의 로그인 axe 두 조건). 정착 상태는 forceSettled 가 본문에만 강제한다.
             await page.waitForLoadState('networkidle');
-            await page.addStyleTag({
-                content: `main#main-content, main#main-content * {
-                opacity: 1 !important;
-                transform: none !important;
-                animation: none !important;
-                transition: none !important;
-            }`,
+            await expectNoAccessibilityViolations(page, '/login 본문', {
+                include: 'main#main-content',
+                forceSettled: 'main#main-content',
+                stabilize: false,
             });
-            const results = await new AxeBuilder({ page }).include('main#main-content').analyze();
-            expect(results.violations, `a11y 위반: ${JSON.stringify(results.violations.map((v) => v.id))}`).toEqual([]);
         });
     });
 });
