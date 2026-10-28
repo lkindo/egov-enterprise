@@ -229,8 +229,13 @@ jobs:
         run: |
           set -euo pipefail
           VERSION=8.28.0
-          curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \
-            | tar -xz gitleaks
+          # 공식 릴리스 checksums.txt 의 linux_x64 tarball SHA-256 — VERSION 을 올리면 그 릴리스의 checksums.txt 에서 함께 바꾼다.
+          # 받은 파일을 이 값으로 확인한 뒤에만 풀고 실행한다(일치하지 않으면 sha256sum 이 실패해 단계가 멈춘다).
+          SHA256=a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
+          ARCHIVE="${RUNNER_TEMP}/gitleaks.tar.gz"
+          curl -sSfL -o "$ARCHIVE" "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz"
+          echo "${SHA256}  ${ARCHIVE}" | sha256sum -c -
+          tar -xzf "$ARCHIVE" gitleaks
 
           echo "::group::① 워킹트리 스캔"
           ./gitleaks detect --source . --no-git --no-banner --redact --verbose \

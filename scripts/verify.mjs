@@ -10,7 +10,8 @@
  *
  * fast·push·fe·full·e2e 는 실패가 잦고 짧은 정적 검사(타입·lint·폼 census — fast·push 는 Java 컴파일 포함,
  * e2e 는 E2E 타입 검사만)를 운영 계약(로컬 약 11분)보다 먼저 돌려 실패를 빨리 알린다. full·be 의 Java 컴파일은
- * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 그 다음 계약이 먼저다. 성공하면 같은 명령이 모두
+ * runBackendSuite 의 gradle 한 줄 안에 있어 계약 뒤에 돌고, be·docs 는 그 다음 계약이 먼저다. fast·push 는 pre-push 소스 경로와
+ * 같이 불변식 Vitest·원문 계약(push 는 하네스까지)도 계약 앞에서 돌고 계약이 마지막이다. 성공하면 같은 명령이 모두
  * 실행되므로 명령 집합은 같다. 총시간은 캐시·실행 조건에 따라 달라 실측한다. fast·push·full 은 맨 앞에서 CodeQL 근사(`npm run sast:approx`, 수 초)를 돈다.
  * 운영 계약을 부르는 모든 범위(docs·fast·push·be·fe·full·e2e)는 맨 앞(fast·push·full 은 CodeQL 근사 다음)에서 생성물 신선도
  * (`npm run regen -- --check`, 약 20초)를 본다 — pre-push 맨 앞과 같은 검사다. 계약 codegen 은 그 안의 sync-contract 가 한 번 본다.
@@ -112,12 +113,12 @@ function runScriptStatic() {
   run('npm run sast:approx');
 }
 
-function runFastProfile() {
+// fast·push 의 운영 계약 앞 검사 — pre-push 소스 경로와 같은 순서다. 불변식·원문 계약도 실패가 잦고 짧아 운영 계약을 기다리게 하지 않는다.
+function runFastChecks() {
   runScriptStatic();
   runGeneratedFreshness();
   run(`${gradlew} compileJava compileTestJava -Dfile.encoding=UTF-8`);
   runFrontendStatic();
-  runOperationalContracts();
   run('pnpm -C frontend exec vitest run src/__tests__');
   runFrontendSourceContracts();
 }
@@ -156,10 +157,12 @@ try {
   if (scope === 'docs') {
     runDocumentationContracts();
   } else if (scope === 'fast') {
-    runFastProfile();
+    runFastChecks();
+    runOperationalContracts();
   } else if (scope === 'push') {
-    runFastProfile();
+    runFastChecks();
     run(`${gradlew} :api-server:harnessTest -Dfile.encoding=UTF-8`);
+    runOperationalContracts();
   } else if (scope === 'be') {
     runGeneratedFreshness();
     runOperationalContracts();

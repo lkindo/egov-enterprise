@@ -649,6 +649,38 @@ export function parseWorkflowJobs(ciContent) {
   return jobs;
 }
 
+export const GITLEAKS_SCAN_STEP = 'Run gitleaks (working tree + incremental)';
+
+/*
+ * [2026-10-28] secret-scan 은 내려받은 gitleaks 실행 파일을 그대로 돌린다 — 받은 tarball 을 고정 SHA-256 으로 확인한 뒤에만 풀어야 한다
+ * (예전에는 curl 출력을 tar 로 바로 넘겨 무결성 확인 없이 실행했다). criticalSteps 의 exact run 결속은 명세와 워크플로를 함께 바꾸면
+ * 통과하므로 확인 자체를 판정한다: 내려받은 내용을 tar 로 바로 넘기는 파이프가 없고, `SHA256=<64자리 소문자 16진>` 한 줄이 있고, curl 이
+ * `-o` 로 쓴 파일을 그 값으로 `sha256sum -c` 하며, 모든 tar 가 그 뒤에 같은 파일을 푼다. 주석 줄은 보지 않는다.
+ */
+const SHA256_CHECK = /^echo "\$\{SHA256\} {2}(\S+)" \| sha256sum -c -$/;
+const shellPath = value => value.replace(/["']/g, '').replace(/\$\{(\w+)\}/g, '$$$1');
+
+export function gitleaksDownloadViolations(run) {
+  const lines = String(run ?? '').split('\n').map(line => line.trim()).filter(line => line && !line.startsWith('#'));
+  const violation = detail => [`critical step '${GITLEAKS_SCAN_STEP}' must verify the downloaded tarball against a pinned SHA-256 before extracting it: ${detail}`];
+  if (lines.some(line => /\|\s*tar\b/.test(line))) return violation('a download is piped straight into tar');
+  const pins = lines.map((line, index) => (/^SHA256=[0-9a-f]{64}$/.test(line) ? index : -1)).filter(index => index >= 0);
+  if (pins.length !== 1) return violation('exactly one SHA256=<64 lowercase hex> pin is required');
+  const checkAt = lines.findIndex(line => SHA256_CHECK.test(line));
+  if (checkAt < pins[0]) return violation('the pinned value must be checked with sha256sum -c after it is declared');
+  const verified = shellPath(SHA256_CHECK.exec(lines[checkAt])[1]);
+  const downloads = lines.map((line, index) => ({ line, index }))
+    .filter(({ line }) => /^curl\s/.test(line) && line.split(/\s+/).some((token, at, tokens) => token === '-o' && shellPath(tokens[at + 1] ?? '') === verified));
+  if (!downloads.some(({ index }) => index < checkAt)) return violation('the checksum must cover the file curl wrote with -o before the check');
+  const extracts = lines.map((line, index) => ({ line, index })).filter(({ line }) => /^tar\s/.test(line));
+  if (extracts.length === 0) return violation('no tar extraction found');
+  for (const { line, index } of extracts) {
+    if (index < checkAt) return violation('tar runs before the checksum check');
+    if (!line.split(/\s+/).some(token => shellPath(token) === verified)) return violation('tar must extract the verified file');
+  }
+  return [];
+}
+
 export function validateStaticContract({ manifest, ciContent, workflowPath = WORKFLOW_PATH }) {
   const errors = [];
   if (!manifest || manifest.version !== 1 || !Array.isArray(manifest.requiredChecks)) {
@@ -776,6 +808,9 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
         errors.push("required operational contracts step must run 'npm run test:operational-contracts' exactly");
       }
     }
+    // 단계가 없으면 criticalSteps 대조가 따로 붉다 — 있을 때 내려받은 실행 파일의 무결성 확인을 본다.
+    const scanStep = parseNamedSteps(secretScanJob).get(GITLEAKS_SCAN_STEP);
+    if (scanStep) errors.push(...gitleaksDownloadViolations(stepRun(scanStep)));
   }
 
   errors.push(...validateCriticalSteps(manifest.criticalSteps, jobs));

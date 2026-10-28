@@ -356,8 +356,12 @@ const VERIFY_BACKEND_SUITE = './gradlew compileJava compileTestJava test :api-se
 const VERIFY_PACKAGING = ['pnpm -C frontend build', 'pnpm -C frontend run bundle:check', 'pnpm -C frontend run test:coverage'];
 // [2026-10-20] CodeQL 근사(scripts/sast-approximation.mjs, 수 초)는 fast·push·full 의 맨 앞이다 — 가장 싼 정적 검사다.
 const SAST_APPROXIMATION = 'npm run sast:approx';
-const VERIFY_FAST = [SAST_APPROXIMATION, REGEN_CHECK, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC, CONTRACTS,
+// [2026-10-28] fast·push 는 pre-push 소스 경로처럼 불변식 Vitest·원문 계약(push 는 하네스까지)도 운영 계약 앞에서 돌고 계약이 마지막이다
+//   (DEC-OPS-338 ① 의 확장 — 그 결정은 tsc·lint·폼 census 만 앞당겼다). 명령 집합·인자는 그대로다.
+const VERIFY_FAST_CHECKS = [SAST_APPROXIMATION, REGEN_CHECK, './gradlew compileJava compileTestJava -Dfile.encoding=UTF-8', ...VERIFY_STATIC,
   'pnpm -C frontend exec vitest run src/__tests__', SOURCE_CONTRACTS_DETECT, VERIFY_SOURCE_CONTRACTS];
+const VERIFY_HARNESS = './gradlew :api-server:harnessTest -Dfile.encoding=UTF-8';
+const VERIFY_FAST = [...VERIFY_FAST_CHECKS, CONTRACTS];
 // 갈래 통합 뒤 푸시 전 점검(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → regen → 폼 census·전체 시험·하네스 → 선별 E2E. 운영 계약은 부르지 않는다.
 const INTEGRATION_PRECHECK = 'node scripts/integration-precheck.mjs';
 const INTEGRATION_FORMS = 'pnpm -C frontend run test:form-validation';
@@ -369,7 +373,7 @@ test('verify profiles run static checks before the operational contracts and sto
   const expected = {
     docs: [REGEN_CHECK, CONTRACTS, atlasCommand],
     fast: VERIFY_FAST,
-    push: [...VERIFY_FAST, './gradlew :api-server:harnessTest -Dfile.encoding=UTF-8'],
+    push: [...VERIFY_FAST_CHECKS, VERIFY_HARNESS, CONTRACTS],
     be: [REGEN_CHECK, CONTRACTS, VERIFY_BACKEND_SUITE, crossStackCommand],
     fe: [REGEN_CHECK, ...VERIFY_STATIC, CONTRACTS, ...VERIFY_PACKAGING],
     full: [SAST_APPROXIMATION, REGEN_CHECK, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
@@ -409,6 +413,25 @@ test('verify profiles run static checks before the operational contracts and sto
     "  } else if (scope === 'fe') {\n    runGeneratedFreshness();\n    runOperationalContracts();\n    runFrontendStatic();\n");
   assert.notEqual(contractsFirst, runner);
   assert.ok(observeVerification('fe', { source: contractsFirst, failCommand: typeCheck }).commands.includes(CONTRACTS));
+  // fast·push 의 불변식·원문 계약·하네스 실패도 운영 계약을 기다리지 않는다(pre-push 소스 경로와 같은 순서).
+  const shortStageFailures = [['fast', 'pnpm -C frontend exec vitest run src/__tests__'], ['fast', VERIFY_SOURCE_CONTRACTS],
+    ['push', 'pnpm -C frontend exec vitest run src/__tests__'], ['push', VERIFY_SOURCE_CONTRACTS], ['push', VERIFY_HARNESS]];
+  const waitsForContracts = source => shortStageFailures.filter(([scope, failCommand]) => {
+    const failed = observeVerification(scope, { source, failCommand });
+    assert.deepEqual(failed.exits, [1], `${scope}: ${failCommand} failure must stop verification`);
+    return failed.commands.includes(CONTRACTS);
+  }).map(([scope, failCommand]) => `${scope}: ${failCommand}`);
+  assert.deepEqual(waitsForContracts(), [], 'a short-stage failure must not wait for the operational contracts');
+  // 계약을 불변식·원문 계약·하네스 앞으로 되돌린 종전 순서는 그 실패에서 계약을 먼저 기다린다 — 위 단언이 그것을 잡는다(red 재현).
+  const formerOrder = runner
+    .replace("  runFrontendStatic();\n  run('pnpm -C frontend exec vitest run src/__tests__');\n", "  runFrontendStatic();\n  runOperationalContracts();\n  run('pnpm -C frontend exec vitest run src/__tests__');\n")
+    .replace("    runFastChecks();\n    runOperationalContracts();\n", '    runFastChecks();\n')
+    .replace("    run(`${gradlew} :api-server:harnessTest -Dfile.encoding=UTF-8`);\n    runOperationalContracts();\n", "    run(`${gradlew} :api-server:harnessTest -Dfile.encoding=UTF-8`);\n");
+  assert.notEqual(formerOrder, runner);
+  assert.deepEqual(observeVerification('push', { source: formerOrder }).commands,
+    [...VERIFY_FAST_CHECKS.slice(0, -3), CONTRACTS, ...VERIFY_FAST_CHECKS.slice(-3), VERIFY_HARNESS],
+    'the former-order fixture must be the pre-2026-10-28 command order');
+  assert.equal(waitsForContracts(formerOrder).length, shortStageFailures.length);
 });
 
 test('verify stops on a CodeQL approximation finding first and on a Flyway conflict before regenerating', () => {
@@ -571,12 +594,26 @@ const PRE_PUSH_SOURCE_ORDER = [
   'npx tsc -p tsconfig.e2e.json --noEmit',
   'pnpm run lint',
   'pnpm run test:form-validation',
-  CONTRACTS,
   'npx vitest run src/__tests__',
   SOURCE_CONTRACTS_DETECT,
   SOURCE_CONTRACTS_RUN,
   'gradlew :api-server:harnessTest -q',
+  // [2026-10-28] 불변식·원문 계약·cross-stack·하네스도 짧고 실패가 잦아 운영 계약 앞이다 — 운영 계약이 마지막이다(DEC-OPS-338 ① 의 확장).
+  CONTRACTS,
 ];
+
+// 운영 계약 호출과 Atlas 단독 실행은 소스 경로의 맨 끝, 완료 문구 바로 앞이다.
+const SOURCE_PATH_CONTRACTS_TAIL = /\nrun_operational_contracts\nrun_atlas_contract\n(?=\necho "\[pre-push\] ✅)/u;
+const INVARIANTS_START = '\nif [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then\n  # 빠른 저장소 불변식';
+
+/** 종전(2026-10-28 전) 순서의 훅 — 운영 계약이 정적 검사 바로 뒤, 불변식·원문 계약·cross-stack·하네스 앞이다. red 재현용이다. */
+function contractsBeforeShortStages(source) {
+  const lf = source.replace(/\r\n/g, '\n');
+  assert.match(lf, SOURCE_PATH_CONTRACTS_TAIL, 'the source path must end with the operational contracts and the Atlas contract');
+  assert.ok(lf.includes(INVARIANTS_START), 'the frontend invariants block must follow the static checks');
+  return lf.replace(SOURCE_PATH_CONTRACTS_TAIL, '\n')
+    .replace(INVARIANTS_START, () => `\nrun_operational_contracts\nrun_atlas_contract\n${INVARIANTS_START}`);
+}
 
 test('pre-push does not display an empty file when a successful ref has no changes', () => {
   const secondLocal = '3'.repeat(40);
@@ -658,7 +695,7 @@ test('pre-push checks contract drift once, through the regen check that runs the
   assert.ok(runHook(input, doubled, { files: ['frontend/src/example.ts'] }).commands.includes('pnpm run codegen:verify'));
 });
 
-test('pre-push runs static checks before the operational contracts and stops on their failure', () => {
+test('pre-push runs static checks, invariant and source-contract Vitest, cross-stack and harness before the operational contracts', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
   const both = runHook(input, hookSource, { files });
@@ -667,19 +704,30 @@ test('pre-push runs static checks before the operational contracts and stops on 
   const backendOnly = runHook(input, hookSource, { files: [files[0]] });
   assertSuccessful(backendOnly);
   assert.deepEqual(backendOnly.commands,
-    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', CONTRACTS, 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q']);
-  for (const failCommand of [SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx tsc --noEmit']) {
-    const failed = runHook(input, hookSource, { files, failCommand });
+    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q', CONTRACTS]);
+  // 짧고 실패가 잦은 단계의 실패는 운영 계약(로컬 약 8~14분)을 기다리지 않고 그 자리에서 막는다.
+  const shortStages = [
+    ...[SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx tsc --noEmit', 'npx vitest run src/__tests__', SOURCE_CONTRACTS_RUN,
+      'gradlew :api-server:harnessTest -q'].map(failCommand => ({ files, failCommand })),
+    { files: [files[0]], failCommand: 'npx vitest run src/__tests__/cross-stack' },
+  ];
+  const waitsForContracts = source => shortStages.filter(({ files: pushed, failCommand }) => {
+    const failed = runHook(input, source, { files: pushed, failCommand });
     assert.notEqual(failed.status, 0, failCommand);
     assert.equal(failed.commands.at(-1), failCommand);
-    assert.ok(!failed.commands.includes(CONTRACTS), `${failCommand} failure must not wait for the operational contracts`);
-  }
+    return failed.commands.includes(CONTRACTS);
+  }).map(({ failCommand }) => failCommand);
+  assert.deepEqual(waitsForContracts(hookSource), [], 'a short-stage failure must not wait for the operational contracts');
   // 계약 호출을 정적 검사 앞으로 옮긴 훅은 타입 오류에서도 계약을 먼저 부른다 — 위 단언이 그것을 잡는다(red 재현).
-  const contractsFirst = hookSource
+  const contractsFirst = hookSource.replace(/\r\n/g, '\n')
     .replace('echo "[pre-push] AGENTS.md change-scoped source verification"', 'run_operational_contracts\necho "[pre-push] AGENTS.md change-scoped source verification"')
-    .replace(/# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다\.\r?\nrun_operational_contracts\r?\n/u, '');
-  assert.notEqual(contractsFirst, hookSource);
+    .replace(SOURCE_PATH_CONTRACTS_TAIL, '\nrun_atlas_contract\n');
+  assert.notEqual(contractsFirst, hookSource.replace(/\r\n/g, '\n'));
   assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
+  // 종전 순서(계약이 불변식·원문 계약·cross-stack·하네스 앞)로 되돌리면 명령 순서와 실패 대기가 모두 붉다(red 재현).
+  const formerOrder = contractsBeforeShortStages(hookSource);
+  assert.notDeepEqual(runHook(input, formerOrder, { files }).commands, PRE_PUSH_SOURCE_ORDER);
+  assert.deepEqual(waitsForContracts(formerOrder), shortStages.slice(3).map(({ failCommand }) => failCommand));
 });
 
 test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', () => {
@@ -712,7 +760,7 @@ test('pre-push checks generated freshness first and stops before compilation and
   const block = hookSource.replace(/\r\n/g, '\n').match(regenBlock)?.[0];
   assert.ok(block, 'pre-push 의 생성물 신선도 블록을 찾지 못했다');
   const moved = hookSource.replace(/\r\n/g, '\n').replace(block, '')
-    .replace('# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다.\n', `${block}# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다.\n`);
+    .replace(INVARIANTS_START, () => `\n${block}${INVARIANTS_START.slice(1)}`);
   for (const mutant of [swallowed, moved]) {
     assert.notEqual(mutant, hookSource);
     assert.notDeepEqual(stops(mutant), paths.map(() => ({ status: 'blocked', commands: [REGEN_CHECK] })));
@@ -793,9 +841,9 @@ test('pre-push selects one Atlas owner and keeps its failure blocking in every s
   // 이관 범위에서도 Atlas 를 생략하거나 소스 경로의 단독 실행을 걷으면 이관+Atlas push 에서 Atlas 가 돌지 않는다 — 위 단언이 잡는다(red 재현).
   const migrationAtlas = [atlas, 'migration-tool/src/main/java/X.java'];
   const skippedForMigration = hookSource.replace('[ "$SCOPE_FRONTEND" = "true" ]; }; then', '[ "$SCOPE_FRONTEND" = "true" ] || [ "$SCOPE_MIGRATION" = "true" ]; }; then');
-  const sourcePathOwnerRemoved = hookSource.replace(/(# 정적 검사를 모두 통과한 뒤에 비싼 운영 계약을 돌린다\.\r?\nrun_operational_contracts\r?\n)run_atlas_contract\r?\n/u, '$1');
+  const sourcePathOwnerRemoved = hookSource.replace(/\r\n/g, '\n').replace(SOURCE_PATH_CONTRACTS_TAIL, '\nrun_operational_contracts\n');
   for (const mutant of [skippedForMigration, sourcePathOwnerRemoved]) {
-    assert.notEqual(mutant, hookSource);
+    assert.notEqual(mutant.replace(/\r\n/g, '\n'), hookSource.replace(/\r\n/g, '\n'));
     assert.deepEqual(runHook(input, mutant, { files: migrationAtlas }).commands.filter(value => value.includes('vitest')), []);
   }
 });

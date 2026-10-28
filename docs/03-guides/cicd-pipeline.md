@@ -52,7 +52,7 @@ push/PR / workflow_dispatch
 
 Gradle PR 의존성 그래프는 write token으로 PR 코드를 실행하지 않도록 다음 신뢰 경계로 분리한다.
 
-`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다.
+`secret-scan`의 gitleaks는 checkout 직후 실행한다. 운영 계약이나 의존성 설치의 실패·대기가 시크릿 탐지 피드백을 지연시키지 않게 하며, 이후 운영 계약·의존성 review도 같은 required context에서 계속 차단한다. 내려받은 gitleaks tarball은 공식 릴리스 `checksums.txt`의 SHA-256을 단계에 고정해 `sha256sum -c`로 확인한 뒤에만 풀고 실행한다(판을 올리면 그 릴리스의 `checksums.txt`에서 값을 함께 바꾼다). 필수 체크 계약이 명세와 워크플로를 함께 바꾼 경우에도 이 확인 순서를 따로 판정한다.
 
 ```
 dependency-submission.yml (pull_request, contents:read)
@@ -502,12 +502,14 @@ open build/reports/jacoco/aggregated/index.html
 
 ```bash
 npm run regen              # 다시 쓰고 바뀐 파일을 보인다 — diff 를 확인한 뒤 함께 커밋한다
-npm run regen -- --check   # 쓰지 않고 낡은 것만 본다(pre-push·verify 맨 앞, 로컬 약 20초)
+npm run regen -- --check   # 쓰지 않고 낡은 것과 손 결속 원장의 어긋남만 본다(pre-push·verify 맨 앞, 로컬 약 20초)
 # SAST 예외 해시가 낡았으면 regen 이 하네스 기준선 앞에서 멈춘다. 방어 경계를 재검토한 뒤 그 항목만 다시 결속한다:
 npm run regen -- --rebind-sast SAST-FP-001 --note "Re-reviewed 2026-10-19: <바뀐 것과 그대로인 방어>"
+# PowerShell 의 npm 래퍼는 `--` 를 지운다 — 인자를 넘길 때는 node 로 직접 부른다(npm 이 플래그를 삼키면 쓰지 않고 종료 코드 2로 멈춘다):
+node scripts/regenerate.mjs --check
 ```
 
-새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
+`--check`는 생성기 검사 모드에 더해, `regen`이 고치지 않는 손 결속 원장 — operation census의 수·래칫(`config/governance/operation-consumer-census.json`의 `expected`)과 IA 처분 제안의 라우트 원장 결속 해시 — 를 같은 CLI로 먼저 확인한다. 운영 계약이 같은 판정을 다시 보므로 새 판정이 아니며, 실패하면 출력대로 원장이나 원인을 고친다. 새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
 
 ### 로컬 사전 게이트 (git hooks)
 
