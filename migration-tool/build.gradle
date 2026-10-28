@@ -21,7 +21,7 @@ dependencies {
     testImplementation 'org.testcontainers:testcontainers-mssqlserver'
     testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
     testRuntimeOnly 'com.mysql:mysql-connector-j:26.10.0'
-    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.10'
+    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:4.0.0'
     // SQL Server 는 실측한 드라이버 조합(13.6.0.0)만 허용한다(SqlServerSourceAdapter·SqlServerDiscoveryVisibilityProof).
     // 이 판은 그 조합을 시험하는 드라이버라 따로 올리지 않는다 — 올리려면 새 드라이버로 다시 실측하고 허용 판·시험을 함께 바꾼다.
     testRuntimeOnly 'com.microsoft.sqlserver:mssql-jdbc:13.6.0.jre11'
