@@ -20,7 +20,8 @@ test.describe('공통 셸과 인증', () => {
                 console.log('>>> Step 3: Verifying Stat Card Set');
                 // [2026-07-27 정정] '활동 인텔리전스' 는 **코드베이스 어디에도 없는 문구**였다(UI 개편 잔재).
                 // 실재하는 통계 카드 제목으로 교체한다. 카드는 리다이렉트 스텁이 아니라 시스템 로그 화면으로 간다.
-                await expect(page.getByRole('link', { name: /^실패 요청 로그 —/ })).toHaveAttribute('href', '/admin/system/logs/system');
+                // [2026-10-28] 카드 이름은 aria-label 이 아니라 내용(제목·값·설명)과 화면 밖 '상세 화면으로 이동'이다(axe 4.14).
+                await expect(page.getByRole('link', { name: /^실패 요청 로그.*상세 화면으로 이동$/ })).toHaveAttribute('href', '/admin/system/logs/system');
                 // 운영 신호 — 관리자 기본 그룹은 사용자·시스템 로그 조회 권한이 있어 잠긴 계정·오늘 실패 요청이 실린다.
                 const signals = page.getByRole('region', { name: '운영 신호' });
                 await expect(signals).toBeVisible({ timeout: 15000 });
