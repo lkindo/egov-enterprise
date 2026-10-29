@@ -521,6 +521,45 @@ function namesTaggedClass(filter, tagged) {
 const expandWorkingDir = (source, cwd) => source.replace(/^(?:\$\{?PWD\}?|\$\(pwd\)|%cd%)/i, cwd.replaceAll('\\', '/'));
 
 /**
+ * 조각의 명령 이름(name)과 그 뒤 단어들(args, alignedWords). 이름은 원문에서 따옴표를 벗겨 읽는다 — PowerShell 은 공백이 있는 실행 파일
+ * 경로를 따옴표로 감싸 호출 연산자로 부른다(`& "C:\Program Files\GitHub CLI\gh.exe" …`). 띄어 쓴 `&` 는 commandAt 이 건너뛰고 붙여 쓴
+ * `&"…"` 는 여기서 벗긴다. 가린 판만 읽으면 따옴표 친 경로가 밑줄이 되어 명령 이름을 놓친다.
+ */
+function invokedCommand(code, raw) {
+  const words = alignedWords(code, raw);
+  const at = commandAt(words.map((word) => word.code));
+  return words[at] ? { name: unquote(words[at].text.replace(/^&/, '')), args: words.slice(at + 1) } : null;
+}
+
+/** 값을 다음 단어로 받는 gh 옵션 — 하위 명령 앞에 둔 `-R OWNER/REPO` 의 저장소를 하위 명령으로 읽지 않는다. `--repo=…` 는 한 단어다. */
+const GH_VALUE_OPTIONS = new Set(['-R', '--repo']);
+
+/**
+ * gh 호출이면 앞의 두 하위 명령 단어(`pr`·`checks`)와 그 뒤 인자. gh 는 하위 명령 앞·사이의 옵션(`gh -R o/r pr checks`·
+ * `gh pr --repo=o/r checks`)도 받으므로 옵션과 그 값을 건너뛰고 센다. gh 가 아니면 null.
+ */
+function ghInvocation(code, raw) {
+  const command = invokedCommand(code, raw);
+  if (!command || !/(^|[\\/])gh(\.exe)?$/i.test(command.name)) return null;
+  const { args } = command;
+  const subcommands = [];
+  let index = 0;
+  while (index < args.length && subcommands.length < 2) {
+    const { value } = args[index];
+    if (!value.startsWith('-')) subcommands.push(value);
+    index += GH_VALUE_OPTIONS.has(value) ? 2 : 1;
+  }
+  return { subcommands, args: args.slice(index) };
+}
+
+/** gh(pflag)가 거짓으로 읽는 불리언 값(strconv.ParseBool 의 0·f·false) — `--watch=false`·`--watch=0` 은 감시하지 않는다. */
+const FALSE_FLAG_VALUE = /^(?:0|f|false)$/i;
+
+/** 인자 가운데 감시를 켜는 `--watch` 가 있는가 — 값 없는 `--watch` 와 거짓이 아닌 값(`--watch=true`). 값은 따옴표를 벗겨 읽는다. */
+const requestsWatch = (args) => args.some(({ value }) => value === '--watch'
+  || (value.startsWith('--watch=') && !FALSE_FLAG_VALUE.test(unquote(value.slice('--watch='.length)))));
+
+/**
  * 규칙 표. 각 규칙은 명령 조각 하나와 맥락(cwd·원문 전체)을 받아 걸리면 사유를 돌려준다.
  * why 는 근거가 된 실제 사고, fix 는 대신 쓸 방법이다 — 오류 메시지가 고칠 방법을 말해야 같은 실수가 반복되지 않는다.
  */
@@ -660,11 +699,11 @@ export const RULES = Object.freeze([
     why: '`gh pr checks --watch` 는 등록된 체크에 pending 이 없으면 끝나고 head SHA 를 고정하지 않는다 — required 집계 체크는 소스 잡 뒤에야 등록돼 정착 전에 통과로 끝날 수 있다(2026-09-24 PR #735).',
     fix: 'node scripts/pr-checks-wait.mjs --pr <번호> --sha <커밋> 을 백그라운드로 실행하고 종료 코드로 판정한다. 한 번 보는 것은 gh pr checks <번호> --required.',
     // 명령 자리의 gh 만 본다 — 문자열·검색어 속 문구는 명령이 아니다. 셸 래퍼·명령 치환 안은 재귀 판정이 명령 자리로 만든다.
-    match: ({ code }) => {
-      const words = tokens(code);
-      const at = commandAt(words);
-      return /(^|[\\/])gh(\.exe)?$/i.test(words[at] ?? '') && words[at + 1] === 'pr' && words[at + 2] === 'checks'
-        && hasFlag(words.slice(at + 3), '--watch');
+    // 따옴표 친 실행 파일 경로(`& "C:\…\gh.exe"`)와 하위 명령 앞·사이의 저장소 옵션(`gh -R o/r pr checks`)도 같은 호출이고,
+    // 거짓 값을 준 `--watch=false` 는 감시하지 않는다(2026-10-29 독립 검토).
+    match: ({ code, raw }) => {
+      const gh = ghInvocation(code, raw);
+      return gh?.subcommands.join(' ') === 'pr checks' && requestsWatch(gh.args);
     },
   },
   {

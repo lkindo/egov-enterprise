@@ -132,9 +132,17 @@ const CASES = {
   // 2026-09-24 PR #735: `--watch` 는 집계 체크가 등록되기 전 pending 0 에서 끝났다. 첫 사례는 기억이 권하던 실제 명령이다.
   'gh-pr-checks-watch': {
     hit: ['gh pr checks 1002 --watch --interval 30', 'gh pr checks 735 --required --watch', 'gh.exe pr checks 1 --watch=true',
-      'x=$(gh pr checks 1002 --watch)', "bash -lc 'gh pr checks 1002 --watch'"],
+      'x=$(gh pr checks 1002 --watch)', "bash -lc 'gh pr checks 1002 --watch'",
+      // 2026-10-29 독립 검토(Codex) 미탐: gh 는 하위 명령 앞·사이의 저장소 옵션을 받는데 `gh` 바로 뒤의 `pr checks` 만 봤고,
+      // PowerShell 호출 연산자로 부른 따옴표 친 실행 파일 경로는 가린 판에서 밑줄이 되어 명령 이름을 놓쳤다.
+      'gh --repo=OWNER/REPO pr checks 1002 --watch', 'gh -R OWNER/REPO pr checks 1002 --watch', 'gh --repo OWNER/REPO pr checks 1002 --watch',
+      'gh pr -R OWNER/REPO checks 1002 --watch', '& "C:\\Program Files\\GitHub CLI\\gh.exe" pr checks 1002 --watch',
+      "& 'C:\\Program Files\\GitHub CLI\\gh.exe' pr checks 1002 --watch", '&"C:\\Program Files\\GitHub CLI\\gh.exe" pr checks 1002 --watch'],
     pass: ['gh pr checks 735 --required', 'node scripts/pr-checks-wait.mjs --pr 1002', 'gh run watch 123 --exit-status', 'echo "gh pr checks --watch"',
-      'git commit --only -m "gh pr checks --watch 대신 도구를 쓴다" -- a.txt'],
+      'git commit --only -m "gh pr checks --watch 대신 도구를 쓴다" -- a.txt',
+      // 같은 검토의 오탐: 거짓 값을 준 `--watch` 는 감시하지 않는다(pflag 의 ParseBool).
+      'gh pr checks 1002 --watch=false', 'gh pr checks 1002 --watch=0', 'gh pr checks 1002 --watch="false"',
+      'gh -R OWNER/REPO pr checks 1002 --required', 'Write-Output "& \'C:\\Program Files\\GitHub CLI\\gh.exe\' pr checks 1002 --watch"'],
   },
   'guard-canary': {
     hit: ['echo AGENT_GUARD_CANARY', '  echo AGENT_GUARD_CANARY  '],

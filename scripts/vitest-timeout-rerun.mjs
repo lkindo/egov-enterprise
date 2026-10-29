@@ -87,6 +87,11 @@ function defaultNote(note) {
 
 export function main(args, { runVitest = defaultRunVitest, ci = Boolean(process.env.CI), log = message => console.error(message),
   note = defaultNote } = {}) {
+  // 경로 필터만 받는다 — 옵션은 값이 따로 오는지(`--testTimeout 20000`) 알 수 없어 재실행 인자로 옮길 수 없다. 받으면 돌리지 않고 막는다.
+  if (args.length === 0 || args.some(arg => typeof arg !== 'string' || arg === '' || arg.startsWith('-'))) {
+    log(`${PREFIX} 사용법: node scripts/vitest-timeout-rerun.mjs <vitest 경로 필터…> — 옵션은 받지 않는다(재실행에 그대로 옮길 수 없다).`);
+    return 2;
+  }
   const first = runVitest(args);
   if (first.status === 0) return 0;
   const files = first.status === 1 ? rerunPlan(first.outcome, { ci }) : [];
@@ -97,7 +102,7 @@ export function main(args, { runVitest = defaultRunVitest, ci = Boolean(process.
     return first.status || 1;
   }
   log(`${PREFIX} 실패가 모두 Vitest 시간 초과다(단언 실패 아님) — 이 파일만 단독으로 한 번 다시 돈다(SOP §6.3):\n  ${files.join('\n  ')}`);
-  const second = runVitest([...files, ...args.filter(arg => arg.startsWith('-')), '--no-file-parallelism', '--bail=1']);
+  const second = runVitest([...files, '--no-file-parallelism', '--bail=1']);
   const passed = second.status === 0;
   note({ files, rerunResult: passed ? 'passed' : 'failed' });
   log(passed

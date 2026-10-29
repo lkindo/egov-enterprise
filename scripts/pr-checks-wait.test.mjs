@@ -20,11 +20,20 @@ const SHA = 'c0ffee'.padEnd(40, '0');
 const NEW_SHA = 'deadbeef'.padEnd(40, '1');
 const SUITE = 7001;
 const OTHER_SUITE = 7002;
+const PR = 77;
+const BRANCH = 'fix/wait-binding';
+const OWNER = 'octo-owner';
+/** evaluateSnapshot 에 넘기는 PR 결속 — 가짜 gh 의 pr view 기본값과 같다. */
+const PR_BINDING = { number: PR, headRef: BRANCH, headOwner: OWNER };
+const PR_VIEW_ARGS = ['pr', 'view', String(PR), '--json', 'headRefOid,state,mergeStateStatus,headRefName,headRepositoryOwner'];
 
+/** 실행 행의 PR 결속 필드(실제 actions/runs 모양). */
+const headOf = (owner = OWNER) => ({ full_name: `${owner}/egov-enterprise`, owner: { login: owner } });
+const binding = { head_branch: BRANCH, head_repository: headOf(), pull_requests: [{ id: 9000 + PR, number: PR }] };
 const ciRun = (over = {}) => ({ id: 501, path: WORKFLOW, head_sha: SHA, status: 'completed', conclusion: 'success', run_attempt: 1,
-  check_suite_id: SUITE, ...over });
+  check_suite_id: SUITE, ...binding, ...over });
 const otherRun = (over = {}) => ({ id: 502, path: '.github/workflows/dependency-submission.yml', head_sha: SHA, status: 'completed',
-  conclusion: 'success', run_attempt: 1, check_suite_id: OTHER_SUITE, ...over });
+  conclusion: 'success', run_attempt: 1, check_suite_id: OTHER_SUITE, ...binding, ...over });
 let nextId = 1000;
 function check(name, over = {}) {
   nextId += 1;
@@ -42,7 +51,7 @@ const reply = (value, build) => (value?.[RAW] ? value : { status: 0, stdout: JSO
 
 /**
  * 가짜 gh. polls[i] 는 i 번째 폴링(pr view 호출마다 다음 폴링)의 응답이다 — pr(덮어쓸 필드), runs, checks, runsTotal, checksTotal.
- * 마지막 폴링은 계속 되풀이한다. 네트워크를 쓰지 않는다.
+ * 결과를 내기 직전의 pr view 재확인도 pr view 호출이라 다음 항목을 읽는다. 마지막 폴링은 계속 되풀이한다. 네트워크를 쓰지 않는다.
  */
 function fakeGh(polls) {
   const calls = [];
@@ -52,7 +61,8 @@ function fakeGh(polls) {
     if (args[0] === 'pr') index += 1;
     const poll = polls[Math.min(Math.max(index, 0), polls.length - 1)];
     if (args[0] === 'pr') {
-      return reply(poll.pr ?? {}, (pr) => ({ headRefOid: SHA, state: 'OPEN', mergeStateStatus: 'CLEAN', ...pr }));
+      return reply(poll.pr ?? {}, (pr) => ({ headRefOid: SHA, state: 'OPEN', mergeStateStatus: 'CLEAN', headRefName: BRANCH,
+        headRepositoryOwner: { id: 'U_fake', login: OWNER }, ...pr }));
     }
     if (args[1].includes('/actions/runs?')) {
       return reply(poll.runs ?? [], (runs) => ({ total_count: poll.runsTotal ?? runs.length, workflow_runs: runs }));
@@ -73,12 +83,15 @@ async function wait(polls, options = {}) {
   const { gh, calls } = fakeGh(polls);
   const clock = fakeClock();
   const lines = [];
-  const outcome = await waitForRequiredChecks({ pr: 77, manifest: BOUND, gh, sleep: clock.sleep, now: clock.now,
+  const outcome = await waitForRequiredChecks({ pr: PR, manifest: BOUND, gh, sleep: clock.sleep, now: clock.now,
     log: (line) => lines.push(line), ...options });
   return { outcome, calls, lines, last: lines.at(-1) };
 }
 
 const checkRunCalls = (calls) => calls.filter((args) => args[0] === 'api' && args[1].includes('/check-runs?'));
+/** gh 호출 순서를 이름으로 본다 — pr view 재확인이 결과 직전에 있는지 확인한다. */
+const callNames = (calls) => calls.map((args) => (args[0] === 'pr' ? 'pr view' : args[1].includes('/actions/runs?') ? 'actions/runs' : 'check-runs'));
+const snap = (runs, checkRuns, manifest = BOUND) => evaluateSnapshot({ manifest, sha: SHA, pullRequest: PR_BINDING, runs, checkRuns });
 
 test('종료 코드 표: 0 은 pass 하나뿐이다', () => {
   assert.deepEqual({ ...EXIT }, { pass: 0, fail: 1, error: 2, 'head-moved': 3, timeout: 4 });
@@ -88,10 +101,10 @@ test('종료 코드 표: 0 은 pass 하나뿐이다', () => {
 test('ⓐ 늦은 등록: ci 실행이 진행 중이면 등록된 required 가 모두 success 여도 기다리고, 끝나서 전부 success 면 통과한다', async () => {
   // 2026-09-24 PR #735: 집계 체크가 등록되기 전 "pending 0" 을 정착으로 봤다.
   const early = { runs: [running()], checks: [check(CONTEXTS[0])] };
-  const result = evaluateSnapshot({ manifest: BOUND, sha: SHA, runs: early.runs, checkRuns: early.checks });
+  const result = snap(early.runs, early.checks);
   assert.equal(result.state, 'waiting');
   assert.equal(result.registered, 1);
-  assert.equal(evaluateSnapshot({ manifest: BOUND, sha: SHA, runs: [], checkRuns: [] }).state, 'waiting', '실행이 없으면(미시작) 기다린다');
+  assert.equal(snap([], []).state, 'waiting', '실행이 없으면(미시작) 기다린다');
 
   const { outcome, lines, last, calls } = await wait([early, { runs: [ciRun()], checks: allGreen() }]);
   assert.equal(outcome.code, 0);
@@ -99,7 +112,7 @@ test('ⓐ 늦은 등록: ci 실행이 진행 중이면 등록된 required 가 �
   assert.ok(lines.some((line) => line.includes(`대기 — ${basename(WORKFLOW)} in_progress, required 등록 1/${CONTEXTS.length}·완료 1`)),
     '진행 중 상태를 한 줄로 남긴다');
   assert.equal(last, `RESULT=pass pr=77 sha=${SHA} required=${CONTEXTS.length}/${CONTEXTS.length}`);
-  assert.equal(calls.filter((args) => args[0] === 'pr').length, 2);
+  assert.equal(calls.filter((args) => args[0] === 'pr').length, 3, '폴링 2회 + 결과 직전 재확인 1회');
   for (const context of CONTEXTS) {
     assert.ok(lines.some((line) => line.startsWith(`${context}\tsuccess\thttps://github.example/runs/`)), `required 마다 한 줄: ${context}`);
   }
@@ -186,7 +199,7 @@ test('ⓔ required 가 success 가 아니면 1 이다 — skipped·neutral·canc
 test('ⓕ 실행이 끝났는데 원장의 required 가 등록되지 않았으면 기다리지 않고 1 이다', async () => {
   const { outcome, lines, calls } = await wait([{ runs: [ciRun()], checks: allGreen().filter((entry) => entry.name !== TARGET) }]);
   assert.equal(outcome.code, 1);
-  assert.equal(calls.filter((args) => args[0] === 'pr').length, 1);
+  assert.deepEqual(callNames(calls), ['pr view', 'actions/runs', 'check-runs', 'pr view'], '첫 폴링에서 끝나고 결과 직전에만 다시 읽는다');
   assert.ok(lines.some((line) => line.startsWith(`${TARGET}\tmissing\t`)));
 });
 
@@ -200,7 +213,7 @@ test('ⓖ 다른 suite·다른 앱·다른 커밋의 같은 이름 success 는 �
   };
   for (const [label, over] of Object.entries(impostors)) {
     const fake = allGreen(over);
-    const waiting = evaluateSnapshot({ manifest: BOUND, sha: SHA, runs: [running(), otherRun()], checkRuns: fake });
+    const waiting = snap([running(), otherRun()], fake);
     assert.equal(waiting.state, 'waiting', label);
     assert.equal(waiting.registered, 0, `${label}: 사칭 체크를 등록으로 세지 않는다`);
     const { outcome } = await wait([{ runs, checks: fake }]);
@@ -216,7 +229,7 @@ test('ⓗ 재실행: 실행이 다시 queued 인 동안은 옛 failure 가 남�
   const oldFailure = check(TARGET, { id: 10, conclusion: 'failure' });
   const others = CONTEXTS.filter((context) => context !== TARGET).map((context) => check(context));
   const queued = { runs: [ciRun({ status: 'queued', conclusion: null, run_attempt: 2 })], checks: [oldFailure, ...others] };
-  assert.equal(evaluateSnapshot({ manifest: BOUND, sha: SHA, runs: queued.runs, checkRuns: queued.checks }).state, 'waiting');
+  assert.equal(snap(queued.runs, queued.checks).state, 'waiting');
   const { outcome } = await wait([queued, { runs: [ciRun({ run_attempt: 2 })], checks: [oldFailure, ...others, check(TARGET, { id: 10_000_000 })] }]);
   assert.equal(outcome.code, 0);
 });
@@ -329,5 +342,154 @@ test('ⓛ main(): 실제 원장 파일로 판정하고, 예상 밖 예외도 2 �
 test('ⓛ runGh 는 셸 메타 문자·공백이 든 인자를 실행하지 않는다', () => {
   for (const args of [['pr', 'view', '1; rm -rf x'], ['api', 'repos/{owner}/{repo}/x y'], ['pr', '$(id)'], ['pr', 'view', '`id`'], ['pr', 7]]) {
     assert.throws(() => runGh(args), (error) => error instanceof ToolError && error.code === 2, JSON.stringify(args));
+  }
+});
+
+/** 한 suite 의 required 체크 — id 는 idBase 부터, failing 이면 TARGET 만 failure 다. */
+const suiteChecks = (suite, idBase, failing) => CONTEXTS.map((context, index) => check(context,
+  { id: idBase + index, check_suite: { id: suite }, conclusion: failing && context === TARGET ? 'failure' : 'success' }));
+const SMALL_IDS = 100;
+const LARGE_IDS = 9_000_000;
+const OTHER_PR = 78;
+const RIVAL_SUITE = 7003;
+
+test('ⓜ PR 결속: 같은 SHA·같은 workflow 에서 다른 PR 번호를 실은 실행의 결과는 이 PR 의 판정에 섞이지 않는다(양방향)', async () => {
+  // 2026-10-29 독립 검토: PR A 의 실행이 실패하고 같은 head 의 PR B 실행이 나중에 통과하면, B 의 더 큰 체크 id 가 A 의 실패를 덮어
+  // '--pr A' 가 0 으로 끝났다. 두 PR 은 같은 브랜치(base 만 다름)라 브랜치·소유자로는 갈리지 않고 실린 PR 번호로만 갈린다.
+  const runs = [ciRun({ id: 601, check_suite_id: SUITE }),
+    ciRun({ id: 602, check_suite_id: RIVAL_SUITE, pull_requests: [{ id: 9000 + OTHER_PR, number: OTHER_PR }] })];
+  const ownFails = [...suiteChecks(SUITE, SMALL_IDS, true), ...suiteChecks(RIVAL_SUITE, LARGE_IDS, false)];
+  const failA = await wait([{ runs, checks: ownFails }]);
+  assert.equal(failA.outcome.code, 1, '--pr A 는 B 의 나중 통과로 통과하지 않는다');
+  assert.equal(failA.last, `RESULT=fail pr=${PR} sha=${SHA} required=${CONTEXTS.length - 1}/${CONTEXTS.length}`);
+  assert.deepEqual(snap(runs, ownFails).ciRuns.map((run) => run.id), [601], 'A 의 판정에는 A 의 실행만 쓴다');
+  assert.equal((await wait([{ runs, checks: ownFails }], { pr: OTHER_PR })).outcome.code, 0, 'B 는 자기 실행으로 통과한다');
+
+  const rivalFails = [...suiteChecks(SUITE, LARGE_IDS, false), ...suiteChecks(RIVAL_SUITE, SMALL_IDS, true)];
+  const failB = await wait([{ runs, checks: rivalFails }], { pr: OTHER_PR });
+  assert.equal(failB.outcome.code, 1, '--pr B 도 A 의 나중 통과로 통과하지 않는다');
+  assert.equal(failB.last, `RESULT=fail pr=${OTHER_PR} sha=${SHA} required=${CONTEXTS.length - 1}/${CONTEXTS.length}`);
+  assert.equal((await wait([{ runs, checks: rivalFails }])).outcome.code, 0, 'A 는 자기 실행으로 통과한다');
+  assert.deepEqual(failB.calls[0], [...PR_VIEW_ARGS.slice(0, 2), String(OTHER_PR), ...PR_VIEW_ARGS.slice(3)],
+    'pr view 는 결속할 head 브랜치·소유자를 함께 읽는다');
+});
+
+test('ⓜ PR 결속: 같은 브랜치에서 함께 열린 다른 PR 을 실행이 같이 싣으면 가를 수 없어 2 다', async () => {
+  // 같은 브랜치·다른 base 의 PR 둘이 열려 있으면 GitHub 은 두 실행 모두에 두 번호를 싣는다. 이 PR 의 실행이 아직 없을 때도
+  // 다른 PR 의 실행 하나가 이 PR 번호를 실어 대상으로 보이므로, 실행 수와 상관없이 판정하지 않는다.
+  const both = [{ id: 9000 + PR, number: PR }, { id: 9000 + OTHER_PR, number: OTHER_PR }];
+  const checks = [...suiteChecks(SUITE, SMALL_IDS, true), ...suiteChecks(RIVAL_SUITE, LARGE_IDS, false)];
+  for (const runs of [[ciRun({ id: 611, check_suite_id: SUITE, pull_requests: both }), ciRun({ id: 612, check_suite_id: RIVAL_SUITE, pull_requests: both })],
+    [ciRun({ id: 612, check_suite_id: RIVAL_SUITE, pull_requests: both })]]) {
+    const ambiguous = await wait([{ runs, checks }]);
+    assert.equal(ambiguous.outcome.code, 2, `실행 ${runs.length}개: 다른 PR 을 함께 실은 실행으로 판정하지 않는다`);
+    assert.match(ambiguous.lines.join('\n'), new RegExp(`PR #${PR} 과 다른 PR`));
+  }
+});
+
+test('ⓜ PR 결속: 같은 SHA 의 다른 브랜치 실행은 이 PR 번호를 실어도 세지 않는다', async () => {
+  // GitHub 은 head_sha 만 같아도 열린 PR 을 실행 행에 실을 수 있다 — 브랜치 결속이 번호 결속보다 먼저다.
+  const elsewhere = ciRun({ id: 603, check_suite_id: RIVAL_SUITE, head_branch: 'other-branch' });
+  const checks = [...suiteChecks(SUITE, SMALL_IDS, true), ...suiteChecks(RIVAL_SUITE, LARGE_IDS, false)];
+  const shadowed = await wait([{ runs: [ciRun(), elsewhere], checks }]);
+  assert.equal(shadowed.outcome.code, 1, '다른 브랜치의 나중 통과가 이 PR 의 실패를 덮지 않는다');
+
+  const alone = snap([elsewhere], suiteChecks(RIVAL_SUITE, LARGE_IDS, false));
+  assert.equal(alone.reason, 'not-started', '다른 브랜치 실행만 있으면 이 PR 의 실행은 아직 없다');
+  assert.equal(alone.registered, 0);
+  const notStarted = await wait([{ runs: [elsewhere], checks: suiteChecks(RIVAL_SUITE, LARGE_IDS, false) }],
+    { startTimeoutMs: 60_000, timeoutMs: 120_000 });
+  assert.equal(notStarted.outcome.code, 4);
+  assert.equal(checkRunCalls(notStarted.calls).length, 0, '이 PR 의 실행이 없으면 체크를 조회하지 않는다');
+});
+
+test('ⓜ PR 결속: 병합 뒤 pull_requests 가 비어도 같은 브랜치·소유자의 실행으로 판정한다', async () => {
+  // 실측(2026-10-29, PR #1002 실행 40858521948): 병합 뒤 실행 행의 pull_requests 는 [] 다. 번호로만 결속하면 판정할 실행이 없다.
+  for (const pullRequests of [[], null]) {
+    const merged = { state: 'MERGED', mergeStateStatus: 'UNKNOWN' };
+    const pass = await wait([{ pr: merged, runs: [ciRun({ pull_requests: pullRequests })], checks: allGreen() }]);
+    assert.equal(pass.outcome.code, 0, `pull_requests ${JSON.stringify(pullRequests)}`);
+    assert.equal(pass.last, `RESULT=pass pr=${PR} sha=${SHA} required=${CONTEXTS.length}/${CONTEXTS.length}`);
+    const fail = await wait([{ pr: merged, runs: [ciRun({ pull_requests: pullRequests })], checks: suiteChecks(SUITE, SMALL_IDS, true) }]);
+    assert.equal(fail.outcome.code, 1, `실패도 그대로 실패다: ${JSON.stringify(pullRequests)}`);
+  }
+});
+
+test('ⓜ PR 결속: 같은 브랜치 이름의 fork 실행과 head 저장소가 지워진 실행은 세지 않는다', async () => {
+  const fork = ciRun({ id: 604, check_suite_id: RIVAL_SUITE, head_repository: headOf('fork-owner'), pull_requests: [] });
+  const orphan = ciRun({ id: 605, check_suite_id: RIVAL_SUITE + 1, head_repository: null, pull_requests: [] });
+  const checks = [...suiteChecks(SUITE, SMALL_IDS, true), ...suiteChecks(RIVAL_SUITE, LARGE_IDS, false),
+    ...suiteChecks(RIVAL_SUITE + 1, LARGE_IDS * 2, false)];
+  const shadowed = await wait([{ runs: [ciRun(), fork, orphan], checks }]);
+  assert.equal(shadowed.outcome.code, 1, 'fork·지워진 저장소의 나중 통과가 이 PR 의 실패를 덮지 않는다');
+  assert.deepEqual(snap([ciRun(), fork, orphan], checks).ciRuns.map((run) => run.id), [501]);
+  assert.equal(snap([fork, orphan], checks).reason, 'not-started');
+  // 소유자 login 은 GitHub 이 대소문자를 가리지 않는다.
+  assert.equal((await wait([{ runs: [ciRun({ head_repository: headOf(OWNER.toUpperCase()) })], checks: allGreen() }])).outcome.code, 0);
+});
+
+test('ⓝ 결과 직전 재확인: 같은 폴링 안에서 조회하는 사이 head 가 바뀌거나 PR 이 닫히면 옛 SHA 가 끝났어도 3 이다', async () => {
+  // 2026-10-29 독립 검토: head 는 실행·체크 조회 전에 한 번만 봤다 — 그 사이의 push 는 옛 head 의 통과를 RESULT=pass 로 냈다.
+  const failing = suiteChecks(SUITE, SMALL_IDS, true);
+  for (const [label, checks] of [['통과', allGreen()], ['실패', failing]]) {
+    const moved = await wait([{ runs: [ciRun()], checks }, { pr: { headRefOid: NEW_SHA }, runs: [ciRun()], checks }]);
+    assert.equal(moved.outcome.code, 3, `옛 SHA 가 ${label}로 끝나도 head 가 바뀌었으면 판정하지 않는다`);
+    assert.deepEqual(callNames(moved.calls), ['pr view', 'actions/runs', 'check-runs', 'pr view'], label);
+    assert.ok(moved.lines.some((line) => line.includes(`판정 직전 PR head 가 ${SHA} 에서 ${NEW_SHA} 로 바뀌었다`)), label);
+    assert.ok(!moved.lines.some((line) => line.startsWith(`${TARGET}\t`)), `옛 SHA 의 required 요약을 싣지 않는다: ${label}`);
+    assert.ok(moved.last.startsWith(`RESULT=head-moved pr=${PR} sha=${SHA} `), moved.last);
+
+    const closed = await wait([{ runs: [ciRun()], checks }, { pr: { state: 'CLOSED' } }]);
+    assert.equal(closed.outcome.code, 3, `판정 직전에 닫혔으면 3 이다: ${label}`);
+    assert.equal(closed.calls.length, 4);
+  }
+  const merged = await wait([{ runs: [ciRun()], checks: allGreen() }, { pr: { state: 'MERGED' } }]);
+  assert.equal(merged.outcome.code, 0, '판정 직전에 병합됐어도 같은 head 면 통과다');
+
+  // 재확인의 일시 오류는 결과를 내지 않고 다음 폴링에서 처음부터 다시 본다.
+  const flaky = raw(1, '', 'HTTP 502: Bad Gateway');
+  const retried = await wait([{ runs: [ciRun()], checks: allGreen() }, { pr: flaky }, { runs: [ciRun()], checks: allGreen() }]);
+  assert.equal(retried.outcome.code, 0);
+  assert.deepEqual(callNames(retried.calls),
+    ['pr view', 'actions/runs', 'check-runs', 'pr view', 'pr view', 'actions/runs', 'check-runs', 'pr view']);
+});
+
+test('ⓞ PR 결속 필드의 모양이 다르면 기다리지 않고 2 다 — head 저장소 null 만 결속 불가(세지 않음)로 본다', async () => {
+  const isToolError = (error) => error instanceof ToolError && error.code === 2;
+  const badViews = {
+    'headRefName 없음': { headRefName: undefined },
+    'headRefName 빈 문자열': { headRefName: '' },
+    'headRepositoryOwner null': { headRepositoryOwner: null },
+    'headRepositoryOwner.login 없음': { headRepositoryOwner: { id: 'U_fake' } },
+  };
+  for (const [label, pr] of Object.entries(badViews)) {
+    const { outcome, calls } = await wait([{ pr, runs: [ciRun()], checks: allGreen() }]);
+    assert.equal(outcome.code, 2, label);
+    assert.equal(calls.length, 1, `실행을 조회하지 않는다: ${label}`);
+  }
+  const badRuns = {
+    'head_branch 숫자': { head_branch: 5 },
+    'head_repository 문자열': { head_repository: OWNER },
+    'head_repository.owner null': { head_repository: { owner: null } },
+    'pull_requests 문자열': { pull_requests: String(PR) },
+    'pull_requests 번호가 문자열': { pull_requests: [{ number: String(PR) }] },
+    'pull_requests 항목 null': { pull_requests: [null] },
+    'pull_requests 없음': { pull_requests: undefined },
+  };
+  for (const [label, over] of Object.entries(badRuns)) {
+    // 다른 workflow 의 행이어도 모양이 다르면 판정하지 않는다.
+    for (const runs of [[ciRun(over)], [ciRun(), otherRun(over)]]) {
+      const { outcome, calls } = await wait([{ runs, checks: allGreen() }]);
+      assert.equal(outcome.code, 2, label);
+      assert.equal(checkRunCalls(calls).length, 0, `체크를 조회하지 않는다: ${label}`);
+    }
+  }
+  // 문자열 PR 번호는 실린 번호와 같아질 수 없다 — 결속 검사가 실행 조회 뒤에 잡기 전에, gh 를 부르기 전에 2 로 끝낸다.
+  const textPr = await wait([{ runs: [ciRun()], checks: allGreen() }], { pr: String(PR) });
+  assert.equal(textPr.outcome.code, 2, '문자열 pr 은 판정하지 않는다');
+  assert.equal(textPr.calls.length, 0, '문자열 pr 은 gh 를 부르기 전에 끝난다');
+  for (const pullRequest of [undefined, { ...PR_BINDING, number: String(PR) }, { ...PR_BINDING, headRef: '' }, { ...PR_BINDING, headOwner: null }]) {
+    assert.throws(() => evaluateSnapshot({ manifest: BOUND, sha: SHA, pullRequest, runs: [ciRun()], checkRuns: allGreen() }), isToolError,
+      `PR 결속 없이 판정하지 않는다: ${JSON.stringify(pullRequest)}`);
   }
 });

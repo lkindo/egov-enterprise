@@ -41,9 +41,11 @@ test('a run whose every failure is a Vitest timeout reruns only those files, alo
   const failed = drive([first, { status: 1, outcome: null }]);
   assert.equal(failed.code, 1);
   assert.deepEqual(failed.notes, [{ files: ['src/__tests__/a.test.ts'], rerunResult: 'failed' }]);
-  // 깃발 인자(-u 등)는 재실행에도 실린다.
-  assert.deepEqual(drive([first, { status: 0 }], { args: ['src/__tests__', '--silent'] }).calls[1],
-    ['src/__tests__/a.test.ts', '--silent', '--no-file-parallelism', '--bail=1']);
+  // 경로 필터만 받는다 — 옵션(값이 따로 오는 `--testTimeout 20000` 포함)은 재실행에 옮길 수 없어 돌리지 않고 2 로 막는다.
+  for (const args of [['src/__tests__', '--testTimeout', '20000'], ['--silent'], [], ['']]) {
+    const rejected = drive([first, { status: 0 }], { args });
+    assert.deepEqual([rejected.code, rejected.calls.length], [2, 0], JSON.stringify(args));
+  }
   // beforeAll 같은 훅의 시간 초과도 같은 성질이다.
   const hook = { status: 1, outcome: outcome([{ file: 'src/__tests__/b.test.ts', errors: [hookTimeout], failed: [] }]) };
   assert.deepEqual(drive([hook, { status: 0 }]).calls.length, 2);
