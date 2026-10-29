@@ -122,6 +122,8 @@ node tools/migration-workspace-prototype/build-styles.mjs --check
 
 [실제 실행 시험](../../migration-tool/src/test/java/nuri/migration/MigrationWorkspacePackagedCliIntegrationTest.java)은 Node 엔진의 기본 자식 실행으로 패키징한 JAR와 격리 PostgreSQL 17을 연결한다. 구조 조사→매핑→합성 검토→계획 검증→DRY_RUN, 산출물 변조·변경 JAR 거부, 원천 값·대상 무쓰기와 자식 프로세스 종료를 확인한다. 일반 `:migration-tool:test`와 생성 단일 모듈의 `migrationTest`에 포함되며, 엔진 3파일과 JAR 바이트를 Gradle 시험 입력으로 추적한다. 브라우저·HTTP·AI·COMMIT을 통합한 시험은 아니다.
 
+원본 저장소의 측정 출처 검사는 `refs/remotes/origin/main`과 측정 기준 커밋까지의 이력을 요구한다. 단일 브랜치·얕은 clone에서는 이 참조와 이력을 먼저 가져와야 한다. 내보낸 독립 제품은 승인 lock으로 출처를 확인하므로 기관 저장소에 이 원격 참조를 요구하지 않는다.
+
 `--check`는 파일을 쓰지 않고 커밋본 CSS와 비교해 낡으면 종료 코드 1, 잘못된 인자는 2로 끝난다. 다시 만드는 명령은 `npm run migration:ui:css`이며 시안 CSS에는 frontend 의존성이 필요하다. 운영 계약 시험이 두 CSS의 신선도를 늘 보므로 `premium.css` 토큰·시안 화면 클래스·설치된 Tailwind 판이 바뀌면 다시 만들 때까지 붉다.
 
 두 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI·시안 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).

@@ -83,6 +83,8 @@ test('migrationTest declares the actual engine files and packaged archive as tas
     source => source.replace(inputs, '').replace("tasks.register('migrationTest', Test)",
       `tasks.named('test') { ${inputs} }\ntasks.register('migrationTest', Test)`),
     source => source.replace(inputs, `doFirst { ${inputs} }`),
+    source => source.replace(inputs, `if (false) { ${inputs} }`),
+    source => source.replace(inputs, `${inputs}\n    ${inputs}`),
     source => source.replace("inputs.file(tasks.named('migrationBootJar').flatMap { it.archiveFile })",
       "inputs.file(tasks.named('bootJar').flatMap { it.archiveFile })"),
   ]) {
@@ -93,6 +95,8 @@ test('migrationTest declares the actual engine files and packaged archive as tas
   }
   writeFileSync(path, build);
   assert.deepEqual(inspectSingleModuleLayout(root).errors, []);
+  writeFileSync(path, build.replace(inputs, `${inputs}\n    maxHeapSize = '1g'\n    timeout = java.time.Duration.ofMinutes(10)\n    inputs.file('institution-fixture.json')`));
+  assert.deepEqual(inspectSingleModuleLayout(root).errors, [], 'institutional heap and timeout settings preserve the input contract');
 });
 
 test('production collisions are rejected while different test resources remain isolated', t => {

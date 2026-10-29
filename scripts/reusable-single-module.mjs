@@ -323,13 +323,41 @@ ${apiTasks}\n${assembly()}\n${migrationDependencies}`;
     offlineArchiveTask: 'migrationBootJar', buildSha256: createHash('sha256').update(code).digest('hex') };
 }
 
-function migrationTestBody(source) {
+function migrationTestInputs(source) {
   const code = groovyCode(source);
   const headers = [...source.matchAll(/tasks\.register\(['"]migrationTest['"],\s*Test\)\s*\{/g)]
     .filter(match => code.startsWith('tasks.register', match.index));
   if (headers.length !== 1) fail('migrationTest inputs require exactly one executable task declaration');
-  return groovyWithoutComments(block(source.slice(headers[0].index), /^tasks\.register\([^)]*\)\s*\{/g))
-    .replace(/\s+/g, ' ').trim();
+  const body = groovyWithoutComments(block(source.slice(headers[0].index), /^tasks\.register\([^)]*\)\s*\{/g));
+  const executable = groovyCode(body);
+  const declarations = [];
+  let depth = 0;
+  for (let index = 0; index < executable.length; index += 1) {
+    if ('{(['.includes(executable[index])) depth += 1;
+    if ('})]'.includes(executable[index])) depth -= 1;
+    if (depth !== 0) continue;
+    const start = /^inputs\.(?:files|file)\s*\(/.exec(executable.slice(index));
+    if (!start || (index > 0 && /[\w.]/.test(executable[index - 1]))) continue;
+    let end = index + start[0].length;
+    // Consume the call and chained input options, retaining literal arguments.
+    // Nested closures (such as flatMap) belong to this declaration, not a task action.
+    for (;;) {
+      let parentheses = 1;
+      while (end < executable.length && parentheses > 0) {
+        if (executable[end] === '(') parentheses += 1;
+        if (executable[end] === ')') parentheses -= 1;
+        end += 1;
+      }
+      if (parentheses !== 0) fail('unclosed migrationTest input declaration');
+      const chained = /^\s*\.\w+\s*\(/.exec(executable.slice(end));
+      if (!chained) break;
+      end += chained[0].length;
+    }
+    const declaration = body.slice(index, end).replace(/\s+/g, ' ').trim();
+    if (/\.withPropertyName\('(?:migrationWorkspaceEngine|migrationDrillJar)'\)/.test(declaration)) declarations.push(declaration);
+    index = end - 1;
+  }
+  return declarations.sort();
 }
 
 export function inspectSingleModuleLayout(outputRoot) {
@@ -360,8 +388,11 @@ export function inspectSingleModuleLayout(outputRoot) {
     errors.push('logical test suites must not include merged production output');
   }
   try {
-    // Inspect this task's body: declarations in another task, a quoted decoy, or doFirst do not bind its inputs.
-    if (migrationTestBody(build) !== migrationTestBody(assembly())) errors.push('migrationTest inputs or execution boundary differ from the generated contract');
+    // Only configuration-scope input declarations are fixed; heap/timeout options may vary.
+    // Another task, quoted decoy or doFirst cannot satisfy this task's input contract.
+    if (JSON.stringify(migrationTestInputs(build)) !== JSON.stringify(migrationTestInputs(assembly()))) {
+      errors.push('migrationTest inputs or execution boundary differ from the generated contract');
+    }
   } catch (error) { errors.push(`migrationTest inputs: ${error.message}`); }
   return { id: 'single-module', errors };
 }

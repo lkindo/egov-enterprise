@@ -81,7 +81,7 @@ class MigrationWorkspacePackagedCliIntegrationTest {
         String java = Path.of(System.getProperty("java.home"), "bin", windows() ? "java.exe" : "java").toString();
         var environment = new HashMap<String, String>();
         environment.put("D03_PRODUCT_ROOT", root.toString());
-        environment.put("D03_DIRECTORY", directory.toString());
+        environment.put("D03_DIRECTORY", directory.toRealPath().toString());
         environment.put("D03_JAVA", java);
         environment.put("D03_JAR", application.toString());
         environment.put("D03_TAMPERED_JAR", changedJar.toString());
