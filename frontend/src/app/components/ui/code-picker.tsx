@@ -1,7 +1,7 @@
 'use client';
 
 import { fetchAllPages } from '@/lib/api/fetch-all-pages';
-import React, { useCallback, useMemo, useState } from 'react';
+import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { StandardModal } from './standard-modal';
 import { VirtualScrollList } from './virtual-scroll-list';
 import { codeAdminService } from '@/services/foundation/system/CodeAdminService';
@@ -51,6 +51,7 @@ export function CodePicker({
   const [groupsLoading, setGroupsLoading] = useState(false);
   const [groupsSearched, setGroupsSearched] = useState(false);
   const [groupsError, setGroupsError] = useState(false);
+  const [groupTotal, setGroupTotal] = useState(0);
 
   // --- Stage 2: 선택 그룹의 상세코드 ---
   const [activeGroup, setActiveGroup] = useState<CmmnCode | null>(null);
@@ -58,45 +59,73 @@ export function CodePicker({
   const [codesLoading, setCodesLoading] = useState(false);
   const [codesError, setCodesError] = useState(false);
   const [codeFilter, setCodeFilter] = useState('');
+  const groupRequestGeneration = useRef(0);
+  const detailRequestGeneration = useRef(0);
+  const [previousOpen, setPreviousOpen] = useState(isOpen);
+
+  // 검색어·완료한 결과는 보존한다. 미완료 상세는 빈 결과로 오인하지 않게 그룹 선택으로 돌아간다.
+  if (previousOpen !== isOpen) {
+    setPreviousOpen(isOpen);
+    setGroupsLoading(false);
+    setCodesLoading(false);
+    if (codesLoading) {
+      setActiveGroup(null);
+      setCodes([]);
+      setCodesError(false);
+      setCodeFilter('');
+    }
+  }
+  useLayoutEffect(() => () => {
+    groupRequestGeneration.current += 1;
+    detailRequestGeneration.current += 1;
+  }, [isOpen]);
 
   const searchGroups = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const keyword = groupKeyword.trim();
-    if (keyword.length < 1) return;
+    if (keyword.length < 1 || !isOpen) return;
+    const generation = ++groupRequestGeneration.current;
 
     try {
       setGroupsLoading(true);
-      setGroupsError(false);
-      const byName = await codeAdminService.getCmmnCodeList({
+      let result = await codeAdminService.getCmmnCodeList({
         searchCondition: '2',
         searchKeyword: keyword,
         size: 100,
       });
-      let list = byName.list || [];
+      if (generation !== groupRequestGeneration.current) return;
       // 코드명 무결과 + ID 형태 검색어 → ID 축 폴백 1회 (예: "COM017")
-      if (list.length === 0 && /^[A-Za-z0-9_-]+$/.test(keyword)) {
-        const byId = await codeAdminService.getCmmnCodeList({
+      if ((result.list || []).length === 0 && /^[A-Za-z0-9_-]+$/.test(keyword)) {
+        result = await codeAdminService.getCmmnCodeList({
           searchCondition: '1',
           searchKeyword: keyword,
           size: 100,
         });
-        list = byId.list || [];
+        if (generation !== groupRequestGeneration.current) return;
       }
+      const list = result.list || [];
       setGroups(list.filter(Boolean));
+      setGroupTotal(result.total ?? list.length);
+      setGroupsError(false);
       setGroupsSearched(true);
     } catch (error) {
+      if (generation !== groupRequestGeneration.current) return;
       logErrorSafely('공통코드 그룹 검색 실패', error);
       setGroups([]);
+      setGroupTotal(0);
       setGroupsSearched(true);
       setGroupsError(true);
     } finally {
-      setGroupsLoading(false);
+      if (generation === groupRequestGeneration.current) setGroupsLoading(false);
     }
-  }, [groupKeyword]);
+  }, [groupKeyword, isOpen]);
 
   const openGroup = useCallback(async (group: CmmnCode) => {
+    groupRequestGeneration.current += 1;
+    const generation = ++detailRequestGeneration.current;
     setActiveGroup(group);
     setCodeFilter('');
+    setCodes([]);
     try {
       setCodesLoading(true);
       setCodesError(false);
@@ -108,28 +137,40 @@ export function CodePicker({
           page,
           size,
         }));
+      if (generation !== detailRequestGeneration.current) return;
       setCodes(rows.filter(item => item && item.cdId === group.cdId));
     } catch (error) {
+      if (generation !== detailRequestGeneration.current) return;
       logErrorSafely('상세코드 목록 조회 실패', error);
       setCodes([]);
       setCodesError(true);
     } finally {
-      setCodesLoading(false);
+      if (generation === detailRequestGeneration.current) setCodesLoading(false);
     }
   }, []);
 
   const backToGroups = useCallback(() => {
+    detailRequestGeneration.current += 1;
     setActiveGroup(null);
     setCodes([]);
+    setCodesLoading(false);
     setCodesError(false);
     setCodeFilter('');
   }, []);
 
-  const pickCode = useCallback((code: CmmnDetailCode) => {
-    if (!activeGroup) return;
-    onSelect({ group: activeGroup, code });
+  const handleClose = useCallback(() => {
+    groupRequestGeneration.current += 1;
+    detailRequestGeneration.current += 1;
+    setGroupsLoading(false);
+    if (codesLoading) backToGroups();
     onClose();
-  }, [activeGroup, onSelect, onClose]);
+  }, [backToGroups, codesLoading, onClose]);
+
+  const pickCode = useCallback((code: CmmnDetailCode) => {
+    if (!activeGroup || code.cdId !== activeGroup.cdId) return;
+    onSelect({ group: activeGroup, code });
+    handleClose();
+  }, [activeGroup, onSelect, handleClose]);
 
   // 2단계 필터는 이미 받아 둔 목록을 클라이언트에서 거른다(서버 요청 없음 → 디바운스 불필요).
   const visibleCodes = useMemo(() => {
@@ -188,7 +229,7 @@ export function CodePicker({
   );
 
   return (
-    <StandardModal isOpen={isOpen} onClose={onClose} title={title} maxWidth="sm">
+    <StandardModal isOpen={isOpen} onClose={handleClose} title={title} maxWidth="sm">
       <div className="space-y-[var(--form-gap)]">
         {activeGroup === null ? (
           <>
@@ -245,6 +286,11 @@ export function CodePicker({
                 />
               )}
             </div>
+            {!groupsLoading && !groupsError && groupTotal > groups.length && (
+              <p role="status" className="text-sm text-muted-foreground">
+                총 {groupTotal}개 중 {groups.length}개를 표시합니다. 검색어를 더 구체적으로 입력해 주세요.
+              </p>
+            )}
           </>
         ) : (
           <>

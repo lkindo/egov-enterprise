@@ -36,7 +36,12 @@
     "permissionDomains": [
       "COMMENT"
     ],
-    "gates": [],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/CommentUpdateDeleteConcurrencyIntegrationTest.java",
+        "alsoRequires": ["board"]
+      }
+    ],
     "rbacMatrix": null,
     "markerBlocks": [],
     "commonCodeGroups": []

@@ -251,7 +251,7 @@ class CommentServiceTest {
                 .ansCn("Old Comment")
                 .build();
 
-        given(commentRepository.findById(id)).willReturn(Optional.of(comment));
+        given(commentRepository.findByIdForUpdate(id)).willReturn(Optional.of(comment));
 
         // when
         commentService.updateComment(id, newContent);
@@ -289,7 +289,7 @@ class CommentServiceTest {
     void updateComment_NotFound() {
         // given
         Long id = 1L;
-        given(commentRepository.findById(id)).willReturn(Optional.empty());
+        given(commentRepository.findByIdForUpdate(id)).willReturn(Optional.empty());
 
         // when & then
         assertThatThrownBy(() -> commentService.updateComment(id, "Updated Comment"))
@@ -441,6 +441,7 @@ class CommentServiceTest {
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())
                         .isEqualTo(CommentErrorCode.COMMENT_NOT_FOUND));
+        given(commentRepository.findByIdForUpdate(11L)).willReturn(Optional.of(deleted));
         assertThatThrownBy(() -> commentService.updateComment(11L, "hack"))
                 .isInstanceOf(BusinessException.class)
                 .satisfies(e -> assertThat(((BusinessException) e).getErrorCode())

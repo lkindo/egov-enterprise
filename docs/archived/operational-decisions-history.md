@@ -2440,3 +2440,7 @@ GAP-CONTRACT-001의 2026-09-06 보강은 길이·필수 제약에 더해 Memo/Wo
 ### GAP-BOARD-003
 
 `GAP-BOARD-003`(게시판 가시성 판정 불일치)은 2026-10-23 종료했다([ADR-0040](../02-architecture/decisions/ADR-0040-board-operations-management.md), [설계서 §7](../02-architecture/board-management-expansion-design.md#7-구현-배치와-검증)). A0(#963)이 공개 FAQ 목록·상세와 첨부 판정에 게시 종료일을 넣고, 목록 응답에 게시 기간을 싣고, 만족도 수정·삭제를 평가의 실제 게시판·글과 대조하게 하고, 영구 삭제 단건 판정을 일괄과 같은 질의로 맞췄다. 본문·첨부 판정은 `BoardAttachmentAccessTest`가 대조한다. A2가 사용 안 함 게시판의 등록·수정·삭제·해결 표시와 파일 경로 쓰기를 쓰기 판정(`loadWritableMaster`)으로 닫고, 사용 여부를 커뮤니티 가드보다 먼저 봐 사용 안 함 커뮤니티 게시판의 비회원 요청도 없는 게시판과 같은 404를 받게 했다. 사용 안 함 게시판에서는 작성자의 첨부 소유 근거(열람·삭제)도 닫았다(D1 기각 ②). 기간 조건과 쓰기 판정을 뺀 변이의 red 증명은 각 PR에 있다.
+
+### GAP-MIG-003
+
+`GAP-MIG-003`(독립 이관 제품의 원본 Git 이력 의존)은 2026-10-29 수정했다. [제품 계약](../../scripts/migration-product-contract.test.mjs)은 export를 원본 밖의 새 Git 저장소로 옮기고 원본 커밋이 없음을 확인한 뒤 내부 계약을 실제 실행한다. 생성 전 원본의 커밋 존재·조상 관계 검사는 유지하고, 생성 제품은 검증 기록·profile digest·생성 계약의 결속을 대조한다. 원본의 Git 부재·없는 커밋·비조상·얕은 이력과 생성물의 profile/lock 누락·변조·동시 변조가 실패하는 회귀 시험을 포함한다. 이 기록은 외부 발행자 인증을 뜻하지 않는다. 검증 경계와 기관 갱신 책임은 [독립 도입 가이드](../03-guides/governance-review-lifecycle.md#4-독립-migration-tool-도입)에 둔다.

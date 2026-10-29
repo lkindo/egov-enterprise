@@ -12,6 +12,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.IntConsumer;
 
 /**
@@ -70,21 +72,37 @@ public class LogRetentionScheduler {
 
     /**
      * 매일 04:00(Asia/Seoul) 만료 로그 정리. cron 은 {@code nuri.log.retention.cron} 으로 재정의 가능.
+     * 각 저장소의 삭제 트랜잭션은 독립적으로 시도하고, 실패는 모든 대상 처리 뒤 스케줄러에 전달한다.
      */
     @Scheduled(cron = "${nuri.log.retention.cron:0 0 4 * * *}", zone = "Asia/Seoul")
     public void purgeExpiredLogs() {
         log.info("[log-retention] 만료 로그 정리 시작 (web={}m sys={}m login={}m user={}m privacy={}m)",
                 webMonths, sysMonths, loginMonths, userMonths, privacyMonths);
-        purge("web_log", webMonths, webLogRepository::deleteOldLogs);
-        purge("sys_log", sysMonths, sysLogRepository::deleteOldLogs);
-        purge("login_log", loginMonths, loginLogRepository::deleteOldLogs);
-        purge("user_log", userMonths, userLogRepository::deleteOldLogs);
-        purge("privacy_log", privacyMonths, privacyLogRepository::deleteOldLogs);
+        List<RuntimeException> failures = new ArrayList<>();
+        attemptPurge(failures, () -> purge("web_log", webMonths, webLogRepository::deleteOldLogs));
+        attemptPurge(failures, () -> purge("sys_log", sysMonths, sysLogRepository::deleteOldLogs));
+        attemptPurge(failures, () -> purge("login_log", loginMonths, loginLogRepository::deleteOldLogs));
+        attemptPurge(failures, () -> purge("user_log", userMonths, userLogRepository::deleteOldLogs));
+        attemptPurge(failures, () -> purge("privacy_log", privacyMonths, privacyLogRepository::deleteOldLogs));
         // D13 approved minimum is 24 months; never shorten this journal to the legacy 12-month floor.
         if (sensitiveMonths >= 24) {
-            sensitiveAuditLogRepository.deleteBefore(java.time.LocalDateTime.now().minusMonths(sensitiveMonths));
+            attemptPurge(failures, () -> sensitiveAuditLogRepository.deleteBefore(
+                    java.time.LocalDateTime.now().minusMonths(sensitiveMonths)));
         } else {
             log.warn("[log-retention] sys_adt_log 보존월={} < 24, 삭제 건너뜀", sensitiveMonths);
+        }
+        if (!failures.isEmpty()) {
+            var failure = new IllegalStateException("Log retention failed for " + failures.size() + " table(s)");
+            failures.forEach(failure::addSuppressed);
+            throw failure;
+        }
+    }
+
+    private void attemptPurge(List<RuntimeException> failures, Runnable purge) {
+        try {
+            purge.run();
+        } catch (RuntimeException failure) {
+            failures.add(failure);
         }
     }
 
