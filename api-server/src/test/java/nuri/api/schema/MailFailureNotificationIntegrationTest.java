@@ -159,7 +159,7 @@ class MailFailureNotificationIntegrationTest {
         assertThat(observation.beforeFailure).containsExactly(new NoticeBoundary("F", 1, 1));
         assertThat(observation.observationFailure.get()).isNull();
         assertThat(observation.completions).containsExactly(TransactionSynchronization.STATUS_ROLLED_BACK);
-        // Current code is red here: its prior result transaction leaves F / 0 / 0 after notice rollback.
+        // Notice rollback must also roll back the result, leaving the claimed mail available for recording retry.
         assertThat(observation.afterRollback).containsExactly(new NoticeBoundary("P", 0, 0));
 
         assertThat(noticeBoundary(jdbc, id, identity.esntlId())).isEqualTo(new NoticeBoundary("F", 1, 1));

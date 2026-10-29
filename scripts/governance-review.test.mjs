@@ -163,6 +163,25 @@ test('source changes invalidate environment approval while unrelated online file
   assert.ok(validate(review, root).some((error) => error.includes('scope digest mismatch')));
 });
 
+test('migration approval binds the actual workspace engine inputs without including its UI or AI', (t) => {
+  const { root, write } = fixture(t);
+  const inputs = ['engine.mjs', 'store.mjs', 'inputs.mjs'];
+  for (const file of inputs) write(`tools/migration-workspace/${file}`, 'export const original = true;\n');
+  const review = approved(root);
+  for (const file of ['server.mjs', 'ai.mjs', 'public/app.js']) {
+    write(`tools/migration-workspace/${file}`, 'unrelated workspace UI or AI');
+  }
+  assert.deepEqual(validate(review, root), []);
+  for (const file of inputs) {
+    const path = `tools/migration-workspace/${file}`;
+    try {
+      write(path, 'export const original = false;\n');
+      assert.ok(validate(review, root).some(error => error.includes('scope digest mismatch')), path);
+    } finally { write(path, 'export const original = true;\n'); }
+  }
+  assert.deepEqual(validate(review, root), []);
+});
+
 test('online deployment inputs invalidate approvals and text checkout line endings do not', (t) => {
   const { root, write } = fixture(t);
   write('frontend/package.json', '{"private":true}\n');

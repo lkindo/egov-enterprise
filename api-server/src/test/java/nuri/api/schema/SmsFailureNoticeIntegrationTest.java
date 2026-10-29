@@ -1,6 +1,5 @@
 package nuri.api.schema;
 
-// DRAFT ONLY: not installed, compiled, or executed. Reviewed against 3112daea2.
 // Keep separate from the SMS-only state suite: this class requires both SMS and optional notification.
 import java.time.Clock;
 import java.time.Instant;
@@ -154,7 +153,7 @@ class SmsFailureNoticeIntegrationTest {
         assertThat(stored(FIRST).requestId()).isNull();
         assertThat(inboxCount()).isZero();
         assertThat(noticeJobCount()).isZero();
-        assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // CURRENT RED: swallowed notice error => SUCCEEDED.
+        assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // A notice failure must not complete the work.
         assertThat(job().getRtryNmtm().intValueExact()).isEqualTo(1);
 
         due();
@@ -200,7 +199,7 @@ class SmsFailureNoticeIntegrationTest {
                 assertThat(code(FIRST)).isEqualTo("F");
                 assertThat(code(SECOND)).isEqualTo("P");
                 assertThat(rawReceipt(SECOND)).isNull();
-                assertThat(inboxCount()).isZero(); // CURRENT RED: it publishes the one-failure partial summary first.
+                assertThat(inboxCount()).isZero(); // An unsettled recipient prevents a partial failure summary.
                 assertThat(noticeJobCount()).isZero();
                 assertThat(observed).isEmpty();
                 verify(sender, times(1)).send(eq(FIRST), anyString(), anyString());
@@ -234,7 +233,7 @@ class SmsFailureNoticeIntegrationTest {
             try {
                 assertThat(entered.await(10, TimeUnit.SECONDS)).isTrue();
                 dispatchOwned();
-                assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // CURRENT RED: both rows are skipped, false success.
+                assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // Skipped claims are not completed recipients.
                 assertThat(inboxCount()).isZero();
                 assertThat(noticeJobCount()).isZero();
                 assertThat(stored(SECOND).stage()).isEqualTo(SmsReceiptState.Stage.CLAIMED);
@@ -336,7 +335,7 @@ class SmsFailureNoticeIntegrationTest {
         enqueue(FIRST);
         String claim = processor.claimSending(transmission, FIRST).orElseThrow();
         dispatchOwned();
-        assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // CURRENT RED: local and persisted failure counts are both zero.
+        assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // A zero failure count does not settle an active claim.
         assertThat(rawReceipt(FIRST)).isEqualTo(claim);
         assertThat(inboxCount()).isZero();
         assertThat(noticeJobCount()).isZero();

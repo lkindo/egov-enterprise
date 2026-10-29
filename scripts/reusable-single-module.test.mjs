@@ -59,6 +59,42 @@ test('unexpected Gradle conventions fail before writing either output build file
   assert.throws(() => applySingleModuleLayout(dependencyRoot), /project dependency convention changed/);
 });
 
+test('migrationTest declares the actual engine files and packaged archive as task inputs', t => {
+  const root = fixture(t);
+  applySingleModuleLayout(root);
+  const path = join(root, 'build.gradle');
+  const build = readFileSync(path, 'utf8');
+  const inputs = `inputs.files(rootProject.files(
+            'tools/migration-workspace/engine.mjs',
+            'tools/migration-workspace/store.mjs',
+            'tools/migration-workspace/inputs.mjs'))
+            .withPropertyName('migrationWorkspaceEngine')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(tasks.named('migrationBootJar').flatMap { it.archiveFile })
+            .withPropertyName('migrationDrillJar')
+            .withPathSensitivity(PathSensitivity.NONE)`;
+  assert.ok(build.includes(inputs), 'generated task must track external engine and JAR bytes');
+  for (const mutate of [
+    ...['engine', 'store', 'inputs'].map(name => source => source.replace(
+      `tools/migration-workspace/${name}.mjs`, `tools/migration-workspace/missing-${name}.mjs`)),
+    source => source.replace(inputs, ''),
+    source => source.replace(inputs, `/* ${inputs} */`),
+    source => source.replace(inputs, `def decoy = '''${inputs}'''`),
+    source => source.replace(inputs, '').replace("tasks.register('migrationTest', Test)",
+      `tasks.named('test') { ${inputs} }\ntasks.register('migrationTest', Test)`),
+    source => source.replace(inputs, `doFirst { ${inputs} }`),
+    source => source.replace("inputs.file(tasks.named('migrationBootJar').flatMap { it.archiveFile })",
+      "inputs.file(tasks.named('bootJar').flatMap { it.archiveFile })"),
+  ]) {
+    const changed = mutate(build);
+    assert.notEqual(changed, build);
+    writeFileSync(path, changed);
+    assert.ok(inspectSingleModuleLayout(root).errors.some(error => error.includes('migrationTest inputs')));
+  }
+  writeFileSync(path, build);
+  assert.deepEqual(inspectSingleModuleLayout(root).errors, []);
+});
+
 test('production collisions are rejected while different test resources remain isolated', t => {
   const root = fixture(t);
   for (const module of ['foundation', 'business-core']) {

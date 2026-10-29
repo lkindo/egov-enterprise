@@ -105,7 +105,8 @@ export function adoptionScope(repoRoot, { product, profile }) {
   // its actual entrypoint and imports, not only the now-inactive upstream runner.
   if (generatedProduct) common.push('package.json');
   const roots = product === 'migration-tool'
-    ? [...common, 'migration-tool/src', 'migration-tool/build.gradle', 'migration-tool/Dockerfile', 'migration-tool/.dockerignore']
+    ? [...common, 'migration-tool/src', 'migration-tool/build.gradle', 'migration-tool/Dockerfile', 'migration-tool/.dockerignore',
+      'tools/migration-workspace/engine.mjs', 'tools/migration-workspace/store.mjs', 'tools/migration-workspace/inputs.mjs']
     : [...common, ...['foundation', 'business-core', 'business-app', 'api-server'].flatMap((module) =>
       [`${module}/src/main`, `${module}/build.gradle`]),
     'frontend/src', 'frontend/next.config.ts', 'frontend/package.json', 'frontend/pnpm-lock.yaml',

@@ -2347,6 +2347,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-390 | accepted | 기억에만 남던 반복 실패를 기계로 막는 배치를 한 결정으로 묶는다(2026-10-29 사용자 요청 "근본적으로 해결", 결정 위임). ① pre-push 의 Vitest 세 단계(불변식·원문 계약·cross-stack)는 실패가 모두 Vitest 시간 초과일 때만 그 파일을 단독으로 한 번 다시 돈다 — 단언·모듈·처리되지 않은 오류·중단과 재실행 실패는 막고, CI·`vitest.config` 에는 재시도를 두지 않으며 15초 예산도 그대로다. ② ci.yml 업로드는 성질로 나눈다 — 뒤 잡이 받거나 `if-no-files-found: error` 인 업로드는 `continue-on-error` 를 쓰지 않고, 그 밖의 보관·진단 업로드는 `continue-on-error: true` 다. ③ 로컬 프런트 타입 게이트는 `next typegen` 뒤 tsc(`type-check`)이고 next dev 사본 `.next/dev` 는 tsconfig 에서 뺀다. ④ PR CI 대기는 `scripts/pr-checks-wait.mjs` 로 하고 손으로 짠 폴링·`gh pr checks --watch` 를 쓰지 않는다. | 같은 실패가 기억·SOP 문장으로만 막혀 되풀이됐다 — 다른 오퍼레이터·IDE 부하의 Vitest 시간 초과 거짓 red(2026-10-28·29, 매번 재푸시 약 20분), PIT 는 통과했는데 보고서 업로드 ENOTFOUND 로 붉은 required mutation-test(run 40858521948, upload-artifact 는 DNS·연결 오류를 재시도하지 않는다), 낡은 build·dev 라우트 타입 사본이 낸 로컬 TS2344(2026-10-29), jq 부재·늦게 등록되는 집계 체크로 틀린 CI 대기(2026-09-04·09-24·10-28·10-29). 동기 시험의 시간 초과는 단언이 모두 통과한 뒤 늦었다는 뜻이고 비동기 시험은 결과 미정이라 단독 재실행만이 판정한다. DEC-OPS-386 ③ 의 집행이다. | [시간 초과 재실행](../../scripts/vitest-timeout-rerun.mjs), [업로드 분류 계약](../../scripts/required-checks-contract.mjs), [훅 계약](../../scripts/pre-push-ref-contract.test.mjs), [CI 대기 도구](../../scripts/pr-checks-wait.mjs), [SOP §6.3](../03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩) | 2026-10-29 | - |
 
+## DEC-OPS-391
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-391 | accepted | 도메인 개선 계획의 D03 실제 작업공간→CLI 시험에 필요한 입력 경계를 연결한다(2026-10-30 사용자 요청 "순서대로 작업 진행"에 따른 실행 위임). `tools/migration-workspace/engine.mjs`, `store.mjs`, `inputs.mjs` 3파일만 정확 경로로 이관·이관 PIT reader 축을 고르고, 독립 이관 제품 내보내기 및 migration 승인 digest에 포함한다. UI/server/AI와 시안은 기존 운영 계약·SAST·재사용 검증 경계를 유지한다. 기관 승인·운영 적재·외부 전송·adapter COMMIT 자격은 바꾸지 않는다. | DEC-OPS-383 당시에는 작업공간이 이관 모듈 시험 입력이 아니었다. 실제 Node 엔진→패키지 JAR→격리 PostgreSQL 시험을 추가하면 엔진만 바뀐 변경도 그 시험을 실행해야 하며, 독립 산출물과 승인 범위도 같은 입력을 담아야 한다. 기존 reader census의 보수적 이관 PIT 축을 유지해 비용은 늘 수 있으나 새 예외로 숨기지 않는다. | [연결 시험](../../migration-tool/src/test/java/nuri/migration/MigrationWorkspacePackagedCliIntegrationTest.java), [분류기](../../scripts/ci-change-scope.mjs), [reader 계약](../../scripts/ci-change-scope-tool-paths.test.mjs), [내보내기](../../scripts/generate-migration-product.mjs), [승인 범위](../../scripts/adoption-review.mjs) | 2026-10-30 | DEC-OPS-383 ⑦의 엔진 3파일 무축 분류 |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

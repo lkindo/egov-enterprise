@@ -134,7 +134,12 @@ function sourceDependencies(file, source, fileSet) {
   } else if (JS_SOURCE.test(file)) {
     const { tokens } = tokenizeDependencies(source, file);
     const literals = tokens.map((token, index) => ({ ...token, index }))
-      .filter(token => token.type === 'string' || token.type === 'template');
+      .filter(token => token.type === 'string' || token.type === 'template')
+      // A traversal rejection compares a prefix; it does not read the containing tools/ directory.
+      // Keep actual readdir('../') and join('../', ...) reads in the conservative census.
+      .filter(token => !(/^\.{1,2}\/$/.test(token.value)
+        && tokens[token.index - 3]?.value === '.' && tokens[token.index - 2]?.value === 'startsWith'
+        && tokens[token.index - 1]?.value === '('));
     chainedValues(literals, index => literals[index + 1].index === literals[index].index + 2
       && [',', '+'].includes(tokens[literals[index].index + 1]?.value)).forEach(record);
     const { references, issues } = parseModuleReferences(source, file);
@@ -185,7 +190,7 @@ function workflowEntrypoints(workflow, packages) {
  */
 function toolPathEvidence({ files, read, table = GENERATOR_TOOL_PATHS }) {
   const fileSet = new Set(files);
-  const entryOf = file => table.find(entry => file.startsWith(entry.path)) ?? null;
+  const entryOf = file => table.find(entry => entry.exact ? file === entry.path : file.startsWith(entry.path)) ?? null;
   // 같은 이름의 파일은 같은 원문이다(합성 시험은 새 이름만 더한다). 시험마다 저장소 전체를 다시 읽지 않는다.
   const dependencies = file => {
     if (!DEPENDENCY_CACHE.has(file)) DEPENDENCY_CACHE.set(file, sourceDependencies(file, read(file), fileSet));
@@ -273,7 +278,7 @@ function toolPathMismatches({ files, read, table = GENERATOR_TOOL_PATHS }) {
   const { entries } = toolPathEvidence({ files, read, table });
   const problems = [];
   for (const entry of table) {
-    if (!files.some(file => file.startsWith(entry.path))) problems.push(`${entry.path}: 맞는 파일이 없는 항목이다(낡은 항목).`);
+    if (!files.some(file => entry.exact ? file === entry.path : file.startsWith(entry.path))) problems.push(`${entry.path}: 맞는 파일이 없는 항목이다(낡은 항목).`);
     const evidence = entries.get(entry.path);
     const required = [...evidence.keys()].sort();
     const declared = [...entry.axes].sort();
@@ -291,6 +296,18 @@ const readRepository = file => readFileSync(path.join(repoRoot, file), 'utf8');
 
 test('every generator-tool table entry selects exactly the axes of the sources that read or run it', () => {
   assert.deepEqual(toolPathMismatches({ files: repositoryFiles, read: readRepository }), []);
+});
+
+test('a parent traversal prefix check is not a directory read while an actual parent read still is', () => {
+  const file = 'tools/migration-workspace/synthetic-path-reader.mjs';
+  const guard = sourceDependencies(file, "if (candidate.startsWith('../')) throw new Error('outside');", new Set());
+  assert.deepEqual([...guard.directories], []);
+  assert.deepEqual([...guard.paths], []);
+  const read = sourceDependencies(file, "const entries = readdirSync('../');", new Set());
+  assert.deepEqual([...read.directories], ['tools']);
+  assert.ok([...read.paths].some(value => value.replace(/\/+$/, '') === 'tools'));
+  const joinedRead = sourceDependencies(file, "readFileSync(join('../', 'project-composer/public/app.js'));", new Set());
+  assert.ok(joinedRead.paths.has('tools/project-composer/public/app.js'));
 });
 
 test('the reader census is not vacuous: tests, workflow entrypoints and the composer browser test are all read', () => {
@@ -376,10 +393,10 @@ test('a synthetic PR touching only generator-tool paths skips backend, migration
     'a pull request still verifies every preset it does not leave to main once');
 });
 
-// [DEC-OPS-383] 로컬 이관 작업공간은 migration-tool JAR 를 실행하지만 migration-tool 의 빌드·시험·PIT 입력이 아니다. 작업공간만 바꾸면
-// 이관·PIT·화면 축을 돌지 않고, 시험(운영 계약)·SAST·재사용 검증만 남는다. migration-tool 을 함께 바꾸면 이관 축이 그대로 켜진다.
-test('a migration workspace change runs its contracts, SAST and reuse checks but not migration, PIT or product lanes', () => {
-  for (const files of [['tools/migration-workspace/engine.mjs', 'tools/migration-workspace/public/styles.css'], ['tools/migration-workspace-prototype/serve.mjs']]) {
+// The packaged workspace test reads only the three engine inputs. UI/server/AI retain their independent contracts.
+test('workspace UI and server changes keep contracts, SAST and reuse checks without migration or product lanes', () => {
+  for (const files of [['tools/migration-workspace/server.mjs', 'tools/migration-workspace/public/styles.css'],
+    ['tools/migration-workspace/ai.mjs'], ['tools/migration-workspace-prototype/serve.mjs']]) {
     const result = classifyChangedFiles(files, { event: 'pull_request' });
     assert.deepEqual(result.unknownFiles, [], files.join(','));
     for (const field of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[field], false, `${files}: ${field}`);
@@ -392,6 +409,29 @@ test('a migration workspace change runs its contracts, SAST and reuse checks but
   for (const near of ['tools/migration-workspacex/a.js', 'tools/migration-workspace.mjs']) {
     assert.equal(generatorToolEntry(near), null, near);
     assert.deepEqual(classifyChangedFiles([near]).unknownFiles, [near], near);
+  }
+});
+
+test('actual workspace engine inputs select their packaged-test reader axes and reject prefix lookalikes', () => {
+  for (const input of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
+    const file = `tools/migration-workspace/${input}`;
+    assert.deepEqual(generatorToolEntry(file), { path: file, exact: true, axes: ['migration', 'mutationMigrationTool'] });
+    const result = classifyChangedFiles([file]);
+    assert.deepEqual(result.unknownFiles, []);
+    for (const axis of AXES) assert.equal(result[axis], ['migration', 'mutationMigrationTool'].includes(axis), `${file}: ${axis}`);
+    for (const field of ['reusable', 'sast', 'secretScan']) assert.equal(result[field], true, `${file}: ${field}`);
+    for (const suffix of ['.bak', '/nested.mjs', '.test.mjs']) {
+      assert.equal(generatorToolEntry(file + suffix).path, 'tools/migration-workspace/');
+      assert.equal(classifyChangedFiles([file + suffix]).migration, false);
+    }
+  }
+  // Removing either real reader axis must fail the existing source census; no new exception list.
+  for (const axis of ['migration', 'mutationMigrationTool']) {
+    const table = GENERATOR_TOOL_PATHS.map(entry => entry.path === 'tools/migration-workspace/engine.mjs'
+      ? { ...entry, axes: entry.axes.filter(value => value !== axis) } : entry);
+    const problems = toolPathMismatches({ files: repositoryFiles, read: readRepository, table });
+    assert.ok(problems.some(problem => problem.startsWith('tools/migration-workspace/engine.mjs:')
+      && problem.includes(`${axis} 를 켜야 한다`)), problems.join('\n'));
   }
 });
 

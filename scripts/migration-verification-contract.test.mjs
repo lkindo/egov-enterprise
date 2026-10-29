@@ -53,6 +53,15 @@ const childOnlyScopes = [
 const ordinaryDrillConfiguration = `
 tasks.named('test', Test) {
     dependsOn tasks.named('bootJar')
+    inputs.files(rootProject.files(
+            'tools/migration-workspace/engine.mjs',
+            'tools/migration-workspace/store.mjs',
+            'tools/migration-workspace/inputs.mjs'))
+            .withPropertyName('migrationWorkspaceEngine')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(tasks.named('bootJar').flatMap { it.archiveFile })
+            .withPropertyName('migrationDrillJar')
+            .withPathSensitivity(PathSensitivity.NONE)
     doFirst {
         systemProperty 'migration.drill.classpath', classpath.asPath
         systemProperty 'migration.drill.jar', tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath
@@ -308,7 +317,8 @@ test('migration duration profile exactly covers source tests and produces three 
   const profile = loadMigrationDurationProfile();
   const classes = discoverMigrationTestClasses();
   assert.deepEqual(validateMigrationDurationProfile(profile, classes), []);
-  assert.equal(classes.length, 193);
+  assert.equal(classes.length, 194);
+  assert.equal(profile.source.classMeasurements?.['nuri.migration.MigrationWorkspacePackagedCliIntegrationTest']?.kind, 'local-junit');
   const plan = buildMigrationShardPlan(profile, classes);
   assert.equal(plan.length, 3);
   assert.deepEqual(plan.flatMap(({ classes: selected }) => selected).sort(), classes);
@@ -341,6 +351,24 @@ test('migration shard profile and evidence drift are reproducible reds', (t) => 
   const invalid = structuredClone(profile);
   invalid.durationsMs[classes[0]] = 0;
   assert.match(validateMigrationDurationProfile(invalid, classes).join('\n'), /positive integer/);
+  const measurement = { kind: 'local-junit', baseCommit: profile.source.commit, measuredAt: '2026-10-30T00:00:00Z' };
+  for (const [name, record, expected] of [
+    ['nuri.migration.StaleTest', measurement, /no duration/],
+    [classes[0], { ...measurement, kind: 'unmeasured' }, /kind must be local-junit/],
+    [classes[0], { ...measurement, baseCommit: 'short' }, /full lowercase SHA/],
+    [classes[0], { ...measurement, measuredAt: 'not-a-date' }, /timestamp/],
+    [classes[0], { ...measurement, junitSha256: 'f'.repeat(64) }, /contain only/],
+    [classes[0], null, /contain only/],
+  ]) {
+    const changed = structuredClone(profile);
+    changed.source.classMeasurements = { [name]: record };
+    assert.match(validateMigrationDurationProfile(changed, classes).join('\n'), expected);
+  }
+  for (const records of [null, []]) {
+    const changed = structuredClone(profile);
+    changed.source.classMeasurements = records;
+    assert.match(validateMigrationDurationProfile(changed, classes).join('\n'), /must be an object/);
+  }
 
   const root = mkdtempSync(join(tmpdir(), 'migration-shards-'));
   t.after(() => rmSync(root, { recursive: true, force: true }));
@@ -392,6 +420,14 @@ test('broad PIT exclusions, unregistered engine probes, and ordinary Test filter
     (source) => `tasks.named('test') { enabled = false }\n${source}`,
     (source) => `tasks.withType(Test) { enabled = false }\n${source}`,
     (source) => source.replace("dependsOn tasks.named('bootJar')", "// dependsOn tasks.named('bootJar')"),
+    ...['engine', 'store', 'inputs'].map(name => source => source.replace(
+      `tools/migration-workspace/${name}.mjs`, `tools/migration-workspace/missing-${name}.mjs`)),
+    (source) => source.replace("inputs.file(tasks.named('bootJar').flatMap { it.archiveFile })",
+      "inputs.file('fake-application.jar')"),
+    (source) => source.replace('    inputs.files(rootProject.files(', '    /* inputs.files(rootProject.files(')
+      .replace(".withPropertyName('migrationWorkspaceEngine')", ".withPropertyName('migrationWorkspaceEngine') */"),
+    (source) => source.replace('    inputs.files(rootProject.files(', '    doFirst {\n    inputs.files(rootProject.files(')
+      .replace('    doFirst {\n        systemProperty', '        systemProperty'),
     (source) => source.replace("systemProperty 'migration.drill.classpath', classpath.asPath",
       "systemProperty 'migration.drill.classpath', 'fake-classpath'"),
     (source) => source.replace("systemProperty 'migration.drill.jar', tasks.named('bootJar').get().archiveFile.get().asFile.absolutePath",

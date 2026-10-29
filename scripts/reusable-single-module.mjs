@@ -213,6 +213,15 @@ tasks.register('migrationTest', Test) {
     classpath = sourceSets.migrationTest.runtimeClasspath
     workingDir file('migration-tool')
     dependsOn tasks.named('migrationBootJar')
+    inputs.files(rootProject.files(
+            'tools/migration-workspace/engine.mjs',
+            'tools/migration-workspace/store.mjs',
+            'tools/migration-workspace/inputs.mjs'))
+            .withPropertyName('migrationWorkspaceEngine')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(tasks.named('migrationBootJar').flatMap { it.archiveFile })
+            .withPropertyName('migrationDrillJar')
+            .withPathSensitivity(PathSensitivity.NONE)
     useJUnitPlatform()
     doFirst {
         systemProperty 'migration.drill.classpath', classpath.asPath
@@ -314,6 +323,15 @@ ${apiTasks}\n${assembly()}\n${migrationDependencies}`;
     offlineArchiveTask: 'migrationBootJar', buildSha256: createHash('sha256').update(code).digest('hex') };
 }
 
+function migrationTestBody(source) {
+  const code = groovyCode(source);
+  const headers = [...source.matchAll(/tasks\.register\(['"]migrationTest['"],\s*Test\)\s*\{/g)]
+    .filter(match => code.startsWith('tasks.register', match.index));
+  if (headers.length !== 1) fail('migrationTest inputs require exactly one executable task declaration');
+  return groovyWithoutComments(block(source.slice(headers[0].index), /^tasks\.register\([^)]*\)\s*\{/g))
+    .replace(/\s+/g, ' ').trim();
+}
+
 export function inspectSingleModuleLayout(outputRoot) {
   const root = resolve(outputRoot);
   const errors = [];
@@ -341,5 +359,9 @@ export function inspectSingleModuleLayout(outputRoot) {
   if (/suite\.(?:compileClasspath|runtimeClasspath)\s*\+=\s*sourceSets\.main\.output/.test(executable)) {
     errors.push('logical test suites must not include merged production output');
   }
+  try {
+    // Inspect this task's body: declarations in another task, a quoted decoy, or doFirst do not bind its inputs.
+    if (migrationTestBody(build) !== migrationTestBody(assembly())) errors.push('migrationTest inputs or execution boundary differ from the generated contract');
+  } catch (error) { errors.push(`migrationTest inputs: ${error.message}`); }
   return { id: 'single-module', errors };
 }

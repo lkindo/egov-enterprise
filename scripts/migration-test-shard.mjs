@@ -3,6 +3,7 @@ import { spawnSync } from 'node:child_process';
 import { existsSync, readFileSync, readdirSync, statSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { validateMigrationClassMeasurements } from './migration-profile-provenance.mjs';
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const defaultProfilePath = join(repoRoot, 'config', 'migration-test-duration-profile.json');
@@ -44,7 +45,7 @@ export function loadMigrationDurationProfile(path = defaultProfilePath) {
 }
 
 export function validateMigrationDurationProfile(profile, classes = discoverMigrationTestClasses()) {
-  const errors = [];
+  const errors = validateMigrationClassMeasurements(profile);
   if (profile?.schemaVersion !== 1) errors.push('duration profile schemaVersion must be 1');
   if (profile?.shardCount !== 3) errors.push('duration profile shardCount must be exactly 3');
   if (!Number.isInteger(profile?.source?.runId) || profile.source.runId <= 0) errors.push('duration profile source.runId must be a positive integer');
