@@ -15,9 +15,13 @@ description: PR·main CI 나 정기 워크플로가 붉을 때 쓴다 — 기반
 
 ## 1. 정착을 먼저 확인한다
 
-- `gh pr checks <PR> --required` 로 본다. required 집계 체크(`backend-build`·`mutation-test` 등)는 소스 잡이 끝난 뒤에야
-  **등록**되므로, 초반에는 pending 이 0 이어도 정착이 아니다 — 등록된 required 가 6개 이상이고 미완료가 0 일 때만 정착이다.
-- 기본 출력은 탭 구분이다 — `awk -F'\t'` 로 읽는다(이 PC 에는 jq 가 없다).
+- PR CI 를 기다릴 때는 `node scripts/pr-checks-wait.mjs --pr <PR> --sha <검증한 커밋>` 을 백그라운드로 실행하고 **종료 코드로만**
+  판정한다: 0 통과 · 1 required 실패·누락 · 2 조회·도구 오류(통과 아님) · 3 head 불일치·이동·PR 닫힘(새 head 로 다시 기다린다) ·
+  4 시간 초과.
+- 이 도구는 required 목록을 [.github/required-checks.json](../../../.github/required-checks.json)에서 읽고, 그 커밋의 ci.yml 실행이
+  끝나고 required 가 모두 등록돼야 정착으로 본다 — required 집계 체크는 소스 잡이 끝난 뒤에야 **등록**되므로 pending 0 은 정착이 아니다.
+- 폴링 루프를 새로 짜거나 `gh pr checks --watch` 로 기다리지 않는다(가드가 막는다). 한 번 볼 때만 `gh pr checks <PR> --required` 를 쓴다.
+- 실패 잡을 재실행한 직후에는 실행이 다시 queued 가 되기 전 몇 초 동안 옛 실패로 1 이 날 수 있다 — 재실행 뒤에는 다시 기다린다.
 - main 병합은 PR 경로다. push 트리거는 main 뿐이라 브랜치 push 로는 CI 가 돌지 않는다.
 
 ## 2. 실패 잡의 로그로 가른다

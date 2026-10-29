@@ -102,7 +102,7 @@ JavaScript 같은 비정적 소비 경로도 확인한다.
 ./gradlew compileJava compileTestJava
 ./gradlew :api-server:harnessTest :api-server:test
 pnpm -C frontend install --frozen-lockfile
-pnpm -C frontend exec tsc --noEmit
+pnpm -C frontend run type-check
 pnpm -C frontend vitest run
 pnpm -C frontend run codegen:verify
 pnpm -C frontend run codegen:verify:zod

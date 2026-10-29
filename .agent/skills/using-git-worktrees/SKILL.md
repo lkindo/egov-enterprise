@@ -134,7 +134,7 @@ In this repository, pick the minimum check for the scope you will change from [A
 ```bash
 # Pick the ones that match the scope you will change (AGENTS.md Verification by change scope)
 npm run regen -- --check                # docs, shared memory and generated artifacts
-pnpm -C frontend exec tsc --noEmit      # frontend sources
+pnpm -C frontend run type-check       # frontend sources (next typegen, then tsc)
 ./gradlew compileJava compileTestJava   # backend sources
 ```
 

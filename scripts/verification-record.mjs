@@ -340,10 +340,30 @@ export function createRun(options = {}) {
   }, unavailable());
 }
 
+// [2026-10-29 DEC-OPS-390] A pre-push Vitest step whose every failure was a Vitest timeout reruns those files alone once
+// (scripts/vitest-timeout-rerun.mjs). The note names them, so a file that keeps timing out shows up in the summary; it never
+// changes the step or run outcome (the rerun's own exit status is the step's status).
+const RERUN_FILE = /^src\/[\w@()[\].\/-]+\.test\.tsx?$/;
+
+export function noteTimeoutRerun(root, runId, { files, rerunResult } = {}) {
+  return safely(() => {
+    requireValue(typeof runId === 'string' && RUN_ID.test(runId));
+    requireValue(Array.isArray(files) && files.length > 0 && files.length <= 200
+      && files.every(file => typeof file === 'string' && RERUN_FILE.test(file) && !file.split('/').includes('..')));
+    requireValue(rerunResult === 'passed' || rerunResult === 'failed');
+    return withRun(root, runId, ({ descriptor, events }) => {
+      requireValue(!events.some(event => event.event === 'run-end'));
+      const open = [...openSteps(events).keys()];
+      requireValue(open.length === 1);
+      return append(descriptor, runId, { event: 'step-note', stageId: open[0], note: 'timeout-rerun', files, rerunResult, ...instant() });
+    });
+  });
+}
+
 /**
  * Anomalies in this worktree's run records, newest first: no run-end (killed or still running), inconsistent or incomplete
- * outcomes, inputs that changed during the run, suspected overlap with another heavy run (SOP §6.3) and records that are
- * empty or cut off — the oddest runs are listed, not dropped. Ids, times and fixed labels only.
+ * outcomes, inputs that changed during the run, suspected overlap with another heavy run (SOP §6.3), Vitest files rerun alone
+ * after a timeout and records that are empty or cut off — the oddest runs are listed, not dropped. Ids, times and fixed labels only.
  */
 export function summarizeRuns(root, now = Date.now()) {
   const directory = resolve(root, 'build', 'verification-runs');
@@ -366,6 +386,13 @@ export function summarizeRuns(root, now = Date.now()) {
       if (!start) notes.push(events.length || malformed ? 'malformed-record' : 'empty-record');
       else {
         if (malformed) notes.push('malformed-record');
+        const reruns = new Map();
+        for (const event of events) {
+          if (event.event === 'step-note' && event.note === 'timeout-rerun' && SAFE_ID.test(event.stageId) && Array.isArray(event.files)) {
+            reruns.set(event.stageId, (reruns.get(event.stageId) ?? 0) + event.files.length);
+          }
+        }
+        for (const [stageId, count] of reruns) notes.push(`timeout-rerun:${stageId}(${count})`);
         const end = events.find(event => event.event === 'run-end');
         if (!end) notes.push(now - Date.parse(start.timestamp) > 6 * 3_600_000 ? 'no-run-end' : 'running-or-killed');
         else {

@@ -201,7 +201,7 @@ if ($DryRun) {
     Write-Host "Dry run finished. Paths to delete: $($deletedRelPaths.Count) (absent mappings: $($absentRelPaths.Count))" -ForegroundColor Green
 } else {
     Write-Host "Deletion finished. Deleted paths: $($deletedRelPaths.Count) (absent mappings: $($absentRelPaths.Count))" -ForegroundColor Green
-    Write-Host "삭제 후 ./gradlew clean compileJava compileTestJava 와 pnpm -C frontend exec tsc --noEmit 로 회귀를 확인하라." -ForegroundColor Cyan
+    Write-Host "삭제 후 ./gradlew clean compileJava compileTestJava 와 pnpm -C frontend run type-check 로 회귀를 확인하라." -ForegroundColor Cyan
 }
 Write-Host "=============================================" -ForegroundColor Cyan
 exit 0
