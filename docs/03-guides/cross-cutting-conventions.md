@@ -83,7 +83,7 @@
 | **관례(지향 — 현재 미확립)** | ① 캐노니컬 CacheManager는 `foundation/.../config/CacheConfig.java`(Caffeine, `@Profile("!test")`, expireAfterWrite 10분·maxSize 500) 단일. ② **캐시명은 중앙 상수(SSOT)에서만 참조** — 현재 미확립(아래 갭). ③ 무효화는 `allEntries=true`(coarse, 안전측) 기본. ④ 교차서비스 무효화는 소유 서비스가 공개한 상수를 통해서만. |
 | **근거** | `foundation/.../config/CacheConfig.java`와 현재 서비스의 `@Cacheable`/`@CacheEvict` 선언. |
 | **집행 게이트** | `CachingInvalidationMatrixLinterTest`(pre-push `harnessTest`)가 `NO_EVICT`(채우지만 지우지 않음)와 `DEAD_EVICT`(지우지만 채우지 않음)를 양방향으로 검사한다. TTL만으로 충분한 캐시는 테스트 소스의 `TTL_ONLY_CACHES`에 사유를 명시한다. |
-| **잔여 갭(상수화)** | ① 캐시명 **문자열 리터럴 산발**(`MenuService "allMenus"/"menuParentMap"/"allMenuDtos"`). 공통코드 그룹 조회 캐시(`commonCodes`)는 2026-10-20 걷었다 — 로컬 캐시의 `@CacheEvict` 가 쓴 인스턴스만 비워 서버가 여러 대면 최대 10분 낡았고, 소비처(결재 업무 구분 COM075)는 요청마다 키 앞부분 조회 한 번이라 캐시 이득이 없었다(`CommonCodeService#getCodesByGroup` 주석). `PolicyService`만 `CACHE_SYSTEM_POLICIES`·`CACHE_SYSTEM_POLICIES_ALL` 상수를 쓴다. ② **교차서비스 evict 결합**: 2026-10-04 프로그램 목록 퇴역으로 Menu 소유 캐시를 문자열로 중복 evict 하던 `ProgramService`와 URL→메뉴 역조회 캐시 `rootMenuIdByUrl`을 함께 걷어 지금은 없다. 새로 생기면 rename 무음 미스를 막도록 소유 서비스의 상수를 인용한다. ③ `CaffeineCacheManager` 동적 생성 → 오타 시 조용히 새 캐시 생성. <br>위 매트릭스 게이트가 한쪽에만 나타난 이름을 차단하더라도 상수화는 가독성·응집도 개선에 유효하다. 변경 대상별 캐시 의미와 소유자를 확인해 단계적으로 적용한다. |
+| **잔여 갭(상수화)** | ① 캐시명 **문자열 리터럴 산발**(`MenuService "allMenus"/"menuParentMap"/"allMenuDtos"`). 공통코드 그룹 조회 캐시(`commonCodes`)는 2026-10-20 걷었다 — 로컬 캐시의 `@CacheEvict` 가 쓴 인스턴스만 비워 서버가 여러 대면 최대 10분 낡았고, 소비처(결재 업무 구분 COM075)는 요청마다 키 앞부분 조회 한 번이라 캐시 이득이 없었다(`CommonCodeService#getCodesByGroup` 주석). 정책 조회 캐시도 2026-10-30 걷었다 — 늦은 reader가 변경 완료 뒤 옛 상세·목록·빈 결과를 다시 캐시하는 경합을 실제 PostgreSQL과 Caffeine에서 재현했다. 정책 조회는 DB를 읽으며 요청량·응답 지연 영향은 별도 측정 대상이다. ② **교차서비스 evict 결합**: 2026-10-04 프로그램 목록 퇴역으로 Menu 소유 캐시를 문자열로 중복 evict 하던 `ProgramService`와 URL→메뉴 역조회 캐시 `rootMenuIdByUrl`을 함께 걷어 지금은 없다. 새로 생기면 rename 무음 미스를 막도록 소유 서비스의 상수를 인용한다. ③ `CaffeineCacheManager` 동적 생성 → 오타 시 조용히 새 캐시 생성. <br>위 매트릭스 게이트가 한쪽에만 나타난 이름을 차단하더라도 상수화는 가독성·응집도 개선에 유효하다. 변경 대상별 캐시 의미와 소유자를 확인해 단계적으로 적용한다. |
 
 ### 6.1 캐시명 SSOT / 무효화 매트릭스 (권장 도입)
 
@@ -92,7 +92,6 @@
 | `ALL_MENUS="allMenus"` | MenuService | menu CUD | — |
 | `MENU_PARENT_MAP="menuParentMap"` | MenuService | menu CUD | — |
 | `ALL_MENU_DTOS="allMenuDtos"` | MenuService | menu CUD | — |
-| `CACHE_SYSTEM_POLICIES`·`CACHE_SYSTEM_POLICIES_ALL`(상수 존재) | PolicyService | policy 변경 | — |
 
 > **실행 지침**: 위 상수를 단일 `CacheNames` 클래스로 승격하고 모든 `@Cacheable/@CacheEvict(value=...)`를 상수 참조로 치환한다.
 > 교차서비스 evict 가 다시 생기면 소유 서비스가 노출한 상수만 인용해 rename-무음미스를 막는다.

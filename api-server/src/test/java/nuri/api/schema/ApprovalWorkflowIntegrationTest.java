@@ -76,6 +76,7 @@ class ApprovalWorkflowIntegrationTest {
     @Autowired private ApplicationContext applicationContext;
     @Autowired private DataSource dataSource;
     @Autowired private PlatformTransactionManager transactionManager;
+    @Autowired private ProcessReadProbe processReadProbe;
     @MockitoBean private UserRepository users;
     @MockitoBean private CommonCodeService codes;
     @MockitoBean private SanctionEventListener finalNotifications;
@@ -682,6 +683,308 @@ class ApprovalWorkflowIntegrationTest {
                 Integer.class, saved.temporaryDraftSn())).as("임시저장 참조자는 임시저장과 함께 지워진다").isZero();
     }
 
+    /** Actual PostgreSQL result materialization, not latency, wire bytes, or a real user-query cost. */
+    @Test
+    void listProcessMaterializationDoesNotGrowWithPastCycles(org.junit.jupiter.api.TestReporter reporter) {
+        assertThat(applicationContext.getEnvironment().getProperty("spring.datasource.url"))
+                .as("synthetic writes are limited to the existing PostgreSQL 17 Testcontainers runner")
+                .startsWith("jdbc:tc:postgresql:17:");
+        List<String> previous = List.of("WF_COST_OLD_1", "WF_COST_OLD_2", "WF_COST_OLD_3");
+        String measurementTitle = "비용 검증 " + java.util.UUID.randomUUID();
+        var measurementFilter = nuri.business.service.informalsanction.ApprovalListFilter.of(measurementTitle, null, null, null);
+        List<String> eligibleApprovers = new ArrayList<>(List.of(FIRST, SECOND, FINAL));
+        eligibleApprovers.addAll(previous);
+        when(users.findActiveEsntlIdsHoldingPermission("APPROVAL_APPROVE")).thenReturn(eligibleApprovers);
+        when(users.findProfilesByEsntlIds(any())).thenAnswer(call -> {
+            List<nuri.business.service.user.dto.UserSearchDto> result = new ArrayList<>();
+            Iterable<String> ids = call.getArgument(0);
+            for (String user : ids) {
+                result.add(new nuri.business.service.user.dto.UserSearchDto(user, user, "합성 부서", FINAL.equals(user)));
+            }
+            return result;
+        });
+
+        authenticate(OWNER);
+        long id = service.registerInformalSanction(document(measurementTitle + " 차수 1", "합성 초기 본문 1"),
+                List.of(stage(ApprovalStageKind.APPROVAL, previous.getFirst())));
+        ownDocuments.add(id);
+        // Each historical cycle is produced through the service: ASK, ANSWER, REVISE, reject, resubmit.
+        for (int index = 0; index < previous.size(); index++) {
+            String former = previous.get(index);
+            int cycle = index + 1;
+            authenticate(former);
+            service.requestSupplement(id, ("과거 합성 질문 " + cycle + " ").repeat(80),
+                    service.getInformalSanction(id, former).getVersion());
+            authenticate(OWNER);
+            service.answerSupplement(id, ("과거 합성 답변 " + cycle + " ").repeat(80), "합성 보완 본문 " + cycle,
+                    service.getInformalSanction(id, OWNER).getVersion());
+            authenticate(former);
+            service.confirmInformalSanction(id, "R", "합성 반려 " + cycle,
+                    service.getInformalSanction(id, former).getVersion());
+            authenticate(OWNER);
+            boolean last = index == previous.size() - 1;
+            List<ApprovalStageRequest> next = last
+                    ? List.of(stage(ApprovalStageKind.AGREEMENT, FIRST), stage(ApprovalStageKind.APPROVAL, FINAL))
+                    : List.of(stage(ApprovalStageKind.APPROVAL, previous.get(index + 1)));
+            service.resubmitInformalSanction(id, document(measurementTitle + " 차수 " + (cycle + 1), "합성 초기 본문 " + (cycle + 1)),
+                    service.getInformalSanction(id, OWNER).getVersion(), next, last ? List.of(REFERENCE) : List.of());
+        }
+
+        // Preserve ordering-sensitive current-cycle semantics as well: an answered ASK, then an open ASK and REMIND.
+        authenticate(FIRST);
+        service.requestSupplement(id, "현재 닫힐 요청", service.getInformalSanction(id, FIRST).getVersion());
+        authenticate(OWNER);
+        service.answerSupplement(id, "현재 첫 요청 답변", null, service.getInformalSanction(id, OWNER).getVersion());
+        assertThat(service.getInformalSanction(id, OWNER).getOpenSupplement()).isNull();
+        authenticate(FIRST);
+        service.requestSupplement(id, "현재 열린 요청", service.getInformalSanction(id, FIRST).getVersion());
+        authenticate(OWNER);
+        assertThat(service.remindApprovers(id)).isEqualTo(1);
+
+        // Independent JDBC aggregates describe persisted synthetic rows; no repository under test supplies the budget.
+        ProcessBudget current = processBudget(id, true);
+        ProcessBudget all = processBudget(id, false);
+        assertThat(current.rows()).isEqualTo(4);
+        assertThat(all.rows()).isEqualTo(previous.size() * 3L + current.rows());
+        assertThat(all.contentBytes()).isGreaterThan(current.contentBytes());
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_ifml_atrz_hstry WHERE ifml_atrz_sn=? AND aprv_yn='R'",
+                Long.class, id)).isEqualTo((long) previous.size());
+
+        // Capture every role before any cost assertion, so the first cost failure cannot hide the other samples.
+        List<MeasuredApprovalList> samples = List.of(
+                measureApprovalList("submitted", OWNER, id,
+                        () -> service.getInformalSanctionList(OWNER, measurementFilter, PageRequest.of(0, 20))),
+                measureApprovalList("pending", FIRST, id,
+                        () -> service.getPendingApprovalList(FIRST, measurementFilter, PageRequest.of(0, 20))),
+                measureApprovalList("referenced", REFERENCE, id,
+                        () -> service.getReferencedApprovalList(REFERENCE,
+                                measurementFilter, PageRequest.of(0, 20))),
+                measureApprovalList("processed", previous.getFirst(), id,
+                        () -> service.getProcessedApprovalList(previous.getFirst(), measurementFilter, PageRequest.of(0, 20))));
+        for (MeasuredApprovalList sample : samples) {
+            reporter.publishEntry(sample.role(), "observedCalls=" + sample.read().calls + "; returnedRows=" + sample.read().rows
+                    + "; returnedContentUtf8Bytes=" + sample.read().contentBytes
+                    + "; currentRows=" + current.rows() + "; currentContentUtf8Bytes=" + current.contentBytes()
+                    + "; allRows=" + all.rows() + "; allContentUtf8Bytes=" + all.contentBytes()
+                    + "; mockNameLookupDistinctIds=" + sample.names().size()
+                    + "; mockProfileLookupDistinctIds=" + sample.profiles().size());
+            assertThat(sample.read().calls).as(sample.role() + " actual process query observed before cost assertions").isEqualTo(1);
+            assertThat(sample.row()).as(sample.role() + " list fields and hints match the real participant detail")
+                    .usingRecursiveComparison().ignoringFields("history", "processHistory", "references", "remindedToday", "canRemind")
+                    .isEqualTo(sample.detail());
+            assertThat(sample.row().getHistory()).isEmpty();
+            assertThat(sample.row().getProcessHistory()).isEmpty();
+            assertThat(sample.row().getReferences()).isEmpty();
+        }
+
+        InformalSanctionDto owner = samples.get(0).row();
+        assertThat(owner.getAtrzCycl()).isEqualTo(4);
+        assertThat(owner.getDocTtl()).isEqualTo(measurementTitle + " 차수 4");
+        assertThat(owner.getDocCn()).isEqualTo("합성 초기 본문 4");
+        assertThat(owner.getCurrentStageSince()).isNotNull();
+        assertThat(owner.getOpenSupplement().askedBy()).isEqualTo(FIRST);
+        assertThat(owner.getOpenSupplement().askedByNm()).isEqualTo(FIRST);
+        assertThat(owner.getOpenSupplement().question()).isEqualTo("현재 열린 요청");
+        assertThat(owner.isCanAnswerSupplement()).isTrue();
+        java.time.LocalDate reminderDay = samples.get(0).detail().getProcessHistory().stream()
+                .filter(p -> p.type() == nuri.business.domain.informalsanction.ApprovalProcessType.REMIND)
+                .findFirst().orElseThrow().at().atZone(java.time.ZoneId.systemDefault())
+                .withZoneSameInstant(java.time.ZoneId.of("Asia/Seoul")).toLocalDate();
+        for (MeasuredApprovalList sample : samples) {
+            if ("submitted".equals(sample.role())) {
+                assertReminderHints(sample.detail(), reminderDay, sample.detailStart(), sample.detailEnd());
+                assertReminderHints(sample.row(), reminderDay, sample.listStart(), sample.listEnd());
+            } else {
+                assertThat(sample.row().isRemindedToday()).isFalse();
+                assertThat(sample.row().isCanRemind()).isFalse();
+                assertThat(sample.detail().isRemindedToday()).isFalse();
+                assertThat(sample.detail().isCanRemind()).isFalse();
+            }
+        }
+        assertThat(owner.isCanReplaceApprover()).isTrue();
+        assertThat(owner.isCanWithdraw()).isTrue();
+        assertThat(owner.getStages().get(1).approvers().getFirst().absent()).isTrue();
+        InformalSanctionDto approver = samples.get(1).row();
+        assertThat(approver.isCanApprove()).isTrue();
+        assertThat(approver.isCanRequestSupplement()).isFalse();
+        assertThat(approver.isCanAnswerSupplement()).isFalse();
+        assertThat(approver.isCanAddReference()).isFalse();
+        InformalSanctionDto reference = samples.get(2).row();
+        assertThat(reference.isReferenceViewer()).isTrue();
+        assertReadOnlyHints(reference);
+        assertThat(reference.getCurrentStageSince()).isNotNull();
+        assertThat(reference.getOpenSupplement()).isEqualTo(owner.getOpenSupplement());
+        InformalSanctionDto past = samples.get(3).row();
+        assertThat(past.getAtrzCycl()).isEqualTo(1);
+        assertThat(past.getAprvYn()).isEqualTo("R");
+        assertThat(past.getDocTtl()).isEqualTo(measurementTitle + " 차수 1");
+        assertThat(past.getDocCn()).isEqualTo("합성 보완 본문 1");
+        assertThat(past.getVersion()).isNull();
+        assertThat(past.getCurrentStageSince()).isNull();
+        assertThat(past.getOpenSupplement()).isNull();
+        assertThat(past.isReferenceViewer()).isFalse();
+        assertReadOnlyHints(past);
+        assertThat(past.getStages()).flatExtracting(s -> s.approvers())
+                .extracting(a -> a.userId()).containsExactly(previous.getFirst());
+
+        // Detail still loads and returns permitted history, independently of the list-only cost boundary.
+        for (int index : List.of(0, 2)) {
+            InformalSanctionDto detail = samples.get(index).detail();
+            assertThat(detail.getHistory()).extracting(h -> h.atrzCycl()).containsExactly(4, 3, 2, 1);
+            assertThat(detail.getProcessHistory()).hasSize((int) all.rows());
+            assertThat(detail.getProcessHistory()).extracting(p -> p.atrzCycl()).contains(1, 2, 3, 4);
+            assertThat(detail.getReferences()).extracting(r -> r.userId()).containsExactly(REFERENCE);
+        }
+        assertThat(samples.get(1).detail().getProcessHistory()).hasSize((int) current.rows())
+                .allSatisfy(p -> assertThat(p.atrzCycl()).isEqualTo(4));
+        assertThat(samples.get(3).detail().getHistory()).extracting(h -> h.atrzCycl()).containsExactly(1);
+        assertThat(samples.get(3).detail().getProcessHistory()).hasSize(3)
+                .allSatisfy(p -> assertThat(p.atrzCycl()).isEqualTo(1));
+        assertThat(samples.get(3).detail().getReferences()).isEmpty();
+
+        // The original full-history list query must fail here; no method-name assertion selects the implementation.
+        org.assertj.core.api.SoftAssertions.assertSoftly(soft -> {
+            for (MeasuredApprovalList sample : samples) {
+                boolean pastParticipant = "processed".equals(sample.role());
+                if (pastParticipant) {
+                    // This actor needs no current-cycle processing data; a later zero-row optimization is valid.
+                    soft.assertThat(sample.read().rows).as(sample.role() + " process row upper bound")
+                            .isBetween(0L, current.rows());
+                    soft.assertThat(sample.read().contentBytes).as(sample.role() + " prcsCn UTF-8 byte upper bound")
+                            .isBetween(0L, current.contentBytes());
+                    soft.assertThat(sample.read().cycles).as(sample.role() + " no historical process overfetch")
+                            .isSubsetOf(4);
+                    soft.assertThat(sample.names()).as("past participant required visible names")
+                            .contains(OWNER, previous.getFirst());
+                    soft.assertThat(sample.names()).as("past participant bounded names; current actor is optional")
+                            .isSubsetOf(OWNER, previous.getFirst(), FIRST);
+                } else {
+                    soft.assertThat(sample.read().rows).as(sample.role() + " materialized process rows")
+                            .isEqualTo(current.rows());
+                    soft.assertThat(sample.read().contentBytes).as(sample.role() + " materialized prcsCn UTF-8 bytes")
+                            .isEqualTo(current.contentBytes());
+                    soft.assertThat(sample.read().cycles).as(sample.role() + " process cycles materialized")
+                            .containsExactly(4);
+                    soft.assertThat(sample.names()).as(sample.role() + " mock name lookup ID population, not SQL cost")
+                            .containsExactlyInAnyOrder(OWNER, FIRST, FINAL);
+                }
+                java.util.Set<String> expectedProfiles = pastParticipant
+                        ? java.util.Set.of(previous.getFirst()) : java.util.Set.of(FIRST, FINAL);
+                soft.assertThat(sample.profiles()).as(sample.role() + " mock absence lookup ID population, not SQL cost")
+                        .containsExactlyInAnyOrderElementsOf(expectedProfiles);
+            }
+        });
+    }
+
+    private static java.time.LocalDate businessDate() {
+        return java.time.LocalDate.now(java.time.ZoneId.of("Asia/Seoul"));
+    }
+
+    private static void assertReminderHints(InformalSanctionDto row, java.time.LocalDate reminderDay,
+                                           java.time.LocalDate before, java.time.LocalDate after) {
+        // If the request crosses midnight either date is valid; on ordinary requests this is an exact assertion.
+        assertThat(row.isRemindedToday()).isIn(List.of(reminderDay.equals(before), reminderDay.equals(after)));
+        assertThat(row.isCanRemind()).isEqualTo(!row.isRemindedToday());
+    }
+    private static void assertReadOnlyHints(InformalSanctionDto row) {
+        assertThat(List.of(row.isCanApprove(), row.isCanWithdraw(), row.isCanResubmit(), row.isCanRemind(),
+                row.isRemindedToday(), row.isCanReplaceApprover(), row.isCanRequestSupplement(),
+                row.isCanAnswerSupplement(), row.isCanAddReference())).containsOnly(false);
+    }
+
+    private ProcessBudget processBudget(long id, boolean currentOnly) {
+        return jdbc.queryForObject("SELECT count(*), coalesce(sum(octet_length(convert_to(coalesce(p.prcs_cn,''), 'UTF8'))),0) "
+                        + "FROM tb_ifml_atrz_prcs_hstry p JOIN tb_ifml_atrz_info s ON s.ifml_atrz_sn=p.ifml_atrz_sn "
+                        + "WHERE p.ifml_atrz_sn=?" + (currentOnly ? " AND p.atrz_cycl=s.atrz_cycl" : ""),
+                (row, number) -> new ProcessBudget(row.getLong(1), row.getLong(2)), id);
+    }
+
+    private MeasuredApprovalList measureApprovalList(String role, String actor, long id,
+            java.util.function.Supplier<org.springframework.data.domain.Page<InformalSanctionDto>> query) {
+        authenticate(actor);
+        java.time.LocalDate detailStart = businessDate();
+        InformalSanctionDto detail = service.getInformalSanction(id, actor);
+        java.time.LocalDate detailEnd = businessDate();
+        org.mockito.Mockito.clearInvocations(users); // Preserve every existing stub; exclude fixture/detail lookups.
+        ProcessRead read = processReadProbe.begin(id);
+        java.time.LocalDate listStart = businessDate();
+        java.time.LocalDate listEnd;
+        InformalSanctionDto row;
+        try {
+            var page = query.get();
+            listEnd = businessDate();
+            var ownRows = page.getContent().stream().filter(item -> Long.valueOf(id).equals(item.getIfmlAtrzSn())).toList();
+            assertThat(ownRows).as("the synthetic document is present once, independently of other documents").hasSize(1);
+            row = ownRows.getFirst();
+        } finally {
+            processReadProbe.end();
+        }
+        return new MeasuredApprovalList(role, row, detail, read,
+                lookupIds("findAllById"), lookupIds("findProfilesByEsntlIds"), detailStart, detailEnd, listStart, listEnd);
+    }
+
+    private java.util.Set<String> lookupIds(String method) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (var invocation : org.mockito.Mockito.mockingDetails(users).getInvocations()) {
+            if (method.equals(invocation.getMethod().getName())) {
+                Iterable<String> requested = invocation.getArgument(0);
+                requested.forEach(ids::add);
+            }
+        }
+        return java.util.Set.copyOf(ids);
+    }
+
+    private record ProcessBudget(long rows, long contentBytes) { }
+    private record MeasuredApprovalList(String role, InformalSanctionDto row, InformalSanctionDto detail,
+                                        ProcessRead read, java.util.Set<String> names, java.util.Set<String> profiles,
+                                        java.time.LocalDate detailStart, java.time.LocalDate detailEnd,
+                                        java.time.LocalDate listStart, java.time.LocalDate listEnd) { }
+
+    private static class ProcessRead {
+        private final long documentId;
+        private int calls;
+        private long rows;
+        private long contentBytes;
+        private final java.util.Set<Integer> cycles = new java.util.HashSet<>();
+
+        ProcessRead(long documentId) { this.documentId = documentId; }
+    }
+
+    /** Observe returned real entities only; leave query, transaction advice, ordering and result untouched. */
+    @org.aspectj.lang.annotation.Aspect
+    static class ProcessReadProbe {
+        private final ThreadLocal<ProcessRead> active = new ThreadLocal<>();
+
+        ProcessRead begin(long documentId) {
+            assertThat(active.get()).as("measurement must not leak into another list read").isNull();
+            ProcessRead read = new ProcessRead(documentId);
+            active.set(read);
+            return read;
+        }
+
+        void end() { active.remove(); }
+
+        @org.aspectj.lang.annotation.Around("execution(java.util.List nuri.business.domain.informalsanction.InformalSanctionProcessRepository.*(..))")
+        Object observeReturnedProcesses(org.aspectj.lang.ProceedingJoinPoint invocation) throws Throwable {
+            Object result = invocation.proceed();
+            ProcessRead read = active.get();
+            if (read != null) {
+                assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.isActualTransactionActive()).isTrue();
+                assertThat(org.springframework.transaction.support.TransactionSynchronizationManager.isCurrentTransactionReadOnly()).isTrue();
+                read.calls++;
+                for (Object item : (List<?>) result) {
+                    var process = (nuri.business.domain.informalsanction.InformalSanctionProcess) item;
+                    if (!Long.valueOf(read.documentId).equals(process.getIfmlAtrzSn())) continue;
+                    read.rows++;
+                    read.cycles.add(process.getAtrzCycl().intValueExact());
+                    if (process.getPrcsCn() != null) {
+                        read.contentBytes += process.getPrcsCn().getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+                    }
+                }
+            }
+            return result;
+        }
+    }
     private void seedDrafter() {
         jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
                 + "VALUES(?,?,'draft fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
@@ -755,7 +1058,11 @@ class ApprovalWorkflowIntegrationTest {
      * 일반 BeanFactoryPostProcessor 는 컴포넌트 스캔(ConfigurationClassPostProcessor) 뒤에 돈다.
      */
     @TestConfiguration(proxyBeanMethods = false)
+    @org.springframework.context.annotation.EnableAspectJAutoProxy
     static class InAppNotificationsOffTestConfiguration {
+        @Bean
+        ProcessReadProbe processReadProbe() { return new ProcessReadProbe(); }
+
         @Bean
         static BeanFactoryPostProcessor dropInAppNotificationListener() {
             return beanFactory -> {

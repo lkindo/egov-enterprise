@@ -12,6 +12,8 @@ import org.mockito.junit.jupiter.MockitoExtension;
 
 import java.util.Optional;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.*;
@@ -149,5 +151,116 @@ class MailAsyncProcessorTest {
         processor.setSelf(processor);
         processor.dispatchCommitted(1L, QUEUED, "Sub", "Cn", "from", "to", "SENDER-1").join();
         verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void failureEventIdentityUsesTheIntentAttemptIncludingNanoseconds() {
+        var intentTime = QUEUED.withNano(123456789);
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("subject").rcvrNm("recipient").build();
+        mail.queueAt(intentTime.truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+        when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
+        when(sentMailRepository.recordResult(eq(1L), any(java.time.LocalDateTime.class), eq("F"))).thenReturn(1);
+
+        mailAsyncProcessor.markResult(1L, intentTime, "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime, "F", "SENDER-1");
+        mailAsyncProcessor.markResult(1L, intentTime.plusNanos(1), "F", "SENDER-1");
+
+        var captor = org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, times(3)).publishEvent(captor.capture());
+        var published = captor.getAllValues();
+        assertThat(published.get(0).eventId()).isEqualTo(published.get(1).eventId());
+        assertThat(published.get(2).eventId()).isNotEqualTo(published.get(0).eventId());
+        verifyNoInteractions(emailSender);
+    }
+
+    @Test
+    void noticeExceptionEscapesTheResultTransactionForRecordingRecovery() {
+        SentMail mail = SentMail.builder().emlDsptchSn(1L).emlTtl("subject").build();
+        when(sentMailRepository.findById(1L)).thenReturn(Optional.of(mail));
+        var failure = new IllegalStateException("synthetic notification failure");
+        doThrow(failure).when(eventPublisher).publishEvent(any(Object.class));
+
+        assertThatThrownBy(() -> mailAsyncProcessor.markResult(1L, QUEUED, "F", "SENDER-1"))
+                .isSameAs(failure);
+        verifyNoInteractions(emailSender);
+    }
+
+    @Test
+    void exhaustedFailureRecordingPreservesFailureAndCountsOnlyTheLostNotice() {
+        var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        var processor = new MailAsyncProcessor(emailSender, sentMailRepository, registry, eventPublisher);
+        processor.setSelf(processor);
+
+        assertThat(processor.recoverRecording(new IllegalStateException("synthetic notice failure"),
+                1L, QUEUED, "F", "SENDER-1")).isTrue();
+
+        verify(sentMailRepository, times(1)).recordResult(1L, QUEUED, "F");
+        assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
+        assertThat(registry.get("mail.dispatch.failure.notices.lost").counter().count()).isEqualTo(1);
+        verifyNoInteractions(eventPublisher, emailSender);
+    }
+
+    @Test
+    void fallbackCasZeroDoesNotClaimThatANoticeWasLost() {
+        var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        var processor = new MailAsyncProcessor(emailSender, sentMailRepository, registry, eventPublisher);
+        processor.setSelf(processor);
+        when(sentMailRepository.recordResult(1L, QUEUED, "F")).thenReturn(0);
+
+        assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
+                1L, QUEUED, "F", "SENDER-1")).isFalse();
+
+        verify(sentMailRepository, times(1)).recordResult(1L, QUEUED, "F");
+        assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
+        assertThat(registry.find("mail.dispatch.failure.notices.lost").counter()).isNull();
+        verifyNoInteractions(eventPublisher, emailSender);
+    }
+
+    @Test
+    void failedResultOnlyFallbackKeepsTheUnknownBoundaryWithoutMoreRetries() {
+        var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        var processor = new MailAsyncProcessor(emailSender, sentMailRepository, registry, eventPublisher);
+        processor.setSelf(processor);
+        when(sentMailRepository.recordResult(1L, QUEUED, "F"))
+                .thenThrow(new org.springframework.dao.TransientDataAccessResourceException("synthetic database outage"));
+
+        assertThat(processor.recoverRecording(new IllegalStateException("synthetic notice failure"),
+                1L, QUEUED, "F", "SENDER-1")).isFalse();
+
+        verify(sentMailRepository, times(1)).recordResult(1L, QUEUED, "F");
+        assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
+        assertThat(registry.find("mail.dispatch.failure.notices.lost").counter()).isNull();
+        verifyNoInteractions(eventPublisher, emailSender);
+    }
+
+    @Test
+    void exhaustedSuccessRecordingDoesNotUseTheFailureFallback() {
+        var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        var processor = new MailAsyncProcessor(emailSender, sentMailRepository, registry, eventPublisher);
+        processor.setSelf(processor);
+
+        assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
+                1L, QUEUED, "S", "SENDER-1")).isFalse();
+
+        verifyNoInteractions(sentMailRepository, eventPublisher, emailSender);
+        assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(1);
+        assertThat(registry.find("mail.dispatch.failure.notices.lost").counter()).isNull();
+    }
+
+    @Test
+    void unknownOrBlankSenderDoesNotCountAnExpectedNoticeAsLost() {
+        var registry = new io.micrometer.core.instrument.simple.SimpleMeterRegistry();
+        var processor = new MailAsyncProcessor(emailSender, sentMailRepository, registry, eventPublisher);
+        processor.setSelf(processor);
+
+        assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
+                1L, QUEUED, "F", null)).isTrue();
+        assertThat(processor.recoverRecording(new IllegalStateException("synthetic recording failure"),
+                1L, QUEUED, "F", "  ")).isTrue();
+
+        verify(sentMailRepository, times(2)).recordResult(1L, QUEUED, "F");
+        assertThat(registry.get("mail.dispatch.recording.failures").counter().count()).isEqualTo(2);
+        assertThat(registry.find("mail.dispatch.failure.notices.lost").counter()).isNull();
+        verifyNoInteractions(eventPublisher, emailSender);
     }
 }

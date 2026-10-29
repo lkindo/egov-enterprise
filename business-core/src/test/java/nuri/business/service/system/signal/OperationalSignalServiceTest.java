@@ -2,6 +2,7 @@ package nuri.business.service.system.signal;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.tuple;
+import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -25,6 +26,9 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.support.SimpleTransactionStatus;
 
 /**
  * [2026-10-20] 관리자 홈의 운영 신호 요약. 신호마다 그 원천의 조회 권한이 있을 때만 싣고(H3), 셀 수 없으면 0 이 아니라 null 이다.
@@ -39,10 +43,14 @@ class OperationalSignalServiceTest {
     private final DurableJobRepository durableJobs = mock(DurableJobRepository.class);
     private final UserRepository users = mock(UserRepository.class);
     private final SysLogRepository sysLogs = mock(SysLogRepository.class);
-    private final OperationalSignalService service = new OperationalSignalService(durableJobs, users, sysLogs, SEOUL);
+    private final PlatformTransactionManager transactionManager = mock(PlatformTransactionManager.class);
+    private final OperationalSignalService service = new OperationalSignalService(durableJobs, users, sysLogs,
+            transactionManager, SEOUL);
 
     @BeforeEach
     void counts() {
+        when(transactionManager.getTransaction(any(TransactionDefinition.class)))
+                .thenAnswer(invocation -> new SimpleTransactionStatus());
         when(durableJobs.countByPrcsSttsNm("FAILED")).thenReturn(3L);
         when(users.countByLckYn("Y")).thenReturn(2L);
         when(sysLogs.countByOcrnYmd("20261020")).thenReturn(5L);

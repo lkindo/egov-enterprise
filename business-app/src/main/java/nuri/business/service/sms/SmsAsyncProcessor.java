@@ -53,15 +53,13 @@ public class SmsAsyncProcessor {
 
     private void dispatchRecipients(Long smsTrsmSn, String senderTel, String content, String senderEsntlId) {
         List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
-        int failed = 0;
         RuntimeException deferred = null;
         for (SmsRecptn recipient : recipients) {
             if (Thread.currentThread().isInterrupted()) {
                 throw new java.util.concurrent.CancellationException("SMS batch interrupted before the next recipient");
             }
             try {
-                if (self.sendToRecipient(smsTrsmSn, recipient.getRcptnTelno(), senderTel, content)
-                        == SmsGatewayResult.State.REJECTED) failed++;
+                self.sendToRecipient(smsTrsmSn, recipient.getRcptnTelno(), senderTel, content);
             } catch (RuntimeException failure) {
                 deferred = failure;
                 // A DB/worker failure does not prove the provider rejected a possibly accepted POST.
@@ -70,22 +68,33 @@ public class SmsAsyncProcessor {
                         failure.getClass().getSimpleName());
             }
         }
-        if (failed > 0 && senderEsntlId != null && !senderEsntlId.isBlank()) {
-            try { self.notifyDeliveryFailure(senderEsntlId, failed, recipients.size()); }
-            catch (RuntimeException failure) {
-                log.error("SMS failure notice could not be requested: transmission={}, errorType={}",
-                        smsTrsmSn, failure.getClass().getSimpleName());
-            }
-        }
         // A retry may finish never-claimed recipients. Already claimed recipients remain protected
         // by claimSending, including a POST whose outcome or result commit was not confirmed.
         if (deferred != null) throw deferred;
+        self.notifyDeliveryFailure(smsTrsmSn, senderEsntlId);
     }
 
+    /** Rebuild a stable summary from committed results; notice failures keep the durable job retryable. */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void notifyDeliveryFailure(String senderEsntlId, int failed, int total) {
-        eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(senderEsntlId,
-                "문자 발송 실패", "문자 " + total + "건 중 " + failed + "건을 보내지 못했습니다. 문자 관리에서 수신자 결과를 확인해 주세요.",
+    public void notifyDeliveryFailure(Long smsTrsmSn, String senderEsntlId) {
+        List<SmsRecptn> recipients = smsRecptnRepository.findByIdSmsTrsmSn(smsTrsmSn);
+        int failed = 0;
+        for (SmsRecptn recipient : recipients) {
+            var receipt = SmsReceiptState.parse(recipient.getRsltMsg());
+            if (("P".equals(recipient.getRsltCd()) && recipient.getRsltMsg() == null)
+                    || receipt.filter(state -> state.stage() == SmsReceiptState.Stage.CLAIMED).isPresent()) {
+                // Expiry alone does not settle CLAIMED: its worker may still commit a matching result CAS.
+                throw new IllegalStateException("SMS recipients are not fully processed");
+            }
+            // GET rejections retain requestId; legacy text does not prove an initial POST rejection.
+            if ("F".equals(recipient.getRsltCd()) && receipt.filter(state ->
+                    state.stage() == SmsReceiptState.Stage.REJECTED && state.requestId() == null).isPresent()) failed++;
+        }
+        if (failed == 0 || senderEsntlId == null || senderEsntlId.isBlank()) return;
+        java.util.UUID eventId = java.util.UUID.nameUUIDFromBytes(
+                ("SMS_DELIVERY_FAILURE:" + smsTrsmSn).getBytes(java.nio.charset.StandardCharsets.UTF_8));
+        eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(eventId, senderEsntlId,
+                "문자 발송 실패", "문자 " + recipients.size() + "건 중 " + failed + "건을 보내지 못했습니다. 문자 관리에서 수신자 결과를 확인해 주세요.",
                 SMS_ADMIN_PATH));
     }
 

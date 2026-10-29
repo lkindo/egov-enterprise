@@ -213,6 +213,15 @@ tasks.register('migrationTest', Test) {
     classpath = sourceSets.migrationTest.runtimeClasspath
     workingDir file('migration-tool')
     dependsOn tasks.named('migrationBootJar')
+    inputs.files(rootProject.files(
+            'tools/migration-workspace/engine.mjs',
+            'tools/migration-workspace/store.mjs',
+            'tools/migration-workspace/inputs.mjs'))
+            .withPropertyName('migrationWorkspaceEngine')
+            .withPathSensitivity(PathSensitivity.RELATIVE)
+    inputs.file(tasks.named('migrationBootJar').flatMap { it.archiveFile })
+            .withPropertyName('migrationDrillJar')
+            .withPathSensitivity(PathSensitivity.NONE)
     useJUnitPlatform()
     doFirst {
         systemProperty 'migration.drill.classpath', classpath.asPath
@@ -314,6 +323,43 @@ ${apiTasks}\n${assembly()}\n${migrationDependencies}`;
     offlineArchiveTask: 'migrationBootJar', buildSha256: createHash('sha256').update(code).digest('hex') };
 }
 
+function migrationTestInputs(source) {
+  const code = groovyCode(source);
+  const headers = [...source.matchAll(/tasks\.register\(['"]migrationTest['"],\s*Test\)\s*\{/g)]
+    .filter(match => code.startsWith('tasks.register', match.index));
+  if (headers.length !== 1) fail('migrationTest inputs require exactly one executable task declaration');
+  const body = groovyWithoutComments(block(source.slice(headers[0].index), /^tasks\.register\([^)]*\)\s*\{/g));
+  const executable = groovyCode(body);
+  const declarations = [];
+  let depth = 0;
+  for (let index = 0; index < executable.length; index += 1) {
+    if ('{(['.includes(executable[index])) depth += 1;
+    if ('})]'.includes(executable[index])) depth -= 1;
+    if (depth !== 0) continue;
+    const start = /^inputs\.(?:files|file)\s*\(/.exec(executable.slice(index));
+    if (!start || (index > 0 && /[\w.]/.test(executable[index - 1]))) continue;
+    let end = index + start[0].length;
+    // Consume the call and chained input options, retaining literal arguments.
+    // Nested closures (such as flatMap) belong to this declaration, not a task action.
+    for (;;) {
+      let parentheses = 1;
+      while (end < executable.length && parentheses > 0) {
+        if (executable[end] === '(') parentheses += 1;
+        if (executable[end] === ')') parentheses -= 1;
+        end += 1;
+      }
+      if (parentheses !== 0) fail('unclosed migrationTest input declaration');
+      const chained = /^\s*\.\w+\s*\(/.exec(executable.slice(end));
+      if (!chained) break;
+      end += chained[0].length;
+    }
+    const declaration = body.slice(index, end).replace(/\s+/g, ' ').trim();
+    if (/\.withPropertyName\('(?:migrationWorkspaceEngine|migrationDrillJar)'\)/.test(declaration)) declarations.push(declaration);
+    index = end - 1;
+  }
+  return declarations.sort();
+}
+
 export function inspectSingleModuleLayout(outputRoot) {
   const root = resolve(outputRoot);
   const errors = [];
@@ -341,5 +387,12 @@ export function inspectSingleModuleLayout(outputRoot) {
   if (/suite\.(?:compileClasspath|runtimeClasspath)\s*\+=\s*sourceSets\.main\.output/.test(executable)) {
     errors.push('logical test suites must not include merged production output');
   }
+  try {
+    // Only configuration-scope input declarations are fixed; heap/timeout options may vary.
+    // Another task, quoted decoy or doFirst cannot satisfy this task's input contract.
+    if (JSON.stringify(migrationTestInputs(build)) !== JSON.stringify(migrationTestInputs(assembly()))) {
+      errors.push('migrationTest inputs or execution boundary differ from the generated contract');
+    }
+  } catch (error) { errors.push(`migrationTest inputs: ${error.message}`); }
   return { id: 'single-module', errors };
 }

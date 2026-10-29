@@ -161,7 +161,7 @@ class CachingInvalidationMatrixLinterTest {
         return out;
     }
 
-    // @Caching 으로 묶인 경우까지 훑는다 — 저장소에 실제 사용례가 있다.
+    // @Caching 으로 묶인 복합 선언도 같은 매트릭스에 포함한다.
     private static Cacheable[] collectCacheable(Method m) {
         Caching c = m.getAnnotation(Caching.class);
         Cacheable single = m.getAnnotation(Cacheable.class);

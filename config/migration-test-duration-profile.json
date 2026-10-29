@@ -4,7 +4,14 @@
   "source": {
     "runId": 36557162092,
     "commit": "1a7bc613021a18d6960e8541de61f2ba9b97ddb8",
-    "measuredAt": "2026-09-29T10:59:18Z"
+    "measuredAt": "2026-09-29T10:59:18Z",
+    "classMeasurements": {
+      "nuri.migration.MigrationWorkspacePackagedCliIntegrationTest": {
+        "kind": "local-junit",
+        "baseCommit": "a9debeb952a916b0bd2b9051c1a61a85797c2e22",
+        "measuredAt": "2026-10-29T21:16:17.836955+00:00"
+      }
+    }
   },
   "durationsMs": {
     "nuri.migration.adapter.CubridSourceAdapterTest": 620,
@@ -124,6 +131,7 @@
     "nuri.migration.MigrationRunnerTest": 899,
     "nuri.migration.MigrationSafetyIntegrationTest": 1529,
     "nuri.migration.MigrationWorkflowRunnerTest": 1684,
+    "nuri.migration.MigrationWorkspacePackagedCliIntegrationTest": 48556,
     "nuri.migration.model.MappingIdentityDslTest": 21,
     "nuri.migration.model.MappingLoaderEndpointBindingTest": 15,
     "nuri.migration.model.MappingNullifyDslTest": 40,

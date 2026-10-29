@@ -4,6 +4,7 @@ import io.micrometer.core.instrument.simple.SimpleMeterRegistry;
 import nuri.business.domain.sms.SmsRecptn;
 import nuri.business.domain.sms.SmsRecptnId;
 import nuri.business.domain.sms.SmsRecptnRepository;
+import nuri.foundation.core.event.NotificationRequestedEvent;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -18,6 +19,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -289,6 +291,97 @@ class SmsAsyncProcessorTest {
         verify(events).publishEvent(captor.capture());
         assertThat(captor.getValue().content()).contains("2건 중 1건").doesNotContain(PHONE, "01000000002", "private body");
         assertThat(captor.getValue().linkUrl()).isEqualTo(SmsAsyncProcessor.SMS_ADMIN_PATH);
+    }
+
+    @Test void notificationFailureRetriesStoredRejectionWithSameEventAndNoAdditionalPost() {
+        SmsRecptn rejected = row(1L, PHONE, "P", null);
+        when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(rejected));
+        when(sender.send(any(), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.UNCONFIGURED));
+        var unavailable = new org.springframework.dao.TransientDataAccessResourceException("notification unavailable");
+        doThrow(unavailable).doNothing().when(events).publishEvent(any(NotificationRequestedEvent.class));
+
+        assertThatThrownBy(() -> processor.dispatchCommitted(1L, "0212345678", "body", "SENDER-1"))
+                .isSameAs(unavailable);
+        assertThat(rejected.getRsltCd()).isEqualTo("F");
+        processor.dispatchCommitted(1L, "0212345678", "body", "SENDER-1").join();
+
+        var captor = org.mockito.ArgumentCaptor.forClass(NotificationRequestedEvent.class);
+        verify(events, times(2)).publishEvent(captor.capture());
+        assertThat(captor.getAllValues().get(1)).isEqualTo(captor.getAllValues().get(0));
+        assertThat(captor.getValue().content()).contains("문자 1건 중 1건");
+        verify(sender, times(1)).send(any(), any(), any());
+    }
+
+    @Test void deferredRecipientPreventsPartialFailureNotice() {
+        SmsRecptn rejected = row(1L, PHONE, "P", null);
+        SmsRecptn pending = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01000000002").rsltCd("P").build();
+        when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(rejected, pending));
+        when(sender.send(eq(PHONE), any(), any())).thenReturn(SmsGatewayResult.rejected(SmsGatewayResult.Reason.UNCONFIGURED));
+        var unavailable = new org.springframework.dao.DataAccessResourceFailureException("recipient lock unavailable");
+        when(recipients.findByIdForUpdate(new SmsRecptnId(1L, "01000000002"))).thenThrow(unavailable);
+
+        assertThatThrownBy(() -> processor.dispatchCommitted(1L, "0212345678", "body", "SENDER-1"))
+                .isSameAs(unavailable);
+        assertThat(rejected.getRsltCd()).isEqualTo("F");
+        assertThat(pending.getRsltMsg()).isNull();
+        verifyNoInteractions(events);
+        verify(sender, times(1)).send(any(), any(), any());
+    }
+
+    @Test void summaryDefersUnclaimedAndClaimedRecipientsEvenWithoutAnyInitialRejection() {
+        for (String receipt : java.util.Arrays.asList(null, SmsReceiptState.claim(NOW).encode(),
+                SmsReceiptState.claim(NOW - 120_001).encode())) {
+            SmsRecptn pending = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno(PHONE).rsltCd("P").rsltMsg(receipt).build();
+            when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(pending));
+            assertThatThrownBy(() -> processor.notifyDeliveryFailure(1L, "SENDER-1"))
+                    .isInstanceOf(IllegalStateException.class);
+            assertThat(pending.getRsltMsg()).isEqualTo(receipt);
+        }
+        verifyNoInteractions(events, sender);
+    }
+
+    @Test void summaryCountsOnlyInitialRejectedReceiptsAndKeepsIdentityAcrossGetRejection() {
+        SmsReceiptState rejected = SmsReceiptState.claim(NOW)
+                .submitted(SmsGatewayResult.rejected(SmsGatewayResult.Reason.UNCONFIGURED), NOW);
+        SmsReceiptState accepted = SmsReceiptState.claim(NOW).submitted(SmsGatewayResult.accepted("request-1"), NOW);
+        SmsRecptn initial = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno(PHONE).rsltCd("F").rsltMsg(rejected.encode()).build();
+        SmsRecptn receipt = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01000000002").rsltCd("P")
+                .rsltMsg(accepted.reconciled(SmsGatewayResult.unknown(SmsGatewayResult.Reason.LOOKUP_FAILED)).encode()).build();
+        SmsRecptn legacy = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01000000003").rsltCd("F")
+                .rsltMsg("Dispatch queue saturated").build();
+        SmsRecptn malformed = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01000000004").rsltCd("F")
+                .rsltMsg(SmsReceiptState.PREFIX + "REJECTED|malformed").build();
+        SmsRecptn legacyPending = SmsRecptn.builder().smsTrsmSn(1L).rcptnTelno("01000000005").rsltCd("P")
+                .rsltMsg("legacy pending outcome").build();
+        when(recipients.findByIdSmsTrsmSn(1L)).thenReturn(List.of(initial, receipt, legacy, malformed, legacyPending));
+
+        processor.notifyDeliveryFailure(1L, "SENDER-1");
+        SmsReceiptState laterRejection = accepted.reconciled(
+                SmsGatewayResult.rejected("request-1", "message-1", SmsGatewayResult.Reason.PROVIDER_REJECTED));
+        receipt.updateResult("F", laterRejection.encode());
+        processor.notifyDeliveryFailure(1L, "SENDER-1");
+
+        var captor = org.mockito.ArgumentCaptor.forClass(NotificationRequestedEvent.class);
+        verify(events, times(2)).publishEvent(captor.capture());
+        assertThat(captor.getAllValues().get(1)).isEqualTo(captor.getAllValues().get(0));
+        assertThat(captor.getValue().content()).contains("문자 5건 중 1건");
+        assertThat(legacyPending.getRsltMsg()).isEqualTo("legacy pending outcome");
+        verifyNoInteractions(sender);
+    }
+
+    @Test void separateTransmissionsHaveDifferentFailureNoticeIdentities() {
+        String rejection = SmsReceiptState.claim(NOW)
+                .submitted(SmsGatewayResult.rejected(SmsGatewayResult.Reason.UNCONFIGURED), NOW).encode();
+        for (long id : new long[] {1L, 2L}) {
+            when(recipients.findByIdSmsTrsmSn(id)).thenReturn(List.of(SmsRecptn.builder()
+                    .smsTrsmSn(id).rcptnTelno(PHONE).rsltCd("F").rsltMsg(rejection).build()));
+            processor.notifyDeliveryFailure(id, "SENDER-1");
+        }
+        var captor = org.mockito.ArgumentCaptor.forClass(NotificationRequestedEvent.class);
+        verify(events, times(2)).publishEvent(captor.capture());
+        assertThat(captor.getAllValues().get(0).eventId()).isNotEqualTo(captor.getAllValues().get(1).eventId());
+        assertThat(captor.getAllValues().get(0).content()).isEqualTo(captor.getAllValues().get(1).content());
+        verifyNoInteractions(sender);
     }
 
     @Test void durableRetryCompletesUnclaimedRecipientsWithoutRepeatingAcceptedPosts() {
