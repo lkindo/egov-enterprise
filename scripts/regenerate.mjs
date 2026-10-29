@@ -17,9 +17,10 @@
  *   3. 하네스 기준선(baseline-manifest.properties)은 손 결속 원장(gates.json·SAST 예외)과 훅·게이트 소스의 해시라 그 뒤에 쓴다.
  *   4. Atlas 는 문서·게이트 원장·훅을 읽는 마지막 단계다.
  *
- * 하지 않는 것: api-docs.json 추출(Gradle)과 메뉴 snapshot(일회용 PostgreSQL)은 §6.3 의 무거운 실행이라 따로 돌린다. 새 시험의 게이트
- * 등록(gates.json)과 고정 수 시험의 값은 사람이 정한다 — 이 명령은 그 결과를 해시할 뿐이다. 재생성으로 래칫 수치가 오르거나 새 예외가
- * 생기면 받아들이지 않고 원인을 본다(§6.4·H2). 바뀐 파일 목록과 diff 를 확인한 뒤 함께 커밋한다.
+ * 하지 않는 것: api-docs.json 추출(Gradle)과 메뉴 snapshot(일회용 PostgreSQL)은 §6.3 의 무거운 실행이라 따로 돌린다(--check 는 메뉴
+ * snapshot 이 낡았는지만 본다). 새 시험의 게이트 등록(gates.json)과 고정 수 시험의 값은 사람이 정한다 — 이 명령은 그 결과를 해시하고,
+ * --check 는 빠졌는지만 알린다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(§6.4·H2). 바뀐 파일 목록과
+ * diff 를 확인한 뒤 함께 커밋한다.
  *
  * --check 는 각 생성기 자신의 검사 모드(GENERATORS 의 check)를 병렬로 부르고, URL 승인 결속과 SAST 예외 해시, 재생성이 고치지 않는
  * 손 결속 원장 확인(LEDGER_CHECKS)을 함께 본다. 새 판정을 더하지 않는다 — 운영 계약·codegen 게이트가 같은 생성물·원장을 다시 본다.
@@ -47,6 +48,12 @@ function censusErrorHeadlines(output) {
   return headlines.length ? headlines.join('\n') : output;
 }
 
+/** 손 결속 사전 점검은 같은 머리줄 뒤에 위반 코드마다 고치는 법(`    → …`)을 쓴다 — 고치는 법은 그 스크립트 한 곳에 두고 여기서는 남기기만 한다. */
+function headlinesWithFixes(output) {
+  const lines = output.split(/\r?\n/).filter(line => /^ {2}- \[[A-Z_]+\]/.test(line) || line.startsWith('    → '));
+  return lines.length ? lines.join('\n') : output;
+}
+
 /** IA 처분 계약 CLI 는 JSON 요약을 쓴다 — 실패 판정인 structuralErrors 만 꺼낸다(뒤의 승인 차단 표본은 판정이 아니다). */
 function dispositionStructuralErrors(output) {
   try {
@@ -59,10 +66,12 @@ function dispositionStructuralErrors(output) {
 /*
  * 손 결속 원장 확인(--check 전용, 쓰지 않는다). 재생성이 고치지 않는 사람이 맞추는 수·해시 — 배선 census 원장의 operation 수와 소비 래칫
  * (config/governance/operation-consumer-census.json 의 expected, OPERATION_COUNT_DRIFT 등), IA 처분 제안 원장의 라우트 원장 결속 해시
- * (manifestRef.sha256 ← config/ui-route-capabilities.json) — 를 잊은 push 가 운영 계약
- * (약 8~14분) 뒤에야 붉었다. 같은 CLI 를 운영 계약의 시험(operation-consumer-census.test.mjs·ui-navigation-disposition-contract.test.mjs)이
- * 그대로 다시 보므로 새 판정이 아니고 운영 계약에서 걷지 않는다. 둘 다 읽기만 하고 단독 실행이 수 초다(2026-10-28 실측 약 4초·1초 미만).
- * 게이트 원장의 Java 태그 집합 대조(governance-gates-contract)는 단독으로 싸게 부를 진입점이 없어 넣지 않았다.
+ * (manifestRef.sha256 ← config/ui-route-capabilities.json), 태그 시험의 게이트 원장 등록·메뉴 snapshot 의 마이그레이션 해시·기본 그룹 없는
+ * 권한의 기능 파일 안내(scripts/ledger-precheck.mjs) — 를 잊은 push 가 운영 계약(약 8~14분) 뒤에야 붉었다. 운영 계약의 시험
+ * (operation-consumer-census.test.mjs·ui-navigation-disposition-contract.test.mjs·governance-gates-contract.test.mjs·project-composer 시험)이
+ * 같은 CLI·판정 함수로 다시 보므로 새 판정이 아니고 운영 계약에서 걷지 않는다. 모두 읽기만 하고 단독 실행이 수 초다(2026-10-28 실측 약
+ * 4초·1초 미만, 2026-10-30 손 결속 사전 점검 약 2~7초(기계 부하에 따라) — 태그 스캔이 대부분이다). 게이트 원장의 Java 태그 대조는 원장 계약에서 그 부분만
+ * 떼어 낸 진입점(governance-gates-contract.mjs 의 taggedGateRegistryErrors)을 부른다 — 원장 검증도 같은 함수를 쓴다.
  * 실패는 regen 으로 고쳐지지 않는다 — 출력대로 원장이나 원인을 고친다. 래칫을 올리거나 해시만 다시 결속해 신호를 지우지 않는다(H2).
  * 이 파일은 처분 제안 원장의 파일 이름을 적지 않는다 — 처분 계약은 그 이름을 담은 실행 소스를 미등록 소비자로 막는다(이 명령은 CLI 를
  * 부를 뿐 원장을 읽지 않는다).
@@ -83,6 +92,13 @@ export const LEDGER_CHECKS = Object.freeze([
     excerpt: dispositionStructuralErrors,
     hint: 'IA 처분 제안 원장의 결속은 regen 밖이다 — 라우트 원장의 처분 범위가 정당하게 바뀌었을 때만 출력의 expected 값으로'
       + ' 다시 결속한다(오케스트레이션 프로토콜 §6.4).',
+  }),
+  Object.freeze({
+    id: 'hand-bound-ledgers',
+    requires: 'scripts/ledger-precheck.mjs',
+    command: ['node', ['scripts/ledger-precheck.mjs']],
+    excerpt: headlinesWithFixes,
+    hint: '태그 시험 등록·메뉴 snapshot·미배정 권한 안내는 regen 이 고치지 않는다 — 코드마다 위 → 대로 고친다.',
   }),
 ]);
 

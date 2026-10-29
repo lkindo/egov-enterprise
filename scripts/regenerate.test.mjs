@@ -83,11 +83,12 @@ test('모든 생성기가 쓰지 않는 검사 명령을 갖고, 그 명령은 �
   assert.throws(() => checkTasks(ROOT, unchecked), /검사 명령\(check\)이 없다/);
 });
 
-// 재생성이 고치지 않는 손 결속 값(operation 수·소비 래칫, IA 처분 결속 해시)을 잊으면 운영 계약 뒤에야 붉었다. --check 가 같은 CLI 를
-// 먼저 부른다 — 읽기만 하는 명령이어야 하고, 그 스크립트가 없는 저장소(재사용 생성물)에서는 돌지 않는다.
-test('--check 는 손 결속 원장(operation census·IA 처분 결속)을 쓰지 않는 CLI 로 먼저 본다', () => {
+// 재생성이 고치지 않는 손 결속 값(operation 수·소비 래칫, IA 처분 결속 해시, 태그 시험 등록·메뉴 스냅숏 해시·미배정 권한 안내)을 잊으면
+// 운영 계약 뒤에야 붉었다. --check 가 같은 CLI 를 먼저 부른다 — 읽기만 하는 명령이어야 하고, 그 스크립트가 없는 저장소(재사용 생성물)에서는
+// 돌지 않는다. 손 결속 사전 점검의 실제 사례 red 는 ledger-precheck.test.mjs 가 본다.
+test('--check 는 손 결속 원장(operation census·IA 처분 결속·태그 등록·메뉴 스냅숏·미배정 안내)을 쓰지 않는 CLI 로 먼저 본다', () => {
   const ids = LEDGER_CHECKS.map(check => check.id);
-  assert.deepEqual(ids, ['operation-consumer-census', 'ia-disposition-binding']);
+  assert.deepEqual(ids, ['operation-consumer-census', 'ia-disposition-binding', 'hand-bound-ledgers']);
   for (const { id, command: [command, args] } of LEDGER_CHECKS) {
     assert.equal(command, 'node', `${id}: 확인은 node 스크립트다`);
     assert.ok(existsSync(join(ROOT, args[0])), `${id}: ${args[0]} 이 없다`);

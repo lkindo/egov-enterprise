@@ -67,6 +67,8 @@ test('the Flyway check reads the base ref and the working tree, including uncomm
     git('commit', '-q', '-m', 'base');
     git('tag', 'base');
     assert.deepEqual((await integrationPrecheck(root, 'base', { menus: false })).errors, []);
+    // 바뀐 마이그레이션이 없으면 메뉴 스냅숏을 보지 않는다.
+    assert.deepEqual((await integrationPrecheck(root, 'base')).notices, []);
     // 다른 갈래의 같은 번호(추적하지 않는 새 파일)와 적용된 마이그레이션의 수정(커밋하지 않은 변경).
     writeFileSync(path.join(directory, 'V2_2__other_branch.sql'), 'ALTER TABLE tb_b ADD COLUMN x int;\n');
     writeFileSync(path.join(directory, 'V2_1__a.sql'), 'CREATE TABLE tb_a (id bigint, y int);\n');
@@ -76,6 +78,11 @@ test('the Flyway check reads the base ref and the working tree, including uncomm
     assert.ok(errors.some((message) => message.startsWith('Flyway 버전 2.2 이 둘 이상입니다')));
     assert.ok(errors.some((message) => message.startsWith('V2_1__a.sql: 기준에 있는 마이그레이션을 고쳤습니다')));
     await assert.rejects(() => integrationPrecheck(root, 'no-such-ref', { menus: false }));
+    // 메뉴 스냅숏은 regen --check 의 손 결속 사전 점검과 같은 점검(MENU_SNAPSHOT_PRECHECK)으로 본다 — 이 임시 저장소에는 스냅숏이 없다.
+    const { notices } = await integrationPrecheck(root, 'base');
+    assert.equal(notices.length, 1, notices.join('\n'));
+    assert.match(notices[0], /MENU_SNAPSHOT_STALE: Composer menu snapshot: snapshot file is missing or unreadable/u);
+    assert.match(notices[0], /npm run project:menus:refresh/u);
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
