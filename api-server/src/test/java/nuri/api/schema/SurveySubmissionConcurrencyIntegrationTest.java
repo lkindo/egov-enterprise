@@ -233,7 +233,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
 
     private String edit(Edit edit) {
         switch (edit) {
-            case QUESTION_TEXT -> editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion)
+            case QUESTION_TEXT -> editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion).srvySn(survey)
                     .qstnSn(1L).qstnCn("수정 문항").maxChcCnt(1).build());
             case ARTICLE_TEXT -> editor.updateItem(SurveyArticleDto.builder().srvyArtclSn(firstArticle)
                     .artclSn(1L).artclCn("수정 선택").etcAnsYn("N").build());
@@ -270,7 +270,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
             try {
                 awaitApplied(applied, first, "선행 문항 변경과 제출을 저장");
                 second = executor.submit(() -> transactionAction(secondApplication, () -> {
-                    editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion).qstnSn(8L)
+                    editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion).srvySn(survey).qstnSn(8L)
                             .qstnCn("검증 문항").maxChcCnt(1).build());
                     return "edited";
                 }));

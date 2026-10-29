@@ -12,59 +12,11 @@ import { Button } from "@/components/ui/button";
 import { Plus, Pencil, Trash2, ExternalLink, RefreshCcw } from "lucide-react";
 import { WorkListPage } from '@/app/components/patterns/work-list-page';
 import { StandardDataTable, Column } from '@/app/components/ui/standard-data-table';
+import { parseScrapUrl } from '../scrap-url';
+
+export { parseScrapUrl } from '../scrap-url';
 
 const DEFAULT_PAGE_UNIT = 10;
-
-/**
- * 스크랩 URL을 분석하여 안전한 링크 정보를 생성한다.
- * - 내부 eGov 레거시 경로(/cop/bbs/selectArticleDetail.do?bbsId=...&nttId=...)는 표준 Next.js 경로로 변환
- * - 내부 상대경로(/...)는 Next.js <Link>로 연결하여 SPA 이동
- * - 외부 http/https 경로는 <a> 새 창 열기
- * - javascript: 등 위험 스킴은 null 반환(텍스트만 표시)
- */
-export function parseScrapUrl(url: string | undefined): { isInternal: boolean; resolvedHref: string } | null {
-    if (!url) return null;
-    const trimmed = url.trim();
-    if (!trimmed || /[\r\n\t]/.test(trimmed)) return null;
-
-    // 내부 상대 경로 (/...) — 프로토콜 상대 경로(//, /\) 및 오픈 리다이렉트 차단
-    //
-    // ⚠ 레거시 변환은 **내부 경로에만** 적용한다. 스킴 검증보다 먼저 bbsId/nttId 를 찾으면
-    //   `https://example.com/x?bbsId=A&nttId=1` 같은 외부 주소가 호스트를 잃고 내부 게시글
-    //   경로로 바뀌어, 목록에 보이는 글자와 실제 이동 목적지가 달라진다.
-    if (trimmed.startsWith('/') && !/^\/[\\/]/.test(trimmed)) {
-        // eGov 레거시 게시판 경로(/cop/bbs/selectArticleDetail.do?bbsId=...&nttId=...) → 표준 경로
-        const bbsMatch = trimmed.match(/[?&]bbsId=([^&#\s]+)/i)?.[1];
-        const nttMatch = trimmed.match(/[?&](?:pstSn|nttId)=([^&#\s]+)/i)?.[1];
-        if (bbsMatch && nttMatch) {
-            return {
-                isInternal: true,
-                resolvedHref: `/admin/community/boards/detail?bbsId=${encodeURIComponent(bbsMatch)}&pstSn=${encodeURIComponent(nttMatch)}`,
-            };
-        }
-        return {
-            isInternal: true,
-            resolvedHref: trimmed,
-        };
-    }
-
-    // 외부 절대 URL (http / https 만 허용, new URL 로 스킴 엄격 검증)
-    if (/^https?:\/\//i.test(trimmed)) {
-        try {
-            const parsed = new URL(trimmed);
-            if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
-                return {
-                    isInternal: false,
-                    resolvedHref: parsed.href,
-                };
-            }
-        } catch {
-            return null;
-        }
-    }
-
-    return null;
-}
 
 /**
  * A1(조회형 목록) archetype 이행 — docs/02-architecture/work-screen-grammar-catalog.md §5 A1.

@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 import { ScrapDtoSchema } from '@/types/generated-zod';
+import { parseScrapUrl } from './scrap-url';
 
 const scrapNameSchema = ScrapDtoSchema.shape.scrapNm
   .unwrap()
@@ -8,11 +9,13 @@ const scrapNameSchema = ScrapDtoSchema.shape.scrapNm
   .min(1, '스크랩명을 입력해 주세요.')
   .max(100, '스크랩명은 최대 100자까지 입력할 수 있습니다.');
 
-const scrapUrlSchema = ScrapDtoSchema.shape.scrapUrl
+const scrapUrlValueSchema = ScrapDtoSchema.shape.scrapUrl
   .unwrap()
   .trim()
   .min(1, '참조 URL을 입력해 주세요.')
-  .max(1000, '참조 URL은 최대 1000자까지 입력할 수 있습니다.')
+  .max(1000, '참조 URL은 최대 1000자까지 입력할 수 있습니다.');
+
+const scrapUrlSchema = scrapUrlValueSchema
   .url('올바른 URL 형식을 입력해 주세요.')
   .refine(
     (value) => /^https?:\/\//i.test(value),
@@ -34,7 +37,15 @@ export const scrapCreateFormSchema = ScrapDtoSchema.pick({
   useYn: scrapUseSchema,
 });
 
-export const scrapEditFormSchema = scrapCreateFormSchema;
+export const scrapEditFormSchema = scrapCreateFormSchema.extend({
+  scrapUrl: ScrapDtoSchema.shape.scrapUrl
+    .unwrap()
+    .refine(
+      (value) => !value.trim() || parseScrapUrl(value) !== null,
+      '참조 URL은 안전한 사이트 내부 경로 또는 http://, https:// 주소여야 합니다.',
+    )
+    .pipe(scrapUrlValueSchema),
+});
 
 export const scrapValidationLabels = {
   scrapExpln: '설명',

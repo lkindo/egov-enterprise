@@ -183,10 +183,10 @@ class DeptJobUserService extends ApiService {
    * 담당자만 다시 지정한다(2026-10-01 결정 22). 등록자는 맡긴 업무의 담당자를 바꿀 수 있지만 내용은 고칠 수 없다.
    * picId 는 esntlId 다(로그인 ID 가 아니다).
    */
-  async reassignDeptJob(deptTaskSn: number, picId: string, config?: AxiosRequestConfig): Promise<void> {
+  async reassignDeptJob(deptTaskSn: number, picId: string, version: number, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(reassignDeptJobOperation, {
       path: { deptTaskSn },
-      body: { picId },
+      body: { picId, version },
       config,
     });
   }

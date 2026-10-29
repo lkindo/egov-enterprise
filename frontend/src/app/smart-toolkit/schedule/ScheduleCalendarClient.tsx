@@ -105,10 +105,14 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
   const schedules: DeptSchedule[] = useMemo(() => scheduleData || [], [scheduleData]);
 
   /** 일정이 하나라도 있는 날짜들 — 캘린더 셀에 마커를 찍는 데 쓴다. */
-  const scheduleDates = useMemo(
-    () => schedules.flatMap((s) => scheduleSpanDates(s.schdlBgngYmd, s.schdlEndYmd)),
-    [schedules]
-  );
+  const scheduleDates = useMemo(() => {
+    // ko 달력은 일요일 시작·6주 고정이다. 선택 가능한 앞뒤 달 칸도 같은 일정 표시를 받는다.
+    const start = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
+    start.setDate(1 - start.getDay());
+    const end = new Date(start);
+    end.setDate(end.getDate() + 41);
+    return schedules.flatMap((s) => scheduleSpanDates(s.schdlBgngYmd, s.schdlEndYmd, { start, end }));
+  }, [schedules, currentDate]);
 
   /** 선택한 날짜의 일정(미선택이면 그 달 전체). 일정은 일 단위라 시작일 기준으로 매칭한다. */
   const visibleSchedules = useMemo(() => {

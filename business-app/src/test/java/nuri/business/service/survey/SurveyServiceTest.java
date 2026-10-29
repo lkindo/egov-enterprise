@@ -10,6 +10,9 @@ import nuri.business.service.survey.dto.SurveyTemplateDto;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -551,6 +554,7 @@ class SurveyServiceTest {
 
         SurveyQuestionDto dto = SurveyQuestionDto.builder()
                 .srvyQstnSn(301L)
+                .srvySn(201L)
                 .qstnCn("NEW")
                 .qstnSn(5L)
                 .qstnTypeCd("TEXT")
@@ -561,6 +565,61 @@ class SurveyServiceTest {
 
         assertThat(question.getQstnCn()).isEqualTo("NEW");
         assertThat(question.getQstnSn()).isEqualTo(5L);
+        assertThat(question.getSrvySn()).isEqualTo(201L);
+        assertThat(question.getQstnTypeCd()).isEqualTo("TEXT");
+        assertThat(question.getMaxChcCnt()).isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @ValueSource(longs = {0, 3})
+    @DisplayName("다른 설문 경로로 문항을 수정하면 응답 유무와 무관하게 404이며 모든 문항 필드를 보존한다")
+    void updateQuestion_wrongParentPreservesQuestion(long responseCount) {
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(3).build();
+        givenQuestionSurvey(301L);
+        given(infoRepository.findByIdForSubmission(999L)).willReturn(Optional.of(
+                SurveyInfo.builder().srvySn(999L).srvyTmpltSn(901L).build()));
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(responseCount);
+
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).srvySn(999L).srvyTmpltSn(901L)
+                .qstnSn(8L).qstnTypeCd("2").qstnCn("다른 설문에서 보낸 수정").maxChcCnt(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        assertThat(question).extracting("srvyQstnSn", "srvySn", "srvyTmpltSn",
+                        "qstnSn", "qstnTypeCd", "qstnCn", "maxChcCnt")
+                .containsExactly(301L, 201L, 101L, 2L, "1", "원래 문항", 3);
+        verify(qesitmRepository, never()).save(any());
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(rsltRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(rsltRepository, never()).countBySrvyQstnSn(anyLong());
+    }
+
+    @Test
+    @DisplayName("부모 설문 번호가 없는 문항 수정은 응답 여부를 확인하기 전에 404로 거부한다")
+    void updateQuestion_missingParentPreservesQuestion() {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(3).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).qstnSn(8L).qstnTypeCd("2")
+                .qstnCn("변경 요청 문항").maxChcCnt(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        assertThat(question).extracting("srvyQstnSn", "srvySn", "srvyTmpltSn",
+                        "qstnSn", "qstnTypeCd", "qstnCn", "maxChcCnt")
+                .containsExactly(301L, 201L, 101L, 2L, "1", "원래 문항", 3);
+        verify(rsltRepository, never()).countBySrvyQstnSn(anyLong());
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
     }
 
     @Test
@@ -591,17 +650,17 @@ class SurveyServiceTest {
         given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
 
         assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
-                .srvyQstnSn(301L).qstnSn(1L).qstnTypeCd("1").qstnCn("바꾼 문항").maxChcCnt(1).build()))
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(1L).qstnTypeCd("1").qstnCn("바꾼 문항").maxChcCnt(1).build()))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_IN_USE);
         assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
-                .srvyQstnSn(301L).qstnSn(1L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(3).build()))
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(1L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(3).build()))
                 .isInstanceOf(BusinessException.class);
         assertThat(question.getQstnCn()).isEqualTo("원래 문항");
 
         // 순번만 바꾸는 것은 응답의 뜻을 바꾸지 않는다 — NULL 과 1 은 같은 '하나만 고르기' 다.
         surveyService.updateQuestion(SurveyQuestionDto.builder()
-                .srvyQstnSn(301L).qstnSn(5L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(1).build());
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(5L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(1).build());
         assertThat(question.getQstnSn()).isEqualTo(5L);
     }
 
@@ -625,7 +684,7 @@ class SurveyServiceTest {
     void updateQuestion_NotFound_ShouldThrowBusinessException() {
         given(infoRepository.findSurveyIdByQuestionId(301L)).willReturn(Optional.empty());
 
-        SurveyQuestionDto dto = SurveyQuestionDto.builder().srvyQstnSn(301L).build();
+        SurveyQuestionDto dto = SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L).build();
 
         assertThatThrownBy(() -> surveyService.updateQuestion(dto))
                 .isInstanceOf(BusinessException.class);
@@ -760,13 +819,190 @@ class SurveyServiceTest {
     @DisplayName("🚨 유형을 주관식으로 바꾸면 답변 칸이 없을 때 하나 만든다")
     void updateQuestion_toFreeTextCreatesAnswerSlot() {
         givenQuestionSurvey(301L);
-        given(qesitmRepository.findById(301L)).willReturn(Optional.of(SurveyQuestion.builder()
-                .srvyQstnSn(301L).srvySn(201L).qstnTypeCd("1").qstnCn("질문").srvyTmpltSn(101L).build()));
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).qstnTypeCd("1").qstnCn("질문")
+                .qstnSn(2L).maxChcCnt(3).srvyTmpltSn(101L).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
         given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of());
 
-        surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).qstnTypeCd("2").qstnCn("질문").build());
+        surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
+                .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(3).build());
 
-        verify(iemRepository).save(any(SurveyArticle.class));
+        assertThat(question.isFreeText()).isTrue();
+        assertThat(question.getMaxChcCnt()).isEqualTo(1);
+        org.mockito.ArgumentCaptor<SurveyArticle> slot = org.mockito.ArgumentCaptor.forClass(SurveyArticle.class);
+        verify(iemRepository).save(slot.capture());
+        assertThat(slot.getValue()).extracting("srvySn", "srvyQstnSn", "srvyTmpltSn",
+                        "artclSn", "artclCn", "etcAnsYn")
+                .containsExactly(201L, 301L, 101L, 1L, SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT, "N");
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {2, 3})
+    @DisplayName("선택 항목이 둘 이상인 문항은 주관식으로 바꾸지 않고 400으로 거부하며 문항과 항목을 보존한다")
+    void updateQuestion_toFreeTextRejectsMultipleItemsBeforeChangingQuestion(int itemCount) {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("1").qstnCn("원래 문항").maxChcCnt(3).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        List<SurveyArticle> items = java.util.stream.LongStream.rangeClosed(1, itemCount)
+                .mapToObj(order -> SurveyArticle.builder().srvyArtclSn(400L + order)
+                        .srvySn(201L).srvyQstnSn(301L).srvyTmpltSn(101L)
+                        .artclSn(order).artclCn("항목 " + order).etcAnsYn("N").build())
+                .toList();
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(items);
+
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(8L).qstnTypeCd("2")
+                .qstnCn("변경 요청 문항").maxChcCnt(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+
+        assertThat(question).extracting("srvyQstnSn", "srvySn", "srvyTmpltSn",
+                        "qstnSn", "qstnTypeCd", "qstnCn", "maxChcCnt")
+                .containsExactly(301L, 201L, 101L, 2L, "1", "원래 문항", 3);
+        for (int index = 0; index < itemCount; index++) {
+            long order = index + 1L;
+            assertThat(items.get(index)).extracting("srvyArtclSn", "srvySn", "srvyQstnSn",
+                            "srvyTmpltSn", "artclSn", "artclCn", "etcAnsYn")
+                    .containsExactly(400L + order, 201L, 301L, 101L, order, "항목 " + order, "N");
+        }
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteById(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(rsltRepository, never()).deleteBySrvyQstnSn(anyLong());
+    }
+
+    @Test
+    @DisplayName("선택 항목 하나를 주관식으로 바꾸면 기존 항목을 그대로 쓰고 최대 답변 수는 하나가 된다")
+    void updateQuestion_toFreeTextKeepsExistingSlotAndLimitsAnswerCount() {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("1").qstnCn("질문").maxChcCnt(3).build();
+        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L)
+                .srvyQstnSn(301L).srvyTmpltSn(101L).artclSn(4L).artclCn("기존 항목").etcAnsYn("Y").build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+
+        surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
+                .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(3).build());
+
+        assertThat(question.isFreeText()).isTrue();
+        assertThat(question.getMaxChcCnt()).isEqualTo(1);
+        assertThat(item).extracting("srvyArtclSn", "srvySn", "srvyQstnSn", "srvyTmpltSn",
+                        "artclSn", "artclCn", "etcAnsYn")
+                .containsExactly(401L, 201L, 301L, 101L, 4L, "기존 항목", "Y");
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteById(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+    }
+
+    @Test
+    @DisplayName("미응답 주관식을 선택형으로 되돌리면 기존 항목을 보존하고 요청한 선택 수를 쓴다")
+    void updateQuestion_fromFreeTextPreservesItemAndRequestedChoiceCount() {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(1).build();
+        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L)
+                .srvyQstnSn(301L).srvyTmpltSn(101L).artclSn(1L)
+                .artclCn(SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT).etcAnsYn("N").build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+
+        surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
+                .qstnSn(2L).qstnTypeCd("1").qstnCn("질문").maxChcCnt(3).build());
+
+        assertThat(question.getQstnTypeCd()).isEqualTo("1");
+        assertThat(question.getMaxChcCnt()).isEqualTo(3);
+        assertThat(item).extracting("srvyArtclSn", "srvySn", "srvyQstnSn", "srvyTmpltSn",
+                        "artclSn", "artclCn", "etcAnsYn")
+                .containsExactly(401L, 201L, 301L, 101L, 1L, SurveyQuestion.FREE_TEXT_ARTICLE_CONTENT, "N");
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteById(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1, 2", "2, 1"})
+    @DisplayName("응답이 있는 문항은 양방향 유형 전환을 409로 막고 문항과 응답을 보존한다")
+    void updateQuestion_answeredTypeConversionPreservesMeaning(String originalType, String requestedType) {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd(originalType).qstnCn("질문").maxChcCnt(1).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
+
+        // 선택 항목이 둘 이상이어도 응답된 문항의 의미 보호(409)가 전환 형상 검사(400)보다 먼저다.
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(
+                SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L).srvyQstnSn(301L).build(),
+                SurveyArticle.builder().srvyArtclSn(402L).srvySn(201L).srvyQstnSn(301L).build()));
+
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(8L).qstnTypeCd(requestedType)
+                .qstnCn("질문").maxChcCnt(1).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
+
+        assertThat(question).extracting("srvyQstnSn", "srvySn", "srvyTmpltSn",
+                        "qstnSn", "qstnTypeCd", "qstnCn", "maxChcCnt")
+                .containsExactly(301L, 201L, 101L, 2L, originalType, "질문", 1);
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(rsltRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(rsltRepository, never()).save(any());
+    }
+
+    @ParameterizedTest
+    @CsvSource({"1, 3", "3, 1"})
+    @DisplayName("응답된 주관식의 최대 선택 수 변경은 정규화를 이유로 허용하지 않고 409로 거부한다")
+    void updateQuestion_answeredFreeTextChoiceCountChangePreservesMeaning(int originalMax, int requestedMax) {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(originalMax).build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
+
+        assertThatThrownBy(() -> surveyService.updateQuestion(SurveyQuestionDto.builder()
+                .srvyQstnSn(301L).srvySn(201L).qstnSn(8L).qstnTypeCd("2")
+                .qstnCn("질문").maxChcCnt(requestedMax).build()))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_IN_USE);
+
+        assertThat(question).extracting("qstnSn", "qstnTypeCd", "qstnCn", "maxChcCnt")
+                .containsExactly(2L, "2", "질문", originalMax);
+        verify(iemRepository, never()).save(any());
+        verify(rsltRepository, never()).deleteBySrvyQstnSn(anyLong());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {1, 3})
+    @DisplayName("응답된 주관식의 순번만 바꾸면 과거 최대 선택 수를 조용히 정규화하지 않는다")
+    void updateQuestion_answeredFreeTextOrderOnlyPreservesLegacyChoiceCount(int originalMax) {
+        givenQuestionSurvey(301L);
+        SurveyQuestion question = SurveyQuestion.builder()
+                .srvyQstnSn(301L).srvySn(201L).srvyTmpltSn(101L)
+                .qstnSn(2L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(originalMax).build();
+        SurveyArticle item = SurveyArticle.builder().srvyArtclSn(401L).srvySn(201L)
+                .srvyQstnSn(301L).srvyTmpltSn(101L).artclSn(1L).artclCn("기존 답변 칸").etcAnsYn("N").build();
+        given(qesitmRepository.findById(301L)).willReturn(Optional.of(question));
+        given(iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(301L)).willReturn(List.of(item));
+        given(rsltRepository.countBySrvyQstnSn(301L)).willReturn(3L);
+
+        surveyService.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
+                .qstnSn(8L).qstnTypeCd("2").qstnCn("질문").maxChcCnt(originalMax).build());
+
+        assertThat(question).extracting("srvyQstnSn", "srvySn", "srvyTmpltSn",
+                        "qstnSn", "qstnTypeCd", "qstnCn", "maxChcCnt")
+                .containsExactly(301L, 201L, 101L, 8L, "2", "질문", originalMax);
+        assertThat(item.getArtclCn()).isEqualTo("기존 답변 칸");
+        verify(iemRepository, never()).save(any());
+        verify(iemRepository, never()).deleteBySrvyQstnSn(anyLong());
+        verify(rsltRepository, never()).deleteBySrvyQstnSn(anyLong());
     }
 
     @Test

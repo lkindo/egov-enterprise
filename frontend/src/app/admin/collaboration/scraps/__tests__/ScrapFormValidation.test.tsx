@@ -1,16 +1,20 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import React from 'react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   scrapCreateFormSchema,
   scrapEditFormSchema,
 } from '../scrap-form-validation';
-import { ScrapFormDialog } from '../ScrapFormDialog';
+import { ScrapFormDialog, type ScrapFormValues } from '../ScrapFormDialog';
+import { submitPostScrap } from '@/queries/scrap-post-action';
+import ScrapListClient from '../selectScrapList/ScrapListClient';
 
 const mocks = vi.hoisted(() => ({
   back: vi.fn(),
+  confirm: vi.fn(),
   delete: vi.fn(),
   get: vi.fn(),
   post: vi.fn(),
@@ -60,13 +64,32 @@ vi.mock('@/app/components/layout/DynamicBreadcrumb', () => ({
   DynamicBreadcrumb: () => <nav aria-label="현재 위치" />,
 }));
 
+vi.mock('@/app/components/ui/confirm-modal', () => ({ useConfirm: () => mocks.confirm }));
+vi.mock('@/app/components/patterns/work-list-page', () => ({
+  WorkListPage: ({ actions, children }: { actions: React.ReactNode; children: React.ReactNode }) => <main>{actions}{children}</main>,
+}));
+vi.mock('@/app/components/ui/standard-data-table', () => ({
+  StandardDataTable: ({ columns, data }: {
+    columns: Array<{ accessor: (item: Record<string, unknown>, index: number) => React.ReactNode }>;
+    data: Array<Record<string, unknown>>;
+  }) => (
+    <div>{data.map((item, rowIndex) => (
+      <div key={rowIndex}>
+        {columns.map((column, columnIndex) => <React.Fragment key={columnIndex}>{column.accessor(item, rowIndex)}</React.Fragment>)}
+      </div>
+    ))}</div>
+  ),
+}));
+
 /*
   [2026-09-12 §A3-1] 등록·수정이 전용 페이지 2개에서 목록 위 모달 하나로 합쳐졌다.
   계약(검증 인라인 연결·서버 필드 오류 귀속·동기 잠금)은 그대로이고 그릇만 바뀐다.
 */
 const onSaved = vi.fn();
 
-function renderDetail() {
+function renderDetail(initialValues: ScrapFormValues = {
+  scrapNm: '참고 자료', scrapUrl: 'https://example.com/reference', scrapExpln: '설명',
+}) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   });
@@ -76,7 +99,7 @@ function renderDetail() {
         isOpen
         mode="edit"
         scrapSn={17}
-        initialValues={{ scrapNm: '참고 자료', scrapUrl: 'https://example.com/reference', scrapExpln: '설명' }}
+        initialValues={initialValues}
         onClose={() => {}}
         onSaved={onSaved}
       />
@@ -124,6 +147,97 @@ describe('scrap form validation contract', () => {
     expect(scrapCreateFormSchema.safeParse({ ...valid, scrapUrl: 'not-a-url' }).success).toBe(false);
     expect(scrapCreateFormSchema.safeParse({ ...valid, scrapUrl: `https://${'a'.repeat(1000)}.com` }).success).toBe(false);
     expect(scrapCreateFormSchema.safeParse({ ...valid, useYn: 'X' }).success).toBe(false);
+  });
+
+  it.each([
+    '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31',
+    '/cop/bbs/selectArticleDetail.do?bbsId=BBS-1&nttId=31',
+    '/pages/guide?tab=1#top',
+  ])('기존 내부 스크랩 %s는 편집에서 보존하고 신규 수동 등록에는 허용하지 않는다', (scrapUrl) => {
+    const values = { scrapNm: '이름 수정', scrapUrl, scrapExpln: '설명 수정', useYn: 'Y' };
+    const edited = scrapEditFormSchema.safeParse(values);
+
+    expect(edited.success).toBe(true);
+    if (edited.success) expect(edited.data.scrapUrl).toBe(scrapUrl);
+    expect(scrapCreateFormSchema.safeParse(values).success).toBe(false);
+  });
+
+  it.each([
+    ['경로 중간 역슬래시', '/admin\\community/boards/detail'],
+    ['NUL 제어문자', '/admin/\u0000community/boards/detail'],
+    ['DEL 제어문자', '/admin/\u007fcommunity/boards/detail'],
+    ['앞쪽 개행', '\n/admin/community/boards/detail'],
+    ['뒤쪽 탭', '/admin/community/boards/detail\t'],
+    ['외부 주소의 역슬래시', 'https://example.com\\notice'],
+    ['외부 주소의 개행', 'https://example.com/\nnotice'],
+  ])('%s를 브라우저가 정규화하기 전에 편집과 목록 링크 모두에서 거부한다', async (_label, scrapUrl) => {
+    const values = { scrapNm: '안전성 검사 스크랩', scrapUrl, scrapExpln: '보존 설명', useYn: 'Y' };
+    expect.soft(scrapEditFormSchema.safeParse(values).success).toBe(false);
+    mocks.get.mockResolvedValue({ list: [{ ...values, scrapSn: 17 }], total: 1, page: 1, size: 10, totalPage: 1 });
+    const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+    render(<QueryClientProvider client={queryClient}><ScrapListClient /></QueryClientProvider>);
+
+    expect(await screen.findByRole('button', { name: '안전성 검사 스크랩' })).toBeVisible();
+    expect(screen.getByText('보존 설명')).toBeVisible();
+    expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it.each([
+    ['프로토콜 상대 주소', '//evil.example/path'],
+    ['역슬래시 호스트', '/\\evil.example/path'],
+    ['경로 중간 역슬래시', '/admin\\community/boards/detail'],
+    ['탭', '/admin/\tcommunity/boards/detail'],
+    ['개행', '/admin/\ncommunity/boards/detail'],
+    ['NUL 제어문자', '/admin/\u0000community/boards/detail'],
+    ['DEL 제어문자', '/admin/\u007fcommunity/boards/detail'],
+    ['실행 스킴', 'javascript:alert(1)'],
+  ])('등록·수정 모두 %s가 있는 URL을 거부한다', (_label, scrapUrl) => {
+    const values = { scrapNm: '문서', scrapUrl, scrapExpln: '', useYn: 'Y' };
+    expect(scrapCreateFormSchema.safeParse(values).success).toBe(false);
+    expect(scrapEditFormSchema.safeParse(values).success).toBe(false);
+  });
+
+  it('게시글 스크랩 생산자가 저장한 내부 URL 그대로 이름·설명을 편집하면 수정 API를 한 번 호출한다', async () => {
+    const canonicalPath = '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31';
+    await submitPostScrap({
+      bbsId: 'BBS-1', pstSn: 31, title: '원본 게시글', boardTitle: '공지사항', canonicalPath,
+      queryClient: new QueryClient(),
+    });
+    expect(mocks.post).toHaveBeenCalledTimes(1);
+    const created = mocks.post.mock.calls[0][1] as ScrapFormValues;
+    expect(created.scrapUrl).toBe(canonicalPath);
+    renderDetail(created);
+    const user = userEvent.setup();
+    const name = screen.getByRole('textbox', { name: /스크랩명/ });
+    const explanation = screen.getByRole('textbox', { name: '설명' });
+    await user.clear(name);
+    await user.type(name, '다시 찾을 게시글');
+    await user.clear(explanation);
+    await user.type(explanation, '업무에 참고할 내용');
+    expect(screen.getByRole('textbox', { name: /참조 URL/ })).toHaveValue(canonicalPath);
+
+    await user.click(screen.getByRole('button', { name: /수정 완료$/ }));
+
+    await waitFor(() => expect(mocks.put).toHaveBeenCalledTimes(1));
+    expect(mocks.put).toHaveBeenCalledWith('scraps/17', {
+      scrapNm: '다시 찾을 게시글', scrapUrl: canonicalPath, scrapExpln: '업무에 참고할 내용', useYn: 'Y',
+    }, undefined);
+    expect(mocks.post).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(onSaved).toHaveBeenCalledTimes(1));
+  });
+
+  it('신규 수동 등록은 내부 주소를 입력해도 저장하지 않고 URL 오류를 안내한다', async () => {
+    renderInsert();
+    fireEvent.change(screen.getByRole('textbox', { name: /스크랩명/ }), { target: { value: '수동 스크랩' } });
+    const url = screen.getByRole('textbox', { name: /참조 URL/ });
+    fireEvent.change(url, { target: { value: '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31' } });
+
+    fireEvent.click(screen.getByRole('button', { name: /스크랩 등록$/ }));
+
+    expect(mocks.post).not.toHaveBeenCalled();
+    expect(mocks.put).not.toHaveBeenCalled();
+    expect(url).toHaveAttribute('aria-invalid', 'true');
+    expect(await screen.findByRole('alert', { name: /입력 오류/ })).toBeVisible();
   });
 
   it('등록 URL 오류는 write 없이 인라인으로 연결하고 URL 입력으로 이동한다', async () => {

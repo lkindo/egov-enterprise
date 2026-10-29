@@ -8523,6 +8523,8 @@ export interface components {
         };
         DeptJobAssigneeRequest: {
             picId: string;
+            /** Format: int32 */
+            version: number;
         };
         /** @description 관리자용 비밀번호 변경 요청 */
         AdminPasswordChangeRequest: {

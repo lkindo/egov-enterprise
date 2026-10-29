@@ -308,11 +308,11 @@ public class UserService extends BaseAbstractService {
 
                 boolean isSelf = Optional.ofNullable(user.getEsntlId())
                         .equals(nuri.business.security.util.SecurityUtil.getCurrentEsntlId());
-                boolean departmentChanging = userDto.ognzId() != null
-                        && !java.util.Objects.equals(blankToNull(userDto.ognzId()), blankToNull(user.getOgnzId()));
-                if (!isSelf || departmentChanging) {
+                // 잠금 전 소속은 낡을 수 있다. 소속 입력이 있으면 전역→사용자 순서를 먼저 확보한다.
+                if (!isSelf || userDto.ognzId() != null) {
                         authorizationAdministration.lockAdministration();
                 }
+                refreshForUpdateOrThrow(user);
 
                 // [2026-08-12 결함 수정] **보내지 않은 필드가 지워지던 것**을 막는다.
                 //
@@ -384,13 +384,18 @@ public class UserService extends BaseAbstractService {
         @Transactional
         public void changePassword(@NonNull String userId, @NonNull String oldPassword, @NonNull String newPassword) {
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
-
-
-                if (!passwordEncoder.matches(oldPassword, user.getPswd())) {
+                String observedPassword = user.getPswd();
+                if (!passwordEncoder.matches(oldPassword, observedPassword)) {
                         throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
                 }
-
-                user.updatePassword(passwordEncoder.encode(newPassword));
+                String encodedPassword = passwordEncoder.encode(newPassword);
+                // 해시 계산은 잠금 밖에서 한다. 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
+                refreshForUpdateOrThrow(user);
+                if (!java.util.Objects.equals(observedPassword, user.getPswd())
+                                && !passwordEncoder.matches(oldPassword, user.getPswd())) {
+                        throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
+                }
+                user.updatePassword(encodedPassword);
                 revokeRefreshTokens(user);
         }
 
@@ -585,8 +590,10 @@ public class UserService extends BaseAbstractService {
 
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
                 authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
+                String encodedPassword = passwordEncoder.encode(newPassword);
+                refreshForUpdateOrThrow(user);
                 // [2026-10-01 결정 18] 관리자가 정해 알려 준 비밀번호는 임시다 — 본인이 바꾸기 전까지 다른 기능을 막는다.
-                user.issueTemporaryPassword(passwordEncoder.encode(newPassword));
+                user.issueTemporaryPassword(encodedPassword);
                 // [2026-09-26 DIP B4 P7, D5] 초기화는 계정 잠금도 푼다 — 잠긴 채로 새 비밀번호를 알려 주면 잠금 시간이
                 //   지날 때까지 그 비밀번호로도 들어올 수 없다.
                 user.unlockAccount();
@@ -604,6 +611,7 @@ public class UserService extends BaseAbstractService {
                 authorizationAdministration.lockAndAuthorize("USER_STATUS");
                 User user = findByLoginIdOrEsntlIdOrThrow(userId);
                 authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId());
+                refreshForUpdateOrThrow(user);
                 user.unlockAccount();
         }
 
@@ -618,6 +626,7 @@ public class UserService extends BaseAbstractService {
                 long managerCount = authorizationAdministration.managerCount();
                 List<User> users = findAllByLoginIdOrThrow(userIds);
                 users.forEach(user -> authorizationAdministration.authorizeProtectedAccountChange(user.getEsntlId()));
+                refreshAllForUpdate(users);
                 users.forEach(user -> user.updateStatus(status));
                 userRepository.saveAllAndFlush(users);
                 authorizationAdministration.protectLastManager(managerCount);
@@ -633,9 +642,24 @@ public class UserService extends BaseAbstractService {
                 nuri.business.security.util.SecurityUtil.assertPermission("USER_DEPT");
                 assertDepartmentExists(ognzId);
                 List<User> users = findAllByLoginIdOrThrow(userIds);
+                refreshAllForUpdate(users);
                 String normalizedOgnzId = blankToNull(ognzId);
                 users.forEach(user -> user.updateOrgnztId(normalizedOgnzId));
                 userRepository.saveAll(users);
+        }
+
+        /** 전역 잠금 뒤 일정한 순서로 모두 새로 읽는다. 하나라도 수정하기 전에 끝내 auto-flush를 피한다. */
+        private void refreshAllForUpdate(List<User> users) {
+                users.stream().sorted(java.util.Comparator.comparing(User::getEsntlId))
+                                .forEach(this::refreshForUpdateOrThrow);
+        }
+
+        private void refreshForUpdateOrThrow(User user) {
+                try {
+                        userRepository.refreshForUpdate(user);
+                } catch (org.springframework.orm.ObjectRetrievalFailureException deletedWhileWaiting) {
+                        throw new BusinessException(UserErrorCode.USER_NOT_FOUND);
+                }
         }
 
         /**

@@ -367,7 +367,7 @@ class DeptJobServiceTest {
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
         givenActiveAssignee("USER2");
 
-        deptJobService.reassignDeptJob(1L, "USER2");
+        deptJobService.reassignDeptJob(1L, "USER2", 0);
 
         assertEquals("USER2", deptJob.getPicId());
         assertEquals("Test Job", deptJob.getDeptTaskNm());
@@ -383,10 +383,89 @@ class DeptJobServiceTest {
         org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "someone");
         when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
 
-        BusinessException ex = assertThrows(BusinessException.class, () -> deptJobService.reassignDeptJob(1L, "USER2"));
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> deptJobService.reassignDeptJob(1L, "USER2", 0));
 
         assertEquals(CommonErrorCode.ACCESS_DENIED, ex.getErrorCode());
-        assertEquals("USER1", deptJob.getPicId());
+        assertReassignmentUnchanged(0);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 버전 누락보다 인가 거절을 먼저 판정한다")
+    void reassignDeptJob_strangerDeniedBeforeMissingVersion() {
+        authenticateAs("stranger", "ESNTL_STRANGER");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "someone");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> deptJobService.reassignDeptJob(1L, "USER2", null));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, ex.getErrorCode());
+        assertReassignmentUnchanged(0);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 버전이 없으면 변경과 알림 없이 거절한다")
+    void reassignDeptJob_missingVersionRejectedWithoutChanges() {
+        authenticateAs("user1", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> deptJobService.reassignDeptJob(1L, "USER2", null));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, ex.getErrorCode());
+        assertReassignmentUnchanged(0);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 낡은 버전이면 변경과 알림 없이 충돌을 알린다")
+    void reassignDeptJob_staleVersionRejectedWithoutChanges() {
+        authenticateAs("user1", "USER1");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "version", 1);
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> deptJobService.reassignDeptJob(1L, "USER2", 0));
+
+        assertEquals(CommonErrorCode.CONCURRENT_MODIFICATION, ex.getErrorCode());
+        assertReassignmentUnchanged(1);
+    }
+
+    @Test
+    @DisplayName("같은 담당자 재지정도 낡은 버전이면 무변경 성공으로 숨기지 않는다")
+    void reassignDeptJob_sameAssigneeStillRejectsStaleVersion() {
+        authenticateAs("user1", "USER1");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "version", 1);
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        BusinessException ex = assertThrows(BusinessException.class,
+                () -> deptJobService.reassignDeptJob(1L, "USER1", 0));
+
+        assertEquals(CommonErrorCode.CONCURRENT_MODIFICATION, ex.getErrorCode());
+        assertReassignmentUnchanged(1);
+    }
+
+    @Test
+    @DisplayName("같은 담당자와 최신 버전이면 업무와 알림을 바꾸지 않는다")
+    void reassignDeptJob_sameAssigneeAndCurrentVersionIsNoOp() {
+        authenticateAs("user1", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        deptJobService.reassignDeptJob(1L, "USER1", 0);
+
+        assertReassignmentUnchanged(0);
+    }
+
+    private void assertReassignmentUnchanged(Integer expectedVersion) {
+        assertAll(
+                () -> assertEquals("USER1", deptJob.getPicId()),
+                () -> assertEquals("Test Job", deptJob.getDeptTaskNm()),
+                () -> assertEquals("Content", deptJob.getDeptTaskCn()),
+                () -> assertEquals(1L, deptJob.getDeptTaskBoxSn()),
+                () -> assertEquals("1", deptJob.getPrrtyRnk()),
+                () -> assertEquals(101L, deptJob.getAtchFileSn()),
+                () -> assertEquals(expectedVersion, deptJob.getVersion()));
+        verifyNoInteractions(userRepository, eventPublisher);
     }
 
     @Test

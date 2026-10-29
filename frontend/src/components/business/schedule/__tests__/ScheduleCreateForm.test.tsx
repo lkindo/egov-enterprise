@@ -219,6 +219,43 @@ describe('ScheduleCreateForm 수정 모드 전체 치환 왕복', () => {
     mocks.submit.mockResolvedValue(undefined);
   });
 
+  it.each([
+    { label: 'NULL', end: null, expected: '20260910' },
+    { label: '빈 문자열', end: '', expected: '20260910' },
+    { label: '누락', end: undefined, expected: '20260910' },
+    { label: '정상 종료일', end: '20260912', expected: '20260912' },
+  ])('수정 시 $label 종료일은 기존 일정의 기간을 유지한다', async ({ end, expected }) => {
+    // API의 NULL 응답도 전달한다. 현재 생성 타입의 optional보다 넓은 실제 wire 경계다.
+    const initialData = { ...editInitialData, schdlEndYmd: end } as Partial<ScheduleFormValues>;
+    render(
+      <ScheduleCreateForm
+        mode="edit"
+        initialData={initialData}
+        defaultYmd="20261030"
+        onSubmit={mocks.submit}
+        onCancel={mocks.cancel}
+      />,
+    );
+    const fields = getEditFormFields();
+    expect(screen.getByLabelText(/시작일/)).toHaveValue('2026-09-10');
+    expect(screen.getByLabelText(/종료일/)).toHaveValue(
+      `${expected.slice(0, 4)}-${expected.slice(4, 6)}-${expected.slice(6, 8)}`,
+    );
+
+    fireEvent.change(fields.name, { target: { value: '기간은 그대로인 일정' } });
+    fireEvent.submit(fields.form);
+
+    await waitFor(() => expect(mocks.submit).toHaveBeenCalledTimes(1));
+    expect(mocks.submit).toHaveBeenCalledWith(expect.objectContaining({
+      schdlNm: '기간은 그대로인 일정',
+      schdlBgngYmd: '20260910',
+      schdlEndYmd: expected,
+      schdlKndCd: 'B',
+      schdlImprtCd: 'A',
+      reptSeCd: 'N',
+    }));
+  });
+
   it('일정명만 고쳐 제출해도 schdlKndCd·schdlImprtCd·reptSeCd 가 원래 값 그대로 실려 간다', async () => {
     renderEditForm();
     const fields = getEditFormFields();

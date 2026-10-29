@@ -111,12 +111,15 @@ export function ScheduleCreateForm({ defaultYmd, initialData, mode = 'create', o
   const { toast } = useToast();
   const submitPendingRef = useRef(false);
   const [isSubmitPending, setSubmitPending] = useState(false);
+  const initialEndYmd = isEdit
+    ? initialData?.schdlEndYmd || initialData?.schdlBgngYmd
+    : initialData?.schdlEndYmd;
   const form = useAppForm(scheduleFormSchema, {
     defaultValues: {
       schdlNm: initialData?.schdlNm ?? '',
       schdlCn: initialData?.schdlCn ?? '',
       schdlBgngYmd: initialData?.schdlBgngYmd ?? defaultYmd,
-      schdlEndYmd: initialData?.schdlEndYmd ?? defaultYmd,
+      schdlEndYmd: initialEndYmd ?? defaultYmd,
       schdlPlcNm: initialData?.schdlPlcNm ?? '',
       // 기본은 개인 일정('2'). 체크 시 부서 공유('1')로 등록되어 같은 부서원에게도 보인다.
       schdlSeCd: initialData?.schdlSeCd ?? '2',

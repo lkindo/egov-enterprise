@@ -124,6 +124,10 @@ public class ScheduleService {
         }
     }
 
+    private static String normalizeEndDate(String endDate) {
+        return "".equals(endDate) ? null : endDate;
+    }
+
     @Transactional
     public Long createSchedule(String userId, ScheduleDto dto) {
         requireStartDate(dto);
@@ -146,7 +150,7 @@ public class ScheduleService {
                 .schdlNm(dto.getSchdlNm())
                 .schdlCn(dto.getSchdlCn())
                 .schdlBgngYmd(dto.getSchdlBgngYmd())
-                .schdlEndYmd(dto.getSchdlEndYmd())
+                .schdlEndYmd(normalizeEndDate(dto.getSchdlEndYmd()))
                 .schdlPlcNm(dto.getSchdlPlcNm())
                 .schdlImprtCd(dto.getSchdlImprtCd())
                 .schdlPicId(userId)
@@ -178,7 +182,7 @@ public class ScheduleService {
                 dto.getSchdlSeCd(),
                 dto.getSchdlKndCd(),
                 dto.getSchdlBgngYmd(),
-                dto.getSchdlEndYmd(),
+                normalizeEndDate(dto.getSchdlEndYmd()),
                 dto.getSchdlPlcNm(),
                 dto.getSchdlImprtCd(),
                 // [소유자 불변] 담당자는 등록 시 인증 주체로 고정되며 수정으로 재지정하지 않는다.

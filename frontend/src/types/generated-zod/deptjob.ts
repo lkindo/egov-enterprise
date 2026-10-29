@@ -44,6 +44,7 @@ export type DeptJobBoxDto = z.infer<typeof DeptJobBoxDtoSchema>;
 
 export const DeptJobAssigneeRequestSchema = /*#__PURE__*/ (() => z.object({
   picId: z.string().min(0).max(20),
+  version: z.number().int().min(0),
 }))();
 export type DeptJobAssigneeRequest = z.infer<typeof DeptJobAssigneeRequestSchema>;
 
@@ -161,10 +162,12 @@ export const DeptJobBoxDtoResponseSchema = /*#__PURE__*/ (() => z.object({
 
 export const DeptJobAssigneeRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   picId: z.string().min(0).max(20),
+  version: z.number().int().min(0),
 }))();
 
 export const DeptJobAssigneeRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   picId: z.string().min(0).max(20),
+  version: z.number().int().min(0),
 }))();
 
 export const ApiResponsePageResponseDeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({

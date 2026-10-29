@@ -6,6 +6,8 @@ import nuri.business.domain.config.JpaConfig;
 import nuri.business.security.audit.LoginUserAuditorAware;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.test.context.TestConfiguration;
@@ -73,6 +75,52 @@ class ScheduleRepositoryOrderTest {
         assertThat(monthly).containsExactlyElementsOf(expected);
         assertThat(range).containsExactlyElementsOf(expected);
         assertThat(ownerRange).containsExactlyElementsOf(expected);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @DisplayName("NULL·빈 종료일은 월·두 기간 조회에서 시작일 하루로 판정한다")
+    void absentEndDatesRemainVisibleOnlyOnTheirStartDay(String endDate) {
+        Schedule day = scheduleRepository.saveAndFlush(Schedule.builder().schdlNm("하루 일정")
+                .schdlSeCd("2").schdlBgngYmd("20261015").schdlEndYmd(endDate)
+                .schdlPicId("USER_A").schdlDeptId("DEPT_A").build());
+
+        assertThat(scheduleRepository.findMonthlySchedules("USER_A", "DEPT_A", "202610"))
+                .extracting(Schedule::getSchdlSn).containsExactly(day.getSchdlSn());
+        assertThat(scheduleRepository.findSchedulesByDateRange("USER_A", "20261015", "20261015"))
+                .extracting(Schedule::getSchdlSn).containsExactly(day.getSchdlSn());
+        assertThat(scheduleRepository.findSchedulesByDateRange("2", "USER_A", "20261015", "20261015"))
+                .extracting(Schedule::getSchdlSn).containsExactly(day.getSchdlSn());
+        assertThat(scheduleRepository.findSchedulesByDateRange("USER_A", "20261014", "20261014")).isEmpty();
+        assertThat(scheduleRepository.findSchedulesByDateRange(null, "USER_A", "20261016", "20261016")).isEmpty();
+        assertThat(scheduleRepository.findMonthlySchedules("USER_A", "DEPT_A", "202609")).isEmpty();
+        assertThat(scheduleRepository.findMonthlySchedules("USER_A", "DEPT_A", "202611")).isEmpty();
+        assertThat(day.getSchdlEndYmd()).as("read compatibility must not rewrite an existing value")
+                .isEqualTo(endDate);
+    }
+
+    @Test
+    @DisplayName("빈 종료일 읽기 호환도 본인·부서 공유 범위를 넓히지 않는다")
+    void emptyEndDateQueriesPreserveOwnerAndDepartmentScope() {
+        Schedule own = saveScopeFixture("내 개인 일정", "USER_A", "DEPT_A", "2");
+        Schedule shared = saveScopeFixture("같은 부서 공유", "USER_B", "DEPT_A", "1");
+        saveScopeFixture("같은 부서 타인 개인", "USER_B", "DEPT_A", "2");
+        saveScopeFixture("다른 부서 공유", "USER_C", "DEPT_B", "1");
+        scheduleRepository.flush();
+
+        assertThat(scheduleRepository.findMonthlySchedules("USER_A", "DEPT_A", "202610"))
+                .extracting(Schedule::getSchdlSn).containsExactly(own.getSchdlSn(), shared.getSchdlSn());
+        assertThat(scheduleRepository.findSchedulesByDateRange("USER_A", "20261001", "20261031"))
+                .extracting(Schedule::getSchdlSn).containsExactly(own.getSchdlSn());
+        assertThat(scheduleRepository.findSchedulesByDateRange("2", "USER_A", "20261001", "20261031"))
+                .extracting(Schedule::getSchdlSn).containsExactly(own.getSchdlSn());
+        assertThat(scheduleRepository.findSchedulesByDateRange("1", "USER_A", "20261001", "20261031"))
+                .isEmpty();
+    }
+
+    private Schedule saveScopeFixture(String name, String owner, String department, String scope) {
+        return scheduleRepository.save(Schedule.builder().schdlNm(name).schdlSeCd(scope)
+                .schdlBgngYmd("20261015").schdlEndYmd("").schdlPicId(owner).schdlDeptId(department).build());
     }
 
     @Test
