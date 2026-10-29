@@ -559,6 +559,154 @@ const FALSE_FLAG_VALUE = /^(?:0|f|false)$/i;
 const requestsWatch = (args) => args.some(({ value }) => value === '--watch'
   || (value.startsWith('--watch=') && !FALSE_FLAG_VALUE.test(unquote(value.slice('--watch='.length)))));
 
+/** 값이 없는 문서용 dotenv 견본의 끝 이름 — 키 이름과 형식만 담아 저장소에 추적된다(`.env.example`·`frontend/.env.example`). */
+const DOTENV_SAMPLE = /\.(?:example|sample|template|dist)$/i;
+
+/**
+ * 이 값이 dotenv 파일을 가리키는가 — 마지막 이름이 `.env`·`.env.<무엇>`(`.env.local`·`.env.production`)이거나 그것을 고르는 glob
+ * (`.env*`·`.env.?`)이고 문서용 견본이 아닐 때다. 경로(`./.env`·`frontend\.env.local`·`D:\…\.env`)는 마지막 이름만 보고,
+ * PowerShell 배열(`.env,.env.local`)은 항목마다 본다.
+ */
+function namesDotenv(value) {
+  return value.split(',').some((item) => {
+    const name = item.split(/[\\/]/).at(-1).toLowerCase();
+    if (!name.startsWith('.env')) return false;
+    const rest = name.slice('.env'.length);
+    return (rest === '' || ['.', '*', '?', '['].includes(rest[0])) && !DOTENV_SAMPLE.test(name);
+  });
+}
+
+/** 값을 다음 단어로 받는 grep·rg 옵션 — `rg -g "*.mjs" ".env" scripts` 의 glob 을 패턴으로 읽어 패턴 `.env` 를 파일로 세지 않게 건너뛴다. */
+const GREP_VALUE_OPTIONS = new Set(['-m', '-A', '-B', '-C', '-d', '-D', '-g', '-t', '-T', '-M', '-j', '--max-count', '--after-context',
+  '--before-context', '--context', '--glob', '--iglob', '--type', '--type-not', '--max-depth', '--threads']);
+
+/** grep·rg 가 내용 대신 참·거짓·개수·파일 이름만 내는 옵션(`-q`·`-c`·`-l` 과 그 묶음 `-rc`). 대문자 `-C`(문맥)·rg 의 `-L`(링크 따라가기)은 아니다. */
+const grepPrintsNoLines = (value) => ['--quiet', '--silent', '--count', '--files-with-matches'].includes(value)
+  || (/^-[A-Za-z]+$/.test(value) && /[qcl]/.test(value));
+
+/**
+ * 파일 내용을 그대로 출력하는 명령과 그 인자 읽는 법. 이름은 실행 파일 경로·`.exe` 를 벗겨 소문자로 찾는다(PowerShell 별칭 gc·sls·type 포함).
+ *   patternFirst — 첫 위치 인자가 파일이 아니라 패턴·스크립트다(`grep DB .env`). pattern 옵션으로 주면 위치 인자가 모두 파일이다.
+ *   pattern·patternAttached — 패턴·스크립트를 다음 단어로 받는 옵션과 붙여 받는 옵션(findstr `/c:…`).
+ *   paths — 값이 파일인 옵션(PowerShell `-Path`). valued — 값을 다음 단어로 받는 그 밖의 옵션.
+ *   ps — 옵션을 대소문자 없이 읽는다. slashOptions — `/x` 도 옵션이다(findstr). printsNothing — 내용을 내지 않게 하는 옵션.
+ */
+const PLAIN_PRINTER = Object.freeze({});
+const PS_PRINTER = Object.freeze({ ps: true });
+const GREP_PRINTER = Object.freeze({ patternFirst: true, pattern: new Set(['-e', '--regexp', '-f', '--file']), valued: GREP_VALUE_OPTIONS,
+  printsNothing: grepPrintsNoLines });
+const CONTENT_PRINTERS = new Map([
+  ...['cat', 'tac', 'type', 'more', 'less', 'head', 'tail', 'nl', 'od', 'xxd', 'hexdump', 'strings', 'base64', 'bat', 'cut', 'sort', 'diff']
+    .map((name) => [name, PLAIN_PRINTER]),
+  ...['get-content', 'gc', 'format-hex', 'fhx'].map((name) => [name, PS_PRINTER]),
+  ...['grep', 'egrep', 'fgrep', 'rg'].map((name) => [name, GREP_PRINTER]),
+  ...['select-string', 'sls'].map((name) => [name, { ps: true, patternFirst: true, pattern: new Set(['-pattern']),
+    paths: new Set(['-path', '-literalpath', '-lp', '-pspath']), valued: new Set(['-context', '-encoding', '-include', '-exclude', '-culture']),
+    printsNothing: (value) => value === '-quiet' }]),
+  // `sed -i` 는 파일을 고쳐 쓰고 출력하지 않는다. 값 없는 짧은 옵션(n·r·E·s·u·z)과 묶인 `-ni` 도 같다.
+  ['sed', { patternFirst: true, pattern: new Set(['-e', '--expression', '-f', '--file']), valued: new Set(['-l', '--line-length']),
+    printsNothing: (value) => /^--in-place(?:=|$)/.test(value) || /^-[nrEsuz]*i/.test(value) }],
+  ...['awk', 'gawk'].map((name) => [name, { patternFirst: true, pattern: new Set(['-f', '--file', '-e', '--source']),
+    valued: new Set(['-v', '-F', '--assign', '--field-separator']) }]),
+  ['findstr', { patternFirst: true, slashOptions: true, patternAttached: /^\/[cg]:/i }],
+]);
+
+/** 출력 리디렉션(`>`·`>>`·`2>`·`*>`·`&>`) — 뒤의 대상은 쓰는 파일이지 읽는 파일이 아니다(`cat .env.example > .env`). */
+const OUTPUT_REDIRECT = /^[0-9*&]?>{1,2}/;
+
+/** 내용 출력 명령이 읽는 파일들(원문 값) — 위치 인자·경로 옵션 값·입력 리디렉션(`< .env`). 출력하지 않게 하는 옵션이 있으면 빈 목록이다. */
+function printedFiles(spec, args) {
+  let optionsEnd = false;
+  const isOption = (word) => !optionsEnd && (word.code.startsWith('-') || (spec.slashOptions === true && /^\/[A-Za-z]/.test(word.code)));
+  const key = (value) => (spec.ps ? value.toLowerCase() : value);
+  if (spec.printsNothing && args.some((word) => isOption(word) && spec.printsNothing(key(word.value)))) return [];
+  const files = [];
+  const positional = [];
+  let patternGiven = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const { code, value } = args[index];
+    const redirect = OUTPUT_REDIRECT.exec(code);
+    if (redirect) { if (redirect[0] === code) index += 1; continue; }
+    if (code.startsWith('<') && !code.startsWith('<<')) {
+      const target = code === '<' ? args[(index += 1)]?.value : value.slice(1);
+      if (target) files.push(target);
+      continue;
+    }
+    if (!optionsEnd && code === '--') { optionsEnd = true; continue; }
+    if (!isOption(args[index])) { positional.push(value); continue; }
+    if (spec.patternAttached?.test(code)) { patternGiven = true; continue; }
+    const [flag, ...attached] = key(value).split('=');
+    const next = attached.length ? null : args[index + 1]?.value;
+    if (spec.pattern?.has(flag)) patternGiven = true;
+    else if (spec.paths?.has(flag)) files.push(attached.length ? attached.join('=') : next ?? '');
+    else if (!spec.valued?.has(flag)) continue;
+    if (!attached.length) index += 1;
+  }
+  return [...files, ...(spec.patternFirst && !patternGiven ? positional.slice(1) : positional)];
+}
+
+/** 값을 다음 단어로 받는 docker 전역 옵션과 compose 옵션 — 그 값(`--env-file .env`·`-p config`)을 하위 명령으로 읽지 않는다. */
+const DOCKER_VALUE_OPTIONS = new Set(['-c', '--context', '--config', '-H', '--host', '-l', '--log-level']);
+const COMPOSE_VALUE_OPTIONS = new Set(['-f', '--file', '-p', '--project-name', '--env-file', '--profile', '--project-directory', '--ansi',
+  '--progress', '--parallel']);
+/** 해석한 설정 대신 이름만 내거나 아무것도 내지 않는 `compose config` 옵션. `--environment`·`--variables`·`--format`·`-o` 는 값을 내거나 옮긴다. */
+const COMPOSE_CONFIG_NAMES_ONLY = new Set(['-q', '--quiet', '--services', '--volumes', '--networks', '--images', '--profiles', '--models', '--hash']);
+
+/**
+ * `docker compose … config`(·옛 별칭 `convert`·독립 `docker-compose`)가 해석한 설정을 출력하는가 — compose 는 프로젝트 디렉터리의 .env 를
+ * 기본으로 읽고(`--env-file` 이 없어도) `${DB_PASSWORD}` 같은 보간과 env_file 의 값을 풀어 낸다. 이름만 내는 옵션을 주면 아니다.
+ */
+function composeConfigPrints(name, args) {
+  let index = 0;
+  if (name === 'docker') {
+    while (index < args.length && args[index].value.startsWith('-')) index += DOCKER_VALUE_OPTIONS.has(args[index].value) ? 2 : 1;
+    if (args[index]?.value !== 'compose') return false;
+    index += 1;
+  } else if (name !== 'docker-compose') return false;
+  while (index < args.length && args[index].value.startsWith('-')) index += COMPOSE_VALUE_OPTIONS.has(args[index].value) ? 2 : 1;
+  if (!['config', 'convert'].includes(args[index]?.value)) return false;
+  return !args.slice(index + 1).some(({ value }) => COMPOSE_CONFIG_NAMES_ONLY.has(value.split('=')[0]));
+}
+
+/** PowerShell 이 .NET 으로 파일 전체를 읽는 호출(`[IO.File]::ReadAllText('.env')`). 호출 이름은 가린 판에서, 첫 인자는 원문에서 읽는다. */
+const DOTNET_FILE_READ = /\[(?:System\.)?IO\.File\]::(?:ReadAllText|ReadAllLines|ReadAllBytes|ReadLines)\s*\(\s*/gi;
+const dotnetReadTargets = (code, raw) => [...code.matchAll(DOTNET_FILE_READ)]
+  .map((match) => unquote(/^(?:'[^']*'|"[^"]*"|[^\s,)]+)/.exec(raw.slice(match.index + match[0].length))?.[0] ?? ''));
+
+/**
+ * 조각 안에서 명령이 시작하는 자리(start)와 끝(end) — 조각 처음과, 따옴표 밖의 `(`·`{`·백틱 바로 뒤. 괄호 묶음(`(gc .env) -match …`)·
+ * 스크립트 블록(`if (…) { Get-Content .env }`)·프로세스 치환(`<(cat .env)`)·bash 백틱 치환의 첫 단어도 명령 자리다. 열린 묶음은 같은 종류의
+ * 닫는 글자에서 끊는다. 조각 처음은 끊지 않는다 — 변수 괄호(`cat ${HOME}/.env`)의 `}` 에서 피연산자가 잘리지 않게 한다.
+ */
+function commandStarts(code) {
+  const closers = { '(': ')', '{': '}', '`': '`' };
+  const starts = [{ start: 0, end: code.length }];
+  for (let index = 0; index < code.length; index += 1) {
+    const closer = closers[code[index]];
+    if (!closer) continue;
+    const close = code.indexOf(closer, index + 1);
+    starts.push({ start: index + 1, end: close < 0 ? code.length : close });
+  }
+  return starts;
+}
+
+/** 명령 자리 앞의 PowerShell 대입(`$s = …`·`$env:X=…`) — 대입한 명령도 실행된다. */
+const PS_ASSIGNMENT = /^\s*\$[\w:]+\s*=\s*/;
+
+/** 이 조각이 dotenv 파일의 내용을 출력하는가(env-file-read). */
+function readsDotenv(code, raw) {
+  if (dotnetReadTargets(code, raw).some(namesDotenv)) return true;
+  return commandStarts(code).some(({ start, end }) => {
+    const from = start + (PS_ASSIGNMENT.exec(code.slice(start, end))?.[0].length ?? 0);
+    const command = invokedCommand(code.slice(from, end), raw.slice(from, end));
+    if (!command) return false;
+    const name = command.name.replace(/^.*[\\/]/, '').replace(/\.exe$/i, '').toLowerCase();
+    if (composeConfigPrints(name, command.args)) return true;
+    const spec = CONTENT_PRINTERS.get(name);
+    return spec !== undefined && printedFiles(spec, command.args).some(namesDotenv);
+  });
+}
+
 /**
  * 규칙 표. 각 규칙은 명령 조각 하나와 맥락(cwd·원문 전체)을 받아 걸리면 사유를 돌려준다.
  * why 는 근거가 된 실제 사고, fix 는 대신 쓸 방법이다 — 오류 메시지가 고칠 방법을 말해야 같은 실수가 반복되지 않는다.
@@ -711,6 +859,14 @@ export const RULES = Object.freeze([
     why: 'db/seed-dev 는 알려진 개발 자격(TEST1 비밀번호 1)과 가짜 감사 로그라 dev·e2e 일회용 DB 에만 넣는다. 공유 DB 이력에는 없어 넣으면 처음 적용된다.',
     fix: 'Flyway 위치는 db/migration 하나만 준다(docs/04-operations/shared-oci-migration-apply-log.md 절차).',
     match: ({ raw, code }) => /\bflyway\b/i.test(code) && /seed-dev/.test(raw) && /\b(migrate|repair|baseline)\b/i.test(code),
+  },
+  {
+    id: 'env-file-read', decision: 'deny',
+    // 셸 명령만 본다 — Claude 의 Read 도구·Antigravity 의 view_file 은 셸이 아니고, 인터프리터 스크립트(`node -e "…readFileSync('.env')…"`)·
+    // `find -exec`·`xargs` 같은 간접 호출·변수에 담은 경로도 읽지 못한다. 판정하지 못하면 통과하는 보조 장치다(병합 권위가 아니다).
+    why: 'dotenv 파일(.env·.env.local 등)에는 DB 접속·SMS 키 같은 실제 비밀 값이 있다 — 셸로 내용을 출력하면 대화 기록·로그에 값이 남는다(AGENTS 안전과 외부 경계). 지금까지 이 금지는 Claude 자동 모드 분류기만 막아 Codex·Antigravity 에서는 글로만 지켜졌다. `docker compose config` 도 .env 를 기본으로 읽어 보간한 값을 출력한다.',
+    fix: '값을 출력하지 않고 쓴다 — 명령에 넘길 때는 node --env-file=.env …(DB 조회는 DB_NAME=egovdb node --env-file=.env .agent/scripts/db-bridge.js "SELECT …"), 키가 정해졌는지는 node --env-file=.env -e "console.log(Boolean(process.env.X))" 나 grep -q \'^X=\' .env, 키 이름·형식은 .env.example 에서 본다. compose 는 docker compose config --quiet(검증)·--services(이름)를 쓴다.',
+    match: ({ code, raw }) => readsDotenv(code, raw),
   },
   {
     id: 'openapi-relative-export-path', decision: 'deny',
