@@ -12,7 +12,7 @@ git config core.hooksPath .githooks
 | 훅 | 시점 | 동작 | 강도 |
 |----|------|------|------|
 | `pre-commit` | 커밋 | 설치된 gitleaks로 staged 시크릿 검사 + DTO/Controller/api-docs.json/생성타입의 `codegen:verify(:zod)` 드리프트 점검 | 시크릿 탐지는 차단, gitleaks 미설치·codegen 드리프트는 경고 |
-| `pre-push` | 푸시 | remote branch/tag 삭제-only는 전송할 object가 없어 즉시 종료한다. 그 외 push에서는 변경 범위를 판정·출력하고 생성물 신선도(`npm run regen -- --check`)를 먼저 본다. 문서-only는 운영 계약(Atlas HTML이면 전용 계약 추가)을 통과한 뒤 fast-pass한다. 소스 변경은 공용 fail-closed 분류기로 온라인 backend/독립 migration/frontend를 선택하고, 컴파일·타입·lint·폼 census, 불변식 Vitest·원문 계약 Vitest(src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험 — 목록은 `scripts/frontend-source-contracts.mjs`가 매번 계산)·cross-stack Vitest, 하네스를 먼저 돌리고 운영 계약을 마지막에 실행한다. 계약 codegen 드리프트는 맨 앞의 생성물 신선도 검사가 프런트 `codegen:verify(:zod)`와 같은 검증기로 보며 프런트 단계에서 다시 돌리지 않는다. 알 수 없는 파일은 전체를 실행한다. 삭제와 일반 push가 섞이면 일반 push 범위는 그대로 검증한다. | ❌ 실행된 범위에서 차단 |
+| `pre-push` | 푸시 | remote branch/tag 삭제-only는 전송할 object가 없어 즉시 종료한다. 그 외 push에서는 변경 범위를 판정·출력하고 생성물 신선도(`npm run regen -- --check`)를 먼저 본다. 문서-only는 운영 계약(Atlas HTML이면 전용 계약 추가)을 통과한 뒤 fast-pass한다. 소스 변경은 공용 fail-closed 분류기로 온라인 backend/독립 migration/frontend를 선택하고, 컴파일·타입·lint·폼 census, 불변식 Vitest·원문 계약 Vitest(src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험 — 목록은 `scripts/frontend-source-contracts.mjs`가 매번 계산)·cross-stack Vitest, 하네스를 먼저 돌리고 운영 계약을 마지막에 실행한다. 프런트 타입 검사는 `pnpm run type-check`(next typegen 으로 라우트 타입을 새로 만든 뒤 tsc — `.next/dev` 사본은 제외)다. 세 Vitest 단계는 `scripts/vitest-timeout-rerun.mjs`로 돌아, 실패가 모두 Vitest 시간 초과일 때만 그 파일을 단독으로 한 번 다시 돌고 단언·모듈·처리되지 않은 오류는 그대로 막는다(DEC-OPS-390, CI 는 재실행 없음). 계약 codegen 드리프트는 맨 앞의 생성물 신선도 검사가 프런트 `codegen:verify(:zod)`와 같은 검증기로 보며 프런트 단계에서 다시 돌리지 않는다. 알 수 없는 파일은 전체를 실행한다. 삭제와 일반 push가 섞이면 일반 push 범위는 그대로 검증한다. | ❌ 실행된 범위에서 차단 |
 
 현재 계약 게이트는 `api-docs.json`과 생성 타입/Zod 파일이 Git에 추적되는지 확인한다. 그 뒤 index 와 작업 트리 둘 다 본다 — index 의 스펙으로 임시 디렉터리에 다시 만든 결과를 index 생성물과 비교하고, 작업 트리가 index 와 다르면 작업 트리 쌍도 비교한다. 검증은 작업 파일과 index를 수정하지 않으며 줄바꿈 차이만 정규화한다. 하네스는 소스 변경의 pre-push 경로에도 연결하지만 훅은 우회 가능하므로 최종 병합 권위는 required CI다.
 
@@ -28,7 +28,7 @@ pre-push와 `npm run verify`는 실패가 잦고 짧은 정적 검사를 운영 
 |---|---|---|---|
 | pre-commit | 자동 | 설치된 gitleaks의 시크릿 탐지는 차단(미설치 시 **경고 출력**)·계약 드리프트는 경고 | 낮음 |
 | pre-push 문서-only | 자동 | 생성물 신선도 → 운영 계약 catalog 전체(공용 메모리·문서 링크 포함). Atlas HTML이면 전용 docs-as-code 계약 추가 | 전체 운영 계약 비용 포함 |
-| pre-push 소스 변경 | 자동 | 생성물 신선도(계약 codegen 드리프트 포함) → CodeQL 근사(바뀐 JS·TS) → 영향에 따른 온라인 Java compile, 독립 이관 compile, FE/E2E tsc·lint·폼 census → 불변식 Vitest → 원문 계약 Vitest(backend-only면 cross-stack Vitest) → `harnessTest` → 운영 계약(맨 끝). 미분류 파일은 전체 실행 | 운영 계약 비용 + 영향 범위 검사 |
+| pre-push 소스 변경 | 자동 | 생성물 신선도(계약 codegen 드리프트 포함) → CodeQL 근사(바뀐 JS·TS) → 영향에 따른 온라인 Java compile, 독립 이관 compile, FE 라우트 타입 재생성·tsc, E2E tsc·lint·폼 census → 불변식 Vitest → 원문 계약 Vitest(backend-only면 cross-stack Vitest, 셋 다 시간 초과만 단독 1회 재실행) → `harnessTest` → 운영 계약(맨 끝). 미분류 파일은 전체 실행 | 운영 계약 비용 + 영향 범위 검사 |
 | **Gradle 전수 lane** | `./gradlew localGate` | 하네스 + **실PG 스키마 검증** + 전 모듈 테스트 + **JaCoCo LINE 85%/BRANCH 70%** + 프론트 Vitest/전체소스 coverage 래칫. pre-push의 모든 정적 검사를 포함하는 superset은 아님 | 높음 |
 | **통합 전수 진입점** | `npm run verify` | CodeQL 근사 → 생성물 신선도(계약 codegen 포함) → FE 타입·lint·폼 census → 운영 계약 → backend 전수 lane → FE build·bundle·coverage. E2E와 원격 ruleset은 각각 `verify:e2e`/`verify:ops` | 높음 |
 | CI | `.github/workflows/ci.yml` | 변경 scope에 따른 빌드·실PG 스키마·번들·E2E·뮤테이션과 **secret-scan**·**secure-coding(CodeQL)**. 안정 required context 6개로 결과 집계 | 가장 높음 |

@@ -6,7 +6,7 @@ import { mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, 
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { createRun, heavyProcessKinds, listProcesses, summarizeRuns } from './verification-record.mjs';
+import { createRun, heavyProcessKinds, listProcesses, noteTimeoutRerun, summarizeRuns } from './verification-record.mjs';
 
 const script = fileURLToPath(new URL('./verification-record.mjs', import.meta.url));
 // A real process scan would make these records depend on whatever else this machine runs; tests inject scans instead.
@@ -413,6 +413,30 @@ test('step samples, staged changes and a deliberate rewrite are seen; an unknown
   writeFileSync(anchorFile, `${[JSON.stringify({ ...JSON.parse(startLine), anchorDigest: null }), ...rest].join('\n')}\n`);
   warningsDuring(() => lostAnchor.finish({ exitCode: 0 }));
   assert.equal(records(root, lostAnchor.runId).at(-1).inputChanged, null, 'an unknown anchor half is not reported as unchanged');
+});
+
+// [2026-10-29 DEC-OPS-390] 시간 초과만 난 Vitest 파일의 단독 재실행은 열린 단계에 이름을 남기고 요약에 보인다. 결과는 바꾸지 않는다.
+test('a timeout rerun note names the files on the open step, shows in the summary and never changes the outcome', t => {
+  const root = fixture(t, { git: true });
+  const run = createRun({ root, entrypoint: 'pre-push', scope: 'source', scanProcesses: () => [] });
+  run.stepStart('frontend-invariants');
+  const files = ['src/__tests__/cross-stack/tab-destination-contract.test.ts'];
+  assert.equal(noteTimeoutRerun(root, run.runId, { files, rerunResult: 'passed' }), true);
+  // 경로 밖·형식 밖 이름과 열린 단계가 없는 기록은 남기지 않는다(진단 기록이라 예외도 던지지 않는다).
+  for (const bad of [{ files: ['../x.test.ts'], rerunResult: 'passed' }, { files: ['src/../x.test.ts'], rerunResult: 'passed' },
+    { files: [], rerunResult: 'passed' }, { files, rerunResult: 'flaky' }]) {
+    assert.equal(warningsDuring(() => noteTimeoutRerun(root, run.runId, bad)).value, false, JSON.stringify(bad));
+  }
+  run.stepEnd('frontend-invariants', { exitCode: 0 });
+  assert.equal(warningsDuring(() => noteTimeoutRerun(root, run.runId, { files, rerunResult: 'passed' })).value, false, 'no open step');
+  run.finish({ exitCode: 0 });
+
+  const events = records(root, run.runId);
+  assert.deepEqual(events.filter(event => event.event === 'step-note').map(({ stageId, note, files: named, rerunResult }) =>
+    ({ stageId, note, files: named, rerunResult })), [{ stageId: 'frontend-invariants', note: 'timeout-rerun', files, rerunResult: 'passed' }]);
+  assert.equal(events.at(-1).result, 'passed', 'the note does not change the run outcome');
+  assert.match(summarizeRuns(root).find(line => line.startsWith(run.runId.slice(0, 8))) ?? '(the run is missing from the summary)',
+    / pre-push\/source — timeout-rerun:frontend-invariants\(1\)$/);
 });
 
 test('summary lists only anomalous runs, newest first, by short id without paths', t => {

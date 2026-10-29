@@ -128,7 +128,7 @@
 #### 4.1 필수 증거 (현행 게이트 명시)
 | 작업 도메인 | 증거 유형 |
 |:---|:---|
-| **UI/Frontend** | `pnpm -C frontend exec tsc --noEmit`(정적 타입) — [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts). RSC 경계는 `pnpm -C frontend build`, 런타임 거동은 관련 Playwright spec으로 검증한다. pre-push는 E2E를 실행하지 않으므로 최종 병합 판단에는 현재 required CI 결과를 직접 확인한다. |
+| **UI/Frontend** | `pnpm -C frontend run type-check`(라우트 타입 재생성 뒤 정적 타입) — [AGENTS.md의 범위별 검증](../../AGENTS.md#verification-by-change-scope) + 계약 드리프트 게이트 `codegen:verify`/`codegen:verify:zod`(api-docs.json ↔ generated-api.d.ts/generated-zod.ts). RSC 경계는 `pnpm -C frontend build`, 런타임 거동은 관련 Playwright spec으로 검증한다. pre-push는 E2E를 실행하지 않으므로 최종 병합 판단에는 현재 required CI 결과를 직접 확인한다. |
 | **Backend/API** | `./gradlew compileJava compileTestJava`(컴파일 무결성) — [AGENTS 범위별 검증](../../AGENTS.md#verification-by-change-scope). 헌법·표준 린터는 `./gradlew :api-server:harnessTest`, 기능은 관련 JUnit/ArchUnit과 API 응답으로 검증한다. |
 | **Database** | `db-bridge` 쿼리 실행 결과·행(Row) 수, `flyway_schema_history` 확인, `EXPLAIN ANALYZE` 결과, 스키마 변경 확인 로그. **엔티티·DDL 변경 시 `./gradlew :api-server:schemaValidationTest`**(빈 PostgreSQL 17 + Flyway 전량 적용 + Hibernate `ddl-auto:validate`, Docker 필요). ⚠ 단위 테스트 프로파일은 **H2 + `create`/`create-drop`** 이라 물리 스키마 불일치를 **원리적으로 검출하지 못한다** — 그 그린을 스키마 증거로 제시하지 말 것. |
 | **아키텍처/규칙** | 신설·수정한 ArchUnit/린트 게이트가 그린임을 대상 테스트 직접 실행(`--tests`)으로 증명. **게이트를 신설·수정했다면 그린 확인만으로 부족하다 — 의도적으로 위반을 주입해 red 가 되는 것까지 증명한다**(그린만 확인하면 vacuous 통과·UP-TO-DATE 스킵과 구분되지 않는다. [AGENTS.md Evidence guardrails H5](../../AGENTS.md#evidence-guardrails)). |
@@ -216,6 +216,7 @@
 - 워크플로 팬아웃(§2.1)과 서브에이전트의 verify 단계도 이 규칙을 따른다. 병렬 에이전트에는 영향 테스트와 정적 검사만 맡기고, 무거운 검증은 메인 에이전트가 산출물을 통합한 뒤 한 번 순서대로 실행한다(§2.3). 병렬 에이전트·워크플로(읽기 전용 검토 포함)가 도는 동안에는 메인도 무거운 검증을 시작하지 않는다 — 2026-10-26 전체 Vitest 를 검토 에이전트 넷과 함께 돌려 실패 9건 가운데 6건이 부하에 따른 시간 초과(거짓 red)였다.
 - 다른 오퍼레이터의 실행은 공용 메모리로 알 수 없다(GAP-AGENT-001). 무거운 검증을 시작하기 전에 같은 기계에서 Gradle·Vitest·Playwright·테스트 컨테이너가 돌고 있는지 프로세스 목록과 `docker ps`로 확인하고, 돌고 있으면 끝난 뒤에 시작한다. `npm run verify`·pre-push 의 [실행 기록](harness-improvement-pilot.md#관측용-실행-기록)은 시작·단계마다·종료 때 같은 기계에서 살아 있던 다른 시험·검증 실행(종류 이름만, 컨테이너는 보지 않는다)과 실행 중 바뀐 작업 트리 입력을 경고로 알리고, `node scripts/verification-record.mjs --root . summary` 는 `run-end` 가 없거나 겹쳤거나 입력이 바뀐 실행을 나열한다. 표본 사이에 시작해 끝난 실행은 보지 못하므로 경고가 없다는 사실은 겹치지 않았다는 증거가 아니다 — 위의 확인은 그대로 한다. 진단일 뿐 검사를 막거나 결과를 바꾸지 않는다.
 - 다른 무거운 실행과 겹쳤던 실행은 green이든 red든 그 커밋의 증거로 쓰지 않는다. 부하는 거짓 red뿐 아니라 파일 단위 수집 누락으로 거짓 green도 만든다. 같은 명령 전체를 단독으로 다시 실행해 그 결과를 증거로 삼는다. 단독 실행에서도 재현되는 red는 실패로 다룬다. 겹친 실행에서 실패한 테스트 이름은 보고에 남기고, 같은 테스트가 단독 실행이나 CI에서 다시 흔들리면 불안정한 테스트로 보고 고친다.
+- pre-push 의 Vitest 세 단계(불변식·원문 계약·cross-stack)는 이 단독 재실행을 [scripts/vitest-timeout-rerun.mjs](../../scripts/vitest-timeout-rerun.mjs)로 기계화했다(DEC-OPS-390). 실패가 모두 Vitest 자신의 시간 초과(시험·훅)일 때만 그 파일을 단독으로 한 번 다시 돈다 — 동기 시험의 시간 초과는 단언이 모두 통과한 뒤 늦었다는 뜻이고 비동기 시험은 결과 미정이라, 다른 오퍼레이터·IDE 부하가 만든 거짓 red 와 구분할 정보가 없다. 단언·모듈·처리되지 않은 오류, 중단, 재실행의 실패는 그대로 막고, 다시 돈 파일 이름은 출력과 실행 기록(`timeout-rerun`)에 남는다. CI 는 재실행하지 않는다. 이 재실행으로 통과한 green 도 겹친 실행이었다면 위 규칙대로 그 커밋의 증거가 아니다.
 - 기다리는 동안에는 읽기·편집·다음 배치 준비 같은 가벼운 작업을 한다.
 
 ### 6.4 main 최신화 뒤 생성물 재생성

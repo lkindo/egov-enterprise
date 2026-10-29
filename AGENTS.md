@@ -55,7 +55,7 @@ Gemini·Claude Code·Codex 등은 같은 워킹트리를 공유하며, 도구별
 |---|---|
 | 문서·공용 메모리·정적 HTML만 | 관련 문서/메모리/HTML 계약 테스트와 링크 검사 |
 | 백엔드 소스 | 영향 테스트 + `./gradlew compileJava compileTestJava` |
-| 프론트엔드 소스 | 영향 테스트 + `pnpm -C frontend exec tsc --noEmit` 및 관련 lint/build |
+| 프론트엔드 소스 | 영향 테스트 + `pnpm -C frontend run type-check`(라우트 타입 재생성 뒤 tsc) 및 관련 lint/build |
 | API/DB/양단 계약 | 백엔드·프론트 계약 생성물과 양쪽 검증 |
 | 게이트·CI·훅 | 해당 계약 테스트 + 의도적 위반 red 증명 |
 

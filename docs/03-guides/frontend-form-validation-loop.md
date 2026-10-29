@@ -30,7 +30,7 @@
 
 ```bash
 pnpm -C frontend run test:form-validation
-pnpm -C frontend exec tsc --noEmit
+pnpm -C frontend run type-check
 pnpm -C frontend run lint
 ```
 

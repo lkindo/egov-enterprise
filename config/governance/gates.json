@@ -1342,7 +1342,7 @@
         "commandBindings": [
           {
             "source": ".githooks/pre-push",
-            "fragment": "( cd frontend && npx vitest run src/__tests__ ) \\",
+            "fragment": "( cd frontend && node ../scripts/vitest-timeout-rerun.mjs src/__tests__ ) \\",
             "tiers": [
               "pre-push"
             ]
@@ -1378,10 +1378,11 @@
       "requiredCiContext": "frontend-build",
       "inputs": [
         "frontend/src/__tests__",
-        "frontend/vitest.config.mts"
+        "frontend/vitest.config.mts",
+        "scripts/vitest-timeout-rerun.mjs"
       ],
       "evidence": [
-        "Vitest process exit status"
+        "Vitest process exit status (pre-push: files whose every failure is a Vitest timeout rerun alone once; CI: no rerun)"
       ],
       "redProof": "Break an invariant fixture or remove a runner binding; the targeted Vitest gate or registry contract must fail."
     },
@@ -1404,7 +1405,7 @@
         "commandBindings": [
           {
             "source": ".githooks/pre-push",
-            "fragment": "( cd frontend && npx vitest run src/__tests__/cross-stack ) \\",
+            "fragment": "( cd frontend && node ../scripts/vitest-timeout-rerun.mjs src/__tests__/cross-stack ) \\",
             "tiers": [
               "pre-push"
             ]
@@ -1449,10 +1450,11 @@
       ],
       "inputs": [
         "frontend/src/__tests__/cross-stack",
-        "frontend/src/__tests__/cross-stack-boundary.test.ts"
+        "frontend/src/__tests__/cross-stack-boundary.test.ts",
+        "scripts/vitest-timeout-rerun.mjs"
       ],
       "evidence": [
-        "Vitest process exit status"
+        "Vitest process exit status (pre-push: files whose every failure is a Vitest timeout rerun alone once; CI: no rerun)"
       ],
       "redProof": "Detach a pre-push/verify/CI binding line, skip a cross-stack test, or move a backend-auditing contract out of the catalog; the registry contract or the placement guard must fail."
     },

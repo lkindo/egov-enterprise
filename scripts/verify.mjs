@@ -50,7 +50,8 @@ function stageId(command) {
     ['compileJava compileTestJava', 'backend-compile'], ['test:operational-contracts', 'operational-contracts'],
     ['governance-atlas-contract', 'atlas'], ['cross-stack', 'cross-stack'], ['src/__tests__', 'frontend-invariants'],
     ['vitest run', 'frontend-tests'],
-    ['type-check:e2e', 'e2e-types'], ['tsc --noEmit', 'frontend-types'], ['run lint', 'frontend-lint'],
+    // 'run type-check' 는 'run type-check:e2e' 에도 들어 있다 — e2e 항목이 먼저 맞아야 한다(find 는 앞에서부터 고른다).
+    ['type-check:e2e', 'e2e-types'], ['run type-check', 'frontend-types'], ['run lint', 'frontend-lint'],
     ['sast:approx', 'sast'], ['bundle:check', 'frontend-bundle'], ['test:coverage', 'frontend-coverage'],
     ['frontend build', 'frontend-build'], ['run-isolated-e2e', 'isolated-e2e'],
     ['verify-branch-protection', 'repository-policy'], ['regen -- --check', 'generated-freshness'], ['npm run regen', 'regenerate'],
@@ -102,7 +103,8 @@ function runDocumentationContracts() {
 }
 
 function runFrontendStatic() {
-  run('pnpm -C frontend exec tsc --noEmit');
+  // next typegen → tsc: 디스크의 낡은 라우트 타입 생성물이 아니라 현재 src 로 판정한다(pre-push 와 같은 스크립트).
+  run('pnpm -C frontend run type-check');
   run('pnpm -C frontend run type-check:e2e');
   run('pnpm -C frontend run lint');
   run('pnpm -C frontend run test:form-validation');
