@@ -1157,6 +1157,9 @@ function assertSchemaResultRetention(content) {
   const job = parseWorkflowJobs(content.replace(/\r\n/g, '\n')).get('backend-schema-scope') ?? '';
   const step = workflowStep(job, 'Retain schema test result XML');
   assert.ok(step, 'the schema runner must retain its own test result XML');
+  const validationStep = workflowStep(job, 'Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)');
+  assert.ok(validationStep && job.indexOf(validationStep) < job.indexOf(step),
+    'schema validation must produce its XML before the retention step runs');
   assert.match(step, /^        if: \$\{\{ !cancelled\(\) \}\}$/m,
     'failed schema tests must retain their XML too');
   assert.match(step, /^        uses: actions\/upload-artifact@[a-f0-9]{40}(?:\s+#.*)?$/m);
@@ -1219,6 +1222,14 @@ test('physical schema validation runs in parallel and remains required by backen
   );
   assert.throws(() => assertSchemaResultRetention(moved), assert.AssertionError,
     'retaining XML from another runner cannot preserve the schema runner results');
+
+  const beforeValidation = mutateWorkflowJob(ciContent, 'backend-schema-scope', block => {
+    const validationStep = workflowStep(block, 'Real PostgreSQL Schema Validation (Testcontainers + Flyway + validate)');
+    return block.replace(retentionStep, '').replace(validationStep, `${retentionStep}\n${validationStep}`);
+  });
+  assert.notEqual(beforeValidation, ciContent.replace(/\r\n/g, '\n'));
+  assert.throws(() => assertSchemaResultRetention(beforeValidation), assert.AssertionError,
+    'retaining XML before schema validation silently loses the evidence');
 });
 
 test('reusable-base consumes the fail-closed impacted profile matrix', () => {

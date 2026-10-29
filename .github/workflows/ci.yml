@@ -584,6 +584,7 @@ jobs:
         if: always()
         run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
+      # DEC-OPS-382 ⑤: 별도 schema runner의 XML도 같은 비차단 보관 정책을 따른다.
       - name: Retain schema test result XML
         if: ${{ !cancelled() }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2

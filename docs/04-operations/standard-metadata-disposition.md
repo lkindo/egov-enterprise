@@ -83,7 +83,7 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
  ORDER BY cols.table_name, cols.ordinal_position
 ```
 
-타입 불일치 판정은 `도메인 VARCHAR↔character varying`, `NUMERIC↔numeric`, `BIGINT↔bigint`, `DATETIME↔timestamp` 를 일치로 보고 나머지를 불일치로 셌다. 종류(같음/다름)는 이관 도구 `TargetLimit.sameKind` 규칙(정수·소수는 서로 같은 종류)을 따랐다. 단어 대조는 `meta_standard_words`(3,387행)를 `_` 로 나눈 토큰의 `eng_abbr` 와 맞췄다(열 word_name·eng_abbr·word_dc·rprs_yn — V2_1 시드, rprs_yn 과 PK 는 V2_15). 같은 종류 비교에는 NUMERIC 소수 자릿수도 넣었다.
+타입 불일치 판정은 `도메인 VARCHAR↔character varying`, `NUMERIC↔numeric`, `BIGINT↔bigint`, `DATETIME↔timestamp`(2026-10-29 재실측에는 `JSONB↔jsonb`도 추가)를 일치로 보고 나머지를 불일치로 셌다. 종류(같음/다름)는 이관 도구 `TargetLimit.sameKind` 규칙(정수·소수는 서로 같은 종류)을 따랐다. 단어 대조는 `meta_standard_words`(3,387행)를 `_` 로 나눈 토큰의 `eng_abbr` 와 맞췄다(열 word_name·eng_abbr·word_dc·rprs_yn — V2_1 시드, rprs_yn 과 PK 는 V2_15). 같은 종류 비교에는 NUMERIC 소수 자릿수도 넣었다.
 
 ### 수치 요약 — 2026-10-18 상세 분류
 
