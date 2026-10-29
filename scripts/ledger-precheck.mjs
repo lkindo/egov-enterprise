@@ -11,8 +11,9 @@
  * 새 판정이 아니다 — 점검마다 그 결속을 판정하는 함수를 그대로 부른다. 태그는 거버넌스 원장 계약이 쓰는 대조(taggedGateRegistryErrors),
  * 메뉴는 생성기 계획이 쓰는 스냅숏 적재(loadProjectComposerMenus), 안내는 생성기 계획이 쓰는 판정(loadUnassignedPermissionGuidance)이다.
  * 운영 계약(governance-gates-contract·project-composer 시험)이 같은 함수로 다시 보므로 거기서 걷지 않는다 — 병합 권위는 그대로다.
- * 읽기만 하고 Docker·네트워크 없이 수 초다. 판정 모듈이 없는 저장소에서는 그 점검만 건너뛰고 그렇게 말한다. 판정 모듈이 있는데
- * 자료(원장·스냅숏·기능 파일)가 없으면 건너뛰지 않는다 — 판정 함수가 붉힌다.
+ * 읽기만 하고 Docker·네트워크 없이 수 초다. 판정 모듈이 없는 저장소에서는 그 점검만 건너뛰고 그렇게 말한다 — 통과해도 `건너뜀: 코드 — …`
+ * 줄을 쓰고, regen --check 는 통과 출력을 숨기는 대신 그 줄을 `  ⚠ hand-bound-ledgers: …` 로 보인다(regenerate.mjs 의 notices). 판정 모듈이
+ * 있는데 자료(원장·스냅숏·기능 파일)가 없으면 건너뛰지 않는다 — 판정 함수가 붉힌다.
  *
  * 사용법: node scripts/ledger-precheck.mjs   (인자 없음. 위반은 `  - [코드] 판정 문장` 머리줄과 코드마다 `    → 고치는 법` 줄을 쓰고 종료 코드 1)
  */
@@ -81,7 +82,10 @@ export async function ledgerPrecheck({ root = repoRoot, moduleRoot = repoRoot, c
   return { findings, ran, skipped };
 }
 
-/** 결과를 CLI 줄로 — 코드마다 위반 머리줄(`  - [코드] …`)을 쓰고 그 뒤에 고치는 법(`    → …`) 한 줄. */
+/**
+ * 결과를 CLI 줄로 — 코드마다 위반 머리줄(`  - [코드] …`)을 쓰고 그 뒤에 고치는 법(`    → …`) 한 줄. 건너뛴 점검은 통과·실패와 상관없이
+ * `건너뜀: ` 으로 시작하는 줄이다(regen --check 가 이 머리말로 알림을 꺼낸다).
+ */
 export function formatPrecheck({ findings, ran, skipped }) {
   const notes = skipped.map(({ code, requires }) => `건너뜀: ${code} — ${requires} 이 이 저장소에 없다.`);
   if (findings.length === 0) {

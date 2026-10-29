@@ -28,6 +28,7 @@
 #   앵커 없는 패턴은 같은 이름의 소스 폴더를 조용히 빼 로컬은 green, CI 체크아웃에만 파일이 없었다
 #   (2026-03 관리자 로그 화면, 2026-09-27 frontend/src/lib/upload). 모든 깊이 패턴은 도구 고유 이름만 쓰고,
 #   scripts/gitignore-source-roots.test.mjs 가 소스 루트 탐침(무시되면 붉다)과 실제 출력 위치(드러나면 붉다)를 본다.
+#   슬래시 없는 줄(`**/X`·`X`)도 같은 이름의 파일과 폴더를 모든 깊이에서 가리므로 같은 규칙이다(`**/coverage`·`dist` 도 붉다).
 #   작업 디렉터리 기준 출력(bin·logs·storage/uploads)은 루트와 Gradle 모듈마다 둔다 — 새 모듈을 더하면 그 줄도 더한다.
 #   Maven target/·vendor/·export/·dist/·tomcat/·analysis/ 처럼 이 저장소에서 생기지 않는 출력 이름은 두지 않는다.
 **/build/
@@ -85,11 +86,14 @@
 # ----- Local Configuration & Secrets -----
 **/egovProps/conf/
 **/*.local.properties
+# dotenv 파일은 이름(.env·.env.<무엇>)과 깊이에 상관없이 무시한다 — 종전에는 .env 와 .env*.local 만 가려 루트·모듈의
+#   .env.production·.env.test 가 미추적으로 드러났다(`git add -A`, 미추적 파일까지 복사하는 생성기에 섞인다).
+#   추적하는 것은 비밀 없는 견본 .env.example 뿐이다(부트스트랩이 .env·frontend/.env.local 로 복제한다). 다른 견본 이름은 쓰지 않는다 —
+#   쓰게 되면 아래 예외에 이름과 사유를 더한다. scripts/gitignore-source-roots.test.mjs 가 양방향으로 본다.
 **/.env
+**/.env.*
 **/.env*.local
-**/.env.development.local
-**/.env.test.local
-**/.env.production.local
+!**/.env.example
 **/application-local.properties
 **/application-local.yml
 **/application-dev.properties

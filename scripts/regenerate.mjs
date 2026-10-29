@@ -24,6 +24,7 @@
  *
  * --check 는 각 생성기 자신의 검사 모드(GENERATORS 의 check)를 병렬로 부르고, URL 승인 결속과 SAST 예외 해시, 재생성이 고치지 않는
  * 손 결속 원장 확인(LEDGER_CHECKS)을 함께 본다. 새 판정을 더하지 않는다 — 운영 계약·codegen 게이트가 같은 생성물·원장을 다시 본다.
+ * 통과한 검사의 출력은 보이지 않고, 손 결속 사전 점검이 판정 모듈이 없어 건너뛴 점검만 `  ⚠ hand-bound-ledgers: 건너뜀: …` 줄로 남긴다.
  * pre-push 가 이것을 맨 앞에서 돌려, 낡은 생성물과 잊은 손 결속 값을 11분짜리 운영 계약 뒤가 아니라 수십 초 안에 알린다.
  */
 import { spawn, spawnSync } from 'node:child_process';
@@ -52,6 +53,14 @@ function censusErrorHeadlines(output) {
 function headlinesWithFixes(output) {
   const lines = output.split(/\r?\n/).filter(line => /^ {2}- \[[A-Z_]+\]/.test(line) || line.startsWith('    → '));
   return lines.length ? lines.join('\n') : output;
+}
+
+/**
+ * 손 결속 사전 점검은 판정 모듈이 없는 점검을 건너뛰고도 통과하며 그 사실을 `건너뜀: …` 줄로 쓴다. 통과한 검사의 출력은 보이지 않으므로
+ * 그 줄만 알림으로 꺼낸다 — 꺼내지 않으면 보지 않은 점검이 평범한 통과로 숨는다.
+ */
+function skipNotices(output) {
+  return output.split(/\r?\n/).filter(line => line.startsWith('건너뜀: '));
 }
 
 /** IA 처분 계약 CLI 는 JSON 요약을 쓴다 — 실패 판정인 structuralErrors 만 꺼낸다(뒤의 승인 차단 표본은 판정이 아니다). */
@@ -98,6 +107,7 @@ export const LEDGER_CHECKS = Object.freeze([
     requires: 'scripts/ledger-precheck.mjs',
     command: ['node', ['scripts/ledger-precheck.mjs']],
     excerpt: headlinesWithFixes,
+    notices: skipNotices,
     hint: '태그 시험 등록·메뉴 snapshot·미배정 권한 안내는 regen 이 고치지 않는다 — 코드마다 위 → 대로 고친다.',
   }),
 ]);
@@ -251,11 +261,15 @@ export function regenerate({ cwd = repoRoot, steps = regenerationSteps(), runCom
   return { status: 'ready', changed: result };
 }
 
-/** 손 결속 원장 확인 하나의 검사 일. 실패하면 판정 줄만 추리고 regen 이 고치지 않는다는 안내를 끝에 붙인다. */
+/**
+ * 손 결속 원장 확인 하나의 검사 일. 실패하면 판정 줄만 추리고 regen 이 고치지 않는다는 안내를 끝에 붙인다. 통과하면 그 확인이 꺼내는
+ * 알림(`notices`, 건너뛴 점검)만 남긴다 — checkGenerated 가 통과한 검사에서는 이 알림만 보인다.
+ */
 function ledgerTask(cwd, check) {
   return { id: check.id, label: [check.command[0], ...check.command[1]].join(' '), run: async () => {
     const result = await runAsync(cwd, check.command);
-    return result.ok ? result : { ok: false, output: `${check.excerpt(result.output).trimEnd()}\n→ ${check.hint}` };
+    if (!result.ok) return { ok: false, output: `${check.excerpt(result.output).trimEnd()}\n→ ${check.hint}` };
+    return { ...result, notices: check.notices ? check.notices(result.output) : [] };
   } };
 }
 
@@ -287,7 +301,12 @@ export function checkTasks(cwd, steps = regenerationSteps(), ledgerChecks = LEDG
   return tasks;
 }
 
-/** 쓰지 않고 검사한다. 일은 서로 읽기만 하므로 동시에 돈다. 반환: `{ ok, results, seconds }`. */
+const clipped = line => (line.length > 300 ? `${line.slice(0, 300)}…` : line);
+
+/**
+ * 쓰지 않고 검사한다. 일은 서로 읽기만 하므로 동시에 돈다. 반환: `{ ok, results, seconds }`. 실패한 검사는 출력 끝을, 통과한 검사는
+ * 알림(`notices`)이 있을 때만 `  ⚠ <id>: …` 줄을 보인다 — 알림이 없는 통과는 ✔ 한 줄 그대로다.
+ */
 export async function checkGenerated({ cwd = repoRoot, steps = regenerationSteps(), tasks = checkTasks(cwd, steps), log = console.log,
   concurrency = Math.max(2, (os.availableParallelism?.() ?? os.cpus().length) - 1) } = {}) {
   const started = Date.now();
@@ -307,13 +326,15 @@ export async function checkGenerated({ cwd = repoRoot, steps = regenerationSteps
   for (const result of results) {
     log(`${result.ok ? '  ✔' : '  ✘'} ${result.id} (${result.label}) ${result.seconds.toFixed(1)}초`);
     if (!result.ok) {
-      log(result.output.trimEnd().split(/\r?\n/).slice(-15)
-        .map(line => `      ${line.length > 300 ? `${line.slice(0, 300)}…` : line}`).join('\n'));
+      log(result.output.trimEnd().split(/\r?\n/).slice(-15).map(line => `      ${clipped(line)}`).join('\n'));
+    } else if (result.notices?.length) {
+      log(result.notices.map(notice => `  ⚠ ${result.id}: ${clipped(notice)}`).join('\n'));
     }
   }
   const ok = results.every(result => result.ok);
+  const noticed = results.some(result => result.ok && result.notices?.length);
   log(ok
-    ? `생성물이 모두 최신이다(${results.length}개 검사, ${seconds.toFixed(1)}초).`
+    ? `생성물이 모두 최신이다(${results.length}개 검사, ${seconds.toFixed(1)}초).${noticed ? ' 건너뛴 점검은 위 ⚠ 줄에 있다 — 그 점검은 보지 않았다.' : ''}`
     : `낡은 생성물·해시 결속이 있다(${seconds.toFixed(1)}초). \`npm run regen\` 으로 다시 만들고 diff 를 확인한 뒤 함께 커밋한다.`
       + ' 다시 만들어도 남으면 그 검사의 출력이 원인이다.');
   return { ok, results, seconds };
@@ -335,7 +356,7 @@ export function swallowedNpmFlags(argv, env) {
 }
 
 export async function main(argv, { cwd = repoRoot, log = console.log, error = console.error, env = process.env,
-  write = options => regenerate(options) } = {}) {
+  write = options => regenerate(options), check = options => checkGenerated(options) } = {}) {
   const swallowed = swallowedNpmFlags(argv, env);
   if (swallowed.length) {
     error([
@@ -346,7 +367,7 @@ export async function main(argv, { cwd = repoRoot, log = console.log, error = co
     return 2;
   }
   if (argv.length === 0) return write({ cwd, log }).status === 'ready' ? 0 : 1;
-  if (argv.length === 1 && argv[0] === '--check') return (await checkGenerated({ cwd, log })).ok ? 0 : 1;
+  if (argv.length === 1 && argv[0] === '--check') return (await check({ cwd, log })).ok ? 0 : 1;
   const at = name => argv.indexOf(name);
   if (argv.length === 4 && at('--rebind-sast') >= 0 && at('--note') >= 0) {
     const ids = argv[at('--rebind-sast') + 1]?.split(',').map(id => id.trim()).filter(Boolean);

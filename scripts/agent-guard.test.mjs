@@ -129,11 +129,20 @@ const CASES = {
       "[IO.File]::ReadAllText('.env')", '$t = [System.IO.File]::ReadAllLines("$PWD\\.env")',
       // compose 는 .env 를 기본으로 읽어 보간한 비밀(docker-compose.prod.yml 의 DB_PASSWORD·JWT_SECRET)을 출력한다.
       'docker compose config', 'docker compose --env-file .env -f docker-compose.prod.yml config', 'docker-compose config --environment',
-      'docker compose -p egov config --format json'],
+      'docker compose -p egov config --format json',
+      // 2026-10-30 독립 검토(Codex) 미탐: 옵션이 먹은 값(두 번째 패턴 `-q`)을 출력하지 않는 옵션으로 셌고, 붙여 쓴 `-eDB_URL` 을 몰라 .env 를
+      // 패턴으로 셌고, PowerShell 의 `-Path:값` 을 몰랐고, compose 의 이름만 내는 옵션에 거짓·빈 값을 줘도 켜진 것으로 셌다.
+      'grep -e DB_URL -e -q .env', 'grep -eDB_URL .env', 'grep --regexp=DB .env', 'Get-Content -Path:.env', 'Get-Content -LiteralPath:".env"',
+      'docker compose config --quiet=false', 'docker compose config --services=false', 'docker compose config --hash=',
+      // 같은 갈래를 실제 도구(GNU grep 3·rg 14·sed 4.9·PowerShell 7)로 확인한 형태: grep 은 긴 옵션의 앞부분(`--reg`)을 받고 `-T` 는 값이 없으며
+      // `--color` 는 값을 붙여서만 받는다. PowerShell 은 매개변수 앞부분(`-Pa:`)과 `-Quiet:$false` 를 받는다. pflag 는 마지막 값이 이긴다.
+      'grep --reg -q .env', 'grep -T DB_URL .env', 'grep --color never .env', 'rg -e DB -e -q .env', 'sed -e -i .env', 'Get-Content -Pa:.env',
+      'Select-String DB -Path .env -Quiet:$false', 'docker compose config --quiet --quiet=false'],
     pass: ['cat .env.example', 'Get-Content frontend/.env.example', 'cat .env.sample', 'cat .env.template', 'cat .env.local.example',
       // 값을 출력하지 않고 쓰는 길 — 규칙의 fix 가 권하는 명령이다.
       'node --env-file=.env scripts/x.mjs', 'DB_NAME=egovdb node --env-file=.env .agent/scripts/db-bridge.js "SELECT 1"',
-      'node --env-file=.env -e "console.log(Boolean(process.env.DB_URL))"', "grep -q '^DB_URL=' .env", 'grep -c DB_URL .env', 'rg -l DB_URL .env',
+      'node --env-file=.env -e "console.log(Boolean(process.env.DB_URL))"', 'grep -q -e DB_URL .env', "grep -q '^DB_URL=' .env", 'grep -c DB_URL .env',
+      'rg -l DB_URL .env',
       'Select-String -Path .env -Pattern DB -Quiet',
       // 있음·무시 여부·메타데이터만 본다.
       'git check-ignore -v .env', 'ls .env', 'ls -la .env*', 'Test-Path .env', 'wc -l .env', 'Get-Item .env',
@@ -149,7 +158,10 @@ const CASES = {
       "cat <<'EOF' > .env\nX=1\nEOF",
       // compose 의 이름만 내는 config 와 다른 하위 명령.
       'docker compose --env-file .env up -d', 'docker compose config --quiet', 'docker compose -f docker-compose.prod.yml config --services',
-      'docker compose logs config', 'docker compose -p config up', 'docker compose config --hash="*"'],
+      'docker compose logs config', 'docker compose -p config up', 'docker compose config --hash="*"',
+      // 2026-10-30 독립 검토(Codex) 오탐: rg 의 `--color` 는 값을 다음 단어로 받는다(grep 은 `=WHEN` 으로만). 참 값을 준 이름만 내는 옵션은 켜진 것이다.
+      'rg --color never .env scripts', 'grep --color=auto -rn ".env" .gitignore', 'docker compose config --quiet=true', 'docker compose config -q',
+      'docker compose config --hash web', 'Select-String DB -Path .env -Quiet:$true', 'Select-String -Pattern: .env -Path .gitignore'],
   },
   'openapi-relative-export-path': {
     hit: ['./gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" -Dopenapi.export.path="api-docs.json" --rerun-tasks',

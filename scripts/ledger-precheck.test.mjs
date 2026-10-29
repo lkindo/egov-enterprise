@@ -4,7 +4,8 @@
  * 붉은 예는 실제로 push 를 거부시킨 모양 그대로다 — gates.json 에 등록하지 않은 @Tag("schema-validation") 시험(2026-10-19),
  * 기능 파일에서 빠진 CMS_PURGE 안내 행(2026-10-26), 갱신하지 않은 메뉴 스냅숏 해시(PR #897·#978). 원본 설정은 고치지 않고 자료만
  * 임시 복사본으로 바꾼다. 판정 자체는 운영 계약(governance-gates-contract·project-composer 시험)이 고정하므로, 여기서는 그 판정 함수에
- * 이어졌는지·코드 라벨과 고치는 법이 regen --check 출력까지 가는지·판정 모듈이 없을 때만 건너뛰는지를 고정한다.
+ * 이어졌는지·코드 라벨과 고치는 법이 regen --check 출력까지 가는지·판정 모듈이 없을 때만 건너뛰는지·건너뛴 점검이 regen --check 출력에
+ * 알림으로 남는지를 고정한다.
  */
 import assert from 'node:assert/strict';
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
@@ -15,7 +16,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { JAVA_GATE_SCAN_ROOTS, loadGovernanceRegistry } from './governance-gates-contract.mjs';
 import { GATE_REGISTRY, LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck, main } from './ledger-precheck.mjs';
-import { LEDGER_CHECKS, checkGenerated, checkTasks } from './regenerate.mjs';
+import { LEDGER_CHECKS, checkGenerated, checkTasks, main as regenerateMain } from './regenerate.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS = 'api-server/src/main/resources/db/migration';
@@ -130,6 +131,33 @@ test('regen --check 의 손 결속 확인은 실패한 코드의 머리줄과 �
   // checkGenerated 는 줄마다 300자에서 자른다 — 고치는 법이 잘리지 않는다.
   for (const code of LEDGER_PRECHECKS.map(check => check.code)) assert.ok(`    → ${fix(code)}`.length <= 300, `${code}: 고치는 법이 300자를 넘는다`);
   assert.match(logs.join('\n'), /✘ hand-bound-ledgers[\s\S]*\[MENU_SNAPSHOT_STALE\] Composer menu snapshot: stale migration hash/u);
+});
+
+// 독립 검토(2026-10-30): 판정 모듈이 없어 건너뛴 점검은 `건너뜀:` 줄과 함께 통과하는데, regen --check 는 통과한 검사의 출력을 보이지 않아
+// 보지 않은 점검이 평범한 통과로 숨었다. regen CLI(main --check) → checkTasks → checkGenerated → 출력 줄까지 실제 경로로 돌린다.
+test('판정 모듈 하나가 없어 건너뛴 점검은 regen --check 출력에 ⚠ 알림으로 남고 종료 코드는 0 이다', async (t) => {
+  const root = fixture(t);
+  // 판정 모듈을 불러오는 저장소: 태그 대조 모듈만 없고, 나머지 둘은 원본을 그대로 내보내는 얇은 모듈이다.
+  const modules = scratch(t, 'ledger-precheck-modules-');
+  const [absent, ...present] = LEDGER_PRECHECKS;
+  assert.equal(absent.code, 'TAGGED_GATE_REGISTRY');
+  for (const { requires } of present) put(modules, requires, `export * from ${JSON.stringify(pathToFileURL(join(ROOT, requires)).href)};\n`);
+  const handBound = LEDGER_CHECKS.find(check => check.id === 'hand-bound-ledgers');
+  const entry = pathToFileURL(join(ROOT, 'scripts/ledger-precheck.mjs')).href;
+  const script = `const { main } = await import(${JSON.stringify(entry)});`
+    + ` process.exitCode = await main([], { root: ${JSON.stringify(root)}, moduleRoot: ${JSON.stringify(modules)} });`;
+  const tasks = checkTasks(ROOT, [], [{ ...handBound, requires: undefined, command: ['node', ['--input-type=module', '-e', script]] }]);
+  const printed = [];
+  const code = await regenerateMain(['--check'], { cwd: ROOT, env: {}, log: line => printed.push(line), error: line => printed.push(line),
+    check: options => checkGenerated({ ...options, tasks }) });
+  const lines = printed.join('\n').split('\n');
+  const notice = `  ⚠ hand-bound-ledgers: 건너뜀: ${absent.code} — ${absent.requires} 이 이 저장소에 없다.`;
+  assert.ok(lines.includes(notice), `regen --check 출력에 건너뛴 점검 알림이 없다:\n${lines.join('\n')}`);
+  // 남은 두 점검은 돌아 통과했다 — 알림은 건너뛴 점검 하나뿐이고, 마지막 요약도 그 알림을 가리킨다.
+  assert.deepEqual(lines.filter(line => line.startsWith('  ⚠ ')), [notice]);
+  assert.ok(lines.some(line => line.startsWith('  ✔ hand-bound-ledgers ')), '손 결속 확인은 통과(✔)로 남아야 한다');
+  assert.match(lines.at(-1), /^생성물이 모두 최신이다\(1개 검사, [\d.]+초\)\. 건너뛴 점검은 위 ⚠ 줄에 있다/u);
+  assert.equal(code, 0, '건너뛴 점검은 실패가 아니다 — regen --check 의 종료 코드는 0 이다');
 });
 
 test('판정 모듈이 없을 때만 건너뛰고, 자료가 없으면 건너뛰지 않고 붉다', async (t) => {

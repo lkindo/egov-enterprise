@@ -121,6 +121,32 @@ test('원장 확인이 실패하면 판정 줄만 추려 보이고 regen 이 고
   assert.equal((await checkGenerated({ cwd: ROOT, tasks: passing, log: () => {} })).ok, true);
 });
 
+// 통과한 검사의 출력은 보이지 않는다. 손 결속 사전 점검이 판정 모듈이 없어 건너뛴 점검만 ⚠ 줄로 남긴다(실제 경로의 red 는
+// ledger-precheck.test.mjs). 다른 통과 검사는 같은 줄을 써도 ✔ 한 줄 그대로이고, 실패한 검사의 출력도 그대로다.
+test('통과한 손 결속 확인만 건너뛴 점검을 ⚠ 줄로 보이고, 다른 통과·실패 검사의 출력은 그대로다', async () => {
+  const skipLine = '건너뜀: PROBE_CODE — scripts/probe-judge.mjs 이 이 저장소에 없다.';
+  const printing = `console.log(${JSON.stringify(`${skipLine}\n✅ 통과`)})`;
+  const as = (id, script) => ({ ...LEDGER_CHECKS.find(check => check.id === id), requires: undefined, command: ['node', ['-e', script]] });
+  assert.deepEqual(LEDGER_CHECKS.filter(check => check.notices).map(check => check.id), ['hand-bound-ledgers'], '알림을 꺼내는 확인은 손 결속 하나다');
+  const tasks = checkTasks(ROOT, [], [as('operation-consumer-census', printing), as('hand-bound-ledgers', printing)]);
+  const logs = [];
+  const result = await checkGenerated({ cwd: ROOT, tasks, log: line => logs.push(line) });
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.results.map(row => row.notices), [[], [skipLine]]);
+  const lines = logs.join('\n').split('\n');
+  assert.deepEqual(lines.filter(line => line.startsWith('  ⚠ ')), [`  ⚠ hand-bound-ledgers: ${skipLine}`]);
+  assert.match(lines.at(-1), /건너뛴 점검은 위 ⚠ 줄에 있다/u);
+  // 알림 없는 통과는 요약에 아무것도 더하지 않고, 실패한 검사는 알림이 있어도 출력 끝만 보인다(실패 출력은 바꾸지 않는다).
+  const quiet = [];
+  await checkGenerated({ cwd: ROOT, tasks: [{ id: 'fresh', label: 'fresh', run: async () => ({ ok: true, output: skipLine }) }], log: line => quiet.push(line) });
+  assert.deepEqual(quiet.join('\n').split('\n').filter(line => line.includes('⚠')), []);
+  const broken = [];
+  await checkGenerated({ cwd: ROOT, log: line => broken.push(line),
+    tasks: [{ id: 'broken', label: 'broken', run: async () => ({ ok: false, output: 'boom', notices: [skipLine] }) }] });
+  assert.deepEqual(broken.join('\n').split('\n').filter(line => line.includes('⚠')), []);
+  assert.ok(broken.includes('      boom'));
+});
+
 test('regen 은 단계를 순서대로 돌리고 바뀐 파일만 보이며, URL 승인 해시를 다시 결속한다', (t) => {
   const root = scratch(t, 'regenerate-write-');
   const census = '{\n  "records": []\n}\n';
