@@ -129,6 +129,13 @@ const CASES = {
       // 2026-10-28 감사(D5-7) 오탐: excludeTags 가 없는 다른 모듈의 test 가 api-server 태그 시험 이름(Authorization…)과 겹쳐 막혔다.
       './gradlew :business-core:test --tests "*Authorization*"'],
   },
+  // 2026-09-24 PR #735: `--watch` 는 집계 체크가 등록되기 전 pending 0 에서 끝났다. 첫 사례는 기억이 권하던 실제 명령이다.
+  'gh-pr-checks-watch': {
+    hit: ['gh pr checks 1002 --watch --interval 30', 'gh pr checks 735 --required --watch', 'gh.exe pr checks 1 --watch=true',
+      'x=$(gh pr checks 1002 --watch)', "bash -lc 'gh pr checks 1002 --watch'"],
+    pass: ['gh pr checks 735 --required', 'node scripts/pr-checks-wait.mjs --pr 1002', 'gh run watch 123 --exit-status', 'echo "gh pr checks --watch"',
+      'git commit --only -m "gh pr checks --watch 대신 도구를 쓴다" -- a.txt'],
+  },
   'guard-canary': {
     hit: ['echo AGENT_GUARD_CANARY', '  echo AGENT_GUARD_CANARY  '],
     pass: ['echo AGENT_GUARD_CANARY_X', 'grep -n AGENT_GUARD_CANARY scripts/agent-guard.mjs', 'echo hello'],

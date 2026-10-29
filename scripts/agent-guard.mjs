@@ -646,13 +646,25 @@ export const RULES = Object.freeze([
   {
     id: 'jq-not-installed', decision: 'deny',
     why: '이 PC 에는 jq 가 없다 — `gh … --json | jq` 감시는 오류 없이 빈 출력으로 계속 돌아 "아직 대기 중"과 "감시가 죽음"을 구분하지 못한다(2026-09-04).',
-    fix: 'gh 의 --jq 옵션이나 node -e 로 JSON 을 읽는다. gh pr checks 는 탭 구분 기본 출력을 awk -F"\\t" 로 읽는다.',
+    fix: 'PR CI 대기는 node scripts/pr-checks-wait.mjs --pr <번호> 를 백그라운드로 실행한다. 그 밖의 JSON 은 gh 의 --jq 나 node -e 로 읽는다.',
     // 명령 자리만 본다 — 파이프 뒤는 조각 나누기, `$( … )` 안은 재귀 판정이 명령 자리로 만든다. bash 의 백틱 치환은 PowerShell 의
     // 이스케이프 문자와 겹쳐 일반 재귀로 읽지 않고 jq 에 한해 백틱 바로 뒤의 jq 를 본다.
     match: ({ code }) => {
       const words = tokens(code);
       const head = /(^|[\\/])jq(\.exe)?$/i.test(words[commandAt(words)] ?? '');
       return (head || /`\s*(?:\S*[\\/])?jq(?:\.exe)?(?=[\s`]|$)/i.test(code)) && !onPath('jq');
+    },
+  },
+  {
+    id: 'gh-pr-checks-watch', decision: 'deny',
+    why: '`gh pr checks --watch` 는 등록된 체크에 pending 이 없으면 끝나고 head SHA 를 고정하지 않는다 — required 집계 체크는 소스 잡 뒤에야 등록돼 정착 전에 통과로 끝날 수 있다(2026-09-24 PR #735).',
+    fix: 'node scripts/pr-checks-wait.mjs --pr <번호> --sha <커밋> 을 백그라운드로 실행하고 종료 코드로 판정한다. 한 번 보는 것은 gh pr checks <번호> --required.',
+    // 명령 자리의 gh 만 본다 — 문자열·검색어 속 문구는 명령이 아니다. 셸 래퍼·명령 치환 안은 재귀 판정이 명령 자리로 만든다.
+    match: ({ code }) => {
+      const words = tokens(code);
+      const at = commandAt(words);
+      return /(^|[\\/])gh(\.exe)?$/i.test(words[at] ?? '') && words[at + 1] === 'pr' && words[at + 2] === 'checks'
+        && hasFlag(words.slice(at + 3), '--watch');
     },
   },
   {
