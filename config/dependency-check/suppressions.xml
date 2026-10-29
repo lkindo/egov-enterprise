@@ -67,8 +67,9 @@
          [2026-09-24 Boot 4.1.1 전환, ADR-0024] 런타임이 Framework 7.0.9 · Security 7.1.1 · Integration 7.1.1 로 옮겨
          그 16건의 대상 아티팩트가 해석 결과에서 사라졌다. 다음 주간 NVD 실행 결과로 확인한다. -->
 
-    <!-- kotlin-stdlib 2.3.21 (okhttp 5.3.2 ← opentelemetry-exporter-otlp 경유).
-         2026-09-22 판정 때는 1.9.25 였고, Boot 4.1.1 전환으로 okhttp 5 가 들어오며 2.3.21 로 바뀌었다. -->
+    <!-- kotlin-stdlib 2.3.21 (okhttp 5.5.0 ← opentelemetry-exporter-otlp 경유).
+         2026-09-22 판정 때는 1.9.25 였고, Boot 4.1.1 전환으로 okhttp 5 가 들어오며 2.3.21 로 바뀌었다.
+         2026-10-29 OpenTelemetry 1.67.0 상향으로 okhttp 가 5.3.2 → 5.5.0 이 됐고 stdlib 은 Boot BOM 값 그대로다. -->
     <suppress until="2026-12-21Z">
         <notes><![CDATA[
         CVE-2026-53914 는 Kotlin Build Cache(kotlin-gradle-plugin, 수정 2.4.20)의 역직렬화 결함이고
@@ -80,13 +81,14 @@
         <cve>CVE-2020-29582</cve>
     </suppress>
 
-    <!-- OpenTelemetry Java 1.62.0 — JavaScript 패키지 @opentelemetry/core 의 CVE 가 CPE 이름만으로 매칭됐다 -->
+    <!-- OpenTelemetry Java 1.67.0 — JavaScript 패키지 @opentelemetry/core 의 CVE 가 CPE 이름만으로 매칭됐다 -->
     <suppress until="2026-12-21Z">
         <notes><![CDATA[
         CVE-2026-54285 는 npm @opentelemetry/core (<2.8.0) 의 W3C Baggage 전파 메모리 결함이다.
-        cpe:2.3:a:opentelemetry:opentelemetry 가 언어를 구분하지 않아 Java SDK 1.62.0 전 모듈에 붙었다(오탐).
+        cpe:2.3:a:opentelemetry:opentelemetry 가 언어를 구분하지 않아 Java SDK 전 모듈에 붙었다(오탐).
+        2026-09-22 에 1.62.0 으로 판정했고, 2026-10-29 GHSA-ccrj-gw8r-854m 대응으로 1.67.0 에 올리며 버전만 옮겼다.
         ]]></notes>
-        <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@1\.62\.0$</packageUrl>
+        <packageUrl regex="true">^pkg:maven/io\.opentelemetry/opentelemetry-.*@1\.67\.0$</packageUrl>
         <cve>CVE-2026-54285</cve>
     </suppress>
 </suppressions>
