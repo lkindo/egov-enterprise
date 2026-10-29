@@ -77,6 +77,7 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/AssignmentRecipientIntegrityIntegrationTest.java', ['note', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java', 'memoreport'],
   ['api-server/src/test/java/nuri/api/schema/CommunityDecisionConcurrencyIntegrationTest.java', 'community'],
+  ['api-server/src/test/java/nuri/api/schema/CommentUpdateDeleteConcurrencyIntegrationTest.java', ['comment', 'board']],
   ['api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java', ['community', 'template']],
   ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'event'],
   ['api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java', 'notification'],

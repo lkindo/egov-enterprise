@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useLayoutEffect, useRef } from 'react';
 import dynamic from 'next/dynamic';
 const StandardModal = dynamic(() => import('./standard-modal').then(mod => mod.StandardModal), { ssr: false });
 import { VirtualScrollList } from './virtual-scroll-list';
@@ -30,26 +30,46 @@ export function UserPicker({
   // [2026-09-15 DEC-OPS-100] 검색하기 전의 빈 결과를 "검색 결과 없음"으로, 검색 실패를 결과 없음으로 말하지 않는다.
   const [searchedKeyword, setSearchedKeyword] = useState<string | null>(null);
   const [searchFailed, setSearchFailed] = useState(false);
+  const requestGeneration = useRef(0);
+  const [previousOpen, setPreviousOpen] = useState(isOpen);
+
+  // 완료한 검색은 보존하고, 닫힌 사이 취소된 요청의 진행 표시만 걷는다.
+  if (previousOpen !== isOpen) {
+    setPreviousOpen(isOpen);
+    setLoading(false);
+  }
+  useLayoutEffect(() => () => { requestGeneration.current += 1; }, [isOpen]);
+
+  const handleClose = useCallback(() => {
+    requestGeneration.current += 1;
+    setLoading(false);
+    onClose();
+  }, [onClose]);
 
   const handleSearch = useCallback(async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
     const term = keyword.trim();
-    if (term.length < 2) return;
+    if (term.length < 2 || !isOpen) return;
+    const generation = ++requestGeneration.current;
 
     try {
       setLoading(true);
-      setSearchFailed(false);
       const res = await userSearchService.searchAssignableUsers(term);
+      if (generation !== requestGeneration.current) return;
       setResults(res);
+      setSearchFailed(false);
     } catch (error) {
+      if (generation !== requestGeneration.current) return;
       logErrorSafely('Search failed', error);
       setResults([]);
       setSearchFailed(true);
     } finally {
-      setSearchedKeyword(term);
-      setLoading(false);
+      if (generation === requestGeneration.current) {
+        setSearchedKeyword(term);
+        setLoading(false);
+      }
     }
-  }, [keyword]);
+  }, [keyword, isOpen]);
 
   const renderUserItem = (user: UserSearchResult) => (
     <div
@@ -59,13 +79,13 @@ export function UserPicker({
       className="flex items-center justify-between px-6 py-3 border-b hover:bg-primary/5 transition-colors cursor-pointer group"
       onClick={() => {
         onSelect(user);
-        onClose();
+        handleClose();
       }}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {
           e.preventDefault();
           onSelect(user);
-          onClose();
+          handleClose();
         }
       }}
     >
@@ -87,7 +107,7 @@ export function UserPicker({
   return (
     <StandardModal
       isOpen={isOpen}
-      onClose={onClose}
+      onClose={handleClose}
       title={title}
       maxWidth="sm"
     >

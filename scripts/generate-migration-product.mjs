@@ -5,12 +5,13 @@ import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, readFileSync
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { adoptionScope, containedFile, createPendingAdoptionReview } from './adoption-review.mjs';
+import { MIGRATION_DURATION_PROFILE_PATH, migrationProvenanceDigest, verifySourceMigrationProfileProvenance } from './migration-profile-provenance.mjs';
 
 export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   'build.gradle', 'gradle.properties', 'gradle', 'gradlew', 'gradlew.bat', '.gitattributes', '.nvmrc',
   'config/dependency-check/suppressions.xml', 'migration-tool/build.gradle', 'migration-tool/src',
   'config/governance/migration-execution.example.json',
-  'config/migration-test-duration-profile.json', 'scripts/migration-test-shard.mjs',
+  'config/migration-test-duration-profile.json', 'scripts/migration-test-shard.mjs', 'scripts/migration-profile-provenance.mjs',
   'scripts/verify.mjs', 'scripts/verification-record.mjs',
   'scripts/migration-verification-contract.test.mjs', 'scripts/required-checks-contract.mjs',
   'scripts/adoption-review.mjs', 'scripts/adoption-execute.mjs', 'scripts/adoption-execute.test.mjs',
@@ -35,6 +36,20 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
     if (parent === sourceRoot) break;
     if (dirname(parent) === parent) throw new Error('export parent escapes the source workspace');
   }
+  // Fail before creating any output. The adopter's new Git history cannot prove
+  // ancestry in this producer, so establish that boundary here and bind the bytes.
+  const profileText = readFileSync(containedFile(sourceRoot, MIGRATION_DURATION_PROFILE_PATH), 'utf8');
+  const durationProfileProvenance = verifySourceMigrationProfileProvenance(JSON.parse(profileText), sourceRoot);
+  const contractPath = 'scripts/migration-verification-contract.test.mjs';
+  const sourceContract = readFileSync(containedFile(sourceRoot, contractPath), 'utf8').replace(/\r\n/g, '\n');
+  const provenanceImport = "import { verifySourceMigrationProfileProvenance } from './migration-profile-provenance.mjs';";
+  const provenanceCall = '  verifySourceMigrationProfileProvenance(profile, provenanceRoot);';
+  for (const anchor of [provenanceImport, provenanceCall]) {
+    if (sourceContract.split(anchor).length !== 2) throw new Error('migration product provenance seam must occur exactly once');
+  }
+  const generatedContract = sourceContract.replace(provenanceImport,
+    "import { verifyExportedMigrationProfileProvenance } from './migration-profile-provenance.mjs';").replace(provenanceCall,
+    `  verifyExportedMigrationProfileProvenance(profile, provenanceRoot, '${migrationProvenanceDigest(durationProfileProvenance)}');`);
   const copy = path => {
     const source = join(sourceRoot, path);
     const stat = lstatSync(source);
@@ -42,10 +57,14 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
     if (stat.isDirectory()) { for (const child of readdirSync(source).sort()) copy(`${path}/${child}`); return; }
     const file = containedFile(sourceRoot, path);
     mkdirSync(dirname(join(outputRoot, path)), { recursive: true });
-    copyFileSync(file, join(outputRoot, path));
+    // Keep the verified profile snapshot if another operator changes the source
+    // while the rest of the product is being copied.
+    if (path === MIGRATION_DURATION_PROFILE_PATH) writeFileSync(join(outputRoot, path), profileText);
+    else copyFileSync(file, join(outputRoot, path));
   };
   for (const input of MIGRATION_PRODUCT_INPUTS) copy(input);
   const write = (path, body) => { mkdirSync(dirname(join(outputRoot, path)), { recursive: true }); writeFileSync(join(outputRoot, path), body); };
+  write(contractPath, generatedContract);
   write('settings.gradle', "rootProject.name = 'egov-migration-tool'\ninclude 'migration-tool'\n");
   write('package.json', `${JSON.stringify({ name: 'egov-migration-tool', private: true, engines: { node: '>=22.0.0' },
     scripts: { verify: 'node scripts/verify.mjs migration',
@@ -79,7 +98,7 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
   const scope = adoptionScope(outputRoot, { product: 'migration-tool', profile: null });
   write('migration-product-lock.json', `${JSON.stringify({ schemaVersion: 1, product: 'migration-tool',
     generatedAt: new Date().toISOString(), sourceScope: scope, technicalValidation: 'not-executed',
-    environmentApproval: 'pending', onlineGovernance: 'not-applicable' }, null, 2)}\n`);
+    environmentApproval: 'pending', onlineGovernance: 'not-applicable', durationProfileProvenance }, null, 2)}\n`);
   write('README.md', '# eGov migration tool\n\n독립 CLI 소스 산출물이다. 생성 성공은 기술 검증이나 운영 이관 승인이 아니다.\n\n'
     + 'Node 22, JDK 21, Docker가 필요하다. 프론트엔드와 npm 설치는 필요하지 않다.\n\n'
     + '```sh\nnode scripts/verify.mjs migration\nnode --test scripts/adoption-execute.test.mjs\n'
@@ -90,7 +109,11 @@ export function generateMigrationProduct({ sourceRoot, outputRoot } = {}) {
     + '원본 기관 승인은 복사되지 않는다. `adoption:check -- --execution PATH --environment ID`는 '
     + '기술 검증과 승인 확인만 수행한다. 실제 실행은 명시한 `--execute`가 필요하며 기존 load 안전장치를 그대로 통과해야 한다.\n\n'
     + '`.github/workflows/migration-tool.yml`과 `.githooks/pre-push`는 독립 모듈 검사만 실행한다. '
-    + '새 저장소의 required check 설정은 기관에서 이 워크플로에 연결해야 한다.\n');
+    + '새 저장소의 required check 설정은 기관에서 이 워크플로에 연결해야 한다.\n\n'
+    + '검증 시간 프로필의 출처 커밋 존재·조상 관계는 export 전에 원본 저장소에서 검사한다. '
+    + '독립 제품의 계약은 생성 시 고정된 검증 기록과 profile·lock의 무결성을 대조한다. '
+    + '이 기록은 외부 발행자 서명이나 새 저장소에서 원본 Git 조상 관계를 독립 증명한 결과가 아니다. '
+    + '기관이 프로필을 갱신하면 새 측정 근거와 검증 기록·계약의 결속도 함께 검토해야 한다.\n');
   if (process.platform !== 'win32') { chmodSync(join(outputRoot, 'gradlew'), 0o755); chmodSync(join(outputRoot, '.githooks/pre-push'), 0o755); }
   return { outputRoot, scope };
 }

@@ -101,7 +101,6 @@ refresh_triggers:
 | GAP-AUTH-004 | P3 | deferred | authorization history | 권한 배정 버전 계산이 `tb_authrt_chg_hstry` 를 인덱스 없는 열로 훑는다 — 이력이 1만 행을 넘거나 느려지면 인덱스를 새 마이그레이션으로 둔다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-COMPOSE-001 | P3 | open | composer degraded compositions | 기능 저하 생성물의 화면 일부가 사실과 다르게 말할 수 있다 — `/admin` 밖 링크와 문장 속 메뉴 이름은 아직 기계로 대조하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#composer) |
 | GAP-MIG-002 | P2 | open | migration protected keys | 암호화할 소스 컬럼은 키로 쓸 수 없어(평문이 제어 표에 남는다) 그런 컬럼만 키인 테이블과 숫자형 보호 소스는 지금 적재할 수 없다. | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
-| GAP-MIG-003 | P2 | open | migration product provenance | 독립 이관 제품의 duration profile 출처 검사는 새 저장소에서 실패하는데 제품 계약은 원본 `.git` 덕에 통과한다(false-green). | [상세](../../docs/04-operations/known-gaps-detail.md#migration) |
 | GAP-STD-001 | P2 | open | standard schema metadata | 표준 스키마에 표준 용어가 없거나 물리 타입이 다른 컬럼이 남았다(목록은 처분안) — 등록 단어 조합만으로 표준 적합으로 보지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-E2E-001 | P3 | needs-revalidation | E2E impact selection | PR 은 검토된 화면 변경만 E2E 를 spec 단위로 선별하고 공유·미지 입력과 main 은 전수다 — 일반 의존성 완전성과 절감률은 검증되지 않았다. | [상세](../../docs/04-operations/known-gaps-detail.md#ci-governance) |
 | GAP-DATA-002 | P2 | blocked-external | legacy input data | OCI 설문 3행의 시작·종료일이 잘린 채 남아 있다 — 업무 소유자가 원래 날짜를 확인하기 전에는 추정해 보정하지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |

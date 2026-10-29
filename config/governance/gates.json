@@ -867,6 +867,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/BoardCommentCountReconciliationMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-COMMENT-UPDATE-DELETE-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/CommentUpdateDeleteConcurrencyIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-BOARD-COMMENT-RATING-ENABLE",
           "source": "api-server/src/test/java/nuri/api/schema/BoardCommentRatingEnableMigrationIntegrationTest.java"
         },
