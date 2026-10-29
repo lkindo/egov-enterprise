@@ -12,6 +12,14 @@
       "expected": {
         "gates": [
           {
+            "file": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java",
+            "reason": "담당자 재배정의 버전 충돌과 실제 알림 행의 원자적 저장을 검증한다. 알림 기능이 없으면 NotificationService와 tb_user_noti가 없어 이 통합 시험은 성립하지 않는다. core 담당자 서비스와 DeptJobServiceTest는 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java",
+            "reason": "일정 HTTP 저장과 월별 조회를 실제 PostgreSQL에서 검증한다. 일정 기능이 없으면 ScheduleRepository와 tb_schdl_info가 없어 검사 대상이 없다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java",
             "reason": "기존 AssignmentRecipientIntegrityIntegrationTest의 메모 6검사를 도메인별로 분리했다. memoreport가 없는 core에서는 메모 검사만 제외하며 기존 쪽지·담당자 검사의 선택 범위는 유지한다."
           },
@@ -233,6 +241,10 @@
       "expected": {
         "gates": [
           {
+            "file": "api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java",
+            "reason": "일정 HTTP 저장과 월별 조회를 실제 PostgreSQL에서 검증한다. 일정 기능이 없으면 ScheduleRepository와 tb_schdl_info가 없어 검사 대상이 없다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/MemoReportRecipientIntegrityIntegrationTest.java",
             "reason": "기존 AssignmentRecipientIntegrityIntegrationTest의 메모 6검사를 도메인별로 분리했다. memoreport가 없는 collaboration에서는 메모 검사만 제외하고 쪽지·담당자 기존 14검사를 보존한다."
           },
@@ -423,6 +435,14 @@
       },
       "expected": {
         "gates": [
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java",
+            "reason": "담당자 재배정의 버전 충돌과 실제 알림 행의 원자적 저장을 검증한다. 알림 기능이 없으면 NotificationService와 tb_user_noti가 없어 이 통합 시험은 성립하지 않는다. core 담당자 서비스와 DeptJobServiceTest는 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java",
+            "reason": "일정 HTTP 저장과 월별 조회를 실제 PostgreSQL에서 검증한다. 일정 기능이 없으면 ScheduleRepository와 tb_schdl_info가 없어 검사 대상이 없다."
+          },
           {
             "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
             "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. 주소록 기능이 없는 구성에서는 대상 서비스와 테이블이 없다."
@@ -619,6 +639,14 @@
       },
       "expected": {
         "gates": [
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java",
+            "reason": "담당자 재배정의 버전 충돌과 실제 알림 행의 원자적 저장을 검증한다. 알림 기능이 없으면 NotificationService와 tb_user_noti가 없어 이 통합 시험은 성립하지 않는다. core 담당자 서비스와 DeptJobServiceTest는 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java",
+            "reason": "일정 HTTP 저장과 월별 조회를 실제 PostgreSQL에서 검증한다. 일정 기능이 없으면 ScheduleRepository와 tb_schdl_info가 없어 검사 대상이 없다."
+          },
           {
             "file": "api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java",
             "reason": "주소록 스냅샷 충돌·부모 잠금·소유자 보호의 실 PostgreSQL 검증이다. 주소록 기능이 없는 구성에서는 대상 서비스와 테이블이 없다."

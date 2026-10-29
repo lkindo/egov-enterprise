@@ -286,11 +286,13 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 }
 ```
 
-모양을 보이는 예시다(`example` 은 실제 시작 구성이 아니다). 실제 `core` 는 게이트 14건·규칙 2개·연쇄 106개다 — 값은 `presets.json` 이 정본이다.
+모양을 보이는 예시다(`example` 은 실제 시작 구성이 아니다). 구성별 게이트·규칙·연쇄의 현재 목록은 `presets.json` 이 정본이다.
 
 생성기와 정밀 점검은 이 승인을 `presets.json` 에서 읽는다(11단계 C3). `expected.gates` 는 기능 파일의 게이트 소유(`owns.gates`·
 `owns.rbacMatrix`)에서 계산한 목록과 정확히 같아야 한다(로더가 본다). 직접 선택 구성의 승인은 기대치 없이 그 게이트 소유에서
 계산한다.
+
+새 PostgreSQL 시험도 같은 소유 계약에 연결한다. `ScheduleCalendarQueryIntegrationTest`는 일정 기능을 선택했을 때 남는다. `DeptJobReassignmentConcurrencyIntegrationTest`는 실제 알림 행과 전달 의도까지 확인하므로 알림 기능이 있을 때 남으며, 부서 업무의 core 서비스·단위 시험은 계속 유지한다. 사용자 보안 상태를 검사하는 `UserSecurityStateConcurrencyIntegrationTest`는 선택 기능에 의존하지 않아 모든 구성에 남는다. [실제 투영 대조와 소유 누락 부정 시험](../../scripts/project-composer-source.test.mjs)이 이 구분을 검사한다.
 
 - 승인하지 않은 게이트가 제거되면 생성이 **FAIL** 한다.
 - 제거되지 않는데 승인 목록에 남은 항목(낡은 승인)도 **FAIL** 한다 — 죽은 승인은 다음 제거를 조용히 통과시킨다.
@@ -316,8 +318,8 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 `backend-build`에 집계한다. 게이트 승인 목록 **자체**의 건전성(형식·중복·대상 실재)은
 `npm run test:base-profile`(CI의 `test:operational-contracts`에 포함)이 별도로 지킨다.
 
-현재 시작 구성은 파일 게이트를 core 13·collaboration 10·survey 11·approval 12·demo 0건(`presets.json` 의 `expected.gates`),
-역사 검증 규칙 45건을 제외한다(2026-10-13). 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
+2026-10-13 당시 시작 구성은 파일 게이트를 core 13·collaboration 10·survey 11·approval 12·demo 0건,
+역사 검증 규칙 45건을 제외했다. 현재 파일 게이트 목록은 `presets.json` 의 `expected.gates` 로 확인한다. 역사 규칙은 V2 migration 파일 검증 42건과 구 인가 전환 검증 3건이며, 새 V1 baseline의 현재
 PostgreSQL 스키마 검증은 계속 실행한다. 모든 프로필은 원본 Atlas 규칙(`upstream-atlas`)으로 Atlas HTML·생성기와
 그 계약 3건(`governance-atlas-contract`·`atlas-catalog`·`atlas-generation`)도 걷는다 — Atlas 는 원본의 운영 사실을 담고
 로그인 전에 응답되며, 생성기가 원본 공용 메모리를 읽어 생성물 안에서 다시 만들 수 없다. 파일 게이트(예: `SurveySubmissionConcurrencyIntegrationTest`·`RbacDemoSurfaceAuthorizationMatrixTest`·`ApprovalWorkflowIntegrationTest`·`CommunityDecisionConcurrencyIntegrationTest`·`TemplateCreationIntegrityIntegrationTest`·`ReferenceIntegrityCommunityFkIntegrationTest`)은 빠진
