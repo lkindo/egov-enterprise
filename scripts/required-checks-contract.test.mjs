@@ -1153,6 +1153,24 @@ test('frontend heavy source starts independently from the backend heavy source',
     'frontend coverage must run beside production build rather than after another heavy source');
 });
 
+function assertSchemaResultRetention(content) {
+  const job = parseWorkflowJobs(content.replace(/\r\n/g, '\n')).get('backend-schema-scope') ?? '';
+  const step = workflowStep(job, 'Retain schema test result XML');
+  assert.ok(step, 'the schema runner must retain its own test result XML');
+  assert.match(step, /^        if: \$\{\{ !cancelled\(\) \}\}$/m,
+    'failed schema tests must retain their XML too');
+  assert.match(step, /^        uses: actions\/upload-artifact@[a-f0-9]{40}(?:\s+#.*)?$/m);
+  for (const line of [
+    '          name: backend-schema-test-results',
+    '          path: api-server/build/test-results/schemaValidationTest/**/*.xml',
+    '          if-no-files-found: warn',
+    "          retention-days: ${{ github.event_name == 'push' && 90 || 14 }}",
+    '          overwrite: true',
+  ]) assert.ok(step.split('\n').includes(line), `schema result retention must include: ${line}`);
+  assert.match(step, /^        continue-on-error: true(?:\s+#.*)?$/m,
+    'artifact availability must not change the schema test result');
+}
+
 test('physical schema validation runs in parallel and remains required by backend-build', () => {
   const schemaJob = ciContent.match(
     /^  backend-schema-scope:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,
@@ -1176,10 +1194,31 @@ test('physical schema validation runs in parallel and remains required by backen
     /^    needs: \[change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom\]$/m);
   assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\.schema \}\}/);
   assert.match(aggregateJob, /SOURCE_RESULT: \$\{\{ needs\.backend-schema-scope\.result \}\}/);
+  assertSchemaResultRetention(ciContent);
 
   const detached = aggregateJob.replace('needs.backend-schema-scope.result', 'needs.backend-scope.result');
   assert.doesNotMatch(detached, /SOURCE_RESULT: \$\{\{ needs\.backend-schema-scope\.result \}\}/,
     'negative proof: detaching the schema source must violate the required expression');
+
+  const retentionStep = workflowStep(schemaJob.replace(/\r\n/g, '\n'), 'Retain schema test result XML');
+  for (const mutate of [
+    block => block.replace(retentionStep, ''),
+    block => block.replace('test-results/schemaValidationTest/**/*.xml', 'test-results/test/**/*.xml'),
+    block => block.replace('if: ${{ !cancelled() }}', 'if: success()'),
+    block => block.replace('backend-schema-test-results', 'backend-test-results'),
+    block => block.replace('if-no-files-found: warn', 'if-no-files-found: error'),
+    block => block.replace('continue-on-error: true', 'continue-on-error: false'),
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'backend-schema-scope', mutate);
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
+    assert.throws(() => assertSchemaResultRetention(changed), assert.AssertionError);
+  }
+  const moved = mutateWorkflowJob(
+    mutateWorkflowJob(ciContent, 'backend-schema-scope', block => block.replace(retentionStep, '')),
+    'backend-scope', block => `${block}\n${retentionStep}`,
+  );
+  assert.throws(() => assertSchemaResultRetention(moved), assert.AssertionError,
+    'retaining XML from another runner cannot preserve the schema runner results');
 });
 
 test('reusable-base consumes the fail-closed impacted profile matrix', () => {

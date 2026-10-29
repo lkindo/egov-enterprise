@@ -54,7 +54,7 @@ public class AdministCodeService {
             throw new BusinessException(CodeErrorCode.DUPLICATE_CODE,
                     "이미 등록된 행정구역 코드입니다: " + dto.getAdmdstCd());
         }
-        assertHierarchy(dto.getAdmdstCd(), dto.getUpAdmdstCd());
+        assertHierarchy(dto.getAdmdstCd(), dto.getUpAdmdstCd(), null);
 
         AdministCode entity = AdministCode.builder()
                 .admdstCd(dto.getAdmdstCd())
@@ -74,7 +74,7 @@ public class AdministCodeService {
 
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
-        assertHierarchy(code, dto.getUpAdmdstCd());
+        assertHierarchy(code, dto.getUpAdmdstCd(), entity.getUpAdmdstCd());
         entity.update(dto.getAdmdstSeCd(), dto.getAdmdstZoneNm(), blankToNull(dto.getUpAdmdstCd()), dto.getUseYn(), userId);
     }
 
@@ -148,18 +148,17 @@ public class AdministCodeService {
     /**
      * 상위 행정구역 지정의 무결성 검사. [2026-09-17]
      *
-     * <p>{@code tb_admdst_cd} 에는 자기참조 FK 가 없어(V2_0 은 PK 만) DB 가 아무것도 막지 않는다.
-     * 삭제 방향은 하위 코드 가드가 이미 닫았지만(DEC-OPS-061) <b>쓰기 방향은 통째로 열려 있었다</b> —
-     * 존재하지 않는 상위, 자기 자신, 순환 중 어느 것도 거부되지 않았다.
+     * <p>V2_102 의 자기참조 FK 는 부모 존재와 참조 중인 부모 삭제를 보호하지만 순환은 막지 못한다.
      *
      * <p>⚠ 빈 값은 최상위다. 이 화면은 상위 없는 시·도를 등록할 수 있어야 하므로 그대로 통과시킨다
-     * (DEC-OPS-061 이 푼 필수 제약을 다시 걸지 않는다). 값을 정규화하지도 않는다 — 프런트 계약이
-     * {@code upAdmdstCd} 를 문자열로 요구해서, 여기서 {@code ""} 를 {@code null} 로 바꾸면 목록 조회가 깨진다.
+     * (DEC-OPS-061 이 푼 필수 제약을 다시 걸지 않는다). 저장은 {@link #blankToNull}, 응답은
+     * {@link #nullToBlank} 로 변환해 프런트 문자열 계약과 DB 의 NULL 표현을 함께 지킨다.
      *
      * <p>순환은 FK 로 막지 못한다. 조상 사슬을 거슬러 자기 자신에 닿으면 거부하며, 이미 순환이
-     * 들어가 있는 데이터에서도 멈추도록 방문 집합과 깊이 상한을 함께 둔다.
+     * 들어가 있는 데이터에서도 멈추도록 방문 집합과 깊이 상한을 함께 둔다. 새 상위 연결은 상한 안에
+     * 검증을 끝내지 못하면 거부하되, 기존 상위를 유지한 메타데이터 수정은 막지 않는다.
      */
-    private void assertHierarchy(String code, String upAdmdstCd) {
+    private void assertHierarchy(String code, String upAdmdstCd, String currentUpAdmdstCd) {
         if (upAdmdstCd == null || upAdmdstCd.isBlank()) {
             return; // 최상위
         }
@@ -173,7 +172,7 @@ public class AdministCodeService {
         }
         Set<String> visited = new HashSet<>();
         String ancestor = upAdmdstCd;
-        for (int depth = 0; depth < MAX_HIERARCHY_DEPTH && ancestor != null && !ancestor.isBlank(); depth++) {
+        for (int depth = 0; depth < MAX_HIERARCHY_DEPTH && ancestor != null; depth++) {
             if (ancestor.equals(code)) {
                 throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                         "상위 행정구역이 순환합니다: " + code + " → " + upAdmdstCd);
@@ -183,7 +182,13 @@ public class AdministCodeService {
             }
             ancestor = administCodeRepository.findById(ancestor)
                     .map(AdministCode::getUpAdmdstCd)
+                    .map(AdministCodeService::blankToNull)
                     .orElse(null);
+        }
+        if (ancestor != null && !upAdmdstCd.equals(currentUpAdmdstCd)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "상위 행정구역 계층이 " + MAX_HIERARCHY_DEPTH + "단계를 넘어 순환 여부를 확인할 수 없습니다: "
+                            + code + " → " + upAdmdstCd);
         }
     }
 }

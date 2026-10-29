@@ -8,13 +8,38 @@
 
 GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준 용어 등록(DB 헌법 제9조)이나 물리 타입 정정 중 하나를 판정")을 위해, 표준 용어가 없는 컬럼과 도메인·물리 타입이 다른 컬럼마다 처분 후보를 제시한다.
 
-- 기준일: **2026-10-18**
+- 상세 처분표 최초 조사 기준일: **2026-10-18** — 아래 표 1·표 2와 A/B/C 건수는 이 시점의 후보를 보존한다. 현재 관측 차분은 다음 절에 따로 적는다.
 - 원천: 공유 OCI 개발 DB(`egovdb`, 운영 아님) 읽기 전용 조회 — `.agent/scripts/db-bridge.js`(SELECT·WITH만). 수치는 그날의 DB 실측이며 저장소에 남는 증거가 아니다.
 - 보조 원천: JPA 엔티티 필드 타입(정적 파싱), 컬럼 COMMENT, 화면 라벨, 시드 마이그레이션(V2_1·V2_15·V2_17·V2_112·V2_128·V2_129·V2_56·V2_69·V2_76).
 
+### 2026-10-29 재실측 차분
+
+같은 공유 개발 DB에서 아래 **기존 SQL 두 개를 변경 없이** 읽기 전용으로 재실행했다(2026-10-29 10:21 UTC). 사전 규모와 대소문자 비교는 메타 테이블만 추가 조회했다(10:22 UTC). 업무 행 데이터·행 수·변환 가능한 값의 범위는 조회하지 않았다. 현재 수치가 과거 상세표의 처분을 다시 승인하거나 데이터 정정의 안전성을 증명하는 것은 아니다.
+
+| 항목 | 2026-10-18 상세표 | 2026-10-29 재실측 |
+|---|---:|---:|
+| public `tb_` 기본 테이블 / 컬럼 | 88 / 1,011 | 94 / 1,082 |
+| 표준 영문약어와 일치하는 용어 없음: 컬럼 / 표 / 고유 이름 | 276 / 66 / 212 | 291 / 69 / 213 |
+| 용어 있고 도메인 타입이 다름 | 26 | 28 |
+| 그중 같은 종류 / 다른 종류 | 20 / 6 | 22 / 6 |
+| 폐기 용어에 걸린 컬럼 | 0 | 0 |
+| 표준 단어 / 용어 / 도메인 | 3,387 / 13,232 / 130 | 3,387 / 13,245 / 131 |
+
+문서 SQL은 `st.eng_abbr = upper(cols.column_name)`로 대조한다. 재평가 요약에서 사용한 `upper(st.eng_abbr)` 대조와 차이가 있는지 확인했으며, 현재 소문자가 섞인 사전 약어와 두 대조 방식의 결과 차이는 모두 0개였다. 현재 타입 대조는 아래 SQL 결과에 `JSONB↔jsonb` 일치도 반영한다. **같은 종류 허용은 이관 도구의 판정이며, 도메인의 타입·길이가 정확히 일치하거나 용어의 업무 의미가 맞다는 뜻은 아니다.**
+
+과거 표 1의 고유 이름은 모두 현재 미등록 목록에도 있다. 컬럼 증가 15개는 `version` 3→16개(+13), `bbs_id` 8→9개(+1), 새 이름 `bbs_chg_hstry_sn` 1개(+1)로 대조됐다. `bbs_id`의 새 사용처는 `tb_bbs_chg_hstry`다. `version`은 [DEC-OPS-378](../archived/operational-decisions-history.md#dec-ops-378)로 확정한 기술 컬럼 예외이므로 새 용어를 만들거나 재승인 대상으로 돌리지 않는다. 따라서 **미등록 291개는 미승인 결함 291개가 아니다.** 이 집계가 각 `version`의 기본값·CHECK까지 검증한 것은 아니다.
+
+| 새로 확인된 대상 | 현재 메타·물리 상태 | 처분 상태와 다음 판단 |
+|---|---|---|
+| `tb_bbs_chg_hstry.bbs_chg_hstry_sn` | 용어 없음 / `bigint` identity | [V2_139](../../api-server/src/main/resources/db/migration/V2_139__add_board_change_history_and_master_version.sql)가 GAP-STD-001 등록 후보로 남긴 식별자다. 표준 용어명·대표 약어·도메인은 아직 확정하지 않는다. 사전 의미와 기존 용어를 재대조한 뒤 등록 여부를 승인한다. 과거 A 107건에 자동 가산하지 않는다. |
+| `tb_bbs_chg_hstry.pst_sn` | 게시물일련번호·일련번호N22(`NUMERIC(22)`) / `bigint` | 같은 숫자 종류의 새 사용처다. 표 2의 PST_SN 도메인 정정 후보와 함께 모든 현재 사용처를 대조한 뒤 판단한다. 기존 후보가 이 컬럼의 정정 승인인 것은 아니다. |
+| `tb_cms_conts_file.atch_file_seq` | 첨부파일순서·순서N10(`NUMERIC(10)`) / `integer` | 같은 숫자 종류의 새 사용처다. [V2_137](../../api-server/src/main/resources/db/migration/V2_137__add_cms_content_pages.sql)은 참조 대상 `tb_file_detail.atch_file_seq`와 같은 타입으로 FK를 구성한다. 해당 컬럼만 사전 타입으로 바꾸지 않고 참조 양쪽과 표준 도메인을 함께 판단한다. |
+
+과거 표 2의 타입 차이 26개는 모두 남아 있고 위 두 사용처가 추가됐다. 다른 종류인 6개는 `tb_bbs_item.ans_lv`, `tb_dept_task_info.prrty_rnk`, `tb_popup_info.popup_vrtc_sz`·`popup_wdth_sz`, `tb_sys_log.prcs_tm`, `tb_web_log.prcs_tm`으로 기존과 같다. 이 컬럼들은 이미 사전 용어가 있으므로 `nonStandardTarget`으로 확정해 이관 차단을 우회할 수 없다([검증기](../../migration-tool/src/main/java/nuri/migration/validate/ledger/TermLedgerValidator.java), [부정 시험](../../migration-tool/src/test/java/nuri/migration/validate/ledger/TermLedgerValidatorTest.java)). 이번 변경은 문서 정합만 수행하며 용어 등록·도메인 수정·DDL·DML을 하지 않는다.
+
 ### 실측 쿼리
 
-집계(1,011·276·212 재현):
+집계(과거 1,011·276·212, 2026-10-29에는 1,082·291·213):
 
 ```sql
 WITH cols AS (
@@ -60,7 +85,7 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
 
 타입 불일치 판정은 `도메인 VARCHAR↔character varying`, `NUMERIC↔numeric`, `BIGINT↔bigint`, `DATETIME↔timestamp` 를 일치로 보고 나머지를 불일치로 셌다. 종류(같음/다름)는 이관 도구 `TargetLimit.sameKind` 규칙(정수·소수는 서로 같은 종류)을 따랐다. 단어 대조는 `meta_standard_words`(3,387행)를 `_` 로 나눈 토큰의 `eng_abbr` 와 맞췄다(열 word_name·eng_abbr·word_dc·rprs_yn — V2_1 시드, rprs_yn 과 PK 는 V2_15). 같은 종류 비교에는 NUMERIC 소수 자릿수도 넣었다.
 
-### 수치 요약
+### 수치 요약 — 2026-10-18 상세 분류
 
 | 항목 | 값 |
 |---|---|
@@ -83,7 +108,7 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
 |---|---|---|
 | **A** 표준 용어 등록 후보 | 컬럼명이 대표 약어의 표준 단어 조합이고, 뜻이 단어와 맞으며, 같은 뜻의 기존 용어가 없고, 물리 타입·길이가 기존 도메인 하나와 같다. **A\*** 는 integer 를 NUMERIC 도메인에 잇는 동종 등록이다(INTEGER 도메인이 없다 — 등록하면 "같은 종류 불일치" 집계에 더해진다). | 용어 행 추가(메타 시드 마이그레이션)만. DDL 없음 |
 | **B** 물리 타입/이름 정정 후보 | 용어는 있거나 만들 수 있으나 ① 같은 뜻의 기존 용어가 다른 약어로 있거나, ② 비대표·뜻이 다른 약어를 쓰거나, ③ 물리 타입·길이가 도메인과 다르다. 세부 표기: B(이름)·B(이름+길이)·B(이름+타입)·B(타입)·B(길이). | DDL(RENAME·ALTER TYPE) — Flyway, 헌법 제7조 Expand-and-Contract, ZDM waiver, 엔티티·API 계약 변경, 승인 필요 |
-| **C** 승인 예외 유지 | 기술 컬럼(uuid·bytea·@Version·라우트), 외부 공급 형식(GAP-CODE-001), 의미 미정(PD-DB-002), 퇴역 후보처럼 지금 표준화 실익이 없거나 판단을 미룬다. | 없음. 이관 원장은 계속 `nonStandardTarget` 과 사유로 확정 |
+| **C** 예외 유지(승인 확정·후보 구분) | 기술 컬럼(uuid·bytea·@Version·라우트), 외부 공급 형식(GAP-CODE-001), 의미 미정(PD-DB-002), 퇴역 후보처럼 지금 표준화 실익이 없거나 판단을 미룬다. `version`은 DEC-OPS-378로 승인 확정됐으며 다른 후보까지 일괄 승인한 것은 아니다. | 해당 schema의 live 메타에 용어가 없는 대상만 이관 원장에서 `nonStandardTarget` 과 사유로 확정할 수 있다. |
 
 ### 등록이 바꾸는 것
 
@@ -92,7 +117,7 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
 - **B 의 이름 정정은 원장 대상 컬럼명도 바꾼다.** 확정 원장은 대상 컬럼이 표준 영문약어와 같아야 하므로(`confirmed`), 이름을 바꾸면 그 컬럼을 가리키는 원장을 다시 만든다.
 - 단어가 없는 경우(인사·준비·밀리초)는 제9조에 따라 단어 등록부터 요청한다. 프로젝트 단어 PREP=전임은 뜻이 잘못 올라간 것으로 보인다.
 
-## 2. 표 1 — 표준 용어가 없는 고유 이름 212개
+## 2. 표 1 — 2026-10-18 표준 용어가 없는 고유 이름 212개
 
 표기: 단어 분해의 `†` 는 비대표 약어(rprs_yn=N, 화살표는 대표 약어), `*` 는 프로젝트 등록 단어(word_dc='신규등록'). A 의 용어명은 단어 한글명을 이은 것이다. "확인 필요"는 뜻·관례를 사람이 봐야 하는 항목이다. "기존"은 live 메타에 이미 있는 용어다.
 
@@ -344,7 +369,7 @@ SELECT cols.*, st.term_name, st.domain_name, d.data_type AS dom_type, d.data_len
 
 ## 4. 요약
 
-### 분류별 건수
+### 분류별 건수 — 2026-10-18 상세 분류, 현행 재분류 아님
 
 | 분류 | 고유 이름 | 컬럼 | 세부 |
 |---|---|---|---|
@@ -359,16 +384,16 @@ B 의 상당수는 "대안 A" 또는 "대안 C" 를 함께 적었다. 이름 정
 
 ### 승인 단위 제안
 
-1. **1차 — A 일괄 등록**(메타 전용 마이그레이션 1개): A 107개 용어를 `INSERT … ON CONFLICT (eng_abbr) DO NOTHING` + 검증 DO 블록으로 넣는다. "확인 필요" 12개는 소유자 확인 뒤 넣거나 뺀다. 마이그레이션 계약 테스트를 같이 두고, 공유 OCI 적용은 따로 승인한다. 적용 뒤 이 컬럼들을 가리키는 이관 원장의 `nonStandardTarget` 을 용어로 바꾸고, 같은 집계 쿼리로 GAP-STD-001 수와 검증일을 다시 센다.
+1. **1차 — 현재 재대조·승인한 A 목록 등록**(메타 전용 마이그레이션): 과거 A 107개는 후보 목록이다. 등록 시점의 사전·물리 컬럼과 업무 의미를 다시 대조하고 소유자가 확정한 목록만 `INSERT … ON CONFLICT (eng_abbr) DO NOTHING` + 검증 DO 블록으로 넣는다. "확인 필요" 12개는 소유자 확인 뒤 넣거나 뺀다. 마이그레이션 계약 테스트를 같이 두고, 공유 OCI 적용은 따로 승인한다. 적용 뒤 이 컬럼들을 가리키는 이관 원장의 `nonStandardTarget` 을 용어로 바꾸고, 같은 집계 쿼리로 GAP-STD-001 수와 검증일을 다시 센다. 이미 기술 예외로 승인된 `version`은 등록 대상에서 제외한다.
 2. **2차 — 표 2 도메인 정정 10개**(메타 전용): ANS_SN·PST_SN·UP_PST_SN·ARTCL_SN 을 일련번호N19 로. DDL 이 없어 1차와 한 파일에 넣을 수 있지만 공통표준 용어의 도메인을 바꾸는 일이라 승인 항목을 나눈다.
-3. **3차 — B 컬럼별 DDL 결정**: 표 단위로 묶는다. 0행인 tb_popup_info(크기 2·위치 2·공지 시작/종료일 2·공지여부·제목)와 tb_dept_task_info.prrty_rnk 부터 시작하면 데이터 위험이 없다. 길이 축소(cmpny_nm·ofcps_nm·office_telno·file_estn·mpng_file_path·tmplt_path·pstinst_cd)는 실데이터 최대 길이를 먼저 잰다. 이름 정정은 한 표의 여러 컬럼을 한 Expand-and-Contract 로 묶고 ZDM waiver 를 등록한다.
-4. **C 기록**: 이관 원장에서는 지금처럼 `nonStandardTarget` 과 사유로 확정한다. 퇴역 후보(otp_secret·noti_ivl_val, 게시글·댓글·만족도 pswd)의 제거는 별도 스키마 승인이다. 기관코드 공급 형식 컬럼은 GAP-CODE-001 의 재개 조건(공급처 명세 확정)과 묶는다.
+3. **3차 — B 컬럼별 DDL 결정**: 표 단위로 묶는다. tb_popup_info와 tb_dept_task_info의 과거 0행 관측은 현재 데이터량·동시 쓰기·계약 영향의 안전성 증거가 아니다. 정정 직전 실제 값의 범위와 참조·API 영향을 확인하고 이행 계획을 승인한다. 표 2의 `varchar → integer`는 이관 도구의 같은 숫자 종류 판정을 통과하는 후보이지 `NUMERIC` 도메인과 타입·길이가 정확히 일치하는 안은 아니다. 최종 타입은 사전과 업무 의미를 함께 판단한다. 길이 축소(cmpny_nm·ofcps_nm·office_telno·file_estn·mpng_file_path·tmplt_path·pstinst_cd)는 실데이터 최대 길이를 먼저 잰다. 이름 정정은 한 표의 여러 컬럼을 한 Expand-and-Contract 로 묶고 ZDM waiver 를 등록한다.
+4. **C 기록**: 해당 schema의 live 메타에 같은 영문약어의 용어가 없는 대상만 이관 원장에서 `nonStandardTarget` 과 사유로 확정한다. 표 2의 이름 정정 대상 3개에 적힌 "1차 예외 유지"는 정정 보류이며 현재 이관 차단은 유지된다. `version`의 기술 예외 승인은 DEC-OPS-378을 따른다. 퇴역 후보(otp_secret·noti_ivl_val, 게시글·댓글·만족도 pswd)의 제거는 별도 스키마 승인이다. 기관코드 공급 형식 컬럼은 GAP-CODE-001 의 재개 조건(공급처 명세 확정)과 묶는다.
 
 ### 남는 위험
 
 - 같은 뜻 기존 용어 탐색은 한글 용어명 일치, 대표 약어 치환, V2_128 동의어, 분류어 바꿔 보기(수↔건수·횟수, 아이디↔식별자·번호, 제목↔명, ~경로↔~경로명, ~URL↔~URL주소 등)까지만 했다. 이 범위 밖의 동의어가 있으면 A 가 이중 표준이 된다 — 등록 전 소유자가 표 1 의 A 를 훑어야 한다.
 - 뜻 판정은 컬럼 COMMENT(대부분 단어 조합으로 자동 생성돼 근거가 약하다), 엔티티 필드, 화면 라벨로 했다. "확인 필요" 표시는 업무 소유자 판단이 필요하다.
 - A\* 와 표 2 의 예외 유지는 INTEGER 도메인이 없어서 생긴다. INTEGER 도메인 신설은 이 처분안 범위 밖이며 따로 정할 일이다. DATE 도메인도 없어 date 컬럼(공지시작·종료일)은 varchar(8) 로 바꾸거나 C 로 남기는 둘 중 하나다.
-- 수치는 2026-10-18 공유 OCI 개발 DB 실측이다. 다른 환경이나 이후 스키마 변경은 같은 쿼리로 다시 센다. 재사용 생성물의 메타 시드(V1_1)는 생성 때 Flyway 결과에서 다시 덤프되므로 등록 마이그레이션이 그대로 따라간다.
+- 표 1·표 2와 A/B/C 분류는 2026-10-18 공유 OCI 개발 DB 조사다. 2026-10-29 재실측 차분은 머리에 구분했으며 전체 후보의 업무 의미·도메인을 다시 승인한 것은 아니다. 다른 환경이나 이후 스키마 변경은 같은 쿼리로 다시 센다. 재사용 생성물의 메타 시드(V1_1)는 생성 때 Flyway 결과에서 다시 덤프되므로 등록 마이그레이션이 그대로 따라간다.
 - 이 처분안은 public 스키마 `tb_` 기본 테이블만 봤다. 뷰·다른 스키마·메타 테이블 자신은 대상이 아니다(헌법 제3조 2항).
 

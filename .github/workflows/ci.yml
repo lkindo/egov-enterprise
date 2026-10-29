@@ -584,6 +584,17 @@ jobs:
         if: always()
         run: node scripts/ci-junit-duration-summary.mjs >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Retain schema test result XML
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: backend-schema-test-results
+          path: api-server/build/test-results/schemaValidationTest/**/*.xml
+          if-no-files-found: warn
+          retention-days: ${{ github.event_name == 'push' && 90 || 14 }}
+          overwrite: true
+        continue-on-error: true # 보관 업로드 — 게이트 아님
+
       - name: Surface schema validation failure detail
         if: failure()
         run: |
