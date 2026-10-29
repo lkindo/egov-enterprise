@@ -2,12 +2,14 @@ import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import {
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   readdirSync,
   rmSync,
   writeFileSync,
 } from 'node:fs';
+import { createRequire } from 'node:module';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -19,7 +21,11 @@ import { GENERATORS } from './merge-main-regenerate.mjs';
 // 원문 계약 목록은 탐지기가 계산한다(사본 없음). 훅의 탐지 호출은 스텁이 이 목록을 내도록 해 시험마다 다시 계산하지 않는다.
 const SOURCE_CONTRACT_FILES = frontendSourceContracts().map(({ file }) => file);
 const SOURCE_CONTRACTS_DETECT = 'node scripts/frontend-source-contracts.mjs';
-const SOURCE_CONTRACTS_RUN = `npx vitest run ${SOURCE_CONTRACT_FILES.join(' ')}`;
+// [2026-10-29 DEC-OPS-390] 훅의 Vitest 세 단계는 시간 초과만 단독 재실행하는 래퍼로 돈다(scripts/vitest-timeout-rerun.mjs).
+const VITEST_RERUN = 'node ../scripts/vitest-timeout-rerun.mjs';
+const INVARIANTS_RUN = `${VITEST_RERUN} src/__tests__`;
+const CROSS_STACK_RUN = `${VITEST_RERUN} src/__tests__/cross-stack`;
+const SOURCE_CONTRACTS_RUN = `${VITEST_RERUN} ${SOURCE_CONTRACT_FILES.join(' ')}`;
 const VERIFY_SOURCE_CONTRACTS = `pnpm -C frontend exec vitest run ${SOURCE_CONTRACT_FILES.join(' ')}`;
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -92,6 +98,9 @@ node() {
   case "$1" in
     scripts/frontend-source-contracts.mjs)
       record_command "node $*" && printf '%s\\n' "$HOOK_SOURCE_CONTRACTS"
+      ;;
+    ../scripts/vitest-timeout-rerun.mjs)
+      record_command "node $*"
       ;;
     */scripts/verification-record.mjs)
       if [ "$HOOK_RECORD_FAIL" = "true" ]; then return 1; fi
@@ -347,7 +356,7 @@ test('verification profiles execute the full required Vitest population exactly 
 const REGEN_CHECK = 'npm run regen -- --check';
 const CONTRACTS = 'npm run test:operational-contracts';
 const VERIFY_STATIC = [
-  'pnpm -C frontend exec tsc --noEmit',
+  'pnpm -C frontend run type-check',
   'pnpm -C frontend run type-check:e2e',
   'pnpm -C frontend run lint',
   'pnpm -C frontend run test:form-validation',
@@ -400,7 +409,7 @@ test('verify profiles run static checks before the operational contracts and sto
     const observed = observeVerification(scope, { source: exited });
     assert.deepEqual([observed.commands, observed.exits], [[], [0]], early);
   }
-  const typeCheck = 'pnpm -C frontend exec tsc --noEmit';
+  const typeCheck = 'pnpm -C frontend run type-check';
   for (const scope of ['fast', 'push', 'fe', 'full']) {
     const failed = observeVerification(scope, { failCommand: typeCheck });
     assert.deepEqual(failed.exits, [1], scope);
@@ -590,11 +599,11 @@ const PRE_PUSH_SOURCE_ORDER = [
   REGEN_CHECK,
   SAST_APPROXIMATION_HOOK,
   'gradlew compileJava compileTestJava -q',
-  'npx tsc --noEmit',
+  'pnpm run type-check',
   'npx tsc -p tsconfig.e2e.json --noEmit',
   'pnpm run lint',
   'pnpm run test:form-validation',
-  'npx vitest run src/__tests__',
+  INVARIANTS_RUN,
   SOURCE_CONTRACTS_DETECT,
   SOURCE_CONTRACTS_RUN,
   'gradlew :api-server:harnessTest -q',
@@ -704,12 +713,12 @@ test('pre-push runs static checks, invariant and source-contract Vitest, cross-s
   const backendOnly = runHook(input, hookSource, { files: [files[0]] });
   assertSuccessful(backendOnly);
   assert.deepEqual(backendOnly.commands,
-    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx vitest run src/__tests__/cross-stack', 'gradlew :api-server:harnessTest -q', CONTRACTS]);
+    [REGEN_CHECK, SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', CROSS_STACK_RUN, 'gradlew :api-server:harnessTest -q', CONTRACTS]);
   // 짧고 실패가 잦은 단계의 실패는 운영 계약(로컬 약 8~14분)을 기다리지 않고 그 자리에서 막는다.
   const shortStages = [
-    ...[SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'npx tsc --noEmit', 'npx vitest run src/__tests__', SOURCE_CONTRACTS_RUN,
+    ...[SAST_APPROXIMATION_HOOK, 'gradlew compileJava compileTestJava -q', 'pnpm run type-check', INVARIANTS_RUN, SOURCE_CONTRACTS_RUN,
       'gradlew :api-server:harnessTest -q'].map(failCommand => ({ files, failCommand })),
-    { files: [files[0]], failCommand: 'npx vitest run src/__tests__/cross-stack' },
+    { files: [files[0]], failCommand: CROSS_STACK_RUN },
   ];
   const waitsForContracts = source => shortStages.filter(({ files: pushed, failCommand }) => {
     const failed = runHook(input, source, { files: pushed, failCommand });
@@ -723,11 +732,67 @@ test('pre-push runs static checks, invariant and source-contract Vitest, cross-s
     .replace('echo "[pre-push] AGENTS.md change-scoped source verification"', 'run_operational_contracts\necho "[pre-push] AGENTS.md change-scoped source verification"')
     .replace(SOURCE_PATH_CONTRACTS_TAIL, '\nrun_atlas_contract\n');
   assert.notEqual(contractsFirst, hookSource.replace(/\r\n/g, '\n'));
-  assert.ok(runHook(input, contractsFirst, { files, failCommand: 'npx tsc --noEmit' }).commands.includes(CONTRACTS));
+  assert.ok(runHook(input, contractsFirst, { files, failCommand: 'pnpm run type-check' }).commands.includes(CONTRACTS));
   // 종전 순서(계약이 불변식·원문 계약·cross-stack·하네스 앞)로 되돌리면 명령 순서와 실패 대기가 모두 붉다(red 재현).
   const formerOrder = contractsBeforeShortStages(hookSource);
   assert.notDeepEqual(runHook(input, formerOrder, { files }).commands, PRE_PUSH_SOURCE_ORDER);
   assert.deepEqual(waitsForContracts(formerOrder), shortStages.slice(3).map(({ failCommand }) => failCommand));
+});
+
+// [2026-10-29] 프런트 타입 게이트(pre-push·verify 의 type-check)는 next build 의 타입 검사와 같은 전제로 돈다 — next typegen 으로
+//   .next/types 를 새로 만든 뒤 tsc 를 돌고, next dev 가 따로 갱신하는 .next/dev 사본은 tsconfig 에서 뺀다. 두 사본은 같은 전역 라우트
+//   타입을 다시 선언해 하나가 낡으면 src 와 무관한 TS2344·TS2307 이 났다(10-23 build 사본 + 10-28 dev 사본, select-board-list layout).
+//   실제 tsconfig 와 Next 의 경로 함수·TypeScript 로 그 사고를 재현한다.
+test('the frontend type gate regenerates route types and keeps the next dev copy out of the program', () => {
+  const frontendRoot = path.join(repoRoot, 'frontend');
+  const frontendRequire = createRequire(path.join(frontendRoot, 'package.json'));
+  const ts = frontendRequire('typescript');
+  const { getDevTypesPath, getTypeDefinitionGlobPatterns } = frontendRequire('next/dist/lib/typescript/type-paths.js');
+  const scripts = JSON.parse(readFileSync(path.join(frontendRoot, 'package.json'), 'utf8')).scripts;
+  assert.equal(scripts['type-check'], 'next typegen && tsc --noEmit', 'route types must be regenerated before tsc, and a typegen failure must stop it');
+
+  const { config, error } = ts.readConfigFile(path.join(frontendRoot, 'tsconfig.json'), ts.sys.readFile);
+  assert.equal(error, undefined);
+  // Next 는 이 두 glob 을 tsconfig include 에 다시 써 넣는다. dev 경로가 옮겨 가면 여기서 붉어 제외 대상을 다시 판정한다.
+  for (const glob of getTypeDefinitionGlobPatterns('.next')) assert.ok(config.include.includes(glob), glob);
+
+  const fixture = mkdtempSync(path.join(tmpdir(), 'frontend-type-gate-'));
+  try {
+    const write = (relative, text) => {
+      const file = path.join(fixture, relative);
+      mkdirSync(path.dirname(file), { recursive: true });
+      writeFileSync(file, text, 'utf8');
+    };
+    const devTypes = path.relative(fixture, getDevTypesPath(fixture, '.next')).replaceAll('\\', '/');
+    write('next-env.d.ts', 'import "./.next/types/routes.d.ts";\n');
+    // 낡은 build 사본: 그 뒤 추가된 layout 라우트가 없는데, next-env.d.ts 가 불러 이 전역 선언이 이긴다.
+    write('.next/types/routes.d.ts', 'type LayoutRoutes = "/";\n'
+      + 'declare global { type LayoutProps<R extends LayoutRoutes> = { params: Promise<R> }; }\nexport {};\n');
+    // dev 사본: 새 라우트가 있고, 그 뒤 지워진 페이지를 아직 import 한다.
+    write(`${devTypes}/routes.d.ts`, 'export type LayoutRoutes = "/" | "/board";\n');
+    write(`${devTypes}/validator.ts`, 'import type { LayoutRoutes } from "./routes.js";\n'
+      + 'type LayoutConfig<Route extends LayoutRoutes> = { default: (props: LayoutProps<Route>) => unknown };\n'
+      + 'export type Checked = [LayoutConfig<"/board">, typeof import("../../../src/app/gone/page.js")];\n');
+    const diagnostics = exclude => {
+      const parsed = ts.parseJsonConfigFileContent({ ...config, exclude }, ts.sys, fixture);
+      const options = { ...parsed.options, types: [], lib: ['lib.es2020.d.ts'], noUnusedLocals: false, incremental: false };
+      return ts.getPreEmitDiagnostics(ts.createProgram({ rootNames: parsed.fileNames, options }))
+        .map(d => `${d.file ? path.relative(fixture, d.file.fileName).replaceAll('\\', '/') : '<global>'} TS${d.code}`)
+        .sort();
+    };
+    assert.deepEqual(diagnostics(config.exclude), [], 'the next dev copy must stay out of the type-checked program');
+    // 제외를 빼면 이번 사고의 두 오류가 그대로 난다 — 위 단언이 그것을 잡는다(red 재현).
+    assert.deepEqual(diagnostics(config.exclude.filter(entry => entry !== '.next/dev')),
+      [`${devTypes}/validator.ts TS2307`, `${devTypes}/validator.ts TS2344`]);
+  } finally {
+    rmSync(fixture, { recursive: true, force: true });
+  }
+
+  // verify 의 실행 기록 단계 이름은 'type-check:e2e' 와 겹치지 않게 갈린다.
+  const events = [];
+  observeVerification('fe', { recordEvents: events });
+  const started = events.filter(event => event.event === 'step-start').map(event => event.id);
+  assert.ok(started.includes('frontend-types') && started.includes('e2e-types'), started.join(','));
 });
 
 test('pre-push blocks a CodeQL approximation finding before compilation, only on the source path', () => {
@@ -793,8 +858,8 @@ test('pre-push runs the file-reading contracts outside src/__tests__ on frontend
   const frontend = ['frontend/src/app/page.tsx'];
   const ran = runHook(input, hookSource, { files: frontend });
   assertSuccessful(ran);
-  const after = ran.commands.slice(ran.commands.indexOf('npx vitest run src/__tests__'));
-  assert.deepEqual(after.slice(0, 3), ['npx vitest run src/__tests__', SOURCE_CONTRACTS_DETECT, SOURCE_CONTRACTS_RUN]);
+  const after = ran.commands.slice(ran.commands.indexOf(INVARIANTS_RUN));
+  assert.deepEqual(after.slice(0, 3), [INVARIANTS_RUN, SOURCE_CONTRACTS_DETECT, SOURCE_CONTRACTS_RUN]);
   for (const file of ['src/app/components/layout/__tests__/shell-accessibility-contract.test.ts', 'src/app/__tests__/dashboard-auth-error.test.tsx']) {
     assert.ok(SOURCE_CONTRACT_FILES.includes(file), file);
   }
@@ -824,9 +889,9 @@ test('pre-push selects one Atlas owner and keeps its failure blocking in every s
   const atlas = 'frontend/public/governance_harness_atlas.html';
   const cases = [
     { files: [atlas], command: atlasCommand },
-    { files: [atlas, 'api-server/src/test/java/ExampleTest.java'], command: 'npx vitest run src/__tests__/cross-stack' },
-    { files: [atlas, 'frontend/src/example.ts'], command: 'npx vitest run src/__tests__' },
-    { files: [atlas, 'unclassified/new-tool.mjs'], command: 'npx vitest run src/__tests__' },
+    { files: [atlas, 'api-server/src/test/java/ExampleTest.java'], command: CROSS_STACK_RUN },
+    { files: [atlas, 'frontend/src/example.ts'], command: INVARIANTS_RUN },
+    { files: [atlas, 'unclassified/new-tool.mjs'], command: INVARIANTS_RUN },
     // 독립 이관만 함께 바뀌면 frontend·cross-stack 실행이 없어 소스 경로의 단독 Atlas 실행이 유일한 owner 다.
     { files: [atlas, 'migration-tool/src/main/java/X.java'], command: atlasCommand },
   ];

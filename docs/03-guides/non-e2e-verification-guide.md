@@ -73,7 +73,7 @@ Playwright E2E는 브라우저 사용자 흐름을 검증하지만 서비스 분
 ./gradlew :api-server:schemaValidationTest
 
 # 프런트 정적·단위 검증
-pnpm -C frontend exec tsc --noEmit
+pnpm -C frontend run type-check
 pnpm -C frontend exec vitest run <target>
 
 # 관련 브라우저 spec(.env 가 없는 격리 worktree에서 새 격리 스택으로 실행)

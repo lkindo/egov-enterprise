@@ -209,10 +209,12 @@ if [ "$SCOPE_MIGRATION" = "true" ] && [ "$SCOPE_BACKEND" != "true" ]; then
 fi
 
 if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
-  echo "  → frontend: npx tsc --noEmit"
+  # type-check 는 next typegen 으로 라우트 타입(.next/types)을 새로 만든 뒤 tsc 를 돈다 — next build 의 타입 검사와 같은 전제다.
+  # 디스크에 남은 낡은 생성물(build·dev 시점의 라우트)이 결과를 바꾸지 않게 한다(2026-10-29 TS2344, tsconfig 의 .next/dev 제외 참조).
+  echo "  → frontend: pnpm run type-check (next typegen → tsc --noEmit)"
   record_start frontend-types
-  ( cd frontend && npx tsc --noEmit ) \
-    || { record_end "$?"; echo "❌ TypeScript 타입 컴파일 실패 (AGENTS.md Verification)"; exit 1; }
+  ( cd frontend && pnpm run type-check ) \
+    || { record_end "$?"; echo "❌ 라우트 타입 생성 또는 TypeScript 타입 검사 실패 (AGENTS.md Verification)"; exit 1; }
   record_end 0
 
   # 루트 tsconfig가 제외하는 E2E 스펙·fixture·POM을 별도 구성으로 검사한다.
@@ -241,9 +243,11 @@ fi
 
 if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   # 빠른 저장소 불변식과 원문 계약만 pre-push에서 실행하고 전수 Vitest/coverage는 CI가 소유한다.
+  # [DEC-OPS-390] 이 훅의 Vitest 세 단계는 scripts/vitest-timeout-rerun.mjs 로 돈다 — 실패가 모두 Vitest 시간 초과일 때만 그 파일을
+  # 단독으로 한 번 다시 돌고(같은 기계의 다른 실행이 만든 부하의 거짓 red), 단언·모듈·처리되지 않은 오류는 그대로 막는다. CI 는 재실행이 없다.
   echo "  → frontend: vitest src/__tests__ (저장소 불변식 게이트)"
   record_start frontend-invariants
-  ( cd frontend && npx vitest run src/__tests__ ) \
+  ( cd frontend && node ../scripts/vitest-timeout-rerun.mjs src/__tests__ ) \
     || { record_end "$?"; echo "❌ 프런트 불변식 게이트 실패 — 위반을 수정하고 하향 래칫의 개선분은 정본에 반영하세요."; exit 1; }
   record_end 0
 
@@ -254,7 +258,7 @@ if [ "$SCOPE_FRONTEND" = "true" ] && [ -f frontend/package.json ]; then
   FRONTEND_SOURCE_CONTRACTS=$(node scripts/frontend-source-contracts.mjs) \
     || { record_end "$?"; echo "❌ 원문 계약 목록을 계산하지 못했습니다 — 탐지기 실패는 생략이 아니라 차단입니다"; exit 1; }
   # set -f: 대괄호 경로([id] 등)가 글로브로 펼쳐지지 않게 한다. 공백 경로는 탐지기가 막는다.
-  ( cd frontend && set -f && npx vitest run $FRONTEND_SOURCE_CONTRACTS ) \
+  ( cd frontend && set -f && node ../scripts/vitest-timeout-rerun.mjs $FRONTEND_SOURCE_CONTRACTS ) \
     || { record_end "$?"; echo "❌ 원문 계약 실패 — 바꾼 소스·설정을 원문으로 읽는 시험이 어긋납니다(CI frontend-coverage-scope 가 같은 시험을 돕니다)"; exit 1; }
   record_end 0
 fi
@@ -265,7 +269,7 @@ fi
 if [ "$SCOPE_BACKEND" = "true" ] && [ "$SCOPE_FRONTEND" != "true" ] && [ -f frontend/package.json ]; then
   echo "  → cross-stack: vitest src/__tests__/cross-stack (frontend↔backend 진실 결속)"
   record_start cross-stack
-  ( cd frontend && npx vitest run src/__tests__/cross-stack ) \
+  ( cd frontend && node ../scripts/vitest-timeout-rerun.mjs src/__tests__/cross-stack ) \
     || { record_end "$?"; echo "❌ 크로스 스택 계약 실패 — 백엔드 변경이 프런트 화면의 고지·문구 계약과 어긋납니다"; exit 1; }
   record_end 0
 fi

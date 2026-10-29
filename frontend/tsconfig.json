@@ -45,11 +45,16 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
+  // [2026-10-29] .next/dev 는 next dev 가 따로 갱신하는 둘째 라우트 타입 사본이다. .next/types 와 같은 전역 타입을 다시 선언하므로
+  //   둘 중 하나가 낡으면 src 와 무관한 TS2344·TS2307 이 난다(2026-10-29 select-board-list layout). next build 의 타입 검사도
+  //   이 경로를 거른다(next/dist/lib/typescript/type-paths.js getDevTypesPath). include 의 두 .next glob 은 Next 가 다시 써 넣으므로
+  //   지우지 않고 여기서만 뺀다 — .next/types 는 type-check 스크립트가 tsc 직전에 next typegen 으로 새로 만든다.
   "exclude": [
     "node_modules",
     "scripts",
     "vitest.config.mts",
     "vitest.setup.ts",
-    "e2e"
+    "e2e",
+    ".next/dev"
   ]
 }

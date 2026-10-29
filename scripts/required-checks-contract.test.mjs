@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { presetIds } from './composition-profiles.mjs';
 
 import {
+  artifactUploadViolations,
   comparePullRequestPolicy,
   compareRequiredChecks,
   compareRequiredContexts,
@@ -1170,8 +1171,7 @@ function assertSchemaResultRetention(content) {
     "          retention-days: ${{ github.event_name == 'push' && 90 || 14 }}",
     '          overwrite: true',
   ]) assert.ok(step.split('\n').includes(line), `schema result retention must include: ${line}`);
-  assert.match(step, /^        continue-on-error: true(?:\s+#.*)?$/m,
-    'artifact availability must not change the schema test result');
+  // continue-on-error: true 는 업로드 일반 규칙(artifactUploadViolations — 'schema XML made blocking' 사례)이 본다.
 }
 
 test('physical schema validation runs in parallel and remains required by backend-build', () => {
@@ -1210,7 +1210,6 @@ test('physical schema validation runs in parallel and remains required by backen
     block => block.replace('if: ${{ !cancelled() }}', 'if: success()'),
     block => block.replace('backend-schema-test-results', 'backend-test-results'),
     block => block.replace('if-no-files-found: warn', 'if-no-files-found: error'),
-    block => block.replace('continue-on-error: true', 'continue-on-error: false'),
   ]) {
     const changed = mutateWorkflowJob(ciContent, 'backend-schema-scope', mutate);
     assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'));
@@ -1230,6 +1229,36 @@ test('physical schema validation runs in parallel and remains required by backen
   assert.notEqual(beforeValidation, ciContent.replace(/\r\n/g, '\n'));
   assert.throws(() => assertSchemaResultRetention(beforeValidation), assert.AssertionError,
     'retaining XML before schema validation silently loses the evidence');
+});
+
+test('artifact uploads are failing evidence when consumed or missing-file guarded, otherwise they cannot change a gate result', () => {
+  assert.deepEqual(artifactUploadViolations(ciContent), []);
+  const normalized = ciContent.replace(/\r\n/g, '\n');
+  const advisory = '        continue-on-error: true # 보관 업로드 — 게이트 아님\n';
+  const onStep = (jobId, stepName, mutate) => mutateWorkflowJob(ciContent, jobId, block => {
+    const step = workflowStep(block, stepName);
+    assert.ok(step, `${jobId}/${stepName} must exist`);
+    return block.replace(step, mutate(step));
+  });
+  const cases = [
+    // run 40858521948 의 모양 — PIT 보고서 전송 오류가 통과한 범위를 다시 붉게 만든다.
+    ['incident: PIT report upload blocks its scope', onStep('mutation-scope', 'Upload PIT report', s => s.replace(advisory, '')), /'Upload PIT report' in 'mutation-scope' is retention-only/],
+    ['migration PIT report', onStep('mutation-scope-migration', 'Upload PIT report', s => s.replace(advisory, '')), /'Upload PIT report' in 'mutation-scope-migration' is retention-only/],
+    ['schema XML made blocking', onStep('backend-schema-scope', 'Retain schema test result XML', s => s.replace('continue-on-error: true', 'continue-on-error: false')), /'Retain schema test result XML' in 'backend-schema-scope' is retention-only/],
+    ['expression-valued advisory flag', onStep('mutation-scope', 'Upload PIT report', s => s.replace('continue-on-error: true', "continue-on-error: ${{ github.event_name == 'push' }}")), /'Upload PIT report' in 'mutation-scope' is retention-only/],
+    ['consumed shard evidence made advisory', onStep('migration-test-scope', 'Retain migration shard execution evidence', s => s.replace('          retention-days: 14\n', `          retention-days: 14\n${advisory}`)), /'Retain migration shard execution evidence' in 'migration-test-scope' is downloaded by a later job/],
+    ['consumed Playwright blob made advisory', onStep('e2e-tests', 'Upload Playwright Report', s => s.replace('          include-hidden-files: true\n', `          include-hidden-files: true\n${advisory}`)), /'Upload Playwright Report' in 'e2e-tests' is downloaded by a later job/],
+    ['missing-file evidence made advisory', onStep('migration-scope', 'Retain the verified migration CLI', s => s.replace('          retention-days: 7\n', `          retention-days: 7\n${advisory}`)), /'Retain the verified migration CLI' in 'migration-scope' fails on missing files/],
+    // 소비 판정이 이름 목록이 아니라 실제 download pattern 에서 온다는 증명
+    ['detached consumer', normalized.replace('pattern: playwright-report-shard-*', 'pattern: playwright-blob-*'), /'Upload Playwright Report' in 'e2e-tests' is retention-only/],
+    ['unnamed artifact step', mutateWorkflowJob(ciContent, 'mutation-scope', b => b.replace('      - name: Upload PIT report\n        if: always()\n        uses: ', '      - uses: ')), /mutation-scope' has an artifact step without a name/],
+  ];
+  for (const [label, changed, expected] of cases) {
+    assert.notEqual(changed, normalized, `${label} must change the workflow`);
+    assert.match(artifactUploadViolations(changed).join('\n'), expected, label);
+  }
+  // validateStaticContract 가 규칙을 부른다 — 호출을 지우면 사고 모양이 required 계약을 다시 지난다.
+  assert.match(validateStaticContract({ manifest, ciContent: cases[0][1] }).join('\n'), /'Upload PIT report' in 'mutation-scope' is retention-only/);
 });
 
 test('reusable-base consumes the fail-closed impacted profile matrix', () => {

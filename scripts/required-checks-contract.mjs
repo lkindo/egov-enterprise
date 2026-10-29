@@ -681,6 +681,65 @@ export function gitleaksDownloadViolations(run) {
   return [];
 }
 
+// [2026-10-29] actions/upload-artifact·download-artifact(@actions/artifact)는 ENOTFOUND·ECONNRESET·ETIMEDOUT·ECONNREFUSED·EHOSTUNREACH 를
+//   재시도하지 않고 바로 실패한다(NetworkError). run 40858521948 에서 PIT 는 85% 로 통과했는데 보고서 업로드만 실패해 mutation-test 가 붉었다.
+//   그래서 ci.yml 의 업로드를 성질로 나눈다. 같은 workflow 의 download-artifact 가 받는 산출물과 if-no-files-found: error 로 부재를
+//   실패로 삼는 증거는 실패가 신호다 — continue-on-error 를 쓸 수 없다. 그 밖의 보관·진단 업로드는 continue-on-error: true 다 — 산출물
+//   전송이 게이트 결과를 바꾸지 않는다(실패는 action 의 오류 주석으로 남는다). 단계 재시도는 두지 않는다: 첫 시도에 continue-on-error 가
+//   필요해 앞 부류의 금지와 부딪친다. glob 대조는 정규식을 만들지 않고 문자열로 한다(download pattern 의 '*' 만 본다).
+function artifactGlobMatches(pattern, value) {
+  const parts = pattern.split('*');
+  if (parts.length === 1) return pattern === value;
+  const last = parts[parts.length - 1];
+  if (!value.startsWith(parts[0]) || !value.endsWith(last)) return false;
+  let cursor = parts[0].length;
+  for (const part of parts.slice(1, -1)) {
+    const at = value.indexOf(part, cursor);
+    if (at < 0) return false;
+    cursor = at + part.length;
+  }
+  return cursor <= value.length - last.length;
+}
+
+export function artifactUploadViolations(ciContent) {
+  const errors = [];
+  const consumers = [];
+  const uploads = [];
+  for (const [jobId, job] of parseWorkflowJobs(ciContent)) {
+    // 이름 없는(또는 이름이 겹친) 산출물 단계는 parseNamedSteps 에 잡히지 않아 분류를 빠져나간다 — 선언 수와 맞춰 본다.
+    const declared = [...job.matchAll(/^ +(?:- +)?uses:\s*actions\/(?:upload|download)-artifact@/gm)].length;
+    let named = 0;
+    for (const [name, step] of parseNamedSteps(job)) {
+      const uses = stepScalar(step, 'uses') ?? '';
+      if (uses.startsWith('actions/download-artifact@')) {
+        named += 1;
+        // pattern·name 이 없으면 그 실행의 산출물을 모두 받는다.
+        consumers.push(scalarAtIndent(step, 'pattern', 10) ?? scalarAtIndent(step, 'name', 10) ?? '*');
+      } else if (uses.startsWith('actions/upload-artifact@')) {
+        named += 1;
+        uploads.push({ jobId, name, step });
+      }
+    }
+    if (declared !== named) {
+      errors.push(`job '${jobId}' has an artifact step without a name — every artifact step must start with its own '- name:' so its upload policy can be checked`);
+    }
+  }
+  for (const { jobId, name, step } of uploads) {
+    // upload-artifact 의 기본 이름은 'artifact' 다. 이름 속 식은 한 글자로 바꿔 download pattern 의 '*' 와 맞춘다.
+    const artifact = (scalarAtIndent(step, 'name', 10) ?? 'artifact').replace(/\$\{\{[^}]*\}\}/g, 'x');
+    const consumed = consumers.some(pattern => artifactGlobMatches(pattern, artifact));
+    const continueOnError = stepScalar(step, 'continue-on-error');
+    if (consumed || scalarAtIndent(step, 'if-no-files-found', 10) === 'error') {
+      if (continueOnError !== null) {
+        errors.push(`artifact upload '${name}' in '${jobId}' ${consumed ? 'is downloaded by a later job' : 'fails on missing files'} and cannot use continue-on-error`);
+      }
+    } else if (continueOnError !== 'true') {
+      errors.push(`artifact upload '${name}' in '${jobId}' is retention-only and must declare continue-on-error: true — artifact transport must not change a gate result`);
+    }
+  }
+  return errors;
+}
+
 export function validateStaticContract({ manifest, ciContent, workflowPath = WORKFLOW_PATH }) {
   const errors = [];
   if (!manifest || manifest.version !== 1 || !Array.isArray(manifest.requiredChecks)) {
@@ -756,6 +815,7 @@ export function validateStaticContract({ manifest, ciContent, workflowPath = WOR
     }
   }
   errors.push(...validatePinnedWorkflowUses([{ path: workflowPath, content: ciContent }]));
+  errors.push(...artifactUploadViolations(ciContent));
   if (runShellDefault(ciContent, 0) !== null) {
     errors.push('workflow-level defaults.run.shell cannot override required command execution');
   }
