@@ -294,6 +294,8 @@ HEAD commit이나 ref가 생기면 [보호 migration 이력 검사](../02-archit
 
 새 PostgreSQL 시험도 같은 소유 계약에 연결한다. `ScheduleCalendarQueryIntegrationTest`는 일정 기능을 선택했을 때 남는다. `DeptJobReassignmentConcurrencyIntegrationTest`는 실제 알림 행과 전달 의도까지 확인하므로 알림 기능이 있을 때 남으며, 부서 업무의 core 서비스·단위 시험은 계속 유지한다. 사용자 보안 상태를 검사하는 `UserSecurityStateConcurrencyIntegrationTest`는 선택 기능에 의존하지 않아 모든 구성에 남는다. [실제 투영 대조와 소유 누락 부정 시험](../../scripts/project-composer-source.test.mjs)이 이 구분을 검사한다.
 
+`OperationalSignalIsolationIntegrationTest`도 core의 운영 신호를 검사하므로 모든 구성에 남는다. `MailFailureNotificationIntegrationTest`는 mail+notification, `SmsFailureNoticeIntegrationTest`는 sms+notification에 속한다. 알림의 실제 저장·복구 시험을 기존 발송 상태 클래스와 분리하여 알림이 없는 mail 또는 sms 구성의 기존 시험도 유지한다. 새 runner를 추가하지 않고 기존 `schemaValidationTest`의 발견·실행·소유 대조를 확장한다.
+
 - 승인하지 않은 게이트가 제거되면 생성이 **FAIL** 한다.
 - 제거되지 않는데 승인 목록에 남은 항목(낡은 승인)도 **FAIL** 한다 — 죽은 승인은 다음 제거를 조용히 통과시킨다.
 - `reason` 이 비면 **FAIL** 한다. 목록이 곧 서랍이 되지 않도록 사유를 `presets.json` 안에 남긴다.

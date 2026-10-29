@@ -39,6 +39,12 @@
       {
         "file": "api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java",
         "alsoRequires": []
+      },
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/SmsFailureNoticeIntegrationTest.java",
+        "alsoRequires": [
+          "notification"
+        ]
       }
     ],
     "rbacMatrix": null,

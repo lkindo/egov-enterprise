@@ -52,6 +52,10 @@ worker 재시도는 기존 알림 ID를 그대로 사용하므로 알림함에 �
 
 SMS 작업에는 전송 ID와 발신자 식별자만 저장하고 전화번호·본문을 복제하지 않는다. 결과 불명 수신자에 대한 자동 POST 재시도는 금지하며, 저장된 접수 receipt의 조회와 상태 기록만 수행한다. 상세 절차는 [SMS 공급자 운영 문서](sms-provider-operations.md)를 따른다.
 
+메일의 확정 실패 `F`와 발신자 알림은 같은 결과 기록 트랜잭션에서 저장하며, 기록 재시도는 SMTP를 다시 호출하지 않는다. 알림 사건 ID는 발송 ID와 의도에서 전달받은 접수 시각으로 고정한다. 발신자 삭제 등으로 알림 저장이 끝내 실패하면 별도 트랜잭션에서 현재 시도의 `P→F` 결과만 한 번 더 저장한다. 이 CAS가 성공했고 발신자 식별자가 있을 때만 알림 미기록을 로그와 `mail.dispatch.failure.notices.lost` 카운터에 남기며, 오래된 시도이거나 이미 커밋된 결과여서 CAS가 0이면 알림 유실로 단정하지 않는다. 기록 재시도 소진은 기존 `mail.dispatch.recording.failures`로도 관측한다. 결과 전용 저장도 실패하거나 결과 기록 전 프로세스가 종료되면 기존 `P`의 불확실성은 남는다. 성공 결과 기록과 암호화 payload의 종료 시 정리 정책은 그대로다.
+
+SMS 실패 알림은 저장된 초기 POST 거절(`F`, 유효한 내부 `REJECTED` receipt, 요청 ID 없음)만 다시 집계한다. 전송 ID로 고정한 사건 ID를 사용하므로 알림 저장 실패나 완료 기록 전 재실행에서도 알림을 중복 생성하지 않는다. 미선점 `P/NULL`, `CLAIMED` 또는 이번 실행의 DB 오류가 남으면 실패 수가 0이어도 완료와 요약을 유보한다. 늦은 영수증 조회의 거절은 초기 실패 수에 더하지 않고, 옛 문자열 결과도 초기 거절로 추측하지 않는다. 재시도 한도를 넘으면 작업은 `FAILED`가 된다. 기존 receipt 조정으로 상태가 확정된 후 `DWORK_RETRY`로 재개할 수 있으며, `provider=none`에서는 조정 스케줄러가 없어 수동 재시도만으로 버려진 `CLAIMED`가 해소되지는 않는다.
+
 ## 파일 삭제의 복구 경계
 
 파일 메타데이터 삭제 전에 별도의 하드링크 `.deletions/{preparation UUID}.anchor`와 내용·속성 지문으로 저장 객체의 식별 정보를 확보한다. Windows처럼 Java의 `fileKey`가 없는 환경에서도 `Files.isSameFile`로 실제 객체를 비교한다. 객체가 원래 없었다면 나중에 같은 경로에 생긴 파일을 지우지 않는다. 저장 이름은 새 UUID로 생성하며 기존 파일을 덮어쓰지 않는다.
@@ -67,6 +71,8 @@ SMS 작업에는 전송 ID와 발신자 식별자만 저장하고 전화번호·
 `DurableWorkIntegrationTest`의 검사 범위는 격리 PostgreSQL의 업무 롤백·중복 의도·임대 만료·복수 작업자·시도 한도·재처리 감사와 현재 시도만 가능한 임대 갱신, 종료 시 payload 정리다. `DurableWorkSchedulingConfigTest`와 `DurableWorkDispatcherTest`는 실행기 포화·선점 시점·스케줄러 진행·heartbeat 취소, 유형별 선점·슬롯 확보의 원자성, 긴 작업 중 다른 유형의 진행과 예외 후 슬롯 반환을 다룬다. `LocalFileStorageServiceTest`와 `FileDeletionTransactionTest`는 실제 임시 파일의 교체·중단·롤백 경계를 확인한다. 테스트 파일의 존재는 통과 증거가 아니며 실행 결과는 해당 변경의 검증 기록에서 확인한다. 운영 저장소에서의 중단·복구 리허설과 배포는 별도 승인 범위다.
 
 `SmsDeliveryStateIntegrationTest`는 접수·의도의 원자 롤백, 저장된 의도를 읽는 새 handler, 재실행 시 중복 POST 방지, 실제 수신자 잠금과 receipt 상태 전이를 다룬다. 메일의 서비스·processor·handler 단위시험은 접수 의도, 선점 상태, 암호화 주소 복구와 종료 처리를 검사한다. 이 범위만으로 실제 SMTP/SENS 계정의 배달이나 발송 중 JVM 종료를 검증했다고 해석하지 않는다.
+
+`MailFailureNotificationIntegrationTest`와 `SmsFailureNoticeIntegrationTest`는 실제 PostgreSQL 알림 저장 오류·재시도·중복 의도와 외부 발송 횟수를 확인한다. 메일은 삭제된 발신자, 비DB 예외, 실제 커밋 후 응답 예외와 새 수동 접수의 보호를, SMS는 부분 요약 유보, 조회 후 거절, 재시도 소진과 기존 조정·감사된 재처리를 포함한다. 두 시험은 각각 mail+notification, sms+notification 구성에서 유지하며 기존 발송 상태 시험의 기능 범위를 좁히지 않는다.
 
 `NotificationDurabilityIntegrationTest`는 격리 PostgreSQL에서 알림·의도의 원자 롤백, 실제 advisory 잠금 대기를 동반한 동시 재발행, 요청 지문 불일치, 삭제 후 재발행, 전송 실패 재시도와 새 dispatcher의 만료 임대 회수를 검증한다. `AssignmentRecipientIntegrityIntegrationTest`는 실제 쪽지·부서업무 경로의 수신자 정합과 원자 저장을 다루며, `MemoReportRecipientIntegrityIntegrationTest`는 메모 수신자의 활성 상태·고정과 최초 열람의 동시성을 검증한다.
 

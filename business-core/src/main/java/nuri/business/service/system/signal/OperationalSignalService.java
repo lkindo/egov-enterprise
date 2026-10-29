@@ -16,7 +16,11 @@ import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.security.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.TransactionDefinition;
+import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * 관리자 홈의 운영 신호 요약 — 실패한 후속 작업 수, 잠긴 계정 수, 오늘 실패 요청 수를 DB 에서 읽어 관측 시각과 함께 낸다.
@@ -30,6 +34,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * <p><b>셀 수 없는 값</b> — 조회가 실패한 신호는 {@code count} 가 null 이다(0 은 "없다" 는 사실 주장이다, unknownAsZero). 한 신호의
  * 실패가 다른 신호를 가리지 않는다. 요청마다 센다 — 관리자 홈만 부르고 세 COUNT 는 가볍다(재사용 캐시를 두지 않는다).
+ * 각 COUNT와 그 트랜잭션 완료를 독립적으로 처리하여 PostgreSQL 오류 상태가 다음 COUNT로 전파되지 않게 한다.
  *
  * <p><b>오늘</b> — 시스템 로그의 발생일자({@code ocrn_ymd}, yyyyMMdd)는 기록할 때 서버 기본 시간대의 날짜로 쓴다
  * (OperationalAuditInterceptor 의 {@code LocalDateTime.now()}). 같은 시계로 오늘을 정해야 기록과 집계의 날짜가 같다.
@@ -45,20 +50,27 @@ public class OperationalSignalService {
     private final UserRepository users;
     private final SysLogRepository sysLogs;
     private final Clock clock;
+    private final TransactionTemplate countTransaction;
 
     @Autowired
-    public OperationalSignalService(DurableJobRepository durableJobs, UserRepository users, SysLogRepository sysLogs) {
-        this(durableJobs, users, sysLogs, Clock.systemDefaultZone());
+    public OperationalSignalService(DurableJobRepository durableJobs, UserRepository users, SysLogRepository sysLogs,
+            PlatformTransactionManager transactionManager) {
+        this(durableJobs, users, sysLogs, transactionManager, Clock.systemDefaultZone());
     }
 
-    OperationalSignalService(DurableJobRepository durableJobs, UserRepository users, SysLogRepository sysLogs, Clock clock) {
+    OperationalSignalService(DurableJobRepository durableJobs, UserRepository users, SysLogRepository sysLogs,
+            PlatformTransactionManager transactionManager, Clock clock) {
         this.durableJobs = Objects.requireNonNull(durableJobs);
         this.users = Objects.requireNonNull(users);
         this.sysLogs = Objects.requireNonNull(sysLogs);
         this.clock = Objects.requireNonNull(clock);
+        this.countTransaction = new TransactionTemplate(Objects.requireNonNull(transactionManager));
+        this.countTransaction.setReadOnly(true);
+        this.countTransaction.setPropagationBehavior(TransactionDefinition.PROPAGATION_REQUIRES_NEW);
     }
 
     /** 보는 사람이 원천을 조회할 수 있는 신호만, 고정된 순서로 싣는다. */
+    @Transactional(readOnly = true, propagation = Propagation.NOT_SUPPORTED)
     public OperationalSignals currentSignals() {
         Instant observedAt = clock.instant();
         List<OperationalSignal> signals = new ArrayList<>();
@@ -78,8 +90,10 @@ public class OperationalSignalService {
                     LocalDate.ofInstant(observedAt, clock.getZone()).format(STORAGE_YMD));
         };
         try {
-            long value = query.getAsLong();
-            return value < 0 ? null : value;
+            return countTransaction.execute(status -> {
+                long value = query.getAsLong();
+                return value < 0 ? null : value;
+            });
         } catch (RuntimeException unavailable) {
             log.warn("Operational signal {} could not be counted: {}", kind, unavailable.getClass().getSimpleName());
             return null;
