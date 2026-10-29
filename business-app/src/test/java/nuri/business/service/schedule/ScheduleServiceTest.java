@@ -155,6 +155,37 @@ class ScheduleServiceTest {
         verify(attachmentAssignmentPolicy).assertAssignable(101L);
     }
 
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.NullAndEmptySource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"20261021"})
+    @DisplayName("등록·수정은 빈 종료일을 NULL로 저장하고 정상 종료일은 보존한다")
+    void createAndUpdateNormalizeOnlyAbsentEndDate(String endDate) {
+        ScheduleDto dto = ScheduleDto.builder().schdlNm("하루 일정").schdlBgngYmd("20261020")
+                .schdlEndYmd(endDate).version(0).build();
+        given(scheduleRepository.save(any(Schedule.class)))
+                .willReturn(Schedule.builder().schdlSn(2L).build());
+
+        scheduleService.createSchedule("user1", dto);
+
+        var saved = org.mockito.ArgumentCaptor.forClass(Schedule.class);
+        verify(scheduleRepository).save(saved.capture());
+        String expectedEndDate = endDate == null || endDate.isEmpty() ? null : endDate;
+        assertThat(saved.getValue().getSchdlEndYmd()).isEqualTo(expectedEndDate);
+        assertThat(saved.getValue().getSchdlBgngYmd()).isEqualTo("20261020");
+        assertThat(saved.getValue().getSchdlPicId()).isEqualTo("user1");
+
+        Schedule existing = Schedule.builder().schdlSn(1L).schdlNm("기간 일정")
+                .schdlBgngYmd("20261020").schdlEndYmd("20261025").schdlPicId("user1").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(existing));
+
+        scheduleService.updateSchedule(1L, "user1", dto);
+
+        assertThat(existing.getSchdlEndYmd()).isEqualTo(expectedEndDate);
+        assertThat(existing.getSchdlBgngYmd()).isEqualTo("20261020");
+        assertThat(existing.getSchdlPicId()).isEqualTo("user1");
+    }
+
     @Test
     @DisplayName("일정 생성 - 첨부 할당 거부 시 저장하지 않는다")
     void createSchedule_deniedAttachmentDoesNotSave() {

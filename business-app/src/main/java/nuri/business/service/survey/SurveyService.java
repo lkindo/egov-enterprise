@@ -322,6 +322,9 @@ public class SurveyService {
     @Transactional
     public void updateQuestion(SurveyQuestionDto dto) {
         SurveyQuestion entity = questionAfterSurveyLock(dto.getSrvyQstnSn());
+        if (dto.getSrvySn() == null || !dto.getSrvySn().equals(entity.getSrvySn())) {
+            throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
         // [2026-09-26 DIP B4 P6] 응답이 모인 뒤 문구·유형·선택 수를 바꾸면 이미 받은 응답이 다른 질문에 대한 답이 된다.
         //   순번(배치)만 바꾸는 것은 허용한다.
         boolean meaningChanged = !Objects.equals(entity.getQstnCn(), dto.getQstnCn())
@@ -330,7 +333,15 @@ public class SurveyService {
         if (meaningChanged) {
             assertNotAnswered(rsltRepository.countBySrvyQstnSn(entity.getSrvyQstnSn()), "문항");
         }
-        entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), dto.getMaxChcCnt());
+        Integer maxChcCnt = dto.getMaxChcCnt();
+        if (!entity.isFreeText() && SurveyQuestion.TYPE_FREE_TEXT.equals(dto.getQstnTypeCd())) {
+            if (iemRepository.findBySrvyQstnSnOrderByArtclSnAsc(entity.getSrvyQstnSn()).size() > 1) {
+                throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                        "주관식으로 바꾸려면 선택 항목을 하나 이하로 줄여 주세요.");
+            }
+            maxChcCnt = 1;
+        }
+        entity.update(dto.getQstnSn(), dto.getQstnTypeCd(), dto.getQstnCn(), maxChcCnt);
         // 유형을 주관식으로 바꾸면 답변 칸이 있어야 한다 — 유형 변경은 응답이 없을 때만 지나온다(위 meaningChanged).
         ensureFreeTextArticle(entity);
     }

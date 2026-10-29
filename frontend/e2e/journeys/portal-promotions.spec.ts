@@ -110,6 +110,9 @@ test.describe('Public Engagement & Experience', () => {
             await test.step('User: Verify Banner Visibility', async () => {
                 console.log(`>>> Verifying banner on Dashboard`);
                 await userPage.goto('/');
+                const bannerRegion = userPage.getByRole('region', { name: '홍보 배너', exact: true });
+                // 이미지 다운로드를 기다리는 동안 자동 회전으로 검증 대상이 바뀌지 않게 한다.
+                await bannerRegion.hover();
                 // [2026-07-27 결정적 검증] 메인 배너는 **한 번에 한 장만** 렌더하는 캐러셀이다
                 //   (BannerSlider: `banners[currentIndex]`, 5초마다 회전). 그래서 "새 배너가 보이는가"를
                 //   리로드로만 확인하면 슬라이드 순서에 운을 맡기게 된다 — 리로드는 currentIndex 를 0 으로
@@ -142,6 +145,17 @@ test.describe('Public Engagement & Experience', () => {
                     }
                 }
                 await expect(bannerTitleLoc).toBeVisible({ timeout: 10000 });
+                // http로 시작하는 원본 파일명도 외부 URL이 아니라 업로드한 첨부의 blob으로 표시해야 한다.
+                const bannerImage = bannerRegion.getByRole('img', { name: bannerTitle, exact: true });
+                await expect(bannerImage).toBeVisible();
+                await expect(bannerImage).toHaveAttribute('src', /^blob:/);
+                await expect.poll(() => bannerImage.evaluate(image => (image as HTMLImageElement).naturalWidth), {
+                    message: '첨부 배너 이미지가 실제로 디코딩되어야 한다',
+                }).toBeGreaterThan(0);
+                const bannerLink = bannerRegion.getByRole('link', { name: `${bannerTitle} 자세히 보기 새창 열림`, exact: true });
+                await expect(bannerLink).toHaveAttribute('href', 'https://egovframe.go.kr');
+                await expect(bannerLink).toHaveAttribute('target', '_blank');
+                await expect(bannerLink).toHaveAttribute('rel', 'noopener noreferrer');
             });
         }
         finally {

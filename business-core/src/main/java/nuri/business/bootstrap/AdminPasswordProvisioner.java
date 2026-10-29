@@ -61,6 +61,11 @@ public class AdminPasswordProvisioner {
         }
 
         User admin = found.get();
+        // 다른 인스턴스의 초기화나 관리자 변경이 먼저 끝났다면 현재 값을 보존한다.
+        // 이미 읽은 엔티티에는 잠금 조회만으로 부족하므로 sentinel 판정 전에 새로 읽는다.
+        if (hasInitialPassword()) {
+            userRepository.refreshForUpdate(admin);
+        }
         boolean isSentinel = admin.getPswd() != null && admin.getPswd().startsWith(SENTINEL_PREFIX);
 
         if (!isSentinel) {

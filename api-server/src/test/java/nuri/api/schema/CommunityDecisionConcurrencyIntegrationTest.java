@@ -2,10 +2,18 @@ package nuri.api.schema;
 
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import com.querydsl.jpa.impl.JPAQueryFactory;
+import nuri.business.domain.community.CommunityRepository;
+import nuri.business.domain.community.CommunityUserId;
+import nuri.business.domain.community.CommunityUserRepository;
+import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.community.CommunityService;
 import nuri.business.service.user.UserService;
+import nuri.foundation.core.event.NotificationRequestedEvent;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.exception.GlobalExceptionHandler;
+import nuri.foundation.core.template.TemplateAssignmentPolicy;
 import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -14,22 +22,33 @@ import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
+import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.AdditionalAnswers.delegatesTo;
+import static org.mockito.Mockito.doAnswer;
+import static org.mockito.Mockito.mock;
 
 /** Actual PostgreSQL locks expose stale membership decisions in either commit order. */
 @Tag("schema-validation")
@@ -40,6 +59,12 @@ class CommunityDecisionConcurrencyIntegrationTest {
     private static final String USER_ID = "USRCNFRM_00000000001";
     @Autowired private CommunityService service;
     @Autowired private UserService users;
+    @Autowired private CommunityRepository communityRepository;
+    @Autowired private CommunityUserRepository memberships;
+    @Autowired private UserRepository userRepository;
+    @Autowired private JPAQueryFactory queryFactory;
+    @Autowired private ObjectProvider<TemplateAssignmentPolicy> templateAssignmentPolicy;
+    @Autowired private ApplicationEventPublisher eventPublisher;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
     @PersistenceContext private EntityManager entityManager;
@@ -92,6 +117,83 @@ class CommunityDecisionConcurrencyIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT mbr_stts_cd FROM tb_cmnty_user_map WHERE cmnty_sn=? AND user_id=?",
                 String.class, community, USER_ID)).isEqualTo("A");
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_cmnty_info WHERE cmnty_sn=?", Integer.class, community)).isEqualTo(1);
+    }
+
+    @Test
+    void lateFirstJoinCannotReplaceACommittedApprovalOrCommitAnotherRequest() throws Exception {
+        // This scenario starts before any membership exists. The other tests begin with a request row.
+        assertThat(jdbc.update("DELETE FROM tb_cmnty_user_map WHERE cmnty_sn=? AND user_id=?",
+                community, USER_ID)).isEqualTo(1);
+        var absent = new CountDownLatch(1);
+        var resumeLateJoin = new CountDownLatch(1);
+        var id = new CommunityUserId(community, USER_ID);
+        var committedLateRequests = new ConcurrentLinkedQueue<NotificationRequestedEvent>();
+
+        // Pause only after the real SELECT FOR UPDATE returned no row. Repository writes, auditing,
+        // constraints and the service body remain real; the same transaction spans the observation
+        // and save. A mock returning Optional.empty() without querying PostgreSQL would not prove it.
+        var observedMemberships = mock(CommunityUserRepository.class, delegatesTo(memberships));
+        doAnswer(call -> {
+            var found = memberships.findByIdForUpdate(call.getArgument(0));
+            assertThat(found).as("the late request really observed an absent membership").isEmpty();
+            absent.countDown();
+            await(resumeLateJoin);
+            return found;
+        }).when(observedMemberships).findByIdForUpdate(id);
+        ApplicationEventPublisher observedPublisher = event -> {
+            if (event instanceof NotificationRequestedEvent notification) {
+                // A publication attempt before a later rollback is not a durable duplicate notice.
+                TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                    @Override public void afterCommit() { committedLateRequests.add(notification); }
+                });
+            }
+            eventPublisher.publishEvent(event);
+        };
+        var lateService = new CommunityService(communityRepository, observedMemberships, queryFactory,
+                userRepository, templateAssignmentPolicy, observedPublisher);
+
+        try (var executor = Executors.newSingleThreadExecutor()) {
+            Future<RuntimeException> lateJoin = executor.submit(() -> {
+                authenticateApplicant();
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(
+                            status -> lateService.joinCommunity(community, USER_ID));
+                    return null;
+                } catch (RuntimeException failure) {
+                    return failure;
+                } finally {
+                    SecurityContextHolder.clearContext();
+                }
+            });
+            try {
+                boolean ready = absent.await(15, TimeUnit.SECONDS);
+                if (!ready && lateJoin.isDone()) lateJoin.get(1, TimeUnit.SECONDS);
+                assertThat(ready).as("the first join has finished its actual absence query").isTrue();
+
+                // These two proxied service calls each commit before the late request can save.
+                authenticateApplicant();
+                service.joinCommunity(community, USER_ID);
+                authenticate(true);
+                service.approveMember(community, USER_ID);
+                var approved = jdbc.queryForMap(
+                        "SELECT * FROM tb_cmnty_user_map WHERE cmnty_sn=? AND user_id=?", community, USER_ID);
+                assertThat(approved.get("mbr_stts_cd")).isEqualTo("P");
+
+                resumeLateJoin.countDown();
+                RuntimeException failure = lateJoin.get(20, TimeUnit.SECONDS);
+
+                assertThat(jdbc.queryForMap(
+                        "SELECT * FROM tb_cmnty_user_map WHERE cmnty_sn=? AND user_id=?", community, USER_ID))
+                        .as("the approved row and its audit must survive the late first join")
+                        .isEqualTo(approved);
+                new ConflictResponseProbe().assertDuplicate(failure);
+                assertThat(committedLateRequests)
+                        .as("the rejected late join must not commit another notification request").isEmpty();
+            } finally {
+                resumeLateJoin.countDown();
+                SecurityContextHolder.clearContext();
+            }
+        }
     }
 
     @ParameterizedTest(name = "first decision approves={0}")
@@ -173,6 +275,34 @@ class CommunityDecisionConcurrencyIntegrationTest {
                 .enabled(true).permissions(List.of(approve ? "COMMUNITY_APPROVE" : "COMMUNITY_REJECT")).build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+    }
+
+    private static void authenticateApplicant() {
+        var principal = CustomUserDetails.builder().userId("community-applicant").esntlId(USER_ID)
+                .enabled(true).permissions(List.of()).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
+    }
+
+    /** Check the real HTTP error mapping without imposing a new service-level exception wrapper. */
+    private static class ConflictResponseProbe extends GlobalExceptionHandler {
+        void assertDuplicate(RuntimeException failure) {
+            assertThat(failure).as("the late first join must fail as a duplicate")
+                    .isInstanceOfAny(BusinessException.class, DataIntegrityViolationException.class);
+            if (failure instanceof BusinessException business) {
+                assertThat(business.getErrorCode()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE);
+            } else {
+                assertThat(((DataIntegrityViolationException) failure).getMostSpecificCause())
+                        .isInstanceOfSatisfying(SQLException.class,
+                                sql -> assertThat(sql.getSQLState()).isEqualTo("23505"));
+            }
+            var response = failure instanceof BusinessException business
+                    ? handleBusinessException(business)
+                    : handleDataIntegrityViolation((DataIntegrityViolationException) failure);
+            assertThat(response.getStatusCode().value()).isEqualTo(409);
+            assertThat(response.getBody()).isNotNull();
+            assertThat(response.getBody().code()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE.getCode());
+        }
     }
 
     private static void await(CountDownLatch latch) {

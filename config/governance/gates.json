@@ -803,6 +803,18 @@
           "source": "api-server/src/test/java/nuri/api/schema/LoginFailureCounterConcurrencyIntegrationTest.java"
         },
         {
+          "id": "DB-DEPT-JOB-REASSIGNMENT-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java"
+        },
+        {
+          "id": "DB-SCHEDULE-CALENDAR-QUERY",
+          "source": "api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java"
+        },
+        {
+          "id": "DB-USER-SECURITY-STATE-CONCURRENCY",
+          "source": "api-server/src/test/java/nuri/api/schema/UserSecurityStateConcurrencyIntegrationTest.java"
+        },
+        {
           "id": "DB-MIG-CMS-CONTENT",
           "source": "api-server/src/test/java/nuri/api/schema/CmsContentMigrationIntegrationTest.java"
         },

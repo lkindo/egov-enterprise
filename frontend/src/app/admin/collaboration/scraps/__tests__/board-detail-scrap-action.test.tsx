@@ -62,6 +62,7 @@ vi.mock('@tanstack/react-query', () => ({
 
 import { BoardDetailClient } from '@/app/admin/community/boards/detail/BoardDetailClient';
 import scrapPostActions from '@/extensions/scrap/post-actions';
+import { scrapCreateFormSchema, scrapEditFormSchema } from '../scrap-form-validation';
 
 async function renderDetail(pstTtl = '보존할 게시글') {
   const dataPromise = Promise.resolve({
@@ -174,6 +175,19 @@ describe('게시글 상세의 스크랩 버튼(스크랩 기여 조립)', () => 
     await waitFor(() => expect(mocks.createScrap).toHaveBeenCalledWith(expect.objectContaining({
       scrapUrl: '/admin/community/boards/detail?bbsId=BBS-1&pstSn=31',
     })));
+  });
+
+  it('게시글에서 생성한 정본 URL은 그대로 이름·설명 편집 계약에 다시 사용할 수 있다', async () => {
+    await renderDetail();
+    fireEvent.click(await screen.findByRole('button', { name: '게시글 스크랩' }));
+    await waitFor(() => expect(mocks.createScrap).toHaveBeenCalledTimes(1));
+    const created = mocks.createScrap.mock.calls[0][0];
+    const edited = { ...created, scrapNm: '다시 볼 게시글', scrapExpln: '나중에 참고할 설명' };
+
+    expect(created.scrapUrl).toBe('/admin/community/boards/detail?bbsId=BBS-1&pstSn=31');
+    expect(scrapEditFormSchema.safeParse(edited).success).toBe(true);
+    // 게시글 동작이 만든 내부 주소의 편집 허용은 신규 수동 등록 규칙을 넓히지 않는다.
+    expect(scrapCreateFormSchema.safeParse(edited).success).toBe(false);
   });
 
   it('서버 사유가 없는 실패는 스크랩 문구로 알리고 다시 누를 수 있다', async () => {
