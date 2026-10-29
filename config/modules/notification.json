@@ -36,6 +36,10 @@
     ],
     "gates": [
       {
+        "file": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java",
+        "alsoRequires": []
+      },
+      {
         "file": "api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java",
         "alsoRequires": []
       }

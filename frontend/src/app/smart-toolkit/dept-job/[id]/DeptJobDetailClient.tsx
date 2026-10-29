@@ -53,6 +53,8 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     const actionPendingRef = React.useRef(false);
     const [activeAction, setActiveAction] = React.useState<'update' | 'delete' | 'reassign' | null>(null);
     const [isReassignOpen, setReassignOpen] = React.useState(false);
+    // 선택창을 열 때 본 버전으로 재지정한다. 선택 중 백그라운드 조회가 갱신되어도 바꾸지 않는다.
+    const [reassignVersion, setReassignVersion] = React.useState<number | undefined>(undefined);
 
     /*
       [미저장 보호] 종전에는 이 화면에 가드가 없었다. 같은 DeptJobForm 을 쓰는 등록 화면
@@ -131,16 +133,27 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
     */
     const handleReassign = async (picId: string, picNm: string) => {
         if (actionPendingRef.current) return;
+        if (reassignVersion === undefined) {
+            setReassignOpen(false);
+            toast.error('업무 정보를 다시 불러옵니다. 최신 내용을 확인한 뒤 담당자를 다시 골라 주세요.');
+            void queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
+            return;
+        }
         actionPendingRef.current = true;
         setActiveAction('reassign');
         setReassignOpen(false);
         try {
-            await deptJobUserService.reassignDeptJob(deptTaskSn, picId);
+            await deptJobUserService.reassignDeptJob(deptTaskSn, picId, reassignVersion);
             toast.success(`담당자를 ${picNm}님으로 바꿨습니다.`);
             await queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
             queryClient.invalidateQueries({ queryKey: ['work-jobs'] });
         } catch (error) {
-            toast.error(extractErrorMessage(error, '담당자를 바꾸지 못했습니다. 권한이 없거나 사용 중이 아닌 사용자일 수 있습니다.'));
+            if (isConflictError(error)) {
+                toast.error(extractErrorMessage(error, '다른 사용자가 먼저 수정했습니다. 최신 내용을 확인한 뒤 담당자를 다시 골라 주세요.'));
+                void queryClient.invalidateQueries({ queryKey: ['dept-job', deptTaskSn] });
+            } else {
+                toast.error(extractErrorMessage(error, '담당자를 바꾸지 못했습니다. 권한이 없거나 사용 중이 아닌 사용자일 수 있습니다.'));
+            }
         } finally {
             actionPendingRef.current = false;
             setActiveAction(null);
@@ -251,7 +264,7 @@ export default function DeptJobDetailClient({ deptTaskSn }: { deptTaskSn: number
                             <Button
                                 variant="outline"
                                 size="sm"
-                                onClick={() => setReassignOpen(true)}
+                                onClick={() => { setReassignVersion(job.version ?? undefined); setReassignOpen(true); }}
                                 disabled={activeAction !== null}
                                 aria-busy={activeAction === 'reassign' || undefined}
                                 className="font-bold gap-1"

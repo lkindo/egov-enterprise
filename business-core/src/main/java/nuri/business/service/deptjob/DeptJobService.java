@@ -205,10 +205,11 @@ public class DeptJobService extends BaseAbstractService {
      * 담당자·관리자에게 남는다(DEC-OPS-138 의 쓰기 규칙 유지). 새 담당자는 사용 중 계정이어야 하고 알림을 받는다.
      */
     @Transactional
-    public void reassignDeptJob(Long deptTaskSn, String picId) {
+    public void reassignDeptJob(Long deptTaskSn, String picId, Integer expectedVersion) {
         DeptJob deptJob = deptJobRepository.findById(required(deptTaskSn, "deptTaskSn 은 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertCanReassign(deptJob);
+        nuri.foundation.core.util.EntityVersions.assertCurrent(expectedVersion, deptJob.getVersion());
         if (picId == null || picId.isBlank()) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 담당자를 골라 주세요.");
         }

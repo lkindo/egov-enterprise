@@ -6,7 +6,6 @@ import { bannerService } from '@/services/business/user/BannerService';
 import { isCanceledRequest } from '@/lib/safe-error-log';
 import { PublicBanner } from '@/types/foundation/banner';
 import { cn } from '@/lib/utils';
-import Image from 'next/image';
 import Link from 'next/link';
 import { AttachmentImage } from '@/app/components/ui/attachment-image';
 
@@ -92,10 +91,11 @@ export function BannerSlider() {
   }
 
   const currentBanner = banners[currentIndex];
-  // 외부 URL(http/https)은 그대로 렌더한다. 그 외에는 첨부이므로 blob 으로 받아 그린다 —
-  // `<img src="/api/v1/files/…">` 는 Authorization 헤더를 실을 수 없어 원리적으로 401 이다.
-  // (종전 코드는 백엔드에 존재하지도 않는 `/api/v1/files/download?fileId=` 를 불렀다.)
-  const externalUrl = currentBanner.bnrImgNm?.startsWith('http') ? currentBanner.bnrImgNm : null;
+  // 현재 이미지 정책은 외부 호스트를 허용하지 않는다. 파일명과 무관하게 유효한 첨부만
+  // 인증된 blob으로 읽고, 첨부가 없거나 ID가 잘못되면 공통 빈 이미지 상태를 표시한다.
+  const attachmentId = typeof currentBanner.atchFileSn === 'number'
+    && Number.isInteger(currentBanner.atchFileSn) && currentBanner.atchFileSn > 0
+    ? currentBanner.atchFileSn : null;
   const link = bannerLink(currentBanner.linkUrl);
 
   return (
@@ -111,25 +111,13 @@ export function BannerSlider() {
         if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setFocusWithin(false);
       }}
     >
-      {externalUrl ? (
-        <Image
-          src={externalUrl}
+      <div className="absolute inset-0" style={{ opacity: 0.8 }}>
+        <AttachmentImage
+          atchFileSn={attachmentId}
           alt={currentBanner.bnrNm}
-          fill
-          sizes="100vw"
-          className="object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
-          style={{ opacity: 0.8 }}
-          priority
+          className="h-full w-full object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
         />
-      ) : (
-        <div className="absolute inset-0" style={{ opacity: 0.8 }}>
-          <AttachmentImage
-            atchFileSn={currentBanner.atchFileSn}
-            alt={currentBanner.bnrNm}
-            className="h-full w-full object-cover transition-all duration-500 ease-in-out transform scale-105 group-hover:scale-100"
-          />
-        </div>
-      )}
+      </div>
 
       <div
         aria-live={rotating ? 'off' : 'polite'}

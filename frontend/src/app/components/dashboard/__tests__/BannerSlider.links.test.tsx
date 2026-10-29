@@ -8,12 +8,24 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
  * 그 밖의 값(javascript:·data:·'//다른 사이트' 등)은 링크로 그리지 않는다. 종전에는 http(s) 만 그려, 안내 페이지로
  * 보내는 배너를 만들어도 링크가 보이지 않았다.
  */
-const harness = vi.hoisted(() => ({ banners: vi.fn() }));
+const harness = vi.hoisted(() => ({ banners: vi.fn(), attachment: vi.fn() }));
 
 vi.mock('@/services/business/user/BannerService', () => ({
   bannerService: { getReflectedBanners: harness.banners },
 }));
-vi.mock('@/app/components/ui/attachment-image', () => ({ AttachmentImage: () => null }));
+vi.mock('@/app/components/ui/attachment-image', () => ({
+  AttachmentImage: ({ atchFileSn, alt }: { atchFileSn?: number | null; alt: string }) => {
+    harness.attachment({ atchFileSn, alt });
+    return <span role="img" aria-label={alt} data-testid="attachment-banner-image" data-attachment-id={atchFileSn ?? ''} />;
+  },
+}));
+// remotePatterns=[] and the image CSP do not support external banner images.
+// Keep this sentinel so a restored external branch fails without bypassing the production loader policy.
+vi.mock('next/image', () => ({
+  default: ({ src, alt }: { src: string; alt: string }) => (
+    <span role="img" aria-label={alt} data-testid="legacy-banner-image" data-src={src} />
+  ),
+}));
 
 import { BannerSlider } from '../BannerSlider';
 
@@ -30,6 +42,7 @@ async function renderWith(linkUrl: string) {
 describe('홍보 배너 자세히 보기 링크', () => {
   beforeEach(() => {
     harness.banners.mockReset();
+    harness.attachment.mockClear();
   });
 
   it('사이트 안 경로는 같은 창 링크로 그린다', async () => {
@@ -70,5 +83,52 @@ describe('홍보 배너 자세히 보기 링크', () => {
     await renderWith('');
 
     expect(screen.queryByRole('link')).toBeNull();
+  });
+
+  it.each(['http-banner.png', 'https-guide.jpg', 'https://legacy.example/banner.png'])(
+    '첨부 ID가 있으면 파일명 %s보다 첨부 이미지가 우선한다', async (bnrImgNm) => {
+      harness.banners.mockResolvedValue([{ ...banner(''), atchFileSn: 42, bnrImgNm }]);
+      render(<BannerSlider />);
+      await screen.findByRole('heading', { name: '안내 배너' });
+
+      expect(screen.getByTestId('attachment-banner-image')).toHaveAttribute('data-attachment-id', '42');
+      expect(screen.getByRole('img', { name: '안내 배너' })).toBeVisible();
+      expect(screen.queryByTestId('legacy-banner-image')).toBeNull();
+    },
+  );
+
+  it.each(['http://legacy.example/banner.png', 'https://legacy.example/banner.png', 'HTTPS://legacy.example/banner.png'])(
+    '첨부 없는 과거 절대 URL %s는 외부 요청 대신 빈 첨부 이미지로 표시한다', async (bnrImgNm) => {
+      harness.banners.mockResolvedValue([{ ...banner(''), atchFileSn: null, bnrImgNm }]);
+      render(<BannerSlider />);
+      await screen.findByRole('heading', { name: '안내 배너' });
+
+      expect(screen.getByTestId('attachment-banner-image')).toHaveAttribute('data-attachment-id', '');
+      expect(harness.attachment).toHaveBeenLastCalledWith({ atchFileSn: null, alt: '안내 배너' });
+      expect(screen.getByRole('img', { name: '안내 배너' })).toBeVisible();
+      expect(screen.queryByTestId('legacy-banner-image')).toBeNull();
+    },
+  );
+
+  it.each([undefined, null, 0, -1, 1.5])('유효하지 않은 첨부 ID %s는 null로 전달해 빈 이미지로 표시한다', async (atchFileSn) => {
+    harness.banners.mockResolvedValue([{ ...banner(''), atchFileSn }]);
+    render(<BannerSlider />);
+    await screen.findByRole('heading', { name: '안내 배너' });
+
+    expect(harness.attachment).toHaveBeenLastCalledWith({ atchFileSn: null, alt: '안내 배너' });
+    expect(screen.getByTestId('attachment-banner-image')).toHaveAttribute('data-attachment-id', '');
+    expect(screen.queryByTestId('legacy-banner-image')).toBeNull();
+  });
+
+  it.each([
+    'http-banner.png', 'https-guide.jpg', 'httpx://legacy.example/banner.png',
+    'http:banner.png', 'https://', '//evil.example/banner.png', 'javascript:alert(1)',
+  ])('첨부가 없어도 %s를 외부 이미지 URL로 오인하지 않는다', async (bnrImgNm) => {
+    harness.banners.mockResolvedValue([{ ...banner(''), atchFileSn: null, bnrImgNm }]);
+    render(<BannerSlider />);
+    await screen.findByRole('heading', { name: '안내 배너' });
+
+    expect(screen.queryByTestId('legacy-banner-image')).toBeNull();
+    expect(screen.getByTestId('attachment-banner-image')).toHaveAttribute('data-attachment-id', '');
   });
 });

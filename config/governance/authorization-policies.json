@@ -4497,9 +4497,15 @@
       "policy": "SELF_WITH_CREDENTIAL",
       "denyReferences": 0,
       "requiredTokens": [
+        "String observedPassword = user.getPswd();",
+        "passwordEncoder.matches(oldPassword, observedPassword)",
+        "String encodedPassword = passwordEncoder.encode(newPassword);",
+        "refreshForUpdateOrThrow(user);",
+        "!java.util.Objects.equals(observedPassword, user.getPswd())",
         "passwordEncoder.matches(oldPassword, user.getPswd())",
         "throw new BusinessException(UserErrorCode.INVALID_PASSWORD);",
-        "user.updatePassword(passwordEncoder.encode(newPassword))"
+        "user.updatePassword(encodedPassword);",
+        "revokeRefreshTokens(user);"
       ],
       "forbiddenTokens": []
     },

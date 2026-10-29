@@ -4,6 +4,8 @@ import nuri.business.service.deptjob.DeptJobBoxService;
 import nuri.business.service.deptjob.DeptJobService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.foundation.core.exception.BusinessException;
+import nuri.foundation.core.exception.CommonErrorCode;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -195,6 +197,95 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
         mockMvc.perform(get("/api/v1/dept-jobs").param("scope", "dept"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.data.list[0].deptTaskSn").value(1));
+    }
+
+    // ROLE_USER fixture resolves DEPT_JOB_UPDATE from the permission catalog, as this PATCH requires.
+    @Test
+    @DisplayName("담당자 재지정은 인가 후 서비스가 거절한 누락 버전을 400으로 응답한다")
+    @WithMockCustomUser(username = "registrar", esntlId = "USR_REGISTRAR")
+    void reassignDeptJob_missingVersion_BadRequest() throws Exception {
+        // DEC-OPS-359 keeps authorization before a missing-version error, so null reaches the service.
+        doThrow(new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE))
+                .when(deptJobService).reassignDeptJob(1L, "USR_NEW", null);
+
+        mockMvc.perform(patch("/api/v1/dept-jobs/1/assignee")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"picId":"USR_NEW"}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verify(deptJobService).reassignDeptJob(1L, "USR_NEW", null);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 버전이 없어도 서비스의 인가 거절을 403으로 응답한다")
+    @WithMockCustomUser(username = "stranger", esntlId = "USR_STRANGER")
+    void reassignDeptJob_missingVersionPreservesForbiddenResponse() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED))
+                .when(deptJobService).reassignDeptJob(1L, "USR_NEW", null);
+
+        mockMvc.perform(patch("/api/v1/dept-jobs/1/assignee")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"picId":"USR_NEW"}
+                                """))
+                .andExpect(status().isForbidden());
+
+        verify(deptJobService).reassignDeptJob(1L, "USR_NEW", null);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 서비스의 낡은 버전 거절을 409로 응답한다")
+    @WithMockCustomUser(username = "registrar", esntlId = "USR_REGISTRAR")
+    void reassignDeptJob_staleVersion_Conflict() throws Exception {
+        doThrow(new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION))
+                .when(deptJobService).reassignDeptJob(1L, "USR_NEW", 0);
+
+        mockMvc.perform(patch("/api/v1/dept-jobs/1/assignee")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"picId":"USR_NEW","version":0}
+                                """))
+                .andExpect(status().isConflict());
+
+        verify(deptJobService).reassignDeptJob(1L, "USR_NEW", 0);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 음수 버전이면 서비스 호출 전에 400")
+    @WithMockCustomUser(username = "registrar", esntlId = "USR_REGISTRAR")
+    void reassignDeptJob_negativeVersion_BadRequest() throws Exception {
+        mockMvc.perform(patch("/api/v1/dept-jobs/1/assignee")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"picId":"USR_NEW","version":-1}
+                                """))
+                .andExpect(status().isBadRequest());
+
+        verifyNoInteractions(deptJobService);
+    }
+
+    @Test
+    @DisplayName("담당자 재지정은 버전 0을 포함한 유효한 요청을 서비스에 전달한다")
+    @WithMockCustomUser(username = "registrar", esntlId = "USR_REGISTRAR")
+    void reassignDeptJob_versionPresent_Success() throws Exception {
+        doNothing().when(deptJobService).reassignDeptJob(1L, "USR_NEW", 0);
+
+        mockMvc.perform(patch("/api/v1/dept-jobs/1/assignee")
+                        .with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content("""
+                                {"picId":"USR_NEW","version":0}
+                                """))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.success").value(true));
+
+        verify(deptJobService).reassignDeptJob(1L, "USR_NEW", 0);
     }
 
     @Test

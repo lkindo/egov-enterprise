@@ -180,16 +180,20 @@ public class DeptJobApiController {
     public ResponseEntity<ApiResponse<Void>> reassignDeptJob(
             @PathVariable Long deptTaskSn,
             @Valid @RequestBody DeptJobAssigneeRequest request) {
-        deptJobService.reassignDeptJob(deptTaskSn, request.picId());
+        deptJobService.reassignDeptJob(deptTaskSn, request.picId(), request.version());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 
-    /** [2026-10-01 결정 22] 담당자 재지정 요청 — 새 담당자의 사용자 식별자(esntlId)만 받는다. */
+    /** 담당자 재지정 요청 — 새 담당자의 esntlId와 화면이 읽은 버전을 받는다. */
     public record DeptJobAssigneeRequest(
             @jakarta.validation.constraints.NotBlank
             @jakarta.validation.constraints.Size(max = 20)
             @io.swagger.v3.oas.annotations.media.Schema(requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
-            String picId) {
+            String picId,
+            // DEC-OPS-359: 누락 버전은 서비스가 인가 판정 뒤 거부하므로 @NotNull을 붙이지 않는다.
+            @jakarta.validation.constraints.Min(0)
+            @io.swagger.v3.oas.annotations.media.Schema(requiredMode = io.swagger.v3.oas.annotations.media.Schema.RequiredMode.REQUIRED)
+            Integer version) {
     }
 
     @Operation(summary = "부서 업무 삭제", description = "부서 업무를 삭제합니다. 담당자 본인 또는 관리자만 가능합니다.")

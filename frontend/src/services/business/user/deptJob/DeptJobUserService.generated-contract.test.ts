@@ -131,6 +131,24 @@ describe('DeptJobUserService generated contract', () => {
     );
   });
 
+  it('담당자 재지정은 상세에서 읽은 버전을 PATCH 본문으로 돌려보내고 네 번째 인자의 요청 설정을 보존한다', async () => {
+    client.getRaw.mockResolvedValueOnce(successEnvelope({ ...jobResponse, version: 4 }));
+    client.requestRaw.mockResolvedValueOnce(successEnvelope(null));
+    const job = await deptJobUserService.getDeptJob(5);
+    expect(job.version).toBe(4);
+
+    const config = { timeout: 4500, suppressErrorToast: true };
+    await expect(deptJobUserService.reassignDeptJob(5, 'USER02', job.version!, config)).resolves.toBeUndefined();
+
+    expect(client.requestRaw).toHaveBeenCalledTimes(1);
+    expect(client.requestRaw).toHaveBeenCalledWith({
+      url: 'dept-jobs/5/assignee',
+      method: 'patch',
+      data: { picId: 'USER02', version: 4 },
+      ...config,
+    });
+  });
+
   it('요청·응답 스키마의 방향별 exact key와 서버 소유 필드 차단을 고정한다', async () => {
     const boxReadOnlyFields = [
       'deptTaskBoxSn',

@@ -47,6 +47,8 @@ Proxy는 JWT 서명·만료·subject·타입을 확인한다. 보호 화면의 �
 
 컨트롤러는 `@permissionPolicy.allowed(authentication, '정규클래스#메서드')`로 같은 operation binding을 확인한다. 서비스는 `assertPermission` 또는 `assertOwnerOrPermission`의 구체적인 기능 코드를 사용한다. 엄격 본인 행위는 `assertOwnerByEsntlId`를 유지한다. 개인정보 로그는 SYSTEM 그룹을 다른 그룹과 함께 가져도 제외한다. [정책 원장](../../config/governance/authorization-policies.json)과 [카탈로그](../../config/governance/permission-catalog.json)가 이 대응의 원본이다.
 
+본인 비밀번호 변경은 [UserService](../../business-core/src/main/java/nuri/business/service/user/UserService.java)의 초기 자격 확인과 잠금 뒤 재확인을 함께 본다. 해시는 사용자 행 잠금 전에 계산하지만, 최신 행을 다시 읽었을 때 비밀번호가 달라졌으면 기존 비밀번호를 다시 검증해야 한다. 원장의 `UserService#changePassword` 항목은 해시 계산·최신 행 조회·재검증·해시 저장·refresh token 폐기의 코드 연결을 검사한다. 이 토큰 검사는 제어 흐름 전체의 증명이 아니며, 실제 순서와 상태 보존은 [PostgreSQL 경합 시험](../../api-server/src/test/java/nuri/api/schema/UserSecurityStateConcurrencyIntegrationTest.java)으로 확인한다.
+
 ## 3. 🚨 긴급 보안 장애 트러블슈팅 가이드
 
 ### 3.1 [HTTP 401] Unauthorized 진단 플로우차트

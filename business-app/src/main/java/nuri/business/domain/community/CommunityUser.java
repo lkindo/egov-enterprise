@@ -6,13 +6,29 @@ import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import jakarta.persistence.*;
+import org.springframework.data.domain.Persistable;
 import java.io.Serializable;
 
 @Entity
 @Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 @Table(name = "tb_cmnty_user_map")
-public class CommunityUser extends BaseEntity implements Serializable {
+public class CommunityUser extends BaseEntity implements Serializable, Persistable<CommunityUserId> {
+
+    // 할당형 복합키의 최초 저장은 INSERT다. 늦은 가입 요청이 기존 승인 행을 merge하지 않는다.
+    @Transient
+    private boolean newEntity = true;
+
+    @Override
+    public boolean isNew() {
+        return newEntity;
+    }
+
+    @PostLoad
+    @PostPersist
+    void markNotNew() {
+        newEntity = false;
+    }
 
     @EmbeddedId
     private CommunityUserId id;

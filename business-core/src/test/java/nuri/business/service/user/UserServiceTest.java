@@ -70,6 +70,26 @@ class UserServiceTest {
     private UserService userService;
 
     @Test
+    @DisplayName("조회 뒤 삭제된 사용자는 새로 읽기에 실패해도 500 대신 사용자 없음으로 처리한다")
+    void updateUserDeletedWhileWaitingReturnsNotFoundWithoutMutation() {
+        User user = User.builder().esntlId("USR_TARGET").userId("target")
+                .userNm("Original").pswd("fixture-hash").build();
+        given(userRepository.findByUserId("target")).willReturn(Optional.of(user));
+        doThrow(new org.springframework.orm.jpa.JpaObjectRetrievalFailureException(
+                new jakarta.persistence.EntityNotFoundException("deleted fixture")))
+                .when(userRepository).refreshForUpdate(user);
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("target", "USR_TARGET", "ROLE_USER"));
+
+        BusinessException failure = assertThrows(BusinessException.class, () ->
+                userService.updateUser("target", UserDto.builder().userNm("Changed").build()));
+
+        assertEquals(nuri.business.domain.user.exception.UserErrorCode.USER_NOT_FOUND, failure.getErrorCode());
+        assertEquals("Original", user.getUserNm());
+        verifyNoInteractions(passwordEncoder, eventPublisher, refreshTokenRepository, sensitiveAudit);
+    }
+
+    @Test
     @DisplayName("사용자 목록 페이지의 권한 snapshot을 일괄 조회한다")
     void getPagedUserListLoadsAuthorization() {
         UserDto user = UserDto.builder()

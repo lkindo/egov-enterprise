@@ -80,7 +80,9 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/CommentUpdateDeleteConcurrencyIntegrationTest.java', ['comment', 'board']],
   ['api-server/src/test/java/nuri/api/schema/CommunityTemplateIntegrityIntegrationTest.java', ['community', 'template']],
   ['api-server/src/test/java/nuri/api/schema/EventApprovalIntegrityIntegrationTest.java', 'event'],
+  ['api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java', 'notification'],
   ['api-server/src/test/java/nuri/api/schema/NotificationDurabilityIntegrationTest.java', 'notification'],
+  ['api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java', 'schedule'],
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
   ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
   ['api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java', 'sms'],
@@ -91,6 +93,7 @@ const integrityGates = [
 ];
 const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
 const gateSelected = (selected, owner) => gateDomains(owner).every(domain => selected.includes(domain));
+const userSecurityGate = 'api-server/src/test/java/nuri/api/schema/UserSecurityStateConcurrencyIntegrationTest.java';
 
 const displayNameSupport = [
   'foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java',
@@ -705,6 +708,7 @@ test('each selectable domain retains its Java production sources after actual de
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
     const profile = composerProfile(modules, composition);
     const plan = javaPlanFor(profile);
+    assert.equal(plan.removed.has(join(root, userSecurityGate)), false, `${domain}: core user security gate must survive`);
     for (const [path, owner] of eventOwners) {
       assert.equal(!plan.removed.has(join(root, path)), owner === 'core' || composition.resolvedDomains.includes(owner),
         `${domain}: event source ${path} is owned by ${owner} in the census but the generator ${plan.removed.has(join(root, path)) ? 'removes' : 'keeps'} it`);
@@ -729,14 +733,16 @@ test('each selectable domain retains its Java production sources after actual de
   }
 });
 
-test('preset integrity gate acknowledgements match the real removal plan', () => {
-  for (const preset of catalog.presets) {
-    const name = preset.id;
-    const composition = presetComposition(name);
+test('preset and empty-selection integrity gate acknowledgements match the real removal plan', () => {
+  assert.equal(modules.extras.gateOwners[userSecurityGate], undefined, 'core user security gate has no optional owner');
+  const compositions = [...catalog.presets.map(preset => presetComposition(preset.id)), resolveProjectRecipe(recipe([]), catalog)];
+  for (const composition of compositions) {
+    const name = composition.profile;
     const profile = composerProfile(modules, composition);
     const selected = composition.resolvedDomains;
     assertIntegrityGateAcknowledgements(profile, selected);
     const plan = javaPlanFor(profile);
+    assert.equal(plan.removed.has(join(root, userSecurityGate)), false, `${name}: core user security gate must survive`);
     for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !selected.includes('memoreport'), `${name}: ${file}`);
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(selected, owner), `${name}: ${file}`);
@@ -748,7 +754,9 @@ test('preset integrity gate acknowledgements match the real removal plan', () =>
 // 그 게이트가 빠져 위 대조가 붉다.
 test('missing integrity gate ownership is red for a custom composition', () => {
   const composition = resolveProjectRecipe(recipe([]), catalog);
+  const plan = javaPlanFor(composerProfile(modules, composition));
   for (const [file, owner] of integrityGates) {
+    assert.ok(plan.removed.has(join(root, file)), `${file}: actual source pruning removes the unselected gate`);
     assert.deepEqual(modules.extras.gateOwners[file], gateDomains(owner), `${file}: owner declaration is present before mutation`);
     const { [file]: _dropped, ...gateOwners } = modules.extras.gateOwners;
     const mutant = { ...modules, extras: { ...modules.extras, gateOwners } };

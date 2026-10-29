@@ -45,7 +45,7 @@ class SurveyEditingConcurrencyTest {
             return Optional.of(SurveyInfo.builder().srvySn(201L).build());
         });
 
-        assertThatThrownBy(() -> service.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L)
+        assertThatThrownBy(() -> service.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L)
                 .qstnSn(1L).qstnCn("바꾼 문항").maxChcCnt(1).build()))
                 .isInstanceOfSatisfying(BusinessException.class, exception ->
                         assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_IN_USE));
@@ -83,7 +83,7 @@ class SurveyEditingConcurrencyTest {
                 Optional.of(SurveyInfo.builder().srvySn(201L).build()));
         given(qesitmRepository.findById(301L)).willReturn(Optional.empty());
 
-        assertThatThrownBy(() -> service.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).build()))
+        assertThatThrownBy(() -> service.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(301L).srvySn(201L).build()))
                 .isInstanceOfSatisfying(BusinessException.class, exception ->
                         assertThat(exception.getErrorCode()).isEqualTo(CommonErrorCode.RESOURCE_NOT_FOUND));
         verify(rsltRepository, never()).countBySrvyQstnSn(301L);

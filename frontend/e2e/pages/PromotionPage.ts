@@ -78,13 +78,13 @@ export class PromotionPage {
         await this.page.getByPlaceholder(/\/pages\//i).fill('https://egovframe.go.kr');
         await this.page.locator('input[name="sortOrdr"]').fill('1'); // Use name selector
 
-        await this.uploadImage();
+        await this.uploadImage('http-banner-e2e.png');
         await this.clickSubmitAndWait();
     }
 
-    private async uploadImage() {
+    private async uploadImage(fileName = 'e2e-dummy.png') {
         console.log('>>> [Promotion] Uploading 1x1 PNG asset...');
-        const dummyPath = path.join(os.tmpdir(), 'e2e-dummy.png');
+        const dummyPath = path.join(os.tmpdir(), fileName);
         
         // Create a valid 1x1 transparent PNG if it doesn't exist
         if (!fs.existsSync(dummyPath)) {
