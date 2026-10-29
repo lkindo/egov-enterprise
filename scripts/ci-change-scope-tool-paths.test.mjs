@@ -412,21 +412,22 @@ test('workspace UI and server changes keep contracts, SAST and reuse checks with
   }
 });
 
-test('actual workspace engine inputs select their packaged-test reader axes and reject prefix lookalikes', () => {
+test('actual workspace engine inputs select packaged-test and conservative template-reader axes without prefix lookalikes', () => {
+  const expectedAxes = ['backend', 'e2e', 'migration', 'mutationMigrationTool'];
   for (const input of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
     const file = `tools/migration-workspace/${input}`;
-    assert.deepEqual(generatorToolEntry(file), { path: file, exact: true, axes: ['migration', 'mutationMigrationTool'] });
+    assert.deepEqual(generatorToolEntry(file), { path: file, exact: true, axes: expectedAxes });
     const result = classifyChangedFiles([file]);
     assert.deepEqual(result.unknownFiles, []);
-    for (const axis of AXES) assert.equal(result[axis], ['migration', 'mutationMigrationTool'].includes(axis), `${file}: ${axis}`);
+    for (const axis of AXES) assert.equal(result[axis], expectedAxes.includes(axis), `${file}: ${axis}`);
     for (const field of ['reusable', 'sast', 'secretScan']) assert.equal(result[field], true, `${file}: ${field}`);
     for (const suffix of ['.bak', '/nested.mjs', '.test.mjs']) {
       assert.equal(generatorToolEntry(file + suffix).path, 'tools/migration-workspace/');
-      assert.equal(classifyChangedFiles([file + suffix]).migration, false);
+      for (const axis of expectedAxes) assert.equal(classifyChangedFiles([file + suffix])[axis], false);
     }
   }
-  // Removing either real reader axis must fail the existing source census; no new exception list.
-  for (const axis of ['migration', 'mutationMigrationTool']) {
+  // Removing a direct or conservative reader axis must fail the existing census; no new exception list.
+  for (const axis of expectedAxes) {
     const table = GENERATOR_TOOL_PATHS.map(entry => entry.path === 'tools/migration-workspace/engine.mjs'
       ? { ...entry, axes: entry.axes.filter(value => value !== axis) } : entry);
     const problems = toolPathMismatches({ files: repositoryFiles, read: readRepository, table });

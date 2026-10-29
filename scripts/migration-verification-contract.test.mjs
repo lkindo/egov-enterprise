@@ -420,8 +420,8 @@ test('broad PIT exclusions, unregistered engine probes, and ordinary Test filter
     (source) => `tasks.named('test') { enabled = false }\n${source}`,
     (source) => `tasks.withType(Test) { enabled = false }\n${source}`,
     (source) => source.replace("dependsOn tasks.named('bootJar')", "// dependsOn tasks.named('bootJar')"),
-    ...['engine', 'store', 'inputs'].map(name => source => source.replace(
-      `tools/migration-workspace/${name}.mjs`, `tools/migration-workspace/missing-${name}.mjs`)),
+    ...['tools/migration-workspace/engine.mjs', 'tools/migration-workspace/store.mjs',
+      'tools/migration-workspace/inputs.mjs'].map(file => source => source.replace(file, `${file}.missing`)),
     (source) => source.replace("inputs.file(tasks.named('bootJar').flatMap { it.archiveFile })",
       "inputs.file('fake-application.jar')"),
     (source) => source.replace('    inputs.files(rootProject.files(', '    /* inputs.files(rootProject.files(')

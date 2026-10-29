@@ -126,6 +126,6 @@ node tools/migration-workspace-prototype/build-styles.mjs --check
 
 `--check`는 파일을 쓰지 않고 커밋본 CSS와 비교해 낡으면 종료 코드 1, 잘못된 인자는 2로 끝난다. 다시 만드는 명령은 `npm run migration:ui:css`이며 시안 CSS에는 frontend 의존성이 필요하다. 운영 계약 시험이 두 CSS의 신선도를 늘 보므로 `premium.css` 토큰·시안 화면 클래스·설치된 Tailwind 판이 바뀌면 다시 만들 때까지 붉다.
 
-두 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI·시안 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).
+두 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 생성 Groovy의 경로 참조를 따라가는 기존 보수적 reader 검사는 이 세 파일에 backend·E2E 축도 요구한다. 이 정적 참조는 해당 시험이 엔진 바이트를 직접 실행한다는 증거와 구분한다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI·시안 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).
 
 이 검사는 실제 기관 DB, Oracle 등 driver별 버전, 실제 AI 계정 로그인·요금·응답 품질, 운영 규모 성능을 검증했다는 뜻이 아니다. 실제 실행 결과를 확인하기 전에는 운영 전환에 사용하지 않는다.
