@@ -236,8 +236,10 @@ subprojects { subproject ->
     //   정규식 역추적으로 CPU 가 제곱으로 는다(<=1.66.0, 수정 1.67.0). 4.1.2 BOM 은 1.62.0 을 주고 4.1.x 는
     //   OTel minor 를 올리지 않는다(1.67.0 은 4.2.0-RC1 부터). 기본 설정에서 W3C 추출이 켜져 있고 edge·Next 가
     //   헤더를 그대로 넘겨 인증 전에 도달한다. micrometer-tracing-bridge-otel 1.7.2 는 1.62.0 으로 빌드돼 minor
-    //   도약이다 — 1.63~1.67 의 깨지는 변경은 incubator·alpha·zipkin 에만 있고 bridge 가 쓰는 클래스는 모두 남는다.
-    //   semconv·proto 는 이 BOM 밖이라 그대로다.
+    //   도약이다 — 1.63~1.67 의 BREAKING 은 incubator·alpha·zipkin 과 이 앱이 쓰지 않는 OTLP sender SPI 속성명·
+    //   autoconfigure 속성에 있고, Boot 4.1.2·bridge·registry-otlp 가 참조하는 심볼은 1.67.0 에 모두 남는다.
+    //   1.67.0 은 깨진 baggage 항목마다 WARNING 을 남겨 baggage 를 끈다(application.yml management.tracing.baggage).
+    //   semconv·proto 는 이 BOM 밖이라 그대로다. 억제 규칙(config/dependency-check/suppressions.xml)도 같은 버전이다.
     //   제거 조건: Boot BOM 이 opentelemetry 1.67.0 이상을 관리하면(Boot 4.2 전환 때 예상).
     ext['opentelemetry.version'] = '1.67.0'
 

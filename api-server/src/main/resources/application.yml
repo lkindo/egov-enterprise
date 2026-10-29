@@ -323,6 +323,14 @@ management:
       export:
         enabled: ${OTLP_METRICS_EXPORT_ENABLED:false}
         url: ${OTLP_METRICS_URL:http://localhost:4318/v1/metrics}
+  # [2026-10-29] W3C baggage 는 받지도 넘기지도 않는다. 이 앱은 baggage 를 쓰지 않는데(원격·상관 필드 없음)
+  #   Boot 기본값은 들어온 baggage 헤더를 인증 전에 파싱한다. OpenTelemetry 1.67.0 은 깨진 항목마다 예외를 만들고
+  #   스택 트레이스를 붙여 WARNING 을 남긴다 — 8KB 헤더 하나가 경고 1,333건·수 MB 로그와 수십~수백 ms CPU 가 된다.
+  #   끄면 trace 전파기만 남고, traceId MDC·X-Trace-Id 를 채우는 Tracer·Slf4JEventListener 는 그대로다.
+  #   TracingBaggageDisabledTest 가 이 키로 trace 는 이어지고 baggage 는 파싱되지 않는지 확인한다.
+  tracing:
+    baggage:
+      enabled: false
 
 Globals:
   File:
