@@ -279,6 +279,8 @@ node scripts/verify.mjs migration
 
 업로드 조건과 보존 기간은 현재 workflow가 정본이다.
 
+업로드는 성질로 나눈다. 뒤 잡이 `download-artifact`로 받는 산출물과 `if-no-files-found: error`로 부재를 실패로 삼는 증거는 `continue-on-error`를 쓰지 않는다. 그 밖의 보관·진단 업로드는 `continue-on-error: true`다 — `actions/upload-artifact`는 ENOTFOUND 같은 네트워크 오류를 재시도하지 않아, 진단 보고서 전송 오류 하나가 통과한 게이트를 붉게 만들었다(run 40858521948). 전송 실패는 실행의 오류 주석으로 남는다. [required-checks 계약](../../scripts/required-checks-contract.mjs)이 이 분류를 검사한다.
+
 ---
 
 ## 프론트엔드 빌드

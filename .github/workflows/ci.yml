@@ -272,6 +272,7 @@ jobs:
             gitleaks-incremental.json
           if-no-files-found: ignore
           retention-days: 14
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
       # 이후 소스 투영 계약은 Git의 미추적 파일도 읽는다. 이 잡이 만든 바이너리와
       # 리포트를 build 아래에 보존해 검사 입력이나 재사용 산출물로 복사되지 않게 한다.
@@ -511,12 +512,14 @@ jobs:
           path: |
             build/reports/jacoco/online
             build/reports/jacoco/jacocoOnlineReport/jacocoOnlineReport.xml
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
       - name: Upload OpenAPI Spec
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
         with:
           name: openapi-spec
           path: api-docs.json
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
       # 실패 스텝·마지막 출력·JUnit 메시지를 error annotation으로 노출해 로그 권한 없이도 진단하게 한다.
       - name: Surface failure detail (annotations)
@@ -1346,6 +1349,7 @@ jobs:
             /tmp/compose-up.log
           retention-days: 7
           if-no-files-found: warn
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
       - name: Upload Playwright Report
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -1449,6 +1453,7 @@ jobs:
           name: playwright-report-merged
           path: frontend/playwright-report
           retention-days: 30
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
   # Stable merge check for the sharded E2E leaves. Branch protection must
   # depend on this job rather than on each matrix context, so changing the
@@ -1649,6 +1654,7 @@ jobs:
           name: pitest-report-${{ matrix.scope }}
           path: "**/build/reports/pitest"
           retention-days: 30
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
   # [2026-09-16 DEC-OPS-104] migration-tool 뮤테이션만 따로 세운 잡이다.
   #   실측: 73.4분 CI 에서 임계 경로가 backend-scope 25.2분 → migration-validate-verify 48.0분이었고
@@ -1820,6 +1826,7 @@ jobs:
           name: pitest-report-${{ matrix.scope }}
           path: "**/build/reports/pitest"
           retention-days: 30
+        continue-on-error: true # 보관 업로드 — 게이트 아님
 
   # 안정 required context를 유지하며 matrix 전체 결과를 집계한다.
   # always()가 실패 시 aggregate skip으로 바뀌는 fail-open을 막고 계약 테스트가 이를 고정한다.
