@@ -50,7 +50,7 @@ public class GroupManageService {
     public int selectGroupListTotCnt(BaseSearchDto searchVO) {
         String keyword = searchVO.getSearchKeyword();
         if (keyword != null && !keyword.isEmpty()) {
-            return (int) groupManageRepository.searchByKeyword(keyword, Pageable.unpaged()).getTotalElements();
+            return (int) groupManageRepository.countByKeyword(keyword);
         }
         return (int) groupManageRepository.count();
     }

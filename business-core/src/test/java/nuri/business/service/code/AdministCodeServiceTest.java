@@ -8,6 +8,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
@@ -30,6 +32,8 @@ import static org.mockito.BDDMockito.given;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.spy;
+import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.verifyNoInteractions;
 
 @ExtendWith(MockitoExtension.class)
 @DisplayName("AdministCodeService (행정코드 관리) 테스트")
@@ -70,6 +74,7 @@ class AdministCodeServiceTest {
         // then
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).getAdmdstZoneNm()).isEqualTo("서울특별시");
+        verify(administCodeRepository, never()).lockHierarchy();
     }
 
     @Test
@@ -105,6 +110,7 @@ class AdministCodeServiceTest {
 
         assertThat(error.getErrorCode())
                 .isEqualTo(nuri.business.domain.code.exception.CodeErrorCode.CODE_NOT_FOUND);
+        verify(administCodeRepository, never()).lockHierarchy();
     }
 
     @Test
@@ -121,7 +127,10 @@ class AdministCodeServiceTest {
  
         // then
         assertThat(result).isEqualTo("1100000000");
-        verify(administCodeRepository).insert(any(AdministCode.class));
+        var order = inOrder(administCodeRepository);
+        order.verify(administCodeRepository).lockHierarchy();
+        order.verify(administCodeRepository).existsById("1100000000");
+        order.verify(administCodeRepository).insert(any(AdministCode.class));
     }
 
     @Test
@@ -143,6 +152,9 @@ class AdministCodeServiceTest {
  
         // then
         verify(entity).update(any(), eq("New Name"), any(), any(), eq("admin"));
+        var order = inOrder(administCodeRepository);
+        order.verify(administCodeRepository).lockHierarchy();
+        order.verify(administCodeRepository).findById("1100000000");
     }
 
     @Test
@@ -170,7 +182,11 @@ class AdministCodeServiceTest {
 
         administCodeService.deleteAdministCode("1100000000");
 
-        verify(administCodeRepository).delete(entity);
+        var order = inOrder(administCodeRepository);
+        order.verify(administCodeRepository).lockHierarchy();
+        order.verify(administCodeRepository).findById("1100000000");
+        order.verify(administCodeRepository).countByUpAdmdstCd("1100000000");
+        order.verify(administCodeRepository).delete(entity);
     }
 
     @Test
@@ -200,17 +216,24 @@ class AdministCodeServiceTest {
         verify(administCodeRepository, never()).delete(any());
     }
 
-    @Test
+    @ParameterizedTest
+    @ValueSource(strings = {"create", "update", "delete"})
     @DisplayName("행정코드 쓰기는 서비스 계층에서도 일반 사용자를 거부한다")
-    void administCodeWriteRequiresAdminAtServiceBoundary() {
+    void administCodeWriteRequiresAdminAtServiceBoundary(String operation) {
         SecurityContextHolder.getContext().setAuthentication(
                 nuri.business.support.AuthorizationTestPrincipal.authentication("user", "ESNTL_user", "ROLE_USER"));
 
-        BusinessException error = assertThrows(BusinessException.class,
-                () -> administCodeService.deleteAdministCode("1100000000"));
+        BusinessException error = assertThrows(BusinessException.class, () -> {
+            switch (operation) {
+                case "create" -> administCodeService.createAdministCode(dto("1100000000", ""), "user");
+                case "update" -> administCodeService.updateAdministCode("1100000000", dto("1100000000", ""), "user");
+                case "delete" -> administCodeService.deleteAdministCode("1100000000");
+                default -> throw new AssertionError(operation);
+            }
+        });
 
         assertThat(error.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
-        verify(administCodeRepository, never()).delete(any());
+        verifyNoInteractions(administCodeRepository);
     }
     /**
      * 상위 행정구역 지정의 무결성. [2026-09-17]
