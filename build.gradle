@@ -16,6 +16,9 @@ buildscript {
             // Dependency-Check 13.0.0 이 jsoup 1.23.1 을 가져온다(GHSA-65r4-943x-97jj, <1.23.2).
             // 2026-10-21 추가, 플러그인이 1.23.2 이상을 가져오면 제거.
             classpath('org.jsoup:jsoup:1.23.2')
+            // Dependency-Check 13.0.0 이 guava 33.6.0-jre 를 가져온다(GHSA-xxph-c9ww-hj94, <=33.7.1).
+            // 2026-10-29 추가, 플러그인이 33.7.2 이상을 가져오면 제거.
+            classpath('com.google.guava:guava:33.7.2-jre')
         }
     }
 }
