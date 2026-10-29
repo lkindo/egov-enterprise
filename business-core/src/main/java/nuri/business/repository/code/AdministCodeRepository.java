@@ -13,8 +13,8 @@ public interface AdministCodeRepository extends JpaRepository<AdministCode, Stri
     /**
      * 이 코드를 상위로 두는 하위 코드 수.
      *
-     * <p>{@code tb_admdst_cd} 에는 자기참조 FK 가 없어(V2_0 은 PK 만) DB 가 삭제를 막지 않는다.
-     * 상위를 지우면 하위가 존재하지 않는 코드를 가리킨 채 남으므로 애플리케이션이 막는다.
+     * <p>V2_102 의 자기참조 FK 도 부모 삭제를 막지만, 서비스에서 먼저 검사해
+     * 참조 중인 하위 코드 수와 함께 RESOURCE_IN_USE 를 반환한다.
      */
     long countByUpAdmdstCd(String upAdmdstCd);
 }

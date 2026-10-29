@@ -10,4 +10,7 @@ public interface GroupManageRepository extends JpaRepository<GroupManage, String
 
     @Query("SELECT g FROM GroupManage g WHERE g.groupNm LIKE CONCAT(:searchKeyword, '%')")
     Page<GroupManage> searchByKeyword(@Param("searchKeyword") String searchKeyword, Pageable pageable);
+
+    @Query("SELECT COUNT(g) FROM GroupManage g WHERE g.groupNm LIKE CONCAT(:searchKeyword, '%')")
+    long countByKeyword(@Param("searchKeyword") String searchKeyword);
 }
