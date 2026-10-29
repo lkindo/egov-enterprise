@@ -1,5 +1,7 @@
 package nuri.business.service.mail;
 
+import java.nio.charset.StandardCharsets;
+import java.util.UUID;
 import nuri.business.domain.mail.SentMailRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -13,7 +15,7 @@ import org.springframework.transaction.annotation.Transactional;
  *
  * 외부 SMTP IO 는 트랜잭션 밖에서 수행한다 — 발송이 tx 안에 있으면 SMTP 지연 동안
  * DB 커넥션을 점유하고, 발송 성공 후 커밋 실패 시 실제 발송과 기록이 어긋난다.
- * 상태 기록만 짧은 REQUIRES_NEW 트랜잭션(markResult)으로 분리해 즉시 커밋한다.
+ * 상태와 실패 알림 의도를 짧은 REQUIRES_NEW 트랜잭션(markResult)으로 함께 커밋한다.
  */
 @Slf4j
 @Component
@@ -46,16 +48,7 @@ public class MailAsyncProcessor {
         }
         boolean delivered = self.deliverMail(emlDsptchSn, sj, emailCn, dsptchPerson, recptnPerson);
         meterRegistry.counter("mail.dispatch.total", "result", delivered ? "success" : "failure").increment();
-        boolean recorded = self.recordResult(emlDsptchSn, queuedAt, delivered ? "S" : "F");
-        if (recorded && !delivered && senderEsntlId != null && !senderEsntlId.isBlank()) {
-            try {
-                self.notifyDeliveryFailure(emlDsptchSn, senderEsntlId);
-            } catch (RuntimeException e) {
-                // 알림 실패가 발송 결과 기록을 되돌리지 않는다 — 결과는 이미 이력에 있다.
-                log.error("Mail failure notice could not be requested for dispatch serial number: {}, errorType: {}",
-                        emlDsptchSn, e.getClass().getSimpleName());
-            }
-        }
+        self.recordResult(emlDsptchSn, queuedAt, delivered ? "S" : "F", senderEsntlId);
         return java.util.concurrent.CompletableFuture.completedFuture(null);
     }
 
@@ -64,11 +57,13 @@ public class MailAsyncProcessor {
         return sentMailRepository.claimQueued(emlDsptchSn, queuedAt) == 1;
     }
 
-    /** 실패로 확정된 발송을 발신자에게 알린다 — 알림은 업무 트랜잭션 안에서 저장된다(NotificationRequestListener). */
-    @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public void notifyDeliveryFailure(Long emlDsptchSn, String senderEsntlId) {
+    /** 결과 CAS를 이긴 시도의 알림을 같은 트랜잭션에 저장한다. */
+    private void notifyDeliveryFailure(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String senderEsntlId) {
+        // intent에서 전달받은 시각을 사용한다. DB 재조회 시각의 정밀도로 시도 식별자를 바꾸지 않는다.
+        UUID eventId = UUID.nameUUIDFromBytes(
+                ("MAIL_FAILURE:" + emlDsptchSn + ":" + queuedAt).getBytes(StandardCharsets.UTF_8));
         sentMailRepository.findById(emlDsptchSn).ifPresent(mail -> eventPublisher.publishEvent(
-                new nuri.foundation.core.event.NotificationRequestedEvent(senderEsntlId, "메일 발송 실패",
+                new nuri.foundation.core.event.NotificationRequestedEvent(eventId, senderEsntlId, "메일 발송 실패",
                         failureNotice(mail.getEmlTtl(), mail.getRcvrNm()), MAIL_HISTORY_PATH)));
     }
 
@@ -119,23 +114,51 @@ public class MailAsyncProcessor {
         maxAttempts = 3,
         backoff = @org.springframework.retry.annotation.Backoff(delay = 1000)
     )
-    public boolean recordResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode) {
-        return self.markResult(emlDsptchSn, queuedAt, resultCode);
+    public boolean recordResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode, String senderEsntlId) {
+        return self.markResult(emlDsptchSn, queuedAt, resultCode, senderEsntlId);
     }
 
     @org.springframework.retry.annotation.Recover
-    public boolean recoverRecording(Exception e, Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode) {
+    public boolean recoverRecording(Exception e, Long emlDsptchSn, java.time.LocalDateTime queuedAt,
+            String resultCode, String senderEsntlId) {
         log.error("Mail result recording exhausted for dispatch serial number: {}, intendedResult: {}, errorType: {}",
                 emlDsptchSn, resultCode, e.getClass().getSimpleName());
         meterRegistry.counter("mail.dispatch.recording.failures").increment();
-        return false;
+        if (!"F".equals(resultCode)) return false;
+
+        // 삭제된 발신자 등의 영구 알림 오류가 확정된 F 결과까지 잃게 하지 않는다.
+        // 결과 전용 CAS는 한 번만 시도하며 SMTP를 다시 호출하지 않는다.
+        try {
+            boolean recorded = self.markFailureWithoutNotice(emlDsptchSn, queuedAt);
+            if (recorded && senderEsntlId != null && !senderEsntlId.isBlank()) {
+                meterRegistry.counter("mail.dispatch.failure.notices.lost").increment();
+                log.error("Mail failure notice was not recorded for dispatch serial number: {}, errorType: {}",
+                        emlDsptchSn, e.getClass().getSimpleName());
+            }
+            // CAS 0은 이전 시도이거나 이미 커밋된 결과일 수 있다. 알림 유실로 세지 않는다.
+            return recorded;
+        } catch (RuntimeException failure) {
+            log.error("Mail result-only recording failed for dispatch serial number: {}, errorType: {}",
+                    emlDsptchSn, failure.getClass().getSimpleName());
+            return false;
+        }
     }
 
     /**
-     * 발송 결과 기록 — 짧은 트랜잭션으로 즉시 커밋(외부 IO 와 분리).
+     * 발송 결과와 실패 알림을 함께 기록한다. 커밋 실패도 recordResult 프록시가 재시도한다.
      */
     @Transactional(propagation = Propagation.REQUIRES_NEW)
-    public boolean markResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode) {
-        return sentMailRepository.recordResult(emlDsptchSn, queuedAt, resultCode) == 1;
+    public boolean markResult(Long emlDsptchSn, java.time.LocalDateTime queuedAt, String resultCode, String senderEsntlId) {
+        if (sentMailRepository.recordResult(emlDsptchSn, queuedAt, resultCode) != 1) return false;
+        if ("F".equals(resultCode) && senderEsntlId != null && !senderEsntlId.isBlank()) {
+            notifyDeliveryFailure(emlDsptchSn, queuedAt, senderEsntlId);
+        }
+        return true;
+    }
+
+    /** 알림 저장이 소진돼도 확정 실패는 보존한다. 이 저장마저 실패하면 기존 P/UNKNOWN이 남는다. */
+    @Transactional(propagation = Propagation.REQUIRES_NEW)
+    public boolean markFailureWithoutNotice(Long emlDsptchSn, java.time.LocalDateTime queuedAt) {
+        return sentMailRepository.recordResult(emlDsptchSn, queuedAt, "F") == 1;
     }
 }

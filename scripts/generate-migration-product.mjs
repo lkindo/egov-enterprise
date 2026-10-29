@@ -11,6 +11,8 @@ export const MIGRATION_PRODUCT_INPUTS = Object.freeze([
   'build.gradle', 'gradle.properties', 'gradle', 'gradlew', 'gradlew.bat', '.gitattributes', '.nvmrc',
   'config/dependency-check/suppressions.xml', 'migration-tool/build.gradle', 'migration-tool/src',
   'config/governance/migration-execution.example.json',
+  // Actual inputs of the packaged workspace integration drill; UI/server/AI remain separate products.
+  'tools/migration-workspace/engine.mjs', 'tools/migration-workspace/store.mjs', 'tools/migration-workspace/inputs.mjs',
   'config/migration-test-duration-profile.json', 'scripts/migration-test-shard.mjs', 'scripts/migration-profile-provenance.mjs',
   'scripts/verify.mjs', 'scripts/verification-record.mjs',
   'scripts/migration-verification-contract.test.mjs', 'scripts/required-checks-contract.mjs',

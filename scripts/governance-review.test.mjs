@@ -23,6 +23,9 @@ function fixture(t) {
   const write = (file, value) => { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), value); };
   write('migration-tool/build.gradle', 'dependencies {}\n');
   write('migration-tool/src/main/java/Tool.java', 'class Tool {}\n');
+  for (const file of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
+    write(`tools/migration-workspace/${file}`, 'export const original = true;\n');
+  }
   write('config/governance/migration-adoption-review.json', JSON.stringify(createPendingAdoptionReview({ product: 'migration-tool', profile: null })));
   write('docs/review.md', 'Fixture evidence of source/target, mappings, and recovery; not a production approval.\n');
   return { root, write };
@@ -161,6 +164,35 @@ test('source changes invalidate environment approval while unrelated online file
   assert.equal(report.urlState.applicability, 'not-applicable');
   write('migration-tool/src/main/java/Tool.java', 'class Tool { int changed; }');
   assert.ok(validate(review, root).some((error) => error.includes('scope digest mismatch')));
+});
+
+test('migration approval binds the actual workspace engine inputs without including its UI or AI', async (t) => {
+  const { root, write } = fixture(t);
+  const inputs = ['engine.mjs', 'store.mjs', 'inputs.mjs'];
+  const review = approved(root);
+  for (const file of ['server.mjs', 'ai.mjs', 'public/app.js']) {
+    write(`tools/migration-workspace/${file}`, 'unrelated workspace UI or AI');
+  }
+  assert.deepEqual(validate(review, root), []);
+  for (const file of inputs) {
+    const path = `tools/migration-workspace/${file}`;
+    try {
+      write(path, 'export const original = false;\n');
+      assert.ok(validate(review, root).some(error => error.includes('scope digest mismatch')), path);
+    } finally { write(path, 'export const original = true;\n'); }
+  }
+  assert.deepEqual(validate(review, root), []);
+  for (const file of inputs) {
+    await t.test(`missing ${file} cannot form an approval scope`, () => {
+      const path = `tools/migration-workspace/${file}`;
+      try {
+        rmSync(join(root, path));
+        assert.throws(() => adoptionScope(root, { product: 'migration-tool', profile: null }),
+          { message: `missing product scope input: ${path}` });
+      } finally { write(path, 'export const original = true;\n'); }
+      assert.deepEqual(validate(review, root), []);
+    });
+  }
 });
 
 test('online deployment inputs invalidate approvals and text checkout line endings do not', (t) => {

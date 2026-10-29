@@ -858,7 +858,8 @@ class InformalSanctionWorkflowServiceTest {
         verify(detailRepository, never()).findForDocuments(any());
         verify(historyRepository, never()).findForDocuments(any());
         verify(informalSanctionRepository).findProcessed("first", List.of("C", "R"), null, null, null, null, pageable);
-        verify(processRepository).findForDocuments(List.of(7L, 9L));
+        verify(processRepository).findForCurrentCycles(List.of(7L, 9L));
+        verify(processRepository, never()).findForDocuments(any());
         verify(referenceRepository).findForDocuments(List.of(7L, 9L));
         verify(userRepository).findAllById(java.util.Set.of("owner", "first"));
         verify(userRepository).findProfilesByEsntlIds(java.util.Set.of("first"));

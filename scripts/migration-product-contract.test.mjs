@@ -7,7 +7,7 @@ import { dirname, isAbsolute, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import test from 'node:test';
 import { generateMigrationProduct } from './generate-migration-product.mjs';
-import { migrationProvenanceDigest } from './migration-profile-provenance.mjs';
+import { migrationProvenanceDigest, verifySourceMigrationProfileProvenance } from './migration-profile-provenance.mjs';
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -64,10 +64,35 @@ test('standalone migration export retains independent verification and clears in
     rmSync(generatedRoot, { recursive: true, force: true });
   });
   const result = generateMigrationProduct({ sourceRoot: root, outputRoot: generatedRoot });
+  // The real packaged workspace drill must resolve only its actual engine closure in every exported product.
+  for (const input of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
+    const file = `tools/migration-workspace/${input}`;
+    assert.equal(readFileSync(resolve(generatedRoot, file), 'utf8'), readFileSync(resolve(root, file), 'utf8'));
+  }
+  for (const absent of ['server.mjs', 'ai.mjs', 'public']) {
+    assert.equal(existsSync(resolve(generatedRoot, 'tools/migration-workspace', absent)), false);
+  }
   const isolatedRoot = temporaryRoot(t);
   const outputRoot = resolve(isolatedRoot, 'product');
   cpSync(generatedRoot, outputRoot, { recursive: true });
   const childEnv = isolatedEnvironment(isolatedRoot);
+  const engineImport = "await import('./tools/migration-workspace/engine.mjs')";
+  const importedEngine = spawnSync(process.execPath, ['--input-type=module', '--eval', engineImport],
+    { cwd: outputRoot, encoding: 'utf8', env: childEnv });
+  assert.equal(importedEngine.status, 0, importedEngine.stderr);
+  assert.equal(importedEngine.stdout, '');
+  for (const input of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
+    const file = resolve(outputRoot, 'tools/migration-workspace', input);
+    const bytes = readFileSync(file);
+    try {
+      rmSync(file);
+      const missing = spawnSync(process.execPath, ['--input-type=module', '--eval', engineImport],
+        { cwd: outputRoot, encoding: 'utf8', env: childEnv });
+      assert.notEqual(missing.status, 0);
+      assert.match(missing.stderr, /ERR_MODULE_NOT_FOUND/);
+      assert.ok(missing.stderr.includes(input));
+    } finally { writeFileSync(file, bytes); }
+  }
   initializeRepository(outputRoot, childEnv);
   assert.equal(realpathSync(git(outputRoot, childEnv, ['rev-parse', '--show-toplevel'])), realpathSync(outputRoot));
   const upstreamCommit = JSON.parse(readFileSync(resolve(root, 'config/migration-test-duration-profile.json'), 'utf8')).source.commit;
@@ -141,6 +166,13 @@ test('standalone migration export retains independent verification and clears in
     () => rmSync(lockPath),
     () => { const changed = structuredClone(profile); changed.source.runId += 1; writeFileSync(profilePath, JSON.stringify(changed)); },
     () => { const changed = structuredClone(profile); changed.durationsMs[Object.keys(changed.durationsMs)[0]] += 1; writeFileSync(profilePath, JSON.stringify(changed)); },
+    () => { const changed = structuredClone(profile); delete changed.source.classMeasurements; writeFileSync(profilePath, JSON.stringify(changed)); },
+    () => {
+      const changed = structuredClone(profile);
+      const record = Object.values(changed.source.classMeasurements)[0];
+      record.measuredAt = '2026-10-31T00:00:00Z';
+      writeFileSync(profilePath, JSON.stringify(changed));
+    },
     () => { const changed = structuredClone(lock); delete changed.durationProfileProvenance; writeFileSync(lockPath, JSON.stringify(changed)); },
     () => { const changed = structuredClone(lock); changed.durationProfileProvenance.producerCommit = 'f'.repeat(40); writeFileSync(lockPath, JSON.stringify(changed)); },
     () => { const changed = structuredClone(lock); changed.durationProfileProvenance.profileSha256 = 'f'.repeat(64); writeFileSync(lockPath, JSON.stringify(changed)); },
@@ -199,6 +231,26 @@ test('standalone migration export retains independent verification and clears in
     } finally { writeFileSync(missingHelper, helperContent); }
   }
   assert.throws(() => generateMigrationProduct({ sourceRoot: root, outputRoot: generatedRoot }), /new child directory/);
+});
+
+test('local measurement bases survive squash by requiring producer main ancestry', (t) => {
+  const sourceRoot = temporaryRoot(t);
+  const env = isolatedEnvironment(dirname(sourceRoot));
+  const upstream = initializeRepository(sourceRoot, env);
+  git(sourceRoot, env, ['update-ref', 'refs/remotes/origin/main', upstream]);
+  const branch = initializeRepository(sourceRoot, env, 'Unmerged local measurement inputs');
+  const name = 'nuri.migration.FixtureTest';
+  const profile = { source: { runId: 1, commit: upstream, measuredAt: '2026-10-30T00:00:00Z',
+    classMeasurements: { [name]: { kind: 'local-junit', baseCommit: upstream, measuredAt: '2026-10-30T01:00:00Z' } } },
+  durationsMs: { [name]: 1 } };
+  assert.equal(verifySourceMigrationProfileProvenance(profile, sourceRoot).producerCommit, branch);
+  for (const [baseCommit, reason] of [[branch, /ancestor of producer main/], ['f'.repeat(40), /must exist/]]) {
+    const changed = structuredClone(profile);
+    changed.source.classMeasurements[name].baseCommit = baseCommit;
+    assert.throws(() => verifySourceMigrationProfileProvenance(changed, sourceRoot), reason);
+  }
+  git(sourceRoot, env, ['update-ref', '-d', 'refs/remotes/origin/main']);
+  assert.throws(() => verifySourceMigrationProfileProvenance(profile, sourceRoot), /requires producer origin\/main history/);
 });
 
 test('export verifies producer history before writing and rejects missing, unrelated and shallow provenance', (t) => {

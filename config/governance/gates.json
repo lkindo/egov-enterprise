@@ -1237,6 +1237,18 @@
         {
           "id": "DB-SENSITIVE-AUDIT-DURABILITY",
           "source": "api-server/src/test/java/nuri/api/schema/SensitiveAuditDurabilityIntegrationTest.java"
+        },
+        {
+          "id": "DB-MAIL-FAILURE-NOTIFICATION",
+          "source": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java"
+        },
+        {
+          "id": "DB-SMS-FAILURE-NOTICE",
+          "source": "api-server/src/test/java/nuri/api/schema/SmsFailureNoticeIntegrationTest.java"
+        },
+        {
+          "id": "DB-OPERATIONAL-SIGNAL-ISOLATION",
+          "source": "api-server/src/test/java/nuri/api/schema/OperationalSignalIsolationIntegrationTest.java"
         }
       ]
     },

@@ -86,6 +86,8 @@ const integrityGates = [
   ['api-server/src/test/java/nuri/api/schema/TemplateCreationIntegrityIntegrationTest.java', 'template'],
   ['api-server/src/test/java/nuri/api/schema/AddressBookSnapshotConcurrencyIntegrationTest.java', 'addressbook'],
   ['api-server/src/test/java/nuri/api/schema/SmsDeliveryStateIntegrationTest.java', 'sms'],
+  ['api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java', ['mail', 'notification']],
+  ['api-server/src/test/java/nuri/api/schema/SmsFailureNoticeIntegrationTest.java', ['sms', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/ApprovalReferenceNotificationIntegrationTest.java', ['informalsanction', 'notification']],
   ['api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java', 'informalsanction'],
   ['api-server/src/test/java/nuri/api/schema/ReferenceIntegrityCommunityFkIntegrationTest.java', ['board', 'community']],
@@ -93,7 +95,10 @@ const integrityGates = [
 ];
 const gateDomains = owner => Array.isArray(owner) ? owner : [owner];
 const gateSelected = (selected, owner) => gateDomains(owner).every(domain => selected.includes(domain));
-const userSecurityGate = 'api-server/src/test/java/nuri/api/schema/UserSecurityStateConcurrencyIntegrationTest.java';
+const coreIntegrityGates = [
+  'api-server/src/test/java/nuri/api/schema/UserSecurityStateConcurrencyIntegrationTest.java',
+  'api-server/src/test/java/nuri/api/schema/OperationalSignalIsolationIntegrationTest.java',
+];
 
 const displayNameSupport = [
   'foundation/src/main/java/nuri/foundation/core/user/UserDisplayNameLookup.java',
@@ -708,7 +713,7 @@ test('each selectable domain retains its Java production sources after actual de
     const composition = resolveProjectRecipe(recipe([domain]), catalog);
     const profile = composerProfile(modules, composition);
     const plan = javaPlanFor(profile);
-    assert.equal(plan.removed.has(join(root, userSecurityGate)), false, `${domain}: core user security gate must survive`);
+    for (const file of coreIntegrityGates) assert.equal(plan.removed.has(join(root, file)), false, `${domain}: core gate ${file} must survive`);
     for (const [path, owner] of eventOwners) {
       assert.equal(!plan.removed.has(join(root, path)), owner === 'core' || composition.resolvedDomains.includes(owner),
         `${domain}: event source ${path} is owned by ${owner} in the census but the generator ${plan.removed.has(join(root, path)) ? 'removes' : 'keeps'} it`);
@@ -734,7 +739,7 @@ test('each selectable domain retains its Java production sources after actual de
 });
 
 test('preset and empty-selection integrity gate acknowledgements match the real removal plan', () => {
-  assert.equal(modules.extras.gateOwners[userSecurityGate], undefined, 'core user security gate has no optional owner');
+  for (const file of coreIntegrityGates) assert.equal(modules.extras.gateOwners[file], undefined, `core gate ${file} has no optional owner`);
   const compositions = [...catalog.presets.map(preset => presetComposition(preset.id)), resolveProjectRecipe(recipe([]), catalog)];
   for (const composition of compositions) {
     const name = composition.profile;
@@ -742,7 +747,7 @@ test('preset and empty-selection integrity gate acknowledgements match the real 
     const selected = composition.resolvedDomains;
     assertIntegrityGateAcknowledgements(profile, selected);
     const plan = javaPlanFor(profile);
-    assert.equal(plan.removed.has(join(root, userSecurityGate)), false, `${name}: core user security gate must survive`);
+    for (const file of coreIntegrityGates) assert.equal(plan.removed.has(join(root, file)), false, `${name}: core gate ${file} must survive`);
     for (const file of displayNameSupport) assert.equal(plan.removed.has(join(root, file)), !selected.includes('memoreport'), `${name}: ${file}`);
     for (const [file, owner] of integrityGates) {
       assert.equal(plan.removed.has(join(root, file)), !gateSelected(selected, owner), `${name}: ${file}`);

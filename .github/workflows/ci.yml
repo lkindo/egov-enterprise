@@ -608,7 +608,7 @@ jobs:
           fi
           node scripts/ci-annotate-test-failures.mjs
 
-  # The migration module's 123 source test classes are an exact, duration-balanced
+  # The migration module's source test classes are an exact, duration-balanced
   # population. Each shard produces its own JaCoCo data; migration-scope below merges
   # all three files before applying the unchanged LINE 85% / BRANCH 70% gate.
   migration-test-scope:

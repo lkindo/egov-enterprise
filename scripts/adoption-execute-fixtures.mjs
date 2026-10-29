@@ -14,6 +14,9 @@ export function adoptionExecutionFixture(t, layout) {
   });
   const write = (path, bytes) => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), bytes); };
   write('migration-tool/build.gradle', 'dependencies {}');
+  for (const file of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
+    write(`tools/migration-workspace/${file}`, 'export const fixture = true;\n');
+  }
   write('migration-tool/src/main/java/Tool.java', 'class Tool {}');
   // 승인 실행 사슬이 import 하는 구성 이름 판정(11단계 C8)은 이관 제품에도 복사된다.
   write('scripts/composition-profiles.mjs', '// Synthetic composition profile input; the real module is imported from this repository.\n');

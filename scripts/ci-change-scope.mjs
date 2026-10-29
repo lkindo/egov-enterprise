@@ -330,8 +330,12 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
   { path: 'tools/project-composer/', axes: ['e2e'] },
   // [DEC-OPS-383] 로컬 이관 작업공간과 정적 시안(ADR-0041). 시험은 늘 도는 운영 계약(secret-scan)에서, 코드는 SAST 에서 본다.
-  // 이관 축은 켜지 않는다 — 작업공간은 migration-tool JAR 를 실행할 뿐 migration-tool 의 빌드·시험·PIT 입력이 아니고, 두 쪽의
-  // CLI 계약(cli-contract.test.mjs)은 운영 계약이라 어느 쪽만 바꾼 변경에서도 돈다. 생성물에 복사되므로 재사용 검증은 남는다.
+  // 실제 packaged workspace 시험의 엔진 3파일은 이관 축, 생성 Groovy의 경로를 따라가는 보수적 reader는 backend/e2e도 고른다.
+  // backend/e2e의 정적 참조를 엔진 바이트의 직접 실행 증거로 해석하지 않는다. 나머지 UI/server/AI 와 정적 시안은
+  // 기존 운영 계약·SAST·재사용 검증 경계를 유지한다. 파일 접두가 같은 다른 이름까지 새 축에 포함하지 않는다.
+  { path: 'tools/migration-workspace/engine.mjs', exact: true, axes: ['backend', 'e2e', 'migration', 'mutationMigrationTool'] },
+  { path: 'tools/migration-workspace/store.mjs', exact: true, axes: ['backend', 'e2e', 'migration', 'mutationMigrationTool'] },
+  { path: 'tools/migration-workspace/inputs.mjs', exact: true, axes: ['backend', 'e2e', 'migration', 'mutationMigrationTool'] },
   { path: 'tools/migration-workspace/', axes: [] },
   { path: 'tools/migration-workspace-prototype/', axes: [] },
   // [2026-10-27 DEC-OPS-387] 에이전트 하네스(DEC-OPS-386) — 실행 전 가드·스킬 안내 생성기와 세 도구의 훅 어댑터. 시험은 늘 도는 운영
@@ -346,7 +350,8 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
 ].map(entry => Object.freeze({ ...entry, axes: Object.freeze(entry.axes) })));
 
 export function generatorToolEntry(file) {
-  return GENERATOR_TOOL_PATHS.find(entry => normalizeFile(file).startsWith(entry.path)) ?? null;
+  const normalized = normalizeFile(file);
+  return GENERATOR_TOOL_PATHS.find(entry => entry.exact ? normalized === entry.path : normalized.startsWith(entry.path)) ?? null;
 }
 
 function selectsToolAxis(file, axis) {

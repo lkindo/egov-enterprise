@@ -754,7 +754,7 @@ public class InformalSanctionService {
         List<Long> ids = page.stream().map(InformalSanction::getIfmlAtrzSn).toList();
         List<InformalSanctionDetail> lines = detailRepository.findVisibleForDocuments(ids, actor);
         List<InformalSanctionHistory> history = historyRepository.findVisibleForDocuments(ids, actor);
-        List<InformalSanctionProcess> processes = processRepository.findForDocuments(ids);
+        List<InformalSanctionProcess> processes = processRepository.findForCurrentCycles(ids);
         // [D4] 참조자 여부·결재자 추가 힌트에 쓴다. 참조자 목록(이름)은 상세에만 싣는다.
         List<InformalSanctionReference> references = referenceRepository.findForDocuments(ids);
         Map<String, String> users = userNames(page.getContent(), lines, processes);
