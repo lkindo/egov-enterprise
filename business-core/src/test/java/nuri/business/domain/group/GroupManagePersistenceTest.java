@@ -1,8 +1,14 @@
 package nuri.business.domain.group;
 
 import nuri.business.support.PersistenceTestSupport;
+import nuri.business.domain.common.BaseSearchDto;
+import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.service.group.GroupManageService;
+import org.hibernate.Session;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -17,6 +23,9 @@ class GroupManagePersistenceTest extends PersistenceTestSupport {
 
     @Autowired
     private GroupManageRepository groupManageRepository;
+
+    @Autowired
+    private UserRepository userRepository;
 
     @Test
     @DisplayName("그룹 정보 CRUD 테스트")
@@ -74,5 +83,30 @@ class GroupManagePersistenceTest extends PersistenceTestSupport {
         // then
         assertThat(result.getContent()).isNotEmpty();
         assertThat(result.getContent().get(0).getGroupNm()).contains("검색");
+    }
+
+    @ParameterizedTest
+    @CsvSource({"팀, 3", "팀%, 3", "없는이름, 0"})
+    @DisplayName("검색 총건수는 접두어·LIKE 의미를 유지하고 그룹 엔티티를 적재하지 않는다")
+    void countSearchMatchesWithoutLoadingGroups(String keyword, int expectedCount) {
+        String[] names = {"팀A", "팀B", "타팀A", "팀%기호", "다른그룹"};
+        for (int i = 0; i < names.length; i++) {
+            groupManageRepository.save(GroupManage.builder()
+                    .groupId("COUNT_0" + i)
+                    .groupNm(names[i])
+                    .build());
+        }
+        groupManageRepository.flush();
+        entityManager.clear();
+        BaseSearchDto search = new BaseSearchDto();
+        search.setSearchKeyword(keyword);
+        GroupManageService service = new GroupManageService(groupManageRepository, userRepository);
+
+        int count = service.selectGroupListTotCnt(search);
+
+        assertThat(count).isEqualTo(expectedCount);
+        assertThat(entityManager.unwrap(Session.class).getStatistics().getEntityCount())
+                .as("총건수 조회가 일치하는 그룹 전체를 영속성 컨텍스트에 적재해서는 안 된다")
+                .isZero();
     }
 }

@@ -13,6 +13,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
@@ -42,9 +43,12 @@ public class AdministCodeService {
                         CodeErrorCode.CODE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
     }
 
-    @Transactional
+    // All hierarchy writers share one boundary, including create/delete, for depth and reference checks.
+    // READ_COMMITTED ensures that reads after a lock wait see the preceding writer's commit.
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public String createAdministCode(AdministCodeDto dto, String userId) {
         SecurityUtil.assertPermission("ADMCODE_CREATE");
+        administCodeRepository.lockHierarchy();
 
         // [2026-09-17] 등록은 신규 전용이다. 이 엔티티는 클라이언트가 보낸 문자열 PK 를 쓰고
         //   @Version 도 Persistable 도 없어 save() 가 persist 가 아니라 merge 로 간다 — 이미 있는
@@ -68,9 +72,10 @@ public class AdministCodeService {
         return entity.getAdmdstCd();
     }
 
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void updateAdministCode(String code, AdministCodeDto dto, String userId) {
         SecurityUtil.assertPermission("ADMCODE_UPDATE");
+        administCodeRepository.lockHierarchy();
 
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "행정구역 코드를 찾을 수 없습니다: " + code));
@@ -92,9 +97,10 @@ public class AdministCodeService {
      *       {@code RESOURCE_IN_USE} 를 반환한다.</li>
      * </ol>
      */
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public void deleteAdministCode(String code) {
         SecurityUtil.assertPermission("ADMCODE_DELETE");
+        administCodeRepository.lockHierarchy();
 
         AdministCode entity = administCodeRepository.findById(code)
                 .orElseThrow(() -> new BusinessException(

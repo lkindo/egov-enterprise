@@ -14,7 +14,7 @@ GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준
 
 ### 2026-10-29 재실측 차분
 
-같은 공유 개발 DB에서 아래 **기존 SQL 두 개를 변경 없이** 읽기 전용으로 재실행했다(2026-10-29 10:21 UTC). 사전 규모와 대소문자 비교는 메타 테이블만 추가 조회했다(10:22 UTC). 업무 행 데이터·행 수·변환 가능한 값의 범위는 조회하지 않았다. 현재 수치가 과거 상세표의 처분을 다시 승인하거나 데이터 정정의 안전성을 증명하는 것은 아니다.
+같은 공유 개발 DB에서 아래 **기존 SQL 두 개를 변경 없이** 읽기 전용으로 재실행했다(2026-10-29 10:21 UTC). 사전 규모와 대소문자 비교는 메타 테이블만 추가 조회했다(10:22 UTC). 이 재실행에서는 업무 행 데이터·행 수·변환 가능한 값의 범위를 조회하지 않았다(아래 후속 절의 집계는 별도). 현재 수치가 과거 상세표의 처분을 다시 승인하거나 데이터 정정의 안전성을 증명하는 것은 아니다.
 
 | 항목 | 2026-10-18 상세표 | 2026-10-29 재실측 |
 |---|---:|---:|
@@ -36,6 +36,31 @@ GAP-STD-001(`.agent/memory/known-gaps.md`)의 다음 행동("컬럼마다 표준
 | `tb_cms_conts_file.atch_file_seq` | 첨부파일순서·순서N10(`NUMERIC(10)`) / `integer` | 같은 숫자 종류의 새 사용처다. [V2_137](../../api-server/src/main/resources/db/migration/V2_137__add_cms_content_pages.sql)은 참조 대상 `tb_file_detail.atch_file_seq`와 같은 타입으로 FK를 구성한다. 해당 컬럼만 사전 타입으로 바꾸지 않고 참조 양쪽과 표준 도메인을 함께 판단한다. |
 
 과거 표 2의 타입 차이 26개는 모두 남아 있고 위 두 사용처가 추가됐다. 다른 종류인 6개는 `tb_bbs_item.ans_lv`, `tb_dept_task_info.prrty_rnk`, `tb_popup_info.popup_vrtc_sz`·`popup_wdth_sz`, `tb_sys_log.prcs_tm`, `tb_web_log.prcs_tm`으로 기존과 같다. 이 컬럼들은 이미 사전 용어가 있으므로 `nonStandardTarget`으로 확정해 이관 차단을 우회할 수 없다([검증기](../../migration-tool/src/main/java/nuri/migration/validate/ledger/TermLedgerValidator.java), [부정 시험](../../migration-tool/src/test/java/nuri/migration/validate/ledger/TermLedgerValidatorTest.java)). 이번 변경은 문서 정합만 수행하며 용어 등록·도메인 수정·DDL·DML을 하지 않는다.
+
+### 2026-10-29 후속 의미·타입 처분 — 미승인 후보
+
+아래 판단은 **표 2의 우선순위·팝업 크기 3개에 대한 `varchar → integer` 제안과, `ans_lv`를 답변 깊이로 단정한 이름 정정 제안을 대체한다.** 표 1·표 2와 과거 집계는 당시 후보 기록으로 보존한다. 이번 후속 검토도 사전 등록·값 정정·DDL의 승인이 아니며, 기존 이관 차단을 유지한다.
+
+같은 공유 개발 DB의 메타를 2026-10-29 12:46 UTC에 다시 조회했다. `PRRTY_RNK`는 수N10, 팝업 크기 두 용어는 수N7이며, `ANS_LV`를 포함한 레벨 용어 13개는 번호V10이다. `ANS_DPTH` 용어와 밀리초 단어·용어는 조회 범위에서 없었다. 기존 소요시간(`REQ_HR`)·작업소요시간(`JOB_REQ_HR`)·응답시간(`RSPNS_HR`)·총소요시간(`TREQ_HR`)은 모두 시분초C6이므로 숫자 ms의 대체 용어로 바로 쓸 수 없다. INTEGER 도메인은 없고 BIGINT 도메인은 일련번호N19뿐이다.
+
+추가 데이터 확인은 원시 업무 행 대신 `COUNT(*)`, NULL·음수·비0 건수, 최소·최대의 읽기 전용 집계로 했다. 각 행은 아래 시점의 별도 조회 결과이며 하나의 트랜잭션 스냅샷이 아니다. 카탈로그의 추정 행 수를 실제 행 수로 쓰지 않았다.
+
+| 대상 | 조회 시각(2026-10-29 UTC) | 관측 결과 | 해석 한계 |
+|---|---|---|---|
+| `tb_dept_task_info`, `tb_popup_info` | 13:05:14 | 각각 실제 0행 | 이 환경·시점의 관측이다. 이후 쓰기·다른 기관 데이터·API 호환·DDL 잠금의 안전성을 보장하지 않는다. |
+| `tb_bbs_item.ans_lv` | 13:01:41 | 378행 모두 0, NULL·음수·비0은 0건. 상위 글 번호가 있는 행도 0건 | 답글 표본이 없어 답글의 레벨 값은 관측하지 못했다. 현재 데이터는 답변 깊이의 의미를 증명하지 않으며 다른 환경의 비0 값도 배제하지 못한다. |
+| `tb_sys_log.prcs_tm` | 13:01:42 | 71행, 0~169ms, NULL·음수 0건 | 값 범위와 ms 단위가 맞는 현재 관측이며 향후 최대값이나 보존량의 상한이 아니다. |
+| `tb_web_log.prcs_tm` | 13:01:42 | 36,473행, 0~2,750ms, NULL·음수 0건 | 과거 표 2의 35,518행을 대체하는 현재 관측이며 이후 쓰기는 계속 증가할 수 있다. |
+
+**1. 우선순위·팝업 크기 — 사전 유지, 물리 NUMERIC 정합 후보.** `prrty_rnk`는 `NUMERIC(10,0)`, `popup_wdth_sz`·`popup_vrtc_sz`는 `NUMERIC(7,0)`를 후보로 둔다. `integer`로만 바꾸면 이관의 같은 숫자 종류 판정은 통과해도 사전의 타입·정밀도와 정확히 같아지지는 않는다. [BoardMaster](../../business-app/src/main/java/nuri/business/domain/board/BoardMaster.java)는 같은 수N10·수N7을 `BigInteger`와 precision/scale로 매핑하는 선례다. 이 선례를 쓰더라도 Entity·API 표현과 실제 PostgreSQL 매핑 검증이 필요하다.
+
+우선순위의 [화면 선택지](../../frontend/src/components/business/deptJob/DeptJobForm.tsx)는 1·2·3이지만 [요청 DTO](../../business-core/src/main/java/nuri/business/service/deptjob/dto/DeptJobDto.java)는 길이 12만 검사한다. 팝업 [폼](../../frontend/src/app/admin/system/banner/PopupAssetsPanel.tsx)은 숫자로 변환하되 정수만으로 제한하지 않고, [사용자 화면](../../frontend/src/app/components/dashboard/PopupManager.tsx)은 정수로 읽어 100~4,000px로 제한한다. 따라서 **API 문자열 호환 여부, 허용 범위·우선순위 값 집합, NULL/빈 값·선행 0·소수·범위 초과 값 처분을 먼저 승인**해야 한다. 기존 값을 임의 반올림·절단하거나 빈 값을 NULL로 합치지 않는다. 팝업 위치 2개를 이 3개 타입 정정에 자동 포함하지 않는다.
+
+**2. 처리 소요시간 로그 — bigint/ms 유지, 새 표준 승인 후 이름 정정 후보.** [요청 감사 인터셉터](../../api-server/src/main/java/nuri/api/interceptor/OperationalAuditInterceptor.java)의 단조 시간 차이에서 얻은 `durationMs`를 [시스템 로그](../../business-core/src/main/java/nuri/business/service/log/SystemErrorLogListener.java)와 [웹 로그](../../business-core/src/main/java/nuri/business/service/log/WebAuditLogListener.java)가 그대로 저장한다. 현재 bigint 값과 ms 단위를 보존하며, 기존 `PRCS_TM`의 처리시각 뜻을 바꾸거나 값을 HHmmss로 변환하지 않는다. **처리 소요시간(ms)의 새 단어·용어·숫자 수량 도메인 승인이 물리명 변경보다 먼저**다. 일련번호N19를 소요시간 수량에 재사용하지 않으며 새 명칭·약어도 임의로 확정하지 않는다. 기존 DTO의 String/Long 표현을 유지하는 명시 매핑은 가능하지만 외부 SQL·내보내기 소비와 계속되는 로그 쓰기의 이행 계획을 확인해야 한다.
+
+**3. 답변 레벨 — 의미 결정 전 보류.** [Board](../../business-app/src/main/java/nuri/business/domain/board/Board.java)는 기본값 0을 두고 [BoardService.replyPost](../../business-app/src/main/java/nuri/business/service/board/BoardService.java)도 현재 0을 쓴다. 이는 **현재 앱 쓰기 경로의 사실**이고, 위 378행 집계는 **해당 환경·시점 데이터의 사실**이다. 둘 다 `ans_lv`가 계산된 답변 깊이라는 근거는 아니다. 따라서 표 2의 `ANS_DPTH` 이름 정정 제안은 보류로 대체한다. 기존 응답 필드를 보존할지 실제 깊이 기능을 도입할지 제품이 먼저 정하고, 후자라면 새 용어·도메인과 기존 값의 의미·재계산을 별도로 승인한다. 공통 `ANS_LV` 사전 도메인 변경이나 컬럼 삭제로 처리하지 않는다.
+
+등록·물리 변경을 진행할 때는 그 시점의 데이터 범위·참조·동시 쓰기를 다시 확인하고, [DB 헌법 제7조](../../.agent/knowledge/db-standard-constitution/artifacts/constitution.md)에 따른 Expand → Sync → Redirect → Contract와 승인·관측·복구 조건을 따로 설계한다. 과거 0행 관측이나 다른 6개를 다룬 ADR-0014는 이번 6개 변경의 승인이 아니다.
 
 ### 실측 쿼리
 

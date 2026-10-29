@@ -133,14 +133,13 @@ class GroupManageServiceTest {
         // Given
         BaseSearchDto searchVO = new BaseSearchDto();
         searchVO.setSearchKeyword("test");
-        GroupManage entity = GroupManage.builder().groupId("G1").groupNm("Group1").build();
-        given(groupManageRepository.searchByKeyword(any(), any(Pageable.class))).willReturn(new PageImpl<>(List.of(entity)));
+        given(groupManageRepository.countByKeyword("test")).willReturn(5L);
 
         // When
         int result = groupManageService.selectGroupListTotCnt(searchVO);
 
         // Then
-        assertThat(result).isEqualTo(1);
+        assertThat(result).isEqualTo(5);
     }
 
     @Test
