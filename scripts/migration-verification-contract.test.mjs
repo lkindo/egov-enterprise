@@ -1,8 +1,8 @@
 import assert from 'node:assert/strict';
-import { execFileSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import test from 'node:test';
 import { runInNewContext } from 'node:vm';
 
@@ -17,6 +17,7 @@ import {
   verifyMigrationShardResults,
 } from './migration-test-shard.mjs';
 import { parseWorkflowJobs, reviewedActionPin } from './required-checks-contract.mjs';
+import { verifySourceMigrationProfileProvenance } from './migration-profile-provenance.mjs';
 
 const runner = readFileSync(new URL('./verify.mjs', import.meta.url), 'utf8').replace(/\r\n/g, '\n');
 // [2026-09-22] workflow 도 같은 정규화를 받는다. `.gitattributes` 의 `* text=auto` 와 Windows
@@ -30,6 +31,7 @@ const moduleTasks = ':migration-tool:compileJava :migration-tool:compileTestJava
 const shardedModuleTasks = ':migration-tool:compileJava :migration-tool:bootJar jacocoMigrationCoverageVerification -PmigrationShardExecutionRoot=build/migration-shards';
 const gradleOptions = '--no-daemon --warning-mode fail --console=plain -Dfile.encoding=UTF-8';
 const standaloneProduct = existsSync(new URL('../migration-product-lock.json', import.meta.url));
+const provenanceRoot = fileURLToPath(new URL('../', import.meta.url));
 
 
 const childOnlyTests = [
@@ -318,8 +320,13 @@ test('migration duration profile exactly covers source tests and produces three 
     assert.deepEqual(selected, shard.classes);
   }
   assert.throws(() => parseShard('1/2', 3), /invalid migration shard/);
-  execFileSync('git', ['cat-file', '-e', `${profile.source.commit}^{commit}`]);
-  execFileSync('git', ['merge-base', '--is-ancestor', profile.source.commit, 'HEAD']);
+});
+
+test('migration duration profile provenance matches its verification boundary', () => {
+  const profile = loadMigrationDurationProfile();
+  // Export replaces this exact call and its import after producer Git verification.
+  // A product lock in the producer checkout cannot select the exported boundary.
+  verifySourceMigrationProfileProvenance(profile, provenanceRoot);
 });
 
 test('migration shard profile and evidence drift are reproducible reds', (t) => {

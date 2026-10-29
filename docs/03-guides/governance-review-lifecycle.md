@@ -132,6 +132,8 @@ npm run migration:export -- --output build/migration-product/my-institution
 
 출력은 `build/migration-product/` 안의 새 디렉터리여야 한다. 생성물의 Gradle settings는 migration-tool 하나만 포함하며 독립 package·hook·workflow와 새 `pending` 원장을 제공한다. 기존 기관 승인이나 온라인 공용 메모리를 복사하지 않는다. 생성 후 해당 디렉터리에서 `npm run verify`, `npm run test:operational-contracts`, `npm run review:status`를 실행한다. Node·JDK·Docker는 필요하지만 프런트 설치와 npm 의존성 설치는 필요하지 않다. 새 저장소의 required check와 hook 활성화는 도입 기관이 연결해야 한다.
 
+생성기는 출력 전에 생산 저장소의 Git에서 duration profile의 실측 커밋이 현재 HEAD의 조상인지 검증한다. 검증한 커밋·run ID·실측 시각·생산 HEAD와 정규화한 profile의 SHA-256은 `migration-product-lock.json`에 결속하고, 생성 계약은 그 기록의 digest와 profile을 대조한다. 따라서 생성물을 원본 이력이 없는 새 저장소로 옮겨도 자체 계약을 실행할 수 있다. 원본 저장소의 검증은 계속 Git 이력을 요구하며, lock 파일을 놓아 우회할 수 없다. 생성물의 검증은 생산 시점의 검증 기록과 파일 무결성을 확인하는 것으로, 외부 발행자 서명이나 도입 저장소에서 upstream 조상 관계를 새로 증명하는 것은 아니다. 계약·lock·profile을 함께 바꿀 권한이 있는 작성자까지 인증하지 않는다.
+
 기관 이관 원장은 [migration-adoption-review.json](../../config/governance/migration-adoption-review.json)이다. 제품은 `migration-tool`, 프로필은 `null`이며 온라인 원장과 별도로 `pending`에서 시작한다. 환경·소유자·UTC 유효기간·scope digest·근거 파일 계약은 온라인과 같다.
 
 | control | 검토 내용 |

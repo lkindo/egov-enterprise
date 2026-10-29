@@ -41,11 +41,11 @@ public interface CommentRepository extends JpaRepository<Comment, Long> {
     long countByBbsIdAndPstSnAndUseYn(String bbsId, Long pstSn, String useYn);
 
     /**
-     * 논리 삭제 전이를 직렬화한다.
+     * 본문 수정과 논리 삭제를 직렬화한다.
      *
      * <p>활성 행만 잠근다. 잠금 대기 중 선행 트랜잭션이 {@code useYn=N}으로 바꾸면 후행
      * 쿼리는 빈 결과가 되어 기존 {@code COMMENT_NOT_FOUND} 의미를 유지하고, 감소 이벤트도
-     * 한 번만 발행된다.
+     * 한 번만 발행된다. 수정도 같은 잠금을 사용해 삭제 전 스냅샷으로 활성 상태를 되살리지 않는다.
      */
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT c FROM Comment c WHERE c.ansSn = :commentNo AND c.useYn = 'Y'")

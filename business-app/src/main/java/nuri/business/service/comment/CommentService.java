@@ -116,7 +116,7 @@ public class CommentService {
     @Transactional
     public void updateComment(Long commentNo, String content) {
         requireContent(content);
-        Comment comment = commentRepository.findById(commentNo)
+        Comment comment = commentRepository.findByIdForUpdate(commentNo)
                 .filter(c -> "Y".equals(c.getUseYn()))
                 .orElseThrow(() -> new BusinessException(CommentErrorCode.COMMENT_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(comment.getFrstRgtrId(), "COMMENT_UPDATE_ALL"); // [IDOR] 작성자/관리자만 수정

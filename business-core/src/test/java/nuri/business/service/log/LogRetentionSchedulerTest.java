@@ -12,6 +12,10 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.catchThrowable;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
@@ -76,6 +80,69 @@ class LogRetentionSchedulerTest {
         verify(loginLogRepository).deleteOldLogs(12);
         verify(userLogRepository).deleteOldLogs(13);
         verify(privacyLogRepository).deleteOldLogs(24);
+    }
+
+    @Test
+    @DisplayName("첫 테이블 정리가 실패해도 나머지 정리를 시도한 뒤 실패를 전달한다")
+    void firstFailureDoesNotSkipRemainingRetentionPolicies() {
+        setMonths(12, 24, 12, 13, 24);
+        ReflectionTestUtils.setField(scheduler, "sensitiveMonths", 24);
+        var webFailure = new IllegalStateException("web retention unavailable");
+        doThrow(webFailure).when(webLogRepository).deleteOldLogs(12);
+
+        Throwable failure = catchThrowable(scheduler::purgeExpiredLogs);
+
+        verify(webLogRepository).deleteOldLogs(12);
+        verify(sysLogRepository).deleteOldLogs(24);
+        verify(loginLogRepository).deleteOldLogs(12);
+        verify(userLogRepository).deleteOldLogs(13);
+        verify(privacyLogRepository).deleteOldLogs(24);
+        verify(sensitiveAuditLogRepository).deleteBefore(any());
+        assertThat(failure).isInstanceOf(RuntimeException.class);
+        assertThat(failure.getSuppressed()).containsExactly(webFailure);
+    }
+
+    @Test
+    @DisplayName("여러 테이블의 정리 실패를 마지막 민감 감사 정리까지 모아 전달한다")
+    void multipleFailuresArePreservedAfterEveryTableIsAttempted() {
+        setMonths(24, 24, 24, 24, 24);
+        ReflectionTestUtils.setField(scheduler, "sensitiveMonths", 24);
+        var webFailure = new IllegalStateException("web retention unavailable");
+        var privacyFailure = new IllegalArgumentException("privacy retention unavailable");
+        var sensitiveFailure = new IllegalStateException("sensitive retention unavailable");
+        doThrow(webFailure).when(webLogRepository).deleteOldLogs(24);
+        doThrow(privacyFailure).when(privacyLogRepository).deleteOldLogs(24);
+        doThrow(sensitiveFailure).when(sensitiveAuditLogRepository).deleteBefore(any());
+
+        Throwable failure = catchThrowable(scheduler::purgeExpiredLogs);
+
+        verify(webLogRepository).deleteOldLogs(24);
+        verify(sysLogRepository).deleteOldLogs(24);
+        verify(loginLogRepository).deleteOldLogs(24);
+        verify(userLogRepository).deleteOldLogs(24);
+        verify(privacyLogRepository).deleteOldLogs(24);
+        verify(sensitiveAuditLogRepository).deleteBefore(any());
+        assertThat(failure).isInstanceOf(RuntimeException.class);
+        assertThat(failure.getSuppressed()).containsExactly(webFailure, privacyFailure, sensitiveFailure);
+    }
+
+    @Test
+    @DisplayName("다른 테이블이 실패해도 12개월·24개월 보존 하한은 그대로 지킨다")
+    void failureDoesNotBypassRetentionMinimums() {
+        setMonths(12, 11, 0, -1, 11);
+        ReflectionTestUtils.setField(scheduler, "sensitiveMonths", 23);
+        var webFailure = new IllegalStateException("web retention unavailable");
+        doThrow(webFailure).when(webLogRepository).deleteOldLogs(12);
+
+        Throwable failure = catchThrowable(scheduler::purgeExpiredLogs);
+
+        verify(sysLogRepository, never()).deleteOldLogs(org.mockito.ArgumentMatchers.anyInt());
+        verify(loginLogRepository, never()).deleteOldLogs(org.mockito.ArgumentMatchers.anyInt());
+        verify(userLogRepository, never()).deleteOldLogs(org.mockito.ArgumentMatchers.anyInt());
+        verify(privacyLogRepository, never()).deleteOldLogs(org.mockito.ArgumentMatchers.anyInt());
+        verify(sensitiveAuditLogRepository, never()).deleteBefore(any());
+        assertThat(failure).isInstanceOf(RuntimeException.class);
+        assertThat(failure.getSuppressed()).containsExactly(webFailure);
     }
 
     /**
