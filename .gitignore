@@ -24,12 +24,22 @@
 **/*.launch
 
 # ----- Build & Dependencies -----
+# [2026-10-30] 흔한 낱말 폴더(bin·logs·upload 등)는 모든 깊이(**/X/)로 무시하지 않고 실제 출력 위치에만 둔다.
+#   앵커 없는 패턴은 같은 이름의 소스 폴더를 조용히 빼 로컬은 green, CI 체크아웃에만 파일이 없었다
+#   (2026-03 관리자 로그 화면, 2026-09-27 frontend/src/lib/upload). 모든 깊이 패턴은 도구 고유 이름만 쓰고,
+#   scripts/gitignore-source-roots.test.mjs 가 소스 루트 탐침(무시되면 붉다)과 실제 출력 위치(드러나면 붉다)를 본다.
+#   작업 디렉터리 기준 출력(bin·logs·storage/uploads)은 루트와 Gradle 모듈마다 둔다 — 새 모듈을 더하면 그 줄도 더한다.
+#   Maven target/·vendor/·export/·dist/·tomcat/·analysis/ 처럼 이 저장소에서 생기지 않는 출력 이름은 두지 않는다.
 **/build/
-**/bin/
-**/target/
+# Eclipse·VS Code Java(JDT)의 컴파일 출력 — 루트 프로젝트와 Gradle 모듈 바로 아래에만 생긴다.
+/bin/
+/foundation/bin/
+/business-core/bin/
+/business-app/bin/
+/api-server/bin/
+/migration-tool/bin/
 **/.gradle/
 **/.mvn/
-**/vendor/
 **/*.class
 **/*.jar
 # Gradle wrapper jar은 반드시 VCS에 포함되어야 ./gradlew 부트스트랩이 가능하다 (AGENTS.md 범위별 검증)
@@ -44,13 +54,13 @@
 **/src/main/generated/
 **/node_modules/
 **/.npm/
+# pnpm 저장소(store-dir) — 종전에는 files 폴더 규칙이 안쪽 v3/files 만 우연히 가렸다.
+**/.pnpm-store/
 **/npm-debug.log*
 **/yarn-debug.log*
 **/yarn-error.log*
 **/pnpm-debug.log*
 **/.next/
-**/dist/
-**/export/
 **/storybook-static/
 **/playwright/.auth/
 **/playwright-reports/
@@ -89,8 +99,13 @@
 
 # ----- Logs & Temp Files -----
 **/*.log
-**/logs/
-!**/src/**/logs/
+# 앱 로그(logs/backend.log 와 회전 .gz)는 작업 디렉터리 기준이다 — 소스의 logs 폴더(관리자 로그 화면)는 가리지 않는다.
+/logs/
+/foundation/logs/
+/business-core/logs/
+/business-app/logs/
+/api-server/logs/
+/migration-tool/logs/
 **/*_log.txt
 **/*_output.txt
 **/boot_error*
@@ -115,7 +130,6 @@
 # ----- Tools & Infrastructure -----
 **/docker-data/
 **/apache-tomcat-*/
-**/tomcat/
 **/prisma/migrations/
 **/prisma/dev.db
 **/prisma/dev.db-journal
@@ -130,9 +144,8 @@ test/load-tests/results/
 **/.playwright/
 **/jacoco/
 **/*.exec
-**/coverage/
+# frontend 의 coverage·out 은 frontend/.gitignore 가 그 위치에 앵커해 가린다.
 **/coverage-report/
-**/out/
 **/.vercel/
 **/.turbo/
 **/.server/
@@ -179,9 +192,13 @@ test/load-tests/results/
 !/.codex/hooks.json
 
 # ----- Upload/Storage -----
-**/upload/
-**/uploads/
-**/files/
+# 첨부 저장소(file.upload.path 기본값 ./storage/uploads)는 작업 디렉터리 기준이다 — 루트와 Gradle 모듈(시험 실행)에서 생긴다.
+/storage/uploads/
+/foundation/storage/uploads/
+/business-core/storage/uploads/
+/business-app/storage/uploads/
+/api-server/storage/uploads/
+/migration-tool/storage/uploads/
 # storage/ - Active project directory
 
 # ----- Project Specific -----
@@ -208,7 +225,6 @@ module-knowledge/
 .worktrees/
 
 # ----- Analysis & Reports -----
-**/analysis/
 **/lighthouse-reports/
 **/bundle-analysis/
 **/next-build-cache/
