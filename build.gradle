@@ -232,6 +232,17 @@ subprojects { subproject ->
     ext['jackson-bom.version'] = '3.1.7'
     ext['jackson-2-bom.version'] = '2.21.7'
 
+    // [2026-10-29] opentelemetry-api GHSA-ccrj-gw8r-854m(medium, CVE-2026-118259) — W3C tracestate 파싱의
+    //   정규식 역추적으로 CPU 가 제곱으로 는다(<=1.66.0, 수정 1.67.0). 4.1.2 BOM 은 1.62.0 을 주고 4.1.x 는
+    //   OTel minor 를 올리지 않는다(1.67.0 은 4.2.0-RC1 부터). 기본 설정에서 W3C 추출이 켜져 있고 edge·Next 가
+    //   헤더를 그대로 넘겨 인증 전에 도달한다. micrometer-tracing-bridge-otel 1.7.2 는 1.62.0 으로 빌드돼 minor
+    //   도약이다 — 1.63~1.67 의 BREAKING 은 incubator·alpha·zipkin 과 이 앱이 쓰지 않는 OTLP sender SPI 속성명·
+    //   autoconfigure 속성에 있고, Boot 4.1.2·bridge·registry-otlp 가 참조하는 심볼은 1.67.0 에 모두 남는다.
+    //   1.67.0 은 깨진 baggage 항목마다 WARNING 을 남겨 baggage 를 끈다(application.yml management.tracing.baggage).
+    //   semconv·proto 는 이 BOM 밖이라 그대로다. 억제 규칙(config/dependency-check/suppressions.xml)도 같은 버전이다.
+    //   제거 조건: Boot BOM 이 opentelemetry 1.67.0 이상을 관리하면(Boot 4.2 전환 때 예상).
+    ext['opentelemetry.version'] = '1.67.0'
+
     //   [2026-08-07 CVE 상환 2차] 열린 Dependabot 알림 84건을 **실제 해석 버전**으로 재판정한 결과
     //   조치가 필요한 maven 항목은 12건이었다(나머지는 §아래 census 참조). BOM 이 관리하는 3종을
     //   BOM 속성으로 상향한다. 근거는 알림의 first_patched_version 과 로컬 해석값의 대조이며,
