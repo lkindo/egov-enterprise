@@ -17,7 +17,7 @@
 1. PostgreSQL 마이그레이션이 스키마의 유일한 정본이다. 기준 PostgreSQL 에서 구성한 최종 스키마와 재적용 DB 의 행을 벤더 중립 모델로 옮겨 어댑터가 DDL·시드를 만든다. 벤더별 마이그레이션 체인·Hibernate DDL 생성·외부 변환기를 두지 않는다.
 2. 벤더 id 는 이관 도구와 같은 7종이다. 벤더별 적합성 증거가 있는 벤더만 화면에서 고를 수 있고, 나머지는 사유와 함께 비활성으로 보인다.
 3. 지원 범위는 Oracle·MariaDB·MySQL·SQL Server 를 정식 목표로, CUBRID 를 저하를 표시한 제한 지원으로, Tibero 를 라이선스 확보 뒤 측정으로 둔다. 최소 버전은 Oracle 19c, MariaDB 11.4, MySQL 8.4, SQL Server 2022 다.
-4. 앱 SQL 은 원본에서 먼저 정리한다. Hibernate 가 벤더 문법을 만들 수 있으면 HQL 로 옮기고, 벤더마다 달라야 하는 일만 `VendorSqlDialect` 포트 뒤로 보낸다. PostgreSQL 구현의 문장은 포트 전과 같다. 단위 시험의 H2 도 이 구현을 쓴다. 구현은 `app.database.vendor` 로 고르고 모르는 값은 기동을 멈춘다.
+4. 앱 SQL 은 원본에서 먼저 정리한다. Hibernate 가 벤더 문법을 만들 수 있으면 HQL 로 옮기고, 벤더마다 달라야 하는 일만 `VendorSqlDialect` 포트 뒤로 보낸다. PostgreSQL 구현의 문장은 포트 전과 같고, 다른 곳은 둘이다. 잠금 대기 상한은 밀리초로 쓴다. 작업 선점은 Hibernate 가 `FOR NO KEY UPDATE SKIP LOCKED` 로 만드는데, `tb_sys_job` 을 가리키는 FK 가 없어 `FOR UPDATE` 와 결과가 같고 시험이 FK 부재를 묶는다. 단위 시험의 H2 도 이 구현을 쓴다. 구현은 `app.database.vendor` 로 고르고 모르는 값은 기동을 멈춘다.
 5. 포트 밖의 PostgreSQL 전용 구문은 `VendorSqlPortabilityLinterTest` 가 막는다. 남는 위치는 벤더 SQL 원장에 처리 방식·대응 시험·넘길 단계와 규칙별 개수로 동결한다. 게이트는 구문만 막으므로 이식 판정은 벤더 DB 실행으로 한다.
 6. 번역은 문장 성공이 아니라 PostgreSQL 차등 시험으로 판정한다. 같은 값을 넣어 받아들이는 값이 같아야 한다. 대체 구현이 없으면 벤더별 저하 목록에 올리고 표시해야 인증된다.
 7. 감사 원장 삭제 허가는 PostgreSQL 밖에서 트랜잭션 범위 허가 표로 통일한다. 트리거가 같은 트랜잭션의 미커밋 행만 보므로 트랜잭션 범위가 되고 롤백하면 허가도 사라진다. SQL Server 는 조회에 `WITH (READCOMMITTED)` 를 붙인다.

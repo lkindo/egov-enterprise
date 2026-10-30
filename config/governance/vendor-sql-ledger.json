@@ -80,7 +80,7 @@
     {
       "path": "business-core/src/main/java/nuri/business/domain/system/job/DurableJobRepository.java",
       "treatment": "hibernate",
-      "reason": "페이징과 SKIP LOCKED 를 Hibernate 가 벤더 문법으로 만든다",
+      "reason": "페이징과 SKIP LOCKED 를 Hibernate 가 벤더 문법으로 만든다. PostgreSQL 에서는 FOR NO KEY UPDATE 로 나가지만 이 표를 가리키는 FK 가 없어 FOR UPDATE 와 결과가 같고, 시험이 FK 부재를 묶는다",
       "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
@@ -93,13 +93,13 @@
       "path": "business-app/src/main/java/nuri/business/domain/board/BoardRepository.java",
       "treatment": "hibernate",
       "reason": "일자 집계는 HQL, 고정 해제는 NULL 을 문장에 적어 CAST 를 없앴다",
-      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/BoardOperationsPostgresIntegrationTest.java"
     },
     {
       "path": "business-app/src/main/java/nuri/business/domain/board/DtaUseStatsRepository.java",
       "treatment": "hibernate",
       "reason": "HQL format 으로 일자 문자열을 만든다",
-      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/BoardOperationsPostgresIntegrationTest.java"
     },
     {
       "path": "business-core/src/main/java/nuri/business/service/file/AttachmentSource.java",
@@ -123,7 +123,7 @@
       "path": "business-app/src/main/java/nuri/business/domain/survey/SurveyResultRepository.java",
       "treatment": "portable-rewrite",
       "reason": "빈 검색어가 NULL 인 Oracle 에서도 전체를 돌려주도록 IS NULL 가지를 더했다",
-      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java"
     },
     {
       "path": "business-app/src/main/java/nuri/business/service/survey/OnlinePollService.java",
@@ -218,6 +218,15 @@
       "stage": 3,
       "reason": "deleteAllById 가 지연 FK 에 기댄다. 지연 FK 가 없는 벤더 구현 때 자식부터 지우게 고친다",
       "test": "business-core/src/test/java/nuri/business/service/menu/MenuServiceTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/core/softdelete/SoftDeleteAspect.java",
+      "treatment": "portable-as-is",
+      "reason": "AspectJ 포인트컷의 논리 OR 이다. SQL 이 아니다",
+      "test": "business-app/src/test/java/nuri/business/core/softdelete/SoftDeleteDynamicTest.java",
+      "frozen": {
+        "string-concat": 2
+      }
     }
   ]
 }

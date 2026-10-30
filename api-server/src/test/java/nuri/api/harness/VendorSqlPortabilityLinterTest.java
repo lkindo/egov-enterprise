@@ -32,7 +32,8 @@ import tools.jackson.databind.json.JsonMapper;
  *
  * <p>[생성물] 기능을 뺀 생성물에서는 남은 소스의 항목만 대조한다({@link ReusableHarnessProfile#retainsSource}).
  *
- * <p>[한계] 이 게이트는 구문만 막는다. 이식 판정은 벤더 DB 실행으로 한다. 같은 구문이라도 문자열을 쪼개 이어 붙이면 보지 못한다.
+ * <p>[한계] 이 게이트는 구문만 막는다. 이식 판정은 벤더 DB 실행으로 한다. 같은 구문이라도 문자열을 쪼개 이어 붙이면 보지 못하고,
+ * 원장의 대응 시험은 파일이 있는지만 본다. 그 시험이 그 코드를 실행하는지는 사람이 판정한다.
  */
 @Tag("governance-harness")
 class VendorSqlPortabilityLinterTest {
@@ -51,8 +52,10 @@ class VendorSqlPortabilityLinterTest {
     }
 
     private static final List<Rule> RULES = List.of(
-            Rule.of("cast-operator", "[a-z_)']::(text|int|integer|bigint|varchar|numeric|boolean|jsonb|timestamp|date|regclass|regtype)\\b"),
-            Rule.of("pg-function", "\\bpg_[a-z_]+|\\bset_config\\s*\\(|\\bto_regclass\\s*\\(|\\bto_regprocedure\\s*\\("),
+            Rule.of("cast-operator", "(?i)[\\w)'\"?\\]]\\s*::\\s*(text|int|int2|int4|int8|integer|smallint|bigint|bool|boolean"
+                    + "|varchar|char|bpchar|numeric|decimal|real|float4|float8|double|json|jsonb|uuid|inet|bytea|interval"
+                    + "|date|time|timestamp|timestamptz|regclass|regtype)\\b"),
+            Rule.of("pg-function", "(?i)\\bpg_[a-z_]+|\\bset_config\\s*\\(|\\bto_regclass\\s*\\(|\\bto_regprocedure\\s*\\("),
             Rule.of("on-conflict", "(?i)\\bON\\s+CONFLICT\\b"),
             Rule.of("skip-locked", "(?i)\\bSKIP\\s+LOCKED\\b"),
             Rule.of("no-key-update", "(?i)\\bFOR\\s+NO\\s+KEY\\s+UPDATE\\b"),
@@ -64,14 +67,16 @@ class VendorSqlPortabilityLinterTest {
             Rule.of("select-exists", "(?i)\\bSELECT\\s+EXISTS\\b"),
             Rule.of("limit", "(?i)\\bLIMIT\\s+[?:\\d]"),
             Rule.of("nulls-order", "(?i)\\bNULLS\\s+(FIRST|LAST)\\b"),
-            Rule.of("string-concat", "'\\s*\\|\\||\\|\\|\\s*['?:]"),
+            Rule.of("string-concat", "\\|\\|"),
             Rule.of("vendor-cast", "(?i)\\bCAST\\s*\\([^)]*\\bAS\\s+(varchar|timestamp)\\b"),
-            Rule.of("upper-table", "\\b(?:FROM|INTO|UPDATE|JOIN)\\s+TB_[A-Z_]+"),
+            Rule.of("upper-table", "\\b(?i:FROM|INTO|UPDATE|JOIN|TABLE)\\s+TB_[A-Z_]+"),
             Rule.of("empty-string-compare", "(?<![A-Za-z0-9_ ]IS NULL OR )(?<!\\w):\\w+\\s*=\\s*''"));
 
     private static Pattern rule(String id) {
         return RULES.stream().filter(rule -> rule.id().equals(id)).findFirst().orElseThrow().pattern();
     }
+
+    private static final Pattern UNICODE_ESCAPE = Pattern.compile("(?<!\\\\)((?:\\\\\\\\)*)\\\\u+([0-9a-fA-F]{4})");
 
     private record Literal(String relativePath, String text) { }
 
@@ -167,7 +172,11 @@ class VendorSqlPortabilityLinterTest {
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = ';', quoteCharacter = '"', value = {
         "cast-operator;SELECT menu_sn::text FROM t",
+        "cast-operator;SELECT menu_sn::TEXT FROM t",
+        "cast-operator;WHERE a = ?::uuid",
+        "cast-operator;SELECT a :: timestamptz FROM t",
         "pg-function;SELECT pg_advisory_xact_lock(?)",
+        "pg-function;SELECT PG_ADVISORY_XACT_LOCK(?)",
         "pg-function;SELECT set_config('a', 'on', true)",
         "on-conflict;INSERT INTO t VALUES (1) ON CONFLICT DO NOTHING",
         "skip-locked;SELECT * FROM t FOR UPDATE SKIP LOCKED",
@@ -181,8 +190,10 @@ class VendorSqlPortabilityLinterTest {
         "limit;SELECT a FROM t LIMIT ? OFFSET ?",
         "nulls-order;ORDER BY a NULLS LAST",
         "string-concat;file_url = '/api/' || ?",
+        "string-concat;SELECT file_url || file_url FROM t",
         "vendor-cast;CAST(:a AS TIMESTAMP)",
         "upper-table;DELETE FROM TB_LOGIN_LOG WHERE a = 1",
+        "upper-table;delete from TB_LOGIN_LOG where a = 1",
         "empty-string-compare;WHERE :keyword = '' OR a = 1",
     })
     @DisplayName("규칙은 실제 위반 문장에서 빨갛다")
@@ -216,7 +227,27 @@ class VendorSqlPortabilityLinterTest {
                     \"\"\";
                 boolean c = d || e;
                 """;
-        assertThat(stringLiterals(source)).containsExactly("x \\\" y", "\n    SELECT 1\n    ");
+        assertThat(stringLiterals(source)).containsExactly("x \" y", "\n    SELECT 1\n    ");
+    }
+
+    @Test
+    @DisplayName("문자열은 런타임 값으로 읽는다 — 이스케이프로 쓴 벤더 구문도 잡는다")
+    void literalScannerDecodesEscapes() {
+        String source = """
+                String a = "INSERT INTO t VALUES (1) ON\\nCONFLICT DO NOTHING";
+                String b = "SELECT 1 FOR\\u0020NO\\tKEY UPDATE";
+                String c = "\\\\u0041";
+                String d = \"\"\"
+                    a \\\"\"\" b
+                    \"\"\";
+                """;
+        List<String> literals = stringLiterals(source);
+
+        assertThat(literals).hasSize(4);
+        assertThat(countHits(rule("on-conflict"), literals.get(0))).isPositive();
+        assertThat(countHits(rule("no-key-update"), literals.get(1))).isPositive();
+        assertThat(literals.get(2)).isEqualTo("\\u0041");
+        assertThat(literals.get(3)).contains("a \"\"\" b");
     }
 
     private static int countHits(Pattern pattern, String text) {
@@ -263,14 +294,14 @@ class VendorSqlPortabilityLinterTest {
                 int end = source.indexOf("*/", index + 2);
                 index = end < 0 ? source.length() : end + 2;
             } else if (source.startsWith("\"\"\"", index)) {
-                int end = source.indexOf("\"\"\"", index + 3);
-                literals.add(source.substring(index + 3, end));
+                int end = closingTextBlock(source, index + 3);
+                literals.add(runtimeValue(source.substring(index + 3, end)));
                 index = end + 3;
             } else if (source.charAt(index) == '"' || source.charAt(index) == '\'') {
                 char quote = source.charAt(index);
                 int end = closingQuote(source, index + 1, quote);
                 if (quote == '"') {
-                    literals.add(source.substring(index + 1, end));
+                    literals.add(runtimeValue(source.substring(index + 1, end)));
                 }
                 index = end + 1;
             } else {
@@ -278,6 +309,20 @@ class VendorSqlPortabilityLinterTest {
             }
         }
         return literals;
+    }
+
+    /** 실행될 때의 문자열로 푼다. {@code "ON\nCONFLICT"} 는 소스에서는 공백이 없지만 실행되면 유효한 문장이다. */
+    private static String runtimeValue(String literal) {
+        return UNICODE_ESCAPE.matcher(literal).replaceAll(escape -> Matcher.quoteReplacement(
+                escape.group(1) + (char) Integer.parseInt(escape.group(2), 16))).translateEscapes();
+    }
+
+    private static int closingTextBlock(String source, int from) {
+        int index = from;
+        while (!source.startsWith("\"\"\"", index)) {
+            index += source.charAt(index) == '\\' ? 2 : 1;
+        }
+        return index;
     }
 
     private static int closingQuote(String source, int from, char quote) {

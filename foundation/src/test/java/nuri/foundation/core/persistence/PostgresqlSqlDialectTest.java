@@ -1,6 +1,7 @@
 package nuri.foundation.core.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
@@ -76,7 +77,15 @@ class PostgresqlSqlDialectTest {
     @Test
     @DisplayName("잠금 대기 상한은 트랜잭션 지역이다")
     void lockWaitIsTransactionLocal() {
-        assertThat(dialect.transactionLockWaitSql(Duration.ofSeconds(5))).isEqualTo("SET LOCAL lock_timeout = '5s'");
+        assertThat(dialect.transactionLockWaitSql(Duration.ofSeconds(5))).isEqualTo("SET LOCAL lock_timeout = '5000ms'");
+        assertThat(dialect.transactionLockWaitSql(Duration.ofMillis(500))).isEqualTo("SET LOCAL lock_timeout = '500ms'");
+    }
+
+    @Test
+    @DisplayName("잠금 대기 0 은 PostgreSQL 에서 무제한이라 받지 않는다")
+    void lockWaitRejectsValuesThatMeanNoLimit() {
+        assertThatThrownBy(() -> dialect.transactionLockWaitSql(Duration.ZERO)).isInstanceOf(IllegalArgumentException.class);
+        assertThatThrownBy(() -> dialect.transactionLockWaitSql(Duration.ofNanos(1))).isInstanceOf(IllegalArgumentException.class);
     }
 
     @Test

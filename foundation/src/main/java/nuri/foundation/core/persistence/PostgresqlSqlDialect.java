@@ -74,7 +74,11 @@ public class PostgresqlSqlDialect implements VendorSqlDialect {
 
     @Override
     public String transactionLockWaitSql(Duration wait) {
-        return "SET LOCAL lock_timeout = '" + wait.toSeconds() + "s'";
+        long milliseconds = wait.toMillis();
+        if (milliseconds <= 0) {
+            throw new IllegalArgumentException("잠금 대기는 1ms 이상이어야 한다 — PostgreSQL 의 0 은 무제한이다: " + wait);
+        }
+        return "SET LOCAL lock_timeout = '" + milliseconds + "ms'";
     }
 
     @Override

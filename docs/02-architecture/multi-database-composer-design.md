@@ -178,7 +178,7 @@ flowchart TD
 
 ## 4. 앱 SQL 중립화(D-6)
 
-벤더 코드는 원본에 둔다. 템플릿으로 빼면 컴파일되지 않아 낡는다. `foundation` 의 `VendorSqlDialect` 포트에 벤더별 구현을 두고, 소스 생성기가 고른 벤더 구현만 남긴다. 어떤 구현을 쓸지는 `app.database.vendor` 로 정하고, 기동할 때 JDBC 제품명과 맞지 않으면 실패한다. H2 시험은 testFixtures 의 시험용 구현을 쓴다.
+벤더 코드는 원본에 둔다. 템플릿으로 빼면 컴파일되지 않아 낡는다. `foundation` 의 `VendorSqlDialect` 포트에 벤더별 구현을 두고, 소스 생성기가 고른 벤더 구현만 남긴다. 어떤 구현을 쓸지는 `app.database.vendor` 로 정하고, 기동할 때 JDBC 제품명과 맞지 않으면 실패한다. H2 단위 시험도 PostgreSQL 구현을 쓴다(ADR-0047 결정 4).
 
 | 처리 | 위치 | 방법 |
 |---|---|---|
@@ -193,7 +193,7 @@ flowchart TD
 | 포트 | `CmsPageAdminService.java:378`, 저장소의 `ESCAPE '\'` | LIKE 리터럴 처리. MySQL·MariaDB 기본 설정에서 `ESCAPE '\'` 는 문법 오류다(실측), `ESCAPE '\|'` 는 동작한다. SQL Server 는 `[` 도 패턴이라 이스케이프 대상에 넣는다. `[ab]` 검색어를 차등 시험에 넣는다 |
 | 이식 형태로 고침 | `LoginLogRepository.java:20,26` `\|\|` 와 `to_char` | 기간별 집계와 함께 Java 로 |
 | 포트 | `UserLogRepository.java:48` upsert | 벤더별 upsert |
-| 포트 | `DurableJobRepository.java:24` `SKIP LOCKED` | 벤더별 선점, CUBRID 는 상태 CAS |
+| Hibernate | `DurableJobRepository.java:24` `SKIP LOCKED` | `@Lock` 과 `lock.timeout` 힌트. Hibernate 가 벤더 문법을 만든다. CUBRID 는 상태 CAS |
 | 포트 | `DurableWorkService.java:46`, `AdministCodeRepositoryCustomImpl.java:28` advisory 잠금 | Oracle `DBMS_LOCK`, SQL Server `sp_getapplock`, 그 밖은 슬롯 잠금 테이블 |
 | 포트 | `AuditLedgerRetention.java:27`, `CmsContentRevisionRepository.java:51` 허가 | 벤더별 트랜잭션 범위 허가 |
 | 포트 | `MenuRepository.java:19,52`, `DeptManageRepository.java:26`, `AuthorizationAdministrationService.java:346` `FOR NO KEY UPDATE`, `SmsAsyncProcessor.java:265` `SET LOCAL lock_timeout` | 벤더별 잠금 문장·대기 상한 |

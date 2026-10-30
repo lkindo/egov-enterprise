@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
+import nuri.business.service.file.AttachmentReferenceResolver;
 import nuri.business.service.promotion.popup.PopupService;
 import nuri.business.service.promotion.popup.dto.PopupDto;
 import nuri.foundation.core.exception.BusinessException;
@@ -35,6 +36,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @ActiveProfiles({"test", "tc"})
 class PopupInputPolicyIntegrationTest {
     @Autowired private PopupService service;
+    @Autowired private AttachmentReferenceResolver attachments;
     @Autowired private JdbcTemplate jdbc;
 
     private String fixture;
@@ -153,6 +155,16 @@ class PopupInputPolicyIntegrationTest {
                 .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5").containsEntry("version", 2);
         assertThat(service.getPopup(popup).getPopupWdthSz()).isNull();
         assertThat(service.getPopup(popup).getPopupVrtcSz()).isNull();
+    }
+
+    @Test
+    void attachmentGrantStaysOnTheAttachmentThePopupPointsAt() {
+        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,frst_rgtr_id) VALUES (?,'/api/v1/files/987654321',?)", fixture, actorLogin);
+        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,frst_rgtr_id) VALUES (?,'/api/v1/files/download?fileId=987654322',?)", fixture, actorLogin);
+
+        assertThat(attachments.resolve(987654321L, null, null).sharedGrant()).as("path URL").isTrue();
+        assertThat(attachments.resolve(987654322L, null, null).sharedGrant()).as("query URL").isTrue();
+        assertThat(attachments.resolve(987654323L, null, null).sharedGrant()).as("other attachment").isFalse();
     }
 
     private PopupDto popupRequest() {

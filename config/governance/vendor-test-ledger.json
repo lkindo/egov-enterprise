@@ -639,8 +639,8 @@
     },
     {
       "test": "VendorSqlPortPostgresIntegrationTest.java",
-      "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
     },
     {
       "test": "WebLogBigintMigrationIntegrationTest.java",
