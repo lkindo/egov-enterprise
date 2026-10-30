@@ -118,10 +118,14 @@ node tools/migration-workspace-prototype/build-styles.mjs --check
 
 `npm run test:migration-workspace`는 `tools/migration-workspace/`와 `tools/migration-workspace-prototype/`의 `*.test.mjs`를 모두 찾아 실행한다. 같은 파일이 `npm run test:operational-contracts`에도 들어 있어 필수 CI(`secret-scan`)·pre-push·`npm run verify`에서 돌고, [gate registry](../../config/governance/gates.json)의 운영 계약 카탈로그가 그 안의 `skip`·`only`·`todo`를 막는다. 다루는 범위는 로컬 HTTP 경계(실행 비밀·Host/Origin·요청 토큰), 입력 준비와 업로드 잠금, 저장·재시작 복구, 실행 요청과 결과 불명 작업 확인, AI 문맥 정책·질문 검사·전송 기록, Codex 홈 격리 조건, 시안 서버다.
 
-[CLI 계약](../../tools/migration-workspace/cli-contract.test.mjs)은 JAR를 실행하지 않는 소스 대조 계약이다. 실행기를 가짜 자식 프로세스로 돌려 받은 인자를 Java CLI와 대조한다 — 명령별 옵션(`WorkflowCliOptions`), `--command`·`--mode` 값, adapter ID, object kind, `-D` 속성. 진단 코드는 `WorkflowFailureDiagnostic` 열거값과 정확히 같아야 하고(`CLI_FAILED`는 공통 기본값) 화면이 코드마다 안내를 가져야 하며, 산출물 형식 판·종류·필드 이름은 Java 상수와 같아야 한다. 실제 JAR와 DB를 잇는 자동 통합 시험은 없다.
+[CLI 계약](../../tools/migration-workspace/cli-contract.test.mjs)은 JAR를 실행하지 않는 소스 대조 계약이다. 실행기를 가짜 자식 프로세스로 돌려 받은 인자를 Java CLI와 대조한다 — 명령별 옵션(`WorkflowCliOptions`), `--command`·`--mode` 값, adapter ID, object kind, `-D` 속성. 진단 코드는 `WorkflowFailureDiagnostic` 열거값과 정확히 같아야 하고(`CLI_FAILED`는 공통 기본값) 화면이 코드마다 안내를 가져야 하며, 산출물 형식 판·종류·필드 이름은 Java 상수와 같아야 한다.
+
+[실제 실행 시험](../../migration-tool/src/test/java/nuri/migration/MigrationWorkspacePackagedCliIntegrationTest.java)은 Node 엔진의 기본 자식 실행으로 패키징한 JAR와 격리 PostgreSQL 17을 연결한다. 구조 조사→매핑→합성 검토→계획 검증→DRY_RUN, 산출물 변조·변경 JAR 거부, 원천 값·대상 무쓰기와 자식 프로세스 종료를 확인한다. 일반 `:migration-tool:test`와 생성 단일 모듈의 `migrationTest`에 포함되며, 엔진 3파일과 JAR 바이트를 Gradle 시험 입력으로 추적한다. 브라우저·HTTP·AI·COMMIT을 통합한 시험은 아니다.
+
+원본 저장소의 측정 출처 검사는 `refs/remotes/origin/main`과 측정 기준 커밋까지의 이력을 요구한다. 단일 브랜치·얕은 clone에서는 이 참조와 이력을 먼저 가져와야 한다. 내보낸 독립 제품은 승인 lock으로 출처를 확인하므로 기관 저장소에 이 원격 참조를 요구하지 않는다.
 
 `--check`는 파일을 쓰지 않고 커밋본 CSS와 비교해 낡으면 종료 코드 1, 잘못된 인자는 2로 끝난다. 다시 만드는 명령은 `npm run migration:ui:css`이며 시안 CSS에는 frontend 의존성이 필요하다. 운영 계약 시험이 두 CSS의 신선도를 늘 보므로 `premium.css` 토큰·시안 화면 클래스·설치된 Tailwind 판이 바뀌면 다시 만들 때까지 붉다.
 
-두 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 두 디렉터리만 바꾼 변경은 CI에서 생성기·도구 경로로 분류되어 운영 계약·SAST·재사용 검증만 돌고, `migration-tool`을 함께 바꾸면 이관 검증이 함께 켜진다.
+두 디렉터리는 CodeQL JavaScript 분석 범위([codeql.yml](../../config/security/codeql.yml))에 들어 있고 로컬 근사(`npm run sast:approx`)도 같은 범위를 본다. 작업공간의 `engine.mjs`·`store.mjs`·`inputs.mjs` 변경은 실제 실행 시험의 입력이므로 CI의 이관·이관 mutation 검증도 켠다. 생성 Groovy의 경로 참조를 따라가는 기존 보수적 reader 검사는 이 세 파일에 backend·E2E 축도 요구한다. 이 정적 참조는 해당 시험이 엔진 바이트를 직접 실행한다는 증거와 구분한다. 이 세 파일은 이관 독립 제품에 포함하고 이관 도입 승인 digest에도 묶는다. 나머지 UI·서버·AI·시안 경로의 도구 분류는 유지한다([DEC-OPS-391](../archived/operational-decisions-history.md#dec-ops-391)).
 
 이 검사는 실제 기관 DB, Oracle 등 driver별 버전, 실제 AI 계정 로그인·요금·응답 품질, 운영 규모 성능을 검증했다는 뜻이 아니다. 실제 실행 결과를 확인하기 전에는 운영 전환에 사용하지 않는다.

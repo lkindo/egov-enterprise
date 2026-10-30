@@ -7,9 +7,6 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
-import org.springframework.cache.annotation.CacheEvict;
-import org.springframework.cache.annotation.Cacheable;
-import org.springframework.cache.annotation.Caching;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -27,10 +24,6 @@ public class PolicyService {
 
     private final SystemPolicyRepository systemPolicyRepository;
     
-    // 캐시 이름 정의
-    public static final String CACHE_SYSTEM_POLICIES = "systemPolicies";
-    public static final String CACHE_SYSTEM_POLICIES_ALL = "systemPoliciesAll";
-
     @Data
     @Builder
     @NoArgsConstructor
@@ -44,7 +37,7 @@ public class PolicyService {
     /**
      * 정책 전체 목록 조회
      */
-    @Cacheable(value = CACHE_SYSTEM_POLICIES_ALL)
+    // 늦은 reader가 writer의 evict 뒤에 옛 값을 다시 넣을 수 있어 정책은 DB에서 읽는다.
     public List<Policy> getPolicies() {
         return systemPolicyRepository.findAll().stream()
                 .map(entity -> Policy.builder()
@@ -58,7 +51,6 @@ public class PolicyService {
     /**
      * 정책 상세 조회
      */
-    @Cacheable(value = CACHE_SYSTEM_POLICIES, key = "#type")
     public Optional<Policy> getPolicy(String type) {
         return systemPolicyRepository.findById(type)
                 .map(entity -> Policy.builder()
@@ -72,10 +64,6 @@ public class PolicyService {
      * 정책 수정 구현부
      */
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = CACHE_SYSTEM_POLICIES, key = "#type"),
-        @CacheEvict(value = CACHE_SYSTEM_POLICIES_ALL, allEntries = true)
-    })
     public void updatePolicy(String type, String title, String content) {
         validatePolicyType(type);
         SystemPolicy policy = systemPolicyRepository.findById(type)
@@ -89,10 +77,6 @@ public class PolicyService {
 
     /** 첫 등록은 기존 PUT upsert와 구분하고 DB PK로 동시 중복 생성도 거부한다. */
     @Transactional
-    @Caching(evict = {
-        @CacheEvict(value = CACHE_SYSTEM_POLICIES, key = "#type"),
-        @CacheEvict(value = CACHE_SYSTEM_POLICIES_ALL, allEntries = true)
-    })
     public void createPolicy(String type, String title, String content) {
         nuri.business.security.util.SecurityUtil.assertPermission("POLICY_UPDATE");
         validatePolicyType(type);

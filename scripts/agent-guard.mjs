@@ -559,6 +559,296 @@ const FALSE_FLAG_VALUE = /^(?:0|f|false)$/i;
 const requestsWatch = (args) => args.some(({ value }) => value === '--watch'
   || (value.startsWith('--watch=') && !FALSE_FLAG_VALUE.test(unquote(value.slice('--watch='.length)))));
 
+/** 값이 없는 문서용 dotenv 견본의 끝 이름 — 키 이름과 형식만 담아 저장소에 추적된다(`.env.example`·`frontend/.env.example`). */
+const DOTENV_SAMPLE = /\.(?:example|sample|template|dist)$/i;
+
+/**
+ * 이 값이 dotenv 파일을 가리키는가 — 마지막 이름이 `.env`·`.env.<무엇>`(`.env.local`·`.env.production`)이거나 그것을 고르는 glob
+ * (`.env*`·`.env.?`)이고 문서용 견본이 아닐 때다. 경로(`./.env`·`frontend\.env.local`·`D:\…\.env`)는 마지막 이름만 보고,
+ * PowerShell 배열(`.env,.env.local`)은 항목마다 본다.
+ */
+function namesDotenv(value) {
+  return value.split(',').some((item) => {
+    const name = item.split(/[\\/]/).at(-1).toLowerCase();
+    if (!name.startsWith('.env')) return false;
+    const rest = name.slice('.env'.length);
+    return (rest === '' || ['.', '*', '?', '['].includes(rest[0])) && !DOTENV_SAMPLE.test(name);
+  });
+}
+
+/**
+ * GNU getopt_long 식으로 옵션을 읽는 명령(grep·rg·sed·awk)의 옵션 표. 옵션은 앞에서부터 차례로 읽는다 — 값을 받는 옵션이 먹은 값
+ * (`grep -e DB -e -q .env` 의 `-q`)은 옵션이 아니다. 짧은 옵션 묶음(`-rnq`)은 글자마다 읽고, 값을 받는 글자를 만나면 묶음의 나머지
+ * (`-eDB`·`-m1`)나, 없으면 다음 단어가 그 값이다.
+ *   shortRequired — 값을 반드시 받는 짧은 옵션 글자. shortOptional — 값을 같은 묶음에 붙여서만 받는 글자(sed `-i[SUFFIX]`).
+ *   required·optional·flags — 긴 옵션 이름. required 는 `--x=v`·`--x v` 를, optional 은 `--x=v` 만 받는다(GNU grep `--color[=WHEN]`).
+ *   abbreviations — getopt_long 처럼 긴 옵션의 모호하지 않은 앞부분을 받는다(GNU grep `--reg` = `--regexp`). 그 판정에 쓰도록 flags 에
+ *   값 없는 긴 옵션을 적는다 — 표가 실제보다 적으면 실제로는 모호해 명령이 실패하는 앞부분만 하나로 읽으므로 출력 판정을 틀리지 않는다.
+ */
+const gnuOptions = ({ shortRequired, shortOptional = '', required = [], optional = [], flags = [], abbreviations = false }) => Object.freeze({
+  shortRequired, shortOptional, abbreviations,
+  long: new Map([...required.map((name) => [name, 'required']), ...optional.map((name) => [name, 'optional']), ...flags.map((name) => [name, 'flag'])]),
+});
+
+/** GNU grep(egrep·fgrep) 3.x — `--color` 는 값을 `=WHEN` 으로 붙여서만 받는다(`grep --color never .env` 의 never 는 패턴이다). `-T` 는 값이 없다. */
+const GNU_GREP_OPTIONS = gnuOptions({ shortRequired: 'ABCDXdefm', abbreviations: true,
+  required: ['after-context', 'before-context', 'binary-files', 'context', 'devices', 'directories', 'exclude', 'exclude-dir', 'exclude-from',
+    'file', 'group-separator', 'include', 'label', 'max-count', 'regexp'],
+  optional: ['color', 'colour'],
+  flags: ['basic-regexp', 'binary', 'byte-offset', 'count', 'dereference-recursive', 'extended-regexp', 'files-with-matches', 'files-without-match',
+    'fixed-strings', 'help', 'ignore-case', 'initial-tab', 'invert-match', 'line-buffered', 'line-number', 'line-regexp', 'no-filename',
+    'no-group-separator', 'no-ignore-case', 'no-messages', 'null', 'null-data', 'only-matching', 'perl-regexp', 'quiet', 'recursive', 'silent',
+    'text', 'version', 'with-filename', 'word-regexp'] });
+
+/** ripgrep 14 — 값을 받는 옵션은 `--x v`·`--x=v`·`-gV`·`-g V` 를 모두 받고(`rg --color never`), 긴 옵션의 앞부분은 받지 않는다. `-E` 는 인코딩이다. */
+const RG_OPTIONS = gnuOptions({ shortRequired: 'ABCEMTdefgjmrt',
+  required: ['after-context', 'before-context', 'color', 'colors', 'context', 'context-separator', 'dfa-size-limit', 'encoding', 'engine',
+    'field-context-separator', 'field-match-separator', 'file', 'generate', 'glob', 'hostname-bin', 'hyperlink-format', 'iglob', 'ignore-file',
+    'max-columns', 'max-count', 'max-depth', 'maxdepth', 'max-filesize', 'path-separator', 'pre', 'pre-glob', 'regex-size-limit', 'regexp',
+    'replace', 'sort', 'sortr', 'threads', 'type', 'type-add', 'type-clear', 'type-not'] });
+
+/** GNU sed 4.x — `-i` 의 접미사는 붙여서만 받는다(`-in` 은 접미사 n 인 제자리 편집이다). */
+const SED_OPTIONS = gnuOptions({ shortRequired: 'efl', shortOptional: 'i', abbreviations: true,
+  required: ['expression', 'file', 'line-length'], optional: ['in-place'],
+  flags: ['binary', 'debug', 'follow-symlinks', 'help', 'null-data', 'posix', 'quiet', 'regexp-extended', 'sandbox', 'separate', 'silent',
+    'unbuffered', 'version', 'zero-terminated'] });
+
+/** GNU awk 5.x. */
+const AWK_OPTIONS = gnuOptions({ shortRequired: 'EFefilv', shortOptional: 'DLdop', abbreviations: true,
+  required: ['assign', 'exec', 'field-separator', 'file', 'include', 'load', 'source'],
+  optional: ['debug', 'dump-variables', 'lint', 'pretty-print', 'profile'],
+  flags: ['bignum', 'characters-as-bytes', 'copyright', 'csv', 'gen-pot', 'help', 'lint-old', 'no-optimize', 'non-decimal-data', 'optimize',
+    'posix', 're-interval', 'sandbox', 'trace', 'traditional', 'use-lc-numeric', 'version'] });
+
+/**
+ * 긴 옵션 이름 — 표에 그대로 있으면 그 이름, 아니면(abbreviations) 그 앞부분으로 시작하는 옵션들이 모두 같은 종류일 때 첫 옵션
+ * (`--col` 은 같은 옵션인 color·colour 다). 모르는 이름은 쓴 그대로 둔다 — 값 없는 옵션으로 읽힌다.
+ */
+function longOptionName(table, typed) {
+  if (table.long.has(typed) || !table.abbreviations || !typed) return typed;
+  const candidates = [...table.long.keys()].filter((name) => name.startsWith(typed));
+  const kinds = new Set(candidates.map((name) => table.long.get(name)));
+  return candidates.length && kinds.size === 1 ? candidates[0] : typed;
+}
+
+/** GNU 식 옵션 단어 하나(와 값으로 먹는 다음 단어)를 옵션들({ name, value })로 읽는다. 값이 없는 옵션의 value 는 undefined 다. */
+function readGnuOption(table, args, index) {
+  const { value } = args[index];
+  const next = () => args[index + 1]?.value ?? '';
+  if (value.startsWith('--')) {
+    const equals = value.indexOf('=');
+    const name = longOptionName(table, (equals < 0 ? value : value.slice(0, equals)).slice(2));
+    const takesNext = equals < 0 && table.long.get(name) === 'required';
+    return { options: [{ name: `--${name}`, value: takesNext ? next() : (equals < 0 ? undefined : value.slice(equals + 1)) }], width: takesNext ? 2 : 1 };
+  }
+  const options = [];
+  for (let at = 1; at < value.length; at += 1) {
+    const name = `-${value[at]}`;
+    const rest = value.slice(at + 1);
+    if (table.shortRequired.includes(value[at])) {
+      options.push({ name, value: rest || next() });
+      return { options, width: rest ? 1 : 2 };
+    }
+    if (table.shortOptional.includes(value[at])) {
+      options.push({ name, value: rest });
+      return { options, width: 1 };
+    }
+    options.push({ name });
+  }
+  return { options, width: 1 };
+}
+
+/**
+ * PowerShell 매개변수 이름(소문자) — 값을 받는 매개변수(paths·pattern·valued 순)의 앞부분이면 그 매개변수다(`-Pa:.env` 는 -Path).
+ * 실제로 모호한 앞부분(Select-String 의 `-Pat`)은 PowerShell 이 거부하므로 어느 쪽으로 읽어도 출력은 없다 — 파일 쪽을 먼저 본다.
+ */
+function psParameterName(spec, typed) {
+  const known = [spec.paths, spec.pattern, spec.valued].flatMap((set) => (set ? [...set] : []));
+  if (known.includes(typed) || typed.length < 2) return typed;
+  return known.find((name) => name.startsWith(typed)) ?? typed;
+}
+
+/** PowerShell 매개변수 단어 하나 — `-Name 값`·`-Name:값`·`-Name: 값`·`-Name:"값"`(대소문자 무시). 스위치는 `-Quiet:$false` 처럼 값을 붙일 수 있다. */
+function readPsOption(spec, args, index) {
+  const { value } = args[index];
+  const colon = value.indexOf(':');
+  const name = psParameterName(spec, (colon < 0 ? value : value.slice(0, colon)).toLowerCase());
+  const next = { options: [{ name, value: args[index + 1]?.value ?? '' }], width: 2 };
+  if (colon >= 0) return value.length > colon + 1 ? { options: [{ name, value: unquote(value.slice(colon + 1)) }], width: 1 } : next;
+  return [spec.paths, spec.pattern, spec.valued].some((set) => set?.has(name)) ? next : { options: [{ name }], width: 1 };
+}
+
+/** findstr 옵션(`/i`·`-i`) — `/c:문자열`·`/g:파일` 처럼 콜론에 붙은 값은 이름을 `/c:` 로 읽는다. */
+function readSlashOption(_spec, args, index) {
+  const { value } = args[index];
+  const attached = /^\/([A-Za-z]):/.exec(value);
+  return { options: [{ name: attached ? `/${attached[1].toLowerCase()}:` : value.toLowerCase() }], width: 1 };
+}
+
+/** 옵션 읽는 법(spec.style). 없으면 옵션은 값 없는 단어 하나다(`head -n 3 .env` 의 3 은 위치 인자로 남아 파일 쪽으로 센다). */
+const OPTION_READERS = Object.freeze({
+  gnu: (spec, args, index) => readGnuOption(spec.options, args, index),
+  ps: readPsOption,
+  findstr: readSlashOption,
+});
+const readPlainOption = (_spec, args, index) => ({ options: [{ name: args[index].value }], width: 1 });
+
+/** grep·rg 가 내용 대신 참·거짓·개수·파일 이름만 내는 옵션. 대문자 `-C`(문맥)·rg 의 `-L`(링크 따라가기)은 아니다. */
+const GREP_SILENT = new Set(['-q', '-c', '-l', '--quiet', '--silent', '--count', '--files-with-matches']);
+/** PowerShell 이 참으로 읽는 스위치 값(`-Quiet:$true`·`-Quiet:1`). `-Quiet:$false` 는 내용을 출력한다. */
+const PS_TRUE = /^(?:\$true|1)$/i;
+const PS_PATHS = new Set(['-path', '-literalpath', '-lp', '-pspath']);
+
+/**
+ * 파일 내용을 그대로 출력하는 명령과 그 인자 읽는 법. 이름은 실행 파일 경로·`.exe` 를 벗겨 소문자로 찾는다(PowerShell 별칭 gc·sls·type 포함).
+ *   style — 옵션 읽는 법(gnu·ps·findstr, 없으면 값 없는 단어). gnu 는 options 의 표로 읽는다.
+ *   patternFirst — 첫 위치 인자가 파일이 아니라 패턴·스크립트다(`grep DB .env`). pattern 옵션으로 주면 위치 인자가 모두 파일이다.
+ *   pattern — 패턴·스크립트를 주는 옵션 이름. paths — 값이 파일인 옵션(PowerShell `-Path`). valued — 값을 다음 단어로 받는 그 밖의 옵션(ps).
+ *   silences — 실제 옵션({ name, value })이 내용을 내지 않게 하는가. 다른 옵션이 값으로 먹은 단어는 옵션이 아니다.
+ */
+const PLAIN_PRINTER = Object.freeze({});
+const PS_PRINTER = Object.freeze({ style: 'ps', paths: PS_PATHS });
+const GREP_PRINTER = Object.freeze({ style: 'gnu', options: GNU_GREP_OPTIONS, patternFirst: true, pattern: new Set(['-e', '--regexp', '-f', '--file']),
+  silences: ({ name }) => GREP_SILENT.has(name) });
+const CONTENT_PRINTERS = new Map([
+  ...['cat', 'tac', 'type', 'more', 'less', 'head', 'tail', 'nl', 'od', 'xxd', 'hexdump', 'strings', 'base64', 'bat', 'cut', 'sort', 'diff']
+    .map((name) => [name, PLAIN_PRINTER]),
+  ...['get-content', 'gc', 'format-hex', 'fhx'].map((name) => [name, PS_PRINTER]),
+  ...['grep', 'egrep', 'fgrep'].map((name) => [name, GREP_PRINTER]),
+  ['rg', Object.freeze({ ...GREP_PRINTER, options: RG_OPTIONS })],
+  ...['select-string', 'sls'].map((name) => [name, { style: 'ps', patternFirst: true, pattern: new Set(['-pattern']), paths: PS_PATHS,
+    valued: new Set(['-context', '-encoding', '-include', '-exclude', '-culture']),
+    silences: ({ name: option, value }) => option === '-quiet' && (value === undefined || PS_TRUE.test(value)) }]),
+  // `sed -i` 는 파일을 고쳐 쓰고 출력하지 않는다. 값 없는 짧은 옵션과 묶인 `-ni` 도 같다.
+  ['sed', { style: 'gnu', options: SED_OPTIONS, patternFirst: true, pattern: new Set(['-e', '--expression', '-f', '--file']),
+    silences: ({ name }) => name === '-i' || name === '--in-place' }],
+  ...['awk', 'gawk'].map((name) => [name, { style: 'gnu', options: AWK_OPTIONS, patternFirst: true,
+    pattern: new Set(['-f', '--file', '-e', '--source', '-E', '--exec']) }]),
+  ['findstr', { style: 'findstr', patternFirst: true, pattern: new Set(['/c:', '/g:']) }],
+]);
+
+/** 출력 리디렉션(`>`·`>>`·`2>`·`*>`·`&>`) — 뒤의 대상은 쓰는 파일이지 읽는 파일이 아니다(`cat .env.example > .env`). */
+const OUTPUT_REDIRECT = /^[0-9*&]?>{1,2}/;
+
+/**
+ * 내용 출력 명령이 읽는 파일들(원문 값) — 위치 인자·경로 옵션 값·입력 리디렉션(`< .env`). 옵션은 앞에서부터 차례로 읽어 값으로 먹은 단어를
+ * 건너뛰고, 내용을 내지 않게 하는 옵션이 실제 옵션으로 있으면 빈 목록이다. `-` 하나는 표준 입력·패턴인 위치 인자다.
+ */
+function printedFiles(spec, args) {
+  const read = OPTION_READERS[spec.style] ?? readPlainOption;
+  const isOption = ({ code }) => (code.length > 1 && code.startsWith('-')) || (spec.style === 'findstr' && /^\/[A-Za-z]/.test(code));
+  const files = [];
+  const positional = [];
+  let patternGiven = false;
+  let silenced = false;
+  let optionsEnd = false;
+  for (let index = 0; index < args.length; index += 1) {
+    const { code, value } = args[index];
+    const redirect = OUTPUT_REDIRECT.exec(code);
+    if (redirect) { if (redirect[0] === code) index += 1; continue; }
+    if (code.startsWith('<') && !code.startsWith('<<')) {
+      const target = code === '<' ? args[(index += 1)]?.value : value.slice(1);
+      if (target) files.push(target);
+      continue;
+    }
+    if (!optionsEnd && code === '--') { optionsEnd = true; continue; }
+    if (optionsEnd || !isOption(args[index])) { positional.push(value); continue; }
+    const { options, width } = read(spec, args, index);
+    index += width - 1;
+    for (const option of options) {
+      if (spec.pattern?.has(option.name)) patternGiven = true;
+      else if (spec.paths?.has(option.name)) files.push(option.value ?? '');
+      if (spec.silences?.(option)) silenced = true;
+    }
+  }
+  if (silenced) return [];
+  return [...files, ...(spec.patternFirst && !patternGiven ? positional.slice(1) : positional)];
+}
+
+/** 값을 다음 단어로 받는 docker 전역 옵션과 compose 옵션 — 그 값(`--env-file .env`·`-p config`)을 하위 명령으로 읽지 않는다. */
+const DOCKER_VALUE_OPTIONS = new Set(['-c', '--context', '--config', '-H', '--host', '-l', '--log-level']);
+const COMPOSE_VALUE_OPTIONS = new Set(['-f', '--file', '-p', '--project-name', '--env-file', '--profile', '--project-directory', '--ansi',
+  '--progress', '--parallel']);
+/**
+ * 해석한 설정 대신 이름만 내거나 검증만 하는 `compose config` 불리언 옵션(`-q` 는 `--quiet`). 값을 붙이면 pflag 의 ParseBool 로 읽는다 —
+ * 값이 없거나 참(`true`·`1`·`t`)일 때만 설정을 내지 않고, `--quiet=false`·`--services=0`·빈 값은 설정을 출력한다.
+ * `--environment`·`--variables` 는 값을 낸다.
+ */
+const COMPOSE_CONFIG_NAMES_ONLY = new Set(['--quiet', '--services', '--volumes', '--networks', '--images', '--profiles', '--models']);
+/** 값을 받는 `compose config` 옵션 — 값(`--format json`)을 건너뛴다. `--hash` 는 값이 비지 않을 때만 해시를 내고, `--format`·`-o` 는 설정을 옮긴다. */
+const COMPOSE_CONFIG_VALUED = new Set(['--hash', '--format', '-o', '--output']);
+const TRUE_FLAG_VALUE = /^(?:1|t|true)$/i;
+
+/**
+ * `docker compose … config`(·옛 별칭 `convert`·독립 `docker-compose`)가 해석한 설정을 출력하는가 — compose 는 프로젝트 디렉터리의 .env 를
+ * 기본으로 읽고(`--env-file` 이 없어도) `${DB_PASSWORD}` 같은 보간과 env_file 의 값을 풀어 낸다. 이름만 내는 옵션이 켜져 있으면 아니다
+ * (같은 옵션을 거듭 주면 pflag 처럼 마지막 값이 이긴다).
+ */
+function composeConfigPrints(name, args) {
+  let index = 0;
+  if (name === 'docker') {
+    while (index < args.length && args[index].value.startsWith('-')) index += DOCKER_VALUE_OPTIONS.has(args[index].value) ? 2 : 1;
+    if (args[index]?.value !== 'compose') return false;
+    index += 1;
+  } else if (name !== 'docker-compose') return false;
+  while (index < args.length && args[index].value.startsWith('-')) index += COMPOSE_VALUE_OPTIONS.has(args[index].value) ? 2 : 1;
+  if (!['config', 'convert'].includes(args[index]?.value)) return false;
+  const namesOnly = new Map();
+  for (let at = index + 1; at < args.length && args[at].value !== '--'; at += 1) {
+    const { value } = args[at];
+    const equals = value.indexOf('=');
+    const flag = equals < 0 ? value : value.slice(0, equals);
+    const option = flag === '-q' ? '--quiet' : flag;
+    const attached = equals < 0 ? undefined : unquote(value.slice(equals + 1));
+    if (COMPOSE_CONFIG_NAMES_ONLY.has(option)) {
+      namesOnly.set(option, attached === undefined || TRUE_FLAG_VALUE.test(attached));
+    } else if (COMPOSE_CONFIG_VALUED.has(option)) {
+      if (attached === undefined) at += 1;
+      if (option === '--hash') namesOnly.set(option, (attached ?? args[at]?.value ?? '') !== '');
+    }
+  }
+  return ![...namesOnly.values()].some(Boolean);
+}
+
+/** PowerShell 이 .NET 으로 파일 전체를 읽는 호출(`[IO.File]::ReadAllText('.env')`). 호출 이름은 가린 판에서, 첫 인자는 원문에서 읽는다. */
+const DOTNET_FILE_READ = /\[(?:System\.)?IO\.File\]::(?:ReadAllText|ReadAllLines|ReadAllBytes|ReadLines)\s*\(\s*/gi;
+const dotnetReadTargets = (code, raw) => [...code.matchAll(DOTNET_FILE_READ)]
+  .map((match) => unquote(/^(?:'[^']*'|"[^"]*"|[^\s,)]+)/.exec(raw.slice(match.index + match[0].length))?.[0] ?? ''));
+
+/**
+ * 조각 안에서 명령이 시작하는 자리(start)와 끝(end) — 조각 처음과, 따옴표 밖의 `(`·`{`·백틱 바로 뒤. 괄호 묶음(`(gc .env) -match …`)·
+ * 스크립트 블록(`if (…) { Get-Content .env }`)·프로세스 치환(`<(cat .env)`)·bash 백틱 치환의 첫 단어도 명령 자리다. 열린 묶음은 같은 종류의
+ * 닫는 글자에서 끊는다. 조각 처음은 끊지 않는다 — 변수 괄호(`cat ${HOME}/.env`)의 `}` 에서 피연산자가 잘리지 않게 한다.
+ */
+function commandStarts(code) {
+  const closers = { '(': ')', '{': '}', '`': '`' };
+  const starts = [{ start: 0, end: code.length }];
+  for (let index = 0; index < code.length; index += 1) {
+    const closer = closers[code[index]];
+    if (!closer) continue;
+    const close = code.indexOf(closer, index + 1);
+    starts.push({ start: index + 1, end: close < 0 ? code.length : close });
+  }
+  return starts;
+}
+
+/** 명령 자리 앞의 PowerShell 대입(`$s = …`·`$env:X=…`) — 대입한 명령도 실행된다. */
+const PS_ASSIGNMENT = /^\s*\$[\w:]+\s*=\s*/;
+
+/** 이 조각이 dotenv 파일의 내용을 출력하는가(env-file-read). */
+function readsDotenv(code, raw) {
+  if (dotnetReadTargets(code, raw).some(namesDotenv)) return true;
+  return commandStarts(code).some(({ start, end }) => {
+    const from = start + (PS_ASSIGNMENT.exec(code.slice(start, end))?.[0].length ?? 0);
+    const command = invokedCommand(code.slice(from, end), raw.slice(from, end));
+    if (!command) return false;
+    const name = command.name.replace(/^.*[\\/]/, '').replace(/\.exe$/i, '').toLowerCase();
+    if (composeConfigPrints(name, command.args)) return true;
+    const spec = CONTENT_PRINTERS.get(name);
+    return spec !== undefined && printedFiles(spec, command.args).some(namesDotenv);
+  });
+}
+
 /**
  * 규칙 표. 각 규칙은 명령 조각 하나와 맥락(cwd·원문 전체)을 받아 걸리면 사유를 돌려준다.
  * why 는 근거가 된 실제 사고, fix 는 대신 쓸 방법이다 — 오류 메시지가 고칠 방법을 말해야 같은 실수가 반복되지 않는다.
@@ -711,6 +1001,14 @@ export const RULES = Object.freeze([
     why: 'db/seed-dev 는 알려진 개발 자격(TEST1 비밀번호 1)과 가짜 감사 로그라 dev·e2e 일회용 DB 에만 넣는다. 공유 DB 이력에는 없어 넣으면 처음 적용된다.',
     fix: 'Flyway 위치는 db/migration 하나만 준다(docs/04-operations/shared-oci-migration-apply-log.md 절차).',
     match: ({ raw, code }) => /\bflyway\b/i.test(code) && /seed-dev/.test(raw) && /\b(migrate|repair|baseline)\b/i.test(code),
+  },
+  {
+    id: 'env-file-read', decision: 'deny',
+    // 셸 명령만 본다 — Claude 의 Read 도구·Antigravity 의 view_file 은 셸이 아니고, 인터프리터 스크립트(`node -e "…readFileSync('.env')…"`)·
+    // `find -exec`·`xargs` 같은 간접 호출·변수에 담은 경로도 읽지 못한다. 판정하지 못하면 통과하는 보조 장치다(병합 권위가 아니다).
+    why: 'dotenv 파일(.env·.env.local 등)에는 DB 접속·SMS 키 같은 실제 비밀 값이 있다 — 셸로 내용을 출력하면 대화 기록·로그에 값이 남는다(AGENTS 안전과 외부 경계). 지금까지 이 금지는 Claude 자동 모드 분류기만 막아 Codex·Antigravity 에서는 글로만 지켜졌다. `docker compose config` 도 .env 를 기본으로 읽어 보간한 값을 출력한다.',
+    fix: '값을 출력하지 않고 쓴다 — 명령에 넘길 때는 node --env-file=.env …(DB 조회는 DB_NAME=egovdb node --env-file=.env .agent/scripts/db-bridge.js "SELECT …"), 키가 정해졌는지는 node --env-file=.env -e "console.log(Boolean(process.env.X))" 나 grep -q \'^X=\' .env, 키 이름·형식은 .env.example 에서 본다. compose 는 docker compose config --quiet(검증)·--services(이름)를 쓴다.',
+    match: ({ code, raw }) => readsDotenv(code, raw),
   },
   {
     id: 'openapi-relative-export-path', decision: 'deny',

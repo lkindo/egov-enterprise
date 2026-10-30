@@ -102,6 +102,14 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
             "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java",
+            "reason": "메일 실패 결과와 알림의 원자 저장·기록 재시도·삭제 발신자 복구를 실제 PostgreSQL로 검증한다. mail과 notification이 함께 있는 구성에서 유지하며 기존 mail-only 발송 상태 검증은 별도로 보존한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/SmsFailureNoticeIntegrationTest.java",
+            "reason": "SMS의 저장된 초기 거절 집계·알림 재시도·미완료 선점 유보를 실제 PostgreSQL로 검증한다. sms와 notification이 함께 있는 구성에서 유지하며 기존 sms-only 영수증·발송 상태 검증은 별도로 보존한다."
           }
         ],
         "gateRemovalRules": [
@@ -522,6 +530,14 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
             "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java",
+            "reason": "메일 실패 결과와 알림의 원자 저장·기록 재시도·삭제 발신자 복구를 실제 PostgreSQL로 검증한다. mail과 notification이 함께 있는 구성에서 유지하며 기존 mail-only 발송 상태 검증은 별도로 보존한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/SmsFailureNoticeIntegrationTest.java",
+            "reason": "SMS의 저장된 초기 거절 집계·알림 재시도·미완료 선점 유보를 실제 PostgreSQL로 검증한다. sms와 notification이 함께 있는 구성에서 유지하며 기존 sms-only 영수증·발송 상태 검증은 별도로 보존한다."
           }
         ],
         "gateRemovalRules": [
@@ -734,6 +750,14 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
             "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java",
+            "reason": "메일 실패 결과와 알림의 원자 저장·기록 재시도·삭제 발신자 복구를 실제 PostgreSQL로 검증한다. mail과 notification이 함께 있는 구성에서 유지하며 기존 mail-only 발송 상태 검증은 별도로 보존한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/SmsFailureNoticeIntegrationTest.java",
+            "reason": "SMS의 저장된 초기 거절 집계·알림 재시도·미완료 선점 유보를 실제 PostgreSQL로 검증한다. sms와 notification이 함께 있는 구성에서 유지하며 기존 sms-only 영수증·발송 상태 검증은 별도로 보존한다."
           }
         ],
         "gateRemovalRules": [
