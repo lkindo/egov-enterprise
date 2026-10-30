@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 import javax.sql.DataSource;
@@ -20,20 +21,27 @@ import nuri.business.domain.board.DtaUseStatsRepository;
 import nuri.business.domain.log.LoginLogRepository;
 import nuri.business.domain.log.UserLogRepository;
 import nuri.business.domain.menu.MenuRepository;
+import nuri.business.domain.survey.SurveyResult;
+import nuri.business.domain.survey.SurveyResultRepository;
 import nuri.business.domain.system.job.DurableJob;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.business.domain.user.repository.DeptManageRepository;
 import nuri.business.service.file.AttachmentReferenceResolver;
 import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkPort;
+import org.hibernate.resource.jdbc.spi.StatementInspector;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.hibernate.autoconfigure.HibernatePropertiesCustomizer;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.TestConfiguration;
+import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Import;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
@@ -46,9 +54,33 @@ import org.springframework.transaction.support.TransactionTemplate;
  */
 @Tag("schema-validation")
 @SpringBootTest(properties = "nuri.durable-work.enabled=false")
-@Import(AuthorizationSchemaRehearsalTestConfiguration.class)
+@Import({AuthorizationSchemaRehearsalTestConfiguration.class, VendorSqlPortPostgresIntegrationTest.CaptureTestConfiguration.class})
 @ActiveProfiles({"test", "tc"})
 class VendorSqlPortPostgresIntegrationTest {
+    /** Hibernate 가 실제로 보낸 문장을 읽는다. 손으로 쓴 SQL 로 대조하면 HQL 과 어긋나도 모른다. */
+    public static class CapturedSql implements StatementInspector {
+        final List<String> statements = new CopyOnWriteArrayList<>();
+
+        @Override
+        public String inspect(String sql) {
+            statements.add(sql);
+            return sql;
+        }
+    }
+
+    @TestConfiguration(proxyBeanMethods = false)
+    public static class CaptureTestConfiguration {
+        @Bean
+        CapturedSql capturedSql() {
+            return new CapturedSql();
+        }
+
+        @Bean
+        HibernatePropertiesCustomizer captureStatements(CapturedSql collector) {
+            return properties -> properties.put("hibernate.session_factory.statement_inspector", collector);
+        }
+    }
+
     private static final String BOARD = "VSQL_BOARD";
     private static final String DEPT = "VSQL_DEPT";
     private static final String JOB_TYPE = "VSQL_CLAIM";
@@ -60,12 +92,14 @@ class VendorSqlPortPostgresIntegrationTest {
     @Autowired private UserLogRepository userLogs;
     @Autowired private BoardRepository boards;
     @Autowired private DtaUseStatsRepository usage;
+    @Autowired private SurveyResultRepository surveyResults;
     @Autowired private DurableJobRepository jobs;
     @Autowired private DurableWorkPort durableWork;
     @Autowired private AttachmentReferenceResolver attachments;
     @Autowired private PlatformTransactionManager manager;
     @Autowired private DataSource dataSource;
     @Autowired private JdbcTemplate jdbc;
+    @Autowired private CapturedSql capturedSql;
     private TransactionTemplate transaction;
     private final List<Long> menuRows = new ArrayList<>();
 
@@ -163,6 +197,75 @@ class VendorSqlPortPostgresIntegrationTest {
         assertThat(boards.countPostsBetween("2031-03-05 00:00:00", "2031-03-06 00:00:00")).isEqualTo(1);
         assertSingleDay(usage.countByDate("2031-03-05 00:00:00", "2031-03-06 00:00:00"));
         assertSingleDay(logins.countLoginsByDate("20310305", "20310305"));
+    }
+
+    @Test
+    @DisplayName("로그인 집계는 성공만 세고, 시작일 0시와 종료일 마지막 소수초를 포함하며 앞뒤 날짜를 뺀다")
+    void loginCountsKeepOnlySuccessesThroughTheEndDay() {
+        jdbc.update("""
+                INSERT INTO tb_login_log(err_ocrn_yn,crt_dt) VALUES
+                  ('N',timestamp '2099-09-01 00:00:00'),
+                  ('N',timestamp '2099-09-02 23:59:59.999999'),
+                  ('Y',timestamp '2099-09-01 12:00:00'),
+                  (NULL,timestamp '2099-09-01 13:00:00'),
+                  ('N',timestamp '2099-08-31 23:59:59.999999'),
+                  ('N',timestamp '2099-09-03 00:00:00')
+                """);
+
+        List<Object[]> rows = logins.countLoginsByDate("20990901", "20990902");
+
+        assertThat(rows).hasSize(2);
+        assertThat(rows.get(0)[0]).isEqualTo("2099-09-01");
+        assertThat(((Number) rows.get(0)[1]).longValue()).as("성공 로그인만 집계하며 실패·미상 시도를 제외한다").isEqualTo(1);
+        assertThat(rows.get(1)[0]).isEqualTo("2099-09-02");
+        assertThat(((Number) rows.get(1)[1]).longValue()).as("종료일 마지막 소수초를 포함한다").isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_login_log WHERE crt_dt >= timestamp '2099-09-01'"
+                + " AND crt_dt < timestamp '2099-09-03'", Long.class)).as("실패·미상 시도 원본 이력을 지우지 않는다").isEqualTo(4);
+    }
+
+    @Test
+    @DisplayName("로그인 집계 문장은 작성일 인덱스를 쓸 수 있다 — 컬럼을 문자열로 바꿔 비교하지 않는다")
+    void loginCountsCanUseTheCreatedAtIndex() {
+        capturedSql.statements.clear();
+        logins.countLoginsByDate("20260101", "20260102");
+        String generated = capturedSql.statements.stream().filter(sql -> sql.contains("tb_login_log")).findFirst().orElseThrow();
+        String bound = generated.replaceFirst("\\?", "timestamp '2026-01-01'").replaceFirst("\\?", "timestamp '2026-01-03'");
+
+        transaction.executeWithoutResult(status -> {
+            jdbc.execute("SET LOCAL enable_seqscan = off");
+            assertThat(String.join("\n", jdbc.queryForList("EXPLAIN " + bound, String.class))).contains("ix_tb_login_log_crt_dt");
+        });
+    }
+
+    @Test
+    @DisplayName("설문 응답자 검색은 빈 검색어와 없는 검색어에서 전체를, 검색어에서는 이름이 맞는 행만 돌려준다")
+    void surveySearchTreatsBlankAndMissingKeywordAsAll() {
+        long template = jdbc.queryForObject("INSERT INTO tb_srvy_tmplt DEFAULT VALUES RETURNING srvy_tmplt_sn", Long.class);
+        long survey = jdbc.queryForObject("INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd, rls_yn)"
+                + " VALUES ('이식 검증', ?, '20000101', '29991231', 'Y') RETURNING srvy_sn", Long.class, template);
+        long question = jdbc.queryForObject("INSERT INTO tb_srvy_qstn (srvy_sn, srvy_tmplt_sn, qstn_sn, qstn_cn, max_chc_cnt)"
+                + " VALUES (?, ?, 1, '이식 검증', 1) RETURNING srvy_qstn_sn", Long.class, survey, template);
+        long article = jdbc.queryForObject("INSERT INTO tb_srvy_artcl (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, artcl_sn, artcl_cn, etc_ans_yn)"
+                + " VALUES (?, ?, ?, 1, '이식 검증', 'N') RETURNING srvy_artcl_sn", Long.class, survey, template, question);
+        String respondent = "이식응답자" + UUID.randomUUID().toString().substring(0, 8);
+        jdbc.update("INSERT INTO tb_srvy_rslt (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, srvy_artcl_sn, rspns_nm, frst_rgtr_id)"
+                + " VALUES (?, ?, ?, ?, ?, 'vendor-sql')", survey, template, question, article, respondent);
+        try {
+            long total = surveyResults.count();
+            PageRequest page = PageRequest.of(0, 1);
+
+            assertThat(surveyResults.searchByRspnsNm("", page).getTotalElements()).as("빈 검색어").isEqualTo(total);
+            assertThat(surveyResults.searchByRspnsNm(null, page).getTotalElements()).as("없는 검색어").isEqualTo(total);
+            assertThat(surveyResults.searchByRspnsNm(respondent.substring(1), page).getContent())
+                    .extracting(SurveyResult::getRspnsNm).containsExactly(respondent);
+            assertThat(surveyResults.searchByRspnsNm("없는응답자" + respondent, page).getContent()).isEmpty();
+        } finally {
+            jdbc.update("DELETE FROM tb_srvy_rslt WHERE srvy_sn = ?", survey);
+            jdbc.update("DELETE FROM tb_srvy_artcl WHERE srvy_sn = ?", survey);
+            jdbc.update("DELETE FROM tb_srvy_qstn WHERE srvy_sn = ?", survey);
+            jdbc.update("DELETE FROM tb_srvy_info WHERE srvy_sn = ?", survey);
+            jdbc.update("DELETE FROM tb_srvy_tmplt WHERE srvy_tmplt_sn = ?", template);
+        }
     }
 
     @Test

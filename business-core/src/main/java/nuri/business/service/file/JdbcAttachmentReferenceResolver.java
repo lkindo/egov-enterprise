@@ -317,7 +317,7 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
      * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.
      *
      * <p><b>작은따옴표 문자열 리터럴 안의 {@code ?} 는 세지 않는다.</b> 이 구분이 없으면
-     * {@code '/api/v1/files/download?fileId=' || ?} 같은 술어에서 URL 안의 {@code ?} 까지 세어
+     * {@code file_url = '/api/v1/files/download?fileId=1'} 같은 술어에서 URL 안의 {@code ?} 까지 세어
      * 파라미터를 하나 더 바인딩하고, JDBC 는 자리표시자 개수 불일치로 실패한다
      * (2026-08-04 실측 — 팝업 참조원을 추가하며 드러났다. JDBC 드라이버는 리터럴 안의 {@code ?} 를
      * 자리표시자로 보지 않으므로 이 함수도 같은 규칙을 따라야 한다).

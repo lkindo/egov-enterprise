@@ -15,19 +15,19 @@
       "path": "business-core/src/main/java/nuri/business/domain/log/UserLogRepositoryImpl.java",
       "treatment": "port",
       "reason": "카운터 upsert 를 한 문장으로 직렬화한다",
-      "test": "foundation/src/test/java/nuri/foundation/core/persistence/PostgresqlSqlDialectTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-core/src/main/java/nuri/business/domain/menu/MenuRowLockRepositoryImpl.java",
       "treatment": "port",
       "reason": "자기 FK 와 충돌하지 않는 강도로 메뉴 행을 잠근다",
-      "test": "foundation/src/test/java/nuri/foundation/core/persistence/PostgresqlSqlDialectTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-core/src/main/java/nuri/business/domain/user/repository/DeptManageRepositoryImpl.java",
       "treatment": "port",
       "reason": "계층 변경을 같은 순서로 직렬화한다",
-      "test": "foundation/src/test/java/nuri/foundation/core/persistence/PostgresqlSqlDialectTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-core/src/main/java/nuri/business/service/auth/AuthorizationAdministrationService.java",
@@ -81,25 +81,25 @@
       "path": "business-core/src/main/java/nuri/business/domain/system/job/DurableJobRepository.java",
       "treatment": "hibernate",
       "reason": "페이징과 SKIP LOCKED 를 Hibernate 가 벤더 문법으로 만든다",
-      "test": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-core/src/main/java/nuri/business/domain/log/LoginLogRepository.java",
       "treatment": "hibernate",
       "reason": "HQL format 으로 일자 문자열을 만든다",
-      "test": "business-app/src/test/java/nuri/business/service/board/stats/StatisticsCompositionEquivalenceTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-app/src/main/java/nuri/business/domain/board/BoardRepository.java",
       "treatment": "hibernate",
       "reason": "일자 집계는 HQL, 고정 해제는 NULL 을 문장에 적어 CAST 를 없앴다",
-      "test": "business-app/src/test/java/nuri/business/domain/board/BoardPostDateStatsTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-app/src/main/java/nuri/business/domain/board/DtaUseStatsRepository.java",
       "treatment": "hibernate",
       "reason": "HQL format 으로 일자 문자열을 만든다",
-      "test": "business-app/src/test/java/nuri/business/service/board/stats/StatisticsCompositionEquivalenceTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-core/src/main/java/nuri/business/service/file/AttachmentSource.java",
@@ -123,19 +123,19 @@
       "path": "business-app/src/main/java/nuri/business/domain/survey/SurveyResultRepository.java",
       "treatment": "portable-rewrite",
       "reason": "빈 검색어가 NULL 인 Oracle 에서도 전체를 돌려주도록 IS NULL 가지를 더했다",
-      "test": "business-app/src/test/java/nuri/business/service/survey/SurveyResultServiceTest.java"
+      "test": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
     },
     {
       "path": "business-app/src/main/java/nuri/business/service/survey/OnlinePollService.java",
       "treatment": "portable-rewrite",
       "reason": "Oracle 은 제약 이름을 대문자로 돌려주므로 대소문자를 무시한다",
-      "test": "business-app/src/test/java/nuri/business/service/survey/SurveyResultServiceTest.java"
+      "test": "business-app/src/test/java/nuri/business/service/survey/OnlinePollServiceTest.java"
     },
     {
       "path": "api-server/src/main/java/nuri/config/E2EDataCleansingConfig.java",
       "treatment": "portable-rewrite",
       "reason": "Linux MySQL 은 표 이름의 대소문자를 가린다",
-      "test": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+      "test": "api-server/src/test/java/nuri/config/E2EDataCleansingConfigTest.java"
     },
     {
       "path": "business-app/src/main/java/nuri/business/domain/schedule/ScheduleRepository.java",
