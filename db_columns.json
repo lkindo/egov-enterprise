@@ -4068,6 +4068,10 @@
     "column_name": "sys_log_sn"
   },
   {
+    "table_name": "tb_sys_log",
+    "column_name": "prcs_req_msec"
+  },
+  {
     "table_name": "tb_tmplt_info",
     "column_name": "use_yn"
   },
@@ -4458,5 +4462,9 @@
   {
     "table_name": "tb_web_log",
     "column_name": "web_log_sn"
+  },
+  {
+    "table_name": "tb_web_log",
+    "column_name": "prcs_req_msec"
   }
 ]

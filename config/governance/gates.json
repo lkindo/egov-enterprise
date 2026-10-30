@@ -1006,9 +1006,17 @@
           "id": "DB-MIG-IP-ADDRESS-IPV6",
           "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
         },
+          {
+            "id": "DB-LOG-DURATION-JPA",
+            "source": "api-server/src/test/java/nuri/api/schema/LogDurationJpaIntegrationTest.java"
+          },
+          {
+            "id": "DB-LOG-DURATION-MIGRATION",
+            "source": "api-server/src/test/java/nuri/api/schema/LogDurationMigrationIntegrationTest.java"
+          },
         {
           "id": "DB-LOG-DURATION-TRANSITION-PROPOSAL",
-          "source": "api-server/src/test/java/nuri/api/schema/LogDurationTransitionProposalIntegrationTest.java"
+          "source": "api-server/src/test/java/nuri/api/schema/LogDurationTransitionMigrationIntegrationTest.java"
         },
         {
           "id": "DB-MIG-LOG-SEARCH-INDEX",

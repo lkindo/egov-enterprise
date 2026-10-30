@@ -1,18 +1,17 @@
--- PROPOSAL ONLY: NOT APPROVED FOR SHARED DATABASE APPLICATION.
--- Caller must run this ENTIRE file in one transaction with autocommit=false.
--- No BEGIN/COMMIT: suitable for an eventual separately approved Flyway migration.
--- External runner must bound total transaction/lock-hold time; statement_timeout is per statement.
+-- V2_145 Expand: register the approved millisecond quantity standard and preserve both legacy log writers.
+-- Flyway owns one transaction. No legacy data is rewritten; Sync precedes V2_146 and new application readers.
 SET LOCAL lock_timeout = '3s';
 SET LOCAL statement_timeout = '5s';
+SET LOCAL transaction_timeout = '15s';
 SET LOCAL search_path = pg_catalog, public;
 
 -- Fixed metadata lock order precedes all conflict checks and target-table locks.
 -- SHARE ROW EXCLUSIVE excludes competing metadata INSERT/UPDATE/DELETE through commit.
-LOCK TABLE public.meta_standard_words IN SHARE ROW EXCLUSIVE MODE;
-LOCK TABLE public.meta_standard_domains IN SHARE ROW EXCLUSIVE MODE;
-LOCK TABLE public.meta_standard_terms IN SHARE ROW EXCLUSIVE MODE;
-LOCK TABLE public.tb_sys_log IN ACCESS EXCLUSIVE MODE;
-LOCK TABLE public.tb_web_log IN ACCESS EXCLUSIVE MODE;
+LOCK TABLE public.meta_standard_words IN SHARE ROW EXCLUSIVE MODE NOWAIT;
+LOCK TABLE public.meta_standard_domains IN SHARE ROW EXCLUSIVE MODE NOWAIT;
+LOCK TABLE public.meta_standard_terms IN SHARE ROW EXCLUSIVE MODE NOWAIT;
+LOCK TABLE public.tb_sys_log IN ACCESS EXCLUSIVE MODE NOWAIT;
+LOCK TABLE public.tb_web_log IN ACCESS EXCLUSIVE MODE NOWAIT;
 
 DO $d02_log_preflight$
 BEGIN
@@ -44,7 +43,8 @@ BEGIN
     IF (SELECT count(*) FROM pg_catalog.pg_class c
         JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
         WHERE n.nspname='public' AND c.relname IN ('tb_sys_log','tb_web_log')
-          AND c.relkind='r' AND NOT c.relispartition) <> 2
+          AND c.relkind='r' AND c.relpersistence='p' AND NOT c.relispartition
+          AND NOT c.relrowsecurity AND NOT c.relforcerowsecurity) <> 2
        OR EXISTS (SELECT 1 FROM pg_catalog.pg_inherits
            WHERE inhrelid IN ('public.tb_sys_log'::regclass,'public.tb_web_log'::regclass)
               OR inhparent IN ('public.tb_sys_log'::regclass,'public.tb_web_log'::regclass))

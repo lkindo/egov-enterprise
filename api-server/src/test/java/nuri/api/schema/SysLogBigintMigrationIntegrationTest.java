@@ -35,7 +35,10 @@ class SysLogBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSu
                     """);
         }
 
-        migrateThroughAuthorizationCutover();
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.145")));
+        LogDurationCutoverTestSupport.assertRedirectRefusesUnsynchronizedRows(flyway(null));
+        LogDurationCutoverTestSupport.sync(flyway(null).getConfiguration().getDataSource());
+        flyway(null).migrate();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -61,6 +64,8 @@ class SysLogBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSu
                 assertThat(rows.getString("ocrn_ymd")).isEqualTo("20260814");
                 assertThat(rows.next()).isFalse();
             }
+            assertThat(singleLong(statement,"SELECT prcs_req_msec FROM tb_sys_log WHERE dmnd_id='REQ_LEGACY_001'"))
+                    .isEqualTo(87L);
 
             assertThat(columnDataType(statement, "tb_sys_log", "sys_log_sn")).isEqualTo("bigint");
             assertThat(identityGeneration(statement, "tb_sys_log", "sys_log_sn")).isEqualTo("BY DEFAULT");

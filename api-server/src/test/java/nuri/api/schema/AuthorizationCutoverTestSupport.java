@@ -48,6 +48,11 @@ public final class AuthorizationCutoverTestSupport {
         } catch (IOException failure) {
             throw new IllegalStateException("Cannot read the actual authorization Contract",failure);
         }
+        if (flyway.getConfiguration().getTarget().compareTo(
+                org.flywaydb.core.api.MigrationVersion.fromVersion("2.146"))>=0) {
+            Flyway.configure().configuration(flyway.getConfiguration()).target("2.145").load().migrate();
+            LogDurationCutoverTestSupport.sync(flyway.getConfiguration().getDataSource());
+        }
         flyway.migrate();
     }
 

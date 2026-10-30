@@ -43,6 +43,7 @@ public class SysLog extends BaseEntity {
     private String prcsSeCd;
 
     // [V2_16] varchar(14)→bigint 타입 통일: 의미는 tb_web_log.prcs_tm 과 동일한 '처리 소요시간(ms)' 실측 확정
+    @Column(name = "prcs_req_msec")
     private Long prcsTm;
 
     @Column(length = 20)

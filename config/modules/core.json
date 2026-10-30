@@ -63,15 +63,15 @@
     ]
   },
   "databaseSnapshot": {
-    "source": "isolated PostgreSQL 17/public; repository migrations through V2_142 and explicit authorization Contract; physical inventory measured by the composer DB generator (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process, approval-temporary-draft, approval-saved-line, cms content and board change-history sequences are table-owned",
-    "checkedAt": "2026-10-23T04:23:30.424Z",
+    "source": "isolated PostgreSQL 17/public; repository migrations through V2_146 and explicit authorization Contract; physical inventory measured by raw composer migration replay (not OCI deployment state); MFA sequences are standalone, durable-work, sensitive-audit, approval-process, approval-temporary-draft, approval-saved-line, cms content and board change-history sequences are table-owned",
+    "checkedAt": "2026-10-30T12:52:18.810Z",
     "physicalTableCountExcludingFlyway": 98,
     "physicalSequenceCount": 62,
     "physicalStandaloneSequenceCount": 6,
     "metaRows": {
-      "meta_standard_words": 3387,
-      "meta_standard_terms": 13245,
-      "meta_standard_domains": 131
+      "meta_standard_words": 3388,
+      "meta_standard_terms": 13246,
+      "meta_standard_domains": 132
     }
   },
   "presentation": {

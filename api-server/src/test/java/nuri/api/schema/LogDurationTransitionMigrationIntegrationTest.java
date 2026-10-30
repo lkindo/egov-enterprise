@@ -27,15 +27,15 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
- * Flyway 자동 적용 경로 밖의 로그 소요시간 Expand/Sync 제안을 클래스 전용 PostgreSQL에서 리허설한다.
+ * 실제 V2_145와 운영 Sync SQL의 거부·동기화·철회를 클래스 전용 PostgreSQL에서 리허설한다.
  *
  * <p>메타 충돌·잘못된 초기 상태는 savepoint로 DDL까지 되돌린다. 정상 이행과 두 연결의 쓰기 경합은 한 시험 안에서
  * 이어지므로 시험 순서에 의존하지 않는다. 커밋한 리허설 데이터도 공용 support의 클래스별 database 삭제로 정리된다.
  * 이 시험은 공유 DB 적용이나 신규 writer 활성화를 승인하지 않는다.
  */
 @Tag("schema-validation")
-@DisplayName("로그 밀리초 표준 전환 제안의 실제 PostgreSQL 이행·거부·경합")
-class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrationTestSupport {
+@DisplayName("로그 밀리초 표준 전환 SQL의 실제 PostgreSQL 이행·거부·경합")
+class LogDurationTransitionMigrationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
     private static final String PROPOSALS = "db/proposals/log-duration/";
     private static final String LEGACY = "prcs_tm";
@@ -50,7 +50,7 @@ class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrati
 
     @BeforeAll
     void migrateCurrentPhysicalModel() throws SQLException {
-        migrateThroughAuthorizationCutover();
+        AuthorizationCutoverTestSupport.migrate(flyway(org.flywaydb.core.api.MigrationVersion.fromVersion("2.144")));
     }
 
     @Test
@@ -777,8 +777,16 @@ class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrati
         }
     }
 
+    private static String resourcePath(String filename) {
+        return switch (filename) {
+            case "expand.sql" -> "db/migration/V2_145__expand_log_duration_milliseconds.sql";
+            case "backfill.sql", "verify-parity.sql" -> "db/operations/log-duration/" + filename;
+            default -> PROPOSALS + filename;
+        };
+    }
+
     private static String proposal(String filename) throws IOException {
-        try (var stream = new ClassPathResource(PROPOSALS + filename).getInputStream()) {
+        try (var stream = new ClassPathResource(resourcePath(filename)).getInputStream()) {
             return new String(stream.readAllBytes(), StandardCharsets.UTF_8);
         }
     }
