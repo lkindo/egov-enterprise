@@ -33,6 +33,7 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -149,9 +150,10 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"", "01", "4"})
-    void legacyPriorityCanBeReadButMustBeCorrectedBeforeSaving(String legacyPriority) {
-        jdbc.update("UPDATE tb_dept_task_info SET prrty_rnk=? WHERE dept_task_sn=?", legacyPriority, task);
+    @ValueSource(strings = {"0", "4", "9999999999"})
+    void outOfRangeNumericPriorityCanBeReadButMustBeCorrectedBeforeSaving(String legacyPriority) {
+        // Noncanonical text cannot survive the approved empty-table transition to NUMERIC(10,0).
+        jdbc.update("UPDATE tb_dept_task_info SET prrty_rnk=? WHERE dept_task_sn=?", new BigDecimal(legacyPriority), task);
         Map<String, Object> before = storedTask();
         var read = service.getDeptJob(task);
         assertThat(read.getPrrtyRnk()).isEqualTo(legacyPriority);
@@ -170,7 +172,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
         read.setPicId(null); // Existing omitted-assignee behavior preserves the current owner.
         read.setPrrtyRnk("3");
         service.updateDeptJob(task, read);
-        assertThat(storedTask()).containsEntry("prrty_rnk", "3").containsEntry("version", 1)
+        assertThat(storedTask()).containsEntry("prrty_rnk", new BigDecimal("3")).containsEntry("version", 1)
                 .containsEntry("dept_task_cn", "corrected content").containsEntry("pic_id", actor)
                 .containsEntry("frst_rgtr_id", actorLogin);
         assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("3");
@@ -190,6 +192,17 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
     }
 
     @Test
+    void validStringPriorityBindsAsNumericAndReadsBackAsAString() {
+        Long created = service.createDeptJob(DeptJobDto.builder().deptTaskNm(fixture + " priority")
+                .deptTaskCn("explicit priority").prrtyRnk("1").build());
+
+        assertThat(jdbc.queryForMap("SELECT prrty_rnk,version FROM tb_dept_task_info WHERE dept_task_sn=?", created))
+                .containsEntry("prrty_rnk", BigDecimal.ONE).containsEntry("version", 0);
+        assertThat(service.getDeptJob(created).getPrrtyRnk()).isEqualTo("1");
+        assertNotificationRecipients();
+    }
+
+    @Test
     void nullPriorityRemainsNullOnCreateAndClearsTheStoredValueOnUpdate() {
         Long created = service.createDeptJob(DeptJobDto.builder().deptTaskNm(fixture + " null")
                 .deptTaskCn("no priority supplied").build());
@@ -199,7 +212,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
 
         service.updateDeptJob(task, DeptJobDto.builder().deptTaskNm(fixture).deptTaskCn("with priority")
                 .prrtyRnk("2").version(0).build());
-        assertThat(storedTask()).containsEntry("prrty_rnk", "2").containsEntry("version", 1);
+        assertThat(storedTask()).containsEntry("prrty_rnk", new BigDecimal("2")).containsEntry("version", 1);
         service.updateDeptJob(task, DeptJobDto.builder().deptTaskNm(fixture).deptTaskCn("priority cleared")
                 .version(1).build());
         assertThat(storedTask()).containsEntry("prrty_rnk", null).containsEntry("version", 2)
@@ -215,7 +228,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
 
         service.reassignDeptJob(task, winner, 0);
 
-        assertThat(storedTask()).containsEntry("prrty_rnk", "4").containsEntry("version", 1)
+        assertThat(storedTask()).containsEntry("prrty_rnk", new BigDecimal("4")).containsEntry("version", 1)
                 .containsEntry("pic_id", winner).containsEntry("dept_task_cn", "original content");
         assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("4");
         assertNotificationRecipients(winner);

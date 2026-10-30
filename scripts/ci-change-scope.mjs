@@ -178,6 +178,10 @@ const SHARED_PROTECTED_COLUMN_CONTRACT = [
   /^foundation\/src\/main\/java\/nuri\/foundation\/core\/(?:util\/CryptoUtil|config\/ProjectCryptoConfig)\.java$/,
   /^foundation\/src\/main\/java\/nuri\/foundation\/security\/mfa\/MfaSecretCipher\.java$/,
   /^business-core\/src\/main\/java\/nuri\/business\/domain\/(?:user\/entity\/User|auth\/mfa\/MfaCredential)\.java$/,
+  // Non-encrypting numeric converters are explicitly classified by the same inventory.
+  // Pin their holders too: removal leaves no @Convert content to select the contract.
+  /^business-core\/src\/main\/java\/nuri\/business\/domain\/deptjob\/DeptJob\.java$/,
+  /^business-app\/src\/main\/java\/nuri\/business\/domain\/promotion\/popup\/Popup\.java$/,
   // A new JPA converter may encrypt another column; the contract counts every @Convert.
   /^(?:foundation|business-core|business-app|api-server)\/src\/main\/java\/.*Converter\.java$/,
   // The contract also compares the exact set of online encryption users (ENCRYPTION_USERS).

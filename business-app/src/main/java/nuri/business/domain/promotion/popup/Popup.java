@@ -3,7 +3,9 @@ import lombok.Builder;
 import java.time.LocalDate;
 
 import nuri.foundation.domain.common.BaseEntity;
+import nuri.foundation.domain.common.IntegralStringConverter;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
@@ -41,10 +43,12 @@ public class Popup extends BaseEntity {
     @Column(length = 12)
     private String popupVrtcPstn;
 
-    @Column(length = 12)
+    @Convert(converter = IntegralStringConverter.class)
+    @Column(name = "popup_vrtc_sz", precision = 7, scale = 0)
     private String popupVrtcSz;
 
-    @Column(length = 12)
+    @Convert(converter = IntegralStringConverter.class)
+    @Column(name = "popup_wdth_sz", precision = 7, scale = 0)
     private String popupWdthSz;
 
     private LocalDate ntceBgnde;

@@ -807,6 +807,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java"
         },
         {
+          "id": "DB-EMPTY-NUMERIC-COLUMNS-MIGRATION",
+          "source": "api-server/src/test/java/nuri/api/schema/EmptyNumericColumnsMigrationIntegrationTest.java"
+        },
+        {
           "id": "DB-POPUP-INPUT-POLICY",
           "source": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java"
         },
@@ -1001,6 +1005,10 @@
         {
           "id": "DB-MIG-IP-ADDRESS-IPV6",
           "source": "api-server/src/test/java/nuri/api/schema/IpAddressIpv6MigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-LOG-DURATION-TRANSITION-PROPOSAL",
+          "source": "api-server/src/test/java/nuri/api/schema/LogDurationTransitionProposalIntegrationTest.java"
         },
         {
           "id": "DB-MIG-LOG-SEARCH-INDEX",

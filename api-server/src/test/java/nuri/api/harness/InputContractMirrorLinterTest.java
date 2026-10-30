@@ -7,6 +7,7 @@ import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.json.JsonMapper;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotEmpty;
@@ -15,6 +16,7 @@ import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import nuri.business.service.auth.dto.AuthorizationDto;
 import nuri.business.service.user.dto.UserDto;
+import nuri.foundation.domain.common.IntegralStringConverter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -108,6 +110,14 @@ class InputContractMirrorLinterTest {
 
     private static final String API_DOCS_FILE = "api-docs.json";
     private static final String CENSUS_REGISTRY = "config/governance/input-contract-mirror-census.json";
+    // 타입 import 대신 이름으로 묶어 optional 기능이 빠진 재사용 제품에서도 이 게이트를 유지한다.
+    // NUMERIC에는 @Column.length의 기본값 255가 저장 한도가 아니다. 승인된 precision과 요청 정수 범위를 함께 본다.
+    private static final Map<String, NumericStringContract> NUMERIC_STRING_CONTRACTS = Map.of(
+            "nuri.business.domain.deptjob.DeptJob.prrtyRnk", new NumericStringContract(10, "^(?:1|2|3)$"),
+            "nuri.business.domain.promotion.popup.Popup.popupVrtcSz",
+            new NumericStringContract(7, "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$"),
+            "nuri.business.domain.promotion.popup.Popup.popupWdthSz",
+            new NumericStringContract(7, "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$"));
 
     // 표적 하한은 원장의 expected 다(Registry.Floors). 하한은 원장 전체에 적용한다 — 축소 프로필에서 검사하는 부분집합은
     //   작아지지만, 원장을 비워 게이트를 줄이는 경로는 여전히 red 다. 표면을 걷어 검증 대상 자체가 사라지면(약화가 아니다)
@@ -174,6 +184,7 @@ class InputContractMirrorLinterTest {
         }
 
         List<String> violations = new ArrayList<>();
+        Set<String> visitedNumericBindings = new TreeSet<>();
         for (LengthBinding binding : census.lengthBindings()) {
             for (String fieldName : binding.fields()) {
                 Field entityField = declaredField(binding.entityType(), binding.entityField(fieldName), violations, "Entity");
@@ -183,6 +194,14 @@ class InputContractMirrorLinterTest {
                 }
                 Column column = entityField.getAnnotation(Column.class);
                 Size size = dtoField.getAnnotation(Size.class);
+                NumericStringContract numeric = NUMERIC_STRING_CONTRACTS.get(
+                        binding.entityType().getName() + "." + entityField.getName());
+                Convert convert = entityField.getAnnotation(Convert.class);
+                if (numeric != null || (convert != null && convert.converter() == IntegralStringConverter.class)) {
+                    visitedNumericBindings.add(binding.entityType().getName() + "." + entityField.getName());
+                    violations.addAll(numericStringViolations(entityField, dtoField, numeric));
+                    continue;
+                }
                 if (column == null) {
                     violations.add(binding.entityType().getSimpleName() + "." + fieldName
                             + " — @Column(length)가 없어 저장 상한을 판정할 수 없습니다");
@@ -200,6 +219,9 @@ class InputContractMirrorLinterTest {
             }
         }
 
+        for (String missing : missingNumericBindings(visitedNumericBindings, ReusableHarnessProfile.current()::retainsType)) {
+            violations.add(missing + " — 승인된 숫자 문자열 필드가 입력 원장 검사에서 빠졌습니다");
+        }
         for (EnumBinding binding : census.enumBindings()) {
             Field dtoField = declaredField(binding.dtoType(), binding.field(), violations, "DTO");
             if (dtoField == null) {
@@ -225,6 +247,80 @@ class InputContractMirrorLinterTest {
         log.info("✅ 입력 계약 표적 미러: 길이 {}필드, enum {}필드.",
                 census.lengthBindings().stream().mapToInt(binding -> binding.fields().size()).sum(),
                 census.enumBindings().size());
+    }
+
+    private static Set<String> missingNumericBindings(Set<String> visited, Predicate<String> retainedType) {
+        Set<String> missing = new TreeSet<>();
+        for (String key : NUMERIC_STRING_CONTRACTS.keySet()) {
+            if (retainedType.test(key.substring(0, key.lastIndexOf('.'))) && !visited.contains(key)) missing.add(key);
+        }
+        return missing;
+    }
+
+    private static List<String> numericStringViolations(Field entity, Field dto, NumericStringContract expected) {
+        List<String> violations = new ArrayList<>();
+        String label = entity.getDeclaringClass().getSimpleName() + "." + entity.getName();
+        if (expected == null) {
+            return List.of(label + " — 승인된 숫자 문자열 저장 계약이 없습니다");
+        }
+        Column column = entity.getAnnotation(Column.class);
+        Convert convert = entity.getAnnotation(Convert.class);
+        if (entity.getType() != String.class || dto.getType() != String.class
+                || convert == null || convert.disableConversion() || convert.converter() != IntegralStringConverter.class
+                || column == null || column.precision() != expected.precision() || column.scale() != 0) {
+            violations.add(label + " — String/IntegralStringConverter/NUMERIC(" + expected.precision() + ",0) 계약 불일치");
+        }
+        Pattern pattern = dto.getAnnotation(Pattern.class);
+        Size size = dto.getAnnotation(Size.class);
+        if (pattern == null || !expected.pattern().equals(pattern.regexp()) || pattern.flags().length != 0
+                || size == null || size.max() == Integer.MAX_VALUE) {
+            violations.add(label + " — NUMERIC 범위 안의 정규 정수 요청 Pattern·Size 계약 불일치");
+        }
+        return violations;
+    }
+
+    @Test
+    @DisplayName("NUMERIC 문자열 저장 검사는 기본 length=255로 precision·scale·변환기·입력 패턴 위반을 숨기지 않는다")
+    void numericStringsUsePrecisionAndStrictRequestInsteadOfDefaultLength() throws Exception {
+        NumericStringContract expected = new NumericStringContract(7, "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$");
+        Field goodEntity = NumericStorageFixtures.class.getDeclaredField("good");
+        Field goodRequest = NumericRequestFixtures.class.getDeclaredField("good");
+        assertThat(goodEntity.getAnnotation(Column.class).length()).isEqualTo(255);
+        assertThat(numericStringViolations(goodEntity, goodRequest, expected)).isEmpty();
+        for (String field : List.of("precision", "scale", "missingConverter", "disabledConverter", "wrongType")) {
+            assertThat(numericStringViolations(NumericStorageFixtures.class.getDeclaredField(field), goodRequest, expected))
+                    .as(field).isNotEmpty();
+        }
+        for (String field : List.of("unboundedPattern", "missingPattern", "missingSize", "wrongType")) {
+            assertThat(numericStringViolations(goodEntity, NumericRequestFixtures.class.getDeclaredField(field), expected))
+                    .as(field).isNotEmpty();
+        }
+        assertThat(numericStringViolations(goodEntity, goodRequest, null)).isNotEmpty();
+        assertThat(missingNumericBindings(NUMERIC_STRING_CONTRACTS.keySet(), ignored -> true)).isEmpty();
+        Set<String> incomplete = new TreeSet<>(NUMERIC_STRING_CONTRACTS.keySet());
+        String removed = incomplete.iterator().next();
+        incomplete.remove(removed);
+        assertThat(missingNumericBindings(incomplete, ignored -> true)).containsExactly(removed);
+        assertThat(missingNumericBindings(Set.of(), ignored -> false)).isEmpty();
+    }
+
+    private record NumericStringContract(int precision, String pattern) {}
+
+    private static class NumericStorageFixtures {
+        @Column(precision = 7, scale = 0) @Convert(converter = IntegralStringConverter.class) String good;
+        @Column(precision = 6, scale = 0) @Convert(converter = IntegralStringConverter.class) String precision;
+        @Column(precision = 7, scale = 1) @Convert(converter = IntegralStringConverter.class) String scale;
+        @Column(precision = 7, scale = 0) String missingConverter;
+        @Column(precision = 7, scale = 0) @Convert(converter = IntegralStringConverter.class, disableConversion = true) String disabledConverter;
+        @Column(precision = 7, scale = 0) @Convert(converter = IntegralStringConverter.class) Long wrongType;
+    }
+
+    private static class NumericRequestFixtures {
+        @Size(max = 12) @Pattern(regexp = "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$") String good;
+        @Size(max = 12) @Pattern(regexp = "[0-9]+") String unboundedPattern;
+        @Size(max = 12) String missingPattern;
+        @Pattern(regexp = "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$") String missingSize;
+        @Size(max = 12) @Pattern(regexp = "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$") Long wrongType;
     }
 
     @Test

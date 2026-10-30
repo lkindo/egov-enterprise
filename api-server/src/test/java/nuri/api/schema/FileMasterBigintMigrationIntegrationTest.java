@@ -1,6 +1,7 @@
 package nuri.api.schema;
 
 import org.flywaydb.core.api.MigrationVersion;
+import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -12,6 +13,7 @@ import java.sql.Statement;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("schema-validation")
 @DisplayName("첨부파일 문자열 PK → BIGINT IDENTITY 폐포 마이그레이션")
@@ -57,7 +59,17 @@ class FileMasterBigintMigrationIntegrationTest extends SharedPostgresMigrationTe
                     """);
         }
 
-        migrateThroughAuthorizationCutover();
+        // V2_144 explicitly rejects this nonempty popup fixture; keep the attachment conversion evidence.
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.143")));
+
+        try (Connection connection = openConnection(); Statement statement = connection.createStatement()) {
+            String before = attachmentSnapshot(statement);
+            assertThatThrownBy(() -> flyway(MigrationVersion.fromVersion("2.144")).migrate())
+                    .isInstanceOf(FlywayException.class)
+                    .hasStackTraceContaining("V2_144 requires BOTH business tables empty");
+            assertThat(attachmentSnapshot(statement)).isEqualTo(before);
+            assertThat(singleLong(statement, "SELECT count(*) FROM flyway_schema_history WHERE version='2.144'")).isZero();
+        }
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -96,6 +108,14 @@ class FileMasterBigintMigrationIntegrationTest extends SharedPostgresMigrationTe
             assertThat(singleLong(statement, "SELECT max(atch_file_sn) FROM tb_file_master"))
                     .isGreaterThan(attachmentSn);
         }
+    }
+
+    private String attachmentSnapshot(Statement statement) throws SQLException {
+        return singleString(statement, "SELECT jsonb_build_object('files',"
+                + "(SELECT jsonb_agg(to_jsonb(m) ORDER BY atch_file_sn) FROM tb_file_master m),'details',"
+                + "(SELECT jsonb_agg(to_jsonb(d) ORDER BY atch_file_sn,atch_file_seq) FROM tb_file_detail d),'boards',"
+                + "(SELECT jsonb_agg(to_jsonb(b) ORDER BY pst_sn) FROM tb_bbs_item b),'popups',"
+                + "(SELECT jsonb_agg(to_jsonb(p) ORDER BY popup_sn) FROM tb_popup_info p))::text");
     }
 
     private long singleLong(Statement statement, String sql) throws SQLException {

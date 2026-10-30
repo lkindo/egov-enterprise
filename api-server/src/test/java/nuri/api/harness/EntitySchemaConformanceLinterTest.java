@@ -1,6 +1,7 @@
 package nuri.api.harness;
 
 import jakarta.persistence.Column;
+import jakarta.persistence.Convert;
 import jakarta.persistence.ElementCollection;
 import jakarta.persistence.Embedded;
 import jakarta.persistence.EmbeddedId;
@@ -15,6 +16,7 @@ import jakarta.persistence.OneToMany;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import jakarta.persistence.Transient;
+import nuri.foundation.domain.common.IntegralStringConverter;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -102,7 +104,7 @@ class EntitySchemaConformanceLinterTest {
     private static final Pattern DROP_COLUMN = Pattern.compile(
             "(?is)^DROP\\s+COLUMN\\s+(?:IF\\s+EXISTS\\s+)?\"?(\\w+)\"?");
     private static final Pattern ALTER_COLUMN_TYPE = Pattern.compile(
-            "(?is)^ALTER\\s+COLUMN\\s+\"?(\\w+)\"?\\s+(?:SET\\s+DATA\\s+)?TYPE\\s+([^,]+?)(?:\\s+USING\\s+.*)?$");
+            "(?is)^ALTER\\s+COLUMN\\s+\"?(\\w+)\"?\\s+(?:SET\\s+DATA\\s+)?TYPE\\s+(.+?)(?:\\s+USING\\s+.*)?$");
     private static final Pattern RENAME_COLUMN = Pattern.compile(
             "(?is)^RENAME\\s+COLUMN\\s+\"?(\\w+)\"?\\s+TO\\s+\"?(\\w+)\"?");
     private static final Pattern RENAME_TABLE = Pattern.compile(
@@ -179,9 +181,15 @@ class EntitySchemaConformanceLinterTest {
                     }
                 }
 
-                // ② 길이 초과 — 엔티티가 물리보다 길면 런타임 'value too long'
+                // ② 명시 숫자 변환은 문자열 길이가 아닌 실제 NUMERIC precision/scale과 대조한다.
                 Column col = field.getAnnotation(Column.class);
-                if (field.getType() == String.class) {
+                Convert convert = field.getAnnotation(Convert.class);
+                if (convert != null && !convert.disableConversion() && convert.converter() == IntegralStringConverter.class) {
+                    if (!integralStringMatchesPhysicalType(field, physicalType)) {
+                        violations.add(String.format("%s → %s.%s [숫자 변환 불일치] String/NUMERIC precision·scale (물리: %s)",
+                                clazz.getSimpleName(), table, column, physicalType));
+                    }
+                } else if (field.getType() == String.class) {
                     int entityLen = (col != null) ? col.length() : JPA_DEFAULT_LENGTH;
                     int physicalLen = lengthOf(physicalType);
                     if (entityLen > physicalLen && !KNOWN_DRIFT.contains(key + ":length")) {
@@ -215,6 +223,42 @@ class EntitySchemaConformanceLinterTest {
     }
 
     // ── 마이그레이션 재생 ────────────────────────────────────────────────────────
+
+    private static boolean integralStringMatchesPhysicalType(Field field, String physicalType) {
+        Column column = field.getAnnotation(Column.class);
+        Matcher numeric = Pattern.compile("(?i)^(?:NUMERIC|DECIMAL)\\s*\\(\\s*(\\d+)\\s*,\\s*(\\d+)\\s*\\)$")
+                .matcher(physicalType.trim());
+        return field.getType() == String.class && column != null && column.scale() == 0 && numeric.matches()
+                && column.precision() == Integer.parseInt(numeric.group(1))
+                && column.scale() == Integer.parseInt(numeric.group(2));
+    }
+
+    @Test
+    @DisplayName("명시 정수 변환기의 문자열은 물리 NUMERIC precision/scale과 일치해야 한다")
+    void integralStringMappingChecksPhysicalNumericInsteadOfLength() throws Exception {
+        Field field = IntegralStorageFixture.class.getDeclaredField("value");
+        org.assertj.core.api.Assertions.assertThat(integralStringMatchesPhysicalType(field, "NUMERIC(10,0)")).isTrue();
+        org.assertj.core.api.Assertions.assertThat(integralStringMatchesPhysicalType(field, "decimal(10, 0)")).isTrue();
+        for (String wrong : List.of("VARCHAR(12)", "NUMERIC(7,0)", "NUMERIC(10,1)", "BIGINT", "NUMERIC")) {
+            org.assertj.core.api.Assertions.assertThat(integralStringMatchesPhysicalType(field, wrong)).as(wrong).isFalse();
+        }
+    }
+
+    private static class IntegralStorageFixture {
+        @Column(precision = 10, scale = 0) @Convert(converter = IntegralStringConverter.class) String value;
+    }
+
+    @Test
+    @DisplayName("NUMERIC precision/scale의 콤마는 ALTER action 경계가 아니며 USING은 타입에 포함되지 않는다")
+    void numericAlterTypeKeepsPrecisionAndScale() {
+        Map<String, Map<String, String>> schema = new TreeMap<>();
+        applyStatement(schema, "CREATE TABLE sample (priority VARCHAR(12), width VARCHAR(12), height VARCHAR(12))");
+        applyStatement(schema, "ALTER TABLE public.sample ALTER COLUMN priority TYPE NUMERIC(10,0) USING priority::NUMERIC(10,0)");
+        applyStatement(schema, "ALTER TABLE sample ALTER COLUMN width SET DATA TYPE NUMERIC(7, 0),"
+                + " ALTER COLUMN height TYPE NUMERIC(7,0) USING height::NUMERIC(7,0)");
+        org.assertj.core.api.Assertions.assertThat(schema.get("sample")).containsExactlyInAnyOrderEntriesOf(Map.of(
+                "priority", "NUMERIC(10,0)", "width", "NUMERIC(7, 0)", "height", "NUMERIC(7,0)"));
+    }
 
     /** {@code 테이블 -> (컬럼 -> 타입)} — V* 델타를 버전 순으로 적용한 유효 스키마 */
     Map<String, Map<String, String>> replayMigrations() throws IOException {
