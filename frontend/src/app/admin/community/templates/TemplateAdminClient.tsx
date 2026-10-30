@@ -42,6 +42,10 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { TemplateDtoSchema } from '@/types/generated-zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
+/* reusable-base:board:start */
+import Link from 'next/link';
+import { canOpenPage } from '@/lib/auth/page-access';
+/* reusable-base:board:end */
 
 // [2026-08-29] 생성 DTO 가 이제 길이·필수를 스스로 말한다(백엔드 @Size/@NotBlank 추가).
 // 여기서는 사용자에게 보일 한국어 사유만 덧입힌다 — 제약 자체를 여기서 창작하지 않는다.
@@ -323,6 +327,16 @@ export default function TemplateAdminClient({
         </>
       }
     >
+      {/* reusable-base:board:start */}
+      <div role="note" className="rounded-md border border-border bg-muted/40 p-3 text-sm text-muted-foreground">
+        <p>게시판 화면 유형은 게시판 만들기의 2단계에서 미리 볼 수 있습니다. 이 원장에 경로를 등록해도 게시판 화면 유형이 추가되지 않습니다.</p>
+        {canPermission(user, 'BBS_MST_CREATE') && canOpenPage(user, '/admin/community/boards/maker') && (
+          <Link href="/admin/community/boards/maker" prefetch={false} className="mt-2 inline-block text-primary underline underline-offset-4 focus-visible:outline-2 focus-visible:outline-ring">
+            게시판 만들기에서 화면 유형 확인
+          </Link>
+        )}
+      </div>
+      {/* reusable-base:board:end */}
       <StandardDataTable
         accessibleLabel="템플릿 목록"
         columns={columns}

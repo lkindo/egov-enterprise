@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "82550ba9db174f1bd26527187f653c5de5120e2b38254378620a5ec605ad1a44"
+    "inventoryHash": "35737f53d5f2ecc64dc9452010413a2bdabb0f49d5bd49686f419201dc97ddd7"
   },
   "summary": {
-    "records": 473,
-    "syntaxOccurrences": 576,
-    "ambiguousRecords": 424,
-    "unverifiedRecords": 473,
+    "records": 474,
+    "syntaxOccurrences": 577,
+    "ambiguousRecords": 425,
+    "unverifiedRecords": 474,
     "exactPopulations": {
       "filesystemRoutes": 122,
       "dynamicRoutePatterns": 13,
@@ -44,7 +44,7 @@
       "config-redirect": 13,
       "dynamic-segment": 13,
       "form-producer": 62,
-      "navigation-producer": 230,
+      "navigation-producer": 231,
       "page-redirect": 17,
       "query-builder": 25,
       "query-consumer": 58,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 463,
+      "navigation": 464,
       "request-telemetry": 10
     }
   },
@@ -6099,6 +6099,44 @@
       "evidence": {
         "source": "frontend/src/app/admin/community/page.tsx",
         "detector": "page-redirect-parser",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-907AD11E990E65",
+      "surface": "navigation",
+      "kind": "navigation-producer",
+      "operation": "jsx-href",
+      "source": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
+      "producerFile": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/community/templates",
+      "targetCandidate": "/admin/community/boards/maker",
+      "stateItems": [],
+      "currentBehavior": "Navigation emits the observed literal or template target.",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": "/admin/community/boards/maker",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/community/templates/TemplateAdminClient.tsx",
+        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },

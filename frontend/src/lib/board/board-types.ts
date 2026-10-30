@@ -16,7 +16,7 @@ export const BOARD_TYPES = [
     code: 'BBST01',
     templateId: 'TMPLT_HUB',
     name: '지식 허브',
-    description: '지식 공유에 최적화된 고도화된 대시보드형 레이아웃',
+    description: '대표 게시글과 나머지 글을 카드로 보여주는 목록',
   },
   {
     code: 'BBST02',
@@ -28,7 +28,7 @@ export const BOARD_TYPES = [
     code: 'BBST03',
     templateId: 'TMPLT_GALLERY',
     name: 'Visual Gallery',
-    description: '이미지 및 카드 중심의 시각적 커뮤니티 레이아웃',
+    description: '첨부 수와 댓글·추천 수를 함께 보여주는 카드형 목록',
   },
   {
     code: 'BBST04',
@@ -40,19 +40,19 @@ export const BOARD_TYPES = [
     code: 'BBST05',
     templateId: 'TMPLT_CALENDAR',
     name: 'Event Calendar',
-    description: '날짜 기반의 전사 일정 및 교육 현황 관리 레이아웃',
+    description: '행사일을 기준으로 게시글을 월 달력에 배치하는 목록',
   },
   {
     code: 'BBST06',
     templateId: 'TMPLT_FAQ',
     name: 'Accordion FAQ',
-    description: '질문과 답변을 한눈에 펼쳐보는 아코디언 스타일의 FAQ 레이아웃',
+    description: '질문을 펼쳐 답변을 하나씩 확인하는 목록',
   },
   {
     code: 'BBST07',
     templateId: 'TMPLT_WIKI',
     name: 'Knowledge Wiki',
-    description: '방대한 정보를 체계적으로 정리하는 도큐먼트형 위키 레이아웃',
+    description: '문서 제목·작성자·등록일을 세로로 보여주는 목록',
   },
 ] as const;
 

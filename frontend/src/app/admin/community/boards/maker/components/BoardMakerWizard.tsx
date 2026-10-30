@@ -453,7 +453,7 @@ export function BoardMakerWizard() {
   const attachmentSummary = watch('fileAtchPsbltyYn') === 'N'
     ? '허용 안 함'
     : `허용(${Number(watch('atchPsbltyFileQty')) === 0 ? '개수 상한 없음' : `${watch('atchPsbltyFileQty')}개까지`} · 파일당 ${fileSizeBytes > 0 ? `${fileSizeBytes / BYTES_PER_MB}MB` : `전역 상한 ${SERVER_MAX_FILE_SIZE_MB}MB`})`;
-  // [2026-10-26 WIZ-09] 미리보기는 고른 기능을 그대로 받는다 — 끈 기능의 표지를 그리지 않는다.
+  // 미리보기는 새로 받는 기능과 누적 수 표시를 구별하고, 실제 조회·변경 없이 예시를 그린다.
   const previewFeatures: BoardPreviewFeatures = {
     comments: watch('ansYn') !== 'N',
     recommendations: watch('rcmdtnUseYn') !== 'N',
@@ -1338,7 +1338,7 @@ export function BoardMakerWizard() {
             </div>
           </CardContent>
 
-          <CardFooter className="flex items-center justify-between border-t border-border bg-muted/50 p-4 text-left">
+          <CardFooter className="flex flex-wrap items-center justify-between gap-2 border-t border-border bg-muted/50 p-4 text-left">
             <div className="flex items-center gap-1">
               <Button
                 type="button"
@@ -1377,7 +1377,7 @@ export function BoardMakerWizard() {
                 size="lg"
                 disabled={isSubmitting}
                 className={cn(
-                  "font-semibold transition-colors",
+                  "w-full font-semibold transition-colors sm:w-auto",
                   currentStep === STEPS.length
                     ? "bg-primary text-primary-foreground"
                     : "bg-surface-inverse text-surface-inverse-foreground dark:bg-primary dark:text-primary-foreground hover:bg-surface-inverse/90 dark:hover:bg-primary/90"

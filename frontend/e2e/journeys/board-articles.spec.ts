@@ -2,6 +2,55 @@ import { expect,test } from '../fixtures/browser-test';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { screenYmd } from '../helpers/screen-date';
 test.describe('게시판과 커뮤니티', () => {
+    test('템플릿 안내에서 게시판 유형을 미리 보며 실제 게시글 요청을 보내지 않는다', async ({ adminPage }, testInfo) => {
+        await adminPage.setViewportSize({ width: 1440, height: 1000 });
+        await adminPage.goto('/admin/community/templates');
+        await adminPage.getByRole('link', { name: '게시판 만들기에서 화면 유형 확인' }).click();
+        await adminPage.getByRole('textbox', { name: '게시판 명칭' }).fill('미리보기 확인');
+        await adminPage.getByRole('button', { name: /다음 단계로/ }).click();
+        const preview = adminPage.getByRole('region', { name: '게시판 레이아웃 미리보기' });
+        await expect(preview).toBeVisible();
+        const unexpectedRequests: string[] = [];
+        adminPage.on('request', request => {
+            if (request.url().includes('/api/v1/boards/') ||
+                (request.url().includes('/api/') && !['GET', 'HEAD', 'OPTIONS'].includes(request.method()))) {
+                unexpectedRequests.push(`${request.method()} ${new URL(request.url()).pathname}`);
+            }
+        });
+        for (const name of ['지식 허브', 'Enterprise List', 'Visual Gallery', 'Professional Q&A', 'Event Calendar', 'Accordion FAQ', 'Knowledge Wiki']) {
+            await adminPage.getByRole('button', { name: new RegExp(name) }).click();
+            if (name === 'Enterprise List') await expect(preview.getByRole('table')).toBeVisible();
+            if (name === 'Visual Gallery') {
+                await expect(preview.getByText('사진', { exact: true })).toHaveCount(0);
+                await expect(preview.getByText('갤러리', { exact: true })).toHaveCount(3);
+                expect((await preview.boundingBox())!.height).toBeLessThan(1000);
+            }
+            if (name === '지식 허브') await expect(preview.getByText('대표 게시글', { exact: true })).toBeVisible();
+            if (name === 'Accordion FAQ') {
+                await expect(preview.locator('details[open]')).toHaveCount(0);
+                await preview.locator('summary').nth(1).focus();
+                await adminPage.keyboard.press('Enter');
+                await expect(preview.locator('details').nth(1)).toHaveAttribute('open', '');
+            }
+            await testInfo.attach(`preview-${name}`, { body: await preview.screenshot(), contentType: 'image/png' });
+        }
+        await adminPage.setViewportSize({ width: 390, height: 844 });
+        await adminPage.getByRole('button', { name: /Enterprise List/ }).click();
+        await expect(preview.getByRole('table')).toBeVisible();
+        expect(await adminPage.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+        await testInfo.attach('preview-mobile-list', { body: await preview.screenshot(), contentType: 'image/png' });
+        await adminPage.getByRole('button', { name: /Visual Gallery/ }).click();
+        await adminPage.getByRole('button', { name: '테마 변경', exact: true }).click();
+        await expect(adminPage.locator('html')).toHaveClass(/dark/);
+        const nextStep = adminPage.getByRole('button', { name: /다음 단계로/ });
+        await nextStep.focus();
+        const nextBounds = (await nextStep.boundingBox())!;
+        expect(nextBounds.x).toBeGreaterThanOrEqual(0);
+        expect(nextBounds.x + nextBounds.width).toBeLessThanOrEqual(390);
+        await testInfo.attach('preview-mobile-dark-gallery', { body: await adminPage.screenshot({ fullPage: true }), contentType: 'image/png' });
+        expect(unexpectedRequests).toEqual([]);
+    });
+
     test('일반 게시판 작성자는 지정 공지·FAQ 작성 화면과 직접 요청에서 차단된다', async ({ userPage, userRequest }) => {
         // 기본 격리 환경은 공지와 FAQ가 같은 게시판이다. 두 권한을 모두 요구한다.
         const bbsId = 'BBSMSTR_AAAAAAAAAAAA';

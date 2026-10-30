@@ -1,15 +1,12 @@
 import { cn } from '@/lib/utils';
 import {
-  Search,
   MessageSquare,
   Eye,
   Clock,
-  ChevronRight,
   ThumbsUp,
   CheckCircle2,
-  User,
-  ChevronDown,
-  Book,
+  HelpCircle,
+  BookOpen,
   Lock,
   Paperclip,
   Pin,
@@ -17,8 +14,9 @@ import {
   Star,
 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { Card } from '@/components/ui/card';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { BOARD_LIST_ROUTE } from '@/lib/board/board-menu-links';
+import { QNA_STATUS_LABELS } from '@/lib/board/qna-status';
 import { SERVER_MAX_FILE_SIZE_MB, formatMegabytes } from '@/lib/attachments/server-upload-limits';
 
 /** 비밀글 정책 세 값(ADR-0040 결정 7). 마법사의 생성 스키마 어휘와 같다. */
@@ -27,8 +25,8 @@ export type PreviewPrivatePostPolicy = 'NONE' | 'OPTIONAL' | 'REQUIRED';
 /**
  * [2026-10-26 ADR-0043 WIZ-09] 미리보기가 그릴 게시판 기능. 마법사가 고른 값 그대로다.
  *
- * 종전 미리보기는 화면 유형·이름·소개만 받아, 댓글·추천을 끈 게시판에도 댓글 수·추천 아이콘을 그렸다. 화면 유형은 만든 뒤 바꿀 수
- * 없으므로 그 선택의 근거가 실제와 다른 그림이면 안 된다 — 끈 기능의 표지는 그리지 않는다.
+ * 목록 배치는 실제 BoardTemplates와 맞춘다. 신규 댓글·추천을 받는 설정과 기존 누적 수 표시는 구별한다.
+ * 실제 조회·추천·이동을 연결하지 않고 예시 데이터만 그린다.
  */
 export interface BoardPreviewFeatures {
   /** 댓글 받기(ansYn). */
@@ -72,9 +70,9 @@ const MOCK_POSTS = [
   //   `posts: any[]` 라 타입 검사가 이 누락을 못 봤고, 미리보기는 FAQ 템플릿을
   //   '답변이 보이지 않는 템플릿' 으로 잘못 보여 주고 있었다.
   // [2026-10-26 WIZ-09] sample 은 이 예시 글이 어느 기능의 표지를 보이는 자리인지다(고정·비밀글·예약). 기능을 끄면 표지도 없다.
-  { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, likes: 12, files: 2, sample: 'pinned', content: '4.x 는 Java 21 과 Spring Boot 3 계열을 기준으로 합니다. 3.x 설정은 그대로 쓸 수 없으므로 마이그레이션 가이드의 호환성 표를 먼저 확인해 주세요.' },
-  { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, likes: 5, files: 0, sample: 'secret', content: '서버 컴포넌트에서는 브라우저 전용 API 를 쓸 수 없습니다. 상태가 필요한 구간만 클라이언트 컴포넌트로 분리하세요.' },
-  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, likes: 31, files: 1, sample: 'scheduled', content: '2단계 커밋 대신 보상 트랜잭션으로 일관성을 맞춥니다. 각 단계는 실패 시 되돌릴 수 있어야 합니다.' },
+  { id: 1, title: '전자정부 표준프레임워크 4.x 업데이트 가이드라인', author: '관리자', date: '2024-05-20', views: 1240, comments: 45, likes: 12, files: 2, sample: 'pinned', solved: true, content: '4.x 는 Java 21 과 Spring Boot 3 계열을 기준으로 합니다. 3.x 설정은 그대로 쓸 수 없으므로 마이그레이션 가이드의 호환성 표를 먼저 확인해 주세요.' },
+  { id: 2, title: '리액트 서버 컴포넌트(RSC) 도입 시 주의사항 및 모범 사례', author: '기술혁신팀', date: '2024-05-19', views: 856, comments: 23, likes: 5, files: 0, sample: 'secret', solved: false, content: '서버 컴포넌트에서는 브라우저 전용 API 를 쓸 수 없습니다. 상태가 필요한 구간만 클라이언트 컴포넌트로 분리하세요.' },
+  { id: 3, title: 'MSA 환경에서의 분산 트랜잭션 처리 전략 (Saga 패턴)', author: '플랫폼실', date: '2024-05-18', views: 2301, comments: 67, likes: 31, files: 1, sample: 'scheduled', solved: false, content: '2단계 커밋 대신 보상 트랜잭션으로 일관성을 맞춥니다. 각 단계는 실패 시 되돌릴 수 있어야 합니다.' },
 ] as const;
 
 /** 파일당 크기 문구. 0 은 게시판 상한이 없어 서버 전역 상한이 적용된다. */
@@ -87,37 +85,44 @@ function isSecret(post: PreviewPost, features: BoardPreviewFeatures): boolean {
   return features.privatePostPolicy === 'REQUIRED' || (features.privatePostPolicy === 'OPTIONAL' && post.sample === 'secret');
 }
 
-/** 글 제목 옆 표지 — 고정·예약·비밀글·첨부. 끈 기능의 표지는 그리지 않는다. */
+/** 새 게시판의 예시 글 상태. 첨부 수는 실제 목록처럼 갤러리에만 따로 표시한다. */
 function PostMarks({ post, features }: { post: PreviewPost; features: BoardPreviewFeatures }) {
   const pinned = features.pinning && post.sample === 'pinned';
   const scheduled = features.reservation && post.sample === 'scheduled';
   const secret = isSecret(post, features);
-  const attached = features.attachments.allowed && post.files > 0;
-  if (!pinned && !scheduled && !secret && !attached) return null;
+  if (!pinned && !scheduled && !secret) return null;
   return (
     <span className="inline-flex flex-wrap items-center gap-1">
       {pinned && <Badge variant="outline" className="text-xs"><Pin aria-hidden="true" />고정</Badge>}
       {scheduled && <Badge variant="outline" className="text-xs"><CalendarClock aria-hidden="true" />예약</Badge>}
       {secret && <Badge variant="outline" className="text-xs"><Lock aria-hidden="true" />비밀글</Badge>}
-      {attached && <Badge variant="outline" className="text-xs"><Paperclip aria-hidden="true" />첨부 {post.files}</Badge>}
     </span>
   );
 }
 
-/** 글 줄의 수치 — 조회 수는 늘, 댓글 수·추천 수는 그 기능을 받을 때만 보인다. */
-function PostStats({ post, features, className }: { post: PreviewPost; features: BoardPreviewFeatures; className?: string }) {
+/** HUB·GALLERY의 실제 PostMeta와 같은 누적 수. 새 댓글 허용과 과거 댓글 표시는 별개다. */
+function PostStats({ post }: { post: PreviewPost }) {
   return (
-    <span className={cn('flex flex-wrap items-center gap-3 text-xs text-muted-foreground', className)}>
-      <span className="flex items-center gap-1"><Eye size={12} aria-hidden="true" />조회 {post.views}</span>
-      {features.comments && <span className="flex items-center gap-1"><MessageSquare size={12} aria-hidden="true" />댓글 {post.comments}</span>}
-      {features.recommendations && <span className="flex items-center gap-1"><ThumbsUp size={12} aria-hidden="true" />추천 {post.likes}</span>}
+    <span className="flex flex-wrap items-center gap-3 text-xs text-muted-foreground">
+      <span className="flex items-center gap-1"><Clock size={12} aria-hidden="true" />{post.date}</span>
+      <span className="flex items-center gap-1"><Eye size={12} aria-hidden="true" />조회 {post.views.toLocaleString()}</span>
+      <span className="flex items-center gap-1"><MessageSquare size={12} aria-hidden="true" />댓글 {post.comments}</span>
+    </span>
+  );
+}
+
+/** 실제 LikeButton처럼 추천을 받지 않아도 누적 수는 남긴다. 미리보기에는 변경 동작이 없다. */
+function LikeCount({ post, enabled }: { post: PreviewPost; enabled: boolean }) {
+  return (
+    <span className={cn('inline-flex items-center gap-1.5 text-xs text-muted-foreground', enabled && 'rounded-md border border-border px-2 py-1')}>
+      <ThumbsUp size={14} aria-hidden="true" />추천 {post.likes}
     </span>
   );
 }
 
 export function BoardPreview({ tmpltId, bbsTtl, bbsExpln, features }: PreviewProps) {
   return (
-    <div className="relative flex h-full w-full flex-col overflow-hidden rounded-md border border-border bg-muted">
+    <section aria-label="게시판 레이아웃 미리보기" className="relative flex min-w-0 w-full flex-col overflow-hidden rounded-md border border-border bg-muted">
       {/* [2026-10-26 WIZ-09] 지어낸 주소 대신 실제 이용 화면 주소 형태를 보인다 — 게시판 ID 는 만들 때 정해진다. */}
       <div className="flex min-h-9 items-center bg-surface-inverse px-3 py-1.5">
         <span className="break-all font-mono text-xs text-surface-inverse-muted">
@@ -133,10 +138,7 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln, features }: PreviewPro
               <p className="text-xl font-bold tracking-tight text-foreground">{bbsTtl || '게시판 이름'}</p>
               <p className="text-[length:var(--font-size-body)] text-muted-foreground">{bbsExpln || '게시판 소개가 여기에 보입니다.'}</p>
             </div>
-            <div className="flex shrink-0 gap-2" aria-hidden="true">
-              <div className="flex size-10 items-center justify-center rounded-lg bg-surface-inverse text-surface-inverse-foreground"><Search size={18} /></div>
-              <div className="flex h-10 items-center justify-center rounded-lg bg-primary px-3 text-xs font-bold text-primary-foreground">글쓰기</div>
-            </div>
+
           </div>
         </div>
 
@@ -145,17 +147,17 @@ export function BoardPreview({ tmpltId, bbsTtl, bbsExpln, features }: PreviewPro
         {tmpltId === 'TMPLT_LIST' && <ListLayout posts={MOCK_POSTS} features={features} />}
         {tmpltId === 'TMPLT_GALLERY' && <GalleryLayout posts={MOCK_POSTS} features={features} />}
         {tmpltId === 'TMPLT_QNA' && <QnaLayout posts={MOCK_POSTS} features={features} />}
-        {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout />}
+        {tmpltId === 'TMPLT_CALENDAR' && <CalendarLayout features={features} />}
         {tmpltId === 'TMPLT_FAQ' && <FaqLayout posts={MOCK_POSTS} features={features} />}
         {tmpltId === 'TMPLT_WIKI' && <WikiLayout posts={MOCK_POSTS} features={features} />}
 
         <PostScreenFeatures features={features} />
       </div>
 
-      <div className="flex h-10 items-center justify-center border-t border-border bg-muted">
-        <span className="text-xs font-bold tracking-tight text-muted-foreground">예시 데이터로 그린 레이아웃 미리보기입니다</span>
-      </div>
-    </div>
+      <p className="border-t border-border bg-muted px-3 py-2 text-xs text-muted-foreground">
+        예시 데이터로 그린 레이아웃 미리보기입니다. 댓글·추천 수는 누적 예시이며 새 글이나 추천을 저장하지 않습니다.
+      </p>
+    </section>
   );
 }
 
@@ -200,7 +202,7 @@ function PostScreenFeatures({ features }: { features: BoardPreviewFeatures }) {
         <p className="font-semibold text-muted-foreground">글 보기 화면</p>
         {viewItems.length > 0
           ? <ul className="space-y-1">{viewItems}</ul>
-          : <p className="text-muted-foreground">첨부·추천·만족도 평가·댓글을 받지 않아 글 아래에 덧붙는 것이 없습니다.</p>}
+          : <p className="text-muted-foreground">새 첨부·추천·만족도 평가·댓글을 받지 않습니다. 기존 댓글과 누적 추천 수는 유지됩니다.</p>}
       </div>
       <div className="space-y-1.5 rounded-md border border-border bg-muted/40 p-3">
         <p className="font-semibold text-muted-foreground">글쓰기 화면</p>
@@ -213,35 +215,24 @@ function PostScreenFeatures({ features }: { features: BoardPreviewFeatures }) {
 }
 
 function HubLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
+  const [lead, ...rest] = posts;
   return (
-    <div className="space-y-6">
-      <div className="relative overflow-hidden rounded-lg bg-surface-inverse p-6 text-surface-inverse-foreground">
-        <div className="absolute right-[-10%] top-[-20%] h-64 w-64 rounded-lg bg-primary/20 blur-3xl" aria-hidden="true" />
-        <div className="relative z-10 space-y-3">
-          <span className="text-xs text-surface-inverse-muted">추천 지식</span>
-          <p className="text-2xl font-bold leading-tight tracking-tight">{posts[0].title}</p>
-          <PostMarks post={posts[0]} features={features} />
-          <div className="mt-4 flex items-center gap-6">
-            <span className="text-xs font-bold">작성자 {posts[0].author}</span>
-            <span className="flex items-center gap-2 text-surface-inverse-muted">
-              <Clock size={12} aria-hidden="true" />
-              <span className="text-xs font-bold">1시간 전</span>
-            </span>
-          </div>
-        </div>
-      </div>
-      <div className="grid grid-cols-2 gap-4">
-        {posts.slice(1).map((post) => (
-          <div key={post.id} className="space-y-3 rounded-lg border-2 border-border bg-muted p-4 transition-all hover:border-foreground">
-            <p className="text-sm font-bold leading-snug text-foreground">{post.title}</p>
+    <div className="space-y-3">
+      <article className="rounded-md border border-primary/30 bg-primary/5 p-3">
+        <Badge variant="secondary">대표 게시글</Badge>
+        <p className="mt-1 text-base font-semibold text-foreground">{lead.title}</p>
+        <PostMarks post={lead} features={features} />
+        <p className="my-1 text-xs text-muted-foreground">{lead.author}</p>
+        <PostStats post={lead} />
+      </article>
+      <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+        {rest.map(post => (
+          <article key={post.id} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
             <PostMarks post={post} features={features} />
-            <div className="flex items-center justify-between pt-2">
-              <PostStats post={post} features={features} />
-              <div className="flex size-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground" aria-hidden="true">
-                <ChevronRight size={14} />
-              </div>
-            </div>
-          </div>
+            <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</p>
+            <p className="text-xs text-muted-foreground">{post.author}</p>
+            <PostStats post={post} />
+          </article>
         ))}
       </div>
     </div>
@@ -250,52 +241,50 @@ function HubLayout({ posts, features }: { posts: readonly PreviewPost[]; feature
 
 function ListLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
   return (
-    <div className="space-y-2">
-      {posts.map((post) => (
-        <div key={post.id} className="group flex items-center justify-between gap-4 border-b-2 border-border p-4 transition-all hover:bg-muted">
-          <div className="flex flex-1 items-center gap-6">
-            <span className="w-8 text-xs font-bold text-muted-foreground">{post.id}</span>
-            <div className="flex-1 space-y-1">
-              <p className="text-sm font-bold tracking-tight text-foreground transition-colors group-hover:text-primary">{post.title}</p>
-              <PostMarks post={post} features={features} />
-              <div className="flex flex-wrap items-center gap-4">
-                <span className="text-xs font-bold text-muted-foreground">{post.author}</span>
-                <PostStats post={post} features={features} />
-              </div>
-            </div>
-          </div>
-          <p className="shrink-0 text-xs font-bold text-muted-foreground">{post.date}</p>
-        </div>
-      ))}
+    <div className="overflow-x-auto rounded-md border border-border">
+      <Table aria-label="게시글 목록 예시">
+        <TableHeader className="bg-muted/50">
+          <TableRow>
+            {['번호', '제목', '작성자', '등록일', '조회', '추천'].map(label => <TableHead key={label}>{label}</TableHead>)}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {posts.map((post, index) => (
+            <TableRow key={post.id}>
+              <TableCell>{features.pinning && post.sample === 'pinned' ? '고정' : posts.length - index}</TableCell>
+              <TableCell><p className="min-w-40 whitespace-normal font-medium">{post.title}</p><PostMarks post={post} features={features} /></TableCell>
+              <TableCell className="text-muted-foreground">{post.author}</TableCell>
+              <TableCell className="text-muted-foreground">{post.date}</TableCell>
+              <TableCell>{post.views.toLocaleString()}</TableCell>
+              <TableCell><LikeCount post={post} enabled={features.recommendations} /></TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
     </div>
   );
 }
 
 function GalleryLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
   return (
-    <div className="grid grid-cols-1 gap-6">
-      {posts.map((post) => (
-        <div key={post.id} className="group overflow-hidden rounded-md border border-border bg-card transition-colors hover:border-primary">
-          <div className="relative h-40 overflow-hidden">
-            {/*
-              [2026-08-29] 예시 이미지(unsplash) 제거. 미리보기의 목적은 레이아웃 확인이지 사진이
-              아니고, 관리자 화면이 외부 호스트로 나갈 이유가 없다.
-            */}
-            <div aria-hidden="true" className="absolute inset-0 bg-muted" />
-            <div className="absolute right-2 top-2 rounded bg-surface-inverse/90 px-2 py-0.5 text-xs text-surface-inverse-foreground">사진</div>
+    <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
+      {posts.map(post => (
+        <article key={post.id} className="flex flex-col gap-2 rounded-md border border-border bg-card p-3">
+          <div className="flex flex-wrap items-start justify-between gap-2">
+            <Badge variant="secondary">갤러리</Badge>
+            <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+              <Paperclip size={12} aria-hidden="true" />
+              {features.attachments.allowed && post.files > 0 ? `첨부 ${post.files}` : '첨부 없음'}
+            </span>
           </div>
-          <div className="space-y-4 p-6">
-            <p className="text-xl font-bold leading-snug tracking-tighter text-foreground">{post.title}</p>
-            <PostMarks post={post} features={features} />
-            <div className="flex items-center justify-between border-t border-border pt-4">
-              <div className="flex items-center gap-3">
-                <User size={14} className="text-muted-foreground" aria-hidden="true" />
-                <span className="text-xs font-bold text-foreground">{post.author}</span>
-              </div>
-              <PostStats post={post} features={features} />
-            </div>
+          <PostMarks post={post} features={features} />
+          <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</p>
+          <p className="text-xs text-muted-foreground">{post.author}</p>
+          <div className="mt-auto flex flex-wrap items-end justify-between gap-2">
+            <PostStats post={post} />
+            <LikeCount post={post} enabled={features.recommendations} />
           </div>
-        </div>
+        </article>
       ))}
     </div>
   );
@@ -303,129 +292,111 @@ function GalleryLayout({ posts, features }: { posts: readonly PreviewPost[]; fea
 
 function QnaLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
   return (
-    <div className="space-y-4">
-      {posts.map((post, idx) => (
-        <div key={post.id} className="group flex gap-3 rounded-md border border-border bg-card p-3 transition-colors hover:border-primary">
-          <div className="flex min-w-[60px] flex-col items-center gap-1">
-            <div className={cn(
-              'flex size-9 items-center justify-center rounded-md border text-base font-semibold',
-              idx === 0 ? 'border-success/40 bg-success/15 text-foreground' : 'border-border bg-muted text-muted-foreground',
-            )}>
-              {idx === 0 ? <CheckCircle2 size={18} aria-hidden="true" /> : '?'}
-            </div>
-            <span className="text-xs text-muted-foreground">{idx === 0 ? '해결' : '미해결'}</span>
-          </div>
-          <div className="flex-1 space-y-2">
-            <div className="flex items-center gap-3">
-              <Badge className="border-none bg-muted text-xs font-bold text-muted-foreground hover:bg-muted">업무 문의</Badge>
-              <span className="text-xs font-bold text-muted-foreground">{post.date}</span>
-            </div>
-            <p className="text-[length:var(--font-size-body)] font-semibold leading-snug text-foreground transition-colors group-hover:text-primary">{post.title}</p>
+    <ul className="divide-y divide-border rounded-md border border-border bg-card">
+      {posts.map(post => (
+        <li key={post.id} className="flex flex-wrap items-start gap-3 p-3">
+          <span className={cn('inline-flex shrink-0 items-center gap-1.5 rounded border px-2 py-0.5 text-xs text-foreground', post.solved ? 'border-success/40 bg-success/15' : 'border-warning/40 bg-warning/15')}>
+            {post.solved ? <CheckCircle2 size={14} aria-hidden="true" /> : <HelpCircle size={14} aria-hidden="true" />}
+            {post.solved ? QNA_STATUS_LABELS.SOLVED : QNA_STATUS_LABELS.OPEN}
+          </span>
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</p>
             <PostMarks post={post} features={features} />
-            <div className="flex flex-wrap items-center gap-4 text-xs font-bold text-muted-foreground">
-              <span className="flex items-center gap-1"><User size={12} aria-hidden="true" /> {post.author}</span>
-              <PostStats post={post} features={features} />
+            <div className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+              <span>분류 일반</span><span>{post.author}</span><span>{post.date}</span>
+              <span className="inline-flex items-center gap-1"><MessageSquare size={12} aria-hidden="true" />답변 {post.comments}</span>
             </div>
           </div>
-        </div>
+          <LikeCount post={post} enabled={features.recommendations} />
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
 function FaqLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
   return (
-    <div className="space-y-4">
-      {posts.slice(0, 3).map((post, idx) => (
-        <Card key={post.id} className="group overflow-hidden rounded-lg border-2 border-border transition-all hover:border-hub-purple">
-          <div className="flex items-center justify-between p-4">
-            <div className="flex items-center gap-4">
-              <div className={cn(
-                'flex size-10 items-center justify-center rounded-lg text-lg font-bold transition-all',
-                idx === 0 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground',
-              )}>
-                질문
-              </div>
-              <div className="space-y-1">
-                <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</p>
-                <PostMarks post={post} features={features} />
-              </div>
+    <ul className="divide-y divide-border rounded-md border border-border">
+      {posts.map(post => (
+        <li key={post.id} className="bg-card">
+          <details>
+            <summary className="cursor-pointer px-3 py-2.5 text-[length:var(--font-size-body)] font-medium text-foreground focus-visible:outline-2 focus-visible:outline-ring">
+              <span className="mr-2 rounded bg-muted px-1.5 text-xs">Q</span>{post.title}
+              <PostMarks post={post} features={features} />
+            </summary>
+            <div className="space-y-2 border-t border-border px-3 py-2.5">
+              <p className="text-[length:var(--font-size-body)] text-foreground"><span className="mr-2 rounded bg-muted px-1.5 text-xs">A</span>{post.content}</p>
+              <p className="text-xs text-muted-foreground">등록 {post.date} · 조회 {post.views}</p>
             </div>
-            <ChevronDown className="size-5 text-muted-foreground" aria-hidden="true" />
-          </div>
-          {idx === 0 && (
-            <div className="px-6 pb-6">
-              <div className="rounded-lg border-l-8 border-hub-purple bg-muted p-4 font-medium leading-relaxed text-muted-foreground">
-                {post.content}
-              </div>
-            </div>
-          )}
-        </Card>
+          </details>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
 function WikiLayout({ posts, features }: { posts: readonly PreviewPost[]; features: BoardPreviewFeatures }) {
   return (
-    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-      {posts.map((post) => (
-        <Card key={post.id} className="group overflow-hidden rounded-md border border-border transition-colors hover:border-primary">
-          <div className="flex">
-            <div className="flex w-14 shrink-0 items-center justify-center border-r border-border bg-muted transition-colors group-hover:bg-surface-inverse group-hover:text-surface-inverse-foreground" aria-hidden="true">
-              <Book size={22} className="opacity-40" />
-            </div>
-            <div className="space-y-2 p-4">
-              <p className="text-[length:var(--font-size-body)] font-semibold text-foreground transition-colors group-hover:text-primary">{post.title}</p>
+    <ul className="divide-y divide-border rounded-md border border-border bg-card">
+      {posts.map(post => (
+        <li key={post.id} className="flex items-start gap-3 p-3">
+          <BookOpen size={16} className="mt-0.5 shrink-0 text-muted-foreground" aria-hidden="true" />
+          <div className="min-w-0 flex-1 space-y-1">
+            <div className="flex flex-wrap items-center gap-2">
+              <Badge variant="outline">문서</Badge>
+              <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">{post.title}</p>
               <PostMarks post={post} features={features} />
-              <p className="text-xs text-muted-foreground">마지막 수정: {post.author}</p>
             </div>
+            <p className="text-xs text-muted-foreground">작성자 {post.author} · {post.date} · 조회 {post.views.toLocaleString()}</p>
           </div>
-        </Card>
+        </li>
       ))}
-    </div>
+    </ul>
   );
 }
 
 const WEEKDAYS = ['일', '월', '화', '수', '목', '금', '토'] as const;
 
-function CalendarLayout() {
-  const days = Array.from({ length: 35 }, (_, i) => i + 1 - 3); // 미리보기용 단순 시작 오프셋
+function CalendarLayout({ features }: { features: BoardPreviewFeatures }) {
+  const days = Array.from({ length: 42 }, (_, i) => i + 1 - 3); // 미리보기용 단순 시작 오프셋
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between rounded-lg border-2 border-border bg-muted p-4">
-        <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">2024년 5월</p>
-        <div className="flex gap-2" aria-hidden="true">
-          <div className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground"><ChevronRight className="rotate-180" size={16} /></div>
-          <div className="flex size-8 items-center justify-center rounded-lg border border-border text-muted-foreground"><ChevronRight size={16} /></div>
-        </div>
+      <div className="rounded-md border border-border bg-card px-3 py-2">
+        <p className="text-[length:var(--font-size-body)] font-semibold text-foreground">2024년 5월 · 예시</p>
       </div>
-      <div className="grid grid-cols-7 gap-2">
+      <div className="overflow-x-auto"><div className="grid min-w-80 grid-cols-7 gap-px rounded-md border border-border bg-border">
         {WEEKDAYS.map((d) => (
-          <div key={d} className="pb-1 text-center text-xs text-muted-foreground">{d}</div>
+          <div key={d} className="bg-muted py-1 text-center text-xs text-muted-foreground">{d}</div>
         ))}
         {days.map((day, i) => (
           <div key={i} className={cn(
-            'group relative h-20 overflow-hidden rounded-lg border-2 border-border p-2 transition-all',
-            day === 20 ? 'border-primary/20 bg-primary/5' : 'bg-card',
-            day <= 0 || day > 31 ? 'opacity-10' : 'hover:border-foreground',
+            'min-h-[5.5rem] p-1.5',
+            day <= 0 || day > 31 ? 'bg-muted/40' : 'bg-card',
           )}>
-            <span className={cn('text-xs font-bold', day === 20 ? 'text-primary' : 'text-muted-foreground')}>
+            <span className="text-xs tabular-nums text-muted-foreground">
               {day > 0 && day <= 31 ? day : ''}
             </span>
             {day === 20 && (
-              <div className="mt-2 rounded-sm bg-primary p-1.5 text-xs font-bold leading-tight text-primary-foreground">
-                기술 세미나
+              <div className="mt-2 space-y-1">
+                <p className="rounded bg-muted px-1.5 py-0.5 text-xs text-foreground">기술 세미나</p>
+                <PostMarks post={MOCK_POSTS[0]} features={features} />
               </div>
             )}
             {day === 21 && (
-              <div className="mt-1 rounded-sm bg-surface-inverse p-1.5 text-xs font-bold leading-tight text-surface-inverse-foreground">
-                정기 점검
+              <div className="mt-1 space-y-1">
+                <p className="rounded bg-muted px-1.5 py-0.5 text-xs text-foreground">정기 점검</p>
+                <PostMarks post={MOCK_POSTS[1]} features={features} />
+              </div>
+            )}
+            {day === 22 && (
+              <div className="mt-1 space-y-1">
+                <p className="rounded bg-muted px-1.5 py-0.5 text-xs text-foreground">교육 안내</p>
+                <PostMarks post={MOCK_POSTS[2]} features={features} />
               </div>
             )}
           </div>
         ))}
-      </div>
+      </div></div>
     </div>
   );
 }
