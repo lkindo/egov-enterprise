@@ -73,7 +73,7 @@ public class WebLogRepositoryImpl implements WebLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_WEB_LOG WHERE OCCR_YMD < :targetDe";
+        String sql = "DELETE FROM tb_web_log WHERE OCCR_YMD < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

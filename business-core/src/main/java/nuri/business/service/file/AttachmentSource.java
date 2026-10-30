@@ -54,9 +54,12 @@ public enum AttachmentSource {
      * <p>[LIKE 를 쓰지 않는 이유] {@code file_url LIKE '%'||?||'%'} 로 하면 요청자가 {@code %} 를
      * 첨부 ID 로 보내 <b>모든 팝업에 매칭</b>시켜 공유 근거를 만들 수 있다(와일드카드 주입).
      * 저장되는 두 형태를 <b>정확히 일치</b>로 비교한다.
+     *
+     * <p>[SQL 에서 잇지 않는 이유] 비교할 URL 은 {@link #linkageParameters} 가 완성해 바인딩한다. MySQL·MariaDB 기본 설정의
+     * {@code ||} 는 논리 OR 이라 {@code file_url = '...' || ?} 가 모든 팝업과 일치한다(ADR-0047).
      */
     POPUP("tb_popup_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null,
-            "(file_url = '/api/v1/files/' || ? OR file_url = '/api/v1/files/download?fileId=' || ?)"),
+            "(file_url = ? OR file_url = ?)"),
 
     /** 게시판 글. resolver는 비밀글 조건 앞에 커뮤니티 승인 회원 조건을, 공유 근거에 게시 기간(시작일·종료일) 조건을 함께 적용한다. */
     BOARD("tb_bbs_item", Sensitivity.SHARED,
@@ -175,6 +178,14 @@ public enum AttachmentSource {
     /** 이 참조원이 첨부와 이어지는 방식(WHERE 절). {@code ?} 자리마다 atchFileSn 가 바인딩된다. */
     public String linkagePredicate() {
         return linkagePredicate;
+    }
+
+    /** {@link #linkagePredicate()} 의 자리표시자에 순서대로 바인딩할 값. */
+    public List<Object> linkageParameters(Long atchFileSn) {
+        if (this == POPUP) {
+            return List.of("/api/v1/files/" + atchFileSn, "/api/v1/files/download?fileId=" + atchFileSn);
+        }
+        return List.of(atchFileSn);
     }
 
     /** 전용 컬럼이 아니라 URL 문자열로 첨부를 참조하는가 — 레지스트리 린터의 판정 축이 갈린다. */

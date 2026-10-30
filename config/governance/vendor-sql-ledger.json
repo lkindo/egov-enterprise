@@ -1,0 +1,223 @@
+{
+  "schemaVersion": 1,
+  "description": "벤더 의존 SQL 의 위치·처리 방식·대응 시험(ADR-0047). frozen 은 그 파일에 남은 벤더 구문의 규칙별 개수이며 VendorSqlPortabilityLinterTest 가 정확히 대조한다.",
+  "portImplementations": [
+    "foundation/src/main/java/nuri/foundation/core/persistence/PostgresqlSqlDialect.java"
+  ],
+  "locations": [
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/menu/NavigationGrantRepository.java",
+      "treatment": "port",
+      "reason": "메뉴 번호 문자열 변환·부분 일치·페이징. 빈 검색어는 SQL 에서 비교하지 않는다",
+      "test": "business-core/src/test/java/nuri/business/domain/menu/NavigationGrantRepositoryTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/log/UserLogRepositoryImpl.java",
+      "treatment": "port",
+      "reason": "카운터 upsert 를 한 문장으로 직렬화한다",
+      "test": "foundation/src/test/java/nuri/foundation/core/persistence/PostgresqlSqlDialectTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/menu/MenuRowLockRepositoryImpl.java",
+      "treatment": "port",
+      "reason": "자기 FK 와 충돌하지 않는 강도로 메뉴 행을 잠근다",
+      "test": "foundation/src/test/java/nuri/foundation/core/persistence/PostgresqlSqlDialectTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/user/repository/DeptManageRepositoryImpl.java",
+      "treatment": "port",
+      "reason": "계층 변경을 같은 순서로 직렬화한다",
+      "test": "foundation/src/test/java/nuri/foundation/core/persistence/PostgresqlSqlDialectTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/auth/AuthorizationAdministrationService.java",
+      "treatment": "port",
+      "reason": "페이징·행 잠금·EXISTS 조회. 메뉴 번호의 ::text 는 getString 으로 대체했다",
+      "test": "business-core/src/test/java/nuri/business/service/auth/AuthorizationAdministrationServiceTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/file/AttachmentReferenceIntegrityService.java",
+      "treatment": "port",
+      "reason": "행마다 값이 달라 URL 을 미리 완성할 수 없어 연결식을 쓴다",
+      "test": "api-server/src/test/java/nuri/api/schema/AttachmentReferenceIntegrityPostgresTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/user/LoginIdReuseGuard.java",
+      "treatment": "port",
+      "reason": "FROM 없는 EXISTS 조회",
+      "test": "business-core/src/test/java/nuri/business/service/user/LoginIdReuseGuardTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/repository/code/AdministCodeRepositoryCustomImpl.java",
+      "treatment": "port",
+      "reason": "계층 전체 응용 잠금과 트랜잭션 지역 대기 상한",
+      "test": "api-server/src/test/java/nuri/api/schema/AdministCodeHierarchyConcurrencyIntegrationTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/system/job/DurableWorkService.java",
+      "treatment": "port",
+      "reason": "의도 키별 응용 잠금",
+      "test": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/log/AuditLedgerRetention.java",
+      "treatment": "port",
+      "reason": "감사 원장 삭제 허가는 벤더마다 방식이 다르다",
+      "test": "api-server/src/test/java/nuri/api/schema/AuditLedgerRetentionIntegrationTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/cms/CmsRevisionPurgePermitImpl.java",
+      "treatment": "port",
+      "reason": "게시본 파기 허가",
+      "test": "api-server/src/test/java/nuri/api/schema/CmsPageLifecycleIntegrationTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/service/sms/SmsAsyncProcessor.java",
+      "treatment": "port",
+      "reason": "수신자 행 잠금 대기 상한",
+      "test": "business-app/src/test/java/nuri/business/service/sms/SmsAsyncProcessorTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/system/job/DurableJobRepository.java",
+      "treatment": "hibernate",
+      "reason": "페이징과 SKIP LOCKED 를 Hibernate 가 벤더 문법으로 만든다",
+      "test": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/log/LoginLogRepository.java",
+      "treatment": "hibernate",
+      "reason": "HQL format 으로 일자 문자열을 만든다",
+      "test": "business-app/src/test/java/nuri/business/service/board/stats/StatisticsCompositionEquivalenceTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/board/BoardRepository.java",
+      "treatment": "hibernate",
+      "reason": "일자 집계는 HQL, 고정 해제는 NULL 을 문장에 적어 CAST 를 없앴다",
+      "test": "business-app/src/test/java/nuri/business/domain/board/BoardPostDateStatsTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/board/DtaUseStatsRepository.java",
+      "treatment": "hibernate",
+      "reason": "HQL format 으로 일자 문자열을 만든다",
+      "test": "business-app/src/test/java/nuri/business/service/board/stats/StatisticsCompositionEquivalenceTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/file/AttachmentSource.java",
+      "treatment": "portable-rewrite",
+      "reason": "MySQL·MariaDB 의 || 는 논리 OR 이라 모든 팝업과 일치한다. URL 을 Java 에서 완성해 바인딩한다(H3)",
+      "test": "business-core/src/test/java/nuri/business/service/file/JdbcAttachmentReferenceResolverTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/file/JdbcAttachmentReferenceResolver.java",
+      "treatment": "portable-rewrite",
+      "reason": "SELECT 목록의 불리언 식을 CASE 로 바꿨다",
+      "test": "business-core/src/test/java/nuri/business/service/file/JdbcAttachmentReferenceResolverTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/cms/CmsContentRepository.java",
+      "treatment": "portable-rewrite",
+      "reason": "COALESCE(x, '') 비교는 Oracle 에서 UNKNOWN 이다. 요약 비교를 길이로 바꿨다",
+      "test": "api-server/src/test/java/nuri/api/schema/CmsPageLifecycleIntegrationTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/survey/SurveyResultRepository.java",
+      "treatment": "portable-rewrite",
+      "reason": "빈 검색어가 NULL 인 Oracle 에서도 전체를 돌려주도록 IS NULL 가지를 더했다",
+      "test": "business-app/src/test/java/nuri/business/service/survey/SurveyResultServiceTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/service/survey/OnlinePollService.java",
+      "treatment": "portable-rewrite",
+      "reason": "Oracle 은 제약 이름을 대문자로 돌려주므로 대소문자를 무시한다",
+      "test": "business-app/src/test/java/nuri/business/service/survey/SurveyResultServiceTest.java"
+    },
+    {
+      "path": "api-server/src/main/java/nuri/config/E2EDataCleansingConfig.java",
+      "treatment": "portable-rewrite",
+      "reason": "Linux MySQL 은 표 이름의 대소문자를 가린다",
+      "test": "api-server/src/test/java/nuri/api/schema/DurableWorkIntegrationTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/schedule/ScheduleRepository.java",
+      "treatment": "portable-as-is",
+      "reason": ":x IS NULL OR :x = '' 는 Oracle 에서 IS NULL 가지가 받는다. NULLIF(x, '') 는 '' 가 저장되지 않으면 x 와 같다",
+      "test": "business-app/src/test/java/nuri/business/domain/schedule/ScheduleRepositoryOrderTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/deptjob/DeptJobBoxRepository.java",
+      "treatment": "portable-as-is",
+      "reason": ":x IS NULL OR :x = '' 는 Oracle 에서 IS NULL 가지가 받는다",
+      "test": "business-core/src/test/java/nuri/business/domain/deptjob/DeptJobRepositoryVersionTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java",
+      "treatment": "portable-as-is",
+      "reason": "isNull 가지가 있어 Oracle 의 eq(\"\") UNKNOWN 이 결과를 바꾸지 않는다",
+      "test": "business-app/src/test/java/nuri/business/domain/board/BoardRepositoryTest.java"
+    },
+    {
+      "path": "business-app/src/main/java/nuri/business/domain/cms/CmsContentRevisionRepository.java",
+      "treatment": "portable-as-is",
+      "reason": "LOWER(COALESCE(x, '')) LIKE 는 NULL 이어도 제목 조건이 받으므로 결과가 같다",
+      "test": "api-server/src/test/java/nuri/api/schema/CmsPageLifecycleIntegrationTest.java"
+    },
+    {
+      "path": "api-server/src/main/java/nuri/api/config/LogDurationReadinessConfig.java",
+      "treatment": "postgresql-only",
+      "stage": 1,
+      "reason": "옛 데이터가 있는 PostgreSQL 환경의 이행 검사다. 벤더 프로젝트에는 옛 데이터가 없으므로 뺀다",
+      "test": "api-server/src/test/java/nuri/api/schema/LogDurationTransitionMigrationIntegrationTest.java",
+      "frozen": {
+        "cast-operator": 1,
+        "pg-function": 25,
+        "set-local": 3,
+        "catalog": 1,
+        "select-exists": 2,
+        "string-concat": 3
+      }
+    },
+    {
+      "path": "api-server/src/main/java/nuri/api/config/IsolatedAuthorizationRehearsalConfig.java",
+      "treatment": "postgresql-only",
+      "stage": 1,
+      "reason": "격리 리허설 전용 프로파일이다. 벤더 프로젝트에서 뺀다",
+      "test": "api-server/src/test/java/nuri/api/schema/AuthorizationAdministrationIntegrationTest.java",
+      "frozen": {
+        "pg-function": 3,
+        "catalog": 1,
+        "on-conflict": 1
+      }
+    },
+    {
+      "path": "api-server/src/main/java/nuri/api/config/AuthorizationSchemaBarrierConfig.java",
+      "treatment": "deferred",
+      "stage": 2,
+      "reason": "information_schema 와 table_schema='public' 은 MySQL·SQL Server 에서 0건으로 조용히 통과한다. 벤더 구현 때 메타 조회를 포트로 옮긴다",
+      "test": "api-server/src/test/java/nuri/api/schema/AuthorizationAdministrationIntegrationTest.java",
+      "frozen": {
+        "catalog": 1
+      }
+    },
+    {
+      "path": "foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java",
+      "treatment": "deferred",
+      "stage": 2,
+      "reason": "400·409 분기가 SQLState 에 묶여 있다. 벤더 구현 때 오류 코드 표를 더한다",
+      "test": "foundation/src/test/java/nuri/foundation/core/exception/GlobalExceptionHandlerTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/domain/user/repository/UserRepository.java",
+      "treatment": "deferred",
+      "stage": 4,
+      "reason": "FOR UPDATE 는 SQL Server 만 지원하지 않는다. SQL Server 구현 때 포트로 옮긴다",
+      "test": "business-core/src/test/java/nuri/business/service/user/UserServiceTest.java"
+    },
+    {
+      "path": "business-core/src/main/java/nuri/business/service/menu/MenuService.java",
+      "treatment": "deferred",
+      "stage": 3,
+      "reason": "deleteAllById 가 지연 FK 에 기댄다. 지연 FK 가 없는 벤더 구현 때 자식부터 지우게 고친다",
+      "test": "business-core/src/test/java/nuri/business/service/menu/MenuServiceTest.java"
+    }
+  ]
+}

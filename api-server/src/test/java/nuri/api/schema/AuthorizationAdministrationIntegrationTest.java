@@ -76,7 +76,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         jdbc=new JdbcTemplate(source);
         var manager=new DataSourceTransactionManager(source);
         transaction=new TransactionTemplate(manager);
-        var proxy=new ProxyFactory(new AuthorizationAdministrationService(jdbc));
+        var proxy=new ProxyFactory(new AuthorizationAdministrationService(jdbc,new nuri.foundation.core.persistence.PostgresqlSqlDialect()));
         proxy.setProxyTargetClass(true);
         var interceptor=new TransactionInterceptor();
         interceptor.setTransactionManager(manager);

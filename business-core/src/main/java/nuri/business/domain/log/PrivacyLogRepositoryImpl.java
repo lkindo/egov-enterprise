@@ -20,6 +20,8 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
 
         private final jakarta.persistence.EntityManager entityManager;
 
+        private final nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
+
         /**
          * 형제 저장소({@code WebLogRepositoryImpl} 등)는 {@code yyyyMMdd} 문자열 컬럼을 비교하지만
          * 이 테이블의 조회 시각({@code inq_dt})은 timestamp 다. 문자열 절단 없이 시각으로 비교한다.
@@ -30,7 +32,7 @@ public class PrivacyLogRepositoryImpl implements PrivacyLogRepositoryCustom {
         @Transactional
         public void deleteOldLogs(int months) {
                 LocalDateTime cutoff = LocalDateTime.now().minusMonths(months);
-                AuditLedgerRetention.permitDeletionInCurrentTransaction(entityManager);
+                AuditLedgerRetention.permitDeletionInCurrentTransaction(entityManager, vendorSql);
                 queryFactory.delete(QPrivacyLog.privacyLog)
                                 .where(QPrivacyLog.privacyLog.inqDt.lt(cutoff))
                                 .execute();

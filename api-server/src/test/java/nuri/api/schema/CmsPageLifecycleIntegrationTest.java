@@ -155,6 +155,29 @@ class CmsPageLifecycleIntegrationTest {
         return jdbc.queryForObject(sql, Long.class, args);
     }
 
+    /** 요약을 게시본과 현재 행에 직접 넣는다 — 저장 경로는 빈 요약을 정규화해 NULL 경계를 만들 수 없다. */
+    private void pageWithSummary(String path, String published, String draft) {
+        long page = createPage(path, document(text("본문")));
+        jdbc.update("UPDATE tb_cms_conts SET conts_expln = ? WHERE conts_sn = ?", published, page);
+        publish(page);
+        jdbc.update("UPDATE tb_cms_conts SET conts_expln = ? WHERE conts_sn = ?", draft, page);
+    }
+
+    @Test
+    @DisplayName("게시 대기의 요약 비교 — NULL 과 빈 문자열은 같고, 한쪽만 값이 있으면 다르다")
+    void pendingSummaryComparisonIsNullSafe() {
+        pageWithSummary("null-to-value", null, "새 요약");
+        pageWithSummary("value-to-null", "옛 요약", null);
+        pageWithSummary("value-to-other", "옛 요약", "새 요약");
+        pageWithSummary("both-null", null, null);
+        pageWithSummary("empty-to-null", "", null);
+        pageWithSummary("null-to-empty", null, "");
+        pageWithSummary("same-value", "요약", "요약");
+
+        assertThat(listed("PENDING")).containsExactlyInAnyOrder("null-to-value-" + suffix, "value-to-null-" + suffix,
+                "value-to-other-" + suffix);
+    }
+
     @Test
     @DisplayName("목록 상태 — 초안·게시 중·게시 대기(jsonb 비교)·게시 중지를 가르고, 검색어의 % 를 글자 그대로 찾는다")
     void statusFiltersSeparateDraftsPendingAndUnpublishedPages() {

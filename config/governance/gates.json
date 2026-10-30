@@ -575,6 +575,10 @@
           "source": "api-server/src/test/java/nuri/api/harness/UnreachableServiceLinterTest.java"
         },
         {
+          "id": "GH-VENDOR-SQL-PORTABILITY",
+          "source": "api-server/src/test/java/nuri/api/harness/VendorSqlPortabilityLinterTest.java"
+        },
+        {
           "id": "GH-WORKFLOW-MANIFEST",
           "source": "api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java"
         },

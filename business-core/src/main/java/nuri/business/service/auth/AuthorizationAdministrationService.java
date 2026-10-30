@@ -10,6 +10,8 @@ import lombok.RequiredArgsConstructor;
 import nuri.business.security.authorization.PermissionCodes;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.auth.dto.AuthorizationDto.*;
+import nuri.foundation.core.persistence.VendorSqlDialect;
+import nuri.foundation.core.persistence.VendorSqlDialect.RowLock;
 import nuri.business.service.login.ProtectedAccountChangeGuard;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
@@ -29,6 +31,7 @@ import org.springframework.transaction.annotation.Transactional;
 @Transactional(readOnly = true)
 public class AuthorizationAdministrationService implements ProtectedAccountChangeGuard {
     private final JdbcTemplate jdbc;
+    private final VendorSqlDialect vendorSql;
     private static final Set<String> RESERVED = Set.of("ROLE_ADMIN", "ROLE_SYSTEM", "ROLE_USER", "ROLE_ANONYMOUS");
     private static final Set<String> PROTECTED_PERMISSIONS = Set.of("AUTHRT_GRANT", "AUTHRT_ASSIGN", "USER_PASSWORD");
     // Recovery authority needs the same trusted administration boundary without changing D02 account classification.
@@ -120,11 +123,11 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("AUTHRT_READ");
         requireGroup(code);
         var pageable = pagination(page,size);
-        var rows = jdbc.query("SELECT u.esntl_id,u.user_id,u.user_nm,u.ognz_id FROM tb_authrt_user_map m"
+        var rows = jdbc.query(vendorSql.paginate("SELECT u.esntl_id,u.user_id,u.user_nm,u.ognz_id FROM tb_authrt_user_map m"
                 + " JOIN tb_user_info u ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?"
-                + " ORDER BY u.user_nm,u.user_id LIMIT ? OFFSET ?",
+                + " ORDER BY u.user_nm,u.user_id",pageable.getPageSize(),pageable.getOffset()),
                 (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),
-                code,pageable.getPageSize(),pageable.getOffset());
+                code);
         Long total = jdbc.queryForObject("SELECT count(*) FROM tb_authrt_user_map m JOIN tb_user_info u"
                 + " ON u.esntl_id=m.scrty_dcsn_trgt_id WHERE m.authrt_cd=?",Long.class,code);
         return new PageImpl<>(rows,pageable,Objects.requireNonNull(total));
@@ -201,7 +204,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     public Catalog catalog() {
         SecurityUtil.assertPermission("AUTHRT_READ");
         // 사용 여부는 사이드바와 같은 판정(값이 'Y' 일 때만 사용)으로 정규화한다 — NULL 을 사용 중으로 보이지 않게 한다.
-        var navigation = jdbc.query("SELECT menu_sn::text,menu_nm,CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL ELSE up_menu_sn::text END,modern_route,use_yn FROM tb_menu_info ORDER BY menu_ordr NULLS LAST,menu_sn",
+        var navigation = jdbc.query("SELECT menu_sn,menu_nm,NULLIF(up_menu_sn,0),modern_route,use_yn FROM tb_menu_info ORDER BY menu_ordr,menu_sn",
                 (rs,n) -> new Navigation(rs.getString(1),rs.getString(2),rs.getString(3),routeOf(rs.getString(4)),"Y".equals(rs.getString(5))?"Y":"N"));
         return new Catalog(loadCatalogOperations(),navigation,PermissionCodes.CATALOG_VERSION);
     }
@@ -210,8 +213,8 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission("AUTHRT_READ");
         var pageable = pagination(page,size);
         String term = "%" + Objects.toString(keyword, "").replace("!","!!").replace("%","!%").replace("_","!_") + "%";
-        var rows = jdbc.query("SELECT esntl_id,user_id,user_nm,ognz_id FROM tb_user_info WHERE user_id LIKE ? ESCAPE '!' OR user_nm LIKE ? ESCAPE '!' ORDER BY user_id LIMIT ? OFFSET ?",
-                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),term,term,pageable.getPageSize(),pageable.getOffset());
+        var rows = jdbc.query(vendorSql.paginate("SELECT esntl_id,user_id,user_nm,ognz_id FROM tb_user_info WHERE user_id LIKE ? ESCAPE '!' OR user_nm LIKE ? ESCAPE '!' ORDER BY user_id",pageable.getPageSize(),pageable.getOffset()),
+                (rs,n) -> new UserChoice(rs.getString(1),rs.getString(2),rs.getString(3),rs.getString(4)),term,term);
         Long total = jdbc.queryForObject("SELECT count(*) FROM tb_user_info WHERE user_id LIKE ? ESCAPE '!' OR user_nm LIKE ? ESCAPE '!'",Long.class,term,term);
         return new PageImpl<>(rows,pageable,Objects.requireNonNull(total));
     }
@@ -286,7 +289,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     /** 메시지용 메뉴 이름. 지워진 메뉴는 번호로 남는다. */
     private String menuNames(List<String> codes) {
         var names = new HashMap<String,String>();
-        jdbc.query("SELECT menu_sn::text,menu_nm FROM tb_menu_info ORDER BY menu_sn",
+        jdbc.query("SELECT menu_sn,menu_nm FROM tb_menu_info ORDER BY menu_sn",
                 (rs,n) -> names.put(rs.getString(1),rs.getString(2)));
         return codes.stream().limit(5).map(code -> "'" + names.getOrDefault(code,code) + "'")
                 .collect(Collectors.joining(", ")) + (codes.size() > 5 ? " 외 " + (codes.size()-5) + "개" : "");
@@ -334,7 +337,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     private void lockMenus(List<Long> ids) {
         ids.stream().distinct().sorted().forEach(id -> {
-            var found = jdbc.queryForList("SELECT menu_sn FROM tb_menu_info WHERE menu_sn=? FOR UPDATE",Long.class,id);
+            var found = jdbc.queryForList(vendorSql.selectForLock("menu_sn","tb_menu_info","WHERE menu_sn=?",RowLock.FOR_UPDATE),Long.class,id);
             if (found.isEmpty()) invalid("존재하지 않는 메뉴입니다.");
         });
     }
@@ -343,7 +346,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
 
     /** Stabilize parent links before ADMIN; allow the deferred self-FK's KEY SHARE during a move. */
     private Map<String,String> lockMenuParents() {
-        var rows = jdbc.query("SELECT menu_sn::text,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE",
+        var rows = jdbc.query(vendorSql.selectForLock("menu_sn,up_menu_sn","tb_menu_info","ORDER BY menu_sn",RowLock.FOR_NO_KEY_UPDATE),
                 (rs,n) -> new MenuParent(rs.getString(1),rs.getString(2)));
         var parents = new HashMap<String,String>();
         rows.forEach(row -> parents.put(row.code(),row.parentCode()));
@@ -616,14 +619,13 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         var parameters=new MapSqlParameterSource();
         String where=buildHistoryWhereClause(groupCode,userId,actorId,fromDate,toDate,parameters);
         var query=new NamedParameterJdbcTemplate(jdbc);
-        parameters.addValue("size",pageable.getPageSize()).addValue("offset",pageable.getOffset());
         // 처리자·대상 사용자 이름을 함께 싣는다 — 종전 화면은 내부 식별자(esntlId)만 보여 누가 바꿨는지 읽을 수 없었다.
         //   탈퇴 등으로 사용자가 없으면 이름은 null 이고 식별자가 남는다.
-        var rows=query.query("SELECT h.*, actor.user_nm AS actor_nm, target.user_nm AS target_user_nm"
+        var rows=query.query(vendorSql.paginate("SELECT h.*, actor.user_nm AS actor_nm, target.user_nm AS target_user_nm"
                 + " FROM tb_authrt_chg_hstry h"
                 + " LEFT JOIN tb_user_info actor ON actor.esntl_id=h.chg_user_idntfr"
                 + " LEFT JOIN tb_user_info target ON target.esntl_id=h.scrty_dcsn_trgt_id"
-                + where+" ORDER BY h.authrt_chg_hstry_sn DESC LIMIT :size OFFSET :offset",parameters,AuthorizationAdministrationSupport::mapHistoryChange);
+                + where+" ORDER BY h.authrt_chg_hstry_sn DESC",pageable.getPageSize(),pageable.getOffset()),parameters,AuthorizationAdministrationSupport::mapHistoryChange);
         return new PageImpl<>(rows,pageable,Objects.requireNonNull(query.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry h"+where,parameters,Long.class)));
     }
 
@@ -643,7 +645,7 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
     }
 
     public void lockAdministration() {
-        if (jdbc.queryForList("SELECT authrt_cd FROM tb_authrt_info WHERE authrt_cd='ROLE_ADMIN' FOR UPDATE",String.class).isEmpty()) {
+        if (jdbc.queryForList(vendorSql.selectForLock("authrt_cd","tb_authrt_info","WHERE authrt_cd='ROLE_ADMIN'",RowLock.FOR_UPDATE),String.class).isEmpty()) {
             throw new IllegalStateException("Reserved authorization lock row missing");
         }
     }
@@ -654,15 +656,13 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
         SecurityUtil.assertPermission(permission);
         lockAdministration();
         String actor = SecurityUtil.getCurrentEsntlId().orElseThrow(() -> new BusinessException(CommonErrorCode.ACCESS_DENIED));
-        Boolean allowed = jdbc.queryForObject("""
-                SELECT EXISTS (
+        Boolean allowed = jdbc.queryForObject(vendorSql.existsQuery("""
                   SELECT 1 FROM tb_user_info u
                   JOIN tb_authrt_user_map m ON m.scrty_dcsn_trgt_id=u.esntl_id
                   JOIN tb_authrt_grnt_map g ON g.authrt_cd=m.authrt_cd
                   WHERE u.esntl_id=? AND u.user_stts_cd='P' AND coalesce(u.lck_yn,'N')<>'Y'
                     AND g.authrt_type_cd='OPERATION' AND g.authrt_grnt_cd=?
-                )
-                """, Boolean.class, actor, permission);
+                """), Boolean.class, actor, permission);
         if (!Boolean.TRUE.equals(allowed)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
     }
 

@@ -173,11 +173,9 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
             }
         }
 
-        // SELECT 절의 ? 가 WHERE 절보다 앞서므로 atchFileSn 는 마지막에 바인딩한다.
-        // 연결 술어는 참조원마다 다르고(POPUP 은 URL 비교라 자리표시자가 2개다) 개수만큼 반복 바인딩한다.
-        for (int i = 0; i < countPlaceholders(source.linkagePredicate()); i++) {
-            params.add(atchFileSn);
-        }
+        // SELECT 절의 ? 가 WHERE 절보다 앞서므로 연결 값은 마지막에 바인딩한다.
+        // 연결 술어는 참조원마다 다르다(POPUP 은 URL 비교라 값이 2개이고 저장 형태로 완성해 넘긴다).
+        params.addAll(source.linkageParameters(atchFileSn));
 
         String sql = "SELECT COUNT(*) AS ref_cnt,"
                 + " SUM(CASE WHEN " + sharedExpr + " THEN 1 ELSE 0 END) AS shared_cnt,"
@@ -295,12 +293,13 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
      */
     private SourceHit queryCmsPage(Long fileId) {
         List<Boolean> published = jdbcTemplate.query("""
-                SELECT EXISTS (SELECT 1 FROM tb_cms_conts c
+                SELECT CASE WHEN EXISTS (SELECT 1 FROM tb_cms_conts c
                                  JOIN tb_cms_conts_rvsn_file rf
                                    ON rf.conts_rvsn_sn = c.conts_rvsn_sn AND rf.conts_file_sn = f.conts_file_sn
                                 WHERE c.conts_sn = f.conts_sn AND c.kpng_yn = 'N')
                        AND NOT EXISTS (SELECT 1 FROM tb_file_detail d
-                                        WHERE d.atch_file_sn = f.atch_file_sn AND d.atch_file_seq <> f.atch_file_seq) AS published
+                                        WHERE d.atch_file_sn = f.atch_file_sn AND d.atch_file_seq <> f.atch_file_seq)
+                       THEN 1 ELSE 0 END AS published
                   FROM tb_cms_conts_file f
                  WHERE f.atch_file_sn = ?
                 """, (rs, rowNum) -> rs.getBoolean("published"), fileId);

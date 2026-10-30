@@ -1,5 +1,7 @@
 package nuri.business.domain.board;
 
+import java.time.LocalDateTime;
+import nuri.foundation.core.stats.StatsTimestamp;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -18,14 +20,19 @@ public interface DtaUseStatsRepository extends JpaRepository<DtaUseStats, Long> 
   /**
    * 날짜별 데이터 사용 통계
    */
-  @Query(value = """
-      SELECT TO_CHAR(d.crt_dt, 'YYYY-MM-DD') as statsDate, COUNT(*) as cnt
-      FROM tb_dta_use_stats d
-      WHERE d.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND d.crt_dt < CAST(:toDate AS TIMESTAMP)
-      GROUP BY TO_CHAR(d.crt_dt, 'YYYY-MM-DD')
+  default List<Object[]> countByDate(String fromDate, String toDate) {
+    return countPerDay(StatsTimestamp.parse(fromDate), StatsTimestamp.parse(toDate));
+  }
+
+  /** 일자 형식은 Hibernate 가 벤더 함수로 만든다. */
+  @Query("""
+      SELECT format(d.crtDt as 'yyyy-MM-dd') as statsDate, COUNT(d) as cnt
+      FROM DtaUseStats d
+      WHERE d.crtDt >= :fromDate AND d.crtDt < :toDate
+      GROUP BY format(d.crtDt as 'yyyy-MM-dd')
       ORDER BY statsDate DESC
-      """, nativeQuery = true)
-  List<Object[]> countByDate(
-      @Param("fromDate") String fromDate,
-      @Param("toDate") String toDate);
+      """)
+  List<Object[]> countPerDay(
+      @Param("fromDate") LocalDateTime fromDate,
+      @Param("toDate") LocalDateTime toDate);
 }

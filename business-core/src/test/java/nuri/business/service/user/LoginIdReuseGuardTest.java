@@ -43,7 +43,7 @@ class LoginIdReuseGuardTest {
     void reportsTheFirstColumnThatStillCarriesTheLoginId() {
         var guard = new LoginIdReuseGuard(jdbcTemplate, List.of(
                 contributor(new Reference("tb_rpt_info", "frst_rgtr_id")),
-                contributor(new Reference("tb_file_master", "frst_rgtr_id"))));
+                contributor(new Reference("tb_file_master", "frst_rgtr_id"))), new nuri.foundation.core.persistence.PostgresqlSqlDialect());
         given(jdbcTemplate.queryForObject(anyString(), eq(Boolean.class), eq("reused"))).willReturn(false);
         given(jdbcTemplate.queryForObject(
                 eq("SELECT EXISTS (SELECT 1 FROM tb_rpt_info WHERE frst_rgtr_id = ?)"), eq(Boolean.class), eq("reused")))
@@ -61,7 +61,8 @@ class LoginIdReuseGuardTest {
     @DisplayName("어느 컬럼에도 없으면 거짓이고, 빈 로그인 ID 는 조회하지 않는다")
     void falseWhenNoColumnCarriesTheLoginId() {
         var guard = new LoginIdReuseGuard(jdbcTemplate, List.of(contributor(
-                new Reference("tb_schdl_info", "frst_rgtr_id"), new Reference("tb_schdl_info", "schdl_pic_id"))));
+                new Reference("tb_schdl_info", "frst_rgtr_id"), new Reference("tb_schdl_info", "schdl_pic_id"))),
+                new nuri.foundation.core.persistence.PostgresqlSqlDialect());
         given(jdbcTemplate.queryForObject(anyString(), eq(Boolean.class), eq("fresh"))).willReturn(false);
 
         assertThat(guard.isStillReferenced("fresh")).isFalse();
@@ -69,7 +70,7 @@ class LoginIdReuseGuardTest {
                 "SELECT EXISTS (SELECT 1 FROM tb_schdl_info WHERE schdl_pic_id = ?)", Boolean.class, "fresh");
 
         var untouched = mock(JdbcTemplate.class);
-        var emptyGuard = new LoginIdReuseGuard(untouched, List.of(contributor(new Reference("tb_rpt_info", "user_id"))));
+        var emptyGuard = new LoginIdReuseGuard(untouched, List.of(contributor(new Reference("tb_rpt_info", "user_id"))), new nuri.foundation.core.persistence.PostgresqlSqlDialect());
         assertThat(emptyGuard.isStillReferenced("")).isFalse();
         assertThat(emptyGuard.isStillReferenced(null)).isFalse();
         verifyNoInteractions(untouched);
@@ -78,7 +79,7 @@ class LoginIdReuseGuardTest {
     @Test
     @DisplayName("조회가 실패하면 '남은 기록 없음' 으로 보지 않고 예외를 올린다(fail-closed)")
     void propagatesLookupFailure() {
-        var guard = new LoginIdReuseGuard(jdbcTemplate, List.of(contributor(new Reference("tb_rpt_info", "user_id"))));
+        var guard = new LoginIdReuseGuard(jdbcTemplate, List.of(contributor(new Reference("tb_rpt_info", "user_id"))), new nuri.foundation.core.persistence.PostgresqlSqlDialect());
         given(jdbcTemplate.queryForObject(anyString(), eq(Boolean.class), eq("reused")))
                 .willThrow(new DataAccessResourceFailureException("relation does not exist"));
 
@@ -89,13 +90,13 @@ class LoginIdReuseGuardTest {
     @Test
     @DisplayName("기여가 없거나, 빈 기여이거나, 같은 컬럼을 두 번 등록하면 기동하지 않는다")
     void rejectsEmptyOrDuplicateRegistrations() {
-        assertThatThrownBy(() -> new LoginIdReuseGuard(jdbcTemplate, List.of()))
+        assertThatThrownBy(() -> new LoginIdReuseGuard(jdbcTemplate, List.of(), new nuri.foundation.core.persistence.PostgresqlSqlDialect()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("하나도 등록되지 않았다");
-        assertThatThrownBy(() -> new LoginIdReuseGuard(jdbcTemplate, List.of(contributor())))
+        assertThatThrownBy(() -> new LoginIdReuseGuard(jdbcTemplate, List.of(contributor()), new nuri.foundation.core.persistence.PostgresqlSqlDialect()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("컬럼을 하나도 등록하지 않았다");
         assertThatThrownBy(() -> new LoginIdReuseGuard(jdbcTemplate, List.of(
                 contributor(new Reference("tb_rpt_info", "frst_rgtr_id")),
-                contributor(new Reference("tb_rpt_info", "frst_rgtr_id")))))
+                contributor(new Reference("tb_rpt_info", "frst_rgtr_id"))), new nuri.foundation.core.persistence.PostgresqlSqlDialect()))
                 .isInstanceOf(IllegalStateException.class).hasMessageContaining("중복 등록");
         verify(jdbcTemplate, never()).queryForObject(anyString(), eq(Boolean.class), anyString());
     }

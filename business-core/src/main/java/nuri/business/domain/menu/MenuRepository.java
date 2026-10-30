@@ -7,32 +7,7 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 @Repository
-public interface MenuRepository extends JpaRepository<Menu, Long> {
-    interface ParentLink {
-        Long getMenuSn();
-        Long getUpMenuSn();
-    }
-
-    /** 권한 관리와 같은 메뉴 번호 순서로 잠근다. 자기 FK의 KEY SHARE와는 충돌하지 않는다. */
-    @Query(value = """
-            SELECT menu_sn AS "menuSn", up_menu_sn AS "upMenuSn"
-            FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE
-            """, nativeQuery = true)
-    List<ParentLink> findParentLinksForUpdate();
-
-    /**
-     * [2026-10-02] 메뉴 구조 편집기가 읽는 한 행. 구조 버전은 이 일곱 칸의 요약값이다.
-     * [2026-10-05] 레거시 연결 프로그램(prgrm_file_nm)은 앱이 읽지 않으므로 뺐다(DEC-OPS-231).
-     */
-    interface StructureRow {
-        Long getMenuSn();
-        Long getUpMenuSn();
-        Integer getMenuOrdr();
-        String getMenuNm();
-        String getUseYn();
-        String getModernRoute();
-        String getMenuExpln();
-    }
+public interface MenuRepository extends JpaRepository<Menu, Long>, MenuRowLockRepository {
 
     /**
      * 메뉴 구조를 캐시를 거치지 않고 DB 에서 읽는다 — 메뉴 목록 캐시는 인스턴스마다 따로 10분이라 그 값으로 버전을 만들면
@@ -44,14 +19,6 @@ public interface MenuRepository extends JpaRepository<Menu, Long> {
             FROM tb_menu_info ORDER BY menu_sn
             """, nativeQuery = true)
     List<StructureRow> findStructureRows();
-
-    /** 구조 저장이 잠그고 읽는다. 잠금 순서·방식은 {@link #findParentLinksForUpdate()} 와 같다(메뉴 → ADMIN). */
-    @Query(value = """
-            SELECT menu_sn AS "menuSn", up_menu_sn AS "upMenuSn", menu_ordr AS "menuOrdr", menu_nm AS "menuNm",
-                   use_yn AS "useYn", modern_route AS "modernRoute", menu_expln AS "menuExpln"
-            FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE
-            """, nativeQuery = true)
-    List<StructureRow> findStructureRowsForUpdate();
 
     List<Menu> findAllByOrderByUpMenuSnAscMenuOrdrAsc();
 

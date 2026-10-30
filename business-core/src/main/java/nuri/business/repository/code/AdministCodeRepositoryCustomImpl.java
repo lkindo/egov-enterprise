@@ -1,9 +1,10 @@
 package nuri.business.repository.code;
 
 import jakarta.persistence.EntityManager;
+import java.time.Duration;
 import nuri.business.domain.code.AdministCode;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -13,10 +14,12 @@ public class AdministCodeRepositoryCustomImpl implements AdministCodeRepositoryC
     private static final int HIERARCHY_NAMESPACE = 0x41444D43; // ADMC
     private final EntityManager entityManager;
     private final JdbcTemplate jdbc;
+    private final VendorSqlDialect vendorSql;
 
-    public AdministCodeRepositoryCustomImpl(EntityManager entityManager, JdbcTemplate jdbc) {
+    public AdministCodeRepositoryCustomImpl(EntityManager entityManager, JdbcTemplate jdbc, VendorSqlDialect vendorSql) {
         this.entityManager = entityManager;
         this.jdbc = jdbc;
+        this.vendorSql = vendorSql;
     }
 
     @Override
@@ -24,11 +27,8 @@ public class AdministCodeRepositoryCustomImpl implements AdministCodeRepositoryC
     public void lockHierarchy() {
         // Native advisory locks do not use the JPA lock hint. Match application.yml's 5000 ms bound.
         // Transaction-local configuration also bounds subsequent row/FK waits and never leaks to the pool.
-        jdbc.queryForObject("SELECT set_config('lock_timeout', '5s', true)", String.class);
-        jdbc.query("SELECT pg_advisory_xact_lock(?, ?)", statement -> {
-            statement.setInt(1, HIERARCHY_NAMESPACE);
-            statement.setInt(2, 1);
-        }, (RowCallbackHandler) row -> { });
+        jdbc.execute(vendorSql.transactionLockWaitSql(Duration.ofSeconds(5)));
+        vendorSql.lockForTransaction(jdbc, HIERARCHY_NAMESPACE, 1);
     }
 
     @Override

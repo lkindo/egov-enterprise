@@ -14,6 +14,7 @@ import nuri.business.domain.system.job.DurableJob;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkPort;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import org.springframework.stereotype.Service;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
@@ -25,6 +26,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class DurableWorkService implements DurableWorkPort {
     private final DurableJobRepository repository;
     private final JdbcTemplate jdbc;
+    private final VendorSqlDialect vendorSql;
 
     @Override
     @Transactional(propagation = Propagation.MANDATORY)
@@ -41,10 +43,9 @@ public class DurableWorkService implements DurableWorkPort {
         // Validate before executing a caller factory that can write domain data.
         new DurableWork(key, type, "");
         Objects.requireNonNull(payloadFactory, "payloadFactory");
-        // PostgreSQL transaction locks share the caller's connection and release on commit/rollback.
+        // Transaction locks share the caller's connection and release on commit/rollback.
         // The fixed namespace and UUID hash select a 64-bit lock; collisions only serialize work.
-        jdbc.query("SELECT pg_advisory_xact_lock(?)", statement -> statement.setLong(1, lockKey(key)),
-                (org.springframework.jdbc.core.RowCallbackHandler) row -> { });
+        vendorSql.lockForTransaction(jdbc, lockKey(key));
         var existing = repository.findByJobMngNo(key.toString());
         if (existing.isPresent()) {
             DurableWork work = existing.get().work();

@@ -21,7 +21,8 @@ class AttachmentReferenceIntegrityPostgresTest extends SharedPostgresMigrationTe
             statement.execute("INSERT INTO tb_popup_info VALUES ('/api/v1/files/1'), ('/api/v1/files/download?fileId=2'), ('https://example.invalid/image.png')");
             var dataSource = new SingleConnectionDataSource(connection, true);
             var scanner = new AttachmentReferenceIntegrityService(dataSource,
-                    List.of(() -> List.of(AttachmentSource.BOARD, AttachmentSource.POPUP, AttachmentSource.DATA_USE_STATS)));
+                    List.of(() -> List.of(AttachmentSource.BOARD, AttachmentSource.POPUP, AttachmentSource.DATA_USE_STATS)),
+                    new nuri.foundation.core.persistence.PostgresqlSqlDialect());
             var result = scanner.scan(100);
             assertThat(result.complete()).isTrue();
             assertThat(result.checked()).isEqualTo(4);

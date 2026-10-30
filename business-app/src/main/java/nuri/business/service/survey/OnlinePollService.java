@@ -419,7 +419,7 @@ public class OnlinePollService {
     private boolean isDuplicateVoteViolation(Throwable e) {
         for (Throwable t = e; t != null; t = t.getCause()) {
             String msg = t.getMessage();
-            if (msg != null && msg.contains("uk_tb_onln_poll_rslt_poll_voter")) {
+            if (msg != null && msg.toLowerCase(java.util.Locale.ROOT).contains("uk_tb_onln_poll_rslt_poll_voter")) {
                 return true;
             }
         }

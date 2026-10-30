@@ -1,6 +1,7 @@
 package nuri.business.domain.log;
 
 import jakarta.persistence.EntityManager;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 
 /**
  * 감사 원장(tb_privacy_log·tb_sys_adt_log)의 보존 정리 삭제를 현재 트랜잭션에서만 허용하도록 DB 에 선언한다(2026-10-18, V2_132).
@@ -20,11 +21,7 @@ final class AuditLedgerRetention {
     private AuditLedgerRetention() {
     }
 
-    static void permitDeletionInCurrentTransaction(EntityManager entityManager) {
-        boolean postgres = entityManager.unwrap(org.hibernate.Session.class).doReturningWork(
-                connection -> "PostgreSQL".equalsIgnoreCase(connection.getMetaData().getDatabaseProductName()));
-        if (postgres) {
-            entityManager.createNativeQuery("SELECT set_config('app.audit_retention', 'on', true)").getSingleResult();
-        }
+    static void permitDeletionInCurrentTransaction(EntityManager entityManager, VendorSqlDialect vendorSql) {
+        vendorSql.permitLedgerDeletion(entityManager, VendorSqlDialect.LedgerDeletionPermit.AUDIT_RETENTION);
     }
 }

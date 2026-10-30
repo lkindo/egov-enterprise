@@ -10,7 +10,7 @@ import org.springframework.data.repository.query.Param;
 import java.util.List;
 import java.util.Optional;
 
-public interface CmsContentRevisionRepository extends JpaRepository<CmsContentRevision, Long> {
+public interface CmsContentRevisionRepository extends JpaRepository<CmsContentRevision, Long>, CmsRevisionPurgePermit {
 
     /** 게시 이력. 최신이 앞이다. 페이지당 게시 횟수는 운영자가 직접 누른 수라 페이징하지 않는다. */
     List<CmsContentRevision> findByContsSnOrderByContsRvsnSnDesc(Long contsSn);
@@ -46,10 +46,6 @@ public interface CmsContentRevisionRepository extends JpaRepository<CmsContentRe
     Page<CmsContentRevision> searchPublished(@Param("keyword") String keyword, Pageable pageable);
 
     // ---- 파기(ADR-0042) — 게시본 불변 트리거는 이 트랜잭션 표시가 켜진 동안에만 삭제를 받는다(수정은 늘 거부한다) ------------------------
-
-    /** 지금 트랜잭션에서만 게시본 삭제를 허용한다(SET LOCAL 과 같다 — 트랜잭션이 끝나면 풀린다). */
-    @Query(value = "SELECT set_config('nuri.cms_purge', 'on', true)", nativeQuery = true)
-    String allowPurgeInCurrentTransaction();
 
     @Modifying(flushAutomatically = true, clearAutomatically = true)
     @Query(value = "DELETE FROM tb_cms_conts_rvsn_file WHERE conts_sn = :contsSn AND conts_rvsn_sn = :contsRvsnSn",

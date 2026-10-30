@@ -27,7 +27,7 @@ public interface SurveyResultRepository extends JpaRepository<SurveyResult, Long
     void deleteBySrvyArtclSn(Long srvyArtclSn);
 
     /** 응답자명 부분일치(선택). 관리 목록은 설문 경계를 넘어 조회한다 — 응답 내용에는 신상이 없다. */
-    @Query("SELECT r FROM SurveyResult r WHERE :keyword = '' OR r.rspnsNm LIKE %:keyword%")
+    @Query("SELECT r FROM SurveyResult r WHERE :keyword IS NULL OR :keyword = '' OR r.rspnsNm LIKE %:keyword%")
     Page<SurveyResult> searchByRspnsNm(@Param("keyword") String keyword, Pageable pageable);
 
     /**

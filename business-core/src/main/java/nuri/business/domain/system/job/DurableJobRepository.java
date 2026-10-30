@@ -7,6 +7,7 @@ import java.util.Collection;
 import java.util.Optional;
 import java.util.List;
 import jakarta.persistence.QueryHint;
+import org.springframework.data.domain.Limit;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -19,10 +20,17 @@ public interface DurableJobRepository extends JpaRepository<DurableJob, BigInteg
     /** 그 처리 상태인 작업 수 — 관리자 홈의 운영 신호(OperationalSignalService)가 FAILED 를 센다. 본문·식별자는 읽지 않는다. */
     long countByPrcsSttsNm(String prcsSttsNm);
 
-    @Query(value = "SELECT * FROM tb_sys_job WHERE prcs_stts_nm IN ('PENDING','RETRY','RUNNING') "
-            + "AND job_prnmnt_dt <= :now AND job_se_nm IN (:types) "
-            + "ORDER BY job_prnmnt_dt,job_sn LIMIT 1 FOR UPDATE SKIP LOCKED", nativeQuery = true)
-    Optional<DurableJob> claimNext(@Param("now") LocalDateTime now, @Param("types") Collection<String> types);
+    /** 잠긴 행은 건너뛴다. 페이징과 잠금 절은 Hibernate 가 벤더 문법으로 만든다(-2 는 SKIP LOCKED 다). */
+    @Lock(LockModeType.PESSIMISTIC_WRITE)
+    @QueryHints(@QueryHint(name = "jakarta.persistence.lock.timeout", value = "-2"))
+    @Query("SELECT j FROM DurableJob j WHERE j.prcsSttsNm IN ('PENDING','RETRY','RUNNING') "
+            + "AND j.jobPrnmntDt <= :now AND j.jobSeNm IN :types "
+            + "ORDER BY j.jobPrnmntDt, j.jobSn")
+    List<DurableJob> findClaimable(@Param("now") LocalDateTime now, @Param("types") Collection<String> types, Limit limit);
+
+    default Optional<DurableJob> claimNext(LocalDateTime now, Collection<String> types) {
+        return findClaimable(now, types, Limit.of(1)).stream().findFirst();
+    }
 
     @Lock(LockModeType.PESSIMISTIC_WRITE)
     @Query("SELECT j FROM DurableJob j WHERE j.jobSn = :id")
