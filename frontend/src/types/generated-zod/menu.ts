@@ -6,6 +6,29 @@
 import { z } from 'zod';
 import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema, MenuDtoRequestSchema, MenuDtoResponseSchema, MenuDtoSchema } from './_shared';
 
+export const MenuBookmarkCleanupRequestSchema = /*#__PURE__*/ (() => z.object({
+  expectedAuthorizationVersion: z.string().min(0).max(64),
+  expectedServerUnavailableCount: z.number().int().min(0),
+  uiUnavailableMenuNos: z.array(z.number().int().min(1)).min(0).max(30),
+}))();
+export type MenuBookmarkCleanupRequest = z.infer<typeof MenuBookmarkCleanupRequestSchema>;
+
+export const ApiResponseMenuBookmarkCleanupResultSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MenuBookmarkCleanupResultSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseMenuBookmarkCleanupResult = z.infer<typeof ApiResponseMenuBookmarkCleanupResultSchema>;
+
+export const MenuBookmarkCleanupResultSchema = /*#__PURE__*/ (() => z.object({
+  removedCount: z.number().int().min(0),
+}))();
+export type MenuBookmarkCleanupResult = z.infer<typeof MenuBookmarkCleanupResultSchema>;
+
 export const ApiResponseMenuListResponseSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
   status: z.number().int().optional(),
@@ -38,6 +61,63 @@ export const MenuBookmarkDtoSchema = /*#__PURE__*/ (() => z.object({
   menuNm: z.string(),
 }))();
 export type MenuBookmarkDto = z.infer<typeof MenuBookmarkDtoSchema>;
+
+export const ApiResponseMenuBookmarkStatusDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MenuBookmarkStatusDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponseMenuBookmarkStatusDto = z.infer<typeof ApiResponseMenuBookmarkStatusDtoSchema>;
+
+export const MenuBookmarkStatusDtoSchema = /*#__PURE__*/ (() => z.object({
+  bookmarks: z.array(z.lazy(() => MenuBookmarkDtoSchema)),
+  unavailableCount: z.number().int().min(0),
+}))();
+export type MenuBookmarkStatusDto = z.infer<typeof MenuBookmarkStatusDtoSchema>;
+
+export const MenuBookmarkCleanupRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  expectedAuthorizationVersion: z.string().min(0).max(64),
+  expectedServerUnavailableCount: z.number().int().min(0),
+  uiUnavailableMenuNos: z.array(z.number().int().min(1)).min(0).max(30),
+}))();
+
+export const MenuBookmarkCleanupRequestResponseSchema = /*#__PURE__*/ (() => z.object({
+  expectedAuthorizationVersion: z.string().min(0).max(64),
+  expectedServerUnavailableCount: z.number().int().min(0),
+  uiUnavailableMenuNos: z.array(z.number().int().min(1).optional().nullable()).min(0).max(30),
+}))();
+
+export const ApiResponseMenuBookmarkCleanupResultRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MenuBookmarkCleanupResultRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseMenuBookmarkCleanupResultResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MenuBookmarkCleanupResultResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const MenuBookmarkCleanupResultRequestSchema = /*#__PURE__*/ (() => z.object({
+  removedCount: z.number().int().min(0),
+}))();
+
+export const MenuBookmarkCleanupResultResponseSchema = /*#__PURE__*/ (() => z.object({
+  removedCount: z.number().int().min(0),
+}))();
 
 export const ApiResponseMenuListResponseRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -95,4 +175,34 @@ export const MenuBookmarkDtoRequestSchema = /*#__PURE__*/ (() => z.object({
 export const MenuBookmarkDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   menuNo: z.number().int(),
   menuNm: z.string(),
+}))();
+
+export const ApiResponseMenuBookmarkStatusDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => MenuBookmarkStatusDtoRequestSchema.strict()).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemRequestSchema.strict())).optional(),
+}))();
+
+export const ApiResponseMenuBookmarkStatusDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional().nullable(),
+  status: z.number().int().optional().nullable(),
+  code: z.string().optional().nullable(),
+  message: z.string().optional().nullable(),
+  data: z.lazy(() => MenuBookmarkStatusDtoResponseSchema).optional().nullable(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const MenuBookmarkStatusDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  bookmarks: z.array(z.lazy(() => MenuBookmarkDtoRequestSchema.strict())),
+  unavailableCount: z.number().int().min(0),
+}))();
+
+export const MenuBookmarkStatusDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  bookmarks: z.array(z.lazy(() => MenuBookmarkDtoResponseSchema)),
+  unavailableCount: z.number().int().min(0),
 }))();

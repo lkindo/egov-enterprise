@@ -41,7 +41,7 @@ export const updateMemoReportOperation = /*#__PURE__*/ (() => {
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"],["instructable"]],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"],["instructable"],["instructionReadToken"],["attachments"]],
   responseForbiddenPaths: [],
   });
 })();
@@ -98,7 +98,7 @@ export const createMemoReportOperation = /*#__PURE__*/ (() => {
   requestSchema: MemoReportDtoRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"],["instructable"]],
+  requestForbiddenPaths: [["memoRptSn"],["userId"],["wrterNm"],["rptrNm"],["drctnMttr"],["drctnMttrRegDt"],["rptrInqDt"],["crtDt"],["editable"],["deletable"],["instructable"],["instructionReadToken"],["attachments"]],
   responseForbiddenPaths: [],
   });
 })();

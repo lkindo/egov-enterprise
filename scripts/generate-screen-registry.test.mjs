@@ -369,7 +369,7 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   assert.match(recipientGuard,
     /^\{\s*String esntlId = currentEsntlIdOrDeny\(\);\s*if \(!esntlId\.equals\(entity\.getRptrId\(\)\)\) \{\s*throw new BusinessException\(CommonErrorCode\.ACCESS_DENIED\);\s*\}\s*\}$/u,
     'the instruction guard admits the recipient only');
-  assert.match(javaMethodBody(memoService, 'public void updateDrctMatter(Long memoRptSn, String instrCn)'), /\bassertRecipient\(entity\);/u,
+  assert.match(javaMethodBody(memoService, 'public void updateDrctMatter(Long memoRptSn, String instrCn, String instructionReadToken)'), /\bassertRecipient\(entity\);/u,
     'instructions use the recipient-only guard');
   const instructHint = javaMethodBody(memoService, 'private boolean canInstruct(MemoReport entity)');
   assert.deepEqual([...instructHint.matchAll(/hasPermission\("([A-Z_]+)"\)/gu)].map(match => match[1]), ['MEMO_RPT_INSTRUCT'],

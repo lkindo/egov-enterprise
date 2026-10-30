@@ -3,11 +3,16 @@ import { ApiService } from '@/services/core/ApiService';
 import { MenuInfo } from '@/types/foundation/menu';
 import {
   addBookmarkOperation,
+  cleanupUnavailableBookmarksOperation,
   getHeadMenuOperation,
   getLeftMenuOperation,
+  getMyBookmarkStatusOperation,
   getMyBookmarksOperation,
   removeBookmarkOperation,
 } from '@/types/generated-operations';
+import type { GeneratedOperationRequest } from '@/types/generated-operations';
+
+export type MenuBookmarkCleanupRequest = GeneratedOperationRequest<'cleanupUnavailableBookmarks'>;
 
 class MenuService extends ApiService {
   /**
@@ -34,6 +39,16 @@ class MenuService extends ApiService {
    */
   async getMyBookmarks(config?: AxiosRequestConfig) {
     return this.executeGenerated(getMyBookmarksOperation, { config });
+  }
+
+  /** 숨겨진 항목은 정보 대신 개수만 받는다. 기존 List API는 명령 센터 등에서 유지한다. */
+  async getMyBookmarkStatus(config?: AxiosRequestConfig) {
+    return this.executeGenerated(getMyBookmarkStatusOperation, { config });
+  }
+
+  /** 본인이 확인한 현재 상태를 보내며, 충돌 뒤 자동으로 다시 삭제하지 않는다. */
+  async cleanupUnavailableBookmarks(body: MenuBookmarkCleanupRequest, config?: AxiosRequestConfig) {
+    return this.executeGenerated(cleanupUnavailableBookmarksOperation, { body, config });
   }
 
   /** 이미 있으면 그대로 둔다. 볼 수 없는 메뉴는 404, 상한을 넘기면 409 다. */

@@ -1,6 +1,8 @@
 import React from 'react';
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
+import userEvent from '@testing-library/user-event';
+import { DeptJobSaveRequestRequestSchema } from '@/types/generated-zod';
 
 const mocks = vi.hoisted(() => ({
   confirm: vi.fn(),
@@ -39,9 +41,11 @@ vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
 }));
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
-  useQuery: () => ({
+  useQuery: ({ queryKey }: { queryKey: readonly unknown[] }) => ({
     // [DIP B4 P5] 수정·삭제 버튼은 서버 힌트로만 그린다 — 이 계약들은 담당자 시점이다.
-    data: { editable: true, deletable: true, ...mocks.jobResponse },
+    data: queryKey[0] === 'dept-job-boxes'
+      ? { list: [{ deptTaskBoxSn: 3, deptTaskBoxNm: '보존할 업무함' }] }
+      : queryKey[0] === 'user-search' ? [] : { editable: true, deletable: true, ...mocks.jobResponse },
     isLoading: false,
     isError: false,
   }),
@@ -193,10 +197,32 @@ describe('DeptJobDetailClient server validation ownership', () => {
       atchFileSn: undefined,
     }));
     const submitted = mocks.updateDeptJob.mock.calls[0]?.[1];
+    expect(DeptJobSaveRequestRequestSchema.strict().safeParse(submitted).success).toBe(true);
     expect(submitted).not.toHaveProperty('deptTaskSn');
     expect(submitted).not.toHaveProperty('deptTaskBoxNm');
     expect(submitted).not.toHaveProperty('picNm');
     expect(submitted).not.toHaveProperty('frstRgtrId');
+  });
+
+  it.each(['01', '4', ''])('기존 비정규 우선순위 %j는 직접 정정하기 전까지 저장하지 않는다', async (priority) => {
+    mocks.jobResponse = { deptTaskSn: 7, deptTaskNm: '기존 업무', deptTaskCn: '보존할 내용', prrtyRnk: priority, deptTaskBoxSn: 3, picId: 'USER01', atchFileSn: 42, version: 8 };
+    render(<DeptJobDetailClient deptTaskSn={7} />);
+    fireEvent.click(screen.getByRole('button', { name: /수정/ }));
+    expect(screen.getByText(/저장된 우선순위가 올바르지 않습니다/)).toBeVisible();
+    expect(screen.getByRole('combobox', { name: /우선 순위/ })).toHaveAccessibleDescription(new RegExp(`저장된 값: ${JSON.stringify(priority)}`));
+    const taskName = screen.getByRole('textbox', { name: /업무명/ });
+    fireEvent.change(taskName, { target: { value: '다른 필드만 수정' } });
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(screen.getByRole('combobox', { name: /우선 순위/ })).toHaveAttribute('aria-invalid', 'true'));
+    expect(mocks.updateDeptJob).not.toHaveBeenCalled();
+    await userEvent.click(screen.getByRole('combobox', { name: /우선 순위/ }));
+    await userEvent.click(await screen.findByRole('option', { name: /높음/ }));
+    fireEvent.click(screen.getByRole('button', { name: '수정 저장' }));
+    await waitFor(() => expect(mocks.updateDeptJob).toHaveBeenCalledTimes(1));
+    const submitted = mocks.updateDeptJob.mock.calls[0]?.[1];
+    expect(submitted).toMatchObject({ deptTaskNm: '다른 필드만 수정', deptTaskBoxSn: 3, picId: 'USER01', atchFileSn: 42, prrtyRnk: '1', version: 8 });
+    expect(DeptJobSaveRequestRequestSchema.strict().safeParse(submitted).success).toBe(true);
+    expect(submitted).not.toHaveProperty('deptTaskSn');
   });
 
   it('삭제는 confirm 전에 동기 선점하고 실패 후 상세 화면과 재시도 상태를 유지한다', async () => {

@@ -75,4 +75,16 @@ describe('Core user services', () => {
     await menuService.removeBookmark(10);
     expect(client.requestRaw).toHaveBeenCalledWith({ url: 'menus/bookmarks/10', method: 'delete' });
   });
+
+  it('즐겨찾기 상태는 숨김 개수만 받고 명시적 정리는 확인 내용을 그대로 보낸다', async () => {
+    const OK = { success: true, code: 'S000', message: '성공' };
+    const status = { bookmarks: [{ menuNo: 10, menuNm: '공지' }], unavailableCount: 2 };
+    const request = { expectedAuthorizationVersion: 'v1', expectedServerUnavailableCount: 2, uiUnavailableMenuNos: [10] };
+    vi.mocked(client.getRaw).mockResolvedValueOnce({ ...OK, data: status });
+    vi.mocked(client.requestRaw).mockResolvedValueOnce({ ...OK, data: { removedCount: 3 } });
+    await expect(menuService.getMyBookmarkStatus()).resolves.toEqual(status);
+    expect(client.getRaw).toHaveBeenCalledWith('menus/bookmarks/status', undefined);
+    await expect(menuService.cleanupUnavailableBookmarks(request)).resolves.toEqual({ removedCount: 3 });
+    expect(client.requestRaw).toHaveBeenCalledWith({ url: 'menus/bookmarks/cleanup', method: 'post', data: request });
+  });
 });

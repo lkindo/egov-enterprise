@@ -13,7 +13,7 @@ import { Popup, PublicPopup } from '@/types/foundation/banner';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { fileAdminService } from '@/services/foundation/system/FileAdminService';
-import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
+import { popupAdminService, type PopupInput } from '@/services/foundation/system/PopupAdminService';
 import {
   Plus,
   Trash2,
@@ -33,13 +33,14 @@ import { useAppForm } from '@/hooks/useAppForm';
 import {
   Form,
   FormControl,
+  FormDescription,
   FormErrorSummary,
   FormField as ShadcnFormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { PopupDtoSchema } from '@/types/generated-zod';
+import { PopupSaveRequestRequestSchema } from '@/types/generated-zod';
 import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import {
@@ -79,19 +80,24 @@ function maskIsoDateTyping(raw: string): string | null {
   return digits;
 }
 
-/** 팝업 좌표·크기 입력의 상한 — 생성 계약이 이 값들을 12자 문자열(max(12))로 받는다. */
+/** 팝업 좌표 입력의 상한 — 생성 계약이 좌표를 12자 문자열(max(12))로 받는다. */
 const POPUP_NUMBER_MAX = 999999999999;
 
-export const popupSchema = PopupDtoSchema.extend({
-  popupTtlNm: PopupDtoSchema.shape.popupTtlNm.min(1),
-  ntceBgnde: isoDateSchema(PopupDtoSchema.shape.ntceBgnde),
-  ntceEndde: isoDateSchema(PopupDtoSchema.shape.ntceEndde),
-  popupWdthPstn: popupNumberSchema(PopupDtoSchema.shape.popupWdthPstn, 0),
-  popupVrtcPstn: popupNumberSchema(PopupDtoSchema.shape.popupVrtcPstn, 0),
-  popupWdthSz: popupNumberSchema(PopupDtoSchema.shape.popupWdthSz, 100),
-  popupVrtcSz: popupNumberSchema(PopupDtoSchema.shape.popupVrtcSz, 100),
-  ntceYn: PopupDtoSchema.shape.ntceYn.unwrap(),
-  stopvewSetupYn: PopupDtoSchema.shape.stopvewSetupYn.unwrap(),
+const POPUP_SIZE_ERROR = '100~4,000 사이의 정수를 입력하세요. 앞자리 0·소수·부호·공백은 사용할 수 없습니다.';
+// Number/trim 변환 없이 생성된 저장 계약으로 원문을 판정한다. 조회 계약은 기존 값을 허용한다.
+const popupSizeSchema = (generatedField: z.ZodType) => z.string({ error: POPUP_SIZE_ERROR })
+  .refine(value => generatedField.safeParse(value).success, POPUP_SIZE_ERROR);
+
+export const popupSchema = PopupSaveRequestRequestSchema.extend({
+  popupTtlNm: PopupSaveRequestRequestSchema.shape.popupTtlNm.min(1),
+  ntceBgnde: isoDateSchema(PopupSaveRequestRequestSchema.shape.ntceBgnde),
+  ntceEndde: isoDateSchema(PopupSaveRequestRequestSchema.shape.ntceEndde),
+  popupWdthPstn: popupNumberSchema(PopupSaveRequestRequestSchema.shape.popupWdthPstn, 0),
+  popupVrtcPstn: popupNumberSchema(PopupSaveRequestRequestSchema.shape.popupVrtcPstn, 0),
+  popupWdthSz: popupSizeSchema(PopupSaveRequestRequestSchema.shape.popupWdthSz),
+  popupVrtcSz: popupSizeSchema(PopupSaveRequestRequestSchema.shape.popupVrtcSz),
+  ntceYn: PopupSaveRequestRequestSchema.shape.ntceYn.unwrap(),
+  stopvewSetupYn: PopupSaveRequestRequestSchema.shape.stopvewSetupYn.unwrap(),
 }).refine(data => {
   if (!data.ntceBgnde || !data.ntceEndde) return true;
   const start = data.ntceBgnde.replace(/\D/g, '');
@@ -115,8 +121,8 @@ const POPUP_FORM_DEFAULTS: PopupFormValues = {
   ntceEndde: '',
   popupWdthPstn: 0,
   popupVrtcPstn: 0,
-  popupWdthSz: 400,
-  popupVrtcSz: 300,
+  popupWdthSz: '400',
+  popupVrtcSz: '300',
   ntceYn: 'Y',
   stopvewSetupYn: 'Y'
 };
@@ -212,8 +218,8 @@ export function usePopupAssetsPanel({
         ntceEndde: item?.ntceEndde || fallback.ntceEndde,
         popupWdthPstn: item?.popupWdthPstn ? Number(item.popupWdthPstn) : fallback.popupWdthPstn,
         popupVrtcPstn: item?.popupVrtcPstn ? Number(item.popupVrtcPstn) : fallback.popupVrtcPstn,
-        popupWdthSz: item?.popupWdthSz ? Number(item.popupWdthSz) : fallback.popupWdthSz,
-        popupVrtcSz: item?.popupVrtcSz ? Number(item.popupVrtcSz) : fallback.popupVrtcSz,
+        popupWdthSz: item?.popupWdthSz ?? fallback.popupWdthSz,
+        popupVrtcSz: item?.popupVrtcSz ?? fallback.popupVrtcSz,
         ntceYn: (item?.ntceYn as 'Y' | 'N') || fallback.ntceYn,
         stopvewSetupYn: (item?.stopvewSetupYn as 'Y' | 'N') || fallback.stopvewSetupYn
       });
@@ -293,7 +299,7 @@ export function usePopupAssetsPanel({
     if (popupSubmitLock.current || deletePendingRef.current || otherBusy('popup')) return;
     popupSubmitLock.current = true;
     try {
-      const data: Partial<Popup> = {
+      const data: PopupInput = {
         ...values,
         ntceYn: values.ntceYn as "Y" | "N",
         stopvewSetupYn: values.stopvewSetupYn as "Y" | "N",
@@ -301,8 +307,8 @@ export function usePopupAssetsPanel({
         ntceEndde: values.ntceEndde,
         popupWdthPstn: String(values.popupWdthPstn),
         popupVrtcPstn: String(values.popupVrtcPstn),
-        popupWdthSz: String(values.popupWdthSz),
-        popupVrtcSz: String(values.popupVrtcSz)
+        popupWdthSz: values.popupWdthSz,
+        popupVrtcSz: values.popupVrtcSz
       };
 
       if (formFiles.length > 0) {
@@ -316,14 +322,15 @@ export function usePopupAssetsPanel({
         // 나중에 다른 소비자가 열어 보더라도 404 가 아니게 된다.
         data.fileUrl = `/api/v1/files/${uploadedFileSn}`;
       } else if (editingItem) {
-        data.fileUrl = editingItem.fileUrl;
+        // 조회 null은 파일 없음이다. 저장 계약의 생략값도 같은 의미이며 기존 파일 URL은 보존한다.
+        data.fileUrl = editingItem.fileUrl ?? undefined;
       }
       // [2026-10-18] 창을 열 때 읽은 버전을 함께 보낸다 — 다른 사람이 먼저 고쳤으면 서버가 409 로 거부해 덮어쓰지 않는다.
       if (editingItem) data.version = editingItem.version;
 
       const res = await savePopupAction(null, {
         mode: editingItem ? 'edit' : 'create',
-        data: data as Popup,
+        data,
         id: editingItem?.popupSn
       });
 
@@ -611,8 +618,15 @@ export function usePopupAssetsPanel({
                       <FormItem className="space-y-1.5 p-0.5">
                         <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">가로 폭 (W_Res)</FormLabel>
                         <FormControl>
-                          <Input {...field} {...numberInputProps(field, 100, POPUP_NUMBER_MAX)} />
+                          <Input {...field} type="text" inputMode="numeric" />
                         </FormControl>
+                        <FormDescription>
+                          100~4,000 사이의 정수를 입력하세요.
+                          {editingItem?.popupWdthSz != null
+                            && !PopupSaveRequestRequestSchema.shape.popupWdthSz.safeParse(editingItem.popupWdthSz).success
+                            && !PopupSaveRequestRequestSchema.shape.popupWdthSz.safeParse(field.value).success
+                            && ' 기존 값이 범위나 형식에 맞지 않습니다. 수정 후 저장해 주세요.'}
+                        </FormDescription>
                         <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
                       </FormItem>
                     )}
@@ -625,8 +639,15 @@ export function usePopupAssetsPanel({
                       <FormItem className="space-y-1.5 p-0.5">
                         <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">세로 높이 (H_Res)</FormLabel>
                         <FormControl>
-                          <Input {...field} {...numberInputProps(field, 100, POPUP_NUMBER_MAX)} />
+                          <Input {...field} type="text" inputMode="numeric" />
                         </FormControl>
+                        <FormDescription>
+                          100~4,000 사이의 정수를 입력하세요.
+                          {editingItem?.popupVrtcSz != null
+                            && !PopupSaveRequestRequestSchema.shape.popupVrtcSz.safeParse(editingItem.popupVrtcSz).success
+                            && !PopupSaveRequestRequestSchema.shape.popupVrtcSz.safeParse(field.value).success
+                            && ' 기존 값이 범위나 형식에 맞지 않습니다. 수정 후 저장해 주세요.'}
+                        </FormDescription>
                         <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
                       </FormItem>
                     )}

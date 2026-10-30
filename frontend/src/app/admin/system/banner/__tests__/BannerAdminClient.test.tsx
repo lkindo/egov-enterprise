@@ -46,8 +46,8 @@ const popupValues = {
   ntceEndde: '2026-08-16',
   popupWdthPstn: 10,
   popupVrtcPstn: 20,
-  popupWdthSz: 400,
-  popupVrtcSz: 300,
+  popupWdthSz: '400',
+  popupVrtcSz: '300',
   ntceYn: 'Y',
   stopvewSetupYn: 'N',
 };

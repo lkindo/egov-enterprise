@@ -4,7 +4,7 @@
 // ==========================================================================
 
 import { z } from 'zod';
-import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
+import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema, FileDtoResponseSchema, FileDtoSchema } from './_shared';
 
 export const MemoReportDtoSchema = /*#__PURE__*/ (() => z.object({
   memoRptSn: z.number().int().optional().nullable(),
@@ -23,11 +23,14 @@ export const MemoReportDtoSchema = /*#__PURE__*/ (() => z.object({
   editable: z.boolean().optional(),
   deletable: z.boolean().optional(),
   instructable: z.boolean().optional(),
+  instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional().nullable(),
+  attachments: z.array(z.lazy(() => FileDtoSchema)).optional().nullable(),
 }))();
 export type MemoReportDto = z.infer<typeof MemoReportDtoSchema>;
 
 export const MemoInstructionRequestSchema = /*#__PURE__*/ (() => z.object({
   drctnMttr: z.string().min(1).max(2000),
+  instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")),
 }))();
 export type MemoInstructionRequest = z.infer<typeof MemoInstructionRequestSchema>;
 
@@ -87,14 +90,18 @@ export const MemoReportDtoResponseSchema = /*#__PURE__*/ (() => z.object({
   editable: z.boolean().optional().nullable(),
   deletable: z.boolean().optional().nullable(),
   instructable: z.boolean().optional().nullable(),
+  instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")).optional().nullable(),
+  attachments: z.array(z.lazy(() => FileDtoResponseSchema)).optional().nullable(),
 }))();
 
 export const MemoInstructionRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   drctnMttr: z.string().min(1).max(2000),
+  instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")),
 }))();
 
 export const MemoInstructionRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   drctnMttr: z.string().min(1).max(2000),
+  instructionReadToken: z.string().min(64).max(64).regex(new RegExp("^[a-f0-9]{64}$")),
 }))();
 
 export const ApiResponsePageResponseMemoReportDtoRequestSchema = /*#__PURE__*/ (() => z.object({

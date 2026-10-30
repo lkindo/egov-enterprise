@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponsePageResponsePopupDtoResponseSchema, ApiResponsePopupDtoResponseSchema, PageResponsePopupDtoResponseSchema, PopupDtoRequestSchema, PopupDtoResponseSchema } from '../generated-zod/popup';
+import { ApiResponsePageResponsePopupDtoResponseSchema, ApiResponsePopupDtoResponseSchema, PageResponsePopupDtoResponseSchema, PopupDtoResponseSchema, PopupSaveRequestRequestSchema } from '../generated-zod/popup';
 
 export const getPopupOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -38,7 +38,7 @@ export const updatePopupOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: z.object({ "popupSn": z.number().int() }).strict(),
   querySchema: null,
-  requestSchema: PopupDtoRequestSchema.strict(),
+  requestSchema: PopupSaveRequestRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
   requestForbiddenPaths: [],
@@ -95,7 +95,7 @@ export const createPopupOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
-  requestSchema: PopupDtoRequestSchema.strict(),
+  requestSchema: PopupSaveRequestRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
   requestForbiddenPaths: [],

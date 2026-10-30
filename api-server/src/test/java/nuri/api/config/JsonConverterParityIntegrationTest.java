@@ -100,17 +100,25 @@ class JsonConverterParityIntegrationTest {
     }
 
     @Test
-    @DisplayName("지시사항의 문자열·객체 본문이 서비스에 닿고 공백은 400 이다")
+    @DisplayName("지시사항의 토큰 포함 객체만 서비스에 닿고 문자열·누락·공백은 400 이다")
     void memoInstructionBodiesAreReadByProductionConverter() throws Exception {
+        String token = "a".repeat(64);
         mockMvc.perform(patch("/api/v1/memo-reports/7/instr-cn").contentType(MediaType.APPLICATION_JSON)
-                .content("\"문자열 지시\"")).andExpect(status().isOk());
-        verify(memoReportService).updateDrctMatter(7L, "문자열 지시");
+                .content("\"문자열 지시\"")).andExpect(status().isBadRequest());
 
         mockMvc.perform(patch("/api/v1/memo-reports/8/instr-cn").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"drctnMttr\":\"객체 지시\"}")).andExpect(status().isOk());
-        verify(memoReportService).updateDrctMatter(8L, "객체 지시");
+                .content("{\"drctnMttr\":\"객체 지시\",\"instructionReadToken\":\"" + token + "\"}"))
+                .andExpect(status().isOk());
+        verify(memoReportService).updateDrctMatter(8L, "객체 지시", token);
 
         mockMvc.perform(patch("/api/v1/memo-reports/9/instr-cn").contentType(MediaType.APPLICATION_JSON)
-                .content("{\"drctnMttr\":\"   \"}")).andExpect(status().isBadRequest());
+                .content("{\"drctnMttr\":\"   \",\"instructionReadToken\":\"" + token + "\"}"))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/v1/memo-reports/9/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"drctnMttr\":\"지시\"}")).andExpect(status().isBadRequest());
+        mockMvc.perform(patch("/api/v1/memo-reports/9/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                .content("{\"drctnMttr\":\"지시\",\"instructionReadToken\":" + "1".repeat(64) + "}"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoMoreInteractions(memoReportService);
     }
 }

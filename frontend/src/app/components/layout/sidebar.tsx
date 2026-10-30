@@ -18,7 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { openableMenus } from '@/lib/navigation/openable-menus';
 import { findActiveMenu, walkMenuTree } from '@/lib/navigation/active-menu';
 import { resolveMenuInternalRoute } from '@/lib/navigation/internal-route';
-import { useMenuBookmarks } from '@/hooks/api/use-menu-bookmarks';
+import { useMenuBookmarkCleanup, useMenuBookmarks } from '@/hooks/api/use-menu-bookmarks';
 import { SIDEBAR_CONTENT_ID } from '@/lib/layout/sidebar-collapse-script';
 import { SidebarEdgeToggle } from './sidebar-edge-toggle';
 
@@ -55,7 +55,8 @@ export function Sidebar({
     closeButtonRef.current?.focus();
 
     const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key !== 'Escape') return;
+      if (event.key !== 'Escape' || event.defaultPrevented
+        || (event.target instanceof Element && event.target.closest('[role="dialog"], [role="alertdialog"]'))) return;
       event.preventDefault();
       setSidebarOpen(false);
     };
@@ -70,19 +71,24 @@ export function Sidebar({
   }, [isSidebarOpen, setSidebarOpen]);
 
   // initialData가 실제로 있을 때만 주입한다. 빈 배열을 데이터로 확정하면 복구 query가 실행되지 않는다.
-  const { data: assignedTopMenus = NO_MENUS, isError: topMenusFailed, refetch: refetchTopMenus } = useQuery({
+  const { data: assignedTopMenus = NO_MENUS, isError: topMenusFailed, isSuccess: topMenusLoaded, isFetching: topMenusFetching, refetch: refetchTopMenus } = useQuery({
     queryKey: ['menus', 'head', ...menuAuthorization.scope],
     queryFn: () => menuService.getHeadMenus(),
     initialData: menuAuthorization.acceptsInitialMenus && resolvedMenus.length > 0 ? resolvedMenus : undefined,
     enabled: menuAuthorization.authenticated,
     staleTime: 5 * 60 * 1000,
+    placeholderData: undefined,
+    throwOnError: false,
   });
   // [2026-10-01] 배정된 메뉴 가운데 라우트 게이트가 통과시킬 것만 보인다(openableMenus 주석).
   const topMenus = useMemo(() => openableMenus(assignedTopMenus, user), [assignedTopMenus, user]);
 
   // [2026-10-01] 즐겨찾기를 사이드바에서도 쓴다 — 종전에는 Ctrl+K 명령 센터 안에만 있었다. 명령 센터와 같이
   //   지금 열 수 있는 메뉴 트리와 메뉴 번호로 맞춰, 배정이 회수된 메뉴는 보이지 않는다.
-  const { bookmarks } = useMenuBookmarks();
+  const {
+    bookmarks, unavailableCount: serverUnavailableCount,
+    isSuccess: bookmarksLoaded, isFetching: bookmarksFetching, isError: bookmarksFailed, refetch: refetchBookmarks,
+  } = useMenuBookmarks();
   const favoriteMenus = useMemo(() => {
     const byNo = new Map<number, MenuInfo>();
     for (const { item } of walkMenuTree(topMenus)) byNo.set(item.menuNo, item);
@@ -90,6 +96,15 @@ export function Sidebar({
       .map((bookmark) => byNo.get(bookmark.menuNo))
       .filter((menu): menu is MenuInfo => !!menu && resolveMenuInternalRoute(menu) !== null);
   }, [bookmarks, topMenus]);
+  const bookmarkStatusReady = !!user?.authorizationVersion && topMenusLoaded && bookmarksLoaded
+    && !topMenusFetching && !bookmarksFetching && !topMenusFailed && !bookmarksFailed;
+  // 전체 트리가 성공했을 때만 UI에서 열 수 없는 항목을 센다. 현재 영역·검색 결과는 정리 근거가 아니다.
+  const unavailableCount = bookmarkStatusReady && serverUnavailableCount !== undefined
+    ? serverUnavailableCount + bookmarks.length - favoriteMenus.length : undefined;
+  const canCleanupBookmarks = unavailableCount !== undefined && unavailableCount > 0;
+  const bookmarkCleanup = useMenuBookmarkCleanup(canCleanupBookmarks);
+  const showBookmarks = menuAuthorization.authenticated && (favoriteMenus.length > 0 || bookmarks.length > 0
+    || (serverUnavailableCount !== undefined && serverUnavailableCount > 0) || !bookmarksLoaded || bookmarksFailed);
 
   // 유효한 사용자 선택을 우선하고, 첫 렌더에서는 현재 URL로 영역을 고른다.
   const effectiveActiveMenuNo = topMenus.some((menu) => menu.menuNo === activeMenuNo)
@@ -214,7 +229,7 @@ export function Sidebar({
               })}
             </div>
 
-            {favoriteMenus.length > 0 && (
+            {showBookmarks && (
               <div role="group" aria-labelledby="sidebar-favorites-heading" className="mb-6 space-y-1 border-b border-border/60 pb-5">
                 <p id="sidebar-favorites-heading" className="mb-2 px-2 text-xs font-bold text-muted-foreground">즐겨찾기</p>
                 <ul className="space-y-1">
@@ -230,6 +245,29 @@ export function Sidebar({
                     </li>
                   ))}
                 </ul>
+                {(bookmarksFailed || topMenusFailed) ? (
+                  <div role="alert" className="space-y-2 px-2 text-xs text-muted-foreground">
+                    <p>즐겨찾기의 현재 상태를 확인하지 못했습니다.</p>
+                    <Button type="button" variant="outline" size="sm" aria-label="즐겨찾기 상태 다시 확인"
+                      onClick={() => { void refetchTopMenus(); void refetchBookmarks(); }}>
+                      상태 다시 확인
+                    </Button>
+                  </div>
+                ) : unavailableCount === undefined ? (
+                  <p role="status" className="px-2 text-xs text-muted-foreground">즐겨찾기의 현재 상태를 확인하는 중입니다.</p>
+                ) : unavailableCount > 0 ? (
+                  <p className="px-2 text-xs text-muted-foreground">사용할 수 없는 즐겨찾기 {unavailableCount}개가 보관되어 있습니다.</p>
+                ) : null}
+                {(unavailableCount === undefined || unavailableCount > 0 || bookmarkCleanup.pending) && (
+                  <Button type="button" variant="outline" size="sm" className="ml-2 mt-2"
+                    aria-label="사용할 수 없는 즐겨찾기 정리"
+                    aria-busy={bookmarkCleanup.pending}
+                    aria-disabled={!canCleanupBookmarks || bookmarkCleanup.pending}
+                    disabled={!canCleanupBookmarks && !bookmarkCleanup.pending}
+                    onClick={() => { void bookmarkCleanup.cleanup(); }}>
+                    정리
+                  </Button>
+                )}
               </div>
             )}
 

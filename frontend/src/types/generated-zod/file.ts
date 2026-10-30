@@ -4,7 +4,7 @@
 // ==========================================================================
 
 import { z } from 'zod';
-import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
+import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema, FileDtoRequestSchema, FileDtoResponseSchema, FileDtoSchema } from './_shared';
 
 export const ApiResponseListFileDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -16,17 +16,6 @@ export const ApiResponseListFileDtoSchema = /*#__PURE__*/ (() => z.object({
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
 export type ApiResponseListFileDto = z.infer<typeof ApiResponseListFileDtoSchema>;
-
-export const FileDtoSchema = /*#__PURE__*/ (() => z.object({
-  atchFileSn: z.number().int().optional(),
-  fileSn: z.number().int().optional(),
-  orignlFileNm: z.string().optional(),
-  fileExtsn: z.string().optional(),
-  fileMg: z.number().int().optional(),
-  fileCn: z.string().min(0).max(4000).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-export type FileDto = z.infer<typeof FileDtoSchema>;
 
 export const ApiResponseListFileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -46,24 +35,4 @@ export const ApiResponseListFileDtoResponseSchema = /*#__PURE__*/ (() => z.objec
   data: z.array(z.lazy(() => FileDtoResponseSchema)).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
-}))();
-
-export const FileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
-  atchFileSn: z.number().int().optional(),
-  fileSn: z.number().int().optional(),
-  orignlFileNm: z.string().optional(),
-  fileExtsn: z.string().optional(),
-  fileMg: z.number().int().optional(),
-  fileCn: z.string().min(0).max(4000).optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
-}))();
-
-export const FileDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  atchFileSn: z.number().int().optional().nullable(),
-  fileSn: z.number().int().optional().nullable(),
-  orignlFileNm: z.string().optional().nullable(),
-  fileExtsn: z.string().optional().nullable(),
-  fileMg: z.number().int().optional().nullable(),
-  fileCn: z.string().min(0).max(4000).optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();

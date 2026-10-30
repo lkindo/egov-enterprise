@@ -1845,6 +1845,18 @@
     },
     {
       "method": "POST",
+      "path": "/api/v1/menus/bookmarks/cleanup",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#cleanupUnavailableBookmarks",
+      "policy": "STRICT_SELF",
+      "methodSecurity": "@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#cleanupUnavailableBookmarks')",
+      "routeGate": "EXPLICIT_AUTHENTICATED",
+      "guardRef": "MenuBookmarkService#cleanupUnavailableBookmarks",
+      "handlerRequiredTokens": [
+        "menuBookmarkService.cleanupUnavailableBookmarks(userDetails.getUsername(), request)"
+      ]
+    },
+    {
+      "method": "POST",
       "path": "/api/v1/admin/system/durable-jobs/{jobSn}/retry",
       "handler": "nuri.api.controller.foundation.controller.system.job.DurableJobApiController#retry",
       "policy": "ADMIN_OR_SYSTEM",
@@ -3963,6 +3975,17 @@
       ]
     },
     {
+      "target": "MenuBookmarkService#getMyBookmarkStatus",
+      "policy": "STRICT_OWNER",
+      "mechanisms": [
+        {
+          "helper": "assertOwnerByEsntlId",
+          "count": 1,
+          "identityAxis": "ESNTL_ID"
+        }
+      ]
+    },
+    {
       "target": "MenuBookmarkService#lockBookmarkOwner",
       "policy": "STRICT_OWNER",
       "mechanisms": [
@@ -4388,6 +4411,19 @@
       "forbiddenTokens": []
     },
     {
+      "target": "MemoReportService#readAttachments",
+      "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "if (entity.getAtchFileSn() == null) return FileReadSnapshot.empty();",
+        "if (!canReadAttachments(entity)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
+        "fileService.getReadSnapshotForUpdate(entity.getAtchFileSn())",
+        "fileService.getReadSnapshot(entity.getAtchFileSn())"
+      ],
+      "forbiddenTokens": []
+    },
+    {
       "target": "MemoReportService#currentEsntlIdOrDeny",
       "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
       "policy": "AUTHENTICATED",
@@ -4770,6 +4806,24 @@
       "denyReferences": 0,
       "requiredTokens": [
         "new BkmkMenu.BkmkMenuId(Objects.requireNonNull(menuNo), Objects.requireNonNull(esntlId))"
+      ],
+      "forbiddenTokens": [
+        "SecurityUtil.hasRole(",
+        "assertOwnerOrAdmin",
+        "SecurityUtil.hasPermission(",
+        "assertOwnerOrPermission"
+      ]
+    },
+    {
+      "target": "MenuBookmarkService#cleanupUnavailableBookmarks",
+      "source": "business-core/src/main/java/nuri/business/service/menu/MenuBookmarkService.java",
+      "policy": "STRICT_SELF",
+      "denyReferences": 0,
+      "requiredTokens": [
+        "lockBookmarkOwner(esntlId)",
+        "authorizationSnapshotService.load(esntlId)",
+        "bkmkMenuRepository.findByIdUserIdOrderByCrtDtAsc(esntlId)",
+        "bkmkMenuRepository.deleteAll(removed)"
       ],
       "forbiddenTokens": [
         "SecurityUtil.hasRole(",
@@ -7054,6 +7108,20 @@
       "method": "GET",
       "path": "/api/v1/menus/bookmarks",
       "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getMyBookmarks",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "GET",
+      "path": "/api/v1/menus/bookmarks/status",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getMyBookmarkStatus",
+      "access": "AUTHENTICATED",
+      "permission": null
+    },
+    {
+      "method": "POST",
+      "path": "/api/v1/menus/bookmarks/cleanup",
+      "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#cleanupUnavailableBookmarks",
       "access": "AUTHENTICATED",
       "permission": null
     },

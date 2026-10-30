@@ -6,28 +6,16 @@
 import { z } from 'zod';
 import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
-export const DeptJobDtoSchema = /*#__PURE__*/ (() => z.object({
-  deptTaskSn: z.number().int().optional().nullable(),
+export const DeptJobSaveRequestSchema = /*#__PURE__*/ (() => z.object({
   deptTaskBoxSn: z.number().int().optional(),
-  deptTaskBoxNm: z.string().optional().nullable(),
-  deptId: z.string().min(0).max(20).optional().nullable(),
-  deptNm: z.string().optional().nullable(),
   deptTaskNm: z.string().min(0).max(100).optional(),
   deptTaskCn: z.string().min(0).max(4000).optional(),
   picId: z.string().min(0).max(20).optional(),
-  picNm: z.string().optional().nullable(),
-  prrtyRnk: z.string().min(0).max(12).optional(),
+  prrtyRnk: z.string().min(0).max(12).regex(new RegExp("^(?:1|2|3)$")).optional().nullable(),
   atchFileSn: z.number().int().optional(),
-  frstRgtrId: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  lastMdfrId: z.string().optional().nullable(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  editable: z.boolean().optional(),
-  deletable: z.boolean().optional(),
-  reassignable: z.boolean().optional(),
   version: z.number().int().min(0).optional(),
 }))();
-export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
+export type DeptJobSaveRequest = z.infer<typeof DeptJobSaveRequestSchema>;
 
 export const DeptJobBoxDtoSchema = /*#__PURE__*/ (() => z.object({
   deptTaskBoxSn: z.number().int().optional().nullable(),
@@ -58,6 +46,29 @@ export const ApiResponsePageResponseDeptJobDtoSchema = /*#__PURE__*/ (() => z.ob
   errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
 }))();
 export type ApiResponsePageResponseDeptJobDto = z.infer<typeof ApiResponsePageResponseDeptJobDtoSchema>;
+
+export const DeptJobDtoSchema = /*#__PURE__*/ (() => z.object({
+  deptTaskSn: z.number().int().optional().nullable(),
+  deptTaskBoxSn: z.number().int().optional(),
+  deptTaskBoxNm: z.string().optional().nullable(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  deptTaskNm: z.string().min(0).max(100).optional(),
+  deptTaskCn: z.string().min(0).max(4000).optional(),
+  picId: z.string().min(0).max(20).optional(),
+  picNm: z.string().optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).optional(),
+  atchFileSn: z.number().int().optional(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  editable: z.boolean().optional(),
+  deletable: z.boolean().optional(),
+  reassignable: z.boolean().optional(),
+  version: z.number().int().min(0).optional(),
+}))();
+export type DeptJobDto = z.infer<typeof DeptJobDtoSchema>;
 
 export const PageResponseDeptJobDtoSchema = /*#__PURE__*/ (() => z.object({
   list: z.array(z.lazy(() => DeptJobDtoSchema)),
@@ -110,35 +121,23 @@ export const ApiResponseDeptJobBoxDtoSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type ApiResponseDeptJobBoxDto = z.infer<typeof ApiResponseDeptJobBoxDtoSchema>;
 
-export const DeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const DeptJobSaveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
   deptTaskBoxSn: z.number().int().optional(),
   deptTaskNm: z.string().min(0).max(100).optional(),
   deptTaskCn: z.string().min(0).max(4000).optional(),
   picId: z.string().min(0).max(20).optional(),
-  prrtyRnk: z.string().min(0).max(12).optional(),
+  prrtyRnk: z.string().min(0).max(12).regex(new RegExp("^(?:1|2|3)$")).optional().nullable(),
   atchFileSn: z.number().int().optional(),
   version: z.number().int().min(0).optional(),
 }))();
 
-export const DeptJobDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  deptTaskSn: z.number().int().optional().nullable(),
+export const DeptJobSaveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   deptTaskBoxSn: z.number().int().optional().nullable(),
-  deptTaskBoxNm: z.string().optional().nullable(),
-  deptId: z.string().min(0).max(20).optional().nullable(),
-  deptNm: z.string().optional().nullable(),
   deptTaskNm: z.string().min(0).max(100).optional().nullable(),
   deptTaskCn: z.string().min(0).max(4000).optional().nullable(),
   picId: z.string().min(0).max(20).optional().nullable(),
-  picNm: z.string().optional().nullable(),
-  prrtyRnk: z.string().min(0).max(12).optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).regex(new RegExp("^(?:1|2|3)$")).optional().nullable(),
   atchFileSn: z.number().int().optional().nullable(),
-  frstRgtrId: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  lastMdfrId: z.string().optional().nullable(),
-  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
-  editable: z.boolean().optional().nullable(),
-  deletable: z.boolean().optional().nullable(),
-  reassignable: z.boolean().optional().nullable(),
   version: z.number().int().min(0).optional().nullable(),
 }))();
 
@@ -188,6 +187,38 @@ export const ApiResponsePageResponseDeptJobDtoResponseSchema = /*#__PURE__*/ (()
   data: z.lazy(() => PageResponseDeptJobDtoResponseSchema).optional().nullable(),
   timestamp: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   errors: z.array(z.lazy(() => FieldErrorItemResponseSchema)).optional().nullable(),
+}))();
+
+export const DeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  deptTaskBoxSn: z.number().int().optional(),
+  deptTaskNm: z.string().min(0).max(100).optional(),
+  deptTaskCn: z.string().min(0).max(4000).optional(),
+  picId: z.string().min(0).max(20).optional(),
+  prrtyRnk: z.string().min(0).max(12).optional(),
+  atchFileSn: z.number().int().optional(),
+  version: z.number().int().min(0).optional(),
+}))();
+
+export const DeptJobDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  deptTaskSn: z.number().int().optional().nullable(),
+  deptTaskBoxSn: z.number().int().optional().nullable(),
+  deptTaskBoxNm: z.string().optional().nullable(),
+  deptId: z.string().min(0).max(20).optional().nullable(),
+  deptNm: z.string().optional().nullable(),
+  deptTaskNm: z.string().min(0).max(100).optional().nullable(),
+  deptTaskCn: z.string().min(0).max(4000).optional().nullable(),
+  picId: z.string().min(0).max(20).optional().nullable(),
+  picNm: z.string().optional().nullable(),
+  prrtyRnk: z.string().min(0).max(12).optional().nullable(),
+  atchFileSn: z.number().int().optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  lastMdfrId: z.string().optional().nullable(),
+  mdfcnDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  editable: z.boolean().optional().nullable(),
+  deletable: z.boolean().optional().nullable(),
+  reassignable: z.boolean().optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const PageResponseDeptJobDtoRequestSchema = /*#__PURE__*/ (() => z.object({

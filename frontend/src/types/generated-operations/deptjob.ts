@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseDeptJobBoxDtoResponseSchema, ApiResponseDeptJobDtoResponseSchema, ApiResponsePageResponseDeptJobBoxDtoResponseSchema, ApiResponsePageResponseDeptJobDtoResponseSchema, DeptJobAssigneeRequestRequestSchema, DeptJobBoxDtoRequestSchema, DeptJobBoxDtoResponseSchema, DeptJobDtoRequestSchema, DeptJobDtoResponseSchema, PageResponseDeptJobBoxDtoResponseSchema, PageResponseDeptJobDtoResponseSchema } from '../generated-zod/deptjob';
+import { ApiResponseDeptJobBoxDtoResponseSchema, ApiResponseDeptJobDtoResponseSchema, ApiResponsePageResponseDeptJobBoxDtoResponseSchema, ApiResponsePageResponseDeptJobDtoResponseSchema, DeptJobAssigneeRequestRequestSchema, DeptJobBoxDtoRequestSchema, DeptJobBoxDtoResponseSchema, DeptJobDtoResponseSchema, DeptJobSaveRequestRequestSchema, PageResponseDeptJobBoxDtoResponseSchema, PageResponseDeptJobDtoResponseSchema } from '../generated-zod/deptjob';
 
 export const getDeptJobOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -38,10 +38,10 @@ export const updateDeptJobOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: z.object({ "deptTaskSn": z.number().int() }).strict(),
   querySchema: null,
-  requestSchema: DeptJobDtoRequestSchema.strict(),
+  requestSchema: DeptJobSaveRequestRequestSchema.strict(),
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
-  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"],["reassignable"]],
+  requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
 })();
@@ -152,10 +152,10 @@ export const createDeptJobOperation = /*#__PURE__*/ (() => {
   multipartParts: null,
   pathSchema: null,
   querySchema: null,
-  requestSchema: DeptJobDtoRequestSchema.strict(),
+  requestSchema: DeptJobSaveRequestRequestSchema.strict(),
   responseSchema: z.number().int(),
   envelopeSchema: ApiResponseLongResponseSchema,
-  requestForbiddenPaths: [["deptTaskSn"],["deptTaskBoxNm"],["deptId"],["deptNm"],["picNm"],["frstRgtrId"],["crtDt"],["lastMdfrId"],["mdfcnDt"],["editable"],["deletable"],["reassignable"]],
+  requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
 })();

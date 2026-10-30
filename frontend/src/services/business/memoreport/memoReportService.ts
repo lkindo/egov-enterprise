@@ -10,7 +10,7 @@ import {
   updateMemoReportOperation,
 } from '@/types/generated-operations';
 import {
-  MemoInstructionRequestSchema,
+  MemoInstructionRequestRequestSchema,
   MemoReportDtoRequestSchema,
   MemoReportDtoResponseSchema,
 } from '@/types/generated-zod';
@@ -18,7 +18,9 @@ import { z } from 'zod';
 
 export type MemoReportInput = z.input<typeof MemoReportDtoRequestSchema>;
 
-const MemoInstructionBoundarySchema = MemoInstructionRequestSchema.superRefine((request, context) => {
+export type MemoInstructionInput = z.input<typeof MemoInstructionRequestRequestSchema>;
+
+const MemoInstructionBoundarySchema = MemoInstructionRequestRequestSchema.strict().superRefine((request, context) => {
   if (!request.drctnMttr.trim()) {
     context.addIssue({
       code: z.ZodIssueCode.custom,
@@ -63,8 +65,8 @@ export const memoReportService = {
       body: data,
     });
   },
-  updateDrctMatter: async (memoRptSn: number, drctnMttr: string) => {
-    const request = MemoInstructionBoundarySchema.parse({ drctnMttr });
+  updateDrctMatter: async (memoRptSn: number, data: MemoInstructionInput) => {
+    const request = MemoInstructionBoundarySchema.parse(data);
     return executeGeneratedOperation(updateDrctMatterOperation, {
       path: { memoRptSn },
       body: request,

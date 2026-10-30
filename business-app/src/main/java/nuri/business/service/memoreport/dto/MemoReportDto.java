@@ -108,11 +108,22 @@ public class MemoReportDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean deletable;
 
-    /** [2026-10-01] 현재 사용자가 지시를 남길 수 있는지 — 지시 기능 권한과 수신자 여부로 판정한다(2026-10-16 GAP-MEMO-001, 관리자 우회 없음). */
+    /** 지시 기능 권한·수신자 여부·첨부 목록 작업권한으로 판정하며 상세에서는 읽은 내용 정보도 필요하다. 관리자 우회는 없다. */
     @Schema(description = "현재 사용자가 지시를 남길 수 있는지(서버 판정)",
             accessMode = Schema.AccessMode.READ_ONLY)
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean instructable;
+
+    @Schema(description = "수신자가 상세에서 확인한 본문·첨부의 내용 비교 토큰", nullable = true,
+            types = {"string", "null"}, minLength = 64, maxLength = 64, pattern = "^[a-f0-9]{64}$",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String instructionReadToken;
+
+    @Schema(description = "상세와 같은 시점에 읽은 첨부. 미조회·열람 대상 아님은 null, 조회 결과 없음은 빈 목록",
+            nullable = true, types = {"array", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private java.util.List<nuri.business.service.file.dto.FileDto> attachments;
 
     // 수기 from(MemoReport) 은 MemoReportMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }

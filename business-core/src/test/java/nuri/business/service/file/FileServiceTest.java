@@ -72,6 +72,73 @@ class FileServiceTest {
     @Spy private ObjectMapper objectMapper = JsonMapper.builder().build();
 
     @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void readSnapshotUsesOneAuthorizedListAndCopiesImmutableValues(boolean forUpdate) {
+        FileMaster master = new FileMaster(123L);
+        FileDetail detail = FileDetail.builder().fileMaster(master).atchFileSeq(1).strgFileNm("private.pdf")
+                .fileStrgPath("private/path").orgnlFileNm("읽은파일.pdf").fileEstn("pdf").fileSz(17L).fileCn("설명").build();
+        java.util.UUID identity = java.util.UUID.randomUUID();
+        ReflectionTestUtils.setField(detail, "id", identity);
+        if (forUpdate) given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
+        else given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        var details = new java.util.ArrayList<>(List.of(detail));
+        given(fileDetailRepository.findByFileMaster(master)).willReturn(details);
+
+        var snapshot = forUpdate ? fileService.getReadSnapshotForUpdate(123L) : fileService.getReadSnapshot(123L);
+        details.clear();
+        ReflectionTestUtils.setField(detail, "orgnlFileNm", "변경된파일.pdf");
+        ReflectionTestUtils.setField(detail, "strgFileNm", "changed.pdf");
+
+        assertThat(snapshot.files()).hasSize(1);
+        assertThat(snapshot.files().getFirst().id()).isEqualTo(identity);
+        assertThat(snapshot.files().getFirst().strgFileNm()).isEqualTo("private.pdf");
+        assertThat(snapshot.toFileDtos()).extracting(FileDto::getOrignlFileNm).containsExactly("읽은파일.pdf");
+        assertThatThrownBy(() -> snapshot.files().clear()).isInstanceOf(UnsupportedOperationException.class);
+        String publicJson = objectMapper.writeValueAsString(snapshot.toFileDtos());
+        assertThat(publicJson).doesNotContain("private/path", "private.pdf", identity.toString(), "strgFileNm", "fileStrgPath");
+        var order = inOrder(fileMasterRepository, accessPolicy, fileDetailRepository);
+        if (forUpdate) order.verify(fileMasterRepository).findByIdForUpdate(123L);
+        else order.verify(fileMasterRepository).findById(123L);
+        order.verify(accessPolicy).assertReadable(master);
+        order.verify(fileDetailRepository).findByFileMaster(master);
+        verifyNoMoreInteractions(fileMasterRepository, accessPolicy, fileDetailRepository);
+    }
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void snapshotAccessDeniedNeverReadsMetadata(boolean forUpdate) {
+        FileMaster master = new FileMaster(123L);
+        if (forUpdate) given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
+        else given(fileMasterRepository.findById(123L)).willReturn(Optional.of(master));
+        doThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED)).when(accessPolicy).assertReadable(master);
+        assertThatThrownBy(() -> {
+            if (forUpdate) fileService.getReadSnapshotForUpdate(123L);
+            else fileService.getReadSnapshot(123L);
+        }).isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        verifyNoInteractions(fileDetailRepository, storageService, durableWork);
+    }
+
+    @Test
+    void emptySnapshotHasNoRepositoryInteraction() {
+        assertThat(fileService.getReadSnapshot(null).files()).isEmpty();
+        assertThat(fileService.getReadSnapshotForUpdate(null).toFileDtos()).isEmpty();
+        verifyNoInteractions(fileMasterRepository, fileDetailRepository, accessPolicy);
+    }
+
+    @Test
+    void deleteMissingDetailAfterParentLockDoesNotQueueOrTouchStorage() {
+        FileMaster master = new FileMaster(123L);
+        given(fileMasterRepository.findByIdForUpdate(123L)).willReturn(Optional.of(master));
+        given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(123L, 1)).willReturn(Optional.empty());
+        assertThatThrownBy(() -> fileService.deleteFile(123L, 1)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        var order = inOrder(fileMasterRepository, fileDetailRepository);
+        order.verify(fileMasterRepository).findByIdForUpdate(123L);
+        order.verify(fileDetailRepository).findByFileMasterAtchFileSnAndAtchFileSeq(123L, 1);
+        verifyNoInteractions(storageService, durableWork, accessPolicy);
+    }
+
+    @ParameterizedTest
     @ValueSource(booleans = { false, true })
     @DisplayName("🚨 업로드 뒤 트랜잭션이 롤백되면 이번에 저장한 파일을 지운다 — 커밋되면 남긴다 (DIP I2)")
     void uploadFiles_compensatesStoredFilesOnRollback(boolean board) throws IOException {
@@ -392,6 +459,7 @@ class FileServiceTest {
 
         given(fileDetailRepository.findByFileMasterAtchFileSnAndAtchFileSeq(anyLong(), anyInt())).willReturn(Optional.of(detail));
         ReflectionTestUtils.setField(detail, "id", java.util.UUID.randomUUID());
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         given(storageService.captureDeletionIdentity("stored.jpg", "path")).willReturn("a".repeat(64));
 
         // when
@@ -402,6 +470,12 @@ class FileServiceTest {
         verify(storageService, never()).delete(anyString(), anyString());
         verify(durableWork).enqueue(argThat(work -> work.key().equals(detail.getId()) && work.type().equals("FILE_DELETE")));
         verify(fileDetailRepository, times(1)).delete(detail);
+        var order = inOrder(fileMasterRepository, fileDetailRepository, accessPolicy, durableWork);
+        order.verify(fileMasterRepository).findByIdForUpdate(atchFileSn);
+        order.verify(fileDetailRepository).findByFileMasterAtchFileSnAndAtchFileSeq(atchFileSn, fileSn);
+        order.verify(accessPolicy).assertDeletable(master);
+        order.verify(fileDetailRepository).delete(detail);
+        order.verify(durableWork).enqueue(any());
     }
 
     @Test
@@ -409,6 +483,7 @@ class FileServiceTest {
     void deleteFile_deniedByPolicy_doesNotTouchStorageOrRow() throws IOException {
         Long atchFileSn = 123L;
         FileMaster master = new FileMaster(atchFileSn);
+        given(fileMasterRepository.findByIdForUpdate(atchFileSn)).willReturn(Optional.of(master));
         FileDetail detail = FileDetail.builder()
                 .fileMaster(master)
                 .strgFileNm("stored.jpg")
@@ -420,10 +495,11 @@ class FileServiceTest {
                 .when(accessPolicy).assertDeletable(master);
 
         assertThatThrownBy(() -> fileService.deleteFile(atchFileSn, 1))
-                .isInstanceOf(BusinessException.class);
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
 
         verify(storageService, never()).delete(anyString(), anyString());
         verify(fileDetailRepository, never()).delete(any(FileDetail.class));
+        verifyNoInteractions(durableWork);
     }
 
     @Test

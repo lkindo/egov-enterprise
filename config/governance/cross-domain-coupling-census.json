@@ -227,7 +227,9 @@
       "target": "file",
       "module": "business-core",
       "types": [
-        "nuri.business.service.file.AttachmentAssignmentPolicy"
+        "nuri.business.service.file.AttachmentAssignmentPolicy",
+        "nuri.business.service.file.FileService",
+        "nuri.business.service.file.dto.FileReadSnapshot"
       ]
     },
     {

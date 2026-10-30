@@ -41,7 +41,12 @@
       "BANNER",
       "POPUP"
     ],
-    "gates": [],
+    "gates": [
+      {
+        "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
+        "alsoRequires": []
+      }
+    ],
     "rbacMatrix": {
       "surfaces": [
         "/api/v1/admin/system/banners",

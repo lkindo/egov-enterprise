@@ -2353,6 +2353,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-391 | accepted | 도메인 개선 계획의 D03 입력 경계를 연결한다(2026-10-30 사용자 요청 "순서대로 작업 진행"에 따른 실행 위임). `tools/migration-workspace/engine.mjs`, `store.mjs`, `inputs.mjs` 3파일만 정확 경로로 이관·이관 PIT 축과 보수적 생성 템플릿 참조에 따른 backend·E2E 축을 고르고, 독립 이관 제품 내보내기 및 migration 승인 digest에 포함한다. UI/server/AI와 시안의 기존 분류 및 기관 승인·운영 적재·외부 전송·adapter COMMIT 자격은 유지한다. | 실제 Node 엔진→패키지 JAR→격리 PostgreSQL 시험은 엔진 변경 때 실행해야 하고 독립 산출물·승인도 같은 입력을 담아야 한다. 기존 reader census는 생성 Groovy의 경로 문자열까지 따라가 backend·E2E도 요구한다. 이 정적 참조와 직접 실행 증거는 구별하며, 보수적 PIT 축과 함께 비용 증가를 숨길 예외를 만들지 않는다. | [연결 시험](../../migration-tool/src/test/java/nuri/migration/MigrationWorkspacePackagedCliIntegrationTest.java), [분류기](../../scripts/ci-change-scope.mjs), [reader 계약](../../scripts/ci-change-scope-tool-paths.test.mjs), [내보내기](../../scripts/generate-migration-product.mjs), [승인 범위](../../scripts/adoption-review.mjs) | 2026-10-30 | DEC-OPS-383 ⑦의 엔진 3파일 무축 분류 |
 
+## DEC-OPS-392
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-392 | accepted | 도메인 개선의 사용자 정책 선택을 한 배치로 확정한다. 즐겨찾기는 기본 보존하고 본인이 명시적으로 정리한다. 부서 업무 우선순위·팝업 크기는 기존 비정규 값도 관련 저장 시 정정하도록 엄격 검증한다. 메모 지시는 읽은 본문·첨부 기준으로 저장한다. 추가 이관 DBMS 대상은 없다. 상세 범위·호환성과 정합성 보장은 ADR-0045를 따른다. | 2026-10-30 사용자가 순차 실행을 요청하고 네 정책 질문에 직접 답했다. 스키마·메타 표준·운영 데이터 변경 승인은 포함하지 않는다. | [ADR-0045](../02-architecture/decisions/ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) | 2026-10-30 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

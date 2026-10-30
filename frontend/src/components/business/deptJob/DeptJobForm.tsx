@@ -2,10 +2,11 @@
 
 import React from 'react';
 import { useAppForm } from '@/hooks/useAppForm';
-import type { z } from 'zod';
+import { z } from 'zod';
 import {
     Form,
     FormControl,
+    FormDescription,
     FormErrorSummary,
     FormField,
     FormItem,
@@ -22,7 +23,7 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { DeptJobDtoRequestSchema, DeptJobDtoResponseSchema } from '@/types/generated-zod';
+import { DeptJobSaveRequestRequestSchema, DeptJobDtoResponseSchema } from '@/types/generated-zod';
 import { deptJobUserService } from '@/services/business/user/deptJob/DeptJobUserService';
 import { userSearchService, type UserSearchResult } from '@/services/business/user/UserSearchService';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
@@ -37,23 +38,29 @@ import { cn } from '@/lib/utils';
  * (create/, insertDeptJob/, selectDeptJobDetail/[id]/ — 마지막 것은 경로가 '상세'인데 내용은 등록 폼이었다).
  * 등록과 수정이 같은 필드를 다루므로 한 컴포넌트로 합치고 mode 로만 구분한다.
  */
-export const deptJobFormSchema = DeptJobDtoRequestSchema.extend({
-    deptTaskNm: DeptJobDtoRequestSchema.shape.deptTaskNm
+const PRIORITY_ERROR = '우선순위는 높음·보통·낮음 중 하나를 선택하세요.';
+const isValidPriority = (value: unknown): value is string => typeof value === 'string'
+    && DeptJobSaveRequestRequestSchema.shape.prrtyRnk.safeParse(value).success;
+
+export const deptJobFormSchema = DeptJobSaveRequestRequestSchema.extend({
+    deptTaskNm: DeptJobSaveRequestRequestSchema.shape.deptTaskNm
         .unwrap()
         .min(1, '업무명을 입력하세요.')
         .max(100, '업무명은 100자를 넘을 수 없습니다.'),
     // dept_task_cn 은 varchar(4000). 필수는 아니지만 상한은 스키마로 막는다.
-    deptTaskCn: DeptJobDtoRequestSchema.shape.deptTaskCn
+    deptTaskCn: DeptJobSaveRequestRequestSchema.shape.deptTaskCn
         .unwrap()
         .max(4000, '업무 내용은 4000자를 넘을 수 없습니다.')
         .optional(),
-    deptTaskBoxSn: DeptJobDtoRequestSchema.shape.deptTaskBoxSn
+    // 조회 응답의 기존 비정규 값은 그대로 보여 주되 새 저장 계약을 통과하기 전에는 제출하지 않는다.
+    prrtyRnk: z.string({ error: PRIORITY_ERROR }).refine(isValidPriority, PRIORITY_ERROR),
+    deptTaskBoxSn: DeptJobSaveRequestRequestSchema.shape.deptTaskBoxSn
         .nullable()
         .transform(v => v === null ? undefined : v),
-    atchFileSn: DeptJobDtoRequestSchema.shape.atchFileSn
+    atchFileSn: DeptJobSaveRequestRequestSchema.shape.atchFileSn
         .nullable()
         .transform(v => v === null ? undefined : v),
-    picId: DeptJobDtoRequestSchema.shape.picId
+    picId: DeptJobSaveRequestRequestSchema.shape.picId
         .nullable()
         .transform(v => v === null ? undefined : v),
 });
@@ -203,13 +210,18 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                     render={({ field }) => (
                         <FormItem>
                             <FormLabel className="text-xs font-bold text-foreground uppercase tracking-tight ml-1">우선 순위</FormLabel>
-                            <Select value={field.value ?? '2'} onValueChange={field.onChange}>
+                            <Select value={field.value} onValueChange={field.onChange}>
                                 <FormControl>
                                     <SelectTrigger className="rounded-lg font-bold">
                                         <SelectValue placeholder="순위 선택" />
                                     </SelectTrigger>
                                 </FormControl>
                                 <SelectContent className="rounded-lg">
+                                    {field.value && !isValidPriority(field.value) && (
+                                        <SelectItem value={field.value} disabled>
+                                            저장된 값: {field.value} (수정 필요)
+                                        </SelectItem>
+                                    )}
                                     {PRIORITY_OPTIONS.map((opt) => (
                                         <SelectItem key={opt.value} value={opt.value} className="font-bold py-3">
                                             {opt.label}
@@ -217,6 +229,12 @@ export function DeptJobForm({ mode = 'create', initialData, onSubmit, onCancel, 
                                     ))}
                                 </SelectContent>
                             </Select>
+                            {initialData?.prrtyRnk != null && !isValidPriority(field.value) && (
+                                <FormDescription>
+                                    저장된 우선순위가 올바르지 않습니다. 높음·보통·낮음 중 하나를 선택하세요.
+                                    {' '}저장된 값: {JSON.stringify(initialData.prrtyRnk)}
+                                </FormDescription>
+                            )}
                             <FormMessage className="text-xs font-bold text-rose-500 mt-1 ml-1" />
                         </FormItem>
                     )}

@@ -65,7 +65,6 @@ public class MemoReportApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.memoreport.MemoReportApiController#getMemoReport')")
     public ResponseEntity<ApiResponse<MemoReportDto>> getMemoReport(
             @Parameter(description = "메모보고 일련번호") @PathVariable Long memoRptSn) {
-        memoReportService.readMemoReport(memoRptSn);
         return ResponseEntity.ok(ApiResponse.success(memoReportService.getMemoReport(memoRptSn)));
     }
 
@@ -97,7 +96,7 @@ public class MemoReportApiController {
     public ResponseEntity<ApiResponse<Void>> updateDrctMatter(
             @PathVariable Long memoRptSn,
             @Valid @RequestBody MemoInstructionRequest request) {
-        memoReportService.updateDrctMatter(memoRptSn, request.getDrctnMttr());
+        memoReportService.updateDrctMatter(memoRptSn, request.getDrctnMttr(), request.getInstructionReadToken());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

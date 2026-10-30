@@ -100,6 +100,10 @@
             "reason": "댓글 수정·삭제의 PostgreSQL 행 잠금 경합과 게시글 댓글 수 정합을 검증한다. 댓글·게시판 기능이 없는 구성에서는 대상 서비스와 테이블이 없으며, 두 기능이 있는 구성에서는 이 시험을 유지한다."
           },
           {
+            "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
+            "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
+          },
+          {
             "file": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java",
             "reason": "메일 실패 결과와 알림의 원자 저장·기록 재시도·삭제 발신자 복구를 실제 PostgreSQL로 검증한다. mail과 notification이 함께 있는 구성에서 유지하며 기존 mail-only 발송 상태 검증은 별도로 보존한다."
           },
@@ -307,6 +311,10 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/CmsPageLifecycleIntegrationTest.java",
             "reason": "콘텐츠 페이지 수명주기(초안·게시 판정, 상태 목록의 jsonb 비교, 미사용 첨부 정리, 초안 삭제·파기와 게시본 파기 트리거 예외)를 실제 PostgreSQL 로 본다. 콘텐츠 페이지 기능이 없는 구성에서는 대상 서비스와 콘텐츠 표가 없다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
+            "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
           }
         ],
         "gateRemovalRules": [
@@ -518,6 +526,10 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/CommentUpdateDeleteConcurrencyIntegrationTest.java",
             "reason": "댓글 수정·삭제의 PostgreSQL 행 잠금 경합과 게시글 댓글 수 정합을 검증한다. 댓글·게시판 기능이 없는 구성에서는 대상 서비스와 테이블이 없으며, 두 기능이 있는 구성에서는 이 시험을 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
+            "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java",
@@ -734,6 +746,10 @@
           {
             "file": "api-server/src/test/java/nuri/api/schema/CommentUpdateDeleteConcurrencyIntegrationTest.java",
             "reason": "댓글 수정·삭제의 PostgreSQL 행 잠금 경합과 게시글 댓글 수 정합을 검증한다. 댓글·게시판 기능이 없는 구성에서는 대상 서비스와 테이블이 없으며, 두 기능이 있는 구성에서는 이 시험을 유지한다."
+          },
+          {
+            "file": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java",
+            "reason": "팝업 크기 입력 정책과 기존 비정규 값의 보존·정정을 실제 PostgreSQL에서 검증한다. 배너·팝업 기능이 없는 구성에는 대상 서비스와 팝업 표가 없어 이 시험만 제외한다."
           },
           {
             "file": "api-server/src/test/java/nuri/api/schema/MailFailureNotificationIntegrationTest.java",

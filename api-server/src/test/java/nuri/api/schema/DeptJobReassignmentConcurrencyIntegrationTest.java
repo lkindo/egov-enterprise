@@ -7,6 +7,7 @@ import nuri.business.domain.deptjob.DeptJobRepository;
 import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.deptjob.DeptJobService;
+import nuri.business.service.deptjob.dto.DeptJobDto;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.notification.NotificationService;
@@ -17,6 +18,8 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.aop.support.AopUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -142,6 +145,79 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
         service.reassignDeptJob(task, winner, 1);
 
         assertThat(storedTask()).isEqualTo(committed);
+        assertNotificationRecipients(winner);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", "01", "4"})
+    void legacyPriorityCanBeReadButMustBeCorrectedBeforeSaving(String legacyPriority) {
+        jdbc.update("UPDATE tb_dept_task_info SET prrty_rnk=? WHERE dept_task_sn=?", legacyPriority, task);
+        Map<String, Object> before = storedTask();
+        var read = service.getDeptJob(task);
+        assertThat(read.getPrrtyRnk()).isEqualTo(legacyPriority);
+        assertThat(read.getVersion()).isZero();
+
+        read.setDeptTaskNm(fixture + " rejected edit");
+        read.setDeptTaskCn("must not persist before correction");
+        read.setPicId(winner);
+        assertThatThrownBy(() -> service.updateDeptJob(task, read)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(storedTask()).isEqualTo(before);
+        assertNotificationRecipients();
+
+        read.setDeptTaskNm(fixture + " corrected");
+        read.setDeptTaskCn("corrected content");
+        read.setPicId(null); // Existing omitted-assignee behavior preserves the current owner.
+        read.setPrrtyRnk("3");
+        service.updateDeptJob(task, read);
+        assertThat(storedTask()).containsEntry("prrty_rnk", "3").containsEntry("version", 1)
+                .containsEntry("dept_task_cn", "corrected content").containsEntry("pic_id", actor)
+                .containsEntry("frst_rgtr_id", actorLogin);
+        assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("3");
+        assertNotificationRecipients();
+    }
+
+    @Test
+    void invalidPriorityOnCreateLeavesNoTaskOrAssignmentNotification() {
+        Long before = jdbc.queryForObject("SELECT count(*) FROM tb_dept_task_info WHERE frst_rgtr_id=?", Long.class, actorLogin);
+        var request = DeptJobDto.builder().deptTaskNm(fixture + " invalid")
+                .deptTaskCn("must not be created").picId(winner).prrtyRnk("4").build();
+
+        assertThatThrownBy(() -> service.createDeptJob(request)).isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_dept_task_info WHERE frst_rgtr_id=?", Long.class, actorLogin)).isEqualTo(before);
+        assertNotificationRecipients();
+    }
+
+    @Test
+    void nullPriorityRemainsNullOnCreateAndClearsTheStoredValueOnUpdate() {
+        Long created = service.createDeptJob(DeptJobDto.builder().deptTaskNm(fixture + " null")
+                .deptTaskCn("no priority supplied").build());
+        assertThat(service.getDeptJob(created).getPrrtyRnk()).isNull();
+        assertThat(jdbc.queryForMap("SELECT prrty_rnk,pic_id FROM tb_dept_task_info WHERE dept_task_sn=?", created))
+                .containsEntry("prrty_rnk", null).containsEntry("pic_id", actor);
+
+        service.updateDeptJob(task, DeptJobDto.builder().deptTaskNm(fixture).deptTaskCn("with priority")
+                .prrtyRnk("2").version(0).build());
+        assertThat(storedTask()).containsEntry("prrty_rnk", "2").containsEntry("version", 1);
+        service.updateDeptJob(task, DeptJobDto.builder().deptTaskNm(fixture).deptTaskCn("priority cleared")
+                .version(1).build());
+        assertThat(storedTask()).containsEntry("prrty_rnk", null).containsEntry("version", 2)
+                .containsEntry("pic_id", actor).containsEntry("dept_task_cn", "priority cleared");
+        assertThat(service.getDeptJob(task).getPrrtyRnk()).isNull();
+        assertNotificationRecipients();
+    }
+
+    @Test
+    void assigneeOnlyReassignmentDoesNotRequireCorrectingTheLegacyPriority() {
+        jdbc.update("UPDATE tb_dept_task_info SET prrty_rnk='4' WHERE dept_task_sn=?", task);
+        assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("4");
+
+        service.reassignDeptJob(task, winner, 0);
+
+        assertThat(storedTask()).containsEntry("prrty_rnk", "4").containsEntry("version", 1)
+                .containsEntry("pic_id", winner).containsEntry("dept_task_cn", "original content");
+        assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("4");
         assertNotificationRecipients(winner);
     }
 

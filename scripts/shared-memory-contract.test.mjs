@@ -460,9 +460,10 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
   // 표기를 바꿔도 같은 재진술이다 — 조사·기호·'수'·짧은 낱말을 건너거나, 어순·굵게 표시·띄어쓰기·화살표·대소문자를 바꿔도 붉다.
   const [wiringHolder, wiringRow] = fullGapRow(files, 'GAP-WIRING-001');
   const wiringText = files[wiringHolder];
+  const operationCount = ledgerCountFacts(repoRoot).find(({ id }) => id === 'operation-count').value;
   for (const [label, restated] of [
-    ['operation', 'operation **436**개'],
-    ['operation', 'operation은 437개'],
+    ['operation', `operation **${operationCount}**개`],
+    ['operation', `operation은 ${operationCount + 1}개`],
     ['unwired', 'unwired는 10개'],
     ['unwired', 'unwired: 10개'],
     ['unwired', 'unwired(10개)'],

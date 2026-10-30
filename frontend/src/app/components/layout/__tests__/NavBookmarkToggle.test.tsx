@@ -8,7 +8,7 @@ import type { MenuInfo } from '@/types/foundation/menu';
  * [2026-09-26 DIP B5 F2] 사이드바 말단 메뉴의 즐겨찾기 토글.
  */
 const mocks = vi.hoisted(() => ({
-  getMyBookmarks: vi.fn(),
+  getMyBookmarkStatus: vi.fn(),
   addBookmark: vi.fn(),
   removeBookmark: vi.fn(),
   toast: vi.fn(),
@@ -16,7 +16,7 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@/services/business/user/MenuService', () => ({
   menuService: {
-    getMyBookmarks: mocks.getMyBookmarks,
+    getMyBookmarkStatus: mocks.getMyBookmarkStatus,
     addBookmark: mocks.addBookmark,
     removeBookmark: mocks.removeBookmark,
   },
@@ -47,7 +47,7 @@ function menu(overrides: Partial<MenuInfo>): MenuInfo {
 describe('메뉴 즐겨찾기 토글', () => {
   beforeEach(() => {
     Object.values(mocks).forEach((fn) => fn.mockReset());
-    mocks.getMyBookmarks.mockResolvedValue([{ menuNo: 10, menuNm: '공지' }]);
+    mocks.getMyBookmarkStatus.mockResolvedValue({ bookmarks: [{ menuNo: 10, menuNm: '공지' }], unavailableCount: 0 });
     mocks.addBookmark.mockResolvedValue(undefined);
     mocks.removeBookmark.mockResolvedValue(undefined);
   });
@@ -67,12 +67,12 @@ describe('메뉴 즐겨찾기 토글', () => {
     const user = userEvent.setup();
     renderWithClient(<NavBookmarkToggle menuNo={20} menuNm="결재함" />);
     const toggle = screen.getByRole('button', { name: '결재함 즐겨찾기' });
-    await waitFor(() => expect(mocks.getMyBookmarks).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(1));
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
 
     await user.click(toggle);
     await waitFor(() => expect(mocks.addBookmark).toHaveBeenCalledWith(20));
-    await waitFor(() => expect(mocks.getMyBookmarks).toHaveBeenCalledTimes(2));
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(2));
   });
 
   it('처리 중에는 다시 눌러도 요청이 하나만 나가고, 실패하면 서버 사유를 알린다', async () => {
@@ -81,7 +81,7 @@ describe('메뉴 즐겨찾기 토글', () => {
     mocks.addBookmark.mockImplementation(() => new Promise((_, r) => { reject = r; }));
     renderWithClient(<NavBookmarkToggle menuNo={20} menuNm="결재함" />);
     const toggle = screen.getByRole('button', { name: '결재함 즐겨찾기' });
-    await waitFor(() => expect(mocks.getMyBookmarks).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalled());
 
     await user.click(toggle);
     await waitFor(() => expect(toggle).toHaveAttribute('aria-busy', 'true'));
@@ -101,7 +101,7 @@ describe('메뉴 즐겨찾기 토글', () => {
     const { result } = renderHook(() => useMenuBookmarkToggle(20, '결재함'), {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
     });
-    await waitFor(() => expect(mocks.getMyBookmarks).toHaveBeenCalled());
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalled());
 
     let first: Promise<void> = Promise.resolve();
     act(() => {
@@ -113,6 +113,18 @@ describe('메뉴 즐겨찾기 토글', () => {
     expect(mocks.addBookmark).toHaveBeenCalledTimes(1);
     resolve();
     await act(async () => { await first; });
+  });
+
+  it('추가·빼기 뒤 사이드바 상태와 기존 명령 센터 목록을 모두 무효화한다', async () => {
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const invalidate = vi.spyOn(client, 'invalidateQueries');
+    const { result } = renderHook(() => useMenuBookmarkToggle(20, '결재함'), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalled());
+    await act(async () => { await result.current.toggle(); });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['menus', 'bookmarks'] });
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['menus', 'command-center', 'bookmarks'] });
   });
 
   it('사이드바 슬롯은 말단 메뉴에만 별을 그리고, 슬롯이 없으면 그리지 않는다', () => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useRef, useState } from 'react';
+import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -18,8 +18,10 @@ import { StandardModal } from '@/app/components/ui/standard-modal';
 import { UserPicker } from '@/app/components/ui/user-picker';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage } from '@/app/actions/actionUtils';
+import { getHttpStatus, isConflictError } from '@/lib/query/list-query-defaults';
+import { fileService } from '@/services/foundation/file/FileService';
 import { z } from 'zod';
-import { MemoReportDtoRequestSchema, MemoReportDtoSchema } from '@/types/generated-zod';
+import { MemoReportDtoRequestSchema, MemoInstructionRequestRequestSchema } from '@/types/generated-zod';
 import { getTodayYmd } from '@/lib/date/today-ymd';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { useAppForm } from '@/hooks/useAppForm';
@@ -70,8 +72,9 @@ const memoComposeSchema = MemoReportDtoRequestSchema.pick({ rptTtl: true, rptCn:
     .pipe(MemoReportDtoRequestSchema.shape.rptrId),
 });
 
-const memoInstructionSchema = MemoReportDtoSchema.pick({ drctnMttr: true }).extend({
-  drctnMttr: z.string().trim().min(1, '지시사항을 입력해 주세요.').max(2000, '지시사항은 2,000자까지 입력할 수 있습니다.'),
+const memoInstructionSchema = MemoInstructionRequestRequestSchema.pick({ drctnMttr: true }).extend({
+  drctnMttr: z.string().trim().min(1, '지시사항을 입력해 주세요.').max(2000, '지시사항은 2,000자까지 입력할 수 있습니다.')
+    .pipe(MemoInstructionRequestRequestSchema.shape.drctnMttr),
 });
 
 const COMPOSE_LABELS = { rptTtl: '제목', rptrId: '받는 사람', rptCn: '내용' };
@@ -90,6 +93,8 @@ const PAGE_SIZE_OPTIONS = [10, 20, 50];
 
 export default function MemoReportManagementClient() {
   const { user } = useAuth();
+  const detailScope = JSON.stringify([user?.id ?? null, user?.esntlId ?? null, user?.authorizationVersion ?? null]);
+  const currentDetailScope = useRef(detailScope);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -100,6 +105,7 @@ export default function MemoReportManagementClient() {
   //   **권한 있는 SYSTEM 관리자에게 '전체' 탭이 사라졌다** — 라우트는 열어 주는데 화면만
   //   막히는 비대칭이고, 조용히 죽는 결함이다(DEC-OPS-023).
   const isAdmin = canPermission(user, 'MEMO_RPT_READ_ALL');
+  const canDownloadAttachments = canPermission(user, 'FILE_DOWNLOAD');
   // [2026-09-25 DIP I7] 지시는 보고를 받은 사람(rptrId, esntlId 축)만 남긴다.
   //   서버(MemoReportService.assertRecipient)와 같은 규칙이며 서버가 다시 판정한다.
   //   [2026-10-01] 서버가 판정한 instructable 을 먼저 쓴다 — 종전 화면은 지시 기능 권한(MEMO_RPT_INSTRUCT)을 보지 않아
@@ -151,16 +157,34 @@ export default function MemoReportManagementClient() {
    * 해소할 방법도 없었다 — 열람 기록은 GET /{memoRptSn} 이 남기는데 그 호출부가 0건이었다.
    */
   const [detailTarget, setDetailTarget] = useState<MemoReportInfo | null>(null);
+  const detailSession = useRef(0);
+  const [detailSnapshot, setDetailSnapshot] = useState<{ scope: string; report: MemoReportInfo } | null>(null);
+  const [instructionRecovery, setInstructionRecovery] = useState<'conflict' | 'review' | null>(null);
+  const [latestError, setLatestError] = useState<string | null>(null);
+  const [isLoadingLatest, setLoadingLatest] = useState(false);
+  const loadingLatestRef = useRef(false);
+  const [downloadingFile, setDownloadingFile] = useState<string | null>(null);
+  const downloadingFileRef = useRef<string | null>(null);
   const {
-    data: detail,
+    data: fetchedDetail,
     isFetching: isDetailLoading,
     error: detailError,
     refetch: refetchDetail,
   } = useQuery({
-    queryKey: ['memo-report-detail', detailTarget?.memoRptSn],
+    queryKey: ['memo-report-detail', detailScope, detailTarget?.memoRptSn],
     enabled: detailTarget?.memoRptSn != null,
     queryFn: () => memoReportService.getMemoReport(detailTarget!.memoRptSn),
   });
+  const detail = detailSnapshot?.scope === detailScope && detailSnapshot.report.memoRptSn === detailTarget?.memoRptSn
+    ? detailSnapshot.report : undefined;
+
+  // 최초 성공 응답만 통째로 채택한다. 배경 refetch가 작성 중인 본문·첨부·비교 기준을 바꾸지 않는다.
+  useEffect(() => {
+    if (!detailSnapshot && !isDetailLoading && !detailError && fetchedDetail
+      && fetchedDetail.memoRptSn === detailTarget?.memoRptSn && currentDetailScope.current === detailScope) {
+      setDetailSnapshot({ scope: detailScope, report: fetchedDetail });
+    }
+  }, [detailSnapshot, isDetailLoading, detailError, fetchedDetail, detailTarget?.memoRptSn, detailScope]);
 
   const composeForm = useAppForm(memoComposeSchema, {
     defaultValues: { rptTtl: '', rptCn: '', rptrId: '' },
@@ -243,10 +267,106 @@ export default function MemoReportManagementClient() {
     같은 파일의 '보고 작성' 은 openCompose 가 열 때마다 reset 해 이미 이 규율을 지킨다 —
     수정·지시 경로만 빠져 있었다. 대상이 바뀌는 **모든** 경로를 아래 두 함수로 수렴시킨다.
   */
-  const resetDetailEditState = () => {
+  const resetEditForm = editForm.reset;
+  const resetInstructionForm = instructionForm.reset;
+  const resetDetailEditState = useCallback(() => {
+    detailSession.current += 1;
+    setDetailSnapshot(null);
+    setInstructionRecovery(null);
+    setLatestError(null);
+    loadingLatestRef.current = false;
+    setLoadingLatest(false);
+    savingInstructionRef.current = false;
+    setSavingInstruction(false);
+    downloadingFileRef.current = null;
+    setDownloadingFile(null);
     setIsEditing(false);
-    editForm.reset({ rptTtl: '', rptCn: '', rptrId: '' });
-    instructionForm.reset({ drctnMttr: '' });
+    resetEditForm({ rptTtl: '', rptCn: '', rptrId: '' });
+    resetInstructionForm({ drctnMttr: '' });
+  }, [resetEditForm, resetInstructionForm]);
+
+  // 권한·계정 경계가 바뀐 commit 이후에는 앞 계정의 확인 대기·조회 응답을 채택하지 않는다.
+  useLayoutEffect(() => {
+    if (currentDetailScope.current !== detailScope) {
+      currentDetailScope.current = detailScope;
+      setDetailTarget(null);
+      resetDetailEditState();
+    }
+  }, [detailScope, resetDetailEditState]);
+
+  const isCurrentDetail = (session: number, scope: string) => detailSession.current === session
+    && currentDetailScope.current === scope;
+
+  const isCompleteInstructionSnapshot = (report: MemoReportInfo | undefined) => !!report
+    && Array.isArray(report.attachments)
+    && MemoInstructionRequestRequestSchema.shape.instructionReadToken.safeParse(report.instructionReadToken).success;
+  const attachmentInstructionRestriction = (report: MemoReportInfo | undefined): string | null => {
+    // 명시적인 미공개 첨부만 제한 사유로 해석한다. 누락·형식 오류를 권한 없음으로 단정하지 않는다.
+    // 수신자와 기능 권한 확인은 사유·보존된 초안을 보여 주기 위한 것이며 서버 저장 힌트를 대신하지 않는다.
+    if (!report || report.atchFileSn == null || report.attachments !== null
+      || !user?.esntlId || user.esntlId !== report.rptrId || !canPermission(user, 'MEMO_RPT_INSTRUCT')) return null;
+    return !canPermission(user, 'FILE_READ') && !canPermission(user, 'FILE_READ_ALL')
+      ? '첨부 목록 열람 권한이 없어 지시를 저장할 수 없습니다. 권한 담당자에게 문의해 주세요.'
+      : '첨부를 열람할 수 없어 지시를 저장할 수 없습니다. 보고 작성자나 권한 담당자에게 문의해 주세요.';
+  };
+  const attachmentRestriction = attachmentInstructionRestriction(detail);
+  const hasInstructionSnapshot = isCompleteInstructionSnapshot(detail);
+  const instructionBlocked = !canInstruct(detail) || !hasInstructionSnapshot || !!instructionRecovery || isDetailLoading || !!detailError || !!latestError || isLoadingLatest;
+
+  const reloadLatest = async () => {
+    if (loadingLatestRef.current || savingInstructionRef.current || detailTarget == null || attachmentRestriction) return;
+    const session = detailSession.current;
+    const reportId = detailTarget.memoRptSn;
+    const scope = detailScope;
+    loadingLatestRef.current = true;
+    setLoadingLatest(true);
+    setInstructionRecovery('conflict');
+    setLatestError(null);
+    try {
+      const result = await refetchDetail({ throwOnError: true });
+      if (!isCurrentDetail(session, scope)) return;
+      if (!result.data || result.data.memoRptSn !== reportId) throw new Error('보고 응답이 요청과 다릅니다.');
+      setDetailSnapshot({ scope, report: result.data });
+      if (attachmentInstructionRestriction(result.data)) {
+        setInstructionRecovery(null);
+      } else if (!isCompleteInstructionSnapshot(result.data)) {
+        setInstructionRecovery(null);
+        setLatestError('보고의 본문과 첨부를 확인하는 정보가 올바르지 않습니다. 다시 불러와 주세요.');
+      } else {
+        setInstructionRecovery(canInstruct(result.data) ? 'review' : null);
+      }
+    } catch (error: unknown) {
+      if (!isCurrentDetail(session, scope)) return;
+      const status = getHttpStatus(error);
+      setLatestError(status === 401 ? '로그인을 다시 확인한 뒤 최신 내용을 불러와 주세요.'
+        : status === 403 ? '이 보고를 확인할 권한이 없습니다. 작성 중인 지시는 유지됩니다.'
+          : status === 404 ? '보고를 찾을 수 없습니다. 작성 중인 지시는 유지됩니다.'
+            : '최신 내용을 불러오지 못했습니다. 작성 중인 지시는 유지됩니다. 다시 시도해 주세요.');
+    } finally {
+      if (isCurrentDetail(session, scope)) {
+        loadingLatestRef.current = false;
+        setLoadingLatest(false);
+      }
+    }
+  };
+
+  const downloadAttachment = async (file: NonNullable<MemoReportInfo['attachments']>[number]) => {
+    if (!canDownloadAttachments || downloadingFileRef.current || file.atchFileSn == null || file.fileSn == null || !detail) return;
+    const session = detailSession.current;
+    const scope = detailScope;
+    const key = `${file.atchFileSn}:${file.fileSn}`;
+    downloadingFileRef.current = key;
+    setDownloadingFile(key);
+    try {
+      await fileService.downloadFile(file.atchFileSn, file.fileSn, file.orignlFileNm ?? undefined);
+    } catch {
+      if (isCurrentDetail(session, scope)) toast('첨부파일을 내려받지 못했습니다. 파일과 권한을 확인한 뒤 다시 시도해 주세요.', 'error');
+    } finally {
+      if (isCurrentDetail(session, scope)) {
+        downloadingFileRef.current = null;
+        setDownloadingFile(null);
+      }
+    }
   };
 
   /** 상세를 닫는다(모달 X·ESC·'닫기'·삭제 성공 공통). */
@@ -274,6 +394,8 @@ export default function MemoReportManagementClient() {
   const submitEdit = editForm.handleSubmit(async (values) => {
     if (editingRef.current || detailTarget == null || detail == null) return;
     editingRef.current = true;
+    const session = detailSession.current;
+    const scope = detailScope;
     setEditPending(true);
     try {
       await memoReportService.updateMemoReport(detailTarget.memoRptSn, {
@@ -284,9 +406,13 @@ export default function MemoReportManagementClient() {
         memoRptYmd: detail.memoRptYmd ?? getTodayYmd(),
         atchFileSn: detail.atchFileSn ?? undefined,
       });
+      if (!isCurrentDetail(session, scope)) return;
       toast('보고를 수정했습니다.', 'success');
       setIsEditing(false);
-      await refetchDetail();
+      const refreshed = await refetchDetail();
+      if (isCurrentDetail(session, scope) && refreshed.data?.memoRptSn === detailTarget.memoRptSn && !refreshed.error) {
+        setDetailSnapshot({ scope, report: refreshed.data });
+      }
       await refetch();
     } catch (error: unknown) {
       if (!editForm.applyServerErrors(error)) {
@@ -324,7 +450,12 @@ export default function MemoReportManagementClient() {
   };
 
   const submitInstruction = instructionForm.handleSubmit(async (values) => {
-    if (savingInstructionRef.current || detailTarget == null) return;
+    if (savingInstructionRef.current || detailTarget == null || !detail || instructionBlocked || !canInstruct(detail)) return;
+    const session = detailSession.current;
+    const scope = detailScope;
+    const reportId = detail.memoRptSn;
+    const instructionReadToken = detail.instructionReadToken;
+    if (typeof instructionReadToken !== 'string') return;
     savingInstructionRef.current = true;
     setSavingInstruction(true);
     try {
@@ -340,19 +471,30 @@ export default function MemoReportManagementClient() {
             : '이전 지시를 새 지시로 바꿉니다. 이전 지시는 남지 않습니다.',
           confirmText: '바꾸기',
         });
-        if (!ok) return;
+        if (!ok || !isCurrentDetail(session, scope)) return;
       }
-      await memoReportService.updateDrctMatter(detailTarget.memoRptSn, values.drctnMttr);
+      if (!isCurrentDetail(session, scope)) return;
+      await memoReportService.updateDrctMatter(reportId, { drctnMttr: values.drctnMttr, instructionReadToken });
+      if (!isCurrentDetail(session, scope)) return;
       toast(previous ? '지시사항을 바꿨습니다.' : '지시사항을 등록했습니다.', 'success');
       instructionForm.reset({ drctnMttr: '' });
-      await refetchDetail();
+      const refreshed = await refetchDetail();
+      if (isCurrentDetail(session, scope) && refreshed.data?.memoRptSn === reportId && !refreshed.error) {
+        setDetailSnapshot({ scope, report: refreshed.data });
+      }
     } catch (error: unknown) {
-      if (!instructionForm.applyServerErrors(error)) {
+      if (!isCurrentDetail(session, scope)) return;
+      if (isConflictError(error)) {
+        setInstructionRecovery('conflict');
+        setLatestError(null);
+      } else if (!instructionForm.applyServerErrors(error)) {
         toast('지시사항을 등록하지 못했습니다. 입력 내용은 유지됩니다.', 'error');
       }
     } finally {
-      savingInstructionRef.current = false;
-      setSavingInstruction(false);
+      if (isCurrentDetail(session, scope)) {
+        savingInstructionRef.current = false;
+        setSavingInstruction(false);
+      }
     }
   });
 
@@ -560,7 +702,7 @@ export default function MemoReportManagementClient() {
         <StandardModal
           isOpen
           onClose={closeDetail}
-          title={detailTarget.rptTtl || `${detailTarget.memoRptSn}번 보고`}
+          title={detail?.rptTtl || detailTarget.rptTtl || `${detailTarget.memoRptSn}번 보고`}
           maxWidth="2xl"
           footer={
             <div className="flex w-full gap-2">
@@ -597,17 +739,38 @@ export default function MemoReportManagementClient() {
             </div>
           }
         >
-          {detailError ? (
+          {!detail && (detailError || (fetchedDetail && fetchedDetail.memoRptSn !== detailTarget.memoRptSn)) ? (
             <div className="space-y-3 py-4">
               <p className="text-sm font-medium text-destructive-emphasis">보고를 불러오지 못했습니다.</p>
               <Button type="button" variant="outline" size="sm" onClick={() => void refetchDetail()}>
                 다시 시도
               </Button>
             </div>
-          ) : isDetailLoading ? (
+          ) : !detail ? (
             <p className="py-6 text-sm text-muted-foreground">불러오는 중…</p>
           ) : (
             <div className="space-y-6 py-2">
+              {(attachmentRestriction || instructionRecovery || latestError || detailError || (canInstruct(detail) && !hasInstructionSnapshot)) && (
+                <div role={latestError ? 'alert' : 'status'} aria-label="메모 보고 재확인 안내" className="space-y-3 rounded-md border border-border bg-muted p-4 text-sm">
+                  <p>
+                    {attachmentRestriction || latestError || (instructionRecovery === 'review'
+                      ? '최신 본문과 첨부를 불러왔습니다. 내용을 확인한 다음 지시사항을 별도로 저장해 주세요.'
+                      : instructionRecovery === 'conflict'
+                        ? '본문이나 첨부가 변경되어 지시사항을 저장하지 않았습니다. 작성 중인 지시는 유지됩니다. 최신 내용을 불러와 다시 확인해 주세요.'
+                        : '보고의 본문과 첨부를 확인할 수 없어 지시사항을 저장할 수 없습니다. 최신 내용을 다시 불러와 주세요.')}
+                  </p>
+                  {!attachmentRestriction && <div className="flex flex-wrap gap-2">
+                    <Button type="button" variant="outline" size="sm" disabled={isLoadingLatest || isSavingInstruction} aria-busy={isLoadingLatest || undefined} onClick={() => void reloadLatest()}>
+                      최신 내용 불러오기
+                    </Button>
+                    {instructionRecovery === 'review' && (
+                      <Button type="button" size="sm" disabled={!hasInstructionSnapshot || isLoadingLatest || !!detailError || !!latestError || !canInstruct(detail)} onClick={() => setInstructionRecovery(null)}>
+                        내용을 확인했습니다
+                      </Button>
+                    )}
+                  </div>}
+                </div>
+              )}
               <dl className="grid gap-3 rounded-md bg-muted p-4 sm:grid-cols-2">
                 <div>
                   <dt className="text-xs text-muted-foreground">작성자</dt>
@@ -707,6 +870,38 @@ export default function MemoReportManagementClient() {
                 )}
               </section>
 
+              <section aria-labelledby="memo-report-attachments-heading" className="space-y-2">
+                <h3 id="memo-report-attachments-heading" className="text-sm font-bold text-foreground">첨부파일</h3>
+                {detail.attachments == null ? (
+                  <p className="text-sm text-muted-foreground">첨부 정보를 확인할 수 없습니다.</p>
+                ) : detail.attachments.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">첨부파일이 없습니다.</p>
+                ) : (
+                  <>
+                    <ul className="space-y-2">
+                      {detail.attachments.map((file, index) => {
+                        const name = file.orignlFileNm || '첨부파일';
+                        const key = `${file.atchFileSn}:${file.fileSn}`;
+                        return (
+                          <li key={`${key}:${index}`} className="flex flex-wrap items-center justify-between gap-3 rounded-md border border-border p-3">
+                            <div className="min-w-0">
+                              <p className="break-words text-sm font-medium">{name}</p>
+                              <p className="text-xs text-muted-foreground">{file.fileExtsn || '형식 정보 없음'} · {file.fileMg == null ? '크기 정보 없음' : `${file.fileMg.toLocaleString('ko-KR')} bytes`}</p>
+                            </div>
+                            <Button type="button" variant="outline" size="sm" aria-label={`${name} 다운로드`} aria-busy={downloadingFile === key || undefined}
+                              disabled={!canDownloadAttachments || downloadingFile !== null || file.atchFileSn == null || file.fileSn == null}
+                              onClick={() => void downloadAttachment(file)}>
+                              {downloadingFile === key ? '내려받는 중…' : '다운로드'}
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                    {!canDownloadAttachments && <p className="text-xs text-muted-foreground">첨부파일 다운로드 권한이 없습니다.</p>}
+                  </>
+                )}
+              </section>
+
               <section aria-labelledby="memo-report-instruction-heading" className="space-y-2">
                 <h3 id="memo-report-instruction-heading" className="text-sm font-bold text-foreground">지시사항</h3>
                 {detail?.drctnMttr ? (
@@ -730,9 +925,10 @@ export default function MemoReportManagementClient() {
                   [2026-09-25 DIP I7] 지시는 수신자만 남긴다(2026-10-16 GAP-MEMO-001 — 관리자 우회 없음).
                   작성자·관리자에게는 입력을 보이지 않는다 — 보여 주면 누를 때마다 403 이 나는 죽은 어포던스가 된다.
                 */}
-                {canInstruct(detail ?? detailTarget) && (
+                {(canInstruct(detail) || attachmentRestriction) && (
                 <Form {...instructionForm}>
                   <form onSubmit={submitInstruction} noValidate className="space-y-2">
+                    <p className="text-xs text-muted-foreground">저장할 때 지금 표시된 본문과 첨부가 변경되지 않았는지 확인합니다.</p>
                     <FormErrorSummary labels={INSTRUCTION_LABELS} onNavigate={instructionForm.focusError} />
                     <ShadcnFormField
                       control={instructionForm.control}
@@ -747,6 +943,7 @@ export default function MemoReportManagementClient() {
                             <textarea
                               {...field}
                               maxLength={2000}
+                              readOnly={!!attachmentRestriction}
                               placeholder="이 보고에 대한 지시사항을 입력하세요."
                               className="w-full min-h-[100px] rounded-md border border-border bg-muted/40 p-3 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                             />
@@ -759,7 +956,7 @@ export default function MemoReportManagementClient() {
                       <Button
                         type="submit"
                         size="sm"
-                        disabled={isSavingInstruction}
+                        disabled={isSavingInstruction || instructionBlocked}
                         aria-busy={isSavingInstruction || undefined}
                       >
                         {isSavingInstruction ? '저장 중…' : detail?.drctnMttr ? '지시사항 바꾸기' : '지시사항 등록'}

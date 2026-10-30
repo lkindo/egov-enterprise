@@ -3,6 +3,7 @@ import fs from 'fs';
 import path from 'path';
 import { expect,test } from '../fixtures/browser-test';
 import { PromotionPage } from '../pages/PromotionPage';
+import { screenDate } from '../helpers/screen-date';
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080/api/v1').replace(/\/$/, '');
 /**
  * 이 spec 이 UI 로 만든 홍보물(팝업·배너)을 제목으로 찾아 지운다.
@@ -58,6 +59,74 @@ async function deletePromotionByTitle(request: APIRequestContext, kind: 'popups'
     }
 }
 test.describe('Public Engagement & Experience', () => {
+    test('팝업 크기는 입력 원문을 보존하고 직접 정정한 정수 문자열만 저장한다', async ({ adminPage, adminRequest }, testInfo) => {
+        const title = `E2E Popup Input ${Date.now()}`;
+        const endpoint = '/api/v1/admin/system/popups';
+        const created = await adminRequest.post(endpoint, { data: {
+            popupTtlNm: title, popupWdthPstn: '0', popupVrtcPstn: '0',
+            popupWdthSz: '400', popupVrtcSz: '300',
+            ntceBgnde: screenDate(), ntceEndde: screenDate(1), ntceYn: 'N', stopvewSetupYn: 'N',
+        } });
+        expect(created.status()).toBe(201);
+        const id = (await created.json()).data as number;
+        expect(id).toBeGreaterThan(0);
+        let actionCount = 0;
+        try {
+            const before = await adminRequest.get(`${endpoint}/${id}`);
+            expect(before.status()).toBe(200);
+            const initial = (await before.json()).data;
+            await adminPage.goto('/admin/system/banner');
+            await adminPage.getByRole('button', { name: /팝업 설정/ }).click();
+            await adminPage.getByRole('button', { name: `${title} 팝업 수정`, exact: true }).click();
+            const dialog = adminPage.getByRole('dialog', { name: '팝업 아키텍처 수정', exact: true });
+            const width = dialog.locator('input[name="popupWdthSz"]');
+            const height = dialog.locator('input[name="popupVrtcSz"]');
+            await expect(width).toHaveAttribute('type', 'text');
+            await expect(width).toHaveAttribute('inputmode', 'numeric');
+            adminPage.on('request', request => {
+                if (request.method() === 'POST' && new URL(request.url()).pathname === '/admin/system/banner'
+                    && request.headers()['next-action']) actionCount++;
+            });
+            for (const invalid of ['99', '4001', '0100', '1e3', '100 ', '100.5']) {
+                await width.fill(invalid);
+                await dialog.getByRole('button', { name: '자산 수정', exact: true }).click();
+                await expect(width).toHaveAttribute('aria-invalid', 'true');
+                await expect(width).toHaveValue(invalid);
+                expect(actionCount, '잘못된 크기로 저장 action을 호출하지 않는다').toBe(0);
+            }
+            await width.fill('100');
+            await height.fill('4001');
+            await dialog.getByRole('button', { name: '자산 수정', exact: true }).click();
+            await expect(height).toHaveAttribute('aria-invalid', 'true');
+            expect(actionCount).toBe(0);
+            const unchanged = await adminRequest.get(`${endpoint}/${id}`);
+            expect(unchanged.status()).toBe(200);
+            expect((await unchanged.json()).data).toMatchObject({ popupWdthSz: '400', popupVrtcSz: '300', version: initial.version });
+            await testInfo.attach('popup-size-correction', { body: await dialog.screenshot(), contentType: 'image/png' });
+            await height.fill('4000');
+            const savedResponse = adminPage.waitForResponse(response => response.request().method() === 'POST'
+                && new URL(response.url()).pathname === '/admin/system/banner'
+                && !!response.request().headers()['next-action']);
+            await dialog.getByRole('button', { name: '자산 수정', exact: true }).click();
+            expect((await savedResponse).status()).toBe(200);
+            await expect(dialog).toBeHidden();
+            expect(actionCount).toBe(1);
+            const stored = await adminRequest.get(`${endpoint}/${id}`);
+            expect(stored.status()).toBe(200);
+            expect((await stored.json()).data).toMatchObject({ popupWdthSz: '100', popupVrtcSz: '4000', ntceYn: 'N' });
+            await adminPage.getByRole('button', { name: `${title} 팝업 수정`, exact: true }).click();
+            await expect(width).toHaveValue('100');
+            await expect(height).toHaveValue('4000');
+        } finally {
+            try {
+                await adminPage.goto('about:blank');
+            } finally {
+                const cleanup = await adminRequest.delete(`${endpoint}/${id}`);
+                expect(cleanup.status(), '이 시험이 만든 비게시 팝업만 정리한다').toBe(200);
+            }
+        }
+    });
+
     test('Portal Promotion Flow (Admin Popup/Banner -> User Visibility)', async ({ adminPage, userPage, actorPage, request }) => {
         const popupTitle = `E2E Popup ${Date.now()}-${Math.floor(Math.random() * 1000)}`;
         const bannerTitle = `E2E Banner ${Date.now()}-${Math.floor(Math.random() * 1000)}`;

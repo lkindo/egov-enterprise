@@ -82,7 +82,12 @@ public class MenuService {
      * 사용 여부(useYn)는 호출자가 메뉴 행으로 본다.
      */
     public Set<Long> allowedMenuIdsForCurrentUser() {
-        return navigationGrantRepository.findAllowedMenuIds(currentGroups(SecurityContextHolder.getContext().getAuthentication()));
+        return allowedMenuIdsForGroups(currentGroups(SecurityContextHolder.getContext().getAuthentication()));
+    }
+
+    /** 잠금 뒤 읽은 권한 snapshot도 같은 NAVIGATION 판정을 사용한다. */
+    Set<Long> allowedMenuIdsForGroups(List<String> groups) {
+        return navigationGrantRepository.findAllowedMenuIds(groups);
     }
 
     private static List<String> currentGroups(Authentication auth) {

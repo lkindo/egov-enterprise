@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseGeneratedOperationResponse } from '@/lib/api/generated-operation';
-import { getHeadMenuOperation, getMyBookmarksOperation, loginOperation } from '@/types/generated-operations';
+import { getHeadMenuOperation, getMyBookmarkStatusOperation, getMyBookmarksOperation, loginOperation } from '@/types/generated-operations';
 
 describe('공용 MSW handler generated 계약', () => {
   it('로그인 fixture는 생성 envelope와 명시적 권한 스냅샷을 사용한다', async () => {
@@ -27,5 +27,7 @@ describe('공용 MSW handler generated 계약', () => {
 
     const bookmarks: unknown = await (await fetch('http://localhost:8080/api/v1/menus/bookmarks')).json();
     expect(parseGeneratedOperationResponse(getMyBookmarksOperation, bookmarks)).toStrictEqual([]);
+    const status: unknown = await (await fetch('http://localhost:8080/api/v1/menus/bookmarks/status')).json();
+    expect(parseGeneratedOperationResponse(getMyBookmarkStatusOperation, status)).toStrictEqual({ bookmarks: [], unavailableCount: 0 });
   });
 });

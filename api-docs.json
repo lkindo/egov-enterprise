@@ -2539,7 +2539,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeptJobDto"
+                "$ref": "#/components/schemas/DeptJobSaveRequest"
               }
             }
           },
@@ -6963,7 +6963,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PopupDto"
+                "$ref": "#/components/schemas/PopupSaveRequest"
               }
             }
           },
@@ -13781,6 +13781,78 @@
         }
       }
     },
+    "/api/v1/menus/bookmarks/cleanup": {
+      "post": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "사용할 수 없는 내 즐겨찾기 정리",
+        "description": "본인이 확인한 권한·개수·후보에 맞을 때만 정리합니다. 상태가 달라지면 409로 거부합니다.",
+        "operationId": "cleanupUnavailableBookmarks",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/MenuBookmarkCleanupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMenuBookmarkCleanupResult"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/v1/memo-reports": {
       "get": {
         "tags": [
@@ -15061,7 +15133,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/DeptJobDto"
+                "$ref": "#/components/schemas/DeptJobSaveRequest"
               }
             }
           },
@@ -19684,7 +19756,7 @@
           "content": {
             "application/json": {
               "schema": {
-                "$ref": "#/components/schemas/PopupDto"
+                "$ref": "#/components/schemas/PopupSaveRequest"
               }
             }
           },
@@ -27569,6 +27641,68 @@
               "application/json": {
                 "schema": {
                   "$ref": "#/components/schemas/ApiResponseListMenuBookmarkDto"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "서버 내부 오류 (code: C004/S001)",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseVoid"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/v1/menus/bookmarks/status": {
+      "get": {
+        "tags": [
+          "Menu"
+        ],
+        "summary": "내 즐겨찾기 사용 상태",
+        "description": "볼 수 있는 목록과 서버가 숨긴 항목 수를 반환하며 저장된 즐겨찾기를 삭제하지 않습니다.",
+        "operationId": "getMyBookmarkStatus",
+        "responses": {
+          "200": {
+            "description": "OK",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponseMenuBookmarkStatusDto"
                 }
               }
             }
@@ -38884,6 +39018,38 @@
           "pollNm"
         ]
       },
+      "FileDto": {
+        "type": "object",
+        "properties": {
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fileSn": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "orignlFileNm": {
+            "type": "string"
+          },
+          "fileExtsn": {
+            "type": "string"
+          },
+          "fileMg": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "fileCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time"
+          }
+        }
+      },
       "MemoReportDto": {
         "type": "object",
         "description": "메모보고 정보",
@@ -39002,6 +39168,28 @@
             "type": "boolean",
             "description": "현재 사용자가 지시를 남길 수 있는지(서버 판정)",
             "readOnly": true
+          },
+          "instructionReadToken": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "수신자가 상세에서 확인한 본문·첨부의 내용 비교 토큰",
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[a-f0-9]{64}$",
+            "readOnly": true
+          },
+          "attachments": {
+            "type": [
+              "array",
+              "null"
+            ],
+            "description": "상세와 같은 시점에 읽은 첨부. 미조회·열람 대상 아님은 null, 조회 결과 없음은 빈 목록",
+            "items": {
+              "$ref": "#/components/schemas/FileDto"
+            },
+            "readOnly": true
           }
         },
         "required": [
@@ -39102,43 +39290,13 @@
           "hlpSeCd"
         ]
       },
-      "DeptJobDto": {
+      "DeptJobSaveRequest": {
         "type": "object",
+        "description": "부서 업무 저장 요청",
         "properties": {
-          "deptTaskSn": {
-            "type": [
-              "integer",
-              "null"
-            ],
-            "format": "int64",
-            "readOnly": true
-          },
           "deptTaskBoxSn": {
             "type": "integer",
             "format": "int64"
-          },
-          "deptTaskBoxNm": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "readOnly": true
-          },
-          "deptId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "maxLength": 20,
-            "minLength": 0,
-            "readOnly": true
-          },
-          "deptNm": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "readOnly": true
           },
           "deptTaskNm": {
             "type": "string",
@@ -39155,71 +39313,24 @@
             "maxLength": 20,
             "minLength": 0
           },
-          "picNm": {
+          "prrtyRnk": {
             "type": [
               "string",
               "null"
             ],
-            "readOnly": true
-          },
-          "prrtyRnk": {
-            "type": "string",
+            "description": "우선순위 문자열 1(높음)·2(보통)·3(낮음). null·생략은 기존처럼 값을 비웁니다.",
             "maxLength": 12,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:1|2|3)$"
           },
           "atchFileSn": {
             "type": "integer",
             "format": "int64"
           },
-          "frstRgtrId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "readOnly": true
-          },
-          "crtDt": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "readOnly": true
-          },
-          "lastMdfrId": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "readOnly": true
-          },
-          "mdfcnDt": {
-            "type": [
-              "string",
-              "null"
-            ],
-            "format": "date-time",
-            "readOnly": true
-          },
-          "editable": {
-            "type": "boolean",
-            "description": "현재 사용자가 수정할 수 있는지(서버 판정)",
-            "readOnly": true
-          },
-          "deletable": {
-            "type": "boolean",
-            "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
-            "readOnly": true
-          },
-          "reassignable": {
-            "type": "boolean",
-            "description": "현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정)",
-            "readOnly": true
-          },
           "version": {
             "type": "integer",
             "format": "int32",
-            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "description": "조회한 수정 버전. 수정 시 서비스에서 필수로 대조하며 등록에서는 무시합니다.",
             "minimum": 0
           }
         }
@@ -40176,59 +40287,55 @@
           }
         }
       },
-      "PopupDto": {
+      "PopupSaveRequest": {
         "type": "object",
-        "description": "팝업 정보 DTO",
+        "description": "팝업 저장 요청",
         "properties": {
-          "popupSn": {
-            "type": "integer",
-            "format": "int64",
-            "description": "팝업 일련번호",
-            "example": 1
-          },
           "popupTtlNm": {
             "type": "string",
-            "description": "팝업 제목",
             "maxLength": 100,
             "minLength": 0
           },
           "fileUrl": {
             "type": "string",
-            "description": "파일 URL",
             "maxLength": 1000,
             "minLength": 0
           },
           "popupWdthPstn": {
             "type": "string",
-            "description": "팝업 가로 위치",
             "maxLength": 12,
             "minLength": 0
           },
           "popupVrtcPstn": {
             "type": "string",
-            "description": "팝업 세로 위치",
             "maxLength": 12,
             "minLength": 0
           },
           "popupVrtcSz": {
-            "type": "string",
-            "description": "팝업 높이 크기",
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "팝업 높이: 100~4000 정수 문자열. null·생략은 값을 비웁니다.",
             "maxLength": 12,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$"
           },
           "popupWdthSz": {
-            "type": "string",
-            "description": "팝업 너비 크기",
+            "type": [
+              "string",
+              "null"
+            ],
+            "description": "팝업 너비: 100~4000 정수 문자열. null·생략은 값을 비웁니다.",
             "maxLength": 12,
-            "minLength": 0
+            "minLength": 0,
+            "pattern": "^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$"
           },
           "ntceBgnde": {
-            "type": "string",
-            "description": "게시 시작일"
+            "type": "string"
           },
           "ntceEndde": {
-            "type": "string",
-            "description": "게시 종료일"
+            "type": "string"
           },
           "stopvewSetupYn": {
             "type": "string",
@@ -40252,19 +40359,10 @@
             "minLength": 0,
             "pattern": "^(?:Y|N)$"
           },
-          "frstRgtrId": {
-            "type": "string",
-            "description": "생성자 ID"
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time",
-            "description": "생성 일시"
-          },
           "version": {
             "type": "integer",
             "format": "int32",
-            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "description": "조회한 수정 버전. 수정 시 서비스에서 필수로 대조하며 등록에서는 무시합니다.",
             "minimum": 0
           }
         },
@@ -42876,6 +42974,86 @@
           "recptnSe"
         ]
       },
+      "MenuBookmarkCleanupRequest": {
+        "type": "object",
+        "description": "본인이 확인한 사용할 수 없는 즐겨찾기 정리",
+        "properties": {
+          "expectedAuthorizationVersion": {
+            "type": "string",
+            "description": "확인한 계정의 권한 버전",
+            "maxLength": 64,
+            "minLength": 0
+          },
+          "expectedServerUnavailableCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "확인한 서버 숨김 개수",
+            "minimum": 0
+          },
+          "uiUnavailableMenuNos": {
+            "type": "array",
+            "items": {
+              "type": "integer",
+              "format": "int64",
+              "minimum": 1
+            },
+            "maxItems": 30,
+            "minItems": 0,
+            "uniqueItems": true
+          }
+        },
+        "required": [
+          "expectedAuthorizationVersion",
+          "expectedServerUnavailableCount",
+          "uiUnavailableMenuNos"
+        ]
+      },
+      "ApiResponseMenuBookmarkCleanupResult": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MenuBookmarkCleanupResult"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "MenuBookmarkCleanupResult": {
+        "type": "object",
+        "description": "본인 즐겨찾기 정리 결과",
+        "properties": {
+          "removedCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "삭제한 즐겨찾기 수",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "removedCount"
+        ]
+      },
       "MailRecipientDto": {
         "type": "object",
         "description": "메일 수신자 — esntlId(사용자) 또는 emlAddr(이메일 주소) 중 하나",
@@ -44834,10 +45012,18 @@
             "description": "지시사항",
             "maxLength": 2000,
             "minLength": 1
+          },
+          "instructionReadToken": {
+            "type": "string",
+            "description": "상세에서 확인한 본문·첨부의 내용 비교 토큰",
+            "maxLength": 64,
+            "minLength": 64,
+            "pattern": "^[a-f0-9]{64}$"
           }
         },
         "required": [
-          "drctnMttr"
+          "drctnMttr",
+          "instructionReadToken"
         ]
       },
       "DeptJobAssigneeRequest": {
@@ -46303,6 +46489,59 @@
           "menuNo"
         ]
       },
+      "ApiResponseMenuBookmarkStatusDto": {
+        "type": "object",
+        "properties": {
+          "success": {
+            "type": "boolean"
+          },
+          "status": {
+            "type": "integer",
+            "format": "int32"
+          },
+          "code": {
+            "type": "string"
+          },
+          "message": {
+            "type": "string"
+          },
+          "data": {
+            "$ref": "#/components/schemas/MenuBookmarkStatusDto"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "errors": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/FieldErrorItem"
+            }
+          }
+        }
+      },
+      "MenuBookmarkStatusDto": {
+        "type": "object",
+        "description": "내 즐겨찾기 목록과 사용할 수 없는 항목 수",
+        "properties": {
+          "bookmarks": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/MenuBookmarkDto"
+            }
+          },
+          "unavailableCount": {
+            "type": "integer",
+            "format": "int32",
+            "description": "메뉴 배정·사용 여부로 서버가 숨긴 항목 수",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "bookmarks",
+          "unavailableCount"
+        ]
+      },
       "ApiResponsePageResponseMemoReportDto": {
         "type": "object",
         "properties": {
@@ -47049,38 +47288,6 @@
           }
         }
       },
-      "FileDto": {
-        "type": "object",
-        "properties": {
-          "atchFileSn": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "fileSn": {
-            "type": "integer",
-            "format": "int32"
-          },
-          "orignlFileNm": {
-            "type": "string"
-          },
-          "fileExtsn": {
-            "type": "string"
-          },
-          "fileMg": {
-            "type": "integer",
-            "format": "int64"
-          },
-          "fileCn": {
-            "type": "string",
-            "maxLength": 4000,
-            "minLength": 0
-          },
-          "crtDt": {
-            "type": "string",
-            "format": "date-time"
-          }
-        }
-      },
       "ApiResponsePageResponseDeptJobDto": {
         "type": "object",
         "properties": {
@@ -47109,6 +47316,128 @@
             "items": {
               "$ref": "#/components/schemas/FieldErrorItem"
             }
+          }
+        }
+      },
+      "DeptJobDto": {
+        "type": "object",
+        "properties": {
+          "deptTaskSn": {
+            "type": [
+              "integer",
+              "null"
+            ],
+            "format": "int64",
+            "readOnly": true
+          },
+          "deptTaskBoxSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "deptTaskBoxNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "deptId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "maxLength": 20,
+            "minLength": 0,
+            "readOnly": true
+          },
+          "deptNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "deptTaskNm": {
+            "type": "string",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "deptTaskCn": {
+            "type": "string",
+            "maxLength": 4000,
+            "minLength": 0
+          },
+          "picId": {
+            "type": "string",
+            "maxLength": 20,
+            "minLength": 0
+          },
+          "picNm": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "prrtyRnk": {
+            "type": "string",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "atchFileSn": {
+            "type": "integer",
+            "format": "int64"
+          },
+          "frstRgtrId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "crtDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "lastMdfrId": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "readOnly": true
+          },
+          "mdfcnDt": {
+            "type": [
+              "string",
+              "null"
+            ],
+            "format": "date-time",
+            "readOnly": true
+          },
+          "editable": {
+            "type": "boolean",
+            "description": "현재 사용자가 수정할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "deletable": {
+            "type": "boolean",
+            "description": "현재 사용자가 삭제할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "reassignable": {
+            "type": "boolean",
+            "description": "현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정)",
+            "readOnly": true
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
           }
         }
       },
@@ -50879,6 +51208,102 @@
           "size",
           "total",
           "totalPage"
+        ]
+      },
+      "PopupDto": {
+        "type": "object",
+        "description": "팝업 정보 DTO",
+        "properties": {
+          "popupSn": {
+            "type": "integer",
+            "format": "int64",
+            "description": "팝업 일련번호",
+            "example": 1
+          },
+          "popupTtlNm": {
+            "type": "string",
+            "description": "팝업 제목",
+            "maxLength": 100,
+            "minLength": 0
+          },
+          "fileUrl": {
+            "type": "string",
+            "description": "파일 URL",
+            "maxLength": 1000,
+            "minLength": 0
+          },
+          "popupWdthPstn": {
+            "type": "string",
+            "description": "팝업 가로 위치",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "popupVrtcPstn": {
+            "type": "string",
+            "description": "팝업 세로 위치",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "popupVrtcSz": {
+            "type": "string",
+            "description": "팝업 높이 크기",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "popupWdthSz": {
+            "type": "string",
+            "description": "팝업 너비 크기",
+            "maxLength": 12,
+            "minLength": 0
+          },
+          "ntceBgnde": {
+            "type": "string",
+            "description": "게시 시작일"
+          },
+          "ntceEndde": {
+            "type": "string",
+            "description": "게시 종료일"
+          },
+          "stopvewSetupYn": {
+            "type": "string",
+            "description": "그만보기 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
+          },
+          "ntceYn": {
+            "type": "string",
+            "description": "게시 여부",
+            "enum": [
+              "Y",
+              "N"
+            ],
+            "maxLength": 1,
+            "minLength": 0,
+            "pattern": "^(?:Y|N)$"
+          },
+          "frstRgtrId": {
+            "type": "string",
+            "description": "생성자 ID"
+          },
+          "crtDt": {
+            "type": "string",
+            "format": "date-time",
+            "description": "생성 일시"
+          },
+          "version": {
+            "type": "integer",
+            "format": "int32",
+            "description": "낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.",
+            "minimum": 0
+          }
+        },
+        "required": [
+          "popupTtlNm"
         ]
       },
       "ApiResponsePopupDto": {

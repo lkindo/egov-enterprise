@@ -3,8 +3,8 @@
 import { revalidatePath } from 'next/cache';
 import { cookies } from 'next/headers';
 import { bannerAdminService } from '@/services/foundation/system/BannerAdminService';
-import { popupAdminService } from '@/services/foundation/system/PopupAdminService';
-import { Banner, Popup } from '@/types/foundation/banner';
+import { popupAdminService, type PopupInput } from '@/services/foundation/system/PopupAdminService';
+import { Banner } from '@/types/foundation/banner';
 import { extractErrorMessage, extractFieldErrors } from './actionUtils';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 
@@ -81,7 +81,7 @@ export async function deleteBannerAction(prevState: unknown, bnrSn: number): Pro
 }
 
 // Popup Actions
-export async function savePopupAction(prevState: unknown, { mode, data, id }: SaveActionParams<Popup>): Promise<ActionResponse> {
+export async function savePopupAction(prevState: unknown, { mode, data, id }: SaveActionParams<PopupInput>): Promise<ActionResponse> {
     try {
         const cookieStore = await cookies();
         const accessToken = cookieStore.get('accessToken')?.value;

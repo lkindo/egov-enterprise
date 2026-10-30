@@ -9,6 +9,9 @@ export const handlers = [
   http.get('*/api/v1/menus/bookmarks', () => {
     return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: [] });
   }),
+  http.get('*/api/v1/menus/bookmarks/status', () => {
+    return HttpResponse.json({ success: true, code: 'S000', message: '성공', data: { bookmarks: [], unavailableCount: 0 } });
+  }),
 
   // 사용자 정보 조회 Mock API (실제 서비스는 users/me 호출)
   http.get('*/api/v1/users/me', () => {

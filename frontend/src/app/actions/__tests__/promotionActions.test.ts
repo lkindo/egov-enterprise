@@ -46,7 +46,6 @@ const BANNER = {
   rfltYn: 'Y',
 } as const;
 const POPUP = {
-  popupSn: 1,
   popupTtlNm: '공지',
   fileUrl: '/popup.png',
   popupWdthPstn: '0',

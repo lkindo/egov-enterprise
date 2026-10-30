@@ -6,23 +6,20 @@
 import { z } from 'zod';
 import { FieldErrorItemRequestSchema, FieldErrorItemResponseSchema, FieldErrorItemSchema } from './_shared';
 
-export const PopupDtoSchema = /*#__PURE__*/ (() => z.object({
-  popupSn: z.number().int().optional(),
+export const PopupSaveRequestSchema = /*#__PURE__*/ (() => z.object({
   popupTtlNm: z.string().min(0).max(100),
   fileUrl: z.string().min(0).max(1000).optional(),
   popupWdthPstn: z.string().min(0).max(12).optional(),
   popupVrtcPstn: z.string().min(0).max(12).optional(),
-  popupVrtcSz: z.string().min(0).max(12).optional(),
-  popupWdthSz: z.string().min(0).max(12).optional(),
+  popupVrtcSz: z.string().min(0).max(12).regex(new RegExp("^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$")).optional().nullable(),
+  popupWdthSz: z.string().min(0).max(12).regex(new RegExp("^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$")).optional().nullable(),
   ntceBgnde: z.string().optional(),
   ntceEndde: z.string().optional(),
   stopvewSetupYn: z.enum(["Y","N"]).optional(),
   ntceYn: z.enum(["Y","N"]).optional(),
-  frstRgtrId: z.string().optional(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   version: z.number().int().min(0).optional(),
 }))();
-export type PopupDto = z.infer<typeof PopupDtoSchema>;
+export type PopupSaveRequest = z.infer<typeof PopupSaveRequestSchema>;
 
 export const ApiResponsePageResponsePopupDtoSchema = /*#__PURE__*/ (() => z.object({
   success: z.boolean().optional(),
@@ -44,18 +41,7 @@ export const PageResponsePopupDtoSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type PageResponsePopupDto = z.infer<typeof PageResponsePopupDtoSchema>;
 
-export const ApiResponsePopupDtoSchema = /*#__PURE__*/ (() => z.object({
-  success: z.boolean().optional(),
-  status: z.number().int().optional(),
-  code: z.string().optional(),
-  message: z.string().optional(),
-  data: z.lazy(() => PopupDtoSchema).optional(),
-  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
-  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
-}))();
-export type ApiResponsePopupDto = z.infer<typeof ApiResponsePopupDtoSchema>;
-
-export const PopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+export const PopupDtoSchema = /*#__PURE__*/ (() => z.object({
   popupSn: z.number().int().optional(),
   popupTtlNm: z.string().min(0).max(100),
   fileUrl: z.string().min(0).max(1000).optional(),
@@ -71,21 +57,44 @@ export const PopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
   crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
   version: z.number().int().min(0).optional(),
 }))();
+export type PopupDto = z.infer<typeof PopupDtoSchema>;
 
-export const PopupDtoResponseSchema = /*#__PURE__*/ (() => z.object({
-  popupSn: z.number().int().optional().nullable(),
+export const ApiResponsePopupDtoSchema = /*#__PURE__*/ (() => z.object({
+  success: z.boolean().optional(),
+  status: z.number().int().optional(),
+  code: z.string().optional(),
+  message: z.string().optional(),
+  data: z.lazy(() => PopupDtoSchema).optional(),
+  timestamp: z.iso.datetime({ offset: true, local: true }).optional(),
+  errors: z.array(z.lazy(() => FieldErrorItemSchema)).optional(),
+}))();
+export type ApiResponsePopupDto = z.infer<typeof ApiResponsePopupDtoSchema>;
+
+export const PopupSaveRequestRequestSchema = /*#__PURE__*/ (() => z.object({
+  popupTtlNm: z.string().min(0).max(100),
+  fileUrl: z.string().min(0).max(1000).optional(),
+  popupWdthPstn: z.string().min(0).max(12).optional(),
+  popupVrtcPstn: z.string().min(0).max(12).optional(),
+  popupVrtcSz: z.string().min(0).max(12).regex(new RegExp("^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$")).optional().nullable(),
+  popupWdthSz: z.string().min(0).max(12).regex(new RegExp("^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$")).optional().nullable(),
+  ntceBgnde: z.string().optional(),
+  ntceEndde: z.string().optional(),
+  stopvewSetupYn: z.enum(["Y","N"]).optional(),
+  ntceYn: z.enum(["Y","N"]).optional(),
+  version: z.number().int().min(0).optional(),
+}))();
+
+export const PopupSaveRequestResponseSchema = /*#__PURE__*/ (() => z.object({
   popupTtlNm: z.string().min(0).max(100),
   fileUrl: z.string().min(0).max(1000).optional().nullable(),
   popupWdthPstn: z.string().min(0).max(12).optional().nullable(),
   popupVrtcPstn: z.string().min(0).max(12).optional().nullable(),
-  popupVrtcSz: z.string().min(0).max(12).optional().nullable(),
-  popupWdthSz: z.string().min(0).max(12).optional().nullable(),
+  popupVrtcSz: z.string().min(0).max(12).regex(new RegExp("^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$")).optional().nullable(),
+  popupWdthSz: z.string().min(0).max(12).regex(new RegExp("^(?:[1-9][0-9]{2}|[1-3][0-9]{3}|4000)$")).optional().nullable(),
   ntceBgnde: z.string().optional().nullable(),
   ntceEndde: z.string().optional().nullable(),
   stopvewSetupYn: z.enum(["Y","N"]).optional().nullable(),
   ntceYn: z.enum(["Y","N"]).optional().nullable(),
-  frstRgtrId: z.string().optional().nullable(),
-  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
   version: z.number().int().min(0).optional().nullable(),
 }))();
 
@@ -123,6 +132,40 @@ export const PageResponsePopupDtoResponseSchema = /*#__PURE__*/ (() => z.object(
   page: z.number().int(),
   size: z.number().int(),
   totalPage: z.number().int(),
+}))();
+
+export const PopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  popupSn: z.number().int().optional(),
+  popupTtlNm: z.string().min(0).max(100),
+  fileUrl: z.string().min(0).max(1000).optional(),
+  popupWdthPstn: z.string().min(0).max(12).optional(),
+  popupVrtcPstn: z.string().min(0).max(12).optional(),
+  popupVrtcSz: z.string().min(0).max(12).optional(),
+  popupWdthSz: z.string().min(0).max(12).optional(),
+  ntceBgnde: z.string().optional(),
+  ntceEndde: z.string().optional(),
+  stopvewSetupYn: z.enum(["Y","N"]).optional(),
+  ntceYn: z.enum(["Y","N"]).optional(),
+  frstRgtrId: z.string().optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+  version: z.number().int().min(0).optional(),
+}))();
+
+export const PopupDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  popupSn: z.number().int().optional().nullable(),
+  popupTtlNm: z.string().min(0).max(100),
+  fileUrl: z.string().min(0).max(1000).optional().nullable(),
+  popupWdthPstn: z.string().min(0).max(12).optional().nullable(),
+  popupVrtcPstn: z.string().min(0).max(12).optional().nullable(),
+  popupVrtcSz: z.string().min(0).max(12).optional().nullable(),
+  popupWdthSz: z.string().min(0).max(12).optional().nullable(),
+  ntceBgnde: z.string().optional().nullable(),
+  ntceEndde: z.string().optional().nullable(),
+  stopvewSetupYn: z.enum(["Y","N"]).optional().nullable(),
+  ntceYn: z.enum(["Y","N"]).optional().nullable(),
+  frstRgtrId: z.string().optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
+  version: z.number().int().min(0).optional().nullable(),
 }))();
 
 export const ApiResponsePopupDtoRequestSchema = /*#__PURE__*/ (() => z.object({

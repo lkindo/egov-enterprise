@@ -59,8 +59,8 @@ describe('generated admin boundary wave 4', () => {
   it('OpenAPI 충돌 3개를 제외한 21개 경계를 generated transport로 실행한다', async () => {
     await popupAdminService.getPopupList({ page: 1, size: 10, searchWrd: '점검' });
     await popupAdminService.getPopup(2);
-    await popupAdminService.createPopup(popup);
-    await popupAdminService.updatePopup(2, popup);
+    await popupAdminService.createPopup({ popupTtlNm: popup.popupTtlNm });
+    await popupAdminService.updatePopup(2, { popupTtlNm: popup.popupTtlNm });
     await popupAdminService.deletePopup(2);
 
     await hpcmAdminService.getHpcmList({ page: 1, size: 10, searchWrd: '정의' });

@@ -424,4 +424,95 @@ class DeptJobApiControllerTest extends ControllerTestSupport {
         assertNull(bound.getLastMdfrId());
         assertNull(bound.getMdfcnDt());
     }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"1", "\"4\""})
+    @DisplayName("부서 업무 우선순위는 승인된 JSON 문자열만 받는다")
+    @WithMockCustomUser
+    void priorityRejectsRawNumbersAndOutOfPolicyStrings(String rawPriority) throws Exception {
+        given(deptJobService.createDeptJob(any(DeptJobDto.class))).willReturn(2L);
+        mockMvc.perform(post("/api/v1/dept-jobs")
+                        .with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deptTaskNm\":\"신규 업무\",\"prrtyRnk\":" + rawPriority + "}"))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(deptJobService);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"1", "true", "false", "{}", "[]", "[\"1\"]", "1.0"})
+    @WithMockCustomUser
+    void priorityRejectsNonStringJsonTypesOnBothWrites(String rawPriority) throws Exception {
+        assertPriorityRejectedOnBothWrites(rawPriority);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"", " ", "01", "1.0", "+1", "-1", "0", "4", "1\n", "1\r\n", "\n1"})
+    @WithMockCustomUser
+    void priorityRejectsNonCanonicalStringsOnBothWrites(String priority) throws Exception {
+        assertPriorityRejectedOnBothWrites(objectMapper.writeValueAsString(priority));
+    }
+
+    private void assertPriorityRejectedOnBothWrites(String rawPriority) throws Exception {
+        String body = "{\"deptTaskNm\":\"업무\",\"version\":0,\"prrtyRnk\":" + rawPriority + "}";
+        mockMvc.perform(post("/api/v1/dept-jobs").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        mockMvc.perform(put("/api/v1/dept-jobs/2").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(deptJobService);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"1", "2", "3"})
+    @WithMockCustomUser
+    void validOrNullPriorityIsPassedUnchangedToBothWrites(String priority) throws Exception {
+        assertPriorityWriteMapping(",\"prrtyRnk\":" + objectMapper.writeValueAsString(priority), priority);
+    }
+
+    @Test
+    @WithMockCustomUser
+    void omittedPriorityRemainsNullInBothWrites() throws Exception {
+        assertPriorityWriteMapping("", null);
+    }
+
+    private void assertPriorityWriteMapping(String priorityProperty, String priority) throws Exception {
+        given(deptJobService.createDeptJob(any(DeptJobDto.class))).willReturn(2L);
+        String body = "{\"deptTaskBoxSn\":7,\"deptTaskNm\":\"업무\",\"deptTaskCn\":\"내용\","
+                + "\"picId\":\"USER2\",\"atchFileSn\":9,\"version\":0" + priorityProperty + "}";
+        mockMvc.perform(post("/api/v1/dept-jobs").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isCreated());
+        mockMvc.perform(put("/api/v1/dept-jobs/2").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isOk());
+        ArgumentCaptor<DeptJobDto> created = ArgumentCaptor.forClass(DeptJobDto.class);
+        ArgumentCaptor<DeptJobDto> updated = ArgumentCaptor.forClass(DeptJobDto.class);
+        verify(deptJobService).createDeptJob(created.capture());
+        verify(deptJobService).updateDeptJob(eq(2L), updated.capture());
+        for (DeptJobDto request : List.of(created.getValue(), updated.getValue())) {
+            org.assertj.core.api.Assertions.assertThat(request.getPrrtyRnk()).isEqualTo(priority);
+            org.assertj.core.api.Assertions.assertThat(request.getDeptTaskBoxSn()).isEqualTo(7L);
+            org.assertj.core.api.Assertions.assertThat(request.getDeptTaskNm()).isEqualTo("업무");
+            org.assertj.core.api.Assertions.assertThat(request.getDeptTaskCn()).isEqualTo("내용");
+            org.assertj.core.api.Assertions.assertThat(request.getPicId()).isEqualTo("USER2");
+            org.assertj.core.api.Assertions.assertThat(request.getAtchFileSn()).isEqualTo(9L);
+            org.assertj.core.api.Assertions.assertThat(request.getVersion()).isZero();
+        }
+    }
+
+    @Test
+    @WithMockCustomUser
+    void legacyPriorityIsStillReadable() throws Exception {
+        given(deptJobService.getDeptJob(2L)).willReturn(DeptJobDto.builder().deptTaskSn(2L).prrtyRnk("01").build());
+
+        mockMvc.perform(get("/api/v1/dept-jobs/2"))
+                .andExpect(status().isOk()).andExpect(jsonPath("$.data.prrtyRnk").value("01"));
+    }
+
+    @Test
+    @WithMockCustomUser
+    void invalidPriorityIdentifiesTheFieldToCorrect() throws Exception {
+        mockMvc.perform(put("/api/v1/dept-jobs/2").with(csrf()).contentType(MediaType.APPLICATION_JSON)
+                        .content("{\"deptTaskNm\":\"업무\",\"version\":0,\"prrtyRnk\":\"4\"}"))
+                .andExpect(status().isBadRequest()).andExpect(jsonPath("$.errors[0].field").value("prrtyRnk"));
+        verifyNoInteractions(deptJobService);
+    }
 }

@@ -10,6 +10,7 @@ import nuri.business.domain.organization.OrganizationManageRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.business.service.deptjob.dto.DeptJobSaveRequest;
 import nuri.business.service.deptjob.dto.DeptJobMapper;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.domain.deptjob.QDeptJob;
@@ -28,6 +29,8 @@ import java.util.stream.Collectors;
 @Service
 @Transactional(readOnly = true)
 public class DeptJobService extends BaseAbstractService {
+    private static final java.util.regex.Pattern PRIORITY_PATTERN =
+            java.util.regex.Pattern.compile(DeptJobSaveRequest.PRIORITY_PATTERN);
 
     private final DeptJobRepository deptJobRepository;
     private final DeptJobBoxRepository deptJobBoxRepository;
@@ -259,6 +262,7 @@ public class DeptJobService extends BaseAbstractService {
     @Transactional
     public Long createDeptJob(DeptJobDto dto) {
         String creatorEsntlId = currentEsntlIdOrDeny();
+        validatePriority(dto.getPrrtyRnk());
         assertAttachmentIsAssignable(dto.getAtchFileSn());
 
         // [담당자 기본값] 등록 폼(DeptJobForm)에는 비동기 검색 담당자 피커가 있고 선택 값이
@@ -294,6 +298,7 @@ public class DeptJobService extends BaseAbstractService {
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다(인가 판정 뒤).
         //   담당자 재지정(reassignDeptJob)도 버전을 올리므로, 재지정 뒤 옛 화면의 저장은 409 가 된다.
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), deptJob.getVersion());
+        validatePriority(dto.getPrrtyRnk());
 
         if (dto.getAtchFileSn() != null
                 && !Objects.equals(dto.getAtchFileSn(), deptJob.getAtchFileSn())) {
@@ -335,6 +340,12 @@ public class DeptJobService extends BaseAbstractService {
         assertPicOrAdmin(deptJob, "DEPT_JOB_DELETE_ALL");
 
         deptJobRepository.delete(deptJob);
+    }
+
+    private static void validatePriority(String priority) {
+        if (priority != null && !PRIORITY_PATTERN.matcher(priority).matches()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, DeptJobSaveRequest.PRIORITY_MESSAGE);
+        }
     }
 
     /**

@@ -5,6 +5,9 @@ import nuri.business.domain.memoreport.MemoReport;
 import nuri.business.domain.memoreport.MemoReportRepository;
 import nuri.business.domain.user.repository.UserRepository;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
+import nuri.business.service.file.FileService;
+import nuri.business.service.file.dto.FileReadSnapshot;
+import nuri.business.service.memoreport.dto.MemoInstructionRequest;
 import nuri.business.service.memoreport.dto.MemoReportDto;
 import nuri.business.service.memoreport.dto.MemoReportMapper;
 import nuri.foundation.core.exception.BusinessException;
@@ -23,6 +26,12 @@ import java.util.Collection;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Comparator;
+import java.nio.ByteBuffer;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
+import java.util.HexFormat;
 
 @Service
 @RequiredArgsConstructor
@@ -34,6 +43,7 @@ public class MemoReportService {
     private final MemoReportMapper memoReportMapper;
     private final UserDisplayNameLookup userDisplayNameLookup;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
+    private final FileService fileService;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     /**
@@ -158,11 +168,76 @@ public class MemoReportService {
         return dto;
     }
 
+    @Transactional
     public MemoReportDto getMemoReport(@NonNull Long memoRptSn) {
-        MemoReport entity = memoReportRepository.findById(memoRptSn)
+        MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertParticipantOrAdmin(entity); // [IDOR] 작성자·수신자·관리자만 열람
-        return toDtoWithPermission(entity, participantNames(List.of(entity)));
+        String actor = currentEsntlIdOrDeny();
+        boolean recipient = actor.equals(entity.getRptrId());
+        boolean participant = recipient || actor.equals(entity.getUserId());
+        // 본문 권한은 파일 목록 작업권한을 대신하지 않는다. 허용된 참여자도 기존 파일 인가를 통과해야 한다.
+        FileReadSnapshot snapshot = participant && canReadAttachments(entity) ? readAttachments(entity, false) : null;
+        if (recipient && entity.getRptrInqDt() == null) {
+            // PostgreSQL timestamp(6)에 저장되는 정밀도로 응답도 맞춘다. 첫 응답과 재조회가 같은 최초 시각이다.
+            entity.updateInqireDt(java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+        }
+        MemoReportDto dto = toDtoWithPermission(entity, participantNames(List.of(entity)));
+        if (snapshot == null) dto.setInstructable(false);
+        if (snapshot != null) dto.setAttachments(snapshot.toFileDtos());
+        if (recipient && snapshot != null) dto.setInstructionReadToken(instructionReadToken(entity, snapshot));
+        return dto;
+    }
+
+    private boolean canReadAttachments(MemoReport entity) {
+        return entity.getAtchFileSn() == null
+                || nuri.business.security.util.SecurityUtil.hasPermission("FILE_READ")
+                || nuri.business.security.util.SecurityUtil.hasPermission("FILE_READ_ALL");
+    }
+
+    private FileReadSnapshot readAttachments(MemoReport entity, boolean forUpdate) {
+        if (entity.getAtchFileSn() == null) return FileReadSnapshot.empty();
+        // 토큰 발급 뒤 파일 목록 권한이 회수됐어도 지시 저장에서 이를 우회할 수 없다.
+        if (!canReadAttachments(entity)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+        return forUpdate ? fileService.getReadSnapshotForUpdate(entity.getAtchFileSn())
+                : fileService.getReadSnapshot(entity.getAtchFileSn());
+    }
+
+    /** 지시 자체·열람/감사 시각을 제외한 실제 값의 지문. 파일 목록은 응답과 같은 불변 복사본이다. */
+    private static String instructionReadToken(MemoReport entity, FileReadSnapshot snapshot) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            addTokenValue(digest, "nuri.memoreport.instruction-read.v1");
+            addTokenValue(digest, entity.getMemoRptSn());
+            addTokenValue(digest, entity.getRptTtl());
+            addTokenValue(digest, entity.getMemoRptYmd());
+            addTokenValue(digest, entity.getRptCn());
+            addTokenValue(digest, entity.getAtchFileSn());
+            var files = snapshot.files().stream().sorted(Comparator
+                    .comparing(FileReadSnapshot.Entry::id, Comparator.nullsFirst(Comparator.naturalOrder()))
+                    .thenComparing(FileReadSnapshot.Entry::atchFileSeq, Comparator.nullsFirst(Comparator.naturalOrder())))
+                    .toList();
+            addTokenValue(digest, files.size());
+            for (FileReadSnapshot.Entry file : files) {
+                addTokenValue(digest, file.id());
+                addTokenValue(digest, file.atchFileSeq());
+                addTokenValue(digest, file.strgFileNm());
+                addTokenValue(digest, file.fileStrgPath());
+                addTokenValue(digest, file.orgnlFileNm());
+                addTokenValue(digest, file.fileEstn());
+                addTokenValue(digest, file.fileSz());
+                addTokenValue(digest, file.fileCn());
+            }
+            return HexFormat.of().formatHex(digest.digest());
+        } catch (NoSuchAlgorithmException ex) {
+            throw new IllegalStateException("SHA-256을 사용할 수 없습니다.", ex);
+        }
+    }
+
+    private static void addTokenValue(MessageDigest digest, Object value) {
+        byte[] bytes = value == null ? null : value.toString().getBytes(StandardCharsets.UTF_8);
+        digest.update(ByteBuffer.allocate(Integer.BYTES).putInt(bytes == null ? -1 : bytes.length).array());
+        if (bytes != null) digest.update(bytes);
     }
 
     /**
@@ -234,10 +309,10 @@ public class MemoReportService {
      * [2026-10-01] 지시를 남길 수 있는가 — 지시 기능 권한과 수신자 규칙(assertRecipient)을 boolean 으로 계산한다.
      * 종전 화면은 기능 권한을 보지 않아, 권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다.
      * [2026-10-16 GAP-MEMO-001] 전체 수정 권한(MEMO_RPT_UPDATE_ALL)은 더 이상 지시를 열지 않는다 — 쓰기 가드와 같다.
-     * 표시용 힌트이며 실제 차단은 쓰기 경로가 집행한다.
+     * 첨부 묶음이 있으면 파일 목록 기능 권한도 필요하다. 실제 파일 접근과 저장 검증은 상세·쓰기 경로가 집행한다.
      */
     private boolean canInstruct(MemoReport entity) {
-        if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT")) {
+        if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT") || !canReadAttachments(entity)) {
             return false;
         }
         return nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
@@ -294,33 +369,25 @@ public class MemoReportService {
         memoReportRepository.delete(entity);
     }
 
-    /**
-     * 열람 표시. 열람일시는 <b>수신자가 처음 연 시각</b>이다(2026-09-25 DIP I7, D9).
-     *
-     * <p>종전에는 작성자·관리자가 열어도, 수신자가 다시 열어도 매번 덮어써서 목록의 '열람됨' 이 "수신자가
-     * 읽었다" 를 뜻하지 않았다 — 작성자가 자기 보고를 다시 열기만 해도 열람됨이 됐다.</p>
-     */
     @Transactional
-    public void readMemoReport(@NonNull Long memoRptSn) {
-        memoReportRepository.findByIdForUpdate(memoRptSn).ifPresent(entity -> {
-            assertParticipantOrAdmin(entity); // 열람 표시도 권한자만 — 미인가 요청이 조회일시를 갱신하지 못하게 한다
-            boolean recipient = currentEsntlIdOrDeny().equals(entity.getRptrId());
-            if (recipient && entity.getRptrInqDt() == null) {
-                entity.updateInqireDt(java.time.LocalDateTime.now());
-            }
-        });
-    }
-
-    @Transactional
-    public void updateDrctMatter(Long memoRptSn, String instrCn) {
+    public void updateDrctMatter(Long memoRptSn, String instrCn, String instructionReadToken) {
         MemoReport entity = memoReportRepository.findByIdForUpdate(memoRptSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         assertRecipient(entity); // [IDOR] 지시는 보고를 받은 사람만 남긴다 — 관리자 우회 없음(GAP-MEMO-001)
+        if (instructionReadToken == null || instructionReadToken.length() != 64
+                || !instructionReadToken.matches(MemoInstructionRequest.READ_TOKEN_PATTERN)
+                || instrCn == null || instrCn.isBlank() || instrCn.length() > 2000) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        FileReadSnapshot snapshot = readAttachments(entity, true);
+        if (!instructionReadToken.equals(instructionReadToken(entity, snapshot))) {
+            throw new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION);
+        }
         // [2026-10-01] 이미 지시가 있던 보고에 다른 지시를 남기면 '변경' 으로 알린다 — 종전에는 같은 제목의 알림이라
         //   작성자가 새 지시인지 바뀐 지시인지 구분할 수 없었다.
         boolean replacing = hasInstruction(entity) && !Objects.equals(entity.getDrctnMttr(), instrCn);
         entity.updateDrctMatter(instrCn, java.time.LocalDateTime.now());
-        // [2026-09-26 DIP B4 P3] 보고한 사람에게 지시가 달렸다고 알린다. 지시를 지운 경우와 자기 보고는 알리지 않는다.
+        // [2026-09-26 DIP B4 P3] 보고한 사람에게 지시가 달렸다고 알린다. 자기 보고는 알리지 않는다.
         String author = entity.getUserId();
         String actor = nuri.business.security.util.SecurityUtil.getCurrentEsntlId().orElse(null);
         if (org.springframework.util.StringUtils.hasText(instrCn)

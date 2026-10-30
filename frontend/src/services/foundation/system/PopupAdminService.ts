@@ -12,6 +12,9 @@ import {
   updatePopupOperation,
 } from '@/types/generated-operations';
 
+/** 저장 입력은 조회 식별자·감사 필드를 제외한 생성 요청 계약을 따른다. */
+export type PopupInput = GeneratedOperationRequest<'createPopup'>;
+
 /**
  * 팝업창 관리 서비스 (Admin)
  */
@@ -43,18 +46,18 @@ class PopupAdminService extends ApiService {
   }
 
   /** 팝업창 등록 */
-  async createPopup(data: Partial<Popup>, config?: AxiosRequestConfig): Promise<number> {
+  async createPopup(data: PopupInput, config?: AxiosRequestConfig): Promise<number> {
     return this.executeGenerated(createPopupOperation, {
-      body: data as GeneratedOperationRequest<'createPopup'>,
+      body: data,
       config,
     });
   }
 
   /** 팝업창 수정 */
-  async updatePopup(popupSn: number, data: Partial<Popup>, config?: AxiosRequestConfig): Promise<void> {
+  async updatePopup(popupSn: number, data: PopupInput, config?: AxiosRequestConfig): Promise<void> {
     return this.executeGenerated(updatePopupOperation, {
       path: { popupSn },
-      body: data as GeneratedOperationRequest<'updatePopup'>,
+      body: data,
       config,
     });
   }
