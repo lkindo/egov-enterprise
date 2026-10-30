@@ -56,6 +56,7 @@ class FileDeletionTransactionTest {
         Files.createDirectories(file.getParent());
         Files.writeString(file, "preserve on rollback");
         when(details.findByFileMasterAtchFileSnAndAtchFileSeq(123L, 1)).thenReturn(Optional.of(detail));
+        when(masters.findByIdForUpdate(123L)).thenReturn(Optional.of(master));
         service = new FileService(masters, details, storage, policy, work, mapper);
     }
 

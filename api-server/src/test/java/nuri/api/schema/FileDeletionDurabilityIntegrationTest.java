@@ -167,6 +167,71 @@ class FileDeletionDurabilityIntegrationTest {
     }
 
     @Test
+    void concurrentDeletesWaitOnMasterThenRereadDetailWithoutDuplicateDurableIntent() throws Exception {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        var applied = new java.util.concurrent.CountDownLatch(1);
+        var release = new java.util.concurrent.CountDownLatch(1);
+        var firstPid = new java.util.concurrent.atomic.AtomicInteger();
+        String application = "file-delete-contender-" + master;
+        try (var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
+            var first = executor.submit(() -> {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                try {
+                    new TransactionTemplate(manager).executeWithoutResult(status -> {
+                        firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        deleteFixture();
+                        details.flush();
+                        applied.countDown();
+                        try {
+                            assertThat(release.await(25, java.util.concurrent.TimeUnit.SECONDS)).isTrue();
+                        } catch (InterruptedException interrupted) {
+                            Thread.currentThread().interrupt();
+                            throw new IllegalStateException(interrupted);
+                        }
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            java.util.concurrent.Future<BusinessException> second;
+            try {
+                boolean ready = applied.await(15, java.util.concurrent.TimeUnit.SECONDS);
+                if (!ready && first.isDone()) first.get();
+                assertThat(ready).isTrue();
+                second = executor.submit(() -> {
+                    SecurityContextHolder.getContext().setAuthentication(authentication);
+                    try {
+                        new TransactionTemplate(manager).executeWithoutResult(status -> {
+                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            deleteFixture();
+                        });
+                        return null;
+                    } catch (BusinessException rejected) { return rejected; }
+                    finally { SecurityContextHolder.clearContext(); }
+                });
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+                boolean waiting;
+                do {
+                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
+                            SELECT EXISTS (SELECT 1 FROM pg_stat_activity
+                              WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
+                                AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')
+                            """, Boolean.class, application, firstPid.get()));
+                    if (!waiting && second.isDone()) second.get();
+                    if (!waiting) Thread.sleep(20);
+                } while (!waiting && System.nanoTime() < deadline);
+                assertThat(waiting).as("delete must wait before reading the detail that the first transaction removed").isTrue();
+            } finally { release.countDown(); }
+            first.get(20, java.util.concurrent.TimeUnit.SECONDS);
+            assertThat(second.get(20, java.util.concurrent.TimeUnit.SECONDS))
+                    .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
+        assertThat(details.findById(detail.getId())).isEmpty();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no=?",
+                Long.class, detail.getId().toString())).isEqualTo(1);
+        assertThat(physical).hasContent("durable fixture");
+        assertThat(intentAnchor(detail.getId())).exists();
+    }
+
+    @Test
     void rollbackPreservesMetadataAndFileAndDiscardsIntentPreparation() {
         Path rolledBackAnchor = new TransactionTemplate(manager).execute(status -> {
             deleteFixture();

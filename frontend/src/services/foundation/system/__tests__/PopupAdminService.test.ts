@@ -74,7 +74,7 @@ const client = vi.hoisted(() => {
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { popupAdminService } from '../PopupAdminService';
+import { popupAdminService, type PopupInput } from '../PopupAdminService';
 
 /**
  * 이 서비스의 모든 요청이 공유하는 접두.
@@ -272,7 +272,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
 
   describe('팝업 등록 (createPopup)', () => {
     it('컬렉션 경로에 요청 본문을 무가공으로 POST 한다', async () => {
-      const payload: Partial<Popup> = {
+      const payload: PopupInput = {
         popupTtlNm: '신규 팝업',
         fileUrl: '/files/popup-new.png',
         popupWdthSz: '400',
@@ -288,7 +288,7 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
     });
 
     it('등록 시 config(timeout)가 유실되지 않는다', async () => {
-      const payload: Partial<Popup> = { popupTtlNm: '신규 팝업' };
+      const payload: PopupInput = { popupTtlNm: '신규 팝업' };
 
       await popupAdminService.createPopup(payload, { timeout: 5000 });
 
@@ -304,19 +304,17 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
   });
 
   describe('팝업 수정 (updatePopup)', () => {
-    it('인자로 받은 popupSn 이 경로를 결정한다 — 본문의 popupSn 이 아니다', async () => {
-      // 본문에 다른 popupSn(99)을 심어 두고, 경로는 인자(7)만 따르는지 확인한다.
-      // 본문을 따라가도록 바뀌면 화면에서 고른 팝업이 아닌 엉뚱한 팝업이 수정된다.
-      const payload: Partial<Popup> = { popupSn: 99, popupTtlNm: '제목만 수정' };
-
+    it('본문의 읽기 전용 popupSn은 거부하며 유효한 요청의 경로는 인자로 고른다', async () => {
+      await expect(popupAdminService.updatePopup(7, { popupSn: 99, popupTtlNm: '제목만 수정' } as never)).rejects.toThrow();
+      expect(client.put).not.toHaveBeenCalled();
+      const payload = { popupTtlNm: '제목만 수정' };
       await popupAdminService.updatePopup(7, payload, { timeout: 2000 });
-
       expect(client.put).toHaveBeenCalledWith(`${BASE}/7`, payload, { timeout: 2000 });
       expect(client.put).not.toHaveBeenCalledWith(`${BASE}/99`, payload, { timeout: 2000 });
     });
 
     it('config 를 생략하면 undefined 가 그대로 전달된다', async () => {
-      const payload: Partial<Popup> = { popupTtlNm: '제목만 수정' };
+      const payload: PopupInput = { popupTtlNm: '제목만 수정' };
 
       await popupAdminService.updatePopup(7, payload);
 
@@ -330,6 +328,31 @@ describe('PopupAdminService — 팝업 관리자 API 계약', () => {
       expect(client.post).not.toHaveBeenCalled();
       expect(client.delete).not.toHaveBeenCalled();
     });
+  });
+
+  it.each(['99', '4001', '0100', '100.0', '1e3', '', 'abc', ' 100', '100\n', 100])('팝업 크기 %j를 보정하지 않고 요청 단계에서 거절한다', async (size) => {
+    for (const field of ['popupWdthSz', 'popupVrtcSz']) {
+      const data = { popupTtlNm: '크기 정책', [field]: size };
+      await expect(popupAdminService.createPopup(data)).rejects.toThrow();
+      await expect(popupAdminService.updatePopup(7, data)).rejects.toThrow();
+    }
+    expect(client.post).not.toHaveBeenCalled();
+    expect(client.put).not.toHaveBeenCalled();
+  });
+
+  it.each(['100', '999', '1000', '3999', '4000', null, undefined])('팝업 크기 %j와 null·생략을 보존한다', async (size) => {
+    const data = { popupTtlNm: '크기 정책', ...(size !== undefined ? { popupWdthSz: size, popupVrtcSz: size } : {}) };
+    await popupAdminService.createPopup(data);
+    await popupAdminService.updatePopup(7, data);
+    expect(client.post).toHaveBeenCalledWith(BASE, data, undefined);
+    expect(client.put).toHaveBeenCalledWith(`${BASE}/7`, data, undefined);
+  });
+
+  it('기존 비정규 크기의 상세·목록 응답은 원문을 유지한다', async () => {
+    const legacy = { ...popupFixture(7, '기존 값'), popupWdthSz: '0100', popupVrtcSz: 'abc' };
+    client.get.mockResolvedValueOnce(legacy).mockResolvedValueOnce({ list: [legacy], total: 1, page: 1, size: 10, totalPage: 1 });
+    await expect(popupAdminService.getPopup(7)).resolves.toMatchObject({ popupWdthSz: '0100', popupVrtcSz: 'abc' });
+    await expect(popupAdminService.getPopupList()).resolves.toMatchObject({ list: [{ popupWdthSz: '0100', popupVrtcSz: 'abc' }] });
   });
 
   describe('팝업 삭제 (deletePopup)', () => {

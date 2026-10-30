@@ -18,6 +18,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.CsvSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.domain.PageRequest;
@@ -42,7 +44,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
  * 같은 트랜잭션의 표시로만 열리고 수정은 계속 막는지.
  */
 @Tag("schema-validation")
-@SpringBootTest
+@SpringBootTest(properties = "nuri.durable-work.enabled=false")
 @org.springframework.context.annotation.Import(AuthorizationSchemaRehearsalTestConfiguration.class)
 @ActiveProfiles({"test", "tc"})
 @DisplayName("콘텐츠 페이지 수명주기 — 초안 판정·상태 목록·삭제·파기(PostgreSQL)")
@@ -55,6 +57,8 @@ class CmsPageLifecycleIntegrationTest {
     @Autowired private CmsPageReadService readService;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
+    @Autowired private javax.sql.DataSource dataSource;
+    @Autowired private jakarta.persistence.EntityManager entityManager;
 
     private String suffix;
     private String login;
@@ -96,6 +100,9 @@ class CmsPageLifecycleIntegrationTest {
                 jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm = 'FILE_DELETE' AND job_mng_no = ?", fileDetail);
             }
         });
+        AuditLedgerFixtures.delete(jdbc,
+                "DELETE FROM tb_sys_adt_log WHERE job_nm IN ('CMS_PAGE_DELETE', 'CMS_PAGE_PURGE') AND adt_cn LIKE ?",
+                "%" + suffix + "%");
     }
 
     private static Map<String, Object> document(Map<String, Object> cell) {
@@ -279,6 +286,80 @@ class CmsPageLifecycleIntegrationTest {
         assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm = 'CMS_PAGE_PURGE'"
                 + " AND adt_cn LIKE ? AND adt_cn LIKE ?", "%reference=INC-" + suffix + "%", "%purge-page-" + suffix + "%"))
                 .as("감사에 근거 번호와 지운 페이지의 주소가 남는다").isEqualTo(1);
+    }
+
+    @ParameterizedTest
+    @CsvSource({"save,false", "save,true", "delete,false", "delete,true", "purge,false", "purge,true"})
+    void actualReleasePathsWaitOnFileMasterAndKeepPageFileAndDurableIntentInOneTransaction(String operation, boolean rollback) throws Exception {
+        long image = uploadedImage();
+        long page = createPage("locked-release", document(image(image, "그림")));
+        CmsPageDetailDto current = adminService.getPage(page);
+        var beforePage = jdbc.queryForMap("SELECT * FROM tb_cms_conts WHERE conts_sn=?", page);
+        var beforeReferences = jdbc.queryForList("SELECT * FROM tb_cms_conts_file WHERE conts_sn=?", page);
+        String fileId = fileDetails.getFirst();
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        String application = "cms-release-" + suffix;
+        try (var blocker = dataSource.getConnection(); var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
+            blocker.setAutoCommit(false);
+            int blockerPid;
+            try (var statement = blocker.createStatement(); var row = statement.executeQuery("SELECT pg_backend_pid()")) {
+                row.next(); blockerPid = row.getInt(1);
+            }
+            try (var lock = blocker.prepareStatement("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE")) {
+                lock.setLong(1, image); lock.executeQuery().close();
+            }
+            var releasing = executor.submit(() -> {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        switch (operation) {
+                            case "save" -> adminService.saveDraft(page, CmsPageDraftRequest.builder()
+                                    .contsPathNm(current.contsPathNm()).contsTtl(current.contsTtl())
+                                    .document(document(text("첨부를 뺀 본문"))).version(current.version()).build());
+                            case "delete" -> adminService.deleteDraftPage(page, current.version());
+                            case "purge" -> adminService.purgePage(page, CmsPagePurgeRequest.builder()
+                                    .contsPathNm(current.contsPathNm()).version(current.version()).caseReference("INC-" + suffix).build());
+                            default -> throw new IllegalArgumentException(operation);
+                        }
+                        // saveDraft leaves the final FileMaster removal queued until flush/commit.
+                        // JDBC observes database rows, so flush every operation before inspecting its uncommitted state.
+                        entityManager.flush();
+                        assertThat(count("SELECT count(*) FROM tb_file_master WHERE atch_file_sn=?", image)).isZero();
+                        assertThat(count("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no=?", fileId)).isEqualTo(1);
+                        if (rollback) status.setRollbackOnly();
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            try {
+                long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
+                boolean waiting;
+                do {
+                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
+                            + "WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock' "
+                            + "AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')",
+                            Boolean.class, application, blockerPid));
+                    if (!waiting && releasing.isDone()) releasing.get();
+                    if (!waiting) Thread.sleep(20);
+                } while (!waiting && System.nanoTime() < deadline);
+                assertThat(waiting).as("actual CMS %s release waits on the shared FileMaster lock", operation).isTrue();
+                assertThat(count("SELECT count(*) FROM tb_file_detail WHERE atch_file_sn=?", image)).isEqualTo(1);
+                assertThat(count("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no=?", fileId)).isZero();
+            } finally { blocker.rollback(); }
+            releasing.get(20, java.util.concurrent.TimeUnit.SECONDS);
+        }
+        assertThat(count("SELECT count(*) FROM tb_file_master WHERE atch_file_sn=?", image)).isEqualTo(rollback ? 1 : 0);
+        assertThat(count("SELECT count(*) FROM tb_file_detail WHERE atch_file_sn=?", image)).isEqualTo(rollback ? 1 : 0);
+        assertThat(count("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no=?", fileId)).isEqualTo(rollback ? 0 : 1);
+        if (rollback) {
+            assertThat(jdbc.queryForMap("SELECT * FROM tb_cms_conts WHERE conts_sn=?", page)).isEqualTo(beforePage);
+            assertThat(jdbc.queryForList("SELECT * FROM tb_cms_conts_file WHERE conts_sn=?", page)).isEqualTo(beforeReferences);
+            assertThat(count("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm IN ('CMS_PAGE_DELETE','CMS_PAGE_PURGE') AND adt_cn LIKE ?",
+                    "%locked-release-" + suffix + "%")).isZero();
+        } else {
+            assertThat(count("SELECT count(*) FROM tb_cms_conts_file WHERE conts_sn=?", page)).isZero();
+            assertThat(count("SELECT count(*) FROM tb_cms_conts WHERE conts_sn=?", page)).isEqualTo(operation.equals("save") ? 1 : 0);
+        }
     }
 
     @Test

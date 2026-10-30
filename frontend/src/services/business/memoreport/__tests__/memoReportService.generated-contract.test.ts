@@ -7,7 +7,7 @@ const client = vi.hoisted(() => ({
 
 vi.mock('@/lib/api/client', () => ({ default: client }));
 
-import { memoReportService, type MemoReportInput } from '../memoReportService';
+import { memoReportService, type MemoReportInput, type MemoInstructionInput } from '../memoReportService';
 import { createMemoReportOperation, updateMemoReportOperation } from '@/types/generated-operations';
 import {
   MemoReportDtoRequestSchema,
@@ -27,19 +27,38 @@ describe('memoReportService generated instruction contract', () => {
   });
 
   it('generated MemoInstructionRequest 객체 본문으로 전송한다', async () => {
-    await memoReportService.updateDrctMatter(17, '검토 후 조치');
+    await memoReportService.updateDrctMatter(17, { drctnMttr: '검토 후 조치', instructionReadToken: 'a'.repeat(64) });
 
     expect(client.requestRaw).toHaveBeenCalledWith({
       url: 'memo-reports/17/instr-cn',
       method: 'patch',
-      data: { drctnMttr: '검토 후 조치' },
+      data: { drctnMttr: '검토 후 조치', instructionReadToken: 'a'.repeat(64) },
     });
   });
 
   it('공백과 2000자 초과 지시사항은 네트워크 전에 거부한다', async () => {
-    await expect(memoReportService.updateDrctMatter(17, '   ')).rejects.toThrow();
-    await expect(memoReportService.updateDrctMatter(17, '가'.repeat(2001))).rejects.toThrow();
+    await expect(memoReportService.updateDrctMatter(17, { drctnMttr: '   ', instructionReadToken: 'a'.repeat(64) })).rejects.toThrow();
+    await expect(memoReportService.updateDrctMatter(17, { drctnMttr: '가'.repeat(2001), instructionReadToken: 'a'.repeat(64) })).rejects.toThrow();
     expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it.each([undefined, null, '', 'a'.repeat(63), 'A'.repeat(64), 'g'.repeat(64), 1])('읽은 내용 정보 %j가 유효하지 않으면 전송하지 않는다', async (instructionReadToken) => {
+    await expect(memoReportService.updateDrctMatter(17, { drctnMttr: '지시', instructionReadToken } as MemoInstructionInput)).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it('예전 문자열 요청은 최신 내용을 임의로 채우지 않고 거부한다', async () => {
+    await expect(memoReportService.updateDrctMatter(17, '지시' as never)).rejects.toThrow();
+    expect(client.getRaw).not.toHaveBeenCalled();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it('오래된 내용의 409는 그대로 반환하고 재조회나 자동 저장을 하지 않는다', async () => {
+    const conflict = { response: { status: 409 } };
+    client.requestRaw.mockRejectedValueOnce(conflict);
+    await expect(memoReportService.updateDrctMatter(17, { drctnMttr: '지시', instructionReadToken: 'a'.repeat(64) })).rejects.toBe(conflict);
+    expect(client.requestRaw).toHaveBeenCalledTimes(1);
+    expect(client.getRaw).not.toHaveBeenCalled();
   });
 
   it('목록·상세·CRUD가 operation descriptor의 경로와 메서드로만 실행된다', async () => {
@@ -99,6 +118,8 @@ describe('memoReportService generated instruction contract', () => {
       'deletable',
       // [2026-10-01] 지시 가능 여부도 서버 판정이다(지시 기능 권한 + 수신자 — 2026-10-16 GAP-MEMO-001 부터 관리자 우회 없음).
       'instructable',
+      'instructionReadToken',
+      'attachments',
     ] as const;
     type ServerOwnedField = Extract<keyof MemoReportInput, (typeof serverOwnedFields)[number]>;
     expectTypeOf<ServerOwnedField>().toEqualTypeOf<never>();

@@ -7,6 +7,7 @@ import nuri.business.domain.promotion.popup.PopupDomainRepository;
 import nuri.business.security.util.SecurityUtil;
 import nuri.business.service.file.AttachmentAssignmentPolicy;
 import nuri.business.service.promotion.popup.dto.PopupDto;
+import nuri.business.service.promotion.popup.dto.PopupSaveRequest;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -30,6 +31,7 @@ public class PopupService {
             Pattern.compile("\\A/api/v1/files/([1-9][0-9]*)\\z");
     private static final Pattern LEGACY_FILE_URL =
             Pattern.compile("\\A/api/v1/files/download\\?fileId=([1-9][0-9]*)\\z");
+    private static final Pattern SIZE_PATTERN = Pattern.compile(PopupSaveRequest.SIZE_PATTERN);
 
     private final PopupDomainRepository popupRepository;
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
@@ -73,6 +75,7 @@ public class PopupService {
     @Transactional
     public Long createPopup(String userId, PopupDto dto) {
         SecurityUtil.assertPermission("POPUP_CREATE");
+        validateDimensions(dto);
         Long atchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
         LocalDate[] period = noticePeriod(dto);
         if (atchFileSn != null) {
@@ -102,6 +105,7 @@ public class PopupService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), popup.getVersion());
+        validateDimensions(dto);
         LocalDate[] period = noticePeriod(dto);
 
         Long requestedAtchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
@@ -126,6 +130,13 @@ public class PopupService {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
         popupRepository.deleteById(Objects.requireNonNull(popupSn));
+    }
+
+    private static void validateDimensions(PopupDto dto) {
+        if ((dto.getPopupWdthSz() != null && !SIZE_PATTERN.matcher(dto.getPopupWdthSz()).matches())
+                || (dto.getPopupVrtcSz() != null && !SIZE_PATTERN.matcher(dto.getPopupVrtcSz()).matches())) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, PopupSaveRequest.SIZE_MESSAGE);
+        }
     }
 
     /**

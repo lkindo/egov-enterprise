@@ -22,6 +22,17 @@ export const FieldErrorItemSchema = /*#__PURE__*/ (() => z.object({
 }))();
 export type FieldErrorItem = z.infer<typeof FieldErrorItemSchema>;
 
+export const FileDtoSchema = /*#__PURE__*/ (() => z.object({
+  atchFileSn: z.number().int().optional(),
+  fileSn: z.number().int().optional(),
+  orignlFileNm: z.string().optional(),
+  fileExtsn: z.string().optional(),
+  fileMg: z.number().int().optional(),
+  fileCn: z.string().min(0).max(4000).optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+export type FileDto = z.infer<typeof FileDtoSchema>;
+
 export const CommentDtoSchema = /*#__PURE__*/ (() => z.object({
   ansSn: z.number().int().optional(),
   pstSn: z.number().int().optional(),
@@ -298,6 +309,26 @@ export const FieldErrorItemRequestSchema = /*#__PURE__*/ (() => z.object({
 export const FieldErrorItemResponseSchema = /*#__PURE__*/ (() => z.object({
   field: z.string().optional().nullable(),
   message: z.string().optional().nullable(),
+}))();
+
+export const FileDtoRequestSchema = /*#__PURE__*/ (() => z.object({
+  atchFileSn: z.number().int().optional(),
+  fileSn: z.number().int().optional(),
+  orignlFileNm: z.string().optional(),
+  fileExtsn: z.string().optional(),
+  fileMg: z.number().int().optional(),
+  fileCn: z.string().min(0).max(4000).optional(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional(),
+}))();
+
+export const FileDtoResponseSchema = /*#__PURE__*/ (() => z.object({
+  atchFileSn: z.number().int().optional().nullable(),
+  fileSn: z.number().int().optional().nullable(),
+  orignlFileNm: z.string().optional().nullable(),
+  fileExtsn: z.string().optional().nullable(),
+  fileMg: z.number().int().optional().nullable(),
+  fileCn: z.string().min(0).max(4000).optional().nullable(),
+  crtDt: z.iso.datetime({ offset: true, local: true }).optional().nullable(),
 }))();
 
 export const CommentDtoRequestSchema = /*#__PURE__*/ (() => z.object({

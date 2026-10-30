@@ -18,7 +18,7 @@ import {
 import {
   DeptJobBoxDtoRequestSchema,
   DeptJobBoxDtoResponseSchema,
-  DeptJobDtoRequestSchema,
+  DeptJobSaveRequestRequestSchema,
   DeptJobDtoResponseSchema,
 } from '@/types/generated-zod';
 
@@ -180,17 +180,17 @@ describe('DeptJobUserService generated contract', () => {
     expectTypeOf<JobReadOnlyInput>().toEqualTypeOf<never>();
 
     const boxForbiddenPaths = boxReadOnlyFields.map((field) => [field]);
-    const jobForbiddenPaths = jobReadOnlyFields.map((field) => [field]);
     expect(createDeptJobBoxOperation.requestForbiddenPaths).toStrictEqual(boxForbiddenPaths);
     expect(updateDeptJobBoxOperation.requestForbiddenPaths).toStrictEqual(boxForbiddenPaths);
-    expect(createDeptJobOperation.requestForbiddenPaths).toStrictEqual(jobForbiddenPaths);
-    expect(updateDeptJobOperation.requestForbiddenPaths).toStrictEqual(jobForbiddenPaths);
+    // 요청 전용 DTO에는 조회 필드 자체가 없으므로 strict 요청 스키마가 같은 필드를 거부한다.
+    expect(createDeptJobOperation.requestSchema.safeParse(jobRequest).success).toBe(true);
+    expect(updateDeptJobOperation.requestSchema.safeParse(jobRequest).success).toBe(true);
 
     expect(Object.keys(DeptJobBoxDtoRequestSchema.shape)).toStrictEqual([
       'deptTaskBoxNm', 'deptId', 'sortOrdr',
     ]);
     // [2026-10-18 V2_133] version 은 요청·응답 양방향이다 — 수정 요청이 읽은 버전을 그대로 돌려보낸다.
-    expect(Object.keys(DeptJobDtoRequestSchema.shape)).toStrictEqual([
+    expect(Object.keys(DeptJobSaveRequestRequestSchema.shape)).toStrictEqual([
       'deptTaskBoxSn', 'deptTaskNm', 'deptTaskCn', 'picId', 'prrtyRnk', 'atchFileSn', 'version',
     ]);
     expect(Object.keys(DeptJobBoxDtoResponseSchema.shape)).toStrictEqual([
@@ -212,11 +212,37 @@ describe('DeptJobUserService generated contract', () => {
     }
     for (const field of jobReadOnlyFields) {
       const forged = { ...jobRequest, [field]: 'forged-value' };
+      expect(createDeptJobOperation.requestSchema.safeParse(forged).success).toBe(false);
+      expect(updateDeptJobOperation.requestSchema.safeParse(forged).success).toBe(false);
       await expect(deptJobUserService.createDeptJob(forged as never))
-        .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+        .rejects.toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
       await expect(deptJobUserService.updateDeptJob(5, forged as never))
-        .rejects.toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+        .rejects.toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
     }
     expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it.each(['', ' ', '01', '1.0', '+1', '4', '1\n', 1, true])('우선순위 %j는 등록·수정 요청을 전송하기 전에 거절한다', async (priority) => {
+    const data = { deptTaskNm: '정책 시험', prrtyRnk: priority } as DeptJobInput;
+    await expect(deptJobUserService.createDeptJob(data)).rejects.toThrow();
+    await expect(deptJobUserService.updateDeptJob(5, data)).rejects.toThrow();
+    expect(client.requestRaw).not.toHaveBeenCalled();
+  });
+
+  it.each(['1', '2', '3', null, undefined])('우선순위 %j의 현재 null·생략 의미를 보존해 전송한다', async (priority) => {
+    client.requestRaw.mockResolvedValueOnce(successEnvelope(5)).mockResolvedValueOnce(successEnvelope(null));
+    const data: DeptJobInput = { deptTaskNm: '정책 시험', ...(priority !== undefined ? { prrtyRnk: priority } : {}) };
+    await deptJobUserService.createDeptJob(data);
+    await deptJobUserService.updateDeptJob(5, data);
+    expect(client.requestRaw).toHaveBeenNthCalledWith(1, { url: 'dept-jobs', method: 'post', data });
+    expect(client.requestRaw).toHaveBeenNthCalledWith(2, { url: 'dept-jobs/5', method: 'put', data });
+  });
+
+  it('기존 비정규 우선순위의 상세·목록 조회는 원문을 유지한다', async () => {
+    const legacy = { ...jobResponse, prrtyRnk: '01' };
+    client.getRaw.mockResolvedValueOnce(successEnvelope(legacy))
+      .mockResolvedValueOnce(successEnvelope({ list: [legacy], total: 1, page: 1, size: 10, totalPage: 1 }));
+    await expect(deptJobUserService.getDeptJob(5)).resolves.toMatchObject({ prrtyRnk: '01' });
+    await expect(deptJobUserService.getDeptJobList({})).resolves.toMatchObject({ list: [{ prrtyRnk: '01' }] });
   });
 });

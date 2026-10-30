@@ -1553,6 +1553,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/menus/bookmarks/cleanup": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /**
+         * 사용할 수 없는 내 즐겨찾기 정리
+         * @description 본인이 확인한 권한·개수·후보에 맞을 때만 정리합니다. 상태가 달라지면 409로 거부합니다.
+         */
+        post: operations["cleanupUnavailableBookmarks"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memo-reports": {
         parameters: {
             query?: never;
@@ -3944,6 +3964,26 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
+    "/api/v1/menus/bookmarks/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /**
+         * 내 즐겨찾기 사용 상태
+         * @description 볼 수 있는 목록과 서버가 숨긴 항목 수를 반환하며 저장된 즐겨찾기를 삭제하지 않습니다.
+         */
+        get: operations["getMyBookmarkStatus"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
     "/api/v1/memo-reports/received": {
         parameters: {
             query?: never;
@@ -6204,6 +6244,19 @@ export interface components {
             /** @description 현재 사용자의 투표 참여 여부 */
             hasVoted?: boolean;
         };
+        FileDto: {
+            /** Format: int64 */
+            atchFileSn?: number;
+            /** Format: int32 */
+            fileSn?: number;
+            orignlFileNm?: string;
+            fileExtsn?: string;
+            /** Format: int64 */
+            fileMg?: number;
+            fileCn?: string;
+            /** Format: date-time */
+            crtDt?: string;
+        };
         /** @description 메모보고 정보 */
         MemoReportDto: {
             /**
@@ -6253,6 +6306,10 @@ export interface components {
             readonly deletable?: boolean;
             /** @description 현재 사용자가 지시를 남길 수 있는지(서버 판정) */
             readonly instructable?: boolean;
+            /** @description 수신자가 상세에서 확인한 본문·첨부의 내용 비교 토큰 */
+            readonly instructionReadToken?: string | null;
+            /** @description 상세와 같은 시점에 읽은 첨부. 미조회·열람 대상 아님은 null, 조회 결과 없음은 빈 목록 */
+            readonly attachments?: components["schemas"]["FileDto"][] | null;
         };
         /** @description 온라인 메뉴얼 DTO */
         OnlineManualDto: {
@@ -6300,36 +6357,20 @@ export interface components {
              */
             crtDt?: string;
         };
-        DeptJobDto: {
-            /** Format: int64 */
-            readonly deptTaskSn?: number | null;
+        /** @description 부서 업무 저장 요청 */
+        DeptJobSaveRequest: {
             /** Format: int64 */
             deptTaskBoxSn?: number;
-            readonly deptTaskBoxNm?: string | null;
-            readonly deptId?: string | null;
-            readonly deptNm?: string | null;
             deptTaskNm?: string;
             deptTaskCn?: string;
             picId?: string;
-            readonly picNm?: string | null;
-            prrtyRnk?: string;
+            /** @description 우선순위 문자열 1(높음)·2(보통)·3(낮음). null·생략은 기존처럼 값을 비웁니다. */
+            prrtyRnk?: string | null;
             /** Format: int64 */
             atchFileSn?: number;
-            readonly frstRgtrId?: string | null;
-            /** Format: date-time */
-            readonly crtDt?: string | null;
-            readonly lastMdfrId?: string | null;
-            /** Format: date-time */
-            readonly mdfcnDt?: string | null;
-            /** @description 현재 사용자가 수정할 수 있는지(서버 판정) */
-            readonly editable?: boolean;
-            /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
-            readonly deletable?: boolean;
-            /** @description 현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정) */
-            readonly reassignable?: boolean;
             /**
              * Format: int32
-             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             * @description 조회한 수정 버전. 수정 시 서비스에서 필수로 대조하며 등록에서는 무시합니다.
              */
             version?: number;
         };
@@ -6704,29 +6745,17 @@ export interface components {
              */
             crtDt?: string;
         };
-        /** @description 팝업 정보 DTO */
-        PopupDto: {
-            /**
-             * Format: int64
-             * @description 팝업 일련번호
-             * @example 1
-             */
-            popupSn?: number;
-            /** @description 팝업 제목 */
+        /** @description 팝업 저장 요청 */
+        PopupSaveRequest: {
             popupTtlNm: string;
-            /** @description 파일 URL */
             fileUrl?: string;
-            /** @description 팝업 가로 위치 */
             popupWdthPstn?: string;
-            /** @description 팝업 세로 위치 */
             popupVrtcPstn?: string;
-            /** @description 팝업 높이 크기 */
-            popupVrtcSz?: string;
-            /** @description 팝업 너비 크기 */
-            popupWdthSz?: string;
-            /** @description 게시 시작일 */
+            /** @description 팝업 높이: 100~4000 정수 문자열. null·생략은 값을 비웁니다. */
+            popupVrtcSz?: string | null;
+            /** @description 팝업 너비: 100~4000 정수 문자열. null·생략은 값을 비웁니다. */
+            popupWdthSz?: string | null;
             ntceBgnde?: string;
-            /** @description 게시 종료일 */
             ntceEndde?: string;
             /**
              * @description 그만보기 여부
@@ -6738,16 +6767,9 @@ export interface components {
              * @enum {string}
              */
             ntceYn?: "Y" | "N";
-            /** @description 생성자 ID */
-            frstRgtrId?: string;
-            /**
-             * Format: date-time
-             * @description 생성 일시
-             */
-            crtDt?: string;
             /**
              * Format: int32
-             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             * @description 조회한 수정 버전. 수정 시 서비스에서 필수로 대조하며 등록에서는 무시합니다.
              */
             version?: number;
         };
@@ -7806,6 +7828,36 @@ export interface components {
             /** @description 수신자 읽음 여부 (Y: 읽음, N: 읽지 않음) */
             readonly openYn?: string;
         };
+        /** @description 본인이 확인한 사용할 수 없는 즐겨찾기 정리 */
+        MenuBookmarkCleanupRequest: {
+            /** @description 확인한 계정의 권한 버전 */
+            expectedAuthorizationVersion: string;
+            /**
+             * Format: int32
+             * @description 확인한 서버 숨김 개수
+             */
+            expectedServerUnavailableCount: number;
+            uiUnavailableMenuNos: number[];
+        };
+        ApiResponseMenuBookmarkCleanupResult: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["MenuBookmarkCleanupResult"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 본인 즐겨찾기 정리 결과 */
+        MenuBookmarkCleanupResult: {
+            /**
+             * Format: int32
+             * @description 삭제한 즐겨찾기 수
+             */
+            removedCount: number;
+        };
         /** @description 메일 수신자 — esntlId(사용자) 또는 emlAddr(이메일 주소) 중 하나 */
         MailRecipientDto: {
             /** @description 사용자 고유 ID(esntlId). 지정하면 서버가 등록된 이메일 주소를 해석한다 */
@@ -8520,6 +8572,8 @@ export interface components {
         MemoInstructionRequest: {
             /** @description 지시사항 */
             drctnMttr: string;
+            /** @description 상세에서 확인한 본문·첨부의 내용 비교 토큰 */
+            instructionReadToken: string;
         };
         DeptJobAssigneeRequest: {
             picId: string;
@@ -9090,6 +9144,26 @@ export interface components {
             /** @description 메뉴 이름 */
             menuNm: string;
         };
+        ApiResponseMenuBookmarkStatusDto: {
+            success?: boolean;
+            /** Format: int32 */
+            status?: number;
+            code?: string;
+            message?: string;
+            data?: components["schemas"]["MenuBookmarkStatusDto"];
+            /** Format: date-time */
+            timestamp?: string;
+            errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        /** @description 내 즐겨찾기 목록과 사용할 수 없는 항목 수 */
+        MenuBookmarkStatusDto: {
+            bookmarks: components["schemas"]["MenuBookmarkDto"][];
+            /**
+             * Format: int32
+             * @description 메뉴 배정·사용 여부로 서버가 숨긴 항목 수
+             */
+            unavailableCount: number;
+        };
         ApiResponsePageResponseMemoReportDto: {
             success?: boolean;
             /** Format: int32 */
@@ -9429,19 +9503,6 @@ export interface components {
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
         };
-        FileDto: {
-            /** Format: int64 */
-            atchFileSn?: number;
-            /** Format: int32 */
-            fileSn?: number;
-            orignlFileNm?: string;
-            fileExtsn?: string;
-            /** Format: int64 */
-            fileMg?: number;
-            fileCn?: string;
-            /** Format: date-time */
-            crtDt?: string;
-        };
         ApiResponsePageResponseDeptJobDto: {
             success?: boolean;
             /** Format: int32 */
@@ -9452,6 +9513,39 @@ export interface components {
             /** Format: date-time */
             timestamp?: string;
             errors?: components["schemas"]["FieldErrorItem"][];
+        };
+        DeptJobDto: {
+            /** Format: int64 */
+            readonly deptTaskSn?: number | null;
+            /** Format: int64 */
+            deptTaskBoxSn?: number;
+            readonly deptTaskBoxNm?: string | null;
+            readonly deptId?: string | null;
+            readonly deptNm?: string | null;
+            deptTaskNm?: string;
+            deptTaskCn?: string;
+            picId?: string;
+            readonly picNm?: string | null;
+            prrtyRnk?: string;
+            /** Format: int64 */
+            atchFileSn?: number;
+            readonly frstRgtrId?: string | null;
+            /** Format: date-time */
+            readonly crtDt?: string | null;
+            readonly lastMdfrId?: string | null;
+            /** Format: date-time */
+            readonly mdfcnDt?: string | null;
+            /** @description 현재 사용자가 수정할 수 있는지(서버 판정) */
+            readonly editable?: boolean;
+            /** @description 현재 사용자가 삭제할 수 있는지(서버 판정) */
+            readonly deletable?: boolean;
+            /** @description 현재 사용자가 담당자를 다시 지정할 수 있는지(서버 판정) */
+            readonly reassignable?: boolean;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         PageResponseDeptJobDto: {
             /** @description 현재 페이지의 항목 */
@@ -10989,6 +11083,53 @@ export interface components {
              * @description 전체 페이지 수
              */
             totalPage: number;
+        };
+        /** @description 팝업 정보 DTO */
+        PopupDto: {
+            /**
+             * Format: int64
+             * @description 팝업 일련번호
+             * @example 1
+             */
+            popupSn?: number;
+            /** @description 팝업 제목 */
+            popupTtlNm: string;
+            /** @description 파일 URL */
+            fileUrl?: string;
+            /** @description 팝업 가로 위치 */
+            popupWdthPstn?: string;
+            /** @description 팝업 세로 위치 */
+            popupVrtcPstn?: string;
+            /** @description 팝업 높이 크기 */
+            popupVrtcSz?: string;
+            /** @description 팝업 너비 크기 */
+            popupWdthSz?: string;
+            /** @description 게시 시작일 */
+            ntceBgnde?: string;
+            /** @description 게시 종료일 */
+            ntceEndde?: string;
+            /**
+             * @description 그만보기 여부
+             * @enum {string}
+             */
+            stopvewSetupYn?: "Y" | "N";
+            /**
+             * @description 게시 여부
+             * @enum {string}
+             */
+            ntceYn?: "Y" | "N";
+            /** @description 생성자 ID */
+            frstRgtrId?: string;
+            /**
+             * Format: date-time
+             * @description 생성 일시
+             */
+            crtDt?: string;
+            /**
+             * Format: int32
+             * @description 낙관적 잠금 버전(V2_133). 조회한 값을 수정 요청에 그대로 돌려보내며 수정할 때 필수다 — 다르면 409. 등록에서는 무시한다.
+             */
+            version?: number;
         };
         ApiResponsePopupDto: {
             success?: boolean;
@@ -15057,7 +15198,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeptJobDto"];
+                "application/json": components["schemas"]["DeptJobSaveRequest"];
             };
         };
         responses: {
@@ -18557,7 +18698,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PopupDto"];
+                "application/json": components["schemas"]["PopupSaveRequest"];
             };
         };
         responses: {
@@ -23974,6 +24115,66 @@ export interface operations {
             };
         };
     };
+    cleanupUnavailableBookmarks: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["MenuBookmarkCleanupRequest"];
+            };
+        };
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseMenuBookmarkCleanupResult"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
     getMemoReports: {
         parameters: {
             query?: {
@@ -24864,7 +25065,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DeptJobDto"];
+                "application/json": components["schemas"]["DeptJobSaveRequest"];
             };
         };
         responses: {
@@ -28379,7 +28580,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["PopupDto"];
+                "application/json": components["schemas"]["PopupSaveRequest"];
             };
         };
         responses: {
@@ -34182,6 +34383,62 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["ApiResponseListMenuBookmarkDto"];
+                };
+            };
+            /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */
+            400: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 인증되지 않음 — 토큰이 없거나 만료·위조 (code: A001/A002/A003) */
+            401: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 권한 부족 — 인증은 되었으나 해당 자원에 대한 권한이 없음 (code: C010) */
+            403: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+            /** @description 서버 내부 오류 (code: C004/S001) */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseVoid"];
+                };
+            };
+        };
+    };
+    getMyBookmarkStatus: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description OK */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiResponseMenuBookmarkStatusDto"];
                 };
             };
             /** @description 요청 값이 유효하지 않음 — 검증 실패 시 errors[] 에 필드별 사유가 실린다 (code: C001/C005/C009) */

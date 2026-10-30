@@ -2036,6 +2036,20 @@
     "permission": null
   },
   {
+    "method": "GET",
+    "path": "/api/v1/menus/bookmarks/status",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#getMyBookmarkStatus",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
+    "method": "POST",
+    "path": "/api/v1/menus/bookmarks/cleanup",
+    "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#cleanupUnavailableBookmarks",
+    "access": "AUTHENTICATED",
+    "permission": null
+  },
+  {
     "method": "PUT",
     "path": "/api/v1/menus/bookmarks/{menuNo}",
     "handler": "nuri.api.controller.foundation.controller.menu.MenuUserApiController#addBookmark",

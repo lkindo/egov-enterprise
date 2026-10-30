@@ -21,6 +21,7 @@ vi.mock('@/services/business/user/deptJob/DeptJobUserService', () => ({
   deptJobUserService: { createDeptJob: mocks.createDeptJob },
 }));
 import DeptJobCreateClient from './DeptJobCreateClient';
+import { DeptJobSaveRequestRequestSchema } from '@/types/generated-zod';
 
 describe('DeptJobCreateClient server validation ownership', () => {
   beforeEach(() => {
@@ -48,7 +49,9 @@ describe('DeptJobCreateClient server validation ownership', () => {
     await waitFor(() => expect(mocks.createDeptJob).toHaveBeenCalledTimes(1));
     expect(mocks.createDeptJob).toHaveBeenCalledWith(expect.objectContaining({
       deptTaskNm: '보존할 중복 업무',
+      prrtyRnk: '2',
     }));
+    expect(DeptJobSaveRequestRequestSchema.strict().safeParse(mocks.createDeptJob.mock.calls[0]?.[0]).success).toBe(true);
     expect(submit).toBeDisabled();
     expect(submit).toHaveAttribute('aria-busy', 'true');
 

@@ -3,6 +3,7 @@ package nuri.business.service.memoreport.dto;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 
 /**
@@ -14,34 +15,41 @@ import jakarta.validation.constraints.Size;
 @Schema(description = "메모보고 지시사항 요청")
 public class MemoInstructionRequest {
 
+    public static final String READ_TOKEN_PATTERN = "^[a-f0-9]{64}$";
+
     @Schema(description = "지시사항", minLength = 1, maxLength = 2000)
     @NotBlank
     @Size(min = 1, max = 2000)
     private String drctnMttr;
 
+    @Schema(description = "상세에서 확인한 본문·첨부의 내용 비교 토큰", minLength = 64, maxLength = 64)
+    @NotBlank
+    @Size(min = 64, max = 64)
+    @Pattern(regexp = READ_TOKEN_PATTERN)
+    private String instructionReadToken;
+
     public MemoInstructionRequest() {
     }
 
-    public MemoInstructionRequest(String drctnMttr) {
+    public MemoInstructionRequest(String drctnMttr, String instructionReadToken) {
         this.drctnMttr = drctnMttr;
+        this.instructionReadToken = instructionReadToken;
     }
 
     /**
-     * 기존 application/json 문자열 본문과 신규 객체 본문을 함께 수용한다.
+     * 두 필드가 문자열인 객체만 받는다. 토큰 없는 옛 문자열 요청을 최신 내용으로 보충하지 않는다.
      *
-     * <p>[2026-09-24 ADR-0024] 위임 대상을 {@code Object} 로 둔다. Jackson 2·3 모두 문자열 본문은 {@code String},
-     * 객체 본문은 {@code Map} 으로 넘긴다. 종전 {@code com.fasterxml...JsonNode} 는 Jackson 3 변환기에서 만들 수
-     * 없는 타입이라 500 이었다. 문자열이 아닌 값은 종전처럼 비워 {@code @NotBlank} 가 400 으로 거절한다.
+     * <p>Object 위임으로 JSON 숫자·불린을 문자열로 자동 변환하지 않는다. 잘못된 타입은 비워
+     * {@code @NotBlank} 가 400으로 거절하며 Jackson 3와 호환되지 않는 Jackson 2 JsonNode는 쓰지 않는다.
      */
     @JsonCreator(mode = JsonCreator.Mode.DELEGATING)
     public static MemoInstructionRequest fromJson(Object body) {
-        if (body instanceof String text) {
-            return new MemoInstructionRequest(text);
+        if (body instanceof java.util.Map<?, ?> fields) {
+            return new MemoInstructionRequest(
+                    fields.get("drctnMttr") instanceof String text ? text : null,
+                    fields.get("instructionReadToken") instanceof String token ? token : null);
         }
-        if (body instanceof java.util.Map<?, ?> fields && fields.get("drctnMttr") instanceof String text) {
-            return new MemoInstructionRequest(text);
-        }
-        return new MemoInstructionRequest(null);
+        return new MemoInstructionRequest(null, null);
     }
 
     public String getDrctnMttr() {
@@ -50,5 +58,13 @@ public class MemoInstructionRequest {
 
     public void setDrctnMttr(String drctnMttr) {
         this.drctnMttr = drctnMttr;
+    }
+
+    public String getInstructionReadToken() {
+        return instructionReadToken;
+    }
+
+    public void setInstructionReadToken(String instructionReadToken) {
+        this.instructionReadToken = instructionReadToken;
     }
 }

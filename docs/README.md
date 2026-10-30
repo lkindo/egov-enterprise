@@ -35,6 +35,8 @@
 
 ## 02-architecture — 설계
 
+승인 정책: [ADR-0045](02-architecture/decisions/ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) — 즐겨찾기 정리·입력 검증·메모 지시의 내용 기준.
+
 | 문서 | 내용 |
 |---|---|
 | [backend-architecture.md](02-architecture/backend-architecture.md) | Backend Architecture Blueprint — 멀티모듈 구조·레이어 |

@@ -14,6 +14,7 @@ import nuri.business.domain.file.FileDetailRepository;
 import nuri.business.domain.file.FileMaster;
 import nuri.business.domain.file.FileMasterRepository;
 import nuri.business.service.file.dto.FileDto;
+import nuri.business.service.file.dto.FileReadSnapshot;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.stereotype.Service;
@@ -115,6 +116,29 @@ public class FileService extends BaseAbstractService {
                 .collect(Collectors.toList());
     }
 
+    /** 일반 상세 열람은 부모를 잠그지 않고, 한 번 읽은 첨부 값만 복사한다. */
+    public FileReadSnapshot getReadSnapshot(Long atchFileSn) {
+        if (atchFileSn == null) return FileReadSnapshot.empty();
+        FileMaster master = fileMasterRepository.findById(atchFileSn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        return readSnapshot(master);
+    }
+
+    /** 내용에 결속된 저장은 append/delete와 같은 부모 잠금을 잡은 뒤 현재 값을 비교한다. */
+    @Transactional
+    public FileReadSnapshot getReadSnapshotForUpdate(Long atchFileSn) {
+        if (atchFileSn == null) return FileReadSnapshot.empty();
+        FileMaster master = fileMasterRepository.findByIdForUpdate(atchFileSn)
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        return readSnapshot(master);
+    }
+
+    private FileReadSnapshot readSnapshot(FileMaster master) {
+        accessPolicy.assertReadable(master);
+        return new FileReadSnapshot(fileDetailRepository.findByFileMaster(master).stream()
+                .map(FileReadSnapshot.Entry::from).toList());
+    }
+
     /**
      * 파일 다운로드를 위한 리소스 조회
      */
@@ -157,13 +181,16 @@ public class FileService extends BaseAbstractService {
      */
     @Transactional
     public void deleteFile(Long atchFileSn, Integer fileSn) throws IOException {
+        FileMaster master = fileMasterRepository.findByIdForUpdate(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"))
+                .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
+        // 잠금 대기 중 다른 삭제가 끝날 수 있으므로 상세는 부모 잠금을 얻은 뒤 처음 조회한다.
         FileDetail detail = fileDetailRepository
-                .findByFileMasterAtchFileSnAndAtchFileSeq(required(atchFileSn, "atchFileSn 는 null 일 수 없습니다"),
+                .findByFileMasterAtchFileSnAndAtchFileSeq(master.getAtchFileSn(),
                         required(fileSn, "fileSn 는 null 일 수 없습니다"))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [인가] 삭제는 열람보다 위험하다 — 공유 근거로는 지울 수 없고, 관리자도 개인 귀속 첨부는 지우지 못한다.
         //   HTTP 로 처음 노출되는 경로(2026-09-05 DELETE /files/{atchFileSn}/{fileSn})이므로 저장소를 건드리기 전에 판정한다.
-        accessPolicy.assertDeletable(detail.getFileMaster());
+        accessPolicy.assertDeletable(master);
 
         fileDetailRepository.delete(required(detail, "detail 는 null 일 수 없습니다"));
         scheduleStoredFileDeletion(detail);

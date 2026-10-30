@@ -32,6 +32,8 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 
 class MemoReportApiControllerTest {
 
+    private static final String READ_TOKEN = "a".repeat(64);
+
     private MockMvc mockMvc;
     private MemoReportService memoReportService;
     private ObjectMapper objectMapper = JsonMapper.builder().configureForJackson2().build();
@@ -104,8 +106,17 @@ class MemoReportApiControllerTest {
     @Test
     @DisplayName("메모보고 상세 조회 - 성공")
     void getMemoReport_success() throws Exception {
-        when(memoReportService.getMemoReport(1L)).thenReturn(MemoReportDto.builder().memoRptSn(1L).build());
-        mockMvc.perform(get("/api/v1/memo-reports/1")).andExpect(status().isOk());
+        when(memoReportService.getMemoReport(1L)).thenReturn(MemoReportDto.builder().memoRptSn(1L)
+                .instructionReadToken(READ_TOKEN).attachments(List.of(nuri.business.service.file.dto.FileDto.builder()
+                        .atchFileSn(12L).fileSn(1).orignlFileNm("보고.pdf").fileMg(15L).build())).build());
+        mockMvc.perform(get("/api/v1/memo-reports/1")).andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.instructionReadToken").value(READ_TOKEN))
+                .andExpect(jsonPath("$.data.attachments[0].orignlFileNm").value("보고.pdf"))
+                .andExpect(jsonPath("$.data.attachments[0].fileStrgPath").doesNotExist())
+                .andExpect(jsonPath("$.data.attachments[0].strgFileNm").doesNotExist())
+                .andExpect(jsonPath("$.data.attachments[0].id").doesNotExist());
+        verify(memoReportService).getMemoReport(1L);
+        verifyNoMoreInteractions(memoReportService);
     }
 
     @Test
@@ -128,6 +139,8 @@ class MemoReportApiControllerTest {
                           "drctnMttrRegDt": "2026-09-06T01:00:00",
                           "rptrInqDt": "2026-09-06T02:00:00",
                           "crtDt": "2026-09-06T03:00:00"
+                          ,"instructionReadToken": "forged-token"
+                          ,"attachments": [{"atchFileSn": 99, "fileSn": 1}]
                         }
                         """))
                 .andExpect(status().isCreated())
@@ -145,6 +158,8 @@ class MemoReportApiControllerTest {
         assertNull(dto.getValue().getDrctnMttrRegDt());
         assertNull(dto.getValue().getRptrInqDt());
         assertNull(dto.getValue().getCrtDt());
+        assertNull(dto.getValue().getInstructionReadToken());
+        assertNull(dto.getValue().getAttachments());
     }
 
     @Test
@@ -199,21 +214,20 @@ class MemoReportApiControllerTest {
     void updateDrctMatter_typedJsonSuccess() throws Exception {
         mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
                 .contentType(MediaType.APPLICATION_JSON)
-                .content("""
-                        {"drctnMttr":"Do it now"}
-                        """))
+                .content(objectMapper.writeValueAsString(Map.of("drctnMttr", "Do it now",
+                        "instructionReadToken", READ_TOKEN))))
                 .andExpect(status().isOk());
-        verify(memoReportService).updateDrctMatter(1L, "Do it now");
+        verify(memoReportService).updateDrctMatter(1L, "Do it now", READ_TOKEN);
     }
 
     @Test
-    @DisplayName("지시사항은 공백이 아니고 물리 컬럼 2000자 이하여야 한다")
+    @DisplayName("지시사항은 공백이 아니고 기존 입력 한도 2000자 이하여야 한다")
     void updateDrctMatter_rejectsInvalidTypedJson() throws Exception {
         for (String instruction : new String[]{"   ", "가".repeat(2001)}) {
             mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
                             .contentType(MediaType.APPLICATION_JSON)
                             .content(objectMapper.writeValueAsString(
-                                    java.util.Map.of("drctnMttr", instruction))))
+                                    java.util.Map.of("drctnMttr", instruction, "instructionReadToken", READ_TOKEN))))
                     .andExpect(status().isBadRequest());
         }
 
@@ -221,14 +235,70 @@ class MemoReportApiControllerTest {
     }
 
     @Test
-    @DisplayName("기존 application/json 문자열 지시사항 요청도 호환한다")
-    void updateDrctMatter_legacyJsonStringCompatibility() throws Exception {
+    @DisplayName("기존 application/json 문자열 지시사항 요청은 토큰이 없어 거절한다")
+    void updateDrctMatter_rejectsLegacyJsonString() throws Exception {
         mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString("Legacy JSON instruction")))
-                .andExpect(status().isOk());
+                .andExpect(status().isBadRequest());
 
-        verify(memoReportService).updateDrctMatter(1L, "Legacy JSON instruction");
+        verifyNoInteractions(memoReportService);
+    }
+
+    @Test
+    void updateDrctMatter_acceptsExistingMaximumLength() throws Exception {
+        String instruction = "가".repeat(2000);
+        mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("drctnMttr", instruction,
+                                "instructionReadToken", READ_TOKEN))))
+                .andExpect(status().isOk());
+        verify(memoReportService).updateDrctMatter(1L, instruction, READ_TOKEN);
+    }
+
+    @Test
+    void updateDrctMatter_rejectsNonStringAndNonCanonicalToken() throws Exception {
+        for (Object token : List.of(true, Map.of("token", READ_TOKEN), List.of(READ_TOKEN),
+                "A".repeat(64), "a".repeat(63), "a".repeat(65), READ_TOKEN + "\n", " " + READ_TOKEN)) {
+            mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("drctnMttr", "지시",
+                                    "instructionReadToken", token))))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(memoReportService);
+    }
+
+    @Test
+    void updateDrctMatter_rejectsNonStringInstructionEvenWithValidToken() throws Exception {
+        for (Object instruction : List.of(123, true, Map.of("text", "지시"), List.of("지시"))) {
+            mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                            .content(objectMapper.writeValueAsString(Map.of("drctnMttr", instruction,
+                                    "instructionReadToken", READ_TOKEN))))
+                    .andExpect(status().isBadRequest());
+        }
+        verifyNoInteractions(memoReportService);
+    }
+
+    @Test
+    void updateDrctMatter_preservesRecipientOnlyForbiddenResponse() throws Exception {
+        doThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED))
+                .when(memoReportService).updateDrctMatter(1L, "관리자 지시", READ_TOKEN);
+        mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("drctnMttr", "관리자 지시",
+                                "instructionReadToken", READ_TOKEN))))
+                .andExpect(status().isForbidden());
+    }
+
+    @Test
+    void updateDrctMatter_reportsConflictWithoutReturningCurrentToken() throws Exception {
+        doThrow(new nuri.foundation.core.exception.BusinessException(
+                nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION))
+                .when(memoReportService).updateDrctMatter(1L, "지시", READ_TOKEN);
+        mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn").contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(Map.of("drctnMttr", "지시",
+                                "instructionReadToken", READ_TOKEN))))
+                .andExpect(status().isConflict())
+                .andExpect(jsonPath("$.instructionReadToken").doesNotExist());
     }
 
     @Test
@@ -236,5 +306,22 @@ class MemoReportApiControllerTest {
     void deleteMemoReport_success() throws Exception {
         mockMvc.perform(delete("/api/v1/memo-reports/1")).andExpect(status().isOk());
         verify(memoReportService).deleteMemoReport(1L);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {
+            "\"Legacy JSON instruction\"",
+            "{\"drctnMttr\":\"Do it now\"}",
+            "{\"drctnMttr\":\"Do it now\",\"instructionReadToken\":null}",
+            "{\"drctnMttr\":\"Do it now\",\"instructionReadToken\":123}",
+            "{\"drctnMttr\":\"Do it now\",\"instructionReadToken\":1111111111111111111111111111111111111111111111111111111111111111}",
+            "{\"drctnMttr\":\"Do it now\",\"instructionReadToken\":\"abc\"}"
+    })
+    @DisplayName("읽은 본문·첨부를 확인할 토큰 없는 지시는 저장하지 않는다")
+    void instructionRequiresAWellFormedReadToken(String body) throws Exception {
+        mockMvc.perform(patch("/api/v1/memo-reports/1/instr-cn")
+                        .contentType(MediaType.APPLICATION_JSON).content(body))
+                .andExpect(status().isBadRequest());
+        verifyNoInteractions(memoReportService);
     }
 }

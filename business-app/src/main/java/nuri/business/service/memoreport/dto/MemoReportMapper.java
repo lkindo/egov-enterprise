@@ -18,6 +18,8 @@ public interface MemoReportMapper {
 
     @Mapping(target = "wrterNm", ignore = true)
     @Mapping(target = "rptrNm", ignore = true)
+    @Mapping(target = "instructionReadToken", ignore = true)
+    @Mapping(target = "attachments", ignore = true)
     MemoReportDto toDto(MemoReport entity);
 
     MemoReport toEntity(MemoReportDto dto);

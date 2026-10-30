@@ -5,6 +5,7 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.response.PageResponse;
 import nuri.business.service.promotion.popup.PopupService;
 import nuri.business.service.promotion.popup.dto.PopupDto;
+import nuri.business.service.promotion.popup.dto.PopupSaveRequest;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.Parameter;
 import io.swagger.v3.oas.annotations.tags.Tag;
@@ -49,8 +50,8 @@ public class PopupApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.admin.content.popup.PopupApiController#createPopup')")
     public ResponseEntity<ApiResponse<Long>> createPopup(
             @AuthenticationPrincipal UserDetails userDetails,
-            @Valid @RequestBody PopupDto popupDto) {
-        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(popupService.createPopup(userDetails.getUsername(), popupDto)));
+            @Valid @RequestBody PopupSaveRequest popupDto) {
+        return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(popupService.createPopup(userDetails.getUsername(), popupDto.toDto())));
     }
 
     @Operation(summary = "팝업 정보 수정", description = "기존 팝업의 정보를 수정합니다.")
@@ -59,8 +60,8 @@ public class PopupApiController {
     public ResponseEntity<ApiResponse<Void>> updatePopup(
             @AuthenticationPrincipal UserDetails userDetails,
             @Parameter(description = "팝업 일련번호") @PathVariable Long popupSn,
-            @Valid @RequestBody PopupDto popupDto) {
-        popupService.updatePopup(popupSn, userDetails.getUsername(), popupDto);
+            @Valid @RequestBody PopupSaveRequest popupDto) {
+        popupService.updatePopup(popupSn, userDetails.getUsername(), popupDto.toDto());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

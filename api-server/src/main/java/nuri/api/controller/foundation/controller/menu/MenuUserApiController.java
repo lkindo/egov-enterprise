@@ -5,19 +5,25 @@ import nuri.foundation.core.response.ApiResponse;
 import nuri.business.security.annotation.LoginUser;
 import nuri.business.service.menu.MenuBookmarkService;
 import nuri.business.service.menu.MenuService;
+import nuri.business.service.menu.dto.MenuBookmarkCleanupRequest;
+import nuri.business.service.menu.dto.MenuBookmarkCleanupResult;
 import nuri.business.service.menu.dto.MenuBookmarkDto;
+import nuri.business.service.menu.dto.MenuBookmarkStatusDto;
 import nuri.business.service.menu.dto.MenuDto;
 import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
 import io.swagger.v3.oas.annotations.tags.Tag;
 import lombok.RequiredArgsConstructor;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import java.util.List;
@@ -59,6 +65,23 @@ public class MenuUserApiController {
     public ResponseEntity<ApiResponse<List<MenuBookmarkDto>>> getMyBookmarks(
             @LoginUser CustomUserDetails userDetails) {
         return ResponseEntity.ok(ApiResponse.success(menuBookmarkService.getMyBookmarks(userDetails.getUsername())));
+    }
+
+    @Operation(summary = "내 즐겨찾기 사용 상태", description = "볼 수 있는 목록과 서버가 숨긴 항목 수를 반환하며 저장된 즐겨찾기를 삭제하지 않습니다.")
+    @GetMapping("/bookmarks/status")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#getMyBookmarkStatus')")
+    public ResponseEntity<ApiResponse<MenuBookmarkStatusDto>> getMyBookmarkStatus(
+            @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(menuBookmarkService.getMyBookmarkStatus(userDetails.getUsername())));
+    }
+
+    @Operation(summary = "사용할 수 없는 내 즐겨찾기 정리", description = "본인이 확인한 권한·개수·후보에 맞을 때만 정리합니다. 상태가 달라지면 409로 거부합니다.")
+    @PostMapping("/bookmarks/cleanup")
+    @PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.foundation.controller.menu.MenuUserApiController#cleanupUnavailableBookmarks')")
+    public ResponseEntity<ApiResponse<MenuBookmarkCleanupResult>> cleanupUnavailableBookmarks(
+            @Valid @RequestBody MenuBookmarkCleanupRequest request,
+            @LoginUser CustomUserDetails userDetails) {
+        return ResponseEntity.ok(ApiResponse.success(menuBookmarkService.cleanupUnavailableBookmarks(userDetails.getUsername(), request)));
     }
 
     @Operation(summary = "메뉴 즐겨찾기 추가", description = "지금 볼 수 있는 메뉴를 내 즐겨찾기에 더합니다. 이미 있으면 그대로 둡니다. 30개를 넘으면 409 입니다.")

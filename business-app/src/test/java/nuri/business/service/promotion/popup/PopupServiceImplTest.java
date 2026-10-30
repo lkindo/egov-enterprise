@@ -557,6 +557,93 @@ class PopupServiceImplTest {
                         .map(identity -> Arguments.of(operation, identity)));
     }
 
+    static Stream<Arguments> invalidSavedDimensions() {
+        return Stream.of("width", "height").flatMap(field ->
+                Stream.of("", " ", "99", "4001", "0100", "100.0", "+100", "1e3", "100\n", "100\r\n")
+                        .map(value -> Arguments.of(field, value)));
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidSavedDimensions")
+    void invalidDimensionsDoNotCreateOrClaimAttachments(String field, String value) {
+        authenticate("POPUP_CREATE");
+        PopupDto request = PopupDto.builder().popupTtlNm("변경").fileUrl("/api/v1/files/999")
+                .popupWdthSz("width".equals(field) ? value : "400")
+                .popupVrtcSz("height".equals(field) ? value : "300").build();
+
+        assertThatThrownBy(() -> popupService.createPopup("operator", request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        verifyNoInteractions(popupRepository, attachmentAssignmentPolicy);
+    }
+
+    @ParameterizedTest
+    @MethodSource("invalidSavedDimensions")
+    void invalidDimensionsLeaveAnExistingPopupAndAuditUnchanged(String field, String value) {
+        authenticate("POPUP_UPDATE");
+        Popup existing = Popup.builder().popupSn(1L).popupTtlNm("기존").fileUrl("/api/v1/files/101")
+                .popupWdthSz("400").popupVrtcSz("300").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        existing.setLastMdfrId("previous");
+        given(popupRepository.findById(1L)).willReturn(Optional.of(existing));
+        PopupDto request = PopupDto.builder().popupTtlNm("변경").fileUrl("/api/v1/files/999").version(0)
+                .popupWdthSz("width".equals(field) ? value : "400")
+                .popupVrtcSz("height".equals(field) ? value : "300").build();
+
+        assertThatThrownBy(() -> popupService.updatePopup(1L, "operator", request))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(existing.getPopupTtlNm()).isEqualTo("기존");
+        assertThat(existing.getFileUrl()).isEqualTo("/api/v1/files/101");
+        assertThat(existing.getPopupWdthSz()).isEqualTo("400");
+        assertThat(existing.getPopupVrtcSz()).isEqualTo("300");
+        assertThat(existing.getVersion()).isZero();
+        assertThat(existing.getLastMdfrId()).isEqualTo("previous");
+        verify(popupRepository, never()).save(any());
+        verifyNoInteractions(attachmentAssignmentPolicy);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"100", "999", "1000", "3999", "4000"})
+    void canonicalDimensionsAndNullKeepTheirValuesOnCreateAndUpdate(String value) {
+        authenticate("POPUP_CREATE", "POPUP_UPDATE");
+        given(popupRepository.save(any(Popup.class))).willAnswer(invocation -> invocation.getArgument(0));
+        PopupDto request = PopupDto.builder().popupTtlNm("유효").popupWdthSz(value).popupVrtcSz(value).version(0).build();
+
+        popupService.createPopup("operator", request);
+
+        var saved = org.mockito.ArgumentCaptor.forClass(Popup.class);
+        verify(popupRepository).save(saved.capture());
+        assertThat(saved.getValue().getPopupWdthSz()).isEqualTo(value);
+        assertThat(saved.getValue().getPopupVrtcSz()).isEqualTo(value);
+        Popup existing = Popup.builder().popupSn(1L).popupTtlNm("기존").popupWdthSz("0100").popupVrtcSz("5000").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(existing, "version", 0);
+        given(popupRepository.findById(1L)).willReturn(Optional.of(existing));
+        popupService.updatePopup(1L, "operator", request);
+        assertThat(existing.getPopupWdthSz()).isEqualTo(value);
+        assertThat(existing.getPopupVrtcSz()).isEqualTo(value);
+        verifyNoInteractions(attachmentAssignmentPolicy);
+    }
+
+    @Test
+    void legacyDimensionsAreStillReturnedByReadOperations() {
+        Popup existing = Popup.builder().popupSn(1L).popupTtlNm("기존").popupWdthSz("0100").popupVrtcSz("5000").build();
+        given(popupRepository.findById(1L)).willReturn(Optional.of(existing));
+        given(popupRepository.findAll(any(Pageable.class))).willReturn(new PageImpl<>(List.of(existing)));
+
+        assertThat(popupService.getPopup(1L).getPopupWdthSz()).isEqualTo("0100");
+        assertThat(popupService.getPopupList(null, PageRequest.of(0, 10)).getContent().getFirst().getPopupVrtcSz()).isEqualTo("5000");
+    }
+
+    @Test
+    void invalidDimensionsStillRequireTheExactWritePermission() {
+        authenticate();
+        PopupDto request = PopupDto.builder().popupTtlNm("변경").popupWdthSz("99").version(0).build();
+
+        assertDenied(() -> popupService.createPopup("operator", request));
+        assertDenied(() -> popupService.updatePopup(1L, "operator", request));
+        verifyNoInteractions(popupRepository, attachmentAssignmentPolicy);
+    }
+
     private static void authenticateDeniedIdentity(String identity, String operation) {
         switch (identity) {
             case "NO_AUTHENTICATION" -> SecurityContextHolder.clearContext();

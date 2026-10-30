@@ -22,6 +22,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+vi.unmock('@/app/components/ui/confirm-modal');
 import { LayoutProvider } from '@/contexts/LayoutContext';
 import {
   SIDEBAR_COLLAPSE_SCRIPT,
@@ -32,8 +33,9 @@ import {
 } from '@/lib/layout/sidebar-collapse-script';
 import { setSidebarCollapsed } from '@/lib/layout/use-sidebar-collapsed';
 import { Sidebar } from '../sidebar';
+import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
 
-const menu = vi.hoisted(() => ({ getHeadMenus: vi.fn(), getLeftMenus: vi.fn(), getMyBookmarks: vi.fn() }));
+const menu = vi.hoisted(() => ({ getHeadMenus: vi.fn(), getLeftMenus: vi.fn(), getMyBookmarkStatus: vi.fn() }));
 vi.mock('@/services/business/user/MenuService', () => ({ menuService: menu }));
 vi.mock('@/contexts/AuthContext', () => ({
   useAuth: () => ({ user: { id: 'u', groups: ['USER'], permissions: [], authorizationVersion: 'v1' } }),
@@ -44,10 +46,10 @@ function renderSidebar() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
   return render(
     <QueryClientProvider client={client}>
-      <LayoutProvider>
+      <ConfirmProvider><LayoutProvider>
         <Sidebar />
         <main id="main-content" tabIndex={-1}>본문</main>
-      </LayoutProvider>
+      </LayoutProvider></ConfirmProvider>
     </QueryClientProvider>,
   );
 }
@@ -60,7 +62,7 @@ describe('사이드바 경계선 접기·펼치기 단추', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     menu.getHeadMenus.mockResolvedValue([]);
-    menu.getMyBookmarks.mockResolvedValue([]);
+    menu.getMyBookmarkStatus.mockResolvedValue({ bookmarks: [], unavailableCount: 0 });
     window.localStorage.clear();
     html().removeAttribute(SIDEBAR_COLLAPSED_ATTRIBUTE);
   });

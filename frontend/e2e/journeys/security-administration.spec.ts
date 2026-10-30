@@ -123,6 +123,142 @@ test.describe('권한 변경과 충돌 제어', () => {
         expect(response.status(), '임시 사용자 그룹 배정 변경').toBe(200);
         return membership(request, headers, userId);
     }
+    test('즐겨찾기는 권한 회수 때 보존되고 모바일 확인 후에만 정리된다', async ({ adminRequest, actorPage, playwright, baseURL }) => {
+        if (!baseURL || !['localhost', '127.0.0.1', '[::1]'].includes(new URL(baseURL).hostname)) {
+            throw new Error('Bookmark fixtures require the isolated loopback E2E stack.');
+        }
+        const suffix = randomBytes(4).toString('hex');
+        const userId = `e2e_bm_${suffix}`;
+        const groupCode = `E2E_BM_${suffix.toUpperCase()}`;
+        const password = `Bookmark1!${randomBytes(16).toString('hex')}`;
+        const loginRequest = await playwright.request.newContext({ baseURL, ...anonymousCsrfRequestState(baseURL) });
+        let groupCreated = false;
+        let userCreated = false;
+        let actor: Awaited<ReturnType<typeof actorPage>> | undefined;
+        let menuNo: number | undefined;
+        let primaryFailure: unknown;
+        try {
+            const createdGroup = await adminRequest.post(`${AUTHORIZATION}/groups`, {
+                data: { code: groupCode, name: `즐겨찾기 검증 ${suffix}`, description: '이 시험만 사용하는 그룹' },
+            });
+            groupCreated = createdGroup.ok();
+            expect(createdGroup.status()).toBe(201);
+            const createdUser = await adminRequest.post(USERS, {
+                data: { userId, pswd: password, userNm: '즐겨찾기 검증 사용자', role: 'USER' },
+            });
+            userCreated = createdUser.ok();
+            expect(createdUser.status()).toBe(201);
+            expect((await loginRequest.post('/api/v1/auth/login', { data: { userId, password } })).status()).toBe(200);
+            const me = await data<CurrentUser>(await loginRequest.get('/api/v1/auth/me'), '즐겨찾기 사용자 확인');
+            expect(me.id).toBe(userId);
+            expect(me.esntlId).not.toBe(userId);
+            const catalog = await data<{ navigation: Navigation[] }>(await adminRequest.get(`${AUTHORIZATION}/catalog`), '메뉴 카탈로그');
+            const leaf = catalog.navigation.find(entry => entry.route === '/admin/system/menus' && entry.useYn !== 'N');
+            if (!leaf) throw new Error('The canonical menu management leaf is missing.');
+            menuNo = Number(leaf.code);
+            expect(Number.isSafeInteger(menuNo) && menuNo > 0).toBe(true);
+            const navigation: Grant[] = [];
+            const visited = new Set<string>();
+            let node: Navigation | undefined = leaf;
+            while (node) {
+                if (visited.has(node.code)) throw new Error('Navigation catalog contains a cycle.');
+                visited.add(node.code);
+                navigation.push({ type: 'NAVIGATION', code: node.code });
+                if (!node.parentCode) break;
+                const parentCode: string = node.parentCode;
+                node = catalog.navigation.find(entry => entry.code === parentCode);
+                if (!node) throw new Error('Navigation catalog has a missing ancestor.');
+            }
+            const grants: Grant[] = [{ type: 'OPERATION', code: 'MENU_READ' }, ...navigation];
+            const hiddenGrants = grants.filter(grant => grant.type !== 'NAVIGATION' || grant.code !== leaf.code);
+            await replaceGrants(adminRequest, {}, groupCode, grants);
+            await replaceGroups(adminRequest, {}, me.esntlId, [groupCode]);
+            actor = await actorPage({ storageState: await loginRequest.storageState(), viewport: { width: 1440, height: 1000 } });
+            const actorBrowser = actor.page;
+            await actorBrowser.goto('/admin/system/menus');
+            const sidebar = actorBrowser.getByRole('navigation', { name: '주 메뉴 탐색', exact: true });
+            const toggle = sidebar.getByRole('button', { name: `${leaf.name} 즐겨찾기`, exact: true });
+            const added = actorBrowser.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/menus/bookmarks/${menuNo}` && response.request().method() === 'PUT');
+            await toggle.click();
+            expect((await added).status()).toBe(200);
+            await expect(toggle).toHaveAttribute('aria-pressed', 'true');
+            const favorites = actorBrowser.getByRole('group', { name: '즐겨찾기', exact: true });
+            await expect(favorites.getByRole('link', { name: leaf.name, exact: true })).toBeVisible();
+            type BookmarkStatus = { bookmarks: { menuNo: number; menuNm: string }[]; unavailableCount: number };
+            const status = () => loginRequest.get('/api/v1/menus/bookmarks/status').then(response => data<BookmarkStatus>(response, '즐겨찾기 상태'));
+
+            await replaceGrants(adminRequest, {}, groupCode, hiddenGrants);
+            await actorBrowser.reload();
+            expect(await status()).toEqual({ bookmarks: [], unavailableCount: 1 });
+            await expect(favorites.getByRole('link', { name: leaf.name, exact: true })).toHaveCount(0);
+            await expect(favorites).toContainText('사용할 수 없는 즐겨찾기 1개가 보관되어 있습니다.');
+            await replaceGrants(adminRequest, {}, groupCode, grants);
+            await actorBrowser.reload();
+            await expect(favorites.getByRole('link', { name: leaf.name, exact: true })).toBeVisible();
+            expect((await status()).unavailableCount).toBe(0);
+
+            await replaceGrants(adminRequest, {}, groupCode, hiddenGrants);
+            await actorBrowser.reload();
+            await actorBrowser.setViewportSize({ width: 390, height: 844 });
+            await actorBrowser.getByRole('button', { name: '주 메뉴 열기', exact: true }).click();
+            const cleanup = favorites.getByRole('button', { name: '사용할 수 없는 즐겨찾기 정리', exact: true });
+            let cleanupRequests = 0;
+            actorBrowser.on('request', request => {
+                if (new URL(request.url()).pathname === '/api/v1/menus/bookmarks/cleanup' && request.method() === 'POST') cleanupRequests++;
+            });
+            await cleanup.click();
+            const confirmation = actorBrowser.getByRole('dialog', { name: '사용할 수 없는 즐겨찾기 정리', exact: true });
+            await expect(confirmation).toBeVisible();
+            await expect(confirmation.getByRole('button', { name: '취소', exact: true })).toBeFocused();
+            await test.info().attach('bookmark-cleanup-mobile', { body: await actorBrowser.screenshot(), contentType: 'image/png' });
+            await actorBrowser.keyboard.press('Escape');
+            await expect(confirmation).toHaveCount(0);
+            await expect(sidebar).toBeVisible();
+            await expect(cleanup).toBeFocused();
+            expect((await status()).unavailableCount).toBe(1);
+            expect(cleanupRequests).toBe(0);
+            await cleanup.click();
+            const cleaned = actorBrowser.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/bookmarks/cleanup' && response.request().method() === 'POST');
+            await confirmation.getByRole('button', { name: '정리하기', exact: true }).click();
+            expect((await cleaned).status()).toBe(200);
+            expect(cleanupRequests).toBe(1);
+            expect(await status()).toEqual({ bookmarks: [], unavailableCount: 0 });
+            await replaceGrants(adminRequest, {}, groupCode, grants);
+            await actorBrowser.setViewportSize({ width: 1440, height: 1000 });
+            await actorBrowser.reload();
+            await expect(toggle).toHaveAttribute('aria-pressed', 'false');
+            const readded = actorBrowser.waitForResponse(response => new URL(response.url()).pathname === `/api/v1/menus/bookmarks/${menuNo}` && response.request().method() === 'PUT');
+            await toggle.click();
+            expect((await readded).status()).toBe(200);
+            await expect(favorites.getByRole('link', { name: leaf.name, exact: true })).toBeVisible();
+        } catch (error) {
+            primaryFailure = error;
+            throw error;
+        } finally {
+            const cleanupFailures: unknown[] = [];
+            if (actor) {
+                try { await collectPageCoverage(actor.page); } catch (error) { cleanupFailures.push(error); }
+                try { await actor.context.close(); } catch (error) { cleanupFailures.push(error); }
+            }
+            if (menuNo !== undefined) {
+                try { expect((await loginRequest.delete(`/api/v1/menus/bookmarks/${menuNo}`)).status()).toBe(200); }
+                catch (error) { cleanupFailures.push(error); }
+            }
+            if (userCreated) {
+                try { expect((await adminRequest.delete(`${USERS}/${userId}`)).status()).toBe(200); }
+                catch (error) { cleanupFailures.push(error); }
+            }
+            if (groupCreated) {
+                try {
+                    const current = await group(adminRequest, {}, groupCode);
+                    expect((await adminRequest.delete(`${AUTHORIZATION}/groups/${groupCode}`, { params: { version: current.version } })).status()).toBe(200);
+                } catch (error) { cleanupFailures.push(error); }
+            }
+            await loginRequest.dispose();
+            if (cleanupFailures.length) throw new AggregateError(primaryFailure === undefined ? cleanupFailures : [primaryFailure, ...cleanupFailures], 'Bookmark fixture cleanup failed');
+        }
+    });
+
     type DepartmentMember = Membership & {
         loginId: string;
         userName: string;

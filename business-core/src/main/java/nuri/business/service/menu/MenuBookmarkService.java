@@ -1,18 +1,24 @@
 package nuri.business.service.menu;
 
 import java.util.Collection;
+import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import lombok.RequiredArgsConstructor;
 import nuri.business.domain.menu.BkmkMenu;
 import nuri.business.domain.menu.BkmkMenuRepository;
 import nuri.business.domain.menu.Menu;
 import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.user.repository.UserRepository;
+import nuri.business.security.authorization.AuthorizationSnapshotService;
 import nuri.business.security.util.SecurityUtil;
+import nuri.business.service.menu.dto.MenuBookmarkCleanupRequest;
+import nuri.business.service.menu.dto.MenuBookmarkCleanupResult;
 import nuri.business.service.menu.dto.MenuBookmarkDto;
+import nuri.business.service.menu.dto.MenuBookmarkStatusDto;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import org.springframework.stereotype.Service;
@@ -37,19 +43,30 @@ public class MenuBookmarkService {
     private final MenuRepository menuRepository;
     private final MenuService menuService;
     private final UserRepository userRepository;
+    private final AuthorizationSnapshotService authorizationSnapshotService;
 
     public List<MenuBookmarkDto> getMyBookmarks(String esntlId) {
         SecurityUtil.assertOwnerByEsntlId(esntlId);
+        return loadBookmarkStatus(esntlId).bookmarks();
+    }
+
+    public MenuBookmarkStatusDto getMyBookmarkStatus(String esntlId) {
+        SecurityUtil.assertOwnerByEsntlId(esntlId);
+        return loadBookmarkStatus(esntlId);
+    }
+
+    private MenuBookmarkStatusDto loadBookmarkStatus(String esntlId) {
         List<BkmkMenu> rows = bkmkMenuRepository.findByIdUserIdOrderByCrtDtAsc(Objects.requireNonNull(esntlId));
         if (rows.isEmpty()) {
-            return List.of();
+            return new MenuBookmarkStatusDto(List.of(), 0);
         }
         Map<Long, Menu> visible = visibleMenus(rows.stream().map(row -> row.getId().getMenuId()).toList());
-        return rows.stream()
+        List<MenuBookmarkDto> bookmarks = rows.stream()
                 .map(row -> visible.get(row.getId().getMenuId()))
                 .filter(Objects::nonNull)
                 .map(menu -> new MenuBookmarkDto(menu.getMenuSn(), menu.getMenuNm()))
                 .toList();
+        return new MenuBookmarkStatusDto(bookmarks, rows.size() - bookmarks.size());
     }
 
     @Transactional
@@ -65,7 +82,7 @@ public class MenuBookmarkService {
         }
         if (bkmkMenuRepository.countByIdUserId(esntlId) >= MAX_BOOKMARKS) {
             throw new BusinessException(CommonErrorCode.RESOURCE_IN_USE,
-                    "즐겨찾기는 " + MAX_BOOKMARKS + "개까지 둘 수 있습니다. 쓰지 않는 즐겨찾기를 빼 주세요.");
+                    "즐겨찾기는 " + MAX_BOOKMARKS + "개까지 둘 수 있습니다. 사이드바 즐겨찾기에서 사용할 수 없는 항목을 정리하거나 기존 즐겨찾기를 빼 주세요.");
         }
         bkmkMenuRepository.save(BkmkMenu.create(id, menu.getMenuNm(), null));
     }
@@ -77,6 +94,50 @@ public class MenuBookmarkService {
         bkmkMenuRepository.deleteById(new BkmkMenu.BkmkMenuId(Objects.requireNonNull(menuNo), Objects.requireNonNull(esntlId)));
     }
 
+    /** 본인이 확인한 서버 숨김 개수와 화면 후보가 현재 상태와 맞을 때만 한 번에 정리한다. */
+    @Transactional
+    public MenuBookmarkCleanupResult cleanupUnavailableBookmarks(String esntlId, MenuBookmarkCleanupRequest request) {
+        lockBookmarkOwner(esntlId);
+        validateCleanupRequest(request);
+        // A principal can become stale while waiting for the owner row. Re-read both version and groups after the lock.
+        var snapshot = authorizationSnapshotService.load(esntlId);
+        if (!snapshot.authorizationVersion().equals(request.expectedAuthorizationVersion())) {
+            throw changedBookmarks();
+        }
+        List<BkmkMenu> rows = bkmkMenuRepository.findByIdUserIdOrderByCrtDtAsc(esntlId);
+        Map<Long, Menu> visible = rows.isEmpty() ? Map.of()
+                : visibleMenus(rows.stream().map(row -> row.getId().getMenuId()).toList(),
+                        menuService.allowedMenuIdsForGroups(snapshot.groups()));
+        Set<Long> uiUnavailable = new HashSet<>(request.uiUnavailableMenuNos());
+        if (rows.size() - visible.size() != request.expectedServerUnavailableCount()
+                || !visible.keySet().containsAll(uiUnavailable)) {
+            throw changedBookmarks();
+        }
+        // Only entities loaded through the owner query are deleted. No caller-supplied ID can widen the owner scope.
+        List<BkmkMenu> removed = rows.stream()
+                .filter(row -> !visible.containsKey(row.getId().getMenuId()) || uiUnavailable.contains(row.getId().getMenuId()))
+                .toList();
+        if (!removed.isEmpty()) {
+            bkmkMenuRepository.deleteAll(removed);
+        }
+        return new MenuBookmarkCleanupResult(removed.size());
+    }
+
+    private static void validateCleanupRequest(MenuBookmarkCleanupRequest request) {
+        if (request == null || request.expectedAuthorizationVersion() == null
+                || request.expectedAuthorizationVersion().isBlank() || request.expectedAuthorizationVersion().length() > 64
+                || request.expectedServerUnavailableCount() == null || request.expectedServerUnavailableCount() < 0
+                || request.uiUnavailableMenuNos() == null || request.uiUnavailableMenuNos().size() > MAX_BOOKMARKS
+                || request.uiUnavailableMenuNos().stream().anyMatch(menuNo -> menuNo == null || menuNo <= 0)
+                || new HashSet<>(request.uiUnavailableMenuNos()).size() != request.uiUnavailableMenuNos().size()) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "정리할 즐겨찾기를 다시 확인해 주세요.");
+        }
+    }
+
+    private static BusinessException changedBookmarks() {
+        return new BusinessException(CommonErrorCode.CONCURRENT_MODIFICATION, "즐겨찾기 상태가 변경되었습니다. 다시 확인해 주세요.");
+    }
+
     private void lockBookmarkOwner(String esntlId) {
         SecurityUtil.assertOwnerByEsntlId(esntlId);
         // Existing user row serializes count + insert and removal even when no bookmarks exist yet.
@@ -86,7 +147,10 @@ public class MenuBookmarkService {
     }
 
     private Map<Long, Menu> visibleMenus(Collection<Long> menuNos) {
-        java.util.Set<Long> allowed = menuService.allowedMenuIdsForCurrentUser();
+        return visibleMenus(menuNos, menuService.allowedMenuIdsForCurrentUser());
+    }
+
+    private Map<Long, Menu> visibleMenus(Collection<Long> menuNos, Set<Long> allowed) {
         Map<Long, Menu> result = new LinkedHashMap<>();
         menuRepository.findAllById(menuNos).forEach(menu -> {
             if (allowed.contains(menu.getMenuSn()) && "Y".equals(menu.getUseYn())) {

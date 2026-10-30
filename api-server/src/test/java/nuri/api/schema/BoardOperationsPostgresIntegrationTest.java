@@ -5,7 +5,10 @@ import nuri.business.domain.board.BoardSearchCondition;
 import nuri.business.domain.board.BoardSearchResult;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardPostPinRequest;
+import nuri.business.service.board.dto.BoardSaveRequest;
 import nuri.business.service.board.dto.PostingStatus;
+import nuri.business.service.file.FileService;
+import nuri.business.domain.file.FileDetailRepository;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
 import nuri.foundation.security.service.CustomUserDetails;
@@ -14,15 +17,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowCallbackHandler;
+import org.springframework.mock.web.MockMultipartFile;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.DynamicPropertyRegistry;
+import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
 
@@ -39,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Supplier;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * 게시판 운영 관리 B 배치(ADR-0040)의 질의를 실제 PostgreSQL 에서 본다. B1 — 게시 기간(시작일·종료일) 집행과 게시 기준일
@@ -59,11 +69,17 @@ import static org.assertj.core.api.Assertions.assertThat;
  * <p>고유한 게시판 ID 로 행을 넣고 시험마다 지운다. 질의 시험의 기준일은 고정값(2026-10-23)을 넘긴다.
  */
 @Tag("schema-validation")
-@SpringBootTest
+@SpringBootTest(properties = "nuri.durable-work.enabled=false")
 @Import(AuthorizationSchemaRehearsalTestConfiguration.class)
 @ActiveProfiles({"test", "tc"})
 @DisplayName("게시판 운영 질의(PostgreSQL) — 게시 기간 집행과 게시 기준일 정렬")
 class BoardOperationsPostgresIntegrationTest {
+
+    @TempDir static java.nio.file.Path storageRoot;
+    @DynamicPropertySource
+    static void storage(DynamicPropertyRegistry properties) {
+        properties.add("file.upload.path", () -> storageRoot.toString());
+    }
 
     private static final String TODAY = "20261023";
 
@@ -71,6 +87,10 @@ class BoardOperationsPostgresIntegrationTest {
     @Autowired private BoardService boardService;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
+    @Autowired private javax.sql.DataSource dataSource;
+    @Autowired private FileService files;
+    @Autowired private FileDetailRepository fileDetails;
+    private Long attachment;
 
     private String bbsId;
     /** 예약 글 작성자 — 게시글의 user_id 는 사용자 표를 가리키므로(FK) 실제 사용자 행을 둔다. 나머지 글은 작성자를 비운다. */
@@ -107,6 +127,10 @@ class BoardOperationsPostgresIntegrationTest {
         jdbc.update("DELETE FROM tb_bbs_chg_hstry WHERE bbs_id = ?", bbsId);
         jdbc.update("DELETE FROM tb_bbs_item WHERE bbs_id = ?", bbsId);
         jdbc.update("DELETE FROM tb_bbs_master WHERE bbs_id = ?", bbsId);
+        if (attachment != null) {
+            jdbc.update("DELETE FROM tb_file_detail WHERE atch_file_sn = ?", attachment);
+            jdbc.update("DELETE FROM tb_file_master WHERE atch_file_sn = ?", attachment);
+        }
         jdbc.update("DELETE FROM tb_user_info WHERE esntl_id = ?", author);
     }
 
@@ -308,6 +332,95 @@ class BoardOperationsPostgresIntegrationTest {
 
     /** 추천·취소 시험의 주체 권한 — 서비스는 operation 권한을 다시 보지 않으므로 표시용이다. */
     private static final List<String> LIKE_PERMISSIONS = List.of("BOARD_LIKE");
+
+    @ParameterizedTest
+    @ValueSource(strings = {"commit", "rollback", "optimistic-conflict"})
+    void actualMultipartAppendWaitsOnFileMasterAndCommitOrRollbackKeepsRowsAndStorageConsistent(String outcome) throws Exception {
+        boolean rollback = !outcome.equals("commit");
+        var principal = CustomUserDetails.builder().userId(author).esntlId(author).enabled(true)
+                .groups(List.of()).permissions(List.of("BOARD_UPDATE")).build();
+        var authentication = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
+        SecurityContextHolder.getContext().setAuthentication(authentication);
+        attachment = files.uploadBoardFiles(List.of(new MockMultipartFile("files", "initial.txt", "text/plain", "initial".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+        var initial = fileDetails.findByFileMasterAtchFileSnAndAtchFileSeq(attachment, 1).orElseThrow();
+        java.nio.file.Path directory = storageRoot.resolve(initial.getFileStrgPath());
+        long post = pstSn("A");
+        jdbc.update("UPDATE tb_bbs_master SET file_atch_psblty_yn='Y', atch_psblty_file_qty=5 WHERE bbs_id=?", bbsId);
+        jdbc.update("UPDATE tb_bbs_item SET user_id=?, frst_rgtr_id=?, atch_file_sn=? WHERE pst_sn=?", author, author, attachment, post);
+        var before = jdbc.queryForMap("SELECT * FROM tb_bbs_item WHERE pst_sn=?", post);
+        var expectedRow = new java.util.concurrent.atomic.AtomicReference<>(before);
+        int version = ((Number) before.get("version")).intValue();
+        var request = new BoardSaveRequest(bbsId, "with appended file", "new body", null, null, null,
+                null, null, null, "N", "Y", null, version);
+        var appendedPath = new java.util.concurrent.atomic.AtomicReference<java.nio.file.Path>();
+        String application = "board-multipart-" + author;
+        try (var blocker = dataSource.getConnection(); var executor = Executors.newSingleThreadExecutor()) {
+            blocker.setAutoCommit(false);
+            int blockerPid;
+            try (var query = blocker.createStatement(); var row = query.executeQuery("SELECT pg_backend_pid()")) {
+                row.next(); blockerPid = row.getInt(1);
+            }
+            try (var lock = blocker.prepareStatement("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE")) {
+                lock.setLong(1, attachment); lock.executeQuery().close();
+            }
+            var writing = executor.submit(() -> {
+                SecurityContextHolder.getContext().setAuthentication(authentication);
+                try {
+                    new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        try {
+                            boardService.updatePostWithFiles(bbsId, post, request,
+                                    List.of(new MockMultipartFile("files", "appended.txt", "text/plain", "appended".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
+                        } catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+                        // Capture the new physical object before flushing the later Board @Version update.
+                        try (var stored = java.nio.file.Files.list(directory)) {
+                            appendedPath.set(stored.filter(path -> !path.getFileName().toString().equals(initial.getStrgFileNm()))
+                                    .findFirst().orElseThrow());
+                        } catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+                        assertThat(appendedPath.get()).hasContent("appended");
+                        fileDetails.flush();
+                        if (outcome.equals("rollback")) status.setRollbackOnly();
+                    });
+                } finally { SecurityContextHolder.clearContext(); }
+            });
+            try {
+                long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
+                boolean waiting;
+                do {
+                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
+                            + "WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock' "
+                            + "AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')",
+                            Boolean.class, application, blockerPid));
+                    if (!waiting && writing.isDone()) writing.get();
+                    if (!waiting) Thread.sleep(20);
+                } while (!waiting && System.nanoTime() < deadline);
+                assertThat(waiting).as("actual BoardService multipart append waits before adding file metadata").isTrue();
+                assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_file_detail WHERE atch_file_sn=?", Long.class, attachment)).isEqualTo(1);
+                if (outcome.equals("optimistic-conflict")) {
+                    jdbc.update("UPDATE tb_bbs_item SET version=version+1, pst_ttl='concurrent title' WHERE pst_sn=?", post);
+                    expectedRow.set(jdbc.queryForMap("SELECT * FROM tb_bbs_item WHERE pst_sn=?", post));
+                }
+            } finally { blocker.rollback(); }
+            if (outcome.equals("optimistic-conflict")) {
+                assertThatThrownBy(() -> writing.get(20, TimeUnit.SECONDS))
+                        .hasCauseInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
+            } else {
+                writing.get(20, TimeUnit.SECONDS);
+            }
+        }
+        assertThat(storageRoot.resolve(initial.getFileStrgPath()).resolve(initial.getStrgFileNm())).hasContent("initial");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_file_detail WHERE atch_file_sn=?", Long.class, attachment))
+                .isEqualTo(rollback ? 1 : 2);
+        if (rollback) {
+            assertThat(jdbc.queryForMap("SELECT * FROM tb_bbs_item WHERE pst_sn=?", post)).isEqualTo(expectedRow.get());
+            assertThat(appendedPath.get()).doesNotExist();
+        } else {
+            assertThat(jdbc.queryForMap("SELECT pst_ttl, pst_cn, version, atch_file_sn FROM tb_bbs_item WHERE pst_sn=?", post))
+                    .containsEntry("pst_ttl", "with appended file").containsEntry("pst_cn", "new body")
+                    .containsEntry("version", version + 1).containsEntry("atch_file_sn", attachment);
+            assertThat(appendedPath.get()).hasContent("appended");
+        }
+    }
 
     private RuntimeException attempt(Runnable action) {
         return attempt(List.of("BOARD_PIN"), action);

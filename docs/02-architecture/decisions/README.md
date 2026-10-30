@@ -51,3 +51,4 @@
 | [ADR-0042](ADR-0042-cms-operations-follow-up.md) | 콘텐츠 페이지 운영 보완 — 초안·게시 판정 분리, 내려받기 파일 칸, 게시 중지 상태, 초안 삭제·사고 대응 파기(V2_143), 안내 페이지 목록 | Accepted |
 | [ADR-0043](ADR-0043-board-publish-flow-and-designated-boards.md) | 게시판 공개 동선 — 메뉴와 분리한 생성, 사용 전환으로 공개, 공개 준비 기준(찾는 길 하나 이상), 지정 게시판 영구 삭제 거부, 템플릿 기준 화면 유형 이름 | Accepted |
 | [ADR-0044](ADR-0044-ci-tuning-values-and-pit-scope-floors.md) | CI 튜닝값(슬롯 수·PIT 선언 순서)은 ci.yml·실측 profile 이 정본, PIT 범위별 하한, api-server 의 PIT 선별 유지 | Accepted |
+| [ADR-0045](ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) | 즐겨찾기 기본 보존·명시적 정리, 부서 업무 우선순위·팝업 크기의 엄격 저장, 읽은 메모 본문·첨부 기준 지시 | Accepted |

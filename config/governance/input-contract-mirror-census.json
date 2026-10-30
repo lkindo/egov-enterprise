@@ -5,8 +5,8 @@
     "lengthFields": 269,
     "enumFields": 37,
     "nestedValidationFields": 13,
-    "requiredFields": 107,
-    "readOnlyFields": 42,
+    "requiredFields": 108,
+    "readOnlyFields": 44,
     "calendarDateFields": 19
   },
   "lengthBindings": [
@@ -23,7 +23,7 @@
     },
     {
       "entity": "nuri.business.domain.promotion.popup.Popup",
-      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupSaveRequest",
       "fields": [
         "popupTtlNm",
         "fileUrl",
@@ -313,7 +313,7 @@
     },
     {
       "entity": "nuri.business.domain.deptjob.DeptJob",
-      "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
+      "dto": "nuri.business.service.deptjob.dto.DeptJobSaveRequest",
       "fields": [
         "deptTaskNm",
         "deptTaskCn",
@@ -739,7 +739,7 @@
       ]
     },
     {
-      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupSaveRequest",
       "field": "stopvewSetupYn",
       "allowedValues": [
         "Y",
@@ -747,7 +747,7 @@
       ]
     },
     {
-      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupSaveRequest",
       "field": "ntceYn",
       "allowedValues": [
         "Y",
@@ -1090,7 +1090,7 @@
       ]
     },
     {
-      "dto": "nuri.business.service.promotion.popup.dto.PopupDto",
+      "dto": "nuri.business.service.promotion.popup.dto.PopupSaveRequest",
       "fields": [
         {
           "field": "popupTtlNm",
@@ -1524,7 +1524,7 @@
       ]
     },
     {
-      "dto": "nuri.business.service.deptjob.dto.DeptJobDto",
+      "dto": "nuri.business.service.deptjob.dto.DeptJobSaveRequest",
       "fields": []
     },
     {
@@ -1748,6 +1748,11 @@
           "field": "drctnMttr",
           "constraint": "NotBlank",
           "groups": []
+        },
+        {
+          "field": "instructionReadToken",
+          "constraint": "NotBlank",
+          "groups": []
         }
       ]
     },
@@ -1962,7 +1967,9 @@
         "rptrInqDt",
         "crtDt",
         "editable",
-        "deletable"
+        "deletable",
+        "instructionReadToken",
+        "attachments"
       ]
     },
     {

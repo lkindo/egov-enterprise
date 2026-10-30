@@ -154,6 +154,8 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
         try {
             await deptJobPage.gotoJobCreate();
             await deptJobPage.jobNameInput.fill(name);
+            await page.getByRole('combobox', { name: '우선 순위', exact: true }).click();
+            await page.getByRole('option', { name: /높음/ }).press('Enter');
             await page.getByRole('button', { name: '업무 등록' }).click();
             // 서버가 채번한 식별자로 상세에 착지해야 한다.
             await expect(page, '등록 후 DB 채번 일련번호의 상세로 이동해야 한다').toHaveURL(/\/smart-toolkit\/dept-job\/\d+/, { timeout: 30000 });
@@ -162,6 +164,9 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             // 상세 화면이 '전달받은 id 의' 업무를 보여준다(목록 복제본이 아니다).
             await expect(page.getByText(name).first()).toBeVisible({ timeout: 30000 });
             await expect(page.getByText(String(deptTaskSn)).first(), '상세에 식별자가 표시되어야 한다').toBeVisible();
+            const stored = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+            expect(stored.status()).toBe(200);
+            expect((await stored.json()).data.prrtyRnk).toBe('1');
         }
         finally {
             // 방금 착지한 업무 상세를 먼저 떠난 뒤 지운다 — 열린 상세의 재조회가 지운 업무를 404 로 받으면 브라우저 오류 감시가
@@ -169,8 +174,10 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             try {
                 await page.goto('about:blank');
             } finally {
-                if (deptTaskSn)
-                    await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+                if (deptTaskSn) {
+                    const cleanup = await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+                    expect(cleanup.status(), '이 시험이 만든 업무를 정리한다').toBe(200);
+                }
             }
         }
     });
@@ -191,8 +198,13 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             await expect(deptJobPage.jobNameInput).toHaveValue(name, { timeout: 20000 });
             const editedName = `${name}_edited`;
             await deptJobPage.jobNameInput.fill(editedName);
+            await page.getByRole('combobox', { name: '우선 순위', exact: true }).click();
+            await page.getByRole('option', { name: /낮음/ }).press('Enter');
             await page.getByRole('button', { name: '수정 저장' }).click();
             await expect(page.getByText(editedName).first(), '수정 결과가 상세에 반영되어야 한다').toBeVisible({ timeout: 30000 });
+            const stored = await request.get(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+            expect(stored.status()).toBe(200);
+            expect((await stored.json()).data.prrtyRnk).toBe('3');
             // 삭제 — useConfirm 확인 후 목록으로 되돌아간다.
             await page.getByRole('button', { name: '삭제' }).click();
             await deptJobPage.confirmDialogButton('삭제').click();
@@ -202,8 +214,14 @@ test.describe('부서 업무 ↔ 업무 보고 사슬', () => {
             deleted = true;
         }
         finally {
-            if (!deleted)
-                await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+            try {
+                await page.goto('about:blank');
+            } finally {
+                if (!deleted) {
+                    const cleanup = await request.delete(`${JOB_API}/${deptTaskSn}`, { headers: auth });
+                    expect(cleanup.status(), '이 시험이 만든 업무를 정리한다').toBe(200);
+                }
+            }
         }
     });
 });

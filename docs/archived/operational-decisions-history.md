@@ -2347,6 +2347,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-390 | accepted | 기억에만 남던 반복 실패를 기계로 막는 배치를 한 결정으로 묶는다(2026-10-29 사용자 요청 "근본적으로 해결", 결정 위임). ① pre-push 의 Vitest 세 단계(불변식·원문 계약·cross-stack)는 실패가 모두 Vitest 시간 초과일 때만 그 파일을 단독으로 한 번 다시 돈다 — 단언·모듈·처리되지 않은 오류·중단과 재실행 실패는 막고, CI·`vitest.config` 에는 재시도를 두지 않으며 15초 예산도 그대로다. ② ci.yml 업로드는 성질로 나눈다 — 뒤 잡이 받거나 `if-no-files-found: error` 인 업로드는 `continue-on-error` 를 쓰지 않고, 그 밖의 보관·진단 업로드는 `continue-on-error: true` 다. ③ 로컬 프런트 타입 게이트는 `next typegen` 뒤 tsc(`type-check`)이고 next dev 사본 `.next/dev` 는 tsconfig 에서 뺀다. ④ PR CI 대기는 `scripts/pr-checks-wait.mjs` 로 하고 손으로 짠 폴링·`gh pr checks --watch` 를 쓰지 않는다. | 같은 실패가 기억·SOP 문장으로만 막혀 되풀이됐다 — 다른 오퍼레이터·IDE 부하의 Vitest 시간 초과 거짓 red(2026-10-28·29, 매번 재푸시 약 20분), PIT 는 통과했는데 보고서 업로드 ENOTFOUND 로 붉은 required mutation-test(run 40858521948, upload-artifact 는 DNS·연결 오류를 재시도하지 않는다), 낡은 build·dev 라우트 타입 사본이 낸 로컬 TS2344(2026-10-29), jq 부재·늦게 등록되는 집계 체크로 틀린 CI 대기(2026-09-04·09-24·10-28·10-29). 동기 시험의 시간 초과는 단언이 모두 통과한 뒤 늦었다는 뜻이고 비동기 시험은 결과 미정이라 단독 재실행만이 판정한다. DEC-OPS-386 ③ 의 집행이다. | [시간 초과 재실행](../../scripts/vitest-timeout-rerun.mjs), [업로드 분류 계약](../../scripts/required-checks-contract.mjs), [훅 계약](../../scripts/pre-push-ref-contract.test.mjs), [CI 대기 도구](../../scripts/pr-checks-wait.mjs), [SOP §6.3](../03-guides/orchestration-protocol.md#63-무거운-검증은-하나씩) | 2026-10-29 | - |
 
+## DEC-OPS-392
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-392 | accepted | 도메인 개선의 사용자 정책 선택을 한 배치로 확정한다. 즐겨찾기는 기본 보존하고 본인이 명시적으로 정리한다. 부서 업무 우선순위·팝업 크기는 기존 비정규 값도 관련 저장 시 정정하도록 엄격 검증한다. 메모 지시는 읽은 본문·첨부 기준으로 저장한다. 추가 이관 DBMS 대상은 없다. 상세 범위·호환성과 정합성 보장은 ADR-0045를 따른다. | 2026-10-30 사용자가 순차 실행을 요청하고 네 정책 질문에 직접 답했다. 스키마·메타 표준·운영 데이터 변경 승인은 포함하지 않는다. | [ADR-0045](../02-architecture/decisions/ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) | 2026-10-30 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

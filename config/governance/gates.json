@@ -807,6 +807,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/DeptJobReassignmentConcurrencyIntegrationTest.java"
         },
         {
+          "id": "DB-POPUP-INPUT-POLICY",
+          "source": "api-server/src/test/java/nuri/api/schema/PopupInputPolicyIntegrationTest.java"
+        },
+        {
           "id": "DB-SCHEDULE-CALENDAR-QUERY",
           "source": "api-server/src/test/java/nuri/api/schema/ScheduleCalendarQueryIntegrationTest.java"
         },

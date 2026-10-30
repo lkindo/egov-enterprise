@@ -8,6 +8,7 @@ import nuri.business.service.deptjob.DeptJobBoxService;
 import nuri.business.service.deptjob.DeptJobService;
 import nuri.business.service.deptjob.dto.DeptJobBoxDto;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.business.service.deptjob.dto.DeptJobSaveRequest;
 import nuri.business.security.annotation.LoginUser;
 import nuri.foundation.security.service.CustomUserDetails;
 import io.swagger.v3.oas.annotations.Operation;
@@ -158,8 +159,8 @@ public class DeptJobApiController {
     @PostMapping
     @org.springframework.web.bind.annotation.ResponseStatus(org.springframework.http.HttpStatus.CREATED)
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#createDeptJob')")
-    public ResponseEntity<ApiResponse<Long>> createDeptJob(@Valid @RequestBody DeptJobDto dto) {
-        Long newSn = deptJobService.createDeptJob(dto);
+    public ResponseEntity<ApiResponse<Long>> createDeptJob(@Valid @RequestBody DeptJobSaveRequest dto) {
+        Long newSn = deptJobService.createDeptJob(dto.toDto());
         return ResponseEntity.status(org.springframework.http.HttpStatus.CREATED).body(ApiResponse.created(newSn));
     }
 
@@ -168,8 +169,8 @@ public class DeptJobApiController {
     @org.springframework.security.access.prepost.PreAuthorize("@permissionPolicy.allowed(authentication, 'nuri.api.controller.business.smarttoolkit.DeptJobApiController#updateDeptJob')")
     public ResponseEntity<ApiResponse<Void>> updateDeptJob(
             @PathVariable Long deptTaskSn,
-            @Valid @RequestBody DeptJobDto dto) {
-        deptJobService.updateDeptJob(deptTaskSn, dto);
+            @Valid @RequestBody DeptJobSaveRequest dto) {
+        deptJobService.updateDeptJob(deptTaskSn, dto.toDto());
         return ResponseEntity.ok(ApiResponse.success(null));
     }
 

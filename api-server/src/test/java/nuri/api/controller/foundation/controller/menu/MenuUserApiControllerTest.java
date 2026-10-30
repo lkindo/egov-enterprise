@@ -91,6 +91,94 @@ class MenuUserApiControllerTest {
     }
 
     @Test
+    @DisplayName("즐겨찾기 정리는 확인한 권한·개수·후보가 없는 요청을 저장 전에 거부한다")
+    void cleanupRequiresAnExplicitValidatedConfirmation() throws Exception {
+        String version = "a".repeat(64);
+        for (String body : java.util.List.of(
+                "{}",
+                "{\"expectedAuthorizationVersion\":\"\",\"expectedServerUnavailableCount\":0,\"uiUnavailableMenuNos\":[]}",
+                "{\"expectedAuthorizationVersion\":\"" + version + "\",\"expectedServerUnavailableCount\":-1,\"uiUnavailableMenuNos\":[]}",
+                "{\"expectedAuthorizationVersion\":\"" + version + "\",\"expectedServerUnavailableCount\":0,\"uiUnavailableMenuNos\":null}",
+                "{\"expectedAuthorizationVersion\":\"" + version + "\",\"expectedServerUnavailableCount\":0,\"uiUnavailableMenuNos\":[null]}")) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/menus/bookmarks/cleanup")
+                    .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                    .content(body))
+                    .andExpect(status().isBadRequest());
+        }
+        org.mockito.Mockito.verifyNoInteractions(menuBookmarkService);
+    }
+
+    @Test
+    void statusReturnsVisibleBookmarksAndOnlyTheUnavailableCount() throws Exception {
+        given(menuBookmarkService.getMyBookmarkStatus("USR_STAFF_0001"))
+                .willReturn(new nuri.business.service.menu.dto.MenuBookmarkStatusDto(java.util.List.of(
+                        new nuri.business.service.menu.dto.MenuBookmarkDto(10L, "공지")), 2));
+
+        var response = mockMvc.perform(get("/api/v1/menus/bookmarks/status").param("esntlId", "OTHER"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.bookmarks[0].menuNo").value(10))
+                .andExpect(jsonPath("$.data.bookmarks[0].menuNm").value("공지"))
+                .andExpect(jsonPath("$.data.unavailableCount").value(2))
+                .andReturn().getResponse().getContentAsString();
+
+        var data = tools.jackson.databind.json.JsonMapper.builder().build().readTree(response).get("data");
+        org.assertj.core.api.Assertions.assertThat(data.propertyNames()).containsExactlyInAnyOrder("bookmarks", "unavailableCount");
+        org.assertj.core.api.Assertions.assertThat(data.get("bookmarks").get(0).propertyNames())
+                .containsExactlyInAnyOrder("menuNo", "menuNm");
+        org.mockito.Mockito.verify(menuBookmarkService).getMyBookmarkStatus("USR_STAFF_0001");
+    }
+
+    @Test
+    void cleanupBindsTheConfirmedRequestToTheAuthenticatedOwner() throws Exception {
+        var request = new nuri.business.service.menu.dto.MenuBookmarkCleanupRequest("a".repeat(64), 2, java.util.List.of(10L));
+        given(menuBookmarkService.cleanupUnavailableBookmarks("USR_STAFF_0001", request))
+                .willReturn(new nuri.business.service.menu.dto.MenuBookmarkCleanupResult(3));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/menus/bookmarks/cleanup")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"expectedAuthorizationVersion\":\"" + "a".repeat(64)
+                                + "\",\"expectedServerUnavailableCount\":2,\"uiUnavailableMenuNos\":[10],\"esntlId\":\"OTHER\"}"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.data.removedCount").value(3));
+
+        org.mockito.Mockito.verify(menuBookmarkService).cleanupUnavailableBookmarks("USR_STAFF_0001", request);
+    }
+
+    @Test
+    void cleanupKeepsServerConflictStatus() throws Exception {
+        var request = new nuri.business.service.menu.dto.MenuBookmarkCleanupRequest("a".repeat(64), 1, java.util.List.of());
+        given(menuBookmarkService.cleanupUnavailableBookmarks("USR_STAFF_0001", request))
+                .willThrow(new nuri.foundation.core.exception.BusinessException(
+                        nuri.foundation.core.exception.CommonErrorCode.CONCURRENT_MODIFICATION,
+                        "즐겨찾기 상태가 변경되었습니다. 다시 확인해 주세요."));
+
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/menus/bookmarks/cleanup")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"expectedAuthorizationVersion\":\"" + "a".repeat(64)
+                                + "\",\"expectedServerUnavailableCount\":1,\"uiUnavailableMenuNos\":[]}"))
+                .andExpect(status().isConflict());
+    }
+
+    @Test
+    void cleanupRejectsDuplicateNonPositiveAndOversizedCandidatesBeforeService() throws Exception {
+        var oversized = java.util.stream.LongStream.rangeClosed(1, 31).mapToObj(Long::toString)
+                .collect(java.util.stream.Collectors.joining(",", "[", "]"));
+        for (String candidates : java.util.List.of("[10,10]", "[0]", "[-1]", oversized)) {
+            mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/menus/bookmarks/cleanup")
+                            .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                            .content("{\"expectedAuthorizationVersion\":\"" + "a".repeat(64)
+                                    + "\",\"expectedServerUnavailableCount\":0,\"uiUnavailableMenuNos\":" + candidates + "}"))
+                    .andExpect(status().isBadRequest());
+        }
+        mockMvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post("/api/v1/menus/bookmarks/cleanup")
+                        .contentType(org.springframework.http.MediaType.APPLICATION_JSON)
+                        .content("{\"expectedAuthorizationVersion\":\"" + "a".repeat(65)
+                                + "\",\"expectedServerUnavailableCount\":0,\"uiUnavailableMenuNos\":[]}"))
+                .andExpect(status().isBadRequest());
+        org.mockito.Mockito.verifyNoInteractions(menuBookmarkService);
+    }
+
+    @Test
     @DisplayName("GNB 메인 메뉴 목록 조회 성공")
     void getHeadMenu_Success() throws Exception {
         given(menuService.getMenuHierarchy()).willReturn(new ArrayList<>());

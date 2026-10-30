@@ -53,6 +53,9 @@ class MemoReportServiceTest {
     private AttachmentAssignmentPolicy attachmentAssignmentPolicy;
 
     @Mock
+    private nuri.business.service.file.FileService fileService;
+
+    @Mock
     private org.springframework.context.ApplicationEventPublisher eventPublisher;
 
     @org.mockito.Spy
@@ -71,6 +74,322 @@ class MemoReportServiceTest {
 
     /** 서비스가 정렬 없는 요청에 넣는 기본 정렬. 아래 테스트들은 이미 정렬된 요청을 보내 위임만 본다. */
     private static final Sort NEWEST_FIRST = Sort.by(Sort.Direction.DESC, "memoRptSn");
+
+    private MemoReport readableReport(Long attachmentId) {
+        MemoReport report = MemoReport.builder().memoRptSn(1L).userId("writer").rptrId("recipient")
+                .rptTtl("제목").rptCn("읽은 본문").memoRptYmd("20261030").atchFileSn(attachmentId).build();
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("recipient"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("FILE_READ"))
+                .thenReturn(true);
+        return report;
+    }
+
+    private nuri.business.service.file.dto.FileReadSnapshot snapshot(java.util.UUID identity, String filename) {
+        return new nuri.business.service.file.dto.FileReadSnapshot(List.of(
+                new nuri.business.service.file.dto.FileReadSnapshot.Entry(identity, 15L, 1,
+                        "private-uuid.pdf", "private/path", filename, "pdf", 100L, "설명", null)));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"FILE_READ", "FILE_READ_ALL"})
+    void singleDetailReadReturnsFirstReadAndMatchingImmutableAttachmentToken(String filePermission) {
+        MemoReport report = readableReport(15L);
+        allowFileReadOnly(filePermission);
+        var snapshot = snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf");
+        given(fileService.getReadSnapshot(15L)).willReturn(snapshot);
+        given(fileService.getReadSnapshotForUpdate(15L)).willReturn(snapshot);
+
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+        assertThat(detail.getRptrInqDt()).isEqualTo(report.getRptrInqDt()).isNotNull();
+        assertThat(detail.getInstructionReadToken()).matches("[a-f0-9]{64}");
+        assertThat(detail.getAttachments()).extracting(nuri.business.service.file.dto.FileDto::getOrignlFileNm)
+                .containsExactly("읽은첨부.pdf");
+        verify(fileService).getReadSnapshot(15L);
+        verify(fileService, org.mockito.Mockito.never()).getReadSnapshotForUpdate(any());
+
+        memoReportService.updateDrctMatter(1L, "확인한 내용 지시", detail.getInstructionReadToken());
+        assertThat(report.getDrctnMttr()).isEqualTo("확인한 내용 지시");
+        verify(eventPublisher).publishEvent(any(Object.class));
+    }
+
+    private void allowFileReadOnly(String permission) {
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("FILE_READ"))
+                .thenReturn("FILE_READ".equals(permission));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("FILE_READ_ALL"))
+                .thenReturn("FILE_READ_ALL".equals(permission));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"writer", "recipient"})
+    void attachedReportWithoutFileReadPermissionKeepsBodyButDoesNotExposeMetadataOrToken(String actor) {
+        MemoReport report = readableReport(15L);
+        allowFileReadOnly(null);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of(actor));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT"))
+                .thenReturn(true);
+
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+
+        assertThat(detail.getRptCn()).isEqualTo("읽은 본문");
+        assertThat(detail.getAttachments()).isNull();
+        assertThat(detail.getInstructionReadToken()).isNull();
+        assertThat(detail.getInstructable()).isEqualTo(actor.equals("recipient"));
+        if (actor.equals("recipient")) assertThat(report.getRptrInqDt()).isNotNull();
+        else assertThat(report.getRptrInqDt()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
+
+    @Test
+    void attachedReportWithoutFileReadPermissionCannotAcceptEvenWellFormedToken() {
+        MemoReport report = readableReport(15L);
+        allowFileReadOnly(null);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "지시", "a".repeat(64)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThat(report.getDrctnMttr()).isNull();
+        assertThat(report.getDrctnMttrRegDt()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"FILE_READ", "FILE_READ_ALL"})
+    void revokingFileReadPermissionInvalidatesAlreadyIssuedTokenWithoutSideEffects(String permission) {
+        MemoReport report = readableReport(15L);
+        allowFileReadOnly(permission);
+        given(fileService.getReadSnapshot(15L)).willReturn(snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf"));
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        report.updateDrctMatter("기존 지시", java.time.LocalDateTime.of(2026, 10, 1, 9, 0));
+        allowFileReadOnly(null);
+        org.mockito.Mockito.clearInvocations(fileService);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "새 지시", token))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThat(report.getDrctnMttr()).isEqualTo("기존 지시");
+        assertThat(report.getDrctnMttrRegDt()).isEqualTo(java.time.LocalDateTime.of(2026, 10, 1, 9, 0));
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+        assertThat(detail.getInstructionReadToken()).isNull();
+        assertThat(detail.getAttachments()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
+
+    @Test
+    void reportWithoutAttachmentDoesNotRequireFileOperationPermissionToReadOrInstruct() {
+        MemoReport report = readableReport(null);
+        allowFileReadOnly(null);
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+        assertThat(detail.getAttachments()).isEmpty();
+        assertThat(detail.getInstructionReadToken()).matches("[a-f0-9]{64}");
+        assertThat(detail.getRptrInqDt()).isNotNull();
+
+        memoReportService.updateDrctMatter(1L, "첨부 없는 본문 지시", detail.getInstructionReadToken());
+        assertThat(report.getDrctnMttr()).isEqualTo("첨부 없는 본문 지시");
+        org.mockito.Mockito.verifyNoInteractions(fileService);
+        verify(eventPublisher).publishEvent(any(Object.class));
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"rptTtl", "rptCn", "memoRptYmd", "memoRptSn", "atchFileSn"})
+    void changedReportContentRejectsInstructionWithoutMutationOrNotification(String changedField) {
+        MemoReport report = readableReport(null);
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        report.updateDrctMatter("기존 지시", java.time.LocalDateTime.of(2026, 10, 1, 9, 0));
+        Object changedValue = switch (changedField) {
+            case "memoRptSn" -> 2L;
+            case "atchFileSn" -> 15L;
+            case "memoRptYmd" -> "20261031";
+            default -> "바뀐 내용";
+        };
+        if (changedField.equals("atchFileSn")) {
+            given(fileService.getReadSnapshotForUpdate(15L))
+                    .willReturn(new nuri.business.service.file.dto.FileReadSnapshot(List.of()));
+        }
+        org.springframework.test.util.ReflectionTestUtils.setField(report, changedField, changedValue);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "새 지시", token))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(report.getDrctnMttr()).isEqualTo("기존 지시");
+        assertThat(report.getDrctnMttrRegDt()).isEqualTo(java.time.LocalDateTime.of(2026, 10, 1, 9, 0));
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"append", "delete", "replace-identity", "rename"})
+    void sameGroupAttachmentChangesRejectInstruction(String change) {
+        MemoReport report = readableReport(15L);
+        var oldSnapshot = snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf");
+        given(fileService.getReadSnapshot(15L)).willReturn(oldSnapshot);
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        var newSnapshot = switch (change) {
+            case "delete" -> new nuri.business.service.file.dto.FileReadSnapshot(List.of());
+            case "append" -> new nuri.business.service.file.dto.FileReadSnapshot(List.of(
+                    oldSnapshot.files().getFirst(), snapshot(java.util.UUID.randomUUID(), "추가.pdf").files().getFirst()));
+            case "rename" -> snapshot(oldSnapshot.files().getFirst().id(), "바뀐첨부.pdf");
+            default -> snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf");
+        };
+        given(fileService.getReadSnapshotForUpdate(15L)).willReturn(newSnapshot);
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "새 지시", token))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(report.getDrctnMttr()).isNull();
+        assertThat(report.getDrctnMttrRegDt()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void attachmentOrderAndReadAuditDoNotInvalidateToken() {
+        MemoReport report = readableReport(15L);
+        var first = snapshot(java.util.UUID.randomUUID(), "하나.pdf").files().getFirst();
+        var second = snapshot(java.util.UUID.randomUUID(), "둘.pdf").files().getFirst();
+        given(fileService.getReadSnapshot(15L)).willReturn(
+                new nuri.business.service.file.dto.FileReadSnapshot(List.of(first, second)));
+        given(fileService.getReadSnapshotForUpdate(15L)).willReturn(
+                new nuri.business.service.file.dto.FileReadSnapshot(List.of(second, first)));
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        report.updateInqireDt(java.time.LocalDateTime.of(2026, 10, 30, 10, 0));
+        memoReportService.updateDrctMatter(1L, "첫 지시", token);
+        memoReportService.updateDrctMatter(1L, "변경 지시", token);
+        assertThat(report.getDrctnMttr()).isEqualTo("변경 지시");
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"id", "sequence", "storedName", "path", "originalName", "extension", "size", "description"})
+    void everyImmutableAttachmentIdentityAndMetadataValueParticipatesInComparison(String field) {
+        MemoReport report = readableReport(15L);
+        var original = snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf");
+        given(fileService.getReadSnapshot(15L)).willReturn(original);
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        var file = original.files().getFirst();
+        var changed = new nuri.business.service.file.dto.FileReadSnapshot.Entry(
+                field.equals("id") ? java.util.UUID.randomUUID() : file.id(), file.atchFileSn(),
+                field.equals("sequence") ? 2 : file.atchFileSeq(),
+                field.equals("storedName") ? "replacement.pdf" : file.strgFileNm(),
+                field.equals("path") ? "another/path" : file.fileStrgPath(),
+                field.equals("originalName") ? "정정.pdf" : file.orgnlFileNm(),
+                field.equals("extension") ? "txt" : file.fileEstn(),
+                field.equals("size") ? 101L : file.fileSz(),
+                field.equals("description") ? "바뀐 설명" : file.fileCn(), file.crtDt());
+        given(fileService.getReadSnapshotForUpdate(15L)).willReturn(
+                new nuri.business.service.file.dto.FileReadSnapshot(List.of(changed)));
+
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "새 지시", token))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.CONCURRENT_MODIFICATION);
+        assertThat(report.getDrctnMttr()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @Test
+    void attachmentAuditTimeDoesNotInvalidateAnOtherwiseIdenticalSnapshot() {
+        readableReport(15L);
+        var original = snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf");
+        given(fileService.getReadSnapshot(15L)).willReturn(original);
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        var file = original.files().getFirst();
+        var auditOnly = new nuri.business.service.file.dto.FileReadSnapshot.Entry(file.id(), file.atchFileSn(),
+                file.atchFileSeq(), file.strgFileNm(), file.fileStrgPath(), file.orgnlFileNm(), file.fileEstn(),
+                file.fileSz(), file.fileCn(), java.time.LocalDateTime.of(2026, 10, 30, 13, 0));
+        given(fileService.getReadSnapshotForUpdate(15L)).willReturn(
+                new nuri.business.service.file.dto.FileReadSnapshot(List.of(auditOnly)));
+        memoReportService.updateDrctMatter(1L, "지시", token);
+        verify(eventPublisher).publishEvent(any(Object.class));
+    }
+
+    @Test
+    void tokenPreservesFieldBoundariesNullsAndExactUnicodeContent() {
+        MemoReport report = readableReport(null);
+        java.util.Set<String> tokens = new java.util.HashSet<>();
+        for (String[] content : new String[][]{{"ab", "c"}, {"a", "bc"}, {"제목", null},
+                {"제목", ""}, {"제목", "본문"}, {"제목", "본문 "}, {"제목", "가"}, {"제목", "가"}}) {
+            org.springframework.test.util.ReflectionTestUtils.setField(report, "rptTtl", content[0]);
+            org.springframework.test.util.ReflectionTestUtils.setField(report, "rptCn", content[1]);
+            tokens.add(memoReportService.getMemoReport(1L).getInstructionReadToken());
+        }
+        assertThat(tokens).hasSize(8);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"", "   ", "\n"})
+    void blankInstructionWithValidTokenDoesNotTouchAttachments(String instruction) {
+        MemoReport report = readableReport(15L);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, instruction, "a".repeat(64)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(report.getDrctnMttr()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
+
+    @Test
+    void overlongInstructionIsRejectedAtServiceBoundary() {
+        MemoReport report = readableReport(15L);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "가".repeat(2001), "a".repeat(64)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(report.getDrctnMttr()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"FILE_READ", "FILE_READ_ALL"})
+    void readAllAdminGetsBodyWithoutPrivateAttachmentsOrRecipientToken(String filePermission) {
+        readableReport(15L);
+        allowFileReadOnly(filePermission);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("admin"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_READ_ALL"))
+                .thenReturn(true);
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+        assertThat(detail.getRptCn()).isEqualTo("읽은 본문");
+        assertThat(detail.getAttachments()).isNull();
+        assertThat(detail.getInstructionReadToken()).isNull();
+        assertThat(detail.getRptrInqDt()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
+
+    @Test
+    void authorReadsAuthorizedSnapshotWithoutRecipientTokenOrReadTimestamp() {
+        MemoReport report = readableReport(15L);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of("writer"));
+        given(fileService.getReadSnapshot(15L)).willReturn(snapshot(java.util.UUID.randomUUID(), "작성자첨부.pdf"));
+
+        MemoReportDto detail = memoReportService.getMemoReport(1L);
+        assertThat(detail.getAttachments()).extracting(nuri.business.service.file.dto.FileDto::getOrignlFileNm)
+                .containsExactly("작성자첨부.pdf");
+        assertThat(detail.getInstructionReadToken()).isNull();
+        assertThat(report.getRptrInqDt()).isNull();
+        verify(fileService).getReadSnapshot(15L);
+        org.mockito.Mockito.verifyNoMoreInteractions(fileService);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"FILE_READ", "FILE_READ_ALL"})
+    void recipientAttachmentAccessFailureDoesNotReturnFalseEmptySnapshotOrSaveInstruction(String permission) {
+        MemoReport report = readableReport(15L);
+        allowFileReadOnly(permission);
+        given(fileService.getReadSnapshot(15L)).willThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED));
+        given(fileService.getReadSnapshotForUpdate(15L)).willThrow(new BusinessException(CommonErrorCode.ACCESS_DENIED));
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.getMemoReport(1L))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "지시", "a".repeat(64)))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThat(report.getDrctnMttr()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"", "a", "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA", "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa\n"})
+    void invalidReadTokenFailsBeforeAttachmentOrMutation(String token) {
+        MemoReport report = readableReport(15L);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "지시", token))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(report.getDrctnMttr()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
+    }
 
     @ParameterizedTest
     @org.junit.jupiter.params.provider.ValueSource(strings = {"missing", "A", "D"})
@@ -143,6 +462,11 @@ class MemoReportServiceTest {
         assertThat(result.getContent().getFirst().getRptrNm()).isEqualTo("보고 수신자");
         assertThat(result.getContent().get(1).getRptrNm()).isEqualTo(scope.equals("received") ? "보고 수신자" : null);
         assertThat(result.getContent().get(1).getRptrId()).isEqualTo(second.getRptrId());
+        assertThat(result.getContent()).allSatisfy(dto -> {
+            assertThat(dto.getAttachments()).isNull();
+            assertThat(dto.getInstructionReadToken()).isNull();
+        });
+        org.mockito.Mockito.verifyNoInteractions(fileService);
         verify(userDisplayNameLookup).findDisplayNames(argThat(ids -> ids.size() == 3
                 && ids.containsAll(List.of("esntl-writer", "esntl-reader", "esntl-deleted"))));
         org.mockito.Mockito.verifyNoMoreInteractions(userDisplayNameLookup);
@@ -152,7 +476,7 @@ class MemoReportServiceTest {
     @DisplayName("메모보고 상세는 참여자 인가 뒤 이름을 보강한다")
     void detailParticipantNamesPreserveIdentifiersAndPermissionHints() {
         MemoReport report = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-reader").build();
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(report));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(report));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-reader"));
         given(userDisplayNameLookup.findDisplayNames(anyCollection())).willReturn(Map.of("esntl-writer", "작성자"));
@@ -291,7 +615,7 @@ class MemoReportServiceTest {
         // given — 참여자 축은 esntlId(userId/rptrId)다. loginId(frstRgtrId)가 아니다.
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-me").build();
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
@@ -309,7 +633,7 @@ class MemoReportServiceTest {
         // given
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-owner").rptrId("esntl-receiver").build();
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-stranger"));
 
@@ -325,7 +649,7 @@ class MemoReportServiceTest {
         // given
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-owner").rptrId("esntl-me").build();
-        given(memoReportRepository.findById(memoRptSn)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(memoRptSn)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
@@ -523,10 +847,11 @@ class MemoReportServiceTest {
                 .thenReturn(Optional.of("esntl-writer"));
 
         BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
-                () -> memoReportService.updateDrctMatter(1L, "작성자가 덮어쓴 지시"));
+                () -> memoReportService.updateDrctMatter(1L, "작성자가 덮어쓴 지시", null));
 
         assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
         assertThat(entity.getDrctnMttr()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
     }
 
     @Test
@@ -553,7 +878,7 @@ class MemoReportServiceTest {
     }
 
     @Test
-    @DisplayName("[DIP B4 P3] 지시가 달리면 보고한 사람에게 알린다 — 지시를 지우거나 자기 보고면 알리지 않는다")
+    @DisplayName("[DIP B4 P3] 지시가 달리면 보고한 사람에게 알리고 빈 지시는 기존 지시를 보존하며 거절한다")
     void updateDrctMatter_notifiesAuthor() {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptTtl("주간 보고")
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
@@ -561,7 +886,8 @@ class MemoReportServiceTest {
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
-        memoReportService.updateDrctMatter(1L, "보완해 주세요");
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        memoReportService.updateDrctMatter(1L, "보완해 주세요", token);
 
         org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
                 org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
@@ -569,7 +895,9 @@ class MemoReportServiceTest {
         assertThat(event.getValue().receiverEsntlId()).isEqualTo("esntl-writer");
 
         org.mockito.Mockito.clearInvocations(eventPublisher);
-        memoReportService.updateDrctMatter(1L, "");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "", token))
+                .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE);
+        assertThat(entity.getDrctnMttr()).isEqualTo("보완해 주세요");
         org.mockito.Mockito.verifyNoInteractions(eventPublisher);
     }
 
@@ -584,13 +912,14 @@ class MemoReportServiceTest {
         org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> event =
                 org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
 
-        memoReportService.updateDrctMatter(1L, "보완해 주세요");
+        String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
+        memoReportService.updateDrctMatter(1L, "보완해 주세요", token);
         verify(eventPublisher).publishEvent(event.capture());
         assertThat(event.getValue().title()).isEqualTo("메모 보고에 지시가 달렸습니다");
         assertThat(event.getValue().linkUrl()).isEqualTo("/admin/operation/memo-reports?tab=MY");
 
         org.mockito.Mockito.clearInvocations(eventPublisher);
-        memoReportService.updateDrctMatter(1L, "기한을 앞당겨 주세요");
+        memoReportService.updateDrctMatter(1L, "기한을 앞당겨 주세요", token);
         verify(eventPublisher).publishEvent(event.capture());
         assertThat(event.getValue().title()).isEqualTo("메모 보고의 지시가 변경되었습니다");
     }
@@ -627,7 +956,6 @@ class MemoReportServiceTest {
                 .userId("esntl-writer").rptrId("esntl-recipient").build();
         entity.updateDrctMatter("보완해 주세요", java.time.LocalDateTime.now());
         when(memoReportRepository.findByIdForUpdate(1L)).thenReturn(Optional.of(entity));
-        when(memoReportRepository.findById(1L)).thenReturn(Optional.of(entity));
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
 
         BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
@@ -648,7 +976,7 @@ class MemoReportServiceTest {
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
-        memoReportService.updateDrctMatter(1L, "수신자 지시");
+        memoReportService.updateDrctMatter(1L, "수신자 지시", memoReportService.getMemoReport(1L).getInstructionReadToken());
         assertThat(entity.getDrctnMttr()).isEqualTo("수신자 지시");
     }
 
@@ -668,11 +996,11 @@ class MemoReportServiceTest {
         __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission(anyString())).thenReturn(true);
 
         BusinessException ex = org.junit.jupiter.api.Assertions.assertThrows(BusinessException.class,
-                () -> memoReportService.updateDrctMatter(1L, "관리자 지시"));
+                () -> memoReportService.updateDrctMatter(1L, "관리자 지시", null));
 
         assertThat(ex.getErrorCode()).isEqualTo(CommonErrorCode.ACCESS_DENIED);
         assertThat(entity.getDrctnMttr()).as("수신자의 지시를 덮지 않는다").isEqualTo("수신자 지시");
-        org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+        org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
     }
 
     @ParameterizedTest(name = "instruct={0}, updateAll={1}, recipient={2} -> instructable={3}")
@@ -687,7 +1015,7 @@ class MemoReportServiceTest {
     @DisplayName("instructable: 지시 기능 권한과 수신자 여부로만 판정한다 — 전체 수정 권한은 지시를 열지 않는다 (GAP-MEMO-001)")
     void instructableMatchesRecipientOnlyGuard(boolean instruct, boolean updateAll, boolean recipient, boolean expected) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of(recipient ? "esntl-recipient" : "esntl-admin"));
         // 열람은 수신자이거나 전체 열람 권한으로 통과시킨다 — 판정 대상은 지시 힌트뿐이다.
@@ -797,7 +1125,7 @@ class MemoReportServiceTest {
             boolean editable, boolean deletable) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
         entity.setFrstRgtrId(owner ? "login-me" : "login-other");
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)
@@ -834,7 +1162,7 @@ class MemoReportServiceTest {
             boolean owner, boolean override, boolean update, boolean delete) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).rptrId("esntl-me").build();
         entity.setFrstRgtrId(owner ? "login-me" : "login-other");
-        given(memoReportRepository.findById(1L)).willReturn(Optional.of(entity));
+        given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentLoginId)

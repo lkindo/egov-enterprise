@@ -14,8 +14,11 @@ import { renderToString } from 'react-dom/server';
 import { Sidebar } from '../sidebar';
 import { HeaderSearchParamSync } from '../HeaderSearchParamSync';
 import { LayoutProvider, useLayout } from '@/contexts/LayoutContext';
+import { ConfirmProvider } from '@/app/components/ui/confirm-modal';
 import type { MenuInfo } from '@/types/foundation/menu';
 import { pageInProjection } from '@/test-utils/projection';
+
+vi.unmock('@/app/components/ui/confirm-modal');
 
 // 고정 메뉴의 경로 — 원본에서는 로그인만 요구하는 관리 화면이 게이트를 통과하는지를 함께 본다. 그 화면이 투영으로 빠진
 //   생성물에는 그런 관리 화면이 없으므로 관리 밖 core 경로로 본다(page 파일이 원장에 있고 실제로 없을 때다).
@@ -81,7 +84,7 @@ function renderSidebar(ui: React.ReactNode) {
   });
   return render(
     <QueryClientProvider client={queryClient}>
-      <LayoutProvider>{ui}</LayoutProvider>
+      <ConfirmProvider><LayoutProvider>{ui}</LayoutProvider></ConfirmProvider>
     </QueryClientProvider>,
   );
 }
@@ -120,9 +123,9 @@ describe('Sidebar responsive primary navigation', () => {
     const queryClient = new QueryClient({
       defaultOptions: { queries: { retry: false, staleTime: Infinity } },
     });
-    queryClient.setQueryData(['menus', 'bookmarks', 'layout-user', 'v1'], []);
+    queryClient.setQueryData(['menus', 'bookmarks', 'layout-user', 'v1'], { bookmarks: [], unavailableCount: 0 });
     const tree = <QueryClientProvider client={queryClient}>
-      <LayoutProvider><Sidebar initialMenus={scenario.menus} /></LayoutProvider>
+      <ConfirmProvider><LayoutProvider><Sidebar initialMenus={scenario.menus} /></LayoutProvider></ConfirmProvider>
     </QueryClientProvider>;
     const container = document.createElement('div');
     const onRecoverableError = vi.fn();

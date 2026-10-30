@@ -6,7 +6,7 @@
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
 import { ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseListMenuBookmarkDtoResponseSchema, ApiResponseMenuListResponseResponseSchema, MenuBookmarkDtoResponseSchema, MenuListResponseResponseSchema } from '../generated-zod/menu';
+import { ApiResponseListMenuBookmarkDtoResponseSchema, ApiResponseMenuBookmarkCleanupResultResponseSchema, ApiResponseMenuBookmarkStatusDtoResponseSchema, ApiResponseMenuListResponseResponseSchema, MenuBookmarkCleanupRequestRequestSchema, MenuBookmarkCleanupResultResponseSchema, MenuBookmarkDtoResponseSchema, MenuBookmarkStatusDtoResponseSchema, MenuListResponseResponseSchema } from '../generated-zod/menu';
 
 export const addBookmarkOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({
@@ -41,6 +41,25 @@ export const removeBookmarkOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: null,
   envelopeSchema: ApiResponseVoidResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const cleanupUnavailableBookmarksOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "cleanupUnavailableBookmarks",
+  method: "post",
+  path: "/api/v1/menus/bookmarks/cleanup",
+  requestKind: "json",
+  responseKind: "json",
+  requestRequired: true,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: MenuBookmarkCleanupRequestRequestSchema.strict(),
+  responseSchema: z.lazy(() => MenuBookmarkCleanupResultResponseSchema),
+  envelopeSchema: ApiResponseMenuBookmarkCleanupResultResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });
@@ -98,6 +117,25 @@ export const getMyBookmarksOperation = /*#__PURE__*/ (() => {
   requestSchema: null,
   responseSchema: z.array(z.lazy(() => MenuBookmarkDtoResponseSchema)),
   envelopeSchema: ApiResponseListMenuBookmarkDtoResponseSchema,
+  requestForbiddenPaths: [],
+  responseForbiddenPaths: [],
+  });
+})();
+
+export const getMyBookmarkStatusOperation = /*#__PURE__*/ (() => {
+  return defineGeneratedOperation({
+  id: "getMyBookmarkStatus",
+  method: "get",
+  path: "/api/v1/menus/bookmarks/status",
+  requestKind: "none",
+  responseKind: "json",
+  requestRequired: false,
+  multipartParts: null,
+  pathSchema: null,
+  querySchema: null,
+  requestSchema: null,
+  responseSchema: z.lazy(() => MenuBookmarkStatusDtoResponseSchema),
+  envelopeSchema: ApiResponseMenuBookmarkStatusDtoResponseSchema,
   requestForbiddenPaths: [],
   responseForbiddenPaths: [],
   });

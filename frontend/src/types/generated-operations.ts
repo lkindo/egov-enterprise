@@ -258,6 +258,7 @@ export { createNotificationOperation } from './generated-operations/notification
 export { markAsReadOperation } from './generated-operations/notification';
 export { markAllAsReadOperation } from './generated-operations/notification';
 export { sendNoteOperation } from './generated-operations/note';
+export { cleanupUnavailableBookmarksOperation } from './generated-operations/menu';
 export { getMemoReportsOperation } from './generated-operations/memoreport';
 export { createMemoReportOperation } from './generated-operations/memoreport';
 export { getSentMailsOperation } from './generated-operations/mail';
@@ -420,6 +421,7 @@ export { getUnreadReceivedCountOperation } from './generated-operations/note';
 export { getLeftMenuOperation } from './generated-operations/menu';
 export { getHeadMenuOperation } from './generated-operations/menu';
 export { getMyBookmarksOperation } from './generated-operations/menu';
+export { getMyBookmarkStatusOperation } from './generated-operations/menu';
 export { getReceivedReportsOperation } from './generated-operations/memoreport';
 export { getMyReportsOperation } from './generated-operations/memoreport';
 export { getSentMailOperation } from './generated-operations/mail';

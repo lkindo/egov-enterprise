@@ -1112,4 +1112,87 @@ class DeptJobServiceTest {
         assertTrue(result.isEmpty(), "박스 0건이면 빈 페이지로 닫아야 한다");
         verify(deptJobRepository, never()).findAll(any(Predicate.class), any(PageRequest.class));
     }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "01", "1.0", "+1", "4", "1\n", "1\r\n"})
+    void invalidPriorityCannotCreateOrAssignAttachments(String priority) {
+        authenticateAs("actor", "USER1");
+        DeptJobDto request = DeptJobDto.builder().deptTaskNm("새 업무").prrtyRnk(priority)
+                .picId("USER2").atchFileSn(999L).build();
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.createDeptJob(request));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verifyNoInteractions(deptJobRepository, userRepository, attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @ParameterizedTest
+    @ValueSource(strings = {"", " ", "01", "1.0", "+1", "4", "1\n", "1\r\n"})
+    void invalidPriorityCannotChangeAnExistingJobOrSendNotifications(String priority) {
+        authenticateAs("actor", "USER1");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        DeptJobDto request = DeptJobDto.builder().deptTaskBoxSn(2L).deptTaskNm("변경")
+                .deptTaskCn("변경된 내용").picId("USER2").prrtyRnk(priority).atchFileSn(999L).version(0).build();
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L, request));
+
+        assertEquals(CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        assertEquals("Test Job", deptJob.getDeptTaskNm());
+        assertEquals("Content", deptJob.getDeptTaskCn());
+        assertEquals(1L, deptJob.getDeptTaskBoxSn());
+        assertEquals("USER1", deptJob.getPicId());
+        assertEquals("1", deptJob.getPrrtyRnk());
+        assertEquals(101L, deptJob.getAtchFileSn());
+        assertEquals(0, deptJob.getVersion());
+        verify(deptJobRepository, never()).save(any());
+        verifyNoInteractions(userRepository, attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @ParameterizedTest
+    @org.junit.jupiter.params.provider.NullSource
+    @ValueSource(strings = {"1", "2", "3"})
+    void validPriorityAndNullArePersistedWithoutADefault(String priority) {
+        authenticateAs("actor", "USER1");
+        givenActiveAssignee("USER1");
+        when(deptJobRepository.save(any(DeptJob.class))).thenAnswer(invocation -> invocation.getArgument(0));
+        DeptJobDto request = DeptJobDto.builder().deptTaskNm("업무").prrtyRnk(priority).version(0).build();
+
+        deptJobService.createDeptJob(request);
+
+        var saved = ArgumentCaptor.forClass(DeptJob.class);
+        verify(deptJobRepository).save(saved.capture());
+        assertEquals(priority, saved.getValue().getPrrtyRnk());
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        deptJobService.updateDeptJob(1L, request);
+        assertEquals(priority, deptJob.getPrrtyRnk(), "null 수정은 기존 우선순위를 지우며 기본값으로 보정하지 않는다");
+        verifyNoInteractions(attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    void invalidPriorityDoesNotBypassTheExistingOwnerCheck() {
+        authenticateAs("other", "OTHER");
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+
+        BusinessException error = assertThrows(BusinessException.class, () -> deptJobService.updateDeptJob(1L,
+                DeptJobDto.builder().prrtyRnk("4").version(0).build()));
+
+        assertEquals(CommonErrorCode.ACCESS_DENIED, error.getErrorCode());
+        assertEquals("1", deptJob.getPrrtyRnk());
+        verifyNoInteractions(attachmentAssignmentPolicy, eventPublisher);
+    }
+
+    @Test
+    void legacyPriorityRemainsReadableAndDoesNotBlockAssigneeOnlyChange() {
+        authenticateAs("actor", "USER1");
+        deptJob.update(1L, "Test Job", "Content", "USER1", "01", 101L);
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        mockToDtoDependencies();
+
+        assertEquals("01", deptJobService.getDeptJob(1L).getPrrtyRnk());
+
+        givenActiveAssignee("USER2");
+        deptJobService.reassignDeptJob(1L, "USER2", 0);
+        assertEquals("USER2", deptJob.getPicId());
+        assertEquals("01", deptJob.getPrrtyRnk());
+    }
 }

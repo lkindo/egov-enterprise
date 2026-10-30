@@ -5,8 +5,8 @@
 
 import { z } from 'zod';
 import { defineGeneratedOperation } from './_define';
-import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema } from '../generated-zod/_shared';
-import { ApiResponseListFileDtoResponseSchema, FileDtoResponseSchema } from '../generated-zod/file';
+import { ApiResponseLongResponseSchema, ApiResponseVoidResponseSchema, FileDtoResponseSchema } from '../generated-zod/_shared';
+import { ApiResponseListFileDtoResponseSchema } from '../generated-zod/file';
 
 export const uploadFilesOperation = /*#__PURE__*/ (() => {
   return defineGeneratedOperation({

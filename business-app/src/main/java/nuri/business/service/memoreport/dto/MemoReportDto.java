@@ -114,5 +114,16 @@ public class MemoReportDto {
     @JsonProperty(access = JsonProperty.Access.READ_ONLY)
     private Boolean instructable;
 
+    @Schema(description = "수신자가 상세에서 확인한 본문·첨부의 내용 비교 토큰", nullable = true,
+            types = {"string", "null"}, minLength = 64, maxLength = 64, pattern = "^[a-f0-9]{64}$",
+            accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private String instructionReadToken;
+
+    @Schema(description = "상세와 같은 시점에 읽은 첨부. 미조회·열람 대상 아님은 null, 조회 결과 없음은 빈 목록",
+            nullable = true, types = {"array", "null"}, accessMode = Schema.AccessMode.READ_ONLY)
+    @JsonProperty(access = JsonProperty.Access.READ_ONLY)
+    private java.util.List<nuri.business.service.file.dto.FileDto> attachments;
+
     // 수기 from(MemoReport) 은 MemoReportMapper(MapStruct, 프레임워크 표준)로 대체됨.
 }
