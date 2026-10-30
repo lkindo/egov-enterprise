@@ -41,12 +41,17 @@ class WebLogBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSu
                     .isEqualTo(LEGACY_ROW_COUNT);
         }
 
-        migrateThroughAuthorizationCutover();
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.145")));
+        LogDurationCutoverTestSupport.assertRedirectRefusesUnsynchronizedRows(flyway(null));
+        LogDurationCutoverTestSupport.sync(flyway(null).getConfiguration().getDataSource());
+        flyway(null).migrate();
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
             assertThat(singleLong(statement, "SELECT count(*) FROM tb_web_log"))
                     .isEqualTo(LEGACY_ROW_COUNT);
+            assertThat(singleLong(statement,"SELECT count(*) FROM tb_web_log WHERE prcs_req_msec IS DISTINCT FROM prcs_tm"))
+                    .isZero();
             assertThat(singleLong(statement, "SELECT count(DISTINCT web_log_sn) FROM tb_web_log"))
                     .isEqualTo(LEGACY_ROW_COUNT);
 

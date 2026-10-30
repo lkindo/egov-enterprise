@@ -72,9 +72,61 @@ public class IsolatedAuthorizationRehearsalConfig {
             } catch (java.sql.SQLException failure) {
                 throw new IllegalStateException("Disposable authorization rehearsal connection failed",failure);
             }
+            // The dev repeatables already wrote legacy log rows at 2.99. This explicitly
+            // acknowledged disposable initializer rehearses the same Expand/Sync/Redirect order.
+            boolean logExpand=Arrays.stream(flyway.info().all()).anyMatch(migration ->
+                    org.flywaydb.core.api.MigrationVersion.fromVersion("2.145").equals(migration.getVersion()));
+            if (logExpand && flyway.getConfiguration().getTarget().compareTo(
+                    org.flywaydb.core.api.MigrationVersion.fromVersion("2.146"))>=0) {
+                Flyway.configure().configuration(flyway.getConfiguration()).target("2.145").load().migrate();
+                syncDisposableLogDurations(flyway,profiles,ack,expected);
+            }
             flyway.migrate();
             seedDisposableContentEditors(flyway,profiles,ack,expected);
         };
+    }
+
+    private static void syncDisposableLogDurations(Flyway flyway,Set<String> profiles,String ack,Target expected) {
+        try (var connection=flyway.getConfiguration().getDataSource().getConnection()) {
+            if (!expected.equals(validateTarget(profiles,connection.getMetaData().getURL(),ack))
+                    || !"PostgreSQL".equals(connection.getMetaData().getDatabaseProductName())) {
+                throw new IllegalStateException("Disposable log Sync datasource changed");
+            }
+            String sql;
+            try (var input=new ClassPathResource("db/operations/log-duration/backfill.sql").getInputStream()) {
+                sql=new String(input.readAllBytes(),StandardCharsets.UTF_8);
+            }
+            connection.setAutoCommit(false);
+            try (var statement=connection.createStatement()) {
+                statement.setQueryTimeout(5);
+                for (int attempt=0;attempt<200;attempt++) {
+                    long changed=0;
+                    int ledgers=0;
+                    boolean result=statement.execute(sql);
+                    do {
+                        if (result) try (var rows=statement.getResultSet()) {
+                            while (rows.next()) {
+                                long size=rows.getLong("changed_rows");
+                                if (size<0 || size>500) throw new IllegalStateException("Disposable log Sync batch size differs");
+                                changed+=size;
+                                ledgers++;
+                            }
+                        }
+                        result=statement.getMoreResults();
+                    } while (result || statement.getUpdateCount()!=-1);
+                    if (ledgers!=2) throw new IllegalStateException("Disposable log Sync result differs");
+                    connection.commit();
+                    // V2_146 performs the full NULL-safe parity check, including locked pending rows.
+                    if (changed==0) return;
+                }
+                throw new IllegalStateException("Disposable log Sync budget exhausted");
+            } catch (Exception failure) {
+                connection.rollback();
+                throw failure;
+            }
+        } catch (Exception failure) {
+            throw new IllegalStateException("Explicit disposable log Sync failed",failure);
+        }
     }
 
     /** Explicit E2E content-editor fixture; never changes the production catalog or migration-only smoke bootstrap. */

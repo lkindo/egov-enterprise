@@ -40,6 +40,7 @@ public class WebLog extends BaseEntity {
     @Column(length = 8)
     private String occrYmd;
 
+    @Column(name = "prcs_req_msec")
     private Long prcsTm;
 
     private WebLog(Long webLogSn, String url, String dmndUserId, String dmndUserIpAddr, String occrYmd, Long prcsTm) {
