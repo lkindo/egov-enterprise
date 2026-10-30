@@ -124,8 +124,11 @@ public class MenuBookmarkService {
     }
 
     private static void validateCleanupRequest(MenuBookmarkCleanupRequest request) {
-        if (request == null || request.expectedAuthorizationVersion() == null
-                || request.expectedAuthorizationVersion().isBlank() || request.expectedAuthorizationVersion().length() > 64
+        if (request == null) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "정리할 즐겨찾기를 다시 확인해 주세요.");
+        }
+        String expectedVersion = request.expectedAuthorizationVersion();
+        if (expectedVersion == null || expectedVersion.isBlank() || expectedVersion.length() > 64
                 || request.expectedServerUnavailableCount() == null || request.expectedServerUnavailableCount() < 0
                 || request.uiUnavailableMenuNos() == null || request.uiUnavailableMenuNos().size() > MAX_BOOKMARKS
                 || request.uiUnavailableMenuNos().stream().anyMatch(menuNo -> menuNo == null || menuNo <= 0)
