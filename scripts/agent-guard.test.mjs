@@ -111,6 +111,58 @@ const CASES = {
       'git commit --only -m "flyway migrate 에 seed-dev 를 섞지 않는다" -- a.txt',
       'docker run --rm flyway/flyway:12.4.0 \\\n  -locations=filesystem:/flyway/sql/seed-dev \\\n  info'],
   },
+  // 2026-10-30: .env 내용 출력은 Claude 자동 모드 분류기만 막아 Codex·Antigravity 에서는 글로만 금지였다(oci-db-access 기억).
+  // 첫 일곱은 그 기억이 기록한 실제 읽기 형태다.
+  'env-file-read': {
+    hit: ['cat .env', 'Get-Content .env', 'grep DB_URL .env', 'type .env', "bash -lc 'cat .env'", 'Select-String -Path .env -Pattern DB',
+      'Get-Content -Raw frontend/.env.local',
+      // 경로·glob·여러 파일 — 마지막 이름으로 본다.
+      'cat ./.env', 'type .\\.env.production', 'Get-Content "D:\\project\\egov-enterprise\\.env"', 'cat .env*', 'cat .env.example .env',
+      'gc .env.example,.env', 'head -n 3 .env', 'tail -f .env', 'base64 .env', 'xxd .env', 'diff .env .env.example',
+      // 패턴·스크립트가 앞에 오는 명령: 위치 패턴, 옵션 패턴, 값을 받는 옵션 뒤, 입력 리디렉션.
+      'grep -e DB .env', 'rg -n -g "*" DB_ .env.local', 'grep -- -DB_URL .env', 'cat ${HOME}/.env', 'sls DB .env', 'Select-String -Path .env DB', 'findstr DB .env', 'findstr /c:"DB" .env',
+      "awk -F= '{print $2}' .env", "awk -F '=' '{print $2}' .env", 'sed -n p < .env', 'more <.env', 'sed -n 1,5p .env',
+      // 파이프·대입·묶음·스크립트 블록·치환·래퍼·호출 연산자·.NET 읽기.
+      'cat .env | grep DB', 'Get-Content .env | Select-String DB', '$s = Get-Content .env -Raw', '(gc .env) -match "DB"',
+      'if (Test-Path .env) { Get-Content .env }', 'x=$(cat .env)', 'echo "$(grep DB_ .env)"', 'x=`cat .env`', 'diff <(cat .env) .env.example',
+      'pwsh -NoProfile -Command "Get-Content .env"', 'cmd /c type .env', '& "C:\\Program Files\\Git\\usr\\bin\\cat.exe" .env',
+      "[IO.File]::ReadAllText('.env')", '$t = [System.IO.File]::ReadAllLines("$PWD\\.env")',
+      // compose 는 .env 를 기본으로 읽어 보간한 비밀(docker-compose.prod.yml 의 DB_PASSWORD·JWT_SECRET)을 출력한다.
+      'docker compose config', 'docker compose --env-file .env -f docker-compose.prod.yml config', 'docker-compose config --environment',
+      'docker compose -p egov config --format json',
+      // 2026-10-30 독립 검토(Codex) 미탐: 옵션이 먹은 값(두 번째 패턴 `-q`)을 출력하지 않는 옵션으로 셌고, 붙여 쓴 `-eDB_URL` 을 몰라 .env 를
+      // 패턴으로 셌고, PowerShell 의 `-Path:값` 을 몰랐고, compose 의 이름만 내는 옵션에 거짓·빈 값을 줘도 켜진 것으로 셌다.
+      'grep -e DB_URL -e -q .env', 'grep -eDB_URL .env', 'grep --regexp=DB .env', 'Get-Content -Path:.env', 'Get-Content -LiteralPath:".env"',
+      'docker compose config --quiet=false', 'docker compose config --services=false', 'docker compose config --hash=',
+      // 같은 갈래를 실제 도구(GNU grep 3·rg 14·sed 4.9·PowerShell 7)로 확인한 형태: grep 은 긴 옵션의 앞부분(`--reg`)을 받고 `-T` 는 값이 없으며
+      // `--color` 는 값을 붙여서만 받는다. PowerShell 은 매개변수 앞부분(`-Pa:`)과 `-Quiet:$false` 를 받는다. pflag 는 마지막 값이 이긴다.
+      'grep --reg -q .env', 'grep -T DB_URL .env', 'grep --color never .env', 'rg -e DB -e -q .env', 'sed -e -i .env', 'Get-Content -Pa:.env',
+      'Select-String DB -Path .env -Quiet:$false', 'docker compose config --quiet --quiet=false'],
+    pass: ['cat .env.example', 'Get-Content frontend/.env.example', 'cat .env.sample', 'cat .env.template', 'cat .env.local.example',
+      // 값을 출력하지 않고 쓰는 길 — 규칙의 fix 가 권하는 명령이다.
+      'node --env-file=.env scripts/x.mjs', 'DB_NAME=egovdb node --env-file=.env .agent/scripts/db-bridge.js "SELECT 1"',
+      'node --env-file=.env -e "console.log(Boolean(process.env.DB_URL))"', 'grep -q -e DB_URL .env', "grep -q '^DB_URL=' .env", 'grep -c DB_URL .env',
+      'rg -l DB_URL .env',
+      'Select-String -Path .env -Pattern DB -Quiet',
+      // 있음·무시 여부·메타데이터만 본다.
+      'git check-ignore -v .env', 'ls .env', 'ls -la .env*', 'Test-Path .env', 'wc -l .env', 'Get-Item .env',
+      // 문자열·메시지·주석 속 문구는 명령이 아니다.
+      'git commit --only -m "cat .env 대신 node --env-file 을 쓴다" -- a.txt', 'echo "cat .env"', 'echo cat .env', "Write-Output 'Get-Content .env'",
+      'echo "(Get-Content .env)"',
+      "git commit --only -F - -- a.txt <<'EOF'\n가드가 cat .env 를 막는다\nEOF", 'git status # cat .env',
+      // `.env` 를 검색어로 찾는 명령(첫 위치 인자·옵션 패턴·값을 받는 옵션 뒤의 패턴).
+      'grep -rn ".env" .gitignore', 'rg -g "*.mjs" ".env" scripts', 'grep -m 1 .env .gitignore', 'grep -e .env .gitignore',
+      'Select-String -Pattern .env -Path .gitignore', 'findstr /c:".env" .gitignore', 'rg -- .env scripts',
+      // 쓰기·복사는 내용을 출력하지 않는다.
+      'cat .env.example > .env', 'cp .env.example .env', 'Copy-Item .env.example .env', "sed -i 's/^X=.*/X=1/' .env",
+      "cat <<'EOF' > .env\nX=1\nEOF",
+      // compose 의 이름만 내는 config 와 다른 하위 명령.
+      'docker compose --env-file .env up -d', 'docker compose config --quiet', 'docker compose -f docker-compose.prod.yml config --services',
+      'docker compose logs config', 'docker compose -p config up', 'docker compose config --hash="*"',
+      // 2026-10-30 독립 검토(Codex) 오탐: rg 의 `--color` 는 값을 다음 단어로 받는다(grep 은 `=WHEN` 으로만). 참 값을 준 이름만 내는 옵션은 켜진 것이다.
+      'rg --color never .env scripts', 'grep --color=auto -rn ".env" .gitignore', 'docker compose config --quiet=true', 'docker compose config -q',
+      'docker compose config --hash web', 'Select-String DB -Path .env -Quiet:$true', 'Select-String -Pattern: .env -Path .gitignore'],
+  },
   'openapi-relative-export-path': {
     hit: ['./gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" -Dopenapi.export.path="api-docs.json" --rerun-tasks',
       '.\\gradlew.bat :api-server:test --tests nuri.openapi.OpenApiDocumentationTest "-Dopenapi.export.path=api-docs.json"'],

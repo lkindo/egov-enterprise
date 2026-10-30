@@ -23,11 +23,12 @@ import { platform } from 'node:os';
 import { join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { MENU_SNAPSHOT_PRECHECK, ledgerPrecheck } from './ledger-precheck.mjs';
+
 const REPO_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 export const MIGRATION_DIRECTORY = 'api-server/src/main/resources/db/migration';
 export const DEFAULT_BASE = 'origin/main';
 const GATE_REGISTRY = 'config/governance/gates.json';
-const MENU_SNAPSHOT = 'config/project-composer-menus.json';
 export const COMPOSER_UI_TEST = 'node --test tools/project-composer/ui.test.mjs';
 /** 생성기 화면 시험(ui.test.mjs)이 실행하는 카탈로그·화면의 입력. 이 접두의 파일이 바뀌면 그 시험을 돈다. */
 export const COMPOSER_UI_INPUTS = Object.freeze([
@@ -160,10 +161,11 @@ export async function integrationPrecheck(root = REPO_ROOT, base = DEFAULT_BASE,
   const errors = flywayConflicts({ baseNames, headNames, changes: migrationChanges });
   const notices = [];
   if (menus && migrationChanges.length) {
-    const { projectMenuSourceHash } = await import('./project-composer-menu-preview.mjs');
-    const snapshot = JSON.parse(readFileSync(join(root, MENU_SNAPSHOT), 'utf8'));
-    if (snapshot.sourceMigrationHash !== projectMenuSourceHash(root)) {
-      notices.push('메뉴 스냅숏이 마이그레이션을 따라가지 못했습니다(MENU_SNAPSHOT_STALE) — 바뀐 마이그레이션이 메뉴 inventory 에 닿습니다. '
+    // 판정은 regen --check 의 손 결속 사전 점검과 같은 점검(생성기 계획의 스냅숏 적재)이다 — 해시 비교를 여기에 따로 두지 않는다.
+    const { findings, skipped } = await ledgerPrecheck({ root, checks: [MENU_SNAPSHOT_PRECHECK] });
+    for (const { requires } of skipped) notices.push(`메뉴 스냅숏을 보지 않았습니다 — ${requires} 이 이 저장소에 없습니다.`);
+    for (const { message } of findings) {
+      notices.push(`메뉴 스냅숏이 마이그레이션을 따라가지 못했습니다(MENU_SNAPSHOT_STALE: ${message}) — 바뀐 마이그레이션이 메뉴 inventory 에 닿습니다. `
         + '`npm run project:menus:refresh`(일회용 PostgreSQL, 무거운 실행)로 다시 만든 뒤 regen 하십시오.');
     }
   }

@@ -15,12 +15,14 @@ import {
   containsRunnerSkip,
   findRunnerSkipConstructs,
   findTaggedGatesOutsideRoots,
+  JAVA_GATE_SCAN_ROOTS,
   effectiveCodeOwners,
   hasClassAnnotation,
   hasGateSkipConstruct,
   loadGovernanceRegistry,
   parseMutationScopeMatrix,
   readPopulationConsumer,
+  taggedGateRegistryErrors,
   validateGovernanceRegistry,
   validateCriticalMutationTargets,
   validatePitResultCheck,
@@ -548,6 +550,61 @@ test('deleting a registry entry leaves the real tagged gate unregistered and fai
   const removed = registry.gateSets[0].rules.shift();
 
   assert.match(validate(registry).join('\n'), new RegExp(`unregistered tagged gate.*${removed.source.replaceAll('/', '\\/')}`, 'i'));
+});
+
+// [2026-10-30] 태그 시험 등록 대조를 regen --check(손 결속 사전 점검)가 먼저 부른다. 사전 점검 진입점(taggedGateRegistryErrors)은 원장
+//   검증과 같은 함수를 부르므로, 같은 원장·트리에서 그 결과는 원장 검증 오류의 부분집합이어야 한다 — 판정기가 둘로 갈라지면 여기서 붉다.
+test('the tag registration precheck reports a subset of the registry contract errors, from the same functions', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  assert.deepEqual(taggedGateRegistryErrors({ registry, repoRoot, snapshot: sharedSnapshot }), []);
+  const removed = clone(registry);
+  const source = removed.gateSets.find(({ id }) => id === 'GATESET-SCHEMA-VALIDATION').rules.shift().source;
+  const precheck = taggedGateRegistryErrors({ registry: removed, repoRoot, snapshot: sharedSnapshot });
+  assert.deepEqual(precheck, [`unregistered tagged gate in GATESET-SCHEMA-VALIDATION: ${source}`]);
+  const full = validate(removed);
+  for (const message of precheck) assert.ok(full.includes(message), `the registry contract reports the same message: ${message}`);
+  assert.throws(() => taggedGateRegistryErrors({ registry, repoRoot: os.tmpdir(), snapshot: sharedSnapshot }), /governance snapshot is bound to/);
+});
+
+// 실제 사례(2026-10-19): 새 @Tag("schema-validation") 시험을 gates.json 에 등록하지 않은 채 push 해 운영 계약 약 11분 뒤에야 붉었다.
+//   합성 트리에서 같은 모양이 사전 점검 진입점과 원장 검증 양쪽에서 같은 문장으로 붉고, 등록하면 사전 점검이 초록이 되는지 본다.
+test('an unregistered schema-validation test is red in the precheck entry and in the registry contract alike', (t) => {
+  const tempRoot = mkdtempSync(path.join(os.tmpdir(), 'gate-precheck-'));
+  t.after(() => {
+    assert.equal(path.dirname(tempRoot), path.resolve(os.tmpdir()));
+    assert.ok(path.basename(tempRoot).startsWith('gate-precheck-'));
+    rmSync(tempRoot, { recursive: true, force: true });
+  });
+  const schemaRoot = 'api-server/src/test/java/nuri/api/schema';
+  for (const scanRoot of JAVA_GATE_SCAN_ROOTS) mkdirSync(path.join(tempRoot, scanRoot), { recursive: true });
+  const schemaTest = (name) => ['package nuri.api.schema;', 'import org.junit.jupiter.api.Tag;', 'import org.junit.jupiter.api.Test;',
+    '@Tag("schema-validation")', `class ${name} {`, '    @Test', '    void replaysToLatest() {}', '}', ''].join('\n');
+  mkdirSync(path.join(tempRoot, schemaRoot), { recursive: true });
+  writeFileSync(path.join(tempRoot, schemaRoot, 'RegisteredSchemaTest.java'), schemaTest('RegisteredSchemaTest'));
+  const real = loadGovernanceRegistry(registryPath).gateSets.find(({ id }) => id === 'GATESET-SCHEMA-VALIDATION');
+  const registry = { gateSets: [{ ...clone(real), rules: [{ id: 'SCHEMA-REGISTERED', source: `${schemaRoot}/RegisteredSchemaTest.java` }] }] };
+  const fresh = () => createGovernanceRepositorySnapshot({ repoRoot: tempRoot });
+  assert.deepEqual(taggedGateRegistryErrors({ registry, repoRoot: tempRoot, snapshot: fresh() }), []);
+
+  writeFileSync(path.join(tempRoot, schemaRoot, 'MenuInventorySchemaTest.java'), schemaTest('MenuInventorySchemaTest'));
+  const unregistered = `unregistered tagged gate in GATESET-SCHEMA-VALIDATION: ${schemaRoot}/MenuInventorySchemaTest.java`;
+  assert.deepEqual(taggedGateRegistryErrors({ registry, repoRoot: tempRoot, snapshot: fresh() }), [unregistered]);
+  assert.ok(validateGovernanceRegistry({ registry, repoRoot: tempRoot }).includes(unregistered), 'the registry contract reports the same sentence');
+  // 같은 태그를 선언 root 밖으로 옮겨도 사전 점검이 본다(원장 검증의 root 밖 탐지와 같은 함수).
+  rmSync(path.join(tempRoot, schemaRoot, 'MenuInventorySchemaTest.java'));
+  mkdirSync(path.join(tempRoot, 'api-server/src/test/java/nuri/api/other'), { recursive: true });
+  writeFileSync(path.join(tempRoot, 'api-server/src/test/java/nuri/api/other/MenuInventorySchemaTest.java'), schemaTest('MenuInventorySchemaTest'));
+  assert.match(taggedGateRegistryErrors({ registry, repoRoot: tempRoot, snapshot: fresh() }).join('\n'),
+    /^GATESET-SCHEMA-VALIDATION: tagged gate outside declared selector roots — api-server\/src\/test\/java\/nuri\/api\/other\/MenuInventorySchemaTest\.java/);
+  // 등록하면(그리고 root 안에 두면) 초록이다.
+  rmSync(path.join(tempRoot, 'api-server/src/test/java/nuri/api/other'), { recursive: true });
+  writeFileSync(path.join(tempRoot, schemaRoot, 'MenuInventorySchemaTest.java'), schemaTest('MenuInventorySchemaTest'));
+  registry.gateSets[0].rules.push({ id: 'SCHEMA-MENU-INVENTORY', source: `${schemaRoot}/MenuInventorySchemaTest.java` });
+  assert.deepEqual(taggedGateRegistryErrors({ registry, repoRoot: tempRoot, snapshot: fresh() }), []);
+  // 선택자 root 가 없으면 조용히 줄지 않고 붉다.
+  rmSync(path.join(tempRoot, schemaRoot), { recursive: true });
+  assert.match(taggedGateRegistryErrors({ registry, repoRoot: tempRoot, snapshot: fresh() }).join('\n'),
+    /GATESET-SCHEMA-VALIDATION: selector root does not exist: api-server\/src\/test\/java\/nuri\/api\/schema/);
 });
 
 test('a registry source that does not satisfy its selector is rejected as a ghost', () => {

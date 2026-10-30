@@ -157,7 +157,8 @@ run_atlas_contract() {
 
 # 생성물·해시 결속이 낡았는지 맨 앞에서 본다(npm run regen -- --check — 쓰지 않는다, 로컬 약 20초). 생성 계약·권한·슬롯·경계
 # census·화면 목록·URL census(승인 결속)·SAST 예외 해시·하네스 기준선·Atlas 의 각 검사 모드와, regen 이 고치지 않는 손 결속 원장
-# 확인(operation census 의 수·래칫, IA 처분 제안의 라우트 원장 결속 해시)이다. 모두 운영 계약·CI codegen 게이트가 다시 보는 것이라
+# 확인(operation census 의 수·래칫, IA 처분 제안의 라우트 원장 결속 해시, scripts/ledger-precheck.mjs 의 태그 시험 gates.json 등록·
+# 메뉴 snapshot 해시·기본 그룹 없는 권한의 기능 파일 안내)이다. 모두 운영 계약·CI codegen 게이트가 같은 판정으로 다시 보는 것이라
 # 새 검사가 아니다 — 11분짜리 운영 계약 뒤가 아니라 처음에 알린다. 문서만 바꿔도 Atlas 가 낡으므로 두 경로 모두 돈다.
 # [계약 드리프트 게이트] 생성 계약 검사(sync-contract)는 프런트 codegen:verify·codegen:verify:zod 와 같은 스크립트·인자다
 # (scripts/verify-generated-contracts.mjs api·zod — 경로는 스크립트 위치 기준 절대 경로라 cwd 와 무관하다). index 의 api-docs.json 으로

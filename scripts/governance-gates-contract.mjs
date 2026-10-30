@@ -1068,6 +1068,86 @@ export const JAVA_GATE_SCAN_ROOTS = [
   'migration-tool/src/test/java',
 ];
 
+/** java-class-annotation 선택자가 판정할 수 있는 모양인가 — 아니면 원장 검증이 'invalid java-class-annotation selector' 로 붉다. */
+function isJavaAnnotationSelector(selector) {
+  return ['Tag', 'ArchTag'].includes(selector?.annotation)
+    && typeof selector.value === 'string'
+    && Array.isArray(selector.roots)
+    && selector.roots.length > 0;
+}
+
+/**
+ * java-class-annotation 선택자가 실제로 고르는 소스 — 선언 root 아래에서 파일 이름의 클래스에 그 태그가 붙은 Java 파일(저장소 상대 경로).
+ * 안전하지 않거나 없는 root 는 오류로 돌려준다(선택 결과가 조용히 줄면 거짓 녹색이다).
+ * 원장 검증(validateGovernanceRegistry)과 등록 사전 점검(taggedGateRegistryErrors)이 이 함수 하나로 센다.
+ */
+function javaAnnotatedSources({ repoRoot, setLabel, selector, snapshot }) {
+  const errors = [];
+  const roots = selector.roots.filter(isSafeRelative);
+  if (roots.length !== selector.roots.length) errors.push(`${setLabel}: selector roots must be safe relative paths`);
+  const sources = new Set();
+  for (const root of roots) {
+    const absoluteRoot = path.join(repoRoot, root);
+    if (!snapshot.isDirectory(absoluteRoot)) {
+      errors.push(`${setLabel}: selector root does not exist: ${root}`);
+      continue;
+    }
+    for (const sourcePath of snapshot.javaFiles(absoluteRoot)) {
+      if (snapshot.analyze(sourcePath, `annotation:${selector.annotation}:${selector.value}:${path.basename(sourcePath, '.java')}`,
+        text => hasClassAnnotation(text, selector.annotation, selector.value, path.basename(sourcePath, '.java')))) {
+        sources.add(posix(path.relative(repoRoot, sourcePath)));
+      }
+    }
+  }
+  return { sources, errors };
+}
+
+/** 원장에 등록된 소스 — 안전한 상대 경로만 센다(나머지는 원장 검증이 'source must be a safe relative path' 로 말한다). */
+function registeredGateSources(rules) {
+  return new Set(rules.map((rule) => rule?.source).filter(isSafeRelative));
+}
+
+/**
+ * 태그 시험과 원장 등록의 양방향 대조 — 선택 결과에 있는데 등록되지 않은 시험(미등록)과, 등록됐고 파일도 있는데 선택 결과 밖인 소스(유령).
+ * 등록 소스의 파일이 아예 없으면 원장 검증이 'ghost gate source: … does not exist' 로 따로 말한다.
+ */
+function taggedGateRegistrationErrors({ repoRoot, setLabel, actual, registered, snapshot }) {
+  const errors = [];
+  for (const source of actual) {
+    if (!registered.has(source)) errors.push(`unregistered tagged gate in ${setLabel}: ${source}`);
+  }
+  for (const source of registered) {
+    if (!actual.has(source) && snapshot.isFile(path.join(repoRoot, source))) {
+      errors.push(`ghost gate source in ${setLabel}: ${source} is outside the actual selector result`);
+    }
+  }
+  return errors;
+}
+
+/**
+ * 게이트 원장의 Java 태그 결속만 보는 진입점 — 태그 시험의 등록 대조(미등록·선택 결과 밖 등록·없는 root)와 선언 root 밖 태그.
+ * validateGovernanceRegistry 와 같은 함수(javaAnnotatedSources·registeredGateSources·taggedGateRegistrationErrors·
+ * findTaggedGatesOutsideRoots)를 부르므로 같은 원장·트리에서 이 결과는 원장 검증 오류의 부분집합이다. 실행 binding·래칫 등 나머지는
+ * 원장 검증만 본다. 손 결속 사전 점검(scripts/ledger-precheck.mjs, regen --check)이 운영 계약보다 먼저 부른다.
+ * 모양이 틀린 선택자는 건너뛴다 — 원장 검증이 'invalid java-class-annotation selector' 로 붉힌다.
+ */
+export function taggedGateRegistryErrors({ registry, repoRoot, snapshot = createGovernanceRepositorySnapshot({ repoRoot }),
+  scanRoots = JAVA_GATE_SCAN_ROOTS }) {
+  assertSnapshotRoot(snapshot, repoRoot);
+  const errors = [];
+  for (const set of registry?.gateSets ?? []) {
+    const selector = set?.selector;
+    if (selector?.type !== 'java-class-annotation' || !isJavaAnnotationSelector(selector)
+      || !Array.isArray(set.rules) || set.rules.length === 0) continue;
+    const setLabel = set.id ?? '(missing-set-id)';
+    const { sources: actual, errors: rootErrors } = javaAnnotatedSources({ repoRoot, setLabel, selector, snapshot });
+    errors.push(...rootErrors,
+      ...taggedGateRegistrationErrors({ repoRoot, setLabel, actual, registered: registeredGateSources(set.rules), snapshot }));
+  }
+  errors.push(...findTaggedGatesOutsideRoots(repoRoot, registry?.gateSets, scanRoots, snapshot));
+  return errors;
+}
+
 export function findTaggedGatesOutsideRoots(repoRoot, gateSets, scanRoots = JAVA_GATE_SCAN_ROOTS, snapshot = createGovernanceRepositorySnapshot({ repoRoot })) {
   assertSnapshotRoot(snapshot, repoRoot);
   const errors = [];
@@ -2140,10 +2220,7 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
     validateRequiredContexts(set.requiredCiContext, requiredContexts, setLabel, errors);
 
     if (selector?.type === 'java-class-annotation') {
-      if (!['Tag', 'ArchTag'].includes(selector.annotation)
-        || typeof selector.value !== 'string'
-        || !Array.isArray(selector.roots)
-        || selector.roots.length === 0) {
+      if (!isJavaAnnotationSelector(selector)) {
         errors.push(`${setLabel}: invalid java-class-annotation selector`);
         continue;
       }
@@ -2152,24 +2229,10 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
         continue;
       }
 
-      const roots = selector.roots.filter(isSafeRelative);
-      if (roots.length !== selector.roots.length) errors.push(`${setLabel}: selector roots must be safe relative paths`);
-      const actual = new Set();
-      for (const root of roots) {
-        const absoluteRoot = path.join(repoRoot, root);
-        if (!snapshot.isDirectory(absoluteRoot)) {
-          errors.push(`${setLabel}: selector root does not exist: ${root}`);
-          continue;
-        }
-        for (const sourcePath of snapshot.javaFiles(absoluteRoot)) {
-          if (snapshot.analyze(sourcePath, `annotation:${selector.annotation}:${selector.value}:${path.basename(sourcePath, '.java')}`,
-            text => hasClassAnnotation(text, selector.annotation, selector.value, path.basename(sourcePath, '.java')))) {
-            actual.add(posix(path.relative(repoRoot, sourcePath)));
-          }
-        }
-      }
+      // 실제 선택 결과와 등록 대조는 사전 점검(taggedGateRegistryErrors)과 같은 함수다 — 판정기를 둘로 두지 않는다.
+      const { sources: actual, errors: rootErrors } = javaAnnotatedSources({ repoRoot, setLabel, selector, snapshot });
+      errors.push(...rootErrors);
 
-      const expected = new Set();
       for (const rule of set.rules) {
         const id = rule?.id ?? '(missing-rule-id)';
         const source = rule?.source;
@@ -2182,7 +2245,6 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
         }
         if (registeredSources.has(source)) errors.push(`duplicate registered source: ${source}`);
         registeredSources.add(source);
-        expected.add(source);
         const absolute = path.join(repoRoot, source);
         if (!snapshot.isFile(absolute)) {
           errors.push(`ghost gate source: ${source} does not exist`);
@@ -2200,14 +2262,7 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
           }
         }
       }
-      for (const source of actual) {
-        if (!expected.has(source)) errors.push(`unregistered tagged gate in ${setLabel}: ${source}`);
-      }
-      for (const source of expected) {
-        if (!actual.has(source) && snapshot.isFile(path.join(repoRoot, source))) {
-          errors.push(`ghost gate source in ${setLabel}: ${source} is outside the actual selector result`);
-        }
-      }
+      errors.push(...taggedGateRegistrationErrors({ repoRoot, setLabel, actual, registered: registeredGateSources(set.rules), snapshot }));
       validateExecutionBindings({
         bindings: selector.executionBindings,
         repoRoot,

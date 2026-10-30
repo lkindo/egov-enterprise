@@ -527,7 +527,7 @@ npm run regen -- --rebind-sast SAST-FP-001 --note "Re-reviewed 2026-10-19: <바�
 node scripts/regenerate.mjs --check
 ```
 
-`--check`는 생성기 검사 모드에 더해, `regen`이 고치지 않는 손 결속 원장 — operation census의 수·래칫(`config/governance/operation-consumer-census.json`의 `expected`)과 IA 처분 제안의 라우트 원장 결속 해시 — 를 같은 CLI로 먼저 확인한다. 운영 계약이 같은 판정을 다시 보므로 새 판정이 아니며, 실패하면 출력대로 원장이나 원인을 고친다. 새 시험의 게이트 등록(`config/governance/gates.json`)과 고정 수 시험 값은 사람이 먼저 정한다 — `regen`은 그 결과를 해시할 뿐이다. 등록 점검기(`node scripts/domain-registration-doctor.mjs <기능 id>`)는 원장에 없는 `@Tag("schema-validation")` 시험을 찾아 `gates.json`·기능 파일(`config/modules/<기능>.json` 의 `owns.gates`)에 붙여 넣을 항목을 보인다. `api-docs.json` 추출과 메뉴 snapshot은 무거운 실행이라 하지 않는다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
+`--check`는 생성기 검사 모드에 더해, `regen`이 고치지 않는 손 결속 원장 — operation census의 수·래칫(`config/governance/operation-consumer-census.json`의 `expected`), IA 처분 제안의 라우트 원장 결속 해시, 그리고 [손 결속 사전 점검](../../scripts/ledger-precheck.mjs)이 보는 셋(`TAGGED_GATE_REGISTRY` 태그 시험과 `config/governance/gates.json` 등록, `MENU_SNAPSHOT_STALE` 메뉴 snapshot의 마이그레이션 해시, `UNASSIGNED_PERMISSION_GUIDANCE` 기본 그룹 없는 권한의 기능 파일 `unassignedPermissions` 안내) — 를 같은 CLI·판정 함수로 먼저 확인한다. 운영 계약이 같은 판정을 다시 보므로 새 판정이 아니며, 실패하면 코드마다 출력의 `→` 대로 원장이나 원인을 고친다. 새 시험의 게이트 등록과 고정 수 시험 값은 사람이 정한다 — `regen`은 그 결과를 해시하고 `--check`는 빠진 것을 알릴 뿐이다. 등록 점검기(`node scripts/domain-registration-doctor.mjs <기능 id>`)는 원장에 없는 `@Tag("schema-validation")` 시험을 찾아 `gates.json`·기능 파일(`config/modules/<기능>.json` 의 `owns.gates`)에 붙여 넣을 항목을 보인다. `api-docs.json` 추출과 메뉴 snapshot 갱신(`npm run project:menus:refresh`)은 무거운 실행이라 하지 않는다 — `--check`는 snapshot이 낡았는지만 본다. 재생성으로 래칫 수치가 오르거나 새 예외가 생기면 받아들이지 않고 원인을 본다(H2).
 
 ### 로컬 사전 게이트 (git hooks)
 

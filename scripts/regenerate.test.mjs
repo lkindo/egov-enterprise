@@ -83,11 +83,12 @@ test('모든 생성기가 쓰지 않는 검사 명령을 갖고, 그 명령은 �
   assert.throws(() => checkTasks(ROOT, unchecked), /검사 명령\(check\)이 없다/);
 });
 
-// 재생성이 고치지 않는 손 결속 값(operation 수·소비 래칫, IA 처분 결속 해시)을 잊으면 운영 계약 뒤에야 붉었다. --check 가 같은 CLI 를
-// 먼저 부른다 — 읽기만 하는 명령이어야 하고, 그 스크립트가 없는 저장소(재사용 생성물)에서는 돌지 않는다.
-test('--check 는 손 결속 원장(operation census·IA 처분 결속)을 쓰지 않는 CLI 로 먼저 본다', () => {
+// 재생성이 고치지 않는 손 결속 값(operation 수·소비 래칫, IA 처분 결속 해시, 태그 시험 등록·메뉴 스냅숏 해시·미배정 권한 안내)을 잊으면
+// 운영 계약 뒤에야 붉었다. --check 가 같은 CLI 를 먼저 부른다 — 읽기만 하는 명령이어야 하고, 그 스크립트가 없는 저장소(재사용 생성물)에서는
+// 돌지 않는다. 손 결속 사전 점검의 실제 사례 red 는 ledger-precheck.test.mjs 가 본다.
+test('--check 는 손 결속 원장(operation census·IA 처분 결속·태그 등록·메뉴 스냅숏·미배정 안내)을 쓰지 않는 CLI 로 먼저 본다', () => {
   const ids = LEDGER_CHECKS.map(check => check.id);
-  assert.deepEqual(ids, ['operation-consumer-census', 'ia-disposition-binding']);
+  assert.deepEqual(ids, ['operation-consumer-census', 'ia-disposition-binding', 'hand-bound-ledgers']);
   for (const { id, command: [command, args] } of LEDGER_CHECKS) {
     assert.equal(command, 'node', `${id}: 확인은 node 스크립트다`);
     assert.ok(existsSync(join(ROOT, args[0])), `${id}: ${args[0]} 이 없다`);
@@ -118,6 +119,32 @@ test('원장 확인이 실패하면 판정 줄만 추려 보이고 regen 이 고
   assert.match(logs.join('\n'), /OPERATION_COUNT_DRIFT[\s\S]*drifted from the current manifest: expected abc/);
   const passing = checkTasks(ROOT, [], [fail('ok', 'process.exit(0)', census.excerpt)]);
   assert.equal((await checkGenerated({ cwd: ROOT, tasks: passing, log: () => {} })).ok, true);
+});
+
+// 통과한 검사의 출력은 보이지 않는다. 손 결속 사전 점검이 판정 모듈이 없어 건너뛴 점검만 ⚠ 줄로 남긴다(실제 경로의 red 는
+// ledger-precheck.test.mjs). 다른 통과 검사는 같은 줄을 써도 ✔ 한 줄 그대로이고, 실패한 검사의 출력도 그대로다.
+test('통과한 손 결속 확인만 건너뛴 점검을 ⚠ 줄로 보이고, 다른 통과·실패 검사의 출력은 그대로다', async () => {
+  const skipLine = '건너뜀: PROBE_CODE — scripts/probe-judge.mjs 이 이 저장소에 없다.';
+  const printing = `console.log(${JSON.stringify(`${skipLine}\n✅ 통과`)})`;
+  const as = (id, script) => ({ ...LEDGER_CHECKS.find(check => check.id === id), requires: undefined, command: ['node', ['-e', script]] });
+  assert.deepEqual(LEDGER_CHECKS.filter(check => check.notices).map(check => check.id), ['hand-bound-ledgers'], '알림을 꺼내는 확인은 손 결속 하나다');
+  const tasks = checkTasks(ROOT, [], [as('operation-consumer-census', printing), as('hand-bound-ledgers', printing)]);
+  const logs = [];
+  const result = await checkGenerated({ cwd: ROOT, tasks, log: line => logs.push(line) });
+  assert.equal(result.ok, true);
+  assert.deepEqual(result.results.map(row => row.notices), [[], [skipLine]]);
+  const lines = logs.join('\n').split('\n');
+  assert.deepEqual(lines.filter(line => line.startsWith('  ⚠ ')), [`  ⚠ hand-bound-ledgers: ${skipLine}`]);
+  assert.match(lines.at(-1), /건너뛴 점검은 위 ⚠ 줄에 있다/u);
+  // 알림 없는 통과는 요약에 아무것도 더하지 않고, 실패한 검사는 알림이 있어도 출력 끝만 보인다(실패 출력은 바꾸지 않는다).
+  const quiet = [];
+  await checkGenerated({ cwd: ROOT, tasks: [{ id: 'fresh', label: 'fresh', run: async () => ({ ok: true, output: skipLine }) }], log: line => quiet.push(line) });
+  assert.deepEqual(quiet.join('\n').split('\n').filter(line => line.includes('⚠')), []);
+  const broken = [];
+  await checkGenerated({ cwd: ROOT, log: line => broken.push(line),
+    tasks: [{ id: 'broken', label: 'broken', run: async () => ({ ok: false, output: 'boom', notices: [skipLine] }) }] });
+  assert.deepEqual(broken.join('\n').split('\n').filter(line => line.includes('⚠')), []);
+  assert.ok(broken.includes('      boom'));
 });
 
 test('regen 은 단계를 순서대로 돌리고 바뀐 파일만 보이며, URL 승인 해시를 다시 결속한다', (t) => {
