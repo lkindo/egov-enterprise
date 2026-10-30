@@ -105,6 +105,11 @@ class AttachmentSourceRegistryLinterTest {
                     guarded("assertAttachmentIsAssignable(dto.getAtchFileSn())", "deptJob.update(")),
             entry("business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java#assertAttachmentIsAssignable",
                     required("attachmentAssignmentPolicy.assertAssignable(atchFileSn)")),
+            // 저장 요청의 DTO 변환은 파일 귀속을 저장하지 않는다. 실제 writer 가드는 서비스에서 유지한다.
+            entry("business-core/src/main/java/nuri/business/service/deptjob/dto/DeptJobSaveRequest.java#toDto",
+                    readOnly()),
+            entry("business-app/src/main/java/nuri/business/service/promotion/popup/dto/PopupSaveRequest.java#toDto",
+                    readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityService.java#knownNamesByDirectory",
                     readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/AttachmentIntegrityService.java#describe",
@@ -129,6 +134,19 @@ class AttachmentSourceRegistryLinterTest {
                     guarded("accessPolicy.assertAttachable(master)",
                             "fileDetailRepository.findByFileMaster(", "storeFileDetails(")),
             entry("business-core/src/main/java/nuri/business/service/file/FileService.java#convertToDto",
+                    readOnly()),
+            // 부모 잠금 뒤 최신 detail을 읽는 삭제 경로도 인가가 메타·실물 삭제보다 먼저여야 한다.
+            entry("business-core/src/main/java/nuri/business/service/file/FileService.java#deleteFile",
+                    guarded("accessPolicy.assertDeletable(master)",
+                            "fileDetailRepository.delete(", "scheduleStoredFileDeletion(")),
+            // 불변 스냅샷·응답 변환은 저장소를 변경하지 않는다(중첩 record도 소비 census에 포함된다).
+            entry("business-core/src/main/java/nuri/business/service/file/dto/FileReadSnapshot.java#FileReadSnapshot",
+                    readOnly()),
+            entry("business-core/src/main/java/nuri/business/service/file/dto/FileReadSnapshot.java#Entry",
+                    readOnly()),
+            entry("business-core/src/main/java/nuri/business/service/file/dto/FileReadSnapshot.java#from",
+                    readOnly()),
+            entry("business-core/src/main/java/nuri/business/service/file/dto/FileReadSnapshot.java#toDto",
                     readOnly()),
             entry("business-app/src/main/java/nuri/business/service/board/BoardService.java#createPost",
                     guarded("attachmentAssignmentPolicy.assertAssignable(request.atchFileSn())",
@@ -155,6 +173,13 @@ class AttachmentSourceRegistryLinterTest {
                             "memoReportRepository.save(")),
             entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#updateMemoReport",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)", "entity.update(")),
+            // 조회 권한·내용 지문은 첨부의 read-only 소비다. 개인 첨부 인가는 FileService가 집행한다.
+            entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#canReadAttachments",
+                    readOnly()),
+            entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#readAttachments",
+                    readOnly()),
+            entry("business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java#instructionReadToken",
+                    readOnly()),
             entry("business-app/src/main/java/nuri/business/service/note/NoteService.java#sendNote",
                     guarded("attachmentAssignmentPolicy.assertAssignable(atchFileSn)",
                             "noteRepository.save(")),
@@ -263,6 +288,40 @@ class AttachmentSourceRegistryLinterTest {
                 loadAttachmentServiceSources(), activeAttachmentRules());
         if (!violations.isEmpty()) {
             fail("첨부 할당 writer 계약 위반:\n - " + String.join("\n - ", violations));
+        }
+    }
+
+    @Test
+    @DisplayName("🔒 읽은 첨부 정책의 실제 소비 규칙은 삭제 가드 후행·누락과 DTO 저장을 거부한다")
+    void readSnapshotConsumersRejectWritesAndUnguardedDeletion() throws IOException {
+        Map<String, String> sources = loadAttachmentServiceSources();
+        Map<String, AttachmentMethodRule> rules = activeAttachmentRules();
+        String filePath = "business-core/src/main/java/nuri/business/service/file/FileService.java";
+        if (sources.containsKey(filePath)) {
+            String original = sources.get(filePath);
+            String guard = "accessPolicy.assertDeletable(master);";
+            String schedule = "scheduleStoredFileDeletion(detail);";
+            assertTrue(original.contains(guard));
+            assertTrue(original.contains(schedule));
+            for (Map.Entry<String, String> mutation : Map.of(
+                    "가드 토큰 소실", original.replace(guard, ""),
+                    "저장보다 뒤", original.replace(guard, "").replace(schedule, schedule + " " + guard)).entrySet()) {
+                Map<String, String> mutated = new LinkedHashMap<>(sources);
+                mutated.put(filePath, mutation.getValue());
+                assertTrue(attachmentMethodViolations(mutated, rules).stream().anyMatch(value ->
+                        value.contains(filePath + "#deleteFile") && value.contains(mutation.getKey())));
+            }
+        }
+        for (String dtoPath : List.of(
+                "business-core/src/main/java/nuri/business/service/deptjob/dto/DeptJobSaveRequest.java",
+                "business-app/src/main/java/nuri/business/service/promotion/popup/dto/PopupSaveRequest.java")) {
+            if (!sources.containsKey(dtoPath)) continue; // 선택 기능이 없는 생성물에는 DTO도 없다.
+            String original = sources.get(dtoPath);
+            assertTrue(original.contains("toDto() {"));
+            Map<String, String> mutated = new LinkedHashMap<>(sources);
+            mutated.put(dtoPath, original.replace("toDto() {", "toDto() { repository.save(entity);"));
+            assertTrue(attachmentMethodViolations(mutated, rules).stream().anyMatch(value ->
+                    value.contains(dtoPath + "#toDto") && value.contains("금지된 쓰기/재사용 토큰")));
         }
     }
 

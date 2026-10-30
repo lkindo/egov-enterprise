@@ -136,7 +136,7 @@ class MemoReportServiceTest {
         assertThat(detail.getRptCn()).isEqualTo("읽은 본문");
         assertThat(detail.getAttachments()).isNull();
         assertThat(detail.getInstructionReadToken()).isNull();
-        assertThat(detail.getInstructable()).isEqualTo(actor.equals("recipient"));
+        assertThat(detail.getInstructable()).isFalse();
         if (actor.equals("recipient")) assertThat(report.getRptrInqDt()).isNotNull();
         else assertThat(report.getRptrInqDt()).isNull();
         org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
@@ -158,6 +158,8 @@ class MemoReportServiceTest {
     void revokingFileReadPermissionInvalidatesAlreadyIssuedTokenWithoutSideEffects(String permission) {
         MemoReport report = readableReport(15L);
         allowFileReadOnly(permission);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT"))
+                .thenReturn(true);
         given(fileService.getReadSnapshot(15L)).willReturn(snapshot(java.util.UUID.randomUUID(), "읽은첨부.pdf"));
         String token = memoReportService.getMemoReport(1L).getInstructionReadToken();
         report.updateDrctMatter("기존 지시", java.time.LocalDateTime.of(2026, 10, 1, 9, 0));
@@ -171,6 +173,7 @@ class MemoReportServiceTest {
         MemoReportDto detail = memoReportService.getMemoReport(1L);
         assertThat(detail.getInstructionReadToken()).isNull();
         assertThat(detail.getAttachments()).isNull();
+        assertThat(detail.getInstructable()).isFalse();
         org.mockito.Mockito.verifyNoInteractions(fileService, eventPublisher);
     }
 
@@ -178,10 +181,13 @@ class MemoReportServiceTest {
     void reportWithoutAttachmentDoesNotRequireFileOperationPermissionToReadOrInstruct() {
         MemoReport report = readableReport(null);
         allowFileReadOnly(null);
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT"))
+                .thenReturn(true);
         MemoReportDto detail = memoReportService.getMemoReport(1L);
         assertThat(detail.getAttachments()).isEmpty();
         assertThat(detail.getInstructionReadToken()).matches("[a-f0-9]{64}");
         assertThat(detail.getRptrInqDt()).isNotNull();
+        assertThat(detail.getInstructable()).isTrue();
 
         memoReportService.updateDrctMatter(1L, "첨부 없는 본문 지시", detail.getInstructionReadToken());
         assertThat(report.getDrctnMttr()).isEqualTo("첨부 없는 본문 지시");
@@ -377,7 +383,33 @@ class MemoReportServiceTest {
         org.assertj.core.api.Assertions.assertThatThrownBy(() -> memoReportService.updateDrctMatter(1L, "지시", "a".repeat(64)))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
         assertThat(report.getDrctnMttr()).isNull();
+        assertThat(report.getRptrInqDt()).isNull();
+        assertThat(report.getDrctnMttrRegDt()).isNull();
         org.mockito.Mockito.verifyNoInteractions(eventPublisher);
+    }
+
+    @ParameterizedTest
+    @CsvSource({
+            "true,NONE,true,true,false", "true,FILE_READ,true,true,true", "true,FILE_READ_ALL,true,true,true",
+            "false,NONE,true,true,true", "true,FILE_READ,true,false,false", "true,FILE_READ,false,true,false"
+    })
+    void listInstructionHintRequiresAvailableFileReadPermissionWithoutReadingAttachments(
+            boolean attached, String permission, boolean recipient, boolean instruct, boolean expected) {
+        MemoReport report = readableReport(attached ? 15L : null);
+        allowFileReadOnly(permission);
+        __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
+                .thenReturn(Optional.of(recipient ? "recipient" : "writer"));
+        __secUtilMock.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT"))
+                .thenReturn(instruct);
+        Pageable pageable = PageRequest.of(0, 10, NEWEST_FIRST);
+        given(memoReportRepository.findByRptrId("recipient", pageable)).willReturn(new PageImpl<>(List.of(report)));
+
+        MemoReportDto dto = memoReportService.getReceivedReportList("recipient", null, pageable).getContent().getFirst();
+
+        assertThat(dto.getInstructable()).isEqualTo(expected);
+        assertThat(dto.getAttachments()).isNull();
+        assertThat(dto.getInstructionReadToken()).isNull();
+        org.mockito.Mockito.verifyNoInteractions(fileService);
     }
 
     @ParameterizedTest
@@ -803,29 +835,31 @@ class MemoReportServiceTest {
 
     @Test
     @DisplayName("수신자가 처음 열면 열람일시를 남긴다 (DIP I7)")
-    void readMemoReport_recipientFirstView() {
+    void getMemoReport_recipientFirstView() {
         Long memoRptSn = 1L;
         MemoReport entity = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-me").build();
         when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(Optional.of(entity));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-me"));
 
-        memoReportService.readMemoReport(memoRptSn);
+        MemoReportDto detail = memoReportService.getMemoReport(memoRptSn);
 
         assertThat(entity.getRptrInqDt()).isNotNull();
+        assertThat(detail.getRptrInqDt()).isEqualTo(entity.getRptrInqDt());
     }
 
     @Test
     @DisplayName("🚨 작성자가 열어도, 수신자가 다시 열어도 열람일시는 바뀌지 않는다 — 열람됨은 수신자의 첫 열람이다 (DIP I7)")
-    void readMemoReport_onlyRecipientFirstViewCounts() {
+    void getMemoReport_onlyRecipientFirstViewCounts() {
         Long memoRptSn = 1L;
         MemoReport unread = MemoReport.builder().memoRptSn(memoRptSn).userId("esntl-writer").rptrId("esntl-recipient").build();
         when(memoReportRepository.findByIdForUpdate(memoRptSn)).thenReturn(Optional.of(unread));
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-writer"));
 
-        memoReportService.readMemoReport(memoRptSn);
+        MemoReportDto authorView = memoReportService.getMemoReport(memoRptSn);
         assertThat(unread.getRptrInqDt()).as("작성자 열람은 수신 확인이 아니다").isNull();
+        assertThat(authorView.getRptrInqDt()).isNull();
 
         java.time.LocalDateTime firstView = java.time.LocalDateTime.of(2026, 9, 1, 9, 0);
         MemoReport read = MemoReport.builder().memoRptSn(2L).userId("esntl-writer").rptrId("esntl-recipient").build();
@@ -834,8 +868,9 @@ class MemoReportServiceTest {
         __secUtilMock.when(nuri.business.security.util.SecurityUtil::getCurrentEsntlId)
                 .thenReturn(Optional.of("esntl-recipient"));
 
-        memoReportService.readMemoReport(2L);
+        MemoReportDto recipientView = memoReportService.getMemoReport(2L);
         assertThat(read.getRptrInqDt()).as("다시 열어도 첫 열람 시각을 덮지 않는다").isEqualTo(firstView);
+        assertThat(recipientView.getRptrInqDt()).isEqualTo(firstView);
     }
 
     @Test
@@ -1012,7 +1047,7 @@ class MemoReportServiceTest {
             "false, true, true, false",
             "false, false, true, false"
     })
-    @DisplayName("instructable: 지시 기능 권한과 수신자 여부로만 판정한다 — 전체 수정 권한은 지시를 열지 않는다 (GAP-MEMO-001)")
+    @DisplayName("첨부 없는 보고의 instructable: 지시 기능 권한과 수신자 여부로 판정한다 — 전체 수정 권한은 지시를 열지 않는다")
     void instructableMatchesRecipientOnlyGuard(boolean instruct, boolean updateAll, boolean recipient, boolean expected) {
         MemoReport entity = MemoReport.builder().memoRptSn(1L).userId("esntl-writer").rptrId("esntl-recipient").build();
         given(memoReportRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));

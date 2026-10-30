@@ -297,13 +297,24 @@ export default function MemoReportManagementClient() {
   const isCurrentDetail = (session: number, scope: string) => detailSession.current === session
     && currentDetailScope.current === scope;
 
-  const hasInstructionSnapshot = !!detail
-    && Array.isArray(detail.attachments)
-    && MemoInstructionRequestRequestSchema.shape.instructionReadToken.safeParse(detail.instructionReadToken).success;
-  const instructionBlocked = !hasInstructionSnapshot || !!instructionRecovery || isDetailLoading || !!detailError || !!latestError || isLoadingLatest;
+  const isCompleteInstructionSnapshot = (report: MemoReportInfo | undefined) => !!report
+    && Array.isArray(report.attachments)
+    && MemoInstructionRequestRequestSchema.shape.instructionReadToken.safeParse(report.instructionReadToken).success;
+  const attachmentInstructionRestriction = (report: MemoReportInfo | undefined): string | null => {
+    // 명시적인 미공개 첨부만 제한 사유로 해석한다. 누락·형식 오류를 권한 없음으로 단정하지 않는다.
+    // 수신자와 기능 권한 확인은 사유·보존된 초안을 보여 주기 위한 것이며 서버 저장 힌트를 대신하지 않는다.
+    if (!report || report.atchFileSn == null || report.attachments !== null
+      || !user?.esntlId || user.esntlId !== report.rptrId || !canPermission(user, 'MEMO_RPT_INSTRUCT')) return null;
+    return !canPermission(user, 'FILE_READ') && !canPermission(user, 'FILE_READ_ALL')
+      ? '첨부 목록 열람 권한이 없어 지시를 저장할 수 없습니다. 권한 담당자에게 문의해 주세요.'
+      : '첨부를 열람할 수 없어 지시를 저장할 수 없습니다. 보고 작성자나 권한 담당자에게 문의해 주세요.';
+  };
+  const attachmentRestriction = attachmentInstructionRestriction(detail);
+  const hasInstructionSnapshot = isCompleteInstructionSnapshot(detail);
+  const instructionBlocked = !canInstruct(detail) || !hasInstructionSnapshot || !!instructionRecovery || isDetailLoading || !!detailError || !!latestError || isLoadingLatest;
 
   const reloadLatest = async () => {
-    if (loadingLatestRef.current || savingInstructionRef.current || detailTarget == null) return;
+    if (loadingLatestRef.current || savingInstructionRef.current || detailTarget == null || attachmentRestriction) return;
     const session = detailSession.current;
     const reportId = detailTarget.memoRptSn;
     const scope = detailScope;
@@ -316,7 +327,14 @@ export default function MemoReportManagementClient() {
       if (!isCurrentDetail(session, scope)) return;
       if (!result.data || result.data.memoRptSn !== reportId) throw new Error('보고 응답이 요청과 다릅니다.');
       setDetailSnapshot({ scope, report: result.data });
-      setInstructionRecovery('review');
+      if (attachmentInstructionRestriction(result.data)) {
+        setInstructionRecovery(null);
+      } else if (!isCompleteInstructionSnapshot(result.data)) {
+        setInstructionRecovery(null);
+        setLatestError('보고의 본문과 첨부를 확인하는 정보가 올바르지 않습니다. 다시 불러와 주세요.');
+      } else {
+        setInstructionRecovery(canInstruct(result.data) ? 'review' : null);
+      }
     } catch (error: unknown) {
       if (!isCurrentDetail(session, scope)) return;
       const status = getHttpStatus(error);
@@ -732,16 +750,16 @@ export default function MemoReportManagementClient() {
             <p className="py-6 text-sm text-muted-foreground">불러오는 중…</p>
           ) : (
             <div className="space-y-6 py-2">
-              {(instructionRecovery || latestError || detailError || (canInstruct(detail) && !hasInstructionSnapshot)) && (
+              {(attachmentRestriction || instructionRecovery || latestError || detailError || (canInstruct(detail) && !hasInstructionSnapshot)) && (
                 <div role={latestError ? 'alert' : 'status'} aria-label="메모 보고 재확인 안내" className="space-y-3 rounded-md border border-border bg-muted p-4 text-sm">
                   <p>
-                    {latestError || (instructionRecovery === 'review'
+                    {attachmentRestriction || latestError || (instructionRecovery === 'review'
                       ? '최신 본문과 첨부를 불러왔습니다. 내용을 확인한 다음 지시사항을 별도로 저장해 주세요.'
                       : instructionRecovery === 'conflict'
                         ? '본문이나 첨부가 변경되어 지시사항을 저장하지 않았습니다. 작성 중인 지시는 유지됩니다. 최신 내용을 불러와 다시 확인해 주세요.'
                         : '보고의 본문과 첨부를 확인할 수 없어 지시사항을 저장할 수 없습니다. 최신 내용을 다시 불러와 주세요.')}
                   </p>
-                  <div className="flex flex-wrap gap-2">
+                  {!attachmentRestriction && <div className="flex flex-wrap gap-2">
                     <Button type="button" variant="outline" size="sm" disabled={isLoadingLatest || isSavingInstruction} aria-busy={isLoadingLatest || undefined} onClick={() => void reloadLatest()}>
                       최신 내용 불러오기
                     </Button>
@@ -750,7 +768,7 @@ export default function MemoReportManagementClient() {
                         내용을 확인했습니다
                       </Button>
                     )}
-                  </div>
+                  </div>}
                 </div>
               )}
               <dl className="grid gap-3 rounded-md bg-muted p-4 sm:grid-cols-2">
@@ -907,7 +925,7 @@ export default function MemoReportManagementClient() {
                   [2026-09-25 DIP I7] 지시는 수신자만 남긴다(2026-10-16 GAP-MEMO-001 — 관리자 우회 없음).
                   작성자·관리자에게는 입력을 보이지 않는다 — 보여 주면 누를 때마다 403 이 나는 죽은 어포던스가 된다.
                 */}
-                {canInstruct(detail) && (
+                {(canInstruct(detail) || attachmentRestriction) && (
                 <Form {...instructionForm}>
                   <form onSubmit={submitInstruction} noValidate className="space-y-2">
                     <p className="text-xs text-muted-foreground">저장할 때 지금 표시된 본문과 첨부가 변경되지 않았는지 확인합니다.</p>
@@ -925,6 +943,7 @@ export default function MemoReportManagementClient() {
                             <textarea
                               {...field}
                               maxLength={2000}
+                              readOnly={!!attachmentRestriction}
                               placeholder="이 보고에 대한 지시사항을 입력하세요."
                               className="w-full min-h-[100px] rounded-md border border-border bg-muted/40 p-3 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                             />

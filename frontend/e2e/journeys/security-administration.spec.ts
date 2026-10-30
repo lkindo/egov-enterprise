@@ -3,7 +3,7 @@ import { randomBytes } from 'node:crypto';
 import { expect,test } from '../fixtures/browser-test';
 import { collectPageCoverage } from '../fixtures/page-observation';
 import { getAdminBearerToken } from '../utils/admin-token';
-import { anonymousCsrfRequestState } from '../fixtures/csrf';
+import { anonymousCsrfRequestState, CSRF_COOKIE, CSRF_HEADER } from '../fixtures/csrf';
 /**
  * [2026-10-05 반박 리뷰 반영 — blocker 회귀 방지] 단추 중심의 맨 위 요소가 단추 자신(또는 그 안)인가. 창이 낮을 때(기본 뷰포트
  * 1280×720 포함) 권한 표 상자가 편집기 안에서 넘쳐 저장 막대를 덮으면 클릭이 표 칸에 떨어진다('td intercepts pointer events').
@@ -241,7 +241,14 @@ test.describe('권한 변경과 충돌 제어', () => {
                 try { await actor.context.close(); } catch (error) { cleanupFailures.push(error); }
             }
             if (menuNo !== undefined) {
-                try { expect((await loginRequest.delete(`/api/v1/menus/bookmarks/${menuNo}`)).status()).toBe(200); }
+                try {
+                    // 로그인은 CSRF 쿠키를 교체하므로 익명 컨텍스트의 고정 헤더 대신 현재 쿠키와 맞춘다.
+                    const csrf = (await loginRequest.storageState()).cookies.find(cookie => cookie.name === CSRF_COOKIE)?.value;
+                    if (!csrf) throw new Error('Bookmark cleanup requires the current CSRF cookie.');
+                    expect((await loginRequest.delete(`/api/v1/menus/bookmarks/${menuNo}`, {
+                        headers: { [CSRF_HEADER]: csrf },
+                    })).status()).toBe(200);
+                }
                 catch (error) { cleanupFailures.push(error); }
             }
             if (userCreated) {

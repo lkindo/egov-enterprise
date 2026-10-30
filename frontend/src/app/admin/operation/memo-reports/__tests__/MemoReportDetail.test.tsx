@@ -163,6 +163,100 @@ describe('읽은 본문·첨부에 결속된 지시', () => {
     expect(screen.getByRole('button', { name: '최신 내용 불러오기' })).toBeEnabled();
   });
 
+  it('첨부 목록 권한이 없는 수신자에게 지시 불가 사유를 알리고 반복 조회를 제안하지 않는다', async () => {
+    mocks.getMemoReport.mockResolvedValue({ ...DETAIL, atchFileSn: 77, attachments: null, instructionReadToken: null, instructable: false });
+    renderClient();
+    const draft = await openReport();
+    expect(screen.getByText('첨부 목록 열람 권한이 없어 지시를 저장할 수 없습니다. 권한 담당자에게 문의해 주세요.')).toBeVisible();
+    expect(screen.getByText(ROW.rptCn)).toBeVisible();
+    expect(draft).toHaveAttribute('readonly');
+    expect(screen.getByRole('button', { name: '지시사항 등록' })).toBeDisabled();
+    expect(screen.queryByRole('button', { name: '최신 내용 불러오기' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '내용을 확인했습니다' })).not.toBeInTheDocument();
+    expect(mocks.getMemoReport).toHaveBeenCalledTimes(1);
+    expect(mocks.updateDrctMatter).not.toHaveBeenCalled();
+  });
+
+  // 현재 resource ACCESS_DENIED는 GET 403이다. 불완전한 서버 응답이 온 경우에도 성공으로 안내하지 않는 방어적 UI 계약이다.
+  it.each(['FILE_READ', 'FILE_READ_ALL'])('%s가 있는데 명시적인 미공개 첨부 응답이 오면 반복 조회 대신 제한을 안내한다', async (permission) => {
+    mocks.user!.permissions!.push(permission);
+    mocks.getMemoReport.mockResolvedValue({ ...DETAIL, atchFileSn: 77, attachments: null, instructionReadToken: null, instructable: false });
+    renderClient();
+    await openReport();
+    expect(screen.getByText('첨부를 열람할 수 없어 지시를 저장할 수 없습니다. 보고 작성자나 권한 담당자에게 문의해 주세요.')).toBeVisible();
+    expect(screen.queryByText(/첨부 목록 열람 권한이 없어/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '최신 내용 불러오기' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '지시사항 등록' })).toBeDisabled();
+  });
+
+  it.each([
+    { esntlId: 'USR_A', permissions: ['MEMO_RPT_READ', 'MEMO_RPT_INSTRUCT'] },
+    { esntlId: 'USR_B', permissions: ['MEMO_RPT_READ'] },
+  ])('수신자·지시 권한 조건을 충족하지 않으면 제한 안내나 초안 입력을 새로 열지 않는다: %j', async (authorization) => {
+    mocks.user = { role: 'ROLE_USER', ...authorization, authorizationVersion: 'v1' };
+    mocks.getMemoReport.mockResolvedValue({ ...DETAIL, atchFileSn: 77, attachments: null, instructionReadToken: null, instructable: false });
+    renderClient();
+    fireEvent.click(await screen.findByRole('button', { name: '3분기 운영 보고 보고 열기' }));
+    expect(await screen.findByText(ROW.rptCn)).toBeVisible();
+    expect(screen.queryByText(/지시를 저장할 수 없습니다/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('textbox', { name: /지시사항 남기기/ })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '최신 내용 불러오기' })).not.toBeInTheDocument();
+    expect(mocks.updateDrctMatter).not.toHaveBeenCalled();
+  });
+
+  it('재조회 후 첨부 열람 불가 응답이면 성공 안내 없이 초안을 확인·복사할 수 있게 남긴다', async () => {
+    mocks.user!.permissions!.push('FILE_READ');
+    mocks.updateDrctMatter.mockRejectedValueOnce({ response: { status: 409 } });
+    renderClient();
+    const draft = await openReport();
+    fireEvent.change(draft, { target: { value: '복사할 기존 초안' } });
+    fireEvent.click(screen.getByRole('button', { name: '지시사항 등록' }));
+    const reload = await screen.findByRole('button', { name: '최신 내용 불러오기' });
+    mocks.getMemoReport.mockResolvedValueOnce({ ...DETAIL, rptCn: '변경된 본문', atchFileSn: 77, attachments: null, instructionReadToken: null, instructable: false });
+    fireEvent.click(reload);
+    expect(await screen.findByText('첨부를 열람할 수 없어 지시를 저장할 수 없습니다. 보고 작성자나 권한 담당자에게 문의해 주세요.')).toBeVisible();
+    expect(screen.getByText('변경된 본문')).toBeVisible();
+    expect(draft).toHaveValue('복사할 기존 초안');
+    expect(draft).toHaveAttribute('readonly');
+    expect(draft).not.toBeDisabled();
+    expect(screen.getByRole('button', { name: '지시사항 등록' })).toBeDisabled();
+    expect(screen.queryByText(/최신 본문과 첨부를 불러왔습니다/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '내용을 확인했습니다' })).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '최신 내용 불러오기' })).not.toBeInTheDocument();
+    await act(async () => { fireEvent.submit(draft.closest('form')!); });
+    expect(mocks.updateDrctMatter).toHaveBeenCalledTimes(1);
+  });
+
+  it.each([
+    { attachments: undefined, instructionReadToken: null },
+    { attachments: [], instructionReadToken: '잘못된 확인 정보' },
+  ])('첨부 스냅샷 누락·형식 오류를 확정된 권한 없음으로 간주하지 않는다: %j', async (snapshot) => {
+    mocks.getMemoReport.mockResolvedValue({ ...DETAIL, ...snapshot, atchFileSn: 77, instructable: true });
+    renderClient();
+    await openReport();
+    expect(screen.queryByText(/권한 담당자에게 문의해 주세요/)).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '최신 내용 불러오기' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '지시사항 등록' })).toBeDisabled();
+  });
+
+  it('재조회가 유효하지 않은 확인 정보를 반환하면 확인 완료로 진행하지 않고 초안과 재시도를 유지한다', async () => {
+    mocks.updateDrctMatter.mockRejectedValueOnce({ response: { status: 409 } });
+    renderClient();
+    const draft = await openReport();
+    fireEvent.change(draft, { target: { value: '불완전한 조회 후 보존' } });
+    fireEvent.click(screen.getByRole('button', { name: '지시사항 등록' }));
+    const reload = await screen.findByRole('button', { name: '최신 내용 불러오기' });
+    mocks.getMemoReport.mockResolvedValueOnce({ ...DETAIL, instructionReadToken: '잘못된 확인 정보', instructable: true });
+    fireEvent.click(reload);
+    expect(await screen.findByRole('alert', { name: '메모 보고 재확인 안내' })).toHaveTextContent('보고의 본문과 첨부를 확인하는 정보가 올바르지 않습니다. 다시 불러와 주세요.');
+    expect(draft).toHaveValue('불완전한 조회 후 보존');
+    expect(screen.queryByText(/최신 본문과 첨부를 불러왔습니다/)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: '내용을 확인했습니다' })).not.toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '최신 내용 불러오기' })).toBeEnabled();
+    expect(screen.getByRole('button', { name: '지시사항 등록' })).toBeDisabled();
+    expect(mocks.updateDrctMatter).toHaveBeenCalledTimes(1);
+  });
+
   it('배경 재조회는 작성 중인 화면의 본문·첨부·읽은 내용 정보를 교체하지 않는다', async () => {
     const { client } = renderClient();
     const draft = await openReport();

@@ -179,9 +179,11 @@ public class MemoReportService {
         // 본문 권한은 파일 목록 작업권한을 대신하지 않는다. 허용된 참여자도 기존 파일 인가를 통과해야 한다.
         FileReadSnapshot snapshot = participant && canReadAttachments(entity) ? readAttachments(entity, false) : null;
         if (recipient && entity.getRptrInqDt() == null) {
-            entity.updateInqireDt(java.time.LocalDateTime.now());
+            // PostgreSQL timestamp(6)에 저장되는 정밀도로 응답도 맞춘다. 첫 응답과 재조회가 같은 최초 시각이다.
+            entity.updateInqireDt(java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
         }
         MemoReportDto dto = toDtoWithPermission(entity, participantNames(List.of(entity)));
+        if (snapshot == null) dto.setInstructable(false);
         if (snapshot != null) dto.setAttachments(snapshot.toFileDtos());
         if (recipient && snapshot != null) dto.setInstructionReadToken(instructionReadToken(entity, snapshot));
         return dto;
@@ -307,10 +309,10 @@ public class MemoReportService {
      * [2026-10-01] 지시를 남길 수 있는가 — 지시 기능 권한과 수신자 규칙(assertRecipient)을 boolean 으로 계산한다.
      * 종전 화면은 기능 권한을 보지 않아, 권한을 회수해도 지시 칸이 남고 저장 때 403 을 만났다.
      * [2026-10-16 GAP-MEMO-001] 전체 수정 권한(MEMO_RPT_UPDATE_ALL)은 더 이상 지시를 열지 않는다 — 쓰기 가드와 같다.
-     * 표시용 힌트이며 실제 차단은 쓰기 경로가 집행한다.
+     * 첨부 묶음이 있으면 파일 목록 기능 권한도 필요하다. 실제 파일 접근과 저장 검증은 상세·쓰기 경로가 집행한다.
      */
     private boolean canInstruct(MemoReport entity) {
-        if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT")) {
+        if (!nuri.business.security.util.SecurityUtil.hasPermission("MEMO_RPT_INSTRUCT") || !canReadAttachments(entity)) {
             return false;
         }
         return nuri.business.security.util.SecurityUtil.getCurrentEsntlId()
@@ -365,23 +367,6 @@ public class MemoReportService {
             }
         }
         memoReportRepository.delete(entity);
-    }
-
-    /**
-     * 열람 표시. 열람일시는 <b>수신자가 처음 연 시각</b>이다(2026-09-25 DIP I7, D9).
-     *
-     * <p>종전에는 작성자·관리자가 열어도, 수신자가 다시 열어도 매번 덮어써서 목록의 '열람됨' 이 "수신자가
-     * 읽었다" 를 뜻하지 않았다 — 작성자가 자기 보고를 다시 열기만 해도 열람됨이 됐다.</p>
-     */
-    @Transactional
-    public void readMemoReport(@NonNull Long memoRptSn) {
-        memoReportRepository.findByIdForUpdate(memoRptSn).ifPresent(entity -> {
-            assertParticipantOrAdmin(entity); // 열람 표시도 권한자만 — 미인가 요청이 조회일시를 갱신하지 못하게 한다
-            boolean recipient = currentEsntlIdOrDeny().equals(entity.getRptrId());
-            if (recipient && entity.getRptrInqDt() == null) {
-                entity.updateInqireDt(java.time.LocalDateTime.now());
-            }
-        });
     }
 
     @Transactional

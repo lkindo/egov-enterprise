@@ -4411,6 +4411,19 @@
       "forbiddenTokens": []
     },
     {
+      "target": "MemoReportService#readAttachments",
+      "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
+      "policy": "REACHABILITY_WITH_PRIVACY",
+      "denyReferences": 1,
+      "requiredTokens": [
+        "if (entity.getAtchFileSn() == null) return FileReadSnapshot.empty();",
+        "if (!canReadAttachments(entity)) throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
+        "fileService.getReadSnapshotForUpdate(entity.getAtchFileSn())",
+        "fileService.getReadSnapshot(entity.getAtchFileSn())"
+      ],
+      "forbiddenTokens": []
+    },
+    {
       "target": "MemoReportService#currentEsntlIdOrDeny",
       "source": "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
       "policy": "AUTHENTICATED",

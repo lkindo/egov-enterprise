@@ -45,7 +45,7 @@ pre-push와 `npm run verify`는 CodeQL 분석을 직접 실행하지 않는다. 
 
 ### 첨부 할당 인가 게이트
 
-`AttachmentSourceRegistryLinterTest`는 `atchFileSn`을 가진 엔티티와 참조원 registry를 양방향으로 대조하는 기존 열람 도달성 검사에 더해, `business-core`·`business-app`의 프로덕션 서비스 계층에서 클라이언트가 선택한 첨부 assignment carrier를 exact census로 수집한다. 쓰기 경로는 `AttachmentAssignmentPolicy`의 원 업로더 가드가 엔티티·물리 파일 변경보다 먼저 오는지까지 검사하며, 미등록 writer·가드 삭제·가드 후행은 하네스를 red로 만든다. 파일 삭제 API처럼 새 업무 참조를 만들지 않는 경로는 이 census 범위가 아니다. 판정 본문은 baseline full-source hash로 보호된다.
+`AttachmentSourceRegistryLinterTest`는 `atchFileSn`을 가진 엔티티와 참조원 registry를 양방향으로 대조하는 기존 열람 도달성 검사에 더해, `business-core`·`business-app`의 프로덕션 서비스 계층에서 첨부 식별자를 소비하는 메서드를 exact census로 수집한다. 귀속 저장은 `AttachmentAssignmentPolicy`의 원 업로더 가드가 저장보다 먼저 오는지 검사한다. DTO 변환·내용 스냅샷 등 읽기 전용 소비에는 쓰기를 금지하고, 파일 삭제는 `FileAccessPolicy.assertDeletable`이 메타데이터 삭제와 실물 삭제 예약보다 먼저 오는지 검사한다. 미등록 소비·가드 삭제·가드 후행은 하네스를 red로 만들며, 판정 본문은 baseline full-source hash로 보호된다.
 
 ### 대표 거버넌스 하네스
 

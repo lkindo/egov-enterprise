@@ -57,12 +57,12 @@ export function useMenuBookmarkCleanup(ready: boolean) {
   const { toast } = useToast();
   const scopeKey = JSON.stringify(authorization.scope);
   const currentScope = useRef(scopeKey);
-  const mounted = useRef(true);
+  const lifecycleActiveRef = useRef(true);
   const pendingRef = useRef(false);
   const [pending, setPending] = useState(false);
   // Invalidate a confirmation in the commit phase, before another dialog event can use the old account scope.
   useLayoutEffect(() => { currentScope.current = scopeKey; }, [scopeKey]);
-  useLayoutEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
+  useLayoutEffect(() => { lifecycleActiveRef.current = true; return () => { lifecycleActiveRef.current = false; }; }, []);
 
   const mutation = useMutation({
     mutationFn: (body: MenuBookmarkCleanupRequest) => menuService.cleanupUnavailableBookmarks(body),
@@ -75,7 +75,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
     pendingRef.current = true;
     setPending(true);
     const confirmedScope = scopeKey;
-    const sameScope = () => mounted.current && currentScope.current === confirmedScope;
+    const sameScope = () => lifecycleActiveRef.current && currentScope.current === confirmedScope;
     const headKey = ['menus', 'head', ...authorization.scope] as const;
     const statusKey = [...MENU_BOOKMARKS_KEY, ...authorization.scope] as const;
     try {
@@ -135,7 +135,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
       }
     } finally {
       pendingRef.current = false;
-      if (mounted.current) setPending(false);
+      if (lifecycleActiveRef.current) setPending(false);
     }
   }, [authorization.scope, checkAuth, client, confirm, mutation, ready, scopeKey, toast, user]);
 

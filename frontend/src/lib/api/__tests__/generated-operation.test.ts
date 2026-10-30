@@ -69,12 +69,22 @@ describe('generated operation contract', () => {
   });
 
   it('readOnly 요청 위조와 writeOnly 응답 유출을 중첩 경로까지 차단한다', () => {
-    // 수정 가능 여부(editable)는 서버가 판정해 응답에만 싣는 readOnly 필드다 — 요청에 실으면 위조다.
+    // 입력 전용 DeptJobSaveRequest에는 서버 판정 editable이 없다 — 실제 요청에서는 알 수 없는 필드로 거부한다.
     expect(() => parseGeneratedOperationRequest(createDeptJobOperation, {
       deptTaskNm: '업무',
       deptTaskCn: '내용',
       editable: true,
-    } as never)).toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
+    } as never)).toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
+
+    // 실행기의 readOnly 경로 차단도 유지한다. 아래 중첩 writeOnly 사례처럼 같은 형식의 경로를 서술자에 얹는다.
+    expect(() => parseGeneratedOperationRequest({
+      ...createDeptJobOperation,
+      requestForbiddenPaths: [['editable']],
+    }, {
+      deptTaskNm: '업무',
+      deptTaskCn: '내용',
+      editable: true,
+    })).toThrow('생성 API 요청에 허용되지 않은 필드가 있습니다.');
 
     // 계약에 없는 작성자 ID도 strict 요청 계약이 거부한다(작성자는 서버가 인증 주체로 정한다).
     expect(() => parseGeneratedOperationRequest(createDeptJobOperation, {

@@ -222,15 +222,6 @@
       ]
     },
     {
-      "file": "memoreport/dto/MemoReportDto.java",
-      "owner": "memoreport",
-      "target": "file",
-      "module": "business-core",
-      "types": [
-        "nuri.business.service.file.dto.FileDto"
-      ]
-    },
-    {
       "file": "memoreport/MemoReportService.java",
       "owner": "memoreport",
       "target": "file",

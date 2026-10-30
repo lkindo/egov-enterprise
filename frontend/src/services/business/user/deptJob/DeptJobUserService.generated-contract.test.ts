@@ -183,8 +183,11 @@ describe('DeptJobUserService generated contract', () => {
     expect(createDeptJobBoxOperation.requestForbiddenPaths).toStrictEqual(boxForbiddenPaths);
     expect(updateDeptJobBoxOperation.requestForbiddenPaths).toStrictEqual(boxForbiddenPaths);
     // 요청 전용 DTO에는 조회 필드 자체가 없으므로 strict 요청 스키마가 같은 필드를 거부한다.
-    expect(createDeptJobOperation.requestSchema.safeParse(jobRequest).success).toBe(true);
-    expect(updateDeptJobOperation.requestSchema.safeParse(jobRequest).success).toBe(true);
+    const createRequestSchema = createDeptJobOperation.requestSchema;
+    const updateRequestSchema = updateDeptJobOperation.requestSchema;
+    if (!createRequestSchema || !updateRequestSchema) throw new Error('부서 업무 쓰기 요청 스키마가 필요합니다.');
+    expect(createRequestSchema.safeParse(jobRequest).success).toBe(true);
+    expect(updateRequestSchema.safeParse(jobRequest).success).toBe(true);
 
     expect(Object.keys(DeptJobBoxDtoRequestSchema.shape)).toStrictEqual([
       'deptTaskBoxNm', 'deptId', 'sortOrdr',
@@ -212,8 +215,8 @@ describe('DeptJobUserService generated contract', () => {
     }
     for (const field of jobReadOnlyFields) {
       const forged = { ...jobRequest, [field]: 'forged-value' };
-      expect(createDeptJobOperation.requestSchema.safeParse(forged).success).toBe(false);
-      expect(updateDeptJobOperation.requestSchema.safeParse(forged).success).toBe(false);
+      expect(createRequestSchema.safeParse(forged).success).toBe(false);
+      expect(updateRequestSchema.safeParse(forged).success).toBe(false);
       await expect(deptJobUserService.createDeptJob(forged as never))
         .rejects.toThrow('생성 API 요청이 OpenAPI 계약과 일치하지 않습니다.');
       await expect(deptJobUserService.updateDeptJob(5, forged as never))

@@ -212,9 +212,12 @@ class MemoReportRecipientIntegrityIntegrationTest {
 
     @Test
     void concurrentRecipientReadsPreserveExactlyTheFirstReadTime() throws Exception {
+        assertThat(jdbc.queryForObject("SELECT datetime_precision FROM information_schema.columns "
+                + "WHERE table_schema=current_schema() AND table_name='tb_memo_rpt_info' AND column_name='rptr_inq_dt'",
+                Integer.class)).isEqualTo(6);
         long id = memoReportService.createMemoReport(sender, memo(active));
         // 작성자가 확인해도 수신자 읽음은 생기지 않는다.
-        memoReportService.readMemoReport(id);
+        memoReportService.getMemoReport(id);
         assertThat(jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", java.sql.Timestamp.class, id)).isNull();
         try (var blocker = dataSource.getConnection(); var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
             blocker.setAutoCommit(false);
@@ -228,10 +231,15 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 try {
                     return new TransactionTemplate(transactionManager).execute(status -> {
                         jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
-                        memoReportService.readMemoReport(id);
+                        MemoReportDto response = memoReportService.getMemoReport(id);
+                        assertThat(response.getRptrInqDt()).isNotNull();
+                        assertThat(response.getInstructionReadToken()).matches("[a-f0-9]{64}");
                         entityManager.flush();
-                        return jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?",
+                        java.sql.Timestamp stored = jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?",
                                 java.sql.Timestamp.class, id);
+                        assertThat(stored).isNotNull();
+                        assertThat(response.getRptrInqDt()).isEqualTo(stored.toLocalDateTime());
+                        return stored;
                     });
                 } finally { SecurityContextHolder.clearContext(); }
             };
@@ -387,6 +395,8 @@ class MemoReportRecipientIntegrityIntegrationTest {
         if (actor.equals("administrator")) {
             authenticate(waiting, "MEMO_RPT_READ_ALL", "MEMO_RPT_UPDATE_ALL", "MEMO_RPT_INSTRUCT", "FILE_READ_ALL", "FILE_DELETE_ALL");
             MemoReportDto adminRead = memoReportService.getMemoReport(id);
+            assertThat(adminRead.getRptCn()).isEqualTo("original");
+            assertThat(adminRead.getInstructable()).isFalse();
             assertThat(adminRead.getInstructionReadToken()).isNull();
             assertThat(adminRead.getAttachments()).isNullOrEmpty();
             assertThatThrownBy(() -> files.getFileList(group))
@@ -593,13 +603,20 @@ class MemoReportRecipientIntegrityIntegrationTest {
         assertThat(bodyOnly.getRptCn()).isEqualTo("original");
         assertThat(bodyOnly.getAttachments()).isNull();
         assertThat(bodyOnly.getInstructionReadToken()).isNull();
+        assertThat(bodyOnly.getInstructable()).isFalse();
         Object firstRead = reportRow(id).get("rptr_inq_dt");
         assertThat(firstRead).isNotNull();
         authenticate(active);
         MemoReportDto allowed = memoReportService.getMemoReport(id);
         assertThat(allowed.getAttachments()).hasSize(1);
         assertThat(allowed.getInstructionReadToken()).isNotBlank();
+        assertThat(allowed.getInstructable()).isTrue();
         authenticate(active, "MEMO_RPT_INSTRUCT");
+        MemoReportDto revoked = memoReportService.getMemoReport(id);
+        assertThat(revoked.getRptCn()).isEqualTo("original");
+        assertThat(revoked.getAttachments()).isNull();
+        assertThat(revoked.getInstructionReadToken()).isNull();
+        assertThat(revoked.getInstructable()).isFalse();
         Map<String, Object> before = reportRow(id);
         List<Long> effects = effectCounts();
         assertThatThrownBy(() -> memoReportService.updateDrctMatter(id, "permission was revoked", allowed.getInstructionReadToken()))
