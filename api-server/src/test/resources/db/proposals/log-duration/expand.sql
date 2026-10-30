@@ -43,8 +43,14 @@ BEGIN
     END IF;
     IF (SELECT count(*) FROM pg_catalog.pg_class c
         JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
-        WHERE n.nspname='public' AND c.relname IN ('tb_sys_log','tb_web_log') AND c.relkind='r') <> 2 THEN
-        RAISE EXCEPTION USING ERRCODE='55000', MESSAGE='D02 log target tables require separate partition/view review';
+        WHERE n.nspname='public' AND c.relname IN ('tb_sys_log','tb_web_log')
+          AND c.relkind='r' AND NOT c.relispartition) <> 2
+       OR EXISTS (SELECT 1 FROM pg_catalog.pg_inherits
+           WHERE inhrelid IN ('public.tb_sys_log'::regclass,'public.tb_web_log'::regclass)
+              OR inhparent IN ('public.tb_sys_log'::regclass,'public.tb_web_log'::regclass))
+       OR EXISTS (SELECT 1 FROM pg_catalog.pg_rewrite
+           WHERE ev_class IN ('public.tb_sys_log'::regclass,'public.tb_web_log'::regclass)) THEN
+        RAISE EXCEPTION USING ERRCODE='55000', MESSAGE='D02 log target tables require separate partition/view/inheritance/rule review';
     END IF;
     IF EXISTS (SELECT 1 FROM information_schema.columns
         WHERE table_schema='public' AND table_name IN ('tb_sys_log','tb_web_log')

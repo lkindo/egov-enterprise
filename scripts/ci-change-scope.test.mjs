@@ -262,12 +262,17 @@ test('online encryption sources select the migration suite that holds their comp
     'foundation/src/main/java/nuri/foundation/security/mfa/MfaSecretCipher.java',
     'business-core/src/main/java/nuri/business/domain/user/entity/User.java',
     'business-core/src/main/java/nuri/business/domain/auth/mfa/MfaCredential.java',
+    'foundation/src/main/java/nuri/foundation/domain/common/IntegralStringConverter.java',
+    'business-core/src/main/java/nuri/business/domain/deptjob/DeptJob.java',
+    'business-app/src/main/java/nuri/business/domain/promotion/popup/Popup.java',
   ]) {
     assert.ok(fs.existsSync(path.join(repoRoot, file)), `${file}: semantic input must exist`);
     const result = classifyChangedFiles([file]);
     for (const field of ['backend', 'migration']) {
       assert.equal(result[field], true, `${file}: protected column contract lost ${field}`);
     }
+    assert.equal(classifyChangedFiles([file], { readSource: () => null }).migration, true,
+      `${file}: removing its converter declaration must still select the inventory contract`);
   }
   // A future converter elsewhere is still counted by the contract.
   assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/domain/x/NewSecretConverter.java']).migration, true);

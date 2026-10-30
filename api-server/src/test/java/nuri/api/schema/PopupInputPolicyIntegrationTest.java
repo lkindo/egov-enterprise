@@ -1,5 +1,6 @@
 package nuri.api.schema;
 
+import java.math.BigDecimal;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -27,7 +28,7 @@ import org.springframework.test.context.ActiveProfiles;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-/** Legacy reads and strict new writes use the real popup service and disposable PostgreSQL. */
+/** NUMERIC reads and strict string requests use the real popup service and disposable PostgreSQL. */
 @Tag("schema-validation")
 @SpringBootTest(properties = "nuri.durable-work.enabled=false")
 @Import(AuthorizationSchemaRehearsalTestConfiguration.class)
@@ -65,13 +66,14 @@ class PopupInputPolicyIntegrationTest {
     }
 
     @ParameterizedTest
-    @CsvSource({"5000,300", "400,0100"})
-    void legacyDimensionsRemainReadableButMustBeCorrectedBeforeSaving(String legacyWidth, String legacyHeight) {
+    @CsvSource({"5000,300", "400,99", "9999999,300"})
+    void outOfRangeNumericDimensionsRemainReadableButMustBeCorrectedBeforeSaving(String legacyWidth, String legacyHeight) {
+        // Empty-table migration cannot retain '0100'. Exercise representable out-of-range data instead.
         Long popup = jdbc.queryForObject("""
                 INSERT INTO tb_popup_info(popup_ttl_nm,popup_wdth_pstn,popup_vrtc_pstn,popup_wdth_sz,popup_vrtc_sz,
                     stopvew_setup_yn,ntce_yn,frst_rgtr_id,last_mdfr_id,crt_dt,mdfcn_dt)
                 VALUES (?,'010','-5',?,?,'N','N',?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) RETURNING popup_sn
-                """, Long.class, fixture, legacyWidth, legacyHeight, actorLogin, actorLogin);
+                """, Long.class, fixture, new BigDecimal(legacyWidth), new BigDecimal(legacyHeight), actorLogin, actorLogin);
         Map<String, Object> before = storedPopup(popup);
         var read = service.getPopup(popup);
         assertThat(read.getPopupWdthSz()).isEqualTo(legacyWidth);
@@ -91,7 +93,8 @@ class PopupInputPolicyIntegrationTest {
         read.setPopupWdthSz("100");
         read.setPopupVrtcSz("4000");
         service.updatePopup(popup, actorLogin, read);
-        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", "100").containsEntry("popup_vrtc_sz", "4000")
+        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", new BigDecimal("100"))
+                .containsEntry("popup_vrtc_sz", new BigDecimal("4000"))
                 .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5")
                 .containsEntry("version", 1).containsEntry("frst_rgtr_id", actorLogin);
         assertThat(service.getPopup(popup).getPopupWdthSz()).isEqualTo("100");
@@ -112,6 +115,22 @@ class PopupInputPolicyIntegrationTest {
     }
 
     @Test
+    void validStringDimensionsBindAsNumericAndReadBackAsStrings() {
+        var request = popupRequest();
+        request.setPopupWdthSz("100");
+        request.setPopupVrtcSz("4000");
+
+        Long popup = service.createPopup(actorLogin, request);
+
+        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", new BigDecimal("100"))
+                .containsEntry("popup_vrtc_sz", new BigDecimal("4000")).containsEntry("version", 0)
+                .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5");
+        var read = service.getPopup(popup);
+        assertThat(read.getPopupWdthSz()).isEqualTo("100");
+        assertThat(read.getPopupVrtcSz()).isEqualTo("4000");
+    }
+
+    @Test
     void nullDimensionsStayNullOnCreateAndClearExistingValuesOnUpdate() {
         Long popup = service.createPopup(actorLogin, popupRequest());
         assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", null).containsEntry("popup_vrtc_sz", null);
@@ -122,7 +141,8 @@ class PopupInputPolicyIntegrationTest {
         sized.setPopupWdthSz("400");
         sized.setPopupVrtcSz("300");
         service.updatePopup(popup, actorLogin, sized);
-        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", "400").containsEntry("popup_vrtc_sz", "300")
+        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", new BigDecimal("400"))
+                .containsEntry("popup_vrtc_sz", new BigDecimal("300"))
                 .containsEntry("version", 1);
 
         var cleared = service.getPopup(popup);

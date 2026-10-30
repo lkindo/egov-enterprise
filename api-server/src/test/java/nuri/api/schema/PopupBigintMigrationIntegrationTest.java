@@ -1,6 +1,7 @@
 package nuri.api.schema;
 
 import org.flywaydb.core.api.MigrationVersion;
+import org.flywaydb.core.api.FlywayException;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
@@ -11,6 +12,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Tag("schema-validation")
 @DisplayName("팝업 문자열 PK → BIGINT IDENTITY 데이터 마이그레이션")
@@ -36,7 +38,20 @@ class PopupBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSup
                     """);
         }
 
-        migrateThroughAuthorizationCutover();
+        // V2_144 is intentionally empty-table-only; preserve this historical data fixture.
+        AuthorizationCutoverTestSupport.migrate(flyway(MigrationVersion.fromVersion("2.143")));
+
+        try (Connection connection = openConnection(); Statement statement = connection.createStatement()) {
+            String before = rowSnapshot(statement);
+            assertThatThrownBy(() -> flyway(MigrationVersion.fromVersion("2.144")).migrate())
+                    .isInstanceOf(FlywayException.class)
+                    .hasStackTraceContaining("V2_144 requires BOTH business tables empty");
+            assertThat(rowSnapshot(statement)).isEqualTo(before);
+            try (ResultSet history = statement.executeQuery("SELECT count(*) FROM flyway_schema_history WHERE version='2.144'")) {
+                assertThat(history.next()).isTrue();
+                assertThat(history.getLong(1)).isZero();
+            }
+        }
 
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
@@ -78,6 +93,13 @@ class PopupBigintMigrationIntegrationTest extends SharedPostgresMigrationTestSup
                 assertThat(generated.next()).isTrue();
                 assertThat(generated.getLong(1)).isGreaterThan(migratedSn);
             }
+        }
+    }
+
+    private String rowSnapshot(Statement statement) throws SQLException {
+        try (ResultSet rows = statement.executeQuery("SELECT jsonb_agg(to_jsonb(t) ORDER BY popup_sn)::text FROM tb_popup_info t")) {
+            assertThat(rows.next()).isTrue();
+            return rows.getString(1);
         }
     }
 

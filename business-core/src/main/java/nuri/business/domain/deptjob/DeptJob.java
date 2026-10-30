@@ -1,6 +1,7 @@
 package nuri.business.domain.deptjob;
 
 import nuri.foundation.domain.common.BaseEntity;
+import nuri.foundation.domain.common.IntegralStringConverter;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -35,7 +36,8 @@ public class DeptJob extends BaseEntity {
     @Column(length = 20)
     private String picId;
 
-    @Column(length = 12)
+    @Convert(converter = IntegralStringConverter.class)
+    @Column(name = "prrty_rnk", precision = 10, scale = 0)
     private String prrtyRnk; // 1: 높음, 2: 보통, 3: 낮음
     @Column(name = "atch_file_sn")
     private Long atchFileSn;

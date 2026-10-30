@@ -73,6 +73,12 @@ class OnlineRrnoConverterContractTest {
     /** 온라인 {@code @Convert} 변환기 → 보호 방식. 새 변환기가 생기면 이 표와 보호 목록을 함께 고친다. */
     private static final Map<String, ColumnProtection> CONVERTERS =
             Map.of("RrnoEncryptionConverter", ColumnProtection.ARIA_EGOV_V1);
+    /** ADR-0046의 숫자 표현 변환은 암호화가 아니다. 새 사용처를 무조건 제외하지 않고 정확한 표·컬럼을 대조한다. */
+    private static final Map<String, Set<String>> NUMERIC_CONVERTER_HOLDERS = Map.of(
+            "business-core/src/main/java/nuri/business/domain/deptjob/DeptJob.java",
+            Set.of("tb_dept_task_info.prrty_rnk"),
+            "business-app/src/main/java/nuri/business/domain/promotion/popup/Popup.java",
+            Set.of("tb_popup_info.popup_wdth_sz", "tb_popup_info.popup_vrtc_sz"));
     /** 변환기가 아니라 서비스가 암호화하는 컬럼과 그 암호 클래스. */
     private static final Map<String, String> SERVICE_ENCRYPTED = Map.of(
             "tb_auth_otp_cert.otp_secret_encpt_cn",
@@ -227,6 +233,7 @@ class OnlineRrnoConverterContractTest {
     void protectedColumnListMatchesTheOnlineEntities() throws IOException {
         requireOnline();
         Map<String, ColumnProtection> online = new TreeMap<>();
+        Map<String, Set<String>> numeric = new TreeMap<>();
         Map<String, Set<String>> encryptionUsers = new TreeMap<>();
         for (Path file : onlineJavaSources()) {
             String source = Files.readString(file, StandardCharsets.UTF_8);
@@ -240,10 +247,8 @@ class OnlineRrnoConverterContractTest {
                 if (converter == null) {
                     continue; // disableConversion 은 변환기를 붙이지 않는다.
                 }
-                assertThat(CONVERTERS).as("새 @Convert 변환기 %s — 이관 도구 보호 목록과 이 계약을 함께 고친다", converter)
-                        .containsKey(converter);
-                online.put(table(source, file) + "." + fieldColumn(source, convert.start(), file),
-                        CONVERTERS.get(converter));
+                classifyConverter(converter, relative,
+                        table(source, file) + "." + fieldColumn(source, convert.start(), file), online, numeric);
             }
             for (String use : encryptionUsesIn(source)) {
                 if (!ENCRYPTION_DEFINITIONS.get(use).equals(relative)) {
@@ -251,6 +256,11 @@ class OnlineRrnoConverterContractTest {
                 }
             }
         }
+        Map<String, Set<String>> expectedNumeric = NUMERIC_CONVERTER_HOLDERS.entrySet().stream()
+                // 재사용 제품은 optional 엔티티 소스 자체가 없을 수 있다. 남은 파일에서 변환기를 걷으면 여전히 red다.
+                .filter(entry -> Files.isRegularFile(root.resolve(entry.getKey())))
+                .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue, (a, b) -> a, TreeMap::new));
+        assertThat(numeric).as("비암호 숫자 변환은 승인된 파일·컬럼의 정확한 집합이어야 한다").isEqualTo(expectedNumeric);
         assertThat(encryptionUsers)
                 .as("온라인 암호를 직접 부르는 원본이 바뀌었다 — 새 암호 컬럼이면 보호 목록·SERVICE_ENCRYPTED 와 함께 고친다")
                 .isEqualTo(new TreeMap<>(ENCRYPTION_USERS));
@@ -267,6 +277,36 @@ class OnlineRrnoConverterContractTest {
                 (left, right) -> left, TreeMap::new));
         assertThat(registry).isEqualTo(online);
         assertThat(online).containsEntry("tb_user_info.user_enrrno", ColumnProtection.ARIA_EGOV_V1);
+    }
+
+    private static void classifyConverter(String converter, String source, String column,
+                                          Map<String, ColumnProtection> encrypted,
+                                          Map<String, Set<String>> numeric) {
+        if ("IntegralStringConverter".equals(converter)) {
+            assertThat(NUMERIC_CONVERTER_HOLDERS.getOrDefault(source, Set.of()))
+                    .as("비암호 변환기라고 보호 컬럼을 임의 제외할 수 없다: %s %s", source, column).contains(column);
+            numeric.computeIfAbsent(source, ignored -> new TreeSet<>()).add(column);
+            return;
+        }
+        assertThat(CONVERTERS).as("새 @Convert 변환기 %s — 이관 도구 보호 목록과 이 계약을 함께 고친다", converter)
+                .containsKey(converter);
+        encrypted.put(column, CONVERTERS.get(converter));
+    }
+
+    @Test
+    @DisplayName("숫자 변환의 명시 분류는 암호 컬럼·새 변환기를 보호 목록에서 숨기지 않는다")
+    void numericConversionCannotHideProtectedOrUnknownColumns() {
+        Map<String, ColumnProtection> encrypted = new TreeMap<>();
+        Map<String, Set<String>> numeric = new TreeMap<>();
+        String deptSource = "business-core/src/main/java/nuri/business/domain/deptjob/DeptJob.java";
+        classifyConverter("IntegralStringConverter", deptSource, "tb_dept_task_info.prrty_rnk", encrypted, numeric);
+        classifyConverter("RrnoEncryptionConverter", "User.java", "tb_user_info.user_enrrno", encrypted, numeric);
+        assertThat(encrypted).containsOnlyKeys("tb_user_info.user_enrrno");
+        assertThat(numeric.get(deptSource)).containsExactly("tb_dept_task_info.prrty_rnk");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> classifyConverter("IntegralStringConverter",
+                deptSource, "tb_user_info.user_enrrno", encrypted, numeric)).isInstanceOf(AssertionError.class);
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> classifyConverter("NewConverter",
+                deptSource, "tb_dept_task_info.prrty_rnk", encrypted, numeric)).isInstanceOf(AssertionError.class);
     }
 
     @Test

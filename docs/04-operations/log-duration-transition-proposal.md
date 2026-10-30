@@ -4,7 +4,7 @@
 
 | D-n | 결정 | 관련 H | 영향 계약 파일 | 부정 시험 |
 |---|---|---|---|---|
-| D-1 | BIGINT·밀리초·NULL과 API 이름을 보존하고 새 표준 후보를 검토한다 | H1 | 아래 메타 등록 후보·`expand.sql` | 메타 충돌, 기존 값 보존 |
+| D-1 | BIGINT·밀리초·NULL과 API 이름을 보존하고 PRCS_REQ_MSEC 표준을 채택한다 | H1 | ADR-0046·아래 메타 등록안·`expand.sql` | 메타 충돌, 기존 값 보존 |
 | D-2 | 승인 뒤 versioned Flyway로만 Expand를 배포한다 | H1 | 후속 Flyway·공유 OCI 적용 로그 | 이미 존재하는 컬럼 거부 |
 | D-3 | 한쪽 writer·명시 트랜잭션·동기화 대사를 전제로 한다 | H1·H5 | `expand.sql`·`backfill.sql`·`verify-parity.sql` | 잠금, 복제 세션, 잘못된 트리거, drift 거부 |
 | D-4 | Redirect 전 철회도 별도 승인된 후속 Flyway로 처리하고 메타를 보존한다 | H1 | `rollback.sql` | 불일치 철회 거부, 구 writer·기존 행 보존 |
@@ -23,7 +23,7 @@
 
 기존 `PRCS_TM` 표준을 변경하지 않는다. 새 단어·도메인·용어는 등록 후보이며, 적용 시점에 충돌을 다시 확인한다. 명시 필드와 설명의 정본은 [Expand SQL](../../api-server/src/test/resources/db/proposals/log-duration/expand.sql)이다. 단어의 키는 `(word_name, eng_abbr)`이고 도메인·용어의 ID만 DB 기본 sequence를 사용한다. 동의어·허용값은 NULL로 둔다. 메타의 길이 19는 BIGINT의 십진 자릿수 표기이며 NUMERIC(19,0)의 전체 범위를 의미하지 않는다.
 
-명명 판단은 **아직 승인 대기**다. 이 후보는 단위가 이름과 도메인에 직접 드러나도록 `처리소요밀리초/PRCS_REQ_MSEC/밀리초N19`를 사용한다. 기존 `처리소요일수/PRCS_REQ_DAY_CNT`와 같은 분류어 관례를 우선하면 `처리소요밀리초수/PRCS_REQ_MSEC_CNT`와 BIGINT 수 도메인을 새로 등록하는 대안이 있다. `수N19`는 이번 실측에 없었고, 기존 BIGINT `일련번호N19`는 식별자 의미라 소요량에 재사용하지 않는다. 현재 SQL·시험은 첫 후보에 대한 검토 자료이며 테스트 통과가 표준 등록 승인은 아니다.
+명명은 2026-10-30 사용자가 **처리소요밀리초 / PRCS_REQ_MSEC / 밀리초N19**로 확정했다([ADR-0046](../02-architecture/decisions/ADR-0046-empty-numeric-transition-and-log-duration-standard.md)). 단위가 이름과 도메인에 직접 드러나는 안을 채택했으며 `PRCS_REQ_MSEC_CNT` 대안은 채택하지 않는다. 기존 BIGINT `일련번호N19`는 식별자 의미라 소요량에 재사용하지 않는다. 명명·등록 설계 승인과 실제 메타 등록·DB 적용 승인은 별개이며, 실제 실행은 완성된 패킷 승인 뒤 진행한다.
 
 같은 조사에서 확인한 숫자 3개 컬럼(`prrty_rnk`, `popup_wdth_sz`, `popup_vrtc_sz`)은 [숫자 컬럼 결정안](numeric-column-transition-proposal.md)의 별도 전환 대상으로 둔다. 같은 의미의 영구 별칭을 새로 등록하는 후보는 철회했다. `ans_lv`는 현재 의미를 확정하지 않은 상태에서 변환하지 않는다. 이 로그 검토안으로 여섯 컬럼 전체의 정합 완료를 선언하지 않는다.
 
@@ -45,7 +45,9 @@ Expand와 백필 파일 하나는 READ COMMITTED·autocommit=false인 한 트랜
 
 **큰 표의 성능은 아직 검증하지 않았다.** 현재 백필은 매 호출마다 두 표의 비NULL drift를 전수 검사하고, 기본키 앞부분부터 미이행 행을 찾는다. 500행 상한은 갱신 행 수만 제한하며 스캔량을 제한하지 않는다. 안전성 때문에 전수 drift 거부를 유지한 소규모 적용 후보로, 502행 시험의 통과를 수백만 행 처리 능력으로 확대하지 않는다. 적용 전 대상 규모를 복제한 격리 DB에서 시작·중간·종료 배치의 EXPLAIN 및 실행 시간·버퍼·잠금 보유시간을 확인해야 한다. 5초 문장 예산 또는 승인된 전체 예산을 넘으면 중단하고 keyset/부분 인덱스 등을 별도 설계한다. timeout을 늘려 우회하지 않는다. 현재 공유 DB에는 새 컬럼이 없어 최종 백필 계획 자체를 읽기 전용으로 실행해 확인할 수 없다.
 
-SQL은 READ COMMITTED·`session_replication_role=origin`, 트리거의 활성 상태·BEFORE ROW INSERT/UPDATE·대상 두 컬럼을 검사한다. 같은 함수 OID로 본문을 교체하는 변화까지 이 검사가 인증하지는 않는다. 실행자는 `pg_get_triggerdef`·`pg_get_functiondef`를 승인 SQL에서 생성한 정의와 대조하고, 배치·Redirect 직전에도 다시 확인한다. 임의 함수 교체를 허용한 상태를 지원하지 않는다.
+SQL은 READ COMMITTED·`session_replication_role=origin`을 검사한다. 백필은 트리거의 활성 상태·BEFORE ROW INSERT/UPDATE·대상 두 컬럼을 검사하며, 철회는 이름·함수·활성 상태를 확인한다. 같은 함수 OID로 본문을 교체하는 변화까지 이 검사가 인증하지는 않는다. 실행자는 `pg_get_triggerdef`·`pg_get_functiondef`를 승인 SQL에서 생성한 정의와 대조하고, 배치·Redirect 직전에도 다시 확인한다. 임의 함수 교체를 허용한 상태를 지원하지 않는다.
+
+실제 적용 전에는 로그 writer의 트랜잭션 경계를 확인한다. 이 SQL은 sys → web 순서로 잠그므로, 두 표를 반대 순서로 쓰는 업무 트랜잭션이 있으면 교착 상태의 피해자가 업무 쪽이 될 수도 있다. 정비창·writer 중지 여부와 잠금 순서의 리허설을 적용 패킷에 결속한다. 격리 시험의 동시 writer 검증을 운영 업무 트랜잭션의 무중단 보장으로 확대하지 않는다.
 
 ## 복구와 호환성
 

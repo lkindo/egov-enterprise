@@ -52,3 +52,4 @@
 | [ADR-0043](ADR-0043-board-publish-flow-and-designated-boards.md) | 게시판 공개 동선 — 메뉴와 분리한 생성, 사용 전환으로 공개, 공개 준비 기준(찾는 길 하나 이상), 지정 게시판 영구 삭제 거부, 템플릿 기준 화면 유형 이름 | Accepted |
 | [ADR-0044](ADR-0044-ci-tuning-values-and-pit-scope-floors.md) | CI 튜닝값(슬롯 수·PIT 선언 순서)은 ci.yml·실측 profile 이 정본, PIT 범위별 하한, api-server 의 PIT 선별 유지 | Accepted |
 | [ADR-0045](ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) | 즐겨찾기 기본 보존·명시적 정리, 부서 업무 우선순위·팝업 크기의 엄격 저장, 읽은 메모 본문·첨부 기준 지시 | Accepted |
+| [ADR-0046](ADR-0046-empty-numeric-transition-and-log-duration-standard.md) | 빈 표·정비창 한정 숫자 세 컬럼 NUMERIC 전환과 처리소요밀리초 표준, 공유 DB 실행 별도 승인 | Accepted |

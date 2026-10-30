@@ -66,6 +66,7 @@ class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrati
                 assertWholeExpandRollsBackOnLaterFailure(connection);
                 assertMetadataConflictsRollback(connection);
                 assertExistingTargetColumnIsRejected(connection);
+                assertInheritanceAndRulesAreRejected(connection);
                 assertExactMetadataCanBeReusedOnEmptyTables(connection);
                 assertExpandRejectsReplicaSession(connection);
                 assertNonNullDriftIsRejectedWithoutOverwritingIt(connection);
@@ -138,7 +139,13 @@ class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrati
                 "INSERT INTO meta_standard_terms(term_name,eng_abbr,domain_name)"
                         + " VALUES ('처리소요밀리초','prcs_req_msec','수N10')",
                 "INSERT INTO meta_standard_domains(domain_group,domain_name,data_type,data_length)"
-                        + " VALUES ('수량','밀리초N19','INTEGER',19)");
+                        + " VALUES ('수량','밀리초N19','INTEGER',19)",
+                "INSERT INTO meta_standard_words(word_name,eng_abbr,word_dc,rprs_yn)"
+                        + " VALUES ('밀리초','MSEC','different definition','N')",
+                "INSERT INTO meta_standard_terms(term_name,eng_abbr,domain_name,deprecated_yn)"
+                        + " VALUES ('처리소요밀리초','PRCS_REQ_MSEC','수N10','Y')",
+                "INSERT INTO meta_standard_domains(domain_group,domain_name,data_type,data_length)"
+                        + " VALUES ('수량','밀리초n19','BIGINT',19)");
         for (String collision : collisions) {
             Savepoint fixture = connection.setSavepoint();
             try {
@@ -150,6 +157,26 @@ class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrati
             } finally {
                 connection.rollback(fixture);
                 connection.releaseSavepoint(fixture);
+            }
+        }
+    }
+
+    private void assertInheritanceAndRulesAreRejected(Connection connection) throws Exception {
+        for (Ledger ledger : LEDGERS) {
+            for (String fixtureSql : List.of(
+                    "CREATE TABLE d02_inherited_log () INHERITS (" + ledger.table() + ")",
+                    "CREATE RULE d02_skip_log_delete AS ON DELETE TO " + ledger.table() + " DO INSTEAD NOTHING")) {
+                Savepoint fixture = connection.setSavepoint();
+                try {
+                    execute(connection, fixtureSql);
+                    List<Long> before = metadataCounts(connection);
+                    assertRejected(connection, proposal("expand.sql"), "55000");
+                    assertThat(targetColumnCount(connection)).isZero();
+                    assertThat(metadataCounts(connection)).isEqualTo(before);
+                } finally {
+                    connection.rollback(fixture);
+                    connection.releaseSavepoint(fixture);
+                }
             }
         }
     }
@@ -277,7 +304,10 @@ class LogDurationTransitionProposalIntegrationTest extends SharedPostgresMigrati
                             + " FOR EACH ROW EXECUTE FUNCTION " + ledger.function() + "()",
                     "DROP TRIGGER " + ledger.trigger() + " ON " + ledger.table() + "; CREATE TRIGGER "
                             + ledger.trigger() + " BEFORE INSERT OR UPDATE OF prcs_tm ON " + ledger.table()
-                            + " FOR EACH ROW EXECUTE FUNCTION " + ledger.function() + "()");
+                            + " FOR EACH ROW EXECUTE FUNCTION " + ledger.function() + "()",
+                    "DROP TRIGGER " + ledger.trigger() + " ON " + ledger.table() + "; CREATE TRIGGER "
+                            + ledger.trigger() + " BEFORE INSERT OR UPDATE OF prcs_tm,prcs_req_msec ON " + ledger.table()
+                            + " FOR EACH ROW WHEN (NEW.prcs_tm IS NOT NULL) EXECUTE FUNCTION " + ledger.function() + "()");
             for (String mutation : mutations) {
                 Savepoint fixture = connection.setSavepoint();
                 try {

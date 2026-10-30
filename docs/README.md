@@ -35,6 +35,8 @@
 
 ## 02-architecture — 설계
 
+DB 전환 승인: [ADR-0046](02-architecture/decisions/ADR-0046-empty-numeric-transition-and-log-duration-standard.md) — 빈 표 숫자 타입 전환·로그 밀리초 표준과 실제 적용 승인 경계.
+
 승인 정책: [ADR-0045](02-architecture/decisions/ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) — 즐겨찾기 정리·입력 검증·메모 지시의 내용 기준.
 
 | 문서 | 내용 |
@@ -130,7 +132,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [crypto-key-rotation.md](04-operations/crypto-key-rotation.md) | 암호화 마스터 키 로테이션·PII 재암호화 런북 |
 | [log-retention-policy.md](04-operations/log-retention-policy.md) | 로그 보존기간·개인정보 파기 정책 |
 | [log-duration-transition-proposal.md](04-operations/log-duration-transition-proposal.md) | 로그 처리시간의 밀리초 표준·Expand/Sync SQL·격리 시험을 위한 적용 전 검토안 |
-| [numeric-column-transition-proposal.md](04-operations/numeric-column-transition-proposal.md) | 우선순위·팝업 크기의 NUMERIC 정합 경로와 빈 표 정비창 한정 예외 결정안 |
+| [numeric-column-transition-proposal.md](04-operations/numeric-column-transition-proposal.md) | 승인된 빈 표·정비창 한정 숫자 NUMERIC 전환의 적용·복구 패킷 |
 | [observability-baseline.md](04-operations/observability-baseline.md) | 요청·첨부 점검·영속 작업 상태 지표, 9개 경보와 실제 promtool 시간 흐름 검증 |
 | [database-optimization-guide.md](04-operations/database-optimization-guide.md) | DB 최적화 |
 | [performance-optimization-guide.md](04-operations/performance-optimization-guide.md) | 성능 최적화 |
