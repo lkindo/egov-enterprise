@@ -37,12 +37,12 @@ public interface CmsContentRevisionRepository extends JpaRepository<CmsContentRe
      */
     @Query(value = "SELECT r FROM CmsContentRevision r, CmsContent c WHERE c.contsRvsnSn = r.contsRvsnSn AND c.kpngYn = 'N' "
             + "AND (LOWER(r.contsTtl) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\' "
-            + "     OR LOWER(COALESCE(r.contsExpln, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\') "
+            + "     OR LOWER(r.contsExpln) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\') "
             + "ORDER BY r.crtDt DESC, r.contsRvsnSn DESC",
             countQuery = "SELECT COUNT(r) FROM CmsContentRevision r, CmsContent c WHERE c.contsRvsnSn = r.contsRvsnSn "
                     + "AND c.kpngYn = 'N' "
                     + "AND (LOWER(r.contsTtl) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\' "
-                    + "     OR LOWER(COALESCE(r.contsExpln, '')) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\')")
+                    + "     OR LOWER(r.contsExpln) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\')")
     Page<CmsContentRevision> searchPublished(@Param("keyword") String keyword, Pageable pageable);
 
     // ---- 파기(ADR-0042) — 게시본 불변 트리거는 이 트랜잭션 표시가 켜진 동안에만 삭제를 받는다(수정은 늘 거부한다) ------------------------

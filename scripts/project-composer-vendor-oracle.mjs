@@ -177,8 +177,14 @@ function emitSchema(model) {
       emission.cover(index.name, 'index');
     }
   }
-  emission.sql('CREATE TABLE tb_sys_ledger_permit (permit_key VARCHAR2(50 CHAR) PRIMARY KEY)');
+  // 토큰이 키에 있어 중단된 바깥 트랜잭션의 미커밋 행을 안쪽 트랜잭션이 기다리지 않는다.
+  emission.sql('CREATE TABLE tb_sys_ledger_permit (permit_key VARCHAR2(50 CHAR) NOT NULL, permit_token RAW(16) DEFAULT SYS_GUID() NOT NULL, PRIMARY KEY (permit_key, permit_token))');
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_key');
+  emission.expect('columns', 'tb_sys_ledger_permit', 'permit_token');
+  // 응용 잠금 슬롯. OracleSqlDialect.LOCK_SLOTS 와 같은 수의 행을 둔다. DBMS_LOCK 은 별도 권한이 필요하다.
+  emission.sql('CREATE TABLE tb_sys_lock_slot (lock_slot_no NUMBER(10) PRIMARY KEY)');
+  emission.expect('columns', 'tb_sys_lock_slot', 'lock_slot_no');
+  emission.sql('INSERT INTO tb_sys_lock_slot (lock_slot_no) SELECT LEVEL - 1 FROM DUAL CONNECT BY LEVEL <= 65536');
   for (const table of model.tables) {
     for (const trigger of table.triggers) {
       emission.sql(trigger.kind === 'append-only' ? appendOnlyTrigger(table, trigger) : syncPairTrigger(table, trigger), { raw: true });

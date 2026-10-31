@@ -707,8 +707,9 @@ public class AuthorizationAdministrationService implements ProtectedAccountChang
                   JOIN tb_authrt_grnt_map g ON g.authrt_cd=m.authrt_cd AND g.authrt_type_cd='OPERATION'
                   WHERE u.user_stts_cd='P' AND coalesce(u.lck_yn,'N')<>'Y'
                     AND NOT EXISTS (SELECT 1 FROM tb_login_policy p WHERE p.user_id=u.user_id AND p.lmt_yn='Y')
-                  GROUP BY u.esntl_id HAVING bool_or(g.authrt_grnt_cd='AUTHRT_READ')
-                    AND bool_or(g.authrt_grnt_cd='AUTHRT_GRANT') AND bool_or(g.authrt_grnt_cd='AUTHRT_ASSIGN')
+                  GROUP BY u.esntl_id HAVING MAX(CASE WHEN g.authrt_grnt_cd='AUTHRT_READ' THEN 1 ELSE 0 END)=1
+                    AND MAX(CASE WHEN g.authrt_grnt_cd='AUTHRT_GRANT' THEN 1 ELSE 0 END)=1
+                    AND MAX(CASE WHEN g.authrt_grnt_cd='AUTHRT_ASSIGN' THEN 1 ELSE 0 END)=1
                 ) managers
                 """,Long.class));
     }

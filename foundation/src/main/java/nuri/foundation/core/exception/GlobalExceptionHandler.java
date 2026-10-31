@@ -209,13 +209,19 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(org.springframework.dao.DataAccessException.class)
     protected ResponseEntity<ApiResponse<Void>> handleUnclassifiedDataAccess(org.springframework.dao.DataAccessException e) {
         String sqlState = extractSqlState(e);
+        // Oracle 의 길이 초과(72000)·숫자 변환(42000)은 무결성 위반으로 번역되지 않아 이 경로로 온다.
+        if (ORACLE_INVALID_VALUES.contains(extractVendorCode(e))) {
+            log.warn(">>> Rejected database value: {} SQLState={}", e.getClass().getSimpleName(), sqlState);
+            return invalidValueResponse();
+        }
         log.error(">>> Unclassified database failure: {} SQLState={}", e.getClass().getSimpleName(), sqlState);
-        if ("55P03".equals(sqlState) || "40001".equals(sqlState) || "40P01".equals(sqlState)) {
+        if ("55P03".equals(sqlState) || "40001".equals(sqlState) || "40P01".equals(sqlState)
+                || ORACLE_LOCK_FAILURES.contains(extractVendorCode(e))) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error(CommonErrorCode.CONCURRENT_MODIFICATION,
                             resolve(CommonErrorCode.CONCURRENT_MODIFICATION)));
         }
-        if ("57014".equals(sqlState)) {
+        if ("57014".equals(sqlState) || extractVendorCode(e) == ORACLE_CANCELLED) {
             return connectionUnavailableResponse();
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -247,13 +253,12 @@ public class GlobalExceptionHandler {
         //   CHECK/NOT NULL 은 400 으로 정정한다. UNIQUE/FK 는 종전대로 409(의미가 맞다).
         if ("23514".equals(sqlState) || "23502".equals(sqlState)
                 || "22001".equals(sqlState) || "22003".equals(sqlState)
-                || "22007".equals(sqlState) || "22008".equals(sqlState) || "22P02".equals(sqlState)) {
-            return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
-                    resolve("handler.constraint_invalid_value", null,
-                            "허용되지 않는 값이 포함되어 있습니다. 입력값을 확인해 주십시오.")));
+                || "22007".equals(sqlState) || "22008".equals(sqlState) || "22P02".equals(sqlState)
+                || ORACLE_INVALID_VALUES.contains(extractVendorCode(e))) {
+            return invalidValueResponse();
         }
         // 22 전체를 입력 오류로 취급하면 0으로 나누기·시퀀스 고갈 같은 서버 결함을 감춘다.
-        if (sqlState != null && !sqlState.startsWith("23")) {
+        if (sqlState != null && !sqlState.startsWith("23") && !ORACLE_DUPLICATES.contains(extractVendorCode(e))) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
                             resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
@@ -263,6 +268,30 @@ public class GlobalExceptionHandler {
                         resolve("handler.data_integrity", null,
                                 "요청이 기존 데이터 제약과 충돌합니다. 이미 존재하거나 사용 중인 값일 수 있습니다.")),
                 HttpStatus.CONFLICT);
+    }
+
+    private ResponseEntity<ApiResponse<Void>> invalidValueResponse() {
+        return ResponseEntity.badRequest().body(ApiResponse.error(CommonErrorCode.INVALID_INPUT_VALUE,
+                resolve("handler.constraint_invalid_value", null,
+                        "허용되지 않는 값이 포함되어 있습니다. 입력값을 확인해 주십시오.")));
+    }
+
+    /** Oracle 은 무결성 위반의 SQLState 가 모두 23000 이라 오류 번호로 나눈다. CHECK·NOT NULL·길이·형식은 입력 오류다. */
+    private static final java.util.Set<Integer> ORACLE_INVALID_VALUES = java.util.Set.of(2290, 1400, 1407, 12899, 1438, 1722, 1858, 1861);
+    private static final java.util.Set<Integer> ORACLE_DUPLICATES = java.util.Set.of(1, 2291, 2292);
+    /** 대기 초과(54·30006), 교착(60), 직렬화 실패(8177). */
+    private static final java.util.Set<Integer> ORACLE_LOCK_FAILURES = java.util.Set.of(54, 30006, 60, 8177);
+    private static final int ORACLE_CANCELLED = 1013;
+
+    /** 원인 체인의 벤더 오류 번호. 없으면 0 이다. */
+    private static int extractVendorCode(Throwable cause) {
+        java.util.Set<Throwable> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable t = cause; t != null && visited.add(t); t = t.getCause()) {
+            if (t instanceof java.sql.SQLException sqlEx && sqlEx.getErrorCode() != 0) {
+                return sqlEx.getErrorCode();
+            }
+        }
+        return 0;
     }
 
     /** Spring/Hibernate 원인 체인의 SQLState를 읽으며 순환한 예외 체인에도 종료한다. */

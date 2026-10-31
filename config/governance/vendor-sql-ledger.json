@@ -2,6 +2,7 @@
   "schemaVersion": 1,
   "description": "벤더 의존 SQL 의 위치·처리 방식·대응 시험(ADR-0047). frozen 은 그 파일에 남은 벤더 구문의 규칙별 개수이며 VendorSqlPortabilityLinterTest 가 정확히 대조한다.",
   "portImplementations": [
+    "foundation/src/main/java/nuri/foundation/core/persistence/OracleSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/PostgresqlSqlDialect.java"
   ],
   "locations": [
@@ -169,7 +170,7 @@
       "test": "api-server/src/test/java/nuri/api/schema/LogDurationTransitionMigrationIntegrationTest.java",
       "frozen": {
         "cast-operator": 1,
-        "pg-function": 25,
+        "pg-function": 27,
         "set-local": 3,
         "catalog": 1,
         "select-exists": 2,
@@ -190,13 +191,9 @@
     },
     {
       "path": "api-server/src/main/java/nuri/api/config/AuthorizationSchemaBarrierConfig.java",
-      "treatment": "deferred",
-      "stage": 2,
-      "reason": "information_schema 와 table_schema='public' 은 MySQL·SQL Server 에서 0건으로 조용히 통과한다. 벤더 구현 때 메타 조회를 포트로 옮긴다",
-      "test": "api-server/src/test/java/nuri/api/schema/AuthorizationAdministrationIntegrationTest.java",
-      "frozen": {
-        "catalog": 1
-      }
+      "treatment": "port",
+      "reason": "표 수 조회를 포트로 옮겼다. information_schema 와 table_schema='public' 은 MySQL·SQL Server 에서 0건으로 조용히 통과하기 때문이다",
+      "test": "api-server/src/test/java/nuri/api/config/AuthorizationSchemaBarrierConfigTest.java"
     },
     {
       "path": "foundation/src/main/java/nuri/foundation/core/exception/GlobalExceptionHandler.java",

@@ -36,6 +36,16 @@ class PostgresqlSqlDialectTest {
     private final VendorSqlDialect dialect = new PostgresqlSqlDialect();
 
     @Test
+    @DisplayName("원장 삭제 허가는 트랜잭션 지역 설정이라 커밋 뒤에 남을 수 없어 기동 때 볼 것이 없다")
+    void noOpenPermitToCheckAtStartup() {
+        JdbcOperations jdbc = mock(JdbcOperations.class);
+
+        dialect.assertNoOpenLedgerPermit(jdbc);
+
+        org.mockito.Mockito.verifyNoInteractions(jdbc);
+    }
+
+    @Test
     @DisplayName("페이징과 상한은 정렬 뒤에 붙는다")
     void pagination() {
         assertThat(dialect.paginate("SELECT a FROM t ORDER BY a", 20, 40)).isEqualTo("SELECT a FROM t ORDER BY a LIMIT 20 OFFSET 40");

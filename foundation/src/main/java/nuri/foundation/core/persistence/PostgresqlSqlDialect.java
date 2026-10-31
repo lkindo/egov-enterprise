@@ -96,6 +96,17 @@ public class PostgresqlSqlDialect implements VendorSqlDialect {
     }
 
     @Override
+    public String countTablesQuery(List<String> tables) {
+        String names = tables.stream().map(table -> "'" + table + "'").collect(Collectors.joining(","));
+        return "SELECT count(*) FROM information_schema.tables WHERE table_schema='public' AND table_name IN (" + names + ")";
+    }
+
+    @Override
+    public String databaseProductName() {
+        return PRODUCT_NAME;
+    }
+
+    @Override
     public void permitLedgerDeletion(EntityManager entityManager, LedgerDeletionPermit permit) {
         boolean postgres = entityManager.unwrap(Session.class).doReturningWork(
                 connection -> PRODUCT_NAME.equalsIgnoreCase(connection.getMetaData().getDatabaseProductName()));

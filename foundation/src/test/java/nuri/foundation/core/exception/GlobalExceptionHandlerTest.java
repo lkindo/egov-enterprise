@@ -420,6 +420,77 @@ class GlobalExceptionHandlerTest {
         assertDatabaseResponse(dive(state, "private-database-detail"), 500, "C004", null);
     }
 
+    private static org.springframework.dao.DataIntegrityViolationException oracleViolation(int code) {
+        return new org.springframework.dao.DataIntegrityViolationException(
+                "private-database-detail", new java.sql.SQLException("private-database-detail", "23000", code));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {2290, 1400, 1407, 12899, 1438, 1722, 1858, 1861})
+    @DisplayName("Oracle 은 SQLState 가 23000 으로 같아 오류 번호로 입력 오류를 가른다")
+    void oracleInvalidValuesAreBadRequestsThroughMvc(int code) throws Exception {
+        assertDatabaseResponse(oracleViolation(code), 400, "C001", null);
+    }
+
+    @Test
+    @DisplayName("Oracle 길이 초과는 드라이버가 72000 으로 올려 일반 데이터 접근 예외로 오지만 입력 오류다")
+    void oracleValueTooLargeThroughTheGenericPathIsABadRequest() throws Exception {
+        assertDatabaseResponse(new org.springframework.orm.jpa.JpaSystemException(new RuntimeException(
+                new java.sql.SQLException("private-database-detail", "72000", 12899))), 400, "C001", null);
+    }
+
+    @Test
+    @DisplayName("Oracle 숫자 변환 실패는 문법 오류 계열(42000)로 오지만 입력 오류다")
+    void oracleInvalidNumberThroughTheGrammarPathIsABadRequest() throws Exception {
+        assertDatabaseResponse(new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
+                "SELECT 1", new java.sql.SQLSyntaxErrorException("private-database-detail", "42000", 1722)),
+                400, "C001", null);
+    }
+
+    @Test
+    @DisplayName("Oracle 의 진짜 문법 오류는 입력 오류로 가리지 않는다")
+    void oracleBadSqlRemainsAServerError() throws Exception {
+        assertDatabaseResponse(new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
+                "SELECT 1", new java.sql.SQLSyntaxErrorException("private-database-detail", "42000", 904)),
+                500, "C004", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {1, 2291, 2292})
+    @DisplayName("Oracle 의 중복·FK 위반은 409 다")
+    void oracleDuplicatesAreConflictsThroughMvc(int code) throws Exception {
+        assertDatabaseResponse(oracleViolation(code), 409, "C008", null);
+    }
+
+    @Test
+    @DisplayName("SQLState 가 무결성 계열이 아닌 Oracle 중복도 500 으로 빠지지 않는다")
+    void oracleDuplicateWithoutIntegrityStateIsAConflictThroughMvc() throws Exception {
+        assertDatabaseResponse(new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
+                new java.sql.SQLException("private-database-detail", "72000", 1)), 409, "C008", null);
+    }
+
+    @Test
+    @DisplayName("Oracle 의 다른 내부 오류는 입력 오류로 가리지 않는다")
+    void oracleInternalFailureRemainsAServerErrorThroughMvc() throws Exception {
+        assertDatabaseResponse(new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
+                new java.sql.SQLException("private-database-detail", "72000", 600)), 500, "C004", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {54, 30006, 60, 8177})
+    @DisplayName("Oracle 의 대기 초과·교착·직렬화 실패는 재시도를 안내하는 409 다")
+    void oracleLockFailuresAreConflictsThroughMvc(int code) throws Exception {
+        assertDatabaseResponse(new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null,
+                new java.sql.SQLException("private-database-detail", "61000", code)), 409, "C013", null);
+    }
+
+    @Test
+    @DisplayName("Oracle 의 문장 취소는 일시 불가다")
+    void oracleCancelledStatementIsUnavailableThroughMvc() throws Exception {
+        assertDatabaseResponse(new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null,
+                new java.sql.SQLException("private-database-detail", "72000", 1013)), 503, "S002", "5");
+    }
+
     @Test
     @DisplayName("잠금 경합은 409이며 자동 재시도를 지시하지 않는다")
     void pessimisticLockFailuresAreConflictsThroughMvc() throws Exception {
