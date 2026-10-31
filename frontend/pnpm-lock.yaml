@@ -20,7 +20,7 @@ overrides:
   nanoid@<3.3.18: 3.3.18
   sharp@<0.35.4: 0.35.4
   argparse@<2: 2.0.1
-  follow-redirects@>=1.16.0 <1.16.1: 1.16.1
+  follow-redirects@>=1.16.0 <1.16.2: 1.16.2
   dompurify@<=3.4.16: 3.4.17
   undici@>=8.0.0 <8.12.2: 8.12.2
   '@next/eslint-plugin-next>fast-glob': npm:tinyglobby@0.2.17
@@ -3183,8 +3183,8 @@ packages:
   flatted@3.4.2:
     resolution: {integrity: sha512-PjDse7RzhcPkIJwy5t7KPWQSZ9cAbzQXcafsetQoD7sOJRQlGikNbx7yZp2OotDnJyrDcbyRq3Ttb18iYOqkxA==}
 
-  follow-redirects@1.16.1:
-    resolution: {integrity: sha512-FNvFGzoMLWmE6Yj9spb/zjd7yiNCHiAW9/Tg9CXrQ8wuu32HtlJOwWO11OJafl5FfY3DxTdQ0vj42zU1kvv5jg==}
+  follow-redirects@1.16.2:
+    resolution: {integrity: sha512-/kVP2U8z596Ia0gwFrwyIeo74ta5aVmSeU1FfAUMAmcEP5EP7zydmag3SLiN64NaRKef3lxsq7i/g7ltJQDGow==}
     engines: {node: '>=4.0'}
     peerDependencies:
       debug: '*'
@@ -7452,7 +7452,7 @@ snapshots:
 
   axios@1.20.0:
     dependencies:
-      follow-redirects: 1.16.1
+      follow-redirects: 1.16.2
       form-data: 4.0.6
       https-proxy-agent: 5.0.1
       proxy-from-env: 2.1.0
@@ -8150,7 +8150,7 @@ snapshots:
 
   flatted@3.4.2: {}
 
-  follow-redirects@1.16.1: {}
+  follow-redirects@1.16.2: {}
 
   for-each@0.3.5:
     dependencies:

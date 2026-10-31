@@ -59,8 +59,10 @@ export function evaluateAuditReport(report, productionReport) {
     }
     return total + count;
   }, 0);
-  if (reportedCount !== advisories.length) {
-    throw new Error(`pnpm audit count mismatch: metadata=${reportedCount}, advisories=${advisories.length}`);
+  // pnpm 의 metadata 는 권고가 아니라 취약 버전(finding)마다 센다 — 권고 하나가 여러 버전에 걸리면 권고 수보다 크다.
+  const findingCount = Object.values(report.advisories).reduce((total, advisory) => total + advisory.findings.length, 0);
+  if (reportedCount !== findingCount) {
+    throw new Error(`pnpm audit count mismatch: metadata=${reportedCount}, findings=${findingCount}`);
   }
 
   const blocking = advisories.filter(({ severity, production }) => (
