@@ -89,7 +89,7 @@ test('keyboard selection, dependent features, preview, failure recovery and gene
   const externalRequests = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('request', request => { if (!request.url().startsWith(origin)) externalRequests.push(request.url()); });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(page.getByRole('heading', { name: '새 프로젝트 만들기' })).toBeVisible();
   await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
   await page.getByLabel('프로젝트 이름').fill('../bad');
@@ -174,7 +174,7 @@ test('polling disconnect retains the active job and recovery does not submit it 
   const browser = await chromium.launch({ headless: true });
   t.after(() => browser.close());
   const page = await browser.newPage();
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(page.getByRole('button', { name: '프로젝트 생성', exact: true })).toBeEnabled();
   await page.route('**/api/jobs/*', route => route.abort());
   await confirmGenerate(page);
@@ -198,8 +198,8 @@ test('another tab running a different recipe cannot overwrite the selection afte
   t.after(() => browser.close());
   const first = await browser.newPage();
   const second = await browser.newPage();
-  await first.goto(origin);
-  await second.goto(origin);
+  await first.goto(`${origin}/#launch=${app.launchSecret}`);
+  await second.goto(`${origin}/#launch=${app.launchSecret}`);
   await first.getByLabel('프로젝트 이름').fill('first-service');
   await first.locator('#capability-board').check();
   await second.getByLabel('프로젝트 이름').fill('second-service');
@@ -235,7 +235,7 @@ test('lost generation response recovers only its accepted request without submit
     const browser = await chromium.launch({ headless: true });
     t.after(() => browser.close());
     const page = await browser.newPage();
-    await page.goto(origin);
+    await page.goto(`${origin}/#launch=${app.launchSecret}`);
     await page.getByLabel('프로젝트 이름').fill('own-service');
     await expect(page.locator('#generate')).toBeEnabled();
     await page.route('**/api/jobs', async route => {
@@ -312,7 +312,7 @@ async function realCatalogPage(t, { preflight = passingPreflight, deep = passing
   const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
   const pageErrors = [];
   page.on('pageerror', error => pageErrors.push(error.message));
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   return { page, pageErrors, release };
 }
 
@@ -1327,7 +1327,7 @@ test('a reserved Windows name is refused before any request, and a server name r
   let serverRefuses = false;
   const { page, origin, pageErrors, count } = await errorPage(t, {
     plan: recipe => { if (serverRefuses) throw new ComposerError('INVALID_NAME', { field: 'project.name' }); return plan(recipe); } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(generateButton(page)).toBeEnabled();
   const plans = count('/api/plan');
   await page.getByLabel('프로젝트 이름').fill('con');
@@ -1358,7 +1358,7 @@ test('a changed source offers a reload that keeps the name and selection and sho
   let sourceChanged = false;
   const { page, origin, pageErrors, count } = await errorPage(t, { catalog: () => current,
     plan: recipe => { if (sourceChanged) throw new ComposerError('SOURCE_CHANGED', {}, 'Recipe sourceRef does not identify the current checkout'); return plan(recipe); } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(page.locator('#source-ref')).toHaveText('HEAD · aaaaaaaaaaaa');
   // 카탈로그가 공통 기반의 크기를 알려 주지 않으면 그 줄을 보이지 않는다.
   await expect(page.locator('#core-counts')).toHaveText('');
@@ -1403,7 +1403,7 @@ test('a stale menu snapshot shows the real refresh command and copies it', { tim
   const { page, origin, pageErrors } = await errorPage(t, {
     plan: () => { throw new ComposerError('MENU_SNAPSHOT_STALE', {}, 'Composer menu snapshot: source hash mismatch'); } },
   { permissions: ['clipboard-read', 'clipboard-write'] });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(page.locator('#plan-status')).toContainText('메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못했습니다.');
   await expect(page.locator('#plan-status')).not.toContainText('hash');
   await expect(generateButton(page)).toBeDisabled();
@@ -1417,7 +1417,7 @@ test('a stale menu snapshot shows the real refresh command and copies it', { tim
 test('a session failure shows the server sentence with its developer details, and only a lost connection asks to start the server', { timeout: 45_000 }, async t => {
   let failure = new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx'] });
   const { page, origin, pageErrors } = await errorPage(t, { catalog: () => { throw failure; } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(page.locator('#connection-message')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
   await expect(page.locator('#workspace')).toBeHidden();
   const developer = page.locator('#connection-actions details');
@@ -1448,7 +1448,7 @@ test('a session failure shows the server sentence with its developer details, an
 
 test('an unknown action or a malformed command from the server shows the sentence without a button', { timeout: 45_000 }, async t => {
   const { page, origin, pageErrors } = await errorPage(t);
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(generateButton(page)).toBeEnabled();
   const answer = error => page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error }) }));
   await answer({ code: 'FUTURE_CODE', message: '새 버전의 오류 문장입니다.', action: 'future-action', details: { command: 'rm -rf /' } });
@@ -1473,7 +1473,7 @@ test('a changed source found by the final check closes the dialog and reloads wi
     preflight: () => moved
       ? { checks: [{ id: 'source', status: 'block', code: 'SOURCE_CHANGED', label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' }], blocked: true }
       : passingPreflight() });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-notification').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1507,7 +1507,7 @@ test('a changed source found by the final check closes the dialog and reloads wi
 test('a reload starts the change announcement over instead of blaming the dropped feature on the user', { timeout: 45_000 }, async t => {
   let current = catalog;
   const { page, origin, pageErrors } = await errorPage(t, { catalog: () => current });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(page.locator('#plan-status')).toHaveText('게시판 선택으로 함께 포함되는 기능이 2개 늘었습니다(댓글, 스크랩). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. 포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
@@ -1526,7 +1526,7 @@ test('a reload that drops a selected feature or preset says so instead of droppi
   let slowPlan = false;
   const { page, origin, pageErrors } = await errorPage(t, { catalog: () => current,
     plan: async recipe => { if (slowPlan) await new Promise(accept => setTimeout(accept, 1500)); return plan(recipe); } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await page.locator('#capability-notification').check();
@@ -1572,7 +1572,7 @@ test('a reload that fails leaves no plan to generate or save', { timeout: 45_000
     preflight: () => moved
       ? { checks: [{ id: 'source', status: 'block', code: 'SOURCE_CHANGED', label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' }], blocked: true }
       : passingPreflight() });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
   await expect(page.getByRole('button', { name: '선택 정보 저장' })).toBeEnabled();
@@ -1597,7 +1597,7 @@ test('a generation request rejected by the plan check withdraws the plan and a l
     plan: recipe => { if (rejectJob) { const error = rejectJob; rejectJob = null; throw error; } return plan(recipe); },
     diff: (recipe, domain) => ({ domain, summary: `옛 원본 기준: ${domain}` }),
     generate: async recipe => { generations += 1; return { projectDirectory: `build/project-composer/${recipe.project.name}`, verified: true }; } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1663,7 +1663,7 @@ test('a reload that fails while a check is in flight leaves the re-check button 
       throw new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: drifted'] });
     },
     plan: async recipe => { if (slowPlan) await new Promise(accept => setTimeout(accept, 1800)); return plan(recipe); } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await expect(generateButton(page)).toBeEnabled();
   await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',
     body: JSON.stringify({ error: { code: 'SOURCE_CHANGED', message: '원본이 바뀌었습니다.', action: 'reload-source' } }) }), { times: 1 });
@@ -1685,7 +1685,7 @@ test('a reload that fails while a check is in flight leaves the re-check button 
 test('a coded deep-check failure in the final confirmation shows its action in the dialog', { timeout: 45_000 }, async t => {
   let deepFailure = new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx'] });
   const { page, origin, pageErrors, count } = await errorPage(t, { deep: () => { if (deepFailure) throw deepFailure; return passingDeep(); } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
   await generateButton(page).click();
@@ -1721,7 +1721,7 @@ const jobFailure = (code, details, failure) => Object.assign(new ComposerError(c
 const verifyFailure = (step, logTail) => jobFailure('VERIFY_FAILED', { step }, { stage: 'verify', commandId: 'scripts/verify-reusable-artifact.mjs',
   exitCode: 1, log: JOB_LOG, report: JOB_REPORT, sourceCommit: 'a'.repeat(40), logTail });
 async function startFailingJob(page, origin) {
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1899,7 +1899,7 @@ test('a command that ended without an exit code is not called "could not run", a
   const { page, origin, pageErrors } = await errorPage(t, { generate: () => new Promise((_, reject) => {
     release = () => reject(Object.assign(new Error('x'), { failure: { stage: 'install', causeCode: 'COMMAND_FAILED', commandId: 'pnpm', exitCode: null } }));
   }) });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1956,7 +1956,7 @@ test('the job panel shows each stage and verification step with its time, and th
       backend: { status: 'failed', durationMs: 55_000 }, typecheck: { status: 'skipped' }, lint: { status: 'skipped' }, build: { status: 'skipped' } }) });
     throw verifyFailure('backend', ['> Task :compileJava FAILED']);
   } });
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -2041,7 +2041,7 @@ const cancelRequests = page => {
   return seen;
 };
 async function startRunningJob(page, origin) {
-  await page.goto(origin);
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();

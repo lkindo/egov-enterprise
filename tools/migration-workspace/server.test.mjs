@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { request } from 'node:http';
+import { connect } from 'node:net';
 import { inspect } from 'node:util';
 import { startWorkspaceServer } from './server.mjs';
 import { AI_PROFILE_ROW_LIMIT_MAX } from './ai.mjs';
@@ -45,6 +46,24 @@ test('loopback server rejects cross-origin/Host/token bypass and serves only all
   assert.equal(await navigate(`${app.url}/app.js`), 403);
   assert.equal((await fetch(`${app.url}/../workspace.json`)).status, 403);
   assert.equal((await fetch(`${app.url}/api/state`, { headers })).status, 200);
+});
+
+test('forwarded and duplicate Host requests are rejected before any route', async t => {
+  const { app } = await fixture(t);
+  const target = new URL(app.url);
+  for (const name of ['Forwarded', 'X-Forwarded-For', 'X-Forwarded-Host', 'X-Forwarded-Proto']) {
+    assert.equal((await fetch(`${app.url}/`, { headers: { [name]: 'value' } })).status, 403, name);
+  }
+  assert.equal((await fetch(`${app.url}/`, { headers: { 'Sec-Fetch-Site': 'same-site' } })).status, 403);
+  const duplicated = await new Promise((resolve, reject) => {
+    const socket = connect(Number(target.port), target.hostname);
+    let data = '';
+    socket.on('data', chunk => { data += chunk; });
+    socket.on('close', () => resolve(data));
+    socket.on('error', reject);
+    socket.write(`GET / HTTP/1.1\r\nHost: ${target.host}\r\nHost: ${target.host}\r\nConnection: close\r\n\r\n`);
+  });
+  assert.doesNotMatch(duplicated.split('\r\n')[0], / 200 /);
 });
 
 test('the request token is issued only to a client holding the terminal launch secret', async t => {

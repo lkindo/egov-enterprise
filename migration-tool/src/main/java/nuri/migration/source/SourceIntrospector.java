@@ -2,6 +2,7 @@ package nuri.migration.source;
 
 import nuri.migration.model.MappingSpec.DbConfig;
 import org.springframework.jdbc.core.JdbcTemplate;
+import nuri.migration.jdbc.JdbcUrlSafety;
 import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import org.springframework.stereotype.Component;
 
@@ -16,7 +17,11 @@ public class SourceIntrospector {
 
     /** {@link DbConfig} 로부터 JdbcTemplate 생성(소스/타깃 공통). */
     public JdbcTemplate jdbc(DbConfig cfg) {
+        if (!JdbcUrlSafety.isSafe(cfg.url())) {
+            throw new IllegalArgumentException("JDBC 주소에 허용하지 않는 연결 속성이 있습니다");
+        }
         DriverManagerDataSource ds = new DriverManagerDataSource(cfg.url(), cfg.username(), cfg.password());
+        ds.setConnectionProperties(JdbcUrlSafety.hardenedProperties(cfg.url()));
         if (cfg.driver() != null && !cfg.driver().isBlank()) {
             ds.setDriverClassName(cfg.driver());
         }

@@ -89,7 +89,10 @@ export async function startWorkspaceServer({ directory, jarPath, javaPath, gitPa
       const authority = `127.0.0.1:${server.address().port}`, origin = `http://${authority}`;
       const url = new URL(request.url, origin);
       const documentNavigation = request.method === 'GET' && !url.search && ['/', '/index.html'].includes(url.pathname) && request.headers['sec-fetch-mode'] === 'navigate' && request.headers['sec-fetch-dest'] === 'document';
-      if (request.headers.host !== authority || (request.headers.origin && request.headers.origin !== origin) || (!documentNavigation && request.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(request.headers['sec-fetch-site']))) fail('LOCAL_ORIGIN_REQUIRED', 403);
+      const hostCount = request.rawHeaders.filter((value, index) => index % 2 === 0 && value.toLowerCase() === 'host').length;
+      if (hostCount !== 1 || request.headers.host !== authority || !['127.0.0.1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress)
+        || ['forwarded', 'x-forwarded-for', 'x-forwarded-host', 'x-forwarded-proto'].some(name => request.headers[name] !== undefined)
+        || (request.headers.origin && request.headers.origin !== origin) || (!documentNavigation && request.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(request.headers['sec-fetch-site']))) fail('LOCAL_ORIGIN_REQUIRED', 403);
       if (request.method === 'GET' && !url.search && assets.has(url.pathname)) { const asset = assets.get(url.pathname); response.writeHead(200, { 'Content-Type': asset.type }); response.end(asset.bytes); return; }
       if (url.pathname === '/api/session' && request.method === 'GET' && !url.search) {
         // 터미널 주소의 실행 비밀을 상수 시간으로 대조한 화면에만 요청 토큰을 준다.
