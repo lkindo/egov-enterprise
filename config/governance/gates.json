@@ -1183,6 +1183,10 @@
           "source": "api-server/src/test/java/nuri/api/schema/SurveyFamilyBigintMigrationIntegrationTest.java"
         },
         {
+          "id": "DB-VENDOR-SQL-PORT",
+          "source": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
+        },
+        {
           "id": "DB-SURVEY-SUBMISSION-CONCURRENCY",
           "source": "api-server/src/test/java/nuri/api/schema/SurveySubmissionConcurrencyIntegrationTest.java"
         },
