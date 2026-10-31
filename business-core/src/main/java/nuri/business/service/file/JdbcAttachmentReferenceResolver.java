@@ -139,6 +139,9 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         if (source == AttachmentSource.BOARD) return queryBoard(atchFileSn, loginId, esntlId);
         if (source == AttachmentSource.SCHEDULE) return querySchedule(atchFileSn, loginId);
         if (source == AttachmentSource.CMS_PAGE) return queryCmsPage(atchFileSn);
+        if (source == AttachmentSource.DEPT_TASK) return queryDeptTask(atchFileSn, loginId, esntlId);
+        if (source == AttachmentSource.POPUP) return queryPopup(atchFileSn, loginId);
+        if (source == AttachmentSource.BANNER) return queryBanner(atchFileSn, loginId);
         List<Object> params = new ArrayList<>();
 
         String sharedExpr = source.sharedPredicate() != null ? source.sharedPredicate() : "1 = 0";
@@ -312,6 +315,75 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     }
 
     private record ScheduleReference(String registrar, String sharing, String department, String userDepartment) {}
+
+    private record DeptTaskReference(String registrar, String assignee, String boxDepartment, String userDepartment) {}
+
+    private record PopupReference(String registrar, String notice, LocalDate start, LocalDate end) {}
+
+    private record BannerReference(String registrar, String reflected) {}
+
+    /**
+     * DeptJobService 의 상세 열람·수정과 같은 조건이다. 공유는 등록자·담당자·업무함과 같은 부서·전체 수정 권한자이고, 업무함이 없는
+     * 업무는 부서를 알 수 없어 같은 부서 근거가 없다. 소유(삭제 근거)는 담당자이고 공석이면 등록자다 — 담당자를 둔 뒤의 등록자는
+     * 내용을 고칠 수 없으므로(DEC-OPS-205) 열람만 한다. FILE_READ_ALL 우회는 그대로 둔다(readDenied 를 만들지 않는다).
+     */
+    private SourceHit queryDeptTask(Long fileId, String loginId, String esntlId) {
+        var references = jdbcTemplate.query("""
+                SELECT t.frst_rgtr_id, t.pic_id, b.dept_id, u.ognz_id
+                  FROM tb_dept_task_info t
+                  LEFT JOIN tb_dept_job_bx b ON b.dept_task_box_sn = t.dept_task_box_sn
+                  LEFT JOIN tb_user_info u ON u.esntl_id = ?
+                 WHERE t.atch_file_sn = ?
+                """, (rs, rowNum) -> new DeptTaskReference(rs.getString("frst_rgtr_id"), rs.getString("pic_id"),
+                    rs.getString("dept_id"), rs.getString("ognz_id")), esntlId, fileId);
+        boolean admin = nuri.business.security.util.SecurityUtil.hasPermission("DEPT_JOB_UPDATE_ALL");
+        boolean shared = false, owner = false;
+        for (var reference : references) {
+            boolean registrar = loginId != null && loginId.equals(reference.registrar());
+            boolean unassigned = reference.assignee() == null || reference.assignee().isBlank();
+            boolean assignee = unassigned ? registrar : esntlId != null && esntlId.equals(reference.assignee());
+            boolean sameDepartment = reference.boxDepartment() != null
+                    && reference.boxDepartment().equals(reference.userDepartment());
+            shared |= admin || registrar || assignee || sameDepartment;
+            owner |= assignee;
+        }
+        return new SourceHit(!references.isEmpty(), shared, owner, false);
+    }
+
+    /**
+     * 사용자 화면이 보는 범위(Popup#isPublishedOn)와 같다. 게시 중이 아니면 등록자와 관리 조회 권한자만 연다. POPUP_READ 는 일반
+     * 사용자 기본 권한이라 이 근거로 쓰면 초안이 그대로 열린다. core 는 선택 기능의 엔티티에 의존하지 않으므로 SQL 로 읽는다.
+     */
+    private SourceHit queryPopup(Long fileId, String loginId) {
+        var references = jdbcTemplate.query(
+                "SELECT frst_rgtr_id, ntce_yn, ntce_bgnde, ntce_endde FROM tb_popup_info WHERE "
+                        + AttachmentSource.POPUP.linkagePredicate(),
+                (rs, rowNum) -> new PopupReference(rs.getString("frst_rgtr_id"), rs.getString("ntce_yn"),
+                        rs.getObject("ntce_bgnde", LocalDate.class), rs.getObject("ntce_endde", LocalDate.class)),
+                AttachmentSource.POPUP.linkageParameters(fileId).toArray());
+        LocalDate today = LocalDate.ofInstant(clock.instant(), SERVICE_ZONE);
+        boolean manager = nuri.business.security.util.SecurityUtil.hasPermission("POPUP_ADMIN_READ");
+        boolean shared = false, owner = false;
+        for (var reference : references) {
+            shared |= manager || ("Y".equals(reference.notice()) && reference.start() != null && reference.end() != null
+                    && !today.isBefore(reference.start()) && !today.isAfter(reference.end()));
+            owner |= loginId != null && loginId.equals(reference.registrar());
+        }
+        return new SourceHit(!references.isEmpty(), shared, owner, false);
+    }
+
+    /** 사용자 화면이 보는 범위(반영한 배너)와 같다. BANNER_READ 는 일반 사용자 기본 권한이라 근거로 쓰지 않는다. */
+    private SourceHit queryBanner(Long fileId, String loginId) {
+        var references = jdbcTemplate.query("SELECT frst_rgtr_id, rflt_yn FROM tb_bnr_info WHERE atch_file_sn = ?",
+                (rs, rowNum) -> new BannerReference(rs.getString("frst_rgtr_id"), rs.getString("rflt_yn")), fileId);
+        boolean manager = nuri.business.security.util.SecurityUtil.hasPermission("BANNER_ADMIN_READ");
+        boolean shared = false, owner = false;
+        for (var reference : references) {
+            shared |= manager || "Y".equals(reference.reflected());
+            owner |= loginId != null && loginId.equals(reference.registrar());
+        }
+        return new SourceHit(!references.isEmpty(), shared, owner, false);
+    }
 
     /**
      * 술어에 들어 있는 <b>바인드 자리표시자</b> 개수를 센다.

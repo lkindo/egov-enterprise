@@ -58,7 +58,7 @@ public enum AttachmentSource {
      * <p>[SQL 에서 잇지 않는 이유] 비교할 URL 은 {@link #linkageParameters} 가 완성해 바인딩한다. MySQL·MariaDB 기본 설정의
      * {@code ||} 는 논리 OR 이라 {@code file_url = '...' || ?} 가 모든 팝업과 일치한다(ADR-0047).
      */
-    POPUP("tb_popup_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null,
+    POPUP("tb_popup_info", Sensitivity.SHARED, null, "frst_rgtr_id = ?", null,
             "(file_url = ? OR file_url = ?)"),
 
     /** 게시판 글. resolver는 비밀글 조건 앞에 커뮤니티 승인 회원 조건을, 공유 근거에 게시 기간(시작일·종료일) 조건을 함께 적용한다. */
@@ -67,14 +67,17 @@ public enum AttachmentSource {
             "frst_rgtr_id = ?", "user_id = ?"),
 
 
-    /** 배너 이미지. 공개 콘텐츠(비로그인 대시보드에도 노출되는 성격). */
-    BANNER("tb_bnr_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
+    /** 배너 이미지. resolver가 반영 여부로 공유를 판정한다 — 반영 전 이미지는 등록자와 관리 조회 권한자만 연다. */
+    BANNER("tb_bnr_info", Sensitivity.SHARED, null, "frst_rgtr_id = ?", null),
 
     /** 일정. resolver가 작성자·SCHEDULE_READ_ALL·같은 부서의 공유 일정 조건으로 열람을 판정한다. */
     SCHEDULE("tb_schdl_info", Sensitivity.SHARED, null, "frst_rgtr_id = ?", null),
 
-    /** 부서 업무. 부서 공용 자원이라 개인 귀속이 아니며 관리자 우회를 허용한다. */
-    DEPT_TASK("tb_dept_task_info", Sensitivity.SHARED, "1 = 1", "frst_rgtr_id = ?", null),
+    /**
+     * 부서 업무. 부서 공용 자원이라 개인 귀속이 아니며 관리자 우회를 허용한다. resolver가 상세 열람과 같은 조건으로 공유를,
+     * 수정·삭제와 같은 조건(담당자, 공석이면 등록자)으로 소유를 판정한다.
+     */
+    DEPT_TASK("tb_dept_task_info", Sensitivity.SHARED, null, "frst_rgtr_id = ?", null),
 
     /** 업무일지. 개인 귀속. */
     DIARY("tb_diary_info", Sensitivity.PERSONAL, null, "frst_rgtr_id = ?", null),

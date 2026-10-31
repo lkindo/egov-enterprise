@@ -78,12 +78,13 @@ class MemoReportAttachmentReachabilityTest {
     }
 
     @Test
-    @DisplayName("작성자는 자기 메모의 첨부를 열고 지운다")
-    void authorReadsAndDeletes() {
+    @DisplayName("🔒 작성자는 자기 메모의 첨부를 열지만 개별 삭제로 지우지 못한다 — 지시가 달린 뒤 첨부를 뺄 수 없다(ADR-0048)")
+    void authorReadsButCannotDeleteThroughFileApi() {
         authenticateAs("author-login", "author-esntl", "USER");
 
         assertThatCode(() -> policy.assertReadable(attachment())).doesNotThrowAnyException();
-        assertThatCode(() -> policy.assertDeletable(attachment())).doesNotThrowAnyException();
+        assertThatExceptionOfType(BusinessException.class)
+                .isThrownBy(() -> policy.assertDeletable(attachment()));
     }
 
     @Test
