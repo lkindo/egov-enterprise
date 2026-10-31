@@ -98,6 +98,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 |---|---|
 | `build/reusable-base/source/<프로젝트명>-<생성 ID>` | 독립 소스 프로젝트 |
 | `build/reusable-base/composer-<프로젝트명>-<생성 ID>-db` | PostgreSQL baseline·시드·DB lock |
+| `build/reusable-base/composer-<프로젝트명>-<생성 ID>-db.vendor-input.json` | 벤더 번역 입력(최종 스키마·함수·시드 행). 번들 밖에 두어 PostgreSQL 산출물은 바뀌지 않는다 |
 | `project-recipe.json`, `project-composition.json` | 사용자 선택과 해석된 구성 |
 | `reusable-base-lock.json` | 원본 commit, 배치, 구성·DB 식별, 제외 및 검증 범위 |
 | `project-generation-report.json` | 원본 파일 지문, 실행한 기술 검증, 결과 |

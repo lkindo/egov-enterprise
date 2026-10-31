@@ -1,6 +1,6 @@
 # 프로젝트 생성기 다중 DB 설계
 
-- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0 진행 중이며 벤더 구현은 시작 전이다
+- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1 완료. 벤더는 아직 고를 수 없다(§16)
 - 기준 커밋: 첫 실측 `a3a3b182f`, 수정안 실측 `ce06495c7`(V2_146까지 포함).
 - 실측: 2026-10-30~31, 이 기계의 일회용 컨테이너. 저장소 변경 없음.
 - 관련: [생성기 설계](project-composer-design.md) §6·§8 E, ADR-0020, ADR-0008, DEC-OPS-239·262·263
@@ -407,3 +407,27 @@ Oracle 을 먼저 하는 이유는 공공 수요가 가장 크고, 빈 문자열
 | `violation()` 이 NULL 흡수식을 잘못 푼다, 차등 시험이 번역기를 쓰지 않았다 | 사실. 현재 134개에는 없다 | 비지원 식은 번역 중단, 차등 시험이 번역기를 통과 |
 | 무결성 집계의 `\|\|` 는 단일 바인딩으로 못 바꾼다 | 사실 | 포트의 연결식(§4) |
 | SQL Server `LIKE` 의 `[` | 사실(공식 문서) | 이스케이프 대상 추가(§4). `ESCAPE '\\'` 문제도 함께 찾아 실측 |
+
+## 16. 단계 1 결과
+
+단계 1 은 번역과 대상 DB 대조까지다. 앱은 아직 어느 벤더에서도 기동하지 않았고, 벤더는 화면에서 고를 수 없다.
+
+- 시제품의 문자열 치환을 버리고 닫힌 문법의 중립 모델([vendor-model](../../scripts/project-composer-vendor-model.mjs))과 벤더 어댑터로 다시 썼다. 시제품의 수동 목록(긴 키, NULL 허용 UNIQUE, FK 대상)은 스키마에서 도출한다.
+- 모든 생성이 [벤더 번역](../../scripts/project-composer-vendors.mjs)을 돌린다. 옮길 수 없는 스키마 변경은 그 변경의 재사용 생성에서 멈춘다. 입력은 번들 옆의 `*.vendor-input.json` 이라 PostgreSQL 산출물은 생성 시각을 빼면 그대로다.
+- 어댑터는 모델의 모든 키·제약·인덱스·트리거를 번역하거나 저하로 선언해야 한다. 선언 없이 빠지면 번역이 멈춘다.
+
+전체 기능 구성(표 98, CHECK 134, 시드 18,143행)을 [적용·대조](../../scripts/project-composer-vendor-verify.mjs)하고 [차등 시험](../../scripts/project-composer-vendor-differential.mjs)을 돌린 결과다. 대조는 컬럼·제약·인덱스·트리거·시퀀스, 표별 행 수, 다음 식별 값을 다시 읽어 본다.
+
+| 벤더 | 스키마 문장 | 적용 실패 | 시드 | 메타 대조 | CHECK 차등 값 | 불일치 |
+|---|---:|---:|---|---|---:|---:|
+| Oracle 19.3 EE·23.26 Free | 1,552 | 0 | 통과 | 통과 | 1,302 | 0 |
+| MariaDB 11.4 | 454 | 0 | 통과 | 통과 | 1,352 | 0 |
+| MySQL 8.4 | 464 | 0 | 통과 | 통과 | 1,352 | 0 |
+| SQL Server 2022 | 446 | 0 | 통과 | 통과 | 1,141 | 0 |
+| CUBRID 11.4 | 610 | 0 | 통과 | 통과 | 1,352 | 0 |
+
+Oracle 문장 수가 많은 것은 컬럼 주석을 별도 문장으로 쓰기 때문이다. 차등 값은 기준 PostgreSQL 이 허용과 거부를 모두 내도록 CHECK 마다 만든다. Oracle 은 빈 문자열, SQL Server 는 뒤 공백 값을 뺀다(§6.1 의 고유 한계).
+
+차등 시험이 시제품 검증에서 놓친 오류를 잡았다. Oracle 에서 공백뿐인 값의 `TRIM` 은 NULL 이라 `x = TRIM(x)` 가 UNKNOWN 이 되고 CHECK 를 통과했다. PostgreSQL 은 거부한다. 번역을 `TRIM(x) IS NOT NULL AND x = TRIM(x)` 로 고쳤다.
+
+남은 일은 단계 2 부터다: 벤더별 `VendorSqlDialect` 구현, 소스 투영(D-11), 앱 기동과 Hibernate validate, 통합 시험 이식, 인증 증거(D-9), 화면 선택지(D-13)다. 이 PR 은 벤더 번들을 만들지 않으므로 생성물 번들 형식(D-5)도 그 단계에서 정한다.

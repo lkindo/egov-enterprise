@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "description": "프로젝트 생성기의 DB 벤더 인증 원장(ADR-0047). certified 만 고를 수 있다. 벤더 id 는 이관 도구와 같다. evidence 는 벤더·버전별 전체 검증 실행과 입력 해시다.",
+  "vendors": [
+    { "id": "postgresql", "label": "PostgreSQL", "status": "certified", "engines": [{ "version": "17" }] },
+    { "id": "oracle", "label": "Oracle", "status": "preview", "engines": [{ "version": "19" }, { "version": "23" }], "reason": "스키마 번역과 대상 DB 대조까지다. 앱 기동과 통합 시험을 아직 통과하지 않았다." },
+    { "id": "mariadb", "label": "MariaDB", "status": "preview", "engines": [{ "version": "11.4" }], "reason": "스키마 번역과 대상 DB 대조까지다. 앱 기동과 통합 시험을 아직 통과하지 않았다." },
+    { "id": "mysql", "label": "MySQL", "status": "preview", "engines": [{ "version": "8.4" }], "reason": "스키마 번역과 대상 DB 대조까지다. 앱 기동과 통합 시험을 아직 통과하지 않았다." },
+    { "id": "mssql", "label": "SQL Server", "status": "preview", "engines": [{ "version": "2022" }], "reason": "스키마 번역과 대상 DB 대조까지다. 앱 기동과 통합 시험을 아직 통과하지 않았다." },
+    { "id": "cubrid", "label": "CUBRID", "status": "preview", "engines": [{ "version": "11.4" }], "reason": "제한 지원 대상이다. 스키마 번역과 대상 DB 대조까지이고 앱 기동을 아직 통과하지 않았다." },
+    { "id": "tibero", "label": "Tibero", "status": "blocked", "engines": [], "reason": "라이선스 파일이 없어 측정하지 못했다. Hibernate·Flyway 공개 지원도 없다." }
+  ]
+}
