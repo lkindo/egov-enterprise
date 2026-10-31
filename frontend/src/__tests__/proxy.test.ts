@@ -95,6 +95,10 @@ describe('proxy 인증 게이트', () => {
     '/a%70i/v1/auth/login',
     '/api/v1/%61uth/%6Cogin',
     '/api/v1/auth/reissue%2f',
+    '/api/v1/auth/login;a=b',
+    '/api/v1/auth/reissue;x',
+    '/api/v1/auth;x=1/login',
+    '/api/v1/auth/mfa;x/verify',
   ])('거부: 인코딩된 인증 토큰 경로가 rewrite로 BFF를 우회하지 못한다: %s', async path => {
     const response = await proxy(new NextRequestCtor(`http://localhost:3001${path}`, { method: 'POST' }));
 
@@ -110,11 +114,86 @@ describe('proxy 인증 게이트', () => {
     '/api/v1/auth/login', '/api/v1/auth/reissue',
     '/api/v1/boards/%ED%95%9C%EA%B8%80', '/api/v1/files/fixture%20file',
     '/api/v1/boards/%2572eissue',
+    '/api/v1/boards/a;b',
   ])('유지: 정규 인증 별칭과 일반 업무 자원의 인코딩을 통과시킨다: %s', async path => {
     const response = await proxy(new NextRequestCtor(`http://localhost:3001${path}`, { method: 'POST' }));
 
     expect(response.status).toBe(200);
     expect(response.headers.get('x-middleware-next')).toBe('1');
+  });
+
+  describe('쓰기 요청의 출처', () => {
+    const write = (host: string, headers: Record<string, string>) => proxy(new NextRequestCtor(
+      new URL(`http://${host}/api/v1/boards`), { method: 'POST', headers: { host, ...headers } }));
+
+    it.each([
+      ['portal.example', 'https://portal.example'],
+      ['portal.example:8443', 'https://portal.example:8443'],
+      ['portal.example:443', 'https://portal.example'],
+      ['localhost:3001', 'http://127.0.0.1:3001'],
+      ['127.0.0.1:3001', 'http://localhost:4000'],
+    ])('허용: Host %s 에 온 Origin %s', async (host, origin) => {
+      expect((await write(host, { origin })).status).toBe(200);
+    });
+
+    it.each([
+      ['portal.example', 'http://localhost'],
+      ['portal.example', 'http://127.0.0.1:3000'],
+      ['portal.example', 'https://portal.example:8443'],
+      ['portal.example:8443', 'https://portal.example'],
+      ['portal.example', 'https://portal.example.attacker.test'],
+      ['portal.example', 'https://attacker.test'],
+      ['portal.example', 'null'],
+    ])('거부: Host %s 에 온 Origin %s', async (host, origin) => {
+      const response = await write(host, { origin });
+      expect(response.status).toBe(403);
+      expect((await response.json()).code).toBe('INVALID_ORIGIN');
+    });
+
+    it('Origin 이 없으면 Referer 를 같은 기준으로 보고, 둘 다 없으면 브라우저 쓰기가 아니다', async () => {
+      expect((await write('portal.example', { referer: 'https://attacker.test/page' })).status).toBe(403);
+      expect((await write('portal.example', { referer: 'https://portal.example/page' })).status).toBe(200);
+      expect((await write('portal.example', {})).status).toBe(200);
+    });
+  });
+
+  describe('백엔드로 넘기는 머리글', () => {
+    const api = (headers: Record<string, string>) => proxy(new NextRequestCtor(
+      new URL('http://localhost:3001/api/v1/users/me'), { headers: { cookie: 'accessToken=fixture-token', ...headers } }));
+
+    it.each(['image', 'video', 'audio', 'style', 'font', 'object', 'embed'])(
+      '부속 자원 요청(%s)에는 쿠키를 Bearer 로 바꾸지 않는다', async dest => {
+        const response = await api({ 'sec-fetch-dest': dest });
+        expect(response.headers.get('x-middleware-request-authorization')).toBeNull();
+      });
+
+    it.each(['empty', 'document'])('화면 요청(%s)은 그대로 Bearer 를 받는다', async dest => {
+      const response = await api({ 'sec-fetch-dest': dest });
+      expect(response.headers.get('x-middleware-request-authorization')).toBe('Bearer fixture-token');
+    });
+
+    it('Sec-Fetch 를 보내지 않는 클라이언트도 그대로 Bearer 를 받는다', async () => {
+      expect((await api({})).headers.get('x-middleware-request-authorization')).toBe('Bearer fixture-token');
+    });
+
+    it('신뢰 앞단이 없으면 클라이언트가 보낸 IP 머리글을 넘기지 않는다', async () => {
+      const response = await api({ 'x-forwarded-for': '203.0.113.9', 'x-real-ip': '203.0.113.9', forwarded: 'for=203.0.113.9' });
+      for (const name of ['x-forwarded-for', 'x-real-ip', 'forwarded']) {
+        expect(response.headers.get(`x-middleware-request-${name}`)).toBeNull();
+      }
+    });
+
+    it('신뢰 앞단이 켜져 있으면 앞단이 덮어쓴 값을 그대로 둔다', async () => {
+      const original = process.env.TRUSTED_EDGE_PROXY;
+      process.env.TRUSTED_EDGE_PROXY = 'true';
+      try {
+        const response = await api({ 'x-forwarded-for': '198.51.100.7' });
+        expect(response.headers.get('x-middleware-request-x-forwarded-for')).toBe('198.51.100.7');
+      } finally {
+        if (original === undefined) delete process.env.TRUSTED_EDGE_PROXY;
+        else process.env.TRUSTED_EDGE_PROXY = original;
+      }
+    });
   });
 
   it('같은 시크릿의 토큰은 통과하고 진단은 비밀 파생값 없이 필요한 메타만 남긴다', async () => {

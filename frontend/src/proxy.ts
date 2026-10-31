@@ -3,6 +3,7 @@ import type { NextRequest } from 'next/server';
 import { canEnterRegisteredPage, loadPageAuthorization } from '@/lib/auth/page-authorization';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
 import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
+import { isTrustedEdgeProxyEnabled } from '@/lib/api/forwarded-client-ip';
 
 // ────────────────────────────────────────────────────────────────────────────
 // [보안] JWT 서명 검증 (Edge 런타임 네이티브 Web Crypto, 외부 의존 없음)
@@ -340,45 +341,58 @@ function isUpgradeRequest(headers: Headers): boolean {
 }
 
 function isEncodedAuthTokenPath(pathname: string): boolean {
-  if (!pathname.includes('%')) return false;
+  if (!pathname.includes('%') && !pathname.includes(';')) return false;
   try {
     // Static Next routes match the encoded path, while the upstream can decode a path segment.
     // Reject only aliases of these token endpoints; encoded business resource identifiers remain valid.
-    return /^\/api\/v1\/auth\/(?:login|reissue|mfa(?:\/.*)?)\/?$/.test(decodeURIComponent(pathname));
+    // A `;` path parameter also misses the static route and reaches the rewrite, so strip it before matching.
+    const canonical = decodeURIComponent(pathname).replace(/;[^/]*/g, '');
+    return /^\/api\/v1\/auth\/(?:login|reissue|mfa(?:\/.*)?)\/?$/.test(canonical);
   } catch {
     // Malformed paths are handled by normal routing/upstream validation, not guessed or recursively decoded.
     return false;
   }
 }
 
+const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
+
+/** TLS 가 앞단에서 끝나면 여기서는 스킴을 알 수 없다. 기본 포트(80·443)는 같은 값으로 보고 나머지 포트는 정확히 비교한다. */
+function effectivePort(port: string): string {
+  return port === '80' || port === '443' ? '' : port;
+}
+
+/**
+ * 쓰기 요청의 출처가 이 요청의 Host 와 같은가. 비교 대상은 Next 의 내부 URL 이 아니라 Edge 가 그대로 넘긴 Host 다.
+ * 루프백끼리는 포트를 묻지 않고(개발 서버), 공개 주소로 온 요청의 루프백 Origin 은 받지 않는다(OriginValidationFilter 와 같다).
+ */
+function isSameRequestAuthority(source: string, host: string): boolean {
+  try {
+    const sourceUrl = new URL(source);
+    const hostUrl = new URL(`http://${host}`);
+    const sourceHostname = sourceUrl.hostname.toLowerCase();
+    const hostHostname = hostUrl.hostname.toLowerCase();
+    if (LOOPBACK_HOSTNAMES.has(hostHostname)) return LOOPBACK_HOSTNAMES.has(sourceHostname);
+    return sourceHostname === hostHostname && effectivePort(sourceUrl.port) === effectivePort(hostUrl.port);
+  } catch {
+    return false;
+  }
+}
+
+/** 브라우저가 스스로 불러오는 부속 자원. 본문에 심은 <img>·SVG·CSS url() 도 여기에 든다. */
+const SUBRESOURCE_DESTINATIONS = new Set(['image', 'audio', 'video', 'track', 'style', 'script', 'font', 'object', 'embed']);
+
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // [Zero-Trust] Origin/Referer 검증: POST, PUT, DELETE, PATCH 요청 시 Origin 헤더가 존재하면 허용된 Host인지 확인
+  // [Zero-Trust] Origin/Referer 검증: POST, PUT, DELETE, PATCH 요청의 출처가 이 Host 인지 확인한다.
+  // Origin 이 없으면 Referer 를 같은 기준으로 본다. 둘 다 없는 요청은 브라우저의 교차 출처 쓰기가 아니다.
   if (['POST', 'PUT', 'DELETE', 'PATCH'].includes(request.method) && pathname.startsWith('/api')) {
-    const origin = request.headers.get('origin');
-    if (origin) {
-      const host = request.headers.get('host') || '';
-      const hostDomain = host.split(':')[0];
-      // 부분문자열(includes) 비교는 `https://localhost.attacker.com` 같은 접미사 도메인을
-      // 통과시키므로, Origin 을 파싱해 hostname 을 정확히 비교한다.
-      let originHostname: string | null = null;
-      try {
-        originHostname = new URL(origin).hostname;
-      } catch {
-        originHostname = null;
-      }
-      const isAllowed =
-        originHostname !== null &&
-        ['localhost', '127.0.0.1', hostDomain].some(
-          (allowed) => allowed && allowed.toLowerCase() === originHostname.toLowerCase()
-        );
-      if (!isAllowed) {
-        return new NextResponse(
-          JSON.stringify({ success: false, code: 'INVALID_ORIGIN', message: 'Access denied: untrusted Origin header' }),
-          { status: 403, headers: { 'content-type': 'application/json' } }
-        );
-      }
+    const source = request.headers.get('origin') ?? request.headers.get('referer');
+    if (source && !isSameRequestAuthority(source, request.headers.get('host') ?? request.nextUrl.host)) {
+      return new NextResponse(
+        JSON.stringify({ success: false, code: 'INVALID_ORIGIN', message: 'Access denied: untrusted Origin header' }),
+        { status: 403, headers: { 'content-type': 'application/json' } }
+      );
     }
   }
 
@@ -401,7 +415,15 @@ export async function proxy(request: NextRequest) {
   if (pathname.startsWith('/api/v1') || pathname.startsWith('/actuator') || pathname.startsWith('/ws')) {
     const requestHeaders = new Headers(request.headers);
     const accessToken = request.cookies.get('accessToken')?.value;
-    if (accessToken) requestHeaders.set('Authorization', `Bearer ${accessToken}`);
+    // 쿠키를 Bearer 로 바꿔 주는 대상은 화면 코드의 요청과 문서 이동이다. 부속 자원에 주입하면 게시글 본문에 심은
+    // <img src="/api/v1/…"> 가 열람자 권한으로 API 를 부른다. 화면의 첨부 그림은 fetch 로 받으므로 영향이 없다.
+    const subresource = SUBRESOURCE_DESTINATIONS.has(request.headers.get('sec-fetch-dest') ?? '');
+    if (accessToken && !subresource) requestHeaders.set('Authorization', `Bearer ${accessToken}`);
+    // 앞단 프록시가 덮어쓴 값이 아니면 클라이언트가 보낸 값이다. 지우면 백엔드는 Next 를 접속지로 본다 — 인증 BFF 와 같은
+    // 경계다(forwarded-client-ip.ts, ADR-0019). Next 는 이 헤더가 없을 때만 채우므로 여기서 값을 가려낼 수 없다.
+    if (!isTrustedEdgeProxyEnabled()) {
+      for (const name of ['x-forwarded-for', 'x-real-ip', 'forwarded']) requestHeaders.delete(name);
+    }
     // [GAP-FE-002 · DEC-OPS-333] rewrite 프록시가 백엔드 연결을 유휴 상태로 다시 쓰지 않게 한다.
     //   Next 16 rewrite 는 httpxy 의 모듈 전역 keep-alive Agent(timeout 없음, 주입 수단 없음)를 쓴다.
     //   Node 22 Agent 는 자기 timeout 이 0 이면 서버의 `Keep-Alive: timeout=20` 힌트를 무시해 유휴 소켓을
