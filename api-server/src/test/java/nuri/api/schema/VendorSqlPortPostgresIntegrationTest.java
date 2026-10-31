@@ -10,6 +10,7 @@ import java.time.LocalDateTime;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.CopyOnWriteArrayList;
@@ -22,6 +23,7 @@ import nuri.business.domain.menu.MenuRepository;
 import nuri.business.domain.system.job.DurableJob;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.business.domain.user.repository.DeptManageRepository;
+import nuri.business.service.system.job.DurableWorkMetrics;
 import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkPort;
 import org.hibernate.resource.jdbc.spi.StatementInspector;
@@ -84,6 +86,7 @@ class VendorSqlPortPostgresIntegrationTest {
     @Autowired private UserLogRepository userLogs;
     @Autowired private DurableJobRepository jobs;
     @Autowired private DurableWorkPort durableWork;
+    @Autowired private DurableWorkMetrics metrics;
     @Autowired private PlatformTransactionManager manager;
     @Autowired private DataSource dataSource;
     @Autowired private JdbcTemplate jdbc;
@@ -135,15 +138,30 @@ class VendorSqlPortPostgresIntegrationTest {
 
     @Test
     @DisplayName("작업 선점은 Hibernate 가 FOR NO KEY UPDATE 로 만들지만, 이 표를 가리키는 FK 가 없어 FOR UPDATE 와 결과가 같다")
-    void claimLockStaysEquivalentToForUpdate() {
+    void claimLockStaysEquivalentToForUpdate() throws Exception {
         capturedSql.statements.clear();
         transaction.executeWithoutResult(status -> jobs.claimNext(LocalDateTime.now(ZoneOffset.UTC), List.of(JOB_TYPE)));
 
-        assertThat(capturedSql.statements).filteredOn(sql -> sql.contains("tb_sys_job")).singleElement().asString()
-                .containsIgnoringCase("for no key update").containsIgnoringCase("skip locked");
+        // 시간 지연 없이 실제 집계 SQL 을 다른 스레드에서 같은 수집 창에 넣는다.
+        var executor = Executors.newSingleThreadExecutor(runnable -> new Thread(runnable, "vendor-sql-metrics-probe"));
+        try {
+            executor.submit(metrics::refresh).get(5, TimeUnit.SECONDS);
+        } finally {
+            executor.shutdownNow();
+        }
+
+        var jobStatements = List.copyOf(capturedSql.statements).stream()
+                .filter(sql -> sql.toLowerCase(Locale.ROOT).contains("tb_sys_job")).toList();
+        assertThat(jobStatements).as("한 선점 SQL 에 두 잠금 절이 모두 있어야 한다")
+                .anyMatch(sql -> {
+                    String normalized = sql.toLowerCase(Locale.ROOT);
+                    return normalized.contains("for no key update") && normalized.contains("skip locked");
+                });
         assertThat(jdbc.queryForObject("SELECT count(*) FROM pg_constraint WHERE contype = 'f'"
                 + " AND confrelid = 'tb_sys_job'::regclass", Long.class))
                 .as("이 표를 가리키는 FK 가 생기면 KEY SHARE 를 쥔 행이 선점되므로 잠금 강도를 다시 정한다").isZero();
+        assertThat(jobStatements).as("실제 백그라운드 집계 SQL 도 같은 수집기에 들어온다")
+                .anyMatch(sql -> sql.toLowerCase(Locale.ROOT).contains("group by prcs_stts_nm"));
     }
 
     @Test
