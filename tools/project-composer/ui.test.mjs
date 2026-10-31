@@ -1319,15 +1319,15 @@ async function errorPage(t, engine = {}, { permissions } = {}) {
   const calls = [];
   page.on('pageerror', error => pageErrors.push(error.message));
   page.on('request', request => { const { pathname } = new URL(request.url()); if (pathname.startsWith('/api/')) calls.push(pathname); });
-  return { page, origin, pageErrors, count: path => calls.filter(item => item === path).length };
+  return { page, origin, launchUrl: `${origin}/#launch=${app.launchSecret}`, pageErrors, count: path => calls.filter(item => item === path).length };
 }
 const generateButton = page => page.getByRole('button', { name: '프로젝트 생성', exact: true });
 
 test('a reserved Windows name is refused before any request, and a server name refusal uses the same sentence', { timeout: 45_000 }, async t => {
   let serverRefuses = false;
-  const { page, origin, pageErrors, count } = await errorPage(t, {
+  const { page, launchUrl, pageErrors, count } = await errorPage(t, {
     plan: recipe => { if (serverRefuses) throw new ComposerError('INVALID_NAME', { field: 'project.name' }); return plan(recipe); } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await expect(generateButton(page)).toBeEnabled();
   const plans = count('/api/plan');
   await page.getByLabel('프로젝트 이름').fill('con');
@@ -1356,9 +1356,9 @@ test('a reserved Windows name is refused before any request, and a server name r
 test('a changed source offers a reload that keeps the name and selection and shows the new source', { timeout: 45_000 }, async t => {
   let current = catalog;
   let sourceChanged = false;
-  const { page, origin, pageErrors, count } = await errorPage(t, { catalog: () => current,
+  const { page, launchUrl, pageErrors, count } = await errorPage(t, { catalog: () => current,
     plan: recipe => { if (sourceChanged) throw new ComposerError('SOURCE_CHANGED', {}, 'Recipe sourceRef does not identify the current checkout'); return plan(recipe); } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await expect(page.locator('#source-ref')).toHaveText('HEAD · aaaaaaaaaaaa');
   // 카탈로그가 공통 기반의 크기를 알려 주지 않으면 그 줄을 보이지 않는다.
   await expect(page.locator('#core-counts')).toHaveText('');
@@ -1400,10 +1400,10 @@ test('a changed source offers a reload that keeps the name and selection and sho
 });
 
 test('a stale menu snapshot shows the real refresh command and copies it', { timeout: 45_000 }, async t => {
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     plan: () => { throw new ComposerError('MENU_SNAPSHOT_STALE', {}, 'Composer menu snapshot: source hash mismatch'); } },
   { permissions: ['clipboard-read', 'clipboard-write'] });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await expect(page.locator('#plan-status')).toContainText('메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못했습니다.');
   await expect(page.locator('#plan-status')).not.toContainText('hash');
   await expect(generateButton(page)).toBeDisabled();
@@ -1416,8 +1416,8 @@ test('a stale menu snapshot shows the real refresh command and copies it', { tim
 
 test('a session failure shows the server sentence with its developer details, and only a lost connection asks to start the server', { timeout: 45_000 }, async t => {
   let failure = new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx'] });
-  const { page, origin, pageErrors } = await errorPage(t, { catalog: () => { throw failure; } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  const { page, launchUrl, pageErrors } = await errorPage(t, { catalog: () => { throw failure; } });
+  await page.goto(launchUrl);
   await expect(page.locator('#connection-message')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
   await expect(page.locator('#workspace')).toBeHidden();
   const developer = page.locator('#connection-actions details');
@@ -1447,8 +1447,8 @@ test('a session failure shows the server sentence with its developer details, an
 });
 
 test('an unknown action or a malformed command from the server shows the sentence without a button', { timeout: 45_000 }, async t => {
-  const { page, origin, pageErrors } = await errorPage(t);
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  const { page, launchUrl, pageErrors } = await errorPage(t);
+  await page.goto(launchUrl);
   await expect(generateButton(page)).toBeEnabled();
   const answer = error => page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json', body: JSON.stringify({ error }) }));
   await answer({ code: 'FUTURE_CODE', message: '새 버전의 오류 문장입니다.', action: 'future-action', details: { command: 'rm -rf /' } });
@@ -1468,12 +1468,12 @@ test('a changed source found by the final check closes the dialog and reloads wi
   let current = catalog;
   let moved = false;
   let slow = false;
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     catalog: async () => { if (slow) await new Promise(accept => setTimeout(accept, 1500)); return current; },
     preflight: () => moved
       ? { checks: [{ id: 'source', status: 'block', code: 'SOURCE_CHANGED', label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' }], blocked: true }
       : passingPreflight() });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-notification').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1506,8 +1506,8 @@ test('a changed source found by the final check closes the dialog and reloads wi
 
 test('a reload starts the change announcement over instead of blaming the dropped feature on the user', { timeout: 45_000 }, async t => {
   let current = catalog;
-  const { page, origin, pageErrors } = await errorPage(t, { catalog: () => current });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  const { page, launchUrl, pageErrors } = await errorPage(t, { catalog: () => current });
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(page.locator('#plan-status')).toHaveText('게시판 선택으로 함께 포함되는 기능이 2개 늘었습니다(댓글, 스크랩). 시작 구성이 ‘직접 선택’으로 바뀌었습니다. 포함 범위를 확인했습니다. 이 구성으로 생성할 수 있습니다.');
@@ -1524,9 +1524,9 @@ test('a reload starts the change announcement over instead of blaming the droppe
 test('a reload that drops a selected feature or preset says so instead of dropping it silently', { timeout: 45_000 }, async t => {
   let current = catalog;
   let slowPlan = false;
-  const { page, origin, pageErrors } = await errorPage(t, { catalog: () => current,
+  const { page, launchUrl, pageErrors } = await errorPage(t, { catalog: () => current,
     plan: async recipe => { if (slowPlan) await new Promise(accept => setTimeout(accept, 1500)); return plan(recipe); } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await page.locator('#capability-notification').check();
@@ -1567,12 +1567,12 @@ test('a reload that drops a selected feature or preset says so instead of droppi
 test('a reload that fails leaves no plan to generate or save', { timeout: 45_000 }, async t => {
   let sessionFails = false;
   let moved = false;
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     catalog: () => { if (sessionFails) throw new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: drifted'] }); return catalog; },
     preflight: () => moved
       ? { checks: [{ id: 'source', status: 'block', code: 'SOURCE_CHANGED', label: '원본이 새 커밋으로 바뀌었습니다. 화면을 새로 고쳐 새 원본으로 다시 확인하세요.' }], blocked: true }
       : passingPreflight() });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
   await expect(page.getByRole('button', { name: '선택 정보 저장' })).toBeEnabled();
@@ -1593,11 +1593,11 @@ test('a reload that fails leaves no plan to generate or save', { timeout: 45_000
 test('a generation request rejected by the plan check withdraws the plan and a later job leaves no stale action', { timeout: 60_000 }, async t => {
   let rejectJob = null;
   let generations = 0;
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     plan: recipe => { if (rejectJob) { const error = rejectJob; rejectJob = null; throw error; } return plan(recipe); },
     diff: (recipe, domain) => ({ domain, summary: `옛 원본 기준: ${domain}` }),
     generate: async recipe => { generations += 1; return { projectDirectory: `build/project-composer/${recipe.project.name}`, verified: true }; } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1656,14 +1656,14 @@ test('a generation request rejected by the plan check withdraws the plan and a l
 test('a reload that fails while a check is in flight leaves the re-check button usable', { timeout: 45_000 }, async t => {
   let sessionFails = false;
   let slowPlan = false;
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     catalog: async () => {
       if (!sessionFails) return catalog;
       await new Promise(accept => setTimeout(accept, 700));
       throw new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: drifted'] });
     },
     plan: async recipe => { if (slowPlan) await new Promise(accept => setTimeout(accept, 1800)); return plan(recipe); } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await expect(generateButton(page)).toBeEnabled();
   await page.route('**/api/plan', route => route.fulfill({ status: 409, contentType: 'application/json',
     body: JSON.stringify({ error: { code: 'SOURCE_CHANGED', message: '원본이 바뀌었습니다.', action: 'reload-source' } }) }), { times: 1 });
@@ -1684,8 +1684,8 @@ test('a reload that fails while a check is in flight leaves the re-check button 
 
 test('a coded deep-check failure in the final confirmation shows its action in the dialog', { timeout: 45_000 }, async t => {
   let deepFailure = new ComposerError('CATALOG_DRIFT', { violations: ['project-composer catalog: declared UI dependency drifted: frontend/src/a.tsx'] });
-  const { page, origin, pageErrors, count } = await errorPage(t, { deep: () => { if (deepFailure) throw deepFailure; return passingDeep(); } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  const { page, launchUrl, pageErrors, count } = await errorPage(t, { deep: () => { if (deepFailure) throw deepFailure; return passingDeep(); } });
+  await page.goto(launchUrl);
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
   await generateButton(page).click();
@@ -1720,8 +1720,8 @@ const JOB_REPORT = 'build/project-composer/jobs/agency-service-0123456789abcdef/
 const jobFailure = (code, details, failure) => Object.assign(new ComposerError(code, details, `private-detail ${code}`), { failure });
 const verifyFailure = (step, logTail) => jobFailure('VERIFY_FAILED', { step }, { stage: 'verify', commandId: 'scripts/verify-reusable-artifact.mjs',
   exitCode: 1, log: JOB_LOG, report: JOB_REPORT, sourceCommit: 'a'.repeat(40), logTail });
-async function startFailingJob(page, origin) {
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+async function startFailingJob(page, launchUrl) {
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1731,9 +1731,9 @@ async function startFailingJob(page, origin) {
 
 test('a verification step failure keeps one sentence in the alert, a closed log tail and copies only identifiers', { timeout: 45_000 }, async t => {
   const tail = ['[reusable-verify] custom/single-module: pnpm -C frontend run lint', 'src/a.tsx 3:1 error no-unused-vars'];
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async () => { throw verifyFailure('lint', tail); } },
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async () => { throw verifyFailure('lint', tail); } },
     { permissions: ['clipboard-read', 'clipboard-write'] });
-  await startFailingJob(page, origin);
+  await startFailingJob(page, launchUrl);
   await expect(page.locator('#job-error')).toHaveText(/「린트」 단계에서 실패했습니다/);
   assert.equal(await page.locator('#job-error').locator('button, code, details, pre, p').count(), 0, 'the alert holds the sentence only');
   await expect(page.locator('#job-message'), 'the failure sentence is announced once').toHaveText('');
@@ -1757,12 +1757,12 @@ test('a verification step failure keeps one sentence in the alert, a closed log 
 
 test('regenerating from a failed job goes through the final check and keeps focus on the job heading', { timeout: 60_000 }, async t => {
   let generations = 0;
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async recipe => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async recipe => {
     generations += 1;
     if (generations === 1) throw verifyFailure('build', ['next build failed: out of memory']);
     return { projectDirectory: `build/project-composer/${recipe.project.name}`, verified: true };
   } });
-  await startFailingJob(page, origin);
+  await startFailingJob(page, launchUrl);
   await expect(page.locator('#job-error')).toHaveText(/「프런트 빌드」 단계에서 실패했습니다.+환경 문제였다면 다시 생성해 주세요/);
   await page.locator('#job-actions').getByRole('button', { name: '다시 생성' }).click();
   const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
@@ -1784,8 +1784,8 @@ test('Docker, database, git and source failures each offer only their own action
     jobFailure('SOURCE_CHANGED', {}, { stage: 'source' }),
   ];
   let next = 0;
-  const { page, origin, pageErrors, count } = await errorPage(t, { generate: async () => { throw failures[next++]; } });
-  await startFailingJob(page, origin);
+  const { page, launchUrl, pageErrors, count } = await errorPage(t, { generate: async () => { throw failures[next++]; } });
+  await startFailingJob(page, launchUrl);
   const actions = page.locator('#job-actions');
   // Docker: 생성 환경 다시 점검은 최종 확인 창(환경 점검 포함)을 연다.
   await expect(page.locator('#job-error')).toContainText('Linux 컨테이너 모드');
@@ -1814,11 +1814,11 @@ test('Docker, database, git and source failures each offer only their own action
 });
 
 test('a removed source file is copied as a diagnosis, with a manual copy when the clipboard refuses', { timeout: 45_000 }, async t => {
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async () => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async () => {
     throw jobFailure('SOURCE_SURVIVAL', { files: ['frontend/src/app/mail/page.tsx'] }, { stage: 'source', report: JOB_REPORT, sourceCommit: 'a'.repeat(40) });
   } });
   await page.addInitScript(() => { navigator.clipboard.writeText = () => Promise.reject(new Error('denied')); });
-  await startFailingJob(page, origin);
+  await startFailingJob(page, launchUrl);
   await expect(page.locator('#job-error')).toContainText('생성기 결함이므로 진단 정보를 복사해 보고해 주세요');
   await page.locator('#job-actions').getByRole('button', { name: '진단 정보 복사' }).click();
   await expect(page.locator('#job-actions [role="status"]')).toHaveText('복사하지 못했습니다. 아래 진단 정보를 직접 선택해 복사해 주세요.');
@@ -1830,10 +1830,10 @@ test('a removed source file is copied as a diagnosis, with a manual copy when th
 
 test('an unknown job action draws no button, and regenerating before the plan is confirmed explains why instead of opening nothing', { timeout: 60_000 }, async t => {
   let slowPlan = false;
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     plan: async recipe => { if (slowPlan) await new Promise(resolve => setTimeout(resolve, 2500)); return plan(recipe); },
     generate: async () => { throw jobFailure('DB_NOT_READY', {}, { stage: 'database', commandId: 'docker', exitCode: 1 }); } });
-  await startFailingJob(page, origin);
+  await startFailingJob(page, launchUrl);
   await expect(page.locator('#job-actions').getByRole('button', { name: '다시 생성' })).toBeVisible();
   // 새로고침 직후에는 작업이 계획보다 먼저 그려진다. 확인 창은 구성 확인이 끝나야 열린다.
   slowPlan = true;
@@ -1869,10 +1869,10 @@ test('an unknown job action draws no button, and regenerating before the plan is
 
 test('regenerating says why the final check cannot open, and the reason clears once the plan is ready again', { timeout: 60_000 }, async t => {
   let blocked = false;
-  const { page, origin, pageErrors } = await errorPage(t, {
+  const { page, launchUrl, pageErrors } = await errorPage(t, {
     plan: recipe => ({ ...plan(recipe), blockers: blocked ? ['게시판의 tb_bbs_item 테이블이 다른 기능을 참조합니다.'] : [] }),
     generate: async () => { throw jobFailure('DB_NOT_READY', {}, { stage: 'database', commandId: 'docker', exitCode: 1 }); } });
-  await startFailingJob(page, origin);
+  await startFailingJob(page, launchUrl);
   const regenerate = page.locator('#job-actions').getByRole('button', { name: '다시 생성' });
   const status = page.locator('#job-actions [role="status"]');
   // 이름이 틀렸으면 이름 칸으로 간다.
@@ -1896,10 +1896,10 @@ test('regenerating says why the final check cannot open, and the reason clears o
 
 test('a command that ended without an exit code is not called "could not run", and a lost status check keeps focus', { timeout: 60_000 }, async t => {
   let release;
-  const { page, origin, pageErrors } = await errorPage(t, { generate: () => new Promise((_, reject) => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: () => new Promise((_, reject) => {
     release = () => reject(Object.assign(new Error('x'), { failure: { stage: 'install', causeCode: 'COMMAND_FAILED', commandId: 'pnpm', exitCode: null } }));
   }) });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -1938,7 +1938,7 @@ test('the job panel shows each stage and verification step with its time, and th
   let generations = 0;
   const gates = [];
   const gate = () => new Promise(resolve => gates.push(resolve));
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
     generations += 1;
     if (generations > 1) {
       onProgress({ stage: 'resolve', progress: 0, timeline: timelineOf({ resolve: { status: 'running', startedAt: Date.now() } }) });
@@ -1956,7 +1956,7 @@ test('the job panel shows each stage and verification step with its time, and th
       backend: { status: 'failed', durationMs: 55_000 }, typecheck: { status: 'skipped' }, lint: { status: 'skipped' }, build: { status: 'skipped' } }) });
     throw verifyFailure('backend', ['> Task :compileJava FAILED']);
   } });
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -2040,8 +2040,8 @@ const cancelRequests = page => {
   page.on('request', request => { if (new URL(request.url()).pathname.endsWith('/cancel')) seen.push(request.method()); });
   return seen;
 };
-async function startRunningJob(page, origin) {
-  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+async function startRunningJob(page, launchUrl) {
+  await page.goto(launchUrl);
   await page.getByLabel('프로젝트 이름').fill('agency-service');
   await page.locator('#capability-board').check();
   await expect(generateButton(page)).toBeEnabled();
@@ -2052,7 +2052,7 @@ async function startRunningJob(page, origin) {
 test('the cancel button stops a running job, keeps focus while it cleans up and shows what was kept', { timeout: 60_000 }, async t => {
   let release;
   const cleaned = new Promise(resolve => { release = resolve; });
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress, signal }) => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress, signal }) => {
     const started = Date.now();
     const before = { resolve: done.resolve, database: done.database, source: done.source };
     onProgress({ stage: 'install', progress: 20, timeline: timelineOf({ ...before, install: { status: 'running', startedAt: started } }) });
@@ -2064,7 +2064,7 @@ test('the cancel button stops a running job, keeps focus while it cleans up and 
       details: { database: 'removed', staging: 'none', project: KEPT_PROJECT, schema: KEPT_SCHEMA }, failure: { stage: 'install', report: JOB_REPORT } });
   } });
   const sent = cancelRequests(page);
-  await startRunningJob(page, origin);
+  await startRunningJob(page, launchUrl);
   await expect(page.getByRole('heading', { name: '프로젝트 준비 중' })).toBeVisible();
   const cancel = page.locator('#job-cancel');
   await cancel.focus();
@@ -2098,13 +2098,13 @@ test('the cancel button stops a running job, keeps focus while it cleans up and 
 test('a cancel pressed after the status poll failed re-arms polling, and a failed cancel reason does not outlive the job', { timeout: 60_000 }, async t => {
   let release;
   const cleaned = new Promise(resolve => { release = resolve; });
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress, signal }) => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress, signal }) => {
     onProgress({ stage: 'install', progress: 20 });
     await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
     await cleaned;
     throw Object.assign(new ComposerError('CANCELLED', {}, 'private-detail cancel'), { details: { database: 'removed', staging: 'none' } });
   } });
-  await startRunningJob(page, origin);
+  await startRunningJob(page, launchUrl);
   // 다음 진행 조회 하나를 끊는다 — 화면은 '상태 다시 확인' 을 보이고 더 조회하지 않는다.
   let pollCut = false;
   await page.route('**/api/jobs/*', async route => {
@@ -2132,12 +2132,12 @@ test('a cancel pressed after the status poll failed re-arms polling, and a faile
 test('a cancel that reaches a job that has just finished says so and shows the finished result', { timeout: 60_000 }, async t => {
   let finish;
   const gate = new Promise(resolve => { finish = resolve; });
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
     onProgress({ stage: 'install', progress: 20 });
     await gate;
     return { verified: true, projectDirectory: KEPT_PROJECT };
   } });
-  await startRunningJob(page, origin);
+  await startRunningJob(page, launchUrl);
   // 진행 조회 하나를 붙잡아 화면이 아직 '진행 중' 을 보이는 동안 작업을 끝낸다(누르는 순간 끝난 작업).
   // 거절을 받은 화면은 붙잡힌 조회를 기다리지 않고 바로 다시 조회해 결과를 그린다.
   let releasePoll;
@@ -2173,12 +2173,12 @@ test('a cancel that reaches a job that has just finished says so and shows the f
 test('a cancel that failed to reach the server leaves no reason once the job ends on its own', { timeout: 60_000 }, async t => {
   let finish;
   const gate = new Promise(resolve => { finish = resolve; });
-  const { page, origin, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async (recipe, { onProgress }) => {
     onProgress({ stage: 'install', progress: 20 });
     await gate;
     return { verified: true, projectDirectory: KEPT_PROJECT };
   } });
-  await startRunningJob(page, origin);
+  await startRunningJob(page, launchUrl);
   await page.route('**/api/jobs/*/cancel', route => route.abort());
   await page.locator('#job-cancel').click();
   await expect(page.locator('#job-cancel-status')).toHaveText(/연결하지 못했습니다/);
