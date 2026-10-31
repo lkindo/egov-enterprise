@@ -5,12 +5,12 @@ import io.micrometer.core.instrument.MeterRegistry;
 import java.time.Clock;
 import java.time.LocalDateTime;
 import java.time.Duration;
-import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.system.job.DurableJobRepository;
+import nuri.foundation.core.util.ServiceTime;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.scheduling.annotation.Scheduled;
@@ -35,7 +35,7 @@ public class DurableWorkMetrics {
     @Autowired
     public DurableWorkMetrics(DurableJobRepository repository, MeterRegistry registry,
             @Value("${nuri.durable-work.enabled:true}") boolean enabled) {
-        this(repository, registry, enabled, Clock.systemUTC());
+        this(repository, registry, enabled, ServiceTime.clock());
     }
 
     public DurableWorkMetrics(DurableJobRepository repository, MeterRegistry registry, boolean enabled, Clock clock) {
@@ -55,7 +55,7 @@ public class DurableWorkMetrics {
     public synchronized void refresh() {
         try {
             Map<String, State> next = new LinkedHashMap<>();
-            for (var row : repository.summarizeQueue(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC))) {
+            for (var row : repository.summarizeQueue(ServiceTime.toLocal(clock.instant()))) {
                 String status = row.getStatus();
                 if (!STATUSES.contains(status) || row.getJobCount() == null || row.getJobCount() < 0
                         || next.containsKey(status)) throw new IllegalStateException("Invalid durable queue aggregate");
@@ -72,7 +72,7 @@ public class DurableWorkMetrics {
     private State state(String status) { return snapshot.states().getOrDefault(status, new State(0, null)); }
     private double dueAge(String status) {
         LocalDateTime due = state(status).oldestDue();
-        return due == null ? 0 : Math.max(0, Duration.between(due.toInstant(ZoneOffset.UTC), clock.instant()).getSeconds());
+        return due == null ? 0 : Math.max(0, Duration.between(ServiceTime.toInstant(due), clock.instant()).getSeconds());
     }
     private record State(long count, LocalDateTime oldestDue) { }
     private record Snapshot(Map<String, State> states, long observedAt) { }

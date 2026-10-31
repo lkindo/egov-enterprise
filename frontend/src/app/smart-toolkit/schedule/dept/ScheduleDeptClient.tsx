@@ -24,7 +24,6 @@ import { Textarea } from "@/components/ui/textarea";
 ;
 ;
 ;
-import { format } from "date-fns";
 import { Loader2, Pencil,  Trash2,  Plus } from "lucide-react";
 import { getDeptScheduleList, createDeptSchedule, updateDeptSchedule, deleteDeptSchedule } from '@/services/business/schedule/deptScheduleService';
 import { DeptSchedule, ScheduleSearchParams } from '@/types/business/schedule';
@@ -33,6 +32,7 @@ import { useConfirm } from '@/app/components/ui/confirm-modal';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
+import { todayStorageYmd } from '@/lib/format-date';
 import { isConflictError } from '@/lib/query/list-query-defaults';
 import { failureMessage } from '@/lib/safe-error-log';
 import { deptScheduleFormSchema } from './schedule-form-validation';
@@ -51,7 +51,6 @@ const SCHEDULE_FORM_LABELS = {
  * DTO 도 @Size(max = 8) 이라 시각(HH:mm)을 붙여 보내면 컨트롤러 @Valid 에서 400 이 난다.
  * 스키마에 시각 정보 자체가 없으므로 일정은 일(day) 단위다.
  */
-const YMD = 'yyyyMMdd';
 /** 저장 포맷 'yyyyMMdd' → <input type="date"> 가 요구하는 'yyyy-MM-dd' */
 const ymdToInput = (ymd?: string) =>
     ymd && ymd.length >= 8 ? `${ymd.slice(0, 4)}-${ymd.slice(4, 6)}-${ymd.slice(6, 8)}` : '';
@@ -93,8 +92,8 @@ export default function ScheduleDeptClient() {
     const [formData, setFormData] = useState<Partial<DeptSchedule>>({
         schdlNm: '',
         schdlCn: '',
-        schdlBgngYmd: format(new Date(), YMD),
-        schdlEndYmd: format(new Date(), YMD),
+        schdlBgngYmd: todayStorageYmd(),
+        schdlEndYmd: todayStorageYmd(),
         schdlPlcNm: '',
         // [2026-10-20] schdlImprtCd 는 지어내지 않는다. 종전에는 'A'(주석은 'A: 전체, B: 부서, C: 개인')를 늘 실었지만, 그 컬럼은
         //   일정 중요도 코드(DB 주석 '일정중요도코드', 공통코드 COM019 '일정중요도 낮음/보통/높음')이고 공개 범위가 아니다 — 공개
@@ -150,8 +149,8 @@ export default function ScheduleDeptClient() {
         setFormData({
             schdlNm: '',
             schdlCn: '',
-            schdlBgngYmd: format(new Date(), YMD),
-            schdlEndYmd: format(new Date(), YMD),
+            schdlBgngYmd: todayStorageYmd(),
+            schdlEndYmd: todayStorageYmd(),
             schdlPlcNm: '',
             schdlSeCd: '1', // 부서 일정 — GET /schedules/dept 의 필터 조건
         });

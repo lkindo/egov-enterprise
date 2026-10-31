@@ -164,13 +164,10 @@ subprojects { subproject ->
         // 모듈에서 root/build/jacoco/test.exec로 수렴한다. 나머지 -D 속성은 전달하되 작업 디렉터리는
         // Gradle Test 태스크의 프로젝트별 기본값을 유지한다.
         systemProperties System.properties.findAll { key, ignored -> key != 'user.dir' }
-        // [CI 패리티] CI 러너는 UTC 다. `systemProperties System.properties` 가 데몬의 user.timezone(KST)을
-        // 그대로 넘기기 때문에, 로컬에서는 KST 로 통과하고 CI(UTC)에서만 깨지는 시간대 의존 테스트가
-        // 로컬에서 드러나지 않는다 — 2026-07-26 LoginPolicyManageServiceTest 가 정확히 그 형태였다.
-        // 테스트 JVM 시간대를 UTC 로 고정해 로컬 실행을 CI 와 동일 조건으로 만든다.
-        // (KST 가 의미상 필요한 테스트는 코드에서 ZoneId 를 명시할 것. 임시 변경: -Dtest.timezone=Asia/Seoul)
-        // 근거: 전 모듈 299클래스/1591테스트를 UTC 로 실행해 실패 0 확인 후 도입.
-        systemProperty 'user.timezone', System.getProperty('test.timezone') ?: 'UTC'
+        // [운영 패리티] 앱은 어디서 돌든 JVM 기본 시간대를 한국 표준시로 고정한다(DEC-OPS-396). 시험도 러너의 시간대가 아니라
+        // 같은 값으로 고정해 로컬·CI·운영이 같은 조건이 된다. UTC 로 돌리던 때는 DB 의 CURRENT_DATE 가 한국 날짜보다 하루 뒤처지는
+        // 한국 0시~9시마다 날짜 경계 시험이 붉었고, 낮에 도는 CI 는 그것을 보지 못했다. 다른 시간대 확인: -Dtest.timezone=UTC
+        systemProperty 'user.timezone', System.getProperty('test.timezone') ?: 'Asia/Seoul'
         maxHeapSize = "6144m"
         ignoreFailures = false
         

@@ -42,6 +42,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import nuri.foundation.core.util.ServiceTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -264,7 +265,7 @@ class DurableWorkIntegrationTest {
         var clock = new QueueClock();
         var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         var metrics = new DurableWorkMetrics(repository, prometheus, true, clock);
-        LocalDateTime now = LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC);
+        LocalDateTime now = ServiceTime.toLocal(clock.instant());
         jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=? WHERE job_mng_no=?", now.minusMinutes(20), work.key().toString());
         metrics.refresh();
         assertThat(prometheus.get(DurableWorkMetrics.OLDEST_DUE_AGE).tag("status", "PENDING").gauge().value()).isGreaterThanOrEqualTo(1200);
@@ -291,7 +292,7 @@ class DurableWorkIntegrationTest {
         enqueue();
         var clock = new QueueClock();
         jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='owned-expired-lease',job_prnmnt_dt=? WHERE job_mng_no=?",
-                LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC).minusMinutes(20), work.key().toString());
+                ServiceTime.toLocal(clock.instant()).minusMinutes(20), work.key().toString());
         var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         var metrics = new DurableWorkMetrics(repository, prometheus, true, clock);
         metrics.refresh();
@@ -311,7 +312,7 @@ class DurableWorkIntegrationTest {
         var clock = new QueueClock();
         var observed = org.mockito.Mockito.mock(DurableJobRepository.class);
         org.mockito.Mockito.when(observed.summarizeQueue(org.mockito.ArgumentMatchers.any()))
-                .thenReturn(repository.summarizeQueue(LocalDateTime.ofInstant(clock.instant(), ZoneOffset.UTC)));
+                .thenReturn(repository.summarizeQueue(ServiceTime.toLocal(clock.instant())));
         var prometheus = new PrometheusMeterRegistry(PrometheusConfig.DEFAULT);
         var metrics = new DurableWorkMetrics(observed, prometheus, true, clock);
         assertThat(prometheus.get(DurableWorkMetrics.OBSERVATION_HEALTHY).gauge().value()).isZero();
@@ -397,8 +398,8 @@ class DurableWorkIntegrationTest {
         enqueue();
         var id = job().getJobSn();
         String firstAttempt = transaction.execute(status -> repository.findLocked(id).orElseThrow()
-                .claim(LocalDateTime.now(ZoneOffset.UTC), 8, 120));
-        LocalDateTime renewedUntil = LocalDateTime.now(ZoneOffset.UTC)
+                .claim(ServiceTime.now(), 8, 120));
+        LocalDateTime renewedUntil = ServiceTime.now()
                 .truncatedTo(java.time.temporal.ChronoUnit.SECONDS).plusMinutes(4);
 
         Integer renewed = transaction.execute(status -> repository.renewLease(id, firstAttempt, renewedUntil));
@@ -409,7 +410,7 @@ class DurableWorkIntegrationTest {
 
         makeDue();
         String currentAttempt = transaction.execute(status -> repository.findLocked(id).orElseThrow()
-                .claim(LocalDateTime.now(ZoneOffset.UTC), 8, 120));
+                .claim(ServiceTime.now(), 8, 120));
         var currentDeadline = job().getJobPrnmntDt();
         Integer staleRenewal = transaction.execute(status -> repository.renewLease(id, firstAttempt, renewedUntil));
         assertThat(staleRenewal).isZero();

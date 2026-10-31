@@ -2,7 +2,6 @@ package nuri.business.service.system.job;
 
 import java.math.BigInteger;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import lombok.RequiredArgsConstructor;
 import nuri.business.domain.system.job.DurableJob;
 import nuri.business.domain.system.job.DurableJobRepository;
@@ -10,6 +9,7 @@ import nuri.business.security.util.SecurityUtil;
 import nuri.foundation.core.audit.SensitiveAuditPort;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.util.ServiceTime;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -36,7 +36,7 @@ public class DurableJobAdministrationService {
         DurableJob job = repository.findLocked(jobSn)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         if (!job.retryable()) throw new BusinessException(CommonErrorCode.INVALID_STATE);
-        job.retry(LocalDateTime.now(ZoneOffset.UTC));
+        job.retry(ServiceTime.now());
         audit.recordMutation("DURABLE_WORK_RETRY", jobSn.toString());
     }
 

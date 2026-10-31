@@ -37,6 +37,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import nuri.foundation.core.util.ServiceTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -102,7 +103,7 @@ class ProtectedAccountAdministrationIntegrationTest {
         authenticate(actor);
         refreshTokens.saveAndFlush(RefreshToken.builder().userId(target)
                 .rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(fixture))
-                .exprtnDt(Instant.now().plusSeconds(600)).build());
+                .exprtnDt(ServiceTime.toLocal(Instant.now().plusSeconds(600))).build());
     }
 
     @AfterEach

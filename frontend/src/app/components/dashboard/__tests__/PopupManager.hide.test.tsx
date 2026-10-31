@@ -49,14 +49,15 @@ describe('PopupManager 오늘 하루 보지 않기', () => {
     vi.restoreAllMocks();
   });
 
-  it('🚨 숨김은 24시간이 아니라 오늘 자정까지다', async () => {
+  it('🚨 숨김은 24시간이 아니라 오늘 한국 자정까지다', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
-    vi.setSystemTime(new Date(2026, 8, 26, 23, 0, 0));
+    // 한국 2026-09-26 23:00
+    vi.setSystemTime(new Date('2026-09-26T14:00:00Z'));
     render(<PopupManager />);
 
     fireEvent.click(await screen.findByRole('button', { name: '오늘 하루 보지 않기' }));
 
-    expect(Number(localStorage.getItem('popup_hide_7'))).toBe(new Date(2026, 8, 27, 0, 0, 0).getTime());
+    expect(Number(localStorage.getItem('popup_hide_7'))).toBe(Date.parse('2026-09-26T15:00:00Z'));
   });
 
   it('🚨 저장소가 막혀도 팝업은 뜨고, 숨김을 눌러도 화면이 깨지지 않는다', async () => {

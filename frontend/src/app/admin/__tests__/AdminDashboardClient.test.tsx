@@ -85,7 +85,7 @@ describe('관리자 홈 — 권한에 맞는 조회와 원천에 맞는 이름',
     const signals = (await screen.findByRole('heading', { level: 2, name: '운영 신호' })).closest('section') as HTMLElement;
     expect(within(signals).getByText('2건')).toBeInTheDocument();
     expect(within(signals).getByText('5건')).toBeInTheDocument();
-    // 관측 시각은 한국 시각이다(서버는 UTC 로 보낸다). 시각은 <time> 이 기계용 원값을 함께 싣는다.
+    // 관측 시각은 한국 시각이다(서버는 순간 값을 Z 표기로 보낸다). 시각은 <time> 이 기계용 원값을 함께 싣는다.
     expect(within(signals).getByText(/DB 에서 센 값입니다/)).toHaveTextContent('관측 시각 2026-10-20 08:30:00');
     expect(within(signals).getByText('2026-10-20 08:30:00').tagName).toBe('TIME');
     expect(card('잠긴 계정')).toHaveAttribute('href', '/admin/user/manage');

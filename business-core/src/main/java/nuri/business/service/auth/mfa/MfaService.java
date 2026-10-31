@@ -7,7 +7,6 @@ import java.nio.charset.StandardCharsets;
 import java.time.Clock;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -25,6 +24,7 @@ import nuri.business.service.auth.mfa.MfaResults.*;
 import nuri.business.service.login.LoginPolicyManageService;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.exception.CommonErrorCode;
+import nuri.foundation.core.util.ServiceTime;
 import nuri.foundation.security.mfa.MfaChallengePolicy;
 import nuri.foundation.security.mfa.MfaChallengePolicy.Purpose;
 import nuri.foundation.security.mfa.MfaOpaqueTokens;
@@ -57,7 +57,7 @@ public class MfaService {
     private final nuri.foundation.core.audit.SensitiveAuditPort sensitiveAudit;
     private final TotpVerifier totp = new TotpVerifier();
     private final MfaOpaqueTokens tokens = new MfaOpaqueTokens();
-    private Clock clock = Clock.systemUTC();
+    private Clock clock = ServiceTime.clock();
 
     void useClock(Clock clock) { this.clock = Objects.requireNonNull(clock); }
 
@@ -109,7 +109,7 @@ public class MfaService {
         MfaCredential credential = locked.credential();
         assertPendingEnrollment(credential);
         verifyTotp(credential, locked.challenge(), code);
-        locked.challenge().consume(utcNow());
+        locked.challenge().consume(storedNow());
         credential.activate();
         // 확인 전에 발급한 일반 세션/다른 도전은 새 버전과 맞지 않게 한다.
         rotateCredential(credential);
@@ -140,14 +140,14 @@ public class MfaService {
                 fail(credential, locked.challenge());
                 throw new MfaRejectedException();
             }
-            stored.consume(utcNow());
+            stored.consume(storedNow());
             revoke(credential, true);
             Challenge enrollment = beginEnrollment(locked.user(), credential);
             sensitiveAudit.recordMutation("MFA_RECOVERY_CODE_USED", credential.getSubject());
             return new Completion(credential.getSubject(), credential.getCredentialVersion(), null, List.of(), enrollment);
         }
         verifyTotp(credential, locked.challenge(), code);
-        locked.challenge().consume(utcNow());
+        locked.challenge().consume(storedNow());
         return completed(credential, List.of());
     }
 
@@ -167,7 +167,7 @@ public class MfaService {
     public Completion regenerateRecoveryCodes(String proof, String clientIp) {
         LockedChallenge locked = lockChallenge(proof, Purpose.REAUTH, currentSubject(), clientIp);
         if (!locked.credential().isActive()) throw new MfaRejectedException();
-        locked.challenge().consume(utcNow());
+        locked.challenge().consume(storedNow());
         rotateCredential(locked.credential());
         challenges.deleteForCredential(locked.credential().getId());
         refreshTokens.deleteAllByEsntlIdIn(List.of(locked.user().getEsntlId()));
@@ -182,7 +182,7 @@ public class MfaService {
         if (settings.requireProtected() && protectedAccount(locked.user().getEsntlId())) {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
-        locked.challenge().consume(utcNow());
+        locked.challenge().consume(storedNow());
         revoke(locked.credential(), false);
         sensitiveAudit.recordMutation("MFA_DISABLE", locked.user().getEsntlId());
     }
@@ -201,7 +201,7 @@ public class MfaService {
         LockedChallenge approval = lockChallenge(proof, Purpose.REAUTH, actor, clientIp);
         User target = lockUser(targetSubject);
         MfaCredential credential = lockCredential(target, true);
-        approval.challenge().consume(utcNow());
+        approval.challenge().consume(storedNow());
         revoke(credential, true);
         sensitiveAudit.recordMfaRecovery(targetSubject, verificationReference);
     }
@@ -275,7 +275,7 @@ public class MfaService {
         String token = tokens.challenge();
         Instant now = clock.instant();
         MfaChallenge challenge = MfaChallenge.create(credential.getId(), MfaOpaqueTokens.challengeDigest(token), purpose,
-                credential.getCredentialVersion(), utc(now), utc(now.plus(MfaChallengePolicy.LIFETIME)));
+                credential.getCredentialVersion(), ServiceTime.toLocal(now), ServiceTime.toLocal(now.plus(MfaChallengePolicy.LIFETIME)));
         audit(challenge, user);
         challenges.save(challenge);
         return new Challenge(stage, token, now.plus(MfaChallengePolicy.LIFETIME));
@@ -295,7 +295,7 @@ public class MfaService {
             fail(credential, challenge);
             throw new MfaRejectedException();
         }
-        credential.accept(accepted.getAsLong(), utcNow());
+        credential.accept(accepted.getAsLong(), storedNow());
     }
 
     private void assertNotLocked(MfaCredential credential) {
@@ -306,7 +306,7 @@ public class MfaService {
     }
 
     private void fail(MfaCredential credential, MfaChallenge challenge) {
-        credential.recordFailure(utcNow());
+        credential.recordFailure(storedNow());
         if (challenge != null) challenge.fail();
     }
 
@@ -372,8 +372,7 @@ public class MfaService {
         entity.setLastMdfrId(user.getUserId());
     }
 
-    private LocalDateTime utcNow() { return utc(clock.instant()); }
-    private static LocalDateTime utc(Instant instant) { return LocalDateTime.ofInstant(instant, ZoneOffset.UTC); }
-    private static Instant instant(LocalDateTime value) { return value == null ? null : value.toInstant(ZoneOffset.UTC); }
+    private LocalDateTime storedNow() { return ServiceTime.toLocal(clock.instant()); }
+    private static Instant instant(LocalDateTime value) { return value == null ? null : ServiceTime.toInstant(value); }
     private record LockedChallenge(User user, MfaCredential credential, MfaChallenge challenge) {}
 }

@@ -9,7 +9,6 @@ import org.hibernate.service.ServiceRegistry;
 import org.hibernate.type.SqlTypes;
 import org.hibernate.type.descriptor.jdbc.JdbcType;
 import org.hibernate.type.descriptor.jdbc.JsonJdbcType;
-import org.hibernate.type.descriptor.jdbc.TimestampUtcAsJdbcTimestampJdbcType;
 import org.hibernate.type.descriptor.jdbc.spi.JdbcTypeRegistry;
 
 /**
@@ -65,11 +64,8 @@ public class NuriOracleDialect extends OracleDialect {
 
     /**
      * 벤더 기본 매핑 대신 번역이 만든 물리 타입에 맞춘다. JSON 은 19c 와 23 계열 모두 CLOB 에 문자열로 저장한다.
-     * {@code Instant} 컬럼은 시간대가 없고, Oracle 드라이버는 그 컬럼을 시간대 있는 값으로 읽기를 거부한다(ORA-18716).
-     * UTC 기준의 시각으로 저장해 JVM 시간대가 바뀌어도, 일광 절약 경계를 지나도 같은 순간으로 읽는다.
      */
     static void applyStoredTypes(JdbcTypeRegistry registry) {
         registry.addDescriptor(JsonJdbcType.INSTANCE);
-        registry.addDescriptor(TimestampUtcAsJdbcTimestampJdbcType.INSTANCE);
     }
 }

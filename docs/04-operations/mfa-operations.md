@@ -79,3 +79,15 @@ MFA 등록 완료·복구코드 재발급·해제·복구의 성공 감사는 �
 `TotpVerifierTest`·`MfaSecretCipherTest`·`MfaChallengePolicyTest`는 표준 벡터, 0으로 시작하는 코드, 변조·키 결속·회전, 도전 만료와 목적 제한을 다룬다. `MfaFlowIntegrationTest`는 실제 PostgreSQL에서 실패 횟수 커밋, 동시 OTP 소모, 복구·재등록, 보호권한 취득, 직접 HTTP 경로, 감사/토큰 발급 실패 롤백을 검사한다. `ProtectedAccountAdministrationIntegrationTest`는 관리자 초기화의 감사 실패 롤백을 포함한다. 파일의 존재가 실행 성공을 뜻하지 않으며 해당 커밋의 테스트 결과로 판정한다. 운영 인증앱·실제 배포·키 복구 리허설은 별도 증거가 필요하다.
 
 근거: [RFC 6238](https://www.rfc-editor.org/rfc/rfc6238), [RFC 4226](https://www.rfc-editor.org/rfc/rfc4226), [OWASP MFA](https://cheatsheetseries.owasp.org/cheatsheets/Multifactor_Authentication_Cheat_Sheet.html), [OWASP 세션 관리](https://cheatsheetseries.owasp.org/cheatsheets/Session_Management_Cheat_Sheet.html).
+
+## 시각 기준 전환
+
+DEC-OPS-396 으로 내구 작업·MFA·갱신 토큰의 시각을 UTC 에서 한국 표준시로 옮겼다. 기존 행은 보정하지 않으므로 전환할 때 아래를 따른다.
+
+- **구·신 버전을 공존시키지 않는다.** 구버전을 내리고 진행 중인 후속 작업이 끝난 뒤 신버전을 올린다. 공존하면 신버전이 구버전의 작업 임대를 만료로 읽어 회수하고, 마지막 시도였던 작업을 실패로 확정할 수 있다.
+- **전환 때 일어나는 일.** 기존 갱신 토큰은 9시간 일찍 만료되어 그 사용자는 다시 로그인한다. MFA 잠금은 일찍 풀리고 진행 중인 인증 단계는 다시 시작한다. 대기 중인 후속 작업은 바로 돈다. 모두 짧아지는 방향이다.
+- **구버전으로 되돌릴 때.** 신버전이 쓴 시각은 구버전에게 9시간 뒤로 보인다. 그대로 되돌리면 만료된 MFA 인증 단계가 다시 유효해지고, 대기 중인 후속 작업은 9시간 늦게 돈다. 다음 순서를 지킨다. 운영 데이터 변경이므로 승인을 받는다.
+  1. 신버전의 요청을 막고 프로세스와 진행 중인 트랜잭션이 끝난 것을 확인한다. 먼저 지우면 그사이 새 인증 단계가 생긴다.
+  2. `tb_auth_cert_dmnd` 의 미사용 행(`use_dt` 가 비어 있는 행)을 지우고 0 건인지 확인한다.
+  3. `tb_sys_job` 의 끝나지 않은 작업을 처리한다. 끝내고 되돌리거나, 승인을 받아 `job_prnmnt_dt` 를 9시간 앞당긴다.
+  4. 구버전을 기동한다.

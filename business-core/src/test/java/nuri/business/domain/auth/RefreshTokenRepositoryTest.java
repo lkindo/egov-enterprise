@@ -14,8 +14,8 @@ import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 
-import java.time.Instant;
 import java.util.List;
+import nuri.foundation.core.util.ServiceTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
@@ -43,7 +43,7 @@ class RefreshTokenRepositoryTest {
     @Test
     @DisplayName("esntlId IN 벌크 삭제는 선택한 토큰만 한 번에 삭제한다")
     void deleteAllByEsntlIdIn_deletesOnlySelectedTokens() {
-        Instant expiry = Instant.now().plusSeconds(3600);
+        java.time.LocalDateTime expiry = ServiceTime.now().plusHours(1);
         refreshTokenRepository.saveAll(List.of(
                 RefreshToken.builder().userId("ESNTL_001").rfshTkn("token-1").exprtnDt(expiry).build(),
                 RefreshToken.builder().userId("ESNTL_002").rfshTkn("token-2").exprtnDt(expiry).build(),

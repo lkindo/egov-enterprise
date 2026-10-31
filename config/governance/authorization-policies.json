@@ -5437,7 +5437,7 @@
       "denyReferences": 0,
       "requiredTokens": [
         "lockChallenge(proof, Purpose.REAUTH, currentSubject(), clientIp)",
-        "locked.challenge().consume(utcNow())"
+        "locked.challenge().consume(storedNow())"
       ],
       "forbiddenTokens": []
     },
@@ -5448,7 +5448,7 @@
       "denyReferences": 1,
       "requiredTokens": [
         "lockChallenge(proof, Purpose.REAUTH, currentSubject(), clientIp)",
-        "locked.challenge().consume(utcNow())"
+        "locked.challenge().consume(storedNow())"
       ],
       "forbiddenTokens": []
     },

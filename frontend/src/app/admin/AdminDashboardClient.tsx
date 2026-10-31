@@ -34,7 +34,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
-import { toDisplayYmd, utcToSeoulDisplayDateTime } from '@/lib/format-date';
+import { toDisplayYmd, toSeoulDisplayDateTime } from '@/lib/format-date';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
@@ -286,7 +286,7 @@ export default function AdminDashboardClient() {
               {/* 관측 시각은 요청마다 바뀌는 값이라 다른 동적 숫자처럼 tabular-nums 로 둔다(시각 회귀 기준선이 이 클래스를 가린다). */}
               DB 에서 센 값입니다. 관측 시각{' '}
               <time dateTime={signalsData?.observedAt ?? undefined} className="tabular-nums">
-                {utcToSeoulDisplayDateTime(signalsData?.observedAt)}
+                {toSeoulDisplayDateTime(signalsData?.observedAt)}
               </time>
             </p>
           </div>

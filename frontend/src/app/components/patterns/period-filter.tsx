@@ -2,6 +2,7 @@
 
 import { useId } from 'react';
 import { Input } from '@/components/ui/input';
+import { koreanToday } from '@/lib/date/today-ymd';
 import { cn } from '@/lib/utils';
 
 /**
@@ -101,7 +102,7 @@ export function PeriodFilter({ value, onChange, label, presets }: PeriodFilterPr
   const fromId = useId();
   const toId = useId();
   const hintId = useId();
-  const activePreset = activePresetOf(value, new Date());
+  const activePreset = activePresetOf(value, koreanToday());
   const problem = periodProblem(value);
 
   return (
@@ -114,7 +115,7 @@ export function PeriodFilter({ value, onChange, label, presets }: PeriodFilterPr
               key={preset.key}
               type="button"
               aria-pressed={activePreset === preset.key}
-              onClick={() => onChange(presetToPeriod(preset.key, new Date()))}
+              onClick={() => onChange(presetToPeriod(preset.key, koreanToday()))}
               className={cn(
                 'flex h-[var(--control-h-sm)] items-center rounded px-3 text-xs font-bold transition-colors',
                 activePreset === preset.key ? 'bg-muted text-foreground' : 'text-muted-foreground hover:text-foreground',
