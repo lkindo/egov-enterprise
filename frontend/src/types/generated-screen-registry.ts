@@ -325,6 +325,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "demo": false,
     "entry": {"permissions":["TEMPLATE_READ"],"mode":"ANY"},
     "permissions": [
+      {"code":"BBS_MST_CREATE","action":"CREATE","source":"display"},
       {"code":"TEMPLATE_CREATE","action":"CREATE","source":"write"},
       {"code":"TEMPLATE_DELETE","action":"DELETE","source":"write"},
       {"code":"TEMPLATE_READ","action":"READ","source":"entry"},

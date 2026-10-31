@@ -3,9 +3,28 @@ import assert from 'node:assert/strict';
 import { cpSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
+import { createFrontendProjector } from './reusable-source-frontend.mjs';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+
+test('template-only composition removes the board preview link and its permission tests', () => {
+  const files = [
+    'src/app/admin/community/templates/TemplateAdminClient.tsx',
+    'src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx',
+  ];
+  for (const selected of [false, true]) {
+    const composition = { resolvedDomains: selected ? ['template', 'board'] : ['template'], frontend: { removePaths: [] } };
+    const projector = createFrontendProjector({ composition, files });
+    for (const file of files) {
+      const source = readFileSync(join(ROOT, 'frontend', file), 'utf8');
+      const projected = projector.project(file, source).source;
+      assert.equal(projected.includes('/admin/community/boards/maker'), selected, file);
+      assert.equal(projected.includes('게시판 만들기에서 화면 유형 확인'), selected, file);
+      assert.ok(projected.includes('templateAdminService'), 'template CRUD remains');
+    }
+  }
+});
 
 /*
  * 마커 선언은 projector 마다 읽는다(트랙 C 검토). 오래 도는 생성기 화면 서버(project:ui)는 정밀 점검마다 카탈로그를 다시 적재하는데,

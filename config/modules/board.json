@@ -85,6 +85,18 @@
     "rbacMatrix": null,
     "markerBlocks": [
       {
+        "file": "src/app/admin/community/templates/TemplateAdminClient.tsx",
+        "blocks": 2,
+        "step": "게시판 미리보기 안내",
+        "reason": "게시판이 포함된 구성에서만 생성 마법사의 미리보기 위치와 권한 있는 이동 링크를 안내한다."
+      },
+      {
+        "file": "src/app/admin/community/templates/__tests__/TemplateAdminClient.test.tsx",
+        "blocks": 1,
+        "step": "게시판 미리보기 안내",
+        "reason": "게시판 미리보기 안내 링크의 접근 권한 검증은 게시판이 포함된 구성에서만 실행한다."
+      },
+      {
         "file": "src/app/search/SearchClient.tsx",
         "blocks": 7,
         "step": "검색 이행(별도 PR, ADR-0009 승인 바인딩)",

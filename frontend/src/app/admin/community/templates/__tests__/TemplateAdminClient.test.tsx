@@ -77,6 +77,30 @@ async function openCreateDialog(user: ReturnType<typeof userEvent.setup>) {
   };
 }
 
+/* reusable-base:board:start */
+describe('게시판 미리보기 안내', () => {
+  it('원장 읽기 권한만 있으면 위치를 안내하되 생성 화면 링크는 숨긴다', () => {
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    renderClient();
+    expect(screen.getByText(/게시판 화면 유형은 게시판 만들기의 2단계/)).toBeInTheDocument();
+    expect(screen.queryByRole('link', { name: '게시판 만들기에서 화면 유형 확인' })).not.toBeInTheDocument();
+  });
+
+  it('게시판 생성 화면에 접근할 권한이 있으면 안내 링크를 제공한다', () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'BBS_MST_CREATE'];
+    renderClient();
+    expect(screen.getByRole('link', { name: '게시판 만들기에서 화면 유형 확인' }))
+      .toHaveAttribute('href', '/admin/community/boards/maker');
+  });
+
+  it('수정 권한만 있으면 경로 진입이 가능해도 생성 마법사 안내 링크는 숨긴다', () => {
+    auth.permissions = [...READ_ONLY_PERMISSIONS, 'BBS_MST_UPDATE'];
+    renderClient();
+    expect(screen.queryByRole('link', { name: '게시판 만들기에서 화면 유형 확인' })).not.toBeInTheDocument();
+  });
+});
+/* reusable-base:board:end */
+
 describe('TemplateAdminClient validation', () => {
   beforeEach(() => {
     vi.clearAllMocks();
