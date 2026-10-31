@@ -4,7 +4,7 @@
  * 어댑터는 모델의 모든 키·제약·인덱스·트리거를 "번역했다" 또는 "저하로 선언했다" 둘 중 하나로 남겨야 한다.
  * 선언 없이 빠진 항목은 assertCoverage 가 잡는다.
  */
-import { columnsIn, gap, tablesInDependencyOrder } from './project-composer-vendor-model.mjs';
+import { columnsIn, containsOp, gap, tablesInDependencyOrder } from './project-composer-vendor-model.mjs';
 
 export function createEmission(vendor) {
   const coverage = new Map();
@@ -105,9 +105,11 @@ export function violationExpression(node, dialect, table) {
     case 'isNotNull': return `${render(node.arg)} IS NULL`;
     case 'in': return [...guard(node, dialect), `${render(node.arg)} NOT IN (${node.values.map(dialect.string).join(', ')})`].join(' AND ');
     case 'regex':
-      return node.arg.op === 'coalesce' ? `NOT (${render(node)})` : [...guard(node, dialect), `NOT (${render(node)})`].join(' AND ');
+      if (node.arg.op === 'coalesce') return `NOT (${render(node)})`;
+      if (containsOp(node.arg, 'coalesce')) gap(`${table.name}: 중첩된 COALESCE 는 위반식으로 옮길 수 없다`);
+      return [...guard(node, dialect), `NOT (${render(node)})`].join(' AND ');
     case 'compare':
-      if (node.left.op === 'coalesce' || node.right.op === 'coalesce') gap(`${table.name}: NULL 을 값으로 바꾸는 비교는 위반식으로 옮길 수 없다`);
+      if (containsOp(node, 'coalesce')) gap(`${table.name}: NULL 을 값으로 바꾸는 비교는 위반식으로 옮길 수 없다`);
       return [...guard(node, dialect), `${render(node.left)} ${FLIP[node.operator]} ${render(node.right)}`].join(' AND ');
     default: return gap(`${table.name}: 위반식으로 옮길 수 없는 식 ${node.op}`);
   }
@@ -154,6 +156,9 @@ export function emitRows(model, rows, adapter) {
     if (wrap) statements.push(wrap.before);
     for (const row of parentFirst(table, items)) {
       for (const name of Object.keys(row)) if (!table.columns.some(column => column.name === name)) gap(`${table.name}: 모델에 없는 시드 컬럼 ${name}`);
+      for (const column of table.columns) {
+        if (['bigint', 'integer', 'numeric'].includes(column.type.kind) && (row[column.name] ?? null) !== null) exactNumber(row[column.name], `${table.name}.${column.name}`);
+      }
       statements.push(`INSERT INTO ${table.name} (${list}) VALUES (${table.columns.map(column => adapter.literal(column, row[column.name] ?? null)).join(', ')})`);
     }
     if (wrap) statements.push(wrap.after);
@@ -163,17 +168,23 @@ export function emitRows(model, rows, adapter) {
 
 export const escapeString = value => String(value).replaceAll("'", "''");
 
+/** JSON 으로 읽은 숫자는 2^53 을 넘으면 값이 바뀐다. 조용히 틀린 값을 넣지 않고 멈춘다. */
+export function exactNumber(value, label) {
+  if (typeof value !== 'number' || (Number.isInteger(value) ? !Number.isSafeInteger(value) : String(value).replace(/[-.]/g, '').length > 15)) gap(`정확히 옮길 수 없는 숫자: ${label}`);
+  return value;
+}
+
 /** 다음 값의 시작점. 표의 최댓값과 PostgreSQL 시퀀스의 마지막 값 가운데 큰 값 뒤다(설계서 D-5). */
 export function nextValues(model, rows) {
   const identities = model.tables.flatMap(table => table.columns.filter(column => column.identity).map(column => {
-    const values = (rows[table.name] ?? []).map(row => Number(row[column.name])).filter(Number.isFinite);
-    return { table: table.name, column: column.name, next: values.length ? Math.max(...values) + 1 : 1 };
+    const values = (rows[table.name] ?? []).map(row => exactNumber(row[column.name], `${table.name}.${column.name}`));
+    return { table: table.name, column: column.name, next: values.length ? exactNumber(Math.max(...values) + 1, table.name) : 1 };
   }));
   const sequences = model.sequences.map(sequence => {
-    const last = sequence.last === null ? 0 : Number(sequence.last);
+    const last = sequence.last === null ? 0 : exactNumber(Number(sequence.last), sequence.name);
     const owners = model.tables.flatMap(table => table.columns.filter(column => column.default?.kind === 'sequence' && column.default.name === sequence.name)
-      .flatMap(column => (rows[table.name] ?? []).map(row => Number(row[column.name])).filter(Number.isFinite)));
-    return { name: sequence.name, next: Math.max(sequence.start, last + sequence.increment, ...owners.map(value => value + sequence.increment)), increment: sequence.increment };
+      .flatMap(column => (rows[table.name] ?? []).map(row => exactNumber(row[column.name], `${table.name}.${column.name}`))));
+    return { name: sequence.name, next: exactNumber(Math.max(sequence.start, last + sequence.increment, ...owners.map(value => value + sequence.increment)), sequence.name), increment: sequence.increment };
   });
   return { identities, sequences };
 }

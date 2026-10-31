@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
 import { assertCatalogParity, nextValues } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
-import { readCatalog, readNextValues, runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
+import { parseCount, readCatalog, readNextValues, runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
 
 export function parseVerifyArgs(argv) {
   const args = {};
@@ -36,8 +36,7 @@ function rowCounts(handle, model) {
   const { sections, errors } = runStatements(handle, statements);
   if (errors.length) throw stageFailure('행 수 조회', errors);
   return Object.fromEntries(model.tables.map((table, index) => {
-    const count = (sections.get(index) ?? []).map(item => item.trim().match(/^(?:<\d+>.*:\s*)?(\d+)$/)?.[1]).find(Boolean);
-    return [table.name, count === undefined ? null : Number(count)];
+    return [table.name, parseCount(sections.get(index))];
   }));
 }
 

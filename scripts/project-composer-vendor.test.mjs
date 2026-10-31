@@ -3,13 +3,14 @@ import { resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
-import { assertCatalogParity, assertCoverage, createEmission, emitRows, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
+import { assertCatalogParity, assertCoverage, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
 import { loadVendorLedger, selectableVendors, translateForAllVendors, VENDOR_ADAPTERS, VENDOR_IDS } from './project-composer-vendors.mjs';
-import { oracleAdapter } from './project-composer-vendor-oracle.mjs';
+import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { probeRows } from './project-composer-vendor-differential.mjs';
+import { collectResults, parseCount } from './project-composer-vendor-engine.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const isGap = error => error instanceof VendorTranslationGap && error.code === 'VENDOR_TRANSLATION_GAP';
@@ -81,6 +82,27 @@ test('anything outside the grammar stops the translation instead of being skippe
   assert.throws(() => buildVendorModel({ snapshot: notValid, extras }), isGap);
 });
 
+test('a cast that changes the comparison stops the translation', () => {
+  const kinds = new Map([['a', 'integer'], ['b', 'varchar'], ['c', 'timestamp']]);
+  assert.throws(() => parseExpression("a::text > '2'::text", ['a', 'b', 'c'], kinds), isGap);
+  assert.throws(() => parseExpression("(a)::text = '2'::text", ['a', 'b', 'c'], kinds), isGap);
+  assert.throws(() => parseExpression("c::text = 'x'::text", ['a', 'b', 'c'], kinds), isGap);
+  assert.throws(() => parseExpression('b::numeric >= 0', ['a', 'b', 'c'], kinds), isGap);
+  assert.doesNotThrow(() => parseExpression("b::text = 'x'::text AND a >= 0::numeric", ['a', 'b', 'c'], kinds));
+});
+
+test('constraints and indexes outside the grammar are refused, not dropped', () => {
+  const exclusion = snapshot();
+  exclusion.constraints.push(constraint('t_child', 'ex_t_child', 'x', 'EXCLUDE USING gist (url WITH =)'));
+  assert.throws(() => buildVendorModel({ snapshot: exclusion, extras }), isGap);
+  for (const definition of ['CREATE UNIQUE INDEX ix_u ON public.t_child USING btree (btrim((url)::text))',
+    "CREATE INDEX ix_u ON public.t_child USING btree (btrim((url)::text)) WHERE ((url)::text <> 'x'::text)"]) {
+    const expression = snapshot();
+    expression.indexes.push({ table_name: 't_child', name: 'ix_u', definition });
+    assert.throws(() => buildVendorModel({ snapshot: expression, extras }), isGap, definition);
+  }
+});
+
 test('a trigger is translated only while its function body is the reviewed one', () => {
   const withTrigger = name => ({ ...snapshot(), triggers: [{ table_name: 't_parent', name: 'tr_x', definition: `CREATE TRIGGER tr_x BEFORE DELETE OR UPDATE ON t_parent FOR EACH ROW EXECUTE FUNCTION ${name}()` }] });
   // 선언은 그대로 두고 함수 본문만 바꾼 변경(V2_143 과 같은 형태)을 잡는다.
@@ -145,8 +167,39 @@ test('the violation form never yields NULL and refuses NULL absorbing comparison
   assert.equal(violationExpression(parseExpression("(a::text = 'x'::text) = (b IS NOT NULL)", ['a', 'b']), dialect, table),
     "((new.a IS NOT NULL AND new.a <> 'x') OR (new.b IS NULL)) AND ((new.a IS NOT NULL AND new.a = 'x') OR (new.b IS NOT NULL))");
   assert.throws(() => violationExpression(parseExpression("COALESCE(b, ''::character varying) = 'x'::text", ['a', 'b']), dialect, table), isGap);
+  // 깊은 곳의 COALESCE 도 NULL 가드를 틀리게 한다.
+  assert.throws(() => violationExpression(parseExpression("char_length(COALESCE(b, ''::character varying)) > 0", ['a', 'b']), dialect, table), isGap);
   // 왼쪽이 NULL 일 수 있는 논리값 등식은 전개하면 의미가 달라진다.
   assert.throws(() => violationExpression(parseExpression("(b::text = 'x'::text) = (a IS NOT NULL)", ['a', 'b']), dialect, table), isGap);
+});
+
+test('long Oracle literals split on code points, and numbers JSON cannot keep are refused', () => {
+  const value = `a${'😀'.repeat(1000)}`;
+  const literal = clobLiteral(value);
+  assert.equal(literal.includes('\uFFFD'), false);
+  const parts = [...literal.matchAll(/TO_CLOB\('([^']*)'\)/g)].map(match => match[1]);
+  assert.equal(parts.join(''), value);
+  assert.ok(parts.every(part => !/[\uD800-\uDBFF]$/.test(part) && !/^[\uDC00-\uDFFF]/.test(part)), '조각 경계가 글자를 자르지 않는다');
+  assert.ok(parts.every(part => Buffer.byteLength(part) <= 4000));
+  assert.throws(() => exactNumber(9007199254740992, 'x'), isGap);
+  assert.equal(exactNumber(9007199254740991, 'x'), 9007199254740991);
+  const big = model();
+  assert.throws(() => nextValues(big, { t_parent: [{ id: 9007199254740992 }] }), isGap);
+});
+
+test('a client that stopped early is a failed run, not a rejected value', () => {
+  const statements = [{ sql: 'INSERT 1' }, { sql: 'INSERT 2' }];
+  const errors = /^ERROR \d+/;
+  const done = collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 3819 (HY000): Check constraint is violated\n' }, statements, errors, 'mysql');
+  assert.deepEqual(done.errors.map(item => item.index), [1]);
+  const notReady = error => error.code === 'VENDOR_ENGINE_NOT_READY';
+  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n' }, statements, errors, 'mysql'), notReady, '표식이 끊기면 실패다');
+  assert.throws(() => collectResults({ status: 0, stdout: '' }, statements, errors, 'mysql'), notReady, '접속 실패의 빈 출력은 전부 통과가 아니다');
+  assert.throws(() => collectResults({ status: null, signal: 'SIGTERM', stdout: '@@0\n@@1\n' }, statements, errors, 'mysql'), notReady, '시간 초과는 실패다');
+  assert.throws(() => collectResults({ status: 1, error: new Error('spawn failed') }, statements, errors, 'mysql'), notReady);
+  assert.equal(parseCount(['<00001>  count(*): 3']), 3);
+  assert.equal(parseCount(['0']), 0);
+  assert.equal(parseCount(['no rows']), null);
 });
 
 test('catalog parity is red for a missing index, an extra object and a dropped trigger', () => {
@@ -189,6 +242,12 @@ test('the differential probes both sides of every rule', () => {
   assert.ok(rows.some(row => row.hash_vl === `${'a'.repeat(64)}\n`), '끝 줄바꿈을 늘 시험한다');
   assert.ok(rows.some(row => row.hash_vl === null));
   assert.throws(() => probeRows({ expression: parseExpression("hash_vl::text ~ '^x+$'::text", ['hash_vl']) }, parent), isGap);
+  // 여러 칸을 함께 NULL 로 둬야 통과하는 CHECK 도 허용 표본이 나와야 한다(V2_98 의 대상 모양 제약).
+  const shape = { name: 't', columns: ['a', 'b', 'c'].map(name => ({ name, nullable: true, type: { kind: 'varchar', length: 20 } })) };
+  const expression = parseExpression("a::text = 'X'::text AND b IS NULL AND c IS NULL OR a::text = 'Y'::text AND b IS NOT NULL AND c IS NULL", ['a', 'b', 'c']);
+  const candidates = probeRows({ expression }, shape);
+  assert.ok(candidates.some(row => row.a === 'X' && row.b === null && row.c === null));
+  assert.ok(candidates.some(row => row.a === 'Y' && row.b !== null && row.c === null));
 });
 
 test('only certified vendors can be chosen and the ledger names every vendor', () => {

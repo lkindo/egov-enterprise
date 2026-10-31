@@ -67,9 +67,14 @@ function tokenize(text) {
 }
 
 const BOOLEAN_NODES = new Set(['and', 'or', 'compare', 'isNull', 'isNotNull', 'in', 'regex', 'iff']);
+const TEXT_CASTS = new Set(['text', 'character varying', 'bpchar']);
+const NUMBER_CASTS = new Set(['numeric', 'integer', 'bigint']);
+/** 같은 계열 안의 캐스트만 버릴 수 있다. 숫자를 문자로 바꾼 비교처럼 뜻이 달라지는 캐스트는 멈춘다. */
+const castKeepsMeaning = (kind, cast) => (['varchar', 'text', 'json'].includes(kind) ? TEXT_CASTS.has(cast)
+  : ['integer', 'bigint', 'numeric'].includes(kind) && NUMBER_CASTS.has(cast));
 
 /** pg_get_constraintdef 가 낸 식을 트리로 옮긴다. 이 문법 밖의 식은 번역을 멈춘다. */
-export function parseExpression(text, columns) {
+export function parseExpression(text, columns, kinds = new Map()) {
   const tokens = tokenize(text);
   let position = 0;
   const peek = () => tokens[position];
@@ -84,6 +89,10 @@ export function parseExpression(text, columns) {
       position += 1;
     }
     return seen;
+  };
+  const assertColumnCasts = (node, casts) => {
+    if (node.op !== 'column' || !kinds.has(node.name)) return;
+    for (const cast of casts) if (!castKeepsMeaning(kinds.get(node.name), cast)) gap(`뜻이 달라지는 캐스트 ${node.name}::${cast}: ${text}`);
   };
   const stringList = () => {
     expect('[');
@@ -106,7 +115,7 @@ export function parseExpression(text, columns) {
       position += 1;
       const inner = or();
       expect(')');
-      skipCasts();
+      assertColumnCasts(inner, skipCasts());
       return inner;
     }
     if (token.type === 'string') {
@@ -142,8 +151,9 @@ export function parseExpression(text, columns) {
       gap(`모르는 함수 ${token.value}: ${text}`);
     }
     if (!columns.includes(token.value)) gap(`모르는 컬럼 ${token.value}: ${text}`);
-    skipCasts();
-    return { op: 'column', name: token.value };
+    const node = { op: 'column', name: token.value };
+    assertColumnCasts(node, skipCasts());
+    return node;
   }
 
   function additive() {
@@ -256,7 +266,7 @@ function logicalDefault(column) {
 
 const splitColumns = text => text.split(',').map(item => item.trim().replaceAll('"', ''));
 
-function parseConstraint(row, columns) {
+function parseConstraint(row, columns, kinds) {
   if (row.validated === false) gap(`검증되지 않은 제약: ${row.name}`);
   const definition = row.definition;
   if (row.type === 'p' || row.type === 'u') {
@@ -275,12 +285,12 @@ function parseConstraint(row, columns) {
   if (row.type === 'c') {
     const match = definition.match(/^CHECK \((.*)\)$/s);
     if (!match) gap(`모르는 CHECK 정의 ${row.name}: ${definition}`);
-    return { name: row.name, expression: parseExpression(match[1], columns) };
+    return { name: row.name, expression: parseExpression(match[1], columns, kinds) };
   }
   return gap(`모르는 제약 종류 ${row.type}: ${row.name}`);
 }
 
-function parseIndex(row, columns) {
+function parseIndex(row, columns, kinds) {
   const match = row.definition.match(/^CREATE (UNIQUE )?INDEX (\S+) ON public\.(\S+) USING (btree|gin) \((.*?)\)(?: WHERE (.*))?$/s);
   if (!match) gap(`모르는 인덱스 정의 ${row.name}: ${row.definition}`);
   const [, unique, , , method, body, where] = match;
@@ -288,14 +298,18 @@ function parseIndex(row, columns) {
     if (!/^[a-z0-9_]+ gin_trgm_ops$/.test(body) || unique) gap(`모르는 GIN 인덱스 ${row.name}: ${row.definition}`);
     return { name: row.name, unique: false, method: 'trigram', columns: [{ name: body.split(' ')[0] }], where: null };
   }
-  const trimmed = body.match(/^btrim\(\(([a-z0-9_]+)\)::text$/) ?? body.match(/^btrim\(\(([a-z0-9_]+)\)::text\)$/);
-  if (trimmed) return { name: row.name, unique: Boolean(unique), method: 'btree', columns: [{ name: trimmed[1], expression: 'trim' }], where: null };
+  const trimmed = body.match(/^btrim\(\(([a-z0-9_]+)\)::text\)$/);
+  if (trimmed) {
+    // 조건부·유일 표현식 인덱스는 벤더마다 뜻이 달라진다. 지금 스키마에 없으니 문법 밖으로 둔다.
+    if (unique || where) gap(`표현식 인덱스는 조건 없는 일반 인덱스만 받는다: ${row.name}`);
+    return { name: row.name, unique: false, method: 'btree', columns: [{ name: trimmed[1], expression: 'trim' }], where: null };
+  }
   const parts = splitColumns(body).map(part => {
     const piece = part.match(/^([a-z0-9_]+)( DESC)?$/);
     if (!piece) gap(`모르는 인덱스 컬럼 ${row.name}: ${part}`);
     return { name: piece[1], descending: Boolean(piece[2]) };
   });
-  return { name: row.name, unique: Boolean(unique), method: 'btree', columns: parts, where: where ? parseExpression(where, columns) : null };
+  return { name: row.name, unique: Boolean(unique), method: 'btree', columns: parts, where: where ? parseExpression(where, columns, kinds) : null };
 }
 
 function parseTrigger(row, functions) {
@@ -317,6 +331,7 @@ export function buildVendorModel({ snapshot, extras }) {
   for (const key of ['columns', 'constraints', 'indexes', 'triggers', 'sequences']) {
     if (!Array.isArray(snapshot?.[key])) gap(`스냅숏에 ${key} 가 없다.`);
   }
+  for (const row of snapshot.constraints) if (!['p', 'u', 'f', 'c'].includes(row.type)) gap(`모르는 제약 종류 ${row.type}: ${row.name}`);
   const functions = new Map((extras?.functions ?? []).map(row => [row.name, row.definition]));
   const comments = new Map((extras?.comments ?? []).map(row => [`${row.table}.${row.column ?? ''}`, row.comment]));
   const identitySequences = new Set(extras?.identitySequences ?? []);
@@ -326,7 +341,8 @@ export function buildVendorModel({ snapshot, extras }) {
   const tables = names.map(name => {
     const rows = snapshot.columns.filter(row => row.table_name === name).sort((a, b) => a.ordinal_position - b.ordinal_position);
     const columnNames = rows.map(row => row.column_name);
-    const owned = type => snapshot.constraints.filter(row => row.table_name === name && row.type === type).map(row => parseConstraint(row, columnNames));
+    const kinds = new Map(rows.map(row => [row.column_name, logicalType(row).kind]));
+    const owned = type => snapshot.constraints.filter(row => row.table_name === name && row.type === type).map(row => parseConstraint(row, columnNames, kinds));
     const columns = rows.map(row => {
       if (row.is_generated !== 'NEVER') gap(`생성 컬럼은 문법 밖이다: ${name}.${row.column_name}`);
       if (row.is_identity === 'YES' && row.identity_generation !== 'BY DEFAULT') gap(`GENERATED ALWAYS 는 문법 밖이다: ${name}.${row.column_name}`);
@@ -336,13 +352,20 @@ export function buildVendorModel({ snapshot, extras }) {
     const [primaryKey = null, ...extraKeys] = owned('p');
     if (extraKeys.length) gap(`기본 키가 둘이다: ${name}`);
     return { name, comment: comments.get(`${name}.`) ?? null, columns, primaryKey, uniques: owned('u'), foreignKeys: owned('f'), checks: owned('c'),
-      indexes: snapshot.indexes.filter(row => row.table_name === name && !constraintNames.has(row.name)).map(row => parseIndex(row, columnNames)),
+      indexes: snapshot.indexes.filter(row => row.table_name === name && !constraintNames.has(row.name)).map(row => parseIndex(row, columnNames, kinds)),
       triggers: snapshot.triggers.filter(row => row.table_name === name).map(row => parseTrigger(row, functions)) };
   });
   const sequences = snapshot.sequences.filter(row => !identitySequences.has(row.name)).map(row => ({
     name: row.name, increment: Number(row.increment_by), start: Number(row.start_value), last: lastValues.get(row.name) ?? null,
   })).sort((a, b) => a.name.localeCompare(b.name));
   return { schemaVersion: 1, tables, sequences };
+}
+
+/** 식 안에 해당 연산이 있는가. */
+export function containsOp(node, op) {
+  if (!node || typeof node !== 'object') return false;
+  if (node.op === op) return true;
+  return Object.values(node).some(value => (Array.isArray(value) ? value.some(item => containsOp(item, op)) : containsOp(value, op)));
 }
 
 /** 키·인덱스·FK 양쪽에 쓰이는 컬럼. 긴 문자열을 LOB 로 바꿀 수 없는 자리다. */

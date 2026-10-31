@@ -96,6 +96,9 @@ BEGIN
   RAISE_APPLICATION_ERROR(-20001, 'append-only ${table.name}');
 END;`;
 
+/** PL/SQL 조건은 삼값이라 NULL 과의 비교가 그대로 IF 를 빠져나간다. 언제나 참·거짓인 "다름" 식을 쓴다. */
+const differs = (left, right) => `((${left} IS NULL AND ${right} IS NOT NULL) OR (${left} IS NOT NULL AND ${right} IS NULL) OR (${left} IS NOT NULL AND ${right} IS NOT NULL AND ${left} <> ${right}))`;
+
 const syncPairTrigger = (table, trigger) => `CREATE OR REPLACE TRIGGER ${trigger.name} BEFORE INSERT OR UPDATE OF ${trigger.legacy}, ${trigger.current} ON ${table.name} FOR EACH ROW
 DECLARE legacy_changed BOOLEAN; current_changed BOOLEAN;
 BEGIN
@@ -103,13 +106,13 @@ BEGIN
     IF :NEW.${trigger.legacy} IS NULL THEN :NEW.${trigger.legacy} := :NEW.${trigger.current}; END IF;
     IF :NEW.${trigger.current} IS NULL THEN :NEW.${trigger.current} := :NEW.${trigger.legacy}; END IF;
   ELSE
-    legacy_changed := NOT (:NEW.${trigger.legacy} = :OLD.${trigger.legacy} OR (:NEW.${trigger.legacy} IS NULL AND :OLD.${trigger.legacy} IS NULL));
-    current_changed := NOT (:NEW.${trigger.current} = :OLD.${trigger.current} OR (:NEW.${trigger.current} IS NULL AND :OLD.${trigger.current} IS NULL));
+    legacy_changed := ${differs(`:NEW.${trigger.legacy}`, `:OLD.${trigger.legacy}`)};
+    current_changed := ${differs(`:NEW.${trigger.current}`, `:OLD.${trigger.current}`)};
     IF legacy_changed AND NOT current_changed THEN :NEW.${trigger.current} := :NEW.${trigger.legacy};
     ELSIF current_changed AND NOT legacy_changed THEN :NEW.${trigger.legacy} := :NEW.${trigger.current};
     END IF;
   END IF;
-  IF NOT (:NEW.${trigger.current} = :NEW.${trigger.legacy} OR (:NEW.${trigger.current} IS NULL AND :NEW.${trigger.legacy} IS NULL)) THEN
+  IF ${differs(`:NEW.${trigger.current}`, `:NEW.${trigger.legacy}`)} THEN
     RAISE_APPLICATION_ERROR(-20002, 'conflicting pair');
   END IF;
 END;`;
@@ -191,11 +194,14 @@ function emitSchema(model) {
 }
 
 const LONG_LITERAL = 3000;
+/** 한 글자가 UTF-8 로 4바이트여도 리터럴 상한을 넘지 않는 조각 크기. */
+const CLOB_CHUNK = 700;
 
-/** SQL*Plus 와 Oracle 문자열 리터럴 상한을 넘지 않게 나눠 CLOB 로 잇는다. */
-function clobLiteral(value) {
+/** SQL*Plus 와 Oracle 문자열 리터럴 상한을 넘지 않게 나눠 CLOB 로 잇는다. 코드 포인트로 잘라야 이모지가 깨지지 않는다. */
+export function clobLiteral(value) {
+  const characters = [...value];
   const parts = [];
-  for (let index = 0; index < value.length; index += LONG_LITERAL / 3) parts.push(`TO_CLOB(${string(value.slice(index, index + LONG_LITERAL / 3))})`);
+  for (let index = 0; index < characters.length; index += CLOB_CHUNK) parts.push(`TO_CLOB(${string(characters.slice(index, index + CLOB_CHUNK).join(''))})`);
   return parts.join('\n|| ');
 }
 

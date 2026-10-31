@@ -103,6 +103,36 @@ export function startVendorEngine(engineId) {
 
 export const stopVendorEngine = handle => docker(['rm', '-f', '-v', handle.name]);
 
+/** COUNT 한 줄을 읽는다. csql 은 `<00001> count(*): 3` 으로 낸다. */
+export const parseCount = lines => {
+  const value = (lines ?? []).map(line => line.trim().match(/^(?:<\d+>.*:\s*)?(\d+)$/)?.[1]).find(item => item !== undefined);
+  return value === undefined ? null : Number(value);
+};
+
+/**
+ * 클라이언트 출력을 문장별로 나눈다. 값 거부는 문장 오류로 돌려주고, 실행 자체의 실패는 던진다.
+ * 접속이 끊긴 클라이언트도 종료 코드 0 을 낼 수 있어 문장마다 표식이 나왔는지 본다.
+ */
+export function collectResults(result, statements, errorPattern, label) {
+  if (result.error || result.status === null) fail('VENDOR_ENGINE_NOT_READY', `${label} 실행이 끝나지 않았다: ${result.error?.message ?? result.signal}`);
+  const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
+  const sections = new Map();
+  let current = -1;
+  for (const line of output.split(/\r?\n/)) {
+    const marker = line.match(/@@(\d+)/);
+    if (marker) { current = Number(marker[1]); if (!sections.has(current)) sections.set(current, []); continue; }
+    if (current >= 0) sections.get(current).push(line);
+  }
+  const unreached = statements.findIndex((_, index) => !sections.has(index));
+  if (unreached >= 0) fail('VENDOR_ENGINE_NOT_READY', `${label}: ${statements.length}문장 가운데 ${unreached}번째에 닿지 못했다 — ${output.trim().slice(-300)}`);
+  const errors = [];
+  for (const [index, lines] of sections) {
+    const at = lines.findIndex(line => errorPattern.test(line.trim()));
+    if (at >= 0) errors.push({ index, statement: statements[index]?.sql.replace(/\s+/g, ' ').slice(0, 200), error: `${lines[at].trim().slice(0, 180)} ${(lines[at + 1] ?? '').trim().slice(0, 120)}` });
+  }
+  return { sections, errors };
+}
+
 /** 문장을 표식과 함께 실행하고 표식별 출력을 돌려준다. 벤더 클라이언트는 오류 뒤에도 계속 가므로 출력에서 오류를 찾는다. */
 export function runStatements(handle, statements, { sessionPrefix = [] } = {}) {
   const { engine, name } = handle;
@@ -114,19 +144,7 @@ export function runStatements(handle, statements, { sessionPrefix = [] } = {}) {
     if (copied.status !== 0) fail('VENDOR_ENGINE_NOT_READY', copied.stderr.slice(0, 300));
     docker(['exec', name, 'sh', '-c', 'chmod 644 /tmp/run.sql']);
     const result = docker(['exec', ...(engine.user ? ['-u', engine.user] : []), name, 'sh', '-c', `${engine.command('/tmp/run.sql')} 2>&1`], { timeout: 3_600_000 });
-    const sections = new Map();
-    let current = -1;
-    for (const line of `${result.stdout ?? ''}${result.stderr ?? ''}`.split(/\r?\n/)) {
-      const marker = line.match(/@@(\d+)/);
-      if (marker) { current = Number(marker[1]); if (!sections.has(current)) sections.set(current, []); continue; }
-      if (current >= 0) sections.get(current).push(line);
-    }
-    const errors = [];
-    for (const [index, lines] of sections) {
-      const at = lines.findIndex(line => engine.batch.errors.test(line.trim()));
-      if (at >= 0) errors.push({ index, statement: statements[index]?.sql.replace(/\s+/g, ' ').slice(0, 200), error: `${lines[at].trim().slice(0, 180)} ${(lines[at + 1] ?? '').trim().slice(0, 120)}` });
-    }
-    return { sections, errors };
+    return collectResults(result, statements, engine.batch.errors, name);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

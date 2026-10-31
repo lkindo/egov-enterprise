@@ -11,7 +11,7 @@ import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { buildVendorModel, columnsIn, gap } from './project-composer-vendor-model.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
-import { runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
+import { parseCount, runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
 
 /** 정규식마다 맞는 값과 틀린 값. 맞는 값 뒤의 줄바꿈은 항상 시험한다(`$` 함정). */
 const REGEX_SAMPLES = Object.freeze({
@@ -24,11 +24,10 @@ const REGEX_SAMPLES = Object.freeze({
 });
 const TIMESTAMP = '2026-10-30T00:00:00';
 const shiftSeconds = seconds => new Date(Date.parse(`${TIMESTAMP}Z`) + seconds * 1000).toISOString().slice(0, 19);
-const MAX_ROWS = 48;
+const MAX_ROWS = 64;
 
 function collectValues(node, columns, values) {
   const add = (name, ...items) => { if (name) values.get(name)?.push(...items); };
-  const nameOf = item => (item?.op === 'column' ? item.name : item?.arg?.op === 'column' ? item.arg.name : item?.arg?.name);
   switch (node.op) {
     case 'in': add(nameOf(node), ...node.values, ...node.values.slice(0, 2).flatMap(value => [`${value} `, value.toLowerCase(), `${value}\n`]), 'zz'); break;
     case 'regex': {
@@ -72,6 +71,64 @@ function sampleByType(column) {
   }
 }
 
+const nameOf = item => (item?.op === 'column' ? item.name : item?.arg?.op === 'column' ? item.arg.name : item?.arg?.name);
+
+/**
+ * 식을 참으로 만드는 값 묶음. OR 은 가지마다 하나씩 낸다. 여러 칸이 함께 맞아야 통과하는 CHECK 는
+ * 한 칸씩 바꿔서는 허용 표본이 나오지 않아, 망가진 번역이 전부 거부해도 드러나지 않는다.
+ * hard 는 그 값이어야 하는 칸, soft 는 다른 값이어도 되는 칸이다.
+ */
+function satisfying(node, table) {
+  const hard = (name, value) => [{ hard: { [name]: value }, soft: {} }];
+  const soft = (name, value) => [{ hard: {}, soft: { [name]: value } }];
+  const columnOf = name => table.columns.find(column => column.name === name);
+  const anyValue = name => sampleByType(columnOf(name))[0];
+  switch (node.op) {
+    case 'or': return node.args.flatMap(item => satisfying(item, table));
+    case 'and': {
+      let merged = [{ hard: {}, soft: {} }];
+      for (const item of node.args) {
+        merged = merged.flatMap(left => satisfying(item, table).flatMap(right => {
+          const clash = Object.keys(left.hard).some(key => key in right.hard && left.hard[key] !== right.hard[key]);
+          return clash ? [] : [{ hard: { ...left.hard, ...right.hard }, soft: { ...left.soft, ...right.soft } }];
+        })).slice(0, 8);
+      }
+      return merged;
+    }
+    case 'iff': {
+      const other = { op: 'compare', operator: node.left.operator === '=' ? '<>' : '=', left: node.left.left, right: node.left.right };
+      const flipped = node.right.op === 'isNotNull' ? { ...node.right, op: 'isNull' } : { ...node.right, op: 'isNotNull' };
+      return [...satisfying({ op: 'and', args: [node.left, node.right] }, table), ...satisfying({ op: 'and', args: [other, flipped] }, table)];
+    }
+    case 'isNull': return hard(nameOf(node), null);
+    case 'isNotNull': return hard(nameOf(node), anyValue(nameOf(node)));
+    case 'in': return hard(nameOf(node), node.values[0]);
+    case 'regex': return hard(nameOf(node), (REGEX_SAMPLES[node.pattern] ?? gap(`시험값이 없는 정규식: ${node.pattern}`))[0]);
+    case 'compare': {
+      const name = nameOf(node.left);
+      if (node.left.op === 'jsonType') return hard(name, '{"a":1}');
+      if (node.left.op === 'octetLength' || node.left.op === 'charLength') return soft(name, 'ab');
+      if (node.right.op === 'addSeconds') return hard(name, shiftSeconds(1));
+      if (node.right.op === 'trim' || node.left.op === 'trim') return soft(name, 'ab');
+      if (node.right.op === 'string') {
+        if (node.operator === '=') return hard(name, node.right.value);
+        return soft(name, `${node.right.value}x`);
+      }
+      if (node.right.op === 'number') {
+        const value = node.operator === '>' ? node.right.value + 1 : node.operator === '<' ? node.right.value - 1 : node.right.value;
+        return hard(name, node.operator === '<>' ? value + 1 : value);
+      }
+      if (node.right.op === 'column') {
+        const [low, high] = sampleByType(columnOf(name));
+        const greater = ['>', '>='].includes(node.operator);
+        return [{ hard: {}, soft: { [name]: greater ? high : low, [node.right.name]: greater ? low : high } }];
+      }
+      return gap(`${table.name}: 허용 표본을 만들 수 없는 비교`);
+    }
+    default: return [{ hard: {}, soft: {} }];
+  }
+}
+
 /** 한 칸씩 바꾼 행. 나머지 칸은 앞의 값을 쓴다. 두 칸짜리 조건은 곱집합까지 본다. */
 export function probeRows(check, table) {
   const names = [...columnsIn(check.expression)];
@@ -84,7 +141,9 @@ export function probeRows(check, table) {
     if (column.nullable) list.push(null);
   }
   const distinct = name => [...new Set(values.get(name))];
-  const rows = [];
+  const filler = (assignment, name) => (name in assignment.hard ? assignment.hard[name] : name in assignment.soft ? assignment.soft[name] : distinct(name)[0]);
+  const passing = satisfying(check.expression, table).map(assignment => Object.fromEntries(names.map(name => [name, filler(assignment, name)])));
+  const rows = [...passing, ...passing.slice(0, 3).flatMap(row => names.flatMap(name => distinct(name).slice(0, 3).map(value => ({ ...row, [name]: value }))))];
   if (names.length === 2) {
     for (const left of distinct(names[0])) for (const right of distinct(names[1])) rows.push({ [names[0]]: left, [names[1]]: right });
   } else {
@@ -92,7 +151,8 @@ export function probeRows(check, table) {
     rows.push(base);
     for (const name of names) for (const value of distinct(name)) rows.push({ ...base, [name]: value });
   }
-  return rows.slice(0, MAX_ROWS);
+  const seen = new Set();
+  return rows.filter(row => { const key = JSON.stringify(row); if (seen.has(key)) return false; seen.add(key); return true; }).slice(0, MAX_ROWS);
 }
 
 /** 벤더 고유 차이로 비교할 수 없는 값. 없앨 수 없는 한계는 저하 목록에 이미 있다(설계서 §6.1). */
@@ -142,10 +202,14 @@ function postgresAccepts({ container, user, database }, probes, definitions) {
     return `INSERT INTO ${table.name} (probe_id, ${names.map(name => `"${name}"`).join(', ')}) VALUES (${index}, ${names.map(name => postgresLiteral(row[name])).join(', ')});`;
   }));
   const applied = psql([...statements, ...insertions].join('\n'));
-  const broken = `${applied.stderr}`.split(/\r?\n/).filter(line => /ERROR:\s+(relation|syntax|column|type)/.test(line));
+  if (applied.error || applied.status !== 0) gap(`PostgreSQL 기준 실행 실패: ${applied.error?.message ?? applied.stderr.slice(0, 300)}`);
+  // 값 때문에 거부된 것만 거부다. 그 밖의 오류는 시험 자체가 깨진 것이다.
+  const broken = `${applied.stderr}`.split(/\r?\n/).filter(line => /ERROR:/.test(line)
+    && !/violates (check|not-null) constraint|invalid input syntax|invalid input value|value too long|out of range|Token .* is invalid|invalid.*json/i.test(line));
   if (broken.length) gap(`PostgreSQL 기준 실행 실패: ${broken[0]}`);
   // 받아들인 행을 다시 읽는다. 거부는 행이 없다는 사실로 판정한다.
   const stored = psql(`${probes.tables.map(table => `SELECT '${table.name}:' || probe_id FROM ${table.name};`).join('\n')}\n`);
+  if (stored.error || stored.status !== 0 || /ERROR:/.test(stored.stderr)) gap(`PostgreSQL 기준 결과를 읽지 못했다: ${stored.stderr.slice(0, 300)}`);
   return new Set(stored.stdout.split(/\r?\n/).filter(Boolean));
 }
 
@@ -160,6 +224,52 @@ function vendorAccepts(handle, adapter, probes) {
   return new Set(insertions.map(item => item.key).filter(key => !rejected.has(key)));
 }
 
+const probeColumn = (name, nullable = true) => ({ name, type: { kind: 'integer' }, nullable, identity: false, default: null, comment: null });
+const intentTable = (name, columns, triggers) => ({ name, comment: null, columns: [probeColumn('id', false), ...columns.map(column => probeColumn(column))],
+  primaryKey: { name: `pk_${name}`, columns: ['id'] }, uniques: [], foreignKeys: [], indexes: [], checks: [], triggers, rows: [] });
+const INTENT_TABLES = () => [
+  intentTable('zz_sync_probe', ['prcs_tm', 'prcs_req_msec'], [{ name: 'tr_zz_sync', kind: 'sync-pair', legacy: 'prcs_tm', current: 'prcs_req_msec' }]),
+  intentTable('zz_ledger_probe', ['val'], [{ name: 'tr_zz_ledger', kind: 'append-only', permit: 'app.audit_retention' }]),
+];
+
+/** 번역한 트리거가 원본 함수와 같게 움직이는지 본다. 행은 원본 V2_145·감사 원장 시험과 같은 전이다. */
+const INTENT_STEPS = Object.freeze([
+  ['INSERT INTO zz_sync_probe (id, prcs_tm) VALUES (1, 5)', true],
+  ['INSERT INTO zz_sync_probe (id, prcs_req_msec) VALUES (2, 7)', true],
+  ['INSERT INTO zz_sync_probe (id, prcs_tm, prcs_req_msec) VALUES (3, 1, 2)', false],
+  ['UPDATE zz_sync_probe SET prcs_tm = 20 WHERE id = 1', true],
+  ['SELECT COUNT(*) FROM zz_sync_probe WHERE id = 1 AND prcs_tm = 20 AND prcs_req_msec = 20', 1],
+  ['UPDATE zz_sync_probe SET prcs_req_msec = 30 WHERE id = 1', true],
+  ['SELECT COUNT(*) FROM zz_sync_probe WHERE id = 1 AND prcs_tm = 30 AND prcs_req_msec = 30', 1],
+  ['UPDATE zz_sync_probe SET prcs_tm = NULL WHERE id = 1', true],
+  ['SELECT COUNT(*) FROM zz_sync_probe WHERE id = 1 AND prcs_tm IS NULL AND prcs_req_msec IS NULL', 1],
+  ['UPDATE zz_sync_probe SET prcs_tm = 8, prcs_req_msec = 9 WHERE id = 2', false],
+  ['SELECT COUNT(*) FROM zz_sync_probe WHERE id = 2 AND prcs_tm = 7 AND prcs_req_msec = 7', 1],
+  ['INSERT INTO zz_ledger_probe (id, val) VALUES (1, 1)', true],
+  ['INSERT INTO zz_ledger_probe (id, val) VALUES (2, 2)', true],
+  ['UPDATE zz_ledger_probe SET val = 9 WHERE id = 1', false],
+  ['DELETE FROM zz_ledger_probe WHERE id = 1', false],
+  ["INSERT INTO tb_sys_ledger_permit (permit_key) VALUES ('app.audit_retention')", true],
+  ['DELETE FROM zz_ledger_probe WHERE id = 1', true],
+  ['UPDATE zz_ledger_probe SET val = 9 WHERE id = 2', false],
+  ["DELETE FROM tb_sys_ledger_permit WHERE permit_key = 'app.audit_retention'", true],
+  ['DELETE FROM zz_ledger_probe WHERE id = 2', false],
+  ['SELECT COUNT(*) FROM zz_ledger_probe', 1],
+]);
+
+function intentFailures(handle, vendorId) {
+  const statements = INTENT_STEPS.map(([sql]) => ({ sql }));
+  const { sections, errors } = runStatements(handle, statements);
+  const rejected = new Set(errors.map(item => item.index));
+  return INTENT_STEPS.flatMap(([sql, expected], index) => {
+    if (typeof expected === 'number') {
+      const actual = parseCount(sections.get(index));
+      return actual === expected ? [] : [`${sql} → ${actual} (기대 ${expected})`];
+    }
+    return rejected.has(index) === expected ? [`${sql} → ${expected ? '거부' : '통과'}`] : [];
+  });
+}
+
 export function runDifferential({ input, vendorId, engineId, postgres }) {
   const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
   const adapter = VENDOR_ADAPTERS[vendorId];
@@ -170,7 +280,12 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
     table.rows = probeRows(table.checks[0], source).filter(row => (comparable[vendorId] ?? (() => true))(row));
   }
   const baseline = postgresAccepts(postgres, probes, definitions);
-  const emission = adapter.emitSchema(probes);
+  // 허용과 거부가 다 있어야 번역이 망가졌을 때 드러난다.
+  const unbalanced = probes.tables.filter(table => {
+    const accepted = table.rows.filter((_, index) => baseline.has(`${table.name}:${index}`)).length;
+    return accepted === 0 || accepted === table.rows.length;
+  }).map(table => table.definition);
+  const emission = adapter.emitSchema({ ...probes, tables: [...probes.tables, ...INTENT_TABLES()] });
   const handle = startVendorEngine(engineId ?? vendorId);
   try {
     const schema = runStatements(handle, emission.statements);
@@ -184,7 +299,8 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
       });
     }
     const rows = probes.tables.reduce((sum, table) => sum + table.rows.length, 0);
-    return { vendor: vendorId, engine: engineId ?? vendorId, checks: probes.tables.length, rows, accepted: baseline.size, rejected: rows - baseline.size, differences };
+    return { vendor: vendorId, engine: engineId ?? vendorId, checks: probes.tables.length, rows, accepted: baseline.size, rejected: rows - baseline.size,
+      differences, unbalanced, intentFailures: intentFailures(handle, vendorId) };
   } finally {
     stopVendorEngine(handle);
   }
@@ -196,7 +312,9 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const result = runDifferential({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine,
     postgres: { container: args.container, user: args.user, database: args.database } });
   if (args.report) writeFileSync(args.report, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-  console.log(`[vendor-differential] ${result.engine}: CHECK ${result.checks}, 값 ${result.rows}(기준 허용 ${result.accepted}, 거부 ${result.rejected}), 불일치 ${result.differences.length}`);
+  console.log(`[vendor-differential] ${result.engine}: CHECK ${result.checks}, 값 ${result.rows}(기준 허용 ${result.accepted}, 거부 ${result.rejected}), 불일치 ${result.differences.length}, 한쪽만 나온 CHECK ${result.unbalanced.length}, 트리거 동작 실패 ${result.intentFailures.length}`);
+  for (const name of result.unbalanced.slice(0, 12)) console.log(`  표본 부족: ${name}`);
+  for (const item of result.intentFailures.slice(0, 12)) console.log(`  트리거: ${item}`);
   for (const item of result.differences.slice(0, 12)) console.log(`  ${item.check} ${JSON.stringify(item.row).slice(0, 110)} pg=${item.postgresql} vendor=${item.vendor}`);
-  if (result.differences.length) process.exitCode = 1;
+  if (result.differences.length || result.unbalanced.length || result.intentFailures.length) process.exitCode = 1;
 }

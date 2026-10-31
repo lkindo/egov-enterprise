@@ -53,6 +53,9 @@ const dialectFor = prefix => ({
   jsonViolation: (column, maxBytes) => `${column} IS NOT NULL AND (LEFT(LTRIM(${column}), 1) <> '{' OR LENGTH(${column}) > ${maxBytes})`,
 });
 
+/** 트리거 조건이 NULL 이면 결과가 흔들리므로 언제나 참·거짓인 "다름" 식을 쓴다. */
+const differs = (left, right) => `((${left} IS NULL AND ${right} IS NOT NULL) OR (${left} IS NOT NULL AND ${right} IS NULL) OR (${left} IS NOT NULL AND ${right} IS NOT NULL AND ${left} <> ${right}))`;
+
 const appendOnly = (emission, table, trigger) => {
   emission.sql(`CREATE TRIGGER ${trigger.name}_u BEFORE UPDATE ON ${table.name} EXECUTE REJECT`);
   emission.sql(`CREATE TRIGGER ${trigger.name}_d BEFORE DELETE ON ${table.name} IF ((SELECT COUNT(*) FROM tb_sys_ledger_permit WHERE permit_key = ${string(trigger.permit)}) = 0) EXECUTE REJECT`);
@@ -66,7 +69,10 @@ const syncPair = (emission, table, trigger) => {
   emission.sql(`CREATE TRIGGER ${trigger.name}_c BEFORE INSERT ON ${table.name} IF (new.${legacy} IS NOT NULL AND new.${current} IS NOT NULL AND new.${legacy} <> new.${current}) EXECUTE REJECT`);
   emission.sql(`CREATE TRIGGER ${trigger.name}_a AFTER INSERT ON ${table.name} IF (obj.${current} IS NULL AND obj.${legacy} IS NOT NULL) EXECUTE UPDATE ${table.name} SET ${current} = obj.${legacy} WHERE ${key} = obj.${key}`);
   emission.sql(`CREATE TRIGGER ${trigger.name}_b AFTER INSERT ON ${table.name} IF (obj.${legacy} IS NULL AND obj.${current} IS NOT NULL) EXECUTE UPDATE ${table.name} SET ${legacy} = obj.${current} WHERE ${key} = obj.${key}`);
-  for (const suffix of ['c', 'a', 'b']) emission.expect('triggers', table.name, `${trigger.name}_${suffix}`);
+  // AFTER 트리거는 REJECT 를 쓸 수 없다. 두 값을 함께 다르게 고치면 조건이 풀리지 않아 트리거 깊이 초과로 문장이 되돌려진다.
+  const legacyChanged = differs(`obj.${legacy}`, `old.${legacy}`), currentChanged = differs(`obj.${current}`, `old.${current}`);
+  emission.sql(`CREATE TRIGGER ${trigger.name}_u AFTER UPDATE ON ${table.name} IF (${differs(`obj.${legacy}`, `obj.${current}`)}) EXECUTE UPDATE ${table.name} SET ${legacy} = CASE WHEN ${currentChanged} AND NOT ${legacyChanged} THEN obj.${current} ELSE ${legacy} END, ${current} = CASE WHEN ${legacyChanged} AND NOT ${currentChanged} THEN obj.${legacy} ELSE ${current} END WHERE ${key} = obj.${key}`);
+  for (const suffix of ['c', 'a', 'b', 'u']) emission.expect('triggers', table.name, `${trigger.name}_${suffix}`);
 };
 
 /** 복합 UNIQUE 의 일부 NULL 중복을 엔진이 거부한다. 모든 키가 찼을 때만 값을 갖는 그림자 키에 UNIQUE 를 건다. */
