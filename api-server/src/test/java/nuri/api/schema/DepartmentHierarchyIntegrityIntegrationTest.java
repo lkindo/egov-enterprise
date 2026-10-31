@@ -184,7 +184,8 @@ class DepartmentHierarchyIntegrityIntegrationTest {
     }
 
     private void authenticate() {
-        var principal = CustomUserDetails.builder().userId(fixture).esntlId(fixture).enabled(true).build();
+        var principal = CustomUserDetails.builder().userId(fixture).esntlId(fixture).enabled(true)
+                .permissions(List.of("DEPT_UPDATE")).build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }

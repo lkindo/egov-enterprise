@@ -35,7 +35,7 @@ public final class JdbcUrlSafety {
     /** 위 꼴에 들지 않지만 값이 클래스 인자·파일·실행문인 속성. {@code init}·{@code initsql} 은 연결할 때 SQL 을 실행한다(H2·MariaDB). */
     private static final Set<String> EXECUTABLE_OPTIONS = Set.of(
             "allowloadlocalinfileinpath", "socketfactoryarg", "sslfactoryarg", "socketfactoryconstructorarg",
-            "trustmanagerconstructorarg", "connectexecutorarg", "logger", "loggerfile", "loggerlevel", "init", "initsql",
+            "trustmanagerconstructorarg", "connectexecutorarg", "logger", "loggerfile", "init", "initsql",
             "oracle.jdbc.config.file");
 
     private JdbcUrlSafety() {

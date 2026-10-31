@@ -235,6 +235,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
     }
 
     private String edit(Edit edit) {
+        authenticateEditor();
         switch (edit) {
             case QUESTION_TEXT -> editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion).srvySn(survey)
                     .qstnSn(1L).qstnCn("수정 문항").maxChcCnt(1).build());
@@ -273,6 +274,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
             try {
                 awaitApplied(applied, first, "선행 문항 변경과 제출을 저장");
                 second = executor.submit(() -> transactionAction(secondApplication, () -> {
+                    authenticateEditor();
                     editor.updateQuestion(SurveyQuestionDto.builder().srvyQstnSn(firstQuestion).srvySn(survey).qstnSn(8L)
                             .qstnCn("검증 문항").maxChcCnt(1).build());
                     return "edited";
@@ -654,6 +656,12 @@ class SurveySubmissionConcurrencyIntegrationTest {
 
     private int answerCount(String author) {
         return jdbc.queryForObject("SELECT count(*) FROM tb_srvy_rslt WHERE srvy_sn=? AND frst_rgtr_id=?", Integer.class, survey, author);
+    }
+
+    private void authenticateEditor() {
+        var principal = CustomUserDetails.builder().userId("survey-race-user").esntlId("SURVEY_TEST_INTERNAL").enabled(true)
+                .permissions(List.of("SURVEY_CREATE_ALL", "SURVEY_UPDATE_ALL", "SURVEY_DELETE_ALL")).build();
+        SecurityContextHolder.getContext().setAuthentication(new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 
     private void authenticateCancellation(String loginId) {

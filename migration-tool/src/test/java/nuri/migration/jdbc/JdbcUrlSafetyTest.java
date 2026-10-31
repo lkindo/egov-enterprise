@@ -67,6 +67,7 @@ class JdbcUrlSafetyTest {
         "jdbc:postgresql://db/app?options=-c%20search_path%3Dapp&currentSchema=app",
         "jdbc:sqlserver://db:1433;databaseName=app;authentication=SqlPassword;hostNameInCertificate=*.example.org",
         "jdbc:mysql://user:pass=word@db:3306,db2:3306/app?characterEncoding=UTF-8",
+        "jdbc:postgresql://localhost:5432/test?loggerLevel=OFF",
     })
     @DisplayName("이관 작업공간이 만드는 주소와 일반 주소는 받는다")
     void acceptsRegularUrls(String url) {

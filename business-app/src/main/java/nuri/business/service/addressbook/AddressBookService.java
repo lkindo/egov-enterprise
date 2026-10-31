@@ -105,8 +105,8 @@ public class AddressBookService {
     public void updateAddressBook(String userId, AddressBookDto dto) {
         AddressBook entity = addressBookRepository.findByIdForUpdate(Objects.requireNonNull(dto.getAdbkSn()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
-        assertInUse(entity);
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정(PII)
+        assertInUse(entity);
 
         // 잠금만으로는 앞선 조회에서 만들어진 오래된 전체 구성원 목록을 판별할 수 없다.
         // 잠금을 얻은 뒤 현재 상태와 요청의 조회 토큰을 비교하고, 충돌이면 어떤 필드도 바꾸지 않는다.

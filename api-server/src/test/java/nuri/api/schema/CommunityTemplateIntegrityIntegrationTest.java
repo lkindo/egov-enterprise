@@ -35,6 +35,7 @@ class CommunityTemplateIntegrityIntegrationTest {
     private String id;
 
     @BeforeEach void seedOwnTemplate() {
+        authenticate();
         id = "CT" + UUID.randomUUID().toString().replace("-", "").substring(0, 14);
         jdbc.update("INSERT INTO tb_tmplt_info(tmplt_id,tmplt_nm,tmplt_se_cd,tmplt_path,use_yn) VALUES (?,?,'TMPT02','metadata-only','Y')", id, id);
     }
@@ -45,6 +46,12 @@ class CommunityTemplateIntegrityIntegrationTest {
         } finally {
             SecurityContextHolder.clearContext();
         }
+    }
+    private void authenticate() {
+        var principal = CustomUserDetails.builder().userId("fixture").esntlId("fixture").enabled(true)
+                .permissions(List.of("COMMUNITY_CREATE_ALL", "COMMUNITY_UPDATE_ALL", "COMMUNITY_DELETE_ALL")).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
     private CommunityDto request(String template) {
         return CommunityDto.builder().cmntyNm(id).cmntyIntroCn("내용").tmpltId(template).useYn("Y").build();
@@ -84,6 +91,7 @@ class CommunityTemplateIntegrityIntegrationTest {
                 change.executeUpdate();
             }
             var pending = executor.submit(() -> new TransactionTemplate(transactionManager).execute(status -> {
+                authenticate();
                 jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
                 return communities.createCommunity("fixture", request(id));
             }));
@@ -115,6 +123,7 @@ class CommunityTemplateIntegrityIntegrationTest {
                 change.executeUpdate();
             }
             var pending = executor.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                authenticate();
                 jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
                 communities.deleteCommunity(community, "fixture");
             }));

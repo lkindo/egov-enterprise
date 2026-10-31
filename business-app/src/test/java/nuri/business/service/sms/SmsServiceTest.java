@@ -214,7 +214,7 @@ class SmsServiceTest {
      * [2026-09-05 DEC-OPS-035] 수신자 피커 공용화 — recipients(esntlId|rcptnTelno) 계약.
      */
     @Test
-    @DisplayName("🔐 사용자를 골라 보낸 수신자는 식별자를 남기고, 직접 입력한 번호는 사람을 추정하지 않는다(ADR-0048)")
+    @DisplayName("🔐 사용자를 골라 보낸 수신자는 식별자를 남기고, 직접 입력한 번호는 사람을 추정하지 않는다(DEC-OPS-394)")
     void sendSms_recordsReceiverOnlyWhenChosenAsAUser() {
         SmsDto dto = SmsDto.builder().sndngTelno("0212345678").sndngCn("hi")
                 .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_A").build(),
