@@ -1,8 +1,10 @@
 package nuri.business.domain.board;
 
 import org.jspecify.annotations.NonNull;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+import nuri.foundation.core.stats.StatsTimestamp;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -51,32 +53,40 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          * ({@code delete()} 가 useYn 을 'N' 으로 바꾼다)이고, 이 네이티브 질의에는 JPA
          * {@code @Filter} 가 걸리지 않는다. 빠뜨리면 <b>지운 글이 통계를 부풀린다.</b>
          */
-        @Query(value = """
-                        SELECT TO_CHAR(b.crt_dt, 'YYYY-MM-DD') AS statsDate, COUNT(*) AS cnt
-                        FROM tb_bbs_item b
-                        WHERE b.use_yn = 'Y'
-                          AND b.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND b.crt_dt < CAST(:toDate AS TIMESTAMP)
-                        GROUP BY TO_CHAR(b.crt_dt, 'YYYY-MM-DD')
+        default List<Object[]> countPostsByDate(String fromDate, String toDate) {
+                return countPostsPerDay(StatsTimestamp.parse(fromDate), StatsTimestamp.parse(toDate));
+        }
+
+        /** 일자 형식은 Hibernate 가 벤더 함수로 만든다. */
+        @Query("""
+                        SELECT format(b.crtDt as 'yyyy-MM-dd') AS statsDate, COUNT(b) AS cnt
+                        FROM Board b
+                        WHERE b.useYn = 'Y'
+                          AND b.crtDt >= :fromDate AND b.crtDt < :toDate
+                        GROUP BY format(b.crtDt as 'yyyy-MM-dd')
                         ORDER BY statsDate DESC
-                        """, nativeQuery = true)
-        List<Object[]> countPostsByDate(
-                        @Param("fromDate") String fromDate,
-                        @Param("toDate") String toDate);
+                        """)
+        List<Object[]> countPostsPerDay(
+                        @Param("fromDate") LocalDateTime fromDate,
+                        @Param("toDate") LocalDateTime toDate);
 
         /**
          * 반개방 구간 [fromDate, toDate) 안의 게시글 수. {@link #countPostsByDate} 와 같은 조건이되 날짜별로
-         * 묶지 않는다 — 실시간 대시보드가 오늘 건수 하나만 필요해서다. {@code use_yn = 'Y'} 를 명시하는
-         * 이유도 같다(네이티브 질의에는 {@code @Filter} 가 걸리지 않는다).
+         * 묶지 않는다 — 실시간 대시보드가 오늘 건수 하나만 필요해서다.
          */
-        @Query(value = """
-                        SELECT COUNT(*)
-                        FROM tb_bbs_item b
-                        WHERE b.use_yn = 'Y'
-                          AND b.crt_dt >= CAST(:fromDate AS TIMESTAMP) AND b.crt_dt < CAST(:toDate AS TIMESTAMP)
-                        """, nativeQuery = true)
-        long countPostsBetween(
-                        @Param("fromDate") String fromDate,
-                        @Param("toDate") String toDate);
+        default long countPostsBetween(String fromDate, String toDate) {
+                return countPostsInRange(StatsTimestamp.parse(fromDate), StatsTimestamp.parse(toDate));
+        }
+
+        @Query("""
+                        SELECT COUNT(b)
+                        FROM Board b
+                        WHERE b.useYn = 'Y'
+                          AND b.crtDt >= :fromDate AND b.crtDt < :toDate
+                        """)
+        long countPostsInRange(
+                        @Param("fromDate") LocalDateTime fromDate,
+                        @Param("toDate") LocalDateTime toDate);
 
         /**
          * 영구 삭제를 막아야 하는 게시글 보유 게시판 ID를 조회한다. 단건 판정도 이 질의 하나를 쓴다(ADR-0040 A0 —
@@ -152,20 +162,35 @@ public interface BoardRepository extends JpaRepository<Board, Long>, BoardReposi
          * 수정이 409 가 되지 않는다(조회수·추천 수 원자 UPDATE 와 같은 이유). 경로 게시판의 지우지 않은 글만 바꾼다 — 영향 수가
          * 대상 수와 다르면 호출부가 롤백한다(동시 삭제 경합).
          *
-         * @param endYmd 고정 종료일(yyyyMMdd). 해제면 null 이다. null 을 형 없이 넘기지 않으려고 문자열로 형을 정한다.
+         * @param endYmd 고정 종료일(yyyyMMdd). 해제면 null 이다. 형 없는 null 바인딩을 피하려고 문장을 나눈다.
          * @return 영향 행 수
          */
+        default int updatePin(String bbsId, List<Long> pstSns, String yn, String endYmd) {
+                return endYmd == null ? updatePinWithoutEndDate(bbsId, pstSns, yn) : updatePinUntil(bbsId, pstSns, yn, endYmd);
+        }
+
         @org.springframework.transaction.annotation.Transactional
         @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
         @Query(value = """
                         UPDATE tb_bbs_item
-                        SET upend_fix_yn = :yn, upend_fix_end_ymd = CAST(:endYmd AS VARCHAR(8))
+                        SET upend_fix_yn = :yn, upend_fix_end_ymd = :endYmd
                         WHERE bbs_id = :bbsId
                           AND pst_sn IN (:pstSns)
                           AND use_yn = 'Y'
                         """, nativeQuery = true)
-        int updatePin(@Param("bbsId") String bbsId, @Param("pstSns") List<Long> pstSns,
+        int updatePinUntil(@Param("bbsId") String bbsId, @Param("pstSns") List<Long> pstSns,
                         @Param("yn") String yn, @Param("endYmd") String endYmd);
+
+        @org.springframework.transaction.annotation.Transactional
+        @org.springframework.data.jpa.repository.Modifying(clearAutomatically = true, flushAutomatically = true)
+        @Query(value = """
+                        UPDATE tb_bbs_item
+                        SET upend_fix_yn = :yn, upend_fix_end_ymd = NULL
+                        WHERE bbs_id = :bbsId
+                          AND pst_sn IN (:pstSns)
+                          AND use_yn = 'Y'
+                        """, nativeQuery = true)
+        int updatePinWithoutEndDate(@Param("bbsId") String bbsId, @Param("pstSns") List<Long> pstSns, @Param("yn") String yn);
 
         /**
          * 조회수 원자 증가. [W1-17]

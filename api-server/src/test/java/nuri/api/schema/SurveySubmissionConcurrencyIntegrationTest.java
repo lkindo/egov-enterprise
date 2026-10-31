@@ -1,6 +1,8 @@
 package nuri.api.schema;
 
 import nuri.business.core.harness.QueryCountInspector;
+import nuri.business.domain.survey.SurveyResult;
+import nuri.business.domain.survey.SurveyResultRepository;
 import nuri.business.service.survey.SurveyResultService;
 import nuri.business.service.survey.SurveyService;
 import nuri.business.service.survey.dto.SurveyArticleDto;
@@ -48,6 +50,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class SurveySubmissionConcurrencyIntegrationTest {
     @Autowired private SurveyResultService service;
     @Autowired private SurveyService editor;
+    @Autowired private SurveyResultRepository results;
     @Autowired private EntityManager entityManager;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private DataSource dataSource;
@@ -435,6 +438,20 @@ class SurveySubmissionConcurrencyIntegrationTest {
         assertThat(page.getContent()).extracting(SurveyResultDto::rspdntAnsCn)
                 .containsExactly("열람 가능한 선택", null, null);
         assertThat(measuredArticleQueries(3)).as("소속 검증도 단일 항목 조회 결과에서 수행").hasSize(1);
+    }
+
+    @Test
+    void respondentSearchTreatsBlankAndMissingKeywordAsAll() {
+        String respondent = "검색응답자" + template;
+        response(firstQuestion, firstArticle, respondent, "vendor-sql", null, null);
+        long total = results.count();
+        PageRequest page = PageRequest.of(0, 1);
+
+        assertThat(results.searchByRspnsNm("", page).getTotalElements()).as("빈 검색어").isEqualTo(total);
+        assertThat(results.searchByRspnsNm(null, page).getTotalElements()).as("없는 검색어").isEqualTo(total);
+        assertThat(results.searchByRspnsNm(respondent.substring(1), page).getContent())
+                .extracting(SurveyResult::getRspnsNm).containsExactly(respondent);
+        assertThat(results.searchByRspnsNm("없는응답자" + respondent, page).getContent()).isEmpty();
     }
 
     private Page<SurveyResultDto> measuredResponseList(String respondent, int pageSize) {

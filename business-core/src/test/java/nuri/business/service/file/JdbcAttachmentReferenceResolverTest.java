@@ -412,21 +412,20 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.sqlFor(AttachmentSource.CMS_PAGE)).contains("WHERE f.atch_file_sn = ?");
         // 팝업만 연결 방식이 다르다 — URL 문자열 정확 일치.
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP))
-                .contains("WHERE (file_url = '/api/v1/files/' || ?");
+                .contains("WHERE (file_url = ? OR file_url = ?)");
     }
 
     @Test
-    @DisplayName("🚨 팝업 URL 안의 '?' 는 자리표시자가 아니다 — 리터럴을 세면 바인딩 개수가 어긋나 SQL 이 깨진다")
+    @DisplayName("🚨 팝업은 저장 형태로 완성한 URL 을 바인딩한다 — SQL 의 || 는 MySQL·MariaDB 에서 논리 OR 이다")
     void popupBindsAttachmentIdForEachLinkagePlaceholder() {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
 
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
-        // 연결 술어는 `'/api/v1/files/download?fileId=' || ?` 를 포함한다. 그 URL 안의 '?' 까지 세면
-        // 파라미터가 하나 더 붙어 JDBC 가 자리표시자 불일치로 실패한다(2026-08-04 실측).
-        // 소유(loginId) 1개 + 연결(atchFileSn) 2개 = 3개여야 한다.
+        // 소유(loginId) 1개 + 연결 URL 2개 = 3개여야 한다. 첨부 번호를 그대로 넘기면 file_url 과 같은 값이 없다.
         assertThat(jdbc.paramsFor(AttachmentSource.POPUP))
-                .containsExactly(LOGIN_ID, ATCH_FILE_SN, ATCH_FILE_SN);
+                .containsExactly(LOGIN_ID, "/api/v1/files/" + ATCH_FILE_SN, "/api/v1/files/download?fileId=" + ATCH_FILE_SN);
+        assertThat(jdbc.sqlFor(AttachmentSource.POPUP)).doesNotContain("||");
     }
 
     @Test

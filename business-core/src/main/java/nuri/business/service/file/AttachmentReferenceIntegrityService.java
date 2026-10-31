@@ -1,5 +1,6 @@
 package nuri.business.service.file;
 
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -13,8 +14,11 @@ import java.util.List;
 public class AttachmentReferenceIntegrityService {
     private final JdbcTemplate jdbc;
     private final List<AttachmentSource> sources;
+    private final VendorSqlDialect vendorSql;
 
-    public AttachmentReferenceIntegrityService(DataSource dataSource, List<AttachmentSourceContributor> contributors) {
+    public AttachmentReferenceIntegrityService(DataSource dataSource, List<AttachmentSourceContributor> contributors,
+            VendorSqlDialect vendorSql) {
+        this.vendorSql = vendorSql;
         jdbc = new JdbcTemplate(dataSource);
         jdbc.setQueryTimeout(10);
         sources = contributors.stream().flatMap(c -> c.sources().stream()).distinct()
@@ -35,17 +39,20 @@ public class AttachmentReferenceIntegrityService {
             if (!source.table().matches("tb_[a-z0-9_]+")) throw new IllegalStateException("Invalid source registry");
             boolean popup = source == AttachmentSource.POPUP;
             String column = popup ? "file_url" : "atch_file_sn";
+            // 행마다 첨부 번호가 달라 값을 미리 완성할 수 없다. 벤더의 연결식으로 잇는다.
+            String attachmentId = vendorSql.castToVarchar("m.atch_file_sn", 20);
             String predicate = popup
-                    ? "(src.file_url = '/api/v1/files/' || m.atch_file_sn OR src.file_url = '/api/v1/files/download?fileId=' || m.atch_file_sn)"
+                    ? "(src.file_url = " + vendorSql.concat("'/api/v1/files/'", attachmentId)
+                            + " OR src.file_url = " + vendorSql.concat("'/api/v1/files/download?fileId='", attachmentId) + ")"
                     : "src.atch_file_sn = m.atch_file_sn";
             String sourceFilter = popup
                     ? "file_url LIKE '/api/v1/files/%'"
                     : "atch_file_sn IS NOT NULL";
-            String sql = "SELECT COUNT(*) AS checked, COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM tb_file_master m WHERE "
-                    + predicate + ") THEN 0 ELSE 1 END), 0) AS dangling FROM (SELECT " + column
-                    + " FROM " + source.table() + " WHERE " + sourceFilter + " LIMIT ?) src";
             long remaining = maxReferences - checked;
-            long[] counts = jdbc.queryForObject(sql, (rs, row) -> new long[] {rs.getLong("checked"), rs.getLong("dangling")}, remaining + 1);
+            String references = vendorSql.limit("SELECT " + column + " FROM " + source.table() + " WHERE " + sourceFilter, remaining + 1);
+            String sql = "SELECT COUNT(*) AS checked, COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM tb_file_master m WHERE "
+                    + predicate + ") THEN 0 ELSE 1 END), 0) AS dangling FROM (" + references + ") src";
+            long[] counts = jdbc.queryForObject(sql, (rs, row) -> new long[] {rs.getLong("checked"), rs.getLong("dangling")});
             if (counts == null) throw new IllegalStateException("Reference census returned no aggregate");
             if (counts[0] > remaining) return new Result(checked, dangling, scanned, false);
             checked += counts[0];

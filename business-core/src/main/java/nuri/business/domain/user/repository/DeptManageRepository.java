@@ -16,16 +16,6 @@ public interface DeptManageRepository extends JpaRepository<DeptManage, String>,
     @Query("SELECT d FROM DeptManage d WHERE d.ognzId = :ognzId")
     java.util.Optional<DeptManage> findByIdForUpdate(@Param("ognzId") String ognzId);
 
-    interface ParentLink {
-        String getOgnzId();
-        String getUpOgnzId();
-    }
-
-    /** 계층 변경끼리 같은 순서로 잠그고, 대기한 변경은 앞선 커밋의 부모 관계를 다시 읽는다. */
-    @Query(value = "SELECT ognz_id AS \"ognzId\", up_ognz_id AS \"upOgnzId\" "
-            + "FROM tb_ognz_info ORDER BY ognz_id FOR NO KEY UPDATE", nativeQuery = true)
-    java.util.List<ParentLink> findParentLinksForUpdate();
-
     /** 하위 부서 수. 부서 삭제 가드에서 사용한다. [V2_26] */
     long countByUpOgnzId(String upOgnzId);
 

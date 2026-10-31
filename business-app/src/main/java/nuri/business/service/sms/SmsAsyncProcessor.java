@@ -33,6 +33,9 @@ public class SmsAsyncProcessor {
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
 
+    @org.springframework.beans.factory.annotation.Autowired(required = false)
+    private nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
+
     @org.springframework.beans.factory.annotation.Autowired
     public void setSelf(@org.springframework.context.annotation.Lazy SmsAsyncProcessor self) {
         this.self = self;
@@ -262,6 +265,6 @@ public class SmsAsyncProcessor {
         if (entityManager != null && entityManager.getEntityManagerFactory()
                 .unwrap(org.hibernate.engine.spi.SessionFactoryImplementor.class)
                 .getJdbcServices().getDialect() instanceof org.hibernate.dialect.PostgreSQLDialect)
-            entityManager.createNativeQuery("SET LOCAL lock_timeout = '2s'").executeUpdate();
+            entityManager.createNativeQuery(vendorSql.transactionLockWaitSql(java.time.Duration.ofSeconds(2))).executeUpdate();
     }
 }

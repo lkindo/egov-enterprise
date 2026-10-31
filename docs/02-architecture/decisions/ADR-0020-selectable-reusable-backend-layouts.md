@@ -1,7 +1,7 @@
 # ADR-0020 — 재사용 백엔드의 멀티모듈·단일모듈 출력 선택
 
 - 상태: Accepted
-- 후속 결정: 결정 5의 '레이아웃만 다른 경우 같은 프로필의 DB 번들을 사용'은 [DEC-OPS-239](../../archived/operational-decisions-history.md#dec-ops-239)가(DB 번들도 레이아웃마다 만든다), 결정 5와 '검증과 후속 범위'의 '누적 프로필' 표현은 [ADR-0028](ADR-0028-presets-are-named-domain-lists.md)이 대체한다. 레이아웃 축과 PostgreSQL 범위는 유지한다. 아래 본문은 당시 승인 기록이다.
+- 후속 결정: 결정 5의 '레이아웃만 다른 경우 같은 프로필의 DB 번들을 사용'은 [DEC-OPS-239](../../archived/operational-decisions-history.md#dec-ops-239)가(DB 번들도 레이아웃마다 만든다), 결정 5와 '검증과 후속 범위'의 '누적 프로필' 표현은 [ADR-0028](ADR-0028-presets-are-named-domain-lists.md)이 대체한다. 레이아웃 축과 PostgreSQL 범위는 유지한다. 아래 본문은 당시 승인 기록이다. 결정 5의 PostgreSQL 범위는 [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)이 대체했다.
 - 결정일: 2026-09-19
 - 승인 범위: 사용자가 명시한 원본 모듈 구조 유지와 두 가지 내보내기 형태 제공
 - supplements: [ADR-0001](ADR-0001-core-app-product-boundary.md)의 신규 프로젝트용 소스 배포 형태

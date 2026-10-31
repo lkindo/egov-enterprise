@@ -228,7 +228,7 @@ CLI는 `project:catalog`, `project:plan -- --recipe FILE`, `project:create -- --
 | B. 공통 composition | recipe·해석기·계획 조회·결속된 lock·비대화형 CLI 구현 | 기존 preset 결과의 동등성, 원본·DB·소스 식별 불일치 거부, 잘못된 요청의 무출력 실패, 결정적인 구성 해석 |
 | C. 업무 선택 | 21개 도메인·필수 의존성·소스/DB/메뉴/검토 범위 투영 구현 | core+각 선택 기능, 필수 의존 묶음, 선택적 연동, 전체 구성의 생존·제외 계약과 실제 산출물 검증 |
 | D. 로컬 UI | 별도 3100 UI·메뉴 미리보기·PG/배치 선택·작업 상태·recipe 저장 구현 | 같은 recipe의 CLI/UI 동등 결과, 키보드 조작, 입력 보존·중복 제출·오류 복구, 실제 전체 생성과 도입 환경 기동 검증 |
-| E. DB 확대 | 미구현; PostgreSQL만 제공 | 해당 vendor의 빈 DB 적용·스키마 검증·인가·대표 CRUD와 데이터 의미 검증 |
+| E. DB 확대 | [다중 DB 설계](multi-database-composer-design.md) 단계 0 진행 중; PostgreSQL만 제공 | 해당 vendor의 빈 DB 적용·스키마 검증·인가·대표 CRUD와 데이터 의미 검증 |
 
 A~D의 실행 경로가 있다는 사실과 개별 산출물의 검증 완료는 구분한다. 대표 custom 조합의 CI와 각 생성 작업의 full 검증을 완료 기준으로 삼는다. 미완성 조합이나 배치를 테스트 제외로 통과시키지 않고 실패 원인과 실행 증거를 남긴다.
 

@@ -873,6 +873,26 @@ class OnlinePollServiceTest {
     }
 
     @Test
+    @DisplayName("설문 투표 - 제약 이름을 대문자로 돌려주는 DB 의 이중투표 오류도 '이미 참여'로 안내한다")
+    void vote_UppercaseConstraintName_ThrowsAlreadyVoted() {
+        String today = seoulToday(0);
+        OnlinePollManage entity = OnlinePollManage.builder()
+                .pollSn(1L)
+                .pollDsuseYn("N")
+                .pollBgngYmd(today)
+                .pollEndYmd(today)
+                .build();
+        given(pollManageRepository.findByIdForShare(1L)).willReturn(Optional.of(entity));
+        given(pollResultRepository.countByPollSnAndFrstRegisterId(1L, "user1")).willReturn(0L);
+        given(pollResultRepository.saveAndFlush(any(OnlinePollResult.class)))
+                .willThrow(new DataIntegrityViolationException("ORA-00001: unique constraint (APP.UK_TB_ONLN_POLL_RSLT_POLL_VOTER) violated"));
+
+        assertThatThrownBy(() -> onlinePollService.vote(1L, 11L, "user1"))
+                .isInstanceOf(BusinessException.class)
+                .hasMessageContaining("이미 참여");
+    }
+
+    @Test
     @DisplayName("설문 투표 - 무결성 오류지만 이중투표 제약이 아니면 '이미 참여'로 오분류하지 않고 그대로 전파")
     void vote_NonDuplicateIntegrityError_Propagates() {
         // 이중투표 유니크 제약(uk_tb_onln_poll_rslt_poll_voter) 이외의 무결성 오류(예: value too long)는

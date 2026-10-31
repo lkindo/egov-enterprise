@@ -24,23 +24,23 @@ import static org.mockito.Mockito.when;
 class E2EDataCleansingConfigTest {
 
     private static final String E2E_POLL_PREDICATE =
-            "SELECT POLL_SN FROM TB_ONLN_POLL_MANAGE "
+            "SELECT POLL_SN FROM tb_onln_poll_manage "
                     + "WHERE POLL_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'";
     private static final String BOARD_SQL =
-            "UPDATE TB_BBS_ITEM SET USE_YN = 'N' "
+            "UPDATE tb_bbs_item SET USE_YN = 'N' "
                     + "WHERE PST_TTL LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'";
     private static final String POLL_RESULT_SQL =
-            "DELETE FROM TB_ONLN_POLL_RSLT WHERE POLL_SN IN (" + E2E_POLL_PREDICATE + ")";
+            "DELETE FROM tb_onln_poll_rslt WHERE POLL_SN IN (" + E2E_POLL_PREDICATE + ")";
     private static final String POLL_ARTICLE_SQL =
-            "DELETE FROM TB_ONLN_POLL_ARTCL WHERE POLL_SN IN (" + E2E_POLL_PREDICATE + ")";
+            "DELETE FROM tb_onln_poll_artcl WHERE POLL_SN IN (" + E2E_POLL_PREDICATE + ")";
     private static final String POLL_MANAGE_SQL =
-            "DELETE FROM TB_ONLN_POLL_MANAGE "
+            "DELETE FROM tb_onln_poll_manage "
                     + "WHERE POLL_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'";
     private static final String POPUP_SQL =
-            "DELETE FROM TB_POPUP_INFO "
+            "DELETE FROM tb_popup_info "
                     + "WHERE POPUP_TTL_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'";
     private static final String BANNER_SQL =
-            "DELETE FROM TB_BNR_INFO "
+            "DELETE FROM tb_bnr_info "
                     + "WHERE BNR_NM LIKE 'E2E %' OR FRST_RGTR_ID = 'E2E_USER'";
 
     @Test

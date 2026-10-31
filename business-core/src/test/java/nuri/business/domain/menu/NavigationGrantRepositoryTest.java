@@ -26,7 +26,7 @@ class NavigationGrantRepositoryTest {
         source.setURL("jdbc:h2:mem:navigation_" + UUID.randomUUID() + ";DB_CLOSE_DELAY=-1");
         jdbc = new JdbcTemplate(source);
         var named = new NamedParameterJdbcTemplate(source);
-        repository = new NavigationGrantRepository(named);
+        repository = new NavigationGrantRepository(named, new nuri.foundation.core.persistence.PostgresqlSqlDialect());
         jdbc.execute("CREATE TABLE tb_authrt_info(authrt_cd varchar(20) PRIMARY KEY,authrt_nm varchar(100),"
                 + "authrt_expln varchar(4000),authrt_crt_ymd varchar(8))");
         jdbc.execute("CREATE TABLE tb_menu_info(menu_sn bigint PRIMARY KEY,menu_nm varchar(100),up_menu_sn bigint,"

@@ -5,6 +5,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import jakarta.persistence.criteria.*;
 import lombok.RequiredArgsConstructor;
+import nuri.foundation.core.persistence.VendorSqlDialect;
+import nuri.foundation.core.persistence.VendorSqlDialect.UpsertColumn;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +20,41 @@ import java.util.Objects;
 @RequiredArgsConstructor
 public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
 
+    private static final List<UpsertColumn> ACTIVITY_KEYS = List.of(
+            new UpsertColumn("ocrn_ymd", "ocrnYmd"),
+            new UpsertColumn("dmnd_user_id", "dmndUserId"),
+            new UpsertColumn("srvc_nm", "srvcNm"),
+            new UpsertColumn("mthd_nm", "mthdNm"));
+    private static final List<UpsertColumn> ACTIVITY_COUNTERS = List.of(
+            new UpsertColumn("crt_cnt", "crtCnt"),
+            new UpsertColumn("mdfcn_cnt", "mdfcnCnt"),
+            new UpsertColumn("inq_cnt", "inqCnt"),
+            new UpsertColumn("del_cnt", "delCnt"),
+            new UpsertColumn("otpt_cnt", "otptCnt"),
+            new UpsertColumn("err_cnt", "errCnt"));
+
     @PersistenceContext
     private final EntityManager entityManager;
+    private final VendorSqlDialect vendorSql;
+
+    @Override
+    @Transactional
+    public int upsertActivityCounts(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
+            long crtCnt, long mdfcnCnt, long inqCnt, long delCnt, long otptCnt, long errCnt) {
+        return entityManager.createNativeQuery(vendorSql.upsertAddingCounters("tb_user_log", "pk_tb_user_log",
+                        ACTIVITY_KEYS, ACTIVITY_COUNTERS, "crt_dt", "mdfcn_dt"))
+                .setParameter("ocrnYmd", ocrnYmd)
+                .setParameter("dmndUserId", dmndUserId)
+                .setParameter("srvcNm", srvcNm)
+                .setParameter("mthdNm", mthdNm)
+                .setParameter("crtCnt", crtCnt)
+                .setParameter("mdfcnCnt", mdfcnCnt)
+                .setParameter("inqCnt", inqCnt)
+                .setParameter("delCnt", delCnt)
+                .setParameter("otptCnt", otptCnt)
+                .setParameter("errCnt", errCnt)
+                .executeUpdate();
+    }
 
     @Override
     public Page<UserLog> searchUserLogs(String searchWrd, String searchBgnDe, String searchEndDe, Pageable pageable) {
@@ -81,7 +116,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_USER_LOG WHERE OCRN_YMD < :targetDe";
+        String sql = "DELETE FROM tb_user_log WHERE OCRN_YMD < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();
