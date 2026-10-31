@@ -56,6 +56,8 @@ After those checks, delete the merged task branch locally and then remotely with
 
 Branch deletion does not authorize automatic worktree directory deletion. Keep the directory and untracked evidence unless cleanup of those exact contents is separately authorized.
 
+In this repository, retain the assigned persistent worktree under [SOP §6.6](../../../docs/03-guides/orchestration-protocol.md#66-작업-트리). After confirming the merge, ownership and clean state, stop only processes started for this task, run `git fetch --no-prune origin`, return this worktree to detached `origin/main`, and delete only the verified task branch as described above. Keep its installed dependencies and caches for the next task. A busy worktree or unfinished work belongs to its current session; do not repurpose it for another session.
+
 ## Discard Is a Separate Action
 
 Discarding unmerged work is outside normal branch completion. Before any destructive discard, identify the exact branch, commits, worktree path and affected files, then obtain explicit authorization for those contents. Do not treat approval to delete a merged branch as permission to discard work.
