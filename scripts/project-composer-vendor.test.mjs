@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
@@ -130,6 +131,14 @@ test('every adapter accounts for every key, constraint and index', () => {
     emission.coverage.delete('uk_t_parent_code');
     assert.throws(() => assertCoverage(sample, emission), isGap, `${adapter.id}: 선언 없는 축소는 붉다`);
   }
+});
+
+test('the Oracle lock slots match the range the dialect folds keys into', () => {
+  const dialect = readFileSync(resolve(ROOT, 'foundation/src/main/java/nuri/foundation/core/persistence/OracleSqlDialect.java'), 'utf8');
+  const slots = dialect.match(/LOCK_SLOTS = ([\d_]+);/)[1].replaceAll('_', '');
+  const sql = oracleAdapter.emitSchema(model()).statements.map(statement => statement.sql).join('\n');
+  // 행이 모자라면 잠금 조회가 0행을 받고 아무것도 잠그지 않은 채 지나간다.
+  assert.ok(sql.includes(`CONNECT BY LEVEL <= ${slots}`), `슬롯 ${slots}개`);
 });
 
 test('translations keep the semantics the differential found', () => {

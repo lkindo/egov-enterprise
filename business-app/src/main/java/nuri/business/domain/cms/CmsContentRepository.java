@@ -36,7 +36,8 @@ public interface CmsContentRepository extends JpaRepository<CmsContent, Long> {
      *
      * <p>"게시본과 다름" 은 제목·요약·문서를 현재 게시본과 비교한다. 요약은 NULL 과 빈 문자열을 같게 본다 — {@code COALESCE(x, '')} 는
      * {@code ''} 가 NULL 인 Oracle 에서 비교가 UNKNOWN 이 되어 요약만 바뀐 페이지가 빠지므로 길이로 판정한다. 문서는 jsonb 라 키 순서·공백과 상관없이 같은 값이면 같다 — 서버
-     * 검증기의 같은 문서 판정({@code CmsDocumentValidator#sameDocument})과 같은 의미다.
+     * 검증기의 같은 문서 판정({@code CmsDocumentValidator#sameDocument})과 같은 의미다. Oracle 은 문서가 CLOB 이라 글자로 비교한다.
+     * 키 순서만 다른 문서는 다르다고 나와 게시 대기에 남는다(앱이 같은 순서로 쓰므로 평소에는 닿지 않는다).
      */
     @Query("SELECT c FROM CmsContent c WHERE "
             + "(LOWER(c.contsTtl) LIKE LOWER(CONCAT('%', :keyword, '%')) ESCAPE '\\' "
@@ -51,10 +52,10 @@ public interface CmsContentRepository extends JpaRepository<CmsContent, Long> {
             + "  OR (:status = 'PENDING' AND c.kpngYn = 'N' AND ("
             + "      (c.contsRvsnSn IS NULL AND NOT EXISTS (SELECT 1 FROM CmsContentRevision r WHERE r.contsSn = c.contsSn)) "
             + "      OR EXISTS (SELECT 1 FROM CmsContentRevision r WHERE r.contsRvsnSn = c.contsRvsnSn "
-            + "          AND (r.contsTtl <> c.contsTtl OR r.contsExpln <> c.contsExpln "
+            + "          AND (r.contsTtl <> c.contsTtl OR function('text_differs', r.contsExpln, c.contsExpln) = 1 "
             + "               OR (r.contsExpln IS NULL AND LENGTH(c.contsExpln) > 0) "
             + "               OR (c.contsExpln IS NULL AND LENGTH(r.contsExpln) > 0) "
-            + "               OR r.contsDocCn <> c.contsDocCn))))) "
+            + "               OR function('text_differs', r.contsDocCn, c.contsDocCn) = 1))))) "
             + "ORDER BY c.mdfcnDt DESC, c.contsSn DESC")
     Page<CmsContent> search(@Param("keyword") String keyword, @Param("status") String status, Pageable pageable);
 }

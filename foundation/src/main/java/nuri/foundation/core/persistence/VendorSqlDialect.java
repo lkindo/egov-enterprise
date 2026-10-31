@@ -83,4 +83,14 @@ public interface VendorSqlDialect {
 
     /** 이 트랜잭션에서만 불변 원장의 삭제를 허용한다. 호출자는 쓰기 트랜잭션 안에 있어야 한다. */
     void permitLedgerDeletion(EntityManager entityManager, LedgerDeletionPermit permit);
+
+    /** 현재 스키마에 있는 표의 수를 세는 문장. 이름은 코드에 고정된 소문자 값만 받는다. */
+    String countTablesQuery(List<String> tables);
+
+    /** JDBC 제품명에 든 이름. 설정과 실제 DB 가 다르면 기동을 멈춘다. */
+    String databaseProductName();
+
+    /** 불변 원장 삭제 허가가 커밋된 채 남지 않았는지 기동 때 본다. 트랜잭션 지역 설정을 쓰는 벤더는 남을 수 없다. */
+    default void assertNoOpenLedgerPermit(JdbcOperations jdbc) {
+    }
 }

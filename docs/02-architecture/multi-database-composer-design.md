@@ -1,6 +1,6 @@
 # 프로젝트 생성기 다중 DB 설계
 
-- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1 완료. 벤더는 아직 고를 수 없다(§16)
+- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1 완료, 단계 2 진행 중. 벤더는 아직 고를 수 없다(§16·§17)
 - 기준 커밋: 첫 실측 `a3a3b182f`, 수정안 실측 `ce06495c7`(V2_146까지 포함).
 - 실측: 2026-10-30~31, 이 기계의 일회용 컨테이너. 저장소 변경 없음.
 - 관련: [생성기 설계](project-composer-design.md) §6·§8 E, ADR-0020, ADR-0008, DEC-OPS-239·262·263
@@ -194,8 +194,8 @@ flowchart TD
 | 이식 형태로 고침 | `LoginLogRepository.java:20,26` `\|\|` 와 `to_char` | 기간별 집계와 함께 Java 로 |
 | 포트 | `UserLogRepository.java:48` upsert | 벤더별 upsert |
 | Hibernate | `DurableJobRepository.java:24` `SKIP LOCKED` | `@Lock` 과 `lock.timeout` 힌트. Hibernate 가 벤더 문법을 만든다. CUBRID 는 상태 CAS |
-| 포트 | `DurableWorkService.java:46`, `AdministCodeRepositoryCustomImpl.java:28` advisory 잠금 | Oracle `DBMS_LOCK`, SQL Server `sp_getapplock`, 그 밖은 슬롯 잠금 테이블 |
-| 포트 | `AuditLedgerRetention.java:27`, `CmsContentRevisionRepository.java:51` 허가 | 벤더별 트랜잭션 범위 허가 |
+| 포트 | `DurableWorkService.java:46`, `AdministCodeRepositoryCustomImpl.java:28` advisory 잠금 | SQL Server `sp_getapplock`, 그 밖은 슬롯 잠금 테이블. Oracle 도 슬롯이다. `DBMS_LOCK` 은 앱 계정에 별도 실행 권한이 필요하다. 슬롯이 겹치면 무관한 키가 서로 기다리고, 한 트랜잭션이 키를 여럿 잠그면 교차 순서로 교착할 수 있어 슬롯을 65,536개로 둔다. 남는 충돌은 되돌림과 409 로 끝난다 |
+| 포트 | `AuditLedgerRetention.java:27`, `CmsContentRevisionRepository.java:51` 허가 | 벤더별 트랜잭션 범위 허가. Oracle 은 허가 표의 미커밋 행이고 커밋 직전 동기화로 회수한다(지우지 못하면 커밋을 멈춘다). 행마다 토큰이 키에 있어 중단된 바깥 트랜잭션의 행을 기다리지 않는다. 호출부는 그대로다 |
 | 포트 | `MenuRepository.java:19,52`, `DeptManageRepository.java:26`, `AuthorizationAdministrationService.java:346` `FOR NO KEY UPDATE`, `SmsAsyncProcessor.java:265` `SET LOCAL lock_timeout` | 벤더별 잠금 문장·대기 상한 |
 | 포트 | `NavigationGrantRepository.java:71`, `AuthorizationAdministrationService.java:125,213,626`, `AttachmentReferenceIntegrityService.java:46` `LIMIT` | 벤더별 페이징 문장 |
 | 포트 | `NavigationGrantRepository.java:69,81` `POSITION(:keyword IN ...)` 와 `:keyword=''` | 벤더별 부분 일치식(Oracle `INSTR`, SQL Server `CHARINDEX`). 빈 검색어는 Java 에서 null 로 정규화 |
@@ -216,11 +216,12 @@ flowchart TD
 | 문자열 비교 | MySQL `utf8mb4_0900_bin`, MariaDB `utf8mb4_nopad_bin`, SQL Server 는 컬럼에 `Korean_100_BIN2`(DB 기본은 CI 유지, 메타 식별자가 대소문자를 타지 않게), CUBRID 는 `utf8_bin` | 로그인 ID 대소문자 UNIQUE |
 | 뒤 공백 | SQL Server 만 차이가 남는다. 저하 목록에 올린다 | 프로브 고정 |
 | 빈 문자열 | Oracle·Tibero 는 `''` 가 NULL 이다. CHECK 의 `x <> ''` 는 NOT NULL 컬럼에서만 `x IS NOT NULL` 로 번역한다(현재 4개 모두 NOT NULL). NULL 허용 컬럼이면 정상 NULL 까지 거부하므로 그 항은 뺀다. `COALESCE(x, '') ~ p` 는 `x IS NOT NULL AND ...` 로 번역한다. 그냥 지우면 NULL 이 통과한다. 시드는 NULL 로 넣는다. NOT NULL 문자열 컬럼에 `""` 가 오면 400 으로 드러난다 | 통합 시험 |
-| 격리 수준 | MySQL·MariaDB 는 Hikari `READ_COMMITTED` 고정. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다 | 동시성 시험 |
+| 격리 수준 | MySQL·MariaDB 는 Hikari `READ_COMMITTED` 고정. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다. Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
 | NULL 순서 | `hibernate.order_by.default_null_ordering=last` 를 벤더 설정에 넣는다 | 정렬 시험 |
 | 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. 벤더별 표로 같은 응답을 낸다 | 벤더별 위반 시험 |
 | JSON | Oracle 은 19c 기준 CLOB + `IS JSON` 과 Hibernate 매핑을 맞춘다. 23 계열 기능에 기대지 않는다 | 스키마 검증 |
-| UUID·Instant | 저장 범위가 같으면 DDL 을 Hibernate 벤더 기본 매핑에 맞추고, 다르면 ORM 매핑을 바꾼다 | 스키마 검증 |
+| UUID·Instant | 저장 범위가 같으면 DDL 을 Hibernate 벤더 기본 매핑에 맞추고, 다르면 ORM 매핑을 바꾼다. Oracle 드라이버는 시간대 없는 컬럼을 시간대 있는 값으로 읽기를 거부해(ORA-18716) `Instant` 를 일반 `TIMESTAMP` 에 UTC 기준으로 저장한다. 첫 쓰기는 통과하고 그 행을 읽을 때 실패한다 | 스키마 검증, 재로그인 |
+| CLOB 비교 | Oracle 의 CLOB 은 `<>` 로 비교할 수 없고(ORA-22848) `COALESCE(clob, '')` 도 형이 맞지 않는다(ORA-00932). JPQL 은 `function('text_differs', a, b)` 를 쓰고 `COALESCE` 를 뺀다. 네이티브 조회의 CLOB 은 방언이 문자열로 읽는다 | 콘텐츠 페이지 목록·검색 |
 
 ## 6. 스키마 호환 처리(D-8)
 
@@ -259,6 +260,7 @@ flowchart TD
 | 벤더 | 한계 | 이유 | 처리 |
 |---|---|---|---|
 | Oracle | `''` 와 NULL 을 구분할 수 없다 | DB 의 정의다. 끌 수 없다 | NOT NULL 문자열에 `""` 가 오면 저장 실패, NULL 허용이면 `null` 로 돌아온다. 입력 정규화와 E2E 로 드러낸다 |
+| Oracle | `hibernate validate` 가 `VARCHAR2` 와 CLOB 을 구분하지 못한다 | 방언의 타입 비교가 길이를 받지 않아, 글자 수 1,000 초과 컬럼을 CLOB 으로 두려면 둘을 같다고 해야 한다 | 초기 스키마는 번역 번들이 만들어 이 문제가 없다. 생성 뒤 손으로 쓴 마이그레이션이나 손으로 고친 스키마에서 짧은 컬럼이 CLOB 이 되면 기동은 통과하고 비교에서 실패한다. 후속 마이그레이션은 컬럼 타입을 사람이 확인한다 |
 | Oracle(기본 설정) | 4,000바이트 초과 문자열을 `VARCHAR2` 에 못 담는다 | `MAX_STRING_SIZE=STANDARD` | CLOB 는 `=`·`DISTINCT`·`ORDER BY`·`GROUP BY`·인덱스를 못 쓴다. EXTENDED 는 되돌릴 수 없다(§14) |
 | SQL Server | `=`·UNIQUE 가 뒤 공백을 무시한다 | 표준 패딩 비교. `BIN2` 로도 안 바뀐다 | `abc` 와 `abc ` 가 같은 키다. 키 값은 앱에서 잘라 저장하고 저하로 표시 |
 | SQL Server | 인덱스 키 1,700바이트 | 엔진 상한 | 긴 컬럼 키는 해시·INCLUDE 로 우회 |
@@ -439,3 +441,32 @@ Oracle 문장 수가 많은 것은 컬럼 주석을 별도 문장으로 쓰기 �
 | 독립 검토 | 긴 Oracle 시드가 이모지를 잘랐다. 2^53 을 넘는 숫자가 조용히 바뀐다. 의미를 바꾸는 캐스트, EXCLUDE, 조건부 표현식 인덱스가 문법을 빠져나갔다 | 코드 포인트 분할, 정확히 옮길 수 없는 값·식은 번역 중단 |
 
 남은 일은 단계 2 부터다: 벤더별 `VendorSqlDialect` 구현, 소스 투영(D-11), 앱 기동과 Hibernate validate, 통합 시험 이식, 인증 증거(D-9), 화면 선택지(D-13)다. 이 PR 은 벤더 번들을 만들지 않으므로 생성물 번들 형식(D-5)도 그 단계에서 정한다.
+
+## 17. 단계 2 진행 결과
+
+단계 2 의 앞부분은 앱을 Oracle 에서 띄우고 실제로 호출해 보는 일이다. 벤더는 아직 고를 수 없고 인증 증거도 없다.
+
+전체 기능 구성의 번역 스키마와 시드를 Oracle 23.26 Free 에 적용하고 앱을 기동했다. `ddl-auto: validate` 가 전체 엔티티를 통과하고, 권한 배리어와 벤더 일치 검사를 지나 관리자 로그인까지 된다. 방언은 설정 없이 JDBC 제품명으로 고른다. 호출은 일회용 DB 의 관리자에게 미배정 권한까지 준 상태로 했다. Oracle 19c 위 앱 기동은 아직 재지 않았다(번역 적용·대조만 했다).
+
+| 호출 | 수 | 결과 |
+|---|---:|---|
+| GET 전체 | 206 | 2xx 126, 400 8, 404 71, 500 1. 500 은 의도된 디버그 오류 하나다 |
+| 쓰기 전체(스키마로 만든 본문, 실제 식별자) | 220 | 2xx 77, 나머지는 입력·상태 검증 응답이다. 5xx 0, 미분류 DB 오류 0 |
+| 핵심 흐름 | 23 | 전부 통과. 게시글(4,000자 12KB 한글·이모지 재조회, 낙관 잠금 409), 추천, 댓글, 첨부, 쪽지, 콘텐츠 페이지 게시·파기(감사 원장 허가), 결재 상신·승인 |
+| 시간대 | - | KST JVM 에서 받은 갱신 쿠키를 UTC JVM 으로 재기동한 뒤 재발급 200. 저장 만료는 UTC 현재 기준 168시간 그대로다 |
+| 예약 작업 | - | 활동 집계(MERGE upsert)와 로그 보존 정리가 오류 없이 돈다 |
+
+쓰기 스윕의 2xx 는 77건뿐이다. 나머지는 업무 검증에서 멈추므로 **그 쓰기 SQL 이 Oracle 에서 동작한다는 증거가 아니다.** 통합 시험 이식이 그 자리를 메운다.
+
+한 번은 전체 호출 도중 앱 JVM 이 네이티브 오류(0xC0000005)로 끝났다. 크래시 파일과 Windows 오류 이벤트가 남지 않아 원인을 특정하지 못했고, 같은 순서를 다시 돌렸을 때는 재현되지 않았다. 재현되지 않았을 뿐 해결된 것은 아니다.
+
+앞 단계가 놓친 오류가 앱을 띄우자 드러났다.
+
+| 찾은 곳 | 오류 | 처리 |
+|---|---|---|
+| 재로그인 | 첫 로그인은 통과하고 두 번째가 500 이다. 첫 로그인이 만든 갱신 토큰 행을 `Instant` 로 읽다 드라이버가 거부했다(ORA-18716). 스키마 검증과 첫 쓰기로는 잡히지 않는다 | `Instant` 를 일반 `TIMESTAMP` 에 UTC 기준으로 저장 |
+| 권한 화면 | `REPEATABLE READ` 를 드라이버가 거부해(ORA-17030) 503 이다 | 연결에서 `SERIALIZABLE` 로 변환 |
+| 콘텐츠 목록·검색 | CLOB 비교(ORA-22848)와 `COALESCE`(ORA-00932) | `text_differs` 함수, `COALESCE` 제거 |
+| 메뉴 구조 | 네이티브 인터페이스 투영이 CLOB 을 문자열로 못 바꾼다 | 방언이 네이티브 CLOB 을 문자열로 읽는다 |
+| 사용자 삭제 | `bool_or` 는 PostgreSQL 전용 집계다. 린터 규칙에 없어 단계 0 을 통과했다 | 표준 `MAX(CASE ...)`, 린터가 PostgreSQL 전용 함수 묶음을 막는다 |
+| 오류 분류 | Oracle 은 무결성 위반의 SQLState 가 모두 23000 이다. 벤더 번호를 보지 않으면 CHECK 위반이 409 중복으로 나간다 | 벤더 오류 번호 표 |

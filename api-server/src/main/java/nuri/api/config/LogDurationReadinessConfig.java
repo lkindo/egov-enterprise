@@ -10,11 +10,13 @@ import org.springframework.beans.factory.config.BeanFactoryPostProcessor;
 import org.springframework.boot.sql.init.dependency.DependsOnDatabaseInitialization;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.context.annotation.Profile;
 
 /** New log readers/writers cannot start with an incomplete Sync even when remote Flyway is disabled. */
 @Configuration
 @Profile({"!test & !mock-security & !mock-security-test", "tc"})
+@ConditionalOnProperty(name = "app.database.vendor", havingValue = "postgresql", matchIfMissing = true)
 public class LogDurationReadinessConfig {
     @Bean
     static BeanFactoryPostProcessor logDurationReadinessDependency() {

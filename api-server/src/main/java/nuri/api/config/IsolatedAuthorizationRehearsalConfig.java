@@ -63,7 +63,7 @@ public class IsolatedAuthorizationRehearsalConfig {
                             statement.execute(new String(input.readAllBytes(),StandardCharsets.UTF_8));
                         }
                     }
-                    AuthorizationSchemaBarrierConfig.verify(jdbc);
+                    AuthorizationSchemaBarrierConfig.verify(jdbc, new nuri.foundation.core.persistence.PostgresqlSqlDialect());
                     connection.commit();
                 } catch (Exception failure) {
                     connection.rollback();

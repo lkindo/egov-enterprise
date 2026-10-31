@@ -1,6 +1,8 @@
 package nuri.api.schema;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 import java.util.UUID;
@@ -159,8 +161,9 @@ class PopupInputPolicyIntegrationTest {
 
     @Test
     void attachmentGrantStaysOnTheAttachmentThePopupPointsAt() {
-        insertPopup("/api/v1/files/987654321", "Y", "CURRENT_DATE - 1", "CURRENT_DATE + 1");
-        insertPopup("/api/v1/files/download?fileId=987654322", "Y", "CURRENT_DATE - 1", "CURRENT_DATE + 1");
+        LocalDate today = koreanToday();
+        insertPopup("/api/v1/files/987654321", "Y", today.minusDays(1), today.plusDays(1));
+        insertPopup("/api/v1/files/download?fileId=987654322", "Y", today.minusDays(1), today.plusDays(1));
 
         assertThat(attachments.resolve(987654321L, null, null).sharedGrant()).as("path URL").isTrue();
         assertThat(attachments.resolve(987654322L, null, null).sharedGrant()).as("query URL").isTrue();
@@ -169,9 +172,10 @@ class PopupInputPolicyIntegrationTest {
 
     @Test
     void attachmentOfAnUnpublishedPopupIsNotShared() {
-        insertPopup("/api/v1/files/987654331", "N", "CURRENT_DATE - 1", "CURRENT_DATE + 1");
-        insertPopup("/api/v1/files/987654332", "Y", "CURRENT_DATE + 1", "CURRENT_DATE + 2");
-        insertPopup("/api/v1/files/987654333", "Y", "CURRENT_DATE - 2", "CURRENT_DATE - 1");
+        LocalDate today = koreanToday();
+        insertPopup("/api/v1/files/987654331", "N", today.minusDays(1), today.plusDays(1));
+        insertPopup("/api/v1/files/987654332", "Y", today.plusDays(2), today.plusDays(3));
+        insertPopup("/api/v1/files/987654333", "Y", today.minusDays(3), today.minusDays(2));
 
         // POPUP_READ is a default user permission, so holding it must not open a draft.
         var reader = CustomUserDetails.builder().userId("popup-reader").esntlId("POPUP_READER").enabled(true).lockAt("N")
@@ -212,9 +216,17 @@ class PopupInputPolicyIntegrationTest {
         }
     }
 
-    private void insertPopup(String fileUrl, String notice, String start, String end) {
-        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,ntce_yn,ntce_bgnde,ntce_endde,frst_rgtr_id) VALUES (?,?,?,"
-                + start + "," + end + ",?)", fixture, fileUrl, notice, actorLogin);
+    /**
+     * 게시 기간은 앱과 같은 한국 날짜로 만든다. 시험 JVM 은 UTC 라 DB 의 CURRENT_DATE 는 한국 0시~9시에 하루 뒤처지고, 그때 내일 시작하는
+     * 팝업이 오늘 게시 중이 된다. 미래·과거 표본은 이틀 떨어뜨려 실행 중 자정을 넘겨도 뒤집히지 않는다.
+     */
+    private static LocalDate koreanToday() {
+        return LocalDate.now(ZoneId.of("Asia/Seoul"));
+    }
+
+    private void insertPopup(String fileUrl, String notice, LocalDate start, LocalDate end) {
+        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,ntce_yn,ntce_bgnde,ntce_endde,frst_rgtr_id) VALUES (?,?,?,?,?,?)",
+                fixture, fileUrl, notice, start, end, actorLogin);
     }
 
     private PopupDto popupRequest() {

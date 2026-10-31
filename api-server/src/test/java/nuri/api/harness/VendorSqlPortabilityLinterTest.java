@@ -55,7 +55,8 @@ class VendorSqlPortabilityLinterTest {
             Rule.of("cast-operator", "(?i)[\\w)'\"?\\]]\\s*::\\s*(text|int|int2|int4|int8|integer|smallint|bigint|bool|boolean"
                     + "|varchar|char|bpchar|numeric|decimal|real|float4|float8|double|json|jsonb|uuid|inet|bytea|interval"
                     + "|date|time|timestamp|timestamptz|regclass|regtype)\\b"),
-            Rule.of("pg-function", "(?i)\\bpg_[a-z_]+|\\bset_config\\s*\\(|\\bto_regclass\\s*\\(|\\bto_regprocedure\\s*\\("),
+            Rule.of("pg-function", "(?i)\\bpg_[a-z_]+|\\b(set_config|current_setting|to_regclass|to_regprocedure"
+                    + "|bool_or|bool_and|string_agg|array_agg|unnest|generate_series|date_trunc|jsonb?_[a-z_]+)\\s*\\("),
             Rule.of("on-conflict", "(?i)\\bON\\s+CONFLICT\\b"),
             Rule.of("skip-locked", "(?i)\\bSKIP\\s+LOCKED\\b"),
             Rule.of("no-key-update", "(?i)\\bFOR\\s+NO\\s+KEY\\s+UPDATE\\b"),
@@ -178,6 +179,9 @@ class VendorSqlPortabilityLinterTest {
         "pg-function;SELECT pg_advisory_xact_lock(?)",
         "pg-function;SELECT PG_ADVISORY_XACT_LOCK(?)",
         "pg-function;SELECT set_config('a', 'on', true)",
+        "pg-function;HAVING bool_or(a = 'x')",
+        "pg-function;SELECT string_agg(a, ',') FROM t",
+        "pg-function;SELECT jsonb_build_object('a', 1)",
         "on-conflict;INSERT INTO t VALUES (1) ON CONFLICT DO NOTHING",
         "skip-locked;SELECT * FROM t FOR UPDATE SKIP LOCKED",
         "no-key-update;SELECT * FROM t FOR NO KEY UPDATE",
