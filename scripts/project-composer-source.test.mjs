@@ -836,7 +836,9 @@ test('the marker ratchet is red for an added or removed block, an undeclared blo
   // 로더도 한 기능 파일 안의 같은 파일 선언 둘을 거부한다. 경로 접두로 소유를 짐작하지 않는다 — 소유는 토큰이다.
   const files = readComposerModuleFiles(root);
   const board = files['board.json'];
-  const twice = { ...files, 'board.json': { ...board, owns: { ...board.owns, markerBlocks: [...board.owns.markerBlocks, board.owns.markerBlocks[0]] } } };
+  const duplicate = board.owns.markerBlocks.find(row => row.file === 'src/app/search/SearchClient.tsx');
+  assert.ok(duplicate, 'the duplicate probe targets the declared board search marker');
+  const twice = { ...files, 'board.json': { ...board, owns: { ...board.owns, markerBlocks: [...board.owns.markerBlocks, duplicate] } } };
   assert.throws(() => composerMarkerDeclarations(twice), /marker blocks are declared twice: src\/app\/search\/SearchClient\.tsx\/board/);
 });
 
