@@ -46,7 +46,7 @@ function jsonObjectRule(node) {
 }
 
 /** PostgreSQL CHECK 는 식이 NULL 이면 통과한다. 앞쪽이 NULL 일 수 있는 논리값 등식은 의미를 지키지 못해 멈춘다. */
-function expandIff(node, table) {
+export function expandIff(node, table) {
   const nullable = [...columnsIn(node.left)].filter(name => table.columns.find(column => column.name === name)?.nullable);
   if (nullable.length || node.left.op !== 'compare') gap(`${table.name}: 논리값 등식의 왼쪽은 NOT NULL 비교여야 한다`);
   const negate = item => {
@@ -103,7 +103,9 @@ export function violationExpression(node, dialect, table) {
     case 'iff': return again(expandIff(node, table));
     case 'isNull': return `${render(node.arg)} IS NOT NULL`;
     case 'isNotNull': return `${render(node.arg)} IS NULL`;
-    case 'in': return [...guard(node, dialect), `${render(node.arg)} NOT IN (${node.values.map(dialect.string).join(', ')})`].join(' AND ');
+    case 'in':
+      if (containsOp(node, 'coalesce')) gap(`${table.name}: NULL 을 값으로 바꾸는 목록 비교는 위반식으로 옮길 수 없다`);
+      return [...guard(node, dialect), `${render(node.arg)} NOT IN (${node.values.map(dialect.string).join(', ')})`].join(' AND ');
     case 'regex':
       if (node.arg.op === 'coalesce') return `NOT (${render(node)})`;
       if (containsOp(node.arg, 'coalesce')) gap(`${table.name}: 중첩된 COALESCE 는 위반식으로 옮길 수 없다`);
@@ -168,9 +170,13 @@ export function emitRows(model, rows, adapter) {
 
 export const escapeString = value => String(value).replaceAll("'", "''");
 
-/** JSON 으로 읽은 숫자는 2^53 을 넘으면 값이 바뀐다. 조용히 틀린 값을 넣지 않고 멈춘다. */
+/** 십진 15자리까지는 배정밀도 왕복이 값을 보존한다. 앞의 0 은 자릿수가 아니다. */
+const significantDigits = value => String(Math.abs(value)).replace(/e[-+]?\d+$/, '').replace('.', '').replace(/^0+/, '').length;
+
+/** JSON 으로 읽은 숫자는 2^53 이나 15자리를 넘으면 값이 바뀔 수 있다. 조용히 틀린 값을 넣지 않고 멈춘다. */
 export function exactNumber(value, label) {
-  if (typeof value !== 'number' || (Number.isInteger(value) ? !Number.isSafeInteger(value) : String(value).replace(/[-.]/g, '').length > 15)) gap(`정확히 옮길 수 없는 숫자: ${label}`);
+  const exact = typeof value === 'number' && (Number.isInteger(value) ? Number.isSafeInteger(value) : Number.isFinite(value) && significantDigits(value) <= 15);
+  if (!exact) gap(`정확히 옮길 수 없는 숫자: ${label}`);
   return value;
 }
 

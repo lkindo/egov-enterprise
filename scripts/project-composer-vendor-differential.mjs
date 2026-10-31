@@ -10,6 +10,7 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { buildVendorModel, columnsIn, gap } from './project-composer-vendor-model.mjs';
+import { expandIff } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
 import { parseCount, runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
 
@@ -95,11 +96,7 @@ function satisfying(node, table) {
       }
       return merged;
     }
-    case 'iff': {
-      const other = { op: 'compare', operator: node.left.operator === '=' ? '<>' : '=', left: node.left.left, right: node.left.right };
-      const flipped = node.right.op === 'isNotNull' ? { ...node.right, op: 'isNull' } : { ...node.right, op: 'isNotNull' };
-      return [...satisfying({ op: 'and', args: [node.left, node.right] }, table), ...satisfying({ op: 'and', args: [other, flipped] }, table)];
-    }
+    case 'iff': return satisfying(expandIff(node, table), table);
     case 'isNull': return hard(nameOf(node), null);
     case 'isNotNull': return hard(nameOf(node), anyValue(nameOf(node)));
     case 'in': return hard(nameOf(node), node.values[0]);
@@ -116,7 +113,8 @@ function satisfying(node, table) {
       }
       if (node.right.op === 'number') {
         const value = node.operator === '>' ? node.right.value + 1 : node.operator === '<' ? node.right.value - 1 : node.right.value;
-        return hard(name, node.operator === '<>' ? value + 1 : value);
+        // 범위의 양 끝은 서로를 만족하므로 고정값이 아니다.
+        return soft(name, node.operator === '<>' ? value + 1 : value);
       }
       if (node.right.op === 'column') {
         const [low, high] = sampleByType(columnOf(name));

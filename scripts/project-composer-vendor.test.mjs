@@ -89,6 +89,15 @@ test('a cast that changes the comparison stops the translation', () => {
   assert.throws(() => parseExpression("c::text = 'x'::text", ['a', 'b', 'c'], kinds), isGap);
   assert.throws(() => parseExpression('b::numeric >= 0', ['a', 'b', 'c'], kinds), isGap);
   assert.doesNotThrow(() => parseExpression("b::text = 'x'::text AND a >= 0::numeric", ['a', 'b', 'c'], kinds));
+  // 같은 숫자 계열이어도 numeric 을 integer 로 줄이면 반올림된다.
+  const numeric = new Map([['n', 'numeric'], ['big', 'bigint'], ['s', 'varchar']]);
+  assert.throws(() => parseExpression('n::integer <> 1', ['n', 'big', 's'], numeric), isGap);
+  assert.throws(() => parseExpression('big::integer <> 1', ['n', 'big', 's'], numeric), isGap);
+  assert.doesNotThrow(() => parseExpression('big::numeric >= 0::numeric', ['n', 'big', 's'], numeric));
+  // 함수와 식의 결과 캐스트는 뜻을 보장하지 못한다.
+  assert.throws(() => parseExpression('char_length(s)::numeric > 0', ['n', 'big', 's'], numeric), isGap);
+  assert.throws(() => parseExpression('(big + 1)::text = 1', ['n', 'big', 's'], numeric), isGap);
+  assert.doesNotThrow(() => parseExpression("COALESCE(s, ''::character varying)::text ~ '^[0-9]{8}$'::text", ['n', 'big', 's'], numeric));
 });
 
 test('constraints and indexes outside the grammar are refused, not dropped', () => {
@@ -169,6 +178,7 @@ test('the violation form never yields NULL and refuses NULL absorbing comparison
   assert.throws(() => violationExpression(parseExpression("COALESCE(b, ''::character varying) = 'x'::text", ['a', 'b']), dialect, table), isGap);
   // 깊은 곳의 COALESCE 도 NULL 가드를 틀리게 한다.
   assert.throws(() => violationExpression(parseExpression("char_length(COALESCE(b, ''::character varying)) > 0", ['a', 'b']), dialect, table), isGap);
+  assert.throws(() => violationExpression(parseExpression("btrim(COALESCE(b, 'X'::character varying)) = ANY (ARRAY['Y'::text])", ['a', 'b']), dialect, table), isGap);
   // 왼쪽이 NULL 일 수 있는 논리값 등식은 전개하면 의미가 달라진다.
   assert.throws(() => violationExpression(parseExpression("(b::text = 'x'::text) = (a IS NOT NULL)", ['a', 'b']), dialect, table), isGap);
 });
@@ -183,19 +193,23 @@ test('long Oracle literals split on code points, and numbers JSON cannot keep ar
   assert.ok(parts.every(part => Buffer.byteLength(part) <= 4000));
   assert.throws(() => exactNumber(9007199254740992, 'x'), isGap);
   assert.equal(exactNumber(9007199254740991, 'x'), 9007199254740991);
+  for (const value of [0, -1, 0.5, 2 ** -15, -0.25, 1e-7]) assert.equal(exactNumber(value, 'x'), value);
+  assert.throws(() => exactNumber(0.1234567890123456, 'x'), isGap);
   const big = model();
   assert.throws(() => nextValues(big, { t_parent: [{ id: 9007199254740992 }] }), isGap);
 });
 
 test('a client that stopped early is a failed run, not a rejected value', () => {
   const statements = [{ sql: 'INSERT 1' }, { sql: 'INSERT 2' }];
-  const errors = /^ERROR \d+/;
-  const done = collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 3819 (HY000): Check constraint is violated\n' }, statements, errors, 'mysql');
+  const errors = { errors: /^ERROR \d+/, fatal: /^ERROR (2006|2013)\b/ };
+  const done = collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 3819 (HY000): Check constraint is violated\n@@COMPLETED\n' }, statements, errors, 'mysql');
   assert.deepEqual(done.errors.map(item => item.index), [1]);
   const notReady = error => error.code === 'VENDOR_ENGINE_NOT_READY';
-  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n' }, statements, errors, 'mysql'), notReady, '표식이 끊기면 실패다');
+  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '문장 표식이 빠지면 실패다');
+  assert.throws(() => collectResults({ status: 137, stdout: '@@0\n@@1\n', stderr: 'Killed\n' }, statements, errors, 'mysql'), notReady, '마지막 문장 뒤의 단절도 실패다');
+  assert.throws(() => collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 2013 (HY000): Lost connection\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '연결 단절은 값 거부가 아니다');
   assert.throws(() => collectResults({ status: 0, stdout: '' }, statements, errors, 'mysql'), notReady, '접속 실패의 빈 출력은 전부 통과가 아니다');
-  assert.throws(() => collectResults({ status: null, signal: 'SIGTERM', stdout: '@@0\n@@1\n' }, statements, errors, 'mysql'), notReady, '시간 초과는 실패다');
+  assert.throws(() => collectResults({ status: null, signal: 'SIGTERM', stdout: '@@0\n@@1\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '시간 초과는 실패다');
   assert.throws(() => collectResults({ status: 1, error: new Error('spawn failed') }, statements, errors, 'mysql'), notReady);
   assert.equal(parseCount(['<00001>  count(*): 3']), 3);
   assert.equal(parseCount(['0']), 0);
@@ -248,6 +262,15 @@ test('the differential probes both sides of every rule', () => {
   const candidates = probeRows({ expression }, shape);
   assert.ok(candidates.some(row => row.a === 'X' && row.b === null && row.c === null));
   assert.ok(candidates.some(row => row.a === 'Y' && row.b !== null && row.c === null));
+  // 범위의 양 끝은 서로 충돌하지 않는다.
+  const bounded = { name: 't', columns: [{ name: 'n', nullable: false, type: { kind: 'integer' } }, { name: 'b', nullable: true, type: { kind: 'varchar', length: 5 } }] };
+  const range = probeRows({ expression: parseExpression('n >= 1 AND n <= 10 AND b IS NULL', ['n', 'b']) }, bounded);
+  assert.ok(range.some(row => row.n >= 1 && row.n <= 10 && row.b === null));
+  // 오른쪽도 비교인 논리값 등식은 양쪽 가지를 만든다.
+  const paired = { name: 't', columns: ['a', 'b'].map(name => ({ name, nullable: false, type: { kind: 'varchar', length: 5 } })) };
+  const iff = probeRows({ expression: parseExpression("(a::text = 'X'::text) = (b::text = 'Y'::text)", ['a', 'b']) }, paired);
+  assert.ok(iff.some(row => row.a === 'X' && row.b === 'Y'));
+  assert.ok(iff.some(row => row.a !== 'X' && row.b !== 'Y'));
 });
 
 test('only certified vendors can be chosen and the ledger names every vendor', () => {

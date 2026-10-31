@@ -15,14 +15,18 @@ const docker = (args, options = {}) => spawnSync('docker', args, { encoding: 'ut
 const sleep = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 const fail = (code, message) => { const error = new Error(message); error.code = code; throw error; };
 
+/** 끝까지 실행했다는 표식. 문장 표식만으로는 마지막 문장 뒤의 단절을 알 수 없다. */
+const COMPLETED = '@@COMPLETED';
+
 const oracleBatch = {
-  terminator: '', errors: /^(ORA-\d+|SP2-\d+|PLS-\d+)/,
+  errors: /^(ORA-\d+|SP2-\d+|PLS-\d+)/, fatal: /^(ORA-0?3113|ORA-0?3114|ORA-0?1012|SP2-0640|SP2-0306|SP2-0157)\b/,
+  finish: `PROMPT ${COMPLETED}`,
   wrap: body => `SET DEFINE OFF\nSET SQLBLANKLINES ON\nSET FEEDBACK OFF\nSET PAGESIZE 0\nSET HEADING OFF\nSET LINESIZE 300\nSET LONG 100000\nSET ECHO OFF\n${body}\nCOMMIT;\nEXIT\n`,
   mark: (index, statement) => (statement.raw ? `PROMPT @@${index}\n${statement.sql}\n/` : `PROMPT @@${index}\n${statement.sql};`),
 };
 
 const mysqlBatch = {
-  errors: /^ERROR \d+/,
+  errors: /^ERROR \d+/, fatal: /^ERROR (2002|2003|2006|2013)\b/, finish: `SELECT '${COMPLETED}';`,
   wrap: body => `SET NAMES utf8mb4;\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n${body}\nCOMMIT;\n`,
   mark: (index, statement) => (statement.raw ? `SELECT '@@${index}';\nDELIMITER $$\n${statement.sql}$$\nDELIMITER ;` : `SELECT '@@${index}';\n${statement.sql};`),
 };
@@ -66,14 +70,14 @@ export const VENDOR_ENGINES = Object.freeze({
     environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer' }),
     ready: name => docker(['exec', name, 'sh', '-c', `/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF DB_ID('${SCHEMA}') IS NULL CREATE DATABASE ${SCHEMA}; ALTER DATABASE ${SCHEMA} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"`]).status === 0,
     command: file => `/opt/mssql-tools18/bin/sqlcmd -C -I -f 65001 -h -1 -W -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d ${SCHEMA} -i ${file}`,
-    batch: { errors: /^Msg \d+, Level (1[1-9]|2\d)/, wrap: body => `SET NOCOUNT ON\nGO\n${body}\n`, mark: (index, statement) => `PRINT '@@${index}'\nGO\n${statement.sql}\nGO` },
+    batch: { errors: /^Msg \d+, Level (1[1-9]|2\d)/, fatal: /^(Sqlcmd: Error|Msg \d+, Level 2\d)/, finish: `PRINT '${COMPLETED}'\nGO`, wrap: body => `SET NOCOUNT ON\nGO\n${body}\n`, mark: (index, statement) => `PRINT '@@${index}'\nGO\n${statement.sql}\nGO` },
   },
   cubrid: {
     image: 'cubrid/cubrid:latest', maxWaitSeconds: 120, user: 'cubrid',
     environment: () => ({ CUBRID_DB: SCHEMA, CUBRID_LOCALE: 'ko_KR.utf8', CUBRID_VOLUME_SIZE: '512M' }),
     ready: name => docker(['exec', '-u', 'cubrid', name, 'sh', '-c', `csql -u dba -c "select 1 from db_root" ${SCHEMA}@localhost`]).status === 0,
     command: file => `csql -u dba -e -l -i ${file} ${SCHEMA}@localhost`,
-    batch: { errors: /^(ERROR:|Execute:.*error)/i, wrap: body => `${body}\nCOMMIT;\n`, mark: (index, statement) => `SELECT '@@${index}' AS m FROM db_root;\n${statement.sql};` },
+    batch: { errors: /^(ERROR:|Execute:.*error)/i, fatal: /(Failed to connect|Server .* is not running|connection (has been )?(lost|closed|aborted))/i, finish: `SELECT '${COMPLETED}' AS m FROM db_root;`, wrap: body => `${body}\nCOMMIT;\n`, mark: (index, statement) => `SELECT '@@${index}' AS m FROM db_root;\n${statement.sql};` },
   },
 });
 
@@ -113,7 +117,7 @@ export const parseCount = lines => {
  * 클라이언트 출력을 문장별로 나눈다. 값 거부는 문장 오류로 돌려주고, 실행 자체의 실패는 던진다.
  * 접속이 끊긴 클라이언트도 종료 코드 0 을 낼 수 있어 문장마다 표식이 나왔는지 본다.
  */
-export function collectResults(result, statements, errorPattern, label) {
+export function collectResults(result, statements, batch, label) {
   if (result.error || result.status === null) fail('VENDOR_ENGINE_NOT_READY', `${label} 실행이 끝나지 않았다: ${result.error?.message ?? result.signal}`);
   const output = `${result.stdout ?? ''}${result.stderr ?? ''}`;
   const sections = new Map();
@@ -123,11 +127,14 @@ export function collectResults(result, statements, errorPattern, label) {
     if (marker) { current = Number(marker[1]); if (!sections.has(current)) sections.set(current, []); continue; }
     if (current >= 0) sections.get(current).push(line);
   }
+  const fatal = output.split(/\r?\n/).find(line => batch.fatal.test(line.trim()));
+  if (fatal) fail('VENDOR_ENGINE_NOT_READY', `${label}: 실행 중 연결이 끊겼다 — ${fatal.trim().slice(0, 200)}`);
+  if (!output.includes(COMPLETED)) fail('VENDOR_ENGINE_NOT_READY', `${label}: 끝까지 실행하지 못했다(종료 ${result.status}) — ${output.trim().slice(-300)}`);
   const unreached = statements.findIndex((_, index) => !sections.has(index));
   if (unreached >= 0) fail('VENDOR_ENGINE_NOT_READY', `${label}: ${statements.length}문장 가운데 ${unreached}번째에 닿지 못했다 — ${output.trim().slice(-300)}`);
   const errors = [];
   for (const [index, lines] of sections) {
-    const at = lines.findIndex(line => errorPattern.test(line.trim()));
+    const at = lines.findIndex(line => batch.errors.test(line.trim()));
     if (at >= 0) errors.push({ index, statement: statements[index]?.sql.replace(/\s+/g, ' ').slice(0, 200), error: `${lines[at].trim().slice(0, 180)} ${(lines[at + 1] ?? '').trim().slice(0, 120)}` });
   }
   return { sections, errors };
@@ -139,12 +146,12 @@ export function runStatements(handle, statements, { sessionPrefix = [] } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'egov-vendor-'));
   try {
     const script = join(directory, 'run.sql');
-    writeFileSync(script, engine.batch.wrap([...sessionPrefix, ...statements.map((statement, index) => engine.batch.mark(index, statement))].join('\n')), 'utf8');
+    writeFileSync(script, engine.batch.wrap([...sessionPrefix, ...statements.map((statement, index) => engine.batch.mark(index, statement)), engine.batch.finish].join('\n')), 'utf8');
     const copied = docker(['cp', script, `${name}:/tmp/run.sql`]);
     if (copied.status !== 0) fail('VENDOR_ENGINE_NOT_READY', copied.stderr.slice(0, 300));
     docker(['exec', name, 'sh', '-c', 'chmod 644 /tmp/run.sql']);
     const result = docker(['exec', ...(engine.user ? ['-u', engine.user] : []), name, 'sh', '-c', `${engine.command('/tmp/run.sql')} 2>&1`], { timeout: 3_600_000 });
-    return collectResults(result, statements, engine.batch.errors, name);
+    return collectResults(result, statements, engine.batch, name);
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }

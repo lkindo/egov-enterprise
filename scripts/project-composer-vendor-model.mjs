@@ -67,11 +67,12 @@ function tokenize(text) {
 }
 
 const BOOLEAN_NODES = new Set(['and', 'or', 'compare', 'isNull', 'isNotNull', 'in', 'regex', 'iff']);
-const TEXT_CASTS = new Set(['text', 'character varying', 'bpchar']);
-const NUMBER_CASTS = new Set(['numeric', 'integer', 'bigint']);
-/** 같은 계열 안의 캐스트만 버릴 수 있다. 숫자를 문자로 바꾼 비교처럼 뜻이 달라지는 캐스트는 멈춘다. */
-const castKeepsMeaning = (kind, cast) => (['varchar', 'text', 'json'].includes(kind) ? TEXT_CASTS.has(cast)
-  : ['integer', 'bigint', 'numeric'].includes(kind) && NUMBER_CASTS.has(cast));
+/** 값을 그대로 보존하는 캐스트만 버릴 수 있다. numeric 을 integer 로 줄이면 반올림되고, 숫자를 문자로 바꾸면 비교가 달라진다. */
+const LOSSLESS_CASTS = Object.freeze({
+  varchar: ['text', 'character varying'], text: ['text', 'character varying'], json: ['text'],
+  integer: ['integer', 'bigint', 'numeric'], bigint: ['bigint', 'numeric'], numeric: ['numeric'],
+});
+const castKeepsMeaning = (kind, cast) => (LOSSLESS_CASTS[kind] ?? []).includes(cast);
 
 /** pg_get_constraintdef 가 낸 식을 트리로 옮긴다. 이 문법 밖의 식은 번역을 멈춘다. */
 export function parseExpression(text, columns, kinds = new Map()) {
@@ -115,7 +116,9 @@ export function parseExpression(text, columns, kinds = new Map()) {
       position += 1;
       const inner = or();
       expect(')');
-      assertColumnCasts(inner, skipCasts());
+      const casts = skipCasts();
+      if (inner.op !== 'column' && casts.length) gap(`식 결과의 캐스트는 문법 밖이다: ${text}`);
+      assertColumnCasts(inner, casts);
       return inner;
     }
     if (token.type === 'string') {
@@ -138,7 +141,9 @@ export function parseExpression(text, columns, kinds = new Map()) {
       const args = [or()];
       while (isSymbol(',')) { position += 1; args.push(or()); }
       expect(')');
-      skipCasts();
+      const casts = skipCasts();
+      // pg_get_constraintdef 는 COALESCE(varchar, '')::text 로 낸다. 그 밖의 함수 결과 캐스트는 뜻을 보장하지 못한다.
+      if (casts.length && !(token.value === 'COALESCE' && casts.every(cast => LOSSLESS_CASTS.varchar.includes(cast)))) gap(`함수 결과의 캐스트는 문법 밖이다: ${text}`);
       const single = () => { if (args.length !== 1) gap(`${token.value} 의 인자 수가 다르다: ${text}`); return args[0]; };
       if (token.value === 'char_length') return { op: 'charLength', arg: single() };
       if (token.value === 'octet_length') return { op: 'octetLength', arg: single() };
