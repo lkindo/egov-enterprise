@@ -176,6 +176,7 @@ public class ScheduleService {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
         }
 
+        boolean becomesDepartmentShared = "1".equals(dto.getSchdlSeCd()) && !"1".equals(entity.getSchdlSeCd());
         entity.updateAll(
                 dto.getSchdlNm(),
                 dto.getSchdlCn(),
@@ -191,6 +192,10 @@ public class ScheduleService {
                 entity.getSchdlPicId(),
                 dto.getReptSeCd(),
                 atchFileSn != null ? atchFileSn : entity.getAtchFileSn());
+        // 등록 뒤 소유자의 부서가 바뀌었으면 옛 부서에 공유된다. 대행 수정자의 부서로 옮기면 다른 부서에 내용이 열리므로 소유자 기준이다.
+        if (becomesDepartmentShared) {
+            entity.shareWithDepartment(resolveDeptId(entity.getFrstRgtrId()));
+        }
         
         entity.setLastMdfrId(userId);
     }

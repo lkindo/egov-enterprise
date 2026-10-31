@@ -288,7 +288,8 @@ class SurveyResultServiceTest {
 
         try (var mocked = org.mockito.Mockito.mockStatic(nuri.business.security.util.SecurityUtil.class)) {
             mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")).thenReturn(false);
-            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_READ_ALL")).thenReturn(false);
+            // 결정 21 — 조회 전체 권한만으로는 작성 중인 설문을 보지 못한다(DEC-OPS-204).
+            mocked.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_READ_ALL")).thenReturn(true);
             assertThatThrownBy(() -> service.getStats(301L))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);

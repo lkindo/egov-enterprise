@@ -71,6 +71,19 @@ public class DeptJobService extends BaseAbstractService {
     }
 
     /**
+     * 담당에서 빠진 사람에게 알린다. 등록자가 업무를 자기에게 되돌리면 내용까지 고칠 수 있으므로(DEC-OPS-205), 맡았던 사람이 모르는
+     * 사이 업무가 바뀌지 않게 한다. 스스로 넘긴 경우는 알리지 않는다.
+     */
+    private void notifyPreviousAssignee(String previousEsntlId, String actorEsntlId, DeptJob deptJob) {
+        if (previousEsntlId == null || previousEsntlId.isBlank() || previousEsntlId.equals(actorEsntlId)) {
+            return;
+        }
+        String name = deptJob.getDeptTaskNm() != null && !deptJob.getDeptTaskNm().isBlank() ? deptJob.getDeptTaskNm() : "(업무명 없음)";
+        eventPublisher.publishEvent(new nuri.foundation.core.event.NotificationRequestedEvent(previousEsntlId,
+                "담당자가 변경되었습니다", name, "/smart-toolkit/dept-job/" + deptJob.getDeptTaskSn()));
+    }
+
+    /**
      * 부서 업무 목록.
      *
      * <p><b>[소유 스코프]</b> {@code mineOnly=true}(화면 기본값)면 <b>내가 담당자인 업무</b>만 돌려준다.
@@ -220,8 +233,11 @@ public class DeptJobService extends BaseAbstractService {
             return;
         }
         assertActiveAssignee(picId);
+        String previousPicId = deptJob.getPicId();
         deptJob.reassign(picId);
-        notifyAssignee(picId, SecurityUtil.getCurrentEsntlId().orElse(null), deptJob);
+        String actor = SecurityUtil.getCurrentEsntlId().orElse(null);
+        notifyAssignee(picId, actor, deptJob);
+        notifyPreviousAssignee(previousPicId, actor, deptJob);
     }
 
     /** 담당자 재지정 인가 — 담당자(공석이면 등록자)·등록자·전체 수정 권한자. */
@@ -326,7 +342,9 @@ public class DeptJobService extends BaseAbstractService {
                 dto.getPrrtyRnk(),
                 dto.getAtchFileSn());
         if (!Objects.equals(previousPicId, picId)) {
-            notifyAssignee(picId, SecurityUtil.getCurrentEsntlId().orElse(null), deptJob);
+            String actor = SecurityUtil.getCurrentEsntlId().orElse(null);
+            notifyAssignee(picId, actor, deptJob);
+            notifyPreviousAssignee(previousPicId, actor, deptJob);
         }
     }
 

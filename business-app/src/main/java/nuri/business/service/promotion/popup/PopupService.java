@@ -76,6 +76,7 @@ public class PopupService {
     public Long createPopup(String userId, PopupDto dto) {
         SecurityUtil.assertPermission("POPUP_CREATE");
         validateDimensions(dto);
+        assertLinkable(dto.getFileUrl());
         Long atchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
         LocalDate[] period = noticePeriod(dto);
         if (atchFileSn != null) {
@@ -107,6 +108,9 @@ public class PopupService {
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), popup.getVersion());
         validateDimensions(dto);
         LocalDate[] period = noticePeriod(dto);
+        if (!Objects.equals(popup.getFileUrl(), dto.getFileUrl())) {
+            assertLinkable(dto.getFileUrl());
+        }
 
         Long requestedAtchFileSn = parseRequestedAttachmentId(dto.getFileUrl());
         Long currentAtchFileSn = parsePersistedAttachmentId(popup.getFileUrl());
@@ -167,6 +171,13 @@ public class PopupService {
             return LocalDate.parse(value);
         } catch (DateTimeParseException e) {
             throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "유효한 게시 일자(YYYY-MM-DD)를 입력하세요.");
+        }
+    }
+
+    private static void assertLinkable(String fileUrl) {
+        if (!nuri.foundation.core.util.SafeUrls.isLinkable(fileUrl)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "이미지 주소는 /로 시작하는 사이트 안 경로이거나 http(s) 주소여야 합니다.");
         }
     }
 

@@ -43,6 +43,7 @@ public class BannerService {
     @Transactional
     public Long insertBanner(BannerDto dto) {
         SecurityUtil.assertPermission("BANNER_CREATE");
+        assertLinkable(dto.getLinkUrl());
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -66,6 +67,9 @@ public class BannerService {
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // [2026-10-18] 화면이 읽은 버전과 다르면 다른 사람이 먼저 고친 것이다 — 덮지 않고 409 로 알린다.
         nuri.foundation.core.util.EntityVersions.assertCurrent(dto.getVersion(), entity.getVersion());
+        if (!Objects.equals(entity.getLinkUrl(), dto.getLinkUrl())) {
+            assertLinkable(dto.getLinkUrl());
+        }
         Long atchFileSn = dto.getAtchFileSn();
         if (atchFileSn != null && !Objects.equals(entity.getAtchFileSn(), atchFileSn)) {
             attachmentAssignmentPolicy.assertAssignable(atchFileSn);
@@ -84,6 +88,13 @@ public class BannerService {
         Banner entity = bannerRepository.findById(Objects.requireNonNull(bnrSn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         bannerRepository.delete(entity);
+    }
+
+    private static void assertLinkable(String linkUrl) {
+        if (!nuri.foundation.core.util.SafeUrls.isLinkable(linkUrl)) {
+            throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
+                    "링크 주소는 /로 시작하는 사이트 안 경로이거나 http(s) 주소여야 합니다.");
+        }
     }
 
     public List<BannerDto> getReflectedBanners() {

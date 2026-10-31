@@ -322,4 +322,34 @@ class ScheduleServiceTest {
         // then — 가드가 소유자 loginId 로 호출됨
         __secUtilMock.verify(() -> nuri.business.security.util.SecurityUtil.assertOwnerOrPermission("creator", "SCHEDULE_DELETE_ALL"));
     }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("🔐 부서 공유로 바꾸면 소유자의 현재 부서에 공유한다 — 대행 수정자의 부서로 옮기지 않는다")
+    void updateSchedule_sharesWithTheOwnersDepartment() {
+        Schedule entity = Schedule.builder().schdlSn(1L).schdlNm("일정").schdlSeCd("2").schdlDeptId("OLD_DEPT").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "frstRgtrId", "owner");
+        nuri.business.domain.user.entity.User owner = org.mockito.Mockito.mock(nuri.business.domain.user.entity.User.class);
+        given(owner.getOgnzId()).willReturn("OWNER_DEPT");
+        given(userRepository.findByUserId("owner")).willReturn(Optional.of(owner));
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        scheduleService.updateSchedule(1L, "delegate-admin",
+                ScheduleDto.builder().schdlSn(1L).schdlNm("일정").schdlSeCd("1").schdlBgngYmd("20261020").version(0).build());
+
+        assertThat(entity.getSchdlDeptId()).isEqualTo("OWNER_DEPT");
+    }
+
+    @Test
+    @org.junit.jupiter.api.DisplayName("🔐 이미 부서 공유인 일정을 고쳐도 공유 부서는 그대로다 — 제목만 고친 대행 수정이 다른 부서로 옮기지 않는다")
+    void updateSchedule_keepsTheSharedDepartmentOnPlainEdits() {
+        Schedule entity = Schedule.builder().schdlSn(1L).schdlNm("일정").schdlSeCd("1").schdlDeptId("ORIGINAL_DEPT").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        given(scheduleRepository.findById(1L)).willReturn(Optional.of(entity));
+
+        scheduleService.updateSchedule(1L, "delegate-admin",
+                ScheduleDto.builder().schdlSn(1L).schdlNm("새 제목").schdlSeCd("1").schdlBgngYmd("20261020").version(0).build());
+
+        assertThat(entity.getSchdlDeptId()).isEqualTo("ORIGINAL_DEPT");
+    }
 }

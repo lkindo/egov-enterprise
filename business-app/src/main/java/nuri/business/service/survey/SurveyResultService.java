@@ -344,9 +344,8 @@ public class SurveyResultService {
     public List<SurveyStatsDto> getStats(Long srvySn) {
         SurveyInfo survey = infoRepository.findById(Objects.requireNonNull(srvySn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-        if (!survey.isReleased()
-                && !nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")
-                && !nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_READ_ALL")) {
+        // [2026-10-01 결정 21] 작성 중인 설문은 설문을 고치는 사람에게만 보인다(DEC-OPS-204).
+        if (!survey.isReleased() && !nuri.business.security.util.SecurityUtil.hasPermission("SURVEY_UPDATE_ALL")) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
         }
 
