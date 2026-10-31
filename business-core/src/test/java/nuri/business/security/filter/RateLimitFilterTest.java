@@ -54,6 +54,40 @@ class RateLimitFilterTest {
         return counter == null ? 0 : counter.count();
     }
 
+    @Test
+    void loginBucketComparesTheDecodedPath() throws ServletException, IOException {
+        RateLimitFilter tight = newFilter(100, 1);
+        for (String encoded : new String[] {"/api/v1/auth/logi%6e", "/api/v1/auth/login;a=b"}) {
+            MockHttpServletResponse first = sendTo(tight, "198.51.100." + encoded.length(), encoded, "/api/v1/auth/login");
+            MockHttpServletResponse second = sendTo(tight, "198.51.100." + encoded.length(), encoded, "/api/v1/auth/login");
+            assertEquals(200, first.getStatus());
+            assertEquals(429, second.getStatus(), "인코딩한 로그인 경로가 로그인 버킷을 비껴갔다: " + encoded);
+        }
+    }
+
+    @Test
+    void passwordChangeSharesTheLoginBudgetButTokenReissueDoesNot() throws ServletException, IOException {
+        RateLimitFilter tight = newFilter(100, 1);
+        String password = "/api/v1/users/me/password";
+        assertEquals(200, sendTo(tight, "198.51.100.50", password, password).getStatus());
+        assertEquals(429, sendTo(tight, "198.51.100.50", password, password).getStatus());
+
+        String reissue = "/api/v1/auth/reissue";
+        assertEquals(200, sendTo(tight, "198.51.100.51", reissue, reissue).getStatus());
+        assertEquals(200, sendTo(tight, "198.51.100.51", reissue, reissue).getStatus(), "토큰 재발급은 로그인 버킷을 쓰지 않는다");
+    }
+
+    private MockHttpServletResponse sendTo(RateLimitFilter target, String remoteAddr, String rawUri, String servletPath)
+            throws ServletException, IOException {
+        MockHttpServletRequest request = new MockHttpServletRequest();
+        request.setRemoteAddr(remoteAddr);
+        request.setRequestURI(rawUri);
+        request.setServletPath(servletPath);
+        MockHttpServletResponse response = new MockHttpServletResponse();
+        target.doFilter(request, response, filterChain);
+        return response;
+    }
+
     private MockHttpServletResponse send(String remoteAddr, String uri) throws ServletException, IOException {
         MockHttpServletRequest request = new MockHttpServletRequest();
         request.setRemoteAddr(remoteAddr);

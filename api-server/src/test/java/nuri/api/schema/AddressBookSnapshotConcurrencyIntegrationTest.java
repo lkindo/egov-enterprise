@@ -242,18 +242,30 @@ class AddressBookSnapshotConcurrencyIntegrationTest {
                 .isEqualTo("외부 연락처");
     }
 
-    @ParameterizedTest
-    @ValueSource(strings = {"Y", "N"})
-    void omittedUseYnPreservesItsCurrentValue(String useYn) {
-        jdbc.update("UPDATE tb_adbk_manage SET use_yn=? WHERE adbk_sn=?", useYn, book);
+    @Test
+    void omittedUseYnPreservesItsCurrentValue() {
         AddressBookDto request = snapshot();
         request.setUseYn(null);
         request.setAdbkNm("사용 여부 보존");
 
         service.updateAddressBook(ownerEsntl, request);
 
-        assertThat(jdbc.queryForObject("SELECT use_yn FROM tb_adbk_manage WHERE adbk_sn=?", String.class, book)).isEqualTo(useYn);
+        assertThat(jdbc.queryForObject("SELECT use_yn FROM tb_adbk_manage WHERE adbk_sn=?", String.class, book)).isEqualTo("Y");
         assertThat(contactNames()).containsExactly("연락처 A", "연락처 B");
+    }
+
+    @Test
+    void deletedBookIsNotUpdatedOrRevivedByItsNumber() {
+        AddressBookDto request = snapshot();
+        jdbc.update("UPDATE tb_adbk_manage SET use_yn='N' WHERE adbk_sn=?", book);
+        request.setUseYn("Y");
+        request.setAdbkNm("되살리면 안 되는 변경");
+
+        assertThatThrownBy(() -> service.updateAddressBook(ownerEsntl, request))
+                .isInstanceOf(BusinessException.class)
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.RESOURCE_NOT_FOUND);
+
+        assertThat(jdbc.queryForObject("SELECT use_yn FROM tb_adbk_manage WHERE adbk_sn=?", String.class, book)).isEqualTo("N");
     }
 
     @Test

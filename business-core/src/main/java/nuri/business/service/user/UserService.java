@@ -388,6 +388,10 @@ public class UserService extends BaseAbstractService {
                 if (!passwordEncoder.matches(oldPassword, observedPassword)) {
                         throw new BusinessException(UserErrorCode.INVALID_PASSWORD);
                 }
+                // 같은 값으로 바꾸면 임시 비밀번호 표시만 지워져 강제 변경을 건너뛴다.
+                if (oldPassword.equals(newPassword)) {
+                        throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE, "새 비밀번호는 현재 비밀번호와 달라야 합니다.");
+                }
                 String encodedPassword = passwordEncoder.encode(newPassword);
                 // 해시 계산은 잠금 밖에서 한다. 대기 중 초기화됐으면 현재 비밀번호로 다시 검증한다.
                 refreshForUpdateOrThrow(user);
@@ -506,7 +510,9 @@ public class UserService extends BaseAbstractService {
          */
         @Transactional
         public UserResponse signup(UserSignupRequest request) {
-                authorizationAdministration.lockAdministration();
+                // 잠금을 기다리는 사이 회수된 권한으로 계정을 만들지 않게 잠금 뒤 현재 상태로 다시 판정한다(registerUser 와 같다).
+                authorizationAdministration.lockAndAuthorize("USER_CREATE");
+                nuri.business.security.util.SecurityUtil.assertPermission("USER_CREATE");
                 required(request, "회원가입 요청 정보는 null 일 수 없습니다");
                 required(request.getUserId(), "사용자 ID 는 null 일 수 없습니다");
                 required(request.getPswd(), "비밀번호 는 null 일 수 없습니다");

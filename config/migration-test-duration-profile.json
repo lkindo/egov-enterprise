@@ -10,6 +10,11 @@
         "kind": "local-junit",
         "baseCommit": "a9debeb952a916b0bd2b9051c1a61a85797c2e22",
         "measuredAt": "2026-10-29T21:16:17.836955+00:00"
+      },
+      "nuri.migration.jdbc.JdbcUrlSafetyTest": {
+        "kind": "local-junit",
+        "baseCommit": "7757e5418d4046ca33e5202c2bb05cb8e08962df",
+        "measuredAt": "2026-10-31T07:04:43.262Z"
       }
     }
   },
@@ -113,6 +118,7 @@
     "nuri.migration.jdbc.IsolatedSourceJdbcEndpointTest": 258,
     "nuri.migration.jdbc.JdbcLobReaderFatalCloseTest": 322,
     "nuri.migration.jdbc.JdbcLobReaderTest": 586,
+    "nuri.migration.jdbc.JdbcUrlSafetyTest": 81,
     "nuri.migration.jdbc.LocalDriverJarPolicyTest": 15,
     "nuri.migration.jdbc.SourceJdbcEndpointFactoryTest": 662,
     "nuri.migration.jdbc.SourceReadStatementsTest": 213,

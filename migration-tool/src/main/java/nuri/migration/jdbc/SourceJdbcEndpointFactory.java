@@ -41,7 +41,7 @@ public final class SourceJdbcEndpointFactory {
             List<Path> driverJars,
             String driverClassOverride
     ) {
-        if (config == null || config.url() == null || config.url().isBlank()) {
+        if (config == null || config.url() == null || config.url().isBlank() || !JdbcUrlSafety.isSafe(config.url())) {
             throw SourceDriverException.configuration();
         }
         List<Path> jars = driverJars == null ? List.of() : List.copyOf(driverJars);

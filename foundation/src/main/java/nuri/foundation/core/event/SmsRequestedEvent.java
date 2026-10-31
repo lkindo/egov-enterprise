@@ -16,12 +16,18 @@ package nuri.foundation.core.event;
  * @param requesterId    발송 요청자 loginId. 발송 이력·로그 귀속에만 쓰이며 인가 판정에 쓰이지 않는다
  * @param recipientTelno 수신자 전화번호. 발행 측이 이미 해석한 값이다
  * @param content        문자 본문
+ * @param recipientEsntlId 수신자가 사용자이면 그 esntlId. 발송 이력의 정보주체를 번호로 추정하지 않기 위해 싣는다
  */
 public record SmsRequestedEvent(
         String requesterId,
         String recipientTelno,
-        String content
+        String content,
+        String recipientEsntlId
 ) implements DomainEvent {
+
+    public SmsRequestedEvent(String requesterId, String recipientTelno, String content) {
+        this(requesterId, recipientTelno, content, null);
+    }
 
     /** 수신 번호가 없으면 문자를 만들 수 없다 — 발행 측에서 걸러야 하지만 소비 측도 방어한다. */
     public boolean hasRecipient() {

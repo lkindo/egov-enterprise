@@ -53,6 +53,7 @@ public class AddressBookService {
         // 공개범위(rlsScopeCd) 예외는 두지 않는다: 코드값이 표준화돼 있지 않고('P'/'G'/'PUBLIC'/'COMPANY' 혼재)
         // 목록 조회도 타인의 '공개' 주소록을 노출하지 않으므로, 상세만 여는 것은 열거 취약점이 된다.
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_READ_ALL");
+        assertInUse(entity);
 
         AddressBookDto dto = convertToDto(entity);
         List<AddressBookUser> users = addressBookUserRepository.findByAdbkSn(adbkSn);
@@ -105,6 +106,7 @@ public class AddressBookService {
         AddressBook entity = addressBookRepository.findByIdForUpdate(Objects.requireNonNull(dto.getAdbkSn()))
                 .orElseThrow(() -> new BusinessException("수정할 주소록이 존재하지 않습니다.", CommonErrorCode.RESOURCE_NOT_FOUND));
         nuri.business.security.util.SecurityUtil.assertOwnerOrPermission(entity.getFrstRgtrId(), "ADBK_UPDATE_ALL"); // [IDOR] 소유자/관리자만 수정(PII)
+        assertInUse(entity);
 
         // 잠금만으로는 앞선 조회에서 만들어진 오래된 전체 구성원 목록을 판별할 수 없다.
         // 잠금을 얻은 뒤 현재 상태와 요청의 조회 토큰을 비교하고, 충돌이면 어떤 필드도 바꾸지 않는다.
@@ -214,10 +216,11 @@ public class AddressBookService {
                 .map(res -> new AddressBookUserSelectionDto(res.getEsntlId(), res.getUserNm(), res.getOgnzNm()));
     }
 
-    public AddressBookUserDto getAdbkUser(Long id) {
-        return addressBookUserRepository.findById(Objects.requireNonNull(id))
-                .map(this::convertToUserDto)
-                .orElseThrow(() -> new BusinessException("주소록 사용자를 찾을 수 없습니다: " + id, CommonErrorCode.RESOURCE_NOT_FOUND));
+    /** 삭제는 use_yn 을 끄는 논리 삭제다. 목록에서 사라진 주소록을 번호로 다시 열거나 고치지 않는다. */
+    private static void assertInUse(AddressBook entity) {
+        if (!"Y".equals(entity.getUseYn())) {
+            throw new BusinessException("주소록을 찾을 수 없습니다: " + entity.getAdbkSn(), CommonErrorCode.RESOURCE_NOT_FOUND);
+        }
     }
 
     private AddressBookDto convertToDto(AddressBook entity) {

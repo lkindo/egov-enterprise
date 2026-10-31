@@ -59,7 +59,7 @@ class AddressBookServiceTest {
     @DisplayName("주소록 목록 조회 성공")
     void getAddressBookList_Success() {
         // Given
-        Page<AddressBook> page = new PageImpl<>(List.of(AddressBook.builder().adbkSn(1L).build()));
+        Page<AddressBook> page = new PageImpl<>(List.of(AddressBook.builder().useYn("Y").adbkSn(1L).build()));
         given(addressBookRepository.searchAddressBooks(any(), any(), any(), any(), any(Pageable.class))).willReturn(page);
 
         // When
@@ -73,7 +73,7 @@ class AddressBookServiceTest {
     @DisplayName("주소록 상세 조회 성공")
     void getAddressBook_Success() {
         // Given
-        AddressBook entity = AddressBook.builder().adbkSn(1L).adbkNm("Name").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(1L).adbkNm("Name").build();
         given(addressBookRepository.findById(1L)).willReturn(Optional.of(entity));
         given(addressBookUserRepository.findByAdbkSn(1L)).willReturn(List.of());
 
@@ -101,7 +101,7 @@ class AddressBookServiceTest {
     @DisplayName("주소록 삭제 성공")
     void deleteAddressBook_Success() {
         // Given
-        AddressBook entity = AddressBook.builder().adbkSn(1L).adbkNm("Name").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(1L).adbkNm("Name").build();
         given(addressBookRepository.findByIdForUpdate(1L)).willReturn(Optional.of(entity));
 
         // When
@@ -137,11 +137,11 @@ class AddressBookServiceTest {
     void updateAddressBook_WithUserUpdates_Success() {
         // Given
         Long adbkSn = 1L;
-        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("Old").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(adbkSn).adbkNm("Old").build();
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existingUser = 
-            nuri.business.domain.addressbook.AddressBookUser.builder().adbkMbrSn(5L).addressBook(AddressBook.builder().adbkSn(adbkSn).build()).build();
+            nuri.business.domain.addressbook.AddressBookUser.builder().adbkMbrSn(5L).addressBook(AddressBook.builder().useYn("Y").adbkSn(adbkSn).build()).build();
         given(addressBookUserRepository.findByAdbkSn(adbkSn)).willReturn(List.of(existingUser));
 
         nuri.business.service.addressbook.dto.AddressBookUserDto newUserDto =
@@ -169,7 +169,7 @@ class AddressBookServiceTest {
          * 이 엔드포인트를 부르는 프런트 경로는 useYn 을 보내지 않으므로 모든 수정이 그랬다.
          */
         Long adbkSn = 7L;
-        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("Old").useYn("Y").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(adbkSn).adbkNm("Old").useYn("Y").build();
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
 
         // 화면이 실제로 보내는 본문과 같다 — adbkNm·rlsScopeCd 만 있고 useYn 이 없다.
@@ -190,7 +190,7 @@ class AddressBookServiceTest {
     void updateAddressBook_AppliesUseYnWhenProvided() {
         // 보존은 '생략됐을 때' 만이다 — 명시적 변경까지 막으면 사용 중지 경로가 죽는다.
         Long adbkSn = 8L;
-        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("Old").useYn("Y").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(adbkSn).adbkNm("Old").useYn("Y").build();
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
 
         AddressBookDto dto = AddressBookDto.builder()
@@ -211,7 +211,7 @@ class AddressBookServiceTest {
          * 조용히 성공하는 no-op 이라 사용자는 저장된 줄 안다.
          */
         Long adbkSn = 1L;
-        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("팀 주소록").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(adbkSn).adbkNm("팀 주소록").build();
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
 
         nuri.business.domain.addressbook.AddressBookUser existing =
@@ -249,7 +249,7 @@ class AddressBookServiceTest {
     @DisplayName("[DIP B5 F8] 작성자 ID 를 함께 가진 두 구성원도 번호로 가려 각자 고친다 — 종전에는 서로를 덮었다")
     void updateAddressBook_membersSharingLegacyUserIdAreKeptApart() {
         Long adbkSn = 2L;
-        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("팀").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(adbkSn).adbkNm("팀").build();
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
         nuri.business.domain.addressbook.AddressBookUser first = nuri.business.domain.addressbook.AddressBookUser.builder()
                 .adbkMbrSn(11L).userId("AUTHOR").nm("갑").addressBook(entity).build();
@@ -274,7 +274,7 @@ class AddressBookServiceTest {
     @DisplayName("[DIP B5 F8] 이 주소록의 구성원이 아니거나 두 번 나온 번호는 400 이고 아무것도 지우지 않는다")
     void updateAddressBook_rejectsForeignOrDuplicateMember() {
         Long adbkSn = 4L;
-        AddressBook entity = AddressBook.builder().adbkSn(adbkSn).adbkNm("팀").build();
+        AddressBook entity = AddressBook.builder().useYn("Y").adbkSn(adbkSn).adbkNm("팀").build();
         given(addressBookRepository.findById(adbkSn)).willReturn(Optional.of(entity));
         nuri.business.domain.addressbook.AddressBookUser own = nuri.business.domain.addressbook.AddressBookUser.builder()
                 .adbkMbrSn(21L).nm("갑").addressBook(entity).build();
@@ -322,5 +322,29 @@ class AddressBookServiceTest {
         assertThat(result.getContent()).hasSize(1);
         assertThat(result.getContent().get(0).esntlId()).isEqualTo("EMP_1");
         assertThat(result.getContent().get(0).userNm()).isEqualTo("Name");
+    }
+
+    @Test
+    @DisplayName("🔐 지운 주소록은 번호로 다시 열거나 고치지 못한다")
+    void deletedAddressBookIsNotReachable() {
+        AddressBook deleted = AddressBook.builder().adbkSn(9L).useYn("N").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(deleted, "frstRgtrId", "owner");
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("owner", "OWNER_ESNTL", "ROLE_USER"));
+        try {
+            given(addressBookRepository.findById(9L)).willReturn(Optional.of(deleted));
+            given(addressBookRepository.findByIdForUpdate(9L)).willReturn(Optional.of(deleted));
+            nuri.business.service.addressbook.dto.AddressBookDto request = new nuri.business.service.addressbook.dto.AddressBookDto();
+            request.setAdbkSn(9L);
+
+            for (org.assertj.core.api.ThrowableAssert.ThrowingCallable call : java.util.List.<org.assertj.core.api.ThrowableAssert.ThrowingCallable>of(
+                    () -> addressBookService.getAddressBook(9L),
+                    () -> addressBookService.updateAddressBook("owner", request))) {
+                org.assertj.core.api.Assertions.assertThatThrownBy(call)
+                        .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.RESOURCE_NOT_FOUND);
+            }
+        } finally {
+            org.springframework.security.core.context.SecurityContextHolder.clearContext();
+        }
     }
 }

@@ -363,7 +363,7 @@ test('selective integrations are declared exactly and every evidence line points
   }
   // api-server 의 알림 리스너는 알림 서비스를 import 해 알림과 함께 지워진다 — core 발행으로 세면 안 된다.
   const core = catalog.integrates.find(edge => edge.from === 'core');
-  assert.deepEqual(core.evidence.filter(row => row.role === 'publisher').map(row => row.path),
+  assert.deepEqual([...new Set(core.evidence.filter(row => row.role === 'publisher').map(row => row.path))],
     ['business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java']);
 });
 

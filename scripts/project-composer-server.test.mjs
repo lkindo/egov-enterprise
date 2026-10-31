@@ -15,12 +15,14 @@ const catalog = { sourceRef: 'HEAD', sourceCommit: 'a'.repeat(40), mandatory: ['
   presets: [{ id: 'core', label: '공통 기반', description: '기본 기능', domains: [] }],
   capabilities: [{ id: 'board', label: '게시판', description: '게시글', available: true }] };
 
-function send(origin, path, { method = 'GET', headers = {}, data, raw, chunked = false } = {}) {
+const launchSecrets = new Map();
+function send(origin, path, { method = 'GET', headers = {}, data, raw, chunked = false, launch = true } = {}) {
   const payload = raw ?? (data === undefined ? undefined : JSON.stringify(data));
   return new Promise((accept, reject) => {
     const call = request(`${origin}${path}`, { method, headers: {
       ...(payload === undefined ? {} : { 'Content-Type': 'application/json',
-        ...(chunked ? {} : { 'Content-Length': Buffer.byteLength(payload) }) }), ...headers,
+        ...(chunked ? {} : { 'Content-Length': Buffer.byteLength(payload) }) }),
+      ...(launch && launchSecrets.has(origin) ? { 'X-Composer-Launch': launchSecrets.get(origin) } : {}), ...headers,
     } }, response => {
       const chunks = [];
       response.on('data', value => chunks.push(value));
@@ -48,6 +50,7 @@ async function fixture(t, overrides = {}) {
   };
   const app = createComposerServer({ engine });
   const origin = await app.listen(0);
+  launchSecrets.set(origin, app.launchSecret);
   t.after(() => app.close());
   const session = (await send(origin, '/api/session')).body;
   const headers = { Origin: origin, 'X-Composer-CSRF': session.csrfToken };
@@ -85,11 +88,23 @@ test('local server binds only loopback and serves explicit static assets with a 
   } })).status, 200, 'opening the local link must work; it exposes no session token');
 });
 
+test('a session needs the launch secret printed to the terminal, so another local client gets no CSRF token', async t => {
+  const { origin, app, calls } = await fixture(t);
+  for (const headers of [{}, { 'X-Composer-Launch': 'x'.repeat(43) }, { 'X-Composer-Launch': '' }]) {
+    const response = await send(origin, '/api/session', { launch: false, headers });
+    assert.equal(response.status, 403);
+    assert.equal(response.body.error?.code ?? response.body.code, 'LAUNCH_REQUIRED');
+    assert.equal(response.body.csrfToken, undefined);
+  }
+  assert.equal((await send(origin, '/api/session', { launch: false, headers: { 'X-Composer-Launch': app.launchSecret } })).status, 200);
+  assert.equal(calls.plan.length, 0);
+});
+
 test('DNS rebinding, cross-origin and forwarded requests are rejected before catalog or generation', async t => {
   const { origin, headers, calls } = await fixture(t);
   for (const bad of [
     { Host: 'attacker.example' }, { Host: new URL(origin).host.replace('127.0.0.1', 'localhost') },
-    { Origin: 'https://attacker.example' }, { 'Sec-Fetch-Site': 'cross-site' },
+    { Origin: 'https://attacker.example' }, { 'Sec-Fetch-Site': 'cross-site' }, { 'Sec-Fetch-Site': 'same-site' },
     { Forwarded: 'host=127.0.0.1' }, { 'X-Forwarded-Host': new URL(origin).host }, { 'X-Forwarded-Proto': 'http' },
   ]) assert.equal((await send(origin, '/api/session', { headers: bad })).status, 403);
   for (const bad of [ {}, { Origin: origin }, { 'X-Composer-CSRF': headers['X-Composer-CSRF'] },

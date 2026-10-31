@@ -65,7 +65,8 @@ public class UserContactService {
         List<UserContact> contacts = new ArrayList<>(distinct.size());
         for (String esntlId : distinct) {
             User user = byEsntlId.get(esntlId);
-            if (user == null) {
+            // 사용 중이 아닌 계정은 없는 수신자와 같다 — 연락처로 보내지 않고 오류 문구에 이름을 싣지도 않는다.
+            if (user == null || !"P".equals(user.getUserSttsCd())) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND,
                         "수신자로 지정한 사용자를 찾을 수 없습니다.");
             }

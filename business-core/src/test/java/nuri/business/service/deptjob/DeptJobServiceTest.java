@@ -360,7 +360,7 @@ class DeptJobServiceTest {
     }
 
     @Test
-    @DisplayName("🚨 등록자는 담당자만 다시 지정하고 새 담당자에게 알린다 — 내용은 바꾸지 않는다 (2026-10-01 결정 22)")
+    @DisplayName("🚨 등록자는 담당자만 다시 지정하고 새 담당자와 이전 담당자에게 알린다 — 내용은 바꾸지 않는다 (2026-10-01 결정 22)")
     void reassignDeptJob_registrarChangesAssigneeOnly() {
         authenticateAs("outsider", "ESNTL_OUTSIDER");
         org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "outsider");
@@ -373,7 +373,25 @@ class DeptJobServiceTest {
         assertEquals("Test Job", deptJob.getDeptTaskNm());
         assertEquals("Content", deptJob.getDeptTaskCn());
         assertEquals(101L, deptJob.getAtchFileSn());
-        verify(eventPublisher, times(1)).publishEvent(any(Object.class));
+        verify(eventPublisher, times(2)).publishEvent(any(Object.class));
+    }
+
+    @Test
+    @DisplayName("🔐 등록자가 업무를 자기에게 되돌리면 이전 담당자에게 알린다 — 맡았던 사람이 모르는 사이 내용이 바뀌지 않는다")
+    void reassignDeptJob_registrarTakingBackNotifiesThePreviousAssignee() {
+        authenticateAs("outsider", "ESNTL_OUTSIDER");
+        org.springframework.test.util.ReflectionTestUtils.setField(deptJob, "frstRgtrId", "outsider");
+        String previous = deptJob.getPicId();
+        when(deptJobRepository.findById(1L)).thenReturn(Optional.of(deptJob));
+        givenActiveAssignee("ESNTL_OUTSIDER");
+
+        deptJobService.reassignDeptJob(1L, "ESNTL_OUTSIDER", 0);
+
+        org.mockito.ArgumentCaptor<nuri.foundation.core.event.NotificationRequestedEvent> notice =
+                org.mockito.ArgumentCaptor.forClass(nuri.foundation.core.event.NotificationRequestedEvent.class);
+        verify(eventPublisher, times(1)).publishEvent(notice.capture());
+        assertEquals("ESNTL_OUTSIDER", deptJob.getPicId());
+        org.assertj.core.api.Assertions.assertThat(notice.getValue().toString()).contains(previous, "담당자가 변경되었습니다");
     }
 
     @Test
@@ -679,9 +697,11 @@ class DeptJobServiceTest {
         moved.setVersion(0);
         deptJobService.updateDeptJob(7L, moved);
         ArgumentCaptor<Object> events = ArgumentCaptor.forClass(Object.class);
-        verify(eventPublisher, times(1)).publishEvent(events.capture());
-        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getValue();
+        verify(eventPublisher, times(2)).publishEvent(events.capture());
+        var event = (nuri.foundation.core.event.NotificationRequestedEvent) events.getAllValues().get(0);
         assertEquals("USR_B", event.receiverEsntlId());
+        var previous = (nuri.foundation.core.event.NotificationRequestedEvent) events.getAllValues().get(1);
+        assertEquals("USR_A", previous.receiverEsntlId());
         assertEquals("/smart-toolkit/dept-job/7", event.linkUrl());
     }
 

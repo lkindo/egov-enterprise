@@ -3604,6 +3604,10 @@
     "column_name": "sms_trsm_sn"
   },
   {
+    "table_name": "tb_sms_rcptn",
+    "column_name": "rcvr_id"
+  },
+  {
     "table_name": "tb_srvy_artcl",
     "column_name": "etc_ans_yn"
   },

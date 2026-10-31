@@ -167,6 +167,7 @@ public class CommunityService {
 
     @Transactional
     public CommunityDto createCommunity(String userId, CommunityDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("COMMUNITY_CREATE_ALL");
         String templateId = normalizeTemplateId(dto.getTmpltId());
         if (templateId != null) assertAssignableTemplate(templateId);
         Community community = Community.builder()
@@ -182,6 +183,7 @@ public class CommunityService {
 
     @Transactional
     public void updateCommunity(String userId, CommunityDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("COMMUNITY_UPDATE_ALL");
         Community community = communityRepository.findByIdForUpdate(Objects.requireNonNull(dto.getCmntySn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + dto.getCmntySn()));
 
@@ -200,6 +202,7 @@ public class CommunityService {
 
     @Transactional
     public void deleteCommunity(Long cmntySn, String userId) {
+        nuri.business.security.util.SecurityUtil.assertPermission("COMMUNITY_DELETE_ALL");
         Community community = communityRepository.findByIdForUpdate(Objects.requireNonNull(cmntySn))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "커뮤니티를 찾을 수 없습니다: " + cmntySn));
         community.delete();

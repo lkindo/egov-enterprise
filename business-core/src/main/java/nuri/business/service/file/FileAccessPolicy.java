@@ -16,9 +16,10 @@ import org.springframework.stereotype.Component;
  *
  * <p>[판정 표] 위에서부터 먼저 성립하는 것이 결론이다.
  * <ol>
- *   <li><b>업로더 본인</b>({@code tb_file_master.frst_rgtr_id} = loginId) → 허용.
- *       업로드 직후 아직 어떤 업무 행에도 붙지 않은 <b>미첨부 창(window)</b>을 여는 유일한 근거다.
- *       이게 없으면 "파일 올리고 → 미리보기 → 글 저장" 흐름이 자기 파일에 대해 403 이 된다.</li>
+ *   <li><b>업로더 본인</b>({@code tb_file_master.frst_rgtr_id} = loginId) → <b>어느 업무 행에도 붙지 않았을 때만</b> 허용.
+ *       업로드 직후의 <b>미첨부 창(window)</b>을 여는 유일한 근거다. 이게 없으면 "파일 올리고 → 미리보기 → 글 저장" 흐름이 자기
+ *       파일에 대해 403 이 된다. 업무 행에 붙은 뒤에는 그 참조의 판정을 따른다 — 업로더라는 이유로 사용 안 함 게시판의 잠금
+ *       (ADR-0040 결정 1)을 지나면 안 된다.</li>
  *   <li><b>참조원 조회 실패</b> — 하나라도 판정할 수 없으면 다른 소유·공유 근거와 무관하게 불허.</li>
  *   <li><b>개인 소유 근거</b> — 개인 귀속(PERSONAL) 참조가 있으면 그 참조의 소유자·당사자만 허용.
  *       같은 파일을 가리키는 공유 참조의 소유자는 개인 첨부를 열 수 없다. 열람 전용 당사자(메모보고 수신자)도 열람은
@@ -65,7 +66,7 @@ public class FileAccessPolicy {
         }
 
         // 1. 업로더 본인 — 미첨부 창.
-        if (loginId != null && loginId.equals(master.getFrstRgtrId())) {
+        if (isUnattachedUpload(master, loginId)) {
             return;
         }
 
@@ -115,11 +116,13 @@ public class FileAccessPolicy {
      * <p>[열람과 다른 점] <b>공유 근거는 삭제 근거가 아니다.</b> 비밀글이 아닌 게시글의 첨부는 인증
      * 사용자 누구나 읽지만, 그 사실이 남의 첨부를 지울 권리를 주지는 않는다. 판정 표:
      * <ol>
-     *   <li><b>업로더 본인</b>({@code frst_rgtr_id} = loginId) → 허용. 잘못 올린 파일을 글 저장 전에 되돌리는 경로다.</li>
+     *   <li><b>업로더 본인</b>({@code frst_rgtr_id} = loginId) → 어느 업무 행에도 붙지 않았을 때만 허용. 잘못 올린 파일을 글 저장
+     *       전에 되돌리는 경로다.</li>
      *   <li><b>참조원 조회 실패</b> — 하나라도 판정할 수 없으면 다른 근거와 무관하게 불허.</li>
-     *   <li><b>개인 소유 근거</b> — PERSONAL 참조가 있으면 그 참조의 당사자만 허용.</li>
-     *   <li><b>비개인 소유 근거</b> — PERSONAL 참조가 없을 때 참조 행의 소유자만 허용.</li>
-     *   <li><b>관리자</b>(ADMIN/SYSTEM) → 허용. 단 PERSONAL 참조원이 있으면 열람과 같이 불허(H3).</li>
+     *   <li><b>개인 귀속 참조</b> — 당사자도 관리자도 이 경로로 지우지 못한다(ADR-0048). 같은 묶음을 여러 당사자가 보므로 쪽지
+     *       수신자 한 명이 지우면 모두의 파일이 사라지고, 지시가 달린 메모는 작성자가 첨부를 빼도 지시가 남는다.</li>
+     *   <li><b>비개인 소유 근거</b> — 참조 행의 소유자만 허용.</li>
+     *   <li><b>관리자</b>(ADMIN/SYSTEM) → 허용.</li>
      *   <li>그 외 → <b>403</b>. 참조원을 모르는 첨부는 지우지 않는다(fail-closed).</li>
      * </ol>
      *
@@ -135,8 +138,8 @@ public class FileAccessPolicy {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 
-        // 1. 업로더 본인.
-        if (loginId != null && loginId.equals(master.getFrstRgtrId())) {
+        // 1. 업로더 본인 — 미첨부 창.
+        if (isUnattachedUpload(master, loginId)) {
             return;
         }
 
@@ -148,23 +151,32 @@ public class FileAccessPolicy {
             throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
 
-        // 3·4. 공유 근거는 삭제 근거가 아니며, PERSONAL과 섞이면 개인 참조 당사자만 허용한다.
-        if (grants.personalReference() && grants.personalOwnerGrant()) {
-            return;
+        // 3. 개인 귀속 첨부는 이 경로로 지우지 않는다. 묶음을 바꾸는 일은 각 업무의 수정 경로가 맡는다(ADR-0048).
+        if (grants.personalReference()) {
+            log.warn("[FileAccess] 첨부 삭제 거부 — 개인 귀속 참조 atchFileSn={} loginId={}", atchFileSn, loginId);
+            throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
         }
-        if (!grants.personalReference() && grants.ownerGrant()) {
+
+        // 4. 공유 근거는 삭제 근거가 아니다 — 참조 행의 소유자만 허용한다.
+        if (grants.ownerGrant()) {
             return;
         }
 
-        // 5. 관리자 — 개인 귀속 참조원이 없을 때만.
+        // 5. 관리자.
         boolean admin = SecurityUtil.hasPermission("FILE_DELETE_ALL");
-        if (admin && !grants.personalReference()) {
+        if (admin) {
             return;
         }
 
-        log.warn("[FileAccess] 첨부 삭제 거부 — atchFileSn={} loginId={} admin={} ownerGrant={} personalRef={}",
-                atchFileSn, loginId, admin, grants.ownerGrant(), grants.personalReference());
+        log.warn("[FileAccess] 첨부 삭제 거부 — atchFileSn={} loginId={} admin={} ownerGrant={}",
+                atchFileSn, loginId, admin, grants.ownerGrant());
         throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
+    }
+
+    /** 내가 올렸고 아직 어느 업무 행도 가리키지 않는 첨부인가. 참조 조회에 실패하면 참조가 있는 것으로 본다(fail-closed). */
+    private boolean isUnattachedUpload(FileMaster master, String loginId) {
+        return loginId != null && loginId.equals(master.getFrstRgtrId())
+                && !referenceResolver.referenced(master.getAtchFileSn());
     }
 
     /**

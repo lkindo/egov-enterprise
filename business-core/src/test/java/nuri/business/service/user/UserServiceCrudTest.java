@@ -164,6 +164,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 성공")
   void signup_success() {
+      authorizeSignup();
     when(userRepository.findByUserId(any())).thenReturn(Optional.empty());
     when(passwordEncoder.encode(any())).thenReturn("encoded");
     when(userRepository.saveAndFlush(any())).thenAnswer(i -> i.getArgument(0));
@@ -177,6 +178,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 실패 - 중복된 ID")
   void signup_fail_duplicateId() {
+      authorizeSignup();
     when(userRepository.findByUserId(any())).thenReturn(Optional.of(mock(User.class)));
 
     assertThatThrownBy(() -> userService.signup(signupRequest))
@@ -186,6 +188,7 @@ class UserServiceCrudTest {
   @Test
   @DisplayName("사용자 회원가입 실패 - null 값 포함")
   void signup_fail_withNullValues() {
+      authorizeSignup();
     UserSignupRequest nullRequest = UserSignupRequest.builder().userId(null).pswd("pw").userNm("name").pswdHint("h").pswdCrans("c").build();
 
     assertThatThrownBy(() -> userService.signup(nullRequest))
@@ -205,4 +208,10 @@ class UserServiceCrudTest {
     when(passwordEncoder.matches(any(), any())).thenReturn(false);
     assertThat(passwordEncoder.matches("pw", "encoded")).isFalse();
   }
+
+    /** 가입은 잠금 뒤 현재 권한을 다시 본다(서비스 가드) — 컨트롤러를 지나지 않는 시험도 권한을 쥐어야 한다. */
+    private static void authorizeSignup() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+    }
 }

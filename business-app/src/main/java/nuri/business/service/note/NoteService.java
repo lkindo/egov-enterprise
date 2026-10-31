@@ -125,11 +125,11 @@ public class NoteService {
         if ("sent".equals(type)) {
             NoteTrnsmit trnsmit = noteTrnsmitRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-            assertNoteRelation(noteSn, trnsmit.getNote());
-            // [보안 H1] 발신자 본인만 조회 가능(IDOR 차단)
+            // [보안 H1] 발신자 본인만 조회 가능(IDOR 차단). 연결 검사보다 먼저 봐야 403/404 차이로 남의 연결을 알 수 없다.
             if (currentUserId == null || !currentUserId.equals(trnsmit.getSndrId())) {
                 throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
             }
+            assertNoteRelation(noteSn, trnsmit.getNote());
             // [V2_21] 발신자가 삭제한 쪽지는 목록에서 숨긴 것과 일관되게 상세도 부재로 처리
             if ("Y".equals(trnsmit.getDelYn())) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -144,11 +144,11 @@ public class NoteService {
         } else {
             NoteRecptn recptn = noteRecptnRepository.findById(relationSn)
                     .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
-            assertNoteRelation(noteSn, recptn.getNote());
-            // [보안 H1] 수신자 본인만 조회 가능(IDOR 차단)
+            // [보안 H1] 수신자 본인만 조회 가능(IDOR 차단). 연결 검사보다 먼저 본다.
             if (currentUserId == null || !currentUserId.equals(recptn.getRcvrId())) {
                 throw new BusinessException(CommonErrorCode.ACCESS_DENIED);
             }
+            assertNoteRelation(noteSn, recptn.getNote());
             // [V2_21] 수신자가 삭제한 사본은 상세도 부재로 처리
             if ("Y".equals(recptn.getDelYn())) {
                 throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);

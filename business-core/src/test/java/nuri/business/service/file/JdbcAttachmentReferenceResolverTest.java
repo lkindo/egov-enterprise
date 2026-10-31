@@ -9,6 +9,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 
 import java.sql.ResultSet;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -77,6 +78,12 @@ class JdbcAttachmentReferenceResolverTest {
                         when(rs.getString("schdl_dept_id")).thenReturn("DEPT1");
                         when(rs.getString("ognz_id")).thenReturn("DEPT1");
                         when(rs.getBoolean("published")).thenReturn(counts.sharedCnt()>0);
+                        when(rs.getString("pic_id")).thenReturn(counts.ownerCnt()>0?ESNTL_ID:"other-id");
+                        when(rs.getString("dept_id")).thenReturn(counts.sharedCnt()>0?"DEPT1":"DEPT2");
+                        when(rs.getString("rflt_yn")).thenReturn(counts.sharedCnt()>0?"Y":"N");
+                        when(rs.getString("ntce_yn")).thenReturn(counts.sharedCnt()>0?"Y":"N");
+                        when(rs.getObject("ntce_bgnde", LocalDate.class)).thenReturn(LocalDate.of(2000, 1, 1));
+                        when(rs.getObject("ntce_endde", LocalDate.class)).thenReturn(LocalDate.of(2999, 12, 31));
                         RowMapper<?> mapper=invocation.getArgument(1);
                         return List.of(mapper.mapRow(rs,0));
                     });
@@ -145,9 +152,9 @@ class JdbcAttachmentReferenceResolverTest {
                 .containsExactly(ATCH_FILE_SN);
         assertThat(jdbc.paramsFor(AttachmentSource.SCHEDULE)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
 
-        // NOTE: loginId 1개 + esntlId 2개(발신·수신 EXISTS) + atchFileSn.
+        // NOTE: esntlId 2개(발신·수신 EXISTS) + atchFileSn. 등록자 축은 사본을 지워도 남아 쓰지 않는다.
         assertThat(jdbc.paramsFor(AttachmentSource.NOTE))
-                .containsExactly(LOGIN_ID, ESNTL_ID, ESNTL_ID, ATCH_FILE_SN);
+                .containsExactly(ESNTL_ID, ESNTL_ID, ATCH_FILE_SN);
 
         // 두 축이 모두 있으면 OR 로 이어야 한다. 구분자가 빠지면 SQL 이 깨지고,
         // AND 로 바뀌면 '작성자이면서 동시에 esntlId 소유자' 라는 성립 불가 조건이 된다.
@@ -200,8 +207,9 @@ class JdbcAttachmentReferenceResolverTest {
     @Test
     @DisplayName("소유 근거가 하나라도 있으면 ownerGrant 로 집계된다")
     void ownerHitIsAggregated() {
-        AttachmentReferenceResolver.Grants grants =
-                new CapturingJdbc(1, 0, 1).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+        // 부서 업무의 담당자는 소유이면서 열람 대상이므로 소유만 세는 참조원으로 본다.
+        AttachmentReferenceResolver.Grants grants = new CapturingJdbc(source -> source == AttachmentSource.DIARY
+                ? new SourceCounts(1, 0, 1) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(grants.ownerGrant()).isTrue();
         assertThat(grants.sharedGrant()).isFalse();
@@ -402,11 +410,14 @@ class JdbcAttachmentReferenceResolverTest {
 
         for (String sql : jdbc.sqls) {
             if (!sql.contains("FROM tb_bbs_item ") && !sql.contains("FROM tb_schdl_info ")
-                    && !sql.contains("FROM tb_cms_conts_file ")) {
+                    && !sql.contains("FROM tb_cms_conts_file ") && !sql.contains("FROM tb_dept_task_info ")
+                    && !sql.contains("FROM tb_popup_info ") && !sql.contains("FROM tb_bnr_info ")) {
                 assertThat(sql).contains("COUNT(*) AS ref_cnt");
             }
         }
         assertThat(jdbc.sqlFor(AttachmentSource.BOARD)).contains("WHERE b.atch_file_sn=?");
+        assertThat(jdbc.sqlFor(AttachmentSource.DEPT_TASK)).contains("WHERE t.atch_file_sn = ?");
+        assertThat(jdbc.sqlFor(AttachmentSource.BANNER)).contains("WHERE atch_file_sn = ?");
         assertThat(jdbc.sqlFor(AttachmentSource.SCHEDULE))
                 .contains("u.user_id = ?", "WHERE s.atch_file_sn = ?");
         assertThat(jdbc.sqlFor(AttachmentSource.CMS_PAGE)).contains("WHERE f.atch_file_sn = ?");
@@ -422,9 +433,9 @@ class JdbcAttachmentReferenceResolverTest {
 
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
-        // 소유(loginId) 1개 + 연결 URL 2개 = 3개여야 한다. 첨부 번호를 그대로 넘기면 file_url 과 같은 값이 없다.
+        // 연결 URL 2개여야 한다. 첨부 번호를 그대로 넘기면 file_url 과 같은 값이 없다.
         assertThat(jdbc.paramsFor(AttachmentSource.POPUP))
-                .containsExactly(LOGIN_ID, "/api/v1/files/" + ATCH_FILE_SN, "/api/v1/files/download?fileId=" + ATCH_FILE_SN);
+                .containsExactly("/api/v1/files/" + ATCH_FILE_SN, "/api/v1/files/download?fileId=" + ATCH_FILE_SN);
         assertThat(jdbc.sqlFor(AttachmentSource.POPUP)).doesNotContain("||");
     }
 
@@ -474,6 +485,43 @@ class JdbcAttachmentReferenceResolverTest {
         assertThat(jdbc.sqls).noneMatch(sql -> sql.contains("tb_schdl_info"));
         assertThat(new CapturingJdbc(0, 0, 0).resolver()
                 .resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID).readDenied()).isFalse();
+    }
+
+    @Test
+    @DisplayName("🔐 부서 업무 첨부는 본문과 같다 — 무관한 사용자는 근거가 없고, 담당자는 소유 근거를 얻는다")
+    void deptTaskFollowsBodyAccess() {
+        AttachmentReferenceResolver.Grants stranger = new CapturingJdbc(source -> source == AttachmentSource.DEPT_TASK
+                ? new SourceCounts(1, 0, 0) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+        assertThat(stranger.sharedGrant()).as("다른 부서 사용자에게 공유 근거가 생겼다").isFalse();
+        assertThat(stranger.ownerGrant()).isFalse();
+
+        AttachmentReferenceResolver.Grants sameDepartment = new CapturingJdbc(source -> source == AttachmentSource.DEPT_TASK
+                ? new SourceCounts(1, 1, 0) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+        assertThat(sameDepartment.sharedGrant()).isTrue();
+        assertThat(sameDepartment.ownerGrant()).as("같은 부서는 열람만 한다").isFalse();
+
+        AttachmentReferenceResolver.Grants assignee = new CapturingJdbc(source -> source == AttachmentSource.DEPT_TASK
+                ? new SourceCounts(1, 0, 1) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+        assertThat(assignee.ownerGrant()).isTrue();
+        assertThat(assignee.readDenied()).as("관리자 우회를 막는 근거가 아니다").isFalse();
+    }
+
+    @Test
+    @DisplayName("🔐 팝업·배너 첨부는 게시·반영된 것만 공유된다 — 초안은 등록자의 소유 근거로만 열린다")
+    void popupAndBannerShareOnlyPublishedRows() {
+        for (AttachmentSource source : List.of(AttachmentSource.POPUP, AttachmentSource.BANNER)) {
+            AttachmentReferenceResolver.Grants draft = new CapturingJdbc(candidate -> candidate == source
+                    ? new SourceCounts(1, 0, 0) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+            assertThat(draft.sharedGrant()).as("%s 초안이 공유됐다", source).isFalse();
+
+            AttachmentReferenceResolver.Grants published = new CapturingJdbc(candidate -> candidate == source
+                    ? new SourceCounts(1, 1, 0) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+            assertThat(published.sharedGrant()).as("%s 게시본이 공유되지 않는다", source).isTrue();
+
+            AttachmentReferenceResolver.Grants registrar = new CapturingJdbc(candidate -> candidate == source
+                    ? new SourceCounts(1, 0, 1) : SourceCounts.NONE).resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
+            assertThat(registrar.ownerGrant()).as("%s 등록자", source).isTrue();
+        }
     }
 
     /**

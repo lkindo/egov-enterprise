@@ -49,6 +49,9 @@ server {
         proxy_set_header X-Forwarded-For $remote_addr;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-Host $http_host;
+        # 표준 Forwarded 는 쓰지 않으므로 클라이언트 값을 넘기지 않는다. X-Forwarded-Proto 는 건드리지 않는다 — 이 서버는 평문이라
+        # $scheme 이 늘 http 이고, 앞단이 TLS 를 끝낼 때 넘긴 https 를 덮으면 Next 의 출처 판정이 어긋난다.
+        proxy_set_header Forwarded "";
 
         # /ws 는 Next rewrite 를 거쳐 백엔드 STOMP 로 간다.
         proxy_set_header Upgrade $http_upgrade;

@@ -43,6 +43,7 @@ public class DeptManageService {
 
     @Transactional
     public String insertDeptManage(DeptManageDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("DEPT_CREATE");
         // [PK 채번] 종전에는 dto.getOgnzId() 를 그대로 썼고 DTO 가 @NotBlank 였는데, 등록 폼은 이 값을
         //   수집하지 않는다. 그래서 부서 등록이 항상 400 이었고 조직이 '기본조직' 1건뿐이었다.
         //   기존 데이터 컨벤션(ORGNZT_...)을 이어가되 서버가 채번한다. 'ORGNZT_'(7) + 13 = 20자(컬럼 상한).
@@ -75,6 +76,7 @@ public class DeptManageService {
 
     @Transactional
     public void updateDeptManage(DeptManageDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("DEPT_UPDATE");
         DeptManage entity = deptManageRepository.findByIdForUpdate(Objects.requireNonNull(dto.getOgnzId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getOgnzNm(), dto.getOgnzExpln());
@@ -86,6 +88,7 @@ public class DeptManageService {
      */
     @Transactional
     public void updateDeptHierarchy(List<DeptManageDto> items) {
+        nuri.business.security.util.SecurityUtil.assertPermission("DEPT_UPDATE");
         if (items == null || items.isEmpty()) {
             return;
         }
@@ -132,6 +135,7 @@ public class DeptManageService {
 
     @Transactional
     public void deleteDeptManage(String ognzId) {
+        nuri.business.security.util.SecurityUtil.assertPermission("DEPT_DELETE");
         Objects.requireNonNull(ognzId);
 
         // [삭제 가드] tb_user_info.ognz_id 와 tb_ognz_info.up_ognz_id 모두 DB FK 가 없어(NO_CONSTRAINT)

@@ -317,7 +317,7 @@ test('migration duration profile exactly covers source tests and produces three 
   const profile = loadMigrationDurationProfile();
   const classes = discoverMigrationTestClasses();
   assert.deepEqual(validateMigrationDurationProfile(profile, classes), []);
-  assert.equal(classes.length, 194);
+  assert.equal(classes.length, 195);
   assert.equal(profile.source.classMeasurements?.['nuri.migration.MigrationWorkspacePackagedCliIntegrationTest']?.kind, 'local-junit');
   const plan = buildMigrationShardPlan(profile, classes);
   assert.equal(plan.length, 3);

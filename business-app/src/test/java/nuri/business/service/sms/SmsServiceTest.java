@@ -214,6 +214,53 @@ class SmsServiceTest {
      * [2026-09-05 DEC-OPS-035] 수신자 피커 공용화 — recipients(esntlId|rcptnTelno) 계약.
      */
     @Test
+    @DisplayName("🔐 사용자를 골라 보낸 수신자는 식별자를 남기고, 직접 입력한 번호는 사람을 추정하지 않는다(DEC-OPS-394)")
+    void sendSms_recordsReceiverOnlyWhenChosenAsAUser() {
+        SmsDto dto = SmsDto.builder().sndngTelno("0212345678").sndngCn("hi")
+                .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_A").build(),
+                        SmsRecptnDto.builder().rcptnTelno("01099998888").build()))
+                .build();
+        when(userContactService.resolve(any())).thenReturn(List.of(
+                new nuri.business.service.user.UserContactService.UserContact("USR_A", "갑", null, "01012345678")));
+        when(smsRepository.save(any(nuri.business.domain.sms.Sms.class))).thenAnswer(invocation -> {
+            nuri.business.domain.sms.Sms saved = invocation.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(saved, "smsTrsmSn", 7L);
+            return saved;
+        });
+
+        smsService.sendSms("sender", dto);
+
+        org.mockito.ArgumentCaptor<SmsRecptn> saved = org.mockito.ArgumentCaptor.forClass(SmsRecptn.class);
+        verify(smsRecptnRepository, org.mockito.Mockito.times(2)).save(saved.capture());
+        assertThat(saved.getAllValues()).extracting(SmsRecptn::getRcptnTelno, SmsRecptn::getRcvrId)
+                .containsExactly(org.assertj.core.groups.Tuple.tuple("01012345678", "USR_A"),
+                        org.assertj.core.groups.Tuple.tuple("01099998888", null));
+    }
+
+    @Test
+    @DisplayName("🔐 한 번호에 수신자가 겹치면 한 사람으로 특정하지 않는다 — 감사 기록에 다른 사람을 남기지 않는다")
+    void sendSms_leavesReceiverEmptyWhenANumberIsShared() {
+        SmsDto dto = SmsDto.builder().sndngTelno("0212345678").sndngCn("hi")
+                .recipients(List.of(SmsRecptnDto.builder().esntlId("USR_A").build(),
+                        SmsRecptnDto.builder().esntlId("USR_B").build()))
+                .build();
+        when(userContactService.resolve(any())).thenReturn(List.of(
+                new nuri.business.service.user.UserContactService.UserContact("USR_A", "갑", null, "01012345678"),
+                new nuri.business.service.user.UserContactService.UserContact("USR_B", "을", null, "01012345678")));
+        when(smsRepository.save(any(nuri.business.domain.sms.Sms.class))).thenAnswer(invocation -> {
+            nuri.business.domain.sms.Sms saved = invocation.getArgument(0);
+            org.springframework.test.util.ReflectionTestUtils.setField(saved, "smsTrsmSn", 8L);
+            return saved;
+        });
+
+        smsService.sendSms("sender", dto);
+
+        org.mockito.ArgumentCaptor<SmsRecptn> saved = org.mockito.ArgumentCaptor.forClass(SmsRecptn.class);
+        verify(smsRecptnRepository).save(saved.capture());
+        assertThat(saved.getValue().getRcvrId()).isNull();
+    }
+
+    @Test
     @DisplayName("사용자(esntlId) 수신자는 서버가 휴대전화 번호로 해석해 수신자 행을 만든다 — 번호 직접 입력과 섞어도 순서 보존")
     void sendSms_resolvesUserRecipientsToPhoneNumbers() {
         SmsDto dto = SmsDto.builder()

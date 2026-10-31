@@ -23,11 +23,16 @@ public class SmsRecptn extends BaseEntity {
     @Column(length = 4000)
     private String rsltMsg;
 
+    /** 사용자를 골라 보낸 수신자의 esntlId. 직접 입력한 번호와 이 컬럼 전의 행은 비어 있다 — 번호로 사람을 추정하지 않는다. */
+    @Column(length = 20)
+    private String rcvrId;
+
     @Builder
-    public SmsRecptn(Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg) {
+    public SmsRecptn(Long smsTrsmSn, String rcptnTelno, String rsltCd, String rsltMsg, String rcvrId) {
         this.id = new SmsRecptnId(smsTrsmSn, rcptnTelno);
         this.rsltCd = rsltCd;
         this.rsltMsg = rsltMsg;
+        this.rcvrId = rcvrId;
     }
 
     public Long getSmsTrsmSn() {

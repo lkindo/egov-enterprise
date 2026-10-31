@@ -55,7 +55,7 @@ class FileAccessPolicyTest {
     void uploaderCanReadOwnOrphanUpload() {
         authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
 
-        assertThatCode(() -> policy(grantsNone()).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+        assertThatCode(() -> unattached(grantsNone()).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .doesNotThrowAnyException();
     }
 
@@ -131,7 +131,7 @@ class FileAccessPolicyTest {
     }
 
     @Test
-    @DisplayName("일정의 읽기 제한보다 기존 개인 참조 당사자 판정과 업로더 예외가 우선한다")
+    @DisplayName("일정의 읽기 제한보다 개인 참조 당사자 판정이 우선하고, 업로더도 그 제한을 지나지 못한다")
     void domainReadRestrictionPreservesPersonalPartiesAndUploader() {
         authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
         var personalOwner = new AttachmentReferenceResolver.Grants(false, true, true, true, false, false, true);
@@ -143,8 +143,9 @@ class FileAccessPolicyTest {
         assertThatExceptionOfType(BusinessException.class)
                 .isThrownBy(() -> policy(personalReader).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)));
         authenticate(UPLOADER_LOGIN_ID, "uploader-internal", "ROLE_USER");
-        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, false, false, false, false, false, true))
-                .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID))).doesNotThrowAnyException();
+        assertThatExceptionOfType(BusinessException.class).as("업무 행에 붙은 뒤에는 업로더 예외가 없다")
+                .isThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(false, false, false, false, false, false, true))
+                        .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)));
     }
 
     @Test
@@ -206,21 +207,37 @@ class FileAccessPolicyTest {
     }
 
     @Test
-    @DisplayName("업로더 본인은 공유·개인 참조가 함께 있어도 자기 첨부를 열람한다")
-    void uploaderCanReadOwnAttachmentWithMixedReferences() {
+    @DisplayName("🚨 업무 행에 붙은 첨부는 업로더도 그 참조의 판정을 따른다 — 사용 안 함 게시판의 잠금을 지나지 못한다(ADR-0040)")
+    void uploaderFollowsReferenceOnceAttached() {
         authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
 
-        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(true, false, true, false, true))
+        assertThatExceptionOfType(BusinessException.class)
+                .as("참조가 있는 첨부를 업로더라는 이유만으로 열었다")
+                .isThrownBy(() -> policy(grantsNone()).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)));
+        assertThatExceptionOfType(BusinessException.class)
+                .as("참조원을 판정하지 못했는데 업로더라는 이유로 열었다")
+                .isThrownBy(() -> policy(new AttachmentReferenceResolver.Grants(true, true, false, false, true))
+                        .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)));
+        assertThatCode(() -> policy(new AttachmentReferenceResolver.Grants(false, true, false, false, false))
                 .assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                .as("참조 행의 소유자이면 그대로 연다")
                 .doesNotThrowAnyException();
     }
 
     @Test
-    @DisplayName("업로더 조기 허용은 참조원 장애와 무관하며 조회기조차 호출하지 않는다")
-    void uploaderEarlyGrantDoesNotResolveReferences() {
+    @DisplayName("미첨부 창의 업로더는 근거 판정을 거치지 않는다")
+    void unattachedUploadDoesNotResolveGrants() {
         authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
-        FileAccessPolicy policy = new FileAccessPolicy((atchFileSn, loginId, esntlId) -> {
-            throw new AssertionError("업로더 조기 허용 뒤에는 참조원을 조회하면 안 된다");
+        FileAccessPolicy policy = new FileAccessPolicy(new AttachmentReferenceResolver() {
+            @Override
+            public Grants resolve(Long atchFileSn, String loginId, String esntlId) {
+                throw new AssertionError("미첨부 창에서는 근거를 판정하지 않는다");
+            }
+
+            @Override
+            public boolean referenced(Long atchFileSn) {
+                return false;
+            }
         });
 
         assertThatCode(() -> policy.assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
@@ -294,7 +311,7 @@ class FileAccessPolicyTest {
     void loginIdAloneIsSufficientToBeConsideredAuthenticated() {
         authenticate(UPLOADER_LOGIN_ID, null, "ROLE_USER");
 
-        assertThatCode(() -> policy(grantsNone()).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+        assertThatCode(() -> unattached(grantsNone()).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                 .doesNotThrowAnyException();
     }
 
@@ -474,8 +491,19 @@ class FileAccessPolicyTest {
         void uploaderCanDeleteOwnOrphanUpload() {
             authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
 
-            assertThatCode(() -> policy(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+            assertThatCode(() -> unattached(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
                     .doesNotThrowAnyException();
+        }
+
+        @Test
+        @DisplayName("🚨 업무 행에 붙은 첨부는 업로더라는 이유만으로 지우지 못한다 — 발송한 쪽지·사용 안 함 게시판의 첨부")
+        void uploaderCannotDeleteOnceAttached() {
+            authenticate(UPLOADER_LOGIN_ID, "USR_0000000000000001", "ROLE_USER");
+
+            assertThatThrownBy(() -> policy(grantsNone()).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                    .isInstanceOf(BusinessException.class)
+                    .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                    .isEqualTo(CommonErrorCode.ACCESS_DENIED);
         }
 
         @Test
@@ -504,15 +532,22 @@ class FileAccessPolicyTest {
         }
 
         @Test
-        @DisplayName("PERSONAL과 SHARED 참조가 섞여도 개인 참조 당사자는 삭제할 수 있다")
-        void personalOwnerCanDeleteMixedPersonalAttachment() {
+        @DisplayName("🚨 개인 귀속 첨부는 당사자도 개별 삭제로 지우지 못한다 — 쪽지 수신자가 지우면 모두의 파일이 사라진다(ADR-0048)")
+        void personalPartyCannotDeleteThroughFileApi() {
             authenticate(OTHER_LOGIN_ID, OTHER_ESNTL_ID, "ROLE_USER");
+            AttachmentReferenceResolver.Grants noteParty =
+                    new AttachmentReferenceResolver.Grants(false, true, true, true, false);
             AttachmentReferenceResolver.Grants mixedPersonalOwner =
                     new AttachmentReferenceResolver.Grants(true, true, true, true, false);
 
-            assertThatCode(() -> policy(mixedPersonalOwner)
-                    .assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
-                    .doesNotThrowAnyException();
+            for (AttachmentReferenceResolver.Grants grants : List.of(noteParty, mixedPersonalOwner)) {
+                assertThatCode(() -> policy(grants).assertReadable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                        .as("열람은 그대로다").doesNotThrowAnyException();
+                assertThatThrownBy(() -> policy(grants).assertDeletable(masterOwnedBy(UPLOADER_LOGIN_ID)))
+                        .isInstanceOf(BusinessException.class)
+                        .extracting(ex -> ((BusinessException) ex).getErrorCode())
+                        .isEqualTo(CommonErrorCode.ACCESS_DENIED);
+            }
         }
 
         @Test
@@ -589,6 +624,21 @@ class FileAccessPolicyTest {
 
     private FileAccessPolicy policy(AttachmentReferenceResolver.Grants grants) {
         return new FileAccessPolicy((atchFileSn, loginId, esntlId) -> grants);
+    }
+
+    /** 어느 업무 행도 가리키지 않는 첨부(미첨부 창). */
+    private FileAccessPolicy unattached(AttachmentReferenceResolver.Grants grants) {
+        return new FileAccessPolicy(new AttachmentReferenceResolver() {
+            @Override
+            public Grants resolve(Long atchFileSn, String loginId, String esntlId) {
+                return grants;
+            }
+
+            @Override
+            public boolean referenced(Long atchFileSn) {
+                return false;
+            }
+        });
     }
 
     private AttachmentReferenceResolver.Grants grantsNone() {

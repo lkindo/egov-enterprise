@@ -6,6 +6,7 @@ import nuri.business.service.user.UserService;
 import nuri.business.service.user.dto.UserSignupRequest;
 import nuri.foundation.core.exception.BusinessException;
 import nuri.foundation.core.user.LoginIdReferenceContributor.Reference;
+import nuri.foundation.security.service.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.test.context.ActiveProfiles;
 
@@ -46,13 +48,35 @@ class LoginIdReuseIntegrationTest {
     @Autowired private JdbcTemplate jdbc;
 
     private String loginId;
+    private String admin;
+    private String adminGroup;
     private final List<Long> deptTasks = new ArrayList<>();
     private final List<String> codeCategories = new ArrayList<>();
 
     @BeforeEach
     void pickUnusedLoginId() {
         SecurityContextHolder.clearContext();
-        loginId = "reuse" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12);
+        loginId = "reuse" + suffix;
+        admin = "RAU" + suffix;
+        adminGroup = "RAG" + suffix;
+        authorizeSignup();
+    }
+
+    /** 가입은 잠금 뒤 DB 의 현재 권한을 다시 본다 — 권한을 든 사용자를 실제 행으로 둔다. */
+    private void authorizeSignup() {
+        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'재사용 시험 관리자','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))", admin, admin);
+        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,'재사용 시험',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", adminGroup);
+        jdbc.update("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,'OPERATION','USER_CREATE',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", adminGroup);
+        jdbc.update("INSERT INTO tb_authrt_user_map(scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,?,'USR03',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", admin, adminGroup);
+        var principal = CustomUserDetails.builder().userId(admin).esntlId(admin).enabled(true)
+                .permissions(List.of("USER_CREATE")).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }
 
     @AfterEach
@@ -60,6 +84,10 @@ class LoginIdReuseIntegrationTest {
         SecurityContextHolder.clearContext();
         for (Long sn : deptTasks) jdbc.update("DELETE FROM tb_dept_task_info WHERE dept_task_sn = ?", sn);
         for (String code : codeCategories) jdbc.update("DELETE FROM tb_com_clsf_cd WHERE clsf_cd = ?", code);
+        jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id = ?", admin);
+        jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_cd = ?", adminGroup);
+        jdbc.update("DELETE FROM tb_authrt_info WHERE authrt_cd = ?", adminGroup);
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id = ?", admin);
         List<String> created = jdbc.queryForList("SELECT esntl_id FROM tb_user_info WHERE user_id = ?", String.class, loginId);
         for (String esntlId : created) {
             // 권한 변경 이력은 V2_132 트리거가 선언 없는 삭제를 막는다 — 시험 준비물 정리는 보존 정리 선언과 함께 지운다.

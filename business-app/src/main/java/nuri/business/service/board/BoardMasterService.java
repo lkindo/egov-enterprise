@@ -231,6 +231,7 @@ public class BoardMasterService extends BaseAbstractService {
 
     @Transactional
     public String createBoardMaster(String userId, BoardMasterDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("BBS_MST_CREATE");
         assertCommunityExists(dto.getCmntySn());
         String bbsId = dto.getBbsId();
         if (bbsId == null || bbsId.isEmpty()) {
@@ -276,6 +277,7 @@ public class BoardMasterService extends BaseAbstractService {
      */
     @Transactional
     public void updateBoardMaster(String userId, @NonNull String bbsId, BoardMasterUpdateRequest request) {
+        nuri.business.security.util.SecurityUtil.assertPermission("BBS_MST_UPDATE");
         BoardMaster entity = boardMasterRepository.findById(Objects.requireNonNull(bbsId))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         // 값을 합치기 전에 대조한다 — 늦은 저장이 앞 저장을 덮지 않게 한다.
@@ -341,6 +343,7 @@ public class BoardMasterService extends BaseAbstractService {
      */
     @Transactional
     public void deleteBoardMaster(String userId, String bbsId) {
+        nuri.business.security.util.SecurityUtil.assertPermission("BBS_MST_DELETE");
         BoardMaster entity = boardMasterRepository.findById(bbsId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         String beforeUse = entity.getUseYn();
@@ -416,6 +419,7 @@ public class BoardMasterService extends BaseAbstractService {
 
     @Transactional
     public void deleteBoardMasterPhysically(String userId, String bbsId) {
+        nuri.business.security.util.SecurityUtil.assertPermission("BBS_MST_DELETE");
         BoardMaster master = boardMasterRepository.findById(bbsId)
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
 
@@ -437,6 +441,7 @@ public class BoardMasterService extends BaseAbstractService {
 
     @Transactional
     public void updateBoardMasterStatusInBatch(String userId, List<String> bbsIds, String useYn) {
+        nuri.business.security.util.SecurityUtil.assertPermission("BBS_MST_UPDATE");
         if (bbsIds == null || bbsIds.isEmpty()) {
             return;
         }
@@ -457,6 +462,7 @@ public class BoardMasterService extends BaseAbstractService {
 
     @Transactional
     public void deleteBoardMastersInBatch(String userId, List<String> bbsIds) {
+        nuri.business.security.util.SecurityUtil.assertPermission("BBS_MST_DELETE");
         if (bbsIds == null || bbsIds.isEmpty()) {
             return;
         }

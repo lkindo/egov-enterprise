@@ -45,6 +45,7 @@ public class UserAbsenceServiceImpl implements UserAbsenceService {
     @Override
     @Transactional
     public void updateAbsence(String userId, UserAbsenceDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("ABSENCE_UPDATE");
         // [V2_13 결속] tb_user_absn.user_id 는 esntl_id 규약 — 실존 사용자 검증이 키 규약의 코드 확정을 겸함
         // (fk_tb_user_absn_tb_user_info 하에서 유령 id 업서트는 FK 위반이 되므로 도메인 예외로 선차단)
         if (!userRepository.existsById(userId)) {

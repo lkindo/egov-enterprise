@@ -236,6 +236,18 @@ class PopupServiceImplTest {
     }
 
     @Test
+    @DisplayName("팝업 등록 - 위험한 스킴과 프로토콜 상대 주소는 저장하지 않는다")
+    void createPopup_rejectsUnsafeUrls() {
+        authenticate("POPUP_CREATE");
+        for (String url : java.util.List.of("javascript:alert(1)", "data:image/svg+xml,x", "vbscript:x", "//attacker.test")) {
+            PopupDto dto = PopupDto.builder().popupTtlNm("위험").fileUrl(url).build();
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> popupService.createPopup("admin", dto))
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        org.mockito.Mockito.verify(popupRepository, org.mockito.Mockito.never()).save(any(Popup.class));
+    }
+
+    @Test
     @DisplayName("팝업 등록 - 외부 URL과 일반 내부 자산 경로는 첨부 검증 대상이 아니다")
     void createPopup_nonAttachmentUrlsRemainAllowed() {
         authenticate("POPUP_CREATE");

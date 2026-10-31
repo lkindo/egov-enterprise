@@ -14,6 +14,7 @@ import org.mapstruct.ReportingPolicy;
 @Mapper(componentModel = "spring", unmappedTargetPolicy = ReportingPolicy.IGNORE)
 public interface SmsRecptnMapper {
 
+    @org.mapstruct.Mapping(target = "esntlId", source = "rcvrId")
     @org.mapstruct.Mapping(target = "rsltMsg", expression = "java(nuri.business.service.sms.SmsReceiptState.display(entity.getRsltCd(), entity.getRsltMsg()))")
     SmsRecptnDto toDto(SmsRecptn entity);
 }

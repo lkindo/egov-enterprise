@@ -59,6 +59,18 @@ class UserContactServiceTest {
     }
 
     @Test
+    @DisplayName("🚨 사용 중이 아닌 계정은 없는 수신자와 같다 — 연락처와 이름을 돌려주지 않는다")
+    void inactiveAccountsAreNotResolved() {
+        for (String state : List.of("D", "A")) {
+            given(userRepository.findByEsntlIdIn(any())).willReturn(List.of(user("USR_X", "퇴사자", "x@example.com", "01012345678", state)));
+
+            assertThatThrownBy(() -> userContactService.resolve(List.of("USR_X")))
+                    .isInstanceOf(nuri.foundation.core.exception.BusinessException.class)
+                    .hasMessageNotContaining("퇴사자");
+        }
+    }
+
+    @Test
     @DisplayName("🚨 하나라도 존재하지 않는 사용자가 있으면 전체를 거부한다 — 부분 발송 금지")
     void rejectsWhenAnyUserIsMissing() {
         given(userRepository.findByEsntlIdIn(any()))
@@ -80,12 +92,17 @@ class UserContactServiceTest {
     }
 
     private static User user(String esntlId, String userNm, String emlAddr, String mblTelno) {
+        return user(esntlId, userNm, emlAddr, mblTelno, "P");
+    }
+
+    private static User user(String esntlId, String userNm, String emlAddr, String mblTelno, String state) {
         // 엔티티 기본 생성자는 JPA 용 protected 다 — Spring 의 BeanUtils 가 접근 가능하게 만들어 생성한다.
         User user = org.springframework.beans.BeanUtils.instantiateClass(User.class);
         ReflectionTestUtils.setField(user, "esntlId", esntlId);
         ReflectionTestUtils.setField(user, "userNm", userNm);
         ReflectionTestUtils.setField(user, "emlAddr", emlAddr);
         ReflectionTestUtils.setField(user, "mblTelno", mblTelno);
+        ReflectionTestUtils.setField(user, "userSttsCd", state);
         return user;
     }
 }

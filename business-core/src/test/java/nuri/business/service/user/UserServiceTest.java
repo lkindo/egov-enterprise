@@ -308,6 +308,7 @@ class UserServiceTest {
     @Test
     @DisplayName("가입 - 지워진 계정의 기록이 남은 로그인 ID 는 일반 중복과 같은 오류로 거부한다")
     void signupRejectsLoginIdStillCarriedByRecords() {
+        authorizeSignup();
         given(userRepository.findByUserId("reused")).willReturn(Optional.empty());
         given(userRepository.existsById("reused")).willReturn(false);
         given(loginIdReuseGuard.isStillReferenced("reused")).willReturn(true);
@@ -333,6 +334,22 @@ class UserServiceTest {
         assertDoesNotThrow(() -> userService.changePassword("user1", "old", "new"));
         verify(user).updatePassword("newEncoded");
         verify(refreshTokenRepository).deleteAllByEsntlIdIn(List.of("USR_ESNTL_1"));
+    }
+
+    @Test
+    @DisplayName("🚨 현재 비밀번호와 같은 값으로는 바꾸지 못한다 — 임시 비밀번호 표시만 지워 강제 변경을 건너뛴다")
+    void changePasswordRejectsTheSameValue() {
+        User user = mock(User.class);
+        given(userRepository.findById("user1")).willReturn(Optional.of(user));
+        given(user.getPswd()).willReturn("oldEncoded");
+        given(passwordEncoder.matches("temporary", "oldEncoded")).willReturn(true);
+
+        BusinessException error = assertThrows(BusinessException.class,
+                () -> userService.changePassword("user1", "temporary", "temporary"));
+
+        assertEquals(nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE, error.getErrorCode());
+        verify(user, never()).updatePassword(any());
+        verify(refreshTokenRepository, never()).deleteAllByEsntlIdIn(any());
     }
 
     @Test
@@ -404,6 +421,7 @@ class UserServiceTest {
     @Test
     @DisplayName("가입: 가입일자는 시계의 시간대(Asia/Seoul) 기준 날짜다 — UTC 로 세면 하루 어긋나는 경계")
     void signupStampsSignupDateInSeoul() {
+        authorizeSignup();
         UserSignupRequest request = UserSignupRequest.builder().userId("dated2").pswd("password").userNm("신규유저").build();
         given(userRepository.findByUserId("dated2")).willReturn(Optional.empty());
         given(passwordEncoder.encode(anyString())).willReturn("encoded");
@@ -420,6 +438,7 @@ class UserServiceTest {
     @Test
     @DisplayName("회원가입 테스트")
     void signupTest() {
+        authorizeSignup();
         UserSignupRequest request = UserSignupRequest.builder()
                 .userId("newuser")
                 .pswd("password")
@@ -975,5 +994,11 @@ class UserServiceTest {
 
         assertThat(detail.passwordChangeRequired()).isTrue();
         assertThat(detail.mfaEnabled()).isTrue();
+    }
+
+    /** 가입은 잠금 뒤 현재 권한을 다시 본다(서비스 가드) — 컨트롤러를 지나지 않는 시험도 권한을 쥐어야 한다. */
+    private static void authorizeSignup() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
     }
 }

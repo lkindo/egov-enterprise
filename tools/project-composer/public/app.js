@@ -32,6 +32,27 @@ function text(tag, content, classes = '') {
   return element;
 }
 // 연결이 끊기거나 응답이 JSON 이 아니면 브라우저 영문 오류 대신 한국어로 알린다.
+const LAUNCH_STORAGE_KEY = 'project-composer-launch';
+const LAUNCH_SECRET = /^[A-Za-z0-9_-]{43}$/;
+let launchSecret;
+// 실행기 터미널 주소의 조각(#launch=)에서 실행 비밀을 읽고 바로 주소에서 지운다. sessionStorage 는 이 포트·이 탭에만 남아 새로고침
+// 뒤에도 쓰인다.
+function captureLaunchSecret() {
+  if (location.hash.startsWith('#launch=')) {
+    const candidate = location.hash.slice('#launch='.length);
+    history.replaceState(history.state, '', `${location.pathname}${location.search}`);
+    if (LAUNCH_SECRET.test(candidate)) {
+      launchSecret = candidate;
+      try { sessionStorage.setItem(LAUNCH_STORAGE_KEY, candidate); } catch { /* 저장할 수 없으면 이 탭 메모리에만 둔다. */ }
+      return;
+    }
+  }
+  try {
+    const stored = sessionStorage.getItem(LAUNCH_STORAGE_KEY);
+    if (stored && LAUNCH_SECRET.test(stored)) launchSecret = stored;
+  } catch { /* 저장소를 읽을 수 없으면 터미널 주소로 다시 연다. */ }
+}
+captureLaunchSecret();
 const CONNECTION_FAILED = '생성기 서버에 연결하지 못했습니다. 생성기가 실행 중인지 확인한 뒤 다시 시도해 주세요.';
 async function api(path, payload) {
   let response;
@@ -39,7 +60,8 @@ async function api(path, payload) {
   try {
     response = await fetch(path, {
       method: payload === undefined ? 'GET' : 'POST', credentials: 'same-origin',
-      headers: payload === undefined ? {} : { 'Content-Type': 'application/json', 'X-Composer-CSRF': state.csrf },
+      headers: payload === undefined ? (launchSecret ? { 'X-Composer-Launch': launchSecret } : {})
+        : { 'Content-Type': 'application/json', 'X-Composer-CSRF': state.csrf },
       body: payload === undefined ? undefined : JSON.stringify(payload),
     });
     data = await response.json();

@@ -106,6 +106,11 @@ public class Schedule extends BaseEntity implements Serializable {
         this.atchFileSn = atchFileSn;
     }
 
+    /** 공유 대상 부서를 정한다. 소유자의 부서로만 부른다 — 수정자의 부서가 아니다. */
+    public void shareWithDepartment(String schdlDeptId) {
+        this.schdlDeptId = schdlDeptId;
+    }
+
     public void updateAll(String schdlNm, String schdlCn, String schdlSeCd, String schdlKndCd, String schdlBgngYmd, String schdlEndYmd,
                        String schdlPlcNm, String schdlImprtCd, String schdlPicId, String reptSeCd) {
         updateAll(schdlNm, schdlCn, schdlSeCd, schdlKndCd, schdlBgngYmd, schdlEndYmd,

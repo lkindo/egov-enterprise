@@ -354,6 +354,17 @@ class MemoReportRecipientIntegrityIntegrationTest {
         assertThat(reportRow(id)).containsEntry("drctn_mttr", "read corrected content");
     }
 
+    @Test
+    void authorCannotDeleteAMemoAttachmentThroughTheFileApiBeforeOrAfterInstruction() throws Exception {
+        long group = upload();
+        long id = attachedMemo(group);
+        authenticate(sender);
+        assertThatThrownBy(() -> files.deleteFile(group, 1))
+                .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
+        assertThat(fileCount(group)).isEqualTo(1);
+        assertThat(memoReportService.getMemoReport(id).getAtchFileSn()).isEqualTo(group);
+    }
+
     @ParameterizedTest
     @ValueSource(strings = {"append", "delete", "reuse"})
     void sameGroupMutationIncludingIdenticalNameSizeAndReusedSequenceInvalidatesToken(String mutation) throws Exception {
@@ -721,8 +732,12 @@ class MemoReportRecipientIntegrityIntegrationTest {
     private void mutate(long group, String mutation) {
         if (mutation.equals("delete") || mutation.equals("reuse")) {
             deletedFileIds.add(details.findByFileMasterAtchFileSnAndAtchFileSeq(group, 1).orElseThrow().getId().toString());
-            try { files.deleteFile(group, 1); }
-            catch (java.io.IOException failure) { throw new java.io.UncheckedIOException(failure); }
+            // 개별 삭제 API 는 개인 귀속 첨부를 지우지 않는다(ADR-0048). 토큰은 묶음이 어떤 경로로 바뀌든 거부해야 하므로
+            // FileService#deleteFile 과 같은 부모 잠금을 쥐고 묶음을 바꾼다.
+            new org.springframework.transaction.support.TransactionTemplate(transactionManager).executeWithoutResult(status -> {
+                masters.findByIdForUpdate(group).orElseThrow();
+                details.delete(details.findByFileMasterAtchFileSnAndAtchFileSeq(group, 1).orElseThrow());
+            });
         }
         if (mutation.equals("append") || mutation.equals("reuse")) {
             try {

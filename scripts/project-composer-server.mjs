@@ -19,6 +19,7 @@ const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const PUBLIC = resolve(ROOT, 'tools/project-composer/public');
 const LIMIT = 32 * 1024;
 const MESSAGES = Object.freeze({
+  LAUNCH_REQUIRED: '생성기를 실행한 터미널에 나온 주소로 다시 열어 주세요.',
   BAD_REQUEST: '요청 형식을 확인해 주세요.', FORBIDDEN: '이 생성기 화면에서 다시 시도해 주세요.',
   NOT_FOUND: '요청한 항목을 찾을 수 없습니다.', METHOD_NOT_ALLOWED: '지원하지 않는 요청 방식입니다.',
   BODY_TOO_LARGE: '선택 정보가 너무 큽니다. 기능 선택을 다시 확인해 주세요.',
@@ -168,9 +169,17 @@ function errorBody({ code, details = {} }) {
 }
 
 
+function launchSecretMatches(supplied, expected) {
+  return typeof supplied === 'string' && Buffer.byteLength(supplied) === Buffer.byteLength(expected)
+    && timingSafeEqual(Buffer.from(supplied), Buffer.from(expected));
+}
+
 export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) {
   if (!engine || ['catalog', 'plan', 'generate'].some(method => typeof engine[method] !== 'function')) throw new TypeError('catalog, plan and generate engine methods are required');
   const csrfToken = randomBytes(32).toString('hex');
+  // 터미널에 출력하는 주소의 조각(#launch=)에만 싣는다. 같은 PC의 다른 계정·프로세스나 브라우저 밖 클라이언트는 이 비밀 없이
+  // 요청 토큰을 받을 수 없다(이관 작업공간과 같은 경계). 이 도구는 이 컴퓨터에서 명령을 띄운다.
+  const launchSecret = randomBytes(32).toString('base64url');
   const jobs = new Map();
   const requests = new Map();
   // 진행 중인 생성 작업의 취소 신호와 끝을 기다릴 약속(E6b). 작업이 정리를 마치면 지운다.
@@ -193,7 +202,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         || !['127.0.0.1', '::ffff:127.0.0.1'].includes(request.socket.remoteAddress)
         || ['forwarded', 'x-forwarded-host', 'x-forwarded-proto'].some(key => request.headers[key] !== undefined)
         || (request.headers.origin !== undefined && request.headers.origin !== origin)
-        || (request.headers['sec-fetch-site'] === 'cross-site' && !initialNavigation)) throw new HttpError(403, 'FORBIDDEN');
+        || (request.headers['sec-fetch-site'] && !['same-origin', 'none'].includes(request.headers['sec-fetch-site']) && !initialNavigation)) throw new HttpError(403, 'FORBIDDEN');
       if (!request.url?.startsWith('/') || request.url.startsWith('//')) throw new HttpError(400, 'BAD_REQUEST');
       const url = new URL(request.url, origin);
       if (url.search || url.hash) throw new HttpError(400, 'BAD_REQUEST');
@@ -208,6 +217,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
           || !timingSafeEqual(Buffer.from(supplied), Buffer.from(csrfToken))) throw new HttpError(403, 'FORBIDDEN');
       }
       if (path === '/api/session') {
+        if (!launchSecretMatches(request.headers['x-composer-launch'], launchSecret)) throw new HttpError(403, 'LAUNCH_REQUIRED');
         let catalog;
         try { catalog = await engine.catalog(); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
         json(response, 200, { csrfToken, catalog, job: latest ? jobView(jobs.get(latest)) : null });
@@ -318,6 +328,7 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
   // Never expose a caller-controlled host option: this tool can only bind IPv4 loopback.
   return {
     server,
+    launchSecret,
     async listen(port = 3100) {
       if (!Number.isInteger(port) || port < 0 || port > 65535) throw new TypeError('invalid local port');
       await new Promise((accept, reject) => {
@@ -365,7 +376,8 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     } catch { process.stderr.write('[project-composer] 지난 생성 작업의 임시 자원을 정리하지 못했습니다. 다음 기동에 다시 봅니다.\n'); }
     const application = createComposerServer({ engine });
     const origin = await application.listen(args.length ? Number(args[1]) : 3100);
-    process.stdout.write(`[project-composer] ${origin}\n`);
+    // 주소의 조각은 브라우저가 서버로 보내지 않아 요청 기록·Referer 에 남지 않는다.
+    process.stdout.write(`[project-composer] ${origin}/#launch=${application.launchSecret}\n`);
     // Ctrl+C·종료 신호는 진행 중인 생성을 취소하고 정리를 마친 뒤 끝낸다. 두 번째 신호는 기다리지 않고 끝낸다.
     let stopping = false;
     const stop = () => {

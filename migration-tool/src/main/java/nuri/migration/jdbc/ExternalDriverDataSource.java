@@ -55,7 +55,7 @@ final class ExternalDriverDataSource implements DataSource {
         if (closed.get()) {
             throw SourceDriverException.closed();
         }
-        Properties properties = new Properties();
+        Properties properties = JdbcUrlSafety.hardenedProperties(url);
         if (user != null) {
             properties.setProperty("user", user);
         }

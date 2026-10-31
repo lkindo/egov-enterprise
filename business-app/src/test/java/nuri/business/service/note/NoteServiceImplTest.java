@@ -225,6 +225,19 @@ class NoteServiceImplTest {
     }
 
     @Test
+    void getNoteDetail_checksOwnershipBeforeTheNoteRelation() {
+        NoteTrnsmit others = NoteTrnsmit.builder().noteSndngSn(1L).sndrId("someone-else")
+                .note(Note.builder().noteSn(9L).noteTtl("t").build()).build();
+        given(noteTrnsmitRepository.findById(1L)).willReturn(Optional.of(others));
+
+        for (long noteSn : List.of(9L, 10L)) {
+            assertThatThrownBy(() -> noteService.getNoteDetail(noteSn, "sent", 1L, "me"))
+                    .as("쪽지 번호가 맞든 틀리든 같은 응답이어야 연결을 알아내지 못한다")
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.ACCESS_DENIED);
+        }
+    }
+
+    @Test
     @DisplayName("보낸 쪽지 상세 조회 실패 - 존재하지 않음")
     void getNoteDetail_sent_notFound() {
         // given

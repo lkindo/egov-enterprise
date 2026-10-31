@@ -74,6 +74,7 @@ public class GroupManageService {
      */
     @Transactional
     public String insertGroup(GroupManageDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("CLASS_GRP_CREATE");
         // Generate ID if not provided
         String groupId = dto.getGroupId();
         if (groupId == null || groupId.isEmpty()) {
@@ -97,6 +98,7 @@ public class GroupManageService {
      */
     @Transactional
     public void updateGroup(GroupManageDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("CLASS_GRP_UPDATE");
         GroupManage entity = groupManageRepository.findById(Objects.requireNonNull(dto.getGroupId()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND, "그룹을 찾을 수 없습니다: " + dto.getGroupId()));
         entity.update(dto.getGroupNm(), dto.getGroupDc());
@@ -107,6 +109,7 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroup(String groupId) {
+        nuri.business.security.util.SecurityUtil.assertPermission("CLASS_GRP_DELETE");
         Objects.requireNonNull(groupId);
         // [V2_13 결속] fk_tb_user_info_tb_authrt_group_info(NO ACTION) — 배정 사용자 참조 해제 후 삭제
         userRepository.clearGroupIdByGroupIdIn(List.of(groupId));
@@ -118,6 +121,7 @@ public class GroupManageService {
      */
     @Transactional
     public void deleteGroups(String[] groupIds) {
+        nuri.business.security.util.SecurityUtil.assertPermission("CLASS_GRP_DELETE");
         List<String> ids = Arrays.asList(Objects.requireNonNull(groupIds));
         // [V2_13 결속] 위 deleteGroup 과 동일 사유의 참조 해제
         userRepository.clearGroupIdByGroupIdIn(ids);

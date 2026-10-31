@@ -104,7 +104,7 @@ public class SanctionEventListener {
         }
         try {
             eventPublisher.publishEvent(new nuri.foundation.core.event.SmsRequestedEvent(
-                    actorId, user.mblTelno(), message));
+                    actorId, user.mblTelno(), message, user.esntlId()));
             log.info("SMS notification requested: sanctionSn={}, status={}",
                     event.getInformalSanctionSn(), event.getNewStatus());
         } catch (Exception e) {

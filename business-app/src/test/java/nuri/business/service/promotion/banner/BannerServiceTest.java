@@ -423,4 +423,30 @@ class BannerServiceTest {
         assertThatThrownBy(action).isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.ACCESS_DENIED);
     }
+
+    @Test
+    void insertBanner_rejectsUnsafeLinks() {
+        authenticate("BANNER_CREATE");
+        for (String link : java.util.List.of("javascript:alert(1)", "data:text/html,x", "//attacker.test")) {
+            BannerDto dto = BannerDto.builder().bnrNm("배너").linkUrl(link).sortOrdr(1L).rfltYn("Y").build();
+            org.assertj.core.api.Assertions.assertThatThrownBy(() -> bannerService.insertBanner(dto))
+                    .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+        }
+        org.mockito.Mockito.verify(bannerRepository, org.mockito.Mockito.never()).save(any(Banner.class));
+    }
+
+    @Test
+    void updateBanner_keepsAnUnchangedLegacyLinkButRejectsANewUnsafeOne() {
+        authenticate("BANNER_UPDATE");
+        Banner entity = Banner.builder().bnrSn(1L).bnrNm("배너").linkUrl("legacy-path").build();
+        org.springframework.test.util.ReflectionTestUtils.setField(entity, "version", 0);
+        given(bannerRepository.findById(1L)).willReturn(java.util.Optional.of(entity));
+
+        bannerService.updateBanner(BannerDto.builder().bnrSn(1L).bnrNm("새 이름").linkUrl("legacy-path").version(0).build());
+
+        org.assertj.core.api.Assertions.assertThat(entity.getBnrNm()).isEqualTo("새 이름");
+        org.assertj.core.api.Assertions.assertThatThrownBy(() -> bannerService.updateBanner(
+                        BannerDto.builder().bnrSn(1L).bnrNm("새 이름").linkUrl("javascript:alert(1)").version(0).build()))
+                .hasFieldOrPropertyWithValue("errorCode", nuri.foundation.core.exception.CommonErrorCode.INVALID_INPUT_VALUE);
+    }
 }

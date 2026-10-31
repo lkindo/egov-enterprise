@@ -458,6 +458,11 @@ class BoardCommunityAccessTest {
     @Nested
     @DisplayName("게시판 생성 시 커뮤니티 존재 검증")
     class CreationValidation {
+        @org.junit.jupiter.api.BeforeEach
+        void authorizeCreation() {
+            securityUtil.when(() -> nuri.business.security.util.SecurityUtil.hasPermission("BBS_MST_CREATE")).thenReturn(true);
+        }
+
 
         @Test
         @DisplayName("없는 커뮤니티에 귀속시키면 404 다 — 아무도 회원일 수 없는 게시판을 만들지 않는다")

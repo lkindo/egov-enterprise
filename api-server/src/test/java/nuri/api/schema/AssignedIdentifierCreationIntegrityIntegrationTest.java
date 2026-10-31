@@ -85,7 +85,7 @@ class AssignedIdentifierCreationIntegrityIntegrationTest {
     void prepareIdentity() {
         fixtureId = "CI" + UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         var principal = CustomUserDetails.builder().userId("creation-test").esntlId("CREATION_TEST")
-                .enabled(true).permissions(List.of("CODE_CREATE", "ADMCODE_CREATE")).build();
+                .enabled(true).permissions(List.of("CODE_CREATE", "ADMCODE_CREATE", "CLASS_GRP_CREATE")).build();
         SecurityContextHolder.getContext().setAuthentication(
                 new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities()));
     }

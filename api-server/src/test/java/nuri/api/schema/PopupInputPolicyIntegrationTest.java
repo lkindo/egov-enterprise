@@ -159,12 +159,62 @@ class PopupInputPolicyIntegrationTest {
 
     @Test
     void attachmentGrantStaysOnTheAttachmentThePopupPointsAt() {
-        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,frst_rgtr_id) VALUES (?,'/api/v1/files/987654321',?)", fixture, actorLogin);
-        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,frst_rgtr_id) VALUES (?,'/api/v1/files/download?fileId=987654322',?)", fixture, actorLogin);
+        insertPopup("/api/v1/files/987654321", "Y", "CURRENT_DATE - 1", "CURRENT_DATE + 1");
+        insertPopup("/api/v1/files/download?fileId=987654322", "Y", "CURRENT_DATE - 1", "CURRENT_DATE + 1");
 
         assertThat(attachments.resolve(987654321L, null, null).sharedGrant()).as("path URL").isTrue();
         assertThat(attachments.resolve(987654322L, null, null).sharedGrant()).as("query URL").isTrue();
         assertThat(attachments.resolve(987654323L, null, null).sharedGrant()).as("other attachment").isFalse();
+    }
+
+    @Test
+    void attachmentOfAnUnpublishedPopupIsNotShared() {
+        insertPopup("/api/v1/files/987654331", "N", "CURRENT_DATE - 1", "CURRENT_DATE + 1");
+        insertPopup("/api/v1/files/987654332", "Y", "CURRENT_DATE + 1", "CURRENT_DATE + 2");
+        insertPopup("/api/v1/files/987654333", "Y", "CURRENT_DATE - 2", "CURRENT_DATE - 1");
+
+        // POPUP_READ is a default user permission, so holding it must not open a draft.
+        var reader = CustomUserDetails.builder().userId("popup-reader").esntlId("POPUP_READER").enabled(true).lockAt("N")
+                .permissions(List.of("POPUP_READ")).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(reader, null, reader.getAuthorities()));
+        for (long draft : List.of(987654331L, 987654332L, 987654333L)) {
+            var grants = attachments.resolve(draft, "popup-reader", "POPUP_READER");
+            assertThat(grants.sharedGrant()).as("unpublished popup %s", draft).isFalse();
+            assertThat(grants.ownerGrant()).isFalse();
+        }
+
+        assertThat(attachments.resolve(987654331L, actorLogin, actor).ownerGrant()).as("registrar").isTrue();
+
+        var manager = CustomUserDetails.builder().userId("popup-manager").esntlId("POPUP_MANAGER").enabled(true).lockAt("N")
+                .permissions(List.of("POPUP_ADMIN_READ")).build();
+        SecurityContextHolder.getContext().setAuthentication(
+                new UsernamePasswordAuthenticationToken(manager, null, manager.getAuthorities()));
+        assertThat(attachments.resolve(987654331L, "popup-manager", "POPUP_MANAGER").sharedGrant()).as("manager").isTrue();
+    }
+
+    @Test
+    void attachmentOfAnUnreflectedBannerIsNotShared() {
+        Long file = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn) VALUES ('Y') RETURNING atch_file_sn", Long.class);
+        jdbc.update("INSERT INTO tb_bnr_info(bnr_nm,rflt_yn,atch_file_sn,frst_rgtr_id) VALUES (?,'N',?,?)", fixture, file, actorLogin);
+        try {
+            var reader = CustomUserDetails.builder().userId("banner-reader").esntlId("BANNER_READER").enabled(true).lockAt("N")
+                    .permissions(List.of("BANNER_READ")).build();
+            SecurityContextHolder.getContext().setAuthentication(
+                    new UsernamePasswordAuthenticationToken(reader, null, reader.getAuthorities()));
+            assertThat(attachments.resolve(file, "banner-reader", "BANNER_READER").sharedGrant()).as("draft").isFalse();
+
+            jdbc.update("UPDATE tb_bnr_info SET rflt_yn='Y' WHERE atch_file_sn=?", file);
+            assertThat(attachments.resolve(file, "banner-reader", "BANNER_READER").sharedGrant()).as("reflected").isTrue();
+        } finally {
+            jdbc.update("DELETE FROM tb_bnr_info WHERE atch_file_sn=?", file);
+            jdbc.update("DELETE FROM tb_file_master WHERE atch_file_sn=?", file);
+        }
+    }
+
+    private void insertPopup(String fileUrl, String notice, String start, String end) {
+        jdbc.update("INSERT INTO tb_popup_info(popup_ttl_nm,file_url,ntce_yn,ntce_bgnde,ntce_endde,frst_rgtr_id) VALUES (?,?,?,"
+                + start + "," + end + ",?)", fixture, fileUrl, notice, actorLogin);
     }
 
     private PopupDto popupRequest() {

@@ -38,6 +38,13 @@ public class SmsRequestListener {
         this.senderTel = senderTel == null ? "" : senderTel.trim();
     }
 
+    /** 사용자에게 보내는 문자는 이력에 수신자가 남도록 사용자로 지정한다. 번호는 발송 서비스가 현재 연락처로 해석한다. */
+    private static SmsRecptnDto recipient(SmsRequestedEvent event) {
+        return org.springframework.util.StringUtils.hasText(event.recipientEsntlId())
+                ? SmsRecptnDto.builder().esntlId(event.recipientEsntlId()).build()
+                : SmsRecptnDto.builder().rcptnTelno(event.recipientTelno()).build();
+    }
+
     @EventListener
     public void onSmsRequested(SmsRequestedEvent event) {
         if (!event.hasRecipient()) {
@@ -53,9 +60,7 @@ public class SmsRequestListener {
             smsService.sendSms(event.requesterId(), SmsDto.builder()
                     .sndngTelno(senderTel)
                     .sndngCn(event.content())
-                    .recipients(List.of(SmsRecptnDto.builder()
-                            .rcptnTelno(event.recipientTelno())
-                            .build()))
+                    .recipients(List.of(recipient(event)))
                     .build());
             log.info("요청된 문자를 발송했습니다");
         } catch (Exception e) {

@@ -2365,6 +2365,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-393 | accepted | 공유 개발 DB의 두 표가 빈 경우에만 정비창에서 숫자 세 컬럼을 NUMERIC으로 바꾸는 한정 E&C 예외를 승인하고, 로그 표준을 처리소요밀리초/PRCS_REQ_MSEC/밀리초N19로 확정한다. API 문자열·NULL·기존 값과 단위를 보존하며 실제 메타 등록·DDL·백필은 최종 패킷 승인 뒤 수행한다. | 2026-10-30 사용자가 A안 구현과 로그 명명을 직접 선택했다. 행이 있는 환경에는 적용하지 않고 별도 데이터 보존 이행안을 검토한다. | [ADR-0046](../02-architecture/decisions/ADR-0046-empty-numeric-transition-and-log-duration-standard.md) | 2026-10-30 | - |
 
+## DEC-OPS-394
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-394 | accepted | **보안 지시서 검증의 결정을 한 배치로 확정한다(2026-10-31 사용자 결정).** ① 포상 첨부는 REWARD_READ 에 열지 않는다. ② 등록자의 자기 재지정은 두고 이전 담당자에게 알린다. ③ SMS 수신자는 발송 때 식별자를 저장하고(V2_147) 번호로 추정하지 않는다. ④ 첨부 다중 참조는 제한하지 않는다. | 외부 모델이 쓴 보안 지시서를 코드와 독립 검토로 대조해 사용자가 권장안대로 정했다. ① 포상 화면에 첨부 UI 가 없고 파일 정책이 상벌 첨부의 관리자 열람을 프라이버시 회귀로 규정한다. ② 막으면 담당자 부재를 풀려던 DEC-OPS-205 가 되돌아간다. 문제는 재지정이 아니라 이전 담당자가 모르는 것이다. ③ 현재 번호로 사람을 되찾으면 번호가 재할당된 뒤 다른 사람이 감사 기록에 남는다. ④ 연결은 원 업로더만 할 수 있고 개인 판정이 우선해 유출이 없으며 피해는 본인 파일뿐이다. 호출부 20여 곳과 잠금을 고쳐도 막는 위협이 작고 승인된 CMS 공존을 깬다. | [첨부 정책](../../business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java), [부서 업무](../../business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java), [SMS](../../business-app/src/main/java/nuri/business/service/sms/SmsService.java), [ADR-0048](../02-architecture/decisions/ADR-0048-personal-attachment-deletion-and-uploader-window.md) | 2026-10-31 | DEC-OPS-205 ② 의 알림 대상(새 담당자에 이전 담당자 추가) |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
