@@ -1,0 +1,661 @@
+{
+  "schemaVersion": 1,
+  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). 소스 토큰으로 나눈 1차 분류이며 벤더 구현 단계에서 실제 실행으로 고친다.",
+  "tests": [
+    {
+      "test": "AddressBookBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "AddressBookSnapshotConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "AdministCodeHierarchyConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "ApprovalReferenceNotificationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ApprovalSavedLineConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "ApprovalWorkflowIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "ApprovalWorkflowMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "AssignedIdentifierCreationIntegrityIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "AssignmentRecipientIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "AttachmentReferenceIntegrityPostgresTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "AuditLedgerImmutabilityMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "AuditLedgerRetentionIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "AuthorityReferenceFkIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "AuthorizationAdministrationIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "AuthorizationContractIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "AuthorizationGrantExpansionIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BackupRestoreDrillIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BannerBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BaseAdminBootstrapSeedIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BlogBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BlogRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardChangeHistoryMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardCommentCountReconciliationMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardCommentRatingEnableMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardMasterMenuRenameMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardOperationsPostgresIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "BoardOperationsSettingsMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardPostBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BoardPostDateIndexMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "BusinessPolicyIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "CmsContentMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "CmsPageLifecycleIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "CommentUpdateDeleteConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "CommunityBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "CommunityDecisionConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "CommunityTemplateIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "DatabaseExceptionTranslationIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "DeferredStandardDesignMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "DepartmentHierarchyIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "DeptJobBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "DeptJobBoxBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "DeptJobReassignmentConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "DiaryBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "DtaUseStatsBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "DurableWorkIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "EmptyNumericColumnsMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "EventApprovalIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "EventInfoBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "FileDeletionDurabilityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "FileMasterBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "HpcmBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "InformalSanctionBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "InternetServiceGuidanceBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "InternetServiceGuidanceGrantRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "IpAddressIpv6MigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LegacyMenuRouteBackfillMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LockWaitTimeoutIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "LogDurationJpaIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "LogDurationMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LogDurationTransitionMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LogSearchIndexMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LoginFailureCounterConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "LoginIdReuseIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LoginLogBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "LogoutCutoffAndPrivacySubjectMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MailDeliveryStateIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "MailFailureNotificationIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "MemoReportBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MemoReportRecipientIntegrityIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MenuBookmarkConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "MenuHierarchyIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "MenuIdentityMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MenuInformationArchitectureMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MetaStandardTermsExtensionMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MfaFlowIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "MyPageContentBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "MyPageMenuRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "NetworkGrantRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "NoteFamilyBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "NotificationBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "NotificationDurabilityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "OnlineManualBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "OnlinePollFamilyBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "OnlinePollItemIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "OperationalSignalIsolationIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "OptimisticVersionColumnsMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "PopupBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "PopupInputPolicyIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "PrivacyLogBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ProgramGrantRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ProtectedAccountAdministrationIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "QnaOpenStatusNormalizeMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "RecommendationAndRatingUniqueMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ReferenceIntegrityCommunityFkIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ReferenceIntegrityFkIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ReferenceIntegrityFkMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "RefreshTokenDigestMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "RefreshTokenRotationConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "ReportStatsMenuRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ReprtStatsBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "RetiredPostPasswordClearMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "RetiredProgramLedgerDropMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "RewardBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ScheduleBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ScheduleCalendarQueryIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "SchemaValidationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ScrapBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ScrapOwnerUrlUniqueMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "ScreenMenuRenameProgramRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SensitiveAuditDurabilityIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
+      "test": "SentMailBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SmsBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SmsDeliveryStateIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "SmsFailureNoticeIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "StampBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "StandardLengthMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SurveyFamilyBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SurveyReleaseFlagMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "SurveySubmissionConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "SysLogBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "TemplateCreationIntegrityIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "TemporaryPasswordFlagMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "UnenforcedPermissionGrantRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "UserActivityUpsertIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "UserSecurityStateConcurrencyIntegrationTest.java",
+      "category": "fixture-port",
+      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+    },
+    {
+      "test": "UserSignupDateDefaultIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "UserSurveyAdminNavigationRetirementMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "VendorSqlPortPostgresIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "WebLogBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "WorkReportBigintMigrationIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    },
+    {
+      "test": "WriteSmokeIntegrationTest.java",
+      "category": "replacement",
+      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+    }
+  ]
+}

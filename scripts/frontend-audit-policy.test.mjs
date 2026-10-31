@@ -6,7 +6,7 @@ import { evaluateAuditReport } from './frontend-audit-policy.mjs';
 
 function report(advisories) {
   const vulnerabilities = { info: 0, low: 0, moderate: 0, high: 0, critical: 0 };
-  for (const advisory of Object.values(advisories)) vulnerabilities[advisory.severity] += 1;
+  for (const advisory of Object.values(advisories)) vulnerabilities[advisory.severity] += advisory.findings.length;
   return { advisories, metadata: { vulnerabilities } };
 }
 
@@ -72,6 +72,22 @@ test('malformed or internally inconsistent reports fail closed', () => {
     advisories: {},
     metadata: { vulnerabilities: { info: 0, low: 0, moderate: 0, high: 1, critical: 0 } },
   }), /count mismatch/);
+  assert.throws(() => evaluateAuditReport({
+    advisories: { several: advisory('moderate', [{}, {}]) },
+    metadata: { vulnerabilities: { info: 0, low: 0, moderate: 1, high: 0, critical: 0 } },
+  }), /count mismatch/);
+});
+
+test('metadata counts vulnerable versions, so one advisory can account for several', () => {
+  const policy = evaluateAuditReport({
+    advisories: {
+      minimatch: advisory('moderate', [{}, {}, {}, {}, {}]),
+      glob: advisory('moderate', [{}, {}]),
+      redirects: advisory('high', [{}]),
+    },
+    metadata: { vulnerabilities: { info: 0, low: 0, moderate: 7, high: 1, critical: 0 } },
+  });
+  assert.deepEqual(policy.blocking.map(({ id }) => id), ['redirects']);
 });
 
 test('CI performs one frontend audit request through the policy evaluator', () => {

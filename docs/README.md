@@ -43,6 +43,7 @@ DB 전환 승인: [ADR-0046](02-architecture/decisions/ADR-0046-empty-numeric-tr
 |---|---|
 | [backend-architecture.md](02-architecture/backend-architecture.md) | Backend Architecture Blueprint — 멀티모듈 구조·레이어 |
 | [project-composer-design.md](02-architecture/project-composer-design.md) | 선택형 프로젝트 생성 설계 — 공통 구성·PostgreSQL·멀티/단일모듈 출력과 업무 선택·로컬 UI의 단계별 완료조건 |
+| [multi-database-composer-design.md](02-architecture/multi-database-composer-design.md) | 생성기 다중 DB 설계 — PostgreSQL 단일 정본, 벤더 어댑터, 벤더별 실측과 없앨 수 없는 한계 |
 | [frontend-architecture.md](02-architecture/frontend-architecture.md) | Frontend Architecture (Next.js App Router 기준) |
 | [frontend-design-system.md](02-architecture/frontend-design-system.md) | Design System |
 | [approval-workflow-ux.md](02-architecture/approval-workflow-ux.md) | 다단계·병렬 전원 결재의 UX 근거, 차수·회수·재상신·열람 규칙 |

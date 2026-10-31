@@ -575,6 +575,10 @@
           "source": "api-server/src/test/java/nuri/api/harness/UnreachableServiceLinterTest.java"
         },
         {
+          "id": "GH-VENDOR-SQL-PORTABILITY",
+          "source": "api-server/src/test/java/nuri/api/harness/VendorSqlPortabilityLinterTest.java"
+        },
+        {
           "id": "GH-WORKFLOW-MANIFEST",
           "source": "api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java"
         },
@@ -1177,6 +1181,10 @@
         {
           "id": "DB-MIG-SURVEY-FAMILY-BIGINT",
           "source": "api-server/src/test/java/nuri/api/schema/SurveyFamilyBigintMigrationIntegrationTest.java"
+        },
+        {
+          "id": "DB-VENDOR-SQL-PORT",
+          "source": "api-server/src/test/java/nuri/api/schema/VendorSqlPortPostgresIntegrationTest.java"
         },
         {
           "id": "DB-SURVEY-SUBMISSION-CONCURRENCY",

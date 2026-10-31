@@ -3,6 +3,7 @@ package nuri.api.schema;
 import nuri.business.domain.board.BoardRepository;
 import nuri.business.domain.board.BoardSearchCondition;
 import nuri.business.domain.board.BoardSearchResult;
+import nuri.business.domain.board.DtaUseStatsRepository;
 import nuri.business.service.board.BoardService;
 import nuri.business.service.board.dto.BoardPostPinRequest;
 import nuri.business.service.board.dto.BoardSaveRequest;
@@ -85,6 +86,7 @@ class BoardOperationsPostgresIntegrationTest {
 
     @Autowired private BoardRepository boards;
     @Autowired private BoardService boardService;
+    @Autowired private DtaUseStatsRepository usage;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
     @Autowired private javax.sql.DataSource dataSource;
@@ -125,6 +127,7 @@ class BoardOperationsPostgresIntegrationTest {
         SecurityContextHolder.clearContext();
         jdbc.update("DELETE FROM tb_bbs_rcmdtn_hstry WHERE pst_sn IN (SELECT pst_sn FROM tb_bbs_item WHERE bbs_id = ?)", bbsId);
         jdbc.update("DELETE FROM tb_bbs_chg_hstry WHERE bbs_id = ?", bbsId);
+        jdbc.update("DELETE FROM tb_dta_use_stats WHERE bbs_id = ?", bbsId);
         jdbc.update("DELETE FROM tb_bbs_item WHERE bbs_id = ?", bbsId);
         jdbc.update("DELETE FROM tb_bbs_master WHERE bbs_id = ?", bbsId);
         if (attachment != null) {
@@ -491,6 +494,36 @@ class BoardOperationsPostgresIntegrationTest {
         BoardSearchCondition condition = readAll(null);
         condition.setPostingStatus(status);
         return condition;
+    }
+
+    @Test
+    @DisplayName("게시·이용 일별 집계는 PostgreSQL 에서 일자 문자열과 건수를 돌려주고 끝 경계를 세지 않는다")
+    void dailyStatisticsCountHalfOpenRanges() {
+        jdbc.update("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'a', 'Y', TIMESTAMP '2031-03-05 23:59:59')", bbsId);
+        jdbc.update("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'b', 'N', TIMESTAMP '2031-03-05 12:00:00')", bbsId);
+        jdbc.update("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'c', 'Y', TIMESTAMP '2031-03-06 00:00:00')", bbsId);
+        jdbc.update("INSERT INTO tb_dta_use_stats (bbs_id, file_sn, crt_dt) VALUES (?, 1, TIMESTAMP '2031-03-05 01:00:00')", bbsId);
+
+        assertSingleDay(boards.countPostsByDate("2031-03-05 00:00:00", "2031-03-06 00:00:00"));
+        assertThat(boards.countPostsBetween("2031-03-05 00:00:00", "2031-03-06 00:00:00")).isEqualTo(1);
+        assertSingleDay(usage.countByDate("2031-03-05 00:00:00", "2031-03-06 00:00:00"));
+    }
+
+    @Test
+    @DisplayName("상단 고정은 종료일이 있든 없든 형 오류 없이 쓴다")
+    void pinWritesBothBranches() {
+        Long post = jdbc.queryForObject("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn) VALUES (?, '고정', 'Y') RETURNING pst_sn", Long.class, bbsId);
+
+        assertThat(boards.updatePin(bbsId, List.of(post), "Y", "20311231")).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT upend_fix_end_ymd FROM tb_bbs_item WHERE pst_sn = ?", String.class, post)).isEqualTo("20311231");
+        assertThat(boards.updatePin(bbsId, List.of(post), "N", null)).isEqualTo(1);
+        assertThat(jdbc.queryForObject("SELECT upend_fix_end_ymd FROM tb_bbs_item WHERE pst_sn = ?", String.class, post)).isNull();
+    }
+
+    private static void assertSingleDay(List<Object[]> rows) {
+        assertThat(rows).hasSize(1);
+        assertThat(rows.getFirst()[0]).isEqualTo("2031-03-05");
+        assertThat(((Number) rows.getFirst()[1]).longValue()).isEqualTo(1);
     }
 
     private List<String> titles(BoardSearchCondition condition) {

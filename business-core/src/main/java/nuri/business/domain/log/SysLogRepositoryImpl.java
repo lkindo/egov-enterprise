@@ -57,7 +57,7 @@ public class SysLogRepositoryImpl implements SysLogRepositoryCustom {
     @Transactional
     public void deleteOldLogs(int months) {
         String targetDe = LocalDate.now().minusMonths(months).format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String sql = "DELETE FROM TB_SYS_LOG WHERE OCRN_YMD < :targetDe";
+        String sql = "DELETE FROM tb_sys_log WHERE OCRN_YMD < :targetDe";
         entityManager.createNativeQuery(sql)
                 .setParameter("targetDe", targetDe)
                 .executeUpdate();

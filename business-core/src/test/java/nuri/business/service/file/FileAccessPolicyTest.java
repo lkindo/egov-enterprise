@@ -428,10 +428,9 @@ class FileAccessPolicyTest {
             assertThat(predicate)
                     .as("LIKE 를 쓰면 요청자가 '%%' 를 첨부 ID 로 보내 모든 팝업에 매칭시켜 공유 근거를 만든다")
                     .doesNotContainIgnoringCase("like");
-            assertThat(predicate)
+            assertThat(AttachmentSource.POPUP.linkageParameters(7L))
                     .as("저장되는 두 URL 형태(정규·레거시)를 모두 비교해야 기존 행이 살아난다")
-                    .contains("'/api/v1/files/' || ?")
-                    .contains("'/api/v1/files/download?fileId=' || ?");
+                    .containsExactly("/api/v1/files/7", "/api/v1/files/download?fileId=7");
         }
 
         @Test

@@ -2,6 +2,7 @@ package nuri.business.service.user;
 
 import lombok.extern.slf4j.Slf4j;
 import nuri.foundation.core.user.LoginIdReferenceContributor;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
@@ -29,10 +30,13 @@ import java.util.Objects;
 public class LoginIdReuseGuard {
 
     private final JdbcTemplate jdbcTemplate;
+    private final VendorSqlDialect vendorSql;
     private final List<LoginIdReferenceContributor.Reference> references;
 
-    public LoginIdReuseGuard(JdbcTemplate jdbcTemplate, List<LoginIdReferenceContributor> contributors) {
+    public LoginIdReuseGuard(JdbcTemplate jdbcTemplate, List<LoginIdReferenceContributor> contributors,
+            VendorSqlDialect vendorSql) {
         this.jdbcTemplate = Objects.requireNonNull(jdbcTemplate, "jdbcTemplate");
+        this.vendorSql = Objects.requireNonNull(vendorSql, "vendorSql");
         List<LoginIdReferenceContributor.Reference> collected = Objects.requireNonNull(contributors, "contributors").stream()
                 .flatMap(contributor -> {
                     var declared = contributor.loginIdReferences();
@@ -71,7 +75,7 @@ public class LoginIdReuseGuard {
         }
         for (LoginIdReferenceContributor.Reference reference : references) {
             Boolean found = jdbcTemplate.queryForObject(
-                    "SELECT EXISTS (SELECT 1 FROM " + reference.table() + " WHERE " + reference.column() + " = ?)",
+                    vendorSql.existsQuery("SELECT 1 FROM " + reference.table() + " WHERE " + reference.column() + " = ?"),
                     Boolean.class, loginId);
             if (Boolean.TRUE.equals(found)) {
                 log.info("[LoginIdReuse] 지워진 계정의 기록이 남은 로그인 ID 로 등록을 거부했다 — 기록 위치 {}",

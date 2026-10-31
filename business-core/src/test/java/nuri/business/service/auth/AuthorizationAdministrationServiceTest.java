@@ -66,7 +66,7 @@ class AuthorizationAdministrationServiceTest {
     @BeforeEach
     void setUp() {
         db = new Boundary();
-        service = new AuthorizationAdministrationService(mock(JdbcTemplate.class, db));
+        service = new AuthorizationAdministrationService(mock(JdbcTemplate.class, db), new nuri.foundation.core.persistence.PostgresqlSqlDialect());
         authenticate("operator_login", "OPERATOR_ID", PermissionCodes.ALL);
     }
 
@@ -149,7 +149,7 @@ class AuthorizationAdministrationServiceTest {
                 new Navigation("3", "Legacy menu", "1", "/admin/system/menus", "N"));
         assertThat(PermissionCodes.ALL).doesNotContain("1", "2");
         assertThat(db.calls).anySatisfy(sql -> assertThat(sql)
-                .contains("CASE WHEN up_menu_sn IS NULL OR up_menu_sn=0 THEN NULL", "ORDER BY menu_ordr NULLS LAST,menu_sn"));
+                .contains("NULLIF(up_menu_sn,0)", "ORDER BY menu_ordr,menu_sn"));
     }
 
     @Test
@@ -160,11 +160,14 @@ class AuthorizationAdministrationServiceTest {
         assertThat(result.getTotalElements()).isEqualTo(2);
         assertThat(result.getContent()).containsExactly(new UserChoice("U_1", "login_one", "User one", "D_1"),
                 new UserChoice("U_2", "login_two", "User two", "D_1"));
-        assertThat(db.lastUserSearch).containsExactly("%a!!!%!_%", "%a!!!%!_%", 100, 0L);
+        assertThat(db.lastUserSearch).containsExactly("%a!!!%!_%", "%a!!!%!_%");
+        assertThat(db.calls).anyMatch(sql -> sql.endsWith("LIMIT 100 OFFSET 0"));
         service.users(null, 2, 0);
-        assertThat(db.lastUserSearch).containsExactly("%%", "%%", 1, 2L);
+        assertThat(db.lastUserSearch).containsExactly("%%", "%%");
+        assertThat(db.calls).anyMatch(sql -> sql.endsWith("LIMIT 1 OFFSET 2"));
         service.users("plain", 1, 25);
-        assertThat(db.lastUserSearch).containsExactly("%plain%", "%plain%", 25, 25L);
+        assertThat(db.lastUserSearch).containsExactly("%plain%", "%plain%");
+        assertThat(db.calls).anyMatch(sql -> sql.endsWith("LIMIT 25 OFFSET 25"));
     }
 
     @Test
@@ -492,7 +495,7 @@ class AuthorizationAdministrationServiceTest {
                 List.of("G_A","NAVIGATION","1"),List.of("G_A","NAVIGATION","2"),List.of("G_A","NAVIGATION","3"));
         assertThat(db.audits()).hasSize(3).allSatisfy(w -> assertThat(w.values().get(3)).isEqualTo("REMOVE"));
         assertThat(db.audits().stream().map(w -> w.values().getFirst()).distinct()).hasSize(1);
-        int menus=db.calls.indexOf("SELECT menu_sn::text,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
+        int menus=db.calls.indexOf("SELECT menu_sn,up_menu_sn FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
         int group=db.calls.indexOf("SELECT authrt_cd FROM tb_authrt_info WHERE authrt_cd='ROLE_ADMIN' FOR UPDATE");
         assertThat(menus).isLessThan(group);
     }
@@ -569,17 +572,18 @@ class AuthorizationAdministrationServiceTest {
             assertThat(result.getNumber()).isEqualTo(2);
             assertThat(result.getSize()).isEqualTo(10);
             var parameters = ArgumentCaptor.forClass(SqlParameterSource.class);
-            verify(construction.constructed().getFirst()).query(anyString(), parameters.capture(), ArgumentMatchers.<RowMapper<Change>>any());
+            var pagedSql = ArgumentCaptor.forClass(String.class);
+            verify(construction.constructed().getFirst()).query(pagedSql.capture(), parameters.capture(), ArgumentMatchers.<RowMapper<Change>>any());
+            assertThat(pagedSql.getValue()).endsWith("LIMIT 10 OFFSET 20");
             assertThat(parameters.getValue().getValue("groupCode")).isEqualTo("G_A");
             assertThat(parameters.getValue().getValue("userId")).isEqualTo("U_1");
             assertThat(parameters.getValue().getValue("actorId")).isEqualTo("OPERATOR_ID");
             assertThat(parameters.getValue().getValue("fromDate")).isEqualTo(Timestamp.valueOf(at.toLocalDate().atStartOfDay()));
             assertThat(parameters.getValue().getValue("untilDate")).isEqualTo(Timestamp.valueOf(at.toLocalDate().plusDays(1).atStartOfDay()));
-            assertThat(parameters.getValue().getValue("offset")).isEqualTo(20L);
             service.history(0, 10, " ", null, "", null, null);
             var blankParameters = ArgumentCaptor.forClass(SqlParameterSource.class);
             verify(construction.constructed().getLast()).query(anyString(), blankParameters.capture(), ArgumentMatchers.<RowMapper<Change>>any());
-            assertThat(((MapSqlParameterSource) blankParameters.getValue()).getValues()).containsOnlyKeys("size", "offset");
+            assertThat(((MapSqlParameterSource) blankParameters.getValue()).getValues()).isEmpty();
         }
     }
 
@@ -748,7 +752,7 @@ class AuthorizationAdministrationServiceTest {
         assertAudit(db.audits().get(2), "GROUP_GRANT", "ADD", "COPY_A", null, NAV_ONE, "grant", null, "1");
         assertThat(db.audits().stream().map(w -> w.values().getFirst()).distinct()).hasSize(1);
         assertThat(db.reauthorizationRequests).containsExactly(List.of("OPERATOR_ID", "AUTHRT_CREATE"), List.of("OPERATOR_ID", "AUTHRT_GRANT"));
-        int menus = db.calls.indexOf("SELECT menu_sn::text,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
+        int menus = db.calls.indexOf("SELECT menu_sn,up_menu_sn FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
         int admin = db.calls.indexOf("SELECT authrt_cd FROM tb_authrt_info WHERE authrt_cd='ROLE_ADMIN' FOR UPDATE");
         assertThat(menus).isNotNegative().isLessThan(admin);
         assertThat(db.groups.get("G_A").grants()).containsExactly(NAV_ONE, READ);
@@ -883,7 +887,7 @@ class AuthorizationAdministrationServiceTest {
     void menuStructureGroupVersionsAreCheckedUnderTheMenuThenAdminLocks() {
         service.assertGroupVersions(List.of(new GroupVersion("G_B", service.group("G_B").version()),
                 new GroupVersion("G_A", service.group("G_A").version())));
-        int menus = db.calls.indexOf("SELECT menu_sn::text,up_menu_sn::text FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
+        int menus = db.calls.indexOf("SELECT menu_sn,up_menu_sn FROM tb_menu_info ORDER BY menu_sn FOR NO KEY UPDATE");
         int admin = db.calls.indexOf("SELECT authrt_cd FROM tb_authrt_info WHERE authrt_cd='ROLE_ADMIN' FOR UPDATE");
         assertThat(menus).isNotNegative().isLessThan(admin);
         var stale = assertThrows(BusinessException.class, () -> service.assertGroupVersions(List.of(new GroupVersion("G_A", "stale"))));

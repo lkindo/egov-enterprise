@@ -18,8 +18,24 @@ import static nuri.business.domain.user.entity.QDeptManage.deptManage;
  */
 @RequiredArgsConstructor
 public class DeptManageRepositoryImpl implements DeptManageRepositoryCustom {
+    private record ParentLinkRow(String ognzId, String upOgnzId) implements ParentLink {
+        @Override public String getOgnzId() { return ognzId; }
+        @Override public String getUpOgnzId() { return upOgnzId; }
+    }
+
+    private final jakarta.persistence.EntityManager entityManager;
+    private final nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
 
     private final JPAQueryFactory queryFactory;
+
+    @Override
+    public java.util.List<ParentLink> findParentLinksForUpdate() {
+        @SuppressWarnings("unchecked")
+        java.util.List<Object[]> rows = entityManager.createNativeQuery(vendorSql.selectForLock("ognz_id, up_ognz_id",
+                "tb_ognz_info", "ORDER BY ognz_id",
+                nuri.foundation.core.persistence.VendorSqlDialect.RowLock.FOR_NO_KEY_UPDATE)).getResultList();
+        return rows.stream().<ParentLink>map(row -> new ParentLinkRow((String) row[0], (String) row[1])).toList();
+    }
 
     @Override
     public Page<DeptManage> searchDeptManages(String keyword, Pageable pageable) {
