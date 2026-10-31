@@ -20,6 +20,9 @@ import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMen
   schemaSnapshotSql, selectSchemaSnapshot, assertDeclaredCrossDomainForeignKeys,
   assertNavigationEnterable, projectCompositionNavigation } from './project-composer-db.mjs';
 import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
+import { buildVendorModel, vendorSnapshotSql } from './project-composer-vendor-model.mjs';
+import { vendorRowsSql } from './project-composer-vendor-sql.mjs';
+import { translateForAllVendors } from './project-composer-vendors.mjs';
 import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, dropTemporaryDatabase, dump, dumpTableData, git, inspectContainer, listObjects, listSequenceDetails, psql,
   quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
 import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
@@ -415,6 +418,15 @@ async function main() {
         fail(`재적용 DB admin bootstrap 시드 부재 — ${label} (count=${count}). 생성 base 가 day-1 관리자 잠금 상태로 출하됩니다.`);
       }
     }
+
+    // 모든 생성에서 벤더 번역을 돌린다. 옮길 수 없는 스키마 변경은 그 변경에서 멈춘다(ADR-0047, 설계서 D-14).
+    // 번들 파일 집합은 바꾸지 않는다. 입력은 번들 옆에 두어 PostgreSQL 산출물 해시가 그대로다(설계서 D-2).
+    const vendorInput = { snapshot: selectedSchema.snapshot, extras: JSON.parse(psql(args.container, user, verifyDb, vendorSnapshotSql())) };
+    const vendorModel = buildVendorModel(vendorInput);
+    const vendorTranslation = translateForAllVendors(vendorModel);
+    vendorInput.rows = JSON.parse(psql(args.container, user, verifyDb, vendorRowsSql(vendorModel)));
+    writeFileSync(`${output}.vendor-input.json`, JSON.stringify(vendorInput), 'utf8');
+    console.log(`[base-db] 벤더 번역 통과: ${Object.entries(vendorTranslation).map(([vendor, result]) => `${vendor} ${result.statements}문장`).join(', ')}`);
 
     writeFileSync(
       join(output, 'README.md'),

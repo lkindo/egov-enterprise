@@ -113,7 +113,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     const recordCancellation = (error, { hadDatabase, databaseCleaned }) => {
       const kept = Boolean(paths && existsSync(paths.projectDirectory));
       let staging = 'none';
-      for (const path of paths ? [paths.stagingDirectory, ...(kept ? [] : [paths.databaseDirectory])] : []) {
+      for (const path of paths ? [paths.stagingDirectory, ...(kept ? [] : [paths.databaseDirectory, `${paths.databaseDirectory}.vendor-input.json`])] : []) {
         if (!existsSync(path)) continue;
         try { rmSync(path, { recursive: true, force: true, maxRetries: 5, retryDelay: 200 }); } catch { staging = 'failed'; continue; }
         if (existsSync(path)) staging = 'failed';

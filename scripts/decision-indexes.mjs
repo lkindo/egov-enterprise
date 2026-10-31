@@ -72,7 +72,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   }),
   composer: Object.freeze({
     paths: Object.freeze([
-      'config/modules/**', 'config/project-composer-menus.json', 'tools/project-composer/**', 'frontend/src/extensions/**',
+      'config/modules/**', 'config/project-composer-menus.json', 'config/db-vendors.json', 'tools/project-composer/**', 'frontend/src/extensions/**',
       'scripts/project-composer*', 'scripts/composer-*', 'scripts/reusable-*', 'scripts/generate-reusable-base-*',
       'scripts/verify-reusable-*', 'scripts/slot-registry*', 'scripts/domain-deletion-*', 'scripts/frontend-reachability-census*',
     ]),

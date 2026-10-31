@@ -90,7 +90,8 @@ export async function recoverAbandonedJobs({ outputRoot, docker, alive = process
       // 최종 위치로 옮긴 프로젝트가 있으면 그 DB 스키마 폴더는 프로젝트와 함께 남긴다.
       const kept = existsSync(resolve(outputRoot, 'build/reusable-base/source', name));
       const folders = [resolve(outputRoot, 'build/reusable-base/source', `.pending-${name}`),
-        ...(kept ? [] : [resolve(outputRoot, 'build/reusable-base', `composer-${name}-db`)])];
+        ...(kept ? [] : [resolve(outputRoot, 'build/reusable-base', `composer-${name}-db`),
+          resolve(outputRoot, 'build/reusable-base', `composer-${name}-db.vendor-input.json`)])];
       for (const result of folders.map(removeFolder)) {
         if (result === 'failed') cleaned.staging = 'failed';
         else if (result === 'removed' && cleaned.staging === 'none') cleaned.staging = 'removed';
