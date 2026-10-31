@@ -308,10 +308,13 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   }
   if (!worktreeSection.includes('한 작업 트리는 동시에 한 세션만 사용한다')
     || !worktreeSection.includes('고정 트리를 사용 중이면 고유한 임시')
+    || !worktreeSection.includes('프로세스 명령줄에 경로가 없다는 이유만으로 미사용이라고 단정하지 않는다')
     || !worktreeSection.includes('사용 여부가 불명확하면 기존 트리를 보존하고 임시 트리로 분리한다')) {
     errors.push('protocol §6.6 must isolate busy or uncertain persistent worktrees');
   }
   if (!worktreeSection.includes('미커밋 변경·미추적 작업물·미병합 작업 브랜치가 있으면 보존')
+    || !worktreeSection.includes('유휴 후보는 detached HEAD 이면서 clean 인 트리뿐이며')
+    || !worktreeSection.includes('작업 브랜치가 checkout 되어 있으면 커밋이 없어도 사용 중으로 본다')
     || !worktreeSection.includes('clean 상태만으로 유휴라고 판단하지 않는다')
     || !worktreeSection.includes('재사용을 위해 자동 stash·강제 reset·`git clean -fdx` 를 실행하지 않는다')) {
     errors.push('protocol §6.6 must preserve pending work and reject destructive preparation');
@@ -319,9 +322,21 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   const worktreeStart = section(worktreeSection, '- **최초 생성과 작업 시작**', '- **경로**');
   if (!worktreeStart.includes('고정 트리가 없을 때만')
     || !worktreeStart.includes('`git worktree add --detach <고정 경로> origin/main`')
+    || !worktreeStart.includes('이미 존재하는 경로는 같은 저장소의 등록된 트리인지 확인하며 덮어쓰지 않는다')
     || !worktreeStart.includes('유휴 고정 트리는 `detached origin/main` 상태로 두고 그 상태에서는 수정·커밋하지 않는다')
     || !worktreeStart.includes('`git switch --no-track -c <고유 작업 브랜치> origin/main`')) {
     errors.push('protocol §6.6 must create once, park detached, and start a distinct task branch');
+  }
+  if (!worktreeStart.includes('브랜치 생성 직전에 detached HEAD·clean·미사용 상태를 다시 확인하며, 달라졌으면 멈추고 임시 트리로 분리한다')
+    || !worktreeStart.includes('이 재확인은 원자적 세션 잠금이 아니므로 동시 진입 경쟁은 GAP-AGENT-001 의 잔여 위험이다')) {
+    errors.push('protocol §6.6 must recheck admission without claiming an atomic session lock');
+  }
+  const worktreeGuard = section(worktreeSection, '- **실행 전 가드**', '- **의존성과 캐시**');
+  if (!worktreeGuard.includes('고정 트리를 처음 사용하거나 세션 시작 경로와 다른 트리에서 작업하면')
+    || !worktreeGuard.includes('수정 전에 대상 트리에서 `echo AGENT_GUARD_CANARY` 가 막히는지 확인한다')
+    || !worktreeGuard.includes('막히지 않으면 그 도구의 프로젝트·훅 신뢰 설정을 사용자에게 요청하고 수정 작업을 진행하지 않는다')
+    || !worktreeGuard.includes('신뢰 상태를 임의로 조작하거나 가드를 우회하지 않는다')) {
+    errors.push('protocol §6.6 must verify target guard activation before editing and stop for user trust configuration if inactive');
   }
   const worktreeDependencies = section(worktreeSection, '- **의존성과 캐시**', '- **비밀 검사**');
   if (!worktreeDependencies.includes('의존성이 없거나 대응 lockfile 이 바뀌었을 때')
@@ -332,7 +347,7 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
   if (!worktreeFinish.includes('PR 병합과 최신 로컬·원격 HEAD')
     || !worktreeFinish.includes('자신이 시작한 서버·검증 프로세스만 소유 근거를 확인해 종료하고')
     || !worktreeFinish.includes('미커밋 변경·미추적 작업물이 없을 때')
-    || !worktreeFinish.includes('`git switch --detach origin/main`')
+    || !worktreeFinish.includes('`git fetch --no-prune origin` 뒤 `git switch --detach origin/main`')
     || !worktreeFinish.includes('자기 작업 브랜치만 기존 완료 규칙에 따라 정리하며, 고정 작업 트리 디렉터리는 삭제하지 않는다')) {
     errors.push('protocol §6.6 must verify owned completion, park detached, and retain the directory');
   }
@@ -717,20 +732,32 @@ test('DEC-OPS-395 persistent worktree regressions fail with their own message', 
     ['agents', '기존 세션의 진행 중인 작업은 자동으로 옮기거나 브랜치를 바꾸지 않는다', '기존 세션의 작업도 자동으로 옮긴다', 'without relocating existing work'],
     ['protocol', '한 작업 트리는 동시에 한 세션만 사용한다', '같은 도구의 여러 세션은 작업 트리를 공유한다', 'isolate busy or uncertain'],
     ['protocol', '고정 트리를 사용 중이면 고유한 임시', '고정 트리를 사용 중이어도 같은', 'isolate busy or uncertain'],
+    ['protocol', '프로세스 명령줄에 경로가 없다는 이유만으로 미사용이라고 단정하지 않는다', '프로세스 명령줄에 경로가 없으면 미사용으로 본다', 'isolate busy or uncertain'],
     ['protocol', '사용 여부가 불명확하면 기존 트리를 보존하고 임시 트리로 분리한다', '사용 여부가 불명확해도 기존 트리를 재사용한다', 'isolate busy or uncertain'],
     ['protocol', '미커밋 변경·미추적 작업물·미병합 작업 브랜치가 있으면 보존', '미커밋 변경·미추적 작업물만 있으면 보존', 'preserve pending work'],
+    ['protocol', '유휴 후보는 detached HEAD 이면서 clean 인 트리뿐이며', '유휴 후보는 clean 인 트리이며', 'preserve pending work'],
+    ['protocol', '작업 브랜치가 checkout 되어 있으면 커밋이 없어도 사용 중으로 본다', '작업 브랜치에 커밋이 없으면 유휴로 본다', 'preserve pending work'],
     ['protocol', 'clean 상태만으로 유휴라고 판단하지 않는다', 'clean 상태면 유휴라고 판단한다', 'preserve pending work'],
     ['protocol', '재사용을 위해 자동 stash·강제 reset·`git clean -fdx` 를 실행하지 않는다', '재사용 전에 자동 정리로 트리를 비운다', 'reject destructive preparation'],
     ['protocol', '고정 트리가 없을 때만', '작업을 시작할 때마다', 'create once, park detached'],
     ['protocol', 'git worktree add --detach <고정 경로> origin/main', 'git worktree add <고정 경로> main', 'create once, park detached'],
+    ['protocol', '이미 존재하는 경로는 같은 저장소의 등록된 트리인지 확인하며 덮어쓰지 않는다', '이미 존재하는 경로는 새 트리로 덮어쓴다', 'create once, park detached'],
     ['protocol', '유휴 고정 트리는 `detached origin/main` 상태로 두고', '유휴 고정 트리는 `main` 브랜치에 두고', 'park detached, and start'],
     ['protocol', '그 상태에서는 수정·커밋하지 않는다', '그 상태에서도 수정·커밋할 수 있다', 'park detached, and start'],
     ['protocol', 'git switch --no-track -c <고유 작업 브랜치> origin/main', 'git switch main', 'start a distinct task branch'],
+    ['protocol', '브랜치 생성 직전에 detached HEAD·clean·미사용 상태를 다시 확인하며', '세션 시작 때 한 번 상태를 확인하며', 'recheck admission'],
+    ['protocol', '달라졌으면 멈추고 임시 트리로 분리한다', '달라졌어도 같은 트리를 사용한다', 'recheck admission'],
+    ['protocol', '이 재확인은 원자적 세션 잠금이 아니므로 동시 진입 경쟁은 GAP-AGENT-001 의 잔여 위험이다', '이 재확인으로 동시 진입 경쟁을 원자적으로 막는다', 'without claiming an atomic session lock'],
+    ['protocol', '고정 트리를 처음 사용하거나 세션 시작 경로와 다른 트리에서 작업하면', '최초 세션 시작 경로에서만', 'verify target guard activation'],
+    ['protocol', '수정 전에 대상 트리에서 `echo AGENT_GUARD_CANARY` 가 막히는지 확인한다', '수정 후에 대상 트리에서 가드 상태를 확인한다', 'before editing'],
+    ['protocol', '막히지 않으면 그 도구의 프로젝트·훅 신뢰 설정을 사용자에게 요청하고 수정 작업을 진행하지 않는다', '막히지 않아도 수정 작업을 진행한다', 'stop for user trust configuration'],
+    ['protocol', '신뢰 상태를 임의로 조작하거나 가드를 우회하지 않는다', '신뢰 상태를 자동으로 바꾸고 진행한다', 'stop for user trust configuration'],
     ['protocol', '의존성이 없거나 대응 lockfile 이 바뀌었을 때', '의존성이 없을 때만', 'changed lockfiles'],
     ['protocol', '디렉터리·의존성·캐시는 유지하며', '작업 뒤 디렉터리·의존성·캐시는 삭제하며', 'retain caches'],
     ['protocol', 'PR 병합과 최신 로컬·원격 HEAD', '브랜치 이름', 'verify owned completion'],
     ['protocol', '자신이 시작한 서버·검증 프로세스만 소유 근거를 확인해 종료하고', '모든 서버·검증 프로세스를 종료하고', 'verify owned completion'],
     ['protocol', '미커밋 변경·미추적 작업물이 없을 때', '미커밋 변경·미추적 작업물이 있어도', 'verify owned completion'],
+    ['protocol', 'git fetch --no-prune origin', 'git fetch --prune origin', 'verify owned completion'],
     ['protocol', 'git switch --detach origin/main', 'git switch main', 'park detached, and retain'],
     ['protocol', '고정 작업 트리 디렉터리는 삭제하지 않는다', '고정 작업 트리 디렉터리도 삭제한다', 'retain the directory'],
   ];
@@ -751,6 +778,7 @@ test('persistent worktree assignments require distinct operators and paths witho
   const mutants = [
     current.protocol.replace(rows[0][0], ''),
     current.protocol.replace(rows[0][0], rows[1][0]),
+    current.protocol.replace(rows[0][0], `| ${rows[1][1]} | \`${rows[0][2]}\` |`),
     current.protocol.replace(rows[0][0], `| ${rows[0][1]} | \`${rows[1][2].replaceAll('\\', '/').toUpperCase()}/\` |`),
   ];
   for (const protocol of mutants) {
