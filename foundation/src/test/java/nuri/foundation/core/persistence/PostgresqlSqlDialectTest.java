@@ -113,7 +113,8 @@ class PostgresqlSqlDialectTest {
     void ledgerPermitIsPostgresOnly() throws SQLException {
         EntityManager postgres = entityManagerOn("PostgreSQL");
         Query query = mock(Query.class);
-        when(postgres.createNativeQuery("SELECT set_config('nuri.cms_purge', 'on', true)")).thenReturn(query);
+        when(postgres.createNativeQuery("SELECT set_config(?1, 'on', true)")).thenReturn(query);
+        when(query.setParameter(1, "nuri.cms_purge")).thenReturn(query);
         dialect.permitLedgerDeletion(postgres, LedgerDeletionPermit.CMS_PURGE);
         verify(query).getSingleResult();
 

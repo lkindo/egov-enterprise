@@ -100,7 +100,7 @@ public class PostgresqlSqlDialect implements VendorSqlDialect {
         boolean postgres = entityManager.unwrap(Session.class).doReturningWork(
                 connection -> PRODUCT_NAME.equalsIgnoreCase(connection.getMetaData().getDatabaseProductName()));
         if (postgres) {
-            entityManager.createNativeQuery("SELECT set_config('" + permit.key() + "', 'on', true)").getSingleResult();
+            entityManager.createNativeQuery("SELECT set_config(?1, 'on', true)").setParameter(1, permit.key()).getSingleResult();
         }
     }
 }
