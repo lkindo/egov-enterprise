@@ -295,6 +295,48 @@ function protocolTruthErrors({ agents, protocol, atlas }) {
     errors.push('protocol §6.6 must ask before deleting a worktree it did not create');
   }
 
+  // [2026-10-31 DEC-OPS-395] 고정 트리는 재사용하되 동시에 쓰거나 남은 작업을 지워 비우지 않는다.
+  if (!agentGitRules.includes('변경 작업은 시작 경로와 관계없이 [SOP §6.6의 도구별 고정 작업 트리]')
+    || !agentGitRules.includes('기존 세션의 진행 중인 작업은 자동으로 옮기거나 브랜치를 바꾸지 않는다')) {
+    errors.push('AGENTS must prefer persistent worktrees without relocating existing work');
+  }
+  const assignedTrees = [...worktreeSection.matchAll(/^\| (Codex|Claude Code|Antigravity\/Gemini) \| `([^`]+)` \|$/gmu)];
+  const assignedPaths = assignedTrees.map(match => match[2].replaceAll('\\', '/').replace(/\/+$/u, '').toLowerCase());
+  if (assignedTrees.length !== 3 || new Set(assignedTrees.map(match => match[1])).size !== 3
+    || new Set(assignedPaths).size !== 3) {
+    errors.push('protocol §6.6 must assign each operator a distinct persistent worktree');
+  }
+  if (!worktreeSection.includes('한 작업 트리는 동시에 한 세션만 사용한다')
+    || !worktreeSection.includes('고정 트리를 사용 중이면 고유한 임시')
+    || !worktreeSection.includes('사용 여부가 불명확하면 기존 트리를 보존하고 임시 트리로 분리한다')) {
+    errors.push('protocol §6.6 must isolate busy or uncertain persistent worktrees');
+  }
+  if (!worktreeSection.includes('미커밋 변경·미추적 작업물·미병합 작업 브랜치가 있으면 보존')
+    || !worktreeSection.includes('clean 상태만으로 유휴라고 판단하지 않는다')
+    || !worktreeSection.includes('재사용을 위해 자동 stash·강제 reset·`git clean -fdx` 를 실행하지 않는다')) {
+    errors.push('protocol §6.6 must preserve pending work and reject destructive preparation');
+  }
+  const worktreeStart = section(worktreeSection, '- **최초 생성과 작업 시작**', '- **경로**');
+  if (!worktreeStart.includes('고정 트리가 없을 때만')
+    || !worktreeStart.includes('`git worktree add --detach <고정 경로> origin/main`')
+    || !worktreeStart.includes('유휴 고정 트리는 `detached origin/main` 상태로 두고 그 상태에서는 수정·커밋하지 않는다')
+    || !worktreeStart.includes('`git switch --no-track -c <고유 작업 브랜치> origin/main`')) {
+    errors.push('protocol §6.6 must create once, park detached, and start a distinct task branch');
+  }
+  const worktreeDependencies = section(worktreeSection, '- **의존성과 캐시**', '- **비밀 검사**');
+  if (!worktreeDependencies.includes('의존성이 없거나 대응 lockfile 이 바뀌었을 때')
+    || !worktreeDependencies.includes('디렉터리·의존성·캐시는 유지하며')) {
+    errors.push('protocol §6.6 must retain caches while refreshing dependencies for changed lockfiles');
+  }
+  const worktreeFinish = section(worktreeSection, '- **작업 완료와 대기**', '- **정리**');
+  if (!worktreeFinish.includes('PR 병합과 최신 로컬·원격 HEAD')
+    || !worktreeFinish.includes('자신이 시작한 서버·검증 프로세스만 소유 근거를 확인해 종료하고')
+    || !worktreeFinish.includes('미커밋 변경·미추적 작업물이 없을 때')
+    || !worktreeFinish.includes('`git switch --detach origin/main`')
+    || !worktreeFinish.includes('자기 작업 브랜치만 기존 완료 규칙에 따라 정리하며, 고정 작업 트리 디렉터리는 삭제하지 않는다')) {
+    errors.push('protocol §6.6 must verify owned completion, park detached, and retain the directory');
+  }
+
   // [2026-10-24 DEC-OPS-382] 설계 검토 예산 — 반복 비용만 줄이고 승인 분리·신호 보존·L2 검토는 지운 채 남지 않게 고정한다.
   const designReviewBudget = section(activeProtocol, '## 7. 설계 검토 예산');
   if (!designReviewBudget.includes('H1~H5, red 증명, 승인 경계는 그대로다')) {
@@ -666,6 +708,54 @@ test('DEC-OPS-389 grade, audit report and hierarchy pins fail with their own mes
     assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
     const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
     assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
+  }
+});
+
+test('DEC-OPS-395 persistent worktree regressions fail with their own message', () => {
+  const cases = [
+    ['agents', '변경 작업은 시작 경로와 관계없이 [SOP §6.6의 도구별 고정 작업 트리]', '변경 작업은 현재 열린 폴더를 우선 사용하고 [SOP §6.6의 도구별 고정 작업 트리]', 'prefer persistent worktrees'],
+    ['agents', '기존 세션의 진행 중인 작업은 자동으로 옮기거나 브랜치를 바꾸지 않는다', '기존 세션의 작업도 자동으로 옮긴다', 'without relocating existing work'],
+    ['protocol', '한 작업 트리는 동시에 한 세션만 사용한다', '같은 도구의 여러 세션은 작업 트리를 공유한다', 'isolate busy or uncertain'],
+    ['protocol', '고정 트리를 사용 중이면 고유한 임시', '고정 트리를 사용 중이어도 같은', 'isolate busy or uncertain'],
+    ['protocol', '사용 여부가 불명확하면 기존 트리를 보존하고 임시 트리로 분리한다', '사용 여부가 불명확해도 기존 트리를 재사용한다', 'isolate busy or uncertain'],
+    ['protocol', '미커밋 변경·미추적 작업물·미병합 작업 브랜치가 있으면 보존', '미커밋 변경·미추적 작업물만 있으면 보존', 'preserve pending work'],
+    ['protocol', 'clean 상태만으로 유휴라고 판단하지 않는다', 'clean 상태면 유휴라고 판단한다', 'preserve pending work'],
+    ['protocol', '재사용을 위해 자동 stash·강제 reset·`git clean -fdx` 를 실행하지 않는다', '재사용 전에 자동 정리로 트리를 비운다', 'reject destructive preparation'],
+    ['protocol', '고정 트리가 없을 때만', '작업을 시작할 때마다', 'create once, park detached'],
+    ['protocol', 'git worktree add --detach <고정 경로> origin/main', 'git worktree add <고정 경로> main', 'create once, park detached'],
+    ['protocol', '유휴 고정 트리는 `detached origin/main` 상태로 두고', '유휴 고정 트리는 `main` 브랜치에 두고', 'park detached, and start'],
+    ['protocol', '그 상태에서는 수정·커밋하지 않는다', '그 상태에서도 수정·커밋할 수 있다', 'park detached, and start'],
+    ['protocol', 'git switch --no-track -c <고유 작업 브랜치> origin/main', 'git switch main', 'start a distinct task branch'],
+    ['protocol', '의존성이 없거나 대응 lockfile 이 바뀌었을 때', '의존성이 없을 때만', 'changed lockfiles'],
+    ['protocol', '디렉터리·의존성·캐시는 유지하며', '작업 뒤 디렉터리·의존성·캐시는 삭제하며', 'retain caches'],
+    ['protocol', 'PR 병합과 최신 로컬·원격 HEAD', '브랜치 이름', 'verify owned completion'],
+    ['protocol', '자신이 시작한 서버·검증 프로세스만 소유 근거를 확인해 종료하고', '모든 서버·검증 프로세스를 종료하고', 'verify owned completion'],
+    ['protocol', '미커밋 변경·미추적 작업물이 없을 때', '미커밋 변경·미추적 작업물이 있어도', 'verify owned completion'],
+    ['protocol', 'git switch --detach origin/main', 'git switch main', 'park detached, and retain'],
+    ['protocol', '고정 작업 트리 디렉터리는 삭제하지 않는다', '고정 작업 트리 디렉터리도 삭제한다', 'retain the directory'],
+  ];
+  for (const [source, from, to, expected] of cases) {
+    assert.equal(current[source].split(from).length, 2, `${source} must hold the pinned sentence exactly once: ${from}`);
+    const errors = protocolTruthErrors({ ...current, [source]: current[source].replace(from, to) });
+    assert.ok(errors.some(error => error.includes(expected)), `${from} → ${expected}: ${JSON.stringify(errors)}`);
+  }
+});
+
+test('persistent worktree assignments require distinct operators and paths without freezing locations', () => {
+  const worktreeSection = section(current.protocol, '### 6.6 작업 트리', '## 7. 설계 검토 예산');
+  const rows = [...worktreeSection.matchAll(/^\| (Codex|Claude Code|Antigravity\/Gemini) \| `([^`]+)` \|$/gmu)];
+  assert.equal(rows.length, 3);
+  const relocated = rows.reduce((protocol, row, index) => protocol.replace(row[0], `| ${row[1]} | \`E:\\wt-project-operator-${index}\` |`), current.protocol);
+  assert.deepEqual(protocolTruthErrors({ ...current, protocol: relocated }), []);
+
+  const mutants = [
+    current.protocol.replace(rows[0][0], ''),
+    current.protocol.replace(rows[0][0], rows[1][0]),
+    current.protocol.replace(rows[0][0], `| ${rows[0][1]} | \`${rows[1][2].replaceAll('\\', '/').toUpperCase()}/\` |`),
+  ];
+  for (const protocol of mutants) {
+    assert.notEqual(protocol, current.protocol);
+    assert.ok(protocolTruthErrors({ ...current, protocol }).some(error => error.includes('distinct persistent worktree')));
   }
 });
 
