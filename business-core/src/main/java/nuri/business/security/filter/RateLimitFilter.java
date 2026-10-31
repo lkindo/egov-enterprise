@@ -56,6 +56,9 @@ public class RateLimitFilter implements Filter {
     /** 거절 버킷 태그. 값은 {@code login}·{@code all} 둘뿐이다 — IP·URI 를 태그로 두면 시계열이 무한히 늘어난다. */
     public static final String REJECTION_BUCKET_TAG = "bucket";
 
+    /** 현재 비밀번호를 대입할 수 있는 경로라 로그인과 같은 예산을 쓴다. 토큰 재발급은 정상 세션이 늘 부르므로 넣지 않는다. */
+    private static final String PASSWORD_CHANGE_PATH = "/api/v1/users/me/password";
+
     /**
      * [2026-09-14] 선택 주입. 이 필터는 {@code HIGHEST_PRECEDENCE} 라 HTTP 관측 필터보다 먼저 응답을 끝내므로
      * 429 는 {@code http.server.requests} 에 **잡히지 않는다**. 그래서 경보의 원천은 이 카운터다.
@@ -131,8 +134,10 @@ public class RateLimitFilter implements Filter {
         }
 
         String clientIp = getClientIp(httpRequest);
-        boolean login = httpRequest.getRequestURI().contains("/auth/login")
-                || httpRequest.getRequestURI().startsWith("/api/v1/auth/mfa/");
+        String path = requestPath(httpRequest);
+        boolean login = path.contains("/auth/login")
+                || path.startsWith("/api/v1/auth/mfa/")
+                || path.equals(PASSWORD_CHANGE_PATH);
 
         // 로그인은 전용 버킷을 먼저 본다 — 로그인 한도를 넘긴 요청이 전체 한도까지 깎지 않게 한다.
         String deniedBy = null;
@@ -153,6 +158,17 @@ public class RateLimitFilter implements Filter {
             httpResponse.setContentType("application/json;charset=UTF-8");
             httpResponse.getWriter().write("{\"success\":false,\"code\":\"C429\",\"message\":\"Rate limit exceeded. Too many requests from this IP.\"}");
         }
+    }
+
+    /**
+     * 컨테이너가 디코딩·정규화한 경로. 원시 URI 로 비교하면 {@code /auth/logi%6e} 나 {@code /auth/login;a=b} 가 로그인 버킷을 비껴가
+     * 공개된 백엔드 포트에서 일반 한도로 비밀번호를 대입할 수 있다.
+     */
+    private static String requestPath(HttpServletRequest request) {
+        String servletPath = request.getServletPath();
+        String pathInfo = request.getPathInfo();
+        String path = (servletPath == null ? "" : servletPath) + (pathInfo == null ? "" : pathInfo);
+        return path.isEmpty() ? request.getRequestURI() : path;
     }
 
     /**

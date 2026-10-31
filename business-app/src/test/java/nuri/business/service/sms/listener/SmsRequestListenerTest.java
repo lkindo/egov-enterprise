@@ -44,6 +44,21 @@ class SmsRequestListenerTest {
                 .isEqualTo("01011112222");
     }
 
+    @Test
+    @DisplayName("사용자에게 보내는 문자는 이력에 수신자가 남도록 사용자로 지정한다")
+    void addressesUserRecipientsByIdentity() {
+        SmsRequestListener listener = new SmsRequestListener(smsService, SENDER_TEL);
+
+        listener.onSmsRequested(new SmsRequestedEvent("SANCTIONER_001", "01011112222", "본문", "USR_A"));
+
+        ArgumentCaptor<SmsDto> captor = ArgumentCaptor.forClass(SmsDto.class);
+        verify(smsService).sendSms(eq("SANCTIONER_001"), captor.capture());
+        assertThat(captor.getValue().getRecipients()).singleElement().satisfies(recipient -> {
+            assertThat(recipient.getEsntlId()).isEqualTo("USR_A");
+            assertThat(recipient.getRcptnTelno()).isNull();
+        });
+    }
+
     /**
      * 종전에는 이 판정이 {@code SanctionEventListener} 안에 있어 결재에서 나가는 문자에만 걸렸다.
      * sms 도메인으로 옮긴 뒤에는 모든 문자 요청이 같은 규칙을 따른다.

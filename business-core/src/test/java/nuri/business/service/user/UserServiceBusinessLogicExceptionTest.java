@@ -86,6 +86,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("회원가입 실패 - 중복된 사용자 ID (BusinessException 발생)")
         void signup_fail_withDuplicateUserId() {
+            authorizeSignup();
                 // Given
                 when(userRepository.findByUserId("newUser")).thenReturn(java.util.Optional.of(org.mockito.Mockito.mock(User.class)));
 
@@ -98,6 +99,7 @@ class UserServiceBusinessLogicExceptionTest {
         @Test
         @DisplayName("회원가입 실패 - DB 저장 오류 (RuntimeException 발생)")
         void signup_fail_withDatabaseConnectionError() {
+            authorizeSignup();
                 // Given
                 when(userRepository.findByUserId("newUser")).thenReturn(java.util.Optional.empty());
                 when(passwordEncoder.encode(any(String.class))).thenReturn("encodedPassword");
@@ -242,4 +244,10 @@ class UserServiceBusinessLogicExceptionTest {
                                 .isInstanceOf(RuntimeException.class)
                                 .hasMessage("Database connection error");
         }
+
+    /** 가입은 잠금 뒤 현재 권한을 다시 본다(서비스 가드) — 컨트롤러를 지나지 않는 시험도 권한을 쥐어야 한다. */
+    private static void authorizeSignup() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+    }
 }

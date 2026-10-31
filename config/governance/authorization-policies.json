@@ -3175,6 +3175,18 @@
       ]
     },
     {
+      "target": "UserService#signup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "USER_CREATE"
+        }
+      ]
+    },
+    {
       "target": "UserService#registerUser",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [

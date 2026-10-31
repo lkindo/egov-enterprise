@@ -13,7 +13,7 @@ import nuri.business.service.sms.dto.SmsMapper;
 import nuri.business.service.sms.dto.SmsRecptnMapper;
 import nuri.business.service.user.UserContactService;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
+import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.function.Function;
 import lombok.RequiredArgsConstructor;
@@ -115,7 +115,7 @@ public class SmsService {
     public Long sendSms(String userId, @Valid SmsDto dto) {
         log.info("SMS dispatch requested");
         // 수신 번호를 먼저 확정한다 — 해석이 실패하면 수신자 없는 발송 헤더가 남지 않아야 한다.
-        List<String> recipientNumbers = resolveRecipientNumbers(dto);
+        Map<String, String> recipients = resolveRecipients(dto);
 
         Sms sms = Sms.builder()
                 .sndngTelno(dto.getSndngTelno())
@@ -126,13 +126,14 @@ public class SmsService {
         Long smsTrsmSn = Objects.requireNonNull(savedSms.getSmsTrsmSn(),
                 "DB must generate SMS transmission serial number");
 
-        if (!recipientNumbers.isEmpty()) {
+        if (!recipients.isEmpty()) {
             log.info("Registering {} recipients for SMS transmission serial number: {}",
-                    recipientNumbers.size(), smsTrsmSn);
-            for (String rcptnTelno : recipientNumbers) {
+                    recipients.size(), smsTrsmSn);
+            for (Map.Entry<String, String> recipient : recipients.entrySet()) {
                 SmsRecptn recptn = SmsRecptn.builder()
                         .smsTrsmSn(smsTrsmSn)
-                        .rcptnTelno(rcptnTelno)
+                        .rcptnTelno(recipient.getKey())
+                        .rcvrId(recipient.getValue())
                         .rsltCd("P") // Pending
                         .build();
                 smsRecptnRepository.save(Objects.requireNonNull(recptn));
@@ -149,13 +150,13 @@ public class SmsService {
     }
 
     /**
-     * 수신 번호 목록을 확정한다 — 요청 순서 보존, 같은 번호는 한 번만(수신자 PK 가 (전송번호, 수신번호)다).
+     * 수신 번호와 그 수신자를 확정한다(값은 사용자를 골랐을 때의 esntlId) — 요청 순서 보존, 같은 번호는 한 번만(수신자 PK 가 (전송번호, 수신번호)다).
      *
      * <p>[2026-09-05 DEC-OPS-035] 수신자는 번호 직접 입력({@code rcptnTelno}) 또는 사용자({@code esntlId}) 중
      * 하나다. 사용자는 코어 {@link UserContactService} 로 휴대전화 번호를 해석하고, 등록 번호가 없는 사용자가
      * 하나라도 있으면 <b>이름을 밝히고 전체를 거부</b>한다 — 일부만 접수된 발송이 가장 나쁜 결과다.
      */
-    private List<String> resolveRecipientNumbers(SmsDto dto) {
+    private Map<String, String> resolveRecipients(SmsDto dto) {
         List<SmsRecptnDto> recipients = dto.getRecipients() == null ? List.of() : dto.getRecipients();
         List<String> esntlIds = new ArrayList<>();
         for (SmsRecptnDto recipient : recipients) {
@@ -194,7 +195,7 @@ public class SmsService {
                             + String.join(", ", missing) + ". 이 수신자를 빼고 다시 보내 주세요.");
         }
 
-        LinkedHashSet<String> numbers = new LinkedHashSet<>();
+        Map<String, String> receivers = new LinkedHashMap<>();
         for (SmsRecptnDto recipient : recipients) {
             if (hasText(recipient.getEsntlId())) {
                 UserContactService.UserContact contact = contacts.get(recipient.getEsntlId().trim());
@@ -203,12 +204,22 @@ public class SmsService {
                     throw new BusinessException(CommonErrorCode.INVALID_INPUT_VALUE,
                             "'" + name + "' 님은 등록된 휴대전화 번호가 없어 문자를 보낼 수 없습니다.");
                 }
-                numbers.add(nuri.business.domain.sms.SmsRecipientNumber.requireValid(contact.mblTelno()));
+                addReceiver(receivers, nuri.business.domain.sms.SmsRecipientNumber.requireValid(contact.mblTelno()),
+                        recipient.getEsntlId().trim());
             } else {
-                numbers.add(nuri.business.domain.sms.SmsRecipientNumber.requireValid(recipient.getRcptnTelno()));
+                addReceiver(receivers, nuri.business.domain.sms.SmsRecipientNumber.requireValid(recipient.getRcptnTelno()), null);
             }
         }
-        return new ArrayList<>(numbers);
+        return receivers;
+    }
+
+    /** 한 번호에 다른 수신자가 겹치면 한 사람으로 특정할 수 없어 수신자를 비운다(감사 기록에 다른 사람을 남기지 않는다). */
+    private static void addReceiver(Map<String, String> receivers, String number, String esntlId) {
+        if (!receivers.containsKey(number)) {
+            receivers.put(number, esntlId);
+        } else if (!Objects.equals(receivers.get(number), esntlId)) {
+            receivers.put(number, null);
+        }
     }
 
     private static boolean hasText(String value) {
