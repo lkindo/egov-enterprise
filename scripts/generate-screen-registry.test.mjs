@@ -342,12 +342,12 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   //    삭제)를 보지 않으며, 메모 보고·업무 보고 첨부는 개인 귀속이라 열리지 않는다. 그래서 '다른 사람 업무 자료 대행'에 넣으면
   //    대행할 자료의 첨부는 못 열고 게시판 비밀글 첨부를 연다. 판정이 업무 자료에 맞게 좁아지면 다시 분류한다.
   const filePolicy = javaCode('business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java');
-  for (const code of ['FILE_READ_ALL', 'FILE_DELETE_ALL']) {
-    assert.ok(excluded.has(code), `${code} is excluded`);
-    assert.match(filePolicy, new RegExp(
-      `boolean admin = SecurityUtil\\.hasPermission\\("${code}"\\);\\s*if \\(admin && !grants\\.personalReference\\(\\)\\) \\{\\s*return;`, 'u'),
-    `${code} opens every non-personal attachment regardless of the shared predicate`);
-  }
+  for (const code of ['FILE_READ_ALL', 'FILE_DELETE_ALL']) assert.ok(excluded.has(code), `${code} is excluded`);
+  assert.match(filePolicy, /boolean admin = SecurityUtil\.hasPermission\("FILE_READ_ALL"\);\s*if \(admin && !grants\.personalReference\(\)\) \{\s*return;/u,
+    'FILE_READ_ALL opens every non-personal attachment regardless of the shared predicate');
+  // 삭제는 개인 귀속 참조를 앞에서 거부하므로(ADR-0048) 관리자 분기에 닿는 것은 비개인 첨부뿐이다.
+  assert.match(filePolicy, /if \(grants\.personalReference\(\)\) \{\s*log\.warn\([^;]*\);\s*throw new BusinessException\(CommonErrorCode\.ACCESS_DENIED\);\s*\}[\s\S]*boolean admin = SecurityUtil\.hasPermission\("FILE_DELETE_ALL"\);\s*if \(admin\) \{\s*return;/u,
+    'FILE_DELETE_ALL opens every non-personal attachment regardless of the shared predicate');
   const attachmentSources = javaCode('business-core/src/main/java/nuri/business/service/file/AttachmentSource.java');
   for (const source of ['MEMO_REPORT', 'WORK_REPORT']) {
     assert.match(attachmentSources, new RegExp(`\\b${source}\\("tb_[a-z_]+", Sensitivity\\.PERSONAL\\b`, 'u'), `${source} attachments are personal`);
