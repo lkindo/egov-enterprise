@@ -3,6 +3,7 @@ package nuri.api.schema;
 import nuri.business.domain.notification.NotificationRepository;
 import nuri.business.service.deptjob.DeptJobService;
 import nuri.business.service.deptjob.dto.DeptJobDto;
+import nuri.business.service.file.AttachmentReferenceResolver;
 import nuri.business.service.note.NoteService;
 import nuri.business.service.note.dto.NoteDto;
 import nuri.foundation.core.exception.BusinessException;
@@ -41,6 +42,7 @@ class AssignmentRecipientIntegrityIntegrationTest {
     @Autowired private NoteService noteService;
     @Autowired private DeptJobService deptJobService;
     @Autowired private NotificationRepository notificationRepository;
+    @Autowired private AttachmentReferenceResolver attachments;
     @Autowired private JdbcTemplate jdbc;
     @Autowired private PlatformTransactionManager transactionManager;
 
@@ -50,6 +52,7 @@ class AssignmentRecipientIntegrityIntegrationTest {
     private String waiting;
     private String disabled;
     private String missing;
+    private Long noteFile;
 
     @BeforeEach
     void seedOnlyDisposableDatabaseUsers() {
@@ -82,6 +85,7 @@ class AssignmentRecipientIntegrityIntegrationTest {
                     fixtureId);
             jdbc.update("DELETE FROM tb_note_sndng WHERE sndr_id=?", sender);
             jdbc.update("DELETE FROM tb_note_info WHERE note_ttl=?", fixtureId);
+            if (noteFile != null) jdbc.update("DELETE FROM tb_file_master WHERE atch_file_sn=?", noteFile);
             jdbc.update("DELETE FROM tb_dept_task_info WHERE frst_rgtr_id=?", sender);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id IN (?, ?, ?, ?)", sender, active, waiting, disabled);
     }
@@ -174,6 +178,34 @@ class AssignmentRecipientIntegrityIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT pic_id FROM tb_dept_task_info WHERE dept_task_sn=?", String.class, id))
                 .isEqualTo(active);
         assertThat(notificationCount()).isEqualTo(1);
+    }
+
+    @Test
+    @DisplayName("🔐 쪽지 사본을 지운 당사자는 첨부를 열지 못하고, 남은 상대의 근거는 그대로다")
+    void deletedNoteCopyClosesAttachmentForThatPartyOnly() {
+        noteFile = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn) VALUES ('Y') RETURNING atch_file_sn", Long.class);
+        Long noteSn = jdbc.queryForObject("INSERT INTO tb_note_info (note_ttl, note_cn, atch_file_sn, frst_rgtr_id)"
+                + " VALUES (?, '첨부 판정', ?, ?) RETURNING note_sn", Long.class, fixtureId, noteFile, sender);
+        Long sent = jdbc.queryForObject("INSERT INTO tb_note_sndng (note_sn, sndr_id, del_yn) VALUES (?, ?, 'N')"
+                + " RETURNING note_sndng_sn", Long.class, noteSn, sender);
+        jdbc.update("INSERT INTO tb_note_rcptn (note_sn, note_sndng_sn, rcvr_id, del_yn) VALUES (?, ?, ?, 'N')",
+                noteSn, sent, active);
+        assertThat(ownsNoteFile(sender)).as("발신자").isTrue();
+        assertThat(ownsNoteFile(active)).as("수신자").isTrue();
+
+        jdbc.update("UPDATE tb_note_sndng SET del_yn='Y' WHERE note_sndng_sn=?", sent);
+        assertThat(ownsNoteFile(sender)).as("사본을 지운 발신자").isFalse();
+        assertThat(ownsNoteFile(active)).as("남은 수신자").isTrue();
+
+        jdbc.update("UPDATE tb_note_rcptn SET del_yn='Y' WHERE note_sn=?", noteSn);
+        assertThat(ownsNoteFile(active)).as("사본을 지운 수신자").isFalse();
+        assertThat(attachments.referenced(noteFile)).as("쪽지 행이 남아 미첨부 창으로 돌아가지 않는다").isTrue();
+    }
+
+    private boolean ownsNoteFile(String party) {
+        var grants = attachments.resolve(noteFile, party, party);
+        assertThat(grants.resolutionFailed()).isFalse();
+        return grants.ownerGrant();
     }
 
     private void insertUser(String id, String state) {

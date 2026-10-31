@@ -62,9 +62,6 @@ class AttachmentAccessPostgresIntegrationTest {
 
     @AfterEach
     void cleanup() {
-        jdbc.update("DELETE FROM tb_note_rcptn WHERE note_sn IN (SELECT note_sn FROM tb_note_info WHERE atch_file_sn = ?)", file);
-        jdbc.update("DELETE FROM tb_note_sndng WHERE note_sn IN (SELECT note_sn FROM tb_note_info WHERE atch_file_sn = ?)", file);
-        jdbc.update("DELETE FROM tb_note_info WHERE atch_file_sn = ?", file);
         jdbc.update("DELETE FROM tb_dept_task_info WHERE atch_file_sn = ?", file);
         jdbc.update("DELETE FROM tb_dept_job_bx WHERE dept_task_box_sn = ?", box);
         jdbc.update("DELETE FROM tb_file_master WHERE atch_file_sn = ?", file);
@@ -111,27 +108,6 @@ class AttachmentAccessPostgresIntegrationTest {
 
         assertThat(grants(REGISTRAR_LOGIN, registrar).ownerGrant()).isTrue();
         assertThat(grants("attach-colleague", colleague).sharedGrant()).as("업무함 없는 업무의 같은 부서 사용자").isFalse();
-    }
-
-    @Test
-    @DisplayName("🔐 쪽지 사본을 지운 당사자는 첨부를 열지 못하고, 남은 상대의 근거는 그대로다")
-    void deletedNoteCopyClosesAttachmentForThatPartyOnly() {
-        Long note = jdbc.queryForObject("INSERT INTO tb_note_info (note_ttl, note_cn, atch_file_sn, frst_rgtr_id)"
-                + " VALUES ('첨부 판정', '첨부 판정', ?, ?) RETURNING note_sn", Long.class, file, REGISTRAR_LOGIN);
-        Long sent = jdbc.queryForObject("INSERT INTO tb_note_sndng (note_sn, sndr_id, del_yn) VALUES (?, ?, 'N')"
-                + " RETURNING note_sndng_sn", Long.class, note, registrar);
-        jdbc.update("INSERT INTO tb_note_rcptn (note_sn, note_sndng_sn, rcvr_id, del_yn) VALUES (?, ?, ?, 'N')",
-                note, sent, assignee);
-        assertThat(grants(REGISTRAR_LOGIN, registrar).ownerGrant()).as("발신자").isTrue();
-        assertThat(grants(ASSIGNEE_LOGIN, assignee).ownerGrant()).as("수신자").isTrue();
-
-        jdbc.update("UPDATE tb_note_sndng SET del_yn = 'Y' WHERE note_sndng_sn = ?", sent);
-        assertThat(grants(REGISTRAR_LOGIN, registrar).ownerGrant()).as("사본을 지운 발신자").isFalse();
-        assertThat(grants(ASSIGNEE_LOGIN, assignee).ownerGrant()).as("남은 수신자").isTrue();
-
-        jdbc.update("UPDATE tb_note_rcptn SET del_yn = 'Y' WHERE note_sn = ?", note);
-        assertThat(grants(ASSIGNEE_LOGIN, assignee).ownerGrant()).as("사본을 지운 수신자").isFalse();
-        assertThat(attachments.referenced(file)).as("쪽지 행이 남아 미첨부 창으로 돌아가지 않는다").isTrue();
     }
 
     private Grants grants(String loginId, String esntlId) {
