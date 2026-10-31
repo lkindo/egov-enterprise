@@ -35,6 +35,18 @@ import static org.mockito.Mockito.*;
 @DisplayName("BoardMasterService 로직 테스트")
 class BoardMasterServiceLogicTest {
 
+    /** 쓰기 서비스는 현재 권한을 다시 본다(백엔드 헌법 제8조). 권한을 따로 쥐지 않은 시험은 관리자로 돈다. */
+    @org.junit.jupiter.api.BeforeEach
+    void authorizeServiceGuard() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearServiceGuard() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
     @Mock
     private BoardMasterRepository boardMasterRepository;
 

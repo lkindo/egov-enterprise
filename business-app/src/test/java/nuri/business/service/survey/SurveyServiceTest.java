@@ -36,6 +36,18 @@ import static org.mockito.Mockito.*;
 @DisplayName("SurveyService 단위 테스트 (Full Coverage)")
 class SurveyServiceTest {
 
+    /** 쓰기 서비스는 현재 권한을 다시 본다(백엔드 헌법 제8조). 권한을 따로 쥐지 않은 시험은 관리자로 돈다. */
+    @org.junit.jupiter.api.BeforeEach
+    void authorizeServiceGuard() {
+        org.springframework.security.core.context.SecurityContextHolder.getContext().setAuthentication(
+                nuri.business.support.AuthorizationTestPrincipal.authentication("fixture", "FIXTURE_ESNTL", "ROLE_ADMIN"));
+    }
+
+    @org.junit.jupiter.api.AfterEach
+    void clearServiceGuard() {
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
+    }
+
     @org.mockito.Spy
     nuri.business.service.survey.dto.SurveyTemplateMapper surveyTemplateMapper = new nuri.business.service.survey.dto.SurveyTemplateMapperImpl();
 
@@ -201,6 +213,8 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 목록 조회 - 키워드 없음")
     void getSurveyList_NoKeyword() {
+        // 작성 중 설문을 함께 보는 편집자 조회가 아니라 응답자의 목록이다.
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
         Pageable pageable = PageRequest.of(0, 10);
         SurveyInfo info = SurveyInfo.builder().srvySn(201L).srvyTtl("Subject").build();
         given(infoRepository.findByRlsYn("Y", pageable)).willReturn(new PageImpl<>(List.of(info)));
@@ -289,6 +303,8 @@ class SurveyServiceTest {
     @Test
     @DisplayName("설문 정보 목록 조회 - 키워드 있음")
     void getSurveyList_WithKeyword() {
+        // 작성 중 설문을 함께 보는 편집자 조회가 아니라 응답자의 목록이다.
+        org.springframework.security.core.context.SecurityContextHolder.clearContext();
         Pageable pageable = PageRequest.of(0, 10);
         SurveyInfo info = SurveyInfo.builder().srvySn(201L).srvyTtl("Subject").build();
         given(infoRepository.findByRlsYnAndSrvyTtlContaining(eq("Y"), eq("Keyword"), any())).willReturn(new PageImpl<>(List.of(info)));

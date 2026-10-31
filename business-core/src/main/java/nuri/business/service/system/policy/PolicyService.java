@@ -65,6 +65,7 @@ public class PolicyService {
      */
     @Transactional
     public void updatePolicy(String type, String title, String content) {
+        nuri.business.security.util.SecurityUtil.assertPermission("POLICY_UPDATE");
         validatePolicyType(type);
         SystemPolicy policy = systemPolicyRepository.findById(type)
                 .orElseGet(() -> SystemPolicy.builder()

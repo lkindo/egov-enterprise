@@ -118,6 +118,8 @@ class AttachmentSourceRegistryLinterTest {
                     readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java#assertAttachable",
                     readOnly()),
+            entry("business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java#isUnattachedUpload",
+                    readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java#assertDeletable",
                     readOnly()),
             entry("business-core/src/main/java/nuri/business/service/file/FileService.java#uploadFiles",

@@ -105,11 +105,14 @@ public enum AttachmentSource {
     /**
      * 쪽지(사인·私信). 발신자·수신자만 열람하며 <b>관리자도 우회하지 못한다</b>.
      * 수신자 축은 {@code tb_note_rcptn.rcvr_id}(esntlId), 발신자 축은 {@code tb_note_sndng.sndr_id}(esntlId).
+     * 자기 사본을 지운 관계는 본문이 404 이므로 첨부 근거도 되지 않는다(ADR-0048). 등록자 축은 사본을 지워도 남아 두지 않는다.
      */
     NOTE("tb_note_info", Sensitivity.PERSONAL, null,
-            "frst_rgtr_id = ?",
-            "EXISTS (SELECT 1 FROM tb_note_sndng s WHERE s.note_sn = tb_note_info.note_sn AND s.sndr_id = ?)"
-                    + " OR EXISTS (SELECT 1 FROM tb_note_rcptn r WHERE r.note_sn = tb_note_info.note_sn AND r.rcvr_id = ?)"),
+            null,
+            "EXISTS (SELECT 1 FROM tb_note_sndng s WHERE s.note_sn = tb_note_info.note_sn AND s.sndr_id = ?"
+                    + " AND (s.del_yn IS NULL OR s.del_yn <> 'Y'))"
+                    + " OR EXISTS (SELECT 1 FROM tb_note_rcptn r WHERE r.note_sn = tb_note_info.note_sn AND r.rcvr_id = ?"
+                    + " AND (r.del_yn IS NULL OR r.del_yn <> 'Y'))"),
 
     /**
      * 콘텐츠 페이지 이미지(ADR-0039 결정 8). 귀속 표 {@code tb_cms_conts_file} 이 첨부 하나를 페이지 하나에 묶는다. 판정은 리졸버의

@@ -3175,6 +3175,402 @@
       ]
     },
     {
+      "target": "PolicyService#updatePolicy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "POLICY_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#insertTmplat",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_CREATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#updateTmplat",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#deleteTmplat",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_DELETE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#insertSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_CREATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#updateSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#copySurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_CREATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#deleteSurvey",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_DELETE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#insertQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_CREATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#updateQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#deleteQuestion",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_DELETE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#insertItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_CREATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#updateItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "SurveyService#deleteItem",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "SURVEY_DELETE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "BoardMasterService#createBoardMaster",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BBS_MST_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "BoardMasterService#updateBoardMaster",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BBS_MST_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "BoardMasterService#deleteBoardMaster",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BBS_MST_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "BoardMasterService#deleteBoardMasterPhysically",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BBS_MST_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "BoardMasterService#updateBoardMasterStatusInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BBS_MST_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "BoardMasterService#deleteBoardMastersInBatch",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "BBS_MST_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#createCommunity",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "COMMUNITY_CREATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#updateCommunity",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "COMMUNITY_UPDATE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "CommunityService#deleteCommunity",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "COMMUNITY_DELETE_ALL"
+        }
+      ]
+    },
+    {
+      "target": "DeptManageService#insertDeptManage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "DEPT_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "DeptManageService#updateDeptManage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "DEPT_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "DeptManageService#updateDeptHierarchy",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "DEPT_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "DeptManageService#deleteDeptManage",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "DEPT_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "GroupManageService#insertGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CLASS_GRP_CREATE"
+        }
+      ]
+    },
+    {
+      "target": "GroupManageService#updateGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CLASS_GRP_UPDATE"
+        }
+      ]
+    },
+    {
+      "target": "GroupManageService#deleteGroup",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CLASS_GRP_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "GroupManageService#deleteGroups",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "CLASS_GRP_DELETE"
+        }
+      ]
+    },
+    {
+      "target": "InstitutionCodeService#updateInstitutionCodeRecptn",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "INST_CODE_IMPORT"
+        }
+      ]
+    },
+    {
+      "target": "UserAbsenceServiceImpl#updateAbsence",
+      "policy": "ADMIN_OR_SYSTEM",
+      "mechanisms": [
+        {
+          "helper": "assertPermission",
+          "count": 1,
+          "identityAxis": "PERMISSION",
+          "permission": "ABSENCE_UPDATE"
+        }
+      ]
+    },
+    {
       "target": "UserService#signup",
       "policy": "ADMIN_OR_SYSTEM",
       "mechanisms": [
@@ -3668,6 +4064,9 @@
             "USER_STATUS"
           ],
           "UserService#registerUser": [
+            "USER_CREATE"
+          ],
+          "UserService#signup": [
             "USER_CREATE"
           ],
           "UserService#moveUsersToDept": [
@@ -4347,20 +4746,21 @@
       "target": "FileAccessPolicy#assertDeletable",
       "source": "business-core/src/main/java/nuri/business/service/file/FileAccessPolicy.java",
       "policy": "REACHABILITY_WITH_PRIVACY",
-      "denyReferences": 3,
+      "denyReferences": 4,
       "requiredTokens": [
         "SecurityUtil.getCurrentLoginId()",
         "SecurityUtil.getCurrentEsntlId()",
+        "if (isUnattachedUpload(master, loginId))",
         "if (grants.resolutionFailed())",
-        "grants.personalReference() && grants.personalOwnerGrant()",
-        "!grants.personalReference() && grants.ownerGrant()",
-        "admin && !grants.personalReference()",
+        "if (grants.personalReference()) { log.warn(\"[FileAccess] 첨부 삭제 거부 — 개인 귀속 참조 atchFileSn={} loginId={}\", atchFileSn, loginId); throw new BusinessException(CommonErrorCode.ACCESS_DENIED); }",
+        "if (grants.ownerGrant()) { return; }",
+        "if (admin) { return; }",
         "throw new BusinessException(CommonErrorCode.ACCESS_DENIED);",
         "SecurityUtil.hasPermission(\"FILE_DELETE_ALL\")"
       ],
       "forbiddenTokens": [
         "grants.sharedGrant()",
-        "if (grants.ownerGrant())",
+        "grants.personalOwnerGrant()",
         "grants.personalReaderGrant()"
       ]
     },

@@ -48,6 +48,11 @@
       "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
     },
     {
+      "test": "AttachmentAccessPostgresIntegrationTest.java",
+      "category": "as-is",
+      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+    },
+    {
       "test": "AttachmentReferenceIntegrityPostgresTest.java",
       "category": "as-is",
       "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"

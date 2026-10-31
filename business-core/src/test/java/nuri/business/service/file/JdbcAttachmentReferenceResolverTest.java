@@ -152,9 +152,9 @@ class JdbcAttachmentReferenceResolverTest {
                 .containsExactly(ATCH_FILE_SN);
         assertThat(jdbc.paramsFor(AttachmentSource.SCHEDULE)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
 
-        // NOTE: loginId 1개 + esntlId 2개(발신·수신 EXISTS) + atchFileSn.
+        // NOTE: esntlId 2개(발신·수신 EXISTS) + atchFileSn. 등록자 축은 사본을 지워도 남아 쓰지 않는다.
         assertThat(jdbc.paramsFor(AttachmentSource.NOTE))
-                .containsExactly(LOGIN_ID, ESNTL_ID, ESNTL_ID, ATCH_FILE_SN);
+                .containsExactly(ESNTL_ID, ESNTL_ID, ATCH_FILE_SN);
 
         // 두 축이 모두 있으면 OR 로 이어야 한다. 구분자가 빠지면 SQL 이 깨지고,
         // AND 로 바뀌면 '작성자이면서 동시에 esntlId 소유자' 라는 성립 불가 조건이 된다.

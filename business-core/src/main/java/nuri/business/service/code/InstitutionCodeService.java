@@ -81,6 +81,7 @@ public class InstitutionCodeService extends BaseAbstractService {
      */
     @Transactional
     public void updateInstitutionCodeRecptn(InstitutionCodeRecptnDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("INST_CODE_IMPORT");
         InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId id = new InstitutionCodeRecptnLog.InstitutionCodeRecptnLogId(
                 dto.getOcrnYmd(), dto.getInstCd(), dto.getJobSn());
         InstitutionCodeRecptnLog entity = institutionCodeRecptnLogRepository.findById(id)

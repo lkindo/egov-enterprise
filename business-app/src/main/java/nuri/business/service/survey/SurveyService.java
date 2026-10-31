@@ -53,6 +53,7 @@ public class SurveyService {
 
     @Transactional
     public Long insertTmplat(SurveyTemplateDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_CREATE_ALL");
         SurveyTemplate template = Objects.requireNonNull(SurveyTemplate.builder()
                 .srvyTmpltTypeCd(dto.getSrvyTmpltTypeCd())
                 .srvyTmpltPathNm(dto.getSrvyTmpltPathNm())
@@ -64,6 +65,7 @@ public class SurveyService {
 
     @Transactional
     public void updateTmplat(SurveyTemplateDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_UPDATE_ALL");
         SurveyTemplate entity = tmplatRepository.findById(Objects.requireNonNull(dto.getSrvyTmpltSn()))
                 .orElseThrow(() -> new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND));
         entity.update(dto.getSrvyTmpltTypeCd(), dto.getSrvyTmpltPathNm(), dto.getSrvyTmpltExpln());
@@ -78,6 +80,7 @@ public class SurveyService {
      */
     @Transactional
     public void deleteTmplat(Long srvyTmpltSn) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_DELETE_ALL");
         Long id = Objects.requireNonNull(srvyTmpltSn);
         if (!tmplatRepository.existsById(id)) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -142,6 +145,7 @@ public class SurveyService {
 
     @Transactional
     public Long insertSurvey(SurveyInfoDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_CREATE_ALL");
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
         if (!tmplatRepository.existsById(Objects.requireNonNull(dto.getSrvyTmpltSn()))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -161,6 +165,7 @@ public class SurveyService {
 
     @Transactional
     public void updateSurvey(SurveyInfoDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_UPDATE_ALL");
         validateSurveyDates(dto.getSrvyBgngYmd(), dto.getSrvyEndYmd());
         if (!tmplatRepository.existsById(Objects.requireNonNull(dto.getSrvyTmpltSn()))) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -192,6 +197,7 @@ public class SurveyService {
      */
     @Transactional
     public Long copySurvey(Long srvySn, nuri.business.service.survey.dto.SurveyCopyRequest request) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_CREATE_ALL");
         SurveyInfo source = lockSurvey(srvySn);
         validateSurveyDates(request.getSrvyBgngYmd(), request.getSrvyEndYmd());
         SurveyInfo copy = infoRepository.save(Objects.requireNonNull(SurveyInfo.builder()
@@ -236,6 +242,7 @@ public class SurveyService {
 
     @Transactional
     public void deleteSurvey(Long srvySn) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_DELETE_ALL");
         lockSurvey(srvySn);
         // [V2_13 결속] 설문 참조 FK(NO ACTION) 하에서 자식→부모 순 연쇄 정리.
         // 기존 V2_6 FK(qstn→info)로 문항 보유 설문 삭제가 409로 파손되던 기왕 부채도 함께 해소.
@@ -278,6 +285,7 @@ public class SurveyService {
 
     @Transactional
     public Long insertQuestion(SurveyQuestionDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_CREATE_ALL");
         SurveyInfo survey = lockSurvey(dto.getSrvySn());
         assertNoResponses(survey.getSrvySn());
         // [2026-09-26 DIP B4 P6] 순번은 서버가 매긴다 — 화면이 '문항 수 + 1' 을 보내, 중간 문항을 지운 뒤 추가하면 마지막
@@ -321,6 +329,7 @@ public class SurveyService {
 
     @Transactional
     public void updateQuestion(SurveyQuestionDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_UPDATE_ALL");
         SurveyQuestion entity = questionAfterSurveyLock(dto.getSrvyQstnSn());
         if (dto.getSrvySn() == null || !dto.getSrvySn().equals(entity.getSrvySn())) {
             throw new BusinessException(CommonErrorCode.RESOURCE_NOT_FOUND);
@@ -360,6 +369,7 @@ public class SurveyService {
 
     @Transactional
     public void deleteQuestion(Long srvySn, Long srvyQstnSn) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_DELETE_ALL");
         lockSurvey(srvySn);
         Objects.requireNonNull(srvyQstnSn);
         SurveyQuestion question = qesitmRepository.findById(srvyQstnSn)
@@ -381,6 +391,7 @@ public class SurveyService {
 
     @Transactional
     public Long insertItem(SurveyArticleDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_CREATE_ALL");
         SurveyQuestion question = questionAfterSurveyLock(dto.getSrvyQstnSn());
         assertNoResponses(question.getSrvySn());
         // 주관식은 답변 칸 하나에 글로 답한다 — 칸을 더하면 응답 화면이 어느 칸에 답을 담을지 정할 수 없다.
@@ -402,6 +413,7 @@ public class SurveyService {
 
     @Transactional
     public void updateItem(SurveyArticleDto dto) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_UPDATE_ALL");
         SurveyArticle entity = itemAfterSurveyLock(dto.getSrvyArtclSn());
         // [2026-09-26 DIP B4 P6] 응답이 모인 문항의 선택지 문구를 바꾸면 이미 고른 사람의 답이 다른 뜻이 된다.
         if (!Objects.equals(entity.getArtclCn(), dto.getArtclCn())) {
@@ -412,6 +424,7 @@ public class SurveyService {
 
     @Transactional
     public void deleteItem(Long srvyArtclSn) {
+        nuri.business.security.util.SecurityUtil.assertPermission("SURVEY_DELETE_ALL");
         SurveyArticle item = itemAfterSurveyLock(srvyArtclSn);
         assertNoResponses(rsltRepository.countBySrvyArtclSn(item.getSrvyArtclSn()), "선택 항목");
         boolean freeText = qesitmRepository.findById(item.getSrvyQstnSn()).map(SurveyQuestion::isFreeText).orElse(false);

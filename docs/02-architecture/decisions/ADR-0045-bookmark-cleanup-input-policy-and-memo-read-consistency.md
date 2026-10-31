@@ -1,6 +1,7 @@
 # ADR-0045 — 즐겨찾기 명시적 정리, 엄격 입력 검증, 읽은 메모 기준 지시
 
 - 상태: Accepted
+- 후속 결정: [ADR-0048](ADR-0048-personal-attachment-deletion-and-uploader-window.md)이 결정 5의 "지시 후 모든 첨부 변경 금지를 새로 도입하지 않는다"를 대체한다.
 - 결정일: 2026-10-30
 - 승인: 사용자가 도메인 개선 계획의 순차 실행을 요청하고, 즐겨찾기는 “기본 보존 + 본인이 명시적으로 정리”, 메모 지시는 “읽은 본문·첨부 기준으로 저장”, 기존 비정규 입력은 “엄격 검증과 수정 안내 적용 — 기존 값도 저장 시 정정 필요”를 선택했다. 이관 검증은 “추가 대상 없음 — 현재 검증 범위 유지”로 확정했다.
 - 관계: [ADR-0016](ADR-0016-explicit-permissions-and-multiple-groups.md)의 인가와 [ADR-0025](ADR-0025-enterprise-completeness-and-durable-operations.md)의 업무 정합성 위에 아래 정책을 추가한다. 기존 원문 결정은 소급 수정하지 않는다.
