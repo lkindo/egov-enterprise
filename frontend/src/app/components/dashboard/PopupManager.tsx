@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { AttachmentImage, extractAtchFileSn } from '@/app/components/ui/attachment-image';
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { nextKoreanMidnight } from '@/lib/date/today-ymd';
 import { cn } from '@/lib/utils';
 
 /*
@@ -31,12 +32,10 @@ function clearHidden(popupSn: number) {
     }
 }
 
-/** '오늘 하루' 는 24시간이 아니라 오늘 자정(사용자 시각)까지다 — 밤 11시에 닫으면 다음 날 아침에 다시 보인다. */
+/** '오늘 하루' 는 24시간이 아니라 오늘 자정(한국 시각)까지다 — 밤 11시에 닫으면 다음 날 아침에 다시 보인다. */
 function hideUntilMidnight(popupSn: number) {
-    const midnight = new Date();
-    midnight.setHours(24, 0, 0, 0);
     try {
-        localStorage.setItem(`popup_hide_${popupSn}`, midnight.getTime().toString());
+        localStorage.setItem(`popup_hide_${popupSn}`, nextKoreanMidnight().toString());
     } catch {
         // 저장하지 못하면 이번 화면에서만 닫힌다.
     }

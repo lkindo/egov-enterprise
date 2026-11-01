@@ -8,6 +8,7 @@ import {
   type PeriodPreset,
   type PeriodValue,
 } from '@/app/components/patterns/period-filter';
+import { koreanToday } from '@/lib/date/today-ymd';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
 
 /**
@@ -102,7 +103,7 @@ export function useRememberedListConditions(screenKey: string, options: Remember
 
   const setPeriod = useCallback((next: PeriodValue) => {
     setChosenPeriod(next);
-    const preset = activePresetOf(next, new Date());
+    const preset = activePresetOf(next, koreanToday());
     write(screenKey, { periodPreset: preset && REMEMBERED_PRESETS.includes(preset) ? preset : undefined });
   }, [screenKey]);
 

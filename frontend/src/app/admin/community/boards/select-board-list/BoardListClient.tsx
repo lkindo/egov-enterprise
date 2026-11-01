@@ -85,6 +85,7 @@ export const fromQueryDate = (raw: string | null | undefined): Date | undefined 
 };
 
 import type { InitialBoardData } from './BoardListServer';
+import { koreanToday } from '@/lib/date/today-ymd';
 
 export interface BoardListClientProps {
   initialData: InitialBoardData;
@@ -253,7 +254,7 @@ export const BoardListClient = ({ initialData, params: initialParams }: BoardLis
    SSR 첫 목록은 달 단위 조회가 아니므로 캘린더에는 쓰지 않는다.
  */
  const isCalendar = tmpltId === 'TMPLT_CALENDAR';
- const calendarMonth = queryStartDateValue ?? new Date();
+ const calendarMonth = queryStartDateValue ?? koreanToday();
  const listParams: BoardListParams = isCalendar
   ? {
     bbsId,

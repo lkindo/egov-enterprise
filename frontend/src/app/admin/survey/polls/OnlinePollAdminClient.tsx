@@ -37,8 +37,10 @@ import {
   toDateInputValue,
   toDisplayYmd,
   toStorageYmd,
+  todayStorageYmd,
 } from '@/lib/format-date';
 import { useTodayStorageYmd } from '@/lib/hooks/use-today-ymd';
+import { koreanDaysFromNow } from '@/lib/date/today-ymd';
 import { getPollStatus, POLL_STATUS_LABEL, type PollStatus } from '@/lib/poll-status';
 import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
@@ -119,8 +121,8 @@ export default function OnlinePollAdminClient() {
   // 날짜는 varchar(8) / @Size(max = 8) 라 'yyyyMMdd' 8자로 저장한다(10자 전송은 400).
   const emptyPoll = (): OnlinePollDto => ({
     pollNm: '',
-    pollBgngYmd: toStorageYmd(new Date()),
-    pollEndYmd: toStorageYmd(new Date(new Date().setDate(new Date().getDate() + 7))),
+    pollBgngYmd: todayStorageYmd(),
+    pollEndYmd: toStorageYmd(koreanDaysFromNow(7)),
     pollKndCd: 'POLL01',
     pollDsuseYn: 'N',
     pollArticles: [{ pollArtclNm: '' }, { pollArtclNm: '' }],

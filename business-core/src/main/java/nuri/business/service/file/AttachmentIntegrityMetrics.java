@@ -2,6 +2,7 @@ package nuri.business.service.file;
 
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.MeterRegistry;
+import nuri.foundation.core.util.ServiceTime;
 import java.time.Clock;
 import java.util.Set;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,7 +26,7 @@ public class AttachmentIntegrityMetrics {
     @Autowired
     public AttachmentIntegrityMetrics(AttachmentIntegrityReportStore store, MeterRegistry registry,
             @Value("${nuri.attachment.integrity.enabled:false}") boolean enabled) {
-        this(store, registry, enabled, Clock.systemUTC());
+        this(store, registry, enabled, ServiceTime.clock());
     }
 
     AttachmentIntegrityMetrics(AttachmentIntegrityReportStore store, MeterRegistry registry, boolean enabled, Clock clock) {

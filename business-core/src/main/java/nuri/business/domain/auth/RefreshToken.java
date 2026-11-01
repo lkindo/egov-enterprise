@@ -3,7 +3,7 @@ package nuri.business.domain.auth;
 import jakarta.persistence.*;
 import lombok.*;
 import nuri.foundation.domain.common.BaseEntity;
-import java.time.Instant;
+import java.time.LocalDateTime;
 
 /**
  * JWT 리프레시 토큰 저장 엔티티
@@ -25,20 +25,20 @@ public class RefreshToken extends BaseEntity {
     private String rfshTkn;
 
     @Column(nullable = false)
-    private Instant exprtnDt;
+    private LocalDateTime exprtnDt;
 
-    private RefreshToken(String userId, String rfshTkn, Instant exprtnDt) {
+    private RefreshToken(String userId, String rfshTkn, LocalDateTime exprtnDt) {
         this.userId = userId;
         this.rfshTkn = rfshTkn;
         this.exprtnDt = exprtnDt;
     }
 
     @Builder
-    public static RefreshToken create(String userId, String rfshTkn, Instant exprtnDt) {
+    public static RefreshToken create(String userId, String rfshTkn, LocalDateTime exprtnDt) {
         return new RefreshToken(userId, rfshTkn, exprtnDt);
     }
 
-    public void updateToken(String rfshTkn, Instant exprtnDt) {
+    public void updateToken(String rfshTkn, LocalDateTime exprtnDt) {
         this.rfshTkn = rfshTkn;
         this.exprtnDt = exprtnDt;
     }

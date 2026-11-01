@@ -53,14 +53,13 @@ describe('DurableJobsClient', () => {
     expect(screen.queryByRole('button', { name: /다시 처리/ })).toBeNull();
   });
 
-  it('원장의 UTC 시각을 한국 시각으로 보인다(시간대 표기 없는 값을 그대로 자르지 않는다)', async () => {
+  it('원장의 시각은 이미 한국 시각이라 그대로 보인다(시간을 더하지 않는다)', async () => {
     renderClient();
     expect(await screen.findByText('알림 전달')).toBeInTheDocument();
-    // availableAt 01:00:00(UTC) 은 두 행 모두 10:00:00(KST), completedAt 01:00:05(UTC) 는 10:00:05(KST) 다.
-    expect(screen.getAllByText('2026-10-01 10:00:00')).toHaveLength(2);
-    expect(screen.getByText('2026-10-01 10:00:05')).toBeInTheDocument();
-    expect(screen.queryByText('2026-10-01 01:00:00')).toBeNull();
-    expect(screen.queryByText('2026-10-01 01:00:05')).toBeNull();
+    expect(screen.getAllByText('2026-10-01 01:00:00')).toHaveLength(2);
+    expect(screen.getByText('2026-10-01 01:00:05')).toBeInTheDocument();
+    expect(screen.queryByText('2026-10-01 10:00:00')).toBeNull();
+    expect(screen.queryByText('2026-10-01 10:00:05')).toBeNull();
   });
 
   it('주소를 지운 메일 실패처럼 서버가 재처리 불가로 판정한 작업에는 단추 대신 새로 보내라고 말한다', async () => {

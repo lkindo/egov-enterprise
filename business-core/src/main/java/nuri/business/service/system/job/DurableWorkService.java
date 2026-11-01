@@ -1,7 +1,5 @@
 package nuri.business.service.system.job;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -15,6 +13,7 @@ import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkPort;
 import nuri.foundation.core.persistence.VendorSqlDialect;
+import nuri.foundation.core.util.ServiceTime;
 import org.springframework.stereotype.Service;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
@@ -56,7 +55,7 @@ public class DurableWorkService implements DurableWorkPort {
         }
         DurableWork work = new DurableWork(key, type, payloadFactory.get());
         // Flush before the caller returns. A storage failure cannot be hidden by an after-commit callback.
-        repository.saveAndFlush(DurableJob.pending(work, LocalDateTime.now(ZoneOffset.UTC)));
+        repository.saveAndFlush(DurableJob.pending(work, ServiceTime.now()));
         return work;
     }
 

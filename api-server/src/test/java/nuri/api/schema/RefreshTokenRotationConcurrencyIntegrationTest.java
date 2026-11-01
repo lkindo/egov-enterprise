@@ -28,6 +28,7 @@ import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import nuri.foundation.core.util.ServiceTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -211,6 +212,6 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
     private void store(String token, Instant expiry) {
         new TransactionTemplate(transactionManager).executeWithoutResult(status ->
                 refreshTokenRepository.save(RefreshToken.builder()
-                        .userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(token)).exprtnDt(expiry).build()));
+                        .userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(token)).exprtnDt(ServiceTime.toLocal(expiry)).build()));
     }
 }

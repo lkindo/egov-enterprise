@@ -37,6 +37,7 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.List;
 import java.util.Optional;
+import nuri.foundation.core.util.ServiceTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -131,7 +132,7 @@ class AuthServiceImplTest {
         if (relogin) {
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("old-digest")
-                    .exprtnDt(Instant.now().plusSeconds(30)).build()));
+                    .exprtnDt(ServiceTime.toLocal(Instant.now().plusSeconds(30))).build()));
         }
 
         Instant before = Instant.now();
@@ -141,7 +142,7 @@ class AuthServiceImplTest {
                 Instant.now().plusMillis(validityMs));
         ArgumentCaptor<RefreshToken> captured = ArgumentCaptor.forClass(RefreshToken.class);
         verify(refreshTokenRepository).save(captured.capture());
-        assertThat(captured.getValue().getExprtnDt()).isEqualTo(signedExpiry);
+        assertThat(captured.getValue().getExprtnDt()).isEqualTo(ServiceTime.toLocal(signedExpiry));
 
         String digest = nuri.business.domain.auth.RefreshTokenDigest.of(issued.getRefreshToken());
         given(refreshTokenRepository.findByRfshTkn(digest)).willReturn(Optional.of(captured.getValue()));
@@ -149,7 +150,7 @@ class AuthServiceImplTest {
         TokenResponse rotated = service.reissue(issued.getRefreshToken(), CLIENT_IP);
         // DEC-OPS-102: 같은 초의 회전은 동일 토큰일 수 있다. 이 회귀의 불변식은 절대 만료다.
         assertThat(realProvider.getExpiration(rotated.getRefreshToken()).toInstant()).isEqualTo(signedExpiry);
-        assertThat(captured.getValue().getExprtnDt()).isEqualTo(signedExpiry);
+        assertThat(captured.getValue().getExprtnDt()).isEqualTo(ServiceTime.toLocal(signedExpiry));
     }
 
     @Nested
@@ -313,7 +314,7 @@ class AuthServiceImplTest {
             assertThat(rt.getUserId()).isEqualTo(ESNTL_ID);
             // 원문이 아니라 해시를 저장한다(DIP D7) — DB 를 읽은 사람이 저장값으로 재발급할 수 없다.
             assertThat(rt.getRfshTkn()).isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of("refresh-token")).isNotEqualTo("refresh-token");
-            assertThat(rt.getExprtnDt()).isEqualTo(jwtTokenProvider.getExpiration("refresh-token").toInstant());
+            assertThat(rt.getExprtnDt()).isEqualTo(ServiceTime.toLocal(jwtTokenProvider.getExpiration("refresh-token").toInstant()));
         }
 
         @Test
@@ -321,7 +322,7 @@ class AuthServiceImplTest {
         void rotatesExistingRefreshTokenOnRelogin() {
             RefreshToken existing = RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("old-token")
-                    .exprtnDt(Instant.now().plus(Duration.ofDays(1))).build();
+                    .exprtnDt(ServiceTime.toLocal(Instant.now().plus(Duration.ofDays(1)))).build();
             given(refreshTokenRepository.findById(ESNTL_ID)).willReturn(Optional.of(existing));
 
             authService.login(loginRequest(null), CLIENT_IP);
@@ -409,7 +410,7 @@ class AuthServiceImplTest {
         void deletesAndRejectsExpiredToken() {
             RefreshToken expired = RefreshToken.builder()
                     .userId(ESNTL_ID).rfshTkn("expired")
-                    .exprtnDt(Instant.now().minus(Duration.ofMinutes(1))).build();
+                    .exprtnDt(ServiceTime.toLocal(Instant.now().minus(Duration.ofMinutes(1)))).build();
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("expired"))).willReturn(Optional.of(expired));
 
@@ -495,7 +496,7 @@ class AuthServiceImplTest {
         @DisplayName("회전해도 절대만료는 연장되지 않는다 (슬라이딩 세션 금지)")
         void preservesAbsoluteExpiryAcrossRotation() {
             RefreshToken stored = storedToken();
-            Instant originalExpiry = stored.getExprtnDt();
+            Instant originalExpiry = ServiceTime.toInstant(stored.getExprtnDt());
             given(jwtTokenProvider.validateRefreshToken(anyString())).willReturn(true);
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("old"))).willReturn(Optional.of(stored));
             given(userRepository.findById(ESNTL_ID)).willReturn(Optional.empty());
@@ -508,7 +509,7 @@ class AuthServiceImplTest {
             // 회전마다 7일을 새로 주면 탈취 토큰이 무기한 연장된다 — 회전의 목적이 사라진다.
             // 조회 엔티티는 직접 수정하지 않는다. CAS에서 JWT 상한까지 단축한 만료를 함께 저장하며
             // 실제 저장값은 RefreshTokenRotationConcurrencyIntegrationTest가 실 DB로 확인한다.
-            assertThat(stored.getExprtnDt()).isEqualTo(originalExpiry);
+            assertThat(stored.getExprtnDt()).isEqualTo(ServiceTime.toLocal(originalExpiry));
             ArgumentCaptor<Date> expiry = ArgumentCaptor.forClass(Date.class);
             verify(jwtTokenProvider).createRefreshToken(eq(ESNTL_ID), expiry.capture());
             assertThat(expiry.getValue()).isEqualTo(Date.from(originalExpiry.truncatedTo(java.time.temporal.ChronoUnit.SECONDS)));
@@ -600,7 +601,7 @@ class AuthServiceImplTest {
         @DisplayName("🔐 신원이 없어도 쿠키로 제시된 리프레시 토큰의 행은 해시로 찾아 지운다 (DIP D7)")
         void revokesPresentedRefreshTokenWithoutIdentity() {
             var stored = RefreshToken.builder().userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))
-                    .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
+                    .exprtnDt(ServiceTime.toLocal(Instant.now().plus(Duration.ofDays(3)))).build();
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))).willReturn(Optional.of(stored));
 
             authService.logout(null, "cookie-token");
@@ -650,7 +651,7 @@ class AuthServiceImplTest {
         @DisplayName("[2026-10-18] 쿠키만 있으면 그 재발급 토큰이 저장값일 때만 그 주인의 로그아웃 시각을 남긴다")
         void cookieLogoutRecordsOnlyForTheMatchedOwner() {
             var stored = RefreshToken.builder().userId(ESNTL_ID).rfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))
-                    .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
+                    .exprtnDt(ServiceTime.toLocal(Instant.now().plus(Duration.ofDays(3)))).build();
             given(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of("cookie-token"))).willReturn(Optional.of(stored));
 
             authService.logout(null, "cookie-token");
@@ -676,7 +677,7 @@ class AuthServiceImplTest {
     private static RefreshToken storedToken() {
         return RefreshToken.builder()
                 .userId(ESNTL_ID).rfshTkn("old")
-                .exprtnDt(Instant.now().plus(Duration.ofDays(3))).build();
+                .exprtnDt(ServiceTime.toLocal(Instant.now().plus(Duration.ofDays(3)))).build();
     }
 
 }

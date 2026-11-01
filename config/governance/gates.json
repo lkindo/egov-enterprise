@@ -567,6 +567,10 @@
           "source": "api-server/src/test/java/nuri/api/harness/TestSecurityChainOverrideLinterTest.java"
         },
         {
+          "id": "GH-SERVICE-TIME-ZONE",
+          "source": "api-server/src/test/java/nuri/api/harness/ServiceTimeZoneLinterTest.java"
+        },
+        {
           "id": "GH-UNIQUE-CONSTRAINT-MIRROR",
           "source": "api-server/src/test/java/nuri/api/harness/UniqueConstraintMirrorLinterTest.java"
         },

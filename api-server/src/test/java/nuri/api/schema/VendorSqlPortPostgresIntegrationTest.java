@@ -42,6 +42,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.support.TransactionTemplate;
+import nuri.foundation.core.util.ServiceTime;
 
 /**
  * 포트·HQL 로 옮긴 경로가 실제 PostgreSQL 에서 옮기기 전과 같게 도는지 본다(ADR-0047).
@@ -116,7 +117,7 @@ class VendorSqlPortPostgresIntegrationTest {
     void claimSkipsLockedRows() throws Exception {
         enqueue();
         enqueue();
-        LocalDateTime now = LocalDateTime.now(ZoneOffset.UTC).plusSeconds(1);
+        LocalDateTime now = ServiceTime.now().plusSeconds(1);
         var executor = Executors.newSingleThreadExecutor();
         try {
             transaction.executeWithoutResult(status -> {
@@ -140,7 +141,7 @@ class VendorSqlPortPostgresIntegrationTest {
     @DisplayName("작업 선점은 Hibernate 가 FOR NO KEY UPDATE 로 만들지만, 이 표를 가리키는 FK 가 없어 FOR UPDATE 와 결과가 같다")
     void claimLockStaysEquivalentToForUpdate() throws Exception {
         capturedSql.statements.clear();
-        transaction.executeWithoutResult(status -> jobs.claimNext(LocalDateTime.now(ZoneOffset.UTC), List.of(JOB_TYPE)));
+        transaction.executeWithoutResult(status -> jobs.claimNext(ServiceTime.now(), List.of(JOB_TYPE)));
 
         // 시간 지연 없이 실제 집계 SQL 을 다른 스레드에서 같은 수집 창에 넣는다.
         var executor = Executors.newSingleThreadExecutor(runnable -> new Thread(runnable, "vendor-sql-metrics-probe"));

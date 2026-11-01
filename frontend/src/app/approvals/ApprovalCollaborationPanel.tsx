@@ -13,7 +13,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { extractFieldErrors } from '@/app/actions/actionUtils';
 import { failureMessage } from '@/lib/safe-error-log';
 import { isConflictError } from '@/lib/query/list-query-defaults';
-import { toDisplayDateTime } from '@/lib/format-date';
+import { toSeoulDisplayDateTime } from '@/lib/format-date';
 import { hasDeliveryChannel } from '@/lib/delivery-channels';
 import { ApprovalSupplementAnswerRequestSchema } from '@/types/generated-zod';
 import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
@@ -210,7 +210,7 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
           </h3>
           <p className="text-sm text-muted-foreground">
             {supplement.askedByNm || '결재자'}
-            {supplement.askedAt ? <> · <time dateTime={supplement.askedAt}>{toDisplayDateTime(new Date(supplement.askedAt))}</time></> : null}
+            {supplement.askedAt ? <> · <time dateTime={supplement.askedAt}>{toSeoulDisplayDateTime(supplement.askedAt)}</time></> : null}
             {' '}· 답변을 받으면 같은 결재자가 이어서 처리합니다.
           </p>
           <p className="whitespace-pre-wrap break-words text-sm text-foreground">{supplement.question}</p>
@@ -334,7 +334,7 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
                   {entry.type === 'REPLACE' ? ` · ${entry.beforeNm || '이전 결재자'} → ${entry.targetNm || '새 결재자'}` : ''}
                   {entry.atrzCycl ? ` · ${entry.atrzCycl}차` : ''}
                 </p>
-                {entry.at && <p className="text-xs text-muted-foreground"><time dateTime={entry.at}>{toDisplayDateTime(new Date(entry.at))}</time></p>}
+                {entry.at && <p className="text-xs text-muted-foreground"><time dateTime={entry.at}>{toSeoulDisplayDateTime(entry.at)}</time></p>}
                 {entry.content && entry.type !== 'REVISE' && <p className="whitespace-pre-wrap break-words">{entry.content}</p>}
                 {entry.content && entry.type === 'REVISE' && (
                   <details><summary className="cursor-pointer text-xs">고치기 전 본문 보기</summary><p className="mt-1 whitespace-pre-wrap break-words">{entry.content}</p></details>

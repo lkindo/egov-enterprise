@@ -4,7 +4,6 @@ import java.math.BigInteger;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.time.ZoneOffset;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -16,6 +15,7 @@ import lombok.extern.slf4j.Slf4j;
 import nuri.business.domain.system.job.DurableJobRepository;
 import nuri.foundation.core.job.DurableWork;
 import nuri.foundation.core.job.DurableWorkHandler;
+import nuri.foundation.core.util.ServiceTime;
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -213,7 +213,7 @@ public class DurableWorkDispatcher {
     }
 
     private static LocalDateTime now() {
-        return LocalDateTime.now(ZoneOffset.UTC);
+        return ServiceTime.now();
     }
 
     private record Claim(BigInteger id, String attempt, DurableWork work) {}

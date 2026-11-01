@@ -52,7 +52,7 @@ public interface RefreshTokenRepository extends JpaRepository<RefreshToken, Stri
                         @Param("presented") String presented,
                         @Param("rotated") String rotated,
                         @Param("rotatedAt") LocalDateTime rotatedAt,
-                        @Param("expiresAt") java.time.Instant expiresAt);
+                        @Param("expiresAt") LocalDateTime expiresAt);
 
     /**
      * 만료된 토큰 행을 지운다 — <b>호출한 트랜잭션과 독립적으로</b> 커밋한다. [2026-09-16]

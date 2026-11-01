@@ -34,6 +34,7 @@ import nuri.business.service.sms.SmsGatewayResult;
 import nuri.business.service.sms.SmsGatewayResult.Reason;
 import nuri.business.service.sms.SmsGatewayResult.State;
 import nuri.business.service.sms.SmsSender;
+import nuri.foundation.core.util.ServiceTime;
 import tools.jackson.databind.JsonNode;
 import tools.jackson.databind.ObjectMapper;
 
@@ -57,7 +58,7 @@ public final class NaverSensSmsSender implements SmsSender, AutoCloseable {
     private final Duration requestTimeout;
 
     NaverSensSmsSender(NaverSensSmsProperties properties, ObjectMapper json) {
-        this(properties, json, PRODUCTION_ORIGIN, Clock.systemUTC());
+        this(properties, json, PRODUCTION_ORIGIN, ServiceTime.clock());
     }
 
     /** 실제 공급자 주소는 설정으로 바꾸지 못한다. 이 생성자는 같은 패키지의 루프백 HTTP 시험용이다. */

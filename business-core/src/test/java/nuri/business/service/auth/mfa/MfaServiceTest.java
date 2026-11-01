@@ -45,6 +45,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.test.util.ReflectionTestUtils;
+import nuri.foundation.core.util.ServiceTime;
 
 /** Fast service contracts with real state/crypto. SQL locking and rollback live in MfaFlowIntegrationTest. */
 class MfaServiceTest {
@@ -233,7 +234,7 @@ class MfaServiceTest {
         assertThat(result.verifiedAt()).isEqualTo(now);
         assertThat(result.nextChallenge()).isNull();
         assertThat(result.credentialVersion()).isNotEqualTo(pendingVersion).isEqualTo(credential.getCredentialVersion());
-        assertThat(pendingChallenge.getUsedAt()).isEqualTo(utc(now));
+        assertThat(pendingChallenge.getUsedAt()).isEqualTo(stored(now));
         assertThat(credential.getLastAcceptedStep()).isEqualTo(now.getEpochSecond() / 30);
         assertRecoveryCodes(result, credential);
         assertThat(service.status().recoveryCodesRemaining()).isEqualTo(10);
@@ -305,8 +306,8 @@ class MfaServiceTest {
             case "purpose" -> ReflectionTestUtils.setField(row, "purpose", Purpose.ENROLL);
             case "version" -> ReflectionTestUtils.setField(row, "credentialVersion", "superseded-version");
             case "expired" -> advance(300);
-            case "future" -> ReflectionTestUtils.setField(row, "issuedAt", utc(now.plusSeconds(1)));
-            case "used" -> row.consume(utc(now));
+            case "future" -> ReflectionTestUtils.setField(row, "issuedAt", stored(now.plusSeconds(1)));
+            case "used" -> row.consume(stored(now));
             case "budget" -> { for (int i = 0; i < 5; i++) row.fail(); }
             case "wrong-credential" -> {
                 ReflectionTestUtils.setField(row, "credentialId", 999L);
@@ -339,7 +340,7 @@ class MfaServiceTest {
     @Test
     void successfulLoginConsumesChallengeAndOtpStepAcrossOtherChallenges() {
         MfaCredential credential = activeCredential(user);
-        credential.recordFailure(utc(now));
+        credential.recordFailure(stored(now));
         String first = challenge(credential, Purpose.LOGIN);
         String other = challenge(credential, Purpose.LOGIN);
         MfaResults.Completion completed = service.verifyLogin(first, "081804", null, IP);
@@ -347,8 +348,8 @@ class MfaServiceTest {
         assertThat(completed.credentialVersion()).isEqualTo(credential.getCredentialVersion());
         assertThat(completed.recoveryCodes()).isEmpty();
         assertThat(credential.failures()).isZero();
-        assertThat(credential.getConfirmedAt()).isEqualTo(utc(now));
-        assertThat(stored(first).getUsedAt()).isEqualTo(utc(now));
+        assertThat(credential.getConfirmedAt()).isEqualTo(stored(now));
+        assertThat(stored(first).getUsedAt()).isEqualTo(stored(now));
         assertThatThrownBy(() -> service.verifyLogin(first, "081804", null, IP)).isInstanceOf(MfaRejectedException.class);
         assertThatThrownBy(() -> service.verifyLogin(other, "081804", null, IP)).isInstanceOf(MfaRejectedException.class);
         assertThat(credential.failures()).isEqualTo(1);
@@ -368,7 +369,7 @@ class MfaServiceTest {
             assertThat(credential.failures()).isEqualTo(i);
             assertThat(stored(token).failures()).isEqualTo(1);
         }
-        assertThat(credential.getLockedAt()).isEqualTo(utc(now));
+        assertThat(credential.getLockedAt()).isEqualTo(stored(now));
         assertThatThrownBy(() -> service.beginLogin(principal(user), false)).isInstanceOf(MfaRejectedException.class);
         advance(899);
         assertThatThrownBy(() -> service.beginLogin(principal(user), false)).isInstanceOf(MfaRejectedException.class);
@@ -404,7 +405,7 @@ class MfaServiceTest {
         MfaRecoveryCode recovery = recovery(credential, raw);
         if (scenario.equals("malformed")) raw = "invalid";
         if (scenario.equals("unknown")) recoveryRows.clear();
-        if (scenario.equals("used")) recovery.consume(utc(now));
+        if (scenario.equals("used")) recovery.consume(stored(now));
         if (scenario.equals("old-version")) ReflectionTestUtils.setField(recovery, "credentialVersion", "old-version");
         String supplied = raw;
         String token = challenge(credential, Purpose.LOGIN);
@@ -423,7 +424,7 @@ class MfaServiceTest {
         MfaRecoveryCode recovery = recovery(credential, raw);
         String token = challenge(credential, Purpose.LOGIN);
         MfaResults.Completion result = service.verifyLogin(token, null, raw, IP);
-        assertThat(recovery.getUsedAt()).isEqualTo(utc(now));
+        assertThat(recovery.getUsedAt()).isEqualTo(stored(now));
         assertThat(credential.requiresEnrollment()).isTrue();
         assertThat(credential.isActive()).isFalse();
         assertThat(credential.getCredentialVersion()).isNotEqualTo(oldVersion);
@@ -448,7 +449,7 @@ class MfaServiceTest {
         assertThat(proof.expiresAt()).isEqualTo(now.plusSeconds(300));
         assertThatThrownBy(() -> service.verifyLogin(proof.reauthToken(), "081804", null, IP)).isInstanceOf(MfaRejectedException.class);
         MfaResults.Completion result = service.regenerateRecoveryCodes(proof.reauthToken(), IP);
-        assertThat(stored.getUsedAt()).isEqualTo(utc(now));
+        assertThat(stored.getUsedAt()).isEqualTo(stored(now));
         assertThat(result.credentialVersion()).isNotEqualTo(version);
         assertThat(credential.isActive()).isTrue();
         assertRecoveryCodes(result, credential);
@@ -504,7 +505,7 @@ class MfaServiceTest {
         String proof = challenge(credential, Purpose.REAUTH);
         MfaChallenge stored = stored(proof);
         service.disable(proof, IP);
-        assertThat(stored.getUsedAt()).isEqualTo(utc(now));
+        assertThat(stored.getUsedAt()).isEqualTo(stored(now));
         assertThat(credential.getState()).isEqualTo("NONE");
         assertThat(credential.getCredentialVersion()).isNotEqualTo(version);
         assertThat(credential.getEncryptedSecret()).isNull();
@@ -572,7 +573,7 @@ class MfaServiceTest {
         assertThat(credentialRows.get(target.getEsntlId()).requiresEnrollment()).isTrue();
         assertThat(credentialRows.get(target.getEsntlId()).getEncryptedSecret()).isNull();
         assertThat(recoveryRows).isEmpty();
-        assertThat(approval.getUsedAt()).isEqualTo(utc(now));
+        assertThat(approval.getUsedAt()).isEqualTo(stored(now));
         assertThat(actor.isActive()).isTrue();
         var order = inOrder(administration, audit);
         order.verify(administration).lockAndAuthorize("MFA_RECOVER");
@@ -640,7 +641,7 @@ class MfaServiceTest {
     private String challenge(MfaCredential credential, Purpose purpose) {
         String token = opaqueTokens.challenge();
         MfaChallenge row = MfaChallenge.create(credential.getId(), MfaOpaqueTokens.challengeDigest(token), purpose,
-                credential.getCredentialVersion(), utc(now), utc(now.plus(MfaChallengePolicy.LIFETIME)));
+                credential.getCredentialVersion(), stored(now), stored(now.plus(MfaChallengePolicy.LIFETIME)));
         challengeRows.put(row.getTokenDigest(), row);
         return token;
     }
@@ -674,5 +675,5 @@ class MfaServiceTest {
     }
 
     private void advance(long seconds) { now = now.plusSeconds(seconds); service.useClock(Clock.fixed(now, ZoneOffset.UTC)); }
-    private static LocalDateTime utc(Instant instant) { return LocalDateTime.ofInstant(instant, ZoneOffset.UTC); }
+    private static LocalDateTime stored(Instant instant) { return ServiceTime.toLocal(instant); }
 }

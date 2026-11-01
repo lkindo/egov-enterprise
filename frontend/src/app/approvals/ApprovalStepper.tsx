@@ -2,7 +2,7 @@
 
 import { Check, Clock, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toDisplayDateTime } from '@/lib/format-date';
+import { toSeoulDisplayDateTime } from '@/lib/format-date';
 import { AbsenceBadge } from '@/app/components/ui/absence-badge';
 import type { InformalSanctionDto } from '@/services/business/user/approval/ApprovalUserService';
 
@@ -55,7 +55,7 @@ export function ApprovalStepper({ steps = [], stages, currentUserId, accessibleL
               : ownTurn ? '내 차례' : active ? agreed ? '동의 대기' : '승인 대기' : '앞 단계 대기';
             return <li key={person.userId} className="space-y-1 text-sm">
               <p className={cn('flex flex-wrap items-center gap-1', ownTurn ? 'font-semibold text-primary' : 'text-foreground')}>{person.userNm || person.userId} · {personStatus}{isWaiting && <AbsenceBadge absent={person.absent} />}</p>
-              {person.decidedAt && <p className="text-xs text-muted-foreground"><time dateTime={person.decidedAt}>{toDisplayDateTime(new Date(person.decidedAt))}</time></p>}
+              {person.decidedAt && <p className="text-xs text-muted-foreground"><time dateTime={person.decidedAt}>{toSeoulDisplayDateTime(person.decidedAt)}</time></p>}
               {person.opinion && <p className="whitespace-pre-wrap break-words text-foreground">{person.opinion}</p>}
             </li>;
           })}

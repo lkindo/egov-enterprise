@@ -19,6 +19,8 @@ services:
     environment:
       POSTGRES_DB: egovdb
       POSTGRES_USER: egov
+      # 새 볼륨의 서버 시간대가 된다. 앱 세션은 JDBC 가 JVM 시간대(한국)로 맞추고, psql 세션도 같은 시각을 본다.
+      TZ: Asia/Seoul
       # ⚠ 개발 전용 자격이다. 운영 오버레이가 이 두 값을 DB_USERNAME/DB_PASSWORD 로 덮어쓴다
       #   (docker-compose.prod.yml 의 db 블록 참조).
       POSTGRES_PASSWORD: egov123

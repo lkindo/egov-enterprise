@@ -10,9 +10,11 @@
  * 두 표기의 변환을 화면마다 재구현하면(과거 실제로 그랬다) 드리프트가 재발하므로
  * 여기 한 곳에 모은다.
  *
- * 모든 변환은 **로컬 타임존** 기준이다. `toISOString().slice(0,10)` 같은 UTC 절단은
+ * 'yyyyMMdd' 와 Date 의 변환은 **로컬 필드** 기준이고, 오늘과 시각 표시는 한국 표준시다. `toISOString().slice(0,10)` 같은 UTC 절단은
  * KST 자정 직후 하루가 밀리므로 쓰지 않는다.
  */
+
+import { getTodayYmd, seoulDateTimeParts } from '@/lib/date/today-ymd';
 
 /** 저장 포맷: 8자리 숫자 'yyyyMMdd' */
 export const STORAGE_YMD_PATTERN = /^\d{8}$/;
@@ -48,9 +50,9 @@ export function toStorageYmd(date: Date): string {
   return `${year}${month}${day}`;
 }
 
-/** 오늘 날짜를 저장 포맷 'yyyyMMdd' 로 반환한다(로컬 타임존). */
+/** 오늘 날짜를 저장 포맷 'yyyyMMdd' 로 반환한다. 오늘은 한국 날짜다. */
 export function todayStorageYmd(now: Date = new Date()): string {
-  return toStorageYmd(now);
+  return getTodayYmd(now);
 }
 
 /**
@@ -119,7 +121,7 @@ export function fromDateInputValue(value: string | null | undefined): string {
 }
 
 /**
- * 시각 → 표시 문자열 'yyyy-MM-dd HH:mm:ss'(로컬 타임존).
+ * 시각 → 표시 문자열 'yyyy-MM-dd HH:mm:ss'(한국 시각).
  *
  * [2026-09-15 DEC-OPS-100] 시스템 표준 날짜·시각 형식이다(formatRules.time.dateTimeDisplay). epoch 밀리초와
  * Date 를 받는다. 비었거나 0 이하(한 번도 받지 않은 조회의 dataUpdatedAt)·해석할 수 없는 값이면 `fallback` 이다 —
@@ -129,40 +131,29 @@ export function toDisplayDateTime(value: Date | number | null | undefined, fallb
   if (value === null || value === undefined) return fallback;
   const date = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(date.getTime()) || date.getTime() <= 0) return fallback;
-  const pad = (n: number) => String(n).padStart(2, '0');
-  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`
-    + ` ${pad(date.getHours())}:${pad(date.getMinutes())}:${pad(date.getSeconds())}`;
+  return seoulDisplay(date);
+}
+
+function seoulDisplay(date: Date): string {
+  const parts = seoulDateTimeParts(date);
+  return `${parts.get('year')}-${parts.get('month')}-${parts.get('day')}`
+    + ` ${parts.get('hour')}:${parts.get('minute')}:${parts.get('second')}`;
 }
 
 /** 끝에 시간대 표기(`Z`·`+09:00`·`+0900`)가 붙은 ISO 일시. */
 const ZONE_DESIGNATOR = /(?:Z|[+-]\d{2}:?\d{2})$/i;
 
-const SEOUL_DATE_TIME_PARTS = new Intl.DateTimeFormat('en-CA', {
-  timeZone: 'Asia/Seoul',
-  year: 'numeric',
-  month: '2-digit',
-  day: '2-digit',
-  hour: '2-digit',
-  minute: '2-digit',
-  second: '2-digit',
-  hourCycle: 'h23',
-});
-
 /**
- * UTC 로 기록한 서버 일시 → 한국 시각 표시 'yyyy-MM-dd HH:mm:ss'.
+ * 서버 일시 문자열 → 한국 시각 표시 'yyyy-MM-dd HH:mm:ss'.
  *
- * [2026-10-18] 후속 작업 원장(`tb_sys_job`)은 시각을 `LocalDateTime.now(ZoneOffset.UTC)` 로 쓴다(DurableWorkDispatcher).
- * 그 값은 시간대 표기 없이 오므로 그대로 자르면 UTC 를 한국 시각처럼 보이게 된다(9시간 이르다). 그래서 표기가 없는
- * 값은 **UTC 로 읽는다** — 표기가 없는 값을 한국 시각으로 내려 주는 API(결재 등)에는 이 함수를 쓰지 않는다. 표기가
- * 있으면 그 표기를 따른다. 브라우저 시간대와 무관하게 Asia/Seoul 로 쓴다. 비었거나 해석할 수 없으면 `fallback` 이다.
+ * 서버의 시각은 한국 표준시다(DEC-OPS-396). 시간대 표기가 없는 값은 이미 한국 시각이고, 순간 값(`Instant`)은 `Z` 가 붙어 오므로
+ * 그 표기를 따른다. 브라우저 시간대와 무관하다. 비었거나 해석할 수 없으면 `fallback` 이다.
  */
-export function utcToSeoulDisplayDateTime(value: string | null | undefined, fallback = '-'): string {
+export function toSeoulDisplayDateTime(value: string | null | undefined, fallback = '-'): string {
   const raw = value?.trim();
   if (!raw) return fallback;
   const iso = raw.replace(' ', 'T');
-  const date = new Date(ZONE_DESIGNATOR.test(iso) ? iso : `${iso}Z`);
+  const date = new Date(ZONE_DESIGNATOR.test(iso) ? iso : `${iso}+09:00`);
   if (Number.isNaN(date.getTime())) return fallback;
-  const parts = new Map(SEOUL_DATE_TIME_PARTS.formatToParts(date).map((part) => [part.type, part.value]));
-  return `${parts.get('year')}-${parts.get('month')}-${parts.get('day')}`
-    + ` ${parts.get('hour')}:${parts.get('minute')}:${parts.get('second')}`;
+  return seoulDisplay(date);
 }

@@ -7,6 +7,7 @@ import org.springframework.context.annotation.FilterType;
 import org.springframework.boot.web.servlet.support.SpringBootServletInitializer;
 import org.springframework.boot.builder.SpringApplicationBuilder;
 import nuri.foundation.core.config.FullBeanNameGenerator;
+import nuri.foundation.core.util.ServiceTime;
 
 /**
  * 프로젝트 메인 애플리케이션 클래스
@@ -32,6 +33,11 @@ import nuri.foundation.core.config.FullBeanNameGenerator;
                                 @ComponentScan.Filter(type = FilterType.ANNOTATION, classes = { SpringBootApplication.class })
                 })
 public class ApiServerApplication extends SpringBootServletInitializer {
+
+        static {
+                // 내장 실행과 서블릿 컨테이너 배포 모두 스프링보다 먼저 지난다. JDBC 세션 시간대가 이 값을 따른다.
+                ServiceTime.applyToJvm();
+        }
 
         @Override
         protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {

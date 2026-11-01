@@ -13,7 +13,6 @@ import org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo;
 import org.hibernate.engine.jdbc.dialect.spi.DialectResolver;
 import org.hibernate.type.SqlTypes;
 import org.hibernate.type.descriptor.jdbc.JsonJdbcType;
-import org.hibernate.type.descriptor.jdbc.TimestampUtcAsJdbcTimestampJdbcType;
 import org.hibernate.type.descriptor.jdbc.spi.JdbcTypeRegistry;
 import org.hibernate.type.spi.TypeConfiguration;
 import org.junit.jupiter.api.DisplayName;
@@ -62,13 +61,12 @@ class NuriOracleDialectTest {
     }
 
     @Test
-    @DisplayName("Instant 는 시간대 없는 컬럼에 UTC 기준으로 읽고 쓴다 — JVM 시간대가 바뀌어도 같은 순간이다")
-    void instantsUseAPlainTimestamp() {
+    @DisplayName("JSON 은 CLOB 에 문자열로 저장한다")
+    void jsonIsStoredAsText() {
         JdbcTypeRegistry registry = new TypeConfiguration().getJdbcTypeRegistry();
 
         NuriOracleDialect.applyStoredTypes(registry);
 
-        assertThat(registry.getDescriptor(SqlTypes.TIMESTAMP_UTC)).isSameAs(TimestampUtcAsJdbcTimestampJdbcType.INSTANCE);
         assertThat(registry.getDescriptor(SqlTypes.JSON)).isSameAs(JsonJdbcType.INSTANCE);
     }
 

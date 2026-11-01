@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { CommentVO } from '@/types/business/comment';
-import { format } from 'date-fns';
+import { toSeoulDisplayDateTime } from '@/lib/format-date';
 import { createComment, deleteComment, updateComment } from '@/app/actions/commentActions';
 import { useToast } from '@/app/components/ui/toast';
 import { useConfirm } from '@/app/components/ui/confirm-modal';
@@ -286,7 +286,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
                             <h4 className="truncate text-[length:var(--font-size-body)] font-semibold text-foreground">{comment.wrterNm}</h4>
                             <div className="flex items-center gap-1 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3 shrink-0" aria-hidden="true" />
-                              {comment.crtDt ? format(new Date(comment.crtDt), 'yyyy-MM-dd HH:mm') : '-'}
+                              {toSeoulDisplayDateTime(comment.crtDt).slice(0, 16)}
                             </div>
                           </div>
                         </div>

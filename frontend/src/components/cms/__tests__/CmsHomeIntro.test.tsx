@@ -89,8 +89,11 @@ describe('CmsHomeIntro — 업무 홈 맨 위 소개(ADR-0042)', () => {
     }] }] };
     cms.getHomeIntro.mockResolvedValue({ ...page, document: linked });
     contentHeight(1200);
+    const listen = vi.spyOn(HTMLElement.prototype, 'addEventListener');
     renderIntro();
     expect(await screen.findByRole('button', { name: '펼치기' })).toHaveAttribute('aria-expanded', 'false');
+    // 리스너는 펼치기 단추가 그려진 커밋 뒤 지연 effect 가 붙인다. 붙은 것을 본 뒤 이벤트를 한 번만 보낸다 — 부하에서 이벤트가 앞질러 가지 않게 한다.
+    await waitFor(() => expect(listen.mock.calls.some(([type, , options]) => type === 'focusin' && options === undefined)).toBe(true));
     fireEvent.focusIn(screen.getByRole('link', { name: '아래쪽 링크' }));
     expect(screen.getByRole('button', { name: '접기' })).toHaveAttribute('aria-expanded', 'true');
   });

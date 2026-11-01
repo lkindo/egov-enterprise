@@ -57,6 +57,7 @@ import { cn } from '@/lib/utils';
 import type { BoardPostingStatus } from '@/types/business/board';
 import { PinnedBadge, PostingStatusBadge } from '../../components/PostingStatusBadge';
 import { QNA_STATUS_LABELS, isQnaSolved, qnaCategoryLabel } from '@/lib/board/qna-status';
+import { koreanToday } from '@/lib/date/today-ymd';
 
 const SanitizedFaqAnswer = dynamic(() => import('./SanitizedFaqAnswer'), {
   ssr: false,
@@ -355,7 +356,7 @@ export const CalendarTemplate = ({ list, bbsId, currentViewDate, onPrevMonth, on
     return acc;
   }, {});
 
-  const today = new Date();
+  const today = koreanToday();
 
   return (
     <div className="space-y-3 p-[var(--filter-pad)]">

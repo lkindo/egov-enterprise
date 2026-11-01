@@ -13,7 +13,7 @@ import { X,
   Trash2,
   Undo2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { toDisplayDateTime } from '@/lib/format-date';
+import { toSeoulDisplayDateTime } from '@/lib/format-date';
 import { failureMessage } from '@/lib/safe-error-log';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/app/components/ui/toast';
@@ -363,7 +363,7 @@ export function AppNotificationDrawer({ isOpen, onClose, notifications, onMarkRe
                     </div>
 
                     <div className="relative z-10 mt-1.5 flex items-center justify-between">
-                      <span className="text-xs tabular-nums text-muted-foreground">{toDisplayDateTime(new Date(notif.time))}</span>
+                      <span className="text-xs tabular-nums text-muted-foreground">{toSeoulDisplayDateTime(notif.time)}</span>
                       {/*
                          [2026-08-29] '상세 보기 →' 버튼을 걷었다. onClick·href·router.push 가
                          전혀 없었고, 갈 곳도 없었다.

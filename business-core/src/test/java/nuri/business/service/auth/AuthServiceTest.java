@@ -26,6 +26,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import java.util.Collections;
 import java.time.Instant;
 import java.util.List;
+import nuri.foundation.core.util.ServiceTime;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -119,7 +120,7 @@ class AuthServiceTest {
         nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
                 .userId("user")
                 .rfshTkn(refreshToken)
-                .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .exprtnDt(ServiceTime.now().plusDays(1))
                 .build();
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
         
@@ -150,7 +151,7 @@ class AuthServiceTest {
         nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
                 .userId(userId)
                 .rfshTkn(refreshToken)
-                .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .exprtnDt(ServiceTime.now().plusDays(1))
                 .build();
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
 
@@ -181,7 +182,7 @@ class AuthServiceTest {
         nuri.business.domain.auth.RefreshToken rt = nuri.business.domain.auth.RefreshToken.builder()
                 .userId(userId)
                 .rfshTkn(refreshToken)
-                .exprtnDt(java.time.Instant.now().plus(java.time.Duration.ofDays(1)))
+                .exprtnDt(ServiceTime.now().plusDays(1))
                 .build();
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
 
@@ -379,7 +380,7 @@ class AuthServiceTest {
         when(jwtTokenProvider.validateRefreshToken(refreshToken)).thenReturn(true);
         
         nuri.business.domain.auth.RefreshToken rt = mock(nuri.business.domain.auth.RefreshToken.class);
-        when(rt.getExprtnDt()).thenReturn(java.time.Instant.now().minusSeconds(10));
+        when(rt.getExprtnDt()).thenReturn(ServiceTime.now().minusSeconds(10));
         when(rt.getUserId()).thenReturn("user");
         when(refreshTokenRepository.findByRfshTkn(nuri.business.domain.auth.RefreshTokenDigest.of(refreshToken))).thenReturn(java.util.Optional.of(rt));
 

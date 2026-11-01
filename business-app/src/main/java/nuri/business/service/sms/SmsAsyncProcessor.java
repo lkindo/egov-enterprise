@@ -3,6 +3,7 @@ package nuri.business.service.sms;
 import nuri.business.domain.sms.SmsRecptn;
 import nuri.business.domain.sms.SmsRecptnId;
 import nuri.business.domain.sms.SmsRecptnRepository;
+import nuri.foundation.core.util.ServiceTime;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Async;
@@ -28,7 +29,7 @@ public class SmsAsyncProcessor {
     private final io.micrometer.core.instrument.MeterRegistry meterRegistry;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
     static final String SMS_ADMIN_PATH = "/admin/uss/ion/sms";
-    private Clock clock = Clock.systemUTC();
+    private Clock clock = ServiceTime.clock();
     private SmsAsyncProcessor self;
     @jakarta.persistence.PersistenceContext
     private jakarta.persistence.EntityManager entityManager;
