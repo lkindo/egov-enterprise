@@ -139,7 +139,7 @@
 |---|---:|---|---|
 | survey hub | 6 | `/admin/survey/hub` + route별 `tab` | `items`와 `questions`가 같은 tab으로 수렴한다. alias를 메뉴 node로 중복 노출하지 않는다. |
 | monitoring hub | 4 | `/admin/system/monitoring/hub` + `tab` | observability, security/system audit이 한 hub로 수렴한다. 로그인 정책은 DEC-OPS-024로 정본 화면에 복원됐다. tab 권한·용어를 따로 검증한다. |
-| workflow | 1 | `/admin/workflow` | source와 target 모두 현재 `decisionSafe=false`; alias가 기능 완성을 뜻하지 않는다. |
+| workflow(과거) | 1 | 퇴역 | 2026-09-25에는 정적 데모로 수렴했다. 2026-11-01 [ADR-0049](../02-architecture/decisions/ADR-0049-retire-workflow-demo-screens.md)로 source·target 화면과 별칭을 제거한다. |
 | SMS | 1 | `/admin/uss/ion/sms` | source는 authenticated, effective target은 admin-system이다. source 기준 메뉴 노출은 권한 혼동을 만든다. |
 | address book | 2 | `/admin/collaboration/address-book/select-address-book-list` | index alias와 등록 화면(DEC-OPS-079 모달 이행)이다. canonical label은 사용자 용어로 별도 결정한다. |
 | scrap | 2 | `/admin/collaboration/scraps/selectScrapList` | 등록·상세가 목록 모달로 이행했다(DEC-OPS-079). |
@@ -199,7 +199,7 @@ source가 여럿이라는 사실은 live 메뉴 중복의 증거가 아니다. �
 | 콘텐츠/참여 관리자 | 게시판·템플릿·설문을 만들고 공개 범위 확인 | `/admin/community/boards/master`, `/admin/community/boards/maker`, `/admin/community/templates`, `/admin/survey/hub`, `/admin/survey/manage/*` | admin-system | hub alias와 child route의 label·현재 위치·back contract를 검증한다. |
 | 감사·개인정보 담당 | synthetic 사건을 최소 조건으로 찾아 근거 확인 | `/admin/system/logs`, `/admin/system/logs/{system,login,user,web,privacy}` | admin-system | 현재 주소창에는 page와 category만 동기화하고 검색어는 memory에 둔다. binary GET 다운로드의 `searchKeyword` 전달과 외부 로그 보존은 별도 경계로 검토한다. |
 | 운영 담당 | 시스템 상태·정책의 출처와 미가용 상태 판단 | `/admin/system/monitoring/hub`, `/admin/system/policies`, `/admin/stats/*` | admin-system | 계측 source가 없던 네트워크 관리 화면과 인프라 구성도 탭은 DEC-OPS-129로 퇴역했다. 가짜 정상 수치를 IA 우선순위에 쓰지 않는다. |
-| 업무 설계 관리자 | 승인/워크플로 정의와 실행 상태 관리 | `/admin/workflow`, `/admin/sanctn/forms` | admin-system | 현재 demo/partial capability가 섞여 있다. `관리 센터` 정식 메뉴가 아니라 demo 격리 후보로 연구한다. |
+| 업무 설계 관리자(과거 가설) | 워크플로 정의와 실행 상태 관리 | 제공 화면 없음 | 해당 없음 | 목업은 [ADR-0049](../02-architecture/decisions/ADR-0049-retire-workflow-demo-screens.md)로 퇴역한다. 실제 기안·승인·반려는 `/approvals`의 사용자 과업이며 설계 엔진 제공을 뜻하지 않는다. |
 | framework adopter | profile 선택·생성·검증·운영 인수 | 제품 UI route 없음; 문서·CLI·manifest | 해당 없음 | end-user sitemap에 억지로 넣지 않는다. adopter IA는 docs/CLI 여정으로 별도 연구한다. |
 
 ## 5. 현재 구조에 대한 적대적 검토
@@ -228,7 +228,7 @@ survey와 monitoring은 여러 legacy source가 하나의 hub+tab으로 수렴�
 
 ### 5.4 route 존재와 capability 완성을 합치면 dead action을 정식 IA에 올린다
 
-현재 route별 `live`는 0이고 모든 route가 decision-safe가 아니다. workflow canvas·지표, 알림 health metrics, 통합 검색의 게시글 검색처럼 demo·partial·unavailable action이 섞인 화면을 메뉴 이름만 정리해 정식 운영 capability처럼 보이게 하면 신뢰가 악화된다.
+당시 기준선은 route별 `live`가 0이고 모든 route가 decision-safe가 아니었다. workflow canvas·지표 등 demo·partial·unavailable action이 섞인 화면을 메뉴 이름만 정리해 정식 운영 capability처럼 보이게 하면 신뢰가 악화된다. 워크플로우 목업은 ADR-0049로 퇴역하며, 현재 모집단과 상태는 [route capability manifest](../../config/ui-route-capabilities.json)를 따른다.
 
 **보완:** 메뉴 eligibility는 route 파일 존재가 아니라 역할별 primary capability의 evidence 수준과 상태를 사용한다. demo는 demo profile 또는 명시된 sandbox에 격리한다.
 

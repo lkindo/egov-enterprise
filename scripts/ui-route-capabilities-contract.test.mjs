@@ -217,17 +217,6 @@ test('current unresolved product evidence is explicit and does not claim G1 read
   );
   assert.ok(analysis.result.summary.unresolvedRoutes > 0);
   assert.equal(analysis.result.summary.gateReady, false);
-  const workflow = analysis.manifest.routes.find(({ route }) => route === '/admin/workflow');
-  assert.equal(workflow?.status, 'partial');
-  assert.deepEqual(
-    Object.fromEntries(workflow.capabilities.map(({ id, status }) => [id, status])),
-    {
-      'workflow.canvas': 'demo',
-      'workflow.metrics': 'demo',
-      'workflow.mutations': 'unavailable',
-    },
-  );
-
   const search = analysis.manifest.routes.find(({ route }) => route === '/search');
   assert.equal(search?.status, 'partial');
   const userSearch = search.capabilities.find(({ id }) => id === 'search.users');
@@ -283,26 +272,19 @@ test('global command shortcuts do not advertise demo or misleading operational c
   assert.doesNotMatch(source, /시스템 상태:.*최적화됨/);
 });
 
-test('direct demo routes disclose static data before interaction and disable unsupported mutations', () => {
-  const workflow = fs.readFileSync(
-    path.join(ROOT, 'frontend', 'src', 'app', 'admin', 'workflow', 'WorkflowClient.tsx'),
-    'utf8',
-  );
-  const forms = fs.readFileSync(
-    path.join(ROOT, 'frontend', 'src', 'app', 'admin', 'sanctn', 'WorkflowHubClient.tsx'),
-    'utf8',
-  );
-
-  assert.match(workflow, /정적 데모 화면입니다/);
-  assert.match(workflow, /실제 저장·실행·운영 지표를 제공하지 않습니다/);
-  assert.doesNotMatch(workflow, /실시간 이벤트 기반 워크플로우를 설계/);
-  assert.match(workflow, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?히스토리(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
-  assert.match(workflow, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?설계 등록(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
-
-  assert.match(forms, /정적 데모 화면입니다/);
-  assert.match(forms, /실제 결재 양식·엔진 상태·배포 결과가 아닙니다/);
-  assert.match(forms, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?워크플로우 배포(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
-  assert.match(forms, /<Button\b[^>]*\bdisabled\b[^>]*>(?:(?!<\/Button>)[\s\S])*?새 워크플로우 생성(?:(?!<\/Button>)[\s\S])*?<\/Button>/);
+test('retired workflow demos stay absent while real approvals and templates remain', () => {
+  const { manifest } = currentAnalysis();
+  const permissions = JSON.parse(fs.readFileSync(path.join(ROOT, 'config/governance/permission-catalog.json'), 'utf8'));
+  for (const route of ['/admin/workflow', '/admin/sanctn/workflow', '/admin/sanctn/forms']) {
+    assert.equal(fs.existsSync(path.join(ROOT, 'frontend/src/app', route, 'page.tsx')), false, route);
+    assert.equal(manifest.routes.some(row => row.route === route), false, route);
+    assert.equal(Object.hasOwn(permissions.pagePermissions, route), false, route);
+    assert.equal(repository.configRedirects.redirects.has(route), false, route);
+  }
+  for (const route of ['/approvals', '/admin/community/templates']) {
+    assert.ok(manifest.routes.some(row => row.route === route), route);
+    assert.ok(fs.existsSync(path.join(ROOT, 'frontend/src/app', route, 'page.tsx')), route);
+  }
 });
 
 test('notification stream separates API failure from empty and the dispatch demo stays removed', () => {
@@ -471,30 +453,31 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
   );
 
   const demoLeak = structuredClone(analysis.manifest);
-  demoLeak.routes.find(({ route }) => route === '/admin/workflow').profileOwners = ['core', 'demo'];
+  demoLeak.routes.find(({ route }) => route === '/admin/patterns').profileOwners = ['core', 'demo'];
   assert.match(
     validateRouteCapabilities(demoLeak, repository).errors.join('\n'),
     /demo capability leaks into a non-demo profile owner/,
   );
 
-  // 손으로 적은 소유가 그 화면을 싣는 시작 구성을 빠뜨리면 누수 가드가 그 구성을 보지 못한다(2026-10-13: 결재 기능이 워크플로우 예시
-  // 화면을 소유해 인증 시작 구성 '공통 기반 + 결재' 가 그 화면을 실었는데 원장은 'demo' 만 적었다). 결재 시작 구성이 화면을 지우지
-  // 않는 투영을 만들어, 투영을 그대로 따른 원장이 소유 누락으로 붉은지 본다.
+  // 소유 누락과 시연 누수의 부정 시험은 남아 있는 패턴 갤러리로 유지한다(ADR-0049).
+  // 결재 시작 구성이 갤러리를 지우지 않는 투영을 만들어, 원장의 소유 누락을 잡는지 본다.
   const shipped = structuredClone(repository);
   const approval = shipped.profileProjections.profiles.find(({ profile }) => profile === 'approval');
-  assert.ok(approval?.removePaths.includes('src/app/admin/workflow'), 'the approval preset removes the workflow demo today');
-  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/app/admin/workflow');
+  assert.ok(approval?.removePaths.includes('src/app/admin/patterns'), 'the approval preset removes the pattern gallery');
+  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/app/admin/patterns');
   const omitted = structuredClone(analysis.manifest);
-  const workflowEntry = omitted.routes.find(({ route }) => route === '/admin/workflow');
-  workflowEntry.directProjectionProfiles = directProjectionProfiles(workflowEntry.source, shipped.profileProjections);
-  assert.deepEqual(workflowEntry.directProjectionProfiles, ['approval', 'demo']);
+  const galleryEntry = omitted.routes.find(({ route }) => route === '/admin/patterns');
+  galleryEntry.profileOwners = ['demo'];
+  galleryEntry.unverifiedFields = galleryEntry.unverifiedFields.filter(field => field !== 'profileOwners');
+  galleryEntry.directProjectionProfiles = directProjectionProfiles(galleryEntry.source, shipped.profileProjections);
+  assert.deepEqual(galleryEntry.directProjectionProfiles, ['approval', 'demo']);
   assert.deepEqual(validateRouteCapabilities(omitted, shipped).errors, [
-    'route /admin/workflow: profileOwners omit presets that ship the screen: approval',
+    'route /admin/patterns: profileOwners omit presets that ship the screen: approval',
   ]);
   // 소유에 적으면 누락은 풀리고 누수 가드가 그 구성을 잡는다. 생성물(자기 구성 하나만 아는 투영)은 이 대조를 하지 않는다.
-  workflowEntry.profileOwners = ['approval', 'demo'];
+  galleryEntry.profileOwners = ['approval', 'demo'];
   assert.match(validateRouteCapabilities(omitted, shipped).errors.join('\n'), /demo capability leaks into a non-demo profile owner/);
-  workflowEntry.profileOwners = ['demo'];
+  galleryEntry.profileOwners = ['demo'];
   shipped.profileProjections.projection = true;
   assert.ok(!validateRouteCapabilities(omitted, shipped).errors.some((error) => error.includes('profileOwners omit')));
 
@@ -549,35 +532,35 @@ test('missing evidence and reusable profile projection drift fail closed', () =>
   );
 });
 
-test('a projected route population may omit the demo workflow only when the page and permission entry are absent', () => {
+test('a projected route population may omit SMS only when the page, permission entry and alias are absent', () => {
   const { manifest } = currentAnalysis();
   const projectedManifest = structuredClone(manifest);
-  projectedManifest.routes = projectedManifest.routes.filter(({ route }) => route !== '/admin/workflow');
+  projectedManifest.routes = projectedManifest.routes.filter(({ route }) => route !== '/admin/uss/ion/sms');
   assert.match(
     validateRouteCapabilities(projectedManifest, repository).errors.join('\n'),
-    /manifest is missing filesystem route: \/admin\/workflow/,
+    /manifest is missing filesystem route: \/admin\/uss\/ion\/sms/,
   );
 
   const projectedRepository = structuredClone(repository);
-  projectedRepository.pages = projectedRepository.pages.filter(({ route }) => route !== '/admin/workflow');
+  projectedRepository.pages = projectedRepository.pages.filter(({ route }) => route !== '/admin/uss/ion/sms');
   assert.match(
     validateRouteCapabilities(projectedManifest, projectedRepository).errors.join('\n'),
     /page permission registry must cover exactly the filesystem route population/,
   );
-  delete projectedRepository.proxy.pagePermissions['/admin/workflow'];
+  delete projectedRepository.proxy.pagePermissions['/admin/uss/ion/sms'];
   assert.match(
     validateRouteCapabilities(projectedManifest, projectedRepository).errors.join('\n'),
-    /redirect destination is not a filesystem route: \/admin\/sanctn\/workflow -> \/admin\/workflow/,
+    /redirect destination is not a filesystem route: \/cop\/sms\/selectSmsList -> \/admin\/uss\/ion\/sms/,
   );
-  projectedManifest.routes = projectedManifest.routes.filter(({ route }) => route !== '/admin/sanctn/workflow');
-  projectedRepository.pages = projectedRepository.pages.filter(({ route }) => route !== '/admin/sanctn/workflow');
-  delete projectedRepository.proxy.pagePermissions['/admin/sanctn/workflow'];
-  projectedRepository.configRedirects.redirects.delete('/admin/sanctn/workflow');
+  projectedManifest.routes = projectedManifest.routes.filter(({ route }) => route !== '/cop/sms/selectSmsList');
+  projectedRepository.pages = projectedRepository.pages.filter(({ route }) => route !== '/cop/sms/selectSmsList');
+  delete projectedRepository.proxy.pagePermissions['/cop/sms/selectSmsList'];
+  projectedRepository.configRedirects.redirects.delete('/cop/sms/selectSmsList');
   assert.deepEqual(validateRouteCapabilities(projectedManifest, projectedRepository).errors, []);
 
   assert.match(
     validateRouteCapabilities(manifest, projectedRepository).errors.join('\n'),
-    /route \/admin\/workflow: no matching page.ts\/page.tsx exists/,
+    /route \/admin\/uss\/ion\/sms: no matching page.ts\/page.tsx exists/,
   );
 });
 

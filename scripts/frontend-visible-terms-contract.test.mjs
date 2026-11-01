@@ -493,8 +493,6 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
     'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx',
     // [2026-09-27 DIP B5 F11] 하네스 아틀라스 개요·상세가 이 파일(demo pack)로 옮겨 왔다 — 같은 감시를 따라간다.
     'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx',
-    'frontend/src/app/admin/workflow/WorkflowClient.tsx',
-    'frontend/src/app/components/ui/workflow-canvas.tsx',
     'frontend/src/app/admin/operation/rough-map/page.tsx',
     'frontend/src/app/components/ui/visual-audit-timeline.tsx',
   ]) {
@@ -506,8 +504,6 @@ test('screens fixed for term decisions do not bring the overclaiming or misnamed
     'frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx': ['스트림에서'],
     'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx': ['스트림에서'],
     'frontend/src/app/admin/system/menus/by-authority/MenuByAuthorityClient.tsx': ['노드'],
-    'frontend/src/app/admin/workflow/WorkflowClient.tsx': ['노드'],
-    'frontend/src/app/components/ui/workflow-canvas.tsx': ['노드'],
     'frontend/src/app/admin/community/boards/master/BoardMasterListClient.tsx': ['매트릭스', 'Board Configuration'],
     'frontend/src/app/admin/help/KnowledgeHubClient.tsx': ['지식 스트림'],
     'frontend/src/app/admin/collaboration/page.tsx': ['매트릭스'],

@@ -79,7 +79,6 @@ test('audited cross-route consumers are retained in the candidate population', (
     ['admin/help/KnowledgeHubClient.tsx', ['journeys/help-content.spec.ts', 'journeys/community-navigation.spec.ts']],
     ['admin/community/boards/master/BoardMasterListClient.tsx', ['journeys/help-content.spec.ts', 'journeys/authentication.spec.ts', 'journeys/authorization.spec.ts']],
     ['approvals/ApprovalHubClient.tsx', ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts']],
-    ['admin/workflow/WorkflowClient.tsx', ['journeys/workflow-demo.spec.ts', 'journeys/community-navigation.spec.ts']],
   ];
   for (const [file, owners] of cases) {
     const plan = buildImpactShadowPlan([{ status: 'M', path: `frontend/src/app/${file}` }]);
@@ -315,7 +314,7 @@ test('the default projects retain all measured CI specs while the frozen serial 
   const inventory = partitionPlaywrightSpecs([...ciSpecs, manualSpec], repositorySpecOwnership());
   assert.deepEqual(inventory, { ciSpecs, manualSpecs: [manualSpec] });
   assert.deepEqual(discoverSpecs(), ciSpecs);
-  assert.equal(ciSpecs.length, 51);
+  assert.equal(ciSpecs.length, 50); // ADR-0049 removes only the retired workflow demo spec.
 });
 
 test('new ordinary specs still require measured durations and unowned or ambiguous specs are red', () => {

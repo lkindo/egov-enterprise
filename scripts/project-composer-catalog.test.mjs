@@ -236,14 +236,14 @@ test('split capabilities keep each permission domain in exactly one optional cap
 /*
  * 시연 화면은 프런트 전용 기능이다(DEC-OPS-273). 기능 파일의 backend.frontendOnly 인 기능만 소스 없이 적재되고,
  * 그 표지가 서랍이 되지 않도록 소스·테이블을 가진 기능에 붙이면 실패한다. 표지를 다른 자리가 선언하는 경우(v1 의
- * 다른 pack)는 기능 파일이 자기 자신만 선언하므로 생길 수 없다. 권한은 화면 진입에만 쓰는 것을 가질 수 있다 — 워크플로우 예시
- * 화면(정적 목업)과 그 진입 권한 WORKFLOW_READ 는 시연 기능 소유다(2026-10-13, 아래 시험이 서버 인가 census 와 대조한다).
+ * 다른 pack)는 기능 파일이 자기 자신만 선언하므로 생길 수 없다. 권한은 화면 진입·기존 배정 호환용으로 가질 수 있다.
+ * WORKFLOW_READ는 ADR-0049로 퇴역한 목업의 호환 코드다. 아래 시험은 이 코드가 서버 인가에 쓰이지 않는지 대조한다.
  */
 test('a frontend-only capability is declared in its feature file and owns no backend or table', t => {
   const showcase = catalog.capabilities.find(capability => capability.id === 'showcase');
   assert.deepEqual([showcase.backend, showcase.database, showcase.permissionCodes, showcase.requires],
     [{ sourcePaths: [], sourceFiles: [] }, { tables: [], explicitSequences: [] }, ['WORKFLOW_READ'], []]);
-  assert.deepEqual(showcase.menuRoutes, ['/admin/patterns', '/admin/sanctn/workflow', '/admin/system/layout', '/admin/workflow']);
+  assert.deepEqual(showcase.menuRoutes, ['/admin/patterns', '/admin/system/layout']);
   const root = fixture(t);
   editModule(root, 'showcase', value => { value.backend.frontendOnly = false; });
   assert.throws(() => loadProjectComposerCatalog(root), /capability has no source: showcase/);
@@ -253,10 +253,9 @@ test('a frontend-only capability is declared in its feature file and owns no bac
 });
 
 /*
- * 프런트 전용 기능의 권한은 화면 진입에만 쓰여야 한다. 서버 인가 census(엔드포인트·서비스 가드·수동 가드·연산 바인딩)가 그 권한을
- * 이름으로 부르면 그 권한을 집행하는 백엔드가 있다는 뜻이라, 프런트 전용 표지가 서버 기능을 숨기는 서랍이 된다. 데모 목업이 인증
- * 시작 구성에 실리지 않게 워크플로우 예시 화면을 결재 기능에서 시연 기능으로 옮기며(2026-10-13) 카탈로그의 '권한 도메인 금지' 를
- * 이 대조로 좁혔다.
+ * 프런트 전용 기능의 권한은 화면 진입 또는 퇴역한 화면의 배정 호환에만 남는다. 서버 인가 census(엔드포인트·서비스 가드·수동 가드·
+ * 연산 바인딩)가 그 권한을 이름으로 부르면 그 권한을 집행하는 백엔드가 있다는 뜻이라, 프런트 전용 표지가 서버 기능을 숨기는
+ * 서랍이 된다. ADR-0049로 화면을 걷은 뒤에도 이 대조는 호환 권한을 포함해 유지한다.
  */
 test('a frontend-only capability owns only permissions that the server authorization census never names', () => {
   const policies = readFileSync(join(ROOT, 'config/governance/authorization-policies.json'), 'utf8');

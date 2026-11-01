@@ -71,7 +71,14 @@ test.describe('공통 셸과 인증', () => {
                             reason: '로그아웃 후 보호 경로 재진입 시 /login 으로 튕겨나와 세션 유무를 확인하는 요청이다.',
                             expiresAt: '2026-12-31',
                         }]);
-                    await page.goto('/admin');
+                    // CI 41282070271: 로그아웃은 진행 중인 이전 계정 조회를 취소한다. 초기 셸 조회를 끝낸 뒤 세션 종료를 검사한다.
+                    const [bookmarkStatus] = await Promise.all([
+                        page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/bookmarks/status'
+                            && response.request().method() === 'GET'),
+                        page.goto('/admin'),
+                    ]);
+                    expect(bookmarkStatus.status(), '초기 즐겨찾기 상태 조회가 성공해야 한다').toBe(200);
+                    expect(await bookmarkStatus.finished(), '로그아웃 전에 초기 즐겨찾기 조회가 완료되어야 한다').toBeNull();
                     // 로그아웃 시각은 초로 내려 발급 시각과 비교한다 — 같은 초에 발급된 토큰은 남는다(재로그인 보호 경계).
                     //   서버 무효화를 결정적으로 보려고 이 토큰의 발급 초가 지난 뒤에 로그아웃한다.
                     await waitPastIssuedSecond(fixture.authorization.Authorization);
@@ -126,7 +133,14 @@ test.describe('공통 셸과 인증', () => {
                             expiresAt: '2026-12-31',
                         }]);
                     console.log('>>> Navigating to User Portal Home');
-                    await page.goto('/');
+                    // 일반 사용자도 같은 셸 조회를 끝낸 뒤 로그아웃해야 의도적인 요청 취소와 경쟁하지 않는다.
+                    const [bookmarkStatus] = await Promise.all([
+                        page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/bookmarks/status'
+                            && response.request().method() === 'GET'),
+                        page.goto('/'),
+                    ]);
+                    expect(bookmarkStatus.status(), '초기 즐겨찾기 상태 조회가 성공해야 한다').toBe(200);
+                    expect(await bookmarkStatus.finished(), '로그아웃 전에 초기 즐겨찾기 조회가 완료되어야 한다').toBeNull();
                     await waitPastIssuedSecond(fixture.authorization.Authorization);
                     // [E2E 감사 B] isVisible 가드 제거 — 프로필 버튼이 없으면 실패시키고, 제목이 약속한 '로그아웃'을 실제 수행한다.
                     // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)

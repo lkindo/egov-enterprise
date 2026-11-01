@@ -165,7 +165,6 @@ const nextConfig: NextConfig = {
       //     shadowedBy.kind==='config-redirect' 를 하드 단언한다(삭제 시 red).
       { source: '/admin/user/login-policy', destination: '/admin/user/indvdl-info-policy', permanent: false },
       // 경로 중복(정식 메뉴 타겟으로 통합)
-      { source: '/admin/sanctn/workflow', destination: '/admin/workflow', permanent: false },
       { source: '/cop/sms/selectSmsList', destination: '/admin/uss/ion/sms', permanent: false },
     ];
   },

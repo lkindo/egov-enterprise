@@ -31,40 +31,6 @@ const REVIEWABLE_FIELDS = new Set([
 const MENU_CENSUS_SOURCE = 'live tb_menu_info structural census only via scripts/menu-census.mjs; role exposure not measured';
 
 const KNOWN_ROUTE_CAPABILITIES = {
-  '/admin/workflow': [
-    {
-      id: 'workflow.canvas', status: 'demo', dataSource: 'static-mock', actions: ['select-mock-node'],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '프로세스 캔버스', primaryTask: true,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/workflow/WorkflowClient.tsx'],
-    },
-    {
-      id: 'workflow.metrics', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '워크플로우 상태 지표', primaryTask: false,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/workflow/WorkflowClient.tsx'],
-    },
-    {
-      id: 'workflow.mutations', status: 'unavailable', dataSource: 'none', actions: [],
-      unsupportedVisibleActions: ['history', 'create', 'refresh'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '히스토리·설계 등록·새로고침', primaryTask: true,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/workflow/WorkflowClient.tsx', 'frontend/src/app/components/ui/global-command-center.tsx'],
-    },
-  ],
-  '/admin/sanctn/forms': [
-    {
-      id: 'sanction.forms-catalog', status: 'demo', dataSource: 'static-mock', actions: ['switch-local-tab', 'select-static-form'],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: 'Sanction Forms', primaryTask: true,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/sanctn/WorkflowHubClient.tsx'],
-    },
-    {
-      id: 'sanction.engine-health', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: 'Engine Healthy / 99.9% Uptime', primaryTask: false,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/sanctn/WorkflowHubClient.tsx'],
-    },
-    {
-      id: 'sanction.mutations', status: 'unavailable', dataSource: 'none', actions: [],
-      unsupportedVisibleActions: ['deploy', 'form-create', 'logic-edit', 'instance-run', 'workflow-create'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '워크플로우·서식 작업', primaryTask: true,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/admin/sanctn/WorkflowHubClient.tsx', 'frontend/src/app/components/ui/global-command-center.tsx'],
-    },
-  ],
   '/admin/notifications': [
     {
       id: 'notifications.stream', status: 'partial', candidateStatus: 'live', dataSource: 'notifications-api+websocket', actions: ['local-search', 'tab-filter'],
@@ -583,15 +549,6 @@ export function buildUnreviewedBaselineManifest(
       review: { ...review },
     };
 
-    if (route === '/admin/workflow') {
-      entry.profileOwners = ['demo'];
-      entry.evidence = uniqueSorted([
-        ...entry.evidence,
-        'frontend/src/app/admin/workflow/WorkflowClient.tsx',
-      ]);
-      entry.unverifiedFields = entry.unverifiedFields
-        .filter((field) => field !== 'profileOwners');
-    }
     return entry;
   });
 
@@ -697,10 +654,7 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 }
 
 export function validateRouteCapabilities(manifest, repository) {
-  // 소유 프로필 어휘는 시작 구성 id·직접 선택·미검증이다(presets.json, 11단계 C8 — 종전에는 이름을 이 파일에 열거했다). 시연 기능의
-  // 워크플로우 예시 화면(/admin/workflow, 2026-10-13 결재 기능에서 옮겼다)의 소유 'demo' 는 생성물 원장에도 그대로 실리므로
-  // (buildUnreviewedBaselineManifest) 생성물의 활성 구성이 무엇이든 받는다 — 생성물의 presets.json 에는 활성 구성 하나만 있어, 시연
-  // 기능을 담은 직접 선택 생성물이 제 원장을 거부하게 된다.
+  // 원본 시연 프로필의 소유 기록은 기능을 직접 선택한 생성물에서도 유효하다.
   const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
   const nonDemoPresets = presetIds().filter((profile) => profile !== 'demo');
   const errors = [];
@@ -935,9 +889,8 @@ export function validateRouteCapabilities(manifest, repository) {
       errors.push(`${label}: directProjectionProfiles drifted from the preset compositions' frontend removePaths`);
     }
     // 확인한 소유(profileOwners)는 투영 관찰을 가리지 않는다. 원본 저장소에서 화면 소스를 지우지 않는 시작 구성은 모두 소유에 적혀야
-    // 한다 — 손으로 적은 소유가 그 화면을 싣는 시작 구성을 빠뜨리면 아래 데모 누수 가드가 그 구성을 보지 못한다(2026-10-13: 인증
-    // 시작 구성 '공통 기반 + 결재' 가 워크플로우 예시 화면을 실었는데 원장은 'demo' 만 적었다). 생성물은 자기 구성 하나만 알고 그
-    // 이름이 'custom' 일 수 있어 보지 않는다 — 원본 저장소의 이 대조가 모든 시작 구성을 이미 본다.
+    // 한다 — 손으로 적은 소유가 그 화면을 싣는 시작 구성을 빠뜨리면 아래 데모 누수 가드가 그 구성을 보지 못한다.
+    // 생성물은 자기 구성 하나만 알고 그 이름이 'custom' 일 수 있어 보지 않는다 — 원본 저장소의 이 대조가 모든 시작 구성을 이미 본다.
     if (repository?.profileProjections?.projection === false && Array.isArray(entry.profileOwners)
       && !entry.profileOwners.includes('UNVERIFIED') && Array.isArray(entry.directProjectionProfiles)) {
       const omitted = entry.directProjectionProfiles.filter((profile) => !entry.profileOwners.includes(profile));
@@ -1038,19 +991,6 @@ export function validateRouteCapabilities(manifest, repository) {
     .sort((left, right) => left.source.localeCompare(right.source));
   if (JSON.stringify(manifest?.externalAliases) !== JSON.stringify(expectedExternalAliases)) {
     errors.push('externalAliases drifted from page-independent next.config.ts redirects');
-  }
-
-  const workflow = actualByRoute.get('/admin/workflow');
-  // Reusable profiles may remove this demo page. The exact filesystem census
-  // above still rejects a missing declared page or an invented manifest entry.
-  if (expectedByRoute.has('/admin/workflow') && (!workflow
-    || workflow.status !== 'partial'
-    || workflow.dataSource !== 'mixed'
-    || !exactArray(workflow.profileOwners, ['demo'])
-    || workflow.decisionSafe !== false
-    || !workflow.capabilities?.some(({ id, status }) => id === 'workflow.canvas' && status === 'demo')
-    || !workflow.capabilities?.some(({ id, status }) => id === 'workflow.mutations' && status === 'unavailable'))) {
-    errors.push('/admin/workflow must preserve its demo canvas and unavailable mutations as demo-profile-only capabilities');
   }
 
   const statusCounts = Object.fromEntries(

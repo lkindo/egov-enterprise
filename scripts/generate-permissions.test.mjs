@@ -77,8 +77,9 @@ test('administrative statistics and workflow pages preserve their distinct acces
   for (const [route, codes] of Object.entries(catalog.pagePermissions)) {
     if (route === '/admin/stats' || route.startsWith('/admin/stats/')) assert.deepEqual(codes, ['STATS_ADMIN_READ']);
   }
-  for (const route of ['/admin/workflow', '/admin/sanctn/workflow']) {
-    assert.deepEqual(catalog.pagePermissions[route], ['WORKFLOW_READ']);
+  // ADR-0049: compatibility permission survives, but no retired screen can be entered.
+  for (const route of ['/admin/workflow', '/admin/sanctn/workflow', '/admin/sanctn/forms']) {
+    assert.equal(Object.hasOwn(catalog.pagePermissions, route), false);
   }
   assert.deepEqual(catalog.pagePermissions['/admin'], ['DASHBOARD_ADMIN_READ']);
   for (const route of ['/admin/survey/polls', '/admin/survey/polls/manage']) {

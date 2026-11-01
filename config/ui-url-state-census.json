@@ -27,24 +27,24 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "35737f53d5f2ecc64dc9452010413a2bdabb0f49d5bd49686f419201dc97ddd7"
+    "inventoryHash": "8ddd5496b5a94bcbdb8f614a839f2e1cfa02ba689f4f0d83c669a452c6557160"
   },
   "summary": {
-    "records": 474,
-    "syntaxOccurrences": 577,
-    "ambiguousRecords": 425,
-    "unverifiedRecords": 474,
+    "records": 472,
+    "syntaxOccurrences": 575,
+    "ambiguousRecords": 424,
+    "unverifiedRecords": 472,
     "exactPopulations": {
-      "filesystemRoutes": 122,
+      "filesystemRoutes": 119,
       "dynamicRoutePatterns": 13,
-      "configRedirects": 13,
+      "configRedirects": 12,
       "pageRedirects": 17
     },
     "byKind": {
-      "config-redirect": 13,
+      "config-redirect": 12,
       "dynamic-segment": 13,
       "form-producer": 62,
-      "navigation-producer": 231,
+      "navigation-producer": 230,
       "page-redirect": 17,
       "query-builder": 25,
       "query-consumer": 58,
@@ -53,7 +53,7 @@
       "url-observer": 7
     },
     "bySurface": {
-      "navigation": 464,
+      "navigation": 462,
       "request-telemetry": 10
     }
   },
@@ -291,58 +291,6 @@
       "resolutionStatus": "identified",
       "canonical": {
         "routeCandidate": "/admin/system/monitoring/hub",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/next.config.ts",
-        "detector": "next-config-redirect-parser",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-E1386B747A0831",
-      "surface": "navigation",
-      "kind": "config-redirect",
-      "operation": "temporary-redirect",
-      "source": "frontend/next.config.ts",
-      "producerFile": "frontend/next.config.ts",
-      "consumerFile": "frontend/next.config.ts",
-      "routePattern": "/admin/sanctn/workflow",
-      "targetCandidate": "/admin/workflow",
-      "stateItems": [
-        {
-          "name": "<source-query>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Next config redirect can merge source query names into the destination; no sanitizer is approved by this census.",
-      "riskSignals": [
-        "double-encoded-query",
-        "encoded-query-passthrough",
-        "repeated-query-passthrough",
-        "unknown-query-passthrough"
-      ],
-      "ambiguityReasons": [],
-      "resolutionStatus": "identified",
-      "canonical": {
-        "routeCandidate": "/admin/workflow",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -13816,44 +13764,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/uss/olh/online-manual/ManualAdminClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-08653D2EBCC0FF",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "jsx-href",
-      "source": "frontend/src/app/admin/workflow/WorkflowClient.tsx",
-      "producerFile": "frontend/src/app/admin/workflow/WorkflowClient.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/workflow",
-      "targetCandidate": "/approvals",
-      "stateItems": [],
-      "currentBehavior": "Navigation emits the observed literal or template target.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/approvals",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "admin-system",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/workflow/WorkflowClient.tsx",
-        "detector": "href-navigation",
         "occurrenceCount": 1
       }
     },
