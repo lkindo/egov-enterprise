@@ -16,7 +16,8 @@ import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses,
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
+import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { removeJobContainers } from './project-composer-postgres.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
@@ -515,6 +516,29 @@ test('a failure in the vendor test command is reported as its own command', () =
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test('a vendor container started for a job carries that job token, so a cancel can reclaim it', async () => {
+  const token = 'ab'.repeat(8);
+  assert.deepEqual(vendorContainerLabels('oracle', token), ['--label', 'egov.composer.vendor=oracle', '--label', `egov.project-composer=${token}`]);
+  assert.deepEqual(vendorContainerLabels('oracle', ''), ['--label', 'egov.composer.vendor=oracle']);
+  assert.throws(() => vendorContainerLabels('oracle', 'x;rm'), /작업 토큰 형식/);
+
+  const id = name => name.repeat(64);
+  const run = async ({ byToken, listed, container = id('a') }) => {
+    const calls = [];
+    const docker = async args => {
+      calls.push(args[0]);
+      if (args[0] === 'ps') return listed.join('\n');
+      if (args[0] === 'inspect') return token;
+      return '';
+    };
+    await removeJobContainers(docker, { container, token, byToken });
+    return calls;
+  };
+  assert.deepEqual(await run({ byToken: false, listed: [id('b')] }), ['inspect', 'rm'], 'PostgreSQL 작업은 전과 같다');
+  assert.deepEqual(await run({ byToken: true, listed: [id('b'), id('c')] }), ['inspect', 'rm', 'ps', 'inspect', 'rm', 'inspect', 'rm'], '자식이 띄운 컨테이너까지 회수한다');
+  assert.deepEqual(await run({ byToken: false, listed: [id('b')], container: null }), ['ps', 'inspect', 'rm'], 'ID 를 못 받았으면 표식으로 찾는다');
 });
 
 test('the disposable baseline database goes away whatever happens, and a leftover is not a pass', () => {

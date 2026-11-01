@@ -9,7 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { ComposerError } from './project-composer-errors.mjs';
 import { createLogMasker } from './project-composer-command.mjs';
 import { verificationVendor } from './verify-reusable-artifact.mjs';
-import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
+import { createOwnedPostgres, ownedContainerId, removeJobContainers, waitForOwnedPostgres } from './project-composer-postgres.mjs';
 import { classifyChildFailure, classifyDatabaseNotReady, classifyDockerStart, classifyVerificationFailure, jobFailure, toRepositoryPath }
   from './project-composer-job-failure.mjs';
 import { appendJobHistory, createJobTimeline, estimateRemaining, historyEntry, readJobHistory, verificationStepMarkers }
@@ -139,8 +139,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     // 시작에 실패해 ID 를 받지 못한 컨테이너는 이 작업의 표식으로 찾아 지운다.
     const cleanupDatabase = async () => {
       if (!databaseCreated) return;
-      if (ownedContainerId(container)) await removeOwnedPostgres(cleanupDocker, container, token);
-      else await removeOwnedPostgresByToken(cleanupDocker, token);
+      await removeJobContainers(cleanupDocker, { container, token, byToken: Boolean(verificationVendor(composition.database)) });
       container = undefined; databaseCreated = false;
     };
     // 실패 분류용 Docker 탐침. 멈춘 엔진을 기다리지 않도록 시간 제한을 두고, 탐침도 DB 단계 로그에 남긴다.
@@ -214,7 +213,8 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
       // 검증기가 단계마다 찍는 머리줄로 검증 일곱 단계 중 어디인지 알린다(검증기 자체는 바꾸지 않는다).
       const markers = verificationStepMarkers({ profile: composition.profile, layout: composition.backendLayout, vendor: verificationVendor(composition.database) });
       const onLine = line => { const step = markers.get(line); if (step && timeline.step(step)) emit(); };
-      try { await jobRun('node', ['scripts/verify-reusable-artifact.mjs'], { root: paths.projectDirectory, log: logOf('verify'), onLine }); }
+      // 벤더 검증이 띄우는 컨테이너에 이 작업의 표식을 붙이게 한다. 취소·복구가 그 표식으로 회수한다.
+      try { await jobRun('node', ['scripts/verify-reusable-artifact.mjs'], { root: paths.projectDirectory, log: logOf('verify'), onLine, env: { ...process.env, COMPOSER_CONTAINER_TOKEN: token } }); }
       catch (error) {
         throw classifyVerificationFailure(error, { projectDirectory: paths.projectDirectory, composition, startedAt: report.startedAt,
           roots: [paths.projectDirectory, outputRoot, root] });

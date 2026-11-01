@@ -14,7 +14,7 @@ import { buildVendorModel, columnsIn, gap } from './project-composer-vendor-mode
 import { expandIff } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
 import { COMPOSER_POSTGRES_IMAGE } from './project-composer-postgres.mjs';
-import { VENDOR_CONTAINER_LABEL, parseCount, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
+import { parseCount, runStatements, startVendorEngine, stopVendorEngineReporting, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 
 /** 정규식마다 맞는 값과 틀린 값. 맞는 값 뒤의 줄바꿈은 항상 시험한다(`$` 함정). */
 const REGEX_SAMPLES = Object.freeze({
@@ -321,7 +321,7 @@ export function withDisposablePostgres(run, docker = spawnDocker) {
   let result;
   let failure = null;
   try {
-    const started = docker(['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=postgresql`, '--env', 'POSTGRES_USER=composer',
+    const started = docker(['run', '-d', '--name', name, ...vendorContainerLabels('postgresql'), '--env', 'POSTGRES_USER=composer',
       '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', COMPOSER_POSTGRES_IMAGE]);
     if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${String(started.stderr).slice(0, 200)}`);
     for (let attempt = 0; docker(['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']).status !== 0; attempt += 1) {

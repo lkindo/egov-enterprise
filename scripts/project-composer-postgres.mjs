@@ -50,6 +50,16 @@ export async function removeOwnedPostgres(docker, container, token) {
 }
 
 /**
+ * 작업의 컨테이너를 지운다. 벤더 검증의 컨테이너는 자식이 띄워 ID 를 모른다. 취소는 자식을 강제로 끝내 자식의 정리가 돌지 않으므로
+ * `byToken` 이면 작업 표식으로도 찾는다.
+ */
+export async function removeJobContainers(docker, { container, token, byToken = false }) {
+  const known = ownedContainerId(container);
+  if (known) await removeOwnedPostgres(docker, container, token);
+  if (!known || byToken) await removeOwnedPostgresByToken(docker, token);
+}
+
+/**
  * ID 를 받지 못한 컨테이너를 지운다. `docker run --detach` 는 만들기와 시작을 함께 하므로 시작이 실패하면 ID 없이
  * 컨테이너(소유 표식·익명 볼륨 포함)가 남는다. 이 작업만의 표식으로 찾으므로 남의 컨테이너는 고르지 않는다. 지운 수를 돌려준다.
  */

@@ -7,6 +7,7 @@ import { randomBytes } from 'node:crypto';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { COMPOSER_OWNER_LABEL } from './project-composer-postgres.mjs';
 
 export const VENDOR_CONTAINER_LABEL = 'egov.composer.vendor';
 const SCHEMA = 'vendorcheck';
@@ -101,6 +102,15 @@ function logs(name) {
   return `${result.stdout}${result.stderr}`;
 }
 
+/**
+ * 벤더 컨테이너의 표식. 생성 작업이 부른 실행이면 작업 토큰도 붙인다. 취소는 이 프로세스를 강제로 끝내 아래 정리가 돌지 않으므로
+ * 부모의 정리와 다음 기동의 복구가 이 표식으로 회수한다.
+ */
+export function vendorContainerLabels(engineId, token = process.env.COMPOSER_CONTAINER_TOKEN) {
+  if (token && !/^[a-f0-9]{16}$/.test(token)) fail('VENDOR_ENGINE_NOT_READY', '작업 토큰 형식이 아니다.');
+  return ['--label', `${VENDOR_CONTAINER_LABEL}=${engineId}`, ...(token ? ['--label', `${COMPOSER_OWNER_LABEL}=${token}`] : [])];
+}
+
 export function startVendorEngine(engineId, { publishPort } = {}) {
   const engine = VENDOR_ENGINES[engineId];
   if (!engine) fail('VENDOR_ENGINE_NOT_READY', `모르는 엔진: ${engineId}`);
@@ -109,7 +119,7 @@ export function startVendorEngine(engineId, { publishPort } = {}) {
   // 값은 자식 프로세스 환경으로 넘긴다. 인자에 두면 호스트의 프로세스 목록에 보인다.
   const variables = engine.environment(password);
   const environment = Object.keys(variables).flatMap(key => ['--env', key]);
-  const started = docker(['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=${engineId}`, ...environment,
+  const started = docker(['run', '-d', '--name', name, ...vendorContainerLabels(engineId), ...environment,
     ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
   { env: { ...process.env, ...variables } });
   if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${started.stderr.slice(0, 300)}`);
