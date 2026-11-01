@@ -8,6 +8,7 @@ import org.springframework.core.env.Environment;
 /** TC 스키마 테스트가 실제 전환 SQL을 JPA 초기화 전에 명시적으로 리허설한다. */
 @TestConfiguration(proxyBeanMethods = false)
 @org.springframework.context.annotation.Profile("tc")
+@org.springframework.boot.autoconfigure.condition.ConditionalOnProperty(name = "app.database.vendor", havingValue = "postgresql", matchIfMissing = true)
 public class AuthorizationSchemaRehearsalTestConfiguration {
     @Bean
     FlywayMigrationStrategy authorizationTestCutover(Environment environment) {

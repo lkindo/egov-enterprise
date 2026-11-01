@@ -29,13 +29,14 @@ public final class AuditLedgerFixtures {
         try (Connection connection = dataSource.getConnection()) {
             boolean autoCommit = connection.getAutoCommit();
             connection.setAutoCommit(false);
-            try (var permit = connection.prepareStatement("SELECT set_config('app.audit_retention', 'on', true)");
-                 PreparedStatement statement = connection.prepareStatement(deleteSql)) {
-                permit.execute();
+            var session = VendorTestSql.on(connection);
+            try (PreparedStatement statement = connection.prepareStatement(deleteSql)) {
+                VendorTestSql.permitLedgerDeletion(session, "app.audit_retention");
                 for (int index = 0; index < arguments.length; index++) {
                     statement.setObject(index + 1, arguments[index]);
                 }
                 int deleted = statement.executeUpdate();
+                VendorTestSql.revokeLedgerPermit(session, "app.audit_retention");
                 connection.commit();
                 return deleted;
             } catch (SQLException | RuntimeException failure) {

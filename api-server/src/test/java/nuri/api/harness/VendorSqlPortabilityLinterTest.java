@@ -73,6 +73,8 @@ class VendorSqlPortabilityLinterTest {
             Rule.of("upper-table", "\\b(?i:FROM|INTO|UPDATE|JOIN|TABLE)\\s+TB_[A-Z_]+"),
             Rule.of("empty-string-compare", "(?<![A-Za-z0-9_ ]IS NULL OR )(?<!\\w):\\w+\\s*=\\s*''"));
 
+    private static final Pattern QUERYDSL_EMPTY_COMPARE = Pattern.compile("\\.(eq|ne)\\(\\s*\"\"\\s*\\)");
+
     private static Pattern rule(String id) {
         return RULES.stream().filter(rule -> rule.id().equals(id)).findFirst().orElseThrow().pattern();
     }
@@ -114,6 +116,26 @@ class VendorSqlPortabilityLinterTest {
                 .as("포트 밖의 벤더 구문이다. VendorSqlDialect 로 옮기거나 HQL 로 쓰고, 정말 벤더 전용이면 원장에 사유와 함께 적는다."
                         + " 줄었으면 원장의 개수를 낮추거나 항목을 지운다(H2).")
                 .isEqualTo(frozen);
+    }
+
+    @Test
+    @DisplayName("QueryDSL 은 빈 문자열과 비교하지 않는다 — Oracle 에서 UNKNOWN 이다")
+    void queryDslDoesNotCompareToEmptyString() throws IOException {
+        Path root = HarnessSourceIndex.repoRoot();
+        List<String> found = new ArrayList<>();
+        for (Path source : HarnessSourceIndex.productionJavaSources(MODULES.toArray(String[]::new))) {
+            if (QUERYDSL_EMPTY_COMPARE.matcher(HarnessSourceIndex.read(source)).find()) {
+                found.add(root.relativize(source).toString().replace('\\', '/'));
+            }
+        }
+        assertThat(found).as("isEmpty() 는 길이 비교로 번역돼 NOT 아래에서도 맞다").isEmpty();
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = ';', value = {"QBoard.board.pstEndYmd.eq(\"\");true", "item.name.ne( \"\" );true", "item.name.isEmpty();false", "item.name.eq(value);false"})
+    @DisplayName("빈 문자열 비교 규칙은 위반에서만 빨갛다")
+    void queryDslEmptyCompareRule(String code, boolean violates) {
+        assertThat(QUERYDSL_EMPTY_COMPARE.matcher(code).find()).isEqualTo(violates);
     }
 
     @Test

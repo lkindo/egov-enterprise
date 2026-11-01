@@ -92,14 +92,14 @@ class CommunityTemplateIntegrityIntegrationTest {
             }
             var pending = executor.submit(() -> new TransactionTemplate(transactionManager).execute(status -> {
                 authenticate();
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                VendorTestSql.nameSession(jdbc, application);
                 return communities.createCommunity("fixture", request(id));
             }));
             try {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+                    waiting = VendorTestSql.waitingSessions(jdbc, application);
                     if (waiting == 0) Thread.sleep(20);
                 } while (waiting == 0 && System.nanoTime() < deadline);
                 assertThat(waiting).isEqualTo(1);
@@ -124,14 +124,14 @@ class CommunityTemplateIntegrityIntegrationTest {
             }
             var pending = executor.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                 authenticate();
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                VendorTestSql.nameSession(jdbc, application);
                 communities.deleteCommunity(community, "fixture");
             }));
             try {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+                    waiting = VendorTestSql.waitingSessions(jdbc, application);
                     if (waiting == 0) Thread.sleep(20);
                 } while (waiting == 0 && System.nanoTime() < deadline);
                 assertThat(waiting).isEqualTo(1);

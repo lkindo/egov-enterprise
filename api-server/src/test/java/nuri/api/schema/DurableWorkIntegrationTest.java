@@ -73,8 +73,7 @@ class DurableWorkIntegrationTest {
 
     @AfterEach
     void cleanup() {
-        jdbc.execute("DROP TRIGGER IF EXISTS tr_test_durable_retry_audit_failure ON tb_sys_adt_log");
-        jdbc.execute("DROP FUNCTION IF EXISTS test_durable_retry_audit_failure()");
+        VendorTestSql.dropFailingTrigger(jdbc, "tr_test_durable_retry_audit_failure", "tb_sys_adt_log");
         SecurityContextHolder.clearContext();
         jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", work.key().toString());
         AuditLedgerFixtures.delete(jdbc, "DELETE FROM tb_sys_adt_log WHERE job_nm='DURABLE_WORK_RETRY' AND frst_rgtr_id=?", actor);
@@ -370,12 +369,9 @@ class DurableWorkIntegrationTest {
         var before = job();
         assertThat(before.getPrcsSttsNm()).isEqualTo("FAILED");
         authenticate(List.of("DWORK_RETRY"));
-        jdbc.execute("CREATE FUNCTION test_durable_retry_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ "
-                + "BEGIN IF NEW.job_nm = 'DURABLE_WORK_RETRY' AND NEW.frst_rgtr_id = TG_ARGV[0] "
-                + "THEN RAISE EXCEPTION 'fixture retry audit storage failure'; END IF; RETURN NEW; END $$");
         // actor is generated here as DW + eight hexadecimal UUID characters; it is not user input.
-        jdbc.execute("CREATE TRIGGER tr_test_durable_retry_audit_failure BEFORE INSERT ON tb_sys_adt_log "
-                + "FOR EACH ROW EXECUTE FUNCTION test_durable_retry_audit_failure('" + actor + "')");
+        VendorTestSql.failingTrigger(jdbc, "tr_test_durable_retry_audit_failure", "BEFORE INSERT", "tb_sys_adt_log",
+                "NEW.job_nm = 'DURABLE_WORK_RETRY' AND NEW.frst_rgtr_id = '" + actor + "'", "fixture retry audit storage failure");
         assertThatThrownBy(() -> administration.retry(before.getJobSn()))
                 .isInstanceOf(BusinessException.class)
                 .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.SERVER_OVERLOAD);
@@ -386,7 +382,7 @@ class DurableWorkIntegrationTest {
         assertThat(afterFailure.getJobNo()).isEqualTo(before.getJobNo());
         assertThat(afterFailure.getJobCmptnDt()).isEqualTo(before.getJobCmptnDt());
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='DURABLE_WORK_RETRY' AND frst_rgtr_id=?", Long.class, actor)).isZero();
-        jdbc.execute("DROP TRIGGER tr_test_durable_retry_audit_failure ON tb_sys_adt_log");
+        VendorTestSql.dropFailingTrigger(jdbc, "tr_test_durable_retry_audit_failure", "tb_sys_adt_log");
         administration.retry(before.getJobSn());
         assertThat(job().getPrcsSttsNm()).isEqualTo("PENDING");
         assertThat(job().getRtryNmtm().intValueExact()).isZero();
@@ -424,7 +420,7 @@ class DurableWorkIntegrationTest {
             assertThatThrownBy(() -> jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=? WHERE job_sn=?",
                     terminal, currentAttempt, id))
                     .isInstanceOf(DataIntegrityViolationException.class)
-                    .hasMessageContaining("ck_tb_sys_job_job_no");
+                    .satisfies(failure -> assertThat(failure.getMessage()).containsIgnoringCase("ck_tb_sys_job_job_no"));
             jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=NULL WHERE job_sn=?", terminal, id);
             Integer terminalRenewal = transaction.execute(status ->
                     repository.renewLease(id, currentAttempt, renewedUntil.plusMinutes(1)));
@@ -447,7 +443,7 @@ class DurableWorkIntegrationTest {
             dispatcher().dispatchOne();
         }
         assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
-        assertThat(job().getJobCn()).isEmpty();
+        assertThat(job().payloadDiscarded()).isTrue();
         assertThat(delivery.terminalCalls.get()).isEqualTo(1);
         // The list states the same judgement as retry(): an erased snapshot is FAILED but not retryable.
         assertThat(listedStatus().retryable()).isFalse();
@@ -462,14 +458,14 @@ class DurableWorkIntegrationTest {
         enqueue();
         dispatcher().dispatchOne();
         assertThat(job().getPrcsSttsNm()).isEqualTo("SUCCEEDED");
-        assertThat(job().getJobCn()).isEmpty();
+        assertThat(job().payloadDiscarded()).isTrue();
         assertThat(delivery.terminalCalls.get()).isEqualTo(1);
         jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='expired',job_cn=? WHERE job_mng_no=?",
                 work.payload(), work.key().toString());
         makeDue();
         dispatcher().dispatchOne();
         assertThat(job().getPrcsSttsNm()).isEqualTo("FAILED");
-        assertThat(job().getJobCn()).isEmpty();
+        assertThat(job().payloadDiscarded()).isTrue();
         assertThat(delivery.calls.get()).isEqualTo(1);
         assertThat(delivery.terminalCalls.get()).isEqualTo(2);
     }
@@ -515,7 +511,7 @@ class DurableWorkIntegrationTest {
     }
 
     private void makeDue() {
-        jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=CURRENT_TIMESTAMP - INTERVAL '1 second' WHERE job_mng_no=?", work.key().toString());
+        jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=CURRENT_TIMESTAMP - INTERVAL '1' SECOND WHERE job_mng_no=?", work.key().toString());
     }
 
     private DurableWorkDispatcher dispatcher() {

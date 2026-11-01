@@ -182,11 +182,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(30);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("""
-                            SELECT count(*) FROM pg_stat_activity
-                            WHERE datname=current_database() AND application_name LIKE 'reissue-%'
-                              AND wait_event_type='Lock'
-                            """, Integer.class);
+                    waiting = VendorTestSql.waitingSessions(jdbc, "reissue-%");
                     if (waiting < 2) Thread.sleep(20);
                 } while (waiting < 2 && System.nanoTime() < deadline);
                 assertThat(waiting).as("두 실제 재발급 트랜잭션의 잠금 경합").isEqualTo(2);
@@ -200,7 +196,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
     private String reissue(String name, CountDownLatch ready) {
         try {
             return new TransactionTemplate(transactionManager).execute(status -> {
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, name);
+                VendorTestSql.nameSession(jdbc, name);
                 ready.countDown();
                 return authService.reissue(issuedToken, "127.0.0.1").getRefreshToken();
             });

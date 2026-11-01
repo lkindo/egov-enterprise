@@ -74,9 +74,8 @@ class WriteSmokeIntegrationTest {
     @Test
     @DisplayName("① 애플리케이션 기본값으로 쓴 행이 실 스키마에 실제로 들어간다")
     void applicationWriteRoundTripsAgainstRealSchema() {
-        assertThat(jdbcTemplate.queryForObject("SELECT current_setting('server_version_num')::int", Integer.class))
-                .as("H2 로 폴백되면 create-drop 시절과 같은 거짓 안전이 된다")
-                .isGreaterThanOrEqualTo(170000);
+        // H2 로 폴백되면 create-drop 시절과 같은 거짓 안전이 된다.
+        VendorTestSql.assertPostgresql17(jdbcTemplate);
 
         FileMaster writtenMaster = fileMasterRepository.saveAndFlush(FileMaster.create());
         Long atchFileSn = writtenMaster.getAtchFileSn();
@@ -110,6 +109,8 @@ class WriteSmokeIntegrationTest {
     @Test
     @DisplayName("③ 모든 _yn 컬럼에 CHECK 이 걸려 있다 — V2_24 의 약속이 신규 컬럼에도 유지되는지")
     void everyBooleanFlagColumnHasCheckConstraint() {
+        // 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다.
+        org.junit.jupiter.api.Assumptions.assumeFalse(VendorTestSql.isOracle(jdbcTemplate));
         List<String> ynColumns = jdbcTemplate.queryForList(
                 "SELECT c.table_name || '.' || c.column_name"
                         + "  FROM information_schema.columns c"

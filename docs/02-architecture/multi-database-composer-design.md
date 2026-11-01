@@ -215,6 +215,7 @@ flowchart TD
 | 저장 범위 | 논리 모델에 글자 수와 바이트 용량을 나눠 적는다. 어댑터는 `n × 4` 바이트를 담는 물리 타입을 고른다. Oracle 은 기본 설정에서 n 이 1,000 을 넘는 컬럼 가운데 키가 아닌 것을 CLOB 로 두고 엔티티 매핑을 맞춘다(§14 결정). 기본 `VARCHAR2(4000 CHAR)` 는 4,000바이트를 넘는 값을 **거부**한다(한글 3,900자 입력 실측, 잘라서 저장하지 않는다). SQL Server 는 키가 아닌 컬럼을 `NVARCHAR(2n)`, n 이 2,000 을 넘으면 `NVARCHAR(MAX)` 로 둔다(이모지는 UTF-16 2칸이다). 키에 든 컬럼은 §6 을 따른다. `bytea` 는 BLOB 를 유지하고 RAW(255) 로 줄이지 않는다 | 한글 3,900자, 이모지 100자, 255바이트 초과 이미지 저장·재조회 |
 | 문자열 비교 | MySQL `utf8mb4_0900_bin`, MariaDB `utf8mb4_nopad_bin`, SQL Server 는 컬럼에 `Korean_100_BIN2`(DB 기본은 CI 유지, 메타 식별자가 대소문자를 타지 않게), CUBRID 는 `utf8_bin` | 로그인 ID 대소문자 UNIQUE |
 | 뒤 공백 | SQL Server 만 차이가 남는다. 저하 목록에 올린다 | 프로브 고정 |
+| 공유 행 잠금 | Oracle 에는 `FOR SHARE` 가 없어 Hibernate 가 공유 잠금을 `FOR UPDATE` 로 만든다. 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다 | 동시성 시험 |
 | 빈 문자열 | Oracle·Tibero 는 `''` 가 NULL 이다. CHECK 의 `x <> ''` 는 NOT NULL 컬럼에서만 `x IS NOT NULL` 로 번역한다(현재 4개 모두 NOT NULL). NULL 허용 컬럼이면 정상 NULL 까지 거부하므로 그 항은 뺀다. `COALESCE(x, '') ~ p` 는 `x IS NOT NULL AND ...` 로 번역한다. 그냥 지우면 NULL 이 통과한다. 시드는 NULL 로 넣는다. NOT NULL 문자열 컬럼에 `""` 가 오면 400 으로 드러난다 | 통합 시험 |
 | 격리 수준 | MySQL·MariaDB 는 Hikari `READ_COMMITTED` 고정. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다. Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
 | NULL 순서 | `hibernate.order_by.default_null_ordering=last` 를 벤더 설정에 넣는다 | 정렬 시험 |
@@ -259,7 +260,7 @@ flowchart TD
 
 | 벤더 | 한계 | 이유 | 처리 |
 |---|---|---|---|
-| Oracle | `''` 와 NULL 을 구분할 수 없다 | DB 의 정의다. 끌 수 없다 | NOT NULL 문자열에 `""` 가 오면 저장 실패, NULL 허용이면 `null` 로 돌아온다. 입력 정규화와 E2E 로 드러낸다 |
+| Oracle | `''` 와 NULL 을 구분할 수 없다 | DB 의 정의다. 끌 수 없다 | NOT NULL 문자열에 `""` 가 오면 저장 실패, NULL 허용이면 `null` 로 돌아온다. 입력 정규화와 E2E 로 드러낸다. 앱이 비운 값을 써야 하는 NOT NULL 컬럼은 표시 값을 쓴다(`tb_sys_job.job_cn` 의 `{}`). SQL 의 `x = ''` 는 UNKNOWN 이고 `NOT` 을 씌워도 UNKNOWN 이라 행이 조용히 빠지므로 길이 비교(`isEmpty()`)로 쓴다 |
 | Oracle | `hibernate validate` 가 `VARCHAR2` 와 CLOB 을 구분하지 못한다 | 방언의 타입 비교가 길이를 받지 않아, 글자 수 1,000 초과 컬럼을 CLOB 으로 두려면 둘을 같다고 해야 한다 | 초기 스키마는 번역 번들이 만들어 이 문제가 없다. 생성 뒤 손으로 쓴 마이그레이션이나 손으로 고친 스키마에서 짧은 컬럼이 CLOB 이 되면 기동은 통과하고 비교에서 실패한다. 후속 마이그레이션은 컬럼 타입을 사람이 확인한다 |
 | Oracle(기본 설정) | 4,000바이트 초과 문자열을 `VARCHAR2` 에 못 담는다 | `MAX_STRING_SIZE=STANDARD` | CLOB 는 `=`·`DISTINCT`·`ORDER BY`·`GROUP BY`·인덱스를 못 쓴다. EXTENDED 는 되돌릴 수 없다(§14) |
 | SQL Server | `=`·UNIQUE 가 뒤 공백을 무시한다 | 표준 패딩 비교. `BIN2` 로도 안 바뀐다 | `abc` 와 `abc ` 가 같은 키다. 키 값은 앱에서 잘라 저장하고 저하로 표시 |
@@ -469,3 +470,25 @@ Oracle 문장 수가 많은 것은 컬럼 주석을 별도 문장으로 쓰기 �
 | 메뉴 구조 | 네이티브 인터페이스 투영이 CLOB 을 문자열로 못 바꾼다 | 방언이 네이티브 CLOB 을 문자열로 읽는다 |
 | 사용자 삭제 | `bool_or` 는 PostgreSQL 전용 집계다. 린터 규칙에 없어 단계 0 을 통과했다 | 표준 `MAX(CASE ...)`, 린터가 PostgreSQL 전용 함수 묶음을 막는다 |
 | 오류 분류 | Oracle 은 무결성 위반의 SQLState 가 모두 23000 이다. 벤더 번호를 보지 않으면 CHECK 위반이 409 중복으로 나간다 | 벤더 오류 번호 표 |
+
+### 통합 시험
+
+`node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor oracle` 이 벤더 일회용 DB 를 띄워 번역 스키마와 시드를 적용·대조한 뒤 시험을 돌린다. 시험은 PostgreSQL 과 같은 코드이고, 벤더마다 다른 픽스처와 세션 관측은 `VendorTestSql` 이 맡는다. 돌릴 시험은 [벤더 시험 원장](../../config/governance/vendor-test-ledger.json)이 정한다. Gradle 은 작업을 건너뛰어도 성공으로 끝나므로, 도구는 종료 코드가 아니라 원장의 클래스마다 시험 결과가 남았는지로 판정한다. 시험은 도구가 DB 에 남긴 소유 토큰이 없으면 쓰지 않는다.
+
+schema-validation 시험 132개 클래스의 처리는 다음과 같다(Oracle 23.26 Free).
+
+| 분류 | 클래스 | 처리 |
+|---|---:|---|
+| 시나리오 시험 | 44 | 시험 376건 가운데 373건이 Oracle 에서 통과하고 3건은 건너뛴다 |
+| PostgreSQL 카탈로그를 직접 보는 시험 | 2 | 번역 대조가 같은 것을 본다 |
+| 특정 버전까지 올려 마이그레이션을 보는 시험 | 77 | 벤더 프로젝트는 기준선에서 시작한다. 번역 대조·차등 시험이 대신한다 |
+| 격리 DB 기반 시나리오 시험 | 9 | 다음 묶음에서 옮긴다(권한 관리, DB 오류 번역, 첨부 참조, upsert 등) |
+
+건너뛰는 3건: 같은 설문 투표의 공유 잠금(Oracle 에 없다), PostgreSQL 함수로 재는 조회 바이트, PostgreSQL 카탈로그의 `_yn` CHECK 전수 확인(차등 시험이 본다).
+
+첫 실행의 실패 315건 가운데 285건이 시험 코드의 PostgreSQL 전용 문장이었고, 그것을 걷어 내자 운영 결함 둘이 드러났다. 호출 스윕으로는 찾지 못한 것들이다.
+
+| 찾은 곳 | 오류 | 처리 |
+|---|---|---|
+| 후속 작업 | 끝난 작업의 내용을 `""` 로 지웠다. Oracle 은 NULL 로 바꿔 NOT NULL 위반으로 실패했고, 작업이 끝나지 못하고 재시도됐다 | 지운 표시로 `{}` 를 쓴다. 이전의 빈 문자열 행도 지운 것으로 읽는다 |
+| 게시판 | 예약·종료 필터가 `NOT (x IS NULL OR x = '' OR ...)` 꼴이라 Oracle 에서 UNKNOWN 이 되어 그 글들이 목록에서 사라졌다 | 길이 비교로 바꿨다. 린터가 QueryDSL 의 빈 문자열 비교를 막는다 |

@@ -12,7 +12,7 @@ import { resolve } from 'node:path';
 import { buildVendorModel, columnsIn, gap } from './project-composer-vendor-model.mjs';
 import { expandIff } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
-import { parseCount, runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
+import { parseCount, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 
 /** 정규식마다 맞는 값과 틀린 값. 맞는 값 뒤의 줄바꿈은 항상 시험한다(`$` 함정). */
 const REGEX_SAMPLES = Object.freeze({
@@ -285,6 +285,8 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
   }).map(table => table.definition);
   const emission = adapter.emitSchema({ ...probes, tables: [...probes.tables, ...INTENT_TABLES()] });
   const handle = startVendorEngine(engineId ?? vendorId);
+  let failure = null;
+  let report = null;
   try {
     const schema = runStatements(handle, emission.statements);
     if (schema.errors.length) gap(`시험 표 적용 실패 ${schema.errors.length}건: ${schema.errors[0].error} :: ${schema.errors[0].statement}`);
@@ -297,11 +299,13 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
       });
     }
     const rows = probes.tables.reduce((sum, table) => sum + table.rows.length, 0);
-    return { vendor: vendorId, engine: engineId ?? vendorId, checks: probes.tables.length, rows, accepted: baseline.size, rejected: rows - baseline.size,
+    report = { vendor: vendorId, engine: engineId ?? vendorId, checks: probes.tables.length, rows, accepted: baseline.size, rejected: rows - baseline.size,
       differences, unbalanced, intentFailures: intentFailures(handle, vendorId) };
-  } finally {
-    stopVendorEngine(handle);
+  } catch (error) {
+    failure = error;
   }
+  stopVendorEngineReporting(handle, failure);
+  return report;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

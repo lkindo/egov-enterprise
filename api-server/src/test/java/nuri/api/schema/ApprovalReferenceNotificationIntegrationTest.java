@@ -82,8 +82,7 @@ class ApprovalReferenceNotificationIntegrationTest {
         String kept = fixture + "K";
         String deleted = fixture + "D";
         List<String> people = List.of(approver, kept, deleted);
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM pg_constraint WHERE conname='fk_tb_user_noti_tb_user_info'",
-                Integer.class)).as("알림 행은 사용자 FK 로 묶여 있다 — 없으면 이 시험은 아무것도 증명하지 않는다").isEqualTo(1);
+        assertThat(VendorTestSql.constraintCount(jdbc, "fk_tb_user_noti_tb_user_info")).as("알림 행은 사용자 FK 로 묶여 있다 — 없으면 이 시험은 아무것도 증명하지 않는다").isEqualTo(1);
         try {
             for (String person : people) {
                 jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
@@ -114,7 +113,7 @@ class ApprovalReferenceNotificationIntegrationTest {
             ownDocuments.add(id);
             assertThat(notificationCount(deleted)).as("지정 알림이 실제 알림 행으로 저장된다(리스너가 실제로 불린다)").isEqualTo(1);
 
-            jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", deleted);
+            jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), deleted);
             jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", deleted);
             assertThat(jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", deleted)).isEqualTo(1);
 
@@ -130,7 +129,7 @@ class ApprovalReferenceNotificationIntegrationTest {
                     Integer.class, id, deleted)).as("참조 행은 문서 기록으로 남는다").isEqualTo(1);
         } finally {
             for (String person : people) {
-                jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", person);
+                jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), person);
                 jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", person);
                 jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", person);
             }

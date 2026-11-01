@@ -73,10 +73,10 @@ class CommunityDecisionConcurrencyIntegrationTest {
 
     @BeforeEach
     void prepareRequestedMembership() {
-        community = jdbc.queryForObject("""
+        community = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_cmnty_info (cmnty_nm, reg_se_cd, use_yn)
-                VALUES ('회원 결정 경합', 'REGC01', 'Y') RETURNING cmnty_sn
-                """, Long.class);
+                VALUES ('회원 결정 경합', 'REGC01', 'Y')
+                """, "cmnty_sn");
         jdbc.update("""
                 INSERT INTO tb_cmnty_user_map (cmnty_sn, user_id, mbr_stts_cd, mngr_yn, use_yn)
                 VALUES (?, ?, 'A', 'N', 'Y')
@@ -224,8 +224,7 @@ class CommunityDecisionConcurrencyIntegrationTest {
                     try {
                         assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
                                 .executeWithoutResult(status -> {
-                                    jdbc.queryForObject("SELECT set_config('application_name', ?, true)",
-                                            String.class, "community-decision-contender");
+                                    VendorTestSql.nameSession(jdbc, "community-decision-contender");
                                     decide(!approveFirst);
                                 })).isInstanceOf(BusinessException.class)
                                 .hasFieldOrPropertyWithValue("errorCode", approveFirst
@@ -238,11 +237,7 @@ class CommunityDecisionConcurrencyIntegrationTest {
                     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                     int waiting;
                     do {
-                        waiting = jdbc.queryForObject("""
-                                SELECT count(*) FROM pg_stat_activity
-                                WHERE datname=current_database() AND application_name='community-decision-contender'
-                                  AND wait_event_type='Lock'
-                                """, Integer.class);
+                        waiting = VendorTestSql.waitingSessions(jdbc, "community-decision-contender");
                         if (waiting == 0) Thread.sleep(20);
                     } while (waiting == 0 && System.nanoTime() < deadline);
                     assertThat(waiting).as("선행 결정이 가진 실제 DB 잠금을 기다린다").isEqualTo(1);
@@ -292,9 +287,7 @@ class CommunityDecisionConcurrencyIntegrationTest {
             if (failure instanceof BusinessException business) {
                 assertThat(business.getErrorCode()).isEqualTo(CommonErrorCode.DUPLICATE_RESOURCE);
             } else {
-                assertThat(((DataIntegrityViolationException) failure).getMostSpecificCause())
-                        .isInstanceOfSatisfying(SQLException.class,
-                                sql -> assertThat(sql.getSQLState()).isEqualTo("23505"));
+                assertThat(VendorTestSql.isUniqueViolation((DataIntegrityViolationException) failure)).isTrue();
             }
             var response = failure instanceof BusinessException business
                     ? handleBusinessException(business)

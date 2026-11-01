@@ -62,8 +62,8 @@ class MenuHierarchyIntegrityIntegrationTest {
     void seedOnlyDisposableDatabaseMenus() {
         fixtureId = "MH" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         for (int index = 0; index < 4; index++) {
-            ownMenus.add(jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn,frst_rgtr_id,last_mdfr_id) "
-                    + "VALUES (?,1,'Y',?,?) RETURNING menu_sn", Long.class, fixtureId + index, fixtureId, fixtureId));
+            ownMenus.add(VendorTestSql.insertKey(jdbc, "INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn,frst_rgtr_id,last_mdfr_id) "
+                    + "VALUES (?,1,'Y',?,?)", "menu_sn", fixtureId + index, fixtureId, fixtureId));
         }
         authenticate();
     }
@@ -85,8 +85,8 @@ class MenuHierarchyIntegrityIntegrationTest {
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", user);
         }
         // 구조 저장이 만든 메뉴(이름이 fixtureId 로 시작)와 그 메뉴 표시도 함께 지운다. 한 문장으로 지워 자기 FK(지연 검사)를 지킨다.
-        jdbc.update("DELETE FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_grnt_cd IN "
-                + "(SELECT menu_sn::text FROM tb_menu_info WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?)",
+        jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_grnt_cd IN "
+                + "(SELECT menu_sn::text FROM tb_menu_info WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?)"),
                 id(0), id(1), id(2), id(3), fixtureId + "%");
         jdbc.update("DELETE FROM tb_menu_info WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?",
                 id(0), id(1), id(2), id(3), fixtureId + "%");
@@ -109,13 +109,10 @@ class MenuHierarchyIntegrityIntegrationTest {
         String renamed = fixtureId + "-renamed";
         var request = new MenuStructureSave(version, List.of(), List.of(),
                 List.of(new MenuProperties(id(0), renamed, null, null, "Y")), List.of(), List.of());
-        jdbc.execute("CREATE FUNCTION test_menu_structure_audit_failure() RETURNS trigger LANGUAGE plpgsql AS $$ "
-                + "BEGIN IF NEW.job_nm = 'MENU_STRUCTURE_SAVE' AND NEW.frst_rgtr_id = TG_ARGV[0] "
-                + "THEN RAISE EXCEPTION 'fixture menu audit storage failure'; END IF; RETURN NEW; END $$");
         try {
             // fixtureId is generated here as MH + twelve hexadecimal UUID characters, not request input.
-            jdbc.execute("CREATE TRIGGER tr_test_menu_structure_audit_failure BEFORE INSERT ON tb_sys_adt_log "
-                    + "FOR EACH ROW EXECUTE FUNCTION test_menu_structure_audit_failure('" + fixtureId + "')");
+            VendorTestSql.failingTrigger(jdbc, "tr_test_menu_structure_audit_failure", "BEFORE INSERT", "tb_sys_adt_log",
+                    "NEW.job_nm = 'MENU_STRUCTURE_SAVE' AND NEW.frst_rgtr_id = '" + fixtureId + "'", "fixture menu audit storage failure");
             assertThatThrownBy(() -> service.saveMenuStructure(request))
                     .isInstanceOf(BusinessException.class)
                     .hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.SERVER_OVERLOAD);
@@ -124,8 +121,7 @@ class MenuHierarchyIntegrityIntegrationTest {
             assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?",
                     Long.class, fixtureId)).isZero();
         } finally {
-            jdbc.execute("DROP TRIGGER IF EXISTS tr_test_menu_structure_audit_failure ON tb_sys_adt_log");
-            jdbc.execute("DROP FUNCTION test_menu_structure_audit_failure()");
+            VendorTestSql.dropFailingTrigger(jdbc, "tr_test_menu_structure_audit_failure", "tb_sys_adt_log");
         }
 
         service.saveMenuStructure(request);
@@ -137,8 +133,8 @@ class MenuHierarchyIntegrityIntegrationTest {
         String audit = jdbc.queryForObject("SELECT adt_cn FROM tb_sys_adt_log WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?",
                 String.class, fixtureId);
         assertThat(audit).doesNotContain(renamed);
-        assertThat(jdbc.queryForObject("SELECT adt_cn::jsonb->>'targetId' FROM tb_sys_adt_log "
-                        + "WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?", String.class, fixtureId))
+        assertThat(jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT adt_cn::jsonb->>'targetId' FROM tb_sys_adt_log "
+                        + "WHERE job_nm='MENU_STRUCTURE_SAVE' AND frst_rgtr_id=?"), String.class, fixtureId))
                 .isEqualTo("MENU_STRUCTURE");
     }
 
@@ -153,12 +149,12 @@ class MenuHierarchyIntegrityIntegrationTest {
         try (var executor = Executors.newSingleThreadExecutor()) {
             transaction.executeWithoutResult(status -> {
                 service.saveMenuStructure(placements(version, new MenuPlacement(ref(1), ref(0), 1)));
-                Integer blockerPid = jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
+                Integer blockerPid = VendorTestSql.sessionId(jdbc);
                 contender.set(executor.submit(() -> {
                     authenticate();
                     try {
                         transaction.executeWithoutResult(other -> {
-                            jdbc.queryForObject("SELECT set_config('application_name',?,true)", String.class, applicationName);
+                            VendorTestSql.nameSession(jdbc, applicationName);
                             service.saveMenuStructure(placements(version, new MenuPlacement(ref(2), ref(0), 1)));
                         });
                         return null;
@@ -207,12 +203,12 @@ class MenuHierarchyIntegrityIntegrationTest {
         try (var executor = Executors.newSingleThreadExecutor()) {
             transaction.executeWithoutResult(status -> {
                 service.saveMenuStructure(request);
-                Integer blockerPid = jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
+                Integer blockerPid = VendorTestSql.sessionId(jdbc);
                 contender.set(executor.submit(() -> {
                     authenticateActor(actor, "AUTHRT_GRANT", "AUTHRT_READ", "MENU_UPDATE", "MENU_READ");
                     try {
                         transaction.executeWithoutResult(other -> {
-                            jdbc.queryForObject("SELECT set_config('application_name',?,true)", String.class, applicationName);
+                            VendorTestSql.nameSession(jdbc, applicationName);
                             administration.replaceGrants(group, new ReplaceGrants(before.grants(), before.version(), true));
                         });
                         return null;
@@ -255,8 +251,8 @@ class MenuHierarchyIntegrityIntegrationTest {
         assertThat(parent(child)).isEqualTo(root);
         assertThat(parent(id(3))).isEqualTo(child);
         assertThat(menuRow(child)).containsEntry("use_yn", "N").containsEntry("modern_route", "/admin/structure-test")
-                .containsEntry("menu_expln", "구조 저장 시험").containsEntry("menu_ordr", 1);
-        assertThat(menuRow(root)).containsEntry("menu_ordr", 99).containsEntry("modern_route", null);
+                .containsEntry("menu_expln", "구조 저장 시험").containsEntry("menu_ordr", 1L);
+        assertThat(menuRow(root)).containsEntry("menu_ordr", 99L).containsEntry("modern_route", null);
         assertThat(menuRow(id(0))).containsEntry("menu_nm", fixtureId + "-renamed").containsEntry("modern_route", null)
                 .containsEntry("use_yn", "N").containsEntry("up_menu_sn", null);
         assertThat(created.menus()).anySatisfy(item -> assertThat(item.menuNo()).isEqualTo(child));
@@ -274,7 +270,7 @@ class MenuHierarchyIntegrityIntegrationTest {
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode", CommonErrorCode.INVALID_INPUT_VALUE)
                 .hasMessageContaining("3단계까지만");
         assertThat(parent(id(2))).isNull();
-        assertThat(menuRow(id(1))).containsEntry("menu_ordr", 1);
+        assertThat(menuRow(id(1))).containsEntry("menu_ordr", 1L);
 
         // 하위를 빼낸 뒤 새 메뉴 둘을 한 번에 지우면 그 메뉴 표시도 함께 회수된다.
         service.saveMenuStructure(new MenuStructureSave(current, List.of(), List.of(new MenuPlacement(ref(3), null, 4)),
@@ -299,12 +295,12 @@ class MenuHierarchyIntegrityIntegrationTest {
             transaction.executeWithoutResult(status -> {
                 service.saveMenuStructure(new MenuStructureSave(version, List.of(new MenuCreation("new-1", fixtureId + "-late", null, null, "Y")),
                         List.of(new MenuPlacement("new-1", ref(0), 1)), List.of(), List.of(), List.of()));
-                Integer blockerPid = jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
+                Integer blockerPid = VendorTestSql.sessionId(jdbc);
                 contender.set(executor.submit(() -> {
                     authenticateActor(actor, "MENU_CREATE", "MENU_DELETE", "MENU_UPDATE", "MENU_READ");
                     try {
                         transaction.executeWithoutResult(other -> {
-                            jdbc.queryForObject("SELECT set_config('application_name',?,true)", String.class, applicationName);
+                            VendorTestSql.nameSession(jdbc, applicationName);
                             service.saveMenuStructure(new MenuStructureSave(version, List.of(), List.of(), List.of(),
                                     List.of(id(0)), List.of()));
                         });
@@ -360,7 +356,7 @@ class MenuHierarchyIntegrityIntegrationTest {
         service.saveMenuStructure(new MenuStructureSave(service.getMenuStructure().version(), List.of(), List.of(),
                 List.of(new MenuProperties(id(0), fixtureId + "0", "", null, "Y")), List.of(), List.of()));
         // [2026-10-05] 빈 문자열은 관리자가 비운 경로다 — V2_126 의 경로 보강은 NULL 만 채웠다.
-        assertThat(menuRow(id(0))).containsEntry("modern_route", "");
+        assertThat(menuRow(id(0))).containsEntry("modern_route", VendorTestSql.storedEmptyText(jdbc));
     }
 
     private List<String> adminNavigation(Long... menus) {
@@ -461,12 +457,12 @@ class MenuHierarchyIntegrityIntegrationTest {
             transaction.executeWithoutResult(status -> {
                 service.updateMenuManage(order(id(0), id(1)));
                 entityManager.flush();
-                Integer blockerPid = jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
+                Integer blockerPid = VendorTestSql.sessionId(jdbc);
                 contender.set(executor.submit(() -> {
                     authenticate();
                     try {
                         transaction.executeWithoutResult(other -> {
-                            jdbc.queryForObject("SELECT set_config('application_name',?,true)", String.class, applicationName);
+                            VendorTestSql.nameSession(jdbc, applicationName);
                             service.updateMenuManage(order(id(1), id(0)));
                         });
                         return null;
@@ -489,7 +485,7 @@ class MenuHierarchyIntegrityIntegrationTest {
     }
 
     private Map<String, Object> menuRow(long menuId) {
-        return jdbc.queryForMap("SELECT * FROM tb_menu_info WHERE menu_sn=?", menuId);
+        return VendorTestSql.row(jdbc, "SELECT * FROM tb_menu_info WHERE menu_sn=?", menuId);
     }
 
     private void awaitRealMenuLock(String applicationName, Integer blockerPid, Future<?> contender) {
@@ -498,13 +494,8 @@ class MenuHierarchyIntegrityIntegrationTest {
         while (System.nanoTime() < deadline && !contender.isDone()) {
             // PostgreSQL keeps the first pg_stat_activity snapshot for this blocker transaction.
             // Refresh it so a contender that starts after the first poll can be observed.
-            jdbc.execute("SELECT pg_stat_clear_snapshot()");
-            Boolean observed = jdbc.queryForObject("""
-                    SELECT EXISTS (
-                        SELECT 1 FROM pg_stat_activity
-                        WHERE application_name=? AND wait_event_type='Lock'
-                          AND ?=ANY(pg_blocking_pids(pid)))
-                    """, Boolean.class, applicationName, blockerPid);
+            if (!VendorTestSql.isOracle(jdbc)) jdbc.execute("SELECT pg_stat_clear_snapshot()");
+            Boolean observed = VendorTestSql.waitsOn(jdbc, applicationName, blockerPid, null);
             if (Boolean.TRUE.equals(observed)) {
                 blocked = true;
                 break;

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
@@ -11,7 +12,8 @@ import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mj
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { probeRows } from './project-composer-vendor-differential.mjs';
-import { collectResults, parseCount } from './project-composer-vendor-engine.mjs';
+import { assertTestsRan, integrationEnvironment, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
+import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const isGap = error => error instanceof VendorTranslationGap && error.code === 'VENDOR_TRANSLATION_GAP';
@@ -139,6 +141,54 @@ test('the Oracle lock slots match the range the dialect folds keys into', () => 
   const sql = oracleAdapter.emitSchema(model()).statements.map(statement => statement.sql).join('\n');
   // 행이 모자라면 잠금 조회가 0행을 받고 아무것도 잠그지 않은 채 지나간다.
   assert.ok(sql.includes(`CONNECT BY LEVEL <= ${slots}`), `슬롯 ${slots}개`);
+});
+
+test('integration tests take every database setting from the engine, never from the PostgreSQL test profile', () => {
+  const { integration } = VENDOR_ENGINES.oracle;
+  const environment = integrationEnvironment('oracle', integration, { port: 15210, password: 'not-a-secret', owner: 'token' });
+
+  assert.equal(environment.SPRING_DATASOURCE_URL, 'jdbc:oracle:thin:@//127.0.0.1:15210/FREEPDB1');
+  // 자기 일회용 DB 주소를 properties 로 쓰는 시험도 같은 벤더 DB 로 돈다.
+  assert.equal(environment.VENDOR_TEST_URL, environment.SPRING_DATASOURCE_URL);
+  assert.equal(environment.VENDOR_TEST_OWNER, 'token', '시험은 실행 도구가 띄운 DB 에만 쓴다');
+  assert.equal(environment.SPRING_FLYWAY_ENABLED, 'false', 'PostgreSQL 마이그레이션을 벤더에 적용하면 안 된다');
+  assert.equal(environment.APP_DATABASE_VENDOR, 'oracle');
+  assert.match(environment.SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT, /NuriOracleDialect/);
+  assert.throws(() => parseIntegrationArgs(['--input', 'x.json', '--vendor', 'mysql']), /아직 돌릴 수 없는 엔진/);
+  assert.throws(() => parseIntegrationArgs(['--vendor', 'oracle']), /--input/);
+  assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--engine', 'oracle19']),
+    { input: 'x.json', vendor: 'oracle', engine: 'oracle19' });
+});
+
+test('a run passes only when every ledger class left test results', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-results-'));
+  const write = (name, tests) => writeFileSync(join(directory, `TEST-nuri.api.schema.${name}.xml`), `<testsuite name="x" tests="${tests}" skipped="0"></testsuite>`);
+  const failed = error => error.code === 'VENDOR_INTEGRATION_FAILED';
+  try {
+    // Gradle 이 작업을 건너뛰면 종료 코드는 0 이고 결과 폴더가 없다.
+    assert.throws(() => assertTestsRan(join(directory, 'absent'), ['A']), failed);
+    assert.throws(() => assertTestsRan(directory, ['A']), failed, '결과가 없는 폴더는 실패다');
+    write('A', 3);
+    assert.throws(() => assertTestsRan(directory, ['A', 'B']), /돌지 않은 클래스 1개: B/);
+    write('B', 0);
+    assert.throws(() => assertTestsRan(directory, ['A', 'B']), failed, '시험이 0건인 클래스는 돈 것이 아니다');
+    write('B', 1);
+    assert.doesNotThrow(() => assertTestsRan(directory, ['A', 'B']));
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+  assert.deepEqual(ledgerClasses({ tests: [{ test: 'A.java', category: 'as-is' }, { test: 'B.java', category: 'fixture-port' }, { test: 'C.java', category: 'replacement' }] }), ['A', 'B']);
+});
+
+test('a container that could not be removed is reported, without hiding an earlier failure', () => {
+  const handle = { name: 'egov-vendor-x' };
+  const removed = () => ({ status: 0 });
+  const stuck = () => ({ status: 1 });
+
+  assert.doesNotThrow(() => stopVendorEngineReporting(handle, null, removed));
+  assert.throws(() => stopVendorEngineReporting(handle, new Error('시험 실패'), removed), /^Error: 시험 실패$/);
+  assert.throws(() => stopVendorEngineReporting(handle, null, stuck), /컨테이너가 남았다: egov-vendor-x/);
+  assert.throws(() => stopVendorEngineReporting(handle, new Error('시험 실패'), stuck), /시험 실패 \(시험 DB 컨테이너가 남았다: egov-vendor-x\)/);
 });
 
 test('translations keep the semantics the differential found', () => {

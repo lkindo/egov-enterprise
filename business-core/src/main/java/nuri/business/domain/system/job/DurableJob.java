@@ -34,6 +34,9 @@ public class DurableJob extends BaseEntity {
     private String jobMngNo;
     @Column(name = "job_se_nm", length = 100, nullable = false, updatable = false)
     private String jobSeNm;
+    /** 지운 내용의 표시. 컬럼이 NOT NULL 인데 Oracle 은 빈 문자열이 NULL 이다. 내용은 모두 필드가 있는 JSON 이라 겹치지 않는다. */
+    private static final String DISCARDED_PAYLOAD = "{}";
+
     @Column(name = "job_cn", length = 4000, nullable = false)
     private String jobCn;
     @Column(name = "prcs_stts_nm", length = 300, nullable = false)
@@ -95,7 +98,7 @@ public class DurableJob extends BaseEntity {
 
     /** Exhausted jobs resume only while their payload survives; erased snapshots need a new acceptance. */
     public boolean retryable() {
-        return "FAILED".equals(prcsSttsNm) && !jobCn.isEmpty();
+        return "FAILED".equals(prcsSttsNm) && !payloadDiscarded();
     }
 
     public void retry(LocalDateTime now) {
@@ -112,6 +115,11 @@ public class DurableJob extends BaseEntity {
         if (!"SUCCEEDED".equals(prcsSttsNm) && !"FAILED".equals(prcsSttsNm)) {
             throw new IllegalStateException("Only terminal payloads can be discarded");
         }
-        jobCn = "";
+        jobCn = DISCARDED_PAYLOAD;
+    }
+
+    /** 빈 문자열은 이 표시를 쓰기 전에 지운 행이다. */
+    public boolean payloadDiscarded() {
+        return jobCn.isEmpty() || DISCARDED_PAYLOAD.equals(jobCn);
     }
 }

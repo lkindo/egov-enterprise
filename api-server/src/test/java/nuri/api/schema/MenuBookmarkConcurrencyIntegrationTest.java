@@ -65,7 +65,7 @@ class MenuBookmarkConcurrencyIntegrationTest {
         jdbc.update("INSERT INTO tb_authrt_user_map(scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
                 + "VALUES(?,?,'USR03',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", owner, group);
         for (int index = 0; index < 31; index++) {
-            Long menu = jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('bookmark fixture',?,'Y') RETURNING menu_sn", Long.class, index);
+            Long menu = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('bookmark fixture',?,'Y')", "menu_sn", index);
             menus.add(menu);
             grantNavigation(menu);
             if (index < 29) seedBookmark(owner, menu);
@@ -230,7 +230,7 @@ class MenuBookmarkConcurrencyIntegrationTest {
         var cleanupPid = new AtomicInteger();
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var holder = executor.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                holderPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                holderPid.set(VendorTestSql.sessionId(jdbc));
                 jdbc.queryForObject("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE", String.class, owner);
                 ownerLocked.countDown();
                 awaitFixtureRelease(releaseOwner);
@@ -241,7 +241,7 @@ class MenuBookmarkConcurrencyIntegrationTest {
                     authenticate(stalePrincipal);
                     try {
                         assertThatThrownBy(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                            cleanupPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                            cleanupPid.set(VendorTestSql.sessionId(jdbc));
                             service.cleanupUnavailableBookmarks(owner, request);
                         })).isInstanceOf(BusinessException.class).extracting("errorCode").isEqualTo(CommonErrorCode.CONCURRENT_MODIFICATION);
                     } finally {
@@ -290,18 +290,26 @@ class MenuBookmarkConcurrencyIntegrationTest {
         var request = request(2, List.of());
         // Synthetic identifiers/owner only; this Spring context refuses non-Testcontainers URLs.
         String fixtureFunction = "reject_bookmark_" + owner.toLowerCase(Locale.ROOT);
-        jdbc.execute("CREATE FUNCTION " + fixtureFunction + "() RETURNS trigger LANGUAGE plpgsql AS $$ "
+        boolean oracle = VendorTestSql.isOracle(jdbc);
+        if (oracle) {
+            VendorTestSql.failingSecondDeleteOnOracle(jdbc, fixtureFunction, "tb_bkmk_menu_mng_rslt",
+                    "OLD.user_id='" + owner + "'", "fixture bookmark delete failure after one delete");
+        } else jdbc.execute("CREATE FUNCTION " + fixtureFunction + "() RETURNS trigger LANGUAGE plpgsql AS $$ "
                 + "BEGIN IF OLD.user_id='" + owner + "' AND (SELECT count(*) FROM tb_bkmk_menu_mng_rslt WHERE user_id='" + owner + "') < 29 "
                 + "THEN RAISE EXCEPTION 'fixture bookmark delete failure after one delete'; END IF; RETURN OLD; END $$");
         try {
-            jdbc.execute("CREATE TRIGGER " + fixtureFunction + " BEFORE DELETE ON tb_bkmk_menu_mng_rslt "
+            if (!oracle) jdbc.execute("CREATE TRIGGER " + fixtureFunction + " BEFORE DELETE ON tb_bkmk_menu_mng_rslt "
                     + "FOR EACH ROW EXECUTE FUNCTION " + fixtureFunction + "()");
             assertThatThrownBy(() -> service.cleanupUnavailableBookmarks(owner, request))
                     .isInstanceOf(RuntimeException.class).hasStackTraceContaining("fixture bookmark delete failure after one delete");
             assertThat(storedMenus(owner)).containsExactlyElementsOf(before);
         } finally {
-            jdbc.execute("DROP TRIGGER IF EXISTS " + fixtureFunction + " ON tb_bkmk_menu_mng_rslt");
-            jdbc.execute("DROP FUNCTION " + fixtureFunction + "()");
+            if (oracle) {
+                VendorTestSql.dropSecondDeleteTriggerOnOracle(jdbc, fixtureFunction);
+            } else {
+                jdbc.execute("DROP TRIGGER IF EXISTS " + fixtureFunction + " ON tb_bkmk_menu_mng_rslt");
+                jdbc.execute("DROP FUNCTION " + fixtureFunction + "()");
+            }
         }
         assertThat(service.getMyBookmarkStatus(owner).unavailableCount()).isEqualTo(2);
     }
@@ -348,8 +356,7 @@ class MenuBookmarkConcurrencyIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                 boolean observed = false;
                 while (System.nanoTime() < deadline) {
-                    observed = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
-                            + "WHERE datname=current_database() AND wait_event_type='Lock' AND query LIKE '%tb_user_info%')", Boolean.class));
+                    observed = VendorTestSql.lockWaits(jdbc, "%").stream().anyMatch(wait -> wait.touches("tb_user_info"));
                     if (observed) break;
                     LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));
                 }
@@ -393,9 +400,8 @@ class MenuBookmarkConcurrencyIntegrationTest {
         boolean observed = false;
         while (System.nanoTime() < deadline) {
             if (waitingPid.get() > 0 && blockingPid.get() > 0) {
-                observed = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
-                        + "WHERE pid=? AND wait_event_type='Lock' AND ?=ANY(pg_blocking_pids(pid)))",
-                        Boolean.class, waitingPid.get(), blockingPid.get()));
+                observed = VendorTestSql.lockWaits(jdbc, "%").stream()
+                        .anyMatch(wait -> wait.id() == waitingPid.get() && wait.blockedBy(blockingPid.get()));
             }
             if (observed) break;
             LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));

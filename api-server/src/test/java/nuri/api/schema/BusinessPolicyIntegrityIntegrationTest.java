@@ -116,7 +116,7 @@ class BusinessPolicyIntegrityIntegrationTest {
                 authenticate();
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        VendorTestSql.nameSession(jdbc, application);
                         policies.createPolicy(key, "동시 등록", "덮어쓸 본문");
                     });
                     return null;
@@ -193,7 +193,7 @@ class BusinessPolicyIntegrityIntegrationTest {
         // This describes the injected test-context bean, not production CacheConfig wiring.
         reporter.publishEntry("injected-policy-advisors", Arrays.stream(((Advised) policies).getAdvisors())
                 .map(advisor -> advisor.getAdvice().getClass().getSimpleName()).collect(Collectors.joining(" -> ")));
-        assertThat(environment.getProperty("spring.datasource.url")).startsWith("jdbc:tc:postgresql:17:");
+        VendorTestSql.assertDisposable(environment, jdbc);
         assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
         // Instantiate the actual production factory without replacing the application's shared test CacheManager.
         var caches = new CacheConfig().cacheManager();
@@ -349,7 +349,7 @@ class BusinessPolicyIntegrityIntegrationTest {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
         int waiting;
         do {
-            waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+            waiting = VendorTestSql.waitingSessions(jdbc, application);
             if (waiting == 0) Thread.sleep(20);
         } while (waiting == 0 && System.nanoTime() < deadline);
         assertThat(waiting).isEqualTo(1);

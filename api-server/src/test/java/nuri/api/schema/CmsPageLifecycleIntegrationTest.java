@@ -81,7 +81,7 @@ class CmsPageLifecycleIntegrationTest {
     void cleanUp() {
         SecurityContextHolder.clearContext();
         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-            jdbc.queryForObject("SELECT set_config('nuri.cms_purge', 'on', true)", String.class);
+            VendorTestSql.permitLedgerDeletion(jdbc, "nuri.cms_purge");
             for (Long page : pages) {
                 jdbc.update("UPDATE tb_cms_site_stng SET conts_sn = NULL WHERE conts_sn = ?", page);
                 jdbc.update("UPDATE tb_cms_conts SET conts_rvsn_sn = NULL WHERE conts_sn = ?", page);
@@ -99,6 +99,7 @@ class CmsPageLifecycleIntegrationTest {
             for (String fileDetail : fileDetails) {
                 jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm = 'FILE_DELETE' AND job_mng_no = ?", fileDetail);
             }
+            VendorTestSql.revokeLedgerPermit(jdbc, "nuri.cms_purge");
         });
         AuditLedgerFixtures.delete(jdbc,
                 "DELETE FROM tb_sys_adt_log WHERE job_nm IN ('CMS_PAGE_DELETE', 'CMS_PAGE_PURGE') AND adt_cn LIKE ?",
@@ -137,11 +138,9 @@ class CmsPageLifecycleIntegrationTest {
     }
 
     private long uploadedImage() {
-        long atchFileSn = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn, frst_rgtr_id) VALUES ('Y', ?)"
-                + " RETURNING atch_file_sn", Long.class, login);
-        fileDetails.add(jdbc.queryForObject("INSERT INTO tb_file_detail (atch_file_sn, atch_file_seq, file_sz, strg_file_nm,"
-                + " orgnl_file_nm, file_strg_path, file_estn) VALUES (?, 1, 10, ?, 'a.png', 'general/cms-it', 'png')"
-                + " RETURNING file_detail_id::text", String.class, atchFileSn, "cms-it-" + atchFileSn + ".png"));
+        long atchFileSn = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_file_master (use_yn, frst_rgtr_id) VALUES ('Y', ?)", "atch_file_sn", login);
+        fileDetails.add(VendorTestSql.insertTextKey(jdbc, "INSERT INTO tb_file_detail (atch_file_sn, atch_file_seq, file_sz, strg_file_nm,"
+                + " orgnl_file_nm, file_strg_path, file_estn) VALUES (?, 1, 10, ?, 'a.png', 'general/cms-it', 'png')", "file_detail_id", atchFileSn, "cms-it-" + atchFileSn + ".png"));
         attachments.add(atchFileSn);
         return atchFileSn;
     }
@@ -325,9 +324,7 @@ class CmsPageLifecycleIntegrationTest {
         try (var blocker = dataSource.getConnection(); var executor = java.util.concurrent.Executors.newSingleThreadExecutor()) {
             blocker.setAutoCommit(false);
             int blockerPid;
-            try (var statement = blocker.createStatement(); var row = statement.executeQuery("SELECT pg_backend_pid()")) {
-                row.next(); blockerPid = row.getInt(1);
-            }
+            blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
             try (var lock = blocker.prepareStatement("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE")) {
                 lock.setLong(1, image); lock.executeQuery().close();
             }
@@ -335,7 +332,7 @@ class CmsPageLifecycleIntegrationTest {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        VendorTestSql.nameSession(jdbc, application);
                         switch (operation) {
                             case "save" -> adminService.saveDraft(page, CmsPageDraftRequest.builder()
                                     .contsPathNm(current.contsPathNm()).contsTtl(current.contsTtl())
@@ -358,10 +355,7 @@ class CmsPageLifecycleIntegrationTest {
                 long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
                 boolean waiting;
                 do {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
-                            + "WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock' "
-                            + "AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')",
-                            Boolean.class, application, blockerPid));
+                    waiting = VendorTestSql.waitsOn(jdbc, application, blockerPid, "tb_file_master");
                     if (!waiting && releasing.isDone()) releasing.get();
                     if (!waiting) Thread.sleep(20);
                 } while (!waiting && System.nanoTime() < deadline);
@@ -397,7 +391,7 @@ class CmsPageLifecycleIntegrationTest {
                 jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)))
                 .hasMessageContaining("append-only");
         assertThatThrownBy(() -> transaction.executeWithoutResult(status -> {
-            jdbc.queryForObject("SELECT set_config('nuri.cms_purge', 'on', true)", String.class);
+            VendorTestSql.permitLedgerDeletion(jdbc, "nuri.cms_purge");
             jdbc.update("UPDATE tb_cms_conts_rvsn SET conts_ttl = '바꿈' WHERE conts_sn = ?", page);
         })).hasMessageContaining("append-only");
         // 표시는 트랜잭션이 끝나면 풀린다 — 앞 트랜잭션의 표시가 다음 트랜잭션으로 새지 않는다.
@@ -405,8 +399,9 @@ class CmsPageLifecycleIntegrationTest {
                 jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)))
                 .hasMessageContaining("append-only");
         transaction.executeWithoutResult(status -> {
-            jdbc.queryForObject("SELECT set_config('nuri.cms_purge', 'on', true)", String.class);
+            VendorTestSql.permitLedgerDeletion(jdbc, "nuri.cms_purge");
             assertThat(jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)).isEqualTo(1);
+            VendorTestSql.revokeLedgerPermit(jdbc, "nuri.cms_purge");
         });
     }
 }

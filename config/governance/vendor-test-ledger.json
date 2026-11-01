@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). 소스 토큰으로 나눈 1차 분류이며 벤더 구현 단계에서 실제 실행으로 고친다.",
+  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). as-is·fixture-port 는 vendorIntegrationTest 가 벤더 DB 에서 돌리고, replacement 는 벤더 번역 대조·차등 시험이 대신한다. 2026-11-01 Oracle 실행으로 고쳤다.",
   "tests": [
     {
       "test": "AddressBookBigintMigrationIntegrationTest.java",
@@ -10,27 +10,27 @@
     {
       "test": "AddressBookSnapshotConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "AdministCodeHierarchyConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "ApprovalReferenceNotificationIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "ApprovalSavedLineConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "ApprovalWorkflowIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "ApprovalWorkflowMigrationIntegrationTest.java",
@@ -40,22 +40,22 @@
     {
       "test": "AssignedIdentifierCreationIntegrityIntegrationTest.java",
       "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "reason": "시험 코드에 벤더 전용 문장이 없다"
     },
     {
       "test": "AssignmentRecipientIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "AttachmentAccessPostgresIntegrationTest.java",
-      "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "AttachmentReferenceIntegrityPostgresTest.java",
-      "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "category": "replacement",
+      "reason": "첨부 참조 무결성 시나리오다. 격리 DB 기반 클래스라 다음 묶음에서 옮긴다"
     },
     {
       "test": "AuditLedgerImmutabilityMigrationIntegrationTest.java",
@@ -65,7 +65,7 @@
     {
       "test": "AuditLedgerRetentionIntegrationTest.java",
       "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "reason": "시험 코드에 벤더 전용 문장이 없다"
     },
     {
       "test": "AuthorityReferenceFkIntegrationTest.java",
@@ -74,8 +74,8 @@
     },
     {
       "test": "AuthorizationAdministrationIntegrationTest.java",
-      "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "category": "replacement",
+      "reason": "권한 관리 시나리오다. 격리 DB 기반 클래스라 다음 묶음에서 옮긴다"
     },
     {
       "test": "AuthorizationContractIntegrationTest.java",
@@ -135,7 +135,7 @@
     {
       "test": "BoardOperationsPostgresIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "BoardOperationsSettingsMigrationIntegrationTest.java",
@@ -155,7 +155,7 @@
     {
       "test": "BusinessPolicyIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "CmsContentMigrationIntegrationTest.java",
@@ -164,13 +164,13 @@
     },
     {
       "test": "CmsPageLifecycleIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "CommentUpdateDeleteConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "CommunityBigintMigrationIntegrationTest.java",
@@ -180,17 +180,17 @@
     {
       "test": "CommunityDecisionConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "CommunityTemplateIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "DatabaseExceptionTranslationIntegrationTest.java",
-      "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "category": "replacement",
+      "reason": "오류 번역 시나리오다. 격리 DB 기반 클래스라 다음 묶음에서 옮긴다"
     },
     {
       "test": "DeferredStandardDesignMigrationIntegrationTest.java",
@@ -200,7 +200,7 @@
     {
       "test": "DepartmentHierarchyIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "DeptJobBigintMigrationIntegrationTest.java",
@@ -215,7 +215,7 @@
     {
       "test": "DeptJobReassignmentConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "DiaryBigintMigrationIntegrationTest.java",
@@ -230,7 +230,7 @@
     {
       "test": "DurableWorkIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "EmptyNumericColumnsMigrationIntegrationTest.java",
@@ -240,7 +240,7 @@
     {
       "test": "EventApprovalIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "EventInfoBigintMigrationIntegrationTest.java",
@@ -250,7 +250,7 @@
     {
       "test": "FileDeletionDurabilityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "FileMasterBigintMigrationIntegrationTest.java",
@@ -290,12 +290,12 @@
     {
       "test": "LockWaitTimeoutIntegrationTest.java",
       "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "reason": "시험 코드에 벤더 전용 문장이 없다"
     },
     {
       "test": "LogDurationJpaIntegrationTest.java",
       "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "reason": "시험 코드에 벤더 전용 문장이 없다"
     },
     {
       "test": "LogDurationMigrationIntegrationTest.java",
@@ -314,13 +314,13 @@
     },
     {
       "test": "LoginFailureCounterConcurrencyIntegrationTest.java",
-      "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "category": "as-is",
+      "reason": "시험 코드에 벤더 전용 문장이 없다"
     },
     {
       "test": "LoginIdReuseIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "LoginLogBigintMigrationIntegrationTest.java",
@@ -335,12 +335,12 @@
     {
       "test": "MailDeliveryStateIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "MailFailureNotificationIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "MemoReportBigintMigrationIntegrationTest.java",
@@ -349,18 +349,18 @@
     },
     {
       "test": "MemoReportRecipientIntegrityIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "MenuBookmarkConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "MenuHierarchyIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "MenuIdentityMigrationIntegrationTest.java",
@@ -380,7 +380,7 @@
     {
       "test": "MfaFlowIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "MyPageContentBigintMigrationIntegrationTest.java",
@@ -410,7 +410,7 @@
     {
       "test": "NotificationDurabilityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "OnlineManualBigintMigrationIntegrationTest.java",
@@ -425,12 +425,12 @@
     {
       "test": "OnlinePollItemIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "OperationalSignalIsolationIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "OptimisticVersionColumnsMigrationIntegrationTest.java",
@@ -444,8 +444,8 @@
     },
     {
       "test": "PopupInputPolicyIntegrationTest.java",
-      "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "PrivacyLogBigintMigrationIntegrationTest.java",
@@ -460,7 +460,7 @@
     {
       "test": "ProtectedAccountAdministrationIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "QnaOpenStatusNormalizeMigrationIntegrationTest.java",
@@ -495,7 +495,7 @@
     {
       "test": "RefreshTokenRotationConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "ReportStatsMenuRetirementMigrationIntegrationTest.java",
@@ -530,12 +530,12 @@
     {
       "test": "ScheduleCalendarQueryIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "SchemaValidationIntegrationTest.java",
       "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "reason": "Flyway 이력과 PostgreSQL 카탈로그를 직접 본다. 벤더는 번역 대조가 같은 것을 보고 엔티티 대조는 모든 시험의 문맥 기동이 한다"
     },
     {
       "test": "ScrapBigintMigrationIntegrationTest.java",
@@ -555,7 +555,7 @@
     {
       "test": "SensitiveAuditDurabilityIntegrationTest.java",
       "category": "as-is",
-      "reason": "시험 코드에 PostgreSQL 전용 문장이 없다"
+      "reason": "시험 코드에 벤더 전용 문장이 없다"
     },
     {
       "test": "SentMailBigintMigrationIntegrationTest.java",
@@ -570,12 +570,12 @@
     {
       "test": "SmsDeliveryStateIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "SmsFailureNoticeIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "StampBigintMigrationIntegrationTest.java",
@@ -600,7 +600,7 @@
     {
       "test": "SurveySubmissionConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "SysLogBigintMigrationIntegrationTest.java",
@@ -610,7 +610,7 @@
     {
       "test": "TemplateCreationIntegrityIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "TemporaryPasswordFlagMigrationIntegrationTest.java",
@@ -630,7 +630,7 @@
     {
       "test": "UserSecurityStateConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "시나리오는 벤더 공통이나 픽스처·잠금·허가 문장이 PostgreSQL 전용이다. 시험 지원 코드를 벤더 중립으로 나눈다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     },
     {
       "test": "UserSignupDateDefaultIntegrationTest.java",
@@ -645,7 +645,7 @@
     {
       "test": "VendorSqlPortPostgresIntegrationTest.java",
       "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "reason": "PostgreSQL 포트 구현의 잠금 강도를 카탈로그로 본다. Oracle 구현은 다른 시나리오 시험이 실행한다"
     },
     {
       "test": "WebLogBigintMigrationIntegrationTest.java",
@@ -659,8 +659,8 @@
     },
     {
       "test": "WriteSmokeIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
     }
   ]
 }

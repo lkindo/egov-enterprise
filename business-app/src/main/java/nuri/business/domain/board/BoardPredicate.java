@@ -101,7 +101,7 @@ public class BoardPredicate {
      */
     public static BooleanExpression postingOpenOn(String ymd) {
         return QBoard.board.pstEndYmd.isNull()
-                .or(QBoard.board.pstEndYmd.eq(""))
+                .or(QBoard.board.pstEndYmd.isEmpty())
                 .or(QBoard.board.pstEndYmd.goe(ymd));
     }
 
@@ -111,7 +111,7 @@ public class BoardPredicate {
      */
     public static BooleanExpression postingStartedOn(String ymd) {
         return QBoard.board.pstBgngYmd.isNull()
-                .or(QBoard.board.pstBgngYmd.eq(""))
+                .or(QBoard.board.pstBgngYmd.isEmpty())
                 .or(QBoard.board.pstBgngYmd.loe(ymd));
     }
 
@@ -128,6 +128,7 @@ public class BoardPredicate {
      * 아니고 시작일 전이면 SCHEDULED, 그 밖은 POSTING 이다.
      */
     public static BooleanExpression postingStatusIs(nuri.business.service.board.dto.PostingStatus status, String ymd) {
+        // 아래 not() 때문에 구성요소에 빈 문자열 비교를 쓰지 않는다. Oracle 의 x = '' 는 UNKNOWN 이고 NOT 을 씌워도 UNKNOWN 이라 행이 빠진다.
         BooleanExpression ended = postingOpenOn(ymd).not();
         BooleanExpression scheduled = postingStartedOn(ymd).not();
         return switch (status) {

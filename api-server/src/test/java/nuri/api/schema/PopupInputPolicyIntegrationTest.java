@@ -73,11 +73,11 @@ class PopupInputPolicyIntegrationTest {
     @CsvSource({"5000,300", "400,99", "9999999,300"})
     void outOfRangeNumericDimensionsRemainReadableButMustBeCorrectedBeforeSaving(String legacyWidth, String legacyHeight) {
         // Empty-table migration cannot retain '0100'. Exercise representable out-of-range data instead.
-        Long popup = jdbc.queryForObject("""
+        Long popup = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_popup_info(popup_ttl_nm,popup_wdth_pstn,popup_vrtc_pstn,popup_wdth_sz,popup_vrtc_sz,
                     stopvew_setup_yn,ntce_yn,frst_rgtr_id,last_mdfr_id,crt_dt,mdfcn_dt)
-                VALUES (?,'010','-5',?,?,'N','N',?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) RETURNING popup_sn
-                """, Long.class, fixture, new BigDecimal(legacyWidth), new BigDecimal(legacyHeight), actorLogin, actorLogin);
+                VALUES (?,'010','-5',?,?,'N','N',?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
+                """, "popup_sn", fixture, new BigDecimal(legacyWidth), new BigDecimal(legacyHeight), actorLogin, actorLogin);
         Map<String, Object> before = storedPopup(popup);
         var read = service.getPopup(popup);
         assertThat(read.getPopupWdthSz()).isEqualTo(legacyWidth);
@@ -97,10 +97,10 @@ class PopupInputPolicyIntegrationTest {
         read.setPopupWdthSz("100");
         read.setPopupVrtcSz("4000");
         service.updatePopup(popup, actorLogin, read);
-        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", new BigDecimal("100"))
-                .containsEntry("popup_vrtc_sz", new BigDecimal("4000"))
+        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", 100L)
+                .containsEntry("popup_vrtc_sz", 4000L)
                 .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5")
-                .containsEntry("version", 1).containsEntry("frst_rgtr_id", actorLogin);
+                .containsEntry("version", 1L).containsEntry("frst_rgtr_id", actorLogin);
         assertThat(service.getPopup(popup).getPopupWdthSz()).isEqualTo("100");
         assertThat(service.getPopup(popup).getPopupVrtcSz()).isEqualTo("4000");
     }
@@ -126,8 +126,8 @@ class PopupInputPolicyIntegrationTest {
 
         Long popup = service.createPopup(actorLogin, request);
 
-        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", new BigDecimal("100"))
-                .containsEntry("popup_vrtc_sz", new BigDecimal("4000")).containsEntry("version", 0)
+        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", 100L)
+                .containsEntry("popup_vrtc_sz", 4000L).containsEntry("version", 0L)
                 .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5");
         var read = service.getPopup(popup);
         assertThat(read.getPopupWdthSz()).isEqualTo("100");
@@ -145,16 +145,16 @@ class PopupInputPolicyIntegrationTest {
         sized.setPopupWdthSz("400");
         sized.setPopupVrtcSz("300");
         service.updatePopup(popup, actorLogin, sized);
-        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", new BigDecimal("400"))
-                .containsEntry("popup_vrtc_sz", new BigDecimal("300"))
-                .containsEntry("version", 1);
+        assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", 400L)
+                .containsEntry("popup_vrtc_sz", 300L)
+                .containsEntry("version", 1L);
 
         var cleared = service.getPopup(popup);
         cleared.setPopupWdthSz(null);
         cleared.setPopupVrtcSz(null);
         service.updatePopup(popup, actorLogin, cleared);
         assertThat(storedPopup(popup)).containsEntry("popup_wdth_sz", null).containsEntry("popup_vrtc_sz", null)
-                .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5").containsEntry("version", 2);
+                .containsEntry("popup_wdth_pstn", "010").containsEntry("popup_vrtc_pstn", "-5").containsEntry("version", 2L);
         assertThat(service.getPopup(popup).getPopupWdthSz()).isNull();
         assertThat(service.getPopup(popup).getPopupVrtcSz()).isNull();
     }
@@ -199,7 +199,7 @@ class PopupInputPolicyIntegrationTest {
 
     @Test
     void attachmentOfAnUnreflectedBannerIsNotShared() {
-        Long file = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn) VALUES ('Y') RETURNING atch_file_sn", Long.class);
+        Long file = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_file_master (use_yn) VALUES ('Y')", "atch_file_sn");
         jdbc.update("INSERT INTO tb_bnr_info(bnr_nm,rflt_yn,atch_file_sn,frst_rgtr_id) VALUES (?,'N',?,?)", fixture, file, actorLogin);
         try {
             var reader = CustomUserDetails.builder().userId("banner-reader").esntlId("BANNER_READER").enabled(true).lockAt("N")
@@ -235,7 +235,7 @@ class PopupInputPolicyIntegrationTest {
     }
 
     private Map<String, Object> storedPopup(Long popup) {
-        return jdbc.queryForMap("SELECT * FROM tb_popup_info WHERE popup_sn=?", popup);
+        return VendorTestSql.row(jdbc, "SELECT * FROM tb_popup_info WHERE popup_sn=?", popup);
     }
 
     private Long ownedPopupCount() {

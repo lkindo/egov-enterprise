@@ -388,7 +388,7 @@ class ProtectedAccountAdministrationIntegrationTest {
             var waiting = new AtomicReference<java.util.concurrent.Future<Object>>();
             transactions.executeWithoutResult(status -> {
                 administration.lockAdministration();
-                Long blocker = jdbc.queryForObject("SELECT pg_backend_pid()", Long.class);
+                Long blocker = (long) VendorTestSql.sessionId(jdbc);
                 waiting.set(executor.submit(() -> {
                     authenticate(actor);
                     try {
@@ -403,8 +403,7 @@ class ProtectedAccountAdministrationIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(5);
                 boolean blocked = false;
                 while (System.nanoTime() < deadline) {
-                    Boolean observed = jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM pg_locks "
-                            + "WHERE NOT granted AND ?=ANY(pg_blocking_pids(pid)))", Boolean.class, blocker);
+                    Boolean observed = VendorTestSql.waitersBehind(jdbc, blocker) > 0;
                     if (Boolean.TRUE.equals(observed)) { blocked = true; break; }
                     java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));
                 }

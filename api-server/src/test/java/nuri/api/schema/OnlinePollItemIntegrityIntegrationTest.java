@@ -46,12 +46,12 @@ class OnlinePollItemIntegrityIntegrationTest {
 
     @BeforeEach
     void prepare() {
-        poll = jdbc.queryForObject("""
+        poll = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_onln_poll_manage (poll_nm, poll_bgng_ymd, poll_end_ymd, poll_dsuse_yn)
-                VALUES ('항목 무결성', '20000101', '29991231', 'N') RETURNING poll_sn
-                """, Long.class);
-        first = jdbc.queryForObject("INSERT INTO tb_onln_poll_artcl(poll_sn, poll_artcl_nm) VALUES (?, '첫째') RETURNING poll_artcl_sn", Long.class, poll);
-        second = jdbc.queryForObject("INSERT INTO tb_onln_poll_artcl(poll_sn, poll_artcl_nm) VALUES (?, '둘째') RETURNING poll_artcl_sn", Long.class, poll);
+                VALUES ('항목 무결성', '20000101', '29991231', 'N')
+                """, "poll_sn");
+        first = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_onln_poll_artcl(poll_sn, poll_artcl_nm) VALUES (?, '첫째')", "poll_artcl_sn", poll);
+        second = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_onln_poll_artcl(poll_sn, poll_artcl_nm) VALUES (?, '둘째')", "poll_artcl_sn", poll);
         authenticate();
     }
 
@@ -85,7 +85,7 @@ class OnlinePollItemIntegrityIntegrationTest {
         String application = "poll-contender-" + poll;
         try (var executor = Executors.newFixedThreadPool(2)) {
             var leading = executor.submit(() -> transaction("poll-leading-" + poll, () -> {
-                firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                firstPid.set(VendorTestSql.sessionId(jdbc));
                 String result = act(voteFirst);
                 applied.countDown();
                 try {
@@ -112,11 +112,7 @@ class OnlinePollItemIntegrityIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 boolean waiting;
                 do {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
-                            SELECT EXISTS (SELECT 1 FROM pg_stat_activity
-                              WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                                AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_onln_poll_manage%')
-                            """, Boolean.class, application, firstPid.get()));
+                    waiting = VendorTestSql.waitsOn(jdbc, application, firstPid.get(), "tb_onln_poll_manage");
                     if (!waiting && following.isDone()) following.get();
                     if (!waiting) Thread.sleep(20);
                 } while (!waiting && System.nanoTime() < deadline);
@@ -134,6 +130,8 @@ class OnlinePollItemIntegrityIntegrationTest {
 
     @Test
     void concurrentVotersShareThePollLockAndDoNotWaitForEachOther() throws Exception {
+        // Oracle 에는 공유 행 잠금이 없어 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1).
+        org.junit.jupiter.api.Assumptions.assumeFalse(VendorTestSql.isOracle(jdbc));
         var voted = new CountDownLatch(1);
         var release = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(2)) {
@@ -187,7 +185,7 @@ class OnlinePollItemIntegrityIntegrationTest {
         String application = "poll-deleting-" + poll;
         try (var executor = Executors.newFixedThreadPool(2)) {
             var editing = executor.submit(() -> transaction("poll-editing-" + poll, () -> {
-                editorPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                editorPid.set(VendorTestSql.sessionId(jdbc));
                 service.updatePoll(update("바뀐 첫째"));
                 // The parent is locked, but the child UPDATE has not flushed yet.
                 editPrepared.countDown();
@@ -211,11 +209,7 @@ class OnlinePollItemIntegrityIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 boolean waiting;
                 do {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
-                            SELECT EXISTS (SELECT 1 FROM pg_stat_activity
-                              WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                                AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_onln_poll_manage%')
-                            """, Boolean.class, application, editorPid.get()));
+                    waiting = VendorTestSql.waitsOn(jdbc, application, editorPid.get(), "tb_onln_poll_manage");
                     if (!waiting && deleting.isDone()) deleting.get();
                     if (!waiting) Thread.sleep(20);
                 } while (!waiting && System.nanoTime() < deadline);
@@ -248,7 +242,7 @@ class OnlinePollItemIntegrityIntegrationTest {
         authenticate();
         try {
             return new TransactionTemplate(manager).execute(status -> {
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                VendorTestSql.nameSession(jdbc, application);
                 return action.get();
             });
         } finally {
