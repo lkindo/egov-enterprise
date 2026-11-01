@@ -137,7 +137,7 @@ class AddressBookSnapshotConcurrencyIntegrationTest {
                 authenticate(ownerLogin, ownerEsntl, List.of());
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        firstPid.set(VendorTestSql.sessionId(jdbc));
                         service.updateAddressBook(ownerEsntl, first);
                         entityManager.flush();
                         applied.countDown();
@@ -157,7 +157,7 @@ class AddressBookSnapshotConcurrencyIntegrationTest {
                     authenticate(ownerLogin, ownerEsntl, List.of());
                     try {
                         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             service.updateAddressBook(ownerEsntl, second);
                         });
                         return "saved";
@@ -327,13 +327,7 @@ class AddressBookSnapshotConcurrencyIntegrationTest {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
         boolean waiting;
         do {
-            waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
-                    SELECT EXISTS (
-                        SELECT 1 FROM pg_stat_activity
-                        WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                          AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_adbk_manage%'
-                    )
-                    """, Boolean.class, application, blockerPid));
+            waiting = VendorTestSql.waitsOn(jdbc, application, blockerPid, "tb_adbk_manage");
             if (!waiting) Thread.sleep(20);
         } while (!waiting && System.nanoTime() < deadline);
         assertThat(waiting).as("후행 수정은 구성원 조회 전에 동일 주소록 행의 실제 DB 잠금을 기다림").isTrue();
@@ -363,17 +357,17 @@ class AddressBookSnapshotConcurrencyIntegrationTest {
     }
 
     private long book(String writerEsntl, String authorLogin) {
-        return jdbc.queryForObject("""
+        return VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_adbk_manage (adbk_nm,rls_scope_cd,use_yn,wrter_id,frst_rgtr_id)
-                VALUES ('경합 검증 주소록','PUBLIC','Y',?,?) RETURNING adbk_sn
-                """, Long.class, writerEsntl, authorLogin);
+                VALUES ('경합 검증 주소록','PUBLIC','Y',?,?)
+                """, "adbk_sn", writerEsntl, authorLogin);
     }
 
     private long contact(long bookId, String name, String email) {
-        return jdbc.queryForObject("""
+        return VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_adbk_info (adbk_sn,nm,eml_addr)
-                VALUES (?,?,?) RETURNING adbk_mbr_sn
-                """, Long.class, bookId, name, email);
+                VALUES (?,?,?)
+                """, "adbk_mbr_sn", bookId, name, email);
     }
 
     private void removeBook(long bookId) {

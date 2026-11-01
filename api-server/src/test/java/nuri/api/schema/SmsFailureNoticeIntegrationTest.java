@@ -57,7 +57,7 @@ import static org.mockito.Mockito.*;
 /** Actual PostgreSQL, proxies, event listener, inbox/intents and dispatcher; only the SMS gateway is fake. */
 @Tag("schema-validation")
 @SpringBootTest(properties = {"nuri.sms.provider=none", "nuri.durable-work.enabled=false",
-        "spring.datasource.url=jdbc:tc:postgresql:17:///egov_sms_failure_notification?currentSchema=public"})
+        "spring.datasource.url=${vendor.test.url:jdbc:tc:postgresql:17:///egov_sms_failure_notification?currentSchema=public}"})
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import({AuthorizationSchemaRehearsalTestConfiguration.class, SmsDeliveryStateIntegrationTest.SmsExecutorTestConfiguration.class})
 @ActiveProfiles({"test", "tc"})
@@ -129,8 +129,8 @@ class SmsFailureNoticeIntegrationTest {
         processorClock(Clock.systemUTC());
         SecurityContextHolder.clearContext();
         // All worker futures/latches below are joined/released before cleanup. No seeded account is touched.
-        jdbc.update("DELETE FROM tb_sys_job WHERE CASE WHEN job_se_nm='NOTIFICATION_DELIVERY' AND job_cn<>'' "
-                + "THEN job_cn::jsonb->>'receiver' END=?", receiver);
+        jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE CASE WHEN job_se_nm='NOTIFICATION_DELIVERY' "
+                + "THEN job_cn::jsonb->>'receiver' END=?"), receiver);
         jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", receiver);
         if (transmission != null) {
             jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", deliveryKey());
@@ -349,7 +349,7 @@ class SmsFailureNoticeIntegrationTest {
         SecurityContextHolder.clearContext();
         jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", receiver);
         dispatchOwned();
-        assertThat(noticeSqlState.get()).isEqualTo("23503"); // Actual migrated notification receiver FK, not an assumed error.
+        assertThat(noticeSqlState.get()).isEqualTo(VendorTestSql.foreignKeyState(jdbc)); // Actual migrated notification receiver FK, not an assumed error.
         assertThat(job().getPrcsSttsNm()).isEqualTo("RETRY"); // No blanket swallow/no invented absent-user success policy.
         assertThat(code(FIRST)).isEqualTo("F");
         assertThat(inboxCount()).isZero();
@@ -427,8 +427,8 @@ class SmsFailureNoticeIntegrationTest {
         return jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=?", Long.class, receiver);
     }
     private long noticeJobCount() {
-        return jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE CASE "
-                + "WHEN job_se_nm='NOTIFICATION_DELIVERY' AND job_cn<>'' THEN job_cn::jsonb->>'receiver' END=?",
+        return jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_job WHERE CASE "
+                + "WHEN job_se_nm='NOTIFICATION_DELIVERY' THEN job_cn::jsonb->>'receiver' END=?"),
                 Long.class, receiver);
     }
     private String noticeContent() {

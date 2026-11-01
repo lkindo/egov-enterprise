@@ -64,7 +64,7 @@ class NotificationDurabilityIntegrationTest {
 
     @AfterEach void cleanupOnlyOwnRows() {
         SecurityContextHolder.clearContext();
-        jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", receiver);
+        jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), receiver);
         jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", receiver);
         jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", receiver);
     }
@@ -159,7 +159,7 @@ class NotificationDurabilityIntegrationTest {
                     authenticate();
                     try {
                         return transaction.execute(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             return notifications.createForEvent(request);
                         });
                     } finally { SecurityContextHolder.clearContext(); }
@@ -168,11 +168,10 @@ class NotificationDurabilityIntegrationTest {
                     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                     int waiting;
                     do {
-                        waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() "
-                                + "AND application_name=? AND wait_event_type='Lock' AND wait_event='advisory'", Integer.class, application);
+                        waiting = VendorTestSql.waitingOnApplicationLock(jdbc, application);
                         if (waiting == 0) Thread.sleep(20);
                     } while (waiting == 0 && System.nanoTime() < deadline);
-                    assertThat(waiting).as("PostgreSQL advisory transaction lock wait").isEqualTo(1);
+                    assertThat(waiting).as("응용 잠금 대기").isEqualTo(1);
                 } finally { release.countDown(); }
                 assertThat(second.get(20, TimeUnit.SECONDS)).isEqualTo(first.get(20, TimeUnit.SECONDS));
             } finally { release.countDown(); }
@@ -183,9 +182,9 @@ class NotificationDurabilityIntegrationTest {
 
     private long enqueue() { return transaction.execute(status -> notifications.createForEvent(request)); }
     private int inboxCount() { return jdbc.queryForObject("SELECT count(*) FROM tb_user_noti WHERE rcvr_id=?", Integer.class, receiver); }
-    private int intentCount() { return jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", Integer.class, receiver); }
+    private int intentCount() { return jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), Integer.class, receiver); }
     private DurableJob job() {
-        String key = jdbc.queryForObject("SELECT job_mng_no FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?", String.class, receiver);
+        String key = jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT job_mng_no FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), String.class, receiver);
         return jobs.findByJobMngNo(key).orElseThrow();
     }
     private void due() { jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=TIMESTAMP '1970-01-01 00:00:00' WHERE job_mng_no=?", job().getJobMngNo()); }

@@ -55,9 +55,8 @@ class AttachmentAccessPostgresIntegrationTest {
         assignee = user("PIC" + suffix, otherDepartment);
         colleague = user("COL" + suffix, department);
         outsider = user("OUT" + suffix, otherDepartment);
-        box = jdbc.queryForObject("INSERT INTO tb_dept_job_bx (dept_task_box_nm, dept_id) VALUES ('첨부 판정', ?)"
-                + " RETURNING dept_task_box_sn", Long.class, department);
-        file = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn) VALUES ('Y') RETURNING atch_file_sn", Long.class);
+        box = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_dept_job_bx (dept_task_box_nm, dept_id) VALUES ('첨부 판정', ?)", "dept_task_box_sn", department);
+        file = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_file_master (use_yn) VALUES ('Y')", "atch_file_sn");
     }
 
     @AfterEach

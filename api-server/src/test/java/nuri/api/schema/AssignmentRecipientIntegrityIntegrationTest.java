@@ -77,7 +77,7 @@ class AssignmentRecipientIntegrityIntegrationTest {
     @AfterEach
     void removeOnlyOwnFixtures() {
             SecurityContextHolder.clearContext();
-            jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)",
+            jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)"),
                     sender, active, waiting, disabled, missing);
             jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id IN (?, ?, ?, ?, ?)",
                     sender, active, waiting, disabled, missing);
@@ -183,11 +183,10 @@ class AssignmentRecipientIntegrityIntegrationTest {
     @Test
     @DisplayName("🔐 쪽지 사본을 지운 당사자는 첨부를 열지 못하고, 남은 상대의 근거는 그대로다")
     void deletedNoteCopyClosesAttachmentForThatPartyOnly() {
-        noteFile = jdbc.queryForObject("INSERT INTO tb_file_master (use_yn) VALUES ('Y') RETURNING atch_file_sn", Long.class);
-        Long noteSn = jdbc.queryForObject("INSERT INTO tb_note_info (note_ttl, note_cn, atch_file_sn, frst_rgtr_id)"
-                + " VALUES (?, '첨부 판정', ?, ?) RETURNING note_sn", Long.class, fixtureId, noteFile, sender);
-        Long sent = jdbc.queryForObject("INSERT INTO tb_note_sndng (note_sn, sndr_id, del_yn) VALUES (?, ?, 'N')"
-                + " RETURNING note_sndng_sn", Long.class, noteSn, sender);
+        noteFile = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_file_master (use_yn) VALUES ('Y')", "atch_file_sn");
+        Long noteSn = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_note_info (note_ttl, note_cn, atch_file_sn, frst_rgtr_id)"
+                + " VALUES (?, '첨부 판정', ?, ?)", "note_sn", fixtureId, noteFile, sender);
+        Long sent = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_note_sndng (note_sn, sndr_id, del_yn) VALUES (?, ?, 'N')", "note_sndng_sn", noteSn, sender);
         jdbc.update("INSERT INTO tb_note_rcptn (note_sn, note_sndng_sn, rcvr_id, del_yn) VALUES (?, ?, ?, 'N')",
                 noteSn, sent, active);
         assertThat(ownsNoteFile(sender)).as("발신자").isTrue();
@@ -215,8 +214,8 @@ class AssignmentRecipientIntegrityIntegrationTest {
     }
 
     private long insertJob(String assignee) {
-        return jdbc.queryForObject("INSERT INTO tb_dept_task_info(dept_task_nm, dept_task_cn, pic_id, frst_rgtr_id, last_mdfr_id) "
-                + "VALUES (?, 'original', ?, ?, ?) RETURNING dept_task_sn", Long.class, fixtureId + "-original", assignee, sender, sender);
+        return VendorTestSql.insertKey(jdbc, "INSERT INTO tb_dept_task_info(dept_task_nm, dept_task_cn, pic_id, frst_rgtr_id, last_mdfr_id) "
+                + "VALUES (?, 'original', ?, ?, ?)", "dept_task_sn", fixtureId + "-original", assignee, sender, sender);
     }
 
     private String unavailable(String state) {
@@ -251,7 +250,7 @@ class AssignmentRecipientIntegrityIntegrationTest {
     }
 
     private long deliveryIntentCount() {
-        return jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)",
+        return jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)"),
                 Long.class, sender, active, waiting, disabled, missing);
     }
 

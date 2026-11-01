@@ -71,11 +71,11 @@ class SurveySubmissionConcurrencyIntegrationTest {
     // [2026-10-01 결정 21] 새 설문은 작성 중(rls_yn='N')으로 시작하고 작성 중 설문 응답은 404 다 — 공개된 설문을 명시한다.
     @BeforeEach
     void prepareSurvey() {
-        template = jdbc.queryForObject("INSERT INTO tb_srvy_tmplt DEFAULT VALUES RETURNING srvy_tmplt_sn", Long.class);
-        survey = jdbc.queryForObject("""
+        template = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_srvy_tmplt (srvy_tmplt_sn) VALUES (DEFAULT)", "srvy_tmplt_sn");
+        survey = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd, rls_yn)
-                VALUES ('동시 제출 검증', ?, '20000101', '29991231', 'Y') RETURNING srvy_sn
-                """, Long.class, template);
+                VALUES ('동시 제출 검증', ?, '20000101', '29991231', 'Y')
+                """, "srvy_sn", template);
         firstQuestion = question(1);
         secondQuestion = question(2);
         firstArticle = article(firstQuestion, 1);
@@ -119,11 +119,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("""
-                            SELECT count(*) FROM pg_stat_activity
-                            WHERE datname=current_database() AND application_name LIKE 'survey-submit-%'
-                              AND wait_event_type='Lock'
-                            """, Integer.class);
+                    waiting = VendorTestSql.waitingSessions(jdbc, "survey-submit-%");
                     if (waiting < 2) Thread.sleep(20);
                 } while (waiting < 2 && System.nanoTime() < deadline);
                 assertThat(waiting).as("두 실제 트랜잭션의 잠금 경합").isEqualTo(2);
@@ -294,7 +290,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
     private String heldAction(String application, Supplier<String> action, CountDownLatch applied,
                               CountDownLatch release, AtomicInteger backendPid) {
         return transactionAction(application, () -> {
-            backendPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+            backendPid.set(VendorTestSql.sessionId(jdbc));
             String outcome = action.get();
             entityManager.flush();
             applied.countDown();
@@ -322,7 +318,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         authenticate("survey-race-user");
         try {
             return new TransactionTemplate(transactionManager).execute(status -> {
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                VendorTestSql.nameSession(jdbc, application);
                 return action.get();
             });
         } catch (BusinessException rejected) {
@@ -336,13 +332,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
         boolean waiting;
         do {
-            waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
-                    SELECT EXISTS (
-                        SELECT 1 FROM pg_stat_activity
-                        WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                          AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_srvy_info%'
-                    )
-                    """, Boolean.class, application, blockerPid));
+            waiting = VendorTestSql.waitsOn(jdbc, application, blockerPid, "tb_srvy_info");
             if (!waiting) Thread.sleep(20);
         } while (!waiting && System.nanoTime() < deadline);
         assertThat(waiting).as("후행 트랜잭션은 응답 검사·자식 조회 전에 동일 survey 행에서 대기").isTrue();
@@ -412,18 +402,18 @@ class SurveySubmissionConcurrencyIntegrationTest {
                 "열람 가능한 선택", firstArticle, survey);
         jdbc.update("UPDATE tb_srvy_artcl SET artcl_cn=? WHERE srvy_artcl_sn=? AND srvy_sn=?",
                 "다른 문항의 비공개 선택", thirdArticle, survey);
-        foreignSurvey = jdbc.queryForObject("""
+        foreignSurvey = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_info (srvy_ttl, srvy_tmplt_sn, srvy_bgng_ymd, srvy_end_ymd, rls_yn)
-                VALUES ('소속 혼입 검증', ?, '20000101', '29991231', 'Y') RETURNING srvy_sn
-                """, Long.class, template);
-        long foreignQuestion = jdbc.queryForObject("""
+                VALUES ('소속 혼입 검증', ?, '20000101', '29991231', 'Y')
+                """, "srvy_sn", template);
+        long foreignQuestion = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_qstn (srvy_sn, srvy_tmplt_sn, qstn_sn, qstn_cn, max_chc_cnt)
-                VALUES (?, ?, 1, '다른 설문의 문항', 1) RETURNING srvy_qstn_sn
-                """, Long.class, foreignSurvey, template);
-        long foreignArticle = jdbc.queryForObject("""
+                VALUES (?, ?, 1, '다른 설문의 문항', 1)
+                """, "srvy_qstn_sn", foreignSurvey, template);
+        long foreignArticle = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_artcl (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, artcl_sn, artcl_cn, etc_ans_yn)
-                VALUES (?, ?, ?, 1, '다른 설문의 비공개 선택', 'N') RETURNING srvy_artcl_sn
-                """, Long.class, foreignSurvey, template, foreignQuestion);
+                VALUES (?, ?, ?, 1, '다른 설문의 비공개 선택', 'N')
+                """, "srvy_artcl_sn", foreignSurvey, template, foreignQuestion);
         long ownResponse = response(firstQuestion, firstArticle, respondent, "own-user", null, null);
         // 각 FK는 유효하지만 복합 소속이 다른 실제 행이다. 물리 제약을 끄거나 없는 ID를 만들지 않는다.
         long wrongQuestionResponse = response(firstQuestion, thirdArticle, respondent, "wrong-question", null, null);
@@ -474,18 +464,18 @@ class SurveySubmissionConcurrencyIntegrationTest {
     }
 
     private long response(long question, long article, String respondent, String author, String answer, String otherAnswer) {
-        return jdbc.queryForObject("""
+        return VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_rslt (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, srvy_artcl_sn,
                                           rspdnt_ans_cn, rspns_nm, etc_ans_cn, frst_rgtr_id)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING srvy_rspns_sn
-                """, Long.class, survey, template, question, article, answer, respondent, otherAnswer, author);
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                """, "srvy_rspns_sn", survey, template, question, article, answer, respondent, otherAnswer, author);
     }
 
     private String submit(SurveyResponseSubmitDto answers, String name, CountDownLatch ready) {
         authenticate("survey-lock-user");
         try {
             return new TransactionTemplate(transactionManager).execute(status -> {
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, name);
+                VendorTestSql.nameSession(jdbc, name);
                 ready.countDown();
                 assertThat(service.submitResponse(survey, answers)).isEqualTo(2);
                 return "saved";
@@ -511,9 +501,9 @@ class SurveySubmissionConcurrencyIntegrationTest {
         long anchor = responseAnchor(author);
         authenticate(other);
         service.submitResponse(survey, answers(true));
-        foreignSurvey = jdbc.queryForObject("INSERT INTO tb_srvy_info(srvy_ttl,srvy_tmplt_sn,rls_yn) VALUES ('다른 설문',?,'Y') RETURNING srvy_sn", Long.class, template);
-        long foreignQuestion = jdbc.queryForObject("INSERT INTO tb_srvy_qstn(srvy_sn,srvy_tmplt_sn,max_chc_cnt) VALUES (?,?,1) RETURNING srvy_qstn_sn", Long.class, foreignSurvey, template);
-        long foreignArticle = jdbc.queryForObject("INSERT INTO tb_srvy_artcl(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn) VALUES (?,?,?) RETURNING srvy_artcl_sn", Long.class, foreignSurvey, template, foreignQuestion);
+        foreignSurvey = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_srvy_info(srvy_ttl,srvy_tmplt_sn,rls_yn) VALUES ('다른 설문',?,'Y')", "srvy_sn", template);
+        long foreignQuestion = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_srvy_qstn(srvy_sn,srvy_tmplt_sn,max_chc_cnt) VALUES (?,?,1)", "srvy_qstn_sn", foreignSurvey, template);
+        long foreignArticle = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_srvy_artcl(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn) VALUES (?,?,?)", "srvy_artcl_sn", foreignSurvey, template, foreignQuestion);
         jdbc.update("INSERT INTO tb_srvy_rslt(srvy_sn,srvy_tmplt_sn,srvy_qstn_sn,srvy_artcl_sn,frst_rgtr_id) VALUES (?,?,?,?,?)", foreignSurvey, template, foreignQuestion, foreignArticle, author);
 
         authenticateCancellation(author);
@@ -582,7 +572,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+                    waiting = VendorTestSql.waitingSessions(jdbc, application);
                     if (waiting < 2) Thread.sleep(20);
                 } while (waiting < 2 && System.nanoTime() < deadline);
                 assertThat(waiting).isEqualTo(2);
@@ -597,7 +587,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         authenticateCancellation(author);
         try {
             return new TransactionTemplate(transactionManager).execute(status -> {
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                VendorTestSql.nameSession(jdbc, application);
                 return action.get();
             });
         } finally { SecurityContextHolder.clearContext(); }
@@ -632,7 +622,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+                    waiting = VendorTestSql.waitingSessions(jdbc, application);
                     if (waiting < 2) Thread.sleep(20);
                 } while (waiting < 2 && System.nanoTime() < deadline);
                 assertThat(waiting).isEqualTo(2);
@@ -683,16 +673,16 @@ class SurveySubmissionConcurrencyIntegrationTest {
     }
 
     private long question(int order) {
-        return jdbc.queryForObject("""
+        return VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_qstn (srvy_sn, srvy_tmplt_sn, qstn_sn, qstn_cn, max_chc_cnt)
-                VALUES (?, ?, ?, '검증 문항', 1) RETURNING srvy_qstn_sn
-                """, Long.class, survey, template, order);
+                VALUES (?, ?, ?, '검증 문항', 1)
+                """, "srvy_qstn_sn", survey, template, order);
     }
 
     private long article(long question, int order) {
-        return jdbc.queryForObject("""
+        return VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_srvy_artcl (srvy_sn, srvy_tmplt_sn, srvy_qstn_sn, artcl_sn, artcl_cn, etc_ans_yn)
-                VALUES (?, ?, ?, ?, '검증 항목', 'N') RETURNING srvy_artcl_sn
-                """, Long.class, survey, template, question, order);
+                VALUES (?, ?, ?, ?, '검증 항목', 'N')
+                """, "srvy_artcl_sn", survey, template, question, order);
     }
 }

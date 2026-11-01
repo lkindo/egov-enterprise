@@ -67,7 +67,7 @@ import static org.mockito.Mockito.mock;
 @Tag("schema-validation")
 @SpringBootTest(properties = {
         "nuri.security.login.max-failures=5",
-        "spring.datasource.url=jdbc:tc:postgresql:17:///egov_user_security_state?currentSchema=public"
+        "spring.datasource.url=${vendor.test.url:jdbc:tc:postgresql:17:///egov_user_security_state?currentSchema=public}"
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import(AuthorizationSchemaRehearsalTestConfiguration.class)
@@ -316,9 +316,12 @@ class UserSecurityStateConcurrencyIntegrationTest {
 
     @Test
     void delayedBootstrapCannotReplaceACommittedAdministratorReset() throws Exception {
-        assertThat(environment.getProperty("spring.datasource.url"))
-                .as("bootstrap race requires this class's private disposable PostgreSQL database")
-                .isEqualTo("jdbc:tc:postgresql:17:///egov_user_security_state?currentSchema=public");
+        // The bootstrap race requires this class's private disposable database.
+        VendorTestSql.assertDisposable(environment, jdbc);
+        if (!VendorTestSql.isOracle(jdbc)) {
+            assertThat(environment.getProperty("spring.datasource.url"))
+                    .isEqualTo("jdbc:tc:postgresql:17:///egov_user_security_state?currentSchema=public");
+        }
 
         String adminId = Constants.User.SYSTEM_ADMIN_ESNTL_ID;
         String initialPassword = "Provisioner-initial-test-704!";
@@ -453,7 +456,7 @@ class UserSecurityStateConcurrencyIntegrationTest {
             Future<Throwable> first = executor.submit(() -> {
                 try {
                     return catchThrowable(() -> transaction().executeWithoutResult(status -> {
-                        firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        firstPid.set(VendorTestSql.sessionId(jdbc));
                         setBoundedLockTimeout();
                         firstOperation.run();
                         firstReady.countDown();
@@ -473,8 +476,7 @@ class UserSecurityStateConcurrencyIntegrationTest {
                 second = executor.submit(() -> {
                     try {
                         return catchThrowable(() -> transaction().executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class,
-                                    application);
+                            VendorTestSql.nameSession(jdbc, application);
                             setBoundedLockTimeout();
                             secondOperation.run();
                         }));
@@ -498,26 +500,15 @@ class UserSecurityStateConcurrencyIntegrationTest {
 
     private void awaitCommittedOrWaiting(Connection observer, String application, int blockerPid,
             Future<Throwable> second) throws Exception {
-        try (var statement = observer.prepareStatement("""
-                SELECT EXISTS (
-                    SELECT 1 FROM pg_stat_activity
-                    WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                      AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_user_info%'
-                )
-                """)) {
-            statement.setString(1, application);
-            statement.setInt(2, blockerPid);
-            statement.setQueryTimeout(3);
+        {
+            var observing = VendorTestSql.on(observer);
             await().pollDelay(Duration.ZERO).pollInterval(Duration.ofMillis(20)).atMost(Duration.ofSeconds(15))
                     .until(() -> {
                         if (second.isDone()) {
                             // The caller verifies success or its expected exception after both workers finish.
                             return true;
                         }
-                        try (var rows = statement.executeQuery()) {
-                            rows.next();
-                            return rows.getBoolean(1);
-                        }
+                        return VendorTestSql.waitsOn(observing, application, blockerPid, "tb_user_info");
                     });
         }
     }
@@ -547,7 +538,7 @@ class UserSecurityStateConcurrencyIntegrationTest {
     }
 
     private void setBoundedLockTimeout() {
-        jdbc.queryForObject("SELECT set_config('lock_timeout', '20s', true)", String.class);
+        VendorTestSql.boundLockWait(jdbc, "20s");
     }
 
     private TransactionTemplate transaction() {

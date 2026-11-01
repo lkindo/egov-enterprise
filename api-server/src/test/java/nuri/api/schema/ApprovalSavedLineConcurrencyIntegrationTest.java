@@ -148,7 +148,7 @@ class ApprovalSavedLineConcurrencyIntegrationTest {
         try (var executor = Executors.newFixedThreadPool(names.size())) {
             try {
                 attempts.add(executor.submit(() -> attempt(() -> new TransactionTemplate(transactionManager).execute(status -> {
-                    leadingPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                    leadingPid.set(VendorTestSql.sessionId(jdbc));
                     Object saved = service.createSavedLine(owner, request(names.getFirst()));
                     entityManager.flush();
                     applied.countDown();
@@ -164,9 +164,9 @@ class ApprovalSavedLineConcurrencyIntegrationTest {
                     String name = names.get(index);
                     String contender = application + "-" + index;
                     attempts.add(executor.submit(() -> attempt(() -> new TransactionTemplate(transactionManager).execute(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, contender);
+                        VendorTestSql.nameSession(jdbc, contender);
                         // 잠금을 끝내 얻지 못해도 시험이 멈추지 않게 둔 안전장치다 — 정상 경로는 몇 초 안에 끝난다.
-                        jdbc.queryForObject("SELECT set_config('lock_timeout', '30s', true)", String.class);
+                        VendorTestSql.boundLockWait(jdbc, "30s");
                         return service.createSavedLine(owner, request(name));
                     }))));
                 }
@@ -188,15 +188,11 @@ class ApprovalSavedLineConcurrencyIntegrationTest {
         Map<Integer, Wait> waits = new LinkedHashMap<>();
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
         while (true) {
-            jdbc.query("""
-                    SELECT application_name, pid, lower(query) AS statement, pg_blocking_pids(pid) AS blockers
-                    FROM pg_stat_activity
-                    WHERE datname=current_database() AND wait_event_type='Lock' AND application_name LIKE ?
-                    """, (RowCallbackHandler) row -> {
-                int index = Integer.parseInt(row.getString("application_name").substring(application.length() + 1));
-                Integer[] blockers = (Integer[]) row.getArray("blockers").getArray();
-                waits.putIfAbsent(index, new Wait(row.getInt("pid"), row.getString("statement"), Set.of(blockers)));
-            }, application + "-%");
+            for (var wait : VendorTestSql.lockWaits(jdbc, application + "-%")) {
+                int index = Integer.parseInt(wait.session().substring(application.length() + 1));
+                waits.putIfAbsent(index, new Wait((int) wait.id(), wait.statement(),
+                        wait.blockers().stream().map(Long::intValue).collect(java.util.stream.Collectors.toSet())));
+            }
             boolean settled = true;
             for (int index = 1; index <= contenders.size(); index++) {
                 if (!waits.containsKey(index) && !contenders.get(index - 1).isDone()) settled = false;

@@ -99,8 +99,8 @@ class VendorSqlPortPostgresIntegrationTest {
     void initialize() {
         transaction = new TransactionTemplate(manager);
         jdbc.update("INSERT INTO tb_ognz_info (ognz_id, ognz_nm) VALUES (?, '이식 검증')", DEPT);
-        menuRows.add(jdbc.queryForObject("INSERT INTO tb_menu_info (menu_nm, menu_ordr, use_yn, modern_route, menu_expln)"
-                + " VALUES ('이식 검증', 7, 'Y', '/vsql', '설명') RETURNING menu_sn", Long.class));
+        menuRows.add(VendorTestSql.insertKey(jdbc, "INSERT INTO tb_menu_info (menu_nm, menu_ordr, use_yn, modern_route, menu_expln)"
+                + " VALUES ('이식 검증', 7, 'Y', '/vsql', '설명')", "menu_sn"));
     }
 
     @AfterEach

@@ -70,7 +70,7 @@ import static org.mockito.Mockito.*;
 @SpringBootTest(properties = {
         "nuri.durable-work.enabled=false",
         "nuri.mail.from=no-reply@egov.local",
-        "spring.datasource.url=jdbc:tc:postgresql:17:///egov_mail_failure_notification?currentSchema=public"
+        "spring.datasource.url=${vendor.test.url:jdbc:tc:postgresql:17:///egov_mail_failure_notification?currentSchema=public}"
 })
 @DirtiesContext(classMode = DirtiesContext.ClassMode.AFTER_CLASS)
 @Import({AuthorizationSchemaRehearsalTestConfiguration.class, MailFailureNotificationIntegrationTest.ExecutorConfiguration.class})
@@ -117,8 +117,8 @@ class MailFailureNotificationIntegrationTest {
         SecurityContextHolder.clearContext();
         noticeFailure.reset();
         for (String receiver : ownedNoticeReceivers) {
-            jdbc.update("DELETE FROM tb_sys_job WHERE CASE WHEN job_se_nm='NOTIFICATION_DELIVERY' AND job_cn<>'' "
-                    + "THEN job_cn::jsonb->>'receiver' END = ?", receiver);
+            jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE CASE WHEN job_se_nm='NOTIFICATION_DELIVERY' "
+                    + "THEN job_cn::jsonb->>'receiver' END = ?"), receiver);
             jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id=?", receiver);
         }
         ownedJobs.forEach(key -> jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", key));
@@ -172,7 +172,7 @@ class MailFailureNotificationIntegrationTest {
         });
         DurableJob completed = jobs.findByJobMngNo(initial.getJobMngNo()).orElseThrow();
         assertThat(completed.getPrcsSttsNm()).isEqualTo("SUCCEEDED");
-        assertThat(completed.getJobCn()).isEmpty();
+        assertThat(completed.payloadDiscarded()).isTrue();
         assertThat(notificationIntentCount(jdbc, identity.loginId())).isZero();
         verify(sender, times(1)).send(anyString(), anyString(), anyString(), anyString());
 
@@ -265,7 +265,7 @@ class MailFailureNotificationIntegrationTest {
         assertThat(noticeBoundary(jdbc, id, identity.esntlId())).isEqualTo(new NoticeBoundary("F", 0, 0));
         assertCompletedWithoutPayload(accepted.getJobMngNo());
         verify(sender, times(1)).send(anyString(), anyString(), anyString(), anyString());
-        assertThat(observation.sqlStates).containsExactly("23503", "23503", "23503");
+        assertThat(observation.sqlStates).containsExactly(VendorTestSql.foreignKeyState(jdbc), VendorTestSql.foreignKeyState(jdbc), VendorTestSql.foreignKeyState(jdbc));
         assertThat(observation.events).hasSize(3);
         // Three rolled-back combined attempts, then exactly one result-only CAS in recovery.
         assertThat(observation.resultCas).containsExactly(1, 1, 1, 1);
@@ -338,7 +338,7 @@ class MailFailureNotificationIntegrationTest {
     private void assertCompletedWithoutPayload(String jobKey) {
         DurableJob completed = jobs.findByJobMngNo(jobKey).orElseThrow();
         assertThat(completed.getPrcsSttsNm()).isEqualTo("SUCCEEDED");
-        assertThat(completed.getJobCn()).isEmpty();
+        assertThat(completed.payloadDiscarded()).isTrue();
     }
 
     private double recordingFailures() {
@@ -382,8 +382,8 @@ class MailFailureNotificationIntegrationTest {
     }
 
     private static int notificationIntentCount(JdbcTemplate jdbc, String receiver) {
-        return jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE CASE "
-                + "WHEN job_se_nm='NOTIFICATION_DELIVERY' AND job_cn<>'' THEN job_cn::jsonb->>'receiver' END = ?",
+        return jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_job WHERE CASE "
+                + "WHEN job_se_nm='NOTIFICATION_DELIVERY' THEN job_cn::jsonb->>'receiver' END = ?"),
                 Integer.class, receiver);
     }
 
@@ -541,7 +541,7 @@ class MailFailureNotificationIntegrationTest {
     }
 
     private DurableJob job(long id) {
-        String key = jdbc.queryForObject("SELECT job_mng_no FROM tb_sys_job WHERE CASE WHEN job_se_nm='MAIL_DELIVERY' AND job_cn<>'' THEN job_cn::jsonb->>'dispatchId' END = ?", String.class, Long.toString(id));
+        String key = jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT job_mng_no FROM tb_sys_job WHERE CASE WHEN job_se_nm='MAIL_DELIVERY' THEN job_cn::jsonb->>'dispatchId' END = ?"), String.class, Long.toString(id));
         ownedJobs.add(key);
         return jobs.findByJobMngNo(key).orElseThrow();
     }

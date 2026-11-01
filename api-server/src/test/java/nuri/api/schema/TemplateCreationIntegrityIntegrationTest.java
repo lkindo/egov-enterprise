@@ -115,8 +115,7 @@ class TemplateCreationIntegrityIntegrationTest {
                     try {
                         assertThatThrownBy(() -> new TransactionTemplate(transactionManager)
                                 .executeWithoutResult(status -> {
-                                    jdbc.queryForObject("SELECT set_config('application_name', ?, true)",
-                                            String.class, "template-create-contender");
+                                    VendorTestSql.nameSession(jdbc, "template-create-contender");
                                     service.insertTmplatInfo(template("loser"));
                                 })).isInstanceOf(DataIntegrityViolationException.class);
                     } finally {
@@ -127,11 +126,7 @@ class TemplateCreationIntegrityIntegrationTest {
                     long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                     int waiting;
                     do {
-                        waiting = jdbc.queryForObject("""
-                                SELECT count(*) FROM pg_stat_activity
-                                WHERE datname=current_database() AND application_name='template-create-contender'
-                                  AND wait_event_type='Lock'
-                                """, Integer.class);
+                        waiting = VendorTestSql.waitingSessions(jdbc, "template-create-contender");
                         if (waiting == 0) Thread.sleep(20);
                     } while (waiting == 0 && System.nanoTime() < deadline);
                     assertThat(waiting).as("실제 INSERT의 PK 경합").isEqualTo(1);

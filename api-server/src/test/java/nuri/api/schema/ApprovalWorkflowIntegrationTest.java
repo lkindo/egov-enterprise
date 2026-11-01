@@ -91,7 +91,7 @@ class ApprovalWorkflowIntegrationTest {
         boolean listener = ClassUtils.isPresent(IN_APP_NOTIFICATION_LISTENER, loader);
         assertThat(listener).as("알림 리스너 클래스와 알림 테이블은 함께 있거나 함께 없다 — 리스너가 개명·이동됐거나, "
                         + "알림을 수동 삭제(delete-domain.ps1)해 Flyway DDL(tb_user_noti)만 남은 경우다")
-                .isEqualTo(jdbc.queryForObject("SELECT to_regclass('public.tb_user_noti') IS NOT NULL", Boolean.class));
+                .isEqualTo(VendorTestSql.tableExists(jdbc, "tb_user_noti"));
         if (listener) {
             assertThat(applicationContext.getBeanNamesForType(ClassUtils.resolveClassName(IN_APP_NOTIFICATION_LISTENER, loader)))
                     .as("알림 리스너 bean 은 이 클래스의 문맥에 없다").isEmpty();
@@ -231,10 +231,7 @@ class ApprovalWorkflowIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting;
                 do {
-                    waiting = jdbc.queryForObject("""
-                            SELECT count(*) FROM pg_stat_activity WHERE datname=current_database()
-                            AND application_name LIKE 'approval-wf-%' AND wait_event_type='Lock'
-                            """, Integer.class);
+                    waiting = VendorTestSql.waitingSessions(jdbc, "approval-wf-%");
                     if (waiting < 2) Thread.sleep(20);
                 } while (waiting < 2 && System.nanoTime() < deadline);
                 assertThat(waiting).as("both real transactions wait on the document lock").isEqualTo(2);
@@ -254,7 +251,7 @@ class ApprovalWorkflowIntegrationTest {
         authenticate(actor);
         try {
             return Boolean.TRUE.equals(new TransactionTemplate(transactionManager).execute(status -> {
-                jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, applicationName);
+                VendorTestSql.nameSession(jdbc, applicationName);
                 ready.countDown();
                 service.confirmInformalSanction(id, "C", null);
                 return true;
@@ -686,9 +683,8 @@ class ApprovalWorkflowIntegrationTest {
     /** Actual PostgreSQL result materialization, not latency, wire bytes, or a real user-query cost. */
     @Test
     void listProcessMaterializationDoesNotGrowWithPastCycles(org.junit.jupiter.api.TestReporter reporter) {
-        assertThat(applicationContext.getEnvironment().getProperty("spring.datasource.url"))
-                .as("synthetic writes are limited to the existing PostgreSQL 17 Testcontainers runner")
-                .startsWith("jdbc:tc:postgresql:17:");
+        // Synthetic writes are limited to the disposable test database.
+        VendorTestSql.assertDisposable(applicationContext.getEnvironment(), jdbc);
         List<String> previous = List.of("WF_COST_OLD_1", "WF_COST_OLD_2", "WF_COST_OLD_3");
         String measurementTitle = "비용 검증 " + java.util.UUID.randomUUID();
         var measurementFilter = nuri.business.service.informalsanction.ApprovalListFilter.of(measurementTitle, null, null, null);

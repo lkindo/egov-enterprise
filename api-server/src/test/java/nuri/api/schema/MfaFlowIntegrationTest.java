@@ -239,19 +239,14 @@ class MfaFlowIntegrationTest {
                 statement.executeQuery().close();
             }
             long blockerPid;
-            try (var statement = blocker.createStatement(); var rows = statement.executeQuery("SELECT pg_backend_pid()")) {
-                rows.next(); blockerPid = rows.getLong(1);
-            }
+            blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
             var one = pool.submit(() -> verifyOutcome(first, otp));
             var two = pool.submit(() -> verifyOutcome(second, otp));
             try {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 int waiting = 0;
                 while (waiting < 2 && System.nanoTime() < deadline) {
-                    waiting = jdbc.queryForObject("WITH RECURSIVE waiters(pid) AS ("
-                            + "SELECT pid FROM pg_stat_activity WHERE ?=ANY(pg_blocking_pids(pid)) UNION "
-                            + "SELECT a.pid FROM pg_stat_activity a JOIN waiters w ON w.pid=ANY(pg_blocking_pids(a.pid))) "
-                            + "SELECT count(*) FROM waiters", Integer.class, blockerPid);
+                    waiting = VendorTestSql.waitersBehind(jdbc, blockerPid);
                     if (waiting < 2) java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));
                 }
                 assertThat(waiting).as("both transactions must actually contend on the user's row").isEqualTo(2);
@@ -278,7 +273,7 @@ class MfaFlowIntegrationTest {
                 try {
                     return new TransactionTemplate(transactions).execute(status -> {
                         jdbc.queryForObject("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE", String.class, subject);
-                        userLocked.complete(jdbc.queryForObject("SELECT pg_backend_pid()", Long.class));
+                        userLocked.complete((long) VendorTestSql.sessionId(jdbc));
                         try {
                             if (!allowCompletion.await(15, TimeUnit.SECONDS)) throw new IllegalStateException("completion coordination timeout");
                         } catch (InterruptedException interrupted) {
@@ -301,8 +296,7 @@ class MfaFlowIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(10);
                 boolean waiting = false;
                 while (!waiting && System.nanoTime() < deadline) {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject(
-                            "SELECT EXISTS(SELECT 1 FROM pg_stat_activity WHERE ?=ANY(pg_blocking_pids(pid)))", Boolean.class, holder));
+                    waiting = VendorTestSql.waitersBehind(jdbc, holder) > 0;
                     if (!waiting) java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));
                 }
                 assertThat(waiting).as("actual user deletion must wait on the MFA transaction's user lock").isTrue();
@@ -440,7 +434,7 @@ class MfaFlowIntegrationTest {
         assertThat(state()).isEqualTo("PENDING");
         assertThat(jdbc.queryForObject("SELECT otp_last_scs_sn FROM tb_auth_otp_cert WHERE user_insd_idntfr=?", Long.class, subject)).isNull();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_auth_rstr_cd r JOIN tb_auth_otp_cert c USING(otp_cert_sn) WHERE c.user_insd_idntfr=?", Integer.class, subject)).isZero();
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='MFA_ENROLL' AND adt_cn::jsonb->>'targetId'=?", Integer.class, subject)).isZero();
+        assertThat(jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='MFA_ENROLL' AND adt_cn::jsonb->>'targetId'=?"), Integer.class, subject)).isZero();
         assertThat(jdbc.queryForObject("SELECT rfsh_tkn FROM tb_auth_rfsh_tk WHERE user_id=?", String.class, subject))
                 .isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of(before.getRefreshToken()));
         assertThat(jdbc.queryForObject("SELECT use_dt FROM tb_auth_cert_dmnd WHERE hash_vl=?", java.sql.Timestamp.class,

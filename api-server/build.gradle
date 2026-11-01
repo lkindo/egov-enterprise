@@ -48,6 +48,8 @@ dependencies {
     testImplementation testFixtures(project(':business-core'))
     testImplementation testFixtures(project(':business-app'))
     testRuntimeOnly libs.h2
+    // vendorIntegrationTest 가 벤더 DB 에 붙는 드라이버. 이관 도구와 같은 판이다.
+    testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
     // ArchUnit (architecture tests — active)
     // [스키마 검증] 실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate validate 게이트용.
     // 단위 테스트 프로파일은 H2 + create-drop 이라 물리 스키마 불일치를 원리적으로 못 잡는다(2026-07-26 사고).
@@ -107,6 +109,32 @@ tasks.named('check') {
  * 실 PostgreSQL 스키마 검증 게이트 — Docker 필요라 pre-push 가 아닌 localGate/CI 계층.
  * 기본 `test` 태스크에서는 위 test 설정의 태그로 제외해, Docker 없는 환경의 일반 테스트를 깨지 않는다.
  */
+// 벤더 DB 에서 도는 통합 시험(ADR-0047 D-10). scripts/project-composer-vendor-integration.mjs 가 DB 를 준비해 부른다.
+// 돌릴 시험은 벤더 시험 원장이 정하고 접속 값은 시험 프로필을 덮는 환경 변수로 받는다. 평소 빌드에는 이 작업이 없어 커버리지 집계에 끼지 않는다.
+if (project.hasProperty('vendorIntegration')) {
+    tasks.register('vendorIntegrationTest', Test) {
+        description = '벤더 일회용 DB 에서 시나리오 통합 시험을 실행한다'
+        group = 'Verification'
+        testClassesDirs = sourceSets.test.output.classesDirs
+        classpath = sourceSets.test.runtimeClasspath
+        useJUnitPlatform { includeTags 'schema-validation' }
+        outputs.upToDateWhen { false }
+        outputs.cacheIf { false }
+        // 커버리지 실행 데이터를 남기지 않는다. 블록 안의 enabled 는 작업 자체를 끄므로 확장을 직접 집는다.
+        extensions.getByType(JacocoTaskExtension).enabled = false
+        filter {
+            new groovy.json.JsonSlurper().parse(rootProject.file('config/governance/vendor-test-ledger.json')).tests
+                    .findAll { it.category != 'replacement' }
+                    .each { entry ->
+                        def name = "nuri.api.schema.${entry.test.replace('.java', '')}"
+                        includeTestsMatching name
+                        // 조건부 skip 은 등록 게이트에서 금지라, 벤더에서 뺄 시험도 원장에 적는다.
+                        entry.postgresqlOnly?.each { excludeTestsMatching "${name}.${it.method}" }
+                    }
+        }
+    }
+}
+
 tasks.register('schemaValidationTest', Test) {
     description = '실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate ddl-auto:validate 스키마 검증'
     group = 'Verification'

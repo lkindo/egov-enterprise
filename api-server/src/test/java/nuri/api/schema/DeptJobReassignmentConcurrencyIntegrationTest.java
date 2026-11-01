@@ -85,26 +85,25 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
         insertUser(actor, actorLogin);
         insertUser(winner, winner);
         insertUser(contender, contender);
-        task = jdbc.queryForObject("""
+        task = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_dept_task_info
                     (dept_task_nm, dept_task_cn, pic_id, frst_rgtr_id, last_mdfr_id, crt_dt, mdfcn_dt)
                 VALUES (?, 'original content', ?, ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
-                RETURNING dept_task_sn
-                """, Long.class, fixture, actor, actorLogin, actorLogin);
+                """, "dept_task_sn", fixture, actor, actorLogin, actorLogin);
         authenticateRegistrar();
         assertThat(AopUtils.isAopProxy(service)).isTrue();
         assertThat(AopUtils.isAopProxy(notifications)).isTrue();
-        assertThat(storedTask()).containsEntry("version", 0);
+        assertThat(storedTask()).containsEntry("version", 0L);
         assertNotificationRecipients();
     }
 
     @AfterEach
     void removeOnlyOwnFixturesInReferenceOrder() {
         SecurityContextHolder.clearContext();
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY'
                   AND job_cn::jsonb->>'receiver' IN (?, ?, ?)
-                """, actor, winner, contender);
+                """), actor, winner, contender);
         jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id IN (?, ?, ?)", actor, winner, contender);
         jdbc.update("DELETE FROM tb_dept_task_info WHERE frst_rgtr_id=?", actorLogin);
         jdbc.update("DELETE FROM tb_user_info WHERE esntl_id IN (?, ?, ?)", actor, winner, contender);
@@ -114,7 +113,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
     void latestVersionCommitsOneIncrementAndOneNotification() {
         service.reassignDeptJob(task, winner, 0);
 
-        assertThat(storedTask()).containsEntry("version", 1).containsEntry("pic_id", winner)
+        assertThat(storedTask()).containsEntry("version", 1L).containsEntry("pic_id", winner)
                 .containsEntry("dept_task_nm", fixture).containsEntry("dept_task_cn", "original content")
                 .containsEntry("frst_rgtr_id", actorLogin);
         assertNotificationRecipients(winner);
@@ -172,7 +171,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
         read.setPicId(null); // Existing omitted-assignee behavior preserves the current owner.
         read.setPrrtyRnk("3");
         service.updateDeptJob(task, read);
-        assertThat(storedTask()).containsEntry("prrty_rnk", new BigDecimal("3")).containsEntry("version", 1)
+        assertThat(storedTask()).containsEntry("prrty_rnk", 3L).containsEntry("version", 1L)
                 .containsEntry("dept_task_cn", "corrected content").containsEntry("pic_id", actor)
                 .containsEntry("frst_rgtr_id", actorLogin);
         assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("3");
@@ -196,8 +195,8 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
         Long created = service.createDeptJob(DeptJobDto.builder().deptTaskNm(fixture + " priority")
                 .deptTaskCn("explicit priority").prrtyRnk("1").build());
 
-        assertThat(jdbc.queryForMap("SELECT prrty_rnk,version FROM tb_dept_task_info WHERE dept_task_sn=?", created))
-                .containsEntry("prrty_rnk", BigDecimal.ONE).containsEntry("version", 0);
+        assertThat(VendorTestSql.row(jdbc, "SELECT prrty_rnk,version FROM tb_dept_task_info WHERE dept_task_sn=?", created))
+                .containsEntry("prrty_rnk", 1L).containsEntry("version", 0L);
         assertThat(service.getDeptJob(created).getPrrtyRnk()).isEqualTo("1");
         assertNotificationRecipients();
     }
@@ -207,15 +206,15 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
         Long created = service.createDeptJob(DeptJobDto.builder().deptTaskNm(fixture + " null")
                 .deptTaskCn("no priority supplied").build());
         assertThat(service.getDeptJob(created).getPrrtyRnk()).isNull();
-        assertThat(jdbc.queryForMap("SELECT prrty_rnk,pic_id FROM tb_dept_task_info WHERE dept_task_sn=?", created))
+        assertThat(VendorTestSql.row(jdbc, "SELECT prrty_rnk,pic_id FROM tb_dept_task_info WHERE dept_task_sn=?", created))
                 .containsEntry("prrty_rnk", null).containsEntry("pic_id", actor);
 
         service.updateDeptJob(task, DeptJobDto.builder().deptTaskNm(fixture).deptTaskCn("with priority")
                 .prrtyRnk("2").version(0).build());
-        assertThat(storedTask()).containsEntry("prrty_rnk", new BigDecimal("2")).containsEntry("version", 1);
+        assertThat(storedTask()).containsEntry("prrty_rnk", 2L).containsEntry("version", 1L);
         service.updateDeptJob(task, DeptJobDto.builder().deptTaskNm(fixture).deptTaskCn("priority cleared")
                 .version(1).build());
-        assertThat(storedTask()).containsEntry("prrty_rnk", null).containsEntry("version", 2)
+        assertThat(storedTask()).containsEntry("prrty_rnk", null).containsEntry("version", 2L)
                 .containsEntry("pic_id", actor).containsEntry("dept_task_cn", "priority cleared");
         assertThat(service.getDeptJob(task).getPrrtyRnk()).isNull();
         assertNotificationRecipients();
@@ -228,7 +227,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
 
         service.reassignDeptJob(task, winner, 0);
 
-        assertThat(storedTask()).containsEntry("prrty_rnk", new BigDecimal("4")).containsEntry("version", 1)
+        assertThat(storedTask()).containsEntry("prrty_rnk", 4L).containsEntry("version", 1L)
                 .containsEntry("pic_id", winner).containsEntry("dept_task_cn", "original content");
         assertThat(service.getDeptJob(task).getPrrtyRnk()).isEqualTo("4");
         assertNotificationRecipients(winner);
@@ -278,7 +277,7 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
             // The real proxied service also accepts v0 and fully commits before T1 resumes.
             service.reassignDeptJob(task, winner, 0);
             Map<String, Object> committed = storedTask();
-            assertThat(committed).containsEntry("version", 1).containsEntry("pic_id", winner);
+            assertThat(committed).containsEntry("version", 1L).containsEntry("pic_id", winner);
             assertNotificationRecipients(winner);
 
             resume.countDown();
@@ -298,16 +297,16 @@ class DeptJobReassignmentConcurrencyIntegrationTest {
     }
 
     private Map<String, Object> storedTask() {
-        return jdbc.queryForMap("SELECT * FROM tb_dept_task_info WHERE dept_task_sn=?", task);
+        return VendorTestSql.row(jdbc, "SELECT * FROM tb_dept_task_info WHERE dept_task_sn=?", task);
     }
 
     private void assertNotificationRecipients(String... expected) {
         assertThat(jdbc.queryForList("SELECT rcvr_id FROM tb_user_noti WHERE rcvr_id IN (?, ?, ?)",
                 String.class, actor, winner, contender)).containsExactlyInAnyOrder(expected);
-        assertThat(jdbc.queryForList("""
+        assertThat(jdbc.queryForList(VendorTestSql.sql(jdbc, """
                 SELECT job_cn::jsonb->>'receiver' FROM tb_sys_job
                 WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?)
-                """, String.class, actor, winner, contender)).containsExactlyInAnyOrder(expected);
+                """), String.class, actor, winner, contender)).containsExactlyInAnyOrder(expected);
     }
 
     private void insertUser(String id, String login) {
