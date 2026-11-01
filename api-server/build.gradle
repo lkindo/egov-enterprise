@@ -122,6 +122,8 @@ if (project.hasProperty('vendorIntegration')) {
         outputs.cacheIf { false }
         // 커버리지 실행 데이터를 남기지 않는다. 블록 안의 enabled 는 작업 자체를 끄므로 확장을 직접 집는다.
         extensions.getByType(JacocoTaskExtension).enabled = false
+        systemProperty 'junit.jupiter.testclass.order.default', 'nuri.api.schema.VendorClassOrderer'
+        systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
         filter {
             new groovy.json.JsonSlurper().parse(rootProject.file('config/governance/vendor-test-ledger.json')).tests
                     .findAll { it.category != 'replacement' }

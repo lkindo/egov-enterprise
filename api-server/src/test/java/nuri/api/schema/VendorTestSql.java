@@ -2,8 +2,10 @@ package nuri.api.schema;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
+import com.zaxxer.hikari.HikariDataSource;
 import java.math.BigDecimal;
 import java.sql.Connection;
+import java.sql.DriverManager;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -14,6 +16,9 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
+import nuri.foundation.core.persistence.OracleSqlDialect;
+import nuri.foundation.core.persistence.PostgresqlSqlDialect;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import org.springframework.core.env.Environment;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.ArgumentPreparedStatementSetter;
@@ -55,6 +60,32 @@ final class VendorTestSql {
         return Boolean.TRUE.equals(known);
     }
 
+    /** 실행 도구가 벤더 DB 를 준 실행인가. 빌드 시점이 아니라 실행 시점 값이라 시험을 고르는 데도 쓴다. */
+    static boolean vendorRun() {
+        String url = System.getenv("VENDOR_TEST_URL");
+        return url != null && !url.isBlank();
+    }
+
+    static Connection openVendorConnection() throws SQLException {
+        return DriverManager.getConnection(System.getenv("VENDOR_TEST_URL"),
+                System.getenv("SPRING_DATASOURCE_USERNAME"), System.getenv("SPRING_DATASOURCE_PASSWORD"));
+    }
+
+    /** 쿼리마다 연결을 여는 시험의 벤더 풀. Oracle 리스너는 그 속도로 세션을 만들지 못한다(ORA-12516). 운영도 풀을 쓴다. */
+    static HikariDataSource vendorPool() {
+        var pool = new HikariDataSource();
+        pool.setJdbcUrl(System.getenv("VENDOR_TEST_URL"));
+        pool.setUsername(System.getenv("SPRING_DATASOURCE_USERNAME"));
+        pool.setPassword(System.getenv("SPRING_DATASOURCE_PASSWORD"));
+        pool.setMaximumPoolSize(6);
+        return pool;
+    }
+
+    /** 이 DB 의 SQL 포트. */
+    static VendorSqlDialect dialect(JdbcTemplate jdbc) {
+        return isOracle(jdbc) ? new OracleSqlDialect() : new PostgresqlSqlDialect();
+    }
+
     /** 시험이 따로 쥔 연결에서 문장을 돌린다. 연결은 닫지 않는다. */
     static JdbcTemplate on(Connection connection) {
         return new JdbcTemplate(new SingleConnectionDataSource(connection, true));
@@ -70,8 +101,16 @@ final class VendorTestSql {
             assertThat(url).startsWith("jdbc:tc:postgresql:17:");
             return;
         }
+        assertOwned(url, environment.getProperty("vendor.test.owner"), jdbc);
+    }
+
+    /** 스프링 문맥 없이 벤더 DB 를 쓰는 시험의 같은 확인. */
+    static void assertOwnedVendorDatabase(JdbcTemplate jdbc) {
+        assertOwned(System.getenv("VENDOR_TEST_URL"), System.getenv("VENDOR_TEST_OWNER"), jdbc);
+    }
+
+    private static void assertOwned(String url, String owner, JdbcTemplate jdbc) {
         assertThat(url).startsWith("jdbc:oracle:thin:@//127.0.0.1:");
-        String owner = environment.getProperty("vendor.test.owner");
         assertThat(owner).as("벤더 시험은 실행 도구로 돌린다").isNotBlank();
         assertThat(jdbc.queryForObject("SELECT count(*) FROM vendor_test_owner WHERE token = ?", Integer.class, owner)).isEqualTo(1);
     }
@@ -192,6 +231,17 @@ final class VendorTestSql {
         return chain.size() - 1;
     }
 
+    /**
+     * 이 세션을 기다리는 세션이 있는가. 잠금을 쥔 트랜잭션 안에서 되풀이해 묻는 시험용이다. PostgreSQL 의 pg_stat_activity 는 트랜잭션 안에서
+     * 첫 조회 값을 재사용해 늦게 줄 선 세션을 보지 못하므로 실시간인 pg_locks 를 본다.
+     */
+    static boolean hasWaiters(JdbcTemplate jdbc, long blocker) {
+        return isOracle(jdbc)
+                ? waitersBehind(jdbc, blocker) > 0
+                : Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM pg_locks WHERE NOT granted AND ?=ANY(pg_blocking_pids(pid)))",
+                        Boolean.class, blocker));
+    }
+
     /** 응용 잠금을 기다리는 세션 수. PostgreSQL 은 advisory 잠금, Oracle 은 슬롯 행이다. */
     static int waitingOnApplicationLock(JdbcTemplate jdbc, String session) {
         if (isOracle(jdbc)) {
@@ -273,6 +323,52 @@ final class VendorTestSql {
         return isOracle(jdbc)
                 ? jdbc.queryForObject("SELECT count(*) FROM user_constraints WHERE constraint_name = UPPER(?)", Integer.class, constraint)
                 : jdbc.queryForObject("SELECT count(*) FROM pg_constraint WHERE conname=?", Integer.class, constraint);
+    }
+
+    /** 제약이 켜져 있고 기존 행까지 검증됐는가. 제약이 없으면 실패한다. */
+    static boolean constraintValidated(JdbcTemplate jdbc, String constraint) {
+        return isOracle(jdbc)
+                ? "ENABLEDVALIDATED".equals(jdbc.queryForObject("SELECT status || validated FROM user_constraints WHERE constraint_name = UPPER(?)",
+                        String.class, constraint))
+                : Boolean.TRUE.equals(jdbc.queryForObject("SELECT convalidated FROM pg_constraint WHERE conname = ?", Boolean.class, constraint));
+    }
+
+    static boolean indexExists(JdbcTemplate jdbc, String index) {
+        return (isOracle(jdbc)
+                ? jdbc.queryForObject("SELECT count(*) FROM user_indexes WHERE index_name = UPPER(?)", Integer.class, index)
+                : jdbc.queryForObject("SELECT count(*) FROM pg_indexes WHERE schemaname = 'public' AND indexname = ?", Integer.class, index)) == 1;
+    }
+
+    /** 표의 외래 키 컬럼 이름. 소문자다. */
+    static List<String> foreignKeyColumns(JdbcTemplate jdbc, String table) {
+        return isOracle(jdbc)
+                ? jdbc.queryForList("""
+                        SELECT LOWER(k.column_name) FROM user_constraints c
+                        JOIN user_cons_columns k ON k.constraint_name = c.constraint_name
+                        WHERE c.table_name = UPPER(?) AND c.constraint_type = 'R'
+                        """, String.class, table)
+                : jdbc.queryForList("""
+                        SELECT a.attname FROM pg_constraint c
+                        JOIN unnest(c.conkey) AS k(attnum) ON TRUE
+                        JOIN pg_attribute a ON a.attrelid = c.conrelid AND a.attnum = k.attnum
+                        WHERE c.conrelid = ?::regclass AND c.contype = 'f'
+                        """, String.class, table);
+    }
+
+    /** 컬럼 기본값의 정의 문자열. */
+    static String columnDefault(JdbcTemplate jdbc, String table, String column) {
+        return isOracle(jdbc)
+                ? jdbc.queryForObject("SELECT data_default FROM user_tab_columns WHERE table_name = UPPER(?) AND column_name = UPPER(?)",
+                        String.class, table, column)
+                : jdbc.queryForObject("SELECT column_default FROM information_schema.columns WHERE table_name = ? AND column_name = ?",
+                        String.class, table, column);
+    }
+
+    /** DB 가 계산한 한국 날짜(yyyyMMdd). */
+    static String koreanToday(JdbcTemplate jdbc) {
+        return jdbc.queryForObject(isOracle(jdbc)
+                ? "SELECT TO_CHAR(SYSTIMESTAMP AT TIME ZONE 'Asia/Seoul', 'YYYYMMDD') FROM DUAL"
+                : "SELECT to_char((now() AT TIME ZONE 'Asia/Seoul'), 'YYYYMMDD')", String.class);
     }
 
     /** 한 행을 읽는다. 정수는 컬럼 타입과 상관없이 Long 이다. Oracle 은 정수 컬럼도 NUMBER 로 돌려준다. */

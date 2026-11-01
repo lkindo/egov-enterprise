@@ -58,7 +58,7 @@ class ReferenceIntegrityCommunityFkIntegrationTest extends SharedPostgresMigrati
                             + "  file_atch_psblty_yn, atch_psblty_file_qty, cmnty_sn)"
                             + " VALUES ('T_FK_BBS', '시험 게시판', 'BBST01', 'BBSA01', 'Y', 'N', 0, 987654321)"))
                     .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("fk_tb_bbs_master_tb_cmnty_info");
+                    .message().containsIgnoringCase("fk_tb_bbs_master_tb_cmnty_info");
         }
     }
 
@@ -93,37 +93,14 @@ class ReferenceIntegrityCommunityFkIntegrationTest extends SharedPostgresMigrati
     }
 
     private boolean constraintValidated(Statement statement, String name) throws SQLException {
-        try (ResultSet result = statement.executeQuery(
-                "SELECT convalidated FROM pg_constraint WHERE conname='%s'".formatted(name))) {
-            assertThat(result.next()).as("제약 %s 가 없습니다", name).isTrue();
-            return result.getBoolean(1);
-        }
+        return VendorTestSql.constraintValidated(VendorTestSql.on(statement.getConnection()), name);
     }
 
     private boolean indexExists(Statement statement, String name) throws SQLException {
-        try (ResultSet result = statement.executeQuery(
-                "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='%s')"
-                        .formatted(name))) {
-            assertThat(result.next()).isTrue();
-            return result.getBoolean(1);
-        }
+        return VendorTestSql.indexExists(VendorTestSql.on(statement.getConnection()), name);
     }
 
     private List<String> foreignKeyColumns(Statement statement, String table) throws SQLException {
-        List<String> columns = new ArrayList<>();
-        String query = ("SELECT attribute.attname"
-                + "   FROM pg_constraint constraint_row"
-                + "   JOIN unnest(constraint_row.conkey) AS key_column(attnum) ON TRUE"
-                + "   JOIN pg_attribute attribute"
-                + "     ON attribute.attrelid = constraint_row.conrelid"
-                + "    AND attribute.attnum = key_column.attnum"
-                + "  WHERE constraint_row.conrelid = '%s'::regclass"
-                + "    AND constraint_row.contype = 'f'").formatted(table);
-        try (ResultSet result = statement.executeQuery(query)) {
-            while (result.next()) {
-                columns.add(result.getString(1));
-            }
-        }
-        return columns;
+        return VendorTestSql.foreignKeyColumns(VendorTestSql.on(statement.getConnection()), table);
     }
 }

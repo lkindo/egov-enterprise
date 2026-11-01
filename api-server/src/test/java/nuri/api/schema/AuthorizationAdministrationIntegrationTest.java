@@ -56,10 +56,12 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private AuthorizationSnapshotService snapshots;
     private TransactionTemplate transaction;
     private final AtomicInteger selectCount = new AtomicInteger();
+    private com.zaxxer.hikari.HikariDataSource vendorPool;
 
     @AfterEach
     void clearAuthentication() {
         SecurityContextHolder.clearContext();
+        if (vendorPool != null) vendorPool.close();
     }
 
     @Test
@@ -67,8 +69,11 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         migrateThroughAuthorizationCutover();
         try (Connection connection=openConnection()) {
         }
+        vendorPool=VendorTestSql.vendorRun()?VendorTestSql.vendorPool():null;
         DataSource source=new AbstractDataSource() {
-            @Override public Connection getConnection() throws SQLException { return countSql(openConnection(),Connection.class,null); }
+            @Override public Connection getConnection() throws SQLException {
+                return countSql(vendorPool!=null?vendorPool.getConnection():openConnection(),Connection.class,null);
+            }
             @Override public Connection getConnection(String username,String password) throws SQLException {
                 throw new java.sql.SQLFeatureNotSupportedException("Test datasource uses its isolated database credentials");
             }
@@ -76,7 +81,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         jdbc=new JdbcTemplate(source);
         var manager=new DataSourceTransactionManager(source);
         transaction=new TransactionTemplate(manager);
-        var proxy=new ProxyFactory(new AuthorizationAdministrationService(jdbc,new nuri.foundation.core.persistence.PostgresqlSqlDialect()));
+        var proxy=new ProxyFactory(new AuthorizationAdministrationService(jdbc,VendorTestSql.dialect(jdbc)));
         proxy.setProxyTargetClass(true);
         var interceptor=new TransactionInterceptor();
         interceptor.setTransactionManager(manager);
@@ -122,7 +127,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void verifyMultipleGroupsCompleteSnapshotsAndRevocation() {
         service.createGroup(new CreateGroup("T_MULTI_A","테스트 A","\"".repeat(4000)));
         service.createGroup(new CreateGroup("T_MULTI_B","테스트 B",null));
-        assertThat(jdbc.queryForObject("SELECT char_length(chg_aftr_cn) FROM tb_authrt_chg_hstry "
+        assertThat(jdbc.queryForObject("SELECT LENGTH(chg_aftr_cn) FROM tb_authrt_chg_hstry "
                 + "WHERE authrt_cd='T_MULTI_A' AND chg_artcl_nm='authrt_expln'",Integer.class)).isEqualTo(4000);
         long menu=jdbc.queryForObject("SELECT min(menu_sn) FROM tb_menu_info WHERE up_menu_sn IS NULL OR up_menu_sn=0",Long.class);
         List<Grant> a=List.of(new Grant("OPERATION","MENU_READ"),new Grant("NAVIGATION",Long.toString(menu)));
@@ -185,10 +190,12 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void verifyDepartmentDeltasPreserveOtherGroupsAndRejectStaleRosters() {
         // This rejection needs an existing, unassignable group. Reduced bootstrap profiles do not
         // need an anonymous group, so the isolated fixture supplies its own prerequisite.
-        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,frst_rgtr_id,last_mdfr_id,crt_dt,mdfcn_dt) "
-                + "VALUES('ROLE_ANONYMOUS','fixture anonymous','TEST','TEST',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP) "
-                + "ON CONFLICT (authrt_cd) DO NOTHING");
-        jdbc.update("INSERT INTO tb_ognz_info(ognz_id,ognz_nm) VALUES('T_DEPT_A','권한 시험 A'),('T_DEPT_B','권한 시험 B')");
+        if (jdbc.queryForObject("SELECT count(*) FROM tb_authrt_info WHERE authrt_cd='ROLE_ANONYMOUS'",Integer.class)==0) {
+            jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,frst_rgtr_id,last_mdfr_id,crt_dt,mdfcn_dt) "
+                    + "VALUES('ROLE_ANONYMOUS','fixture anonymous','TEST','TEST',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)");
+        }
+        jdbc.update("INSERT INTO tb_ognz_info(ognz_id,ognz_nm) VALUES('T_DEPT_A','권한 시험 A')");
+        jdbc.update("INSERT INTO tb_ognz_info(ognz_id,ognz_nm) VALUES('T_DEPT_B','권한 시험 B')");
         for (String id:List.of("T_DEPT_USER_A","T_DEPT_USER_B","T_DEPT_OUTSIDE")) {
             insertUser(id);
             jdbc.update("UPDATE tb_user_info SET ognz_id=? WHERE esntl_id=?",id.equals("T_DEPT_OUTSIDE")?"T_DEPT_B":"T_DEPT_A",id);
@@ -224,7 +231,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
                 List.of("T_DEPT_USER_A"),"T_MULTI_B","REMOVE",added.version(),true));
         assertThat(service.memberships("T_DEPT_USER_A").groups()).containsExactly("T_MULTI_A");
         assertThat(service.memberships("T_DEPT_USER_B").groups()).containsExactly("T_MULTI_A","T_MULTI_B");
-        var today=jdbc.queryForObject("SELECT CURRENT_DATE",java.sql.Date.class).toLocalDate();
+        var today=java.time.LocalDate.now(nuri.foundation.core.util.ServiceTime.ZONE);
         var history=service.history(0,1,"T_MULTI_B","T_DEPT_USER_A","TEST_OPERATOR",today,today);
         assertThat(history.getTotalElements()).isEqualTo(2);
         assertThat(history.getContent()).hasSize(1);
@@ -343,12 +350,12 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThat(copy.grants()).containsExactlyElementsOf(source.grants());
         assertThat(service.group("T_MULTI_A")).isEqualTo(source);
         assertThat(service.groupMembers("T_COPY_A",0,20).getTotalElements()).isZero();
-        assertThat(jdbc.queryForList("SELECT DISTINCT chg_rsn FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A'",String.class))
-                .containsExactly("복제 원본: T_MULTI_A");
+        assertThat(jdbc.queryForList("SELECT chg_rsn FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A'",String.class))
+                .containsOnly("복제 원본: T_MULTI_A");
         assertThat(jdbc.queryForObject("SELECT count(DISTINCT dmnd_idntfr) FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A'",Long.class)).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_chg_hstry WHERE authrt_cd='T_COPY_A' "
                 + "AND chg_trgt_type_cd='GROUP_GRANT' AND chg_type_cd='ADD'",Long.class)).isEqualTo(source.grants().size());
-        var today=jdbc.queryForObject("SELECT CURRENT_DATE",java.sql.Date.class).toLocalDate();
+        var today=java.time.LocalDate.now(nuri.foundation.core.util.ServiceTime.ZONE);
         assertThat(service.history(0,50,"T_COPY_A",null,null,today,today).getContent())
                 .isNotEmpty().allSatisfy(change -> assertThat(change.reason()).isEqualTo("복제 원본: T_MULTI_A"));
 
@@ -363,8 +370,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThatThrownBy(() -> service.copyGroup("T_MULTI_A",new CopyGroup("T_MULTI_B","x",null,source.version())))
                 .isInstanceOf(BusinessException.class).hasFieldOrPropertyWithValue("errorCode",CommonErrorCode.INVALID_INPUT_VALUE);
         // 원본에 상위 메뉴 없이 하위 메뉴만 보이는 정리되지 않은 표시가 있으면 이름을 밝혀 거부하고 아무것도 만들지 않는다.
-        Long root=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('복제 검증 상위',1,'Y') RETURNING menu_sn",Long.class);
-        Long child=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('복제 검증 하위',?,1,'Y') RETURNING menu_sn",Long.class,root);
+        Long root=VendorTestSql.insertKey(jdbc,"INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('복제 검증 상위',1,'Y')","menu_sn");
+        Long child=VendorTestSql.insertKey(jdbc,"INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('복제 검증 하위',?,1,'Y')","menu_sn",root);
         service.createGroup(new CreateGroup("T_COPY_ORPHAN","정리 안 된 원본",null));
         jdbc.update("INSERT INTO tb_authrt_grnt_map(authrt_cd,authrt_type_cd,authrt_grnt_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
                 + "VALUES('T_COPY_ORPHAN','NAVIGATION',?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')",child.toString());
@@ -400,7 +407,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
             java.util.concurrent.atomic.AtomicReference<java.util.concurrent.Future<Object>> waiting=new java.util.concurrent.atomic.AtomicReference<>();
             transaction.executeWithoutResult(status -> {
                 service.lockAdministration();
-                Long blocker=jdbc.queryForObject("SELECT pg_backend_pid()",Long.class);
+                long blocker=VendorTestSql.sessionId(jdbc);
                 waiting.set(executor.submit(() -> {
                     authenticate(stale);
                     try {
@@ -415,9 +422,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
                 long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
                 boolean blocked=false;
                 while (System.nanoTime()<deadline) {
-                    Boolean observed=jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM pg_locks "
-                            + "WHERE NOT granted AND ?=ANY(pg_blocking_pids(pid)))",Boolean.class,blocker);
-                    if (Boolean.TRUE.equals(observed)) { blocked=true; break; }
+                    if (VendorTestSql.hasWaiters(jdbc,blocker)) { blocked=true; break; }
                     java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));
                 }
                 assertThat(blocked).as("stale request must actually wait on the administrative row lock").isTrue();
@@ -432,10 +437,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void verifyAuditFailureRollsBackTheActualServiceMutation() {
         service.createGroup(new CreateGroup("T_AUDIT","감사 실패 검증",null));
         var before=service.group("T_AUDIT");
-        jdbc.execute("CREATE FUNCTION reject_authorization_test_audit() RETURNS trigger LANGUAGE plpgsql AS $$ "
-                + "BEGIN IF NEW.authrt_cd='T_AUDIT' THEN RAISE EXCEPTION 'intentional audit failure'; END IF; RETURN NEW; END $$");
-        jdbc.execute("CREATE TRIGGER reject_authorization_test_audit BEFORE INSERT ON tb_authrt_chg_hstry "
-                + "FOR EACH ROW EXECUTE FUNCTION reject_authorization_test_audit()");
+        VendorTestSql.failingTrigger(jdbc,"reject_authorization_test_audit","BEFORE INSERT","tb_authrt_chg_hstry",
+                "NEW.authrt_cd='T_AUDIT'","intentional audit failure");
         try {
             assertThatThrownBy(() -> service.replaceGrants("T_AUDIT",new ReplaceGrants(
                     List.of(new Grant("OPERATION","MENU_READ")),before.version(),true)))
@@ -443,8 +446,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
             assertThat(service.group("T_AUDIT")).isEqualTo(before);
             assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_cd='T_AUDIT'",Long.class)).isZero();
         } finally {
-            jdbc.execute("DROP TRIGGER reject_authorization_test_audit ON tb_authrt_chg_hstry");
-            jdbc.execute("DROP FUNCTION reject_authorization_test_audit()");
+            VendorTestSql.dropFailingTrigger(jdbc,"reject_authorization_test_audit","tb_authrt_chg_hstry");
         }
         var denied=CustomUserDetails.builder().userId("viewer").esntlId("VIEWER").enabled(true)
                 .groups(List.of("ROLE_ADMIN")).permissions(List.of("AUTHRT_READ")).build();
@@ -457,9 +459,9 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void verifyNavigationHierarchy() throws Exception {
         String group="T_NAV_HIERARCHY";
         service.createGroup(new CreateGroup(group,"메뉴 계층 검증",null));
-        Long root=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('계층 검증 상위',1,'Y') RETURNING menu_sn",Long.class);
-        Long child=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('계층 검증 하위',?,1,'Y') RETURNING menu_sn",Long.class,root);
-        Long leaf=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('계층 검증 말단',?,1,'Y') RETURNING menu_sn",Long.class,child);
+        Long root=VendorTestSql.insertKey(jdbc,"INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('계층 검증 상위',1,'Y')","menu_sn");
+        Long child=VendorTestSql.insertKey(jdbc,"INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('계층 검증 하위',?,1,'Y')","menu_sn",root);
+        Long leaf=VendorTestSql.insertKey(jdbc,"INSERT INTO tb_menu_info(menu_nm,up_menu_sn,menu_ordr,use_yn) VALUES('계층 검증 말단',?,1,'Y')","menu_sn",child);
         Grant operation=new Grant("OPERATION","MENU_READ");
         Grant parentGrant=new Grant("NAVIGATION",root.toString());
         Grant childGrant=new Grant("NAVIGATION",child.toString());
@@ -512,7 +514,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
             transaction.executeWithoutResult(status -> {
                 // Match a menu edit: UPDATE locks the leaf; the deferred parent FK runs at commit.
                 jdbc.update("UPDATE tb_menu_info SET up_menu_sn=? WHERE menu_sn=?",root,leaf);
-                Long blocker=jdbc.queryForObject("SELECT pg_backend_pid()",Long.class);
+                long blocker=VendorTestSql.sessionId(jdbc);
                 saving.set(executor.submit(() -> {
                     authenticateOperator();
                     try {
@@ -523,9 +525,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
                 long deadline=System.nanoTime()+TimeUnit.SECONDS.toNanos(5);
                 boolean blocked=false;
                 while (System.nanoTime()<deadline) {
-                    Boolean observed=jdbc.queryForObject("SELECT EXISTS(SELECT 1 FROM pg_locks "
-                            + "WHERE NOT granted AND ?=ANY(pg_blocking_pids(pid)))",Boolean.class,blocker);
-                    if (Boolean.TRUE.equals(observed)) { blocked=true; break; }
+                    if (VendorTestSql.hasWaiters(jdbc,blocker)) { blocked=true; break; }
                     java.util.concurrent.locks.LockSupport.parkNanos(TimeUnit.MILLISECONDS.toNanos(20));
                 }
                 assertThat(blocked).as("grant save must wait for the concurrent menu move").isTrue();
@@ -546,7 +546,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         service.replaceNavigationGrants("ROLE_ADMIN",List.of(),before.version());
         assertThat(service.group("ROLE_ADMIN").grants()).containsExactlyElementsOf(operations);
         Long menu=transaction.execute(status -> {
-            Long id=jdbc.queryForObject("INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('권한 전환 시험 메뉴',1,'Y') RETURNING menu_sn",Long.class);
+            Long id=VendorTestSql.insertKey(jdbc,"INSERT INTO tb_menu_info(menu_nm,menu_ordr,use_yn) VALUES('권한 전환 시험 메뉴',1,'Y')","menu_sn");
             service.grantNewMenuToCompatibilityAdmin(id);
             return id;
         });
@@ -639,7 +639,10 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
             if (method.getName().equals("equals")) return proxy == args[0];
             if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
             try {
-                Object result = method.invoke(delegate,args);
+                // 운영의 IsolationMappingDataSource 와 같다. Oracle 은 REPEATABLE READ 를 받지 않는다.
+                boolean snapshot=VendorTestSql.vendorRun() && method.getName().equals("setTransactionIsolation")
+                        && Integer.valueOf(Connection.TRANSACTION_REPEATABLE_READ).equals(args[0]);
+                Object result = method.invoke(delegate,snapshot?new Object[]{Connection.TRANSACTION_SERIALIZABLE}:args);
                 String sql = preparedSql != null ? preparedSql
                         : args != null && args.length > 0 && args[0] instanceof String text ? text : null;
                 if (method.getName().startsWith("execute") && sql != null

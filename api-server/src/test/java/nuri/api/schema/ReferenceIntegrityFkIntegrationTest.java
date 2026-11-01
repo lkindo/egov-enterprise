@@ -3,6 +3,7 @@ package nuri.api.schema;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -49,19 +50,19 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
                     "INSERT INTO tb_user_info (esntl_id, user_id, pswd, user_nm, sbscrb_ymd, ognz_id)"
                             + " VALUES ('T_FK_USER', 't_fk_user', 'x', '시험 사용자', '20260917', 'NO_SUCH_DEPT')"))
                     .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("fk_tb_user_info_tb_ognz_info");
+                    .message().containsIgnoringCase("fk_tb_user_info_tb_ognz_info");
 
             assertThatThrownBy(() -> statement.executeUpdate(
                     "INSERT INTO tb_ognz_info (ognz_id, ognz_nm, up_ognz_id)"
                             + " VALUES ('T_FK_DEPT', '시험 부서', 'NO_SUCH_PARENT')"))
                     .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("fk_tb_ognz_info_up_ognz_id");
+                    .message().containsIgnoringCase("fk_tb_ognz_info_up_ognz_id");
 
             assertThatThrownBy(() -> statement.executeUpdate(
                     "INSERT INTO tb_admdst_cd (admdst_cd, up_admdst_cd)"
                             + " VALUES ('T_FK_ADM', 'NO_SUCH_UP')"))
                     .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("fk_tb_admdst_cd_up_admdst_cd");
+                    .message().containsIgnoringCase("fk_tb_admdst_cd_up_admdst_cd");
         }
     }
 
@@ -93,28 +94,26 @@ class ReferenceIntegrityFkIntegrationTest extends SharedPostgresMigrationTestSup
         }
     }
 
+    @Override
+    protected void cleanVendorFixtures(JdbcTemplate jdbc) {
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id = 'T_NO_DEPT'");
+        jdbc.update("DELETE FROM tb_ognz_info WHERE ognz_id = 'T_ROOT_DEPT'");
+        jdbc.update("DELETE FROM tb_admdst_cd WHERE admdst_cd = 'T_ROOT_ADM'");
+    }
+
     private boolean constraintValidated(Statement statement, String name) throws SQLException {
-        try (ResultSet result = statement.executeQuery(
-                "SELECT convalidated FROM pg_constraint WHERE conname='%s'".formatted(name))) {
-            assertThat(result.next()).as("제약 %s 가 없습니다", name).isTrue();
-            return result.getBoolean(1);
-        }
+        return VendorTestSql.constraintValidated(VendorTestSql.on(statement.getConnection()), name);
     }
 
     private boolean indexExists(Statement statement, String name) throws SQLException {
-        try (ResultSet result = statement.executeQuery(
-                "SELECT EXISTS (SELECT 1 FROM pg_indexes WHERE schemaname='public' AND indexname='%s')"
-                        .formatted(name))) {
-            assertThat(result.next()).isTrue();
-            return result.getBoolean(1);
-        }
+        return VendorTestSql.indexExists(VendorTestSql.on(statement.getConnection()), name);
     }
 
     private boolean rowExists(Statement statement, String table, String predicate) throws SQLException {
         try (ResultSet result = statement.executeQuery(
-                "SELECT EXISTS (SELECT 1 FROM %s WHERE %s)".formatted(table, predicate))) {
+                "SELECT count(*) FROM %s WHERE %s".formatted(table, predicate))) {
             assertThat(result.next()).isTrue();
-            return result.getBoolean(1);
+            return result.getInt(1) > 0;
         }
     }
 }

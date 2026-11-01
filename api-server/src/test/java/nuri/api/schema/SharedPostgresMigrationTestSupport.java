@@ -7,6 +7,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.TestInstance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.testcontainers.postgresql.PostgreSQLContainer;
 
 import java.sql.Connection;
@@ -26,6 +27,9 @@ import java.util.concurrent.atomic.AtomicLong;
  * 따라서 migration target과 fixture가 서로 오염되지 않으며 JUnit 병렬 실행에서도 이름이 충돌하지 않는다.
  * 접속 암호는 소스에 두지 않고 JVM마다 생성하며, 클래스 종료 시 강제 drop해 실패한 연결도 정리한다.
  * 공용 서버는 테스트 JVM의 정상 종료 훅이 정리하며, 시작 실패 시에도 즉시 정리를 시도한다.
+ *
+ * <p>벤더 실행(ADR-0047 D-10)에서는 서버를 띄우지 않는다. 실행 도구가 번역 스키마를 올린 일회용 DB 를 클래스들이 같이 쓰므로,
+ * 마이그레이션은 하지 않고 클래스가 남긴 행은 {@link #cleanVendorFixtures} 로 지운다.
  */
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 public abstract class SharedPostgresMigrationTestSupport {
@@ -52,9 +56,17 @@ public abstract class SharedPostgresMigrationTestSupport {
     private static final String[] SERVER_COMMAND = {"postgres", "-c", "fsync=off", "-c", "autovacuum=off"};
 
     private String databaseName;
+    private boolean vendorDatabaseOwned;
 
     @BeforeAll
     final void createIsolatedDatabase() throws SQLException {
+        if (VendorTestSql.vendorRun()) {
+            try (Connection connection = openConnection()) {
+                VendorTestSql.assertOwnedVendorDatabase(VendorTestSql.on(connection));
+            }
+            vendorDatabaseOwned = true;
+            return;
+        }
         PostgreSQLContainer server = ServerHolder.INSTANCE;
         if (SERVER_START_COUNT.get() != 1 || !server.isRunning()) {
             throw new IllegalStateException("공용 PostgreSQL 서버는 테스트 JVM에서 정확히 한 번 실행돼야 합니다");
@@ -76,6 +88,16 @@ public abstract class SharedPostgresMigrationTestSupport {
 
     @AfterAll
     final void dropIsolatedDatabase() throws SQLException {
+        if (VendorTestSql.vendorRun()) {
+            // @BeforeAll 이 실패해도 이 단계는 돈다. 소유를 확인하지 못한 DB 의 행은 지우지 않는다.
+            if (vendorDatabaseOwned) {
+                try (Connection connection = openConnection()) {
+                    VendorTestSql.assertOwnedVendorDatabase(VendorTestSql.on(connection));
+                    cleanVendorFixtures(VendorTestSql.on(connection));
+                }
+            }
+            return;
+        }
         String candidate = databaseName;
         if (candidate == null) {
             return;
@@ -91,7 +113,14 @@ public abstract class SharedPostgresMigrationTestSupport {
         }
     }
 
+    /** 벤더 실행에서 이 클래스가 남긴 행을 지운다. PostgreSQL 은 클래스 DB 를 통째로 지워 할 일이 없다. */
+    protected void cleanVendorFixtures(JdbcTemplate jdbc) {
+    }
+
     protected final Connection openConnection() throws SQLException {
+        if (VendorTestSql.vendorRun()) {
+            return VendorTestSql.openVendorConnection();
+        }
         return DriverManager.getConnection(
                 jdbcUrl(requiredDatabaseName()),
                 ServerHolder.INSTANCE.getUsername(),
@@ -113,6 +142,9 @@ public abstract class SharedPostgresMigrationTestSupport {
 
     /** Current physical model: preserve the exact expansion snapshots until Contract succeeds. */
     protected final void migrateThroughAuthorizationCutover() throws SQLException {
+        if (VendorTestSql.vendorRun()) {
+            return;
+        }
         AuthorizationCutoverTestSupport.migrate(flyway(null));
     }
 

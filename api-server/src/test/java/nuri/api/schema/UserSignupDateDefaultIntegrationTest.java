@@ -3,6 +3,7 @@ package nuri.api.schema;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
 
 import java.sql.Connection;
 import java.sql.ResultSet;
@@ -39,13 +40,12 @@ class UserSignupDateDefaultIntegrationTest extends SharedPostgresMigrationTestSu
                             + " VALUES ('T_SIGNUP_DEFAULT', 't_signup_default', 'x', '기본값 사용자')");
 
             try (ResultSet result = statement.executeQuery(
-                    "SELECT sbscrb_ymd, to_char((now() AT TIME ZONE 'Asia/Seoul'), 'YYYYMMDD')"
-                            + " FROM tb_user_info WHERE esntl_id = 'T_SIGNUP_DEFAULT'")) {
+                    "SELECT sbscrb_ymd FROM tb_user_info WHERE esntl_id = 'T_SIGNUP_DEFAULT'")) {
                 assertThat(result.next()).isTrue();
                 String stored = result.getString(1);
                 assertThat(stored).matches("\\d{8}");
-                // 같은 접속에서 같은 식으로 계산한 오늘과 같아야 한다(자정 경계는 같은 트랜잭션 시각이라 갈리지 않는다).
-                assertThat(stored).isEqualTo(result.getString(2));
+                // 같은 접속에서 DB 가 계산한 한국 날짜와 같아야 한다.
+                assertThat(stored).isEqualTo(VendorTestSql.koreanToday(VendorTestSql.on(connection)));
             }
         }
     }
@@ -55,15 +55,15 @@ class UserSignupDateDefaultIntegrationTest extends SharedPostgresMigrationTestSu
     void defaultExpressionIsPinned() throws SQLException {
         migrateThroughAuthorizationCutover();
 
-        try (Connection connection = openConnection();
-             Statement statement = connection.createStatement();
-             ResultSet result = statement.executeQuery(
-                     "SELECT column_default FROM information_schema.columns"
-                             + " WHERE table_name = 'tb_user_info' AND column_name = 'sbscrb_ymd'")) {
-            assertThat(result.next()).isTrue();
-            String definition = result.getString(1);
+        try (Connection connection = openConnection()) {
+            String definition = VendorTestSql.columnDefault(VendorTestSql.on(connection), "tb_user_info", "sbscrb_ymd");
             assertThat(definition).contains("Asia/Seoul").contains("YYYYMMDD");
             assertThat(definition.toUpperCase()).doesNotContain("CURRENT_TIMESTAMP");
         }
+    }
+
+    @Override
+    protected void cleanVendorFixtures(JdbcTemplate jdbc) {
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id = 'T_SIGNUP_DEFAULT'");
     }
 }
