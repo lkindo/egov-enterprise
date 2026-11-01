@@ -71,7 +71,14 @@ test.describe('공통 셸과 인증', () => {
                             reason: '로그아웃 후 보호 경로 재진입 시 /login 으로 튕겨나와 세션 유무를 확인하는 요청이다.',
                             expiresAt: '2026-12-31',
                         }]);
-                    await page.goto('/admin');
+                    // CI 41282070271: 로그아웃은 진행 중인 이전 계정 조회를 취소한다. 초기 셸 조회를 끝낸 뒤 세션 종료를 검사한다.
+                    const [bookmarkStatus] = await Promise.all([
+                        page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/bookmarks/status'
+                            && response.request().method() === 'GET'),
+                        page.goto('/admin'),
+                    ]);
+                    expect(bookmarkStatus.status(), '초기 즐겨찾기 상태 조회가 성공해야 한다').toBe(200);
+                    expect(await bookmarkStatus.finished(), '로그아웃 전에 초기 즐겨찾기 조회가 완료되어야 한다').toBeNull();
                     // 로그아웃 시각은 초로 내려 발급 시각과 비교한다 — 같은 초에 발급된 토큰은 남는다(재로그인 보호 경계).
                     //   서버 무효화를 결정적으로 보려고 이 토큰의 발급 초가 지난 뒤에 로그아웃한다.
                     await waitPastIssuedSecond(fixture.authorization.Authorization);
