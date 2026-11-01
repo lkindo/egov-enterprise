@@ -6,13 +6,15 @@
  * 사용: node scripts/project-composer-vendor-differential.mjs --input <입력 JSON> --vendor <id> --container <기준 PostgreSQL> --user <사용자> --database <임시 DB>
  */
 import { spawnSync } from 'node:child_process';
+import { randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { buildVendorModel, columnsIn, gap } from './project-composer-vendor-model.mjs';
 import { expandIff } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
-import { parseCount, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
+import { COMPOSER_POSTGRES_IMAGE } from './project-composer-postgres.mjs';
+import { VENDOR_CONTAINER_LABEL, parseCount, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 
 /** 정규식마다 맞는 값과 틀린 값. 맞는 값 뒤의 줄바꿈은 항상 시험한다(`$` 함정). */
 const REGEX_SAMPLES = Object.freeze({
@@ -308,11 +310,28 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
   return report;
 }
 
+/** 기준 PostgreSQL 을 주지 않으면 일회용으로 띄운다. 생성물 검증에는 띄워 둔 DB 가 없다. */
+function withDisposablePostgres(run) {
+  const name = `egov-vendor-baseline-${randomBytes(4).toString('hex')}`;
+  const started = spawnSync('docker', ['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=postgresql`, '--env', 'POSTGRES_USER=composer',
+    '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', COMPOSER_POSTGRES_IMAGE], { encoding: 'utf8' });
+  if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${started.stderr.slice(0, 200)}`);
+  try {
+    for (let attempt = 0; spawnSync('docker', ['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']).status !== 0; attempt += 1) {
+      if (attempt > 240) throw new Error('기준 PostgreSQL 이 준비되지 않았다.');
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
+    }
+    return run({ container: name, user: 'composer', database: 'composer' });
+  } finally {
+    spawnSync('docker', ['rm', '-f', '-v', name], { stdio: 'ignore' });
+  }
+}
+
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const args = {};
   for (let index = 2; index < process.argv.length; index += 2) args[process.argv[index].replace(/^--/, '')] = process.argv[index + 1];
-  const result = runDifferential({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine,
-    postgres: { container: args.container, user: args.user, database: args.database } });
+  const run = postgres => runDifferential({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine, postgres });
+  const result = args.container ? run({ container: args.container, user: args.user, database: args.database }) : withDisposablePostgres(run);
   if (args.report) writeFileSync(args.report, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
   console.log(`[vendor-differential] ${result.engine}: CHECK ${result.checks}, 값 ${result.rows}(기준 허용 ${result.accepted}, 거부 ${result.rejected}), 불일치 ${result.differences.length}, 한쪽만 나온 CHECK ${result.unbalanced.length}, 트리거 동작 실패 ${result.intentFailures.length}`);
   for (const name of result.unbalanced.slice(0, 12)) console.log(`  표본 부족: ${name}`);

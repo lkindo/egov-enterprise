@@ -40,7 +40,30 @@ function rowCounts(handle, model) {
   }));
 }
 
-/** 스키마와 시드를 적용하고 대상 DB 를 다시 읽어 모델과 맞춘다. 다른 일을 하기 전에 DB 가 믿을 만한지 보는 관문이다. */
+/** 대상 DB 를 다시 읽어 모델과 맞춘다. 다른 일을 하기 전에 DB 가 믿을 만한지 보는 관문이다. Flyway 이력 표는 번들 밖이다. */
+export function assertVendorApplied(handle, input, vendorId, { ignoreTables } = {}) {
+  const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
+  const emission = VENDOR_ADAPTERS[vendorId].emitSchema(model);
+  assertCatalogParity(emission, readCatalog(handle, vendorId), { ignoreTables });
+  const expected = Object.fromEntries(model.tables.map(table => [table.name, input.rows[table.name]?.length ?? 0]));
+  const actual = rowCounts(handle, model);
+  const different = Object.keys(expected).filter(name => expected[name] !== actual[name]);
+  if (different.length) {
+    const error = new Error(`시드 행 수가 다르다: ${different.slice(0, 8).map(name => `${name} ${actual[name]}/${expected[name]}`).join(', ')}`);
+    error.code = 'VENDOR_PARITY_FAILED';
+    throw error;
+  }
+  const next = readNextValues(handle, vendorId);
+  const behind = nextValues(model, input.rows).identities.filter(item => item.next > 1 && !(next.get(item.table) >= item.next));
+  if (behind.length) {
+    const error = new Error(`다음 값이 최대 ID 뒤로 가지 않았다: ${behind.slice(0, 8).map(item => `${item.table} ${next.get(item.table)}/${item.next}`).join(', ')}`);
+    error.code = 'VENDOR_PARITY_FAILED';
+    throw error;
+  }
+  return { emission };
+}
+
+/** 스키마와 시드를 적용하고 대조한다. */
 export function applyVendor(handle, input, vendorId) {
   const adapter = VENDOR_ADAPTERS[vendorId];
   const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
@@ -54,22 +77,7 @@ export function applyVendor(handle, input, vendorId) {
     if (seeded.errors.length) throw stageFailure('시드 적용', seeded.errors);
     const synced = runStatements(handle, sync);
     if (synced.errors.length) throw stageFailure('다음 값 맞춤', synced.errors);
-    assertCatalogParity(emission, readCatalog(handle, vendorId));
-    const expected = Object.fromEntries(model.tables.map(table => [table.name, input.rows[table.name]?.length ?? 0]));
-    const actual = rowCounts(handle, model);
-    const different = Object.keys(expected).filter(name => expected[name] !== actual[name]);
-    if (different.length) {
-      const error = new Error(`시드 행 수가 다르다: ${different.slice(0, 8).map(name => `${name} ${actual[name]}/${expected[name]}`).join(', ')}`);
-      error.code = 'VENDOR_PARITY_FAILED';
-      throw error;
-    }
-    const next = readNextValues(handle, vendorId);
-    const behind = nextValues(model, input.rows).identities.filter(item => item.next > 1 && !(next.get(item.table) >= item.next));
-    if (behind.length) {
-      const error = new Error(`다음 값이 최대 ID 뒤로 가지 않았다: ${behind.slice(0, 8).map(item => `${item.table} ${next.get(item.table)}/${item.next}`).join(', ')}`);
-      error.code = 'VENDOR_PARITY_FAILED';
-      throw error;
-    }
+    assertVendorApplied(handle, input, vendorId);
     return { statements: emission.statements.length, seedRows: seed.length, degradations: emission.degradations };
   }
 }

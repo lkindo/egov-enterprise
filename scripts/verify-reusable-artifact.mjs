@@ -34,7 +34,13 @@ export function verificationSteps(scope = 'full', layout = 'multi-module', { ven
   if (['backend', 'full'].includes(scope)) steps.push(
     { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]),
       '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8'] },
-    ...(vendor ? [{ id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout] }] : []),
+    ...(vendor ? [
+      // 생성물의 기준선 파일을 실제 Flyway 로 적용한 DB 에서 대조하고 시나리오를 돌린다.
+      { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
+        '--flyway', `classpath:db/vendor/${vendor}`] },
+      // 대체 분류 시험의 근거다. CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 대조한다.
+      { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor] },
+    ] : []),
   );
   if (['frontend', 'full'].includes(scope)) steps.push(
     { id: 'typecheck', command: 'pnpm', args: ['-C', 'frontend', 'exec', 'tsc', '--noEmit'] },

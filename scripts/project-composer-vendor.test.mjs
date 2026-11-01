@@ -15,7 +15,7 @@ import { probeRows } from './project-composer-vendor-differential.mjs';
 import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
-import { verificationStepMarkers } from './project-composer-timeline.mjs';
+import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
 import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
@@ -293,6 +293,8 @@ test('catalog parity is red for a missing index, an extra object and a dropped t
   assert.throws(() => assertCatalogParity(emission, { indexes: [], triggers: ['t.tr_a'] }), error => error.code === 'VENDOR_PARITY_FAILED' && /indexes 누락/.test(error.message));
   assert.throws(() => assertCatalogParity(emission, { indexes: ['t.ix_a', 't.ix_b'], triggers: ['t.tr_a'] }), /indexes 초과/);
   assert.throws(() => assertCatalogParity(emission, { indexes: ['t.ix_a'], triggers: [] }), /triggers 누락/);
+  assert.doesNotThrow(() => assertCatalogParity(emission, { indexes: ['t.ix_a', 'flyway_schema_history.fs_idx'], triggers: ['t.tr_a'] }, { ignoreTables: ['flyway_schema_history'] }), 'Flyway 이력 표는 번들 밖이다');
+  assert.throws(() => assertCatalogParity(emission, { indexes: ['t.ix_a', 'other.fs_idx'], triggers: ['t.tr_a'] }, { ignoreTables: ['flyway_schema_history'] }), /indexes 초과/, '지정한 표만 뺀다');
 });
 
 test('seed rows follow foreign keys, self references and the next value contract', () => {
@@ -476,14 +478,18 @@ test('a vendor project verifies on its own database instead of the PostgreSQL sc
   assert.ok(postgresql.find(step => step.id === 'backend').args.includes(':api-server:schemaValidationTest'));
   assert.equal(postgresql.filter(step => step.id === 'backend').length, 1);
   const vendor = verificationSteps('full', 'single-module', { vendor: 'oracle' }).filter(step => step.id === 'backend');
-  assert.equal(vendor.length, 2);
+  assert.equal(vendor.length, 3);
   assert.ok(!vendor[0].args.some(arg => arg.includes('schemaValidationTest')));
-  assert.deepEqual(vendor[1].args, ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath('oracle'), '--vendor', 'oracle', '--layout', 'single-module']);
+  assert.deepEqual(vendor[1].args, ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath('oracle'), '--vendor', 'oracle', '--layout', 'single-module',
+    '--flyway', vendorBaselinePaths('oracle').location]);
+  assert.deepEqual(vendor[2].args, ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath('oracle'), '--vendor', 'oracle']);
   assert.equal(verificationVendor({ vendor: 'postgresql' }), undefined);
   assert.equal(verificationVendor({ vendor: 'oracle' }), 'oracle');
   const markers = verificationStepMarkers({ profile: 'core', layout: 'multi-module', vendor: 'oracle' });
-  assert.equal(markers.get('[reusable-verify] core/multi-module: node scripts/project-composer-vendor-integration.mjs --input config/vendor/oracle/vendor-input.json --vendor oracle --layout multi-module'), 'backend');
+  assert.equal(markers.get('[reusable-verify] core/multi-module: node scripts/project-composer-vendor-integration.mjs --input config/vendor/oracle/vendor-input.json --vendor oracle --layout multi-module --flyway classpath:db/vendor/oracle'), 'backend');
   assert.equal(integrationTask('single-module').task, ':vendorIntegrationTest');
+  assert.equal(integrationTask('single-module').migrate, ':vendorFlywayMigrate');
+  assert.throws(() => assertTestsRan('없는 폴더', []), /돌릴 시험이 없다/, '시험이 모두 빠지면 통과가 아니다');
   assert.equal(integrationTask().task, ':api-server:vendorIntegrationTest');
   assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--layout', 'single-module']), { input: 'x.json', vendor: 'oracle', layout: 'single-module' });
   assert.deepEqual(ledgerClasses({ tests: [{ test: 'A.java', category: 'as-is' }, { test: 'B.java', category: 'as-is' }] }, name => name === 'B'), ['B'], '구성에서 빠진 시험은 돌았는지 묻지 않는다');
@@ -501,6 +507,11 @@ test('a failure in the vendor test command is reported as its own command', () =
       checkedAt: new Date().toISOString(), failure, steps: [{ ...failure, result: 'failed' }] }));
     const composition = { sourceCommit: 'abc', backendLayout: 'multi-module', profile: 'core', database: { vendor: 'oracle' } };
     assert.deepEqual(failedVerificationStep(directory, composition, new Date(0).toISOString()), { step: 'backend', command: line });
+    const clock = { value: 1000 };
+    const timeline = createJobTimeline({ now: () => clock.value });
+    timeline.stage('verify');
+    timeline.finish('passed', { verificationSteps: [{ step: 'backend', result: 'passed', durationMs: 1000 }, { step: 'backend', result: 'passed', durationMs: 9000 }] });
+    assert.equal(timeline.snapshot().steps.find(item => item.id === 'backend').durationMs, 10000, '같은 단계의 명령 시간을 더한다');
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
@@ -515,6 +526,7 @@ test('the development stack moves to the vendor service and leaves the applicati
 
   api:
     environment:
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
       SPRING_APPLICATION_JSON: >
         { "url": "jdbc:postgresql://db:5432/egovdb" }
 
@@ -528,25 +540,31 @@ volumes:
   assert.match(projected, /jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1/);
   assert.match(projected, /^ {2}api:$/m);
   assert.match(projected, /^ {2}oracle_data:$/m);
+  assert.equal(projectVendorCompose(`${compose}      SPRING_FLYWAY_LOCATIONS: \${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/seed-dev}\n`, 'oracle').includes('classpath:db/migration'), false, '환경 변수가 설정 파일을 이기므로 compose 에 PostgreSQL 위치를 남기지 않는다');
   assert.throws(() => projectVendorCompose('services:\n  web:\n', 'oracle'), /compose db 서비스/);
 
   const prod = projectVendorComposeProd(`    environment:
       POSTGRES_USER: \${DB_USERNAME:?필요}
       POSTGRES_PASSWORD: \${DB_PASSWORD:?필요}
+      SPRING_FLYWAY_LOCATIONS: classpath:db/migration
 `, 'oracle');
+  assert.match(prod, /SPRING_FLYWAY_LOCATIONS: classpath:db\/vendor\/oracle/);
   assert.match(prod, /APP_USER: \$\{DB_USERNAME/);
   assert.match(prod, /APP_USER_PASSWORD: \$\{DB_PASSWORD/);
-  assert.match(prod, /ORACLE_PASSWORD: \$\{DB_PASSWORD/);
+  assert.match(prod, /ORACLE_PASSWORD: \$\{DB_ADMIN_PASSWORD/, 'SYS 비밀번호는 앱 비밀번호와 나눈다');
   assert.doesNotMatch(prod, /POSTGRES/);
 
-  const deploy = projectVendorDeploy(`case "$DB_URL" in
+  const deploy = projectVendorDeploy(`for v in DB_URL DB_PASSWORD MAIL_HOST; do
+case "$DB_URL" in
     jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*) ;;
     *) echo "전용입니다(jdbc:postgresql://db:5432/egovdb)" ;;
 esac
 `, 'oracle');
   assert.doesNotMatch(deploy, /postgresql/);
+  assert.match(deploy, /DB_PASSWORD DB_ADMIN_PASSWORD MAIL_HOST/);
   assert.match(deploy, /^ {4}jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1\) ;;$/m);
 
-  assert.equal(projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_USERNAME=egov\n', 'oracle'),
-    `DB_URL=${VENDOR_SOURCE.oracle.url}\nDB_USERNAME=egov\n`);
+  const environment = projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_PASSWORD=egov123\n', 'oracle');
+  assert.match(environment, new RegExp(`^DB_URL=${VENDOR_SOURCE.oracle.url}$`, 'm'));
+  assert.match(environment, /^DB_ADMIN_PASSWORD=/m);
 });

@@ -112,6 +112,13 @@ tasks.named('check') {
 // 벤더 DB 에서 도는 통합 시험(ADR-0047 D-10). scripts/project-composer-vendor-integration.mjs 가 DB 를 준비해 부른다.
 // 돌릴 시험은 벤더 시험 원장이 정하고 접속 값은 시험 프로필을 덮는 환경 변수로 받는다. 평소 빌드에는 이 작업이 없어 커버리지 집계에 끼지 않는다.
 if (project.hasProperty('vendorIntegration')) {
+    // 생성물의 번역 기준선을 운영과 같은 Flyway 로 적용한다. 실행 도구가 시험 앞에 부른다.
+    tasks.register('vendorFlywayMigrate', JavaExec) {
+        description = '번역 기준선을 Flyway 로 벤더 일회용 DB 에 적용한다'
+        group = 'Verification'
+        classpath = sourceSets.test.runtimeClasspath
+        mainClass = 'nuri.api.schema.VendorFlywayMigrate'
+    }
     tasks.register('vendorIntegrationTest', Test) {
         description = '벤더 일회용 DB 에서 시나리오 통합 시험을 실행한다'
         group = 'Verification'

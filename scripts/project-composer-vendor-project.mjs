@@ -52,7 +52,8 @@ export const VENDOR_SOURCE = Object.freeze({
 
 `,
     composeProd: [[/^(\s*)POSTGRES_USER: (\$\{DB_USERNAME:\?[^\n]*\})$/m, '$1APP_USER: $2'],
-      [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_USER_PASSWORD: $2\n$1ORACLE_PASSWORD: $2']],
+      // ORACLE_PASSWORD 는 SYS 비밀번호다. 앱 자격이 새도 관리자 자격까지 번지지 않게 나눈다.
+      [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_USER_PASSWORD: $2\n$1ORACLE_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}']],
   }),
 });
 
@@ -109,24 +110,29 @@ export function projectVendorCompose(text, vendorId) {
   const source = VENDOR_SOURCE[vendorId];
   const service = replaceRequired(text, /^ {2}db:\n[\s\S]*?(?=^ {2}api:\n)/m, source.composeService, 'compose db 서비스');
   const urls = replaceRequired(service, /jdbc:postgresql:\/\/db:5432\/egovdb/g, source.composeUrl, 'compose 접속 주소');
-  return replaceRequired(urls, /\bpostgres_data\b/g, source.composeVolume, 'compose 볼륨');
+  const volume = replaceRequired(urls, /\bpostgres_data\b/g, source.composeVolume, 'compose 볼륨');
+  // 환경 변수가 설정 파일을 이긴다. 두면 Oracle 에 PostgreSQL 번들을 적용한다.
+  return replaceRequired(volume, /classpath:db\/migration(?:,classpath:db\/seed-dev)?/g, vendorBaselinePaths(vendorId).location, 'compose Flyway 위치');
 }
 
 /** 운영 오버레이의 DB 자격을 벤더 이미지의 환경 변수로 바꾼다. */
 export function projectVendorComposeProd(text, vendorId) {
-  return VENDOR_SOURCE[vendorId].composeProd.reduce((projected, [pattern, replacement]) => replaceRequired(projected, pattern, replacement, 'compose 운영 자격'), text);
+  const credentials = VENDOR_SOURCE[vendorId].composeProd.reduce((projected, [pattern, replacement]) => replaceRequired(projected, pattern, replacement, 'compose 운영 자격'), text);
+  return replaceRequired(credentials, /classpath:db\/migration/g, vendorBaselinePaths(vendorId).location, 'compose 운영 Flyway 위치');
 }
 
 /** 배포 스크립트가 받는 번들 DB 주소를 바꾼다. */
 export function projectVendorDeploy(text, vendorId) {
   const { composeUrl } = VENDOR_SOURCE[vendorId];
-  const guarded = replaceRequired(text, /jdbc:postgresql:\/\/db:5432\/egovdb\|jdbc:postgresql:\/\/db:5432\/egovdb\\\?\*\)/, `${composeUrl})`, '배포 스크립트 주소 검사');
+  const required = replaceRequired(text, /^(for v in [^\n]*\bDB_PASSWORD\b)/m, '$1 DB_ADMIN_PASSWORD', '배포 스크립트 필수 변수');
+  const guarded = replaceRequired(required, /jdbc:postgresql:\/\/db:5432\/egovdb\|jdbc:postgresql:\/\/db:5432\/egovdb\\\?\*\)/, `${composeUrl})`, '배포 스크립트 주소 검사');
   return replaceRequired(guarded, /jdbc:postgresql:\/\/db:5432\/egovdb/g, composeUrl, '배포 스크립트 안내');
 }
 
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
 export function projectVendorEnvironment(text, vendorId) {
-  return replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
+  const url = replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
+  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me', '.env.example 비밀번호');
 }
 
 const vendorReadme = vendorId => `

@@ -78,9 +78,10 @@ export function createJobTimeline({ now = Date.now } = {}) {
         if (items.get('verify').status === 'passed') {
           for (const id of VERIFICATION_STEP_IDS) {
             const item = items.get(id);
-            const reported = measured.find(entry => entry?.step === id && entry.result === 'passed');
+            // 벤더 구성은 한 단계에 명령이 여럿이라 시간을 더한다.
+            const reported = measured.filter(entry => entry?.step === id && entry.result === 'passed');
             if (item.status === 'pending') item.status = 'passed';
-            if (duration(reported?.durationMs)) item.durationMs = reported.durationMs;
+            if (reported.length && reported.every(entry => duration(entry.durationMs))) item.durationMs = reported.reduce((sum, entry) => sum + entry.durationMs, 0);
           }
         }
       } else {

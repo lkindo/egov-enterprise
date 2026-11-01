@@ -196,11 +196,12 @@ export function nextValues(model, rows) {
 }
 
 /** 대상 DB 메타를 다시 읽은 결과와 어댑터가 낸 기대치를 대조한다. 이름은 벤더마다 대소문자가 달라 소문자로 맞춘다. */
-export function assertCatalogParity(emission, actual) {
+export function assertCatalogParity(emission, actual, { ignoreTables = [] } = {}) {
   const problems = [];
+  const ignored = item => ignoreTables.some(table => item.startsWith(`${table}.`));
   for (const kind of Object.keys(emission.expected)) {
     const expected = new Set(emission.expected[kind].map(item => item.toLowerCase()));
-    const found = new Set((actual[kind] ?? []).map(item => item.toLowerCase()));
+    const found = new Set((actual[kind] ?? []).map(item => item.toLowerCase()).filter(item => !ignored(item)));
     const missing = [...expected].filter(item => !found.has(item));
     const unexpected = [...found].filter(item => !expected.has(item));
     if (missing.length) problems.push(`${kind} 누락 ${missing.length}: ${missing.slice(0, 8).join(', ')}`);
