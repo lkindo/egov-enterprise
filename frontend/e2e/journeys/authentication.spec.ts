@@ -133,7 +133,14 @@ test.describe('공통 셸과 인증', () => {
                             expiresAt: '2026-12-31',
                         }]);
                     console.log('>>> Navigating to User Portal Home');
-                    await page.goto('/');
+                    // 일반 사용자도 같은 셸 조회를 끝낸 뒤 로그아웃해야 의도적인 요청 취소와 경쟁하지 않는다.
+                    const [bookmarkStatus] = await Promise.all([
+                        page.waitForResponse(response => new URL(response.url()).pathname === '/api/v1/menus/bookmarks/status'
+                            && response.request().method() === 'GET'),
+                        page.goto('/'),
+                    ]);
+                    expect(bookmarkStatus.status(), '초기 즐겨찾기 상태 조회가 성공해야 한다').toBe(200);
+                    expect(await bookmarkStatus.finished(), '로그아웃 전에 초기 즐겨찾기 조회가 완료되어야 한다').toBeNull();
                     await waitPastIssuedSecond(fixture.authorization.Authorization);
                     // [E2E 감사 B] isVisible 가드 제거 — 프로필 버튼이 없으면 실패시키고, 제목이 약속한 '로그아웃'을 실제 수행한다.
                     // (과거: 유일한 expect가 가드 안에 있어 버튼 부재 시 무단언 통과, 존재 시 가드 조건과 동일한 tautology였음)
