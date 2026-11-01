@@ -55,3 +55,4 @@
 | [ADR-0046](ADR-0046-empty-numeric-transition-and-log-duration-standard.md) | 빈 표·정비창 한정 숫자 세 컬럼 NUMERIC 전환과 처리소요밀리초 표준, 공유 DB 실행 별도 승인 | Accepted |
 | [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) | 프로젝트 생성기의 다중 DB 선택과 벤더 SQL 경계 — PostgreSQL 단일 정본, 벤더 어댑터, 포트·린터, 차등 시험 | Accepted |
 | [ADR-0048](ADR-0048-personal-attachment-deletion-and-uploader-window.md) | 업로더 근거의 범위와 개인 귀속 첨부의 개별 삭제 | Accepted |
+| [ADR-0049](ADR-0049-retire-workflow-demo-screens.md) | 워크플로우 목업 3개 화면 퇴역과 기존 WORKFLOW_READ 배정 호환 | Accepted |

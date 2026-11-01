@@ -151,8 +151,7 @@ export function discoverSpecs(specRoot = SPEC_ROOT) {
 // admin/user is deliberately excluded: identity/organization changes retain full execution.
 export const IMPACT_RULES = [
   { prefixes: ['frontend/src/app/admin/survey/'], specs: ['journeys/online-polls.spec.ts', 'journeys/public-navigation.spec.ts'] },
-  { prefixes: ['frontend/src/app/approvals/'], specs: ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts', 'journeys/workflow-demo.spec.ts'] },
-  { prefixes: ['frontend/src/app/admin/workflow/'], specs: ['journeys/workflow-demo.spec.ts', 'journeys/community-navigation.spec.ts'] },
+  { prefixes: ['frontend/src/app/approvals/'], specs: ['journeys/approvals.spec.ts', 'journeys/public-navigation.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/collaboration/address-book/'], specs: ['journeys/address-book.spec.ts', 'contracts/address-book-ownership.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/community/boards/'], specs: ['journeys/board-masters.spec.ts', 'journeys/board-articles.spec.ts', 'journeys/community-navigation.spec.ts', 'journeys/help-content.spec.ts', 'journeys/authentication.spec.ts', 'journeys/authorization.spec.ts', 'quality/board-draft-recovery.spec.ts', 'quality/stored-xss.spec.ts', 'quality/error-recovery.spec.ts'] },
   { prefixes: ['frontend/src/app/admin/help/', 'frontend/src/app/help/', 'frontend/src/app/admin/uss/olh/online-manual/'], specs: ['journeys/help-content.spec.ts', 'journeys/public-navigation.spec.ts', 'journeys/community-navigation.spec.ts'] },

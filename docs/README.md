@@ -39,6 +39,8 @@ DB 전환 승인: [ADR-0046](02-architecture/decisions/ADR-0046-empty-numeric-tr
 
 승인 정책: [ADR-0045](02-architecture/decisions/ADR-0045-bookmark-cleanup-input-policy-and-memo-read-consistency.md) — 즐겨찾기 정리·입력 검증·메모 지시의 내용 기준.
 
+화면 퇴역: [ADR-0049](02-architecture/decisions/ADR-0049-retire-workflow-demo-screens.md) — 워크플로우 목업 3개 화면 제거와 실제 결재·템플릿·기존 권한 배정 호환의 보존 경계.
+
 | 문서 | 내용 |
 |---|---|
 | [backend-architecture.md](02-architecture/backend-architecture.md) | Backend Architecture Blueprint — 멀티모듈 구조·레이어 |

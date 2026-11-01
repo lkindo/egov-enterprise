@@ -238,9 +238,9 @@ test.describe('Board & Community (Business Flow)', () => {
         // [E2E 감사 Phase0] 동일 URL(/admin/collaboration) 3중 중복 스모크(Community Hub/Smart Scrap/
         // Corporate Addressbook)를 1개로 축약. 실제 협업 거동은 08(collab)·13(mail)이 검증한다.
         // 'Online Polls'(/admin/survey/manage)는 05-public-experience의 설문 생명주기가 소유하므로 제외.
+        // 종료한 워크플로우 목업의 가용성 검사는 제거한다. 실제 전자결재는 approvals 여정이 검증한다.
         const services = [
             { name: 'Collaboration Hub', url: '/admin/collaboration' },
-            { name: 'Electronic Approvals', url: '/admin/sanctn/workflow' }
         ];
         for (const service of services) {
             test(`Service Availability: ${service.name}`, async ({ page }) => {

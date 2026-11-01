@@ -33,6 +33,7 @@ ID가 보관 원문의 앵커다: 운영 결정 행의 전문·이유·승인 �
 | ADR-0045 | accepted | 즐겨찾기는 기본 보존하고 본인이 확인 후 정리한다. 부서 업무 우선순위·팝업 크기는 기존 값도 관련 저장 시 엄격 검증하며, 메모 지시는 읽은 본문·첨부의 내용 토큰을 필수로 비교한다. 추가 이관 DBMS 자격은 확대하지 않는다. | 2026-10-30 | - |
 | ADR-0046 | accepted | 빈 표·정비창 한정 숫자 NUMERIC 전환과 로그 PRCS_REQ_MSEC 표준을 채택한다. 공유 DB 실행은 최종 패킷 별도 승인 뒤 진행한다. | 2026-10-30 | - |
 | ADR-0048 | accepted | 업로더 근거는 미첨부 창에만 쓰고, 개인 귀속 첨부는 개별 삭제 API 로 지우지 않는다. 삭제한 쪽지의 관계는 첨부 근거가 아니다. | 2026-10-31 | ADR-0045 결정 5 의 지시 후 첨부 변경 비금지 |
+| ADR-0049 | accepted | 워크플로우 목업 3개 화면을 퇴역하고 실제 결재·템플릿을 보존한다. WORKFLOW_READ는 기존 DB 인증 호환으로 유지하며 퇴역 URL 진입은 거부한다. | 2026-11-01 | V2_45 화면 보존 판단, 목업 3개 화면의 demo-isolated 승인, DEC-OPS-300의 해당 화면 소유 선언 |
 | DEC-OPS-010 | accepted | 설문 열람(목록·상세·문항)과 제출은 인증 사용자(`@Authenticated`)에게 개방하고, 설문·템플릿·문항·항목의 관리 뮤테이션은 `@AdminOrSystem`으로 유지한다. | 2026-08-20 | - |
 | DEC-OPS-011 | accepted | production CSP의 `script-src`에서 `unsafe-inline`을 요청별 nonce로 대체하고, 그 전제로 PPR(cacheComponents)을 포기해 전 페이지를 동적 렌더로 전환한다. | 2026-08-20 | - |
 | DEC-OPS-015 | accepted | 직교 data-density 축(comfortable·compact)을 신설한다 — 서버 env `UI_DENSITY`를 allowlist 검증해 `<html data-density>` 전역 1곳에 배선하고, ERP 밀도는 globals.css 의 compact 무레이어 오버라이드 블록 한 곳으로 전달한다. | 2026-08-23 | - |

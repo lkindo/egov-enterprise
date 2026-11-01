@@ -28,7 +28,7 @@
 | 04번에 API 거절·추천·초안·VRT·감사 날짜·반응형·axe 혼합 | HTTP 계약, 업무 여정, 품질 파일로 소유권 분리 |
 | 07번의 상태 전이·겹침이라는 이름과 실제 제목/컨트롤 단언 불일치 | 데모 제목으로 이름 교정, 주소록·일정 고유 단언을 실제 여정으로 이전 |
 | 투표 POM의 결과 확인이 목록 제목 검색 | [온라인 투표 여정](../../frontend/e2e/journeys/online-polls.spec.ts)의 이름을 생성·참여·관리자 검색으로 교정. 집계 수치나 별도 설문 기능의 증거로 확대하지 않음 |
-| 정적 캔버스가 단일 단계 결재라는 낡은 설명을 고정 | [제품 설명](../../frontend/src/app/admin/workflow/WorkflowClient.tsx)과 [데모 검사](../../frontend/e2e/journeys/workflow-demo.spec.ts)를 다단계 승인·합의·반려·재상신과 캔버스 비연동 경계에 맞춤 |
+| 정적 캔버스가 단일 단계 결재라는 낡은 설명을 고정 | 당시 다단계 결재와 캔버스 비연동 경계로 설명·검사를 교정했다. 목업과 전용 검사는 이후 [ADR-0049](decisions/ADR-0049-retire-workflow-demo-screens.md)로 퇴역하며 [실제 결재 검사](../../frontend/e2e/journeys/approvals.spec.ts)는 유지한다. |
 | API-only와 다중 역할 검사에도 자동 fixture가 기본 page를 준비 | [API fixture](../../frontend/e2e/fixtures/api-test.ts)와 [브라우저 fixture](../../frontend/e2e/fixtures/browser-test.ts) 분리 |
 
 2026-09-21 이행 시점에 등록된 본 테스트는 API 계약 **36개**, 브라우저 여정·품질 **99개**였다(현재 수는 Playwright 목록에서 센다). 5개 중복을 통합했지만 권한 행렬·IDOR·Origin·XSS·접근성·시각 기준선을 제거하지 않았다. 경로·제목 단언에 그치는 기존 검사는 그 한계를 유지해 기록했고, 이번 이동을 새로운 CRUD·송달·결과 집계 검증으로 계산하지 않았다.
@@ -108,7 +108,7 @@ H2/create-drop, mock-security, API 응답을 주입한 컴포넌트 테스트의
 
 API·브라우저 project 모두 setup에 의존하며 서로의 spec을 선택하지 않는다. 기본 전수 등록은 **137개(setup 2 + 본 검사 135)**다. 실행 전 `--list` inventory와 실제 JSON report의 project/test 좌표를 대조하고, spec 누락·중복·잘못된 project·예상 밖 skip·flaky를 [결과 계약](../../scripts/playwright-result-contract.mjs)이 차단한다. 등록 수 확인은 실제 실행 성공과 구분한다.
 
-화면명이 비슷해도 다른 제품이면 소유자를 나눈다. [조직 정책](../../frontend/e2e/journeys/organization-policy.spec.ts)과 [로그인 보안 정책 화면](../../frontend/e2e/journeys/security-administration.spec.ts), [온라인 투표](../../frontend/e2e/journeys/online-polls.spec.ts)와 [일반 설문 목록 접근](../../frontend/e2e/journeys/public-navigation.spec.ts), [정적 캔버스](../../frontend/e2e/journeys/workflow-demo.spec.ts)와 [실제 결재](../../frontend/e2e/journeys/approvals.spec.ts)는 같은 계약이 아니다. 전체 이동 지도는 7절에 있다.
+화면명이 비슷해도 다른 제품이면 소유자를 나눈다. [조직 정책](../../frontend/e2e/journeys/organization-policy.spec.ts)과 [로그인 보안 정책 화면](../../frontend/e2e/journeys/security-administration.spec.ts), [온라인 투표](../../frontend/e2e/journeys/online-polls.spec.ts)와 [일반 설문 목록 접근](../../frontend/e2e/journeys/public-navigation.spec.ts)는 같은 계약이 아니다. 정적 캔버스도 [실제 결재](../../frontend/e2e/journeys/approvals.spec.ts)와 별개였으며 ADR-0049로 목업과 전용 검사만 퇴역한다. 전체 이동 지도는 7절에 있다.
 
 ### 4.2 fixture는 요청한 자원만 준비한다
 
@@ -177,13 +177,12 @@ Gradle action은 v6.4.0의 검증 대상 commit에 고정하고(2026-10-07 v6.3.
 
 ### 5.4 PR의 검증된 화면 변경만 spec 단위로 선별한다
 
-[ADR-0023](decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md)에 따라 [planner](../../scripts/e2e-shard-plan.mjs)의 소유 매핑을 실제 PR 실행에 연결한다. 기존 잘못된 설문 prefix와 도움말→커뮤니티, 게시판→FAQ·인증·인가, 결재→공개 탐색, 워크플로→커뮤니티 별칭 소비를 보완했다. 표는 검토용 요약이며 정확한 경로·spec 집합은 `IMPACT_RULES`가 소유한다. 아래 경로는 `frontend/src/app/` 기준이다.
+[ADR-0023](decisions/ADR-0023-e2e-impact-selection-and-cache-writer.md)에 따라 [planner](../../scripts/e2e-shard-plan.mjs)의 소유 매핑을 실제 PR 실행에 연결한다. 기존 잘못된 설문 prefix와 도움말→커뮤니티, 게시판→FAQ·인증·인가, 결재→공개 탐색 소비를 보완했다. 워크플로우 목업 매핑은 ADR-0049로 제거한다. 표는 검토용 요약이며 정확한 경로·spec 집합은 `IMPACT_RULES`가 소유한다. 아래 경로는 `frontend/src/app/` 기준이다.
 
 | 수정 화면 범위 | 추가로 선택하는 spec (`journeys/` 기본) |
 |---|---|
 | `admin/survey/` | `online-polls` |
-| `approvals/` | `approvals`, `public-navigation`, `workflow-demo` |
-| `admin/workflow/` | `workflow-demo`, `community-navigation` |
+| `approvals/` | `approvals`, `public-navigation` |
 | `admin/collaboration/address-book/` | `address-book`, `contracts/address-book-ownership` |
 | `admin/community/boards/` | `board-masters`, `board-articles`, `community-navigation`, `help-content`, `authentication`, `authorization` |
 | `admin/help/`, `help/`, `admin/uss/olh/online-manual/` | `help-content`, `public-navigation`, `community-navigation` |
@@ -252,14 +251,14 @@ Gradle action은 v6.4.0의 검증 대상 commit에 고정하고(2026-10-07 v6.3.
 | `04-quality-resilience.spec.ts` | API 거절, 추천 표시, 초안, VRT 격리·스냅샷, 감사 날짜, 반응형, axe | [contracts/request-denial](../../frontend/e2e/contracts/request-denial.spec.ts), [journeys/board-articles](../../frontend/e2e/journeys/board-articles.spec.ts), [quality/board-draft-recovery](../../frontend/e2e/quality/board-draft-recovery.spec.ts), [quality/visual-baselines](../../frontend/e2e/quality/visual-baselines.spec.ts), [journeys/audit-log](../../frontend/e2e/journeys/audit-log.spec.ts), [quality/responsive-shell](../../frontend/e2e/quality/responsive-shell.spec.ts), [quality/route-accessibility](../../frontend/e2e/quality/route-accessibility.spec.ts) |
 | `05-public-experience.spec.ts` | API 투표와 목록/중복참여 UI, 홍보 노출, FAQ, 포털 접근 | [journeys/online-polls](../../frontend/e2e/journeys/online-polls.spec.ts), [journeys/portal-promotions](../../frontend/e2e/journeys/portal-promotions.spec.ts), [journeys/help-content](../../frontend/e2e/journeys/help-content.spec.ts), [journeys/public-navigation](../../frontend/e2e/journeys/public-navigation.spec.ts) |
 | `06-ops-governance.spec.ts` | 조직 정책 별칭·탭, 그룹별 메뉴 조회 | [journeys/organization-policy](../../frontend/e2e/journeys/organization-policy.spec.ts), [journeys/menu-administration](../../frontend/e2e/journeys/menu-administration.spec.ts) |
-| `07-productivity-suite.spec.ts` | 정적 양식 제목, 주소록 dialog, 일정 제목 | [journeys/workflow-demo](../../frontend/e2e/journeys/workflow-demo.spec.ts), [journeys/address-book](../../frontend/e2e/journeys/address-book.spec.ts), [journeys/schedules](../../frontend/e2e/journeys/schedules.spec.ts) |
+| `07-productivity-suite.spec.ts` | 정적 양식 제목, 주소록 dialog, 일정 제목 | 정적 양식 검사는 ADR-0049로 퇴역. [journeys/address-book](../../frontend/e2e/journeys/address-book.spec.ts), [journeys/schedules](../../frontend/e2e/journeys/schedules.spec.ts)는 유지 |
 | `08-advanced-collaboration.spec.ts` | 주소록 UI 생성/검색, 통계 다운로드 이벤트·파일명 | [journeys/address-book](../../frontend/e2e/journeys/address-book.spec.ts), [journeys/statistics](../../frontend/e2e/journeys/statistics.spec.ts) |
 | `09-admin-observability-workspace.spec.ts` | 통합 검색의 빈 결과 | [journeys/global-search](../../frontend/e2e/journeys/global-search.spec.ts) |
 | `10-operational-extension.spec.ts` | 포상 수정/삭제, 외부인사 접근, 메모보고 탭, SMS 접수 | [journeys/rewards](../../frontend/e2e/journeys/rewards.spec.ts), [journeys/operations-navigation](../../frontend/e2e/journeys/operations-navigation.spec.ts), [journeys/sms-submission](../../frontend/e2e/journeys/sms-submission.spec.ts) |
 | `11-enterprise-workflow.spec.ts` | 다단계 승인·합의·반려·재상신, 부서일정 접근 | [journeys/approvals](../../frontend/e2e/journeys/approvals.spec.ts), [journeys/schedules](../../frontend/e2e/journeys/schedules.spec.ts) |
 | `12-notification.spec.ts` | 알림 읽음 영속화, 긴 본문 overflow, 검색 | [journeys/notifications](../../frontend/e2e/journeys/notifications.spec.ts) |
 | `13-mail.spec.ts` | 발신 이력·긴 제목·입력 오류·수신자 찾기·이메일 비노출 | [journeys/mail](../../frontend/e2e/journeys/mail.spec.ts) |
-| `14-admin-workflow.spec.ts` | 정적 Process Studio 고지·샘플·노드 선택; 실제 다단계 결재와 캔버스 비연동 설명 | [journeys/workflow-demo](../../frontend/e2e/journeys/workflow-demo.spec.ts) |
+| `14-admin-workflow.spec.ts` | 정적 Process Studio 고지·샘플·노드 선택; 실제 다단계 결재와 캔버스 비연동 설명 | [ADR-0049](decisions/ADR-0049-retire-workflow-demo-screens.md)로 목업과 전용 검사 퇴역. 퇴역 경로 거부는 [페이지 인가 단위 검사](../../frontend/src/lib/auth/__tests__/page-authorization.test.ts), 실제 결재는 `journeys/approvals`가 담당 |
 | `15-collaboration-extension.spec.ts` | 스크랩 목록 제목 | [journeys/scraps](../../frontend/e2e/journeys/scraps.spec.ts) |
 | `16-system-observability.spec.ts` | 계측 부재 고지·새로고침 요청·반출 모달·통계 제목 | [journeys/system-observability](../../frontend/e2e/journeys/system-observability.spec.ts), [journeys/statistics](../../frontend/e2e/journeys/statistics.spec.ts) |
 | `17-support-governance.spec.ts` | 매뉴얼·FAQ·Q&A 생성/검색 | [journeys/help-content](../../frontend/e2e/journeys/help-content.spec.ts) |

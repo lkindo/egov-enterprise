@@ -135,7 +135,6 @@
     "journeys/system-observability.spec.ts": 13314,
     "journeys/user-administration.spec.ts": 10768,
     "journeys/work-reports.spec.ts": 8905,
-    "journeys/workflow-demo.spec.ts": 7817,
     "quality/admin-accessibility.spec.ts": 4652,
     "quality/board-draft-recovery.spec.ts": 8091,
     "quality/error-recovery.spec.ts": 10821,

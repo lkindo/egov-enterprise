@@ -2264,7 +2264,7 @@
       "code": "WORKFLOW_READ",
       "domain": "WORKFLOW",
       "action": "READ",
-      "name": "워크플로우 · 관리 데모 조회",
+      "name": "워크플로우 · 종료된 시연 권한(기존 배정 호환)",
       "defaultGroups": [
         "ROLE_ADMIN",
         "ROLE_SYSTEM"
@@ -2466,12 +2466,6 @@
     "/admin/patterns": [
       "OPS_READ"
     ],
-    "/admin/sanctn/forms": [
-      "TEMPLATE_READ"
-    ],
-    "/admin/sanctn/workflow": [
-      "WORKFLOW_READ"
-    ],
     "/admin/security/audit": [
       "OPS_READ",
       "SYS_LOG_READ",
@@ -2659,9 +2653,6 @@
       "HELP_READ"
     ],
     "/admin/work-hub": [],
-    "/admin/workflow": [
-      "WORKFLOW_READ"
-    ],
     "/approvals": [],
     "/approvals/draft": [],
     "/cop/cmy/selectCommunityDetail/[id]": [],

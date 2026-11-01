@@ -285,7 +285,6 @@ describe('app shell accessibility source contract', () => {
       // [2026-09-12 §A3-1] 스크랩 등록·수정 전용 화면 2개는 목록 위 모달로 이행했다 —
       // 제목 소유 계약은 아래 '모달 이행' 검사로 옮겼다(지운 것이 아니다).
       ['admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
-      ['admin', 'sanctn', 'WorkflowHubClient.tsx'],
       ['admin', 'survey', 'manage', '[id]', 'SurveyManageDetailClient.tsx'],
       ['admin', 'system', 'common-code', 'codes', 'CommonCodeCodesClient.tsx'],
       ['smart-toolkit', 'dept-job', 'create', 'DeptJobCreateClient.tsx'],
