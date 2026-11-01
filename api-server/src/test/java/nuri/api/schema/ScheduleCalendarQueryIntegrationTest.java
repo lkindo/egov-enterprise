@@ -169,8 +169,8 @@ class ScheduleCalendarQueryIntegrationTest {
                         .content(body("타인 일정 변경 시도", "20261015", null, 0)))
                 .andExpect(status().isForbidden());
         assertThat(stored(sharedDay)).isEqualTo(before);
-        assertThat(stored(ownDay).get("schdl_end_ymd")).isEqualTo(legacyEnd);
-        assertThat(stored(sharedDay).get("schdl_end_ymd")).isEqualTo(legacyEnd);
+        assertThat(stored(ownDay).get("schdl_end_ymd")).isEqualTo(VendorTestSql.stored(jdbc, legacyEnd));
+        assertThat(stored(sharedDay).get("schdl_end_ymd")).isEqualTo(VendorTestSql.stored(jdbc, legacyEnd));
     }
 
     @ParameterizedTest
@@ -204,7 +204,7 @@ class ScheduleCalendarQueryIntegrationTest {
 
         assertThat(monthly(unassigned, "202610")).contains(shared).doesNotContain(personal);
         assertThat(range(unassigned, "20261015", "20261015")).isEmpty();
-        assertThat(stored(shared).get("schdl_end_ymd")).isEqualTo("");
+        assertThat(stored(shared).get("schdl_end_ymd")).isEqualTo(VendorTestSql.storedEmptyText(jdbc));
     }
 
     private void seedUser(String id, String departmentId) {
@@ -248,13 +248,12 @@ class ScheduleCalendarQueryIntegrationTest {
     }
 
     private long legacySchedule(String actor, String dept, String scope, String start, String end) {
-        return jdbc.queryForObject("""
+        return VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_schdl_info
                     (schdl_nm,schdl_se_cd,schdl_bgng_ymd,schdl_end_ymd,schdl_pic_id,schdl_dept_id,
                      frst_rgtr_id,last_mdfr_id,crt_dt,mdfcn_dt)
                 VALUES ('Legacy calendar fixture',?,?,?,?,?,?,?,CURRENT_TIMESTAMP,CURRENT_TIMESTAMP)
-                RETURNING schdl_sn
-                """, Long.class, scope, start, end, login(actor), dept, login(actor), login(actor));
+                """, "schdl_sn", scope, start, end, login(actor), dept, login(actor), login(actor));
     }
 
     private Map<String, Object> stored(long id) {

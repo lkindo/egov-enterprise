@@ -105,10 +105,8 @@ class LoginIdReuseIntegrationTest {
                 .as("core 는 늘 남으므로 그 두 컬럼은 어느 구성에서나 등록돼 있다")
                 .contains("tb_file_master.frst_rgtr_id", "tb_dept_task_info.frst_rgtr_id");
         for (Reference reference : references) {
-            List<String> types = jdbc.queryForList("SELECT data_type FROM information_schema.columns"
-                    + " WHERE table_schema = current_schema() AND table_name = ? AND column_name = ?",
-                    String.class, reference.table(), reference.column());
-            assertThat(types).as("%s 가 스키마에 있다", reference.qualifiedName()).containsExactly("character varying");
+            assertThat(VendorTestSql.isTextColumn(jdbc, reference.table(), reference.column()))
+                    .as("%s 가 스키마에 있다", reference.qualifiedName()).isTrue();
         }
         // 등록한 컬럼마다 EXISTS 질의를 실제로 실행한다 — 이름 오타나 권한 문제는 여기서 예외가 된다.
         assertThat(guard.isStillReferenced(loginId)).isFalse();
@@ -117,9 +115,8 @@ class LoginIdReuseIntegrationTest {
     @Test
     @DisplayName("지워진 계정의 부서 업무가 로그인 ID 를 들고 있으면 가입은 일반 중복으로 거부되고, 기록이 없어지면 통과한다")
     void signupRejectsLoginIdStillCarriedByRecordsUntilTheyAreGone() {
-        long task = jdbc.queryForObject("INSERT INTO tb_dept_task_info(dept_task_nm, frst_rgtr_id, last_mdfr_id, crt_dt, mdfcn_dt)"
-                + " VALUES ('지워진 계정이 등록한 업무', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP) RETURNING dept_task_sn",
-                Long.class, loginId, loginId);
+        long task = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_dept_task_info(dept_task_nm, frst_rgtr_id, last_mdfr_id, crt_dt, mdfcn_dt)"
+                + " VALUES ('지워진 계정이 등록한 업무', ?, ?, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)", "dept_task_sn", loginId, loginId);
         deptTasks.add(task);
 
         assertThatThrownBy(() -> users.signup(signup()))

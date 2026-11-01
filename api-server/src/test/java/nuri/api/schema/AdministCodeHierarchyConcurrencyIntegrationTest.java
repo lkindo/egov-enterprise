@@ -173,12 +173,10 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
                 authenticate();
                 try {
                     transaction().executeWithoutResult(status -> {
-                        leadingPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        leadingPid.set(VendorTestSql.sessionId(jdbc));
                         service.updateAdministCode(first, move(first, second), fixture);
                         // Timing tolerance alone would also accept an accidental 10-second bound.
-                        assertThat(jdbc.queryForObject(
-                                "SELECT setting::int FROM pg_settings WHERE name='lock_timeout'", Integer.class))
-                                .isEqualTo(5_000);
+                        VendorTestSql.assertPostgresqlLockTimeout(jdbc, 5_000);
                         entityManager.flush();
                         applied.countDown();
                         awaitRelease(release);
@@ -197,12 +195,12 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
                     try {
                         long started = System.nanoTime();
                         Throwable failure = catchThrowable(() -> transaction().executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             // An ambient database setting must not hide a missing production lock_timeout.
-                            jdbc.queryForObject("SELECT set_config('lock_timeout', '0', true)", String.class);
+                            VendorTestSql.boundLockWait(jdbc, "0");
                             // This watchdog only bounds a broken implementation. Without the production
                             // lock_timeout, PostgreSQL cancels at 12s with 57014 and the SQLState assertion fails.
-                            jdbc.queryForObject("SELECT set_config('statement_timeout', '12s', true)", String.class);
+                            VendorTestSql.boundStatement(jdbc, "12s");
                             followingStarted.countDown();
                             service.updateAdministCode(third, move(third, fourth), fixture);
                             entityManager.flush();
@@ -230,7 +228,7 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
             assertAll(
                     // JdbcTemplate can leave 55P03 uncategorized; the real handler owns SQLState mapping.
                     () -> assertThat(outcome.failure()).isInstanceOf(DataAccessException.class),
-                    () -> assertThat(sqlState(outcome.failure())).isEqualTo("55P03"),
+                    () -> assertThat(sqlState(outcome.failure())).isEqualTo(VendorTestSql.lockTimeoutState(jdbc)),
                     () -> assertThat(outcome.waited()).isGreaterThanOrEqualTo(Duration.ofMillis(4_500))
                             .isLessThan(Duration.ofSeconds(15)),
                     () -> assertThat(parentOf(first)).isEqualTo(second),
@@ -269,7 +267,7 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
                 try {
                     transaction().executeWithoutResult(status -> {
                         assertReadCommitted();
-                        leadingPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        leadingPid.set(VendorTestSql.sessionId(jdbc));
                         service.updateAdministCode(leadingChild, move(leadingChild, leadingParent), fixture);
                         entityManager.flush();
                         applied.countDown();
@@ -292,7 +290,7 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
                     try {
                         return catchThrowable(() -> transaction().executeWithoutResult(status -> {
                             assertReadCommitted();
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             followingStarted.countDown();
                             service.updateAdministCode(followingChild, move(followingChild, followingParent), fixture);
                             entityManager.flush();
@@ -318,26 +316,15 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
 
     private boolean waitUntilFinishedOrBlocked(Connection observer, String application, int blockerPid,
             Future<?> following) throws Exception {
-        try (var statement = observer.prepareStatement("""
-                SELECT EXISTS (
-                    SELECT 1 FROM pg_stat_activity
-                    WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                      AND ? = ANY(pg_blocking_pids(pid))
-                )
-                """)) {
-            statement.setString(1, application);
-            statement.setInt(2, blockerPid);
-            statement.setQueryTimeout(1);
+        {
+            var observing = VendorTestSql.on(observer);
             // Observe and release before the service's five-second lock wait limit expires.
             long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(3);
             do {
                 // Before the fix the second transaction may finish without waiting. Preserve that
                 // outcome so the test reports the actual accepted cycle, not a synchronization timeout.
                 if (following.isDone()) return false;
-                try (var rows = statement.executeQuery()) {
-                    rows.next();
-                    if (rows.getBoolean(1)) return true;
-                }
+                if (VendorTestSql.waitsOn(observing, application, blockerPid, null)) return true;
                 Thread.sleep(20); // Poll interval only; success requires an observed blocker or completion.
             } while (System.nanoTime() < deadline);
             assertThat(following.isDone()).as("the following transaction finishes or is blocked by the known leader").isTrue();
@@ -353,8 +340,7 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
     }
 
     private void assertReadCommitted() {
-        assertThat(jdbc.queryForObject("SELECT current_setting('transaction_isolation')", String.class))
-                .isEqualTo("read committed");
+        VendorTestSql.assertReadCommitted(jdbc);
     }
 
     private AdministCodeDto move(String code, String parent) {

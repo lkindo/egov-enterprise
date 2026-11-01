@@ -79,8 +79,7 @@ class OperationalSignalIsolationIntegrationTest {
 
     @BeforeEach
     void createOnlyOwnFixturesAndProductionAnnotationProxy() {
-        assertThat(environment.getProperty("spring.datasource.url"))
-                .startsWith("jdbc:tc:postgresql:17:");
+        VendorTestSql.assertDisposable(environment, jdbc);
         assertThat(transactionManager).isInstanceOf(JpaTransactionManager.class);
         assertThat(TransactionSynchronizationManager.isActualTransactionActive()).isFalse();
         assertThat(jdbc.getDataSource()).isSameAs(dataSource);

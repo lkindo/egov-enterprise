@@ -10,7 +10,7 @@ import { resolve } from 'node:path';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
 import { assertCatalogParity, nextValues } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
-import { parseCount, readCatalog, readNextValues, runStatements, startVendorEngine, stopVendorEngine } from './project-composer-vendor-engine.mjs';
+import { parseCount, readCatalog, readNextValues, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 
 export function parseVerifyArgs(argv) {
   const args = {};
@@ -40,14 +40,14 @@ function rowCounts(handle, model) {
   }));
 }
 
-export function verifyVendor({ input, vendorId, engineId }) {
+/** 스키마와 시드를 적용하고 대상 DB 를 다시 읽어 모델과 맞춘다. 다른 일을 하기 전에 DB 가 믿을 만한지 보는 관문이다. */
+export function applyVendor(handle, input, vendorId) {
   const adapter = VENDOR_ADAPTERS[vendorId];
   const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
   const emission = adapter.emitSchema(model);
   const seed = adapter.emitSeed(model, input.rows).map(sql => ({ sql }));
   const sync = adapter.emitSequenceSync(model, input.rows).map(sql => ({ sql }));
-  const handle = startVendorEngine(engineId ?? vendorId);
-  try {
+  {
     const schema = runStatements(handle, emission.statements);
     if (schema.errors.length) throw stageFailure('스키마 적용', schema.errors);
     const seeded = runStatements(handle, seed);
@@ -70,11 +70,21 @@ export function verifyVendor({ input, vendorId, engineId }) {
       error.code = 'VENDOR_PARITY_FAILED';
       throw error;
     }
-    return { vendor: vendorId, engine: engineId ?? vendorId, statements: emission.statements.length, seedRows: seed.length,
-      degradations: emission.degradations };
-  } finally {
-    stopVendorEngine(handle);
+    return { statements: emission.statements.length, seedRows: seed.length, degradations: emission.degradations };
   }
+}
+
+export function verifyVendor({ input, vendorId, engineId }) {
+  const handle = startVendorEngine(engineId ?? vendorId);
+  let failure = null;
+  let report = null;
+  try {
+    report = { vendor: vendorId, engine: engineId ?? vendorId, ...applyVendor(handle, input, vendorId) };
+  } catch (error) {
+    failure = error;
+  }
+  stopVendorEngineReporting(handle, failure);
+  return report;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

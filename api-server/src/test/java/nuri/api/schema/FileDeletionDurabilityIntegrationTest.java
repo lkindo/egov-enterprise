@@ -71,8 +71,7 @@ class FileDeletionDurabilityIntegrationTest {
 
     @AfterEach
     void cleanupOwnFixtures() throws Exception {
-        jdbc.execute("DROP TRIGGER IF EXISTS tr_test_file_intent_failure ON tb_sys_job");
-        jdbc.execute("DROP FUNCTION IF EXISTS test_file_intent_failure()");
+        VendorTestSql.dropFailingTrigger(jdbc, "tr_test_file_intent_failure", "tb_sys_job");
         SecurityContextHolder.clearContext();
         if (detail != null) jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", detail.getId().toString());
         if (committedAliasId != null) jdbc.update("DELETE FROM tb_sys_job WHERE job_mng_no=?", committedAliasId.toString());
@@ -98,7 +97,7 @@ class FileDeletionDurabilityIntegrationTest {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 try {
                     new TransactionTemplate(manager).executeWithoutResult(status -> {
-                        firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        firstPid.set(VendorTestSql.sessionId(jdbc));
                         appendText("first.txt", "first append", false);
                         details.flush();
                         applied.countDown();
@@ -122,7 +121,7 @@ class FileDeletionDurabilityIntegrationTest {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     try {
                         new TransactionTemplate(manager).executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             appendText("second.txt", "second append", true);
                         });
                     } finally {
@@ -132,11 +131,7 @@ class FileDeletionDurabilityIntegrationTest {
                 long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
                 boolean waiting;
                 do {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
-                            SELECT EXISTS (SELECT 1 FROM pg_stat_activity
-                              WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                                AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')
-                            """, Boolean.class, application, firstPid.get()));
+                    waiting = VendorTestSql.waitsOn(jdbc, application, firstPid.get(), "tb_file_master");
                     if (!waiting && second.isDone()) second.get();
                     if (!waiting) Thread.sleep(20);
                 } while (!waiting && System.nanoTime() < deadline);
@@ -178,7 +173,7 @@ class FileDeletionDurabilityIntegrationTest {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 try {
                     new TransactionTemplate(manager).executeWithoutResult(status -> {
-                        firstPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        firstPid.set(VendorTestSql.sessionId(jdbc));
                         deleteFixture();
                         details.flush();
                         applied.countDown();
@@ -200,7 +195,7 @@ class FileDeletionDurabilityIntegrationTest {
                     SecurityContextHolder.getContext().setAuthentication(authentication);
                     try {
                         new TransactionTemplate(manager).executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             deleteFixture();
                         });
                         return null;
@@ -210,11 +205,7 @@ class FileDeletionDurabilityIntegrationTest {
                 long deadline = System.nanoTime() + java.util.concurrent.TimeUnit.SECONDS.toNanos(15);
                 boolean waiting;
                 do {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("""
-                            SELECT EXISTS (SELECT 1 FROM pg_stat_activity
-                              WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                                AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')
-                            """, Boolean.class, application, firstPid.get()));
+                    waiting = VendorTestSql.waitsOn(jdbc, application, firstPid.get(), "tb_file_master");
                     if (!waiting && second.isDone()) second.get();
                     if (!waiting) Thread.sleep(20);
                 } while (!waiting && System.nanoTime() < deadline);
@@ -290,10 +281,8 @@ class FileDeletionDurabilityIntegrationTest {
     @Test
     void intentInsertFailureRollsBackTheActualMetadataDelete() {
         // Failure is injected at the physical intent INSERT, not in a mock repository.
-        jdbc.execute("CREATE FUNCTION test_file_intent_failure() RETURNS trigger LANGUAGE plpgsql AS $$ "
-                + "BEGIN IF NEW.job_se_nm = 'FILE_DELETE' THEN RAISE EXCEPTION 'fixture intent write failure'; END IF; RETURN NEW; END $$");
-        jdbc.execute("CREATE TRIGGER tr_test_file_intent_failure BEFORE INSERT ON tb_sys_job "
-                + "FOR EACH ROW EXECUTE FUNCTION test_file_intent_failure()");
+        VendorTestSql.failingTrigger(jdbc, "tr_test_file_intent_failure", "BEFORE INSERT", "tb_sys_job",
+                "NEW.job_se_nm = 'FILE_DELETE'", "fixture intent write failure");
         assertThatThrownBy(this::deleteFixture).isInstanceOf(RuntimeException.class);
         assertThat(details.findById(detail.getId())).isPresent();
         assertThat(jobs.findByJobMngNo(detail.getId().toString())).isEmpty();
@@ -330,7 +319,7 @@ class FileDeletionDurabilityIntegrationTest {
     }
 
     private Path intentAnchor(UUID key) {
-        String identity = jdbc.queryForObject("SELECT job_cn::jsonb->>'identity' FROM tb_sys_job WHERE job_mng_no=?",
+        String identity = jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT job_cn::jsonb->>'identity' FROM tb_sys_job WHERE job_mng_no=?"),
                 String.class, key.toString());
         assertThat(identity).matches("[0-9a-f-]{36}:[0-9a-f]{64}");
         return storageRoot.resolve(".deletions").resolve(identity.substring(0, 36) + ".anchor");

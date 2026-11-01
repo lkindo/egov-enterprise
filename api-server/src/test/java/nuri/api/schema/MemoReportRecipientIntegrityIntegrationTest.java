@@ -120,22 +120,22 @@ class MemoReportRecipientIntegrityIntegrationTest {
         if (notificationModule) {
             var notificationType = ClassUtils.resolveClassName("nuri.business.service.notification.NotificationService", getClass().getClassLoader());
             assertThat(applicationContext.getBeansOfType(notificationType)).hasSize(1);
-            assertThat(jdbc.queryForObject("SELECT to_regclass('public.tb_user_noti') IS NOT NULL", Boolean.class)).isTrue();
+            assertThat(VendorTestSql.tableExists(jdbc, "tb_user_noti")).isTrue();
         }
     }
 
     @AfterEach
     void removeOnlyOwnFixtures() {
         SecurityContextHolder.clearContext();
-        jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)",
+        jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)"),
                 sender, active, waiting, disabled, missing);
         if (notificationModule) {
             jdbc.update("DELETE FROM tb_user_noti WHERE rcvr_id IN (?, ?, ?, ?, ?)", sender, active, waiting, disabled, missing);
         }
         jdbc.update("DELETE FROM tb_memo_rpt_info WHERE user_id=?", sender);
         for (Long group : attachmentGroups) {
-            jdbc.update("DELETE FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no IN "
-                    + "(SELECT file_detail_id::text FROM tb_file_detail WHERE atch_file_sn=?)", group);
+            jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no IN "
+                    + "(SELECT file_detail_id::text FROM tb_file_detail WHERE atch_file_sn=?)"), group);
             jdbc.update("DELETE FROM tb_file_detail WHERE atch_file_sn=?", group);
             jdbc.update("DELETE FROM tb_file_master WHERE atch_file_sn=?", group);
         }
@@ -192,7 +192,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 try {
                     return new TransactionTemplate(transactionManager).execute(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        VendorTestSql.nameSession(jdbc, application);
                         return memoReportService.createMemoReport(sender, memo(active));
                     });
                 } finally {
@@ -212,9 +212,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
 
     @Test
     void concurrentRecipientReadsPreserveExactlyTheFirstReadTime() throws Exception {
-        assertThat(jdbc.queryForObject("SELECT datetime_precision FROM information_schema.columns "
-                + "WHERE table_schema=current_schema() AND table_name='tb_memo_rpt_info' AND column_name='rptr_inq_dt'",
-                Integer.class)).isEqualTo(6);
+        assertThat(VendorTestSql.timestampPrecision(jdbc, "tb_memo_rpt_info", "rptr_inq_dt")).isEqualTo(6);
         long id = memoReportService.createMemoReport(sender, memo(active));
         // 작성자가 확인해도 수신자 읽음은 생기지 않는다.
         memoReportService.getMemoReport(id);
@@ -230,7 +228,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 authenticate(active);
                 try {
                     return new TransactionTemplate(transactionManager).execute(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        VendorTestSql.nameSession(jdbc, application);
                         MemoReportDto response = memoReportService.getMemoReport(id);
                         assertThat(response.getRptrInqDt()).isNotNull();
                         assertThat(response.getInstructionReadToken()).matches("[a-f0-9]{64}");
@@ -286,7 +284,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                     SecurityContextHolder.getContext().setAuthentication(senderAuthentication);
                     try {
                         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             memoReportService.deleteMemoReport(id);
                         });
                         return null;
@@ -446,7 +444,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 authenticate(sender);
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        blockerPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        blockerPid.set(VendorTestSql.sessionId(jdbc));
                         mutate(group, mutation);
                         entityManager.flush();
                         ready.countDown();
@@ -461,7 +459,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                     authenticate(active);
                     try {
                         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             memoReportService.updateDrctMatter(id, "must reject", token);
                         });
                         return null;
@@ -497,7 +495,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 authenticate(active);
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        blockerPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        blockerPid.set(VendorTestSql.sessionId(jdbc));
                         memoReportService.updateDrctMatter(id, "committed at read snapshot", token);
                         entityManager.flush();
                         ready.countDown();
@@ -512,7 +510,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                     authenticate(sender);
                     try {
                         new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             mutate(group, mutation);
                         });
                     } finally { SecurityContextHolder.clearContext(); }
@@ -671,7 +669,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                 authenticate(sender);
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        blockerPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        blockerPid.set(VendorTestSql.sessionId(jdbc));
                         MemoReportDto changed = memo(active);
                         changed.setRptCn("committed body B");
                         memoReportService.updateMemoReport(id, sender, changed);
@@ -688,7 +686,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                     authenticate(active);
                     try {
                         return new TransactionTemplate(transactionManager).execute(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             return memoReportService.getMemoReport(id);
                         });
                     } finally { SecurityContextHolder.clearContext(); }
@@ -759,8 +757,8 @@ class MemoReportRecipientIntegrityIntegrationTest {
         long notifications = notificationModule ? jdbc.queryForObject(
                 "SELECT count(*) FROM tb_user_noti WHERE rcvr_id IN (?, ?, ?, ?, ?)",
                 Long.class, sender, active, waiting, disabled, missing) : 0;
-        long intents = jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' "
-                + "AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)", Long.class, sender, active, waiting, disabled, missing);
+        long intents = jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' "
+                + "AND job_cn::jsonb->>'receiver' IN (?, ?, ?, ?, ?)"), Long.class, sender, active, waiting, disabled, missing);
         long fileJobs = deletedFileIds.stream().mapToLong(fileId -> jdbc.queryForObject(
                 "SELECT count(*) FROM tb_sys_job WHERE job_se_nm='FILE_DELETE' AND job_mng_no=?", Long.class, fileId)).sum();
         return List.of(notifications, intents, fileJobs);
@@ -795,10 +793,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
         boolean waiting;
         do {
-            waiting = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
-                    + "WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock' "
-                    + "AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE ?)",
-                    Boolean.class, application, blockerPid, "%" + table + "%"));
+            waiting = VendorTestSql.waitsOn(jdbc, application, blockerPid, table);
             if (!waiting && worker.isDone()) worker.get();
             if (!waiting) Thread.sleep(20);
         } while (!waiting && System.nanoTime() < deadline);
@@ -813,8 +808,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
         long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
         int waiting;
         do {
-            waiting = jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() "
-                    + "AND application_name=? AND wait_event_type='Lock'", Integer.class, application);
+            waiting = VendorTestSql.waitingSessions(jdbc, application);
             if (waiting < expected) Thread.sleep(20);
         } while (waiting < expected && System.nanoTime() < deadline);
         assertThat(waiting).as("실제 PostgreSQL 행 잠금 대기").isEqualTo(expected);

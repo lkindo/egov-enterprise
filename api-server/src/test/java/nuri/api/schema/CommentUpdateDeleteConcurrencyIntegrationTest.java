@@ -58,14 +58,14 @@ class CommentUpdateDeleteConcurrencyIntegrationTest {
     @BeforeEach
     void createOwnPostAndComment() {
         loginId = jdbc.queryForObject("SELECT user_id FROM tb_user_info WHERE esntl_id=?", String.class, USER_ID);
-        post = jdbc.queryForObject("""
+        post = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_bbs_item (bbs_id, pst_ttl, pst_cn, use_yn, user_id, cmnt_cnt)
-                VALUES (?, ?, 'comment race fixture', 'Y', ?, 1) RETURNING pst_sn
-                """, Long.class, BOARD_ID, "comment-race-" + UUID.randomUUID(), USER_ID);
-        comment = jdbc.queryForObject("""
+                VALUES (?, ?, 'comment race fixture', 'Y', ?, 1)
+                """, "pst_sn", BOARD_ID, "comment-race-" + UUID.randomUUID(), USER_ID);
+        comment = VendorTestSql.insertKey(jdbc, """
                 INSERT INTO tb_bbs_comment (ans_sn, pst_sn, bbs_id, wrter_id, wrter_nm, ans_cn, use_yn, frst_rgtr_id)
-                VALUES (nextval('sq_answer_no'), ?, ?, ?, '경합 검증', 'before deletion', 'Y', ?) RETURNING ans_sn
-                """, Long.class, post, BOARD_ID, USER_ID, loginId);
+                VALUES (nextval('sq_answer_no'), ?, ?, ?, '경합 검증', 'before deletion', 'Y', ?)
+                """, "ans_sn", post, BOARD_ID, USER_ID, loginId);
     }
 
     @AfterEach
@@ -88,7 +88,7 @@ class CommentUpdateDeleteConcurrencyIntegrationTest {
                 authenticateOwner();
                 try {
                     transaction().executeWithoutResult(status -> {
-                        deletingPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                        deletingPid.set(VendorTestSql.sessionId(jdbc));
                         service.deleteComment(comment);
                         entityManager.flush();
                         deletionApplied.countDown();
@@ -108,8 +108,8 @@ class CommentUpdateDeleteConcurrencyIntegrationTest {
                     authenticateOwner();
                     try {
                         return catchThrowable(() -> transaction().executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
-                            jdbc.queryForObject("SELECT set_config('lock_timeout', '20s', true)", String.class);
+                            VendorTestSql.nameSession(jdbc, application);
+                            VendorTestSql.boundLockWait(jdbc, "20s");
                             service.updateComment(comment, "late update after deletion");
                         }));
                     } finally {
@@ -135,23 +135,12 @@ class CommentUpdateDeleteConcurrencyIntegrationTest {
 
     private void assertWaitingOnComment(Connection observer, String application, int blockerPid,
             Future<Throwable> updating) throws Exception {
-        try (var statement = observer.prepareStatement("""
-                SELECT EXISTS (
-                    SELECT 1 FROM pg_stat_activity
-                    WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock'
-                      AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_bbs_comment%'
-                )
-                """)) {
-            statement.setString(1, application);
-            statement.setInt(2, blockerPid);
-            statement.setQueryTimeout(3);
+        {
+            var observing = VendorTestSql.on(observer);
             // Both the old UPDATE and the corrected SELECT FOR UPDATE must wait on this actual row lock.
             await().pollDelay(Duration.ZERO).pollInterval(Duration.ofMillis(20)).atMost(Duration.ofSeconds(15))
                     .until(() -> {
-                        try (var rows = statement.executeQuery()) {
-                            rows.next();
-                            if (rows.getBoolean(1)) return true;
-                        }
+                        if (VendorTestSql.waitsOn(observing, application, blockerPid, "tb_bbs_comment")) return true;
                         if (updating.isDone()) {
                             throw new AssertionError("Update completed before waiting on the deleting transaction", updating.get());
                         }

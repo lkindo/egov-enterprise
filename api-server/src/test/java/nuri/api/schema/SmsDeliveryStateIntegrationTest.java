@@ -75,8 +75,7 @@ class SmsDeliveryStateIntegrationTest {
 
     @BeforeEach void createOnlyOwnedFixture() {
         reset(sender);
-        transmission = jdbc.queryForObject("INSERT INTO tb_sms_info(sndng_telno,sndng_cn) VALUES (?,?) RETURNING sms_trsm_sn",
-                Long.class, "0212345678", "owned sms fixture " + UUID.randomUUID());
+        transmission = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_sms_info(sndng_telno,sndng_cn) VALUES (?,?)", "sms_trsm_sn", "0212345678", "owned sms fixture " + UUID.randomUUID());
         ownedTransmissions.add(transmission);
         recipients.saveAndFlush(SmsRecptn.builder().smsTrsmSn(transmission).rcptnTelno(PHONE).rsltCd("P").build());
     }
@@ -286,11 +285,7 @@ class SmsDeliveryStateIntegrationTest {
         String receipt = SmsReceiptState.claim(now).submitted(SmsGatewayResult.accepted("request-owned"), now).encode();
         try (var blocker = dataSource.getConnection(); var executor = Executors.newSingleThreadExecutor()) {
             blocker.setAutoCommit(false);
-            int blockerPid;
-            try (var statement = blocker.createStatement(); var result = statement.executeQuery("SELECT pg_backend_pid()")) {
-                assertThat(result.next()).isTrue();
-                blockerPid = result.getInt(1);
-            }
+            int blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
             try (var lock = blocker.prepareStatement("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE")) {
                 lock.setLong(1, transmission);
                 lock.setString(2, PHONE);
@@ -299,8 +294,7 @@ class SmsDeliveryStateIntegrationTest {
             var rejecting = executor.submit(() -> processor.markBatchRejected(transmission));
             try {
                 org.awaitility.Awaitility.await().atMost(10, TimeUnit.SECONDS).untilAsserted(() ->
-                        assertThat(jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE ? = ANY(pg_blocking_pids(pid))"
-                                + " AND query LIKE '%tb_sms_rcptn%'", Long.class, blockerPid)).isPositive());
+                        assertThat(VendorTestSql.lockWaits(jdbc, "%")).anyMatch(wait -> wait.blockedBy(blockerPid) && wait.touches("tb_sms_rcptn")));
                 try (var update = blocker.prepareStatement("UPDATE tb_sms_rcptn SET rslt_msg=? WHERE sms_trsm_sn=? AND rcptn_telno=?")) {
                     update.setString(1, receipt);
                     update.setLong(2, transmission);
@@ -349,7 +343,7 @@ class SmsDeliveryStateIntegrationTest {
         recipients.saveAllAndFlush(broken);
         long now = System.currentTimeMillis();
         String valid = SmsReceiptState.claim(now).submitted(SmsGatewayResult.accepted("request-owned"), now).encode();
-        jdbc.update("UPDATE tb_sms_rcptn SET rslt_msg=?,mdfcn_dt=CURRENT_TIMESTAMP + INTERVAL '1 hour'"
+        jdbc.update("UPDATE tb_sms_rcptn SET rslt_msg=?,mdfcn_dt=CURRENT_TIMESTAMP + INTERVAL '1' HOUR"
                 + " WHERE sms_trsm_sn=? AND rcptn_telno=?", valid, transmission, PHONE);
         when(sender.query("request-owned", null, PHONE)).thenReturn(SmsGatewayResult.delivered("request-owned", "message-owned"));
         processor.reconcilePending().get(30, TimeUnit.SECONDS);

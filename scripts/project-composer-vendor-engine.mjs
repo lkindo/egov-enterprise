@@ -32,6 +32,18 @@ const mysqlBatch = {
 };
 
 /** 벤더별 기동·실행 방법. image 는 개발용이며 운영 라이선스는 기관 몫이다. */
+/** 통합 시험의 접속 값. 시험이 세션 잠금을 관측하고 실패 주입 트리거를 만들 권한을 준다. */
+const oracleIntegration = service => ({
+  port: 1521,
+  url: port => `jdbc:oracle:thin:@//127.0.0.1:${port}/${service}`,
+  username: SCHEMA,
+  driver: 'oracle.jdbc.OracleDriver',
+  dialect: 'nuri.foundation.core.persistence.NuriOracleDialect',
+  administrator: 'sqlplus -S / as sysdba',
+  grants: [`ALTER SESSION SET CONTAINER=${service}`, ...['sys.v_$session', 'sys.v_$sql'].map(view => `GRANT SELECT ON ${view} TO ${SCHEMA}`),
+    `GRANT EXECUTE ON sys.dbms_session TO ${SCHEMA}`, `GRANT CREATE TRIGGER TO ${SCHEMA}`],
+});
+
 export const VENDOR_ENGINES = Object.freeze({
   oracle: {
     image: 'gvenzl/oracle-free:23-slim-faststart', maxWaitSeconds: 300,
@@ -39,6 +51,7 @@ export const VENDOR_ENGINES = Object.freeze({
     ready: name => /DATABASE IS READY TO USE/.test(logs(name)),
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$APP_USER_PASSWORD"@//localhost/FREEPDB1 @${file}`,
     batch: oracleBatch,
+    integration: oracleIntegration('FREEPDB1'),
   },
   oracle19: {
     image: 'fugeritorg/oracle-19.3.0-ee:2025.0', maxWaitSeconds: 1500,
@@ -50,6 +63,7 @@ export const VENDOR_ENGINES = Object.freeze({
     },
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$ORACLE_PWD"@//localhost/ORCLPDB1 @${file}`,
     batch: oracleBatch,
+    integration: oracleIntegration('ORCLPDB1'),
   },
   mysql: {
     image: 'mysql:8.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_bin', '--log-bin-trust-function-creators=1'],
@@ -86,26 +100,65 @@ function logs(name) {
   return `${result.stdout}${result.stderr}`;
 }
 
-export function startVendorEngine(engineId) {
+export function startVendorEngine(engineId, { publishPort } = {}) {
   const engine = VENDOR_ENGINES[engineId];
   if (!engine) fail('VENDOR_ENGINE_NOT_READY', `모르는 엔진: ${engineId}`);
   const name = `egov-vendor-${engineId}-${randomBytes(4).toString('hex')}`;
   const password = `Vd1_${randomBytes(10).toString('hex')}`;
-  const environment = Object.entries(engine.environment(password)).flatMap(([key, value]) => ['--env', `${key}=${value}`]);
-  const started = docker(['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=${engineId}`, ...environment, engine.image, ...(engine.serverArgs ?? [])]);
+  // 값은 자식 프로세스 환경으로 넘긴다. 인자에 두면 호스트의 프로세스 목록에 보인다.
+  const variables = engine.environment(password);
+  const environment = Object.keys(variables).flatMap(key => ['--env', key]);
+  const started = docker(['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=${engineId}`, ...environment,
+    ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
+  { env: { ...process.env, ...variables } });
   if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${started.stderr.slice(0, 300)}`);
   const deadline = Date.now() + engine.maxWaitSeconds * 1000;
-  for (;;) {
-    if (engine.ready(name)) return { id: engineId, name, engine };
-    if (Date.now() > deadline) {
-      stopVendorEngine({ name });
-      fail('VENDOR_ENGINE_NOT_READY', `${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
+  try {
+    for (;;) {
+      if (engine.ready(name)) return { id: engineId, name, engine, password, port: publishPort ? publishedPort(name, publishPort) : null };
+      if (Date.now() > deadline) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
+      sleep(2000);
     }
-    sleep(2000);
+  } catch (failure) {
+    // 호출자는 핸들을 받기 전이라 지울 수 없다.
+    stopVendorEngineReporting({ name }, failure);
+    throw failure;
   }
 }
 
 export const stopVendorEngine = handle => docker(['rm', '-f', '-v', handle.name]);
+
+/**
+ * 컨테이너를 지우고 앞선 실패를 이어 던진다. 지우지 못하면 남은 이름을 알린다. 앞선 실패가 있으면 그 실패를 가리지 않고 덧붙인다.
+ * `remove` 는 시험에서 바꾼다.
+ */
+export function stopVendorEngineReporting(handle, failure = null, remove = stopVendorEngine) {
+  const stopped = remove(handle);
+  if (stopped.status === 0) {
+    if (failure) throw failure;
+    return;
+  }
+  const message = `시험 DB 컨테이너가 남았다: ${handle.name}`;
+  if (failure) {
+    failure.message = `${failure.message} (${message})`;
+    throw failure;
+  }
+  fail('VENDOR_ENGINE_NOT_READY', message);
+}
+
+function publishedPort(name, port) {
+  const mapped = docker(['port', name, String(port)]).stdout.match(/:(\d+)\s*$/m)?.[1];
+  if (!mapped) fail('VENDOR_ENGINE_NOT_READY', `${name} 의 ${port} 포트를 찾지 못했다.`);
+  return Number(mapped);
+}
+
+/** 관리자 세션에서 문장을 돌린다. 어느 하나라도 실패하면 멈춘다. */
+export function runAsAdministrator(handle, statements) {
+  const { administrator } = handle.engine.integration;
+  const script = `WHENEVER SQLERROR EXIT FAILURE\n${statements.map(statement => `${statement};`).join('\n')}\nEXIT\n`;
+  const result = docker(['exec', '-i', handle.name, 'sh', '-c', administrator], { input: script });
+  if (result.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${handle.id} 관리자 문장 실패: ${`${result.stdout}${result.stderr}`.slice(0, 300)}`);
+}
 
 /** COUNT 한 줄을 읽는다. csql 은 `<00001> count(*): 3` 으로 낸다. */
 export const parseCount = lines => {

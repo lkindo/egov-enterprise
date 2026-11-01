@@ -140,8 +140,7 @@ class BoardOperationsPostgresIntegrationTest {
     @Test
     @DisplayName("PostgreSQL 17 에서 게시 기준일 정렬(작성일시 없음은 맨 뒤)과 동률 처리가 번역된다")
     void postingBaseOrderTranslatesOnPostgres() {
-        assertThat(jdbc.queryForObject("SELECT current_setting('server_version_num')::int", Integer.class))
-                .as("운영과 같은 PostgreSQL 17 이상").isGreaterThanOrEqualTo(170000);
+        VendorTestSql.assertPostgresql17(jdbc);
 
         assertThat(titles(readAll(null))).containsExactly("S", "A", "E", "D", "F", "C", "B", "X", "N");
         assertThat(titles(readAll("date"))).containsExactly("S", "A", "E", "D", "F", "C", "B", "X", "N");
@@ -224,24 +223,20 @@ class BoardOperationsPostgresIntegrationTest {
         try (var executor = Executors.newFixedThreadPool(2)) {
             try {
                 attempts.add(executor.submit(() -> attempt(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                    leadingPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                    leadingPid.set(VendorTestSql.sessionId(jdbc));
                     boardService.updatePostPin(bbsId, first, new BoardPostPinRequest("Y", null));
                     applied.countDown();
                     await(release);
                 }))));
                 assertThat(applied.await(15, TimeUnit.SECONDS)).as("선행 고정이 마스터 행 잠금을 쥔 채 고정을 반영함").isTrue();
                 attempts.add(executor.submit(() -> attempt(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                    jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                    VendorTestSql.nameSession(jdbc, application);
                     boardService.updatePostPin(bbsId, second, new BoardPostPinRequest("Y", null));
                 }))));
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
                 while (waits.isEmpty() && !attempts.get(1).isDone() && System.nanoTime() < deadline) {
-                    jdbc.query("""
-                            SELECT pid, lower(query) AS statement, pg_blocking_pids(pid) AS blockers
-                            FROM pg_stat_activity
-                            WHERE datname = current_database() AND wait_event_type = 'Lock' AND application_name = ?
-                            """, (RowCallbackHandler) row -> waits.add(new Wait(row.getInt("pid"), row.getString("statement"),
-                            List.of((Integer[]) row.getArray("blockers").getArray()))), application);
+                    VendorTestSql.lockWaits(jdbc, application).forEach(wait -> waits.add(new Wait((int) wait.id(), wait.statement(),
+                            wait.blockers().stream().map(Long::intValue).toList())));
                     Thread.sleep(20);
                 }
             } finally {
@@ -294,7 +289,7 @@ class BoardOperationsPostgresIntegrationTest {
             try {
                 attempts.add(executor.submit(() -> attempt(LIKE_PERMISSIONS, () -> new TransactionTemplate(transactionManager)
                         .executeWithoutResult(status -> {
-                            leadingPid.set(jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class));
+                            leadingPid.set(VendorTestSql.sessionId(jdbc));
                             assertThat(boardService.cancelLike(bbsId, post)).isEqualTo(5);
                             applied.countDown();
                             await(release);
@@ -302,17 +297,13 @@ class BoardOperationsPostgresIntegrationTest {
                 assertThat(applied.await(15, TimeUnit.SECONDS)).as("선행 취소가 이력 행 잠금을 쥔 채 감소를 반영함").isTrue();
                 attempts.add(executor.submit(() -> attempt(LIKE_PERMISSIONS, () -> new TransactionTemplate(transactionManager)
                         .executeWithoutResult(status -> {
-                            jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                            VendorTestSql.nameSession(jdbc, application);
                             contenderCount.set(boardService.cancelLike(bbsId, post));
                         }))));
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(4);
                 while (waits.isEmpty() && !attempts.get(1).isDone() && System.nanoTime() < deadline) {
-                    jdbc.query("""
-                            SELECT pid, lower(query) AS statement, pg_blocking_pids(pid) AS blockers
-                            FROM pg_stat_activity
-                            WHERE datname = current_database() AND wait_event_type = 'Lock' AND application_name = ?
-                            """, (RowCallbackHandler) row -> waits.add(new Wait(row.getInt("pid"), row.getString("statement"),
-                            List.of((Integer[]) row.getArray("blockers").getArray()))), application);
+                    VendorTestSql.lockWaits(jdbc, application).forEach(wait -> waits.add(new Wait((int) wait.id(), wait.statement(),
+                            wait.blockers().stream().map(Long::intValue).toList())));
                     Thread.sleep(20);
                 }
             } finally {
@@ -360,9 +351,7 @@ class BoardOperationsPostgresIntegrationTest {
         try (var blocker = dataSource.getConnection(); var executor = Executors.newSingleThreadExecutor()) {
             blocker.setAutoCommit(false);
             int blockerPid;
-            try (var query = blocker.createStatement(); var row = query.executeQuery("SELECT pg_backend_pid()")) {
-                row.next(); blockerPid = row.getInt(1);
-            }
+            blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
             try (var lock = blocker.prepareStatement("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE")) {
                 lock.setLong(1, attachment); lock.executeQuery().close();
             }
@@ -370,7 +359,7 @@ class BoardOperationsPostgresIntegrationTest {
                 SecurityContextHolder.getContext().setAuthentication(authentication);
                 try {
                     new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                        jdbc.queryForObject("SELECT set_config('application_name', ?, true)", String.class, application);
+                        VendorTestSql.nameSession(jdbc, application);
                         try {
                             boardService.updatePostWithFiles(bbsId, post, request,
                                     List.of(new MockMultipartFile("files", "appended.txt", "text/plain", "appended".getBytes(java.nio.charset.StandardCharsets.UTF_8))));
@@ -390,10 +379,7 @@ class BoardOperationsPostgresIntegrationTest {
                 long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(15);
                 boolean waiting;
                 do {
-                    waiting = Boolean.TRUE.equals(jdbc.queryForObject("SELECT EXISTS (SELECT 1 FROM pg_stat_activity "
-                            + "WHERE datname=current_database() AND application_name=? AND wait_event_type='Lock' "
-                            + "AND ? = ANY(pg_blocking_pids(pid)) AND lower(query) LIKE '%tb_file_master%')",
-                            Boolean.class, application, blockerPid));
+                    waiting = VendorTestSql.waitsOn(jdbc, application, blockerPid, "tb_file_master");
                     if (!waiting && writing.isDone()) writing.get();
                     if (!waiting) Thread.sleep(20);
                 } while (!waiting && System.nanoTime() < deadline);
@@ -418,9 +404,9 @@ class BoardOperationsPostgresIntegrationTest {
             assertThat(jdbc.queryForMap("SELECT * FROM tb_bbs_item WHERE pst_sn=?", post)).isEqualTo(expectedRow.get());
             assertThat(appendedPath.get()).doesNotExist();
         } else {
-            assertThat(jdbc.queryForMap("SELECT pst_ttl, pst_cn, version, atch_file_sn FROM tb_bbs_item WHERE pst_sn=?", post))
+            assertThat(VendorTestSql.row(jdbc, "SELECT pst_ttl, pst_cn, version, atch_file_sn FROM tb_bbs_item WHERE pst_sn=?", post))
                     .containsEntry("pst_ttl", "with appended file").containsEntry("pst_cn", "new body")
-                    .containsEntry("version", version + 1).containsEntry("atch_file_sn", attachment);
+                    .containsEntry("version", version + 1L).containsEntry("atch_file_sn", attachment);
             assertThat(appendedPath.get()).hasContent("appended");
         }
     }
@@ -512,7 +498,7 @@ class BoardOperationsPostgresIntegrationTest {
     @Test
     @DisplayName("상단 고정은 종료일이 있든 없든 형 오류 없이 쓴다")
     void pinWritesBothBranches() {
-        Long post = jdbc.queryForObject("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn) VALUES (?, '고정', 'Y') RETURNING pst_sn", Long.class, bbsId);
+        Long post = VendorTestSql.insertKey(jdbc, "INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn) VALUES (?, '고정', 'Y')", "pst_sn", bbsId);
 
         assertThat(boards.updatePin(bbsId, List.of(post), "Y", "20311231")).isEqualTo(1);
         assertThat(jdbc.queryForObject("SELECT upend_fix_end_ymd FROM tb_bbs_item WHERE pst_sn = ?", String.class, post)).isEqualTo("20311231");

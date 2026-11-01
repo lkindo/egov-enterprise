@@ -108,7 +108,7 @@ class MailDeliveryStateIntegrationTest {
         assertThat(code(id)).isEqualTo("S");
         DurableJob finished = jobs.findByJobMngNo(initial.getJobMngNo()).orElseThrow();
         assertThat(finished.getPrcsSttsNm()).isEqualTo("SUCCEEDED");
-        assertThat(finished.getJobCn()).isEmpty();
+        assertThat(finished.payloadDiscarded()).isTrue();
         verify(sender, times(1)).send("subject", "body", "no-reply@egov.local", address);
     }
 
@@ -147,7 +147,7 @@ class MailDeliveryStateIntegrationTest {
         jdbc.update("UPDATE tb_email_dsptch_manage SET dsptch_rslt_cd='P' WHERE eml_dsptch_sn=?", id);
         assertThat(worker().dispatchOne()).isTrue();
         assertThat(code(id)).isEqualTo("P");
-        assertThat(jobs.findByJobMngNo(initial.getJobMngNo()).orElseThrow().getJobCn()).isEmpty();
+        assertThat(jobs.findByJobMngNo(initial.getJobMngNo()).orElseThrow().payloadDiscarded()).isTrue();
         verifyNoInteractions(sender);
     }
 
@@ -182,12 +182,12 @@ class MailDeliveryStateIntegrationTest {
     @Test void exhaustedUnstartedIntentBecomesFailedAndLosesItsCiphertext() {
         long id = accept(ADDRESS, "display");
         DurableJob initial = job(id);
-        jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='expired',job_prnmnt_dt=CURRENT_TIMESTAMP-INTERVAL '1 second' WHERE job_mng_no=?", initial.getJobMngNo());
+        jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='expired',job_prnmnt_dt=CURRENT_TIMESTAMP-INTERVAL '1' SECOND WHERE job_mng_no=?", initial.getJobMngNo());
         worker().dispatchOne();
         assertThat(code(id)).isEqualTo("F");
         DurableJob finished = jobs.findByJobMngNo(initial.getJobMngNo()).orElseThrow();
         assertThat(finished.getPrcsSttsNm()).isEqualTo("FAILED");
-        assertThat(finished.getJobCn()).isEmpty();
+        assertThat(finished.payloadDiscarded()).isTrue();
         verifyNoInteractions(sender);
     }
 
@@ -215,7 +215,7 @@ class MailDeliveryStateIntegrationTest {
     }
 
     private DurableJob job(long id) {
-        String key = jdbc.queryForObject("SELECT job_mng_no FROM tb_sys_job WHERE CASE WHEN job_se_nm='MAIL_DELIVERY' AND job_cn<>'' THEN job_cn::jsonb->>'dispatchId' END = ?", String.class, Long.toString(id));
+        String key = jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT job_mng_no FROM tb_sys_job WHERE CASE WHEN job_se_nm='MAIL_DELIVERY' THEN job_cn::jsonb->>'dispatchId' END = ?"), String.class, Long.toString(id));
         ownedJobs.add(key);
         return jobs.findByJobMngNo(key).orElseThrow();
     }
