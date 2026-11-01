@@ -443,6 +443,8 @@ async function main() {
       'utf8',
     );
     lock.validated = true;
+    // PostgreSQL 번들의 잠금은 그대로 둔다. 벤더 구성만 번역 입력을 잠금에 묶는다.
+    if (composition.database.vendor !== 'postgresql') lock.vendorInputSha256 = createHash('sha256').update(readFileSync(`${output}.vendor-input.json`)).digest('hex');
     lock.migrationFiles = Object.fromEntries(readdirSync(join(output, 'db', 'migration')).sort().map(name => [
       `db/migration/${name}`, createHash('sha256').update(readFileSync(join(output, 'db', 'migration', name))).digest('hex'),
     ]));

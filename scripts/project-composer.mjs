@@ -7,7 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
-import { classifyRecipeFailure, resolveProjectRecipe, sourceRefIsValid } from './project-composer-recipe.mjs';
+import { assertVendorRequestable, classifyRecipeFailure, resolveProjectRecipe, sourceRefIsValid } from './project-composer-recipe.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from './project-composer-menu-preview.mjs';
 import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
@@ -174,7 +174,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   };
   // 화면 문구·미배정 권한 안내·메뉴 투영도 선언이다. 일부러 던진 실패만 CATALOG_DRIFT 로, 런타임 결함은 그대로 둔다.
   const declared = read => { try { return read(); } catch (error) { throw classifyDeclarationFailure(error, root); } };
-  const resolveRecipe = (recipe, value) => { try { return resolveProjectRecipe(recipe, value); } catch (error) { throw classifyRecipeFailure(error); } };
+  const resolveRecipe = (recipe, value) => { try { assertVendorRequestable(recipe); return resolveProjectRecipe(recipe, value); } catch (error) { throw classifyRecipeFailure(error); } };
   // 계획 차이는 마지막으로 적재한 카탈로그와 메뉴 스냅숏을 다시 쓴다(카탈로그 적재는 수 초가 걸린다).
   // 차이는 미리보기일 뿐이고, 계획과 생성은 늘 카탈로그를 새로 적재해 다시 판정한다.
   let latest;

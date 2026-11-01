@@ -4,6 +4,7 @@
  * 장기 template 브랜치를 만들거나 현재 working tree를 수정하지 않는다.
  */
 import { existsSync, mkdirSync, readdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
+import { createHash } from 'node:crypto';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { projectReusableGovernance } from './reusable-governance-projection.mjs';
@@ -17,6 +18,7 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, composerOwnership, detectGeneratedComposition, loadComposerModules,
   projectComposerModuleFiles } from './composer-modules.mjs';
 import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
+import { projectVendorSources } from './project-composer-vendor-project.mjs';
 import { assertCompositionDatabaseLock, composerProfile, assertComposerSourceSurvives, projectedScreenLosses,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { pageSurvivalExpectation } from './reusable-page-survival.mjs';
@@ -218,6 +220,12 @@ async function main() {
   if (dbLock.sourceCommit !== sourceCommit) fail(`DB bundle commit ${dbLock.sourceCommit} != source commit ${sourceCommit}`);
   assertCompositionDatabaseLock(dbLock, composition);
   verifyCompositionDatabaseFiles(join(dbBundle, 'db/migration'), dbLock);
+  // 벤더 기준선의 입력은 검증한 번들에 묶인 것만 쓴다. 다르면 권한 행이 빠져도 Oracle SQL 이 만들어진다.
+  const vendorId = composition.recipe.database.vendor;
+  const vendorInput = vendorId === 'postgresql' ? null : readFileSync(`${dbBundle}.vendor-input.json`);
+  if (vendorInput && createHash('sha256').update(vendorInput).digest('hex') !== dbLock.vendorInputSha256) {
+    fail('벤더 번역 입력이 DB bundle lock 과 다르다.');
+  }
 
   // API 계약 생성물은 원본 frontend 의 도구로 다시 만든다(U5-A). 출력 폴더를 만들기 전에 확인해 잔재를 남기지 않는다.
   assertFrontendToolchain(ROOT);
@@ -255,6 +263,8 @@ async function main() {
   const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;
   if (args.layout === 'single-module') installSingleModuleRuntime(output);
   else installMultiModuleMigrationRuntime(output);
+  // 벤더 투영은 빌드·설정을 바꾸므로 거버넌스가 증거 범위를 재기 전에 한다. 입력은 DB 생성기가 번들 옆에 둔 재적용 결과다.
+  const vendorProjection = vendorInput && projectVendorSources(output, { vendorId, layout: args.layout, input: JSON.parse(vendorInput.toString('utf8')) });
   // 거버넌스의 sourceUnchanged 는 '생성물 == 원본에 같은 투영' 이다. 생성기와 같은 projector 로 원본을 투영한다.
   // 레지스트리 렌더는 생성기가 복사한 같은 파일 목록을 쓴다.
   const sourceProjector = createFrontendProjector({ composition, files: copiedFiles.filter(file => file.startsWith('frontend/')) });
@@ -294,6 +304,7 @@ async function main() {
     projectionLedger,
     contracts: { apiDocs: { ...apiDocs.summary, keptAliasesWithoutBase: apiDocs.keptAliasesWithoutBase }, generatedTypes, contractReferences, ...contractCensus },
     zdmWaivers,
+    ...(vendorProjection ? { vendorProjection } : {}),
     governance: {
       path: 'config/governance/reusable-governance-projection.json',
       projectionSha256: canonicalJsonSha256(governance),

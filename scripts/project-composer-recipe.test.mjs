@@ -146,7 +146,7 @@ test('unsupported or unsafe recipes fail before any generation can start', () =>
     recipe({ domains: ['unknown'] }), recipe({ domains: ['survey', 'survey'] }),
     recipe({ domains: ['foundation'] }), recipe({ domains: 'survey' }), recipe({}),
     recipe({ domains: [], preset: 'core' }), recipe({ preset: 'missing' }), recipe({ domains: [], extra: true }),
-    { ...recipe({ domains: [] }), database: { vendor: 'oracle' } },
+    { ...recipe({ domains: [] }), database: { vendor: 'sqlite' } },
     { ...recipe({ domains: [] }), database: { vendor: 'postgresql', password: 'must-not-be-accepted' } },
     { ...recipe({ domains: [] }), backendLayout: 'single' },
   ];

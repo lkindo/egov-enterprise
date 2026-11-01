@@ -1,5 +1,5 @@
 import { canonicalJson, compositionDigest } from './project-composer-catalog.mjs';
-import { verifyResolvedDbComposition } from './project-composer-db.mjs';
+import { DATABASE_VENDORS, verifyResolvedDbComposition } from './project-composer-db.mjs';
 import { normalizeBackendLayout } from './reusable-layout.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
 import { projectNameIsValid } from './project-composer-name.mjs';
@@ -30,6 +30,14 @@ function object(value, field, allowed) {
   if (unknown.length) fail(field, `${field} contains unsupported fields: ${unknown.sort().join(', ')}`);
 }
 
+/** 새 생성 요청의 벤더 판정. 인증되지 않은 벤더는 이 값을 켠 도구 실행에서만 받는다(ADR-0047 D-9). 화면 경로는 서버가 PostgreSQL 만 받는다. */
+export function assertVendorRequestable(recipe) {
+  const vendor = recipe?.database?.vendor ?? 'postgresql';
+  if (vendor !== 'postgresql' && vendor !== process.env.COMPOSER_PREVIEW_VENDOR) {
+    fail('database.vendor', 'Only PostgreSQL is currently supported', 'UNSUPPORTED_DATABASE');
+  }
+}
+
 /** Pure planning: no filesystem, DB, shell or generated-directory mutation. */
 export function resolveProjectRecipe(input, catalog) {
   object(input, 'recipe', ['schemaVersion', 'project', 'sourceRef', 'selection', 'database', 'backendLayout']);
@@ -43,7 +51,8 @@ export function resolveProjectRecipe(input, catalog) {
   if (Object.hasOwn(input.selection, 'preset') === Object.hasOwn(input.selection, 'domains')) fail('selection', 'Choose exactly one of preset or domains');
   const database = input.database ?? { vendor: 'postgresql' };
   object(database, 'database', ['vendor']);
-  if (database.vendor !== 'postgresql') fail('database.vendor', 'Only PostgreSQL is currently supported', 'UNSUPPORTED_DATABASE');
+  // 고를 수 있는지는 새 요청에서만 본다(assertVendorRequestable). 이 함수는 저장된 구성의 재검증에도 쓰여 환경에 기대면 안 된다.
+  if (!DATABASE_VENDORS.includes(database.vendor)) fail('database.vendor', 'Unknown database vendor', 'UNSUPPORTED_DATABASE');
   let backendLayout;
   try { backendLayout = normalizeBackendLayout(input.backendLayout); } catch { fail('backendLayout', 'Unsupported backend layout', 'UNSUPPORTED_LAYOUT'); }
   if (!catalog || catalog.schemaVersion !== 1 || !Array.isArray(catalog.capabilities) || !Array.isArray(catalog.integrates)) fail('catalog', 'A valid capability catalog is required');
@@ -125,7 +134,7 @@ export function resolveProjectRecipe(input, catalog) {
   const excludedMenuTabs = sorted(catalog.capabilities.filter(feature => !included.has(feature.id)).flatMap(feature => feature.menuTabs));
   const permissionCodes = sorted([...catalog.core.permissionCodes, ...retained.flatMap(feature => feature.permissionCodes)]);
   const normalizedRecipe = { schemaVersion: 1, project: { name: input.project.name }, sourceRef: input.sourceRef,
-    selection: preset ? { preset: preset.id } : { domains: selectedDomains }, database: { vendor: 'postgresql' }, backendLayout };
+    selection: preset ? { preset: preset.id } : { domains: selectedDomains }, database: { vendor: database.vendor }, backendLayout };
   const composition = {
     schemaVersion: 1, recipe: normalizedRecipe, project: normalizedRecipe.project, sourceRef: normalizedRecipe.sourceRef,
     profile: preset?.id ?? 'custom', mandatory: [...catalog.mandatory], selectedDomains, resolvedDomains,
@@ -161,6 +170,8 @@ export function resolveGeneratorComposition({ catalog, profile, supplied, backen
   if ((profile === undefined) === (supplied === undefined)) fail('generator', 'Exactly one of a preset profile or a resolved composition is required');
   const input = supplied ?? { ...resolveProjectRecipe({ schemaVersion: 1, project: { name: profile }, sourceRef: sourceCommit,
     selection: { preset: profile }, database: { vendor: 'postgresql' }, backendLayout: backendLayout ?? 'multi-module' }, catalog), sourceCommit };
+  // 두 생성기의 공통 입구다. 생성물의 재검증은 이 함수를 지나지 않는다.
+  assertVendorRequestable(input.recipe);
   const composition = verifyResolvedDbComposition(input, verifyProjectComposition(input, catalog), sourceCommit, resolveSourceReference);
   if (layoutExplicit && backendLayout !== composition.backendLayout) fail('backendLayout', 'The requested layout differs from the composition layout', 'LAYOUT_MISMATCH');
   if (composition.foreignKeyViolations.length) {

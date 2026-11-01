@@ -26,6 +26,7 @@
  */
 import { spawn } from 'node:child_process';
 import { createHash } from 'node:crypto';
+import { existsSync, readFileSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, join, resolve } from 'node:path';
 
@@ -34,20 +35,24 @@ const LOCAL_DB_HOSTS = new Set(['localhost', '127.0.0.1', '::1']);
 /** DB_URL 의 호스트가 이 기계인지 판정한다. 비어 있으면 application.yml 기본값(localhost)이 쓰인다. */
 export function isLocalDatabaseUrl(dbUrl) {
   if (!dbUrl) return true;
-  const match = /^jdbc:[a-z0-9]+:\/\/(\[[^\]]+\]|[^/:?;]+)/i.exec(dbUrl.trim());
-  if (!match) return false;
-  return LOCAL_DB_HOSTS.has(match[1].replace(/^\[|\]$/g, '').toLowerCase());
+  // Oracle thin 은 jdbc:oracle:thin:@//호스트 꼴이다. 주소를 여러 개 적으면 드라이버가 뒤 호스트로도 붙으므로 모두 이 기계여야 한다.
+  const addresses = /^jdbc:(?:oracle:thin:@|[a-z0-9]+:)\/\/([^/?;]+)/i.exec(dbUrl.trim())?.[1];
+  if (!addresses) return false;
+  return addresses.split(',').every((address) => {
+    const host = /^(\[[^\]]+\]|[^:]+)/.exec(address.trim())?.[1];
+    return host !== undefined && LOCAL_DB_HOSTS.has(host.replace(/^\[|\]$/g, '').toLowerCase());
+  });
 }
 
 /** 백엔드가 접속할 수 있는 DB 주소들 — application.yml 의 DB_URL 과, 그것을 덮어쓰는 Spring 환경 변수. */
 const DATABASE_URL_KEYS = ['DB_URL', 'SPRING_DATASOURCE_URL', 'SPRING_DATASOURCE_JDBC_URL', 'SPRING_FLYWAY_URL'];
 
 /** 백엔드 자식 프로세스에 넘길 환경. 원격 DB 면 Flyway 를 끄고(옵트인 시 seed-dev 만 뺀다) 그 사유를 돌려준다. */
-export function backendEnvironment(env) {
+export function backendEnvironment(env, { flywayLocation = 'classpath:db/migration' } = {}) {
   if (DATABASE_URL_KEYS.every((key) => isLocalDatabaseUrl(env[key]))) return { env, notice: null };
   if (env.DEV_REMOTE_FLYWAY === 'migrate') {
     return {
-      env: { ...env, SPRING_FLYWAY_LOCATIONS: 'classpath:db/migration' },
+      env: { ...env, SPRING_FLYWAY_LOCATIONS: flywayLocation },
       notice: '[dev] ⚠ 원격 DB 에 Flyway 를 적용합니다(DEV_REMOTE_FLYWAY=migrate) — 개발 시드(db/seed-dev)는 넣지 않습니다.',
     };
   }
@@ -59,6 +64,13 @@ export function backendEnvironment(env) {
   };
 }
 
+/** 벤더 생성물은 번역한 기준선 폴더만 Flyway 에 준다. 그 안의 PostgreSQL 번들은 대조용이다. */
+export function projectFlywayLocation(root) {
+  const lock = join(root, 'reusable-base-lock.json');
+  const location = existsSync(lock) ? JSON.parse(readFileSync(lock, 'utf8')).vendorProjection?.location : undefined;
+  return location ?? 'classpath:db/migration';
+}
+
 function main() {
   // 기동 시점에 시크릿 지문을 찍어 둔다. 값 자체는 절대 출력하지 않는다(지문만으로 대조에 충분).
   const secret = process.env.JWT_SECRET;
@@ -68,7 +80,8 @@ function main() {
       ? `[dev] JWT_SECRET 주입됨 (지문 ${fingerprint}) — 백엔드/프론트 양쪽에 동일하게 전달합니다.`
       : '[dev] JWT_SECRET 미설정 — 백엔드/프론트 양쪽이 각자의 dev 기본값을 씁니다(값이 같으므로 대칭).'
   );
-  const backend = backendEnvironment(process.env);
+  const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+  const backend = backendEnvironment(process.env, { flywayLocation: projectFlywayLocation(root) });
   if (backend.notice) console.log(backend.notice);
 
   // ⚠ shell:true 에서는 인자 배열이 하나의 셸 문자열로 합쳐지므로, 배열 원소로 넘긴 명령의
