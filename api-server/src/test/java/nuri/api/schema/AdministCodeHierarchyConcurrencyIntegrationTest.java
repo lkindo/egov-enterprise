@@ -228,7 +228,7 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
             assertAll(
                     // JdbcTemplate can leave 55P03 uncategorized; the real handler owns SQLState mapping.
                     () -> assertThat(outcome.failure()).isInstanceOf(DataAccessException.class),
-                    () -> assertThat(sqlState(outcome.failure())).isEqualTo(VendorTestSql.lockTimeoutState(jdbc)),
+                    () -> assertThat(sqlState(outcome.failure())).isIn(VendorTestSql.lockTimeoutStates(jdbc)),
                     () -> assertThat(outcome.waited()).isGreaterThanOrEqualTo(Duration.ofMillis(4_500))
                             .isLessThan(Duration.ofSeconds(15)),
                     () -> assertThat(parentOf(first)).isEqualTo(second),

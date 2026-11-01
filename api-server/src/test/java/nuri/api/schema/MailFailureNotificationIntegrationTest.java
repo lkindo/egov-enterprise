@@ -473,7 +473,7 @@ class MailFailureNotificationIntegrationTest {
                 throw new IllegalStateException("Synthetic non-database notice failure");
             }
             try {
-                jdbc.queryForObject("SELECT 1 / CAST(? AS INTEGER)", Integer.class, 0);
+                jdbc.queryForObject(VendorTestSql.divisionByZero(jdbc), Integer.class, 0);
             } catch (DataAccessException failure) {
                 recordSqlState(observation, failure);
                 throw failure;

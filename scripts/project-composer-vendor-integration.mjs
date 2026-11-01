@@ -83,8 +83,6 @@ function markOwner(handle) {
 }
 
 function runIntegrationTests(vendorId, integration, handle) {
-  // 이전 실행의 결과가 이번 실행의 증거가 되지 않게 지운다.
-  rmSync(RESULTS, { recursive: true, force: true });
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   return spawnSync(`"${gradlew}"`, [':api-server:vendorIntegrationTest', '-PvendorIntegration=true', '--continue', '--console=plain'], {
     cwd: ROOT, stdio: 'inherit', shell: true, env: { ...process.env, ...integrationEnvironment(vendorId, integration, handle) },
@@ -94,6 +92,8 @@ function runIntegrationTests(vendorId, integration, handle) {
 export function runVendorIntegration({ input, vendorId, engineId }) {
   const engine = engineId ?? vendorId;
   const { integration } = VENDOR_ENGINES[engine];
+  // 이전 실행의 결과가 이번 실행의 증거가 되지 않게 맨 앞에서 지운다. 시험 전 단계에서 실패해도 낡은 결과가 남지 않는다.
+  rmSync(RESULTS, { recursive: true, force: true });
   const handle = startVendorEngine(engine, { publishPort: integration.port });
   let failure = null;
   try {

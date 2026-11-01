@@ -111,7 +111,7 @@ class SmsFailureNoticeIntegrationTest {
                     assertThat(inboxCount()).isEqualTo(1); // Same connection sees the uncommitted real rows.
                     assertThat(noticeJobCount()).isEqualTo(1);
                     sqlFaults.incrementAndGet();
-                    jdbc.queryForObject("SELECT 1 / 0", Integer.class); // Actual SQLSTATE 22012, no DDL/mock exception.
+                    jdbc.queryForObject(VendorTestSql.divisionByZero(jdbc), Integer.class, 0); // Actual SQLSTATE 22012, no DDL/mock exception.
                 }
                 return result;
             } catch (RuntimeException failure) {
