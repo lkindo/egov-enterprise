@@ -18,18 +18,18 @@
  * Atlas(atlas-catalog.mjs)는 OpenAPI 만으로 연산을 그리고 인가 원장과 잇지 않는다 — 여기서 하는 조인은 Atlas 에 없으므로
  * 계산부를 나누지 않고 api-docs.json 을 직접 읽는다.
  *
- * 추적 표(하류 추적 보기·입력 항목 후보·시험 목록·요구사항 추적 조인)는 export-deliverables-trace.mjs, DB 표는
- * export-deliverables-db.mjs 가 계산한다.
+ * 추적 표(하류 추적 보기·입력 항목 후보·시험 목록·인수 시험 시나리오 후보·요구사항 추적 조인)는 export-deliverables-trace.mjs,
+ * 예외·도입 승인 현황과 단계 기준선 비교는 이 파일, DB 표는 export-deliverables-db.mjs 가 계산한다.
  *
- * 사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]
+ * 사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--compare <기준선 manifest.json>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]
  */
 import { createHash } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { readScreenRegistryArtifact } from './screen-registry-model.mjs';
-import { inputFieldSheet, loadTraceInputs, readRequirementFile, readRequirements, requirementSheet, testListSheet, traceSheet } from './export-deliverables-trace.mjs';
+import { inputFieldSheet, loadTraceInputs, readRequirementFile, readRequirements, requirementSheet, testListSheet, traceSheet, uatScenarioSheet } from './export-deliverables-trace.mjs';
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -299,11 +299,110 @@ export function falsePositiveSheet({ review }) {
   };
 }
 
+export function riskWaiverSheet({ zdmWaivers = {}, urlApproval = {}, adoptionReview = null, migrationAdoptionReview = null }) {
+  const rows = [
+    ...(zdmWaivers.waivers ?? []).map((row) => ({ category: 'ZDM 예외 승인', id: row.id,
+      target: [row.path, row.directive ?? 'ignore', row.rule].filter(Boolean).join(' · '),
+      status: `approved (${row.approvedAt ?? '-'})`, owner: row.owner, deadline: row.expiresAt, reason: row.reason })),
+    ...(zdmWaivers.legacyDebt ?? []).map((row) => ({ category: 'ZDM 레거시 부채', id: `legacy-debt:${String(row.path ?? '').replaceAll('\\', '/')}`, target: row.path,
+      status: row.status, owner: row.owner, deadline: row.reviewBy, reason: `ignore ${row.ignoreCount}건 — ${row.reason}` })),
+    ...(urlApproval.classes ?? []).map((row) => ({ category: 'URL 상태 부류 등록부', id: row.classId, target: (row.selector?.stateItemNames ?? []).join(', '),
+      status: row.reviewState, owner: row.owner, deadline: row.reviewBy, reason: row.description })),
+    ...[adoptionReview, migrationAdoptionReview].filter(Boolean).map((row) => ({ category: '기관 도입 승인 원장', id: `adoption:${row.product ?? row.authority}`,
+      target: [row.product, row.profile, row.environmentId, row.authority].filter(Boolean).join('/'), status: row.status, owner: row.owner,
+      deadline: row.validUntil, reason: `증거 ${(row.evidence ?? []).length}건` })),
+  ];
+  return {
+    id: 'risk-waiver-ledger', title: '예외·유예·도입 승인 현황',
+    sources: ['config/governance/zdm-waivers.json', 'config/ui-url-state-approval.json', 'config/governance/adoption-review.json', 'config/governance/migration-adoption-review.json'],
+    notices: [
+      '무중단 마이그레이션 예외·부채 원장(zdm-waivers.json), 비규범 URL 상태 부류 등록부(ui-url-state-approval.json), 기관 도입 승인 원장(adoption-review.json·migration-adoption-review.json)의 현재 항목이다 — 공용 메모리(known-gaps)는 읽지 않는다.',
+      '원본 저장소에서 기관 도입 승인 원장은 언제나 pending 템플릿이며(실제 기관 승인은 도입 환경·생성물에 기록되고 이 도구는 원본 저장소에서만 실행된다), 미검토·레거시 부채를 숨기지 않고 그대로 싣는다. 기관의 위험 수용 승인을 대신하지 않는다.',
+    ],
+    columns: [['category', '구분'], ['id', '항목 ID'], ['target', '대상'], ['status', '상태'], ['owner', '책임자'], ['deadline', '만료·재검토 기한'], ['reason', '사유·비고']],
+    rows,
+  };
+}
+
+const NON_DIGEST_FILES = new Set(['manifest.json', 'README.md', 'baseline-comparison.md', 'baseline-comparison.csv']);
+const isDigestFile = (path) => typeof path === 'string' && !NON_DIGEST_FILES.has(path);
+
+export function readBaselineManifest(text) {
+  let parsed;
+  try { parsed = JSON.parse(text); } catch (error) { throw new Error(`baseline manifest is not valid JSON: ${error.message}`); }
+  if (
+    parsed?.schemaVersion !== 1
+    || parsed?.kind !== 'non-normative-derived-deliverables'
+    || typeof parsed?.cleanTree !== 'boolean'
+    || !Array.isArray(parsed?.files)
+    || typeof parsed?.contentDigest !== 'string'
+    || !/^[0-9a-f]{64}$/u.test(parsed.contentDigest)
+    || typeof parsed?.commit !== 'string'
+    || !/^(?:[0-9a-f]{7,40}|unknown)$/u.test(parsed.commit)
+  ) {
+    throw new Error('baseline manifest must be a valid deliverables manifest.json (schemaVersion 1, boolean cleanTree, hex commit and contentDigest)');
+  }
+  const seenPaths = new Set();
+  for (const entry of parsed.files) {
+    if (
+      typeof entry?.path !== 'string'
+      || !/^[a-z0-9._-]+$/iu.test(entry.path)
+      || typeof entry?.sha256 !== 'string'
+      || !/^[0-9a-f]{64}$/u.test(entry.sha256)
+      || !(entry.rows === null || (typeof entry.rows === 'number' && Number.isInteger(entry.rows) && entry.rows >= 0))
+    ) {
+      throw new Error(`baseline manifest contains an invalid file entry: ${JSON.stringify(entry)}`);
+    }
+    if (seenPaths.has(entry.path)) {
+      throw new Error(`baseline manifest contains duplicate file path: ${entry.path}`);
+    }
+    seenPaths.add(entry.path);
+  }
+  const expectedDigest = sha256(
+    parsed.files
+      .filter((entry) => isDigestFile(entry.path))
+      .sort((left, right) => byText(left.path, right.path))
+      .map((entry) => `${entry.path}\t${entry.sha256}\n`)
+      .join(''),
+  );
+  if (expectedDigest !== parsed.contentDigest) {
+    throw new Error('baseline manifest contentDigest does not match its files[] hashes');
+  }
+  return parsed;
+}
+
+export function baselineComparisonSheet(baseline, currentFileEntries) {
+  const isComparable = (entry) => isDigestFile(entry?.path);
+  const baseMap = new Map((baseline.files ?? []).filter(isComparable).map((entry) => [entry.path, entry]));
+  const currMap = new Map((currentFileEntries ?? []).filter(isComparable).map((entry) => [entry.path, entry]));
+  const paths = [...new Set([...baseMap.keys(), ...currMap.keys()])].sort(byText);
+  const rows = paths.map((path) => {
+    const base = baseMap.get(path);
+    const curr = currMap.get(path);
+    const change = !base ? '추가' : !curr ? '제거' : base.sha256 === curr.sha256 ? '동일' : '변경';
+    const baseRows = typeof base?.rows === 'number' ? base.rows : null;
+    const currentRows = typeof curr?.rows === 'number' ? curr.rows : null;
+    const deltaRows = baseRows !== null && currentRows !== null ? currentRows - baseRows : null;
+    return { path, change, baseRows, currentRows, deltaRows, baseSha256: base?.sha256 ?? null, currentSha256: curr?.sha256 ?? null };
+  });
+  const treeNote = baseline.cleanTree === false ? '작업 트리 변경 포함 미리 보기' : '작업 트리 깨끗함';
+  return {
+    id: 'baseline-comparison', title: '단계 기준선 비교', sources: ['(실행 인자) 기준선 manifest.json'],
+    notices: [
+      `기준선 커밋 ${cellText(baseline.commit)} (${treeNote}, 내용 다이제스트 ${cellText(baseline.contentDigest)}) 대비 현재 산출물 파일의 행 수·해시 변화다.`,
+      '해시 변화는 원장·소스 변경 또는 산출물 표 서식·열 변경을 반영하며, 변경의 정당성·승인 여부는 사람이 판정한다.',
+    ],
+    columns: [['path', '파일'], ['change', '변화'], ['baseRows', '기준선 행 수'], ['currentRows', '현재 행 수'], ['deltaRows', '증감'],
+      ['baseSha256', '기준선 SHA-256'], ['currentSha256', '현재 SHA-256']],
+    rows,
+  };
+}
+
 export function buildSheets(inputs) {
   const sheets = [
     permissionSheet(inputs), screenSheet(inputs), capabilitySheet(inputs), interfaceSheet(inputs), serviceGuardSheet(inputs),
     accessPolicySheet(inputs), programSheet(inputs), menuSheet(inputs), weaknessSheet(inputs), falsePositiveSheet(inputs),
-    traceSheet(inputs), inputFieldSheet(inputs), testListSheet(inputs.tests),
+    traceSheet(inputs), inputFieldSheet(inputs), testListSheet(inputs.tests), uatScenarioSheet(inputs), riskWaiverSheet(inputs),
   ];
   if (inputs.requirements !== undefined) {
     const capabilities = new Set(inputs.routes.routes.flatMap((route) => (route.capabilities ?? []).map((capability) => `${route.route}#${capability.id}`)));
@@ -320,15 +419,18 @@ const PACKAGE_NOTICES = Object.freeze([
   `빈칸은 "${BLANK}" 으로, 검토 전 값은 원장 표기(UNVERIFIED·E0~E3) 그대로 싣는다.`,
 ]);
 
-/** 내용 다이제스트 — 표 파일(README·manifest 제외)의 경로와 sha256. 커밋·시각을 넣지 않으므로 원장 값이 같으면 같다. */
+/** 내용 다이제스트 — 표 파일(README·manifest·단계 기준선 비교표 제외)의 경로와 sha256. 커밋·시각·--compare 실행 여부를 넣지 않으므로 원장 값이 같으면 같다. */
 export function contentDigest(files) {
-  return sha256([...files.entries()].filter(([path]) => !['manifest.json', 'README.md'].includes(path)).sort(([left], [right]) => byText(left, right))
+  return sha256([...files.entries()]
+    .filter(([path]) => isDigestFile(path))
+    .sort(([left], [right]) => byText(left, right))
     .map(([path, text]) => `${path}\t${sha256(text)}\n`).join(''));
 }
 
 /** 이 묶음을 다시 만드는 명령 — 표 집합이 옵션마다 다르므로 옵션까지 적는다. */
 export function reproduceCommand(meta) {
-  return ['node scripts/export-deliverables.mjs', meta.database ? '--db' : null, meta.requirements ? '--rtm <같은 CSV>' : null].filter(Boolean).join(' ');
+  return ['node scripts/export-deliverables.mjs', meta.database ? '--db' : null, meta.requirements ? '--rtm <같은 CSV>' : null,
+    meta.baseline ? '--compare <같은 manifest.json>' : null].filter(Boolean).join(' ');
 }
 
 /** extras: 표가 아닌 문서(예: db-erd.md) — { path, title, text }. 표처럼 내용 다이제스트에 들어간다. */
@@ -343,19 +445,35 @@ export function renderPackage(sheets, meta, extras = []) {
     assertNoBannedClaims(extra.text, extra.path);
     files.set(extra.path, extra.text);
   }
+  const allSheets = [...sheets];
+  if (meta.baseline) {
+    const currentEntries = [
+      ...allSheets.flatMap((sheet) => [`${sheet.id}.md`, `${sheet.id}.csv`].map((path) => ({ path, rows: sheet.rows.length, sha256: sha256(files.get(path)) }))),
+      ...extras.map((extra) => ({ path: extra.path, rows: null, sha256: sha256(extra.text) })),
+    ];
+    const comparison = baselineComparisonSheet(meta.baseline, currentEntries);
+    for (const notice of comparison.notices) assertNoBannedClaims(notice, `${comparison.id} notice`);
+    files.set(`${comparison.id}.md`, toMarkdown(comparison));
+    files.set(`${comparison.id}.csv`, toCsv(comparison));
+    allSheets.push(comparison);
+  }
   const digest = contentDigest(files);
+  const comparisonDigest = meta.baseline
+    ? sha256(['baseline-comparison.md', 'baseline-comparison.csv'].map((path) => `${path}\t${sha256(files.get(path))}\n`).join(''))
+    : null;
   const readme = [
     '# 감리·검수 입력 자료 초안', '',
     `커밋 \`${meta.commit}\` · ${meta.cleanTree ? '작업 트리 깨끗함' : '작업 트리 변경 포함 — 미리 보기이며 제출용이 아니다'}`, '',
     '## 이 묶음의 성격', '', ...PACKAGE_NOTICES.map((notice) => `- ${notice}`), '',
     '## 표', '', '| 표 | Markdown | CSV | 행 수 |', '|---|---|---|---|',
-    ...sheets.map((sheet) => `| ${sheet.title} | [${sheet.id}.md](${sheet.id}.md) | [${sheet.id}.csv](${sheet.id}.csv) | ${sheet.rows.length} |`), '',
+    ...allSheets.map((sheet) => `| ${sheet.title} | [${sheet.id}.md](${sheet.id}.md) | [${sheet.id}.csv](${sheet.id}.csv) | ${sheet.rows.length} |`), '',
     ...(extras.length ? ['## 그림', '', ...extras.map((extra) => `- [${extra.title}](${extra.path})`), ''] : []),
     ...(meta.database ? [`DB 표는 참조 스키마(일회용 PostgreSQL ${meta.database.postgres} 에 Flyway ${meta.database.migrations}개를 단계 적용)에서 읽었다 — 운영 DB 실측이 아니다.`, '']
       : ['DB 표(테이블·컬럼 정의서, 외래 키, ERD, 표준 사전)는 --db 로 만든다 — 이 묶음에는 없다.', '']),
     '## 재현', '',
     `내용 다이제스트 \`${digest}\` — 표 파일로 계산한다. 커밋·시각을 넣지 않으므로 원장 값이 같으면 다른 커밋에서 \`${reproduceCommand(meta)}\` 로 다시 만들어도 같다.`,
-    ...(meta.requirements ? ['이 묶음은 기관 요구사항 추적 CSV 를 실행 인자로 받았다 — 다이제스트에 그 내용이 들어가므로 같은 CSV 를 다시 넘겨야 같다.'] : []), '',
+    ...(meta.requirements ? ['이 묶음은 기관 요구사항 추적 CSV 를 실행 인자로 받았다 — 다이제스트에 그 내용이 들어가므로 같은 CSV 를 다시 넘겨야 같다.'] : []),
+    ...(meta.baseline ? ['이 묶음은 이전 단계 기준선 manifest.json 을 실행 인자로 받았다 — 내용 다이제스트(contentDigest)는 기준선 인자와 무관하게 동일하게 유지되며, 비교 표 해시는 manifest.json 의 comparisonDigest 에 따로 기록된다.'] : []), '',
     '입력 파일의 sha256, lockfile, 도구 버전은 manifest.json 에 있다. 공공 규범과의 대응과 이 묶음의 경계는 docs/03-guides/design-to-deliverables-guide.md 에 있다.', '',
   ].join('\n');
   assertNoBannedClaims(readme, 'README.md');
@@ -364,10 +482,11 @@ export function renderPackage(sheets, meta, extras = []) {
     schemaVersion: 1, kind: 'non-normative-derived-deliverables', decision: 'DEC-OPS-382', commit: meta.commit, cleanTree: meta.cleanTree,
     toolchain: meta.toolchain, inputs: meta.inputs, lockfiles: meta.lockfiles, database: meta.database ?? null,
     files: [
-      ...sheets.flatMap((sheet) => [`${sheet.id}.md`, `${sheet.id}.csv`].map((path) => ({ path, rows: sheet.rows.length, sha256: sha256(files.get(path)) }))),
+      ...allSheets.flatMap((sheet) => [`${sheet.id}.md`, `${sheet.id}.csv`].map((path) => ({ path, rows: sheet.rows.length, sha256: sha256(files.get(path)) }))),
       ...extras.map((extra) => ({ path: extra.path, rows: null, sha256: sha256(extra.text) })),
     ],
     contentDigest: digest,
+    comparisonDigest,
   };
   files.set('manifest.json', `${JSON.stringify(manifest, null, 2)}\n`);
   return { files, digest };
@@ -389,7 +508,7 @@ function inputReader(root) {
     list: () => [...inputs].sort(([left], [right]) => byText(left, right)).map(([path, digest]) => ({ path, sha256: digest })) };
 }
 
-export async function loadInputs(root = ROOT, { rtm } = {}) {
+export async function loadInputs(root = ROOT, { rtm, compare } = {}) {
   if (existsSync(join(root, GENERATED_PRODUCT_MARKER))) {
     throw new Error('export-deliverables runs on the source repository only; generated products need a projected-ledger mode first');
   }
@@ -416,6 +535,14 @@ export async function loadInputs(root = ROOT, { rtm } = {}) {
     requirements = readRequirements(text);
     io.record('(실행 인자) 기관 요구사항 추적 CSV', textSha256(text));
   }
+  let baseline;
+  if (compare !== undefined) {
+    const text = readRequirementFile(root, resolve(compare), { label: 'baseline manifest', assertAllowed: assertAllowedInput, tracked: (path) => {
+      try { execFileSync('git', ['ls-files', '--error-unmatch', '--', `:(icase)${path}`], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
+    } });
+    baseline = readBaselineManifest(text);
+    io.record('(실행 인자) 기준선 manifest.json', textSha256(text));
+  }
   return {
     inputs: {
       catalog: io.json('config/governance/permission-catalog.json'),
@@ -427,7 +554,12 @@ export async function loadInputs(root = ROOT, { rtm } = {}) {
       menus: io.json('config/project-composer-menus.json'),
       weaknesses: io.json('config/security/secure-coding-weaknesses.json'),
       review: io.json('config/security/false-positive-review.json'),
-      files, ownerOf, moduleFiles: modules.files, e2e, tests, requirements,
+      uiScenarios: io.json('config/ui-quality-scenarios.json'),
+      zdmWaivers: io.json('config/governance/zdm-waivers.json'),
+      urlApproval: io.json('config/ui-url-state-approval.json'),
+      adoptionReview: io.json('config/governance/adoption-review.json'),
+      migrationAdoptionReview: io.json('config/governance/migration-adoption-review.json'),
+      files, ownerOf, moduleFiles: modules.files, e2e, tests, requirements, baseline,
     },
     inputList: io.list(),
   };
@@ -452,12 +584,26 @@ export function resolveOutput(root, out) {
   return target;
 }
 
-export async function exportDeliverables({ root = ROOT, allowDirty = false, out, db = false, rtm } = {}) {
+export function assertCompareOutsideOutput(targetDir, comparePath) {
+  if (comparePath === undefined) return;
+  const canonical = (p) => {
+    const abs = resolve(p);
+    const norm = existsSync(abs) ? realpathSync.native(abs) : abs;
+    return process.platform === 'win32' ? norm.toLowerCase() : norm;
+  };
+  const inside = relative(canonical(targetDir), canonical(comparePath));
+  if (inside === '' || (!inside.startsWith('..') && !isAbsolute(inside))) {
+    throw new Error(`--compare baseline manifest must not be inside the target --out directory (${targetDir}); pass a different --out directory`);
+  }
+}
+
+export async function exportDeliverables({ root = ROOT, allowDirty = false, out, db = false, rtm, compare } = {}) {
   const commit = git(root, ['rev-parse', 'HEAD']);
   const cleanTree = git(root, ['status', '--porcelain']) === '';
   if (!cleanTree && !allowDirty) throw new Error('working tree is not clean — commit first, or pass --allow-dirty for a preview');
   const target = resolveOutput(root, out ?? `${OUTPUT_ROOT}/${commit.slice(0, 12)}${cleanTree ? '' : '-dirty'}`);
-  const { inputs, inputList } = await loadInputs(root, { rtm });
+  assertCompareOutsideOutput(target, compare);
+  const { inputs, inputList } = await loadInputs(root, { rtm, compare });
   const sheets = buildSheets(inputs);
   const extras = [];
   let database;
@@ -480,7 +626,7 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out,
     }
   });
   const { files, digest } = renderPackage(sheets, { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles, database,
-    requirements: inputs.requirements !== undefined }, extras);
+    requirements: inputs.requirements !== undefined, baseline: inputs.baseline }, extras);
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   for (const [path, text] of files) writeFileSync(join(target, path), text);
@@ -492,12 +638,14 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const valueOf = (flag) => (args.includes(flag) ? args[args.indexOf(flag) + 1] : undefined);
   const out = valueOf('--out');
   const rtm = valueOf('--rtm');
-  const known = new Set(['--allow-dirty', '--db', ...(args.includes('--out') ? ['--out', out] : []), ...(args.includes('--rtm') ? ['--rtm', rtm] : [])]);
-  if ((args.includes('--out') && !out) || (args.includes('--rtm') && !rtm) || args.some((arg) => !known.has(arg))) {
-    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
+  const compare = valueOf('--compare');
+  const known = new Set(['--allow-dirty', '--db', ...(args.includes('--out') ? ['--out', out] : []), ...(args.includes('--rtm') ? ['--rtm', rtm] : []),
+    ...(args.includes('--compare') ? ['--compare', compare] : [])]);
+  if ((args.includes('--out') && !out) || (args.includes('--rtm') && !rtm) || (args.includes('--compare') && !compare) || args.some((arg) => !known.has(arg))) {
+    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--compare <기준선 manifest.json>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
     process.exit(2);
   }
-  const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out, db: args.includes('--db'), rtm });
+  const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out, db: args.includes('--db'), rtm, compare });
   console.log(`산출물 초안 ${result.files}개 파일: ${relative(ROOT, result.target).split(sep).join('/')}`);
   console.log(`내용 다이제스트: ${result.digest}`);
 }

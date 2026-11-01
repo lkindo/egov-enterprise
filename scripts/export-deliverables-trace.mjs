@@ -284,20 +284,54 @@ export async function loadTraceInputs(root, { digest, record, assertAllowed }) {
 }
 
 /**
- * 기관 요구사항 추적 CSV — 저장소가 추적하는 파일과 금지 입력은 받지 않는다(커밋하지 않는 실행 인자).
- * 판정 전에 실제 경로로 정규화한다 — 대소문자만 다른 경로, junction·subst 같은 별칭으로 저장소 안 파일을 가리켜도 같은 판정을 받는다.
+ * 커밋하지 않는 외부 실행 인자 파일(--rtm 기관 요구사항 추적 CSV, --compare 기준선 manifest.json)을 읽는다.
+ * 저장소가 추적하는 파일과 금지 입력은 받지 않으며(label 로 오류 메시지 구분), 판정 전에 실제 경로로 정규화한다.
  */
-export function readRequirementFile(root, path, { tracked, assertAllowed }) {
+export function readRequirementFile(root, path, { tracked, assertAllowed, label = 'requirement trace CSV' }) {
   const real = realpathSync.native(path);
   const inside = toPosix(relative(realpathSync.native(root), real));
   if (inside !== '' && !inside.startsWith('..') && !isAbsolute(inside)) {
     assertAllowed(inside);
-    if (tracked(inside)) throw new Error(`requirement trace CSV must not be a tracked repository file: ${inside}`);
+    if (tracked(inside)) throw new Error(`${label} must not be a tracked repository file: ${inside}`);
   }
   // 확인한 기술자로만 읽는다 — 확인과 읽기 사이에 경로가 바뀌어도 다른 파일을 읽지 않는다(CodeQL js/file-system-race).
   try {
     return readRegularFile(real, { encoding: 'utf8' });
   } catch (error) {
-    throw new Error(`requirement trace CSV is not a readable regular file: ${path} (${error.message})`);
+    throw new Error(`${label} is not a readable regular file: ${path} (${error.message})`);
   }
+}
+
+/** 화면 품질·여정 시나리오 원장 → 발주기관 인수 시험(UAT) 시나리오 후보 표. */
+export function uatScenarioSheet({ uiScenarios = {} }) {
+  const rows = (uiScenarios.scenarios ?? []).flatMap((scenario) => {
+    const steps = scenario.journeySteps ?? [];
+    if (steps.length === 0) {
+      return [{
+        scenarioId: scenario.id, title: scenario.title, archetype: scenario.archetype, primaryTask: scenario.primaryTask,
+        stepId: BLANK_JOIN, route: BLANK_JOIN, role: BLANK_JOIN, interaction: BLANK_JOIN, stepStatus: BLANK_JOIN,
+        baselineStatus: scenario.currentBaseline?.status ?? BLANK_JOIN, reviewBy: scenario.currentBaseline?.reviewBy ?? BLANK_JOIN,
+        evidence: scenario.sourceEvidence ?? [],
+      }];
+    }
+    return steps.map((step) => ({
+      scenarioId: scenario.id, title: scenario.title, archetype: scenario.archetype, primaryTask: scenario.primaryTask,
+      stepId: step.id, route: step.route, role: step.role,
+      interaction: [step.state?.data, step.state?.interaction, step.state?.network].filter(Boolean).join(' · ') || BLANK_JOIN,
+      stepStatus: step.truth?.status ?? BLANK_JOIN, baselineStatus: scenario.currentBaseline?.status ?? BLANK_JOIN,
+      reviewBy: step.truth?.reviewBy ?? scenario.currentBaseline?.reviewBy ?? BLANK_JOIN,
+      evidence: [...new Set([step.source, ...(scenario.sourceEvidence ?? [])].filter(Boolean))],
+    }));
+  });
+  return {
+    id: 'uat-scenarios', title: '인수 시험(UAT)·업무 여정 시나리오 후보', sources: ['config/ui-quality-scenarios.json'],
+    notices: [
+      '화면 품질 대표 여정 시나리오 원장(ui-quality-scenarios.json, ADR-0005 대표 시나리오 8개)의 단계별 과업·역할·상태다 — 발주기관 인수 시험(UAT) 시나리오 초안 후보이며 전체 화면 전수 목록이나 인수 시험 수행·합격 판정이 아니다(전체 화면·역량·E2E 연결은 trace.md 참고).',
+      '단계 상태와 기준선 상태는 원장 표기(partial·unmeasured 등) 그대로 싣는다.',
+    ],
+    columns: [['scenarioId', '시나리오 ID'], ['title', '시나리오 이름'], ['archetype', '유형'], ['primaryTask', '핵심 과업'],
+      ['stepId', '단계 ID'], ['route', '화면 ID(경로)'], ['role', '역할'], ['interaction', '상호작용·상태'],
+      ['stepStatus', '단계 상태'], ['baselineStatus', '기준선 상태'], ['reviewBy', '재검토 기한'], ['evidence', '증거 경로']],
+    rows,
+  };
 }

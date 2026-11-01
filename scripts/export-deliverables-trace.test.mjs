@@ -5,7 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   e2eCandidates, gotoPaths, inputFieldSheet, javaTests, parseCsv, readRequirementFile, readRequirements, requirementSheet, routeMatches,
-  routeOwnerResolver, scriptTests, traceSheet,
+  routeOwnerResolver, scriptTests, traceSheet, uatScenarioSheet,
 } from './export-deliverables-trace.mjs';
 
 /* 산출물 추적 표(DEC-OPS-382)의 고정 입력 시험 — 실제 저장소의 원장·시험 파일을 읽지 않는다. */
@@ -201,4 +201,58 @@ test('script tests take the nearest enclosing describe as their suite', () => {
     "test('밖의 시험', () => {});",
   ].join('\n'), '프런트 단위');
   assert.deepEqual(rows.map((row) => [row.suite, row.name, row.line]), [['목록', '빈 목록을 말한다', 2], ['목록', '값 %s', 3], [null, '밖의 시험', 5]]);
+});
+
+test('uatScenarioSheet expands journey steps and keeps unmeasured or empty scenarios visible', () => {
+  const sheet = uatScenarioSheet({
+    uiScenarios: {
+      scenarios: [
+        {
+          id: 'auth-login',
+          title: '로그인 오류와 복귀',
+          archetype: 'authentication',
+          primaryTask: '오류 확인 후 로그인한다.',
+          currentBaseline: { status: 'unmeasured', reviewBy: '2026-12-07' },
+          sourceEvidence: ['frontend/e2e/journeys/authentication.spec.ts'],
+          journeySteps: [
+            {
+              id: 'invalid-credentials',
+              route: '/login',
+              source: 'frontend/src/app/login/page.tsx',
+              role: 'ANONYMOUS',
+              state: { data: 'invalid', interaction: 'submit-error', network: 'online' },
+              truth: { status: 'partial', reviewBy: '2026-12-01' },
+            },
+          ],
+        },
+        {
+          id: 'empty-scenario',
+          title: '단계 없는 시나리오',
+          archetype: 'hub',
+          primaryTask: '탐색한다.',
+          currentBaseline: { status: 'unverified', reviewBy: '2026-12-31' },
+          sourceEvidence: [],
+          journeySteps: [],
+        },
+      ],
+    },
+  });
+  assert.equal(sheet.rows.length, 2);
+  assert.deepEqual(sheet.rows[0], {
+    scenarioId: 'auth-login',
+    title: '로그인 오류와 복귀',
+    archetype: 'authentication',
+    primaryTask: '오류 확인 후 로그인한다.',
+    stepId: 'invalid-credentials',
+    route: '/login',
+    role: 'ANONYMOUS',
+    interaction: 'invalid · submit-error · online',
+    stepStatus: 'partial',
+    baselineStatus: 'unmeasured',
+    reviewBy: '2026-12-01',
+    evidence: ['frontend/src/app/login/page.tsx', 'frontend/e2e/journeys/authentication.spec.ts'],
+  });
+  assert.equal(sheet.rows[1].stepId, null);
+  assert.equal(sheet.rows[1].baselineStatus, 'unverified');
+  assert.match(sheet.notices.join('\n'), /인수 시험 수행·합격 판정이 아니다/u);
 });
