@@ -310,21 +310,30 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
   return report;
 }
 
-/** 기준 PostgreSQL 을 주지 않으면 일회용으로 띄운다. 생성물 검증에는 띄워 둔 DB 가 없다. */
-function withDisposablePostgres(run) {
+const spawnDocker = args => spawnSync('docker', args, { encoding: 'utf8' });
+
+/**
+ * 기준 PostgreSQL 을 주지 않으면 일회용으로 띄운다. 생성물 검증에는 띄워 둔 DB 가 없다.
+ * 생성 시도부터 정리 범위에 넣는다. 지우지 못하면 성공으로 넘기지 않는다. `docker` 는 시험에서 바꾼다.
+ */
+export function withDisposablePostgres(run, docker = spawnDocker) {
   const name = `egov-vendor-baseline-${randomBytes(4).toString('hex')}`;
-  const started = spawnSync('docker', ['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=postgresql`, '--env', 'POSTGRES_USER=composer',
-    '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', COMPOSER_POSTGRES_IMAGE], { encoding: 'utf8' });
-  if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${started.stderr.slice(0, 200)}`);
+  let result;
+  let failure = null;
   try {
-    for (let attempt = 0; spawnSync('docker', ['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']).status !== 0; attempt += 1) {
+    const started = docker(['run', '-d', '--name', name, '--label', `${VENDOR_CONTAINER_LABEL}=postgresql`, '--env', 'POSTGRES_USER=composer',
+      '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', COMPOSER_POSTGRES_IMAGE]);
+    if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${String(started.stderr).slice(0, 200)}`);
+    for (let attempt = 0; docker(['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']).status !== 0; attempt += 1) {
       if (attempt > 240) throw new Error('기준 PostgreSQL 이 준비되지 않았다.');
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
     }
-    return run({ container: name, user: 'composer', database: 'composer' });
-  } finally {
-    spawnSync('docker', ['rm', '-f', '-v', name], { stdio: 'ignore' });
+    result = run({ container: name, user: 'composer', database: 'composer' });
+  } catch (error) {
+    failure = error;
   }
+  stopVendorEngineReporting({ name }, failure, () => docker(['rm', '-f', '-v', name]));
+  return result;
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {

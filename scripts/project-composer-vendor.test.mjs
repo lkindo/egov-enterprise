@@ -11,7 +11,7 @@ import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
-import { probeRows } from './project-composer-vendor-differential.mjs';
+import { probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
@@ -515,6 +515,16 @@ test('a failure in the vendor test command is reported as its own command', () =
   } finally {
     rmSync(directory, { recursive: true, force: true });
   }
+});
+
+test('the disposable baseline database goes away whatever happens, and a leftover is not a pass', () => {
+  const calls = [];
+  const docker = outcomes => args => { calls.push(args[0]); return outcomes[args[0]] ?? { status: 0, stdout: '', stderr: '' }; };
+  assert.throws(() => withDisposablePostgres(() => assert.fail('돌면 안 된다'), docker({ run: { status: 1, stderr: '이미지 없음' } })), /기준 PostgreSQL 을 띄우지 못했다/);
+  assert.ok(calls.includes('rm'), '띄우지 못해도 지운다');
+  assert.throws(() => withDisposablePostgres(() => { throw new Error('대조 실패'); }, docker({ rm: { status: 1 } })), /대조 실패.*시험 DB 컨테이너가 남았다/, '본래 실패에 잔존을 덧붙인다');
+  assert.throws(() => withDisposablePostgres(() => 'ok', docker({ rm: { status: 1 } })), /시험 DB 컨테이너가 남았다/, '남은 컨테이너를 성공으로 넘기지 않는다');
+  assert.equal(withDisposablePostgres(() => 'ok', docker({})), 'ok');
 });
 
 test('the development stack moves to the vendor service and leaves the application services alone', () => {

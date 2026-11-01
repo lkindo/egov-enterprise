@@ -367,18 +367,23 @@ class ConfigSafetyLinterTest {
             Pattern.compile("(?m)^\\s*ORACLE_PASSWORD\\s*:\\s*\\$\\{DB_ADMIN_PASSWORD:\\?");
     private static final Pattern ORACLE_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*healthcheck\\.sh.*$");
 
-    /** 번들 DB 의 벤더별 판정. 지키는 것은 같다: 포트는 루프백만, 운영 비밀번호는 필수 환경변수, healthcheck 는 운영 자격에서도 동작한다. */
-    private record BundledDatabase(String port, Pattern allInterfaces, Pattern loopback, Map<String, Pattern> passwordOverrides,
-                                   Pattern healthcheck, String deployUrlCase) {
-    }
+    /** Oracle 로 투영한 생성물인가. 벤더 값은 잠금이 정하고 생성물 거버넌스가 결속한다. */
+    private static final boolean ORACLE_BUNDLE = "oracle".equals(ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql"));
 
-    private static final BundledDatabase BUNDLED_DATABASE = "oracle".equals(ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql"))
-            ? new BundledDatabase("1521", ORACLE_PORT_PUBLISHED_ON_ALL_INTERFACES, ORACLE_PORT_PUBLISHED_ON_LOOPBACK,
-                    Map.of("APP_USER_PASSWORD", PROD_ORACLE_APP_PASSWORD_OVERRIDE, "ORACLE_PASSWORD", PROD_ORACLE_ADMIN_PASSWORD_OVERRIDE),
-                    ORACLE_HEALTHCHECK, "jdbc:oracle:thin:@//db:1521/FREEPDB1)")
-            : new BundledDatabase("5432", DB_PORT_PUBLISHED_ON_ALL_INTERFACES, DB_PORT_PUBLISHED_ON_LOOPBACK,
-                    Map.of("POSTGRES_PASSWORD", PROD_DB_PASSWORD_OVERRIDE), DB_HEALTHCHECK_USES_CONTAINER_ENV,
-                    "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)");
+    /*
+     * 번들 DB 의 벤더별 판정. 지키는 것은 같다: 포트는 루프백만, 운영 비밀번호는 필수 환경변수, healthcheck 는 운영 자격에서도 동작한다.
+     * 기준선이 이 상수들의 우변을 해시하므로 record 로 묶지 않는다. 묶으면 매핑을 비워도 기준선이 그대로다.
+     */
+    private static final String BUNDLED_DB_PORT = ORACLE_BUNDLE ? "1521" : "5432";
+    private static final Pattern BUNDLED_DB_ALL_INTERFACES = ORACLE_BUNDLE ? ORACLE_PORT_PUBLISHED_ON_ALL_INTERFACES : DB_PORT_PUBLISHED_ON_ALL_INTERFACES;
+    private static final Pattern BUNDLED_DB_LOOPBACK = ORACLE_BUNDLE ? ORACLE_PORT_PUBLISHED_ON_LOOPBACK : DB_PORT_PUBLISHED_ON_LOOPBACK;
+    private static final Map<String, Pattern> BUNDLED_DB_PASSWORD_OVERRIDES = ORACLE_BUNDLE
+            ? Map.of("APP_USER_PASSWORD", PROD_ORACLE_APP_PASSWORD_OVERRIDE, "ORACLE_PASSWORD", PROD_ORACLE_ADMIN_PASSWORD_OVERRIDE)
+            : Map.of("POSTGRES_PASSWORD", PROD_DB_PASSWORD_OVERRIDE);
+    private static final Pattern BUNDLED_DB_HEALTHCHECK = ORACLE_BUNDLE ? ORACLE_HEALTHCHECK : DB_HEALTHCHECK_USES_CONTAINER_ENV;
+    private static final String BUNDLED_DB_DEPLOY_URL_CASE = ORACLE_BUNDLE
+            ? "jdbc:oracle:thin:@//db:1521/FREEPDB1)"
+            : "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)";
 
     /** 첨부 실물이 컨테이너 쓰기 계층으로 되돌아가지 않도록 고정하는 api mount. */
     private static final Pattern ATTACHMENT_STORAGE_MOUNT = Pattern.compile(
@@ -411,19 +416,19 @@ class ConfigSafetyLinterTest {
             return;
         }
 
-        String port = BUNDLED_DATABASE.port();
-        if (BUNDLED_DATABASE.allInterfaces().matcher(composeBaseSrc).find()) {
+        String port = BUNDLED_DB_PORT;
+        if (BUNDLED_DB_ALL_INTERFACES.matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: db 의 " + port + " 가 모든 인터페이스(0.0.0.0)에 공개돼 있습니다."
                     + " deploy.sh 가 base 를 함께 올리므로 이 공개는 운영 호스트에 그대로 적용됩니다."
                     + " '127.0.0.1:" + port + ":" + port + "' 로 좁히십시오 — 컨테이너 간 통신은 egov-net 을 쓰므로 영향이 없습니다."
                     + " (오버레이로는 닫을 수 없습니다: compose 는 ports 리스트를 이어붙입니다.)");
-        } else if (!BUNDLED_DATABASE.loopback().matcher(composeBaseSrc).find()) {
+        } else if (!BUNDLED_DB_LOOPBACK.matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: db 의 " + port + " 공개 형태를 판정할 수 없습니다 —"
                     + " 루프백 한정('127.0.0.1:" + port + ":" + port + "')이거나 공개가 아예 없어야 합니다."
                     + " 판정 불가를 통과로 넘기면 이 게이트가 무의미해집니다.");
         }
 
-        BUNDLED_DATABASE.passwordOverrides().forEach((variable, override) -> {
+        BUNDLED_DB_PASSWORD_OVERRIDES.forEach((variable, override) -> {
             if (!override.matcher(composeProdSrc).find()) {
                 violations.add("docker-compose.prod.yml: 번들 db 의 " + variable + " 를 필수 환경변수로"
                         + " 재정의하지 않았습니다 — base 에 커밋된 개발 비밀번호가 운영 DB 자격이 됩니다."
@@ -431,7 +436,7 @@ class ConfigSafetyLinterTest {
             }
         });
 
-        if (!BUNDLED_DATABASE.healthcheck().matcher(composeBaseSrc).find()) {
+        if (!BUNDLED_DB_HEALTHCHECK.matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: db healthcheck가 운영 자격을 따르지 않습니다 — prod 오버레이가"
                     + " 사용자를 바꾸면 존재하지 않는 개발 역할을 검사해 DB가 영구 unhealthy가 됩니다."
                     + " Compose 이스케이프 '$${...}'로 실효 값을 전달하십시오.");
@@ -464,7 +469,7 @@ class ConfigSafetyLinterTest {
                 "for v in API_IMAGE_REF FRONTEND_IMAGE_REF",
                 "docker pull \"$ref\"",
                 "case \"$DB_URL\" in",
-                BUNDLED_DATABASE.deployUrlCase(),
+                BUNDLED_DB_DEPLOY_URL_CASE,
                 "up --no-build -d --wait",
                 "docker image inspect \"$API_IMAGE_REF\"",
                 "docker image inspect \"$FRONTEND_IMAGE_REF\"");
