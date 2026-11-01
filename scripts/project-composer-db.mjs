@@ -6,6 +6,8 @@ const canonical = value => Array.isArray(value) ? value.map(canonical)
   : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const equal = (left, right) => JSON.stringify(canonical(left)) === JSON.stringify(canonical(right));
 const fail = message => { throw new Error(message); };
+/** 구성이 적을 수 있는 벤더. 고를 수 있는지는 여기서 정하지 않는다 — 이 판정은 저장된 구성의 재검증에도 쓰인다. */
+export const DATABASE_VENDORS = Object.freeze(['postgresql', 'oracle', 'tibero', 'mysql', 'mariadb', 'mssql', 'cubrid']);
 // 적용 스키마가 카탈로그 선언과 다르면 선언 불일치다(생성기 화면은 개발자 정보에 첫 위반을 보인다).
 const drift = message => { throw new ComposerError('CATALOG_DRIFT', { violations: [message] }, message); };
 const identifier = value => typeof value === 'string' && /^[a-z][a-z0-9_]*$/.test(value);
@@ -22,7 +24,8 @@ export function verifyResolvedDbComposition(input, resolved, sourceCommit, resol
   if (typeof resolveSourceReference !== 'function' || resolveSourceReference(resolved.sourceRef) !== sourceCommit) {
     fail('Composition sourceRef does not resolve to the current source commit.');
   }
-  if (resolved.database?.vendor !== 'postgresql') fail('Composition database must be postgresql.');
+  // 기준 번들은 벤더와 상관없이 PostgreSQL 로 만들고 소스 생성기가 벤더로 옮긴다.
+  if (!DATABASE_VENDORS.includes(resolved.database?.vendor)) fail('Composition database vendor is unknown.');
   for (const key of ['tables', 'explicitSequences']) {
     if (!Array.isArray(resolved[key]) || new Set(resolved[key]).size !== resolved[key].length
       || resolved[key].some(name => !identifier(name))) fail(`Invalid canonical composition ${key}.`);

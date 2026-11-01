@@ -44,6 +44,25 @@ const readJson = (root, file) => JSON.parse(normalizedText(root, file));
 const jsonText = value => `${JSON.stringify(value, null, 2)}\n`;
 export const canonicalJsonSha256 = value => sha256(jsonText(value));
 export const artifactTextSha256 = (root, file) => sha256(normalizedText(root, file));
+
+/** 벤더 생성물의 Flyway 위치와 번역 기준선 경로. 구성의 벤더에서만 나온다. */
+export const vendorBaselinePaths = vendorId => ({
+  location: `classpath:db/vendor/${vendorId}`,
+  migration: `api-server/src/main/resources/db/vendor/${vendorId}/V1_0__vendor_baseline.sql`,
+});
+
+/** 잠금의 벤더 투영이 구성과 맞고 실제로 실행될 기준선과 같은가. PostgreSQL 구성에는 투영이 없다. */
+export function vendorProjectionErrors(root, lock) {
+  const vendorId = lock.composition?.recipe?.database?.vendor ?? 'postgresql';
+  const projection = lock.vendorProjection;
+  if (vendorId === 'postgresql') return projection ? ['Source lock has a vendor projection for a PostgreSQL composition'] : [];
+  const expected = vendorBaselinePaths(vendorId);
+  if (projection?.vendor !== vendorId || projection.location !== expected.location || projection.migration !== expected.migration) {
+    return ['Source lock vendor projection differs from its composition'];
+  }
+  // 잠금의 값과 다르면 대조한 PostgreSQL 번들과 다른 SQL 이 돈다.
+  return artifactTextSha256(root, projection.migration) === projection.migrationSha256 ? [] : ['Vendor baseline differs from the source lock'];
+}
 export const snapshotPathFor = source => (source === UPSTREAM_MODULES ? `${UPSTREAM_DIRECTORY}/modules.json`
   : `${UPSTREAM_DIRECTORY}/${source.split('/').at(-1)}`);
 /** 원본 출처의 스냅숏 본문(줄 끝 정규화). 기능 선언 디렉터리는 카탈로그 해시가 덮는 선언을 JSON 하나로 적는다(UPSTREAM_MODULES). */
@@ -203,6 +222,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
         check(lock.composition.sourceCommit === metadata.sourceCommit, 'Source lock composition commit mismatch');
       } else check(!lock.composition, 'Source lock contains an unbound composition');
       errors.push(...inspectProjectionLedger(root, lock));
+      errors.push(...vendorProjectionErrors(root, lock));
     }
     check(exact(metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
     const activeArtifacts = metadata.activeArtifacts ?? [];

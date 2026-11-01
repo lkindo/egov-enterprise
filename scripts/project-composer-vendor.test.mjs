@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import test from 'node:test';
@@ -14,6 +14,12 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { probeRows } from './project-composer-vendor-differential.mjs';
 import { assertTestsRan, integrationEnvironment, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
 import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
+import { projectVendorBuild, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE, vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
+import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
+import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
+import { DATABASE_VENDORS } from './project-composer-db.mjs';
+import { backendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const isGap = error => error instanceof VendorTranslationGap && error.code === 'VENDOR_TRANSLATION_GAP';
@@ -338,4 +344,119 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   assert.deepEqual(selectableVendors(ledger), ['postgresql']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   assert.ok(ledger.vendors.filter(vendor => vendor.status !== 'certified').every(vendor => vendor.reason), '고를 수 없는 벤더는 사유가 있다');
+});
+
+test('a block statement ends on a slash line and a plain statement on a semicolon', () => {
+  assert.equal(renderFlywayMigration([{ sql: 'CREATE TABLE t (id NUMBER)' }, { sql: 'BEGIN NULL; END;', raw: true }]),
+    'CREATE TABLE t (id NUMBER);\nBEGIN NULL; END;\n/\n');
+});
+
+test('the build uses the vendor driver and Flyway plugin and keeps the rest', () => {
+  const build = `dependencies {
+    implementation 'org.flywaydb:flyway-database-postgresql'
+    implementation libs.postgresql
+    // vendorIntegrationTest 가 벤더 DB 에 붙는 드라이버. 이관 도구와 같은 판이다.
+    testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
+    testImplementation libs.h2
+}
+`;
+  const projected = projectVendorBuild(build, 'oracle');
+  assert.match(projected, /implementation 'org\.flywaydb:flyway-database-oracle'/);
+  assert.match(projected, new RegExp(`runtimeOnly '${VENDOR_SOURCE.oracle.driverCoordinate}'`));
+  assert.doesNotMatch(projected, /postgres/);
+  assert.doesNotMatch(projected, /testRuntimeOnly 'com\.oracle/, '런타임 드라이버와 겹치는 시험 줄은 뺀다');
+  assert.match(projected, /testImplementation libs\.h2/);
+});
+
+test('a build without the expected lines stops instead of keeping PostgreSQL', () => {
+  assert.throws(() => projectVendorBuild("implementation libs.postgresql\n", 'oracle'), /Flyway 플러그인/);
+  assert.throws(() => projectVendorBuild("implementation 'org.flywaydb:flyway-database-postgresql'\n", 'oracle'), /JDBC 드라이버/);
+});
+
+test('profile URLs and drivers move to the vendor without touching environment overrides', () => {
+  const projected = projectVendorProfile(`    url: \${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}
+    driver-class-name: org.postgresql.Driver
+    jdbc-url: \${DB_URL}
+`, 'oracle');
+  assert.equal(projected, `    url: \${DB_URL:${VENDOR_SOURCE.oracle.url}}
+    driver-class-name: ${VENDOR_SOURCE.oracle.driverClass}
+    jdbc-url: \${DB_URL}
+`);
+});
+
+test('the vendor document selects the SQL port and dialect and turns off Flyway placeholders', () => {
+  const document = vendorApplicationDocument('oracle');
+  assert.match(document, /^---\n/);
+  assert.match(document, /vendor: oracle/);
+  assert.match(document, /placeholder-replacement: false/);
+  assert.match(document, new RegExp(`dialect: ${VENDOR_SOURCE.oracle.dialect.replaceAll('.', '\\.')}`));
+});
+
+test('a new request needs certification or a tool run, but a stored composition stays valid in any shell', () => {
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const recipe = database => ({ schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'main', selection: { preset: 'core' }, database, backendLayout: 'multi-module' });
+  const refused = error => error.code === 'UNSUPPORTED_DATABASE';
+  const previous = process.env.COMPOSER_PREVIEW_VENDOR;
+  delete process.env.COMPOSER_PREVIEW_VENDOR;
+  try {
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'oracle' })), refused);
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'postgresql' })));
+    assert.doesNotThrow(() => assertVendorRequestable({}), '벤더를 적지 않으면 기본값이다');
+    assert.deepEqual(resolveProjectRecipe(recipe({ vendor: 'oracle' }), catalog).database, { vendor: 'oracle' }, '저장된 구성의 재검증은 환경에 기대지 않는다');
+    assert.throws(() => resolveProjectRecipe(recipe({}), catalog), refused, '벤더 없는 구성은 받지 않는다');
+    assert.throws(() => resolveProjectRecipe(recipe({ vendor: 'sqlite' }), catalog), refused);
+    process.env.COMPOSER_PREVIEW_VENDOR = 'oracle';
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' })));
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'mysql' })), refused, '켠 벤더만 받는다');
+  } finally {
+    if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;
+    else process.env.COMPOSER_PREVIEW_VENDOR = previous;
+  }
+  assert.deepEqual([...DATABASE_VENDORS].sort(), [...VENDOR_IDS].sort());
+});
+
+test('generators refuse an uncertified vendor even when a composition is passed to them directly', () => {
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const previous = process.env.COMPOSER_PREVIEW_VENDOR;
+  delete process.env.COMPOSER_PREVIEW_VENDOR;
+  try {
+    const recipe = { schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'main', selection: { preset: 'core' }, database: { vendor: 'oracle' }, backendLayout: 'multi-module' };
+    const supplied = { ...resolveProjectRecipe(recipe, catalog), sourceCommit: 'a'.repeat(40) };
+    assert.throws(() => resolveGeneratorComposition({ catalog, supplied, sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }),
+      error => error.code === 'UNSUPPORTED_DATABASE');
+  } finally {
+    if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;
+    else process.env.COMPOSER_PREVIEW_VENDOR = previous;
+  }
+});
+
+test('the lock binds the vendor projection to the composition and the baseline that runs', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vendor-lock-'));
+  try {
+    const paths = vendorBaselinePaths('oracle');
+    mkdirSync(join(root, paths.migration, '..'), { recursive: true });
+    writeFileSync(join(root, paths.migration), 'CREATE TABLE t (id NUMBER);\n');
+    const projection = { vendor: 'oracle', ...paths, migrationSha256: artifactTextSha256(root, paths.migration) };
+    const lock = { composition: { recipe: { database: { vendor: 'oracle' } } }, vendorProjection: projection };
+    assert.deepEqual(vendorProjectionErrors(root, lock), []);
+    assert.match(vendorProjectionErrors(root, { ...lock, vendorProjection: { ...projection, location: 'classpath:db/migration' } })[0], /differs from its composition/, 'Flyway 위치만 바꿔도 붉다');
+    assert.match(vendorProjectionErrors(root, { ...lock, vendorProjection: undefined })[0], /differs from its composition/, '벤더 구성에 투영이 없으면 붉다');
+    writeFileSync(join(root, paths.migration), 'DROP TABLE t;\n');
+    assert.match(vendorProjectionErrors(root, lock)[0], /Vendor baseline differs/);
+    assert.deepEqual(vendorProjectionErrors(root, { composition: { recipe: { database: { vendor: 'postgresql' } } } }), []);
+    assert.match(vendorProjectionErrors(root, { composition: { recipe: { database: { vendor: 'postgresql' } } }, vendorProjection: projection })[0], /PostgreSQL composition/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the development runner keeps a local Oracle local and gives Flyway the vendor folder', () => {
+  assert.equal(isLocalDatabaseUrl('jdbc:oracle:thin:@//localhost:1521/FREEPDB1'), true);
+  assert.equal(isLocalDatabaseUrl('jdbc:oracle:thin:@//db.example.invalid:1521/FREEPDB1'), false);
+  assert.equal(isLocalDatabaseUrl('jdbc:oracle:thin:@//localhost:1521,db.example.invalid:1521/FREEPDB1'), false, '주소가 여럿이면 모두 이 기계여야 한다');
+  assert.equal(isLocalDatabaseUrl('jdbc:postgresql://localhost:5432,db.example.invalid:5432/egovdb'), false);
+  assert.equal(isLocalDatabaseUrl('jdbc:postgresql://localhost:5432,127.0.0.1:5433/egovdb'), true);
+  const { env } = backendEnvironment({ DB_URL: 'jdbc:oracle:thin:@//db.example.invalid:1521/FREEPDB1', DEV_REMOTE_FLYWAY: 'migrate' },
+    { flywayLocation: 'classpath:db/vendor/oracle' });
+  assert.equal(env.SPRING_FLYWAY_LOCATIONS, 'classpath:db/vendor/oracle');
 });
