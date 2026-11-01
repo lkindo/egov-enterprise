@@ -94,7 +94,6 @@ const MUTED_OPACITY_BASELINE: Record<string, number> = {
   'src/app/admin/system/logs/user/SystemLogsUserClient.tsx': 5, // 건수 사이 '/' 구분자(aria-hidden)
   'src/app/components/ui/global-command-center.tsx': 1, // 빈 결과 아이콘(aria-hidden)
   'src/app/components/ui/standard-data-table.tsx': 1, // 검색창 돋보기(aria-hidden)
-  'src/app/components/ui/workflow-canvas.tsx': 2, // 노드 연결선·화살촉(svg aria-hidden)
   'src/app/search/SearchClient.tsx': 1, // 빈 결과 아이콘(aria-hidden)
   'src/app/survey/components/SurveyStatsPanel.tsx': 1, // 빈 상태 아이콘(aria-hidden)
 };

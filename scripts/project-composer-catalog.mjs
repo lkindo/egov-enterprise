@@ -260,8 +260,8 @@ export function buildProjectComposerCatalog(root, declarations) {
     const data = inventory.get(domain);
     if (frontendOnlyDomains.has(domain)) {
       if (data.files.length) fail(`frontend-only capability has backend source: ${domain}`);
-      // 권한 도메인은 둘 수 있다 — 화면 진입에만 쓰는 권한이면 백엔드가 없다(시연 기능의 워크플로우 예시 화면과 그 진입 권한
-      // WORKFLOW_READ, 2026-10-13). 서버 인가 census 가 그 권한을 부르지 않는지는 운영 계약(project-composer-catalog.test.mjs)이 본다.
+      // 프런트 전용 기능도 화면 진입·기존 배정 호환용 권한을 가질 수 있다. 서버 인가 census에서 쓰지 않는지는
+      // 운영 계약(project-composer-catalog.test.mjs)이 검사한다. WORKFLOW_READ는 ADR-0049의 종료 화면 호환용이다.
       if (data.tables.length) fail(`frontend-only capability declares tables: ${domain}`);
     } else if (!data.files.length) fail(`capability has no source: ${domain}`);
     const requires = [];

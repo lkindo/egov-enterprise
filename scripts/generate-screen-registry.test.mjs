@@ -392,13 +392,12 @@ test('excluded permissions stay excluded only while the facts their reasons cite
   assert.ok(catalog.permissions.find(row => row.code === 'MEMO_RPT_INSTRUCT')?.defaultGroups.includes('ROLE_USER'), 'instructing is a user default');
   assert.ok(ledger.bundles.find(bundle => bundle.id === 'basic-work')?.permissions.includes('MEMO_RPT_INSTRUCT'));
   assert.match(proxy.description, /메모 보고의 지시는 보고를 받은 사람만 남길 수 있어 이 묶음으로도 달거나 바꾸지 못하고, 지시가 달린 메모 보고는 본문을 고칠 수 없습니다/u);
-  // 워크플로우 데모 화면은 시연 기능 파일이 소유한다(종전 v1 manifest 의 demo pack → 11단계 C5 의 약식 결재 → 2026-10-13 시연 —
-  // 인증 시작 구성 '공통 기반 + 결재' 에 정적 목업이 실리지 않게 했다). 업무 화면이 되면(소유가 바뀌면) 다시 분류한다.
+  // ADR-0049: 기존 DB 배정 호환 권한은 업무 묶음에서 제외하고 종료된 화면은 등록하지 않는다.
   assert.ok(excluded.has('WORKFLOW_READ'));
   const showcaseModule = JSON.parse(fs.readFileSync(path.join(root, 'config/modules/showcase.json'), 'utf8'));
-  assert.ok(showcaseModule.backend.frontendOnly && showcaseModule.owns.permissionDomains.includes('WORKFLOW'), 'the showcase feature owns the demo entry permission');
+  assert.ok(showcaseModule.backend.frontendOnly && showcaseModule.owns.permissionDomains.includes('WORKFLOW'), 'the showcase feature retains the legacy compatibility permission');
   for (const route of ['src/app/admin/workflow', 'src/app/admin/sanctn/workflow']) {
-    assert.ok(showcaseModule.owns.frontend.includes(route), `${route} is owned by the showcase feature`);
+    assert.ok(!showcaseModule.owns.frontend.includes(route), `${route} is retired (ADR-0049)`);
   }
 });
 

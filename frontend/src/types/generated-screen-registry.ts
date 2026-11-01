@@ -491,18 +491,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
-    "route": "/admin/sanctn/forms",
-    "label": "결재 양식 관리",
-    "labelSource": "menu",
-    "shellAccess": "admin-system",
-    "dynamic": false,
-    "demo": false,
-    "entry": {"permissions":["TEMPLATE_READ"],"mode":"ANY"},
-    "permissions": [
-      {"code":"TEMPLATE_READ","action":"READ","source":"entry"}
-    ]
-  },
-  {
     "route": "/admin/security/authority",
     "label": "권한 그룹 관리",
     "labelSource": "menu",
@@ -1157,18 +1145,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
-    "route": "/admin/workflow",
-    "label": "워크플로우 프로세스 설정",
-    "labelSource": "menu",
-    "shellAccess": "admin-system",
-    "dynamic": false,
-    "demo": false,
-    "entry": {"permissions":["WORKFLOW_READ"],"mode":"ANY"},
-    "permissions": [
-      {"code":"WORKFLOW_READ","action":"READ","source":"entry"}
-    ]
-  },
-  {
     "route": "/approvals",
     "label": "내 결재함",
     "labelSource": "menu",
@@ -1452,7 +1428,6 @@ const GENERATED_ALIASES: readonly ScreenAlias[] = [
   {"route":"/admin/community/boards/selectBoardList","target":"/admin/community/boards/select-board-list","kind":"config-redirect"},
   {"route":"/admin/community/boards/write","target":"/admin/community/boards/insert-board-article","kind":"page-redirect"},
   {"route":"/admin/observability","target":"/admin/system/monitoring/hub?tab=observability","kind":"config-redirect"},
-  {"route":"/admin/sanctn/workflow","target":"/admin/workflow","kind":"config-redirect"},
   {"route":"/admin/security/audit","target":"/admin/system/monitoring/hub?tab=security","kind":"config-redirect"},
   {"route":"/admin/security/role","target":"/admin/security/authority","kind":"page-redirect"},
   {"route":"/admin/survey","target":"/admin/survey/hub","kind":"page-redirect"},
@@ -1628,7 +1603,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/community/boards/master",
       "/admin/community/boards/master/[id]",
       "/admin/community/templates",
-      "/admin/sanctn/forms",
       "/admin/system/comments"
     ],
     "relatedScreens": [

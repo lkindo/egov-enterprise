@@ -103,7 +103,7 @@ test('empty/core selection, each independent capability, shared resources and pr
   const template = resolveProjectRecipe(recipe({ domains: ['template'] }), catalog);
   assert.deepEqual(template.resolvedDomains, ['template']);
   assert.ok(template.tables.includes('tb_tmplt_info'));
-  assert.ok(!template.frontend.removePaths.includes('src/app/admin/sanctn/WorkflowHubClient.tsx'));
+  assert.ok(!template.frontend.removePaths.includes('src/app/admin/community/templates'));
   for (const preset of catalog.presets) {
     const plan = resolveProjectRecipe(recipe({ preset: preset.id }), catalog);
     assert.equal(plan.profile, preset.id);

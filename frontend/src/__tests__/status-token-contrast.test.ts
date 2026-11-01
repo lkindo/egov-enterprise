@@ -12,7 +12,7 @@ const THEMES_DIR = join(FRONTEND_DIR, 'src', 'styles', 'themes');
  * 배경: "다크 모드에서 상태색 6종이 위반"이라는 가설로 다크 전용 값 신설이 승인됐으나,
  * 2026-08-22 실측은 반대였다 — 배지 표면 축(bg-{status} + 그 위 -foreground)은 라이트·다크
  * **모두 통과**하고, 실제 위반은 배지 전경 토큰을 다크 서피스 위 단독 텍스트로 오용한
- * 소비자 1곳(WorkflowHubClient)뿐이었다. 사람 grep 은 -foreground 매칭에 속아 사용처를
+ * 이후 퇴역한 워크플로우 목업 한 곳뿐이었다. 사람 grep 은 -foreground 매칭에 속아 사용처를
  * 과대집계했다. 그래서 이 판정을 사람 판단이 아니라 **수학 계약**으로 고정한다.
  *
  * 이 계약이 red 가 되면: 상태 토큰 값이 대비를 깨는 방향으로 바뀐 것이다. 그때의 올바른
@@ -115,7 +115,7 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
   );
 
   it('surface-inverse 위 상태 텍스트: --warning 이 고정 다크 서피스에서 4.5:1 이상이다', () => {
-    // WorkflowHubClient 가 실제로 쓰는 조합(notification-sender 는 2026-09-06 에 걷었다). surface-inverse 는
+    // 이 조합을 쓰던 목업은 퇴역했지만 공용 토큰의 대비 하한은 유지한다. surface-inverse 는
     // 모드와 무관하게 어두운 고정 서피스이므로 라이트 값 기준 한 번만 검사한다.
     const ratio = contrast(get(light, '--warning'), get(light, '--surface-inverse'));
     expect(

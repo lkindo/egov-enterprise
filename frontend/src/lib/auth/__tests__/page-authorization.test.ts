@@ -58,8 +58,6 @@ describe('page permission mapping', () => {
     ['/admin/stats/data-usage', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/screen', 'STATS_READ', 'STATS_ADMIN_READ'],
     ['/admin/stats/user', 'STATS_READ', 'STATS_ADMIN_READ'],
-    ['/admin/workflow', 'APPROVAL_READ', 'WORKFLOW_READ'],
-    ['/admin/sanctn/workflow', 'APPROVAL_READ', 'WORKFLOW_READ'],
     ['/admin/survey/polls', 'POLL_READ', 'POLL_READ_ALL'],
     ['/admin/survey/polls/manage', 'POLL_READ', 'POLL_READ_ALL'],
   ]))('keeps %s separate from ordinary data reads while accepting an explicit grant', (route, ordinary, management) => {
@@ -67,6 +65,16 @@ describe('page permission mapping', () => {
     expect(canEnterRegisteredPage(route, regularUser)).toBe(false);
     expect(canEnterRegisteredPage(route, { ...regularUser, permissions: [ordinary, management] })).toBe(true);
   });
+
+  // 시연 목업을 퇴역한 뒤에도 예전 권한 배정이나 실제 결재·템플릿 권한이 그 경로를 다시 열어서는 안 된다.
+  it.each(['/admin/workflow', '/admin/sanctn/workflow', '/admin/sanctn/forms'])(
+    'rejects retired demo route %s even with its former or neighboring permissions', route => {
+      expect(PAGE_PERMISSIONS).not.toHaveProperty(route);
+      expect(canEnterRegisteredPage(route, {
+        ...current, permissions: ['WORKFLOW_READ', 'APPROVAL_READ', 'TEMPLATE_READ'],
+      })).toBe(false);
+    },
+  );
 
   it('matches the JWT essential ID when the backend login ID differs, with no-store and no redirect forwarding', async () => {
     const fetchMock = vi.fn().mockResolvedValue(upstream(current));

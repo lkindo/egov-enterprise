@@ -59,12 +59,10 @@ const PROVISIONAL_HYBRID_UNRESOLVED = [
 // D5 웨이브 1 (2026-08-23): 저위험 8건만 owner PR 리뷰로 개별 approved 전이
 // (ADR-0007 §Decision 4, 승인 채널 DEC-OPS-013). 종전의 "승인 0건" 고정은 이 값으로
 // 갱신하고, 잔여 113건에는 기존 population·null 검사를 그대로 유지한다.
+// ADR-0049: 종료한 워크플로우 목업 3개는 현행 승인 모집단에서 제외한다.
 const WAVE1_APPROVED_ROUTES = [
-  '/admin/sanctn/forms',
-  '/admin/sanctn/workflow',
   '/admin/survey/polls/manage',
   // '/admin/system/network' 은 DEC-OPS-129 로 퇴역했다(2026-09-25, 경로·API·권한 삭제).
-  '/admin/workflow',
   // '/approvals/draft' 의 웨이브 1 승인은 DEC-OPS-302 로 거뒀다(2026-10-13) — 2026-09-16 부터 실제 기안 창을 열게 되어
   // demo-isolated 의 근거(목업·미전송 고지·e2e 11)가 사라졌고, 인증 시작 구성 '공통 기반 + 결재' 가 이 화면을 싣는다.
   // 정본 /approvals 로의 consolidate-to-canonical 로 다시 제안한다(리다이렉트는 하지 않았다).

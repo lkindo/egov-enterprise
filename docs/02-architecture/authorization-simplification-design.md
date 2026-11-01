@@ -178,6 +178,7 @@ erDiagram
 - 코드 카탈로그는 DB 테이블이 아니다. NAVIGATION 정의는 메뉴 DB가 원천이며 OPERATION manifest와 결합해 읽기 전용으로 제공한다. 동적 메뉴 편집은 계속 가능하다.
 - 모든 저장 API는 종류·코드 존재·길이·중복·그룹 존재를 검사한다. 유효하지 않은 값은 저장 거부, 이미 유입된 미등록 값은 인가 거부+진단한다. 직접 SQL 이관도 동일 validator를 통과해야 한다.
 - 기능의 무단 삭제·재사용을 차단한다. 먼저 deprecated→배정 회수/치환→양쪽 버전 소비 종료→정의 삭제 순서를 따른다. 배포 전 저장된 OPERATION 코드와 새 catalog의 차집합이 비어야 한다.
+- [ADR-0049](decisions/ADR-0049-retire-workflow-demo-screens.md)로 워크플로우 목업 3개 화면은 퇴역한다. `WORKFLOW_READ`는 저장된 배정의 인증 호환을 위해 정의·기존 기본 그룹·시연 기능 소유를 유지하지만 실행 표면은 없다. DB 배정 회수 없이 정의만 삭제하거나 알 수 없는 저장 권한을 허용하지 않는다.
 - 신규 기능은 먼저 모든 인스턴스에 인식 가능한 catalog를 배포한 뒤 배정을 개방한다. 롤백 대상도 현재 배정 코드를 이해해야 한다. core와 선택 app의 기능 선언은 기존 모듈 의존 방향을 지키는 기여 방식으로 합성하고, 재사용 pack이 제외한 도메인의 배정은 명시적으로 이관/회수한다.
 - 최소안에는 permission FK가 없으므로 DB만으로 모든 권한 코드 무결성을 보장하지 못한다. 애플리케이션 검증·배포 계약을 수용하기 어렵다면 5개 운영 테이블 대안을 선택한다.
 
@@ -250,7 +251,7 @@ flowchart LR
 
 - `AuthContext`, `useUser`의 `['user','me']` 캐시, 메뉴 캐시, 프론트 proxy를 모두 갱신한다. `useUser`는 5분 stale time, 서버 메뉴는 authorities 기반 키, FE header/sidebar 메뉴는 사용자·권한 버전이 없는 고정 키를 사용한다. 각각의 갱신·계정 전환 격리를 새 계약으로 바꾼다.
 - 로그인 상태 확인 후 `/admin` 진입 여부를 실제 필요한 화면 기능으로 판정한다. 기존 USER 예외 경로·RSC·서버 액션·BFF 경로를 포함한다. proxy가 DB를 직접 읽거나 모든 permission을 쿠키에 넣는 설계는 피하고 서버의 현재 권한 응답을 사용한다.
-- 정적 관리 주소는 동적 상세 주소보다 우선한다. 예를 들어 `/admin/community/boards/master`를 `[id]` 상세 화면으로 해석해 열지 않는다. 일반 조회 API와 관리 기능의 경계도 유지한다. `STATS_READ`·`BANNER_READ`·`POPUP_READ`는 기존 사용자 조회에 남기고 관리자 통계·배너·팝업 API는 각각 `STATS_ADMIN_READ`·`BANNER_ADMIN_READ`·`POPUP_ADMIN_READ`로 판정한다. 관리 화면도 해당 관리 권한을 요구한다. 실제 개인 결재의 `APPROVAL_READ`와 관리 데모 화면의 `WORKFLOW_READ`는 구분한다.
+- 정적 관리 주소는 동적 상세 주소보다 우선한다. 예를 들어 `/admin/community/boards/master`를 `[id]` 상세 화면으로 해석해 열지 않는다. 일반 조회 API와 관리 기능의 경계도 유지한다. `STATS_READ`·`BANNER_READ`·`POPUP_READ`는 기존 사용자 조회에 남기고 관리자 통계·배너·팝업 API는 각각 `STATS_ADMIN_READ`·`BANNER_ADMIN_READ`·`POPUP_ADMIN_READ`로 판정한다. 관리 화면도 해당 관리 권한을 요구한다. 실제 개인 결재는 `APPROVAL_READ`를 사용하며, 호환용 `WORKFLOW_READ`는 결재 권한이나 퇴역 URL 진입 권한으로 쓰지 않는다(ADR-0049).
 - 간이 결재(ISM) API 와 그 `INFORMAL_*` 권한은 [ADR-0034](decisions/ADR-0034-retire-ended-authorization-surfaces.md)로 걷었다(2026-10-18). 결재는 `/api/v1/approvals` 가 `APPROVAL_*` 권한으로 같은 서비스를 부르고, 서비스의 엄격한 결재자 본인 검사도 그대로다.
 - `/admin`은 사용자·권한·보안감사를 읽는 관리 대시보드이므로 `DASHBOARD_ADMIN_READ`를 요구한다. 온라인 투표의 관리 화면은 결과 선열람 권한인 `POLL_READ_ALL`을 요구하며, 등록·수정·삭제 권한은 기존 관리자 전용 범위를 보존해 초기 USER 그룹에 부여하지 않는다. 일반 사용자의 조회·투표 권한과 종료 전 집계 비공개 조건은 유지한다.
 - 프론트는 권한 변경 응답·403·새 focus 시 현재 사용자/메뉴 데이터를 재조회하고 권한 상실 버튼을 숨긴다. 화면 캐시가 잠시 오래되더라도 API에서 차단해야 한다.

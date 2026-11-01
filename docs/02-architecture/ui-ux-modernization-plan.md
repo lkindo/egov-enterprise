@@ -5,6 +5,8 @@
 > **2026-09-05 URL 정책 갱신:** [ADR-0009](decisions/ADR-0009-controlled-url-search-state.md)가 개인정보성 업무 검색어의 통제된 URL 사용을 승인했다. 아래 2026-08-20 검토 기록 중 “자유 검색어·식별자 URL 제외”와 `PD-UX-002` 승인 대기 문구는 당시 상태를 설명하는 역사로만 읽고, 현행 구현·검증에는 ADR-0009와 프런트엔드 헌법 제4조를 적용한다.
 >
 > **2026-09-05 IA 상태 갱신:** [ADR-0007](decisions/ADR-0007-reference-default-ia-approval.md)이 ADR-0004의 hybrid 방향을 reference-default IA로 승인해 공통 base에서 “잠정” 지위를 끝냈다. route별 disposition은 일괄 승인되지 않았으며 owner PR review로 개별 승인한다. 기관 채택 시에는 실사용자·실메뉴·실권한으로 원 G1을 다시 수행한다. 아래 2026-08-20의 ADR-0004 잠정·승인 대기 서술은 역사적 검토 문맥으로만 읽는다.
+>
+> **2026-11-01 목업 퇴역:** [ADR-0049](decisions/ADR-0049-retire-workflow-demo-screens.md)로 워크플로우·결재 양식 목업 3개 화면과 전용 검사를 제거한다. 아래 목업 관측·정직성 개선 기록은 당시 이력이며, 현재 기능 제공이나 다시 구현할 과제를 뜻하지 않는다. 실제 결재와 템플릿 원장은 보존한다.
 
 **목표:** 코드 정리 여부가 아니라 실제 사용자와 프레임워크 채택자가 더 안전하고 빠르게 핵심 과업을 완료했음을 증명하는 UI/UX 현대화를 수행한다.
 
@@ -169,7 +171,7 @@
 - `PD-UX-001`의 reference-default IA 방향은 ADR-0007로 승인됐고, exact label/group/order/visibility와 route별 disposition의 개별 owner 승인이 남았다. 원안은 이 경계를 별건으로 미루면서 그보다 먼저 생성기와 메뉴 SQL을 만들려 했다.
 - 설문 E2E의 “Admin Create → User Participate”에서 사용자 투표는 UI가 아니라 API로 직접 수행된다. 이 green은 참여 화면의 사용 가능성을 증명하지 않는다.
 - 배너/팝업, FAQ, 설문, 결재는 관리자 설정과 일반 사용자 경험이 이어지는 종단간 흐름이다. admin 화면만 이식하면 여정이 반쪽으로 남는다.
-- `/admin/workflow`는 코드 주석상 백엔드 미연동 정적 데모이고 `24`, `156`, `99.9%`, `LOW` 같은 고정 지표를 운영 데이터처럼 표시한다.
+- 당시 `/admin/workflow`는 백엔드 미연동 정적 데모였고 `24`, `156`, `99.9%`, `LOW` 같은 고정 지표를 운영 데이터처럼 표시했다. 이후 데모 고지를 거쳐 ADR-0049로 화면을 퇴역한다.
 - 승인 작성 등 일부 화면도 저장 미연동/부분 구현이다. 디자인을 개선하기 전에 `live | partial | demo | unavailable` 상태를 밝혀야 한다.
 - UI에는 `Identity_ID`, `Draft Center`, `Encryption Active`, “인텔리전스”, “노드”, “스트림” 같은 내부 용어와 혼합 언어가 남아 있다. 원안의 “없습니다 문자열 통합”만으로 콘텐츠 문제가 해결되지 않는다.
 
@@ -189,7 +191,7 @@
 | reference baseline | current authoritative r12는 synthetic setup 2/2, proxy 3/3, 대상 E2E 15건 통과·Windows VRT 1건 의도적 skip 뒤 exact 8 scenario·96/96 state·48/48 performance를 완료했다. state/performance invalid는 0이고 assertion은 156/156다. r12 automated-only compact summary는 PR #434 head required CI run `32502622801`을 통과해 merge commit `f39ba9930df973710318088ccb00a2800643d9a3`에 병합됐고, 병합 뒤 Java CI run `32504902346`과 dependency graph run `32504902338`도 성공해 durable historical evidence로 발행됐다. | user 12·FAQ 18·board deploy 6의 mutation evidence 36건은 case-bound 실행·authoritative readback·rollback·cleanup·active residue 0으로 닫혔다. execution-captured protocol hash와 manual 48건이 없어 8개 `currentBaseline`은 모두 `unmeasured`다. |
 | r13 evidence readiness | fresh UUID attempt의 run-scoped staging, exact 282 자동 JSON + 마지막 `automated-run-seal.json`, source/protocol/tooling finish verification, rollback-safe canonical swap과 combined summary v2 계약을 구현했다. clean-checkout measured 판정은 ignored raw 파일이 아니라 tracked current summary의 exact 8 scenario projection을 사용한다. | 계약 86/86과 TSC/plan은 green이지만 runtime은 아직 시작하지 않았다. protocol·tooling·production input이 실행 commit과 exact 일치하는 clean snapshot을 commit 승인으로 먼저 만들어야 하며, 실제 수동 접근성 48건은 자동으로 채우지 않는다. **2026-08-22 DEC-OPS-012 로 r13 런타임 실행을 보류했고 구현물은 그대로 보존한다 — 보류는 measured 승격이 아니다.** |
 | axe·responsive | `color-contrast` 비활성화를 제거했고 reduced-motion은 axe 대상에만 한정했다. r12 exact 자동 모집단에서 axe violation·horizontal overflow·failed assertion은 0이었다. | 정의된 자동 state의 후보 0건일 뿐 WCAG 준수나 실기기 reflow 완료가 아니다. 수동 keyboard·NVDA·zoom·forced-colors·reduced-motion 증거가 남았다. |
-| 데모 정직성 | `/admin/workflow`의 고정 수치·행동을 정적 데모로 명시하고 미지원 mutation을 disabled 처리했다. dashboard의 가짜 활동·가짜 운영 수치를 제거하고 오류와 0건을 분리했다. | 나머지 108개 unverified route를 live로 승격하지 않았다. |
+| 데모 정직성 | 당시 `/admin/workflow`의 고정 수치·행동을 정적 데모로 명시하고 미지원 mutation을 disabled 처리했다. 해당 목업은 이후 ADR-0049로 퇴역한다. dashboard의 가짜 활동·가짜 운영 수치를 제거하고 오류와 0건을 분리했다. | 당시 나머지 108개 unverified route를 live로 승격하지 않았다. |
 | 컴포넌트 경계 | skeleton 호환 shim과 status badge를 작은 batch로 공용 경계에 이식했다. | 서로 다른 수직 파일럿 3개 전에는 대규모 이동을 금지한다. |
 
 위 r12는 현재 자동 증거의 정본이고 r11 이하 실행은 역사다. r8의 focus assertion 실패 6건, axe violation case 14건(violation 16건), 4px overflow 2건과 r9의 mutation prerequisite 36건은 r12에서 각각 자동 finding 0·case-bound executed evidence 36건으로 관측됐지만 과거 artifact를 수기 수정하지 않는다. r12의 full JSON 282개와 별도 diagnostic JSON 8개 원본은 privacy 검사를 통과했어도 계속 ignored/untracked `ephemeral-ignored`이며, UA-04는 그 원본을 복제하지 않은 automated-only compact summary만 durable historical evidence로 발행했다. execution-captured protocol hash와 manual 48건이 닫히기 전에는 `measured` 또는 전체 현대화 완료로 승격하지 않는다.
@@ -574,7 +576,7 @@ node --test scripts/shared-memory-contract.test.mjs
 - Modify: `config/governance/gates.json`
 - Modify: relevant runner/CI binding only after gate metadata is accepted
 
-**Required schema:**
+**Required schema(당시 목업을 사용한 예시; 해당 화면은 ADR-0049로 퇴역):**
 
 ```json
 {
@@ -587,7 +589,7 @@ node --test scripts/shared-memory-contract.test.mjs
   "profileOwners": ["demo"],
   "journeys": [],
   "decisionSafe": false,
-  "evidence": ["frontend/src/app/admin/workflow/WorkflowClient.tsx"]
+  "evidence": ["해당 커밋에서 확인한 화면 소스 경로"]
 }
 ```
 
@@ -597,7 +599,7 @@ node --test scripts/shared-memory-contract.test.mjs
 2. `live | partial | demo | unavailable`을 evidence와 함께 지정한다.
 3. static route string과 dynamic import 소비를 별도로 수집한다.
 4. 모든 route가 exactly once 존재하고 소유자·상태·역할이 비어 있지 않은지 계약화한다.
-5. `/admin/workflow`와 부분 구현 화면은 demo 격리 또는 사용자 고지 작업을 연계한다.
+5. 남아 있는 부분 구현·시연 화면은 demo 격리 또는 사용자 고지 작업을 연계한다. `/admin/workflow` 등 퇴역 목업은 ADR-0049에 따라 모집단에서 제거한다.
 6. 빈 input, route 누락, 중복 route, demo가 core profile에 남는 fixture가 red인지 증명한다.
 
 **Acceptance Criteria:** 119/119 route가 exact 분류되고 none/unknown이 0이거나 owner·reviewBy가 있는 예외다.

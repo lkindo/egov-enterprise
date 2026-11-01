@@ -54,7 +54,7 @@ test('current URL-state census exactly covers critical route and URL producer po
   assert.deepEqual(actual.summary.exactPopulations, {
     filesystemRoutes: FILESYSTEM_ROUTE_COUNT,
     dynamicRoutePatterns: 13,
-    configRedirects: 13,
+    configRedirects: 12, // ADR-0049 removes the retired workflow alias and its query passthrough surface.
     pageRedirects: 17,
   });
   assert.equal(actual.summary.records, actual.records.length);
