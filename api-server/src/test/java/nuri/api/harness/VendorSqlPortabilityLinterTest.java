@@ -192,6 +192,24 @@ class VendorSqlPortabilityLinterTest {
         }
     }
 
+    @Test
+    @DisplayName("벤더 실행에서 빼는 시험은 사유가 있고 벤더에서 도는 클래스의 실제 시험이다")
+    void postgresqlOnlyEntriesPointAtRealTests() throws IOException {
+        Path root = HarnessSourceIndex.repoRoot();
+        for (JsonNode entry : readJson(root.resolve(TEST_LEDGER)).path("tests")) {
+            for (JsonNode only : entry.path("postgresqlOnly")) {
+                assertThat(entry.path("category").asString()).as("대체 분류는 벤더에서 돌지 않는다 " + entry).isNotEqualTo("replacement");
+                assertThat(only.path("reason").asString()).as("사유 " + only).isNotBlank();
+                Path source = root.resolve("api-server/src/test/java/nuri/api/schema").resolve(entry.path("test").asString());
+                if (ReusableHarnessProfile.current().projected() && !source.toFile().isFile()) {
+                    continue;
+                }
+                assertThat(HarnessSourceIndex.read(source)).as("시험 이름 " + only)
+                        .containsPattern("\\bvoid " + Pattern.quote(only.path("method").asString()) + "\\(");
+            }
+        }
+    }
+
     @ParameterizedTest(name = "{0}")
     @CsvSource(delimiter = ';', quoteCharacter = '"', value = {
         "cast-operator;SELECT menu_sn::text FROM t",

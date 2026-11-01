@@ -130,8 +130,6 @@ class OnlinePollItemIntegrityIntegrationTest {
 
     @Test
     void concurrentVotersShareThePollLockAndDoNotWaitForEachOther() throws Exception {
-        // Oracle 에는 공유 행 잠금이 없어 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1).
-        org.junit.jupiter.api.Assumptions.assumeFalse(VendorTestSql.isOracle(jdbc));
         var voted = new CountDownLatch(1);
         var release = new CountDownLatch(1);
         try (var executor = Executors.newFixedThreadPool(2)) {

@@ -683,8 +683,6 @@ class ApprovalWorkflowIntegrationTest {
     /** Actual PostgreSQL result materialization, not latency, wire bytes, or a real user-query cost. */
     @Test
     void listProcessMaterializationDoesNotGrowWithPastCycles(org.junit.jupiter.api.TestReporter reporter) {
-        // 읽어 온 바이트를 PostgreSQL 함수로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 한 벤더면 된다.
-        org.junit.jupiter.api.Assumptions.assumeFalse(VendorTestSql.isOracle(jdbc));
         // Synthetic writes are limited to the disposable test database.
         VendorTestSql.assertDisposable(applicationContext.getEnvironment(), jdbc);
         List<String> previous = List.of("WF_COST_OLD_1", "WF_COST_OLD_2", "WF_COST_OLD_3");
