@@ -5,7 +5,8 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
   BANNED_CLAIMS, BLANK, FORBIDDEN_INPUTS, NO_SEMANTIC_ROW, OUTPUT_ROOT,
-  assertAllowedInput, cellText, contentDigest, csvCell, interfaceSheet, loadInputs, mdCell, renderPackage, reproduceCommand, resolveOutput, screenSheet, toCsv,
+  assertAllowedInput, assertCompareOutsideOutput, baselineComparisonSheet, cellText, contentDigest, csvCell, interfaceSheet, loadInputs, mdCell,
+  readBaselineManifest, renderPackage, reproduceCommand, resolveOutput, riskWaiverSheet, screenSheet, toCsv,
 } from './export-deliverables.mjs';
 
 /*
@@ -155,4 +156,66 @@ test('an empty sheet says so instead of printing an empty table', () => {
   const { files } = renderPackage([{ ...SHEET, rows: [], emptyMessage: '승인된 오탐이 없다.' }], META);
   assert.match(files.get('things.md'), /행 0개\.\n\n승인된 오탐이 없다\./u);
   assert.equal(files.get('things.csv'), '\uFEFF가\r\n');
+});
+
+test('riskWaiverSheet consolidates waiver, debt, URL class registry and adoption review ledgers with distinct product IDs', () => {
+  const sheet = riskWaiverSheet({
+    zdmWaivers: {
+      waivers: [{ id: 'ZDM-2026-0001', path: 'V2_86.sql', directive: 'ignore', rule: 'ZDM-04', approvedAt: '2026-09-02', owner: 'db', expiresAt: '2027-09-02', reason: 'IPv6 expand' }],
+      legacyDebt: [
+        { path: 'module-a/db/migration/V1__init.sql', ignoreCount: 3, status: 'legacy-debt-unapproved', owner: 'db', reviewBy: '2027-02-19', reason: 'pre-registry A' },
+        { path: 'module-b/db/migration/V1__init.sql', ignoreCount: 1, status: 'legacy-debt-unapproved', owner: 'db', reviewBy: '2027-02-19', reason: 'pre-registry B' },
+      ],
+    },
+    urlApproval: {
+      classes: [{ classId: 'presentation-state', selector: { stateItemNames: ['page', 'tab'] }, reviewState: 'approved', owner: 'fe', reviewBy: '2026-12-31', description: '표현 상태' }],
+    },
+    adoptionReview: { authority: 'adopter-environment-review', product: 'egov-enterprise-online', profile: 'demo', status: 'pending', owner: null, validUntil: null, evidence: [] },
+    migrationAdoptionReview: { authority: 'adopter-environment-review', product: 'egov-enterprise-migration-tool', profile: null, status: 'pending', owner: 'ops', validUntil: '2027-01-01', evidence: [{}] },
+  });
+  assert.deepEqual(sheet.rows.map((row) => [row.category, row.id, row.status]), [
+    ['ZDM 예외 승인', 'ZDM-2026-0001', 'approved (2026-09-02)'],
+    ['ZDM 레거시 부채', 'legacy-debt:module-a/db/migration/V1__init.sql', 'legacy-debt-unapproved'],
+    ['ZDM 레거시 부채', 'legacy-debt:module-b/db/migration/V1__init.sql', 'legacy-debt-unapproved'],
+    ['URL 상태 부류 등록부', 'presentation-state', 'approved'],
+    ['기관 도입 승인 원장', 'adoption:egov-enterprise-online', 'pending'],
+    ['기관 도입 승인 원장', 'adoption:egov-enterprise-migration-tool', 'pending'],
+  ]);
+  assert.match(sheet.notices.join('\n'), /위험 수용 승인을 대신하지 않는다/u);
+});
+
+test('baselineComparisonSheet classifies changes, excludes self-comparison files on chained runs and keeps contentDigest invariant', () => {
+  assert.throws(() => readBaselineManifest('not json'), /not valid JSON/u);
+  assert.throws(() => readBaselineManifest('{"kind":"other"}'), /must be a valid deliverables manifest\.json/u);
+  assert.throws(() => readBaselineManifest(JSON.stringify({ schemaVersion: 1, kind: 'non-normative-derived-deliverables', cleanTree: 'false', commit: 'a'.repeat(40), contentDigest: 'a'.repeat(64), files: [] })), /must be a valid deliverables manifest\.json/u);
+  const first = renderPackage([SHEET], META);
+  const baseline = readBaselineManifest(first.files.get('manifest.json'));
+  assert.throws(() => readBaselineManifest(JSON.stringify({ ...baseline, contentDigest: '0'.repeat(64) })), /contentDigest does not match/u);
+  assert.throws(() => readBaselineManifest(JSON.stringify({ ...baseline, files: [baseline.files[0], baseline.files[0]] })), /duplicate file path/u);
+  assert.throws(() => assertCompareOutsideOutput('D:/repo/build/deliverables/abc-dirty', 'D:/repo/build/deliverables/abc-dirty/manifest.json'), /must not be inside the target --out directory/u);
+  assert.doesNotThrow(() => assertCompareOutsideOutput('D:/repo/build/deliverables/abc-next', 'D:/repo/build/deliverables/abc-dirty/manifest.json'));
+  const cmp = baselineComparisonSheet(baseline, [
+    { path: 'things.md', rows: 1, sha256: baseline.files.find((f) => f.path === 'things.md').sha256 },
+    { path: 'things.csv', rows: 3, sha256: 'b'.repeat(64) },
+    { path: 'added.csv', rows: 2, sha256: 'c'.repeat(64) },
+  ]);
+  const byPath = new Map(cmp.rows.map((row) => [row.path, row]));
+  assert.equal(byPath.get('things.md').change, '동일');
+  assert.equal(byPath.get('things.md').deltaRows, 0);
+  assert.equal(byPath.get('things.csv').change, '변경');
+  assert.equal(byPath.get('things.csv').deltaRows, 2);
+  assert.equal(byPath.get('added.csv').change, '추가');
+  assert.equal(byPath.get('added.csv').deltaRows, null);
+
+  const compared = renderPackage([SHEET], { ...META, baseline });
+  assert.ok(compared.files.has('baseline-comparison.md'));
+  assert.ok(compared.files.has('baseline-comparison.csv'));
+  assert.equal(compared.digest, first.digest, 'contentDigest stays invariant whether --compare is passed or not');
+  const comparedManifest = readBaselineManifest(compared.files.get('manifest.json'));
+  assert.match(comparedManifest.comparisonDigest, /^[0-9a-f]{64}$/u);
+  // 연쇄 비교(chained --compare): 이미 baseline-comparison.* 이 들어 있는 manifest 를 다음 기준선으로 넘겨도 거짓 제거 행이 생기지 않는다.
+  const chained = renderPackage([SHEET], { ...META, baseline: comparedManifest });
+  assert.doesNotMatch(chained.files.get('baseline-comparison.md'), /baseline-comparison\./u);
+  assert.equal(reproduceCommand({ baseline }), 'node scripts/export-deliverables.mjs --compare <같은 manifest.json>');
+  assert.match(compared.files.get('README.md'), /--compare <같은 manifest\.json>/u);
 });

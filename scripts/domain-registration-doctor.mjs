@@ -183,7 +183,8 @@ export function evaluateRegistration(inputs) {
   const exactRoutes = new Set(feature.owns?.exactRoutes ?? []);
   const covers = (prefix, route) => (exactRoutes.has(prefix) ? route === prefix : route === prefix || route.startsWith(`${prefix}/`));
   const pagePermissions = inputs.permissionCatalog.pagePermissions ?? {};
-  const ledgerRoutes = (inputs.routeLedger.routes ?? []).map((route) => route.route);
+  const ledgerByRoute = new Map((inputs.routeLedger.routes ?? []).map((route) => [route.route, route]));
+  const ledgerRoutes = [...ledgerByRoute.keys()];
   for (const prefix of feature.owns?.routes ?? []) {
     const screens = ledgerRoutes.filter((route) => covers(prefix, route));
     points.push(point(KINDS.HUMAN, `route-ledger:${prefix}`, 'config/ui-route-capabilities.json', screens.length > 0 ? 'ok' : 'missing',
@@ -192,6 +193,16 @@ export function evaluateRegistration(inputs) {
       const present = Object.hasOwn(pagePermissions, route);
       points.push(point(KINDS.HUMAN, `page-permission:${route}`, 'config/governance/permission-catalog.json', present ? 'ok' : 'missing',
         present ? `${route} 가 등재돼 있다.` : `${route}: 화면 진입 권한(pagePermissions)이 없다.`));
+      const routeEntry = ledgerByRoute.get(route);
+      if ((routeEntry?.routing?.kind ?? 'page') === 'page') {
+        const capabilities = routeEntry?.capabilities ?? [];
+        const verifiedCaps = capabilities.filter(
+          (cap) => cap?.id && cap.id !== 'route-capability-review' && !(cap.evidenceFloor === 'E0' && cap.verificationStatus === 'unverified'),
+        );
+        points.push(point(KINDS.HUMAN, `route-capabilities:${route}`, 'config/ui-route-capabilities.json', verifiedCaps.length > 0 ? 'ok' : 'review',
+          verifiedCaps.length > 0 ? `${route} 에 구체 화면 역량 ${verifiedCaps.length}개가 등재돼 있다(하류 추적·--rtm 연결 대상).`
+            : `${route}: 구체 화면 역량이 없거나 자리표시(route-capability-review / E0 unverified)만 있다 — 하류 추적(trace)과 요구사항 조인(--rtm)이 역량 단위로 이어지게 역량·증거 수준(E0~E5)을 검토한다.`));
+      }
     }
   }
   // IA 처분 행은 판정하지 않고 처분 원장도 읽지 않는다 — 승인 전 처분 원장을 등록되지 않은 실행 코드가 읽는 일을 처분 계약이 막고,

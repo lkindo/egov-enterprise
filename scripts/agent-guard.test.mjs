@@ -446,7 +446,7 @@ test('도구마다 입력을 읽고 그 도구의 형식으로 답한다', () =>
   assert.equal(JSON.parse(renderVerdict('antigravity', ask)).decision, 'force_ask');
   assert.equal(renderVerdict('claude', null), '', '판정이 없으면 승인도 내리지 않는다');
   assert.equal(renderVerdict('codex', null), '');
-  assert.equal(renderVerdict('antigravity', null), '{}', 'Antigravity 에 allow 를 주면 사용자 승인을 건너뛴다');
+  assert.equal(renderVerdict('antigravity', null), '{"decision":"ask"}', 'Antigravity PreToolUse 는 decision 필수이며, allow 는 승인을 건너뛰고 {} 는 빈 거부로 처리되므로 ask(캐시 존중)를 준다');
 });
 
 test('stdin 으로 받은 실제 입력에 실행 파일이 답하고, 읽을 수 없는 입력은 막지 않되 단계 이름과 오류 이름만 stderr 에 남긴다', () => {
@@ -463,7 +463,7 @@ test('stdin 으로 받은 실제 입력에 실행 파일이 답하고, 읽을 �
   assert.equal(broken.stdout, '');
   assert.match(broken.stderr, /^\[agent-guard\] input 판정 실패\(SyntaxError\)[^\n]*\n$/u, '읽지 못한 입력을 "걸린 규칙 없음"과 구분되게 알린다');
   assert.ok(!broken.stderr.includes('PRIVATE_MARKER') && !broken.stderr.includes('not json'), '입력 원문을 진단에 싣지 않는다');
-  assert.equal(run('antigravity', 'not json').stdout, '{}');
+  assert.equal(run('antigravity', 'not json').stdout, '{"decision":"ask"}');
 });
 
 test('규칙 판정이 던지면 그 규칙만 통과로 두고(fail-open) 규칙 id 와 오류 이름만 stderr 에 한 번 남긴다', () => {
@@ -483,6 +483,20 @@ test('규칙 판정이 던지면 그 규칙만 통과로 두고(fail-open) 규�
   // 이름 자리에 명령 문구를 넣은 오류도 이름을 싣지 않는다.
   const named = Object.assign(new Error('x'), { name: `git push ${secret}` });
   const second = capture([thrower(named)], 'git status');
+  // git 하위 호출이 타임아웃(ETIMEDOUT)되면 정상 빈 결과로 삼키지 않고 규칙 판정 실패(ETIMEDOUT)로 진단한 뒤 fail-open 한다.
+  const timedOut = [];
+  const prevStderr = process.stderr.write;
+  process.stderr.write = (chunk) => { timedOut.push(String(chunk)); return true; };
+  try {
+    const timeoutRunner = () => ({ status: null, stdout: '', stderr: '', error: Object.assign(new Error(`timeout ${secret}`), { code: 'ETIMEDOUT' }) });
+    const v = evaluate('rm -rf wt-alpha', { cwd: repoRoot, gitRunner: timeoutRunner });
+    assert.equal(v, null);
+    assert.equal(renderVerdict('antigravity', v), '{"decision":"ask"}');
+  } finally {
+    process.stderr.write = prevStderr;
+  }
+  assert.match(timedOut.join(''), /^\[agent-guard\] worktree-recursive-delete 판정 실패\(ETIMEDOUT\)/u);
+  assert.ok(!timedOut.join('').includes(secret));
   assert.equal(second.verdict, null);
   assert.match(second.written[0], /^\[agent-guard\] throwing-rule 판정 실패\(object\)/u);
   assert.ok(!second.written[0].includes(secret));
