@@ -12,7 +12,7 @@
 | 화면 시안(앱 안) | 패턴 갤러리 `/admin/patterns` — A1 조회형 목록, A2 마스터-디테일 + A3 인라인 편집, A7 현황 + 원본 표 | 실제 셸·토큰·검증 흐름으로 밀도·간격·문구를 판단한다. axe·반응형 E2E 가 이 화면을 방문한다 | 정적 표본이다. 서버 계약·데이터·권한 의미를 보이지 않는다(라우트 원장 status `demo`) |
 | 화면 시안(저장소 밖) | `pnpm -C frontend prototype:kit` → `build/prototype-kit/tokens.css`·`README.md` | 슬라이드·디자인 도구 시안이 앱과 같은 색·대비 값을 쓰게 한다 | 의사소통 자료다. 화면 판단은 갤러리에서 한다 |
 | 구현 착수 | [`scripts/generate-domain.ps1`](../../scripts/generate-domain.ps1) + [등록 점검기](../../scripts/domain-registration-doctor.mjs) | 현행 규칙에 맞는 최소 뼈대 5파일을 만들고, 원장·생성물 등록 지점 가운데 빠진 곳을 사람 판정·생성기·선택 등재로 나눠 보인다 | Flyway·권한 원장·검토 원장에 쓰지 않는다. 의미 판단은 [identity-model-guide §6](identity-model-guide.md)·[getting-started §5.2](getting-started.md) 몫이다 |
-| 산출물 초안 | [`scripts/export-deliverables.mjs`](../../scripts/export-deliverables.mjs) + 수동 워크플로 `Deliverables draft` | 원장에서 권한·화면·역량·API·서비스 판정·프로그램·메뉴·보안약점·하류 추적·입력 항목 후보·시험 목록 표를, `--db` 면 참조 스키마의 DB 정의서·ERD·표준 사전까지 Markdown·CSV 로 계산한다 | 감리·검수를 대신하지 않는다. 기관 DB 의 실제 배정·운영 실측이 아니다 |
+| 산출물 초안 | [`scripts/export-deliverables.mjs`](../../scripts/export-deliverables.mjs) + 수동 워크플로 `Deliverables draft` | 원장에서 권한·화면·역량·API·서비스 판정·프로그램·메뉴·보안약점·하류 추적·입력 항목 후보·시험 목록·인수 시험(UAT) 시나리오 후보·예외 및 도입 승인 현황 표를, `--db` 면 참조 스키마의 DB 정의서·ERD·표준 사전을, `--compare` 면 이전 기준선 대비 변화를 Markdown·CSV 로 계산한다 | 감리·검수를 대신하지 않는다. 기관 DB 의 실제 배정·운영 실측이 아니다 |
 
 ## 2. 정본·파생·비규범의 경계
 
@@ -58,7 +58,10 @@ README 가 제출용이 아니라고 적는다. `--out` 은 `build/deliverables/
 | 하류 추적 보기 | 기능 선언·라우트 원장·화면 목록·연산 바인딩·E2E 파일·PR 선별 규칙 | E2E·쓰기 연산은 계산된 후보다(그 시험이 그 역량을 단언한다는 뜻이 아니다). 잇지 못한 칸은 비운다. 라우트 원장의 journeys 칸은 읽지 않는다 |
 | 입력 항목 후보(요청 스키마) | OpenAPI 요청 본문 | 화면이 실제로 보이는 항목이 아니다. 길이·패턴은 OpenAPI 선언만이다 |
 | 시험 목록 | 네 온라인 모듈·프런트 단위·E2E 시험 소스 | 정적 추출이다 — 매개변수 사례 수·동적 제목·통과 여부가 아니다. 실행 결과는 CI 의 `backend-test-results`·`backend-schema-test-results`·`frontend-test-results` artifact(시험 결과 XML, main push 90일·PR 14일)다 |
+| 인수 시험(UAT)·업무 여정 시나리오 후보 | 화면 품질 대표 여정 시나리오 원장(`config/ui-quality-scenarios.json`, ADR-0005 대표 8개) | 대표 여정의 단계별 역할·화면·과업·상태를 편 발주기관 UAT 시나리오 초안 후보다(전체 화면 전수 목록이나 인수 합격 판정이 아니다) |
+| 예외·유예·도입 승인 현황 | ZDM 예외·레거시 부채(`zdm-waivers.json`), 비규범 URL 상태 부류 등록부(`ui-url-state-approval.json`), 온라인·이관 도입 승인 원장(`adoption-review.json`·`migration-adoption-review.json`) | 원본 저장소에서 도입 승인 원장은 언제나 `pending` 템플릿이다(실제 기관 승인은 도입 환경·생성물에 기록되며 이 도구는 원본 저장소에서만 실행된다). 공용 메모리(`known-gaps`)는 읽지 않는다 |
 | 요구사항 추적 조인 | `--rtm` 으로 받은 기관 CSV | `--rtm` 을 줄 때만 생긴다 |
+| 단계 기준선 비교 | `--compare` 로 받은 이전 기준선 `manifest.json` | `--compare` 를 줄 때만 생긴다(DEC-OPS-397). 자기 자신(`baseline-comparison.*`)과 `contentDigest` 는 비교·집계에서 제외해 단계 다이제스트 불변성을 유지한다 |
 | 테이블·컬럼 정의서, 외래 키 목록, 기능별 물리 ERD, 표준 용어·단어·도메인 사전 | 참조 스키마(`--db`) | 표지(설명 없음·용어 없음·폐기 용어·타입 대조·외래 키 없음)는 이름 대응 표시이지 표준 판정이 아니다. ERD 는 키 컬럼과 물리 외래 키만 그린다 |
 
 **읽지 않는 입력.** 공용 메모리(`.agent/memory`, 거기서 옮긴 [gap 영역 상세](../04-operations/known-gaps-detail.md) 포함), 보관 기록(`docs/archived`), ADR 색인, 공유 OCI(`.env`·DB 접속), 생성물의 검토 전
@@ -87,7 +90,7 @@ xlsx 는 외부 시범 검토 뒤에 정한다(DEC-OPS-382 ⑥).
 ## 5. 단계 기준선
 
 산출물의 기준선은 커밋 SHA 와 내용 다이제스트 한 쌍이다. 설계 확정·구현 완료·릴리스처럼 비교할 시점마다 그 쌍을 남긴다. 두 시점의
-다이제스트가 같으면 표 내용이 같고, 다르면 같은 도구로 두 커밋을 다시 계산해 표끼리 비교한다. 묶음 자체를 커밋하거나 손으로 고친 사본을 기준선으로 삼지 않는다. 릴리스 태그에
+다이제스트가 같으면 표 내용이 같고, 다르면 `--compare <이전 manifest.json>` 으로 표별 행 수 증감·해시 변화(`baseline-comparison.md`·`.csv`)를 계산하거나 두 커밋을 다시 계산해 표끼리 비교한다. 묶음 자체를 커밋하거나 손으로 고친 사본을 기준선으로 삼지 않는다. 릴리스 태그에
 묶음을 붙이는 일은 첫 실제 릴리스에서 이미지 발행과 함께 확인한다(DEC-OPS-382 — 릴리스 첨부의 첫 적용은 따로 정한다). 설계 검토 비용의 기준선은
 [SOP §7.4](orchestration-protocol.md#74-측정)의 PR 설명 칸으로 잰다.
 
@@ -98,3 +101,15 @@ xlsx 는 외부 시범 검토 뒤에 정한다(DEC-OPS-382 ⑥).
 - 갤러리는 시연 화면이라 메뉴 연결 선택지·화면 관리 목록·권한 묶음에 나타나지 않는다(DEC-OPS-382 ④).
 - 저장소 밖 시안은 토큰 키트의 값만 쓴다. 키트는 값을 새로 만들지 않고 프로필 CSS 를 그대로 싣는다. 시안에서 고른 색을 앱에
   옮기려면 디자인 토큰 절차([design-tokens.md](design-tokens.md))를 따른다.
+
+## 7. 요구사항 입구(Intake)·통합 전환(Cutover)·최종 종료(Closeout) 연결
+
+정보공학(IE)의 표준 사전·단계 기준선·추적표와 애자일의 수직 슬라이스·자동 게이트를 전 생명주기로 잇는 실행 순서다.
+
+| 구간 | 입력·원장 | 실행 도구·검증 | 산출물·종료 판정 |
+|---|---|---|---|
+| **1. 요구사항 입구 (Intake)** | 기관 요구사항 추적 CSV(`요구사항 ID,대상 ID,요구사항 이름`), `config/modules/<id>.json`, `config/ui-route-capabilities.json` | [SOP §3 Stage 1](orchestration-protocol.md#stage-1-dispatch-등급-판정-및-spec-발행) 등급(L0~L2)·인가 의미(H3)·식별자 축 판정 | 대상 ID(`화면 경로`·`라우트#역량`·`METHOD 경로`)와 수용·금지 기준(부정 시험 후보) |
+| **2. 설계·표준 대조 (Design & Standard)** | `meta_standard_words`·`terms`·`domains`(live 조회), 결정 카드(D-n), `/admin/patterns` | `db-bridge` 실시간 표준 조회([SOP §3.1](orchestration-protocol.md#31-사전-검증-pre-audit)), [SOP §7 설계 검토 예산](orchestration-protocol.md#7-설계-검토-예산-design-review-budget) | 설계 기준선 커밋 SHA + `export-deliverables.mjs` 내용 다이제스트(`manifest.json`) |
+| **3. 수직 슬라이스 구현 (Vertical Slice)** | Flyway DDL, Entity/Service/Controller, OpenAPI(`api-docs.json`), 생성 TS/Zod, 화면·역량·권한 원장 | [`generate-domain.ps1`](../../scripts/generate-domain.ps1), [`domain-registration-doctor.mjs`](../../scripts/domain-registration-doctor.mjs), `npm run regen`, H5 부정 시험 red 증명 | 빠진 사람 판정 지점 0개(`operation-bindings`·`schema-gate` 등) 및 `route-capabilities` 검토 확인(자리표시 `route-capability-review` 해소 여부), required CI 통과 |
+| **4. 통합 전환 (Master Cutover — 기관 운영 절차)** | 온라인 승인 원장(`adoption-review.json`), 이관 승인 원장(`migration-adoption-review.json`), 실행 descriptor(`execution.json`) | 에이전트 자동 단계가 아닌 **기관 운영 절차(개별 명시 승인 대상)**: [백업·복원 런북](../04-operations/backup-and-restore-runbook.md) → 원천 동결(`ackSourceFreeze`) → 이관 descriptor로 `adoption:check` → `--execute` load 및 대사 FAIL 0 확인([이관 복구 런북](../04-operations/migration-recovery-runbook.md)) → 온라인 `adoption:check` → `--execute` 배포·신규 권한 배정·smoke([거버넌스 검토 수명 가이드 §3·§4](governance-review-lifecycle.md#3-온라인-제품의-기관-도입)) | 이관·온라인 `adoption:check` 통과 후 실행, 대사 FAIL 0건, 배포 후 로그인·권한 회수·핵심 여정 smoke 확인 |
+| **5. 최종 종료·인수 (Closeout & Handover)** | 깨끗한 HEAD, 기관 요구사항 CSV(`--rtm`), 이전 단계 기준선(`--compare`), 도입 환경 승인 원장 | **산출물 준비(저장소 도구)**: `node scripts/export-deliverables.mjs --db --rtm <CSV> --compare <기준선 manifest.json>` + `npm run review:status`<br>**기관 최종 인수(기관 절차)**: UAT 실제 수행·합격, 잔여 예외(`zdm-waivers`·`legacyDebt`) 위험 수용 승인, 도입 환경의 온라인·이관 승인 원장 `approved` 전환(`npm run adoption:check` 통과, [거버넌스 검토 수명 가이드 §3·§4](governance-review-lifecycle.md#3-온라인-제품의-기관-도입)) | **산출물 초안**: 추적·요구사항 조인·UAT 후보·예외 현황·기준선 비교 묶음과 내용 다이제스트<br>**최종 종료 판정**: 발주기관 UAT 합격 + 도입 환경 `adoption:check` 통과 + 운영 인계·최종 인수 승인 기록 |

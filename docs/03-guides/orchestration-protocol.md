@@ -308,3 +308,13 @@ E2E 선별은 기준 ref부터의 커밋 변경과 index·작업 트리·미추�
 - 설계 검토를 거친 PR 설명에 라운드·관점·지적·채택·구현 단계에서 뒤집힌 결정의 수를 적는다.
 - 3~5건이 쌓이면 채택률이 낮은 관점과 라운드부터 줄인다. 값은 공용 메모리에 다시 적지 않는다.
 - 인가·개인정보(H3), 물리 스키마(H1), 식별자 축, 동시성·잠금, 게이트 의미를 보는 관점은 채택률로 줄이지 않는다 — 드물지만 큰 결함을 보는 관점은 본래 채택률이 낮다. 줄일지는 채택 수와 함께 major 지적, 구현 단계·병합 뒤에 뒤집힌 결정을 보고 판단한다.
+
+---
+
+## 8. 전 생명주기 연결: 정보공학(IE) 뼈대와 애자일 실행 (Lifecycle Integration)
+
+본 저장소는 정보공학(IE)의 **표준 사전(`meta_standard_*`)·거버넌스 원장(`config/governance/*.json`, Flyway SQL)**을 규범 정본으로 삼고, **요구사항 추적(`--rtm` 입력과 조인표)·단계 기준선(`manifest.json`)**을 재현 가능한 비규범 파생물로 연결한 위에서 애자일 **수직 슬라이스(DB → Backend → OpenAPI/Zod → Frontend → E2E)와 등급별 파이프라인(L0~L2)**으로 실행한다(DEC-OPS-397). 명령·표 설명은 [시안에서 산출물까지 §7](design-to-deliverables-guide.md#7-요구사항-입구intake통합-전환cutover최종-종료closeout-연결)에, 기관 채택·전환 규범은 [거버넌스 검토 수명 가이드 §3·§4](governance-review-lifecycle.md#3-온라인-제품의-기관-도입)에 둔다.
+
+- **입구(Intake — L1·L2 및 §2.3 의미 변경의 Stage 1 앞단, L0 Fast-Track 제외)**: L1·L2 작업이나 인가(H3)·스키마(H1)·식별자·게이트 의미를 바꾸는 요청은 구현 전에 대상 식별자(`화면 경로`·`라우트#역량`·`METHOD 경로`), 인가 의미(owner-only / owner-or-admin / admin-only), 식별자 축(`esntlId` vs 로그인 ID), 수용 결과와 금지 결과(H5 부정 시험 대상)를 먼저 확정한다.
+- **수직 슬라이스 점검(Stage 2~3)**: [`domain-registration-doctor.mjs`](../../scripts/domain-registration-doctor.mjs)로 기능 선언·마이그레이션·권한·라우트 역량(`route-capabilities`, 자리표시 `route-capability-review` 검토 포함)·연산 바인딩·생성 POST 분류·스키마 게이트 누락을 점검하고 `npm run regen` 으로 파생 계약을 동기화한다.
+- **기관 통합 전환과 최종 종료(Cutover & Closeout — 에이전트 자동 단계가 아닌 기관 운영·인수 절차)**: 운영 데이터 적재·배포는 AGENTS 안전 경계와 [ADR-0008](../02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md)에 따라 개별 명시 승인을 받아 **백업 확인 → 원천 동결(`ackSourceFreeze`) → 이관 descriptor로 `adoption:check` → `--execute` 이관 load(대사 FAIL 0 확인) → 온라인 `adoption:check` → `--execute` 배포·권한 배정·smoke** 순서로 수행한다. 단계 마감·검수 입력 초안은 [`export-deliverables.mjs`](../../scripts/export-deliverables.mjs)(`--db`, `--rtm`, `--compare`)로 내보내며, 최종 종료·인수 완료는 산출물 초안 생성이 아니라 발주기관의 실제 UAT 합격, 잔여 예외·위험 수용 승인, 도입 환경의 온라인·이관 승인 원장(`adoption:check`) 통과 및 운영 인계 승인으로 판정한다([거버넌스 검토 수명 가이드 §3·§4](governance-review-lifecycle.md#3-온라인-제품의-기관-도입)).

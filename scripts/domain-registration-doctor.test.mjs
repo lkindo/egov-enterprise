@@ -193,3 +193,15 @@ test('실제 저장소의 schema-validation 시험은 모두 게이트 원장에
   const registered = new Set(schemaValidation.rules.map(({ source }) => source));
   assert.deepEqual(schemaValidation.tagged.filter((source) => !registered.has(source)), []);
 });
+
+test('페이지 화면에 구체 역량이 없거나 자리표시(route-capability-review / E0 unverified)만 있으면 사람 검토로 알리고, 구체 역량이 있으면 ok 로 판정한다', () => {
+  const placeholderCap = evaluateRegistration(inputs({
+    routeLedger: { routes: [{ route: '/admin/probe', capabilities: [{ id: 'route-capability-review', evidenceFloor: 'E0', verificationStatus: 'unverified' }] }] },
+  })).points.find((entry) => entry.id === 'route-capabilities:/admin/probe');
+  assert.equal(placeholderCap.status, 'review');
+  assert.match(placeholderCap.detail, /자리표시\(route-capability-review \/ E0 unverified\)/u);
+  const withCap = evaluateRegistration(inputs({
+    routeLedger: { routes: [{ route: '/admin/probe', capabilities: [{ id: 'probe.list', evidenceFloor: 'E2', verificationStatus: 'verified' }] }] },
+  })).points.find((entry) => entry.id === 'route-capabilities:/admin/probe');
+  assert.equal(withCap.status, 'ok');
+});

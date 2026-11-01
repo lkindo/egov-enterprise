@@ -8,7 +8,7 @@
  * `.agents/hooks.json`(Antigravity PreToolUse). 판정은 모두 이 파일이 한다.
  *
  * 병합 권위는 required CI 이고, 이 가드는 그 앞에서 같은 실수를 일찍 막는 보조다. 그래서 입력을 읽지 못하거나 판정 중 오류가 나면
- * 아무 판정도 내지 않는다(평소 권한 흐름 그대로). 막지 않은 명령에도 승인을 대신 내리지 않는다. 다만 "걸린 규칙 없음"과 구분되도록
+ * 막지 않는다(평소 권한 흐름 그대로 — Claude·Codex 는 빈 출력, Antigravity 는 Always Allow 캐시를 따르는 ask 출력). 막지 않은 명령에도 승인을 대신 내리지 않는다. 다만 "걸린 규칙 없음"과 구분되도록
  * 실패한 규칙 id(또는 단계 이름)와 오류 이름만 stderr 에 한 줄 남긴다 — 명령 원문·인자·오류 메시지는 비밀이 섞일 수 있어 남기지 않는다.
  * 어댑터가 살아 있는지는 `echo AGENT_GUARD_CANARY` 가 막히는지로 본다(guard-canary 규칙).
  *
@@ -23,6 +23,7 @@ import { basename, delimiter, dirname, isAbsolute, join, normalize, resolve, sep
 import { fileURLToPath } from 'node:url';
 
 const AGENTS = new Set(['claude', 'codex', 'antigravity']);
+const GIT_TIMEOUT_MS = 3000;
 
 /** 한 줄에서 heredoc 시작(`<<EOF`·`<<-'EOF'`)의 구분자. 같은 줄에서 닫히는 문자열 안의 `<<`(예: `-m "Fix << EOF"`)는 세지 않는다. */
 function heredocDelimiter(line) {
@@ -171,8 +172,27 @@ function onPath(executable) {
   return (process.env.PATH ?? '').split(delimiter).some((dir) => dir && names.some((name) => existsSync(join(dir, name))));
 }
 
+function defaultGitRunner(args, cwd) {
+  return spawnSync('git', args, { cwd, encoding: 'utf8', windowsHide: true, timeout: GIT_TIMEOUT_MS });
+}
+let activeGitRunner = defaultGitRunner;
+
+/** git 하위 프로세스를 실행하고 타임아웃·실행 실패(result.error)는 규칙 판정 실패 경로로 던진다. */
+function spawnGit(args, cwd) {
+  if (cwd && !existsSync(cwd)) return { status: 1, stdout: '', stderr: '' };
+  const result = activeGitRunner(args, cwd);
+  if (result.error) {
+    const err = new Error('git invocation failed');
+    err.name = typeof result.error.code === 'string' && /^[A-Za-z_$][\w$]{0,63}$/.test(result.error.code)
+      ? result.error.code
+      : errorName(result.error);
+    throw err;
+  }
+  return result;
+}
+
 function repoTop(cwd) {
-  const result = spawnSync('git', ['rev-parse', '--show-toplevel'], { cwd, encoding: 'utf8', windowsHide: true });
+  const result = spawnGit(['rev-parse', '--show-toplevel'], cwd);
   return result.status === 0 ? result.stdout.trim() : null;
 }
 
@@ -185,10 +205,9 @@ function branchTipsPushed(args, cwd) {
   const names = args.filter((arg) => !arg.startsWith('-'));
   if (!names.length) return false;
   return names.every((name) => {
-    const tip = spawnSync('git', ['rev-parse', '--verify', '--quiet', `refs/heads/${name}`], { cwd, encoding: 'utf8', windowsHide: true });
+    const tip = spawnGit(['rev-parse', '--verify', '--quiet', `refs/heads/${name}`], cwd);
     if (tip.status !== 0) return false;
-    const remotes = spawnSync('git', ['for-each-ref', '--contains', tip.stdout.trim(), '--format=%(refname)', 'refs/remotes'],
-      { cwd, encoding: 'utf8', windowsHide: true });
+    const remotes = spawnGit(['for-each-ref', '--contains', tip.stdout.trim(), '--format=%(refname)', 'refs/remotes'], cwd);
     return remotes.status === 0 && remotes.stdout.trim().length > 0;
   });
 }
@@ -379,7 +398,7 @@ function namesWholeTree(code, raw, valued = new Set()) {
  */
 function sequencerInProgress(cwd) {
   const markers = ['MERGE_HEAD', 'CHERRY_PICK_HEAD', 'REVERT_HEAD', 'rebase-merge', 'rebase-apply'];
-  const result = spawnSync('git', ['rev-parse', ...markers.flatMap((marker) => ['--git-path', marker])], { cwd, encoding: 'utf8', windowsHide: true });
+  const result = spawnGit(['rev-parse', ...markers.flatMap((marker) => ['--git-path', marker])], cwd);
   if (result.status !== 0) return false;
   return result.stdout.split(/\r?\n/).filter(Boolean).some((path) => existsSync(resolve(cwd, path.trim())));
 }
@@ -428,7 +447,7 @@ function comparablePath(path) {
 function worktreeLayout(cwds) {
   const trees = new Set();
   for (const cwd of cwds) {
-    const result = spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd, encoding: 'utf8', windowsHide: true });
+    const result = spawnGit(['worktree', 'list', '--porcelain'], cwd);
     if (result.status !== 0) continue;
     for (const line of result.stdout.split(/\r?\n/)) if (line.startsWith('worktree ')) trees.add(comparablePath(line.slice('worktree '.length)));
   }
@@ -1193,10 +1212,16 @@ function inspectView(view, command, cwd, depth, state, cwdUnknown = false) {
  * 명령 하나를 판정한다. 걸린 규칙이 없으면 null, 있으면 가장 강한 판정(deny > ask)과 사유들.
  * `rules` 는 시험이 던지는 규칙을 끼워 넣을 때만 준다.
  */
-export function evaluate(command, { cwd = process.cwd(), rules = RULES } = {}) {
+export function evaluate(command, { cwd = process.cwd(), rules = RULES, gitRunner = defaultGitRunner } = {}) {
   if (typeof command !== 'string' || !command.trim()) return null;
   const state = { rules, root: cwd, hits: [], reported: new Set() };
-  inspect(command, cwd, 0, state);
+  const previousRunner = activeGitRunner;
+  activeGitRunner = gitRunner;
+  try {
+    inspect(command, cwd, 0, state);
+  } finally {
+    activeGitRunner = previousRunner;
+  }
   const { hits } = state;
   if (!hits.length) return null;
   return {
@@ -1223,10 +1248,10 @@ export function readHookInput(agent, input) {
   return typeof command === 'string' ? { command, cwd: input.cwd ?? process.cwd() } : null;
 }
 
-/** 판정을 각 도구의 출력 형식으로 바꾼다. 판정이 없으면 평소 권한 흐름이 그대로 가도록 아무것도 정하지 않는다. */
+/** 판정을 각 도구의 출력 형식으로 바꾼다. 막지 않은 명령에는 승인을 대신 내리지 않는다(DEC-OPS-386 ②; 2026-11-01 Antigravity 설치본 실측에서 빈 출력·{} 는 PreToolUse 프로토콜 오류로 명령이 거부되고 allow 는 Always Allow 밖 명령까지 자동 승인하므로, Antigravity 는 Always Allow 캐시·기본 승인 흐름을 따르는 { decision: "ask" } 를 돌려준다). */
 export function renderVerdict(agent, verdict) {
   if (agent === 'antigravity') {
-    return JSON.stringify(verdict ? { decision: verdict.decision === 'ask' ? 'force_ask' : 'deny', reason: verdict.reason } : {});
+    return JSON.stringify(verdict ? { decision: verdict.decision === 'ask' ? 'force_ask' : 'deny', reason: verdict.reason } : { decision: 'ask' });
   }
   if (!verdict) return '';
   const decision = agent === 'codex' && verdict.decision === 'ask' ? 'deny' : verdict.decision;
