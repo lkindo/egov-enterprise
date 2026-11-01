@@ -340,21 +340,35 @@ class ConfigSafetyLinterTest {
     /** base compose 의 db 서비스가 커밋해 둔 개발 비밀번호. 이 값이 운영까지 새는지를 본다. */
     private static final Pattern COMPOSE_DB_SERVICE = Pattern.compile("(?m)^\\s+db\\s*:\\s*$");
 
-    /** 모든 인터페이스(0.0.0.0)에 5432 를 공개하는 형태. 호스트 IP 접두가 없으면 여기 걸린다. */
-    private static final Pattern DB_PORT_PUBLISHED_ON_ALL_INTERFACES =
-            Pattern.compile("(?m)^\\s*-\\s*\"?\\d+:5432\"?\\s*$");
+    /**
+     * 번들 DB 의 벤더별 값. 지키는 것은 같다: 포트는 루프백만, 운영 비밀번호는 필수 환경변수, healthcheck 는 운영 자격에서도 동작한다.
+     *
+     * @param healthcheck 운영 오버레이가 자격을 바꿔도 동작하는 healthcheck. PostgreSQL 은 실효 사용자·DB명을 컨테이너 환경에서 읽는다.
+     * @param deployUrlCase deploy.sh 가 받는 번들 DB 주소
+     */
+    private record BundledDatabase(String port, List<String> passwordVariables, Pattern healthcheck, String deployUrlCase) {
+        /** 모든 인터페이스(0.0.0.0)에 공개하는 형태. 호스트 IP 접두가 없으면 여기 걸린다. */
+        Pattern publishedOnAllInterfaces() {
+            return Pattern.compile("(?m)^\\s*-\\s*\"?\\d+:" + port + "\"?\\s*$");
+        }
 
-    /** 루프백 한정 공개. `127.0.0.1:5432:5432` 형태. */
-    private static final Pattern DB_PORT_PUBLISHED_ON_LOOPBACK =
-            Pattern.compile("(?m)^\\s*-\\s*\"?(127\\.0\\.0\\.1|localhost):\\d+:5432\"?\\s*$");
+        /** 루프백 한정 공개. {@code 127.0.0.1:포트:포트} 형태. */
+        Pattern publishedOnLoopback() {
+            return Pattern.compile("(?m)^\\s*-\\s*\"?(127\\.0\\.0\\.1|localhost):\\d+:" + port + "\"?\\s*$");
+        }
 
-    /** prod 오버레이가 번들 DB 자격을 환경변수로 덮어쓰는가. */
-    private static final Pattern PROD_DB_PASSWORD_OVERRIDE =
-            Pattern.compile("(?m)^\\s*POSTGRES_PASSWORD\\s*:\\s*\\$\\{[A-Z_]+:\\?");
+        /** prod 오버레이가 번들 DB 자격을 환경변수로 덮어쓰는가. */
+        Pattern passwordOverride(String variable) {
+            return Pattern.compile("(?m)^\\s*" + variable + "\\s*:\\s*\\$\\{[A-Z_]+:\\?");
+        }
+    }
 
-    /** DB healthcheck가 prod 오버레이 이후의 실효 사용자·DB명을 컨테이너 환경에서 읽는가. */
-    private static final Pattern DB_HEALTHCHECK_USES_CONTAINER_ENV = Pattern.compile(
-            "(?m)^\\s*test\\s*:.*pg_isready.*\\$\\$\\{POSTGRES_USER\\}.*\\$\\$\\{POSTGRES_DB\\}.*$");
+    private static final BundledDatabase BUNDLED_DATABASE = "oracle".equals(ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql"))
+            ? new BundledDatabase("1521", List.of("APP_USER_PASSWORD", "ORACLE_PASSWORD"),
+                    Pattern.compile("(?m)^\\s*test\\s*:.*healthcheck\\.sh.*$"), "jdbc:oracle:thin:@//db:1521/FREEPDB1)")
+            : new BundledDatabase("5432", List.of("POSTGRES_PASSWORD"),
+                    Pattern.compile("(?m)^\\s*test\\s*:.*pg_isready.*\\$\\$\\{POSTGRES_USER\\}.*\\$\\$\\{POSTGRES_DB\\}.*$"),
+                    "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)");
 
     /** 첨부 실물이 컨테이너 쓰기 계층으로 되돌아가지 않도록 고정하는 api mount. */
     private static final Pattern ATTACHMENT_STORAGE_MOUNT = Pattern.compile(
@@ -387,29 +401,31 @@ class ConfigSafetyLinterTest {
             return;
         }
 
-        if (DB_PORT_PUBLISHED_ON_ALL_INTERFACES.matcher(composeBaseSrc).find()) {
-            violations.add("docker-compose.yml: db 의 5432 가 모든 인터페이스(0.0.0.0)에 공개돼 있습니다."
+        String port = BUNDLED_DATABASE.port();
+        if (BUNDLED_DATABASE.publishedOnAllInterfaces().matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db 의 " + port + " 가 모든 인터페이스(0.0.0.0)에 공개돼 있습니다."
                     + " deploy.sh 가 base 를 함께 올리므로 이 공개는 운영 호스트에 그대로 적용됩니다."
-                    + " '127.0.0.1:5432:5432' 로 좁히십시오 — 컨테이너 간 통신은 egov-net 을 쓰므로 영향이 없습니다."
+                    + " '127.0.0.1:" + port + ":" + port + "' 로 좁히십시오 — 컨테이너 간 통신은 egov-net 을 쓰므로 영향이 없습니다."
                     + " (오버레이로는 닫을 수 없습니다: compose 는 ports 리스트를 이어붙입니다.)");
-        } else if (!DB_PORT_PUBLISHED_ON_LOOPBACK.matcher(composeBaseSrc).find()) {
-            violations.add("docker-compose.yml: db 의 5432 공개 형태를 판정할 수 없습니다 —"
-                    + " 루프백 한정('127.0.0.1:5432:5432')이거나 공개가 아예 없어야 합니다."
+        } else if (!BUNDLED_DATABASE.publishedOnLoopback().matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db 의 " + port + " 공개 형태를 판정할 수 없습니다 —"
+                    + " 루프백 한정('127.0.0.1:" + port + ":" + port + "')이거나 공개가 아예 없어야 합니다."
                     + " 판정 불가를 통과로 넘기면 이 게이트가 무의미해집니다.");
         }
 
-        if (!PROD_DB_PASSWORD_OVERRIDE.matcher(composeProdSrc).find()) {
-            violations.add("docker-compose.prod.yml: 번들 db 의 POSTGRES_PASSWORD 를 필수 환경변수로"
-                    + " 재정의하지 않았습니다 — base 에 커밋된 개발 비밀번호가 운영 DB 자격이 됩니다."
-                    + " db 블록에 'POSTGRES_PASSWORD: ${DB_PASSWORD:?...}' 를 두십시오"
-                    + "(deploy.sh 가 이미 필수로 검증하는 변수입니다).");
+        for (String variable : BUNDLED_DATABASE.passwordVariables()) {
+            if (!BUNDLED_DATABASE.passwordOverride(variable).matcher(composeProdSrc).find()) {
+                violations.add("docker-compose.prod.yml: 번들 db 의 " + variable + " 를 필수 환경변수로"
+                        + " 재정의하지 않았습니다 — base 에 커밋된 개발 비밀번호가 운영 DB 자격이 됩니다."
+                        + " db 블록에 '" + variable + ": ${DB_PASSWORD:?...}' 를 두십시오"
+                        + "(deploy.sh 가 이미 필수로 검증하는 변수입니다).");
+            }
         }
 
-        if (!DB_HEALTHCHECK_USES_CONTAINER_ENV.matcher(composeBaseSrc).find()) {
-            violations.add("docker-compose.yml: db healthcheck가 컨테이너의 POSTGRES_USER/POSTGRES_DB를"
-                    + " 사용하지 않습니다 — prod 오버레이가 사용자를 바꾸면 존재하지 않는 개발 역할을"
-                    + " 검사해 DB가 영구 unhealthy가 됩니다. Compose 이스케이프 '$${...}'로 실효 값을"
-                    + " 전달하십시오.");
+        if (!BUNDLED_DATABASE.healthcheck().matcher(composeBaseSrc).find()) {
+            violations.add("docker-compose.yml: db healthcheck가 운영 자격을 따르지 않습니다 — prod 오버레이가"
+                    + " 사용자를 바꾸면 존재하지 않는 개발 역할을 검사해 DB가 영구 unhealthy가 됩니다."
+                    + " Compose 이스케이프 '$${...}'로 실효 값을 전달하십시오.");
         }
     }
 
@@ -439,7 +455,7 @@ class ConfigSafetyLinterTest {
                 "for v in API_IMAGE_REF FRONTEND_IMAGE_REF",
                 "docker pull \"$ref\"",
                 "case \"$DB_URL\" in",
-                "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)",
+                BUNDLED_DATABASE.deployUrlCase(),
                 "up --no-build -d --wait",
                 "docker image inspect \"$API_IMAGE_REF\"",
                 "docker image inspect \"$FRONTEND_IMAGE_REF\"");

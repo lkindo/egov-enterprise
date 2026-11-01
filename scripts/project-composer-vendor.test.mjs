@@ -17,7 +17,7 @@ import { vendorInputPath, verificationSteps, verificationVendor } from './verify
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { verificationStepMarkers } from './project-composer-timeline.mjs';
 import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
-import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
+import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -538,6 +538,14 @@ volumes:
   assert.match(prod, /APP_USER_PASSWORD: \$\{DB_PASSWORD/);
   assert.match(prod, /ORACLE_PASSWORD: \$\{DB_PASSWORD/);
   assert.doesNotMatch(prod, /POSTGRES/);
+
+  const deploy = projectVendorDeploy(`case "$DB_URL" in
+    jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*) ;;
+    *) echo "전용입니다(jdbc:postgresql://db:5432/egovdb)" ;;
+esac
+`, 'oracle');
+  assert.doesNotMatch(deploy, /postgresql/);
+  assert.match(deploy, /^ {4}jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1\) ;;$/m);
 
   assert.equal(projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_USERNAME=egov\n', 'oracle'),
     `DB_URL=${VENDOR_SOURCE.oracle.url}\nDB_USERNAME=egov\n`);

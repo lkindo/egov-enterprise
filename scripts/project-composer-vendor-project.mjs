@@ -117,6 +117,13 @@ export function projectVendorComposeProd(text, vendorId) {
   return VENDOR_SOURCE[vendorId].composeProd.reduce((projected, [pattern, replacement]) => replaceRequired(projected, pattern, replacement, 'compose 운영 자격'), text);
 }
 
+/** 배포 스크립트가 받는 번들 DB 주소를 바꾼다. */
+export function projectVendorDeploy(text, vendorId) {
+  const { composeUrl } = VENDOR_SOURCE[vendorId];
+  const guarded = replaceRequired(text, /jdbc:postgresql:\/\/db:5432\/egovdb\|jdbc:postgresql:\/\/db:5432\/egovdb\\\?\*\)/, `${composeUrl})`, '배포 스크립트 주소 검사');
+  return replaceRequired(guarded, /jdbc:postgresql:\/\/db:5432\/egovdb/g, composeUrl, '배포 스크립트 안내');
+}
+
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
 export function projectVendorEnvironment(text, vendorId) {
   return replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
@@ -156,6 +163,8 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   writeFileSync(compose, projectVendorCompose(readFileSync(compose, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
   const composeProd = join(output, 'docker-compose.prod.yml');
   writeFileSync(composeProd, projectVendorComposeProd(readFileSync(composeProd, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
+  const deploy = join(output, 'scripts/deploy.sh');
+  writeFileSync(deploy, projectVendorDeploy(readFileSync(deploy, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
   const environment = join(output, '.env.example');
   writeFileSync(environment, projectVendorEnvironment(readFileSync(environment, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
   const readme = join(output, 'README.md');

@@ -6,7 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
-import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -27,7 +26,8 @@ class FlywaySchemaOwnershipLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(FlywaySchemaOwnershipLinterTest.class);
     private static final Set<String> NON_MUTATING_DDL_AUTO = Set.of("none", "validate");
-    private static final String MIGRATION_LOCATION = migrationLocation(HarnessSourceIndex.repoRoot());
+    /** 벤더 생성물은 번역 기준선 폴더만 Flyway 에 준다. 위치는 생성기 잠금이 정하고 거버넌스가 구성과 대조한다. */
+    private static final String MIGRATION_LOCATION = ReusableHarnessProfile.vendorProjectionValue("location", "classpath:db/migration");
     private static final List<String> MODULES = List.of(
             "foundation", "business-core", "business-app", "api-server", "migration-tool");
 
@@ -171,20 +171,6 @@ class FlywaySchemaOwnershipLinterTest {
                 .isEmpty();
         log.info("root sql 자동 실행 참조 없음 — sql/*.sql {}건 / launch surface {}건 정적 대조",
                 rootSql.size(), launchSurfaces.size());
-    }
-
-    /** 벤더 생성물은 번역 기준선 폴더만 Flyway 에 준다. 위치는 생성기 잠금이 정하고 거버넌스가 구성과 대조한다. */
-    private static String migrationLocation(Path root) {
-        Path lock = root.resolve("reusable-base-lock.json");
-        if (!Files.isRegularFile(lock)) {
-            return "classpath:db/migration";
-        }
-        try {
-            return JsonMapper.builder().build().readTree(HarnessSourceIndex.read(lock))
-                    .path("vendorProjection").path("location").asString("classpath:db/migration");
-        } catch (IOException failure) {
-            throw new java.io.UncheckedIOException(failure);
-        }
     }
 
     private static List<String> productionOwnershipViolations(Map<String, String> effective) {
