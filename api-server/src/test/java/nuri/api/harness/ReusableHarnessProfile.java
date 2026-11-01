@@ -39,6 +39,16 @@ public final class ReusableHarnessProfile {
     }
 
     public static ReusableHarnessProfile current() { return CURRENT; }
+
+    /** 생성기 잠금의 벤더 투영 값. 원본 저장소와 PostgreSQL 생성물에는 투영이 없어 기본값을 준다. */
+    public static String vendorProjectionValue(String field, String fallback) {
+        Path lock = HarnessSourceIndex.repoRoot().resolve("reusable-base-lock.json");
+        if (!Files.isRegularFile(lock)) {
+            return fallback;
+        }
+        return JsonMapper.builder().configureForJackson2().build().readTree(lock.toFile())
+                .path("vendorProjection").path(field).asString(fallback);
+    }
     public boolean projected() { return projection != null; }
 
     public int count(String key, int canonical) {

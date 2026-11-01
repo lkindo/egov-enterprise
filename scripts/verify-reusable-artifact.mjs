@@ -13,8 +13,16 @@ import { normalizeBackendLayout } from './reusable-layout.mjs';
 // 이 셋을 함께 복사한다(generate-migration-product.mjs).
 export const VERIFICATION_STEP_IDS = Object.freeze(['governance', 'ui-governance', 'entrypoints', 'backend', 'typecheck', 'lint', 'build']);
 
-/** 범위·배치에 맞는 검증 단계 표. 명령 목록(verificationCommands)도 이 표에서 만든다. */
-export function verificationSteps(scope = 'full', layout = 'multi-module') {
+/** 구성의 벤더. PostgreSQL 은 기본 단계표를 쓴다. */
+export const verificationVendor = database => (database?.vendor && database.vendor !== 'postgresql' ? database.vendor : undefined);
+/** 벤더 생성물이 통합 시험에 쓰는 번역 입력. */
+export const vendorInputPath = vendor => `config/vendor/${vendor}/vendor-input.json`;
+
+/**
+ * 범위·배치에 맞는 검증 단계 표. 명령 목록(verificationCommands)도 이 표에서 만든다.
+ * 벤더 생성물의 스키마 시험은 PostgreSQL 컨테이너 대신 그 벤더의 일회용 DB 에서 돈다(ADR-0047 D-10).
+ */
+export function verificationSteps(scope = 'full', layout = 'multi-module', { vendor } = {}) {
   if (!['contracts', 'backend', 'frontend', 'full'].includes(scope)) throw new Error('scope must be contracts, backend, frontend or full');
   normalizeBackendLayout(layout);
   const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
@@ -24,8 +32,15 @@ export function verificationSteps(scope = 'full', layout = 'multi-module') {
     { id: 'entrypoints', command: 'node', args: ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs'] },
   ];
   if (['backend', 'full'].includes(scope)) steps.push(
-    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, `${taskPrefix}schemaValidationTest`,
+    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]),
       '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8'] },
+    ...(vendor ? [
+      // 생성물의 기준선 파일을 실제 Flyway 로 적용한 DB 에서 대조하고 시나리오를 돌린다.
+      { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
+        '--flyway', `classpath:db/vendor/${vendor}`] },
+      // 대체 분류 시험의 근거다. CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 대조한다.
+      { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor] },
+    ] : []),
   );
   if (['frontend', 'full'].includes(scope)) steps.push(
     { id: 'typecheck', command: 'pnpm', args: ['-C', 'frontend', 'exec', 'tsc', '--noEmit'] },
@@ -35,8 +50,8 @@ export function verificationSteps(scope = 'full', layout = 'multi-module') {
   return steps;
 }
 
-export function verificationCommands(scope = 'full', layout = 'multi-module') {
-  return verificationSteps(scope, layout).map(({ command, args }) => [command, args]);
+export function verificationCommands(scope = 'full', layout = 'multi-module', options = {}) {
+  return verificationSteps(scope, layout, options).map(({ command, args }) => [command, args]);
 }
 
 export function runCommand(command, args, { root, env = process.env, capture = false } = {}) {
@@ -60,7 +75,7 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   const lock = JSON.parse(readFileSync(resolve(root, 'reusable-base-lock.json'), 'utf8'));
   if (!compositionProfiles().includes(lock.profile)) throw new Error('generated product lock is required');
   const layout = normalizeBackendLayout(lock.layout);
-  const steps = verificationSteps(scope, layout);
+  const steps = verificationSteps(scope, layout, { vendor: lock.vendorProjection?.vendor });
   const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
   const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),

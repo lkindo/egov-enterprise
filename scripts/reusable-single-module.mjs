@@ -241,6 +241,8 @@ tasks.named('compileTestJava') {
 tasks.named('test', Test) { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }
 tasks.named('harnessTest', Test) { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }
 tasks.named('schemaValidationTest', Test) { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }
+tasks.matching { it.name == 'vendorIntegrationTest' }.configureEach { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }
+tasks.matching { it.name == 'vendorFlywayMigrate' }.configureEach { classpath = sourceSets.test.runtimeClasspath }
 tasks.register('allTests') { dependsOn 'test', 'foundationTest', 'coreTest', 'appTest', 'migrationTest' }
 tasks.named('check') { dependsOn 'foundationTest', 'coreTest', 'appTest', 'migrationTest' }
 
@@ -376,6 +378,8 @@ export function inspectSingleModuleLayout(outputRoot) {
     "tasks.named('compileAppTestJava')", "tasks.named('compileFoundationTestJava')", "tasks.named('compileMigrationTestJava')",
     "tasks.named('harnessTest', Test) { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }",
     "tasks.named('schemaValidationTest', Test) { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }",
+    "tasks.matching { it.name == 'vendorIntegrationTest' }.configureEach { workingDir file('api-server'); classpath = sourceSets.test.runtimeClasspath }",
+    "tasks.matching { it.name == 'vendorFlywayMigrate' }.configureEach { classpath = sourceSets.test.runtimeClasspath }",
     "tasks.named('bootRun') { workingDir file('api-server') }", "tasks.named('assemble') { dependsOn 'bootJar', 'migrationBootJar' }",
     "appVerification: ['foundationVerification', 'coreVerification']",
     'sourceSets.fixtures.compileClasspath += sourceSets.foundationVerification.output + sourceSets.coreVerification.output',

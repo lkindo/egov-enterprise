@@ -147,7 +147,11 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
             JdbcTemplate jdbc = jdbc(connection);
             DataAccessException failure;
             if (VendorTestSql.vendorRun()) {
-                failure = cancelledByDriverTimeout(jdbc);
+                // 도는 질의를 드라이버의 문장 시간 초과로 취소한다. 잠금 대기 취소는 Docker 포트 매핑을 거치면 20분 뒤에야 닿는다(실측).
+                jdbc.setQueryTimeout(1);
+                failure = queryFailure(jdbc, "SELECT COUNT(*) FROM all_objects a, all_objects b, all_objects c "
+                        + "WHERE a.object_id + b.object_id + c.object_id > CAST(? AS NUMBER)", "5");
+                jdbc.setQueryTimeout(-1);
             } else {
                 jdbc.execute("SET statement_timeout = '100ms'");
                 failure = queryFailure(jdbc, "SELECT pg_sleep(CAST(? AS DOUBLE PRECISION))", "5");
@@ -174,25 +178,6 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                 jdbc.execute("DROP TABLE response_child_probe");
                 jdbc.execute("DROP TABLE response_parent_probe");
             }
-        }
-    }
-
-    /** 다른 세션이 쥔 행을 기다리는 질의를 드라이버의 문장 시간 초과로 취소한다. Oracle 에는 세션 범위 문장 상한이 없다. */
-    private DataAccessException cancelledByDriverTimeout(JdbcTemplate jdbc) throws SQLException {
-        jdbc.execute("CREATE TABLE response_timeout_probe (id integer PRIMARY KEY)");
-        jdbc.update("INSERT INTO response_timeout_probe (id) VALUES (1)");
-        try (Connection holder = openConnection()) {
-            holder.setAutoCommit(false);
-            jdbc(holder).queryForObject("SELECT id FROM response_timeout_probe WHERE id=1 FOR UPDATE", Integer.class);
-            jdbc.setQueryTimeout(1);
-            try {
-                return queryFailure(jdbc, "SELECT id FROM response_timeout_probe WHERE id=CAST(? AS INTEGER) FOR UPDATE", "1");
-            } finally {
-                jdbc.setQueryTimeout(-1);
-                holder.rollback();
-            }
-        } finally {
-            jdbc.execute("DROP TABLE response_timeout_probe");
         }
     }
 

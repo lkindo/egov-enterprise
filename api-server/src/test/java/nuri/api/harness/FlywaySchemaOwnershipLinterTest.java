@@ -26,6 +26,8 @@ class FlywaySchemaOwnershipLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(FlywaySchemaOwnershipLinterTest.class);
     private static final Set<String> NON_MUTATING_DDL_AUTO = Set.of("none", "validate");
+    /** 벤더 생성물은 번역 기준선 폴더만 Flyway 에 준다. 위치는 생성기 잠금이 정하고 거버넌스가 구성과 대조한다. */
+    private static final String MIGRATION_LOCATION = ReusableHarnessProfile.vendorProjectionValue("location", "classpath:db/migration");
     private static final List<String> MODULES = List.of(
             "foundation", "business-core", "business-app", "api-server", "migration-tool");
 
@@ -197,9 +199,9 @@ class FlywaySchemaOwnershipLinterTest {
         if (!"true".equals(normalize(effective.get("spring.flyway.enabled")))) {
             violations.add("spring.flyway.enabled는 운영 effective config에서 명시적 true여야 함");
         }
-        if (!"classpath:db/migration".equals(normalize(effective.get("spring.flyway.locations")))) {
+        if (!MIGRATION_LOCATION.equals(normalize(effective.get("spring.flyway.locations")))) {
             violations.add("spring.flyway.locations=" + effective.get("spring.flyway.locations")
-                    + " — 운영 SSOT는 classpath:db/migration 단독이어야 함");
+                    + " — 운영 SSOT는 " + MIGRATION_LOCATION + " 단독이어야 함");
         }
         if (!"false".equals(normalize(effective.get("spring.flyway.baseline-on-migrate")))) {
             violations.add("spring.flyway.baseline-on-migrate는 prod overlay에서 false로 fail-closed해야 함");

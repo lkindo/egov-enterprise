@@ -8,6 +8,7 @@ import { basename, dirname, isAbsolute, join, relative, resolve, sep } from 'nod
 import { setTimeout as delay } from 'node:timers/promises';
 import { ComposerError } from './project-composer-errors.mjs';
 import { createLogMasker } from './project-composer-command.mjs';
+import { verificationVendor } from './verify-reusable-artifact.mjs';
 import { createOwnedPostgres, ownedContainerId, removeOwnedPostgres, removeOwnedPostgresByToken, waitForOwnedPostgres } from './project-composer-postgres.mjs';
 import { classifyChildFailure, classifyDatabaseNotReady, classifyDockerStart, classifyVerificationFailure, jobFailure, toRepositoryPath }
   from './project-composer-job-failure.mjs';
@@ -211,7 +212,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
       await jobRun('pnpm', ['-C', 'frontend', 'install', '--frozen-lockfile'], { root: paths.projectDirectory, log: logOf('install') });
       progress('verify');
       // 검증기가 단계마다 찍는 머리줄로 검증 일곱 단계 중 어디인지 알린다(검증기 자체는 바꾸지 않는다).
-      const markers = verificationStepMarkers({ profile: composition.profile, layout: composition.backendLayout });
+      const markers = verificationStepMarkers({ profile: composition.profile, layout: composition.backendLayout, vendor: verificationVendor(composition.database) });
       const onLine = line => { const step = markers.get(line); if (step && timeline.step(step)) emit(); };
       try { await jobRun('node', ['scripts/verify-reusable-artifact.mjs'], { root: paths.projectDirectory, log: logOf('verify'), onLine }); }
       catch (error) {

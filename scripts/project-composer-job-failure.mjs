@@ -14,7 +14,7 @@ import { ComposerError, JOB_ERROR_CODES, withoutRoot } from './project-composer-
 import { createLogMasker, environmentSecrets } from './project-composer-command.mjs';
 import { readChildFailure } from './project-composer-child-failure.mjs';
 import { dockerAnswers, ownedPostgresRunning } from './project-composer-postgres.mjs';
-import { verificationSteps } from './verify-reusable-artifact.mjs';
+import { verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 
 /** 검증을 실행하는 명령 식별자. 서버는 VERIFY_FAILED 가 이 명령의 실패일 때만 받는다. */
 export const VERIFY_COMMAND_ID = 'scripts/verify-reusable-artifact.mjs';
@@ -81,8 +81,10 @@ export function failedVerificationStep(projectDirectory, composition, startedAt)
   // 실패 단계가 단계 표에 없으면 아래에서 같은 id 의 명령을 찾지 못해 판정하지 않는다.
   if (!failure || !Number.isSafeInteger(failure.exitCode)) return undefined;
   if (last?.result !== 'failed' || last.step !== failure.step || last.command !== failure.command) return undefined;
-  const expected = verificationSteps('full', composition.backendLayout).find(step => step.id === failure.step);
-  if (!expected || [expected.command, ...expected.args].join(' ') !== failure.command) return undefined;
+  // 벤더 구성은 한 단계에 명령이 둘이라 id 와 명령을 함께 맞춘다.
+  const expected = verificationSteps('full', composition.backendLayout, { vendor: verificationVendor(composition.database) })
+    .find(step => step.id === failure.step && [step.command, ...step.args].join(' ') === failure.command);
+  if (!expected) return undefined;
   return { step: failure.step, command: failure.command };
 }
 

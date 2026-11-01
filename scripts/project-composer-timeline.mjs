@@ -30,8 +30,8 @@ const ITEMS = Object.freeze([...JOB_STAGES, ...VERIFICATION_STEP_IDS]);
 const duration = value => Number.isSafeInteger(value) && value >= 0;
 
 /** 검증기가 단계마다 찍는 머리줄 → 단계 id. 검증기(이관 제품이 복사하는 파일)는 바꾸지 않고 같은 단계 표에서 만든다. */
-export function verificationStepMarkers({ profile, layout }) {
-  return new Map(verificationSteps('full', layout)
+export function verificationStepMarkers({ profile, layout, vendor }) {
+  return new Map(verificationSteps('full', layout, { vendor })
     .map(step => [`[reusable-verify] ${profile}/${layout}: ${[step.command, ...step.args].join(' ')}`, step.id]));
 }
 
@@ -78,9 +78,10 @@ export function createJobTimeline({ now = Date.now } = {}) {
         if (items.get('verify').status === 'passed') {
           for (const id of VERIFICATION_STEP_IDS) {
             const item = items.get(id);
-            const reported = measured.find(entry => entry?.step === id && entry.result === 'passed');
+            // 벤더 구성은 한 단계에 명령이 여럿이라 시간을 더한다.
+            const reported = measured.filter(entry => entry?.step === id && entry.result === 'passed');
             if (item.status === 'pending') item.status = 'passed';
-            if (duration(reported?.durationMs)) item.durationMs = reported.durationMs;
+            if (reported.length && reported.every(entry => duration(entry.durationMs))) item.durationMs = reported.reduce((sum, entry) => sum + entry.durationMs, 0);
           }
         }
       } else {
