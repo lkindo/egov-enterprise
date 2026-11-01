@@ -61,7 +61,9 @@ export function vendorProjectionErrors(root, lock) {
     return ['Source lock vendor projection differs from its composition'];
   }
   // 잠금의 값과 다르면 대조한 PostgreSQL 번들과 다른 SQL 이 돈다.
-  return artifactTextSha256(root, projection.migration) === projection.migrationSha256 ? [] : ['Vendor baseline differs from the source lock'];
+  const errors = artifactTextSha256(root, projection.migration) === projection.migrationSha256 ? [] : ['Vendor baseline differs from the source lock'];
+  if (artifactTextSha256(root, projection.input) !== projection.inputSha256) errors.push('Vendor input differs from the source lock');
+  return errors;
 }
 export const snapshotPathFor = source => (source === UPSTREAM_MODULES ? `${UPSTREAM_DIRECTORY}/modules.json`
   : `${UPSTREAM_DIRECTORY}/${source.split('/').at(-1)}`);

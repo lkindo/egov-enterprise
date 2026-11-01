@@ -30,8 +30,8 @@ const ITEMS = Object.freeze([...JOB_STAGES, ...VERIFICATION_STEP_IDS]);
 const duration = value => Number.isSafeInteger(value) && value >= 0;
 
 /** 검증기가 단계마다 찍는 머리줄 → 단계 id. 검증기(이관 제품이 복사하는 파일)는 바꾸지 않고 같은 단계 표에서 만든다. */
-export function verificationStepMarkers({ profile, layout }) {
-  return new Map(verificationSteps('full', layout)
+export function verificationStepMarkers({ profile, layout, vendor }) {
+  return new Map(verificationSteps('full', layout, { vendor })
     .map(step => [`[reusable-verify] ${profile}/${layout}: ${[step.command, ...step.args].join(' ')}`, step.id]));
 }
 

@@ -12,9 +12,13 @@ import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mj
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { probeRows } from './project-composer-vendor-differential.mjs';
-import { assertTestsRan, integrationEnvironment, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
+import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
+import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
+import { failedVerificationStep } from './project-composer-job-failure.mjs';
+import { verificationStepMarkers } from './project-composer-timeline.mjs';
 import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
-import { projectVendorBuild, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE, vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
+import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
+  vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
@@ -436,11 +440,17 @@ test('the lock binds the vendor projection to the composition and the baseline t
     const paths = vendorBaselinePaths('oracle');
     mkdirSync(join(root, paths.migration, '..'), { recursive: true });
     writeFileSync(join(root, paths.migration), 'CREATE TABLE t (id NUMBER);\n');
-    const projection = { vendor: 'oracle', ...paths, migrationSha256: artifactTextSha256(root, paths.migration) };
+    const input = vendorInputPath('oracle');
+    mkdirSync(join(root, input, '..'), { recursive: true });
+    writeFileSync(join(root, input), '{}\n');
+    const projection = { vendor: 'oracle', ...paths, migrationSha256: artifactTextSha256(root, paths.migration), input, inputSha256: artifactTextSha256(root, input) };
     const lock = { composition: { recipe: { database: { vendor: 'oracle' } } }, vendorProjection: projection };
     assert.deepEqual(vendorProjectionErrors(root, lock), []);
     assert.match(vendorProjectionErrors(root, { ...lock, vendorProjection: { ...projection, location: 'classpath:db/migration' } })[0], /differs from its composition/, 'Flyway 위치만 바꿔도 붉다');
     assert.match(vendorProjectionErrors(root, { ...lock, vendorProjection: undefined })[0], /differs from its composition/, '벤더 구성에 투영이 없으면 붉다');
+    writeFileSync(join(root, input), '{"rows":{}}\n');
+    assert.match(vendorProjectionErrors(root, lock)[0], /Vendor input differs/);
+    writeFileSync(join(root, input), '{}\n');
     writeFileSync(join(root, paths.migration), 'DROP TABLE t;\n');
     assert.match(vendorProjectionErrors(root, lock)[0], /Vendor baseline differs/);
     assert.deepEqual(vendorProjectionErrors(root, { composition: { recipe: { database: { vendor: 'postgresql' } } } }), []);
@@ -459,4 +469,76 @@ test('the development runner keeps a local Oracle local and gives Flyway the ven
   const { env } = backendEnvironment({ DB_URL: 'jdbc:oracle:thin:@//db.example.invalid:1521/FREEPDB1', DEV_REMOTE_FLYWAY: 'migrate' },
     { flywayLocation: 'classpath:db/vendor/oracle' });
   assert.equal(env.SPRING_FLYWAY_LOCATIONS, 'classpath:db/vendor/oracle');
+});
+
+test('a vendor project verifies on its own database instead of the PostgreSQL schema tests', () => {
+  const postgresql = verificationSteps('full', 'multi-module');
+  assert.ok(postgresql.find(step => step.id === 'backend').args.includes(':api-server:schemaValidationTest'));
+  assert.equal(postgresql.filter(step => step.id === 'backend').length, 1);
+  const vendor = verificationSteps('full', 'single-module', { vendor: 'oracle' }).filter(step => step.id === 'backend');
+  assert.equal(vendor.length, 2);
+  assert.ok(!vendor[0].args.some(arg => arg.includes('schemaValidationTest')));
+  assert.deepEqual(vendor[1].args, ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath('oracle'), '--vendor', 'oracle', '--layout', 'single-module']);
+  assert.equal(verificationVendor({ vendor: 'postgresql' }), undefined);
+  assert.equal(verificationVendor({ vendor: 'oracle' }), 'oracle');
+  const markers = verificationStepMarkers({ profile: 'core', layout: 'multi-module', vendor: 'oracle' });
+  assert.equal(markers.get('[reusable-verify] core/multi-module: node scripts/project-composer-vendor-integration.mjs --input config/vendor/oracle/vendor-input.json --vendor oracle --layout multi-module'), 'backend');
+  assert.equal(integrationTask('single-module').task, ':vendorIntegrationTest');
+  assert.equal(integrationTask().task, ':api-server:vendorIntegrationTest');
+  assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--layout', 'single-module']), { input: 'x.json', vendor: 'oracle', layout: 'single-module' });
+  assert.deepEqual(ledgerClasses({ tests: [{ test: 'A.java', category: 'as-is' }, { test: 'B.java', category: 'as-is' }] }, name => name === 'B'), ['B'], '구성에서 빠진 시험은 돌았는지 묻지 않는다');
+});
+
+test('a failure in the vendor test command is reported as its own command', () => {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-failure-'));
+  try {
+    const command = verificationSteps('full', 'multi-module', { vendor: 'oracle' }).filter(step => step.id === 'backend')[1];
+    const line = [command.command, ...command.args].join(' ');
+    const reports = join(directory, 'build/reports/reusable-base');
+    mkdirSync(reports, { recursive: true });
+    const failure = { step: 'backend', command: line, exitCode: 1, durationMs: 5 };
+    writeFileSync(join(reports, 'full.json'), JSON.stringify({ result: 'failed', scope: 'full', sourceCommit: 'abc', layout: 'multi-module', profile: 'core',
+      checkedAt: new Date().toISOString(), failure, steps: [{ ...failure, result: 'failed' }] }));
+    const composition = { sourceCommit: 'abc', backendLayout: 'multi-module', profile: 'core', database: { vendor: 'oracle' } };
+    assert.deepEqual(failedVerificationStep(directory, composition, new Date(0).toISOString()), { step: 'backend', command: line });
+  } finally {
+    rmSync(directory, { recursive: true, force: true });
+  }
+});
+
+test('the development stack moves to the vendor service and leaves the application services alone', () => {
+  const compose = `services:
+  db:
+    image: postgres:17
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+  api:
+    environment:
+      SPRING_APPLICATION_JSON: >
+        { "url": "jdbc:postgresql://db:5432/egovdb" }
+
+volumes:
+  postgres_data:
+`;
+  const projected = projectVendorCompose(compose, 'oracle');
+  assert.doesNotMatch(projected, /postgres/);
+  assert.match(projected, /image: gvenzl\/oracle-free:23-slim-faststart@sha256:/);
+  assert.match(projected, /127\.0\.0\.1:1521:1521/, '호스트 공개는 루프백으로 좁힌다');
+  assert.match(projected, /jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1/);
+  assert.match(projected, /^ {2}api:$/m);
+  assert.match(projected, /^ {2}oracle_data:$/m);
+  assert.throws(() => projectVendorCompose('services:\n  web:\n', 'oracle'), /compose db 서비스/);
+
+  const prod = projectVendorComposeProd(`    environment:
+      POSTGRES_USER: \${DB_USERNAME:?필요}
+      POSTGRES_PASSWORD: \${DB_PASSWORD:?필요}
+`, 'oracle');
+  assert.match(prod, /APP_USER: \$\{DB_USERNAME/);
+  assert.match(prod, /APP_USER_PASSWORD: \$\{DB_PASSWORD/);
+  assert.match(prod, /ORACLE_PASSWORD: \$\{DB_PASSWORD/);
+  assert.doesNotMatch(prod, /POSTGRES/);
+
+  assert.equal(projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_USERNAME=egov\n', 'oracle'),
+    `DB_URL=${VENDOR_SOURCE.oracle.url}\nDB_USERNAME=egov\n`);
 });

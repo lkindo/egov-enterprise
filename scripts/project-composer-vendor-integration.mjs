@@ -16,12 +16,19 @@ import { applyVendor } from './project-composer-vendor-verify.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
-const RESULTS = join(ROOT, 'api-server/build/test-results/vendorIntegrationTest');
 const LEDGER = join(ROOT, 'config/governance/vendor-test-ledger.json');
+const SCHEMA_TESTS = join(ROOT, 'api-server/src/test/java/nuri/api/schema');
 
-/** 원장에서 벤더 DB 로 돌릴 시험 클래스. */
-export function ledgerClasses(ledger) {
-  return ledger.tests.filter(entry => entry.category !== 'replacement').map(entry => entry.test.replace(/\.java$/, ''));
+/** 배치별 Gradle 작업과 결과 폴더. 단일모듈은 시험 작업이 루트에 있다. */
+export function integrationTask(layout = 'multi-module') {
+  return layout === 'single-module'
+    ? { task: ':vendorIntegrationTest', results: join(ROOT, 'build/test-results/vendorIntegrationTest') }
+    : { task: ':api-server:vendorIntegrationTest', results: join(ROOT, 'api-server/build/test-results/vendorIntegrationTest') };
+}
+
+/** 원장에서 벤더 DB 로 돌릴 시험 클래스. 생성물은 구성에서 빠진 시험의 파일이 없다. */
+export function ledgerClasses(ledger, present = () => true) {
+  return ledger.tests.filter(entry => entry.category !== 'replacement').map(entry => entry.test.replace(/\.java$/, '')).filter(present);
 }
 
 /**
@@ -46,7 +53,7 @@ export function assertTestsRan(resultsDirectory, classes) {
 export function parseIntegrationArgs(argv) {
   const args = {};
   for (let index = 0; index < argv.length; index += 1) {
-    const key = { '--input': 'input', '--vendor': 'vendor', '--engine': 'engine' }[argv[index]];
+    const key = { '--input': 'input', '--vendor': 'vendor', '--engine': 'engine', '--layout': 'layout' }[argv[index]];
     if (!key || !argv[index + 1]) throw new Error(`알 수 없는 인자: ${argv[index]}`);
     args[key] = argv[++index];
   }
@@ -82,29 +89,30 @@ function markOwner(handle) {
   return owner;
 }
 
-function runIntegrationTests(vendorId, integration, handle) {
+function runIntegrationTests(vendorId, integration, handle, task) {
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
-  return spawnSync(`"${gradlew}"`, [':api-server:vendorIntegrationTest', '-PvendorIntegration=true', '--continue', '--console=plain'], {
+  return spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--continue', '--console=plain'], {
     cwd: ROOT, stdio: 'inherit', shell: true, env: { ...process.env, ...integrationEnvironment(vendorId, integration, handle) },
   });
 }
 
-export function runVendorIntegration({ input, vendorId, engineId }) {
+export function runVendorIntegration({ input, vendorId, engineId, layout }) {
   const engine = engineId ?? vendorId;
   const { integration } = VENDOR_ENGINES[engine];
+  const { task, results } = integrationTask(layout);
   // 이전 실행의 결과가 이번 실행의 증거가 되지 않게 맨 앞에서 지운다. 시험 전 단계에서 실패해도 낡은 결과가 남지 않는다.
-  rmSync(RESULTS, { recursive: true, force: true });
+  rmSync(results, { recursive: true, force: true });
   const handle = startVendorEngine(engine, { publishPort: integration.port });
   let failure = null;
   try {
     applyVendor(handle, input, vendorId);
     runAsAdministrator(handle, integration.grants);
-    const result = runIntegrationTests(vendorId, integration, { ...handle, owner: markOwner(handle) });
+    const result = runIntegrationTests(vendorId, integration, { ...handle, owner: markOwner(handle) }, task);
     if (result.status !== 0) {
-      failure = new Error(`통합 시험 실패(종료 ${result.status}). api-server/build/test-results/vendorIntegrationTest 를 본다.`);
+      failure = new Error(`통합 시험 실패(종료 ${result.status}). ${results} 를 본다.`);
       failure.code = 'VENDOR_INTEGRATION_FAILED';
     } else {
-      assertTestsRan(RESULTS, ledgerClasses(JSON.parse(readFileSync(LEDGER, 'utf8'))));
+      assertTestsRan(results, ledgerClasses(JSON.parse(readFileSync(LEDGER, 'utf8')), name => existsSync(join(SCHEMA_TESTS, `${name}.java`))));
     }
   } catch (error) {
     failure = error;
@@ -115,7 +123,7 @@ export function runVendorIntegration({ input, vendorId, engineId }) {
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const args = parseIntegrationArgs(process.argv.slice(2));
   try {
-    runVendorIntegration({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine });
+    runVendorIntegration({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine, layout: args.layout });
     console.log(`[vendor-integration] PASS ${args.engine ?? args.vendor}`);
   } catch (error) {
     console.error(`[vendor-integration] ${error.code ?? 'FAILED'}: ${error.message}`);

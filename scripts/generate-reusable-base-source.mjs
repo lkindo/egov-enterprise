@@ -264,7 +264,7 @@ async function main() {
   if (args.layout === 'single-module') installSingleModuleRuntime(output);
   else installMultiModuleMigrationRuntime(output);
   // 벤더 투영은 빌드·설정을 바꾸므로 거버넌스가 증거 범위를 재기 전에 한다. 입력은 DB 생성기가 번들 옆에 둔 재적용 결과다.
-  const vendorProjection = vendorInput && projectVendorSources(output, { vendorId, layout: args.layout, input: JSON.parse(vendorInput.toString('utf8')) });
+  const vendorProjection = vendorInput && projectVendorSources(output, { vendorId, layout: args.layout, input: JSON.parse(vendorInput.toString('utf8')), inputText: vendorInput.toString('utf8') });
   // 거버넌스의 sourceUnchanged 는 '생성물 == 원본에 같은 투영' 이다. 생성기와 같은 projector 로 원본을 투영한다.
   // 레지스트리 렌더는 생성기가 복사한 같은 파일 목록을 쓴다.
   const sourceProjector = createFrontendProjector({ composition, files: copiedFiles.filter(file => file.startsWith('frontend/')) });

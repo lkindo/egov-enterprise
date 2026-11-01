@@ -6,8 +6,9 @@
  * 남는 일을 막는다.
  */
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { artifactTextSha256, vendorBaselinePaths } from './reusable-governance-integrity.mjs';
+import { vendorInputPath } from './verify-reusable-artifact.mjs';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
 
@@ -23,6 +24,35 @@ export const VENDOR_SOURCE = Object.freeze({
     driverClass: 'oracle.jdbc.OracleDriver',
     url: 'jdbc:oracle:thin:@//localhost:1521/FREEPDB1',
     dialect: 'nuri.foundation.core.persistence.NuriOracleDialect',
+    composeUrl: 'jdbc:oracle:thin:@//db:1521/FREEPDB1',
+    composeVolume: 'oracle_data',
+    // 개발용 이미지다. 운영 라이선스는 기관 몫이다.
+    composeService: `  db:
+    image: gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
+    container_name: egov-oracle
+    restart: always
+    ports:
+      - "127.0.0.1:1521:1521"
+    environment:
+      TZ: Asia/Seoul
+      # ⚠ 개발 전용 자격이다. 운영 오버레이가 DB_USERNAME/DB_PASSWORD 로 덮어쓴다.
+      ORACLE_PASSWORD: egov123
+      APP_USER: egov
+      APP_USER_PASSWORD: egov123
+    volumes:
+      - oracle_data:/opt/oracle/oradata
+    healthcheck:
+      test: ["CMD", "healthcheck.sh"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+      start_period: 60s
+    networks:
+      - egov-net
+
+`,
+    composeProd: [[/^(\s*)POSTGRES_USER: (\$\{DB_USERNAME:\?[^\n]*\})$/m, '$1APP_USER: $2'],
+      [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_USER_PASSWORD: $2\n$1ORACLE_PASSWORD: $2']],
   }),
 });
 
@@ -74,13 +104,43 @@ export function vendorApplicationDocument(vendorId) {
     `    locations: classpath:${vendorMigrationLocation(vendorId)}`, '    placeholder-replacement: false', '  jpa:', '    properties:', '      hibernate:', `        dialect: ${dialect}`, ''].join('\n');
 }
 
+/** 개발 스택의 DB 서비스와 앱 접속값을 벤더로 바꾼다. */
+export function projectVendorCompose(text, vendorId) {
+  const source = VENDOR_SOURCE[vendorId];
+  const service = replaceRequired(text, /^ {2}db:\n[\s\S]*?(?=^ {2}api:\n)/m, source.composeService, 'compose db 서비스');
+  const urls = replaceRequired(service, /jdbc:postgresql:\/\/db:5432\/egovdb/g, source.composeUrl, 'compose 접속 주소');
+  return replaceRequired(urls, /\bpostgres_data\b/g, source.composeVolume, 'compose 볼륨');
+}
+
+/** 운영 오버레이의 DB 자격을 벤더 이미지의 환경 변수로 바꾼다. */
+export function projectVendorComposeProd(text, vendorId) {
+  return VENDOR_SOURCE[vendorId].composeProd.reduce((projected, [pattern, replacement]) => replaceRequired(projected, pattern, replacement, 'compose 운영 자격'), text);
+}
+
+/** 예시 환경 파일의 접속 주소를 바꾼다. */
+export function projectVendorEnvironment(text, vendorId) {
+  return replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
+}
+
+const vendorReadme = vendorId => `
+## 데이터베이스
+
+이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 의 번역 기준선만 적용한다. \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
+
+\`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
+`;
+
 /** 생성물 트리를 벤더로 투영한다. 소스 생성기가 PostgreSQL 번들을 설치한 뒤 부른다. */
-export function projectVendorSources(output, { vendorId, input, layout }) {
+export function projectVendorSources(output, { vendorId, input, inputText, layout }) {
   if (!VENDOR_SOURCE[vendorId]) throw new Error(`소스 투영이 없는 벤더: ${vendorId}`);
   const { location, migration } = vendorBaselinePaths(vendorId);
   mkdirSync(join(output, RESOURCES, vendorMigrationLocation(vendorId)), { recursive: true });
   const statements = vendorMigrationStatements(vendorId, input);
   writeFileSync(join(output, migration), renderFlywayMigration(statements), 'utf8');
+  // 생성물 검증이 같은 입력으로 벤더 DB 를 올린다. 잠금이 번들과 이 파일을 묶는다.
+  const inputPath = vendorInputPath(vendorId);
+  mkdirSync(join(output, dirname(inputPath)), { recursive: true });
+  writeFileSync(join(output, inputPath), inputText, 'utf8');
 
   // 단일모듈은 의존성을 루트 빌드 파일로 합친다.
   const buildFile = layout === 'single-module' ? 'build.gradle' : 'api-server/build.gradle';
@@ -92,5 +152,15 @@ export function projectVendorSources(output, { vendorId, input, layout }) {
   const common = join(resources, 'application.yml');
   writeFileSync(common, `${readFileSync(common, 'utf8').replace(/\s*$/, '\n')}${vendorApplicationDocument(vendorId)}`, 'utf8');
 
-  return { vendor: vendorId, location, migration, migrationSha256: artifactTextSha256(output, migration), statements: statements.length, buildFile, profiles };
+  const compose = join(output, 'docker-compose.yml');
+  writeFileSync(compose, projectVendorCompose(readFileSync(compose, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
+  const composeProd = join(output, 'docker-compose.prod.yml');
+  writeFileSync(composeProd, projectVendorComposeProd(readFileSync(composeProd, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
+  const environment = join(output, '.env.example');
+  writeFileSync(environment, projectVendorEnvironment(readFileSync(environment, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
+  const readme = join(output, 'README.md');
+  writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId)}`, 'utf8');
+
+  return { vendor: vendorId, location, migration, migrationSha256: artifactTextSha256(output, migration), input: inputPath,
+    inputSha256: artifactTextSha256(output, inputPath), statements: statements.length, buildFile, profiles };
 }

@@ -6,6 +6,7 @@ import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
+import tools.jackson.databind.json.JsonMapper;
 
 import java.io.IOException;
 import java.nio.file.Files;
@@ -26,6 +27,7 @@ class FlywaySchemaOwnershipLinterTest {
 
     private static final Logger log = LoggerFactory.getLogger(FlywaySchemaOwnershipLinterTest.class);
     private static final Set<String> NON_MUTATING_DDL_AUTO = Set.of("none", "validate");
+    private static final String MIGRATION_LOCATION = migrationLocation(HarnessSourceIndex.repoRoot());
     private static final List<String> MODULES = List.of(
             "foundation", "business-core", "business-app", "api-server", "migration-tool");
 
@@ -171,6 +173,20 @@ class FlywaySchemaOwnershipLinterTest {
                 rootSql.size(), launchSurfaces.size());
     }
 
+    /** 벤더 생성물은 번역 기준선 폴더만 Flyway 에 준다. 위치는 생성기 잠금이 정하고 거버넌스가 구성과 대조한다. */
+    private static String migrationLocation(Path root) {
+        Path lock = root.resolve("reusable-base-lock.json");
+        if (!Files.isRegularFile(lock)) {
+            return "classpath:db/migration";
+        }
+        try {
+            return JsonMapper.builder().build().readTree(HarnessSourceIndex.read(lock))
+                    .path("vendorProjection").path("location").asString("classpath:db/migration");
+        } catch (IOException failure) {
+            throw new java.io.UncheckedIOException(failure);
+        }
+    }
+
     private static List<String> productionOwnershipViolations(Map<String, String> effective) {
         List<String> violations = new ArrayList<>();
         String ddlAuto = normalize(effective.get("spring.jpa.hibernate.ddl-auto"));
@@ -197,9 +213,9 @@ class FlywaySchemaOwnershipLinterTest {
         if (!"true".equals(normalize(effective.get("spring.flyway.enabled")))) {
             violations.add("spring.flyway.enabled는 운영 effective config에서 명시적 true여야 함");
         }
-        if (!"classpath:db/migration".equals(normalize(effective.get("spring.flyway.locations")))) {
+        if (!MIGRATION_LOCATION.equals(normalize(effective.get("spring.flyway.locations")))) {
             violations.add("spring.flyway.locations=" + effective.get("spring.flyway.locations")
-                    + " — 운영 SSOT는 classpath:db/migration 단독이어야 함");
+                    + " — 운영 SSOT는 " + MIGRATION_LOCATION + " 단독이어야 함");
         }
         if (!"false".equals(normalize(effective.get("spring.flyway.baseline-on-migrate")))) {
             violations.add("spring.flyway.baseline-on-migrate는 prod overlay에서 false로 fail-closed해야 함");
