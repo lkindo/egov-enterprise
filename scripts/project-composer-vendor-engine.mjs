@@ -33,13 +33,13 @@ const mysqlBatch = {
 
 /** 벤더별 기동·실행 방법. image 는 개발용이며 운영 라이선스는 기관 몫이다. */
 /** 통합 시험의 접속 값. 시험이 세션 잠금을 관측하고 실패 주입 트리거를 만들 권한을 준다. */
-const oracleIntegration = service => ({
+const oracleIntegration = (service, administrator = 'sqlplus -S / as sysdba') => ({
   port: 1521,
   url: port => `jdbc:oracle:thin:@//127.0.0.1:${port}/${service}`,
   username: SCHEMA,
   driver: 'oracle.jdbc.OracleDriver',
   dialect: 'nuri.foundation.core.persistence.NuriOracleDialect',
-  administrator: 'sqlplus -S / as sysdba',
+  administrator,
   grants: [`ALTER SESSION SET CONTAINER=${service}`, ...['sys.v_$session', 'sys.v_$sql'].map(view => `GRANT SELECT ON ${view} TO ${SCHEMA}`),
     `GRANT EXECUTE ON sys.dbms_session TO ${SCHEMA}`, `GRANT CREATE TRIGGER TO ${SCHEMA}`],
 });
@@ -63,7 +63,8 @@ export const VENDOR_ENGINES = Object.freeze({
     },
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$ORACLE_PWD"@//localhost/ORCLPDB1 @${file}`,
     batch: oracleBatch,
-    integration: oracleIntegration('ORCLPDB1'),
+    // 이 이미지는 exec 환경에 ORACLE_SID 가 없어 로컬 접속이 안 된다(ORA-12162).
+    integration: oracleIntegration('ORCLPDB1', 'sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba'),
   },
   mysql: {
     image: 'mysql:8.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_bin', '--log-bin-trust-function-creators=1'],

@@ -50,7 +50,8 @@ class AttachmentAccessPostgresIntegrationTest {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 10);
         department = "ATCHD" + suffix;
         otherDepartment = "ATCHO" + suffix;
-        jdbc.update("INSERT INTO tb_ognz_info (ognz_id, ognz_nm) VALUES (?, '첨부 판정'), (?, '다른 부서')", department, otherDepartment);
+        jdbc.update("INSERT INTO tb_ognz_info (ognz_id, ognz_nm) VALUES (?, '첨부 판정')", department);
+        jdbc.update("INSERT INTO tb_ognz_info (ognz_id, ognz_nm) VALUES (?, '다른 부서')", otherDepartment);
         registrar = user("REG" + suffix, department);
         assignee = user("PIC" + suffix, otherDepartment);
         colleague = user("COL" + suffix, department);

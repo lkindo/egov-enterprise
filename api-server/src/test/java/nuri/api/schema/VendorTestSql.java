@@ -397,9 +397,14 @@ final class VendorTestSql {
         return isOracle(jdbc) ? "23000" : "23503";
     }
 
-    /** 잠금 대기 초과의 SQLState. */
-    static String lockTimeoutState(JdbcTemplate jdbc) {
-        return isOracle(jdbc) ? "61000" : "55P03";
+    /** 잠금 대기 초과의 SQLState. Oracle 은 23 이 ORA-00054(61000), 19c 가 ORA-30006(99999)으로 답한다. */
+    static List<String> lockTimeoutStates(JdbcTemplate jdbc) {
+        return isOracle(jdbc) ? List.of("61000", "99999") : List.of("55P03");
+    }
+
+    /** 0 으로 나눠 실제 DB 오류를 만드는 문장. 나눌 값을 바인딩으로 받는다. Oracle 19c 는 FROM 없는 SELECT 를 받지 않는다. */
+    static String divisionByZero(JdbcTemplate jdbc) {
+        return isOracle(jdbc) ? "SELECT 1 / CAST(? AS INTEGER) FROM DUAL" : "SELECT 1 / CAST(? AS INTEGER)";
     }
 
     static boolean isUniqueViolation(DataIntegrityViolationException failure) {

@@ -282,10 +282,10 @@ class OperationalSignalIsolationIntegrationTest {
                             if (kind == Kind.FAILED_REQUESTS_TODAY) {
                                 // The last source has no following COUNT: exercise Hibernate's rollback-only
                                 // state and the service transaction's completion, not just JDBC poisoning.
-                                entityManager.createNativeQuery("SELECT 1 / CAST(?1 AS INTEGER)")
+                                entityManager.createNativeQuery(VendorTestSql.divisionByZero(jdbc).replace("?", "?1"))
                                         .setParameter(1, 0).getSingleResult();
                             } else {
-                                jdbc.queryForObject("SELECT 1 / CAST(? AS INTEGER)", Integer.class, 0);
+                                jdbc.queryForObject(VendorTestSql.divisionByZero(jdbc), Integer.class, 0);
                             }
                             throw new AssertionError("PostgreSQL division by zero unexpectedly succeeded");
                         }
