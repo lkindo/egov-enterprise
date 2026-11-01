@@ -29,6 +29,8 @@ const GATE_REMOVAL_RULES = {
     '투영 DB 번들이 원본 V2 체인을 V1 baseline 으로 대체해 역사적 migration 검증이 검사 대상을 잃는다',
   'upstream-atlas':
     '원본 Atlas 는 원본 저장소의 운영 사실을 담은 채 로그인 전에 응답되고, 투영본만으로는 다시 만들 수 없어 생성물에서 걷는다',
+  'vendor-postgresql-assets':
+    'PostgreSQL 전용 도구는 벤더 프로젝트에서 동작하지 않아 걷는다. 게이트마다 사유와 대체 여부는 config/governance/vendor-removed-assets.json 에 있다',
 };
 
 /**

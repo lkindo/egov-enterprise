@@ -150,7 +150,7 @@ export function validateReusableArtifactEntrypoints(root) {
     const lock = JSON.parse(read('reusable-base-lock.json'));
     const layout = normalizeBackendLayout(lock.layout);
     if (layout === 'single-module') {
-      errors.push(...inspectSingleModuleLayout(root).errors, ...validateSingleModuleRuntime(root));
+      errors.push(...inspectSingleModuleLayout(root, { migration: !lock.vendorProjection }).errors, ...validateSingleModuleRuntime(root));
     } else {
       check(/\binclude\b/.test(groovyCode(read('settings.gradle'))), 'multi-module layout must retain Gradle project includes');
       check(lock.layoutProjection?.id !== 'single-module', 'layout and projection identity differ');

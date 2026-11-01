@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** Runtime entrypoints for generated backend layouts; importing never runs a command. */
 import { spawnSync } from 'node:child_process';
-import { readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, realpathSync, statSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { compositionProfiles } from './composition-profiles.mjs';
@@ -91,19 +91,21 @@ export function installMultiModuleMigrationRuntime(outputRoot) {
   return { files: ['package.json'], migrationCommand: MIGRATION_ALIAS };
 }
 
-export function installSingleModuleRuntime(outputRoot) {
+export function installSingleModuleRuntime(outputRoot, { migration = true } = {}) {
   // 실제 표기로 비교한다 — realpathSync 는 Windows 드라이브 문자를 받은 그대로 둬 대소문자만 다른 원본을 놓쳤다.
   const root = realpathSync.native(resolve(outputRoot));
   if (root === realpathSync.native(resolve(dirname(SCRIPT_PATH), '..'))) fail('refusing to rewrite the source repository');
   const pkg = JSON.parse(read(root, 'package.json'));
   if (pkg.scripts?.backend !== 'gradlew.bat :api-server:bootRun') fail('unexpected package backend command');
-  if (pkg.scripts?.['verify:migration'] !== 'node scripts/verify.mjs migration') fail('unexpected package verify:migration command');
+  if (migration && pkg.scripts?.['verify:migration'] !== 'node scripts/verify.mjs migration') fail('unexpected package verify:migration command');
   for (const [alias, expected] of TEST_ALIASES) if (pkg.scripts?.[alias] !== expected) fail(`unexpected package ${alias} command`);
   const dev = read(root, 'scripts/dev.mjs');
   let docker = read(root, 'api-server/Dockerfile');
   // These remain upstream source, not the active single-module verification entrypoint.
-  exactLine(read(root, 'scripts/verify.mjs'), MIGRATION_SOURCE_COMMAND, 'upstream migration command');
-  read(root, 'scripts/migration-verification-contract.test.mjs');
+  if (migration) {
+    exactLine(read(root, 'scripts/verify.mjs'), MIGRATION_SOURCE_COMMAND, 'upstream migration command');
+    read(root, 'scripts/migration-verification-contract.test.mjs');
+  }
   const changedDev = replaceLine(dev, devLine(':api-server:bootRun'), devLine('bootRun'), 'development command');
   exactLine(changedDev, devLine('bootRun'), 'projected development command');
   if (executable(changedDev, 'js').includes(':api-server:bootRun')) fail('unexpected module-qualified development command');
@@ -111,7 +113,7 @@ export function installSingleModuleRuntime(outputRoot) {
   for (const [, after] of DOCKER_LINES) exactLine(docker, after, 'projected Docker command', 'docker');
   if (/^[ \t]*RUN\b[^\n]*\s:[\w-]+:/m.test(executable(docker, 'docker'))) fail('unexpected module-qualified Docker task');
   pkg.scripts.backend = 'gradlew.bat bootRun';
-  pkg.scripts['verify:migration'] = MIGRATION_ALIAS;
+  if (migration) pkg.scripts['verify:migration'] = MIGRATION_ALIAS;
   for (const [alias, , command] of TEST_ALIASES) pkg.scripts[alias] = command;
   const changed = new Map([
     ['package.json', `${JSON.stringify(pkg, null, 2)}\n`],
@@ -120,7 +122,7 @@ export function installSingleModuleRuntime(outputRoot) {
   ]);
   // Validate every required input before the first mutation, so drift cannot leave a partial adapter.
   for (const [file, source] of changed) writeFileSync(safeFile(root, file), source);
-  return { files: [...changed.keys()], migrationCommand: MIGRATION_ALIAS };
+  return { files: [...changed.keys()], ...(migration ? { migrationCommand: MIGRATION_ALIAS } : {}) };
 }
 
 export function validateSingleModuleRuntime(outputRoot) {
@@ -133,7 +135,7 @@ export function validateSingleModuleRuntime(outputRoot) {
     }
     const pkg = JSON.parse(read(root, 'package.json'));
     if (pkg.scripts?.backend !== 'gradlew.bat bootRun') errors.push('single-module runtime: invalid backend alias');
-    if (pkg.scripts?.['verify:migration'] !== MIGRATION_ALIAS) errors.push('single-module runtime: invalid verify:migration alias');
+    if (pkg.scripts?.['verify:migration'] !== (lock.vendorProjection ? undefined : MIGRATION_ALIAS)) errors.push('single-module runtime: invalid verify:migration alias');
     for (const [alias, , command] of TEST_ALIASES) {
       if (pkg.scripts?.[alias] !== command) errors.push(`single-module runtime: invalid ${alias} alias`);
     }
@@ -161,9 +163,14 @@ export function validateGeneratedMigrationRuntime(outputRoot) {
     const root = realpathSync(resolve(outputRoot));
     const layout = generatedLayout(root);
     const pkg = JSON.parse(read(root, 'package.json'));
-    if (pkg.scripts?.['verify:migration'] !== MIGRATION_ALIAS) errors.push('generated migration runtime: invalid verify:migration alias');
-    if (layout === 'single-module') errors.push(...inspectSingleModuleLayout(root).errors);
-    else {
+    const migration = !JSON.parse(read(root, 'reusable-base-lock.json')).vendorProjection;
+    if (pkg.scripts?.['verify:migration'] !== (migration ? MIGRATION_ALIAS : undefined)) errors.push('generated migration runtime: invalid verify:migration alias');
+    if (layout === 'single-module') errors.push(...inspectSingleModuleLayout(root, { migration }).errors);
+    else if (!migration) {
+      // 벤더 프로젝트는 이관 도구를 뺐다. 되살아나면 PostgreSQL 전용 도구가 빌드에 들어온다.
+      if (existsSync(join(root, 'migration-tool'))) errors.push('generated migration runtime: a vendor project keeps the migration tool');
+      if (read(root, 'settings.gradle').includes("include 'migration-tool'")) errors.push('generated migration runtime: a vendor project includes the migration tool');
+    } else {
       exactLine(read(root, 'settings.gradle'), "include 'migration-tool'", 'independent migration project');
       const moduleBuild = read(root, 'migration-tool/build.gradle');
       if (/\bproject\s*\(/.test(groovyCode(moduleBuild))) errors.push('generated migration runtime: offline module may not depend on online projects');
@@ -174,6 +181,7 @@ export function validateGeneratedMigrationRuntime(outputRoot) {
 
 export function verifyGeneratedMigration({ root, run = runMigrationTasks } = {}) {
   root = realpathSync(resolve(root));
+  if (JSON.parse(read(root, 'reusable-base-lock.json')).vendorProjection) fail('this vendor project has no migration tool; it targets PostgreSQL only');
   const errors = validateGeneratedMigrationRuntime(root);
   if (errors.length) fail(errors.join('\n'));
   run([...(generatedLayout(root) === 'single-module' ? MIGRATION_TASKS : MULTI_MIGRATION_TASKS)], root);

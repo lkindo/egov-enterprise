@@ -70,7 +70,7 @@ function dependencies(source, module) {
 }
 
 function assertUniqueProductionFiles(root, moduleBuilds) {
-  for (const module of MODULES.filter(module => module !== 'business-core')) {
+  for (const module of [...moduleBuilds.keys()].filter(module => module !== 'business-core')) {
     const conventions = groovyWithoutComments(moduleBuilds.get(module));
     // A directory alone does not create a Gradle source set. Foundation retains
     // an inactive legacy resource here without applying java-test-fixtures.
@@ -280,13 +280,22 @@ tasks.named('check') { dependsOn 'foundationCheck' }
 `;
 }
 
+/** 이관 도구를 뺀 벤더 프로젝트의 조립. 블록이 바뀌면 남은 채 지나가지 않도록 자리마다 정확히 맞아야 한다. */
+function withoutMigration(source) {
+  let text = replaceExactly(source.replace(/\r\n/g, '\n'), /^ {4}migration \{\n[\s\S]*?^ {4}migrationTest \{\n[\s\S]*?^ {4}\}\n/gm, '');
+  text = replaceExactly(text, /^\/\/ The offline migration CLI[\s\S]*?(?=^\/\/ Keep the producer's aggregate)/gm, "tasks.named('assemble') { dependsOn 'bootJar' }\n\n");
+  text = replaceExactly(text, /, tasks\.named\('compileMigrationTestJava'\)/g, '');
+  text = replaceExactly(text, /, 'migrationTest'/g, '', 2);
+  return replaceExactly(text, /^\/\/ Aggregate coverage continues[\s\S]*?(?=^\/\/ Preserve foundation's)/gm, '');
+}
+
 /** Apply only to a copied/generated tree; module source files remain untouched. */
-export function applySingleModuleLayout(outputRoot) {
+export function applySingleModuleLayout(outputRoot, { migration = true } = {}) {
   const root = resolve(outputRoot);
   const buildPath = join(root, 'build.gradle');
   let build = readFileSync(buildPath, 'utf8');
   if (build.includes(MARKER)) fail('layout already applied');
-  const moduleBuilds = new Map(MODULES.map(module => [module, readFileSync(join(root, module, 'build.gradle'), 'utf8')]));
+  const moduleBuilds = new Map((migration ? MODULES : ONLINE).map(module => [module, readFileSync(join(root, module, 'build.gradle'), 'utf8')]));
   assertUniqueProductionFiles(root, moduleBuilds);
   // Fail closed on convention drift. The current root's security constraints,
   // compiler flags, test policy and coverage thresholds remain the source of truth.
@@ -305,9 +314,9 @@ export function applySingleModuleLayout(outputRoot) {
   if (!apiTasks.includes("tasks.register('harnessTest'") || !apiTasks.includes("tasks.register('schemaValidationTest'")) fail('API verification task definitions missing');
   apiTasks = replaceExactly(apiTasks, /inputs\.dir\('src\/main\/resources\/db\/migration'\)/g,
     "inputs.dir('api-server/src/main/resources/db/migration')");
-  const migrationDependencies = dependencies(moduleBuilds.get('migration-tool'), 'migration-tool');
+  const migrationDependencies = migration ? dependencies(moduleBuilds.get('migration-tool'), 'migration-tool') : '';
   const code = `${build}\n${ONLINE.map(module => `// Dependencies originally declared by ${module}.\n${dependencies(moduleBuilds.get(module), module)}`).join('\n')}
-${apiTasks}\n${assembly()}\n${migrationDependencies}`;
+${apiTasks}\n${migration ? assembly() : withoutMigration(assembly())}\n${migrationDependencies}`;
   // Thresholds are extracted/checked before emitting their isolated equivalent.
   const coverage = block(moduleBuilds.get('foundation'), /^jacocoTestCoverageVerification\s*\{/gm);
   if (!/minimum\s*=\s*0\.80\b/.test(coverage) || !/minimum\s*=\s*0\.55\b/.test(coverage)) fail('foundation coverage convention changed');
@@ -318,11 +327,11 @@ ${apiTasks}\n${assembly()}\n${migrationDependencies}`;
   if (JSON.stringify(knownIncludes) !== JSON.stringify(MODULES)) fail('source module includes changed');
   writeFileSync(buildPath, code, 'utf8');
   writeFileSync(join(root, 'settings.gradle'), `rootProject.name = '${name}'\n\n// One Gradle project; logical source directories are configured in build.gradle.\n`, 'utf8');
-  const inspection = inspectSingleModuleLayout(root);
+  const inspection = inspectSingleModuleLayout(root, { migration });
   if (inspection.errors.length) fail(inspection.errors.join('\n'));
   return { id: 'single-module', gradleProjectCount: 1, logicalSourceRoots: ONLINE,
-    testSuites: ['test', 'foundationTest', 'coreTest', 'appTest', 'migrationTest'],
-    offlineArchiveTask: 'migrationBootJar', buildSha256: createHash('sha256').update(code).digest('hex') };
+    testSuites: ['test', 'foundationTest', 'coreTest', 'appTest', ...(migration ? ['migrationTest'] : [])],
+    ...(migration ? { offlineArchiveTask: 'migrationBootJar' } : {}), buildSha256: createHash('sha256').update(code).digest('hex') };
 }
 
 function migrationTestInputs(source) {
@@ -362,7 +371,7 @@ function migrationTestInputs(source) {
   return declarations.sort();
 }
 
-export function inspectSingleModuleLayout(outputRoot) {
+export function inspectSingleModuleLayout(outputRoot, { migration = true } = {}) {
   const root = resolve(outputRoot);
   const errors = [];
   const settings = readFileSync(join(root, 'settings.gradle'), 'utf8');
@@ -385,13 +394,17 @@ export function inspectSingleModuleLayout(outputRoot) {
     'sourceSets.fixtures.compileClasspath += sourceSets.foundationVerification.output + sourceSets.coreVerification.output',
     'suite.compileClasspath += logicalOutputs + fixtures', 'suite.runtimeClasspath += logicalOutputs + fixtures',
     "foundationTest: ['foundation']", "coreTest: ['foundation', 'business-core']",
-    "appTest: ['foundation', 'business-core', 'business-app']"]) {
+    "appTest: ['foundation', 'business-core', 'business-app']"].filter(token => migration || !/migration/i.test(token))) {
     if (!executable.includes(token)) errors.push(`missing assembly contract: ${token}`);
+  }
+  if (!migration) {
+    if (!executable.includes("tasks.named('assemble') { dependsOn 'bootJar' }")) errors.push("missing assembly contract: tasks.named('assemble')");
+    if (/\b(?:migrationBootJar|migrationTest|compileMigrationTestJava)\b/.test(executable)) errors.push('a project without the migration tool still declares its tasks');
   }
   if (/suite\.(?:compileClasspath|runtimeClasspath)\s*\+=\s*sourceSets\.main\.output/.test(executable)) {
     errors.push('logical test suites must not include merged production output');
   }
-  try {
+  if (migration) try {
     // Only configuration-scope input declarations are fixed; heap/timeout options may vary.
     // Another task, quoted decoy or doFirst cannot satisfy this task's input contract.
     if (JSON.stringify(migrationTestInputs(build)) !== JSON.stringify(migrationTestInputs(assembly()))) {

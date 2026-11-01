@@ -38,6 +38,7 @@ import {
   DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest,
 } from './harness-baseline-manifest-format.mjs';
 import { fail, normalize, readTextIfPresent, walk } from './reusable-source-tree.mjs';
+import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 
 export { DEFAULT_HEADER, MANIFEST_PATH, hasConflictMarkers, manifestHeader, parseManifest, renderHarnessBaselineManifest };
 
@@ -90,6 +91,7 @@ const GATE_REGISTRIES = [
   'scripts/reusable-layout.mjs',
   'scripts/reusable-layout-runtime.mjs',
   'scripts/reusable-single-module.mjs',
+  'scripts/reusable-vendor-assets.mjs',
   // 실행 가능한 생성물 정책도 JSON 원장과 같은 전체 내용 hash 경계에 묶는다.
   'scripts/reusable-artifact-entrypoints-contract.mjs',
   'scripts/reusable-artifact-entrypoints-contract.test.mjs',
@@ -103,6 +105,7 @@ const GATE_REGISTRIES = [
   'config/governance/input-contract-mirror-census.json',
   'config/governance/privacy-access-census.json',
   'config/governance/zdm-waivers.json',
+  'config/governance/vendor-removed-assets.json',
   'config/security/false-positive-review.json',
 ];
 
@@ -233,6 +236,12 @@ export function registeredGateClasses(root) {
   return classes;
 }
 
+/** 벤더 프로젝트가 원장대로 뺀 스캔 루트인가. 번역 기준선 폴더가 있는 생성물에서만 참이다. */
+function removedForVendor(root, scanRoot) {
+  if (!fs.existsSync(path.join(root, 'api-server', 'src', 'main', 'resources', 'db', 'vendor'))) return false;
+  return readVendorAssetLedger(root).assets.some(asset => scanRoot === asset || scanRoot.startsWith(`${asset}/`));
+}
+
 /**
  * 매니페스트에 적을 키와 값을 `root` 의 실제 소스에서 계산한다. `minimumGateSources` 는 게이트 소스 스캔 건수의 하한이다 — CLI 는
  * MINIMUM_GATE_SOURCES 를 넘기고, 작은 fixture 를 계산하는 시험과 생성기는 0 이다(생성물은 자기 메타 게이트가 CLI 로 다시 본다).
@@ -241,8 +250,11 @@ export function computeHarnessBaselineEntries(root, { minimumGateSources = 0 } =
   const gateSources = new Map();
   for (const scanRoot of HARNESS_SCAN_ROOTS) {
     const dir = path.join(root, ...scanRoot.split('/'));
-    // 스캔 루트 부재를 넘기면 조용한 skip 이고 false-green 이다.
-    if (!fs.existsSync(dir)) fail(`게이트 무결성 파손: 하네스 스캔 루트를 찾을 수 없다 — ${scanRoot}`);
+    // 스캔 루트 부재를 넘기면 조용한 skip 이고 false-green 이다. 벤더 프로젝트가 원장대로 뺀 모듈만 예외다.
+    if (!fs.existsSync(dir)) {
+      if (removedForVendor(root, scanRoot)) continue;
+      fail(`게이트 무결성 파손: 하네스 스캔 루트를 찾을 수 없다 — ${scanRoot}`);
+    }
     const module = scanRoot.split('/')[0];
     for (const file of walk(dir, candidate => candidate.endsWith('.java'))) {
       const source = fs.readFileSync(file, 'utf8');

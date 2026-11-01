@@ -1,0 +1,90 @@
+{
+  "schemaVersion": 1,
+  "authority": "ADR-0047 벤더 프로젝트에서 빼는 PostgreSQL 전용 자산의 원장이다. 생성기가 이 목록대로 걷고 잠금과 생성물 거버넌스가 부재를 대조한다.",
+  "assets": [
+    "db_columns.json",
+    "docker-compose.authz-e2e.yml",
+    "migration-tool",
+    "scripts/ReleaseSmokeProbe.java",
+    "scripts/e2e-compose-preflight.mjs",
+    "scripts/generate-migration-product.mjs",
+    "scripts/historical-release-fixture.mjs",
+    "scripts/migration-profile-provenance.mjs",
+    "scripts/migration-test-shard.mjs",
+    "scripts/restore-drill.mjs",
+    "scripts/run-isolated-readiness.mjs",
+    "scripts/run-isolated-release-smoke.mjs",
+    "scripts/ui-quality-baseline-build.mjs",
+    "scripts/ui-quality-baseline-launch.mjs",
+    "tools/migration-workspace",
+    "tools/migration-workspace-prototype"
+  ],
+  "aliases": [
+    "migration:export",
+    "migration:ui",
+    "migration:ui:css",
+    "review:adoption:migration",
+    "review:migration",
+    "test:migration-workspace",
+    "ui-quality:baseline:build",
+    "ui-quality:baseline:launch",
+    "verify:migration"
+  ],
+  "gates": [
+    {
+      "file": "api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java",
+      "reason": "벤더 프로젝트의 Flyway 는 번역 기준선만 적용하므로 이 린터가 읽는 PostgreSQL 마이그레이션은 실행되지 않는다. 남기면 통과가 거짓 신호다.",
+      "coveredBy": null
+    },
+    {
+      "file": "api-server/src/test/java/nuri/api/schema/BackupRestoreDrillIntegrationTest.java",
+      "reason": "복원 도구가 pg_dump 전용이다. 벤더 DB 의 백업·복원은 기관 backup-recovery 통제 몫이다.",
+      "coveredBy": null
+    },
+    {
+      "file": "migration-tool/src/test/java/nuri/migration/schema/MigrationRuntimeSchemaIsolationTest.java",
+      "reason": "이관 도구는 target 이 PostgreSQL 전용이라 벤더 프로젝트에서 뺐다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/authorization-rehearsal.test.mjs",
+      "reason": "뺀 authz-e2e 오버레이와 준비 실행기 전용이다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/e2e-isolation.test.mjs",
+      "reason": "격리 실행기의 소유 판정을 본다. 벤더 프로젝트의 실행기는 그 판정 전에 멈춘다.",
+      "coveredBy": "scripts/run-isolated-e2e.mjs 의 assertIsolatedRunnerSupportsProject"
+    },
+    {
+      "file": "scripts/migration-product-contract.test.mjs",
+      "reason": "이관 도구는 target 이 PostgreSQL 전용이라 벤더 프로젝트에서 뺐다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/migration-verification-contract.test.mjs",
+      "reason": "이관 도구는 target 이 PostgreSQL 전용이라 벤더 프로젝트에서 뺐다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/release-images.test.mjs",
+      "reason": "뺀 릴리스 스모크 전용이다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/restore-drill.test.mjs",
+      "reason": "복원 도구가 pg_dump 전용이다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/ui-quality-baseline-build-contract.test.mjs",
+      "reason": "PostgreSQL 컨테이너로 화면 기준선을 재는 도구 전용이다.",
+      "coveredBy": null
+    },
+    {
+      "file": "scripts/ui-quality-baseline-launch-contract.test.mjs",
+      "reason": "PostgreSQL 컨테이너로 화면 기준선을 재는 도구 전용이다.",
+      "coveredBy": null
+    }
+  ]
+}

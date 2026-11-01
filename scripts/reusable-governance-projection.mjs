@@ -302,8 +302,11 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
   });
   for (const [key, path] of Object.entries(REVIEW_MANIFEST_PATHS)) writeJson(outputRoot, path, reviewProjection.manifests[key]);
   writeJson(outputRoot, 'config/governance/adoption-review.json', createPendingAdoptionReview({ product: 'online', profile }));
-  writeJson(outputRoot, 'config/governance/migration-adoption-review.json', createPendingAdoptionReview({ product: 'migration-tool', profile: null }));
-  for (const [path, content] of Object.entries(buildGeneratedMemory({ profile, sourceCommit }))) {
+  // 벤더 프로젝트에는 이관 도구가 없어 승인 원장도 없다.
+  const migrationEnvironmentReview = (composition?.recipe?.database?.vendor ?? 'postgresql') === 'postgresql'
+    ? { path: 'config/governance/migration-adoption-review.json', inherited: false } : undefined;
+  if (migrationEnvironmentReview) writeJson(outputRoot, migrationEnvironmentReview.path, createPendingAdoptionReview({ product: 'migration-tool', profile: null }));
+  for (const [path, content] of Object.entries(buildGeneratedMemory({ profile, sourceCommit, migrationEnvironmentReview }))) {
     mkdirSync(dirname(join(outputRoot, path)), { recursive: true });
     writeFileSync(join(outputRoot, path), content, 'utf8');
   }
@@ -326,7 +329,7 @@ export function projectReusableGovernance({ sourceRoot, outputRoot, profile, sou
     codeScope: projectedCodeScope(outputRoot),
     activeArtifacts: ACTIVE_ARTIFACTS.map(path => ({ path, sha256: artifactTextSha256(outputRoot, path) })),
     environmentReview: { path: 'config/governance/adoption-review.json', inherited: false },
-    migrationEnvironmentReview: { path: 'config/governance/migration-adoption-review.json', inherited: false },
+    ...(migrationEnvironmentReview ? { migrationEnvironmentReview } : {}),
     limitations: [
       'Upstream decisions are retained code evidence only; they never approve adopter data, logging, authorization deployment, or accessibility.',
       'Routes are regenerated with unverified adopter roles and menu exposure; upstream route reviews remain historical evidence.',

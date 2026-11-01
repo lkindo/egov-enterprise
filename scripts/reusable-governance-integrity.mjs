@@ -12,6 +12,7 @@ import { compositionDigest } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, verifyProjectComposition } from './project-composer-recipe.mjs';
 import { COMPOSER_MENU_SNAPSHOT_PATH } from './project-composer-menu-preview.mjs';
 import { inspectProjectionLedger } from './reusable-projection-ledger.mjs';
+import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 import { artifactScreenErrors } from './reusable-page-survival.mjs';
 import { buildPermissionArtifacts } from './generate-permissions.mjs';
 import { AUTHORIZATION_POLICY_PATH, PERMISSION_CATALOG_PATH, projectPermissionCatalog, projectedPermissionCoverageErrors } from './reusable-permission-projection.mjs';
@@ -63,6 +64,9 @@ export function vendorProjectionErrors(root, lock) {
   // 잠금의 값과 다르면 대조한 PostgreSQL 번들과 다른 SQL 이 돈다.
   const errors = artifactTextSha256(root, projection.migration) === projection.migrationSha256 ? [] : ['Vendor baseline differs from the source lock'];
   if (artifactTextSha256(root, projection.input) !== projection.inputSha256) errors.push('Vendor input differs from the source lock');
+  // 뺀 도구가 되살아나면 벤더 프로젝트에서 동작하지 않는 PostgreSQL 도구가 돈다.
+  if (!exact(projection.removedAssets, readVendorAssetLedger(root).assets)) errors.push('Source lock removed assets differ from the removal ledger');
+  for (const asset of projection.removedAssets ?? []) if (existsSync(join(root, asset))) errors.push(`Vendor project keeps a PostgreSQL-only asset: ${asset}`);
   return errors;
 }
 export const snapshotPathFor = source => (source === UPSTREAM_MODULES ? `${UPSTREAM_DIRECTORY}/modules.json`
@@ -113,7 +117,7 @@ export function projectedCodeScope(root) {
   return { format: 'reusable-source-evidence-v1-lf-text-raw-binary', fileCount: inputs.length, sha256: sha256(JSON.stringify(inputs)) };
 }
 
-export function buildGeneratedMemory({ profile, sourceCommit }) {
+export function buildGeneratedMemory({ profile, sourceCommit, migrationEnvironmentReview }) {
   const titles = ['프로젝트 컨텍스트', '결정 인덱스', '미해결 위험 인덱스'];
   return Object.fromEntries(MEMORY_PATHS.map((path, index) => {
     const basename = path.split('/').at(-1);
@@ -125,8 +129,8 @@ export function buildGeneratedMemory({ profile, sourceCommit }) {
       `- 현재 소스·원장·제외 사유: [투영 원장](../../config/governance/reusable-governance-projection.json)\n` +
       `- 원본 기록: [upstream snapshot](../../${snapshotPathFor(path)}) — 원본 위치는 \`${path}\`이며 내부 상대 링크도 그 원본 위치를 기준으로 해석한다.\n` +
       `- 기관 온라인 승인: [현재 원장](../../config/governance/adoption-review.json)\n` +
-      `- 기관 이관 승인: [현재 원장](../../config/governance/migration-adoption-review.json)\n\n` +
-      `생성 시 두 기관 승인 원장은 pending으로 시작했다. 이후 상태는 위 원장이 소유한다. 기계 생성 일시나 원본의 검토자·날짜를 기관 재검토 증거로 사용하지 않는다.\n` +
+      (migrationEnvironmentReview ? '- 기관 이관 승인: [현재 원장](../../config/governance/migration-adoption-review.json)\n' : '') + '\n' +
+      `생성 시 ${migrationEnvironmentReview ? '두 ' : ''}기관 승인 원장은 pending으로 시작했다. 이후 상태는 위 원장이 소유한다. 기계 생성 일시나 원본의 검토자·날짜를 기관 재검토 증거로 사용하지 않는다.\n` +
       `실행한 검증과 미해결 항목은 현재 산출물에서 재확인한다. 원본 운영 메뉴 수·배포 이력·미해결 위험은 upstream 이력이며 현재 기관의 실측을 대신하지 않는다.\n`];
   }));
 }
@@ -225,6 +229,8 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       } else check(!lock.composition, 'Source lock contains an unbound composition');
       errors.push(...inspectProjectionLedger(root, lock));
       errors.push(...vendorProjectionErrors(root, lock));
+      // 이관 승인 원장은 이관 도구가 있는 구성에만 있다.
+      check(Boolean(metadata.migrationEnvironmentReview) === !lock.vendorProjection, 'Migration review scope differs from the vendor projection');
     }
     check(exact(metadata.codeScope, projectedCodeScope(root)), 'Source evidence scope changed; inherited approval requires review before artifact certification');
     const activeArtifacts = metadata.activeArtifacts ?? [];
@@ -295,7 +301,7 @@ export function inspectReusableGovernance(root = ROOT, { requireLock = true } = 
       check(normalizedText(root, path) === expected, `Generated memory must separate upstream and adopter facts: ${path}`);
     }
     for (const [path, product, profile] of [['config/governance/adoption-review.json', 'online', metadata.profile],
-      ['config/governance/migration-adoption-review.json', 'migration-tool', null]]) {
+      ...(metadata.migrationEnvironmentReview ? [['config/governance/migration-adoption-review.json', 'migration-tool', null]] : [])]) {
       const review = readJson(root, path);
       check(review.authority === 'adopter-environment-review' && review.product === product && review.profile === profile,
         `Adoption review identity differs from artifact: ${path}`);
