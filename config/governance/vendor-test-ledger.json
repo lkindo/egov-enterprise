@@ -60,8 +60,8 @@
     },
     {
       "test": "AttachmentReferenceIntegrityPostgresTest.java",
-      "category": "replacement",
-      "reason": "첨부 참조 무결성 시나리오다. 격리 DB 기반 클래스라 다음 묶음에서 옮긴다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 격리 DB 대신 실행 도구의 일회용 DB 를 쓴다. 픽스처와 관측은 VendorTestSql 이 맡고 남긴 행은 클래스가 지운다"
     },
     {
       "test": "AuditLedgerImmutabilityMigrationIntegrationTest.java",
@@ -80,8 +80,8 @@
     },
     {
       "test": "AuthorizationAdministrationIntegrationTest.java",
-      "category": "replacement",
-      "reason": "권한 관리 시나리오다. 격리 DB 기반 클래스라 다음 묶음에서 옮긴다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 시드의 관리자 배정을 걷어 낸 채 끝나므로 벤더 실행에서는 맨 뒤에 돈다(VendorClassOrderer)"
     },
     {
       "test": "AuthorizationContractIntegrationTest.java",
@@ -106,7 +106,7 @@
     {
       "test": "BaseAdminBootstrapSeedIntegrationTest.java",
       "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "reason": "PostgreSQL 시드 파일을 재실행해 본다. 벤더는 번역 시드를 쓰고 적용 뒤 행 수를 대조한다"
     },
     {
       "test": "BlogBigintMigrationIntegrationTest.java",
@@ -195,8 +195,8 @@
     },
     {
       "test": "DatabaseExceptionTranslationIntegrationTest.java",
-      "category": "replacement",
-      "reason": "오류 번역 시나리오다. 격리 DB 기반 클래스라 다음 묶음에서 옮긴다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 격리 DB 대신 실행 도구의 일회용 DB 를 쓴다. 픽스처와 관측은 VendorTestSql 이 맡고 남긴 행은 클래스가 지운다"
     },
     {
       "test": "DeferredStandardDesignMigrationIntegrationTest.java",
@@ -486,13 +486,13 @@
     },
     {
       "test": "ReferenceIntegrityCommunityFkIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 격리 DB 대신 실행 도구의 일회용 DB 를 쓴다. 픽스처와 관측은 VendorTestSql 이 맡고 남긴 행은 클래스가 지운다"
     },
     {
       "test": "ReferenceIntegrityFkIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 격리 DB 대신 실행 도구의 일회용 DB 를 쓴다. 픽스처와 관측은 VendorTestSql 이 맡고 남긴 행은 클래스가 지운다"
     },
     {
       "test": "ReferenceIntegrityFkMigrationIntegrationTest.java",
@@ -636,8 +636,8 @@
     },
     {
       "test": "UserActivityUpsertIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 격리 DB 대신 실행 도구의 일회용 DB 를 쓴다. 픽스처와 관측은 VendorTestSql 이 맡고 남긴 행은 클래스가 지운다"
     },
     {
       "test": "UserSecurityStateConcurrencyIntegrationTest.java",
@@ -646,8 +646,8 @@
     },
     {
       "test": "UserSignupDateDefaultIntegrationTest.java",
-      "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "category": "fixture-port",
+      "reason": "벤더 공통 시나리오다. 격리 DB 대신 실행 도구의 일회용 DB 를 쓴다. 픽스처와 관측은 VendorTestSql 이 맡고 남긴 행은 클래스가 지운다"
     },
     {
       "test": "UserSurveyAdminNavigationRetirementMigrationIntegrationTest.java",

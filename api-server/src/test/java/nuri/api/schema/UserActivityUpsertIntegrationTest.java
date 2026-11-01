@@ -3,6 +3,9 @@ package nuri.api.schema;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
+import org.springframework.jdbc.core.namedparam.NamedParameterUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -13,11 +16,13 @@ import java.sql.Statement;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
+import nuri.business.domain.log.UserLogRepositoryImpl;
+
 /**
- * 사용자 활동 집계 UPSERT 를 <b>실 PostgreSQL</b>에서 검증한다.
+ * 사용자 활동 집계 UPSERT 를 <b>실 DB</b>에서 검증한다.
  *
- * <p>[왜 통합 테스트인가] {@code UserLogRepository.upsertActivityCounts} 는 네이티브
- * {@code INSERT ... ON CONFLICT ON CONSTRAINT pk_tb_user_log DO UPDATE} 다. 단위 테스트는
+ * <p>[왜 통합 테스트인가] {@code UserLogRepository.upsertActivityCounts} 는 벤더 포트가 만든 네이티브 upsert 다.
+ * 시험은 운영과 같은 문장을 {@link UserLogRepositoryImpl#activityUpsertSql} 에서 받는다. 단위 테스트는
  * 저장소를 목으로 대체하므로 <b>SQL 이 실제로 파싱되는지, 제약 이름이 맞는지, NULL 카운터가
  * 누적을 리셋하지 않는지를 하나도 검증하지 못한다</b> — 목만 있는 검증은 초록이면서 운영에서
  * 첫 요청에 죽는다. 이 프로젝트의 감사에서 반복 지적된 함정이라 실 DB 로 고정한다.
@@ -36,24 +41,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 @DisplayName("사용자 활동 집계 UPSERT")
 class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSupport {
 
-    /** 프로덕션 코드({@code UserLogRepository})와 같은 문장. 갈라지면 이 테스트가 의미를 잃는다. */
-    private static final String UPSERT = """
-            INSERT INTO tb_user_log (
-                ocrn_ymd, dmnd_user_id, srvc_nm, mthd_nm,
-                crt_cnt, mdfcn_cnt, inq_cnt, del_cnt, otpt_cnt, err_cnt,
-                crt_dt, mdfcn_dt)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, now(), now())
-            ON CONFLICT ON CONSTRAINT pk_tb_user_log DO UPDATE SET
-                crt_cnt   = COALESCE(tb_user_log.crt_cnt, 0)   + EXCLUDED.crt_cnt,
-                mdfcn_cnt = COALESCE(tb_user_log.mdfcn_cnt, 0) + EXCLUDED.mdfcn_cnt,
-                inq_cnt   = COALESCE(tb_user_log.inq_cnt, 0)   + EXCLUDED.inq_cnt,
-                del_cnt   = COALESCE(tb_user_log.del_cnt, 0)   + EXCLUDED.del_cnt,
-                otpt_cnt  = COALESCE(tb_user_log.otpt_cnt, 0)  + EXCLUDED.otpt_cnt,
-                err_cnt   = COALESCE(tb_user_log.err_cnt, 0)   + EXCLUDED.err_cnt,
-                mdfcn_dt  = now()
-            """;
-
-    @Test
+        @Test
     @DisplayName("같은 키를 반복 적재하면 행 하나에 카운터가 누적된다")
     void accumulatesCountersOnConflict() throws SQLException {
         migrateThroughAuthorizationCutover();
@@ -61,7 +49,7 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
 
-            assertThat(constraintExists(statement, "pk_tb_user_log")).isTrue();
+            assertThat(VendorTestSql.constraintCount(VendorTestSql.on(connection), "pk_tb_user_log")).isEqualTo(1);
             String esntlId = seedUser(connection, "USRACT_0001", "acttester");
 
             upsert(connection, esntlId, 1, 0, 2, 0, 0, 1);
@@ -105,7 +93,7 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
         try (Connection connection = openConnection()) {
             assertThatThrownBy(() -> upsert(connection, "ANONYMOUS", 0, 0, 1, 0, 0, 0))
                     .isInstanceOf(SQLException.class)
-                    .hasMessageContaining("fk_tb_user_log_tb_user_info");
+                    .message().containsIgnoringCase("fk_tb_user_log_tb_user_info");
         }
     }
 
@@ -125,7 +113,9 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
              Statement deletingStatement = deleting.createStatement();
              Statement loggingStatement = logging.createStatement()) {
             String esntlId = seedUser(deleting, "USRACT_DELETE", "actdelete");
-            loggingStatement.execute("SET lock_timeout = '300ms'");
+            if (!VendorTestSql.vendorRun()) {
+                loggingStatement.execute("SET lock_timeout = '300ms'");
+            }
             deleting.setAutoCommit(false);
             try {
                 try (PreparedStatement lock = deleting.prepareStatement(
@@ -137,6 +127,15 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
                 }
                 deletingStatement.executeUpdate("DELETE FROM tb_user_log WHERE dmnd_user_id='%s'".formatted(esntlId));
 
+                if (VendorTestSql.vendorRun()) {
+                    // Oracle 의 FK 검사는 부모 행 잠금을 기다리지 않는다. 늦은 로그는 들어가고 사용자 삭제가 FK 로 거부돼 고아가 남지 않는다(설계서 §6.1).
+                    upsert(logging, esntlId, 0, 0, 1, 0, 0, 0);
+                    assertThatThrownBy(() -> deletingStatement.executeUpdate(
+                            "DELETE FROM tb_user_info WHERE esntl_id='%s'".formatted(esntlId)))
+                            .isInstanceOfSatisfying(SQLException.class,
+                                    failure -> assertThat(failure.getErrorCode()).isEqualTo(2292));
+                    return;
+                }
                 assertThatThrownBy(() -> upsert(logging, esntlId, 0, 0, 1, 0, 0, 0))
                         .isInstanceOfSatisfying(SQLException.class,
                                 failure -> assertThat(failure.getSQLState()).isEqualTo("55P03"));
@@ -149,19 +148,21 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
         }
     }
 
+    /** 운영 문장을 이름 바인딩 그대로 실행한다. */
     private void upsert(Connection connection, String esntlId,
             int crt, int mdfcn, int inq, int del, int otpt, int err) throws SQLException {
-        try (PreparedStatement ps = connection.prepareStatement(UPSERT)) {
-            ps.setString(1, "20260902");
-            ps.setString(2, esntlId);
-            ps.setString(3, "ThingApiController");
-            ps.setString(4, "list");
-            ps.setInt(5, crt);
-            ps.setInt(6, mdfcn);
-            ps.setInt(7, inq);
-            ps.setInt(8, del);
-            ps.setInt(9, otpt);
-            ps.setInt(10, err);
+        String sql = UserLogRepositoryImpl.activityUpsertSql(VendorTestSql.dialect(VendorTestSql.on(connection)));
+        var values = new MapSqlParameterSource().addValue("ocrnYmd", "20260902").addValue("dmndUserId", esntlId)
+                .addValue("srvcNm", "ThingApiController").addValue("mthdNm", "list")
+                .addValue("crtCnt", crt).addValue("mdfcnCnt", mdfcn).addValue("inqCnt", inq)
+                .addValue("delCnt", del).addValue("otptCnt", otpt).addValue("errCnt", err);
+        var parsed = NamedParameterUtils.parseSqlStatement(sql);
+        Object[] bound = NamedParameterUtils.buildValueArray(parsed, values, null);
+        try (PreparedStatement ps = connection.prepareStatement(NamedParameterUtils.substituteNamedParameters(parsed, values))) {
+            for (int index = 0; index < bound.length; index++) {
+                ps.setObject(index + 1, bound[index]);
+            }
+            ps.setQueryTimeout(VendorTestSql.vendorRun() ? 2 : 0);
             ps.executeUpdate();
         }
     }
@@ -204,11 +205,9 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
         }
     }
 
-    private boolean constraintExists(Statement statement, String name) throws SQLException {
-        try (ResultSet rs = statement.executeQuery(
-                "SELECT EXISTS (SELECT 1 FROM pg_constraint WHERE conname='%s')".formatted(name))) {
-            assertThat(rs.next()).isTrue();
-            return rs.getBoolean(1);
-        }
+    @Override
+    protected void cleanVendorFixtures(JdbcTemplate jdbc) {
+        jdbc.update("DELETE FROM tb_user_log WHERE dmnd_user_id LIKE 'USRACT_%'");
+        jdbc.update("DELETE FROM tb_user_info WHERE esntl_id LIKE 'USRACT_%'");
     }
 }

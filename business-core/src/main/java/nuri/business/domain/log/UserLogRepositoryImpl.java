@@ -41,8 +41,7 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
     @Transactional
     public int upsertActivityCounts(String ocrnYmd, String dmndUserId, String srvcNm, String mthdNm,
             long crtCnt, long mdfcnCnt, long inqCnt, long delCnt, long otptCnt, long errCnt) {
-        return entityManager.createNativeQuery(vendorSql.upsertAddingCounters("tb_user_log", "pk_tb_user_log",
-                        ACTIVITY_KEYS, ACTIVITY_COUNTERS, "crt_dt", "mdfcn_dt"))
+        return entityManager.createNativeQuery(activityUpsertSql(vendorSql))
                 .setParameter("ocrnYmd", ocrnYmd)
                 .setParameter("dmndUserId", dmndUserId)
                 .setParameter("srvcNm", srvcNm)
@@ -54,6 +53,12 @@ public class UserLogRepositoryImpl implements UserLogRepositoryCustom {
                 .setParameter("otptCnt", otptCnt)
                 .setParameter("errCnt", errCnt)
                 .executeUpdate();
+    }
+
+    /** 활동 집계 upsert 문장. 통합 시험이 운영과 같은 문장을 실행하게 공개한다. */
+    public static String activityUpsertSql(VendorSqlDialect vendorSql) {
+        return vendorSql.upsertAddingCounters("tb_user_log", "pk_tb_user_log",
+                ACTIVITY_KEYS, ACTIVITY_COUNTERS, "crt_dt", "mdfcn_dt");
     }
 
     @Override
