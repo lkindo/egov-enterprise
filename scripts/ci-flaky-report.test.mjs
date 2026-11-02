@@ -274,7 +274,7 @@ test('Dependabot runs are recognized by actor or head branch', () => {
 
 test('runner queue wait is measured from the later of job creation and the completion of its needs', () => {
   const needs = workflowNeeds(ciYaml);
-  assert.deepEqual(needs.get('backend-build'), ['change-scope', 'backend-scope', 'backend-schema-scope', 'migration-scope', 'reusable-base', 'reusable-custom']);
+  assert.deepEqual(needs.get('backend-build'), ['change-scope', 'backend-scope', 'backend-schema-scope', 'migration-scope', 'reusable-base', 'reusable-custom', 'reusable-vendor']);
   assert.deepEqual(needs.get('e2e-merge-reports'), ['e2e-tests']);
   assert.deepEqual(needs.get('change-scope'), []);
   assert.deepEqual(workflowNeeds('jobs:\n  a:\n    runs-on: x\n  b:\n    needs:\n      - a\n      - "c"\n    runs-on: x\n').get('b'), ['a', 'c']);

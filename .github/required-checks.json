@@ -18,6 +18,14 @@
       "run": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }}"
     },
     {
+      "jobId": "reusable-vendor",
+      "name": "Generate and verify vendor composition",
+      "run": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor ${{ matrix.vendor }}",
+      "env": {
+        "COMPOSER_PREVIEW_VENDOR": "${{ matrix.vendor }}"
+      }
+    },
+    {
       "jobId": "e2e-tests",
       "name": "Verify local composer browser flow",
       "if": "strategy.job-index == 0",
@@ -96,7 +104,8 @@
         "backend-schema-scope",
         "migration-scope",
         "reusable-base",
-        "reusable-custom"
+        "reusable-custom",
+        "reusable-vendor"
       ],
       "jobIf": "always()",
       "aggregate": [
@@ -191,6 +200,26 @@
           "resultExpression": "needs.reusable-custom.result",
           "successResult": "success",
           "scopeExpression": "needs.change-scope.outputs['reusable-custom']",
+          "classifierResultExpression": "needs.change-scope.result",
+          "skippedResult": "skipped"
+        },
+        {
+          "sourceJobId": "reusable-vendor",
+          "sourceNeeds": [
+            "change-scope"
+          ],
+          "sourceJobIf": "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['reusable-vendor'] == 'true'",
+          "sourceStepName": "Generate and verify vendor composition",
+          "sourceRun": "node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor ${{ matrix.vendor }}",
+          "sourceWorkingDirectory": null,
+          "sourceEnv": {
+            "COMPOSER_PREVIEW_VENDOR": "${{ matrix.vendor }}"
+          },
+          "aggregateStepName": "벤더 구성 결과 집계",
+          "aggregateRun": "node scripts/aggregate-required-check.mjs",
+          "resultExpression": "needs.reusable-vendor.result",
+          "successResult": "success",
+          "scopeExpression": "needs.change-scope.outputs['reusable-vendor']",
           "classifierResultExpression": "needs.change-scope.result",
           "skippedResult": "skipped"
         }

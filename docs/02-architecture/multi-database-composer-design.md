@@ -290,7 +290,7 @@ flowchart TD
 
 `certified` 조건은 벤더·버전마다 다음을 모두 통과한 실행 ID 다: 스키마 대조, 시드 행 대조, Hibernate validate, 통합 시험, §5·§6 적합성, 대표 E2E(로그인·권한·게시판·결재·감사 원장). 증거에는 입력 해시를 함께 적는다. 입력은 중립 모델, 어댑터, 포트 구현, 벤더 의존 SQL 파일, 엔티티 매핑(벤더 설정 포함), 벤더에서 도는 시험 코드와 시험 원장이다. 중립 모델은 PostgreSQL 컨테이너에서 나와 Docker 없는 검사에서 계산할 수 없으므로 소스(마이그레이션·권한 원장·모델 코드)의 해시로 대신하고, 실제 모델 해시는 증거의 `modelHash` 에 따로 적는다. 해시가 현재 저장소와 다르면 `npm run regen -- --check` 가 `VENDOR_EVIDENCE_STALE` 로 먼저 알리고, 계약 시험이 그 `certified` 를 거부한다. 그래서 야간 실패를 기다리는 동안 낡은 인증이 남지 않는다. 입력을 바꾼 PR 은 증거를 다시 만들거나 그 벤더를 `preview` 로 내린다. 재검증 만료는 ADR-0018 처럼 기술 판정과 분리한다. 생성기는 기존 원칙대로 생성 작업마다 전체 검증을 돌리므로 인증은 선택 허용일 뿐 각 작업의 검증을 대신하지 않는다.
 
-입력 목록은 [원장](../../config/db-vendors.json)의 `evidenceInputs` 에 공통과 벤더별로 나눠 적는다. 벤더 하나의 구현을 고쳐 다른 벤더의 증거가 낡지 않게 하려는 것이다. 벤더 의존 SQL 위치, `replacement` 가 아닌 벤더 시험, 대표 E2E, 엔티티 매핑(`@Entity`·`@Embeddable`·`@MappedSuperclass`·`@Converter`·`AttributeConverter`·`@FilterDef`), 포트를 쓰는 코드, 네이티브 SQL 호출 지점(`nativeQuery`·`createNativeQuery`·`JdbcTemplate`·`NamedParameterJdbcTemplate`·`JdbcClient`)은 [판정 코드](../../scripts/project-composer-vendor-evidence.mjs)가 원장과 소스에서 도출한다. 벤더 SQL 원장은 린터 규칙에 걸린 구문의 동결 위치만 담아, 네이티브 SQL 을 담았어도 규칙에 안 걸린 파일은 호출 지점 표지로 잡는다. 모델을 만드는 명령(`generate-reusable-base-db.mjs`)이 가져오는 스크립트도 기본으로 입력이다. 빼는 것은 원장의 `excludedModelTools` 에 이유와 함께 적는다: 배치 이름·실패 보고·오류 코드·프로젝트 이름·화면 문장·시작 구성 이름만 다루는 모듈, 메뉴를 스냅숏과 대조하기만 하는 모듈, 프런트 슬롯과 화면 생존 기대값(프런트 코드는 입력이 아니다). 입력은 git 이 추적하거나 무시하지 않는 파일로 한정한다. 무시 파일(`application-local.yml` 등)을 읽으면 같은 커밋이 체크아웃마다 다른 값이 되고 개인 설정이 판정에 들어간다. 해시는 경로와 내용을 함께 넣으므로 파일 삭제와 표지 제거도 값을 바꾼다. 원장 자체는 증거를 담아 입력이 아니고, 프런트 코드·E2E 지원 코드·의존성 판(`libs.versions.toml`)도 입력이 아니다. 이들의 회귀는 CI 경로(§10)와 생성 작업마다 도는 검증이 본다. 생성물은 입력이 투영돼 값이 달라지므로 낡음 판정을 하지 않는다.
+입력 목록은 [원장](../../config/db-vendors.json)의 `evidenceInputs` 에 공통과 벤더별로 나눠 적는다. 벤더 하나의 구현을 고쳐 다른 벤더의 증거가 낡지 않게 하려는 것이다. 벤더 의존 SQL 위치, `replacement` 가 아닌 벤더 시험, 대표 E2E, 엔티티 매핑(`@Entity`·`@Embeddable`·`@MappedSuperclass`·`@Converter`·`AttributeConverter`·`@FilterDef`), 포트를 쓰는 코드, 네이티브 SQL 호출 지점(`nativeQuery`·`createNativeQuery`·`JdbcTemplate`·`NamedParameterJdbcTemplate`·`JdbcClient`)은 [판정 코드](../../scripts/project-composer-vendor-evidence.mjs)가 원장과 소스에서 도출한다. 벤더 SQL 원장은 린터 규칙에 걸린 구문의 동결 위치만 담아, 네이티브 SQL 을 담았어도 규칙에 안 걸린 파일은 호출 지점 표지로 잡는다. 모델을 만드는 명령(`generate-reusable-base-db.mjs`)이 가져오는 스크립트도 기본으로 입력이다. 빼는 것은 원장의 `excludedModelTools` 에 이유와 함께 적는다: 배치 이름·실패 보고·오류 코드·프로젝트 이름·화면 문장·시작 구성 이름만 다루는 모듈, 메뉴를 스냅숏과 대조하기만 하는 모듈, 프런트 슬롯과 화면 생존 기대값(프런트 코드는 입력이 아니다). 입력은 git 이 추적하거나 무시하지 않는 파일로 한정한다. 무시 파일(`application-local.yml` 등)을 읽으면 같은 커밋이 체크아웃마다 다른 값이 되고 개인 설정이 판정에 들어간다. 해시는 경로와 내용을 함께 넣으므로 파일 삭제와 표지 제거도 값을 바꾼다. 원장 자체는 증거를 담아 입력이 아니고, 프런트 코드·E2E 지원 코드·의존성 판(`libs.versions.toml`)도 입력이 아니다. 의존성 판은 증거를 낡게 하지 않고 CI 벤더 잡만 켠다(원장의 `ciOnly`, §10). 프런트 코드와 E2E 지원 코드의 회귀는 PostgreSQL 쪽 CI 와 생성 작업마다 도는 검증이 본다. 생성물은 입력이 투영돼 값이 달라지므로 낡음 판정을 하지 않는다.
 
 이미지 값의 정본은 실행 도구의 엔진 표(`VENDOR_ENGINES`)이고 원장은 엔진 키로 가리킨다. 증거의 `image` 가 현재 엔진 값과 다르면 낡은 것이다. Oracle 두 이미지만 digest 로 고정돼 있다. 다른 벤더는 올릴 때 고정한다 — 고정하지 않으면 원장 적재가 `certified` 를 거부한다. 원장 적재는 생성 작업마다 돌기 때문에 입력 해시를 대조하지 않고, `certified` 의 어댑터·소스 투영·통합 시험을 돌릴 엔진·증거 형식만 본다. 그래서 어댑터 없는 Tibero 나 빈 증거로는 열리지 않는다.
 
@@ -331,10 +331,35 @@ Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 
 | 경로 | 실행 | 비용 |
 |---|---|---|
 | 모든 PR 의 기존 custom 생성 | 기준 PostgreSQL 에서 뽑은 모델을 모든 어댑터로 **번역만** 한다 | 수 초 |
-| 인증 입력(어댑터·포트 구현·벤더 의존 SQL·엔티티 매핑·벤더 시험)이 바뀐 PR | 해당 벤더 적용·대조·Hibernate validate. `certified` 벤더는 영향받는 동작·동시성 시험까지 기존 `backend-build` 안에서 돌린다 | 적용은 벤더당 1~3분(시제품 18~74초), 시험은 측정 전 |
-| 야간 `reusable-nightly` | 벤더 × 대표 구성 전체 검증 | 무거움 |
+| 인증 입력이 바뀐 PR | `ci: true` 인 벤더(지금 Oracle 23 Free)로 대표 구성을 생성하고 전체 검증을 돌린다. 기준선 적용·대조·Hibernate validate·카탈로그·동작 시험·차등 시험이다. 잡은 `reusable-vendor` 이고 `backend-build` 에 집계한다 | 15~20분(어림, 러너 미측정) |
+| 입력 삭제, main·수동 실행 | 같은 잡을 두 레이아웃으로 돌린다 | 위의 두 배 |
 
-required context 수는 늘리지 않는다. 벤더 작업이 비필수 야간에만 도는 동안 그 벤더는 `preview` 이고 선택할 수 없다. `certified` 로 올리는 것은 위 PR 경로가 required 안에서 돌기 시작한 뒤다.
+야간 벤더 실행은 넣지 않았다. `reusable-nightly.yml` 수정과 생성물 T2 첫 실행이 따로 필요하고 `certified` 조건도 아니다. 19c 는 CI 에서 돌지 않고 증거 실행(§7)에서만 돈다.
+
+required context 수는 늘리지 않는다. 벤더 잡이 required 안에 없는 벤더는 `certified` 가 될 수 없다(원장 적재가 `ci` 를 본다). `certified` 로 올리는 것은 위 PR 경로가 required 안에서 돌기 시작한 뒤다.
+
+선택은 [분류기](../../scripts/ci-change-scope.mjs)가 증거 판정과 같은 [입력 계산](../../scripts/vendor-evidence-inputs.mjs)으로 한다.
+
+- 다른 벤더의 입력을 고친 PR 은 이 잡을 켜지 않는다. PostgreSQL 포트만 고친 PR 도 그렇다. 다른 축의 선택은 이 잡과 무관하다는 것을 계약이 본다.
+- 입력을 지운 PR 은 두 레이아웃 전수다. 지운 파일은 머리 트리로 입력 여부를 알 수 없어, 지운 Java 는 비교 기준의 내용으로 보고 읽지 못하면 입력으로 본다. 지운 스크립트는 모델 명령이 가져오던 도구일 수 있어, 시험과 원장이 뺀 도구가 아니면 입력으로 본다.
+- 표지만 지운 변경도 비교 기준의 내용으로 잡는다.
+- 입력 계산이 실패하는 트리도 전수다. 원장을 읽지 못하면 분류를 멈춘다.
+- 원장과 벤더 원장은 분류기의 입력이라 미지 경로로 둔다. 증거만 갱신하는 커밋도 전 파이프라인과 이 잡을 돈다.
+- `ciOnly` 는 증거를 낡게 하지 않고 잡만 켠다. 의존성 판(드라이버·Hibernate·Flyway), 잡의 진입점·단계표, 소스 투영이 고칠 자리를 찾는 파일(못 찾으면 벤더 생성만 멈춘다), 선택 자체를 정하는 파일(원장·분류기)이다. 투영이 고치는 파일이 모두 켜는지는 계약이 본다. `ci.yml` 은 이 잡의 정의가 바뀐 변경만 켠다.
+- 미지 경로는 이 잡을 켜지 않는다. 이 축은 입력과 `ciOnly` 로 닫혀 있어 미지가 아니다. 비교 범위가 없는 실행(수동·확인되지 않은 push base)만 전수다.
+- 그 밖의 생성기 코드도 입력이 아니면 이 잡을 켜지 않는다. 공통 경로는 PostgreSQL `reusable-custom` 이 보고, 생성 작업마다 전체 검증이 돈다. 벤더 분기를 담은 생성기 코드(`project-composer-generate.mjs` 등)의 회귀는 다음 입력 변경이나 수동 실행까지 CI 에 드러나지 않는다.
+
+대표 구성은 시험 원장의 `representativeE2e.preset`(demo)이다. 인증 입력이 모든 기능의 엔티티·마이그레이션이라 일부 기능 구성은 바뀐 입력을 돌리지 못한다. PR 의 레이아웃은 같은 원장의 `layout`(멀티모듈)이다.
+
+시간과 슬롯은 근거가 약하다. 첫 main 실행에서 재고 고친다.
+
+- 소요: 같은 구성의 PostgreSQL 검증이 main 실행 41397307357 한 표본에서 약 11분이고, 이 기계의 Oracle 통합 시험이 257건 271초다. 399건과 이미지 내려받기를 더해 15~20분으로 어림했다.
+- 제한: 어림의 두 배에 Oracle 기동 대기 상한 5분을 더해 45분이다.
+- 슬롯: 같은 표본에서 러너 20개가 1~12분에 차 있고 demo 는 이미 4분 줄을 선다. frontend 뒤로 입장하면 잡이 줄 끝에서 시작해 wall 이 4~13분(어림) 늘어나므로 분류 직후 입장한다. 이때 뒤 잡이 줄에서 한두 칸 밀린다.
+- 빈도: 2026-11-03 에 main 최근 150커밋을 분류기로 다시 돌렸다. 90개가 이 잡을 고르고 그중 7개는 입력 삭제의 두 레이아웃 전수다. ADR-0047 작업이 든 기간이라 평상시보다 높을 수 있다. main 은 고른 실행마다 두 레이아웃이므로 이 빈도면 슬롯 비용은 드문 일이 아니다. 같은 150개에서 다른 축의 선택은 하나도 바뀌지 않았다.
+- 되돌림: 첫 main 실행의 wall 과 demo 대기가 늘면 main 레이아웃을 줄이거나 입장을 옮긴다.
+
+이 잡은 required 안이라 Oracle 쪽 불안정이 입력을 바꾼 PR 의 병합을 막는다. `preview` 동안에도 그렇다. 재현되지 않은 앱 JVM 네이티브 오류(§17)가 러너에서 나오는지는 첫 실행으로 본다.
 
 ## 11. 출시 순서(D-15)
 
@@ -550,11 +575,13 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 승격은 원장 값 변경으로 끝난다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
 
-이 시험의 게이트(`GATESET-VENDOR-CONFORMANCE`)는 아직 CI 잡에 잇지 않았다. 지금 실행 경로는 생성물의 `npm run verify` 와 `verify:vendor-schema` 뿐이라 등록을 `local-vendor` tier 와 `ciPending` 으로 둔다. `reusable-vendor` 잡을 이을 때 `ci` tier 와 required context 로 바꾸며, `ciPending` 이 남아 있으면 벤더를 `certified` 로 올릴 수 없다.
+이 시험의 게이트(`GATESET-VENDOR-CONFORMANCE`)는 `reusable-vendor` 잡(§10)에 이었다. 등록은 `local-vendor`·`ci` tier 와 required context `backend-build` 다. 잡을 잇기 전의 임시 표시 `ciPending` 은 걷었다.
 
 **인증 증거 틀.** §7 대로 원장 형식, 입력 해시, `VENDOR_EVIDENCE_STALE`, 이미지 digest, 증거 기록 명령을 넣었다. 비-PostgreSQL `certified` 가 없으므로 판정은 fixture 와 실제 입력의 복사본으로 붉혔고(BLOB 매핑 되돌림 포함), 기록 명령도 보고서를 흉내 낸 시험만 돌았다. 실제 증거는 없다.
 
-남은 일: 대표 E2E 실측(실행기는 §8 대로 고쳤고 부정 시험만 돌렸다. demo 생성과 PostgreSQL 대조, Oracle 23·19c 실행은 아직이다), 증거 기록의 첫 실제 실행, CI 경로(§10).
+**CI 경로.** §10 대로 `reusable-vendor` 잡을 넣었다. 분류와 잡 모양은 계약 시험과 의도적 위반으로 확인했고 러너에서 돌린 적은 없다. 소요 시간·슬롯 영향·demo Oracle 전체 경로는 푸시 뒤 첫 실행에서 본다.
+
+남은 일: 대표 E2E 실측(실행기는 §8 대로 고쳤고 부정 시험만 돌렸다. demo 생성과 PostgreSQL 대조, Oracle 23·19c 실행은 아직이다), 증거 기록의 첫 실제 실행, CI 잡의 첫 러너 측정.
 
 ### 공수 재판단(ADR-0047 재검토 조건)
 

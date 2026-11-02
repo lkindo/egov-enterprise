@@ -1773,21 +1773,11 @@ function validateRequiredContexts(value, knownContexts, label, errors) {
   }
 }
 
-/**
- * required context 는 그 CI 잡이 이 게이트를 돌린다는 주장이다. ci tier 없이 적으면 어느 잡도 돌리지 않는데 병합 권위가 있는 것처럼 보인다.
- * 아직 잇지 못한 벤더 게이트만 ciPending 으로 그 사실을 드러낸다.
- */
+/** required context 는 그 CI 잡이 이 게이트를 돌린다는 주장이다. ci tier 없이 적으면 어느 잡도 돌리지 않는데 병합 권위가 있는 것처럼 보인다. */
 function validateGateSetCiClaim(set, requiredContexts, setLabel, errors) {
-  if (set.ciPending !== undefined) {
-    if (typeof set.ciPending !== 'string' || set.ciPending.trim() === '') errors.push(`${setLabel}: ciPending must say why no CI job runs this gate`);
-    if (!set.tier?.includes?.(LOCAL_VENDOR_TIER)) errors.push(`${setLabel}: ciPending is only for a ${LOCAL_VENDOR_TIER} gate`);
-    if (set.tier?.includes?.('ci')) errors.push(`${setLabel}: ciPending cannot claim the ci tier`);
-    if (set.requiredCiContext !== undefined) errors.push(`${setLabel}: ciPending cannot claim a required CI context`);
-    return;
-  }
   validateRequiredContexts(set.requiredCiContext, requiredContexts, setLabel, errors);
   if (set.tier?.includes?.(LOCAL_VENDOR_TIER) && !set.tier.includes('ci')) {
-    errors.push(`${setLabel}: a ${LOCAL_VENDOR_TIER} gate without the ci tier must declare ciPending instead of a required CI context`);
+    errors.push(`${setLabel}: a ${LOCAL_VENDOR_TIER} gate without the ci tier claims a required CI context no job runs`);
   }
 }
 

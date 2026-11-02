@@ -425,7 +425,7 @@ export function buildAtlasCatalog(repoRoot) {
     io.read(rule.source);
     return record(rule.id, rule.id, `${set.category} · ${path.posix.basename(rule.source)}`, 'registered-gate', rule.source,
       { category: set.category, gateSet: set.id, requiredContext: set.requiredCiContext,
-        details: [detail('실행 명령', set.task), detail('실행 tier', set.tier), detail('required context', set.requiredCiContext ?? `CI 미연결: ${set.ciPending}`),
+        details: [detail('실행 명령', set.task), detail('실행 tier', set.tier), detail('required context', set.requiredCiContext),
           detail('selector', `${set.selector.type}: ${set.selector.annotation ?? ''} ${set.selector.value ?? ''}`),
           detail('검증 산출물', set.evidence), detail('의도적 위반 / red', set.redProof)],
         links: [{ label: '게이트 registry', path: gateSource }] });

@@ -1329,16 +1329,25 @@
             "tiers": [
               "local-vendor"
             ]
+          },
+          {
+            "source": ".github/workflows/ci.yml",
+            "job": "reusable-vendor",
+            "fragment": "run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor ${{ matrix.vendor }}",
+            "tiers": [
+              "ci"
+            ]
           }
         ]
       },
       "tier": [
-        "local-vendor"
+        "local-vendor",
+        "ci"
       ],
       "task": ":api-server:vendorConformanceTest",
       "category": "database",
       "owner": "database",
-      "ciPending": "No CI job runs this gate yet, so a change to the rules can stay green until a generated vendor project runs npm run verify or verify:vendor-schema. The reusable-vendor job (ADR-0047) replaces this field with the ci tier and a required context, and no vendor can become certified before that.",
+      "requiredCiContext": "backend-build",
       "inputs": [
         "api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java",
         "api-server/src/test/java/nuri/api/harness/SchemaConformanceRules.java",

@@ -37,7 +37,8 @@ push/PR / workflow_dispatch
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
         ├─ reusable-base (frontend-scope 완료 뒤 영향받는 시작 구성 profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout(survey·approval 은 PR 에서 뺀다), 그 밖에는 두 layout)
         ├─ reusable-custom (분류 직후 core 영향 시 custom composition 두 layout 검증)
-        ├─ backend-build (온라인·스키마·이관·재사용 profile·custom 결과를 집계)
+        ├─ reusable-vendor (분류 직후, 인증 입력이 바뀐 변경만 PostgreSQL 외 DB 로 대표 구성 검증 — PR 은 한 layout, 입력 삭제·main·수동은 두 layout)
+        ├─ backend-build (온라인·스키마·이관·재사용 profile·custom·벤더 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
         ├─ frontend-build (두 frontend source를 각각 집계하는 안정 required context)
@@ -182,6 +183,9 @@ PR 의 운영 계약이 매번 대조한다. `ci.main` 은 두 layout 전부여�
 core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서 분류 직후 실행해 frontend가 끝나기 전의
 빈 runner를 쓴다. profile은 frontend production 완료 뒤 함께 입장한다. 문서 전용 변경은 둘 다 명시적으로 skip하며 실패·취소·예상 밖 skip은 `backend-build`의 독립
 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
+
+PostgreSQL 외 DB 는 `reusable-vendor` 가 본다. [원장](../../config/db-vendors.json)의 `ci: true` 벤더(지금 Oracle 23 Free)로 대표 구성을 생성해 전체 검증을 돌리고 `backend-build` 에 집계한다.
+고르는 기준은 인증 입력이다. 다른 벤더의 입력과 PostgreSQL 포트만 고친 변경은 고르지 않고, 입력을 지운 변경은 두 layout 전수다. 시간·슬롯의 근거와 경계는 [설계서 §10](../02-architecture/multi-database-composer-design.md#10-cid-14)이 소유하고, 러너 소요는 아직 어림이다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
 개발·CI driver의 lock에는 `localDevelopmentBuild`를 남기므로 기술 검증 성공만으로 공식 릴리스 자산이 되지 않는다.

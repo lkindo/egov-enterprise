@@ -65,6 +65,8 @@ export function vendorEvidenceProblems(evidence) {
 function certificationProblems(vendor, ledger) {
   if (!VENDOR_ADAPTERS[vendor.id]) return ['어댑터가 없다'];
   if (!VENDOR_SOURCE[vendor.id]) return ['소스 투영(VENDOR_SOURCE)이 없다'];
+  // required 안의 CI 경로가 없으면 입력 변경이 그 벤더를 돌리지 않는다(D-14).
+  if (vendor.ci !== true) return ['CI 벤더 잡(ci)이 없다'];
   if (!vendor.engines?.length) return ['엔진이 없다'];
   if (!vendor.evidenceInputs?.length || !ledger.evidenceInputs?.paths?.length) return ['증거 입력 목록이 없다'];
   return vendor.engines.flatMap(engine => {
@@ -91,6 +93,8 @@ export function loadVendorLedger(root) {
       if (problems.length) throw new Error(`${vendor.id}: ${problems.join('; ')}`);
     }
     if (vendor.status !== 'certified' && !vendor.reason) throw new Error(`${vendor.id}: 고를 수 없는 사유가 없다`);
+    // CI 잡은 생성물 검증의 기본 엔진(벤더 id)으로 돈다. 통합 시험을 못 여는 벤더를 켜면 잡이 늘 실패한다.
+    if (vendor.ci !== undefined && (vendor.ci !== true || !VENDOR_ENGINES[vendor.id]?.integration)) throw new Error(`${vendor.id}: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다`);
     // 벤더를 적지 않은 레시피와 프리셋의 기본값이다. 이 값이 빠지면 모든 기본 생성이 멈춘다.
     if (vendor.id === 'postgresql' && vendor.status !== 'certified') throw new Error('postgresql: 기본 벤더는 certified 여야 한다');
   }

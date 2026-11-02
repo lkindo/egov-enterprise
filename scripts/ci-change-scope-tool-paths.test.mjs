@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 
 import { classifyChangedFiles, GENERATOR_TOOL_PATHS, generatorToolEntry, PR_REUSABLE_LAYOUT } from './ci-change-scope.mjs';
 import { presetIds } from './composition-profiles.mjs';
+import { vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
 import { parseModuleReferences, tokenizeDependencies } from './frontend-module-graph.mjs';
 import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
 
@@ -36,10 +37,13 @@ import { trackedAndUntrackedFiles } from './reusable-source-tree.mjs';
  */
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
-const AXES = ['atlas', 'backend', 'e2e', 'frontend', 'migration', 'mutation', 'mutationMigrationTool', 'schema'];
+const VENDOR_AXIS = 'reusableVendor';
+const AXES = ['atlas', 'backend', 'e2e', 'frontend', 'migration', 'mutation', 'mutationMigrationTool', VENDOR_AXIS, 'schema'];
+/** 표가 항목마다 선언하는 축. 벤더 축은 파일 단위 입력 목록이 고르므로 아래 벤더 계약이 따로 본다. */
+const TABLE_AXES = AXES.filter(axis => axis !== VENDOR_AXIS);
 const OUTPUT_AXIS = {
   atlas: 'atlas', backend: 'backend', e2e: 'e2e', frontend: 'frontend', migration: 'migration', mutation: 'mutation',
-  'mutation-migration-tool': 'mutationMigrationTool', schema: 'schema',
+  'mutation-migration-tool': 'mutationMigrationTool', 'reusable-vendor': VENDOR_AXIS, schema: 'schema',
 };
 const JS_SOURCE = /\.(?:mjs|cjs|js|ts|tsx|mts|cts)$/;
 const DEPENDENCY_CACHE = new Map();
@@ -186,7 +190,7 @@ function workflowEntrypoints(workflow, packages) {
 
 /**
  * 표의 항목마다 그 경로를 읽거나 실행하는 소스와 축. `files`·`read` 를 바꿔 끼워 합성 저장소로도 판정한다.
- * 결과: { entries: Map<항목 경로, Map<축, Set<읽는 소스>>>, readers, entrypoints }.
+ * 결과: { entries: Map<항목 경로, Map<축, Set<읽는 소스>>>, reached: Map<축, Set<표 안 파일>>, readers, entrypoints }.
  */
 function toolPathEvidence({ files, read, table = GENERATOR_TOOL_PATHS }) {
   const fileSet = new Set(files);
@@ -198,7 +202,7 @@ function toolPathEvidence({ files, read, table = GENERATOR_TOOL_PATHS }) {
   };
   const axesOfChange = file => {
     const result = classifyChangedFiles([file]);
-    return AXES.filter(axis => result[axis] === true);
+    return TABLE_AXES.filter(axis => result[axis] === true);
   };
 
   const readers = new Map();
@@ -230,6 +234,7 @@ function toolPathEvidence({ files, read, table = GENERATOR_TOOL_PATHS }) {
   }
 
   const entries = new Map(table.map(entry => [entry.path, new Map()]));
+  const reachedFiles = new Map();
   const covering = token => files.filter(file => file === token || file.startsWith(token));
   for (const [reader, { axes, executed }] of readers) {
     if (axes.size === 0) continue;
@@ -265,12 +270,14 @@ function toolPathEvidence({ files, read, table = GENERATOR_TOOL_PATHS }) {
       if (!entry) continue;
       const evidence = entries.get(entry.path);
       for (const axis of axes) {
+        if (!reachedFiles.has(axis)) reachedFiles.set(axis, new Set());
+        reachedFiles.get(axis).add(file);
         if (!evidence.has(axis)) evidence.set(axis, new Set());
         evidence.get(axis).add(reader);
       }
     }
   }
-  return { entries, readers, entrypoints };
+  return { entries, reached: reachedFiles, readers, entrypoints };
 }
 
 /** 표와 계산이 다른 항목, 맞는 파일이 없는 항목. */
@@ -280,7 +287,11 @@ function toolPathMismatches({ files, read, table = GENERATOR_TOOL_PATHS }) {
   for (const entry of table) {
     if (!files.some(file => entry.exact ? file === entry.path : file.startsWith(entry.path))) problems.push(`${entry.path}: 맞는 파일이 없는 항목이다(낡은 항목).`);
     const evidence = entries.get(entry.path);
-    const required = [...evidence.keys()].sort();
+    const required = [...evidence.keys()].filter(axis => axis !== VENDOR_AXIS).sort();
+    if (entry.axes.includes(VENDOR_AXIS)) {
+      problems.push(`${entry.path}: ${VENDOR_AXIS} 축은 표가 아니라 인증 입력이 고른다(config/db-vendors.json)`);
+      continue;
+    }
     const declared = [...entry.axes].sort();
     if (JSON.stringify(required) === JSON.stringify(declared)) continue;
     const missing = required.filter(axis => !declared.includes(axis))
@@ -378,6 +389,53 @@ test('directory reads, joined literals and execution chains inside the table cou
   assert.equal(quiet.entries.get('tools/project-composer/').get('frontend'), undefined);
 });
 
+const VENDOR_ENTRY = 'scripts/verify-project-composer.mjs';
+const vendorInputs = () => vendorEvidenceInputs(repoRoot, JSON.parse(readRepository('config/db-vendors.json')), 'oracle');
+
+/**
+ * 벤더 축은 표의 경로 접두가 아니라 인증 입력이 고른다(다른 벤더 어댑터까지 켜지 않으려는 것이다). 그래서 항목마다 대조하는 대신, 잡이 그 축의 출력에 묶여 진입점을 돌리고,
+ * 그 진입점이 입력의 실행 코드에 닿고, 입력마다 분류기가 잡을 고르는지 본다.
+ */
+function vendorAxisMismatches({ files, read, inputs, selects }) {
+  const { entrypoints, reached } = toolPathEvidence({ files, read });
+  const problems = [];
+  if (!entrypoints.some(entry => entry.job === 'reusable-vendor' && entry.axes.includes(VENDOR_AXIS) && entry.paths.includes(VENDOR_ENTRY))) {
+    problems.push(`reusable-vendor 잡이 ${VENDOR_AXIS} 축의 출력으로 ${VENDOR_ENTRY} 를 돌리지 않는다`);
+  }
+  const running = reached.get(VENDOR_AXIS) ?? new Set();
+  for (const file of ['scripts/project-composer-vendor-integration.mjs', 'scripts/project-composer-vendor-differential.mjs', 'scripts/project-composer-vendor-oracle.mjs']) {
+    if (!running.has(file)) problems.push(`벤더 잡의 실행 경로가 ${file} 에 닿지 않는다`);
+  }
+  for (const input of inputs) if (!selects(input)) problems.push(`인증 입력이 벤더 잡을 켜지 않는다: ${input}`);
+  return problems;
+}
+
+test('the vendor job is bound to its output, reaches the vendor code it verifies and is selected by every input', () => {
+  const inputs = vendorInputs();
+  const selects = file => classifyChangedFiles([file]).reusableVendor;
+  const check = (read = readRepository) => vendorAxisMismatches({ files: repositoryFiles, read, inputs, selects });
+  assert.deepEqual(check(), []);
+  const editedCi = (from, to) => {
+    const ci = readRepository('.github/workflows/ci.yml');
+    assert.ok(ci.includes(from), from);
+    return file => (file === '.github/workflows/ci.yml' ? ci.replace(from, to) : readRepository(file));
+  };
+  // 잡을 다른 출력에 묶으면 입력이 바뀌어도 돌지 않는다. 이 계약이 그 출력을 몰랐던 것이 빈틈이었다.
+  assert.match(check(editedCi("outputs['reusable-vendor'] == 'true'", "outputs.backend == 'true'")).join('\n'), /reusable-vendor 잡이 reusableVendor 축의 출력으로/);
+  assert.match(check(editedCi('run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor', 'run: echo --layout ${{ matrix.layout }} --vendor')).join('\n'), /reusable-vendor 잡이 reusableVendor 축의 출력으로/);
+  const missing = 'scripts/project-composer-vendor-oracle.mjs';
+  assert.deepEqual(vendorAxisMismatches({ files: repositoryFiles, read: readRepository, inputs: [missing], selects: () => false }), [`인증 입력이 벤더 잡을 켜지 않는다: ${missing}`]);
+  // 벤더 어댑터와 생성기 화면 코드를 고친 변경은 입력이 아니면 잡을 켜지 않는다.
+  for (const file of ['scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-server.mjs']) assert.equal(selects(file), false, file);
+});
+
+test('the table cannot declare the vendor axis: certification inputs select that job, not path prefixes', () => {
+  const table = GENERATOR_TOOL_PATHS.map(entry => (entry.path === 'scripts/project-composer' ? { ...entry, axes: [...entry.axes, VENDOR_AXIS] } : entry));
+  const problems = toolPathMismatches({ files: repositoryFiles, read: readRepository, table });
+  assert.equal(problems.length, 1, problems.join('\n'));
+  assert.match(problems[0], /^scripts\/project-composer: reusableVendor 축은 표가 아니라 인증 입력이 고른다/);
+});
+
 const PRESET_IDS = presetIds();
 const HEAVY_UNRELATED = ['migration', 'mutation', 'mutationMigrationTool', 'frontend'];
 // PR 은 `ci.pr` 이 null 인 시작 구성(13b 의 인증 시작 구성)을 빼고 나머지를 한 레이아웃씩 돈다(DEC-OPS-296). 뺀 시작 구성은 main·T2 몫이다.
@@ -419,7 +477,7 @@ test('actual workspace engine inputs select packaged-test and conservative templ
     assert.deepEqual(generatorToolEntry(file), { path: file, exact: true, axes: expectedAxes });
     const result = classifyChangedFiles([file]);
     assert.deepEqual(result.unknownFiles, []);
-    for (const axis of AXES) assert.equal(result[axis], expectedAxes.includes(axis), `${file}: ${axis}`);
+    for (const axis of TABLE_AXES) assert.equal(result[axis], expectedAxes.includes(axis), `${file}: ${axis}`);
     for (const field of ['reusable', 'sast', 'secretScan']) assert.equal(result[field], true, `${file}: ${field}`);
     for (const suffix of ['.bak', '/nested.mjs', '.test.mjs']) {
       assert.equal(generatorToolEntry(file + suffix).path, 'tools/migration-workspace/');
@@ -443,7 +501,7 @@ test('generator scripts and feature declarations keep only the axes their reader
     assert.ok(entry, `${file} must be a generator-tool path`);
     const result = classifyChangedFiles([file]);
     assert.deepEqual(result.unknownFiles, [], file);
-    for (const axis of AXES) assert.equal(result[axis], entry.axes.includes(axis), `${file}: ${axis}`);
+    for (const axis of TABLE_AXES) assert.equal(result[axis], entry.axes.includes(axis), `${file}: ${axis}`);
     for (const field of HEAVY_UNRELATED) assert.equal(result[field], false, `${file}: ${field}`);
     assert.deepEqual(result.reusableProfiles, PRESET_IDS, file);
     assert.equal(result.reusableCustom, true, file);
@@ -464,7 +522,7 @@ test('generator-tool paths do not open a fast path around unknown, policy or cla
   }
   // 표는 닫힌 축 어휘만 쓰고, 축은 이름 순이다(표와 계약의 대조가 순서로 흔들리지 않게).
   for (const entry of GENERATOR_TOOL_PATHS) {
-    assert.ok(entry.axes.every(axis => AXES.includes(axis)), entry.path);
+    assert.ok(entry.axes.every(axis => TABLE_AXES.includes(axis)), entry.path);
     assert.deepEqual([...entry.axes], [...entry.axes].sort(), entry.path);
   }
 });

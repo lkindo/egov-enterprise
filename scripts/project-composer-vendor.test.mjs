@@ -38,6 +38,7 @@ import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from 
 import { DATABASE_VENDORS } from './project-composer-db.mjs';
 import { backendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
 import { createComposerEngine } from './project-composer.mjs';
+import { composerVerificationRecipe, parseComposerVerificationArgs } from './verify-project-composer.mjs';
 import { validateComposerRequestRecipe } from './project-composer-server.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
@@ -637,11 +638,41 @@ test('a unique counts as baseline only while its signature is unchanged, and eve
   assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), /유니크 서명 조회 실패: ORA-00942/);
 });
 
-test('a vendor cannot be certified while the catalog gate is not wired into CI', () => {
-  const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
+test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
   const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
-  const certified = ledger.vendors.filter(vendor => vendor.id !== 'postgresql' && vendor.status === 'certified').map(vendor => vendor.id);
-  assert.deepEqual(gate.ciPending ? certified : [], [], 'reusable-vendor 잡을 잇고 ciPending 을 지운 뒤에 승격한다');
+  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle']);
+  const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
+  assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
+  const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const load = mutate => {
+    const copy = JSON.parse(JSON.stringify(ledger));
+    mutate(copy.vendors.find(vendor => vendor.id === certifiedRow.id), copy);
+    const root = mkdtempSync(join(tmpdir(), 'vendor-ci-'));
+    try {
+      mkdirSync(join(root, 'config'));
+      writeFileSync(join(root, 'config/db-vendors.json'), JSON.stringify(copy));
+      return loadVendorLedger(root);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  };
+  assert.throws(() => load(vendor => { vendor.status = 'certified'; delete vendor.ci; }), /oracle: CI 벤더 잡\(ci\)이 없다/);
+  assert.throws(() => load((_, copy) => { copy.vendors.find(vendor => vendor.id === 'mysql').ci = true; }), /mysql: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
+  assert.throws(() => load(vendor => { vendor.ci = 'yes'; }), /oracle: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
+});
+
+test('the vendor CI entry generates the representative preset and leaves the PostgreSQL recipes as they were', () => {
+  const sourceRef = 'a'.repeat(40);
+  const recipe = args => composerVerificationRecipe({ sourceRef, preset: 'demo', ...args });
+  assert.deepEqual(recipe({ layout: 'multi-module' }), { schemaVersion: 1, project: { name: 'composer-multi-module' }, sourceRef,
+    selection: { domains: ['mail', 'schedule'] }, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+  assert.deepEqual(recipe({ layout: 'single-module' }), { schemaVersion: 1, project: { name: 'composer-single-module' }, sourceRef,
+    selection: { domains: ['board', 'survey'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });
+  assert.deepEqual(recipe({ layout: 'multi-module', vendor: 'oracle' }), { schemaVersion: 1, project: { name: 'composer-oracle-multi-module' }, sourceRef,
+    selection: { preset: 'demo' }, database: { vendor: 'oracle' }, backendLayout: 'multi-module' });
+  assert.deepEqual(parseComposerVerificationArgs(['--layout', 'single-module']), { layout: 'single-module', vendor: undefined });
+  assert.deepEqual(parseComposerVerificationArgs(['--layout', 'multi-module', '--vendor', 'oracle']), { layout: 'multi-module', vendor: 'oracle' });
+  for (const bad of [[], ['--layout'], ['--vendor', 'oracle'], ['--layout', 'multi-module', '--engine', 'oracle19'], ['--layout', 'multi-module', '--vendor']]) {
+    assert.throws(() => parseComposerVerificationArgs(bad), /Usage: verify-project-composer/, bad.join(' '));
+  }
 });
 
 test('the baseline is compared before anything else is applied, and the catalog test runs before the fixtures', () => {

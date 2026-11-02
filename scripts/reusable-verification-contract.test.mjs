@@ -262,6 +262,26 @@ function validatePipeline(workflow, manifest) {
   const errors = validateStaticContract({ manifest, ciContent: workflow });
   const job = parseWorkflowJobs(workflow).get('reusable-base') ?? '';
   const customJob = parseWorkflowJobs(workflow).get('reusable-custom') ?? '';
+  const vendorJob = parseWorkflowJobs(workflow).get('reusable-vendor') ?? '';
+  if (!/^      reusable-vendor: \$\{\{ steps\.scope\.outputs\.reusable_vendor \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the vendor selection flag');
+  }
+  if (!/^      reusable-vendor-matrix: \$\{\{ steps\.scope\.outputs\.reusable_vendor_matrix \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the vendor matrix');
+  }
+  for (const expected of [
+    /^    needs: \[change-scope\]$/m,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-vendor'\] == 'true'"$/m,
+    /^      fail-fast: false$/m,
+    /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-vendor-matrix'\]\) \}\}$/m,
+    /^          COMPOSER_PREVIEW_VENDOR: \$\{\{ matrix\.vendor \}\}$/m,
+    /^        run: node scripts\/verify-project-composer\.mjs --layout \$\{\{ matrix\.layout \}\} --vendor \$\{\{ matrix\.vendor \}\}$/m,
+    /^      - name: Retain vendor composition verification\n        if: always\(\)$/m,
+    /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
+    /^          if-no-files-found: error$/m,
+    /^    timeout-minutes: 45$/m,
+  ]) if (!expected.test(vendorJob)) errors.push(`missing vendor pipeline contract: ${expected}`);
+  if (/^\s*(?:continue-on-error|defaults):/m.test(vendorJob)) errors.push('vendor execution override is not allowed');
   if (!/^      reusable: \$\{\{ steps\.scope\.outputs\.reusable \}\}$/m.test(workflow)) {
     errors.push('change-scope must publish the reusable selection flag');
   }
@@ -336,12 +356,37 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
     assert.ok(validatePipeline(workflow.replace(customJob, changedJob), manifest).length,
       `negative mutation must fail custom pipeline contract: ${name}`);
   }
+  const vendorJob = parseWorkflowJobs(workflow).get('reusable-vendor');
+  for (const [name, mutate] of [
+    ['wrong scope', value => value.replace("outputs['reusable-vendor'] == 'true'", "outputs.backend == 'true'")],
+    ['static matrix', value => value.replace("fromJSON(needs.change-scope.outputs['reusable-vendor-matrix'])", "fromJSON('{\"include\":[]}')")],
+    ['missing vendor', value => value.replace(' --vendor ${{ matrix.vendor }}', '')],
+    ['missing preview grant', value => value.replace('          COMPOSER_PREVIEW_VENDOR: ${{ matrix.vendor }}\n', '')],
+    ['bypass command', value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass')],
+    ['missing artifact always', value => value.replace('        if: always()\n', '')],
+    ['advisory artifact', value => value.replace('if-no-files-found: error', 'if-no-files-found: warn')],
+    ['advisory job', value => value.replace('    steps:', '    continue-on-error: true\n    steps:')],
+    ['delayed admission', value => value.replace('    needs: [change-scope]', '    needs: [change-scope, frontend-scope]')],
+    ['ignores cancellation', value => value.replace('    if: "!cancelled()', '    if: "always()')],
+    ['longer slot hold', value => value.replace('timeout-minutes: 45', 'timeout-minutes: 60')],
+  ]) {
+    const changedJob = mutate(vendorJob);
+    assert.notEqual(changedJob, vendorJob, `negative mutation must change vendor job: ${name}`);
+    assert.ok(validatePipeline(workflow.replace(vendorJob, changedJob), manifest).length,
+      `negative mutation must fail vendor pipeline contract: ${name}`);
+  }
   for (const mutate of [
+    value => value.replace('reusable-vendor: ${{ steps.scope.outputs.reusable_vendor }}', 'reusable-vendor: false'),
+    value => value.replace('reusable-vendor-matrix: ${{ steps.scope.outputs.reusable_vendor_matrix }}', 'reusable-vendor-matrix: {}'),
     value => value.replace('reusable: ${{ steps.scope.outputs.reusable }}', 'reusable: false'),
     value => value.replace('reusable-custom: ${{ steps.scope.outputs.reusable_custom }}', 'reusable-custom: false'),
     value => value.replace('reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}', 'reusable-matrix: {}'),
   ]) assert.ok(validatePipeline(mutate(workflow), manifest).length);
-  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom]', 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]'), manifest).length);
+  for (const dropped of ['reusable-custom', 'reusable-vendor']) {
+    const needs = 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom, reusable-vendor]';
+    assert.ok(workflow.includes(needs));
+    assert.ok(validatePipeline(workflow.replace(needs, needs.replace(`, ${dropped}`, '')), manifest).length, dropped);
+  }
 });
 
 /*
