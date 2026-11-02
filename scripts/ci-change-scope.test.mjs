@@ -977,7 +977,7 @@ test('a pull request runs one layout, everything else both, and only the selecti
     assert.deepEqual(vendorFields(classifyChangedFiles([ORACLE_PORT], { event })), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH }, event);
   }
   for (const files of [['config/db-vendors.json'], ['config/governance/vendor-sql-ledger.json'], ['config/governance/vendor-test-ledger.json'], ['scripts/vendor-evidence-inputs.mjs'], ['scripts/ci-change-scope.mjs'],
-    ['docker-compose.yml'], ['docker-compose.prod.yml'], ['scripts/deploy.sh'], ['.env.example'], ['package.json'], []]) {
+    ['docker-compose.yml'], ['docker-compose.prod.yml'], ['scripts/deploy.sh'], ['.env.example'], ['package.json']]) {
     assert.deepEqual(vendorFields(classifyChangedFiles(files, PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, String(files));
   }
   // 미지 경로는 전 파이프라인을 고르지만 인증 입력이 아니면 이 잡은 켜지 않는다.
@@ -986,6 +986,10 @@ test('a pull request runs one layout, everything else both, and only the selecti
     assert.deepEqual([result.unknownFiles, result.backend, result.reusableVendor], [[file], true, false], file);
   }
   assert.deepEqual(vendorFields(classifyChangedFiles([], { forceFull: true, event: 'push' })), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH });
+  // 비교 기준을 찾지 못한 PR 은 무엇이 바뀌었는지 모른다. 입력 삭제일 수도 있으므로 두 레이아웃으로 닫는다.
+  for (const [files, options] of [[[], PR], [[], { ...PR, forceFull: true }], [['docs/README.md'], { ...PR, forceFull: true }]]) {
+    assert.deepEqual(vendorFields(classifyChangedFiles(files, options)), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH }, `no comparison range: ${JSON.stringify([files, options])}`);
+  }
   assert.deepEqual(vendorFields(classifyChangedFiles(['docs/README.md'], { event: 'push' })).reusableVendor, false);
 });
 

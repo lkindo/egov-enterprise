@@ -461,7 +461,7 @@ function loadVendorPlan() {
 }
 
 /**
- * 벤더 잡 선택. 인증 입력이나 원장의 ciOnly 경로가 바뀐 벤더만 돈다. PR 은 대표 레이아웃 하나, main·수동·이벤트 미상과 입력 삭제는 두 레이아웃 전수다.
+ * 벤더 잡 선택. 인증 입력이나 원장의 ciOnly 경로가 바뀐 벤더만 돈다. PR 은 대표 레이아웃 하나, main·수동·이벤트 미상과 입력 삭제·비교 범위 없는 실행은 두 레이아웃 전수다.
  * 미지 경로는 이 잡을 켜지 않는다. 켜면 전수 실행(main 150커밋 중 103개)마다 포화된 슬롯을 더 민다. 비교 범위가 없을 때만 전수다.
  * 이 목록은 잡이 닿는 코드 전부가 아니다. 벤더 분기가 없는 공통 생성기 코드와 표지 없는 파생 쿼리·서비스 코드는 켜지 않으므로 그 회귀는 다음에 잡을 켠 변경에서 드러난다(설계서 §10).
  * 고르지 않아도 matrix 는 비우지 않는다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
@@ -476,7 +476,7 @@ function reusableVendorSelection(files, { noRange, docsOnly, event, readSource, 
   const changes = plan.vendors.map(vendor => ({ vendor,
     states: files.map(file => vendorInputChange(plan, vendor, file, { head: readSource(file), readBase: () => readBaseSource(file) })) }));
   if (changes.some(({ states }) => states.includes('deleted'))) return { selected: true, matrix: matrixOf(plan.vendors, true) };
-  if (noRange) return { selected: true, matrix: matrixOf(plan.vendors, false) };
+  if (noRange) return { selected: true, matrix: matrixOf(plan.vendors, true) };
   const vendors = changes.filter(({ states }) => states.includes('changed')).map(({ vendor }) => vendor);
   return vendors.length > 0 ? { selected: true, matrix: matrixOf(vendors, false) } : { selected: false, matrix: matrixOf(plan.vendors, false) };
 }
