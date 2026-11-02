@@ -11,6 +11,7 @@ import { randomBytes } from 'node:crypto';
 import { existsSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { vendorExitCode } from './project-composer-errors.mjs';
 import { VENDOR_ENGINES, runAsAdministrator, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 import { applyVendor, assertVendorApplied } from './project-composer-vendor-verify.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
@@ -102,8 +103,9 @@ function migrateWithFlyway(vendorId, integration, handle, task, location) {
     env: { ...process.env, ...integrationEnvironment(vendorId, integration, { ...handle, owner: '' }), VENDOR_FLYWAY_LOCATION: location },
   });
   if (result.status !== 0) {
+    // Gradle 의 네트워크·메모리·컴파일 실패가 섞여 있어 대조 실패로 말할 수 없다.
     const error = new Error(`Flyway 기준선 적용 실패(종료 ${result.status})`);
-    error.code = 'VENDOR_PARITY_FAILED';
+    error.code = 'VENDOR_INTEGRATION_FAILED';
     throw error;
   }
 }
@@ -151,6 +153,6 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
     console.log(`[vendor-integration] PASS ${args.engine ?? args.vendor}`);
   } catch (error) {
     console.error(`[vendor-integration] ${error.code ?? 'FAILED'}: ${error.message}`);
-    process.exitCode = 1;
+    process.exitCode = vendorExitCode(error);
   }
 }

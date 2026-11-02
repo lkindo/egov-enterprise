@@ -2,7 +2,7 @@
  * 생성 작업의 상태와 화면에 보낼 모양(설계서 14.2·14.3·20장, E4b·E6a·E6b). 서버는 작업을 만들고 엔진 알림·결과를 여기로 넘긴다.
  * 엔진 값은 정해진 모양만 받고(어긋나면 버린다), 경과·남은 시간은 응답 시각에 서버 시계로 센다(엔진과 같은 프로세스다).
  */
-import { ComposerError, JOB_ERROR_CODES } from './project-composer-errors.mjs';
+import { ComposerError, JOB_ERROR_CODES, VERIFICATION_JOB_CODES } from './project-composer-errors.mjs';
 import { createLogMasker } from './project-composer-command.mjs';
 import { VERIFICATION_STEP_IDS } from './verify-reusable-artifact.mjs';
 import { HISTORY_LIMIT, HISTORY_MIN_RUNS, JOB_STAGES, TIMELINE_STATUSES } from './project-composer-timeline.mjs';
@@ -30,6 +30,10 @@ const JOB_MESSAGES = Object.freeze({
   SOURCE_SURVIVAL: '선택한 기능의 소스가 생성 중에 지워졌습니다. 생성기 결함이므로 진단 정보를 복사해 보고해 주세요.',
   MENU_SNAPSHOT_STALE: '메뉴 미리보기 자료가 원본 DB 변경을 따라가지 못해 생성을 멈췄습니다. 아래 명령으로 메뉴 자료를 갱신한 뒤 다시 생성해 주세요.',
   CATALOG_DRIFT: '기능 선언이 원본 코드와 맞지 않아 생성을 멈췄습니다. 개발자 정보의 위반을 고친 뒤 다시 생성해 주세요.',
+  // 번역은 모든 구성에서 돈다. PostgreSQL 을 고른 사용자에게도 나갈 수 있어 고른 DB 를 탓하지 않는다.
+  VENDOR_TRANSLATION_GAP: '기준 스키마에 지원 데이터베이스로 옮기는 규칙이 없는 항목이 있어 생성을 멈췄습니다. 같은 구성으로 다시 생성해도 결과가 같습니다. 진단 정보를 복사해 보고해 주세요.',
+  VENDOR_PARITY_FAILED: '대상 데이터베이스에 적용한 결과가 기준 스키마와 달라 검증을 멈췄습니다. 같은 구성으로 다시 생성해도 대개 결과가 같습니다. 아래 로그 끝부분을 확인하고 진단 정보를 복사해 보고해 주세요.',
+  VENDOR_ENGINE_NOT_READY: '대상 데이터베이스의 임시 컨테이너를 띄우지 못했거나 실행 중 연결이 끊겼습니다. 아래 로그 끝부분을 확인하고 Docker 상태와 메모리를 점검해 주세요.',
 });
 const JOB_ERRORS = Object.freeze({
   SOURCE_CHANGED: { stages: ['resolve', 'database', 'source'], action: 'reload-source' },
@@ -40,6 +44,10 @@ const JOB_ERRORS = Object.freeze({
   VERIFY_FAILED: { stages: ['verify'], command: 'scripts/verify-reusable-artifact.mjs' },
   MENU_SNAPSHOT_STALE: { stages: ['resolve', 'database'], action: 'copy-command' },
   CATALOG_DRIFT: { stages: ['resolve', 'database'], action: 'show-violations' },
+  VENDOR_TRANSLATION_GAP: { stages: ['database', 'source'], action: 'copy-diagnostics' },
+  // 대상 컨테이너는 검증의 백엔드 단계에만 있다.
+  VENDOR_PARITY_FAILED: { stages: ['verify'], command: 'scripts/verify-reusable-artifact.mjs', step: 'backend', action: 'copy-diagnostics' },
+  VENDOR_ENGINE_NOT_READY: { stages: ['verify'], command: 'scripts/verify-reusable-artifact.mjs', step: 'backend', action: 'recheck' },
 });
 // 도구가 쓰이는 생성 단계. 다른 단계에서 온 도구 없음은 엔진의 잘못된 분류로 보고 일반 실패로 말한다.
 const TOOL_STAGES = Object.freeze({ git: 'resolve', docker: 'database', frontend: 'source' });
@@ -92,6 +100,7 @@ export function jobError(error, failure) {
   if (!rule.stages.includes(failure?.stage)) return fallback;
   const details = plain(error.details) ? error.details : {};
   const code = error.code;
+  if (rule.step && (details.step !== rule.step || failure.commandId !== rule.command)) return fallback;
   if (code === 'VERIFY_FAILED') {
     const step = typeof details.step === 'string' && Object.hasOwn(VERIFY_STEP_LABELS, details.step) ? details.step : undefined;
     if (!step || failure.commandId !== rule.command) return fallback;
@@ -223,7 +232,7 @@ export function failJob(job, error, now = Date.now()) {
     return;
   }
   job.status = 'failed'; job.error = jobError(error, failure); job.message = job.error.message; job.finishedAtMs = now;
-  if (failure && job.error.code === 'VERIFY_FAILED') {
+  if (failure && VERIFICATION_JOB_CODES.includes(job.error.code)) {
     failure.step = error.details.step; failure.stepLabel = VERIFY_STEP_LABELS[failure.step];
     const tail = safeLogTail(error.failure.logTail);
     if (tail) failure.logTail = tail;

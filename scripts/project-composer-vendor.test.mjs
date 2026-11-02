@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -11,12 +12,13 @@ import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
-import { probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
+import { differentialExitCode, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
+import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
 import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { collectResults, parseCount, readCatalog, readNextValues, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
@@ -283,10 +285,12 @@ test('a client that stopped early is a failed run, not a rejected value', () => 
   const done = collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 3819 (HY000): Check constraint is violated\n@@COMPLETED\n' }, statements, errors, 'mysql');
   assert.deepEqual(done.errors.map(item => item.index), [1]);
   const notReady = error => error.code === 'VENDOR_ENGINE_NOT_READY';
-  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '문장 표식이 빠지면 실패다');
-  assert.throws(() => collectResults({ status: 137, stdout: '@@0\n@@1\n', stderr: 'Killed\n' }, statements, errors, 'mysql'), notReady, '마지막 문장 뒤의 단절도 실패다');
+  // 표식이 빠진 것은 끊김일 수도, 앞 문장이 스크립트를 삼킨 번역 결함일 수도 있어 대상 DB 탓으로 말하지 않는다.
+  const incomplete = error => error.code === 'VENDOR_RUN_INCOMPLETE';
+  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n@@COMPLETED\n' }, statements, errors, 'mysql'), incomplete, '문장 표식이 빠지면 실패다');
+  assert.throws(() => collectResults({ status: 137, stdout: '@@0\n@@1\n', stderr: 'Killed\n' }, statements, errors, 'mysql'), incomplete, '마지막 문장 뒤의 단절도 실패다');
   assert.throws(() => collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 2013 (HY000): Lost connection\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '연결 단절은 값 거부가 아니다');
-  assert.throws(() => collectResults({ status: 0, stdout: '' }, statements, errors, 'mysql'), notReady, '접속 실패의 빈 출력은 전부 통과가 아니다');
+  assert.throws(() => collectResults({ status: 0, stdout: '' }, statements, errors, 'mysql'), incomplete, '접속 실패의 빈 출력은 전부 통과가 아니다');
   assert.throws(() => collectResults({ status: null, signal: 'SIGTERM', stdout: '@@0\n@@1\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '시간 초과는 실패다');
   assert.throws(() => collectResults({ status: 1, error: new Error('spawn failed') }, statements, errors, 'mysql'), notReady);
   assert.equal(parseCount(['<00001>  count(*): 3']), 3);
@@ -793,4 +797,62 @@ esac
   const environment = projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_PASSWORD=egov123\n', 'oracle');
   assert.match(environment, new RegExp(`^DB_URL=${VENDOR_SOURCE.oracle.url}$`, 'm'));
   assert.match(environment, /^DB_ADMIN_PASSWORD=/m);
+});
+
+/*
+ * 종료 코드 표로 부모에게 가는 코드는 화면 문장이 곧이곧대로 말할 수 있는 실패여야 한다. 뜻이 넓은 자리는 다른 코드로 나누어 VERIFY_FAILED 로 남긴다.
+ */
+test('failures wider than the screen sentence do not carry a table code', () => {
+  const code = expected => error => error.code === expected && vendorExitCode(error) === 1;
+  const handle = { id: 'oracle', name: 'c', engine: VENDOR_ENGINES.oracle };
+  const refused = () => ({ sections: new Map(), errors: [{ index: 0, error: 'ORA-00942' }] });
+  assert.throws(() => stopVendorEngineReporting({ name: 'c' }, null, () => ({ status: 1 })), code('VENDOR_CONTAINER_LEFT'), '시험을 통과한 뒤의 정리 실패');
+  assert.throws(() => runAsAdministrator(handle, ['GRANT x'], () => ({ status: 1, stdout: '', stderr: 'ORA-01031' })), code('VENDOR_ADMIN_FAILED'), '관리자 문장 실패');
+  assert.throws(() => readCatalog(handle, 'oracle', refused), code('VENDOR_QUERY_FAILED'), '메타 조회 실패');
+  assert.throws(() => readNextValues(handle, 'oracle', refused), code('VENDOR_QUERY_FAILED'), '다음 값 조회 실패');
+  // Flyway Gradle 작업에는 네트워크·메모리·컴파일 실패가 섞이고, 대조 코드는 기준선 대조에서만 난다.
+  assert.doesNotMatch(readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8'), /'VENDOR_PARITY_FAILED'/);
+});
+
+test('only a real difference ends the differential as a parity failure', () => {
+  const report = extra => ({ differences: [], unbalanced: [], intentFailures: [], ...extra });
+  assert.equal(differentialExitCode(report()), 0);
+  assert.equal(differentialExitCode(report({ differences: [{}] })), VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED);
+  assert.equal(differentialExitCode(report({ intentFailures: ['x'] })), VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED);
+  assert.equal(differentialExitCode(report({ unbalanced: ['ck_a'] })), 1, '표본 부족은 시험 표본의 문제다');
+  assert.equal(differentialExitCode(report({ unbalanced: ['ck_a'], differences: [{}] })), VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED, '진짜 불일치가 앞선다');
+});
+
+/** 명령을 임시 폴더로 옮겨 실행한다. 명령의 ROOT 가 임시 폴더가 되어 저장소의 시험 결과 폴더를 지우지 않는다. */
+function copyWithImports(directory, file, seen = new Set()) {
+  if (seen.has(file)) return;
+  seen.add(file);
+  const source = readFileSync(join(ROOT, 'scripts', file), 'utf8');
+  writeFileSync(join(directory, 'scripts', file), source);
+  for (const [, next] of source.matchAll(/from '\.\/([^']+\.mjs)'/g)) copyWithImports(directory, next, seen);
+}
+
+test('a vendor command tells its parent the code through its real exit code when Docker cannot run', t => {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-exit-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  mkdirSync(join(directory, 'scripts'));
+  const [integration, differential] = ['project-composer-vendor-integration.mjs', 'project-composer-vendor-differential.mjs'];
+  copyWithImports(directory, integration);
+  copyWithImports(directory, differential);
+  writeFileSync(join(directory, 'input.json'), '{}');
+  const env = { PATH: join(directory, 'no-tools'), ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) };
+  const run = script => spawnSync(process.execPath, [`scripts/${script}`, '--input', 'input.json', '--vendor', 'oracle'], { cwd: directory, env, encoding: 'utf8' });
+  const engine = run(integration);
+  assert.equal(engine.status, VENDOR_EXIT_CODES.VENDOR_ENGINE_NOT_READY, engine.stderr);
+  assert.match(engine.stderr, /^\[vendor-integration\] VENDOR_ENGINE_NOT_READY: /m);
+  // 기준 PostgreSQL 을 띄우지 못한 것은 대상 DB 의 문제가 아니다.
+  const baseline = run(differential);
+  assert.equal(baseline.status, 1, baseline.stderr);
+  assert.match(baseline.stderr, /^\[vendor-differential\] FAILED: 기준 PostgreSQL 을 띄우지 못했다/m);
+  // 기준 DB 에서 문장을 돌리지 못한 것도 번역 불가가 아니다.
+  writeFileSync(join(directory, 'empty.json'), JSON.stringify({ snapshot: { tables: [], columns: [], constraints: [], indexes: [], triggers: [], sequences: [] },
+    extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } }));
+  const applied = spawnSync(process.execPath, [`scripts/${differential}`, '--input', 'empty.json', '--vendor', 'oracle', '--container', 'c', '--user', 'u', '--database', 'd'], { cwd: directory, env, encoding: 'utf8' });
+  assert.equal(applied.status, 1, applied.stderr);
+  assert.match(applied.stderr, /^\[vendor-differential\] VENDOR_BASELINE_FAILED: /m);
 });

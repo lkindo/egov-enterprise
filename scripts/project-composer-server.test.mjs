@@ -290,6 +290,9 @@ test('every job code has a rule, a Korean sentence and a stage, and verification
     VERIFY_FAILED: [{ step: 'lint' }, verifyFailure(), 'copy-diagnostics'],
     MENU_SNAPSHOT_STALE: [{}, { stage: 'database' }, 'copy-command'],
     CATALOG_DRIFT: [{ violations: ['first'] }, { stage: 'database' }, 'show-violations'],
+    VENDOR_TRANSLATION_GAP: [{}, { stage: 'database' }, 'copy-diagnostics'],
+    VENDOR_PARITY_FAILED: [{ step: 'backend' }, verifyFailure(), 'copy-diagnostics'],
+    VENDOR_ENGINE_NOT_READY: [{ step: 'backend' }, verifyFailure(), 'recheck'],
   };
   // 취소는 실패 문장이 아니라 취소된 작업으로 끝난다(취소 시험이 따로 본다).
   assert.deepEqual(Object.keys(cases).sort(), JOB_ERROR_CODES.filter(code => code !== 'CANCELLED').sort(), 'the table covers every job code');
@@ -806,4 +809,67 @@ test('shutdown cancels the running job and waits for its cleanup, and says so wh
   assert.equal(await other.app.shutdown({ timeoutMs: 30 }), false, 'a cleanup that outlasts the wait is reported');
   stuck.release();
   assert.equal(await (await fixture(t)).app.shutdown({ timeoutMs: 30 }), true, 'with no job there is nothing to wait for');
+});
+
+/*
+ * 벤더 코드도 같은 신뢰 경계를 지난다. 코드가 붙어 있어도 단계·명령·검증 단계가 그 코드의 자리가 아니면 일반 실패다.
+ */
+test('a vendor job code is trusted only at the stage, command and step that can produce it', async t => {
+  const backend = { step: 'backend' };
+  for (const code of ['VENDOR_PARITY_FAILED', 'VENDOR_ENGINE_NOT_READY']) {
+    const job = await jobFailureFixture(t, coded(code, backend), verifyFailure({ logTail: ['[reusable-verify] custom/multi-module: node x', 'ORA-00001'] }));
+    assert.equal(job.error.code, code);
+    assert.deepEqual([job.failure.step, job.failure.stepLabel], ['backend', VERIFY_STEP_LABELS.backend], code);
+    assert.deepEqual(job.failure.logTail, ['[reusable-verify] custom/multi-module: node x', 'ORA-00001']);
+    assert.doesNotMatch(JSON.stringify(job), /private-detail/);
+    for (const [details, failure, label] of [
+      [backend, verifyFailure({ stage: 'database' }), 'DB 단계에 대상 컨테이너는 없다'], [backend, verifyFailure({ stage: 'source' }), '소스 단계'],
+      [backend, verifyFailure({ commandId: 'docker' }), '다른 명령'], [backend, { stage: 'verify' }, '명령 없음'],
+      [{ step: 'lint' }, verifyFailure(), '다른 검증 단계'], [{}, verifyFailure(), '검증 단계 없음'], [{ step: 'constructor' }, verifyFailure(), '이상한 단계'],
+    ]) {
+      const refused = await jobFailureFixture(t, coded(code, details), failure);
+      assert.equal(refused.error.code, 'GENERATION_FAILED', `${code}: ${label}`);
+      assert.equal(refused.failure?.logTail, undefined, label);
+    }
+    assert.equal((await jobFailureFixture(t, Object.assign(new Error('x'), { code, details: backend }), verifyFailure())).error.code, 'GENERATION_FAILED', '코드만 흉내 낸 오류');
+  }
+  // 번역 불가는 자식 생성기 단계의 코드다. 검증 단계에서 온 코드는 일반 실패로 말한다(그 경로는 종료 코드 1 이라 VERIFY_FAILED 로 온다).
+  for (const stage of ['database', 'source']) assert.equal((await jobFailureFixture(t, coded('VENDOR_TRANSLATION_GAP'), { stage })).error.code, 'VENDOR_TRANSLATION_GAP', stage);
+  for (const failure of [verifyFailure(), { stage: 'resolve' }, { stage: 'install' }]) {
+    assert.equal((await jobFailureFixture(t, coded('VENDOR_TRANSLATION_GAP'), failure)).error.code, 'GENERATION_FAILED', failure.stage);
+  }
+  const translation = await jobFailureFixture(t, coded('VENDOR_TRANSLATION_GAP'), { stage: 'source' });
+  assert.doesNotMatch(translation.error.message, /PostgreSQL|Oracle/, '번역은 모든 구성에서 돈다. 고른 DB 를 탓하지 않는다');
+});
+
+test('preflight takes a selectable vendor only, and overlapping requests share a run per commit and vendor', async t => {
+  const asked = [];
+  const checks = [{ id: 'docker', status: 'pass', label: 'Docker 엔진이 응답합니다' }];
+  const { post } = await fixture(t, { preflight: async options => { asked.push(options); return { checks, blocked: false }; }, selectableVendors: () => ['postgresql', 'oracle'] });
+  for (const vendor of ['postgresql', 'oracle']) assert.equal((await post('/api/preflight', { sourceCommit: SCREEN, vendor })).status, 200, vendor);
+  assert.deepEqual(asked, [{ sourceCommit: SCREEN, vendor: 'postgresql' }, { sourceCommit: SCREEN, vendor: 'oracle' }]);
+  for (const vendor of ['mysql', 'tibero', '', 'constructor', 42, null, ['oracle']]) {
+    assert.equal((await post('/api/preflight', { sourceCommit: SCREEN, vendor })).status, 400, JSON.stringify(vendor));
+  }
+  assert.equal(asked.length, 2, 'rejected vendors never reach the engine');
+  // 원장 판정을 못 받는 엔진은 PostgreSQL 만 받는다.
+  const plain = await fixture(t, { preflight: async () => ({ checks, blocked: false }) });
+  assert.equal((await plain.post('/api/preflight', { sourceCommit: SCREEN, vendor: 'postgresql' })).status, 200);
+  assert.equal((await plain.post('/api/preflight', { sourceCommit: SCREEN, vendor: 'oracle' })).status, 400);
+  // 벤더별로 겹친 요청을 합친다. 다른 벤더의 점검 결과를 받으면 이미지·메모리 항목이 어긋난다.
+  let release;
+  const gate = new Promise(resolve => { release = resolve; });
+  const overlapped = [];
+  const shared = await fixture(t, { preflight: async options => { overlapped.push(options.vendor); await gate; return { checks, blocked: false }; }, selectableVendors: () => ['postgresql', 'oracle'] });
+  let arrived = 0;
+  const allArrived = new Promise(resolve => shared.app.server.on('request', request => {
+    if (request.url === '/api/preflight') request.on('end', () => { arrived += 1; if (arrived === 3) resolve(); });
+  }));
+  const pending = [shared.post('/api/preflight', { sourceCommit: SCREEN, vendor: 'oracle' }), shared.post('/api/preflight', { sourceCommit: SCREEN, vendor: 'oracle' }),
+    shared.post('/api/preflight', { sourceCommit: SCREEN, vendor: 'postgresql' })];
+  await allArrived;
+  await new Promise(resolve => setTimeout(resolve, 20));
+  release();
+  await Promise.all(pending);
+  assert.deepEqual(overlapped.sort(), ['oracle', 'postgresql']);
 });

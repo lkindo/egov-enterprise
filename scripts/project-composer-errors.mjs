@@ -22,7 +22,16 @@ export const REQUEST_ERROR_CODES = Object.freeze(['INVALID_NAME', 'INVALID_RECIP
  * ComposerError 가 아닌 오류를 모두 일반 실패(GENERATION_FAILED)로 말한다. 작업 취소(CANCELLED)는 오류가 아니라 취소된 작업으로 끝난다(E6b).
  */
 export const JOB_ERROR_CODES = Object.freeze(['SOURCE_CHANGED', 'TOOL_UNAVAILABLE', 'DB_NOT_READY', 'OUTPUT_CONFLICT', 'SOURCE_SURVIVAL',
-  'VERIFY_FAILED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'CANCELLED']);
+  'VERIFY_FAILED', 'MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'CANCELLED', 'VENDOR_TRANSLATION_GAP', 'VENDOR_PARITY_FAILED', 'VENDOR_ENGINE_NOT_READY']);
+/** 검증 단계에서 나는 작업 코드. 실패한 검증 단계와 가린 로그 끝부분을 함께 보인다. */
+export const VERIFICATION_JOB_CODES = Object.freeze(['VERIFY_FAILED', 'VENDOR_PARITY_FAILED', 'VENDOR_ENGINE_NOT_READY']);
+/**
+ * 벤더 검증 명령이 작업 코드를 전하는 유일한 통로다. 그 명령은 검증기의 자식이라 종료 코드만 검증 보고서에 남고, 로그 글자는 시험 출력이 위조할 수 있다.
+ * 표 밖의 실패는 뜻이 넓어(Gradle 실패·표본 부족 등) 종료 코드 1, 곧 VERIFY_FAILED 로 남는다. 40번대는 Node 자체 종료 코드(1~13, 128 초과)와 겹치지 않는다.
+ */
+export const VENDOR_EXIT_CODES = Object.freeze({ VENDOR_PARITY_FAILED: 40, VENDOR_ENGINE_NOT_READY: 41 });
+export const vendorExitCode = error => (typeof error?.code === 'string' && Object.hasOwn(VENDOR_EXIT_CODES, error.code) ? VENDOR_EXIT_CODES[error.code] : 1);
+export const vendorCodeOfExit = exitCode => Object.keys(VENDOR_EXIT_CODES).find(code => VENDOR_EXIT_CODES[code] === exitCode);
 /** 메뉴 미리보기 자료를 갱신하는 명령. 화면은 이 문자열만 보이고, 생성기 서버는 명령을 실행하지 않는다. */
 export const MENUS_REFRESH_COMMAND = 'npm run project:menus:refresh';
 

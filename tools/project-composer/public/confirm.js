@@ -48,7 +48,7 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     $('preflight-list').replaceChildren();
     $('preflight-status').textContent = '이 컴퓨터의 생성 환경을 점검하고 있습니다…';
     try {
-      const { preflight } = await api('/api/preflight', { sourceCommit: state.catalog.sourceCommit });
+      const { preflight } = await api('/api/preflight', { sourceCommit: state.catalog.sourceCommit, vendor: recipe().database.vendor });
       if (stale()) return null;
       $('preflight-list').replaceChildren(...preflight.checks.map(check => {
         const item = text('li', '', 'flex gap-2');

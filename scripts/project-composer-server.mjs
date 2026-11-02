@@ -190,8 +190,11 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
   const runs = new Set();
   let active;
   let latest;
-  // 점검은 명령 여러 개를 띄운다. 같은 원본 커밋을 묻는 겹친 요청은 진행 중인 점검 하나를 함께 기다린다.
+  // 점검은 명령 여러 개를 띄운다. 같은 원본 커밋·벤더를 묻는 겹친 요청은 진행 중인 점검 하나를 함께 기다린다.
   const preflightRuns = new Map();
+  const readSelectableVendors = () => {
+    try { return engine.selectableVendors?.(); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
+  };
   const server = createServer(async (request, response) => {
     secureHeaders(response);
     try {
@@ -242,24 +245,25 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         }
         if (path === '/api/preflight') {
           // 원본 비교는 점검을 요청한 화면이 카탈로그를 받은 때의 커밋과 한다(탭마다 다를 수 있다).
-          if (!keys(input, ['sourceCommit']) || typeof input.sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(input.sourceCommit)) {
+          if (!keys(input, ['sourceCommit', 'vendor']) || typeof input.sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(input.sourceCommit)) {
             throw new HttpError(400, 'BAD_REQUEST');
           }
-          const { sourceCommit } = input;
-          if (!preflightRuns.has(sourceCommit)) {
-            preflightRuns.set(sourceCommit, Promise.resolve().then(() => engine.preflight({ sourceCommit }))
-              .finally(() => preflightRuns.delete(sourceCommit)));
+          const { sourceCommit, vendor } = input;
+          // 고를 수 없는 벤더는 점검하지 않는다. 판정은 생성 요청과 같은 원장이다.
+          if (vendor !== undefined && !(readSelectableVendors() ?? ['postgresql']).includes(vendor)) throw new HttpError(400, 'BAD_REQUEST');
+          const run = JSON.stringify([sourceCommit, vendor ?? null]);
+          if (!preflightRuns.has(run)) {
+            preflightRuns.set(run, Promise.resolve().then(() => engine.preflight({ sourceCommit, ...(vendor === undefined ? {} : { vendor }) }))
+              .finally(() => preflightRuns.delete(run)));
           }
           let result;
-          try { result = await preflightRuns.get(sourceCommit); } catch { throw new HttpError(500, 'PREFLIGHT_FAILED'); }
+          try { result = await preflightRuns.get(run); } catch { throw new HttpError(500, 'PREFLIGHT_FAILED'); }
           json(response, 200, { preflight: safePreflight(result) });
           return;
         }
         const allowed = { '/api/jobs': ['recipe', 'requestId'], '/api/plan/diff': ['recipe', 'domain'] }[path] ?? ['recipe'];
         if (!keys(input, allowed)) throw new HttpError(400, 'BAD_REQUEST');
-        let selectable;
-        try { selectable = engine.selectableVendors?.(); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
-        const recipe = validateComposerRequestRecipe(input.recipe, selectable);
+        const recipe = validateComposerRequestRecipe(input.recipe, readSelectableVendors());
         if (path === '/api/plan/deep') {
           let deep;
           // 코드가 붙은 오류(입력·원본 변경·선언 불일치 등)는 그 코드로, 그 밖의 엔진 오류는 점검 실패로 답한다(내용은 숨긴다).

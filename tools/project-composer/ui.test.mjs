@@ -2287,3 +2287,43 @@ test('a cancel that failed to reach the server leaves no reason once the job end
   await expect(page.locator('#job-cancel-status'), 'a connection error is not true next to the result').toHaveText('');
   assert.deepEqual(pageErrors, []);
 });
+
+test('a vendor verification failure names the step and offers only its own action', { timeout: 60_000 }, async t => {
+  const tail = ['[reusable-verify] custom/single-module: node scripts/project-composer-vendor-integration.mjs', 'ORA-02290 check constraint violated'];
+  const failure = code => jobFailure(code, { step: 'backend' }, { stage: 'verify', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, log: JOB_LOG, report: JOB_REPORT, sourceCommit: 'a'.repeat(40), logTail: tail });
+  const failures = [failure('VENDOR_PARITY_FAILED'), failure('VENDOR_ENGINE_NOT_READY')];
+  let next = 0;
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async () => { throw failures[next++]; } }, { permissions: ['clipboard-read', 'clipboard-write'] });
+  await startFailingJob(page, launchUrl);
+  const actions = page.locator('#job-actions');
+  await expect(page.locator('#job-error')).toContainText('대상 데이터베이스에 적용한 결과가 기준 스키마와 달라');
+  await expect(page.locator('#job-failure')).toContainText('실패 단계: 생성 프로젝트 검증 · 백엔드 컴파일·테스트');
+  await page.locator('#job-log-tail summary').click();
+  await expect(page.locator('#job-log-tail-lines')).toHaveText(tail.join('\n'));
+  // 대조 실패는 다시 생성을 권하지 않는다. 진단 정보는 식별자만 담는다.
+  await expect(actions.getByRole('button', { name: '다시 생성' })).toHaveCount(0);
+  await actions.getByRole('button', { name: '진단 정보 복사' }).click();
+  await expect(page.locator('#job-actions [role="status"]')).toHaveText('진단 정보를 복사했습니다.');
+  assert.equal((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n'),
+    ['코드: VENDOR_PARITY_FAILED:backend', '단계: verify', `원본 커밋: ${'a'.repeat(40)}`, `작업 보고서: ${JOB_REPORT}`].join('\n'));
+  // 엔진 미준비는 환경 문제라 최종 확인 창의 환경 점검으로 간다.
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toContainText('대상 데이터베이스의 임시 컨테이너를 띄우지 못했거나 실행 중 연결이 끊겼습니다');
+  await expect(actions.getByRole('button', { name: '진단 정보 복사' })).toHaveCount(0);
+  await actions.getByRole('button', { name: '생성 환경 다시 점검' }).click();
+  await expect(page.getByRole('dialog', { name: '이 구성으로 생성할까요?' })).toBeVisible();
+  await expect(page.locator('#job-panel')).not.toContainText('private-detail');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('the final check asks the environment check about the chosen database', { timeout: 45_000 }, async t => {
+  const asked = [];
+  const { page, pageErrors, release } = await realCatalogPage(t, { preflight: options => { asked.push(options); return passingPreflight(); } });
+  await page.locator('#capability-mail').check();
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await expect(page.locator('#preflight-status')).toHaveText('생성 환경 점검을 모두 통과했습니다.');
+  assert.deepEqual(asked, [{ sourceCommit: 'a'.repeat(40), vendor: 'postgresql' }]);
+  assert.deepEqual(pageErrors, []);
+  release();
+});

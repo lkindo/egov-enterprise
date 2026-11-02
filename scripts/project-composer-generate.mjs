@@ -89,7 +89,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     const history = readJobHistory(outputRoot);
     const emit = () => {
       const snapshot = timeline.snapshot();
-      try { onProgress({ stage, progress: snapshot.progress, timeline: snapshot, estimate: estimateRemaining(history, { layout: recipe?.backendLayout, snapshot }) }); }
+      try { onProgress({ stage, progress: snapshot.progress, timeline: snapshot, estimate: estimateRemaining(history, { layout: recipe?.backendLayout, vendor: verificationVendor(recipe?.database), snapshot }) }); }
       catch { /* 알림을 받는 쪽의 오류가 생성 결과를 바꾸지 않는다. */ }
     };
     const cancelled = () => Boolean(signal?.aborted);
@@ -101,7 +101,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     // 끝난 작업을 이력 색인에 남긴다. 색인은 남은 시간 추정용이라 쓰지 못해도 생성 결과는 그대로다(작업 보고서에도 같은 값이 있다).
     const recordHistory = (result, snapshot) => {
       if (!paths || !composition) return;
-      try { appendJobHistory(outputRoot, historyEntry({ job: basename(paths.jobDirectory), layout: composition.backendLayout, result, snapshot })); }
+      try { appendJobHistory(outputRoot, historyEntry({ job: basename(paths.jobDirectory), layout: composition.backendLayout, vendor: verificationVendor(composition.database), result, snapshot })); }
       catch { /* 다음 작업의 남은 시간 추정에서 이 작업이 빠질 뿐이다. */ }
     };
     let outcome;

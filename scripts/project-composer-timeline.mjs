@@ -108,6 +108,7 @@ const plain = value => value !== null && typeof value === 'object' && !Array.isA
 const validEntry = entry => plain(entry) && typeof entry.job === 'string' && /^[a-z0-9-]{1,90}$/.test(entry.job)
   && typeof entry.finishedAt === 'string' && Number.isFinite(Date.parse(entry.finishedAt)) && ['passed', 'failed', 'cancelled'].includes(entry.result)
   && LAYOUTS.includes(entry.layout) && plain(entry.durations)
+  && (entry.vendor === undefined || (typeof entry.vendor === 'string' && /^[a-z0-9]{1,32}$/.test(entry.vendor)))
   && Object.entries(entry.durations).every(([id, value]) => ITEMS.includes(id) && duration(value));
 
 /** 작업 이력 색인을 읽는다. 없거나 깨졌거나 모르는 형식이면 빈 이력이다(남은 시간을 말하지 않을 뿐이다). */
@@ -118,11 +119,11 @@ export function readJobHistory(outputRoot) {
   } catch { return []; }
 }
 
-/** 끝난 작업의 이력 항목. 소요 시간을 잰 단계만 싣는다. */
-export function historyEntry({ job, layout, result, finishedAt = new Date().toISOString(), snapshot }) {
+/** 끝난 작업의 이력 항목. 소요 시간을 잰 단계만 싣는다. PostgreSQL 항목은 vendor 가 없다(옛 기록과 같은 모양이다). */
+export function historyEntry({ job, layout, vendor, result, finishedAt = new Date().toISOString(), snapshot }) {
   const durations = {};
   for (const item of [...snapshot.stages, ...snapshot.steps]) if (duration(item.durationMs)) durations[item.id] = item.durationMs;
-  return { job, finishedAt, result, layout, durations };
+  return { job, finishedAt, result, layout, ...(vendor ? { vendor } : {}), durations };
 }
 
 /**
@@ -147,15 +148,15 @@ const median = values => {
   return sorted.length % 2 ? sorted[middle] : Math.round((sorted[middle - 1] + sorted[middle]) / 2);
 };
 /**
- * 남은 시간. 같은 배치로 끝까지 마친 최근 기록(최대 20건)에서 남은 단계마다 측정값이 3개 이상이면 중앙값을 쓴다. 검증은 일곱 단계 값으로 센다.
+ * 남은 시간. 같은 배치·같은 벤더로 끝까지 마친 최근 기록(최대 20건)에서 남은 단계마다 측정값이 3개 이상이면 중앙값을 쓴다. 검증은 일곱 단계 값으로 센다.
  * 대기 중인 단계의 합(pendingMs)과 진행 중인 단계의 보통 시간(running)을 나눠 돌려준다 — 받는 쪽이 진행 중인 단계에서만 지난 시간을 빼고
  * 0 아래로 내리지 않게(한 단계가 늦어져도 뒤 단계의 몫을 깎지 않는다). remainingMs 는 now 시점의 같은 계산이다.
  * 측정값이 모자라면 remainingMs 는 null 이고, 남은 단계가 없으면(끝난 작업) 추정하지 않는다(undefined).
  */
-export function estimateRemaining(history, { layout, snapshot, now = Date.now() }) {
+export function estimateRemaining(history, { layout, vendor, snapshot, now = Date.now() }) {
   const items = [...snapshot.stages.filter(item => item.id !== 'verify'), ...snapshot.steps].filter(item => ['pending', 'running'].includes(item.status));
   if (!items.length) return undefined;
-  const runs = history.filter(entry => entry.result === 'passed' && entry.layout === layout).slice(-HISTORY_SAMPLE);
+  const runs = history.filter(entry => entry.result === 'passed' && entry.layout === layout && entry.vendor === vendor).slice(-HISTORY_SAMPLE);
   let pendingMs = 0;
   let running = null;
   for (const item of items) {

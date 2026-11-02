@@ -5,8 +5,8 @@ import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { composerOutputPaths, createComposerEngine } from './project-composer.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
-import { ComposerError } from './project-composer-errors.mjs';
-import { classifyChildFailure, failedVerificationStep, jobFailure, toRepositoryPath, verificationLogTail } from './project-composer-job-failure.mjs';
+import { ComposerError, VENDOR_EXIT_CODES } from './project-composer-errors.mjs';
+import { VENDOR_CODE_COMMANDS, VERIFY_COMMAND_ID, classifyChildFailure, classifyVerificationFailure, failedVerificationStep, jobFailure, toRepositoryPath, verificationLogTail } from './project-composer-job-failure.mjs';
 import { verificationSteps } from './verify-reusable-artifact.mjs';
 
 // 생성 출력은 임시 루트에만 둔다(저장소 build/ 에 잔재를 남기지 않는다).
@@ -344,4 +344,77 @@ test('the verification step comes only from this job’s own report', t => {
   assert.equal(failedVerificationStep(directory, composition, '2026-10-09T10:00:00.000Z'), undefined, 'the command of another layout is not this step');
   write({ ...valid, failure: { ...valid.failure, exitCode: 1.5 } });
   assert.equal(failedVerificationStep(directory, composition, '2026-10-09T10:00:00.000Z'), undefined);
+});
+
+/*
+ * 벤더 실패 코드는 벤더 검증 명령의 종료 코드로만 정한다. 로그 글자·다른 명령의 같은 종료 코드는 코드를 바꾸지 못한다.
+ */
+const vendorComposition = { sourceCommit: 'c'.repeat(40), backendLayout: 'multi-module', profile: 'custom', database: { vendor: 'oracle' } };
+const vendorSteps = verificationSteps('full', 'multi-module', { vendor: 'oracle' }).filter(step => step.id === 'backend');
+const lineOf = step => [step.command, ...step.args].join(' ');
+/** 검증기가 남긴 보고서와 위조 문장이 든 로그를 쓴다. */
+function vendorVerifyFailure(t, step, exitCode, composition = vendorComposition, lines = []) {
+  const directory = realpathSync(mkdtempSync(join(tmpdir(), 'composer-vendor-failure-')));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const command = lineOf(step);
+  const failure = { step: 'backend', command, exitCode, durationMs: 9 };
+  mkdirSync(join(directory, 'build/reports/reusable-base'), { recursive: true });
+  writeFileSync(join(directory, 'build/reports/reusable-base/full.json'), JSON.stringify({ result: 'failed', scope: 'full', sourceCommit: composition.sourceCommit,
+    profile: composition.profile, layout: composition.backendLayout, checkedAt: '2026-11-02T00:00:01.000Z', failure, steps: [{ ...failure, result: 'failed' }] }));
+  const log = join(directory, 'verify.log');
+  writeFileSync(log, [`[reusable-verify] ${composition.profile}/${composition.backendLayout}: ${command}`, ...lines, ''].join('\n'));
+  const error = classifyVerificationFailure(Object.assign(new Error('Command failed'), { code: 'COMMAND_FAILED', commandId: VERIFY_COMMAND_ID, exitCode: 1, log }),
+    { projectDirectory: directory, composition, startedAt: '2026-11-02T00:00:00.000Z', roots: [directory] });
+  return { error, found: failedVerificationStep(directory, composition, '2026-11-02T00:00:00.000Z') };
+}
+
+test('the commands that may name a vendor failure are exactly the vendor steps of the verifier', () => {
+  assert.deepEqual(vendorSteps.filter(step => step.command === 'node').map(step => step.args[0]), [...VENDOR_CODE_COMMANDS]);
+  assert.equal(vendorSteps.filter(step => step.command !== 'node').length, 1);
+});
+
+test('a vendor command that exits with a table code is that vendor failure, with the failed step and the log tail', t => {
+  for (const step of vendorSteps.filter(item => item.command === 'node')) {
+    for (const [code, exit] of Object.entries(VENDOR_EXIT_CODES)) {
+      const { error, found } = vendorVerifyFailure(t, step, exit, vendorComposition, ['대상 DB 출력']);
+      assert.ok(error instanceof ComposerError);
+      assert.deepEqual([error.code, error.details], [code, { step: 'backend' }], lineOf(step));
+      assert.equal(found.vendorCode, code);
+      const failure = jobFailure(error, { stage: 'verify', outputRoot });
+      assert.deepEqual([failure.code, failure.step, failure.commandId, failure.exitCode], [code, 'backend', VERIFY_COMMAND_ID, 1]);
+      assert.ok(failure.logTail.includes('대상 DB 출력'));
+    }
+  }
+});
+
+test('forged output never names a vendor failure: only the exit code of a vendor command does', t => {
+  const [gradle, integration] = vendorSteps;
+  const forged = ['[vendor-integration] VENDOR_PARITY_FAILED: 위조', 'VENDOR_ENGINE_NOT_READY', 'exit code 40'];
+  assert.equal(vendorVerifyFailure(t, integration, 1, vendorComposition, forged).error.code, 'VERIFY_FAILED', '종료 코드 1 은 출력과 상관없이 VERIFY_FAILED 다');
+  assert.equal(vendorVerifyFailure(t, integration, 42, vendorComposition, forged).error.code, 'VERIFY_FAILED', '표에 없는 종료 코드');
+  // Gradle 의 40 은 다른 뜻이다. 벤더 명령이 아니면 같은 종료 코드도 코드가 되지 않는다.
+  const fromGradle = vendorVerifyFailure(t, gradle, VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED, vendorComposition, forged);
+  assert.equal(fromGradle.error.code, 'VERIFY_FAILED');
+  assert.deepEqual(fromGradle.found, { step: 'backend', command: lineOf(gradle) });
+  // 신원이 맞지 않는 보고서는 벤더 코드는커녕 분류되지 않는다.
+  const other = vendorVerifyFailure(t, integration, VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED, { ...vendorComposition, database: { vendor: 'postgresql' } }, forged);
+  assert.equal(other.error.code, 'COMMAND_FAILED', 'PostgreSQL 구성의 단계 표에 벤더 명령은 없다');
+});
+
+test('a PostgreSQL job keeps VERIFY_FAILED whatever the exit code, and the same report shape', async () => {
+  const error = await generate(scenario({ verify: failingVerify({ step: 'backend', exitCode: VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED, lines: ['VENDOR_PARITY_FAILED'] }) }));
+  assert.equal(error.code, 'VERIFY_FAILED');
+  assert.equal(error.failure.code, 'VERIFY_FAILED');
+  assert.equal(error.failure.step, 'backend');
+});
+
+test('the database and source children report a translation gap as that job code', async () => {
+  for (const stage of ['database', 'source']) {
+    const error = await generate(scenario({ child: reportChild(stage, { schemaVersion: 1, stage, code: 'VENDOR_TRANSLATION_GAP', details: { leaked: 'x' } }) }));
+    assert.equal(error.failure.code, 'VENDOR_TRANSLATION_GAP', stage);
+    assert.equal(error.failure.stage, stage);
+    assert.deepEqual(error.details, {}, '세부 정보는 싣지 않는다');
+  }
+  const forged = await generate(scenario({ child: reportChild('database', { schemaVersion: 1, stage: 'database', code: 'VENDOR_PARITY_FAILED', details: {} }) }));
+  assert.equal(forged.failure.code, undefined, '자식은 검증 단계 코드를 보고하지 못한다');
 });

@@ -11,6 +11,8 @@ import { COMPOSER_OWNER_LABEL } from './project-composer-postgres.mjs';
 
 export const VENDOR_CONTAINER_LABEL = 'egov.composer.vendor';
 const SCHEMA = 'vendorcheck';
+// 설계서 §9 의 권장값이다. 검증과 겹치는 실제 필요량은 재지 않았으므로 사전 점검은 경고만 한다.
+const MEMORY_HINT_BYTES = 2 * 1024 ** 3;
 
 const docker = (args, options = {}) => spawnSync('docker', args, { encoding: 'utf8', maxBuffer: 1 << 29, ...options });
 const sleep = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
@@ -47,7 +49,7 @@ const oracleIntegration = (service, administrator = 'sqlplus -S / as sysdba') =>
 
 export const VENDOR_ENGINES = Object.freeze({
   oracle: {
-    image: 'gvenzl/oracle-free:23-slim-faststart', maxWaitSeconds: 300,
+    image: 'gvenzl/oracle-free:23-slim-faststart', maxWaitSeconds: 300, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ORACLE_PASSWORD: password, APP_USER: SCHEMA, APP_USER_PASSWORD: password }),
     ready: name => /DATABASE IS READY TO USE/.test(logs(name)),
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$APP_USER_PASSWORD"@//localhost/FREEPDB1 @${file}`,
@@ -82,7 +84,7 @@ export const VENDOR_ENGINES = Object.freeze({
     batch: mysqlBatch,
   },
   mssql: {
-    image: 'mcr.microsoft.com/mssql/server:2022-latest', maxWaitSeconds: 180,
+    image: 'mcr.microsoft.com/mssql/server:2022-latest', maxWaitSeconds: 180, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer' }),
     ready: name => docker(['exec', name, 'sh', '-c', `/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF DB_ID('${SCHEMA}') IS NULL CREATE DATABASE ${SCHEMA}; ALTER DATABASE ${SCHEMA} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"`]).status === 0,
     command: file => `/opt/mssql-tools18/bin/sqlcmd -C -I -f 65001 -h -1 -W -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d ${SCHEMA} -i ${file}`,
@@ -125,7 +127,8 @@ export function startVendorEngine(engineId, { publishPort, runDocker = docker } 
     const started = runDocker(['run', '-d', '--name', name, ...labels, ...environment,
       ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
     { env: { ...process.env, ...variables } });
-    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${started.stderr.slice(0, 300)}`);
+    // docker 를 실행하지 못하면 stderr 가 없다. 그 경우에도 코드가 남아야 부모가 원인을 안다.
+    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${String(started.stderr ?? started.error?.message).slice(0, 300)}`);
     const deadline = Date.now() + engine.maxWaitSeconds * 1000;
     for (;;) {
       if (engine.ready(name)) return { id: engineId, name, engine, password, port: publishPort ? publishedPort(name, publishPort) : null };
@@ -151,12 +154,13 @@ export function stopVendorEngineReporting(handle, failure = null, remove = stopV
     if (failure) throw failure;
     return;
   }
+  // 시험을 모두 통과한 뒤에도 난다. 대상 DB 가 준비되지 않았다는 뜻이 아니다.
   const message = `시험 DB 컨테이너가 남았다: ${handle.name}`;
   if (failure) {
     failure.message = `${failure.message} (${message})`;
     throw failure;
   }
-  fail('VENDOR_ENGINE_NOT_READY', message);
+  fail('VENDOR_CONTAINER_LEFT', message);
 }
 
 function publishedPort(name, port) {
@@ -166,11 +170,11 @@ function publishedPort(name, port) {
 }
 
 /** 관리자 세션에서 문장을 돌린다. 어느 하나라도 실패하면 멈춘다. */
-export function runAsAdministrator(handle, statements) {
+export function runAsAdministrator(handle, statements, runDocker = docker) {
   const { administrator } = handle.engine.integration;
   const script = `WHENEVER SQLERROR EXIT FAILURE\n${statements.map(statement => `${statement};`).join('\n')}\nEXIT\n`;
-  const result = docker(['exec', '-i', handle.name, 'sh', '-c', administrator], { input: script });
-  if (result.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${handle.id} 관리자 문장 실패: ${`${result.stdout}${result.stderr}`.slice(0, 300)}`);
+  const result = runDocker(['exec', '-i', handle.name, 'sh', '-c', administrator], { input: script });
+  if (result.status !== 0) fail('VENDOR_ADMIN_FAILED', `${handle.id} 관리자 문장 실패: ${`${result.stdout}${result.stderr}`.slice(0, 300)}`);
 }
 
 /** COUNT 한 줄을 읽는다. csql 은 `<00001> count(*): 3` 으로 낸다. */
@@ -182,6 +186,7 @@ export const parseCount = lines => {
 /**
  * 클라이언트 출력을 문장별로 나눈다. 값 거부는 문장 오류로 돌려주고, 실행 자체의 실패는 던진다.
  * 접속이 끊긴 클라이언트도 종료 코드 0 을 낼 수 있어 문장마다 표식이 나왔는지 본다.
+ * 끊김이 드러난 경우만 VENDOR_ENGINE_NOT_READY 다. 표식이 빠진 것은 앞 문장이 스크립트를 삼킨 번역 결함일 수도 있어 나누지 못한다.
  */
 export function collectResults(result, statements, batch, label) {
   if (result.error || result.status === null) fail('VENDOR_ENGINE_NOT_READY', `${label} 실행이 끝나지 않았다: ${result.error?.message ?? result.signal}`);
@@ -195,9 +200,9 @@ export function collectResults(result, statements, batch, label) {
   }
   const fatal = output.split(/\r?\n/).find(line => batch.fatal.test(line.trim()));
   if (fatal) fail('VENDOR_ENGINE_NOT_READY', `${label}: 실행 중 연결이 끊겼다 — ${fatal.trim().slice(0, 200)}`);
-  if (!output.includes(COMPLETED)) fail('VENDOR_ENGINE_NOT_READY', `${label}: 끝까지 실행하지 못했다(종료 ${result.status}) — ${output.trim().slice(-300)}`);
+  if (!output.includes(COMPLETED)) fail('VENDOR_RUN_INCOMPLETE', `${label}: 끝까지 실행하지 못했다(종료 ${result.status}) — ${output.trim().slice(-300)}`);
   const unreached = statements.findIndex((_, index) => !sections.has(index));
-  if (unreached >= 0) fail('VENDOR_ENGINE_NOT_READY', `${label}: ${statements.length}문장 가운데 ${unreached}번째에 닿지 못했다 — ${output.trim().slice(-300)}`);
+  if (unreached >= 0) fail('VENDOR_RUN_INCOMPLETE', `${label}: ${statements.length}문장 가운데 ${unreached}번째에 닿지 못했다 — ${output.trim().slice(-300)}`);
   const errors = [];
   for (const [index, lines] of sections) {
     const at = lines.findIndex(line => batch.errors.test(line.trim()));
@@ -214,7 +219,7 @@ export function runStatements(handle, statements, { sessionPrefix = [] } = {}) {
     const script = join(directory, 'run.sql');
     writeFileSync(script, engine.batch.wrap([...sessionPrefix, ...statements.map((statement, index) => engine.batch.mark(index, statement)), engine.batch.finish].join('\n')), 'utf8');
     const copied = docker(['cp', script, `${name}:/tmp/run.sql`]);
-    if (copied.status !== 0) fail('VENDOR_ENGINE_NOT_READY', copied.stderr.slice(0, 300));
+    if (copied.status !== 0) fail('VENDOR_ENGINE_NOT_READY', String(copied.stderr ?? copied.error?.message).slice(0, 300));
     docker(['exec', name, 'sh', '-c', 'chmod 644 /tmp/run.sql']);
     const result = docker(['exec', ...(engine.user ? ['-u', engine.user] : []), name, 'sh', '-c', `${engine.command('/tmp/run.sql')} 2>&1`], { timeout: 3_600_000 });
     return collectResults(result, statements, engine.batch, name);
@@ -259,10 +264,11 @@ const VENDOR_NEXT_VALUES = Object.freeze({
   cubrid: { sql: "SELECT LOWER(class_name) || ':' || CAST(current_val AS VARCHAR(40)) FROM db_serial WHERE class_name IS NOT NULL" },
 });
 
-export function readNextValues(handle, vendorId) {
+export function readNextValues(handle, vendorId, run = runStatements) {
   const query = VENDOR_NEXT_VALUES[vendorId];
-  const { sections, errors } = runStatements(handle, [{ sql: query.sql }], { sessionPrefix: query.prefix ?? [] });
-  if (errors.length) fail('VENDOR_PARITY_FAILED', `${vendorId} 다음 값 조회 실패: ${errors[0].error}`);
+  const { sections, errors } = run(handle, [{ sql: query.sql }], { sessionPrefix: query.prefix ?? [] });
+  // 조회 문장의 실패는 조회 자체의 문제다. 대조 결과가 나오기 전이라 대조 실패로 말하지 않는다.
+  if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 다음 값 조회 실패: ${errors[0].error}`);
   const values = new Map();
   for (const line of sections.get(0) ?? []) {
     const match = line.trim().match(/(?:^|[\s'])([a-z0-9_$#]+):(\d+)'?$/);
@@ -285,11 +291,11 @@ function mysqlIntrospection() {
 const NAME_VALUE = /(?:^|[\s:'])([a-z0-9_$#]*\.[a-z0-9_$#]+)'?$/;
 
 /** 메타를 읽어 번역 기대치와 같은 모양으로 돌려준다. */
-export function readCatalog(handle, vendorId) {
+export function readCatalog(handle, vendorId, run = runStatements) {
   const queries = VENDOR_INTROSPECTION[vendorId];
   const kinds = Object.keys(queries).filter(kind => queries[kind]);
-  const { sections, errors } = runStatements(handle, kinds.map(kind => ({ sql: queries[kind] })));
-  if (errors.length) fail('VENDOR_PARITY_FAILED', `${vendorId} 메타 조회 실패: ${errors[0].error}`);
+  const { sections, errors } = run(handle, kinds.map(kind => ({ sql: queries[kind] })));
+  if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 메타 조회 실패: ${errors[0].error}`);
   const catalog = {};
   kinds.forEach((kind, index) => {
     const names = (sections.get(index) ?? []).map(line => line.trim().match(NAME_VALUE)?.[1]).filter(Boolean);

@@ -3,7 +3,8 @@ import { readFileSync, existsSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 import test from 'node:test';
-import { ComposerError, MENUS_REFRESH_COMMAND, REQUEST_ERROR_CODES, classifyDeclarationFailure } from './project-composer-errors.mjs';
+import { ComposerError, JOB_ERROR_CODES, MENUS_REFRESH_COMMAND, REQUEST_ERROR_CODES, VENDOR_EXIT_CODES, VERIFICATION_JOB_CODES, classifyDeclarationFailure, vendorCodeOfExit, vendorExitCode } from './project-composer-errors.mjs';
+import { VendorTranslationGap, gap } from './project-composer-vendor-model.mjs';
 import * as nameRule from './project-composer-name.mjs';
 import { ProjectRecipeError, classifyRecipeFailure } from './project-composer-recipe.mjs';
 
@@ -81,4 +82,29 @@ test('the menu refresh command shown on screen is a real npm script', () => {
   assert.equal(MENUS_REFRESH_COMMAND, `npm run ${name}`);
   assert.equal(scripts[name], 'node scripts/project-composer-menus-refresh.mjs');
   assert.ok(existsSync(join(root, 'scripts/project-composer-menus-refresh.mjs')));
+});
+
+/*
+ * 벤더 검증 명령은 종료 코드 표로만 작업 코드를 전한다. 표를 넓히면 번역 불가·표본 부족 같은 다른 뜻이 재시도·점검 안내를 잃으므로 표 자체를 고정한다.
+ */
+test('the vendor exit table holds exactly the two verification codes and everything else ends with 1', () => {
+  assert.deepEqual(Object.keys(VENDOR_EXIT_CODES).sort(), ['VENDOR_ENGINE_NOT_READY', 'VENDOR_PARITY_FAILED']);
+  for (const [code, exit] of Object.entries(VENDOR_EXIT_CODES)) {
+    assert.ok(JOB_ERROR_CODES.includes(code) && VERIFICATION_JOB_CODES.includes(code), code);
+    assert.ok(exit > 13 && exit < 128, 'Node 자체 종료 코드(1~13)·신호(128 초과)와 겹치지 않는다');
+    assert.equal(vendorExitCode(Object.assign(new Error('x'), { code })), exit);
+    assert.equal(vendorCodeOfExit(exit), code);
+  }
+  for (const code of ['VENDOR_TRANSLATION_GAP', 'VENDOR_INTEGRATION_FAILED', 'VENDOR_RUN_INCOMPLETE', 'VENDOR_CONTAINER_LEFT', 'VENDOR_BASELINE_FAILED', 'constructor', 42, undefined]) {
+    assert.equal(vendorExitCode(Object.assign(new Error('x'), { code })), 1, String(code));
+  }
+  assert.equal(vendorExitCode(new Error('plain')), 1);
+  for (const exit of [0, 1, 39, 42, '40', null, undefined]) assert.equal(vendorCodeOfExit(exit), undefined, String(exit));
+});
+
+test('a translation gap is a coded composer error that carries no schema text in its details', () => {
+  assert.throws(() => gap('tb_secret: 모르는 타입'), error => error instanceof VendorTranslationGap && error instanceof ComposerError
+    && error.code === 'VENDOR_TRANSLATION_GAP' && error.name === 'VendorTranslationGap' && error.message === 'tb_secret: 모르는 타입'
+    && Object.keys(error.details).length === 0);
+  assert.equal(vendorExitCode(new VendorTranslationGap('x')), 1, '검증 단계에서 난 번역 불가는 VERIFY_FAILED 로 남는다');
 });
