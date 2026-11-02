@@ -114,6 +114,7 @@ test('the real ledger has no stale certified vendor and declares what certificat
       const definition = VENDOR_ENGINES[engine.engine];
       assert.ok(definition, `${vendor.id} ${engine.version}: 실행 도구에 없는 엔진 ${engine.engine}`);
       assert.equal(definition.vendor ?? engine.engine, vendor.id, `${engine.engine} 는 ${vendor.id} 의 엔진이 아니다`);
+      assert.equal(definition.version, engine.version, `${engine.engine} 의 버전이 ${vendor.id} ${engine.version} 행과 다르다`);
     }
     assert.ok(vendorEvidenceInputs(ROOT, ledger, vendor.id).some(path => /^scripts\/project-composer-vendor-(oracle|mysql|mssql|cubrid)\.mjs$/.test(path)), `${vendor.id}: 어댑터가 입력에 없다`);
   }
@@ -181,6 +182,9 @@ test('certified needs an adapter, an engine, a source projection and evidence pe
   assert.throws(load(vendor => { certifyVendor(vendor('oracle')); vendor('oracle').engines[0].evidence = {}; }), /oracle: 19: 증거 형식이 맞지 않다\(실행 ID, 커밋, /);
   assert.throws(load(vendor => { certifyVendor(vendor('oracle')); vendor('oracle').engines[1].engine = 'mysql'; }), /oracle: 23: 통합 시험을 돌릴 엔진\(mysql\)이 아니다/);
   assert.throws(load(vendor => { certifyVendor(vendor('oracle')); vendor('oracle').engines[1].engine = 'nothing'; }), /통합 시험을 돌릴 엔진\(nothing\)이 아니다/);
+  // 벤더가 같아도 버전이 다른 엔진의 실행은 그 행의 증거가 아니다. 증거 형식까지 맞춰 위조한다.
+  assert.throws(load(vendor => { certifyVendor(vendor('oracle')); Object.assign(vendor('oracle').engines[0], { engine: 'oracle', evidence: fixtureEvidence('oracle') }); }), /oracle: 19: 엔진\(oracle\)의 버전\(23\)이 원장 버전과 다르다/);
+  assert.throws(load(vendor => { certifyVendor(vendor('oracle')); Object.assign(vendor('oracle').engines[1], { engine: 'oracle19', evidence: fixtureEvidence('oracle19') }); }), /oracle: 23: 엔진\(oracle19\)의 버전\(19\)이 원장 버전과 다르다/);
   assert.doesNotThrow(load(vendor => certifyVendor(vendor('oracle'))));
   assert.doesNotThrow(load(() => {}), 'preview 는 증거 없이 그대로다');
 });
@@ -552,6 +556,14 @@ test('the record command refuses before starting any container when the setup ca
   refused({}, ({ artifact }) => put(artifact, 'api-server/src/test/java/nuri/api/schema/Extra.java', 'class Extra {}\n'), changedArtifact);
   refused({}, ({ artifact }) => rmSync(join(artifact, 'api-server/src/test/java/nuri/api/schema/A.java')), changedArtifact);
   refused({ full: { artifactFingerprint: undefined } }, null, changedArtifact);
+  const wiredTo = engine => ({ root }) => {
+    const ledger = readLedger(root);
+    ledger.vendors.find(vendor => vendor.id === 'oracle').engines[0].engine = engine;
+    writeLedger(root, ledger);
+  };
+  // 19 행에 23 엔진을 이으면 23 실행이 19 증거가 된다.
+  refused({}, wiredTo('oracle'), /증거를 기록하지 않는다: oracle 19: 엔진\(oracle\)의 버전\(23\)이 원장 버전과 다르다/);
+  refused({}, wiredTo('mysql'), /증거를 기록하지 않는다: oracle 19: 통합 시험을 돌릴 엔진\(mysql\)이 아니다/);
   const fixture = recordingFixture(t);
   const call = version => () => recordVendorEvidence({ root: fixture.root, artifact: fixture.artifact, vendorId: 'oracle', version, run: fixture.run, git: fixture.git });
   assert.throws(call('12'), /원장에 oracle 12 엔진이 없다/);

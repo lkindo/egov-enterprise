@@ -51,10 +51,11 @@ const oracleIntegration = (service, administrator = 'sqlplus -S / as sysdba') =>
 
 /**
  * 인증 증거가 image 를 그대로 적어 대조하므로 인증할 엔진은 digest 로 고정한다.
- * imageOrigin 은 공식 레지스트리 이미지가 아니라는 표시다(설계서 §7).
+ * imageOrigin 은 공식 레지스트리 이미지가 아니라는 표시다(설계서 §7). version 은 원장 행과 대조한다(vendorEngineProblem).
  */
 export const VENDOR_ENGINES = Object.freeze({
   oracle: {
+    version: '23',
     image: 'gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093', imageOrigin: 'community:gvenzl', maxWaitSeconds: 300, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ORACLE_PASSWORD: password, APP_USER: SCHEMA, APP_USER_PASSWORD: password }),
     ready: (name, run = docker) => /DATABASE IS READY TO USE/.test(logs(name, run)),
@@ -63,6 +64,7 @@ export const VENDOR_ENGINES = Object.freeze({
     integration: oracleIntegration('FREEPDB1'),
   },
   oracle19: {
+    version: '19',
     image: 'fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac', imageOrigin: 'community:fugeritorg', maxWaitSeconds: 1500, vendor: 'oracle',
     environment: password => ({ ORACLE_PWD: password }),
     ready: (name, run = docker) => {
@@ -76,6 +78,7 @@ export const VENDOR_ENGINES = Object.freeze({
     integration: oracleIntegration('ORCLPDB1', 'sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba'),
   },
   mysql: {
+    version: '8.4',
     image: 'mysql:8.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_bin', '--log-bin-trust-function-creators=1'],
     environment: password => ({ MYSQL_ROOT_PASSWORD: password, MYSQL_DATABASE: SCHEMA }),
     ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot -e "select 1" ${SCHEMA}`]).status === 0,
@@ -83,6 +86,7 @@ export const VENDOR_ENGINES = Object.freeze({
     batch: mysqlBatch,
   },
   mariadb: {
+    version: '11.4',
     image: 'mariadb:11.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_nopad_bin'],
     environment: password => ({ MARIADB_ROOT_PASSWORD: password, MARIADB_DATABASE: SCHEMA }),
     ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot -e "select 1" ${SCHEMA}`]).status === 0,
@@ -90,6 +94,7 @@ export const VENDOR_ENGINES = Object.freeze({
     batch: mysqlBatch,
   },
   mssql: {
+    version: '2022',
     image: 'mcr.microsoft.com/mssql/server:2022-latest', maxWaitSeconds: 180, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer' }),
     ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF DB_ID('${SCHEMA}') IS NULL CREATE DATABASE ${SCHEMA}; ALTER DATABASE ${SCHEMA} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"`]).status === 0,
@@ -97,6 +102,7 @@ export const VENDOR_ENGINES = Object.freeze({
     batch: { errors: /^Msg \d+, Level (1[1-9]|2\d)/, fatal: /^(Sqlcmd: Error|Msg \d+, Level 2\d)/, finish: `PRINT '${COMPLETED}'\nGO`, wrap: body => `SET NOCOUNT ON\nGO\n${body}\n`, mark: (index, statement) => `PRINT '@@${index}'\nGO\n${statement.sql}\nGO` },
   },
   cubrid: {
+    version: '11.4',
     image: 'cubrid/cubrid:latest', maxWaitSeconds: 120, user: 'cubrid',
     environment: () => ({ CUBRID_DB: SCHEMA, CUBRID_LOCALE: 'ko_KR.utf8', CUBRID_VOLUME_SIZE: '512M' }),
     ready: (name, run = docker) => run(['exec', '-u', 'cubrid', name, 'sh', '-c', `csql -u dba -c "select 1 from db_root" ${SCHEMA}@localhost`]).status === 0,
@@ -104,6 +110,16 @@ export const VENDOR_ENGINES = Object.freeze({
     batch: { errors: /^(ERROR:|Execute:.*error)/i, fatal: /(Failed to connect|Server .* is not running|connection (has been )?(lost|closed|aborted))/i, finish: `SELECT '${COMPLETED}' AS m FROM db_root;`, wrap: body => `${body}\nCOMMIT;\n`, mark: (index, statement) => `SELECT '@@${index}' AS m FROM db_root;\n${statement.sql};` },
   },
 });
+
+/**
+ * 원장 행이 이 벤더·버전의 엔진을 가리키지 않으면 그 사유를, 맞으면 null 을 돌려준다. 적재와 증거 기록이 같은 판정을 쓴다.
+ * 벤더 이름만 대조하면 19 행에 23 엔진을 이어도 통과해 23 실행이 19 증거가 된다.
+ */
+export function vendorEngineProblem(vendorId, row) {
+  const definition = Object.hasOwn(VENDOR_ENGINES, row.engine ?? '') ? VENDOR_ENGINES[row.engine] : undefined;
+  if (!definition?.integration || (definition.vendor ?? row.engine) !== vendorId) return `통합 시험을 돌릴 엔진(${row.engine ?? '없음'})이 아니다`;
+  return definition.version === row.version ? null : `엔진(${row.engine})의 버전(${definition.version ?? '없음'})이 원장 버전과 다르다`;
+}
 
 function logs(name, run = docker) {
   const result = run(['logs', name]);

@@ -10,7 +10,7 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { oracleAdapter } from './project-composer-vendor-oracle.mjs';
-import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
+import { VENDOR_ENGINES, vendorEngineProblem } from './project-composer-vendor-engine.mjs';
 import { VENDOR_SOURCE } from './project-composer-vendor-source.mjs';
 
 export const VENDOR_LEDGER_PATH = 'config/db-vendors.json';
@@ -70,9 +70,9 @@ function certificationProblems(vendor, ledger) {
   if (!vendor.engines?.length) return ['엔진이 없다'];
   if (!vendor.evidenceInputs?.length || !ledger.evidenceInputs?.paths?.length) return ['증거 입력 목록이 없다'];
   return vendor.engines.flatMap(engine => {
-    const definition = Object.hasOwn(VENDOR_ENGINES, engine.engine ?? '') ? VENDOR_ENGINES[engine.engine] : undefined;
-    if (!definition?.integration || (definition.vendor ?? engine.engine) !== vendor.id) return [`${engine.version}: 통합 시험을 돌릴 엔진(${engine.engine ?? '없음'})이 아니다`];
-    if (!DIGEST_IMAGE.test(definition.image)) return [`${engine.version}: 엔진 이미지가 digest 로 고정되지 않았다`];
+    const problem = vendorEngineProblem(vendor.id, engine);
+    if (problem) return [`${engine.version}: ${problem}`];
+    if (!DIGEST_IMAGE.test(VENDOR_ENGINES[engine.engine].image)) return [`${engine.version}: 엔진 이미지가 digest 로 고정되지 않았다`];
     if (!engine.evidence) return [`증거 없는 certified(${engine.version})`];
     const problems = vendorEvidenceProblems(engine.evidence);
     return problems.length ? [`${engine.version}: 증거 형식이 맞지 않다(${problems.join(', ')})`] : [];

@@ -14,7 +14,7 @@ import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { composerSourceFingerprint } from './project-composer.mjs';
-import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
+import { VENDOR_ENGINES, vendorEngineProblem } from './project-composer-vendor-engine.mjs';
 import { VENDOR_EVIDENCE_SCOPE, VENDOR_LEDGER_PATH, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
 import { artifactStepEnvironment, runCommand, vendorArtifactFingerprint, vendorInputPath, vendorIntegrationStep } from './verify-reusable-artifact.mjs';
 import { gitOutput, readVendorInput, vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
@@ -134,8 +134,8 @@ export function recordVendorEvidence({ root = ROOT, artifact, vendorId, version,
   const ledger = loadVendorLedger(root);
   const row = ledger.vendors.find(vendor => vendor.id === vendorId)?.engines.find(engine => engine.version === version);
   if (!row) throw refuse(`원장에 ${vendorId} ${version} 엔진이 없다.`);
-  const definition = Object.hasOwn(VENDOR_ENGINES, row.engine ?? '') ? VENDOR_ENGINES[row.engine] : undefined;
-  if (!definition?.integration || (definition.vendor ?? row.engine) !== vendorId) throw refuse(`${vendorId} ${version} 는 통합 시험을 돌릴 수 있는 엔진이 아니다.`);
+  const engineProblem = vendorEngineProblem(vendorId, row);
+  if (engineProblem) throw refuse(`${vendorId} ${version}: ${engineProblem}.`);
   assertCleanSource(root, git);
   const commit = git(root, ['rev-parse', 'HEAD']).trim();
   const inputHash = vendorEvidenceHash(root, ledger, vendorId);
