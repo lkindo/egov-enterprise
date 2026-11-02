@@ -256,3 +256,34 @@ test('uatScenarioSheet expands journey steps and keeps unmeasured or empty scena
   assert.equal(sheet.rows[1].baselineStatus, 'unverified');
   assert.match(sheet.notices.join('\n'), /인수 시험 수행·합격 판정이 아니다/u);
 });
+
+test('requirementSheet surfaces ledgerStatus, evidenceLevel and extended workspace columns without conflating found and acceptance', () => {
+  const csv = [
+    '요구사항 ID,대상 ID,요구사항 이름,요구사항 유형,해법 구분,범위 결정,작업 ID,인수조건 ID,연결 의도,기관 인수 판정',
+    "REQ-1,/things#thing.list,'-긴급 목록 조회,functional,fit,included,US-1,AC-1,existing,pending",
+    'REQ-2,/things#thing.bulk,일괄 처리,functional,gap-dev,included,US-2,AC-2,planned,pending',
+    'REQ-3,(값 없음),미연결 요구사항,non-functional,hybrid,included,(값 없음),(값 없음),planned,pending',
+  ].join('\n');
+  const requirements = readRequirements(csv);
+  assert.equal(requirements.length, 3);
+  assert.equal(requirements[0].name, '-긴급 목록 조회');
+  assert.equal(requirements[2].target, '');
+  assert.equal(requirements[2].workItemId, null);
+
+  const sheet = requirementSheet(requirements, {
+    screens: new Set(['/things']),
+    capabilities: new Set(['/things#thing.list']),
+    interfaces: new Set(),
+    capabilityMap: new Map([['/things#thing.list', { status: 'partial', evidenceLevel: 'E1' }]]),
+    screenMap: new Map([['/things', { status: 'unverified' }]]),
+  });
+  assert.equal(sheet.columns.length, 14);
+  assert.deepEqual(
+    sheet.rows.map((row) => [row.id, row.found, row.ledgerStatus, row.evidenceLevel, row.solutionDisposition, row.linkIntent, row.acceptanceDisposition]),
+    [
+      ['REQ-1', true, 'partial', 'E1', 'fit', 'existing', 'pending'],
+      ['REQ-2', false, null, null, 'gap-dev', 'planned', 'pending'],
+      ['REQ-3', false, null, null, 'hybrid', 'planned', 'pending'],
+    ],
+  );
+});

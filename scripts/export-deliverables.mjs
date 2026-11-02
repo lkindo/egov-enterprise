@@ -405,9 +405,18 @@ export function buildSheets(inputs) {
     traceSheet(inputs), inputFieldSheet(inputs), testListSheet(inputs.tests), uatScenarioSheet(inputs), riskWaiverSheet(inputs),
   ];
   if (inputs.requirements !== undefined) {
-    const capabilities = new Set(inputs.routes.routes.flatMap((route) => (route.capabilities ?? []).map((capability) => `${route.route}#${capability.id}`)));
-    sheets.push(requirementSheet(inputs.requirements, { capabilities, screens: new Set(inputs.registry.screens.map((screen) => screen.route)),
-      interfaces: new Set((inputs.policies.operationBindings ?? []).map((binding) => `${binding.method} ${binding.path}`)) }));
+    const capabilityMap = new Map(inputs.routes.routes.flatMap((route) => (route.capabilities ?? []).map((capability) => [
+      `${route.route}#${capability.id}`,
+      { status: capability.status ?? null, evidenceLevel: capability.evidenceLevel ?? null },
+    ])));
+    const screenMap = new Map(inputs.routes.routes.map((route) => [route.route, { status: route.status ?? null }]));
+    sheets.push(requirementSheet(inputs.requirements, {
+      capabilities: new Set(capabilityMap.keys()),
+      screens: new Set(inputs.registry.screens.map((screen) => screen.route)),
+      interfaces: new Set((inputs.policies.operationBindings ?? []).map((binding) => `${binding.method} ${binding.path}`)),
+      capabilityMap,
+      screenMap,
+    }));
   }
   return sheets;
 }
