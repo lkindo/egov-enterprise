@@ -296,6 +296,8 @@ flowchart TD
 
 증거는 원본 저장소에서 기록한다: `node scripts/project-composer-vendor-evidence.mjs --vendor oracle --version 19 --artifact <생성물>`. 원본 트리가 깨끗하고, 생성물이 같은 커밋에서 만들어져 전체 검증을 통과했으며, 대표 묶음이 요구하는 구성일 때만 시작한다. 커밋이 같아도 미커밋 수정으로 만들고 되돌렸을 수 있으므로 생성 보고서의 원본 지문(`evidenceFingerprint`, 벤더 생성에만 있다)을 현재 트리와 대조하고, 전체 검증이 끝날 때 남긴 생성물 지문(`artifactFingerprint`)을 기록 전후에 다시 계산해 검증 뒤 시험을 고치거나 줄인 생성물을 거부한다. 원장은 앞 엔진의 증거가 쌓이는 파일이라 원본 지문에서 뺀다. 그 엔진의 일회용 DB 로 통합 시험·차등 시험·대표 E2E 를 돌려 보고서를 받고, 실행 중 입력이 그대로일 때만 그 엔진의 `evidence` 를 쓴다. 실행이 길어 원장은 쓰기 직전에 다시 읽고 그 엔진의 증거만 바꾼다. `status` 는 바꾸지 않는다. 실행은 로컬이라 실행 ID 를 원격에서 대조할 수 없다. 증거의 범위는 `application-database` 다. 19c 는 recipe 로 고르지 않고 공식 배포 경로는 번들 DB 만 받으므로(`deploy.sh`) 19c 증거는 앱과 DB 의 동작 증거이지 배포 경로 증거가 아니다.
 
+대표 E2E 는 [게이트 원장](../../config/governance/gates.json)에 따로 올리지 않는다. 이 묶음을 부르는 곳은 증거 기록 명령 하나이고 어느 검증 명령과 워크플로도 부르지 않는다. 원장의 tier 는 실행 경로를 주장하는 값인데 `local-vendor` 는 생성물 검증 실행기(`verify-reusable-artifact.mjs`), `local-e2e` 는 `verify.mjs` 의 e2e 범위, `ci` 는 잡을 뜻해 어느 값을 적어도 거짓이다. 증거 전용 tier 를 새로 두어도 새 신호는 없다. 시험 파일의 모집단은 `GATESET-PLAYWRIGHT-E2E` 가 PostgreSQL 쪽에서 등록해 돌리고, 묶음의 구성은 시험 원장의 `representativeE2e` 와 실행기가, 기록 명령이 이 묶음을 그 엔진으로 돌리는지는 [증거 계약](../../scripts/project-composer-vendor-evidence.test.mjs)이, 결과는 증거 형식 판정이 본다. CI 나 검증 명령이 이 묶음을 부르게 되면 그 변경에서 등록한다.
+
 `schema-validation` 시험은 벤더 적합성의 뼈대다. 인가·동시성·감사 원장을 이미 실 DB 로 시험하고 있어 새로 쓰는 것보다 낫다. 다만 40개가 시험 코드에 PostgreSQL 전용 SQL 을 담고 있어 `SharedPostgresMigrationTestSupport` 를 벤더 중립 지원으로 나누고, 시험을 세 분류로 원장에 적는다: 그대로 실행, 픽스처 이식, 대체 시험 필요.
 
 Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 수 없어 저장소가 이미 쓴 커뮤니티 이미지로 재되, 공식 이미지가 아니라는 점을 증거에 표시한다. CI 의 Oracle Free(23 계열)만 통과한 것을 19c 증거로 쓰지 않는다.
