@@ -284,5 +284,5 @@ test('the upstream Atlas, its generator, contracts and aliases are absent from g
   // 대상이 하나라도 없으면 조용히 넘어가지 않는다 — 규칙이 낡은 채 "0건 제거" 로 통과하지 않게 한다.
   write(root, 'package.json', JSON.stringify({ scripts: { 'atlas:build': 'a', 'atlas:check': 'b' } }));
   for (const path of removed.slice(1)) write(root, path === 'frontend/atlas' ? `${path}/atlas.css` : path, 'x\n');
-  assert.throws(() => pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*governance_harness_atlas\.html/);
+  assert.throws(() => pruneUpstreamAtlas(root), /Upstream Atlas asset is missing.*frontend\/atlas/);
 });

@@ -205,27 +205,50 @@ describe('CSP nonce 계약', () => {
     ).toMatch(/nonce=\{nonce\}/);
   });
 
-  it('public/ 정적 HTML 에 inline 이벤트 핸들러가 없다', () => {
-    const publicDir = join(FRONTEND_DIR, 'public');
-    const htmlFiles = readdirSync(publicDir).filter((name) => name.endsWith('.html'));
-    // 재사용 생성물에서는 원본 Atlas 같은 정적 HTML 이 투영으로 빠질 수 있다 — 원장이 확인한 부재는 비어 있는 이유가 된다.
-    const removedHtml = [...projectionRemovedFiles()].filter((file) => /^frontend\/public\/[^/]+\.html$/.test(file));
-    expect(htmlFiles.length + removedHtml.length, 'public/ HTML 스캔이 비면 이 계약은 vacuous 하다').toBeGreaterThan(0);
+  it('public/ 에 정적 HTML 을 커밋하지 않으며 Atlas 템플릿 HTML 에 inline 이벤트 핸들러가 없다', () => {
+    const isHtmlName = (name: string) => /\.html?$/i.test(name);
+    const collectHtmlFiles = (dir: string, prefix = ''): string[] =>
+      readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {
+        const rel = prefix ? `${prefix}/${entry.name}` : entry.name;
+        if (entry.isDirectory()) return collectHtmlFiles(join(dir, entry.name), rel);
+        return isHtmlName(entry.name) ? [rel] : [];
+      });
+    const scanInlineHandlers = (items: Array<{ label: string; source: string }>) =>
+      items.flatMap(({ label, source }) =>
+        [...source.matchAll(/\son(?:click|change|submit|load|input|mouseover|focus|blur|keydown|keyup)\s*=/gi)]
+          .map((match) => ({
+            file: label,
+            line: source.slice(0, match.index).split('\n').length,
+          })),
+      );
 
-    const offenders = htmlFiles.flatMap((name) => {
-      const source = readFileSync(join(publicDir, name), 'utf8');
-      return [...source.matchAll(/\son(?:click|change|submit|load|input|mouseover|focus|blur|keydown|keyup)\s*=/gi)]
-        .map((match) => ({
-          file: name,
-          line: source.slice(0, match.index).split('\n').length,
-        }));
-    });
+    // H5 부정 검증: 대소문자 확장자·중첩 경로·인라인 이벤트 핸들러 탐지기 자체가 살아 있는지 고정한다.
+    expect(['a.html', 'nested/b.HTML', 'c.htm', 'font.woff2'].filter(isHtmlName)).toEqual(['a.html', 'nested/b.HTML', 'c.htm']);
+    expect(scanInlineHandlers([{ label: 'fixture.html', source: '<div>\n<button ONCLICK="alert(1)">x</button>' }])).toEqual([
+      { file: 'fixture.html', line: 2 },
+    ]);
+
+    const publicDir = join(FRONTEND_DIR, 'public');
+    const htmlFiles = collectHtmlFiles(publicDir);
+    expect(
+      htmlFiles,
+      'frontend/public/ 아래(하위 폴더·대소문자 확장자 포함)에 정적 HTML 을 커밋하지 않습니다(DEC-OPS-398). 정적 HTML 은 nonce 를 받을 수 없어 별도 CSP 예외가 필요합니다.',
+    ).toEqual([]);
+
+    const templatePath = join(FRONTEND_DIR, 'atlas', 'atlas.template.html');
+    // 재사용 생성물에서는 원본 Atlas 템플릿이 투영으로 빠질 수 있다 — 원장이 확인한 부재는 비어 있는 이유가 된다.
+    const removedTemplate = [...projectionRemovedFiles()].filter((file) => file === 'frontend/atlas/atlas.template.html');
+    const templateExists = existsSync(templatePath);
+    expect((templateExists ? 1 : 0) + removedTemplate.length, 'Atlas 템플릿 HTML 스캔이 비면 이 계약은 vacuous 하다').toBeGreaterThan(0);
+
+    const sourcesToScan = templateExists ? [{ label: 'atlas/atlas.template.html', source: readFileSync(templatePath, 'utf8') }] : [];
+    const offenders = scanInlineHandlers(sourcesToScan);
 
     expect(
       offenders,
       [
         "script-src-attr 'none' 아래에서 inline 핸들러는 조용히 죽습니다. addEventListener 로 배선하십시오:",
-        ...offenders.map(({ file, line }) => `  public/${file}:${line}`),
+        ...offenders.map(({ file, line }) => `  ${file}:${line}`),
       ].join('\n'),
     ).toEqual([]);
   });

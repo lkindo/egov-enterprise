@@ -37,8 +37,8 @@ function record(id, title, summary, status, source, extra = {}) {
 
 /**
  * Only repository-owned, explicitly requested files are read; no environment or Git state.
- * 읽은 원본은 경로만 기록한다. 파일별 내용 해시를 싣지 않으므로, catalog 에 실리는 사실을 바꾸지 않는 소스 수정은
- * Atlas 재생성을 요구하지 않는다. 신선도는 생성물 계약(atlas-generation.test.mjs)이 다시 만든 HTML 과 바이트로 대조해 소유한다.
+ * 읽은 원본은 경로만 기록한다. 파일별 내용 해시를 싣지 않으며, 정합성은 카탈로그·생성 계약(atlas-catalog.test.mjs·
+ * atlas-generation.test.mjs)과 인메모리 렌더 계약(governance-atlas-contract.test.ts)이 소유한다(DEC-OPS-398).
  */
 function repositoryReader(repoRoot) {
   const root = path.resolve(repoRoot);

@@ -11,6 +11,7 @@ import {
   applyPushBaseCheck, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, PROTECTED_COLUMN_CONTENT, pushBaseWasVerified,
   reusableMatrix,
 } from './ci-change-scope.mjs';
+import { buildAtlasCatalog } from './atlas-catalog.mjs';
 import { presetIds } from './composition-profiles.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -21,7 +22,7 @@ test('documentation and Atlas-only changes run governance without heavy leaves',
   const result = classifyChangedFiles([
     'docs/03-guides/testing-guide.md',
     '.agent/memory/known-gaps.md',
-    'frontend/public/governance_harness_atlas.html',
+    'docs/03-guides/governance-atlas-guide.md',
   ]);
 
   assert.equal(result.docsOnly, true);
@@ -101,7 +102,34 @@ test('Atlas source and generator inputs select Atlas contracts without weakening
     assert.equal(result.mutation, false, file);
     assert.equal(result.mutationMigrationTool, false, file);
   }
-  assert.equal(classifyChangedFiles(['docs/03-guides/testing-guide.md']).atlas, false);
+  assert.equal(classifyChangedFiles(['.githooks/README.md']).atlas, false);
+  for (const { path: catalogSource } of buildAtlasCatalog(repoRoot).sources) {
+    const scoped = classifyChangedFiles([catalogSource]);
+    assert.equal(
+      scoped.atlas || scoped.backend || scoped.frontend,
+      true,
+      `${catalogSource} is read by buildAtlasCatalog and must select atlas, backend, or frontend`,
+    );
+  }
+  for (const catalogInput of [
+    'docs/03-guides/governance-atlas-guide.md',
+    'docs/03-guides/testing-guide.md',
+    'docs/03-guides/__synthetic_new_guide__.md',
+    '.agent/memory/project-context.md',
+    '.agent/memory/decisions.md',
+    '.agent/memory/known-gaps.md',
+    'docs/04-operations/operational-decisions-index-ci-governance.md',
+    'docs/archived/operational-decisions-index-historical.md',
+    'docs/04-operations/known-gaps-detail.md',
+    'docs/archived/operational-decisions-history.md',
+    'docs/02-architecture/decisions/ADR-0001-core-app-product-boundary.md',
+    '.agent/knowledge/backend-api-constitution/artifacts/constitution.md',
+    '.github/workflows/ci.yml',
+    'config/governance/gates.json',
+    'migration-tool/src/test/java/com/example/SyntheticMigrationTest.java',
+  ]) {
+    assert.equal(classifyChangedFiles([catalogInput]).atlas, true, `${catalogInput} must select the atlas axis`);
+  }
   const hook = fs.readFileSync(path.join(repoRoot, '.githooks/pre-push'), 'utf8');
   assert.match(hook, /--stdin --field atlas/);
   assert.match(hook, /if \[ "\$SCOPE_ATLAS" = "true" \]; then/);

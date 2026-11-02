@@ -1,6 +1,6 @@
 # Governance & Harness Atlas 사용·현행화 가이드
 
-[Atlas](../../frontend/public/governance_harness_atlas.html)는 프로젝트 구성·업무 흐름·규칙·검증·운영·원본 문서를 연결하는 설명용 지도다. 규범은 [AGENTS](../../AGENTS.md), [SOP](orchestration-protocol.md), 관련 헌법·Accepted ADR을 따른다. 소스 인벤토리와 운영 실측은 서로 다른 증거다.
+Governance & Harness Atlas(`npm run atlas:build` → `build/atlas/governance_harness_atlas.html`)는 프로젝트 구성·업무 흐름·규칙·검증·운영·원본 문서를 연결하는 설명용 지도다. 규범은 [AGENTS](../../AGENTS.md), [SOP](orchestration-protocol.md), 관련 헌법·Accepted ADR을 따른다. 소스 인벤토리와 운영 실측은 서로 다른 증거다.
 
 ## 읽는 순서
 
@@ -29,11 +29,11 @@
 | [atlas-runtime.js](../../frontend/atlas/atlas-runtime.js) | 원본 목록 표시, 검색, 주소 이동, 검증 선택, 테마·인쇄 |
 | [atlas-catalog.mjs](../../scripts/atlas-catalog.mjs) | 기존 manifest·문서·코드에서 분류 목록과 사실을 수집 |
 | [build-atlas.mjs](../../scripts/build-atlas.mjs) | 데이터·스타일·스크립트를 하나의 정적 HTML로 결합 |
-| [governance_harness_atlas.html](../../frontend/public/governance_harness_atlas.html) | 배포·직접 열기용 생성물. 직접 수정하지 않음 |
+| `build/atlas/governance_harness_atlas.html` | 직접 열기용 온디맨드 생성물(Git 미추적, DEC-OPS-398). 직접 수정하지 않음 |
 
 `npm run atlas:build`로 생성한다. 외부 차트 라이브러리나 실행 중인 API 없이 HTML 자체를 읽을 수 있다. JavaScript를 사용할 수 없는 환경에서도 설명·도식·원본 안내를 읽을 수 있으며 생성 카탈로그의 검색·상세 표시에는 JavaScript가 필요하다. 외부 저장소 원본 링크를 열려면 네트워크가 필요하다.
 
-생성기가 읽은 원본은 경로만 싣고 파일별 내용 해시는 싣지 않는다. 그래서 카탈로그에 실리는 사실(목록·수치·상태·근거 링크)을 바꾸지 않는 소스 수정은 다시 생성하지 않아도 되고, 그 사실이 바뀌거나 읽은 원본이 생기거나 없어지면 생성물 계약이 붉다. 의존성·런타임 버전과 워크플로 액션의 커밋 핀은 사실로 싣지 않는다 — 값의 정본은 선언 파일(lockfile·`build.gradle`·버전 카탈로그·워크플로)이고 화면은 그 파일로 링크하므로, Dependabot 범프가 Atlas 재생성을 요구하지 않는다([catalog 계약](../../scripts/atlas-catalog.test.mjs)). 생성 시각이나 HEAD 변경만으로 운영 확인일을 갱신하지 않으며 생성물 자신을 입력으로 삼지 않는다. 원본 링크는 현재 기본 브랜치 문서를 가리키므로 로컬 미커밋 변경과 원격의 차이를 고려한다.
+생성기가 읽은 원본은 경로만 싣고 파일별 내용 해시는 싣지 않는다. 정적 HTML은 Git에 커밋하지 않고 인메모리 `renderAtlas()`로 즉시 검증하며(`build/atlas/governance_harness_atlas.html`은 로컬 열람용 온디맨드 생성물, DEC-OPS-398), 카탈로그에 실리는 사실(목록·수치·상태·근거 링크)이 어긋나면 카탈로그·렌더 계약이 붉다. 의존성·런타임 버전과 워크플로 액션의 커밋 핀은 사실로 싣지 않는다 — 값의 정본은 선언 파일(lockfile·`build.gradle`·버전 카탈로그·워크플로)이고 화면은 그 파일로 링크한다([catalog 계약](../../scripts/atlas-catalog.test.mjs)). 생성 시각이나 HEAD 변경만으로 운영 확인일을 갱신하지 않으며 생성물 자신을 입력으로 삼지 않는다. 원본 링크는 현재 기본 브랜치 문서를 가리키므로 로컬 미커밋 변경과 원격의 차이를 고려한다.
 
 ## 카탈로그의 증거 경계
 
@@ -48,10 +48,9 @@
 
 ```text
 1. 원본 또는 frontend/atlas의 설명·스타일·동작 수정
-2. npm run atlas:build
-3. npm run atlas:check
-4. node --test scripts/atlas-catalog.test.mjs scripts/atlas-generation.test.mjs, 화면·동작을 바꿨으면 pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts (나머지 운영 계약은 pre-push 가 돈다)
-5. UI 동작 변경 시 실제 브라우저·키보드·모바일·인쇄 확인
+2. npm run atlas:check
+3. node --test scripts/atlas-catalog.test.mjs scripts/atlas-generation.test.mjs, 화면·동작을 바꿨으면 pnpm -C frontend exec vitest run src/__tests__/cross-stack/governance-atlas-contract.test.ts (나머지 운영 계약은 pre-push 가 돈다)
+4. (선택) 로컬 브라우저 열람이나 UI 동작·키보드·모바일·인쇄 시각 확인이 필요할 때 npm run atlas:build 로 build/atlas/governance_harness_atlas.html 생성
 ```
 
 JS·계약·분류기 변경에는 영향 테스트와 프론트 타입·관련 lint 검증을 함께 수행한다. 새로운 파일·도메인·규칙이 생성기에 발견되지 않으면 입력 목록과 분류 방법을 확인한다. 설명을 숨기거나 집계를 비워 검사를 통과시키지 않는다.
@@ -61,8 +60,8 @@ JS·계약·분류기 변경에는 영향 테스트와 프론트 타입·관련 
 | 검사 | 확인하는 내용 |
 |---|---|
 | [카탈로그 계약](../../scripts/atlas-catalog.test.mjs) | 원본 항목 대응·누락·중복·미확인 유지·결정성, 독립 계수 규칙(시험 annotation·공유 PostgreSQL 부모·waiver 표지)의 합성 fixture 회귀 |
-| [생성물 계약](../../scripts/atlas-generation.test.mjs) | 입력과 HTML 일치(신선도의 단독 소유), 데이터 script 경계, 변경 시 재생성, 실행 연결 |
-| [Atlas 계약](../../frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts) | HTML에 실린 catalog를 기대값으로 실제 JS 표시·수치 전수 대조·검색·이전 주소·상태·회귀(신선도는 다시 계산하지 않는다) |
+| [생성물 계약](../../scripts/atlas-generation.test.mjs) | 인메모리 렌더·온디맨드 생성(`writeAtlas`), 레거시 `frontend/public/` HTML 부재, 데이터 script 경계, 실행 연결 |
+| [Atlas 계약](../../frontend/src/__tests__/cross-stack/governance-atlas-contract.test.ts) | 인메모리 `renderAtlas()` 출력과 catalog를 기대값으로 실제 JS 표시·수치 전수 대조·검색·이전 주소·상태·회귀 |
 | [문서 링크 계약](../../scripts/docs-link-integrity.test.mjs) | 소유 문서·헌법 artifact·metadata의 파일·제목·HTML 앵커 |
 | [범위 분류 계약](../../scripts/ci-change-scope.test.mjs), [도구 경로 표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs) | Atlas 원본·생성기 변경의 검사 선택과 기존 소스 검증 유지. Atlas 도구·소비 원장의 축은 그 경로를 읽는 시험에서 다시 계산한다(DEC-OPS-336) |
 

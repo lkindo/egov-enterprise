@@ -19,8 +19,8 @@
 | 대상 | 지위 | 위치 | 바꾸는 법 |
 |---|---|---|---|
 | 권한 카탈로그·인가 원장·라우트 원장·보안약점 원장 | 정본(사람이 검토한 원장) | `config/governance/`, `config/ui-route-capabilities.json`, `config/security/` | 사람이 PR 로 고친다 |
-| 화면 목록·권한 생성물·Atlas | 커밋하는 파생 생성물 | `frontend/src/types/`, `frontend/public/` | 원장을 고친 뒤 `npm run regen` |
-| 산출물 초안 | 비규범·비커밋 파생물 | `build/deliverables/<커밋>/` | 다시 실행한다. 손으로 고친 사본은 초안이 아니라 기관 문서다 |
+| 화면 목록·권한 생성물 | 커밋하는 파생 생성물 | `frontend/src/types/` | 원장을 고친 뒤 `npm run regen` |
+| 산출물 초안·Atlas HTML | 비규범·비커밋 파생물 | `build/deliverables/<커밋>/`, `build/atlas/` | 필요할 때 다시 실행한다(`export-deliverables.mjs`, `npm run atlas:build`). 손으로 고친 사본은 초안이 아니라 기관 문서다 |
 | 시안(갤러리·토큰 키트·저장소 밖 아티팩트) | 비규범 | `/admin/patterns`, `build/prototype-kit/` | 확인은 승인이 아니다([SOP §7.2](orchestration-protocol.md#72-결정-유형별-확정-수단)) |
 
 ## 3. 산출물 초안 내보내기

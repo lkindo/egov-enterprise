@@ -147,7 +147,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
 export const NO_EXTRA_INDEX_PATHS = Object.freeze([
   '.agent/memory/**', GAP_DETAIL, 'docs/04-operations/operational-decisions-index-*.md', 'docs/archived/operational-decisions-*.md',
   'docs/02-architecture/decisions/README.md', 'docs/README.md',
-  '.agents/skills/**', '.claude/skills/**', 'frontend/public/governance_harness_atlas.html', 'api-docs.json',
+  '.agents/skills/**', '.claude/skills/**', 'api-docs.json',
   'frontend/src/types/generated-**', 'frontend/src/extensions/generated-*', 'config/governance/generated-*',
   'config/ui-url-state-census.json', 'business-core/src/main/java/nuri/business/security/authorization/PermissionCodes.java',
   'business-core/src/main/resources/authorization/*.json',

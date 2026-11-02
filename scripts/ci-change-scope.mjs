@@ -108,7 +108,6 @@ const DOCUMENTATION_ONLY = [
   /^\.agent\/(?:knowledge|skills)\/.*\.md$/,
   // 스킬 안내 파일은 .agent/skills 정본에서 npm run regen 이 만든다(scripts/agent-skill-adapters.mjs) — 정본과 함께 바뀌는 문서다.
   /^\.(?:agents|claude)\/skills\/[^/]+\/SKILL\.md$/,
-  /^frontend\/public\/governance_harness_atlas\.html$/,
 ];
 
 // A constitution edit can change which executable evidence is mandatory even
@@ -283,7 +282,6 @@ const E2E_RELEVANT = [
 ];
 
 const E2E_EXEMPT = [
-  /^frontend\/public\/governance_harness_atlas\.html$/,
   /^frontend\/src\/test-utils\//,
   /^frontend\/src\/__tests__\//,
   /^frontend\/src\/.*\.test\.(?:ts|tsx)$/,
@@ -311,12 +309,12 @@ const CROSS_STACK_CONTRACT = [
 export const GENERATOR_TOOL_PATHS = Object.freeze([
   // Atlas와 소비 원장도 실행 가능한 도구 입력이다. 문서 fast-pass 대신 소비자 축을
   // 동일한 source-reader 계약으로 확인하고, 관계없는 migration/PIT만 선택하지 않는다.
-  { path: 'scripts/atlas-', axes: ['backend', 'e2e', 'schema'] },
-  { path: 'scripts/build-atlas.mjs', axes: ['backend', 'e2e', 'schema'] },
-  { path: 'config/governance/operation-consumer-census.json', axes: ['backend'] },
+  { path: 'scripts/atlas-', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  { path: 'scripts/build-atlas.mjs', axes: ['atlas', 'backend', 'e2e', 'schema'] },
+  { path: 'config/governance/operation-consumer-census.json', axes: ['atlas', 'backend'] },
   // 기능 선언(매니페스트 v2). 하네스가 생성물 표지(presets.json)와 디렉터리를, 기본 관리자 시드 스키마 검증이 기능 파일을
   // 읽고, 생성기 화면 시험이 카탈로그를 실행한다.
-  { path: 'config/modules/', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'config/modules/', axes: ['atlas', 'backend', 'e2e', 'schema'] },
   // 생성기 메뉴 스냅숏. 탭 목적지 cross-stack 계약도 읽는다.
   { path: 'config/project-composer-menus.json', axes: ['atlas', 'backend', 'e2e', 'schema'] },
   // scripts/ 는 하네스 두 개(FlywaySchemaOwnershipLinterTest·SecretLiteralLinterTest)가 디렉터리째 읽어 backend 를 끄지 못한다.
@@ -328,7 +326,7 @@ export const GENERATOR_TOOL_PATHS = Object.freeze([
   { path: 'scripts/generate-domain', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/generate-reusable-base-', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/project-composer', axes: ['backend', 'e2e', 'schema'] },
-  { path: 'scripts/reusable-', axes: ['backend', 'e2e', 'schema'] },
+  { path: 'scripts/reusable-', axes: ['atlas', 'backend', 'e2e', 'schema'] },
   { path: 'scripts/verify-project-composer', axes: ['backend', 'e2e', 'schema'] },
   { path: 'scripts/verify-reusable-', axes: ['backend', 'e2e', 'schema'] },
   // 생성기 화면. 화면 시험(ui.test.mjs)은 e2e 0번 샤드에서만 돈다.
@@ -460,7 +458,12 @@ export function classifyChangedFiles(changedFiles,
   // 생성기·도구 전용 경로는 표의 축만 켠다(GENERATOR_TOOL_PATHS). 재사용 검증은 아래 selectedReusableProfiles 가 고른다 —
   // 이 경로는 기능 소유가 없어 모든 시작 구성이다.
   const tool = axis => files.some(file => selectsToolAxis(file, axis));
-  const atlas = tool('atlas') || files.some(file => file === 'frontend/public/governance_harness_atlas.html'
+  const atlas = tool('atlas') || files.some(file => /^docs\/.+\.(?:md|html)$/i.test(file)
+    || /^\.agent\/memory\/(?:project-context|decisions|known-gaps)\.md$/.test(file)
+    || /^\.agent\/knowledge\/[^/]+\/artifacts\/constitution\.md$/.test(file)
+    || /^\.github\/workflows\/[^/]+\.ya?ml$/.test(file)
+    || file.startsWith('config/governance/')
+    || /^migration-tool\/(?:build\.gradle|src\/test\/java\/.+\.java)$/.test(file)
     || file.startsWith('frontend/atlas/')
     || file === 'scripts/build-atlas.mjs'
     || /^scripts\/atlas-[^/]+\.mjs$/.test(file));

@@ -119,7 +119,7 @@ test('only generators whose inputs or outputs changed on both sides run, downstr
     ['boundary-census', 'screen-registry', 'url-state-census', 'atlas'], 'a conflicted registry is regenerated, not picked');
   assert.deepEqual(ids({ ours: ['api-docs.json'], theirs: ['docs/a.md'] }), ['atlas'],
     'a contract changed on one side only is already consistent');
-  assert.deepEqual(ids({ ours: ['frontend/public/governance_harness_atlas.html'], theirs: ['frontend/public/governance_harness_atlas.html'] }),
+  assert.deepEqual(ids({ ours: ['frontend/atlas/atlas.css'], theirs: ['frontend/atlas/atlas.css'] }),
     ['atlas']);
   assert.deepEqual(ids({ ours: ['config/governance/permission-bundles.json'], theirs: ['config/ui-route-capabilities.json'] }),
     ['screen-registry', 'url-state-census', 'atlas'], 'the permission bundle ledger feeds the screen registry');

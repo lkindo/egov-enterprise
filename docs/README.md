@@ -190,6 +190,6 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | 공용 프로젝트 컨텍스트 | [.agent/memory/project-context.md](../.agent/memory/project-context.md) |
 | 공용 결정 인덱스 | [.agent/memory/decisions.md](../.agent/memory/decisions.md) |
 | 공용 활성 gap 인덱스 | [.agent/memory/known-gaps.md](../.agent/memory/known-gaps.md) |
-| 거버넌스·하네스 설명 지도 | [Governance & Harness Atlas](../frontend/public/governance_harness_atlas.html) — 설명용 파생 문서 |
+| 거버넌스·하네스 설명 지도 | [Governance & Harness Atlas 가이드](03-guides/governance-atlas-guide.md) — 온디맨드 설명용 파생 문서(`npm run atlas:build`) |
 | 게이트 계층·훅 규약 | [.githooks/README.md](../.githooks/README.md) |
 | 3대 헌법 | [.agent/knowledge/](../.agent/knowledge/) |

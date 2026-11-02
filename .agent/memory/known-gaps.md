@@ -17,7 +17,7 @@ canonical_sources:
   - ../../docs/02-architecture/decisions/ADR-0018-governance-review-lifecycle-and-adoption.md
   - ../../docs/04-operations/authorization-cutover-runbook.md
   - ../../docs/02-architecture/decisions/ADR-0012-retire-blog-domain.md
-  - ../../frontend/public/governance_harness_atlas.html
+  - ../../docs/03-guides/governance-atlas-guide.md
   - ../../docs/02-architecture/decisions/ADR-0008-multi-source-approved-migration-workflow.md
   - ../../docs/02-architecture/decisions/ADR-0009-controlled-url-search-state.md
   - ../../docs/02-architecture/legacy-migration-tool-design.md
