@@ -1194,7 +1194,11 @@ test('the runner wires the closed Docker environment, one API environment and th
   const row = Object.values(removedAssets).flat().find(entry => entry?.file === 'scripts/e2e-isolation.test.mjs');
   assert.match(row.coveredBy, /assertOwnedVendorDatabase/, '제거 사유가 지금 실행기와 맞아야 한다');
   assert.match(row.reason, /공통 판정.*원본 저장소에서만/, '함께 빠지는 공통 판정의 전수 사례를 적는다');
-  assert.match(row.coveredBy, /validateIsolationManifest, assertIsolatedTarget/, '벤더 프로젝트에 남는 공통 판정 시험을 적는다');
+  assert.match(row.coveredBy, /validateIsolationManifest, assertIsolatedTarget/, '대신 도는 공통 판정 시험을 적는다');
+  // 대체 시험이 도는 자리를 사실대로 적는다. 생성물은 이 시험 파일을 복사만 하고 돌리지 않는다.
+  assert.match(row.coveredBy, /원본 저장소의 운영 계약\(test:operational-contracts\)에서 도는 scripts\/project-composer-vendor\.test\.mjs/);
+  assert.match(JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts['test:operational-contracts'], /"scripts\/\*\.test\.mjs"/);
+  assert.ok(!verificationSteps('full', 'multi-module', { vendor: 'oracle' }).flatMap(step => step.args).some(argument => argument.includes('project-composer-vendor.test')), '생성물 검증이 돌리게 되면 원장 문장을 고친다');
 });
 
 /** 실제 launchVendorContainer 와 엔진 값을 쓰고 docker 만 바꾼다. inspect 는 run 인자로 만들어 배선한 라벨·환경이 판정까지 닿는지 본다. */

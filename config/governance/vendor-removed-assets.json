@@ -59,7 +59,7 @@
     {
       "file": "scripts/e2e-isolation.test.mjs",
       "reason": "PostgreSQL·compose 소유 판정을 보고 뺀 릴리스 스모크를 import 한다. 벤더 프로젝트의 실행기는 대표 묶음만 돌고 벤더 소유 판정을 쓴다. 대표 묶음에서도 도는 공통 판정(매니페스트·대상 검증, MFA 환경, .env 거부, 빌드 대상)의 전수 사례도 함께 빠지므로 전수 사례는 원본 저장소에서만 돈다.",
-      "coveredBy": "scripts/project-composer-vendor.test.mjs 의 벤더 소유 판정 시험(assertOwnedVendorDatabase, assertRemovableVendorDatabase)과 공통 판정의 최소 부정 사례(validateIsolationManifest, assertIsolatedTarget, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget)"
+      "coveredBy": "원본 저장소의 운영 계약(test:operational-contracts)에서 도는 scripts/project-composer-vendor.test.mjs 의 벤더 소유 판정 시험(assertOwnedVendorDatabase, assertRemovableVendorDatabase)과 공통 판정의 최소 부정 사례(validateIsolationManifest, assertIsolatedTarget, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget). 이 시험 파일은 생성물에 복사되지만 생성물의 verify·ci.yml 은 돌리지 않고, 생성물에는 V2 마이그레이션 같은 원본 전제가 없어 직접 돌리면 일부가 붉다"
     },
     {
       "file": "scripts/migration-product-contract.test.mjs",
