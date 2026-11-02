@@ -791,7 +791,9 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     registry: { screens: [{ route: '/', entry: { permissions: [homeCode], mode: 'ANY' }, permissions: [{ code: homeCode, action: 'READ', source: 'entry' }] }] },
   };
   const loadPermissionSources = () => permissionSources;
-  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real, loadModules: () => modules, loadPermissionSources });
+  // 합성 저장소에는 벤더 원장도 없다. 아래 거부 단언이 실제 원장의 승격과 무관하도록 미인증 벤더를 직접 준다.
+  const loadVendors = () => ({ vendors: [{ id: 'postgresql', status: 'certified' }, { id: 'oracle', status: 'preview' }] });
+  const engine = createComposerEngine({ root: repository, outputRoot, loadCatalog: () => real, loadModules: () => modules, loadPermissionSources, loadVendors });
   const deep = engine.deep(core);
   assert.deepEqual(deep.blockers, []);
   assert.equal(deep.permissionProjection.permissions, real.core.permissionCodes.length, 'the engine passes its permission sources to the deep plan');
@@ -817,7 +819,7 @@ test('the deep check reads the files Git would copy and refuses a recipe from an
     try { execFileSync('fsutil', ['file', 'setCaseSensitiveInfo', caseOutput, 'enable'], { stdio: 'ignore' }); } catch { /* 지원하지 않는 디스크 */ }
   }
   for (const output of [outputRoot, caseOutput]) {
-    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real, loadModules: () => modules, loadPermissionSources }).deep(core);
+    const caseDeep = createComposerEngine({ root: repository, outputRoot: output, loadCatalog: () => real, loadModules: () => modules, loadPermissionSources, loadVendors }).deep(core);
     assert.deepEqual(caseDeep.blockers.map(blocker => blocker.code), ['SOURCE_SURVIVAL']);
     assert.deepEqual(caseDeep.blockers[0].files, ['frontend/src/app/login/page.tsx']);
   }

@@ -28,13 +28,20 @@ export function loadVendorLedger(root) {
   }
   for (const vendor of ledger.vendors) {
     if (!VENDOR_STATUSES.includes(vendor.status)) throw new Error(`${vendor.id}: 모르는 상태 ${vendor.status}`);
+    if (!vendor.label) throw new Error(`${vendor.id}: 화면에 보일 이름이 없다`);
     if (vendor.status === 'certified' && vendor.id !== 'postgresql' && !vendor.evidence) throw new Error(`${vendor.id}: 증거 없는 certified`);
     if (vendor.status !== 'certified' && !vendor.reason) throw new Error(`${vendor.id}: 고를 수 없는 사유가 없다`);
+    // 벤더를 적지 않은 레시피와 프리셋의 기본값이다. 이 값이 빠지면 모든 기본 생성이 멈춘다.
+    if (vendor.id === 'postgresql' && vendor.status !== 'certified') throw new Error('postgresql: 기본 벤더는 certified 여야 한다');
   }
   return ledger;
 }
 
-export const selectableVendors = ledger => ledger.vendors.filter(vendor => vendor.status === 'certified').map(vendor => vendor.id);
+const isSelectable = vendor => vendor.status === 'certified';
+export const selectableVendors = ledger => ledger.vendors.filter(isSelectable).map(vendor => vendor.id);
+/** 화면에 보일 선택지. 증거·엔진 정보는 화면에 필요 없어 싣지 않는다. */
+export const vendorChoices = ledger => ledger.vendors.map(vendor => ({ id: vendor.id, label: vendor.label, selectable: isSelectable(vendor),
+  ...(isSelectable(vendor) ? {} : { reason: vendor.reason }) }));
 
 /** 어댑터가 있는 모든 벤더로 번역해 본다. 첫 번역 불가에서 멈춘다. */
 export function translateForAllVendors(model) {

@@ -19,7 +19,7 @@ PostgreSQL을 유일한 스키마 원본으로 두고, 생성할 때마다 **기
 
 | D-n | 결정 | 관련 H | 영향 계약 파일 | 부정 시험 |
 |---|---|---|---|---|
-| D-1 | 벤더 id 는 이관 도구와 같은 7종(`postgresql`·`oracle`·`tibero`·`mysql`·`mariadb`·`mssql`·`cubrid`)으로 고정한다. 인증된 벤더만 고를 수 있고, 나머지는 화면에 사유와 함께 비활성으로 보인다. | H2 | `config/db-vendors.json`(신설), `project-composer-recipe.mjs`, `project-composer-server.mjs`, `index.html` | 미인증 벤더 recipe 가 CLI·서버 둘 다에서 `UNSUPPORTED_DATABASE` 로 거부된다 |
+| D-1 | 벤더 id 는 이관 도구와 같은 7종(`postgresql`·`oracle`·`tibero`·`mysql`·`mariadb`·`mssql`·`cubrid`)으로 고정한다. 인증된 벤더만 고를 수 있고, 나머지는 화면에 사유와 함께 비활성으로 보인다. | H2 | `config/db-vendors.json`(신설), `project-composer-recipe.mjs`, `project-composer-server.mjs`, `index.html` | 미인증 벤더 recipe 가 생성기 입구에서 `UNSUPPORTED_DATABASE`, 엔진·서버 응답에서 `INVALID_RECIPE` 로 거부된다 |
 | D-2 | 스키마 정본은 PostgreSQL 마이그레이션 하나다. 벤더별 마이그레이션 체인·Liquibase·Hibernate DDL 생성을 두지 않는다. `postgresql` 출력 경로는 그대로 `pg_dump` 를 쓴다. | H1 | `generate-reusable-base-db.mjs`, `project-composer-db.mjs` | `postgresql` 의 번들 파일 해시·구성 해시가 변경 전후 같다 |
 | D-3 | 중립 모델은 닫힌 문법이다. 모르는 타입·기본값·CHECK·인덱스·트리거가 나오면 건너뛰지 않고 `VENDOR_TRANSLATION_GAP` 으로 실패한다. 트리거는 호출 함수 본문까지 입력으로 읽고, 검토한 함수 해시와 의도를 묶는다. | H2·H3·H4 | `project-composer-vendor-ir.mjs`(신설), `project-composer-db.mjs` 의 `schemaSnapshotSql` | 새 CHECK 모양 픽스처, **트리거 선언은 두고 함수 본문만 바꾼 픽스처**(V2_143 과 같은 형태)가 빨갛다 |
 | D-4 | 어댑터는 Node 내장 모듈만 쓰는 순수 함수 묶음이다. 생성은 기준 PostgreSQL + 대상 벤더 컨테이너 두 개로 돌고, 대상에 적용한 결과를 다시 읽어 모델과 대조한다. | H1 | `project-composer-vendor-*.mjs`(신설), `project-composer-postgres.mjs` | 벤더 DDL 에서 인덱스 하나를 빼면 대조가 빨갛다 |
@@ -523,6 +523,8 @@ Oracle 19c 첫 실행의 실패 11건은 모두 시험 코드였다. 시험이 O
 PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json`)대로 걷는다. 잠금과 생성물 거버넌스가 부재를 대조하므로 되살아나면 붉다. SQL 을 읽는 하네스 가운데 뜻이 유지되는 것은 남겼다. 구조·명명 린터는 번역 입력을 보고, 그 입력이 벤더 DB 와 같다는 것은 Flyway 적용 대조가 잇는다. 시드 위치 린터는 Flyway 가 적용하는 `db/vendor` 도 본다. ZDM 린터만 실행되지 않는 파일을 읽어 거짓 신호라 뺐다.
 
 그 대조는 생성 시점에만 성립한다. 도입자가 생성 뒤 벤더 폴더에 마이그레이션을 더하면 엔티티·명명·유니크 린터는 그 파일을 읽지 못해, 새 표를 실행되지 않는 `db/migration` 에도 적어야 통과한다. `npm run regen` 의 권한 시드도 `db/migration` 만 고친다. 생성물 README 에 적었고 벤더를 `certified` 로 올리기 전에 푼다.
+
+화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 승격은 원장 값 변경으로 끝난다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
 
 남은 일: 생성 뒤 스키마 변경 경로, 격리 E2E 실행기의 벤더 대응과 대표 E2E, 19c 기본 접속값.
 

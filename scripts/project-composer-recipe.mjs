@@ -30,11 +30,14 @@ function object(value, field, allowed) {
   if (unknown.length) fail(field, `${field} contains unsupported fields: ${unknown.sort().join(', ')}`);
 }
 
-/** 새 생성 요청의 벤더 판정. 인증되지 않은 벤더는 이 값을 켠 도구 실행에서만 받는다(ADR-0047 D-9). 화면 경로는 서버가 PostgreSQL 만 받는다. */
-export function assertVendorRequestable(recipe) {
+/**
+ * 새 생성 요청의 벤더 판정. selectable 은 원장의 selectableVendors 결과이고 입구가 넘긴다 — 이 모듈은 생성물 재검증에도 쓰여 파일을 읽지 않는다.
+ * 인증되지 않은 벤더는 COMPOSER_PREVIEW_VENDOR 를 켠 도구 실행에서만 받는다(ADR-0047 D-9). 화면 경로는 서버가 원장만 보므로 이 값으로 열리지 않는다.
+ */
+export function assertVendorRequestable(recipe, selectable) {
   const vendor = recipe?.database?.vendor ?? 'postgresql';
-  if (vendor !== 'postgresql' && vendor !== process.env.COMPOSER_PREVIEW_VENDOR) {
-    fail('database.vendor', 'Only PostgreSQL is currently supported', 'UNSUPPORTED_DATABASE');
+  if (!selectable.includes(vendor) && vendor !== process.env.COMPOSER_PREVIEW_VENDOR) {
+    fail('database.vendor', `Database vendor is not certified: ${vendor}`, 'UNSUPPORTED_DATABASE');
   }
 }
 
@@ -166,12 +169,12 @@ export function resolveProjectRecipe(input, catalog) {
  * 같은 규칙으로 받는다. 프리셋 레시피의 이름은 프로필, 원본 참조는 현재 커밋이다 — 두 생성기가 같은 커밋에서
  * 같은 해시를 얻는다. 출력 레이아웃은 구성 해시에 들어가므로 DB 번들도 레이아웃마다 만든다.
  */
-export function resolveGeneratorComposition({ catalog, profile, supplied, backendLayout, layoutExplicit = false, sourceCommit, resolveSourceReference }) {
+export function resolveGeneratorComposition({ catalog, profile, supplied, backendLayout, layoutExplicit = false, sourceCommit, resolveSourceReference, selectable }) {
   if ((profile === undefined) === (supplied === undefined)) fail('generator', 'Exactly one of a preset profile or a resolved composition is required');
   const input = supplied ?? { ...resolveProjectRecipe({ schemaVersion: 1, project: { name: profile }, sourceRef: sourceCommit,
     selection: { preset: profile }, database: { vendor: 'postgresql' }, backendLayout: backendLayout ?? 'multi-module' }, catalog), sourceCommit };
   // 두 생성기의 공통 입구다. 생성물의 재검증은 이 함수를 지나지 않는다.
-  assertVendorRequestable(input.recipe);
+  assertVendorRequestable(input.recipe, selectable);
   const composition = verifyResolvedDbComposition(input, verifyProjectComposition(input, catalog), sourceCommit, resolveSourceReference);
   if (layoutExplicit && backendLayout !== composition.backendLayout) fail('backendLayout', 'The requested layout differs from the composition layout', 'LAYOUT_MISMATCH');
   if (composition.foreignKeyViolations.length) {

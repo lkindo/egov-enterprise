@@ -6,7 +6,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
 import { assertCatalogParity, assertCoverage, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
-import { loadVendorLedger, selectableVendors, translateForAllVendors, VENDOR_ADAPTERS, VENDOR_IDS } from './project-composer-vendors.mjs';
+import { loadVendorLedger, selectableVendors, translateForAllVendors, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices } from './project-composer-vendors.mjs';
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
@@ -31,6 +31,8 @@ import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRec
 import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
 import { DATABASE_VENDORS } from './project-composer-db.mjs';
 import { backendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
+import { createComposerEngine } from './project-composer.mjs';
+import { validateComposerRequestRecipe } from './project-composer-server.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const isGap = error => error instanceof VendorTranslationGap && error.code === 'VENDOR_TRANSLATION_GAP';
@@ -356,7 +358,82 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
   assert.deepEqual(selectableVendors(ledger), ['postgresql']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
-  assert.ok(ledger.vendors.filter(vendor => vendor.status !== 'certified').every(vendor => vendor.reason), '고를 수 없는 벤더는 사유가 있다');
+  // 사유는 화면에 그대로 나간다.
+  for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, vendor.id);
+});
+
+/** 실제 원장을 바꿔 임시 폴더에 쓰고 검증 함수로 다시 읽는다. change 가 원장 전체를 고칠 수 있다. */
+function ledgerCopy(t, change) {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-ledger-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const ledger = JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8'));
+  change(id => ledger.vendors.find(vendor => vendor.id === id));
+  mkdirSync(join(directory, 'config'));
+  writeFileSync(join(directory, VENDOR_LEDGER_PATH), JSON.stringify(ledger));
+  return directory;
+}
+const certify = id => vendor => { Object.assign(vendor(id), { status: 'certified', evidence: { run: 'fixture' } }); delete vendor(id).reason; };
+const withPreviewEnv = (value, action) => {
+  const previous = process.env.COMPOSER_PREVIEW_VENDOR;
+  if (value === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR; else process.env.COMPOSER_PREVIEW_VENDOR = value;
+  try { return action(); } finally {
+    if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR; else process.env.COMPOSER_PREVIEW_VENDOR = previous;
+  }
+};
+
+test('a ledger that would mislead the screen or strand the default vendor is refused', t => {
+  const load = change => () => loadVendorLedger(ledgerCopy(t, change));
+  assert.doesNotThrow(load(() => {}));
+  assert.throws(load(vendor => { vendor('postgresql').status = 'preview'; vendor('postgresql').reason = '시험'; }), /기본 벤더는 certified/);
+  assert.throws(load(vendor => { delete vendor('oracle').label; }), /oracle: 화면에 보일 이름이 없다/);
+  assert.throws(load(vendor => { delete vendor('oracle').reason; }), /oracle: 고를 수 없는 사유가 없다/);
+  assert.throws(load(vendor => { vendor('oracle').status = 'certified'; }), /oracle: 증거 없는 certified/);
+});
+
+test('vendor choices carry the same judgement as the request check and leave evidence behind', t => {
+  const ledger = loadVendorLedger(ledgerCopy(t, certify('oracle')));
+  const choices = vendorChoices(ledger);
+  assert.deepEqual(choices.filter(choice => choice.selectable).map(choice => choice.id), selectableVendors(ledger));
+  assert.deepEqual(choices.find(choice => choice.id === 'oracle'), { id: 'oracle', label: 'Oracle', selectable: true });
+  const mysql = choices.find(choice => choice.id === 'mysql');
+  assert.equal(mysql.selectable, false);
+  assert.ok(mysql.reason);
+  assert.doesNotMatch(JSON.stringify(choices), /evidence|engines|status/);
+});
+
+test('certifying a vendor in the ledger opens every request entry without a code change', t => {
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const recipe = vendor => ({ schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'core' }, database: { vendor }, backendLayout: 'multi-module' });
+  const certified = loadVendorLedger(ledgerCopy(t, certify('oracle')));
+  const opened = createComposerEngine({ loadCatalog: () => catalog, loadVendors: () => certified });
+  const closed = createComposerEngine({ loadCatalog: () => catalog });
+  withPreviewEnv(undefined, () => {
+    const selectable = opened.selectableVendors();
+    assert.deepEqual(selectable, ['postgresql', 'oracle']);
+    assert.equal(validateComposerRequestRecipe(recipe('oracle'), selectable).database.vendor, 'oracle', '서버');
+    assert.equal(opened.plan(recipe('oracle')).database.vendor, 'oracle', '엔진');
+    assert.equal(opened.catalog().vendors.find(choice => choice.id === 'oracle').selectable, true, '화면');
+    const supplied = { ...resolveProjectRecipe({ ...recipe('oracle'), sourceRef: 'a'.repeat(40) }, catalog), sourceCommit: 'a'.repeat(40) };
+    assert.equal(resolveGeneratorComposition({ catalog, supplied, selectable, sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }).database.vendor, 'oracle', '생성기 입구');
+    assert.throws(() => opened.plan(recipe('mysql')), error => error.code === 'INVALID_RECIPE' && error.details.reason === 'UNSUPPORTED_DATABASE', '올리지 않은 벤더는 그대로다');
+    // 원장이 구성 해시에 들어가면 승격이 PostgreSQL 산출물의 식별값을 바꾼다.
+    assert.equal(opened.plan(recipe('postgresql')).compositionHash, closed.plan(recipe('postgresql')).compositionHash);
+    assert.equal(opened.catalog().catalogHash, closed.catalog().catalogHash);
+  });
+});
+
+test('the preview switch opens the tool path only: the screen path keeps reading the ledger', () => {
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const recipe = { schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'core' }, database: { vendor: 'mysql' }, backendLayout: 'multi-module' };
+  const engine = createComposerEngine({ loadCatalog: () => catalog });
+  const closed = error => error.code === 'INVALID_RECIPE' && error.details.reason === 'UNSUPPORTED_DATABASE';
+  withPreviewEnv(undefined, () => assert.throws(() => engine.plan(recipe), closed));
+  withPreviewEnv('mysql', () => {
+    assert.equal(engine.plan(recipe).database.vendor, 'mysql', '도구 실행');
+    assert.ok(!engine.selectableVendors().includes('mysql'), '서버가 받는 목록은 환경값으로 넓어지지 않는다');
+    assert.throws(() => validateComposerRequestRecipe(recipe, engine.selectableVendors()), error => error.code === 'INVALID_RECIPE', '서버');
+    assert.equal(engine.catalog().vendors.find(choice => choice.id === 'mysql').selectable, false, '화면');
+  });
 });
 
 test('a block statement ends on a slash line and a plain statement on a semicolon', () => {
@@ -412,15 +489,18 @@ test('a new request needs certification or a tool run, but a stored composition 
   const previous = process.env.COMPOSER_PREVIEW_VENDOR;
   delete process.env.COMPOSER_PREVIEW_VENDOR;
   try {
-    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'oracle' })), refused);
-    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'postgresql' })));
-    assert.doesNotThrow(() => assertVendorRequestable({}), '벤더를 적지 않으면 기본값이다');
+    const selectable = ['postgresql'];
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'oracle' }), selectable), refused);
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'postgresql' }), selectable));
+    assert.doesNotThrow(() => assertVendorRequestable({}, selectable), '벤더를 적지 않으면 기본값이다');
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' }), ['postgresql', 'oracle']), '원장이 올린 벤더는 환경값 없이 받는다');
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'postgresql' })), TypeError, '원장을 넘기지 않은 입구는 기본값으로도 통과하지 못한다');
     assert.deepEqual(resolveProjectRecipe(recipe({ vendor: 'oracle' }), catalog).database, { vendor: 'oracle' }, '저장된 구성의 재검증은 환경에 기대지 않는다');
     assert.throws(() => resolveProjectRecipe(recipe({}), catalog), refused, '벤더 없는 구성은 받지 않는다');
     assert.throws(() => resolveProjectRecipe(recipe({ vendor: 'sqlite' }), catalog), refused);
     process.env.COMPOSER_PREVIEW_VENDOR = 'oracle';
-    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' })));
-    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'mysql' })), refused, '켠 벤더만 받는다');
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' }), selectable));
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'mysql' }), selectable), refused, '켠 벤더만 받는다');
   } finally {
     if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;
     else process.env.COMPOSER_PREVIEW_VENDOR = previous;
@@ -435,7 +515,7 @@ test('generators refuse an uncertified vendor even when a composition is passed 
   try {
     const recipe = { schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'main', selection: { preset: 'core' }, database: { vendor: 'oracle' }, backendLayout: 'multi-module' };
     const supplied = { ...resolveProjectRecipe(recipe, catalog), sourceCommit: 'a'.repeat(40) };
-    assert.throws(() => resolveGeneratorComposition({ catalog, supplied, sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }),
+    assert.throws(() => resolveGeneratorComposition({ catalog, supplied, selectable: ['postgresql'], sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }),
       error => error.code === 'UNSUPPORTED_DATABASE');
   } finally {
     if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;

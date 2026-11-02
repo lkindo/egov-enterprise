@@ -113,6 +113,26 @@ function renderFailureActions(container, error, { focus = false, onReload = relo
   }
   container.hidden = container.childElementCount === 0;
 }
+// 데이터베이스 선택지는 카탈로그가 준 원장 판정을 그대로 그린다(ADR-0047 결정 2). 고를 수 없는 벤더도 비활성과 사유로 보인다.
+// 고르던 벤더를 새 원본에서 고를 수 없게 되면 조용히 바꾸지 않고 알릴 문장을 돌려준다.
+function applyVendors(vendors) {
+  if (!Array.isArray(vendors)) return '';
+  const select = $('database');
+  const previous = select.value;
+  const previousLabel = select.selectedOptions[0]?.textContent ?? previous;
+  select.replaceChildren(...vendors.map(vendor => {
+    const option = new Option(vendor.selectable ? vendor.label : `${vendor.label} · 선택할 수 없음`, vendor.id);
+    option.disabled = !vendor.selectable;
+    return option;
+  }));
+  const unavailable = vendors.filter(vendor => !vendor.selectable);
+  $('database-reason-list').replaceChildren(...unavailable.map(vendor => text('li', `${vendor.label}: ${vendor.reason}`)));
+  $('database-reasons').hidden = unavailable.length === 0;
+  if (vendors.some(vendor => vendor.selectable && vendor.id === previous)) { select.value = previous; return ''; }
+  const fallback = vendors.find(vendor => vendor.selectable);
+  if (fallback) select.value = fallback.id;
+  return `새 원본에서 고를 수 없는 데이터베이스(${previousLabel})라 ${fallback?.label ?? '다른 데이터베이스'}로 바꿨습니다.`;
+}
 // 세션 응답을 화면에 적용한다. 원본 표시·프리셋 목록·CSRF 를 바꾸고, 새 목록에 없는 직접 선택은 뺀다.
 // 뺀 기능과 사라진 시작 구성은 조용히 버리지 않고 알릴 문장으로 돌려준다.
 function applySession(session) {
@@ -136,6 +156,8 @@ function applySession(session) {
   const dropped = [...state.selected].filter(id => !known.has(id));
   state.selected = new Set([...state.selected].filter(id => known.has(id)));
   const notes = [];
+  const vendorNote = applyVendors(state.catalog.vendors);
+  if (vendorNote) notes.push(vendorNote);
   if (droppedPreset) notes.push(`새 원본에 없는 시작 구성(${previous?.presentation?.presets?.[droppedPreset]?.label ?? droppedPreset})을 직접 선택으로 바꿨습니다.`);
   if (dropped.length) notes.push(`새 원본에 없는 기능을 선택에서 뺐습니다: ${dropped.map(previousLabel).join(', ')}.`);
   return notes.join(' ');
@@ -452,6 +474,12 @@ function restoreRecipe(value) {
   document.querySelector(`input[name="layout"][value="${value.backendLayout}"]`).checked = true;
   renderFeatures();
 }
+// 작업의 구성은 서버가 받은 값이라 벤더도 되살린다. 파일 불러오기는 이 경로를 쓰지 않는다 — recipe-file.js 가 고를 수 있는 값만 고른다.
+function restoreJobRecipe(value) {
+  restoreRecipe(value);
+  const option = [...$('database').options].find(item => item.value === value.database?.vendor && !item.disabled);
+  if (option) $('database').value = option.value;
+}
 // 저장한 구성 불러오기(E9). 판정과 화면 연결은 recipe-file.js 에 있다.
 const importRecipe = createRecipeImport({ $, state, restoreRecipe, withdrawPlan, changed });
 function downloadRecipe() {
@@ -465,7 +493,7 @@ async function connect() {
     applySession(session);
     state.selected = new Set(state.catalog.presets.find(item => item.id === state.preset)?.domains ?? state.selected);
     $('workspace').hidden = false; renderFeatures();
-    if (session.job) { restoreRecipe(session.job.recipe); renderJob(session.job); if (session.job.status === 'running') await pollJob(); else await preview(false); }
+    if (session.job) { restoreJobRecipe(session.job.recipe); renderJob(session.job); if (session.job.status === 'running') await pollJob(); else await preview(false); }
     else await preview(false);
   } catch (error) {
     // 서버가 답한 오류(선언 불일치·낡은 메뉴 자료·도구 없음 등)는 그 문장과 행동을 보인다. 연결 자체가 안 될 때만 서버 실행을 안내한다.
@@ -489,6 +517,7 @@ $('preset').addEventListener('change', () => {
   changed(); renderFeatures();
 });
 for (const input of document.querySelectorAll('input[name="layout"]')) input.addEventListener('change', changed);
+$('database').addEventListener('change', changed);
 keepSummaryInView($('summary-aside'));
 $('import-recipe').addEventListener('click', () => $('recipe-file').click());
 $('recipe-file').addEventListener('change', () => {
@@ -498,7 +527,7 @@ $('recipe-file').addEventListener('change', () => {
   if (file) importRecipe(file);
 });
 // 작업 영역(진행·결과·실패와 그 행동). 실패의 다시 생성·다시 점검은 아래 확인 창을 연다(창은 그 뒤에 만들어진다).
-const { renderJob, pollJob, generate, onPlanChange } = createJobPanel({ $, text, api, state, busy, preview, recipe, validateName, withdrawPlan, restoreRecipe,
+const { renderJob, pollJob, generate, onPlanChange } = createJobPanel({ $, text, api, state, busy, preview, recipe, validateName, withdrawPlan, restoreRecipe: restoreJobRecipe,
   renderFailureActions, planRejectionCodes: PLAN_REJECTION_CODES, openConfirmation: () => confirmation.open() });
 // 생성 버튼은 곧바로 생성하지 않고 최종 확인 창(환경 점검·소스 정밀 점검·구성 요약)을 연다.
 const confirmation = createFinalConfirmation({ $, text, api, recipe, label, state, validateName, generate, renderFailureActions, reloadCatalog });

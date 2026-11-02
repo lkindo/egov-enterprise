@@ -10,6 +10,7 @@ import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } f
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
+import { loadVendorLedger, selectableVendors, vendorChoices } from '../../scripts/project-composer-vendors.mjs';
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
 import { elapsedSentence, formatDuration, timelineStatus } from './public/job.js';
@@ -660,7 +661,7 @@ test('recipe import planning re-binds to the current source and names what it dr
   assert.equal(other.vendor, null);
   assert.deepEqual(other.notes.slice(1), [
     '지금 원본에 없는 기능은 빼고 불러왔습니다: ghost-1, ghost-2, ghost-3, ghost-4, ghost-5 외 1개.',
-    '지원하지 않는 데이터베이스(oracle)라 지금 고른 데이터베이스로 불러왔습니다.',
+    '지금 고를 수 없는 데이터베이스(oracle)라 지금 고른 데이터베이스로 불러왔습니다.',
     '이 구성은 다른 원본(커밋 bbbbbbbbbbbb)에서 저장했습니다. 지금 원본으로 다시 확인합니다. 저장한 원본 그대로 만들려면 저장소를 그 커밋으로 체크아웃한 뒤 생성기를 다시 시작하세요.']);
   const preset = plan(savedRecipe({ sourceRef: 'HEAD', selection: { preset: 'collaboration' } }));
   assert.deepEqual(preset.notes, ['‘my.recipe.json’ 구성을 불러왔습니다.'], 'a symbolic source reference says nothing about the commit');
@@ -1161,6 +1162,105 @@ test('a late answer from an earlier preflight never replaces the latest one', { 
   await page.waitForTimeout(500);
   await expect(page.locator('#preflight-status')).toHaveText('생성 환경 점검을 모두 통과했습니다.');
   await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 데이터베이스 선택지(ADR-0047 결정 2). 화면은 원장의 판정을 그대로 보인다. 인증되지 않은 벤더는 비활성과 사유로 남고 파일로도 고를 수 없으며,
+ * 원장의 값만 바꾸면 코드 변경 없이 고를 수 있게 된다.
+ */
+async function vendorPage(t, readLedger, generate = async () => ({ projectDirectory: 'build/project-composer/x', databaseDirectory: 'build/db', reportPath: 'build/report.json', verified: true })) {
+  const app = createComposerServer({ engine: { catalog: () => ({ ...catalog, vendors: vendorChoices(readLedger()) }), plan, preflight: passingPreflight, deep: passingDeep, generate,
+    selectableVendors: () => selectableVendors(readLedger()) } });
+  const origin = await app.listen(0);
+  t.after(() => app.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const planned = [];
+  page.on('request', request => { if (request.url().endsWith('/api/plan')) planned.push(JSON.parse(request.postData()).recipe); });
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  return { page, pageErrors, planned };
+}
+const vendorFile = value => ({ name: 'vendor.recipe.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(value)) });
+
+test('uncertified vendors stay disabled with their reason and a recipe file cannot pick them', { timeout: 60_000 }, async t => {
+  const ledger = loadVendorLedger(root);
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger);
+  const select = page.locator('#database');
+  await expect(select).toHaveValue('postgresql');
+  await expect(select).toHaveAttribute('aria-describedby', 'database-reasons');
+  await expect(page.locator('#database-reasons')).toBeVisible();
+  for (const vendor of ledger.vendors) {
+    const option = select.locator(`option[value="${vendor.id}"]`);
+    if (vendor.status === 'certified') {
+      await expect(option).toBeEnabled();
+      await expect(option).toHaveText(vendor.label);
+    } else {
+      await expect(option).toBeDisabled();
+      await expect(option).toHaveText(`${vendor.label} · 선택할 수 없음`);
+      await expect(page.locator('#database-reason-list')).toContainText(`${vendor.label}: ${vendor.reason}`);
+    }
+  }
+  const uncertified = ledger.vendors.find(vendor => vendor.status !== 'certified').id;
+  await page.locator('#recipe-file').setInputFiles(vendorFile(savedRecipe({ selection: { domains: ['board'] }, database: { vendor: uncertified } })));
+  await expect(page.locator('#plan-status')).toContainText(`지금 고를 수 없는 데이터베이스(${uncertified})라`);
+  await expect(select).toHaveValue('postgresql');
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('changing only the ledger makes a vendor selectable through planning, generation, files and job recovery', { timeout: 90_000 }, async t => {
+  const certified = structuredClone(loadVendorLedger(root));
+  const oracle = certified.vendors.find(vendor => vendor.id === 'oracle');
+  oracle.status = 'certified'; oracle.evidence = { run: 'fixture' }; delete oracle.reason;
+  let ledger = certified;
+  const generated = [];
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger, async value => {
+    generated.push(value);
+    return { projectDirectory: 'build/project-composer/x', databaseDirectory: 'build/db', reportPath: 'build/report.json', verified: true };
+  });
+  const select = page.locator('#database');
+  const reasons = page.locator('#database-reason-list');
+  await expect(select.locator('option[value="oracle"]')).toBeEnabled();
+  await expect(select.locator('option[value="oracle"]')).toHaveText('Oracle');
+  await expect(reasons).not.toContainText('Oracle');
+  await expect(select).toHaveValue('postgresql');
+  // 파일이 인증된 벤더를 적었으면 고른다.
+  await page.locator('#recipe-file').setInputFiles(vendorFile(savedRecipe({ selection: { domains: ['board'] }, database: { vendor: 'oracle' } })));
+  await expect(select).toHaveValue('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.equal(planned.at(-1).database.vendor, 'oracle');
+  // 화면에서 바꿔도 구성을 다시 확인한다. 저장한 계획이 다른 벤더를 말하지 않게 생성 버튼이 잠긴다.
+  const before = planned.length;
+  await select.selectOption('postgresql');
+  await expect.poll(() => planned.length).toBeGreaterThan(before);
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  assert.equal(generated.at(-1).database.vendor, 'oracle');
+  // 다시 열면 그 작업의 벤더를 되살린다.
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(select).toHaveValue('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.equal(planned.at(-1).database.vendor, 'oracle');
+  // 원장이 다시 내려가면 서버가 거부하고, 새 원본을 받으면 고르던 값이 바뀐 사실을 알린다.
+  ledger = loadVendorLedger(root);
+  await page.getByLabel('프로젝트 이름').fill('after-downgrade');
+  await expect(page.locator('#plan-status')).toContainText('선택한 구성을 지금 원본에서 만들 수 없습니다');
+  await page.getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(select).toHaveValue('postgresql');
+  await expect(select.locator('option[value="oracle"]')).toBeDisabled();
+  await expect(page.locator('#plan-status')).toContainText('새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
   assert.deepEqual(pageErrors, []);
 });
 

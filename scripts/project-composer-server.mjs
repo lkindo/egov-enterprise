@@ -57,12 +57,15 @@ class HttpError extends Error {
   constructor(status, code, details = {}) { super(code); this.status = status; this.code = code; this.details = details; }
 }
 
-/** Reject extra input channels before invoking an engine or creating any output. */
-export function validateComposerRequestRecipe(recipe) {
+/**
+ * Reject extra input channels before invoking an engine or creating any output.
+ * selectable 은 엔진이 원장에서 읽은 벤더다. COMPOSER_PREVIEW_VENDOR 는 도구 실행 전용이라 여기에 들어오지 않는다.
+ */
+export function validateComposerRequestRecipe(recipe, selectable = ['postgresql']) {
   if (!keys(recipe, ['schemaVersion', 'project', 'sourceRef', 'selection', 'database', 'backendLayout'])
     || recipe.schemaVersion !== 1 || !keys(recipe.project, ['name']) || typeof recipe.project.name !== 'string'
     || typeof recipe.sourceRef !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,159}$/.test(recipe.sourceRef)
-    || recipe.sourceRef.includes('..') || !keys(recipe.database, ['vendor']) || recipe.database.vendor !== 'postgresql'
+    || recipe.sourceRef.includes('..') || !keys(recipe.database, ['vendor']) || !selectable.includes(recipe.database.vendor)
     || !['multi-module', 'single-module'].includes(recipe.backendLayout)
     || !keys(recipe.selection, ['preset', 'domains'])) throw new HttpError(400, 'INVALID_RECIPE');
   // 이름은 화면이 칸을 짚어 알려 줄 수 있는 입력이다. 형식 오류와 구분한다(해석기·화면과 같은 규칙).
@@ -254,7 +257,9 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         }
         const allowed = { '/api/jobs': ['recipe', 'requestId'], '/api/plan/diff': ['recipe', 'domain'] }[path] ?? ['recipe'];
         if (!keys(input, allowed)) throw new HttpError(400, 'BAD_REQUEST');
-        const recipe = validateComposerRequestRecipe(input.recipe);
+        let selectable;
+        try { selectable = engine.selectableVendors?.(); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
+        const recipe = validateComposerRequestRecipe(input.recipe, selectable);
         if (path === '/api/plan/deep') {
           let deep;
           // 코드가 붙은 오류(입력·원본 변경·선언 불일치 등)는 그 코드로, 그 밖의 엔진 오류는 점검 실패로 답한다(내용은 숨긴다).

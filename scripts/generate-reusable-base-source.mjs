@@ -18,6 +18,7 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, composerOwnership, detectGeneratedComposition, loadComposerModules,
   projectComposerModuleFiles } from './composer-modules.mjs';
 import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
+import { loadVendorLedger, selectableVendors } from './project-composer-vendors.mjs';
 import { projectVendorSources } from './project-composer-vendor-project.mjs';
 import { assertCompositionDatabaseLock, composerProfile, assertComposerSourceSurvives, projectedScreenLosses,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
@@ -201,6 +202,7 @@ async function main() {
   const composition = resolveGeneratorComposition({ catalog, profile: args.composition ? undefined : args.profile,
     supplied: args.composition ? JSON.parse(readFileSync(resolve(args.composition), 'utf8')) : undefined,
     backendLayout: args.layout, layoutExplicit: process.argv.includes('--layout'), sourceCommit: git(['rev-parse', 'HEAD']),
+    selectable: selectableVendors(loadVendorLedger(ROOT)),
     resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
   args.profile = composition.profile;
   args.layout = composition.backendLayout;

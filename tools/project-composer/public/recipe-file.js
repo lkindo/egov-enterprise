@@ -56,7 +56,7 @@ export function planImport({ value, fileName, catalog, vendors, currentName }) {
   }
   const requested = value.database?.vendor ?? 'postgresql';
   const vendor = vendors.includes(requested) ? requested : null;
-  if (!vendor) notes.push(`지원하지 않는 데이터베이스(${clip(requested)})라 지금 고른 데이터베이스로 불러왔습니다.`);
+  if (!vendor) notes.push(`지금 고를 수 없는 데이터베이스(${clip(requested)})라 지금 고른 데이터베이스로 불러왔습니다.`);
   // 이름 규칙(63자)보다 긴 이름은 화면에 옮기지 않는다(그 밖의 규칙 위반은 평소처럼 이름 칸이 알린다).
   const name = value.project.name.length > 63 ? currentName : value.project.name;
   if (name !== value.project.name) notes.push('구성 파일의 프로젝트 이름이 63자를 넘어 지금 이름을 그대로 둡니다.');
@@ -82,7 +82,7 @@ export function createRecipeImport({ $, state, restoreRecipe, withdrawPlan, chan
     let imported;
     try {
       imported = planImport({ value: await readRecipeFile(file), fileName: file.name, catalog: state.catalog,
-        vendors: [...$('database').options].map(option => option.value), currentName: $('project-name').value });
+        vendors: [...$('database').options].filter(option => !option.disabled).map(option => option.value), currentName: $('project-name').value });
     } catch (error) { $('import-error').textContent = error.message; $('import-error').hidden = false; return; }
     if (state.busy || $('import-recipe').disabled) return;
     restoreRecipe(imported.recipe);

@@ -20,7 +20,7 @@
     <div class="mb-8 max-w-3xl">
       <p class="mb-3 text-sm font-semibold text-accent">필요한 기능부터 시작하세요</p>
       <h1 class="text-3xl font-bold tracking-tight sm:text-4xl">새 프로젝트 만들기</h1>
-      <p class="mt-4 leading-7 text-muted">공통 기반에 업무 기능을 더하고, 프로젝트 구조를 선택하세요.<br class="hidden sm:block">선택한 소스와 PostgreSQL 스키마를 함께 준비합니다.</p>
+      <p class="mt-4 leading-7 text-muted">공통 기반에 업무 기능을 더하고, 프로젝트 구조를 선택하세요.<br class="hidden sm:block">선택한 소스와 DB 스키마를 함께 준비합니다.</p>
     </div>
     <div id="connection-error" class="mb-6 rounded-xl border border-danger bg-danger-soft p-5" hidden>
       <p id="connection-message" role="alert"></p>
@@ -72,7 +72,11 @@
             </fieldset>
             <p class="mt-3 text-xs leading-6 text-muted">단일모듈도 기능별 소스 폴더와 검증 경계를 보존합니다. 프런트엔드는 별도 앱으로 포함됩니다.</p>
             <label class="mb-2 mt-5 block text-sm font-semibold" for="database">데이터베이스</label>
-            <select id="database" class="w-full rounded-lg border border-line bg-panel px-3 py-3"><option value="postgresql">PostgreSQL</option></select>
+            <select id="database" class="w-full rounded-lg border border-line bg-panel px-3 py-3" aria-describedby="database-reasons"><option value="postgresql">PostgreSQL</option></select>
+            <div id="database-reasons" class="mt-2 text-xs leading-6 text-muted" hidden>
+              <p class="font-semibold">아직 고를 수 없는 데이터베이스</p>
+              <ul id="database-reason-list" class="space-y-1"></ul>
+            </div>
           </section>
         </fieldset>
         <button id="preview" type="submit" class="mt-5 rounded-lg border border-line bg-panel px-5 py-3 text-sm font-semibold">구성 다시 확인</button>

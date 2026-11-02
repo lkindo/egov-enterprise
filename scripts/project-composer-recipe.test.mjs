@@ -271,7 +271,8 @@ test('every composition starts group sidebars from the original grants and shows
 test('both generators resolve a preset profile through the same resolver the composer uses', () => {
   const sourceCommit = 'a'.repeat(40);
   const resolveSourceReference = reference => (reference === sourceCommit ? sourceCommit : 'b'.repeat(40));
-  const generator = options => resolveGeneratorComposition({ catalog, sourceCommit, resolveSourceReference, ...options });
+  const selectable = ['postgresql'];
+  const generator = options => resolveGeneratorComposition({ catalog, sourceCommit, resolveSourceReference, selectable, ...options });
   for (const preset of catalog.presets.map(item => item.id)) {
     const hashes = new Set();
     for (const layout of ['multi-module', 'single-module']) {
@@ -291,18 +292,20 @@ test('both generators resolve a preset profile through the same resolver the com
   const single = generator({ profile: 'core', backendLayout: 'single-module' });
   assert.throws(() => generator({ supplied: single, backendLayout: 'multi-module', layoutExplicit: true }), /layout differs/);
   const supplied = { ...resolveProjectRecipe({ ...recipe({ domains: ['reward'] }), sourceRef: sourceCommit }, loose), sourceCommit };
-  assert.throws(() => resolveGeneratorComposition({ catalog: loose, sourceCommit, resolveSourceReference, supplied }),
+  assert.throws(() => resolveGeneratorComposition({ catalog: loose, sourceCommit, resolveSourceReference, selectable, supplied }),
     error => error.code === 'FK_CLOSURE' && /fk_tb_rward_manage_tb_ifml_atrz_info/.test(error.message));
   assert.throws(() => generator({ profile: 'custom' }), /Unknown project preset/);
   assert.throws(() => generator({}), /Exactly one/);
   assert.throws(() => generator({ profile: 'core', supplied: single }), /Exactly one/);
-  assert.throws(() => resolveGeneratorComposition({ catalog, profile: 'core', sourceCommit, resolveSourceReference: () => 'c'.repeat(40) }), /sourceRef/);
+  assert.throws(() => resolveGeneratorComposition({ catalog, profile: 'core', sourceCommit, selectable, resolveSourceReference: () => 'c'.repeat(40) }), /sourceRef/);
 });
 
 test('both generators take their composition only from the shared resolver', () => {
   for (const file of ['generate-reusable-base-db.mjs', 'generate-reusable-base-source.mjs']) {
     const code = readFileSync(join(import.meta.dirname, file), 'utf8');
     assert.equal(code.match(/resolveGeneratorComposition\(/g)?.length, 1, `${file}: one resolver call`);
+    // 벤더 판정은 원장에서 온다. 입구에서 값을 고정하면 원장을 올려도 생성 단계에서만 거부된다.
+    assert.match(code, /selectable: selectableVendors\(loadVendorLedger\(ROOT\)\)/, `${file}: the vendor judgement comes from the ledger`);
     assert.doesNotMatch(code, /verifyResolvedDbComposition\(|resolveProjectRecipe\(|verifyProjectComposition\(/, `${file}: no second resolver`);
     // 프리셋 전용 분기가 돌아오면 같은 선택이 진입 경로에 따라 다른 결과를 낸다(DEC-OPS-239).
     assert.doesNotMatch(code, /if \(!?composition\)|(?<![.\w])composition \? |(?<![.\w])!composition\b/, `${file}: no profile-only branch`);

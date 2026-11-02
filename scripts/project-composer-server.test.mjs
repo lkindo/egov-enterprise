@@ -137,6 +137,30 @@ test('method, content type, malformed JSON, size and unrecognized recipe input f
   assert.throws(() => validateComposerRequestRecipe(null));
 });
 
+test('a recipe is accepted only for a vendor the engine reads from its ledger', async t => {
+  const { post, calls } = await fixture(t, { selectableVendors: () => ['postgresql', 'oracle'] });
+  const oracle = { ...recipe(), database: { vendor: 'oracle' } };
+  assert.equal((await post('/api/plan', { recipe: oracle })).status, 200);
+  assert.deepEqual(calls.plan.at(-1), oracle);
+  assert.equal((await post('/api/plan', { recipe: { ...recipe(), database: { vendor: 'mysql' } } })).status, 400);
+  assert.equal(calls.plan.length, 1);
+  assert.doesNotThrow(() => validateComposerRequestRecipe(oracle, ['oracle']));
+  assert.throws(() => validateComposerRequestRecipe(oracle), error => error.code === 'INVALID_RECIPE', '엔진이 벤더 목록을 주지 않으면 PostgreSQL 만 받는다');
+});
+
+test('a broken vendor ledger is reported, never treated as an open or a closed list', async t => {
+  const drift = await fixture(t, { selectableVendors: () => { throw new ComposerError('CATALOG_DRIFT', { violations: ['벤더 원장 위반'] }, 'ledger'); } });
+  const declared = await drift.post('/api/plan', { recipe: recipe() });
+  assert.equal(declared.status, 500);
+  assert.equal(declared.body.error.code, 'CATALOG_DRIFT');
+  const bug = await fixture(t, { selectableVendors: () => { throw new TypeError('private-detail'); } });
+  const internal = await bug.post('/api/plan', { recipe: recipe() });
+  assert.equal(internal.status, 500);
+  assert.equal(internal.body.error.code, 'INTERNAL_ERROR');
+  assert.doesNotMatch(internal.text, /private-detail/);
+  assert.equal(drift.calls.plan.length + bug.calls.plan.length, 0);
+});
+
 test('plan and generate receive the same recipe, polling shows bounded progress and only safe result fields', async t => {
   const { origin, post, calls } = await fixture(t, { generate: async (value, { onProgress }) => {
     calls.generate.push(value);
