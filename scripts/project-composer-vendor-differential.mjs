@@ -262,13 +262,15 @@ const INTENT_STEPS = Object.freeze([
   ['SELECT COUNT(*) FROM zz_ledger_probe', 1],
 ]);
 
-function intentFailures(handle, vendorId) {
+export function intentFailures(handle, vendorId, run = runStatements) {
   const statements = INTENT_STEPS.map(([sql]) => ({ sql }));
-  const { sections, errors } = runStatements(handle, statements);
+  const { sections, errors } = run(handle, statements);
   const rejected = new Set(errors.map(item => item.index));
   return INTENT_STEPS.flatMap(([sql, expected], index) => {
     if (typeof expected === 'number') {
       const actual = parseCount(sections.get(index));
+      // 조회가 안 된 것은 트리거 동작의 차이가 아니다. 대조 실패로 말하면 원인을 잘못 가리킨다.
+      if (rejected.has(index) || actual === null) throw Object.assign(new Error(`${vendorId} 트리거 확인 조회 실패: ${sql}`), { code: 'VENDOR_QUERY_FAILED' });
       return actual === expected ? [] : [`${sql} → ${actual} (기대 ${expected})`];
     }
     return rejected.has(index) === expected ? [`${sql} → ${expected ? '거부' : '통과'}`] : [];
@@ -328,10 +330,13 @@ export function withDisposablePostgres(run, docker = spawnDocker) {
   const name = `egov-vendor-baseline-${randomBytes(4).toString('hex')}`;
   let result;
   let failure = null;
+  let dockerMissing = false;
   try {
     const started = docker(['run', '-d', '--name', name, ...vendorContainerLabels('postgresql'), '--env', 'POSTGRES_USER=composer',
       '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', COMPOSER_POSTGRES_IMAGE]);
-    if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${String(started.stderr).slice(0, 200)}`);
+    // 실행 파일이 없으면 만들어진 컨테이너도 없다. 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 그대로 정리한다.
+    dockerMissing = started.error?.code === 'ENOENT';
+    if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${String(started.stderr ?? started.error?.message).slice(0, 200)}`);
     for (let attempt = 0; docker(['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']).status !== 0; attempt += 1) {
       if (attempt > 240) throw new Error('기준 PostgreSQL 이 준비되지 않았다.');
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
@@ -340,6 +345,7 @@ export function withDisposablePostgres(run, docker = spawnDocker) {
   } catch (error) {
     failure = error;
   }
+  if (dockerMissing) throw failure;
   stopVendorEngineReporting({ name }, failure, () => docker(['rm', '-f', '-v', name]));
   return result;
 }

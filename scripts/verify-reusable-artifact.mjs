@@ -48,7 +48,7 @@ export function verificationSteps(scope = 'full', layout = 'multi-module', { ven
     { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]), ...GRADLE_OPTIONS] },
     ...(vendor ? [
       vendorIntegrationStep(vendor, layout),
-      // 대체 분류 시험의 근거다. CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 대조한다.
+      // 대체 분류 시험의 근거다. CHECK 는 같은 값을 PostgreSQL 과 대조하고, 트리거는 원본 함수의 기대 전이와 대조한다.
       { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor] },
     ] : []),
   );

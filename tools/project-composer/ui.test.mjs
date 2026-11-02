@@ -2059,7 +2059,7 @@ test('a command that ended without an exit code is not called "could not run", a
 });
 
 /*
- * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 상태와 시간을 보이고, 남은 시간은 같은 배치로 끝까지 마친 기록이
+ * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 상태와 시간을 보이고, 남은 시간은 같은 출력 구조·같은 데이터베이스로 끝까지 마친 기록이
  * 충분할 때만 숫자로 말한다. 같은 작업의 목록은 제자리에서 고치고, 새 작업은 목록을 새로 시작한다.
  */
 const timelineOf = overrides => ({
@@ -2110,7 +2110,7 @@ test('the job panel shows each stage and verification step with its time, and th
   await expect(list.locator(':scope > li[data-id="verify"]')).toHaveAttribute('aria-current', 'step');
   await expect(steps.locator('li[data-id="typecheck"]')).toHaveText('타입 검사 · 대기');
   await expect(page.locator('#job-message')).toHaveText('생성 프로젝트 검증 중 · 백엔드 컴파일·테스트 (4/7)');
-  await expect(page.locator('#job-elapsed')).toHaveText(/^경과 \d+(\.\d)?초 · 남은 시간은 같은 배치로 끝까지 마친 기록이 3회 이상이면 알려 드립니다\(지금 1회\)$/);
+  await expect(page.locator('#job-elapsed')).toHaveText(/^경과 \d+(\.\d)?초 · 남은 시간은 같은 출력 구조·같은 데이터베이스로 끝까지 마친 기록이 3회 이상이면 알려 드립니다\(지금 1회\)$/);
   assert.equal(await page.locator('#job-elapsed').getAttribute('aria-live'), null, 'the ticking time is not announced');
   // 같은 작업의 다음 조회는 항목을 새로 만들지 않는다(화면 낭독기가 읽던 자리를 지킨다).
   await page.evaluate(() => { window.backendRow = document.querySelector('#job-timeline li[data-id="backend"]'); });

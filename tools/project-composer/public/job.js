@@ -23,7 +23,7 @@ export function timelineStatus(item) {
   const text = STATUS_TEXT[item.status] ?? '';
   return Number.isFinite(time) && ['running', 'passed', 'failed', 'cancelled'].includes(item.status) ? `${text} · ${formatDuration(time)}` : text;
 }
-/** 경과·남은 시간 한 줄. 남은 시간은 같은 배치로 끝까지 마친 기록이 충분할 때만 숫자로 말한다. */
+/** 경과·남은 시간 한 줄. 남은 시간은 같은 출력 구조·같은 데이터베이스로 끝까지 마친 기록이 충분할 때만 숫자로 말한다. */
 export function elapsedSentence(job) {
   if (!Number.isFinite(job?.elapsedMs)) return '';
   if (job.status !== 'running') return `걸린 시간 ${formatDuration(job.elapsedMs)}`;
@@ -33,7 +33,7 @@ export function elapsedSentence(job) {
     rest = estimate.remainingMs > 0 ? ` · 최근 ${estimate.runs}회 기록 기준 약 ${formatDuration(estimate.remainingMs)} 남음`
       : ' · 최근 기록보다 오래 걸리고 있습니다';
   } else if (estimate && Number.isInteger(estimate.minRuns)) {
-    rest = ` · 남은 시간은 같은 배치로 끝까지 마친 기록이 ${estimate.minRuns}회 이상이면 알려 드립니다(지금 ${estimate.runs}회)`;
+    rest = ` · 남은 시간은 같은 출력 구조·같은 데이터베이스로 끝까지 마친 기록이 ${estimate.minRuns}회 이상이면 알려 드립니다(지금 ${estimate.runs}회)`;
   }
   return `경과 ${formatDuration(job.elapsedMs)}${rest}`;
 }

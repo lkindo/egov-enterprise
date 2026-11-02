@@ -78,7 +78,9 @@ export function projectVendorCompose(text, vendorId) {
   const urls = replaceRequired(service, /jdbc:postgresql:\/\/db:5432\/egovdb/g, source.composeUrl, 'compose 접속 주소');
   const volume = replaceRequired(urls, /\bpostgres_data\b/g, source.composeVolume, 'compose 볼륨');
   // 환경 변수가 설정 파일을 이긴다. 두면 Oracle 에 PostgreSQL 번들을 적용한다.
-  return replaceRequired(volume, /classpath:db\/migration(?:,classpath:db\/seed-dev)?/g, vendorBaselinePaths(vendorId).location, 'compose Flyway 위치');
+  const flyway = replaceRequired(volume, /classpath:db\/migration(?:,classpath:db\/seed-dev)?/g, vendorBaselinePaths(vendorId).location, 'compose Flyway 위치');
+  // 개발 시드가 없어 webmaster 는 로그인 불가 상태로 시작한다. 알려진 비밀번호를 산출물에 늘리지 않고 값은 바깥에서 받는다.
+  return replaceRequired(flyway, /^( {6})SPRING_FLYWAY_LOCATIONS:/m, '$1ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}\n$1SPRING_FLYWAY_LOCATIONS:', 'compose 관리자 비밀번호');
 }
 
 /** 운영 오버레이의 DB 자격을 벤더 이미지의 환경 변수로 바꾼다. */
@@ -107,7 +109,7 @@ export function projectVendorSettings(text) {
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
 export function projectVendorEnvironment(text, vendorId) {
   const url = replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
-  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me', '.env.example 비밀번호');
+  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me\n# 최초 관리자(webmaster) 비밀번호. 개발 시드가 없어 값을 정해야 로그인할 수 있다.\n# ADMIN_INITIAL_PASSWORD=', '.env.example 비밀번호');
 }
 
 export const vendorReadme = vendorId => `
@@ -116,6 +118,8 @@ export const vendorReadme = vendorId => `
 이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 폴더만 적용한다(생성 시점에는 번역 기준선 하나). \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 
 \`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
+
+이 프로젝트에는 PostgreSQL 개발 시드(\`db/seed-dev\`)가 적용되지 않아 \`webmaster\` 는 로그인할 수 없는 상태로 시작한다. 개발 스택을 올리기 전에 \`.env\` 의 \`ADMIN_INITIAL_PASSWORD\` 에 비밀번호를 정하면 첫 기동 때 한 번 설정된다. 이미 정한 비밀번호는 덮어쓰지 않는다.
 
 PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 엔티티·스키마 정적 린터(아래 카탈로그 시험이 대신한다), 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 대표 묶음만 돌린다: \`node scripts/run-isolated-e2e.mjs --representative\`. 시험 목록은 \`config/governance/vendor-test-ledger.json\` 이 고정하고, 원장의 기능을 모두 고른 멀티모듈 생성물이 아니면 시작 전에 멈춘다.
 

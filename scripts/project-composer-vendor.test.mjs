@@ -13,7 +13,7 @@ import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
-import { differentialExitCode, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
+import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
 import { VENDOR_BASELINE_VERSION, assertTestsRan, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
@@ -1342,6 +1342,21 @@ test('the disposable baseline database goes away whatever happens, and a leftove
   assert.throws(() => withDisposablePostgres(() => { throw new Error('대조 실패'); }, docker({ rm: { status: 1 } })), /대조 실패.*시험 DB 컨테이너가 남았다/, '본래 실패에 잔존을 덧붙인다');
   assert.throws(() => withDisposablePostgres(() => 'ok', docker({ rm: { status: 1 } })), /시험 DB 컨테이너가 남았다/, '남은 컨테이너를 성공으로 넘기지 않는다');
   assert.equal(withDisposablePostgres(() => 'ok', docker({})), 'ok');
+  const missing = () => ({ status: null, error: Object.assign(new Error('spawnSync docker ENOENT'), { code: 'ENOENT' }) });
+  assert.throws(() => withDisposablePostgres(() => assert.fail('돌면 안 된다'), missing),
+    error => /spawnSync docker ENOENT/.test(error.message) && !/남았다|undefined/.test(error.message), 'Docker 가 없으면 남은 컨테이너도 없다');
+});
+
+test('a trigger probe whose count cannot be read is a query failure, not a parity difference', () => {
+  const steps = (errorAt = () => false, value = '1') => (handle, statements) => {
+    const sections = new Map(statements.map(({ sql }, index) => [index, /^SELECT COUNT/.test(sql) ? [value] : []]));
+    return { sections, errors: statements.flatMap(({ sql }, index) => (errorAt(sql) ? [{ index, error: 'ORA-00942' }] : [])) };
+  };
+  const rejectsCount = sql => /^SELECT COUNT/.test(sql);
+  assert.throws(() => intentFailures({}, 'oracle', steps(rejectsCount)), error => error.code === 'VENDOR_QUERY_FAILED' && /oracle 트리거 확인 조회 실패/.test(error.message), '조회 오류');
+  assert.throws(() => intentFailures({}, 'oracle', steps(() => false, 'x')), error => error.code === 'VENDOR_QUERY_FAILED', '읽을 수 없는 수');
+  const wrong = intentFailures({}, 'oracle', steps(() => false, '2'));
+  assert.ok(wrong.some(item => /→ 2 \(기대 1\)/.test(item)), '값이 다르면 그대로 대조 실패다');
 });
 
 test('the development stack moves to the vendor service and leaves the application services alone', () => {
@@ -1367,6 +1382,7 @@ volumes:
   assert.match(projected, /jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1/);
   assert.match(projected, /^ {2}api:$/m);
   assert.match(projected, /^ {2}oracle_data:$/m);
+  assert.match(projected, /^ {6}ADMIN_INITIAL_PASSWORD: \$\{ADMIN_INITIAL_PASSWORD:-\}$/m, '개발 시드가 없어 관리자 비밀번호를 환경값으로 받는다');
   assert.equal(projectVendorCompose(`${compose}      SPRING_FLYWAY_LOCATIONS: \${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/seed-dev}\n`, 'oracle').includes('classpath:db/migration'), false, '환경 변수가 설정 파일을 이기므로 compose 에 PostgreSQL 위치를 남기지 않는다');
   assert.throws(() => projectVendorCompose('services:\n  web:\n', 'oracle'), /compose db 서비스/);
 
