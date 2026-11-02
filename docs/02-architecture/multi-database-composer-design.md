@@ -529,8 +529,9 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 | 규칙 | 범위 | 입력 |
 |---|---|---|
 | PK 전략·숫자 변환·길이 초과 | 카탈로그 전체 | JDBC 메타데이터를 JDBC 타입 코드로 정규화 |
-| 표·제약·인덱스·시퀀스 이름, 새 표의 감사 컬럼, 새 컬럼의 고정 문자형 | 기준선 뒤의 새 객체 | 두 시점 이름 목록의 차이(어댑터의 메타 조회 재사용) |
-| 유니크 미러 | 기준선 뒤의 새 유니크 | 드라이버의 유니크 인덱스. 이름 없는 제약(`SYS_C`)도 새 유니크로 잡고, Oracle 함수 인덱스는 숨은 컬럼 대신 `user_ind_expressions` 의 식에서 컬럼을 읽는다 |
+| 표·제약·인덱스·시퀀스 이름, 새 표의 감사 컬럼, 새 컬럼의 고정 문자형 | 기준선 뒤의 새 객체 | 두 시점 이름 목록의 차이(어댑터의 메타 조회 재사용). DB 가 지은 이름(Oracle `SYS_C`)은 조회에서 빠져 이름 규칙이 보지 않는다. 드라이버가 뷰라고 답한 이름은 표 규칙에서 뺀다 |
+| 뷰 이름 | 전체(기준선에 뷰가 없다) | 드라이버의 뷰 목록 |
+| 유니크 미러 | 기준선 뒤에 생기거나 다시 만든 유니크, 기본키 제외 | 드라이버의 유니크 인덱스와 기본키. 기준선 여부는 두 시점 `표.이름=값`(Oracle 은 `object_id`)이 같은지로 가른다. 이름 없는 제약(`SYS_C`)도 새 유니크로 잡고, Oracle 함수 인덱스는 숨은 컬럼 대신 `user_ind_expressions` 의 식에서 컬럼을 읽는다 |
 | 초기 권한 | 전체 | 카탈로그 `defaultGroups` ↔ `tb_authrt_grnt_map` OPERATION 양방향 |
 | 표·컬럼 부재, 타입 계열 | 전체 | 시나리오 시험 문맥의 Hibernate validate(같은 불변식을 두 게이트에 두지 않는다) |
 
@@ -538,9 +539,11 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 `npm run verify` 의 의미는 바꾸지 않았다. 거버넌스 첫 단계가 소스 변경을 잡아 멈추므로 첫 변경 뒤에는 그 뒤 단계에 닿지 못하고, 이는 PostgreSQL 생성물과 같다(`reusable-base-guide.md`). 새 명령은 그 단계를 지나지 않으며 인증을 주장하지 않는다(보고서 `authority: local-vendor-schema-check`).
 
-지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
+지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 이름 없이 만든 제약의 이름 규칙(PostgreSQL 명명 린터도 `CONSTRAINT` 구문만 본다), 뷰의 정의, 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
 
 화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 승격은 원장 값 변경으로 끝난다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
+
+이 시험의 게이트(`GATESET-VENDOR-CONFORMANCE`)는 아직 CI 잡에 잇지 않았다. 지금 실행 경로는 생성물의 `npm run verify` 와 `verify:vendor-schema` 뿐이라 등록을 `local-vendor` tier 와 `ciPending` 으로 둔다. `reusable-vendor` 잡을 이을 때 `ci` tier 와 required context 로 바꾸며, `ciPending` 이 남아 있으면 벤더를 `certified` 로 올릴 수 없다.
 
 남은 일: 격리 E2E 실행기의 벤더 대응과 대표 E2E, 19c 기본 접속값.
 

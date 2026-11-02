@@ -33,7 +33,7 @@ export function verificationSteps(scope = 'full', layout = 'multi-module', { ven
   if (!['contracts', 'backend', 'frontend', 'full', VENDOR_SCHEMA_SCOPE].includes(scope)) throw new Error(`scope must be contracts, backend, frontend, full or ${VENDOR_SCHEMA_SCOPE}`);
   normalizeBackendLayout(layout);
   const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
-  if (scope === VENDOR_SCHEMA_SCOPE && !vendor) throw new Error('vendor-schema is only for a project generated on a vendor database');
+  if (scope === VENDOR_SCHEMA_SCOPE && !vendor) throw new Error('vendor-schema 는 PostgreSQL 외 DB 로 생성한 프로젝트에서만 쓴다');
   // 생성물 인증(거버넌스 첫 단계)을 지나지 않는다. 첫 소스 변경 뒤 전체 검증이 거기서 멈춰도 벤더 스키마 신호는 받게 한다.
   if (scope === VENDOR_SCHEMA_SCOPE) return [
     { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...GRADLE_OPTIONS] },

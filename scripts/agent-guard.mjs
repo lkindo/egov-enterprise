@@ -1045,8 +1045,8 @@ export const RULES = Object.freeze([
   },
   {
     id: 'tagged-test-on-default-task', decision: 'deny',
-    why: '@Tag("governance-harness")·@Tag("schema-validation") 시험은 기본 test 태스크에서 빠진다 — 그 태스크에 --tests 로 걸면 0건이 돌고도 BUILD SUCCESSFUL 이다(2026-09-05).',
-    fix: '하네스 시험은 :api-server:harnessTest --tests, 스키마 시험은 :api-server:schemaValidationTest --tests 로 돌린다(한 호출에 함께 걸 수 있다).',
+    why: '@Tag("governance-harness")·@Tag("schema-validation")·@Tag("vendor-conformance") 시험은 기본 test 태스크에서 빠진다 — 그 태스크에 --tests 로 걸면 0건이 돌고도 BUILD SUCCESSFUL 이다(2026-09-05).',
+    fix: '하네스 시험은 :api-server:harnessTest --tests, 스키마 시험은 :api-server:schemaValidationTest --tests 로 돌린다(한 호출에 함께 걸 수 있다). 벤더 카탈로그 시험은 벤더 DB 와 스냅숏이 있어야 하므로 scripts/project-composer-vendor-integration.mjs 로 돌린다.',
     match: ({ raw, code, cwd }) => {
       if (!/gradlew/i.test(code) || !/--tests/.test(code)) return false;
       // excludeTags 는 api-server 의 test 태스크에만 있다 — 그 태스크와 그것을 포함하는 루트 집계 `test` 만 본다.

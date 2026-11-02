@@ -36,7 +36,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code VENDOR_CATALOG_SNAPSHOT} 파일로 넘긴 뒤 이 시험을 시나리오 시험과 소유 표시보다 먼저 돌린다. 그래야 시험 픽스처와
  * {@code vendor_test_owner} 가 도입자 객체로 보이지 않는다. 접속 값이 없으면 실패한다 — 이 시험은 전용 작업에서만 돈다.
  *
- * <p>규칙의 범위: PK 전략·숫자 변환·길이는 카탈로그 전체, 명명·감사·유니크 미러는 기준선 뒤의 새 객체, 초기 권한은 전체. 표·컬럼 부재와 타입
+ * <p>규칙의 범위: PK 전략·숫자 변환·길이는 카탈로그 전체, 명명·감사·유니크 미러는 기준선 뒤의 새 객체, 뷰 이름과 초기 권한은 전체. 표·컬럼 부재와 타입
  * 계열은 Hibernate validate 가 같은 DB 에서 본다. 생성 시점 기준선의 정확 대조는 실행 도구의 {@code assertVendorApplied} 가 한다.
  */
 @Tag("vendor-conformance")
@@ -54,6 +54,9 @@ class VendorCatalogConformanceTest {
     private static Map<String, Map<String, String>> schema;
     private static Map<String, Map<String, Set<String>>> uniques;
     private static Set<String> grants;
+    private static Set<String> views;
+    private static Map<String, Set<String>> primaryKeys;
+    private static Set<String> unchangedUniques;
 
     @BeforeAll
     static void readCatalog() throws Exception {
@@ -61,12 +64,15 @@ class VendorCatalogConformanceTest {
                 .readTree(Path.of(requireEnvironment("VENDOR_CATALOG_SNAPSHOT")).toFile());
         baseline = names(snapshot.path("baseline"));
         current = names(snapshot.path("current"));
+        unchangedUniques = strings(snapshot.path("unchangedUniques"));
         try (Connection connection = DriverManager.getConnection(requireEnvironment("VENDOR_TEST_URL"),
                 requireEnvironment("SPRING_DATASOURCE_USERNAME"), requireEnvironment("SPRING_DATASOURCE_PASSWORD"))) {
             DatabaseMetaData metadata = connection.getMetaData();
             Map<String, String> stored = new LinkedHashMap<>();
             schema = readColumns(connection, metadata, stored);
+            views = readViews(connection, metadata);
             uniques = readUniques(connection, metadata, stored);
+            primaryKeys = readPrimaryKeys(connection, metadata, stored);
             grants = readGrants(connection);
         }
     }
@@ -89,7 +95,7 @@ class VendorCatalogConformanceTest {
         if (baseline.tables().isEmpty() || current.tables().isEmpty()) {
             fail("게이트 무결성 파손: 카탈로그 표 수 기준선 " + baseline.tables().size() + " / 현재 " + current.tables().size());
         }
-        report("DB 헌법 명명·타입·감사 컬럼 표준 위반", SchemaConformanceRules.newObjectProblems(baseline, current, schema));
+        report("DB 헌법 명명·타입·감사 컬럼 표준 위반", SchemaConformanceRules.newObjectProblems(baseline, current, schema, views));
     }
 
     @Test
@@ -101,7 +107,7 @@ class VendorCatalogConformanceTest {
         if (mapped < MIN_MAPPED_UNIQUES) {
             fail("게이트 무결성 파손: 엔티티가 매핑된 표의 유니크 " + mapped + "건 — 드라이버 조회 파손 의심(예상 하한 " + MIN_MAPPED_UNIQUES + "건).");
         }
-        report("DB UNIQUE 의 JPA 미러 누락", SchemaConformanceRules.mirrorProblems(mirrors, uniques, baseline.objectNames()));
+        report("DB UNIQUE 의 JPA 미러 누락", SchemaConformanceRules.mirrorProblems(mirrors, uniques, unchangedUniques, primaryKeys));
     }
 
     @Test
@@ -167,6 +173,28 @@ class VendorCatalogConformanceTest {
             }
         }
         return columns;
+    }
+
+    private static Set<String> readViews(Connection connection, DatabaseMetaData metadata) throws SQLException {
+        Set<String> names = new TreeSet<>();
+        try (ResultSet rows = metadata.getTables(connection.getCatalog(), connection.getSchema(), "%", new String[] {"VIEW"})) {
+            while (rows.next()) {
+                names.add(lower(rows.getString("TABLE_NAME")));
+            }
+        }
+        return names;
+    }
+
+    private static Map<String, Set<String>> readPrimaryKeys(Connection connection, DatabaseMetaData metadata, Map<String, String> stored) throws SQLException {
+        Map<String, Set<String>> keys = new HashMap<>();
+        for (Map.Entry<String, String> table : stored.entrySet()) {
+            try (ResultSet rows = metadata.getPrimaryKeys(connection.getCatalog(), connection.getSchema(), table.getValue())) {
+                while (rows.next()) {
+                    keys.computeIfAbsent(table.getKey(), key -> new TreeSet<>()).add(lower(rows.getString("COLUMN_NAME")));
+                }
+            }
+        }
+        return keys;
     }
 
     /** 표 → 유니크 인덱스 이름 → 컬럼. approximate 로 부른다 — 정확 통계를 달라고 하면 Oracle 드라이버가 표를 분석하는 문장을 낸다. */

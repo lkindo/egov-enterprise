@@ -12,7 +12,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_ENGINES, readCatalog, runAsAdministrator, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
+import { VENDOR_ENGINES, readCatalog, readUniqueSignatures, runAsAdministrator, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 import { applyVendor, assertVendorApplied } from './project-composer-vendor-verify.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
 
@@ -153,6 +153,14 @@ export function conformanceCatalog(vendorId, catalog) {
   return { columns: catalog.columns ?? [], constraints, indexes: catalog.indexes ?? [], sequences: catalog.sequences ?? [] };
 }
 
+/**
+ * 기준선 그대로인 유니크의 `표.이름`. 시험은 여기에 없는 유니크를 새 것으로 본다. 조회가 깨져 비면 전부 새 것이 되어 붉으므로 조용히 초록이 되지 않는다.
+ */
+export function unchangedUniques(baseline, current) {
+  const before = new Set(baseline);
+  return current.filter(signature => before.has(signature)).map(signature => signature.slice(0, signature.indexOf('=')));
+}
+
 /** 적용된 카탈로그를 스키마 규칙으로 본다. 시나리오 시험의 픽스처와 소유 표가 도입자 객체로 보이지 않게 그보다 먼저 돈다. */
 function runVendorConformance(vendorId, integration, handle, { task, results }, snapshot) {
   const file = join(ROOT, 'build/vendor-conformance/catalog.json');
@@ -193,8 +201,10 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
       migrateWithFlyway(vendorId, integration, handle, migrate, flyway, VENDOR_BASELINE_VERSION);
       assertVendorApplied(handle, input, vendorId, { ignoreTables: ['flyway_schema_history'] });
       const baseline = conformanceCatalog(vendorId, readCatalog(handle, vendorId));
+      const baselineUniques = readUniqueSignatures(handle, vendorId);
       migrateWithFlyway(vendorId, integration, handle, migrate, flyway);
-      const snapshot = { vendor: vendorId, baseline, current: conformanceCatalog(vendorId, readCatalog(handle, vendorId)) };
+      const snapshot = { vendor: vendorId, baseline, current: conformanceCatalog(vendorId, readCatalog(handle, vendorId)),
+        unchangedUniques: unchangedUniques(baselineUniques, readUniqueSignatures(handle, vendorId)) };
       runVendorConformance(vendorId, integration, handle, { task: conformance, results: conformanceResults }, snapshot);
     } else {
       applyVendor(handle, input, vendorId);

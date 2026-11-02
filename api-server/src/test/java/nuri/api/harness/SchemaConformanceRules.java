@@ -51,6 +51,7 @@ final class SchemaConformanceRules {
 
     static final Pattern TABLE_NAME = Pattern.compile("tb_[a-z0-9_]+");
     static final Pattern SEQUENCE_NAME = Pattern.compile("sq_[a-z0-9_]+");
+    static final Pattern VIEW_NAME = Pattern.compile("vw_[a-z0-9_]+");
     // uk_ 는 유니크 "인덱스" 레거시 관행(제약 승격 대상 P5) — 신규도 잠정 허용하되 ix_ 권장
     static final Pattern INDEX_NAME = Pattern.compile("(?:ix|uk)_[a-z0-9_]+");
     static final Pattern CONSTRAINT_NAME = Pattern.compile("(?:pk|fk|uk|ck)_[a-z0-9_]+");
@@ -291,14 +292,6 @@ final class SchemaConformanceRules {
             columns.forEach(column -> tables.add(column.substring(0, column.indexOf('.'))));
             return tables;
         }
-
-        /** 이 시점에 있던 제약·인덱스의 이름. 표를 뺀 이름으로 드라이버가 주는 인덱스 이름과 맞춘다. */
-        Set<String> objectNames() {
-            Set<String> names = new TreeSet<>();
-            constraints.forEach(item -> names.add(item.substring(item.indexOf('.') + 1)));
-            indexes.forEach(item -> names.add(item.substring(item.indexOf('.') + 1)));
-            return names;
-        }
     }
 
     private static Set<String> added(Set<String> current, Set<String> baseline) {
@@ -310,11 +303,19 @@ final class SchemaConformanceRules {
     /**
      * 기준선 뒤에 생긴 객체만 명명·감사 규칙으로 본다. 기준선은 어댑터 파생 이름이 섞여 있고 정확 대조를 이미 받았다.
      * 같은 이름의 컬럼 타입을 바꾸는 변경은 여기에 나타나지 않는다.
+     *
+     * @param views 드라이버가 뷰라고 답한 이름. Oracle 컬럼 조회는 뷰 컬럼도 내므로 빼지 않으면 표로 판정된다. 드라이버가 뷰라고 답한 것만
+     *              빼므로 모르는 이름은 표로 남아 붉다. 기준선에는 뷰가 없어 모든 뷰가 새 객체다.
      */
-    static List<String> newObjectProblems(CatalogNames baseline, CatalogNames current, Map<String, Map<String, String>> schema) {
+    static List<String> newObjectProblems(CatalogNames baseline, CatalogNames current, Map<String, Map<String, String>> schema, Set<String> views) {
         List<String> problems = new ArrayList<>();
+        for (String view : new TreeSet<>(views)) {
+            if (!VIEW_NAME.matcher(view).matches()) {
+                problems.add(String.format("뷰명 '%s' — 헌법 제3조 vw_ 접두 + 제1조 소문자 snake_case 위반", view));
+            }
+        }
         Set<String> oldTables = baseline.tables();
-        for (String table : added(current.tables(), oldTables)) {
+        for (String table : added(added(current.tables(), oldTables), views)) {
             if (!TABLE_NAME.matcher(table).matches()) {
                 problems.add(String.format("테이블명 '%s' — 헌법 제3조 tb_ 접두 + 제1조 소문자 snake_case 위반", table));
             }
@@ -465,12 +466,16 @@ final class SchemaConformanceRules {
     }
 
     /**
-     * 기준선 뒤에 생긴 유니크만 미러와 대조한다. 기준선의 유니크는 어댑터가 해시 컬럼이나 함수 인덱스로 바꿔 둔 것이 있어 전체를 대조하면
-     * 정상 스키마가 붉다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가 맡는다.
+     * 기준선 뒤에 생기거나 다시 만든 유니크만 미러와 대조한다. 기준선의 유니크는 어댑터가 해시 컬럼이나 함수 인덱스로 바꿔 둔 것이 있어 전체를
+     * 대조하면 정상 스키마가 붉다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가 맡는다. 기본키는 미러 대상이 아니다 — 복합 키
+     * 엔티티는 {@code @Id} 필드가 없어 미러 판정을 통과하지 못한다.
      *
-     * @param uniques 표 → 인덱스 이름 → 컬럼 집합. 드라이버가 답한 실제 유니크다.
+     * @param uniques     표 → 인덱스 이름 → 컬럼 집합. 드라이버가 답한 실제 유니크다.
+     * @param unchanged   기준선 그대로인 유니크의 {@code 표.이름}. 표를 포함해야 다른 표의 같은 이름(MySQL)이 검사를 가리지 않는다.
+     * @param primaryKeys 표 → 기본키 컬럼 집합.
      */
-    static List<String> mirrorProblems(Map<String, EntityMirror> mirrors, Map<String, Map<String, Set<String>>> uniques, Set<String> baselineNames) {
+    static List<String> mirrorProblems(Map<String, EntityMirror> mirrors, Map<String, Map<String, Set<String>>> uniques,
+            Set<String> unchanged, Map<String, Set<String>> primaryKeys) {
         List<String> problems = new ArrayList<>();
         new TreeMap<>(uniques).forEach((table, indexes) -> {
             EntityMirror mirror = mirrors.get(table);
@@ -478,7 +483,7 @@ final class SchemaConformanceRules {
                 return;
             }
             indexes.forEach((name, columns) -> {
-                if (!baselineNames.contains(name) && !mirror.satisfies(columns)) {
+                if (!unchanged.contains(table + "." + name) && !columns.equals(primaryKeys.get(table)) && !mirror.satisfies(columns)) {
                     problems.add(String.format("테이블 '%s' UNIQUE %s(%s) — 엔티티 %s 에 JPA 미러 없음. @Table(uniqueConstraints) 또는 단일컬럼 @Column(unique=true) 로 미러하십시오.",
                             table, columns, name, mirror.entityClass));
                 }

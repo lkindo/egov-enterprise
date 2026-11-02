@@ -1306,36 +1306,44 @@
             "source": "api-server/build.gradle",
             "fragment": "tasks.register('vendorConformanceTest', Test) {",
             "tiers": [
-              "local-full"
+              "local-vendor"
             ]
           },
           {
             "source": "api-server/build.gradle",
             "fragment": "useJUnitPlatform { includeTags 'vendor-conformance' }",
             "tiers": [
-              "local-full"
+              "local-vendor"
             ]
           },
           {
             "source": "scripts/project-composer-vendor-integration.mjs",
             "fragment": "runVendorConformance(vendorId, integration, handle, { task: conformance, results: conformanceResults }, snapshot);",
             "tiers": [
-              "local-full"
+              "local-vendor"
+            ]
+          },
+          {
+            "source": "scripts/verify-reusable-artifact.mjs",
+            "fragment": "if (scope === VENDOR_SCHEMA_SCOPE) return [",
+            "tiers": [
+              "local-vendor"
             ]
           }
         ]
       },
       "tier": [
-        "local-full"
+        "local-vendor"
       ],
       "task": ":api-server:vendorConformanceTest",
       "category": "database",
       "owner": "database",
-      "requiredCiContext": "backend-build",
+      "ciPending": "No CI job runs this gate yet, so a change to the rules can stay green until a generated vendor project runs npm run verify or verify:vendor-schema. The reusable-vendor job (ADR-0047) replaces this field with the ci tier and a required context, and no vendor can become certified before that.",
       "inputs": [
         "api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java",
         "api-server/src/test/java/nuri/api/harness/SchemaConformanceRules.java",
-        "scripts/project-composer-vendor-integration.mjs"
+        "scripts/project-composer-vendor-integration.mjs",
+        "scripts/project-composer-vendor-engine.mjs"
       ],
       "evidence": [
         "api-server/build/test-results/vendorConformanceTest"

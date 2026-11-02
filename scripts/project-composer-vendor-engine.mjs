@@ -258,6 +258,14 @@ export const VENDOR_INTROSPECTION = Object.freeze({
   },
 });
 
+/**
+ * 유니크마다 `표.이름=값` 을 낸다. 값은 그 유니크를 다시 만들면 달라지므로 같은 이름으로 다른 컬럼에 다시 만들어도 구분된다.
+ * 통합 시험을 여는 벤더는 여기에도 더한다. 위 메타 조회와 나눈 이유는 기준선 정확 대조가 그 조회의 종류를 그대로 읽기 때문이다.
+ */
+export const VENDOR_UNIQUE_SIGNATURES = Object.freeze({
+  oracle: "SELECT LOWER(i.table_name) || '.' || LOWER(i.index_name) || '=' || o.object_id FROM user_indexes i JOIN user_objects o ON o.object_name = i.index_name AND o.object_type = 'INDEX' WHERE i.uniqueness = 'UNIQUE'",
+});
+
 /** 표별 다음 식별 값. 각 문장은 `표:값` 을 낸다. `inclusive` 는 값이 이미 쓰인 마지막 번호라는 뜻이다. */
 const VENDOR_NEXT_VALUES = Object.freeze({
   oracle: { sql: "SELECT LOWER(c.table_name) || ':' || s.last_number FROM user_tab_identity_cols c JOIN user_sequences s ON s.sequence_name = c.sequence_name" },
@@ -292,6 +300,16 @@ function mysqlIntrospection() {
 
 /** 다른 클라이언트는 값만 내지만 csql 은 `<00001> 식: 'a.b'` 로 낸다. 줄 끝의 값만 읽는다. */
 const NAME_VALUE = /(?:^|[\s:'])([a-z0-9_$#]*\.[a-z0-9_$#]+)'?$/;
+
+const UNIQUE_SIGNATURE_VALUE = /(?:^|[\s:'])([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)'?$/;
+
+export function readUniqueSignatures(handle, vendorId, run = runStatements) {
+  const sql = VENDOR_UNIQUE_SIGNATURES[vendorId];
+  if (!sql) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 서명 조회가 없다`);
+  const { sections, errors } = run(handle, [{ sql }]);
+  if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 서명 조회 실패: ${errors[0].error}`);
+  return [...new Set((sections.get(0) ?? []).map(line => line.trim().match(UNIQUE_SIGNATURE_VALUE)?.[1]).filter(Boolean))];
+}
 
 /** 메타를 읽어 번역 기대치와 같은 모양으로 돌려준다. */
 export function readCatalog(handle, vendorId, run = runStatements) {

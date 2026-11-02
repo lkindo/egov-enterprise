@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 class SchemaConformanceRulesTest {
 
     private static final Map<String, Map<String, String>> NO_TYPES = Map.of();
+    private static final Set<String> NO_VIEWS = Set.of();
 
     private static CatalogNames catalog(Set<String> columns, Set<String> constraints, Set<String> indexes, Set<String> sequences) {
         return new CatalogNames(columns, constraints, indexes, sequences);
@@ -38,7 +39,7 @@ class SchemaConformanceRulesTest {
     @Test
     @DisplayName("기준선의 이름은 규칙을 어겨도 보지 않고 새 객체만 본다")
     void baselineObjectsAreNotJudged() {
-        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, BASELINE, NO_TYPES)).isEmpty();
+        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, BASELINE, NO_TYPES, NO_VIEWS)).isEmpty();
     }
 
     @Test
@@ -47,7 +48,7 @@ class SchemaConformanceRulesTest {
         CatalogNames current = catalog(
                 Set.of("tb_a.id", "tb_a.crt_dt", "flyway_schema_history.version", "bad_table.id", "tb_b.id", "tb_b.frst_rgtr_id", "tb_b.crt_dt", "tb_b.mdfcn_dt"),
                 Set.of("tb_a.pk_tb_a", "tb_a.tb_a_adapter_named", "bad_table.c_wrong"), Set.of("tb_a.tb_a_legacy_idx", "tb_a.idx_wrong"), Set.of(".legacy_seq", ".seq_wrong"));
-        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, NO_TYPES))
+        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, NO_TYPES, NO_VIEWS))
                 .anyMatch(problem -> problem.startsWith("테이블명 'bad_table'"))
                 .anyMatch(problem -> problem.contains("'bad_table'") && problem.contains("최소 감사컬럼"))
                 .anyMatch(problem -> problem.contains("'tb_b'") && problem.contains("감사컬럼 짝 깨짐"))
@@ -62,9 +63,23 @@ class SchemaConformanceRulesTest {
         CatalogNames current = catalog(
                 Set.of("tb_a.id", "tb_a.crt_dt", "flyway_schema_history.version", "tb_c.id", "tb_c.frst_rgtr_id", "tb_c.crt_dt"),
                 Set.of("tb_a.pk_tb_a", "tb_a.tb_a_adapter_named", "tb_c.pk_tb_c"), Set.of("tb_a.tb_a_legacy_idx", "tb_c.ix_tb_c_id"), Set.of(".legacy_seq", ".sq_tb_c"));
-        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, Map.of("tb_c", Map.of("id", "VARCHAR(20)")))).isEmpty();
-        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, Map.of("tb_c", Map.of("id", "CHAR(20)"))))
+        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, Map.of("tb_c", Map.of("id", "VARCHAR(20)")), NO_VIEWS)).isEmpty();
+        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, Map.of("tb_c", Map.of("id", "CHAR(20)")), NO_VIEWS))
                 .singleElement().asString().contains("고정 문자형");
+    }
+
+    @Test
+    @DisplayName("뷰는 표 규칙으로 보지 않고 이름만 본다 — 드라이버가 뷰라고 답하지 않은 이름은 표로 남는다")
+    void viewsFollowTheViewRuleOnly() {
+        CatalogNames current = catalog(
+                Set.of("tb_a.id", "tb_a.crt_dt", "flyway_schema_history.version", "vw_sample.id", "bad_view.id", "bad_table.id"),
+                BASELINE.constraints(), BASELINE.indexes(), BASELINE.sequences());
+        assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, NO_TYPES, Set.of("vw_sample", "bad_view")))
+                .anyMatch(problem -> problem.startsWith("뷰명 'bad_view'"))
+                .anyMatch(problem -> problem.startsWith("테이블명 'bad_table'"))
+                .anyMatch(problem -> problem.contains("'bad_table'") && problem.contains("최소 감사컬럼"))
+                .noneMatch(problem -> problem.contains("vw_sample"))
+                .noneMatch(problem -> problem.contains("'bad_view'") && problem.contains("테이블"));
     }
 
     @Test
@@ -119,14 +134,14 @@ class SchemaConformanceRulesTest {
         mirror.singleUniqueColumns.add("sample_nm");
         mirror.tableUniqueSets.add(Set.of("sample_a", "sample_b"));
         Map<String, EntityMirror> mirrors = Map.of("tb_sample", mirror);
-        Set<String> baseline = Set.of("uk_sample_hash");
+        Set<String> baseline = Set.of("tb_sample.uk_sample_hash");
         assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_sample", Map.of(
                 "uk_sample_hash", Set.of("sample_nm_hash"),
                 "pk_new", Set.of("sample_sn"),
                 "uk_single", Set.of("sample_nm"),
                 "uk_pair", Set.of("sample_a", "sample_b")),
-                "tb_no_entity", Map.of("uk_other", Set.of("x"))), baseline)).isEmpty();
-        assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_sample", Map.of("uk_new", Set.of("sample_c"))), baseline))
+                "tb_no_entity", Map.of("uk_other", Set.of("x"))), baseline, Map.of())).isEmpty();
+        assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_sample", Map.of("uk_new", Set.of("sample_c"))), baseline, Map.of()))
                 .singleElement().asString().contains("JPA 미러 없음").contains("uk_new");
     }
 
@@ -135,7 +150,26 @@ class SchemaConformanceRulesTest {
     void unnamedUniqueIsStillNew() {
         EntityMirror mirror = new EntityMirror("Sample");
         assertThat(SchemaConformanceRules.mirrorProblems(Map.of("tb_sample", mirror),
-                Map.of("tb_sample", Map.of("sys_c0012345", Set.of("sample_c"))), Set.of())).hasSize(1);
+                Map.of("tb_sample", Map.of("sys_c0012345", Set.of("sample_c"))), Set.of(), Map.of())).hasSize(1);
+    }
+
+    @Test
+    @DisplayName("복합 기본키는 @Id 필드가 없어도 미러를 요구하지 않고, 기본키와 컬럼이 다른 유니크는 그대로 붉다")
+    void compositePrimaryKeyNeedsNoMirror() {
+        Map<String, EntityMirror> mirrors = Map.of("tb_composite", new EntityMirror("CompositeEntity"));
+        Map<String, Set<String>> primaryKeys = Map.of("tb_composite", Set.of("a", "b"));
+        assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_composite", Map.of("primary", Set.of("a", "b"))), Set.of(), primaryKeys)).isEmpty();
+        assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_composite", Map.of("uk_abc", Set.of("a", "b", "c"))), Set.of(), primaryKeys))
+                .singleElement().asString().contains("JPA 미러 없음").contains("uk_abc");
+    }
+
+    @Test
+    @DisplayName("기준선은 표까지 묶어 본다 — 다른 표의 같은 이름과 기준선 목록에서 빠진 유니크는 새 유니크다")
+    void baselineIsKeyedByTable() {
+        Map<String, EntityMirror> mirrors = Map.of("tb_composite", new EntityMirror("CompositeEntity"));
+        assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_composite", Map.of("uk_same", Set.of("c"))), Set.of("tb_other.uk_same"), Map.of()))
+                .singleElement().asString().contains("uk_same");
+        assertThat(SchemaConformanceRules.mirrorProblems(mirrors, Map.of("tb_composite", Map.of("uk_old", Set.of("c"))), Set.of("tb_composite.uk_old"), Map.of())).isEmpty();
     }
 
     @Test

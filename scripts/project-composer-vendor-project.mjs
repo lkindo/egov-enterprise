@@ -151,7 +151,7 @@ export function projectVendorEnvironment(text, vendorId) {
 export const vendorReadme = vendorId => `
 ## 데이터베이스
 
-이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 의 번역 기준선만 적용한다. \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
+이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 폴더만 적용한다(생성 시점에는 번역 기준선 하나). \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 
 \`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
 
@@ -163,7 +163,7 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거�
 2. \`npm run verify:vendor-schema\` 로 검사한다. 하네스를 돌린 뒤 일회용 DB 에 기준선만 적용해 번역 결과와 정확히 대조하고, 나머지 마이그레이션을 적용해 카탈로그 시험과 시나리오 시험을 돌린다. 컨테이너가 필요해 시간이 걸린다.
 3. \`db/migration\` 은 고치지 않는다. 실행되지 않는 번역 근거이고, 명명·유니크 미러 린터는 이 입력만 본다.
 
-카탈로그 시험은 적용된 DB 를 읽는다. 카탈로그 전체에서 PK 전략·숫자 변환·길이 초과를, 기준선 뒤에 생긴 객체에서 표·제약·인덱스·시퀀스 이름(\`tb_\`·\`pk_\`·\`fk_\`·\`uk_\`·\`ck_\`·\`ix_\`·\`sq_\`), 새 표의 감사 컬럼, 새 컬럼의 고정 문자형, 새 유니크의 엔티티 미러를 본다. 표·컬럼 부재와 타입 계열은 시나리오 시험을 띄울 때 Hibernate validate 가 본다.
+카탈로그 시험은 적용된 DB 를 읽는다. 카탈로그 전체에서 PK 전략·숫자 변환·길이 초과를, 기준선 뒤에 생긴 객체에서 표·제약·인덱스·시퀀스 이름(\`tb_\`·\`pk_\`·\`fk_\`·\`uk_\`·\`ck_\`·\`ix_\`·\`sq_\`), 새 표의 감사 컬럼, 새 컬럼의 고정 문자형을, 기준선 뒤에 생기거나 다시 만든 유니크의 엔티티 미러(기본키 제외)를, 뷰 이름(\`vw_\`)을 본다. 표·컬럼 부재와 타입 계열은 시나리오 시험을 띄울 때 Hibernate validate 가 본다.
 
 기존 권한의 기본 그룹을 바꾸려면 \`config/governance/permission-catalog.json\` 과 벤더 DB 의 부여를 함께 맞춘다. \`npm run regen\` 은 \`db/migration\` 의 시드만 고치므로 벤더 마이그레이션에 부여 변경을 직접 넣는다. 둘이 어긋나면 카탈로그 시험이 붉다.
 
@@ -173,6 +173,8 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거�
 
 - 파괴적 DDL 검사: 무중단 마이그레이션 린터가 없다. 컬럼 삭제·타입 축소·이름 변경의 무중단 여부는 사람이 판단한다.
 - 명명 예외: 카탈로그 시험에는 예외를 적을 자리가 없다. 표준 밖의 이름은 붉다.
+- 이름 없이 만든 제약: DB 가 지은 이름(Oracle 의 \`SYS_C\`)은 조회에서 빠져 이름 규칙이 보지 않는다. 제약에는 이름을 붙인다. 이름 없는 유니크는 엔티티가 매핑된 표일 때만 미러 규칙이 본다.
+- 뷰의 정의: 뷰는 이름만 본다. 컬럼과 정의는 시험을 직접 더한다.
 - 도입자가 더한 CHECK·트리거의 의미: 차등 시험은 번역 입력만 보므로 PostgreSQL 과 같은 값으로 대조되지 않는다. 시험을 직접 더한다.
 - 같은 이름의 컬럼 타입 변경: 새 객체가 아니어서 고정 문자형 규칙이 보지 않는다. Oracle 은 Hibernate validate 가 \`VARCHAR2\` 와 CLOB 을 구분하지 못하므로 짧은 컬럼을 CLOB 으로 바꾸지 않았는지 사람이 확인한다.
 - 새 권한 코드: 권한 코드는 구성과 정확히 일치해야 해 \`npm run regen\` 이 멈춘다. PostgreSQL 프로젝트와 같다.

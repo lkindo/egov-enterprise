@@ -209,6 +209,12 @@ const CASES = {
   },
 };
 
+test('tagged-test-on-default-task: 벤더 카탈로그 시험은 전용 실행 도구로 안내한다', () => {
+  const rule = RULES.find(({ id }) => id === 'tagged-test-on-default-task');
+  assert.match(rule.why, /@Tag\("vendor-conformance"\)/);
+  assert.match(rule.fix, /scripts\/project-composer-vendor-integration\.mjs/);
+});
+
 test('규칙 표와 시험 사례가 일대일이다', () => {
   const tested = new Set([...Object.keys(CASES), 'jq-not-installed', 'gitleaks-worktree-mount', 'worktree-recursive-delete']);
   assert.deepEqual(RULES.map((rule) => rule.id).sort(), [...tested].sort(), '규칙을 더하면 실제 사례 시험도 함께 더한다.');

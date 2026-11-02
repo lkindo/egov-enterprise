@@ -38,7 +38,7 @@
     },
     {
       "file": "api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java",
-      "reason": "벤더 프로젝트의 Flyway 는 번역 기준선만 적용하므로 이 린터가 읽는 PostgreSQL 마이그레이션은 실행되지 않는다. 남기면 통과가 거짓 신호다.",
+      "reason": "벤더 프로젝트의 Flyway 는 db/vendor/<벤더> 폴더만 적용하므로(생성 시점에는 번역 기준선 하나) 이 린터가 읽는 PostgreSQL 마이그레이션은 실행되지 않는다. 남기면 통과가 거짓 신호다.",
       "coveredBy": null
     },
     {

@@ -15,11 +15,11 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_BASELINE_VERSION, assertTestsRan, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
+import { VENDOR_BASELINE_VERSION, assertTestsRan, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, readCatalog, readNextValues, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { collectResults, parseCount, readCatalog, readNextValues, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
@@ -601,7 +601,7 @@ test('the schema command skips the certification step and exists only for a vend
   assert.ok(steps[0].args.includes(':api-server:harnessTest'));
   assert.deepEqual(steps[1].args, verificationSteps('full', 'multi-module', { vendor: 'oracle' }).filter(step => step.id === 'backend')[1].args, '통합 단계는 전체 검증과 같은 명령이다');
   assert.ok(verificationSteps('vendor-schema', 'single-module', { vendor: 'oracle' })[0].args.includes('harnessTest'));
-  assert.throws(() => verificationSteps('vendor-schema', 'multi-module'), /only for a project generated on a vendor database/);
+  assert.throws(() => verificationSteps('vendor-schema', 'multi-module'), /PostgreSQL 외 DB 로 생성한 프로젝트에서만/);
   assert.equal(verificationSteps('full', 'multi-module', { vendor: 'oracle' })[0].id, 'governance', '전체 검증의 의미는 그대로다');
   assert.equal(integrationTask().conformance, ':api-server:vendorConformanceTest');
   assert.equal(integrationTask('single-module').conformance, ':vendorConformanceTest');
@@ -623,11 +623,29 @@ test('the catalog test sees the engine names an adopter did not choose removed, 
   assert.deepEqual(conformanceCatalog('cubrid', { columns: ['tb_a.id'] }), { columns: ['tb_a.id'], constraints: [], indexes: [], sequences: [] }, '조회가 없는 종류도 빈 목록으로 넘긴다');
 });
 
+test('a unique counts as baseline only while its signature is unchanged, and every integration vendor can read signatures', () => {
+  const baseline = ['tb_a.uk_keep=10', 'tb_a.uk_recreated=11', 'tb_b.uk_dropped=12'];
+  assert.deepEqual(unchangedUniques(baseline, ['tb_a.uk_keep=10', 'tb_a.uk_recreated=99', 'tb_c.uk_new=13']), ['tb_a.uk_keep'], '다시 만든 유니크와 새 유니크는 기준선이 아니다');
+  assert.deepEqual(unchangedUniques([], ['tb_a.uk_keep=10']), [], '조회가 비면 모두 새 유니크로 보여 붉다');
+  assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_SIGNATURES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 서명 조회가 있어야 한다');
+  const output = readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['tb_a.uk_keep=10', '  tb_a.sys_c0012=11  ', 'garbage line']]]) }));
+  assert.deepEqual(output, ['tb_a.uk_keep=10', 'tb_a.sys_c0012=11']);
+  assert.throws(() => readUniqueSignatures({}, 'mysql', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
+  assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), /유니크 서명 조회 실패: ORA-00942/);
+});
+
+test('a vendor cannot be certified while the catalog gate is not wired into CI', () => {
+  const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
+  const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
+  const certified = ledger.vendors.filter(vendor => vendor.id !== 'postgresql' && vendor.status === 'certified').map(vendor => vendor.id);
+  assert.deepEqual(gate.ciPending ? certified : [], [], 'reusable-vendor 잡을 잇고 ciPending 을 지운 뒤에 승격한다');
+});
+
 test('the baseline is compared before anything else is applied, and the catalog test runs before the fixtures', () => {
   const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
   const start = source.indexOf('export function runVendorIntegration');
   const order = ['migrateWithFlyway(vendorId, integration, handle, migrate, flyway, VENDOR_BASELINE_VERSION)', 'assertVendorApplied(handle, input, vendorId',
-    'const baseline = conformanceCatalog', 'migrateWithFlyway(vendorId, integration, handle, migrate, flyway);', 'runVendorConformance(vendorId', 'runAsAdministrator(handle', 'markOwner(handle)'];
+    'const baseline = conformanceCatalog', 'const baselineUniques = readUniqueSignatures', 'migrateWithFlyway(vendorId, integration, handle, migrate, flyway);', 'unchangedUniques(baselineUniques', 'runVendorConformance(vendorId', 'runAsAdministrator(handle', 'markOwner(handle)'];
   const positions = order.map(text => source.indexOf(text, start));
   assert.ok(positions.every(position => position > 0), '순서를 보는 문장이 사라졌다');
   assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '기준선 정확 대조는 나머지 적용 앞, 카탈로그 시험은 권한 부여와 소유 표시 앞이다');

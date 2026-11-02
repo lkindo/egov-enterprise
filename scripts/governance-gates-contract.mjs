@@ -4,7 +4,10 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ALLOWED_TIERS = new Set(['pre-push', 'local-full', 'local-e2e', 'ci']);
+const ALLOWED_TIERS = new Set(['pre-push', 'local-full', 'local-e2e', 'local-vendor', 'ci']);
+/** local-vendor 는 벤더로 생성한 프로젝트의 검증 실행기에서만 돈다는 뜻이다. verify.mjs 범위가 아니므로 local-full 로 적으면 거짓 주장이다. */
+const LOCAL_VENDOR_TIER = 'local-vendor';
+const VENDOR_VERIFY_RUNNER = 'scripts/verify-reusable-artifact.mjs';
 const RULE_ID = /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/;
 const SEVERITY = new Map([['off', 0], ['warn', 1], ['error', 2]]);
 
@@ -1770,6 +1773,24 @@ function validateRequiredContexts(value, knownContexts, label, errors) {
   }
 }
 
+/**
+ * required context 는 그 CI 잡이 이 게이트를 돌린다는 주장이다. ci tier 없이 적으면 어느 잡도 돌리지 않는데 병합 권위가 있는 것처럼 보인다.
+ * 아직 잇지 못한 벤더 게이트만 ciPending 으로 그 사실을 드러낸다.
+ */
+function validateGateSetCiClaim(set, requiredContexts, setLabel, errors) {
+  if (set.ciPending !== undefined) {
+    if (typeof set.ciPending !== 'string' || set.ciPending.trim() === '') errors.push(`${setLabel}: ciPending must say why no CI job runs this gate`);
+    if (!set.tier?.includes?.(LOCAL_VENDOR_TIER)) errors.push(`${setLabel}: ciPending is only for a ${LOCAL_VENDOR_TIER} gate`);
+    if (set.tier?.includes?.('ci')) errors.push(`${setLabel}: ciPending cannot claim the ci tier`);
+    if (set.requiredCiContext !== undefined) errors.push(`${setLabel}: ciPending cannot claim a required CI context`);
+    return;
+  }
+  validateRequiredContexts(set.requiredCiContext, requiredContexts, setLabel, errors);
+  if (set.tier?.includes?.(LOCAL_VENDOR_TIER) && !set.tier.includes('ci')) {
+    errors.push(`${setLabel}: a ${LOCAL_VENDOR_TIER} gate without the ci tier must declare ciPending instead of a required CI context`);
+  }
+}
+
 function validateStringArray(value, label, field, errors) {
   if (!Array.isArray(value)
     || value.length === 0
@@ -2217,7 +2238,11 @@ export function validateGovernanceRegistry({ registry, repoRoot, analysis, snaps
     }
     validateStringArray(set.inputs, setLabel, 'inputs', errors);
     validateStringArray(set.evidence, setLabel, 'evidence', errors);
-    validateRequiredContexts(set.requiredCiContext, requiredContexts, setLabel, errors);
+    validateGateSetCiClaim(set, requiredContexts, setLabel, errors);
+    if (set.tier?.includes?.(LOCAL_VENDOR_TIER)
+      && !(selector?.executionBindings ?? []).some(binding => binding?.source === VENDOR_VERIFY_RUNNER && binding.tiers?.includes(LOCAL_VENDOR_TIER))) {
+      errors.push(`${setLabel}: tier ${LOCAL_VENDOR_TIER} must be bound to ${VENDOR_VERIFY_RUNNER}`);
+    }
 
     if (selector?.type === 'java-class-annotation') {
       if (!isJavaAnnotationSelector(selector)) {
