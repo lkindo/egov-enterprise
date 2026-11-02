@@ -911,11 +911,40 @@ const VENDOR_JOB_SELECTORS = ['gradle/libs.versions.toml', 'gradle/wrapper/gradl
 test('every certification input and CI-only path selects the vendor job on the representative layout', () => {
   const ledger = vendorLedger();
   const inputs = vendorEvidenceInputs(repoRoot, ledger, 'oracle');
-  // 2026-11-03 실측 449개. 목록이 무너지면 이 시험이 모두 초록이 된다.
+  // 2026-11-03 실측 507개. 목록이 무너지면 이 시험이 모두 초록이 된다.
   assert.ok(inputs.length >= 300, `input population collapsed: ${inputs.length}`);
   for (const input of [...inputs, ...VENDOR_JOB_SELECTORS, ...ledger.evidenceInputs.ciOnly.filter(file => !file.endsWith('/'))]) {
     assert.deepEqual(vendorFields(classifyChangedFiles([input], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, input);
   }
+});
+
+// 벤더 SQL 원장에 없고 네이티브 SQL 도 없는 파일들이다. 표지를 좁히면 이 파일들이 조용히 꺼진다.
+const QUERY_FILES = {
+  'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepository.java': 'JPQL @Query',
+  'business-core/src/main/java/nuri/business/domain/auth/RefreshTokenRepository.java': 'JPQL UPDATE',
+  'business-app/src/main/java/nuri/business/domain/comment/CommentRepository.java': '@Lock',
+  'business-app/src/main/java/nuri/business/domain/board/BoardRepositoryImpl.java': 'QueryDSL',
+  'business-app/src/main/java/nuri/business/domain/sms/SmsRepositoryImpl.java': 'QueryDSL template',
+  'business-core/src/main/java/nuri/business/domain/login/LoginPolicyRepositoryImpl.java': 'QueryDSL template',
+  'business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java': 'QueryDSL condition only',
+  'business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java': 'QueryDSL in a service',
+  'business-core/src/main/java/nuri/business/service/log/SensitiveAuditQueryService.java': 'QueryDSL in a service',
+  'business-core/src/main/java/nuri/business/domain/log/UserLogRepositoryImpl.java': 'createQuery',
+};
+
+test('JPQL, QueryDSL and lock files select the vendor job, but a derived query or a plain service does not', () => {
+  const inputs = vendorEvidenceInputs(repoRoot, vendorLedger(), 'oracle');
+  for (const [file, kind] of Object.entries(QUERY_FILES)) {
+    assert.ok(inputs.includes(file), `${kind}: ${file}`);
+    assert.deepEqual(vendorFields(classifyChangedFiles([file], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, `${kind}: ${file}`);
+  }
+  const change = (head, base) => classifyChangedFiles([ENTITY_FILE], { ...PR, readSource: () => head, readBaseSource: () => base }).reusableVendor;
+  assert.equal(change('interface R { @Query("select r from R r") List<R> all(); }', 'interface R {}'), true, 'JPQL added');
+  assert.equal(change('interface R {}', 'interface R { @Query("select r from R r") List<R> all(); }'), true, 'JPQL removed');
+  assert.equal(change('interface R { @Lock(PESSIMISTIC_WRITE) R one(); }', 'interface R {}'), true, 'lock added');
+  // 설계서 §7·§10 이 공백으로 적는다. 이 시험이 붉어지면 문서도 함께 고친다.
+  assert.equal(change('interface R extends JpaRepository<R, Long> { List<R> findByTitleContaining(String title); }', 'interface R extends JpaRepository<R, Long> {}'), false, 'derived query');
+  assert.equal(change('class S { void run() { em.find(R.class, 1L, LockModeType.PESSIMISTIC_WRITE); } }', 'class S {}'), false, 'plain service');
 });
 
 test('a change outside the certification inputs leaves the vendor job off, including another vendor and PostgreSQL itself', () => {

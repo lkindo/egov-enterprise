@@ -29,6 +29,8 @@ const DIALECT = 'foundation/src/main/java/nuri/foundation/core/persistence/NuriO
 const SURVEY_TEMPLATE = 'business-app/src/main/java/nuri/business/domain/survey/SurveyTemplate.java';
 const AUTH_SNAPSHOT = 'business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java';
 const FILTER_DEF = 'business-core/src/main/java/nuri/business/domain/package-info.java';
+const JPQL_REPOSITORY = 'business-core/src/main/java/nuri/business/domain/auth/RefreshTokenRepository.java';
+const QUERYDSL_TEMPLATE = 'business-app/src/main/java/nuri/business/domain/sms/SmsRepositoryImpl.java';
 const COMMIT = 'e'.repeat(40);
 
 const scratch = (t, prefix = 'vendor-evidence-') => {
@@ -291,7 +293,21 @@ test('stale evidence: native SQL outside the SQL ledger and the shared filter de
   assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '전 엔티티에 걸리는 필터 정의 변경');
 });
 
-test('every native SQL and filter marker makes a Java file an input, and a plain file is not one', t => {
+test('stale evidence: JPQL and QueryDSL outside the SQL ledger count', t => {
+  const root = inputsCopy(t);
+  const ledgerPaths = JSON.parse(readFileSync(join(root, 'config/governance/vendor-sql-ledger.json'), 'utf8')).locations.map(row => row.path);
+  assert.ok(!ledgerPaths.includes(JPQL_REPOSITORY) && !ledgerPaths.includes(QUERYDSL_TEMPLATE), '원장에 있으면 이 사례가 표지를 시험하지 못한다');
+  assert.deepEqual(vendorEvidenceStaleErrors(root), []);
+  const jpql = readFileSync(join(root, JPQL_REPOSITORY), 'utf8');
+  change(root, JPQL_REPOSITORY, 'token.rfshTkn = :presented OR token.rfshTkn = :rotated', 'token.rfshTkn = :presented');
+  assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, 'JPQL 변경');
+  writeFileSync(join(root, JPQL_REPOSITORY), jpql);
+  assert.deepEqual(vendorEvidenceStaleErrors(root), []);
+  change(root, QUERYDSL_TEMPLATE, "replace({0}, '-', '')", "translate({0}, '-', '')");
+  assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, 'QueryDSL 템플릿 변경');
+});
+
+test('every SQL, JPQL, QueryDSL, lock and filter marker makes a Java file an input, and a plain file or a derived query is not one', t => {
   const root = tinySource(t);
   const ledger = readLedger(root);
   const before = vendorEvidenceHash(root, ledger, 'oracle');
@@ -299,9 +315,21 @@ test('every native SQL and filter marker makes a Java file an input, and a plain
   put(root, file, 'class M { void plain() { service.call(); } }\n');
   assert.equal(vendorEvidenceHash(root, ledger, 'oracle'), before, '표지 없는 파일은 입력이 아니다');
   for (const marker of ['@Query(value = "x", nativeQuery = true)', 'em.createNativeQuery("x")', 'em.createNativeMutationQuery("x")', 'JdbcTemplate jdbc;', 'NamedParameterJdbcTemplate jdbc;', 'JdbcClient jdbc;',
-    '@FilterDef(name = "x")', '@FilterDefs({})', '@org.hibernate.annotations.FilterDef(name = "x")']) {
+    '@FilterDef(name = "x")', '@FilterDefs({})', '@org.hibernate.annotations.FilterDef(name = "x")',
+    '@Query("select m from M m")', '@org.springframework.data.jpa.repository.Query("select m from M m")', '@Lock(LockModeType.PESSIMISTIC_WRITE)', '@org.springframework.data.jpa.repository.Lock(PESSIMISTIC_WRITE)',
+    'em.createQuery("select m from M m")', 'import com.querydsl.core.BooleanBuilder;']) {
     put(root, file, `class M { ${marker} }\n`);
     assert.ok(vendorEvidenceInputs(root, ledger, 'oracle').includes(file), `표지가 입력을 만들지 못했다: ${marker}`);
+    assert.notEqual(vendorEvidenceHash(root, ledger, 'oracle'), before, `표지가 값을 바꾸지 못했다: ${marker}`);
+  }
+  // 표지를 지우면 입력에서 빠지고 값이 돌아온다. 값이 달라지는 것은 표지 있는 동안의 기록과 비교할 때다.
+  put(root, file, 'class M { void plain() { service.call(); } }\n');
+  assert.equal(vendorEvidenceHash(root, ledger, 'oracle'), before, '표지를 지운 파일은 입력이 아니다');
+  // 이름이 비슷한 다른 것은 표지가 아니다. 파생 쿼리는 표지가 없어 입력이 아니고 설계서 §7·§10 이 공백으로 적는다.
+  for (const notMarker of ['@QueryParam("x") String x;', '@Locked void x();', 'createQueryBuilder();', 'recreateQuery();', 'com.querydslx.Thing t;',
+    'List<M> findByTitleContaining(String title);']) {
+    put(root, file, `interface M { ${notMarker} }\n`);
+    assert.ok(!vendorEvidenceInputs(root, ledger, 'oracle').includes(file), `표지가 아닌 이름인데 입력이 됐다: ${notMarker}`);
   }
 });
 

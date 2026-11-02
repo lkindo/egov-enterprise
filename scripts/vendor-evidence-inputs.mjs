@@ -18,9 +18,10 @@ const ENTITY_ROOTS = Object.freeze(['foundation/src/main/java', 'business-core/s
 /** 중립 모델을 만드는 명령. 이 명령이 가져오는 모듈은 원장이 빼지 않는 한 입력이다. */
 const MODEL_ENTRY = 'scripts/generate-reusable-base-db.mjs';
 const TOOL_IMPORT = /(?:\bfrom\s+|\bimport\s*\(?\s*)['"]\.\/([^'"]+\.mjs)['"]/g;
-// 벤더 값으로 매핑되거나, 벤더별 SQL 을 고르거나, SQL 을 직접 담는 코드. 벤더 SQL 원장은 린터 규칙에 걸린 구문만 적으므로 원장만으로는 네이티브 SQL 을 다 찾지 못한다.
+// 벤더 값으로 매핑되거나, 벤더별 SQL 을 고르거나, SQL·JPQL·QueryDSL 을 담거나 잠금을 거는 코드. 벤더 SQL 원장은 린터 규칙에 걸린 구문만 적으므로 원장만으로는 쿼리를 다 찾지 못한다.
+// Hibernate 가 번역하는 JPQL·QueryDSL 도 Oracle 에서만 깨진 실례가 있다(설계서 §17). 표지 없는 파생 쿼리와 서비스 코드는 입력이 아니다(설계서 §7).
 // 표지가 지워지면 경로가 집합에서 빠져 해시가 바뀌므로 표지 제거도 놓치지 않는다.
-const VENDOR_SENSITIVE = /@(?:(?:jakarta\.persistence|org\.hibernate\.annotations)\.)?(?:Entity|Embeddable|MappedSuperclass|Converter|FilterDefs?)\b|\bAttributeConverter\b|\bVendorSqlDialect\b|\bnativeQuery\b|\bcreateNative\w*Query\b|\b(?:NamedParameter)?JdbcTemplate\b|\bJdbcClient\b/;
+const VENDOR_SENSITIVE = /@(?:(?:jakarta\.persistence|org\.hibernate\.annotations)\.)?(?:Entity|Embeddable|MappedSuperclass|Converter|FilterDefs?)\b|@(?:org\.springframework\.data\.jpa\.repository\.)?(?:Query|Lock)\b|\bcom\.querydsl\b|\bcreateQuery\b|\bAttributeConverter\b|\bVendorSqlDialect\b|\bnativeQuery\b|\bcreateNative\w*Query\b|\b(?:NamedParameter)?JdbcTemplate\b|\bJdbcClient\b/;
 
 const readJson = (root, file) => JSON.parse(readFileSync(join(root, file), 'utf8'));
 const inputFailure = (path, error) => new Error(`인증 입력을 읽지 못했다: ${path} (${error.code ?? error.message})`);
