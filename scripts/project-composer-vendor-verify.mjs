@@ -30,13 +30,17 @@ const stageFailure = (stage, errors) => {
   return error;
 };
 
-/** 표마다 행 수를 세어 시드가 빠짐없이 들어갔는지 본다. */
-function rowCounts(handle, model) {
+const queryFailure = message => Object.assign(new Error(message), { code: 'VENDOR_QUERY_FAILED' });
+
+/** 표마다 행 수를 세어 시드가 빠짐없이 들어갔는지 본다. 세지 못한 것은 대조 결과가 아니라 조회 자체의 문제다. */
+export function rowCounts(handle, model, vendorId, run = runStatements) {
   const statements = model.tables.map(table => ({ sql: `SELECT COUNT(*) FROM ${table.name}` }));
-  const { sections, errors } = runStatements(handle, statements);
-  if (errors.length) throw stageFailure('행 수 조회', errors);
+  const { sections, errors } = run(handle, statements);
+  if (errors.length) throw queryFailure(`${vendorId} 행 수 조회 실패 ${errors.length}건: ${errors[0].error} :: ${errors[0].statement}`);
   return Object.fromEntries(model.tables.map((table, index) => {
-    return [table.name, parseCount(sections.get(index))];
+    const count = parseCount(sections.get(index));
+    if (count === null) throw queryFailure(`${vendorId} 행 수를 읽지 못했다: ${table.name}`);
+    return [table.name, count];
   }));
 }
 
@@ -46,7 +50,7 @@ export function assertVendorApplied(handle, input, vendorId, { ignoreTables } = 
   const emission = VENDOR_ADAPTERS[vendorId].emitSchema(model);
   assertCatalogParity(emission, readCatalog(handle, vendorId), { ignoreTables });
   const expected = Object.fromEntries(model.tables.map(table => [table.name, input.rows[table.name]?.length ?? 0]));
-  const actual = rowCounts(handle, model);
+  const actual = rowCounts(handle, model, vendorId);
   const different = Object.keys(expected).filter(name => expected[name] !== actual[name]);
   if (different.length) {
     const error = new Error(`시드 행 수가 다르다: ${different.slice(0, 8).map(name => `${name} ${actual[name]}/${expected[name]}`).join(', ')}`);

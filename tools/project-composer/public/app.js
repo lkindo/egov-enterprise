@@ -113,6 +113,7 @@ function renderFailureActions(container, error, { focus = false, onReload = relo
   }
   container.hidden = container.childElementCount === 0;
 }
+const vendorReplacedNote = (from, to) => `새 원본에서 고를 수 없는 데이터베이스(${from})라 ${to}로 바꿨습니다.`;
 // 데이터베이스 선택지는 카탈로그가 준 원장 판정을 그대로 그린다(ADR-0047 결정 2). 고를 수 없는 벤더도 비활성과 사유로 보인다.
 // 고르던 벤더를 새 원본에서 고를 수 없게 되면 조용히 바꾸지 않고 알릴 문장을 돌려준다.
 function applyVendors(vendors) {
@@ -131,7 +132,7 @@ function applyVendors(vendors) {
   if (vendors.some(vendor => vendor.selectable && vendor.id === previous)) { select.value = previous; return ''; }
   const fallback = vendors.find(vendor => vendor.selectable);
   if (fallback) select.value = fallback.id;
-  return `새 원본에서 고를 수 없는 데이터베이스(${previousLabel})라 ${fallback?.label ?? '다른 데이터베이스'}로 바꿨습니다.`;
+  return vendorReplacedNote(previousLabel, fallback?.label ?? '다른 데이터베이스');
 }
 // 세션 응답을 화면에 적용한다. 원본 표시·프리셋 목록·CSRF 를 바꾸고, 새 목록에 없는 직접 선택은 뺀다.
 // 뺀 기능과 사라진 시작 구성은 조용히 버리지 않고 알릴 문장으로 돌려준다.
@@ -477,8 +478,14 @@ function restoreRecipe(value) {
 // 작업의 구성은 서버가 받은 값이라 벤더도 되살린다. 파일 불러오기는 이 경로를 쓰지 않는다 — recipe-file.js 가 고를 수 있는 값만 고른다.
 function restoreJobRecipe(value) {
   restoreRecipe(value);
-  const option = [...$('database').options].find(item => item.value === value.database?.vendor && !item.disabled);
-  if (option) $('database').value = option.value;
+  const vendor = value.database?.vendor;
+  const option = [...$('database').options].find(item => item.value === vendor && !item.disabled);
+  if (option) { $('database').value = option.value; return; }
+  if (!vendor) return;
+  // 그 뒤 원장이 내려갔다. 작업의 벤더와 다른 값으로 계획하므로 조용히 넘어가지 않는다.
+  const from = state.catalog.vendors?.find(item => item.id === vendor)?.label ?? vendor;
+  state.notice = vendorReplacedNote(from, $('database').selectedOptions[0]?.textContent ?? '다른 데이터베이스');
+  $('plan-status').textContent = state.notice;
 }
 // 저장한 구성 불러오기(E9). 판정과 화면 연결은 recipe-file.js 에 있다.
 const importRecipe = createRecipeImport({ $, state, restoreRecipe, withdrawPlan, changed });

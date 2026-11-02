@@ -33,6 +33,7 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     const screens = menus.filter(menu => (menu.kind ?? (menu.path ? 'screen' : 'category')) === 'screen');
     const compared = menus.some(menu => typeof menu.added === 'boolean');
     $('confirm-summary').replaceChildren(
+      confirmRow('데이터베이스', $('database').selectedOptions[0]?.textContent ?? recipe().database.vendor),
       confirmRow('업무 기능', `직접 ${direct.length} · 자동 ${automatic.length}${direct.length + automatic.length ? ` — ${[...direct, ...automatic].join(', ')}` : ' — 공통 기반만'}`),
       confirmRow('테이블 · 권한', `${plan.tables?.length ?? 0} · ${plan.permissionCodes?.length ?? 0}${core ? ` (공통 기반 ${core.tables.length} · ${core.permissionCodes.length})` : ''}`),
       confirmRow('메뉴', `전체 ${menus.length}개 · 목적지 ${screens.length}개${compared ? ` (공통 기반 목적지 ${screens.length - screens.filter(menu => menu.added).length}개)` : ''}`),

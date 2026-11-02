@@ -122,11 +122,14 @@ export function startVendorEngine(engineId, { publishPort, runDocker = docker } 
   const variables = engine.environment(password);
   const environment = Object.keys(variables).flatMap(key => ['--env', key]);
   const labels = vendorContainerLabels(engineId);
+  let dockerMissing = false;
   try {
     // docker run -d 는 시작에 실패해도 만든 컨테이너와 익명 볼륨을 남긴다. 그래서 여기서부터 정리 범위다.
     const started = runDocker(['run', '-d', '--name', name, ...labels, ...environment,
       ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
     { env: { ...process.env, ...variables } });
+    // 실행 파일이 없으면 만들어진 컨테이너도 없다. 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 그대로 정리한다.
+    dockerMissing = started.error?.code === 'ENOENT';
     // docker 를 실행하지 못하면 stderr 가 없다. 그 경우에도 코드가 남아야 부모가 원인을 안다.
     if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${String(started.stderr ?? started.error?.message).slice(0, 300)}`);
     const deadline = Date.now() + engine.maxWaitSeconds * 1000;
@@ -137,7 +140,7 @@ export function startVendorEngine(engineId, { publishPort, runDocker = docker } 
     }
   } catch (failure) {
     // 호출자는 핸들을 받기 전이라 지울 수 없다.
-    stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
+    if (!dockerMissing) stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
     throw failure;
   }
 }

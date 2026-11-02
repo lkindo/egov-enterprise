@@ -13,6 +13,7 @@ import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mj
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
+import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
 import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
@@ -420,7 +421,8 @@ test('certifying a vendor in the ledger opens every request entry without a code
     const supplied = { ...resolveProjectRecipe({ ...recipe('oracle'), sourceRef: 'a'.repeat(40) }, catalog), sourceCommit: 'a'.repeat(40) };
     assert.equal(resolveGeneratorComposition({ catalog, supplied, selectable, sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }).database.vendor, 'oracle', '생성기 입구');
     assert.throws(() => opened.plan(recipe('mysql')), error => error.code === 'INVALID_RECIPE' && error.details.reason === 'UNSUPPORTED_DATABASE', '올리지 않은 벤더는 그대로다');
-    // 원장이 구성 해시에 들어가면 승격이 PostgreSQL 산출물의 식별값을 바꾼다.
+    // 원장이 구성 해시에 들어가면 승격이 PostgreSQL 산출물의 식별값을 바꾼다. 여기는 같은 카탈로그를 주입하므로 엔진만 본다.
+    // 카탈로그 로더가 원장을 읽는 회귀는 composer-modules.test.mjs 가 원장을 바꾼 트리에서 본다.
     assert.equal(opened.plan(recipe('postgresql')).compositionHash, closed.plan(recipe('postgresql')).compositionHash);
     assert.equal(opened.catalog().catalogHash, closed.catalog().catalogHash);
   });
@@ -731,6 +733,17 @@ test('a vendor container that was created but never started is removed too', () 
     /포트 충돌.*시험 DB 컨테이너가 남았다/, '지우지 못하면 본래 실패에 잔존을 덧붙인다');
 });
 
+test('a missing docker executable reports only that, because no container can exist', () => {
+  const unable = code => ({ status: null, stdout: null, stderr: null, error: Object.assign(new Error(`spawnSync docker ${code}`), { code }) });
+  const calls = [];
+  assert.throws(() => startVendorEngine('oracle', { runDocker: args => { calls.push(args[0]); return unable('ENOENT'); } }),
+    error => error.code === 'VENDOR_ENGINE_NOT_READY' && /spawnSync docker ENOENT/.test(error.message) && !/남았다/.test(error.message));
+  assert.deepEqual(calls, ['run'], '지울 대상이 없다');
+  // 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 잔존을 그대로 알린다.
+  assert.throws(() => startVendorEngine('oracle', { runDocker: () => unable('ENOBUFS') }), /spawnSync docker ENOBUFS.*시험 DB 컨테이너가 남았다/);
+  assert.throws(() => startVendorEngine('oracle', { runDocker: args => (args[0] === 'run' ? unable('ENOBUFS') : unable('ENOENT')) }), /시험 DB 컨테이너가 남았다/, '도중에 실행 파일을 잃어도 잔존이다');
+});
+
 test('the disposable baseline database goes away whatever happens, and a leftover is not a pass', () => {
   const calls = [];
   const docker = outcomes => args => { calls.push(args[0]); return outcomes[args[0]] ?? { status: 0, stdout: '', stderr: '' }; };
@@ -810,6 +823,11 @@ test('failures wider than the screen sentence do not carry a table code', () => 
   assert.throws(() => runAsAdministrator(handle, ['GRANT x'], () => ({ status: 1, stdout: '', stderr: 'ORA-01031' })), code('VENDOR_ADMIN_FAILED'), '관리자 문장 실패');
   assert.throws(() => readCatalog(handle, 'oracle', refused), code('VENDOR_QUERY_FAILED'), '메타 조회 실패');
   assert.throws(() => readNextValues(handle, 'oracle', refused), code('VENDOR_QUERY_FAILED'), '다음 값 조회 실패');
+  const model = { tables: [{ name: 'tb_a' }] };
+  assert.throws(() => rowCounts(handle, model, 'oracle', refused), error => code('VENDOR_QUERY_FAILED')(error) && /oracle 행 수 조회 실패 1건: ORA-00942/.test(error.message), '행 수 조회 실패');
+  assert.throws(() => rowCounts(handle, model, 'oracle', () => ({ sections: new Map([[0, ['no rows']]]), errors: [] })),
+    error => code('VENDOR_QUERY_FAILED')(error) && /oracle 행 수를 읽지 못했다: tb_a/.test(error.message), '행 수를 읽지 못함');
+  assert.deepEqual(rowCounts(handle, model, 'oracle', () => ({ sections: new Map([[0, ['3']]]), errors: [] })), { tb_a: 3 }, '읽은 수는 그대로 돌려준다');
   // Flyway Gradle 작업에는 네트워크·메모리·컴파일 실패가 섞이고, 대조 코드는 기준선 대조에서만 난다.
   assert.doesNotMatch(readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8'), /'VENDOR_PARITY_FAILED'/);
 });
@@ -845,6 +863,7 @@ test('a vendor command tells its parent the code through its real exit code when
   const engine = run(integration);
   assert.equal(engine.status, VENDOR_EXIT_CODES.VENDOR_ENGINE_NOT_READY, engine.stderr);
   assert.match(engine.stderr, /^\[vendor-integration\] VENDOR_ENGINE_NOT_READY: /m);
+  assert.doesNotMatch(engine.stderr, /남았다/, 'Docker 가 없으면 남은 컨테이너도 없다');
   // 기준 PostgreSQL 을 띄우지 못한 것은 대상 DB 의 문제가 아니다.
   const baseline = run(differential);
   assert.equal(baseline.status, 1, baseline.stderr);

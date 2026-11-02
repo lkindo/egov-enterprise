@@ -314,7 +314,7 @@ Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 
 
 - `compositionHash` 는 recipe 를 포함하므로 벤더가 다르면 해시가 다르다. `postgresql` recipe 의 해시는 변하지 않는다.
 - `profile-lock.json` 에 `database: { vendor, engineVersion, adapterVersion, modelHash }` 를 더한다. `schemaSnapshotHash` 는 기준 PostgreSQL 값으로 유지한다.
-- 새 작업 실패 코드: `VENDOR_TRANSLATION_GAP`(모델 번역 불가. DB·소스 단계), `VENDOR_PARITY_FAILED`(대상 DB 적용·대조 실패), `VENDOR_ENGINE_NOT_READY`(대상 컨테이너를 띄우지 못했거나 실행 중 연결이 끊김). 뒤의 둘은 대상 컨테이너가 있는 검증 단계에서만 나고, 벤더 검증 명령의 종료 코드 표로 전한다. 로그 글자로 판정하지 않는다. 원인을 나눌 수 없는 실패(Flyway Gradle 작업·메타 조회·관리자 문장의 실패, 끝까지 돌지 못한 실행, 컨테이너 잔존, 표본 부족, 기준 PostgreSQL 실패)는 `VERIFY_FAILED` 로 둔다.
+- 새 작업 실패 코드: `VENDOR_TRANSLATION_GAP`(모델 번역 불가. DB·소스 단계), `VENDOR_PARITY_FAILED`(대상 DB 적용·대조 실패), `VENDOR_ENGINE_NOT_READY`(대상 컨테이너를 띄우지 못했거나 실행 중 연결이 끊김). 뒤의 둘은 대상 컨테이너가 있는 검증 단계에서만 나고, 벤더 검증 명령의 종료 코드 표로 전한다. 로그 글자로 판정하지 않는다. 원인을 나눌 수 없는 실패(Flyway Gradle 작업·메타와 행 수 조회·관리자 문장의 실패, 끝까지 돌지 못한 실행, 컨테이너 잔존, 표본 부족, 기준 PostgreSQL 실패)는 `VERIFY_FAILED` 로 둔다.
 - 컨테이너 수명은 `project-composer-postgres.mjs` 를 일반화한다. 소유 표식은 같은 라벨을 쓰고 두 컨테이너를 한 작업 토큰으로 묶는다. 취소·기동 정리도 같은 경로를 탄다.
 - 벤더 구성의 사전 점검에 벤더 이미지와 메모리(Oracle Free·SQL Server 약 2GB 이상)를 더한다. 메모리 기준은 측정 전 값이라 경고만 하고 막지 않는다. Tibero 라이선스 파일 점검은 보류한다 — 원장이 `blocked` 이고 엔진이 없어 선택할 수 없으며, 사전 점검도 엔진이 없는 벤더를 차단한다.
 - 화면은 기능 저하 칸에 벤더 저하를 함께 보이고, 카탈로그 응답에 인증 원장을 싣는다. 비밀번호는 지금처럼 임시 환경으로만 넘긴다.

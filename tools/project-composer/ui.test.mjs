@@ -1078,6 +1078,7 @@ test('the final confirmation shows the environment check and the composition, an
   const coreScreens = realMenuTree({ ...mailRecipe, selection: { preset: 'core' } }).filter(menu => menu.kind === 'screen');
   assert.ok(mailScreens.length > coreScreens.length, 'mail adds destinations');
   const row = term => summary.locator('div', { has: page.locator('dt', { hasText: new RegExp(`^${term}$`) }) }).locator('dd');
+  await expect(row('데이터베이스')).toHaveText('PostgreSQL');
   await expect(row('테이블 · 권한')).toHaveText(`${mailPlan.tables.length} · ${mailPlan.permissionCodes.length} (공통 기반 ${real.core.tables.length} · ${real.core.permissionCodes.length})`);
   await expect(row('메뉴')).toHaveText(`전체 ${mailMenus.length}개 · 목적지 ${mailScreens.length}개 (공통 기반 목적지 ${coreScreens.length}개)`);
   // 점검이 실패하면 통과로 보이지 않는다. '다시 점검'은 잠기지 않아 누른 뒤에도 포커스가 그 자리에 남는다.
@@ -1186,6 +1187,15 @@ async function vendorPage(t, readLedger, generate = async () => ({ projectDirect
   return { page, pageErrors, planned };
 }
 const vendorFile = value => ({ name: 'vendor.recipe.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(value)) });
+// 실제 원장의 Oracle 상태에 기대지 않는다. 승격 뒤에도 같은 전환을 시험해야 한다.
+function ledgerWithOracle(status) {
+  const ledger = loadVendorLedger(root);
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  oracle.status = status;
+  if (status === 'certified') { oracle.evidence = { run: 'fixture' }; delete oracle.reason; }
+  else { oracle.reason = '시험용 사유입니다.'; delete oracle.evidence; }
+  return ledger;
+}
 
 test('uncertified vendors stay disabled with their reason and a recipe file cannot pick them', { timeout: 60_000 }, async t => {
   const ledger = loadVendorLedger(root);
@@ -1214,10 +1224,7 @@ test('uncertified vendors stay disabled with their reason and a recipe file cann
 });
 
 test('changing only the ledger makes a vendor selectable through planning, generation, files and job recovery', { timeout: 90_000 }, async t => {
-  const certified = structuredClone(loadVendorLedger(root));
-  const oracle = certified.vendors.find(vendor => vendor.id === 'oracle');
-  oracle.status = 'certified'; oracle.evidence = { run: 'fixture' }; delete oracle.reason;
-  let ledger = certified;
+  let ledger = ledgerWithOracle('certified');
   const generated = [];
   const { page, pageErrors, planned } = await vendorPage(t, () => ledger, async value => {
     generated.push(value);
@@ -1243,6 +1250,11 @@ test('changing only the ledger makes a vendor selectable through planning, gener
   await select.selectOption('oracle');
   await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
   await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  // 최종 확인 창은 고른 데이터베이스를 말한다. 확인하지 않은 벤더로 생성이 시작되지 않게 한다.
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const summary = page.locator('#confirm-summary');
+  await expect(summary.locator('div', { has: page.locator('dt', { hasText: /^데이터베이스$/ }) }).locator('dd')).toHaveText('Oracle');
+  await page.getByRole('dialog', { name: '이 구성으로 생성할까요?' }).getByRole('button', { name: '돌아가기' }).click();
   await confirmGenerate(page);
   await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
   assert.equal(generated.at(-1).database.vendor, 'oracle');
@@ -1253,7 +1265,7 @@ test('changing only the ledger makes a vendor selectable through planning, gener
   await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
   assert.equal(planned.at(-1).database.vendor, 'oracle');
   // 원장이 다시 내려가면 서버가 거부하고, 새 원본을 받으면 고르던 값이 바뀐 사실을 알린다.
-  ledger = loadVendorLedger(root);
+  ledger = ledgerWithOracle('preview');
   await page.getByLabel('프로젝트 이름').fill('after-downgrade');
   await expect(page.locator('#plan-status')).toContainText('선택한 구성을 지금 원본에서 만들 수 없습니다');
   await page.getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
@@ -1261,6 +1273,30 @@ test('changing only the ledger makes a vendor selectable through planning, gener
   await expect(select.locator('option[value="oracle"]')).toBeDisabled();
   await expect(page.locator('#plan-status')).toContainText('새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.');
   await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('reopening a job whose vendor can no longer be chosen says so until the next change', { timeout: 60_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger);
+  const select = page.locator('#database');
+  const status = page.locator('#plan-status');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  ledger = ledgerWithOracle('preview');
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  const sentence = '새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.';
+  await expect(status).toContainText(sentence);
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await expect(select).toHaveValue('postgresql');
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  await page.getByLabel('프로젝트 이름').fill('after-reopen');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await expect(status).not.toContainText(sentence);
   assert.deepEqual(pageErrors, []);
 });
 
