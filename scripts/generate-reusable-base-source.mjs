@@ -27,6 +27,7 @@ import { applyFrontendProjection, createFrontendProjector, pruneFrontend } from 
 import { adaptGeneratedHarness, assertJavaCascadeAcknowledged, assertRemovedGatesAcknowledged, pruneHistoricalMigrationTests, pruneUpstreamAtlas,
   pruneZeroDowntimeWaivers } from './reusable-source-gates.mjs';
 import { writeHarnessBaseline } from './reusable-source-harness.mjs';
+import { VENDOR_ASSET_RULE, pruneVendorPostgresAssets } from './reusable-vendor-assets.mjs';
 import { pruneJava } from './reusable-source-java.mjs';
 import { ROOT, copySourceTree, fail, git, initializeGeneratedRepository, installDatabaseBundle, isCopyableSourceFile, normalize, readTextIfPresent,
   trackedAndUntrackedFiles, walk } from './reusable-source-tree.mjs';
@@ -239,9 +240,12 @@ async function main() {
   //   게이트 42개가 사라진다(2026-09-12 실측으로 드러난 이 census 자신의 구멍).
   const removedHistoricalMigrationTests = pruneHistoricalMigrationTests(output);
   const removedUpstreamAtlas = pruneUpstreamAtlas(output);
+  // 벤더 프로젝트에서 동작하지 않는 PostgreSQL 전용 자산을 원장대로 걷는다.
+  const removedVendorAssets = vendorInput ? pruneVendorPostgresAssets(output) : null;
   const removedGates = assertRemovedGatesAcknowledged(args.profile, profile, java, frontend, {
     'historical-migration-tests': removedHistoricalMigrationTests.files,
     'upstream-atlas': removedUpstreamAtlas.files,
+    ...(removedVendorAssets ? { [VENDOR_ASSET_RULE]: removedVendorAssets.files } : {}),
   });
   // 프리셋은 연쇄로 지운 Java 를 커밋된 기대치와 대조한다(설계서 C4). 직접 선택은 기대치가 없어 lock 기록(java.cascadeRemoved)만 남긴다.
   if (composition.profile !== 'custom') assertJavaCascadeAcknowledged(args.profile, profile, java);
@@ -255,14 +259,17 @@ async function main() {
   const contractReferences = assertContractReferencesSurvive({ sourceRoot: ROOT, output, projection: apiDocs, files: copiedFiles });
   installDatabaseBundle(output, dbBundle);
   // 이관 카탈로그(설계서 B12): 원본 카탈로그를 그대로 두면 구성에서 빠진 표로 가는 매핑도 검증을 통과하고 적재 직전에야 실패한다.
-  const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
-  console.log(`[base-source] ${args.profile}: 이관 카탈로그(db_columns.json)를 번들 스키마로 다시 썼다(표 ${migrationCatalog.tables}개).`);
+  if (!vendorInput) {
+    const migrationCatalog = installProjectedColumnCatalog(ROOT, output, dbBundle, dbLock);
+    console.log(`[base-source] ${args.profile}: 이관 카탈로그(db_columns.json)를 번들 스키마로 다시 썼다(표 ${migrationCatalog.tables}개).`);
+  }
   const zdmWaivers = pruneZeroDowntimeWaivers(output);
   const projectedModules = writeProjectedModules(output, modules, composition, activeCompositionEntry(modules, composition, profile, java));
   installReusableVerification(output, args.layout);
-  const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output) : null;
-  if (args.layout === 'single-module') installSingleModuleRuntime(output);
-  else installMultiModuleMigrationRuntime(output);
+  const migration = !vendorInput;
+  const layoutProjection = args.layout === 'single-module' ? applySingleModuleLayout(output, { migration }) : null;
+  if (args.layout === 'single-module') installSingleModuleRuntime(output, { migration });
+  else if (migration) installMultiModuleMigrationRuntime(output);
   // 벤더 투영은 빌드·설정을 바꾸므로 거버넌스가 증거 범위를 재기 전에 한다. 입력은 DB 생성기가 번들 옆에 둔 재적용 결과다.
   const vendorProjection = vendorInput && projectVendorSources(output, { vendorId, layout: args.layout, input: JSON.parse(vendorInput.toString('utf8')), inputText: vendorInput.toString('utf8') });
   // 거버넌스의 sourceUnchanged 는 '생성물 == 원본에 같은 투영' 이다. 생성기와 같은 projector 로 원본을 투영한다.
@@ -348,7 +355,7 @@ async function main() {
       `- 현재 route/URL 모집단: ${governance.routes.length}/${governance.urlRecordIds.length}\n` +
       `- 기관 운영 검토: pending. 원본의 검토자·날짜는 upstream-review 이력이며 기관 승인이 아니다.\n` +
       `- 검토 경계: config/governance/reusable-governance-projection.json\n\n` +
-      `DB migration은 신규 빈 PostgreSQL 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
+      `DB migration은 신규 빈 ${vendorInput ? vendorId : 'PostgreSQL'} 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );
   initializeGeneratedRepository(output);

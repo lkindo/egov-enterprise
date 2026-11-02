@@ -36,7 +36,8 @@ function fixture(t, profile = 'core', layout = 'multi-module') {
   for (const path of ['package.json', 'Makefile', '.githooks/pre-push', '.github/required-checks.json', '.github/workflows']) copy(path);
   for (const path of ['build.gradle', 'settings.gradle', 'scripts/dev.mjs', 'scripts/verify.mjs',
     'scripts/migration-verification-contract.test.mjs', 'api-server/Dockerfile',
-    ...['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'].map(module => `${module}/build.gradle`)]) copy(path);
+    // 벤더 생성물에는 이관 도구가 없다. 없어도 되는지는 검사기가 잠금으로 판정한다.
+    ...['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'].map(module => `${module}/build.gradle`)].filter(path => !isArtifact || existsSync(join(ROOT, path)))) copy(path);
   if (isArtifact) {
     for (const path of ['reusable-base-lock.json', VERIFICATION_HISTORY, 'REUSABLE_VERIFICATION.md']) copy(path);
   } else {

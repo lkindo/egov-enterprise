@@ -120,7 +120,19 @@ export function frontendStartArguments(next, webPort) {
     '--keepAliveTimeout', String(E2E_WEB_KEEP_ALIVE_TIMEOUT_MS)];
 }
 
+/** 벤더 프로젝트의 앱은 이 실행기의 PostgreSQL 에 붙지 못한다. 기동 실패로 끝나 원인을 알기 어렵게 되지 않도록 먼저 멈춘다. */
+export function assertIsolatedRunnerSupportsProject(projectRoot) {
+  let lock;
+  try { lock = JSON.parse(readFileSync(path.join(projectRoot, 'reusable-base-lock.json'), 'utf8')); }
+  catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw error;
+  }
+  if (lock.vendorProjection) throw fail(`${lock.vendorProjection.vendor} projects are not supported yet; this runner starts PostgreSQL.`);
+}
+
 export async function main(arguments_ = process.argv.slice(2)) {
+  assertIsolatedRunnerSupportsProject(root);
   const ciCompose = arguments_[0] === '--ci-compose';
   const coverage = arguments_[0] === '--coverage';
   const enterpriseTaskDiagnostic = arguments_[0] === '--enterprise-task-diagnostic';

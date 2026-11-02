@@ -4,6 +4,7 @@ import { isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ComposerError } from './project-composer-errors.mjs';
 import { apiSourceOwner } from './project-composer-integrations.mjs';
+import { VENDOR_ASSET_RULE } from './reusable-vendor-assets.mjs';
 import { describeRoutes, pageSurvivalViolations } from './reusable-page-survival.mjs';
 
 /** Exact support files follow their optional consumer while module dependencies stay unchanged. */
@@ -91,6 +92,14 @@ const RBAC_SURVEY_BOUNDARY = /^ *(?:@SuppressWarnings\("unused"\)\r?\n *)?privat
  * v2 의 presets.json 에서 받고, 직접 선택은 기능 파일의 게이트 소유에서 계산한다. `modules` 는 loadComposerModules 결과다.
  */
 export function composerProfile(modules, composition) {
+  const profile = selectionProfile(modules, composition);
+  if ((composition.recipe?.database?.vendor ?? 'postgresql') === 'postgresql') return profile;
+  // 벤더 구성은 PostgreSQL 전용 자산을 원장대로 걷는다. 게이트별 사유는 원장에 있다.
+  return { ...profile, acknowledgedGateRemovalRules: [...profile.acknowledgedGateRemovalRules,
+    { rule: VENDOR_ASSET_RULE, reason: 'PostgreSQL 전용 도구는 벤더 프로젝트에서 동작하지 않는다(config/governance/vendor-removed-assets.json)' }] };
+}
+
+function selectionProfile(modules, composition) {
   const projection = { resolvedDomains: composition.resolvedDomains, frontendRemovePaths: composition.frontend.removePaths };
   const { presetExpectations, gateOwners, rbac } = modules.extras;
   // 목록만 복사한다. 목록이 아닌 값은 그대로 넘겨 승인 대조가 형식 오류로 말하게 한다(removedGateAcknowledgement·javaCascadeAcknowledgement).

@@ -11,6 +11,7 @@ import { artifactTextSha256, vendorBaselinePaths } from './reusable-governance-i
 import { vendorInputPath } from './verify-reusable-artifact.mjs';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
+import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 
 const RESOURCES = 'api-server/src/main/resources';
 /** classpath 접두사를 뺀 Flyway 위치. 경로의 정본은 거버넌스가 대조하는 vendorBaselinePaths 다. */
@@ -129,6 +130,15 @@ export function projectVendorDeploy(text, vendorId) {
   return replaceRequired(guarded, /jdbc:postgresql:\/\/db:5432\/egovdb/g, composeUrl, '배포 스크립트 안내');
 }
 
+/** 이관 모듈을 빌드 입력에서 뺀다. 없는 경로를 COPY 하면 이미지 빌드가 멈춘다. */
+export function projectVendorDockerfile(text) {
+  return replaceRequired(text, /^COPY migration-tool\/build\.gradle [^\n]*\r?\n/m, '', 'Dockerfile 이관 모듈');
+}
+
+export function projectVendorSettings(text) {
+  return replaceRequired(text, /^include 'migration-tool'\r?\n/m, '', 'settings.gradle 이관 모듈');
+}
+
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
 export function projectVendorEnvironment(text, vendorId) {
   const url = replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
@@ -141,6 +151,10 @@ const vendorReadme = vendorId => `
 이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 의 번역 기준선만 적용한다. \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 
 \`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
+
+PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 아직 이 DB 를 지원하지 않아 시작할 때 멈춘다.
+
+생성 뒤 스키마를 바꾸는 절차는 아직 완성되지 않았다. 새 마이그레이션은 벤더 문법으로 \`db/vendor/${vendorId}\` 에 더한다. 엔티티·명명·유니크 린터는 아직 \`db/migration\` 을 보므로 새 표는 그쪽에도 맞춰 두어야 통과하고, \`npm run regen\` 의 권한 시드도 \`db/migration\` 만 고치므로 새 권한은 벤더 마이그레이션에 직접 넣는다.
 `;
 
 /** 생성물 트리를 벤더로 투영한다. 소스 생성기가 PostgreSQL 번들을 설치한 뒤 부른다. */
@@ -165,6 +179,14 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   const common = join(resources, 'application.yml');
   writeFileSync(common, `${readFileSync(common, 'utf8').replace(/\s*$/, '\n')}${vendorApplicationDocument(vendorId)}`, 'utf8');
 
+  const dockerfile = join(output, 'api-server/Dockerfile');
+  writeFileSync(dockerfile, projectVendorDockerfile(readFileSync(dockerfile, 'utf8')), 'utf8');
+  // 단일모듈은 조립할 때 include 를 이미 지웠다.
+  if (layout !== 'single-module') {
+    const settings = join(output, 'settings.gradle');
+    writeFileSync(settings, projectVendorSettings(readFileSync(settings, 'utf8')), 'utf8');
+  }
+
   const compose = join(output, 'docker-compose.yml');
   writeFileSync(compose, projectVendorCompose(readFileSync(compose, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
   const composeProd = join(output, 'docker-compose.prod.yml');
@@ -177,5 +199,5 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId)}`, 'utf8');
 
   return { vendor: vendorId, location, migration, migrationSha256: artifactTextSha256(output, migration), input: inputPath,
-    inputSha256: artifactTextSha256(output, inputPath), statements: statements.length, buildFile, profiles };
+    inputSha256: artifactTextSha256(output, inputPath), statements: statements.length, buildFile, profiles, removedAssets: readVendorAssetLedger(output).assets };
 }

@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
@@ -16,8 +16,15 @@ import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses,
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
-import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
+import { collectResults, parseCount, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { removeJobContainers } from './project-composer-postgres.mjs';
+import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
+import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
+import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
+import { assertIsolatedRunnerSupportsProject } from './run-isolated-e2e.mjs';
+import { composerProfile } from './project-composer-source.mjs';
+import { loadComposerModules } from './composer-modules.mjs';
+import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -445,7 +452,9 @@ test('the lock binds the vendor projection to the composition and the baseline t
     const input = vendorInputPath('oracle');
     mkdirSync(join(root, input, '..'), { recursive: true });
     writeFileSync(join(root, input), '{}\n');
-    const projection = { vendor: 'oracle', ...paths, migrationSha256: artifactTextSha256(root, paths.migration), input, inputSha256: artifactTextSha256(root, input) };
+    mkdirSync(join(root, 'config/governance'), { recursive: true });
+    writeFileSync(join(root, VENDOR_ASSET_LEDGER), JSON.stringify({ assets: ['migration-tool'] }));
+    const projection = { vendor: 'oracle', ...paths, migrationSha256: artifactTextSha256(root, paths.migration), input, inputSha256: artifactTextSha256(root, input), removedAssets: ['migration-tool'] };
     const lock = { composition: { recipe: { database: { vendor: 'oracle' } } }, vendorProjection: projection };
     assert.deepEqual(vendorProjectionErrors(root, lock), []);
     assert.match(vendorProjectionErrors(root, { ...lock, vendorProjection: { ...projection, location: 'classpath:db/migration' } })[0], /differs from its composition/, 'Flyway 위치만 바꿔도 붉다');
@@ -455,6 +464,11 @@ test('the lock binds the vendor projection to the composition and the baseline t
     writeFileSync(join(root, input), '{}\n');
     writeFileSync(join(root, paths.migration), 'DROP TABLE t;\n');
     assert.match(vendorProjectionErrors(root, lock)[0], /Vendor baseline differs/);
+    writeFileSync(join(root, paths.migration), 'CREATE TABLE t (id NUMBER);\n');
+    assert.deepEqual(vendorProjectionErrors(root, lock), []);
+    assert.match(vendorProjectionErrors(root, { ...lock, vendorProjection: { ...projection, removedAssets: [] } })[0], /removed assets differ/, '잠금에서 지워 부재 대조를 끌 수 없다');
+    mkdirSync(join(root, 'migration-tool'));
+    assert.match(vendorProjectionErrors(root, lock)[0], /keeps a PostgreSQL-only asset: migration-tool/);
     assert.deepEqual(vendorProjectionErrors(root, { composition: { recipe: { database: { vendor: 'postgresql' } } } }), []);
     assert.match(vendorProjectionErrors(root, { composition: { recipe: { database: { vendor: 'postgresql' } } }, vendorProjection: projection })[0], /PostgreSQL composition/);
   } finally {
@@ -517,6 +531,122 @@ test('a failure in the vendor test command is reported as its own command', () =
   }
 });
 
+test('the removal ledger names real files and leaves nothing behind that depends on them', () => {
+  const ledger = readVendorAssetLedger(ROOT);
+  const scripts = JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts;
+  assert.deepEqual(staleVendorAssets(ledger, asset => existsSync(join(ROOT, asset)), scripts), []);
+  for (const row of ledger.gates) {
+    assert.ok(existsSync(join(ROOT, row.file)), `${row.file} 가 없다`);
+    assert.ok(row.reason.trim() && Object.hasOwn(row, 'coveredBy'), `${row.file} 는 사유와 대체 여부를 적는다`);
+  }
+  const removed = new Set([...ledger.assets, ...ledger.gates.map(row => row.file)]);
+  const gone = path => [...removed].some(asset => path === asset || path.startsWith(`${asset}/`));
+  const broken = [];
+  for (const name of readdirSync(join(ROOT, 'scripts')).filter(file => /\.m?js$/.test(file) && !gone(`scripts/${file}`))) {
+    for (const [, target] of readFileSync(join(ROOT, 'scripts', name), 'utf8').matchAll(/from '\.\/([\w.-]+)'/g)) {
+      if (gone(`scripts/${target}`)) broken.push(`${name} -> ${target}`);
+    }
+  }
+  assert.deepEqual(broken, [], '남는 스크립트가 지운 파일을 import 하면 벤더 프로젝트에서 죽는다');
+  const paths = [...removed];
+  const aliases = Object.entries(scripts).filter(([alias, command]) => !ledger.aliases.includes(alias) && !Object.hasOwn(artifactAliases, alias)
+    && paths.some(asset => command.includes(asset))).map(([alias]) => alias);
+  assert.deepEqual(aliases, [], '남는 별칭이 지운 파일을 부르면 안 된다');
+});
+
+test('a vendor project loses the PostgreSQL tools, and a stale ledger stops before anything is removed', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vendor-assets-'));
+  try {
+    const write = (path, text = '') => { mkdirSync(dirname(join(root, path)), { recursive: true }); writeFileSync(join(root, path), text); };
+    write(VENDOR_ASSET_LEDGER, JSON.stringify({ assets: ['tool', 'a.mjs'], aliases: ['tool:run'], gates: [{ file: 'tool/a.test.mjs' }, { file: 'gone.test.mjs' }, { file: 'b.test.mjs' }] }));
+    write('package.json', JSON.stringify({ scripts: { 'tool:run': 'x', keep: 'y' } }));
+    write('tool/a.test.mjs'); write('a.mjs'); write('b.test.mjs'); write('keep.mjs');
+    assert.deepEqual(pruneVendorPostgresAssets(root).files, ['b.test.mjs', 'tool/a.test.mjs'], '구성이 이미 뺀 게이트는 규칙에 적지 않는다');
+    assert.equal(existsSync(join(root, 'tool')), false);
+    assert.equal(existsSync(join(root, 'a.mjs')), false);
+    assert.equal(existsSync(join(root, 'keep.mjs')), true);
+    assert.deepEqual(JSON.parse(readFileSync(join(root, 'package.json'), 'utf8')).scripts, { keep: 'y' });
+    write('keep2.mjs');
+    assert.throws(() => pruneVendorPostgresAssets(root), /벤더 제거 원장이 낡았다: tool, a\.mjs, tool:run/);
+    assert.equal(existsSync(join(root, 'keep2.mjs')), true);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a vendor composition acknowledges the asset rule and a PostgreSQL one does not', () => {
+  const modules = loadComposerModules(ROOT);
+  const base = { profile: 'core', resolvedDomains: [], frontend: { removePaths: [] } };
+  const rules = recipe => composerProfile(modules, { ...base, recipe }).acknowledgedGateRemovalRules.map(row => row.rule);
+  assert.equal(rules({ database: { vendor: 'postgresql' } }).includes(VENDOR_ASSET_RULE), false);
+  assert.equal(rules({ database: { vendor: 'oracle' } }).includes(VENDOR_ASSET_RULE), true);
+});
+
+test('a missing gate scan root stays a failure unless a vendor project removed it by the ledger', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vendor-scan-'));
+  const ledger = assets => { mkdirSync(join(root, 'config/governance'), { recursive: true }); writeFileSync(join(root, VENDOR_ASSET_LEDGER), JSON.stringify({ assets })); };
+  try {
+    for (const scanRoot of HARNESS_SCAN_ROOTS.filter(item => !item.startsWith('migration-tool/'))) mkdirSync(join(root, scanRoot), { recursive: true });
+    ledger(['migration-tool']);
+    assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool/, '벤더 기준선이 없는 저장소는 예외가 아니다');
+    mkdirSync(join(root, 'api-server/src/main/resources/db/vendor/oracle'), { recursive: true });
+    ledger(['tools/other']);
+    assert.throws(() => computeHarnessBaselineEntries(root), /스캔 루트를 찾을 수 없다 — migration-tool/, '원장에 없는 경로는 예외가 아니다');
+    ledger(['migration-tool']);
+    assert.doesNotThrow(() => computeHarnessBaselineEntries(root));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('the isolated runner stops on a vendor project before it starts PostgreSQL', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vendor-runner-'));
+  try {
+    assert.doesNotThrow(() => assertIsolatedRunnerSupportsProject(root), '원본 저장소에는 잠금이 없다');
+    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core' }));
+    assert.doesNotThrow(() => assertIsolatedRunnerSupportsProject(root), 'PostgreSQL 생성물은 그대로 돈다');
+    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ vendorProjection: { vendor: 'oracle' } }));
+    assert.throws(() => assertIsolatedRunnerSupportsProject(root), /oracle projects are not supported yet/);
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('a vendor container started for a job carries that job token, so a cancel can reclaim it', async () => {
+  const token = 'ab'.repeat(8);
+  assert.deepEqual(vendorContainerLabels('oracle', token), ['--label', 'egov.composer.vendor=oracle', '--label', `egov.project-composer=${token}`]);
+  assert.deepEqual(vendorContainerLabels('oracle', ''), ['--label', 'egov.composer.vendor=oracle']);
+  assert.throws(() => vendorContainerLabels('oracle', 'x;rm'), /작업 토큰 형식/);
+
+  const id = name => name.repeat(64);
+  const run = async ({ byToken, listed, container = id('a') }) => {
+    const calls = [];
+    const docker = async args => {
+      calls.push(args[0]);
+      if (args[0] === 'ps') return listed.join('\n');
+      if (args[0] === 'inspect') return token;
+      return '';
+    };
+    await removeJobContainers(docker, { container, token, byToken });
+    return calls;
+  };
+  assert.deepEqual(await run({ byToken: false, listed: [id('b')] }), ['inspect', 'rm'], 'PostgreSQL 작업은 전과 같다');
+  assert.deepEqual(await run({ byToken: true, listed: [id('b'), id('c')] }), ['inspect', 'rm', 'ps', 'inspect', 'rm', 'inspect', 'rm'], '자식이 띄운 컨테이너까지 회수한다');
+  assert.deepEqual(await run({ byToken: false, listed: [id('b')], container: null }), ['ps', 'inspect', 'rm'], 'ID 를 못 받았으면 표식으로 찾는다');
+});
+
+test('a vendor container that was created but never started is removed too', () => {
+  const calls = [];
+  const runDocker = (args, options) => {
+    calls.push(args[0]);
+    return args[0] === 'run' ? { status: 125, stderr: '포트 충돌' } : { status: 0, stderr: '' };
+  };
+  assert.throws(() => startVendorEngine('oracle', { publishPort: 1521, runDocker }), error => error.code === 'VENDOR_ENGINE_NOT_READY' && /포트 충돌/.test(error.message));
+  assert.deepEqual(calls, ['run', 'rm'], '시작 실패에도 지운다');
+  assert.throws(() => startVendorEngine('oracle', { runDocker: args => (args[0] === 'run' ? { status: 125, stderr: '포트 충돌' } : { status: 1, stderr: '' }) }),
+    /포트 충돌.*시험 DB 컨테이너가 남았다/, '지우지 못하면 본래 실패에 잔존을 덧붙인다');
+});
+
 test('the disposable baseline database goes away whatever happens, and a leftover is not a pass', () => {
   const calls = [];
   const docker = outcomes => args => { calls.push(args[0]); return outcomes[args[0]] ?? { status: 0, stdout: '', stderr: '' }; };
@@ -571,6 +701,12 @@ case "$DB_URL" in
 esac
 `, 'oracle');
   assert.doesNotMatch(deploy, /postgresql/);
+  const dockerfile = readFileSync(join(ROOT, 'api-server/Dockerfile'), 'utf8');
+  assert.match(dockerfile, /COPY migration-tool\/build\.gradle/, '원본은 이관 모듈을 복사한다');
+  assert.doesNotMatch(projectVendorDockerfile(dockerfile), /migration-tool/, '지운 모듈을 복사하면 이미지 빌드가 멈춘다');
+  assert.throws(() => projectVendorDockerfile('FROM x\n'), /Dockerfile 이관 모듈/);
+  const settings = readFileSync(join(ROOT, 'settings.gradle'), 'utf8');
+  assert.doesNotMatch(projectVendorSettings(settings), /migration-tool/);
   assert.match(deploy, /DB_PASSWORD DB_ADMIN_PASSWORD MAIL_HOST/);
   assert.match(deploy, /^ {4}jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1\) ;;$/m);
 

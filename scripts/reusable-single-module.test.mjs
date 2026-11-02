@@ -159,3 +159,24 @@ test('structural checks reject resurrected projects and missing compile/test bou
     "tasks.named('harnessTest', Test) { workingDir file('api-server') }"));
   assert.ok(inspectSingleModuleLayout(root).errors.some(error => error.includes('harnessTest')));
 });
+
+test('a vendor project assembles without the migration tool and the inspector holds it to that', () => {
+  const root = mkdtempSync(join(tmpdir(), 'single-module-vendor-'));
+  try {
+    for (const path of ['build.gradle', 'settings.gradle', ...['foundation', 'business-core', 'business-app', 'api-server'].map(module => `${module}/build.gradle`)]) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      copyFileSync(join(ROOT, path), join(root, path));
+    }
+    const layout = applySingleModuleLayout(root, { migration: false });
+    assert.deepEqual(layout.testSuites, ['test', 'foundationTest', 'coreTest', 'appTest']);
+    assert.equal(Object.hasOwn(layout, 'offlineArchiveTask'), false);
+    const build = readFileSync(join(root, 'build.gradle'), 'utf8');
+    assert.doesNotMatch(build, /migrationBootJar|migrationTest|compileMigrationTestJava|migration-tool\/src/);
+    assert.deepEqual(inspectSingleModuleLayout(root, { migration: false }).errors, []);
+    assert.ok(inspectSingleModuleLayout(root).errors.some(error => /migrationBootJar/.test(error)), '이관 도구가 있어야 하는 구성의 검사는 여전히 요구한다');
+    writeFileSync(join(root, 'build.gradle'), build.replace("tasks.named('assemble') { dependsOn 'bootJar' }", "tasks.named('assemble') { dependsOn 'bootJar' }\ntasks.register('migrationBootJar')"));
+    assert.ok(inspectSingleModuleLayout(root, { migration: false }).errors.some(error => /still declares/.test(error)));
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+});

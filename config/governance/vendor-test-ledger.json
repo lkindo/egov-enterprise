@@ -96,7 +96,7 @@
     {
       "test": "BackupRestoreDrillIntegrationTest.java",
       "category": "replacement",
-      "reason": "V2 체인이나 PostgreSQL 카탈로그를 직접 단언한다. 벤더 프로젝트는 기준선에서 시작하므로 벤더 대조 시험으로 대체한다"
+      "reason": "복원 도구가 pg_dump 전용이라 벤더 프로젝트에서 뺐다(vendor-removed-assets.json). 대체 시험은 없고 벤더 DB 의 백업·복원은 기관 몫이다."
     },
     {
       "test": "BannerBigintMigrationIntegrationTest.java",

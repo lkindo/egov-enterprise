@@ -19,6 +19,7 @@ import { buildUnreviewedBaselineManifest, inspectRouteRepository } from './ui-ro
 import { COMPOSER_SELECTION_PATH } from './project-composer-recipe.mjs';
 import { projectSourceApiDocs } from './reusable-contract-projection.mjs';
 import { isContractScopeFile, predictFromProjection, vanishedContractReferences } from './reusable-contract-references.mjs';
+import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 import { root, readJson, catalog, modules, ownership, files, compose, projectionFiles, quietly, readRepositorySource } from './project-composer-deep.test-helpers.mjs';
 
 /*
@@ -104,4 +105,27 @@ test('the deep plan removes exactly the files, cascades and gates the generator 
     // 권한이 빠진 묶음은 이름·설명을 원본에서 들고 가지 않는다(GAP-COMPOSE-001) — 세 구성 모두 '기본 업무'의 권한이 줄어든다.
     assert.ok(reducedBundles.includes('basic-work'), `${label}: the basic work bundle loses permissions`);
   }
+});
+
+test('the deep plan names exactly the PostgreSQL-only gates a vendor generation removes', { timeout: 600_000 }, t => {
+  const postgres = compose({ preset: 'core' });
+  const composition = { ...postgres, recipe: { ...postgres.recipe, database: { vendor: 'oracle' } } };
+  const deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition, files, modules });
+  assert.deepEqual(deep.blockers, [], 'the real checkout has no vendor projection blocker');
+  assert.equal(Object.hasOwn(compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: postgres, files, modules }).ruleRemovals, VENDOR_ASSET_RULE), false,
+    'a PostgreSQL composition has no vendor rule');
+
+  const ledger = readVendorAssetLedger(root);
+  const owned = [VENDOR_ASSET_LEDGER, ...ledger.assets, ...ledger.gates.map(row => row.file)];
+  const output = mkdtempSync(join(tmpdir(), 'composer-deep-vendor-'));
+  t.after(() => rmSync(output, { recursive: true, force: true, maxRetries: 5 }));
+  copySourceTree(output, { sourceRoot: root, files: [...new Set([...projectionFiles,
+    ...files.filter(file => owned.some(path => normalize(file) === path || normalize(file).startsWith(`${path}/`)))])] });
+  const profile = composerProfile(modules, composition);
+  const { java, frontend } = projectSourceTree(output, { ownership, profile: structuredClone(profile), composition, sourceRoot: root, catalog });
+  const ruleRemovals = { 'historical-migration-tests': pruneHistoricalMigrationTests(output).files, 'upstream-atlas': pruneUpstreamAtlas(output).files,
+    [VENDOR_ASSET_RULE]: pruneVendorPostgresAssets(output).files };
+  assert.ok(ruleRemovals[VENDOR_ASSET_RULE].length > 0, 'the rule removes real gates');
+  assert.deepEqual(deep.ruleRemovals, ruleRemovals);
+  quietly(() => assertRemovedGatesAcknowledged(composition.profile, profile, java, frontend, ruleRemovals));
 });
