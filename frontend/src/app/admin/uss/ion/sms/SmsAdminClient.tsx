@@ -464,7 +464,7 @@ export default function SmsAdminClient({
               <select
                 id="sms-search-condition"
                 aria-label="문자 발송 이력 검색 조건"
-                className="block h-[var(--control-h)] rounded-[var(--radius-control)] border border-border bg-card px-2 text-[length:var(--font-size-body)]"
+                className="block h-[var(--control-h)] rounded-[var(--radius-control)] border border-input bg-card px-2 text-[length:var(--font-size-body)]"
                 value={searchCondition}
                 onChange={(e) => {
                   setSearchCondition(e.target.value as '0' | '1');

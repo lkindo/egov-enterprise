@@ -107,7 +107,7 @@ function CommunityBoardContent() {
                   setBbsId(e.target.value);
                   setPage(1);
                 }}
-                className="h-[var(--control-h)] px-8 bg-card border-2 border-border rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
+                className="h-[var(--control-h)] px-8 bg-card border-2 border-input rounded-lg font-bold text-xs tracking-widest outline-none focus:border-primary/20 transition-all shadow-sm"
                 aria-label="게시판 선택"
               >
                 {/* 현재 선택값(주소의 bbsId·기본값)이 선택지에 없으면 선택이 풀린 것처럼 보이므로 그 값을 남겨 둔다.

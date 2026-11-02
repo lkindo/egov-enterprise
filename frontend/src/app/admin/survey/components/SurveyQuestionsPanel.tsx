@@ -803,7 +803,7 @@ function SurveyQuestionCreateForm({
                 <span className="text-muted-foreground">선택 방식</span>
                 <select
                   aria-label="선택 방식"
-                  className="h-[var(--control-h)] rounded-md border border-border bg-background px-2 text-sm"
+                  className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-sm"
                   value={newQuestionFreeText ? 'free-text' : newQuestionMultiple ? 'multiple' : 'single'}
                   onChange={(e) => {
                     questionValidation.clearError('maxChcCnt');

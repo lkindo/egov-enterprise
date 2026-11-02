@@ -51,7 +51,7 @@ export const BoardListFilters = ({
       <form onSubmit={onSearch} className="flex flex-col gap-3 w-full">
         <div className="flex flex-col md:flex-row items-center gap-3 w-full">
           <Select value={searchCnd} onValueChange={setSearchCnd}>
-              <SelectTrigger className="w-full md:w-[220px] !h-[var(--filter-control-h)] rounded-lg border border-border bg-card font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
+              <SelectTrigger className="w-full md:w-[220px] !h-[var(--filter-control-h)] rounded-lg border border-input bg-card font-bold shadow-sm flex items-center leading-none" aria-label="검색 조건 선택">
                 <SelectValue placeholder="검색 조건" />
               </SelectTrigger>
               {/*
@@ -72,7 +72,7 @@ export const BoardListFilters = ({
               id="board-search-input"
               data-testid="board-search-input"
               type="text"
-              className="pl-12 pr-10 !h-[var(--filter-control-h)] text-sm border border-border bg-card shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
+              className="pl-12 pr-10 !h-[var(--filter-control-h)] text-sm border border-input bg-card shadow-sm rounded-lg focus-visible:ring-primary/20 transition-all font-bold leading-none flex items-center"
               placeholder="어떤 정보를 찾으시나요?"
               value={searchWrd}
               onChange={(e) => setSearchWrd(e.target.value)}
@@ -164,7 +164,7 @@ export const BoardListFilters = ({
             )}
 
             <Select value={orderBy} onValueChange={setOrderBy}>
-                <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-[var(--filter-control-h)] rounded-lg border border-border bg-card font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
+                <SelectTrigger data-testid="board-sort-select" className="w-full md:w-[140px] !h-[var(--filter-control-h)] rounded-lg border border-input bg-card font-bold shadow-sm text-sm flex items-center leading-none" aria-label="정렬 방식 선택">
                   <ArrowUpDown className="mr-2 h-3.5 w-3.5 text-primary opacity-50 shrink-0" />
                   <SelectValue placeholder="정렬 방식" />
                 </SelectTrigger>

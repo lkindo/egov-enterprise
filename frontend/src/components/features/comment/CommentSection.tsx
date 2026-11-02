@@ -381,7 +381,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
                             }}
                             maxLength={4000}
                             required
-                            className="min-h-20 rounded-[var(--radius)] border-border bg-background p-2 text-[length:var(--font-size-body)] text-foreground"
+                            className="min-h-20 rounded-[var(--radius)] border-input bg-background p-2 text-[length:var(--font-size-body)] text-foreground"
                           />
                           {editValidation.errors.editCn ? (
                             <p {...editValidation.messageProps('editCn')} className="text-xs font-bold text-destructive-emphasis" />
@@ -440,7 +440,7 @@ export default function CommentSection({ pstSn, bbsId, initialComments, totalCom
               }}
               maxLength={4000}
               required
-              className="min-h-24 resize-y rounded-[var(--radius)] border-border bg-background p-2 text-[length:var(--font-size-body)] text-foreground placeholder:text-muted-foreground"
+              className="min-h-24 resize-y rounded-[var(--radius)] border-input bg-background p-2 text-[length:var(--font-size-body)] text-foreground placeholder:text-muted-foreground"
             />
             {createValidation.errors.ansCn ? (
               <p {...createValidation.messageProps('ansCn')} className="text-xs font-bold text-destructive-emphasis" />

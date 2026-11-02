@@ -261,7 +261,7 @@ export default function SmsHubClient({
                                         inputMode="tel"
                                         maxLength={20}
                                         placeholder="010-0000-0000"
-                                        className="pl-16 h-11 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
+                                        className="pl-16 h-11 bg-muted border-2 border-input rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tight focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground"
                                         value={newSms.rcptnTelno}
                                         onChange={(e) => {
                                           setNewSms((current) => ({ ...current, rcptnTelno: e.target.value }));
@@ -282,7 +282,7 @@ export default function SmsHubClient({
                                         required
                                         maxLength={80}
                                         placeholder="전달할 메시지 내용을 입력하세요..."
-                                        className="min-h-[200px] p-8 bg-muted border-2 border-border rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground leading-relaxed"
+                                        className="min-h-[200px] p-8 bg-muted border-2 border-input rounded-[var(--radius-hub-item)] text-lg font-bold tracking-tighter focus:ring-4 focus:ring-primary/10 transition-all placeholder:text-muted-foreground leading-relaxed"
                                         value={newSms.sndngCn}
                                         onChange={(e) => {
                                           setNewSms((current) => ({ ...current, sndngCn: e.target.value }));

@@ -189,7 +189,7 @@ export function UserManageForm({
                       {...field}
                       maxLength={50}
                       className={cn(
-                        "rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-xs font-medium border-input shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="example@nuri.com"
@@ -218,7 +218,7 @@ export function UserManageForm({
                       maxLength={11}
                       inputMode="tel"
                       className={cn(
-                        "rounded-lg text-xs font-medium border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-xs font-medium border-input shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="010-0000-0000"
@@ -251,7 +251,7 @@ export function UserManageForm({
                       type="password"
                       maxLength={100}
                       className={cn(
-                        "rounded-lg text-xs border-border shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
+                        "rounded-lg text-xs border-input shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
                         fieldState.error && "border-destructive ring-destructive/10 ring-4"
                       )}
                       placeholder="영문·숫자·특수문자 포함 8~64자"
@@ -280,7 +280,7 @@ export function UserManageForm({
                   <select
                     {...field}
                     className={cn(
-                        "w-full h-[var(--control-h)] px-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none shadow-inner transition-all",
+                        "w-full h-[var(--control-h)] px-6 rounded-lg border-2 border-input bg-muted text-xs font-bold outline-none shadow-inner transition-all",
                         fieldState.error ? "border-destructive ring-destructive/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
                     )}
                   >

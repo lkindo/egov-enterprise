@@ -299,7 +299,7 @@ export const SearchResultsContent = ({
                                 aria-describedby={queryError ? 'search-query-error' : undefined}
                                 defaultValue={query}
                                 placeholder={hasArticleSearch ? '게시글 제목, 임직원 또는 바로가기 이름을 입력하세요' : '임직원 또는 바로가기 이름을 입력하세요'}
-                                className="h-[var(--control-h)] rounded-md border border-border bg-card pl-9 pr-28 text-[length:var(--font-size-body)] placeholder:text-muted-foreground"
+                                className="h-[var(--control-h)] rounded-md border border-input bg-card pl-9 pr-28 text-[length:var(--font-size-body)] placeholder:text-muted-foreground"
                             />
                             <Button
                                 type="submit"

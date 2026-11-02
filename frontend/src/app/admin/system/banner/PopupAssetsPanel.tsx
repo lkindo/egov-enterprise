@@ -681,7 +681,7 @@ export function usePopupAssetsPanel({
                           <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">게시 설정</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-[var(--control-h)] rounded-md border border-border bg-card text-[length:var(--font-size-body)]">
+                              <SelectTrigger className="h-[var(--control-h)] rounded-md border border-input bg-card text-[length:var(--font-size-body)]">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>
@@ -703,7 +703,7 @@ export function usePopupAssetsPanel({
                           <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">다시보지않기 처리</FormLabel>
                           <Select onValueChange={field.onChange} value={field.value}>
                             <FormControl>
-                              <SelectTrigger className="h-[var(--control-h)] rounded-md border border-border bg-card text-[length:var(--font-size-body)]">
+                              <SelectTrigger className="h-[var(--control-h)] rounded-md border border-input bg-card text-[length:var(--font-size-body)]">
                                 <SelectValue />
                               </SelectTrigger>
                             </FormControl>

@@ -557,7 +557,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                       value={field.value || ''}
                       disabled={editing !== null}
                       onChange={(event) => field.onChange(event.target.value ? Number(event.target.value) : 0)}
-                      className="h-[var(--control-h)] w-full rounded-lg border border-border bg-muted px-3 text-sm disabled:opacity-60"
+                      className="h-[var(--control-h)] w-full rounded-lg border border-input bg-muted px-3 text-sm disabled:opacity-60"
                     >
                       <option value="">— 행사를 선택하세요 —</option>
                       {eventOptions.map((event) => (
@@ -590,7 +590,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                       maxLength={20}
                       disabled={editing !== null}
                       placeholder="HR-2026-001"
-                      className="rounded-lg bg-muted border-border disabled:opacity-60"
+                      className="rounded-lg bg-muted border-input disabled:opacity-60"
                     />
                   </FormControl>
                   {editing ? (
@@ -608,7 +608,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">성명</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={100} placeholder="홍길동" className="rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={100} placeholder="홍길동" className="rounded-lg bg-muted border-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -622,7 +622,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">소속기관</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={200} placeholder="한국인재개발원" className="rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={200} placeholder="한국인재개발원" className="rounded-lg bg-muted border-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -637,7 +637,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                   <FormItem>
                     <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">지역번호</FormLabel>
                     <FormControl>
-                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="02" className="rounded-lg bg-muted border-border" />
+                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="02" className="rounded-lg bg-muted border-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -651,7 +651,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                   <FormItem>
                     <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">국번</FormLabel>
                     <FormControl>
-                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="1234" className="rounded-lg bg-muted border-border" />
+                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="1234" className="rounded-lg bg-muted border-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -665,7 +665,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                   <FormItem>
                     <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">종번</FormLabel>
                     <FormControl>
-                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="5678" className="rounded-lg bg-muted border-border" />
+                      <Input {...field} maxLength={4} inputMode="numeric" placeholder="5678" className="rounded-lg bg-muted border-input" />
                     </FormControl>
                     <FormMessage />
                   </FormItem>
@@ -680,7 +680,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">이메일</FormLabel>
                   <FormControl>
-                    <Input {...field} type="email" maxLength={320} placeholder="example@domain.com" className="rounded-lg bg-muted border-border" />
+                    <Input {...field} type="email" maxLength={320} placeholder="example@domain.com" className="rounded-lg bg-muted border-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -694,7 +694,7 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
                 <FormItem>
                   <FormLabel className="text-xs font-bold text-muted-foreground tracking-widest">생년월일 (8자리)</FormLabel>
                   <FormControl>
-                    <Input {...field} maxLength={8} inputMode="numeric" placeholder="19900101" className="rounded-lg bg-muted border-border" />
+                    <Input {...field} maxLength={8} inputMode="numeric" placeholder="19900101" className="rounded-lg bg-muted border-input" />
                   </FormControl>
                   <FormMessage />
                 </FormItem>

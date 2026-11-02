@@ -477,7 +477,7 @@ export function useBannerAssetsPanel({
                         <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">자산 로드 상태</FormLabel>
                         <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <SelectTrigger className="h-[var(--control-h)] rounded-md border border-border bg-muted text-[length:var(--font-size-body)]">
+                            <SelectTrigger className="h-[var(--control-h)] rounded-md border border-input bg-muted text-[length:var(--font-size-body)]">
                               <SelectValue />
                             </SelectTrigger>
                           </FormControl>
@@ -498,7 +498,7 @@ export function useBannerAssetsPanel({
                     <FormItem className="space-y-1.5 p-0.5">
                       <FormLabel className="flex items-center gap-1.5 text-[length:var(--font-size-body)] font-medium text-foreground">자산 명세 및 설명 (Metadata)</FormLabel>
                       <FormControl>
-                        <textarea {...field} maxLength={4000} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
+                        <textarea {...field} maxLength={4000} className="w-full min-h-[120px] p-6 rounded-lg border-2 border-input bg-muted text-xs font-bold focus:ring-4 focus:ring-primary/10 outline-none resize-none shadow-inner" placeholder="배너 자산 용도 및 노출 조건 설명" />
                       </FormControl>
                       <FormMessage className="mt-1 px-1 text-xs text-destructive-emphasis" />
                     </FormItem>
