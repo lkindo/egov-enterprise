@@ -153,6 +153,8 @@ const vendorReadme = vendorId => `
 \`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
 
 PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 아직 이 DB 를 지원하지 않아 시작할 때 멈춘다.
+
+생성 뒤 스키마를 바꾸는 절차는 아직 완성되지 않았다. 새 마이그레이션은 벤더 문법으로 \`db/vendor/${vendorId}\` 에 더한다. 엔티티·명명·유니크 린터는 아직 \`db/migration\` 을 보므로 새 표는 그쪽에도 맞춰 두어야 통과하고, \`npm run regen\` 의 권한 시드도 \`db/migration\` 만 고치므로 새 권한은 벤더 마이그레이션에 직접 넣는다.
 `;
 
 /** 생성물 트리를 벤더로 투영한다. 소스 생성기가 PostgreSQL 번들을 설치한 뒤 부른다. */

@@ -111,6 +111,9 @@ class SeedLocationLinterTest {
         for (Path sql : migrationSql) {
             violations.addAll(findLogInserts(sql, "db/migration"));
         }
+        for (Path sql : vendorMigrationSql(migrationDir)) {
+            violations.addAll(findLogInserts(sql, "db/vendor"));
+        }
 
         // 양성 대조군: 개발 시드는 화면 확인용 감사 로그를 넣는다. 0건이면 정규식이 죽었거나 시드가 사라진 것이다.
         int control = 0;
@@ -167,6 +170,9 @@ class SeedLocationLinterTest {
         }
         for (Path sql : migrationSql) {
             violations.addAll(findCredentialHits(sql, "db/migration"));
+        }
+        for (Path sql : vendorMigrationSql(migrationDir)) {
+            violations.addAll(findCredentialHits(sql, "db/vendor"));
         }
 
         // ── ② 이설 유지 + 양성 대조군(탐지 정규식이 살아있음을 증명) ──────────────────────
@@ -302,6 +308,19 @@ class SeedLocationLinterTest {
     }
 
     // ---- 유틸 ----------------------------------------------------------------------
+
+    /**
+     * 벤더 프로젝트의 Flyway 는 db/vendor 만 적용하므로 그곳이 운영 마이그레이션 경로다. db/migration 만 보면 도입자가
+     * 벤더 폴더에 넣은 자격증명·가짜 로그 행이 통과한다. 벤더 투영인데 비어 있으면 검사가 조용히 빠지므로 실패한다.
+     */
+    private static List<Path> vendorMigrationSql(Path migrationDir) throws IOException {
+        Path vendorDir = migrationDir.getParent().resolve("vendor");
+        List<Path> sql = Files.isDirectory(vendorDir) ? collectSql(vendorDir) : List.of();
+        if (sql.isEmpty() && !ReusableHarnessProfile.vendorProjectionValue("vendor", "").isEmpty()) {
+            fail("게이트 무결성 파손: 벤더 프로젝트인데 db/vendor 에 .sql 이 없습니다 — " + vendorDir.toAbsolutePath());
+        }
+        return sql;
+    }
 
     private static List<Path> collectSql(Path dir) throws IOException {
         return HarnessSourceIndex.filesUnder(dir, p -> p.toString().endsWith(".sql"))

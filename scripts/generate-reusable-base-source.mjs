@@ -355,7 +355,7 @@ async function main() {
       `- 현재 route/URL 모집단: ${governance.routes.length}/${governance.urlRecordIds.length}\n` +
       `- 기관 운영 검토: pending. 원본의 검토자·날짜는 upstream-review 이력이며 기관 승인이 아니다.\n` +
       `- 검토 경계: config/governance/reusable-governance-projection.json\n\n` +
-      `DB migration은 신규 빈 PostgreSQL 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
+      `DB migration은 신규 빈 ${vendorInput ? vendorId : 'PostgreSQL'} 전용이다. 운영/공유 DB 축소에 사용하지 않는다.\n`,
     'utf8',
   );
   initializeGeneratedRepository(output);

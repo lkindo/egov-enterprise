@@ -16,7 +16,7 @@ import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses,
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { collectResults, parseCount, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
@@ -24,7 +24,7 @@ import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-bas
 import { assertIsolatedRunnerSupportsProject } from './run-isolated-e2e.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
-import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorEnvironment, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
+import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -635,6 +635,18 @@ test('a vendor container started for a job carries that job token, so a cancel c
   assert.deepEqual(await run({ byToken: false, listed: [id('b')], container: null }), ['ps', 'inspect', 'rm'], 'ID 를 못 받았으면 표식으로 찾는다');
 });
 
+test('a vendor container that was created but never started is removed too', () => {
+  const calls = [];
+  const runDocker = (args, options) => {
+    calls.push(args[0]);
+    return args[0] === 'run' ? { status: 125, stderr: '포트 충돌' } : { status: 0, stderr: '' };
+  };
+  assert.throws(() => startVendorEngine('oracle', { publishPort: 1521, runDocker }), error => error.code === 'VENDOR_ENGINE_NOT_READY' && /포트 충돌/.test(error.message));
+  assert.deepEqual(calls, ['run', 'rm'], '시작 실패에도 지운다');
+  assert.throws(() => startVendorEngine('oracle', { runDocker: args => (args[0] === 'run' ? { status: 125, stderr: '포트 충돌' } : { status: 1, stderr: '' }) }),
+    /포트 충돌.*시험 DB 컨테이너가 남았다/, '지우지 못하면 본래 실패에 잔존을 덧붙인다');
+});
+
 test('the disposable baseline database goes away whatever happens, and a leftover is not a pass', () => {
   const calls = [];
   const docker = outcomes => args => { calls.push(args[0]); return outcomes[args[0]] ?? { status: 0, stdout: '', stderr: '' }; };
@@ -689,6 +701,12 @@ case "$DB_URL" in
 esac
 `, 'oracle');
   assert.doesNotMatch(deploy, /postgresql/);
+  const dockerfile = readFileSync(join(ROOT, 'api-server/Dockerfile'), 'utf8');
+  assert.match(dockerfile, /COPY migration-tool\/build\.gradle/, '원본은 이관 모듈을 복사한다');
+  assert.doesNotMatch(projectVendorDockerfile(dockerfile), /migration-tool/, '지운 모듈을 복사하면 이미지 빌드가 멈춘다');
+  assert.throws(() => projectVendorDockerfile('FROM x\n'), /Dockerfile 이관 모듈/);
+  const settings = readFileSync(join(ROOT, 'settings.gradle'), 'utf8');
+  assert.doesNotMatch(projectVendorSettings(settings), /migration-tool/);
   assert.match(deploy, /DB_PASSWORD DB_ADMIN_PASSWORD MAIL_HOST/);
   assert.match(deploy, /^ {4}jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1\) ;;$/m);
 

@@ -111,7 +111,7 @@ export function vendorContainerLabels(engineId, token = process.env.COMPOSER_CON
   return ['--label', `${VENDOR_CONTAINER_LABEL}=${engineId}`, ...(token ? ['--label', `${COMPOSER_OWNER_LABEL}=${token}`] : [])];
 }
 
-export function startVendorEngine(engineId, { publishPort } = {}) {
+export function startVendorEngine(engineId, { publishPort, runDocker = docker } = {}) {
   const engine = VENDOR_ENGINES[engineId];
   if (!engine) fail('VENDOR_ENGINE_NOT_READY', `모르는 엔진: ${engineId}`);
   const name = `egov-vendor-${engineId}-${randomBytes(4).toString('hex')}`;
@@ -119,12 +119,14 @@ export function startVendorEngine(engineId, { publishPort } = {}) {
   // 값은 자식 프로세스 환경으로 넘긴다. 인자에 두면 호스트의 프로세스 목록에 보인다.
   const variables = engine.environment(password);
   const environment = Object.keys(variables).flatMap(key => ['--env', key]);
-  const started = docker(['run', '-d', '--name', name, ...vendorContainerLabels(engineId), ...environment,
-    ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
-  { env: { ...process.env, ...variables } });
-  if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${started.stderr.slice(0, 300)}`);
-  const deadline = Date.now() + engine.maxWaitSeconds * 1000;
+  const labels = vendorContainerLabels(engineId);
   try {
+    // docker run -d 는 시작에 실패해도 만든 컨테이너와 익명 볼륨을 남긴다. 그래서 여기서부터 정리 범위다.
+    const started = runDocker(['run', '-d', '--name', name, ...labels, ...environment,
+      ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
+    { env: { ...process.env, ...variables } });
+    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${started.stderr.slice(0, 300)}`);
+    const deadline = Date.now() + engine.maxWaitSeconds * 1000;
     for (;;) {
       if (engine.ready(name)) return { id: engineId, name, engine, password, port: publishPort ? publishedPort(name, publishPort) : null };
       if (Date.now() > deadline) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
@@ -132,7 +134,7 @@ export function startVendorEngine(engineId, { publishPort } = {}) {
     }
   } catch (failure) {
     // 호출자는 핸들을 받기 전이라 지울 수 없다.
-    stopVendorEngineReporting({ name }, failure);
+    stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
     throw failure;
   }
 }
