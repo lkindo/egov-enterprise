@@ -16,7 +16,7 @@ export const fixtureEvidence = (engineId, inputHash = 'a'.repeat(64)) => ({
     verification: { result: 'passed' },
     schemaParity: { tables: 98, statements: 900, degradations: 2 },
     seedParity: { tables: 98, rows: 18143 },
-    hibernateValidate: { ddlAuto: 'validate' },
+    hibernateValidate: { ddlAuto: 'validate', contexts: 51 },
     integration: { classes: 51, tests: 399, failures: 0, errors: 0, skipped: 0 },
     conformance: {
       catalog: { classes: 1, tests: 12, failures: 0, errors: 0, skipped: 0 },

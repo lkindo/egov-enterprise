@@ -131,14 +131,16 @@ export function vendorLockProblems(root, vendorId) {
   if (!existsSync(lockPath)) return [`${GENERATED_LOCK} 이 없어 번역 기준선을 대조하지 못한다. 벤더 생성물에서 돌린다`];
   const projection = JSON.parse(readFileSync(lockPath, 'utf8')).vendorProjection;
   if (projection?.vendor !== vendorId) return [`${GENERATED_LOCK} 의 벤더(${projection?.vendor ?? '없음'})가 ${vendorId} 가 아니다`];
+  const missing = [['번역 기준선', projection.migration], ['번역 입력', projection.input]].filter(([, file]) => !existsSync(join(root, file)));
+  if (missing.length) return missing.map(([label, file]) => `${label}(${file})이 없다`);
   const drift = vendorBaselineDrift(root, projection);
   return [...(drift.migration ? [`번역 기준선(${projection.migration})이 생성 때와 다르다`] : []), ...(drift.input ? [`번역 입력(${projection.input})이 생성 때와 다르다`] : [])];
 }
 
-function assertVendorLock(vendorId) {
-  const problems = vendorLockProblems(ROOT, vendorId);
+export function assertVendorLock(vendorId, root = ROOT) {
+  const problems = vendorLockProblems(root, vendorId);
   if (problems.length) {
-    const error = new Error(`${problems.join(', ')}. 고친 파일을 되돌린다. 스키마 변경은 기준선보다 높은 버전의 V 파일로 더한다.`);
+    const error = new Error(`${problems.join(', ')}. 고치거나 지운 파일을 되돌린다. 스키마 변경은 기준선보다 높은 버전의 V 파일로 더한다.`);
     error.code = 'VENDOR_INTEGRATION_FAILED';
     throw error;
   }
@@ -255,7 +257,7 @@ function runIntegrationTests(vendorId, integration, handle, task) {
   });
 }
 
-export function runVendorIntegration({ input, vendorId, engineId, layout, flyway }) {
+export function runVendorIntegration({ inputFile, vendorId, engineId, layout, flyway }) {
   const engine = engineId ?? vendorId;
   const { integration } = VENDOR_ENGINES[engine];
   const { task, migrate, conformance, results, conformanceResults } = integrationTask(layout);
@@ -268,6 +270,8 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
     assertVendorMigrationNames(flyway);
     assertVendorLock(vendorId);
   }
+  // 잠금 대조 뒤에 읽는다. 앞에서 읽으면 지운 입력이 되돌리라는 문구 없이 ENOENT 로 끝난다.
+  const input = JSON.parse(readFileSync(inputFile, 'utf8'));
   const handle = startVendorEngine(engine, { publishPort: integration.port });
   let failure = null;
   let applied = null;
@@ -317,7 +321,7 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const args = parseIntegrationArgs(process.argv.slice(2));
   try {
-    const report = runVendorIntegration({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine, layout: args.layout, flyway: args.flyway });
+    const report = runVendorIntegration({ inputFile: args.input, vendorId: args.vendor, engineId: args.engine, layout: args.layout, flyway: args.flyway });
     if (args.report) {
       mkdirSync(dirname(resolve(args.report)), { recursive: true });
       writeFileSync(args.report, `${JSON.stringify(report, null, 2)}\n`, 'utf8');

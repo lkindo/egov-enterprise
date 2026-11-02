@@ -206,6 +206,8 @@ test('every field of the evidence form is required and a failed step never passe
   broken('스키마 대조', (_, steps) => { steps.schemaParity.tables = 0; });
   broken('시드 행 대조', (_, steps) => { steps.seedParity.rows = 0; });
   broken('Hibernate validate', (_, steps) => { steps.hibernateValidate.ddlAuto = 'none'; });
+  broken('Hibernate validate', (_, steps) => { delete steps.hibernateValidate.contexts; });
+  broken('Hibernate validate', (_, steps) => { steps.hibernateValidate.contexts = 0; });
   broken('통합 시험', (_, steps) => { steps.integration.failures = 1; });
   broken('통합 시험', (_, steps) => { steps.integration.errors = 1; });
   broken('통합 시험', (_, steps) => { steps.integration.tests = Number.NaN; });
@@ -482,7 +484,7 @@ function recordingFixture(t, overrides = {}) {
     const script = args[0];
     if (script.endsWith('project-composer-vendor-integration.mjs')) {
       put(artifact, `${reports}/integration.json`, JSON.stringify({ vendor: 'oracle', engine: engineId, image, schemaParity: { tables: 98, statements: 900, degradations: 2 }, seedParity: { tables: 98, rows: 18143 },
-        hibernateValidate: { ddlAuto: 'validate' }, integration: { classes: 51, tests: 399, failures: 0, errors: 0, skipped: 0 }, catalog: { classes: 1, tests: 12, failures: 0, errors: 0, skipped: 0 }, ...overrides.integration }));
+        hibernateValidate: { ddlAuto: 'validate', contexts: 51 }, integration: { classes: 51, tests: 399, failures: 0, errors: 0, skipped: 0 }, catalog: { classes: 1, tests: 12, failures: 0, errors: 0, skipped: 0 }, ...overrides.integration }));
     } else if (script.endsWith('project-composer-vendor-differential.mjs')) {
       put(artifact, `${reports}/differential.json`, JSON.stringify({ vendor: 'oracle', engine: engineId, checks: 134, rows: 700, differences: [], unbalanced: [], intentFailures: [], ...overrides.differential }));
     } else {
@@ -564,7 +566,8 @@ test('the ledger stays as it was when a step result falls short or the inputs mo
     assert.equal(readFileSync(join(fixture.root, VENDOR_LEDGER_PATH), 'utf8'), before);
   };
   failing({ integration: { integration: { classes: 51, tests: 399, failures: 1, errors: 0, skipped: 0 } } }, /결과가 인증 조건에 모자란다: 통합 시험/);
-  failing({ integration: { hibernateValidate: { ddlAuto: 'none' } } }, /모자란다: Hibernate validate/);
+  failing({ integration: { hibernateValidate: { ddlAuto: 'none', contexts: 51 } } }, /모자란다: Hibernate validate/);
+  failing({ integration: { hibernateValidate: { ddlAuto: 'validate' } } }, /모자란다: Hibernate validate/);
   failing({ integration: { schemaParity: null, seedParity: null } }, /모자란다: 스키마 대조, 시드 행 대조/);
   failing({ differential: { unbalanced: ['ck_a'] } }, /모자란다: 차등 시험/);
   failing({ e2e: { flaky: 1 } }, /모자란다: 대표 E2E/);

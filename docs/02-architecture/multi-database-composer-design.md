@@ -556,26 +556,26 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 **생성 뒤 스키마 변경.** 도입자는 벤더 폴더에 기준선보다 높은 버전의 `V` 파일을 더하고 `npm run verify:vendor-schema` 로 검사한다. `R__` 는 Flyway 가 target 을 줘도 적용해(Oracle 에서 확인했다) 기준선 단계의 하나만 적용 가드가 거짓 실패하므로, 실행 도구가 컨테이너를 띄우기 전에 파일 이름으로 막는다. 버전은 Flyway 처럼 구간별 숫자로 비교한다(`V1_0_1` 은 기준선보다 높고 `V1_0_0` 은 같다). 번역 기준선과 입력은 같은 자리에서 잠금 해시로 대조한다 — 기준선 대조는 수정된 파일을 적용한 DB 를 그 파일의 이름과 비교하므로 내용 변경을 보지 못한다. 첫 `V1_1` 뒤에 전체 검증이 범위 변경으로 멈춰도 이 대조는 남는다.
 
-실행 도구는 Flyway 를 두 번 돌린다. 먼저 `target=1.0` 으로 기준선만 적용해 적용 수 1 을 확인하고 정확 대조(`assertVendorApplied`)를 받는다. 대조는 이름 집합, 키·유니크의 컬럼 집합(Oracle 은 제약의 `user_cons_columns`, 일반 유니크 인덱스의 `user_ind_columns`, 함수 인덱스의 `user_ind_expressions` 에서 `CASE` 의 값 컬럼과 식이 참조하는 컬럼), 시드 행 수, 식별 컬럼과 독립 시퀀스의 다음 값이다. 함수 인덱스의 조건 모양은 컬럼 집합으로 잡히지 않아 시나리오 시험이 본다. 그때의 이름 목록을 적어 두고 나머지를 적용한 뒤, 다시 읽은 목록과 함께 파일로 넘겨 `vendorConformanceTest`(`@Tag("vendor-conformance")`)를 돌린다. 이 시험은 관리자 부여·소유 표(`vendor_test_owner`)·시나리오 시험보다 앞서므로 시험용 객체를 도입자 객체로 보지 않는다.
+실행 도구는 Flyway 를 두 번 돌린다. 먼저 `target=1.0` 으로 기준선만 적용해 적용 수 1 을 확인하고 정확 대조(`assertVendorApplied`)를 받는다. 대조는 이름 집합, 키·유니크의 컬럼 집합(Oracle 은 제약의 `user_cons_columns`, 일반 유니크 인덱스의 `user_ind_columns`, 함수 인덱스의 `user_ind_expressions` 에서 `CASE` 의 값 컬럼과 식이 참조하는 컬럼), 시드 행 수, 식별 컬럼과 독립 시퀀스의 다음 값이다. 함수 인덱스의 조건 모양은 컬럼 집합으로 잡히지 않고 벤더 DB 에서 도는 시험에 부분 NULL 행을 넣는 것이 없어, 어댑터 문장을 고정하는 노드 시험(`nullable composite uniques`)만 본다. 그때의 이름 목록을 적어 두고 나머지를 적용한 뒤, 다시 읽은 목록과 함께 파일로 넘겨 `vendorConformanceTest`(`@Tag("vendor-conformance")`)를 돌린다. 이 시험은 관리자 부여·소유 표(`vendor_test_owner`)·시나리오 시험보다 앞서므로 시험용 객체를 도입자 객체로 보지 않는다.
 
 | 규칙 | 범위 | 입력 |
 |---|---|---|
 | PK 전략·숫자 변환·길이 초과 | 카탈로그 전체 | JDBC 메타데이터를 JDBC 타입 코드로 정규화 |
 | 바이트 길이 | 기준선 뒤에 바이트 길이가 된 컬럼 중 엔티티에 매핑된 문자열 필드 | 두 시점의 `user_tab_columns.char_used`(Oracle). 드라이버의 `COLUMN_SIZE` 는 `VARCHAR2(100)` 과 `VARCHAR2(100 CHAR)` 에 똑같이 100 이라 길이 규칙으로는 가르지 못한다(23.26 실측). 엔티티 길이 × 4 > 바이트 길이일 때만 붉다. 기준선의 어댑터 저하(`VARCHAR2(4000 BYTE)`)와 엔티티에 매핑되지 않은 컬럼은 보지 않는다 |
 | 표 이름·저장 표기, 새 표의 감사 컬럼 | 기준선 뒤의 새 표. 저장 표기는 전체 | 드라이버의 표 목록(저장 표기 그대로). 따옴표로 만든 표는 기준선과 이름이 겹쳐도 붉다 — 따옴표 없는 네이티브 SQL 이 찾지 못한다. Flyway 이력 표만 뺀다. 드라이버가 뷰라고 답한 이름은 표 규칙에서 뺀다 |
-| 제약·인덱스·시퀀스 이름, 새 컬럼의 고정 문자형 | 기준선 뒤의 새 객체 | 두 시점 이름 목록의 차이(어댑터의 메타 조회 재사용). DB 가 지은 이름(Oracle `SYS_C`)은 조회에서 빠져 이름 규칙이 보지 않는다. Oracle 조회는 줄 전체가 형식에 맞아야 하고 형식 밖 이름은 `VENDOR_QUERY_FAILED` 로 멈춘다. 휴지통 이름(`BIN$`)은 조회에서 뺀다 — `DROP TABLE` 뒤 제약이 그 이름으로 남는 것을 23.26 에서 확인했다. 소문자로 접어 읽으므로 이 객체들의 저장 표기는 보지 않는다 |
-| 뷰 이름 | 전체(기준선에 뷰가 없다) | 드라이버의 뷰 목록 |
+| 제약·인덱스·시퀀스 이름, 새 컬럼의 고정 문자형 | 기준선 뒤의 새 객체 | 두 시점 이름 목록의 차이(어댑터의 메타 조회 재사용). DB 가 지은 이름(Oracle `SYS_C`)은 조회에서 빠져 이름 규칙이 보지 않는다. Oracle 조회는 줄 전체가 형식에 맞아야 하고 형식 밖 이름은 `VENDOR_QUERY_FAILED` 로 멈춘다. 휴지통 이름(`BIN$`)은 조회에서 뺀다 — `DROP TABLE` 뒤 제약이 그 이름으로 남는 것을 23.26 에서 확인했다. 소문자로 접어 읽으므로 이 객체들과 컬럼의 저장 표기는 보지 않는다 |
+| 뷰 이름 | 전체(기준선에 뷰가 없다) | 드라이버의 뷰 목록. 소문자로 접어 읽으므로 저장 표기는 보지 않는다 |
 | 유니크 미러 | 기준선 뒤에 생기거나 다시 만든 유니크, 기본키 제외 | 드라이버의 유니크 인덱스와 기본키, Oracle 에서 일반 인덱스로 집행되는 유니크 제약(기존 인덱스 재사용, DEFERRABLE). 기준선 여부는 두 시점 `표.이름=값`(Oracle 은 인덱스의 `object_id`, 일반 인덱스 위 제약은 정렬한 컬럼 목록)이 같은지로 가른다. 이름 없는 제약(`SYS_C`)도 새 유니크로 잡고, Oracle 함수 인덱스는 숨은 컬럼 대신 `user_ind_expressions` 의 식에서 컬럼을 읽는다 |
 | 초기 권한 | 전체 | 카탈로그 `defaultGroups` ↔ `tb_authrt_grnt_map` OPERATION 양방향 |
 | 표·컬럼 부재, 타입 계열 | 전체 | 시나리오 시험 문맥의 Hibernate validate(같은 불변식을 두 게이트에 두지 않는다) |
 
 기준선 전체에 미러·명명 규칙을 돌리지 않는 이유는 어댑터 파생 객체다. MySQL·SQL Server 의 `*_hash` 유니크와 Oracle 의 CASE 함수 인덱스는 엔티티가 모르는 모양이고, MySQL 은 모든 기본키의 제약 이름이 `PRIMARY` 다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가, 번역이 컬럼을 바꾸는 회귀는 기준선 대조의 컬럼 집합이 맡으므로 그 린터는 남겼다. 명명 린터도 이번에는 둔다.
 
-Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행 도구가 시험 JVM 의 `SPRING_JPA_HIBERNATE_DDL_AUTO` 를 `validate` 로 강제하고, 시나리오 문맥마다 Hibernate 가 받은 `hibernate.hbm2ddl.auto` 를 단언해 그 값을 보고서에 싣는다(`VendorOwnershipExtension`). 다른 값이면 그 시험 클래스가 붉고, 단언한 문맥이 없으면 실행이 실패한다.
+Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행 도구가 시험 JVM 의 `SPRING_JPA_HIBERNATE_DDL_AUTO` 를 `validate` 로 강제하고, 시나리오 문맥마다 Hibernate 가 받은 `hibernate.hbm2ddl.auto` 를 단언해 그 값을 보고서에 싣는다(`VendorOwnershipExtension`). 다른 값이면 그 시험 클래스가 붉고, 단언한 문맥이 없으면 실행이 실패한다. 인증 증거 형식도 문맥 수가 1 이상이어야 받는다.
 
 `npm run verify` 의 의미는 바꾸지 않았다. 거버넌스 첫 단계가 소스 변경을 잡아 멈추므로 첫 변경 뒤에는 그 뒤 단계에 닿지 못하고, 이는 PostgreSQL 생성물과 같다(`reusable-base-guide.md`). 새 명령은 그 단계를 지나지 않으며 인증을 주장하지 않는다(보고서 `authority: local-vendor-schema-check`).
 
-지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 이름 없이 만든 제약의 이름 규칙(PostgreSQL 명명 린터도 `CONSTRAINT` 구문만 본다), 뷰의 정의, 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경(바이트 길이 전환은 위 규칙이 본다), 제약·인덱스·시퀀스의 따옴표 저장 표기, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
+지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 이름 없이 만든 제약의 이름 규칙(PostgreSQL 명명 린터도 `CONSTRAINT` 구문만 본다), 뷰의 정의, 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경(바이트 길이 전환은 위 규칙이 본다), 제약·인덱스·시퀀스·컬럼·뷰의 따옴표 저장 표기, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
 
 화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 승격은 원장 값 변경으로 끝난다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
 

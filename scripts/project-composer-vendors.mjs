@@ -49,7 +49,7 @@ export function vendorEvidenceProblems(evidence) {
     ['생성물 검증', steps?.verification?.result === 'passed'],
     ['스키마 대조', positive(steps?.schemaParity?.tables) && positive(steps.schemaParity.statements) && count(steps.schemaParity.degradations)],
     ['시드 행 대조', positive(steps?.seedParity?.tables) && positive(steps.seedParity.rows)],
-    ['Hibernate validate', steps?.hibernateValidate?.ddlAuto === 'validate'],
+    ['Hibernate validate', steps?.hibernateValidate?.ddlAuto === 'validate' && positive(steps.hibernateValidate.contexts)],
     ['통합 시험', passedTests(steps?.integration)],
     ['카탈로그 적합성', passedTests(steps?.conformance?.catalog)],
     ['차등 시험', positive(differential?.checks) && positive(differential.rows) && differential.differences === 0 && differential.unbalanced === 0 && differential.intentFailures === 0],

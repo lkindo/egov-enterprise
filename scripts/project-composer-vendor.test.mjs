@@ -16,7 +16,7 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_BASELINE_VERSION, addedByteColumns, appliedHibernateCheck, assertTestsRan, childEnvironment, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
+import { VENDOR_BASELINE_VERSION, addedByteColumns, appliedHibernateCheck, assertTestsRan, assertVendorLock, childEnvironment, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
@@ -264,7 +264,8 @@ test('the Oracle adapter states the columns of every key and unique, and they re
 test('nullable composite uniques keep accepting partly NULL rows', () => {
   const sample = model();
   const sql = adapter => adapter.emitSchema(sample).statements.map(statement => statement.sql).join('\n');
-  assert.match(sql(oracleAdapter), /CREATE UNIQUE INDEX uk_t_child_owner_url ON t_child \(CASE WHEN owner IS NOT NULL AND url IS NOT NULL THEN owner END/);
+  // 벤더 DB 에서 도는 시험 가운데 부분 NULL 행을 넣는 것이 없어, 이 문장 고정이 조건 모양의 유일한 안전망이다.
+  assert.match(sql(oracleAdapter), /CREATE UNIQUE INDEX uk_t_child_owner_url ON t_child \(CASE WHEN owner IS NOT NULL AND url IS NOT NULL THEN owner END, CASE WHEN owner IS NOT NULL AND url IS NOT NULL THEN url END\)/);
   assert.match(sql(mssqlAdapter), /CREATE UNIQUE INDEX uk_t_child_owner_url ON t_child \(owner, url_hash\) WHERE owner IS NOT NULL AND url IS NOT NULL/);
   assert.match(sql(cubridAdapter), /ALTER TABLE t_child ADD COLUMN uq_key_1 VARCHAR\(2500\)/);
   // 끝 글자만 다른 긴 주소를 구분하려면 접두가 아니라 해시여야 한다.
@@ -360,7 +361,7 @@ test('unique parity reads the column set of constraints, plain unique indexes an
   assert.throws(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), /uk_fn 기대 \(a, d\), 실제 키 \(a\), 식 참조 \(a, d\)/);
   // 묶음 조건이 줄어도 부분 NULL 의미가 달라진다.
   lines[2] = ['tb_a.uk_fn=CASE  WHEN "A" IS NOT NULL THEN "A" END', 'tb_a.uk_fn=CASE  WHEN "D" IS NOT NULL THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
-  assert.doesNotThrow(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), '이 대조는 컬럼 집합만 본다. 조건의 모양은 시나리오·차등 시험 몫이다');
+  assert.doesNotThrow(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), '이 대조는 컬럼 집합만 본다. 조건의 모양은 어댑터 문장을 고정하는 시험(nullable composite uniques) 몫이다');
 
   assert.equal(readUniqueColumns({}, 'mysql', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
   assert.throws(() => readUniqueColumns({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), error => error.code === 'VENDOR_QUERY_FAILED');
@@ -742,6 +743,11 @@ test('the baseline and the input are compared with the source lock before a cont
     writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\n');
     writeFileSync(join(root, input), '{"snapshot":{"x":1}}\n');
     assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 입력(${input})이 생성 때와 다르다`]);
+    rmSync(join(root, input));
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 입력(${input})이 없다`], '지운 입력은 ENOENT 가 아니라 문제로 돌아온다');
+    rmSync(join(root, migration));
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 기준선(${migration})이 없다`, `번역 입력(${input})이 없다`]);
+    assert.throws(() => assertVendorLock('oracle', root), error => error.code === 'VENDOR_INTEGRATION_FAILED' && /이 없다.*고치거나 지운 파일을 되돌린다/.test(error.message));
     writeLock({ profile: 'core' });
     assert.match(vendorLockProblems(root, 'oracle')[0], /벤더\(없음\)가 oracle 가 아니다/, 'PostgreSQL 생성물의 잠금에는 투영이 없다');
   } finally {
@@ -750,6 +756,8 @@ test('the baseline and the input are compared with the source lock before a cont
   const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
   const start = source.indexOf('export function runVendorIntegration');
   assert.ok(source.indexOf('assertVendorLock(vendorId)', start) > 0 && source.indexOf('assertVendorLock(vendorId)', start) < source.indexOf('startVendorEngine(engine', start), '컨테이너를 띄우기 전에 본다');
+  assert.ok(source.indexOf('assertVendorLock(vendorId)', start) < source.indexOf('readFileSync(inputFile', start) && source.indexOf('readFileSync(inputFile', start) < source.indexOf('startVendorEngine(engine', start), '지운 입력이 잠금 대조의 문구로 끝나게 대조 뒤에 읽는다');
+  assert.doesNotMatch(source, /readFileSync\(args\.input/, '명령 입구에서 읽으면 잠금 대조보다 앞선다');
 });
 
 test('the host cannot switch off Hibernate validate, and the report carries what the contexts really used', () => {
@@ -831,12 +839,27 @@ test('the baseline is compared before anything else is applied, and the catalog 
   const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
   const start = source.indexOf('export function runVendorIntegration');
   const order = ['migrateWithFlyway(vendorId, integration, handle, migrate, flyway, VENDOR_BASELINE_VERSION)', 'assertVendorApplied(handle, input, vendorId',
-    'const baseline = conformanceCatalog', 'const baselineUniques = readUniqueSignatures', 'migrateWithFlyway(vendorId, integration, handle, migrate, flyway);', 'unchangedUniques(baselineUniques', 'runVendorConformance(vendorId', 'runAsAdministrator(handle', 'markOwner(handle)'];
+    'const baseline = conformanceCatalog', 'const baselineUniques = readUniqueSignatures', 'const baselineByteColumns = readByteColumns', 'migrateWithFlyway(vendorId, integration, handle, migrate, flyway);', 'unchangedUniques(baselineUniques', 'byteColumns: addedByteColumns(baselineByteColumns', 'runVendorConformance(vendorId', 'runAsAdministrator(handle', 'markOwner(handle)'];
   const positions = order.map(text => source.indexOf(text, start));
   assert.ok(positions.every(position => position > 0), '순서를 보는 문장이 사라졌다');
   assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '기준선 정확 대조는 나머지 적용 앞, 카탈로그 시험은 권한 부여와 소유 표시 앞이다');
   const migrate = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorFlywayMigrate.java'), 'utf8');
   assert.match(migrate, /applied != 1/, '기준선 단계는 하나만 적용됐는지 본다');
+});
+
+// CI 벤더 잡은 정상 경로만 돌리므로 호출이 빠져도 잡이 붉지 않는다. 판정 함수의 시험은 실행 경로에 이어졌는지 보지 못한다.
+test('the verdicts stay wired into the run the CI job takes', () => {
+  const tool = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  assert.match(tool, /^ *if \(ddlAuto !== 'validate'\) \{\s*failure = new Error\(`Hibernate validate/m, '단언한 문맥이 없거나 값이 다르면 실행이 실패한다');
+  const verify = readFileSync(join(ROOT, 'scripts/project-composer-vendor-verify.mjs'), 'utf8');
+  const applied = verify.slice(verify.indexOf('export function assertVendorApplied'), verify.indexOf('export function applyVendor'));
+  assert.match(applied, /^ *if \(uniqueColumns\) assertUniqueColumns\(emission, uniqueColumns, \{ ignoreTables \}\);/m, '기준선 대조가 키·유니크의 컬럼을 본다');
+  assert.match(applied, /^ *const behindSequences = sequenceNext \? expectedNext\.sequences\.filter\(/m, '기준선 대조가 시퀀스의 다음 값을 본다');
+  assert.match(applied, /^ *if \(behindSequences\.length\) \{[\s\S]*?throw error;/m, '시퀀스의 다음 값이 뒤처지면 멈춘다');
+  const catalog = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java'), 'utf8');
+  assert.match(catalog, /^ *if \(oracle\) \{\s*addOracleConstraintsOnPlainIndexes\(connection, uniques\);/m, '일반 인덱스로 집행되는 유니크 제약도 미러 규칙이 본다');
+  assert.match(catalog, /^ *List<String> problems = new ArrayList<>\(SchemaConformanceRules\.tableProblems\(/m, '표의 저장 표기 규칙이 돈다');
+  assert.match(catalog, /^ *report\("바이트 길이 컬럼과 엔티티 길이의 불일치", SchemaConformanceRules\.byteLengthProblems\(/m, '바이트 길이 규칙이 돈다');
 });
 
 test('the catalog test replaces the entity linter only in a vendor project, by the ledger', () => {
@@ -857,7 +880,7 @@ test('the README procedure names a command that exists and what it does not cove
   assert.ok(readme.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`));
   assert.match(readme, /db\/vendor\/oracle/);
   assert.match(readme, /V1_1__/);
-  for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스']) assert.ok(readme.includes(limit), limit);
+  for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스', '제약·인덱스·시퀀스·컬럼·뷰의 저장 표기']) assert.ok(readme.includes(limit), limit);
   assert.match(readme, /인증이 아니다/);
   assert.doesNotMatch(readme, /그쪽에도 맞춰 두어야/, '실행되지 않는 파일에 맞추라는 옛 안내가 돌아오면 안 된다');
 });
