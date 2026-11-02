@@ -228,7 +228,7 @@
   }
 
   const advice = {
-    docs: ['npm run atlas:check', 'npm run verify:docs', '문서·메모리·링크·Atlas 계약. Atlas 입력을 수정하면 먼저 atlas:build로 생성합니다.'],
+    docs: ['npm run atlas:check', 'npm run verify:docs', '문서·메모리·링크·Atlas 계약. 로컬 열람용 HTML이 필요할 때만 atlas:build로 온디맨드 생성합니다.'],
     api: ['npm run verify:be', 'npm run verify:fe', 'API/DTO 변경은 OpenAPI·생성 TS/Zod와 양쪽 영향 검증이 필요합니다. 실제 화면 흐름은 별도 E2E로 확인합니다.'],
     ui: ['npm run verify:fe', 'npm run verify:e2e', '프론트 타입·lint·생성 계약·build·coverage와 실행 중인 격리 서비스의 브라우저 과업을 확인합니다.'],
     db: ['npm run verify:full', 'npm run verify:e2e', '먼저 live metadata와 표준, 기존 데이터 영향을 확인합니다. full의 PostgreSQL 검증은 Docker가 필요하며 운영 DB 적용을 증명하지 않습니다.'],
@@ -392,7 +392,7 @@
       const evidence = document.getElementById('source-fingerprint');
       if (evidence) {
         evidence.textContent = '생성 입력 원본 ' + data.sources.length + '개(경로는 내장 카탈로그의 sources). '
-          + '파일별 내용 해시는 싣지 않으며, 신선도는 생성물 계약이 다시 만든 HTML과 바이트로 대조합니다.';
+          + '파일별 내용 해시는 싣지 않으며, 정합성은 인메모리 렌더·카탈로그 계약이 검증합니다.';
       }
       document.body.dataset.atlasReady = 'true';
       document.dispatchEvent(new CustomEvent('atlas:ready'));

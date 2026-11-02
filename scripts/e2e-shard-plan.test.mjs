@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { execFileSync, spawnSync } from 'node:child_process';
 import fs from 'node:fs';
+import { renderAtlas } from './build-atlas.mjs';
 import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
@@ -416,7 +417,7 @@ test('current E2E documentation matches the authoritative shard matrix and worke
   assert.ok(buildGradle.includes('e2e-tests 전체 shard가 통째로 skip 됩니다.'));
   assert.doesNotMatch(buildGradle, /e2e-tests \d+샤드/);
 
-  const atlas = fs.readFileSync('frontend/public/governance_harness_atlas.html', 'utf8');
+  const atlas = renderAtlas();
   assertAtlasShardClaims(atlas, shardCount);
 });
 

@@ -138,7 +138,7 @@ CI에서 기본 `comfortable` 밀도의 공통코드 320px 화면에 가로 넘�
 
 URL census 비교에서는 기존 검색 승인 대상의 내용 변경 없이 탐색 링크·셸 이동 어댑터가 추가되었다. 오버레이의 부류·승인자·검색 허용 5개 record/3개 key는 유지하고 현재 census 해시에 다시 결속했다. 어댑터의 동적 목적지는 계속 opaque 검토 대상이며 새 검색어 URL 허용으로 확대하지 않았다. lint 경고는 144→138, 상태 색상 하드코딩은 494→487로 감소해 각 상한도 낮췄다. `baseline-manifest.properties`의 레지스트리 해시 1개도 lint 상한 감소에 맞춰 갱신했다. 예외 목록은 늘리지 않았다. 색상 게이트는 임시 위반 1건을 넣었을 때 실패하는 것도 확인했다.
 
-관련 안내: [업무 화면 문법](../02-architecture/work-screen-grammar-catalog.md) · [정보 구조](../01-product/information-architecture.md) · [Atlas](../../frontend/public/governance_harness_atlas.html).
+관련 안내: [업무 화면 문법](../02-architecture/work-screen-grammar-catalog.md) · [정보 구조](../01-product/information-architecture.md) · [Atlas 가이드](governance-atlas-guide.md).
 
 ## 8. 구현 감사 요약
 

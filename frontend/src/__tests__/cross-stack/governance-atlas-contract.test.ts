@@ -4,9 +4,13 @@ import { createRequire } from 'node:module';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+// build-atlas.mjs renders the Atlas HTML in-memory without writing to disk
+import { renderAtlas } from '../../../../scripts/build-atlas.mjs';
+
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
 const read = (file: string) => readFileSync(join(REPO_DIR, file), 'utf8');
-const HTML = read('frontend/public/governance_harness_atlas.html');
+const HTML: string = renderAtlas(REPO_DIR);
+const atlasRequire = createRequire(import.meta.url);
 const PANELS = ['start', 'map', 'domains', 'flows', 'rules', 'data', 'change', 'verification', 'operations', 'evidence'];
 interface RecordData {
   id: string; source: string; title: string; summary: string; status: string;
@@ -25,7 +29,6 @@ interface Browser {
 }
 interface ConsoleCapture { on(event: string, listener: (...args: unknown[]) => void): void }
 // jsdom is already a pinned frontend test dependency. A narrow adapter avoids an extra @types package.
-const atlasRequire = createRequire(import.meta.url);
 const { JSDOM, VirtualConsole } = atlasRequire('jsdom') as {
   JSDOM: new (html: string, options: Record<string, unknown>) => Browser;
   VirtualConsole: new () => ConsoleCapture;
@@ -128,8 +131,8 @@ function missingRuleTerms(narrative: string): string[] {
   return REQUIRED_RULE_TERMS.filter(term => !narrative.includes(term));
 }
 
-// 커밋된 HTML 이 소스에서 새로 만든 결과와 바이트까지 같은지는 운영 계약(scripts/atlas-generation.test.mjs)이 늘 본다.
-// 여기서는 그 HTML 에 실린 catalog 를 기대값으로 받아 실제 렌더·상호작용만 본다 — 신선도를 다시 계산하지 않는다.
+// 온디맨드 생성기와 커밋 HTML 재유입 차단은 운영 계약(scripts/atlas-generation.test.mjs)이 늘 본다(DEC-OPS-398).
+// 여기서는 renderAtlas() 메모리 렌더 결과에 실린 catalog 를 기대값으로 받아 실제 렌더·상호작용을 검증한다.
 beforeAll(async () => {
   current = embedded(HTML);
   const opened = await openAtlas(HTML);

@@ -3,12 +3,12 @@ import fs from 'node:fs';
 import path from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
+import { renderAtlas } from './build-atlas.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const files = {
   agents: 'AGENTS.md',
   protocol: 'docs/03-guides/orchestration-protocol.md',
-  atlas: 'frontend/public/governance_harness_atlas.html',
   constitution: '.agent/knowledge/backend-api-constitution/artifacts/constitution.md',
   constitutionMetadata: '.agent/knowledge/backend-api-constitution/metadata.json',
   lombokLinter: 'api-server/src/test/java/nuri/api/harness/EntityLombokSourceLinterTest.java',
@@ -569,7 +569,7 @@ function backendEnforcementErrors({
 const current = {
   agents: read(files.agents),
   protocol: read(files.protocol),
-  atlas: read(files.atlas),
+  atlas: renderAtlas(repoRoot),
   constitution: read(files.constitution),
   constitutionMetadata: JSON.parse(read(files.constitutionMetadata)),
   lombokLinter: read(files.lombokLinter),

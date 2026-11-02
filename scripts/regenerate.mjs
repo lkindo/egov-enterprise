@@ -3,7 +3,7 @@
  * 생성물 재생성 한 명령(오케스트레이션 프로토콜 §6.4). 손으로 돌리던 순서를 코드로 둔다.
  *
  * 사용법:
- *   npm run regen                   # 다시 쓴다 — 생성기 사슬 → SAST 예외 해시 확인 → 하네스 기준선 → Atlas, 끝에 바뀐 파일을 보인다
+ *   npm run regen                   # 다시 쓴다 — 생성기 사슬 → SAST 예외 해시 확인 → 하네스 기준선 → Atlas 정합성 확인, 끝에 바뀐 파일을 보인다
  *   npm run regen -- --check        # 쓰지 않는다 — 낡은 생성물·해시 결속이 있으면 종료 코드 1(pre-push 맨 앞에서 돈다)
  *   npm run regen -- --rebind-sast SAST-FP-001,SAST-FP-002 --note "Re-reviewed 2026-10-19: <무엇이 바뀌었고 어느 방어가 그대로인지>"
  *                                   # 방어 경계를 재검토한 SAST 예외 항목만 소스 해시를 다시 결속하고 사유 끝에 재검토 문장을 붙인다
@@ -15,7 +15,7 @@
  *      그 항목과 파일을 보이고 하네스 기준선을 쓰기 전에 멈춘다 — 기준선이 그 원장의 해시를 담기 때문이다. 사람이 방어 경계를 재검토하고
  *      --rebind-sast 로 그 항목만 결속한 뒤 이 명령을 다시 돌린다(몇 번 돌려도 결과가 같다).
  *   3. 하네스 기준선(baseline-manifest.properties)은 손 결속 원장(gates.json·SAST 예외)과 훅·게이트 소스의 해시라 그 뒤에 쓴다.
- *   4. Atlas 는 문서·게이트 원장·훅을 읽는 마지막 단계다.
+ *   4. Atlas 는 문서·게이트 원장·훅의 인메모리 렌더 정합성과 레거시 커밋 파일 부재를 확인하는 마지막 단계다(DEC-OPS-398).
  *
  * 하지 않는 것: api-docs.json 추출(Gradle)과 메뉴 snapshot(일회용 PostgreSQL)은 §6.3 의 무거운 실행이라 따로 돌린다(--check 는 메뉴
  * snapshot 이 낡았는지만 본다). 새 시험의 게이트 등록(gates.json)과 고정 수 시험의 값은 사람이 정한다 — 이 명령은 그 결과를 해시하고,
@@ -374,7 +374,7 @@ export async function main(argv, { cwd = repoRoot, log = console.log, error = co
     const note = argv[at('--note') + 1];
     const file = path.join(cwd, SAST_LEDGER);
     fs.writeFileSync(file, rebindSastLedgerText(fs.readFileSync(file, 'utf8'), { ids, note, cwd }));
-    log(`다시 결속했다: ${ids.join(', ')}. 이제 \`npm run regen\` 으로 하네스 기준선과 Atlas 를 다시 만든다.`);
+    log(`다시 결속했다: ${ids.join(', ')}. 이제 \`npm run regen\` 으로 하네스 기준선을 다시 쓰고 Atlas 정합성을 확인한다.`);
     return 0;
   }
   error(USAGE);
