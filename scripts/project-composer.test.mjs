@@ -233,6 +233,27 @@ test('generation publishes readiness after verification, keeps absolute dependen
   assert.equal(mock.calls.at(-1).args[0], 'rm');
 });
 
+test('only a vendor generation carries the source value the evidence command compares, taken without the ledger', async () => {
+  const fingerprint = (_root, options) => (options?.exclude?.includes('config/db-vendors.json') ? 'b' : 'a').repeat(64);
+  const generate = async database => {
+    const result = await createComposerEngine({ outputRoot, run: runner().run, fingerprint, loadCatalog: loadCatalogOnce }).generate({ ...recipe(), database });
+    return JSON.parse(readFileSync(result.reportPath, 'utf8'));
+  };
+  const postgres = await generate({ vendor: 'postgresql' });
+  assert.equal(postgres.sourceFingerprint, 'a'.repeat(64));
+  assert.equal(Object.hasOwn(postgres, 'evidenceFingerprint'), false, 'PostgreSQL 생성 보고서는 그대로다');
+  const previous = process.env.COMPOSER_PREVIEW_VENDOR;
+  process.env.COMPOSER_PREVIEW_VENDOR = 'oracle';
+  let oracle;
+  try { oracle = await generate({ vendor: 'oracle' }); }
+  finally {
+    if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;
+    else process.env.COMPOSER_PREVIEW_VENDOR = previous;
+  }
+  assert.equal(oracle.sourceFingerprint, 'a'.repeat(64));
+  assert.equal(oracle.evidenceFingerprint, 'b'.repeat(64));
+});
+
 /*
  * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 알리고, 작업 보고서와 작업 이력 색인에 단계별 소요 시간을 남긴다.
  * 작업 이력은 이 시험만의 임시 루트에 쌓는다(다른 시험의 작업이 섞이지 않게).

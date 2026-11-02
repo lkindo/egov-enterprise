@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** A generated product's checks. Upstream framework regression tests run in the producer repository. */
 import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -80,6 +80,24 @@ export function runCommand(command, args, { root, env = process.env, capture = f
   return result.stdout;
 }
 
+/**
+ * 벤더 생성물의 파일 집합 지문. 인증 증거는 전체 검증을 통과한 그 파일로 돌아야 한다(project-composer-vendor-evidence.mjs). 생성 보고서는 검증 뒤에 결과를 다시 쓰므로 뺀다.
+ * 자기 저장소가 아니면 null 이다. 상위 저장소의 목록은 이 폴더를 무시해 빈 집합의 값이 나온다. 도입자가 .git 없이 옮긴 폴더의 검증을 이 때문에 막지 않고, 값이 없으면 증거 기록만 거부된다.
+ */
+export function vendorArtifactFingerprint(root) {
+  if (!existsSync(resolve(root, '.git'))) return null;
+  const listed = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+  if (listed.error || listed.status !== 0) return null;
+  const hash = createHash('sha256');
+  for (const file of listed.stdout.split('\0').filter(Boolean).sort()) {
+    if (file === 'project-generation-report.json' || file.split('/').includes('build')) continue;
+    let contents;
+    try { contents = readFileSync(resolve(root, file)); } catch { contents = '[missing]'; }
+    hash.update(`${file}\0`).update(contents).update('\0');
+  }
+  return hash.digest('hex');
+}
+
 /** 생성물 검증 단계가 받는 환경. 앱 문맥을 띄우는 시험이 비밀 값을 요구하므로 실행마다 만든다. */
 export const artifactStepEnvironment = () => ({ ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') });
 
@@ -107,6 +125,7 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
       report.steps.push({ step: step.id, command: step.command, result: 'passed', durationMs: Date.now() - step.startedAt });
       step = undefined;
     }
+    if (scope === 'full' && lock.vendorProjection) report.artifactFingerprint = vendorArtifactFingerprint(root);
     report.result = 'passed';
   } catch (error) {
     if (step) {

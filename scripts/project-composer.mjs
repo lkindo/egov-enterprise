@@ -105,11 +105,11 @@ function git(root, args, executable = 'git') {
   if (result.error || result.status !== 0) throw Object.assign(new Error('Source checkout identity could not be verified'), { gitStatus: result.status });
   return result.stdout.trim();
 }
-export function composerSourceFingerprint(root) {
+export function composerSourceFingerprint(root, { exclude = [] } = {}) {
   const hash = createHash('sha256');
   const files = git(root, ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean).sort();
   for (const file of files) {
-    if (file.replaceAll('\\', '/').split('/').includes('build')) continue;
+    if (file.replaceAll('\\', '/').split('/').includes('build') || exclude.includes(file.replaceAll('\\', '/'))) continue;
     const path = join(root, file);
     hash.update(`${file}\0`);
     /*

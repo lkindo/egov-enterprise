@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
-import { VERIFICATION_STEP_IDS, verificationCommands, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
+import { VERIFICATION_STEP_IDS, vendorArtifactFingerprint, verificationCommands, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { parseBaseVerificationArgs, verifyReusableBase } from './verify-reusable-base.mjs';
 import { presetIds } from './composition-profiles.mjs';
 import { parseWorkflowJobs, validateStaticContract } from './required-checks-contract.mjs';
@@ -73,6 +74,35 @@ test('the verification report records each step and names the failed command wit
   assert.equal(passed.result, 'passed');
   assert.equal(passed.failure, undefined, 'a passing run does not inherit an earlier failure');
   assert.equal(passed.steps.length, commands.length);
+});
+
+test('a passing full verification of a vendor project records the files it verified, and nothing else changes', (t) => {
+  const root = fixture(t);
+  const full = () => JSON.parse(readFileSync(join(root, 'build/reports/reusable-base/full.json'), 'utf8'));
+  // PostgreSQL 생성물의 보고서는 그대로다.
+  assert.equal(verifyReusableArtifact({ root, run: () => {} }).artifactFingerprint, undefined);
+  writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core', sourceCommit: '1'.repeat(40), vendorProjection: { vendor: 'oracle' } }));
+  // .git 없이 옮긴 폴더의 검증을 막지 않는다. 값이 없으면 증거 기록만 거부된다.
+  assert.equal(verifyReusableArtifact({ root, run: () => {} }).result, 'passed');
+  assert.equal(full().artifactFingerprint, null);
+  assert.equal(spawnSync('git', ['init', '-q'], { cwd: root }).status, 0);
+  const value = verifyReusableArtifact({ root, run: () => {} }).artifactFingerprint;
+  assert.match(value, /^[a-f0-9]{64}$/);
+  assert.equal(full().artifactFingerprint, value);
+  assert.equal(vendorArtifactFingerprint(root), value);
+  // 생성기가 검증 뒤에 다시 쓰는 보고서와 build 출력, 무시 파일은 값을 바꾸지 않는다.
+  writeFileSync(join(root, '.gitignore'), 'ignored.txt\n');
+  const withIgnore = vendorArtifactFingerprint(root);
+  assert.notEqual(withIgnore, value, '새 파일은 값을 바꾼다');
+  writeFileSync(join(root, 'project-generation-report.json'), '{}');
+  writeFileSync(join(root, 'ignored.txt'), 'x');
+  assert.equal(vendorArtifactFingerprint(root), withIgnore);
+  writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core', sourceCommit: '1'.repeat(40), vendorProjection: { vendor: 'oracle' }, changed: true }));
+  assert.notEqual(vendorArtifactFingerprint(root), withIgnore, '내용이 바뀌면 값이 바뀐다');
+  // 끝까지 통과한 전체 검증만 남긴다.
+  assert.equal(verifyReusableArtifact({ root, scope: 'contracts', run: () => {} }).artifactFingerprint, undefined);
+  assert.throws(() => verifyReusableArtifact({ root, run: () => { throw new Error('stage failed'); } }), /stage failed/);
+  assert.equal(full().artifactFingerprint, undefined, '실패한 검증은 파일을 보증하지 않는다');
 });
 
 test('single-module artifacts execute root gates and reject unsupported layouts before any commands', (t) => {

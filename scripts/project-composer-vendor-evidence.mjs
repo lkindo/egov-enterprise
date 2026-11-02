@@ -6,26 +6,32 @@
  * 생성물에서는 입력이 투영돼 값이 달라지기 때문이다. 해시는 경로와 내용을 함께 넣어 파일이 빠지거나 표지가 지워져도 값이 바뀐다.
  *
  * 사용: node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <원장의 엔진 버전> --artifact <생성물 경로>
- * 원본 저장소에서, 같은 커밋으로 만들고 전체 검증을 통과한 생성물을 준다. 일회용 DB 를 띄워 통합 시험·차등 시험·대표 E2E 를 돌리고 원장에 그 엔진의 증거를 쓴다.
+ * 원본 저장소에서, 같은 트리로 만들고 전체 검증을 통과한 뒤 바뀌지 않은 생성물을 준다. 일회용 DB 를 띄워 통합 시험·차등 시험·대표 E2E 를 돌리고 원장에 그 엔진의 증거를 쓴다.
  * status 는 바꾸지 않는다. 승격은 별도 변경이다.
  */
 import { spawnSync } from 'node:child_process';
 import { createHash, randomBytes } from 'node:crypto';
-import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, join, posix, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
+import { composerSourceFingerprint } from './project-composer.mjs';
 import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 import { VENDOR_EVIDENCE_SCOPE, VENDOR_LEDGER_PATH, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
-import { artifactStepEnvironment, runCommand, vendorInputPath, vendorIntegrationStep } from './verify-reusable-artifact.mjs';
+import { artifactStepEnvironment, runCommand, vendorArtifactFingerprint, vendorInputPath, vendorIntegrationStep } from './verify-reusable-artifact.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const GENERATED_LOCK = 'reusable-base-lock.json';
+const GENERATION_REPORT = 'project-generation-report.json';
 const SQL_LEDGER = 'config/governance/vendor-sql-ledger.json';
 const TEST_LEDGER = 'config/governance/vendor-test-ledger.json';
 const SCHEMA_TESTS = 'api-server/src/test/java/nuri/api/schema';
 const ENTITY_ROOTS = Object.freeze(['foundation/src/main/java', 'business-core/src/main/java', 'business-app/src/main/java', 'api-server/src/main/java']);
-// 벤더 값으로 매핑되거나 벤더별 SQL 을 고르는 코드. 표지가 지워지면 경로가 집합에서 빠져 해시가 바뀌므로 표지 제거도 놓치지 않는다.
-const VENDOR_SENSITIVE = /@(?:jakarta\.persistence\.)?(?:Entity|Embeddable|MappedSuperclass|Converter)\b|\bAttributeConverter\b|\bVendorSqlDialect\b/;
+/** 중립 모델을 만드는 명령. 이 명령이 가져오는 모듈은 원장이 빼지 않는 한 입력이다. */
+const MODEL_ENTRY = 'scripts/generate-reusable-base-db.mjs';
+const TOOL_IMPORT = /(?:\bfrom\s+|\bimport\s*\(?\s*)['"]\.\/([^'"]+\.mjs)['"]/g;
+// 벤더 값으로 매핑되거나, 벤더별 SQL 을 고르거나, SQL 을 직접 담는 코드. 벤더 SQL 원장은 린터 규칙에 걸린 구문만 적으므로 원장만으로는 네이티브 SQL 을 다 찾지 못한다.
+// 표지가 지워지면 경로가 집합에서 빠져 해시가 바뀌므로 표지 제거도 놓치지 않는다.
+const VENDOR_SENSITIVE = /@(?:(?:jakarta\.persistence|org\.hibernate\.annotations)\.)?(?:Entity|Embeddable|MappedSuperclass|Converter|FilterDefs?)\b|\bAttributeConverter\b|\bVendorSqlDialect\b|\bnativeQuery\b|\bcreateNative\w*Query\b|\b(?:NamedParameter)?JdbcTemplate\b|\bJdbcClient\b/;
 const HASH_PREFIX = 'egov-vendor-evidence-inputs-v1\0';
 /** 벤더 프로젝트의 보고서 폴더. 생성물 도구가 쓰고 이 명령이 읽는다. build 아래라 커밋되지 않는다. */
 export const vendorEvidenceReportDirectory = engineId => `build/reports/vendor-evidence/${engineId}`;
@@ -33,20 +39,20 @@ export const vendorEvidenceReportDirectory = engineId => `build/reports/vendor-e
 const readJson = (root, file) => JSON.parse(readFileSync(join(root, file), 'utf8'));
 const inputFailure = (path, error) => new Error(`인증 입력을 읽지 못했다: ${path} (${error.code ?? error.message})`);
 
-function listFiles(root, directory) {
-  let entries;
-  try { entries = readdirSync(join(root, directory), { withFileTypes: true }); }
-  catch (error) { throw inputFailure(directory, error); }
-  return entries.flatMap(entry => {
-    const path = posix.join(directory, entry.name);
-    return entry.isDirectory() ? listFiles(root, path) : [path];
-  });
+function gitOutput(root, args) {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+  if (result.status !== 0) throw new Error(`git ${args[0]} 실패: ${result.error?.message ?? result.stderr}`);
+  return result.stdout;
 }
 
+/** 입력은 커밋이 말하는 파일이다. 무시 파일(application-local.yml 등)을 읽으면 같은 커밋이 체크아웃마다 다른 값이 되고 개인 설정이 판정에 들어간다. */
+const committableFiles = root => gitOutput(root, ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean);
+const filesUnder = (listed, directory) => listed.filter(path => path.startsWith(`${directory}/`));
+
 /** 선언 한 줄을 파일로 푼다. 빈 폴더와 맞는 파일이 없는 이름은 오타일 수 있어 멈춘다. 경로가 틀린 파일은 해시를 읽을 때 멈춘다. */
-function expandDeclaredInput(root, declared) {
+function expandDeclaredInput(listed, declared) {
   if (declared.endsWith('/')) {
-    const files = listFiles(root, declared.slice(0, -1));
+    const files = filesUnder(listed, declared.slice(0, -1));
     if (!files.length) throw new Error(`인증 입력 폴더가 비었다: ${declared}`);
     return files;
   }
@@ -54,46 +60,69 @@ function expandDeclaredInput(root, declared) {
   const directory = posix.dirname(declared);
   const [before, after, ...rest] = posix.basename(declared).split('*');
   if (rest.length || directory.includes('*')) throw new Error(`인증 입력은 마지막 칸의 * 하나만 쓴다: ${declared}`);
-  const files = listFiles(root, directory).filter(path => posix.dirname(path) === directory)
+  const files = filesUnder(listed, directory).filter(path => posix.dirname(path) === directory)
     .filter(path => { const name = posix.basename(path); return name.length >= before.length + after.length && name.startsWith(before) && name.endsWith(after); });
   if (!files.length) throw new Error(`맞는 인증 입력이 없다: ${declared}`);
   return files;
 }
 
-const sensitiveJavaFiles = root => ENTITY_ROOTS.flatMap(directory => listFiles(root, directory))
-  .filter(path => path.endsWith('.java') && VENDOR_SENSITIVE.test(readFileSync(join(root, path), 'utf8')));
+function readInput(root, path) {
+  try { return readFileSync(join(root, path), 'utf8'); }
+  catch (error) { throw inputFailure(path, error); }
+}
+
+const sensitiveJavaFiles = (root, listed) => ENTITY_ROOTS.flatMap(directory => filesUnder(listed, directory))
+  .filter(path => path.endsWith('.java') && VENDOR_SENSITIVE.test(readInput(root, path)));
 
 /** 벤더 시험 폴더는 빼는 것만 원장에 적힌다. 새 파일과 지원 코드는 기본으로 입력이다. */
-function vendorTestFiles(root, tests) {
+function vendorTestFiles(listed, tests) {
   const replaced = new Set(tests.tests.filter(row => row.category === 'replacement').map(row => `${SCHEMA_TESTS}/${row.test}`));
-  return listFiles(root, SCHEMA_TESTS).filter(path => !replaced.has(path));
+  return filesUnder(listed, SCHEMA_TESTS).filter(path => !replaced.has(path));
+}
+
+/** 모델을 만드는 도구도 빼는 것만 원장에 적힌다. 뺀 파일이 혼자 가져오는 모듈은 따라 빠진다. 더는 닿지 않는 제외 항목은 근거가 낡았다는 뜻이라 멈춘다. */
+function modelToolFiles(root, ledger, isOtherVendor) {
+  const excluded = ledger.evidenceInputs.excludedModelTools ?? {};
+  const seen = new Set();
+  const visit = path => {
+    if (seen.has(path)) return;
+    seen.add(path);
+    if (Object.hasOwn(excluded, path) || isOtherVendor(path)) return;
+    for (const match of readInput(root, path).matchAll(TOOL_IMPORT)) visit(posix.join('scripts', match[1]));
+  };
+  visit(MODEL_ENTRY);
+  const stale = Object.keys(excluded).filter(path => !seen.has(path));
+  if (stale.length) throw new Error(`인증 입력 제외 목록의 도구가 모델 명령에서 닿지 않는다: ${stale.join(', ')}`);
+  return [...seen].filter(path => !Object.hasOwn(excluded, path) && !isOtherVendor(path));
 }
 
 /**
  * 벤더의 입력 파일 목록. 선언과 원장에서 도출한 파일을 합친다. 벤더 하나의 구현을 고친 변경이 다른 벤더의 증거를 낡게 하지 않게, 다른 벤더가 선언한 파일은
  * 표지로 잡혀도 뺀다(포트 구현은 모두 VendorSqlDialect 를 담는다). 이 모듈과 시험은 입력이 아니다. 판정 코드를 고쳐도 벤더 동작은 바뀌지 않는다.
+ * 원장·시험 원장이 경로를 직접 적은 파일이 무시 파일이면 값이 커밋을 말하지 못하므로 멈춘다.
  */
 export function vendorEvidenceInputs(root, ledger, vendorId) {
   const vendor = ledger.vendors.find(row => row.id === vendorId);
   if (!vendor) throw new Error(`모르는 벤더: ${vendorId}`);
   const tests = readJson(root, TEST_LEDGER);
-  const declared = paths => paths.flatMap(path => expandDeclaredInput(root, path));
+  const listed = committableFiles(root);
+  const declared = paths => paths.flatMap(path => expandDeclaredInput(listed, path));
   const own = declared(vendor.evidenceInputs);
   const others = new Set(ledger.vendors.filter(row => row.id !== vendorId).flatMap(row => row.evidenceInputs));
-  const sensitive = sensitiveJavaFiles(root).filter(path => !others.has(path) || own.includes(path));
-  return [...new Set([...declared(ledger.evidenceInputs.paths), ...own, ...readJson(root, SQL_LEDGER).locations.map(row => row.path), ...vendorTestFiles(root, tests),
-    ...tests.representativeE2e.specs.map(row => `frontend/${row.spec}`), ...sensitive])].sort();
+  const isOtherVendor = path => others.has(path) && !own.includes(path);
+  const sensitive = sensitiveJavaFiles(root, listed).filter(path => !isOtherVendor(path));
+  const inputs = [...new Set([...declared(ledger.evidenceInputs.paths), ...own, ...modelToolFiles(root, ledger, isOtherVendor), ...readJson(root, SQL_LEDGER).locations.map(row => row.path),
+    ...vendorTestFiles(listed, tests), ...tests.representativeE2e.specs.map(row => `frontend/${row.spec}`), ...sensitive])].sort();
+  const known = new Set(listed);
+  const ignored = inputs.filter(path => !known.has(path) && existsSync(join(root, path)));
+  if (ignored.length) throw new Error(`인증 입력이 git 이 무시하는 파일이다: ${ignored.join(', ')}`);
+  return inputs;
 }
 
 /** 줄 끝을 맞춘다. 체크아웃 설정이 다른 기계의 같은 커밋은 같은 값이어야 한다. */
 export function vendorEvidenceHash(root, ledger, vendorId) {
   const hash = createHash('sha256').update(HASH_PREFIX);
-  for (const path of vendorEvidenceInputs(root, ledger, vendorId)) {
-    let text;
-    try { text = readFileSync(join(root, path), 'utf8'); }
-    catch (error) { throw inputFailure(path, error); }
-    hash.update(path).update('\0').update(text.replace(/\r\n/g, '\n')).update('\0');
-  }
+  for (const path of vendorEvidenceInputs(root, ledger, vendorId)) hash.update(path).update('\0').update(readInput(root, path).replace(/\r\n/g, '\n')).update('\0');
   return hash.digest('hex');
 }
 
@@ -115,12 +144,6 @@ export function vendorEvidenceStaleErrors(root = ROOT) {
   });
 }
 
-function gitOutput(root, args) {
-  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
-  if (result.status !== 0) throw new Error(`git ${args[0]} 실패: ${result.error?.message ?? result.stderr}`);
-  return result.stdout;
-}
-
 const refuse = message => new Error(`증거를 기록하지 않는다: ${message}`);
 
 function readReport(artifact, file) {
@@ -132,6 +155,11 @@ function readReport(artifact, file) {
 function assertCleanSource(root, git) {
   const dirty = git(root, ['status', '--porcelain=v1', '-z', '--untracked-files=all']).split('\0').filter(Boolean).filter(entry => entry.slice(3) !== VENDOR_LEDGER_PATH);
   if (dirty.length) throw refuse(`커밋하지 않은 변경이 있다: ${dirty.slice(0, 5).map(entry => entry.slice(3)).join(', ')}`);
+}
+
+/** 전체 검증을 통과한 파일 그대로여야 한다. 시험을 고치거나 줄인 생성물의 통과는 증거가 아니다. */
+function assertArtifactAsVerified(artifact, verification) {
+  if (!verification.artifactFingerprint || vendorArtifactFingerprint(artifact) !== verification.artifactFingerprint) throw refuse('전체 검증을 통과한 뒤 생성물이 바뀌었다.');
 }
 
 /** 컨테이너를 띄우기 전에 멈출 수 있는 것을 먼저 본다. 19c 는 기동만 25분까지 걸린다. */
@@ -146,6 +174,12 @@ function assertArtifactFits(root, artifact, vendorId, commit) {
   if (missing.length) throw refuse(`대표 묶음에 필요한 기능이 이 구성에 없다: ${missing.join(', ')}`);
   const verification = readReport(artifact, 'build/reports/reusable-base/full.json');
   if (verification.result !== 'passed' || verification.sourceCommit !== commit) throw refuse('생성물 전체 검증이 이 커밋에서 통과한 기록이 없다.');
+  // 커밋이 같아도 미커밋 수정으로 만들고 되돌렸을 수 있다. 생성 명령은 늘 --allow-dirty 를 받아 잠금만으로는 가를 수 없다.
+  const generation = readReport(artifact, GENERATION_REPORT);
+  if (generation.result !== 'passed' || !generation.evidenceFingerprint || generation.evidenceFingerprint !== composerSourceFingerprint(root, { exclude: [VENDOR_LEDGER_PATH] })) {
+    throw refuse('생성물을 만들 때의 원본이 현재 트리와 다르다. 깨끗한 트리에서 다시 생성한다.');
+  }
+  assertArtifactAsVerified(artifact, verification);
   return { lock, verification };
 }
 
@@ -182,7 +216,7 @@ export function buildVendorEvidence({ runId, commit, recordedAt, inputHash, engi
 
 const koreanTimestamp = now => new Date(now + 9 * 3_600_000).toISOString().replace('Z', '+09:00');
 
-/** 시험을 돌리고 증거를 원장에 쓴다. 실행 중 입력이 바뀌면 그 결과는 어느 커밋의 증거도 아니다. */
+/** 시험을 돌리고 증거를 원장에 쓴다. 실행 중 입력이 바뀌면 그 결과는 어느 커밋의 증거도 아니다. 실행이 길어 원장은 쓰기 직전에 다시 읽고 이 엔진의 증거만 바꾼다. */
 export function recordVendorEvidence({ root = ROOT, artifact, vendorId, version, run = runCommand, git = gitOutput, now = Date.now }) {
   if (existsSync(join(root, GENERATED_LOCK))) throw refuse('생성물이 아니라 원본 저장소에서 실행한다.');
   const ledger = loadVendorLedger(root);
@@ -207,7 +241,7 @@ export function recordVendorEvidence({ root = ROOT, artifact, vendorId, version,
   run('node', ['scripts/run-isolated-e2e.mjs', '--representative', `--vendor-engine=${row.engine}`], options);
 
   assertCleanSource(root, git);
-  if (git(root, ['rev-parse', 'HEAD']).trim() !== commit || vendorEvidenceHash(root, ledger, vendorId) !== inputHash) throw refuse('실행 중 인증 입력이 바뀌었다.');
+  assertArtifactAsVerified(artifactRoot, verification);
   const evidence = buildVendorEvidence({
     runId: `${row.engine}-${commit.slice(0, 12)}-${randomBytes(4).toString('hex')}`, commit, recordedAt: koreanTimestamp(now()), inputHash, engineId: row.engine,
     specs: readJson(root, TEST_LEDGER).representativeE2e.specs.length, lock, verification,
@@ -217,8 +251,11 @@ export function recordVendorEvidence({ root = ROOT, artifact, vendorId, version,
   });
   const problems = vendorEvidenceProblems(evidence);
   if (problems.length) throw refuse(`결과가 인증 조건에 모자란다: ${problems.join(', ')}`);
-  row.evidence = evidence;
-  writeFileSync(join(root, VENDOR_LEDGER_PATH), `${JSON.stringify(ledger, null, 2)}\n`, 'utf8');
+  const current = loadVendorLedger(root);
+  const currentRow = current.vendors.find(vendor => vendor.id === vendorId)?.engines.find(engine => engine.version === version);
+  if (git(root, ['rev-parse', 'HEAD']).trim() !== commit || currentRow?.engine !== row.engine || vendorEvidenceHash(root, current, vendorId) !== inputHash) throw refuse('실행 중 인증 입력이 바뀌었다.');
+  currentRow.evidence = evidence;
+  writeFileSync(join(root, VENDOR_LEDGER_PATH), `${JSON.stringify(current, null, 2)}\n`, 'utf8');
   return evidence;
 }
 

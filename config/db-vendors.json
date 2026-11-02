@@ -1,8 +1,20 @@
 {
   "schemaVersion": 1,
-  "description": "프로젝트 생성기의 DB 벤더 인증 원장(ADR-0047). certified 만 고를 수 있고 reason 은 화면에 그대로 보인다. 벤더 id 는 이관 도구와 같다. engines[].engine 은 실행 도구의 엔진 키이고 이미지 값의 정본은 그쪽이다. engines[].evidence 는 scripts/project-composer-vendor-evidence.mjs 가 쓴다. 인증 입력은 evidenceInputs.paths 와 벤더의 evidenceInputs, 그리고 판정 코드가 원장·소스에서 도출하는 파일(벤더 의존 SQL, 벤더 시험, 대표 E2E, 엔티티 매핑)이다. 이 파일 자체는 증거를 담으므로 입력이 아니다.",
+  "description": "프로젝트 생성기의 DB 벤더 인증 원장(ADR-0047). certified 만 고를 수 있고 reason 은 화면에 그대로 보인다. 벤더 id 는 이관 도구와 같다. engines[].engine 은 실행 도구의 엔진 키이고 이미지 값의 정본은 그쪽이다. engines[].evidence 는 scripts/project-composer-vendor-evidence.mjs 가 쓴다. 인증 입력은 evidenceInputs.paths 와 벤더의 evidenceInputs, 그리고 판정 코드가 원장·소스에서 도출하는 파일(벤더 의존 SQL, 네이티브 SQL 호출 지점, 벤더 시험, 대표 E2E, 엔티티 매핑, 모델 명령이 가져오는 도구)이다. git 이 무시하는 파일은 입력이 아니다. 이 파일 자체는 증거를 담으므로 입력이 아니다.",
   "evidenceInputs": {
-    "description": "모든 벤더에 걸리는 입력. '/' 로 끝나면 폴더 전체, 마지막 칸의 * 는 그 폴더 안의 이름이다. 중립 모델은 Docker 없이 계산할 수 없어 소스(마이그레이션·권한 원장·모델 코드)로 대신하고 실제 모델 해시는 증거에 따로 적는다.",
+    "description": "모든 벤더에 걸리는 입력. '/' 로 끝나면 폴더 전체, 마지막 칸의 * 는 그 폴더 안의 이름이다. 중립 모델은 Docker 없이 계산할 수 없어 소스(마이그레이션·권한 원장·모델 코드)로 대신하고 실제 모델 해시는 증거에 따로 적는다. excludedModelTools 는 모델 명령이 가져오지만 모델을 바꾸지 않는 도구와 그 이유이고, 여기 없는 도구는 기본으로 입력이다.",
+    "excludedModelTools": {
+      "scripts/reusable-layout.mjs": "배치 이름 판정만 한다.",
+      "scripts/project-composer-child-failure.mjs": "실패 보고 파일만 쓴다.",
+      "scripts/project-composer-errors.mjs": "오류 코드만 정한다.",
+      "scripts/project-composer-name.mjs": "프로젝트 이름 규칙만 정한다.",
+      "scripts/project-composer-reasons.mjs": "화면에 보일 문장만 다룬다.",
+      "scripts/composition-profiles.mjs": "시작 구성 이름만 읽는다. 내용은 입력인 config/modules 에 있다.",
+      "scripts/project-composer-menu-preview.mjs": "메뉴를 스냅숏과 대조하기만 한다. 메뉴 투영은 project-composer-db.mjs 에 있다.",
+      "scripts/slot-registry.mjs": "프런트 슬롯 규칙이다. 프런트 코드는 입력이 아니다.",
+      "scripts/project-composer-slot-readers.mjs": "프런트 슬롯을 읽는다. 프런트 코드는 입력이 아니다.",
+      "scripts/reusable-page-survival.mjs": "화면 생존 기대값이다. 프런트 코드는 입력이 아니다."
+    },
     "paths": [
       "api-server/src/main/resources/db/migration/",
       "api-server/src/main/resources/db/cutover/authorization-contract.sql",

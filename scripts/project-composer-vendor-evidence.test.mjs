@@ -5,6 +5,7 @@
  * 복사본은 실제 파일이라 BLOB 매핑 되돌림 같은 사례가 실제 소스 위에서 붉어진다.
  */
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
@@ -18,12 +19,16 @@ import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 import { hibernateDdlAuto, parseIntegrationArgs, summarizeTestResults } from './project-composer-vendor-integration.mjs';
 import { VENDOR_SOURCE } from './project-composer-vendor-project.mjs';
 import { VENDOR_ADAPTERS, VENDOR_LEDGER_PATH, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
+import { composerSourceFingerprint } from './project-composer.mjs';
 import { LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck } from './ledger-precheck.mjs';
 import { writeRepresentativeReport } from './run-isolated-e2e.mjs';
+import { vendorArtifactFingerprint } from './verify-reusable-artifact.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const DIALECT = 'foundation/src/main/java/nuri/foundation/core/persistence/NuriOracleDialect.java';
 const SURVEY_TEMPLATE = 'business-app/src/main/java/nuri/business/domain/survey/SurveyTemplate.java';
+const AUTH_SNAPSHOT = 'business-core/src/main/java/nuri/business/security/authorization/AuthorizationSnapshotService.java';
+const FILTER_DEF = 'business-core/src/main/java/nuri/business/domain/package-info.java';
 const COMMIT = 'e'.repeat(40);
 
 const scratch = (t, prefix = 'vendor-evidence-') => {
@@ -34,6 +39,11 @@ const scratch = (t, prefix = 'vendor-evidence-') => {
 const readLedger = root => JSON.parse(readFileSync(join(root, VENDOR_LEDGER_PATH), 'utf8'));
 const writeLedger = (root, ledger) => writeFileSync(join(root, VENDOR_LEDGER_PATH), `${JSON.stringify(ledger, null, 2)}\n`, 'utf8');
 const put = (root, file, text) => { mkdirSync(dirname(join(root, file)), { recursive: true }); writeFileSync(join(root, file), text); };
+/** 입력 목록은 git 이 말한다. 커밋 없이 저장소만 만들어도 목록은 나온다. */
+const gitIn = (root, ...args) => {
+  const result = spawnSync('git', args, { cwd: root, encoding: 'utf8', windowsHide: true });
+  assert.equal(result.status, 0, `git ${args[0]}: ${result.stderr}`);
+};
 const change = (root, file, from, to) => {
   const text = readFileSync(join(root, file), 'utf8');
   assert.ok(text.includes(from), `${file} 에 ${from} 가 없다. 시험이 고칠 자리가 사라졌다`);
@@ -48,7 +58,7 @@ function inputsCopy(t) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     cpSync(join(ROOT, path), join(root, path));
   }
-  mkdirSync(join(root, 'api-server/src/main/java'), { recursive: true });
+  gitIn(root, 'init', '-q');
   put(root, VENDOR_LEDGER_PATH, '');
   writeLedger(root, ledger);
   certifyVendor(ledger.vendors.find(vendor => vendor.id === 'oracle'), vendorEvidenceHash(root, ledger, 'oracle'));
@@ -60,12 +70,16 @@ function inputsCopy(t) {
  */
 const TINY_ENTITY = 'foundation/src/main/java/E.java';
 const TINY_ADAPTER = 'scripts/oracle-adapter.mjs';
+const TINY_MODEL_COMMAND = 'scripts/generate-reusable-base-db.mjs';
 function tinySource(t, { certified = false } = {}) {
   const root = scratch(t);
   const ledger = readLedger(ROOT);
   ledger.evidenceInputs.paths = ['scripts/shared.mjs'];
+  ledger.evidenceInputs.excludedModelTools = {};
   const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
   oracle.evidenceInputs = [TINY_ADAPTER];
+  gitIn(root, 'init', '-q');
+  put(root, TINY_MODEL_COMMAND, 'export {};\n');
   for (const module of ['foundation', 'business-core', 'business-app', 'api-server']) put(root, `${module}/src/main/java/E.java`, '@Entity class E {}\n');
   put(root, 'scripts/shared.mjs', 'export const shared = 1;\n');
   put(root, TINY_ADAPTER, 'export const adapter = 1;\n');
@@ -118,7 +132,16 @@ test('the input set holds the design list: model sources, adapter, ports, vendor
     'foundation/src/main/resources/META-INF/services/org.hibernate.engine.jdbc.dialect.spi.DialectResolver', 'business-core/src/main/java/nuri/business/domain/menu/NavigationGrantRepository.java',
     SURVEY_TEMPLATE, 'api-server/src/test/java/nuri/api/schema/VendorTestSql.java', 'api-server/src/test/java/nuri/api/schema/ApprovalWorkflowIntegrationTest.java',
     'frontend/e2e/journeys/audit-log.spec.ts', 'config/governance/vendor-test-ledger.json', 'api-server/src/main/resources/application.yml', 'api-server/Dockerfile', 'build.gradle',
+    // 모델의 표 선택·시드 투영을 정하는 도구. 입력에 없으면 관리자 시드를 고쳐도 해시가 그대로다.
+    'scripts/project-composer-db.mjs', 'scripts/composer-modules.mjs', 'scripts/reusable-db-postgres.mjs', 'scripts/project-composer-catalog.mjs', 'scripts/project-composer-postgres.mjs',
+    // 벤더 SQL 원장에 없는 네이티브 SQL. 린터 규칙에 안 걸린 구문은 원장으로 찾지 못한다.
+    AUTH_SNAPSHOT, 'business-core/src/main/java/nuri/business/domain/menu/MenuRepository.java', 'business-core/src/main/java/nuri/business/domain/log/UserLogRepository.java',
+    'business-core/src/main/java/nuri/business/domain/log/LoginLogRepositoryImpl.java', 'business-core/src/main/java/nuri/business/domain/log/SysLogRepositoryImpl.java',
+    'business-core/src/main/java/nuri/business/domain/log/WebLogRepositoryImpl.java', FILTER_DEF,
   ]) assert.ok(inputs.includes(path), `입력에 없다: ${path}`);
+  for (const path of Object.keys(ledger.evidenceInputs.excludedModelTools)) assert.ok(!inputs.includes(path), `빼기로 적은 도구가 입력이다: ${path}`);
+  assert.ok(!inputs.includes('scripts/frontend-module-graph.mjs'), '뺀 도구가 혼자 가져오는 모듈은 따라 빠진다');
+  assert.ok(Object.values(ledger.evidenceInputs.excludedModelTools).every(reason => reason.trim()), '빼는 이유가 없다');
   assert.ok(!inputs.includes(VENDOR_LEDGER_PATH), '증거를 담는 원장이 입력이면 기록할 때마다 낡는다');
   assert.ok(!inputs.includes('scripts/project-composer-vendor-evidence.mjs'), '판정 코드는 벤더 동작이 아니다');
   assert.ok(!inputs.includes('api-server/src/test/java/nuri/api/schema/AddressBookBigintMigrationIntegrationTest.java'), '대체 분류 시험은 벤더에서 돌지 않는다');
@@ -248,6 +271,107 @@ test('stale evidence: entity set changes that a single file diff would miss stil
   assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '엔티티 삭제');
 });
 
+test('stale evidence: native SQL outside the SQL ledger and the shared filter definition count', t => {
+  const root = inputsCopy(t);
+  const sql = readFileSync(join(root, AUTH_SNAPSHOT), 'utf8');
+  const ledgerPaths = JSON.parse(readFileSync(join(root, 'config/governance/vendor-sql-ledger.json'), 'utf8')).locations.map(row => row.path);
+  assert.ok(!ledgerPaths.includes(AUTH_SNAPSHOT) && !ledgerPaths.includes(FILTER_DEF), '원장에 있으면 이 사례가 표지를 시험하지 못한다');
+  // 규칙에 없는 구문이라 린터는 초록이다. 해시만 이 변경을 잡는다.
+  change(root, AUTH_SNAPSHOT, 'LEFT JOIN tb_authrt_grnt_map g ON g.authrt_cd=u.authrt_cd', 'LEFT JOIN tb_authrt_grnt_map g ON g.authrt_cd IS NOT DISTINCT FROM u.authrt_cd');
+  assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '네이티브 SQL 변경');
+  writeFileSync(join(root, AUTH_SNAPSHOT), sql);
+  assert.deepEqual(vendorEvidenceStaleErrors(root), []);
+  change(root, FILTER_DEF, 'type = String.class', 'type = Boolean.class');
+  assert.match(vendorEvidenceStaleErrors(root)[0], staleOracle, '전 엔티티에 걸리는 필터 정의 변경');
+});
+
+test('every native SQL and filter marker makes a Java file an input, and a plain file is not one', t => {
+  const root = tinySource(t);
+  const ledger = readLedger(root);
+  const before = vendorEvidenceHash(root, ledger, 'oracle');
+  const file = 'business-core/src/main/java/M.java';
+  put(root, file, 'class M { void plain() { service.call(); } }\n');
+  assert.equal(vendorEvidenceHash(root, ledger, 'oracle'), before, '표지 없는 파일은 입력이 아니다');
+  for (const marker of ['@Query(value = "x", nativeQuery = true)', 'em.createNativeQuery("x")', 'em.createNativeMutationQuery("x")', 'JdbcTemplate jdbc;', 'NamedParameterJdbcTemplate jdbc;', 'JdbcClient jdbc;',
+    '@FilterDef(name = "x")', '@FilterDefs({})', '@org.hibernate.annotations.FilterDef(name = "x")']) {
+    put(root, file, `class M { ${marker} }\n`);
+    assert.ok(vendorEvidenceInputs(root, ledger, 'oracle').includes(file), `표지가 입력을 만들지 못했다: ${marker}`);
+  }
+});
+
+test('the tools behind the model are inputs by default: only a listed reason takes one out', t => {
+  const root = tinySource(t);
+  const ledger = readLedger(root);
+  const before = vendorEvidenceHash(root, ledger, 'oracle');
+  // 새 모듈을 가져오기만 해도 입력이 된다. 목록을 고칠 일이 없어 조용히 빠지지 않는다.
+  put(root, TINY_MODEL_COMMAND, "import { seed } from './new-seed.mjs';\nconst lazy = await import('./lazy-select.mjs');\n");
+  put(root, 'scripts/new-seed.mjs', "export { leaf } from './seed-leaf.mjs';\nexport const seed = 1;\n");
+  put(root, 'scripts/seed-leaf.mjs', 'export const leaf = 1;\n');
+  put(root, 'scripts/lazy-select.mjs', 'export const select = 1;\n');
+  const inputs = vendorEvidenceInputs(root, ledger, 'oracle');
+  for (const path of ['scripts/new-seed.mjs', 'scripts/seed-leaf.mjs', 'scripts/lazy-select.mjs']) assert.ok(inputs.includes(path), `입력에 없다: ${path}`);
+  const withTools = vendorEvidenceHash(root, ledger, 'oracle');
+  assert.notEqual(withTools, before);
+  put(root, 'scripts/seed-leaf.mjs', 'export const leaf = 2;\n');
+  const moved = vendorEvidenceHash(root, ledger, 'oracle');
+  assert.notEqual(moved, withTools, '멀리 있는 모듈의 내용도 값을 바꾼다');
+  // 원장이 뺀 도구와 그 도구만 가져오는 모듈은 값을 바꾸지 않는다.
+  ledger.evidenceInputs.excludedModelTools = { 'scripts/new-seed.mjs': '시험' };
+  const excluded = vendorEvidenceHash(root, ledger, 'oracle');
+  put(root, 'scripts/new-seed.mjs', "export { leaf } from './seed-leaf.mjs';\nexport const seed = 2;\n");
+  put(root, 'scripts/seed-leaf.mjs', 'export const leaf = 3;\n');
+  assert.equal(vendorEvidenceHash(root, ledger, 'oracle'), excluded);
+  // 다른 벤더의 어댑터를 가져와도 Oracle 입력이 아니다. 어댑터 표가 모두를 가져온다.
+  put(root, TINY_MODEL_COMMAND, "import { seed } from './new-seed.mjs';\nimport { a } from './project-composer-vendor-mysql.mjs';\n");
+  assert.ok(!vendorEvidenceInputs(root, ledger, 'oracle').includes('scripts/project-composer-vendor-mysql.mjs'));
+  // 더는 닿지 않는 제외 항목은 근거가 낡았다.
+  ledger.evidenceInputs.excludedModelTools = { 'scripts/removed.mjs': '시험' };
+  assert.throws(() => vendorEvidenceInputs(root, ledger, 'oracle'), /인증 입력 제외 목록의 도구가 모델 명령에서 닿지 않는다: scripts\/removed\.mjs/);
+});
+
+test('an ignored file is never an input: the same commit has the same value with or without it', t => {
+  const root = tinySource(t);
+  const ledger = readLedger(root);
+  const config = 'api-server/src/main/resources/application.yml';
+  const local = 'api-server/src/main/resources/application-local.yml';
+  ledger.evidenceInputs.paths = ['scripts/shared.mjs', 'api-server/src/main/resources/application*.yml', 'config/shared/'];
+  ledger.vendors.find(vendor => vendor.id === 'oracle').status = 'certified';
+  put(root, config, 'a: 1\n');
+  put(root, 'config/shared/a.json', '{}');
+  put(root, '.gitignore', '**/application-local.yml\nconfig/shared/private.json\nfoundation/src/main/java/Private.java\n');
+  const clean = vendorEvidenceHash(root, ledger, 'oracle');
+  // 글로브·폴더·표지 스캔이 각각 디스크를 읽으면 잡을 파일들이다.
+  put(root, local, 'local: private\n');
+  put(root, 'config/shared/private.json', '{"private":true}');
+  put(root, 'foundation/src/main/java/Private.java', '@Entity class Private {}\n');
+  const inputs = vendorEvidenceInputs(root, ledger, 'oracle');
+  for (const path of [local, 'config/shared/private.json', 'foundation/src/main/java/Private.java']) assert.ok(!inputs.includes(path), `무시 파일이 입력이다: ${path}`);
+  assert.equal(vendorEvidenceHash(root, ledger, 'oracle'), clean, '개인 설정 파일이 인증 값을 바꿨다');
+  // 대조군: 무시하지 않는 새 파일은 입력이다.
+  put(root, 'api-server/src/main/resources/application-prod.yml', 'b: 1\n');
+  assert.notEqual(vendorEvidenceHash(root, ledger, 'oracle'), clean);
+  rmSync(join(root, 'api-server/src/main/resources/application-prod.yml'));
+  // 무시 규칙에 걸려도 추적하는 파일은 커밋에 있으니 입력이다.
+  gitIn(root, 'add', '-f', 'config/shared/private.json');
+  assert.ok(vendorEvidenceInputs(root, ledger, 'oracle').includes('config/shared/private.json'));
+  gitIn(root, 'rm', '-q', '--cached', 'config/shared/private.json');
+  // 원장이 무시 파일을 직접 가리키면 값이 커밋을 말하지 못한다.
+  ledger.evidenceInputs.paths = ['scripts/shared.mjs', local];
+  assert.throws(() => vendorEvidenceHash(root, ledger, 'oracle'), /인증 입력이 git 이 무시하는 파일이다: api-server\/src\/main\/resources\/application-local\.yml/);
+});
+
+test('an ignored file does not turn certified evidence stale in the checkout that has it', t => {
+  const root = tinySource(t);
+  const ledger = readLedger(root);
+  ledger.evidenceInputs.paths = ['scripts/shared.mjs', 'api-server/src/test/resources/application*.yml'];
+  put(root, 'api-server/src/test/resources/application-tc.yml', 'a: 1\n');
+  put(root, '.gitignore', '**/application-local.yml\n');
+  certifyVendor(ledger.vendors.find(vendor => vendor.id === 'oracle'), vendorEvidenceHash(root, ledger, 'oracle'));
+  writeLedger(root, ledger);
+  put(root, 'api-server/src/test/resources/application-local.yml', 'local: private\n');
+  assert.deepEqual(vendorEvidenceStaleErrors(root), []);
+});
+
 test('stale evidence: a declared input that vanished is red with its path, not a quiet pass', async t => {
   const root = tinySource(t, { certified: true });
   rmSync(join(root, TINY_ADAPTER));
@@ -338,11 +462,14 @@ test('the E2E runner writes its evidence report only after the run and the resul
 function recordingFixture(t, overrides = {}) {
   const root = tinySource(t);
   const artifact = scratch(t, 'vendor-evidence-artifact-');
+  gitIn(artifact, 'init', '-q');
   const { requiredDomains, layout } = JSON.parse(readFileSync(join(root, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e;
   put(artifact, 'reusable-base-lock.json', JSON.stringify({
     profile: 'demo', layout, sourceCommit: COMMIT, composition: { resolvedDomains: requiredDomains, compositionHash: 'd'.repeat(64) },
     vendorProjection: { vendor: 'oracle', inputSha256: 'c'.repeat(64) }, ...overrides.lock }));
-  put(artifact, 'build/reports/reusable-base/full.json', JSON.stringify({ result: 'passed', sourceCommit: COMMIT, ...overrides.full }));
+  put(artifact, 'api-server/src/test/java/nuri/api/schema/A.java', 'class A {}\n');
+  put(artifact, 'project-generation-report.json', JSON.stringify({ result: 'passed', sourceCommit: COMMIT, evidenceFingerprint: composerSourceFingerprint(root, { exclude: [VENDOR_LEDGER_PATH] }), ...overrides.generation }));
+  put(artifact, 'build/reports/reusable-base/full.json', JSON.stringify({ result: 'passed', sourceCommit: COMMIT, artifactFingerprint: vendorArtifactFingerprint(artifact), ...overrides.full }));
   const specs = JSON.parse(readFileSync(join(root, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e.specs.length;
   const engineId = 'oracle19';
   const image = VENDOR_ENGINES[engineId].image;
@@ -361,7 +488,7 @@ function recordingFixture(t, overrides = {}) {
       assert.ok(script.endsWith('run-isolated-e2e.mjs'));
       put(artifact, `${reports}/representative-e2e.json`, JSON.stringify({ vendor: 'oracle', engine: engineId, image, specs, expected: 120, unexpected: 0, flaky: 0, skipped: 1, ...overrides.e2e }));
     }
-    overrides.during?.(script, root, clean);
+    overrides.during?.(script, root, clean, artifact);
   };
   const git = (_, args) => (args[0] === 'status' ? clean.status : `${clean.commit}\n`);
   return { root, artifact, calls, clean, run, git, record: () => recordVendorEvidence({ root, artifact, vendorId: 'oracle', version: '19', run, git, now: () => Date.parse('2026-11-03T01:00:00.000Z') }) };
@@ -410,6 +537,18 @@ test('the record command refuses before starting any container when the setup ca
   refused({ full: { sourceCommit: 'f'.repeat(40) } }, null, /생성물 전체 검증이 이 커밋에서 통과한 기록이 없다/);
   refused({}, ({ artifact }) => rmSync(join(artifact, 'build/reports/reusable-base/full.json')), /보고서를 읽지 못했다: build\/reports\/reusable-base\/full\.json/);
   refused({}, ({ root }) => put(root, 'reusable-base-lock.json', '{}'), /원본 저장소에서 실행한다/);
+  const dirtyGeneration = /생성물을 만들 때의 원본이 현재 트리와 다르다/;
+  // 미커밋 수정으로 생성하고 되돌린 경우. 커밋과 깨끗한 트리는 같아 이 대조만 잡는다. 잠금의 localDevelopmentBuild 는 태그 없는 생성에서 늘 참이라 가르지 못한다.
+  refused({}, ({ root }) => put(root, 'scripts/shared.mjs', 'export const shared = 2;\n'), dirtyGeneration);
+  refused({ generation: { evidenceFingerprint: 'f'.repeat(64) } }, null, dirtyGeneration);
+  refused({ generation: { evidenceFingerprint: undefined } }, null, dirtyGeneration);
+  refused({ generation: { result: 'failed' } }, null, dirtyGeneration);
+  refused({}, ({ artifact }) => rmSync(join(artifact, 'project-generation-report.json')), /보고서를 읽지 못했다: project-generation-report\.json/);
+  const changedArtifact = /전체 검증을 통과한 뒤 생성물이 바뀌었다/;
+  refused({}, ({ artifact }) => put(artifact, 'api-server/src/test/java/nuri/api/schema/A.java', 'class A { /* 줄인 시험 */ }\n'), changedArtifact);
+  refused({}, ({ artifact }) => put(artifact, 'api-server/src/test/java/nuri/api/schema/Extra.java', 'class Extra {}\n'), changedArtifact);
+  refused({}, ({ artifact }) => rmSync(join(artifact, 'api-server/src/test/java/nuri/api/schema/A.java')), changedArtifact);
+  refused({ full: { artifactFingerprint: undefined } }, null, changedArtifact);
   const fixture = recordingFixture(t);
   const call = version => () => recordVendorEvidence({ root: fixture.root, artifact: fixture.artifact, vendorId: 'oracle', version, run: fixture.run, git: fixture.git });
   assert.throws(call('12'), /원장에 oracle 12 엔진이 없다/);
@@ -438,6 +577,73 @@ test('the ledger stays as it was when a step result falls short or the inputs mo
   failing({ during: (script, _root, clean) => { if (script === lastStep) clean.status = ' M scripts/x.mjs\0'; } }, /커밋하지 않은 변경이 있다/);
   failing({ during: (script, _root, clean) => { if (script === lastStep) clean.commit = 'f'.repeat(40); } }, /실행 중 인증 입력이 바뀌었다/);
   failing({ during: (script, root) => { if (script === lastStep) change(root, TINY_ENTITY, '@Entity', '@Entity '); } }, /실행 중 인증 입력이 바뀌었다/);
+  failing({ during: (script, _root, _clean, artifact) => { if (script === lastStep) put(artifact, 'api-server/src/test/java/nuri/api/schema/A.java', 'class A { /* 실행 중 */ }\n'); } }, /전체 검증을 통과한 뒤 생성물이 바뀌었다/);
+  // 실행 중 입력 선언이 바뀌면 옛 선언으로 재면 그 변화를 놓친다. 원장을 바꾼 사람의 내용은 그대로 두고 증거만 쓰지 않는다.
+  const ledgerEdited = (edit, written) => {
+    const fixture = recordingFixture(t, { during: (script, root) => {
+      if (script !== lastStep) return;
+      const ledger = readLedger(root);
+      edit(ledger, root);
+      writeLedger(root, ledger);
+    } });
+    assert.throws(fixture.record, /실행 중 인증 입력이 바뀌었다/);
+    written(readLedger(fixture.root));
+  };
+  const added = 'foundation/src/main/java/New.java';
+  ledgerEdited((ledger, root) => { ledger.evidenceInputs.paths.push(added); put(root, added, 'class New {}\n'); }, ledger => {
+    assert.ok(ledger.evidenceInputs.paths.includes(added));
+    assert.equal(ledger.vendors.find(vendor => vendor.id === 'oracle').engines[0].evidence, null);
+  });
+  ledgerEdited(ledger => { ledger.vendors.find(vendor => vendor.id === 'oracle').engines.shift(); }, ledger => {
+    assert.deepEqual(ledger.vendors.find(vendor => vendor.id === 'oracle').engines.map(engine => engine.evidence), [null]);
+  });
+});
+
+test('a ledger edit made during the long run survives: only this engine\'s evidence is written', t => {
+  const other = fixtureEvidence('oracle');
+  const { root, record } = recordingFixture(t, { during: (script, root) => {
+    if (!script.endsWith('run-isolated-e2e.mjs')) return;
+    const ledger = readLedger(root);
+    const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+    oracle.engines[1].evidence = other;
+    oracle.reason = '실행 중에 사람이 고친 사유';
+    writeLedger(root, ledger);
+  } });
+  const evidence = record();
+  const oracle = readLedger(root).vendors.find(vendor => vendor.id === 'oracle');
+  assert.deepEqual(oracle.engines[0].evidence, evidence);
+  assert.deepEqual(oracle.engines[1].evidence, other, '다른 엔진의 증거가 사라졌다');
+  assert.equal(oracle.reason, '실행 중에 사람이 고친 사유');
+});
+
+test('the evidence of the first engine does not refuse the same artifact for the next one, and build output does not move the artifact value', t => {
+  const fixture = recordingFixture(t);
+  const first = fixture.record();
+  assert.notEqual(readFileSync(join(fixture.root, VENDOR_LEDGER_PATH), 'utf8'), '', '원장이 앞 증거로 바뀌었다');
+  // 생성기는 검증 뒤 보고서에 결과를 다시 쓰고, 실행 도구는 build 아래에 쓴다.
+  const report = JSON.parse(readFileSync(join(fixture.artifact, 'project-generation-report.json'), 'utf8'));
+  put(fixture.artifact, 'project-generation-report.json', JSON.stringify({ ...report, finishedAt: 'later' }));
+  put(fixture.artifact, 'frontend/build/output.txt', 'x');
+  const second = fixture.record();
+  assert.notEqual(second.runId, first.runId);
+});
+
+test('the source value leaves out only what it is told to, and the artifact value needs its own repository', t => {
+  const root = tinySource(t);
+  const whole = composerSourceFingerprint(root);
+  const without = composerSourceFingerprint(root, { exclude: [VENDOR_LEDGER_PATH] });
+  assert.notEqual(whole, without);
+  put(root, VENDOR_LEDGER_PATH, '{}');
+  assert.notEqual(composerSourceFingerprint(root), whole, '기본 지문은 원장을 그대로 본다. PostgreSQL 생성의 SOURCE_CHANGED 판정이 달라지지 않는다');
+  assert.equal(composerSourceFingerprint(root, { exclude: [VENDOR_LEDGER_PATH] }), without);
+  put(root, 'scripts/shared.mjs', 'export const shared = 2;\n');
+  assert.notEqual(composerSourceFingerprint(root, { exclude: [VENDOR_LEDGER_PATH] }), without);
+  // 생성물은 원본의 build 아래에 있다. 자기 .git 이 없으면 git 이 원본 저장소로 올라가 빈 목록의 값을 준다.
+  const outer = scratch(t);
+  gitIn(outer, 'init', '-q');
+  put(outer, '.gitignore', 'build/\n');
+  put(outer, 'build/project/a.txt', 'a\n');
+  assert.equal(vendorArtifactFingerprint(join(outer, 'build/project')), null, '.git 이 없으면 상위 저장소의 목록을 쓰지 않는다');
 });
 
 test('reports left by an earlier run are never read as this run\'s evidence', t => {
