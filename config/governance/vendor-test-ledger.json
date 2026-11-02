@@ -1,6 +1,25 @@
 {
   "schemaVersion": 1,
   "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). as-is·fixture-port 는 vendorIntegrationTest 가 벤더 DB 에서 돌리고, replacement 는 벤더 번역 대조·차등 시험이 대신한다. postgresqlOnly 는 벤더 실행에서 빼는 시험과 사유다. 2026-11-01 Oracle 실행으로 고쳤다.",
+  "representativeE2e": {
+    "description": "설계서 §7 의 대표 E2E. node scripts/run-isolated-e2e.mjs --representative 가 이 목록을 그대로 돌린다. 정리·클렌징·전체 메뉴 계약이 전제하므로 requiredDomains 가 preset 의 기능 목록과 같고 layout 의 생성물에서만 시작한다.",
+    "preset": "demo",
+    "layout": "multi-module",
+    "requiredDomains": ["addressbook", "board", "cms", "comment", "community", "dashboard", "event", "help", "informalsanction", "mail", "memoreport", "note", "notification", "promotion", "report", "reward", "schedule", "scrap", "showcase", "sms", "survey", "template"],
+    "specs": [
+      { "spec": "e2e/contracts/authentication.spec.ts", "category": "로그인" },
+      { "spec": "e2e/journeys/authentication.spec.ts", "category": "로그인" },
+      { "spec": "e2e/contracts/authorization.spec.ts", "category": "권한" },
+      { "spec": "e2e/contracts/menu-visibility.spec.ts", "category": "권한" },
+      { "spec": "e2e/contracts/request-denial.spec.ts", "category": "권한" },
+      { "spec": "e2e/journeys/authorization.spec.ts", "category": "권한" },
+      { "spec": "e2e/journeys/security-administration.spec.ts", "category": "권한" },
+      { "spec": "e2e/journeys/board-articles.spec.ts", "category": "게시판" },
+      { "spec": "e2e/journeys/board-masters.spec.ts", "category": "게시판" },
+      { "spec": "e2e/journeys/approvals.spec.ts", "category": "결재" },
+      { "spec": "e2e/journeys/audit-log.spec.ts", "category": "감사 원장" }
+    ]
+  },
   "tests": [
     {
       "test": "AddressBookBigintMigrationIntegrationTest.java",

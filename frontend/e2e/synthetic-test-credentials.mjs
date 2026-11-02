@@ -9,6 +9,7 @@ export const TEST_CREDENTIALS = {
     },
     user: {
         id: 'TEST1',
-        password: '1'
+        // 벤더 대표 묶음은 시드가 없어 실행기가 이 계정을 API 로 만든다. 비밀번호 정책을 거치므로 실행기가 값을 넘긴다.
+        password: process.env.E2E_TEST_USER_PASSWORD || '1'
     }
 };

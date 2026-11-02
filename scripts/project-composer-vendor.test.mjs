@@ -19,12 +19,13 @@ import { VENDOR_BASELINE_VERSION, assertTestsRan, conformanceCatalog, integratio
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, readCatalog, readNextValues, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { collectResults, launchVendorContainer, parseCount, readCatalog, readNextValues, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
-import { assertIsolatedRunnerSupportsProject } from './run-isolated-e2e.mjs';
+import { assertIsolatedRunnerSupportsProject, closedEnvironment, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
+import { assertOwnedVendorDatabase, assertRemovableVendorDatabase } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
@@ -766,17 +767,309 @@ test('a missing gate scan root stays a failure unless a vendor project removed i
   }
 });
 
-test('the isolated runner stops on a vendor project before it starts PostgreSQL', () => {
+const DEMO_DOMAINS = () => JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e.requiredDomains;
+
+function runnerProject(lock) {
   const root = mkdtempSync(join(tmpdir(), 'vendor-runner-'));
-  try {
-    assert.doesNotThrow(() => assertIsolatedRunnerSupportsProject(root), '원본 저장소에는 잠금이 없다');
-    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core' }));
-    assert.doesNotThrow(() => assertIsolatedRunnerSupportsProject(root), 'PostgreSQL 생성물은 그대로 돈다');
-    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ vendorProjection: { vendor: 'oracle' } }));
-    assert.throws(() => assertIsolatedRunnerSupportsProject(root), /oracle projects are not supported yet/);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
+  mkdirSync(join(root, 'config/governance'), { recursive: true });
+  writeFileSync(join(root, 'config/governance/vendor-test-ledger.json'), readFileSync(join(ROOT, 'config/governance/vendor-test-ledger.json')));
+  if (lock) writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify(lock));
+  return root;
+}
+
+test('the isolated runner opens a vendor project only for the representative bundle and leaves PostgreSQL alone', () => {
+  const fullVendor = { layout: 'multi-module', vendorProjection: { vendor: 'oracle' }, composition: { resolvedDomains: DEMO_DOMAINS() } };
+  const cases = [
+    [null, {}, null, '원본 저장소에는 잠금이 없다'],
+    [null, { representative: true }, null, '원본 저장소의 PostgreSQL 대조 실행'],
+    [{ profile: 'core' }, {}, null, 'PostgreSQL 생성물의 기존 실행 방식은 구성을 보지 않는다'],
+    [{ layout: 'multi-module', composition: { resolvedDomains: DEMO_DOMAINS() } }, { representative: true }, null, 'PostgreSQL 전체 기능 생성물의 대조 실행'],
+    [fullVendor, { representative: true }, 'oracle', '벤더 전체 기능 멀티모듈 생성물'],
+  ];
+  for (const [lock, options, expected, label] of cases) {
+    const root = runnerProject(lock);
+    try { assert.equal(assertIsolatedRunnerSupportsProject(root, options), expected, label); }
+    finally { rmSync(root, { recursive: true, force: true }); }
   }
+  const refusals = [
+    [{ vendorProjection: { vendor: 'oracle' } }, {}, /oracle 프로젝트는 대표 묶음\(--representative\)만 실행할 수 있다/],
+    [fullVendor, {}, /oracle 프로젝트는 대표 묶음/],
+    [{ ...fullVendor, layout: 'single-module' }, { representative: true }, /multi-module 생성물에서만 실행할 수 있다\(현재 single-module\)/],
+    [{ ...fullVendor, composition: { resolvedDomains: DEMO_DOMAINS().filter(domain => domain !== 'informalsanction') } }, { representative: true }, /필요한 기능이 이 구성에 없다: informalsanction/],
+    [{ layout: 'multi-module', composition: { resolvedDomains: ['board'] } }, { representative: true }, /필요한 기능이 이 구성에 없다: addressbook/],
+  ];
+  for (const [lock, options, message] of refusals) {
+    const root = runnerProject(lock);
+    try { assert.throws(() => assertIsolatedRunnerSupportsProject(root, options), message); }
+    finally { rmSync(root, { recursive: true, force: true }); }
+  }
+});
+
+test('the representative bundle is fixed by the ledger and refuses extra arguments', () => {
+  assert.deepEqual(parseRepresentativeArguments([]), { enabled: false });
+  assert.deepEqual(parseRepresentativeArguments(['--', '--project=full-suite']), { enabled: false }, '기존 인자는 그대로 지나간다');
+  assert.deepEqual(parseRepresentativeArguments(['--ci-compose', '--full-inventory']), { enabled: false });
+  assert.deepEqual(parseRepresentativeArguments(['--representative']), { enabled: true, engineId: undefined });
+  assert.deepEqual(parseRepresentativeArguments(['--representative', '--vendor-engine=oracle19']), { enabled: true, engineId: 'oracle19' });
+  for (const extra of [['-g', 'x'], ['--', '--project=full-suite'], ['--vendor-engine=oracle19', '-g'], ['--vendor-engine='], ['e2e/journeys/approvals.spec.ts']]) {
+    assert.throws(() => parseRepresentativeArguments(['--representative', ...extra]), /--vendor-engine=<엔진> 외의 인자를 받지 않는다/, extra.join(' '));
+  }
+  const { specs } = readRepresentativeBundle(ROOT);
+  assert.deepEqual([...specs].sort(), [
+    'e2e/contracts/authentication.spec.ts', 'e2e/contracts/authorization.spec.ts', 'e2e/contracts/menu-visibility.spec.ts', 'e2e/contracts/request-denial.spec.ts',
+    'e2e/journeys/approvals.spec.ts', 'e2e/journeys/audit-log.spec.ts', 'e2e/journeys/authentication.spec.ts', 'e2e/journeys/authorization.spec.ts',
+    'e2e/journeys/board-articles.spec.ts', 'e2e/journeys/board-masters.spec.ts', 'e2e/journeys/security-administration.spec.ts']);
+  assert.deepEqual(representativeSelection(specs).slice(0, 2), ['--project=api-contract', '--project=full-suite']);
+  const ledger = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e;
+  assert.deepEqual([...new Set(ledger.specs.map(row => row.category))].sort(), ['감사 원장', '게시판', '결재', '권한', '로그인'].sort(), '설계서 §7 의 다섯 범주');
+  // 생성물은 고른 구성의 시작 구성만 남기고 삭제 연쇄로 spec 이 줄어든다. 원본에서만 대조할 수 있다.
+  if (!existsSync(join(ROOT, 'reusable-base-lock.json'))) {
+    for (const spec of specs) assert.ok(existsSync(join(ROOT, 'frontend', spec)), spec);
+    const presets = JSON.parse(readFileSync(join(ROOT, 'config/modules/presets.json'), 'utf8')).presets;
+    assert.deepEqual([...ledger.requiredDomains].sort(), [...presets.find(preset => preset.id === ledger.preset).domains].sort(), '원장의 기능은 시작 구성과 같아야 한다');
+  }
+  const root = runnerProject(null);
+  try {
+    const corrupt = extra => writeFileSync(join(root, 'config/governance/vendor-test-ledger.json'), JSON.stringify({ representativeE2e: { layout: 'multi-module', requiredDomains: ['board'], specs: [], ...extra } }));
+    for (const specsValue of [[], [{ spec: 'e2e/journeys/approvals.spec.ts' }, { spec: 'e2e/journeys/approvals.spec.ts' }], [{ spec: '../outside.spec.ts' }], [{}]]) {
+      corrupt({ specs: specsValue });
+      assert.throws(() => readRepresentativeBundle(root), /대표 묶음이 올바르지 않다/);
+    }
+    corrupt({ specs: [{ spec: 'e2e/journeys/approvals.spec.ts' }], requiredDomains: [] });
+    assert.throws(() => readRepresentativeBundle(root), /대표 묶음이 올바르지 않다/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+function playwrightReports(cwd, files) {
+  const suite = file => ({ specs: [{ title: file, id: file, file, tests: [{ status: 'expected', expectedStatus: 'passed', projectName: file.endsWith('.setup.ts') ? 'setup' : file.startsWith('contracts/') ? 'api-contract' : 'full-suite', results: [] }] }] });
+  const shape = { config: { rootDir: join(cwd, 'e2e'), projects: ['setup', 'api-contract', 'full-suite'].map(name => ({ name })) }, errors: [], suites: ['auth.setup.ts', ...files].map(suite) };
+  return { inventory: shape, report: { ...shape, stats: { expected: files.length + 1, skipped: 0, unexpected: 0, flaky: 0 } } };
+}
+
+test('a representative spec that disappears or a foreign spec turns the run red, unlike a plan derived from discovery', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'vendor-result-'));
+  const ledgerSpecs = ['e2e/contracts/authentication.spec.ts', 'e2e/journeys/approvals.spec.ts'];
+  try {
+    const whole = playwrightReports(cwd, ['contracts/authentication.spec.ts', 'journeys/approvals.spec.ts']);
+    assert.deepEqual(validateLocalRun(whole.report, whole.inventory, { representativeSpecs: ledgerSpecs, cwd }).errors, []);
+    const narrowed = playwrightReports(cwd, ['contracts/authentication.spec.ts']);
+    const missing = validateLocalRun(narrowed.report, narrowed.inventory, { representativeSpecs: ledgerSpecs, cwd }).errors;
+    assert.ok(missing.includes('missing full inventory spec: e2e/journeys/approvals.spec.ts'), missing.join('; '));
+    assert.ok(missing.includes('missing planned spec result: e2e/journeys/approvals.spec.ts'), `원장이 계획이다: ${missing.join('; ')}`);
+    assert.deepEqual(validateLocalRun(narrowed.report, narrowed.inventory, { cwd }).errors, [], '일반 실행은 발견 결과가 계획이라 같은 입력이 통과한다');
+    const foreign = playwrightReports(cwd, ['contracts/authentication.spec.ts', 'journeys/approvals.spec.ts', 'journeys/mail.spec.ts']);
+    const unplanned = validateLocalRun(foreign.report, foreign.inventory, { representativeSpecs: ledgerSpecs, cwd }).errors;
+    assert.ok(unplanned.includes('unplanned full inventory spec: e2e/journeys/mail.spec.ts'), unplanned.join('; '));
+  } finally { rmSync(cwd, { recursive: true, force: true }); }
+});
+
+const vendorManifest = () => ({ runId: 'a'.repeat(24), databaseId: 'c'.repeat(64), createdAt: Date.now() - 1000 });
+const vendorExpected = { engineId: 'oracle', image: 'gvenzl/oracle-free:23-slim-faststart', port: 1521, environment: ['APP_USER=vendorcheck', 'ORACLE_PASSWORD=this-run'] };
+const vendorContainer = manifest => ({
+  Id: manifest.databaseId, Created: new Date(manifest.createdAt).toISOString(), State: { Running: true },
+  Config: { Image: vendorExpected.image, Env: ['PATH=/bin', ...vendorExpected.environment], Labels: { 'egov.task': 'isolated-e2e', 'egov.e2e.run': manifest.runId, 'egov.composer.vendor': 'oracle' } },
+  HostConfig: { Binds: null },
+  NetworkSettings: { Ports: { '1521/tcp': [{ HostIp: '127.0.0.1', HostPort: '49153' }] } },
+  Mounts: [{ Type: 'volume', Name: 'd'.repeat(64) }],
+});
+
+test('the vendor ownership proof refuses anything this run did not create', () => {
+  const manifest = vendorManifest();
+  assert.equal(assertOwnedVendorDatabase(vendorContainer(manifest), manifest, vendorExpected), '49153');
+  const changes = {
+    '다른 컨테이너 ID': value => { value.Id = 'e'.repeat(64); },
+    '다른 실행의 표식': value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); },
+    '다른 작업의 표식': value => { value.Config.Labels['egov.task'] = 'other'; },
+    '다른 엔진의 표식': value => { value.Config.Labels['egov.composer.vendor'] = 'oracle19'; },
+    '실행 전에 만든 컨테이너': value => { value.Created = new Date(manifest.createdAt - 60000).toISOString(); },
+    '이름 있는 볼륨': value => { value.Mounts = [{ Type: 'volume', Name: 'shared-oracle-data' }]; },
+    '바인드 마운트': value => { value.Mounts = [{ Type: 'bind', Source: '/data' }]; },
+    '바인드 설정': value => { value.HostConfig.Binds = ['/data:/opt/oracle/oradata']; },
+    '외부 바인딩': value => { value.NetworkSettings.Ports['1521/tcp'][0].HostIp = '0.0.0.0'; },
+    '포트 없음': value => { value.NetworkSettings.Ports = {}; },
+    '정지 상태': value => { value.State.Running = false; },
+    '다른 이미지': value => { value.Config.Image = 'gvenzl/oracle-free:latest'; },
+    '이 실행이 만들지 않은 비밀번호': value => { value.Config.Env = ['APP_USER=vendorcheck', 'ORACLE_PASSWORD=someone-else']; },
+  };
+  for (const [label, change] of Object.entries(changes)) {
+    const actual = vendorContainer(manifest);
+    change(actual);
+    assert.throws(() => assertOwnedVendorDatabase(actual, manifest, vendorExpected), /isolation verification failed/, label);
+  }
+  assert.throws(() => assertOwnedVendorDatabase(vendorContainer(manifest), manifest, { ...vendorExpected, environment: [] }), /isolation verification failed/, '기대 환경이 비면 통과시키지 않는다');
+});
+
+test('cleanup removes a dead container of this run but never one it cannot attribute, and does not hide the earlier failure', () => {
+  const manifest = vendorManifest();
+  const stopped = vendorContainer(manifest);
+  stopped.State.Running = false;
+  assert.doesNotThrow(() => assertRemovableVendorDatabase(stopped, manifest, 'oracle'), '정리는 기동 상태를 보지 않는다');
+  for (const change of [value => { value.Id = 'e'.repeat(64); }, value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); }, value => { delete value.Config.Labels['egov.task']; }, value => { value.Config.Labels['egov.composer.vendor'] = 'mysql'; }]) {
+    const actual = vendorContainer(manifest);
+    change(actual);
+    assert.throws(() => assertRemovableVendorDatabase(actual, manifest, 'oracle'), /isolation verification failed/);
+  }
+  const attempt = ({ container, status = 0, inspectFails = false }) => {
+    const removed = [];
+    const reports = [];
+    removeVendorDatabase({ manifest, engineId: 'oracle', report: message => reports.push(message),
+      inspect: () => { if (inspectFails) throw new Error('no such container'); return container; },
+      remove: id => { removed.push(id); return { status }; } });
+    return { removed, reports };
+  };
+  assert.deepEqual(attempt({ container: stopped }), { removed: [manifest.databaseId], reports: [] }, '죽은 컨테이너와 익명 볼륨도 지운다');
+  const foreign = vendorContainer(manifest);
+  foreign.Config.Labels['egov.e2e.run'] = 'f'.repeat(24);
+  const refused = attempt({ container: foreign });
+  assert.deepEqual(refused.removed, [], '남의 컨테이너는 지우지 않는다');
+  assert.match(refused.reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+  assert.match(attempt({ container: stopped, status: 1 }).reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+  assert.match(attempt({ inspectFails: true }).reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+});
+
+test('the runner launches the vendor container with its own labels and closed environment and gets the container id', () => {
+  const calls = [];
+  const containerId = 'a'.repeat(64);
+  const runDocker = (args, options) => { calls.push({ args, options }); return { status: 0, stdout: 'Unable to find image locally\n'.repeat(0) + containerId + '\n', stderr: '' }; };
+  const handle = launchVendorContainer('oracle', { publishPort: 1521, runDocker, baseEnvironment: { PATH: 'tools' }, requireContainerId: true,
+    extraLabels: ['--label', 'egov.task=isolated-e2e', '--label', 'egov.e2e.run=run'] });
+  assert.equal(handle.containerId, containerId);
+  assert.equal(calls.length, 1, '준비 대기는 호출자 몫이다');
+  const { args, options } = calls[0];
+  for (const label of ['egov.composer.vendor=oracle', 'egov.task=isolated-e2e', 'egov.e2e.run=run']) assert.ok(args.includes(label), label);
+  assert.ok(args.includes('127.0.0.1::1521'), '포트는 루프백에만 연다');
+  assert.ok(!args.join(' ').includes(handle.password), '비밀번호는 인자에 두지 않는다');
+  assert.equal(options.env.PATH, 'tools');
+  assert.equal(options.env.ORACLE_PASSWORD, handle.password);
+  assert.deepEqual(Object.keys(options.env).filter(key => key.startsWith('DOCKER_')), [], '닫힌 환경 밖의 Docker 대상을 물려받지 않는다');
+  assert.ok(!args.join(' ').includes('egov.project-composer'), '닫힌 환경에는 작업 토큰도 없다');
+  const seen = [];
+  assert.equal(VENDOR_ENGINES.oracle.ready('x', cmd => { seen.push(cmd[0]); return { stdout: 'DATABASE IS READY TO USE', stderr: '' }; }), true, '준비 판정도 받은 실행기로 부른다');
+  assert.equal(VENDOR_ENGINES.oracle19.ready('x', cmd => { seen.push(cmd[0]); return { stdout: cmd[0] === 'logs' ? 'DATABASE IS READY TO USE' : 'Grant succeeded', stderr: '' }; }), true);
+  for (const id of ['mysql', 'mariadb', 'mssql', 'cubrid']) assert.equal(VENDOR_ENGINES[id].ready('x', cmd => { seen.push(cmd[0]); return { status: 0 }; }), true, id);
+  assert.deepEqual(seen, ['logs', 'logs', 'exec', 'exec', 'exec', 'exec', 'exec']);
+
+  const removed = [];
+  const noId = (dockerArgs) => { removed.push(dockerArgs[0]); return { status: 0, stdout: 'not an id', stderr: '' }; };
+  assert.throws(() => launchVendorContainer('oracle', { runDocker: noId, requireContainerId: true }), error => error.code === 'VENDOR_ENGINE_NOT_READY' && /ID 를 받지 못했다/.test(error.message));
+  assert.deepEqual(removed, ['run', 'rm'], 'ID 를 못 받으면 소유를 증명할 수 없어 지운다');
+  assert.equal(launchVendorContainer('oracle', { runDocker: () => ({ status: 0, stdout: '', stderr: '' }) }).containerId, null, '다른 호출자는 ID 를 요구하지 않는다');
+});
+
+test('the runner wires the closed Docker environment, one API environment and the result plan', () => {
+  const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(runner, /const runDocker = engines\.dockerIn\(clean\);/);
+  assert.match(runner, /launchVendorContainer\(engineId, \{ publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,/);
+  assert.match(runner, /validateLocalRun\(report, inventory, \{ representativeSpecs: bundle\?\.specs \}\)/);
+  assert.equal(runner.match(/const apiEnvironment = /g).length, 1, 'MFA 배선 계약이 벤더 분기도 보도록 API 환경은 하나다');
+  const account = /E2E_TEST_USER_PASSWORD/g;
+  assert.equal(runner.match(account).length, 1, '일반 계정 비밀번호는 시험 실행 환경에만 싣는다');
+  assert.equal(runner.match(/\.\.\.testAccountEnvironment/g).length, 2, '발견과 실행');
+  assert.doesNotMatch(runner.slice(runner.indexOf('const environment = { ...clean, NODE_ENV'), runner.indexOf('const next = require.resolve')), /testAccountEnvironment/, 'Next 빌드와 서버 환경에는 넣지 않는다');
+  assert.deepEqual(closedEnvironment({ PATH: 'tools', E2E_TEST_USER_PASSWORD: 'inherited' }), { PATH: 'tools' }, '상속한 값으로 계정이 바뀌지 않는다');
+
+  const oracleEnvironment = vendorDatabaseEnvironment(VENDOR_ENGINES.oracle, '49153', 'secret', '1');
+  assert.deepEqual(oracleEnvironment, { DB_URL: 'jdbc:oracle:thin:@//127.0.0.1:49153/FREEPDB1', DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' });
+  assert.match(runner, /databaseEnvironment = \{ DB_URL: `jdbc:postgresql:\/\/127\.0\.0\.1:\$\{databasePort\}\/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,\n\s+NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' \};/, 'PostgreSQL 값은 그대로다');
+
+  assert.deepEqual(resolveVendorEngine('oracle', undefined, VENDOR_ENGINES).id, 'oracle');
+  assert.deepEqual(resolveVendorEngine('oracle', 'oracle19', VENDOR_ENGINES).id, 'oracle19');
+  assert.throws(() => resolveVendorEngine('oracle', 'mysql', VENDOR_ENGINES), /oracle 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/);
+  assert.throws(() => resolveVendorEngine('mysql', undefined, VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/, '통합 값이 없는 엔진은 아직 열지 않는다');
+  assert.throws(() => resolveVendorEngine('mysql', 'oracle19', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 oracle19 엔진으로/);
+  assert.throws(() => resolveVendorEngine('oracle', 'nope', VENDOR_ENGINES), /nope 엔진으로/);
+
+  const readme = vendorReadme('oracle');
+  assert.match(readme, /node scripts\/run-isolated-e2e\.mjs --representative/);
+  assert.doesNotMatch(readme, /시작할 때 멈춘다/);
+  const removedAssets = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-removed-assets.json'), 'utf8'));
+  const row = Object.values(removedAssets).flat().find(entry => entry?.file === 'scripts/e2e-isolation.test.mjs');
+  assert.match(row.coveredBy, /assertOwnedVendorDatabase/, '제거 사유가 지금 실행기와 맞아야 한다');
+});
+
+const ADMIN_GROUP = () => ({ code: 'ROLE_ADMIN', complete: true, version: 'a'.repeat(64), grants: [{ type: 'NAVIGATION', code: '100' }, { type: 'OPERATION', code: 'USER_READ' }] });
+
+function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, group = ADMIN_GROUP(), reread } = {}) {
+  const log = [];
+  let failures = loginFailures;
+  let current = group;
+  const request = async (url, init) => {
+    const target = url.replace('http://127.0.0.1:18080/api/v1', '');
+    const body = init.body ? JSON.parse(init.body) : undefined;
+    log.push({ step: `${init.method} ${target}`, body, authorization: init.headers.Authorization, cookie: init.headers.Cookie });
+    const reply = (status, envelope = {}) => ({ status, json: async () => envelope });
+    if (target === '/auth/login') {
+      if (failures-- > 0) return reply(401, { code: 'INVALID' });
+      return reply(200, { data: { accessToken: 'token' } });
+    }
+    if (target === '/admin/system/users') return reply(userStatus, { code: 'USER_EXISTS' });
+    if (init.method === 'GET') {
+      if (log.filter(entry => entry.step === 'PUT /admin/authorization/groups/ROLE_ADMIN/grants').length && reread) return reply(200, { data: reread });
+      return reply(200, { data: current });
+    }
+    if (putStatus === 200) current = { ...current, grants: body.grants };
+    return reply(putStatus, { code: 'MENU_PARENT_REQUIRED' });
+  };
+  return { log, request };
+}
+
+async function provision(api, verifyOwner = () => api.log.push({ step: 'owner' }), apiUrl = 'http://127.0.0.1:18080/api/v1') {
+  const waits = [];
+  await provisionRepresentativeAccounts({ apiUrl, admin: { id: 'webmaster', password: '1' }, user: { id: 'TEST1', password: 'E2e1!strong' }, verifyOwner, request: api.request, wait: async ms => { waits.push(ms); } });
+  return waits;
+}
+
+test('the fixture proves ownership before every write and adds only the missing grants to the full list', async () => {
+  const api = fixtureApi();
+  await provision(api);
+  assert.deepEqual(api.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'owner', 'POST /admin/system/users', 'GET /admin/authorization/groups/ROLE_ADMIN',
+    'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
+  const user = api.log.find(entry => entry.step === 'POST /admin/system/users');
+  assert.deepEqual(user.body, { userId: 'TEST1', pswd: 'E2e1!strong', userNm: '일반사용자', role: 'USER' });
+  assert.equal(user.authorization, 'Bearer token');
+  assert.ok(api.log.every(entry => !entry.cookie), '쿠키를 싣지 않아 CSRF 대상이 아니다');
+  const put = api.log.find(entry => entry.step.startsWith('PUT'));
+  assert.equal(put.body.complete, true);
+  assert.equal(put.body.version, 'a'.repeat(64));
+  assert.deepEqual(put.body.grants, [...ADMIN_GROUP().grants, { type: 'OPERATION', code: 'NOTICE_EDIT' }, { type: 'OPERATION', code: 'FAQ_EDIT' }], '기존 목록을 잃지 않는다');
+
+  const held = fixtureApi({ group: { ...ADMIN_GROUP(), grants: [{ type: 'OPERATION', code: 'NOTICE_EDIT' }] } });
+  await provision(held);
+  assert.deepEqual(held.log.find(entry => entry.step.startsWith('PUT')).body.grants, [{ type: 'OPERATION', code: 'NOTICE_EDIT' }, { type: 'OPERATION', code: 'FAQ_EDIT' }], '이미 있는 권한을 겹치지 않는다');
+});
+
+test('the fixture retries the login below the lockout threshold and stops on anything unexpected', async () => {
+  const late = fixtureApi({ loginFailures: 2 });
+  assert.equal((await provision(late)).length, 2, '비밀번호 설정을 기다린다');
+  assert.equal(late.log.filter(entry => entry.step === 'POST /auth/login').length, 3);
+  assert.equal(late.log.filter(entry => entry.step === 'owner').length, 5, '로그인 시도도 소유를 먼저 본다');
+
+  const never = fixtureApi({ loginFailures: 100 });
+  await assert.rejects(provision(never), /관리자 로그인이 4회 모두 실패했다/);
+  const attempts = never.log.filter(entry => entry.step === 'POST /auth/login').length;
+  const threshold = Number(readFileSync(join(ROOT, 'api-server/src/main/resources/application.yml'), 'utf8').match(/LOGIN_MAX_FAILURES:(\d+)/)[1]);
+  assert.ok(attempts < threshold, `${attempts}회 실패가 잠금 임계 ${threshold}회에 닿으면 뒤따르는 인증 준비가 잠긴 계정을 만난다`);
+  assert.ok(!never.log.some(entry => entry.step === 'POST /admin/system/users'));
+
+  await assert.rejects(provision(fixtureApi({ userStatus: 409 })), /일반 계정 생성 실패\(HTTP 409, USER_EXISTS\)/);
+  await assert.rejects(provision(fixtureApi({ putStatus: 400 })), /관리자 권한 변경 실패\(HTTP 400, MENU_PARENT_REQUIRED\)/);
+  await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), complete: false } })), /전체 목록이 아니다/);
+  await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), version: 'short' } })), /전체 목록이 아니다/);
+  await assert.rejects(provision(fixtureApi({ reread: ADMIN_GROUP() })), /관리자 권한이 반영되지 않았다/);
+
+  let verified = 0;
+  const lost = fixtureApi();
+  await assert.rejects(provision(lost, () => { verified += 1; if (verified === 2) throw new Error('E2E isolation verification failed'); }), /isolation verification failed/);
+  assert.deepEqual(lost.log.map(entry => entry.step), ['POST /auth/login'], '소유 증명이 깨지면 쓰지 않는다');
+  await assert.rejects(provision(fixtureApi(), () => {}, 'https://remote.example/api/v1'), /isolation verification failed/, '루프백 밖으로 보내지 않는다');
+});
+
+test('the test account password comes from the runner and defaults to the seeded value', () => {
+  const source = readFileSync(join(ROOT, 'frontend/e2e/synthetic-test-credentials.mjs'), 'utf8');
+  assert.match(source, /password: process\.env\.E2E_TEST_USER_PASSWORD \|\| '1'/);
+  const load = environment => spawnSync(process.execPath, ['--input-type=module', '-e', `import(${JSON.stringify(new URL('../frontend/e2e/synthetic-test-credentials.mjs', import.meta.url).href)}).then(m => console.log(m.TEST_CREDENTIALS.user.password))`], { encoding: 'utf8', env: { PATH: process.env.PATH, ...environment } }).stdout.trim();
+  assert.equal(load({}), '1', 'PostgreSQL 은 시드 값을 그대로 쓴다');
+  assert.equal(load({ E2E_TEST_USER_PASSWORD: 'E2e1!strong' }), 'E2e1!strong');
 });
 
 test('a vendor container started for a job carries that job token, so a cancel can reclaim it', async () => {

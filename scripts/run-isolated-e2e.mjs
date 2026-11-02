@@ -7,7 +7,7 @@ import net from 'node:net';
 import path from 'node:path';
 import { createRequire } from 'node:module';
 import { fileURLToPath } from 'node:url';
-import { assertOwnedDatabase, assertOwnedComposeRuntime } from './e2e-isolation.mjs';
+import { assertLoopbackUrl, assertOwnedDatabase, assertOwnedComposeRuntime, assertOwnedVendorDatabase, assertRemovableVendorDatabase } from './e2e-isolation.mjs';
 import { validatePlaywrightResult } from './playwright-result-contract.mjs';
 
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
@@ -120,30 +120,157 @@ export function frontendStartArguments(next, webPort) {
     '--keepAliveTimeout', String(E2E_WEB_KEEP_ALIVE_TIMEOUT_MS)];
 }
 
-/** 벤더 프로젝트의 앱은 이 실행기의 PostgreSQL 에 붙지 못한다. 기동 실패로 끝나 원인을 알기 어렵게 되지 않도록 먼저 멈춘다. */
-export function assertIsolatedRunnerSupportsProject(projectRoot) {
+/** 대표 묶음의 인자. 시험을 좁히면 발견과 실행이 함께 좁아져 초록이 되므로 엔진 선택 말고는 받지 않는다. */
+export function parseRepresentativeArguments(arguments_) {
+  if (arguments_[0] !== '--representative') return { enabled: false };
+  const [, option, ...rest] = arguments_;
+  if (rest.length || (option !== undefined && !/^--vendor-engine=[a-z0-9]+$/.test(option))) {
+    throw fail('대표 묶음은 원장이 시험을 고정한다. --vendor-engine=<엔진> 외의 인자를 받지 않는다.');
+  }
+  return { enabled: true, engineId: option?.slice('--vendor-engine='.length) };
+}
+
+export function readRepresentativeBundle(projectRoot) {
+  const bundle = JSON.parse(readFileSync(path.join(projectRoot, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e;
+  const specs = Array.isArray(bundle?.specs) ? bundle.specs.map(row => row?.spec) : [];
+  if (specs.length === 0 || new Set(specs).size !== specs.length || specs.some(spec => !/^e2e\/(?:contracts|journeys)\/[a-z0-9-]+\.spec\.ts$/.test(spec ?? ''))
+      || !Array.isArray(bundle.requiredDomains) || bundle.requiredDomains.length === 0 || typeof bundle.layout !== 'string') {
+    throw fail('벤더 시험 원장의 대표 묶음이 올바르지 않다.');
+  }
+  return { specs, requiredDomains: bundle.requiredDomains, layout: bundle.layout };
+}
+
+export const representativeSelection = specs => ['--project=api-contract', '--project=full-suite', ...specs];
+
+/**
+ * 벤더 프로젝트의 앱은 이 실행기의 PostgreSQL 에 붙지 못하므로 벤더 DB 를 띄우는 대표 묶음만 연다.
+ * 다른 실행 방식은 기동 실패로 끝나 원인을 알기 어렵게 되지 않도록 먼저 멈춘다.
+ * 대표 묶음은 정리·클렌징·전체 메뉴 계약이 원장의 기능 전부를 전제하므로 구성이 모자라면 시작하지 않는다.
+ */
+export function assertIsolatedRunnerSupportsProject(projectRoot, { representative = false } = {}) {
   let lock;
   try { lock = JSON.parse(readFileSync(path.join(projectRoot, 'reusable-base-lock.json'), 'utf8')); }
   catch (error) {
-    if (error.code === 'ENOENT') return;
+    if (error.code === 'ENOENT') return null;
     throw error;
   }
-  if (lock.vendorProjection) throw fail(`${lock.vendorProjection.vendor} projects are not supported yet; this runner starts PostgreSQL.`);
+  const vendor = lock.vendorProjection?.vendor ?? null;
+  if (vendor && !representative) throw fail(`${vendor} 프로젝트는 대표 묶음(--representative)만 실행할 수 있다. 다른 실행 방식은 PostgreSQL 을 띄운다.`);
+  if (representative) {
+    const bundle = readRepresentativeBundle(projectRoot);
+    if (lock.layout !== bundle.layout) throw fail(`대표 묶음은 ${bundle.layout} 생성물에서만 실행할 수 있다(현재 ${lock.layout}).`);
+    const present = new Set(lock.composition?.resolvedDomains ?? []);
+    const missing = bundle.requiredDomains.filter(domain => !present.has(domain));
+    if (missing.length) throw fail(`대표 묶음에 필요한 기능이 이 구성에 없다: ${missing.join(', ')}`);
+  }
+  return vendor;
+}
+
+export function resolveVendorEngine(vendor, requested, engines) {
+  const id = requested ?? vendor;
+  const engine = engines[id];
+  if (!engine?.integration || (engine.vendor ?? id) !== vendor) throw fail(`${vendor} 프로젝트의 대표 묶음을 ${id} 엔진으로 실행할 수 없다.`);
+  return { id, engine };
+}
+
+/** 벤더 앱의 DB 값. 인가 전환 값은 PostgreSQL 전용 구성을 켜 기동을 실패시키므로 넣지 않는다. */
+export function vendorDatabaseEnvironment(engine, port, password, adminPassword) {
+  return { DB_URL: engine.integration.url(port), DB_USERNAME: engine.integration.username, DB_PASSWORD: password, ADMIN_INITIAL_PASSWORD: adminPassword };
+}
+
+/** 지우기 전 판정이 실패하면 지우지 않는다. 앞선 실패를 가리지 않도록 던지지 않고 알린다. */
+export function removeVendorDatabase({ inspect, remove, manifest, engineId, report }) {
+  try {
+    assertRemovableVendorDatabase(inspect(manifest.databaseId), manifest, engineId);
+    if (remove(manifest.databaseId).status !== 0) throw fail('docker rm failed');
+  } catch {
+    report(`Isolated E2E: 벤더 DB 컨테이너를 지우지 못했다: ${manifest.databaseId}`);
+  }
+}
+
+// 잠금 임계(연속 5회 실패)에 닿지 않아야 뒤따르는 인증 준비가 잠긴 계정을 만나지 않는다.
+const ADMIN_LOGIN_ATTEMPTS = 4;
+const ADMIN_LOGIN_RETRY_MS = 5000;
+const REPRESENTATIVE_ADMIN_GRANTS = Object.freeze(['NOTICE_EDIT', 'FAQ_EDIT']);
+
+/**
+ * 벤더 프로젝트에는 개발 시드가 없다. 시드가 주던 일반 계정과 관리자의 공지·FAQ 권한을 시험 대상 API 로 만든다.
+ * 쿠키를 싣지 않으면 CSRF 대상이 아니다. 관리자 비밀번호는 health 뒤의 ApplicationReady 에서 설정되므로 로그인은 횟수를 제한해 다시 시도한다.
+ * 통제 서버가 뜨기 전이라 쓰기마다 직접 소유를 증명한다.
+ */
+export async function provisionRepresentativeAccounts({ apiUrl, admin, user, verifyOwner, request = fetch, wait = pause }) {
+  assertLoopbackUrl(apiUrl, '/api/v1');
+  const call = async (method, target, { token, body } = {}) => {
+    const response = await request(`${apiUrl}${target}`, { method, redirect: 'error', signal: AbortSignal.timeout(30000),
+      headers: { ...(body ? { 'Content-Type': 'application/json' } : {}), ...(token ? { Authorization: `Bearer ${token}` } : {}) },
+      ...(body ? { body: JSON.stringify(body) } : {}) });
+    return { status: response.status, envelope: await response.json().catch(() => null) };
+  };
+  const expectStatus = (result, status, label) => {
+    if (result.status === status) return;
+    const code = /^[A-Z0-9_]{1,64}$/.test(result.envelope?.code ?? '') ? `, ${result.envelope.code}` : '';
+    throw fail(`${label} 실패(HTTP ${result.status}${code}).`);
+  };
+  let token;
+  for (let attempt = 1; attempt <= ADMIN_LOGIN_ATTEMPTS && !token; attempt++) {
+    verifyOwner();
+    const login = await call('POST', '/auth/login', { body: { userId: admin.id, password: admin.password } }).catch(() => null);
+    token = login?.status === 200 ? login.envelope?.data?.accessToken : undefined;
+    if (!token && attempt < ADMIN_LOGIN_ATTEMPTS) await wait(ADMIN_LOGIN_RETRY_MS);
+  }
+  if (!token) throw fail(`대표 묶음 픽스처: 관리자 로그인이 ${ADMIN_LOGIN_ATTEMPTS}회 모두 실패했다.`);
+  verifyOwner();
+  expectStatus(await call('POST', '/admin/system/users', { token, body: { userId: user.id, pswd: user.password, userNm: '일반사용자', role: 'USER' } }), 201, '대표 묶음 픽스처: 일반 계정 생성');
+  const groupUrl = '/admin/authorization/groups/ROLE_ADMIN';
+  const before = await call('GET', groupUrl, { token });
+  expectStatus(before, 200, '대표 묶음 픽스처: 관리자 그룹 조회');
+  const snapshot = before.envelope?.data;
+  if (snapshot?.complete !== true || !/^[a-f0-9]{64}$/.test(snapshot?.version ?? '') || !Array.isArray(snapshot?.grants)) throw fail('대표 묶음 픽스처: 관리자 그룹 응답이 전체 목록이 아니다.');
+  const holds = (grants, code) => grants.some(grant => grant.type === 'OPERATION' && grant.code === code);
+  const grants = [...snapshot.grants, ...REPRESENTATIVE_ADMIN_GRANTS.filter(code => !holds(snapshot.grants, code)).map(code => ({ type: 'OPERATION', code }))];
+  verifyOwner();
+  expectStatus(await call('PUT', `${groupUrl}/grants`, { token, body: { grants, version: snapshot.version, complete: true } }), 200, '대표 묶음 픽스처: 관리자 권한 변경');
+  const after = await call('GET', groupUrl, { token });
+  expectStatus(after, 200, '대표 묶음 픽스처: 관리자 그룹 재조회');
+  if (!REPRESENTATIVE_ADMIN_GRANTS.every(code => holds(after.envelope?.data?.grants ?? [], code))) throw fail('대표 묶음 픽스처: 관리자 권한이 반영되지 않았다.');
+}
+
+/** 대표 묶음은 원장이 계획이다. 발견 결과로 계획을 만들면 사라진 spec 이 계획에서도 빠져 붉어지지 않는다. */
+export function validateLocalRun(report, inventory, { representativeSpecs, cwd = frontend, platform = process.platform } = {}) {
+  const planned = new Set();
+  const visit = suites => { for (const suite of suites) {
+    for (const spec of suite.specs ?? []) if (spec.file.endsWith('.spec.ts')) planned.add(`e2e/${spec.file.replaceAll('\\', '/')}`);
+    if (suite.suites) visit(suite.suites);
+  } };
+  visit(inventory.suites);
+  return validatePlaywrightResult(report, representativeSpecs ?? [...planned], { cwd, inventory, platform,
+    ...(representativeSpecs ? { fullInventorySpecs: representativeSpecs } : {}) });
+}
+
+async function loadVendorRuntime(vendor, engineId) {
+  const module = await import('./project-composer-vendor-engine.mjs');
+  const { TEST_CREDENTIALS } = await import('../frontend/e2e/synthetic-test-credentials.mjs');
+  return { module, ...resolveVendorEngine(vendor, engineId, module.VENDOR_ENGINES), admin: TEST_CREDENTIALS.admin,
+    user: { id: TEST_CREDENTIALS.user.id, password: `E2e1!${randomBytes(16).toString('hex')}` } };
 }
 
 export async function main(arguments_ = process.argv.slice(2)) {
-  assertIsolatedRunnerSupportsProject(root);
+  const representative = parseRepresentativeArguments(arguments_);
+  const vendor = assertIsolatedRunnerSupportsProject(root, { representative: representative.enabled });
+  if (!vendor && representative.engineId) throw fail('PostgreSQL 실행은 엔진을 고르지 않는다.');
+  const bundle = representative.enabled ? readRepresentativeBundle(root) : null;
   const ciCompose = arguments_[0] === '--ci-compose';
   const coverage = arguments_[0] === '--coverage';
   const enterpriseTaskDiagnostic = arguments_[0] === '--enterprise-task-diagnostic';
   const fullInventory = ciCompose && arguments_[1] === '--full-inventory';
-  const options = ciCompose || coverage || enterpriseTaskDiagnostic ? arguments_.slice(fullInventory ? 2 : 1) : arguments_;
-  if (options.length && options[0] !== '--') throw fail('use [--ci-compose [--full-inventory] | --coverage | --enterprise-task-diagnostic] -- <Playwright test arguments>.');
-  const testArguments = options.slice(1);
+  const options = ciCompose || coverage || enterpriseTaskDiagnostic ? arguments_.slice(fullInventory ? 2 : 1) : bundle ? [] : arguments_;
+  if (options.length && options[0] !== '--') throw fail('use --representative [--vendor-engine=<engine>] or [--ci-compose [--full-inventory] | --coverage | --enterprise-task-diagnostic] -- <Playwright test arguments>.');
+  const testArguments = bundle ? representativeSelection(bundle.specs) : options.slice(1);
   const enterpriseTaskLab = isEnterpriseTaskLabSelection(testArguments);
   if (enterpriseTaskDiagnostic && !enterpriseTaskLab) throw fail('enterprise task diagnostic requires the complete serial task selection.');
   if (enterpriseTaskLab && (ciCompose || coverage)) throw fail('enterprise task lab requires its own fresh production frontend build.');
   assertNoDotEnv(root); assertNoDotEnv(frontend);
+  const vendorRuntime = vendor ? await loadVendorRuntime(vendor, representative.engineId) : null;
   const captureSource = enterpriseTaskLab ? (await import('./run-isolated-release-smoke.mjs')).captureReleaseSmokeSource : undefined;
   const sourceBeforeBuild = captureSource?.();
   const labInputSha256 = enterpriseTaskLab ? Object.fromEntries(LAB_INPUTS.map(file => [file, safeInputHash(file)])) : undefined;
@@ -163,6 +290,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
   const manifest = { version: 1, runId, token: randomBytes(32).toString('hex'), createdAt: Date.now(), databaseId: '' };
   const databaseName = `egov-e2e-${runId}`;
   let ownedDatabase = false;
+  let cleanUpVendorDatabase;
   let api;
   let web;
   let control;
@@ -250,38 +378,73 @@ export async function main(arguments_ = process.argv.slice(2)) {
       const jars = readdirSync(path.join(root, 'api-server/build/libs')).filter(name => name.endsWith('.jar') && !name.endsWith('-plain.jar'));
       if (jars.length !== 1) throw fail('exactly one bootJar is required.');
       if (enterpriseTaskLab) backendJarSha256 = safeInputHash(`api-server/build/libs/${jars[0]}`);
-      const password = randomBytes(24).toString('hex');
       assertActive();
-      // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
-      manifest.databaseId = execFileSync('docker', ['run', '-d', '--rm', '--name', databaseName,
-        '--label', 'egov.task=isolated-e2e', '--label', `egov.e2e.run=${runId}`,
-        '--tmpfs', '/var/lib/postgresql/data:rw', '-p', '127.0.0.1::5432',
-        '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_DB=authz_e2e', '-e', 'POSTGRES_USER=egov', 'postgres:17-alpine'],
-      { env: { ...clean, POSTGRES_PASSWORD: password }, encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
-      ownedDatabase = true;
-      verifyRuntime = () => assertOwnedDatabase(inspect(manifest.databaseId), manifest);
-      const databasePort = verifyRuntime();
-      const deadline = Date.now() + 60000;
-      while (true) {
-        assertActive();
-        try { docker(['exec', manifest.databaseId, 'pg_isready', '-U', 'egov', '-d', 'authz_e2e']); break; }
-        catch { if (Date.now() > deadline) throw fail('database readiness deadline exceeded.'); await pause(500); }
+      let databaseEnvironment;
+      if (vendorRuntime) {
+        const { module: engines, id: engineId, engine, admin } = vendorRuntime;
+        const { port } = engine.integration;
+        const runDocker = engines.dockerIn(clean);
+        let handle;
+        try {
+          handle = engines.launchVendorContainer(engineId, { publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,
+            extraLabels: ['--label', 'egov.task=isolated-e2e', '--label', `egov.e2e.run=${runId}`] });
+        } catch (error) { throw fail(error.message); }
+        manifest.databaseId = handle.containerId;
+        cleanUpVendorDatabase = () => removeVendorDatabase({ inspect, manifest, engineId, remove: id => runDocker(['rm', '-f', '-v', id]),
+          report: message => { console.error(message); process.exitCode = 1; } });
+        const expected = { engineId, image: engine.image, port,
+          environment: Object.entries(engine.environment(handle.password)).map(([key, value]) => `${key}=${value}`) };
+        verifyRuntime = () => assertOwnedVendorDatabase(inspect(manifest.databaseId), manifest, expected);
+        const databasePort = verifyRuntime();
+        const deadline = Date.now() + engine.maxWaitSeconds * 1000;
+        while (!engine.ready(handle.name, runDocker)) {
+          assertActive();
+          verifyRuntime();
+          if (Date.now() > deadline) throw fail(`${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
+          await pause(2000);
+        }
+        databaseEnvironment = vendorDatabaseEnvironment(engine, databasePort, handle.password, admin.password);
+      } else {
+        const password = randomBytes(24).toString('hex');
+        // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
+        manifest.databaseId = execFileSync('docker', ['run', '-d', '--rm', '--name', databaseName,
+          '--label', 'egov.task=isolated-e2e', '--label', `egov.e2e.run=${runId}`,
+          '--tmpfs', '/var/lib/postgresql/data:rw', '-p', '127.0.0.1::5432',
+          '-e', 'POSTGRES_PASSWORD', '-e', 'POSTGRES_DB=authz_e2e', '-e', 'POSTGRES_USER=egov', 'postgres:17-alpine'],
+        { env: { ...clean, POSTGRES_PASSWORD: password }, encoding: 'utf8', windowsHide: true, stdio: ['ignore', 'pipe', 'pipe'] }).trim();
+        ownedDatabase = true;
+        verifyRuntime = () => assertOwnedDatabase(inspect(manifest.databaseId), manifest);
+        const databasePort = verifyRuntime();
+        const deadline = Date.now() + 60000;
+        while (true) {
+          assertActive();
+          try { docker(['exec', manifest.databaseId, 'pg_isready', '-U', 'egov', '-d', 'authz_e2e']); break; }
+          catch { if (Date.now() > deadline) throw fail('database readiness deadline exceeded.'); await pause(500); }
+        }
+        databaseEnvironment = { DB_URL: `jdbc:postgresql://127.0.0.1:${databasePort}/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,
+          NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' };
       }
       apiPort = await freePort();
       jwtSecret = randomBytes(48).toString('hex');
       const apiEnvironment = { ...clean, SPRING_PROFILES_ACTIVE: 'e2e',
         ...createIsolatedMfaEnvironment(),
-        DB_URL: `jdbc:postgresql://127.0.0.1:${databasePort}/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,
+        ...databaseEnvironment,
         SERVER_ADDRESS: '127.0.0.1', SERVER_PORT: String(apiPort), JWT_SECRET: jwtSecret,
         CORS_ALLOWED_ORIGINS: webUrl,
         JWT_ACCESS_TOKEN_VALIDITY_MS: '21600000', ALGORITHM_KEY: randomBytes(24).toString('hex'),
-        NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE',
         FILE_UPLOAD_PATH: path.join(output, 'uploads'), NURI_LOG_RETENTION_ENABLED: 'false', NURI_ATTACHMENT_INTEGRITY_ENABLED: 'false' };
       api = launch('backend', java, ['-jar', path.join(root, 'api-server/build/libs', jars[0]),
         '--spring.config.location=classpath:/'], output, apiEnvironment);
     }
     const apiUrl = `http://127.0.0.1:${apiPort}/api/v1`;
-    await waitReady(`http://127.0.0.1:${apiPort}/actuator/health`, api);
+    // 벤더 기준선은 앱 기동 때 Flyway 로 적용되므로 엔진 대기 상한을 그대로 쓴다.
+    await waitReady(`http://127.0.0.1:${apiPort}/actuator/health`, api, vendorRuntime ? vendorRuntime.engine.maxWaitSeconds * 1000 : undefined);
+    if (vendorRuntime) {
+      await provisionRepresentativeAccounts({ apiUrl, admin: vendorRuntime.admin, user: vendorRuntime.user,
+        verifyOwner: () => { assertActive(); verifyRuntime(); } });
+    }
+    // Next 빌드와 서버는 이 값을 받지 않는다.
+    const testAccountEnvironment = vendorRuntime ? { E2E_TEST_USER_PASSWORD: vendorRuntime.user.password } : {};
     const environment = { ...clean, NODE_ENV: 'production', NODE_OPTIONS: '--max-old-space-size=8192',
       NEXT_PUBLIC_API_URL: apiUrl, BACKEND_API_URL: `${apiUrl}/`, BACKEND_ACTUATOR_URL: `http://127.0.0.1:${apiPort}/actuator`,
       NEXT_PUBLIC_WEB_URL: webUrl, JWT_SECRET: jwtSecret, NEXT_PUBLIC_APP_ENV: 'test', TRUSTED_EDGE_PROXY: '',
@@ -327,25 +490,19 @@ export async function main(arguments_ = process.argv.slice(2)) {
     const reportPath = ciCompose ? '/tmp/e2e-results.json' : path.join(output, 'results.json');
     const selection = testArguments.filter((arg, index, args) => !arg.startsWith('--reporter=') && arg !== '--reporter' && args[index - 1] !== '--reporter');
     await run('discovery', process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...discoveryArguments(selection, fullInventory)], frontend,
-      { ...environment, PLAYWRIGHT_JSON_OUTPUT_FILE: inventoryPath });
+      { ...environment, ...testAccountEnvironment, PLAYWRIGHT_JSON_OUTPUT_FILE: inventoryPath });
     let executionFailure;
     try {
       await run('playwright', process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...selection,
         `--reporter=${ciCompose ? 'blob,line,json' : 'line,json'}`], frontend,
-      { ...environment, PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath });
+      { ...environment, ...testAccountEnvironment, PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath });
     } catch (error) { executionFailure = error; }
     assertLabInputsUnchanged();
     // CI invokes the same result contract explicitly in its required step.
     if (!ciCompose) {
       const inventory = JSON.parse(readFileSync(inventoryPath, 'utf8'));
       const report = JSON.parse(readFileSync(reportPath, 'utf8'));
-      const planned = new Set();
-      const visit = suites => { for (const suite of suites) {
-        for (const spec of suite.specs ?? []) if (spec.file.endsWith('.spec.ts')) planned.add(`e2e/${spec.file.replaceAll('\\', '/')}`);
-        if (suite.suites) visit(suite.suites);
-      } };
-      visit(inventory.suites);
-      const result = validatePlaywrightResult(report, [...planned], { cwd: frontend, inventory, platform: process.platform });
+      const result = validateLocalRun(report, inventory, { representativeSpecs: bundle?.specs });
       console.log(`E2E result: ${result.summary?.expected ?? 0} expected, ${result.summary?.skipped ?? 0} platform skips, ${result.summary?.flaky ?? 0} flaky.`);
       if (result.errors.length) throw fail(`result contract failed: ${result.errors.join('; ')}`);
     }
@@ -357,7 +514,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
     if (control) await new Promise(resolve => control.close(resolve));
     await Promise.all([...children].map(stopChild));
     if (abortCleanup) await abortCleanup;
-    if (ownedDatabase) { assertOwnedDatabase(inspect(manifest.databaseId), manifest); docker(['stop', manifest.databaseId]); }
+    if (cleanUpVendorDatabase) cleanUpVendorDatabase();
+    else if (ownedDatabase) { assertOwnedDatabase(inspect(manifest.databaseId), manifest); docker(['stop', manifest.databaseId]); }
     process.removeListener('SIGINT', abort); process.removeListener('SIGTERM', abort);
   }
 }

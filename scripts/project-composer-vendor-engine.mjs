@@ -15,6 +15,8 @@ const SCHEMA = 'vendorcheck';
 const MEMORY_HINT_BYTES = 2 * 1024 ** 3;
 
 const docker = (args, options = {}) => spawnSync('docker', args, { encoding: 'utf8', maxBuffer: 1 << 29, ...options });
+/** 호출자가 판정한 데몬과 같은 데몬을 보도록 환경을 고정한 docker 실행기. */
+export const dockerIn = environment => (args, options = {}) => docker(args, { env: environment, ...options });
 const sleep = ms => Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, ms);
 const fail = (code, message) => { const error = new Error(message); error.code = code; throw error; };
 
@@ -51,17 +53,17 @@ export const VENDOR_ENGINES = Object.freeze({
   oracle: {
     image: 'gvenzl/oracle-free:23-slim-faststart', maxWaitSeconds: 300, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ORACLE_PASSWORD: password, APP_USER: SCHEMA, APP_USER_PASSWORD: password }),
-    ready: name => /DATABASE IS READY TO USE/.test(logs(name)),
+    ready: (name, run = docker) => /DATABASE IS READY TO USE/.test(logs(name, run)),
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$APP_USER_PASSWORD"@//localhost/FREEPDB1 @${file}`,
     batch: oracleBatch,
     integration: oracleIntegration('FREEPDB1'),
   },
   oracle19: {
-    image: 'fugeritorg/oracle-19.3.0-ee:2025.0', maxWaitSeconds: 1500,
+    image: 'fugeritorg/oracle-19.3.0-ee:2025.0', maxWaitSeconds: 1500, vendor: 'oracle',
     environment: password => ({ ORACLE_PWD: password }),
-    ready: name => {
-      if (!/DATABASE IS READY TO USE/.test(logs(name))) return false;
-      const result = docker(['exec', name, 'sh', '-c', `printf 'CREATE USER ${SCHEMA} IDENTIFIED BY "%s" QUOTA UNLIMITED ON USERS;\\nGRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE TRIGGER TO ${SCHEMA};\\nEXIT\\n' "$ORACLE_PWD" | sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba`]);
+    ready: (name, run = docker) => {
+      if (!/DATABASE IS READY TO USE/.test(logs(name, run))) return false;
+      const result = run(['exec', name, 'sh', '-c', `printf 'CREATE USER ${SCHEMA} IDENTIFIED BY "%s" QUOTA UNLIMITED ON USERS;\\nGRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE TRIGGER TO ${SCHEMA};\\nEXIT\\n' "$ORACLE_PWD" | sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba`]);
       return /Grant succeeded/.test(`${result.stdout}${result.stderr}`);
     },
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$ORACLE_PWD"@//localhost/ORCLPDB1 @${file}`,
@@ -72,35 +74,35 @@ export const VENDOR_ENGINES = Object.freeze({
   mysql: {
     image: 'mysql:8.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_bin', '--log-bin-trust-function-creators=1'],
     environment: password => ({ MYSQL_ROOT_PASSWORD: password, MYSQL_DATABASE: SCHEMA }),
-    ready: name => docker(['exec', name, 'sh', '-c', `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot -e "select 1" ${SCHEMA}`]).status === 0,
+    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot -e "select 1" ${SCHEMA}`]).status === 0,
     command: file => `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot --force -N -B --default-character-set=utf8mb4 ${SCHEMA} < ${file}`,
     batch: mysqlBatch,
   },
   mariadb: {
     image: 'mariadb:11.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_nopad_bin'],
     environment: password => ({ MARIADB_ROOT_PASSWORD: password, MARIADB_DATABASE: SCHEMA }),
-    ready: name => docker(['exec', name, 'sh', '-c', `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot -e "select 1" ${SCHEMA}`]).status === 0,
+    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot -e "select 1" ${SCHEMA}`]).status === 0,
     command: file => `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot --force -N -B --default-character-set=utf8mb4 ${SCHEMA} < ${file}`,
     batch: mysqlBatch,
   },
   mssql: {
     image: 'mcr.microsoft.com/mssql/server:2022-latest', maxWaitSeconds: 180, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer' }),
-    ready: name => docker(['exec', name, 'sh', '-c', `/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF DB_ID('${SCHEMA}') IS NULL CREATE DATABASE ${SCHEMA}; ALTER DATABASE ${SCHEMA} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"`]).status === 0,
+    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF DB_ID('${SCHEMA}') IS NULL CREATE DATABASE ${SCHEMA}; ALTER DATABASE ${SCHEMA} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"`]).status === 0,
     command: file => `/opt/mssql-tools18/bin/sqlcmd -C -I -f 65001 -h -1 -W -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d ${SCHEMA} -i ${file}`,
     batch: { errors: /^Msg \d+, Level (1[1-9]|2\d)/, fatal: /^(Sqlcmd: Error|Msg \d+, Level 2\d)/, finish: `PRINT '${COMPLETED}'\nGO`, wrap: body => `SET NOCOUNT ON\nGO\n${body}\n`, mark: (index, statement) => `PRINT '@@${index}'\nGO\n${statement.sql}\nGO` },
   },
   cubrid: {
     image: 'cubrid/cubrid:latest', maxWaitSeconds: 120, user: 'cubrid',
     environment: () => ({ CUBRID_DB: SCHEMA, CUBRID_LOCALE: 'ko_KR.utf8', CUBRID_VOLUME_SIZE: '512M' }),
-    ready: name => docker(['exec', '-u', 'cubrid', name, 'sh', '-c', `csql -u dba -c "select 1 from db_root" ${SCHEMA}@localhost`]).status === 0,
+    ready: (name, run = docker) => run(['exec', '-u', 'cubrid', name, 'sh', '-c', `csql -u dba -c "select 1 from db_root" ${SCHEMA}@localhost`]).status === 0,
     command: file => `csql -u dba -e -l -i ${file} ${SCHEMA}@localhost`,
     batch: { errors: /^(ERROR:|Execute:.*error)/i, fatal: /(Failed to connect|Server .* is not running|connection (has been )?(lost|closed|aborted))/i, finish: `SELECT '${COMPLETED}' AS m FROM db_root;`, wrap: body => `${body}\nCOMMIT;\n`, mark: (index, statement) => `SELECT '@@${index}' AS m FROM db_root;\n${statement.sql};` },
   },
 });
 
-function logs(name) {
-  const result = docker(['logs', name]);
+function logs(name, run = docker) {
+  const result = run(['logs', name]);
   return `${result.stdout}${result.stderr}`;
 }
 
@@ -113,7 +115,11 @@ export function vendorContainerLabels(engineId, token = process.env.COMPOSER_CON
   return ['--label', `${VENDOR_CONTAINER_LABEL}=${engineId}`, ...(token ? ['--label', `${COMPOSER_OWNER_LABEL}=${token}`] : [])];
 }
 
-export function startVendorEngine(engineId, { publishPort, runDocker = docker } = {}) {
+/**
+ * 컨테이너만 띄운다. 준비 대기는 호출자가 정한다. 기다리는 동안 신호를 처리해야 하는 격리 E2E 실행기가 따로 기다린다.
+ * 환경은 `baseEnvironment` 만 물려주고, 표식은 `extraLabels` 로 더한다.
+ */
+export function launchVendorContainer(engineId, { publishPort, runDocker = docker, baseEnvironment = process.env, extraLabels = [], requireContainerId = false } = {}) {
   const engine = VENDOR_ENGINES[engineId];
   if (!engine) fail('VENDOR_ENGINE_NOT_READY', `모르는 엔진: ${engineId}`);
   const name = `egov-vendor-${engineId}-${randomBytes(4).toString('hex')}`;
@@ -121,26 +127,39 @@ export function startVendorEngine(engineId, { publishPort, runDocker = docker } 
   // 값은 자식 프로세스 환경으로 넘긴다. 인자에 두면 호스트의 프로세스 목록에 보인다.
   const variables = engine.environment(password);
   const environment = Object.keys(variables).flatMap(key => ['--env', key]);
-  const labels = vendorContainerLabels(engineId);
+  const labels = [...vendorContainerLabels(engineId, baseEnvironment.COMPOSER_CONTAINER_TOKEN ?? ''), ...extraLabels];
   let dockerMissing = false;
   try {
     // docker run -d 는 시작에 실패해도 만든 컨테이너와 익명 볼륨을 남긴다. 그래서 여기서부터 정리 범위다.
     const started = runDocker(['run', '-d', '--name', name, ...labels, ...environment,
       ...(publishPort ? ['-p', `127.0.0.1::${publishPort}`] : []), engine.image, ...(engine.serverArgs ?? [])],
-    { env: { ...process.env, ...variables } });
+    { env: { ...baseEnvironment, ...variables } });
     // 실행 파일이 없으면 만들어진 컨테이너도 없다. 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 그대로 정리한다.
     dockerMissing = started.error?.code === 'ENOENT';
     // docker 를 실행하지 못하면 stderr 가 없다. 그 경우에도 코드가 남아야 부모가 원인을 안다.
     if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${String(started.stderr ?? started.error?.message).slice(0, 300)}`);
+    const containerId = String(started.stdout ?? '').trim().match(/^[a-f0-9]{64}$/m)?.[0] ?? null;
+    if (requireContainerId && !containerId) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너의 ID 를 받지 못했다.`);
+    return { id: engineId, name, engine, password, containerId };
+  } catch (failure) {
+    // 호출자는 핸들을 받기 전이라 지울 수 없다.
+    if (!dockerMissing) stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
+    throw failure;
+  }
+}
+
+export function startVendorEngine(engineId, { publishPort, runDocker = docker } = {}) {
+  const handle = launchVendorContainer(engineId, { publishPort, runDocker });
+  const { engine, name } = handle;
+  try {
     const deadline = Date.now() + engine.maxWaitSeconds * 1000;
     for (;;) {
-      if (engine.ready(name)) return { id: engineId, name, engine, password, port: publishPort ? publishedPort(name, publishPort) : null };
+      if (engine.ready(name, runDocker)) return { ...handle, port: publishPort ? publishedPort(name, publishPort, runDocker) : null };
       if (Date.now() > deadline) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
       sleep(2000);
     }
   } catch (failure) {
-    // 호출자는 핸들을 받기 전이라 지울 수 없다.
-    if (!dockerMissing) stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
+    stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
     throw failure;
   }
 }
@@ -166,8 +185,8 @@ export function stopVendorEngineReporting(handle, failure = null, remove = stopV
   fail('VENDOR_CONTAINER_LEFT', message);
 }
 
-function publishedPort(name, port) {
-  const mapped = docker(['port', name, String(port)]).stdout.match(/:(\d+)\s*$/m)?.[1];
+function publishedPort(name, port, run = docker) {
+  const mapped = run(['port', name, String(port)]).stdout.match(/:(\d+)\s*$/m)?.[1];
   if (!mapped) fail('VENDOR_ENGINE_NOT_READY', `${name} 의 ${port} 포트를 찾지 못했다.`);
   return Number(mapped);
 }

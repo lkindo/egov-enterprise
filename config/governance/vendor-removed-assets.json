@@ -58,8 +58,8 @@
     },
     {
       "file": "scripts/e2e-isolation.test.mjs",
-      "reason": "격리 실행기의 소유 판정을 본다. 벤더 프로젝트의 실행기는 그 판정 전에 멈춘다.",
-      "coveredBy": "scripts/run-isolated-e2e.mjs 의 assertIsolatedRunnerSupportsProject"
+      "reason": "PostgreSQL·compose 소유 판정을 보고 뺀 릴리스 스모크를 import 한다. 벤더 프로젝트의 실행기는 대표 묶음만 돌고 벤더 소유 판정을 쓴다.",
+      "coveredBy": "scripts/project-composer-vendor.test.mjs 의 벤더 소유 판정 시험(assertOwnedVendorDatabase, assertRemovableVendorDatabase)"
     },
     {
       "file": "scripts/migration-product-contract.test.mjs",

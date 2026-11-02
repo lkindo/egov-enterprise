@@ -306,7 +306,7 @@ Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 
 
 벤더 프로젝트에서 제거하고 lock 에 남기는 것: `migration-tool`(target 이 PostgreSQL 전용, `nuri/migration/postgres/*`), 백업·복원 도구, 릴리스 스모크, 화면 기준선 실행기, ZDM 린터, 엔티티·스키마 정적 린터(적용된 카탈로그를 보는 시험으로 대체). 목록은 `config/governance/vendor-removed-assets.json` 이고 게이트마다 사유와 대체 시험 유무를 적는다. 게이트 제거는 `vendor-postgresql-assets` 규칙으로 승인한다. 단일모듈 어댑터도 이관 소스 세트를 뺀다.
 
-격리 E2E 실행기는 빼지 않는다. DB 기동 몇 줄만 PostgreSQL 에 묶여 있고 `frontend/e2e` 에는 PostgreSQL 코드가 없어, §7 의 대표 E2E 는 이 실행기를 벤더 대응으로 고쳐 충족한다. 그때까지 벤더 프로젝트에서는 시작할 때 멈춘다. 운영 문서(`docs/`)도 원본 기준으로 남기고 생성물 README 에 범위를 적는다.
+격리 E2E 실행기는 빼지 않는다. DB 기동 몇 줄만 PostgreSQL 에 묶여 있고 `frontend/e2e` 에는 PostgreSQL 코드가 없어, §7 의 대표 E2E 는 이 실행기를 벤더 대응으로 고쳐 충족한다. 벤더 프로젝트는 `node scripts/run-isolated-e2e.mjs --representative [--vendor-engine=<엔진>]` 만 연다. 시험 11개는 [벤더 시험 원장](../../config/governance/vendor-test-ledger.json)의 `representativeE2e` 가 고정하고, 추가 인자를 받지 않으며, 원장 목록을 계획과 전체 발견 대조에 함께 넘겨 파일이 사라지면 붉다. 정리·클렌징·전체 메뉴 계약이 전체 기능을 전제하므로 원장의 기능을 모두 고른 멀티모듈 생성물에서만 시작한다. PostgreSQL 대조 실행도 같은 인자로 한다. 벤더 DB 는 실행 표식을 단 일회용 컨테이너이고, 소유 증명과 정리는 판정을 나눈다(정리는 죽은 컨테이너와 익명 볼륨도 지운다). 개발 시드가 없으므로 관리자 비밀번호는 `ADMIN_INITIAL_PASSWORD`, 일반 계정과 관리자의 공지·FAQ 권한은 실행기가 쓰기 직전마다 소유를 증명하며 API 로 만든다. 운영 문서(`docs/`)도 원본 기준으로 남기고 생성물 README 에 범위를 적는다.
 
 생성물의 `docker-compose*.yml`, `.env.example`, `application*.yml`, `README`, `REUSABLE_*.md` 는 벤더 값으로 투영한다. compose 이미지는 개발용이며 운영 라이선스는 기관 몫이라고 적는다.
 
@@ -545,7 +545,7 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 이 시험의 게이트(`GATESET-VENDOR-CONFORMANCE`)는 아직 CI 잡에 잇지 않았다. 지금 실행 경로는 생성물의 `npm run verify` 와 `verify:vendor-schema` 뿐이라 등록을 `local-vendor` tier 와 `ciPending` 으로 둔다. `reusable-vendor` 잡을 이을 때 `ci` tier 와 required context 로 바꾸며, `ciPending` 이 남아 있으면 벤더를 `certified` 로 올릴 수 없다.
 
-남은 일: 격리 E2E 실행기의 벤더 대응과 대표 E2E, 19c 기본 접속값.
+남은 일: 대표 E2E 실측(실행기는 §8 대로 고쳤고 부정 시험만 돌렸다. demo 생성과 PostgreSQL 대조, Oracle 23·19c 실행은 아직이다), 19c 기본 접속값.
 
 ### 공수 재판단(ADR-0047 재검토 조건)
 

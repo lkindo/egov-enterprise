@@ -58,6 +58,10 @@ npm run test:e2e:isolated
 node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/online-polls.spec.ts
 # Istanbul 계측이 필요한 별도 검증 (전체 빌드를 다시 수행한다).
 pnpm -C frontend run test:e2e:coverage
+# 다중 DB 대표 묶음. 시험은 벤더 시험 원장이 고정한다. 생성물에서는 원장의 기능을 모두 고른 멀티모듈 구성만 시작한다.
+node scripts/run-isolated-e2e.mjs --representative
+# 같은 벤더의 다른 버전을 고를 때(벤더 프로젝트 전용).
+node scripts/run-isolated-e2e.mjs --representative --vendor-engine=oracle19
 ```
 
 ### 3. 실행 설정 (`playwright.config.ts`)

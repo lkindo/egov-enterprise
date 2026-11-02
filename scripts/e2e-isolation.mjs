@@ -155,6 +155,33 @@ export function assertOwnedDatabase(container, manifest) {
   return bindings[0].HostPort;
 }
 
+/** 정리용 판정. 죽은 컨테이너와 익명 볼륨도 지워야 하므로 기동 상태를 보지 않고 이 실행이 만든 것인지만 본다. */
+export function assertRemovableVendorDatabase(container, manifest, engineId) {
+  const labels = container?.Config?.Labels ?? {};
+  if (!RUN_ID.test(manifest?.runId ?? '') || !/^[a-f0-9]{64}$/.test(manifest?.databaseId ?? '') || container?.Id !== manifest.databaseId
+      || labels['egov.task'] !== 'isolated-e2e' || labels['egov.e2e.run'] !== manifest.runId
+      || labels['egov.composer.vendor'] !== engineId) throw failure();
+}
+
+/**
+ * 증명용 판정. 벤더 이미지는 tmpfs 로 올리지 않아 데이터가 쓰기 레이어와 익명 볼륨에 있다.
+ * 이름 있는 볼륨과 바인드를 거부해 다른 실행의 데이터를 이어 쓰지 못하게 하고, 이 실행만 아는 비밀번호까지 환경에서 대조한다.
+ */
+export function assertOwnedVendorDatabase(container, manifest, expected) {
+  assertRemovableVendorDatabase(container, manifest, expected.engineId);
+  const environment = container?.Config?.Env ?? [];
+  const bindings = container?.NetworkSettings?.Ports?.[`${expected.port}/tcp`];
+  const createdAt = Date.parse(container?.Created);
+  if (!container?.State?.Running || !Number.isFinite(createdAt) || createdAt < manifest.createdAt - 2000
+      || container?.Config?.Image !== expected.image
+      || !expected.environment?.length || expected.environment.some(entry => !environment.includes(entry))
+      || !Array.isArray(bindings) || bindings.length !== 1 || bindings[0].HostIp !== '127.0.0.1'
+      || !/^\d+$/.test(bindings[0].HostPort)
+      || (container.HostConfig?.Binds ?? []).length !== 0
+      || (container.Mounts ?? []).some(mount => mount.Type !== 'tmpfs' && !(mount.Type === 'volume' && /^[a-f0-9]{64}$/.test(mount.Name ?? '')))) throw failure();
+  return bindings[0].HostPort;
+}
+
 export function assertOwnedComposeRuntime(database, api, volume, network, environment, now = Date.now()) {
   const project = assertCiProject(environment);
   for (const [container, service] of [[database, 'db'], [api, 'api']]) {
