@@ -900,13 +900,20 @@ const ORACLE_PORT = `${PERSISTENCE}/OracleSqlDialect.java`;
 const ENTITY_FILE = 'business-app/src/main/java/nuri/business/domain/demo/DemoEntity.java';
 const vendorLedger = () => JSON.parse(fs.readFileSync(path.join(repoRoot, 'config/db-vendors.json'), 'utf8'));
 const vendorFields = ({ reusableVendor, reusableVendorMatrix }) => ({ reusableVendor, reusableVendorMatrix });
+// 원장 값을 순회하면 원장에서 지운 항목은 검사 대상에서도 사라진다. 그래서 켜야 하는 경로를 원장과 따로 적는다.
+const VENDOR_JOB_SELECTORS = ['gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties',
+  'scripts/verify-project-composer.mjs', 'scripts/verify-reusable-artifact.mjs',
+  'scripts/generate-reusable-base-source.mjs', 'scripts/reusable-governance-integrity.mjs', 'scripts/reusable-governance-projection.mjs', 'scripts/reusable-source-gates.mjs', 'scripts/reusable-single-module.mjs',
+  'scripts/project-composer-generate.mjs', 'scripts/project-composer-preflight.mjs', 'scripts/project-composer-deep.mjs', 'scripts/project-composer-job-failure.mjs',
+  'docker-compose.yml', 'docker-compose.prod.yml', 'scripts/deploy.sh', '.env.example', 'package.json',
+  'config/db-vendors.json', 'scripts/vendor-evidence-inputs.mjs', 'scripts/ci-change-scope.mjs', 'scripts/composition-profiles.mjs'];
 
 test('every certification input and CI-only path selects the vendor job on the representative layout', () => {
   const ledger = vendorLedger();
   const inputs = vendorEvidenceInputs(repoRoot, ledger, 'oracle');
   // 2026-11-03 실측 449개. 목록이 무너지면 이 시험이 모두 초록이 된다.
   assert.ok(inputs.length >= 300, `input population collapsed: ${inputs.length}`);
-  for (const input of [...inputs, ...['gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', ...ledger.evidenceInputs.ciOnly.filter(file => !file.endsWith('/'))]]) {
+  for (const input of [...inputs, ...VENDOR_JOB_SELECTORS, ...ledger.evidenceInputs.ciOnly.filter(file => !file.endsWith('/'))]) {
     assert.deepEqual(vendorFields(classifyChangedFiles([input], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, input);
   }
 });
@@ -1003,11 +1010,58 @@ test('removing or adding a vendor marker selects the job although the head alone
   assert.equal(change('@Entity class DemoEntity {}', null), true, 'new or marked head');
   assert.equal(change('class DemoEntity { JdbcTemplate jdbc; }', 'class DemoEntity {}'), true, 'native SQL call site added');
   assert.equal(change('class DemoEntity {}', 'class DemoEntity {}'), false);
-  // 실제 비교 기준 읽기를 쓴다. 이 파일은 머리에 표지가 있으므로 머리를 표지 없는 값으로 바꾸면 기준에서만 보인다.
+  // 실제 비교 기준 읽기를 쓴다. 입력 목록을 비워 이 파일이 목록으로 켜지지 않게 하고, 머리를 표지 없는 값으로 바꾸면 기준에서만 표지가 보인다.
   const entity = vendorEvidenceInputs(repoRoot, vendorLedger(), 'oracle').find(file => file.startsWith('business-core/') && file.endsWith('.java') && /@Entity\b/.test(fs.readFileSync(path.join(repoRoot, file), 'utf8')));
-  assert.equal(classifyChangedFiles([entity], { ...PR, readSource: () => 'class Plain {}', readBaseSource: baseSourceReader('HEAD', 'HEAD') }).reusableVendor, true, entity);
+  const notListed = { ...PR, readSource: () => 'class Plain {}', vendorPlan: vendorCiPlan(repoRoot, { inputsOf: () => [] }) };
+  assert.equal(classifyChangedFiles([entity], { ...notListed, readBaseSource: () => null }).reusableVendor, false, 'only the base shows the marker');
+  assert.equal(classifyChangedFiles([entity], { ...notListed, readBaseSource: baseSourceReader('HEAD', 'HEAD') }).reusableVendor, true, entity);
   assert.equal(baseSourceReader('HEAD', 'HEAD')('scripts/no-such-file-in-history.mjs'), null);
   assert.equal(baseSourceReader('', 'HEAD')(entity), null);
+});
+
+test('the command reads the comparison base itself, so a change that only removes a marker selects the job', (t) => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-vendor-base-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const write = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), text);
+  };
+  const git = (...args) => {
+    const result = spawnSync('git', ['-c', 'user.name=contract', '-c', 'user.email=contract@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs', 'vendor-evidence-inputs.mjs']) {
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+    fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
+  }
+  fs.cpSync(path.join(repoRoot, 'config', 'modules'), path.join(root, 'config', 'modules'), { recursive: true });
+  // 입력 계산이 도는 가장 작은 원장이다. 계산이 실패해도 켜지므로 대표 레이아웃 하나인지까지 본다.
+  write('config/db-vendors.json', JSON.stringify({ evidenceInputs: { paths: [] }, vendors: [{ id: 'oracle', ci: true, evidenceInputs: ['scripts/oracle-adapter.mjs'] }] }));
+  write('config/governance/vendor-sql-ledger.json', JSON.stringify({ locations: [] }));
+  write('config/governance/vendor-test-ledger.json', JSON.stringify({ tests: [], representativeE2e: { layout: 'multi-module', specs: [] } }));
+  write('config/governance/vendor-removed-assets.json', JSON.stringify({ assets: [] }));
+  write('scripts/generate-reusable-base-db.mjs', '// 모델 명령 자리\n');
+  write('scripts/oracle-adapter.mjs', '// 어댑터 자리\n');
+  const marked = 'business-app/src/main/java/nuri/business/domain/demo/MarkedEntity.java';
+  const plain = 'business-app/src/main/java/nuri/business/service/demo/PlainService.java';
+  write(marked, '@Entity class MarkedEntity {}\n');
+  write(plain, 'class PlainService {}\n');
+  git('init', '-q');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'base');
+  const base = git('rev-parse', 'HEAD');
+  const classify = () => {
+    const result = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', '--base', base, '--head', 'HEAD', '--event', 'pull_request'], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout);
+  };
+  write(plain, 'class PlainService { int value; }\n');
+  git('commit', '-q', '-am', 'edit without a marker');
+  assert.deepEqual(vendorFields(classify()), { reusableVendor: false, reusableVendorMatrix: ORACLE_MULTI });
+  write(marked, 'class MarkedEntity {}\n');
+  git('commit', '-q', '-am', 'remove the marker');
+  assert.deepEqual(vendorFields(classify()), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, 'the base shows the marker the head lost');
 });
 
 test('a tree whose inputs cannot be computed fails closed to every layout, and a generator tree without the ledger stops', (t) => {

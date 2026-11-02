@@ -43,7 +43,7 @@ function workflowStep(jobBlock, name) {
 
 function assertImpactClassification(content) {
   const job = parseWorkflowJobs(content).get('change-scope') ?? '';
-  const step = workflowStep(job, 'Classify changed paths (unknown means full pipeline)');
+  const step = workflowStep(job, 'Classify changed paths (unknown means full pipeline except the vendor job)');
   assert.match(step, /BASE="\$PUSH_BASE_SHA"/);
   assert.match(step, /HEAD="\$GITHUB_SHA"/);
   assert.match(step, /if \[ -z "\$BASE" \]/);

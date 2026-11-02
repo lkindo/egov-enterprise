@@ -37,7 +37,7 @@ push/PR / workflow_dispatch
         │   └─ migration-scope (세 결과 집계·JaCoCo 병합·bootJar·85/70 커버리지)
         ├─ reusable-base (frontend-scope 완료 뒤 영향받는 시작 구성 profile 동시 생성·기술 검증 — PR 은 profile마다 한 layout(survey·approval 은 PR 에서 뺀다), 그 밖에는 두 layout)
         ├─ reusable-custom (분류 직후 core 영향 시 custom composition 두 layout 검증)
-        ├─ reusable-vendor (분류 직후, 인증 입력이 바뀐 변경만 PostgreSQL 외 DB 로 대표 구성 검증 — PR 은 한 layout, 입력 삭제·main·수동은 두 layout)
+        ├─ reusable-vendor (분류 직후, 인증 입력이나 ciOnly 경로가 바뀐 변경만 PostgreSQL 외 DB 로 대표 구성 검증 — PR 은 한 layout, 입력 삭제·입력이 바뀐 main·수동은 두 layout)
         ├─ backend-build (온라인·스키마·이관·재사용 profile·custom·벤더 결과를 집계)
         ├─ frontend-scope (codegen·typecheck·lint·audit·Next build·bundle budget)
         ├─ frontend-coverage-scope (frontend-scope와 병렬로 전체 Vitest coverage)
@@ -119,7 +119,7 @@ commit, 각 leaf의 XML census, 정확히 세 개의 비어 있지 않은 `.exec
 BRANCH 70% 게이트를 병합 데이터로 실행한다. 프로필에 없는 새 테스트나 stale 테스트, leaf 누락, 빈 실행 데이터는
 모두 실패한다. 로컬 `verify:migration`과 주간 workflow는 환경변수가 없으므로 기존 전체 테스트 경로를 유지한다.
 
-PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
+PIT 분류는 production/test Java뿐 아니라 `src/testFixtures/**`, `src/main/resources/**`, `src/test/resources/**`를 포함한다. 온라인 4모듈의 의존 관계는 한 범위로 유지하며 개별 Java 파일별 시험 선택은 하지 않는다. 이관 전용 소스·리소스·build 변경은 이관 build/PIT를 선택하고 온라인 build/PIT·frontend·schema·E2E를 선택하지 않는다. 공용 Gradle 입력과 양쪽 ID 생성 의미 계약(`IdGenerationUtil`, `Constants`, `StandardIdGenerator`)은 두 모듈을 선택한다. 미지 입력·빈 비교는 전수이며(미지 경로가 켜지 않는 `reusable-vendor` 는 예외다) 루트 `db_columns.json`도 기존 전수 fallback을 유지한다. 정확한 경계는 [분류기](../../scripts/ci-change-scope.mjs)와 [회귀 계약](../../scripts/ci-change-scope.test.mjs)이 소유한다.
 
 생성기·도구 전용 경로(`config/modules/**`, `config/project-composer-menus.json`, `scripts/` 의 `project-composer*`·`reusable-*`·`generate-reusable-base-*`·`verify-reusable-*`·`verify-project-composer*`·`composer-modules*`·`domain-deletion-plan*`, `tools/project-composer/**`, Atlas 도구 `scripts/atlas-*`·`scripts/build-atlas.mjs` 와 operation 소비 원장 `config/governance/operation-consumer-census.json`, 로컬 이관 작업공간과 시안 `tools/migration-workspace/**`·`tools/migration-workspace-prototype/**`, 에이전트 하네스의 실행 전 가드 `scripts/agent-guard*`·스킬 안내 생성기 `scripts/agent-skill-adapters*`·훅 어댑터 `.claude/settings.json`·`.codex/hooks.json`·`.agents/hooks.json`)는 미분류 전수 대신 모든 시작 구성의 재사용 검증과 표에 적힌 축만 고른다(11단계 C11, DEC-OPS-297, Atlas 도구 3항목은 DEC-OPS-336, 이관 작업공간 두 경로는 DEC-OPS-383을 따르되 엔진 `engine.mjs`·`store.mjs`·`inputs.mjs` 3파일은 DEC-OPS-391에 따라 backend·E2E·이관·이관 PIT도 고른다. 나머지 작업공간·시안은 축 없이 늘 도는 운영 계약과 CodeQL에서 본다. 에이전트 하네스 다섯 경로는 DEC-OPS-387 — 가드·스킬 안내 생성기는 `scripts/` 를 읽는 하네스·생성기 시험 때문에 backend·schema·E2E 가 남고 이관·PIT 를 건너뛴다. 훅 어댑터는 읽는 시험이 늘 도는 운영 계약뿐이라 축이 없다(표 계약은 저장소 루트만 가리키는 상대 경로를 읽기로 세지 않고, `.claude/`·`.codex/`·`.agents/` 문자열은 읽기로 센다). 실행 기록 `scripts/verification-record.mjs` 는 `verify.mjs`·pre-push 의 실행 경로라 전수다). 축은 그 경로를 문자열로 가리키거나 디렉터리째 읽거나 실행하는 시험·조건부 CI 진입점이 도는 축이며, [표 계약](../../scripts/ci-change-scope-tool-paths.test.mjs)이 Java·프런트 시험 소스와 `ci.yml` 에서 다시 계산해 항목마다 정확히 같은지 본다. `scripts/` 는 하네스 두 개가 디렉터리째 읽어 backend 를, 기본 관리자 시드 스키마 검증과 생성기 화면 시험이 생성기를 실행해 schema·E2E 를 끄지 못한다 — 이 경로만 바꾼 변경이 건너뛰는 것은 이관·PIT·frontend 다. 생성기 화면(`tools/project-composer/**`)만 바꾼 변경은 재사용 검증과 E2E 축만 고른다. E2E 축은 생성기 화면 시험(`tools/project-composer/ui.test.mjs`, E2E 첫 샤드에서 돈다) 때문에 켜지지만, 켜지면 Playwright 전체 샤드가 돈다 — E2E 영향 선별이 이 경로를 화면 spec 에 잇지 못해 전수로 물러난다(DEC-OPS-301). 화면 시험만 가벼운 잡에서 돌려 E2E 축을 끄는 일은 후속이다. Atlas 도구 3항목만 바꾼 변경도 이관·PIT·frontend 를 건너뛰며, 남는 축은 항목마다 다르다. Atlas 도구 두 경로는 재사용 생성기의 Atlas 제거 규칙(`UPSTREAM_ATLAS`, [게이트 투영](../../scripts/reusable-source-gates.mjs))이 그 경로 이름을 적어, 생성기 화면 시험과 기본 관리자 시드 스키마 검증이 표 안 사슬로 읽고 인메모리 Atlas 렌더 계약(`governance-atlas-contract.test.ts`)이 직접 import 하므로 atlas·backend·E2E·schema 가 남는다(DEC-OPS-398). 소비 원장은 atlas·backend 가 남고 E2E·schema 는 꺼진다. Atlas 원천이 바뀌면 늘 도는 카탈로그·생성 계약([Atlas 가이드](governance-atlas-guide.md))과 `atlas` 축의 인메모리 렌더 계약이 정합성을 검증한다. 분류기 자신이 읽는 `scripts/composition-profiles.mjs` 와 표 밖 스크립트는 종전대로 전수다.
 
@@ -144,7 +144,7 @@ profile을 함께 실행한다. reusable source는 `!cancelled()`와 분류 성�
 frontend 실패·skip에서도 선택된 검증을 실행한다. `secret-scan`은 `always()`를 유지한다. 검사 모집단·
 required context·실패 판정은 바뀌지 않는다.
 
-PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 재사용 profile의 layout 수만 이벤트로 나뉜다(PR 한 layout, 그 밖 두 layout). 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
+PR과 **main/master push는 같은 영향 분류**를 적용한다. PR은 base/head, push는 이전/현재 SHA를 비교하며 수동 실행·비교 기준 부재·미지 또는 빈 변경은 전수로 돌아간다. 다만 미지 경로는 `reusable-vendor` 를 켜지 않는다. 재사용 profile의 layout 수만 이벤트로 나뉜다(PR 한 layout, 그 밖 두 layout). 따라서 문서 전용 fast path는 기본 브랜치에도 적용된다. 전수 로컬 `localGate`·`jacocoRootCoverageVerification`은 유지하며, 릴리스는 대상 커밋의 required 성공과 릴리스 고유 증거를 확인한다. 주간 취약점 감사·부하·DR 검증은 각각의 별도 워크플로우와 격리 환경에서 실행한다.
 
 [PR #699](https://github.com/lkindo/egov-enterprise/pull/699)의 [Linux run 35579358480](https://github.com/lkindo/egov-enterprise/actions/runs/35579358480)에서 E2E 본 테스트 135개와 VRT가 통과했다. 두 shard의 Playwright wall time은 135.458/155.931초, GitHub E2E step은 150/171초, job은 623/454초다. workflow 생성부터 `e2e-test` required 완료까지는 695초(11분 35초)로, [이전 전체 PR 35558688331](https://github.com/lkindo/egov-enterprise/actions/runs/35558688331)의 1,984초(33분 4초)보다 짧았다. 상류 잡 대기·runner 배정·준비를 포함한 두 실행의 관측 비교이며 본 테스트 자체나 전체 CI가 같은 비율로 단축됐다는 뜻은 아니다. 최종 커밋의 required 결과와 전체 소요시간 비교는 [PR #699 검증 기록](https://github.com/lkindo/egov-enterprise/pull/699)이 정본이다. [측정 근거와 한계](../02-architecture/testing-process-redesign.md#9-측정유지와-다음-판단)에 표적 PIT 검사와 전체 범위의 차이도 기록한다.
 
@@ -185,7 +185,7 @@ core가 선택되면 custom composition의 두 layout은 `reusable-custom`에서
 집계에서 통과하지 않는다. 원본 제품 회귀 테스트는 기존 실행 경로에 남는다.
 
 PostgreSQL 외 DB 는 `reusable-vendor` 가 본다. [원장](../../config/db-vendors.json)의 `ci: true` 벤더(지금 Oracle 23 Free)로 대표 구성을 생성해 전체 검증을 돌리고 `backend-build` 에 집계한다.
-고르는 기준은 인증 입력이다. 다른 벤더의 입력과 PostgreSQL 포트만 고친 변경은 고르지 않고, 입력을 지운 변경은 두 layout 전수다. 시간·슬롯의 근거와 경계는 [설계서 §10](../02-architecture/multi-database-composer-design.md#10-cid-14)이 소유하고, 러너 소요는 아직 어림이다.
+고르는 기준은 인증 입력과 원장의 `ciOnly` 경로다. 다른 벤더의 입력, PostgreSQL 포트, 미지 경로, 벤더 분기가 없는 공통 생성기 코드만 고친 변경은 고르지 않는다. 비교 범위가 없는 실행과 입력을 고친 main 은 두 layout 이고, PR 도 입력을 지우면 두 layout 전수다. 시간·슬롯의 근거와 경계는 [설계서 §10](../02-architecture/multi-database-composer-design.md#10-cid-14)이 소유하고, 러너 소요는 아직 어림이다.
 
 로컬 진입점은 `npm run base:verify -- --profile core`이며 [생성 가이드](reusable-base-guide.md)를 따른다.
 개발·CI driver의 lock에는 `localDevelopmentBuild`를 남기므로 기술 검증 성공만으로 공식 릴리스 자산이 되지 않는다.

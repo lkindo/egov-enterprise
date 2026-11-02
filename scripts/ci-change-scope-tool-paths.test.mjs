@@ -390,6 +390,13 @@ test('directory reads, joined literals and execution chains inside the table cou
 });
 
 const VENDOR_ENTRY = 'scripts/verify-project-composer.mjs';
+// 벤더 구성에서만 도는 분기의 이름들. 공통 경로는 PostgreSQL 잡이 봐도 이 분기는 Oracle 에서만 돈다. 이름을 보는 어림이라 전부를 보장하지 않는다(설계서 §10).
+const VENDOR_BRANCH = /\bdatabase\??\.vendor\b|\bverificationVendor\b|\bVENDOR_ASSET_RULE\b|\bvendor-postgresql-assets\b|\bVENDOR_ENGINES\b|\bprojectVendorSources\b|\bvendorProjectionErrors\b|\bvendorIntegrationTest\b/;
+// 표 계약의 도달 집합은 경로를 적기만 한 파일도 세므로, 표지가 있어도 잡이 부르지 않는 파일이 든다.
+const OFF_VENDOR_JOB_PATH = {
+  'scripts/project-composer-server.mjs': '생성기 화면 서버다. 잡은 엔진을 직접 부른다.',
+  'scripts/project-composer-vendor-evidence.mjs': '증거 기록 명령이다. 잡은 부르지 않는다.',
+};
 const vendorInputs = () => vendorEvidenceInputs(repoRoot, JSON.parse(readRepository('config/db-vendors.json')), 'oracle');
 
 /**
@@ -407,6 +414,9 @@ function vendorAxisMismatches({ files, read, inputs, selects }) {
     if (!running.has(file)) problems.push(`벤더 잡의 실행 경로가 ${file} 에 닿지 않는다`);
   }
   for (const input of inputs) if (!selects(input)) problems.push(`인증 입력이 벤더 잡을 켜지 않는다: ${input}`);
+  for (const file of running) {
+    if (/\.mjs$/.test(file) && !/\.test(?:-helpers)?\.mjs$/.test(file) && !Object.hasOwn(OFF_VENDOR_JOB_PATH, file) && VENDOR_BRANCH.test(read(file)) && !selects(file)) problems.push(`벤더 분기를 담은 생성기 코드가 벤더 잡을 켜지 않는다: ${file}`);
+  }
   return problems;
 }
 
@@ -424,7 +434,10 @@ test('the vendor job is bound to its output, reaches the vendor code it verifies
   assert.match(check(editedCi("outputs['reusable-vendor'] == 'true'", "outputs.backend == 'true'")).join('\n'), /reusable-vendor 잡이 reusableVendor 축의 출력으로/);
   assert.match(check(editedCi('run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor', 'run: echo --layout ${{ matrix.layout }} --vendor')).join('\n'), /reusable-vendor 잡이 reusableVendor 축의 출력으로/);
   const missing = 'scripts/project-composer-vendor-oracle.mjs';
-  assert.deepEqual(vendorAxisMismatches({ files: repositoryFiles, read: readRepository, inputs: [missing], selects: () => false }), [`인증 입력이 벤더 잡을 켜지 않는다: ${missing}`]);
+  assert.deepEqual(vendorAxisMismatches({ files: repositoryFiles, read: readRepository, inputs: [missing], selects: file => file !== missing && selects(file) }), [`인증 입력이 벤더 잡을 켜지 않는다: ${missing}`]);
+  // 표지를 든 생성기 코드가 잡을 켜지 않으면 붉다.
+  const branch = 'scripts/project-composer-generate.mjs';
+  assert.deepEqual(vendorAxisMismatches({ files: repositoryFiles, read: readRepository, inputs: [], selects: file => file !== branch && selects(file) }), [`벤더 분기를 담은 생성기 코드가 벤더 잡을 켜지 않는다: ${branch}`]);
   // 벤더 어댑터와 생성기 화면 코드를 고친 변경은 입력이 아니면 잡을 켜지 않는다.
   for (const file of ['scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-server.mjs']) assert.equal(selects(file), false, file);
 });
