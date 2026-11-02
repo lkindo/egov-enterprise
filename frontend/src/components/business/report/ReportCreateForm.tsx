@@ -150,7 +150,7 @@ export function ReportCreateForm({ defaultYmd, initialData, mode = 'create', onS
                                     {...field}
                                     value={field.value ?? ''}
                                     maxLength={4000}
-                                    className={cn('rounded-lg min-h-[120px]', fieldState.error && 'border-destructive')}
+                                    className={cn('rounded-lg min-h-[120px]', fieldState.error && 'border-destructive-emphasis')}
                                     placeholder="주요 업무 내용과 진행 상황"
                                 />
                             </FormControl>

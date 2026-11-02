@@ -130,7 +130,7 @@ export function UserManageForm({
                       className={cn(
                         "rounded-lg text-xs font-mono font-bold shadow-inner transition-all",
                         mode === 'edit' ? "bg-muted/50 border-none" : "focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                       )}
                       placeholder="ID (4-20, 영문/숫자/_)"
                     />
@@ -159,7 +159,7 @@ export function UserManageForm({
                       maxLength={50}
                       className={cn(
                         "rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                       )}
                       placeholder="예: 홍길동"
                     />
@@ -190,7 +190,7 @@ export function UserManageForm({
                       maxLength={50}
                       className={cn(
                         "rounded-lg text-xs font-medium border-input shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                       )}
                       placeholder="example@nuri.com"
                     />
@@ -219,7 +219,7 @@ export function UserManageForm({
                       inputMode="tel"
                       className={cn(
                         "rounded-lg text-xs font-medium border-input shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                       )}
                       placeholder="010-0000-0000"
                     />
@@ -252,7 +252,7 @@ export function UserManageForm({
                       maxLength={100}
                       className={cn(
                         "rounded-lg text-xs border-input shadow-sm transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                       )}
                       placeholder="영문·숫자·특수문자 포함 8~64자"
                     />
@@ -281,7 +281,7 @@ export function UserManageForm({
                     {...field}
                     className={cn(
                         "w-full h-[var(--control-h)] px-6 rounded-lg border-2 border-input bg-muted text-xs font-bold outline-none shadow-inner transition-all",
-                        fieldState.error ? "border-destructive ring-destructive/10 ring-4" : "focus:border-primary/50 focus:ring-4 focus:ring-primary/10"
+                        fieldState.error ? "border-destructive-emphasis ring-destructive/10 ring-4" : "focus:border-ring focus:ring-4 focus:ring-primary/10"
                     )}
                   >
                     {/* 'GLOBAL' 은 내부 구현 용어라 화면에 두지 않는다(헌법 제16조 4항).

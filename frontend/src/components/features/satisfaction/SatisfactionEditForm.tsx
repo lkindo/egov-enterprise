@@ -101,7 +101,7 @@ export function SatisfactionEditForm({ item, onSubmit, onCancel, isPending = fal
         rows={2}
         maxLength={4000}
         disabled={isBusy}
-        className="w-full text-sm border rounded-md p-2 bg-background resize-none"
+        className="w-full text-sm border border-input rounded-md p-2 bg-background resize-none"
       />
       {validation.errors.dgstfnCn ? (
         <p {...validation.messageProps('dgstfnCn')} className="text-xs font-bold text-destructive-emphasis" />

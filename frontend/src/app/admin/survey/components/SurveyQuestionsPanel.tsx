@@ -564,7 +564,7 @@ function SurveyCreateForm({ templateOptions, setError }: {
                 surveyValidation.clearError('srvyTmpltSn');
                 setNewSurveyTemplate(e.target.value);
               }}
-              className="w-full rounded-lg border bg-card px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
             >
               <option value="">— 템플릿을 선택하세요 —</option>
               {templateOptions.map((template) => (

@@ -979,7 +979,7 @@ export function BoardMakerWizard() {
                       placeholder="예) 사내 소식 공유 게시판"
                       className={cn(
                         "bg-card text-[length:var(--font-size-body)]",
-                        errors.bbsTtl ? "border-destructive bg-destructive/10" : "border-input"
+                        errors.bbsTtl ? "border-destructive-emphasis bg-destructive/10" : "border-input"
                       )}
                       {...register('bbsTtl')}
                     />
