@@ -499,7 +499,7 @@ export default function HelpClient() {
                               {...field}
                               maxLength={CONTENT_MAX}
                               placeholder="문의 내용을 입력해 주세요."
-                              className="w-full min-h-[180px] rounded-lg border border-border bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                              className="w-full min-h-[180px] rounded-lg border border-input bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                             />
                           </FormControl>
                           <p className="text-xs text-muted-foreground">

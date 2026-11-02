@@ -92,7 +92,7 @@ export function VisualAuditTimeline({ logs, className, title = "시스템 로그
           <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" size={16} />
             <input
-              className="w-full h-[var(--control-h-sm)] bg-background border border-border rounded-md pl-9 pr-3 text-[length:var(--font-size-body)] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
+              className="w-full h-[var(--control-h-sm)] bg-background border border-input rounded-md pl-9 pr-3 text-[length:var(--font-size-body)] font-medium outline-none focus:ring-2 focus:ring-primary/20 transition-colors"
               placeholder="검색.."
               aria-label={`${title} 검색`}
               value={filter}

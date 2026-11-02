@@ -331,7 +331,7 @@ export function RecipientPicker({
               value={keyword}
               onChange={(event) => setKeyword(event.target.value)}
               placeholder="이름으로 검색 (두 글자 이상)"
-              className="w-full h-[var(--control-h)] pl-10 pr-20 rounded-lg border bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+              className="w-full h-[var(--control-h)] pl-10 pr-20 rounded-lg border border-input bg-background text-sm outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               autoFocus
             />
             <button
@@ -406,7 +406,7 @@ export function RecipientPicker({
               id="recipient-department"
               value={selectedDepartmentId}
               onChange={(event) => handleDepartmentChange(event.target.value)}
-              className="w-full h-[var(--control-h)] rounded-lg border bg-background px-3 text-sm"
+              className="w-full h-[var(--control-h)] rounded-lg border border-input bg-background px-3 text-sm"
             >
               <option value="">부서를 고르세요</option>
               {departments.map((item) => (
@@ -497,7 +497,7 @@ export function RecipientPicker({
               id="recipient-address-book"
               value={selectedBookSn}
               onChange={(event) => handleBookChange(event.target.value)}
-              className="w-full h-[var(--control-h)] rounded-lg border bg-background px-3 text-sm"
+              className="w-full h-[var(--control-h)] rounded-lg border border-input bg-background px-3 text-sm"
             >
               <option value="">주소록을 고르세요</option>
               {books.map((book) => (

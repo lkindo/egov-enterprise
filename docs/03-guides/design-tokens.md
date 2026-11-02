@@ -45,7 +45,8 @@
 | 은은한 바탕 / 보조 텍스트 | `bg-muted` / `text-muted-foreground` | flip |
 | 강조 바탕 | `bg-secondary` · `bg-accent` | flip |
 | 경계 / 링 / 구분선 | `border-border` · `ring-ring` · `ring-border` · `divide-border` | flip |
-| 입력 | `bg-input` · `border-input` | flip |
+| 입력 경계·스위치 OFF | `border-input` · `bg-input`. 인접 면 대비 3:1 이상이다. 입력 컨트롤에 `border-border` 를 쓰지 않는다 | flip |
+| 다크 입력 채움 | `bg-input-fill/30` 등. `--input` 을 반투명 채움으로 쓰지 않는다 | flip |
 | 주 브랜드 | `bg-primary` / `text-primary` / `border-primary` / `ring-primary` | flip |
 | 상태 | `bg-success`·`bg-warning`·`bg-info`·`bg-destructive` (+ `-foreground`) | flip |
 | **다계열 차트** | `useChartColors().series` (`--chart-1`~`--chart-5`) | flip (양 모드 3:1 이상) |

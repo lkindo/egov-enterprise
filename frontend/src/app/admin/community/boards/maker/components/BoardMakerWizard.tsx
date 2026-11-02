@@ -979,7 +979,7 @@ export function BoardMakerWizard() {
                       placeholder="예) 사내 소식 공유 게시판"
                       className={cn(
                         "bg-card text-[length:var(--font-size-body)]",
-                        errors.bbsTtl ? "border-destructive bg-destructive/10" : "border-border"
+                        errors.bbsTtl ? "border-destructive-emphasis bg-destructive/10" : "border-input"
                       )}
                       {...register('bbsTtl')}
                     />
@@ -1001,7 +1001,7 @@ export function BoardMakerWizard() {
                       aria-invalid={errors.bbsExpln ? 'true' : 'false'}
                       aria-describedby={errors.bbsExpln ? 'bbsExpln-error' : undefined}
                       placeholder="게시판의 목적과 사용 대상을 간단히 설명해주세요."
-                      className="min-h-[5rem] border-border bg-card text-[length:var(--font-size-body)] text-left"
+                      className="min-h-[5rem] border-input bg-card text-[length:var(--font-size-body)] text-left"
                       {...register('bbsExpln')}
                     />
                     {errors.bbsExpln && <p id="bbsExpln-error" className="text-destructive-emphasis text-sm font-bold ml-2">{errors.bbsExpln.message}</p>}
@@ -1015,7 +1015,7 @@ export function BoardMakerWizard() {
                     <select
                       id="cmntySn"
                       aria-describedby="cmntySn-help"
-                      className="h-[var(--control-h)] w-full rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
+                      className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] outline-none focus-visible:border-ring focus-visible:ring-[3px] focus-visible:ring-ring/50"
                       {...register('cmntySn')}
                     >
                       <option value="">귀속하지 않음 (모든 인증 사용자 열람)</option>
@@ -1198,7 +1198,7 @@ export function BoardMakerWizard() {
                             touch('prvtPstPlcyCd');
                             setValue('prvtPstPlcyCd', event.target.value as PrivatePostPolicy, { shouldDirty: true });
                           }}
-                          className="h-[var(--control-h)] w-full rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
+                          className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
                         >
                           {(Object.keys(PRIVATE_POST_POLICY_OPTIONS) as PrivatePostPolicy[]).map((policy) => (
                             <option key={policy} value={policy}>{PRIVATE_POST_POLICY_OPTIONS[policy]}</option>

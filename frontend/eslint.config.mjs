@@ -191,6 +191,27 @@ const eslintConfig = [
           "selector": "CallExpression[callee.object.name='z'][callee.property.name='object']",
           "message": "인라인 z.object(...) 금지 — 백엔드 SSOT 스키마(@/types/generated-zod)를 import 하여 .extend() 로 확장하세요 (project-audit-report §4.1/방안1)."
         },
+        // 입력 컨트롤의 경계는 3:1 을 보장한 border-input 이다. border-border 나 색 없는 border 는 다시 보이지 않게 된다(WCAG 1.4.11).
+        {
+          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea|Input|Textarea|SelectTrigger|Checkbox|Switch)$/] > JSXAttribute[name.name='className'] Literal[value=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
+          "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
+        },
+        {
+          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea|Input|Textarea|SelectTrigger|Checkbox|Switch)$/] > JSXAttribute[name.name='className'] TemplateElement[value.raw=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
+          "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
+        },
+        {
+          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea)$/] > JSXAttribute[name.name='className'] Literal[value=/^(?!.*border-input)(.*\\s)?border(\\s.*)?$/]",
+          "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
+        },
+        {
+          "selector": "JSXOpeningElement[name.name=/^(input|select|textarea)$/] > JSXAttribute[name.name='className'] TemplateElement[value.raw=/^(?!.*border-input)(.*\\s)?border(\\s.*)?$/]",
+          "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
+        },
+        {
+          "selector": "VariableDeclarator[id.name=/(INPUT|SELECT|TEXTAREA).*CLASS/] Literal[value=/(^|\\s)([^\\s]*:)?border-border(\\/\\d+)?(\\s|$)/]",
+          "message": "입력 컨트롤의 경계는 인접 면 대비 3:1 을 보장한 border-input 을 쓰세요(status-token-contrast 계약)."
+        },
         {
           "selector": "JSXAttribute[name.name='role'] Literal[value=/^tab(list|panel)?$/]",
           "message": "손으로 쓴 탭 역할 금지 — @/app/components/ui/standard-tabs 의 TabList·Tab·TabPanel 을 쓰세요(방향키·roving tabindex·aria-controls 를 갖춘 탭 원천)."

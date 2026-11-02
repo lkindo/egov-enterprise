@@ -62,6 +62,8 @@ const PROFILE_FILES = readdirSync(THEMES_DIR).filter(
 );
 
 const AA_TEXT = 4.5;
+/** WCAG 1.4.11 비텍스트 대비. 입력 컨트롤은 경계가 곧 식별이라 면제되지 않는다. */
+const NON_TEXT = 3;
 
 describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile) => {
   const { light, dark } = readTokens(profileFile);
@@ -125,6 +127,42 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
     ).toBeGreaterThanOrEqual(AA_TEXT);
   });
 
+  it.each(['--background', '--card', '--popover', '--muted'] as const)(
+    '입력 경계·스위치 OFF: --input 이 %s 위에서 라이트·다크 모두 3:1 이상이다',
+    (adjacent) => {
+      for (const [mode, tokens] of [['light', light], ['dark', dark]] as const) {
+        const value = get(tokens, '--input');
+        const ratio = contrast(value, get(tokens, adjacent));
+        expect(
+          ratio,
+          `[${mode}] --input(${value}) on ${adjacent} = ${ratio.toFixed(2)}:1 — 입력칸과 꺼진 스위치의 경계가 보이지 않습니다.`,
+        ).toBeGreaterThanOrEqual(NON_TEXT);
+      }
+    },
+  );
+
+  it.each(['--ring', '--destructive-emphasis'] as const)(
+    '입력 상태 경계: %s 가 입력이 놓이는 면 위에서 라이트·다크 모두 3:1 이상이다',
+    (token) => {
+      for (const [mode, tokens] of [['light', light], ['dark', dark]] as const) {
+        for (const adjacent of ['--background', '--card', '--popover', '--muted'] as const) {
+          const value = get(tokens, token);
+          const ratio = contrast(value, get(tokens, adjacent));
+          expect(
+            ratio,
+            `[${mode}] ${token}(${value}) on ${adjacent} = ${ratio.toFixed(2)}:1 — 포커스·오류 경계가 평소 입력 경계보다 약해 보입니다.`,
+          ).toBeGreaterThanOrEqual(NON_TEXT);
+        }
+      }
+    },
+  );
+
+  it('입력 채움: --input-fill 은 경계와 나뉘어 프로필에 라이트·다크 모두 정의돼 있다', () => {
+    for (const tokens of [light, dark]) {
+      expect(get(tokens, '--input-fill')).not.toBe(get(tokens, '--input'));
+    }
+  });
+
   it.each(['chart-1', 'chart-2', 'chart-3', 'chart-4', 'chart-5'] as const)(
     '차트 다계열 마크: --%s 가 페이지 배경·카드 위에서 라이트·다크 모두 비텍스트 대비(3:1) 이상이다',
     (chartToken) => {
@@ -141,4 +179,37 @@ describe.each(PROFILE_FILES)('상태색 WCAG 대비 계약 — %s', (profileFile
       }
     },
   );
+});
+
+describe('입력 경계 토큰의 소비', () => {
+  const ui = (name: string) => readFileSync(join(FRONTEND_DIR, 'src', 'components', 'ui', `${name}.tsx`), 'utf8');
+  /** 클래스 낱말. 부분 문자열로 보면 dark: 등 변형 접두사가 붙어도 통과한다. */
+  const classes = (name: string) => new Set(ui(name).split(/[\s"'`]+/));
+
+  it('입력 컨트롤과 스위치 OFF 가 3:1 을 보장한 --input 을 쓴다', () => {
+    for (const name of ['input', 'textarea', 'select', 'checkbox']) {
+      expect(classes(name).has('border-input'), `${name} 의 경계가 --input 이 아닙니다`).toBe(true);
+    }
+    expect(classes('switch').has('data-[state=unchecked]:bg-input'), '라이트·다크 모두 꺼진 스위치가 --input 이어야 합니다').toBe(true);
+  });
+
+  it('입력의 포커스·오류 경계가 3:1 을 보장한 토큰을 쓴다', () => {
+    for (const name of ['input', 'select', 'checkbox']) {
+      expect(classes(name).has('focus-visible:border-ring'), `${name} 포커스 경계`).toBe(true);
+      expect(classes(name).has('aria-invalid:border-destructive-emphasis'), `${name} 오류 경계`).toBe(true);
+      expect(classes(name).has('aria-invalid:border-destructive'), `${name} 오류 경계가 다크에서 약합니다`).toBe(false);
+    }
+  });
+
+  it('입력이 아닌 공용 컴포넌트는 올린 경계 토큰을 쓰지 않는다', () => {
+    for (const name of ['button', 'tabs']) {
+      expect([...classes(name)].filter((token) => /(^|:)border-input$/.test(token)), `${name} 의 경계가 함께 진해집니다`).toEqual([]);
+    }
+  });
+
+  it('공용 컴포넌트가 --input 을 반투명 채움으로 쓰지 않는다(경계를 올리면 채움이 함께 밝아진다)', () => {
+    for (const name of ['button', 'checkbox', 'input', 'select', 'tabs', 'textarea', 'switch']) {
+      expect(ui(name), `${name} 는 채움에 --input-fill 을 쓰세요`).not.toMatch(/\bbg-input\/\d/);
+    }
+  });
 });

@@ -450,7 +450,7 @@ export default function HpcmClient({
                       {...field}
                       maxLength={4000}
                       placeholder="도움말 상세 설명"
-                      className="w-full min-h-[160px] rounded-lg border border-border bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                      className="w-full min-h-[160px] rounded-lg border border-input bg-muted/40 p-4 outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive" />

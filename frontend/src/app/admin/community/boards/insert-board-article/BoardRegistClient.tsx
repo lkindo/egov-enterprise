@@ -846,7 +846,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                             value={toDateInputValue(field.value)}
                             onChange={(event) => field.onChange(fromDateInputValue(event.target.value))}
                             readOnly={dateField.name === 'pstBgngYmd' && startDateLocked}
-                            className="h-[var(--control-h)] rounded-md border-border read-only:bg-muted"
+                            className="h-[var(--control-h)] rounded-md border-input read-only:bg-muted"
                           />
                         </FormControl>
                         {dateField.name === 'pstBgngYmd' && startDateLocked && (
@@ -872,7 +872,7 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
                 <FormItem className="space-y-2">
                   <FormLabel className="text-[length:var(--font-size-body)] font-medium text-foreground">행사 일자</FormLabel>
                   <FormControl>
-                    <Input type="date" {...field} value={field.value ?? ''} className="h-[var(--control-h)] max-w-xs rounded-md border-border" />
+                    <Input type="date" {...field} value={field.value ?? ''} className="h-[var(--control-h)] max-w-xs rounded-md border-input" />
                   </FormControl>
                   <FormDescription className="text-xs">
                     달력에 이 날짜로 표시합니다.{pstSn ? ' 비워 두면 기존 값은 그대로 둡니다.' : ' 비워 두면 등록일로 표시합니다.'}

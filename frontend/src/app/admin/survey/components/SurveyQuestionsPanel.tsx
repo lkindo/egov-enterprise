@@ -564,7 +564,7 @@ function SurveyCreateForm({ templateOptions, setError }: {
                 surveyValidation.clearError('srvyTmpltSn');
                 setNewSurveyTemplate(e.target.value);
               }}
-              className="w-full rounded-lg border bg-card px-3 py-2 text-sm"
+              className="w-full rounded-lg border border-input bg-card px-3 py-2 text-sm"
             >
               <option value="">— 템플릿을 선택하세요 —</option>
               {templateOptions.map((template) => (
@@ -803,7 +803,7 @@ function SurveyQuestionCreateForm({
                 <span className="text-muted-foreground">선택 방식</span>
                 <select
                   aria-label="선택 방식"
-                  className="h-[var(--control-h)] rounded-md border border-border bg-background px-2 text-sm"
+                  className="h-[var(--control-h)] rounded-md border border-input bg-background px-2 text-sm"
                   value={newQuestionFreeText ? 'free-text' : newQuestionMultiple ? 'multiple' : 'single'}
                   onChange={(e) => {
                     questionValidation.clearError('maxChcCnt');

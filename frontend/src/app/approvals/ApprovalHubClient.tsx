@@ -909,7 +909,7 @@ export default function ApprovalHubClient() {
                 }}
                 maxLength={4000}
                 rows={3}
-                className="w-full rounded-md border border-border bg-background p-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
+                className="w-full rounded-md border border-input bg-background p-2 text-sm text-foreground focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-ring"
                 placeholder="검토 의견을 적어 주세요. 반려나 보완 요청은 무엇을 고쳐야 하는지 알려 주세요."
               />
               {decisionValidation.errors.reason ? (

@@ -840,7 +840,7 @@ export default function MemoReportManagementClient() {
                                 {...field}
                                 maxLength={4000}
                                 disabled={isEditPending}
-                                className="w-full min-h-[160px] rounded-md border border-border bg-muted/40 p-4 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                                className="w-full min-h-[160px] rounded-md border border-input bg-muted/40 p-4 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                               />
                             </FormControl>
                             <FormMessage className="text-xs font-bold text-destructive" />
@@ -945,7 +945,7 @@ export default function MemoReportManagementClient() {
                               maxLength={2000}
                               readOnly={!!attachmentRestriction}
                               placeholder="이 보고에 대한 지시사항을 입력하세요."
-                              className="w-full min-h-[100px] rounded-md border border-border bg-muted/40 p-3 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                              className="w-full min-h-[100px] rounded-md border border-input bg-muted/40 p-3 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                             />
                           </FormControl>
                           <FormMessage className="text-xs font-bold text-destructive" />
@@ -1032,7 +1032,7 @@ export default function MemoReportManagementClient() {
                       {...field}
                       maxLength={4000}
                       placeholder="보고 내용을 입력하세요."
-                      className="w-full min-h-[180px] rounded-md border border-border bg-muted/40 p-4 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
+                      className="w-full min-h-[180px] rounded-md border border-input bg-muted/40 p-4 text-sm outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-y"
                     />
                   </FormControl>
                   <FormMessage className="text-xs font-bold text-destructive" />

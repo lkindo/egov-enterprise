@@ -119,7 +119,7 @@ export function DepartmentForm({
                     maxLength={200}
                     className={cn(
                         "rounded-lg text-sm font-bold tracking-tight transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                     )}
                     placeholder="예: 기획부"
                   />
@@ -147,7 +147,7 @@ export function DepartmentForm({
                   <select
                     {...field}
                     value={field.value ?? ''}
-                    className="h-[var(--control-h)] w-full rounded-lg border border-border bg-card px-3 text-sm font-bold"
+                    className="h-[var(--control-h)] w-full rounded-lg border border-input bg-card px-3 text-sm font-bold"
                   >
                     <option value="">최상위 (상위 부서 없음)</option>
                     {parentOptions.map((option) => (
@@ -178,8 +178,8 @@ export function DepartmentForm({
                     {...field}
                     maxLength={4000}
                     className={cn(
-                        "w-full min-h-[120px] p-6 rounded-lg border-2 border-border bg-muted text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
-                        fieldState.error && "border-destructive ring-destructive/10 ring-4"
+                        "w-full min-h-[120px] p-6 rounded-lg border-2 border-input bg-muted text-xs font-bold outline-none resize-none shadow-inner transition-all focus:ring-4 focus:ring-primary/10",
+                        fieldState.error && "border-destructive-emphasis ring-destructive/10 ring-4"
                     )}
                     placeholder="부서의 역할 및 책임 정의..."
                   />

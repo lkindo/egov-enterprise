@@ -722,7 +722,7 @@ export function BoardSettingsTab({ detail, onReload }: {
               aria-describedby={['board-settings-private-policy-hint', policyWarnings.length > 0 ? 'board-settings-private-policy-warning' : null]
                 .filter(Boolean).join(' ')}
               onChange={(event) => edit('prvtPstPlcyCd', toPrivatePostPolicy(event.target.value))}
-              className="h-[var(--control-h)] w-full rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
+              className="h-[var(--control-h)] w-full rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] sm:w-60"
             >
               {PRIVATE_POST_POLICIES.map((policy) => <option key={policy} value={policy}>{PRIVATE_POST_POLICY_OPTIONS[policy]}</option>)}
             </select>

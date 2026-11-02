@@ -358,7 +358,7 @@ const SelectAddressBookDetailClient = () => {
                                         id="adbkNm"
                                         {...validation.fieldProps('adbkNm')}
                                         placeholder="주소록 명칭을 입력하세요"
-                                        className="text-base border-2 border-border focus:border-primary/20 bg-muted/50 rounded-lg transition-all"
+                                        className="text-base border-2 border-input focus:border-ring bg-muted/50 rounded-lg transition-all"
                                         value={adbkNm}
                                         readOnly={!canUpdateAddressBook}
                                         onChange={(e) => {
@@ -379,7 +379,7 @@ const SelectAddressBookDetailClient = () => {
                                     <Input
                                         id="rlsScopeCd"
                                         {...validation.fieldProps('rlsScopeCd')}
-                                        className="text-base border-2 border-border bg-muted rounded-lg"
+                                        className="text-base border-2 border-input bg-muted rounded-lg"
                                         value={editBase?.rlsScopeCd ?? ''}
                                         readOnly
                                         aria-required="true"

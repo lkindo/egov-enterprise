@@ -479,7 +479,7 @@ export function BoardPostsTab({ detail }: { detail: BoardMasterDetail }) {
               id="board-posts-search-condition"
               value={searchCndDraft}
               onChange={(event) => setSearchCndDraft(asSearchCondition(event.target.value))}
-              className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
             >
               {SEARCH_CONDITION_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
@@ -490,7 +490,7 @@ export function BoardPostsTab({ detail }: { detail: BoardMasterDetail }) {
               id="board-posts-status-filter"
               value={statusDraft}
               onChange={(event) => setStatusDraft(event.target.value as PostingStatusFilter)}
-              className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
             >
               {POSTING_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
@@ -501,7 +501,7 @@ export function BoardPostsTab({ detail }: { detail: BoardMasterDetail }) {
               id="board-posts-pinned-filter"
               value={pinnedDraft}
               onChange={(event) => setPinnedDraft(event.target.value as PinnedFilter)}
-              className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
             >
               {PINNED_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
@@ -513,7 +513,7 @@ export function BoardPostsTab({ detail }: { detail: BoardMasterDetail }) {
                 id="board-posts-qna-status-filter"
                 value={qnaStatusDraft}
                 onChange={(event) => setQnaStatusDraft(asQnaStatus(event.target.value))}
-                className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+                className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
               >
                 {QNA_STATUS_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
               </select>

@@ -242,7 +242,7 @@ export function CodePicker({
                 value={groupKeyword}
                 onChange={(e) => setGroupKeyword(e.target.value)}
                 placeholder="그룹 코드명 또는 코드ID 검색..."
-                className="w-full h-[var(--control-h)] pl-9 pr-20 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full h-[var(--control-h)] pl-9 pr-20 rounded-lg border border-input bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
                 autoFocus
               />
               <button
@@ -318,7 +318,7 @@ export function CodePicker({
                 value={codeFilter}
                 onChange={(e) => setCodeFilter(e.target.value)}
                 placeholder="코드 또는 코드명으로 필터..."
-                className="w-full h-[var(--control-h)] pl-9 pr-4 rounded-lg border border-border bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
+                className="w-full h-[var(--control-h)] pl-9 pr-4 rounded-lg border border-input bg-background text-sm text-foreground outline-none focus:ring-2 focus:ring-primary/20 transition-all"
               />
             </div>
 

@@ -323,7 +323,7 @@ function LoginContent() {
                                             setError('');
                                             validation.clearError('userId');
                                         }}
-                                        className="pl-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono text-sm"
+                                        className="pl-12 rounded-[var(--radius-hub-item)] border-input bg-muted/50 focus:bg-card transition-all shadow-inner font-mono text-sm"
                                         autoComplete="username"
                                     />
                                 </div>
@@ -355,7 +355,7 @@ function LoginContent() {
                                             setError('');
                                             validation.clearError('password');
                                         }}
-                                        className="pl-12 pr-12 rounded-[var(--radius-hub-item)] border-border bg-muted/50 focus:bg-card transition-all shadow-inner font-mono"
+                                        className="pl-12 pr-12 rounded-[var(--radius-hub-item)] border-input bg-muted/50 focus:bg-card transition-all shadow-inner font-mono"
                                         autoComplete="current-password"
                                     />
                                     <Button

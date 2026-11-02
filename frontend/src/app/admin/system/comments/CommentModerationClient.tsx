@@ -288,7 +288,7 @@ export default function CommentModerationClient() {
                 id="comment-board-filter"
                 value={boardDraft}
                 onChange={(event) => setBoardDraft(event.target.value)}
-                className="h-[var(--control-h)] max-w-xs rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+                className="h-[var(--control-h)] max-w-xs rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
               >
                 <option value="">전체 게시판</option>
                 {boardChoices.map((choice) => <option key={choice.value} value={choice.value}>{choice.label}</option>)}

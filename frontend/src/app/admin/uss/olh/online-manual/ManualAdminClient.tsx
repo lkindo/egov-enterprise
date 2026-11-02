@@ -393,7 +393,7 @@ export default function ManualAdminClient({
                           {...field}
                           maxLength={100}
                           placeholder="매뉴얼 명을 입력하세요..."
-                          className="px-8 rounded-lg border-2 border-border bg-muted/50 font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="px-8 rounded-lg border-2 border-input bg-muted/50 font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />
@@ -412,7 +412,7 @@ export default function ManualAdminClient({
                           {...field}
                           maxLength={1000}
                           placeholder="/src/docs/manuals/..."
-                          className="px-8 rounded-lg border-2 border-border bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
+                          className="px-8 rounded-lg border-2 border-input bg-muted/50 font-mono text-sm font-bold focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />
@@ -431,7 +431,7 @@ export default function ManualAdminClient({
                           {...field}
                           maxLength={4000}
                           placeholder="매뉴얼 설명을 입력하세요..."
-                          className="min-h-[120px] p-8 rounded-lg border-2 border-border bg-muted/50 text-sm font-bold outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
+                          className="min-h-[120px] p-8 rounded-lg border-2 border-input bg-muted/50 text-sm font-bold outline-none focus:bg-card focus:ring-4 focus:ring-primary/10 transition-all resize-none shadow-inner"
                         />
                       </FormControl>
                       <FormMessage className="text-xs font-bold" />

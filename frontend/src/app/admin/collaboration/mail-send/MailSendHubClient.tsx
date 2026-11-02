@@ -423,7 +423,7 @@ export default function MailSendHubClient() {
               validation.clearError('emailCn');
               setForm({ ...form, emailCn: e.target.value });
             }}
-            className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-card border-2 border-border rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
+            className="min-h-[300px] p-10 text-lg font-medium leading-relaxed bg-card border-2 border-input rounded-lg shadow-xl focus-visible:ring-primary/20 transition-all placeholder:text-muted-foreground"
             placeholder="전달할 상세 내용을 입력하세요."
             maxLength={4000}
             required

@@ -397,7 +397,7 @@ export function BoardMasterListClient() {
               id="board-master-use-filter"
               value={useDraft}
               onChange={(event) => setUseDraft(event.target.value as UseFilter)}
-              className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)]"
+              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)]"
             >
               {USE_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>
@@ -410,7 +410,7 @@ export function BoardMasterListClient() {
               onChange={(event) => setMenuDraft(event.target.value as MenuFilter)}
               disabled={menuFilterUnavailable}
               aria-describedby="board-master-menu-filter-help"
-              className="h-[var(--control-h)] rounded-md border border-border bg-card px-3 text-[length:var(--font-size-body)] disabled:opacity-60"
+              className="h-[var(--control-h)] rounded-md border border-input bg-card px-3 text-[length:var(--font-size-body)] disabled:opacity-60"
             >
               {MENU_FILTER_OPTIONS.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}
             </select>

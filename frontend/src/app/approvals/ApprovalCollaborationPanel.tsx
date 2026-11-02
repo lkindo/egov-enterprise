@@ -228,7 +228,7 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
                 rows={3}
                 disabled={busy}
                 onChange={(event) => { answerValidation.clearError('answer'); setAnswer(event.target.value); }}
-                className="w-full rounded-md border border-border bg-background p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+                className="w-full rounded-md border border-input bg-background p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
               />
               {answerValidation.errors.answer ? <p {...answerValidation.messageProps('answer')} className="text-xs font-bold text-destructive-emphasis" /> : null}
               <label htmlFor="supplement-revise" className="flex items-center gap-2 text-sm">
@@ -252,7 +252,7 @@ export function ApprovalCollaborationPanel({ document, canWrite, disabled }: App
                     rows={6}
                     disabled={busy}
                     onChange={(event) => { answerValidation.clearError('docCn'); setDocCn(event.target.value); }}
-                    className="w-full rounded-md border border-border bg-background p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
+                    className="w-full rounded-md border border-input bg-background p-2 text-sm focus-visible:outline-2 focus-visible:outline-ring"
                   />
                   {answerValidation.errors.docCn ? <p {...answerValidation.messageProps('docCn')} className="text-xs font-bold text-destructive-emphasis" /> : null}
                 </>

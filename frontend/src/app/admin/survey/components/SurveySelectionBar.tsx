@@ -56,7 +56,7 @@ export function SurveySelectionBar({
           const next = e.target.value ? Number(e.target.value) : null;
           onSelect(next);
         }}
-        className="border rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
+        className="border border-input rounded-lg px-3 py-2 text-sm bg-card max-w-md w-full"
       >
         <option value="">— 설문을 선택하세요 —</option>
         {surveyOptions.map((s) => (
