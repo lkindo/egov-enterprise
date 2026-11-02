@@ -185,7 +185,7 @@ test('the deep plan sees exactly the files the generator copies and projects eve
   // 시작 구성 core: 메일을 고르지 않고 demo 화면을 지운다(해석기가 기능 규칙에서 계산하는 제외 경로를 직접 준다).
   const coreOf = removePaths => ({ profile: 'core', packs: ['core'], resolvedDomains: [], frontend: { includedPaths: [], removePaths } });
   // 원본 Atlas 규칙 제거가 성공하도록 자산과 별칭을 둔다(규칙 제거는 늘 적용된다).
-  const atlas = ['frontend/public/governance_harness_atlas.html', 'frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts)$/.test(path)), 'package.json'];
+  const atlas = ['frontend/atlas/catalog.json', ...atlasPaths.filter(path => /\.(?:mjs|ts)$/.test(path)), 'package.json'];
   for (const file of atlas) write(file, file === 'package.json' ? '{"scripts":{"atlas:build":"x","atlas:check":"x"}}' : '// atlas\n');
   const listed = ['business-app/src/main/java/nuri/business/service/mail/MailService.java', 'frontend/src/app/layout.tsx',
     'frontend/src/app/page.tsx', 'frontend/src/app/login/page.tsx', 'frontend/src/app/demo/page.tsx', ...atlas];

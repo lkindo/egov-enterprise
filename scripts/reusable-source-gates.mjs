@@ -269,7 +269,6 @@ export function pruneHistoricalMigrationTests(output) {
  */
 export const UPSTREAM_ATLAS = Object.freeze({
   assets: Object.freeze([
-    'frontend/public/governance_harness_atlas.html',
     'frontend/atlas',
     'scripts/build-atlas.mjs',
     'scripts/atlas-catalog.mjs',

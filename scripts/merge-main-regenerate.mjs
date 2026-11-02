@@ -154,8 +154,8 @@ export const GENERATORS = [
     // 재사용 생성물은 원본 Atlas 와 그 생성기를 걷는다. 생성기가 없는 저장소에서는 이 단계를 건너뛴다.
     requires: 'scripts/build-atlas.mjs',
     inputs: anyPath,
-    outputs: ['frontend/public/governance_harness_atlas.html'],
-    command: ['npm', ['run', 'atlas:build']],
+    outputs: [],
+    command: ['node', ['scripts/build-atlas.mjs', '--check']],
     check: [['node', ['scripts/build-atlas.mjs', '--check']]],
   },
 ];

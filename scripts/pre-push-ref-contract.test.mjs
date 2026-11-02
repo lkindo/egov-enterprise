@@ -556,10 +556,10 @@ test('pre-push recording failure does not skip commands or swallow their failure
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
   const success = runHook(input, hookSource, { recordFailure: true });
   assertSuccessful(success);
-  assert.deepEqual(success.commands, ['npm run regen -- --check', CONTRACTS]);
+  assert.deepEqual(success.commands, ['npm run regen -- --check', CONTRACTS, atlasCommand]);
   const failed = runHook(input, hookSource, { recordFailure: true, failCommand: CONTRACTS });
   assert.equal(failed.status, 1);
-  assert.deepEqual(failed.commands, success.commands);
+  assert.deepEqual(failed.commands, ['npm run regen -- --check', CONTRACTS]);
   assert.match(failed.stderr, /기록을 시작하지 못했습니다/u);
 });
 
@@ -568,9 +568,9 @@ test('pre-push emits real stage and run outcomes, including failures before late
   const passed = runHook(input, hookSource, { realRecords: true });
   assertSuccessful(passed);
   assert.deepEqual(passed.records.filter(event => event.event === 'step-start').map(event => event.stageId),
-    ['generated-freshness', 'operational-contracts']);
+    ['generated-freshness', 'operational-contracts', 'atlas']);
   assert.deepEqual(passed.records.filter(event => event.event === 'step-end').map(event => [event.stageId, event.exitCode]),
-    [['generated-freshness', 0], ['operational-contracts', 0]]);
+    [['generated-freshness', 0], ['operational-contracts', 0], ['atlas', 0]]);
   assert.equal(passed.records.at(-1).event, 'run-end');
   assert.equal(passed.records.at(-1).result, 'passed');
   assert.equal(passed.records.at(-1).recordComplete, true);
@@ -837,7 +837,7 @@ test('pre-push blocks the push when the operational contracts fail on the docume
   const sourceFiles = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
   const cases = [
     { files: ['docs/README.md'], commands: [REGEN_CHECK, CONTRACTS] },
-    { files: ['frontend/public/governance_harness_atlas.html'], commands: [REGEN_CHECK, CONTRACTS] },
+    { files: ['docs/03-guides/governance-atlas-guide.md'], commands: [REGEN_CHECK, CONTRACTS] },
     { files: sourceFiles, commands: PRE_PUSH_SOURCE_ORDER.slice(0, PRE_PUSH_SOURCE_ORDER.indexOf(CONTRACTS) + 1) },
   ];
   const blocks = (source) => cases.map(({ files }) => {
@@ -886,7 +886,7 @@ test('pre-push runs the file-reading contracts outside src/__tests__ on frontend
 
 test('pre-push selects one Atlas owner and keeps its failure blocking in every scope', () => {
   const input = `${pushLine('refs/heads/main', LOCAL_OID, 'refs/heads/main', REMOTE_OID)}\n`;
-  const atlas = 'frontend/public/governance_harness_atlas.html';
+  const atlas = 'docs/03-guides/governance-atlas-guide.md';
   const cases = [
     { files: [atlas], command: atlasCommand },
     { files: [atlas, 'api-server/src/test/java/ExampleTest.java'], command: CROSS_STACK_RUN },

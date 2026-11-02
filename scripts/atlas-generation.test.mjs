@@ -4,18 +4,19 @@ import path from 'node:path';
 import os from 'node:os';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { renderAtlas, checkAtlas, ATLAS_INPUTS, ATLAS_OUTPUT } from './build-atlas.mjs';
+import { renderAtlas, checkAtlas, writeAtlas, ATLAS_INPUTS, ATLAS_OUTPUT, LEGACY_COMMITTED_ATLAS } from './build-atlas.mjs';
 import { buildAtlasCatalog } from './atlas-catalog.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const catalog = buildAtlasCatalog(repoRoot);
 const generated = renderAtlas(repoRoot, catalog);
 
-// 신선도의 유일한 소유자다. Atlas vitest 는 이 바이트 일치를 전제로 HTML 에 실린 catalog 를 기대값으로 쓴다(FE-CONTRACT-05).
-test('committed Atlas exactly matches owned source catalogs and presentation inputs', () => {
-  assert.ok(fs.readFileSync(path.join(repoRoot, ATLAS_OUTPUT), 'utf8').replace(/\r\n/g, '\n') === generated,
-    'Run npm run atlas:build; source or generated presentation has drifted');
-  assert.ok(checkAtlas(repoRoot));
+// 온디맨드 생성과 정적 커밋 HTML 재유입 차단의 유일한 소유자다(DEC-OPS-398). Atlas vitest 는 renderAtlas() 메모리 렌더 결과를 직접 검증한다.
+test('on-demand Atlas renders from source catalogs into untracked build/atlas and blocks committed public HTML', () => {
+  assert.equal(ATLAS_OUTPUT, 'build/atlas/governance_harness_atlas.html');
+  assert.equal(fs.existsSync(path.join(repoRoot, LEGACY_COMMITTED_ATLAS)), false,
+    'frontend/public/governance_harness_atlas.html must not be committed; use npm run atlas:build for on-demand output');
+  assert.ok(checkAtlas(repoRoot, catalog));
 });
 
 test('every displayed fact is generated from the catalog and dangerous data cannot close the JSON script', () => {
@@ -44,6 +45,19 @@ test('rendered artifact changes on catalog, population, style or template change
     fs.copyFileSync(path.join(repoRoot, file), output);
   }
   assert.equal(renderAtlas(temp, catalog), generated);
+  assert.equal(writeAtlas(temp, catalog), path.join(temp, ATLAS_OUTPUT));
+  assert.equal(fs.readFileSync(path.join(temp, ATLAS_OUTPUT), 'utf8').replace(/\r\n/g, '\n'), generated);
+  const legacyPath = path.join(temp, LEGACY_COMMITTED_ATLAS);
+  fs.mkdirSync(path.dirname(legacyPath), { recursive: true });
+  fs.writeFileSync(legacyPath, generated, 'utf8');
+  assert.equal(checkAtlas(temp, catalog), false, 'committed public HTML re-introduction must fail checkAtlas');
+  fs.rmSync(legacyPath, { force: true });
+  const nestedUpperHtml = path.join(temp, 'frontend/public/nested/STATIC.HTML');
+  fs.mkdirSync(path.dirname(nestedUpperHtml), { recursive: true });
+  fs.writeFileSync(nestedUpperHtml, '<!doctype html>', 'utf8');
+  assert.equal(checkAtlas(temp, catalog), false, 'nested or uppercase HTML in frontend/public must also fail checkAtlas');
+  fs.rmSync(nestedUpperHtml, { force: true });
+  assert.equal(checkAtlas(temp, catalog), true);
   // 생성기 코드는 본문에 실리지 않는다 — 출력을 바꾸지 않는 수정은 재생성을 요구하지 않는다.
   fs.appendFileSync(path.join(temp, 'scripts/atlas-catalog.mjs'), '\n// Comment-only generator change.\n');
   assert.equal(renderAtlas(temp, catalog), generated, 'a generator edit that changes no output must not require regeneration');
