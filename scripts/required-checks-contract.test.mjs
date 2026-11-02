@@ -1304,6 +1304,7 @@ test('reusable-base consumes the fail-closed impacted profile matrix', () => {
   assert.match(classifierJob, /reusable-vendor-matrix: \$\{\{ steps\.scope\.outputs\.reusable_vendor_matrix \}\}/);
   assert.match(vendorJob, /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-vendor'\] == 'true'"$/m);
   assert.match(vendorJob, /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-vendor-matrix'\]\) \}\}$/m);
+  assert.match(vendorJob, /build\/reusable-base\/source\/\*\/\*\*\/hs_err_pid\*\.log/, 'a test JVM crash must leave its record');
   assert.match(aggregateJob, /EXPECTED_WORK: \$\{\{ needs\.change-scope\.outputs\['reusable-vendor'\] \}\}/);
   assert.match(aggregateJob, /SOURCE_RESULT: \$\{\{ needs\.reusable-vendor\.result \}\}/);
 

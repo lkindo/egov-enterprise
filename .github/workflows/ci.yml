@@ -1057,6 +1057,7 @@ jobs:
         env:
           COMPOSER_PREVIEW_VENDOR: ${{ matrix.vendor }}
         run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor ${{ matrix.vendor }}
+      # 시험 JVM 이 죽으면 남는 충돌 기록까지 남긴다. 이 잡은 저장소 비밀을 받지 않고, DB 비밀번호는 실행마다 만드는 일회용이다.
       - name: Retain vendor composition verification
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
@@ -1067,6 +1068,7 @@ jobs:
             build/project-composer/jobs/*/report.json
             build/reusable-base/source/*/build/reports/reusable-base/*.json
             build/reusable-base/source/*/**/build/test-results/vendor*/*.xml
+            build/reusable-base/source/*/**/hs_err_pid*.log
           if-no-files-found: error
           retention-days: 7
 
