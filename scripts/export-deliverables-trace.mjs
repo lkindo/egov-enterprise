@@ -9,7 +9,8 @@
  * journeys 칸은 제품·UX 소유 검토 칸이라 읽기만 한다.
  *
  * 기관 요구사항 추적 CSV(--rtm)는 커밋하지 않는 실행 인자다(DEC-OPS-382 ② 의 예외). 저장소가 추적하는 파일은 받지 않는다. 열은
- * '요구사항 ID'·'대상 ID'(필수)와 '요구사항 이름'(선택)이고, 대상 ID 는 화면 ID(라우트)·역량 ID(라우트#역량)·인터페이스 ID(METHOD 경로)다.
+ * '요구사항 ID'·'대상 ID'(필수)와 '요구사항 이름'(선택), 그리고 외부 요구사항 작업공간이 내보내는 선택 확장 열('요구사항 유형'·'해법 구분'·
+ * '범위 결정'·'작업 ID'·'인수조건 ID'·'연결 의도'·'기관 인수 판정')이고, 대상 ID 는 화면 ID(라우트)·역량 ID(라우트#역량)·인터페이스 ID(METHOD 경로)다.
  *
  * 시험 목록은 정적 추출이다 — 매개변수화 시험의 사례 수, 동적 제목, 조건부 건너뜀을 반영하지 않고, 통과 여부가 아니다.
  */
@@ -130,20 +131,77 @@ export function readRequirements(text) {
   const id = index('요구사항 ID');
   const target = index('대상 ID');
   const name = index('요구사항 이름');
+  const requirementType = index('요구사항 유형');
+  const solutionDisposition = index('해법 구분');
+  const scopeDisposition = index('범위 결정');
+  const workItemId = index('작업 ID');
+  const acId = index('인수조건 ID');
+  const linkIntent = index('연결 의도');
+  const acceptanceDisposition = index('기관 인수 판정');
   if (id < 0 || target < 0) throw new Error("requirement trace CSV needs the columns '요구사항 ID' and '대상 ID'");
-  return rows.map((cells) => ({ id: cells[id]?.trim() ?? '', target: cells[target]?.trim() ?? '', name: name >= 0 ? cells[name]?.trim() : null }))
-    .filter((row) => row.id !== '' || row.target !== '');
+  const cleanCell = (raw) => {
+    const rawStr = raw ?? '';
+    const unescaped = rawStr.startsWith("'") && /^[=+\-@\t\r]/u.test(rawStr.slice(1)) ? rawStr.slice(1) : rawStr;
+    const trimmed = unescaped.trim();
+    return trimmed === '(값 없음)' ? '' : trimmed;
+  };
+  const cellAt = (cells, col) => (col >= 0 ? (cleanCell(cells[col]) || null) : null);
+  return rows.map((cells) => ({
+    id: cleanCell(cells[id]),
+    target: cleanCell(cells[target]),
+    name: name >= 0 ? cleanCell(cells[name]) : null,
+    requirementType: cellAt(cells, requirementType),
+    solutionDisposition: cellAt(cells, solutionDisposition),
+    scopeDisposition: cellAt(cells, scopeDisposition),
+    workItemId: cellAt(cells, workItemId),
+    acId: cellAt(cells, acId),
+    linkIntent: cellAt(cells, linkIntent),
+    acceptanceDisposition: cellAt(cells, acceptanceDisposition),
+  })).filter((row) => row.id !== '' || row.target !== '');
 }
 
-/** 기관 요구사항이 가리키는 대상이 저장소에 있는지. 찾지 못한 대상을 숨기지 않는다. */
-export function requirementSheet(requirements, { screens, capabilities, interfaces }) {
+/** 기관 요구사항이 가리키는 대상이 저장소에 있는지. 찾지 못한 대상을 숨기지 않고 원장 상태·증거 수준과 계획·인수 열을 분리해 보인다. */
+export function requirementSheet(requirements, { screens, capabilities, interfaces, capabilityMap = new Map(), screenMap = new Map() }) {
   const kindOf = (target) => (capabilities.has(target) ? '역량' : screens.has(target) ? '화면' : interfaces.has(target) ? '인터페이스' : null);
+  const hasExtended = requirements.some((row) => row.requirementType || row.solutionDisposition || row.scopeDisposition
+    || row.workItemId || row.acId || row.linkIntent || row.acceptanceDisposition);
+  const columns = [
+    ['id', '요구사항 ID'],
+    ['name', '요구사항 이름'],
+    ['target', '대상 ID'],
+    ['kind', '대상 종류'],
+    ['found', '찾음'],
+    ['ledgerStatus', '원장 상태'],
+    ['evidenceLevel', '증거 수준'],
+    ...(hasExtended ? [
+      ['requirementType', '요구사항 유형'],
+      ['solutionDisposition', '해법 구분'],
+      ['scopeDisposition', '범위 결정'],
+      ['workItemId', '작업 ID'],
+      ['acId', '인수조건 ID'],
+      ['linkIntent', '연결 의도'],
+      ['acceptanceDisposition', '기관 인수 판정'],
+    ] : []),
+  ];
   return {
     id: 'requirements-trace', title: '요구사항 추적 조인', sources: ['(실행 인자) 기관 요구사항 추적 CSV'],
-    notices: ['기관이 넘긴 요구사항 추적 CSV 를 저장소의 화면·역량·인터페이스 ID 와 이은 결과다. 찾지 못한 대상은 "찾음" 칸이 아니오다.',
-      '요구사항의 충족 판정이 아니다 — 대상이 저장소에 있다는 것만 보인다.'],
-    columns: [['id', '요구사항 ID'], ['name', '요구사항 이름'], ['target', '대상 ID'], ['kind', '대상 종류'], ['found', '찾음']],
-    rows: requirements.map((row) => ({ ...row, kind: kindOf(row.target), found: kindOf(row.target) !== null })),
+    notices: [
+      '기관이 넘긴 요구사항 추적 CSV 를 저장소의 화면·역량·인터페이스 ID 와 이은 결과다. 찾지 못한 대상은 "찾음" 칸이 아니오다.',
+      '요구사항의 충족 판정이 아니다 — 대상이 저장소에 있다는 것만 보이며, 원장 상태(partial·unverified 등)·증거 수준(E0~E5)과 기관 인수 판정을 분리해 확인한다.',
+    ],
+    columns,
+    rows: requirements.map((row) => {
+      const kind = kindOf(row.target);
+      const cap = kind === '역량' ? capabilityMap.get(row.target) : null;
+      const scr = kind === '화면' ? screenMap.get(row.target) : null;
+      return {
+        ...row,
+        kind,
+        found: kind !== null,
+        ledgerStatus: cap?.status ?? scr?.status ?? null,
+        evidenceLevel: cap?.evidenceLevel ?? null,
+      };
+    }),
   };
 }
 
