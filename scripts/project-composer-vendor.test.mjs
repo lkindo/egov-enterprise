@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
@@ -24,8 +25,8 @@ import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
-import { assertIsolatedRunnerSupportsProject, closedEnvironment, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
-import { assertOwnedVendorDatabase, assertRemovableVendorDatabase } from './e2e-isolation.mjs';
+import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
+import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
@@ -930,7 +931,7 @@ test('cleanup removes a dead container of this run but never one it cannot attri
 test('the runner launches the vendor container with its own labels and closed environment and gets the container id', () => {
   const calls = [];
   const containerId = 'a'.repeat(64);
-  const runDocker = (args, options) => { calls.push({ args, options }); return { status: 0, stdout: 'Unable to find image locally\n'.repeat(0) + containerId + '\n', stderr: '' }; };
+  const runDocker = (args, options) => { calls.push({ args, options }); return { status: 0, stdout: `Unable to find image locally\n${containerId}\n`, stderr: '' }; };
   const handle = launchVendorContainer('oracle', { publishPort: 1521, runDocker, baseEnvironment: { PATH: 'tools' }, requireContainerId: true,
     extraLabels: ['--label', 'egov.task=isolated-e2e', '--label', 'egov.e2e.run=run'] });
   assert.equal(handle.containerId, containerId);
@@ -985,6 +986,189 @@ test('the runner wires the closed Docker environment, one API environment and th
   const removedAssets = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-removed-assets.json'), 'utf8'));
   const row = Object.values(removedAssets).flat().find(entry => entry?.file === 'scripts/e2e-isolation.test.mjs');
   assert.match(row.coveredBy, /assertOwnedVendorDatabase/, '제거 사유가 지금 실행기와 맞아야 한다');
+  assert.match(row.reason, /공통 판정.*원본 저장소에서만/, '함께 빠지는 공통 판정의 전수 사례를 적는다');
+  assert.match(row.coveredBy, /validateIsolationManifest, assertIsolatedTarget/, '벤더 프로젝트에 남는 공통 판정 시험을 적는다');
+});
+
+/** 실제 launchVendorContainer 와 엔진 값을 쓰고 docker 만 바꾼다. inspect 는 run 인자로 만들어 배선한 라벨·환경이 판정까지 닿는지 본다. */
+function isolatedVendorDatabase({ pollsUntilReady = 1, runFails = false, logFails = false, logFile = null } = {}) {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-isolated-'));
+  const manifest = { ...vendorManifest(), databaseId: '' };
+  const steps = [];
+  const containerId = 'c'.repeat(64);
+  let started;
+  let polls = 0;
+  const reports = [];
+  const warnings = [];
+  const fakeDocker = (args, options) => {
+    if (args[0] === 'run') {
+      if (runFails) return { status: 1, stdout: '', stderr: 'no space left' };
+      started = { args, env: options.env };
+      steps.push('run');
+      return { status: 0, stdout: `${containerId}\n`, stderr: '' };
+    }
+    if (args[0] === 'logs' && args[1] === '--tail') {
+      steps.push(`tail ${args[2]} ${args[3]}`);
+      return logFails ? { status: 1, stdout: '', stderr: 'gone' } : { status: 0, stdout: `started with ${started.env.ORACLE_PASSWORD}\n`, stderr: 'ORA-00001 boom\n' };
+    }
+    if (args[0] === 'logs') {
+      polls += 1;
+      steps.push('poll');
+      return { status: 0, stdout: polls >= pollsUntilReady ? 'DATABASE IS READY TO USE' : 'starting', stderr: '' };
+    }
+    if (args[0] === 'rm') { steps.push(args.join(' ')); return { status: 0 }; }
+    throw new Error(`예상하지 못한 docker 호출: ${args.join(' ')}`);
+  };
+  const live = () => {
+    const container = vendorContainer(manifest);
+    container.Config.Labels = Object.fromEntries(started.args.flatMap((arg, index, all) => (arg === '--label' ? [all[index + 1].split('=')] : [])));
+    container.Config.Image = started.args.find(arg => arg === VENDOR_ENGINES.oracle.image);
+    container.Config.Env = started.args.flatMap((arg, index, all) => (arg === '--env' ? [`${all[index + 1]}=${started.env[all[index + 1]]}`] : []));
+    return container;
+  };
+  const state = { change: value => value };
+  const inspect = id => { steps.push(`inspect ${id}`); return state.change(live()); };
+  const seen = [];
+  let database;
+  try {
+    database = launchIsolatedVendorDatabase({ runtime: { module: { dockerIn: environment => { seen.push(environment); return fakeDocker; }, launchVendorContainer }, id: 'oracle', engine: VENDOR_ENGINES.oracle },
+      runId: manifest.runId, clean: { PATH: 'tools' }, manifest, inspect, logFile: logFile ?? join(directory, 'database.log'),
+      report: message => reports.push(message), warn: message => warnings.push(message) });
+  } catch (error) {
+    rmSync(directory, { recursive: true, force: true });
+    throw error;
+  }
+  return { database, manifest, steps, state, reports, warnings, directory, seen, logFile: join(directory, 'database.log'), inspected: `inspect ${containerId}`, containerId, password: () => started.env.ORACLE_PASSWORD };
+}
+
+test('an isolated vendor database checks cancellation and ownership on every wait', async () => {
+  const fixture = isolatedVendorDatabase({ pollsUntilReady: 3 });
+  try {
+    assert.deepEqual(fixture.seen, [{ PATH: 'tools' }], '실행기가 판정한 데몬과 같은 닫힌 환경으로 docker 를 부른다');
+    assert.equal(fixture.manifest.databaseId, fixture.containerId);
+    const order = [];
+    const port = await fixture.database.waitReady(() => order.push(fixture.steps.length), { wait: async () => fixture.steps.push('wait') });
+    assert.equal(port, '49153');
+    assert.deepEqual(fixture.steps, ['run', fixture.inspected, 'poll', fixture.inspected, 'wait', 'poll', fixture.inspected, 'wait', 'poll'], '대기마다 소유를 다시 본다');
+    assert.equal(order.length, 2, '대기마다 취소를 본다');
+  } finally { rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('a vendor run stops waiting when it is cancelled, loses the container or runs out of time, and can still clean up', async () => {
+  const noWait = async () => {};
+  const cancelled = isolatedVendorDatabase({ pollsUntilReady: 99 });
+  const dead = isolatedVendorDatabase({ pollsUntilReady: 99 });
+  const late = isolatedVendorDatabase({ pollsUntilReady: 99 });
+  try {
+    await assert.rejects(cancelled.database.waitReady(() => { throw new Error('Isolated E2E: run was cancelled.'); }, { wait: noWait }), /run was cancelled/);
+    assert.equal(cancelled.steps.filter(step => step === 'poll').length, 1, '취소하면 더 기다리지 않는다');
+
+    let inspections = 0;
+    dead.state.change = value => { inspections += 1; if (inspections > 1) value.State.Running = false; return value; };
+    await assert.rejects(dead.database.waitReady(() => {}, { wait: noWait }), /isolation verification failed/, '정리 판정은 기동 상태를 보지 않으므로 증명 판정이어야 잡힌다');
+    dead.database.cleanUp();
+    assert.deepEqual(dead.reports, []);
+    assert.deepEqual(dead.steps.slice(-3), [dead.inspected, `tail 2000 ${dead.containerId}`, `rm -f -v ${dead.containerId}`], '판정한 뒤 로그를 남기고 익명 볼륨까지 지운다');
+    const saved = readFileSync(dead.logFile, 'utf8');
+    assert.match(saved, /started with \[password\]/, '이미지가 출력한 비밀번호를 가린다');
+    assert.match(saved, /ORA-00001 boom/, '기동 오류는 stderr 에 있다');
+    assert.ok(!saved.includes(dead.password()), '비밀번호를 근거 폴더에 남기지 않는다');
+
+    let clock = 0;
+    await assert.rejects(late.database.waitReady(() => {}, { wait: noWait, now: () => { clock += 200_000; return clock; } }), /oracle 가 300초 안에 준비되지 않았다/, '시간이 지나면 기다리지 않는다');
+  } finally { for (const fixture of [cancelled, dead, late]) rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('vendor cleanup never reads the logs of a container it cannot attribute, and a lost log does not keep the container', () => {
+  const foreign = isolatedVendorDatabase();
+  const logless = isolatedVendorDatabase({ logFails: true });
+  const unwritable = isolatedVendorDatabase({ logFile: join(tmpdir(), 'vendor-isolated-no-such-folder', 'database.log') });
+  try {
+    foreign.state.change = value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); return value; };
+    foreign.database.cleanUp();
+    assert.deepEqual(foreign.steps, ['run', foreign.inspected], '남의 컨테이너는 로그도 읽지 않고 지우지도 않는다');
+    assert.match(foreign.reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+    assert.equal(existsSync(foreign.logFile), false);
+
+    for (const fixture of [logless, unwritable]) {
+      fixture.database.cleanUp();
+      assert.equal(fixture.steps.at(-1), `rm -f -v ${fixture.containerId}`, '로그를 못 남겨도 지운다');
+      assert.deepEqual(fixture.warnings, ['Isolated E2E: 벤더 DB 로그를 남기지 못했다.']);
+      assert.deepEqual(fixture.reports, [], '로그를 못 남긴 것은 정리 실패가 아니다');
+    }
+    assert.throws(() => isolatedVendorDatabase({ runFails: true }), /^Error: Isolated E2E: oracle 컨테이너를 띄우지 못했다: no space left/, '기동 실패 문구를 사용자에게 보인다');
+  } finally { for (const fixture of [foreign, logless, unwritable]) rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('main keeps the vendor checks wired where a fake docker cannot see them', () => {
+  const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const main = runner.slice(runner.indexOf('export async function main'));
+  assert.match(main, /const vendor = assertIsolatedRunnerSupportsProject\(root, \{ representative: representative\.enabled \}\);/, '구성 판정을 main 에서 건너뛰지 않는다');
+  assert.match(main, /verifyOwner: \(\) => \{ assertActive\(\); verifyRuntime\(\); \}/, '픽스처 쓰기 전마다 취소와 소유를 본다');
+  const positions = ['launchIsolatedVendorDatabase({', 'cleanUpVendorDatabase = database.cleanUp;', 'verifyRuntime = database.verify;', 'await database.waitReady(assertActive);'].map(text => main.indexOf(text));
+  assert.ok(positions.every(position => position >= 0), `벤더 DB 배선이 없다: ${positions}`);
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '대기가 실패해도 지우도록 정리를 먼저 받는다');
+  assert.match(main.slice(main.lastIndexOf('} finally {')), /if \(cleanUpVendorDatabase\) cleanUpVendorDatabase\(\);/, '어떻게 끝나든 벤더 DB 를 지운다');
+});
+
+test('the shared isolation checks the vendor runner relies on stay covered in a vendor project', async () => {
+  const manifest = { version: 1, runId: 'a'.repeat(24), token: 'b'.repeat(64), databaseId: 'c'.repeat(64), createdAt: Date.now() - 1000,
+    apiUrl: 'http://127.0.0.1:18080/api/v1', webUrl: 'http://127.0.0.1:13001', controlUrl: 'http://127.0.0.1:14001/verify' };
+  const environment = value => ({ NEXT_PUBLIC_API_URL: value.apiUrl, NEXT_PUBLIC_WEB_URL: value.webUrl });
+  assert.equal(validateIsolationManifest(manifest, environment(manifest)), manifest);
+  const invalid = {
+    '원격 API': { ...manifest, apiUrl: 'https://shared.example/api/v1' },
+    '원격 통제 서버': { ...manifest, controlUrl: 'https://remote.invalid/verify' },
+    '만료': { ...manifest, createdAt: Date.now() - 7 * 3600000 },
+    '다른 DB 형식': { ...manifest, databaseId: 'not-a-container' },
+  };
+  for (const [label, value] of Object.entries(invalid)) assert.throws(() => validateIsolationManifest(value, environment(value)), /isolation verification failed/, label);
+  assert.throws(() => validateIsolationManifest(manifest, {}), /isolation verification failed/, '앱이 보는 대상과 달라도 멈춘다');
+
+  await assert.rejects(assertIsolatedTarget({}), /isolation verification failed/, '매니페스트 없이는 시험 데이터를 건드리지 않는다');
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-live-owner-'));
+  let attestation = { ready: true, runId: manifest.runId, databaseId: manifest.databaseId };
+  const server = createServer((request, response) => {
+    response.writeHead(request.headers.authorization === `Bearer ${manifest.token}` ? 200 : 403, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(attestation));
+  });
+  await new Promise(done => server.listen(0, '127.0.0.1', done));
+  try {
+    const live = { ...manifest, controlUrl: `http://127.0.0.1:${server.address().port}/verify` };
+    const file = join(directory, 'runtime.json');
+    writeFileSync(file, JSON.stringify(live));
+    const target = { ...environment(live), E2E_ISOLATION_MANIFEST: file };
+    assert.equal((await assertIsolatedTarget(target)).runId, manifest.runId);
+    attestation = { ...attestation, ready: false };
+    await assert.rejects(assertIsolatedTarget(target), /isolation verification failed/, '소유자가 준비를 거두면 멈춘다');
+    attestation = { ...attestation, ready: true, databaseId: 'd'.repeat(64) };
+    await assert.rejects(assertIsolatedTarget(target), /isolation verification failed/, '다른 DB 를 증명하면 멈춘다');
+  } finally {
+    await new Promise(done => server.close(done));
+    rmSync(directory, { recursive: true, force: true });
+  }
+
+  const mfa = createIsolatedMfaEnvironment();
+  assert.equal(mfa.MFA_REQUIRE_PROTECTED, 'false', '보호 계정 MFA 를 강제하지 않는다');
+  assert.equal(Buffer.from(JSON.parse(mfa.MFA_KEYS_JSON)[mfa.MFA_ACTIVE_KEY_ID], 'base64').length, 32);
+  assert.notEqual(mfa.MFA_KEYS_JSON, createIsolatedMfaEnvironment().MFA_KEYS_JSON, '실행마다 새 키다');
+
+  const project = mkdtempSync(join(tmpdir(), 'vendor-dotenv-'));
+  try {
+    writeFileSync(join(project, '.env.example'), 'example');
+    assert.doesNotThrow(() => assertNoDotEnv(project));
+    writeFileSync(join(project, '.env'), 'DB_URL=remote');
+    assert.throws(() => assertNoDotEnv(project), /Isolated E2E/, '.env 가 있으면 멈춘다');
+  } finally { rmSync(project, { recursive: true, force: true }); }
+
+  const routes = { rewrites: { beforeFiles: [], fallback: [], afterFiles: [
+    { source: '/api/v1/:path*', destination: `${manifest.apiUrl}/:path*` },
+    { source: '/actuator/:path*', destination: 'http://127.0.0.1:18080/actuator/:path*' },
+    { source: '/ws/:path*', destination: 'http://127.0.0.1:18080/ws/:path*' },
+  ] } };
+  assert.doesNotThrow(() => assertBuildTarget(routes, manifest.apiUrl));
+  routes.rewrites.afterFiles[0].destination = 'https://remote.invalid/:path*';
+  assert.throws(() => assertBuildTarget(routes, manifest.apiUrl), /Isolated E2E/, '다른 대상으로 빌드한 프런트는 멈춘다');
 });
 
 const ADMIN_GROUP = () => ({ code: 'ROLE_ADMIN', complete: true, version: 'a'.repeat(64), grants: [{ type: 'NAVIGATION', code: '100' }, { type: 'OPERATION', code: 'USER_READ' }] });

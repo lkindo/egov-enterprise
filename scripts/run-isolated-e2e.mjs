@@ -178,14 +178,69 @@ export function vendorDatabaseEnvironment(engine, port, password, adminPassword)
   return { DB_URL: engine.integration.url(port), DB_USERNAME: engine.integration.username, DB_PASSWORD: password, ADMIN_INITIAL_PASSWORD: adminPassword };
 }
 
-/** 지우기 전 판정이 실패하면 지우지 않는다. 앞선 실패를 가리지 않도록 던지지 않고 알린다. */
-export function removeVendorDatabase({ inspect, remove, manifest, engineId, report }) {
+/**
+ * 지우기 전 판정이 실패하면 남의 컨테이너일 수 있어 로그도 읽지 않고 지우지도 않는다.
+ * 앞선 실패를 가리지 않도록 던지지 않고 알린다.
+ */
+export function removeVendorDatabase({ inspect, remove, saveLog = () => {}, manifest, engineId, report }) {
   try {
     assertRemovableVendorDatabase(inspect(manifest.databaseId), manifest, engineId);
+    saveLog(manifest.databaseId);
     if (remove(manifest.databaseId).status !== 0) throw fail('docker rm failed');
   } catch {
     report(`Isolated E2E: 벤더 DB 컨테이너를 지우지 못했다: ${manifest.databaseId}`);
   }
+}
+
+// 기동 실패의 원인은 로그 끝부분에 있다.
+const VENDOR_LOG_TAIL_LINES = '2000';
+
+/** 지우면 원인 근거도 함께 사라진다. 로그를 못 남겨도 컨테이너는 지워야 하므로 던지지 않는다. */
+export function saveVendorDatabaseLog({ runDocker, id, file, password, warn }) {
+  try {
+    const logs = runDocker(['logs', '--tail', VENDOR_LOG_TAIL_LINES, id]);
+    if (logs.status !== 0) throw fail('docker logs failed');
+    // 이미지가 환경값을 출력해도 실행 근거 폴더에 비밀번호를 남기지 않는다.
+    writeFileSync(file, `${logs.stdout ?? ''}${logs.stderr ?? ''}`.replaceAll(password, '[password]'), { flag: 'wx', mode: 0o600 });
+  } catch {
+    warn('Isolated E2E: 벤더 DB 로그를 남기지 못했다.');
+  }
+}
+
+/**
+ * 벤더 DB 를 띄우고 판정·대기·정리를 돌려준다. 컨테이너가 생긴 뒤부터 정리 범위이므로 대기는 호출자가 정리를 받은 다음에 시작한다.
+ */
+export function launchIsolatedVendorDatabase({ runtime, runId, clean, manifest, inspect, logFile, report, warn }) {
+  const { module: engines, id: engineId, engine } = runtime;
+  const { port } = engine.integration;
+  const runDocker = engines.dockerIn(clean);
+  let handle;
+  try {
+    handle = engines.launchVendorContainer(engineId, { publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,
+      extraLabels: ['--label', 'egov.task=isolated-e2e', '--label', `egov.e2e.run=${runId}`] });
+  } catch (error) { throw fail(error.message); }
+  manifest.databaseId = handle.containerId;
+  const expected = { engineId, image: engine.image, port,
+    environment: Object.entries(engine.environment(handle.password)).map(([key, value]) => `${key}=${value}`) };
+  const verify = () => assertOwnedVendorDatabase(inspect(manifest.databaseId), manifest, expected);
+  return {
+    password: handle.password,
+    verify,
+    cleanUp: () => removeVendorDatabase({ inspect, manifest, engineId, report, remove: id => runDocker(['rm', '-f', '-v', id]),
+      saveLog: id => saveVendorDatabaseLog({ runDocker, id, file: logFile, password: handle.password, warn }) }),
+    // 첫 기동이 수십 분 걸릴 수 있어 기다리는 동안에도 취소와 소유를 본다.
+    waitReady: async (assertActive, { wait = pause, now = Date.now } = {}) => {
+      const databasePort = verify();
+      const deadline = now() + engine.maxWaitSeconds * 1000;
+      while (!engine.ready(handle.name, runDocker)) {
+        assertActive();
+        verify();
+        if (now() > deadline) throw fail(`${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
+        await wait(2000);
+      }
+      return databasePort;
+    },
+  };
 }
 
 // 잠금 임계(연속 5회 실패)에 닿지 않아야 뒤따르는 인증 준비가 잠긴 계정을 만나지 않는다.
@@ -381,29 +436,12 @@ export async function main(arguments_ = process.argv.slice(2)) {
       assertActive();
       let databaseEnvironment;
       if (vendorRuntime) {
-        const { module: engines, id: engineId, engine, admin } = vendorRuntime;
-        const { port } = engine.integration;
-        const runDocker = engines.dockerIn(clean);
-        let handle;
-        try {
-          handle = engines.launchVendorContainer(engineId, { publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,
-            extraLabels: ['--label', 'egov.task=isolated-e2e', '--label', `egov.e2e.run=${runId}`] });
-        } catch (error) { throw fail(error.message); }
-        manifest.databaseId = handle.containerId;
-        cleanUpVendorDatabase = () => removeVendorDatabase({ inspect, manifest, engineId, remove: id => runDocker(['rm', '-f', '-v', id]),
-          report: message => { console.error(message); process.exitCode = 1; } });
-        const expected = { engineId, image: engine.image, port,
-          environment: Object.entries(engine.environment(handle.password)).map(([key, value]) => `${key}=${value}`) };
-        verifyRuntime = () => assertOwnedVendorDatabase(inspect(manifest.databaseId), manifest, expected);
-        const databasePort = verifyRuntime();
-        const deadline = Date.now() + engine.maxWaitSeconds * 1000;
-        while (!engine.ready(handle.name, runDocker)) {
-          assertActive();
-          verifyRuntime();
-          if (Date.now() > deadline) throw fail(`${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
-          await pause(2000);
-        }
-        databaseEnvironment = vendorDatabaseEnvironment(engine, databasePort, handle.password, admin.password);
+        const database = launchIsolatedVendorDatabase({ runtime: vendorRuntime, runId, clean, manifest, inspect, logFile: path.join(output, 'database.log'),
+          report: message => { console.error(message); process.exitCode = 1; }, warn: message => console.error(message) });
+        cleanUpVendorDatabase = database.cleanUp;
+        verifyRuntime = database.verify;
+        const databasePort = await database.waitReady(assertActive);
+        databaseEnvironment = vendorDatabaseEnvironment(vendorRuntime.engine, databasePort, database.password, vendorRuntime.admin.password);
       } else {
         const password = randomBytes(24).toString('hex');
         // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
