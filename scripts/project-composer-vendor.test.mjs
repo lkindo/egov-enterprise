@@ -15,7 +15,7 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
-import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
+import { VENDOR_BASELINE_VERSION, assertTestsRan, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
@@ -28,7 +28,7 @@ import { assertIsolatedRunnerSupportsProject } from './run-isolated-e2e.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
-  vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
+  VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
@@ -593,6 +593,69 @@ test('a vendor project verifies on its own database instead of the PostgreSQL sc
   assert.equal(integrationTask().task, ':api-server:vendorIntegrationTest');
   assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--layout', 'single-module']), { input: 'x.json', vendor: 'oracle', layout: 'single-module' });
   assert.deepEqual(ledgerClasses({ tests: [{ test: 'A.java', category: 'as-is' }, { test: 'B.java', category: 'as-is' }] }, name => name === 'B'), ['B'], '구성에서 빠진 시험은 돌았는지 묻지 않는다');
+});
+
+test('the schema command skips the certification step and exists only for a vendor project', () => {
+  const steps = verificationSteps('vendor-schema', 'multi-module', { vendor: 'oracle' });
+  assert.deepEqual(steps.map(step => step.id), ['backend', 'backend'], '거버넌스 첫 단계를 지나지 않아 소스 변경 뒤에도 스키마 신호를 받는다');
+  assert.ok(steps[0].args.includes(':api-server:harnessTest'));
+  assert.deepEqual(steps[1].args, verificationSteps('full', 'multi-module', { vendor: 'oracle' }).filter(step => step.id === 'backend')[1].args, '통합 단계는 전체 검증과 같은 명령이다');
+  assert.ok(verificationSteps('vendor-schema', 'single-module', { vendor: 'oracle' })[0].args.includes('harnessTest'));
+  assert.throws(() => verificationSteps('vendor-schema', 'multi-module'), /only for a project generated on a vendor database/);
+  assert.equal(verificationSteps('full', 'multi-module', { vendor: 'oracle' })[0].id, 'governance', '전체 검증의 의미는 그대로다');
+  assert.equal(integrationTask().conformance, ':api-server:vendorConformanceTest');
+  assert.equal(integrationTask('single-module').conformance, ':vendorConformanceTest');
+});
+
+test('the vendor folder takes only migrations after the baseline', () => {
+  assert.deepEqual(vendorMigrationNameProblems(['V1_0__vendor_baseline.sql', 'V1_1__extra.sql', 'V1_10__more.sql', 'V2_0__next.sql', 'notes.txt']), []);
+  assert.deepEqual(vendorMigrationNameProblems(['R__repeat.sql', 'V0_9__before.sql', 'V1_0__other.sql', 'V1_0_1__patch.sql', 'U1_1__undo.sql', 'V1_1_no_separator.sql']),
+    ['R__repeat.sql', 'V0_9__before.sql', 'V1_0__other.sql', 'V1_0_1__patch.sql', 'U1_1__undo.sql', 'V1_1_no_separator.sql']);
+  assert.equal(VENDOR_BASELINE_VERSION, '1.0');
+  assert.match(vendorBaselinePaths('oracle').migration, /\/V1_0__vendor_baseline\.sql$/, '기준선 버전은 파일 이름과 같다');
+});
+
+test('the catalog test sees the engine names an adopter did not choose removed, and every kind present', () => {
+  const catalog = { columns: ['tb_a.id'], constraints: ['tb_a.primary', 'tb_a.pk_tb_a'], indexes: ['tb_a.ix_a'], triggers: ['tb_a.t'], sequences: ['.sq_a'] };
+  assert.deepEqual(conformanceCatalog('mysql', catalog).constraints, ['tb_a.pk_tb_a'], 'MySQL 은 모든 기본키의 제약 이름이 PRIMARY 다');
+  assert.deepEqual(conformanceCatalog('mariadb', catalog).constraints, ['tb_a.pk_tb_a']);
+  assert.deepEqual(conformanceCatalog('oracle', catalog).constraints, ['tb_a.primary', 'tb_a.pk_tb_a'], '다른 벤더의 primary 는 도입자가 정한 이름이라 판정 대상이다');
+  assert.deepEqual(conformanceCatalog('cubrid', { columns: ['tb_a.id'] }), { columns: ['tb_a.id'], constraints: [], indexes: [], sequences: [] }, '조회가 없는 종류도 빈 목록으로 넘긴다');
+});
+
+test('the baseline is compared before anything else is applied, and the catalog test runs before the fixtures', () => {
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const start = source.indexOf('export function runVendorIntegration');
+  const order = ['migrateWithFlyway(vendorId, integration, handle, migrate, flyway, VENDOR_BASELINE_VERSION)', 'assertVendorApplied(handle, input, vendorId',
+    'const baseline = conformanceCatalog', 'migrateWithFlyway(vendorId, integration, handle, migrate, flyway);', 'runVendorConformance(vendorId', 'runAsAdministrator(handle', 'markOwner(handle)'];
+  const positions = order.map(text => source.indexOf(text, start));
+  assert.ok(positions.every(position => position > 0), '순서를 보는 문장이 사라졌다');
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '기준선 정확 대조는 나머지 적용 앞, 카탈로그 시험은 권한 부여와 소유 표시 앞이다');
+  const migrate = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorFlywayMigrate.java'), 'utf8');
+  assert.match(migrate, /applied != 1/, '기준선 단계는 하나만 적용됐는지 본다');
+});
+
+test('the catalog test replaces the entity linter only in a vendor project, by the ledger', () => {
+  const ledger = readVendorAssetLedger(ROOT);
+  const row = ledger.gates.find(item => item.file.endsWith('EntitySchemaConformanceLinterTest.java'));
+  assert.match(row.coveredBy, /VendorCatalogConformanceTest/);
+  assert.match(row.coveredBy, /Hibernate validate/, '표·컬럼 부재는 validate 가 본다고 적는다');
+  for (const kept of ['UniqueConstraintMirrorLinterTest', 'SchemaNamingLinterTest']) {
+    assert.ok(!ledger.gates.some(item => item.file.includes(kept)), `${kept} 는 기준선 입력을 계속 본다`);
+  }
+  const profile = readFileSync(join(ROOT, 'api-server/src/test/resources/application-tc.yml'), 'utf8');
+  assert.match(profile, /ddl-auto: validate/, '대체의 한쪽이 Hibernate validate 다');
+  assert.equal(integrationEnvironment('oracle', VENDOR_ENGINES.oracle.integration, { port: 1, password: 'x', owner: 'y' }).SPRING_JPA_HIBERNATE_DDL_AUTO, undefined, '벤더 실행이 validate 를 덮지 않는다');
+});
+
+test('the README procedure names a command that exists and what it does not cover', () => {
+  const readme = vendorReadme('oracle');
+  assert.ok(readme.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`));
+  assert.match(readme, /db\/vendor\/oracle/);
+  assert.match(readme, /V1_1__/);
+  for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스']) assert.ok(readme.includes(limit), limit);
+  assert.match(readme, /인증이 아니다/);
+  assert.doesNotMatch(readme, /그쪽에도 맞춰 두어야/, '실행되지 않는 파일에 맞추라는 옛 안내가 돌아오면 안 된다');
 });
 
 test('a failure in the vendor test command is reported as its own command', () => {

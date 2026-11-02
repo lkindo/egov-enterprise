@@ -18,26 +18,36 @@ export const verificationVendor = database => (database?.vendor && database.vend
 /** 벤더 생성물이 통합 시험에 쓰는 번역 입력. */
 export const vendorInputPath = vendor => `config/vendor/${vendor}/vendor-input.json`;
 
+/** 벤더 스키마만 다시 보는 범위. 인증 주장이 없고 벤더 프로젝트에만 있다. */
+export const VENDOR_SCHEMA_SCOPE = 'vendor-schema';
+const GRADLE_OPTIONS = Object.freeze(['--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']);
+/** 생성물의 기준선과 도입자 마이그레이션을 실제 Flyway 로 적용한 DB 에서 대조하고, 카탈로그 시험과 시나리오를 돌린다. */
+const vendorIntegrationStep = (vendor, layout) => ({ id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
+  '--flyway', `classpath:db/vendor/${vendor}`] });
+
 /**
  * 범위·배치에 맞는 검증 단계 표. 명령 목록(verificationCommands)도 이 표에서 만든다.
  * 벤더 생성물의 스키마 시험은 PostgreSQL 컨테이너 대신 그 벤더의 일회용 DB 에서 돈다(ADR-0047 D-10).
  */
 export function verificationSteps(scope = 'full', layout = 'multi-module', { vendor } = {}) {
-  if (!['contracts', 'backend', 'frontend', 'full'].includes(scope)) throw new Error('scope must be contracts, backend, frontend or full');
+  if (!['contracts', 'backend', 'frontend', 'full', VENDOR_SCHEMA_SCOPE].includes(scope)) throw new Error(`scope must be contracts, backend, frontend, full or ${VENDOR_SCHEMA_SCOPE}`);
   normalizeBackendLayout(layout);
   const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
+  if (scope === VENDOR_SCHEMA_SCOPE && !vendor) throw new Error('vendor-schema is only for a project generated on a vendor database');
+  // 생성물 인증(거버넌스 첫 단계)을 지나지 않는다. 첫 소스 변경 뒤 전체 검증이 거기서 멈춰도 벤더 스키마 신호는 받게 한다.
+  if (scope === VENDOR_SCHEMA_SCOPE) return [
+    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...GRADLE_OPTIONS] },
+    vendorIntegrationStep(vendor, layout),
+  ];
   const steps = [
     { id: 'governance', command: 'node', args: ['scripts/verify-reusable-governance.mjs'] },
     { id: 'ui-governance', command: 'node', args: ['--test', 'scripts/reusable-ui-governance-contract.test.mjs'] },
     { id: 'entrypoints', command: 'node', args: ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs'] },
   ];
   if (['backend', 'full'].includes(scope)) steps.push(
-    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]),
-      '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8'] },
+    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]), ...GRADLE_OPTIONS] },
     ...(vendor ? [
-      // 생성물의 기준선 파일을 실제 Flyway 로 적용한 DB 에서 대조하고 시나리오를 돌린다.
-      { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
-        '--flyway', `classpath:db/vendor/${vendor}`] },
+      vendorIntegrationStep(vendor, layout),
       // 대체 분류 시험의 근거다. CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 대조한다.
       { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor] },
     ] : []),
@@ -77,7 +87,7 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
   const layout = normalizeBackendLayout(lock.layout);
   const steps = verificationSteps(scope, layout, { vendor: lock.vendorProjection?.vendor });
   const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
-  const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
+  const report = { schemaVersion: 1, authority: scope === VENDOR_SCHEMA_SCOPE ? 'local-vendor-schema-check' : 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
     result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [] };
   const reports = resolve(root, 'build/reports/reusable-base');
@@ -111,7 +121,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const args = process.argv.slice(2);
     const options = { root: resolve(dirname(fileURLToPath(import.meta.url)), '..') };
     for (let index = 0; index < args.length; index += 2) {
-      if (!['--root', '--scope'].includes(args[index]) || !args[index + 1]) throw new Error('usage: --root PATH --scope contracts|backend|frontend|full');
+      if (!['--root', '--scope'].includes(args[index]) || !args[index + 1]) throw new Error('usage: --root PATH --scope contracts|backend|frontend|full|vendor-schema');
       options[args[index].slice(2)] = args[index + 1];
     }
     if (!existsSync(resolve(options.root, 'reusable-base-lock.json'))) throw new Error('run this command inside a generated reusable artifact');

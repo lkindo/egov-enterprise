@@ -8,14 +8,17 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { artifactTextSha256, vendorBaselinePaths } from './reusable-governance-integrity.mjs';
-import { vendorInputPath } from './verify-reusable-artifact.mjs';
+import { VENDOR_SCHEMA_SCOPE, vendorInputPath } from './verify-reusable-artifact.mjs';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
 import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
+import { ARTIFACT_COMMAND } from './reusable-artifact-entrypoints-contract.mjs';
 
 const RESOURCES = 'api-server/src/main/resources';
 /** classpath 접두사를 뺀 Flyway 위치. 경로의 정본은 거버넌스가 대조하는 vendorBaselinePaths 다. */
 export const vendorMigrationLocation = vendorId => vendorBaselinePaths(vendorId).location.replace('classpath:', '');
+
+export const VENDOR_SCHEMA_ALIAS = 'verify:vendor-schema';
 
 /** 벤더별 소스 값. 드라이버 판은 이관 도구와 같다. */
 export const VENDOR_SOURCE = Object.freeze({
@@ -145,16 +148,36 @@ export function projectVendorEnvironment(text, vendorId) {
   return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me', '.env.example 비밀번호');
 }
 
-const vendorReadme = vendorId => `
+export const vendorReadme = vendorId => `
 ## 데이터베이스
 
 이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 의 번역 기준선만 적용한다. \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 
 \`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
 
-PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 아직 이 DB 를 지원하지 않아 시작할 때 멈춘다.
+PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 엔티티·스키마 정적 린터(아래 카탈로그 시험이 대신한다), 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 아직 이 DB 를 지원하지 않아 시작할 때 멈춘다.
 
-생성 뒤 스키마를 바꾸는 절차는 아직 완성되지 않았다. 새 마이그레이션은 벤더 문법으로 \`db/vendor/${vendorId}\` 에 더한다. 엔티티·명명·유니크 린터는 아직 \`db/migration\` 을 보므로 새 표는 그쪽에도 맞춰 두어야 통과하고, \`npm run regen\` 의 권한 시드도 \`db/migration\` 만 고치므로 새 권한은 벤더 마이그레이션에 직접 넣는다.
+### 생성 뒤 스키마 변경
+
+1. 벤더 문법으로 \`${RESOURCES}/db/vendor/${vendorId}\` 에 \`V1_1__설명.sql\` 처럼 기준선(\`V1_0\`)보다 높은 버전의 파일을 더한다. 번역 기준선(\`V1_0__vendor_baseline.sql\`)은 고치지 않는다. 반복 마이그레이션(\`R__\`)은 지원하지 않는다.
+2. \`npm run verify:vendor-schema\` 로 검사한다. 하네스를 돌린 뒤 일회용 DB 에 기준선만 적용해 번역 결과와 정확히 대조하고, 나머지 마이그레이션을 적용해 카탈로그 시험과 시나리오 시험을 돌린다. 컨테이너가 필요해 시간이 걸린다.
+3. \`db/migration\` 은 고치지 않는다. 실행되지 않는 번역 근거이고, 명명·유니크 미러 린터는 이 입력만 본다.
+
+카탈로그 시험은 적용된 DB 를 읽는다. 카탈로그 전체에서 PK 전략·숫자 변환·길이 초과를, 기준선 뒤에 생긴 객체에서 표·제약·인덱스·시퀀스 이름(\`tb_\`·\`pk_\`·\`fk_\`·\`uk_\`·\`ck_\`·\`ix_\`·\`sq_\`), 새 표의 감사 컬럼, 새 컬럼의 고정 문자형, 새 유니크의 엔티티 미러를 본다. 표·컬럼 부재와 타입 계열은 시나리오 시험을 띄울 때 Hibernate validate 가 본다.
+
+기존 권한의 기본 그룹을 바꾸려면 \`config/governance/permission-catalog.json\` 과 벤더 DB 의 부여를 함께 맞춘다. \`npm run regen\` 은 \`db/migration\` 의 시드만 고치므로 벤더 마이그레이션에 부여 변경을 직접 넣는다. 둘이 어긋나면 카탈로그 시험이 붉다.
+
+이 명령은 인증이 아니다. 생성물 전체 검증(\`npm run verify\`)은 소스가 바뀌면 인증 증거가 낡았다고 첫 단계에서 멈추는 것이 정상이고, 이 명령은 그 단계를 지나지 않는다.
+
+지원하지 않는 것:
+
+- 파괴적 DDL 검사: 무중단 마이그레이션 린터가 없다. 컬럼 삭제·타입 축소·이름 변경의 무중단 여부는 사람이 판단한다.
+- 명명 예외: 카탈로그 시험에는 예외를 적을 자리가 없다. 표준 밖의 이름은 붉다.
+- 도입자가 더한 CHECK·트리거의 의미: 차등 시험은 번역 입력만 보므로 PostgreSQL 과 같은 값으로 대조되지 않는다. 시험을 직접 더한다.
+- 같은 이름의 컬럼 타입 변경: 새 객체가 아니어서 고정 문자형 규칙이 보지 않는다. Oracle 은 Hibernate validate 가 \`VARCHAR2\` 와 CLOB 을 구분하지 못하므로 짧은 컬럼을 CLOB 으로 바꾸지 않았는지 사람이 확인한다.
+- 새 권한 코드: 권한 코드는 구성과 정확히 일치해야 해 \`npm run regen\` 이 멈춘다. PostgreSQL 프로젝트와 같다.
+- 새 Java 소스: 생성물의 소스 모집단은 투영 기록과 정확히 일치해야 해 새 엔티티·서비스를 더하면 하네스가 붉다. PostgreSQL 프로젝트와 같다. 기존 엔티티의 필드 변경은 된다.
+- \`scripts/domain-registration-doctor.mjs\` 는 \`db/migration\` 만 읽으므로 벤더 폴더의 새 표를 보지 못한다.
 `;
 
 /** 생성물 트리를 벤더로 투영한다. 소스 생성기가 PostgreSQL 번들을 설치한 뒤 부른다. */
@@ -195,6 +218,11 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   writeFileSync(deploy, projectVendorDeploy(readFileSync(deploy, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
   const environment = join(output, '.env.example');
   writeFileSync(environment, projectVendorEnvironment(readFileSync(environment, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
+  // 생성 뒤 스키마 변경을 검사하는 별칭. 전체 검증과 달리 인증 단계를 지나지 않는다.
+  const packagePath = join(output, 'package.json');
+  const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+  pkg.scripts[VENDOR_SCHEMA_ALIAS] = `${ARTIFACT_COMMAND} --scope ${VENDOR_SCHEMA_SCOPE}`;
+  writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
   const readme = join(output, 'README.md');
   writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId)}`, 'utf8');
 

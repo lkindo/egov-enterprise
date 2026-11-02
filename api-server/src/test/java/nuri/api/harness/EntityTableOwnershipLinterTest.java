@@ -147,8 +147,7 @@ class EntityTableOwnershipLinterTest {
     @DisplayName("감사 컬럼: 쓰기 모델 감사 4개와 불변 이력(권한·공통코드·결재 처리·결재 참조·민감 작업) insert 감사 2개가 물리 스키마와 일치한다")
     void auditColumnMappingsMatchFlywayPhysicalColumns() throws IOException {
         EntityInventory inventory = scanEntities();
-        Map<String, Map<String, String>> schema =
-                new EntitySchemaConformanceLinterTest().replayMigrations();
+        Map<String, Map<String, String>> schema = MigrationSchemaReplay.replay();
 
         List<String> violations = new ArrayList<>();
         Map<AuditShape, Integer> census = new EnumMap<>(AuditShape.class);

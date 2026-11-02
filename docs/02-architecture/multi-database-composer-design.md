@@ -171,9 +171,9 @@ flowchart TD
 
 **시드와 권한 재생성의 분리**: 지금은 번들 파일 다섯 개 이름이 고정이고([project-composer-source.mjs:71](../../scripts/project-composer-source.mjs)), 소스 투영의 `generatePermissions()` 가 `R__zz_seed_base_admin.sql` 의 생성 마커를 필수로 읽어 다시 쓴다([generate-permissions.mjs:64](../../scripts/generate-permissions.mjs), [reusable-governance-projection.mjs:128](../../scripts/reusable-governance-projection.mjs)). 출력만 `V1_*` 로 바꾸면 이미 적용된 마이그레이션이 재생성으로 수정된다. 그래서 다음을 계약으로 둔다.
 
-- 벤더 프로젝트의 `generatePermissions()` 는 Java·TS·원장만 만들고 시드는 쓰지 않는다.
+- 벤더 프로젝트도 PostgreSQL 번들을 번역 근거로 그대로 둔다. `generatePermissions()` 는 그 번들의 시드를 다시 쓰지만 Flyway 는 그 폴더를 실행하지 않아 벤더 기준선과 체크섬을 건드리지 않는다. 시드 앵커를 읽는 하네스(`SecurityAuthAnnotationLinterTest`)가 있어 쓰기를 멈추지 않는다.
 - 번들 파일 집합은 어댑터가 선언하고 `verifyCompositionDatabaseFiles` 가 벤더별로 대조한다.
-- 생성 뒤 권한을 더하는 절차는 벤더 문법의 새 마이그레이션을 쓰는 것이다. 재생성은 기존 마이그레이션 체크섬과 회수된 권한을 건드리지 않는다.
+- 생성 뒤 기본 그룹을 바꾸는 절차는 카탈로그와 벤더 문법의 새 마이그레이션을 함께 고치는 것이다. 재생성만으로는 벤더 DB 에 반영되지 않으므로 벤더 카탈로그 시험이 `defaultGroups` 와 실제 부여를 양방향으로 대조한다. 새 권한 코드는 구성과의 정확 일치 때문에 재생성이 멈춘다(GAP-COMPOSE-002).
 - `R__zz_seed_base_admin.sql` 을 읽는 소비자는 생성물 기준으로 스크립트 6개(`generate-permissions`, `generate-reusable-base-db`, `export-deliverables-db`, `merge-main-regenerate`, `project-composer-menu-preview`, `project-composer-source`)와 그 시험, 하네스 2개(`SecurityAuthAnnotationLinterTest`, `BaseAdminBootstrapSeedIntegrationTest`)다. 단계 1 에서 벤더별 처리를 정한다.
 
 ## 4. 앱 SQL 중립화(D-6)
@@ -304,7 +304,7 @@ Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 
 | CUBRID | 커뮤니티 `CUBRIDDialect` | Central 의 `flyway-database-cubrid` 는 10.26.0 에서 멈췄다. Flyway 12 용 플러그인을 직접 둔다 | `cubrid-jdbc`, `maven.cubrid.org` |
 | Tibero | 없음. `OracleDialect` 상속 방언을 직접 둔다 | 없음. 플러그인을 직접 둔다 | 공개 저장소 없음. 도입자가 jar 제공 |
 
-벤더 프로젝트에서 제거하고 lock 에 남기는 것: `migration-tool`(target 이 PostgreSQL 전용, `nuri/migration/postgres/*`), 백업·복원 도구, 릴리스 스모크, 화면 기준선 실행기, ZDM 린터. 목록은 `config/governance/vendor-removed-assets.json` 이고 게이트마다 사유와 대체 시험 유무를 적는다. 게이트 제거는 `vendor-postgresql-assets` 규칙으로 승인한다. 단일모듈 어댑터도 이관 소스 세트를 뺀다.
+벤더 프로젝트에서 제거하고 lock 에 남기는 것: `migration-tool`(target 이 PostgreSQL 전용, `nuri/migration/postgres/*`), 백업·복원 도구, 릴리스 스모크, 화면 기준선 실행기, ZDM 린터, 엔티티·스키마 정적 린터(적용된 카탈로그를 보는 시험으로 대체). 목록은 `config/governance/vendor-removed-assets.json` 이고 게이트마다 사유와 대체 시험 유무를 적는다. 게이트 제거는 `vendor-postgresql-assets` 규칙으로 승인한다. 단일모듈 어댑터도 이관 소스 세트를 뺀다.
 
 격리 E2E 실행기는 빼지 않는다. DB 기동 몇 줄만 PostgreSQL 에 묶여 있고 `frontend/e2e` 에는 PostgreSQL 코드가 없어, §7 의 대표 E2E 는 이 실행기를 벤더 대응으로 고쳐 충족한다. 그때까지 벤더 프로젝트에서는 시작할 때 멈춘다. 운영 문서(`docs/`)도 원본 기준으로 남기고 생성물 README 에 범위를 적는다.
 
@@ -520,13 +520,29 @@ Oracle 19c 첫 실행의 실패 11건은 모두 시험 코드였다. 시험이 O
 
 벤더 컨테이너는 생성 작업의 토큰 표식을 달고 뜬다. 취소는 검증 프로세스를 강제로 끝내므로 자식의 정리가 돌지 않는다. 부모의 정리가 벤더 작업에서는 표식으로 컨테이너를 모두 찾아 지우고, 끝내 남은 것은 다음 기동의 복구가 같은 표식으로 회수한다.
 
-PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json`)대로 걷는다. 잠금과 생성물 거버넌스가 부재를 대조하므로 되살아나면 붉다. SQL 을 읽는 하네스 가운데 뜻이 유지되는 것은 남겼다. 구조·명명 린터는 번역 입력을 보고, 그 입력이 벤더 DB 와 같다는 것은 Flyway 적용 대조가 잇는다. 시드 위치 린터는 Flyway 가 적용하는 `db/vendor` 도 본다. ZDM 린터만 실행되지 않는 파일을 읽어 거짓 신호라 뺐다.
+PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json`)대로 걷는다. 잠금과 생성물 거버넌스가 부재를 대조하므로 되살아나면 붉다. SQL 을 읽는 하네스 가운데 뜻이 유지되는 것은 남겼다. 명명·유니크 미러 린터는 번역 입력을 보고, 그 입력이 벤더 DB 와 같다는 것은 Flyway 적용 대조가 잇는다. 시드 위치 린터는 Flyway 가 적용하는 `db/vendor` 도 본다. ZDM 린터는 실행되지 않는 파일을 읽어 거짓 신호라 뺐다. 엔티티·스키마 린터는 아래 카탈로그 시험으로 대체하고 뺐다.
 
-그 대조는 생성 시점에만 성립한다. 도입자가 생성 뒤 벤더 폴더에 마이그레이션을 더하면 엔티티·명명·유니크 린터는 그 파일을 읽지 못해, 새 표를 실행되지 않는 `db/migration` 에도 적어야 통과한다. `npm run regen` 의 권한 시드도 `db/migration` 만 고친다. 생성물 README 에 적었고 벤더를 `certified` 로 올리기 전에 푼다.
+**생성 뒤 스키마 변경.** 도입자는 벤더 폴더에 기준선보다 높은 버전의 `V` 파일을 더하고 `npm run verify:vendor-schema` 로 검사한다. `R__` 는 Flyway 가 target 을 줘도 적용해(Oracle 에서 확인했다) 기준선 단계의 하나만 적용 가드가 거짓 실패하므로, 실행 도구가 컨테이너를 띄우기 전에 파일 이름으로 막는다.
+
+실행 도구는 Flyway 를 두 번 돌린다. 먼저 `target=1.0` 으로 기준선만 적용해 적용 수 1 을 확인하고 지금까지의 정확 대조(`assertVendorApplied`)를 그대로 받는다. 대조 기준은 넓히지 않았다. 그때의 이름 목록을 적어 두고 나머지를 적용한 뒤, 다시 읽은 목록과 함께 파일로 넘겨 `vendorConformanceTest`(`@Tag("vendor-conformance")`)를 돌린다. 이 시험은 관리자 부여·소유 표(`vendor_test_owner`)·시나리오 시험보다 앞서므로 시험용 객체를 도입자 객체로 보지 않는다.
+
+| 규칙 | 범위 | 입력 |
+|---|---|---|
+| PK 전략·숫자 변환·길이 초과 | 카탈로그 전체 | JDBC 메타데이터를 JDBC 타입 코드로 정규화 |
+| 표·제약·인덱스·시퀀스 이름, 새 표의 감사 컬럼, 새 컬럼의 고정 문자형 | 기준선 뒤의 새 객체 | 두 시점 이름 목록의 차이(어댑터의 메타 조회 재사용) |
+| 유니크 미러 | 기준선 뒤의 새 유니크 | 드라이버의 유니크 인덱스. 이름 없는 제약(`SYS_C`)도 새 유니크로 잡고, Oracle 함수 인덱스는 숨은 컬럼 대신 `user_ind_expressions` 의 식에서 컬럼을 읽는다 |
+| 초기 권한 | 전체 | 카탈로그 `defaultGroups` ↔ `tb_authrt_grnt_map` OPERATION 양방향 |
+| 표·컬럼 부재, 타입 계열 | 전체 | 시나리오 시험 문맥의 Hibernate validate(같은 불변식을 두 게이트에 두지 않는다) |
+
+기준선 전체에 미러·명명 규칙을 돌리지 않는 이유는 어댑터 파생 객체다. MySQL·SQL Server 의 `*_hash` 유니크와 Oracle 의 CASE 함수 인덱스는 엔티티가 모르는 모양이고, MySQL 은 모든 기본키의 제약 이름이 `PRIMARY` 다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가 맡으므로 그 린터는 남겼다. 명명 린터도 이번에는 둔다.
+
+`npm run verify` 의 의미는 바꾸지 않았다. 거버넌스 첫 단계가 소스 변경을 잡아 멈추므로 첫 변경 뒤에는 그 뒤 단계에 닿지 못하고, 이는 PostgreSQL 생성물과 같다(`reusable-base-guide.md`). 새 명령은 그 단계를 지나지 않으며 인증을 주장하지 않는다(보고서 `authority: local-vendor-schema-check`).
+
+지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
 
 화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 승격은 원장 값 변경으로 끝난다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
 
-남은 일: 생성 뒤 스키마 변경 경로, 격리 E2E 실행기의 벤더 대응과 대표 E2E, 19c 기본 접속값.
+남은 일: 격리 E2E 실행기의 벤더 대응과 대표 E2E, 19c 기본 접속값.
 
 ### 공수 재판단(ADR-0047 재검토 조건)
 

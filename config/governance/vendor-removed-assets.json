@@ -32,6 +32,11 @@
   ],
   "gates": [
     {
+      "file": "api-server/src/test/java/nuri/api/harness/EntitySchemaConformanceLinterTest.java",
+      "reason": "벤더 프로젝트의 Flyway 는 이 린터가 재생하는 PostgreSQL 번역 입력을 실행하지 않는다. 벤더 폴더에 더한 표는 입력에 없어 새 엔티티가 붉고, 입력에만 적으면 실제 스키마와 무관하게 초록이다.",
+      "coveredBy": "api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java 가 적용된 카탈로그로 PK 전략·숫자 변환·길이를 보고, 표·컬럼 부재는 시나리오 시험 문맥의 Hibernate validate(application-tc.yml)가 본다"
+    },
+    {
       "file": "api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java",
       "reason": "벤더 프로젝트의 Flyway 는 번역 기준선만 적용하므로 이 린터가 읽는 PostgreSQL 마이그레이션은 실행되지 않는다. 남기면 통과가 거짓 신호다.",
       "coveredBy": null

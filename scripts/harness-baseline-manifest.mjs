@@ -69,7 +69,7 @@ export const MINIMUM_GATE_SOURCES = 40;
 */
 const GATE_FILE_PATTERN =
   /(?:LinterTest|ArchTest|MatrixTest|GuardrailIntegrationTest|ValidationIntegrationTest|Archunit\w*|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules)\.java$/;
-const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@ArchTag("architecture-gate")'];
+const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@Tag("vendor-conformance")', '@ArchTag("architecture-gate")'];
 
 /*
   소스 전체 해시 대상 — ArchUnit 계열과 판정 본문 자체가 계약인 표적 게이트. ArchUnit 의 규칙과 allowlist 는 `static final` 상수가 아니라
@@ -77,7 +77,7 @@ const GATE_TAGS = ['@Tag("governance-harness")', '@Tag("schema-validation")', '@
   전체를 해시한다. 메타 게이트(HarnessBaselineIntegrityTest)도 여기 있다 — 이 도구를 실행하고 판정하는 본문이 그 게이트의 전부다.
 */
 const ARCH_RULE_FILE_PATTERN =
-  /(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|HarnessBaselineIntegrityTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
+  /(?:WorkflowManifestLinterTest|FlywaySchemaOwnershipLinterTest|ReusableHarnessProfile|ControllerScanBaseLinterTest|EntityLombokSourceLinterTest|EntitySchemaConformanceLinterTest|MigrationSchemaReplay|SchemaConformanceRules|VendorCatalogConformanceTest|EntityTableOwnershipLinterTest|HandlerReachesServiceLinterTest|HarnessBaselineIntegrityTest|PageableConstructionLinterTest|PkGenerationStandardLinterTest|ResponseContractLinterTest|SecurityAuthAnnotationLinterTest|ServiceReadOnlyTransactionalLinterTest|SchemaValidationIntegrationTest|WriteSmokeIntegrationTest|AuthorizationAdministrationIntegrationTest|AttachmentSourceRegistryLinterTest|CrossDomainCouplingLinterTest|InputContractMirrorLinterTest|PrivacyAccessCensusLinterTest|ArchTest|ArchitectureTest|IsolationTest|ArchitectureRules|ConventionRules|Archunit\w*)\.java$/;
 
 /*
   게이트 판정의 근거 데이터를 담은 registry 와 실행 가능한 생성물 정책 — 내용 해시를 동결한다. 동결 census 가 상수에서 JSON registry 로

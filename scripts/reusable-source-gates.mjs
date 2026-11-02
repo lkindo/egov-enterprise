@@ -354,7 +354,7 @@ function adaptOwnershipGuardBaseline(output) {
 export function adaptGeneratedHarness(output) {
   const replacements = [
     {
-      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'EntitySchemaConformanceLinterTest.java'),
+      path: join(output, 'api-server', 'src', 'test', 'java', 'nuri', 'api', 'harness', 'MigrationSchemaReplay.java'),
       from: 'if (files.size() < 20)',
       to: 'if (files.size() < 2)',
     },

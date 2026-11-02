@@ -497,7 +497,7 @@ function taggedClasses(cwd) {
       const path = join(dir, entry.name);
       if (entry.isDirectory()) walk(path);
       else if (entry.name.endsWith('.java')) {
-        const tag = /@Tag\("(governance-harness|schema-validation)"\)/.exec(readFileSync(path, 'utf8'))?.[1];
+        const tag = /@Tag\("(governance-harness|schema-validation|vendor-conformance)"\)/.exec(readFileSync(path, 'utf8'))?.[1];
         if (tag) found.set(entry.name.slice(0, -'.java'.length), tag);
       }
     }

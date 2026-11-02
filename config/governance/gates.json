@@ -365,7 +365,7 @@
           },
           {
             "source": "api-server/build.gradle",
-            "fragment": "useJUnitPlatform { excludeTags 'governance-harness', 'schema-validation' }",
+            "fragment": "useJUnitPlatform { excludeTags 'governance-harness', 'schema-validation', 'vendor-conformance' }",
             "tiers": [
               "local-full",
               "ci"
@@ -577,6 +577,10 @@
         {
           "id": "GH-UNREACHABLE-SERVICE",
           "source": "api-server/src/test/java/nuri/api/harness/UnreachableServiceLinterTest.java"
+        },
+        {
+          "id": "GH-SCHEMA-CONFORMANCE-RULES",
+          "source": "api-server/src/test/java/nuri/api/harness/SchemaConformanceRulesTest.java"
         },
         {
           "id": "GH-VENDOR-SQL-PORTABILITY",
@@ -1285,6 +1289,62 @@
         {
           "id": "DB-OPERATIONAL-SIGNAL-ISOLATION",
           "source": "api-server/src/test/java/nuri/api/schema/OperationalSignalIsolationIntegrationTest.java"
+        }
+      ]
+    },
+    {
+      "id": "GATESET-VENDOR-CONFORMANCE",
+      "selector": {
+        "type": "java-class-annotation",
+        "annotation": "Tag",
+        "value": "vendor-conformance",
+        "roots": [
+          "api-server/src/test/java/nuri/api/harness"
+        ],
+        "executionBindings": [
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "tasks.register('vendorConformanceTest', Test) {",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": "api-server/build.gradle",
+            "fragment": "useJUnitPlatform { includeTags 'vendor-conformance' }",
+            "tiers": [
+              "local-full"
+            ]
+          },
+          {
+            "source": "scripts/project-composer-vendor-integration.mjs",
+            "fragment": "runVendorConformance(vendorId, integration, handle, { task: conformance, results: conformanceResults }, snapshot);",
+            "tiers": [
+              "local-full"
+            ]
+          }
+        ]
+      },
+      "tier": [
+        "local-full"
+      ],
+      "task": ":api-server:vendorConformanceTest",
+      "category": "database",
+      "owner": "database",
+      "requiredCiContext": "backend-build",
+      "inputs": [
+        "api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java",
+        "api-server/src/test/java/nuri/api/harness/SchemaConformanceRules.java",
+        "scripts/project-composer-vendor-integration.mjs"
+      ],
+      "evidence": [
+        "api-server/build/test-results/vendorConformanceTest"
+      ],
+      "redProof": "In a project generated for a vendor, add a migration creating a table without the tb_ prefix, shrinking an entity-mapped column, or adding an unmirrored unique; npm run verify:vendor-schema must fail in vendorConformanceTest with the rule named. SchemaConformanceRulesTest holds the same judgements without a database.",
+      "rules": [
+        {
+          "id": "VENDOR-CATALOG-CONFORMANCE",
+          "source": "api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java"
         }
       ]
     },
