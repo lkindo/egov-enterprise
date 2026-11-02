@@ -11,6 +11,7 @@
 | 상황 | 문서 |
 |---|---|
 | 이 프레임워크로 **새 프로젝트를 시작**한다 | [getting-started.md](03-guides/getting-started.md) — 온보딩 런북 |
+| **초기 요구사항 수집부터 단계별로 에이전트에게 작업을 지시**한다(`P0~P5`) | [design-to-deliverables-guide.md §7](03-guides/design-to-deliverables-guide.md#7-요구사항-입구intake통합-전환cutover최종-종료closeout-연결) — 요구사항 작업공간 CLI·3축 Fit-Gap·에이전트 지시 플레이북 |
 | **에이전트로 작업**한다(작업 등급·승인·검증 절차) | [orchestration-protocol.md](03-guides/orchestration-protocol.md) — SOP |
 | **테스트를 쓴다** | [testing-guide.md](03-guides/testing-guide.md) (SSOT) → [e2e-test-guide.md](03-guides/e2e-test-guide.md) |
 | **게이트가 red 인데 원인을 모른다** | [verification-blindspots.md](04-operations/verification-blindspots.md) · [.githooks/README.md](../.githooks/README.md) |
@@ -85,7 +86,7 @@ ADR 목록·상태·작성 규약은 [decisions/README.md](02-architecture/decis
 | [orchestration-protocol.md](03-guides/orchestration-protocol.md) | **SOP** — 작업 등급·위임·감사·증거 기반 검증 |
 | [harness-improvement-pilot.md](03-guides/harness-improvement-pilot.md) | 스킬 정합·통합 하네스 중복 판단·관측용 실행 기록과 시각 회귀 행동 평가 1건의 범위 |
 | [governance-atlas-guide.md](03-guides/governance-atlas-guide.md) | Atlas 읽기·소스 생성·현행화·검증 및 증거 경계 |
-| [design-to-deliverables-guide.md](03-guides/design-to-deliverables-guide.md) | 설계 검토 예산·패턴 갤러리·토큰 키트·등록 점검기·감리·검수 입력 자료 초안 내보내기의 쓰임과 증거 경계, 공공 SW 규범 대응 |
+| [design-to-deliverables-guide.md](03-guides/design-to-deliverables-guide.md) | 설계 검토 예산·패턴 갤러리·토큰 키트·등록 점검기·감리·검수 입력 자료 초안 내보내기의 쓰임과 증거 경계, 공공 SW 규범 대응, 앞단 요구사항 작업공간(`P0~P5`)·에이전트 지시 플레이북 |
 | [governance-review-lifecycle.md](03-guides/governance-review-lifecycle.md) | 실제 시계 검토 보고, 기관 도입 preflight, 프로필 원장·메모리 투영과 무결성, 독립 이관 검증 |
 | [testing-guide.md](03-guides/testing-guide.md) | **테스트 SSOT** — 단위/통합/E2E 전략 |
 | [e2e-test-guide.md](03-guides/e2e-test-guide.md) | E2E 운영 Runbook |
