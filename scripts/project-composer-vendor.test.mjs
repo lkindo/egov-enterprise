@@ -23,7 +23,7 @@ import { createJobTimeline, verificationStepMarkers } from './project-composer-t
 import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
-import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
+import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
 import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
@@ -1195,10 +1195,31 @@ test('the runner wires the closed Docker environment, one API environment and th
   assert.match(row.coveredBy, /assertOwnedVendorDatabase/, '제거 사유가 지금 실행기와 맞아야 한다');
   assert.match(row.reason, /공통 판정.*원본 저장소에서만/, '함께 빠지는 공통 판정의 전수 사례를 적는다');
   assert.match(row.coveredBy, /validateIsolationManifest, assertIsolatedTarget/, '대신 도는 공통 판정 시험을 적는다');
-  // 대체 시험이 도는 자리를 사실대로 적는다. 생성물은 이 시험 파일을 복사만 하고 돌리지 않는다.
+});
+
+// 대체 시험이 도는 자리를 사실대로 적는다. 이 시험 파일은 생성물에도 복사되므로 생성물 안에서는 그쪽 별칭과 실제 워크플로를 본다.
+test('the isolation replacement cases run in the source operational contracts, and a generated project does not run them', () => {
+  const removedAssets = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-removed-assets.json'), 'utf8'));
+  const row = Object.values(removedAssets).flat().find(entry => entry?.file === 'scripts/e2e-isolation.test.mjs');
   assert.match(row.coveredBy, /원본 저장소의 운영 계약\(test:operational-contracts\)에서 도는 scripts\/project-composer-vendor\.test\.mjs/);
-  assert.match(JSON.parse(readFileSync(join(ROOT, 'package.json'), 'utf8')).scripts['test:operational-contracts'], /"scripts\/\*\.test\.mjs"/);
-  assert.ok(!verificationSteps('full', 'multi-module', { vendor: 'oracle' }).flatMap(step => step.args).some(argument => argument.includes('project-composer-vendor.test')), '생성물 검증이 돌리게 되면 원장 문장을 고친다');
+  const isArtifact = existsSync(join(ROOT, 'reusable-base-lock.json'));
+  const readText = path => readFileSync(join(ROOT, path), 'utf8').replace(/\r\n/g, '\n');
+  const contracts = JSON.parse(readText('package.json')).scripts['test:operational-contracts'];
+  if (isArtifact) assert.equal(contracts, artifactAliases['test:operational-contracts']);
+  else assert.match(contracts, /"scripts\/\*\.test\.mjs"/);
+  // 파일을 직접 적어도, glob 이나 폴더로 돌려도 원장 문장이 틀린 것이다.
+  for (const layout of ['multi-module', 'single-module']) {
+    for (const scope of ['contracts', 'backend', 'frontend', 'full', 'vendor-schema']) {
+      for (const argument of verificationSteps(scope, layout, { vendor: 'oracle' }).flatMap(step => step.args)) {
+        assert.doesNotMatch(argument, /project-composer-vendor\.test|\*|^scripts\/?$/, `생성물 검증이 돌리게 되면 원장 문장을 고친다: ${layout} ${scope}`);
+      }
+    }
+  }
+  assert.equal(artifactAliases.verify, ARTIFACT_COMMAND);
+  const workflow = isArtifact ? readText('.github/workflows/ci.yml') : reusableArtifactEntrypoints('core',
+    JSON.parse(readText('.github/required-checks.json')).criticalSteps.find(step => step.name === 'Run gitleaks (working tree + incremental)').run, readText('.github/workflows/ci.yml')).workflow;
+  assert.match(workflow, /^ +run: node scripts\/verify-reusable-artifact\.mjs$/m);
+  assert.doesNotMatch(workflow, /\.test\.mjs|node --test|npm (?:run )?test/, '생성물 ci.yml 이 돌리게 되면 원장 문장을 고친다');
 });
 
 /** 실제 launchVendorContainer 와 엔진 값을 쓰고 docker 만 바꾼다. inspect 는 run 인자로 만들어 배선한 라벨·환경이 판정까지 닿는지 본다. */

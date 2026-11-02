@@ -918,23 +918,27 @@ test('every certification input and CI-only path selects the vendor job on the r
   }
 });
 
-// 벤더 SQL 원장에 없고 네이티브 SQL 도 없는 파일들이다. 표지를 좁히면 이 파일들이 조용히 꺼진다.
+// 쿼리 표지가 아니면 입력이 아닌 파일들이다. @Query·com.querydsl 표지를 좁히면 이 파일들이 조용히 꺼진다.
+// createQuery 는 원장에 있는 파일에만, @Lock 은 @Query 와 함께만 쓰여 실제 파일로 고정하지 못하므로 아래 합성 사례와 증거 시험의 표지 사례가 지킨다.
 const QUERY_FILES = {
-  'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepository.java': 'JPQL @Query',
+  'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepository.java': '@Query+@Lock',
   'business-core/src/main/java/nuri/business/domain/auth/RefreshTokenRepository.java': 'JPQL UPDATE',
-  'business-app/src/main/java/nuri/business/domain/comment/CommentRepository.java': '@Lock',
+  'business-app/src/main/java/nuri/business/domain/comment/CommentRepository.java': '@Query+@Lock',
   'business-app/src/main/java/nuri/business/domain/board/BoardRepositoryImpl.java': 'QueryDSL',
   'business-app/src/main/java/nuri/business/domain/sms/SmsRepositoryImpl.java': 'QueryDSL template',
   'business-core/src/main/java/nuri/business/domain/login/LoginPolicyRepositoryImpl.java': 'QueryDSL template',
-  'business-app/src/main/java/nuri/business/domain/board/BoardPredicate.java': 'QueryDSL condition only',
   'business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java': 'QueryDSL in a service',
   'business-core/src/main/java/nuri/business/service/log/SensitiveAuditQueryService.java': 'QueryDSL in a service',
-  'business-core/src/main/java/nuri/business/domain/log/UserLogRepositoryImpl.java': 'createQuery',
 };
+// 네이티브 SQL·매핑·포트 표지. 여기 걸린 파일은 쿼리 표지를 지워도 입력으로 남는다.
+const NON_QUERY_MARKER = /@(?:(?:jakarta\.persistence|org\.hibernate\.annotations)\.)?(?:Entity|Embeddable|MappedSuperclass|Converter|FilterDefs?)\b|\bAttributeConverter\b|\bVendorSqlDialect\b|\bnativeQuery\b|\bcreateNative\w*Query\b|\b(?:NamedParameter)?JdbcTemplate\b|\bJdbcClient\b/;
 
 test('JPQL, QueryDSL and lock files select the vendor job, but a derived query or a plain service does not', () => {
   const inputs = vendorEvidenceInputs(repoRoot, vendorLedger(), 'oracle');
+  const sqlLedger = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config/governance/vendor-sql-ledger.json'), 'utf8')).locations.map(row => row.path);
   for (const [file, kind] of Object.entries(QUERY_FILES)) {
+    assert.ok(!sqlLedger.includes(file), `원장으로도 입력이면 이 행이 쿼리 표지를 시험하지 못한다: ${file}`);
+    assert.doesNotMatch(fs.readFileSync(path.join(repoRoot, file), 'utf8'), NON_QUERY_MARKER, `다른 표지로도 입력이면 이 행이 쿼리 표지를 시험하지 못한다: ${file}`);
     assert.ok(inputs.includes(file), `${kind}: ${file}`);
     assert.deepEqual(vendorFields(classifyChangedFiles([file], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, `${kind}: ${file}`);
   }
@@ -942,6 +946,7 @@ test('JPQL, QueryDSL and lock files select the vendor job, but a derived query o
   assert.equal(change('interface R { @Query("select r from R r") List<R> all(); }', 'interface R {}'), true, 'JPQL added');
   assert.equal(change('interface R {}', 'interface R { @Query("select r from R r") List<R> all(); }'), true, 'JPQL removed');
   assert.equal(change('interface R { @Lock(PESSIMISTIC_WRITE) R one(); }', 'interface R {}'), true, 'lock added');
+  assert.equal(change('class R { void run() { em.createQuery("select r from R r"); } }', 'class R {}'), true, 'createQuery added');
   // 설계서 §7·§10 이 공백으로 적는다. 이 시험이 붉어지면 문서도 함께 고친다.
   assert.equal(change('interface R extends JpaRepository<R, Long> { List<R> findByTitleContaining(String title); }', 'interface R extends JpaRepository<R, Long> {}'), false, 'derived query');
   assert.equal(change('class S { void run() { em.find(R.class, 1L, LockModeType.PESSIMISTIC_WRITE); } }', 'class S {}'), false, 'plain service');
