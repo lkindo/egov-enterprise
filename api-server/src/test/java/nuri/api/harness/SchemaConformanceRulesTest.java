@@ -43,18 +43,55 @@ class SchemaConformanceRulesTest {
     }
 
     @Test
-    @DisplayName("tb_ 없는 새 표, 감사 컬럼 누락, 표준 밖의 새 제약·인덱스·시퀀스 이름은 붉다")
+    @DisplayName("표준 밖의 새 제약·인덱스·시퀀스 이름은 붉다")
     void newObjectViolationsAreReported() {
-        CatalogNames current = catalog(
-                Set.of("tb_a.id", "tb_a.crt_dt", "flyway_schema_history.version", "bad_table.id", "tb_b.id", "tb_b.frst_rgtr_id", "tb_b.crt_dt", "tb_b.mdfcn_dt"),
+        CatalogNames current = catalog(BASELINE.columns(),
                 Set.of("tb_a.pk_tb_a", "tb_a.tb_a_adapter_named", "bad_table.c_wrong"), Set.of("tb_a.tb_a_legacy_idx", "tb_a.idx_wrong"), Set.of(".legacy_seq", ".seq_wrong"));
         assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, NO_TYPES, NO_VIEWS))
-                .anyMatch(problem -> problem.startsWith("테이블명 'bad_table'"))
-                .anyMatch(problem -> problem.contains("'bad_table'") && problem.contains("최소 감사컬럼"))
-                .anyMatch(problem -> problem.contains("'tb_b'") && problem.contains("감사컬럼 짝 깨짐"))
                 .anyMatch(problem -> problem.startsWith("제약명 'bad_table.c_wrong'"))
                 .anyMatch(problem -> problem.startsWith("인덱스명 'tb_a.idx_wrong'"))
                 .anyMatch(problem -> problem.startsWith("시퀀스명 'seq_wrong'"));
+    }
+
+    private static final Set<String> BASELINE_TABLES = Set.of("tb_a", "flyway_schema_history");
+    private static final Map<String, String> AUDITED = Map.of("frst_rgtr_id", "VARCHAR(20)", "crt_dt", "TIMESTAMP(6)");
+
+    @Test
+    @DisplayName("기준선 표와 Flyway 이력 표, 표준을 따른 새 표는 저장 표기가 맞으면 통과한다")
+    void storedTablesFollowingTheStandardPass() {
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("TB_A", "flyway_schema_history", "TB_C"), BASELINE_TABLES, NO_VIEWS, Map.of("tb_c", AUDITED), true)).isEmpty();
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("tb_a", "tb_c"), BASELINE_TABLES, NO_VIEWS, Map.of("tb_c", AUDITED), false))
+                .as("따옴표 없는 이름을 대문자로 접지 않는 DB 는 소문자 저장이 정상이다").isEmpty();
+    }
+
+    @Test
+    @DisplayName("tb_ 없는 새 표와 감사 컬럼 누락·짝 깨짐은 붉다")
+    void newTableViolationsAreReported() {
+        Map<String, Map<String, String>> schema = Map.of("bad_table", Map.of("id", "NUMERIC(10,0)"),
+                "tb_b", Map.of("frst_rgtr_id", "VARCHAR(20)", "crt_dt", "TIMESTAMP(6)", "mdfcn_dt", "TIMESTAMP(6)"));
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("TB_A", "BAD_TABLE", "TB_B"), BASELINE_TABLES, NO_VIEWS, schema, true))
+                .anyMatch(problem -> problem.startsWith("테이블명 'BAD_TABLE'"))
+                .anyMatch(problem -> problem.contains("'bad_table'") && problem.contains("최소 감사컬럼"))
+                .anyMatch(problem -> problem.contains("'tb_b'") && problem.contains("감사컬럼 짝 깨짐"));
+    }
+
+    @Test
+    @DisplayName("이름 목록에 없는 따옴표 표도 드라이버 목록으로 붉다 — 소문자·혼합 저장 표기와 형식 밖 이름")
+    void quotedTablesAreRedByTheStoredName() {
+        Map<String, Map<String, String>> schema = Map.of("tb_log", AUDITED, "tb_mixed", AUDITED);
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("tb_log", "Tb_Mixed"), BASELINE_TABLES, NO_VIEWS, schema, true))
+                .hasSize(2).allMatch(problem -> problem.contains("따옴표로 만든 저장 표기"));
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("bad-name", "게시판"), BASELINE_TABLES, NO_VIEWS, Map.of(), true))
+                .anyMatch(problem -> problem.startsWith("테이블명 'bad-name'")).anyMatch(problem -> problem.startsWith("테이블명 '게시판'"));
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("bad-name"), BASELINE_TABLES, NO_VIEWS, Map.of(), false))
+                .anyMatch(problem -> problem.startsWith("테이블명 'bad-name'")).anyMatch(problem -> problem.contains("최소 감사컬럼"));
+    }
+
+    @Test
+    @DisplayName("기준선 이름을 따옴표로 다시 쓴 표는 기준선 표에 가려지지 않는다")
+    void aQuotedTwinOfABaselineTableIsRed() {
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("TB_A", "tb_a"), BASELINE_TABLES, NO_VIEWS, Map.of(), true))
+                .singleElement().asString().contains("'tb_a'").contains("따옴표로 만든 저장 표기");
     }
 
     @Test
@@ -72,14 +109,14 @@ class SchemaConformanceRulesTest {
     @DisplayName("뷰는 표 규칙으로 보지 않고 이름만 본다 — 드라이버가 뷰라고 답하지 않은 이름은 표로 남는다")
     void viewsFollowTheViewRuleOnly() {
         CatalogNames current = catalog(
-                Set.of("tb_a.id", "tb_a.crt_dt", "flyway_schema_history.version", "vw_sample.id", "bad_view.id", "bad_table.id"),
+                Set.of("tb_a.id", "tb_a.crt_dt", "flyway_schema_history.version", "vw_sample.id", "bad_view.id"),
                 BASELINE.constraints(), BASELINE.indexes(), BASELINE.sequences());
         assertThat(SchemaConformanceRules.newObjectProblems(BASELINE, current, NO_TYPES, Set.of("vw_sample", "bad_view")))
-                .anyMatch(problem -> problem.startsWith("뷰명 'bad_view'"))
-                .anyMatch(problem -> problem.startsWith("테이블명 'bad_table'"))
-                .anyMatch(problem -> problem.contains("'bad_table'") && problem.contains("최소 감사컬럼"))
-                .noneMatch(problem -> problem.contains("vw_sample"))
-                .noneMatch(problem -> problem.contains("'bad_view'") && problem.contains("테이블"));
+                .singleElement().asString().startsWith("뷰명 'bad_view'");
+        assertThat(SchemaConformanceRules.tableProblems(Set.of("TB_A", "VW_SAMPLE", "BAD_VIEW", "BAD_TABLE"), BASELINE_TABLES, Set.of("vw_sample", "bad_view"), NO_TYPES, true))
+                .anyMatch(problem -> problem.startsWith("테이블명 'BAD_TABLE'"))
+                .noneMatch(problem -> problem.contains("SAMPLE") || problem.contains("sample"))
+                .noneMatch(problem -> problem.contains("VIEW") || problem.contains("bad_view"));
     }
 
     @Test
@@ -115,6 +152,18 @@ class SchemaConformanceRulesTest {
         assertThat(audit("NUMERIC(19,0)", "VARCHAR(99)", "NUMERIC(10,0)")).singleElement().asString().contains("[길이 초과]");
         assertThat(audit("NUMERIC(19,0)", "TEXT", "NUMERIC(10,0)")).isEmpty();
         assertThat(audit("NUMERIC(19,0)", "VARCHAR(100)", "NUMERIC(7,0)")).singleElement().asString().contains("[숫자 변환 불일치]");
+    }
+
+    @Test
+    @DisplayName("바이트 길이 컬럼은 엔티티 길이 × 4 를 담지 못할 때만 붉다")
+    void byteColumnsAreRedOnlyWhenTheEntityLengthCannotFit() {
+        List<Class<?>> entities = List.of(SampleEntity.class);
+        assertThat(SchemaConformanceRules.byteLengthProblems(entities, Map.of("tb_sample.sample_nm", 399)))
+                .singleElement().asString().contains("[바이트 길이 부족]").contains("length=100").contains("399바이트");
+        assertThat(SchemaConformanceRules.byteLengthProblems(entities, Map.of("tb_sample.sample_nm", 100))).hasSize(1);
+        assertThat(SchemaConformanceRules.byteLengthProblems(entities, Map.of("tb_sample.sample_nm", 400))).as("최악의 경우에도 들어가면 정상이다").isEmpty();
+        assertThat(SchemaConformanceRules.byteLengthProblems(entities, Map.of())).as("글자 수 컬럼과 기준선의 바이트 컬럼은 호출자가 뺀다").isEmpty();
+        assertThat(SchemaConformanceRules.byteLengthProblems(entities, Map.of("tb_sample.sample_sn", 1, "tb_other.sample_nm", 1))).as("문자열 필드가 아니거나 매핑되지 않은 컬럼은 보지 않는다").isEmpty();
     }
 
     @Test

@@ -8,9 +8,9 @@ import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
-import { assertCatalogParity, nextValues } from './project-composer-vendor-sql.mjs';
+import { assertCatalogParity, assertUniqueColumns, nextValues } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
-import { parseCount, readCatalog, readNextValues, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
+import { parseCount, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 
 export function parseVerifyArgs(argv) {
   const args = {};
@@ -49,6 +49,8 @@ export function assertVendorApplied(handle, input, vendorId, { ignoreTables } = 
   const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
   const emission = VENDOR_ADAPTERS[vendorId].emitSchema(model);
   assertCatalogParity(emission, readCatalog(handle, vendorId), { ignoreTables });
+  const uniqueColumns = readUniqueColumns(handle, vendorId);
+  if (uniqueColumns) assertUniqueColumns(emission, uniqueColumns, { ignoreTables });
   const expected = Object.fromEntries(model.tables.map(table => [table.name, input.rows[table.name]?.length ?? 0]));
   const actual = rowCounts(handle, model, vendorId);
   const different = Object.keys(expected).filter(name => expected[name] !== actual[name]);
@@ -58,9 +60,17 @@ export function assertVendorApplied(handle, input, vendorId, { ignoreTables } = 
     throw error;
   }
   const next = readNextValues(handle, vendorId);
-  const behind = nextValues(model, input.rows).identities.filter(item => item.next > 1 && !(next.get(item.table) >= item.next));
+  const expectedNext = nextValues(model, input.rows);
+  const behind = expectedNext.identities.filter(item => item.next > 1 && !(next.get(item.table) >= item.next));
   if (behind.length) {
     const error = new Error(`다음 값이 최대 ID 뒤로 가지 않았다: ${behind.slice(0, 8).map(item => `${item.table} ${next.get(item.table)}/${item.next}`).join(', ')}`);
+    error.code = 'VENDOR_PARITY_FAILED';
+    throw error;
+  }
+  const sequenceNext = readSequenceNextValues(handle, vendorId);
+  const behindSequences = sequenceNext ? expectedNext.sequences.filter(item => !(sequenceNext.get(item.name) >= item.next)) : [];
+  if (behindSequences.length) {
+    const error = new Error(`시퀀스의 다음 값이 번역 결과 뒤로 가지 않았다: ${behindSequences.slice(0, 8).map(item => `${item.name} ${sequenceNext.get(item.name)}/${item.next}`).join(', ')}`);
     error.code = 'VENDOR_PARITY_FAILED';
     throw error;
   }

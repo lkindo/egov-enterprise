@@ -16,7 +16,7 @@ import {
   buildVendorEvidence, parseEvidenceArgs, recordVendorEvidence, vendorEvidenceHash, vendorEvidenceInputs, vendorEvidenceReportDirectory, vendorEvidenceStaleErrors,
 } from './project-composer-vendor-evidence.mjs';
 import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
-import { hibernateDdlAuto, parseIntegrationArgs, summarizeTestResults } from './project-composer-vendor-integration.mjs';
+import { appliedHibernateCheck, parseIntegrationArgs, summarizeTestResults } from './project-composer-vendor-integration.mjs';
 import { VENDOR_SOURCE } from './project-composer-vendor-project.mjs';
 import { VENDOR_ADAPTERS, VENDOR_LEDGER_PATH, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
 import { composerSourceFingerprint } from './project-composer.mjs';
@@ -436,13 +436,14 @@ test('test result summaries count what ran and a malformed result cannot pass as
   assert.ok(vendorEvidenceProblems(evidence).includes('통합 시험'), '건수를 읽지 못한 결과는 통과가 아니다');
 });
 
-test('the integration tool takes a report path and reads the schema check the scenarios actually use', () => {
+test('the integration tool takes a report path and reports the schema check the scenario contexts asserted', () => {
   assert.equal(parseIntegrationArgs(['--input', 'a.json', '--vendor', 'oracle', '--engine', 'oracle19', '--report', 'r.json']).report, 'r.json');
-  assert.equal(hibernateDdlAuto(readFileSync(join(ROOT, 'api-server/src/test/resources/application-tc.yml'), 'utf8')), 'validate', '시나리오 프로필이 validate 가 아니면 Hibernate validate 증거가 아니다');
-  assert.equal(hibernateDdlAuto('spring:\n  jpa:\n    hibernate:\n      ddl-auto: none\n'), 'none');
-  assert.equal(hibernateDdlAuto('spring: {}\n'), null);
+  assert.equal(appliedHibernateCheck('SampleIntegrationTest validate\n').ddlAuto, 'validate');
+  assert.equal(appliedHibernateCheck('SampleIntegrationTest none\n').ddlAuto, 'none');
+  assert.equal(appliedHibernateCheck('').ddlAuto, null, '단언한 문맥이 없으면 Hibernate validate 증거가 아니다');
   const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
   assert.match(source, /applied = assertVendorApplied\(handle, input, vendorId, \{ ignoreTables/, '보고서의 대조 수는 실제 대조 결과다');
+  assert.match(source, /hibernateValidate: readHibernateCheck\(\)/, '보고서의 검사 값은 프로필 문자열이 아니라 문맥이 단언한 값이다');
 });
 
 test('the E2E runner writes its evidence report only after the run and the result contract passed', t => {

@@ -258,9 +258,10 @@ export function runStatements(handle, statements, { sessionPrefix = [] } = {}) {
 export const VENDOR_INTROSPECTION = Object.freeze({
   oracle: {
     columns: 'SELECT LOWER(table_name) || \'.\' || LOWER(column_name) FROM user_tab_columns WHERE table_name NOT LIKE \'BIN$%\'',
-    constraints: "SELECT LOWER(table_name) || '.' || LOWER(constraint_name) FROM user_constraints WHERE constraint_type IN ('P','R','U','C') AND constraint_name NOT LIKE 'SYS\\_%' ESCAPE '\\'",
-    indexes: "SELECT LOWER(table_name) || '.' || LOWER(index_name) FROM user_indexes WHERE index_name NOT LIKE 'SYS\\_%' ESCAPE '\\' AND index_type <> 'LOB' AND index_name NOT IN (SELECT constraint_name FROM user_constraints WHERE constraint_type IN ('P','U'))",
-    triggers: "SELECT LOWER(table_name) || '.' || LOWER(trigger_name) FROM user_triggers",
+    // DROP TABLE 뒤의 제약은 휴지통 이름(BIN$...==$0)으로 이 조회에 남는다(23.26 실측). 인덱스·트리거는 나타나지 않았지만 같은 경계를 둔다.
+    constraints: "SELECT LOWER(table_name) || '.' || LOWER(constraint_name) FROM user_constraints WHERE constraint_type IN ('P','R','U','C') AND constraint_name NOT LIKE 'SYS\\_%' ESCAPE '\\' AND constraint_name NOT LIKE 'BIN$%'",
+    indexes: "SELECT LOWER(table_name) || '.' || LOWER(index_name) FROM user_indexes WHERE index_name NOT LIKE 'SYS\\_%' ESCAPE '\\' AND index_name NOT LIKE 'BIN$%' AND index_type <> 'LOB' AND index_name NOT IN (SELECT constraint_name FROM user_constraints WHERE constraint_type IN ('P','U'))",
+    triggers: "SELECT LOWER(table_name) || '.' || LOWER(trigger_name) FROM user_triggers WHERE trigger_name NOT LIKE 'BIN$%'",
     sequences: "SELECT '.' || LOWER(sequence_name) FROM user_sequences WHERE sequence_name NOT LIKE 'ISEQ$$%'",
   },
   mysql: mysqlIntrospection(),
@@ -284,9 +285,45 @@ export const VENDOR_INTROSPECTION = Object.freeze({
 /**
  * 유니크마다 `표.이름=값` 을 낸다. 값은 그 유니크를 다시 만들면 달라지므로 같은 이름으로 다른 컬럼에 다시 만들어도 구분된다.
  * 통합 시험을 여는 벤더는 여기에도 더한다. 위 메타 조회와 나눈 이유는 기준선 정확 대조가 그 조회의 종류를 그대로 읽기 때문이다.
+ * Oracle 의 유니크 제약은 일반 인덱스로 집행될 수 있어(기존 인덱스 재사용, DEFERRABLE) 인덱스만 읽으면 보이지 않는다. 제약에는 object_id 가 없어
+ * 정렬한 컬럼 목록을 값으로 쓴다 — 같은 이름·같은 컬럼으로 다시 만든 것은 구분하지 못하지만 미러 판정은 컬럼 집합만 본다.
  */
 export const VENDOR_UNIQUE_SIGNATURES = Object.freeze({
-  oracle: "SELECT LOWER(i.table_name) || '.' || LOWER(i.index_name) || '=' || o.object_id FROM user_indexes i JOIN user_objects o ON o.object_name = i.index_name AND o.object_type = 'INDEX' WHERE i.uniqueness = 'UNIQUE'",
+  oracle: "SELECT LOWER(i.table_name) || '.' || LOWER(i.index_name) || '=' || o.object_id FROM user_indexes i JOIN user_objects o ON o.object_name = i.index_name AND o.object_type = 'INDEX' WHERE i.uniqueness = 'UNIQUE'"
+    + " UNION ALL SELECT LOWER(c.table_name) || '.' || LOWER(c.constraint_name) || '=' || LISTAGG(LOWER(k.column_name), '#') WITHIN GROUP (ORDER BY k.column_name) FROM user_constraints c JOIN user_indexes i ON i.index_name = c.index_name"
+    + " JOIN user_cons_columns k ON k.constraint_name = c.constraint_name AND k.table_name = c.table_name WHERE c.constraint_type = 'U' AND i.uniqueness = 'NONUNIQUE' GROUP BY c.table_name, c.constraint_name",
+});
+
+/**
+ * 키와 유니크의 컬럼을 줄마다 `표.이름=컬럼` 으로 낸다. 함수 인덱스는 `표.이름=식` 이다. 이름 대조는 컬럼이 달라져도 통과하므로 기준선 단계에서 어댑터 기대치와 맞춘다.
+ * 식 컬럼(user_ind_expressions)은 LONG 이라 문자열로 이을 수 없어 PL/SQL 로 읽는다. 통합 시험을 여는 벤더는 여기에도 더한다.
+ */
+export const VENDOR_UNIQUE_COLUMNS = Object.freeze({
+  oracle: {
+    prefix: ['SET LINESIZE 4000', 'SET SERVEROUTPUT ON SIZE UNLIMITED'],
+    constraints: "SELECT LOWER(c.table_name) || '.' || LOWER(c.constraint_name) || '=' || LOWER(k.column_name) FROM user_constraints c JOIN user_cons_columns k ON k.constraint_name = c.constraint_name AND k.table_name = c.table_name"
+      + " WHERE c.constraint_type IN ('P','U') AND c.constraint_name NOT LIKE 'SYS\\_%' ESCAPE '\\' AND c.constraint_name NOT LIKE 'BIN$%'",
+    indexes: "SELECT LOWER(i.table_name) || '.' || LOWER(i.index_name) || '=' || LOWER(k.column_name) FROM user_indexes i JOIN user_ind_columns k ON k.index_name = i.index_name"
+      + " WHERE i.uniqueness = 'UNIQUE' AND i.index_name NOT LIKE 'SYS\\_%' ESCAPE '\\' AND i.index_name NOT IN (SELECT constraint_name FROM user_constraints WHERE constraint_type IN ('P','U')) AND k.column_name NOT LIKE 'SYS\\_NC%' ESCAPE '\\'",
+    expressions: `BEGIN
+  FOR item IN (SELECT e.table_name, e.index_name, e.column_expression FROM user_ind_expressions e JOIN user_indexes i ON i.index_name = e.index_name WHERE i.uniqueness = 'UNIQUE') LOOP
+    DBMS_OUTPUT.PUT_LINE(LOWER(item.table_name) || '.' || LOWER(item.index_name) || '=' || item.column_expression);
+  END LOOP;
+END;`,
+  },
+});
+
+/** 독립 시퀀스의 다음 값. 각 문장은 `시퀀스:값` 을 낸다. 표 에뮬레이션 벤더는 조회가 달라 통합 시험을 열 때 더한다. */
+export const VENDOR_SEQUENCE_NEXT_VALUES = Object.freeze({
+  oracle: "SELECT LOWER(sequence_name) || ':' || last_number FROM user_sequences WHERE sequence_name NOT LIKE 'ISEQ$$%'",
+});
+
+/**
+ * 바이트 길이 문자 컬럼. 각 문장은 `표.컬럼=바이트` 를 낸다. Oracle 드라이버의 COLUMN_SIZE 는 VARCHAR2(100) 과 VARCHAR2(100 CHAR) 에 똑같이 100 이라(23.26 실측)
+ * 메타데이터로는 구분되지 않는다. 다른 벤더는 없어서 빈 목록이다.
+ */
+export const VENDOR_BYTE_COLUMNS = Object.freeze({
+  oracle: "SELECT LOWER(table_name) || '.' || LOWER(column_name) || '=' || data_length FROM user_tab_columns WHERE char_used = 'B' AND data_type IN ('VARCHAR2','CHAR') AND table_name NOT LIKE 'BIN$%'",
 });
 
 /** 표별 다음 식별 값. 각 문장은 `표:값` 을 낸다. `inclusive` 는 값이 이미 쓰인 마지막 번호라는 뜻이다. */
@@ -326,12 +363,81 @@ const NAME_VALUE = /(?:^|[\s:'])([a-z0-9_$#]*\.[a-z0-9_$#]+)'?$/;
 
 const UNIQUE_SIGNATURE_VALUE = /(?:^|[\s:'])([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)'?$/;
 
+/**
+ * 줄에서 값을 읽는다. Oracle 배치는 머리 줄 없이 값만 내므로 줄 전체가 형식에 맞아야 한다. 버리면 따옴표로 만든 이름이 목록에서 사라져 그 이름의 규칙을 통째로
+ * 건너뛴다. csql 은 머리 줄을 내므로 다른 벤더는 줄 끝만 읽는다.
+ */
+function readValues(lines, vendorId, pattern, label) {
+  const values = [];
+  for (const line of (lines ?? []).map(item => item.trim()).filter(item => item && item !== COMPLETED)) {
+    const value = line.match(pattern)?.[1];
+    if (vendorId === 'oracle' && value !== line) fail('VENDOR_QUERY_FAILED', `${vendorId} ${label} 조회의 줄을 해석하지 못했다: ${line.slice(0, 200)} — 따옴표로 만든 이름이면 따옴표 없는 표준 이름으로 바꾼다.`);
+    if (value) values.push(value);
+  }
+  return values;
+}
+
 export function readUniqueSignatures(handle, vendorId, run = runStatements) {
   const sql = VENDOR_UNIQUE_SIGNATURES[vendorId];
   if (!sql) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 서명 조회가 없다`);
-  const { sections, errors } = run(handle, [{ sql }]);
+  const { sections, errors } = run(handle, [{ sql }], { sessionPrefix: ['SET LINESIZE 4000'] });
   if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 서명 조회 실패: ${errors[0].error}`);
-  return [...new Set((sections.get(0) ?? []).map(line => line.trim().match(UNIQUE_SIGNATURE_VALUE)?.[1]).filter(Boolean))];
+  return [...new Set(readValues(sections.get(0), vendorId, UNIQUE_SIGNATURE_VALUE, '유니크 서명'))];
+}
+
+const BYTE_COLUMN_VALUE = /^([a-z0-9_$#]+\.[a-z0-9_$#]+=\d+)$/;
+
+export function readByteColumns(handle, vendorId, run = runStatements) {
+  const sql = VENDOR_BYTE_COLUMNS[vendorId];
+  if (!sql) return [];
+  const { sections, errors } = run(handle, [{ sql }]);
+  if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 바이트 컬럼 조회 실패: ${errors[0].error}`);
+  return readValues(sections.get(0), vendorId, BYTE_COLUMN_VALUE, '바이트 컬럼');
+}
+
+const UNIQUE_COLUMN_LINE = /^([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)$/;
+const UNIQUE_EXPRESSION_LINE = /^([a-z0-9_$#]+\.[a-z0-9_$#]+=.+)$/;
+
+/**
+ * `표.이름` → 값을 결정하는 컬럼(`keys`)과 식이 참조하는 모든 컬럼(`references`). `CASE WHEN .. THEN "A" END` 의 값은 A 뿐이라 묶음 조건의 컬럼까지 키로 세면
+ * CASE 하나가 빠진 번역을 놓친다. 일반 컬럼은 둘이 같다.
+ */
+export function readUniqueColumns(handle, vendorId, run = runStatements) {
+  const query = VENDOR_UNIQUE_COLUMNS[vendorId];
+  if (!query) return null;
+  const { sections, errors } = run(handle, [{ sql: query.constraints }, { sql: query.indexes }, { sql: query.expressions, raw: true }], { sessionPrefix: query.prefix });
+  if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 컬럼 조회 실패: ${errors[0].error}`);
+  const found = new Map();
+  const add = (name, keys, references) => {
+    const entry = found.get(name) ?? { keys: new Set(), references: new Set() };
+    keys.forEach(item => entry.keys.add(item));
+    references.forEach(item => entry.references.add(item));
+    found.set(name, entry);
+  };
+  const plain = [...readValues(sections.get(0), vendorId, UNIQUE_COLUMN_LINE, '유니크 컬럼'), ...readValues(sections.get(1), vendorId, UNIQUE_COLUMN_LINE, '유니크 컬럼')];
+  for (const line of plain) {
+    const at = line.indexOf('=');
+    add(line.slice(0, at), [line.slice(at + 1)], [line.slice(at + 1)]);
+  }
+  for (const line of readValues(sections.get(2), vendorId, UNIQUE_EXPRESSION_LINE, '유니크 식')) {
+    const at = line.indexOf('=');
+    const expression = line.slice(at + 1);
+    const references = [...expression.matchAll(/"([^"]+)"/g)].map(match => match[1].toLowerCase());
+    const output = expression.match(/\bTHEN\s+"([^"]+)"\s+END\b/);
+    add(line.slice(0, at), output ? [output[1].toLowerCase()] : references, references);
+  }
+  return found;
+}
+
+const SEQUENCE_VALUE = /^([a-z0-9_$#]+:\d+)$/;
+
+/** 독립 시퀀스의 다음 값. 조회가 없는 벤더는 null 이다. */
+export function readSequenceNextValues(handle, vendorId, run = runStatements) {
+  const sql = VENDOR_SEQUENCE_NEXT_VALUES[vendorId];
+  if (!sql) return null;
+  const { sections, errors } = run(handle, [{ sql }]);
+  if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 시퀀스 다음 값 조회 실패: ${errors[0].error}`);
+  return new Map(readValues(sections.get(0), vendorId, SEQUENCE_VALUE, '시퀀스 다음 값').map(line => [line.slice(0, line.indexOf(':')), Number(line.slice(line.indexOf(':') + 1))]));
 }
 
 /** 메타를 읽어 번역 기대치와 같은 모양으로 돌려준다. */
@@ -342,8 +448,7 @@ export function readCatalog(handle, vendorId, run = runStatements) {
   if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 메타 조회 실패: ${errors[0].error}`);
   const catalog = {};
   kinds.forEach((kind, index) => {
-    const names = (sections.get(index) ?? []).map(line => line.trim().match(NAME_VALUE)?.[1]).filter(Boolean);
-    catalog[kind] = [...new Set(names)];
+    catalog[kind] = [...new Set(readValues(sections.get(index), vendorId, NAME_VALUE, kind))];
   });
   return catalog;
 }

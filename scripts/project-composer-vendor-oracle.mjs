@@ -134,11 +134,13 @@ function emitSchema(model) {
       lines.push(`  CONSTRAINT ${table.primaryKey.name} PRIMARY KEY (${table.primaryKey.columns.join(', ')})`);
       emission.cover(table.primaryKey.name, 'primary-key');
       emission.expect('constraints', table.name, table.primaryKey.name);
+      emission.expectUnique(table.name, table.primaryKey.name, table.primaryKey.columns);
     }
     emission.sql(`CREATE TABLE ${table.name} (\n${lines.join(',\n')}\n)`);
   }
   for (const table of model.tables) {
     for (const unique of table.uniques) {
+      emission.expectUnique(table.name, unique.name, unique.columns);
       const columns = unique.columns.map(name => table.columns.find(column => column.name === name));
       if (unique.columns.length > 1 && columns.some(column => column.nullable)) {
         // 복합 UNIQUE 는 일부만 NULL 인 행도 중복으로 본다. PostgreSQL 은 허용하므로 모든 키가 찼을 때만 값을 내는 인덱스로 옮긴다.
@@ -174,6 +176,7 @@ function emitSchema(model) {
       const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${column.name}${column.descending ? ' DESC' : ''}`));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);
+      if (index.unique) emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));
       emission.cover(index.name, 'index');
     }
   }

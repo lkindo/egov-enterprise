@@ -11,8 +11,11 @@ export function createEmission(vendor) {
   const emission = {
     vendor, statements: [], degradations: [],
     expected: { columns: [], constraints: [], indexes: [], triggers: [], sequences: [] },
+    uniqueColumns: new Map(),
     sql(sql, options = {}) { emission.statements.push({ sql, raw: Boolean(options.raw) }); },
     expect(kind, table, name) { emission.expected[kind].push(`${table}.${name}`); },
+    /** 키·유니크의 컬럼. 이름 대조는 컬럼이 달라져도 통과하므로 따로 남긴다. 컬럼 조회를 연 벤더의 어댑터가 쓴다. */
+    expectUnique(table, name, columns) { emission.uniqueColumns.set(`${table}.${name}`.toLowerCase(), columns.map(column => column.toLowerCase())); },
     /** 모델의 한 항목을 어떻게 옮겼는지 남긴다. */
     cover(name, how) { coverage.set(name, how); },
     degrade(name, reason) { coverage.set(name, 'degraded'); emission.degradations.push({ name, reason }); },
@@ -193,6 +196,27 @@ export function nextValues(model, rows) {
     return { name: sequence.name, next: exactNumber(Math.max(sequence.start, last + sequence.increment, ...owners.map(value => value + sequence.increment)), sequence.name), increment: sequence.increment };
   });
   return { identities, sequences };
+}
+
+/** 키·유니크의 컬럼 집합을 어댑터 기대치와 대조한다. 이름이 같아도 컬럼이 다르면 중복을 허용하거나 정상 행을 거부한다. */
+export function assertUniqueColumns(emission, actual, { ignoreTables = [] } = {}) {
+  const sameSet = (left, right) => left.size === right.size && [...left].every(item => right.has(item));
+  const show = values => [...values].sort().join(', ');
+  const found = new Map([...actual].filter(([name]) => !ignoreTables.some(table => name.startsWith(`${table}.`))));
+  const problems = [];
+  for (const [name, columns] of emission.uniqueColumns) {
+    const expected = new Set(columns);
+    const item = found.get(name);
+    found.delete(name);
+    if (!item) problems.push(`${name} 없음(기대 ${show(expected)})`);
+    else if (!sameSet(item.keys, expected) || !sameSet(item.references, expected)) problems.push(`${name} 기대 (${show(expected)}), 실제 키 (${show(item.keys)}), 식 참조 (${show(item.references)})`);
+  }
+  for (const [name, item] of found) problems.push(`${name} 기대에 없는 유니크(${show(item.keys)})`);
+  if (problems.length) {
+    const error = new Error(`${emission.vendor}: 키·유니크의 컬럼이 번역 결과와 다르다 — ${problems.slice(0, 8).join(' / ')}`);
+    error.code = 'VENDOR_PARITY_FAILED';
+    throw error;
+  }
 }
 
 /** 대상 DB 메타를 다시 읽은 결과와 어댑터가 낸 기대치를 대조한다. 이름은 벤더마다 대소문자가 달라 소문자로 맞춘다. */

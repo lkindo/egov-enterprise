@@ -17,6 +17,7 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -36,7 +37,7 @@ import static org.junit.jupiter.api.Assertions.fail;
  * {@code VENDOR_CATALOG_SNAPSHOT} 파일로 넘긴 뒤 이 시험을 시나리오 시험과 소유 표시보다 먼저 돌린다. 그래야 시험 픽스처와
  * {@code vendor_test_owner} 가 도입자 객체로 보이지 않는다. 접속 값이 없으면 실패한다 — 이 시험은 전용 작업에서만 돈다.
  *
- * <p>규칙의 범위: PK 전략·숫자 변환·길이는 카탈로그 전체, 명명·감사·유니크 미러는 기준선 뒤의 새 객체, 뷰 이름과 초기 권한은 전체. 표·컬럼 부재와 타입
+ * <p>규칙의 범위: PK 전략·숫자 변환·길이는 카탈로그 전체, 명명·감사·유니크 미러·바이트 길이는 기준선 뒤의 새 객체, 뷰 이름과 초기 권한은 전체. 표·컬럼 부재와 타입
  * 계열은 Hibernate validate 가 같은 DB 에서 본다. 생성 시점 기준선의 정확 대조는 실행 도구의 {@code assertVendorApplied} 가 한다.
  */
 @Tag("vendor-conformance")
@@ -57,19 +58,26 @@ class VendorCatalogConformanceTest {
     private static Set<String> views;
     private static Map<String, Set<String>> primaryKeys;
     private static Set<String> unchangedUniques;
+    private static Set<String> storedTables;
+    private static Map<String, Integer> byteColumns;
+    private static boolean oracle;
 
     @BeforeAll
     static void readCatalog() throws Exception {
         JsonNode snapshot = JsonMapper.builder().configureForJackson2().build()
                 .readTree(Path.of(requireEnvironment("VENDOR_CATALOG_SNAPSHOT")).toFile());
+        oracle = "oracle".equals(snapshot.path("vendor").asString());
         baseline = names(snapshot.path("baseline"));
         current = names(snapshot.path("current"));
         unchangedUniques = strings(snapshot.path("unchangedUniques"));
+        byteColumns = new HashMap<>();
+        strings(snapshot.path("byteColumns")).forEach(item -> byteColumns.put(item.substring(0, item.indexOf('=')), Integer.valueOf(item.substring(item.indexOf('=') + 1))));
         try (Connection connection = DriverManager.getConnection(requireEnvironment("VENDOR_TEST_URL"),
                 requireEnvironment("SPRING_DATASOURCE_USERNAME"), requireEnvironment("SPRING_DATASOURCE_PASSWORD"))) {
             DatabaseMetaData metadata = connection.getMetaData();
             Map<String, String> stored = new LinkedHashMap<>();
-            schema = readColumns(connection, metadata, stored);
+            storedTables = new TreeSet<>();
+            schema = readColumns(connection, metadata, stored, storedTables);
             views = readViews(connection, metadata);
             uniques = readUniques(connection, metadata, stored);
             primaryKeys = readPrimaryKeys(connection, metadata, stored);
@@ -95,7 +103,15 @@ class VendorCatalogConformanceTest {
         if (baseline.tables().isEmpty() || current.tables().isEmpty()) {
             fail("게이트 무결성 파손: 카탈로그 표 수 기준선 " + baseline.tables().size() + " / 현재 " + current.tables().size());
         }
-        report("DB 헌법 명명·타입·감사 컬럼 표준 위반", SchemaConformanceRules.newObjectProblems(baseline, current, schema, views));
+        List<String> problems = new ArrayList<>(SchemaConformanceRules.tableProblems(storedTables, baseline.tables(), views, schema, oracle));
+        problems.addAll(SchemaConformanceRules.newObjectProblems(baseline, current, schema, views));
+        report("DB 헌법 명명·타입·감사 컬럼 표준 위반", problems);
+    }
+
+    @Test
+    @DisplayName("기준선 뒤에 바이트 길이가 된 컬럼이 엔티티 길이만큼의 글자를 담는다")
+    void newByteColumnsHoldTheEntityLength() {
+        report("바이트 길이 컬럼과 엔티티 길이의 불일치", SchemaConformanceRules.byteLengthProblems(SchemaConformanceRules.entityClasses("nuri"), byteColumns));
     }
 
     @Test
@@ -136,7 +152,7 @@ class VendorCatalogConformanceTest {
     private static String requireEnvironment(String name) {
         String value = System.getenv(name);
         if (value == null || value.isBlank()) {
-            fail("게이트 무결성 파손: " + name + " 가 없습니다. scripts/project-composer-vendor-integration.mjs 로 실행하십시오. 조용한 skip 은 false-green 을 만듭니다.");
+            fail("게이트 무결성 파손: " + name + " 가 없습니다. 벤더 생성물에서 npm run verify:vendor-schema 로 실행하십시오. 조용한 skip 은 false-green 을 만듭니다.");
         }
         return value;
     }
@@ -155,11 +171,15 @@ class VendorCatalogConformanceTest {
         return name.toLowerCase(Locale.ROOT);
     }
 
-    /** 표 → 컬럼 → 규칙이 읽는 타입. {@code stored} 에 드라이버에 다시 넘길 저장 표기를 남긴다(Oracle 은 대문자다). */
-    private static Map<String, Map<String, String>> readColumns(Connection connection, DatabaseMetaData metadata, Map<String, String> stored) throws SQLException {
+    /**
+     * 표 → 컬럼 → 규칙이 읽는 타입. {@code stored} 에 드라이버에 다시 넘길 저장 표기를 남긴다(Oracle 은 대문자다).
+     * {@code storedTables} 는 드라이버가 답한 표 이름 그대로다 — {@code stored} 의 키는 소문자로 접어 TB_A 와 "tb_a" 가 겹친다.
+     */
+    private static Map<String, Map<String, String>> readColumns(Connection connection, DatabaseMetaData metadata, Map<String, String> stored, Set<String> storedTables) throws SQLException {
         try (ResultSet tables = metadata.getTables(connection.getCatalog(), connection.getSchema(), "%", new String[] {"TABLE"})) {
             while (tables.next()) {
                 stored.put(lower(tables.getString("TABLE_NAME")), tables.getString("TABLE_NAME"));
+                storedTables.add(tables.getString("TABLE_NAME"));
             }
         }
         Map<String, Map<String, String>> columns = new TreeMap<>();
@@ -217,7 +237,24 @@ class VendorCatalogConformanceTest {
                 }
             }
         }
+        if (oracle) {
+            addOracleConstraintsOnPlainIndexes(connection, uniques);
+        }
         return uniques;
+    }
+
+    /**
+     * Oracle 의 유니크 제약은 일반 인덱스로 집행될 수 있다(기존 인덱스 재사용, DEFERRABLE). 드라이버는 유니크 인덱스만 답하므로 제약 쪽에서 읽어 더한다.
+     * 값이 없으면 미러 없이 초록이 되고 PostgreSQL 린터의 {@code ADD CONSTRAINT ... UNIQUE} 판정보다 벤더만 느슨해진다.
+     */
+    private static void addOracleConstraintsOnPlainIndexes(Connection connection, Map<String, Map<String, Set<String>>> uniques) throws SQLException {
+        String sql = "SELECT c.table_name, c.constraint_name, k.column_name FROM user_constraints c JOIN user_indexes i ON i.index_name = c.index_name"
+                + " JOIN user_cons_columns k ON k.constraint_name = c.constraint_name AND k.table_name = c.table_name WHERE c.constraint_type = 'U' AND i.uniqueness = 'NONUNIQUE'";
+        try (Statement statement = connection.createStatement(); ResultSet rows = statement.executeQuery(sql)) {
+            while (rows.next()) {
+                uniques.computeIfAbsent(lower(rows.getString(1)), key -> new HashMap<>()).computeIfAbsent(lower(rows.getString(2)), key -> new TreeSet<>()).add(lower(rows.getString(3)));
+            }
+        }
     }
 
     /** Oracle 함수 인덱스는 숨은 컬럼 이름으로 답한다. 복합 NULL 허용 유니크가 이 모양이라 식이 쓰는 컬럼으로 미러와 맞춘다. */

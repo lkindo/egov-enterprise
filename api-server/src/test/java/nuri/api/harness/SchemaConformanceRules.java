@@ -55,6 +55,11 @@ final class SchemaConformanceRules {
     // uk_ 는 유니크 "인덱스" 레거시 관행(제약 승격 대상 P5) — 신규도 잠정 허용하되 ix_ 권장
     static final Pattern INDEX_NAME = Pattern.compile("(?:ix|uk)_[a-z0-9_]+");
     static final Pattern CONSTRAINT_NAME = Pattern.compile("(?:pk|fk|uk|ck)_[a-z0-9_]+");
+    /** Flyway 가 따옴표로 소문자 이름을 만드는 이력 표. 앱 SQL 이 쓰지 않으므로 저장 표기 규칙에서 뺀다. */
+    private static final String FLYWAY_HISTORY_TABLE = "flyway_schema_history";
+
+    /** 한 글자의 최대 바이트(UTF-8). 번역 기준선이 글자 수를 바이트로 옮길 때 쓰는 값과 같다(설계서 §5). */
+    private static final long MAX_BYTES_PER_CHARACTER = 4;
 
     static final int VARCHAR_UNBOUNDED = Integer.MAX_VALUE;
     /** {@code @Column} 이 없는 String 필드에 적용하는 JPA 기본 길이. */
@@ -158,7 +163,6 @@ final class SchemaConformanceRules {
         }
 
         // ② 명시 숫자 변환은 문자열 길이가 아닌 실제 NUMERIC precision/scale과 대조한다.
-        Column col = field.getAnnotation(Column.class);
         Convert convert = field.getAnnotation(Convert.class);
         if (convert != null && !convert.disableConversion() && convert.converter() == IntegralStringConverter.class) {
             if (!integralStringMatchesPhysicalType(field, physicalType)) {
@@ -166,10 +170,36 @@ final class SchemaConformanceRules {
                         clazz.getSimpleName(), table, column, physicalType)));
             }
         } else if (field.getType() == String.class) {
-            int entityLen = (col != null) ? col.length() : JPA_DEFAULT_LENGTH;
+            int entityLen = entityLength(field);
             if (entityLen > lengthOf(physicalType)) {
                 problems.add(new FieldProblem("length", String.format("%s → %s.%s [길이 초과] 엔티티 length=%d > 물리 %s",
                         clazz.getSimpleName(), table, column, entityLen, physicalType)));
+            }
+        }
+        return problems;
+    }
+
+    private static int entityLength(Field field) {
+        Column column = field.getAnnotation(Column.class);
+        return column != null ? column.length() : JPA_DEFAULT_LENGTH;
+    }
+
+    /**
+     * 기준선 뒤에 바이트 길이가 된 컬럼을 엔티티와 대조한다. 드라이버는 바이트 컬럼도 선언 숫자를 답하므로 {@code VARCHAR2(100)} 은 길이 규칙을 통과하고
+     * 운영에서 한글 34자부터 거부된다. 엔티티 길이만큼의 글자가 최악의 경우에도 들어가면 정상이다 — {@code VARCHAR2(400 BYTE)} 와 {@code length=100} 은 막지 않는다.
+     *
+     * @param byteColumns {@code 표.컬럼} → 바이트 길이. 기준선의 바이트 컬럼은 어댑터의 선언된 저하라 호출자가 뺀다.
+     */
+    static List<String> byteLengthProblems(List<Class<?>> entities, Map<String, Integer> byteColumns) {
+        List<String> problems = new ArrayList<>();
+        for (Class<?> clazz : entities) {
+            String table = tableNameOf(clazz);
+            for (Field field : persistentFields(clazz)) {
+                Integer bytes = byteColumns.get(table + "." + columnNameOf(field));
+                if (bytes != null && field.getType() == String.class && entityLength(field) * MAX_BYTES_PER_CHARACTER > bytes) {
+                    problems.add(String.format("%s → %s.%s [바이트 길이 부족] 엔티티 length=%d 는 최대 %d바이트인데 컬럼은 %d바이트다. 글자 수 의미(VARCHAR2(n CHAR))로 쓰십시오",
+                            clazz.getSimpleName(), table, columnNameOf(field), entityLength(field), entityLength(field) * MAX_BYTES_PER_CHARACTER, bytes));
+                }
             }
         }
         return problems;
@@ -218,7 +248,7 @@ final class SchemaConformanceRules {
 
     /**
      * JDBC 메타데이터를 규칙이 읽는 타입 표기로 옮긴다. 벤더 타입 이름(NUMBER·VARCHAR2·NVARCHAR)이 아니라 JDBC 타입 코드로 나눠 벤더마다
-     * 파서를 두지 않는다. 글자 수가 아니라 바이트로 답하는 드라이버는 길이 규칙이 그만큼 느슨하다.
+     * 파서를 두지 않는다. Oracle 드라이버는 바이트 컬럼도 선언 숫자를 답해 이 표기로는 글자 수 컬럼과 구분되지 않는다({@link #byteLengthProblems}).
      */
     static String physicalType(int jdbcType, String typeName, int size, int digits) {
         return switch (jdbcType) {
@@ -301,11 +331,41 @@ final class SchemaConformanceRules {
     }
 
     /**
-     * 기준선 뒤에 생긴 객체만 명명·감사 규칙으로 본다. 기준선은 어댑터 파생 이름이 섞여 있고 정확 대조를 이미 받았다.
-     * 같은 이름의 컬럼 타입을 바꾸는 변경은 여기에 나타나지 않는다.
+     * 표 규칙을 드라이버가 답한 저장 표기로 본다. 이름 목록은 실행 도구의 조회가 소문자로 접고 형식 밖 이름을 읽지 못하므로, 표 규칙이 거기에 기대면 따옴표로 만든 표가
+     * 규칙을 통째로 건너뛴다. 따옴표 없는 네이티브 SQL 은 대문자 이름을 찾으므로 Oracle 의 소문자 저장 표기는 표준 이름이어도 런타임에 없는 표다.
      *
-     * @param views 드라이버가 뷰라고 답한 이름. Oracle 컬럼 조회는 뷰 컬럼도 내므로 빼지 않으면 표로 판정된다. 드라이버가 뷰라고 답한 것만
-     *              빼므로 모르는 이름은 표로 남아 붉다. 기준선에는 뷰가 없어 모든 뷰가 새 객체다.
+     * @param storedTables 드라이버가 답한 표 이름(저장 표기)
+     * @param baselineTables 기준선 표(소문자). 여기 있으면 이름·감사 규칙을 보지 않는다
+     * @param views 드라이버가 뷰라고 답한 이름. 표 규칙에서 뺀다
+     * @param foldsToUpper 따옴표 없는 이름을 대문자로 저장하는 DB 인가
+     */
+    static List<String> tableProblems(Set<String> storedTables, Set<String> baselineTables, Set<String> views, Map<String, Map<String, String>> schema, boolean foldsToUpper) {
+        List<String> problems = new ArrayList<>();
+        for (String stored : new TreeSet<>(storedTables)) {
+            String table = stored.toLowerCase(Locale.ROOT);
+            if (views.contains(table)) {
+                continue;
+            }
+            boolean quotedOnFoldingDb = foldsToUpper && !FLYWAY_HISTORY_TABLE.equals(stored) && !stored.equals(stored.toUpperCase(Locale.ROOT));
+            if (quotedOnFoldingDb) {
+                problems.add(String.format("테이블명 '%s' — 따옴표로 만든 저장 표기다. 따옴표 없는 네이티브 SQL 이 찾지 못하므로 따옴표 없이 만드십시오", stored));
+            }
+            if (baselineTables.contains(table)) {
+                continue;
+            }
+            if (!quotedOnFoldingDb && !TABLE_NAME.matcher(foldsToUpper ? table : stored).matches()) {
+                problems.add(String.format("테이블명 '%s' — 헌법 제3조 tb_ 접두 + 제1조 소문자 snake_case 위반", stored));
+            }
+            problems.addAll(auditColumnProblems(table, column -> schema.getOrDefault(table, Map.of()).containsKey(column)));
+        }
+        return problems;
+    }
+
+    /**
+     * 기준선 뒤에 생긴 제약·인덱스·시퀀스·컬럼을 명명 규칙으로 본다. 기준선은 어댑터 파생 이름이 섞여 있고 정확 대조를 이미 받았다.
+     * 같은 이름의 컬럼 타입을 바꾸는 변경은 여기에 나타나지 않는다. 표는 {@link #tableProblems} 가 본다.
+     *
+     * @param views 드라이버가 뷰라고 답한 이름. 기준선에는 뷰가 없어 모든 뷰가 새 객체다.
      */
     static List<String> newObjectProblems(CatalogNames baseline, CatalogNames current, Map<String, Map<String, String>> schema, Set<String> views) {
         List<String> problems = new ArrayList<>();
@@ -313,13 +373,6 @@ final class SchemaConformanceRules {
             if (!VIEW_NAME.matcher(view).matches()) {
                 problems.add(String.format("뷰명 '%s' — 헌법 제3조 vw_ 접두 + 제1조 소문자 snake_case 위반", view));
             }
-        }
-        Set<String> oldTables = baseline.tables();
-        for (String table : added(added(current.tables(), oldTables), views)) {
-            if (!TABLE_NAME.matcher(table).matches()) {
-                problems.add(String.format("테이블명 '%s' — 헌법 제3조 tb_ 접두 + 제1조 소문자 snake_case 위반", table));
-            }
-            problems.addAll(auditColumnProblems(table, column -> current.columns().contains(table + "." + column)));
         }
         for (String item : added(current.constraints(), baseline.constraints())) {
             String name = item.substring(item.indexOf('.') + 1);
@@ -467,10 +520,10 @@ final class SchemaConformanceRules {
 
     /**
      * 기준선 뒤에 생기거나 다시 만든 유니크만 미러와 대조한다. 기준선의 유니크는 어댑터가 해시 컬럼이나 함수 인덱스로 바꿔 둔 것이 있어 전체를
-     * 대조하면 정상 스키마가 붉다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가 맡는다. 기본키는 미러 대상이 아니다 — 복합 키
+     * 대조하면 정상 스키마가 붉다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가, 번역이 컬럼을 바꾸는 회귀는 실행 도구의 기준선 대조가 맡는다. 기본키는 미러 대상이 아니다 — 복합 키
      * 엔티티는 {@code @Id} 필드가 없어 미러 판정을 통과하지 못한다.
      *
-     * @param uniques     표 → 인덱스 이름 → 컬럼 집합. 드라이버가 답한 실제 유니크다.
+     * @param uniques     표 → 인덱스·제약 이름 → 컬럼 집합. 드라이버가 답한 유니크 인덱스와 일반 인덱스로 집행되는 유니크 제약이다.
      * @param unchanged   기준선 그대로인 유니크의 {@code 표.이름}. 표를 포함해야 다른 표의 같은 이름(MySQL)이 검사를 가리지 않는다.
      * @param primaryKeys 표 → 기본키 컬럼 집합.
      */

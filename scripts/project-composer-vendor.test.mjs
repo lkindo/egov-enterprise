@@ -7,7 +7,7 @@ import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
-import { assertCatalogParity, assertCoverage, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
+import { assertCatalogParity, assertCoverage, assertUniqueColumns, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
 import { loadVendorLedger, selectableVendors, translateForAllVendors, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices } from './project-composer-vendors.mjs';
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
@@ -16,11 +16,11 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_BASELINE_VERSION, assertTestsRan, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
+import { VENDOR_BASELINE_VERSION, addedByteColumns, appliedHibernateCheck, assertTestsRan, childEnvironment, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, launchVendorContainer, parseCount, readCatalog, readNextValues, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
@@ -242,6 +242,25 @@ test('translations keep the semantics the differential found', () => {
   assert.ok(hash.op === 'regex');
 });
 
+test('the Oracle adapter states the columns of every key and unique, and they reach the statement', () => {
+  const sample = model();
+  const emission = oracleAdapter.emitSchema(sample);
+  const uniques = sample.tables.flatMap(table => [...table.uniques, ...(table.primaryKey ? [table.primaryKey] : [])].map(item => [`${table.name}.${item.name}`, item.columns]));
+  assert.ok(uniques.length >= 3);
+  for (const [name, columns] of uniques) assert.deepEqual(emission.uniqueColumns.get(name), columns, name);
+  // 제약 경로와 함수 인덱스 경로 모두 컬럼이 문장에 있어야 이름 대조를 받는 이 값이 실제 스키마를 뜻한다.
+  const statements = emission.statements.map(statement => statement.sql);
+  for (const table of sample.tables) {
+    for (const unique of table.uniques) {
+      const statement = statements.find(sql => sql.includes(` ${unique.name} `));
+      for (const name of unique.columns) assert.match(statement, new RegExp(`\\b${name}\\b`), `${unique.name}: ${name}`);
+      if (unique.columns.length > 1 && unique.columns.some(name => table.columns.find(column => column.name === name).nullable)) {
+        assert.equal([...statement.matchAll(/CASE WHEN/g)].length, unique.columns.length, `${unique.name}: 컬럼마다 CASE 하나`);
+      }
+    }
+  }
+});
+
 test('nullable composite uniques keep accepting partly NULL rows', () => {
   const sample = model();
   const sql = adapter => adapter.emitSchema(sample).statements.map(statement => statement.sql).join('\n');
@@ -301,6 +320,86 @@ test('a client that stopped early is a failed run, not a rejected value', () => 
   assert.equal(parseCount(['<00001>  count(*): 3']), 3);
   assert.equal(parseCount(['0']), 0);
   assert.equal(parseCount(['no rows']), null);
+});
+
+test('unique parity reads the column set of constraints, plain unique indexes and function indexes', () => {
+  const lines = [
+    ['tb_a.pk_tb_a=id', 'tb_a.uk_pair=a', 'tb_a.uk_pair=b', 'flyway_schema_history.flyway_schema_history_pk=installed_rank'],
+    ['tb_a.uk_idx=c'],
+    ['tb_a.uk_fn=CASE  WHEN ("A" IS NOT NULL AND "D" IS NOT NULL) THEN "A" END', 'tb_a.uk_fn=CASE  WHEN ("A" IS NOT NULL AND "D" IS NOT NULL) THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")', '@@COMPLETED', ''],
+  ];
+  const statements = [];
+  const read = () => readUniqueColumns({}, 'oracle', (_, sql, options) => {
+    statements.push(...sql);
+    assert.ok(options.sessionPrefix.some(item => /SERVEROUTPUT ON/.test(item)), '식은 DBMS_OUTPUT 으로 나온다');
+    return { errors: [], sections: new Map(lines.map((section, index) => [index, section])) };
+  });
+  const found = read();
+  assert.ok(statements[2].raw, '식 조회는 PL/SQL 블록이다');
+  assert.deepEqual([...found.get('tb_a.uk_pair').keys], ['a', 'b']);
+  assert.deepEqual([...found.get('tb_a.uk_fn').keys], ['a', 'd'], 'CASE 의 값이 키다');
+  assert.deepEqual([...found.get('tb_a.uk_trim').keys], ['e'], 'CASE 가 아닌 식은 참조 컬럼이 키다');
+  assert.deepEqual([...found.get('tb_a.uk_idx').keys], ['c', 'f'], '일반 컬럼과 식이 섞인 인덱스는 합친다');
+
+  const emission = columns => {
+    const value = createEmission('oracle');
+    for (const [name, list] of Object.entries(columns)) value.expectUnique('tb_a', name, list);
+    return value;
+  };
+  const ignoreTables = ['flyway_schema_history'];
+  const matching = { pk_tb_a: ['id'], uk_pair: ['a', 'b'], uk_idx: ['c', 'f'], uk_fn: ['a', 'd'], uk_trim: ['e'] };
+  assert.doesNotThrow(() => assertUniqueColumns(emission(matching), found, { ignoreTables }));
+  const parity = /키·유니크의 컬럼이 번역 결과와 다르다/;
+  assert.throws(() => assertUniqueColumns(emission({ ...matching, uk_pair: ['a'] }), found, { ignoreTables }), error => error.code === 'VENDOR_PARITY_FAILED' && parity.test(error.message) && /uk_pair 기대 \(a\), 실제 키 \(a, b\)/.test(error.message));
+  assert.throws(() => assertUniqueColumns(emission({ ...matching, uk_missing: ['z'] }), found, { ignoreTables }), /tb_a\.uk_missing 없음\(기대 z\)/);
+  assert.throws(() => assertUniqueColumns(emission({ pk_tb_a: ['id'], uk_pair: ['a', 'b'], uk_idx: ['c', 'f'], uk_fn: ['a', 'd'] }), found, { ignoreTables }), /tb_a\.uk_trim 기대에 없는 유니크/, '일반 인덱스가 유니크가 된 번역도 붉다');
+  assert.throws(() => assertUniqueColumns(emission(matching), found), /flyway_schema_history_pk 기대에 없는 유니크/, '지정한 표만 뺀다');
+
+  // CASE 가 하나 빠지면 조건에 컬럼이 남아도 키가 줄어든다.
+  lines[2] = ['tb_a.uk_fn=CASE  WHEN ("A" IS NOT NULL AND "D" IS NOT NULL) THEN "A" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
+  assert.throws(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), /uk_fn 기대 \(a, d\), 실제 키 \(a\), 식 참조 \(a, d\)/);
+  // 묶음 조건이 줄어도 부분 NULL 의미가 달라진다.
+  lines[2] = ['tb_a.uk_fn=CASE  WHEN "A" IS NOT NULL THEN "A" END', 'tb_a.uk_fn=CASE  WHEN "D" IS NOT NULL THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
+  assert.doesNotThrow(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), '이 대조는 컬럼 집합만 본다. 조건의 모양은 시나리오·차등 시험 몫이다');
+
+  assert.equal(readUniqueColumns({}, 'mysql', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
+  assert.throws(() => readUniqueColumns({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), error => error.code === 'VENDOR_QUERY_FAILED');
+  assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_COLUMNS[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 컬럼 조회가 있어야 한다');
+  assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_SEQUENCE_NEXT_VALUES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 시퀀스 다음 값 조회가 있어야 한다');
+});
+
+test('sequence next values and byte columns come from strict lines', () => {
+  const answer = lines => () => ({ errors: [], sections: new Map([[0, lines]]) });
+  assert.deepEqual([...readSequenceNextValues({}, 'oracle', answer(['sq_a:42', '  sq_b:1  ', '@@COMPLETED']))], [['sq_a', 42], ['sq_b', 1]]);
+  assert.equal(readSequenceNextValues({}, 'mysql', answer([])), null);
+  assert.throws(() => readSequenceNextValues({}, 'oracle', answer(['sq_a 42'])), error => error.code === 'VENDOR_QUERY_FAILED' && /시퀀스 다음 값 조회의 줄을 해석하지 못했다: sq_a 42/.test(error.message));
+  assert.deepEqual(readByteColumns({}, 'oracle', answer(['tb_a.nm=100', 'tb_a.tk=4000'])), ['tb_a.nm=100', 'tb_a.tk=4000']);
+  assert.deepEqual(readByteColumns({}, 'mysql', answer(['x'])), [], '바이트 의미가 없는 벤더는 비어 있다');
+  assert.throws(() => readByteColumns({}, 'oracle', answer(['bad-name.nm=100'])), /바이트 컬럼 조회의 줄을 해석하지 못했다/);
+  assert.deepEqual(addedByteColumns(['tb_a.tk=4000'], ['tb_a.tk=4000', 'tb_a.nm=100']), ['tb_a.nm=100'], '기준선의 바이트 컬럼은 어댑터의 저하다');
+  assert.deepEqual(addedByteColumns(['tb_a.tk=4000'], ['tb_a.tk=1000']), [], '기준선 컬럼을 줄인 것은 길이 규칙이 본다');
+  assert.deepEqual(addedByteColumns([], ['tb_a.tk=4000']), ['tb_a.tk=4000']);
+});
+
+test('an Oracle catalog line that cannot be read stops the run instead of disappearing', () => {
+  const kinds = Object.keys(VENDOR_INTROSPECTION.oracle);
+  const answer = (index, lines) => () => ({ errors: [], sections: new Map(kinds.map((_, at) => [at, at === index ? lines : []])) });
+  const stops = (kind, line) => assert.throws(() => readCatalog({}, 'oracle', answer(kinds.indexOf(kind), [line])),
+    error => error.code === 'VENDOR_QUERY_FAILED' && error.message.includes(`${kind} 조회의 줄을 해석하지 못했다: ${line}`) && /따옴표 없는 표준 이름/.test(error.message), line);
+  stops('columns', '게시판.id');
+  stops('columns', 'bad-name.id');
+  stops('columns', 'bad name.id');
+  stops('columns', 'x tb_quiet.id');
+  stops('constraints', 'tb_ok.bad-constraint');
+  stops('sequences', '.sq-bad');
+  stops('constraints', 'bin$abc==$0.bin$def==$0');
+  const good = readCatalog({}, 'oracle', answer(0, ['tb_ok.id', 'flyway_schema_history.installed_rank', '', '@@COMPLETED']));
+  assert.deepEqual(good.columns, ['tb_ok.id', 'flyway_schema_history.installed_rank'], '빈 줄과 끝 표식은 값이 아니다');
+  // 휴지통 이름이 조회에서 빠져야 이 판정이 DROP TABLE 을 거짓 실패로 만들지 않는다.
+  for (const kind of ['columns', 'constraints', 'indexes', 'triggers']) assert.match(VENDOR_INTROSPECTION.oracle[kind], /NOT LIKE 'BIN\$%'/, kind);
+  // csql 은 머리 줄을 내므로 다른 벤더는 줄 끝만 읽는다.
+  const csql = readCatalog({}, 'cubrid', () => ({ errors: [], sections: new Map([[0, ["<00001>  expr: 'tb_a.id'", 'There are 1 rows']]]) }));
+  assert.deepEqual(csql.columns, ['tb_a.id']);
 });
 
 test('catalog parity is red for a missing index, an extra object and a dropped trigger', () => {
@@ -611,12 +710,63 @@ test('the schema command skips the certification step and exists only for a vend
   assert.equal(integrationTask('single-module').conformance, ':vendorConformanceTest');
 });
 
-test('the vendor folder takes only migrations after the baseline', () => {
-  assert.deepEqual(vendorMigrationNameProblems(['V1_0__vendor_baseline.sql', 'V1_1__extra.sql', 'V1_10__more.sql', 'V2_0__next.sql', 'notes.txt']), []);
-  assert.deepEqual(vendorMigrationNameProblems(['R__repeat.sql', 'V0_9__before.sql', 'V1_0__other.sql', 'V1_0_1__patch.sql', 'U1_1__undo.sql', 'V1_1_no_separator.sql']),
-    ['R__repeat.sql', 'V0_9__before.sql', 'V1_0__other.sql', 'V1_0_1__patch.sql', 'U1_1__undo.sql', 'V1_1_no_separator.sql']);
+test('the vendor folder takes only migrations after the baseline, compared the way Flyway compares versions', () => {
+  assert.deepEqual(vendorMigrationNameProblems(['V1_0__vendor_baseline.sql', 'V1_1__extra.sql', 'V1_10__more.sql', 'V2_0__next.sql', 'V1_0_1__patch.sql', 'V1_0_0_1__deep.sql', 'V1.2__dotted.sql', 'V2__major.sql', 'notes.txt']), []);
+  const lower = ['R__repeat.sql', 'V0_9__before.sql', 'V1_0__other.sql', 'V1_0_0__same.sql', 'V1__same.sql', 'V0_0_1__before.sql', 'U1_1__undo.sql', 'V1_1_no_separator.sql'];
+  assert.deepEqual(vendorMigrationNameProblems(lower), lower);
   assert.equal(VENDOR_BASELINE_VERSION, '1.0');
   assert.match(vendorBaselinePaths('oracle').migration, /\/V1_0__vendor_baseline\.sql$/, '기준선 버전은 파일 이름과 같다');
+});
+
+test('the baseline and the input are compared with the source lock before a container starts', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vendor-lock-'));
+  const migration = 'api-server/src/main/resources/db/vendor/oracle/V1_0__vendor_baseline.sql';
+  const input = 'config/vendor/oracle/vendor-input.json';
+  try {
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), ['reusable-base-lock.json 이 없어 번역 기준선을 대조하지 못한다. 벤더 생성물에서 돌린다'], '잠금이 없으면 통과가 아니다');
+    mkdirSync(join(root, dirname(migration)), { recursive: true });
+    mkdirSync(join(root, dirname(input)), { recursive: true });
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\r\n');
+    writeFileSync(join(root, input), '{"snapshot":{}}\n');
+    const lock = { vendorProjection: { vendor: 'oracle', migration, input, migrationSha256: artifactTextSha256(root, migration), inputSha256: artifactTextSha256(root, input) } };
+    const writeLock = value => writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify(value));
+    writeLock(lock);
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), []);
+    assert.match(vendorLockProblems(root, 'mysql')[0], /벤더\(oracle\)가 mysql 가 아니다/);
+    writeFileSync(join(root, dirname(migration), 'V1_1__later.sql'), 'ALTER TABLE tb_a ADD nm VARCHAR2(10 CHAR);\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [], '기준선 뒤의 V 파일은 잠금과 무관하다');
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [], '줄 끝만 다른 것은 변경이 아니다');
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(19));\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 기준선(${migration})이 생성 때와 다르다`]);
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\n');
+    writeFileSync(join(root, input), '{"snapshot":{"x":1}}\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 입력(${input})이 생성 때와 다르다`]);
+    writeLock({ profile: 'core' });
+    assert.match(vendorLockProblems(root, 'oracle')[0], /벤더\(없음\)가 oracle 가 아니다/, 'PostgreSQL 생성물의 잠금에는 투영이 없다');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const start = source.indexOf('export function runVendorIntegration');
+  assert.ok(source.indexOf('assertVendorLock(vendorId)', start) > 0 && source.indexOf('assertVendorLock(vendorId)', start) < source.indexOf('startVendorEngine(engine', start), '컨테이너를 띄우기 전에 본다');
+});
+
+test('the host cannot switch off Hibernate validate, and the report carries what the contexts really used', () => {
+  const { integration } = VENDOR_ENGINES.oracle;
+  const child = childEnvironment('oracle', integration, { port: 1, password: 'x', owner: 'y' }, { EXTRA: '1' }, { SPRING_JPA_HIBERNATE_DDL_AUTO: 'none', PATH: 'p' });
+  assert.equal(child.SPRING_JPA_HIBERNATE_DDL_AUTO, 'validate');
+  assert.equal(child.PATH, 'p');
+  assert.equal(child.EXTRA, '1');
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  assert.doesNotMatch(source, /\.\.\.process\.env, \.\.\.integrationEnvironment/, '자식 환경은 한 곳에서 만든다');
+  assert.deepEqual(appliedHibernateCheck('A validate\nB validate\n'), { ddlAuto: 'validate', contexts: 2 });
+  assert.deepEqual(appliedHibernateCheck('A validate\r\nB none\r\n'), { ddlAuto: null, contexts: 2 }, '값이 갈리면 통과로 읽히지 않는다');
+  assert.deepEqual(appliedHibernateCheck('A none\n'), { ddlAuto: 'none', contexts: 1 });
+  assert.deepEqual(appliedHibernateCheck(''), { ddlAuto: null, contexts: 0 }, '단언한 문맥이 없으면 증거가 아니다');
+  const extension = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorOwnershipExtension.java'), 'utf8');
+  assert.match(extension, /getProperties\(\)\.get\("hibernate\.hbm2ddl\.auto"\)/, '프로필 문자열이 아니라 Hibernate 가 받은 값을 본다');
+  assert.match(extension, /throw new IllegalStateException\("Hibernate 스키마 검사가/, 'validate 가 아니면 그 시험 클래스가 붉다');
 });
 
 test('the catalog test sees the engine names an adopter did not choose removed, and every kind present', () => {
@@ -632,8 +782,10 @@ test('a unique counts as baseline only while its signature is unchanged, and eve
   assert.deepEqual(unchangedUniques(baseline, ['tb_a.uk_keep=10', 'tb_a.uk_recreated=99', 'tb_c.uk_new=13']), ['tb_a.uk_keep'], '다시 만든 유니크와 새 유니크는 기준선이 아니다');
   assert.deepEqual(unchangedUniques([], ['tb_a.uk_keep=10']), [], '조회가 비면 모두 새 유니크로 보여 붉다');
   assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_SIGNATURES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 서명 조회가 있어야 한다');
-  const output = readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['tb_a.uk_keep=10', '  tb_a.sys_c0012=11  ', 'garbage line']]]) }));
-  assert.deepEqual(output, ['tb_a.uk_keep=10', 'tb_a.sys_c0012=11']);
+  const output = readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['tb_a.uk_keep=10', '  tb_a.sys_c0012=11  ', 'tb_a.uk_on_plain_index=a#b']]]) }));
+  assert.deepEqual(output, ['tb_a.uk_keep=10', 'tb_a.sys_c0012=11', 'tb_a.uk_on_plain_index=a#b'], '일반 인덱스로 집행되는 제약은 컬럼 목록이 값이다');
+  assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['garbage line']]]) })), /유니크 서명 조회의 줄을 해석하지 못했다: garbage line/);
+  assert.match(VENDOR_UNIQUE_SIGNATURES.oracle, /constraint_type = 'U' AND i\.uniqueness = 'NONUNIQUE'/, '일반 인덱스로 집행되는 유니크 제약도 서명에 든다');
   assert.throws(() => readUniqueSignatures({}, 'mysql', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
   assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), /유니크 서명 조회 실패: ORA-00942/);
 });
@@ -697,7 +849,7 @@ test('the catalog test replaces the entity linter only in a vendor project, by t
   }
   const profile = readFileSync(join(ROOT, 'api-server/src/test/resources/application-tc.yml'), 'utf8');
   assert.match(profile, /ddl-auto: validate/, '대체의 한쪽이 Hibernate validate 다');
-  assert.equal(integrationEnvironment('oracle', VENDOR_ENGINES.oracle.integration, { port: 1, password: 'x', owner: 'y' }).SPRING_JPA_HIBERNATE_DDL_AUTO, undefined, '벤더 실행이 validate 를 덮지 않는다');
+  assert.equal(integrationEnvironment('oracle', VENDOR_ENGINES.oracle.integration, { port: 1, password: 'x', owner: 'y' }).SPRING_JPA_HIBERNATE_DDL_AUTO, 'validate', '벤더 실행은 validate 를 강제한다');
 });
 
 test('the README procedure names a command that exists and what it does not cover', () => {

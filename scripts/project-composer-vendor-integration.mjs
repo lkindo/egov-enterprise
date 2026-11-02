@@ -4,7 +4,8 @@
  *
  * 시나리오는 PostgreSQL 과 같은 시험 코드다. 돌릴 시험은 `config/governance/vendor-test-ledger.json` 이 정한다.
  *
- * 사용: node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor <id> [--engine <id>] [--report <경로>]
+ * 사용: node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor <id> [--engine <id>] [--layout <배치>] [--flyway <위치>] [--report <경로>]
+ * --flyway 가 없으면 어댑터 문장을 직접 적용하고 시나리오 시험만 돈다. 카탈로그 시험은 돌지 않는다 — 생성물에서는 npm run verify:vendor-schema 를 쓴다.
  * 보고서는 인증 증거(project-composer-vendor-evidence.mjs)의 원본이고 끝까지 통과한 실행만 쓴다.
  */
 import { spawnSync } from 'node:child_process';
@@ -13,16 +14,18 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_ENGINES, readCatalog, readUniqueSignatures, runAsAdministrator, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
+import { VENDOR_ENGINES, readByteColumns, readCatalog, readUniqueSignatures, runAsAdministrator, runStatements, startVendorEngine, stopVendorEngineReporting } from './project-composer-vendor-engine.mjs';
 import { applyVendor, assertVendorApplied } from './project-composer-vendor-verify.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
+import { GENERATED_LOCK } from './composer-modules.mjs';
+import { vendorBaselineDrift } from './reusable-governance-integrity.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const LEDGER = join(ROOT, 'config/governance/vendor-test-ledger.json');
 const SCHEMA_TESTS = join(ROOT, 'api-server/src/test/java/nuri/api/schema');
 const CONFORMANCE_PACKAGE = 'nuri.api.harness';
 const CONFORMANCE_CLASS = 'VendorCatalogConformanceTest';
-const TEST_PROFILE = join(ROOT, 'api-server/src/test/resources/application-tc.yml');
+const HIBERNATE_REPORT = join(ROOT, 'build/vendor-conformance/hibernate-validate.txt');
 /** 번역 기준선의 Flyway 버전(V1_0__vendor_baseline.sql). 그 뒤 버전이 도입자의 마이그레이션이다. */
 export const VENDOR_BASELINE_VERSION = '1.0';
 const VENDOR_BASELINE_FILE = 'V1_0__vendor_baseline.sql';
@@ -80,12 +83,18 @@ export function summarizeTestResults(resultsDirectory) {
   return totals;
 }
 
-/** 시나리오 시험이 쓰는 프로필의 스키마 검사 값. 이 값이 validate 여야 시험 통과가 Hibernate validate 통과를 뜻한다. */
-export const hibernateDdlAuto = profileText => profileText.match(/^[ \t]*ddl-auto:[ \t]*([a-z-]+)/m)?.[1] ?? null;
+/**
+ * 시나리오 문맥의 Hibernate 가 실제로 쓴 스키마 검사 값(VendorOwnershipExtension 이 문맥마다 단언하고 남긴다). 프로필 문자열은 증거가 아니다 —
+ * 환경 변수와 시험 속성이 프로필을 이긴다. 문맥이 없거나 값이 갈리면 null 이라 통과로 읽히지 않는다.
+ */
+export function appliedHibernateCheck(reportText) {
+  const lines = reportText.split(/\r?\n/).filter(Boolean);
+  const values = new Set(lines.map(line => line.slice(line.indexOf(' ') + 1)));
+  return { ddlAuto: values.size === 1 ? [...values][0] : null, contexts: lines.length };
+}
 
-function readSchemaCheck() {
-  try { return hibernateDdlAuto(readFileSync(TEST_PROFILE, 'utf8')); }
-  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+function readHibernateCheck() {
+  return appliedHibernateCheck(existsSync(HIBERNATE_REPORT) ? readFileSync(HIBERNATE_REPORT, 'utf8') : '');
 }
 
 export function parseIntegrationArgs(argv) {
@@ -102,15 +111,37 @@ export function parseIntegrationArgs(argv) {
 
 /**
  * 기준선 뒤에 적용될 수 없는 파일을 컨테이너를 띄우기 전에 말한다. Flyway 는 target 을 줘도 R__ 를 적용하고, 기준선 이하 버전은 그 뒤에 적용하지 않아
- * 정확 대조의 전제가 깨진다. 이름만 보므로 내용은 판단하지 않는다.
+ * 정확 대조의 전제가 깨진다. 이름만 보므로 내용은 판단하지 않는다. 버전은 Flyway 처럼 구간별 숫자로 비교한다 — 빠진 구간은 0 이라 V1_0_0 은 기준선과 같고 V1_0_1 은 높다.
  */
 export function vendorMigrationNameProblems(names) {
   return names.filter(name => name.endsWith('.sql') && name !== VENDOR_BASELINE_FILE).filter(name => {
-    const version = name.match(/^V(\d+)((?:_\d+)*)__.+\.sql$/);
+    const version = name.match(/^V(\d+(?:[._]\d+)*)__.+\.sql$/);
     if (!version) return true;
-    const [major, minor = 0] = [version[1], ...version[2].split('_').filter(Boolean)].map(Number);
-    return major < 1 || (major === 1 && minor === 0);
+    const [major, ...rest] = version[1].split(/[._]/).map(Number);
+    return major < 1 || (major === 1 && rest.every(part => part === 0));
   });
+}
+
+/**
+ * 잠금에 묶인 번역 기준선과 입력이 디스크와 다른 이유. 기준선 대조는 수정된 파일을 적용한 DB 를 그 파일의 이름과 비교하므로 내용 변경을 보지 못한다.
+ * 잠금이 없으면 무엇과도 대조하지 못하므로 통과가 아니다.
+ */
+export function vendorLockProblems(root, vendorId) {
+  const lockPath = join(root, GENERATED_LOCK);
+  if (!existsSync(lockPath)) return [`${GENERATED_LOCK} 이 없어 번역 기준선을 대조하지 못한다. 벤더 생성물에서 돌린다`];
+  const projection = JSON.parse(readFileSync(lockPath, 'utf8')).vendorProjection;
+  if (projection?.vendor !== vendorId) return [`${GENERATED_LOCK} 의 벤더(${projection?.vendor ?? '없음'})가 ${vendorId} 가 아니다`];
+  const drift = vendorBaselineDrift(root, projection);
+  return [...(drift.migration ? [`번역 기준선(${projection.migration})이 생성 때와 다르다`] : []), ...(drift.input ? [`번역 입력(${projection.input})이 생성 때와 다르다`] : [])];
+}
+
+function assertVendorLock(vendorId) {
+  const problems = vendorLockProblems(ROOT, vendorId);
+  if (problems.length) {
+    const error = new Error(`${problems.join(', ')}. 고친 파일을 되돌린다. 스키마 변경은 기준선보다 높은 버전의 V 파일로 더한다.`);
+    error.code = 'VENDOR_INTEGRATION_FAILED';
+    throw error;
+  }
 }
 
 function assertVendorMigrationNames(location) {
@@ -135,9 +166,14 @@ export function integrationEnvironment(vendorId, integration, { port, password, 
     SPRING_DATASOURCE_DRIVER_CLASS_NAME: integration.driver,
     SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: integration.dialect,
     SPRING_FLYWAY_ENABLED: 'false',
+    // 호스트의 값을 물려받으면 검증이 꺼진 채로 시험이 통과한다. 표·컬럼 부재와 타입 계열은 이 검증만 본다.
+    SPRING_JPA_HIBERNATE_DDL_AUTO: 'validate',
     APP_DATABASE_VENDOR: vendorId,
   };
 }
+
+/** 자식 프로세스의 환경. 벤더 값이 호스트 값을 이긴다. */
+export const childEnvironment = (vendorId, integration, handle, extra = {}, base = process.env) => ({ ...base, ...integrationEnvironment(vendorId, integration, handle), ...extra });
 
 /** 이 실행이 띄운 DB 임을 남긴다. 시험은 이 토큰이 없는 DB 에는 쓰지 않는다. 대조와 카탈로그 시험이 끝난 뒤라 스키마 대조에 섞이지 않는다. */
 function markOwner(handle) {
@@ -158,7 +194,7 @@ function migrateWithFlyway(vendorId, integration, handle, task, location, target
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   const result = spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--console=plain'], {
     cwd: ROOT, stdio: 'inherit', shell: true,
-    env: { ...process.env, ...integrationEnvironment(vendorId, integration, { ...handle, owner: '' }), VENDOR_FLYWAY_LOCATION: location, ...(target ? { VENDOR_FLYWAY_TARGET: target } : {}) },
+    env: childEnvironment(vendorId, integration, { ...handle, owner: '' }, { VENDOR_FLYWAY_LOCATION: location, ...(target ? { VENDOR_FLYWAY_TARGET: target } : {}) }),
   });
   if (result.status !== 0) {
     // Gradle 의 네트워크·메모리·컴파일 실패가 섞여 있어 대조 실패로 말할 수 없다.
@@ -186,6 +222,15 @@ export function unchangedUniques(baseline, current) {
   return current.filter(signature => before.has(signature)).map(signature => signature.slice(0, signature.indexOf('=')));
 }
 
+/**
+ * 기준선 뒤에 바이트 길이가 된 컬럼(`표.컬럼=바이트`). 기준선의 바이트 컬럼은 어댑터의 선언된 저하이고 정확 대조를 받았다.
+ * 표·컬럼 이름으로 가르므로 길이를 줄인 기준선 컬럼은 여기에 없고 길이 규칙이 본다.
+ */
+export function addedByteColumns(baseline, current) {
+  const before = new Set(baseline.map(item => item.slice(0, item.indexOf('='))));
+  return current.filter(item => !before.has(item.slice(0, item.indexOf('='))));
+}
+
 /** 적용된 카탈로그를 스키마 규칙으로 본다. 시나리오 시험의 픽스처와 소유 표가 도입자 객체로 보이지 않게 그보다 먼저 돈다. */
 function runVendorConformance(vendorId, integration, handle, { task, results }, snapshot) {
   const file = join(ROOT, 'build/vendor-conformance/catalog.json');
@@ -193,7 +238,7 @@ function runVendorConformance(vendorId, integration, handle, { task, results }, 
   writeFileSync(file, `${JSON.stringify(snapshot)}\n`, 'utf8');
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   const result = spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--console=plain'], {
-    cwd: ROOT, stdio: 'inherit', shell: true, env: { ...process.env, ...integrationEnvironment(vendorId, integration, { ...handle, owner: '' }), VENDOR_CATALOG_SNAPSHOT: file },
+    cwd: ROOT, stdio: 'inherit', shell: true, env: childEnvironment(vendorId, integration, { ...handle, owner: '' }, { VENDOR_CATALOG_SNAPSHOT: file }),
   });
   if (result.status !== 0) {
     const error = new Error(`벤더 카탈로그 시험 실패(종료 ${result.status}). ${results} 를 본다.`);
@@ -206,7 +251,7 @@ function runVendorConformance(vendorId, integration, handle, { task, results }, 
 function runIntegrationTests(vendorId, integration, handle, task) {
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   return spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--continue', '--console=plain'], {
-    cwd: ROOT, stdio: 'inherit', shell: true, env: { ...process.env, ...integrationEnvironment(vendorId, integration, handle) },
+    cwd: ROOT, stdio: 'inherit', shell: true, env: childEnvironment(vendorId, integration, handle, { VENDOR_HIBERNATE_REPORT: HIBERNATE_REPORT }),
   });
 }
 
@@ -217,7 +262,12 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
   // 이전 실행의 결과가 이번 실행의 증거가 되지 않게 맨 앞에서 지운다. 시험 전 단계에서 실패해도 낡은 결과가 남지 않는다.
   rmSync(results, { recursive: true, force: true });
   rmSync(conformanceResults, { recursive: true, force: true });
-  if (flyway) assertVendorMigrationNames(flyway);
+  rmSync(HIBERNATE_REPORT, { force: true });
+  mkdirSync(dirname(HIBERNATE_REPORT), { recursive: true });
+  if (flyway) {
+    assertVendorMigrationNames(flyway);
+    assertVendorLock(vendorId);
+  }
   const handle = startVendorEngine(engine, { publishPort: integration.port });
   let failure = null;
   let applied = null;
@@ -228,9 +278,11 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
       applied = assertVendorApplied(handle, input, vendorId, { ignoreTables: ['flyway_schema_history'] });
       const baseline = conformanceCatalog(vendorId, readCatalog(handle, vendorId));
       const baselineUniques = readUniqueSignatures(handle, vendorId);
+      const baselineByteColumns = readByteColumns(handle, vendorId);
       migrateWithFlyway(vendorId, integration, handle, migrate, flyway);
       const snapshot = { vendor: vendorId, baseline, current: conformanceCatalog(vendorId, readCatalog(handle, vendorId)),
-        unchangedUniques: unchangedUniques(baselineUniques, readUniqueSignatures(handle, vendorId)) };
+        unchangedUniques: unchangedUniques(baselineUniques, readUniqueSignatures(handle, vendorId)),
+        byteColumns: addedByteColumns(baselineByteColumns, readByteColumns(handle, vendorId)) };
       runVendorConformance(vendorId, integration, handle, { task: conformance, results: conformanceResults }, snapshot);
     } else {
       applyVendor(handle, input, vendorId);
@@ -242,6 +294,11 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
       failure.code = 'VENDOR_INTEGRATION_FAILED';
     } else {
       assertTestsRan(results, ledgerClasses(JSON.parse(readFileSync(LEDGER, 'utf8')), name => existsSync(join(SCHEMA_TESTS, `${name}.java`))));
+      const { ddlAuto, contexts } = readHibernateCheck();
+      if (ddlAuto !== 'validate') {
+        failure = new Error(`Hibernate validate 를 단언한 시나리오 문맥이 없다(값 ${ddlAuto}, 문맥 ${contexts}개). ${HIBERNATE_REPORT} 를 본다.`);
+        failure.code = 'VENDOR_INTEGRATION_FAILED';
+      }
     }
   } catch (error) {
     failure = error;
@@ -251,7 +308,7 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
     vendor: vendorId, engine, image: VENDOR_ENGINES[engine].image,
     schemaParity: applied && { tables: applied.tables, statements: applied.emission.statements.length, degradations: applied.emission.degradations.length },
     seedParity: applied && { tables: applied.tables, rows: applied.seedRows },
-    hibernateValidate: { ddlAuto: readSchemaCheck() },
+    hibernateValidate: readHibernateCheck(),
     integration: summarizeTestResults(results),
     catalog: summarizeTestResults(conformanceResults),
   };
@@ -265,7 +322,7 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
       mkdirSync(dirname(resolve(args.report)), { recursive: true });
       writeFileSync(args.report, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
     }
-    console.log(`[vendor-integration] PASS ${args.engine ?? args.vendor}`);
+    console.log(`[vendor-integration] PASS ${args.engine ?? args.vendor}${args.flyway ? '' : ' (카탈로그 시험 없음: --flyway 없이 돌렸다. 벤더 생성물에서 npm run verify:vendor-schema 로 돌린다)'}`);
   } catch (error) {
     console.error(`[vendor-integration] ${error.code ?? 'FAILED'}: ${error.message}`);
     process.exitCode = vendorExitCode(error);

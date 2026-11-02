@@ -212,7 +212,7 @@ const CASES = {
 test('tagged-test-on-default-task: 벤더 카탈로그 시험은 전용 실행 도구로 안내한다', () => {
   const rule = RULES.find(({ id }) => id === 'tagged-test-on-default-task');
   assert.match(rule.why, /@Tag\("vendor-conformance"\)/);
-  assert.match(rule.fix, /scripts\/project-composer-vendor-integration\.mjs/);
+  assert.match(rule.fix, /벤더 생성물에서 npm run verify:vendor-schema/);
 });
 
 test('규칙 표와 시험 사례가 일대일이다', () => {

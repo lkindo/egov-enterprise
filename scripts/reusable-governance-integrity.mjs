@@ -52,6 +52,12 @@ export const vendorBaselinePaths = vendorId => ({
   migration: `api-server/src/main/resources/db/vendor/${vendorId}/V1_0__vendor_baseline.sql`,
 });
 
+/** 디스크의 번역 기준선과 입력이 잠금의 해시와 다른가. 전체 검증과 벤더 스키마 명령이 같은 판정을 쓴다. */
+export const vendorBaselineDrift = (root, projection) => ({
+  migration: artifactTextSha256(root, projection.migration) !== projection.migrationSha256,
+  input: artifactTextSha256(root, projection.input) !== projection.inputSha256,
+});
+
 /** 잠금의 벤더 투영이 구성과 맞고 실제로 실행될 기준선과 같은가. PostgreSQL 구성에는 투영이 없다. */
 export function vendorProjectionErrors(root, lock) {
   const vendorId = lock.composition?.recipe?.database?.vendor ?? 'postgresql';
@@ -62,8 +68,9 @@ export function vendorProjectionErrors(root, lock) {
     return ['Source lock vendor projection differs from its composition'];
   }
   // 잠금의 값과 다르면 대조한 PostgreSQL 번들과 다른 SQL 이 돈다.
-  const errors = artifactTextSha256(root, projection.migration) === projection.migrationSha256 ? [] : ['Vendor baseline differs from the source lock'];
-  if (artifactTextSha256(root, projection.input) !== projection.inputSha256) errors.push('Vendor input differs from the source lock');
+  const drift = vendorBaselineDrift(root, projection);
+  const errors = drift.migration ? ['Vendor baseline differs from the source lock'] : [];
+  if (drift.input) errors.push('Vendor input differs from the source lock');
   // 뺀 도구가 되살아나면 벤더 프로젝트에서 동작하지 않는 PostgreSQL 도구가 돈다.
   if (!exact(projection.removedAssets, readVendorAssetLedger(root).assets)) errors.push('Source lock removed assets differ from the removal ledger');
   for (const asset of projection.removedAssets ?? []) if (existsSync(join(root, asset))) errors.push(`Vendor project keeps a PostgreSQL-only asset: ${asset}`);
