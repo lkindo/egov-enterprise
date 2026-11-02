@@ -64,7 +64,7 @@ export function assertVendorApplied(handle, input, vendorId, { ignoreTables } = 
     error.code = 'VENDOR_PARITY_FAILED';
     throw error;
   }
-  return { emission };
+  return { emission, tables: model.tables.length, seedRows: Object.values(expected).reduce((sum, rows) => sum + rows, 0) };
 }
 
 /** 스키마와 시드를 적용하고 대조한다. */

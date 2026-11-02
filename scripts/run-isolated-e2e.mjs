@@ -302,6 +302,14 @@ export function validateLocalRun(report, inventory, { representativeSpecs, cwd =
     ...(representativeSpecs ? { fullInventorySpecs: representativeSpecs } : {}) });
 }
 
+/** 인증 증거의 대표 E2E 원본. 결과 계약과 실행이 모두 통과한 뒤에만 쓴다. 벤더 프로젝트 안의 경로라 인자로 받지 않는다. */
+export function writeRepresentativeReport(projectRoot, { vendor, engineId, image, specs, summary }) {
+  const file = path.join(projectRoot, 'build', 'reports', 'vendor-evidence', engineId, 'representative-e2e.json');
+  mkdirSync(path.dirname(file), { recursive: true });
+  writeFileSync(file, `${JSON.stringify({ vendor, engine: engineId, image, specs: specs.length, expected: summary?.expected, unexpected: summary?.unexpected, flaky: summary?.flaky, skipped: summary?.skipped }, null, 2)}\n`);
+  return file;
+}
+
 async function loadVendorRuntime(vendor, engineId) {
   const module = await import('./project-composer-vendor-engine.mjs');
   const { TEST_CREDENTIALS } = await import('../frontend/e2e/synthetic-test-credentials.mjs');
@@ -530,6 +538,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
     await run('discovery', process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...discoveryArguments(selection, fullInventory)], frontend,
       { ...environment, ...testAccountEnvironment, PLAYWRIGHT_JSON_OUTPUT_FILE: inventoryPath });
     let executionFailure;
+    let localResult;
     try {
       await run('playwright', process.execPath, [require.resolve('@playwright/test/cli'), 'test', ...selection,
         `--reporter=${ciCompose ? 'blob,line,json' : 'line,json'}`], frontend,
@@ -543,8 +552,10 @@ export async function main(arguments_ = process.argv.slice(2)) {
       const result = validateLocalRun(report, inventory, { representativeSpecs: bundle?.specs });
       console.log(`E2E result: ${result.summary?.expected ?? 0} expected, ${result.summary?.skipped ?? 0} platform skips, ${result.summary?.flaky ?? 0} flaky.`);
       if (result.errors.length) throw fail(`result contract failed: ${result.errors.join('; ')}`);
+      localResult = result;
     }
     if (executionFailure) throw executionFailure;
+    if (bundle && vendorRuntime) writeRepresentativeReport(root, { vendor, engineId: vendorRuntime.id, image: vendorRuntime.engine.image, specs: bundle.specs, summary: localResult.summary });
   } finally {
     console.log(`E2E evidence: ${path.relative(root, output).replaceAll('\\', '/')}`);
     ready = false;

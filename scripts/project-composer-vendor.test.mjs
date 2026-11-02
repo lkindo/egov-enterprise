@@ -28,6 +28,7 @@ import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-bas
 import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
+import { certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
@@ -379,7 +380,7 @@ function ledgerCopy(t, change) {
   writeFileSync(join(directory, VENDOR_LEDGER_PATH), JSON.stringify(ledger));
   return directory;
 }
-const certify = id => vendor => { Object.assign(vendor(id), { status: 'certified', evidence: { run: 'fixture' } }); delete vendor(id).reason; };
+const certify = id => vendor => { certifyVendor(vendor(id)); };
 const withPreviewEnv = (value, action) => {
   const previous = process.env.COMPOSER_PREVIEW_VENDOR;
   if (value === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR; else process.env.COMPOSER_PREVIEW_VENDOR = value;

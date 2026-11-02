@@ -17,6 +17,7 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { JAVA_GATE_SCAN_ROOTS, loadGovernanceRegistry } from './governance-gates-contract.mjs';
 import { GATE_REGISTRY, LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck, main } from './ledger-precheck.mjs';
 import { LEDGER_CHECKS, checkGenerated, checkTasks, main as regenerateMain } from './regenerate.mjs';
+import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS = 'api-server/src/main/resources/db/migration';
@@ -52,7 +53,7 @@ const schemaTest = name => ['package nuri.api.schema;', 'import org.junit.jupite
 function fixture(t) {
   const root = scratch(t, 'ledger-precheck-');
   const copy = file => { mkdirSync(dirname(join(root, file)), { recursive: true }); cpSync(join(ROOT, file), join(root, file), { recursive: true }); };
-  for (const file of ['config/modules', 'config/governance/permission-catalog.json', 'config/governance/permission-bundles.json', MENU_SNAPSHOT,
+  for (const file of ['config/modules', 'config/governance/permission-catalog.json', 'config/governance/permission-bundles.json', MENU_SNAPSHOT, VENDOR_LEDGER_PATH,
     MIGRATIONS, 'api-server/src/main/resources/db/cutover/authorization-contract.sql']) copy(file);
   for (const scanRoot of JAVA_GATE_SCAN_ROOTS) mkdirSync(join(root, scanRoot), { recursive: true });
   put(root, `${SCHEMA_ROOT}/RegisteredSchemaTest.java`, schemaTest('RegisteredSchemaTest'));
@@ -68,8 +69,8 @@ const editJson = (root, file, edit) => {
 };
 const findings = async root => (await ledgerPrecheck({ root })).findings.map(({ code, message }) => [code, message]);
 
-test('세 점검은 실제 판정 모듈을 가리키고 코드가 겹치지 않으며, CLI 는 인자를 받지 않는다', async () => {
-  assert.deepEqual(LEDGER_PRECHECKS.map(check => check.code), ['TAGGED_GATE_REGISTRY', 'MENU_SNAPSHOT_STALE', 'UNASSIGNED_PERMISSION_GUIDANCE']);
+test('네 점검은 실제 판정 모듈을 가리키고 코드가 겹치지 않으며, CLI 는 인자를 받지 않는다', async () => {
+  assert.deepEqual(LEDGER_PRECHECKS.map(check => check.code), ['TAGGED_GATE_REGISTRY', 'MENU_SNAPSHOT_STALE', 'UNASSIGNED_PERMISSION_GUIDANCE', 'VENDOR_EVIDENCE_STALE']);
   for (const check of LEDGER_PRECHECKS) {
     assert.ok(readFileSync(join(ROOT, check.requires), 'utf8').length > 0, `${check.code}: ${check.requires} 이 없다`);
     assert.match(check.fix, /\S/u, `${check.code}: 고치는 법이 없다`);
@@ -178,6 +179,7 @@ test('판정 모듈이 없을 때만 건너뛰고, 자료가 없으면 건너뛰
   assert.deepEqual([...new Set(missing.findings.map(finding => finding.code))], LEDGER_PRECHECKS.map(check => check.code));
   assert.ok(missing.findings.some(({ message }) => message === 'Composer menu snapshot: snapshot file is missing or unreadable'));
   assert.equal(await main([], { root: empty, log: () => {}, error: () => {} }), 1);
+  assert.ok(missing.findings.some(({ code, message }) => code === 'VENDOR_EVIDENCE_STALE' && /ENOENT/.test(message)), '원장이 없으면 벤더 증거 점검도 붉다');
   // 판정 함수가 던진 여러 줄 문장도 머리줄 하나로 남는다(발췌는 머리줄만 본다).
   const thrown = await ledgerPrecheck({ root: empty, checks: [{ code: 'PROBE', requires: 'scripts/ledger-precheck.mjs', fix: 'probe',
     run: () => { throw new Error('first line\n  second line'); } }] });

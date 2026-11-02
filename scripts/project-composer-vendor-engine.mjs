@@ -49,9 +49,13 @@ const oracleIntegration = (service, administrator = 'sqlplus -S / as sysdba') =>
     `GRANT EXECUTE ON sys.dbms_session TO ${SCHEMA}`, `GRANT CREATE TRIGGER TO ${SCHEMA}`],
 });
 
+/**
+ * 인증 증거가 image 를 그대로 적어 대조하므로 인증할 엔진은 digest 로 고정한다.
+ * imageOrigin 은 공식 레지스트리 이미지가 아니라는 표시다(설계서 §7).
+ */
 export const VENDOR_ENGINES = Object.freeze({
   oracle: {
-    image: 'gvenzl/oracle-free:23-slim-faststart', maxWaitSeconds: 300, memoryHintBytes: MEMORY_HINT_BYTES,
+    image: 'gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093', imageOrigin: 'community:gvenzl', maxWaitSeconds: 300, memoryHintBytes: MEMORY_HINT_BYTES,
     environment: password => ({ ORACLE_PASSWORD: password, APP_USER: SCHEMA, APP_USER_PASSWORD: password }),
     ready: (name, run = docker) => /DATABASE IS READY TO USE/.test(logs(name, run)),
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$APP_USER_PASSWORD"@//localhost/FREEPDB1 @${file}`,
@@ -59,7 +63,7 @@ export const VENDOR_ENGINES = Object.freeze({
     integration: oracleIntegration('FREEPDB1'),
   },
   oracle19: {
-    image: 'fugeritorg/oracle-19.3.0-ee:2025.0', maxWaitSeconds: 1500, vendor: 'oracle',
+    image: 'fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac', imageOrigin: 'community:fugeritorg', maxWaitSeconds: 1500, vendor: 'oracle',
     environment: password => ({ ORACLE_PWD: password }),
     ready: (name, run = docker) => {
       if (!/DATABASE IS READY TO USE/.test(logs(name, run))) return false;

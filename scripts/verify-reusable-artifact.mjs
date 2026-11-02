@@ -22,7 +22,7 @@ export const vendorInputPath = vendor => `config/vendor/${vendor}/vendor-input.j
 export const VENDOR_SCHEMA_SCOPE = 'vendor-schema';
 const GRADLE_OPTIONS = Object.freeze(['--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']);
 /** 생성물의 기준선과 도입자 마이그레이션을 실제 Flyway 로 적용한 DB 에서 대조하고, 카탈로그 시험과 시나리오를 돌린다. */
-const vendorIntegrationStep = (vendor, layout) => ({ id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
+export const vendorIntegrationStep = (vendor, layout) => ({ id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
   '--flyway', `classpath:db/vendor/${vendor}`] });
 
 /**
@@ -80,13 +80,16 @@ export function runCommand(command, args, { root, env = process.env, capture = f
   return result.stdout;
 }
 
+/** 생성물 검증 단계가 받는 환경. 앱 문맥을 띄우는 시험이 비밀 값을 요구하므로 실행마다 만든다. */
+export const artifactStepEnvironment = () => ({ ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') });
+
 export function verifyReusableArtifact({ root, scope = 'full', run = runCommand } = {}) {
   root = resolve(root);
   const lock = JSON.parse(readFileSync(resolve(root, 'reusable-base-lock.json'), 'utf8'));
   if (!compositionProfiles().includes(lock.profile)) throw new Error('generated product lock is required');
   const layout = normalizeBackendLayout(lock.layout);
   const steps = verificationSteps(scope, layout, { vendor: lock.vendorProjection?.vendor });
-  const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
+  const env = artifactStepEnvironment();
   const report = { schemaVersion: 1, authority: scope === VENDOR_SCHEMA_SCOPE ? 'local-vendor-schema-check' : 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
     result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [] };

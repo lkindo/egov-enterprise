@@ -108,7 +108,7 @@ export const LEDGER_CHECKS = Object.freeze([
     command: ['node', ['scripts/ledger-precheck.mjs']],
     excerpt: headlinesWithFixes,
     notices: skipNotices,
-    hint: '태그 시험 등록·메뉴 snapshot·미배정 권한 안내는 regen 이 고치지 않는다 — 코드마다 위 → 대로 고친다.',
+    hint: '태그 시험 등록·메뉴 snapshot·미배정 권한 안내·벤더 인증 증거는 regen 이 고치지 않는다 — 코드마다 위 → 대로 고친다.',
   }),
 ]);
 

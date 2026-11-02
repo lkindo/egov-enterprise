@@ -282,12 +282,19 @@ flowchart TD
 ## 7. 인증과 검증(D-9, D-10)
 
 ```json
-{ "vendors": [{ "id": "oracle", "label": "Oracle", "status": "preview",
-  "engines": [{ "version": "19", "image": "...", "evidence": null }],
-  "degradations": ["..."] }] }
+{ "evidenceInputs": { "paths": ["..."] },
+  "vendors": [{ "id": "oracle", "label": "Oracle", "status": "preview",
+  "engines": [{ "version": "19", "engine": "oracle19", "evidence": null }],
+  "evidenceInputs": ["..."] }] }
 ```
 
-`certified` 조건은 벤더·버전마다 다음을 모두 통과한 실행 ID 다: 스키마 대조, 시드 행 대조, Hibernate validate, 통합 시험, §5·§6 적합성, 대표 E2E(로그인·권한·게시판·결재·감사 원장). 증거에는 입력 해시를 함께 적는다. 입력은 중립 모델, 어댑터, 포트 구현, 벤더 의존 SQL 파일, 엔티티 매핑(벤더 설정 포함), 벤더에서 도는 시험 코드와 시험 원장이다. 해시가 현재 저장소와 다르면 `npm run regen -- --check` 가 `VENDOR_EVIDENCE_STALE` 로 먼저 알리고, 계약 시험이 그 `certified` 를 거부한다. 그래서 야간 실패를 기다리는 동안 낡은 인증이 남지 않는다. 재검증 만료는 ADR-0018 처럼 기술 판정과 분리한다. 생성기는 기존 원칙대로 생성 작업마다 전체 검증을 돌리므로 인증은 선택 허용일 뿐 각 작업의 검증을 대신하지 않는다.
+`certified` 조건은 벤더·버전마다 다음을 모두 통과한 실행 ID 다: 스키마 대조, 시드 행 대조, Hibernate validate, 통합 시험, §5·§6 적합성, 대표 E2E(로그인·권한·게시판·결재·감사 원장). 증거에는 입력 해시를 함께 적는다. 입력은 중립 모델, 어댑터, 포트 구현, 벤더 의존 SQL 파일, 엔티티 매핑(벤더 설정 포함), 벤더에서 도는 시험 코드와 시험 원장이다. 중립 모델은 PostgreSQL 컨테이너에서 나와 Docker 없는 검사에서 계산할 수 없으므로 소스(마이그레이션·권한 원장·모델 코드)의 해시로 대신하고, 실제 모델 해시는 증거의 `modelHash` 에 따로 적는다. 해시가 현재 저장소와 다르면 `npm run regen -- --check` 가 `VENDOR_EVIDENCE_STALE` 로 먼저 알리고, 계약 시험이 그 `certified` 를 거부한다. 그래서 야간 실패를 기다리는 동안 낡은 인증이 남지 않는다. 입력을 바꾼 PR 은 증거를 다시 만들거나 그 벤더를 `preview` 로 내린다. 재검증 만료는 ADR-0018 처럼 기술 판정과 분리한다. 생성기는 기존 원칙대로 생성 작업마다 전체 검증을 돌리므로 인증은 선택 허용일 뿐 각 작업의 검증을 대신하지 않는다.
+
+입력 목록은 [원장](../../config/db-vendors.json)의 `evidenceInputs` 에 공통과 벤더별로 나눠 적는다. 벤더 하나의 구현을 고쳐 다른 벤더의 증거가 낡지 않게 하려는 것이다. 벤더 의존 SQL 위치, `replacement` 가 아닌 벤더 시험, 대표 E2E, 엔티티 매핑(`@Entity`·`@Embeddable`·`@MappedSuperclass`·`@Converter`·`AttributeConverter`)과 포트를 쓰는 코드는 [판정 코드](../../scripts/project-composer-vendor-evidence.mjs)가 원장과 소스에서 도출한다. 해시는 경로와 내용을 함께 넣으므로 파일 삭제와 표지 제거도 값을 바꾼다. 원장 자체는 증거를 담아 입력이 아니고, 프런트 코드·E2E 지원 코드·의존성 판(`libs.versions.toml`)도 입력이 아니다. 이들의 회귀는 CI 경로(§10)와 생성 작업마다 도는 검증이 본다. 생성물은 입력이 투영돼 값이 달라지므로 낡음 판정을 하지 않는다.
+
+이미지 값의 정본은 실행 도구의 엔진 표(`VENDOR_ENGINES`)이고 원장은 엔진 키로 가리킨다. 증거의 `image` 가 현재 엔진 값과 다르면 낡은 것이다. Oracle 두 이미지만 digest 로 고정돼 있다. 다른 벤더는 올릴 때 고정한다 — 고정하지 않으면 원장 적재가 `certified` 를 거부한다. 원장 적재는 생성 작업마다 돌기 때문에 입력 해시를 대조하지 않고, `certified` 의 어댑터·소스 투영·통합 시험을 돌릴 엔진·증거 형식만 본다. 그래서 어댑터 없는 Tibero 나 빈 증거로는 열리지 않는다.
+
+증거는 원본 저장소에서 기록한다: `node scripts/project-composer-vendor-evidence.mjs --vendor oracle --version 19 --artifact <생성물>`. 원본 트리가 깨끗하고, 생성물이 같은 커밋에서 만들어져 전체 검증을 통과했으며, 대표 묶음이 요구하는 구성일 때만 시작한다. 그 엔진의 일회용 DB 로 통합 시험·차등 시험·대표 E2E 를 돌려 보고서를 받고, 실행 중 입력이 그대로일 때만 그 엔진의 `evidence` 를 쓴다. `status` 는 바꾸지 않는다. 실행은 로컬이라 실행 ID 를 원격에서 대조할 수 없다. 증거의 범위는 `application-database` 다. 19c 는 recipe 로 고르지 않고 공식 배포 경로는 번들 DB 만 받으므로(`deploy.sh`) 19c 증거는 앱과 DB 의 동작 증거이지 배포 경로 증거가 아니다.
 
 `schema-validation` 시험은 벤더 적합성의 뼈대다. 인가·동시성·감사 원장을 이미 실 DB 로 시험하고 있어 새로 쓰는 것보다 낫다. 다만 40개가 시험 코드에 PostgreSQL 전용 SQL 을 담고 있어 `SharedPostgresMigrationTestSupport` 를 벤더 중립 지원으로 나누고, 시험을 세 분류로 원장에 적는다: 그대로 실행, 픽스처 이식, 대체 시험 필요.
 
@@ -545,7 +552,9 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 이 시험의 게이트(`GATESET-VENDOR-CONFORMANCE`)는 아직 CI 잡에 잇지 않았다. 지금 실행 경로는 생성물의 `npm run verify` 와 `verify:vendor-schema` 뿐이라 등록을 `local-vendor` tier 와 `ciPending` 으로 둔다. `reusable-vendor` 잡을 이을 때 `ci` tier 와 required context 로 바꾸며, `ciPending` 이 남아 있으면 벤더를 `certified` 로 올릴 수 없다.
 
-남은 일: 대표 E2E 실측(실행기는 §8 대로 고쳤고 부정 시험만 돌렸다. demo 생성과 PostgreSQL 대조, Oracle 23·19c 실행은 아직이다), 19c 기본 접속값.
+**인증 증거 틀.** §7 대로 원장 형식, 입력 해시, `VENDOR_EVIDENCE_STALE`, 이미지 digest, 증거 기록 명령을 넣었다. 비-PostgreSQL `certified` 가 없으므로 판정은 fixture 와 실제 입력의 복사본으로 붉혔고(BLOB 매핑 되돌림 포함), 기록 명령도 보고서를 흉내 낸 시험만 돌았다. 실제 증거는 없다.
+
+남은 일: 대표 E2E 실측(실행기는 §8 대로 고쳤고 부정 시험만 돌렸다. demo 생성과 PostgreSQL 대조, Oracle 23·19c 실행은 아직이다), 증거 기록의 첫 실제 실행, CI 경로(§10).
 
 ### 공수 재판단(ADR-0047 재검토 조건)
 

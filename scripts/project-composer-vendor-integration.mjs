@@ -4,7 +4,8 @@
  *
  * 시나리오는 PostgreSQL 과 같은 시험 코드다. 돌릴 시험은 `config/governance/vendor-test-ledger.json` 이 정한다.
  *
- * 사용: node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor <id> [--engine <id>]
+ * 사용: node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor <id> [--engine <id>] [--report <경로>]
+ * 보고서는 인증 증거(project-composer-vendor-evidence.mjs)의 원본이고 끝까지 통과한 실행만 쓴다.
  */
 import { spawnSync } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
@@ -21,6 +22,7 @@ const LEDGER = join(ROOT, 'config/governance/vendor-test-ledger.json');
 const SCHEMA_TESTS = join(ROOT, 'api-server/src/test/java/nuri/api/schema');
 const CONFORMANCE_PACKAGE = 'nuri.api.harness';
 const CONFORMANCE_CLASS = 'VendorCatalogConformanceTest';
+const TEST_PROFILE = join(ROOT, 'api-server/src/test/resources/application-tc.yml');
 /** 번역 기준선의 Flyway 버전(V1_0__vendor_baseline.sql). 그 뒤 버전이 도입자의 마이그레이션이다. */
 export const VENDOR_BASELINE_VERSION = '1.0';
 const VENDOR_BASELINE_FILE = 'V1_0__vendor_baseline.sql';
@@ -63,10 +65,33 @@ export function assertTestsRan(resultsDirectory, classes, testPackage = 'nuri.ap
   }
 }
 
+/** 결과 폴더의 시험 수. 속성이 없으면 NaN 이라 증거 형식 검사가 받지 않는다. */
+export function summarizeTestResults(resultsDirectory) {
+  const totals = { classes: 0, tests: 0, failures: 0, errors: 0, skipped: 0 };
+  const files = existsSync(resultsDirectory) ? readdirSync(resultsDirectory).filter(name => /^TEST-.+\.xml$/.test(name)) : [];
+  for (const name of files) {
+    const suite = readFileSync(join(resultsDirectory, name), 'utf8').match(/<testsuite [^>]*>/)?.[0] ?? '';
+    totals.classes += 1;
+    totals.tests += Number(suite.match(/ tests="(\d+)"/)?.[1] ?? NaN);
+    totals.failures += Number(suite.match(/ failures="(\d+)"/)?.[1] ?? NaN);
+    totals.errors += Number(suite.match(/ errors="(\d+)"/)?.[1] ?? NaN);
+    totals.skipped += Number(suite.match(/ skipped="(\d+)"/)?.[1] ?? NaN);
+  }
+  return totals;
+}
+
+/** 시나리오 시험이 쓰는 프로필의 스키마 검사 값. 이 값이 validate 여야 시험 통과가 Hibernate validate 통과를 뜻한다. */
+export const hibernateDdlAuto = profileText => profileText.match(/^[ \t]*ddl-auto:[ \t]*([a-z-]+)/m)?.[1] ?? null;
+
+function readSchemaCheck() {
+  try { return hibernateDdlAuto(readFileSync(TEST_PROFILE, 'utf8')); }
+  catch (error) { if (error.code === 'ENOENT') return null; throw error; }
+}
+
 export function parseIntegrationArgs(argv) {
   const args = {};
   for (let index = 0; index < argv.length; index += 1) {
-    const key = { '--input': 'input', '--vendor': 'vendor', '--engine': 'engine', '--layout': 'layout', '--flyway': 'flyway' }[argv[index]];
+    const key = { '--input': 'input', '--vendor': 'vendor', '--engine': 'engine', '--layout': 'layout', '--flyway': 'flyway', '--report': 'report' }[argv[index]];
     if (!key || !argv[index + 1]) throw new Error(`알 수 없는 인자: ${argv[index]}`);
     args[key] = argv[++index];
   }
@@ -195,11 +220,12 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
   if (flyway) assertVendorMigrationNames(flyway);
   const handle = startVendorEngine(engine, { publishPort: integration.port });
   let failure = null;
+  let applied = null;
   try {
     if (flyway) {
       // 정확 대조는 번역 기준선에 한다. 그 뒤의 객체는 입력에 없으므로 함께 적용하면 초과로 잡히고, 대조를 넓히면 기준선 신호가 약해진다.
       migrateWithFlyway(vendorId, integration, handle, migrate, flyway, VENDOR_BASELINE_VERSION);
-      assertVendorApplied(handle, input, vendorId, { ignoreTables: ['flyway_schema_history'] });
+      applied = assertVendorApplied(handle, input, vendorId, { ignoreTables: ['flyway_schema_history'] });
       const baseline = conformanceCatalog(vendorId, readCatalog(handle, vendorId));
       const baselineUniques = readUniqueSignatures(handle, vendorId);
       migrateWithFlyway(vendorId, integration, handle, migrate, flyway);
@@ -221,12 +247,24 @@ export function runVendorIntegration({ input, vendorId, engineId, layout, flyway
     failure = error;
   }
   stopVendorEngineReporting(handle, failure);
+  return {
+    vendor: vendorId, engine, image: VENDOR_ENGINES[engine].image,
+    schemaParity: applied && { tables: applied.tables, statements: applied.emission.statements.length, degradations: applied.emission.degradations.length },
+    seedParity: applied && { tables: applied.tables, rows: applied.seedRows },
+    hibernateValidate: { ddlAuto: readSchemaCheck() },
+    integration: summarizeTestResults(results),
+    catalog: summarizeTestResults(conformanceResults),
+  };
 }
 
 if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1])).href) {
   const args = parseIntegrationArgs(process.argv.slice(2));
   try {
-    runVendorIntegration({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine, layout: args.layout, flyway: args.flyway });
+    const report = runVendorIntegration({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine, layout: args.layout, flyway: args.flyway });
+    if (args.report) {
+      mkdirSync(dirname(resolve(args.report)), { recursive: true });
+      writeFileSync(args.report, `${JSON.stringify(report, null, 2)}\n`, 'utf8');
+    }
     console.log(`[vendor-integration] PASS ${args.engine ?? args.vendor}`);
   } catch (error) {
     console.error(`[vendor-integration] ${error.code ?? 'FAILED'}: ${error.message}`);

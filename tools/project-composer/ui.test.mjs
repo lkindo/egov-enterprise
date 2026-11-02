@@ -1192,8 +1192,8 @@ function ledgerWithOracle(status) {
   const ledger = loadVendorLedger(root);
   const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
   oracle.status = status;
-  if (status === 'certified') { oracle.evidence = { run: 'fixture' }; delete oracle.reason; }
-  else { oracle.reason = '시험용 사유입니다.'; delete oracle.evidence; }
+  if (status === 'certified') delete oracle.reason;
+  else oracle.reason = '시험용 사유입니다.';
   return ledger;
 }
 

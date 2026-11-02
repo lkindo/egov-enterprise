@@ -175,7 +175,7 @@ test('promoting a vendor in the ledger leaves the catalog hash alone', () => {
   try {
     const ledger = JSON.parse(original);
     // 전부 올린다. Oracle 만 올리면 Oracle 승격 뒤에 이 시험은 아무것도 바꾸지 않는다.
-    for (const vendor of ledger.vendors) { vendor.status = 'certified'; vendor.evidence = { run: 'fixture' }; delete vendor.reason; }
+    for (const vendor of ledger.vendors) { vendor.status = 'certified'; delete vendor.reason; }
     writeFileSync(ledgerFile, JSON.stringify(ledger));
     assert.equal(hashOf(), before, 'the vendor ledger changed the catalog hash');
   } finally {
