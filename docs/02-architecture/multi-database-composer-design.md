@@ -317,7 +317,7 @@ Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 
 
 격리 E2E 실행기는 빼지 않는다. DB 기동 몇 줄만 PostgreSQL 에 묶여 있고 `frontend/e2e` 에는 PostgreSQL 코드가 없어, §7 의 대표 E2E 는 이 실행기를 벤더 대응으로 고쳐 충족한다. 벤더 프로젝트는 `node scripts/run-isolated-e2e.mjs --representative [--vendor-engine=<엔진>]` 만 연다. 시험 11개는 [벤더 시험 원장](../../config/governance/vendor-test-ledger.json)의 `representativeE2e` 가 고정하고, 추가 인자를 받지 않으며, 원장 목록을 계획과 전체 발견 대조에 함께 넘겨 파일이 사라지면 붉다. 정리·클렌징·전체 메뉴 계약이 전체 기능을 전제하므로 원장의 기능을 모두 고른 멀티모듈 생성물에서만 시작한다. PostgreSQL 대조 실행도 같은 인자로 한다. 벤더 DB 는 실행 표식을 단 일회용 컨테이너이고, 소유 증명과 정리는 판정을 나눈다(정리는 죽은 컨테이너와 익명 볼륨도 지운다). 개발 시드가 없으므로 관리자 비밀번호는 `ADMIN_INITIAL_PASSWORD`, 일반 계정과 관리자의 공지·FAQ 권한은 실행기가 쓰기 직전마다 소유를 증명하며 API 로 만든다. 운영 문서(`docs/`)도 원본 기준으로 남기고 생성물 README 에 범위를 적는다.
 
-생성물의 `docker-compose*.yml`, `.env.example`, `application*.yml`, `README`, `REUSABLE_*.md` 는 벤더 값으로 투영한다. compose 이미지는 개발용이며 운영 라이선스는 기관 몫이라고 적는다.
+생성물의 `docker-compose*.yml`, `.env.example`, `application*.yml` 은 벤더 값으로 투영한다. `README` 는 본문을 원본 그대로 두고 끝에 벤더 절을 덧붙인다. 본문의 PostgreSQL 설치·시드·이관·스키마 검증 안내가 남으므로 그 절의 첫머리가 이 프로젝트에는 그 안내가 맞지 않고 이 절이 우선한다고 말한다. `REUSABLE_BASE.md` 는 단일모듈 실행 안내(이관 소스 세트·`verify:migration`·`schemaValidationTest` 대신 `verify:vendor-schema`)와 마지막 DB 줄만 벤더로 바꾸고, `REUSABLE_VERIFICATION.md` 는 바꾸지 않는다. compose 이미지는 개발용이며 운영 라이선스는 기관 몫이라고 적는다.
 
 ## 9. 식별과 실패(D-12, D-13)
 
@@ -549,7 +549,7 @@ Oracle 19c 첫 실행의 실패 11건은 모두 시험 코드였다. 시험이 O
 
 생성물 검증기는 벤더 구성에서 PostgreSQL 스키마 시험 대신 세 가지를 돌린다. 기준선 파일을 실제 Flyway 로 벤더 일회용 DB 에 적용해 대조하고, 그 DB 에서 시나리오 시험을 돌리고, 차등 시험으로 CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 맞춘다. 번역 입력을 `config/vendor/<벤더>` 에 함께 싣고 잠금이 해시를 묶는다.
 
-`docker-compose`·운영 오버레이·배포 스크립트·`.env.example`·README 도 벤더 값으로 바꾼다. 환경 변수가 설정 파일을 이기므로 compose 의 Flyway 위치도 함께 바꾼다. 운영의 SYS 비밀번호는 앱 비밀번호와 나눠 `DB_ADMIN_PASSWORD` 로 받는다.
+`docker-compose`·운영 오버레이·배포 스크립트·`.env.example` 도 벤더 값으로 바꾼다. README 는 본문을 원본 그대로 두고 끝에 벤더 절을 덧붙인다(§8). 환경 변수가 설정 파일을 이기므로 compose 의 Flyway 위치도 함께 바꾼다. 운영의 SYS 비밀번호는 앱 비밀번호와 나눠 `DB_ADMIN_PASSWORD` 로 받는다.
 
 생성기 전체 경로가 `collaboration` 구성의 멀티모듈·단일모듈에서 통과한다. 검증 명령 8개가 모두 통과하고 생성물의 Oracle 통합 시험은 36개 클래스 257건이 실패 없이 돈다. compose 의 db 서비스로 앱이 기동한다.
 

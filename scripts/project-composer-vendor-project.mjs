@@ -118,8 +118,13 @@ export function projectVendorEnvironment(text, vendorId) {
   return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me\n# 최초 관리자(webmaster) 비밀번호. 개발 시드가 없어 값을 정해야 로그인할 수 있다.\n# ADMIN_INITIAL_PASSWORD=', '.env.example 비밀번호');
 }
 
+/** README 본문은 원본 그대로 두고 이 절을 끝에 덧붙이므로, 본문과 어긋나는 자리에서 어느 쪽을 따를지 첫머리에 말한다. */
+export const VENDOR_README_PRECEDENCE = '위 본문의 PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다.';
+
 export const vendorReadme = (vendorId, ledger) => `
 ## 데이터베이스
+
+${VENDOR_README_PRECEDENCE}
 
 이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 폴더만 적용한다(생성 시점에는 번역 기준선 하나). \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 

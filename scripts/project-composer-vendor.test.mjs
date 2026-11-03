@@ -32,7 +32,8 @@ import { composerProfile } from './project-composer-source.mjs';
 import { asPreviewOracle, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, projectVendorSources, renderFlywayMigration, VENDOR_SOURCE,
-  VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
+  VENDOR_README_PRECEDENCE, VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
+import { reusableBaseLayoutLines } from './generate-reusable-base-source.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
@@ -999,6 +1000,26 @@ test('the README procedure names a command that exists and what it does not cove
   for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스', '제약·인덱스·시퀀스·컬럼·뷰의 저장 표기']) assert.ok(readme.includes(limit), limit);
   assert.match(readme, /인증이 아니다/);
   assert.doesNotMatch(readme, /그쪽에도 맞춰 두어야/, '실행되지 않는 파일에 맞추라는 옛 안내가 돌아오면 안 된다');
+  // 본문은 원본 그대로라 PostgreSQL 절차가 남는다. 절의 첫 문단이 어느 쪽을 따를지 말해야 한다.
+  assert.equal(readme.split('\n## 데이터베이스\n\n')[1]?.split('\n\n')[0], VENDOR_README_PRECEDENCE, '절 첫머리가 본문보다 우선한다고 말한다');
+  assert.match(VENDOR_README_PRECEDENCE, /PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다/);
+});
+
+test('the single-module REUSABLE_BASE lines name the vendor schema check, not the PostgreSQL schema test or the migration tool', () => {
+  const postgres = reusableBaseLayoutLines('single-module');
+  assert.equal(postgres,
+    '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n' +
+    '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
+    '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n' +
+    '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n',
+    'PostgreSQL 단일모듈 문장은 그대로다');
+  assert.equal(reusableBaseLayoutLines('multi-module', { vendor: 'oracle' }), reusableBaseLayoutLines('multi-module'), '멀티모듈 줄은 벤더와 무관하다');
+
+  const vendor = reusableBaseLayoutLines('single-module', { vendor: 'oracle' });
+  assert.ok(vendor.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`), '벤더 스키마 검사 명령을 안내한다');
+  assert.match(vendor, /`\.\/gradlew harnessTest`/);
+  // 벤더 생성물에는 이관 소스 세트·별칭이 없고 스키마 시험은 검증에서 빠진다(reusable-layout-runtime, verify-reusable-artifact).
+  for (const absent of ['schemaValidationTest', 'verify:migration', 'offline migration', '오프라인 이관']) assert.ok(!vendor.includes(absent), absent);
 });
 
 test('a failure in the vendor test command is reported as its own command', () => {
