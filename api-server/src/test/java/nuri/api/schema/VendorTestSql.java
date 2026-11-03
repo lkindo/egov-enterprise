@@ -797,14 +797,15 @@ final class VendorTestSql {
 
     /**
      * 응용 잠금(lockForTransaction)이 대기 상한을 넘었는가. Oracle 은 23 이 ORA-00054(61000), 19c 가 ORA-30006(99999)으로 답한다.
-     * MariaDB 는 슬롯 문장의 WAIT 가 1205(HY000)를, MySQL 은 슬롯 문장의 MAX_EXECUTION_TIME 힌트가 3024(HY000)를 낸다(2026-11-04 실측).
+     * MariaDB 는 슬롯 문장의 WAIT 가 1205(HY000)를 낸다. MySQL 은 접속 인자의 세션 잠금 대기(5초)가 먼저 끊어 1205 이고, 그 인자가 빠진
+     * 설정에서는 슬롯 문장의 MAX_EXECUTION_TIME 힌트(10초)가 3024(HY000)로 끊는다(2026-11-04 실측).
      */
     static boolean isApplicationLockTimeout(JdbcTemplate jdbc, SQLException failure) {
         return failure != null && switch (vendor(jdbc)) {
             case POSTGRESQL -> "55P03".equals(failure.getSQLState());
             case ORACLE -> List.of("61000", "99999").contains(failure.getSQLState());
             case MARIADB -> failure.getErrorCode() == 1205;
-            case MYSQL -> failure.getErrorCode() == 3024;
+            case MYSQL -> failure.getErrorCode() == 1205 || failure.getErrorCode() == 3024;
         };
     }
 

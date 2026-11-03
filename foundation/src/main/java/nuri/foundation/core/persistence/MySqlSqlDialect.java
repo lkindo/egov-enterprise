@@ -5,7 +5,9 @@ import java.util.Set;
 /**
  * MySQL 구현. 기준은 8.4 다(ADR-0047 단계 3).
  *
- * <p>응용 잠금의 대기는 {@code MAX_EXECUTION_TIME} 힌트가 묶고, 넘기면 3024 다. {@code innodb_lock_wait_timeout} 은
+ * <p>행 잠금 대기는 접속 인자의 세션 {@code innodb_lock_wait_timeout}(앱의 잠금 조회 상한과 같은 5초)이 묶고, 넘기면 1205 다.
+ * Hibernate 가 MySQL 잠금 조회에 대기 시간을 싣지 못해 세션 하나로 묶었으므로 응용 잠금도 그 상한을 따른다. 슬롯 문장의
+ * {@code MAX_EXECUTION_TIME} 힌트는 그 인자가 빠진 설정의 방어이고, 넘기면 3024 다. {@code innodb_lock_wait_timeout} 은
  * {@code SET_VAR} 힌트를 받지 않는다(경고 3637, 실측). upsert 는 행 별칭으로 새 값을 읽는다 — {@code VALUES(c)} 는 8.0.20
  * 부터 폐기 예정이다.
  */
