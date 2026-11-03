@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { spawnSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -16,16 +17,16 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_BASELINE_VERSION, addedByteColumns, appliedHibernateCheck, assertTestsRan, assertVendorLock, childEnvironment, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
+import { VENDOR_BASELINE_VERSION, VENDOR_GRADLE_OPTIONS, addedByteColumns, appliedHibernateCheck, assertTestsRan, assertVendorLock, childEnvironment, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
-import { failedVerificationStep } from './project-composer-job-failure.mjs';
+import { failedVerificationStep, verificationLogTail } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
 import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
-import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
+import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
@@ -1166,7 +1167,7 @@ test('the runner launches the vendor container with its own labels and closed en
 
 test('the runner wires the closed Docker environment, one API environment and the result plan', () => {
   const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
-  assert.match(runner, /const runDocker = engines\.dockerIn\(clean\);/);
+  assert.match(runner, /const runDocker = boundedVendorDocker\(engines\.dockerIn\(clean\)\);/);
   assert.match(runner, /launchVendorContainer\(engineId, \{ publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,/);
   assert.match(runner, /validateLocalRun\(report, inventory, \{ representativeSpecs: bundle\?\.specs \}\)/);
   assert.equal(runner.match(/const apiEnvironment = /g).length, 1, 'MFA 배선 계약이 벤더 분기도 보도록 API 환경은 하나다');
@@ -1223,16 +1224,22 @@ test('the isolation replacement cases run in the source operational contracts, a
 });
 
 /** 실제 launchVendorContainer 와 엔진 값을 쓰고 docker 만 바꾼다. inspect 는 run 인자로 만들어 배선한 라벨·환경이 판정까지 닿는지 본다. */
-function isolatedVendorDatabase({ pollsUntilReady = 1, runFails = false, logFails = false, logFile = null } = {}) {
+function isolatedVendorDatabase({ engineId = 'oracle', pollsUntilReady = 1, runFails = false, logFails = false, logFile = null, timedOut = [] } = {}) {
   const directory = mkdtempSync(join(tmpdir(), 'vendor-isolated-'));
   const manifest = { ...vendorManifest(), databaseId: '' };
   const steps = [];
+  const calls = [];
   const containerId = 'c'.repeat(64);
   let started;
   let polls = 0;
   const reports = [];
   const warnings = [];
   const fakeDocker = (args, options) => {
+    calls.push({ args, options });
+    if (timedOut.includes(args[1] === '--tail' ? 'tail' : args[0])) {
+      steps.push(`timeout ${args[1] === '--tail' ? 'tail' : args[0]}`);
+      return { status: null, signal: 'SIGTERM', stdout: '', stderr: '', error: Object.assign(new Error('spawnSync docker ETIMEDOUT'), { code: 'ETIMEDOUT' }) };
+    }
     if (args[0] === 'run') {
       if (runFails) return { status: 1, stdout: '', stderr: 'no space left' };
       started = { args, env: options.env };
@@ -1243,6 +1250,7 @@ function isolatedVendorDatabase({ pollsUntilReady = 1, runFails = false, logFail
       steps.push(`tail ${args[2]} ${args[3]}`);
       return logFails ? { status: 1, stdout: '', stderr: 'gone' } : { status: 0, stdout: `started with ${started.env.ORACLE_PASSWORD}\n`, stderr: 'ORA-00001 boom\n' };
     }
+    if (args[0] === 'exec') { steps.push('exec'); return { status: 0, stdout: 'Grant succeeded', stderr: '' }; }
     if (args[0] === 'logs') {
       polls += 1;
       steps.push('poll');
@@ -1254,7 +1262,7 @@ function isolatedVendorDatabase({ pollsUntilReady = 1, runFails = false, logFail
   const live = () => {
     const container = vendorContainer(manifest);
     container.Config.Labels = Object.fromEntries(started.args.flatMap((arg, index, all) => (arg === '--label' ? [all[index + 1].split('=')] : [])));
-    container.Config.Image = started.args.find(arg => arg === VENDOR_ENGINES.oracle.image);
+    container.Config.Image = started.args.find(arg => arg === VENDOR_ENGINES[engineId].image);
     container.Config.Env = started.args.flatMap((arg, index, all) => (arg === '--env' ? [`${all[index + 1]}=${started.env[all[index + 1]]}`] : []));
     return container;
   };
@@ -1263,14 +1271,14 @@ function isolatedVendorDatabase({ pollsUntilReady = 1, runFails = false, logFail
   const seen = [];
   let database;
   try {
-    database = launchIsolatedVendorDatabase({ runtime: { module: { dockerIn: environment => { seen.push(environment); return fakeDocker; }, launchVendorContainer }, id: 'oracle', engine: VENDOR_ENGINES.oracle },
+    database = launchIsolatedVendorDatabase({ runtime: { module: { dockerIn: environment => { seen.push(environment); return fakeDocker; }, launchVendorContainer }, id: engineId, engine: VENDOR_ENGINES[engineId] },
       runId: manifest.runId, clean: { PATH: 'tools' }, manifest, inspect, logFile: logFile ?? join(directory, 'database.log'),
       report: message => reports.push(message), warn: message => warnings.push(message) });
   } catch (error) {
     rmSync(directory, { recursive: true, force: true });
     throw error;
   }
-  return { database, manifest, steps, state, reports, warnings, directory, seen, logFile: join(directory, 'database.log'), inspected: `inspect ${containerId}`, containerId, password: () => started.env.ORACLE_PASSWORD };
+  return { database, manifest, steps, calls, state, reports, warnings, directory, seen, logFile: join(directory, 'database.log'), inspected: `inspect ${containerId}`, containerId, password: () => started.env.ORACLE_PASSWORD };
 }
 
 test('an isolated vendor database checks cancellation and ownership on every wait', async () => {
@@ -1281,9 +1289,184 @@ test('an isolated vendor database checks cancellation and ownership on every wai
     const order = [];
     const port = await fixture.database.waitReady(() => order.push(fixture.steps.length), { wait: async () => fixture.steps.push('wait') });
     assert.equal(port, '49153');
-    assert.deepEqual(fixture.steps, ['run', fixture.inspected, 'poll', fixture.inspected, 'wait', 'poll', fixture.inspected, 'wait', 'poll'], '대기마다 소유를 다시 본다');
-    assert.equal(order.length, 2, '대기마다 취소를 본다');
+    assert.deepEqual(fixture.steps, ['run', fixture.inspected, 'poll', 'wait', fixture.inspected, 'poll', 'wait', fixture.inspected, 'poll'], '준비를 묻기 전마다 소유를 본다');
+    assert.equal(order.length, 3, '준비를 묻기 전마다 취소를 본다');
   } finally { rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+// 19c 의 준비 판정은 CREATE USER·GRANT 를 쓴다. 기다리는 동안 이름이 다른 컨테이너로 옮겨 가면 판정한 것과 쓰는 대상이 달라진다.
+test('the 19c readiness writes only after the ownership check and only to the container the check pinned', async () => {
+  const noWait = async () => {};
+  const owned = isolatedVendorDatabase({ engineId: 'oracle19', pollsUntilReady: 2 });
+  const lost = isolatedVendorDatabase({ engineId: 'oracle19', pollsUntilReady: 2 });
+  const foreign = isolatedVendorDatabase({ engineId: 'oracle19' });
+  const otherRun = value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); return value; };
+  try {
+    await owned.database.waitReady(() => {}, { wait: async () => owned.steps.push('wait') });
+    assert.deepEqual(owned.steps, ['run', owned.inspected, 'poll', 'wait', owned.inspected, 'poll', 'exec'], '쓰기 직전의 준비 판정도 소유 판정 뒤에 돈다');
+    const name = owned.calls[0].args[owned.calls[0].args.indexOf('--name') + 1];
+    const targets = owned.calls.filter(({ args }) => args[0] === 'logs' || args[0] === 'exec').map(({ args }) => args[1]);
+    assert.deepEqual([...new Set(targets)], [owned.containerId], '대상은 판정한 ID 다');
+    assert.ok(!owned.calls.slice(1).some(({ args }) => args.includes(name)), '이름으로 부르지 않는다');
+
+    await assert.rejects(lost.database.waitReady(() => {}, { wait: async () => { lost.state.change = otherRun; } }), /isolation verification failed/, '기다리는 동안 소유를 잃으면 멈춘다');
+    assert.ok(!lost.steps.includes('exec'), '소유를 잃은 뒤에는 쓰지 않는다');
+
+    foreign.state.change = otherRun;
+    await assert.rejects(foreign.database.waitReady(() => {}, { wait: noWait }), /isolation verification failed/);
+    assert.deepEqual(foreign.steps, ['run', foreign.inspected], '남의 컨테이너에는 준비도 묻지 않는다');
+  } finally { for (const fixture of [owned, lost, foreign]) rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('every docker call of an isolated vendor run has its own limit, and a call that timed out still reaches the deadline, the cancel and the cleanup', async () => {
+  const noWait = async () => {};
+  const normal = isolatedVendorDatabase({ engineId: 'oracle19' });
+  const blocked = isolatedVendorDatabase({ pollsUntilReady: 99, timedOut: ['logs'] });
+  const cancelled = isolatedVendorDatabase({ pollsUntilReady: 99, timedOut: ['logs'] });
+  const silentLogs = isolatedVendorDatabase({ timedOut: ['tail'] });
+  const stuckRemoval = isolatedVendorDatabase({ timedOut: ['rm'] });
+  try {
+    await normal.database.waitReady(() => {}, { wait: noWait });
+    normal.database.cleanUp();
+    const limits = Object.fromEntries(normal.calls.map(({ args, options }) => [args[1] === '--tail' ? 'tail' : args[0], options.timeout]));
+    assert.deepEqual(limits, { run: 3_600_000, logs: 30_000, exec: 30_000, tail: 30_000, rm: 300_000 }, 'docker run 은 이미지를 받으므로 짧게 묶지 않고, 나머지는 멈추면 끊는다');
+    assert.ok(normal.calls[0].options.env, '실행기가 넘긴 환경도 유지한다');
+
+    let clock = 0;
+    let turns = 0;
+    await assert.rejects(blocked.database.waitReady(() => { turns += 1; }, { wait: noWait, now: () => { clock += 200_000; return clock; } }), /oracle 가 300초 안에 준비되지 않았다/, '시간 초과는 준비 안 됨으로 끝나 시한을 본다');
+    assert.ok(turns >= 2, '시간 초과 뒤에도 취소를 본다');
+
+    let active = true;
+    await assert.rejects(cancelled.database.waitReady(() => { if (!active) throw new Error('Isolated E2E: run was cancelled.'); }, { wait: async () => { active = false; } }), /run was cancelled/, '시간 초과 뒤의 취소가 닿는다');
+
+    silentLogs.database.cleanUp();
+    assert.deepEqual(silentLogs.warnings, ['Isolated E2E: 벤더 DB 로그를 남기지 못했다.']);
+    assert.equal(silentLogs.steps.at(-1), `rm -f -v ${silentLogs.containerId}`, '로그가 멈춰도 지운다');
+
+    stuckRemoval.database.cleanUp();
+    assert.match(stuckRemoval.reports[0], /벤더 DB 컨테이너를 지우지 못했다/, '지우기가 멈추면 남은 컨테이너를 알린다');
+  } finally { for (const fixture of [normal, blocked, cancelled, silentLogs, stuckRemoval]) rmSync(fixture.directory, { recursive: true, force: true }); }
+  assert.throws(() => isolatedVendorDatabase({ timedOut: ['run'] }), /^Error: Isolated E2E: oracle 컨테이너를 띄우지 못했다: spawnSync docker ETIMEDOUT/, 'stderr 가 비어도 원인을 말한다');
+});
+
+test('a termination signal starts the abort once and keeps listening, so a second signal cannot kill the cleanup', () => {
+  const target = new EventEmitter();
+  let aborts = 0;
+  const stopListening = onTermination(() => { aborts += 1; }, target);
+  for (const signal of ['SIGHUP', 'SIGTERM', 'SIGINT', 'SIGHUP']) {
+    target.emit(signal);
+    assert.equal(target.listenerCount(signal), 1, `${signal} 뒤에도 받는다`);
+  }
+  assert.equal(aborts, 1, '중단은 한 번만 시작한다');
+  stopListening();
+  for (const signal of ['SIGHUP', 'SIGTERM', 'SIGINT']) assert.equal(target.listenerCount(signal), 0, `${signal} 등록을 걷는다`);
+});
+
+test('cleanup runs every step after an earlier one throws and reports the first failure', async () => {
+  const ran = [];
+  await assert.rejects(runCleanupSteps([
+    () => { ran.push('manifest'); throw new Error('첫 실패'); },
+    async () => { ran.push('children'); throw new Error('둘째 실패'); },
+    () => { ran.push('database'); },
+  ]), /^Error: 첫 실패$/);
+  assert.deepEqual(ran, ['manifest', 'children', 'database']);
+  await assert.doesNotReject(runCleanupSteps([() => undefined, async () => undefined]));
+});
+
+test('every Gradle call of the vendor integration leaves no daemon and keeps its own failure conditions', () => {
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const calls = source.match(/spawnSync\(`"\$\{gradlew\}"`, \[[^\]]*\]/g);
+  assert.equal(calls.length, 3, 'Flyway·카탈로그·시나리오');
+  for (const call of calls) assert.match(call, /\.\.\.VENDOR_GRADLE_OPTIONS/, call);
+  assert.ok(VENDOR_GRADLE_OPTIONS.includes('--no-daemon'));
+  assert.ok(!VENDOR_GRADLE_OPTIONS.includes('--warning-mode'), '경고를 실패로 바꾸지 않는다');
+});
+
+test('a vendor failure leaves the masked end of the database log before the container goes away', t => {
+  const printed = [];
+  t.mock.method(console, 'error', text => printed.push(String(text)));
+  const handle = { name: 'egov-vendor-x', password: 'Vd1_secret' };
+  const scenario = ({ failure = new Error('시험 실패'), logs, target = handle }) => {
+    printed.length = 0;
+    const order = [];
+    const remove = () => { order.push('rm'); return { status: 0 }; };
+    const readLogs = (args, options) => { order.push(args.join(' ')); assert.equal(options.timeout, 30_000, '로그 수집도 멈추지 않는다'); return logs(); };
+    if (failure) assert.throws(() => stopVendorEngineReporting(target, failure, remove, readLogs), /^Error: 시험 실패$/, '원래 실패를 가리지 않는다');
+    else stopVendorEngineReporting(target, null, remove, readLogs);
+    return order;
+  };
+  const noisy = Array.from({ length: 100 }, (_, index) => `line ${index} ${'x'.repeat(index === 99 ? 500 : 1)}`).join('\n');
+  assert.deepEqual(scenario({ logs: () => ({ status: 0, stdout: `${noisy}\nstarted with Vd1_secret\n`, stderr: 'ORA-27102: out of memory\n' }) }), ['logs --tail 20 egov-vendor-x', 'rm'], '지우기 전에 읽는다');
+  const output = printed.join('\n');
+  assert.match(output, /ORA-27102: out of memory/);
+  assert.ok(!output.includes('Vd1_secret'), '비밀번호를 내지 않는다');
+  assert.ok(output.split('\n').length <= 21, 'Gradle 실패 요약을 밀어내지 않는다');
+  assert.ok(output.split('\n').every(line => line.length <= 300), '줄도 자른다');
+
+  scenario({ logs: () => ({ status: 0, stdout: 'started with Vd1_secret\n', stderr: '' }) });
+  assert.match(printed.join('\n'), /started with \[password\]/);
+
+  assert.deepEqual(scenario({ logs: () => { throw new Error('docker gone'); } }), ['logs --tail 20 egov-vendor-x', 'rm'], '로그 수집 실패가 정리를 막지 않는다');
+  assert.deepEqual(printed, []);
+  assert.deepEqual(scenario({ logs: () => ({ status: null, stdout: '', stderr: '', error: new Error('ETIMEDOUT') }) }), ['logs --tail 20 egov-vendor-x', 'rm']);
+  assert.deepEqual(printed, []);
+  const silent = () => ({ status: 0, stdout: '', stderr: '' });
+  assert.deepEqual(scenario({ failure: null, logs: silent }), ['rm'], '실패가 없으면 읽지 않는다');
+  assert.deepEqual(scenario({ target: { name: 'egov-vendor-x' }, logs: silent }), ['rm'], '비밀번호를 모르면 가릴 수 없어 읽지 않는다');
+});
+
+test('a vendor engine that never became ready reports the database log, not only the timeout', t => {
+  const printed = [];
+  t.mock.method(console, 'error', text => printed.push(String(text)));
+  let clock = 0;
+  t.mock.method(Date, 'now', () => { clock += 400_000; return clock; });
+  const calls = [];
+  let password;
+  const runDocker = (args, options) => {
+    calls.push(args[1] === '--tail' ? 'tail' : args[0]);
+    if (args[0] === 'run') { password = options.env.ORACLE_PASSWORD; return { status: 0, stdout: '', stderr: '' }; }
+    if (args[0] === 'logs') return { status: 0, stdout: `password is ${password}\n`, stderr: 'ORA-27102: out of memory\n' };
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  assert.throws(() => startVendorEngine('oracle', { runDocker }), error => error.code === 'VENDOR_ENGINE_NOT_READY' && /300초 안에 준비되지 않았다/.test(error.message));
+  assert.deepEqual(calls, ['run', 'logs', 'tail', 'rm']);
+  const output = printed.join('\n');
+  assert.match(output, /ORA-27102: out of memory/);
+  assert.match(output, /password is \[password\]/);
+  assert.ok(!output.includes(password));
+});
+
+test('the vendor commands reach the log tail through the default reader, and a removal of another container does not read logs', () => {
+  const engine = readFileSync(join(ROOT, 'scripts/project-composer-vendor-engine.mjs'), 'utf8');
+  assert.match(engine, /readLogs = remove === stopVendorEngine \? docker : null\)/, '통합·차등·적용 대조는 기본 정리로 로그를 남긴다');
+  for (const file of ['project-composer-vendor-integration.mjs', 'project-composer-vendor-verify.mjs', 'project-composer-vendor-differential.mjs']) {
+    assert.match(readFileSync(join(ROOT, 'scripts', file), 'utf8'), /stopVendorEngineReporting\(handle, failure\);/, file);
+  }
+  const reads = [];
+  assert.throws(() => withDisposablePostgres(() => { throw new Error('대조 실패'); }, args => { reads.push(args[0]); return { status: 0, stdout: '', stderr: '' }; }), /대조 실패/);
+  assert.ok(!reads.includes('logs'), '기준 PostgreSQL 은 벤더 DB 가 아니다');
+});
+
+test('the database log reaches the job failure tail without pushing out the Gradle summary', t => {
+  const printed = [];
+  t.mock.method(console, 'error', text => printed.push(String(text)));
+  const header = { profile: 'demo', layout: 'multi-module', command: 'node scripts/project-composer-vendor-integration.mjs' };
+  const database = Array.from({ length: 19 }, (_, index) => `database line ${index}`).join('\n');
+  assert.throws(() => stopVendorEngineReporting({ name: 'egov-vendor-x', password: 'Vd1_secret' }, new Error('통합 시험 실패'), () => ({ status: 0 }),
+    () => ({ status: 0, stdout: `${database}\nstarted with Vd1_secret\n`, stderr: 'ORA-27102: out of memory\n' })), /통합 시험 실패/);
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-log-tail-'));
+  try {
+    const log = join(directory, 'verify.log');
+    const gradle = Array.from({ length: 100 }, (_, index) => `gradle line ${index}`);
+    writeFileSync(log, [`[reusable-verify] demo/multi-module: ${header.command}`, ...gradle, 'BUILD FAILED in 7m', ...printed, '[vendor-integration] VENDOR_INTEGRATION_FAILED: 통합 시험 실패', '[종료 코드 1 · 가림 0건]', ''].join('\n'));
+    const tail = verificationLogTail(log, header, { roots: [], home: '', env: {} });
+    assert.equal(tail.length, 40);
+    assert.ok(tail.includes('ORA-27102: out of memory'), 'DB 원인이 작업 실패에 닿는다');
+    assert.ok(tail.includes('started with [password]') && !tail.join('\n').includes('Vd1_secret'), '작업 로그에도 비밀번호가 없다');
+    assert.ok(tail.includes('BUILD FAILED in 7m') && tail.some(line => line.startsWith('gradle line')), 'Gradle 실패 요약이 남는다');
+    assert.equal(tail.at(-1), '[vendor-integration] VENDOR_INTEGRATION_FAILED: 통합 시험 실패');
+  } finally { rmSync(directory, { recursive: true, force: true }); }
 });
 
 test('a vendor run stops waiting when it is cancelled, loses the container or runs out of time, and can still clean up', async () => {
@@ -1293,7 +1476,7 @@ test('a vendor run stops waiting when it is cancelled, loses the container or ru
   const late = isolatedVendorDatabase({ pollsUntilReady: 99 });
   try {
     await assert.rejects(cancelled.database.waitReady(() => { throw new Error('Isolated E2E: run was cancelled.'); }, { wait: noWait }), /run was cancelled/);
-    assert.equal(cancelled.steps.filter(step => step === 'poll').length, 1, '취소하면 더 기다리지 않는다');
+    assert.equal(cancelled.steps.filter(step => step === 'poll').length, 0, '취소하면 더 묻지 않는다');
 
     let inspections = 0;
     dead.state.change = value => { inspections += 1; if (inspections > 1) value.State.Running = false; return value; };
@@ -1340,7 +1523,12 @@ test('main keeps the vendor checks wired where a fake docker cannot see them', (
   const positions = ['launchIsolatedVendorDatabase({', 'cleanUpVendorDatabase = database.cleanUp;', 'verifyRuntime = database.verify;', 'await database.waitReady(assertActive);'].map(text => main.indexOf(text));
   assert.ok(positions.every(position => position >= 0), `벤더 DB 배선이 없다: ${positions}`);
   assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '대기가 실패해도 지우도록 정리를 먼저 받는다');
-  assert.match(main.slice(main.lastIndexOf('} finally {')), /if \(cleanUpVendorDatabase\) cleanUpVendorDatabase\(\);/, '어떻게 끝나든 벤더 DB 를 지운다');
+  const closing = main.slice(main.lastIndexOf('} finally {'));
+  assert.match(closing, /if \(cleanUpVendorDatabase\) cleanUpVendorDatabase\(\);/, '어떻게 끝나든 벤더 DB 를 지운다');
+  assert.ok(closing.indexOf('await runCleanupSteps([') < closing.indexOf('unlinkSync(manifestFile)') && closing.indexOf('unlinkSync(manifestFile)') < closing.indexOf('cleanUpVendorDatabase()'), '앞 단계가 던져도 벤더 DB 정리까지 간다');
+  assert.match(main, /const stopListening = onTermination\(abort\);/, 'SIGINT·SIGTERM·SIGHUP 을 계속 받는다');
+  assert.doesNotMatch(main, /process\.once\('SIG/, 'once 는 두 번째 신호에 프로세스를 죽인다');
+  assert.match(closing, /stopListening,\n\s+\]\);/, '정리가 끝난 뒤에 등록을 걷는다');
 });
 
 test('the shared isolation checks the vendor runner relies on stay covered in a vendor project', async () => {

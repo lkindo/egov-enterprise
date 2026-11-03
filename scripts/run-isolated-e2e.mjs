@@ -208,12 +208,23 @@ export function saveVendorDatabaseLog({ runDocker, id, file, password, warn }) {
 }
 
 /**
+ * 동기 호출이 돌아오지 않으면 취소·소유·시한을 볼 수 없어 호출마다 제한을 둔다. 시간 초과는 실패 상태로 돌아와 준비 판정은 준비 안 됨, 정리는 기존 경고·보고로 끝난다.
+ * docker run 은 별도 pull 단계 없이 이미지를 받으므로 짧게 묶지 않고, rm 은 쓰기 레이어와 익명 볼륨을 지우므로 넉넉히 둔다.
+ * 19c 준비 판정의 sqlplus 도 30초를 받는다. 소요는 재지 않았고, 넘기면 다음 차례에 다시 돈다. 실제 값은 다음 19c 실측에서 본다.
+ */
+const VENDOR_RUN_TIMEOUT_MS = 3_600_000;
+const VENDOR_REMOVE_TIMEOUT_MS = 300_000;
+const VENDOR_CALL_TIMEOUT_MS = 30_000;
+const vendorDockerTimeout = command => (command === 'run' ? VENDOR_RUN_TIMEOUT_MS : command === 'rm' ? VENDOR_REMOVE_TIMEOUT_MS : VENDOR_CALL_TIMEOUT_MS);
+export const boundedVendorDocker = runDocker => (args, options) => runDocker(args, { timeout: vendorDockerTimeout(args[0]), ...options });
+
+/**
  * 벤더 DB 를 띄우고 판정·대기·정리를 돌려준다. 컨테이너가 생긴 뒤부터 정리 범위이므로 대기는 호출자가 정리를 받은 다음에 시작한다.
  */
 export function launchIsolatedVendorDatabase({ runtime, runId, clean, manifest, inspect, logFile, report, warn }) {
   const { module: engines, id: engineId, engine } = runtime;
   const { port } = engine.integration;
-  const runDocker = engines.dockerIn(clean);
+  const runDocker = boundedVendorDocker(engines.dockerIn(clean));
   let handle;
   try {
     handle = engines.launchVendorContainer(engineId, { publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,
@@ -228,19 +239,41 @@ export function launchIsolatedVendorDatabase({ runtime, runId, clean, manifest, 
     verify,
     cleanUp: () => removeVendorDatabase({ inspect, manifest, engineId, report, remove: id => runDocker(['rm', '-f', '-v', id]),
       saveLog: id => saveVendorDatabaseLog({ runDocker, id, file: logFile, password: handle.password, warn }) }),
-    // 첫 기동이 수십 분 걸릴 수 있어 기다리는 동안에도 취소와 소유를 본다.
+    // 첫 기동이 수십 분 걸릴 수 있어 기다리는 동안에도 취소와 소유를 본다. 19c 의 준비 판정은 CREATE USER·GRANT 를 쓰므로 소유를 먼저 보고,
+    // 이름은 다른 컨테이너로 옮겨 갈 수 있어 판정한 ID 로만 부른다.
     waitReady: async (assertActive, { wait = pause, now = Date.now } = {}) => {
-      const databasePort = verify();
       const deadline = now() + engine.maxWaitSeconds * 1000;
-      while (!engine.ready(handle.name, runDocker)) {
+      for (;;) {
         assertActive();
-        verify();
+        const databasePort = verify();
+        if (engine.ready(manifest.databaseId, runDocker)) return databasePort;
         if (now() > deadline) throw fail(`${engineId} 가 ${engine.maxWaitSeconds}초 안에 준비되지 않았다.`);
         await wait(2000);
       }
-      return databasePort;
     },
   };
+}
+
+const TERMINATION_SIGNALS = Object.freeze(['SIGINT', 'SIGTERM', 'SIGHUP']);
+
+/**
+ * once 는 첫 신호 뒤 빠져서, 정리 중의 두 번째 신호가 프로세스를 죽이고 벤더 DB 를 남긴다. 그래서 on 으로 계속 받고 중단은 한 번만 시작한다.
+ * 돌려준 함수가 등록을 걷는다. 강제 종료는 여기서 막지 못한다(e2e-test-guide 의 수동 정리).
+ */
+export function onTermination(abort, target = process) {
+  let started = false;
+  const handler = () => { if (!started) { started = true; abort(); } };
+  for (const signal of TERMINATION_SIGNALS) target.on(signal, handler);
+  return () => { for (const signal of TERMINATION_SIGNALS) target.removeListener(signal, handler); };
+}
+
+/** 앞 단계가 던져도 벤더 DB 정리까지 돌게 끝까지 돌고, 첫 실패를 던진다. */
+export async function runCleanupSteps(steps) {
+  const failures = [];
+  for (const step of steps) {
+    try { await step(); } catch (error) { failures.push(error); }
+  }
+  if (failures.length) throw failures[0];
 }
 
 // 잠금 임계(연속 5회 실패)에 닿지 않아야 뒤따르는 인증 준비가 잠긴 계정을 만나지 않는다.
@@ -410,7 +443,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
   };
   let abortCleanup;
   const abort = () => { aborted = true; ready = false; abortCleanup = Promise.all([...children].map(stopChild)); };
-  process.once('SIGINT', abort); process.once('SIGTERM', abort);
+  const stopListening = onTermination(abort);
   try {
     let jwtSecret;
     let apiPort;
@@ -559,13 +592,17 @@ export async function main(arguments_ = process.argv.slice(2)) {
   } finally {
     console.log(`E2E evidence: ${path.relative(root, output).replaceAll('\\', '/')}`);
     ready = false;
-    if (existsSync(manifestFile)) unlinkSync(manifestFile);
-    if (control) await new Promise(resolve => control.close(resolve));
-    await Promise.all([...children].map(stopChild));
-    if (abortCleanup) await abortCleanup;
-    if (cleanUpVendorDatabase) cleanUpVendorDatabase();
-    else if (ownedDatabase) { assertOwnedDatabase(inspect(manifest.databaseId), manifest); docker(['stop', manifest.databaseId]); }
-    process.removeListener('SIGINT', abort); process.removeListener('SIGTERM', abort);
+    await runCleanupSteps([
+      () => { if (existsSync(manifestFile)) unlinkSync(manifestFile); },
+      async () => { if (control) await new Promise(resolve => control.close(resolve)); },
+      () => Promise.all([...children].map(stopChild)),
+      () => abortCleanup,
+      () => {
+        if (cleanUpVendorDatabase) cleanUpVendorDatabase();
+        else if (ownedDatabase) { assertOwnedDatabase(inspect(manifest.databaseId), manifest); docker(['stop', manifest.databaseId]); }
+      },
+      stopListening,
+    ]);
   }
 }
 

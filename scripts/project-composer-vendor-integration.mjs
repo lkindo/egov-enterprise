@@ -29,6 +29,8 @@ const HIBERNATE_REPORT = join(ROOT, 'build/vendor-conformance/hibernate-validate
 /** 번역 기준선의 Flyway 버전(V1_0__vendor_baseline.sql). 그 뒤 버전이 도입자의 마이그레이션이다. */
 export const VENDOR_BASELINE_VERSION = '1.0';
 const VENDOR_BASELINE_FILE = 'V1_0__vendor_baseline.sql';
+// 끝난 뒤 데몬을 남기지 않는다. 다른 검증 단계의 GRADLE_OPTIONS 는 --warning-mode fail 이 함께 있어 실패 조건이 바뀌므로 재사용하지 않는다.
+export const VENDOR_GRADLE_OPTIONS = Object.freeze(['-PvendorIntegration=true', '--no-daemon', '--console=plain']);
 
 /** 배치별 Gradle 작업과 결과 폴더. 단일모듈은 시험 작업이 루트에 있다. */
 export function integrationTask(layout = 'multi-module') {
@@ -194,7 +196,7 @@ function markOwner(handle) {
  */
 function migrateWithFlyway(vendorId, integration, handle, task, location, target) {
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
-  const result = spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--console=plain'], {
+  const result = spawnSync(`"${gradlew}"`, [task, ...VENDOR_GRADLE_OPTIONS], {
     cwd: ROOT, stdio: 'inherit', shell: true,
     env: childEnvironment(vendorId, integration, { ...handle, owner: '' }, { VENDOR_FLYWAY_LOCATION: location, ...(target ? { VENDOR_FLYWAY_TARGET: target } : {}) }),
   });
@@ -239,7 +241,7 @@ function runVendorConformance(vendorId, integration, handle, { task, results }, 
   mkdirSync(dirname(file), { recursive: true });
   writeFileSync(file, `${JSON.stringify(snapshot)}\n`, 'utf8');
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
-  const result = spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--console=plain'], {
+  const result = spawnSync(`"${gradlew}"`, [task, ...VENDOR_GRADLE_OPTIONS], {
     cwd: ROOT, stdio: 'inherit', shell: true, env: childEnvironment(vendorId, integration, { ...handle, owner: '' }, { VENDOR_CATALOG_SNAPSHOT: file }),
   });
   if (result.status !== 0) {
@@ -252,7 +254,7 @@ function runVendorConformance(vendorId, integration, handle, { task, results }, 
 
 function runIntegrationTests(vendorId, integration, handle, task) {
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
-  return spawnSync(`"${gradlew}"`, [task, '-PvendorIntegration=true', '--continue', '--console=plain'], {
+  return spawnSync(`"${gradlew}"`, [task, ...VENDOR_GRADLE_OPTIONS, '--continue'], {
     cwd: ROOT, stdio: 'inherit', shell: true, env: childEnvironment(vendorId, integration, handle, { VENDOR_HIBERNATE_REPORT: HIBERNATE_REPORT }),
   });
 }

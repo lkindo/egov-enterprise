@@ -157,7 +157,8 @@ export function launchVendorContainer(engineId, { publishPort, runDocker = docke
     // 실행 파일이 없으면 만들어진 컨테이너도 없다. 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 그대로 정리한다.
     dockerMissing = started.error?.code === 'ENOENT';
     // docker 를 실행하지 못하면 stderr 가 없다. 그 경우에도 코드가 남아야 부모가 원인을 안다.
-    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${String(started.stderr ?? started.error?.message).slice(0, 300)}`);
+    // 시간 초과는 stderr 가 빈 문자열이라 ?? 로는 원인이 비어 보인다.
+    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${String(started.stderr || started.error?.message).slice(0, 300)}`);
     const containerId = String(started.stdout ?? '').trim().match(/^[a-f0-9]{64}$/m)?.[0] ?? null;
     if (requireContainerId && !containerId) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너의 ID 를 받지 못했다.`);
     return { id: engineId, name, engine, password, containerId };
@@ -179,18 +180,38 @@ export function startVendorEngine(engineId, { publishPort, runDocker = docker } 
       sleep(2000);
     }
   } catch (failure) {
-    stopVendorEngineReporting({ name }, failure, () => runDocker(['rm', '-f', '-v', name]));
+    stopVendorEngineReporting({ name, password: handle.password }, failure, () => runDocker(['rm', '-f', '-v', name]), runDocker);
     throw failure;
   }
 }
 
 export const stopVendorEngine = handle => docker(['rm', '-f', '-v', handle.name]);
 
+// 작업 실패의 로그 끝부분이 40줄(project-composer-job-failure.mjs)이라 Gradle 실패 요약을 밀어내지 않을 만큼만 낸다.
+const FAILURE_LOG_LINES = 20;
+const FAILURE_LOG_WIDTH = 300;
+const FAILURE_LOG_TIMEOUT_MS = 30_000;
+
+/**
+ * 컨테이너를 지우면 DB 쪽 원인 근거도 사라지고, CI 와 생성 작업에는 이 출력밖에 남지 않는다. 비밀번호는 이 프로세스가 만들어 부모의 가림 규칙이 모르므로 여기서 가린다.
+ * 모르면 가릴 수 없어 내지 않는다. 로그를 못 읽어도 원래 실패와 정리를 막지 않는다.
+ */
+function reportVendorLogTail(handle, runDocker) {
+  if (!handle.password) return;
+  try {
+    const logs = runDocker(['logs', '--tail', String(FAILURE_LOG_LINES), handle.name], { timeout: FAILURE_LOG_TIMEOUT_MS });
+    if (logs.status !== 0) return;
+    const lines = `${logs.stdout ?? ''}${logs.stderr ?? ''}`.replaceAll(handle.password, '[password]').split(/\r?\n/).filter(line => line.trim());
+    if (lines.length) console.error([`[vendor-engine] ${handle.name} 로그 끝부분:`, ...lines.slice(-FAILURE_LOG_LINES).map(line => line.slice(0, FAILURE_LOG_WIDTH))].join('\n'));
+  } catch { /* 위 설명대로 원래 결과를 지킨다. */ }
+}
+
 /**
  * 컨테이너를 지우고 앞선 실패를 이어 던진다. 지우지 못하면 남은 이름을 알린다. 앞선 실패가 있으면 그 실패를 가리지 않고 덧붙인다.
- * `remove` 는 시험에서 바꾼다.
+ * 앞선 실패가 있으면 지우기 전에 로그 끝부분을 남긴다. `remove` 와 `readLogs` 는 시험에서 바꾼다. 다른 컨테이너를 지우는 호출자는 `remove` 만 넘겨 로그를 읽지 않는다.
  */
-export function stopVendorEngineReporting(handle, failure = null, remove = stopVendorEngine) {
+export function stopVendorEngineReporting(handle, failure = null, remove = stopVendorEngine, readLogs = remove === stopVendorEngine ? docker : null) {
+  if (failure && readLogs) reportVendorLogTail(handle, readLogs);
   const stopped = remove(handle);
   if (stopped.status === 0) {
     if (failure) throw failure;

@@ -183,7 +183,7 @@ pnpm -C frontend type-check:e2e
 
 ## 🛠️ 유지보수 지침
 - **POM 활용**: 복수 spec이 공유하거나 복잡한 화면 의미를 캡슐화할 때만 `e2e/pages`에 추가한다. 생성만 하고 소비하지 않는 POM/fixture는 만들지 않으며 해당 API/브라우저 fixture provider와 실제 spec 소비를 같은 변경에서 증명한다.
-- **자동 클린업**: spec은 만든 ID를 표적 정리하고 `globalTeardown`은 같은 격리 실행의 테스트 자원만 다룬다. runner는 자신이 소유한 프로세스·컨테이너·DB를 회수한다. 강제 종료 후에는 실행 namespace와 실제 소유권을 확인해 남은 자원만 정리한다. 공용 DB에 수동 cleanup을 실행하지 않는다.
+- **자동 클린업**: spec은 만든 ID를 표적 정리하고 `globalTeardown`은 같은 격리 실행의 테스트 자원만 다룬다. runner는 자신이 소유한 프로세스·컨테이너·DB를 회수한다. 강제 종료(`taskkill /F`, Windows 콘솔 창 닫기 등) 후에는 실행 namespace와 실제 소유권을 확인해 남은 자원만 정리한다. 소유 기록이 없어 자동으로 지우지 않으므로 `docker ps -a --filter label=egov.task=isolated-e2e --format "{{.ID}} {{.Names}} {{.Status}} {{.Label \"egov.e2e.run\"}}"` 로 찾고, 이 기계에 `run-isolated-e2e` 프로세스가 없어 진행 중인 실행이 아님을 확인한 뒤 `docker rm -f -v <id>` 로 지운다. 벤더 DB 컨테이너는 데이터를 쓰기 레이어와 익명 볼륨에 두므로 `-v` 가 필요하다. 공용 DB에 수동 cleanup을 실행하지 않는다.
 - **에러 감시**: `browser-test.ts`를 사용하는 테스트의 공용 page·adminPage·userPage fixture에 `ConsoleErrorGuard`가 설치된다. 별도로 만든 page/context는 자동 포함된다고 가정하지 않는다. 수집된 오류는 fixture 종료의 `verify()`가 판정한다.
 - **대기 방식**: `waitForTimeout`은 금지한다. locator 상태, URL, response, localStorage 등 관찰 가능한 조건을 기다리며 zero-tolerance ratchet이 재도입을 차단한다.
 - **드래그 후 저장**: 조직도는 드래그 overlay의 생성·소멸로 드롭 애니메이션 완료를 확인한 다음 저장하고, 서버 action 응답과 영속된 상위 부서를 모두 검증한다. dnd-kit은 드롭 직후 click 전파를 잠시 억제하므로 저장 버튼의 enabled 상태만으로 다음 클릭 시점을 정하지 않는다([실행 계약](../../frontend/e2e/journeys/department-hierarchy.spec.ts)).
