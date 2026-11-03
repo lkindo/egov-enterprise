@@ -219,3 +219,135 @@ test('baselineComparisonSheet classifies changes, excludes self-comparison files
   assert.equal(reproduceCommand({ baseline }), 'node scripts/export-deliverables.mjs --compare <같은 manifest.json>');
   assert.match(compared.files.get('README.md'), /--compare <같은 manifest\.json>/u);
 });
+
+
+import { backlogDetailSheet, buildSheets, computeAcHash, extractGateEntries, extractSchemaTableNames, menuSheet, projectUatChecklistSheet, verifyProjectedProductMetadata } from './export-deliverables.mjs';
+
+test('menuSheet filters out deselected routes in projected-ledger mode while keeping ancestor folders and verifyProjectedProductMetadata rejects tampered lock', () => {
+  const menus = {
+    menus: [
+      { menu_sn: 1, up_menu_sn: null, menu_nm: '관리', modern_route: null, menu_ordr: 1, use_yn: 'Y', del_yn: 'N' },
+      { menu_sn: 11, up_menu_sn: 1, menu_nm: '배너·팝업', modern_route: '/admin/system/banner', menu_ordr: 1, use_yn: 'Y', del_yn: 'N' },
+      { menu_sn: 12, up_menu_sn: 1, menu_nm: '설문', modern_route: '/admin/content/surveys', menu_ordr: 2, use_yn: 'Y', del_yn: 'N' },
+      { menu_sn: 2, up_menu_sn: null, menu_nm: '빈 폴더', modern_route: null, menu_ordr: 2, use_yn: 'Y', del_yn: 'N' },
+    ],
+  };
+  const routes = { routes: [{ route: '/admin/system/banner' }] };
+  const projected = menuSheet({ menus, routes, ledgerMode: 'projected' });
+  assert.deepEqual(projected.rows.map((r) => r.menuSn), [1, 11]);
+  assert.match(projected.notices.join('\n'), /투영 원장 모드/u);
+
+  const validProjection = {
+    schemaVersion: 1,
+    authority: 'generated-reusable-governance-projection-not-environment-approval',
+    profile: 'core',
+    sourceCommit: '171f45d4262c5a128fe1c8399a25ec4a9ebd360e',
+  };
+  assert.throws(() => verifyProjectedProductMetadata(validProjection, { profile: 'core', sourceCommit: validProjection.sourceCommit, governance: { path: 'config/governance/reusable-governance-projection.json', projectionSha256: 'bad' } }), /verified projected-ledger mode/u);
+});
+
+test('backlogDetailSheet, projectUatChecklistSheet, computeAcHash collision immunity and buildSheets real ledger shapes', () => {
+  assert.notEqual(
+    computeAcHash({ id: 'AC-1', requirementIds: ['R-1'], workItemId: 'W-1', polarity: 'allow', given: 'x\ty', when: 'z', then: 't', verificationMethod: 'e2e' }),
+    computeAcHash({ id: 'AC-1', requirementIds: ['R-1'], workItemId: 'W-1', polarity: 'allow', given: 'x', when: 'y\tz', then: 't', verificationMethod: 'e2e' }),
+    'computeAcHash must use structured JSON serialization so embedded tabs cannot collide',
+  );
+
+  assert.deepEqual(
+    extractSchemaTableNames([{ table_name: 'TB_POPUP_INFO', column_name: 'POPUP_SN' }, { table_name: 'tb_popup_info', column_name: 'NTCE_YN' }]),
+    ['tb_popup_info'],
+  );
+  const gates = extractGateEntries({
+    gateSets: [{ id: 'GATESET-GOV', tier: 'fast', requiredCiContext: 'verify-gov', rules: [{ id: 'GH-01', source: 'Test.java' }] }],
+  });
+  assert.deepEqual(gates.map((g) => [g.id, g.status, g.evidenceLevel]), [
+    ['GATESET-GOV', 'fast', 'verify-gov'],
+    ['GH-01', 'fast', 'verify-gov'],
+  ]);
+
+  const sampleBacklog = {
+    businessRequirements: [
+      {
+        id: 'REQ-SFR-003',
+        title: '팝업 다건 일괄 노출 중지',
+        requirementType: 'functional',
+        solutionDisposition: 'gap-dev',
+        scopeDisposition: 'included',
+        acceptanceDisposition: 'pending',
+        nfrCriteria: { metric: 'p95_ms', threshold: '800ms' },
+        openQuestions: ['최대 선택 건수 100건 제한 여부'],
+      },
+    ],
+    workItems: [
+      { id: 'EPIC-PROMO', workItemType: 'epic', parentEpicId: null, requirementIds: ['REQ-SFR-003'], title: '팝업 에픽' },
+      {
+        id: 'US-PROMO-002',
+        workItemType: 'story',
+        parentEpicId: 'EPIC-PROMO',
+        requirementIds: ['REQ-SFR-003'],
+        title: '일괄 노출 중지 스토리',
+        asA: '운영 관리자',
+        iWant: '다건 팝업을 선택해 노출 중지 처리',
+        soThat: '긴급 공지를 즉시 내릴 수 있다',
+        decisionCards: ['D-2: POPUP_UPDATE 권한 및 SecurityUtil.assertPermission 2차 가드'],
+      },
+      {
+        id: 'CFG-PROMO-001',
+        workItemType: 'configuration',
+        parentEpicId: 'EPIC-PROMO',
+        requirementIds: ['REQ-SFR-003'],
+        title: '팝업 기본 설정 점검',
+        description: '설정 항목 설명 보존 확인',
+      },
+    ],
+    acceptanceCriteria: [
+      {
+        id: 'AC-PROMO-002-G1',
+        workItemId: 'US-PROMO-002',
+        requirementIds: ['REQ-SFR-003'],
+        polarity: 'allow',
+        given: '노출 중인 팝업 2건 선택 시',
+        when: '일괄 중지 실행 시',
+        then: 'ntceYn=N 변경',
+        verificationMethod: 'integration-test',
+        acceptanceDisposition: 'accepted',
+      },
+      {
+        id: 'AC-PROMO-002-R1',
+        workItemId: 'US-PROMO-002',
+        requirementIds: ['REQ-SFR-003'],
+        polarity: 'forbid',
+        given: 'POPUP_UPDATE 권한이 없을 때',
+        when: '호출 시',
+        then: '403 Forbidden 거부',
+        verificationMethod: 'integration-test',
+        acceptanceDisposition: 'accepted',
+        acContentHash: '0000000000000000',
+      },
+    ],
+    traceLinks: [
+      {
+        id: 'TRL-003',
+        requirementId: 'REQ-SFR-003',
+        workItemId: 'US-PROMO-002',
+        acId: 'AC-PROMO-002-G1',
+        targetKind: 'capability',
+        targetId: '/admin/system/banner#promotion.popup-bulk-suspend',
+        linkIntent: 'planned',
+      },
+    ],
+  };
+  sampleBacklog.acceptanceCriteria[0].acContentHash = computeAcHash(sampleBacklog.acceptanceCriteria[0]);
+
+  const detail = backlogDetailSheet(sampleBacklog);
+  assert.equal(detail.rows.length, 3);
+  assert.match(detail.rows.find((r) => r.workItemId === 'US-PROMO-002').storyStatement, /As a 운영 관리자/u);
+  assert.equal(detail.rows.find((r) => r.workItemId === 'CFG-PROMO-001').storyStatement, '설정 항목 설명 보존 확인');
+  assert.match(detail.rows[0].nfrAndQuestions, /NFR\(p95_ms\): 800ms/u);
+
+  const uat = projectUatChecklistSheet(sampleBacklog);
+  assert.equal(uat.rows.length, 2);
+  assert.equal(uat.rows[0].hashStatus, '일치');
+  assert.equal(uat.rows[1].hashStatus, '불일치(조건 변경됨)');
+  assert.equal(reproduceCommand({ backlog: true }), 'node scripts/export-deliverables.mjs --backlog <같은 backlog.json>');
+});
