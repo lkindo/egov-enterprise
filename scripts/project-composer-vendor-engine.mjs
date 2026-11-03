@@ -156,9 +156,9 @@ export function launchVendorContainer(engineId, { publishPort, runDocker = docke
     { env: { ...baseEnvironment, ...variables } });
     // 실행 파일이 없으면 만들어진 컨테이너도 없다. 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 그대로 정리한다.
     dockerMissing = started.error?.code === 'ENOENT';
-    // docker 를 실행하지 못하면 stderr 가 없다. 그 경우에도 코드가 남아야 부모가 원인을 안다.
-    // 시간 초과는 stderr 가 빈 문자열이라 ?? 로는 원인이 비어 보인다.
-    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${String(started.stderr || started.error?.message).slice(0, 300)}`);
+    // 실행 오류를 앞에 둔다. 이미지를 받다 시간이 다 되면 stderr 에는 받던 중의 출력만 남아, 뒤에 두면 잘려서 원인이 안 보인다.
+    const detail = [started.error?.message, started.stderr].filter(Boolean).join(' ') || `종료 코드 ${started.status}`;
+    if (started.status !== 0) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너를 띄우지 못했다: ${detail.slice(0, 300)}`);
     const containerId = String(started.stdout ?? '').trim().match(/^[a-f0-9]{64}$/m)?.[0] ?? null;
     if (requireContainerId && !containerId) fail('VENDOR_ENGINE_NOT_READY', `${engineId} 컨테이너의 ID 를 받지 못했다.`);
     return { id: engineId, name, engine, password, containerId };

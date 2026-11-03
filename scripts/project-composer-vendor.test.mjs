@@ -1165,6 +1165,23 @@ test('the runner launches the vendor container with its own labels and closed en
   assert.equal(launchVendorContainer('oracle', { runDocker: () => ({ status: 0, stdout: '', stderr: '' }) }).containerId, null, '다른 호출자는 ID 를 요구하지 않는다');
 });
 
+test('a vendor container that failed to start says why, even when the pull output fills the stderr', () => {
+  const failureOf = result => {
+    const docker = args => (args[0] === 'run' ? result : { status: 0, stdout: '', stderr: '' });
+    try { launchVendorContainer('oracle', { runDocker: docker }); } catch (error) { return error; }
+    return assert.fail('기동 실패여야 한다');
+  };
+  const timedOut = { status: null, stdout: '', error: Object.assign(new Error('spawnSync docker ETIMEDOUT'), { code: 'ETIMEDOUT' }) };
+  const pulling = 'Unable to find image locally\n23-slim: Pulling from gvenzl/oracle-free\n';
+  const partial = failureOf({ ...timedOut, stderr: pulling });
+  assert.equal(partial.code, 'VENDOR_ENGINE_NOT_READY');
+  assert.match(partial.message, /못했다: spawnSync docker ETIMEDOUT Unable to find image/, '받던 중의 출력이 있어도 시간 초과를 말한다');
+  assert.match(failureOf({ ...timedOut, stderr: 'x'.repeat(1000) }).message, /못했다: spawnSync docker ETIMEDOUT x+$/, '긴 출력에 잘리지 않는다');
+  assert.match(failureOf({ ...timedOut, stderr: '' }).message, /못했다: spawnSync docker ETIMEDOUT$/);
+  assert.match(failureOf({ status: 1, stdout: '', stderr: 'no space left' }).message, /못했다: no space left$/, '실행 오류가 없으면 stderr 만 말한다');
+  assert.match(failureOf({ status: 1, stdout: '', stderr: '' }).message, /못했다: 종료 코드 1$/, '둘 다 없어도 undefined 를 내지 않는다');
+});
+
 test('the runner wires the closed Docker environment, one API environment and the result plan', () => {
   const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
   assert.match(runner, /const runDocker = boundedVendorDocker\(engines\.dockerIn\(clean\)\);/);
@@ -1391,9 +1408,12 @@ test('a vendor failure leaves the masked end of the database log before the cont
     printed.length = 0;
     const order = [];
     const remove = () => { order.push('rm'); return { status: 0 }; };
-    const readLogs = (args, options) => { order.push(args.join(' ')); assert.equal(options.timeout, 30_000, '로그 수집도 멈추지 않는다'); return logs(); };
+    // 수집기 안에서 단언하면 수집 실패를 삼키는 try/catch 에 사라진다. 그래서 끝난 뒤 본다.
+    let logRead = null;
+    const readLogs = (args, options) => { order.push(args.join(' ')); logRead = { options }; return logs(); };
     if (failure) assert.throws(() => stopVendorEngineReporting(target, failure, remove, readLogs), /^Error: 시험 실패$/, '원래 실패를 가리지 않는다');
     else stopVendorEngineReporting(target, null, remove, readLogs);
+    if (logRead) assert.equal(logRead.options?.timeout, 30_000, '로그 수집도 멈추지 않는다');
     return order;
   };
   const noisy = Array.from({ length: 100 }, (_, index) => `line ${index} ${'x'.repeat(index === 99 ? 500 : 1)}`).join('\n');
