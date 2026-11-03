@@ -635,7 +635,8 @@ class SurveySubmissionConcurrencyIntegrationTest {
 
     private String cancellationUser(String suffix) {
         String user = "SC" + survey + suffix;
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,crt_dt) VALUES (?,?,'test-only-unusable','동명이인','P','2000-01-01')", user, user);
+        // 날짜는 ANSI 리터럴로 쓴다. 문자열 '2000-01-01' 의 암묵 변환은 Oracle 세션 지역(JVM 로캘)을 따라 영어 지역에서 ORA-01843 이 난다.
+        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,crt_dt) VALUES (?,?,'test-only-unusable','동명이인','P',TIMESTAMP '2000-01-01 00:00:00')", user, user);
         cancellationUsers.add(user);
         return user;
     }
