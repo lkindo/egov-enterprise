@@ -53,7 +53,10 @@ class SpringdocDeclarationSyncLinterTest {
      * <b>예외 목록이 아니라 대조 대상</b>이다 — 줄어들면 감시 범위가 조용히 축소되므로 매니페스트로 동결한다.
      */
     private static final List<String> SYNCHRONIZED_KEYS = List.of(
-            "default-flat-param-object");
+            "default-flat-param-object",
+            // 고정한 swagger-ui webjar 의 판(2026-11-03). 운영 yml 은 점 표기 키로 둔다. 시험 쪽이 판과 맞는지는
+            // OpenApiDocumentationTest 의 Swagger UI 시험이 404 로 보므로, 여기서 두 선언이 같으면 운영도 맞다.
+            "swagger-ui.version");
 
     @Test
     @DisplayName("📄 springdoc 설정이 운영 yml 과 스펙 산출 테스트에서 동일하다 — 문서가 운영을 서술하지 못하는 드리프트 차단")
