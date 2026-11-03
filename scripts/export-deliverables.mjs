@@ -53,6 +53,8 @@ export const BANNED_CLAIMS = Object.freeze(['100%', '수기 0%', '현행화 0시
 
 const LOCKFILES = Object.freeze(['package-lock.json', 'frontend/pnpm-lock.yaml', 'gradle/libs.versions.toml']);
 const GENERATED_PRODUCT_MARKER = 'config/governance/upstream-review';
+const PROJECTION_METADATA_PATH = 'config/governance/reusable-governance-projection.json';
+const REUSABLE_LOCK_PATH = 'reusable-base-lock.json';
 
 /** 저장소 기준 경로를 판정한다. 두 구분자와 대소문자를 가리지 않는다 — Windows 파일 시스템은 `.ENV`·`.agent\memory` 도 같은 파일로 연다. */
 export function assertAllowedInput(path) {
@@ -255,17 +257,34 @@ export function programSheet({ files, ownerOf }) {
   };
 }
 
-export function menuSheet({ menus }) {
+export function menuSheet({ menus, routes, ledgerMode }) {
   const groups = new Map();
   for (const row of menus.navigation ?? []) groups.set(row.menu_sn, [...(groups.get(row.menu_sn) ?? []), row.authrt_cd]);
+  let menuRows = menus.menus ?? [];
+  if (ledgerMode === 'projected' && Array.isArray(routes?.routes)) {
+    const retainedRoutes = new Set(routes.routes.map((r) => r.route));
+    const bySn = new Map(menuRows.map((m) => [m.menu_sn, m]));
+    const keepSn = new Set();
+    for (const m of menuRows) {
+      if (m.modern_route && retainedRoutes.has(m.modern_route)) {
+        let cur = m;
+        while (cur && !keepSn.has(cur.menu_sn)) {
+          keepSn.add(cur.menu_sn);
+          cur = cur.up_menu_sn ? bySn.get(cur.up_menu_sn) : null;
+        }
+      }
+    }
+    menuRows = menuRows.filter((m) => keepSn.has(m.menu_sn));
+  }
   return {
     id: 'menus', title: '메뉴 목록', sources: ['config/project-composer-menus.json'],
     notices: [
       'Flyway 메뉴 스냅숏의 메뉴 행과 시드 그룹(ROLE_ADMIN·ROLE_USER)의 기본 표시만 싣는다 — 기관 DB 의 실제 메뉴·배정이 아니다.',
+      ...(ledgerMode === 'projected' ? ['파생 생성물 투영 원장 모드(projected-ledger): 투영된 라우트에 연결된 메뉴와 상위 폴더만 남겼다.'] : []),
     ],
     columns: [['menuSn', '메뉴 번호'], ['parentSn', '상위 메뉴 번호'], ['order', '순서'], ['name', '메뉴 이름'], ['route', '경로'],
       ['use', '사용'], ['deleted', '삭제'], ['groups', '기본 표시 그룹']],
-    rows: (menus.menus ?? []).map((row) => ({ menuSn: row.menu_sn, parentSn: row.up_menu_sn, order: row.menu_ordr, name: row.menu_nm,
+    rows: menuRows.map((row) => ({ menuSn: row.menu_sn, parentSn: row.up_menu_sn, order: row.menu_ordr, name: row.menu_nm,
       route: row.modern_route, use: row.use_yn, deleted: row.del_yn, groups: [...(groups.get(row.menu_sn) ?? [])].sort(byText) })),
   };
 }
@@ -299,7 +318,418 @@ export function falsePositiveSheet({ review }) {
   };
 }
 
-export function riskWaiverSheet({ zdmWaivers = {}, urlApproval = {}, adoptionReview = null, migrationAdoptionReview = null }) {
+export function computeAcHash(ac) {
+  const reqIds = Array.isArray(ac?.requirementIds)
+    ? [...ac.requirementIds].map((v) => String(v ?? '').trim()).sort(byText)
+    : ac?.requirementId ? [String(ac.requirementId).trim()] : [];
+  const norm = (v) => String(v ?? '').trim().replace(/\r\n?/gu, '\n');
+  const payload = JSON.stringify([
+    norm(ac?.id),
+    reqIds,
+    norm(ac?.workItemId),
+    norm(ac?.polarity),
+    norm(ac?.given),
+    norm(ac?.when),
+    norm(ac?.then),
+    norm(ac?.verificationMethod),
+  ]);
+  return sha256(payload).slice(0, 32);
+}
+
+export function computeRequirementAcceptanceDisposition(req, acsForReq = []) {
+  if (!req || req.scopeDisposition !== 'included' || !Array.isArray(acsForReq) || acsForReq.length === 0) {
+    return 'pending';
+  }
+  const dispositions = acsForReq.map((ac) => {
+    const disp = ac?.acceptanceDisposition ?? 'pending';
+    if ((disp === 'accepted' || disp === 'conditional') && (!ac?.acContentHash || ac.acContentHash !== computeAcHash(ac))) {
+      return 'pending';
+    }
+    return disp;
+  });
+  if (dispositions.some((d) => d === 'rejected')) return 'rejected';
+  if (dispositions.every((d) => d === 'accepted')) return 'accepted';
+  if (dispositions.some((d) => d === 'conditional') && dispositions.every((d) => d === 'accepted' || d === 'conditional')) {
+    return 'conditional';
+  }
+  return 'pending';
+}
+
+export function extractSchemaTableNames(dbColumns) {
+  if (Array.isArray(dbColumns)) {
+    return [...new Set(dbColumns.map((row) => String(row?.table_name ?? '').toLowerCase().trim()).filter(Boolean))].sort(byText);
+  }
+  if (dbColumns && typeof dbColumns === 'object') {
+    return [...new Set(Object.keys(dbColumns).map((k) => String(k).toLowerCase().trim()).filter(Boolean))].sort(byText);
+  }
+  return [];
+}
+
+export function extractGateEntries(gatesJson) {
+  const byId = new Map();
+  if (Array.isArray(gatesJson?.gateSets)) {
+    for (const set of gatesJson.gateSets) {
+      if (!set?.id) continue;
+      byId.set(set.id, {
+        id: set.id,
+        kind: 'gate-set',
+        gateSet: set.id,
+        status: set.tier ?? null,
+        evidenceLevel: set.requiredCiContext ?? null,
+        source: set.task ?? null,
+      });
+      for (const rule of set.rules ?? []) {
+        if (!rule?.id) continue;
+        byId.set(rule.id, {
+          id: rule.id,
+          kind: 'gate-rule',
+          gateSet: set.id,
+          status: set.tier ?? null,
+          evidenceLevel: set.requiredCiContext ?? null,
+          source: rule.source ?? null,
+        });
+      }
+    }
+  } else if (Array.isArray(gatesJson?.gates)) {
+    for (const gate of gatesJson.gates) {
+      if (!gate?.id) continue;
+      byId.set(gate.id, {
+        id: gate.id,
+        kind: 'gate',
+        gateSet: null,
+        status: gate.tier ?? (gate.blocking ? 'blocking' : 'non-blocking'),
+        evidenceLevel: gate.requiredCiContext ?? gate.ciStep ?? null,
+        source: gate.source ?? null,
+      });
+    }
+  }
+  return [...byId.values()].sort((a, b) => byText(a.id, b.id));
+}
+
+export function backlogToRtmRows(pack = {}) {
+  const reqMap = new Map((pack.businessRequirements ?? []).map((r) => [r.id, r]));
+  const acMap = new Map((pack.acceptanceCriteria ?? []).map((a) => [a.id, a]));
+  const acsByReq = new Map();
+  for (const ac of pack.acceptanceCriteria ?? []) {
+    for (const reqId of ac?.requirementIds ?? []) {
+      const list = acsByReq.get(reqId) ?? [];
+      list.push(ac);
+      acsByReq.set(reqId, list);
+    }
+  }
+  const reqRollup = new Map(
+    (pack.businessRequirements ?? []).map((r) => [r.id, computeRequirementAcceptanceDisposition(r, acsByReq.get(r.id) ?? [])]),
+  );
+
+  const linkedReqIds = new Set();
+  const linkedReqWorkItems = new Set();
+  const linkedReqAcs = new Set();
+  const rows = [];
+
+  for (const link of pack.traceLinks ?? []) {
+    const req = reqMap.get(link.requirementId);
+    const ac = link.acId ? acMap.get(link.acId) : null;
+    linkedReqIds.add(link.requirementId);
+    if (link.workItemId) linkedReqWorkItems.add(`${link.requirementId}::${link.workItemId}`);
+    if (link.acId) linkedReqAcs.add(`${link.requirementId}::${link.acId}`);
+    rows.push({
+      id: link.requirementId,
+      target: link.targetId ?? '',
+      name: req?.title ?? null,
+      requirementType: req?.requirementType ?? null,
+      solutionDisposition: req?.solutionDisposition ?? null,
+      scopeDisposition: req?.scopeDisposition ?? null,
+      workItemId: link.workItemId ?? null,
+      acId: link.acId ?? null,
+      linkIntent: link.linkIntent ?? null,
+      acceptanceDisposition: ac ? (ac.acceptanceDisposition ?? 'pending') : (reqRollup.get(link.requirementId) ?? 'pending'),
+    });
+  }
+
+  for (const ac of pack.acceptanceCriteria ?? []) {
+    if (!ac?.id) continue;
+    for (const reqId of ac.requirementIds ?? []) {
+      const req = reqMap.get(reqId);
+      if (!req || linkedReqAcs.has(`${reqId}::${ac.id}`)) continue;
+      linkedReqIds.add(reqId);
+      if (ac.workItemId) linkedReqWorkItems.add(`${reqId}::${ac.workItemId}`);
+      linkedReqAcs.add(`${reqId}::${ac.id}`);
+      rows.push({
+        id: reqId,
+        target: '',
+        name: req.title ?? null,
+        requirementType: req.requirementType ?? null,
+        solutionDisposition: req.solutionDisposition ?? null,
+        scopeDisposition: req.scopeDisposition ?? null,
+        workItemId: ac.workItemId ?? null,
+        acId: ac.id,
+        linkIntent: null,
+        acceptanceDisposition: ac.acceptanceDisposition ?? 'pending',
+      });
+    }
+  }
+
+  for (const wi of pack.workItems ?? []) {
+    if (!wi?.id || wi.workItemType === 'epic') continue;
+    for (const reqId of wi.requirementIds ?? []) {
+      const req = reqMap.get(reqId);
+      if (!req || linkedReqWorkItems.has(`${reqId}::${wi.id}`)) continue;
+      linkedReqIds.add(reqId);
+      linkedReqWorkItems.add(`${reqId}::${wi.id}`);
+      rows.push({
+        id: reqId,
+        target: '',
+        name: req.title ?? null,
+        requirementType: req.requirementType ?? null,
+        solutionDisposition: req.solutionDisposition ?? null,
+        scopeDisposition: req.scopeDisposition ?? null,
+        workItemId: wi.id,
+        acId: null,
+        linkIntent: null,
+        acceptanceDisposition: reqRollup.get(reqId) ?? 'pending',
+      });
+    }
+  }
+
+  for (const req of pack.businessRequirements ?? []) {
+    if (!req?.id || linkedReqIds.has(req.id)) continue;
+    rows.push({
+      id: req.id,
+      target: '',
+      name: req.title ?? null,
+      requirementType: req.requirementType ?? null,
+      solutionDisposition: req.solutionDisposition ?? null,
+      scopeDisposition: req.scopeDisposition ?? null,
+      workItemId: null,
+      acId: null,
+      linkIntent: null,
+      acceptanceDisposition: reqRollup.get(req.id) ?? 'pending',
+    });
+  }
+
+  return rows;
+}
+
+export function backlogDetailSheet(backlog = {}) {
+  const requirements = [...(backlog.businessRequirements ?? [])].sort((a, b) => byText(a.id, b.id));
+  const workItemsById = new Map((backlog.workItems ?? []).map((item) => [item.id, item]));
+  const workItemsByReq = new Map();
+  for (const item of backlog.workItems ?? []) {
+    for (const reqId of item.requirementIds ?? []) {
+      const list = workItemsByReq.get(reqId) ?? [];
+      list.push(item);
+      workItemsByReq.set(reqId, list);
+    }
+  }
+  const acReqIds = (ac) => (Array.isArray(ac?.requirementIds) ? ac.requirementIds : ac?.requirementId ? [ac.requirementId] : []);
+  const acByWorkItem = new Map();
+  const acByReq = new Map();
+  for (const ac of backlog.acceptanceCriteria ?? []) {
+    const byWi = acByWorkItem.get(ac.workItemId) ?? [];
+    byWi.push(ac);
+    acByWorkItem.set(ac.workItemId, byWi);
+    for (const reqId of acReqIds(ac)) {
+      const byR = acByReq.get(reqId) ?? [];
+      byR.push(ac);
+      acByReq.set(reqId, byR);
+    }
+  }
+  const linksByAc = new Map();
+  const linksByWi = new Map();
+  const linksByReq = new Map();
+  for (const link of backlog.traceLinks ?? []) {
+    if (link.acId) {
+      const list = linksByAc.get(link.acId) ?? [];
+      list.push(link);
+      linksByAc.set(link.acId, list);
+    }
+    if (link.workItemId) {
+      const list = linksByWi.get(link.workItemId) ?? [];
+      list.push(link);
+      linksByWi.set(link.workItemId, list);
+    }
+    if (link.requirementId) {
+      const list = linksByReq.get(link.requirementId) ?? [];
+      list.push(link);
+      linksByReq.set(link.requirementId, list);
+    }
+  }
+
+  const formatDecisions = (cards) => {
+    if (Array.isArray(cards)) return cards.length ? cards.join(' | ') : null;
+    if (!cards || typeof cards !== 'object') return null;
+    const labels = [
+      ['authority', '권한'],
+      ['stateTransition', '상태전이'],
+      ['audit', '감사'],
+      ['concurrency', '동시성'],
+      ['migration', '이관'],
+    ];
+    const parts = labels
+      .map(([key, label]) => (cards[key] ? `${label}: ${cards[key]}` : null))
+      .filter(Boolean);
+    return parts.length ? parts.join(' | ') : null;
+  };
+
+  const formatNfrAndQuestions = (req) => {
+    const parts = [];
+    if (req.nfrCriteria && typeof req.nfrCriteria === 'object') {
+      if (req.nfrCriteria.metric && req.nfrCriteria.threshold) {
+        parts.push(`NFR(${req.nfrCriteria.metric}): ${req.nfrCriteria.threshold}`);
+      } else {
+        for (const [k, v] of Object.entries(req.nfrCriteria)) parts.push(`NFR(${k}): ${v}`);
+      }
+    }
+    for (const q of req.openQuestions ?? []) parts.push(`미결: ${q}`);
+    return parts.length ? parts.join(' / ') : null;
+  };
+
+  const wiTypeOf = (wi) => wi?.workItemType ?? wi?.type ?? null;
+  const wiParentOf = (wi) => wi?.parentEpicId ?? wi?.parentId ?? null;
+
+  const rows = [];
+  for (const req of requirements) {
+    const allWorkItems = (workItemsByReq.get(req.id) ?? []).sort((a, b) => byText(a.id, b.id));
+    const nonEpics = allWorkItems.filter((item) => wiTypeOf(item) !== 'epic');
+    const epics = allWorkItems.filter((item) => wiTypeOf(item) === 'epic');
+    const itemsToIter = nonEpics.length ? nonEpics : epics.length ? epics : [null];
+    const nfrAndQuestions = formatNfrAndQuestions(req);
+
+    for (const wi of itemsToIter) {
+      const parentId = wiParentOf(wi);
+      const epicId = wiTypeOf(wi) === 'epic'
+        ? wi.id
+        : (parentId && wiTypeOf(workItemsById.get(parentId)) === 'epic' ? parentId : null);
+      const asA = wi?.asA ?? wi?.userStory?.asA;
+      const iWant = wi?.iWant ?? wi?.userStory?.iWant;
+      const soThat = wi?.soThat ?? wi?.userStory?.soThat;
+      const storyStatement = asA && iWant && soThat
+        ? `As a ${asA} / I want ${iWant} / So that ${soThat}`
+        : (wi?.description ?? null);
+      const decisionCards = formatDecisions(wi?.decisionCards);
+      const acList = (wi ? (acByWorkItem.get(wi.id) ?? []).filter((ac) => acReqIds(ac).includes(req.id)) : (acByReq.get(req.id) ?? []))
+        .sort((a, b) => byText(a.id, b.id));
+      const acsToIter = acList.length ? acList : [null];
+
+      for (const ac of acsToIter) {
+        const matchedLinks = ac
+          ? (linksByAc.get(ac.id) ?? [])
+          : wi
+            ? (linksByWi.get(wi.id) ?? []).filter((link) => link.requirementId === req.id)
+            : (linksByReq.get(req.id) ?? []);
+        const traceTargets = matchedLinks.length
+          ? matchedLinks.map((link) => `${link.targetKind}:${link.targetId} (${link.linkIntent})`)
+          : null;
+        rows.push({
+          requirementId: req.id,
+          requirementTitle: req.title,
+          requirementType: req.requirementType ?? req.type ?? null,
+          solutionDisposition: req.solutionDisposition,
+          scopeDisposition: req.scopeDisposition,
+          epicId,
+          workItemId: wi?.id ?? null,
+          workItemType: wiTypeOf(wi),
+          workItemTitle: wi?.title ?? null,
+          storyStatement,
+          decisionCards,
+          acId: ac?.id ?? null,
+          polarity: ac?.polarity ?? null,
+          givenWhenThen: ac ? `Given ${ac.given} / When ${ac.when} / Then ${ac.then}` : null,
+          verificationMethod: ac?.verificationMethod ?? null,
+          traceTargets,
+          nfrAndQuestions,
+        });
+      }
+    }
+  }
+
+  return {
+    id: 'backlog-detail',
+    title: '요구사항·에픽·스토리·인수조건 상세 정의서',
+    sources: ['(실행 인자) 기관 요구사항 백로그 JSON'],
+    notices: [
+      '앞단 작업공간(backlog.json)의 요구사항·에픽·스토리(As-a/I-want/So-that)·5대 설계 결정 카드(D-1~D-5)·인수조건(Green/Red Given-When-Then) 원문을 절삭 없이 보존한 비규범 상세 표다.',
+      '10열 요약표(rtm.csv)에서 축약되는 스토리 본문·결정 카드·복수 인수조건·비기능 수치 기준(nfrCriteria)·미결 질문(openQuestions)을 감리·검수 참고용으로 함께 남긴다.',
+    ],
+    columns: [
+      ['requirementId', '요구사항 ID'],
+      ['requirementTitle', '요구사항 명'],
+      ['requirementType', '분류'],
+      ['solutionDisposition', '해법 구분'],
+      ['scopeDisposition', '범위 결정'],
+      ['epicId', '에픽 ID'],
+      ['workItemId', '작업 항목 ID'],
+      ['workItemType', '항목 유형'],
+      ['workItemTitle', '작업 항목 명'],
+      ['storyStatement', '스토리·작업 정의'],
+      ['decisionCards', '설계 결정 카드 (D-1~D-5)'],
+      ['acId', '인수조건 ID'],
+      ['polarity', '극성 (allow/forbid)'],
+      ['givenWhenThen', 'Given / When / Then'],
+      ['verificationMethod', '검증 방식'],
+      ['traceTargets', '연결 원장 식별자'],
+      ['nfrAndQuestions', '비기능 기준·미결 질문'],
+    ],
+    rows,
+  };
+}
+
+export function projectUatChecklistSheet(backlog = {}) {
+  const rows = [...(backlog.acceptanceCriteria ?? [])]
+    .sort((a, b) => byText(a.id, b.id))
+    .map((ac) => {
+      const reqIds = Array.isArray(ac.requirementIds) ? ac.requirementIds : ac.requirementId ? [ac.requirementId] : [];
+      const expectedHash = computeAcHash(ac);
+      const recordedHash = ac.acContentHash ?? null;
+      const hashStatus = !recordedHash ? '미기록' : recordedHash === expectedHash ? '일치' : '불일치(조건 변경됨)';
+      return {
+        acId: ac.id,
+        requirementId: reqIds,
+        workItemId: ac.workItemId,
+        polarity: ac.polarity,
+        given: ac.given,
+        when: ac.when,
+        then: ac.then,
+        verificationMethod: ac.verificationMethod,
+        acceptanceDisposition: ac.acceptanceDisposition ?? 'pending',
+        uatSignedBy: ac.uatSignedBy ?? null,
+        uatVerifiedAt: ac.uatVerifiedAt ?? null,
+        uatEvidence: ac.uatEvidence ?? null,
+        acContentHash: recordedHash,
+        currentAcHash: expectedHash,
+        hashStatus,
+      };
+    });
+  return {
+    id: 'project-uat-checklist',
+    title: '프로젝트 인수조건(UAT) 점검표',
+    sources: ['(실행 인자) 기관 요구사항 백로그 JSON'],
+    notices: [
+      '백로그 인수조건(acceptanceCriteria)별 정상(allow)·거부(forbid) 시나리오와 발주기관 인수 판정(acceptanceDisposition)·점검자·점검 시각·본문 해시(acContentHash)를 기록한 비규범 점검표다.',
+      'acContentHash 는 Given/When/Then·극성·검증 방식 원문의 내용 변경 감지용 다이제스트이며 서명자 신원 인증이나 암호학적 부인방지 수단이 아니다. 인수 조건 문구가 바뀐 뒤 해시가 갱신되지 않은 기존 판정은 불일치(조건 변경됨)로 표시한다.',
+    ],
+    columns: [
+      ['acId', '인수조건 ID'],
+      ['requirementId', '요구사항 ID'],
+      ['workItemId', '작업 항목 ID'],
+      ['polarity', '극성'],
+      ['given', 'Given (전제)'],
+      ['when', 'When (조작)'],
+      ['then', 'Then (기대 결과)'],
+      ['verificationMethod', '검증 방식'],
+      ['acceptanceDisposition', '기관 인수 판정'],
+      ['uatSignedBy', '점검·서명자'],
+      ['uatVerifiedAt', '점검 일시'],
+      ['uatEvidence', '점검 증적'],
+      ['acContentHash', '기록된 본문 해시'],
+      ['currentAcHash', '현재 계산 해시'],
+      ['hashStatus', '해시 정합성'],
+    ],
+    rows,
+  };
+}
+
+export function riskWaiverSheet({ zdmWaivers = {}, urlApproval = {}, adoptionReview = null, migrationAdoptionReview = null, ledgerMode = 'source', projection = null }) {
   const rows = [
     ...(zdmWaivers.waivers ?? []).map((row) => ({ category: 'ZDM 예외 승인', id: row.id,
       target: [row.path, row.directive ?? 'ignore', row.rule].filter(Boolean).join(' · '),
@@ -312,13 +742,19 @@ export function riskWaiverSheet({ zdmWaivers = {}, urlApproval = {}, adoptionRev
       target: [row.product, row.profile, row.environmentId, row.authority].filter(Boolean).join('/'), status: row.status, owner: row.owner,
       deadline: row.validUntil, reason: `증거 ${(row.evidence ?? []).length}건` })),
   ];
+  const sources = ['config/governance/zdm-waivers.json', 'config/ui-url-state-approval.json', 'config/governance/adoption-review.json'];
+  if (migrationAdoptionReview) sources.push('config/governance/migration-adoption-review.json');
+  if (ledgerMode === 'projected') sources.push(PROJECTION_METADATA_PATH, REUSABLE_LOCK_PATH);
+  const notices = [
+    '무중단 마이그레이션 예외·부채 원장(zdm-waivers.json), 비규범 URL 상태 부류 등록부(ui-url-state-approval.json), 기관 도입 승인 원장(adoption-review.json·migration-adoption-review.json)의 현재 항목이다 — 공용 메모리(known-gaps)는 읽지 않는다.',
+    ledgerMode === 'projected'
+      ? `투영 원장 모드(projected-ledger, profile=${cellText(projection?.profile)}, sourceCommit=${cellText(projection?.sourceCommit)})에서 생성한 표다. 원본 저장소의 운영 승인 이력은 생성물로 승계되지 않으며, 미검토·레거시 부채를 숨기지 않고 그대로 싣는다. 기관의 위험 수용 승인을 대신하지 않는다.`
+      : '원본 저장소에서 기관 도입 승인 원장은 언제나 pending 템플릿이며(실제 기관 승인은 도입 환경·생성물에 기록되고 이 도구는 원본 저장소에서만 실행된다), 미검토·레거시 부채를 숨기지 않고 그대로 싣는다. 기관의 위험 수용 승인을 대신하지 않는다.',
+  ];
   return {
     id: 'risk-waiver-ledger', title: '예외·유예·도입 승인 현황',
-    sources: ['config/governance/zdm-waivers.json', 'config/ui-url-state-approval.json', 'config/governance/adoption-review.json', 'config/governance/migration-adoption-review.json'],
-    notices: [
-      '무중단 마이그레이션 예외·부채 원장(zdm-waivers.json), 비규범 URL 상태 부류 등록부(ui-url-state-approval.json), 기관 도입 승인 원장(adoption-review.json·migration-adoption-review.json)의 현재 항목이다 — 공용 메모리(known-gaps)는 읽지 않는다.',
-      '원본 저장소에서 기관 도입 승인 원장은 언제나 pending 템플릿이며(실제 기관 승인은 도입 환경·생성물에 기록되고 이 도구는 원본 저장소에서만 실행된다), 미검토·레거시 부채를 숨기지 않고 그대로 싣는다. 기관의 위험 수용 승인을 대신하지 않는다.',
-    ],
+    sources,
+    notices,
     columns: [['category', '구분'], ['id', '항목 ID'], ['target', '대상'], ['status', '상태'], ['owner', '책임자'], ['deadline', '만료·재검토 기한'], ['reason', '사유·비고']],
     rows,
   };
@@ -410,13 +846,50 @@ export function buildSheets(inputs) {
       { status: capability.status ?? null, evidenceLevel: capability.evidenceLevel ?? null },
     ])));
     const screenMap = new Map(inputs.routes.routes.map((route) => [route.route, { status: route.status ?? null }]));
+    const interfaceMap = new Map((inputs.policies.operationBindings ?? []).map((binding) => [
+      `${binding.method} ${binding.path}`,
+      { status: binding.status ?? null, evidenceLevel: binding.evidenceLevel ?? null },
+    ]));
+    const tableMap = new Map();
+    const modEntries = Array.isArray(inputs.moduleFiles)
+      ? inputs.moduleFiles.map((m) => m?.data ?? m)
+      : Object.values(inputs.moduleFiles ?? {});
+    for (const mod of modEntries) {
+      if (typeof mod?.id !== 'string') continue;
+      for (const table of mod.owns?.tables ?? []) {
+        const key = String(table).toLowerCase().trim();
+        if (key) tableMap.set(key, { status: 'declared', evidenceLevel: null });
+      }
+    }
+    for (const key of extractSchemaTableNames(inputs.dbColumns)) {
+      const prev = tableMap.get(key);
+      tableMap.set(key, { status: prev ? 'declared+schema' : 'schema', evidenceLevel: null });
+    }
+    const gateMap = new Map(extractGateEntries(inputs.gates).map((gate) => [
+      gate.id,
+      { status: gate.status ?? null, evidenceLevel: gate.evidenceLevel ?? null },
+    ]));
+    const migrationMappingMap = new Map((inputs.migrationMappings ?? []).map((m) => [
+      m.id,
+      { status: m.status ?? null, evidenceLevel: m.evidenceLevel ?? null },
+    ]));
     sheets.push(requirementSheet(inputs.requirements, {
       capabilities: new Set(capabilityMap.keys()),
       screens: new Set(inputs.registry.screens.map((screen) => screen.route)),
       interfaces: new Set((inputs.policies.operationBindings ?? []).map((binding) => `${binding.method} ${binding.path}`)),
+      tables: new Set(tableMap.keys()),
+      gates: new Set(gateMap.keys()),
+      migrationMappings: new Set(migrationMappingMap.keys()),
       capabilityMap,
       screenMap,
+      interfaceMap,
+      tableMap,
+      gateMap,
+      migrationMappingMap,
     }));
+  }
+  if (inputs.backlogPack !== undefined) {
+    sheets.push(backlogDetailSheet(inputs.backlogPack), projectUatChecklistSheet(inputs.backlogPack));
   }
   return sheets;
 }
@@ -439,7 +912,7 @@ export function contentDigest(files) {
 /** 이 묶음을 다시 만드는 명령 — 표 집합이 옵션마다 다르므로 옵션까지 적는다. */
 export function reproduceCommand(meta) {
   return ['node scripts/export-deliverables.mjs', meta.database ? '--db' : null, meta.requirements ? '--rtm <같은 CSV>' : null,
-    meta.baseline ? '--compare <같은 manifest.json>' : null].filter(Boolean).join(' ');
+    meta.backlog ? '--backlog <같은 backlog.json>' : null, meta.baseline ? '--compare <같은 manifest.json>' : null].filter(Boolean).join(' ');
 }
 
 /** extras: 표가 아닌 문서(예: db-erd.md) — { path, title, text }. 표처럼 내용 다이제스트에 들어간다. */
@@ -472,7 +945,7 @@ export function renderPackage(sheets, meta, extras = []) {
     : null;
   const readme = [
     '# 감리·검수 입력 자료 초안', '',
-    `커밋 \`${meta.commit}\` · ${meta.cleanTree ? '작업 트리 깨끗함' : '작업 트리 변경 포함 — 미리 보기이며 제출용이 아니다'}`, '',
+    `커밋 \`${meta.commit}\` · ${meta.cleanTree ? '작업 트리 깨끗함' : '작업 트리 변경 포함 — 미리 보기이며 제출용이 아니다'}${meta.ledgerMode === 'projected' ? ' · 투영 원장 모드(projected-ledger)' : ''}`, '',
     '## 이 묶음의 성격', '', ...PACKAGE_NOTICES.map((notice) => `- ${notice}`), '',
     '## 표', '', '| 표 | Markdown | CSV | 행 수 |', '|---|---|---|---|',
     ...allSheets.map((sheet) => `| ${sheet.title} | [${sheet.id}.md](${sheet.id}.md) | [${sheet.id}.csv](${sheet.id}.csv) | ${sheet.rows.length} |`), '',
@@ -482,6 +955,7 @@ export function renderPackage(sheets, meta, extras = []) {
     '## 재현', '',
     `내용 다이제스트 \`${digest}\` — 표 파일로 계산한다. 커밋·시각을 넣지 않으므로 원장 값이 같으면 다른 커밋에서 \`${reproduceCommand(meta)}\` 로 다시 만들어도 같다.`,
     ...(meta.requirements ? ['이 묶음은 기관 요구사항 추적 CSV 를 실행 인자로 받았다 — 다이제스트에 그 내용이 들어가므로 같은 CSV 를 다시 넘겨야 같다.'] : []),
+    ...(meta.backlog ? ['이 묶음은 기관 요구사항 백로그 JSON(--backlog)을 실행 인자로 받았다 — 상세 정의서와 프로젝트 UAT 점검표가 다이제스트에 포함된다.'] : []),
     ...(meta.baseline ? ['이 묶음은 이전 단계 기준선 manifest.json 을 실행 인자로 받았다 — 내용 다이제스트(contentDigest)는 기준선 인자와 무관하게 동일하게 유지되며, 비교 표 해시는 manifest.json 의 comparisonDigest 에 따로 기록된다.'] : []), '',
     '입력 파일의 sha256, lockfile, 도구 버전은 manifest.json 에 있다. 공공 규범과의 대응과 이 묶음의 경계는 docs/03-guides/design-to-deliverables-guide.md 에 있다.', '',
   ].join('\n');
@@ -489,6 +963,7 @@ export function renderPackage(sheets, meta, extras = []) {
   files.set('README.md', readme);
   const manifest = {
     schemaVersion: 1, kind: 'non-normative-derived-deliverables', decision: 'DEC-OPS-382', commit: meta.commit, cleanTree: meta.cleanTree,
+    ...(meta.ledgerMode === 'projected' ? { ledgerMode: 'projected' } : {}),
     toolchain: meta.toolchain, inputs: meta.inputs, lockfiles: meta.lockfiles, database: meta.database ?? null,
     files: [
       ...allSheets.flatMap((sheet) => [`${sheet.id}.md`, `${sheet.id}.csv`].map((path) => ({ path, rows: sheet.rows.length, sha256: sha256(files.get(path)) }))),
@@ -517,11 +992,43 @@ function inputReader(root) {
     list: () => [...inputs].sort(([left], [right]) => byText(left, right)).map(([path, digest]) => ({ path, sha256: digest })) };
 }
 
-export async function loadInputs(root = ROOT, { rtm, compare } = {}) {
-  if (existsSync(join(root, GENERATED_PRODUCT_MARKER))) {
-    throw new Error('export-deliverables runs on the source repository only; generated products need a projected-ledger mode first');
+export function verifyProjectedProductMetadata(projection, lock) {
+  const validProjection = projection?.schemaVersion === 1
+    && projection?.authority === 'generated-reusable-governance-projection-not-environment-approval'
+    && typeof projection?.profile === 'string'
+    && projection.profile.length > 0
+    && /^[a-f0-9]{40}$/u.test(projection?.sourceCommit ?? '');
+  const expectedProjHash = sha256(`${JSON.stringify(projection, null, 2)}\n`);
+  const validLock = lock?.profile === projection?.profile
+    && lock?.sourceCommit === projection?.sourceCommit
+    && !Object.hasOwn(lock ?? {}, 'packs')
+    && lock?.governance?.path === PROJECTION_METADATA_PATH
+    && lock?.governance?.projectionSha256 === expectedProjHash;
+  if (!validProjection || !validLock) {
+    throw new Error('export-deliverables runs on the source repository only; generated products need a verified projected-ledger mode first');
+  }
+}
+
+export async function loadInputs(root = ROOT, { rtm, compare, backlog } = {}) {
+  let ledgerMode = 'source';
+  const isGeneratedProduct = existsSync(join(root, GENERATED_PRODUCT_MARKER))
+    || existsSync(join(root, PROJECTION_METADATA_PATH))
+    || existsSync(join(root, REUSABLE_LOCK_PATH));
+  if (isGeneratedProduct) {
+    if (!existsSync(join(root, PROJECTION_METADATA_PATH)) || !existsSync(join(root, REUSABLE_LOCK_PATH))) {
+      throw new Error('export-deliverables runs on the source repository only; generated products need a projected-ledger mode first');
+    }
+    ledgerMode = 'projected';
   }
   const io = inputReader(root);
+  let projection = null;
+  let lock = null;
+  if (ledgerMode === 'projected') {
+    projection = io.json(PROJECTION_METADATA_PATH);
+    lock = io.json(REUSABLE_LOCK_PATH);
+    verifyProjectedProductMetadata(projection, lock);
+  }
+
   const [{ loadProjectComposerCatalog }, { requiresClosure, sourceOwner, javaSourceFiles }, { loadComposerModules }] = await Promise.all([
     import('./project-composer-catalog.mjs'), import('./project-composer-integrations.mjs'), import('./composer-modules.mjs')]);
   const catalog = loadProjectComposerCatalog(root);
@@ -534,24 +1041,51 @@ export async function loadInputs(root = ROOT, { rtm, compare } = {}) {
   io.record(`(생산 Java ${files.length}개)`, sha256(files.map((file) => `${file.path}\t${textSha256(readFileSync(join(root, file.path), 'utf8'))}\n`).join('')));
   io.record('(생성기 카탈로그 기능 선언·소스 목록)', sha256(`${catalog.provenance.modulesHash}\n${catalog.provenance.sourceInventoryHash}\n`));
   const { e2e, tests } = await loadTraceInputs(root, { digest: textSha256, record: io.record, assertAllowed: assertAllowedInput });
+  const isTracked = (path) => {
+    try { execFileSync('git', ['ls-files', '--error-unmatch', '--', `:(icase)${path}`], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
+  };
   let requirements;
   if (rtm !== undefined) {
     // 기관 요구사항 추적 CSV 는 커밋하지 않는 실행 인자다. 내용의 해시만 남기고 경로는 manifest 에 싣지 않는다.
     // 추적 판정은 대소문자를 가리지 않는다(:(icase)) — Windows 에서는 대소문자만 다른 경로도 같은 파일을 연다.
-    const text = readRequirementFile(root, resolve(rtm), { assertAllowed: assertAllowedInput, tracked: (path) => {
-      try { execFileSync('git', ['ls-files', '--error-unmatch', '--', `:(icase)${path}`], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
-    } });
+    const text = readRequirementFile(root, resolve(rtm), { assertAllowed: assertAllowedInput, tracked: isTracked });
     requirements = readRequirements(text);
     io.record('(실행 인자) 기관 요구사항 추적 CSV', textSha256(text));
   }
+  let backlogPack;
+  if (backlog !== undefined) {
+    const text = readRequirementFile(root, resolve(backlog), { label: 'requirements backlog JSON', assertAllowed: assertAllowedInput, tracked: isTracked });
+    try {
+      backlogPack = JSON.parse(text);
+    } catch (error) {
+      const pos = String(error?.message ?? '').match(/position \d+|line \d+(?: column \d+)?/iu)?.[0] ?? 'syntax error';
+      throw new Error(`requirements backlog JSON is not valid JSON (${pos})`);
+    }
+    if (!backlogPack || typeof backlogPack !== 'object' || Array.isArray(backlogPack) || backlogPack.kind !== 'egov-enterprise-requirements-backlog') {
+      throw new Error('requirements backlog JSON must be a valid egov-enterprise-requirements-backlog object');
+    }
+    io.record('(실행 인자) 기관 요구사항 백로그 JSON', textSha256(text));
+    if (requirements === undefined) {
+      requirements = backlogToRtmRows(backlogPack);
+    }
+  }
   let baseline;
   if (compare !== undefined) {
-    const text = readRequirementFile(root, resolve(compare), { label: 'baseline manifest', assertAllowed: assertAllowedInput, tracked: (path) => {
-      try { execFileSync('git', ['ls-files', '--error-unmatch', '--', `:(icase)${path}`], { cwd: root, stdio: 'ignore' }); return true; } catch { return false; }
-    } });
+    const text = readRequirementFile(root, resolve(compare), { label: 'baseline manifest', assertAllowed: assertAllowedInput, tracked: isTracked });
     baseline = readBaselineManifest(text);
     io.record('(실행 인자) 기준선 manifest.json', textSha256(text));
   }
+  const requireMigrationReview = ledgerMode === 'source' || Boolean(projection?.migrationEnvironmentReview !== false && !lock?.vendorProjection);
+  const migrationAdoptionReview = (requireMigrationReview || existsSync(join(root, 'config/governance/migration-adoption-review.json')))
+    ? io.json('config/governance/migration-adoption-review.json')
+    : null;
+  const dbColumns = existsSync(join(root, 'db_columns.json'))
+    ? io.json('db_columns.json')
+    : null;
+  const gates = existsSync(join(root, 'config/governance/gates.json'))
+    ? io.json('config/governance/gates.json')
+    : null;
+
   return {
     inputs: {
       catalog: io.json('config/governance/permission-catalog.json'),
@@ -567,8 +1101,12 @@ export async function loadInputs(root = ROOT, { rtm, compare } = {}) {
       zdmWaivers: io.json('config/governance/zdm-waivers.json'),
       urlApproval: io.json('config/ui-url-state-approval.json'),
       adoptionReview: io.json('config/governance/adoption-review.json'),
-      migrationAdoptionReview: io.json('config/governance/migration-adoption-review.json'),
-      files, ownerOf, moduleFiles: modules.files, e2e, tests, requirements, baseline,
+      migrationAdoptionReview,
+      dbColumns,
+      gates,
+      ledgerMode,
+      projection,
+      files, ownerOf, moduleFiles: modules.files, e2e, tests, requirements, backlogPack, baseline,
     },
     inputList: io.list(),
   };
@@ -606,13 +1144,13 @@ export function assertCompareOutsideOutput(targetDir, comparePath) {
   }
 }
 
-export async function exportDeliverables({ root = ROOT, allowDirty = false, out, db = false, rtm, compare } = {}) {
+export async function exportDeliverables({ root = ROOT, allowDirty = false, out, db = false, rtm, compare, backlog } = {}) {
   const commit = git(root, ['rev-parse', 'HEAD']);
   const cleanTree = git(root, ['status', '--porcelain']) === '';
   if (!cleanTree && !allowDirty) throw new Error('working tree is not clean — commit first, or pass --allow-dirty for a preview');
   const target = resolveOutput(root, out ?? `${OUTPUT_ROOT}/${commit.slice(0, 12)}${cleanTree ? '' : '-dirty'}`);
   assertCompareOutsideOutput(target, compare);
-  const { inputs, inputList } = await loadInputs(root, { rtm, compare });
+  const { inputs, inputList } = await loadInputs(root, { rtm, compare, backlog });
   const sheets = buildSheets(inputs);
   const extras = [];
   let database;
@@ -634,8 +1172,8 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out,
       throw error;
     }
   });
-  const { files, digest } = renderPackage(sheets, { commit, cleanTree, toolchain: toolchain(root), inputs: inputList, lockfiles, database,
-    requirements: inputs.requirements !== undefined, baseline: inputs.baseline }, extras);
+  const { files, digest } = renderPackage(sheets, { commit, cleanTree, ledgerMode: inputs.ledgerMode, toolchain: toolchain(root), inputs: inputList, lockfiles, database,
+    requirements: inputs.requirements !== undefined && rtm !== undefined, backlog: inputs.backlogPack !== undefined, baseline: inputs.baseline }, extras);
   rmSync(target, { recursive: true, force: true });
   mkdirSync(target, { recursive: true });
   for (const [path, text] of files) writeFileSync(join(target, path), text);
@@ -648,13 +1186,15 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
   const out = valueOf('--out');
   const rtm = valueOf('--rtm');
   const compare = valueOf('--compare');
+  const backlog = valueOf('--backlog');
   const known = new Set(['--allow-dirty', '--db', ...(args.includes('--out') ? ['--out', out] : []), ...(args.includes('--rtm') ? ['--rtm', rtm] : []),
-    ...(args.includes('--compare') ? ['--compare', compare] : [])]);
-  if ((args.includes('--out') && !out) || (args.includes('--rtm') && !rtm) || (args.includes('--compare') && !compare) || args.some((arg) => !known.has(arg))) {
-    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--compare <기준선 manifest.json>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
+    ...(args.includes('--compare') ? ['--compare', compare] : []), ...(args.includes('--backlog') ? ['--backlog', backlog] : [])]);
+  if ((args.includes('--out') && !out) || (args.includes('--rtm') && !rtm) || (args.includes('--compare') && !compare)
+    || (args.includes('--backlog') && !backlog) || args.some((arg) => !known.has(arg))) {
+    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--backlog <기관 요구사항 백로그 JSON>] [--compare <기준선 manifest.json>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
     process.exit(2);
   }
-  const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out, db: args.includes('--db'), rtm, compare });
+  const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out, db: args.includes('--db'), rtm, compare, backlog });
   console.log(`산출물 초안 ${result.files}개 파일: ${relative(ROOT, result.target).split(sep).join('/')}`);
   console.log(`내용 다이제스트: ${result.digest}`);
 }

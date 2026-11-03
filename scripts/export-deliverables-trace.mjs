@@ -76,12 +76,25 @@ export function traceSheet({ moduleFiles, routes, registry, policies, e2e, requi
     const base = { feature: ownersOf(route.route), route: route.route, e2e: e2eCandidates(route.route, route.source, e2e), operations };
     const capabilities = route.capabilities ?? [];
     if (capabilities.length === 0) {
-      rows.push({ ...base, capability: BLANK_JOIN, status: route.status, evidenceLevel: BLANK_JOIN, evidence: [], requirements: requirementIds.get(route.route) ?? [] });
+      rows.push({
+        ...base,
+        capability: BLANK_JOIN,
+        status: route.status,
+        evidenceLevel: BLANK_JOIN,
+        evidence: [],
+        requirements: [...new Set(requirementIds.get(route.route) ?? [])].sort(byText),
+      });
     }
     for (const capability of capabilities) {
       const id = `${route.route}#${capability.id}`;
-      rows.push({ ...base, capability: id, status: capability.status, evidenceLevel: capability.evidenceLevel, evidence: capability.evidence ?? [],
-        requirements: [...new Set([...(requirementIds.get(route.route) ?? []), ...(requirementIds.get(id) ?? [])])].sort(byText) });
+      rows.push({
+        ...base,
+        capability: id,
+        status: capability.status,
+        evidenceLevel: capability.evidenceLevel,
+        evidence: capability.evidence ?? [],
+        requirements: [...new Set([...(requirementIds.get(route.route) ?? []), ...(requirementIds.get(id) ?? [])])].sort(byText),
+      });
     }
   }
   return {
@@ -161,8 +174,35 @@ export function readRequirements(text) {
 }
 
 /** 기관 요구사항이 가리키는 대상이 저장소에 있는지. 찾지 못한 대상을 숨기지 않고 원장 상태·증거 수준과 계획·인수 열을 분리해 보인다. */
-export function requirementSheet(requirements, { screens, capabilities, interfaces, capabilityMap = new Map(), screenMap = new Map() }) {
-  const kindOf = (target) => (capabilities.has(target) ? '역량' : screens.has(target) ? '화면' : interfaces.has(target) ? '인터페이스' : null);
+export function requirementSheet(
+  requirements,
+  {
+    screens = new Set(),
+    capabilities = new Set(),
+    interfaces = new Set(),
+    tables = new Set(),
+    gates = new Set(),
+    migrationMappings = new Set(),
+    capabilityMap = new Map(),
+    screenMap = new Map(),
+    interfaceMap = new Map(),
+    tableMap = new Map(),
+    gateMap = new Map(),
+    migrationMappingMap = new Map(),
+  },
+) {
+  const lowerTables = new Set([...tables].map((t) => String(t).toLowerCase()));
+  const lowerTableMap = new Map([...tableMap.entries()].map(([k, v]) => [String(k).toLowerCase(), v]));
+  const kindOf = (target) => {
+    const lowerTarget = String(target ?? '').toLowerCase();
+    return capabilities.has(target) ? '역량'
+      : screens.has(target) ? '화면'
+        : interfaces.has(target) ? '인터페이스'
+          : (tables.has(target) || lowerTables.has(lowerTarget)) ? '테이블'
+            : gates.has(target) ? '게이트'
+              : migrationMappings.has(target) ? '이관 매핑'
+                : null;
+  };
   const hasExtended = requirements.some((row) => row.requirementType || row.solutionDisposition || row.scopeDisposition
     || row.workItemId || row.acId || row.linkIntent || row.acceptanceDisposition);
   const columns = [
@@ -186,20 +226,25 @@ export function requirementSheet(requirements, { screens, capabilities, interfac
   return {
     id: 'requirements-trace', title: '요구사항 추적 조인', sources: ['(실행 인자) 기관 요구사항 추적 CSV'],
     notices: [
-      '기관이 넘긴 요구사항 추적 CSV 를 저장소의 화면·역량·인터페이스 ID 와 이은 결과다. 찾지 못한 대상은 "찾음" 칸이 아니오다.',
-      '요구사항의 충족 판정이 아니다 — 대상이 저장소에 있다는 것만 보이며, 원장 상태(partial·unverified 등)·증거 수준(E0~E5)과 기관 인수 판정을 분리해 확인한다.',
+      '기관이 넘긴 요구사항 추적 CSV 를 저장소의 화면·역량·인터페이스·테이블·게이트·이관 매핑 ID 와 이은 결과다. 찾지 못한 대상은 "찾음" 칸이 아니오다.',
+      '요구사항의 충족 판정이 아니다 — 대상이 저장소에 있다는 것만 보이며, 원장 상태(partial·unverified·unavailable·demo 등)·증거 수준(E0~E3)과 기관 인수 판정을 분리해 확인한다.',
     ],
     columns,
     rows: requirements.map((row) => {
       const kind = kindOf(row.target);
+      const lowerTarget = String(row.target ?? '').toLowerCase();
       const cap = kind === '역량' ? capabilityMap.get(row.target) : null;
       const scr = kind === '화면' ? screenMap.get(row.target) : null;
+      const iface = kind === '인터페이스' ? interfaceMap.get(row.target) : null;
+      const tbl = kind === '테이블' ? (tableMap.get(row.target) ?? lowerTableMap.get(lowerTarget)) : null;
+      const gate = kind === '게이트' ? gateMap.get(row.target) : null;
+      const mig = kind === '이관 매핑' ? migrationMappingMap.get(row.target) : null;
       return {
         ...row,
         kind,
         found: kind !== null,
-        ledgerStatus: cap?.status ?? scr?.status ?? null,
-        evidenceLevel: cap?.evidenceLevel ?? null,
+        ledgerStatus: cap?.status ?? scr?.status ?? iface?.status ?? tbl?.status ?? gate?.status ?? mig?.status ?? null,
+        evidenceLevel: cap?.evidenceLevel ?? iface?.evidenceLevel ?? gate?.evidenceLevel ?? null,
       };
     }),
   };

@@ -1399,6 +1399,7 @@ const workflowSkills = [
   // [2026-10-27] 동작 확인·CI 판별 실행 스킬도 같은 상위 권위를 가리킨다.
   'verify-app',
   'ci-triage',
+  'requirements-intake',
 ];
 const workflowInstructionRegressions = [
   ['unscoped npm test', /^\s*(?:\$\s*)?npm test\b/mu],

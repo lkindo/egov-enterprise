@@ -60,14 +60,22 @@ const TRACE_INPUTS = {
   e2e: { gotoIndex: new Map(), impactRules: [] },
 };
 
-test('the trace view links what it can and leaves unlinked cells empty', () => {
-  const sheet = traceSheet({ ...TRACE_INPUTS, requirements: [{ id: 'REQ-1', target: '/things' }, { id: 'REQ-2', target: '/things#thing.list' }] });
+test('the trace view links direct route and capability requirements without conflating inferred write operations', () => {
+  const sheet = traceSheet({
+    ...TRACE_INPUTS,
+    requirements: [
+      { id: 'REQ-1', target: '/things' },
+      { id: 'REQ-2', target: '/things#thing.list' },
+      { id: 'REQ-API-1', target: 'POST /api/things' },
+    ],
+  });
   assert.deepEqual(sheet.rows.map((row) => [row.route, row.capability]), [['/things', '/things#thing.list'], ['/things/new', null]]);
   const [list, create] = sheet.rows;
   assert.deepEqual(list.feature, ['thing']);
   assert.deepEqual(list.requirements, ['REQ-1', 'REQ-2']);
   assert.deepEqual(list.operations, []);
   assert.deepEqual(create.operations, ['POST /api/things']);
+  assert.deepEqual(create.requirements, []);
   assert.equal(create.evidenceLevel, null);
   assert.deepEqual(create.e2e, []);
   assert.match(sheet.notices.join('\n'), /그 시험이 그 역량을 단언한다는 뜻이 아니다/u);
@@ -284,6 +292,35 @@ test('requirementSheet surfaces ledgerStatus, evidenceLevel and extended workspa
       ['REQ-1', true, 'partial', 'E1', 'fit', 'existing', 'pending'],
       ['REQ-2', false, null, null, 'gap-dev', 'planned', 'pending'],
       ['REQ-3', false, null, null, 'hybrid', 'planned', 'pending'],
+    ],
+  );
+
+  const extendedReqs = readRequirements([
+    '요구사항 ID,대상 ID,요구사항 이름',
+    'REQ-IF,POST /api/things,등록 API',
+    'REQ-TB,TB_POPUP_INFO,팝업 테이블(대문자 표기)',
+    'REQ-GT,GH-API-DOCS-PATH-COVERAGE,인가 계약 게이트',
+    'REQ-MG,migration:tb_popup_info,팝업 이관 매핑(원장 없음)',
+  ].join('\n'));
+  const extSheet = requirementSheet(extendedReqs, {
+    screens: new Set(),
+    capabilities: new Set(),
+    interfaces: new Set(['POST /api/things']),
+    tables: new Set(['tb_popup_info']),
+    gates: new Set(['GH-API-DOCS-PATH-COVERAGE']),
+    migrationMappings: new Set(),
+    interfaceMap: new Map([['POST /api/things', { status: null, evidenceLevel: null }]]),
+    tableMap: new Map([['tb_popup_info', { status: 'declared+schema', evidenceLevel: null }]]),
+    gateMap: new Map([['GH-API-DOCS-PATH-COVERAGE', { status: 'fast', evidenceLevel: 'verify-governance' }]]),
+    migrationMappingMap: new Map(),
+  });
+  assert.deepEqual(
+    extSheet.rows.map((r) => [r.id, r.kind, r.found, r.ledgerStatus, r.evidenceLevel]),
+    [
+      ['REQ-IF', '인터페이스', true, null, null],
+      ['REQ-TB', '테이블', true, 'declared+schema', null],
+      ['REQ-GT', '게이트', true, 'fast', 'verify-governance'],
+      ['REQ-MG', null, false, null, null],
     ],
   );
 });
