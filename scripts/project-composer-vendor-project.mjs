@@ -37,12 +37,18 @@ export function renderFlywayMigration(statements) {
   return `${statements.map(({ sql, raw }) => (raw ? `${sql}\n/` : `${sql};`)).join('\n')}\n`;
 }
 
-/** 스키마·시드·다음 값 맞춤을 문장 한 벌로 잇는다. 적용 순서가 곧 이 순서다. */
-export function vendorMigrationStatements(vendorId, input) {
+/**
+ * 스키마·시드·다음 값 맞춤을 문장 한 벌로 잇는다. 적용 순서가 곧 이 순서다.
+ * 모델 유래 저하는 실제 모델이 있어야 전부 보인다. 화면과 README 가 말하지 않는 저하를 담은 문장은 내지 않는다 — 쓰는 문장과 같은 번역 결과로 대조한다.
+ */
+export function vendorMigrationStatements(vendorId, input, ledger) {
   const adapter = VENDOR_ADAPTERS[vendorId];
   if (!adapter) throw new Error(`어댑터가 없는 벤더: ${vendorId}`);
   const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
-  return [...adapter.emitSchema(model).statements,
+  const schema = adapter.emitSchema(model);
+  const unshown = unshownDegradations(ledger.vendors.find(vendor => vendor.id === vendorId), schema.degradations);
+  if (unshown.length) throw new Error(`표시 문장이 없는 벤더 저하: ${unshown.join(', ')}. config/db-vendors.json 의 notices 에 더한다.`);
+  return [...schema.statements,
     ...adapter.emitSeed(model, input.rows).map(sql => ({ sql })),
     ...adapter.emitSequenceSync(model, input.rows).map(sql => ({ sql }))];
 }
@@ -159,12 +165,10 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger
 export function projectVendorSources(output, { vendorId, input, inputText, layout }) {
   if (!VENDOR_SOURCE[vendorId]) throw new Error(`소스 투영이 없는 벤더: ${vendorId}`);
   const { location, migration } = vendorBaselinePaths(vendorId);
-  // 모델 유래 저하는 실제 모델이 있어야 전부 보인다. 화면과 README 가 말하지 않는 저하를 담은 프로젝트를 만들지 않는다.
   const ledger = loadVendorLedger(output);
-  const unshown = unshownDegradations(ledger.vendors.find(vendor => vendor.id === vendorId), VENDOR_ADAPTERS[vendorId].emitSchema(buildVendorModel({ snapshot: input.snapshot, extras: input.extras })).degradations);
-  if (unshown.length) throw new Error(`표시 문장이 없는 벤더 저하: ${unshown.join(', ')}. config/db-vendors.json 의 notices 에 더한다.`);
+  // 저하 대조가 멈추면 아무것도 쓰지 않은 채 멈춘다.
+  const statements = vendorMigrationStatements(vendorId, input, ledger);
   mkdirSync(join(output, RESOURCES, vendorMigrationLocation(vendorId)), { recursive: true });
-  const statements = vendorMigrationStatements(vendorId, input);
   writeFileSync(join(output, migration), renderFlywayMigration(statements), 'utf8');
   // 생성물 검증이 같은 입력으로 벤더 DB 를 올린다. 잠금이 번들과 이 파일을 묶는다.
   const inputPath = vendorInputPath(vendorId);

@@ -31,7 +31,7 @@ import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorD
 import { composerProfile } from './project-composer-source.mjs';
 import { asPreviewOracle, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
-import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
+import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, projectVendorSources, renderFlywayMigration, VENDOR_SOURCE,
   VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
@@ -532,7 +532,7 @@ test('every degradation an adapter can declare has a sentence in the ledger, in 
   }
 });
 
-test('certification needs the sentences the screen shows, and the wiring keeps them on the generation path', t => {
+test('certification needs the sentences the screen shows', t => {
   const certified = change => () => loadVendorLedger(ledgerCopy(t, vendor => { certifyVendor(vendor('oracle')); change(vendor('oracle').notices); }));
   assert.doesNotThrow(certified(() => {}));
   assert.throws(certified(notices => { notices.degradations = notices.degradations.filter(row => row.kind !== 'empty-string'); }), /oracle: 표시 문장이 없는 저하\(empty-string\)/);
@@ -542,9 +542,39 @@ test('certification needs the sentences the screen shows, and the wiring keeps t
   assert.throws(certified(notices => { delete notices.degradations; }), /oracle: 화면에 보일 저하·이미지 안내\(notices\)가 없다/);
   assert.throws(() => loadVendorLedger(ledgerCopy(t, (vendor, ledger) => { certifyVendor(vendor('oracle')); delete ledger.removedPostgresTools; })), /oracle: 빠지는 도구의 표시 문장\(removedPostgresTools\)이 없다/);
   assert.doesNotThrow(() => loadVendorLedger(ledgerCopy(t, vendor => { delete vendor('oracle').notices; })), 'preview 는 문장 없이도 그대로다');
-  const tool = readFileSync(join(ROOT, 'scripts/project-composer-vendor-project.mjs'), 'utf8');
-  assert.match(tool, /^ *const unshown = unshownDegradations\(/m, '실제 모델의 저하를 생성할 때 대조한다');
-  assert.match(tool, /^ *if \(unshown\.length\) throw new Error\(/m, '문장 없는 저하가 있으면 멈춘다');
+});
+
+/** 시험 스냅숏에 부분 인덱스 하나를 더한다. 유일 여부만 바꿔 저하와 번역 불가를 가른다. */
+const withPartialIndex = unique => {
+  const value = snapshot();
+  value.indexes.push({ table_name: 't_child', name: 'ix_t_child_owner_live',
+    definition: `CREATE ${unique ? 'UNIQUE ' : ''}INDEX ix_t_child_owner_live ON public.t_child USING btree (owner) WHERE (parent_id IS NOT NULL)` });
+  return value;
+};
+
+// 계획에는 모델이 없어 모델 유래 저하는 생성할 때만 전부 보인다. 생성 경로 자체를 돌려 대조가 쓰기 전에 멈추는지 본다.
+test('generation stops before writing anything when the real model has a degradation the screen does not show', t => {
+  const input = { snapshot: withPartialIndex(false), extras, rows: {} };
+  const project = directory => () => projectVendorSources(directory, { vendorId: 'oracle', input, inputText: '{}', layout: 'multi-module' });
+  const unshown = ledgerCopy(t, vendor => { vendor('oracle').notices.degradations = vendor('oracle').notices.degradations.filter(row => row.kind !== 'partial'); });
+  assert.throws(project(unshown), { message: '표시 문장이 없는 벤더 저하: partial. config/db-vendors.json 의 notices 에 더한다.' });
+  assert.deepEqual(readdirSync(unshown), ['config'], '멈추기 전에 아무것도 쓰지 않는다');
+  // 문장이 있으면 대조를 지나 기준선을 쓴다. 이 폴더에는 소스가 없어 첫 소스 파일을 읽을 때 멈춘다.
+  const shown = ledgerCopy(t, () => {});
+  assert.throws(project(shown), { code: 'ENOENT' });
+  assert.match(readFileSync(join(shown, vendorBaselinePaths('oracle').migration), 'utf8'), /^CREATE INDEX ix_t_child_owner_live ON t_child \(owner\);$/m);
+});
+
+test('a partial unique index stops the vendors that drop the condition instead of widening uniqueness', () => {
+  const unique = buildVendorModel({ snapshot: withPartialIndex(true), extras });
+  for (const adapter of [oracleAdapter, mysqlAdapter, mariadbAdapter, cubridAdapter]) {
+    assert.throws(() => adapter.emitSchema(unique), error => isGap(error) && error.message === 'ix_t_child_owner_live: 조건부 유일 인덱스는 조건 없이 옮길 수 없다', adapter.id);
+  }
+  // 조건을 그대로 옮기는 벤더는 막지 않는다.
+  assert.ok(mssqlAdapter.emitSchema(unique).statements.some(({ sql }) => /^CREATE UNIQUE INDEX ix_t_child_owner_live ON t_child \(owner\) WHERE /.test(sql)));
+  // 유일하지 않은 부분 인덱스는 지금처럼 성능 저하로 둔다.
+  const plain = oracleAdapter.emitSchema(buildVendorModel({ snapshot: withPartialIndex(false), extras }));
+  assert.ok(plain.degradations.some(row => row.name === 'ix_t_child_owner_live:partial'));
 });
 
 test('every removed asset and gate belongs to exactly one tool group shown before generating', () => {

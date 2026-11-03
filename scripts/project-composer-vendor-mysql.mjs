@@ -165,6 +165,8 @@ function emitSchemaFor(vendor, model) {
         emission.degrade(index.name, '부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려진다. 결과는 같다');
         continue;
       }
+      // 조건을 버린 UNIQUE 는 PostgreSQL 이 받는 행을 거부한다. 성능 저하가 아니라 뜻이 바뀌므로 저하로 두지 않는다.
+      if (index.where && index.unique) gap(`${index.name}: 조건부 유일 인덱스는 조건 없이 옮길 수 없다`);
       if (index.where) emission.degrade(`${index.name}:partial`, '부분 인덱스가 없어 일반 인덱스로 둔다. 유일성이 없어 성능만 달라진다');
       if (index.columns.some(column => column.expression === 'trim')) {
         const [{ name }] = index.columns;
