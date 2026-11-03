@@ -634,7 +634,7 @@ Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행
 
 승격은 원장의 `status` 를 `certified` 로 바꾸고 사유를 걷은 것과 승격 표시 시험 한 줄이다. 제품 코드는 바꾸지 않았다. 화면·서버·엔진·두 생성기 입구가 원장을 그대로 읽어 Oracle 이 선택지에 열린다. 선택지는 벤더 하나이고 19c 는 증거만 둔다(DEC-OPS-400 ②). 생성물의 개발 compose 는 23 계열 이미지를 쓴다.
 
-승격 뒤로는 Oracle 인증 입력을 바꾼 변경이 `regen --check` 와 계약 시험에서 `VENDOR_EVIDENCE_STALE` 로 붉다. 입력은 지금 507개 파일이다: 마이그레이션, 업무 코드의 엔티티와 쿼리 호출 지점, 벤더에서 도는 시험과 대표 E2E, 설정 등(§7). 그런 변경은 증거를 다시 기록하거나(이 기계에서 생성과 두 엔진 기록에 약 76분) Oracle 을 `preview` 로 내리고 사유를 적는다.
+승격 뒤로는 Oracle 인증 입력을 바꾼 변경이 `regen --check` 와 계약 시험에서 `VENDOR_EVIDENCE_STALE` 로 붉다. 입력은 지금 507개 파일이다: 마이그레이션, 업무 코드의 엔티티와 쿼리 호출 지점, 벤더에서 도는 시험과 대표 E2E, 설정 등(§7). 그런 변경은 증거를 다시 기록하거나(이 기계에서 생성과 두 엔진 기록에 약 76분) Oracle 을 `preview` 로 내리고 사유를 적는다. 내릴 때는 승격 표시 시험(`project-composer-vendor.test.mjs` 의 `selectableVendors` 기대값)에서도 Oracle 을 뺀다. 안내 문구(`ledger-precheck.mjs`)가 둘을 함께 말한다.
 
 남은 일: 19c 준비 판정의 sqlplus 소요(호출별 제한 값의 근거. 로그에 호출별 시간이 남지 않는다), 다음 단계(§11 의 3, MariaDB·MySQL).
 
