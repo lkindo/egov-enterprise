@@ -64,6 +64,8 @@ node scripts/run-isolated-e2e.mjs --representative
 node scripts/run-isolated-e2e.mjs --representative --vendor-engine=oracle19
 ```
 
+PostgreSQL 생성물에서는 이 실행기가 앱 기동에서 멈춘다. 실행기가 켜는 권한 전환 리허설이 Flyway target 2.99 를 먼저 적용하는데 생성물의 `V1_0` 번들에는 그 버전이 없다([GAP-COMPOSE-003](../04-operations/known-gaps-detail.md#composer)). 벤더 생성물의 대표 묶음과 대조할 PostgreSQL 실행은 원본 저장소에서 같은 시험 파일로 돌린다. 2026-11-03 대조는 `node scripts/run-isolated-e2e.mjs -- --project=api-contract --project=full-suite <원장 representativeE2e 의 spec...>` 로 돌렸다.
+
 ### 3. 실행 설정 (`playwright.config.ts`)
 
 아래 값은 이해를 위한 요약이다. 실행 전 현재 `frontend/playwright.config.ts`를 정본으로 확인한다.
