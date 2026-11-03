@@ -189,8 +189,9 @@ function emitSchema(model) {
         emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));
         continue;
       }
-      // 유일 인덱스의 DESC 는 NULL 을 '00' 으로 담아 NULL 행끼리 중복이 된다(wholeKeyUniqueIndex). 유일 인덱스는 오름차순으로만 둔다.
-      const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${column.name}${column.descending && !index.unique ? ' DESC' : ''}`));
+      // 유일 인덱스의 DESC 는 NULL 을 '00' 으로 담아 NULL 행끼리 중복이 된다(wholeKeyUniqueIndex). NULL 이 들 수 있는 유일 인덱스만 오름차순으로 둔다.
+      const ascendingOnly = index.unique && index.columns.some(column => nullable(table, column.name));
+      const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${column.name}${column.descending && !ascendingOnly ? ' DESC' : ''}`));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);
       if (index.unique) emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));

@@ -626,6 +626,8 @@ test('an Oracle unique index keeps NULL rows apart by dropping DESC, which only 
   // NULL 허용 단일 컬럼의 내림차순 유일 인덱스는 NULL 두 행을 거부한다. PostgreSQL 은 받는다(Oracle 23 실측).
   assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_owner_desc', 'owner DESC', true)).includes('CREATE UNIQUE INDEX ix_t_child_owner_desc ON t_child (owner)'), 'oracle: 유일 인덱스는 오름차순');
   assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_owner_desc', 'owner DESC', false)).includes('CREATE INDEX ix_t_child_owner_desc ON t_child (owner DESC)'), 'oracle: 비유일 인덱스는 DESC 를 지킨다');
+  // NULL 이 들지 않는 키는 '00' 이 생기지 않으므로 정렬 방향을 지킨다.
+  assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_id_desc', 'id DESC', true)).includes('CREATE UNIQUE INDEX ix_t_child_id_desc ON t_child (id DESC)'), 'oracle: NOT NULL 유일 인덱스는 DESC 를 지킨다');
 });
 
 /** 시험 스냅숏의 t_child 문자열 길이를 바꾸고 컬럼·인덱스를 더한다. CUBRID 그림자 키의 길이 한계를 본다. */
@@ -648,6 +650,12 @@ test('the CUBRID shadow key stops when a value could be longer than the cast tha
   // 키 = 컬럼마다 '길이:값' 을 ':' 로 잇는다. 1100·1100·285 는 1105+1105+289+구분자 2 = 2501자, 284 면 2500자다.
   stopsWith(cubridAdapter, wide(285), 'ix_t_child_wide: 그림자 키가 2500자를 넘을 수 있어 유일성을 지켜 옮길 수 없다');
   assert.doesNotThrow(() => cubridAdapter.emitSchema(wide(284)), '이은 키가 2500자 안이면 옮긴다');
+  // 숫자는 부호·앞의 0·소수점까지 센다. numeric(1,1) 의 -0.9 는 4자라 1100·1100·278 과 이으면 2501자다.
+  const fraction = note => withShadowShape({ lengths: { url: 1100, owner: 1100 },
+    columns: [varchar('t_child', 'note', note, { position: 5 }), { ...column('t_child', 'rate', 'numeric', { position: 6 }), numeric_precision: 1, numeric_scale: 1 }],
+    indexes: [['ix_t_child_rate', 'url, owner, note, rate']] });
+  stopsWith(cubridAdapter, fraction(278), 'ix_t_child_rate: 그림자 키가 2500자를 넘을 수 있어 유일성을 지켜 옮길 수 없다');
+  assert.doesNotThrow(() => cubridAdapter.emitSchema(fraction(277)), '숫자를 넣어도 2500자 안이면 옮긴다');
 });
 
 test('a unique index a vendor could keep only by cutting its key or dropping its uniqueness stops the translation', () => {

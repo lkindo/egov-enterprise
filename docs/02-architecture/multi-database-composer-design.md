@@ -243,14 +243,14 @@ flowchart TD
 | 같은 인덱스 | SQL Server | `(occr_ymd DESC) INCLUDE (url)` |
 | NULL 허용 UNIQUE 8개 | SQL Server | 7개는 `WHERE ... IS NOT NULL` 필터 유일 인덱스. `domain_name` 은 FK 대상이라 필터 인덱스를 쓸 수 없어 UNIQUE 유지(NULL 1행 제한, 시드에 NULL 없음) |
 | 복합 NULL 허용 UNIQUE 6개 | Oracle | 모든 키가 NOT NULL 일 때만 값을 내는 `CASE` 함수 기반 유일 인덱스 |
-| 같은 6개 | CUBRID | 필터 UNIQUE 는 문법에서 막힌다. 그림자 키 컬럼 + AFTER 트리거 2개로 키를 채우고 진짜 UNIQUE 인덱스가 판정한다. 경합이 없다. 키는 `길이:값` 으로 이어 구분자 충돌이 없고, 수정 경로(중복 거부, NULL 전환, 재입력)까지 확인했다. 값은 컬럼마다 `VARCHAR(1100)`, 이은 키는 `VARCHAR(2500)` 이라 그보다 길 수 있는 키(길이를 모르는 타입 포함)는 잘려 다른 값이 같아지므로 번역을 멈춘다. 지금 스키마에서 가장 긴 키는 최대 1,029자다(합성 모델 시험만 있고 CUBRID 에서 실측하지 않았다) |
+| 같은 6개 | CUBRID | 필터 UNIQUE 는 문법에서 막힌다. 그림자 키 컬럼 + AFTER 트리거 2개로 키를 채우고 진짜 UNIQUE 인덱스가 판정한다. 경합이 없다. 키는 `길이:값` 으로 이어 구분자 충돌이 없고, 수정 경로(중복 거부, NULL 전환, 재입력)까지 확인했다. 값은 컬럼마다 `VARCHAR(1100)`, 이은 키는 `VARCHAR(2500)` 이라 그보다 길 수 있는 키(길이를 모르는 타입 포함)는 잘려 다른 값이 같아지므로 번역을 멈춘다. 숫자는 부호·앞의 0·소수점까지 정밀도 + 3자로 센다. 지금 스키마에서 가장 긴 키는 최대 1,029자다(합성 모델 시험만 있고 CUBRID 에서 실측하지 않았다) |
 | 정규식 CHECK 8개 | SQL Server 2022 | `LIKE` + `DATALENGTH` 로 정확히 번역. `LEN` 은 뒤 공백을 세지 않으므로 쓰지 않는다 |
 | 글자 수 CHECK 4개 | SQL Server | `_SC` 콜레이션의 `LEN(x + N'.') - 1`. 이모지를 한 글자로 세고 뒤 공백도 센다 |
 | 900바이트 넘는 복합 PK | SQL Server | `pk_meta_standard_words` 를 NONCLUSTERED 로 |
 | 표현식 인덱스 `btrim(ocrn_ymd)` | 벤더별 | Oracle·CUBRID 함수 기반, MySQL 함수 키, MariaDB·SQL Server 계산 컬럼 |
 | 부분 인덱스 `ix_tb_menu_info_del_yn` | Oracle, MySQL, MariaDB, CUBRID | 일반 인덱스로. 유일성이 없어 성능만 달라진다. 조건부 유일 인덱스는 조건을 버리면 PostgreSQL 이 받는 행을 거부하므로 저하로 두지 않고 번역을 멈춘다(지금 스키마에는 없다) |
 | 독립 UNIQUE 인덱스(복합, NULL 허용 키) | Oracle, CUBRID | 같은 어댑터가 유일 제약에 쓰는 `CASE` 함수 인덱스·그림자 키로 옮긴다. 키에 식이 있으면 NULL 의미를 지킬 수 없어 번역을 멈춘다(지금 스키마에는 독립 UNIQUE 인덱스가 없다. 합성 모델 시험만 있고 실측하지 않았다) |
-| UNIQUE 인덱스의 `DESC` 열 | Oracle | 오름차순으로 옮긴다. 내림차순 열은 NULL 을 `'00'` 으로 담아, PostgreSQL 이 받는 `(NULL, 1)` 두 행과 NULL 허용 단일 컬럼의 NULL 두 행을 거부한다. 같은 정의를 오름차순으로 두면 둘 다 받고 꽉 찬 키의 중복은 거부한다(2026-11-03 Oracle 23 실측). 순서는 유일성과 무관하다. 유일하지 않은 인덱스는 `DESC` 를 지킨다 |
+| NULL 이 들 수 있는 UNIQUE 인덱스의 `DESC` 열 | Oracle | 오름차순으로 옮긴다. 내림차순 열은 NULL 을 `'00'` 으로 담아, PostgreSQL 이 받는 `(NULL, 1)` 두 행과 NULL 허용 단일 컬럼의 NULL 두 행을 거부한다. 같은 정의를 오름차순으로 두면 둘 다 받고 꽉 찬 키의 중복은 거부한다(2026-11-03 Oracle 23 실측). 순서는 유일성과 무관하고, 섞인 정렬 방향을 쓰는 조회만 그 인덱스 순서를 잃는다. 키가 모두 NOT NULL 인 유일 인덱스와 유일하지 않은 인덱스는 `DESC` 를 지킨다(지금 스키마에는 독립 UNIQUE 인덱스가 없다) |
 | 독립 UNIQUE 인덱스(NULL 허용 키) | SQL Server | 유일 제약처럼 `WHERE … IS NOT NULL` 로 걸러 NULL 이 든 행을 여럿 받는다. 부분 인덱스면 그 조건 뒤에 붙인다(지금 스키마에는 없다. 실측하지 않았다) |
 | 접두로 잘라야 하는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | MySQL, MariaDB | 번역을 멈춘다. 접두는 앞부분이 같은 정상 값을 거부하고, 식 인덱스의 번역(함수 키·계산 컬럼)은 유일하지 않다. 유일하지 않은 인덱스는 지금처럼 접두로 둔다(지금 스키마에는 없다) |
 | 1,700바이트를 넘는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | SQL Server | 번역을 멈춘다. 인덱스를 빼거나 긴 컬럼을 INCLUDE 로 옮기면 유일성이 사라진다. 유일하지 않은 인덱스는 지금처럼 빼거나 INCLUDE 로 둔다(지금 스키마에는 없다) |

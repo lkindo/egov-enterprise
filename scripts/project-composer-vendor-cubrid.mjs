@@ -86,7 +86,8 @@ function shadowTextLength({ type }) {
     case 'uuid': return 36;
     case 'bigint': return 20;
     case 'integer': return 11;
-    case 'numeric': return (type.precision ?? 38) + 2;
+    // 부호·앞의 0·소수점: numeric(1,1) 의 -0.9 는 정밀도보다 3자 길다.
+    case 'numeric': return (type.precision ?? 38) + 3;
     case 'date': case 'timestamp': return 64;
     default: return null;
   }
