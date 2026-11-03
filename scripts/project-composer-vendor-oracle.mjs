@@ -117,10 +117,13 @@ BEGIN
   END IF;
 END;`;
 
-/** 복합 UNIQUE 는 일부만 NULL 인 행도 중복으로 본다. PostgreSQL 은 허용하므로 모든 키가 찼을 때만 값을 내는 인덱스로 옮긴다. */
+/**
+ * 복합 UNIQUE 는 일부만 NULL 인 행도 중복으로 본다. PostgreSQL 은 허용하므로 모든 키가 찼을 때만 값을 내는 인덱스로 옮긴다.
+ * 유일 인덱스에는 DESC 를 두지 않는다 — 내림차순 열은 NULL 을 '00' 으로 담아 NULL 행끼리 다시 중복이 된다(Oracle 23 실측). 순서는 유일성과 무관하다.
+ */
 function wholeKeyUniqueIndex(emission, table, name, columns) {
   const whole = columns.map(column => `${column.name} IS NOT NULL`).join(' AND ');
-  emission.sql(`CREATE UNIQUE INDEX ${name} ON ${table.name} (${columns.map(column => `CASE WHEN ${whole} THEN ${column.name} END${column.descending ? ' DESC' : ''}`).join(', ')})`);
+  emission.sql(`CREATE UNIQUE INDEX ${name} ON ${table.name} (${columns.map(column => `CASE WHEN ${whole} THEN ${column.name} END`).join(', ')})`);
   emission.expect('indexes', table.name, name);
   emission.cover(name, 'function-based-unique-index');
 }
@@ -186,7 +189,8 @@ function emitSchema(model) {
         emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));
         continue;
       }
-      const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${column.name}${column.descending ? ' DESC' : ''}`));
+      // 유일 인덱스의 DESC 는 NULL 을 '00' 으로 담아 NULL 행끼리 중복이 된다(wholeKeyUniqueIndex). 유일 인덱스는 오름차순으로만 둔다.
+      const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${column.name}${column.descending && !index.unique ? ' DESC' : ''}`));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);
       if (index.unique) emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));

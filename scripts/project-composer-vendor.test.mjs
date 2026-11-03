@@ -601,8 +601,9 @@ test('a standalone unique index with a nullable key gets the treatment the vendo
   const unique = withIndex('ix_t_child_owner_parent', 'owner, parent_id DESC', true);
   const whole = 'owner IS NOT NULL AND parent_id IS NOT NULL';
   const oracle = oracleAdapter.emitSchema(unique);
-  assert.ok(oracle.statements.some(({ sql }) => sql === `CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (CASE WHEN ${whole} THEN owner END, CASE WHEN ${whole} THEN parent_id END DESC)`),
-    'oracle: 독립 유일 인덱스도 CASE 함수 인덱스로 옮긴다');
+  // DESC 는 두지 않는다. Oracle 의 내림차순 열은 NULL 을 '00' 으로 담아 (NULL, 1) 두 행을 다시 중복으로 거부한다(Oracle 23 실측).
+  assert.ok(oracle.statements.some(({ sql }) => sql === `CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (CASE WHEN ${whole} THEN owner END, CASE WHEN ${whole} THEN parent_id END)`),
+    'oracle: 독립 유일 인덱스도 CASE 함수 인덱스로 옮기고 DESC 는 두지 않는다');
   assert.deepEqual(oracle.uniqueColumns.get('t_child.ix_t_child_owner_parent'), ['owner', 'parent_id'], 'oracle: 키 대조가 함수 인덱스의 컬럼을 기대한다');
   const cubrid = statementsOf(cubridAdapter, unique);
   assert.ok(cubrid.includes('CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (uq_key_2)') && cubrid.includes('ALTER TABLE t_child ADD COLUMN uq_key_2 VARCHAR(2500)'),
@@ -619,6 +620,34 @@ test('a standalone unique index with a nullable key gets the treatment the vendo
   // Oracle 의 TRIM 은 공백뿐인 값을 NULL 로 만들고, CUBRID 그림자 키는 컬럼 값만 잇는다. 식 키는 NULL 의미를 지킬 수 없다.
   const expression = withModelIndex({ name: 'ix_t_child_trim_parent', unique: true, columns: [{ name: 'owner', expression: 'trim' }, { name: 'parent_id' }] });
   for (const adapter of [oracleAdapter, cubridAdapter]) stopsWith(adapter, expression, 'ix_t_child_trim_parent: 식이 든 복합 유일 인덱스는 NULL 의미를 지켜 옮길 수 없다');
+});
+
+test('an Oracle unique index keeps NULL rows apart by dropping DESC, which only the non-unique version keeps', () => {
+  // NULL 허용 단일 컬럼의 내림차순 유일 인덱스는 NULL 두 행을 거부한다. PostgreSQL 은 받는다(Oracle 23 실측).
+  assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_owner_desc', 'owner DESC', true)).includes('CREATE UNIQUE INDEX ix_t_child_owner_desc ON t_child (owner)'), 'oracle: 유일 인덱스는 오름차순');
+  assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_owner_desc', 'owner DESC', false)).includes('CREATE INDEX ix_t_child_owner_desc ON t_child (owner DESC)'), 'oracle: 비유일 인덱스는 DESC 를 지킨다');
+});
+
+/** 시험 스냅숏의 t_child 문자열 길이를 바꾸고 컬럼·인덱스를 더한다. CUBRID 그림자 키의 길이 한계를 본다. */
+const withShadowShape = ({ lengths = {}, columns = [], indexes = [] }) => {
+  const value = snapshot();
+  for (const [name, length] of Object.entries(lengths)) value.columns.find(row => row.table_name === 't_child' && row.column_name === name).character_maximum_length = length;
+  value.columns.push(...columns);
+  value.indexes.push(...indexes.map(([name, body]) => ({ table_name: 't_child', name, definition: `CREATE UNIQUE INDEX ${name} ON public.t_child USING btree (${body})` })));
+  return buildVendorModel({ snapshot: value, extras });
+};
+
+test('the CUBRID shadow key stops when a value could be longer than the cast that joins it', () => {
+  // 그림자 키는 값을 VARCHAR(1100) 으로 바꿔 VARCHAR(2500) 에 잇는다. 더 길면 잘리거나 거부돼 끝 글자만 다른 두 값을 같게 보거나 정상 행을 막는다.
+  assert.doesNotThrow(() => cubridAdapter.emitSchema(withShadowShape({ lengths: { url: 1100 } })), '한계 안의 유일 제약은 지금처럼 옮긴다');
+  stopsWith(cubridAdapter, withShadowShape({ lengths: { url: 1101 } }), 'uk_t_child_owner_url: 그림자 키에 1100자를 넘을 수 있는 컬럼이 있어 유일성을 지켜 옮길 수 없다');
+  stopsWith(cubridAdapter, withShadowShape({ columns: [column('t_child', 'memo', 'text', { position: 5 })], indexes: [['ix_t_child_owner_memo', 'owner, memo']] }),
+    'ix_t_child_owner_memo: 그림자 키에 1100자를 넘을 수 있는 컬럼이 있어 유일성을 지켜 옮길 수 없다');
+  // 컬럼마다 한계 안이어도 이은 키가 2500자를 넘을 수 있으면 멈춘다. 둘째 판은 길이 하나만 줄여 한계 안으로 들인다.
+  const wide = note => withShadowShape({ lengths: { url: 1100, owner: 1100 }, columns: [varchar('t_child', 'note', note, { position: 5 })], indexes: [['ix_t_child_wide', 'url, owner, note']] });
+  // 키 = 컬럼마다 '길이:값' 을 ':' 로 잇는다. 1100·1100·285 는 1105+1105+289+구분자 2 = 2501자, 284 면 2500자다.
+  stopsWith(cubridAdapter, wide(285), 'ix_t_child_wide: 그림자 키가 2500자를 넘을 수 있어 유일성을 지켜 옮길 수 없다');
+  assert.doesNotThrow(() => cubridAdapter.emitSchema(wide(284)), '이은 키가 2500자 안이면 옮긴다');
 });
 
 test('a unique index a vendor could keep only by cutting its key or dropping its uniqueness stops the translation', () => {
