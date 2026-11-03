@@ -356,6 +356,10 @@ springdoc:
   # 스펙은 `searchDto` 라는 객체 하나를 요구해, 스펙이 실제 API 를 서술하지 못했다.
   # 영향 범위는 실측으로 한정된다 — 객체 query 파라미터는 Pageable·BaseSearchDto 둘뿐이다(수는 api-docs.json 이 정본).
   default-flat-param-object: true
+  # 루트 build.gradle 이 swagger-ui webjar 를 springdoc 이 가져오는 판보다 올려 고정한다(DOMPurify 취약점).
+  # springdoc 은 자기 설정 파일(springdoc.config.properties)에 적힌 판의 경로에서 화면 파일을 찾으므로
+  # 고정한 판을 여기 적는다 — 다르면 /swagger-ui/index.html 이 404 다. 고정을 걷을 때 이 줄도 걷는다.
+  swagger-ui.version: 5.34.1
 
 # [W1-J1] 신뢰 프록시 경계 — X-Forwarded-For 를 어디까지 믿을 것인가.
 #

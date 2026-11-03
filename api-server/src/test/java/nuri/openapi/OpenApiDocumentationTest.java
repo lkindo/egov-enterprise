@@ -26,7 +26,9 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
     //   설정은 이 컨텍스트에 도달하지 못한다 — 산출 api-docs.json 이 런타임 스펙과 달라진다.
     //   @TestPropertySource 는 그 shadow 보다 우선하므로 여기서 다시 못박는다.
     //   ⚠ main application.yml 의 springdoc 블록과 반드시 동일하게 유지할 것.
-    "springdoc.default-flat-param-object=true"
+    "springdoc.default-flat-param-object=true",
+    // 루트 build.gradle 이 고정한 swagger-ui webjar 의 판. 다르면 아래 Swagger UI 시험이 404 로 붉다.
+    "springdoc.swagger-ui.version=5.34.1"
 })
 class OpenApiDocumentationTest {
 

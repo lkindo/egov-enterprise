@@ -290,6 +290,10 @@ subprojects { subproject ->
             implementation('com.sun.mail:jakarta.mail') { version { require '1.6.8' } }
             // googleauth:1.5.0(TOTP 2FA) 경유. httpclient 4.x 는 Boot 3.x BOM 관리 대상이 아니다.
             implementation('org.apache.httpcomponents:httpclient') { version { require '4.5.13' } }
+            // springdoc 3.2.0 경유. swagger-ui 5.34.0 webjar 의 번들 JS 가 DOMPurify 3.4.16 을 묶는다
+            // (GHSA-cg2g-xh64-v4q7 critical·GHSA-mrv2-3pqr-j5jr high, <3.4.17). 5.34.1 은 3.4.17 을 묶는다.
+            // 2026-11-03 추가(주간 Dependency-Check 의 RetireJS 발견), springdoc 이 5.34.1 이상을 가져오면 제거.
+            implementation('org.webjars:swagger-ui') { version { require '5.34.1' } }
         }
     }
 
