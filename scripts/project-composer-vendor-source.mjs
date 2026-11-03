@@ -9,8 +9,10 @@
  * MySQL 계열의 접속 인자. 세션 시간대를 한국 벽시계로 두어 NOW()·CURRENT_DATE 가 시간대 표 없이 한국 날짜가 되고, 연결 콜레이션을 표와 같은 이진 콜레이션으로 둔다
  * (2026-11-04 MySQL 8.4·MariaDB 11.4 실측). '+' 는 Connector/J 에 %2B 로, MariaDB 드라이버에 그대로 준 형태를 쟀다 — 드라이버마다 URL 해독이 달라 서로 바꿔 쓰지 않는다.
  * 생성물 접속 주소와 통합 시험 주소가 같은 값을 쓴다.
+ * MySQL 만 세션의 행 잠금 대기를 앱의 잠금 조회 상한(jakarta.persistence.lock.timeout 5초)과 같게 묶는다. Hibernate 의 MySQL 방언은 잠금 조회에 대기 시간을
+ * 싣지 못해 기본 50초를 기다렸다(2026-11-04 통합 시험). MariaDB 는 방언이 FOR UPDATE WAIT 를 써서 따로 두지 않는다. 계약 시험이 두 값을 대조한다.
  */
-const MYSQL_URL_PARAMETERS = "sessionVariables=time_zone='%2B09:00'&connectionCollation=utf8mb4_0900_bin";
+const MYSQL_URL_PARAMETERS = "sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin";
 const MARIADB_URL_PARAMETERS = "sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin";
 
 export const VENDOR_SOURCE = Object.freeze({

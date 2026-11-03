@@ -416,7 +416,7 @@ class ConfigSafetyLinterTest {
             "postgresql", "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)",
             "oracle", "jdbc:oracle:thin:@//db:1521/FREEPDB1)",
             "mariadb", "\"jdbc:mariadb://db:3306/egovdb?sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin\")",
-            "mysql", "\"jdbc:mysql://db:3306/egovdb?sessionVariables=time_zone='%2B09:00'&connectionCollation=utf8mb4_0900_bin\")");
+            "mysql", "\"jdbc:mysql://db:3306/egovdb?sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin\")");
 
     /** 첨부 실물이 컨테이너 쓰기 계층으로 되돌아가지 않도록 고정하는 api mount. */
     private static final Pattern ATTACHMENT_STORAGE_MOUNT = Pattern.compile(

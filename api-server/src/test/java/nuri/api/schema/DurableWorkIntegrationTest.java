@@ -35,7 +35,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.support.StaticListableBeanFactory;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.annotation.Import;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -419,7 +418,7 @@ class DurableWorkIntegrationTest {
         for (String terminal : List.of("SUCCEEDED", "FAILED")) {
             assertThatThrownBy(() -> jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=? WHERE job_sn=?",
                     terminal, currentAttempt, id))
-                    .isInstanceOf(DataIntegrityViolationException.class)
+                    .isInstanceOf(VendorTestSql.jdbcCheckViolation(jdbc))
                     .satisfies(failure -> assertThat(failure.getMessage()).containsIgnoringCase("ck_tb_sys_job_job_no"));
             jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm=?,job_no=NULL WHERE job_sn=?", terminal, id);
             Integer terminalRenewal = transaction.execute(status ->

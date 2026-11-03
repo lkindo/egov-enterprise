@@ -735,6 +735,14 @@ final class VendorTestSql {
         }, String.class);
     }
 
+    /**
+     * JdbcTemplate 문장의 CHECK 위반이 오는 예외. MySQL 의 3819 는 SQLState 가 HY000 이라 Spring 이 분류하지 못한다. 앱 응답은
+     * GlobalExceptionHandler 의 벤더 번호 표가 400 으로 맞춘다.
+     */
+    static Class<? extends org.springframework.dao.DataAccessException> jdbcCheckViolation(JdbcTemplate jdbc) {
+        return vendor(jdbc) == Vendor.MYSQL ? org.springframework.jdbc.UncategorizedSQLException.class : DataIntegrityViolationException.class;
+    }
+
     /** 시간대 없는 UTC 현재 시각 식. MySQL 계열에는 {@code AT TIME ZONE} 이 없다. */
     static String utcNowExpression(JdbcTemplate jdbc) {
         return switch (vendor(jdbc)) {

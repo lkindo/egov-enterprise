@@ -367,7 +367,10 @@ test('the MySQL family integration connects like the generated project and grant
     assert.match(VENDOR_ENGINES[vendor].batch.wrap('SELECT 1;'), /^SET NAMES utf8mb4;\nSET time_zone = '\+09:00';\n/, vendor);
   }
   // 2026-11-04 실측 최소 권한. MariaDB 의 INNODB_* 표는 DB 단위가 아닌 PROCESS 를, MySQL 은 performance_schema 표 넷의 SELECT 를 요구한다.
-  assert.deepEqual(VENDOR_SOURCE.mysql.urlParameters, "sessionVariables=time_zone='%2B09:00'&connectionCollation=utf8mb4_0900_bin");
+  assert.deepEqual(VENDOR_SOURCE.mysql.urlParameters, "sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin");
+  // MySQL 의 세션 잠금 대기는 앱의 잠금 조회 상한과 같다. 한쪽만 바꾸면 MySQL 만 다른 상한으로 돈다.
+  const lockTimeoutMillis = Number(readFileSync(join(ROOT, 'api-server/src/main/resources/application.yml'), 'utf8').match(/^\s+lock:\r?\n\s+timeout:\s*(\d+)\s*$/m)?.[1]);
+  assert.equal(Number(VENDOR_SOURCE.mysql.urlParameters.match(/innodb_lock_wait_timeout=(\d+)/)?.[1]) * 1000, lockTimeoutMillis);
   assert.deepEqual(VENDOR_SOURCE.mariadb.urlParameters, "sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin");
   assert.deepEqual(VENDOR_ENGINES.mariadb.integration.grants.slice(1), ["GRANT PROCESS ON *.* TO 'vendorcheck'@'%'"]);
   assert.deepEqual(VENDOR_ENGINES.mysql.integration.grants.slice(1), ['data_lock_waits', 'threads', 'user_variables_by_thread', 'data_locks'].map(table => `GRANT SELECT ON performance_schema.${table} TO 'vendorcheck'@'%'`));

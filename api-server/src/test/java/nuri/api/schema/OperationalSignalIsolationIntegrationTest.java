@@ -94,10 +94,11 @@ class OperationalSignalIsolationIntegrationTest {
                 INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd)
                 VALUES (?,?,'test-only-unusable','Signal fixture','P','Y',to_char(CURRENT_DATE,'YYYYMMDD'))
                 """), fixtureUser, fixtureUser);
-        jdbc.update("""
-                INSERT INTO tb_sys_job(job_mng_no,job_se_nm,job_cn,prcs_stts_nm,rtry_nmtm,job_prnmnt_dt)
-                VALUES (?,'SIGNAL_TEST_ONLY','{}','FAILED',0,CURRENT_TIMESTAMP)
-                """, fixtureJob);
+        // 키는 원래 기본값과 같은 시퀀스로 명시한다. MySQL 에는 시퀀스 기본값이 없다(Hibernate 와 같은 표 흉내).
+        VendorTestSql.insertKey(jdbc, """
+                INSERT INTO tb_sys_job(job_sn,job_mng_no,job_se_nm,job_cn,prcs_stts_nm,rtry_nmtm,job_prnmnt_dt)
+                VALUES (nextval('sq_sys_job'),?,'SIGNAL_TEST_ONLY','{}','FAILED',0,CURRENT_TIMESTAMP)
+                """, "job_sn", fixtureJob);
         // Adjacent dates keep the nonzero fixture valid across a midnight boundary. Expected dates use observedAt.
         LocalDate today = LocalDate.now();
         for (int offset = -1; offset <= 1; offset++) {

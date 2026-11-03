@@ -173,7 +173,7 @@ function innoDbReadme(vendorId) {
     subject: maria ? 'MariaDB 는' : 'MySQL 은',
     mirror: '기준선 뒤에 생기거나 다시 만든 유니크의 엔티티 미러(기본키 제외)를, ',
     session: [
-      `접속 주소(\`DB_URL\`)의 \`${timeZone}\` 는 DB 의 \`NOW()\`·\`CURRENT_TIMESTAMP\`·\`CURRENT_DATE\` 를 한국 시각으로 맞추고(서버에 시간대 표가 없어도 된다), \`${collation}\` 은 연결의 문자열 리터럴과 \`CAST\` 결과를 표와 같은 이진 콜레이션으로 맞춘다. 운영 \`DB_URL\` 에도 두 인자를 그대로 둔다 — 시간대 인자를 빼면 서버 시간대가 UTC 일 때 한국 0시~9시의 \`CURRENT_DATE\` 가 전날이 된다. 격리 수준은 앱이 연결마다 READ COMMITTED 로 둔다(서버 기본은 REPEATABLE READ).`,
+      `접속 주소(\`DB_URL\`)의 \`${timeZone}\` 는 DB 의 \`NOW()\`·\`CURRENT_TIMESTAMP\`·\`CURRENT_DATE\` 를 한국 시각으로 맞추고(서버에 시간대 표가 없어도 된다)${maria ? '' : ', 행 잠금 대기를 앱의 잠금 조회 상한(`jakarta.persistence.lock.timeout`, 5초)과 같게 묶는다 — MySQL 은 잠금 조회 하나에만 대기 시간을 걸 수 없어 세션의 모든 행 잠금 대기가 이 상한을 따른다'}, \`${collation}\` 은 연결의 문자열 리터럴과 \`CAST\` 결과를 표와 같은 이진 콜레이션으로 맞춘다. 운영 \`DB_URL\` 에도 두 인자를 그대로 둔다 — 시간대 인자를 빼면 서버 시간대가 UTC 일 때 한국 0시~9시의 \`CURRENT_DATE\` 가 전날이 된다. 격리 수준은 앱이 연결마다 READ COMMITTED 로 둔다(서버 기본은 REPEATABLE READ).`,
       maria ? '바이너리 로그를 켠 MariaDB 에서는 앱 계정이 트리거를 만들 때 서버의 `log_bin_trust_function_creators` 가 필요할 수 있다. 개발 compose 와 검증 컨테이너는 바이너리 로그를 켜지 않아 이 설정 없이 돈다(바이너리 로그를 켠 경우는 실측하지 않았다).'
         : '바이너리 로그가 켜진 MySQL(8.4 기본)에서 SUPER 권한이 없는 앱 계정이 트리거를 만들려면 서버에 `log_bin_trust_function_creators=1` 이 필요하다. 없으면 기준선의 트리거가 오류 1419 로 멈춘다. 개발 compose 와 검증 컨테이너는 이 설정으로 띄운다.',
     ],

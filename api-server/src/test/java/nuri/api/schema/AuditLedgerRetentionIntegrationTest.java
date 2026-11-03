@@ -50,10 +50,11 @@ class AuditLedgerRetentionIntegrationTest {
         LocalDateTime current = LocalDateTime.now().minusDays(1);
         jdbc.update("INSERT INTO tb_privacy_log (dmnd_id, inq_dt, dmnd_user_id) VALUES (?, ?, 'retention')", "RX" + suffix, expired);
         jdbc.update("INSERT INTO tb_privacy_log (dmnd_id, inq_dt, dmnd_user_id) VALUES (?, ?, 'retention')", "RC" + suffix, current);
-        String audit = "INSERT INTO tb_sys_adt_log (dmnd_idntfr, prcs_stts_nm, job_nm, adt_cn, adt_dt, frst_rgtr_id, crt_dt)"
-                + " VALUES (?, 'ATTEMPTED', 'RETENTION_TEST', '{}', ?, 'SYSTEM', ?)";
-        jdbc.update(audit, "RX" + suffix, expired, expired);
-        jdbc.update(audit, "RC" + suffix, current, current);
+        // 키는 원래 기본값과 같은 시퀀스로 명시한다. MySQL 에는 시퀀스 기본값이 없다(Hibernate 와 같은 표 흉내).
+        String audit = "INSERT INTO tb_sys_adt_log (log_sn, dmnd_idntfr, prcs_stts_nm, job_nm, adt_cn, adt_dt, frst_rgtr_id, crt_dt)"
+                + " VALUES (nextval('sq_sys_adt_log'), ?, 'ATTEMPTED', 'RETENTION_TEST', '{}', ?, 'SYSTEM', ?)";
+        VendorTestSql.insertKey(jdbc, audit, "log_sn", "RX" + suffix, expired, expired);
+        VendorTestSql.insertKey(jdbc, audit, "log_sn", "RC" + suffix, current, current);
     }
 
     @AfterEach
