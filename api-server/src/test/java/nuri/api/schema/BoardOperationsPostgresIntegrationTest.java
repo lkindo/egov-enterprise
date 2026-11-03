@@ -314,7 +314,7 @@ class BoardOperationsPostgresIntegrationTest {
             assertThat(contenderCount.get()).as("후행 취소는 줄이지 않고 지금 수를 돌려준다").isEqualTo(5);
             assertThat(waits).as("후행 취소는 실제 DB 잠금을 기다렸다").isNotEmpty();
             assertThat(waits.getFirst().statement()).as("후행 취소가 기다린 문장은 추천 이력 DELETE 다")
-                    .contains("delete from tb_bbs_rcmdtn_hstry");
+                    .startsWith("delete ").contains("from tb_bbs_rcmdtn_hstry "); // MySQL 계열 방언은 delete br1_0 from 표 br1_0 꼴로 쓴다
             assertThat(waits.getFirst().blockers()).as("후행을 막은 것은 선행 취소다").contains(leadingPid.get());
         }
         assertThat(jdbc.queryForObject("SELECT like_cnt FROM tb_bbs_item WHERE pst_sn = ?", Integer.class, post))

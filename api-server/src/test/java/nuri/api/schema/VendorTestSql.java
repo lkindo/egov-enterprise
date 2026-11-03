@@ -731,6 +731,14 @@ final class VendorTestSql {
         }, String.class);
     }
 
+    /** 시간대 없는 UTC 현재 시각 식. MySQL 계열에는 {@code AT TIME ZONE} 이 없다. */
+    static String utcNowExpression(JdbcTemplate jdbc) {
+        return switch (vendor(jdbc)) {
+            case POSTGRESQL, ORACLE -> "(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')";
+            case MARIADB, MYSQL -> "UTC_TIMESTAMP(6)";
+        };
+    }
+
     /** 한 행을 읽는다. 정수는 컬럼 타입과 상관없이 Long 이다. Oracle 은 정수 컬럼도 NUMBER 로 돌려준다. */
     static Map<String, Object> row(JdbcTemplate jdbc, String statement, Object... arguments) {
         Map<String, Object> row = jdbc.queryForMap(statement, arguments);
