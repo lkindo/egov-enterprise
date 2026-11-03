@@ -267,6 +267,18 @@ export function onTermination(abort, target = process) {
   return () => { for (const signal of TERMINATION_SIGNALS) target.removeListener(signal, handler); };
 }
 
+/**
+ * 취소가 자식을 죽이면 그 종료 코드는 실패가 아니라 취소의 결과다. 종료 코드보다 취소를 먼저 봐야
+ * 'run was cancelled.' 가 '<이름> failed' 에 가려지지 않는다.
+ */
+export function awaitChildExit(child, name, isCancelled) {
+  return new Promise((resolve, reject) => {
+    child.once('error', () => reject(fail(`${name} could not start.`)));
+    child.once('exit', code => (isCancelled() ? reject(fail('run was cancelled.'))
+      : code === 0 ? resolve() : reject(fail(`${name} failed; inspect its private run log.`))));
+  });
+}
+
 /** 앞 단계가 던져도 벤더 DB 정리까지 돌게 끝까지 돌고, 첫 실패를 던진다. */
 export async function runCleanupSteps(steps) {
   const failures = [];
@@ -407,11 +419,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
     return child;
   };
   const run = async (name, command, args, cwd, environment, outputFile) => {
-    const child = launch(name, command, args, cwd, environment, outputFile);
-    await new Promise((resolve, reject) => {
-      child.once('error', () => reject(fail(`${name} could not start.`)));
-      child.once('exit', code => code === 0 ? resolve() : reject(fail(`${name} failed; inspect its private run log.`)));
-    });
+    await awaitChildExit(launch(name, command, args, cwd, environment, outputFile), name, () => aborted);
   };
   const inspect = id => JSON.parse(docker(['inspect', id]))[0];
   const isAlive = child => child?.pid && child.exitCode === null && child.signalCode === null;
@@ -577,6 +585,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
         `--reporter=${ciCompose ? 'blob,line,json' : 'line,json'}`], frontend,
       { ...environment, ...testAccountEnvironment, PLAYWRIGHT_JSON_OUTPUT_FILE: reportPath });
     } catch (error) { executionFailure = error; }
+    // 취소가 playwright 를 죽였으면 결과 파일이 없거나 반쯤 쓰였다. 읽기 전에 취소로 끝내야 사유가 결과 파일 오류에 가려지지 않는다.
+    assertActive();
     assertLabInputsUnchanged();
     // CI invokes the same result contract explicitly in its required step.
     if (!ciCompose) {

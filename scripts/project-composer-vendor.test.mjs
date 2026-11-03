@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { spawnSync } from 'node:child_process';
+import { spawn, spawnSync } from 'node:child_process';
 import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
 import { createServer } from 'node:http';
@@ -26,7 +26,7 @@ import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
 import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
-import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
+import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
 import { asPreviewOracle, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
@@ -1742,10 +1742,36 @@ test('vendor cleanup never reads the logs of a container it cannot attribute, an
   } finally { for (const fixture of [foreign, logless, unwritable]) rmSync(fixture.directory, { recursive: true, force: true }); }
 });
 
+test('a cancelled run reports the cancellation, not the failure of the child it killed', async () => {
+  const exits = code => spawn(process.execPath, ['-e', `process.exit(${code})`], { stdio: 'ignore', windowsHide: true });
+  const target = new EventEmitter();
+  let aborted = false;
+  const child = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], { stdio: 'ignore', windowsHide: true });
+  const stopListening = onTermination(() => { aborted = true; child.kill(); }, target);
+  try {
+    const outcome = awaitChildExit(child, 'playwright', () => aborted);
+    target.emit('SIGHUP');
+    await assert.rejects(outcome, /^Error: Isolated E2E: run was cancelled\.$/, '취소가 죽인 자식은 실패가 아니라 취소로 끝난다');
+  } finally {
+    stopListening();
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+  }
+  await assert.rejects(awaitChildExit(exits(0), 'playwright', () => true), /^Error: Isolated E2E: run was cancelled\.$/, '종료 코드보다 취소를 먼저 본다');
+  await assert.rejects(awaitChildExit(exits(1), 'playwright', () => false), /^Error: Isolated E2E: playwright failed; inspect its private run log\.$/, '취소가 아니면 실패를 그대로 말한다');
+  await assert.doesNotReject(awaitChildExit(exits(0), 'playwright', () => false));
+});
+
 test('main keeps the vendor checks wired where a fake docker cannot see them', () => {
   const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
   const main = runner.slice(runner.indexOf('export async function main'));
   assert.match(main, /const vendor = assertIsolatedRunnerSupportsProject\(root, \{ representative: representative\.enabled \}\);/, '구성 판정을 main 에서 건너뛰지 않는다');
+  assert.match(main, /await awaitChildExit\(launch\(name, command, args, cwd, environment, outputFile\), name, \(\) => aborted\);/, '자식의 종료 코드보다 취소를 먼저 본다');
+  const caught = '} catch (error) { executionFailure = error; }';
+  assert.equal(main.split(caught).length, 2, 'playwright 실행의 catch 는 하나다');
+  const afterPlaywright = main.slice(main.indexOf(caught) + caught.length);
+  const firstStatement = afterPlaywright.split('\n').map(line => line.trim()).find(line => line && !line.startsWith('//'));
+  assert.equal(firstStatement, 'assertActive();', '취소로 삼킨 실패 뒤에는 결과 파일을 읽기 전에 취소로 끝낸다');
+  assert.ok(afterPlaywright.indexOf('readFileSync(reportPath') > afterPlaywright.indexOf('assertActive();'), '결과 파일보다 취소를 먼저 본다');
   assert.match(main, /verifyOwner: \(\) => \{ assertActive\(\); verifyRuntime\(\); \}/, '픽스처 쓰기 전마다 취소와 소유를 본다');
   const positions = ['launchIsolatedVendorDatabase({', 'cleanUpVendorDatabase = database.cleanUp;', 'verifyRuntime = database.verify;', 'await database.waitReady(assertActive);'].map(text => main.indexOf(text));
   assert.ok(positions.every(position => position >= 0), `벤더 DB 배선이 없다: ${positions}`);
