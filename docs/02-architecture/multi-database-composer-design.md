@@ -249,6 +249,10 @@ flowchart TD
 | 900바이트 넘는 복합 PK | SQL Server | `pk_meta_standard_words` 를 NONCLUSTERED 로 |
 | 표현식 인덱스 `btrim(ocrn_ymd)` | 벤더별 | Oracle·CUBRID 함수 기반, MySQL 함수 키, MariaDB·SQL Server 계산 컬럼 |
 | 부분 인덱스 `ix_tb_menu_info_del_yn` | Oracle, MySQL, MariaDB, CUBRID | 일반 인덱스로. 유일성이 없어 성능만 달라진다. 조건부 유일 인덱스는 조건을 버리면 PostgreSQL 이 받는 행을 거부하므로 저하로 두지 않고 번역을 멈춘다(지금 스키마에는 없다) |
+| 독립 UNIQUE 인덱스(복합, NULL 허용 키) | Oracle, CUBRID | 같은 어댑터가 유일 제약에 쓰는 `CASE` 함수 인덱스·그림자 키로 옮긴다. 키에 식이 있으면 NULL 의미를 지킬 수 없어 번역을 멈춘다(지금 스키마에는 독립 UNIQUE 인덱스가 없다. 합성 모델 시험만 있고 실측하지 않았다) |
+| 독립 UNIQUE 인덱스(NULL 허용 키) | SQL Server | 유일 제약처럼 `WHERE … IS NOT NULL` 로 걸러 NULL 이 든 행을 여럿 받는다. 부분 인덱스면 그 조건 뒤에 붙인다(지금 스키마에는 없다. 실측하지 않았다) |
+| 접두로 잘라야 하는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | MySQL, MariaDB | 번역을 멈춘다. 접두는 앞부분이 같은 정상 값을 거부하고, 식 인덱스의 번역(함수 키·계산 컬럼)은 유일하지 않다. 유일하지 않은 인덱스는 지금처럼 접두로 둔다(지금 스키마에는 없다) |
+| 1,700바이트를 넘는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | SQL Server | 번역을 멈춘다. 인덱스를 빼거나 긴 컬럼을 INCLUDE 로 옮기면 유일성이 사라진다. 유일하지 않은 인덱스는 지금처럼 빼거나 INCLUDE 로 둔다(지금 스키마에는 없다) |
 | GIN `ix_tb_web_log_url_trgm` | 전 벤더 | 뺀다. 결과는 같고 URL 부분 검색만 느려진다. 기간 조건과 함께 쓰며 저하로 표시 |
 | DEFERRABLE 자기 참조 FK | Oracle 외 | 시드는 부모 먼저. [MenuService.java:429](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java) 는 자식부터 지우도록 원본을 고친다 |
 | V2_145 동기화 트리거 2개 | 전 벤더 | 번역해 적용·동작 확인. 이행 전용이고 새 프로젝트에는 옛 데이터가 없으므로, Contract 뒤에는 입력에서 사라진다. 어댑터가 모르는 트리거가 생기면 `VENDOR_TRANSLATION_GAP` 으로 멈추는 것이 맞다는 실례다 |

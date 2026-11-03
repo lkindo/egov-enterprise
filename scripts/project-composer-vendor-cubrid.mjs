@@ -199,6 +199,13 @@ function emitSchema(model) {
       // 조건을 버린 UNIQUE 는 PostgreSQL 이 받는 행을 거부한다. 성능 저하가 아니라 뜻이 바뀌므로 저하로 두지 않는다.
       if (index.where && index.unique) gap(`${index.name}: 조건부 유일 인덱스는 조건 없이 옮길 수 없다`);
       if (index.where) emission.degrade(`${index.name}:partial`, '부분 인덱스 문법을 쓰지 않고 일반 인덱스로 둔다');
+      if (index.unique && index.columns.length > 1 && index.columns.some(column => table.columns.find(item => item.name === column.name).nullable)) {
+        // 독립 유일 인덱스도 제약과 같이 일부 NULL 행을 중복으로 본다. 그림자 키는 컬럼 값을 이으므로 식 키는 옮기지 못해 멈춘다.
+        if (index.columns.some(column => column.expression)) gap(`${index.name}: 식이 든 복합 유일 인덱스는 NULL 의미를 지켜 옮길 수 없다`);
+        shadow += 1;
+        shadowUnique(emission, table, { name: index.name, columns: index.columns.map(column => column.name) }, shadow);
+        continue;
+      }
       const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${identifier(column.name)}${column.descending ? ' DESC' : ''}`));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);

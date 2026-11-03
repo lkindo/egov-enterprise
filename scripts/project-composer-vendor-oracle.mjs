@@ -117,6 +117,14 @@ BEGIN
   END IF;
 END;`;
 
+/** 복합 UNIQUE 는 일부만 NULL 인 행도 중복으로 본다. PostgreSQL 은 허용하므로 모든 키가 찼을 때만 값을 내는 인덱스로 옮긴다. */
+function wholeKeyUniqueIndex(emission, table, name, columns) {
+  const whole = columns.map(column => `${column.name} IS NOT NULL`).join(' AND ');
+  emission.sql(`CREATE UNIQUE INDEX ${name} ON ${table.name} (${columns.map(column => `CASE WHEN ${whole} THEN ${column.name} END${column.descending ? ' DESC' : ''}`).join(', ')})`);
+  emission.expect('indexes', table.name, name);
+  emission.cover(name, 'function-based-unique-index');
+}
+
 function emitSchema(model) {
   const emission = createEmission('oracle');
   const keys = keyColumns(model);
@@ -143,11 +151,7 @@ function emitSchema(model) {
       emission.expectUnique(table.name, unique.name, unique.columns);
       const columns = unique.columns.map(name => table.columns.find(column => column.name === name));
       if (unique.columns.length > 1 && columns.some(column => column.nullable)) {
-        // 복합 UNIQUE 는 일부만 NULL 인 행도 중복으로 본다. PostgreSQL 은 허용하므로 모든 키가 찼을 때만 값을 내는 인덱스로 옮긴다.
-        const whole = unique.columns.map(name => `${name} IS NOT NULL`).join(' AND ');
-        emission.sql(`CREATE UNIQUE INDEX ${unique.name} ON ${table.name} (${unique.columns.map(name => `CASE WHEN ${whole} THEN ${name} END`).join(', ')})`);
-        emission.expect('indexes', table.name, unique.name);
-        emission.cover(unique.name, 'function-based-unique-index');
+        wholeKeyUniqueIndex(emission, table, unique.name, columns);
       } else {
         emission.sql(`ALTER TABLE ${table.name} ADD CONSTRAINT ${unique.name} UNIQUE (${unique.columns.join(', ')})`);
         emission.expect('constraints', table.name, unique.name);
@@ -175,6 +179,13 @@ function emitSchema(model) {
       // 조건을 버린 UNIQUE 는 PostgreSQL 이 받는 행을 거부한다. 성능 저하가 아니라 뜻이 바뀌므로 저하로 두지 않는다.
       if (index.where && index.unique) gap(`${index.name}: 조건부 유일 인덱스는 조건 없이 옮길 수 없다`);
       if (index.where) emission.degrade(`${index.name}:partial`, '부분 인덱스가 없어 일반 인덱스로 둔다. 유일성이 없어 성능만 달라진다');
+      if (index.unique && index.columns.length > 1 && index.columns.some(column => nullable(table, column.name))) {
+        // 독립 유일 인덱스도 제약과 같이 일부 NULL 행을 중복으로 본다. 식 키는 TRIM 이 공백뿐인 값을 NULL 로 만들어 NULL 판정이 달라지므로 멈춘다.
+        if (index.columns.some(column => column.expression)) gap(`${index.name}: 식이 든 복합 유일 인덱스는 NULL 의미를 지켜 옮길 수 없다`);
+        wholeKeyUniqueIndex(emission, table, index.name, index.columns);
+        emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));
+        continue;
+      }
       const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${column.name}${column.descending ? ' DESC' : ''}`));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);

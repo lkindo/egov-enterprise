@@ -169,6 +169,8 @@ function emitSchemaFor(vendor, model) {
       if (index.where && index.unique) gap(`${index.name}: 조건부 유일 인덱스는 조건 없이 옮길 수 없다`);
       if (index.where) emission.degrade(`${index.name}:partial`, '부분 인덱스가 없어 일반 인덱스로 둔다. 유일성이 없어 성능만 달라진다');
       if (index.columns.some(column => column.expression === 'trim')) {
+        // 아래 두 번역은 유일하지 않은 인덱스다. 유일 식 인덱스를 그대로 옮기면 PostgreSQL 이 거부하는 중복을 받는다.
+        if (index.unique) gap(`${index.name}: 식 유일 인덱스는 유일성을 지켜 옮기지 않는다`);
         const [{ name }] = index.columns;
         const { length } = table.columns.find(column => column.name === name).type;
         if (maria) {
@@ -178,9 +180,11 @@ function emitSchemaFor(vendor, model) {
         } else emission.sql(`CREATE INDEX ${index.name} ON ${table.name} ((CAST(TRIM(${name}) AS CHAR(${length}))))`);
       } else {
         const bytes = index.columns.reduce((sum, column) => sum + columnBytes(table, column.name), 0);
+        const long = column => bytes > KEY_BYTES && columnBytes(table, column.name) > LONG_PREFIX * CHAR_BYTES / 2;
+        // 접두만 보는 유일 인덱스는 앞부분이 같고 뒤가 다른 정상 값을 중복으로 거부한다. 성능이 아니라 받는 행이 달라지므로 멈춘다.
+        if (index.unique && index.columns.some(long)) gap(`${index.name}: 접두로 자른 유일 인덱스는 앞부분이 같은 다른 값을 거부한다`);
         const parts = index.columns.map(column => {
-          const long = bytes > KEY_BYTES && columnBytes(table, column.name) > LONG_PREFIX * CHAR_BYTES / 2;
-          const prefix = long ? `(${index.columns.length > 1 ? COMPOSITE_PREFIX : LONG_PREFIX})` : '';
+          const prefix = long(column) ? `(${index.columns.length > 1 ? COMPOSITE_PREFIX : LONG_PREFIX})` : '';
           return `${column.name}${prefix}${column.descending ? ' DESC' : ''}`;
         });
         emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${parts.join(', ')})`);

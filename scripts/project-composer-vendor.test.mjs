@@ -571,11 +571,76 @@ test('a partial unique index stops the vendors that drop the condition instead o
   for (const adapter of [oracleAdapter, mysqlAdapter, mariadbAdapter, cubridAdapter]) {
     assert.throws(() => adapter.emitSchema(unique), error => isGap(error) && error.message === 'ix_t_child_owner_live: 조건부 유일 인덱스는 조건 없이 옮길 수 없다', adapter.id);
   }
-  // 조건을 그대로 옮기는 벤더는 막지 않는다.
-  assert.ok(mssqlAdapter.emitSchema(unique).statements.some(({ sql }) => /^CREATE UNIQUE INDEX ix_t_child_owner_live ON t_child \(owner\) WHERE /.test(sql)));
+  // 조건을 그대로 옮기는 벤더는 막지 않는다. 키가 NULL 인 행은 유일 제약처럼 걸러 여럿 받는다.
+  assert.ok(mssqlAdapter.emitSchema(unique).statements.some(({ sql }) => sql === 'CREATE UNIQUE INDEX ix_t_child_owner_live ON t_child (owner) WHERE parent_id IS NOT NULL AND owner IS NOT NULL'),
+    'mssql: 부분 유일 인덱스는 조건과 NULL 거름을 함께 둔다');
   // 유일하지 않은 부분 인덱스는 지금처럼 성능 저하로 둔다.
   const plain = oracleAdapter.emitSchema(buildVendorModel({ snapshot: withPartialIndex(false), extras }));
   assert.ok(plain.degradations.some(row => row.name === 'ix_t_child_owner_live:partial'));
+  assert.ok(mssqlAdapter.emitSchema(buildVendorModel({ snapshot: withPartialIndex(false), extras })).statements.some(({ sql }) => sql === 'CREATE INDEX ix_t_child_owner_live ON t_child (owner) WHERE parent_id IS NOT NULL'),
+    'mssql: 유일하지 않은 부분 인덱스는 NULL 을 거르지 않는다');
+});
+
+/** 시험 스냅숏에 btree 인덱스 하나를 더한다. 유일 여부만 바꿔 같은 정의의 유일·비유일 판을 만든다. */
+const withIndex = (name, body, unique) => {
+  const value = snapshot();
+  value.indexes.push({ table_name: 't_child', name, definition: `CREATE ${unique ? 'UNIQUE ' : ''}INDEX ${name} ON public.t_child USING btree (${body})` });
+  return buildVendorModel({ snapshot: value, extras });
+};
+/** 모델 문법은 식 유일 인덱스를 받지 않는다(parseIndex). 어댑터가 그런 모델을 받아도 유일성을 버리지 않는지 보려고 모델을 직접 고친다. */
+const withModelIndex = index => {
+  const value = model();
+  value.tables.find(table => table.name === 't_child').indexes.push({ method: 'btree', where: null, ...index });
+  return value;
+};
+const statementsOf = (adapter, sample) => adapter.emitSchema(sample).statements.map(statement => statement.sql);
+const stopsWith = (adapter, sample, message) => assert.throws(() => adapter.emitSchema(sample), error => isGap(error) && error.message === message, `${adapter.id}: ${message}`);
+
+test('a standalone unique index with a nullable key gets the treatment the vendor gives the unique constraint', () => {
+  // 모델의 독립 유일 인덱스는 지금 스키마에 없다. 생기면 PostgreSQL 처럼 일부 NULL 행을 여럿 받아야 한다(설계서 §2 의미 프로브).
+  const unique = withIndex('ix_t_child_owner_parent', 'owner, parent_id DESC', true);
+  const whole = 'owner IS NOT NULL AND parent_id IS NOT NULL';
+  const oracle = oracleAdapter.emitSchema(unique);
+  assert.ok(oracle.statements.some(({ sql }) => sql === `CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (CASE WHEN ${whole} THEN owner END, CASE WHEN ${whole} THEN parent_id END DESC)`),
+    'oracle: 독립 유일 인덱스도 CASE 함수 인덱스로 옮긴다');
+  assert.deepEqual(oracle.uniqueColumns.get('t_child.ix_t_child_owner_parent'), ['owner', 'parent_id'], 'oracle: 키 대조가 함수 인덱스의 컬럼을 기대한다');
+  const cubrid = statementsOf(cubridAdapter, unique);
+  assert.ok(cubrid.includes('CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (uq_key_2)') && cubrid.includes('ALTER TABLE t_child ADD COLUMN uq_key_2 VARCHAR(2500)'),
+    'cubrid: 독립 유일 인덱스도 그림자 키로 옮긴다');
+  assert.ok(statementsOf(mssqlAdapter, unique).includes(`CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (owner, parent_id DESC) WHERE ${whole}`), 'mssql: 독립 유일 인덱스도 NULL 을 거른다');
+  // MySQL 계열의 유일 인덱스는 NULL 이 든 행을 PostgreSQL 처럼 여럿 받는다.
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.ok(statementsOf(adapter, unique).includes('CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (owner, parent_id DESC)'), adapter.id);
+  // 같은 정의의 비유일 판은 지금처럼 일반 인덱스다.
+  const plain = withIndex('ix_t_child_owner_parent', 'owner, parent_id DESC', false);
+  for (const adapter of Object.values(VENDOR_ADAPTERS)) {
+    assert.ok(statementsOf(adapter, plain).includes('CREATE INDEX ix_t_child_owner_parent ON t_child (owner, parent_id DESC)'), `${adapter.id}: 비유일 판은 일반 인덱스`);
+  }
+  assert.equal(oracleAdapter.emitSchema(plain).uniqueColumns.has('t_child.ix_t_child_owner_parent'), false);
+  // Oracle 의 TRIM 은 공백뿐인 값을 NULL 로 만들고, CUBRID 그림자 키는 컬럼 값만 잇는다. 식 키는 NULL 의미를 지킬 수 없다.
+  const expression = withModelIndex({ name: 'ix_t_child_trim_parent', unique: true, columns: [{ name: 'owner', expression: 'trim' }, { name: 'parent_id' }] });
+  for (const adapter of [oracleAdapter, cubridAdapter]) stopsWith(adapter, expression, 'ix_t_child_trim_parent: 식이 든 복합 유일 인덱스는 NULL 의미를 지켜 옮길 수 없다');
+});
+
+test('a unique index a vendor could keep only by cutting its key or dropping its uniqueness stops the translation', () => {
+  // 앞 768·700자 접두는 끝 글자만 다른 두 주소를 중복으로 거부하고, 인덱스를 빼거나 INCLUDE 로 옮기면 중복을 받는다.
+  for (const [name, body] of [['ix_t_child_url_unique', 'url'], ['ix_t_child_url_owner', 'url, owner']]) {
+    const unique = withIndex(name, body, true);
+    for (const adapter of [mysqlAdapter, mariadbAdapter]) stopsWith(adapter, unique, `${name}: 접두로 자른 유일 인덱스는 앞부분이 같은 다른 값을 거부한다`);
+    stopsWith(mssqlAdapter, unique, `${name}: 1700바이트를 넘는 유일 인덱스는 유일성을 지켜 옮길 수 없다`);
+  }
+  // 같은 정의의 비유일 판은 지금처럼 접두·뺌·INCLUDE 로 옮긴다.
+  const single = withIndex('ix_t_child_url_unique', 'url', false);
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.ok(statementsOf(adapter, single).includes('CREATE INDEX ix_t_child_url_unique ON t_child (url(768))'), `${adapter.id}: 비유일 단일 컬럼은 접두`);
+  assert.ok(mssqlAdapter.emitSchema(single).degradations.some(row => row.name === 'ix_t_child_url_unique'), 'mssql: 비유일 단일 컬럼은 저하로 뺀다');
+  const composite = withIndex('ix_t_child_url_owner', 'url, owner', false);
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.ok(statementsOf(adapter, composite).includes('CREATE INDEX ix_t_child_url_owner ON t_child (url(700), owner)'), `${adapter.id}: 비유일 복합은 접두`);
+  assert.ok(statementsOf(mssqlAdapter, composite).includes('CREATE INDEX ix_t_child_url_owner ON t_child (owner) INCLUDE (url)'), 'mssql: 비유일 복합은 INCLUDE');
+  // 식 인덱스의 번역(계산 컬럼·함수 키)은 유일하지 않다. 유일 판을 그대로 옮기면 중복을 받는다.
+  const trimmed = unique => withModelIndex({ name: 'ix_t_child_owner_trim', unique, columns: [{ name: 'owner', expression: 'trim' }] });
+  for (const adapter of [mysqlAdapter, mariadbAdapter, mssqlAdapter]) {
+    stopsWith(adapter, trimmed(true), 'ix_t_child_owner_trim: 식 유일 인덱스는 유일성을 지켜 옮기지 않는다');
+    assert.doesNotThrow(() => adapter.emitSchema(trimmed(false)), `${adapter.id}: 비유일 식 인덱스는 지금처럼 옮긴다`);
+  }
 });
 
 test('every removed asset and gate belongs to exactly one tool group shown before generating', () => {
