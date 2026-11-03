@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { certifyVendor, fixtureEvidence } from './project-composer-vendor-evidence.test-helpers.mjs';
+import { asPreviewOracle, certifyVendor, fixtureEvidence } from './project-composer-vendor-evidence.test-helpers.mjs';
 import {
   buildVendorEvidence, parseEvidenceArgs, recordVendorEvidence, vendorEvidenceHash, vendorEvidenceInputs, vendorEvidenceReportDirectory, vendorEvidenceStaleErrors,
 } from './project-composer-vendor-evidence.mjs';
@@ -75,7 +75,7 @@ const TINY_ADAPTER = 'scripts/oracle-adapter.mjs';
 const TINY_MODEL_COMMAND = 'scripts/generate-reusable-base-db.mjs';
 function tinySource(t, { certified = false } = {}) {
   const root = scratch(t);
-  const ledger = readLedger(ROOT);
+  const ledger = asPreviewOracle(readLedger(ROOT));
   ledger.evidenceInputs.paths = ['scripts/shared.mjs'];
   ledger.evidenceInputs.excludedModelTools = {};
   const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
@@ -101,7 +101,7 @@ const staleCodes = async root => (await ledgerPrecheck({ root, checks: LEDGER_PR
 /** 실제 원장의 벤더를 바꾼 복사본. 입력 파일은 필요 없다. 적재는 형식만 본다. */
 function ledgerOnly(t, edit) {
   const root = scratch(t);
-  const ledger = readLedger(ROOT);
+  const ledger = asPreviewOracle(readLedger(ROOT));
   edit(id => ledger.vendors.find(vendor => vendor.id === id), ledger);
   put(root, VENDOR_LEDGER_PATH, JSON.stringify(ledger));
   return root;

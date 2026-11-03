@@ -29,7 +29,7 @@ import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-bas
 import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
-import { certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
+import { asPreviewOracle, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
   VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
@@ -466,6 +466,7 @@ test('the differential probes both sides of every rule', () => {
 test('only certified vendors can be chosen and the ledger names every vendor', () => {
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
+  // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
   assert.deepEqual(selectableVendors(ledger), ['postgresql']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   // 사유는 화면에 그대로 나간다.
@@ -476,7 +477,7 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
 function ledgerCopy(t, change) {
   const directory = mkdtempSync(join(tmpdir(), 'vendor-ledger-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const ledger = JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8'));
+  const ledger = asPreviewOracle(JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8')));
   change(id => ledger.vendors.find(vendor => vendor.id === id), ledger);
   mkdirSync(join(directory, 'config'));
   writeFileSync(join(directory, VENDOR_LEDGER_PATH), JSON.stringify(ledger));
@@ -887,7 +888,7 @@ test('the CI vendor job is a certification condition and only opens a vendor who
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
   const load = mutate => {
-    const copy = JSON.parse(JSON.stringify(ledger));
+    const copy = asPreviewOracle(JSON.parse(JSON.stringify(ledger)));
     mutate(copy.vendors.find(vendor => vendor.id === certifiedRow.id), copy);
     const root = mkdtempSync(join(tmpdir(), 'vendor-ci-'));
     try {
