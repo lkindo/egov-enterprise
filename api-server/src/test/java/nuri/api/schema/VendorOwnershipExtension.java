@@ -51,7 +51,7 @@ public final class VendorOwnershipExtension implements BeforeAllCallback, Before
     /** 스키마 관리 도구를 바꾸거나 검사할 표를 거르는 키. 있으면 validate 라는 이름만 남고 검증 범위가 달라진다. */
     private static final List<String> TOOL_KEYS = List.of(SchemaToolingSettings.SCHEMA_MANAGEMENT_TOOL, SchemaToolingSettings.HBM2DDL_FILTER_PROVIDER);
     /** Hibernate 기본 스키마 관리 도구. ServiceLoader 등록으로도 바뀌므로 설정 키와 따로 실제 서비스를 본다. */
-    private static final String DEFAULT_SCHEMA_TOOL ="org.hibernate.tool.schema.internal.HibernateSchemaManagementTool";
+    private static final String DEFAULT_SCHEMA_TOOL = "org.hibernate.tool.schema.internal.HibernateSchemaManagementTool";
 
     private final Set<Class<?>> checkedClasses = ConcurrentHashMap.newKeySet();
 
