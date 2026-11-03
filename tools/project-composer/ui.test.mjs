@@ -1959,6 +1959,34 @@ test('a coded deep-check failure in the final confirmation shows its action in t
   assert.deepEqual(pageErrors, []);
 });
 
+// PostgreSQL 구성도 환경 점검이 벤더 원장을 읽는다. 원장을 읽지 못한 실패는 다시 점검해도 같으니 정밀 점검과 같은 행동을 보인다.
+test('a coded environment-check failure on a PostgreSQL composition shows the deep check action, not a bare retry', { timeout: 45_000 }, async t => {
+  let drift = false;
+  const { page, launchUrl, pageErrors, count } = await errorPage(t, {
+    selectableVendors: () => { if (drift) throw new ComposerError('CATALOG_DRIFT', { violations: ['config/db-vendors.json 의 벤더가 등록표와 다르다.'] }); return ['postgresql']; } });
+  await page.goto(launchUrl);
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.locator('#database')).toHaveValue('postgresql');
+  drift = true;
+  const deeps = count('/api/plan/deep');
+  await generateButton(page).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog.locator('#preflight-status')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  const start = dialog.getByRole('button', { name: '생성 시작' });
+  await expect(start).toBeDisabled();
+  await expect(dialog.locator('#confirm-blocked')).toHaveText('기능 선언이 원본 코드와 맞지 않아 생성할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 점검하세요.');
+  await expect(dialog.locator('#deep-status')).toHaveText('생성 환경 점검을 마치지 못해 소스 정밀 점검을 하지 않았습니다.');
+  await dialog.locator('#confirm-actions summary').click();
+  await expect(dialog.locator('#confirm-actions code')).toHaveText('config/db-vendors.json 의 벤더가 등록표와 다르다.');
+  // 원장을 고치면 다시 점검으로 풀린다.
+  drift = false;
+  await dialog.getByRole('button', { name: '다시 점검' }).click();
+  await expect(start).toBeEnabled();
+  await expect(dialog.locator('#confirm-actions')).toBeHidden();
+  assert.equal(count('/api/plan/deep'), deeps + 1);
+  assert.deepEqual(pageErrors, []);
+});
+
 /*
  * 생성 작업 실패(설계서 14.2, E4b). 서버가 단계에 맞는 코드와 행동을 주면 화면은 문장을 role=alert 하나에, 단계·명령·로그 위치·
  * 행동·접힌 로그 끝부분은 그 밖의 형제 영역에 둔다. 다시 생성·다시 점검은 최종 확인 창을 거친다.

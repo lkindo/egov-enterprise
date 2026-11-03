@@ -67,7 +67,8 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     } catch (error) {
       if (stale()) return null;
       $('preflight-status').textContent = error.message;
-      // 코드가 붙은 오류(화면을 연 뒤 고를 수 없게 된 벤더)는 다시 점검해도 같다. 정밀 점검과 같은 행동을 보인다.
+      // 코드가 붙은 오류는 다시 점검해도 같다. 정밀 점검과 같은 행동을 보인다 — 화면을 연 뒤 고를 수 없게 된 벤더(INVALID_RECIPE)와,
+      // PostgreSQL 구성에서도 생기는 벤더 원장 적재 실패(CATALOG_DRIFT)다. 코드 없는 실패는 다시 점검으로 남긴다.
       renderFailureActions($('confirm-actions'), error, { onReload: reloadFromDialog });
       return { reason: DEEP_FAILURE_REASONS[error.action] ?? '점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.', failed: true };
     }
