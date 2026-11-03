@@ -1374,6 +1374,44 @@ test('reopening a job whose vendor can no longer be chosen says so until the nex
   assert.deepEqual(pageErrors, []);
 });
 
+// 실행 중인 작업은 끝난 작업과 다른 분기다. 끝날 때까지 계획을 다시 묻지 않으므로 알림이 그동안 보이고 끝난 뒤의 계획에도 이어져야 한다.
+test('reopening a running job restores its vendor, or says so while it runs and after it ends', { timeout: 60_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  let finish;
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger, async () => {
+    await new Promise(resolve => { finish = resolve; });
+    return { projectDirectory: 'build/project-composer/x', databaseDirectory: 'build/db', reportPath: 'build/report.json', verified: true };
+  });
+  const select = page.locator('#database');
+  const status = page.locator('#plan-status');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트 준비 중');
+  // 아직 고를 수 있으면 작업의 벤더를 되살린다.
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트 준비 중');
+  await expect(select).toHaveValue('oracle');
+  const sentence = '새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.';
+  await expect(status).not.toContainText(sentence);
+  // 그 뒤 원장이 내려갔다. 작업은 Oracle 로 도는 중인데 화면의 값은 다르므로 말한다.
+  ledger = ledgerWithOracle('preview');
+  const plansBefore = planned.length;
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트 준비 중');
+  await expect(select).toHaveValue('postgresql');
+  await expect(select.locator('option[value="oracle"]')).toBeDisabled();
+  await expect(status).toHaveText(sentence);
+  assert.equal(planned.length, plansBefore, '실행 중에는 계획을 다시 묻지 않는다');
+  finish();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await expect(status).toContainText(sentence);
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  assert.deepEqual(pageErrors, []);
+});
+
 /*
  * 소스 정밀 점검(설계서 10장 plan/deep, C3). 처음 점검은 이 저장소에서 생성기와 같은 판정을 실제로 돌린다.
  * 차단 사유가 있으면 사유와 파일(앞 다섯 개와 나머지 수)을 보이고 생성 시작을 잠근다. 점검이 실패해도 통과로 보이지 않는다.
