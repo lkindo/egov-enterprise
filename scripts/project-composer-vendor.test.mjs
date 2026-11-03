@@ -1020,6 +1020,12 @@ test('the single-module REUSABLE_BASE lines name the vendor schema check, not th
   assert.match(vendor, /`\.\/gradlew harnessTest`/);
   // 벤더 생성물에는 이관 소스 세트·별칭이 없고 스키마 시험은 검증에서 빠진다(reusable-layout-runtime, verify-reusable-artifact).
   for (const absent of ['schemaValidationTest', 'verify:migration', 'offline migration', '오프라인 이관']) assert.ok(!vendor.includes(absent), absent);
+
+  // 문장 함수만 시험하면 생성기가 벤더를 넘기지 않아도 초록이다. 생성물 REUSABLE_BASE.md 를 읽는 시험은 없다.
+  const generator = readFileSync(join(ROOT, 'scripts/generate-reusable-base-source.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const calls = generator.slice(generator.indexOf('async function main')).match(/reusableBaseLayoutLines\([^)]*\)/g) ?? [];
+  assert.ok(calls.length > 0, '생성기 main 이 배치 줄을 쓴다');
+  for (const call of calls) assert.equal(call, 'reusableBaseLayoutLines(args.layout, { vendor: vendorInput ? vendorId : null })', '생성기 main 이 벤더를 넘긴다');
 });
 
 test('a failure in the vendor test command is reported as its own command', () => {
