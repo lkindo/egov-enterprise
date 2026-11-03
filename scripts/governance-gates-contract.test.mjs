@@ -209,6 +209,7 @@ const REQUIRED_GATE_SETS = [
   'GATESET-PIT-MUTATION-AGGREGATE',
   'GATESET-PLAYWRIGHT-E2E',
   'GATESET-SCHEMA-VALIDATION',
+  'GATESET-VENDOR-CONFORMANCE',
 ];
 
 const REQUIRED_QUALITY_RATCHETS = [
@@ -881,6 +882,34 @@ test('verify runner analysis follows calls from each scope branch and marks cond
     .replace(/\r?\ntry \{\r?\n/u, match => `\nfunction later() {\n  if (scope === 'full') {\n    runFrontendPackaging();\n  }\n}${match}`);
   assert.notEqual(detached, runner);
   assert.match(analyzeVerifyRunnerExecution(detached).errors.join('\n'), /verify scope branch 'full' is inside a function body \(function later\(\)\)/);
+});
+
+test('the vendor gate runs in the required CI job and cannot claim a tier or context it does not run under', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const vendorGate = target => target.gateSets.find(({ id }) => id === 'GATESET-VENDOR-CONFORMANCE');
+  const vendorErrors = mutate => {
+    const copy = clone(registry);
+    mutate(vendorGate(copy));
+    return validate(copy).join('\n');
+  };
+  assert.deepEqual(vendorGate(registry).tier, ['local-vendor', 'ci']);
+  assert.equal(vendorGate(registry).requiredCiContext, 'backend-build');
+  assert.doesNotMatch(vendorErrors(() => {}), /GATESET-VENDOR-CONFORMANCE/);
+  const ciBinding = gate => gate.selector.executionBindings.find(binding => binding.source === '.github/workflows/ci.yml');
+  assert.equal(ciBinding(vendorGate(registry)).job, 'reusable-vendor');
+  assert.match(vendorErrors(gate => {
+    gate.tier = ['local-vendor'];
+    gate.selector.executionBindings = gate.selector.executionBindings.filter(binding => binding !== ciBinding(gate));
+  }), /GATESET-VENDOR-CONFORMANCE: a local-vendor gate without the ci tier claims a required CI context no job runs/);
+  assert.match(vendorErrors(gate => { delete gate.requiredCiContext; }), /GATESET-VENDOR-CONFORMANCE: requiredCiContext must be a non-empty/);
+  assert.match(vendorErrors(gate => { ciBinding(gate).job = 'reusable-custom'; }), /GATESET-VENDOR-CONFORMANCE: execution binding is not inside job reusable-custom/);
+  assert.match(vendorErrors(gate => { ciBinding(gate).fragment = 'run: node scripts/verify-project-composer-gone.mjs'; }), /GATESET-VENDOR-CONFORMANCE: ghost execution binding in \.github\/workflows\/ci\.yml/);
+  assert.match(vendorErrors(gate => {
+    gate.selector.executionBindings = gate.selector.executionBindings.filter(binding => binding.source !== 'scripts/verify-reusable-artifact.mjs');
+  }), /GATESET-VENDOR-CONFORMANCE: tier local-vendor must be bound to scripts\/verify-reusable-artifact\.mjs/);
+  assert.match(vendorErrors(gate => {
+    gate.selector.executionBindings.find(binding => binding.source === 'scripts/verify-reusable-artifact.mjs').fragment = 'vendorSchemaNoLongerHere();';
+  }), /GATESET-VENDOR-CONFORMANCE: ghost execution binding in scripts\/verify-reusable-artifact\.mjs/);
 });
 
 test('verify runner bindings must be reached from the scope branch their tier names', () => {

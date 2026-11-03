@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /** A generated product's checks. Upstream framework regression tests run in the producer repository. */
 import { spawnSync } from 'node:child_process';
-import { randomBytes } from 'node:crypto';
+import { createHash, randomBytes } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -18,27 +18,37 @@ export const verificationVendor = database => (database?.vendor && database.vend
 /** 벤더 생성물이 통합 시험에 쓰는 번역 입력. */
 export const vendorInputPath = vendor => `config/vendor/${vendor}/vendor-input.json`;
 
+/** 벤더 스키마만 다시 보는 범위. 인증 주장이 없고 벤더 프로젝트에만 있다. */
+export const VENDOR_SCHEMA_SCOPE = 'vendor-schema';
+const GRADLE_OPTIONS = Object.freeze(['--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']);
+/** 생성물의 기준선과 도입자 마이그레이션을 실제 Flyway 로 적용한 DB 에서 대조하고, 카탈로그 시험과 시나리오를 돌린다. */
+export const vendorIntegrationStep = (vendor, layout) => ({ id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
+  '--flyway', `classpath:db/vendor/${vendor}`] });
+
 /**
  * 범위·배치에 맞는 검증 단계 표. 명령 목록(verificationCommands)도 이 표에서 만든다.
  * 벤더 생성물의 스키마 시험은 PostgreSQL 컨테이너 대신 그 벤더의 일회용 DB 에서 돈다(ADR-0047 D-10).
  */
 export function verificationSteps(scope = 'full', layout = 'multi-module', { vendor } = {}) {
-  if (!['contracts', 'backend', 'frontend', 'full'].includes(scope)) throw new Error('scope must be contracts, backend, frontend or full');
+  if (!['contracts', 'backend', 'frontend', 'full', VENDOR_SCHEMA_SCOPE].includes(scope)) throw new Error(`scope must be contracts, backend, frontend, full or ${VENDOR_SCHEMA_SCOPE}`);
   normalizeBackendLayout(layout);
   const taskPrefix = layout === 'single-module' ? '' : ':api-server:';
+  if (scope === VENDOR_SCHEMA_SCOPE && !vendor) throw new Error('vendor-schema 는 PostgreSQL 외 DB 로 생성한 프로젝트에서만 쓴다');
+  // 생성물 인증(거버넌스 첫 단계)을 지나지 않는다. 첫 소스 변경 뒤 전체 검증이 거기서 멈춰도 벤더 스키마 신호는 받게 한다.
+  if (scope === VENDOR_SCHEMA_SCOPE) return [
+    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...GRADLE_OPTIONS] },
+    vendorIntegrationStep(vendor, layout),
+  ];
   const steps = [
     { id: 'governance', command: 'node', args: ['scripts/verify-reusable-governance.mjs'] },
     { id: 'ui-governance', command: 'node', args: ['--test', 'scripts/reusable-ui-governance-contract.test.mjs'] },
     { id: 'entrypoints', command: 'node', args: ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs'] },
   ];
   if (['backend', 'full'].includes(scope)) steps.push(
-    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]),
-      '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8'] },
+    { id: 'backend', command: 'gradle', args: ['compileJava', 'compileTestJava', `${taskPrefix}harnessTest`, ...(vendor ? [] : [`${taskPrefix}schemaValidationTest`]), ...GRADLE_OPTIONS] },
     ...(vendor ? [
-      // 생성물의 기준선 파일을 실제 Flyway 로 적용한 DB 에서 대조하고 시나리오를 돌린다.
-      { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-integration.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor, '--layout', layout,
-        '--flyway', `classpath:db/vendor/${vendor}`] },
-      // 대체 분류 시험의 근거다. CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 대조한다.
+      vendorIntegrationStep(vendor, layout),
+      // 대체 분류 시험의 근거다. CHECK 는 같은 값을 PostgreSQL 과 대조하고, 트리거는 원본 함수의 기대 전이와 대조한다.
       { id: 'backend', command: 'node', args: ['scripts/project-composer-vendor-differential.mjs', '--input', vendorInputPath(vendor), '--vendor', vendor] },
     ] : []),
   );
@@ -70,14 +80,35 @@ export function runCommand(command, args, { root, env = process.env, capture = f
   return result.stdout;
 }
 
+/**
+ * 벤더 생성물의 파일 집합 지문. 인증 증거는 전체 검증을 통과한 그 파일로 돌아야 한다(project-composer-vendor-evidence.mjs). 생성 보고서는 검증 뒤에 결과를 다시 쓰므로 뺀다.
+ * 자기 저장소가 아니면 null 이다. 상위 저장소의 목록은 이 폴더를 무시해 빈 집합의 값이 나온다. 도입자가 .git 없이 옮긴 폴더의 검증을 이 때문에 막지 않고, 값이 없으면 증거 기록만 거부된다.
+ */
+export function vendorArtifactFingerprint(root) {
+  if (!existsSync(resolve(root, '.git'))) return null;
+  const listed = spawnSync('git', ['ls-files', '--cached', '--others', '--exclude-standard', '-z'], { cwd: root, encoding: 'utf8', windowsHide: true, maxBuffer: 64 * 1024 * 1024 });
+  if (listed.error || listed.status !== 0) return null;
+  const hash = createHash('sha256');
+  for (const file of listed.stdout.split('\0').filter(Boolean).sort()) {
+    if (file === 'project-generation-report.json' || file.split('/').includes('build')) continue;
+    let contents;
+    try { contents = readFileSync(resolve(root, file)); } catch { contents = '[missing]'; }
+    hash.update(`${file}\0`).update(contents).update('\0');
+  }
+  return hash.digest('hex');
+}
+
+/** 생성물 검증 단계가 받는 환경. 앱 문맥을 띄우는 시험이 비밀 값을 요구하므로 실행마다 만든다. */
+export const artifactStepEnvironment = () => ({ ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') });
+
 export function verifyReusableArtifact({ root, scope = 'full', run = runCommand } = {}) {
   root = resolve(root);
   const lock = JSON.parse(readFileSync(resolve(root, 'reusable-base-lock.json'), 'utf8'));
   if (!compositionProfiles().includes(lock.profile)) throw new Error('generated product lock is required');
   const layout = normalizeBackendLayout(lock.layout);
   const steps = verificationSteps(scope, layout, { vendor: lock.vendorProjection?.vendor });
-  const env = { ...process.env, TZ: 'Asia/Seoul', JWT_SECRET: process.env.JWT_SECRET || randomBytes(44).toString('hex') };
-  const report = { schemaVersion: 1, authority: 'local-product-technical-verification', profile: lock.profile,
+  const env = artifactStepEnvironment();
+  const report = { schemaVersion: 1, authority: scope === VENDOR_SCHEMA_SCOPE ? 'local-vendor-schema-check' : 'local-product-technical-verification', profile: lock.profile,
     scope, layout, sourceCommit: lock.sourceCommit, checkedAt: new Date().toISOString(),
     result: 'started', environmentApproved: false, runtimeScenariosExecuted: false, steps: [] };
   const reports = resolve(root, 'build/reports/reusable-base');
@@ -94,6 +125,7 @@ export function verifyReusableArtifact({ root, scope = 'full', run = runCommand 
       report.steps.push({ step: step.id, command: step.command, result: 'passed', durationMs: Date.now() - step.startedAt });
       step = undefined;
     }
+    if (scope === 'full' && lock.vendorProjection) report.artifactFingerprint = vendorArtifactFingerprint(root);
     report.result = 'passed';
   } catch (error) {
     if (step) {
@@ -111,7 +143,7 @@ if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.ur
     const args = process.argv.slice(2);
     const options = { root: resolve(dirname(fileURLToPath(import.meta.url)), '..') };
     for (let index = 0; index < args.length; index += 2) {
-      if (!['--root', '--scope'].includes(args[index]) || !args[index + 1]) throw new Error('usage: --root PATH --scope contracts|backend|frontend|full');
+      if (!['--root', '--scope'].includes(args[index]) || !args[index + 1]) throw new Error('usage: --root PATH --scope contracts|backend|frontend|full|vendor-schema');
       options[args[index].slice(2)] = args[index + 1];
     }
     if (!existsSync(resolve(options.root, 'reusable-base-lock.json'))) throw new Error('run this command inside a generated reusable artifact');

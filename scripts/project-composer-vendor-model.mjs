@@ -5,12 +5,13 @@
  * 조용히 빠진 제약은 벤더 프로젝트에서 사라진 줄도 모르게 되기 때문이다.
  */
 import { createHash } from 'node:crypto';
+import { ComposerError } from './project-composer-errors.mjs';
 
-export class VendorTranslationGap extends Error {
+/** 번역은 DB·소스 자식 생성기에서 돈다. 작업 코드 오류여야 자식 보고 파일로 엔진까지 간다. */
+export class VendorTranslationGap extends ComposerError {
   constructor(message) {
-    super(message);
+    super('VENDOR_TRANSLATION_GAP', {}, message);
     this.name = 'VendorTranslationGap';
-    this.code = 'VENDOR_TRANSLATION_GAP';
   }
 }
 

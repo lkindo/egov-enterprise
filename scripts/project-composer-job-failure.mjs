@@ -6,11 +6,12 @@
  *   - 자식 보고는 그 단계에 허용된 코드만 받는다(project-composer-child-failure.mjs).
  *   - Docker 는 종료 코드가 아니라 탐침(엔진 응답·컨테이너 실행 여부)으로 판정한다.
  *   - 검증 실패(VERIFY_FAILED)는 같은 작업이 남긴 검증 보고서의 신원과 단계·명령이 모두 맞을 때만이다.
+ *   - 벤더 대조 실패·벤더 엔진 미준비는 거기에 더해 그 명령이 벤더 검증 명령이고 종료 코드가 표에 있을 때만이다. 로그 글자는 보지 않는다.
  */
 import { readFileSync } from 'node:fs';
 import { homedir } from 'node:os';
 import { isAbsolute, join, relative, sep } from 'node:path';
-import { ComposerError, JOB_ERROR_CODES, withoutRoot } from './project-composer-errors.mjs';
+import { ComposerError, JOB_ERROR_CODES, VERIFICATION_JOB_CODES, vendorCodeOfExit, withoutRoot } from './project-composer-errors.mjs';
 import { createLogMasker, environmentSecrets } from './project-composer-command.mjs';
 import { readChildFailure } from './project-composer-child-failure.mjs';
 import { dockerAnswers, ownedPostgresRunning } from './project-composer-postgres.mjs';
@@ -18,6 +19,8 @@ import { verificationSteps, verificationVendor } from './verify-reusable-artifac
 
 /** 검증을 실행하는 명령 식별자. 서버는 VERIFY_FAILED 가 이 명령의 실패일 때만 받는다. */
 export const VERIFY_COMMAND_ID = 'scripts/verify-reusable-artifact.mjs';
+/** 종료 코드로 벤더 실패 코드를 전하는 검증 명령. Gradle 같은 다른 명령의 같은 종료 코드는 뜻이 다르다. */
+export const VENDOR_CODE_COMMANDS = Object.freeze(['scripts/project-composer-vendor-integration.mjs', 'scripts/project-composer-vendor-differential.mjs']);
 export const LOG_TAIL_LINES = 40;
 export const LOG_TAIL_WIDTH = 300;
 
@@ -69,6 +72,7 @@ export async function classifyChildFailure(error, { stage, reportPath, root, sou
  * 검증 명령이 실패했을 때, 같은 작업이 남긴 검증 보고서(full.json)에서 실패한 단계를 찾는다. 다음이 모두 맞을 때만이다.
  * 결과 failed·범위 full, 원본 커밋·배치·프로필이 구성과 같음, 이 작업이 시작된 뒤에 확인함, 종료 코드가 정수(신호·실행 실패 제외),
  * 실패 단계가 단계 표에 있고 마지막 단계 기록과 같음, 실패 명령이 그 단계의 명령과 정확히 같음.
+ * 그 명령이 벤더 검증 명령이고 종료 코드가 표에 있으면 vendorCode 를 함께 돌려준다.
  */
 export function failedVerificationStep(projectDirectory, composition, startedAt) {
   let report;
@@ -85,7 +89,8 @@ export function failedVerificationStep(projectDirectory, composition, startedAt)
   const expected = verificationSteps('full', composition.backendLayout, { vendor: verificationVendor(composition.database) })
     .find(step => step.id === failure.step && [step.command, ...step.args].join(' ') === failure.command);
   if (!expected) return undefined;
-  return { step: failure.step, command: failure.command };
+  const vendorCode = expected.command === 'node' && VENDOR_CODE_COMMANDS.includes(expected.args[0]) ? vendorCodeOfExit(failure.exitCode) : undefined;
+  return { step: failure.step, command: failure.command, ...(vendorCode ? { vendorCode } : {}) };
 }
 
 const EXIT_LINE = /^\[종료 코드 .+ · 가림 \d+건\]$/;
@@ -114,14 +119,14 @@ export function verificationLogTail(logPath, header, { roots = [], home = homedi
   return tail.length ? tail : undefined;
 }
 
-/** 검증 명령의 실패를 VERIFY_FAILED 로 바꾼다. 판정할 수 없으면 원래 오류 그대로다. */
+/** 검증 명령의 실패를 VERIFY_FAILED(벤더 검증 명령이 코드를 전했으면 그 코드)로 바꾼다. 판정할 수 없으면 원래 오류 그대로다. */
 export function classifyVerificationFailure(error, { projectDirectory, composition, startedAt, roots }) {
   if (error?.code !== 'COMMAND_FAILED' || error.commandId !== VERIFY_COMMAND_ID) return error;
   const found = failedVerificationStep(projectDirectory, composition, startedAt);
   if (!found) return error;
   const logTail = error.log ? verificationLogTail(error.log,
     { profile: composition.profile, layout: composition.backendLayout, command: found.command }, { roots }) : undefined;
-  return Object.assign(classified('VERIFY_FAILED', { step: found.step }, error), logTail ? { logTail } : {});
+  return Object.assign(classified(found.vendorCode ?? 'VERIFY_FAILED', { step: found.step }, error), logTail ? { logTail } : {});
 }
 
 /**
@@ -139,5 +144,5 @@ export function jobFailure(error, { stage, outputRoot, sourceCommit }) {
     ...(command?.commandId ? { commandId: command.commandId, exitCode: command.exitCode ?? null, durationMs: command.durationMs } : {}),
     ...(log ? { log } : {}),
     ...(sourceCommit ? { sourceCommit } : {}),
-    ...(coded && error.code === 'VERIFY_FAILED' ? { step: error.details.step, ...(error.logTail ? { logTail: error.logTail } : {}) } : {}) };
+    ...(coded && VERIFICATION_JOB_CODES.includes(error.code) ? { step: error.details.step, ...(error.logTail ? { logTail: error.logTail } : {}) } : {}) };
 }

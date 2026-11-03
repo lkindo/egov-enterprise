@@ -1,36 +1,47 @@
 import assert from 'node:assert/strict';
+import { spawn, spawnSync } from 'node:child_process';
+import { EventEmitter } from 'node:events';
 import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
-import { assertCatalogParity, assertCoverage, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
-import { loadVendorLedger, selectableVendors, translateForAllVendors, VENDOR_ADAPTERS, VENDOR_IDS } from './project-composer-vendors.mjs';
+import { assertCatalogParity, assertCoverage, assertUniqueColumns, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
+import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION_KINDS, selectableVendors, translateForAllVendors, unshownDegradations, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices, vendorDegradationNotes } from './project-composer-vendors.mjs';
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
-import { probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
-import { assertTestsRan, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs } from './project-composer-vendor-integration.mjs';
+import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
+import { rowCounts } from './project-composer-vendor-verify.mjs';
+import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
+import { VENDOR_BASELINE_VERSION, VENDOR_GRADLE_OPTIONS, addedByteColumns, appliedHibernateCheck, assertTestsRan, assertVendorLock, childEnvironment, conformanceCatalog, flywayEnvironment, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
-import { failedVerificationStep } from './project-composer-job-failure.mjs';
+import { failedVerificationStep, verificationLogTail } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
-import { collectResults, parseCount, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
+import { collectResults, launchVendorContainer, parseCount, readByteColumns, readCatalog, readNextValues, readSequenceNextValues, readUniqueColumns, readUniqueSignatures, runAsAdministrator, startVendorEngine, stopVendorEngineReporting, VENDOR_ENGINES, VENDOR_INTROSPECTION, VENDOR_SEQUENCE_NEXT_VALUES, VENDOR_UNIQUE_COLUMNS, VENDOR_UNIQUE_SIGNATURES, vendorContainerLabels } from './project-composer-vendor-engine.mjs';
 import { removeJobContainers } from './project-composer-postgres.mjs';
 import { VENDOR_ASSET_LEDGER, VENDOR_ASSET_RULE, pruneVendorPostgresAssets, readVendorAssetLedger, staleVendorAssets } from './reusable-vendor-assets.mjs';
-import { artifactAliases } from './reusable-artifact-entrypoints-contract.mjs';
+import { ARTIFACT_COMMAND, artifactAliases, reusableArtifactEntrypoints } from './reusable-artifact-entrypoints-contract.mjs';
 import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-baseline-manifest.mjs';
-import { assertIsolatedRunnerSupportsProject } from './run-isolated-e2e.mjs';
+import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
+import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
+import { asPreviewOracle, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
-import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, renderFlywayMigration, VENDOR_SOURCE,
-  vendorApplicationDocument, vendorMigrationLocation } from './project-composer-vendor-project.mjs';
+import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, projectVendorSources, renderFlywayMigration, VENDOR_SOURCE,
+  VENDOR_README_PRECEDENCE, VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
+import { reusableBaseLayoutLines } from './generate-reusable-base-source.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
 import { DATABASE_VENDORS } from './project-composer-db.mjs';
 import { backendEnvironment, isLocalDatabaseUrl } from './dev.mjs';
+import { createComposerEngine } from './project-composer.mjs';
+import { composerVerificationRecipe, parseComposerVerificationArgs } from './verify-project-composer.mjs';
+import { validateComposerRequestRecipe } from './project-composer-server.mjs';
 
 const ROOT = resolve(fileURLToPath(new URL('.', import.meta.url)), '..');
 const isGap = error => error instanceof VendorTranslationGap && error.code === 'VENDOR_TRANSLATION_GAP';
@@ -233,10 +244,30 @@ test('translations keep the semantics the differential found', () => {
   assert.ok(hash.op === 'regex');
 });
 
+test('the Oracle adapter states the columns of every key and unique, and they reach the statement', () => {
+  const sample = model();
+  const emission = oracleAdapter.emitSchema(sample);
+  const uniques = sample.tables.flatMap(table => [...table.uniques, ...(table.primaryKey ? [table.primaryKey] : [])].map(item => [`${table.name}.${item.name}`, item.columns]));
+  assert.ok(uniques.length >= 3);
+  for (const [name, columns] of uniques) assert.deepEqual(emission.uniqueColumns.get(name), columns, name);
+  // 제약 경로와 함수 인덱스 경로 모두 컬럼이 문장에 있어야 이름 대조를 받는 이 값이 실제 스키마를 뜻한다.
+  const statements = emission.statements.map(statement => statement.sql);
+  for (const table of sample.tables) {
+    for (const unique of table.uniques) {
+      const statement = statements.find(sql => sql.includes(` ${unique.name} `));
+      for (const name of unique.columns) assert.match(statement, new RegExp(`\\b${name}\\b`), `${unique.name}: ${name}`);
+      if (unique.columns.length > 1 && unique.columns.some(name => table.columns.find(column => column.name === name).nullable)) {
+        assert.equal([...statement.matchAll(/CASE WHEN/g)].length, unique.columns.length, `${unique.name}: 컬럼마다 CASE 하나`);
+      }
+    }
+  }
+});
+
 test('nullable composite uniques keep accepting partly NULL rows', () => {
   const sample = model();
   const sql = adapter => adapter.emitSchema(sample).statements.map(statement => statement.sql).join('\n');
-  assert.match(sql(oracleAdapter), /CREATE UNIQUE INDEX uk_t_child_owner_url ON t_child \(CASE WHEN owner IS NOT NULL AND url IS NOT NULL THEN owner END/);
+  // 벤더 DB 에서 도는 시험 가운데 부분 NULL 행을 넣는 것이 없어, 이 문장 고정이 조건 모양의 유일한 안전망이다.
+  assert.match(sql(oracleAdapter), /CREATE UNIQUE INDEX uk_t_child_owner_url ON t_child \(CASE WHEN owner IS NOT NULL AND url IS NOT NULL THEN owner END, CASE WHEN owner IS NOT NULL AND url IS NOT NULL THEN url END\)/);
   assert.match(sql(mssqlAdapter), /CREATE UNIQUE INDEX uk_t_child_owner_url ON t_child \(owner, url_hash\) WHERE owner IS NOT NULL AND url IS NOT NULL/);
   assert.match(sql(cubridAdapter), /ALTER TABLE t_child ADD COLUMN uq_key_1 VARCHAR\(2500\)/);
   // 끝 글자만 다른 긴 주소를 구분하려면 접두가 아니라 해시여야 한다.
@@ -281,15 +312,97 @@ test('a client that stopped early is a failed run, not a rejected value', () => 
   const done = collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 3819 (HY000): Check constraint is violated\n@@COMPLETED\n' }, statements, errors, 'mysql');
   assert.deepEqual(done.errors.map(item => item.index), [1]);
   const notReady = error => error.code === 'VENDOR_ENGINE_NOT_READY';
-  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '문장 표식이 빠지면 실패다');
-  assert.throws(() => collectResults({ status: 137, stdout: '@@0\n@@1\n', stderr: 'Killed\n' }, statements, errors, 'mysql'), notReady, '마지막 문장 뒤의 단절도 실패다');
+  // 표식이 빠진 것은 끊김일 수도, 앞 문장이 스크립트를 삼킨 번역 결함일 수도 있어 대상 DB 탓으로 말하지 않는다.
+  const incomplete = error => error.code === 'VENDOR_RUN_INCOMPLETE';
+  assert.throws(() => collectResults({ status: 0, stdout: '@@0\n@@COMPLETED\n' }, statements, errors, 'mysql'), incomplete, '문장 표식이 빠지면 실패다');
+  assert.throws(() => collectResults({ status: 137, stdout: '@@0\n@@1\n', stderr: 'Killed\n' }, statements, errors, 'mysql'), incomplete, '마지막 문장 뒤의 단절도 실패다');
   assert.throws(() => collectResults({ status: 1, stdout: '@@0\n@@1\nERROR 2013 (HY000): Lost connection\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '연결 단절은 값 거부가 아니다');
-  assert.throws(() => collectResults({ status: 0, stdout: '' }, statements, errors, 'mysql'), notReady, '접속 실패의 빈 출력은 전부 통과가 아니다');
+  assert.throws(() => collectResults({ status: 0, stdout: '' }, statements, errors, 'mysql'), incomplete, '접속 실패의 빈 출력은 전부 통과가 아니다');
   assert.throws(() => collectResults({ status: null, signal: 'SIGTERM', stdout: '@@0\n@@1\n@@COMPLETED\n' }, statements, errors, 'mysql'), notReady, '시간 초과는 실패다');
   assert.throws(() => collectResults({ status: 1, error: new Error('spawn failed') }, statements, errors, 'mysql'), notReady);
   assert.equal(parseCount(['<00001>  count(*): 3']), 3);
   assert.equal(parseCount(['0']), 0);
   assert.equal(parseCount(['no rows']), null);
+});
+
+test('unique parity reads the column set of constraints, plain unique indexes and function indexes', () => {
+  const lines = [
+    ['tb_a.pk_tb_a=id', 'tb_a.uk_pair=a', 'tb_a.uk_pair=b', 'flyway_schema_history.flyway_schema_history_pk=installed_rank'],
+    ['tb_a.uk_idx=c'],
+    ['tb_a.uk_fn=CASE  WHEN ("A" IS NOT NULL AND "D" IS NOT NULL) THEN "A" END', 'tb_a.uk_fn=CASE  WHEN ("A" IS NOT NULL AND "D" IS NOT NULL) THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")', '@@COMPLETED', ''],
+  ];
+  const statements = [];
+  const read = () => readUniqueColumns({}, 'oracle', (_, sql, options) => {
+    statements.push(...sql);
+    assert.ok(options.sessionPrefix.some(item => /SERVEROUTPUT ON/.test(item)), '식은 DBMS_OUTPUT 으로 나온다');
+    return { errors: [], sections: new Map(lines.map((section, index) => [index, section])) };
+  });
+  const found = read();
+  assert.ok(statements[2].raw, '식 조회는 PL/SQL 블록이다');
+  assert.deepEqual([...found.get('tb_a.uk_pair').keys], ['a', 'b']);
+  assert.deepEqual([...found.get('tb_a.uk_fn').keys], ['a', 'd'], 'CASE 의 값이 키다');
+  assert.deepEqual([...found.get('tb_a.uk_trim').keys], ['e'], 'CASE 가 아닌 식은 참조 컬럼이 키다');
+  assert.deepEqual([...found.get('tb_a.uk_idx').keys], ['c', 'f'], '일반 컬럼과 식이 섞인 인덱스는 합친다');
+
+  const emission = columns => {
+    const value = createEmission('oracle');
+    for (const [name, list] of Object.entries(columns)) value.expectUnique('tb_a', name, list);
+    return value;
+  };
+  const ignoreTables = ['flyway_schema_history'];
+  const matching = { pk_tb_a: ['id'], uk_pair: ['a', 'b'], uk_idx: ['c', 'f'], uk_fn: ['a', 'd'], uk_trim: ['e'] };
+  assert.doesNotThrow(() => assertUniqueColumns(emission(matching), found, { ignoreTables }));
+  const parity = /키·유니크의 컬럼이 번역 결과와 다르다/;
+  assert.throws(() => assertUniqueColumns(emission({ ...matching, uk_pair: ['a'] }), found, { ignoreTables }), error => error.code === 'VENDOR_PARITY_FAILED' && parity.test(error.message) && /uk_pair 기대 \(a\), 실제 키 \(a, b\)/.test(error.message));
+  assert.throws(() => assertUniqueColumns(emission({ ...matching, uk_missing: ['z'] }), found, { ignoreTables }), /tb_a\.uk_missing 없음\(기대 z\)/);
+  assert.throws(() => assertUniqueColumns(emission({ pk_tb_a: ['id'], uk_pair: ['a', 'b'], uk_idx: ['c', 'f'], uk_fn: ['a', 'd'] }), found, { ignoreTables }), /tb_a\.uk_trim 기대에 없는 유니크/, '일반 인덱스가 유니크가 된 번역도 붉다');
+  assert.throws(() => assertUniqueColumns(emission(matching), found), /flyway_schema_history_pk 기대에 없는 유니크/, '지정한 표만 뺀다');
+
+  // CASE 가 하나 빠지면 조건에 컬럼이 남아도 키가 줄어든다.
+  lines[2] = ['tb_a.uk_fn=CASE  WHEN ("A" IS NOT NULL AND "D" IS NOT NULL) THEN "A" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
+  assert.throws(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), /uk_fn 기대 \(a, d\), 실제 키 \(a\), 식 참조 \(a, d\)/);
+  // 묶음 조건이 줄어도 부분 NULL 의미가 달라진다.
+  lines[2] = ['tb_a.uk_fn=CASE  WHEN "A" IS NOT NULL THEN "A" END', 'tb_a.uk_fn=CASE  WHEN "D" IS NOT NULL THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
+  assert.doesNotThrow(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), '이 대조는 컬럼 집합만 본다. 조건의 모양은 어댑터 문장을 고정하는 시험(nullable composite uniques) 몫이다');
+
+  assert.equal(readUniqueColumns({}, 'mysql', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
+  assert.throws(() => readUniqueColumns({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), error => error.code === 'VENDOR_QUERY_FAILED');
+  assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_COLUMNS[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 컬럼 조회가 있어야 한다');
+  assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_SEQUENCE_NEXT_VALUES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 시퀀스 다음 값 조회가 있어야 한다');
+});
+
+test('sequence next values and byte columns come from strict lines', () => {
+  const answer = lines => () => ({ errors: [], sections: new Map([[0, lines]]) });
+  assert.deepEqual([...readSequenceNextValues({}, 'oracle', answer(['sq_a:42', '  sq_b:1  ', '@@COMPLETED']))], [['sq_a', 42], ['sq_b', 1]]);
+  assert.equal(readSequenceNextValues({}, 'mysql', answer([])), null);
+  assert.throws(() => readSequenceNextValues({}, 'oracle', answer(['sq_a 42'])), error => error.code === 'VENDOR_QUERY_FAILED' && /시퀀스 다음 값 조회의 줄을 해석하지 못했다: sq_a 42/.test(error.message));
+  assert.deepEqual(readByteColumns({}, 'oracle', answer(['tb_a.nm=100', 'tb_a.tk=4000'])), ['tb_a.nm=100', 'tb_a.tk=4000']);
+  assert.deepEqual(readByteColumns({}, 'mysql', answer(['x'])), [], '바이트 의미가 없는 벤더는 비어 있다');
+  assert.throws(() => readByteColumns({}, 'oracle', answer(['bad-name.nm=100'])), /바이트 컬럼 조회의 줄을 해석하지 못했다/);
+  assert.deepEqual(addedByteColumns(['tb_a.tk=4000'], ['tb_a.tk=4000', 'tb_a.nm=100']), ['tb_a.nm=100'], '기준선의 바이트 컬럼은 어댑터의 저하다');
+  assert.deepEqual(addedByteColumns(['tb_a.tk=4000'], ['tb_a.tk=1000']), [], '기준선 컬럼을 줄인 것은 길이 규칙이 본다');
+  assert.deepEqual(addedByteColumns([], ['tb_a.tk=4000']), ['tb_a.tk=4000']);
+});
+
+test('an Oracle catalog line that cannot be read stops the run instead of disappearing', () => {
+  const kinds = Object.keys(VENDOR_INTROSPECTION.oracle);
+  const answer = (index, lines) => () => ({ errors: [], sections: new Map(kinds.map((_, at) => [at, at === index ? lines : []])) });
+  const stops = (kind, line) => assert.throws(() => readCatalog({}, 'oracle', answer(kinds.indexOf(kind), [line])),
+    error => error.code === 'VENDOR_QUERY_FAILED' && error.message.includes(`${kind} 조회의 줄을 해석하지 못했다: ${line}`) && /따옴표 없는 표준 이름/.test(error.message), line);
+  stops('columns', '게시판.id');
+  stops('columns', 'bad-name.id');
+  stops('columns', 'bad name.id');
+  stops('columns', 'x tb_quiet.id');
+  stops('constraints', 'tb_ok.bad-constraint');
+  stops('sequences', '.sq-bad');
+  stops('constraints', 'bin$abc==$0.bin$def==$0');
+  const good = readCatalog({}, 'oracle', answer(0, ['tb_ok.id', 'flyway_schema_history.installed_rank', '', '@@COMPLETED']));
+  assert.deepEqual(good.columns, ['tb_ok.id', 'flyway_schema_history.installed_rank'], '빈 줄과 끝 표식은 값이 아니다');
+  // 휴지통 이름이 조회에서 빠져야 이 판정이 DROP TABLE 을 거짓 실패로 만들지 않는다.
+  for (const kind of ['columns', 'constraints', 'indexes', 'triggers']) assert.match(VENDOR_INTROSPECTION.oracle[kind], /NOT LIKE 'BIN\$%'/, kind);
+  // csql 은 머리 줄을 내므로 다른 벤더는 줄 끝만 읽는다.
+  const csql = readCatalog({}, 'cubrid', () => ({ errors: [], sections: new Map([[0, ["<00001>  expr: 'tb_a.id'", 'There are 1 rows']]]) }));
+  assert.deepEqual(csql.columns, ['tb_a.id']);
 });
 
 test('catalog parity is red for a missing index, an extra object and a dropped trigger', () => {
@@ -354,9 +467,299 @@ test('the differential probes both sides of every rule', () => {
 test('only certified vendors can be chosen and the ledger names every vendor', () => {
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
+  // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
   assert.deepEqual(selectableVendors(ledger), ['postgresql']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
-  assert.ok(ledger.vendors.filter(vendor => vendor.status !== 'certified').every(vendor => vendor.reason), '고를 수 없는 벤더는 사유가 있다');
+  // 사유는 화면에 그대로 나간다.
+  for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, vendor.id);
+});
+
+/** 실제 원장을 바꿔 임시 폴더에 쓰고 검증 함수로 다시 읽는다. change 가 원장 전체를 고칠 수 있다. */
+function ledgerCopy(t, change) {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-ledger-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  const ledger = asPreviewOracle(JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8')));
+  change(id => ledger.vendors.find(vendor => vendor.id === id), ledger);
+  mkdirSync(join(directory, 'config'));
+  writeFileSync(join(directory, VENDOR_LEDGER_PATH), JSON.stringify(ledger));
+  return directory;
+}
+const certify = id => vendor => { certifyVendor(vendor(id)); };
+const withPreviewEnv = (value, action) => {
+  const previous = process.env.COMPOSER_PREVIEW_VENDOR;
+  if (value === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR; else process.env.COMPOSER_PREVIEW_VENDOR = value;
+  try { return action(); } finally {
+    if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR; else process.env.COMPOSER_PREVIEW_VENDOR = previous;
+  }
+};
+
+test('a ledger that would mislead the screen or strand the default vendor is refused', t => {
+  const load = change => () => loadVendorLedger(ledgerCopy(t, change));
+  assert.doesNotThrow(load(() => {}));
+  assert.throws(load(vendor => { vendor('postgresql').status = 'preview'; vendor('postgresql').reason = '시험'; }), /기본 벤더는 certified/);
+  assert.throws(load(vendor => { delete vendor('oracle').label; }), /oracle: 화면에 보일 이름이 없다/);
+  assert.throws(load(vendor => { delete vendor('oracle').reason; }), /oracle: 고를 수 없는 사유가 없다/);
+  assert.throws(load(vendor => { vendor('oracle').status = 'certified'; }), /oracle: 증거 없는 certified/);
+});
+
+/** 어댑터 소스가 선언할 수 있는 저하 종류. 계획에는 모델이 없고 시험 모델은 일부 분기만 지나므로 호출 지점을 센다. 읽지 못하는 모양의 호출이 있으면 붉다. */
+function declaredDegradationKinds(adapterFile) {
+  const source = readFileSync(join(ROOT, adapterFile), 'utf8');
+  const suffixed = [...source.matchAll(/emission\.degrade\(`[^`]*:([a-z-]+)`/g)].map(match => match[1]);
+  const bare = [...source.matchAll(/emission\.degrade\(index\.name\b/g)].map(() => 'index');
+  const pushed = [...source.matchAll(/emission\.degradations\.push\(\{ name: '([a-z-]+)'/g)].map(match => match[1]);
+  assert.equal(suffixed.length + bare.length, [...source.matchAll(/emission\.degrade\(/g)].length, `${adapterFile}: 읽지 못한 저하 선언이 있다`);
+  assert.equal(pushed.length, [...source.matchAll(/emission\.degradations\.push\(/g)].length, `${adapterFile}: 읽지 못한 고정 저하가 있다`);
+  return new Set([...suffixed, ...bare, ...pushed]);
+}
+
+test('every degradation an adapter can declare has a sentence in the ledger, in both directions', () => {
+  const ledger = loadVendorLedger(ROOT);
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const kinds = oracle.notices.degradations.map(row => row.kind);
+  assert.deepEqual([...kinds].sort(), [...declaredDegradationKinds('scripts/project-composer-vendor-oracle.mjs')].sort());
+  // 시험 모델은 인덱스 분기를 지난다. 이름에서 읽은 종류가 소스에서 센 종류와 같은 체계인지 본다.
+  const emitted = oracleAdapter.emitSchema(model()).degradations;
+  assert.ok(emitted.length > fixedDegradations('oracle').length, '모델 유래 저하가 없으면 이 대조는 비어 있다');
+  assert.deepEqual(unshownDegradations(oracle, emitted), []);
+  for (const kind of emitted.map(row => degradationKind(row.name))) assert.ok(kinds.includes(kind), kind);
+  assert.deepEqual(unshownDegradations(oracle, [{ name: 'ix_a' }, { name: 'tb_a.b:length' }, { name: 'tb_a.b:new-kind' }, { name: 'new-fixed' }]), ['new-kind', 'new-fixed']);
+  assert.deepEqual(unshownDegradations({ id: 'mysql' }, [{ name: 'ix_a' }]), ['index'], '문장이 없는 벤더는 모두 붉다');
+  // 다른 어댑터도 같은 표기로 선언한다. 승격 때 이 대조가 그대로 걸린다.
+  for (const file of ['mysql', 'mssql', 'cubrid']) {
+    for (const kind of declaredDegradationKinds(`scripts/project-composer-vendor-${file}.mjs`)) {
+      assert.ok(MODEL_DEGRADATION_KINDS.includes(kind) || fixedDegradations(file).includes(kind), `${file}: 모르는 종류 ${kind}`);
+    }
+  }
+});
+
+test('certification needs the sentences the screen shows', t => {
+  const certified = change => () => loadVendorLedger(ledgerCopy(t, vendor => { certifyVendor(vendor('oracle')); change(vendor('oracle').notices); }));
+  assert.doesNotThrow(certified(() => {}));
+  assert.throws(certified(notices => { notices.degradations = notices.degradations.filter(row => row.kind !== 'empty-string'); }), /oracle: 표시 문장이 없는 저하\(empty-string\)/);
+  assert.throws(certified(notices => { notices.degradations.push({ kind: 'gone', summary: 'x', text: 'y' }); }), /oracle: 어댑터에 없는 저하의 표시 문장\(gone\)/);
+  assert.throws(certified(notices => { notices.degradations[0].text = ''; }), /oracle: 표시 문장이 비었다\(empty-string\)/);
+  assert.throws(certified(notices => { delete notices.image; }), /oracle: 화면에 보일 저하·이미지 안내\(notices\)가 없다/);
+  assert.throws(certified(notices => { delete notices.degradations; }), /oracle: 화면에 보일 저하·이미지 안내\(notices\)가 없다/);
+  assert.throws(() => loadVendorLedger(ledgerCopy(t, (vendor, ledger) => { certifyVendor(vendor('oracle')); delete ledger.removedPostgresTools; })), /oracle: 빠지는 도구의 표시 문장\(removedPostgresTools\)이 없다/);
+  assert.doesNotThrow(() => loadVendorLedger(ledgerCopy(t, vendor => { delete vendor('oracle').notices; })), 'preview 는 문장 없이도 그대로다');
+});
+
+/** 시험 스냅숏에 부분 인덱스 하나를 더한다. 유일 여부만 바꿔 저하와 번역 불가를 가른다. */
+const withPartialIndex = unique => {
+  const value = snapshot();
+  value.indexes.push({ table_name: 't_child', name: 'ix_t_child_owner_live',
+    definition: `CREATE ${unique ? 'UNIQUE ' : ''}INDEX ix_t_child_owner_live ON public.t_child USING btree (owner) WHERE (parent_id IS NOT NULL)` });
+  return value;
+};
+
+// 계획에는 모델이 없어 모델 유래 저하는 생성할 때만 전부 보인다. 생성 경로 자체를 돌려 대조가 쓰기 전에 멈추는지 본다.
+test('generation stops before writing anything when the real model has a degradation the screen does not show', t => {
+  const input = { snapshot: withPartialIndex(false), extras, rows: {} };
+  const project = directory => () => projectVendorSources(directory, { vendorId: 'oracle', input, inputText: '{}', layout: 'multi-module' });
+  const unshown = ledgerCopy(t, vendor => { vendor('oracle').notices.degradations = vendor('oracle').notices.degradations.filter(row => row.kind !== 'partial'); });
+  assert.throws(project(unshown), { message: '표시 문장이 없는 벤더 저하: partial. config/db-vendors.json 의 notices 에 더한다.' });
+  assert.deepEqual(readdirSync(unshown), ['config'], '멈추기 전에 아무것도 쓰지 않는다');
+  // 문장이 있으면 대조를 지나 기준선을 쓴다. 이 폴더에는 소스가 없어 첫 소스 파일을 읽을 때 멈춘다.
+  const shown = ledgerCopy(t, () => {});
+  assert.throws(project(shown), { code: 'ENOENT' });
+  assert.match(readFileSync(join(shown, vendorBaselinePaths('oracle').migration), 'utf8'), /^CREATE INDEX ix_t_child_owner_live ON t_child \(owner\);$/m);
+});
+
+test('a partial unique index stops the vendors that drop the condition instead of widening uniqueness', () => {
+  const unique = buildVendorModel({ snapshot: withPartialIndex(true), extras });
+  for (const adapter of [oracleAdapter, mysqlAdapter, mariadbAdapter, cubridAdapter]) {
+    assert.throws(() => adapter.emitSchema(unique), error => isGap(error) && error.message === 'ix_t_child_owner_live: 조건부 유일 인덱스는 조건 없이 옮길 수 없다', adapter.id);
+  }
+  // 조건을 그대로 옮기는 벤더는 막지 않는다. 키가 NULL 인 행은 유일 제약처럼 걸러 여럿 받는다.
+  assert.ok(mssqlAdapter.emitSchema(unique).statements.some(({ sql }) => sql === 'CREATE UNIQUE INDEX ix_t_child_owner_live ON t_child (owner) WHERE parent_id IS NOT NULL AND owner IS NOT NULL'),
+    'mssql: 부분 유일 인덱스는 조건과 NULL 거름을 함께 둔다');
+  // 유일하지 않은 부분 인덱스는 지금처럼 성능 저하로 둔다.
+  const plain = oracleAdapter.emitSchema(buildVendorModel({ snapshot: withPartialIndex(false), extras }));
+  assert.ok(plain.degradations.some(row => row.name === 'ix_t_child_owner_live:partial'));
+  assert.ok(mssqlAdapter.emitSchema(buildVendorModel({ snapshot: withPartialIndex(false), extras })).statements.some(({ sql }) => sql === 'CREATE INDEX ix_t_child_owner_live ON t_child (owner) WHERE parent_id IS NOT NULL'),
+    'mssql: 유일하지 않은 부분 인덱스는 NULL 을 거르지 않는다');
+});
+
+/** 시험 스냅숏에 btree 인덱스 하나를 더한다. 유일 여부만 바꿔 같은 정의의 유일·비유일 판을 만든다. */
+const withIndex = (name, body, unique) => {
+  const value = snapshot();
+  value.indexes.push({ table_name: 't_child', name, definition: `CREATE ${unique ? 'UNIQUE ' : ''}INDEX ${name} ON public.t_child USING btree (${body})` });
+  return buildVendorModel({ snapshot: value, extras });
+};
+/** 모델 문법은 식 유일 인덱스를 받지 않는다(parseIndex). 어댑터가 그런 모델을 받아도 유일성을 버리지 않는지 보려고 모델을 직접 고친다. */
+const withModelIndex = index => {
+  const value = model();
+  value.tables.find(table => table.name === 't_child').indexes.push({ method: 'btree', where: null, ...index });
+  return value;
+};
+const statementsOf = (adapter, sample) => adapter.emitSchema(sample).statements.map(statement => statement.sql);
+const stopsWith = (adapter, sample, message) => assert.throws(() => adapter.emitSchema(sample), error => isGap(error) && error.message === message, `${adapter.id}: ${message}`);
+
+test('a standalone unique index with a nullable key gets the treatment the vendor gives the unique constraint', () => {
+  // 모델의 독립 유일 인덱스는 지금 스키마에 없다. 생기면 PostgreSQL 처럼 일부 NULL 행을 여럿 받아야 한다(설계서 §2 의미 프로브).
+  const unique = withIndex('ix_t_child_owner_parent', 'owner, parent_id DESC', true);
+  const whole = 'owner IS NOT NULL AND parent_id IS NOT NULL';
+  const oracle = oracleAdapter.emitSchema(unique);
+  // DESC 는 두지 않는다. Oracle 의 내림차순 열은 NULL 을 '00' 으로 담아 (NULL, 1) 두 행을 다시 중복으로 거부한다(Oracle 23 실측).
+  assert.ok(oracle.statements.some(({ sql }) => sql === `CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (CASE WHEN ${whole} THEN owner END, CASE WHEN ${whole} THEN parent_id END)`),
+    'oracle: 독립 유일 인덱스도 CASE 함수 인덱스로 옮기고 DESC 는 두지 않는다');
+  assert.deepEqual(oracle.uniqueColumns.get('t_child.ix_t_child_owner_parent'), ['owner', 'parent_id'], 'oracle: 키 대조가 함수 인덱스의 컬럼을 기대한다');
+  const cubrid = statementsOf(cubridAdapter, unique);
+  assert.ok(cubrid.includes('CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (uq_key_2)') && cubrid.includes('ALTER TABLE t_child ADD COLUMN uq_key_2 VARCHAR(2500)'),
+    'cubrid: 독립 유일 인덱스도 그림자 키로 옮긴다');
+  assert.ok(statementsOf(mssqlAdapter, unique).includes(`CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (owner, parent_id DESC) WHERE ${whole}`), 'mssql: 독립 유일 인덱스도 NULL 을 거른다');
+  // MySQL 계열의 유일 인덱스는 NULL 이 든 행을 PostgreSQL 처럼 여럿 받는다.
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.ok(statementsOf(adapter, unique).includes('CREATE UNIQUE INDEX ix_t_child_owner_parent ON t_child (owner, parent_id DESC)'), adapter.id);
+  // 같은 정의의 비유일 판은 지금처럼 일반 인덱스다.
+  const plain = withIndex('ix_t_child_owner_parent', 'owner, parent_id DESC', false);
+  for (const adapter of Object.values(VENDOR_ADAPTERS)) {
+    assert.ok(statementsOf(adapter, plain).includes('CREATE INDEX ix_t_child_owner_parent ON t_child (owner, parent_id DESC)'), `${adapter.id}: 비유일 판은 일반 인덱스`);
+  }
+  assert.equal(oracleAdapter.emitSchema(plain).uniqueColumns.has('t_child.ix_t_child_owner_parent'), false);
+  // Oracle 의 TRIM 은 공백뿐인 값을 NULL 로 만들고, CUBRID 그림자 키는 컬럼 값만 잇는다. 식 키는 NULL 의미를 지킬 수 없다.
+  const expression = withModelIndex({ name: 'ix_t_child_trim_parent', unique: true, columns: [{ name: 'owner', expression: 'trim' }, { name: 'parent_id' }] });
+  for (const adapter of [oracleAdapter, cubridAdapter]) stopsWith(adapter, expression, 'ix_t_child_trim_parent: 식이 든 복합 유일 인덱스는 NULL 의미를 지켜 옮길 수 없다');
+});
+
+test('an Oracle unique index keeps NULL rows apart by dropping DESC, which only the non-unique version keeps', () => {
+  // NULL 허용 단일 컬럼의 내림차순 유일 인덱스는 NULL 두 행을 거부한다. PostgreSQL 은 받는다(Oracle 23 실측).
+  assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_owner_desc', 'owner DESC', true)).includes('CREATE UNIQUE INDEX ix_t_child_owner_desc ON t_child (owner)'), 'oracle: 유일 인덱스는 오름차순');
+  assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_owner_desc', 'owner DESC', false)).includes('CREATE INDEX ix_t_child_owner_desc ON t_child (owner DESC)'), 'oracle: 비유일 인덱스는 DESC 를 지킨다');
+  // NULL 이 들지 않는 키는 '00' 이 생기지 않으므로 정렬 방향을 지킨다.
+  assert.ok(statementsOf(oracleAdapter, withIndex('ix_t_child_id_desc', 'id DESC', true)).includes('CREATE UNIQUE INDEX ix_t_child_id_desc ON t_child (id DESC)'), 'oracle: NOT NULL 유일 인덱스는 DESC 를 지킨다');
+});
+
+/** 시험 스냅숏의 t_child 문자열 길이를 바꾸고 컬럼·인덱스를 더한다. CUBRID 그림자 키의 길이 한계를 본다. */
+const withShadowShape = ({ lengths = {}, columns = [], indexes = [] }) => {
+  const value = snapshot();
+  for (const [name, length] of Object.entries(lengths)) value.columns.find(row => row.table_name === 't_child' && row.column_name === name).character_maximum_length = length;
+  value.columns.push(...columns);
+  value.indexes.push(...indexes.map(([name, body]) => ({ table_name: 't_child', name, definition: `CREATE UNIQUE INDEX ${name} ON public.t_child USING btree (${body})` })));
+  return buildVendorModel({ snapshot: value, extras });
+};
+
+test('the CUBRID shadow key stops when a value could be longer than the cast that joins it', () => {
+  // 그림자 키는 값을 VARCHAR(1100) 으로 바꿔 VARCHAR(2500) 에 잇는다. 더 길면 잘리거나 거부돼 끝 글자만 다른 두 값을 같게 보거나 정상 행을 막는다.
+  assert.doesNotThrow(() => cubridAdapter.emitSchema(withShadowShape({ lengths: { url: 1100 } })), '한계 안의 유일 제약은 지금처럼 옮긴다');
+  stopsWith(cubridAdapter, withShadowShape({ lengths: { url: 1101 } }), 'uk_t_child_owner_url: 그림자 키에 1100자를 넘을 수 있는 컬럼이 있어 유일성을 지켜 옮길 수 없다');
+  stopsWith(cubridAdapter, withShadowShape({ columns: [column('t_child', 'memo', 'text', { position: 5 })], indexes: [['ix_t_child_owner_memo', 'owner, memo']] }),
+    'ix_t_child_owner_memo: 그림자 키에 1100자를 넘을 수 있는 컬럼이 있어 유일성을 지켜 옮길 수 없다');
+  // 컬럼마다 한계 안이어도 이은 키가 2500자를 넘을 수 있으면 멈춘다. 둘째 판은 길이 하나만 줄여 한계 안으로 들인다.
+  const wide = note => withShadowShape({ lengths: { url: 1100, owner: 1100 }, columns: [varchar('t_child', 'note', note, { position: 5 })], indexes: [['ix_t_child_wide', 'url, owner, note']] });
+  // 키 = 컬럼마다 '길이:값' 을 ':' 로 잇는다. 1100·1100·285 는 1105+1105+289+구분자 2 = 2501자, 284 면 2500자다.
+  stopsWith(cubridAdapter, wide(285), 'ix_t_child_wide: 그림자 키가 2500자를 넘을 수 있어 유일성을 지켜 옮길 수 없다');
+  assert.doesNotThrow(() => cubridAdapter.emitSchema(wide(284)), '이은 키가 2500자 안이면 옮긴다');
+  // 숫자는 부호·앞의 0·소수점까지 센다. numeric(1,1) 의 -0.9 는 4자라 1100·1100·278 과 이으면 2501자다.
+  const fraction = note => withShadowShape({ lengths: { url: 1100, owner: 1100 },
+    columns: [varchar('t_child', 'note', note, { position: 5 }), { ...column('t_child', 'rate', 'numeric', { position: 6 }), numeric_precision: 1, numeric_scale: 1 }],
+    indexes: [['ix_t_child_rate', 'url, owner, note, rate']] });
+  stopsWith(cubridAdapter, fraction(278), 'ix_t_child_rate: 그림자 키가 2500자를 넘을 수 있어 유일성을 지켜 옮길 수 없다');
+  assert.doesNotThrow(() => cubridAdapter.emitSchema(fraction(277)), '숫자를 넣어도 2500자 안이면 옮긴다');
+});
+
+test('a unique index a vendor could keep only by cutting its key or dropping its uniqueness stops the translation', () => {
+  // 앞 768·700자 접두는 끝 글자만 다른 두 주소를 중복으로 거부하고, 인덱스를 빼거나 INCLUDE 로 옮기면 중복을 받는다.
+  for (const [name, body] of [['ix_t_child_url_unique', 'url'], ['ix_t_child_url_owner', 'url, owner']]) {
+    const unique = withIndex(name, body, true);
+    for (const adapter of [mysqlAdapter, mariadbAdapter]) stopsWith(adapter, unique, `${name}: 접두로 자른 유일 인덱스는 앞부분이 같은 다른 값을 거부한다`);
+    stopsWith(mssqlAdapter, unique, `${name}: 1700바이트를 넘는 유일 인덱스는 유일성을 지켜 옮길 수 없다`);
+  }
+  // 같은 정의의 비유일 판은 지금처럼 접두·뺌·INCLUDE 로 옮긴다.
+  const single = withIndex('ix_t_child_url_unique', 'url', false);
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.ok(statementsOf(adapter, single).includes('CREATE INDEX ix_t_child_url_unique ON t_child (url(768))'), `${adapter.id}: 비유일 단일 컬럼은 접두`);
+  assert.ok(mssqlAdapter.emitSchema(single).degradations.some(row => row.name === 'ix_t_child_url_unique'), 'mssql: 비유일 단일 컬럼은 저하로 뺀다');
+  const composite = withIndex('ix_t_child_url_owner', 'url, owner', false);
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.ok(statementsOf(adapter, composite).includes('CREATE INDEX ix_t_child_url_owner ON t_child (url(700), owner)'), `${adapter.id}: 비유일 복합은 접두`);
+  assert.ok(statementsOf(mssqlAdapter, composite).includes('CREATE INDEX ix_t_child_url_owner ON t_child (owner) INCLUDE (url)'), 'mssql: 비유일 복합은 INCLUDE');
+  // 식 인덱스의 번역(계산 컬럼·함수 키)은 유일하지 않다. 유일 판을 그대로 옮기면 중복을 받는다.
+  const trimmed = unique => withModelIndex({ name: 'ix_t_child_owner_trim', unique, columns: [{ name: 'owner', expression: 'trim' }] });
+  for (const adapter of [mysqlAdapter, mariadbAdapter, mssqlAdapter]) {
+    stopsWith(adapter, trimmed(true), 'ix_t_child_owner_trim: 식 유일 인덱스는 유일성을 지켜 옮기지 않는다');
+    assert.doesNotThrow(() => adapter.emitSchema(trimmed(false)), `${adapter.id}: 비유일 식 인덱스는 지금처럼 옮긴다`);
+  }
+});
+
+test('every removed asset and gate belongs to exactly one tool group shown before generating', () => {
+  const ledger = loadVendorLedger(ROOT);
+  const removed = readVendorAssetLedger(ROOT);
+  const listed = ledger.removedPostgresTools.groups.flatMap(group => group.paths);
+  assert.deepEqual([...listed].sort(), [...removed.assets, ...removed.gates.map(row => row.file)].sort());
+  for (const group of ledger.removedPostgresTools.groups) assert.match(group.reason, /니다\.$/, group.label);
+});
+
+test('the plan notes say what a vendor changes in the heading alone, and PostgreSQL gets none', t => {
+  const ledger = loadVendorLedger(ROOT);
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const notes = vendorDegradationNotes(ledger, { database: { vendor: 'oracle' } });
+  assert.deepEqual(notes.map(note => note.to), ['vendor:oracle:behavior', 'vendor:oracle:tools', 'vendor:oracle:image']);
+  for (const row of oracle.notices.degradations) {
+    assert.ok(notes[0].heading.includes(row.summary), row.kind);
+    assert.ok(notes[0].reasons.some(reason => reason.reason === row.text), row.kind);
+  }
+  for (const group of ledger.removedPostgresTools.groups) assert.ok(notes[1].heading.includes(group.label), group.label);
+  assert.equal(notes[2].heading, oracle.notices.image);
+  assert.ok(/라이선스/.test(notes[2].heading) && /개발용/.test(notes[2].heading));
+  assert.deepEqual(vendorDegradationNotes(ledger, { database: { vendor: 'postgresql' } }), []);
+  assert.deepEqual(vendorDegradationNotes(ledger, {}), []);
+  // 엔진 응답. PostgreSQL 계획은 기능 저하만 그대로 둔다.
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const engine = createComposerEngine({ loadCatalog: () => catalog, loadVendors: () => loadVendorLedger(ledgerCopy(t, certify('oracle'))) });
+  const recipe = vendor => ({ schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'demo' }, database: { vendor }, backendLayout: 'multi-module' });
+  withPreviewEnv(undefined, () => {
+    const [postgres, opened] = [engine.plan(recipe('postgresql')), engine.plan(recipe('oracle'))];
+    assert.ok(postgres.degradationNotes.every(note => !note.vendor), 'PostgreSQL 계획에 벤더 안내가 없다');
+    assert.deepEqual(opened.degradationNotes.filter(note => note.vendor), notes);
+    assert.deepEqual(opened.degradationNotes.filter(note => !note.vendor), postgres.degradationNotes);
+    assert.deepEqual(opened.degraded, postgres.degraded, '구성의 저하 값은 벤더로 바뀌지 않는다');
+  });
+});
+
+test('vendor choices carry the same judgement as the request check and leave evidence behind', t => {
+  const ledger = loadVendorLedger(ledgerCopy(t, certify('oracle')));
+  const choices = vendorChoices(ledger);
+  assert.deepEqual(choices.filter(choice => choice.selectable).map(choice => choice.id), selectableVendors(ledger));
+  assert.deepEqual(choices.find(choice => choice.id === 'oracle'), { id: 'oracle', label: 'Oracle', selectable: true });
+  const mysql = choices.find(choice => choice.id === 'mysql');
+  assert.equal(mysql.selectable, false);
+  assert.ok(mysql.reason);
+  assert.doesNotMatch(JSON.stringify(choices), /evidence|engines|status/);
+});
+
+test('certifying a vendor in the ledger opens every request entry without a code change', t => {
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const recipe = vendor => ({ schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'core' }, database: { vendor }, backendLayout: 'multi-module' });
+  const certified = loadVendorLedger(ledgerCopy(t, certify('oracle')));
+  const opened = createComposerEngine({ loadCatalog: () => catalog, loadVendors: () => certified });
+  const closed = createComposerEngine({ loadCatalog: () => catalog });
+  withPreviewEnv(undefined, () => {
+    const selectable = opened.selectableVendors();
+    assert.deepEqual(selectable, ['postgresql', 'oracle']);
+    assert.equal(validateComposerRequestRecipe(recipe('oracle'), selectable).database.vendor, 'oracle', '서버');
+    assert.equal(opened.plan(recipe('oracle')).database.vendor, 'oracle', '엔진');
+    assert.equal(opened.catalog().vendors.find(choice => choice.id === 'oracle').selectable, true, '화면');
+    const supplied = { ...resolveProjectRecipe({ ...recipe('oracle'), sourceRef: 'a'.repeat(40) }, catalog), sourceCommit: 'a'.repeat(40) };
+    assert.equal(resolveGeneratorComposition({ catalog, supplied, selectable, sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }).database.vendor, 'oracle', '생성기 입구');
+    assert.throws(() => opened.plan(recipe('mysql')), error => error.code === 'INVALID_RECIPE' && error.details.reason === 'UNSUPPORTED_DATABASE', '올리지 않은 벤더는 그대로다');
+    // 원장이 구성 해시에 들어가면 승격이 PostgreSQL 산출물의 식별값을 바꾼다. 여기는 같은 카탈로그를 주입하므로 엔진만 본다.
+    // 카탈로그 로더가 원장을 읽는 회귀는 composer-modules.test.mjs 가 원장을 바꾼 트리에서 본다.
+    assert.equal(opened.plan(recipe('postgresql')).compositionHash, closed.plan(recipe('postgresql')).compositionHash);
+    assert.equal(opened.catalog().catalogHash, closed.catalog().catalogHash);
+  });
+});
+
+test('the preview switch opens the tool path only: the screen path keeps reading the ledger', () => {
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const recipe = { schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'core' }, database: { vendor: 'mysql' }, backendLayout: 'multi-module' };
+  const engine = createComposerEngine({ loadCatalog: () => catalog });
+  const closed = error => error.code === 'INVALID_RECIPE' && error.details.reason === 'UNSUPPORTED_DATABASE';
+  withPreviewEnv(undefined, () => assert.throws(() => engine.plan(recipe), closed));
+  withPreviewEnv('mysql', () => {
+    assert.equal(engine.plan(recipe).database.vendor, 'mysql', '도구 실행');
+    assert.ok(!engine.selectableVendors().includes('mysql'), '서버가 받는 목록은 환경값으로 넓어지지 않는다');
+    assert.throws(() => validateComposerRequestRecipe(recipe, engine.selectableVendors()), error => error.code === 'INVALID_RECIPE', '서버');
+    assert.equal(engine.catalog().vendors.find(choice => choice.id === 'mysql').selectable, false, '화면');
+  });
 });
 
 test('a block statement ends on a slash line and a plain statement on a semicolon', () => {
@@ -412,15 +815,18 @@ test('a new request needs certification or a tool run, but a stored composition 
   const previous = process.env.COMPOSER_PREVIEW_VENDOR;
   delete process.env.COMPOSER_PREVIEW_VENDOR;
   try {
-    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'oracle' })), refused);
-    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'postgresql' })));
-    assert.doesNotThrow(() => assertVendorRequestable({}), '벤더를 적지 않으면 기본값이다');
+    const selectable = ['postgresql'];
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'oracle' }), selectable), refused);
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'postgresql' }), selectable));
+    assert.doesNotThrow(() => assertVendorRequestable({}, selectable), '벤더를 적지 않으면 기본값이다');
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' }), ['postgresql', 'oracle']), '원장이 올린 벤더는 환경값 없이 받는다');
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'postgresql' })), TypeError, '원장을 넘기지 않은 입구는 기본값으로도 통과하지 못한다');
     assert.deepEqual(resolveProjectRecipe(recipe({ vendor: 'oracle' }), catalog).database, { vendor: 'oracle' }, '저장된 구성의 재검증은 환경에 기대지 않는다');
     assert.throws(() => resolveProjectRecipe(recipe({}), catalog), refused, '벤더 없는 구성은 받지 않는다');
     assert.throws(() => resolveProjectRecipe(recipe({ vendor: 'sqlite' }), catalog), refused);
     process.env.COMPOSER_PREVIEW_VENDOR = 'oracle';
-    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' })));
-    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'mysql' })), refused, '켠 벤더만 받는다');
+    assert.doesNotThrow(() => assertVendorRequestable(recipe({ vendor: 'oracle' }), selectable));
+    assert.throws(() => assertVendorRequestable(recipe({ vendor: 'mysql' }), selectable), refused, '켠 벤더만 받는다');
   } finally {
     if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;
     else process.env.COMPOSER_PREVIEW_VENDOR = previous;
@@ -435,7 +841,7 @@ test('generators refuse an uncertified vendor even when a composition is passed 
   try {
     const recipe = { schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'main', selection: { preset: 'core' }, database: { vendor: 'oracle' }, backendLayout: 'multi-module' };
     const supplied = { ...resolveProjectRecipe(recipe, catalog), sourceCommit: 'a'.repeat(40) };
-    assert.throws(() => resolveGeneratorComposition({ catalog, supplied, sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }),
+    assert.throws(() => resolveGeneratorComposition({ catalog, supplied, selectable: ['postgresql'], sourceCommit: supplied.sourceCommit, resolveSourceReference: () => supplied.sourceCommit }),
       error => error.code === 'UNSUPPORTED_DATABASE');
   } finally {
     if (previous === undefined) delete process.env.COMPOSER_PREVIEW_VENDOR;
@@ -507,6 +913,277 @@ test('a vendor project verifies on its own database instead of the PostgreSQL sc
   assert.equal(integrationTask().task, ':api-server:vendorIntegrationTest');
   assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--layout', 'single-module']), { input: 'x.json', vendor: 'oracle', layout: 'single-module' });
   assert.deepEqual(ledgerClasses({ tests: [{ test: 'A.java', category: 'as-is' }, { test: 'B.java', category: 'as-is' }] }, name => name === 'B'), ['B'], '구성에서 빠진 시험은 돌았는지 묻지 않는다');
+});
+
+test('the schema command skips the certification step and exists only for a vendor project', () => {
+  const steps = verificationSteps('vendor-schema', 'multi-module', { vendor: 'oracle' });
+  assert.deepEqual(steps.map(step => step.id), ['backend', 'backend'], '거버넌스 첫 단계를 지나지 않아 소스 변경 뒤에도 스키마 신호를 받는다');
+  assert.ok(steps[0].args.includes(':api-server:harnessTest'));
+  assert.deepEqual(steps[1].args, verificationSteps('full', 'multi-module', { vendor: 'oracle' }).filter(step => step.id === 'backend')[1].args, '통합 단계는 전체 검증과 같은 명령이다');
+  assert.ok(verificationSteps('vendor-schema', 'single-module', { vendor: 'oracle' })[0].args.includes('harnessTest'));
+  assert.throws(() => verificationSteps('vendor-schema', 'multi-module'), /PostgreSQL 외 DB 로 생성한 프로젝트에서만/);
+  assert.equal(verificationSteps('full', 'multi-module', { vendor: 'oracle' })[0].id, 'governance', '전체 검증의 의미는 그대로다');
+  assert.equal(integrationTask().conformance, ':api-server:vendorConformanceTest');
+  assert.equal(integrationTask('single-module').conformance, ':vendorConformanceTest');
+});
+
+test('the vendor folder takes only migrations after the baseline, compared the way Flyway compares versions', () => {
+  assert.deepEqual(vendorMigrationNameProblems(['V1_0__vendor_baseline.sql', 'V1_1__extra.sql', 'V1_10__more.sql', 'V2_0__next.sql', 'V1_0_1__patch.sql', 'V1_0_0_1__deep.sql', 'V1.2__dotted.sql', 'V2__major.sql', 'notes.txt']), []);
+  const lower = ['R__repeat.sql', 'V0_9__before.sql', 'V1_0__other.sql', 'V1_0_0__same.sql', 'V1__same.sql', 'V0_0_1__before.sql', 'U1_1__undo.sql', 'V1_1_no_separator.sql'];
+  assert.deepEqual(vendorMigrationNameProblems(lower), lower);
+  assert.equal(VENDOR_BASELINE_VERSION, '1.0');
+  assert.match(vendorBaselinePaths('oracle').migration, /\/V1_0__vendor_baseline\.sql$/, '기준선 버전은 파일 이름과 같다');
+});
+
+test('the baseline and the input are compared with the source lock before a container starts', () => {
+  const root = mkdtempSync(join(tmpdir(), 'vendor-lock-'));
+  const migration = 'api-server/src/main/resources/db/vendor/oracle/V1_0__vendor_baseline.sql';
+  const input = 'config/vendor/oracle/vendor-input.json';
+  try {
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), ['reusable-base-lock.json 이 없어 번역 기준선을 대조하지 못한다. 벤더 생성물에서 돌린다'], '잠금이 없으면 통과가 아니다');
+    mkdirSync(join(root, dirname(migration)), { recursive: true });
+    mkdirSync(join(root, dirname(input)), { recursive: true });
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\r\n');
+    writeFileSync(join(root, input), '{"snapshot":{}}\n');
+    const lock = { vendorProjection: { vendor: 'oracle', migration, input, migrationSha256: artifactTextSha256(root, migration), inputSha256: artifactTextSha256(root, input) } };
+    const writeLock = value => writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify(value));
+    writeLock(lock);
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), []);
+    assert.match(vendorLockProblems(root, 'mysql')[0], /벤더\(oracle\)가 mysql 가 아니다/);
+    writeFileSync(join(root, dirname(migration), 'V1_1__later.sql'), 'ALTER TABLE tb_a ADD nm VARCHAR2(10 CHAR);\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [], '기준선 뒤의 V 파일은 잠금과 무관하다');
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [], '줄 끝만 다른 것은 변경이 아니다');
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(19));\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 기준선(${migration})이 생성 때와 다르다`]);
+    writeFileSync(join(root, migration), 'CREATE TABLE tb_a (id NUMBER(10));\n');
+    writeFileSync(join(root, input), '{"snapshot":{"x":1}}\n');
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 입력(${input})이 생성 때와 다르다`]);
+    rmSync(join(root, input));
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 입력(${input})이 없다`], '지운 입력은 ENOENT 가 아니라 문제로 돌아온다');
+    rmSync(join(root, migration));
+    assert.deepEqual(vendorLockProblems(root, 'oracle'), [`번역 기준선(${migration})이 없다`, `번역 입력(${input})이 없다`]);
+    assert.throws(() => assertVendorLock('oracle', root), error => error.code === 'VENDOR_INTEGRATION_FAILED' && /이 없다.*고치거나 지운 파일을 되돌린다/.test(error.message));
+    writeLock({ profile: 'core' });
+    assert.match(vendorLockProblems(root, 'oracle')[0], /벤더\(없음\)가 oracle 가 아니다/, 'PostgreSQL 생성물의 잠금에는 투영이 없다');
+  } finally {
+    rmSync(root, { recursive: true, force: true });
+  }
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const start = source.indexOf('export function runVendorIntegration');
+  assert.ok(source.indexOf('assertVendorLock(vendorId)', start) > 0 && source.indexOf('assertVendorLock(vendorId)', start) < source.indexOf('startVendorEngine(engine', start), '컨테이너를 띄우기 전에 본다');
+  assert.ok(source.indexOf('assertVendorLock(vendorId)', start) < source.indexOf('readFileSync(inputFile', start) && source.indexOf('readFileSync(inputFile', start) < source.indexOf('startVendorEngine(engine', start), '지운 입력이 잠금 대조의 문구로 끝나게 대조 뒤에 읽는다');
+  assert.doesNotMatch(source, /readFileSync\(args\.input/, '명령 입구에서 읽으면 잠금 대조보다 앞선다');
+});
+
+test('the host cannot switch off Hibernate validate, and the report carries what the contexts really used', () => {
+  const { integration } = VENDOR_ENGINES.oracle;
+  const child = childEnvironment('oracle', integration, { port: 1, password: 'x', owner: 'y' }, { EXTRA: '1' }, { SPRING_JPA_HIBERNATE_DDL_AUTO: 'none', PATH: 'p' });
+  assert.equal(child.SPRING_JPA_HIBERNATE_DDL_AUTO, 'validate');
+  assert.equal(child.PATH, 'p');
+  assert.equal(child.EXTRA, '1');
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  assert.doesNotMatch(source, /\.\.\.process\.env, \.\.\.integrationEnvironment/, '자식 환경은 한 곳에서 만든다');
+  assert.deepEqual(appliedHibernateCheck('A validate\nB validate\n'), { ddlAuto: 'validate', contexts: 2 });
+  assert.deepEqual(appliedHibernateCheck('A validate\r\nB none\r\n'), { ddlAuto: null, contexts: 2 }, '값이 갈리면 통과로 읽히지 않는다');
+  assert.deepEqual(appliedHibernateCheck('A none\n'), { ddlAuto: 'none', contexts: 1 });
+  assert.deepEqual(appliedHibernateCheck(''), { ddlAuto: null, contexts: 0 }, '단언한 문맥이 없으면 증거가 아니다');
+  const extension = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorOwnershipExtension.java'), 'utf8');
+  // 판정 자체는 SchemaConformanceRulesTest 가 DB 없이 붉힌다. 여기서는 확장이 그 판정을 Hibernate 가 받은 설정 전체에 걸고 그 결과를 남기는지 본다.
+  assert.match(extension, /^ *SchemaCheck check = schemaCheck\(factory\.getProperties\(\), /m, '프로필 문자열이나 hbm2ddl.auto 하나가 아니라 Hibernate 가 받은 설정 전체로 적용 동작을 구한다');
+  assert.match(extension, /ActionGrouping\.interpret\(contributors, settings\)/, '우선순위는 Hibernate 자신의 해석기로 정한다');
+  assert.match(extension, /testClass\.getSimpleName\(\) \+ " " \+ check\.reported\(\)/, '보고서에는 판정을 거친 적용 동작을 남긴다');
+  assert.match(extension, /^ *if \(!check\.problems\(\)\.isEmpty\(\)\) \{\s*throw new IllegalStateException\("Hibernate 스키마 검사가/m, 'validate 검증이 그대로 돌지 않으면 그 시험 클래스가 붉다');
+});
+
+test('the Flyway steps hand the child only the target the tool chose, so the second step applies every later migration', () => {
+  const { integration } = VENDOR_ENGINES.oracle;
+  const host = { PATH: 'p', VENDOR_FLYWAY_TARGET: '1.1', Vendor_Flyway_Target: '1.1', VENDOR_TEST_OWNER: 'host' };
+  const targets = env => Object.entries(env).filter(([key]) => key.toUpperCase() === 'VENDOR_FLYWAY_TARGET');
+  const rest = flywayEnvironment('oracle', integration, { port: 1, password: 'x' }, 'classpath:db/vendor/oracle', undefined, host);
+  assert.deepEqual(targets(rest), [], '나머지를 적용하는 호출은 호스트의 target 을 표기와 상관없이 키째 지운다');
+  assert.equal(rest.VENDOR_FLYWAY_LOCATION, 'classpath:db/vendor/oracle');
+  assert.equal(rest.VENDOR_TEST_OWNER, '', '적용 단계에는 소유 토큰을 넘기지 않는다');
+  assert.equal(rest.PATH, 'p');
+  const baseline = flywayEnvironment('oracle', integration, { port: 1, password: 'x' }, 'classpath:db/vendor/oracle', VENDOR_BASELINE_VERSION, host);
+  assert.deepEqual(targets(baseline), [['VENDOR_FLYWAY_TARGET', VENDOR_BASELINE_VERSION]], '기준선 호출은 도구의 기준선 버전 하나만 넘긴다');
+  assert.deepEqual(targets(host), [['VENDOR_FLYWAY_TARGET', '1.1'], ['Vendor_Flyway_Target', '1.1']], '호스트 환경은 고치지 않는다');
+  const tool = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const migrate = tool.slice(tool.indexOf('function migrateWithFlyway'), tool.indexOf('export function conformanceCatalog'));
+  assert.match(migrate, /env: flywayEnvironment\(vendorId, integration, handle, location, target\)/, 'Flyway 단계의 자식 환경은 한 곳에서 만든다');
+  assert.doesNotMatch(migrate, /childEnvironment\(/);
+  const java = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorFlywayMigrate.java'), 'utf8');
+  assert.match(java, /^ *\.filter\(info -> info\.getState\(\)\.isResolved\(\) && !info\.getState\(\)\.isApplied\(\)\)/m,
+    '나머지 적용 뒤 pending 뿐 아니라 target 위에 남은 마이그레이션도 남지 않았는지 본다');
+  assert.match(java, /^ *if \(!unapplied\.isEmpty\(\)\) \{\s*throw new IllegalStateException\("기준선 뒤 마이그레이션이 적용되지 않고 남았다/m);
+  // target 이 새면 Java 는 두 번째 호출을 기준선 단계로 받는다. 그때 기준선 뒤 파일 하나가 적용돼도 통과하지 않게 DB 에 남은 것 전부를 센다.
+  assert.match(java, /^ *if \(applied != 1 \|\| inDatabase\.size\(\) != 1\) \{\s*throw new IllegalStateException\("번역 기준선 하나만 적용돼야 한다/m,
+    '기준선 단계는 이번 적용 수와 함께 DB 에 적용된 마이그레이션이 기준선 하나뿐인지 본다');
+});
+
+test('the catalog test sees the engine names an adopter did not choose removed, and every kind present', () => {
+  const catalog = { columns: ['tb_a.id'], constraints: ['tb_a.primary', 'tb_a.pk_tb_a'], indexes: ['tb_a.ix_a'], triggers: ['tb_a.t'], sequences: ['.sq_a'] };
+  assert.deepEqual(conformanceCatalog('mysql', catalog).constraints, ['tb_a.pk_tb_a'], 'MySQL 은 모든 기본키의 제약 이름이 PRIMARY 다');
+  assert.deepEqual(conformanceCatalog('mariadb', catalog).constraints, ['tb_a.pk_tb_a']);
+  assert.deepEqual(conformanceCatalog('oracle', catalog).constraints, ['tb_a.primary', 'tb_a.pk_tb_a'], '다른 벤더의 primary 는 도입자가 정한 이름이라 판정 대상이다');
+  assert.deepEqual(conformanceCatalog('cubrid', { columns: ['tb_a.id'] }), { columns: ['tb_a.id'], constraints: [], indexes: [], sequences: [] }, '조회가 없는 종류도 빈 목록으로 넘긴다');
+});
+
+test('a unique counts as baseline only while its signature is unchanged, and every integration vendor can read signatures', () => {
+  const baseline = ['tb_a.uk_keep=10', 'tb_a.uk_recreated=11', 'tb_b.uk_dropped=12'];
+  assert.deepEqual(unchangedUniques(baseline, ['tb_a.uk_keep=10', 'tb_a.uk_recreated=99', 'tb_c.uk_new=13']), ['tb_a.uk_keep'], '다시 만든 유니크와 새 유니크는 기준선이 아니다');
+  assert.deepEqual(unchangedUniques([], ['tb_a.uk_keep=10']), [], '조회가 비면 모두 새 유니크로 보여 붉다');
+  assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_SIGNATURES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 서명 조회가 있어야 한다');
+  const output = readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['tb_a.uk_keep=10', '  tb_a.sys_c0012=11  ', 'tb_a.uk_on_plain_index=a#b']]]) }));
+  assert.deepEqual(output, ['tb_a.uk_keep=10', 'tb_a.sys_c0012=11', 'tb_a.uk_on_plain_index=a#b'], '일반 인덱스로 집행되는 제약은 컬럼 목록이 값이다');
+  assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['garbage line']]]) })), /유니크 서명 조회의 줄을 해석하지 못했다: garbage line/);
+  assert.match(VENDOR_UNIQUE_SIGNATURES.oracle, /constraint_type = 'U' AND i\.uniqueness = 'NONUNIQUE'/, '일반 인덱스로 집행되는 유니크 제약도 서명에 든다');
+  assert.throws(() => readUniqueSignatures({}, 'mysql', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
+  assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), /유니크 서명 조회 실패: ORA-00942/);
+});
+
+test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
+  const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
+  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle']);
+  const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
+  assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
+  const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const load = mutate => {
+    const copy = asPreviewOracle(JSON.parse(JSON.stringify(ledger)));
+    mutate(copy.vendors.find(vendor => vendor.id === certifiedRow.id), copy);
+    const root = mkdtempSync(join(tmpdir(), 'vendor-ci-'));
+    try {
+      mkdirSync(join(root, 'config'));
+      writeFileSync(join(root, 'config/db-vendors.json'), JSON.stringify(copy));
+      return loadVendorLedger(root);
+    } finally { rmSync(root, { recursive: true, force: true }); }
+  };
+  assert.throws(() => load(vendor => { vendor.status = 'certified'; delete vendor.ci; }), /oracle: CI 벤더 잡\(ci\)이 없다/);
+  assert.throws(() => load((_, copy) => { copy.vendors.find(vendor => vendor.id === 'mysql').ci = true; }), /mysql: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
+  assert.throws(() => load(vendor => { vendor.ci = 'yes'; }), /oracle: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
+});
+
+test('the vendor CI entry generates the representative preset and leaves the PostgreSQL recipes as they were', () => {
+  const sourceRef = 'a'.repeat(40);
+  const recipe = args => composerVerificationRecipe({ sourceRef, preset: 'demo', ...args });
+  assert.deepEqual(recipe({ layout: 'multi-module' }), { schemaVersion: 1, project: { name: 'composer-multi-module' }, sourceRef,
+    selection: { domains: ['mail', 'schedule'] }, database: { vendor: 'postgresql' }, backendLayout: 'multi-module' });
+  assert.deepEqual(recipe({ layout: 'single-module' }), { schemaVersion: 1, project: { name: 'composer-single-module' }, sourceRef,
+    selection: { domains: ['board', 'survey'] }, database: { vendor: 'postgresql' }, backendLayout: 'single-module' });
+  assert.deepEqual(recipe({ layout: 'multi-module', vendor: 'oracle' }), { schemaVersion: 1, project: { name: 'composer-oracle-multi-module' }, sourceRef,
+    selection: { preset: 'demo' }, database: { vendor: 'oracle' }, backendLayout: 'multi-module' });
+  assert.deepEqual(parseComposerVerificationArgs(['--layout', 'single-module']), { layout: 'single-module', vendor: undefined });
+  assert.deepEqual(parseComposerVerificationArgs(['--layout', 'multi-module', '--vendor', 'oracle']), { layout: 'multi-module', vendor: 'oracle' });
+  for (const bad of [[], ['--layout'], ['--vendor', 'oracle'], ['--layout', 'multi-module', '--engine', 'oracle19'], ['--layout', 'multi-module', '--vendor']]) {
+    assert.throws(() => parseComposerVerificationArgs(bad), /Usage: verify-project-composer/, bad.join(' '));
+  }
+});
+
+test('the baseline is compared before anything else is applied, and the catalog test runs before the fixtures', () => {
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const start = source.indexOf('export function runVendorIntegration');
+  const order = ['migrateWithFlyway(vendorId, integration, handle, migrate, flyway, VENDOR_BASELINE_VERSION)', 'assertVendorApplied(handle, input, vendorId',
+    'const baseline = conformanceCatalog', 'const baselineUniques = readUniqueSignatures', 'const baselineByteColumns = readByteColumns', 'migrateWithFlyway(vendorId, integration, handle, migrate, flyway);', 'unchangedUniques(baselineUniques', 'byteColumns: addedByteColumns(baselineByteColumns', 'runVendorConformance(vendorId', 'runAsAdministrator(handle', 'markOwner(handle)'];
+  const positions = order.map(text => source.indexOf(text, start));
+  assert.ok(positions.every(position => position > 0), '순서를 보는 문장이 사라졌다');
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '기준선 정확 대조는 나머지 적용 앞, 카탈로그 시험은 권한 부여와 소유 표시 앞이다');
+  const migrate = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorFlywayMigrate.java'), 'utf8');
+  assert.match(migrate, /applied != 1/, '기준선 단계는 하나만 적용됐는지 본다');
+});
+
+// CI 벤더 잡은 정상 경로만 돌리므로 호출이 빠져도 잡이 붉지 않는다. 판정 함수의 시험은 실행 경로에 이어졌는지 보지 못한다.
+test('the verdicts stay wired into the run the CI job takes', () => {
+  const tool = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  assert.match(tool, /^ *if \(ddlAuto !== 'validate'\) \{\s*failure = new Error\(`Hibernate validate/m, '단언한 문맥이 없거나 값이 다르면 실행이 실패한다');
+  const verify = readFileSync(join(ROOT, 'scripts/project-composer-vendor-verify.mjs'), 'utf8');
+  const applied = verify.slice(verify.indexOf('export function assertVendorApplied'), verify.indexOf('export function applyVendor'));
+  assert.match(applied, /^ *if \(uniqueColumns\) assertUniqueColumns\(emission, uniqueColumns, \{ ignoreTables \}\);/m, '기준선 대조가 키·유니크의 컬럼을 본다');
+  assert.match(applied, /^ *const behindSequences = sequenceNext \? expectedNext\.sequences\.filter\(/m, '기준선 대조가 시퀀스의 다음 값을 본다');
+  assert.match(applied, /^ *if \(behindSequences\.length\) \{[\s\S]*?throw error;/m, '시퀀스의 다음 값이 뒤처지면 멈춘다');
+  const catalog = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/harness/VendorCatalogConformanceTest.java'), 'utf8');
+  assert.match(catalog, /^ *if \(oracle\) \{\s*addOracleConstraintsOnPlainIndexes\(connection, uniques\);/m, '일반 인덱스로 집행되는 유니크 제약도 미러 규칙이 본다');
+  assert.match(catalog, /^ *List<String> problems = new ArrayList<>\(SchemaConformanceRules\.tableProblems\(/m, '표의 저장 표기 규칙이 돈다');
+  assert.match(catalog, /^ *report\("바이트 길이 컬럼과 엔티티 길이의 불일치", SchemaConformanceRules\.byteLengthProblems\(/m, '바이트 길이 규칙이 돈다');
+});
+
+test('the catalog test replaces the entity linter only in a vendor project, by the ledger', () => {
+  const ledger = readVendorAssetLedger(ROOT);
+  const row = ledger.gates.find(item => item.file.endsWith('EntitySchemaConformanceLinterTest.java'));
+  assert.match(row.coveredBy, /VendorCatalogConformanceTest/);
+  assert.match(row.coveredBy, /Hibernate validate/, '표·컬럼 부재는 validate 가 본다고 적는다');
+  for (const kept of ['UniqueConstraintMirrorLinterTest', 'SchemaNamingLinterTest']) {
+    assert.ok(!ledger.gates.some(item => item.file.includes(kept)), `${kept} 는 기준선 입력을 계속 본다`);
+  }
+  const profile = readFileSync(join(ROOT, 'api-server/src/test/resources/application-tc.yml'), 'utf8');
+  assert.match(profile, /ddl-auto: validate/, '대체의 한쪽이 Hibernate validate 다');
+  assert.equal(integrationEnvironment('oracle', VENDOR_ENGINES.oracle.integration, { port: 1, password: 'x', owner: 'y' }).SPRING_JPA_HIBERNATE_DDL_AUTO, 'validate', '벤더 실행은 validate 를 강제한다');
+});
+
+test('the README procedure names a command that exists and what it does not cover', () => {
+  const ledger = loadVendorLedger(ROOT);
+  const readme = vendorReadme('oracle', ledger);
+  for (const row of ledger.vendors.find(vendor => vendor.id === 'oracle').notices.degradations) assert.ok(readme.includes(`- ${row.text}`), `README 에 저하가 없다: ${row.kind}`);
+  for (const group of ledger.removedPostgresTools.groups) assert.ok(readme.includes(group.label), group.label);
+  assert.ok(readme.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`));
+  assert.match(readme, /db\/vendor\/oracle/);
+  assert.match(readme, /V1_1__/);
+  for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스', '제약·인덱스·시퀀스·컬럼·뷰의 저장 표기']) assert.ok(readme.includes(limit), limit);
+  // §6.1 의 Oracle 한계 가운데 도입자가 스키마를 바꿀 때 닿는 둘(설계서 §6.1 이 복구 절차를 이 절로 가리킨다).
+  assert.match(readme, /^4\. Oracle 은 DDL 이 자동 커밋이라 `V` 파일이 중간에 실패하면 .*Flyway 이력의 실패 행이 남고.*`repair`.*`npm run verify:vendor-schema` 로 일회용 DB 에서 먼저 돌린다\.$/m,
+    'DDL 자동 커밋 뒤 반쯤 남은 스키마의 복구를 안내한다');
+  assert.match(readme, /^- CLOB 컬럼의 비교·정렬: .*`=`·`DISTINCT`·`ORDER BY`·`GROUP BY`·인덱스를 쓸 수 없다\./m, 'CLOB 의 비교·정렬 제한을 안내한다');
+  assert.match(readme, /인증이 아니다/);
+  // 첫 단계는 거버넌스의 소스 결속 검사다. 벤더 인증 원장의 증거는 생성물에서 판정하지 않는다(vendorEvidenceStaleErrors).
+  assert.match(readme, /소스가 바뀌면 첫 단계\(거버넌스의 원본 소스 결속 검사\)에서 멈추는 것이 정상이고/, '전체 검증이 멈추는 첫 단계를 소스 결속 검사로 말한다');
+  assert.doesNotMatch(readme, /인증 증거가 낡았다고/, '벤더 인증 증거가 생성물에서 낡는다고 읽히면 안 된다');
+
+  // 이미지 안내도 저하 문장처럼 원장에서 온다. 원장 문구만 고쳐도 README 가 따라 바뀌어야 한다.
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  assert.ok(readme.includes(`\n\n${oracle.notices.image}\n\n`), 'README 의 이미지 안내가 원장 문장이다');
+  const edited = structuredClone(ledger);
+  edited.vendors.find(vendor => vendor.id === 'oracle').notices.image = '원장에서 고친 이미지 안내입니다.';
+  const editedReadme = vendorReadme('oracle', edited);
+  assert.ok(editedReadme.includes('\n\n원장에서 고친 이미지 안내입니다.\n\n') && !editedReadme.includes(oracle.notices.image), '원장 문구를 고치면 README 도 바뀐다');
+
+  // 이 절은 벤더 생성물에만 붙는다. PostgreSQL 생성물의 README 는 원본 그대로다.
+  const project = readFileSync(join(ROOT, 'scripts/project-composer-vendor-project.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(project.match(/\bvendorReadme\(/g)?.length, 2, 'README 절은 정의와 projectVendorSources 안의 한 번에서만 쓴다');
+  assert.match(project.slice(project.indexOf('export function projectVendorSources')), /^ {2}writeFileSync\(readme, `\$\{readFileSync\(readme, 'utf8'\)\.replace\(\/\\s\*\$\/, '\\n'\)\}\$\{vendorReadme\(vendorId, ledger\)\}`, 'utf8'\);$/m);
+  const generator = readFileSync(join(ROOT, 'scripts/generate-reusable-base-source.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(generator, /^ {2}const vendorInput = vendorId === 'postgresql' \? null : /m, 'PostgreSQL 구성에는 번역 입력이 없다');
+  assert.deepEqual(generator.match(/\bprojectVendorSources\(/g), ['projectVendorSources('], '생성기는 투영을 한 곳에서만 부른다');
+  assert.match(generator, /^ {2}const vendorProjection = vendorInput && projectVendorSources\(/m, '투영은 번역 입력이 있는 벤더 구성에서만 돈다');
+  assert.doesNotMatch(readme, /그쪽에도 맞춰 두어야/, '실행되지 않는 파일에 맞추라는 옛 안내가 돌아오면 안 된다');
+  // 본문은 원본 그대로라 PostgreSQL 절차가 남는다. 절의 첫 문단이 어느 쪽을 따를지 말해야 한다.
+  assert.equal(readme.split('\n## 데이터베이스\n\n')[1]?.split('\n\n')[0], VENDOR_README_PRECEDENCE, '절 첫머리가 본문보다 우선한다고 말한다');
+  assert.match(VENDOR_README_PRECEDENCE, /PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다/);
+});
+
+test('the REUSABLE_BASE layout lines name the vendor schema check and the removed migration module only for a vendor, and keep the PostgreSQL lines byte for byte', () => {
+  const postgres = reusableBaseLayoutLines('single-module');
+  assert.equal(postgres,
+    '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n' +
+    '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
+    '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n' +
+    '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n',
+    'PostgreSQL 단일모듈 문장은 그대로다');
+  assert.equal(reusableBaseLayoutLines('multi-module'), '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n', 'PostgreSQL 멀티모듈 문장은 그대로다');
+  // 벤더 멀티모듈은 settings.gradle 에서 이관 모듈이 빠지므로(projectVendorSettings) '기존 모듈을 유지한다'고 말하면 틀린다.
+  assert.equal(projectVendorSettings("include 'foundation'\ninclude 'migration-tool'\n"), "include 'foundation'\n");
+  assert.equal(reusableBaseLayoutLines('multi-module', { vendor: 'oracle' }), '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n',
+    '벤더 멀티모듈 줄은 빠진 이관 모듈을 말한다');
+
+  const vendor = reusableBaseLayoutLines('single-module', { vendor: 'oracle' });
+  assert.ok(vendor.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`), '벤더 스키마 검사 명령을 안내한다');
+  assert.match(vendor, /`\.\/gradlew harnessTest`/);
+  // 벤더 생성물에는 이관 소스 세트·별칭이 없고 스키마 시험은 검증에서 빠진다(reusable-layout-runtime, verify-reusable-artifact).
+  for (const absent of ['schemaValidationTest', 'verify:migration', 'offline migration', '오프라인 이관']) assert.ok(!vendor.includes(absent), absent);
+
+  // 문장 함수만 시험하면 생성기가 벤더를 넘기지 않아도 초록이다. 생성물 REUSABLE_BASE.md 를 읽는 시험은 없다.
+  const generator = readFileSync(join(ROOT, 'scripts/generate-reusable-base-source.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const calls = generator.slice(generator.indexOf('async function main')).match(/reusableBaseLayoutLines\([^)]*\)/g) ?? [];
+  assert.ok(calls.length > 0, '생성기 main 이 배치 줄을 쓴다');
+  for (const call of calls) assert.equal(call, 'reusableBaseLayoutLines(args.layout, { vendor: vendorInput ? vendorId : null })', '생성기 main 이 벤더를 넘긴다');
 });
 
 test('a failure in the vendor test command is reported as its own command', () => {
@@ -599,17 +1276,750 @@ test('a missing gate scan root stays a failure unless a vendor project removed i
   }
 });
 
-test('the isolated runner stops on a vendor project before it starts PostgreSQL', () => {
+const DEMO_DOMAINS = () => JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e.requiredDomains;
+
+function runnerProject(lock) {
   const root = mkdtempSync(join(tmpdir(), 'vendor-runner-'));
-  try {
-    assert.doesNotThrow(() => assertIsolatedRunnerSupportsProject(root), '원본 저장소에는 잠금이 없다');
-    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core' }));
-    assert.doesNotThrow(() => assertIsolatedRunnerSupportsProject(root), 'PostgreSQL 생성물은 그대로 돈다');
-    writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ vendorProjection: { vendor: 'oracle' } }));
-    assert.throws(() => assertIsolatedRunnerSupportsProject(root), /oracle projects are not supported yet/);
-  } finally {
-    rmSync(root, { recursive: true, force: true });
+  mkdirSync(join(root, 'config/governance'), { recursive: true });
+  writeFileSync(join(root, 'config/governance/vendor-test-ledger.json'), readFileSync(join(ROOT, 'config/governance/vendor-test-ledger.json')));
+  if (lock) writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify(lock));
+  return root;
+}
+
+test('the isolated runner opens a vendor project only for the representative bundle and leaves PostgreSQL alone', () => {
+  const fullVendor = { layout: 'multi-module', vendorProjection: { vendor: 'oracle' }, composition: { resolvedDomains: DEMO_DOMAINS() } };
+  const cases = [
+    [null, {}, null, '원본 저장소에는 잠금이 없다'],
+    [null, { representative: true }, null, '원본 저장소의 PostgreSQL 대조 실행'],
+    [{ profile: 'core' }, {}, null, 'PostgreSQL 생성물의 기존 실행 방식은 구성을 보지 않는다'],
+    [{ layout: 'multi-module', composition: { resolvedDomains: DEMO_DOMAINS() } }, { representative: true }, null, 'PostgreSQL 전체 기능 생성물의 대조 실행'],
+    [fullVendor, { representative: true }, 'oracle', '벤더 전체 기능 멀티모듈 생성물'],
+  ];
+  for (const [lock, options, expected, label] of cases) {
+    const root = runnerProject(lock);
+    try { assert.equal(assertIsolatedRunnerSupportsProject(root, options), expected, label); }
+    finally { rmSync(root, { recursive: true, force: true }); }
   }
+  const refusals = [
+    [{ vendorProjection: { vendor: 'oracle' } }, {}, /oracle 프로젝트는 대표 묶음\(--representative\)만 실행할 수 있다/],
+    [fullVendor, {}, /oracle 프로젝트는 대표 묶음/],
+    [{ ...fullVendor, layout: 'single-module' }, { representative: true }, /multi-module 생성물에서만 실행할 수 있다\(현재 single-module\)/],
+    [{ ...fullVendor, composition: { resolvedDomains: DEMO_DOMAINS().filter(domain => domain !== 'informalsanction') } }, { representative: true }, /필요한 기능이 이 구성에 없다: informalsanction/],
+    [{ layout: 'multi-module', composition: { resolvedDomains: ['board'] } }, { representative: true }, /필요한 기능이 이 구성에 없다: addressbook/],
+  ];
+  for (const [lock, options, message] of refusals) {
+    const root = runnerProject(lock);
+    try { assert.throws(() => assertIsolatedRunnerSupportsProject(root, options), message); }
+    finally { rmSync(root, { recursive: true, force: true }); }
+  }
+});
+
+test('the representative bundle is fixed by the ledger and refuses extra arguments', () => {
+  assert.deepEqual(parseRepresentativeArguments([]), { enabled: false });
+  assert.deepEqual(parseRepresentativeArguments(['--', '--project=full-suite']), { enabled: false }, '기존 인자는 그대로 지나간다');
+  assert.deepEqual(parseRepresentativeArguments(['--ci-compose', '--full-inventory']), { enabled: false });
+  assert.deepEqual(parseRepresentativeArguments(['--representative']), { enabled: true, engineId: undefined });
+  assert.deepEqual(parseRepresentativeArguments(['--representative', '--vendor-engine=oracle19']), { enabled: true, engineId: 'oracle19' });
+  for (const extra of [['-g', 'x'], ['--', '--project=full-suite'], ['--vendor-engine=oracle19', '-g'], ['--vendor-engine='], ['e2e/journeys/approvals.spec.ts']]) {
+    assert.throws(() => parseRepresentativeArguments(['--representative', ...extra]), /--vendor-engine=<엔진> 외의 인자를 받지 않는다/, extra.join(' '));
+  }
+  const { specs } = readRepresentativeBundle(ROOT);
+  assert.deepEqual([...specs].sort(), [
+    'e2e/contracts/authentication.spec.ts', 'e2e/contracts/authorization.spec.ts', 'e2e/contracts/menu-visibility.spec.ts', 'e2e/contracts/request-denial.spec.ts',
+    'e2e/journeys/approvals.spec.ts', 'e2e/journeys/audit-log.spec.ts', 'e2e/journeys/authentication.spec.ts', 'e2e/journeys/authorization.spec.ts',
+    'e2e/journeys/board-articles.spec.ts', 'e2e/journeys/board-masters.spec.ts', 'e2e/journeys/security-administration.spec.ts']);
+  assert.deepEqual(representativeSelection(specs).slice(0, 2), ['--project=api-contract', '--project=full-suite']);
+  const ledger = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-test-ledger.json'), 'utf8')).representativeE2e;
+  assert.deepEqual([...new Set(ledger.specs.map(row => row.category))].sort(), ['감사 원장', '게시판', '결재', '권한', '로그인'].sort(), '설계서 §7 의 다섯 범주');
+  // 생성물은 고른 구성의 시작 구성만 남기고 삭제 연쇄로 spec 이 줄어든다. 원본에서만 대조할 수 있다.
+  if (!existsSync(join(ROOT, 'reusable-base-lock.json'))) {
+    for (const spec of specs) assert.ok(existsSync(join(ROOT, 'frontend', spec)), spec);
+    const presets = JSON.parse(readFileSync(join(ROOT, 'config/modules/presets.json'), 'utf8')).presets;
+    assert.deepEqual([...ledger.requiredDomains].sort(), [...presets.find(preset => preset.id === ledger.preset).domains].sort(), '원장의 기능은 시작 구성과 같아야 한다');
+  }
+  const root = runnerProject(null);
+  try {
+    const corrupt = extra => writeFileSync(join(root, 'config/governance/vendor-test-ledger.json'), JSON.stringify({ representativeE2e: { layout: 'multi-module', requiredDomains: ['board'], specs: [], ...extra } }));
+    for (const specsValue of [[], [{ spec: 'e2e/journeys/approvals.spec.ts' }, { spec: 'e2e/journeys/approvals.spec.ts' }], [{ spec: '../outside.spec.ts' }], [{}]]) {
+      corrupt({ specs: specsValue });
+      assert.throws(() => readRepresentativeBundle(root), /대표 묶음이 올바르지 않다/);
+    }
+    corrupt({ specs: [{ spec: 'e2e/journeys/approvals.spec.ts' }], requiredDomains: [] });
+    assert.throws(() => readRepresentativeBundle(root), /대표 묶음이 올바르지 않다/);
+  } finally { rmSync(root, { recursive: true, force: true }); }
+});
+
+function playwrightReports(cwd, files) {
+  const suite = file => ({ specs: [{ title: file, id: file, file, tests: [{ status: 'expected', expectedStatus: 'passed', projectName: file.endsWith('.setup.ts') ? 'setup' : file.startsWith('contracts/') ? 'api-contract' : 'full-suite', results: [] }] }] });
+  const shape = { config: { rootDir: join(cwd, 'e2e'), projects: ['setup', 'api-contract', 'full-suite'].map(name => ({ name })) }, errors: [], suites: ['auth.setup.ts', ...files].map(suite) };
+  return { inventory: shape, report: { ...shape, stats: { expected: files.length + 1, skipped: 0, unexpected: 0, flaky: 0 } } };
+}
+
+test('a representative spec that disappears or a foreign spec turns the run red, unlike a plan derived from discovery', () => {
+  const cwd = mkdtempSync(join(tmpdir(), 'vendor-result-'));
+  const ledgerSpecs = ['e2e/contracts/authentication.spec.ts', 'e2e/journeys/approvals.spec.ts'];
+  try {
+    const whole = playwrightReports(cwd, ['contracts/authentication.spec.ts', 'journeys/approvals.spec.ts']);
+    assert.deepEqual(validateLocalRun(whole.report, whole.inventory, { representativeSpecs: ledgerSpecs, cwd }).errors, []);
+    const narrowed = playwrightReports(cwd, ['contracts/authentication.spec.ts']);
+    const missing = validateLocalRun(narrowed.report, narrowed.inventory, { representativeSpecs: ledgerSpecs, cwd }).errors;
+    assert.ok(missing.includes('missing full inventory spec: e2e/journeys/approvals.spec.ts'), missing.join('; '));
+    assert.ok(missing.includes('missing planned spec result: e2e/journeys/approvals.spec.ts'), `원장이 계획이다: ${missing.join('; ')}`);
+    assert.deepEqual(validateLocalRun(narrowed.report, narrowed.inventory, { cwd }).errors, [], '일반 실행은 발견 결과가 계획이라 같은 입력이 통과한다');
+    const foreign = playwrightReports(cwd, ['contracts/authentication.spec.ts', 'journeys/approvals.spec.ts', 'journeys/mail.spec.ts']);
+    const unplanned = validateLocalRun(foreign.report, foreign.inventory, { representativeSpecs: ledgerSpecs, cwd }).errors;
+    assert.ok(unplanned.includes('unplanned full inventory spec: e2e/journeys/mail.spec.ts'), unplanned.join('; '));
+  } finally { rmSync(cwd, { recursive: true, force: true }); }
+});
+
+const vendorManifest = () => ({ runId: 'a'.repeat(24), databaseId: 'c'.repeat(64), createdAt: Date.now() - 1000 });
+const vendorExpected = { engineId: 'oracle', image: 'gvenzl/oracle-free:23-slim-faststart', port: 1521, environment: ['APP_USER=vendorcheck', 'ORACLE_PASSWORD=this-run'] };
+const vendorContainer = manifest => ({
+  Id: manifest.databaseId, Created: new Date(manifest.createdAt).toISOString(), State: { Running: true },
+  Config: { Image: vendorExpected.image, Env: ['PATH=/bin', ...vendorExpected.environment], Labels: { 'egov.task': 'isolated-e2e', 'egov.e2e.run': manifest.runId, 'egov.composer.vendor': 'oracle' } },
+  HostConfig: { Binds: null },
+  NetworkSettings: { Ports: { '1521/tcp': [{ HostIp: '127.0.0.1', HostPort: '49153' }] } },
+  Mounts: [{ Type: 'volume', Name: 'd'.repeat(64) }],
+});
+
+test('the vendor ownership proof refuses anything this run did not create', () => {
+  const manifest = vendorManifest();
+  assert.equal(assertOwnedVendorDatabase(vendorContainer(manifest), manifest, vendorExpected), '49153');
+  const changes = {
+    '다른 컨테이너 ID': value => { value.Id = 'e'.repeat(64); },
+    '다른 실행의 표식': value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); },
+    '다른 작업의 표식': value => { value.Config.Labels['egov.task'] = 'other'; },
+    '다른 엔진의 표식': value => { value.Config.Labels['egov.composer.vendor'] = 'oracle19'; },
+    '실행 전에 만든 컨테이너': value => { value.Created = new Date(manifest.createdAt - 60000).toISOString(); },
+    '이름 있는 볼륨': value => { value.Mounts = [{ Type: 'volume', Name: 'shared-oracle-data' }]; },
+    '바인드 마운트': value => { value.Mounts = [{ Type: 'bind', Source: '/data' }]; },
+    '바인드 설정': value => { value.HostConfig.Binds = ['/data:/opt/oracle/oradata']; },
+    '외부 바인딩': value => { value.NetworkSettings.Ports['1521/tcp'][0].HostIp = '0.0.0.0'; },
+    '포트 없음': value => { value.NetworkSettings.Ports = {}; },
+    '정지 상태': value => { value.State.Running = false; },
+    '다른 이미지': value => { value.Config.Image = 'gvenzl/oracle-free:latest'; },
+    '이 실행이 만들지 않은 비밀번호': value => { value.Config.Env = ['APP_USER=vendorcheck', 'ORACLE_PASSWORD=someone-else']; },
+  };
+  for (const [label, change] of Object.entries(changes)) {
+    const actual = vendorContainer(manifest);
+    change(actual);
+    assert.throws(() => assertOwnedVendorDatabase(actual, manifest, vendorExpected), /isolation verification failed/, label);
+  }
+  assert.throws(() => assertOwnedVendorDatabase(vendorContainer(manifest), manifest, { ...vendorExpected, environment: [] }), /isolation verification failed/, '기대 환경이 비면 통과시키지 않는다');
+});
+
+test('cleanup removes a dead container of this run but never one it cannot attribute, and does not hide the earlier failure', () => {
+  const manifest = vendorManifest();
+  const stopped = vendorContainer(manifest);
+  stopped.State.Running = false;
+  assert.doesNotThrow(() => assertRemovableVendorDatabase(stopped, manifest, 'oracle'), '정리는 기동 상태를 보지 않는다');
+  for (const change of [value => { value.Id = 'e'.repeat(64); }, value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); }, value => { delete value.Config.Labels['egov.task']; }, value => { value.Config.Labels['egov.composer.vendor'] = 'mysql'; }]) {
+    const actual = vendorContainer(manifest);
+    change(actual);
+    assert.throws(() => assertRemovableVendorDatabase(actual, manifest, 'oracle'), /isolation verification failed/);
+  }
+  const attempt = ({ container, status = 0, inspectFails = false }) => {
+    const removed = [];
+    const reports = [];
+    removeVendorDatabase({ manifest, engineId: 'oracle', report: message => reports.push(message),
+      inspect: () => { if (inspectFails) throw new Error('no such container'); return container; },
+      remove: id => { removed.push(id); return { status }; } });
+    return { removed, reports };
+  };
+  assert.deepEqual(attempt({ container: stopped }), { removed: [manifest.databaseId], reports: [] }, '죽은 컨테이너와 익명 볼륨도 지운다');
+  const foreign = vendorContainer(manifest);
+  foreign.Config.Labels['egov.e2e.run'] = 'f'.repeat(24);
+  const refused = attempt({ container: foreign });
+  assert.deepEqual(refused.removed, [], '남의 컨테이너는 지우지 않는다');
+  assert.match(refused.reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+  assert.match(attempt({ container: stopped, status: 1 }).reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+  assert.match(attempt({ inspectFails: true }).reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+});
+
+test('the runner launches the vendor container with its own labels and closed environment and gets the container id', () => {
+  const calls = [];
+  const containerId = 'a'.repeat(64);
+  const runDocker = (args, options) => { calls.push({ args, options }); return { status: 0, stdout: `Unable to find image locally\n${containerId}\n`, stderr: '' }; };
+  const handle = launchVendorContainer('oracle', { publishPort: 1521, runDocker, baseEnvironment: { PATH: 'tools' }, requireContainerId: true,
+    extraLabels: ['--label', 'egov.task=isolated-e2e', '--label', 'egov.e2e.run=run'] });
+  assert.equal(handle.containerId, containerId);
+  assert.equal(calls.length, 1, '준비 대기는 호출자 몫이다');
+  const { args, options } = calls[0];
+  for (const label of ['egov.composer.vendor=oracle', 'egov.task=isolated-e2e', 'egov.e2e.run=run']) assert.ok(args.includes(label), label);
+  assert.ok(args.includes('127.0.0.1::1521'), '포트는 루프백에만 연다');
+  assert.ok(!args.join(' ').includes(handle.password), '비밀번호는 인자에 두지 않는다');
+  assert.equal(options.env.PATH, 'tools');
+  assert.equal(options.env.ORACLE_PASSWORD, handle.password);
+  assert.deepEqual(Object.keys(options.env).filter(key => key.startsWith('DOCKER_')), [], '닫힌 환경 밖의 Docker 대상을 물려받지 않는다');
+  assert.ok(!args.join(' ').includes('egov.project-composer'), '닫힌 환경에는 작업 토큰도 없다');
+  const seen = [];
+  assert.equal(VENDOR_ENGINES.oracle.ready('x', cmd => { seen.push(cmd[0]); return { stdout: 'DATABASE IS READY TO USE', stderr: '' }; }), true, '준비 판정도 받은 실행기로 부른다');
+  assert.equal(VENDOR_ENGINES.oracle19.ready('x', cmd => { seen.push(cmd[0]); return { stdout: cmd[0] === 'logs' ? 'DATABASE IS READY TO USE' : 'Grant succeeded', stderr: '' }; }), true);
+  for (const id of ['mysql', 'mariadb', 'mssql', 'cubrid']) assert.equal(VENDOR_ENGINES[id].ready('x', cmd => { seen.push(cmd[0]); return { status: 0 }; }), true, id);
+  assert.deepEqual(seen, ['logs', 'logs', 'exec', 'exec', 'exec', 'exec', 'exec']);
+
+  const removed = [];
+  const noId = (dockerArgs) => { removed.push(dockerArgs[0]); return { status: 0, stdout: 'not an id', stderr: '' }; };
+  assert.throws(() => launchVendorContainer('oracle', { runDocker: noId, requireContainerId: true }), error => error.code === 'VENDOR_ENGINE_NOT_READY' && /ID 를 받지 못했다/.test(error.message));
+  assert.deepEqual(removed, ['run', 'rm'], 'ID 를 못 받으면 소유를 증명할 수 없어 지운다');
+  assert.equal(launchVendorContainer('oracle', { runDocker: () => ({ status: 0, stdout: '', stderr: '' }) }).containerId, null, '다른 호출자는 ID 를 요구하지 않는다');
+});
+
+test('a vendor container that failed to start says why, even when the pull output fills the stderr', () => {
+  const failureOf = result => {
+    const docker = args => (args[0] === 'run' ? result : { status: 0, stdout: '', stderr: '' });
+    try { launchVendorContainer('oracle', { runDocker: docker }); } catch (error) { return error; }
+    return assert.fail('기동 실패여야 한다');
+  };
+  const timedOut = { status: null, stdout: '', error: Object.assign(new Error('spawnSync docker ETIMEDOUT'), { code: 'ETIMEDOUT' }) };
+  const pulling = 'Unable to find image locally\n23-slim: Pulling from gvenzl/oracle-free\n';
+  const partial = failureOf({ ...timedOut, stderr: pulling });
+  assert.equal(partial.code, 'VENDOR_ENGINE_NOT_READY');
+  assert.match(partial.message, /못했다: spawnSync docker ETIMEDOUT Unable to find image/, '받던 중의 출력이 있어도 시간 초과를 말한다');
+  assert.match(failureOf({ ...timedOut, stderr: 'x'.repeat(1000) }).message, /못했다: spawnSync docker ETIMEDOUT x+$/, '긴 출력에 잘리지 않는다');
+  assert.match(failureOf({ ...timedOut, stderr: '' }).message, /못했다: spawnSync docker ETIMEDOUT$/);
+  assert.match(failureOf({ status: 1, stdout: '', stderr: 'no space left' }).message, /못했다: no space left$/, '실행 오류가 없으면 stderr 만 말한다');
+  assert.match(failureOf({ status: 1, stdout: '', stderr: '' }).message, /못했다: 종료 코드 1$/, '둘 다 없어도 undefined 를 내지 않는다');
+});
+
+test('the runner wires the closed Docker environment, one API environment and the result plan', () => {
+  const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(runner, /const runDocker = boundedVendorDocker\(engines\.dockerIn\(clean\)\);/);
+  assert.match(runner, /launchVendorContainer\(engineId, \{ publishPort: port, runDocker, baseEnvironment: clean, requireContainerId: true,/);
+  assert.match(runner, /validateLocalRun\(report, inventory, \{ representativeSpecs: bundle\?\.specs \}\)/);
+  assert.equal(runner.match(/const apiEnvironment = /g).length, 1, 'MFA 배선 계약이 벤더 분기도 보도록 API 환경은 하나다');
+  const account = /E2E_TEST_USER_PASSWORD/g;
+  assert.equal(runner.match(account).length, 1, '일반 계정 비밀번호는 시험 실행 환경에만 싣는다');
+  assert.equal(runner.match(/\.\.\.testAccountEnvironment/g).length, 2, '발견과 실행');
+  assert.doesNotMatch(runner.slice(runner.indexOf('const environment = { ...clean, NODE_ENV'), runner.indexOf('const next = require.resolve')), /testAccountEnvironment/, 'Next 빌드와 서버 환경에는 넣지 않는다');
+  assert.deepEqual(closedEnvironment({ PATH: 'tools', E2E_TEST_USER_PASSWORD: 'inherited' }), { PATH: 'tools' }, '상속한 값으로 계정이 바뀌지 않는다');
+
+  const oracleEnvironment = vendorDatabaseEnvironment(VENDOR_ENGINES.oracle, '49153', 'secret', '1');
+  assert.deepEqual(oracleEnvironment, { DB_URL: 'jdbc:oracle:thin:@//127.0.0.1:49153/FREEPDB1', DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' });
+  assert.match(runner, /databaseEnvironment = \{ DB_URL: `jdbc:postgresql:\/\/127\.0\.0\.1:\$\{databasePort\}\/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,\n\s+NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' \};/, 'PostgreSQL 값은 그대로다');
+
+  assert.deepEqual(resolveVendorEngine('oracle', undefined, VENDOR_ENGINES).id, 'oracle');
+  assert.deepEqual(resolveVendorEngine('oracle', 'oracle19', VENDOR_ENGINES).id, 'oracle19');
+  assert.throws(() => resolveVendorEngine('oracle', 'mysql', VENDOR_ENGINES), /oracle 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/);
+  assert.throws(() => resolveVendorEngine('mysql', undefined, VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/, '통합 값이 없는 엔진은 아직 열지 않는다');
+  assert.throws(() => resolveVendorEngine('mysql', 'oracle19', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 oracle19 엔진으로/);
+  assert.throws(() => resolveVendorEngine('oracle', 'nope', VENDOR_ENGINES), /nope 엔진으로/);
+
+  const readme = vendorReadme('oracle', loadVendorLedger(ROOT));
+  assert.match(readme, /node scripts\/run-isolated-e2e\.mjs --representative/);
+  assert.doesNotMatch(readme, /시작할 때 멈춘다/);
+  const removedAssets = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-removed-assets.json'), 'utf8'));
+  const row = Object.values(removedAssets).flat().find(entry => entry?.file === 'scripts/e2e-isolation.test.mjs');
+  assert.match(row.coveredBy, /assertOwnedVendorDatabase/, '제거 사유가 지금 실행기와 맞아야 한다');
+  assert.match(row.reason, /공통 판정.*원본 저장소에서만/, '함께 빠지는 공통 판정의 전수 사례를 적는다');
+  assert.match(row.coveredBy, /validateIsolationManifest, assertIsolatedTarget/, '대신 도는 공통 판정 시험을 적는다');
+});
+
+// 대체 시험이 도는 자리를 사실대로 적는다. 이 시험 파일은 생성물에도 복사되므로 생성물 안에서는 그쪽 별칭과 실제 워크플로를 본다.
+test('the isolation replacement cases run in the source operational contracts, and a generated project does not run them', () => {
+  const removedAssets = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-removed-assets.json'), 'utf8'));
+  const row = Object.values(removedAssets).flat().find(entry => entry?.file === 'scripts/e2e-isolation.test.mjs');
+  assert.match(row.coveredBy, /원본 저장소의 운영 계약\(test:operational-contracts\)에서 도는 scripts\/project-composer-vendor\.test\.mjs/);
+  const isArtifact = existsSync(join(ROOT, 'reusable-base-lock.json'));
+  const readText = path => readFileSync(join(ROOT, path), 'utf8').replace(/\r\n/g, '\n');
+  const contracts = JSON.parse(readText('package.json')).scripts['test:operational-contracts'];
+  if (isArtifact) assert.equal(contracts, artifactAliases['test:operational-contracts']);
+  else assert.match(contracts, /"scripts\/\*\.test\.mjs"/);
+  // 파일을 직접 적어도, glob 이나 폴더로 돌려도 원장 문장이 틀린 것이다.
+  for (const layout of ['multi-module', 'single-module']) {
+    for (const scope of ['contracts', 'backend', 'frontend', 'full', 'vendor-schema']) {
+      for (const argument of verificationSteps(scope, layout, { vendor: 'oracle' }).flatMap(step => step.args)) {
+        assert.doesNotMatch(argument, /project-composer-vendor\.test|\*|^scripts\/?$/, `생성물 검증이 돌리게 되면 원장 문장을 고친다: ${layout} ${scope}`);
+      }
+    }
+  }
+  assert.equal(artifactAliases.verify, ARTIFACT_COMMAND);
+  const workflow = isArtifact ? readText('.github/workflows/ci.yml') : reusableArtifactEntrypoints('core',
+    JSON.parse(readText('.github/required-checks.json')).criticalSteps.find(step => step.name === 'Run gitleaks (working tree + incremental)').run, readText('.github/workflows/ci.yml')).workflow;
+  assert.match(workflow, /^ +run: node scripts\/verify-reusable-artifact\.mjs$/m);
+  assert.doesNotMatch(workflow, /\.test\.mjs|node --test|npm (?:run )?test/, '생성물 ci.yml 이 돌리게 되면 원장 문장을 고친다');
+});
+
+/** 실제 launchVendorContainer 와 엔진 값을 쓰고 docker 만 바꾼다. inspect 는 run 인자로 만들어 배선한 라벨·환경이 판정까지 닿는지 본다. */
+function isolatedVendorDatabase({ engineId = 'oracle', pollsUntilReady = 1, runFails = false, logFails = false, logFile = null, timedOut = [] } = {}) {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-isolated-'));
+  const manifest = { ...vendorManifest(), databaseId: '' };
+  const steps = [];
+  const calls = [];
+  const containerId = 'c'.repeat(64);
+  let started;
+  let polls = 0;
+  const reports = [];
+  const warnings = [];
+  const fakeDocker = (args, options) => {
+    calls.push({ args, options });
+    if (timedOut.includes(args[1] === '--tail' ? 'tail' : args[0])) {
+      steps.push(`timeout ${args[1] === '--tail' ? 'tail' : args[0]}`);
+      return { status: null, signal: 'SIGTERM', stdout: '', stderr: '', error: Object.assign(new Error('spawnSync docker ETIMEDOUT'), { code: 'ETIMEDOUT' }) };
+    }
+    if (args[0] === 'run') {
+      if (runFails) return { status: 1, stdout: '', stderr: 'no space left' };
+      started = { args, env: options.env };
+      steps.push('run');
+      return { status: 0, stdout: `${containerId}\n`, stderr: '' };
+    }
+    if (args[0] === 'logs' && args[1] === '--tail') {
+      steps.push(`tail ${args[2]} ${args[3]}`);
+      return logFails ? { status: 1, stdout: '', stderr: 'gone' } : { status: 0, stdout: `started with ${started.env.ORACLE_PASSWORD}\n`, stderr: 'ORA-00001 boom\n' };
+    }
+    if (args[0] === 'exec') { steps.push('exec'); return { status: 0, stdout: 'Grant succeeded', stderr: '' }; }
+    if (args[0] === 'logs') {
+      polls += 1;
+      steps.push('poll');
+      return { status: 0, stdout: polls >= pollsUntilReady ? 'DATABASE IS READY TO USE' : 'starting', stderr: '' };
+    }
+    if (args[0] === 'rm') { steps.push(args.join(' ')); return { status: 0 }; }
+    throw new Error(`예상하지 못한 docker 호출: ${args.join(' ')}`);
+  };
+  const live = () => {
+    const container = vendorContainer(manifest);
+    container.Config.Labels = Object.fromEntries(started.args.flatMap((arg, index, all) => (arg === '--label' ? [all[index + 1].split('=')] : [])));
+    container.Config.Image = started.args.find(arg => arg === VENDOR_ENGINES[engineId].image);
+    container.Config.Env = started.args.flatMap((arg, index, all) => (arg === '--env' ? [`${all[index + 1]}=${started.env[all[index + 1]]}`] : []));
+    return container;
+  };
+  const state = { change: value => value };
+  const inspect = id => { steps.push(`inspect ${id}`); return state.change(live()); };
+  const seen = [];
+  let database;
+  try {
+    database = launchIsolatedVendorDatabase({ runtime: { module: { dockerIn: environment => { seen.push(environment); return fakeDocker; }, launchVendorContainer }, id: engineId, engine: VENDOR_ENGINES[engineId] },
+      runId: manifest.runId, clean: { PATH: 'tools' }, manifest, inspect, logFile: logFile ?? join(directory, 'database.log'),
+      report: message => reports.push(message), warn: message => warnings.push(message) });
+  } catch (error) {
+    rmSync(directory, { recursive: true, force: true });
+    throw error;
+  }
+  return { database, manifest, steps, calls, state, reports, warnings, directory, seen, logFile: join(directory, 'database.log'), inspected: `inspect ${containerId}`, containerId, password: () => started.env.ORACLE_PASSWORD };
+}
+
+test('an isolated vendor database checks cancellation and ownership on every wait', async () => {
+  const fixture = isolatedVendorDatabase({ pollsUntilReady: 3 });
+  try {
+    assert.deepEqual(fixture.seen, [{ PATH: 'tools' }], '실행기가 판정한 데몬과 같은 닫힌 환경으로 docker 를 부른다');
+    assert.equal(fixture.manifest.databaseId, fixture.containerId);
+    const order = [];
+    const port = await fixture.database.waitReady(() => order.push(fixture.steps.length), { wait: async () => fixture.steps.push('wait') });
+    assert.equal(port, '49153');
+    assert.deepEqual(fixture.steps, ['run', fixture.inspected, 'poll', 'wait', fixture.inspected, 'poll', 'wait', fixture.inspected, 'poll'], '준비를 묻기 전마다 소유를 본다');
+    assert.equal(order.length, 3, '준비를 묻기 전마다 취소를 본다');
+  } finally { rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+// 19c 의 준비 판정은 CREATE USER·GRANT 를 쓴다. 기다리는 동안 이름이 다른 컨테이너로 옮겨 가면 판정한 것과 쓰는 대상이 달라진다.
+test('the 19c readiness writes only after the ownership check and only to the container the check pinned', async () => {
+  const noWait = async () => {};
+  const owned = isolatedVendorDatabase({ engineId: 'oracle19', pollsUntilReady: 2 });
+  const lost = isolatedVendorDatabase({ engineId: 'oracle19', pollsUntilReady: 2 });
+  const foreign = isolatedVendorDatabase({ engineId: 'oracle19' });
+  const otherRun = value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); return value; };
+  try {
+    await owned.database.waitReady(() => {}, { wait: async () => owned.steps.push('wait') });
+    assert.deepEqual(owned.steps, ['run', owned.inspected, 'poll', 'wait', owned.inspected, 'poll', 'exec'], '쓰기 직전의 준비 판정도 소유 판정 뒤에 돈다');
+    const name = owned.calls[0].args[owned.calls[0].args.indexOf('--name') + 1];
+    const targets = owned.calls.filter(({ args }) => args[0] === 'logs' || args[0] === 'exec').map(({ args }) => args[1]);
+    assert.deepEqual([...new Set(targets)], [owned.containerId], '대상은 판정한 ID 다');
+    assert.ok(!owned.calls.slice(1).some(({ args }) => args.includes(name)), '이름으로 부르지 않는다');
+
+    await assert.rejects(lost.database.waitReady(() => {}, { wait: async () => { lost.state.change = otherRun; } }), /isolation verification failed/, '기다리는 동안 소유를 잃으면 멈춘다');
+    assert.ok(!lost.steps.includes('exec'), '소유를 잃은 뒤에는 쓰지 않는다');
+
+    foreign.state.change = otherRun;
+    await assert.rejects(foreign.database.waitReady(() => {}, { wait: noWait }), /isolation verification failed/);
+    assert.deepEqual(foreign.steps, ['run', foreign.inspected], '남의 컨테이너에는 준비도 묻지 않는다');
+  } finally { for (const fixture of [owned, lost, foreign]) rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('every docker call of an isolated vendor run has its own limit, and a call that timed out still reaches the deadline, the cancel and the cleanup', async () => {
+  const noWait = async () => {};
+  const normal = isolatedVendorDatabase({ engineId: 'oracle19' });
+  const blocked = isolatedVendorDatabase({ pollsUntilReady: 99, timedOut: ['logs'] });
+  const cancelled = isolatedVendorDatabase({ pollsUntilReady: 99, timedOut: ['logs'] });
+  const silentLogs = isolatedVendorDatabase({ timedOut: ['tail'] });
+  const stuckRemoval = isolatedVendorDatabase({ timedOut: ['rm'] });
+  try {
+    await normal.database.waitReady(() => {}, { wait: noWait });
+    normal.database.cleanUp();
+    const limits = Object.fromEntries(normal.calls.map(({ args, options }) => [args[1] === '--tail' ? 'tail' : args[0], options.timeout]));
+    assert.deepEqual(limits, { run: 3_600_000, logs: 30_000, exec: 30_000, tail: 30_000, rm: 300_000 }, 'docker run 은 이미지를 받으므로 짧게 묶지 않고, 나머지는 멈추면 끊는다');
+    assert.ok(normal.calls[0].options.env, '실행기가 넘긴 환경도 유지한다');
+
+    let clock = 0;
+    let turns = 0;
+    await assert.rejects(blocked.database.waitReady(() => { turns += 1; }, { wait: noWait, now: () => { clock += 200_000; return clock; } }), /oracle 가 300초 안에 준비되지 않았다/, '시간 초과는 준비 안 됨으로 끝나 시한을 본다');
+    assert.ok(turns >= 2, '시간 초과 뒤에도 취소를 본다');
+
+    let active = true;
+    await assert.rejects(cancelled.database.waitReady(() => { if (!active) throw new Error('Isolated E2E: run was cancelled.'); }, { wait: async () => { active = false; } }), /run was cancelled/, '시간 초과 뒤의 취소가 닿는다');
+
+    silentLogs.database.cleanUp();
+    assert.deepEqual(silentLogs.warnings, ['Isolated E2E: 벤더 DB 로그를 남기지 못했다.']);
+    assert.equal(silentLogs.steps.at(-1), `rm -f -v ${silentLogs.containerId}`, '로그가 멈춰도 지운다');
+
+    stuckRemoval.database.cleanUp();
+    assert.match(stuckRemoval.reports[0], /벤더 DB 컨테이너를 지우지 못했다/, '지우기가 멈추면 남은 컨테이너를 알린다');
+  } finally { for (const fixture of [normal, blocked, cancelled, silentLogs, stuckRemoval]) rmSync(fixture.directory, { recursive: true, force: true }); }
+  assert.throws(() => isolatedVendorDatabase({ timedOut: ['run'] }), /^Error: Isolated E2E: oracle 컨테이너를 띄우지 못했다: spawnSync docker ETIMEDOUT/, 'stderr 가 비어도 원인을 말한다');
+});
+
+test('a termination signal starts the abort once and keeps listening, so a second signal cannot kill the cleanup', () => {
+  const target = new EventEmitter();
+  let aborts = 0;
+  const stopListening = onTermination(() => { aborts += 1; }, target);
+  for (const signal of ['SIGHUP', 'SIGTERM', 'SIGINT', 'SIGHUP']) {
+    target.emit(signal);
+    assert.equal(target.listenerCount(signal), 1, `${signal} 뒤에도 받는다`);
+  }
+  assert.equal(aborts, 1, '중단은 한 번만 시작한다');
+  stopListening();
+  for (const signal of ['SIGHUP', 'SIGTERM', 'SIGINT']) assert.equal(target.listenerCount(signal), 0, `${signal} 등록을 걷는다`);
+});
+
+test('cleanup runs every step after an earlier one throws and reports the first failure', async () => {
+  const ran = [];
+  await assert.rejects(runCleanupSteps([
+    () => { ran.push('manifest'); throw new Error('첫 실패'); },
+    async () => { ran.push('children'); throw new Error('둘째 실패'); },
+    () => { ran.push('database'); },
+  ]), /^Error: 첫 실패$/);
+  assert.deepEqual(ran, ['manifest', 'children', 'database']);
+  await assert.doesNotReject(runCleanupSteps([() => undefined, async () => undefined]));
+});
+
+test('every Gradle call of the vendor integration leaves no daemon and keeps its own failure conditions', () => {
+  const source = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const calls = source.match(/spawnSync\(`"\$\{gradlew\}"`, \[[^\]]*\]/g);
+  assert.equal(calls.length, 3, 'Flyway·카탈로그·시나리오');
+  for (const call of calls) assert.match(call, /\.\.\.VENDOR_GRADLE_OPTIONS/, call);
+  assert.ok(VENDOR_GRADLE_OPTIONS.includes('--no-daemon'));
+  assert.ok(!VENDOR_GRADLE_OPTIONS.includes('--warning-mode'), '경고를 실패로 바꾸지 않는다');
+});
+
+test('a vendor failure leaves the masked end of the database log before the container goes away', t => {
+  const printed = [];
+  t.mock.method(console, 'error', text => printed.push(String(text)));
+  const handle = { name: 'egov-vendor-x', password: 'Vd1_secret' };
+  const scenario = ({ failure = new Error('시험 실패'), logs, target = handle }) => {
+    printed.length = 0;
+    const order = [];
+    const remove = () => { order.push('rm'); return { status: 0 }; };
+    // 수집기 안에서 단언하면 수집 실패를 삼키는 try/catch 에 사라진다. 그래서 끝난 뒤 본다.
+    let logRead = null;
+    const readLogs = (args, options) => { order.push(args.join(' ')); logRead = { options }; return logs(); };
+    if (failure) assert.throws(() => stopVendorEngineReporting(target, failure, remove, readLogs), /^Error: 시험 실패$/, '원래 실패를 가리지 않는다');
+    else stopVendorEngineReporting(target, null, remove, readLogs);
+    if (logRead) assert.equal(logRead.options?.timeout, 30_000, '로그 수집도 멈추지 않는다');
+    return order;
+  };
+  const noisy = Array.from({ length: 100 }, (_, index) => `line ${index} ${'x'.repeat(index === 99 ? 500 : 1)}`).join('\n');
+  assert.deepEqual(scenario({ logs: () => ({ status: 0, stdout: `${noisy}\nstarted with Vd1_secret\n`, stderr: 'ORA-27102: out of memory\n' }) }), ['logs --tail 20 egov-vendor-x', 'rm'], '지우기 전에 읽는다');
+  const output = printed.join('\n');
+  assert.match(output, /ORA-27102: out of memory/);
+  assert.ok(!output.includes('Vd1_secret'), '비밀번호를 내지 않는다');
+  assert.ok(output.split('\n').length <= 21, 'Gradle 실패 요약을 밀어내지 않는다');
+  assert.ok(output.split('\n').every(line => line.length <= 300), '줄도 자른다');
+
+  scenario({ logs: () => ({ status: 0, stdout: 'started with Vd1_secret\n', stderr: '' }) });
+  assert.match(printed.join('\n'), /started with \[password\]/);
+
+  assert.deepEqual(scenario({ logs: () => { throw new Error('docker gone'); } }), ['logs --tail 20 egov-vendor-x', 'rm'], '로그 수집 실패가 정리를 막지 않는다');
+  assert.deepEqual(printed, []);
+  assert.deepEqual(scenario({ logs: () => ({ status: null, stdout: '', stderr: '', error: new Error('ETIMEDOUT') }) }), ['logs --tail 20 egov-vendor-x', 'rm']);
+  assert.deepEqual(printed, []);
+  const silent = () => ({ status: 0, stdout: '', stderr: '' });
+  assert.deepEqual(scenario({ failure: null, logs: silent }), ['rm'], '실패가 없으면 읽지 않는다');
+  assert.deepEqual(scenario({ target: { name: 'egov-vendor-x' }, logs: silent }), ['rm'], '비밀번호를 모르면 가릴 수 없어 읽지 않는다');
+});
+
+test('a vendor engine that never became ready reports the database log, not only the timeout', t => {
+  const printed = [];
+  t.mock.method(console, 'error', text => printed.push(String(text)));
+  let clock = 0;
+  t.mock.method(Date, 'now', () => { clock += 400_000; return clock; });
+  const calls = [];
+  let password;
+  const runDocker = (args, options) => {
+    calls.push(args[1] === '--tail' ? 'tail' : args[0]);
+    if (args[0] === 'run') { password = options.env.ORACLE_PASSWORD; return { status: 0, stdout: '', stderr: '' }; }
+    if (args[0] === 'logs') return { status: 0, stdout: `password is ${password}\n`, stderr: 'ORA-27102: out of memory\n' };
+    return { status: 0, stdout: '', stderr: '' };
+  };
+  assert.throws(() => startVendorEngine('oracle', { runDocker }), error => error.code === 'VENDOR_ENGINE_NOT_READY' && /300초 안에 준비되지 않았다/.test(error.message));
+  assert.deepEqual(calls, ['run', 'logs', 'tail', 'rm']);
+  const output = printed.join('\n');
+  assert.match(output, /ORA-27102: out of memory/);
+  assert.match(output, /password is \[password\]/);
+  assert.ok(!output.includes(password));
+});
+
+test('the vendor commands reach the log tail through the default reader, and a removal of another container does not read logs', () => {
+  const engine = readFileSync(join(ROOT, 'scripts/project-composer-vendor-engine.mjs'), 'utf8');
+  assert.match(engine, /readLogs = remove === stopVendorEngine \? docker : null\)/, '통합·차등·적용 대조는 기본 정리로 로그를 남긴다');
+  for (const file of ['project-composer-vendor-integration.mjs', 'project-composer-vendor-verify.mjs', 'project-composer-vendor-differential.mjs']) {
+    assert.match(readFileSync(join(ROOT, 'scripts', file), 'utf8'), /stopVendorEngineReporting\(handle, failure\);/, file);
+  }
+  const reads = [];
+  assert.throws(() => withDisposablePostgres(() => { throw new Error('대조 실패'); }, args => { reads.push(args[0]); return { status: 0, stdout: '', stderr: '' }; }), /대조 실패/);
+  assert.ok(!reads.includes('logs'), '기준 PostgreSQL 은 벤더 DB 가 아니다');
+});
+
+test('the database log reaches the job failure tail without pushing out the Gradle summary', t => {
+  const printed = [];
+  t.mock.method(console, 'error', text => printed.push(String(text)));
+  const header = { profile: 'demo', layout: 'multi-module', command: 'node scripts/project-composer-vendor-integration.mjs' };
+  const database = Array.from({ length: 19 }, (_, index) => `database line ${index}`).join('\n');
+  assert.throws(() => stopVendorEngineReporting({ name: 'egov-vendor-x', password: 'Vd1_secret' }, new Error('통합 시험 실패'), () => ({ status: 0 }),
+    () => ({ status: 0, stdout: `${database}\nstarted with Vd1_secret\n`, stderr: 'ORA-27102: out of memory\n' })), /통합 시험 실패/);
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-log-tail-'));
+  try {
+    const log = join(directory, 'verify.log');
+    const gradle = Array.from({ length: 100 }, (_, index) => `gradle line ${index}`);
+    writeFileSync(log, [`[reusable-verify] demo/multi-module: ${header.command}`, ...gradle, 'BUILD FAILED in 7m', ...printed, '[vendor-integration] VENDOR_INTEGRATION_FAILED: 통합 시험 실패', '[종료 코드 1 · 가림 0건]', ''].join('\n'));
+    const tail = verificationLogTail(log, header, { roots: [], home: '', env: {} });
+    assert.equal(tail.length, 40);
+    assert.ok(tail.includes('ORA-27102: out of memory'), 'DB 원인이 작업 실패에 닿는다');
+    assert.ok(tail.includes('started with [password]') && !tail.join('\n').includes('Vd1_secret'), '작업 로그에도 비밀번호가 없다');
+    assert.ok(tail.includes('BUILD FAILED in 7m') && tail.some(line => line.startsWith('gradle line')), 'Gradle 실패 요약이 남는다');
+    assert.equal(tail.at(-1), '[vendor-integration] VENDOR_INTEGRATION_FAILED: 통합 시험 실패');
+  } finally { rmSync(directory, { recursive: true, force: true }); }
+});
+
+test('a vendor run stops waiting when it is cancelled, loses the container or runs out of time, and can still clean up', async () => {
+  const noWait = async () => {};
+  const cancelled = isolatedVendorDatabase({ pollsUntilReady: 99 });
+  const dead = isolatedVendorDatabase({ pollsUntilReady: 99 });
+  const late = isolatedVendorDatabase({ pollsUntilReady: 99 });
+  try {
+    await assert.rejects(cancelled.database.waitReady(() => { throw new Error('Isolated E2E: run was cancelled.'); }, { wait: noWait }), /run was cancelled/);
+    assert.equal(cancelled.steps.filter(step => step === 'poll').length, 0, '취소하면 더 묻지 않는다');
+
+    let inspections = 0;
+    dead.state.change = value => { inspections += 1; if (inspections > 1) value.State.Running = false; return value; };
+    await assert.rejects(dead.database.waitReady(() => {}, { wait: noWait }), /isolation verification failed/, '정리 판정은 기동 상태를 보지 않으므로 증명 판정이어야 잡힌다');
+    dead.database.cleanUp();
+    assert.deepEqual(dead.reports, []);
+    assert.deepEqual(dead.steps.slice(-3), [dead.inspected, `tail 2000 ${dead.containerId}`, `rm -f -v ${dead.containerId}`], '판정한 뒤 로그를 남기고 익명 볼륨까지 지운다');
+    const saved = readFileSync(dead.logFile, 'utf8');
+    assert.match(saved, /started with \[password\]/, '이미지가 출력한 비밀번호를 가린다');
+    assert.match(saved, /ORA-00001 boom/, '기동 오류는 stderr 에 있다');
+    assert.ok(!saved.includes(dead.password()), '비밀번호를 근거 폴더에 남기지 않는다');
+
+    let clock = 0;
+    await assert.rejects(late.database.waitReady(() => {}, { wait: noWait, now: () => { clock += 200_000; return clock; } }), /oracle 가 300초 안에 준비되지 않았다/, '시간이 지나면 기다리지 않는다');
+  } finally { for (const fixture of [cancelled, dead, late]) rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('vendor cleanup never reads the logs of a container it cannot attribute, and a lost log does not keep the container', () => {
+  const foreign = isolatedVendorDatabase();
+  const logless = isolatedVendorDatabase({ logFails: true });
+  const unwritable = isolatedVendorDatabase({ logFile: join(tmpdir(), 'vendor-isolated-no-such-folder', 'database.log') });
+  try {
+    foreign.state.change = value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); return value; };
+    foreign.database.cleanUp();
+    assert.deepEqual(foreign.steps, ['run', foreign.inspected], '남의 컨테이너는 로그도 읽지 않고 지우지도 않는다');
+    assert.match(foreign.reports[0], /벤더 DB 컨테이너를 지우지 못했다/);
+    assert.equal(existsSync(foreign.logFile), false);
+
+    for (const fixture of [logless, unwritable]) {
+      fixture.database.cleanUp();
+      assert.equal(fixture.steps.at(-1), `rm -f -v ${fixture.containerId}`, '로그를 못 남겨도 지운다');
+      assert.deepEqual(fixture.warnings, ['Isolated E2E: 벤더 DB 로그를 남기지 못했다.']);
+      assert.deepEqual(fixture.reports, [], '로그를 못 남긴 것은 정리 실패가 아니다');
+    }
+    assert.throws(() => isolatedVendorDatabase({ runFails: true }), /^Error: Isolated E2E: oracle 컨테이너를 띄우지 못했다: no space left/, '기동 실패 문구를 사용자에게 보인다');
+  } finally { for (const fixture of [foreign, logless, unwritable]) rmSync(fixture.directory, { recursive: true, force: true }); }
+});
+
+test('a cancelled run reports the cancellation, not the failure of the child it killed', async () => {
+  const exits = code => spawn(process.execPath, ['-e', `process.exit(${code})`], { stdio: 'ignore', windowsHide: true });
+  const target = new EventEmitter();
+  let aborted = false;
+  const child = spawn(process.execPath, ['-e', 'setTimeout(() => {}, 60000)'], { stdio: 'ignore', windowsHide: true });
+  const stopListening = onTermination(() => { aborted = true; child.kill(); }, target);
+  try {
+    const outcome = awaitChildExit(child, 'playwright', () => aborted);
+    target.emit('SIGHUP');
+    await assert.rejects(outcome, /^Error: Isolated E2E: run was cancelled\.$/, '취소가 죽인 자식은 실패가 아니라 취소로 끝난다');
+  } finally {
+    stopListening();
+    if (child.exitCode === null && child.signalCode === null) child.kill();
+  }
+  await assert.rejects(awaitChildExit(exits(0), 'playwright', () => true), /^Error: Isolated E2E: run was cancelled\.$/, '종료 코드보다 취소를 먼저 본다');
+  await assert.rejects(awaitChildExit(exits(1), 'playwright', () => false), /^Error: Isolated E2E: playwright failed; inspect its private run log\.$/, '취소가 아니면 실패를 그대로 말한다');
+  await assert.doesNotReject(awaitChildExit(exits(0), 'playwright', () => false));
+});
+
+test('main keeps the vendor checks wired where a fake docker cannot see them', () => {
+  const runner = readFileSync(join(ROOT, 'scripts/run-isolated-e2e.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  const main = runner.slice(runner.indexOf('export async function main'));
+  assert.match(main, /const vendor = assertIsolatedRunnerSupportsProject\(root, \{ representative: representative\.enabled \}\);/, '구성 판정을 main 에서 건너뛰지 않는다');
+  assert.match(main, /await awaitChildExit\(launch\(name, command, args, cwd, environment, outputFile\), name, \(\) => aborted\);/, '자식의 종료 코드보다 취소를 먼저 본다');
+  const caught = '} catch (error) { executionFailure = error; }';
+  assert.equal(main.split(caught).length, 2, 'playwright 실행의 catch 는 하나다');
+  const afterPlaywright = main.slice(main.indexOf(caught) + caught.length);
+  const firstStatement = afterPlaywright.split('\n').map(line => line.trim()).find(line => line && !line.startsWith('//'));
+  assert.equal(firstStatement, 'assertActive();', '취소로 삼킨 실패 뒤에는 결과 파일을 읽기 전에 취소로 끝낸다');
+  assert.ok(afterPlaywright.indexOf('readFileSync(reportPath') > afterPlaywright.indexOf('assertActive();'), '결과 파일보다 취소를 먼저 본다');
+  assert.match(main, /verifyOwner: \(\) => \{ assertActive\(\); verifyRuntime\(\); \}/, '픽스처 쓰기 전마다 취소와 소유를 본다');
+  const positions = ['launchIsolatedVendorDatabase({', 'cleanUpVendorDatabase = database.cleanUp;', 'verifyRuntime = database.verify;', 'await database.waitReady(assertActive);'].map(text => main.indexOf(text));
+  assert.ok(positions.every(position => position >= 0), `벤더 DB 배선이 없다: ${positions}`);
+  assert.deepEqual(positions, [...positions].sort((left, right) => left - right), '대기가 실패해도 지우도록 정리를 먼저 받는다');
+  const closing = main.slice(main.lastIndexOf('} finally {'));
+  assert.match(closing, /if \(cleanUpVendorDatabase\) cleanUpVendorDatabase\(\);/, '어떻게 끝나든 벤더 DB 를 지운다');
+  assert.ok(closing.indexOf('await runCleanupSteps([') < closing.indexOf('unlinkSync(manifestFile)') && closing.indexOf('unlinkSync(manifestFile)') < closing.indexOf('cleanUpVendorDatabase()'), '앞 단계가 던져도 벤더 DB 정리까지 간다');
+  assert.match(main, /const stopListening = onTermination\(abort\);/, 'SIGINT·SIGTERM·SIGHUP 을 계속 받는다');
+  assert.doesNotMatch(main, /process\.once\('SIG/, 'once 는 두 번째 신호에 프로세스를 죽인다');
+  assert.match(closing, /stopListening,\n\s+\]\);/, '정리가 끝난 뒤에 등록을 걷는다');
+});
+
+test('the shared isolation checks the vendor runner relies on stay covered in a vendor project', async () => {
+  const manifest = { version: 1, runId: 'a'.repeat(24), token: 'b'.repeat(64), databaseId: 'c'.repeat(64), createdAt: Date.now() - 1000,
+    apiUrl: 'http://127.0.0.1:18080/api/v1', webUrl: 'http://127.0.0.1:13001', controlUrl: 'http://127.0.0.1:14001/verify' };
+  const environment = value => ({ NEXT_PUBLIC_API_URL: value.apiUrl, NEXT_PUBLIC_WEB_URL: value.webUrl });
+  assert.equal(validateIsolationManifest(manifest, environment(manifest)), manifest);
+  const invalid = {
+    '원격 API': { ...manifest, apiUrl: 'https://shared.example/api/v1' },
+    '원격 통제 서버': { ...manifest, controlUrl: 'https://remote.invalid/verify' },
+    '만료': { ...manifest, createdAt: Date.now() - 7 * 3600000 },
+    '다른 DB 형식': { ...manifest, databaseId: 'not-a-container' },
+  };
+  for (const [label, value] of Object.entries(invalid)) assert.throws(() => validateIsolationManifest(value, environment(value)), /isolation verification failed/, label);
+  assert.throws(() => validateIsolationManifest(manifest, {}), /isolation verification failed/, '앱이 보는 대상과 달라도 멈춘다');
+
+  await assert.rejects(assertIsolatedTarget({}), /isolation verification failed/, '매니페스트 없이는 시험 데이터를 건드리지 않는다');
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-live-owner-'));
+  let attestation = { ready: true, runId: manifest.runId, databaseId: manifest.databaseId };
+  const server = createServer((request, response) => {
+    response.writeHead(request.headers.authorization === `Bearer ${manifest.token}` ? 200 : 403, { 'Content-Type': 'application/json' });
+    response.end(JSON.stringify(attestation));
+  });
+  await new Promise(done => server.listen(0, '127.0.0.1', done));
+  try {
+    const live = { ...manifest, controlUrl: `http://127.0.0.1:${server.address().port}/verify` };
+    const file = join(directory, 'runtime.json');
+    writeFileSync(file, JSON.stringify(live));
+    const target = { ...environment(live), E2E_ISOLATION_MANIFEST: file };
+    assert.equal((await assertIsolatedTarget(target)).runId, manifest.runId);
+    attestation = { ...attestation, ready: false };
+    await assert.rejects(assertIsolatedTarget(target), /isolation verification failed/, '소유자가 준비를 거두면 멈춘다');
+    attestation = { ...attestation, ready: true, databaseId: 'd'.repeat(64) };
+    await assert.rejects(assertIsolatedTarget(target), /isolation verification failed/, '다른 DB 를 증명하면 멈춘다');
+  } finally {
+    await new Promise(done => server.close(done));
+    rmSync(directory, { recursive: true, force: true });
+  }
+
+  const mfa = createIsolatedMfaEnvironment();
+  assert.equal(mfa.MFA_REQUIRE_PROTECTED, 'false', '보호 계정 MFA 를 강제하지 않는다');
+  assert.equal(Buffer.from(JSON.parse(mfa.MFA_KEYS_JSON)[mfa.MFA_ACTIVE_KEY_ID], 'base64').length, 32);
+  assert.notEqual(mfa.MFA_KEYS_JSON, createIsolatedMfaEnvironment().MFA_KEYS_JSON, '실행마다 새 키다');
+
+  const project = mkdtempSync(join(tmpdir(), 'vendor-dotenv-'));
+  try {
+    writeFileSync(join(project, '.env.example'), 'example');
+    assert.doesNotThrow(() => assertNoDotEnv(project));
+    writeFileSync(join(project, '.env'), 'DB_URL=remote');
+    assert.throws(() => assertNoDotEnv(project), /Isolated E2E/, '.env 가 있으면 멈춘다');
+  } finally { rmSync(project, { recursive: true, force: true }); }
+
+  const routes = { rewrites: { beforeFiles: [], fallback: [], afterFiles: [
+    { source: '/api/v1/:path*', destination: `${manifest.apiUrl}/:path*` },
+    { source: '/actuator/:path*', destination: 'http://127.0.0.1:18080/actuator/:path*' },
+    { source: '/ws/:path*', destination: 'http://127.0.0.1:18080/ws/:path*' },
+  ] } };
+  assert.doesNotThrow(() => assertBuildTarget(routes, manifest.apiUrl));
+  routes.rewrites.afterFiles[0].destination = 'https://remote.invalid/:path*';
+  assert.throws(() => assertBuildTarget(routes, manifest.apiUrl), /Isolated E2E/, '다른 대상으로 빌드한 프런트는 멈춘다');
+});
+
+const ADMIN_GROUP = () => ({ code: 'ROLE_ADMIN', complete: true, version: 'a'.repeat(64), grants: [{ type: 'NAVIGATION', code: '100' }, { type: 'OPERATION', code: 'USER_READ' }] });
+
+function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, group = ADMIN_GROUP(), reread } = {}) {
+  const log = [];
+  let failures = loginFailures;
+  let current = group;
+  const request = async (url, init) => {
+    const target = url.replace('http://127.0.0.1:18080/api/v1', '');
+    const body = init.body ? JSON.parse(init.body) : undefined;
+    log.push({ step: `${init.method} ${target}`, body, authorization: init.headers.Authorization, cookie: init.headers.Cookie });
+    const reply = (status, envelope = {}) => ({ status, json: async () => envelope });
+    if (target === '/auth/login') {
+      if (failures-- > 0) return reply(401, { code: 'INVALID' });
+      return reply(200, { data: { accessToken: 'token' } });
+    }
+    if (target === '/admin/system/users') return reply(userStatus, { code: 'USER_EXISTS' });
+    if (init.method === 'GET') {
+      if (log.filter(entry => entry.step === 'PUT /admin/authorization/groups/ROLE_ADMIN/grants').length && reread) return reply(200, { data: reread });
+      return reply(200, { data: current });
+    }
+    if (putStatus === 200) current = { ...current, grants: body.grants };
+    return reply(putStatus, { code: 'MENU_PARENT_REQUIRED' });
+  };
+  return { log, request };
+}
+
+async function provision(api, verifyOwner = () => api.log.push({ step: 'owner' }), apiUrl = 'http://127.0.0.1:18080/api/v1') {
+  const waits = [];
+  await provisionRepresentativeAccounts({ apiUrl, admin: { id: 'webmaster', password: '1' }, user: { id: 'TEST1', password: 'E2e1!strong' }, verifyOwner, request: api.request, wait: async ms => { waits.push(ms); } });
+  return waits;
+}
+
+test('the fixture proves ownership before every write and adds only the missing grants to the full list', async () => {
+  const api = fixtureApi();
+  await provision(api);
+  assert.deepEqual(api.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'owner', 'POST /admin/system/users', 'GET /admin/authorization/groups/ROLE_ADMIN',
+    'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
+  const user = api.log.find(entry => entry.step === 'POST /admin/system/users');
+  assert.deepEqual(user.body, { userId: 'TEST1', pswd: 'E2e1!strong', userNm: '일반사용자', role: 'USER' });
+  assert.equal(user.authorization, 'Bearer token');
+  assert.ok(api.log.every(entry => !entry.cookie), '쿠키를 싣지 않아 CSRF 대상이 아니다');
+  const put = api.log.find(entry => entry.step.startsWith('PUT'));
+  assert.equal(put.body.complete, true);
+  assert.equal(put.body.version, 'a'.repeat(64));
+  assert.deepEqual(put.body.grants, [...ADMIN_GROUP().grants, { type: 'OPERATION', code: 'NOTICE_EDIT' }, { type: 'OPERATION', code: 'FAQ_EDIT' }], '기존 목록을 잃지 않는다');
+
+  const held = fixtureApi({ group: { ...ADMIN_GROUP(), grants: [{ type: 'OPERATION', code: 'NOTICE_EDIT' }] } });
+  await provision(held);
+  assert.deepEqual(held.log.find(entry => entry.step.startsWith('PUT')).body.grants, [{ type: 'OPERATION', code: 'NOTICE_EDIT' }, { type: 'OPERATION', code: 'FAQ_EDIT' }], '이미 있는 권한을 겹치지 않는다');
+});
+
+test('the fixture retries the login below the lockout threshold and stops on anything unexpected', async () => {
+  const late = fixtureApi({ loginFailures: 2 });
+  assert.equal((await provision(late)).length, 2, '비밀번호 설정을 기다린다');
+  assert.equal(late.log.filter(entry => entry.step === 'POST /auth/login').length, 3);
+  assert.equal(late.log.filter(entry => entry.step === 'owner').length, 5, '로그인 시도도 소유를 먼저 본다');
+
+  const never = fixtureApi({ loginFailures: 100 });
+  await assert.rejects(provision(never), /관리자 로그인이 4회 모두 실패했다/);
+  const attempts = never.log.filter(entry => entry.step === 'POST /auth/login').length;
+  const threshold = Number(readFileSync(join(ROOT, 'api-server/src/main/resources/application.yml'), 'utf8').match(/LOGIN_MAX_FAILURES:(\d+)/)[1]);
+  assert.ok(attempts < threshold, `${attempts}회 실패가 잠금 임계 ${threshold}회에 닿으면 뒤따르는 인증 준비가 잠긴 계정을 만난다`);
+  assert.ok(!never.log.some(entry => entry.step === 'POST /admin/system/users'));
+
+  await assert.rejects(provision(fixtureApi({ userStatus: 409 })), /일반 계정 생성 실패\(HTTP 409, USER_EXISTS\)/);
+  await assert.rejects(provision(fixtureApi({ putStatus: 400 })), /관리자 권한 변경 실패\(HTTP 400, MENU_PARENT_REQUIRED\)/);
+  await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), complete: false } })), /전체 목록이 아니다/);
+  await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), version: 'short' } })), /전체 목록이 아니다/);
+  await assert.rejects(provision(fixtureApi({ reread: ADMIN_GROUP() })), /관리자 권한이 반영되지 않았다/);
+
+  let verified = 0;
+  const lost = fixtureApi();
+  await assert.rejects(provision(lost, () => { verified += 1; if (verified === 2) throw new Error('E2E isolation verification failed'); }), /isolation verification failed/);
+  assert.deepEqual(lost.log.map(entry => entry.step), ['POST /auth/login'], '소유 증명이 깨지면 쓰지 않는다');
+  await assert.rejects(provision(fixtureApi(), () => {}, 'https://remote.example/api/v1'), /isolation verification failed/, '루프백 밖으로 보내지 않는다');
+});
+
+test('the test account password comes from the runner and defaults to the seeded value', () => {
+  const source = readFileSync(join(ROOT, 'frontend/e2e/synthetic-test-credentials.mjs'), 'utf8');
+  assert.match(source, /password: process\.env\.E2E_TEST_USER_PASSWORD \|\| '1'/);
+  const load = environment => spawnSync(process.execPath, ['--input-type=module', '-e', `import(${JSON.stringify(new URL('../frontend/e2e/synthetic-test-credentials.mjs', import.meta.url).href)}).then(m => console.log(m.TEST_CREDENTIALS.user.password))`], { encoding: 'utf8', env: { PATH: process.env.PATH, ...environment } }).stdout.trim();
+  assert.equal(load({}), '1', 'PostgreSQL 은 시드 값을 그대로 쓴다');
+  assert.equal(load({ E2E_TEST_USER_PASSWORD: 'E2e1!strong' }), 'E2e1!strong');
 });
 
 test('a vendor container started for a job carries that job token, so a cancel can reclaim it', async () => {
@@ -647,6 +2057,17 @@ test('a vendor container that was created but never started is removed too', () 
     /포트 충돌.*시험 DB 컨테이너가 남았다/, '지우지 못하면 본래 실패에 잔존을 덧붙인다');
 });
 
+test('a missing docker executable reports only that, because no container can exist', () => {
+  const unable = code => ({ status: null, stdout: null, stderr: null, error: Object.assign(new Error(`spawnSync docker ${code}`), { code }) });
+  const calls = [];
+  assert.throws(() => startVendorEngine('oracle', { runDocker: args => { calls.push(args[0]); return unable('ENOENT'); } }),
+    error => error.code === 'VENDOR_ENGINE_NOT_READY' && /spawnSync docker ENOENT/.test(error.message) && !/남았다/.test(error.message));
+  assert.deepEqual(calls, ['run'], '지울 대상이 없다');
+  // 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 잔존을 그대로 알린다.
+  assert.throws(() => startVendorEngine('oracle', { runDocker: () => unable('ENOBUFS') }), /spawnSync docker ENOBUFS.*시험 DB 컨테이너가 남았다/);
+  assert.throws(() => startVendorEngine('oracle', { runDocker: args => (args[0] === 'run' ? unable('ENOBUFS') : unable('ENOENT')) }), /시험 DB 컨테이너가 남았다/, '도중에 실행 파일을 잃어도 잔존이다');
+});
+
 test('the disposable baseline database goes away whatever happens, and a leftover is not a pass', () => {
   const calls = [];
   const docker = outcomes => args => { calls.push(args[0]); return outcomes[args[0]] ?? { status: 0, stdout: '', stderr: '' }; };
@@ -655,6 +2076,21 @@ test('the disposable baseline database goes away whatever happens, and a leftove
   assert.throws(() => withDisposablePostgres(() => { throw new Error('대조 실패'); }, docker({ rm: { status: 1 } })), /대조 실패.*시험 DB 컨테이너가 남았다/, '본래 실패에 잔존을 덧붙인다');
   assert.throws(() => withDisposablePostgres(() => 'ok', docker({ rm: { status: 1 } })), /시험 DB 컨테이너가 남았다/, '남은 컨테이너를 성공으로 넘기지 않는다');
   assert.equal(withDisposablePostgres(() => 'ok', docker({})), 'ok');
+  const missing = () => ({ status: null, error: Object.assign(new Error('spawnSync docker ENOENT'), { code: 'ENOENT' }) });
+  assert.throws(() => withDisposablePostgres(() => assert.fail('돌면 안 된다'), missing),
+    error => /spawnSync docker ENOENT/.test(error.message) && !/남았다|undefined/.test(error.message), 'Docker 가 없으면 남은 컨테이너도 없다');
+});
+
+test('a trigger probe whose count cannot be read is a query failure, not a parity difference', () => {
+  const steps = (errorAt = () => false, value = '1') => (handle, statements) => {
+    const sections = new Map(statements.map(({ sql }, index) => [index, /^SELECT COUNT/.test(sql) ? [value] : []]));
+    return { sections, errors: statements.flatMap(({ sql }, index) => (errorAt(sql) ? [{ index, error: 'ORA-00942' }] : [])) };
+  };
+  const rejectsCount = sql => /^SELECT COUNT/.test(sql);
+  assert.throws(() => intentFailures({}, 'oracle', steps(rejectsCount)), error => error.code === 'VENDOR_QUERY_FAILED' && /oracle 트리거 확인 조회 실패/.test(error.message), '조회 오류');
+  assert.throws(() => intentFailures({}, 'oracle', steps(() => false, 'x')), error => error.code === 'VENDOR_QUERY_FAILED', '읽을 수 없는 수');
+  const wrong = intentFailures({}, 'oracle', steps(() => false, '2'));
+  assert.ok(wrong.some(item => /→ 2 \(기대 1\)/.test(item)), '값이 다르면 그대로 대조 실패다');
 });
 
 test('the development stack moves to the vendor service and leaves the application services alone', () => {
@@ -680,6 +2116,7 @@ volumes:
   assert.match(projected, /jdbc:oracle:thin:@\/\/db:1521\/FREEPDB1/);
   assert.match(projected, /^ {2}api:$/m);
   assert.match(projected, /^ {2}oracle_data:$/m);
+  assert.match(projected, /^ {6}ADMIN_INITIAL_PASSWORD: \$\{ADMIN_INITIAL_PASSWORD:-\}$/m, '개발 시드가 없어 관리자 비밀번호를 환경값으로 받는다');
   assert.equal(projectVendorCompose(`${compose}      SPRING_FLYWAY_LOCATIONS: \${SPRING_FLYWAY_LOCATIONS:-classpath:db/migration,classpath:db/seed-dev}\n`, 'oracle').includes('classpath:db/migration'), false, '환경 변수가 설정 파일을 이기므로 compose 에 PostgreSQL 위치를 남기지 않는다');
   assert.throws(() => projectVendorCompose('services:\n  web:\n', 'oracle'), /compose db 서비스/);
 
@@ -713,4 +2150,68 @@ esac
   const environment = projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_PASSWORD=egov123\n', 'oracle');
   assert.match(environment, new RegExp(`^DB_URL=${VENDOR_SOURCE.oracle.url}$`, 'm'));
   assert.match(environment, /^DB_ADMIN_PASSWORD=/m);
+});
+
+/*
+ * 종료 코드 표로 부모에게 가는 코드는 화면 문장이 곧이곧대로 말할 수 있는 실패여야 한다. 뜻이 넓은 자리는 다른 코드로 나누어 VERIFY_FAILED 로 남긴다.
+ */
+test('failures wider than the screen sentence do not carry a table code', () => {
+  const code = expected => error => error.code === expected && vendorExitCode(error) === 1;
+  const handle = { id: 'oracle', name: 'c', engine: VENDOR_ENGINES.oracle };
+  const refused = () => ({ sections: new Map(), errors: [{ index: 0, error: 'ORA-00942' }] });
+  assert.throws(() => stopVendorEngineReporting({ name: 'c' }, null, () => ({ status: 1 })), code('VENDOR_CONTAINER_LEFT'), '시험을 통과한 뒤의 정리 실패');
+  assert.throws(() => runAsAdministrator(handle, ['GRANT x'], () => ({ status: 1, stdout: '', stderr: 'ORA-01031' })), code('VENDOR_ADMIN_FAILED'), '관리자 문장 실패');
+  assert.throws(() => readCatalog(handle, 'oracle', refused), code('VENDOR_QUERY_FAILED'), '메타 조회 실패');
+  assert.throws(() => readNextValues(handle, 'oracle', refused), code('VENDOR_QUERY_FAILED'), '다음 값 조회 실패');
+  const model = { tables: [{ name: 'tb_a' }] };
+  assert.throws(() => rowCounts(handle, model, 'oracle', refused), error => code('VENDOR_QUERY_FAILED')(error) && /oracle 행 수 조회 실패 1건: ORA-00942/.test(error.message), '행 수 조회 실패');
+  assert.throws(() => rowCounts(handle, model, 'oracle', () => ({ sections: new Map([[0, ['no rows']]]), errors: [] })),
+    error => code('VENDOR_QUERY_FAILED')(error) && /oracle 행 수를 읽지 못했다: tb_a/.test(error.message), '행 수를 읽지 못함');
+  assert.deepEqual(rowCounts(handle, model, 'oracle', () => ({ sections: new Map([[0, ['3']]]), errors: [] })), { tb_a: 3 }, '읽은 수는 그대로 돌려준다');
+  // Flyway Gradle 작업에는 네트워크·메모리·컴파일 실패가 섞이고, 대조 코드는 기준선 대조에서만 난다.
+  assert.doesNotMatch(readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8'), /'VENDOR_PARITY_FAILED'/);
+});
+
+test('only a real difference ends the differential as a parity failure', () => {
+  const report = extra => ({ differences: [], unbalanced: [], intentFailures: [], ...extra });
+  assert.equal(differentialExitCode(report()), 0);
+  assert.equal(differentialExitCode(report({ differences: [{}] })), VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED);
+  assert.equal(differentialExitCode(report({ intentFailures: ['x'] })), VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED);
+  assert.equal(differentialExitCode(report({ unbalanced: ['ck_a'] })), 1, '표본 부족은 시험 표본의 문제다');
+  assert.equal(differentialExitCode(report({ unbalanced: ['ck_a'], differences: [{}] })), VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED, '진짜 불일치가 앞선다');
+});
+
+/** 명령을 임시 폴더로 옮겨 실행한다. 명령의 ROOT 가 임시 폴더가 되어 저장소의 시험 결과 폴더를 지우지 않는다. */
+function copyWithImports(directory, file, seen = new Set()) {
+  if (seen.has(file)) return;
+  seen.add(file);
+  const source = readFileSync(join(ROOT, 'scripts', file), 'utf8');
+  writeFileSync(join(directory, 'scripts', file), source);
+  for (const [, next] of source.matchAll(/from '\.\/([^']+\.mjs)'/g)) copyWithImports(directory, next, seen);
+}
+
+test('a vendor command tells its parent the code through its real exit code when Docker cannot run', t => {
+  const directory = mkdtempSync(join(tmpdir(), 'vendor-exit-'));
+  t.after(() => rmSync(directory, { recursive: true, force: true }));
+  mkdirSync(join(directory, 'scripts'));
+  const [integration, differential] = ['project-composer-vendor-integration.mjs', 'project-composer-vendor-differential.mjs'];
+  copyWithImports(directory, integration);
+  copyWithImports(directory, differential);
+  writeFileSync(join(directory, 'input.json'), '{}');
+  const env = { PATH: join(directory, 'no-tools'), ...(process.env.SystemRoot ? { SystemRoot: process.env.SystemRoot } : {}) };
+  const run = script => spawnSync(process.execPath, [`scripts/${script}`, '--input', 'input.json', '--vendor', 'oracle'], { cwd: directory, env, encoding: 'utf8' });
+  const engine = run(integration);
+  assert.equal(engine.status, VENDOR_EXIT_CODES.VENDOR_ENGINE_NOT_READY, engine.stderr);
+  assert.match(engine.stderr, /^\[vendor-integration\] VENDOR_ENGINE_NOT_READY: /m);
+  assert.doesNotMatch(engine.stderr, /남았다/, 'Docker 가 없으면 남은 컨테이너도 없다');
+  // 기준 PostgreSQL 을 띄우지 못한 것은 대상 DB 의 문제가 아니다.
+  const baseline = run(differential);
+  assert.equal(baseline.status, 1, baseline.stderr);
+  assert.match(baseline.stderr, /^\[vendor-differential\] FAILED: 기준 PostgreSQL 을 띄우지 못했다/m);
+  // 기준 DB 에서 문장을 돌리지 못한 것도 번역 불가가 아니다.
+  writeFileSync(join(directory, 'empty.json'), JSON.stringify({ snapshot: { tables: [], columns: [], constraints: [], indexes: [], triggers: [], sequences: [] },
+    extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } }));
+  const applied = spawnSync(process.execPath, [`scripts/${differential}`, '--input', 'empty.json', '--vendor', 'oracle', '--container', 'c', '--user', 'u', '--database', 'd'], { cwd: directory, env, encoding: 'utf8' });
+  assert.equal(applied.status, 1, applied.stderr);
+  assert.match(applied.stderr, /^\[vendor-differential\] VENDOR_BASELINE_FAILED: /m);
 });

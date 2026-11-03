@@ -72,7 +72,7 @@ test('the generator census follows the historical migration pruning, and adaptat
   assert.equal(projectedMigrationTestCount(output), 1, 'an adopter-added migration check is counted, so the projected census turns red');
 
   if (detectGeneratedComposition(REPOSITORY).projection) return; // 생성물의 하네스는 이미 조정돼 다시 조정할 수 없다.
-  const files = ['EntitySchemaConformanceLinterTest.java', 'SeedLocationLinterTest.java', MIGRATION_HARNESS,
+  const files = ['MigrationSchemaReplay.java', 'SeedLocationLinterTest.java', MIGRATION_HARNESS,
     'ZeroDowntimeMigrationLinterTest.java'];
   const fixture = () => {
     const root = ownedTemporaryDirectory(t, 'reusable-harness-adaptation-');

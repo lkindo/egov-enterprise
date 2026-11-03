@@ -13,6 +13,7 @@ import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
+import { loadVendorLedger, selectableVendors, vendorChoices, vendorDegradationNotes } from './project-composer-vendors.mjs';
 import { missingFrontendToolchain } from './reusable-contract-projection.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
@@ -104,11 +105,11 @@ function git(root, args, executable = 'git') {
   if (result.error || result.status !== 0) throw Object.assign(new Error('Source checkout identity could not be verified'), { gitStatus: result.status });
   return result.stdout.trim();
 }
-export function composerSourceFingerprint(root) {
+export function composerSourceFingerprint(root, { exclude = [] } = {}) {
   const hash = createHash('sha256');
   const files = git(root, ['ls-files', '--cached', '--others', '--exclude-standard', '-z']).split('\0').filter(Boolean).sort();
   for (const file of files) {
-    if (file.replaceAll('\\', '/').split('/').includes('build')) continue;
+    if (file.replaceAll('\\', '/').split('/').includes('build') || exclude.includes(file.replaceAll('\\', '/'))) continue;
     const path = join(root, file);
     hash.update(`${file}\0`);
     /*
@@ -135,9 +136,10 @@ export function composerSourceFingerprint(root) {
  * 실제 생성기 스크립트는 저장소 build/ 밖 출력을 거부하므로, 운영 경로에서 다른 값을 넘기면
  * 생성이 실패할 뿐 출력이 새지 않는다.
  * loadPermissionSources 도 계약 테스트용 이음새다(권한 정의가 없는 합성 저장소). 넘기지 않으면 정밀 점검이 root 에서 읽는다.
+ * loadVendors 도 같다(벤더 원장이 없는 합성 저장소, 승격을 가정한 원장).
  */
 export function createComposerEngine({ root = ROOT, outputRoot, run = runComposerCommand, fingerprint = composerSourceFingerprint,
-  loadCatalog = loadProjectComposerCatalog, loadModules = loadComposerModules, gitExecutable = 'git', readiness, loadPermissionSources } = {}) {
+  loadCatalog = loadProjectComposerCatalog, loadModules = loadComposerModules, gitExecutable = 'git', readiness, loadPermissionSources, loadVendors = loadVendorLedger } = {}) {
   root = realpathSync(root);
   outputRoot = outputRoot === undefined ? root : realpathSync(outputRoot);
   const gitRun = args => git(root, args, gitExecutable);
@@ -174,7 +176,9 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   };
   // 화면 문구·미배정 권한 안내·메뉴 투영도 선언이다. 일부러 던진 실패만 CATALOG_DRIFT 로, 런타임 결함은 그대로 둔다.
   const declared = read => { try { return read(); } catch (error) { throw classifyDeclarationFailure(error, root); } };
-  const resolveRecipe = (recipe, value) => { try { assertVendorRequestable(recipe); return resolveProjectRecipe(recipe, value); } catch (error) { throw classifyRecipeFailure(error); } };
+  const vendorLedger = () => declared(() => loadVendors(root));
+  const selectable = () => selectableVendors(vendorLedger());
+  const resolveRecipe = (recipe, value) => { try { assertVendorRequestable(recipe, selectable()); return resolveProjectRecipe(recipe, value); } catch (error) { throw classifyRecipeFailure(error); } };
   // 계획 차이는 마지막으로 적재한 카탈로그와 메뉴 스냅숏을 다시 쓴다(카탈로그 적재는 수 초가 걸린다).
   // 차이는 미리보기일 뿐이고, 계획과 생성은 늘 카탈로그를 새로 적재해 다시 판정한다.
   let latest;
@@ -182,8 +186,8 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   const catalog = () => {
     const value = remember(loadCatalogClassified());
     const sourceCommit = gitRun(['rev-parse', 'HEAD']);
-    // 화면 문구는 카탈로그 해시 밖에 덧붙인다. 문구를 고쳐도 구성 해시가 바뀌지 않는다.
-    return { ...value, sourceRef: sourceCommit, sourceCommit, presentation: declared(() => composerPresentation(value,
+    // 화면 문구와 벤더 선택지는 카탈로그 해시 밖에 덧붙인다. 고쳐도 구성 해시가 바뀌지 않는다.
+    return { ...value, sourceRef: sourceCommit, sourceCommit, vendors: vendorChoices(vendorLedger()), presentation: declared(() => composerPresentation(value,
       { routeKinds: loadRouteKinds(root), ...loadComposerPresentationDeclarations(root) })) };
   };
   const coreBase = (recipe, value) => {
@@ -200,7 +204,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const owner = code => current.capabilities.find(capability => capability.permissionCodes.includes(code))?.id ?? 'core';
     return { catalog: current, plan: { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
       inclusionNotes: inclusionNotes(composition, current),
-      degradationNotes: degradationNotes(composition, current),
+      degradationNotes: [...degradationNotes(composition, current), ...vendorDegradationNotes(vendorLedger(), composition)],
       // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
       unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root, { permissionCodes: composition.permissionCodes }))
         .filter(row => composition.permissionCodes.includes(row.code))
@@ -227,7 +231,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   };
   // 생성 전 점검: 명령 하나가 멈춰도 화면이 기다리지 않도록 명령마다 시간 제한을 둔다.
   // sourceCommit 은 점검을 요청한 화면이 카탈로그를 받은 때의 커밋이다(탭마다 다를 수 있어 엔진에 두지 않는다).
-  const preflight = ({ sourceCommit } = {}) => composerPreflight({ outputRoot, sourceCommit, missingFrontendTools: missingFrontendToolchain(root),
+  const preflight = ({ sourceCommit, vendor } = {}) => composerPreflight({ outputRoot, sourceCommit, vendor, missingFrontendTools: missingFrontendToolchain(root),
     probe: (command, args) => run(command, args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS }) });
   // 정밀 점검: 생성기의 투영 판정을 디스크를 바꾸지 않고 미리 한다(요청할 때만, 수 초가 걸린다).
   // 계획처럼 카탈로그를 새로 적재하고, 생성기가 복사할 파일 목록(추적·무시되지 않은 새 파일, build 제외)을 쓴다.
@@ -249,7 +253,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
   // 기동을 붙잡지 않도록 명령마다 시간 제한을 둔다.
   const recover = () => recoverAbandonedJobs({ outputRoot,
     docker: (args, options = {}) => run('docker', args, { root, capture: true, timeoutMs: PREFLIGHT_TIMEOUT_MS, ...options }) });
-  return { catalog, plan, diff, preflight, deep, generate, recover, outputRoot };
+  return { catalog, plan, diff, preflight, deep, generate, recover, outputRoot, selectableVendors: selectable };
 }
 
 export function parseComposerArgs(args) {

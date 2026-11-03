@@ -33,6 +33,7 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     const screens = menus.filter(menu => (menu.kind ?? (menu.path ? 'screen' : 'category')) === 'screen');
     const compared = menus.some(menu => typeof menu.added === 'boolean');
     $('confirm-summary').replaceChildren(
+      confirmRow('데이터베이스', $('database').selectedOptions[0]?.textContent ?? recipe().database.vendor),
       confirmRow('업무 기능', `직접 ${direct.length} · 자동 ${automatic.length}${direct.length + automatic.length ? ` — ${[...direct, ...automatic].join(', ')}` : ' — 공통 기반만'}`),
       confirmRow('테이블 · 권한', `${plan.tables?.length ?? 0} · ${plan.permissionCodes?.length ?? 0}${core ? ` (공통 기반 ${core.tables.length} · ${core.permissionCodes.length})` : ''}`),
       confirmRow('메뉴', `전체 ${menus.length}개 · 목적지 ${screens.length}개${compared ? ` (공통 기반 목적지 ${screens.length - screens.filter(menu => menu.added).length}개)` : ''}`),
@@ -48,7 +49,7 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     $('preflight-list').replaceChildren();
     $('preflight-status').textContent = '이 컴퓨터의 생성 환경을 점검하고 있습니다…';
     try {
-      const { preflight } = await api('/api/preflight', { sourceCommit: state.catalog.sourceCommit });
+      const { preflight } = await api('/api/preflight', { sourceCommit: state.catalog.sourceCommit, vendor: recipe().database.vendor });
       if (stale()) return null;
       $('preflight-list').replaceChildren(...preflight.checks.map(check => {
         const item = text('li', '', 'flex gap-2');
@@ -66,7 +67,10 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     } catch (error) {
       if (stale()) return null;
       $('preflight-status').textContent = error.message;
-      return { reason: '점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.', failed: true };
+      // 코드가 붙은 오류는 다시 점검해도 같다. 정밀 점검과 같은 행동을 보인다 — 화면을 연 뒤 고를 수 없게 된 벤더(INVALID_RECIPE)와,
+      // PostgreSQL 구성에서도 생기는 벤더 원장 적재 실패(CATALOG_DRIFT)다. 코드 없는 실패는 다시 점검으로 남긴다.
+      renderFailureActions($('confirm-actions'), error, { onReload: reloadFromDialog });
+      return { reason: DEEP_FAILURE_REASONS[error.action] ?? '점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.', failed: true };
     }
   }
   // 소스 정밀 점검(설계서 10장 plan/deep). 생성기가 걷을 파일과 검증 게이트를 같은 판정으로 미리 센다.
@@ -93,7 +97,9 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
         $('deep-status').textContent = `차단 ${deep.blockers.length}건 · ${deep.summary}`;
         return '소스 정밀 점검의 차단 항목을 해결한 뒤 다시 점검하세요.';
       }
-      $('deep-status').textContent = `${deep.summary}. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면은 남으며 구성에 없는 화면은 남지 않습니다.`;
+      // 벤더 규칙으로 빠지는 수는 위 제거 수에 들지 않는다. 기능 선택과 무관하게 빠지므로 따로 말한다.
+      const vendorRemoval = deep.vendorRemoval ? ` 이 데이터베이스에서는 PostgreSQL 전용 검증 게이트 ${deep.vendorRemoval.gates}건과 도구·자료 ${deep.vendorRemoval.assets}개도 빠집니다.` : '';
+      $('deep-status').textContent = `${deep.summary}. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면은 남으며 구성에 없는 화면은 남지 않습니다.${vendorRemoval}`;
       return null;
     } catch (error) {
       if (stale()) return null;

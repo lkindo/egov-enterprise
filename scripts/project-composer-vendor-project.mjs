@@ -8,55 +8,20 @@
 import { mkdirSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { artifactTextSha256, vendorBaselinePaths } from './reusable-governance-integrity.mjs';
-import { vendorInputPath } from './verify-reusable-artifact.mjs';
+import { VENDOR_SCHEMA_SCOPE, vendorInputPath } from './verify-reusable-artifact.mjs';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
-import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
+import { VENDOR_ADAPTERS, loadVendorLedger, unshownDegradations } from './project-composer-vendors.mjs';
 import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
+import { ARTIFACT_COMMAND } from './reusable-artifact-entrypoints-contract.mjs';
+import { VENDOR_SOURCE } from './project-composer-vendor-source.mjs';
+
+export { VENDOR_SOURCE };
 
 const RESOURCES = 'api-server/src/main/resources';
 /** classpath 접두사를 뺀 Flyway 위치. 경로의 정본은 거버넌스가 대조하는 vendorBaselinePaths 다. */
 export const vendorMigrationLocation = vendorId => vendorBaselinePaths(vendorId).location.replace('classpath:', '');
 
-/** 벤더별 소스 값. 드라이버 판은 이관 도구와 같다. */
-export const VENDOR_SOURCE = Object.freeze({
-  oracle: Object.freeze({
-    flywayPlugin: 'org.flywaydb:flyway-database-oracle',
-    driverCoordinate: 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0',
-    driverClass: 'oracle.jdbc.OracleDriver',
-    url: 'jdbc:oracle:thin:@//localhost:1521/FREEPDB1',
-    dialect: 'nuri.foundation.core.persistence.NuriOracleDialect',
-    composeUrl: 'jdbc:oracle:thin:@//db:1521/FREEPDB1',
-    composeVolume: 'oracle_data',
-    // 개발용 이미지다. 운영 라이선스는 기관 몫이다.
-    composeService: `  db:
-    image: gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093
-    container_name: egov-oracle
-    restart: always
-    ports:
-      - "127.0.0.1:1521:1521"
-    environment:
-      TZ: Asia/Seoul
-      # ⚠ 개발 전용 자격이다. 운영 오버레이가 DB_USERNAME/DB_PASSWORD 로 덮어쓴다.
-      ORACLE_PASSWORD: egov123
-      APP_USER: egov
-      APP_USER_PASSWORD: egov123
-    volumes:
-      - oracle_data:/opt/oracle/oradata
-    healthcheck:
-      test: ["CMD", "healthcheck.sh"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-      start_period: 60s
-    networks:
-      - egov-net
-
-`,
-    composeProd: [[/^(\s*)POSTGRES_USER: (\$\{DB_USERNAME:\?[^\n]*\})$/m, '$1APP_USER: $2'],
-      // ORACLE_PASSWORD 는 SYS 비밀번호다. 앱 자격이 새도 관리자 자격까지 번지지 않게 나눈다.
-      [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_USER_PASSWORD: $2\n$1ORACLE_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}']],
-  }),
-});
+export const VENDOR_SCHEMA_ALIAS = 'verify:vendor-schema';
 
 function replaceRequired(text, pattern, replacement, label) {
   const replaced = text.replace(pattern, replacement);
@@ -72,12 +37,18 @@ export function renderFlywayMigration(statements) {
   return `${statements.map(({ sql, raw }) => (raw ? `${sql}\n/` : `${sql};`)).join('\n')}\n`;
 }
 
-/** 스키마·시드·다음 값 맞춤을 문장 한 벌로 잇는다. 적용 순서가 곧 이 순서다. */
-export function vendorMigrationStatements(vendorId, input) {
+/**
+ * 스키마·시드·다음 값 맞춤을 문장 한 벌로 잇는다. 적용 순서가 곧 이 순서다.
+ * 모델 유래 저하는 실제 모델이 있어야 전부 보인다. 화면과 README 가 말하지 않는 저하를 담은 문장은 내지 않는다 — 쓰는 문장과 같은 번역 결과로 대조한다.
+ */
+export function vendorMigrationStatements(vendorId, input, ledger) {
   const adapter = VENDOR_ADAPTERS[vendorId];
   if (!adapter) throw new Error(`어댑터가 없는 벤더: ${vendorId}`);
   const model = buildVendorModel({ snapshot: input.snapshot, extras: input.extras });
-  return [...adapter.emitSchema(model).statements,
+  const schema = adapter.emitSchema(model);
+  const unshown = unshownDegradations(ledger.vendors.find(vendor => vendor.id === vendorId), schema.degradations);
+  if (unshown.length) throw new Error(`표시 문장이 없는 벤더 저하: ${unshown.join(', ')}. config/db-vendors.json 의 notices 에 더한다.`);
+  return [...schema.statements,
     ...adapter.emitSeed(model, input.rows).map(sql => ({ sql })),
     ...adapter.emitSequenceSync(model, input.rows).map(sql => ({ sql }))];
 }
@@ -113,7 +84,9 @@ export function projectVendorCompose(text, vendorId) {
   const urls = replaceRequired(service, /jdbc:postgresql:\/\/db:5432\/egovdb/g, source.composeUrl, 'compose 접속 주소');
   const volume = replaceRequired(urls, /\bpostgres_data\b/g, source.composeVolume, 'compose 볼륨');
   // 환경 변수가 설정 파일을 이긴다. 두면 Oracle 에 PostgreSQL 번들을 적용한다.
-  return replaceRequired(volume, /classpath:db\/migration(?:,classpath:db\/seed-dev)?/g, vendorBaselinePaths(vendorId).location, 'compose Flyway 위치');
+  const flyway = replaceRequired(volume, /classpath:db\/migration(?:,classpath:db\/seed-dev)?/g, vendorBaselinePaths(vendorId).location, 'compose Flyway 위치');
+  // 개발 시드가 없어 webmaster 는 로그인 불가 상태로 시작한다. 알려진 비밀번호를 산출물에 늘리지 않고 값은 바깥에서 받는다.
+  return replaceRequired(flyway, /^( {6})SPRING_FLYWAY_LOCATIONS:/m, '$1ADMIN_INITIAL_PASSWORD: ${ADMIN_INITIAL_PASSWORD:-}\n$1SPRING_FLYWAY_LOCATIONS:', 'compose 관리자 비밀번호');
 }
 
 /** 운영 오버레이의 DB 자격을 벤더 이미지의 환경 변수로 바꾼다. */
@@ -142,27 +115,71 @@ export function projectVendorSettings(text) {
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
 export function projectVendorEnvironment(text, vendorId) {
   const url = replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
-  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me', '.env.example 비밀번호');
+  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me\n# 최초 관리자(webmaster) 비밀번호. 개발 시드가 없어 값을 정해야 로그인할 수 있다.\n# ADMIN_INITIAL_PASSWORD=', '.env.example 비밀번호');
 }
 
-const vendorReadme = vendorId => `
+/** README 본문은 원본 그대로 두고 이 절을 끝에 덧붙이므로, 본문과 어긋나는 자리에서 어느 쪽을 따를지 첫머리에 말한다. */
+export const VENDOR_README_PRECEDENCE = '위 본문의 PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다.';
+
+/** 이미지 안내와 저하 문장은 화면과 같은 원장(notices)에서 가져온다. 원장 문구를 고치면 README 도 따라 바뀐다. */
+export function vendorReadme(vendorId, ledger) {
+  const { notices } = ledger.vendors.find(vendor => vendor.id === vendorId);
+  return `
 ## 데이터베이스
 
-이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 의 번역 기준선만 적용한다. \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
+${VENDOR_README_PRECEDENCE}
 
-\`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
+이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 폴더만 적용한다(생성 시점에는 번역 기준선 하나). \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 
-PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 아직 이 DB 를 지원하지 않아 시작할 때 멈춘다.
+${notices.image}
 
-생성 뒤 스키마를 바꾸는 절차는 아직 완성되지 않았다. 새 마이그레이션은 벤더 문법으로 \`db/vendor/${vendorId}\` 에 더한다. 엔티티·명명·유니크 린터는 아직 \`db/migration\` 을 보므로 새 표는 그쪽에도 맞춰 두어야 통과하고, \`npm run regen\` 의 권한 시드도 \`db/migration\` 만 고치므로 새 권한은 벤더 마이그레이션에 직접 넣는다.
+이 프로젝트에는 PostgreSQL 개발 시드(\`db/seed-dev\`)가 적용되지 않아 \`webmaster\` 는 로그인할 수 없는 상태로 시작한다. 개발 스택을 올리기 전에 \`.env\` 의 \`ADMIN_INITIAL_PASSWORD\` 에 비밀번호를 정하면 첫 기동 때 한 번 설정된다. 이미 정한 비밀번호는 덮어쓰지 않는다.
+
+이 데이터베이스에서 달라지는 동작(생성 전 화면의 기능 저하 칸과 같다):
+
+${notices.degradations.map(row => `- ${row.text}`).join('\n')}
+
+PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger.removedPostgresTools.groups.map(group => group.label).join(', ')}. 엔티티·스키마 정적 린터는 아래 카탈로그 시험이 대신한다. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 대표 묶음만 돌린다: \`node scripts/run-isolated-e2e.mjs --representative\`. 시험 목록은 \`config/governance/vendor-test-ledger.json\` 이 고정하고, 원장의 기능을 모두 고른 멀티모듈 생성물이 아니면 시작 전에 멈춘다.
+
+### 생성 뒤 스키마 변경
+
+1. 벤더 문법으로 \`${RESOURCES}/db/vendor/${vendorId}\` 에 \`V1_1__설명.sql\` 처럼 기준선(\`V1_0\`)보다 높은 버전의 파일을 더한다. 번역 기준선(\`V1_0__vendor_baseline.sql\`)은 고치지 않는다. 반복 마이그레이션(\`R__\`)은 지원하지 않는다.
+2. \`npm run verify:vendor-schema\` 로 검사한다. 하네스를 돌린 뒤 번역 기준선과 입력을 잠금 해시로 대조하고, 일회용 DB 에 기준선만 적용해 표·컬럼·제약·인덱스·트리거·시퀀스 이름, 키·유니크의 컬럼, 시드 행 수, 식별 컬럼과 시퀀스의 다음 값을 번역 결과와 대조한다(제약 본문과 NOT NULL 은 잠금 해시가 받친다). 그 뒤 나머지 마이그레이션을 적용해 카탈로그 시험과 시나리오 시험을 돌린다. 컨테이너가 필요해 시간이 걸린다.
+3. \`db/migration\` 은 고치지 않는다. 실행되지 않는 번역 근거이고, 명명·유니크 미러 린터는 이 입력만 본다.
+4. Oracle 은 DDL 이 자동 커밋이라 \`V\` 파일이 중간에 실패하면 실패한 문장 앞에서 만든 객체와 Flyway 이력의 실패 행이 남고, 다음 기동은 그 실패 행에서 멈춘다. 남은 객체를 손으로 지우고 실패 행을 정리(Flyway 의 \`repair\`. 이 프로젝트에는 그 명령이 없어 Flyway CLI 등으로 돌린다)한 뒤 다시 적용한다. 운영 DB 에 올리기 전에 \`npm run verify:vendor-schema\` 로 일회용 DB 에서 먼저 돌린다.
+
+카탈로그 시험은 적용된 DB 를 읽는다. 카탈로그 전체에서 PK 전략·숫자 변환·길이 초과를, 기준선 뒤에 생긴 객체에서 표·제약·인덱스·시퀀스 이름(\`tb_\`·\`pk_\`·\`fk_\`·\`uk_\`·\`ck_\`·\`ix_\`·\`sq_\`), 표의 저장 표기(따옴표로 만든 표는 붉다), 새 표의 감사 컬럼, 새 컬럼의 고정 문자형을, 기준선 뒤에 생기거나 다시 만든 유니크의 엔티티 미러(기본키 제외, 일반 인덱스로 집행되는 유니크 제약 포함)를, 기준선 뒤에 바이트 길이가 된 컬럼의 엔티티 길이를, 뷰 이름(\`vw_\`)을 본다. 표·컬럼 부재와 타입 계열은 시나리오 시험을 띄울 때 Hibernate validate 가 본다.
+
+문자 컬럼은 \`VARCHAR2(n CHAR)\` 로 쓴다. \`VARCHAR2(n)\` 은 세션 기본값인 바이트 길이가 되어 한글이 n/3 자부터 거부되는데, 드라이버가 두 경우를 같은 길이로 답해 길이 규칙으로는 구분되지 않는다. 그래서 기준선 뒤에 바이트 길이가 된 컬럼을 따로 읽어 엔티티에 매핑된 문자열 필드의 길이 × 4 가 바이트 길이보다 크면 붉힌다. 엔티티에 매핑되지 않은 컬럼은 이 규칙이 보지 못하고, 기준선에서 어댑터가 바이트 길이로 둔 컬럼(LOB 를 키로 쓸 수 없어 둔 \`VARCHAR2(4000 BYTE)\`)은 대상이 아니다.
+
+기존 권한의 기본 그룹을 바꾸려면 \`config/governance/permission-catalog.json\` 과 벤더 DB 의 부여를 함께 맞춘다. \`npm run regen\` 은 \`db/migration\` 의 시드만 고치므로 벤더 마이그레이션에 부여 변경을 직접 넣는다. 둘이 어긋나면 카탈로그 시험이 붉다.
+
+이 명령은 인증이 아니다. 생성물 전체 검증(\`npm run verify\`)은 소스가 바뀌면 첫 단계(거버넌스의 원본 소스 결속 검사)에서 멈추는 것이 정상이고, 이 명령은 그 단계를 지나지 않는다. 벤더 인증 원장(\`config/db-vendors.json\`)의 증거는 생성물에서 판정하지 않는다.
+
+지원하지 않는 것:
+
+- 파괴적 DDL 검사: 무중단 마이그레이션 린터가 없다. 컬럼 삭제·타입 축소·이름 변경의 무중단 여부는 사람이 판단한다.
+- 명명 예외: 카탈로그 시험에는 예외를 적을 자리가 없다. 표준 밖의 이름은 붉다.
+- 따옴표로 만든 이름: \`"bad-name"\`·\`"게시판"\` 처럼 형식 밖의 이름은 조회를 읽지 못해 멈춘다. 표는 소문자 저장 표기(\`"tb_log"\`)도 붉지만, 제약·인덱스·시퀀스·컬럼·뷰의 저장 표기는 소문자로 접어 읽어 보지 못한다. 따옴표 없는 SQL 이 그런 객체를 찾지 못할 수 있으니 따옴표를 쓰지 않는다.
+- 이름 없이 만든 제약: DB 가 지은 이름(Oracle 의 \`SYS_C\`)은 조회에서 빠져 이름 규칙이 보지 않는다. 제약에는 이름을 붙인다. 이름 없는 유니크는 엔티티가 매핑된 표일 때만 미러 규칙이 본다.
+- 뷰의 정의: 뷰는 이름만 본다. 컬럼과 정의는 시험을 직접 더한다.
+- 도입자가 더한 CHECK·트리거의 의미: 차등 시험은 번역 입력만 보므로 PostgreSQL 과 같은 값으로 대조되지 않는다. 시험을 직접 더한다.
+- 같은 이름의 컬럼 타입 변경: 새 객체가 아니어서 고정 문자형 규칙이 보지 않는다. Oracle 은 Hibernate validate 가 \`VARCHAR2\` 와 CLOB 을 구분하지 못하므로 짧은 컬럼을 CLOB 으로 바꾸지 않았는지 사람이 확인한다.
+- CLOB 컬럼의 비교·정렬: Oracle 의 CLOB 컬럼(기준선에서는 \`text\`·\`json\` 컬럼과, 키·인덱스에 쓰이지 않는 글자 수 1,000 초과 문자열. 키·인덱스에 쓰여 \`VARCHAR2(4000 BYTE)\` 로 둔 문자열은 해당하지 않는다)은 \`=\`·\`DISTINCT\`·\`ORDER BY\`·\`GROUP BY\`·인덱스를 쓸 수 없다. 이 명령은 기존 시나리오 시험이 부르는 쿼리만 돌리므로 새 쿼리가 그런 컬럼을 쓰는지는 사람이 확인한다.
+- 새 권한 코드: 권한 코드는 구성과 정확히 일치해야 해 \`npm run regen\` 이 멈춘다. PostgreSQL 프로젝트와 같다.
+- 새 Java 소스: 생성물의 소스 모집단은 투영 기록과 정확히 일치해야 해 새 엔티티·서비스를 더하면 하네스가 붉다. PostgreSQL 프로젝트와 같다. 기존 엔티티의 필드 변경은 된다.
+- \`scripts/domain-registration-doctor.mjs\` 는 \`db/migration\` 만 읽으므로 벤더 폴더의 새 표를 보지 못한다.
 `;
+}
 
 /** 생성물 트리를 벤더로 투영한다. 소스 생성기가 PostgreSQL 번들을 설치한 뒤 부른다. */
 export function projectVendorSources(output, { vendorId, input, inputText, layout }) {
   if (!VENDOR_SOURCE[vendorId]) throw new Error(`소스 투영이 없는 벤더: ${vendorId}`);
   const { location, migration } = vendorBaselinePaths(vendorId);
+  const ledger = loadVendorLedger(output);
+  // 저하 대조가 멈추면 아무것도 쓰지 않은 채 멈춘다.
+  const statements = vendorMigrationStatements(vendorId, input, ledger);
   mkdirSync(join(output, RESOURCES, vendorMigrationLocation(vendorId)), { recursive: true });
-  const statements = vendorMigrationStatements(vendorId, input);
   writeFileSync(join(output, migration), renderFlywayMigration(statements), 'utf8');
   // 생성물 검증이 같은 입력으로 벤더 DB 를 올린다. 잠금이 번들과 이 파일을 묶는다.
   const inputPath = vendorInputPath(vendorId);
@@ -195,8 +212,13 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   writeFileSync(deploy, projectVendorDeploy(readFileSync(deploy, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
   const environment = join(output, '.env.example');
   writeFileSync(environment, projectVendorEnvironment(readFileSync(environment, 'utf8').replace(/\r\n/g, '\n'), vendorId), 'utf8');
+  // 생성 뒤 스키마 변경을 검사하는 별칭. 전체 검증과 달리 인증 단계를 지나지 않는다.
+  const packagePath = join(output, 'package.json');
+  const pkg = JSON.parse(readFileSync(packagePath, 'utf8'));
+  pkg.scripts[VENDOR_SCHEMA_ALIAS] = `${ARTIFACT_COMMAND} --scope ${VENDOR_SCHEMA_SCOPE}`;
+  writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
   const readme = join(output, 'README.md');
-  writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId)}`, 'utf8');
+  writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId, ledger)}`, 'utf8');
 
   return { vendor: vendorId, location, migration, migrationSha256: artifactTextSha256(output, migration), input: inputPath,
     inputSha256: artifactTextSha256(output, inputPath), statements: statements.length, buildFile, profiles, removedAssets: readVendorAssetLedger(output).assets };

@@ -570,6 +570,8 @@ Java 컴파일·하네스·실 PostgreSQL 스키마 검증, 프런트 `tsc`·lin
 | `npm run verify:fe` | `frontend` | 프런트 타입·lint·build |
 | `npm run verify`, `verify:artifact`, `verify:full`, `verify:push`, `verify:fast` | `full` | backend와 frontend 모두 |
 
+PostgreSQL 외 DB 로 만든 생성물에는 `npm run verify:vendor-schema`(`vendor-schema`)가 더 있다. 거버넌스 단계를 지나지 않고 하네스와 벤더 일회용 DB 의 기준선 대조·카탈로그 시험·시나리오 시험만 돌린다. 생성 뒤 마이그레이션을 검사하는 명령이며 인증을 주장하지 않는다. 절차와 미지원 범위는 그 생성물의 README 에 있다.
+
 단일모듈 산출물에서 직접 사용하는 Gradle 명령은 다음과 같다. 명령은 생성 디렉터리에서 실행하며,
 Windows PowerShell에서는 `./gradlew` 대신 `.\gradlew.bat`를 사용할 수 있다.
 

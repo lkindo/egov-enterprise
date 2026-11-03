@@ -7,6 +7,7 @@ import { tmpdir } from 'node:os';
 import { fileURLToPath } from 'node:url';
 import { CHILD_FAILURE_CODES, childFailureReportPath, failureReportFromArgv, readChildFailure, runReportingChild, writeChildFailure } from './project-composer-child-failure.mjs';
 import { ComposerError, JOB_ERROR_CODES } from './project-composer-errors.mjs';
+import { VendorTranslationGap } from './project-composer-vendor-model.mjs';
 import { CHILD_STAGE as DB_STAGE } from './generate-reusable-base-db.mjs';
 import { CHILD_STAGE as SOURCE_STAGE } from './generate-reusable-base-source.mjs';
 
@@ -189,5 +190,24 @@ test('both generators refuse a report path outside build before any generation w
     assert.equal(result.status, 1, `${script}: ${result.stderr}`);
     assert.match(result.stderr, /FAIL: --failure-report must be a new \.json file under build/, script);
     assert.equal(existsSync(join(ROOT, 'x.json')), false);
+  }
+});
+
+test('a translation gap reaches the engine from both generators with its code only; verification codes are never self-reported', t => {
+  const root = fixture(t);
+  for (const stage of ['database', 'source']) {
+    const path = join(root, 'build', 'failures', `${stage}.json`);
+    assert.equal(writeChildFailure(path, stage, new VendorTranslationGap('tb_secret.col 모르는 타입')), true, stage);
+    assert.doesNotMatch(readFileSync(path, 'utf8'), /tb_secret/, '번역 문장은 가린 로그에만 남는다');
+    const read = readChildFailure(path, stage, root);
+    assert.ok(read instanceof ComposerError);
+    assert.deepEqual([read.code, read.details], ['VENDOR_TRANSLATION_GAP', {}]);
+  }
+  // 대상 컨테이너는 검증 단계에만 있다. 자식 보고 파일이 이 코드들을 지어내지 못한다.
+  for (const code of ['VENDOR_PARITY_FAILED', 'VENDOR_ENGINE_NOT_READY']) {
+    const path = join(root, 'build', 'failures', `forged-${code}.json`);
+    assert.equal(writeChildFailure(path, 'database', new ComposerError(code, {})), false, code);
+    writeFileSync(path, JSON.stringify({ schemaVersion: 1, stage: 'database', code, details: {} }));
+    assert.equal(readChildFailure(path, 'database', root), null, `forged ${code}`);
   }
 });

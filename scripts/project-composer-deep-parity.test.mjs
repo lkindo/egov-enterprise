@@ -112,8 +112,9 @@ test('the deep plan names exactly the PostgreSQL-only gates a vendor generation 
   const composition = { ...postgres, recipe: { ...postgres.recipe, database: { vendor: 'oracle' } } };
   const deep = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition, files, modules });
   assert.deepEqual(deep.blockers, [], 'the real checkout has no vendor projection blocker');
-  assert.equal(Object.hasOwn(compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: postgres, files, modules }).ruleRemovals, VENDOR_ASSET_RULE), false,
-    'a PostgreSQL composition has no vendor rule');
+  const plain = compositionDeepPlan({ root, catalog, readSource: readRepositorySource, composition: postgres, files, modules });
+  assert.equal(Object.hasOwn(plain.ruleRemovals, VENDOR_ASSET_RULE), false, 'a PostgreSQL composition has no vendor rule');
+  assert.equal(Object.hasOwn(plain, 'vendorRemoval'), false, 'a PostgreSQL deep plan keeps its shape');
 
   const ledger = readVendorAssetLedger(root);
   const owned = [VENDOR_ASSET_LEDGER, ...ledger.assets, ...ledger.gates.map(row => row.file)];
@@ -127,5 +128,6 @@ test('the deep plan names exactly the PostgreSQL-only gates a vendor generation 
     [VENDOR_ASSET_RULE]: pruneVendorPostgresAssets(output).files };
   assert.ok(ruleRemovals[VENDOR_ASSET_RULE].length > 0, 'the rule removes real gates');
   assert.deepEqual(deep.ruleRemovals, ruleRemovals);
+  assert.deepEqual(deep.vendorRemoval, { gates: ruleRemovals[VENDOR_ASSET_RULE].length, assets: ledger.assets.length }, 'the screen says the same counts the rule removes');
   quietly(() => assertRemovedGatesAcknowledged(composition.profile, profile, java, frontend, ruleRemovals));
 });

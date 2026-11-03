@@ -1,9 +1,10 @@
 import assert from 'node:assert/strict';
+import { spawnSync } from 'node:child_process';
 import { copyFileSync, mkdirSync, mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, relative, resolve, sep } from 'node:path';
 import test from 'node:test';
-import { VERIFICATION_STEP_IDS, verificationCommands, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
+import { VERIFICATION_STEP_IDS, vendorArtifactFingerprint, verificationCommands, verificationSteps, verifyReusableArtifact } from './verify-reusable-artifact.mjs';
 import { parseBaseVerificationArgs, verifyReusableBase } from './verify-reusable-base.mjs';
 import { presetIds } from './composition-profiles.mjs';
 import { parseWorkflowJobs, validateStaticContract } from './required-checks-contract.mjs';
@@ -73,6 +74,35 @@ test('the verification report records each step and names the failed command wit
   assert.equal(passed.result, 'passed');
   assert.equal(passed.failure, undefined, 'a passing run does not inherit an earlier failure');
   assert.equal(passed.steps.length, commands.length);
+});
+
+test('a passing full verification of a vendor project records the files it verified, and nothing else changes', (t) => {
+  const root = fixture(t);
+  const full = () => JSON.parse(readFileSync(join(root, 'build/reports/reusable-base/full.json'), 'utf8'));
+  // PostgreSQL 생성물의 보고서는 그대로다.
+  assert.equal(verifyReusableArtifact({ root, run: () => {} }).artifactFingerprint, undefined);
+  writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core', sourceCommit: '1'.repeat(40), vendorProjection: { vendor: 'oracle' } }));
+  // .git 없이 옮긴 폴더의 검증을 막지 않는다. 값이 없으면 증거 기록만 거부된다.
+  assert.equal(verifyReusableArtifact({ root, run: () => {} }).result, 'passed');
+  assert.equal(full().artifactFingerprint, null);
+  assert.equal(spawnSync('git', ['init', '-q'], { cwd: root }).status, 0);
+  const value = verifyReusableArtifact({ root, run: () => {} }).artifactFingerprint;
+  assert.match(value, /^[a-f0-9]{64}$/);
+  assert.equal(full().artifactFingerprint, value);
+  assert.equal(vendorArtifactFingerprint(root), value);
+  // 생성기가 검증 뒤에 다시 쓰는 보고서와 build 출력, 무시 파일은 값을 바꾸지 않는다.
+  writeFileSync(join(root, '.gitignore'), 'ignored.txt\n');
+  const withIgnore = vendorArtifactFingerprint(root);
+  assert.notEqual(withIgnore, value, '새 파일은 값을 바꾼다');
+  writeFileSync(join(root, 'project-generation-report.json'), '{}');
+  writeFileSync(join(root, 'ignored.txt'), 'x');
+  assert.equal(vendorArtifactFingerprint(root), withIgnore);
+  writeFileSync(join(root, 'reusable-base-lock.json'), JSON.stringify({ profile: 'core', sourceCommit: '1'.repeat(40), vendorProjection: { vendor: 'oracle' }, changed: true }));
+  assert.notEqual(vendorArtifactFingerprint(root), withIgnore, '내용이 바뀌면 값이 바뀐다');
+  // 끝까지 통과한 전체 검증만 남긴다.
+  assert.equal(verifyReusableArtifact({ root, scope: 'contracts', run: () => {} }).artifactFingerprint, undefined);
+  assert.throws(() => verifyReusableArtifact({ root, run: () => { throw new Error('stage failed'); } }), /stage failed/);
+  assert.equal(full().artifactFingerprint, undefined, '실패한 검증은 파일을 보증하지 않는다');
 });
 
 test('single-module artifacts execute root gates and reject unsupported layouts before any commands', (t) => {
@@ -232,6 +262,26 @@ function validatePipeline(workflow, manifest) {
   const errors = validateStaticContract({ manifest, ciContent: workflow });
   const job = parseWorkflowJobs(workflow).get('reusable-base') ?? '';
   const customJob = parseWorkflowJobs(workflow).get('reusable-custom') ?? '';
+  const vendorJob = parseWorkflowJobs(workflow).get('reusable-vendor') ?? '';
+  if (!/^      reusable-vendor: \$\{\{ steps\.scope\.outputs\.reusable_vendor \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the vendor selection flag');
+  }
+  if (!/^      reusable-vendor-matrix: \$\{\{ steps\.scope\.outputs\.reusable_vendor_matrix \}\}$/m.test(workflow)) {
+    errors.push('change-scope must publish the vendor matrix');
+  }
+  for (const expected of [
+    /^    needs: \[change-scope\]$/m,
+    /^    if: "!cancelled\(\) && needs\.change-scope\.result == 'success' && needs\.change-scope\.outputs\['reusable-vendor'\] == 'true'"$/m,
+    /^      fail-fast: false$/m,
+    /^      matrix: \$\{\{ fromJSON\(needs\.change-scope\.outputs\['reusable-vendor-matrix'\]\) \}\}$/m,
+    /^          COMPOSER_PREVIEW_VENDOR: \$\{\{ matrix\.vendor \}\}$/m,
+    /^        run: node scripts\/verify-project-composer\.mjs --layout \$\{\{ matrix\.layout \}\} --vendor \$\{\{ matrix\.vendor \}\}$/m,
+    /^      - name: Retain vendor composition verification\n        if: always\(\)$/m,
+    /^            build\/project-composer\/jobs\/\*\/report\.json$/m,
+    /^          if-no-files-found: error$/m,
+    /^    timeout-minutes: 45$/m,
+  ]) if (!expected.test(vendorJob)) errors.push(`missing vendor pipeline contract: ${expected}`);
+  if (/^\s*(?:continue-on-error|defaults):/m.test(vendorJob)) errors.push('vendor execution override is not allowed');
   if (!/^      reusable: \$\{\{ steps\.scope\.outputs\.reusable \}\}$/m.test(workflow)) {
     errors.push('change-scope must publish the reusable selection flag');
   }
@@ -306,12 +356,37 @@ test('required CI binds the fail-closed classifier matrix and rejects weakening 
     assert.ok(validatePipeline(workflow.replace(customJob, changedJob), manifest).length,
       `negative mutation must fail custom pipeline contract: ${name}`);
   }
+  const vendorJob = parseWorkflowJobs(workflow).get('reusable-vendor');
+  for (const [name, mutate] of [
+    ['wrong scope', value => value.replace("outputs['reusable-vendor'] == 'true'", "outputs.backend == 'true'")],
+    ['static matrix', value => value.replace("fromJSON(needs.change-scope.outputs['reusable-vendor-matrix'])", "fromJSON('{\"include\":[]}')")],
+    ['missing vendor', value => value.replace(' --vendor ${{ matrix.vendor }}', '')],
+    ['missing preview grant', value => value.replace('          COMPOSER_PREVIEW_VENDOR: ${{ matrix.vendor }}\n', '')],
+    ['bypass command', value => value.replace('node scripts/verify-project-composer.mjs', 'echo bypass')],
+    ['missing artifact always', value => value.replace('        if: always()\n', '')],
+    ['advisory artifact', value => value.replace('if-no-files-found: error', 'if-no-files-found: warn')],
+    ['advisory job', value => value.replace('    steps:', '    continue-on-error: true\n    steps:')],
+    ['delayed admission', value => value.replace('    needs: [change-scope]', '    needs: [change-scope, frontend-scope]')],
+    ['ignores cancellation', value => value.replace('    if: "!cancelled()', '    if: "always()')],
+    ['longer slot hold', value => value.replace('timeout-minutes: 45', 'timeout-minutes: 60')],
+  ]) {
+    const changedJob = mutate(vendorJob);
+    assert.notEqual(changedJob, vendorJob, `negative mutation must change vendor job: ${name}`);
+    assert.ok(validatePipeline(workflow.replace(vendorJob, changedJob), manifest).length,
+      `negative mutation must fail vendor pipeline contract: ${name}`);
+  }
   for (const mutate of [
+    value => value.replace('reusable-vendor: ${{ steps.scope.outputs.reusable_vendor }}', 'reusable-vendor: false'),
+    value => value.replace('reusable-vendor-matrix: ${{ steps.scope.outputs.reusable_vendor_matrix }}', 'reusable-vendor-matrix: {}'),
     value => value.replace('reusable: ${{ steps.scope.outputs.reusable }}', 'reusable: false'),
     value => value.replace('reusable-custom: ${{ steps.scope.outputs.reusable_custom }}', 'reusable-custom: false'),
     value => value.replace('reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}', 'reusable-matrix: {}'),
   ]) assert.ok(validatePipeline(mutate(workflow), manifest).length);
-  assert.ok(validatePipeline(workflow.replace('needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom]', 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base]'), manifest).length);
+  for (const dropped of ['reusable-custom', 'reusable-vendor']) {
+    const needs = 'needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom, reusable-vendor]';
+    assert.ok(workflow.includes(needs));
+    assert.ok(validatePipeline(workflow.replace(needs, needs.replace(`, ${dropped}`, '')), manifest).length, dropped);
+  }
 });
 
 /*

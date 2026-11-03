@@ -147,7 +147,7 @@ class SchemaNamingLinterTest {
             Matcher t = CREATE_TABLE.matcher(code);
             if (t.find()) {
                 String name = unquote(t.group(1));
-                if (!TABLE_WHITELIST.contains(name) && !name.matches("tb_[a-z0-9_]+")) {
+                if (!TABLE_WHITELIST.contains(name) && !SchemaConformanceRules.TABLE_NAME.matcher(name).matches()) {
                     violations.add(String.format(
                             "File [%s:%d]: 테이블명 '%s' — 헌법 제3조 tb_ 접두 + 제1조 소문자 snake_case 위반", fileName, i + 1, name));
                 }
@@ -165,7 +165,7 @@ class SchemaNamingLinterTest {
             Matcher s = CREATE_SEQUENCE.matcher(code);
             if (s.find()) {
                 String name = unquote(s.group(1));
-                if (!SEQUENCE_WHITELIST.contains(name) && !name.matches("sq_[a-z0-9_]+")) {
+                if (!SEQUENCE_WHITELIST.contains(name) && !SchemaConformanceRules.SEQUENCE_NAME.matcher(name).matches()) {
                     violations.add(String.format(
                             "File [%s:%d]: 시퀀스명 '%s' — 헌법 제3조 sq_ 접두 위반", fileName, i + 1, name));
                 }
@@ -174,8 +174,7 @@ class SchemaNamingLinterTest {
             Matcher ix = CREATE_INDEX.matcher(code);
             if (ix.find()) {
                 String name = unquote(ix.group(1));
-                // uk_ 는 유니크 "인덱스" 레거시 관행(제약 승격 대상 P5) — 신규도 잠정 허용하되 ix_ 권장
-                if (!name.matches("(?:ix|uk)_[a-z0-9_]+")) {
+                if (!SchemaConformanceRules.INDEX_NAME.matcher(name).matches()) {
                     violations.add(String.format(
                             "File [%s:%d]: 인덱스명 '%s' — 헌법 제6조 ix_ 접두 위반", fileName, i + 1, name));
                 }
@@ -185,7 +184,7 @@ class SchemaNamingLinterTest {
             if (rn.find()) {
                 // 명명 정정 구문: 신명칭만 표준 검사 (구명칭은 정정 대상이라 검사 무의미)
                 String newName = unquote(rn.group(1));
-                if (!CONSTRAINT_WHITELIST.contains(newName) && !newName.matches("(?:pk|fk|uk|ck)_[a-z0-9_]+")) {
+                if (!CONSTRAINT_WHITELIST.contains(newName) && !SchemaConformanceRules.CONSTRAINT_NAME.matcher(newName).matches()) {
                     violations.add(String.format(
                             "File [%s:%d]: RENAME 신명칭 '%s' — 헌법 제6조 pk_/fk_/uk_/ck_ 접두 위반",
                             fileName, i + 1, newName));
@@ -197,7 +196,7 @@ class SchemaNamingLinterTest {
                     if (CONSTRAINT_WHITELIST.contains(name)) {
                         continue;
                     }
-                    if (!name.matches("(?:pk|fk|uk|ck)_[a-z0-9_]+")) {
+                    if (!SchemaConformanceRules.CONSTRAINT_NAME.matcher(name).matches()) {
                         violations.add(String.format(
                                 "File [%s:%d]: 제약명 '%s' — 헌법 제6조 pk_/fk_/uk_/ck_ 접두 + 소문자 snake_case 위반",
                                 fileName, i + 1, name));
@@ -215,25 +214,10 @@ class SchemaNamingLinterTest {
         }
     }
 
-    /** 제8조: 신규 비즈니스 테이블은 최소 감사컬럼 2종(frst_rgtr_id, crt_dt)을 탑재해야 한다.
-     *  (수정이 구조적으로 없는 Insert-Only 테이블의 2종 면제 조항과 정합 — 4종 여부는 설계 리뷰 영역) */
+    /** 제8조 감사컬럼 규칙. 규칙 본문은 벤더 카탈로그 시험과 같다. */
     private void checkAuditColumns(String fileName, String tableName, String body, List<String> violations) {
-        boolean hasRgtr = body.contains("frst_rgtr_id");
-        boolean hasCrtDt = body.contains("crt_dt");
-        if (!hasRgtr || !hasCrtDt) {
-            violations.add(String.format(
-                    "File [%s]: 테이블 '%s' — 헌법 제8조 최소 감사컬럼(frst_rgtr_id, crt_dt) 누락(%s)",
-                    fileName, tableName,
-                    (hasRgtr ? "" : "frst_rgtr_id ") + (hasCrtDt ? "" : "crt_dt")));
-        }
-        // 짝 깨짐: mdfcn_dt 만 있고 last_mdfr_id 가 없는(또는 반대) 비대칭 차단
-        boolean hasMdfcn = body.contains("mdfcn_dt");
-        boolean hasMdfr = body.contains("last_mdfr_id");
-        if (hasMdfcn != hasMdfr) {
-            violations.add(String.format(
-                    "File [%s]: 테이블 '%s' — 감사컬럼 짝 깨짐(mdfcn_dt=%s, last_mdfr_id=%s) — 둘 다 탑재하거나 둘 다 생략하십시오",
-                    fileName, tableName, hasMdfcn, hasMdfr));
-        }
+        SchemaConformanceRules.auditColumnProblems(tableName, body::contains)
+                .forEach(problem -> violations.add(String.format("File [%s]: %s", fileName, problem)));
     }
 
     /**

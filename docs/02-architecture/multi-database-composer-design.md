@@ -12,14 +12,14 @@ PostgreSQL을 유일한 스키마 원본으로 두고, 생성할 때마다 **기
 - 마이그레이션 146개는 이식하지 않는다. 생성물은 지금도 V2 체인이 아니라 `V1_0` 기준선에서 시작하므로([generate-reusable-base-db.mjs:294](../../scripts/generate-reusable-base-db.mjs)) 벤더마다 최종 상태 하나만 만들면 된다.
 - 어려운 일은 DDL이 아니라 앱과 의미다. DDL과 시드는 시제품으로 5개 벤더에 거의 들어갔다(아래 실측). 그러나 DDL이 들어갔다고 저장 범위까지 같은 것은 아니다. 남은 일은 네이티브 SQL 105문장 중 PostgreSQL 전용 구문, 벤더마다 다른 의미(빈 문자열, 잠금, 트리거, 오류 코드), Oracle 저장 용량을 원본과 어댑터에서 먼저 정리하는 것이다.
 - **스키마 적용 실패는 측정한 5개 벤더 모두 0으로 해결했다**(§2의 수정안 적용 결과). 최신 main의 전체 기능 구성을 적용하고 시드를 넣은 뒤, 실제 테이블에서 받아야 할 값과 거부해야 할 값을 벤더별 36~44개 시험으로 확인했다.
-- 다만 적용 성공과 호환은 다르다. 문장은 성공했는데 PostgreSQL과 다른 값을 받는 번역이 실측에서 여럿 나왔고, 벤더 고유 한계는 없앨 수 없어 §6.1에 남긴다. 앱은 아직 어느 벤더에서도 기동하지 않았다.
+- 다만 적용 성공과 호환은 다르다. 문장은 성공했는데 PostgreSQL과 다른 값을 받는 번역이 실측에서 여럿 나왔고, 벤더 고유 한계는 없앨 수 없어 §6.1에 남긴다. 시제품 실측은 앱을 기동하지 않았다. 앱은 단계 2 에서 Oracle 23·19c 위에서 통합 시험과 대표 E2E 로 돌렸고 다른 벤더는 아직이다(§17).
 - Oracle·MariaDB·MySQL·SQL Server는 이 길로 도달할 수 있다. CUBRID는 쓸 수는 있으나 저하가 가장 크고, Tibero는 라이선스 파일이 없어 지금은 아무것도 잴 수 없다.
 
 ## 결정 카드
 
 | D-n | 결정 | 관련 H | 영향 계약 파일 | 부정 시험 |
 |---|---|---|---|---|
-| D-1 | 벤더 id 는 이관 도구와 같은 7종(`postgresql`·`oracle`·`tibero`·`mysql`·`mariadb`·`mssql`·`cubrid`)으로 고정한다. 인증된 벤더만 고를 수 있고, 나머지는 화면에 사유와 함께 비활성으로 보인다. | H2 | `config/db-vendors.json`(신설), `project-composer-recipe.mjs`, `project-composer-server.mjs`, `index.html` | 미인증 벤더 recipe 가 CLI·서버 둘 다에서 `UNSUPPORTED_DATABASE` 로 거부된다 |
+| D-1 | 벤더 id 는 이관 도구와 같은 7종(`postgresql`·`oracle`·`tibero`·`mysql`·`mariadb`·`mssql`·`cubrid`)으로 고정한다. 인증된 벤더만 고를 수 있고, 나머지는 화면에 사유와 함께 비활성으로 보인다. | H2 | `config/db-vendors.json`(신설), `project-composer-recipe.mjs`, `project-composer-server.mjs`, `index.html` | 미인증 벤더 recipe 가 생성기 입구에서 `UNSUPPORTED_DATABASE`, 엔진·서버 응답에서 `INVALID_RECIPE` 로 거부된다 |
 | D-2 | 스키마 정본은 PostgreSQL 마이그레이션 하나다. 벤더별 마이그레이션 체인·Liquibase·Hibernate DDL 생성을 두지 않는다. `postgresql` 출력 경로는 그대로 `pg_dump` 를 쓴다. | H1 | `generate-reusable-base-db.mjs`, `project-composer-db.mjs` | `postgresql` 의 번들 파일 해시·구성 해시가 변경 전후 같다 |
 | D-3 | 중립 모델은 닫힌 문법이다. 모르는 타입·기본값·CHECK·인덱스·트리거가 나오면 건너뛰지 않고 `VENDOR_TRANSLATION_GAP` 으로 실패한다. 트리거는 호출 함수 본문까지 입력으로 읽고, 검토한 함수 해시와 의도를 묶는다. | H2·H3·H4 | `project-composer-vendor-ir.mjs`(신설), `project-composer-db.mjs` 의 `schemaSnapshotSql` | 새 CHECK 모양 픽스처, **트리거 선언은 두고 함수 본문만 바꾼 픽스처**(V2_143 과 같은 형태)가 빨갛다 |
 | D-4 | 어댑터는 Node 내장 모듈만 쓰는 순수 함수 묶음이다. 생성은 기준 PostgreSQL + 대상 벤더 컨테이너 두 개로 돌고, 대상에 적용한 결과를 다시 읽어 모델과 대조한다. | H1 | `project-composer-vendor-*.mjs`(신설), `project-composer-postgres.mjs` | 벤더 DDL 에서 인덱스 하나를 빼면 대조가 빨갛다 |
@@ -30,9 +30,9 @@ PostgreSQL을 유일한 스키마 원본으로 두고, 생성할 때마다 **기
 | D-9 | 인증은 벤더·버전 단위 원장이다. 상태는 `certified`·`preview`·`blocked` 이고 증거 실행 ID 와 **입력 해시**(중립 모델·어댑터·포트 구현·벤더 의존 SQL·엔티티 매핑·시험 코드와 원장)를 갖는다. 입력이 바뀌면 증거는 낡은 것이다. | H2 | `config/db-vendors.json`, `npm run regen`, 계약 시험 | 증거 없는 `certified`, 입력 해시가 다른 `certified` 가 빨갛다. 이미지 BLOB 매핑만 되돌린 변경도 빨갛다 |
 | D-10 | 생성물 검증은 지금의 7단계를 유지하되 `schemaValidationTest` 를 그 벤더 컨테이너로 돌린다. 벤더에서 못 도는 시험은 원장에 사유와 대체 시험을 적는다. | H2·H5 | `verify-reusable-artifact.mjs`, `SharedPostgresMigrationTestSupport.java`, `config/governance/vendor-test-ledger.json`(신설) | 원장에 없는 시험이 빠지면 빨갛다 |
 | D-11 | 생성물의 드라이버·방언·Flyway·설정·compose 는 벤더별로 투영한다. PostgreSQL 전용 자산(이관 도구 target, 백업·복원 도구, ZDM 린터 등)은 벤더 프로젝트에서 빼고 lock 에 기록한다. 번들 파일 집합 검사도 벤더별로 바꾼다. | H2 | `generate-reusable-base-source.mjs`, `project-composer-source.mjs:71`, `reusable-single-module.mjs`, `build.gradle` | 승인 목록과 다른 제거, 벤더 집합과 다른 번들 파일이 있으면 빨갛다 |
-| D-12 | recipe 는 `schemaVersion: 1` 그대로 `database.vendor` 값만 늘린다. lock 에 벤더·엔진 버전·어댑터 버전·모델 해시를 남긴다. | H2 | `project-composer-recipe.mjs`, `project-composer-db.mjs:25`, `verify-reusable-artifact.mjs` | 벤더가 다른 DB 번들을 소스 생성기가 거부한다 |
+| D-12 | recipe 는 `schemaVersion: 1` 그대로 `database.vendor` 값만 늘린다. lock 에 벤더(`composition.recipe.database.vendor`·`vendorProjection.vendor`), 번역 입력 해시(`vendorInputSha256`·`vendorProjection.inputSha256`), 벤더 기준선 해시(`vendorProjection.migrationSha256`)를 남긴다. 어댑터 판은 `sourceCommit` 이 가리키고 엔진 버전은 남기지 않는다(§9). | H2 | `project-composer-recipe.mjs`, `project-composer-db.mjs:25`, `verify-reusable-artifact.mjs` | 벤더가 다른 DB 번들을 소스 생성기가 거부한다 |
 | D-13 | 생성기 화면은 벤더 선택·저하 표시·이미지·메모리 사전 점검·두 컨테이너 정리를 지원한다. | - | `tools/project-composer/public/*`, `project-composer-preflight.mjs`, `project-composer-recovery.mjs` | 벤더 컨테이너가 남으면 기동 시 정리 시험이 빨갛다 |
-| D-14 | CI 는 모든 PR 에서 모든 벤더의 **순수 번역**을 돌리고, 인증 벤더의 입력이 바뀐 PR 은 기존 required context 안에서 그 벤더의 동작·동시성 시험까지 돌린다. 비필수 검증만 받는 벤더는 `preview` 를 벗어나지 못한다. required context 수는 늘리지 않는다. | H2·H5 | `ci-change-scope.mjs`, `ci.yml`, `reusable-nightly.yml` | 번역 불가 CHECK 를 넣은 PR 이 빨갛다. 인증 벤더 upsert 를 덮어쓰기로 바꾼 PR 이 빨갛다 |
+| D-14 | CI 는 재사용 생성 잡(`reusable-base`·`reusable-custom`)이 도는 변경마다 모든 벤더의 **순수 번역**을 돌리고(생성마다 번역한다. 문서만 고친 PR 처럼 그 잡을 고르지 않는 변경에서는 돌지 않는다), 인증 벤더의 입력이 바뀐 PR 은 기존 required context 안에서 그 벤더의 동작·동시성 시험까지 돌린다. 비필수 검증만 받는 벤더는 `preview` 를 벗어나지 못한다. required context 수는 늘리지 않는다. | H2·H5 | `ci-change-scope.mjs`, `ci.yml`, `reusable-nightly.yml` | 번역 불가 CHECK 를 넣은 PR 이 빨갛다. 인증 벤더 upsert 를 덮어쓰기로 바꾼 PR 이 빨갛다 |
 | D-15 | 순서는 공통 기반 → Oracle → MariaDB·MySQL → SQL Server → CUBRID → Tibero 다. | - | 설계서·ADR | 해당 없음 |
 
 ## 1. 지금 PostgreSQL 이 묶여 있는 곳
@@ -171,9 +171,9 @@ flowchart TD
 
 **시드와 권한 재생성의 분리**: 지금은 번들 파일 다섯 개 이름이 고정이고([project-composer-source.mjs:71](../../scripts/project-composer-source.mjs)), 소스 투영의 `generatePermissions()` 가 `R__zz_seed_base_admin.sql` 의 생성 마커를 필수로 읽어 다시 쓴다([generate-permissions.mjs:64](../../scripts/generate-permissions.mjs), [reusable-governance-projection.mjs:128](../../scripts/reusable-governance-projection.mjs)). 출력만 `V1_*` 로 바꾸면 이미 적용된 마이그레이션이 재생성으로 수정된다. 그래서 다음을 계약으로 둔다.
 
-- 벤더 프로젝트의 `generatePermissions()` 는 Java·TS·원장만 만들고 시드는 쓰지 않는다.
+- 벤더 프로젝트도 PostgreSQL 번들을 번역 근거로 그대로 둔다. `generatePermissions()` 는 그 번들의 시드를 다시 쓰지만 Flyway 는 그 폴더를 실행하지 않아 벤더 기준선과 체크섬을 건드리지 않는다. 시드 앵커를 읽는 하네스(`SecurityAuthAnnotationLinterTest`)가 있어 쓰기를 멈추지 않는다.
 - 번들 파일 집합은 어댑터가 선언하고 `verifyCompositionDatabaseFiles` 가 벤더별로 대조한다.
-- 생성 뒤 권한을 더하는 절차는 벤더 문법의 새 마이그레이션을 쓰는 것이다. 재생성은 기존 마이그레이션 체크섬과 회수된 권한을 건드리지 않는다.
+- 생성 뒤 기본 그룹을 바꾸는 절차는 카탈로그와 벤더 문법의 새 마이그레이션을 함께 고치는 것이다. 재생성만으로는 벤더 DB 에 반영되지 않으므로 벤더 카탈로그 시험이 `defaultGroups` 와 실제 부여를 양방향으로 대조한다. 새 권한 코드는 구성과의 정확 일치 때문에 재생성이 멈춘다(GAP-COMPOSE-002).
 - `R__zz_seed_base_admin.sql` 을 읽는 소비자는 생성물 기준으로 스크립트 6개(`generate-permissions`, `generate-reusable-base-db`, `export-deliverables-db`, `merge-main-regenerate`, `project-composer-menu-preview`, `project-composer-source`)와 그 시험, 하네스 2개(`SecurityAuthAnnotationLinterTest`, `BaseAdminBootstrapSeedIntegrationTest`)다. 단계 1 에서 벤더별 처리를 정한다.
 
 ## 4. 앱 SQL 중립화(D-6)
@@ -243,12 +243,18 @@ flowchart TD
 | 같은 인덱스 | SQL Server | `(occr_ymd DESC) INCLUDE (url)` |
 | NULL 허용 UNIQUE 8개 | SQL Server | 7개는 `WHERE ... IS NOT NULL` 필터 유일 인덱스. `domain_name` 은 FK 대상이라 필터 인덱스를 쓸 수 없어 UNIQUE 유지(NULL 1행 제한, 시드에 NULL 없음) |
 | 복합 NULL 허용 UNIQUE 6개 | Oracle | 모든 키가 NOT NULL 일 때만 값을 내는 `CASE` 함수 기반 유일 인덱스 |
-| 같은 6개 | CUBRID | 필터 UNIQUE 는 문법에서 막힌다. 그림자 키 컬럼 + AFTER 트리거 2개로 키를 채우고 진짜 UNIQUE 인덱스가 판정한다. 경합이 없다. 키는 `길이:값` 으로 이어 구분자 충돌이 없고, 수정 경로(중복 거부, NULL 전환, 재입력)까지 확인했다 |
+| 같은 6개 | CUBRID | 필터 UNIQUE 는 문법에서 막힌다. 그림자 키 컬럼 + AFTER 트리거 2개로 키를 채우고 진짜 UNIQUE 인덱스가 판정한다. 경합이 없다. 키는 `길이:값` 으로 이어 구분자 충돌이 없고, 수정 경로(중복 거부, NULL 전환, 재입력)까지 확인했다. 값은 컬럼마다 `VARCHAR(1100)`, 이은 키는 `VARCHAR(2500)` 이라 그보다 길 수 있는 키(길이를 모르는 타입 포함)는 잘려 다른 값이 같아지므로 번역을 멈춘다. 숫자는 부호·앞의 0·소수점까지 정밀도 + 3자로 센다. 지금 스키마에서 가장 긴 키는 최대 1,029자다(합성 모델 시험만 있고 CUBRID 에서 실측하지 않았다) |
 | 정규식 CHECK 8개 | SQL Server 2022 | `LIKE` + `DATALENGTH` 로 정확히 번역. `LEN` 은 뒤 공백을 세지 않으므로 쓰지 않는다 |
 | 글자 수 CHECK 4개 | SQL Server | `_SC` 콜레이션의 `LEN(x + N'.') - 1`. 이모지를 한 글자로 세고 뒤 공백도 센다 |
 | 900바이트 넘는 복합 PK | SQL Server | `pk_meta_standard_words` 를 NONCLUSTERED 로 |
 | 표현식 인덱스 `btrim(ocrn_ymd)` | 벤더별 | Oracle·CUBRID 함수 기반, MySQL 함수 키, MariaDB·SQL Server 계산 컬럼 |
-| 부분 인덱스 `ix_tb_menu_info_del_yn` | Oracle, MySQL, MariaDB | 일반 인덱스로. 유일성이 없어 성능만 달라진다 |
+| 부분 인덱스 `ix_tb_menu_info_del_yn` | Oracle, MySQL, MariaDB, CUBRID | 일반 인덱스로. 유일성이 없어 성능만 달라진다. 조건부 유일 인덱스는 조건을 버리면 PostgreSQL 이 받는 행을 거부하므로 저하로 두지 않고 번역을 멈춘다(지금 스키마에는 없다) |
+| 독립 UNIQUE 인덱스(복합, NULL 허용 키) | Oracle, CUBRID | 같은 어댑터가 유일 제약에 쓰는 `CASE` 함수 인덱스·그림자 키로 옮긴다. 키에 식이 있으면 NULL 의미를 지킬 수 없어 번역을 멈춘다(지금 스키마에는 독립 UNIQUE 인덱스가 없다. 합성 모델 시험만 있고 실측하지 않았다) |
+| NULL 이 들 수 있는 UNIQUE 인덱스의 `DESC` 열 | Oracle | 오름차순으로 옮긴다. 내림차순 열은 NULL 을 `'00'` 으로 담아, PostgreSQL 이 받는 `(NULL, 1)` 두 행과 NULL 허용 단일 컬럼의 NULL 두 행을 거부한다. 같은 정의를 오름차순으로 두면 둘 다 받고 꽉 찬 키의 중복은 거부한다(2026-11-03 Oracle 23 실측). 순서는 유일성과 무관하고, 섞인 정렬 방향을 쓰는 조회만 그 인덱스 순서를 잃는다. 키가 모두 NOT NULL 인 유일 인덱스와 유일하지 않은 인덱스는 `DESC` 를 지킨다(지금 스키마에는 독립 UNIQUE 인덱스가 없다) |
+| 독립 UNIQUE 인덱스(NULL 허용 키) | SQL Server | 유일 제약처럼 `WHERE … IS NOT NULL` 로 걸러 NULL 이 든 행을 여럿 받는다. 부분 인덱스면 그 조건 뒤에 붙인다(지금 스키마에는 없다. 실측하지 않았다) |
+| 접두로 잘라야 하는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | MySQL, MariaDB | 번역을 멈춘다. 접두는 앞부분이 같은 정상 값을 거부하고, 식 인덱스의 번역(함수 키·계산 컬럼)은 유일하지 않다. 유일하지 않은 인덱스는 지금처럼 접두로 둔다(지금 스키마에는 없다) |
+| 1,700바이트를 넘는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | SQL Server | 번역을 멈춘다. 인덱스를 빼거나 긴 컬럼을 INCLUDE 로 옮기면 유일성이 사라진다. 유일하지 않은 인덱스는 지금처럼 빼거나 INCLUDE 로 둔다(지금 스키마에는 없다) |
+| 위 두 줄의 키 바이트 어림 | MySQL, MariaDB, SQL Server | 문자열만 실제 크기(MySQL 4바이트, SQL Server 2바이트 × 글자 수)로 세고 다른 타입은 모두 8바이트로 센다. 그래서 한계 직전의 정상 키(MySQL `VARCHAR(767)` + `INT`, SQL Server `NVARCHAR(847)` + `INT`)도 멈추고, MySQL 의 `CHAR(36)` UUID 는 적게 센다. 지금 스키마에는 닿는 키가 없다. 각 벤더를 승격할 때 물리 타입별 크기로 바꾸고 한계 직전·직후를 실측한다 |
 | GIN `ix_tb_web_log_url_trgm` | 전 벤더 | 뺀다. 결과는 같고 URL 부분 검색만 느려진다. 기간 조건과 함께 쓰며 저하로 표시 |
 | DEFERRABLE 자기 참조 FK | Oracle 외 | 시드는 부모 먼저. [MenuService.java:429](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java) 는 자식부터 지우도록 원본을 고친다 |
 | V2_145 동기화 트리거 2개 | 전 벤더 | 번역해 적용·동작 확인. 이행 전용이고 새 프로젝트에는 옛 데이터가 없으므로, Contract 뒤에는 입력에서 사라진다. 어댑터가 모르는 트리거가 생기면 `VENDOR_TRANSLATION_GAP` 으로 멈추는 것이 맞다는 실례다 |
@@ -269,7 +275,7 @@ flowchart TD
 | SQL Server | 필터 유일 인덱스는 FK 대상이 못 된다 | 엔진 규칙 | `domain_name` 은 UNIQUE 유지, NULL 1행 제한 |
 | MySQL·MariaDB | FK 를 지연 검사할 수 없다, 부분 인덱스가 없다 | 엔진 기능 부재 | 쓰는 순서를 원본에서 맞춘다. 부분 인덱스는 성능 저하 |
 | MySQL | 앱 계정 트리거 생성에 서버 설정이나 높은 권한이 필요 | 바이너리 로그 안전 규칙 | 도입 조건으로 문서화 |
-| MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 벤더 프로젝트의 복구 절차를 따로 둔다 |
+| MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 복구 절차(남은 객체 삭제와 Flyway 실패 행 정리)와 일회용 DB 선행 적용은 벤더 생성물 README 의 '생성 뒤 스키마 변경' 절에 둔다. 소스 투영이 아직 Oracle 에만 있어 그 절도 Oracle 만 적고, MySQL·MariaDB 는 투영을 열 때 더한다 |
 | CUBRID | CHECK 를 엔진이 집행하지 않는다 | 파서만 받고 무시 | 트리거로 대체하되 쓰기마다 평가한다. 시드 18,143행이 21초(트리거 없음, ISO 문자 집합)에서 34~52초가 됐다. 정밀 측정은 아니다 |
 | CUBRID | 트리거 조건이 NULL 이면 결과가 번갈아 바뀐다 | 같은 입력이 거부·허용·거부로 나왔다 | 모든 조건을 NULL 없는 위반식으로 만든다. `IS FALSE` 는 평가 오류 |
 | CUBRID | JSON 형식을 DB 가 보장하지 못한다 | `JSON` 타입 + UPDATE 트리거는 클라이언트가 종료된다. 트리거 안 JSON 함수는 평가 오류 | `STRING` + 첫 글자 검사. 깨진 JSON 은 앱이 막는다 |
@@ -282,12 +288,21 @@ flowchart TD
 ## 7. 인증과 검증(D-9, D-10)
 
 ```json
-{ "vendors": [{ "id": "oracle", "label": "Oracle", "status": "preview",
-  "engines": [{ "version": "19", "image": "...", "evidence": null }],
-  "degradations": ["..."] }] }
+{ "evidenceInputs": { "paths": ["..."] },
+  "vendors": [{ "id": "oracle", "label": "Oracle", "status": "preview",
+  "engines": [{ "version": "19", "engine": "oracle19", "evidence": null }],
+  "evidenceInputs": ["..."] }] }
 ```
 
-`certified` 조건은 벤더·버전마다 다음을 모두 통과한 실행 ID 다: 스키마 대조, 시드 행 대조, Hibernate validate, 통합 시험, §5·§6 적합성, 대표 E2E(로그인·권한·게시판·결재·감사 원장). 증거에는 입력 해시를 함께 적는다. 입력은 중립 모델, 어댑터, 포트 구현, 벤더 의존 SQL 파일, 엔티티 매핑(벤더 설정 포함), 벤더에서 도는 시험 코드와 시험 원장이다. 해시가 현재 저장소와 다르면 `npm run regen -- --check` 가 `VENDOR_EVIDENCE_STALE` 로 먼저 알리고, 계약 시험이 그 `certified` 를 거부한다. 그래서 야간 실패를 기다리는 동안 낡은 인증이 남지 않는다. 재검증 만료는 ADR-0018 처럼 기술 판정과 분리한다. 생성기는 기존 원칙대로 생성 작업마다 전체 검증을 돌리므로 인증은 선택 허용일 뿐 각 작업의 검증을 대신하지 않는다.
+`certified` 조건은 벤더·버전마다 다음을 모두 통과한 실행 ID 다: 스키마 대조, 시드 행 대조, Hibernate validate, 통합 시험, §5·§6 적합성, 대표 E2E(로그인·권한·게시판·결재·감사 원장). 증거에는 입력 해시를 함께 적는다. 입력은 중립 모델, 어댑터, 포트 구현, 벤더 의존 SQL 파일, 엔티티 매핑(벤더 설정 포함), 벤더에서 도는 시험 코드와 시험 원장이다. 중립 모델은 PostgreSQL 컨테이너에서 나와 Docker 없는 검사에서 계산할 수 없으므로 소스(마이그레이션·권한 원장·모델 코드)의 해시로 대신한다. 증거의 `modelHash` 는 모델 자체가 아니라 생성물이 쓴 번역 입력 파일(`config/vendor/<벤더>/vendor-input.json`: 기준 PostgreSQL 에서 뽑은 스키마 스냅숏·추가 메타·시드 행. 중립 모델은 이 입력으로 만든다)의 해시이고, 생성물 lock 의 `vendorProjection.inputSha256` 과 같다. 해시가 현재 저장소와 다르면 `npm run regen -- --check` 가 `VENDOR_EVIDENCE_STALE` 로 먼저 알리고, 계약 시험이 그 `certified` 를 거부한다. 그래서 야간 실패를 기다리는 동안 낡은 인증이 남지 않는다. 입력을 바꾼 PR 은 증거를 다시 만들거나 그 벤더를 `preview` 로 내린다. 재검증 만료는 ADR-0018 처럼 기술 판정과 분리한다. 생성기는 기존 원칙대로 생성 작업마다 전체 검증을 돌리므로 인증은 선택 허용일 뿐 각 작업의 검증을 대신하지 않는다.
+
+입력 목록은 [원장](../../config/db-vendors.json)의 `evidenceInputs` 에 공통과 벤더별로 나눠 적는다. 벤더 하나의 구현을 고쳐 다른 벤더의 증거가 낡지 않게 하려는 것이다. 벤더 의존 SQL 위치, `replacement` 가 아닌 벤더 시험, 대표 E2E, 엔티티 매핑(`@Entity`·`@Embeddable`·`@MappedSuperclass`·`@Converter`·`AttributeConverter`·`@FilterDef`), 포트를 쓰는 코드, 쿼리 호출 지점(네이티브 SQL 의 `nativeQuery`·`createNativeQuery`·`JdbcTemplate`·`NamedParameterJdbcTemplate`·`JdbcClient`, JPQL 의 `@Query`·`createQuery`, QueryDSL 의 `com.querydsl` import, 잠금의 `@Lock`)은 [입력 계산](../../scripts/vendor-evidence-inputs.mjs)이 원장과 소스에서 도출한다. 벤더 SQL 원장은 린터 규칙에 걸린 구문의 동결 위치만 담아, 쿼리를 담았어도 규칙에 안 걸린 파일은 호출 지점 표지로 잡는다. JPQL·QueryDSL 은 Hibernate 가 번역하지만 §17 의 CLOB 비교와 게시판 필터처럼 Oracle 에서만 깨진 실례가 있고, 린터는 금지 구문만 막으므로 Oracle 에서만 뜻이 달라지는 변경은 벤더 실행으로만 드러난다. 모델을 만드는 명령(`generate-reusable-base-db.mjs`)이 가져오는 스크립트도 기본으로 입력이다. 빼는 것은 원장의 `excludedModelTools` 에 이유와 함께 적는다: 배치 이름·실패 보고·오류 코드·프로젝트 이름·화면 문장·시작 구성 이름만 다루는 모듈, 메뉴를 스냅숏과 대조하기만 하는 모듈, 프런트 슬롯과 화면 생존 기대값(프런트 코드는 입력이 아니다). 입력은 git 이 추적하거나 무시하지 않는 파일로 한정한다. 무시 파일(`application-local.yml` 등)을 읽으면 같은 커밋이 체크아웃마다 다른 값이 되고 개인 설정이 판정에 들어간다. 해시는 경로와 내용을 함께 넣으므로 파일 삭제와 표지 제거도 값을 바꾼다. 표지 없는 코드는 입력이 아니다. Spring Data 파생 쿼리(`findBy…Containing` 등, 2026-11-03 실측으로 표지 없는 저장소 인터페이스 35개 중 22개에 파생 메서드가 있다. `findById`·`deleteById` 재선언은 세지 않았다)와 서비스 코드(`EntityManager.lock`·`refresh` 에 `LockModeType` 을 넘기는 `InformalSanctionService`·`MfaService` 2개 포함)를 고쳐도 증거는 낡지 않고 CI 벤더 잡도 켜지지 않는다. 생성 작업의 전체 검증과 다음 입력 변경 PR 의 벤더 잡이 받치지만, 대표 E2E 는 그 둘에서 돌지 않으므로 통합 시험이 덮지 않는 회귀는 다음 증거 기록까지 드러나지 않는다(§10). 원장 자체는 증거를 담아 입력이 아니고, 프런트 코드·E2E 지원 코드·의존성 판(`libs.versions.toml`)도 입력이 아니다. 의존성 판은 증거를 낡게 하지 않고 CI 벤더 잡만 켠다(원장의 `ciOnly`, §10). 프런트 코드와 E2E 지원 코드의 회귀는 PostgreSQL 쪽 CI 와 생성 작업마다 도는 검증이 본다. 생성물은 입력이 투영돼 값이 달라지므로 낡음 판정을 하지 않는다.
+
+이미지 값의 정본은 실행 도구의 엔진 표(`VENDOR_ENGINES`)이고 원장은 엔진 키로 가리킨다. 엔진 표는 버전도 가지며, 적재와 증거 기록은 원장 행의 벤더·버전·엔진이 서로 맞는지 같은 판정으로 본다. 벤더만 맞으면 19 행에 23 엔진을 이은 실행이 19 증거가 되기 때문이다. 증거의 `image` 가 현재 엔진 값과 다르면 낡은 것이다. Oracle 두 이미지만 digest 로 고정돼 있다. 다른 벤더는 올릴 때 고정한다 — 고정하지 않으면 원장 적재가 `certified` 를 거부한다. 원장 적재는 생성 작업마다 돌기 때문에 입력 해시를 대조하지 않고, `certified` 의 어댑터·소스 투영·통합 시험을 돌릴 엔진과 그 버전·증거 형식만 본다. 그래서 어댑터 없는 Tibero 나 빈 증거로는 열리지 않는다.
+
+증거는 원본 저장소에서 기록한다: `node scripts/project-composer-vendor-evidence.mjs --vendor oracle --version 19 --artifact <생성물>`. 원본 트리가 깨끗하고, 생성물이 같은 커밋에서 만들어져 전체 검증을 통과했으며, 대표 묶음이 요구하는 구성일 때만 시작한다. 커밋이 같아도 미커밋 수정으로 만들고 되돌렸을 수 있으므로 생성 보고서의 원본 지문(`evidenceFingerprint`, 벤더 생성에만 있다)을 현재 트리와 대조하고, 전체 검증이 끝날 때 남긴 생성물 지문(`artifactFingerprint`)을 기록 전후에 다시 계산해 검증 뒤 시험을 고치거나 줄인 생성물을 거부한다. 원장은 앞 엔진의 증거가 쌓이는 파일이라 원본 지문에서 뺀다. 그 엔진의 일회용 DB 로 통합 시험·차등 시험·대표 E2E 를 돌려 보고서를 받고, 실행 중 입력이 그대로일 때만 그 엔진의 `evidence` 를 쓴다. 실행이 길어 원장은 쓰기 직전에 다시 읽고 그 엔진의 증거만 바꾼다. `status` 는 바꾸지 않는다. 실행은 로컬이라 실행 ID 를 원격에서 대조할 수 없다. 증거의 범위는 `application-database` 다. 19c 는 recipe 로 고르지 않고 공식 배포 경로는 번들 DB 만 받으므로(`deploy.sh`) 19c 증거는 앱과 DB 의 동작 증거이지 배포 경로 증거가 아니다.
+
+대표 E2E 는 [게이트 원장](../../config/governance/gates.json)에 따로 올리지 않는다. 이 묶음을 부르는 곳은 증거 기록 명령 하나이고 어느 검증 명령과 워크플로도 부르지 않는다. 원장의 tier 는 실행 경로를 주장하는 값인데 `local-vendor` 는 생성물 검증 실행기(`verify-reusable-artifact.mjs`), `local-e2e` 는 `verify.mjs` 의 e2e 범위, `ci` 는 잡을 뜻해 어느 값을 적어도 거짓이다. 증거 전용 tier 를 새로 두어도 새 신호는 없다. 시험 파일의 모집단은 `GATESET-PLAYWRIGHT-E2E` 가 PostgreSQL 쪽에서 등록해 돌리고, 묶음의 구성은 시험 원장의 `representativeE2e` 와 실행기가, 기록 명령이 이 묶음을 그 엔진으로 돌리는지는 [증거 계약](../../scripts/project-composer-vendor-evidence.test.mjs)이, 결과는 증거 형식 판정이 본다. CI 나 검증 명령이 이 묶음을 부르게 되면 그 변경에서 등록한다.
 
 `schema-validation` 시험은 벤더 적합성의 뼈대다. 인가·동시성·감사 원장을 이미 실 DB 로 시험하고 있어 새로 쓰는 것보다 낫다. 다만 40개가 시험 코드에 PostgreSQL 전용 SQL 을 담고 있어 `SharedPostgresMigrationTestSupport` 를 벤더 중립 지원으로 나누고, 시험을 세 분류로 원장에 적는다: 그대로 실행, 픽스처 이식, 대체 시험 필요.
 
@@ -304,30 +319,56 @@ Oracle 은 19c 를 기준으로 삼는다. 공식 19c 이미지는 내려받을 
 | CUBRID | 커뮤니티 `CUBRIDDialect` | Central 의 `flyway-database-cubrid` 는 10.26.0 에서 멈췄다. Flyway 12 용 플러그인을 직접 둔다 | `cubrid-jdbc`, `maven.cubrid.org` |
 | Tibero | 없음. `OracleDialect` 상속 방언을 직접 둔다 | 없음. 플러그인을 직접 둔다 | 공개 저장소 없음. 도입자가 jar 제공 |
 
-벤더 프로젝트에서 제거하고 lock 에 남기는 것: `migration-tool`(target 이 PostgreSQL 전용, `nuri/migration/postgres/*`), 백업·복원 도구, 릴리스 스모크, 화면 기준선 실행기, ZDM 린터. 목록은 `config/governance/vendor-removed-assets.json` 이고 게이트마다 사유와 대체 시험 유무를 적는다. 게이트 제거는 `vendor-postgresql-assets` 규칙으로 승인한다. 단일모듈 어댑터도 이관 소스 세트를 뺀다.
+벤더 프로젝트에서 제거하고 lock 에 남기는 것: `migration-tool`(target 이 PostgreSQL 전용, `nuri/migration/postgres/*`), 백업·복원 도구, 릴리스 스모크, 화면 기준선 실행기, ZDM 린터, 엔티티·스키마 정적 린터(적용된 카탈로그를 보는 시험으로 대체). 목록은 `config/governance/vendor-removed-assets.json` 이고 게이트마다 사유와 대체 시험 유무를 적는다. 게이트 제거는 `vendor-postgresql-assets` 규칙으로 승인한다. 단일모듈 어댑터도 이관 소스 세트를 뺀다.
 
-격리 E2E 실행기는 빼지 않는다. DB 기동 몇 줄만 PostgreSQL 에 묶여 있고 `frontend/e2e` 에는 PostgreSQL 코드가 없어, §7 의 대표 E2E 는 이 실행기를 벤더 대응으로 고쳐 충족한다. 그때까지 벤더 프로젝트에서는 시작할 때 멈춘다. 운영 문서(`docs/`)도 원본 기준으로 남기고 생성물 README 에 범위를 적는다.
+격리 E2E 실행기는 빼지 않는다. DB 기동 몇 줄만 PostgreSQL 에 묶여 있고 `frontend/e2e` 에는 PostgreSQL 코드가 없어, §7 의 대표 E2E 는 이 실행기를 벤더 대응으로 고쳐 충족한다. 벤더 프로젝트는 `node scripts/run-isolated-e2e.mjs --representative [--vendor-engine=<엔진>]` 만 연다. 시험 11개는 [벤더 시험 원장](../../config/governance/vendor-test-ledger.json)의 `representativeE2e` 가 고정하고, 추가 인자를 받지 않으며, 원장 목록을 계획과 전체 발견 대조에 함께 넘겨 파일이 사라지면 붉다. 정리·클렌징·전체 메뉴 계약이 전체 기능을 전제하므로 원장의 기능을 모두 고른 멀티모듈 생성물에서만 시작한다. PostgreSQL 대조의 표준 명령은 원본 저장소의 `node scripts/run-isolated-e2e.mjs --representative` 다. 원본에는 생성물 잠금이 없어 PostgreSQL 로 뜨고, 같은 원장 목록을 계획과 전체 발견 대조에 넘긴다. 이 명령을 원본 저장소에서 돌린 기록은 아직 없다(§17 의 2026-11-03 대조는 이 명령이 아니었다). PostgreSQL 생성물에서는 격리 실행기가 기동하지 못한다 — 권한 전환 리허설(`IsolatedAuthorizationRehearsalConfig`)이 먼저 적용하는 Flyway target 2.99 가 V1_0 번들에 없다(GAP-COMPOSE-003, 이 작업 전부터의 한계). 벤더 DB 는 실행 표식을 단 일회용 컨테이너이고, 소유 증명과 정리는 판정을 나눈다(정리는 죽은 컨테이너와 익명 볼륨도 지운다). 개발 시드가 없으므로 관리자 비밀번호는 `ADMIN_INITIAL_PASSWORD`, 일반 계정과 관리자의 공지·FAQ 권한은 실행기가 쓰기 직전마다 소유를 증명하며 API 로 만든다. 운영 문서(`docs/`)도 원본 기준으로 남기고 생성물 README 에 범위를 적는다.
 
-생성물의 `docker-compose*.yml`, `.env.example`, `application*.yml`, `README`, `REUSABLE_*.md` 는 벤더 값으로 투영한다. compose 이미지는 개발용이며 운영 라이선스는 기관 몫이라고 적는다.
+생성물의 `docker-compose*.yml`, `.env.example`, `application*.yml` 은 벤더 값으로 투영한다. `README` 는 본문을 원본 그대로 두고 끝에 벤더 절을 덧붙인다. 본문의 PostgreSQL 설치·시드·이관·스키마 검증 안내가 남으므로 그 절의 첫머리가 이 프로젝트에는 그 안내가 맞지 않고 이 절이 우선한다고 말한다. `REUSABLE_BASE.md` 는 단일모듈 실행 안내(이관 소스 세트·`verify:migration`·`schemaValidationTest` 대신 `verify:vendor-schema`), 멀티모듈의 모듈 경계 줄(`settings.gradle` 에서 빠진 이관 모듈을 말한다), 마지막 DB 줄만 벤더로 바꾸고, `REUSABLE_VERIFICATION.md` 는 바꾸지 않는다. compose 이미지는 개발용이며 운영 라이선스는 기관 몫이라고 적는다.
 
 ## 9. 식별과 실패(D-12, D-13)
 
 - `compositionHash` 는 recipe 를 포함하므로 벤더가 다르면 해시가 다르다. `postgresql` recipe 의 해시는 변하지 않는다.
-- `profile-lock.json` 에 `database: { vendor, engineVersion, adapterVersion, modelHash }` 를 더한다. `schemaSnapshotHash` 는 기준 PostgreSQL 값으로 유지한다.
-- 새 작업 실패 코드: `VENDOR_TRANSLATION_GAP`(모델 번역 불가), `VENDOR_PARITY_FAILED`(대상 DB 대조 실패), `VENDOR_ENGINE_NOT_READY`(대상 컨테이너 미기동).
+- DB 번들의 `profile-lock.json` 은 구성(벤더는 `composition.recipe.database.vendor`)과, 벤더 구성이면 번역 입력 해시(`vendorInputSha256`)를 담는다. 생성물의 `reusable-base-lock.json` 은 그 lock(`databaseLock`)과 `vendorProjection`(벤더, Flyway 위치, 기준선 파일과 `migrationSha256`, 번역 입력 파일과 `inputSha256`, 문장 수, 빌드 파일, 바꾼 설정 파일, 걷은 자산)을 담는다. `schemaSnapshotHash` 는 기준 PostgreSQL 값으로 유지한다. 엔진 버전과 어댑터 버전은 따로 두지 않는다. 어댑터 판은 `sourceCommit` 이 가리키고, 생성물 전체 검증은 벤더의 기본 엔진(Oracle 은 23 Free)에서 돌며, 엔진별 근거는 원장 증거(`image`·`commit`·`modelHash`)에 있다.
+- 새 작업 실패 코드: `VENDOR_TRANSLATION_GAP`(모델 번역 불가. DB·소스 단계), `VENDOR_PARITY_FAILED`(대상 DB 적용·대조 실패), `VENDOR_ENGINE_NOT_READY`(대상 컨테이너를 띄우지 못했거나 실행 중 연결이 끊김). 뒤의 둘은 대상 컨테이너가 있는 검증 단계에서만 나고, 벤더 검증 명령의 종료 코드 표로 전한다. 로그 글자로 판정하지 않는다. 원인을 나눌 수 없는 실패(Flyway Gradle 작업·메타와 행 수 조회·관리자 문장의 실패, 끝까지 돌지 못한 실행, 컨테이너 잔존, 표본 부족, 기준 PostgreSQL 실패)는 `VERIFY_FAILED` 로 둔다.
 - 컨테이너 수명은 `project-composer-postgres.mjs` 를 일반화한다. 소유 표식은 같은 라벨을 쓰고 두 컨테이너를 한 작업 토큰으로 묶는다. 취소·기동 정리도 같은 경로를 탄다.
-- 사전 점검에 벤더 이미지, 메모리(Oracle Free·SQL Server 약 2GB 이상), Tibero 라이선스 파일을 더한다.
+- 벤더 구성의 사전 점검에 벤더 이미지와 메모리(Oracle Free·SQL Server 약 2GB 이상)를 더한다. 메모리 기준은 측정 전 값이라 경고만 하고 막지 않는다. Tibero 라이선스 파일 점검은 보류한다 — 원장이 `blocked` 이고 엔진이 없어 선택할 수 없으며, 사전 점검도 엔진이 없는 벤더를 차단한다.
 - 화면은 기능 저하 칸에 벤더 저하를 함께 보이고, 카탈로그 응답에 인증 원장을 싣는다. 비밀번호는 지금처럼 임시 환경으로만 넘긴다.
 
 ## 10. CI(D-14)
 
 | 경로 | 실행 | 비용 |
 |---|---|---|
-| 모든 PR 의 기존 custom 생성 | 기준 PostgreSQL 에서 뽑은 모델을 모든 어댑터로 **번역만** 한다 | 수 초 |
-| 인증 입력(어댑터·포트 구현·벤더 의존 SQL·엔티티 매핑·벤더 시험)이 바뀐 PR | 해당 벤더 적용·대조·Hibernate validate. `certified` 벤더는 영향받는 동작·동시성 시험까지 기존 `backend-build` 안에서 돌린다 | 적용은 벤더당 1~3분(시제품 18~74초), 시험은 측정 전 |
-| 야간 `reusable-nightly` | 벤더 × 대표 구성 전체 검증 | 무거움 |
+| 재사용 생성 잡(`reusable-base`·`reusable-custom`)을 고른 PR | 생성마다 기준 PostgreSQL 에서 뽑은 모델을 모든 어댑터로 **번역만** 한다. 그 잡을 고르지 않는 PR(문서만 고친 PR 등)에서는 번역도 돌지 않는다 | 수 초 |
+| 인증 입력이나 `ciOnly` 경로가 바뀐 PR | `ci: true` 인 벤더(지금 Oracle 23 Free)로 대표 구성을 생성하고 전체 검증을 돌린다. 기준선 적용·대조·Hibernate validate·카탈로그·동작 시험·차등 시험이다. 잡은 `reusable-vendor` 이고 `backend-build` 에 집계한다 | 15~20분(어림, 러너 미측정) |
+| 입력을 지운 변경, 입력이나 `ciOnly` 경로가 바뀐 main, 비교 범위가 없는 실행(수동·확인되지 않은 push base·비교 기준을 찾지 못한 PR) | 같은 잡을 두 레이아웃으로 돌린다. 입력을 고치지 않은 main 커밋은 고르지 않는다 | 위의 두 배 |
 
-required context 수는 늘리지 않는다. 벤더 작업이 비필수 야간에만 도는 동안 그 벤더는 `preview` 이고 선택할 수 없다. `certified` 로 올리는 것은 위 PR 경로가 required 안에서 돌기 시작한 뒤다.
+야간 벤더 실행은 넣지 않았다. `reusable-nightly.yml` 수정과 생성물 T2 첫 실행이 따로 필요하고 `certified` 조건도 아니다. 19c 는 CI 에서 돌지 않고 증거 실행(§7)에서만 돈다.
+
+required context 수는 늘리지 않는다. 벤더 잡이 required 안에 없는 벤더는 `certified` 가 될 수 없다(원장 적재가 `ci` 를 본다). `certified` 로 올리는 것은 이 잡을 넣은 첫 PR 이 병합되고, main 에서 `reusable-vendor` 잡이 선택돼 러너에서 통과하는 것을 확인한 뒤다. 승격은 그 다음 PR 에서 한다(DEC-OPS-400).
+
+선택은 [분류기](../../scripts/ci-change-scope.mjs)가 증거 판정과 같은 [입력 계산](../../scripts/vendor-evidence-inputs.mjs)으로 한다.
+
+- 다른 벤더의 입력을 고친 PR 은 이 잡을 켜지 않는다. PostgreSQL 포트만 고친 PR 도 그렇다. 다른 축의 선택은 이 잡과 무관하다는 것을 계약이 본다.
+- 입력을 지운 PR 은 두 레이아웃 전수다. 지운 파일은 머리 트리로 입력 여부를 알 수 없어, 지운 Java 는 비교 기준의 내용으로 보고 읽지 못하면 입력으로 본다. 지운 스크립트는 모델 명령이 가져오던 도구일 수 있어, 시험과 원장이 뺀 도구가 아니면 입력으로 본다.
+- 표지만 지운 변경도 비교 기준의 내용으로 잡는다.
+- 입력 계산이 실패하는 트리도 전수다. 원장을 읽지 못하면 분류를 멈춘다.
+- 원장과 벤더 원장은 분류기의 입력이라 미지 경로로 둔다. 증거만 갱신하는 커밋도 전 파이프라인과 이 잡을 돈다.
+- `ciOnly` 는 증거를 낡게 하지 않고 잡만 켠다. 의존성 판(드라이버·Hibernate·Flyway), 잡의 진입점·단계표, 벤더 분기를 담은 생성기 코드, 소스 투영이 고칠 자리를 찾는 파일(못 찾으면 벤더 생성만 멈춘다), 선택 자체를 정하는 파일(원장·분류기)이다. 투영이 고치는 파일이 모두 켜는지, 잡이 닿는 생성기 코드 중 벤더 분기 표지가 있는 파일이 모두 켜는지는 계약이 본다. `ci.yml` 은 이 잡의 정의가 바뀐 변경만 켠다.
+- 미지 경로는 이 잡을 켜지 않는다. 비교 범위가 없는 실행(수동·확인되지 않은 push base·비교 기준을 찾지 못한 PR)만 전수다.
+- 입력과 `ciOnly` 는 잡이 닿는 코드 전부가 아니다. 벤더 분기 표지가 없는 공통 생성기 코드는 이 잡을 켜지 않는다. 공통 경로는 PostgreSQL `reusable-custom` 이 보고, 생성 작업마다 전체 검증이 돈다. 그래도 공통 코드를 고쳐 벤더 구성만 깨진 회귀는 그 변경의 PR 에서도 main 에서도 Oracle 에서 돌지 않고, 무관한 다음 입력 변경 PR 의 required `backend-build` 가 대신 붉어진다. 그 PR 은 원인을 main 에서 찾아야 한다. 표지 판정은 이름을 보는 어림이라 표지 없는 벤더 분기도 같은 공백에 든다.
+- 표지 없는 Spring Data 파생 쿼리와 서비스 코드(§7)도 입력이 아니어서 이 잡을 켜지 않는다. PostgreSQL 쪽 잡은 돌지만 Oracle 은 돌지 않으므로, 그 회귀는 생성 작업의 전체 검증이나 무관한 다음 입력 변경 PR 의 required `backend-build` 에서 드러난다. 대표 E2E 는 CI 에서 돌지 않으니 통합 시험이 덮지 않는 회귀는 다음 증거 기록에서야 드러난다.
+
+대표 구성은 시험 원장의 `representativeE2e.preset`(demo)이다. 인증 입력이 모든 기능의 엔티티·마이그레이션이라 일부 기능 구성은 바뀐 입력을 돌리지 못한다. PR 의 레이아웃은 같은 원장의 `layout`(멀티모듈)이다.
+
+시간과 슬롯은 근거가 약하다. 첫 main 실행에서 재고 고친다.
+
+- 소요: 같은 구성의 PostgreSQL 검증이 main 실행 41397307357 한 표본에서 약 11분이고, 이 기계의 Oracle 통합 시험이 257건 271초다. 399건과 이미지 내려받기를 더해 15~20분으로 어림했다. 2026-11-03 이 기계의 실측은 생성 포함 16.4분(통합 399건, 같은 기계 PostgreSQL 13.8분)으로 어림 안이다. 러너 값은 아니다.
+- 제한: 어림의 두 배에 Oracle 기동 대기 상한 5분을 더해 45분이다.
+- 슬롯: 같은 표본에서 러너 20개가 1~12분에 차 있고 demo 는 이미 4분 줄을 선다. frontend 뒤로 입장하면 잡이 줄 끝에서 시작해 wall 이 4~13분(어림) 늘어나므로 분류 직후 입장한다. 이때 뒤 잡이 줄에서 한두 칸 밀린다.
+- 빈도: 2026-11-03 에 main 최근 150커밋을 분류기로 다시 돌렸다. 93개가 이 잡을 고른다. 벤더 분기를 담은 생성기 코드를 `ciOnly` 에 더하기 전에는 90개였고 그중 7개는 입력 삭제의 두 레이아웃 전수다. ADR-0047 작업이 든 기간이라 평상시보다 높을 수 있다. main 은 고른 실행마다 두 레이아웃이므로 이 빈도면 슬롯 비용은 드문 일이 아니다. 같은 150개에서 다른 축의 선택은 하나도 바뀌지 않았다. JPQL·QueryDSL·잠금 표지(§7)를 더해 입력이 449개에서 507개로 늘어도 같은 150개에서 93개 그대로다. 새 입력 58개를 건드린 커밋 24개가 모두 다른 입력도 건드렸기 때문이고, 증거를 낡게 할 커밋 수(입력을 건드린 커밋, `ciOnly` 제외)도 82개 그대로다. 표본이 병합 커밋 단위라 겹침이 크다. 다만 PR 이벤트로 다시 돌리면 두 레이아웃 전수는 7개에서 8개로 는다. 표지 파일 삭제도 입력 삭제이기 때문이다(QueryDSL 저장소를 지운 36469f67d). 표지 파일만 고치는 PR 은 이제 이 잡을 켠다.
+- 되돌림: 첫 main 실행의 wall 과 demo 대기가 늘면 main 레이아웃을 줄이거나 입장을 옮긴다.
+
+이 잡은 required 안이라 Oracle 쪽 불안정이 입력을 바꾼 PR 의 병합을 막는다. `preview` 동안에도 그렇다. 재현되지 않은 앱 JVM 네이티브 오류(§17)는 이 잡으로 볼 수 없다. 이 잡은 시험 JVM 에서 앱 문맥과 통합 시험만 돌리고, 별도 앱 프로세스와 API 전체 호출은 없다. 시험 JVM 충돌은 잡을 붉히지만, 그것이 §17 과 같은 원인인지는 말하지 못한다. 앱 프로세스는 증거 실행(§7)의 격리 E2E 에서만 돌며, 러너에서 도는 경로는 지금 없다.
 
 ## 11. 출시 순서(D-15)
 
@@ -360,9 +401,9 @@ Oracle 을 먼저 하는 이유는 공공 수요가 가장 크고, 빈 문자열
 |---|---|---|
 | CHECK 134개 전체의 차등 시험 | 차등 시험은 규칙 8종만 했다. 나머지 모양은 적용과 표본 시험까지다 | 단계 1 의 번역 게이트 |
 | 허가 표의 커넥션 풀·동시 파기 | 두 세션 시험까지 했다. 풀 재사용과 파기 작업 두 개의 동시 실행은 재지 않았다 | 단계 2 |
-| 벤더에서 앱 기동·업무 흐름 미실행 | 시제품은 DDL·시드·타입만 봤다. 실제 공수는 §4 이후 드러난다 | 단계 2 첫 작업 |
+| 벤더에서 앱 기동·업무 흐름 | 시제품은 DDL·시드·타입만 봤다. 단계 2 에서 Oracle 23 은 앱 기동·호출 스윕·통합 시험·대표 E2E 를, 19c 는 통합 시험·대표 E2E 를 돌렸다(§17). 다른 벤더는 아직이다 | 벤더마다 해당 단계 |
 | Oracle CLOB 전환의 영향 | DDL·시드·저장은 실측했다. 컬럼의 `DISTINCT`·`ORDER BY`·`=` 사용처와 Hibernate 매핑은 아직 재지 않았다 | 단계 0 에서 전수 집계 |
-| Oracle 19c 앱 경로 | 통합 시험에서 앱 문맥과 엔티티 대조까지 통과했다(§17). 호출 스윕은 23 에서만 했다 | 단계 2 에서 측정 |
+| Oracle 19c 앱 경로 | 통합 시험(앱 문맥과 엔티티 대조)과 대표 E2E 를 통과했다(§17). 호출 스윕은 23 에서만 했다 | 단계 2 에서 측정 |
 | 통합 시험 40개의 PostgreSQL 전용 SQL | 이식 공수가 가장 큰 미지수 | 단계 0 에서 분류 |
 | 동시성 의미 | 잠금·격리·재시도 차이는 프로브로 못 잰다 | 기존 동시성 시험 재사용 |
 | 빈 문자열 응답 변화 | Oracle 에서 `""` 가 `null` 로 돌아와 화면·계약이 달라질 수 있다 | E2E |
@@ -416,7 +457,7 @@ Oracle 을 먼저 하는 이유는 공공 수요가 가장 크고, 빈 문자열
 
 ## 16. 단계 1 결과
 
-단계 1 은 번역과 대상 DB 대조까지다. 앱은 아직 어느 벤더에서도 기동하지 않았고, 벤더는 화면에서 고를 수 없다.
+단계 1 은 번역과 대상 DB 대조까지이고 앱은 기동하지 않았다(앱 기동은 §17). 벤더는 화면에서 고를 수 없다.
 
 - 시제품의 문자열 치환을 버리고 닫힌 문법의 중립 모델([vendor-model](../../scripts/project-composer-vendor-model.mjs))과 벤더 어댑터로 다시 썼다. 시제품의 수동 목록(긴 키, NULL 허용 UNIQUE, FK 대상)은 스키마에서 도출한다.
 - 모든 생성이 [벤더 번역](../../scripts/project-composer-vendors.mjs)을 돌린다. 옮길 수 없는 스키마 변경은 그 변경의 재사용 생성에서 멈춘다. 입력은 번들 옆의 `*.vendor-input.json` 이라 PostgreSQL 산출물은 생성 시각을 빼면 그대로다.
@@ -450,7 +491,7 @@ Oracle 문장 수가 많은 것은 컬럼 주석을 별도 문장으로 쓰기 �
 
 단계 2 의 앞부분은 앱을 Oracle 에서 띄우고 실제로 호출해 보는 일이다. 벤더는 아직 고를 수 없고 인증 증거도 없다.
 
-전체 기능 구성의 번역 스키마와 시드를 Oracle 23.26 Free 에 적용하고 앱을 기동했다. `ddl-auto: validate` 가 전체 엔티티를 통과하고, 권한 배리어와 벤더 일치 검사를 지나 관리자 로그인까지 된다. 방언은 설정 없이 JDBC 제품명으로 고른다. 호출은 일회용 DB 의 관리자에게 미배정 권한까지 준 상태로 했다. Oracle 19c 위 앱 기동은 아직 재지 않았다(번역 적용·대조만 했다).
+전체 기능 구성의 번역 스키마와 시드를 Oracle 23.26 Free 에 적용하고 앱을 기동했다. `ddl-auto: validate` 가 전체 엔티티를 통과하고, 권한 배리어와 벤더 일치 검사를 지나 관리자 로그인까지 된다. 방언은 설정 없이 JDBC 제품명으로 고른다. 호출은 일회용 DB 의 관리자에게 미배정 권한까지 준 상태로 했다. 이 호출 스윕은 Oracle 23 에서만 했다. 19c 위 앱은 통합 시험의 앱 문맥과 대표 E2E 의 앱 프로세스로 돌았다(아래 통합 시험 절과 대표 구성 실측).
 
 | 호출 | 수 | 결과 |
 |---|---:|---|
@@ -476,15 +517,17 @@ Oracle 문장 수가 많은 것은 컬럼 주석을 별도 문장으로 쓰기 �
 
 ### 통합 시험
 
-`node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor oracle` 이 벤더 일회용 DB 를 띄워 번역 스키마와 시드를 적용·대조한 뒤 시험을 돌린다. 시험은 PostgreSQL 과 같은 코드이고, 벤더마다 다른 픽스처와 세션 관측은 `VendorTestSql` 이 맡는다. 돌릴 시험은 [벤더 시험 원장](../../config/governance/vendor-test-ledger.json)이 정한다. Gradle 은 작업을 건너뛰어도 성공으로 끝나므로, 도구는 종료 코드가 아니라 원장의 클래스마다 시험 결과가 남았는지로 판정한다. 모든 시험 클래스 앞에서 도구가 DB 에 남긴 소유 토큰을 대조하고, 맞지 않으면 그 클래스를 돌리지 않는다(`VendorOwnershipExtension`). 클래스마다 PostgreSQL DB 를 따로 쓰던 시험도 벤더 실행에서는 도구의 DB 를 같이 쓰고, 남긴 행을 스스로 지운다. 권한 관리 시험은 시드의 관리자 배정을 걷어 낸 채 끝나므로 맨 뒤에 돈다(`VendorClassOrderer`).
+`node scripts/project-composer-vendor-integration.mjs --input <입력 JSON> --vendor oracle` 이 벤더 일회용 DB 를 띄워 번역 스키마와 시드를 적용·대조한 뒤 시험을 돌린다. 시험은 PostgreSQL 과 같은 코드이고, 벤더마다 다른 픽스처와 세션 관측은 `VendorTestSql` 이 맡는다. 돌릴 시험은 [벤더 시험 원장](../../config/governance/vendor-test-ledger.json)이 정한다. `--flyway` 없이 부르면 어댑터 문장을 직접 적용하고 시나리오 시험만 돌며 카탈로그 시험은 돌지 않는다(PASS 줄이 그렇게 말한다). 생성물의 게이트 경로는 `npm run verify:vendor-schema` 이고 CI·증거 기록은 `--flyway` 를 준다. Gradle 은 작업을 건너뛰어도 성공으로 끝나므로, 도구는 종료 코드가 아니라 원장의 클래스마다 시험 결과가 남았는지로 판정한다. 모든 시험 클래스 앞에서 도구가 DB 에 남긴 소유 토큰을 대조하고, 맞지 않으면 그 클래스를 돌리지 않는다(`VendorOwnershipExtension`). 클래스마다 PostgreSQL DB 를 따로 쓰던 시험도 벤더 실행에서는 도구의 DB 를 같이 쓰고, 남긴 행을 스스로 지운다. 권한 관리 시험은 시드의 관리자 배정을 걷어 낸 채 끝나므로 맨 뒤에 돈다(`VendorClassOrderer`).
 
 schema-validation 시험 132개 클래스의 처리는 다음과 같다. Oracle 23.26 Free 와 19.3 EE 의 결과가 같다.
 
 | 분류 | 클래스 | 처리 |
 |---|---:|---|
 | 시나리오 시험 | 51 | 시험 399건이 Oracle 23·19c 에서 통과한다. 3건은 원장의 `postgresqlOnly` 로 뺀다 |
-| PostgreSQL 카탈로그를 직접 보는 시험 | 2 | 번역 대조가 같은 것을 본다 |
-| 특정 버전까지 올려 마이그레이션을 보는 시험 | 78 | 벤더 프로젝트는 기준선에서 시작한다. 번역 대조·차등 시험이 대신한다 |
+| V2 체인이나 PostgreSQL 카탈로그를 직접 단언하는 시험 | 77 | 벤더 프로젝트는 기준선에서 시작한다. 번역 대조·차등 시험이 대신한다. 이 가운데 `ScrapOwnerUrlUniqueMigrationIntegrationTest` 의 부분 NULL 조건 모양은 어댑터 문장을 고정하는 노드 시험만 보고, 벤더 DB 에 부분 NULL 행을 넣는 시험은 없다 |
+| Flyway 이력과 PostgreSQL 카탈로그를 보는 시험(`SchemaValidationIntegrationTest`) | 1 | 번역 대조가 같은 것을 본다. 엔티티 대조는 모든 시나리오 시험의 문맥 기동(Hibernate validate)이 한다 |
+| PostgreSQL 포트 구현을 PostgreSQL 에서 보는 시험(`VendorSqlPortPostgresIntegrationTest`, 잠금 강도 등) | 1 | 벤더 쪽의 같은 시험은 없다. Oracle 포트 구현은 그것을 부르는 시나리오 시험이 실행한다 |
+| 백업·복원 훈련(`BackupRestoreDrillIntegrationTest`) | 1 | 대체 시험이 없다. 복원 도구가 pg_dump 전용이라 벤더 프로젝트에서 걷었고, 벤더 DB 의 백업·복원은 기관 몫이다 |
 | PostgreSQL 시드 파일을 재실행하는 시험 | 1 | 벤더는 번역 시드를 쓴다. 적용 뒤 행 수를 대조한다 |
 
 벤더 실행에서 빼는 3건: 같은 설문 투표의 공유 잠금(Oracle 에 없다), PostgreSQL 함수로 재는 조회 바이트, PostgreSQL 카탈로그의 `_yn` CHECK 전수 확인(차등 시험이 본다). 등록 게이트는 시험 안의 조건부 skip 을 금지하므로 원장에 사유와 함께 적고, 벤더 작업의 시험 필터가 뺀다. PostgreSQL 에서는 그대로 돈다.
@@ -514,17 +557,67 @@ Oracle 19c 첫 실행의 실패 11건은 모두 시험 코드였다. 시험이 O
 
 생성물 검증기는 벤더 구성에서 PostgreSQL 스키마 시험 대신 세 가지를 돌린다. 기준선 파일을 실제 Flyway 로 벤더 일회용 DB 에 적용해 대조하고, 그 DB 에서 시나리오 시험을 돌리고, 차등 시험으로 CHECK 와 트리거의 의미를 PostgreSQL 과 같은 값으로 맞춘다. 번역 입력을 `config/vendor/<벤더>` 에 함께 싣고 잠금이 해시를 묶는다.
 
-`docker-compose`·운영 오버레이·배포 스크립트·`.env.example`·README 도 벤더 값으로 바꾼다. 환경 변수가 설정 파일을 이기므로 compose 의 Flyway 위치도 함께 바꾼다. 운영의 SYS 비밀번호는 앱 비밀번호와 나눠 `DB_ADMIN_PASSWORD` 로 받는다.
+`docker-compose`·운영 오버레이·배포 스크립트·`.env.example` 도 벤더 값으로 바꾼다. README 는 본문을 원본 그대로 두고 끝에 벤더 절을 덧붙인다(§8). 환경 변수가 설정 파일을 이기므로 compose 의 Flyway 위치도 함께 바꾼다. 운영의 SYS 비밀번호는 앱 비밀번호와 나눠 `DB_ADMIN_PASSWORD` 로 받는다.
 
-생성기 전체 경로가 `collaboration` 구성의 멀티모듈·단일모듈에서 통과한다. 검증 명령 8개가 모두 통과하고 생성물의 Oracle 통합 시험은 36개 클래스 257건이 실패 없이 돈다. compose 의 db 서비스로 앱이 기동한다.
+생성기 전체 경로가 `collaboration` 구성의 멀티모듈·단일모듈에서 통과한다(마지막 실측 `e5125ed5d`). 검증 명령 9개(거버넌스·화면 거버넌스·진입점·Gradle·벤더 통합·차등·타입 검사·린트·빌드)가 모두 통과하고 생성물의 Oracle 통합 시험은 36개 클래스 257건이 실패 없이 돈다. compose 의 db 서비스로 앱이 기동한다.
 
 벤더 컨테이너는 생성 작업의 토큰 표식을 달고 뜬다. 취소는 검증 프로세스를 강제로 끝내므로 자식의 정리가 돌지 않는다. 부모의 정리가 벤더 작업에서는 표식으로 컨테이너를 모두 찾아 지우고, 끝내 남은 것은 다음 기동의 복구가 같은 표식으로 회수한다.
 
-PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json`)대로 걷는다. 잠금과 생성물 거버넌스가 부재를 대조하므로 되살아나면 붉다. SQL 을 읽는 하네스 가운데 뜻이 유지되는 것은 남겼다. 구조·명명 린터는 번역 입력을 보고, 그 입력이 벤더 DB 와 같다는 것은 Flyway 적용 대조가 잇는다. 시드 위치 린터는 Flyway 가 적용하는 `db/vendor` 도 본다. ZDM 린터만 실행되지 않는 파일을 읽어 거짓 신호라 뺐다.
+PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json`)대로 걷는다. 잠금과 생성물 거버넌스가 부재를 대조하므로 되살아나면 붉다. SQL 을 읽는 하네스 가운데 뜻이 유지되는 것은 남겼다. 명명·유니크 미러 린터는 번역 입력을 보고, 그 입력이 벤더 DB 와 같다는 것은 Flyway 적용 대조가 이름·키와 유니크의 컬럼 집합·행 수·다음 값까지 잇는다. CHECK·트리거 본문과 NOT NULL 은 이 대조가 보지 않고 차등 시험과 기준선 파일의 잠금 해시가 받친다. 시드 위치 린터는 Flyway 가 적용하는 `db/vendor` 도 본다. ZDM 린터는 실행되지 않는 파일을 읽어 거짓 신호라 뺐다. 엔티티·스키마 린터는 아래 카탈로그 시험으로 대체하고 뺐다.
 
-그 대조는 생성 시점에만 성립한다. 도입자가 생성 뒤 벤더 폴더에 마이그레이션을 더하면 엔티티·명명·유니크 린터는 그 파일을 읽지 못해, 새 표를 실행되지 않는 `db/migration` 에도 적어야 통과한다. `npm run regen` 의 권한 시드도 `db/migration` 만 고친다. 생성물 README 에 적었고 벤더를 `certified` 로 올리기 전에 푼다.
+**생성 뒤 스키마 변경.** 도입자는 벤더 폴더에 기준선보다 높은 버전의 `V` 파일을 더하고 `npm run verify:vendor-schema` 로 검사한다. `R__` 는 Flyway 가 target 을 줘도 적용해(Oracle 에서 확인했다) 기준선 단계의 하나만 적용 가드가 거짓 실패하므로, 실행 도구가 컨테이너를 띄우기 전에 파일 이름으로 막는다. 버전은 Flyway 처럼 구간별 숫자로 비교한다(`V1_0_1` 은 기준선보다 높고 `V1_0_0` 은 같다). 번역 기준선과 입력은 같은 자리에서 잠금 해시로 대조한다 — 기준선 대조는 수정된 파일을 적용한 DB 를 그 파일의 이름과 비교하므로 내용 변경을 보지 못한다. 첫 `V1_1` 뒤에 전체 검증이 범위 변경으로 멈춰도 이 대조는 남는다.
 
-남은 일: 생성 뒤 스키마 변경 경로, 격리 E2E 실행기의 벤더 대응과 대표 E2E, 19c 기본 접속값.
+실행 도구는 Flyway 를 두 번 돌린다. 먼저 `target=1.0` 으로 기준선만 적용해 적용 수 1 과 DB 에 적용된 마이그레이션이 기준선 하나뿐인지 확인하고 정확 대조(`assertVendorApplied`)를 받는다. 대조는 이름 집합, 키·유니크의 컬럼 집합(Oracle 은 제약의 `user_cons_columns`, 일반 유니크 인덱스의 `user_ind_columns`, 함수 인덱스의 `user_ind_expressions` 에서 `CASE` 의 값 컬럼과 식이 참조하는 컬럼), 시드 행 수, 식별 컬럼과 독립 시퀀스의 다음 값이다. 함수 인덱스의 조건 모양은 컬럼 집합으로 잡히지 않고 벤더 DB 에서 도는 시험에 부분 NULL 행을 넣는 것이 없어, 어댑터 문장을 고정하는 노드 시험(`nullable composite uniques`)만 본다. 그때의 이름 목록을 적어 두고 나머지를 적용한 뒤(이 호출에는 호스트의 `VENDOR_FLYWAY_TARGET` 을 키째 지워 넘기고, 적용 뒤 해석됐는데 적용되지 않은 마이그레이션이 남으면 멈춘다), 다시 읽은 목록과 함께 파일로 넘겨 `vendorConformanceTest`(`@Tag("vendor-conformance")`)를 돌린다. 이 시험은 관리자 부여·소유 표(`vendor_test_owner`)·시나리오 시험보다 앞서므로 시험용 객체를 도입자 객체로 보지 않는다.
+
+| 규칙 | 범위 | 입력 |
+|---|---|---|
+| PK 전략·숫자 변환·길이 초과 | 카탈로그 전체 | JDBC 메타데이터를 JDBC 타입 코드로 정규화 |
+| 바이트 길이 | 기준선 뒤에 바이트 길이가 된 컬럼 중 엔티티에 매핑된 문자열 필드 | 두 시점의 `user_tab_columns.char_used`(Oracle). 드라이버의 `COLUMN_SIZE` 는 `VARCHAR2(100)` 과 `VARCHAR2(100 CHAR)` 에 똑같이 100 이라 길이 규칙으로는 가르지 못한다(23.26 실측). 엔티티 길이 × 4 > 바이트 길이일 때만 붉다. 기준선의 어댑터 저하(`VARCHAR2(4000 BYTE)`)와 엔티티에 매핑되지 않은 컬럼은 보지 않는다 |
+| 표 이름·저장 표기, 새 표의 감사 컬럼 | 기준선 뒤의 새 표. 저장 표기는 전체 | 드라이버의 표 목록(저장 표기 그대로). 따옴표로 만든 표는 기준선과 이름이 겹쳐도 붉다 — 따옴표 없는 네이티브 SQL 이 찾지 못한다. Flyway 이력 표만 뺀다. 드라이버가 뷰라고 답한 이름은 표 규칙에서 뺀다 |
+| 제약·인덱스·시퀀스 이름, 새 컬럼의 고정 문자형 | 기준선 뒤의 새 객체 | 두 시점 이름 목록의 차이(어댑터의 메타 조회 재사용). DB 가 지은 이름(Oracle `SYS_C`)은 조회에서 빠져 이름 규칙이 보지 않는다. Oracle 조회는 줄 전체가 형식에 맞아야 하고 형식 밖 이름은 `VENDOR_QUERY_FAILED` 로 멈춘다. 휴지통 이름(`BIN$`)은 조회에서 뺀다 — `DROP TABLE` 뒤 제약이 그 이름으로 남는 것을 23.26 에서 확인했다. 소문자로 접어 읽으므로 이 객체들과 컬럼의 저장 표기는 보지 않는다 |
+| 뷰 이름 | 전체(기준선에 뷰가 없다) | 드라이버의 뷰 목록. 소문자로 접어 읽으므로 저장 표기는 보지 않는다 |
+| 유니크 미러 | 기준선 뒤에 생기거나 다시 만든 유니크, 기본키 제외 | 드라이버의 유니크 인덱스와 기본키, Oracle 에서 일반 인덱스로 집행되는 유니크 제약(기존 인덱스 재사용, DEFERRABLE). 기준선 여부는 두 시점 `표.이름=값`(Oracle 은 인덱스의 `object_id`, 일반 인덱스 위 제약은 정렬한 컬럼 목록)이 같은지로 가른다. 이름 없는 제약(`SYS_C`)도 새 유니크로 잡고, Oracle 함수 인덱스는 숨은 컬럼 대신 `user_ind_expressions` 의 식에서 컬럼을 읽는다 |
+| 초기 권한 | 전체 | 카탈로그 `defaultGroups` ↔ `tb_authrt_grnt_map` OPERATION 양방향 |
+| 표·컬럼 부재, 타입 계열 | 전체 | 시나리오 시험 문맥의 Hibernate validate(같은 불변식을 두 게이트에 두지 않는다) |
+
+기준선 전체에 미러·명명 규칙을 돌리지 않는 이유는 어댑터 파생 객체다. MySQL·SQL Server 의 `*_hash` 유니크와 Oracle 의 CASE 함수 인덱스는 엔티티가 모르는 모양이고, MySQL 은 모든 기본키의 제약 이름이 `PRIMARY` 다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가, 번역이 컬럼을 바꾸는 회귀는 기준선 대조의 컬럼 집합이 맡으므로 그 린터는 남겼다. 명명 린터도 이번에는 둔다.
+
+Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행 도구가 시험 JVM 의 `SPRING_JPA_HIBERNATE_DDL_AUTO` 를 `validate` 로 강제하고, 시나리오 문맥마다 Hibernate 가 실제로 적용할 스키마 동작을 단언해 그 값을 보고서에 싣는다(`VendorOwnershipExtension`). `hibernate.hbm2ddl.auto` 하나는 증거가 되지 못한다. JPA 의 `jakarta`·`javax.persistence.schema-generation.database.action`(기여자 접미 키가 먼저)이 그보다 앞서고, `scripts.action` 만 있어도 그 값은 버려진다. 그래서 문맥이 받은 설정 전체를 Hibernate 자신의 해석기(`ActionGrouping`)에 넣어 기여자마다 데이터베이스 동작이 validate 인지 본다. 스키마 관리 도구나 검사할 표를 바꾸는 설정(`hibernate.schema_management_tool`·`hibernate.hbm2ddl.schema_filter_provider`)과 기본이 아닌 실제 도구 클래스도 붉힌다. 판정은 `SchemaConformanceRulesTest` 가 DB 없이 고정한다. 통과하지 못한 문맥은 보고서에 `rejected:<동작>` 으로 남아 validate 로 읽히지 않고 그 시험 클래스가 붉다. 단언한 문맥이 없으면 실행이 실패한다. 인증 증거 형식도 문맥 수가 1 이상이어야 받는다.
+
+`npm run verify` 의 의미는 바꾸지 않았다. 거버넌스 첫 단계가 소스 변경을 잡아 멈추므로 첫 변경 뒤에는 그 뒤 단계에 닿지 못하고, 이는 PostgreSQL 생성물과 같다(`reusable-base-guide.md`). 새 명령은 그 단계를 지나지 않으며 인증을 주장하지 않는다(보고서 `authority: local-vendor-schema-check`).
+
+지원하지 않는 것은 생성물 README 에 적는다: 파괴적 DDL 검사(ZDM 대응 없음), 명명 예외(카탈로그에는 줄이 없어 `naming-linter:ignore` 가 옮겨 오지 않는다), 이름 없이 만든 제약의 이름 규칙(PostgreSQL 명명 린터도 `CONSTRAINT` 구문만 본다), 뷰의 정의, 도입자가 더한 CHECK·트리거의 의미(차등 시험은 번역 입력만 본다), 같은 이름의 컬럼 타입 변경(바이트 길이 전환은 위 규칙이 본다), 제약·인덱스·시퀀스·컬럼·뷰의 따옴표 저장 표기, 새 권한 코드와 새 Java 소스(PostgreSQL 공통, GAP-COMPOSE-002). Oracle 의 CLOB 구분 불가(§6.1)도 남는다 — 길이 규칙은 `entityLen > physicalLen` 만 보므로 짧은 컬럼이 CLOB 이 된 경우는 잡지 못한다. SQL Server 의 `NVARCHAR(2n)` 은 드라이버가 답하는 값에 따라 길이 규칙이 느슨해질 수 있고, Oracle 외 벤더에서는 아직 돌려 보지 않았다.
+
+화면은 원장을 그대로 보인다. `certified` 만 고를 수 있고 나머지는 비활성 선택지와 사유로 남는다. 서버·엔진·두 생성기 입구가 원장의 같은 판정을 쓰므로 제품 코드는 원장 값 변경만으로 열린다. `COMPOSER_PREVIEW_VENDOR` 는 엔진과 생성기 입구만 열고 서버 경로는 열지 않는다.
+
+승격 변경은 시험 한 줄을 함께 고친다. `project-composer-vendor.test.mjs` 의 `selectableVendors` 고정은 일부러 남긴 승격 표시다(원장과 대조하면 그 함수를 자신과 비교하게 된다). 원장을 복사해 쓰는 나머지 시험은 Oracle 을 preview·무증거로 맞춘 뒤 편집하므로 원장 상태에 기대지 않는다(`asPreviewOracle`). 2026-11-03 임시 원장으로 입력 해시만 실제 값인 형식 증거를 넣어 확인했다: 19 증거만, 두 증거, 승격의 세 단계에서 벤더·증거 시험은 승격 표시 하나만 붉었고, 승격 단계의 원장 소비 계약(분류기·기능 선언·원장 사전 검사·엔진·서버), 나머지 생성기 시험, 생성기 화면 시험 58건은 모두 통과했다. 그 밖의 운영 계약 전체와 벤더 잡은 이 원장으로 돌리지 않았다. 시험은 입력이 아니어서 고쳐도 증거가 낡지 않지만, 두 엔진 기록 사이에 커밋하면 다음 엔진의 생성물을 다시 만들어야 하므로 첫 기록 전이나 두 기록 뒤에 고친다.
+
+**저하 표시.** 벤더를 고르면 계획의 기능 저하 안내(`plan-degraded`), 확인 창의 기능 저하 칸, 생성물 README 가 그 벤더의 번역 저하를 말한다. README 는 그 밖에 도입자가 스키마를 바꿀 때 닿는 Oracle 한계(DDL 자동 커밋 뒤 복구, CLOB 비교·정렬 제한, validate 의 CLOB 구분 불가)를 '생성 뒤 스키마 변경' 절에 적는다. 이 절은 투영 코드에 있어 인증 입력이다. §6.1 의 부모 행 잠금은 FK 거부로 끝나 안내하지 않는다. 생성 전 화면은 PostgreSQL 전용이라 빠지는 도구·게이트와 개발용 이미지·운영 라이선스 안내도 함께 보이고, 정밀 점검은 벤더 규칙으로 빠지는 수를 제거 수와 따로 말한다(그 수는 승인만 대조하고 제거 수에 세지 않는다). 문장은 인증 입력이 아닌 원장(`notices`·`removedPostgresTools`)에 둬 문구를 고쳐도 증거가 낡지 않는다. 계획에는 모델이 없으므로 어댑터와의 대조는 세 겹이다. 고정 이름은 인증 적재가 양방향으로 보고(문장 없는 저하가 있으면 `certified` 로 올릴 수 없다), 모델 유래 저하는 종류 단위 문장으로 받아 계약이 어댑터 소스의 선언과 대조하며, 생성기가 실제 모델의 저하를 다시 대조해 문장 없는 종류가 있으면 멈춘다. demo 입력의 Oracle 저하는 5건이고 모두 문장이 있다. 다른 벤더에는 아직 문장이 없고 승격할 때 쓴다.
+
+이 시험의 게이트(`GATESET-VENDOR-CONFORMANCE`)는 `reusable-vendor` 잡(§10)에 이었다. 등록은 `local-vendor`·`ci` tier 와 required context `backend-build` 다. 잡을 잇기 전의 임시 표시 `ciPending` 은 걷었다.
+
+**인증 증거 틀.** §7 대로 원장 형식, 입력 해시, `VENDOR_EVIDENCE_STALE`, 이미지 digest, 증거 기록 명령을 넣었다. 비-PostgreSQL `certified` 가 없으므로 판정은 fixture 와 실제 입력의 복사본으로 붉혔고(BLOB 매핑 되돌림 포함), 기록 명령도 보고서를 흉내 낸 시험만 돌았다. 실제 증거는 없다.
+
+**CI 경로.** §10 대로 `reusable-vendor` 잡을 넣었다. 분류와 잡 모양은 계약 시험과 의도적 위반으로 확인했다. 러너 첫 실행(PR #1035, 멀티모듈 한 레이아웃)은 잡 전체 8.7분에 통합 399건 중 4건이 붉었다. 원인은 시험 SQL 이었다. 설문 시험이 날짜를 문자열 `'2000-01-01'` 로 넣었는데, Oracle 은 이 암묵 변환을 세션 지역으로 하고 세션 지역은 JVM 로캘을 따른다. 러너(영어 지역)에서는 `ORA-01843` 이 났고, 이 기계(Windows 한국어 로캘)에서는 통과했다. 일회용 Oracle 23 에서 두 지역 세션으로 재현했다. 그 시험은 다른 벤더 시험처럼 ANSI `TIMESTAMP` 리터럴로 고쳤다. 로컬 실행과 증거 기록은 이 기계의 로캘로 돌므로, 로캘에 기대는 결함은 영어 지역인 CI 잡이 잡는다. 슬롯 영향과 main 의 두 레이아웃은 main 첫 실행에서 본다.
+
+**벤더 컨테이너 수명.** 격리 실행기는 준비를 묻기 전마다 취소와 소유를 보고, 판정한 컨테이너 ID 로만 부른다. 19c 의 준비 판정이 `CREATE USER`·`GRANT` 를 쓰기 때문이다. SIGINT·SIGTERM·SIGHUP 을 계속 받아 정리 중의 두 번째 신호가 프로세스를 죽이지 않고, 앞 정리 단계가 던져도 벤더 DB 를 지운다. 강제 종료는 막을 수 없고 소유 기록이 없어 자동 회수하지 않는다(수동 정리는 [E2E 가이드](../03-guides/e2e-test-guide.md)). 2026-11-03 Oracle 23 실측: 대표 묶음을 끝까지 돈 실행, DB 대기 중 SIGTERM 뒤 SIGHUP, Playwright 진행 중 SIGHUP, 숨긴 콘솔 창 닫기(실제 SIGHUP, 3.6초에 정리 끝)는 컨테이너와 자식 프로세스를 남기지 않았고, `taskkill /F` 는 가이드대로 컨테이너가 남아 가이드 명령으로 찾아 지웠다. Windows 의 SIGTERM 은 처리기를 거치지 않는 강제 종료라 앞의 두 신호는 같은 처리기에 `process.emit` 으로 넣었다. 콘솔 닫기는 자식이 없는 DB 대기 단계만 쟀다. 끝까지 돈 실행은 66건 중 1건이 붉었다. 일반 사용자 로그아웃 시험의 경합이다 — 화면이 로그아웃 응답 전에 `/login` 으로 가서 시험의 토큰 확인이 커밋보다 먼저 닿았다(트레이스: 로그아웃 요청 20.301초 시작·333ms, 토큰 확인 20.535초). 원본에도 있는 시험 코드이고 이 실행기와 무관하다. `503c9eca6` 에서 두 로그아웃 시험이 화면 서버의 `/api/auth/logout` 응답을 기다리게 고쳤다. 로그아웃 요청을 붙잡은 강제 순서에서 수정 전 실패·수정 후 통과는 원본 저장소 PostgreSQL 에서만 확인했다. 고친 시험 파일로 다시 돈 벤더 실행은 아래 재실측(`f38488b07`)이다. 실행기의 docker 호출은 호출별 제한을 받는다(`run` 60분, `rm` 5분, 그 밖 30초). 이 값은 재지 않은 초기값이다. 19c 준비 판정의 sqlplus 소요는 재지 않았고, 넘기면 다음 차례에 다시 돈다. 실제 값은 다음 19c 실측에서 본다. 통합·차등·적용 대조 경로의 docker 호출에는 이 제한이 없고 잡 시간 제한과 작업 취소가 받친다. 벤더 명령이 실패하면 컨테이너를 지우기 전에 로그 끝 20줄을 비밀번호를 가려 stderr 로 낸다. 작업 실패의 끝 40줄에 Gradle 실패 요약과 함께 들어가 CI 실패 출력과 생성기 화면에 닿는다. 통합 단계의 Gradle 호출은 `--no-daemon` 이다. 아래 재실측에서 demo 멀티모듈 Oracle 23 전체 경로가 16.4분에서 18.1분이 됐지만, 그 사이 다른 변경도 들어가 데몬 몫을 따로 재지는 않았다.
+
+**대표 구성 실측.** 2026-11-03 커밋 `0bd53905d` 의 demo 멀티모듈을 이 기계에서 쟀다. 아래 시간은 러너 값이 아니다. 전체 경로는 Oracle 23 이 16.4분(통합 399건), PostgreSQL 이 13.8분으로 통과했다. 대표 E2E 11개 파일 66건(로그아웃 시험 수정 전 파일)은 Oracle 23(실행 6.2분), Oracle 19c(기동 대기 포함 20분), 원본 저장소 PostgreSQL(5.9분, 같은 시험 파일을 `-- --project=api-contract --project=full-suite <spec...>` 로 실행)에서 실패·flaky·건너뜀 없이 통과했다. PostgreSQL 대조가 원본 저장소인 것은 demo 생성물의 격리 E2E 가 기동하지 못해서다. V1_0 번들에는 `IsolatedAuthorizationRehearsalConfig` 의 Flyway target 2.99 가 없다. 이 작업이 건드리지 않은 기존 한계다(GAP-COMPOSE-003). 사용자 활동 집계의 FK 실패(시험에서 지운 사용자)는 셋 다 나므로(PostgreSQL 80건, 23 88건, 19c 117건) 벤더 결함이 아니다.
+
+**재실측.** 2026-11-03 커밋 `f38488b07` 에서 한 번씩 차례로 다시 쟀다. 이 커밋은 위 수명·검증 수정과 고친 로그아웃 시험을 담는다. 모두 실패·flaky·건너뜀 없이 통과했다.
+
+| 실행 | 결과 | 시간 |
+|---|---|---|
+| demo 멀티모듈 Oracle 23 전체 경로 | 통합 51개 클래스 399건, 카탈로그 적합 5건, Hibernate 문맥 44개 모두 `validate` | 18.1분 |
+| 같은 생성물의 개발 스택 compose | `ADMIN_INITIAL_PASSWORD` 로 정한 비밀번호의 로그인 200, 틀린 비밀번호 401 | 이미지 빌드 2.3분, 기동 1.4분 |
+| 대표 E2E Oracle 23 | 66건 | 6.3분(Playwright 3.5분) |
+| 대표 E2E Oracle 19c | 66건. 이번에 넣은 준비 판정과 호출별 제한을 거쳤다 | 16.5분(Playwright 3.5분) |
+| demo 단일모듈 Oracle 23 전체 경로 | 통합 399건, 카탈로그 적합 5건, 문맥 44개 모두 `validate` | 17.5분 |
+| 원본 저장소 PostgreSQL 대표 E2E(`--representative`) | 66건. 원장 목록으로 계획과 발견을 대조한 첫 실행이다 | 4.8분(Playwright 3.1분) |
+
+그 뒤 독립 유일 인덱스 번역을 고쳤다(§6 의 Oracle `DESC`, CUBRID 길이 한계). 지금 스키마에는 독립 유일 인덱스가 없다. 실제 입력 21개에서 다섯 벤더의 번역 결과가 바이트까지 같은 것을 확인했으므로, 위 결과는 고친 커밋에도 그대로다.
+
+남은 일: 증거 기록의 첫 실제 실행, CI 잡의 첫 러너 측정, 19c 준비 판정의 sqlplus 소요(호출별 제한 값의 근거).
 
 ### 공수 재판단(ADR-0047 재검토 조건)
 

@@ -18,7 +18,8 @@ import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { MODULES_DIRECTORY, MODULES_SCHEMA, PRESETS_FILE, composerOwnership, detectGeneratedComposition, loadComposerModules,
   projectComposerModuleFiles } from './composer-modules.mjs';
 import { resolveGeneratorComposition } from './project-composer-recipe.mjs';
-import { projectVendorSources } from './project-composer-vendor-project.mjs';
+import { loadVendorLedger, selectableVendors } from './project-composer-vendors.mjs';
+import { VENDOR_SCHEMA_ALIAS, projectVendorSources } from './project-composer-vendor-project.mjs';
 import { assertCompositionDatabaseLock, composerProfile, assertComposerSourceSurvives, projectedScreenLosses,
   verifyCompositionDatabaseFiles } from './project-composer-source.mjs';
 import { pageSurvivalExpectation } from './reusable-page-survival.mjs';
@@ -194,6 +195,24 @@ export function writeProjectedModules(output, modules, composition, active) {
   return Object.keys(projected).sort();
 }
 
+/**
+ * REUSABLE_BASE.md 의 배치 줄. 벤더 프로젝트는 이관 모듈(멀티모듈은 settings.gradle 의 include, projectVendorSettings)·이관 소스 세트와
+ * 별칭이 없고 PostgreSQL 스키마 시험을 검증에서 뺀다(설계서 §8·§17). PostgreSQL 문장은 바이트 그대로 둔다.
+ */
+export function reusableBaseLayoutLines(layout, { vendor = null } = {}) {
+  if (layout !== 'single-module') {
+    return vendor ? '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n' : '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n';
+  }
+  return (vendor
+    ? '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원은 별도 source set으로 격리한다.\n'
+    : '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n') +
+    '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
+    (vendor
+      ? `- 전체 테스트: \`./gradlew allTests\`; 하네스: \`./gradlew harnessTest\`; ${vendor} 스키마 변경 검사: \`npm run ${VENDOR_SCHEMA_ALIAS}\`(README 의 데이터베이스 절).\n`
+      : '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n') +
+    '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n';
+}
+
 async function main() {
   const args = parseSourceArgs(process.argv.slice(2));
   // DB 생성기와 같은 판정기로 구성을 얻는다. 프리셋도 구성 경로를 타며, 같은 커밋·레이아웃이면 같은 해시가 나온다.
@@ -201,6 +220,7 @@ async function main() {
   const composition = resolveGeneratorComposition({ catalog, profile: args.composition ? undefined : args.profile,
     supplied: args.composition ? JSON.parse(readFileSync(resolve(args.composition), 'utf8')) : undefined,
     backendLayout: args.layout, layoutExplicit: process.argv.includes('--layout'), sourceCommit: git(['rev-parse', 'HEAD']),
+    selectable: selectableVendors(loadVendorLedger(ROOT)),
     resolveSourceReference: ref => git(['rev-parse', '--verify', `${ref}^{commit}`]) });
   args.profile = composition.profile;
   args.layout = composition.backendLayout;
@@ -333,12 +353,7 @@ async function main() {
       `- 기능: ${composition.resolvedDomains.join(', ') || '(공통 기반만)'}\n` +
       `- backend layout: ${args.layout}\n` +
       '- 독립 Git 저장소로 초기화되어 있다. 파일 추가·커밋·원격 연결은 도입자가 수행한다.\n' +
-      (args.layout === 'single-module'
-        ? '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n' +
-          '- 실행: `./gradlew bootRun`; 온라인 JAR: `./gradlew bootJar` → `build/libs/app.jar`. Windows는 `./gradlew` 대신 `gradlew.bat`을 사용한다.\n' +
-          '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n' +
-          '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n'
-        : '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n') +
+      reusableBaseLayoutLines(args.layout, { vendor: vendorInput ? vendorId : null }) +
       `- 제외 backend domains: ${java.excludedDomains.join(', ') || '(없음)'}\n` +
       `- 제거 Java files: ${java.removedFiles}\n` +
       `- 제거 frontend files: ${frontend.removedFiles}` +

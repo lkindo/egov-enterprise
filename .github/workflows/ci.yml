@@ -29,7 +29,8 @@ env:
 jobs:
   # Cheap, fail-closed change classifier. Workflow-level path filters are not
   # used because a skipped workflow leaves required checks pending. Unknown or
-  # empty ranges deliberately select every heavy gate.
+  # empty ranges deliberately select every heavy gate. The exception is reusable-vendor:
+  # an unknown path does not select it, only a missing range does (design section 10).
   change-scope:
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -48,6 +49,8 @@ jobs:
       reusable: ${{ steps.scope.outputs.reusable }}
       reusable-custom: ${{ steps.scope.outputs.reusable_custom }}
       reusable-matrix: ${{ steps.scope.outputs.reusable_matrix }}
+      reusable-vendor: ${{ steps.scope.outputs.reusable_vendor }}
+      reusable-vendor-matrix: ${{ steps.scope.outputs.reusable_vendor_matrix }}
       sast: ${{ steps.scope.outputs.sast }}
       docs-only: ${{ steps.scope.outputs.docs_only }}
       atlas: ${{ steps.scope.outputs.atlas }}
@@ -61,7 +64,7 @@ jobs:
         with:
           node-version: ${{ env.NODE_VERSION }}
 
-      - name: Classify changed paths (unknown means full pipeline)
+      - name: Classify changed paths (unknown means full pipeline except the vendor job)
         id: scope
         shell: bash
         env:
@@ -1013,8 +1016,64 @@ jobs:
           if-no-files-found: error
           retention-days: 7
 
+  reusable-vendor:
+    # 인증 입력이나 ciOnly 경로가 바뀐 변경만 PostgreSQL 외 DB 에서 대표 구성을 생성하고 적용·대조·시험을 돌린다(ADR-0047 D-14). 고르는 일은 분류기, 입력 목록은 config/db-vendors.json 이다.
+    # 시간(러너 미측정, 첫 실행에서 잰다): 같은 구성의 PostgreSQL 검증이 main 41397307357 에서 11분이고, 로컬 Oracle 통합 시험이 271초(257건)다. 399건·이미지 내려받기를 더해 15~20분으로 어림한다.
+    # 제한은 어림의 두 배에 Oracle 기동 대기 상한 5분을 더해 45분이다. 멈춘 DB 가 슬롯을 custom 의 60분만큼 쥐지 않게 한다.
+    # 슬롯: 같은 main 실행은 1~12분에 러너 20개가 차 있고 frontend 뒤에 입장하는 demo 가 이미 4분 기다린다. 그 뒤로 미루면 이 잡이 줄 끝에서 끝나 wall 이 4~13분(어림) 늘므로
+    # 분류 직후 입장해 줄을 한두 칸 밀리게 한다. 첫 main 실행의 wall 과 demo 대기가 늘면 main 레이아웃을 줄이거나 입장을 옮긴다. 빈도와 근거는 설계서 §10 이다.
+    needs: [change-scope]
+    if: "!cancelled() && needs.change-scope.result == 'success' && needs.change-scope.outputs['reusable-vendor'] == 'true'"
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJSON(needs.change-scope.outputs['reusable-vendor-matrix']) }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
+        with:
+          node-version: '22'
+      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad  # v6.1.0
+        with:
+          java-version: '21'
+          distribution: temurin
+      - uses: pnpm/action-setup@ea17c68df8912ef543352723c149a84f56e3d413  # v6.1.0
+        with:
+          version: '9.15.0'
+      - uses: gradle/actions/setup-gradle@3f5f9adaf7d9fecd50b5935e54106014257a94e6  # v6.4.0
+        with:
+          cache-provider: basic
+          cache-read-only: true
+      # 생성기는 생성물의 API 계약을 원본 frontend 의 도구로 다시 만든다. 설치하지 않으면 생성이 TOOL_UNAVAILABLE 로 멈춘다.
+      - name: Install source frontend tools for contract projection
+        run: pnpm install --frozen-lockfile
+        working-directory: frontend
+      # preview 벤더는 이 값이 있는 도구 실행에서만 받는다. 화면 경로는 원장만 보므로 이 값으로 열리지 않는다.
+      - name: Generate and verify vendor composition
+        env:
+          COMPOSER_PREVIEW_VENDOR: ${{ matrix.vendor }}
+        run: node scripts/verify-project-composer.mjs --layout ${{ matrix.layout }} --vendor ${{ matrix.vendor }}
+      # 시험 JVM 이 죽으면 남는 충돌 기록까지 남긴다. 이 잡은 저장소 비밀을 받지 않고, DB 비밀번호는 실행마다 만드는 일회용이다.
+      - name: Retain vendor composition verification
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        with:
+          name: reusable-vendor-verification-${{ matrix.vendor }}-${{ matrix.layout }}
+          path: |
+            build/reports/project-composer/*.json
+            build/project-composer/jobs/*/report.json
+            build/reusable-base/source/*/build/reports/reusable-base/*.json
+            build/reusable-base/source/*/**/build/test-results/vendor*/*.xml
+            build/reusable-base/source/*/**/hs_err_pid*.log
+          if-no-files-found: error
+          retention-days: 7
+
   backend-build:
-    needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom]
+    needs: [change-scope, backend-scope, backend-schema-scope, migration-scope, reusable-base, reusable-custom, reusable-vendor]
     if: always()
     runs-on: ubuntu-latest
     timeout-minutes: 5
@@ -1054,6 +1113,13 @@ jobs:
           CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
           EXPECTED_WORK: ${{ needs.change-scope.outputs['reusable-custom'] }}
           SOURCE_RESULT: ${{ needs.reusable-custom.result }}
+        run: node scripts/aggregate-required-check.mjs
+
+      - name: 벤더 구성 결과 집계
+        env:
+          CLASSIFIER_RESULT: ${{ needs.change-scope.result }}
+          EXPECTED_WORK: ${{ needs.change-scope.outputs['reusable-vendor'] }}
+          SOURCE_RESULT: ${{ needs.reusable-vendor.result }}
         run: node scripts/aggregate-required-check.mjs
 
   frontend-build:

@@ -1,5 +1,6 @@
 import { statfsSync } from 'node:fs';
 import { FRONTEND_INSTALL_COMMAND } from './reusable-contract-projection.mjs';
+import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 
 /*
  * 생성 전 환경 점검(설계서 14장·19장, E5). 생성은 Docker·Java 21·Node.js 22·pnpm 과 작업 트리를 쓰는데,
@@ -33,8 +34,9 @@ const javaHomeOf = value => (value ?? '').replaceAll('"', '').trim();
  * `freeBytes` 는 출력 위치의 남은 공간을 돌려준다(테스트 이음새).
  * `missingFrontendTools` 는 원본 frontend 에 설치되지 않은 생성 도구 목록이다(빈 배열이면 모두 있다). 생성기는 API 계약 생성물을
  * 원본 frontend 의 TypeScript·openapi-typescript 로 다시 만든다(Phase 2 10c-2, U5-A).
+ * `vendor` 는 구성의 데이터베이스다. PostgreSQL 구성은 점검 항목·순서가 그대로이고, 벤더 구성만 항목이 더 붙는다.
  */
-export async function composerPreflight({ outputRoot, sourceCommit, probe, missingFrontendTools, nodeVersion = process.versions.node,
+export async function composerPreflight({ outputRoot, sourceCommit, vendor, probe, missingFrontendTools, nodeVersion = process.versions.node,
   javaHome = process.env.JAVA_HOME, freeBytes = path => { const stats = statfsSync(path); return stats.bavail * stats.bsize; } }) {
   const attempt = async (command, args) => {
     try { return { ok: true, out: String(await probe(command, args)) }; }
@@ -88,6 +90,25 @@ export async function composerPreflight({ outputRoot, sourceCommit, probe, missi
     const image = await attempt('docker', ['image', 'inspect', '--format', '{{.Id}}', PREFLIGHT_IMAGE]);
     if (image.ok && image.out.trim()) check('image', 'pass', `${PREFLIGHT_IMAGE} 이미지가 있습니다`);
     else check('image', 'warn', `${PREFLIGHT_IMAGE} 이미지가 없습니다. 첫 생성 때 내려받습니다(네트워크 필요).`);
+  }
+
+  // 기준 PostgreSQL 은 벤더 구성에서도 돈다. 대상 벤더 이미지는 검증 단계가 쓴다. 메모리 기준은 측정 전 값이라 경고만 한다.
+  if (vendor && vendor !== 'postgresql') {
+    const engine = Object.hasOwn(VENDOR_ENGINES, vendor) ? VENDOR_ENGINES[vendor] : undefined;
+    // Tibero 는 엔진이 없고 라이선스 파일 점검도 보류 중이다. 원장이 풀려도 점검 없이 생성으로 넘어가지 않게 막는다.
+    if (!engine) check('vendor-engine', 'block', '선택한 데이터베이스는 실행 환경 점검(라이선스 파일 포함)이 아직 없어 생성할 수 없습니다.');
+    else if (linuxDocker) {
+      const image = await attempt('docker', ['image', 'inspect', '--format', '{{.Id}}', engine.image]);
+      if (image.ok && image.out.trim()) check('vendor-image', 'pass', `${engine.image} 이미지가 있습니다`);
+      else check('vendor-image', 'warn', `${engine.image} 이미지가 없습니다. 첫 검증 때 내려받습니다(네트워크 필요).`);
+      if (engine.memoryHintBytes) {
+        const memory = await attempt('docker', ['info', '--format', '{{.MemTotal}}']);
+        const bytes = memory.ok && /^\d+$/.test(memory.out.trim()) ? Number(memory.out.trim()) : null;
+        if (!bytes) check('vendor-memory', 'warn', `Docker 에 할당된 메모리를 확인하지 못했습니다. 대상 DB 컨테이너에는 약 ${gib(engine.memoryHintBytes)} 이상을 권장합니다.`);
+        else if (bytes < engine.memoryHintBytes) check('vendor-memory', 'warn', `Docker 에 할당된 메모리가 ${gib(bytes)}입니다. 대상 DB 컨테이너에는 약 ${gib(engine.memoryHintBytes)} 이상을 권장합니다. 생성을 막지는 않지만 검증이 실패할 수 있습니다.`);
+        else check('vendor-memory', 'pass', `Docker 에 할당된 메모리가 권장값(약 ${gib(engine.memoryHintBytes)}) 이상입니다`, { detail: gib(bytes) });
+      }
+    }
   }
 
   // 생성기는 작업 트리의 파일(무시되지 않은 새 파일 포함)을 그대로 복사한다.

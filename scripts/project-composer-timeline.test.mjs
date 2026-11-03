@@ -179,3 +179,39 @@ test('the remaining time uses the median of the same layout’s passed runs, nee
     { runs: 3, remainingMs: null });
   assert.equal(HISTORY_MIN_RUNS, 3);
 });
+
+/*
+ * 벤더 검증은 시간이 크게 다르다. PostgreSQL 추정에 섞이지 않게 나누되, PostgreSQL 항목의 모양은 옛 기록과 같게 둔다.
+ */
+test('the history keeps a vendor apart without changing a PostgreSQL entry', t => {
+  const time = clock();
+  const timeline = createJobTimeline({ now: time.now });
+  timeline.stage('resolve'); time.advance(10); timeline.finish('failed');
+  const entry = extra => historyEntry({ job: 'p-1', layout: 'multi-module', result: 'failed', finishedAt: '2026-10-09T00:00:00.000Z', snapshot: timeline.snapshot(), ...extra });
+  const postgres = { job: 'p-1', finishedAt: '2026-10-09T00:00:00.000Z', result: 'failed', layout: 'multi-module', durations: { resolve: 10 } };
+  assert.deepEqual(entry({}), postgres);
+  assert.deepEqual(entry({ vendor: undefined }), postgres);
+  assert.deepEqual(entry({ vendor: 'oracle' }), { ...postgres, vendor: 'oracle' });
+  const root = mkdtempSync(join(tmpdir(), 'composer-history-vendor-'));
+  t.after(() => rmSync(root, { recursive: true, force: true }));
+  appendJobHistory(root, entry({ vendor: 'oracle' }));
+  assert.deepEqual(readJobHistory(root), [{ ...postgres, vendor: 'oracle' }]);
+  assert.throws(() => appendJobHistory(root, { ...postgres, vendor: '../x' }), /Invalid job history entry/);
+  assert.throws(() => appendJobHistory(root, { ...postgres, vendor: 7 }), /Invalid job history entry/);
+});
+
+test('the remaining time counts only runs of the same database', () => {
+  const time = clock();
+  const running = createJobTimeline({ now: time.now });
+  running.stage('resolve');
+  const snapshot = running.snapshot();
+  const durations = value => Object.fromEntries([...JOB_STAGES.filter(id => id !== 'verify'), ...snapshot.steps.map(item => item.id)].map(id => [id, value]));
+  const run = (value, vendor) => ({ job: 'x', finishedAt: '2026-10-09T00:00:00.000Z', result: 'passed', layout: 'multi-module', ...(vendor ? { vendor } : {}), durations: durations(value) });
+  const history = [run(1000), run(1000), run(1000), run(9000, 'oracle'), run(9000, 'oracle'), run(9000, 'oracle')];
+  const estimate = vendor => estimateRemaining(history, { layout: 'multi-module', vendor, snapshot, now: time.now() });
+  assert.equal(estimate(undefined).runs, 3);
+  assert.equal(estimate('oracle').runs, 3);
+  assert.equal(estimate(undefined).pendingMs, 1000 * (JOB_STAGES.length - 2 + snapshot.steps.length));
+  assert.equal(estimate('oracle').pendingMs, 9000 * (JOB_STAGES.length - 2 + snapshot.steps.length));
+  assert.deepEqual(estimate('mysql'), { runs: 0, remainingMs: null }, '기록이 없는 벤더는 추정하지 않는다');
+});

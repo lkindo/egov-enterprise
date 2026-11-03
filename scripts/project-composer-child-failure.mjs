@@ -11,10 +11,11 @@ import { ComposerError, withoutRoot } from './project-composer-errors.mjs';
 /**
  * 단계마다 자식이 보고할 수 있는 코드. 원본 변경(SOURCE_CHANGED)은 엔진이 직접 판정하므로 자식은 보고하지 않는다.
  * 소스 단계의 도구 없음은 원본 frontend 의존성(API 계약 생성물을 다시 만드는 TypeScript·openapi-typescript)뿐이다(10c-2).
+ * 번역 불가는 스키마를 DB 단계가, 시드를 소스 단계가 처음 번역하므로 양쪽에서 난다.
  */
 export const CHILD_FAILURE_CODES = Object.freeze({
-  database: Object.freeze(['MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT']),
-  source: Object.freeze(['SOURCE_SURVIVAL', 'TOOL_UNAVAILABLE']),
+  database: Object.freeze(['MENU_SNAPSHOT_STALE', 'CATALOG_DRIFT', 'VENDOR_TRANSLATION_GAP']),
+  source: Object.freeze(['SOURCE_SURVIVAL', 'TOOL_UNAVAILABLE', 'VENDOR_TRANSLATION_GAP']),
 });
 /** 단계마다 자식이 '없다' 고 보고할 수 있는 도구. */
 const CHILD_TOOLS = Object.freeze({ source: Object.freeze(['frontend']) });

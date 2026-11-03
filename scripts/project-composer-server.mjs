@@ -57,12 +57,15 @@ class HttpError extends Error {
   constructor(status, code, details = {}) { super(code); this.status = status; this.code = code; this.details = details; }
 }
 
-/** Reject extra input channels before invoking an engine or creating any output. */
-export function validateComposerRequestRecipe(recipe) {
+/**
+ * Reject extra input channels before invoking an engine or creating any output.
+ * selectable 은 엔진이 원장에서 읽은 벤더다. COMPOSER_PREVIEW_VENDOR 는 도구 실행 전용이라 여기에 들어오지 않는다.
+ */
+export function validateComposerRequestRecipe(recipe, selectable = ['postgresql']) {
   if (!keys(recipe, ['schemaVersion', 'project', 'sourceRef', 'selection', 'database', 'backendLayout'])
     || recipe.schemaVersion !== 1 || !keys(recipe.project, ['name']) || typeof recipe.project.name !== 'string'
     || typeof recipe.sourceRef !== 'string' || !/^[A-Za-z0-9][A-Za-z0-9._/-]{0,159}$/.test(recipe.sourceRef)
-    || recipe.sourceRef.includes('..') || !keys(recipe.database, ['vendor']) || recipe.database.vendor !== 'postgresql'
+    || recipe.sourceRef.includes('..') || !keys(recipe.database, ['vendor']) || !selectable.includes(recipe.database.vendor)
     || !['multi-module', 'single-module'].includes(recipe.backendLayout)
     || !keys(recipe.selection, ['preset', 'domains'])) throw new HttpError(400, 'INVALID_RECIPE');
   // 이름은 화면이 칸을 짚어 알려 줄 수 있는 입력이다. 형식 오류와 구분한다(해석기·화면과 같은 규칙).
@@ -140,11 +143,13 @@ function safeDeep(value) {
   const explained = (projection, code) => projection !== null || blockers.some(blocker => blocker.code === code);
   if (!plain(value) || !blockers || blockers.length > 20 || !blockers.every(validBlocker) || !removal(value.java) || !removal(value.frontend)
     || !explained(value.java, 'JAVA_PROJECTION') || !explained(value.frontend, 'FRONTEND_PROJECTION')
-    || !files(value.removedGates) || !line(value.summary, 200) || !count(value.durationMs)) throw new HttpError(500, 'DEEP_FAILED');
+    || !files(value.removedGates) || !line(value.summary, 200) || !count(value.durationMs)
+    || (value.vendorRemoval !== undefined && !(plain(value.vendorRemoval) && count(value.vendorRemoval.gates) && count(value.vendorRemoval.assets)))) throw new HttpError(500, 'DEEP_FAILED');
   return {
     java: value.java && { removedFiles: value.java.removedFiles, cascadeFiles: value.java.cascadeFiles },
     frontend: value.frontend && { removedFiles: value.frontend.removedFiles, cascadeFiles: value.frontend.cascadeFiles },
     removedGates: value.removedGates,
+    ...(value.vendorRemoval ? { vendorRemoval: { gates: value.vendorRemoval.gates, assets: value.vendorRemoval.assets } } : {}),
     blockers: blockers.map(({ code, label, files: list, message }) => ({ code, label,
       ...(list ? { files: list.slice(0, 200), fileCount: list.length } : {}),
       ...(message ? { message: message.replace(/[\r\n\0]+/g, ' ').replace(ABSOLUTE_PATH, '<로컬 경로>').slice(0, 500) } : {}) })),
@@ -187,8 +192,11 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
   const runs = new Set();
   let active;
   let latest;
-  // 점검은 명령 여러 개를 띄운다. 같은 원본 커밋을 묻는 겹친 요청은 진행 중인 점검 하나를 함께 기다린다.
+  // 점검은 명령 여러 개를 띄운다. 같은 원본 커밋·벤더를 묻는 겹친 요청은 진행 중인 점검 하나를 함께 기다린다.
   const preflightRuns = new Map();
+  const readSelectableVendors = () => {
+    try { return engine.selectableVendors?.(); } catch (error) { throw requestFailure(error, new HttpError(500, 'INTERNAL_ERROR')); }
+  };
   const server = createServer(async (request, response) => {
     secureHeaders(response);
     try {
@@ -239,22 +247,26 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
         }
         if (path === '/api/preflight') {
           // 원본 비교는 점검을 요청한 화면이 카탈로그를 받은 때의 커밋과 한다(탭마다 다를 수 있다).
-          if (!keys(input, ['sourceCommit']) || typeof input.sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(input.sourceCommit)) {
+          if (!keys(input, ['sourceCommit', 'vendor']) || typeof input.sourceCommit !== 'string' || !/^[a-f0-9]{40}$/.test(input.sourceCommit)) {
             throw new HttpError(400, 'BAD_REQUEST');
           }
-          const { sourceCommit } = input;
-          if (!preflightRuns.has(sourceCommit)) {
-            preflightRuns.set(sourceCommit, Promise.resolve().then(() => engine.preflight({ sourceCommit }))
-              .finally(() => preflightRuns.delete(sourceCommit)));
+          const { sourceCommit, vendor } = input;
+          // 고를 수 없는 벤더는 점검하지 않는다. 판정은 생성 요청과 같은 원장이다. 이름이 있는 벤더의 거부는 화면을 연 뒤 원장이 바뀐 것이라
+          // 계획 요청과 같은 코드로 답해 다시 불러오기를 보인다. 원본 변경이 겹쳐도 다시 불러오면 함께 풀린다.
+          if (vendor !== undefined && !(readSelectableVendors() ?? ['postgresql']).includes(vendor)) throw new HttpError(400, typeof vendor === 'string' && vendor ? 'INVALID_RECIPE' : 'BAD_REQUEST');
+          const run = JSON.stringify([sourceCommit, vendor ?? null]);
+          if (!preflightRuns.has(run)) {
+            preflightRuns.set(run, Promise.resolve().then(() => engine.preflight({ sourceCommit, ...(vendor === undefined ? {} : { vendor }) }))
+              .finally(() => preflightRuns.delete(run)));
           }
           let result;
-          try { result = await preflightRuns.get(sourceCommit); } catch { throw new HttpError(500, 'PREFLIGHT_FAILED'); }
+          try { result = await preflightRuns.get(run); } catch { throw new HttpError(500, 'PREFLIGHT_FAILED'); }
           json(response, 200, { preflight: safePreflight(result) });
           return;
         }
         const allowed = { '/api/jobs': ['recipe', 'requestId'], '/api/plan/diff': ['recipe', 'domain'] }[path] ?? ['recipe'];
         if (!keys(input, allowed)) throw new HttpError(400, 'BAD_REQUEST');
-        const recipe = validateComposerRequestRecipe(input.recipe);
+        const recipe = validateComposerRequestRecipe(input.recipe, readSelectableVendors());
         if (path === '/api/plan/deep') {
           let deep;
           // 코드가 붙은 오류(입력·원본 변경·선언 불일치 등)는 그 코드로, 그 밖의 엔진 오류는 점검 실패로 답한다(내용은 숨긴다).

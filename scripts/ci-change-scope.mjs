@@ -4,6 +4,7 @@ import path from 'node:path';
 import process from 'node:process';
 import { fileURLToPath } from 'node:url';
 import { presetIds } from './composition-profiles.mjs';
+import { vendorCiPlan, vendorInputChange } from './vendor-evidence-inputs.mjs';
 
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const MODULES_DIRECTORY = path.join(REPO_ROOT, 'config', 'modules');
@@ -444,13 +445,51 @@ function selectedReusableProfiles(files, { full, docsOnly }) {
 }
 
 /**
+ * 저장소의 벤더 잡 계획(ADR-0047 D-14). 원장도 생성기도 없는 트리(독립 이관 제품)는 벤더 잡이 없다. 그 밖에 원장을 읽지 못하면 분류를 멈춘다 —
+ * 어느 벤더를 돌릴지 모르는 채로 벤더 검증을 건너뛰지 않는다.
+ */
+let repositoryVendorPlan;
+function loadVendorPlan() {
+  if (repositoryVendorPlan === undefined) {
+    try { repositoryVendorPlan = vendorCiPlan(REPO_ROOT); }
+    catch (error) {
+      if (error.code !== 'ENOENT' || existsSync(REUSABLE_GENERATOR)) throw new Error(`벤더 원장을 읽지 못했다: ${error.message}`);
+      repositoryVendorPlan = null;
+    }
+  }
+  return repositoryVendorPlan;
+}
+
+/**
+ * 벤더 잡 선택. 인증 입력이나 원장의 ciOnly 경로가 바뀐 벤더만 돈다. PR 은 대표 레이아웃 하나, main·수동·이벤트 미상과 입력 삭제·비교 범위 없는 실행은 두 레이아웃 전수다.
+ * 미지 경로는 이 잡을 켜지 않는다. 켜면 전수 실행(main 150커밋 중 103개)마다 포화된 슬롯을 더 민다. 비교 범위가 없을 때만 전수다.
+ * 이 목록은 잡이 닿는 코드 전부가 아니다. 벤더 분기가 없는 공통 생성기 코드와 표지 없는 파생 쿼리·서비스 코드는 켜지 않으므로 그 회귀는 다음에 잡을 켠 변경에서 드러난다(설계서 §10).
+ * 고르지 않아도 matrix 는 비우지 않는다 — 빈 matrix 를 넘기면 잡이 시작도 못 하고 실패한다.
+ */
+function reusableVendorSelection(files, { noRange, docsOnly, event, readSource, readBaseSource, plan }) {
+  if (!plan) return { selected: false, matrix: { include: [] } };
+  const matrixOf = (vendors, exhaustive) => {
+    const layouts = event === 'pull_request' && !exhaustive ? [plan.pullRequestLayout] : REUSABLE_LAYOUTS;
+    return { include: vendors.flatMap(vendor => layouts.map(layout => ({ vendor, layout }))) };
+  };
+  if (docsOnly) return { selected: false, matrix: matrixOf(plan.vendors, false) };
+  const changes = plan.vendors.map(vendor => ({ vendor,
+    states: files.map(file => vendorInputChange(plan, vendor, file, { head: readSource(file), readBase: () => readBaseSource(file) })) }));
+  if (changes.some(({ states }) => states.includes('deleted'))) return { selected: true, matrix: matrixOf(plan.vendors, true) };
+  if (noRange) return { selected: true, matrix: matrixOf(plan.vendors, true) };
+  const vendors = changes.filter(({ states }) => states.includes('changed')).map(({ vendor }) => vendor);
+  return vendors.length > 0 ? { selected: true, matrix: matrixOf(vendors, false) } : { selected: false, matrix: matrixOf(plan.vendors, false) };
+}
+
+/**
  * Fail-closed CI scope classification.
  *
  * Unknown or empty input deliberately selects the full pipeline. A false
  * positive costs runner time; a false negative silently removes evidence.
+ * The vendor job is the one exception for unknown paths: reusableVendorSelection.
  */
 export function classifyChangedFiles(changedFiles,
-  { forceFull = false, event = '', readSource = readRepositorySource } = {}) {
+  { forceFull = false, event = '', readSource = readRepositorySource, readBaseSource = () => null, vendorPlan = loadVendorPlan() } = {}) {
   const files = [...new Set(changedFiles.map(normalizeFile).filter(Boolean))].sort();
   const unknownFiles = files.filter(file => !isKnown(file));
   const full = forceFull || files.length === 0 || unknownFiles.length > 0;
@@ -479,6 +518,7 @@ export function classifyChangedFiles(changedFiles,
   const reusableProfiles = selectedReusableProfiles(files, { full, docsOnly });
   const reusableCustom = reusableProfiles.includes('core');
   const matrix = reusableMatrix(reusableProfiles.length > 0 ? reusableProfiles : undefined, { event });
+  const reusableVendor = reusableVendorSelection(files, { noRange: forceFull || files.length === 0, docsOnly, event, readSource, readBaseSource, plan: vendorPlan });
 
   return {
     files,
@@ -500,6 +540,19 @@ export function classifyChangedFiles(changedFiles,
     reusableCustom,
     reusableProfiles,
     reusableMatrix: matrix,
+    reusableVendor: reusableVendor.selected,
+    reusableVendorMatrix: reusableVendor.matrix,
+  };
+}
+
+/** 비교 기준의 파일을 읽는다. 표지를 지운 변경은 머리 내용만으로 알 수 없다. 범위는 changedFilesFromGit 의 세 점 비교와 같은 merge base 다. */
+export function baseSourceReader(base, head = 'HEAD') {
+  if (!base || !head) return () => null;
+  const gitText = args => execFileSync('git', args, { cwd: REPO_ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'], maxBuffer: 64 * 1024 * 1024 });
+  const mergeBase = gitText(['merge-base', base, head]).trim();
+  return file => {
+    try { return gitText(['show', `${mergeBase}:${file}`]); }
+    catch { return null; }
   };
 }
 
@@ -534,6 +587,8 @@ export function githubOutputs(result) {
     reusable: bool(result.reusable),
     reusable_custom: bool(result.reusableCustom),
     reusable_matrix: JSON.stringify(result.reusableMatrix),
+    reusable_vendor: bool(result.reusableVendor),
+    reusable_vendor_matrix: JSON.stringify(result.reusableVendorMatrix),
     unknown_count: String(result.unknownFiles.length),
   };
 }
@@ -620,7 +675,8 @@ async function main() {
     : options.stdin
       ? (await import('node:fs')).readFileSync(0, 'utf8').split(/\r?\n/).filter(Boolean)
       : changedFilesFromGit(options.base, options.head);
-  const result = classifyChangedFiles(files, { forceFull: options.forceFull, event: options.event });
+  const readBaseSource = options.files.length === 0 && !options.stdin ? baseSourceReader(options.base, options.head) : undefined;
+  const result = classifyChangedFiles(files, { forceFull: options.forceFull, event: options.event, readBaseSource });
   const outputs = githubOutputs(result);
 
   if (options.field) {

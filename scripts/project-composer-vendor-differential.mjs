@@ -10,6 +10,7 @@ import { randomBytes } from 'node:crypto';
 import { readFileSync, writeFileSync } from 'node:fs';
 import { pathToFileURL } from 'node:url';
 import { resolve } from 'node:path';
+import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
 import { buildVendorModel, columnsIn, gap } from './project-composer-vendor-model.mjs';
 import { expandIff } from './project-composer-vendor-sql.mjs';
 import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
@@ -190,6 +191,10 @@ function postgresLiteral(value) {
 const pgType = column => ({ varchar: `varchar(${column.type.length})`, text: 'text', json: 'jsonb', uuid: 'uuid', binary: 'bytea',
   timestamp: 'timestamp', date: 'date', bigint: 'bigint', integer: 'integer', numeric: column.type.precision ? `numeric(${column.type.precision},${column.type.scale ?? 0})` : 'numeric' }[column.type.kind]);
 
+const coded = (code, message) => { throw Object.assign(new Error(message), { code }); };
+// 기준 DB 의 실패는 환경 문제다. 번역 불가도, 대상 DB 와의 불일치도 아니다.
+const baselineFailed = message => coded('VENDOR_BASELINE_FAILED', message);
+
 /** 기준 판정은 원본 CHECK 문장을 그대로 쓴 PostgreSQL 이다. */
 function postgresAccepts({ container, user, database }, probes, definitions) {
   const statements = probes.tables.flatMap(table => {
@@ -202,14 +207,14 @@ function postgresAccepts({ container, user, database }, probes, definitions) {
     return `INSERT INTO ${table.name} (probe_id, ${names.map(name => `"${name}"`).join(', ')}) VALUES (${index}, ${names.map(name => postgresLiteral(row[name])).join(', ')});`;
   }));
   const applied = psql([...statements, ...insertions].join('\n'));
-  if (applied.error || applied.status !== 0) gap(`PostgreSQL 기준 실행 실패: ${applied.error?.message ?? applied.stderr.slice(0, 300)}`);
+  if (applied.error || applied.status !== 0) baselineFailed(`PostgreSQL 기준 실행 실패: ${applied.error?.message ?? applied.stderr.slice(0, 300)}`);
   // 값 때문에 거부된 것만 거부다. 그 밖의 오류는 시험 자체가 깨진 것이다.
   const broken = `${applied.stderr}`.split(/\r?\n/).filter(line => /ERROR:/.test(line)
     && !/violates (check|not-null) constraint|invalid input syntax|invalid input value|value too long|out of range|Token .* is invalid|invalid.*json/i.test(line));
-  if (broken.length) gap(`PostgreSQL 기준 실행 실패: ${broken[0]}`);
+  if (broken.length) baselineFailed(`PostgreSQL 기준 실행 실패: ${broken[0]}`);
   // 받아들인 행을 다시 읽는다. 거부는 행이 없다는 사실로 판정한다.
   const stored = psql(`${probes.tables.map(table => `SELECT '${table.name}:' || probe_id FROM ${table.name};`).join('\n')}\n`);
-  if (stored.error || stored.status !== 0 || /ERROR:/.test(stored.stderr)) gap(`PostgreSQL 기준 결과를 읽지 못했다: ${stored.stderr.slice(0, 300)}`);
+  if (stored.error || stored.status !== 0 || /ERROR:/.test(stored.stderr)) baselineFailed(`PostgreSQL 기준 결과를 읽지 못했다: ${stored.stderr.slice(0, 300)}`);
   return new Set(stored.stdout.split(/\r?\n/).filter(Boolean));
 }
 
@@ -257,13 +262,15 @@ const INTENT_STEPS = Object.freeze([
   ['SELECT COUNT(*) FROM zz_ledger_probe', 1],
 ]);
 
-function intentFailures(handle, vendorId) {
+export function intentFailures(handle, vendorId, run = runStatements) {
   const statements = INTENT_STEPS.map(([sql]) => ({ sql }));
-  const { sections, errors } = runStatements(handle, statements);
+  const { sections, errors } = run(handle, statements);
   const rejected = new Set(errors.map(item => item.index));
   return INTENT_STEPS.flatMap(([sql, expected], index) => {
     if (typeof expected === 'number') {
       const actual = parseCount(sections.get(index));
+      // 조회가 안 된 것은 트리거 동작의 차이가 아니다. 대조 실패로 말하면 원인을 잘못 가리킨다.
+      if (rejected.has(index) || actual === null) throw Object.assign(new Error(`${vendorId} 트리거 확인 조회 실패: ${sql}`), { code: 'VENDOR_QUERY_FAILED' });
       return actual === expected ? [] : [`${sql} → ${actual} (기대 ${expected})`];
     }
     return rejected.has(index) === expected ? [`${sql} → ${expected ? '거부' : '통과'}`] : [];
@@ -291,7 +298,7 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
   let report = null;
   try {
     const schema = runStatements(handle, emission.statements);
-    if (schema.errors.length) gap(`시험 표 적용 실패 ${schema.errors.length}건: ${schema.errors[0].error} :: ${schema.errors[0].statement}`);
+    if (schema.errors.length) coded('VENDOR_PARITY_FAILED', `시험 표 적용 실패 ${schema.errors.length}건: ${schema.errors[0].error} :: ${schema.errors[0].statement}`);
     const actual = vendorAccepts(handle, adapter, probes);
     const differences = [];
     for (const table of probes.tables) {
@@ -310,6 +317,9 @@ export function runDifferential({ input, vendorId, engineId, postgres }) {
   return report;
 }
 
+/** 표본 부족은 번역이 아니라 시험 표본의 문제라 대조 실패로 말하지 않는다. 진짜 불일치가 함께 있으면 불일치가 앞선다. */
+export const differentialExitCode = result => (result.differences.length || result.intentFailures.length ? VENDOR_EXIT_CODES.VENDOR_PARITY_FAILED : result.unbalanced.length ? 1 : 0);
+
 const spawnDocker = args => spawnSync('docker', args, { encoding: 'utf8' });
 
 /**
@@ -320,10 +330,13 @@ export function withDisposablePostgres(run, docker = spawnDocker) {
   const name = `egov-vendor-baseline-${randomBytes(4).toString('hex')}`;
   let result;
   let failure = null;
+  let dockerMissing = false;
   try {
     const started = docker(['run', '-d', '--name', name, ...vendorContainerLabels('postgresql'), '--env', 'POSTGRES_USER=composer',
       '--env', 'POSTGRES_DB=composer', '--env', 'POSTGRES_HOST_AUTH_METHOD=trust', COMPOSER_POSTGRES_IMAGE]);
-    if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${String(started.stderr).slice(0, 200)}`);
+    // 실행 파일이 없으면 만들어진 컨테이너도 없다. 다른 실행 오류는 컨테이너를 만든 뒤일 수 있어 그대로 정리한다.
+    dockerMissing = started.error?.code === 'ENOENT';
+    if (started.status !== 0) throw new Error(`기준 PostgreSQL 을 띄우지 못했다: ${String(started.stderr ?? started.error?.message).slice(0, 200)}`);
     for (let attempt = 0; docker(['exec', name, 'pg_isready', '-h', '127.0.0.1', '-U', 'composer', '-d', 'composer']).status !== 0; attempt += 1) {
       if (attempt > 240) throw new Error('기준 PostgreSQL 이 준비되지 않았다.');
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, 500);
@@ -332,6 +345,7 @@ export function withDisposablePostgres(run, docker = spawnDocker) {
   } catch (error) {
     failure = error;
   }
+  if (dockerMissing) throw failure;
   stopVendorEngineReporting({ name }, failure, () => docker(['rm', '-f', '-v', name]));
   return result;
 }
@@ -340,11 +354,16 @@ if (process.argv[1] && import.meta.url === pathToFileURL(resolve(process.argv[1]
   const args = {};
   for (let index = 2; index < process.argv.length; index += 2) args[process.argv[index].replace(/^--/, '')] = process.argv[index + 1];
   const run = postgres => runDifferential({ input: JSON.parse(readFileSync(args.input, 'utf8')), vendorId: args.vendor, engineId: args.engine, postgres });
-  const result = args.container ? run({ container: args.container, user: args.user, database: args.database }) : withDisposablePostgres(run);
-  if (args.report) writeFileSync(args.report, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
-  console.log(`[vendor-differential] ${result.engine}: CHECK ${result.checks}, 값 ${result.rows}(기준 허용 ${result.accepted}, 거부 ${result.rejected}), 불일치 ${result.differences.length}, 한쪽만 나온 CHECK ${result.unbalanced.length}, 트리거 동작 실패 ${result.intentFailures.length}`);
-  for (const name of result.unbalanced.slice(0, 12)) console.log(`  표본 부족: ${name}`);
-  for (const item of result.intentFailures.slice(0, 12)) console.log(`  트리거: ${item}`);
-  for (const item of result.differences.slice(0, 12)) console.log(`  ${item.check} ${JSON.stringify(item.row).slice(0, 110)} pg=${item.postgresql} vendor=${item.vendor}`);
-  if (result.differences.length || result.unbalanced.length || result.intentFailures.length) process.exitCode = 1;
+  try {
+    const result = args.container ? run({ container: args.container, user: args.user, database: args.database }) : withDisposablePostgres(run);
+    if (args.report) writeFileSync(args.report, `${JSON.stringify(result, null, 2)}\n`, 'utf8');
+    console.log(`[vendor-differential] ${result.engine}: CHECK ${result.checks}, 값 ${result.rows}(기준 허용 ${result.accepted}, 거부 ${result.rejected}), 불일치 ${result.differences.length}, 한쪽만 나온 CHECK ${result.unbalanced.length}, 트리거 동작 실패 ${result.intentFailures.length}`);
+    for (const name of result.unbalanced.slice(0, 12)) console.log(`  표본 부족: ${name}`);
+    for (const item of result.intentFailures.slice(0, 12)) console.log(`  트리거: ${item}`);
+    for (const item of result.differences.slice(0, 12)) console.log(`  ${item.check} ${JSON.stringify(item.row).slice(0, 110)} pg=${item.postgresql} vendor=${item.vendor}`);
+    process.exitCode = differentialExitCode(result);
+  } catch (error) {
+    console.error(`[vendor-differential] ${error.code ?? 'FAILED'}: ${error.message}`);
+    process.exitCode = vendorExitCode(error);
+  }
 }

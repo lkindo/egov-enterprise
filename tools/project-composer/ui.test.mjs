@@ -10,6 +10,8 @@ import { createComposerEngine, degradationNotes, diffSummary, inclusionNotes } f
 import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
+import { loadVendorLedger, selectableVendors, vendorChoices } from '../../scripts/project-composer-vendors.mjs';
+import { readVendorAssetLedger } from '../../scripts/reusable-vendor-assets.mjs';
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
 import { elapsedSentence, formatDuration, timelineStatus } from './public/job.js';
@@ -660,7 +662,7 @@ test('recipe import planning re-binds to the current source and names what it dr
   assert.equal(other.vendor, null);
   assert.deepEqual(other.notes.slice(1), [
     '지금 원본에 없는 기능은 빼고 불러왔습니다: ghost-1, ghost-2, ghost-3, ghost-4, ghost-5 외 1개.',
-    '지원하지 않는 데이터베이스(oracle)라 지금 고른 데이터베이스로 불러왔습니다.',
+    '지금 고를 수 없는 데이터베이스(oracle)라 지금 고른 데이터베이스로 불러왔습니다.',
     '이 구성은 다른 원본(커밋 bbbbbbbbbbbb)에서 저장했습니다. 지금 원본으로 다시 확인합니다. 저장한 원본 그대로 만들려면 저장소를 그 커밋으로 체크아웃한 뒤 생성기를 다시 시작하세요.']);
   const preset = plan(savedRecipe({ sourceRef: 'HEAD', selection: { preset: 'collaboration' } }));
   assert.deepEqual(preset.notes, ['‘my.recipe.json’ 구성을 불러왔습니다.'], 'a symbolic source reference says nothing about the commit');
@@ -1077,6 +1079,7 @@ test('the final confirmation shows the environment check and the composition, an
   const coreScreens = realMenuTree({ ...mailRecipe, selection: { preset: 'core' } }).filter(menu => menu.kind === 'screen');
   assert.ok(mailScreens.length > coreScreens.length, 'mail adds destinations');
   const row = term => summary.locator('div', { has: page.locator('dt', { hasText: new RegExp(`^${term}$`) }) }).locator('dd');
+  await expect(row('데이터베이스')).toHaveText('PostgreSQL');
   await expect(row('테이블 · 권한')).toHaveText(`${mailPlan.tables.length} · ${mailPlan.permissionCodes.length} (공통 기반 ${real.core.tables.length} · ${real.core.permissionCodes.length})`);
   await expect(row('메뉴')).toHaveText(`전체 ${mailMenus.length}개 · 목적지 ${mailScreens.length}개 (공통 기반 목적지 ${coreScreens.length}개)`);
   // 점검이 실패하면 통과로 보이지 않는다. '다시 점검'은 잠기지 않아 누른 뒤에도 포커스가 그 자리에 남는다.
@@ -1161,6 +1164,251 @@ test('a late answer from an earlier preflight never replaces the latest one', { 
   await page.waitForTimeout(500);
   await expect(page.locator('#preflight-status')).toHaveText('생성 환경 점검을 모두 통과했습니다.');
   await expect(dialog.getByRole('button', { name: '생성 시작' })).toBeEnabled();
+  assert.deepEqual(pageErrors, []);
+});
+
+/*
+ * 데이터베이스 선택지(ADR-0047 결정 2). 화면은 원장의 판정을 그대로 보인다. 인증되지 않은 벤더는 비활성과 사유로 남고 파일로도 고를 수 없으며,
+ * 원장의 값만 바꾸면 코드 변경 없이 고를 수 있게 된다.
+ */
+async function vendorPage(t, readLedger, generate = async () => ({ projectDirectory: 'build/project-composer/x', databaseDirectory: 'build/db', reportPath: 'build/report.json', verified: true })) {
+  const app = createComposerServer({ engine: { catalog: () => ({ ...catalog, vendors: vendorChoices(readLedger()) }), plan, preflight: passingPreflight, deep: passingDeep, generate,
+    selectableVendors: () => selectableVendors(readLedger()) } });
+  const origin = await app.listen(0);
+  t.after(() => app.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  const planned = [];
+  page.on('request', request => { if (request.url().endsWith('/api/plan')) planned.push(JSON.parse(request.postData()).recipe); });
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  return { page, pageErrors, planned };
+}
+const vendorFile = value => ({ name: 'vendor.recipe.json', mimeType: 'application/json', buffer: Buffer.from(JSON.stringify(value)) });
+// 실제 원장의 Oracle 상태에 기대지 않는다. 승격 뒤에도 같은 전환을 시험해야 한다.
+function ledgerWithOracle(status) {
+  const ledger = loadVendorLedger(root);
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  oracle.status = status;
+  if (status === 'certified') delete oracle.reason;
+  else oracle.reason = '시험용 사유입니다.';
+  return ledger;
+}
+
+test('uncertified vendors stay disabled with their reason and a recipe file cannot pick them', { timeout: 60_000 }, async t => {
+  const ledger = loadVendorLedger(root);
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger);
+  const select = page.locator('#database');
+  await expect(select).toHaveValue('postgresql');
+  await expect(select).toHaveAttribute('aria-describedby', 'database-reasons');
+  await expect(page.locator('#database-reasons')).toBeVisible();
+  for (const vendor of ledger.vendors) {
+    const option = select.locator(`option[value="${vendor.id}"]`);
+    if (vendor.status === 'certified') {
+      await expect(option).toBeEnabled();
+      await expect(option).toHaveText(vendor.label);
+    } else {
+      await expect(option).toBeDisabled();
+      await expect(option).toHaveText(`${vendor.label} · 선택할 수 없음`);
+      await expect(page.locator('#database-reason-list')).toContainText(`${vendor.label}: ${vendor.reason}`);
+    }
+  }
+  const uncertified = ledger.vendors.find(vendor => vendor.status !== 'certified').id;
+  await page.locator('#recipe-file').setInputFiles(vendorFile(savedRecipe({ selection: { domains: ['board'] }, database: { vendor: uncertified } })));
+  await expect(page.locator('#plan-status')).toContainText(`지금 고를 수 없는 데이터베이스(${uncertified})라`);
+  await expect(select).toHaveValue('postgresql');
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('changing only the ledger makes a vendor selectable through planning, generation, files and job recovery', { timeout: 90_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  const generated = [];
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger, async value => {
+    generated.push(value);
+    return { projectDirectory: 'build/project-composer/x', databaseDirectory: 'build/db', reportPath: 'build/report.json', verified: true };
+  });
+  const select = page.locator('#database');
+  const reasons = page.locator('#database-reason-list');
+  await expect(select.locator('option[value="oracle"]')).toBeEnabled();
+  await expect(select.locator('option[value="oracle"]')).toHaveText('Oracle');
+  await expect(reasons).not.toContainText('Oracle');
+  await expect(select).toHaveValue('postgresql');
+  // 파일이 인증된 벤더를 적었으면 고른다.
+  await page.locator('#recipe-file').setInputFiles(vendorFile(savedRecipe({ selection: { domains: ['board'] }, database: { vendor: 'oracle' } })));
+  await expect(select).toHaveValue('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.equal(planned.at(-1).database.vendor, 'oracle');
+  // 화면에서 바꿔도 구성을 다시 확인한다. 저장한 계획이 다른 벤더를 말하지 않게 생성 버튼이 잠긴다.
+  const before = planned.length;
+  await select.selectOption('postgresql');
+  await expect.poll(() => planned.length).toBeGreaterThan(before);
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  // 최종 확인 창은 고른 데이터베이스를 말한다. 확인하지 않은 벤더로 생성이 시작되지 않게 한다.
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const summary = page.locator('#confirm-summary');
+  await expect(summary.locator('div', { has: page.locator('dt', { hasText: /^데이터베이스$/ }) }).locator('dd')).toHaveText('Oracle');
+  await page.getByRole('dialog', { name: '이 구성으로 생성할까요?' }).getByRole('button', { name: '돌아가기' }).click();
+  await confirmGenerate(page);
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  assert.equal(generated.at(-1).database.vendor, 'oracle');
+  // 다시 열면 그 작업의 벤더를 되살린다.
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(select).toHaveValue('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.equal(planned.at(-1).database.vendor, 'oracle');
+  // 원장이 다시 내려가면 서버가 거부하고, 새 원본을 받으면 고르던 값이 바뀐 사실을 알린다.
+  ledger = ledgerWithOracle('preview');
+  await page.getByLabel('프로젝트 이름').fill('after-downgrade');
+  await expect(page.locator('#plan-status')).toContainText('선택한 구성을 지금 원본에서 만들 수 없습니다');
+  await page.getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(select).toHaveValue('postgresql');
+  await expect(select.locator('option[value="oracle"]')).toBeDisabled();
+  await expect(page.locator('#plan-status')).toContainText('새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.deepEqual(pageErrors, []);
+});
+
+// 구성 입력을 바꾸지 않고 '프로젝트 생성' 을 누르면 계획을 다시 묻지 않으므로 환경 점검이 첫 거부다. 다시 점검해도 같으니 다시 불러오기를 보인다.
+test('a vendor that can no longer be chosen stops the final check with the way out, not a retry', { timeout: 90_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger);
+  const select = page.locator('#database');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  ledger = ledgerWithOracle('preview');
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(page.locator('#preflight-status')).toContainText('선택한 구성을 지금 원본에서 만들 수 없습니다');
+  const start = dialog.getByRole('button', { name: '생성 시작' });
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription('지금 원본으로는 이 구성을 생성할 수 없습니다. 새 원본으로 다시 불러온 뒤 확인하세요.');
+  await expect(page.locator('#deep-status')).toHaveText('생성 환경 점검을 마치지 못해 소스 정밀 점검을 하지 않았습니다.');
+  await dialog.getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(select).toHaveValue('postgresql');
+  await expect(select.locator('option[value="oracle"]')).toBeDisabled();
+  await expect(page.locator('#plan-status')).toContainText('새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  assert.deepEqual(pageErrors, []);
+});
+
+// 승격하면 사용자가 보는 경로다. 실제 엔진에 Oracle 을 올린 원장을 넣어 계획·정밀 점검·확인 창을 잇는다.
+test('choosing a vendor shows its degradations, what is removed and the image notice before generating', { timeout: 180_000 }, async t => {
+  const ledger = ledgerWithOracle('certified');
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const removed = readVendorAssetLedger(root);
+  const engine = createComposerEngine({ root, loadVendors: () => ledger });
+  const app = createComposerServer({ engine: { catalog: engine.catalog, plan: engine.plan, preflight: passingPreflight, deep: engine.deep, selectableVendors: engine.selectableVendors,
+    generate: async () => { throw new Error('not generated in this test'); } } });
+  const origin = await app.listen(0);
+  t.after(() => app.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.getByLabel('프로젝트 이름').fill('vendor-notices');
+  const notes = page.locator('#plan-degraded');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.', { timeout: 60_000 });
+  await expect(notes).not.toContainText(oracle.notices.image);
+  await expect(notes).not.toContainText(ledger.removedPostgresTools.groups[0].label);
+  await page.locator('#database').selectOption('oracle');
+  await expect(notes).toContainText(oracle.notices.image, { timeout: 60_000 });
+  await expect(page.getByRole('group', { name: '줄어드는 동작과 데이터베이스 안내' })).toBeVisible();
+  for (const row of oracle.notices.degradations) await expect(notes).toContainText(row.text);
+  for (const group of ledger.removedPostgresTools.groups) await expect(notes).toContainText(`${group.label}: ${group.reason}`);
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const summary = page.locator('#confirm-summary');
+  const degraded = summary.locator('div', { has: page.locator('dt', { hasText: /^기능 저하$/ }) }).locator('dd');
+  await expect(degraded).toContainText(`Oracle 에서 달라지는 동작: ${oracle.notices.degradations.map(row => row.summary).join(', ')}`);
+  await expect(degraded).toContainText(ledger.removedPostgresTools.groups.map(group => group.label).join(', '));
+  await expect(degraded).toContainText(oracle.notices.image);
+  // 정밀 점검은 실제 판정이다. 벤더 규칙의 수는 제거 수와 따로 말한다.
+  const vendorSentence = `이 데이터베이스에서는 PostgreSQL 전용 검증 게이트 ${removed.gates.length}건과 도구·자료 ${removed.assets.length}개도 빠집니다.`;
+  await expect(page.locator('#deep-status')).toContainText(vendorSentence, { timeout: 120_000 });
+  await expect(page.locator('#deep-status')).toContainText(/제거: Java \d+개\(연쇄 \d+\) · 프런트 \d+개\(연쇄 \d+\) · 검증 게이트 \d+건\./);
+  // PostgreSQL 로 돌아오면 벤더 안내가 사라진다.
+  await page.getByRole('dialog', { name: '이 구성으로 생성할까요?' }).getByRole('button', { name: '돌아가기' }).click();
+  await page.locator('#database').selectOption('postgresql');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.', { timeout: 60_000 });
+  await expect(notes).not.toContainText(oracle.notices.image);
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await expect(page.locator('#deep-status')).toContainText('지워지는 검증 게이트는 승인 목록과 같고', { timeout: 120_000 });
+  await expect(page.locator('#deep-status')).not.toContainText('이 데이터베이스에서는');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('reopening a job whose vendor can no longer be chosen says so until the next change', { timeout: 60_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger);
+  const select = page.locator('#database');
+  const status = page.locator('#plan-status');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  ledger = ledgerWithOracle('preview');
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  const sentence = '새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.';
+  await expect(status).toContainText(sentence);
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await expect(select).toHaveValue('postgresql');
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  await page.getByLabel('프로젝트 이름').fill('after-reopen');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await expect(status).not.toContainText(sentence);
+  assert.deepEqual(pageErrors, []);
+});
+
+// 실행 중인 작업은 끝난 작업과 다른 분기다. 끝날 때까지 계획을 다시 묻지 않으므로 알림이 그동안 보이고 끝난 뒤의 계획에도 이어져야 한다.
+test('reopening a running job restores its vendor, or says so while it runs and after it ends', { timeout: 60_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  let finish;
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger, async () => {
+    await new Promise(resolve => { finish = resolve; });
+    return { projectDirectory: 'build/project-composer/x', databaseDirectory: 'build/db', reportPath: 'build/report.json', verified: true };
+  });
+  const select = page.locator('#database');
+  const status = page.locator('#plan-status');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트 준비 중');
+  // 아직 고를 수 있으면 작업의 벤더를 되살린다.
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트 준비 중');
+  await expect(select).toHaveValue('oracle');
+  const sentence = '새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.';
+  await expect(status).not.toContainText(sentence);
+  // 그 뒤 원장이 내려갔다. 작업은 Oracle 로 도는 중인데 화면의 값은 다르므로 말한다.
+  ledger = ledgerWithOracle('preview');
+  const plansBefore = planned.length;
+  await page.reload();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트 준비 중');
+  await expect(select).toHaveValue('postgresql');
+  await expect(select.locator('option[value="oracle"]')).toBeDisabled();
+  await expect(status).toHaveText(sentence);
+  assert.equal(planned.length, plansBefore, '실행 중에는 계획을 다시 묻지 않는다');
+  finish();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(status).toContainText('포함 범위를 확인했습니다.');
+  await expect(status).toContainText(sentence);
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
   assert.deepEqual(pageErrors, []);
 });
 
@@ -1711,6 +1959,34 @@ test('a coded deep-check failure in the final confirmation shows its action in t
   assert.deepEqual(pageErrors, []);
 });
 
+// PostgreSQL 구성도 환경 점검이 벤더 원장을 읽는다. 원장을 읽지 못한 실패는 다시 점검해도 같으니 정밀 점검과 같은 행동을 보인다.
+test('a coded environment-check failure on a PostgreSQL composition shows the deep check action, not a bare retry', { timeout: 45_000 }, async t => {
+  let drift = false;
+  const { page, launchUrl, pageErrors, count } = await errorPage(t, {
+    selectableVendors: () => { if (drift) throw new ComposerError('CATALOG_DRIFT', { violations: ['config/db-vendors.json 의 벤더가 등록표와 다르다.'] }); return ['postgresql']; } });
+  await page.goto(launchUrl);
+  await expect(generateButton(page)).toBeEnabled();
+  await expect(page.locator('#database')).toHaveValue('postgresql');
+  drift = true;
+  const deeps = count('/api/plan/deep');
+  await generateButton(page).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(dialog.locator('#preflight-status')).toHaveText('기능 선언이 원본 코드와 맞지 않아 구성을 계산할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 확인해 주세요.');
+  const start = dialog.getByRole('button', { name: '생성 시작' });
+  await expect(start).toBeDisabled();
+  await expect(dialog.locator('#confirm-blocked')).toHaveText('기능 선언이 원본 코드와 맞지 않아 생성할 수 없습니다. 개발자 정보의 위반을 고친 뒤 다시 점검하세요.');
+  await expect(dialog.locator('#deep-status')).toHaveText('생성 환경 점검을 마치지 못해 소스 정밀 점검을 하지 않았습니다.');
+  await dialog.locator('#confirm-actions summary').click();
+  await expect(dialog.locator('#confirm-actions code')).toHaveText('config/db-vendors.json 의 벤더가 등록표와 다르다.');
+  // 원장을 고치면 다시 점검으로 풀린다.
+  drift = false;
+  await dialog.getByRole('button', { name: '다시 점검' }).click();
+  await expect(start).toBeEnabled();
+  await expect(dialog.locator('#confirm-actions')).toBeHidden();
+  assert.equal(count('/api/plan/deep'), deeps + 1);
+  assert.deepEqual(pageErrors, []);
+});
+
 /*
  * 생성 작업 실패(설계서 14.2, E4b). 서버가 단계에 맞는 코드와 행동을 주면 화면은 문장을 role=alert 하나에, 단계·명령·로그 위치·
  * 행동·접힌 로그 끝부분은 그 밖의 형제 영역에 둔다. 다시 생성·다시 점검은 최종 확인 창을 거친다.
@@ -1923,7 +2199,7 @@ test('a command that ended without an exit code is not called "could not run", a
 });
 
 /*
- * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 상태와 시간을 보이고, 남은 시간은 같은 배치로 끝까지 마친 기록이
+ * 진행 타임라인(E6a). 단계마다, 검증 안에서는 검증 단계마다 상태와 시간을 보이고, 남은 시간은 같은 출력 구조·같은 데이터베이스로 끝까지 마친 기록이
  * 충분할 때만 숫자로 말한다. 같은 작업의 목록은 제자리에서 고치고, 새 작업은 목록을 새로 시작한다.
  */
 const timelineOf = overrides => ({
@@ -1974,7 +2250,7 @@ test('the job panel shows each stage and verification step with its time, and th
   await expect(list.locator(':scope > li[data-id="verify"]')).toHaveAttribute('aria-current', 'step');
   await expect(steps.locator('li[data-id="typecheck"]')).toHaveText('타입 검사 · 대기');
   await expect(page.locator('#job-message')).toHaveText('생성 프로젝트 검증 중 · 백엔드 컴파일·테스트 (4/7)');
-  await expect(page.locator('#job-elapsed')).toHaveText(/^경과 \d+(\.\d)?초 · 남은 시간은 같은 배치로 끝까지 마친 기록이 3회 이상이면 알려 드립니다\(지금 1회\)$/);
+  await expect(page.locator('#job-elapsed')).toHaveText(/^경과 \d+(\.\d)?초 · 남은 시간은 같은 출력 구조·같은 데이터베이스로 끝까지 마친 기록이 3회 이상이면 알려 드립니다\(지금 1회\)$/);
   assert.equal(await page.locator('#job-elapsed').getAttribute('aria-live'), null, 'the ticking time is not announced');
   // 같은 작업의 다음 조회는 항목을 새로 만들지 않는다(화면 낭독기가 읽던 자리를 지킨다).
   await page.evaluate(() => { window.backendRow = document.querySelector('#job-timeline li[data-id="backend"]'); });
@@ -2095,6 +2371,59 @@ test('the cancel button stops a running job, keeps focus while it cleans up and 
   assert.deepEqual(pageErrors, []);
 });
 
+// 벤더 구성에서 이 폴더와 단계는 번역의 근거다. PostgreSQL 구성의 문구는 그대로 둔다.
+test('a vendor job names the baseline as a translation source on its progress, result and cancel screens', { timeout: 90_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  let finish;
+  let cancelNext = false;
+  const generate = async (recipe, { onProgress, signal }) => {
+    const started = Date.now();
+    onProgress({ stage: 'database', progress: 10, timeline: timelineOf({ resolve: done.resolve, database: { status: 'running', startedAt: started } }) });
+    if (cancelNext) {
+      await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+      throw Object.assign(new ComposerError('CANCELLED', {}, 'private-detail cancel'), { details: { database: 'removed', staging: 'none', project: KEPT_PROJECT, schema: KEPT_SCHEMA } });
+    }
+    await new Promise(resolve => { finish = resolve; });
+    return { projectDirectory: KEPT_PROJECT, databaseDirectory: KEPT_SCHEMA, reportPath: 'build/report.json', verified: true };
+  };
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger, generate);
+  const stage = page.getByRole('list', { name: '생성 단계' }).locator(':scope > li[data-id="database"]');
+  const select = page.locator('#database');
+  const choose = async vendor => {
+    await select.selectOption(vendor);
+    await expect.poll(() => planned.at(-1).database.vendor).toBe(vendor);
+    await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  };
+  await choose('oracle');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-message')).toHaveText('번역 기준 스키마와 초기 데이터 생성 중');
+  await expect(stage).toHaveText(/^번역 기준 스키마와 초기 데이터 생성 · 진행 중/);
+  finish();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(page.locator('#job-result')).toContainText('번역 기준 PostgreSQL 스키마 폴더(적용되는 스키마는 프로젝트의 db/vendor 폴더에 있습니다)');
+  await expect(page.locator('#job-result')).not.toContainText('DB 스키마 폴더');
+  // 같은 화면에서 PostgreSQL 로 바꾸면 종전 문구다.
+  await choose('postgresql');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-message')).toHaveText('PostgreSQL 스키마와 초기 데이터 생성 중');
+  await expect(stage).toHaveText(/^PostgreSQL 스키마와 초기 데이터 생성 · 진행 중/);
+  finish();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(page.locator('#job-result')).toContainText('DB 스키마 폴더');
+  await expect(page.locator('#job-result')).not.toContainText('번역 기준');
+  // 취소 화면.
+  cancelNext = true;
+  await choose('oracle');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-cancel')).toBeVisible();
+  await page.locator('#job-cancel').click();
+  await expect(page.getByRole('heading', { name: '생성을 취소했습니다' })).toBeVisible();
+  await expect(page.locator('#job-message')).toContainText('프로젝트 폴더와 번역 기준 스키마 폴더는 남겨 두었습니다');
+  await expect(page.locator('#job-cancelled')).toContainText('남겨 둔 번역 기준 PostgreSQL 스키마 폴더');
+  await expect(page.locator('#job-cancelled')).toContainText(KEPT_SCHEMA);
+  assert.deepEqual(pageErrors, []);
+});
+
 test('a cancel pressed after the status poll failed re-arms polling, and a failed cancel reason does not outlive the job', { timeout: 60_000 }, async t => {
   let release;
   const cleaned = new Promise(resolve => { release = resolve; });
@@ -2186,4 +2515,44 @@ test('a cancel that failed to reach the server leaves no reason once the job end
   await expect(page.getByRole('heading', { name: '프로젝트가 준비되었습니다' })).toBeVisible();
   await expect(page.locator('#job-cancel-status'), 'a connection error is not true next to the result').toHaveText('');
   assert.deepEqual(pageErrors, []);
+});
+
+test('a vendor verification failure names the step and offers only its own action', { timeout: 60_000 }, async t => {
+  const tail = ['[reusable-verify] custom/single-module: node scripts/project-composer-vendor-integration.mjs', 'ORA-02290 check constraint violated'];
+  const failure = code => jobFailure(code, { step: 'backend' }, { stage: 'verify', commandId: 'scripts/verify-reusable-artifact.mjs', exitCode: 1, log: JOB_LOG, report: JOB_REPORT, sourceCommit: 'a'.repeat(40), logTail: tail });
+  const failures = [failure('VENDOR_PARITY_FAILED'), failure('VENDOR_ENGINE_NOT_READY')];
+  let next = 0;
+  const { page, launchUrl, pageErrors } = await errorPage(t, { generate: async () => { throw failures[next++]; } }, { permissions: ['clipboard-read', 'clipboard-write'] });
+  await startFailingJob(page, launchUrl);
+  const actions = page.locator('#job-actions');
+  await expect(page.locator('#job-error')).toContainText('대상 데이터베이스에 적용한 결과가 기준 스키마와 달라');
+  await expect(page.locator('#job-failure')).toContainText('실패 단계: 생성 프로젝트 검증 · 백엔드 컴파일·테스트');
+  await page.locator('#job-log-tail summary').click();
+  await expect(page.locator('#job-log-tail-lines')).toHaveText(tail.join('\n'));
+  // 대조 실패는 다시 생성을 권하지 않는다. 진단 정보는 식별자만 담는다.
+  await expect(actions.getByRole('button', { name: '다시 생성' })).toHaveCount(0);
+  await actions.getByRole('button', { name: '진단 정보 복사' }).click();
+  await expect(page.locator('#job-actions [role="status"]')).toHaveText('진단 정보를 복사했습니다.');
+  assert.equal((await page.evaluate(() => navigator.clipboard.readText())).replace(/\r\n/g, '\n'),
+    ['코드: VENDOR_PARITY_FAILED:backend', '단계: verify', `원본 커밋: ${'a'.repeat(40)}`, `작업 보고서: ${JOB_REPORT}`].join('\n'));
+  // 엔진 미준비는 환경 문제라 최종 확인 창의 환경 점검으로 간다.
+  await confirmGenerate(page);
+  await expect(page.locator('#job-error')).toContainText('대상 데이터베이스의 임시 컨테이너를 띄우지 못했거나 실행 중 연결이 끊겼습니다');
+  await expect(actions.getByRole('button', { name: '진단 정보 복사' })).toHaveCount(0);
+  await actions.getByRole('button', { name: '생성 환경 다시 점검' }).click();
+  await expect(page.getByRole('dialog', { name: '이 구성으로 생성할까요?' })).toBeVisible();
+  await expect(page.locator('#job-panel')).not.toContainText('private-detail');
+  assert.deepEqual(pageErrors, []);
+});
+
+test('the final check asks the environment check about the chosen database', { timeout: 45_000 }, async t => {
+  const asked = [];
+  const { page, pageErrors, release } = await realCatalogPage(t, { preflight: options => { asked.push(options); return passingPreflight(); } });
+  await page.locator('#capability-mail').check();
+  await expect(page.locator('#domain-count')).toHaveText('1');
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await expect(page.locator('#preflight-status')).toHaveText('생성 환경 점검을 모두 통과했습니다.');
+  assert.deepEqual(asked, [{ sourceCommit: 'a'.repeat(40), vendor: 'postgresql' }]);
+  assert.deepEqual(pageErrors, []);
+  release();
 });

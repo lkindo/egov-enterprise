@@ -595,7 +595,8 @@ export function buildAtlasCatalog(repoRoot) {
   const facts = {
     governanceCount: gateRecords.filter(item => item.category === 'governance').length,
     architectureCount: gateRecords.filter(item => item.category === 'architecture').length,
-    schemaCount: gateRecords.filter(item => item.category === 'database').length,
+    // 화면 표시는 schema-validation 클래스 수다. 같은 database 분류의 벤더 카탈로그 게이트는 생성물에서 돌므로 세지 않는다(전체 수 gateCount 에는 든다).
+    schemaCount: gateRecords.filter(item => item.gateSet === 'GATESET-SCHEMA-VALIDATION').length,
     runnerCount: runnerRecords.length, requiredCount: requiredRecords.length, profileCount: profileRecords.length,
     routeCount: routeRecords.length, documentCount: documentRecords.length, clauseCount: constitutionRecords.length,
     gateCount: gateRecords.length, migrationTestCount,

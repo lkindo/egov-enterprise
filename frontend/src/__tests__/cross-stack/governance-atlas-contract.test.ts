@@ -180,7 +180,8 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     // Java 태그 모집단과 registry 의 정확 대조는 governance-gates-contract 가 소유한다(태그 수를 다시 세지 않는다).
     expect(current.facts.qualityPopulationCount).toBe(registry.qualityPopulations.length);
     expect(current.facts.qualityRatchetCount).toBe(registry.qualityRatchets.length);
-    expect(current.facts.runnerCount).toBe(registry.gateSets.length - 3);
+    // 개별 규칙을 갖는 세트는 governance·architecture·schema-validation·vendor-conformance 넷이고, 나머지가 runner catalog 다.
+    expect(current.facts.runnerCount).toBe(registry.gateSets.length - 4);
     expect(current.catalogs.executionProfiles).toHaveLength(registry.executionProfiles.length);
     const required = JSON.parse(read('.github/required-checks.json')).requiredChecks as Array<{ context: string }>;
     expect(ids(current.catalogs.requiredChecks)).toEqual(required.map(check => check.context).sort());

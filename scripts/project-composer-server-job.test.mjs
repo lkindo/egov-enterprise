@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { CANCELLING_MESSAGE, FAILED_STAGES, LATE_CANCEL_MESSAGE, STAGES, VERIFY_STEP_LABELS, applyJobProgress, cancelledMessage, failJob, jobView, requestCancel,
+import { CANCELLING_MESSAGE, FAILED_STAGES, LATE_CANCEL_MESSAGE, STAGES, VENDOR_DATABASE_STAGE, VERIFY_STEP_LABELS, applyJobProgress, cancelledMessage, failJob, jobView, requestCancel,
   startJob, succeedJob }
   from './project-composer-server-job.mjs';
 import { ComposerError } from './project-composer-errors.mjs';
@@ -158,6 +158,35 @@ test('a finished job cannot be cancelled', () => {
   failJob(failed, new Error('x'), 1);
   assert.equal(requestCancel(failed), false);
   assert.equal(failed.cancelRequested, undefined);
+});
+
+// 벤더 구성의 DB 단계는 번역 기준을 만든다. PostgreSQL 구성의 문구는 그대로다.
+test('a vendor job calls the database stage a translation baseline and a PostgreSQL job keeps its wording', () => {
+  const started = vendor => startJob({ id: 'v', requestId: 'r', recipe: { database: { vendor } }, now: 0 });
+  const stage = { stage: 'database', progress: 10 };
+  const label = job => jobView(job, 1).timeline.stages.find(item => item.id === 'database').label;
+  for (const [vendor, running, failed] of [['oracle', VENDOR_DATABASE_STAGE.running, VENDOR_DATABASE_STAGE.label], ['postgresql', STAGES.database, FAILED_STAGES.database]]) {
+    const job = started(vendor);
+    applyJobProgress(job, { ...stage, timeline: timeline({ database: { status: 'running', startedAt: 0 } }) }, 1);
+    assert.equal(job.message, running, vendor);
+    assert.equal(label(job), failed, vendor);
+    failJob(job, Object.assign(new Error('x'), { failure: { stage: 'database' } }), 2);
+    assert.equal(job.failure.stageLabel, failed, vendor);
+  }
+  assert.match(STAGES.database, /^PostgreSQL 스키마와/, 'PostgreSQL 구성의 문구는 바꾸지 않는다');
+  assert.doesNotMatch(VENDOR_DATABASE_STAGE.running + VENDOR_DATABASE_STAGE.label, /PostgreSQL/);
+  // 이 단계를 벗어나면 벤더 구성도 같은 문구다.
+  const later = started('oracle');
+  applyJobProgress(later, { stage: 'source', progress: 20 }, 1);
+  assert.equal(later.message, STAGES.source);
+  const kept = started('oracle');
+  requestCancel(kept);
+  failJob(kept, cancelError({ database: 'removed', staging: 'none', project: PROJECT, schema: SCHEMA }), 3);
+  assert.match(kept.message, /프로젝트 폴더와 번역 기준 스키마 폴더는 남겨 두었습니다/);
+  const keptPlain = started('postgresql');
+  requestCancel(keptPlain);
+  failJob(keptPlain, cancelError({ database: 'removed', staging: 'none', project: PROJECT, schema: SCHEMA }), 3);
+  assert.match(keptPlain.message, /프로젝트 폴더와 DB 스키마 폴더는 남겨 두었습니다/);
 });
 
 test('only a requested cancellation ends as cancelled, and its sentence names what is left and what to do', () => {

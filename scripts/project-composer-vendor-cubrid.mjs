@@ -75,14 +75,37 @@ const syncPair = (emission, table, trigger) => {
   for (const suffix of ['c', 'a', 'b', 'u']) emission.expect('triggers', table.name, `${trigger.name}_${suffix}`);
 };
 
+/** 그림자 키가 컬럼 하나의 값과 이은 키 전체에 두는 글자 수. */
+const SHADOW_PART = 1100;
+const SHADOW_KEY = 2500;
+
+/** 그림자 키에 넣는 컬럼 값의 최대 글자 수. 문자열이 아닌 타입은 문자열로 바꾼 값의 넉넉한 상한이고, 길이를 모르는 타입은 null 이다. */
+function shadowTextLength({ type }) {
+  switch (type.kind) {
+    case 'varchar': return type.length;
+    case 'uuid': return 36;
+    case 'bigint': return 20;
+    case 'integer': return 11;
+    // 부호·앞의 0·소수점: numeric(1,1) 의 -0.9 는 정밀도보다 3자 길다.
+    case 'numeric': return (type.precision ?? 38) + 3;
+    case 'date': case 'timestamp': return 64;
+    default: return null;
+  }
+}
+
 /** 복합 UNIQUE 의 일부 NULL 중복을 엔진이 거부한다. 모든 키가 찼을 때만 값을 갖는 그림자 키에 UNIQUE 를 건다. */
 function shadowUnique(emission, table, unique, order) {
+  // 값을 VARCHAR(1100) 으로 바꿔 VARCHAR(2500) 키에 잇는다. 더 길 수 있으면 잘리거나 거부돼, PostgreSQL 이 구분하는 두 값을 같게 보거나 정상 행을 막는다.
+  const lengths = unique.columns.map(name => shadowTextLength(table.columns.find(column => column.name === name)));
+  if (lengths.some(length => length === null || length > SHADOW_PART)) gap(`${unique.name}: 그림자 키에 ${SHADOW_PART}자를 넘을 수 있는 컬럼이 있어 유일성을 지켜 옮길 수 없다`);
+  const keyLength = lengths.reduce((sum, length) => sum + String(length).length + 1 + length, lengths.length - 1);
+  if (keyLength > SHADOW_KEY) gap(`${unique.name}: 그림자 키가 ${SHADOW_KEY}자를 넘을 수 있어 유일성을 지켜 옮길 수 없다`);
   const key = `uq_key_${order}`;
   const whole = unique.columns.map(name => `obj.${name} IS NOT NULL`).join(' AND ');
   // 길이를 앞에 붙여 구분자가 값에 들어 있어도 서로 다른 키가 같아지지 않게 한다.
-  const value = unique.columns.map(name => `CAST(CHAR_LENGTH(CAST(obj.${name} AS VARCHAR(1100))) AS VARCHAR(10)) || ':' || CAST(obj.${name} AS VARCHAR(1100))`).join(" || ':' || ");
+  const value = unique.columns.map(name => `CAST(CHAR_LENGTH(CAST(obj.${name} AS VARCHAR(${SHADOW_PART}))) AS VARCHAR(10)) || ':' || CAST(obj.${name} AS VARCHAR(${SHADOW_PART}))`).join(" || ':' || ");
   const where = table.primaryKey.columns.map(name => `${name} = obj.${name}`).join(' AND ');
-  emission.sql(`ALTER TABLE ${table.name} ADD COLUMN ${key} VARCHAR(2500)`);
+  emission.sql(`ALTER TABLE ${table.name} ADD COLUMN ${key} VARCHAR(${SHADOW_KEY})`);
   emission.sql(`CREATE UNIQUE INDEX ${unique.name} ON ${table.name} (${key})`);
   emission.sql(`CREATE TRIGGER ${unique.name}_ki AFTER INSERT ON ${table.name} IF (${whole}) EXECUTE UPDATE ${table.name} SET ${key} = ${value} WHERE ${where}`);
   emission.sql(`CREATE TRIGGER ${unique.name}_ku AFTER UPDATE ON ${table.name} IF (NVL(obj.${key}, CHR(30)) <> NVL(CASE WHEN ${whole} THEN ${value} END, CHR(30))) EXECUTE UPDATE ${table.name} SET ${key} = CASE WHEN ${whole} THEN ${value} END WHERE ${where}`);
@@ -196,7 +219,16 @@ function emitSchema(model) {
         emission.degrade(index.name, '부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려진다. 결과는 같다');
         continue;
       }
+      // 조건을 버린 UNIQUE 는 PostgreSQL 이 받는 행을 거부한다. 성능 저하가 아니라 뜻이 바뀌므로 저하로 두지 않는다.
+      if (index.where && index.unique) gap(`${index.name}: 조건부 유일 인덱스는 조건 없이 옮길 수 없다`);
       if (index.where) emission.degrade(`${index.name}:partial`, '부분 인덱스 문법을 쓰지 않고 일반 인덱스로 둔다');
+      if (index.unique && index.columns.length > 1 && index.columns.some(column => table.columns.find(item => item.name === column.name).nullable)) {
+        // 독립 유일 인덱스도 제약과 같이 일부 NULL 행을 중복으로 본다. 그림자 키는 컬럼 값을 이으므로 식 키는 옮기지 못해 멈춘다.
+        if (index.columns.some(column => column.expression)) gap(`${index.name}: 식이 든 복합 유일 인덱스는 NULL 의미를 지켜 옮길 수 없다`);
+        shadow += 1;
+        shadowUnique(emission, table, { name: index.name, columns: index.columns.map(column => column.name) }, shadow);
+        continue;
+      }
       const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${identifier(column.name)}${column.descending ? ' DESC' : ''}`));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);

@@ -22,7 +22,7 @@ import { assertSchemaPreserved, buildCompositionAdminSeed, projectCompositionMen
 import { assertProjectComposerMenusMatch, writeProjectComposerMenuSnapshot } from './project-composer-menu-preview.mjs';
 import { buildVendorModel, vendorSnapshotSql } from './project-composer-vendor-model.mjs';
 import { vendorRowsSql } from './project-composer-vendor-sql.mjs';
-import { translateForAllVendors } from './project-composer-vendors.mjs';
+import { loadVendorLedger, selectableVendors, translateForAllVendors } from './project-composer-vendors.mjs';
 import { TEMP_DB_PREFIX, assertContainerName, assertIdentifier, createDatabase, dropTemporaryDatabase, dump, dumpTableData, git, inspectContainer, listObjects, listSequenceDetails, psql,
   quoteSqlIdentifier, restore, sanitizePgDump } from './reusable-db-postgres.mjs';
 import { buildIsolatedContractSql, readReviewedAuthorizationCatalogVersion, runAuthorizationMigrationStages, versionedMigrations } from './reusable-db-migrations.mjs';
@@ -179,6 +179,7 @@ async function main() {
     composition = resolveGeneratorComposition({ catalog: composerCatalog, profile: args.profile,
       supplied: args.composition ? JSON.parse(readFileSync(resolve(ROOT, args.composition), 'utf8')) : undefined,
       backendLayout: args.layout, layoutExplicit: args.layout !== undefined, sourceCommit,
+      selectable: selectableVendors(loadVendorLedger(ROOT)),
       resolveSourceReference: reference => git(['rev-parse', '--verify', `${reference}^{commit}`]) });
     args.profile = composition.profile;
   }

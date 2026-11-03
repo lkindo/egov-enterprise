@@ -2,14 +2,16 @@
 /**
  * 손 결속 원장 사전 점검 — `npm run regen -- --check`(scripts/regenerate.mjs 의 LEDGER_CHECKS 'hand-bound-ledgers')가 부른다.
  *
- * 재생성이 고치지 않고 사람이 맞추는 결속 셋을 운영 계약(pre-push 의 약 11분 뒤) 전에 본다. 셋 다 실제로 push 를 거부시켰다.
+ * 재생성이 고치지 않고 사람이 맞추는 결속을 운영 계약(pre-push 의 약 11분 뒤) 전에 본다. 앞의 셋은 실제로 push 를 거부시켰다.
  *   TAGGED_GATE_REGISTRY — 태그 시험과 게이트 원장(config/governance/gates.json)의 등록이 어긋났다(2026-10-19 보안 묶음의 미등록
  *     @Tag("schema-validation") 시험). 선택 결과 밖 등록, 없는 root, 선언 root 밖 태그도 같은 코드다.
  *   MENU_SNAPSHOT_STALE — 메뉴에 닿는 마이그레이션 뒤 생성기 메뉴 스냅숏(config/project-composer-menus.json)의 해시가 낡았다(PR #897).
  *   UNASSIGNED_PERMISSION_GUIDANCE — 기본 그룹이 없는 권한에 기능 파일의 unassignedPermissions 안내가 없다(2026-10-26 CMS_PURGE).
+ *   VENDOR_EVIDENCE_STALE — certified 벤더의 인증 입력이 증거 뒤에 바뀌었다(ADR-0047 D-9). 생성물은 입력이 투영돼 있어 판정 함수가 빈 결과를 낸다.
  *
  * 새 판정이 아니다 — 점검마다 그 결속을 판정하는 함수를 그대로 부른다. 태그는 거버넌스 원장 계약이 쓰는 대조(taggedGateRegistryErrors),
- * 메뉴는 생성기 계획이 쓰는 스냅숏 적재(loadProjectComposerMenus), 안내는 생성기 계획이 쓰는 판정(loadUnassignedPermissionGuidance)이다.
+ * 메뉴는 생성기 계획이 쓰는 스냅숏 적재(loadProjectComposerMenus), 안내는 생성기 계획이 쓰는 판정(loadUnassignedPermissionGuidance), 벤더 증거는
+ * 벤더 계약 시험이 쓰는 판정(vendorEvidenceStaleErrors)이다.
  * 운영 계약(governance-gates-contract·project-composer 시험)이 같은 함수로 다시 보므로 거기서 걷지 않는다 — 병합 권위는 그대로다.
  * 읽기만 하고 Docker·네트워크 없이 수 초다. 판정 모듈이 없는 저장소에서는 그 점검만 건너뛰고 그렇게 말한다 — 통과해도 `건너뜀: 코드 — …`
  * 줄을 쓰고, regen --check 는 통과 출력을 숨기는 대신 그 줄을 `  ⚠ hand-bound-ledgers: …` 로 보인다(regenerate.mjs 의 notices). 판정 모듈이
@@ -50,8 +52,15 @@ const UNASSIGNED_GUIDANCE_PRECHECK = Object.freeze({
     + ' {code, bundle, protected, effect} 안내를 둔다 — 안내를 피하려고 권한에 기본 그룹을 붙이지 않는다(H3).',
 });
 
+const VENDOR_EVIDENCE_PRECHECK = Object.freeze({
+  code: 'VENDOR_EVIDENCE_STALE',
+  requires: 'scripts/project-composer-vendor-evidence.mjs',
+  run: (root, evidence) => evidence.vendorEvidenceStaleErrors(root),
+  fix: '해당 엔진마다 `node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <버전> --artifact <생성물>` 로 증거를 다시 만들거나, 그 벤더를 config/db-vendors.json 에서 preview 로 내리고 사유를 적는다.',
+});
+
 /** 점검 목록. `run(root, 판정 모듈)` 은 위반 문장 배열을 돌려주거나 판정 함수의 예외를 그대로 던진다. */
-export const LEDGER_PRECHECKS = Object.freeze([TAGGED_GATE_PRECHECK, MENU_SNAPSHOT_PRECHECK, UNASSIGNED_GUIDANCE_PRECHECK]);
+export const LEDGER_PRECHECKS = Object.freeze([TAGGED_GATE_PRECHECK, MENU_SNAPSHOT_PRECHECK, UNASSIGNED_GUIDANCE_PRECHECK, VENDOR_EVIDENCE_PRECHECK]);
 
 /** 여러 줄 판정 문장을 머리줄 하나로 — 발췌(regenerate.mjs)는 머리줄만 남긴다. */
 const oneLine = text => String(text).split(/\r?\n/).map(line => line.trim()).filter(Boolean).join(' ');

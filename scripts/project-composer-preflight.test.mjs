@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { DISK_BLOCK_BYTES, DISK_WARN_BYTES, PREFLIGHT_IMAGE, composerPreflight } from './project-composer-preflight.mjs';
+import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 
 /*
  * 생성 전 환경 점검(설계서 14장·19장, E5). 명령 실행은 가짜로 바꿔 도구 상태마다 판정을 고정한다.
@@ -122,4 +123,74 @@ test('free space at the output location is judged against the measured size of o
   assert.equal((await at(Number.NaN)).status, 'warn');
   const failed = byId(await preflightWith({}, { freeBytes: () => { throw new Error('EPERM'); } }), 'disk');
   assert.deepEqual(failed, { id: 'disk', status: 'warn', label: '출력 위치의 남은 공간을 확인하지 못했습니다.' });
+});
+
+/*
+ * 벤더 구성의 사전 점검. 메모리 기준은 측정 전 값이라 어떤 값이어도 막지 않는다. PostgreSQL 구성은 명령 하나 늘지 않는다.
+ */
+const GIB = 1024 ** 3;
+
+test('a PostgreSQL composition asks nothing more and gets the same checks', async () => {
+  const unset = await preflightWith();
+  for (const vendor of ['postgresql', undefined]) {
+    const result = await preflightWith({}, { vendor });
+    assert.deepEqual(result.checks, unset.checks, String(vendor));
+    assert.deepEqual(result.calls.map(call => call.join(' ')).sort(), unset.calls.map(call => call.join(' ')).sort());
+    assert.ok(!result.calls.some(call => call[1] === 'info'), 'docker info 를 부르지 않는다');
+  }
+});
+
+test('an Oracle composition also checks the target image and warns about memory without ever blocking', async () => {
+  const { image } = VENDOR_ENGINES.oracle;
+  const oracle = (overrides = {}) => preflightWith({ 'docker info': String(8 * GIB), ...overrides }, { vendor: 'oracle' });
+  const ready = await oracle();
+  assert.equal(ready.blocked, false);
+  assert.deepEqual(ready.checks.map(check => check.id), ['docker', 'java', 'node', 'pnpm', 'frontend', 'image', 'vendor-image', 'vendor-memory', 'worktree', 'source', 'disk']);
+  assert.ok(ready.calls.some(call => call.join(' ') === `docker image inspect --format {{.Id}} ${image}`), '대상 이미지를 본다');
+  assert.ok(ready.calls.some(call => call.join(' ') === `docker image inspect --format {{.Id}} ${PREFLIGHT_IMAGE}`), '기준 PostgreSQL 이미지도 그대로 본다');
+  assert.deepEqual([byId(ready, 'vendor-image').status, byId(ready, 'vendor-memory').status, byId(ready, 'vendor-memory').detail], ['pass', 'pass', '8.0GB']);
+  for (const [memory, label] of [[String(GIB), /1\.0GB입니다.*약 2\.0GB/], ['0', /확인하지 못했습니다/], ['abc', /확인하지 못했습니다/], [new Error('docker info failed'), /확인하지 못했습니다/], [missing(), /확인하지 못했습니다/]]) {
+    const result = await oracle({ 'docker info': memory });
+    const check = byId(result, 'vendor-memory');
+    assert.equal(check.status, 'warn', String(memory));
+    assert.match(check.label, label);
+    assert.equal(result.blocked, false, '메모리는 측정 전 값이라 막지 않는다');
+    assert.equal(check.code, undefined);
+  }
+  assert.equal(byId(await oracle({ 'docker info': String(2 * GIB) }), 'vendor-memory').status, 'pass', '권장값과 같으면 통과다');
+});
+
+test('a target image that is missing only warns, and a Docker that cannot answer asks neither image nor memory', async () => {
+  const { image } = VENDOR_ENGINES.oracle;
+  const outputs = { 'docker info': String(8 * GIB) };
+  const noImage = await composerPreflight({ outputRoot: 'D:/out', sourceCommit: HEAD, vendor: 'oracle', missingFrontendTools: [], nodeVersion: '22.17.1', javaHome: '', freeBytes: () => 250 * GIB,
+    probe: async (command, args) => {
+      if (args.includes(image)) throw new Error('No such image');
+      const value = { ...healthy, ...outputs }[keyOf(command, args)];
+      if (value === undefined) throw new Error('not found');
+      return value;
+    } });
+  assert.equal(noImage.blocked, false);
+  assert.deepEqual([byId(noImage, 'vendor-image').status, byId(noImage, 'image').status], ['warn', 'pass']);
+  assert.match(byId(noImage, 'vendor-image').label, /첫 검증 때 내려받습니다/);
+  const down = await preflightWith({ 'docker version': new Error('pipe not found') }, { vendor: 'oracle' });
+  assert.deepEqual([byId(down, 'vendor-image'), byId(down, 'vendor-memory')], [undefined, undefined]);
+  assert.ok(!down.calls.some(call => call[1] === 'info'));
+});
+
+test('a vendor without a memory hint is not warned about memory', async () => {
+  const mysql = await preflightWith({}, { vendor: 'mysql' });
+  assert.equal(byId(mysql, 'vendor-memory'), undefined);
+  assert.equal(byId(mysql, 'vendor-image').status, 'pass');
+  assert.ok(!mysql.calls.some(call => call[1] === 'info'));
+  assert.equal(byId(await preflightWith({ 'docker info': String(8 * GIB) }, { vendor: 'mssql' }), 'vendor-memory').status, 'pass');
+});
+
+test('a vendor without an engine blocks until its licence check exists', async () => {
+  for (const vendor of ['tibero', 'constructor']) {
+    const result = await preflightWith({}, { vendor });
+    assert.equal(result.blocked, true, vendor);
+    assert.equal(byId(result, 'vendor-engine').status, 'block');
+    assert.match(byId(result, 'vendor-engine').label, /라이선스 파일/);
+  }
 });

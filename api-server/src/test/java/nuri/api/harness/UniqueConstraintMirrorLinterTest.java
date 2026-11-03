@@ -1,28 +1,18 @@
 package nuri.api.harness;
 
-import jakarta.persistence.Column;
-import jakarta.persistence.Entity;
-import jakarta.persistence.Id;
-import jakarta.persistence.Table;
-import jakarta.persistence.UniqueConstraint;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.context.annotation.ClassPathScanningCandidateComponentProvider;
-import org.springframework.core.type.filter.AnnotationTypeFilter;
 
 import java.io.IOException;
-import java.lang.reflect.Field;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.HashSet;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -74,7 +64,7 @@ class UniqueConstraintMirrorLinterTest {
         Map<String, List<Set<String>>> dbUniques = collectDbUniqueColumnSets();
 
         // 2) @Entity 리플렉션 → 테이블별 미러 컬럼셋 수집
-        Map<String, EntityMirror> entityMirrors = collectEntityMirrors();
+        Map<String, SchemaConformanceRules.EntityMirror> entityMirrors = SchemaConformanceRules.entityMirrors(ENTITY_SCAN_BASE);
 
         // 게이트 무결성(false-green 방지): 파서/스캔이 조용히 0건을 반환하면 vacuous 통과가 되므로 차단
         if (dbUniques.isEmpty()) {
@@ -89,7 +79,7 @@ class UniqueConstraintMirrorLinterTest {
         int checked = 0;
         for (Map.Entry<String, List<Set<String>>> e : dbUniques.entrySet()) {
             String table = e.getKey();
-            EntityMirror mirror = entityMirrors.get(table);
+            SchemaConformanceRules.EntityMirror mirror = entityMirrors.get(table);
             if (mirror == null) {
                 // 매핑 엔티티 없음 — JPA 미러 대상 아님(메타/브로커/고아/뷰). 자연 제외.
                 continue;
@@ -188,108 +178,6 @@ class UniqueConstraintMirrorLinterTest {
         return cols;
     }
 
-    // ---- 엔티티 리플렉션 --------------------------------------------------------------
-
-    private Map<String, EntityMirror> collectEntityMirrors() {
-        Map<String, EntityMirror> mirrors = new HashMap<>();
-        ClassPathScanningCandidateComponentProvider scanner =
-                new ClassPathScanningCandidateComponentProvider(false);
-        scanner.addIncludeFilter(new AnnotationTypeFilter(Entity.class));
-        scanner.findCandidateComponents(ENTITY_SCAN_BASE).forEach(bd -> {
-            String className = bd.getBeanClassName();
-            try {
-                Class<?> clazz = Class.forName(className);
-                Table table = clazz.getAnnotation(Table.class);
-                if (table == null || table.name().isBlank()) {
-                    return; // 물리 테이블명 미상 — 검사 불가(엔티티는 대부분 @Table(name) 보유)
-                }
-                String tableName = unquote(table.name());
-                EntityMirror mirror = new EntityMirror(clazz.getSimpleName());
-
-                for (UniqueConstraint uc : table.uniqueConstraints()) {
-                    Set<String> set = new TreeSet<>();
-                    for (String col : uc.columnNames()) {
-                        set.add(unquote(col));
-                    }
-                    if (!set.isEmpty()) {
-                        mirror.tableUniqueSets.add(set);
-                    }
-                }
-
-                for (Field f : allFields(clazz)) {
-                    Column col = f.getAnnotation(Column.class);
-                    String colName = resolveColumnName(f, col);
-                    if (col != null && col.unique()) {
-                        mirror.singleUniqueColumns.add(colName);
-                    }
-                    if (f.isAnnotationPresent(Id.class)) {
-                        mirror.idColumns.add(colName);
-                    }
-                }
-                mirrors.put(tableName, mirror);
-            } catch (ClassNotFoundException | NoClassDefFoundError ex) {
-                log.warn("[UniqueMirrorLinter] 엔티티 로드 실패(스캔 제외): {} ({})", className, ex.getMessage());
-            }
-        });
-        return mirrors;
-    }
-
-    private static List<Field> allFields(Class<?> clazz) {
-        List<Field> fields = new ArrayList<>();
-        for (Class<?> c = clazz; c != null && c != Object.class; c = c.getSuperclass()) {
-            fields.addAll(Arrays.asList(c.getDeclaredFields()));
-        }
-        return fields;
-    }
-
-    /** @Column(name) 우선, 없으면 필드명 camelCase→snake_case (Spring 물리 명명 전략 기본값). */
-    private static String resolveColumnName(Field f, Column col) {
-        if (col != null && !col.name().isBlank()) {
-            return unquote(col.name());
-        }
-        return camelToSnake(f.getName());
-    }
-
-    static String camelToSnake(String name) {
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < name.length(); i++) {
-            char ch = name.charAt(i);
-            if (Character.isUpperCase(ch)) {
-                if (i > 0) {
-                    sb.append('_');
-                }
-                sb.append(Character.toLowerCase(ch));
-            } else {
-                sb.append(ch);
-            }
-        }
-        return sb.toString();
-    }
-
-    private static final class EntityMirror {
-        final String entityClass;
-        final Set<Set<String>> tableUniqueSets = new LinkedHashSet<>();
-        final Set<String> singleUniqueColumns = new HashSet<>();
-        final Set<String> idColumns = new TreeSet<>();
-
-        EntityMirror(String entityClass) {
-            this.entityClass = entityClass;
-        }
-
-        boolean satisfies(Set<String> dbUniqueCols) {
-            // 1) @Table(uniqueConstraints) 컬럼셋과 정확 일치
-            if (tableUniqueSets.contains(dbUniqueCols)) {
-                return true;
-            }
-            // 2) 단일컬럼 UNIQUE 이고 그 컬럼에 @Column(unique=true)
-            if (dbUniqueCols.size() == 1 && singleUniqueColumns.containsAll(dbUniqueCols)) {
-                return true;
-            }
-            // 3) PK 컬럼셋과 동일(PK 중복 UNIQUE — @Id 로 이미 유일성 보장)
-            return !idColumns.isEmpty() && idColumns.equals(dbUniqueCols);
-        }
-    }
-
     // ---- 유틸 (SchemaNamingLinterTest 관행 재사용) -----------------------------------
 
     static Path resolveMigrationDir() {
@@ -318,6 +206,6 @@ class UniqueConstraintMirrorLinterTest {
     }
 
     private static String unquote(String name) {
-        return name.replace("\"", "").trim().toLowerCase();
+        return SchemaConformanceRules.unquote(name);
     }
 }

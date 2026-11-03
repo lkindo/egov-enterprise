@@ -144,6 +144,8 @@ function emitIndex(emission, table, index) {
     return;
   }
   if (index.columns.some(column => column.expression === 'trim')) {
+    // 계산 컬럼 인덱스는 유일하지 않다. 유일 식 인덱스를 그대로 옮기면 PostgreSQL 이 거부하는 중복을 받는다.
+    if (index.unique) gap(`${index.name}: 식 유일 인덱스는 유일성을 지켜 옮기지 않는다`);
     const [{ name }] = index.columns;
     emission.sql(`ALTER TABLE ${table.name} ADD ${name}_trim AS TRIM(${name}) PERSISTED`);
     emission.expect('columns', table.name, `${name}_trim`);
@@ -153,12 +155,17 @@ function emitIndex(emission, table, index) {
     return;
   }
   const bytes = index.columns.reduce((sum, column) => sum + columnBytes(table, column.name), 0);
+  // 아래 두 우회는 인덱스를 빼거나 긴 컬럼을 INCLUDE 로 옮겨 유일성을 버린다. 성능이 아니라 받는 행이 달라지므로 유일 인덱스는 멈춘다.
+  if (index.unique && bytes > INDEX_KEY_BYTES) gap(`${index.name}: ${INDEX_KEY_BYTES}바이트를 넘는 유일 인덱스는 유일성을 지켜 옮길 수 없다`);
   const render = column => `${column.name}${column.descending ? ' DESC' : ''}`;
   if (bytes > INDEX_KEY_BYTES && index.columns.length === 1) {
     emission.degrade(index.name, `${INDEX_KEY_BYTES}바이트를 넘는 값의 INSERT 가 실패하므로 인덱스를 뺀다. 표가 작아 성능 영향이 적다`);
     return;
   }
-  const where = index.where ? ` WHERE ${renderExpression(index.where, dialect, table)}` : '';
+  // SQL Server 의 유일 인덱스는 NULL 도 한 값으로 본다. NULL 이 든 행을 PostgreSQL 처럼 여럿 받도록 유일 제약과 같이 거른다.
+  const nullable = index.unique && index.columns.some(column => table.columns.find(item => item.name === column.name).nullable);
+  const conditions = [...(index.where ? [renderExpression(index.where, dialect, table)] : []), ...(nullable ? index.columns.map(column => `${column.name} IS NOT NULL`) : [])];
+  const where = conditions.length ? ` WHERE ${conditions.join(' AND ')}` : '';
   if (bytes > INDEX_KEY_BYTES) {
     const included = index.columns.filter(column => columnBytes(table, column.name) * 2 > INDEX_KEY_BYTES);
     const keyed = index.columns.filter(column => !included.includes(column));

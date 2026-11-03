@@ -19,6 +19,7 @@ import { buildProjectComposerCatalog, loadProjectComposerCatalog } from './proje
 import { GENERATED_LOCK, MODULES_DIRECTORY, RETIRED_OWNERSHIP_DECLARATION, derivedRemovedGates, detectGeneratedComposition,
   loadComposerModules, readComposerModuleFiles } from './composer-modules.mjs';
 import { validateComposerModuleSchema } from './composer-modules-schema.mjs';
+import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const loadedCatalog = loadProjectComposerCatalog(ROOT);
@@ -34,7 +35,7 @@ function modulesFixture() {
   const base = resolve(tmpdir());
   const root = mkdtempSync(join(base, 'egov-composer-modules-'));
   const copy = path => { mkdirSync(dirname(join(root, path)), { recursive: true }); cpSync(join(ROOT, path), join(root, path), { recursive: true }); };
-  for (const path of [MODULES_DIRECTORY, 'config/governance/permission-catalog.json', 'config/project-composer-menus.json']) copy(path);
+  for (const path of [MODULES_DIRECTORY, 'config/governance/permission-catalog.json', 'config/project-composer-menus.json', VENDOR_LEDGER_PATH]) copy(path);
   for (const module of ['foundation', 'business-core', 'business-app', 'api-server']) copy(`${module}/src/main/java`);
   const { declarations } = modules;
   for (const path of loadedCatalog.frontendRules.map(rule => rule.path)) copy(`frontend/${path}`);
@@ -161,6 +162,24 @@ test('copy in config/modules stays outside the catalog hash, while a user senten
     assert.notEqual(hashOf(), before, 'a user sentence edit must change the catalog hash');
   } finally {
     for (const name of edited) restoreModule(root, name);
+  }
+});
+
+test('promoting a vendor in the ledger leaves the catalog hash alone', () => {
+  // 원장이 해시에 들어가면 벤더 승격이 PostgreSQL 구성의 식별값과 로컬 DB 번들 lock 까지 바꾼다.
+  const root = modulesFixture();
+  const hashOf = () => buildProjectComposerCatalog(root, loadComposerModules(root).declarations).catalogHash;
+  const before = hashOf();
+  const ledgerFile = join(root, VENDOR_LEDGER_PATH);
+  const original = readFileSync(ledgerFile, 'utf8');
+  try {
+    const ledger = JSON.parse(original);
+    // 전부 올린다. Oracle 만 올리면 Oracle 승격 뒤에 이 시험은 아무것도 바꾸지 않는다.
+    for (const vendor of ledger.vendors) { vendor.status = 'certified'; delete vendor.reason; }
+    writeFileSync(ledgerFile, JSON.stringify(ledger));
+    assert.equal(hashOf(), before, 'the vendor ledger changed the catalog hash');
+  } finally {
+    writeFileSync(ledgerFile, original);
   }
 });
 

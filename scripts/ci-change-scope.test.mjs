@@ -8,11 +8,12 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import {
-  applyPushBaseCheck, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, PROTECTED_COLUMN_CONTENT, pushBaseWasVerified,
+  applyPushBaseCheck, baseSourceReader, classifyChangedFiles, githubOutputs, MAIN_REUSABLE_LAYOUTS, PR_REUSABLE_LAYOUT, PROTECTED_COLUMN_CONTENT, pushBaseWasVerified,
   reusableMatrix,
 } from './ci-change-scope.mjs';
 import { buildAtlasCatalog } from './atlas-catalog.mjs';
 import { presetIds } from './composition-profiles.mjs';
+import { vendorCiPlan, vendorEvidenceInputs } from './vendor-evidence-inputs.mjs';
 
 const repoRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // 모든 시작 구성(presets.json 의 선언 순서). '모든 시작 구성' 기대는 이름을 열거하지 않고 이것을 쓴다(11단계 C8).
@@ -607,7 +608,7 @@ function modulesFixture(t, edit = () => {}, { expectFailure = false } = {}) {
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
   fs.mkdirSync(path.join(root, 'config', 'modules'), { recursive: true });
-  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs']) {
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs', 'vendor-evidence-inputs.mjs']) {
     fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
   }
   const directory = path.join(repoRoot, 'config', 'modules');
@@ -841,6 +842,8 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     mutation_migration_tool: 'false',
     reusable: 'false',
     reusable_custom: 'false',
+    reusable_vendor: 'false',
+    reusable_vendor_matrix: JSON.stringify({ include: [{ vendor: 'oracle', layout: 'multi-module' }, { vendor: 'oracle', layout: 'single-module' }] }),
     reusable_matrix: JSON.stringify({
       include: [
         { profile: 'core', layout: 'multi-module' },
@@ -863,7 +866,7 @@ test('a standalone export without the reusable generator has no presets, while a
   const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-scope-'));
   t.after(() => fs.rmSync(root, { recursive: true, force: true }));
   fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
-  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs']) {
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs', 'vendor-evidence-inputs.mjs']) {
     fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
   }
   const classify = () => spawnSync(process.execPath, [
@@ -885,6 +888,243 @@ test('a standalone export without the reusable generator has no presets, while a
   const withGenerator = classify();
   assert.notEqual(withGenerator.status, 0);
   assert.match(withGenerator.stderr, /시작 구성 선언을 읽지 못했다: config\/modules\/presets\.json/);
+});
+
+// 벤더 잡(ADR-0047 D-14). 입력 목록은 증거 판정과 같은 계산이다.
+const PR = { event: 'pull_request' };
+const ORACLE_MULTI = { include: [{ vendor: 'oracle', layout: 'multi-module' }] };
+const ORACLE_BOTH = { include: [{ vendor: 'oracle', layout: 'multi-module' }, { vendor: 'oracle', layout: 'single-module' }] };
+const PERSISTENCE = 'foundation/src/main/java/nuri/foundation/core/persistence';
+const POSTGRES_PORT = `${PERSISTENCE}/PostgresqlSqlDialect.java`;
+const ORACLE_PORT = `${PERSISTENCE}/OracleSqlDialect.java`;
+const ENTITY_FILE = 'business-app/src/main/java/nuri/business/domain/demo/DemoEntity.java';
+const vendorLedger = () => JSON.parse(fs.readFileSync(path.join(repoRoot, 'config/db-vendors.json'), 'utf8'));
+const vendorFields = ({ reusableVendor, reusableVendorMatrix }) => ({ reusableVendor, reusableVendorMatrix });
+// 원장 값을 순회하면 원장에서 지운 항목은 검사 대상에서도 사라진다. 그래서 켜야 하는 경로를 원장과 따로 적는다.
+const VENDOR_JOB_SELECTORS = ['gradle/libs.versions.toml', 'gradle/wrapper/gradle-wrapper.properties', 'gradle.properties',
+  'scripts/verify-project-composer.mjs', 'scripts/verify-reusable-artifact.mjs',
+  'scripts/generate-reusable-base-source.mjs', 'scripts/reusable-governance-integrity.mjs', 'scripts/reusable-governance-projection.mjs', 'scripts/reusable-source-gates.mjs', 'scripts/reusable-single-module.mjs',
+  'scripts/project-composer-generate.mjs', 'scripts/project-composer-preflight.mjs', 'scripts/project-composer-deep.mjs', 'scripts/project-composer-job-failure.mjs',
+  'docker-compose.yml', 'docker-compose.prod.yml', 'scripts/deploy.sh', '.env.example', 'package.json',
+  'config/db-vendors.json', 'scripts/vendor-evidence-inputs.mjs', 'scripts/ci-change-scope.mjs', 'scripts/composition-profiles.mjs'];
+
+test('every certification input and CI-only path selects the vendor job on the representative layout', () => {
+  const ledger = vendorLedger();
+  const inputs = vendorEvidenceInputs(repoRoot, ledger, 'oracle');
+  // 2026-11-03 실측 507개. 목록이 무너지면 이 시험이 모두 초록이 된다.
+  assert.ok(inputs.length >= 300, `input population collapsed: ${inputs.length}`);
+  for (const input of [...inputs, ...VENDOR_JOB_SELECTORS, ...ledger.evidenceInputs.ciOnly.filter(file => !file.endsWith('/'))]) {
+    assert.deepEqual(vendorFields(classifyChangedFiles([input], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, input);
+  }
+});
+
+// 쿼리 표지가 아니면 입력이 아닌 파일들이다. @Query·com.querydsl 표지를 좁히면 이 파일들이 조용히 꺼진다.
+// createQuery 는 원장에 있는 파일에만, @Lock 은 @Query 와 함께만 쓰여 실제 파일로 고정하지 못하므로 아래 합성 사례와 증거 시험의 표지 사례가 지킨다.
+const QUERY_FILES = {
+  'business-app/src/main/java/nuri/business/domain/board/BoardMasterRepository.java': '@Query+@Lock',
+  'business-core/src/main/java/nuri/business/domain/auth/RefreshTokenRepository.java': 'JPQL UPDATE',
+  'business-app/src/main/java/nuri/business/domain/comment/CommentRepository.java': '@Query+@Lock',
+  'business-app/src/main/java/nuri/business/domain/board/BoardRepositoryImpl.java': 'QueryDSL',
+  'business-app/src/main/java/nuri/business/domain/sms/SmsRepositoryImpl.java': 'QueryDSL template',
+  'business-core/src/main/java/nuri/business/domain/login/LoginPolicyRepositoryImpl.java': 'QueryDSL template',
+  'business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java': 'QueryDSL in a service',
+  'business-core/src/main/java/nuri/business/service/log/SensitiveAuditQueryService.java': 'QueryDSL in a service',
+};
+// 네이티브 SQL·매핑·포트 표지. 여기 걸린 파일은 쿼리 표지를 지워도 입력으로 남는다.
+const NON_QUERY_MARKER = /@(?:(?:jakarta\.persistence|org\.hibernate\.annotations)\.)?(?:Entity|Embeddable|MappedSuperclass|Converter|FilterDefs?)\b|\bAttributeConverter\b|\bVendorSqlDialect\b|\bnativeQuery\b|\bcreateNative\w*Query\b|\b(?:NamedParameter)?JdbcTemplate\b|\bJdbcClient\b/;
+
+test('JPQL, QueryDSL and lock files select the vendor job, but a derived query or a plain service does not', () => {
+  const inputs = vendorEvidenceInputs(repoRoot, vendorLedger(), 'oracle');
+  const sqlLedger = JSON.parse(fs.readFileSync(path.join(repoRoot, 'config/governance/vendor-sql-ledger.json'), 'utf8')).locations.map(row => row.path);
+  for (const [file, kind] of Object.entries(QUERY_FILES)) {
+    assert.ok(!sqlLedger.includes(file), `원장으로도 입력이면 이 행이 쿼리 표지를 시험하지 못한다: ${file}`);
+    assert.doesNotMatch(fs.readFileSync(path.join(repoRoot, file), 'utf8'), NON_QUERY_MARKER, `다른 표지로도 입력이면 이 행이 쿼리 표지를 시험하지 못한다: ${file}`);
+    assert.ok(inputs.includes(file), `${kind}: ${file}`);
+    assert.deepEqual(vendorFields(classifyChangedFiles([file], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, `${kind}: ${file}`);
+  }
+  const change = (head, base) => classifyChangedFiles([ENTITY_FILE], { ...PR, readSource: () => head, readBaseSource: () => base }).reusableVendor;
+  assert.equal(change('interface R { @Query("select r from R r") List<R> all(); }', 'interface R {}'), true, 'JPQL added');
+  assert.equal(change('interface R {}', 'interface R { @Query("select r from R r") List<R> all(); }'), true, 'JPQL removed');
+  assert.equal(change('interface R { @Lock(PESSIMISTIC_WRITE) R one(); }', 'interface R {}'), true, 'lock added');
+  assert.equal(change('class R { void run() { em.createQuery("select r from R r"); } }', 'class R {}'), true, 'createQuery added');
+  // 설계서 §7·§10 이 공백으로 적는다. 이 시험이 붉어지면 문서도 함께 고친다.
+  assert.equal(change('interface R extends JpaRepository<R, Long> { List<R> findByTitleContaining(String title); }', 'interface R extends JpaRepository<R, Long> {}'), false, 'derived query');
+  assert.equal(change('class S { void run() { em.find(R.class, 1L, LockModeType.PESSIMISTIC_WRITE); } }', 'class S {}'), false, 'plain service');
+});
+
+test('a change outside the certification inputs leaves the vendor job off, including another vendor and PostgreSQL itself', () => {
+  for (const file of [POSTGRES_PORT, 'scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-vendor-mssql.mjs', 'scripts/project-composer-vendor-cubrid.mjs',
+    'scripts/project-composer-server.mjs', 'scripts/project-composer-vendor-evidence.mjs', 'scripts/reusable-page-survival.mjs', 'tools/project-composer/public/app.js', 'frontend/src/app/layout.tsx', 'docs/README.md']) {
+    const result = classifyChangedFiles([file], PR);
+    assert.deepEqual(result.unknownFiles, [], file);
+    assert.equal(result.reusableVendor, false, file);
+    assert.deepEqual(result.reusableVendorMatrix, ORACLE_MULTI, `${file}: a skipped job still needs a matrix that can expand`);
+  }
+  assert.equal(classifyChangedFiles(['business-app/src/main/java/nuri/business/service/demo/PlainService.java'], { ...PR, readSource: () => 'class PlainService {}' }).reusableVendor, false);
+});
+
+test('the vendor job changes no other selection, so a PostgreSQL-only pull request selects exactly what it did', () => {
+  const strip = ({ reusableVendor, reusableVendorMatrix, ...rest }) => rest;
+  for (const event of ['pull_request', 'push']) {
+    for (const files of [[POSTGRES_PORT], [ORACLE_PORT], ['api-server/src/main/resources/db/migration/V9_1__added.sql'], ['scripts/project-composer-vendor-oracle.mjs'], ['gradle/libs.versions.toml'],
+      ['frontend/src/app/layout.tsx'], ['docs/README.md'], ['unheard-of/x.bin'], []]) {
+      assert.deepEqual(strip(classifyChangedFiles(files, { event })), strip(classifyChangedFiles(files, { event, vendorPlan: null })), `${event}: ${files}`);
+    }
+  }
+  const postgres = classifyChangedFiles([POSTGRES_PORT], PR);
+  assert.deepEqual([postgres.backend, postgres.reusableVendor], [true, false]);
+  assert.deepEqual(classifyChangedFiles([POSTGRES_PORT], { event: 'push' }).reusableVendor, false);
+});
+
+test('a pull request runs one layout, everything else both, and only the selection inputs among unknown paths select the job', () => {
+  assert.deepEqual(vendorFields(classifyChangedFiles([ORACLE_PORT], PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI });
+  for (const event of ['push', 'workflow_dispatch', '']) {
+    assert.deepEqual(vendorFields(classifyChangedFiles([ORACLE_PORT], { event })), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH }, event);
+  }
+  for (const files of [['config/db-vendors.json'], ['config/governance/vendor-sql-ledger.json'], ['config/governance/vendor-test-ledger.json'], ['scripts/vendor-evidence-inputs.mjs'], ['scripts/ci-change-scope.mjs'],
+    ['docker-compose.yml'], ['docker-compose.prod.yml'], ['scripts/deploy.sh'], ['.env.example'], ['package.json']]) {
+    assert.deepEqual(vendorFields(classifyChangedFiles(files, PR)), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, String(files));
+  }
+  // 미지 경로는 전 파이프라인을 고르지만 인증 입력이 아니면 이 잡은 켜지 않는다.
+  for (const file of ['unheard-of/x.bin', 'scripts/verify.mjs', 'config/ui-route-capabilities.json', '.githooks/pre-push', '.github/required-checks.json']) {
+    const result = classifyChangedFiles([file], PR);
+    assert.deepEqual([result.unknownFiles, result.backend, result.reusableVendor], [[file], true, false], file);
+  }
+  assert.deepEqual(vendorFields(classifyChangedFiles([], { forceFull: true, event: 'push' })), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH });
+  // 비교 기준을 찾지 못한 PR 은 무엇이 바뀌었는지 모른다. 입력 삭제일 수도 있으므로 두 레이아웃으로 닫는다.
+  for (const [files, options] of [[[], PR], [[], { ...PR, forceFull: true }], [['docs/README.md'], { ...PR, forceFull: true }]]) {
+    assert.deepEqual(vendorFields(classifyChangedFiles(files, options)), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH }, `no comparison range: ${JSON.stringify([files, options])}`);
+  }
+  assert.deepEqual(vendorFields(classifyChangedFiles(['docs/README.md'], { event: 'push' })).reusableVendor, false);
+});
+
+test('deleting an input fails closed to every layout even on a pull request', () => {
+  const deleted = (file, options = {}) => vendorFields(classifyChangedFiles([file], { ...PR, readSource: () => null, ...options }));
+  const closed = { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH };
+  for (const file of ['api-server/src/main/resources/db/migration/V2_1__gone.sql', 'scripts/project-composer-vendor-oracle.mjs', ORACLE_PORT, 'config/modules/board.json',
+    'api-server/src/test/java/nuri/api/schema/GoneIntegrationTest.java', 'gradle/libs.versions.toml', 'scripts/project-composer-db.mjs', 'scripts/reusable-a-model-tool-that-only-the-base-tree-imported.mjs']) {
+    assert.deepEqual(deleted(file), closed, file);
+  }
+  // 지운 엔티티는 기준 내용으로 판정하고, 기준을 읽지 못하면 입력으로 본다.
+  assert.deepEqual(deleted(ENTITY_FILE, { readBaseSource: () => '@Entity class DemoEntity {}' }), closed);
+  assert.deepEqual(deleted(ENTITY_FILE), closed, 'unreadable base');
+  assert.equal(deleted(ENTITY_FILE, { readBaseSource: () => 'class DemoEntity {}' }).reusableVendor, false);
+  // 제거 원장이 가리키는 자산이 사라지면 벤더 생성만 멈춘다.
+  for (const file of ['docker-compose.authz-e2e.yml', 'db_columns.json', 'scripts/ReleaseSmokeProbe.java']) assert.deepEqual(deleted(file), closed, file);
+  // 다른 벤더의 입력, 시험, 원장이 이유와 함께 뺀 도구는 지워도 입력이 아니다.
+  for (const file of [POSTGRES_PORT, 'scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-old-thing.test.mjs', 'scripts/project-composer-reasons.mjs', 'frontend/src/app/gone/page.tsx', 'docs/gone.md', 'migration-tool/src/main/java/nuri/migration/Gone.java', 'scripts/ReleaseSmokeProbe.txt']) {
+    assert.equal(deleted(file).reusableVendor, false, file);
+  }
+  // 미지 경로와 겹쳐도 전수다.
+  assert.deepEqual(vendorFields(classifyChangedFiles(['unheard-of/x.bin', 'api-server/src/main/resources/db/migration/V2_1__gone.sql'], { ...PR, readSource: () => null })), closed);
+});
+
+test('a workflow change selects the vendor job only when that job definition moves', () => {
+  const workflow = fs.readFileSync(path.join(repoRoot, '.github/workflows/ci.yml'), 'utf8');
+  const change = (head, base) => classifyChangedFiles(['.github/workflows/ci.yml'], { ...PR, readSource: () => head, readBaseSource: () => base }).reusableVendor;
+  assert.equal(change(workflow, workflow), false, 'same file');
+  assert.equal(change(workflow.replace('timeout-minutes: 5\n', 'timeout-minutes: 6\n').replace('timeout-minutes: 5\r\n', 'timeout-minutes: 6\r\n'), workflow), false, 'another job changed');
+  assert.equal(change(workflow.replace('timeout-minutes: 45', 'timeout-minutes: 50'), workflow), true, 'vendor job changed');
+  assert.equal(change(workflow.replace('--vendor ${{ matrix.vendor }}', ''), workflow), true, 'vendor command changed');
+  assert.equal(change(workflow, null), true, 'unreadable base');
+  assert.equal(change(null, workflow), true, 'deleted workflow');
+  // 잡 하나를 지운 변경은 정의가 사라지므로 켠다.
+  assert.equal(change(workflow.replace(/^ {2}reusable-vendor:/m, '  reusable-vendor-gone:'), workflow), true, 'job removed');
+});
+
+test('every file the vendor source projection edits selects the vendor job', () => {
+  const source = fs.readFileSync(path.join(repoRoot, 'scripts/project-composer-vendor-project.mjs'), 'utf8');
+  const edited = [...source.matchAll(/join\(output, '([^']+)'\)/g)].map(match => match[1]);
+  // 2026-11-03 실측: Dockerfile·compose 둘·deploy·.env.example·package.json·README. 고칠 자리를 못 찾으면 벤더 생성만 멈춘다.
+  assert.ok(edited.length >= 6, edited.join(', '));
+  // README 는 끝에 붙이기만 해 고칠 자리가 없고 문서 전용 경로다.
+  for (const file of edited.filter(file => file !== 'README.md')) assert.equal(classifyChangedFiles([file], PR).reusableVendor, true, file);
+});
+
+test('removing or adding a vendor marker selects the job although the head alone may show no marker', () => {
+  const change = (head, base) => classifyChangedFiles([ENTITY_FILE], { ...PR, readSource: () => head, readBaseSource: () => base }).reusableVendor;
+  assert.equal(change('class DemoEntity {}', '@jakarta.persistence.Entity class DemoEntity {}'), true, 'marker removed');
+  assert.equal(change('class DemoEntity {}', '@Converter class DemoEntity {}'), true, 'converter marker removed');
+  assert.equal(change('@Entity class DemoEntity {}', null), true, 'new or marked head');
+  assert.equal(change('class DemoEntity { JdbcTemplate jdbc; }', 'class DemoEntity {}'), true, 'native SQL call site added');
+  assert.equal(change('class DemoEntity {}', 'class DemoEntity {}'), false);
+  // 실제 비교 기준 읽기를 쓴다. 입력 목록을 비워 이 파일이 목록으로 켜지지 않게 하고, 머리를 표지 없는 값으로 바꾸면 기준에서만 표지가 보인다.
+  const entity = vendorEvidenceInputs(repoRoot, vendorLedger(), 'oracle').find(file => file.startsWith('business-core/') && file.endsWith('.java') && /@Entity\b/.test(fs.readFileSync(path.join(repoRoot, file), 'utf8')));
+  const notListed = { ...PR, readSource: () => 'class Plain {}', vendorPlan: vendorCiPlan(repoRoot, { inputsOf: () => [] }) };
+  assert.equal(classifyChangedFiles([entity], { ...notListed, readBaseSource: () => null }).reusableVendor, false, 'only the base shows the marker');
+  assert.equal(classifyChangedFiles([entity], { ...notListed, readBaseSource: baseSourceReader('HEAD', 'HEAD') }).reusableVendor, true, entity);
+  assert.equal(baseSourceReader('HEAD', 'HEAD')('scripts/no-such-file-in-history.mjs'), null);
+  assert.equal(baseSourceReader('', 'HEAD')(entity), null);
+});
+
+test('the command reads the comparison base itself, so a change that only removes a marker selects the job', (t) => {
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-vendor-base-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const write = (file, text) => {
+    fs.mkdirSync(path.dirname(path.join(root, file)), { recursive: true });
+    fs.writeFileSync(path.join(root, file), text);
+  };
+  const git = (...args) => {
+    const result = spawnSync('git', ['-c', 'user.name=contract', '-c', 'user.email=contract@example.invalid', '-c', 'commit.gpgsign=false', ...args], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return result.stdout.trim();
+  };
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs', 'vendor-evidence-inputs.mjs']) {
+    fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+    fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
+  }
+  fs.cpSync(path.join(repoRoot, 'config', 'modules'), path.join(root, 'config', 'modules'), { recursive: true });
+  // 입력 계산이 도는 가장 작은 원장이다. 계산이 실패해도 켜지므로 대표 레이아웃 하나인지까지 본다.
+  write('config/db-vendors.json', JSON.stringify({ evidenceInputs: { paths: [] }, vendors: [{ id: 'oracle', ci: true, evidenceInputs: ['scripts/oracle-adapter.mjs'] }] }));
+  write('config/governance/vendor-sql-ledger.json', JSON.stringify({ locations: [] }));
+  write('config/governance/vendor-test-ledger.json', JSON.stringify({ tests: [], representativeE2e: { layout: 'multi-module', specs: [] } }));
+  write('config/governance/vendor-removed-assets.json', JSON.stringify({ assets: [] }));
+  write('scripts/generate-reusable-base-db.mjs', '// 모델 명령 자리\n');
+  write('scripts/oracle-adapter.mjs', '// 어댑터 자리\n');
+  const marked = 'business-app/src/main/java/nuri/business/domain/demo/MarkedEntity.java';
+  const plain = 'business-app/src/main/java/nuri/business/service/demo/PlainService.java';
+  write(marked, '@Entity class MarkedEntity {}\n');
+  write(plain, 'class PlainService {}\n');
+  git('init', '-q');
+  git('add', '-A');
+  git('commit', '-q', '-m', 'base');
+  const base = git('rev-parse', 'HEAD');
+  const classify = () => {
+    const result = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', '--base', base, '--head', 'HEAD', '--event', 'pull_request'], { cwd: root, encoding: 'utf8' });
+    assert.equal(result.status, 0, result.stderr);
+    return JSON.parse(result.stdout);
+  };
+  write(plain, 'class PlainService { int value; }\n');
+  git('commit', '-q', '-am', 'edit without a marker');
+  assert.deepEqual(vendorFields(classify()), { reusableVendor: false, reusableVendorMatrix: ORACLE_MULTI });
+  write(marked, 'class MarkedEntity {}\n');
+  git('commit', '-q', '-am', 'remove the marker');
+  assert.deepEqual(vendorFields(classify()), { reusableVendor: true, reusableVendorMatrix: ORACLE_MULTI }, 'the base shows the marker the head lost');
+});
+
+test('a tree whose inputs cannot be computed fails closed to every layout, and a generator tree without the ledger stops', (t) => {
+  const plan = vendorCiPlan(repoRoot, { inputsOf: () => { throw new Error('인증 입력 폴더가 비었다'); } });
+  assert.deepEqual(vendorFields(classifyChangedFiles(['frontend/src/app/layout.tsx'], { ...PR, vendorPlan: plan })), { reusableVendor: true, reusableVendorMatrix: ORACLE_BOTH });
+  assert.equal(classifyChangedFiles(['docs/README.md'], { ...PR, vendorPlan: plan }).reusableVendor, false);
+  assert.equal(classifyChangedFiles([POSTGRES_PORT], { ...PR, vendorPlan: plan }).reusableVendor, false);
+  // 벤더 표지가 없는 트리는 잡이 없다.
+  assert.deepEqual(vendorFields(classifyChangedFiles([ORACLE_PORT], { ...PR, vendorPlan: null })), { reusableVendor: false, reusableVendorMatrix: { include: [] } });
+
+  const root = fs.mkdtempSync(path.join(tmpdir(), 'egov-ci-vendor-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.mkdirSync(path.join(root, 'scripts'), { recursive: true });
+  fs.cpSync(path.join(repoRoot, 'config', 'modules'), path.join(root, 'config', 'modules'), { recursive: true });
+  for (const script of ['ci-change-scope.mjs', 'composition-profiles.mjs', 'vendor-evidence-inputs.mjs']) {
+    fs.copyFileSync(path.join(repoRoot, 'scripts', script), path.join(root, 'scripts', script));
+  }
+  const classify = () => spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', '--file', ORACLE_PORT], { cwd: root, encoding: 'utf8' });
+  const noGenerator = classify();
+  assert.equal(noGenerator.status, 0, noGenerator.stderr);
+  assert.equal(JSON.parse(noGenerator.stdout).reusableVendor, false);
+  fs.writeFileSync(path.join(root, 'scripts', 'generate-reusable-base-source.mjs'), '// 생성기 자리\n');
+  const stopped = classify();
+  assert.notEqual(stopped.status, 0);
+  assert.match(stopped.stderr, /벤더 원장을 읽지 못했다/);
 });
 
 test('git discovery includes deletions so mixed doc and source changes cannot fast-pass', () => {

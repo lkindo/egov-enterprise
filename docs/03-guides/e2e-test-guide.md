@@ -58,7 +58,13 @@ npm run test:e2e:isolated
 node scripts/run-isolated-e2e.mjs -- --project=full-suite e2e/journeys/online-polls.spec.ts
 # Istanbul 계측이 필요한 별도 검증 (전체 빌드를 다시 수행한다).
 pnpm -C frontend run test:e2e:coverage
+# 다중 DB 대표 묶음. 시험은 벤더 시험 원장이 고정한다. 생성물에서는 원장의 기능을 모두 고른 멀티모듈 구성만 시작한다.
+node scripts/run-isolated-e2e.mjs --representative
+# 같은 벤더의 다른 버전을 고를 때(벤더 프로젝트 전용).
+node scripts/run-isolated-e2e.mjs --representative --vendor-engine=oracle19
 ```
+
+PostgreSQL 생성물에서는 이 실행기가 앱 기동에서 멈춘다. 실행기가 켜는 권한 전환 리허설이 Flyway target 2.99 를 먼저 적용하는데 생성물의 `V1_0` 번들에는 그 버전이 없다([GAP-COMPOSE-003](../04-operations/known-gaps-detail.md#composer)). 벤더 생성물의 대표 묶음과 대조할 PostgreSQL 실행은 원본 저장소에서 `node scripts/run-isolated-e2e.mjs --representative` 로 돌린다. 원본에는 생성물 잠금이 없어 PostgreSQL 로 뜨고, 원장 목록을 계획과 전체 발견 대조에 함께 넘겨 파일이 빠지거나 이름이 바뀌면 붉다. 시험 파일을 손으로 나열하면 발견과 실행이 함께 좁아져 초록으로 끝날 수 있으므로 쓰지 않는다. 이 명령을 원본 저장소에서 돌린 기록은 아직 없다.
 
 ### 3. 실행 설정 (`playwright.config.ts`)
 
@@ -179,7 +185,7 @@ pnpm -C frontend type-check:e2e
 
 ## 🛠️ 유지보수 지침
 - **POM 활용**: 복수 spec이 공유하거나 복잡한 화면 의미를 캡슐화할 때만 `e2e/pages`에 추가한다. 생성만 하고 소비하지 않는 POM/fixture는 만들지 않으며 해당 API/브라우저 fixture provider와 실제 spec 소비를 같은 변경에서 증명한다.
-- **자동 클린업**: spec은 만든 ID를 표적 정리하고 `globalTeardown`은 같은 격리 실행의 테스트 자원만 다룬다. runner는 자신이 소유한 프로세스·컨테이너·DB를 회수한다. 강제 종료 후에는 실행 namespace와 실제 소유권을 확인해 남은 자원만 정리한다. 공용 DB에 수동 cleanup을 실행하지 않는다.
+- **자동 클린업**: spec은 만든 ID를 표적 정리하고 `globalTeardown`은 같은 격리 실행의 테스트 자원만 다룬다. runner는 자신이 소유한 프로세스·컨테이너·DB를 회수한다. 강제 종료(`taskkill /F` 등) 후에는 실행 namespace와 실제 소유권을 확인해 남은 자원만 정리한다. Windows 콘솔 창을 닫으면 SIGHUP 으로 정리를 시작하지만 Windows 가 곧 프로세스를 끝낼 수 있어 끝까지 간다는 보장은 없으니 같은 방법으로 확인한다. 소유 기록이 없어 자동으로 지우지 않으므로 `docker ps -a --filter label=egov.task=isolated-e2e --format '{{.ID}} {{.Names}} {{.Status}} {{.Label "egov.e2e.run"}}'` 로 찾고, 이 기계에 `run-isolated-e2e` 프로세스가 없어 진행 중인 실행이 아님을 확인한 뒤 `docker rm -f -v <id>` 로 지운다. 벤더 DB 컨테이너는 tmpfs 가 아니라 디스크에 데이터를 두므로 지워야 공간이 돌아오고, 이미지가 익명 볼륨을 선언했으면 `-v` 가 그것까지 지운다. 공용 DB에 수동 cleanup을 실행하지 않는다.
 - **에러 감시**: `browser-test.ts`를 사용하는 테스트의 공용 page·adminPage·userPage fixture에 `ConsoleErrorGuard`가 설치된다. 별도로 만든 page/context는 자동 포함된다고 가정하지 않는다. 수집된 오류는 fixture 종료의 `verify()`가 판정한다.
 - **대기 방식**: `waitForTimeout`은 금지한다. locator 상태, URL, response, localStorage 등 관찰 가능한 조건을 기다리며 zero-tolerance ratchet이 재도입을 차단한다.
 - **드래그 후 저장**: 조직도는 드래그 overlay의 생성·소멸로 드롭 애니메이션 완료를 확인한 다음 저장하고, 서버 action 응답과 영속된 상위 부서를 모두 검증한다. dnd-kit은 드롭 직후 click 전파를 잠시 억제하므로 저장 버튼의 enabled 상태만으로 다음 클릭 시점을 정하지 않는다([실행 계약](../../frontend/e2e/journeys/department-hierarchy.spec.ts)).

@@ -175,7 +175,9 @@ const CASES = {
       './gradlew :api-server:test --warning-mode fail --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"',
       './gradlew :api-server:test --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest.someMethod"',
       // 루트 집계 test 도 api-server 의 test 를 포함한다.
-      './gradlew test --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"'],
+      './gradlew test --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"',
+      // 벤더 카탈로그 시험도 기본 test 에서 빠진다.
+      './gradlew :api-server:test --tests "nuri.api.harness.VendorCatalogConformanceTest"'],
     pass: ['./gradlew :api-server:harnessTest --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"',
       './gradlew :api-server:test --tests "nuri.openapi.OpenApiDocumentationTest" :api-server:harnessTest --tests "nuri.api.harness.SecurityAuthAnnotationLinterTest"',
       // 2026-10-28 감사(D5-7) 오탐: excludeTags 가 없는 다른 모듈의 test 가 api-server 태그 시험 이름(Authorization…)과 겹쳐 막혔다.
@@ -206,6 +208,12 @@ const CASES = {
     pass: ['git worktree add D:\\wt-board -b fix/x origin/main', 'git worktree list', 'git worktree add D:\\wt-setup -b fix/x origin/main'],
   },
 };
+
+test('tagged-test-on-default-task: 벤더 카탈로그 시험은 전용 실행 도구로 안내한다', () => {
+  const rule = RULES.find(({ id }) => id === 'tagged-test-on-default-task');
+  assert.match(rule.why, /@Tag\("vendor-conformance"\)/);
+  assert.match(rule.fix, /벤더 생성물에서 npm run verify:vendor-schema/);
+});
 
 test('규칙 표와 시험 사례가 일대일이다', () => {
   const tested = new Set([...Object.keys(CASES), 'jq-not-installed', 'gitleaks-worktree-mount', 'worktree-recursive-delete']);

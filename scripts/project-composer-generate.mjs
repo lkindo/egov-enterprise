@@ -9,6 +9,7 @@ import { setTimeout as delay } from 'node:timers/promises';
 import { ComposerError } from './project-composer-errors.mjs';
 import { createLogMasker } from './project-composer-command.mjs';
 import { verificationVendor } from './verify-reusable-artifact.mjs';
+import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
 import { createOwnedPostgres, ownedContainerId, removeJobContainers, waitForOwnedPostgres } from './project-composer-postgres.mjs';
 import { classifyChildFailure, classifyDatabaseNotReady, classifyDockerStart, classifyVerificationFailure, jobFailure, toRepositoryPath }
   from './project-composer-job-failure.mjs';
@@ -89,7 +90,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     const history = readJobHistory(outputRoot);
     const emit = () => {
       const snapshot = timeline.snapshot();
-      try { onProgress({ stage, progress: snapshot.progress, timeline: snapshot, estimate: estimateRemaining(history, { layout: recipe?.backendLayout, snapshot }) }); }
+      try { onProgress({ stage, progress: snapshot.progress, timeline: snapshot, estimate: estimateRemaining(history, { layout: recipe?.backendLayout, vendor: verificationVendor(recipe?.database), snapshot }) }); }
       catch { /* 알림을 받는 쪽의 오류가 생성 결과를 바꾸지 않는다. */ }
     };
     const cancelled = () => Boolean(signal?.aborted);
@@ -101,7 +102,7 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
     // 끝난 작업을 이력 색인에 남긴다. 색인은 남은 시간 추정용이라 쓰지 못해도 생성 결과는 그대로다(작업 보고서에도 같은 값이 있다).
     const recordHistory = (result, snapshot) => {
       if (!paths || !composition) return;
-      try { appendJobHistory(outputRoot, historyEntry({ job: basename(paths.jobDirectory), layout: composition.backendLayout, result, snapshot })); }
+      try { appendJobHistory(outputRoot, historyEntry({ job: basename(paths.jobDirectory), layout: composition.backendLayout, vendor: verificationVendor(composition.database), result, snapshot })); }
       catch { /* 다음 작업의 남은 시간 추정에서 이 작업이 빠질 뿐이다. */ }
     };
     let outcome;
@@ -177,6 +178,8 @@ export function createGenerator({ root, outputRoot, run, fingerprint, gitRun, pl
       writeFileSync(compositionPath, `${JSON.stringify(composition, null, 2)}\n`);
       report = { schemaVersion: VERSION, generatorVersion: VERSION, result: 'started', stage,
         compositionHash: composition.compositionHash, sourceCommit: composition.sourceCommit, sourceFingerprint,
+        // 증거 기록이 이 생성물을 만든 원본을 현재 트리와 대조한다. 원장은 앞 엔진의 증거가 쌓이는 파일이라 뺀다.
+        ...(verificationVendor(composition.database) ? { evidenceFingerprint: fingerprint(root, { exclude: [VENDOR_LEDGER_PATH] }) } : {}),
         localDevelopmentBuild: Boolean(gitRun(['status', '--porcelain'])) || !gitRun(['tag', '--points-at', 'HEAD']).split(/\r?\n/).some(tag => /^v\d/.test(tag)),
         startedAt: new Date().toISOString(), environmentApproved: false, ...paths,
         // 서버를 다시 띄울 때 끝나지 않은 작업의 자원을 정리할지 판단하는 근거(이 컴퓨터의 이 프로세스가 끝났는가).
