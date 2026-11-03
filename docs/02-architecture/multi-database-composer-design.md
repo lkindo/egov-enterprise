@@ -565,7 +565,7 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 **생성 뒤 스키마 변경.** 도입자는 벤더 폴더에 기준선보다 높은 버전의 `V` 파일을 더하고 `npm run verify:vendor-schema` 로 검사한다. `R__` 는 Flyway 가 target 을 줘도 적용해(Oracle 에서 확인했다) 기준선 단계의 하나만 적용 가드가 거짓 실패하므로, 실행 도구가 컨테이너를 띄우기 전에 파일 이름으로 막는다. 버전은 Flyway 처럼 구간별 숫자로 비교한다(`V1_0_1` 은 기준선보다 높고 `V1_0_0` 은 같다). 번역 기준선과 입력은 같은 자리에서 잠금 해시로 대조한다 — 기준선 대조는 수정된 파일을 적용한 DB 를 그 파일의 이름과 비교하므로 내용 변경을 보지 못한다. 첫 `V1_1` 뒤에 전체 검증이 범위 변경으로 멈춰도 이 대조는 남는다.
 
-실행 도구는 Flyway 를 두 번 돌린다. 먼저 `target=1.0` 으로 기준선만 적용해 적용 수 1 을 확인하고 정확 대조(`assertVendorApplied`)를 받는다. 대조는 이름 집합, 키·유니크의 컬럼 집합(Oracle 은 제약의 `user_cons_columns`, 일반 유니크 인덱스의 `user_ind_columns`, 함수 인덱스의 `user_ind_expressions` 에서 `CASE` 의 값 컬럼과 식이 참조하는 컬럼), 시드 행 수, 식별 컬럼과 독립 시퀀스의 다음 값이다. 함수 인덱스의 조건 모양은 컬럼 집합으로 잡히지 않고 벤더 DB 에서 도는 시험에 부분 NULL 행을 넣는 것이 없어, 어댑터 문장을 고정하는 노드 시험(`nullable composite uniques`)만 본다. 그때의 이름 목록을 적어 두고 나머지를 적용한 뒤, 다시 읽은 목록과 함께 파일로 넘겨 `vendorConformanceTest`(`@Tag("vendor-conformance")`)를 돌린다. 이 시험은 관리자 부여·소유 표(`vendor_test_owner`)·시나리오 시험보다 앞서므로 시험용 객체를 도입자 객체로 보지 않는다.
+실행 도구는 Flyway 를 두 번 돌린다. 먼저 `target=1.0` 으로 기준선만 적용해 적용 수 1 과 DB 에 적용된 마이그레이션이 기준선 하나뿐인지 확인하고 정확 대조(`assertVendorApplied`)를 받는다. 대조는 이름 집합, 키·유니크의 컬럼 집합(Oracle 은 제약의 `user_cons_columns`, 일반 유니크 인덱스의 `user_ind_columns`, 함수 인덱스의 `user_ind_expressions` 에서 `CASE` 의 값 컬럼과 식이 참조하는 컬럼), 시드 행 수, 식별 컬럼과 독립 시퀀스의 다음 값이다. 함수 인덱스의 조건 모양은 컬럼 집합으로 잡히지 않고 벤더 DB 에서 도는 시험에 부분 NULL 행을 넣는 것이 없어, 어댑터 문장을 고정하는 노드 시험(`nullable composite uniques`)만 본다. 그때의 이름 목록을 적어 두고 나머지를 적용한 뒤(이 호출에는 호스트의 `VENDOR_FLYWAY_TARGET` 을 키째 지워 넘기고, 적용 뒤 해석됐는데 적용되지 않은 마이그레이션이 남으면 멈춘다), 다시 읽은 목록과 함께 파일로 넘겨 `vendorConformanceTest`(`@Tag("vendor-conformance")`)를 돌린다. 이 시험은 관리자 부여·소유 표(`vendor_test_owner`)·시나리오 시험보다 앞서므로 시험용 객체를 도입자 객체로 보지 않는다.
 
 | 규칙 | 범위 | 입력 |
 |---|---|---|
@@ -580,7 +580,7 @@ PostgreSQL 전용 자산은 원장(`config/governance/vendor-removed-assets.json
 
 기준선 전체에 미러·명명 규칙을 돌리지 않는 이유는 어댑터 파생 객체다. MySQL·SQL Server 의 `*_hash` 유니크와 Oracle 의 CASE 함수 인덱스는 엔티티가 모르는 모양이고, MySQL 은 모든 기본키의 제약 이름이 `PRIMARY` 다. 기준선 안의 미러 회귀는 번역 입력을 보는 유니크 미러 린터가, 번역이 컬럼을 바꾸는 회귀는 기준선 대조의 컬럼 집합이 맡으므로 그 린터는 남겼다. 명명 린터도 이번에는 둔다.
 
-Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행 도구가 시험 JVM 의 `SPRING_JPA_HIBERNATE_DDL_AUTO` 를 `validate` 로 강제하고, 시나리오 문맥마다 Hibernate 가 받은 `hibernate.hbm2ddl.auto` 를 단언해 그 값을 보고서에 싣는다(`VendorOwnershipExtension`). 다른 값이면 그 시험 클래스가 붉고, 단언한 문맥이 없으면 실행이 실패한다. 인증 증거 형식도 문맥 수가 1 이상이어야 받는다.
+Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행 도구가 시험 JVM 의 `SPRING_JPA_HIBERNATE_DDL_AUTO` 를 `validate` 로 강제하고, 시나리오 문맥마다 Hibernate 가 실제로 적용할 스키마 동작을 단언해 그 값을 보고서에 싣는다(`VendorOwnershipExtension`). `hibernate.hbm2ddl.auto` 하나는 증거가 되지 못한다. JPA 의 `jakarta`·`javax.persistence.schema-generation.database.action`(기여자 접미 키가 먼저)이 그보다 앞서고, `scripts.action` 만 있어도 그 값은 버려진다. 그래서 문맥이 받은 설정 전체를 Hibernate 자신의 해석기(`ActionGrouping`)에 넣어 기여자마다 데이터베이스 동작이 validate 인지 본다. 스키마 관리 도구나 검사할 표를 바꾸는 설정(`hibernate.schema_management_tool`·`hibernate.hbm2ddl.schema_filter_provider`)과 기본이 아닌 실제 도구 클래스도 붉힌다. 판정은 `SchemaConformanceRulesTest` 가 DB 없이 고정한다. 통과하지 못한 문맥은 보고서에 `rejected:<동작>` 으로 남아 validate 로 읽히지 않고 그 시험 클래스가 붉다. 단언한 문맥이 없으면 실행이 실패한다. 인증 증거 형식도 문맥 수가 1 이상이어야 받는다.
 
 `npm run verify` 의 의미는 바꾸지 않았다. 거버넌스 첫 단계가 소스 변경을 잡아 멈추므로 첫 변경 뒤에는 그 뒤 단계에 닿지 못하고, 이는 PostgreSQL 생성물과 같다(`reusable-base-guide.md`). 새 명령은 그 단계를 지나지 않으며 인증을 주장하지 않는다(보고서 `authority: local-vendor-schema-check`).
 

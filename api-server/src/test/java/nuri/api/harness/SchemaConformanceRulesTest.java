@@ -14,13 +14,17 @@ import java.util.Map;
 import java.util.Set;
 import nuri.api.harness.SchemaConformanceRules.CatalogNames;
 import nuri.api.harness.SchemaConformanceRules.EntityMirror;
+import nuri.api.schema.VendorOwnershipExtension;
+import nuri.api.schema.VendorOwnershipExtension.SchemaCheck;
 import nuri.foundation.domain.common.IntegralStringConverter;
+import org.hibernate.tool.schema.internal.HibernateSchemaManagementTool;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
 
 /**
  * 벤더 카탈로그 시험의 판정을 DB 없이 붉힌다. 그 시험은 벤더 컨테이너가 있어야 돌므로, 판정이 무력해져도 일반 실행에는 드러나지 않는다.
+ * 벤더 시나리오 문맥이 Hibernate validate 로 떴는지의 판정({@link VendorOwnershipExtension#schemaCheck})도 같은 이유로 여기서 붉힌다.
  */
 @Tag("governance-harness")
 class SchemaConformanceRulesTest {
@@ -237,5 +241,67 @@ class SchemaConformanceRulesTest {
                 .singleElement().asString().contains("defaultGroups 에 있는데").contains("ROLE_USER/A");
         assertThat(SchemaConformanceRules.grantProblems(Set.of("ROLE_ADMIN/A"), Set.of("ROLE_ADMIN/A", "ROLE_USER/B")))
                 .singleElement().asString().contains("벤더 DB 에 부여가 있는데").contains("ROLE_USER/B");
+    }
+
+    /** 기본 스키마 관리 도구로 뜬 문맥의 판정. 도구 이름은 Hibernate 클래스에서 읽어, 확장이 적은 이름이 낡으면 통과 사례가 붉다. */
+    private static SchemaCheck hibernate(Map<String, ?> settings) {
+        return VendorOwnershipExtension.schemaCheck(settings, HibernateSchemaManagementTool.class.getName());
+    }
+
+    @Test
+    @DisplayName("벤더 실행이 강제한 hbm2ddl.auto=validate 만 있거나 JPA database action 도 validate 면 통과하고 validate 를 남긴다")
+    void hibernateValidatePasses() {
+        SchemaCheck check = hibernate(Map.of("hibernate.hbm2ddl.auto", "validate"));
+        assertThat(check.problems()).isEmpty();
+        assertThat(check.reported()).isEqualTo("validate");
+        assertThat(hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "jakarta.persistence.schema-generation.database.action", "validate")).problems()).isEmpty();
+    }
+
+    @Test
+    @DisplayName("JPA database action 은 hbm2ddl.auto=validate 보다 앞서므로 none 이면 검증을 건너뛴 것으로 붉고 none 을 남긴다")
+    void jpaDatabaseActionWinsOverHbm2ddl() {
+        for (String key : List.of("jakarta.persistence.schema-generation.database.action", "javax.persistence.schema-generation.database.action")) {
+            SchemaCheck check = hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", key, "none"));
+            assertThat(check.databaseAction()).as(key).isEqualTo("none");
+            assertThat(check.reported()).as(key).isEqualTo("rejected:none");
+            assertThat(check.problems()).as(key).anyMatch(problem -> problem.startsWith("기여자 orm의 데이터베이스 동작이 none 다"));
+        }
+    }
+
+    @Test
+    @DisplayName("기여자 접미 키는 같은 키보다 앞서고, 접미 키가 없는 기여자(Envers 등)는 루트 값을 받는다")
+    void contributorKeysAreJudgedPerContributor() {
+        SchemaCheck orm = hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "jakarta.persistence.schema-generation.database.action.orm", "none"));
+        assertThat(orm.databaseAction()).isEqualTo("none|validate");
+        assertThat(orm.problems()).singleElement().asString().startsWith("기여자 orm의 데이터베이스 동작이 none 다");
+        assertThat(hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "hibernate.hbm2ddl.auto.envers", "update")).problems())
+                .singleElement().asString().startsWith("기여자 envers의 데이터베이스 동작이 update 다");
+        assertThat(hibernate(Map.of("hibernate.hbm2ddl.auto", "none", "hibernate.hbm2ddl.auto.orm", "validate")).problems())
+                .singleElement().asString().startsWith("기여자별 키가 없는 기여자의 데이터베이스 동작이 none 다");
+    }
+
+    @Test
+    @DisplayName("scripts action 이 있으면 hbm2ddl.auto 가 버려지고, database action 이 validate 여도 스크립트 동작이 붉다")
+    void scriptsActionIsRejected() {
+        SchemaCheck dropped = hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "jakarta.persistence.schema-generation.scripts.action", "create"));
+        assertThat(dropped.databaseAction()).isEqualTo("none");
+        assertThat(dropped.problems()).anyMatch(problem -> problem.startsWith("기여자 orm의 scripts action 이 create-only 다"));
+        SchemaCheck explicit = hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "jakarta.persistence.schema-generation.database.action", "validate",
+                "javax.persistence.schema-generation.scripts.action", "drop-and-create"));
+        assertThat(explicit.databaseAction()).isEqualTo("validate");
+        assertThat(explicit.reported()).as("통과하지 못한 문맥은 validate 로 읽히지 않는다").isEqualTo("rejected:validate");
+        assertThat(hibernate(Map.of()).reported()).as("아무 키도 없으면 검증이 돌지 않는다").isEqualTo("rejected:none");
+    }
+
+    @Test
+    @DisplayName("스키마 관리 도구를 바꾸거나 검사할 표를 거르면 validate 라는 이름이 남아도 붉다")
+    void schemaToolChangesAreRejected() {
+        assertThat(hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "hibernate.schema_management_tool", "x.Tool")).problems())
+                .containsExactly("hibernate.schema_management_tool 이 스키마 관리 도구나 검사할 표를 바꾼다");
+        assertThat(hibernate(Map.of("hibernate.hbm2ddl.auto", "validate", "hibernate.hbm2ddl.schema_filter_provider", "x.Filter")).problems())
+                .containsExactly("hibernate.hbm2ddl.schema_filter_provider 이 스키마 관리 도구나 검사할 표를 바꾼다");
+        SchemaCheck discovered = VendorOwnershipExtension.schemaCheck(Map.of("hibernate.hbm2ddl.auto", "validate"), "x.DiscoveredTool");
+        assertThat(discovered.problems()).containsExactly("스키마 관리 도구가 x.DiscoveredTool 다(Hibernate 기본 도구의 검증이어야 한다)");
+        assertThat(discovered.reported()).isEqualTo("rejected:validate");
     }
 }

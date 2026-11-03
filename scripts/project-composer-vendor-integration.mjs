@@ -190,6 +190,20 @@ function markOwner(handle) {
   return owner;
 }
 
+const FLYWAY_TARGET = 'VENDOR_FLYWAY_TARGET';
+
+/**
+ * Flyway 적용 단계의 자식 환경. target 은 이 도구가 정한 값만 넘긴다 — 호스트의 값이 남으면 나머지를 적용하는 두 번째 호출이 그 버전에서 멈추고,
+ * 그 뒤 마이그레이션은 적용되지 않은 채 카탈로그 시험을 지난다. spawnSync 가 undefined 를 어떻게 다루는지에 기대지 않고 키를 지운다.
+ * Windows 의 환경 변수 이름은 대소문자를 가리지 않으므로 표기가 다른 키도 지운다.
+ */
+export function flywayEnvironment(vendorId, integration, handle, location, target, base = process.env) {
+  const env = childEnvironment(vendorId, integration, { ...handle, owner: '' }, { VENDOR_FLYWAY_LOCATION: location }, base);
+  for (const key of Object.keys(env)) if (key.toUpperCase() === FLYWAY_TARGET) delete env[key];
+  if (target) env[FLYWAY_TARGET] = target;
+  return env;
+}
+
 /**
  * 생성물의 마이그레이션을 운영과 같은 Flyway 로 적용한다. 어댑터 문장을 다시 돌리면 실제로 나가는 파일이 시험되지 않는다.
  * target 이 있으면 번역 기준선까지, 없으면 그 뒤의 도입자 마이그레이션을 적용한다.
@@ -197,8 +211,7 @@ function markOwner(handle) {
 function migrateWithFlyway(vendorId, integration, handle, task, location, target) {
   const gradlew = join(ROOT, process.platform === 'win32' ? 'gradlew.bat' : 'gradlew');
   const result = spawnSync(`"${gradlew}"`, [task, ...VENDOR_GRADLE_OPTIONS], {
-    cwd: ROOT, stdio: 'inherit', shell: true,
-    env: childEnvironment(vendorId, integration, { ...handle, owner: '' }, { VENDOR_FLYWAY_LOCATION: location, ...(target ? { VENDOR_FLYWAY_TARGET: target } : {}) }),
+    cwd: ROOT, stdio: 'inherit', shell: true, env: flywayEnvironment(vendorId, integration, handle, location, target),
   });
   if (result.status !== 0) {
     // Gradle 의 네트워크·메모리·컴파일 실패가 섞여 있어 대조 실패로 말할 수 없다.

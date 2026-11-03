@@ -17,7 +17,7 @@ import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
-import { VENDOR_BASELINE_VERSION, VENDOR_GRADLE_OPTIONS, addedByteColumns, appliedHibernateCheck, assertTestsRan, assertVendorLock, childEnvironment, conformanceCatalog, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
+import { VENDOR_BASELINE_VERSION, VENDOR_GRADLE_OPTIONS, addedByteColumns, appliedHibernateCheck, assertTestsRan, assertVendorLock, childEnvironment, conformanceCatalog, flywayEnvironment, integrationEnvironment, integrationTask, ledgerClasses, parseIntegrationArgs, unchangedUniques, vendorLockProblems, vendorMigrationNameProblems } from './project-composer-vendor-integration.mjs';
 import { vendorInputPath, verificationSteps, verificationVendor } from './verify-reusable-artifact.mjs';
 import { failedVerificationStep, verificationLogTail } from './project-composer-job-failure.mjs';
 import { createJobTimeline, verificationStepMarkers } from './project-composer-timeline.mjs';
@@ -952,8 +952,36 @@ test('the host cannot switch off Hibernate validate, and the report carries what
   assert.deepEqual(appliedHibernateCheck('A none\n'), { ddlAuto: 'none', contexts: 1 });
   assert.deepEqual(appliedHibernateCheck(''), { ddlAuto: null, contexts: 0 }, '단언한 문맥이 없으면 증거가 아니다');
   const extension = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorOwnershipExtension.java'), 'utf8');
-  assert.match(extension, /getProperties\(\)\.get\("hibernate\.hbm2ddl\.auto"\)/, '프로필 문자열이 아니라 Hibernate 가 받은 값을 본다');
-  assert.match(extension, /throw new IllegalStateException\("Hibernate 스키마 검사가/, 'validate 가 아니면 그 시험 클래스가 붉다');
+  // 판정 자체는 SchemaConformanceRulesTest 가 DB 없이 붉힌다. 여기서는 확장이 그 판정을 Hibernate 가 받은 설정 전체에 걸고 그 결과를 남기는지 본다.
+  assert.match(extension, /^ *SchemaCheck check = schemaCheck\(factory\.getProperties\(\), /m, '프로필 문자열이나 hbm2ddl.auto 하나가 아니라 Hibernate 가 받은 설정 전체로 적용 동작을 구한다');
+  assert.match(extension, /ActionGrouping\.interpret\(contributors, settings\)/, '우선순위는 Hibernate 자신의 해석기로 정한다');
+  assert.match(extension, /testClass\.getSimpleName\(\) \+ " " \+ check\.reported\(\)/, '보고서에는 판정을 거친 적용 동작을 남긴다');
+  assert.match(extension, /^ *if \(!check\.problems\(\)\.isEmpty\(\)\) \{\s*throw new IllegalStateException\("Hibernate 스키마 검사가/m, 'validate 검증이 그대로 돌지 않으면 그 시험 클래스가 붉다');
+});
+
+test('the Flyway steps hand the child only the target the tool chose, so the second step applies every later migration', () => {
+  const { integration } = VENDOR_ENGINES.oracle;
+  const host = { PATH: 'p', VENDOR_FLYWAY_TARGET: '1.1', Vendor_Flyway_Target: '1.1', VENDOR_TEST_OWNER: 'host' };
+  const targets = env => Object.entries(env).filter(([key]) => key.toUpperCase() === 'VENDOR_FLYWAY_TARGET');
+  const rest = flywayEnvironment('oracle', integration, { port: 1, password: 'x' }, 'classpath:db/vendor/oracle', undefined, host);
+  assert.deepEqual(targets(rest), [], '나머지를 적용하는 호출은 호스트의 target 을 표기와 상관없이 키째 지운다');
+  assert.equal(rest.VENDOR_FLYWAY_LOCATION, 'classpath:db/vendor/oracle');
+  assert.equal(rest.VENDOR_TEST_OWNER, '', '적용 단계에는 소유 토큰을 넘기지 않는다');
+  assert.equal(rest.PATH, 'p');
+  const baseline = flywayEnvironment('oracle', integration, { port: 1, password: 'x' }, 'classpath:db/vendor/oracle', VENDOR_BASELINE_VERSION, host);
+  assert.deepEqual(targets(baseline), [['VENDOR_FLYWAY_TARGET', VENDOR_BASELINE_VERSION]], '기준선 호출은 도구의 기준선 버전 하나만 넘긴다');
+  assert.deepEqual(targets(host), [['VENDOR_FLYWAY_TARGET', '1.1'], ['Vendor_Flyway_Target', '1.1']], '호스트 환경은 고치지 않는다');
+  const tool = readFileSync(join(ROOT, 'scripts/project-composer-vendor-integration.mjs'), 'utf8');
+  const migrate = tool.slice(tool.indexOf('function migrateWithFlyway'), tool.indexOf('export function conformanceCatalog'));
+  assert.match(migrate, /env: flywayEnvironment\(vendorId, integration, handle, location, target\)/, 'Flyway 단계의 자식 환경은 한 곳에서 만든다');
+  assert.doesNotMatch(migrate, /childEnvironment\(/);
+  const java = readFileSync(join(ROOT, 'api-server/src/test/java/nuri/api/schema/VendorFlywayMigrate.java'), 'utf8');
+  assert.match(java, /^ *\.filter\(info -> info\.getState\(\)\.isResolved\(\) && !info\.getState\(\)\.isApplied\(\)\)/m,
+    '나머지 적용 뒤 pending 뿐 아니라 target 위에 남은 마이그레이션도 남지 않았는지 본다');
+  assert.match(java, /^ *if \(!unapplied\.isEmpty\(\)\) \{\s*throw new IllegalStateException\("기준선 뒤 마이그레이션이 적용되지 않고 남았다/m);
+  // target 이 새면 Java 는 두 번째 호출을 기준선 단계로 받는다. 그때 기준선 뒤 파일 하나가 적용돼도 통과하지 않게 DB 에 남은 것 전부를 센다.
+  assert.match(java, /^ *if \(applied != 1 \|\| inDatabase\.size\(\) != 1\) \{\s*throw new IllegalStateException\("번역 기준선 하나만 적용돼야 한다/m,
+    '기준선 단계는 이번 적용 수와 함께 DB 에 적용된 마이그레이션이 기준선 하나뿐인지 본다');
 });
 
 test('the catalog test sees the engine names an adopter did not choose removed, and every kind present', () => {
