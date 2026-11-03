@@ -146,8 +146,8 @@ class MemoReportRecipientIntegrityIntegrationTest {
     }
 
     private void insertUser(String id, String state) {
-        jdbc.update("INSERT INTO tb_user_info(esntl_id, user_id, pswd, user_nm, user_stts_cd, lck_yn, sbscrb_ymd) "
-                + "VALUES (?, ?, 'test-only-unusable', '시험 계정', ?, 'N', to_char(CURRENT_DATE, 'YYYYMMDD'))",
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id, user_id, pswd, user_nm, user_stts_cd, lck_yn, sbscrb_ymd) "
+                + "VALUES (?, ?, 'test-only-unusable', '시험 계정', ?, 'N', to_char(CURRENT_DATE, 'YYYYMMDD'))"),
                 id, login(id), state);
     }
 

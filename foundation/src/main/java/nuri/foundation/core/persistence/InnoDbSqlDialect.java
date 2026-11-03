@@ -33,6 +33,7 @@ public abstract class InnoDbSqlDialect implements VendorSqlDialect {
     static final String DELETE_PERMIT =
             "DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?1 AND permit_conn = CONNECTION_ID()";
     private static final String NOW = "CURRENT_TIMESTAMP(6)";
+    private static final int KOREAN_OFFSET_MINUTES = 540;
 
     /** 두 엔진만 이 기반을 쓴다. */
     InnoDbSqlDialect() {
@@ -188,6 +189,27 @@ public abstract class InnoDbSqlDialect implements VendorSqlDialect {
         String names = tables.stream().map(table -> "'" + table + "'").collect(Collectors.joining(","));
         return "SELECT count(*) FROM information_schema.tables WHERE table_schema = DATABASE() AND LOWER(table_name) IN ("
                 + names + ")";
+    }
+
+    /** 서버가 MariaDB 인가. 버전 문자열에 이름이 든다. */
+    abstract boolean mariaDbServer();
+
+    /**
+     * 두 가지를 본다. Connector/J 는 MariaDB 서버에도 제품명을 "MySQL" 로 돌려주어 제품명 대조로는 서버를 가르지 못한다. 세션 시계가
+     * 한국 시간(+09:00)이 아니면 DB 가 채우는 시각과 날짜(upsert 의 시각, 컬럼 기본값)가 9시간 어긋난다(CTX-025). 접속 주소의
+     * {@code time_zone} 세션 변수가 빠진 설정을 여기서 막는다. 두 시각은 같은 문장에서 읽어 초가 같다.
+     */
+    @Override
+    public void assertSession(JdbcOperations jdbc) {
+        String version = jdbc.queryForObject("SELECT VERSION()", String.class);
+        if (version == null || version.contains("MariaDB") != mariaDbServer()) {
+            throw new IllegalStateException("app.database.vendor does not match the connected server: " + version);
+        }
+        Integer offset = jdbc.queryForObject("SELECT TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW())", Integer.class);
+        if (offset == null || offset != KOREAN_OFFSET_MINUTES) {
+            throw new IllegalStateException("DB session time zone must be +09:00 (time_zone session variable in the JDBC URL): offset "
+                    + offset + " minutes");
+        }
     }
 
     /** 연결 번호는 서버를 다시 띄우면 다시 쓰인다. 회수되지 않고 커밋된 허가가 다른 연결에 넘어가지 않게 기동 때 막는다. */

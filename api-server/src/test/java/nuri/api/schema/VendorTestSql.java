@@ -223,20 +223,22 @@ final class VendorTestSql {
                     .replaceAll("nextval\\('(\\w+)'\\)", "$1.NEXTVAL")
                     .replaceAll("(\\w+_id)::text", "LOWER(REGEXP_REPLACE(RAWTOHEX($1), '^(.{8})(.{4})(.{4})(.{4})(.{12})\\$', '\\\\1-\\\\2-\\\\3-\\\\4-\\\\5'))")
                     .replaceAll("(\\w+)::text", "TO_CHAR($1)");
-            // UUID 컬럼은 MariaDB 가 UUID 타입, MySQL 이 CHAR(36) 이라 둘 다 CHAR 로 바꾸면 PostgreSQL 의 uuid::text 와 같은 소문자 표기다.
-            // CAST 의 정수형 이름은 SIGNED 다.
+            // MariaDB 의 UUID 타입은 CHAR 로 바꾸면 PostgreSQL 의 uuid::text 와 같은 소문자 표기다. MySQL 의 UUID 컬럼은 BINARY(16) 이라
+            // BIN_TO_UUID 로 읽는다(Oracle 처럼 _id 로 끝나는 ::text 를 UUID 로 본다). CAST 의 정수형 이름은 SIGNED 다.
             case MARIADB -> innoDb(statement).replaceAll("nextval\\('(\\w+)'\\)", "NEXTVAL($1)");
             case MYSQL -> {
                 if (NEXTVAL.matcher(statement).find()) {
                     throw new IllegalStateException("MySQL 은 시퀀스가 없다(표 흉내). nextval 은 insertKey 가 값을 먼저 받아 넣는다: " + statement);
                 }
-                yield innoDb(statement);
+                yield innoDb(statement.replaceAll("(\\w+_id)::text", "BIN_TO_UUID($1)"));
             }
         };
     }
 
+    /** MySQL 계열의 공통 차이. MySQL 에는 to_char 가 없어 오늘 날짜는 DATE_FORMAT 으로 쓴다. 세션 시간대가 +09:00 이라 CURRENT_DATE 가 한국 날짜다. */
     private static String innoDb(String statement) {
         return statement
+                .replaceAll("(?i)to_char\\(CURRENT_DATE,\\s*'YYYYMMDD'\\)", "DATE_FORMAT(CURRENT_DATE, '%Y%m%d')")
                 .replaceAll("(\\w+)::jsonb->>'(\\w+)'", "JSON_VALUE($1, '\\$.$2')")
                 .replaceAll("(\\w+)::text", "CAST($1 AS CHAR)")
                 .replaceAll("(?i)\\bAS\\s+INTEGER\\s*\\)", "AS SIGNED)");
@@ -261,7 +263,9 @@ final class VendorTestSql {
             Object[] withKey = new Object[arguments.length + 1];
             withKey[0] = key;
             System.arraycopy(arguments, 0, withKey, 1, arguments.length);
-            jdbc.update(sql(jdbc, insert.group(1) + keyColumn + ", " + insert.group(3) + "?, " + insert.group(4)), withKey);
+            // MySQL 의 UUID 컬럼은 Hibernate 기본 매핑에 맞춘 BINARY(16) 이다. 같은 바이트 순서로 바꿔 넣는다.
+            String placeholder = vendor(jdbc) == Vendor.MYSQL ? "UUID_TO_BIN(?), " : "?, ";
+            jdbc.update(sql(jdbc, insert.group(1) + keyColumn + ", " + insert.group(3) + placeholder + insert.group(4)), withKey);
             return key;
         }
         Object key = generatedKey(jdbc, statement, keyColumn, arguments);

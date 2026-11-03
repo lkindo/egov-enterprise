@@ -27,7 +27,7 @@ const DECIMAL_LEFTOVER_BYTES = [0, 1, 1, 2, 2, 3, 3, 4, 4, 4];
 const decimalDigitsBytes = digits => Math.floor(digits / 9) * 4 + DECIMAL_LEFTOVER_BYTES[digits % 9];
 
 /**
- * 키에 든 컬럼 하나의 바이트. 물리 타입(physicalType)으로 센다 — 문자열만 실제 크기로 세면 한계 직전의 정상 키(VARCHAR(767)+INT)를 멈추고 MySQL 의 CHAR(36) UUID 를 적게 센다.
+ * 키에 든 컬럼 하나의 바이트. 물리 타입(physicalType)으로 센다 — 문자열만 실제 크기로 세면 한계 직전의 정상 키(VARCHAR(767)+INT)를 멈춘다.
  * 값은 2026-11-04 MySQL 8.4·MariaDB 11.4 에서 VARBINARY 짝으로 잰 크기다. LONGTEXT·LONGBLOB 은 접두 없이 키가 될 수 없어 끝이 없다고 센다.
  */
 export function keyColumnBytes(type, maria) {
@@ -42,7 +42,7 @@ export function keyColumnBytes(type, maria) {
       const [precision, scale] = type.precision === null ? [38, 10] : [type.precision, type.scale ?? 0];
       return decimalDigitsBytes(precision - scale) + decimalDigitsBytes(scale);
     }
-    case 'uuid': return maria ? 16 : 36 * CHAR_BYTES;
+    case 'uuid': return 16;
     case 'text': case 'json': case 'binary': return Infinity;
     default: return gap(`키 바이트를 모르는 타입: ${type.kind}`);
   }
@@ -93,7 +93,8 @@ function physicalType(column, maria) {
     case 'varchar': return `VARCHAR(${type.length})`;
     case 'text': return 'LONGTEXT';
     case 'json': return maria ? 'LONGTEXT' : 'JSON';
-    case 'uuid': return maria ? 'UUID' : 'CHAR(36)';
+    // MySQL 은 UUID 타입이 없다. Hibernate 의 MySQL 기본 매핑(java.util.UUID → binary(16))에 맞춘다 — CHAR(36) 이면 스키마 검증이 멈춘다(설계서 §5 UUID 규칙).
+    case 'uuid': return maria ? 'UUID' : 'BINARY(16)';
     case 'binary': return 'LONGBLOB';
     case 'timestamp': return `DATETIME(${type.precision})`;
     case 'date': return 'DATE';
@@ -109,7 +110,7 @@ function defaultClause(column, maria) {
   if (!value) return '';
   switch (value.kind) {
     case 'sequence': return maria ? ` DEFAULT NEXTVAL(${value.name})` : '';
-    case 'uuid': return maria ? ' DEFAULT UUID()' : ' DEFAULT (UUID())';
+    case 'uuid': return maria ? ' DEFAULT UUID()' : ' DEFAULT (UUID_TO_BIN(UUID()))';
     case 'now': return ` DEFAULT CURRENT_TIMESTAMP(${column.type.precision})`;
     case 'kst-date': return " DEFAULT (DATE_FORMAT(UTC_TIMESTAMP() + INTERVAL 9 HOUR, '%Y%m%d'))";
     case 'number': return ` DEFAULT ${value.value}`;
@@ -287,9 +288,11 @@ function emitSchemaFor(vendor, model) {
   return assertCoverage(model, emission);
 }
 
-function literalFor(column, value) {
+function literalFor(column, value, maria) {
   if (value === null) return 'NULL';
   const { kind } = column.type;
+  // Hibernate 의 binary(16) 과 같은 바이트 순서다(UUID_TO_BIN 의 두 번째 인자 없이).
+  if (kind === 'uuid' && !maria) return `UUID_TO_BIN(${string(String(value))})`;
   if (kind === 'bigint' || kind === 'integer' || kind === 'numeric') return String(value);
   if (kind === 'timestamp') return string(String(value).replace('T', ' ').slice(0, 26));
   if (kind === 'date') return string(String(value).slice(0, 10));
@@ -301,7 +304,7 @@ function adapterFor(id, label) {
   const adapter = {
     id, label,
     identifier: name => name,
-    literal: literalFor,
+    literal: (column, value) => literalFor(column, value, id === 'mariadb'),
     emitSchema: model => emitSchemaFor(id, model),
     emitSeed: (model, rows) => emitRows(model, rows, adapter),
     emitSequenceSync(model, rows) {

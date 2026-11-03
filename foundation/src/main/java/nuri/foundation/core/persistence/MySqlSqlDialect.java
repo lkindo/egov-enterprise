@@ -36,7 +36,12 @@ public class MySqlSqlDialect extends InnoDbSqlDialect {
         return "new." + column;
     }
 
-    /** Connector/J 는 서버와 무관하게 이 이름을 돌려준다. */
+    @Override
+    boolean mariaDbServer() {
+        return false;
+    }
+
+    /** Connector/J 는 서버와 무관하게 이 이름을 돌려준다. 서버는 {@link #assertSession} 이 가른다. */
     @Override
     public String databaseProductName() {
         return "MySQL";

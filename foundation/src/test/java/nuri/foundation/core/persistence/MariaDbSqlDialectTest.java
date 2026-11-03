@@ -23,6 +23,17 @@ class MariaDbSqlDialectTest extends InnoDbSqlDialectContract {
         return "SELECT lock_slot_no FROM tb_sys_lock_slot WHERE lock_slot_no = ? FOR UPDATE WAIT 10";
     }
 
+    /** 2026-11-04 실측한 두 서버의 VERSION(). */
+    @Override
+    String ownServerVersion() {
+        return "11.4.13-MariaDB-ubu2404";
+    }
+
+    @Override
+    String otherServerVersion() {
+        return "8.4.13";
+    }
+
     @Test
     @DisplayName("upsert 는 VALUES(c) 로 새 값을 읽어 더한다 — 행 별칭 문법이 없다")
     void upsertAddsCounters() {

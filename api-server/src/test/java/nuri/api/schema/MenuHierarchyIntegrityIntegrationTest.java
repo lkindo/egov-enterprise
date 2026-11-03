@@ -371,8 +371,8 @@ class MenuHierarchyIntegrityIntegrationTest {
     private String seedActor(String... permissions) {
         String actor = fixtureId + "A";
         String group = seedGroup("G");
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))", actor, actor.toLowerCase(), actor);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"), actor, actor.toLowerCase(), actor);
         ownUsers.add(actor);
         jdbc.update("INSERT INTO tb_authrt_user_map(scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
                 + "VALUES(?,?,'USR03',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", actor, group);
@@ -385,8 +385,8 @@ class MenuHierarchyIntegrityIntegrationTest {
 
     private String seedGroup(String suffix) {
         String group = fixtureId + suffix;
-        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
-                + "VALUES(?,?,to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", group, group + " 그룹");
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,?,to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')"), group, group + " 그룹");
         ownGroups.add(group);
         return group;
     }

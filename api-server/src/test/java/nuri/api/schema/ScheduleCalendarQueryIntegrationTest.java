@@ -208,12 +208,12 @@ class ScheduleCalendarQueryIntegrationTest {
     }
 
     private void seedUser(String id, String departmentId) {
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 INSERT INTO tb_user_info
                     (esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,tmpr_pswd_yn,ognz_id,sbscrb_ymd)
                 VALUES (?,?,'{disabled}calendar-fixture','Calendar fixture','P','N','N',?,
                         to_char(CURRENT_DATE,'YYYYMMDD'))
-                """, id, login(id), departmentId);
+                """), id, login(id), departmentId);
     }
 
     private long createThroughApi(String actor, String name, String start, String end) throws Exception {

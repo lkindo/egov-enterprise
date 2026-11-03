@@ -34,6 +34,11 @@ public class MariaDbSqlDialect extends InnoDbSqlDialect {
         return "VALUES(" + column + ")";
     }
 
+    @Override
+    boolean mariaDbServer() {
+        return true;
+    }
+
     /** MariaDB 드라이버는 MariaDB 서버에 연결하면 이 이름을 돌려준다. MySQL 서버면 "MySQL" 이라 기동이 멈춘다. */
     @Override
     public String databaseProductName() {

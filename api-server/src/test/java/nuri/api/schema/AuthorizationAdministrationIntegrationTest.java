@@ -740,8 +740,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void insertUser(String id) {
         // The legacy varchar(8) subscription date default is CURRENT_TIMESTAMP; explicit YYYYMMDD
         // follows the physical date format and avoids depending on that incompatible default.
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",id,id,id);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),id,id,id);
     }
 
     private void replaceGrants(String group,List<Grant> grants) {

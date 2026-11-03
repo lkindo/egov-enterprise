@@ -74,13 +74,13 @@ class MenuBookmarkConcurrencyIntegrationTest {
     }
 
     private void seedUser(String esntlId, String loginId) {
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'bookmark fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))", esntlId, loginId);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'bookmark fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"), esntlId, loginId);
     }
 
     private void seedGroup(String groupCode) {
-        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
-                + "VALUES(?,'bookmark fixture',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", groupCode);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,'bookmark fixture',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')"), groupCode);
     }
 
     private void grantNavigation(Long menu) {

@@ -90,10 +90,10 @@ class OperationalSignalIsolationIntegrationTest {
         String prefix = "OS" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         fixtureUser = prefix + "U";
         fixtureJob = UUID.randomUUID().toString();
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd)
                 VALUES (?,?,'test-only-unusable','Signal fixture','P','Y',to_char(CURRENT_DATE,'YYYYMMDD'))
-                """, fixtureUser, fixtureUser);
+                """), fixtureUser, fixtureUser);
         jdbc.update("""
                 INSERT INTO tb_sys_job(job_mng_no,job_se_nm,job_cn,prcs_stts_nm,rtry_nmtm,job_prnmnt_dt)
                 VALUES (?,'SIGNAL_TEST_ONLY','{}','FAILED',0,CURRENT_TIMESTAMP)

@@ -50,10 +50,10 @@ class PopupInputPolicyIntegrationTest {
         fixture = "PI" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         actor = fixture + "R";
         actorLogin = fixture + "L";
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd)
                 VALUES (?,?,'test-only-unusable','popup fixture','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))
-                """, actor, actorLogin);
+                """), actor, actorLogin);
         var principal = CustomUserDetails.builder().userId(actorLogin).esntlId(actor).enabled(true).lockAt("N")
                 .permissions(List.of("POPUP_CREATE", "POPUP_UPDATE", "POPUP_DELETE")).build();
         SecurityContextHolder.getContext().setAuthentication(

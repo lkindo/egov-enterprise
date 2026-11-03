@@ -24,6 +24,17 @@ class MySqlSqlDialectTest extends InnoDbSqlDialectContract {
         return "SELECT /*+ MAX_EXECUTION_TIME(10000) */ lock_slot_no FROM tb_sys_lock_slot WHERE lock_slot_no = ? FOR UPDATE";
     }
 
+    /** 2026-11-04 실측한 두 서버의 VERSION(). */
+    @Override
+    String ownServerVersion() {
+        return "8.4.13";
+    }
+
+    @Override
+    String otherServerVersion() {
+        return "11.4.13-MariaDB-ubu2404";
+    }
+
     @Test
     @DisplayName("upsert 는 행 별칭으로 새 값을 읽어 더한다 — VALUES(c) 는 8.0.20 부터 폐기 예정이다")
     void upsertAddsCounters() {

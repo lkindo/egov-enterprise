@@ -982,8 +982,8 @@ class ApprovalWorkflowIntegrationTest {
         }
     }
     private void seedDrafter() {
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'draft fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'draft fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
                 DRAFTER, DRAFTER.toLowerCase(java.util.Locale.ROOT));
         // 사용자 저장소는 이 클래스에서 목이다 — 잠금 조회는 실제 행이 있다는 것만 돌려준다(행 잠금 자체는 즐겨찾기 동시성 시험이 본다).
         when(users.findByEsntlIdForUpdate(DRAFTER)).thenReturn(java.util.Optional.of(

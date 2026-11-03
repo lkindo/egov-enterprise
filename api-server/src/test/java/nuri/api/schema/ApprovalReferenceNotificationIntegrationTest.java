@@ -85,8 +85,8 @@ class ApprovalReferenceNotificationIntegrationTest {
         assertThat(VendorTestSql.constraintCount(jdbc, "fk_tb_user_noti_tb_user_info")).as("알림 행은 사용자 FK 로 묶여 있다 — 없으면 이 시험은 아무것도 증명하지 않는다").isEqualTo(1);
         try {
             for (String person : people) {
-                jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                        + "VALUES(?,?,'reference fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
+                jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                        + "VALUES(?,?,'reference fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
                         person, person.toLowerCase(java.util.Locale.ROOT));
             }
             // 사용자 저장소는 이 클래스에서 목이다 — 이 시험에서는 실제 사용자 행이 있는 사람만 돌려준다(지운 사람은 없다).

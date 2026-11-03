@@ -277,6 +277,30 @@ abstract class InnoDbSqlDialectContract {
         assertThatThrownBy(() -> dialect().assertNoOpenLedgerPermit(jdbc)).isInstanceOf(IllegalStateException.class);
     }
 
+    /** 이 벤더 서버의 버전 문자열과 다른 벤더 서버의 것. */
+    abstract String ownServerVersion();
+
+    abstract String otherServerVersion();
+
+    @Test
+    @DisplayName("기동 검사 — 다른 벤더 서버나 한국 시간이 아닌 세션 시계면 멈춘다")
+    void assertsServerAndKoreanSessionClock() {
+        JdbcOperations jdbc = mock(JdbcOperations.class);
+        when(jdbc.queryForObject("SELECT VERSION()", String.class)).thenReturn(ownServerVersion());
+        when(jdbc.queryForObject("SELECT TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW())", Integer.class)).thenReturn(540);
+        assertThatCode(() -> dialect().assertSession(jdbc)).doesNotThrowAnyException();
+
+        // 접속 주소에서 세션 시간대가 빠지면 컨테이너 기본(UTC)이다.
+        when(jdbc.queryForObject("SELECT TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW())", Integer.class)).thenReturn(0);
+        assertThatThrownBy(() -> dialect().assertSession(jdbc)).isInstanceOf(IllegalStateException.class).hasMessageContaining("+09:00");
+        when(jdbc.queryForObject("SELECT TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW())", Integer.class)).thenReturn(null);
+        assertThatThrownBy(() -> dialect().assertSession(jdbc)).isInstanceOf(IllegalStateException.class);
+
+        when(jdbc.queryForObject("SELECT TIMESTAMPDIFF(MINUTE, UTC_TIMESTAMP(), NOW())", Integer.class)).thenReturn(540);
+        when(jdbc.queryForObject("SELECT VERSION()", String.class)).thenReturn(otherServerVersion());
+        assertThatThrownBy(() -> dialect().assertSession(jdbc)).isInstanceOf(IllegalStateException.class).hasMessageContaining("server");
+    }
+
     @Test
     @DisplayName("Oracle 의 오류 번호를 쓰지 않는다 — 같은 번호가 이 벤더에서는 다른 오류다")
     void doesNotBorrowOracleErrorNumbers() {

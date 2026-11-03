@@ -236,7 +236,7 @@ test('the MySQL family counts key bytes by physical type, as measured on both en
     assert.equal(bytes(type('numeric', { precision: null, scale: null })), 18, '정밀도 없는 numeric 은 DECIMAL(38,10) 이다');
     for (const kind of ['text', 'json', 'binary']) assert.equal(bytes(type(kind)), Infinity, `${kind}: 접두 없이 키가 될 수 없다`);
   }
-  assert.equal(keyColumnBytes(type('uuid'), false), 144, 'MySQL 의 UUID 는 CHAR(36) utf8mb4');
+  assert.equal(keyColumnBytes(type('uuid'), false), 16, 'MySQL 의 UUID 는 BINARY(16)');
   assert.equal(keyColumnBytes(type('uuid'), true), 16, 'MariaDB 의 UUID 타입');
   // 일반 인덱스 접두: 넘지 않으면 자르지 않고, 넘으면 긴 문자열만 잘린 키 전체가 3,072바이트 안에 들게 자른다.
   assert.deepEqual(indexPrefixes([3068, 4]).prefixes, [null, null], 'VARCHAR(767)+INT 는 그대로');
@@ -264,9 +264,9 @@ test('the MySQL family decides the key limit at the measured boundaries', () => 
     triggers: [], sequences: [],
   }, extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
   const statements = (adapter, sample) => adapter.emitSchema(sample).statements.map(statement => statement.sql);
-  // 2026-11-04 실측 경계: VARCHAR(n)+INT 767, +BIGINT 766, +DATETIME(6) 766, +DECIMAL(10,0) 766, +CHAR(36) UUID 732(MySQL). 한 자 더하면 1071 이다.
+  // 2026-11-04 실측 경계: VARCHAR(n)+INT 767, +BIGINT 766, +DATETIME(6) 766, +DECIMAL(10,0) 766, +BINARY(16) UUID 764. 한 자 더하면 1071 이다.
   for (const [other, fits] of [[{ type: 'integer' }, 767], [{ type: 'bigint' }, 766], [{ type: 'timestamp without time zone', datetime: 6 }, 766],
-    [{ type: 'numeric', precision: 10, scale: 0 }, 766], [{ type: 'uuid' }, 732]]) {
+    [{ type: 'numeric', precision: 10, scale: 0 }, 766], [{ type: 'uuid' }, 764]]) {
     assert.ok(statements(mysqlAdapter, keyModel(fits, other)).includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a, b)'), `mysql: VARCHAR(${fits})+${other.type} 는 그대로 받는다`);
     const over = statements(mysqlAdapter, keyModel(fits + 1, other));
     assert.ok(over.includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a_hash, b)'), `mysql: VARCHAR(${fits + 1})+${other.type} 는 해시 유니크다`);
@@ -281,6 +281,12 @@ test('the MySQL family decides the key limit at the measured boundaries', () => 
   assert.ok(statements(mariadbAdapter, keyModel(765, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a(700), b)'));
   assert.ok(statements(mariadbAdapter, keyModel(4000, uuid)).includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a, b)'));
   assert.deepEqual(mariadbAdapter.emitSchema(keyModel(4000, uuid)).degradations, [], 'MariaDB 는 접두 저하가 없다');
+  // MySQL 의 UUID 는 Hibernate 의 MySQL 기본 매핑인 BINARY(16) 이고 시드 값은 같은 바이트 순서로 바꾼다. CHAR(36) 이면 스키마 검증이 멈췄다(2026-11-04).
+  assert.match(statements(mysqlAdapter, keyModel(10, uuid)).join('\n'), /\bb BINARY\(16\)/);
+  assert.match(statements(mariadbAdapter, keyModel(10, uuid)).join('\n'), /\bb UUID\b/);
+  const uuidValue = '6f1c2d3e-4a5b-4c6d-8e7f-001122334455';
+  assert.equal(mysqlAdapter.literal({ type: { kind: 'uuid' } }, uuidValue), `UUID_TO_BIN('${uuidValue}')`);
+  assert.equal(mariadbAdapter.literal({ type: { kind: 'uuid' } }, uuidValue), `'${uuidValue}'`);
   // 단일 컬럼은 768자까지 그대로, 넘으면 MySQL 만 접두 유니크(저하)다.
   const single = length => buildVendorModel({ snapshot: { columns: [column('t_one', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_one', 'a', length, { position: 2 })],
     constraints: [constraint('t_one', 'pk_t_one', 'p', 'PRIMARY KEY (id)'), constraint('t_one', 'uk_t_one_a', 'u', 'UNIQUE (a)')], indexes: [], triggers: [], sequences: [] },

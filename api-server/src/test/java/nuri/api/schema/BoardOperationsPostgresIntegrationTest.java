@@ -103,8 +103,8 @@ class BoardOperationsPostgresIntegrationTest {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
         bbsId = "BBSOPS_" + suffix;
         author = "BOS" + suffix;
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'board operations fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'board operations fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
                 author, author);
         jdbc.update("INSERT INTO tb_bbs_master (bbs_id, bbs_ttl, bbs_type_cd, bbs_atrb_cd, atch_psblty_file_qty,"
                 + " file_atch_psblty_yn, use_yn) VALUES (?, '운영 질의 검증', 'BBST01', 'BBSA02', 0, 'N', 'Y')", bbsId);
