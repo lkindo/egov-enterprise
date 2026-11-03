@@ -234,6 +234,7 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
   // 규칙 순서는 생성기와 같다(과거 마이그레이션 검증, 원본 Atlas). 승인되지 않은 규칙을 말하는 순서가 된다.
   const ruleRemovals = {};
   const undeterminedRules = new Set();
+  let vendorRemoval;
   try {
     const schemaTests = relativeFiles.filter(file => file.startsWith(`${HISTORICAL_SCHEMA_TEST_DIR}/`) && file.endsWith('.java') && kept(file));
     ruleRemovals['historical-migration-tests'] = selectHistoricalMigrationTests(schemaTests.map(file => join(root, file)),
@@ -251,6 +252,7 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
       const scripts = JSON.parse(readSource(join(root, 'package.json'))).scripts;
       const stale = staleVendorAssets(ledger, present, scripts);
       if (stale.length) block('RULE_REMOVAL', { message: `벤더 제거 원장이 낡았다: ${stale.join(', ')}` });
+      vendorRemoval = { gates: ruleRemovals[VENDOR_ASSET_RULE].length, assets: ledger.assets.length };
     } catch (error) {
       undeterminedRules.add(VENDOR_ASSET_RULE);
       block('RULE_REMOVAL', { message: message(error) });
@@ -297,6 +299,8 @@ export function compositionDeepPlan({ root, composition, files, outputParent, ca
     apiContract,
     // 규칙으로 걷는 게이트 파일(승인만 대조하고 제거 수에는 세지 않는다). 화면에는 보내지 않는다.
     ruleRemovals,
+    // 벤더 구성에서 원장대로 빠지는 게이트·자산 수. 위 제거 수와 기준이 달라 합치지 않고 화면이 따로 말한다.
+    ...(vendorRemoval ? { vendorRemoval } : {}),
     blockers,
     durationMs: Math.round(performance.now() - started),
   };

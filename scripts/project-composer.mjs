@@ -13,7 +13,7 @@ import { compositionDiff } from './project-composer-diff.mjs';
 import { loadUnassignedPermissionGuidance } from './project-composer-unassigned.mjs';
 import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from './project-composer-presentation.mjs';
 import { composerPreflight } from './project-composer-preflight.mjs';
-import { loadVendorLedger, selectableVendors, vendorChoices } from './project-composer-vendors.mjs';
+import { loadVendorLedger, selectableVendors, vendorChoices, vendorDegradationNotes } from './project-composer-vendors.mjs';
 import { missingFrontendToolchain } from './reusable-contract-projection.mjs';
 import { compositionDeepPlan, deepSummary } from './project-composer-deep.mjs';
 import { ComposerError, classifyDeclarationFailure } from './project-composer-errors.mjs';
@@ -204,7 +204,7 @@ export function createComposerEngine({ root = ROOT, outputRoot, run = runCompose
     const owner = code => current.capabilities.find(capability => capability.permissionCodes.includes(code))?.id ?? 'core';
     return { catalog: current, plan: { ...composition, sourceCommit, blockers: foreignKeyBlockers(composition, current),
       inclusionNotes: inclusionNotes(composition, current),
-      degradationNotes: degradationNotes(composition, current),
+      degradationNotes: [...degradationNotes(composition, current), ...vendorDegradationNotes(vendorLedger(), composition)],
       // 기본 그룹이 없어 생성 직후 아무에게도 배정되지 않는 권한. 생성을 막지 않고, 완료 뒤 할 일로 보인다.
       unassignedPermissions: declared(() => loadUnassignedPermissionGuidance(root, { permissionCodes: composition.permissionCodes }))
         .filter(row => composition.permissionCodes.includes(row.code))

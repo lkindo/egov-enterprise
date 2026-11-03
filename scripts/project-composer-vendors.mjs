@@ -58,6 +58,48 @@ export function vendorEvidenceProblems(evidence) {
   return rules.filter(([, passed]) => !passed).map(([name]) => name);
 }
 
+/** 모델 항목에서 나오는 저하의 종류. 어느 표에 있는지는 구성마다 달라 문장은 종류 단위로 둔다. */
+export const MODEL_DEGRADATION_KINDS = Object.freeze(['length', 'partial', 'index', 'prefix', 'deferrable', 'null', 'default', 'not-null']);
+/** 저하 이름의 종류. `<객체>:<종류>`, 인덱스 이름 그대로, 또는 어댑터의 고정 이름이다. 표지 없는 새 이름은 고정 이름으로 읽혀 문장 대조에서 붉다. */
+export const degradationKind = name => (name.includes(':') ? name.slice(name.lastIndexOf(':') + 1) : name.startsWith('ix_') ? 'index' : name);
+/** 표가 없으면 모델 유래 저하가 없어 어댑터의 고정 이름만 남는다. 계획에는 모델이 없으므로 이것이 어댑터와 대조할 수 있는 전부다. */
+export const fixedDegradations = vendorId => VENDOR_ADAPTERS[vendorId].emitSchema({ tables: [], sequences: [] }).degradations.map(row => row.name);
+
+/** 표시 문장이 어댑터 선언과 어긋나는 곳. 문장을 어댑터에 두면 문구 수정이 인증 증거를 낡게 하므로 입력이 아닌 원장에 두고 대조한다. */
+export function vendorNoticeProblems(vendor) {
+  const rows = vendor.notices?.degradations;
+  if (!Array.isArray(rows) || !vendor.notices.image) return ['화면에 보일 저하·이미지 안내(notices)가 없다'];
+  const kinds = rows.map(row => row.kind);
+  const fixed = fixedDegradations(vendor.id);
+  return [
+    ...fixed.filter(name => !kinds.includes(name)).map(name => `표시 문장이 없는 저하(${name})`),
+    ...kinds.filter(kind => !fixed.includes(kind) && !MODEL_DEGRADATION_KINDS.includes(kind)).map(kind => `어댑터에 없는 저하의 표시 문장(${kind})`),
+    ...rows.filter(row => !row.summary || !row.text).map(row => `표시 문장이 비었다(${row.kind})`),
+  ];
+}
+/** 번역 결과의 저하 가운데 표시 문장이 없는 종류. 생성기가 실제 모델로 대조한다. */
+export const unshownDegradations = (vendor, degradations) => {
+  const shown = new Set(vendor.notices?.degradations?.map(row => row.kind));
+  return [...new Set(degradations.map(row => degradationKind(row.name)))].filter(kind => !shown.has(kind));
+};
+
+/**
+ * 벤더 구성의 계획에 더할 안내(ADR-0047 결정 6). composition.degraded 에 넣지 않는다 — 그 값은 구성 해시 재계산과 차이 계산에 쓰인다.
+ * 확인 창은 제목만 보이므로 제목만 읽어도 내용을 알 수 있어야 한다. 빠지는 게이트의 실제 수는 구성마다 달라 정밀 점검이 말한다.
+ */
+export function vendorDegradationNotes(ledger, composition) {
+  const vendorId = composition?.database?.vendor;
+  const vendor = ledger.vendors.find(row => row.id === vendorId);
+  if (!vendor?.notices) return [];
+  const note = (part, heading, reasons = []) => ({ to: `vendor:${vendorId}:${part}`, vendor: vendorId, heading, reasons: reasons.map(reason => ({ from: vendorId, reason })) });
+  const tools = ledger.removedPostgresTools?.groups ?? [];
+  return [
+    note('behavior', `${vendor.label} 에서 달라지는 동작: ${vendor.notices.degradations.map(row => row.summary).join(', ')}`, vendor.notices.degradations.map(row => row.text)),
+    ...(tools.length ? [note('tools', `PostgreSQL 전용이라 프로젝트에서 빠지는 도구·검증 게이트: ${tools.map(group => group.label).join(', ')}`, tools.map(group => `${group.label}: ${group.reason}`))] : []),
+    note('image', vendor.notices.image),
+  ];
+}
+
 /**
  * certified 가 지는 조건. 원장만 고쳐 어댑터 없는 벤더나 빈 증거로 열지 못하게 한다. 입력 해시 대조는 여기서 하지 않는다 —
  * 생성 작업마다 도는 함수이고, 생성물에는 입력이 투영돼 있다.
@@ -69,6 +111,9 @@ function certificationProblems(vendor, ledger) {
   if (vendor.ci !== true) return ['CI 벤더 잡(ci)이 없다'];
   if (!vendor.engines?.length) return ['엔진이 없다'];
   if (!vendor.evidenceInputs?.length || !ledger.evidenceInputs?.paths?.length) return ['증거 입력 목록이 없다'];
+  // 저하는 표시해야 인증된다(ADR-0047 결정 6).
+  const notices = [...vendorNoticeProblems(vendor), ...(ledger.removedPostgresTools?.groups?.length ? [] : ['빠지는 도구의 표시 문장(removedPostgresTools)이 없다'])];
+  if (notices.length) return notices;
   return vendor.engines.flatMap(engine => {
     const problem = vendorEngineProblem(vendor.id, engine);
     if (problem) return [`${engine.version}: ${problem}`];

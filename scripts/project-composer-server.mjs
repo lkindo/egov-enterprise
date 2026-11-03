@@ -143,11 +143,13 @@ function safeDeep(value) {
   const explained = (projection, code) => projection !== null || blockers.some(blocker => blocker.code === code);
   if (!plain(value) || !blockers || blockers.length > 20 || !blockers.every(validBlocker) || !removal(value.java) || !removal(value.frontend)
     || !explained(value.java, 'JAVA_PROJECTION') || !explained(value.frontend, 'FRONTEND_PROJECTION')
-    || !files(value.removedGates) || !line(value.summary, 200) || !count(value.durationMs)) throw new HttpError(500, 'DEEP_FAILED');
+    || !files(value.removedGates) || !line(value.summary, 200) || !count(value.durationMs)
+    || (value.vendorRemoval !== undefined && !(plain(value.vendorRemoval) && count(value.vendorRemoval.gates) && count(value.vendorRemoval.assets)))) throw new HttpError(500, 'DEEP_FAILED');
   return {
     java: value.java && { removedFiles: value.java.removedFiles, cascadeFiles: value.java.cascadeFiles },
     frontend: value.frontend && { removedFiles: value.frontend.removedFiles, cascadeFiles: value.frontend.cascadeFiles },
     removedGates: value.removedGates,
+    ...(value.vendorRemoval ? { vendorRemoval: { gates: value.vendorRemoval.gates, assets: value.vendorRemoval.assets } } : {}),
     blockers: blockers.map(({ code, label, files: list, message }) => ({ code, label,
       ...(list ? { files: list.slice(0, 200), fileCount: list.length } : {}),
       ...(message ? { message: message.replace(/[\r\n\0]+/g, ' ').replace(ABSOLUTE_PATH, '<로컬 경로>').slice(0, 500) } : {}) })),

@@ -94,7 +94,9 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
         $('deep-status').textContent = `차단 ${deep.blockers.length}건 · ${deep.summary}`;
         return '소스 정밀 점검의 차단 항목을 해결한 뒤 다시 점검하세요.';
       }
-      $('deep-status').textContent = `${deep.summary}. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면은 남으며 구성에 없는 화면은 남지 않습니다.`;
+      // 벤더 규칙으로 빠지는 수는 위 제거 수에 들지 않는다. 기능 선택과 무관하게 빠지므로 따로 말한다.
+      const vendorRemoval = deep.vendorRemoval ? ` 이 데이터베이스에서는 PostgreSQL 전용 검증 게이트 ${deep.vendorRemoval.gates}건과 도구·자료 ${deep.vendorRemoval.assets}개도 빠집니다.` : '';
+      $('deep-status').textContent = `${deep.summary}. 지워지는 검증 게이트는 승인 목록과 같고, 선택한 기능의 소스와 화면은 남으며 구성에 없는 화면은 남지 않습니다.${vendorRemoval}`;
       return null;
     } catch (error) {
       if (stale()) return null;

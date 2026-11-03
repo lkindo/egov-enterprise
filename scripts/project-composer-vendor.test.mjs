@@ -9,7 +9,7 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
 import { assertCatalogParity, assertCoverage, assertUniqueColumns, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
-import { loadVendorLedger, selectableVendors, translateForAllVendors, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices } from './project-composer-vendors.mjs';
+import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION_KINDS, selectableVendors, translateForAllVendors, unshownDegradations, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices, vendorDegradationNotes } from './project-composer-vendors.mjs';
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
@@ -477,7 +477,7 @@ function ledgerCopy(t, change) {
   const directory = mkdtempSync(join(tmpdir(), 'vendor-ledger-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
   const ledger = JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8'));
-  change(id => ledger.vendors.find(vendor => vendor.id === id));
+  change(id => ledger.vendors.find(vendor => vendor.id === id), ledger);
   mkdirSync(join(directory, 'config'));
   writeFileSync(join(directory, VENDOR_LEDGER_PATH), JSON.stringify(ledger));
   return directory;
@@ -498,6 +498,87 @@ test('a ledger that would mislead the screen or strand the default vendor is ref
   assert.throws(load(vendor => { delete vendor('oracle').label; }), /oracle: 화면에 보일 이름이 없다/);
   assert.throws(load(vendor => { delete vendor('oracle').reason; }), /oracle: 고를 수 없는 사유가 없다/);
   assert.throws(load(vendor => { vendor('oracle').status = 'certified'; }), /oracle: 증거 없는 certified/);
+});
+
+/** 어댑터 소스가 선언할 수 있는 저하 종류. 계획에는 모델이 없고 시험 모델은 일부 분기만 지나므로 호출 지점을 센다. 읽지 못하는 모양의 호출이 있으면 붉다. */
+function declaredDegradationKinds(adapterFile) {
+  const source = readFileSync(join(ROOT, adapterFile), 'utf8');
+  const suffixed = [...source.matchAll(/emission\.degrade\(`[^`]*:([a-z-]+)`/g)].map(match => match[1]);
+  const bare = [...source.matchAll(/emission\.degrade\(index\.name\b/g)].map(() => 'index');
+  const pushed = [...source.matchAll(/emission\.degradations\.push\(\{ name: '([a-z-]+)'/g)].map(match => match[1]);
+  assert.equal(suffixed.length + bare.length, [...source.matchAll(/emission\.degrade\(/g)].length, `${adapterFile}: 읽지 못한 저하 선언이 있다`);
+  assert.equal(pushed.length, [...source.matchAll(/emission\.degradations\.push\(/g)].length, `${adapterFile}: 읽지 못한 고정 저하가 있다`);
+  return new Set([...suffixed, ...bare, ...pushed]);
+}
+
+test('every degradation an adapter can declare has a sentence in the ledger, in both directions', () => {
+  const ledger = loadVendorLedger(ROOT);
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const kinds = oracle.notices.degradations.map(row => row.kind);
+  assert.deepEqual([...kinds].sort(), [...declaredDegradationKinds('scripts/project-composer-vendor-oracle.mjs')].sort());
+  // 시험 모델은 인덱스 분기를 지난다. 이름에서 읽은 종류가 소스에서 센 종류와 같은 체계인지 본다.
+  const emitted = oracleAdapter.emitSchema(model()).degradations;
+  assert.ok(emitted.length > fixedDegradations('oracle').length, '모델 유래 저하가 없으면 이 대조는 비어 있다');
+  assert.deepEqual(unshownDegradations(oracle, emitted), []);
+  for (const kind of emitted.map(row => degradationKind(row.name))) assert.ok(kinds.includes(kind), kind);
+  assert.deepEqual(unshownDegradations(oracle, [{ name: 'ix_a' }, { name: 'tb_a.b:length' }, { name: 'tb_a.b:new-kind' }, { name: 'new-fixed' }]), ['new-kind', 'new-fixed']);
+  assert.deepEqual(unshownDegradations({ id: 'mysql' }, [{ name: 'ix_a' }]), ['index'], '문장이 없는 벤더는 모두 붉다');
+  // 다른 어댑터도 같은 표기로 선언한다. 승격 때 이 대조가 그대로 걸린다.
+  for (const file of ['mysql', 'mssql', 'cubrid']) {
+    for (const kind of declaredDegradationKinds(`scripts/project-composer-vendor-${file}.mjs`)) {
+      assert.ok(MODEL_DEGRADATION_KINDS.includes(kind) || fixedDegradations(file).includes(kind), `${file}: 모르는 종류 ${kind}`);
+    }
+  }
+});
+
+test('certification needs the sentences the screen shows, and the wiring keeps them on the generation path', t => {
+  const certified = change => () => loadVendorLedger(ledgerCopy(t, vendor => { certifyVendor(vendor('oracle')); change(vendor('oracle').notices); }));
+  assert.doesNotThrow(certified(() => {}));
+  assert.throws(certified(notices => { notices.degradations = notices.degradations.filter(row => row.kind !== 'empty-string'); }), /oracle: 표시 문장이 없는 저하\(empty-string\)/);
+  assert.throws(certified(notices => { notices.degradations.push({ kind: 'gone', summary: 'x', text: 'y' }); }), /oracle: 어댑터에 없는 저하의 표시 문장\(gone\)/);
+  assert.throws(certified(notices => { notices.degradations[0].text = ''; }), /oracle: 표시 문장이 비었다\(empty-string\)/);
+  assert.throws(certified(notices => { delete notices.image; }), /oracle: 화면에 보일 저하·이미지 안내\(notices\)가 없다/);
+  assert.throws(certified(notices => { delete notices.degradations; }), /oracle: 화면에 보일 저하·이미지 안내\(notices\)가 없다/);
+  assert.throws(() => loadVendorLedger(ledgerCopy(t, (vendor, ledger) => { certifyVendor(vendor('oracle')); delete ledger.removedPostgresTools; })), /oracle: 빠지는 도구의 표시 문장\(removedPostgresTools\)이 없다/);
+  assert.doesNotThrow(() => loadVendorLedger(ledgerCopy(t, vendor => { delete vendor('oracle').notices; })), 'preview 는 문장 없이도 그대로다');
+  const tool = readFileSync(join(ROOT, 'scripts/project-composer-vendor-project.mjs'), 'utf8');
+  assert.match(tool, /^ *const unshown = unshownDegradations\(/m, '실제 모델의 저하를 생성할 때 대조한다');
+  assert.match(tool, /^ *if \(unshown\.length\) throw new Error\(/m, '문장 없는 저하가 있으면 멈춘다');
+});
+
+test('every removed asset and gate belongs to exactly one tool group shown before generating', () => {
+  const ledger = loadVendorLedger(ROOT);
+  const removed = readVendorAssetLedger(ROOT);
+  const listed = ledger.removedPostgresTools.groups.flatMap(group => group.paths);
+  assert.deepEqual([...listed].sort(), [...removed.assets, ...removed.gates.map(row => row.file)].sort());
+  for (const group of ledger.removedPostgresTools.groups) assert.match(group.reason, /니다\.$/, group.label);
+});
+
+test('the plan notes say what a vendor changes in the heading alone, and PostgreSQL gets none', t => {
+  const ledger = loadVendorLedger(ROOT);
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const notes = vendorDegradationNotes(ledger, { database: { vendor: 'oracle' } });
+  assert.deepEqual(notes.map(note => note.to), ['vendor:oracle:behavior', 'vendor:oracle:tools', 'vendor:oracle:image']);
+  for (const row of oracle.notices.degradations) {
+    assert.ok(notes[0].heading.includes(row.summary), row.kind);
+    assert.ok(notes[0].reasons.some(reason => reason.reason === row.text), row.kind);
+  }
+  for (const group of ledger.removedPostgresTools.groups) assert.ok(notes[1].heading.includes(group.label), group.label);
+  assert.equal(notes[2].heading, oracle.notices.image);
+  assert.ok(/라이선스/.test(notes[2].heading) && /개발용/.test(notes[2].heading));
+  assert.deepEqual(vendorDegradationNotes(ledger, { database: { vendor: 'postgresql' } }), []);
+  assert.deepEqual(vendorDegradationNotes(ledger, {}), []);
+  // 엔진 응답. PostgreSQL 계획은 기능 저하만 그대로 둔다.
+  const catalog = loadProjectComposerCatalog(ROOT);
+  const engine = createComposerEngine({ loadCatalog: () => catalog, loadVendors: () => loadVendorLedger(ledgerCopy(t, certify('oracle'))) });
+  const recipe = vendor => ({ schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'demo' }, database: { vendor }, backendLayout: 'multi-module' });
+  withPreviewEnv(undefined, () => {
+    const [postgres, opened] = [engine.plan(recipe('postgresql')), engine.plan(recipe('oracle'))];
+    assert.ok(postgres.degradationNotes.every(note => !note.vendor), 'PostgreSQL 계획에 벤더 안내가 없다');
+    assert.deepEqual(opened.degradationNotes.filter(note => note.vendor), notes);
+    assert.deepEqual(opened.degradationNotes.filter(note => !note.vendor), postgres.degradationNotes);
+    assert.deepEqual(opened.degraded, postgres.degraded, '구성의 저하 값은 벤더로 바뀌지 않는다');
+  });
 });
 
 test('vendor choices carry the same judgement as the request check and leave evidence behind', t => {
@@ -877,7 +958,10 @@ test('the catalog test replaces the entity linter only in a vendor project, by t
 });
 
 test('the README procedure names a command that exists and what it does not cover', () => {
-  const readme = vendorReadme('oracle');
+  const ledger = loadVendorLedger(ROOT);
+  const readme = vendorReadme('oracle', ledger);
+  for (const row of ledger.vendors.find(vendor => vendor.id === 'oracle').notices.degradations) assert.ok(readme.includes(`- ${row.text}`), `README 에 저하가 없다: ${row.kind}`);
+  for (const group of ledger.removedPostgresTools.groups) assert.ok(readme.includes(group.label), group.label);
   assert.ok(readme.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`));
   assert.match(readme, /db\/vendor\/oracle/);
   assert.match(readme, /V1_1__/);
@@ -1205,7 +1289,7 @@ test('the runner wires the closed Docker environment, one API environment and th
   assert.throws(() => resolveVendorEngine('mysql', 'oracle19', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 oracle19 엔진으로/);
   assert.throws(() => resolveVendorEngine('oracle', 'nope', VENDOR_ENGINES), /nope 엔진으로/);
 
-  const readme = vendorReadme('oracle');
+  const readme = vendorReadme('oracle', loadVendorLedger(ROOT));
   assert.match(readme, /node scripts\/run-isolated-e2e\.mjs --representative/);
   assert.doesNotMatch(readme, /시작할 때 멈춘다/);
   const removedAssets = JSON.parse(readFileSync(join(ROOT, 'config/governance/vendor-removed-assets.json'), 'utf8'));

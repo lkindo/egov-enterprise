@@ -530,6 +530,9 @@ test('plan deep shares the plan boundary and passes only counts, gates and bound
     removedGates: ['api-server/src/test/java/nuri/api/harness/XLinterTest.java'], blockers: [], blocked: false,
     summary: '제거: Java 517개(연쇄 114) · 프런트 388개(연쇄 73) · 검증 게이트 1건', durationMs: 4210 } });
   assert.deepEqual(asked, [recipe()]);
+  // 벤더 규칙으로 빠지는 수는 벤더 구성에서만 싣는다. 다른 값은 넘기지 않는다.
+  next = { ...deepResult(), vendorRemoval: { gates: 12, assets: 16, files: ['a.java'] } };
+  assert.deepEqual((await post('/api/plan/deep', { recipe: recipe() })).body.deep.vendorRemoval, { gates: 12, assets: 16 });
   // 차단 사유: 파일 목록은 앞 200개와 전체 수만, 메시지는 한 줄 500자까지. 엔진이 blocked 를 거짓으로 말해도 서버가 다시 센다.
   const many = Array.from({ length: 250 }, (_, index) => `frontend/src/app/page-${index}.tsx`);
   next = deepResult([
@@ -566,6 +569,9 @@ test('a malformed deep plan is a failure, never a pass', async t => {
     { ...deepResult(), removedGates: ['a\nb'] },
     { ...deepResult(), summary: '' },
     { ...deepResult(), durationMs: 1.5 },
+    { ...deepResult(), vendorRemoval: { gates: -1, assets: 16 } },
+    { ...deepResult(), vendorRemoval: { gates: 12 } },
+    { ...deepResult(), vendorRemoval: 12 },
     deepResult([{ code: 'lowercase', label: '차단' }]),
     deepResult([{ code: 'SOURCE_SURVIVAL', label: '' }]),
     deepResult([{ code: 'SOURCE_SURVIVAL', label: '차단', files: [] }]),

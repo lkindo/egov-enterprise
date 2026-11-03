@@ -421,6 +421,7 @@ function renderPlan() {
   // 기능 저하와 미배정 권한은 생성을 막지 않는 안내다. 생성 버튼은 차단 사유로만 막힌다.
   const notes = plan.degradationNotes ?? [];
   $('plan-degraded').hidden = notes.length === 0;
+  $('plan-degraded').setAttribute('aria-label', notes.some(group => group.vendor) ? '줄어드는 동작과 데이터베이스 안내' : '고르지 않은 연동 기능');
   $('plan-degraded').replaceChildren(...notes.flatMap(group => [text('p', group.heading, 'font-semibold'),
     ...group.reasons.map(row => text('p', row.reason, 'text-muted'))]));
   const unassigned = plan.unassignedPermissions ?? [];

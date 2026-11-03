@@ -1,6 +1,75 @@
 {
   "schemaVersion": 1,
-  "description": "프로젝트 생성기의 DB 벤더 인증 원장(ADR-0047). certified 만 고를 수 있고 reason 은 화면에 그대로 보인다. 벤더 id 는 이관 도구와 같다. engines[].engine 은 실행 도구의 엔진 키이고 이미지 값의 정본은 그쪽이다. engines[].evidence 는 scripts/project-composer-vendor-evidence.mjs 가 쓴다. 인증 입력은 evidenceInputs.paths 와 벤더의 evidenceInputs, 그리고 판정 코드가 원장·소스에서 도출하는 파일(벤더 의존 SQL, 네이티브 SQL·JPQL·QueryDSL·잠금 호출 지점, 벤더 시험, 대표 E2E, 엔티티 매핑, 모델 명령이 가져오는 도구)이다. git 이 무시하는 파일은 입력이 아니다. 이 파일 자체는 증거를 담으므로 입력이 아니다. ci 가 true 인 벤더는 입력이 바뀐 변경에서 CI 의 reusable-vendor 잡이 돌고(ADR-0047 D-14), 그 경로가 없는 벤더는 certified 가 될 수 없다.",
+  "description": "프로젝트 생성기의 DB 벤더 인증 원장(ADR-0047). certified 만 고를 수 있고 reason 은 화면에 그대로 보인다. 벤더 id 는 이관 도구와 같다. engines[].engine 은 실행 도구의 엔진 키이고 이미지 값의 정본은 그쪽이다. engines[].evidence 는 scripts/project-composer-vendor-evidence.mjs 가 쓴다. 인증 입력은 evidenceInputs.paths 와 벤더의 evidenceInputs, 그리고 판정 코드가 원장·소스에서 도출하는 파일(벤더 의존 SQL, 네이티브 SQL·JPQL·QueryDSL·잠금 호출 지점, 벤더 시험, 대표 E2E, 엔티티 매핑, 모델 명령이 가져오는 도구)이다. git 이 무시하는 파일은 입력이 아니다. 이 파일 자체는 증거를 담으므로 입력이 아니다. ci 가 true 인 벤더는 입력이 바뀐 변경에서 CI 의 reusable-vendor 잡이 돌고(ADR-0047 D-14), 그 경로가 없는 벤더는 certified 가 될 수 없다. notices 는 그 벤더를 고르면 생성 전 화면과 생성물 README 에 보일 저하 문장과 이미지 안내다. kind 는 어댑터의 고정 저하 이름이거나 모델 유래 저하의 종류이고, 어댑터 선언과 어긋나면 certified 가 될 수 없다.",
+  "removedPostgresTools": {
+    "description": "벤더 프로젝트에서 빠지는 것을 생성 전에 보일 문장. paths 는 config/governance/vendor-removed-assets.json 의 자산·게이트를 한 묶음씩 나눠 갖는다. 그 원장에 줄을 더하면 묶음을 정할 때까지 계약이 붉다.",
+    "groups": [
+      {
+        "label": "레거시 이관 도구",
+        "reason": "대상 DB 가 PostgreSQL 전용입니다.",
+        "paths": [
+          "db_columns.json",
+          "migration-tool",
+          "migration-tool/src/test/java/nuri/migration/schema/MigrationRuntimeSchemaIsolationTest.java",
+          "scripts/generate-migration-product.mjs",
+          "scripts/migration-product-contract.test.mjs",
+          "scripts/migration-profile-provenance.mjs",
+          "scripts/migration-test-shard.mjs",
+          "scripts/migration-verification-contract.test.mjs",
+          "tools/migration-workspace",
+          "tools/migration-workspace-prototype"
+        ]
+      },
+      {
+        "label": "백업·복원 훈련",
+        "reason": "복원 도구가 pg_dump 전용입니다. 이 DB 의 백업·복원은 도입 기관이 준비합니다.",
+        "paths": [
+          "api-server/src/test/java/nuri/api/schema/BackupRestoreDrillIntegrationTest.java",
+          "scripts/restore-drill.mjs",
+          "scripts/restore-drill.test.mjs"
+        ]
+      },
+      {
+        "label": "무중단 마이그레이션 린터",
+        "reason": "PostgreSQL 마이그레이션만 읽습니다. 컬럼 삭제·타입 축소 같은 변경의 무중단 여부는 사람이 판단합니다.",
+        "paths": [
+          "api-server/src/test/java/nuri/api/harness/ZeroDowntimeMigrationLinterTest.java"
+        ]
+      },
+      {
+        "label": "엔티티·스키마 정적 린터",
+        "reason": "카탈로그 시험과 Hibernate validate 가 대신합니다.",
+        "paths": [
+          "api-server/src/test/java/nuri/api/harness/EntitySchemaConformanceLinterTest.java"
+        ]
+      },
+      {
+        "label": "릴리스 스모크",
+        "reason": "PostgreSQL·compose 기준의 릴리스 스모크, 준비 실행기와 권한 전환 리허설입니다. 격리 E2E 실행기는 대표 묶음만 돌립니다.",
+        "paths": [
+          "docker-compose.authz-e2e.yml",
+          "scripts/ReleaseSmokeProbe.java",
+          "scripts/authorization-rehearsal.test.mjs",
+          "scripts/e2e-compose-preflight.mjs",
+          "scripts/e2e-isolation.test.mjs",
+          "scripts/historical-release-fixture.mjs",
+          "scripts/release-images.test.mjs",
+          "scripts/run-isolated-readiness.mjs",
+          "scripts/run-isolated-release-smoke.mjs"
+        ]
+      },
+      {
+        "label": "화면 기준선 실행기",
+        "reason": "PostgreSQL 컨테이너로 화면 기준선을 재는 도구입니다.",
+        "paths": [
+          "scripts/ui-quality-baseline-build-contract.test.mjs",
+          "scripts/ui-quality-baseline-build.mjs",
+          "scripts/ui-quality-baseline-launch-contract.test.mjs",
+          "scripts/ui-quality-baseline-launch.mjs"
+        ]
+      }
+    ]
+  },
   "evidenceInputs": {
     "description": "모든 벤더에 걸리는 입력. '/' 로 끝나면 폴더 전체, 마지막 칸의 * 는 그 폴더 안의 이름이다. 중립 모델은 Docker 없이 계산할 수 없어 소스(마이그레이션·권한 원장·모델 코드)로 대신하고 실제 모델 해시는 증거에 따로 적는다. excludedModelTools 는 모델 명령이 가져오지만 모델을 바꾸지 않는 도구와 그 이유이고, 여기 없는 도구는 기본으로 입력이다.",
     "excludedModelTools": {
@@ -116,6 +185,36 @@
         "foundation/src/main/java/nuri/foundation/core/persistence/NuriOracleDialectResolver.java",
         "foundation/src/main/resources/META-INF/services/org.hibernate.engine.jdbc.dialect.spi.DialectResolver"
       ],
+      "notices": {
+        "degradations": [
+          {
+            "kind": "empty-string",
+            "summary": "빈 문자열이 NULL 로 저장됨",
+            "text": "Oracle 은 빈 문자열을 NULL 로 저장합니다. NULL 을 허용하는 문자열 칸에 저장한 빈 값은 null 로 돌아옵니다."
+          },
+          {
+            "kind": "json-size",
+            "summary": "JSON 크기 상한을 DB 가 강제하지 못함",
+            "text": "JSON 크기 상한을 CHECK 제약으로 강제하지 못합니다."
+          },
+          {
+            "kind": "length",
+            "summary": "키로 쓰는 긴 문자열이 4,000바이트로 제한됨",
+            "text": "LOB 는 키가 될 수 없어 키로 쓰는 긴 문자열 컬럼을 4,000바이트 VARCHAR2 로 둡니다. 더 긴 값은 저장이 거부됩니다."
+          },
+          {
+            "kind": "partial",
+            "summary": "부분 인덱스가 일반 인덱스로 바뀜",
+            "text": "부분 인덱스가 없어 일반 인덱스로 둡니다. 유일성 제약이 아닌 인덱스라 성능만 달라집니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
+      },
       "reason": "Oracle 23·19c 에서 통합 시험을 통과했습니다. 대표 화면 시험과 인증 증거가 남았습니다."
     },
     {

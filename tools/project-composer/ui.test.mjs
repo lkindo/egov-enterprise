@@ -11,6 +11,7 @@ import { compositionDiff } from '../../scripts/project-composer-diff.mjs';
 import { loadProjectComposerMenus, projectComposerMenuPreview } from '../../scripts/project-composer-menu-preview.mjs';
 import { composerPresentation, loadComposerPresentationDeclarations, loadRouteKinds } from '../../scripts/project-composer-presentation.mjs';
 import { loadVendorLedger, selectableVendors, vendorChoices } from '../../scripts/project-composer-vendors.mjs';
+import { readVendorAssetLedger } from '../../scripts/reusable-vendor-assets.mjs';
 import { ComposerError, MENUS_REFRESH_COMMAND } from '../../scripts/project-composer-errors.mjs';
 import { NAME_RULE_MESSAGE } from '../../scripts/project-composer-name.mjs';
 import { elapsedSentence, formatDuration, timelineStatus } from './public/job.js';
@@ -1273,6 +1274,53 @@ test('changing only the ledger makes a vendor selectable through planning, gener
   await expect(select.locator('option[value="oracle"]')).toBeDisabled();
   await expect(page.locator('#plan-status')).toContainText('새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.');
   await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.deepEqual(pageErrors, []);
+});
+
+// 승격하면 사용자가 보는 경로다. 실제 엔진에 Oracle 을 올린 원장을 넣어 계획·정밀 점검·확인 창을 잇는다.
+test('choosing a vendor shows its degradations, what is removed and the image notice before generating', { timeout: 180_000 }, async t => {
+  const ledger = ledgerWithOracle('certified');
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  const removed = readVendorAssetLedger(root);
+  const engine = createComposerEngine({ root, loadVendors: () => ledger });
+  const app = createComposerServer({ engine: { catalog: engine.catalog, plan: engine.plan, preflight: passingPreflight, deep: engine.deep, selectableVendors: engine.selectableVendors,
+    generate: async () => { throw new Error('not generated in this test'); } } });
+  const origin = await app.listen(0);
+  t.after(() => app.close());
+  const browser = await chromium.launch({ headless: true });
+  t.after(() => browser.close());
+  const page = await browser.newPage({ viewport: { width: 1280, height: 900 }, reducedMotion: 'reduce' });
+  const pageErrors = [];
+  page.on('pageerror', error => pageErrors.push(error.message));
+  await page.goto(`${origin}/#launch=${app.launchSecret}`);
+  await page.getByLabel('프로젝트 이름').fill('vendor-notices');
+  const notes = page.locator('#plan-degraded');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.', { timeout: 60_000 });
+  await expect(notes).not.toContainText(oracle.notices.image);
+  await expect(notes).not.toContainText(ledger.removedPostgresTools.groups[0].label);
+  await page.locator('#database').selectOption('oracle');
+  await expect(notes).toContainText(oracle.notices.image, { timeout: 60_000 });
+  await expect(page.getByRole('group', { name: '줄어드는 동작과 데이터베이스 안내' })).toBeVisible();
+  for (const row of oracle.notices.degradations) await expect(notes).toContainText(row.text);
+  for (const group of ledger.removedPostgresTools.groups) await expect(notes).toContainText(`${group.label}: ${group.reason}`);
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const summary = page.locator('#confirm-summary');
+  const degraded = summary.locator('div', { has: page.locator('dt', { hasText: /^기능 저하$/ }) }).locator('dd');
+  await expect(degraded).toContainText(`Oracle 에서 달라지는 동작: ${oracle.notices.degradations.map(row => row.summary).join(', ')}`);
+  await expect(degraded).toContainText(ledger.removedPostgresTools.groups.map(group => group.label).join(', '));
+  await expect(degraded).toContainText(oracle.notices.image);
+  // 정밀 점검은 실제 판정이다. 벤더 규칙의 수는 제거 수와 따로 말한다.
+  const vendorSentence = `이 데이터베이스에서는 PostgreSQL 전용 검증 게이트 ${removed.gates.length}건과 도구·자료 ${removed.assets.length}개도 빠집니다.`;
+  await expect(page.locator('#deep-status')).toContainText(vendorSentence, { timeout: 120_000 });
+  await expect(page.locator('#deep-status')).toContainText(/제거: Java \d+개\(연쇄 \d+\) · 프런트 \d+개\(연쇄 \d+\) · 검증 게이트 \d+건\./);
+  // PostgreSQL 로 돌아오면 벤더 안내가 사라진다.
+  await page.getByRole('dialog', { name: '이 구성으로 생성할까요?' }).getByRole('button', { name: '돌아가기' }).click();
+  await page.locator('#database').selectOption('postgresql');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.', { timeout: 60_000 });
+  await expect(notes).not.toContainText(oracle.notices.image);
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  await expect(page.locator('#deep-status')).toContainText('지워지는 검증 게이트는 승인 목록과 같고', { timeout: 120_000 });
+  await expect(page.locator('#deep-status')).not.toContainText('이 데이터베이스에서는');
   assert.deepEqual(pageErrors, []);
 });
 

@@ -10,7 +10,7 @@ import { dirname, join } from 'node:path';
 import { artifactTextSha256, vendorBaselinePaths } from './reusable-governance-integrity.mjs';
 import { VENDOR_SCHEMA_SCOPE, vendorInputPath } from './verify-reusable-artifact.mjs';
 import { buildVendorModel } from './project-composer-vendor-model.mjs';
-import { VENDOR_ADAPTERS } from './project-composer-vendors.mjs';
+import { VENDOR_ADAPTERS, loadVendorLedger, unshownDegradations } from './project-composer-vendors.mjs';
 import { readVendorAssetLedger } from './reusable-vendor-assets.mjs';
 import { ARTIFACT_COMMAND } from './reusable-artifact-entrypoints-contract.mjs';
 import { VENDOR_SOURCE } from './project-composer-vendor-source.mjs';
@@ -112,7 +112,7 @@ export function projectVendorEnvironment(text, vendorId) {
   return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, '$1\n# 운영 번들 DB 의 SYS 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me\n# 최초 관리자(webmaster) 비밀번호. 개발 시드가 없어 값을 정해야 로그인할 수 있다.\n# ADMIN_INITIAL_PASSWORD=', '.env.example 비밀번호');
 }
 
-export const vendorReadme = vendorId => `
+export const vendorReadme = (vendorId, ledger) => `
 ## 데이터베이스
 
 이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 폴더만 적용한다(생성 시점에는 번역 기준선 하나). \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
@@ -121,7 +121,11 @@ export const vendorReadme = vendorId => `
 
 이 프로젝트에는 PostgreSQL 개발 시드(\`db/seed-dev\`)가 적용되지 않아 \`webmaster\` 는 로그인할 수 없는 상태로 시작한다. 개발 스택을 올리기 전에 \`.env\` 의 \`ADMIN_INITIAL_PASSWORD\` 에 비밀번호를 정하면 첫 기동 때 한 번 설정된다. 이미 정한 비밀번호는 덮어쓰지 않는다.
 
-PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거시 이관 도구, 백업·복원 훈련, 무중단 마이그레이션 린터, 엔티티·스키마 정적 린터(아래 카탈로그 시험이 대신한다), 릴리스 스모크, 화면 기준선 실행기. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 대표 묶음만 돌린다: \`node scripts/run-isolated-e2e.mjs --representative\`. 시험 목록은 \`config/governance/vendor-test-ledger.json\` 이 고정하고, 원장의 기능을 모두 고른 멀티모듈 생성물이 아니면 시작 전에 멈춘다.
+이 데이터베이스에서 달라지는 동작(생성 전 화면의 기능 저하 칸과 같다):
+
+${ledger.vendors.find(vendor => vendor.id === vendorId).notices.degradations.map(row => `- ${row.text}`).join('\n')}
+
+PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger.removedPostgresTools.groups.map(group => group.label).join(', ')}. 엔티티·스키마 정적 린터는 아래 카탈로그 시험이 대신한다. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 대표 묶음만 돌린다: \`node scripts/run-isolated-e2e.mjs --representative\`. 시험 목록은 \`config/governance/vendor-test-ledger.json\` 이 고정하고, 원장의 기능을 모두 고른 멀티모듈 생성물이 아니면 시작 전에 멈춘다.
 
 ### 생성 뒤 스키마 변경
 
@@ -155,6 +159,10 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: 레거�
 export function projectVendorSources(output, { vendorId, input, inputText, layout }) {
   if (!VENDOR_SOURCE[vendorId]) throw new Error(`소스 투영이 없는 벤더: ${vendorId}`);
   const { location, migration } = vendorBaselinePaths(vendorId);
+  // 모델 유래 저하는 실제 모델이 있어야 전부 보인다. 화면과 README 가 말하지 않는 저하를 담은 프로젝트를 만들지 않는다.
+  const ledger = loadVendorLedger(output);
+  const unshown = unshownDegradations(ledger.vendors.find(vendor => vendor.id === vendorId), VENDOR_ADAPTERS[vendorId].emitSchema(buildVendorModel({ snapshot: input.snapshot, extras: input.extras })).degradations);
+  if (unshown.length) throw new Error(`표시 문장이 없는 벤더 저하: ${unshown.join(', ')}. config/db-vendors.json 의 notices 에 더한다.`);
   mkdirSync(join(output, RESOURCES, vendorMigrationLocation(vendorId)), { recursive: true });
   const statements = vendorMigrationStatements(vendorId, input);
   writeFileSync(join(output, migration), renderFlywayMigration(statements), 'utf8');
@@ -195,7 +203,7 @@ export function projectVendorSources(output, { vendorId, input, inputText, layou
   pkg.scripts[VENDOR_SCHEMA_ALIAS] = `${ARTIFACT_COMMAND} --scope ${VENDOR_SCHEMA_SCOPE}`;
   writeFileSync(packagePath, `${JSON.stringify(pkg, null, 2)}\n`, 'utf8');
   const readme = join(output, 'README.md');
-  writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId)}`, 'utf8');
+  writeFileSync(readme, `${readFileSync(readme, 'utf8').replace(/\s*$/, '\n')}${vendorReadme(vendorId, ledger)}`, 'utf8');
 
   return { vendor: vendorId, location, migration, migrationSha256: artifactTextSha256(output, migration), input: inputPath,
     inputSha256: artifactTextSha256(output, inputPath), statements: statements.length, buildFile, profiles, removedAssets: readVendorAssetLedger(output).assets };
