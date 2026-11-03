@@ -46,6 +46,16 @@ class PostgresqlSqlDialectTest {
     }
 
     @Test
+    @DisplayName("세션 시간대는 드라이버가 JVM 기본 시간대로 맞춰 접속 주소에 기대지 않으므로 기동 때 세션을 묻지 않는다")
+    void noSessionPremiseToCheckAtStartup() {
+        JdbcOperations jdbc = mock(JdbcOperations.class);
+
+        dialect.assertSession(jdbc);
+
+        org.mockito.Mockito.verifyNoInteractions(jdbc);
+    }
+
+    @Test
     @DisplayName("응답 분류는 SQLState 로만 한다 — 다른 벤더의 오류 번호를 빌려 쓰지 않는다")
     void classifiesBySqlStateOnly() {
         assertThat(dialect.errorCodes()).isSameAs(VendorErrorCodes.NONE);
