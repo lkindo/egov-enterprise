@@ -30,7 +30,7 @@ public class OracleSqlDialect implements VendorSqlDialect {
             "SELECT lock_slot_no FROM tb_sys_lock_slot WHERE lock_slot_no = ? FOR UPDATE WAIT " + LOCK_WAIT_SECONDS;
     private static final VendorErrorCodes ERROR_CODES = new VendorErrorCodes(
             Set.of(2290, 1400, 1407, 12899, 1438, 1722, 1858, 1861), Set.of(1, 2291, 2292),
-            Set.of(54, 30006, 60, 8177), Set.of(1013));
+            Set.of(54, 30006, 60, 8177), Set.of(1013), Set.of());
 
     @Override
     public String paginate(String orderedSelect, long limit, long offset) {

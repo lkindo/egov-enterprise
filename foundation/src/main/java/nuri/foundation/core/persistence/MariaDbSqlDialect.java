@@ -17,7 +17,7 @@ public class MariaDbSqlDialect extends InnoDbSqlDialect {
      * 위반으로 번역되지 않는다. 잠금 대기 초과(1205)는 HY000 이라 JdbcTemplate 이 분류하지 못하고, 1969 는 문장 시간 초과다.
      */
     private static final VendorErrorCodes ERROR_CODES = new VendorErrorCodes(
-            Set.of(4025, 1048, 1364, 1366), Set.of(), Set.of(1205, 1213), Set.of(1969));
+            Set.of(4025, 1048, 1364, 1366), Set.of(), Set.of(1205, 1213), Set.of(1969), Set.of());
 
     @Override
     String lockSlotSql() {

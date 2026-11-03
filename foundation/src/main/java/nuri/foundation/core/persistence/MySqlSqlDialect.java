@@ -19,9 +19,10 @@ public class MySqlSqlDialect extends InnoDbSqlDialect {
      * CHECK(3819)·기본값 없음(1364)·형식(1366)은 SQLState 가 HY000 이라 무결성 위반으로 번역되지 않는다. NOT NULL(1048)은 23000 이라
      * 번호로 갈라야 400 이다. NOWAIT(3572)와 잠금 문장의 실행 시간 상한(3024)은 HY000 이라 JdbcTemplate 이 분류하지 못한다.
      * 3024 는 힌트를 단 잠금 문장에서만 난다. 문장 시간 초과는 드라이버가 SQLTimeoutException 으로 올려 번호가 없다.
+     * 0 으로 나누기(1365)는 Connector/J 가 SQLState 를 22012 가 아니라 22001(길이 초과)로 올려, 번호로 갈라야 다른 벤더처럼 500 이다.
      */
     private static final VendorErrorCodes ERROR_CODES = new VendorErrorCodes(
-            Set.of(3819, 1048, 1364, 1366), Set.of(), Set.of(1205, 1213, 3572, 3024), Set.of());
+            Set.of(3819, 1048, 1364, 1366), Set.of(), Set.of(1205, 1213, 3572, 3024), Set.of(), Set.of(1365));
 
     @Override
     String lockSlotSql() {

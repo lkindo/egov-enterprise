@@ -58,12 +58,12 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     arguments("1292", INPUT_PROBE_INSERT + " (date_value) VALUES (?)", "invalid-date", 400, "C001"),
                     arguments("1366", INPUT_PROBE_INSERT + " (int_value) VALUES (?)", "private-database-detail", 400, "C001"),
                     arguments("1365", INPUT_PROBE_INSERT + " (int_value) VALUES (1 / CAST(? AS SIGNED))", "0", 500, "C004"));
-            // 잘못된 날짜는 MySQL 에서 재지 않아 넣지 않는다. Connector/J 는 0 나누기(1365)도 자르기와 같은 22001 로 올려 처리기가 입력 오류(400)로
-            // 본다(2026-11-04 실측) — 서버 결함(500)과 가르지 못하는 것이 MySQL 의 현재 응답이다.
+            // 잘못된 날짜는 MySQL 에서 재지 않아 넣지 않는다. Connector/J 는 0 나누기(1365)도 자르기와 같은 22001 로 올리지만(2026-11-04 실측)
+            // 오류 번호는 남아, 처리기가 번호로 다른 벤더처럼 서버 결함(500)으로 가른다.
             case MYSQL -> Stream.of(
                     arguments("1264", INPUT_PROBE_INSERT + " (decimal_value) VALUES (?)", "40000", 400, "C001"),
                     arguments("1366", INPUT_PROBE_INSERT + " (int_value) VALUES (?)", "private-database-detail", 400, "C001"),
-                    arguments("1365", INPUT_PROBE_INSERT + " (int_value) VALUES (1 / CAST(? AS SIGNED))", "0", 400, "C001"));
+                    arguments("1365", INPUT_PROBE_INSERT + " (int_value) VALUES (1 / CAST(? AS SIGNED))", "0", 500, "C004"));
         };
     }
 

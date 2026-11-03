@@ -535,6 +535,14 @@ class GlobalExceptionHandlerTest {
     }
 
     @Test
+    @DisplayName("MySQL 의 0 나누기(1365)는 Connector/J 가 22001 로 올려도 입력 오류가 아니라 서버 결함(500)이다 — 진짜 길이 초과는 400 이다")
+    void mySqlDivisionByZeroIsAServerFaultDespiteTheTruncationState() throws Exception {
+        assertDatabaseResponse(mysql, violation("22001", 1365), 500, "C004", null);
+        assertDatabaseResponse(mysql, violation("22001", 1406), 400, "C001", null);
+        assertDatabaseResponse(handler, violation("22001", 1365), 400, "C001", null);
+    }
+
+    @Test
     @DisplayName("MariaDB 의 형식 오류(1366)는 문법 오류 계열(22007)로 오지만 입력 오류다")
     void mariaDbIncorrectValueThroughTheGrammarPathIsABadRequest() throws Exception {
         assertDatabaseResponse(mariadb, new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",

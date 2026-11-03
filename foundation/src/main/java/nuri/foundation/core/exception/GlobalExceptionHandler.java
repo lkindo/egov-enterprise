@@ -279,6 +279,12 @@ public class GlobalExceptionHandler {
         //   CHECK/NOT NULL 은 400 으로 정정한다. UNIQUE/FK 는 종전대로 409(의미가 맞다).
         //   Oracle·MySQL·MariaDB 는 CHECK·NOT NULL 의 SQLState 가 23000·HY000 이라 활성 벤더의 오류 번호로 가른다.
         int vendorCode = extractVendorCode(e);
+        // 드라이버가 SQLState 를 입력 오류 계열로 바꿔 올리는 서버 계산 오류(MySQL 의 0 나누기 1365 → 22001)는 아래 분기보다 먼저 500 이다.
+        if (errorCodes.serverFaults().contains(vendorCode)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
+                            resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
+        }
         if ("23514".equals(sqlState) || "23502".equals(sqlState)
                 || "22001".equals(sqlState) || "22003".equals(sqlState)
                 || "22007".equals(sqlState) || "22008".equals(sqlState) || "22P02".equals(sqlState)

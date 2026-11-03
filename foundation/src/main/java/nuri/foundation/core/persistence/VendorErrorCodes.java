@@ -13,17 +13,19 @@ import java.util.Set;
  * @param duplicates    SQLState 가 무결성 계열이 아니어도 409 로 두는 중복·FK 위반
  * @param lockFailures  대기 초과·교착·직렬화 실패(409)
  * @param cancelled     문장 취소·시간 초과(503)
+ * @param serverFaults  SQLState 가 입력 오류 계열이어도 500 으로 두는 서버 계산 오류. 드라이버가 SQLState 를 바꿔 올리는 벤더만 채운다
  */
 public record VendorErrorCodes(Set<Integer> invalidValues, Set<Integer> duplicates, Set<Integer> lockFailures,
-        Set<Integer> cancelled) {
+        Set<Integer> cancelled, Set<Integer> serverFaults) {
 
     /** SQLState 로만 가르는 벤더의 표. PostgreSQL 드라이버는 오류 번호를 싣지 않는다. */
-    public static final VendorErrorCodes NONE = new VendorErrorCodes(Set.of(), Set.of(), Set.of(), Set.of());
+    public static final VendorErrorCodes NONE = new VendorErrorCodes(Set.of(), Set.of(), Set.of(), Set.of(), Set.of());
 
     public VendorErrorCodes {
         invalidValues = Set.copyOf(invalidValues);
         duplicates = Set.copyOf(duplicates);
         lockFailures = Set.copyOf(lockFailures);
         cancelled = Set.copyOf(cancelled);
+        serverFaults = Set.copyOf(serverFaults);
     }
 }
