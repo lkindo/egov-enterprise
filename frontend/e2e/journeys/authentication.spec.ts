@@ -1,7 +1,7 @@
 import { readFileSync } from 'node:fs';
 import { createVisualAdmin } from '../fixtures/visual-admin';
 import { getAdminBearerToken } from '../utils/admin-token';
-import { request as playwrightRequest, type BrowserContext } from '@playwright/test';
+import { request as playwrightRequest, type BrowserContext, type Locator, type Page } from '@playwright/test';
 import { expect,test } from '../fixtures/browser-test';
 import { anonymousCsrfRequestState } from '../fixtures/csrf';
 
@@ -32,6 +32,22 @@ async function waitPastIssuedSecond(authorization: string) {
     while (Date.now() < (issuedAt + 1) * 1000) {
         await new Promise(resolve => setTimeout(resolve, 100));
     }
+}
+
+/**
+ * 로그아웃 단추를 누르고 화면 서버의 로그아웃 응답까지 기다린다. 그 응답은 백엔드 로그아웃이 끝난 뒤에 온다(api/auth/logout/route.ts).
+ *
+ * [2026-11-03 Oracle 대표 E2E] 화면은 로그아웃 요청을 기다리지 않고 먼저 /login 으로 보낸다(AuthContext.logout).
+ * 주소만 보고 이전 토큰을 물으면 서버가 로그아웃을 커밋하기 전이라 200 이 돌아올 수 있다 — 로그아웃 POST 가 333ms 걸리는 동안
+ * 토큰 확인이 먼저 나가 'User Profile and Logout' 이 1건 실패했다.
+ */
+async function clickLogoutAndAwaitServer(page: Page, logoutButton: Locator) {
+    const [logoutResponse] = await Promise.all([
+        page.waitForResponse(response => new URL(response.url()).pathname === '/api/auth/logout'
+            && response.request().method() === 'POST', { timeout: 15000 }),
+        logoutButton.click(),
+    ]);
+    expect(logoutResponse.status(), '화면 서버의 로그아웃 요청이 끝나야 한다').toBe(200);
 }
 
 /**
@@ -89,7 +105,7 @@ test.describe('공통 셸과 인증', () => {
                     console.log('>>> Step 2: Logout Action');
                     const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i });
                     await expect(logoutButton).toBeVisible();
-                    await logoutButton.click();
+                    await clickLogoutAndAwaitServer(page, logoutButton);
                     console.log('>>> Step 3: Redirection Check');
                     await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
                     console.log('>>> Step 4: 세션 쿠키가 실제로 소멸했는지');
@@ -152,7 +168,7 @@ test.describe('공통 셸과 인증', () => {
                     console.log('>>> Step 2: Logout Action');
                     const logoutButton = page.getByRole('button', { name: /로그아웃|Logout/i }).first();
                     await expect(logoutButton).toBeVisible({ timeout: 10000 });
-                    await logoutButton.click();
+                    await clickLogoutAndAwaitServer(page, logoutButton);
                     console.log('>>> Step 3: Redirect to Login');
                     await expect(page).toHaveURL(/\/login/, { timeout: 15000 });
                     await expectAccessTokenRevoked(baseURL, fixture.authorization);
