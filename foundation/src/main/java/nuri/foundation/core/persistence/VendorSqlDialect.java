@@ -90,6 +90,9 @@ public interface VendorSqlDialect {
     /** JDBC 제품명에 든 이름. 설정과 실제 DB 가 다르면 기동을 멈춘다. */
     String databaseProductName();
 
+    /** 응답 분류에 쓰는 이 벤더의 오류 번호. 번호의 뜻이 벤더마다 달라 다른 벤더의 표를 쓰면 400·409 가 뒤바뀐다. */
+    VendorErrorCodes errorCodes();
+
     /** 불변 원장 삭제 허가가 커밋된 채 남지 않았는지 기동 때 본다. 트랜잭션 지역 설정을 쓰는 벤더는 남을 수 없다. */
     default void assertNoOpenLedgerPermit(JdbcOperations jdbc) {
     }

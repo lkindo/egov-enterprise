@@ -46,6 +46,16 @@ class PostgresqlSqlDialectTest {
     }
 
     @Test
+    @DisplayName("응답 분류는 SQLState 로만 한다 — 다른 벤더의 오류 번호를 빌려 쓰지 않는다")
+    void classifiesBySqlStateOnly() {
+        assertThat(dialect.errorCodes()).isSameAs(VendorErrorCodes.NONE);
+        assertThat(VendorErrorCodes.NONE.invalidValues()).isEmpty();
+        assertThat(VendorErrorCodes.NONE.duplicates()).isEmpty();
+        assertThat(VendorErrorCodes.NONE.lockFailures()).isEmpty();
+        assertThat(VendorErrorCodes.NONE.cancelled()).isEmpty();
+    }
+
+    @Test
     @DisplayName("페이징과 상한은 정렬 뒤에 붙는다")
     void pagination() {
         assertThat(dialect.paginate("SELECT a FROM t ORDER BY a", 20, 40)).isEqualTo("SELECT a FROM t ORDER BY a LIMIT 20 OFFSET 40");

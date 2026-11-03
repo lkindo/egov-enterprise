@@ -174,7 +174,7 @@ test('certified needs an adapter, an engine, a source projection and evidence pe
   // 원장만 고쳐 열 수 없다. 사유를 지워 다른 검사에 걸리지 않게 한다.
   const open = (vendor, patch = {}) => { Object.assign(vendor, { status: 'certified' }, patch); delete vendor.reason; };
   assert.throws(load(vendor => open(vendor('tibero'), { engines: [{ version: '7', engine: 'oracle', evidence: fixtureEvidence('oracle') }], evidenceInputs: ['x'] })), /^Error: tibero: 어댑터가 없다$/);
-  assert.throws(load(vendor => certifyVendor(vendor('mysql'))), /^Error: mysql: 소스 투영\(VENDOR_SOURCE\)이 없다$/);
+  assert.throws(load(vendor => certifyVendor(vendor('mssql'))), /^Error: mssql: 소스 투영\(VENDOR_SOURCE\)이 없다$/);
   assert.throws(load(vendor => { open(vendor('oracle'), { engines: [] }); }), /^Error: oracle: 엔진이 없다$/);
   assert.throws(load(vendor => { open(vendor('oracle'), { evidenceInputs: [] }); }), /^Error: oracle: 증거 입력 목록이 없다$/);
   assert.throws(load((vendor, ledger) => { certifyVendor(vendor('oracle')); delete ledger.evidenceInputs; }), /^Error: oracle: 증거 입력 목록이 없다$/, '공통 입력이 없으면 해시가 말하는 것이 없다');
@@ -450,12 +450,25 @@ test('the certification judgement does not import the projection code it inspect
   assert.ok(!seen.has('project-composer-vendor-project.mjs'), '투영 코드는 이 모듈의 어댑터를 가져온다. 거꾸로 가져오면 순환이다');
 });
 
-test('the Oracle images are pinned by digest and the compose projection pulls the same one as the checks', () => {
+test('the CI vendor images are pinned by digest and the compose projection pulls the same one as the checks', () => {
   for (const id of ['oracle', 'oracle19']) {
     assert.match(VENDOR_ENGINES[id].image, /@sha256:[a-f0-9]{64}$/, id);
     assert.match(VENDOR_ENGINES[id].imageOrigin, /^community:/, `${id}: 공식 이미지가 아니라는 표시`);
   }
   assert.ok(VENDOR_SOURCE.oracle.composeService.includes(`image: ${VENDOR_ENGINES.oracle.image}\n`), '개발 compose 와 검증 엔진의 이미지가 갈라졌다');
+  // MySQL·MariaDB 는 Docker 공식 이미지다. 증거 형식이 출처를 요구하므로 승격 전에 엔진이 출처를 갖는다.
+  for (const [id, image] of [['mariadb', 'mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620'],
+    ['mysql', 'mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902']]) {
+    assert.equal(VENDOR_ENGINES[id].image, image, id);
+    assert.match(VENDOR_ENGINES[id].imageOrigin, /^official:\S+$/, id);
+    assert.ok(VENDOR_SOURCE[id].composeService.includes(`image: ${VENDOR_ENGINES[id].image}\n`), `${id}: 개발 compose 와 검증 엔진의 이미지가 갈라졌다`);
+    assert.deepEqual(vendorEvidenceProblems(fixtureEvidence(id)), [], `${id}: 엔진 값으로 만든 증거가 형식을 통과한다`);
+  }
+  // ci 를 연 벤더는 모두 digest 로 고정한다. 고정하지 않으면 같은 태그의 다른 이미지가 CI 결과가 된다.
+  const ledger = loadVendorLedger(ROOT);
+  for (const vendor of ledger.vendors.filter(row => row.ci)) {
+    for (const engine of vendor.engines) assert.match(VENDOR_ENGINES[engine.engine].image, /@sha256:[a-f0-9]{64}$/, `${vendor.id} ${engine.version}`);
+  }
 });
 
 test('test result summaries count what ran and a malformed result cannot pass as evidence', t => {

@@ -1109,7 +1109,23 @@ class MenuServiceTest {
 
         menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(), List.of(5L, 4L), List.of()));
         verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(4L, 5L));
-        verify(menuRepository).deleteAllById(List.of(4L, 5L));
+        verify(menuRepository).deleteAllById(List.of(5L, 4L));
+    }
+
+    @Test
+    @DisplayName("[ADR-0047] 하위 트리는 번호 순이 아니라 깊은 메뉴부터 지운다 — 지연 FK 가 없는 InnoDB 는 상위를 먼저 지우면 1451 이다")
+    void structureSaveDeletesSubtreesChildFirst() {
+        // 1 ─ 2 ─ 3 은 상위 번호가 작고, 9 ─ 7 ─ 6 은 상위 번호가 크다. 어느 번호 순으로도 하위가 먼저 오지 않는다.
+        String version = givenStructure(structureRow(9, null, 3, "Root C"), structureRow(7, 9L, 1, "Child C1"),
+                structureRow(6, 7L, 1, "Leaf C1a"));
+
+        menuService.saveMenuStructure(structureSave(version, List.of(), List.of(), List.of(),
+                List.of(1L, 2L, 3L, 6L, 7L, 9L), List.of()));
+
+        var order = inOrder(authorizationAdministrationService, menuRepository);
+        order.verify(authorizationAdministrationService).removeNavigationGrantsForMenus(List.of(1L, 2L, 3L, 6L, 7L, 9L));
+        order.verify(menuRepository).deleteAllById(List.of(3L, 6L, 2L, 7L, 1L, 9L));
+        order.verify(menuRepository, atLeastOnce()).flush();
     }
 
     @Test

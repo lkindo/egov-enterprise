@@ -426,7 +426,9 @@ public class MenuService {
                 }
             }
             authorizationAdministrationService.removeNavigationGrantsForMenus(plan.deletions());
-            menuRepository.deleteAllById(plan.deletions());
+            // 하위부터 지운다. MySQL·MariaDB 에는 지연 검사 FK 가 없어 자기 참조 FK 를 행마다 바로 보므로, 하위가 남은
+            // 상위를 먼저 지우면 1451 로 멈춘다(실측). PostgreSQL 은 커밋 때 검사해 지우는 행과 결과가 같다.
+            menuRepository.deleteAllById(plan.deletionsChildFirst());
             menuRepository.flush();
         }
         if (plan.hasGrants()) {

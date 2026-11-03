@@ -11,6 +11,8 @@ import java.util.ServiceLoader;
 import org.hibernate.boot.model.FunctionContributions;
 import org.hibernate.boot.model.FunctionContributor;
 import org.hibernate.dialect.Dialect;
+import org.hibernate.dialect.MariaDBDialect;
+import org.hibernate.dialect.MySQLDialect;
 import org.hibernate.dialect.PostgreSQLDialect;
 import org.hibernate.query.sqm.function.SqmFunctionRegistry;
 import org.hibernate.type.spi.TypeConfiguration;
@@ -41,6 +43,15 @@ class VendorFunctionContributorTest {
     void otherVendorsUseTheStandardOperator() {
         verify(contribute(new PostgreSQLDialect())).registerPattern(eq(VendorFunctionContributor.TEXT_DIFFERS),
                 eq("CASE WHEN ?1 <> ?2 THEN 1 ELSE 0 END"), any());
+    }
+
+    @Test
+    @DisplayName("MySQL·MariaDB 의 LONGTEXT 는 <> 로 비교된다 — 이진 콜레이션이라 대소문자·뒤 공백까지 PostgreSQL 처럼 가른다")
+    void innoDbVendorsUseTheStandardOperator() {
+        for (Dialect dialect : new Dialect[] {new MySQLDialect(), new MariaDBDialect()}) {
+            verify(contribute(dialect)).registerPattern(eq(VendorFunctionContributor.TEXT_DIFFERS),
+                    eq("CASE WHEN ?1 <> ?2 THEN 1 ELSE 0 END"), any());
+        }
     }
 
     @Test

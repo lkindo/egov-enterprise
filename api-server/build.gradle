@@ -50,6 +50,8 @@ dependencies {
     testRuntimeOnly libs.h2
     // vendorIntegrationTest 가 벤더 DB 에 붙는 드라이버. 이관 도구와 같은 판이다.
     testRuntimeOnly 'com.oracle.database.jdbc:ojdbc11:23.26.3.0.0'
+    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.11'
+    testRuntimeOnly 'com.mysql:mysql-connector-j:26.10.0'
     // ArchUnit (architecture tests — active)
     // [스키마 검증] 실 PostgreSQL(Testcontainers) + Flyway migrate + Hibernate validate 게이트용.
     // 단위 테스트 프로파일은 H2 + create-drop 이라 물리 스키마 불일치를 원리적으로 못 잡는다(2026-07-26 사고).
@@ -142,14 +144,21 @@ if (project.hasProperty('vendorIntegration')) {
         extensions.getByType(JacocoTaskExtension).enabled = false
         systemProperty 'junit.jupiter.testclass.order.default', 'nuri.api.schema.VendorClassOrderer'
         systemProperty 'junit.jupiter.extensions.autodetection.enabled', 'true'
+        // 실행 도구가 시험 JVM 과 같은 값으로 넘기는 벤더. 없으면 뺄 시험을 고르지 못하므로 시험 전에 멈춘다.
+        def vendor = System.getenv('APP_DATABASE_VENDOR')
+        doFirst {
+            if (!vendor) {
+                throw new GradleException('vendorIntegrationTest 는 APP_DATABASE_VENDOR 가 필요하다. 실행 도구로 돌린다')
+            }
+        }
         filter {
             new groovy.json.JsonSlurper().parse(rootProject.file('config/governance/vendor-test-ledger.json')).tests
                     .findAll { it.category != 'replacement' }
                     .each { entry ->
                         def name = "nuri.api.schema.${entry.test.replace('.java', '')}"
                         includeTestsMatching name
-                        // 조건부 skip 은 등록 게이트에서 금지라, 벤더에서 뺄 시험도 원장에 적는다.
-                        entry.postgresqlOnly?.each { excludeTestsMatching "${name}.${it.method}" }
+                        // 조건부 skip 은 등록 게이트에서 금지라, 벤더에서 뺄 시험도 원장에 적는다. 사유를 적은 벤더에서만 뺀다.
+                        entry.vendorExclusions?.findAll { it.vendors?.containsKey(vendor) }?.each { excludeTestsMatching "${name}.${it.method}" }
                     }
         }
     }

@@ -398,7 +398,11 @@ const OFF_VENDOR_JOB_PATH = {
   'scripts/project-composer-server-job.mjs': '화면 서버의 작업 문구다. 서버만 가져오고 잡은 부르지 않는다.',
   'scripts/project-composer-vendor-evidence.mjs': '증거 기록 명령이다. 잡은 부르지 않는다.',
 };
-const vendorInputs = () => vendorEvidenceInputs(repoRoot, JSON.parse(readRepository('config/db-vendors.json')), 'oracle');
+/** ci 를 연 모든 벤더의 입력. 벤더 하나의 입력만 보면 다른 벤더가 선언한 포트·어댑터가 잡을 켜는지 보지 못한다. */
+const vendorInputs = () => {
+  const ledger = JSON.parse(readRepository('config/db-vendors.json'));
+  return [...new Set(ledger.vendors.filter(vendor => vendor.ci === true).flatMap(vendor => vendorEvidenceInputs(repoRoot, ledger, vendor.id)))];
+};
 
 /**
  * 벤더 축은 표의 경로 접두가 아니라 인증 입력이 고른다(다른 벤더 어댑터까지 켜지 않으려는 것이다). 그래서 항목마다 대조하는 대신, 잡이 그 축의 출력에 묶여 진입점을 돌리고,
@@ -411,7 +415,7 @@ function vendorAxisMismatches({ files, read, inputs, selects }) {
     problems.push(`reusable-vendor 잡이 ${VENDOR_AXIS} 축의 출력으로 ${VENDOR_ENTRY} 를 돌리지 않는다`);
   }
   const running = reached.get(VENDOR_AXIS) ?? new Set();
-  for (const file of ['scripts/project-composer-vendor-integration.mjs', 'scripts/project-composer-vendor-differential.mjs', 'scripts/project-composer-vendor-oracle.mjs']) {
+  for (const file of ['scripts/project-composer-vendor-integration.mjs', 'scripts/project-composer-vendor-differential.mjs', 'scripts/project-composer-vendor-oracle.mjs', 'scripts/project-composer-vendor-mysql.mjs']) {
     if (!running.has(file)) problems.push(`벤더 잡의 실행 경로가 ${file} 에 닿지 않는다`);
   }
   for (const input of inputs) if (!selects(input)) problems.push(`인증 입력이 벤더 잡을 켜지 않는다: ${input}`);
@@ -439,8 +443,9 @@ test('the vendor job is bound to its output, reaches the vendor code it verifies
   // 표지를 든 생성기 코드가 잡을 켜지 않으면 붉다.
   const branch = 'scripts/project-composer-generate.mjs';
   assert.deepEqual(vendorAxisMismatches({ files: repositoryFiles, read: readRepository, inputs: [], selects: file => file !== branch && selects(file) }), [`벤더 분기를 담은 생성기 코드가 벤더 잡을 켜지 않는다: ${branch}`]);
-  // 벤더 어댑터와 생성기 화면 코드를 고친 변경은 입력이 아니면 잡을 켜지 않는다.
-  for (const file of ['scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-server.mjs']) assert.equal(selects(file), false, file);
+  // 벤더 어댑터와 생성기 화면 코드를 고친 변경은 입력이 아니면 잡을 켜지 않는다. MySQL 어댑터는 ci 를 연 MariaDB·MySQL 의 입력이다.
+  for (const file of ['scripts/project-composer-vendor-mssql.mjs', 'scripts/project-composer-server.mjs']) assert.equal(selects(file), false, file);
+  assert.equal(selects('scripts/project-composer-vendor-mysql.mjs'), true);
 });
 
 test('the table cannot declare the vendor axis: certification inputs select that job, not path prefixes', () => {

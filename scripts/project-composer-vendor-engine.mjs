@@ -8,6 +8,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { COMPOSER_OWNER_LABEL } from './project-composer-postgres.mjs';
+import { VENDOR_SOURCE } from './project-composer-vendor-source.mjs';
 
 export const VENDOR_CONTAINER_LABEL = 'egov.composer.vendor';
 const SCHEMA = 'vendorcheck';
@@ -30,9 +31,10 @@ const oracleBatch = {
   mark: (index, statement) => (statement.raw ? `PROMPT @@${index}\n${statement.sql}\n/` : `PROMPT @@${index}\n${statement.sql};`),
 };
 
+// 세션 시간대는 앱 접속 인자(VENDOR_SOURCE 의 sessionVariables)와 같게 둔다. 클라이언트가 넣은 행의 CURRENT_TIMESTAMP 기본값이 앱이 넣은 행과 같은 시계를 쓴다.
 const mysqlBatch = {
   errors: /^ERROR \d+/, fatal: /^ERROR (2002|2003|2006|2013)\b/, finish: `SELECT '${COMPLETED}';`,
-  wrap: body => `SET NAMES utf8mb4;\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n${body}\nCOMMIT;\n`,
+  wrap: body => `SET NAMES utf8mb4;\nSET time_zone = '+09:00';\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n${body}\nCOMMIT;\n`,
   mark: (index, statement) => (statement.raw ? `SELECT '@@${index}';\nDELIMITER $$\n${statement.sql}$$\nDELIMITER ;` : `SELECT '@@${index}';\n${statement.sql};`),
 };
 
@@ -45,13 +47,35 @@ const oracleIntegration = (service, administrator = 'sqlplus -S / as sysdba') =>
   driver: 'oracle.jdbc.OracleDriver',
   dialect: 'nuri.foundation.core.persistence.NuriOracleDialect',
   administrator,
+  // sqlplus 는 오류 뒤에도 다음 문장으로 가므로 첫 오류에서 실패 코드로 끝낸다.
+  administratorScript: statements => `WHENEVER SQLERROR EXIT FAILURE\n${statements.map(statement => `${statement};`).join('\n')}\nEXIT\n`,
   grants: [`ALTER SESSION SET CONTAINER=${service}`, ...['sys.v_$session', 'sys.v_$sql'].map(view => `GRANT SELECT ON ${view} TO ${SCHEMA}`),
     `GRANT EXECUTE ON sys.dbms_session TO ${SCHEMA}`, `GRANT CREATE TRIGGER TO ${SCHEMA}`],
 });
 
 /**
+ * MySQL 계열의 통합 시험 접속 값. 접속 인자는 생성물 접속 주소와 같다(세션 시간대·연결 콜레이션). 앱 계정은 이미지의 앱 계정 변수로 초기화 때 만들어진다 —
+ * 관리자 문장은 Flyway 적용 뒤에 돌지만 Flyway 와 격리 E2E 의 앱이 그 전에 이 계정으로 붙는다. 관리자 문장은 그 DB 의 전권과 시험의 잠금 관측 권한만 준다.
+ */
+const innoDbIntegration = (vendorId, { driver, dialect, administrator, observation }) => ({
+  port: 3306,
+  url: port => `jdbc:${vendorId}://127.0.0.1:${port}/${SCHEMA}?${VENDOR_SOURCE[vendorId].urlParameters}`,
+  username: SCHEMA,
+  driver,
+  dialect,
+  administrator,
+  // 클라이언트는 --force 가 없으면 첫 오류에서 멈추고 실패 코드로 끝난다.
+  administratorScript: statements => `${statements.map(statement => `${statement};`).join('\n')}\n`,
+  grants: [`GRANT ALL PRIVILEGES ON ${SCHEMA}.* TO '${SCHEMA}'@'%'`, ...observation],
+});
+
+/** 앱 계정이 TCP 로 붙어야 준비다. 초기화 중의 임시 서버는 TCP 를 열지 않고 앱 계정은 초기화 끝에 생긴다. */
+const innoDbReady = (client, passwordVariable) => (name, run = docker) => run(['exec', name, 'sh', '-c',
+  `MYSQL_PWD=$${passwordVariable} ${client} -h127.0.0.1 --protocol=TCP -u${SCHEMA} -e "select 1" ${SCHEMA}`]).status === 0;
+
+/**
  * 인증 증거가 image 를 그대로 적어 대조하므로 인증할 엔진은 digest 로 고정한다.
- * imageOrigin 은 공식 레지스트리 이미지가 아니라는 표시다(설계서 §7). version 은 원장 행과 대조한다(vendorEngineProblem).
+ * imageOrigin 은 이미지 출처다. 공식 레지스트리 이미지가 아니면 community 로 그 게시자를 적는다(설계서 §7). version 은 원장 행과 대조한다(vendorEngineProblem).
  */
 export const VENDOR_ENGINES = Object.freeze({
   oracle: {
@@ -79,19 +103,30 @@ export const VENDOR_ENGINES = Object.freeze({
   },
   mysql: {
     version: '8.4',
-    image: 'mysql:8.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_bin', '--log-bin-trust-function-creators=1'],
-    environment: password => ({ MYSQL_ROOT_PASSWORD: password, MYSQL_DATABASE: SCHEMA }),
-    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot -e "select 1" ${SCHEMA}`]).status === 0,
+    image: 'mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902', imageOrigin: 'official:docker-library', maxWaitSeconds: 120,
+    // 바이너리 로그가 켜진 8.4 에서 SUPER 없는 앱 계정이 트리거를 만들려면 마지막 인자가 필요하다(없으면 1419, 2026-11-04 실측).
+    serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_0900_bin', '--log-bin-trust-function-creators=1'],
+    environment: password => ({ MYSQL_ROOT_PASSWORD: password, MYSQL_DATABASE: SCHEMA, MYSQL_USER: SCHEMA, MYSQL_PASSWORD: password }),
+    ready: innoDbReady('mysql', 'MYSQL_PASSWORD'),
     command: file => `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot --force -N -B --default-character-set=utf8mb4 ${SCHEMA} < ${file}`,
     batch: mysqlBatch,
+    // 잠금 관측은 performance_schema 의 대기·스레드 표이고, 세션 이름(사용자 변수)과 잠근 표 이름은 나머지 두 표에서 읽는다(2026-11-04 실측 최소 권한).
+    integration: innoDbIntegration('mysql', { driver: 'com.mysql.cj.jdbc.Driver', dialect: 'org.hibernate.dialect.MySQLDialect',
+      administrator: `MYSQL_PWD=$MYSQL_ROOT_PASSWORD mysql -uroot --default-character-set=utf8mb4 ${SCHEMA}`,
+      observation: ['data_lock_waits', 'threads', 'user_variables_by_thread', 'data_locks'].map(table => `GRANT SELECT ON performance_schema.${table} TO '${SCHEMA}'@'%'`) }),
   },
   mariadb: {
     version: '11.4',
-    image: 'mariadb:11.4', maxWaitSeconds: 120, serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_nopad_bin'],
-    environment: password => ({ MARIADB_ROOT_PASSWORD: password, MARIADB_DATABASE: SCHEMA }),
-    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot -e "select 1" ${SCHEMA}`]).status === 0,
+    image: 'mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620', imageOrigin: 'official:docker-library', maxWaitSeconds: 120,
+    serverArgs: ['--character-set-server=utf8mb4', '--collation-server=utf8mb4_nopad_bin'],
+    environment: password => ({ MARIADB_ROOT_PASSWORD: password, MARIADB_DATABASE: SCHEMA, MARIADB_USER: SCHEMA, MARIADB_PASSWORD: password }),
+    ready: innoDbReady('mariadb', 'MARIADB_PASSWORD'),
     command: file => `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot --force -N -B --default-character-set=utf8mb4 ${SCHEMA} < ${file}`,
     batch: mysqlBatch,
+    // 잠금 관측의 information_schema.INNODB_* 표는 DB 단위가 아닌 PROCESS 권한을 요구한다(2026-11-04 실측). 일회용 시험 DB 에만 준다.
+    integration: innoDbIntegration('mariadb', { driver: 'org.mariadb.jdbc.Driver', dialect: 'org.hibernate.dialect.MariaDBDialect',
+      administrator: `MYSQL_PWD=$MARIADB_ROOT_PASSWORD mariadb -uroot --default-character-set=utf8mb4 ${SCHEMA}`,
+      observation: [`GRANT PROCESS ON *.* TO '${SCHEMA}'@'%'`] }),
   },
   mssql: {
     version: '2022',
@@ -232,11 +267,10 @@ function publishedPort(name, port, run = docker) {
   return Number(mapped);
 }
 
-/** 관리자 세션에서 문장을 돌린다. 어느 하나라도 실패하면 멈춘다. */
+/** 관리자 세션에서 문장을 돌린다. 어느 하나라도 실패하면 멈춘다. 첫 오류에서 끝내는 방법은 클라이언트마다 달라 엔진의 스크립트 형식을 쓴다. */
 export function runAsAdministrator(handle, statements, runDocker = docker) {
-  const { administrator } = handle.engine.integration;
-  const script = `WHENEVER SQLERROR EXIT FAILURE\n${statements.map(statement => `${statement};`).join('\n')}\nEXIT\n`;
-  const result = runDocker(['exec', '-i', handle.name, 'sh', '-c', administrator], { input: script });
+  const { administrator, administratorScript } = handle.engine.integration;
+  const result = runDocker(['exec', '-i', handle.name, 'sh', '-c', administrator], { input: administratorScript(statements) });
   if (result.status !== 0) fail('VENDOR_ADMIN_FAILED', `${handle.id} 관리자 문장 실패: ${`${result.stdout}${result.stderr}`.slice(0, 300)}`);
 }
 
@@ -329,7 +363,27 @@ export const VENDOR_UNIQUE_SIGNATURES = Object.freeze({
   oracle: "SELECT LOWER(i.table_name) || '.' || LOWER(i.index_name) || '=' || o.object_id FROM user_indexes i JOIN user_objects o ON o.object_name = i.index_name AND o.object_type = 'INDEX' WHERE i.uniqueness = 'UNIQUE'"
     + " UNION ALL SELECT LOWER(c.table_name) || '.' || LOWER(c.constraint_name) || '=' || LISTAGG(LOWER(k.column_name), '#') WITHIN GROUP (ORDER BY k.column_name) FROM user_constraints c JOIN user_indexes i ON i.index_name = c.index_name"
     + " JOIN user_cons_columns k ON k.constraint_name = c.constraint_name AND k.table_name = c.table_name WHERE c.constraint_type = 'U' AND i.uniqueness = 'NONUNIQUE' GROUP BY c.table_name, c.constraint_name",
+  // InnoDB 의 인덱스 ID 는 표 재빌드(ADD COLUMN·MODIFY·FORCE)마다 바뀌어 쓸 수 없다. 정렬한 키 목록이 값이다 — 재빌드에는 그대로이고 컬럼·접두·식을 바꾸면 달라진다(2026-11-04 실측).
+  // MySQL 은 접두 길이를 `$n` 으로, 함수 키 부분을 식의 해시로 붙인다.
+  mysql: "SELECT CONCAT(LOWER(s.table_name), '.', LOWER(s.index_name), '=', GROUP_CONCAT(CONCAT(COALESCE(LOWER(s.column_name), CONCAT('expr_', LEFT(SHA2(s.expression, 256), 12))), IF(s.sub_part IS NULL, '', CONCAT('$', s.sub_part)))"
+    + " ORDER BY COALESCE(LOWER(s.column_name), s.expression) SEPARATOR '#')) FROM information_schema.statistics s WHERE s.table_schema = DATABASE() AND s.non_unique = 0 GROUP BY s.table_name, s.index_name",
+  // MariaDB 의 긴 유니크(HASH)도 같은 컬럼 목록으로 나온다.
+  mariadb: "SELECT CONCAT(LOWER(table_name), '.', LOWER(index_name), '=', GROUP_CONCAT(LOWER(column_name) ORDER BY column_name SEPARATOR '#')) FROM information_schema.statistics"
+    + " WHERE table_schema = DATABASE() AND non_unique = 0 GROUP BY table_name, index_name",
 });
+
+/**
+ * 유니크 서명 조회 앞의 세션 설정. GROUP_CONCAT 의 기본 상한(MySQL 1,024자)이 긴 키 목록을 자르지 않게 늘린다. 세미콜론이 없으면 클라이언트가 다음 표식 줄과
+ * 한 문장으로 읽어 표식이 사라진다(2026-11-04 실측).
+ */
+const UNIQUE_SIGNATURE_PREFIX = Object.freeze({
+  oracle: ['SET LINESIZE 4000'],
+  mysql: ['SET SESSION group_concat_max_len = 1048576;'],
+  mariadb: ['SET SESSION group_concat_max_len = 1048576;'],
+});
+
+/** 줄이 없는 조회. 종류마다 문장 하나를 돌려 표식 순서를 맞추되 값은 내지 않는다. */
+const NO_ROWS = "SELECT 'none.none=none' FROM DUAL WHERE 1 = 0";
 
 /**
  * 키와 유니크의 컬럼을 줄마다 `표.이름=컬럼` 으로 낸다. 함수 인덱스는 `표.이름=식` 이다. 이름 대조는 컬럼이 달라져도 통과하므로 기준선 단계에서 어댑터 기대치와 맞춘다.
@@ -348,11 +402,34 @@ export const VENDOR_UNIQUE_COLUMNS = Object.freeze({
   END LOOP;
 END;`,
   },
+  // MySQL 계열은 CREATE UNIQUE INDEX 도 제약 표에 UNIQUE 로 나와 제약과 독립 인덱스를 가를 수 없다(2026-11-04 실측). 모든 유니크가 첫 조회에 들고 둘째는 늘 빈다.
+  // 함수 키 유니크는 어댑터가 만들지 않는다(번역 불가). MySQL 의 식 열은 역따옴표로 나와 식 참조 파서가 읽지 못하므로 조회하지 않는다.
+  mysql: {
+    constraints: "SELECT CONCAT(LOWER(s.table_name), '.', LOWER(s.index_name), '=', LOWER(s.column_name)) FROM information_schema.statistics s WHERE s.table_schema = DATABASE() AND s.non_unique = 0 AND s.column_name IS NOT NULL",
+    indexes: NO_ROWS,
+    expressions: NO_ROWS,
+  },
+  mariadb: {
+    constraints: "SELECT CONCAT(LOWER(c.table_name), '.', LOWER(c.constraint_name), '=', LOWER(k.column_name)) FROM information_schema.table_constraints c JOIN information_schema.key_column_usage k"
+      + " ON k.constraint_schema = c.constraint_schema AND k.table_name = c.table_name AND k.constraint_name = c.constraint_name WHERE c.constraint_schema = DATABASE() AND c.constraint_type IN ('PRIMARY KEY','UNIQUE')",
+    indexes: NO_ROWS,
+    expressions: NO_ROWS,
+  },
 });
 
-/** 독립 시퀀스의 다음 값. 각 문장은 `시퀀스:값` 을 낸다. 표 에뮬레이션 벤더는 조회가 달라 통합 시험을 열 때 더한다. */
+/**
+ * 독립 시퀀스의 다음 값. 각 문장은 `시퀀스:값` 을 낸다. 시퀀스마다 표 이름이 달라 MySQL 계열은 문장을 만들어 돌린다(2026-11-04 실측).
+ * MySQL 은 Hibernate 표 시퀀스(next_val 컬럼 하나인 표)를 읽는다. MariaDB 는 시퀀스의 next_not_cached_value 다 — 어댑터가 NOCACHE 로 만들어 정확한 다음 값이다.
+ * MariaDB 의 EXECUTE IMMEDIATE 는 부분 조회를 받지 않아 사용자 변수로 나눈다.
+ */
 export const VENDOR_SEQUENCE_NEXT_VALUES = Object.freeze({
   oracle: "SELECT LOWER(sequence_name) || ':' || last_number FROM user_sequences WHERE sequence_name NOT LIKE 'ISEQ$$%'",
+  mysql: "SET SESSION group_concat_max_len = 1048576; SET @nuri_seq_sql = COALESCE((SELECT GROUP_CONCAT(CONCAT('SELECT CONCAT(''', LOWER(t.table_name), ':'', next_val) FROM `', t.table_name, '`') SEPARATOR ' UNION ALL ')"
+    + " FROM information_schema.tables t WHERE t.table_schema = DATABASE() AND t.table_type = 'BASE TABLE' AND (SELECT COUNT(*) FROM information_schema.columns c WHERE c.table_schema = t.table_schema AND c.table_name = t.table_name) = 1"
+    + " AND EXISTS (SELECT 1 FROM information_schema.columns c WHERE c.table_schema = t.table_schema AND c.table_name = t.table_name AND c.column_name = 'next_val')), 'SELECT 1 FROM DUAL WHERE 1 = 0');"
+    + ' PREPARE nuri_seq FROM @nuri_seq_sql; EXECUTE nuri_seq; DEALLOCATE PREPARE nuri_seq',
+  mariadb: "SET @q = (SELECT GROUP_CONCAT(CONCAT('SELECT CONCAT(''', LOWER(table_name), ':'', next_not_cached_value) FROM `', table_name, '`') SEPARATOR ' UNION ALL ')"
+    + " FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'SEQUENCE'); EXECUTE IMMEDIATE COALESCE(@q, 'SELECT 1 FROM DUAL WHERE 0')",
 });
 
 /**
@@ -400,15 +477,18 @@ const NAME_VALUE = /(?:^|[\s:'])([a-z0-9_$#]*\.[a-z0-9_$#]+)'?$/;
 
 const UNIQUE_SIGNATURE_VALUE = /(?:^|[\s:'])([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)'?$/;
 
+/** 머리 줄 없이 값만 내는 배치. sqlplus 와 -N -B 로 부른 mysql·mariadb 클라이언트다. */
+const VALUE_ONLY_BATCHES = new Set(['oracle', 'mysql', 'mariadb']);
+
 /**
- * 줄에서 값을 읽는다. Oracle 배치는 머리 줄 없이 값만 내므로 줄 전체가 형식에 맞아야 한다. 버리면 따옴표로 만든 이름이 목록에서 사라져 그 이름의 규칙을 통째로
+ * 줄에서 값을 읽는다. 값만 내는 배치는 줄 전체가 형식에 맞아야 한다. 버리면 따옴표로 만든 이름이 목록에서 사라져 그 이름의 규칙을 통째로
  * 건너뛴다. csql 은 머리 줄을 내므로 다른 벤더는 줄 끝만 읽는다.
  */
 function readValues(lines, vendorId, pattern, label) {
   const values = [];
   for (const line of (lines ?? []).map(item => item.trim()).filter(item => item && item !== COMPLETED)) {
     const value = line.match(pattern)?.[1];
-    if (vendorId === 'oracle' && value !== line) fail('VENDOR_QUERY_FAILED', `${vendorId} ${label} 조회의 줄을 해석하지 못했다: ${line.slice(0, 200)} — 따옴표로 만든 이름이면 따옴표 없는 표준 이름으로 바꾼다.`);
+    if (VALUE_ONLY_BATCHES.has(vendorId) && value !== line) fail('VENDOR_QUERY_FAILED', `${vendorId} ${label} 조회의 줄을 해석하지 못했다: ${line.slice(0, 200)} — 따옴표로 만든 이름이면 따옴표 없는 표준 이름으로 바꾼다.`);
     if (value) values.push(value);
   }
   return values;
@@ -417,7 +497,7 @@ function readValues(lines, vendorId, pattern, label) {
 export function readUniqueSignatures(handle, vendorId, run = runStatements) {
   const sql = VENDOR_UNIQUE_SIGNATURES[vendorId];
   if (!sql) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 서명 조회가 없다`);
-  const { sections, errors } = run(handle, [{ sql }], { sessionPrefix: ['SET LINESIZE 4000'] });
+  const { sections, errors } = run(handle, [{ sql }], { sessionPrefix: UNIQUE_SIGNATURE_PREFIX[vendorId] });
   if (errors.length) fail('VENDOR_QUERY_FAILED', `${vendorId} 유니크 서명 조회 실패: ${errors[0].error}`);
   return [...new Set(readValues(sections.get(0), vendorId, UNIQUE_SIGNATURE_VALUE, '유니크 서명'))];
 }

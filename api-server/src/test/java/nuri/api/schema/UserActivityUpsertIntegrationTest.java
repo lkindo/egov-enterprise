@@ -49,7 +49,9 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
         try (Connection connection = openConnection();
              Statement statement = connection.createStatement()) {
 
-            assertThat(VendorTestSql.constraintCount(VendorTestSql.on(connection), "pk_tb_user_log")).isEqualTo(1);
+            // MySQL·MariaDB 의 upsert 는 키를 고르지 못하고 모든 유일 키에 반응하므로, 충돌 대상이 기본 키 하나뿐인지 본다.
+            assertThat(VendorTestSql.upsertConflictKeys(VendorTestSql.on(connection), "tb_user_log", "pk_tb_user_log"))
+                    .containsExactly("pk_tb_user_log");
             String esntlId = seedUser(connection, "USRACT_0001", "acttester");
 
             upsert(connection, esntlId, 1, 0, 2, 0, 0, 1);
@@ -110,11 +112,12 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
 
         try (Connection deleting = openConnection();
              Connection logging = openConnection();
-             Statement deletingStatement = deleting.createStatement();
-             Statement loggingStatement = logging.createStatement()) {
+             Statement deletingStatement = deleting.createStatement()) {
             String esntlId = seedUser(deleting, "USRACT_DELETE", "actdelete");
-            if (!VendorTestSql.vendorRun()) {
-                loggingStatement.execute("SET lock_timeout = '300ms'");
+            JdbcTemplate loggingJdbc = VendorTestSql.on(logging);
+            boolean childWaits = VendorTestSql.foreignKeyCheckWaitsForParentLock(loggingJdbc);
+            if (childWaits) {
+                VendorTestSql.boundSessionLockWait(loggingJdbc);
             }
             deleting.setAutoCommit(false);
             try {
@@ -127,7 +130,7 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
                 }
                 deletingStatement.executeUpdate("DELETE FROM tb_user_log WHERE dmnd_user_id='%s'".formatted(esntlId));
 
-                if (VendorTestSql.vendorRun()) {
+                if (!childWaits) {
                     // Oracle 의 FK 검사는 부모 행 잠금을 기다리지 않는다. 늦은 로그는 들어가고 사용자 삭제가 FK 로 거부돼 고아가 남지 않는다(설계서 §6.1).
                     upsert(logging, esntlId, 0, 0, 1, 0, 0, 0);
                     assertThatThrownBy(() -> deletingStatement.executeUpdate(
@@ -136,9 +139,11 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
                                     failure -> assertThat(failure.getErrorCode()).isEqualTo(2292));
                     return;
                 }
+                // PostgreSQL 과 MySQL·MariaDB 는 FK 검사가 부모 행에 공유 잠금을 걸어, 늦은 로그가 삭제 잠금 뒤에서 기다리다 대기 상한에서 끊긴다.
                 assertThatThrownBy(() -> upsert(logging, esntlId, 0, 0, 1, 0, 0, 0))
                         .isInstanceOfSatisfying(SQLException.class,
-                                failure -> assertThat(failure.getSQLState()).isEqualTo("55P03"));
+                                failure -> assertThat(VendorTestSql.isRowLockTimeout(loggingJdbc, failure))
+                                        .as("행 잠금 대기 초과: %s", VendorTestSql.describe(failure)).isTrue());
                 assertThat(deletingStatement.executeUpdate(
                         "DELETE FROM tb_user_info WHERE esntl_id='%s'".formatted(esntlId))).isEqualTo(1);
                 deleting.commit();

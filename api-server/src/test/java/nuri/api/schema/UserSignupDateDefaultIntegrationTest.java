@@ -57,7 +57,7 @@ class UserSignupDateDefaultIntegrationTest extends SharedPostgresMigrationTestSu
 
         try (Connection connection = openConnection()) {
             String definition = VendorTestSql.columnDefault(VendorTestSql.on(connection), "tb_user_info", "sbscrb_ymd");
-            assertThat(definition).contains("Asia/Seoul").contains("YYYYMMDD");
+            VendorTestSql.assertKoreanDateDefault(VendorTestSql.on(connection), definition);
             assertThat(definition.toUpperCase()).doesNotContain("CURRENT_TIMESTAMP");
         }
     }

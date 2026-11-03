@@ -26,33 +26,59 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 
 /**
  * DB 가 실제 만든 오류를 JdbcTemplate과 HTTP advice까지 전달한다. 운영 DB에는 접근하지 않는다.
- * 벤더마다 오류를 만드는 문장과 식별 값이 다르다. PostgreSQL 은 SQLState, Oracle 은 오류 번호로 본다.
+ * 벤더마다 오류를 만드는 문장과 식별 값이 다르다. PostgreSQL 은 SQLState, 나머지는 오류 번호로 본다({@link VendorTestSql#errorIdentity}).
+ * 처리기는 운영 문맥처럼 이 벤더의 오류 번호 표를 받는다.
  */
 @Tag("schema-validation")
 class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigrationTestSupport {
 
+    /** MySQL·MariaDB 의 입력 오류를 받을 표. 그 엔진은 SELECT 의 형 변환 실패를 경고로 넘기고 엄격 모드도 쓰기 문장에만 건다(2026-11-04 실측). */
+    private static final String INPUT_PROBE_TABLE =
+            "CREATE TABLE response_input_probe (decimal_value DECIMAL(3,0), date_value DATETIME, int_value INT)";
+    private static final String INPUT_PROBE_INSERT = "INSERT INTO response_input_probe";
+
     static Stream<Arguments> inputAndCalculationFailures() {
-        return VendorTestSql.vendorRun() ? Stream.of(
-                arguments("1438", "SELECT CAST(? AS NUMBER(3)) FROM DUAL", "40000", 400, "C001"),
-                arguments("1841", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "invalid-date", 400, "C001"),
-                arguments("1847", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "2026-02-32", 400, "C001"),
-                arguments("1839", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "2026-02-31", 400, "C001"),
-                arguments("1843", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "2026-13-01", 400, "C001"),
-                arguments("1722", "SELECT CAST(? AS NUMBER) FROM DUAL", "private-database-detail", 400, "C001"),
-                arguments("1476", "SELECT 1 / CAST(? AS NUMBER) FROM DUAL", "0", 500, "C004"))
-                : Stream.of(
-                arguments("22003", "SELECT CAST(? AS SMALLINT)", "40000", 400, "C001"),
-                arguments("22007", "SELECT CAST(? AS DATE)", "invalid-date", 400, "C001"),
-                arguments("22008", "SELECT CAST(? AS DATE)", "2026-02-31", 400, "C001"),
-                arguments("22P02", "SELECT CAST(? AS INTEGER)", "private-database-detail", 400, "C001"),
-                arguments("22012", "SELECT 1 / CAST(? AS INTEGER)", "0", 500, "C004"));
+        return switch (VendorTestSql.vendor()) {
+            case POSTGRESQL -> Stream.of(
+                    arguments("22003", "SELECT CAST(? AS SMALLINT)", "40000", 400, "C001"),
+                    arguments("22007", "SELECT CAST(? AS DATE)", "invalid-date", 400, "C001"),
+                    arguments("22008", "SELECT CAST(? AS DATE)", "2026-02-31", 400, "C001"),
+                    arguments("22P02", "SELECT CAST(? AS INTEGER)", "private-database-detail", 400, "C001"),
+                    arguments("22012", "SELECT 1 / CAST(? AS INTEGER)", "0", 500, "C004"));
+            case ORACLE -> Stream.of(
+                    arguments("1438", "SELECT CAST(? AS NUMBER(3)) FROM DUAL", "40000", 400, "C001"),
+                    arguments("1841", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "invalid-date", 400, "C001"),
+                    arguments("1847", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "2026-02-32", 400, "C001"),
+                    arguments("1839", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "2026-02-31", 400, "C001"),
+                    arguments("1843", "SELECT TO_DATE(?, 'YYYY-MM-DD') FROM DUAL", "2026-13-01", 400, "C001"),
+                    arguments("1722", "SELECT CAST(? AS NUMBER) FROM DUAL", "private-database-detail", 400, "C001"),
+                    arguments("1476", "SELECT 1 / CAST(? AS NUMBER) FROM DUAL", "0", 500, "C004"));
+            case MARIADB -> Stream.of(
+                    arguments("1264", INPUT_PROBE_INSERT + " (decimal_value) VALUES (?)", "40000", 400, "C001"),
+                    arguments("1292", INPUT_PROBE_INSERT + " (date_value) VALUES (?)", "invalid-date", 400, "C001"),
+                    arguments("1366", INPUT_PROBE_INSERT + " (int_value) VALUES (?)", "private-database-detail", 400, "C001"),
+                    arguments("1365", INPUT_PROBE_INSERT + " (int_value) VALUES (1 / CAST(? AS SIGNED))", "0", 500, "C004"));
+            // 잘못된 날짜는 MySQL 에서 재지 않아 넣지 않는다. Connector/J 는 0 나누기(1365)도 자르기와 같은 22001 로 올려 처리기가 입력 오류(400)로
+            // 본다(2026-11-04 실측) — 서버 결함(500)과 가르지 못하는 것이 MySQL 의 현재 응답이다.
+            case MYSQL -> Stream.of(
+                    arguments("1264", INPUT_PROBE_INSERT + " (decimal_value) VALUES (?)", "40000", 400, "C001"),
+                    arguments("1366", INPUT_PROBE_INSERT + " (int_value) VALUES (?)", "private-database-detail", 400, "C001"),
+                    arguments("1365", INPUT_PROBE_INSERT + " (int_value) VALUES (1 / CAST(? AS SIGNED))", "0", 400, "C001"));
+        };
     }
 
     static Stream<Arguments> constraintFailures() {
-        return VendorTestSql.vendorRun() ? Stream.of(
-                arguments("1400", null, 400, "C001"), arguments("2290", "-1", 400, "C001"), arguments("1", "1", 409, "C008"))
-                : Stream.of(
-                arguments("23502", null, 400, "C001"), arguments("23514", "-1", 400, "C001"), arguments("23505", "1", 409, "C008"));
+        return switch (VendorTestSql.vendor()) {
+            case POSTGRESQL -> Stream.of(
+                    arguments("23502", null, 400, "C001"), arguments("23514", "-1", 400, "C001"), arguments("23505", "1", 409, "C008"));
+            case ORACLE -> Stream.of(
+                    arguments("1400", null, 400, "C001"), arguments("2290", "-1", 400, "C001"), arguments("1", "1", 409, "C008"));
+            // CHECK 위반 번호만 다르다. 셋 다 SQLState 로는 가를 수 없어 처리기가 번호로 가른다.
+            case MARIADB -> Stream.of(
+                    arguments("1048", null, 400, "C001"), arguments("4025", "-1", 400, "C001"), arguments("1062", "1", 409, "C008"));
+            case MYSQL -> Stream.of(
+                    arguments("1048", null, 400, "C001"), arguments("3819", "-1", 400, "C001"), arguments("1062", "1", 409, "C008"));
+        };
     }
 
     @ParameterizedTest
@@ -60,9 +86,20 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
     void actualInputAndCalculationStatesKeepTheirDistinctHttpMeaning(
             String state, String sql, String input, int status, String code) throws Exception {
         try (Connection connection = openConnection()) {
-            DataAccessException failure = queryFailure(jdbc(connection), sql, input);
-            assertSqlState(failure, state);
-            assertHttpResponse(failure, status, code, null);
+            JdbcTemplate jdbc = jdbc(connection);
+            boolean probeTable = sql.startsWith(INPUT_PROBE_INSERT);
+            if (probeTable) {
+                jdbc.execute(INPUT_PROBE_TABLE);
+            }
+            try {
+                DataAccessException failure = queryFailure(jdbc, sql, input);
+                assertSqlState(failure, state);
+                assertHttpResponse(failure, status, code, null);
+            } finally {
+                if (probeTable) {
+                    jdbc.execute("DROP TABLE response_input_probe");
+                }
+            }
         }
     }
 
@@ -74,7 +111,11 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
             try {
                 DataAccessException failure = queryFailure(jdbc,
                         "INSERT INTO response_length_probe(probe_value) VALUES (?)", "private-database-detail");
-                assertSqlState(failure, VendorTestSql.vendorRun() ? "12899" : "22001");
+                assertSqlState(failure, switch (VendorTestSql.vendor()) {
+                    case POSTGRESQL -> "22001";
+                    case ORACLE -> "12899";
+                    case MARIADB, MYSQL -> "1406";
+                });
                 assertHttpResponse(failure, 400, "C001", null);
             } finally {
                 jdbc.execute("DROP TABLE response_length_probe");
@@ -91,8 +132,8 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
             jdbc.execute("CREATE TABLE response_constraint_probe (probe_value integer NOT NULL UNIQUE CHECK (probe_value > 0))");
             try {
                 jdbc.update("INSERT INTO response_constraint_probe(probe_value) VALUES (1)");
-                DataAccessException failure = queryFailure(jdbc,
-                        "INSERT INTO response_constraint_probe(probe_value) VALUES (CAST(? AS INTEGER))", input);
+                DataAccessException failure = queryFailure(jdbc, VendorTestSql.sql(jdbc,
+                        "INSERT INTO response_constraint_probe(probe_value) VALUES (CAST(? AS INTEGER))"), input);
                 assertSqlState(failure, state);
                 assertHttpResponse(failure, status, code, null);
             } finally {
@@ -115,16 +156,12 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     ownerJdbc.queryForObject("SELECT id FROM response_lock_probe WHERE id=1 FOR UPDATE", Integer.class);
                     JdbcTemplate contenderJdbc = jdbc(contender);
                     VendorTestSql.boundLockWait(contenderJdbc, "100ms");
-                    // Oracle 에는 세션 범위 대기 상한이 없어 잠금 문장이 대기를 정한다.
-                    DataAccessException failure = queryFailure(contenderJdbc,
-                            "SELECT id FROM response_lock_probe WHERE id=CAST(? AS INTEGER) FOR UPDATE"
-                                    + (VendorTestSql.vendorRun() ? " WAIT 1" : ""), "1");
-                    // Oracle 23 실측은 54 다. 30006 도 같은 대기 초과이고 제품은 둘 다 충돌로 본다.
-                    if (VendorTestSql.vendorRun()) {
-                        assertSqlState(failure, "54", "30006");
-                    } else {
-                        assertSqlState(failure, "55P03");
-                    }
+                    // 세션 범위 대기 상한이 없는 벤더는 잠금 문장이 대기를 정한다. 이 연결은 시험이 닫는다.
+                    DataAccessException failure = queryFailure(contenderJdbc, VendorTestSql.withRowLockWait(contenderJdbc,
+                            VendorTestSql.sql(contenderJdbc, "SELECT id FROM response_lock_probe WHERE id=CAST(? AS INTEGER) FOR UPDATE"), 1), "1");
+                    // Oracle 23 실측은 54 다. 30006 도 같은 대기 초과이고 제품은 둘 다 충돌로 본다. MySQL·MariaDB 는 1205 다.
+                    assertTrue(VendorTestSql.isRowLockTimeout(contenderJdbc, databaseError(failure)),
+                            () -> "행 잠금 대기 초과여야 한다: " + VendorTestSql.describe(databaseError(failure)));
                     assertHttpResponse(failure, 409, "C013", null);
                 } finally {
                     contender.rollback();
@@ -146,18 +183,30 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
         try (Connection connection = openConnection()) {
             JdbcTemplate jdbc = jdbc(connection);
             DataAccessException failure;
-            if (VendorTestSql.vendorRun()) {
-                // 도는 질의를 드라이버의 문장 시간 초과로 취소한다. 잠금 대기 취소는 Docker 포트 매핑을 거치면 20분 뒤에야 닿는다(실측).
-                jdbc.setQueryTimeout(1);
-                failure = queryFailure(jdbc, "SELECT COUNT(*) FROM all_objects a, all_objects b, all_objects c "
-                        + "WHERE a.object_id + b.object_id + c.object_id > CAST(? AS NUMBER)", "5");
-                jdbc.setQueryTimeout(-1);
-            } else {
-                jdbc.execute("SET statement_timeout = '100ms'");
-                failure = queryFailure(jdbc, "SELECT pg_sleep(CAST(? AS DOUBLE PRECISION))", "5");
+            switch (VendorTestSql.vendor()) {
+                case POSTGRESQL -> {
+                    jdbc.execute("SET statement_timeout = '100ms'");
+                    failure = queryFailure(jdbc, "SELECT pg_sleep(CAST(? AS DOUBLE PRECISION))", "5");
+                }
+                case ORACLE -> {
+                    // 도는 질의를 드라이버의 문장 시간 초과로 취소한다. 잠금 대기 취소는 Docker 포트 매핑을 거치면 20분 뒤에야 닿는다(실측).
+                    jdbc.setQueryTimeout(1);
+                    failure = queryFailure(jdbc, "SELECT COUNT(*) FROM all_objects a, all_objects b, all_objects c "
+                            + "WHERE a.object_id + b.object_id + c.object_id > CAST(? AS NUMBER)", "5");
+                    jdbc.setQueryTimeout(-1);
+                }
+                // 드라이버가 SLEEP 을 KILL QUERY 로 끊고 SQLTimeoutException 으로 올린다(2026-11-04 실측).
+                case MARIADB, MYSQL -> {
+                    jdbc.setQueryTimeout(1);
+                    failure = queryFailure(jdbc, "SELECT SLEEP(CAST(? AS SIGNED))", "5");
+                    jdbc.setQueryTimeout(-1);
+                }
+                default -> throw new IllegalStateException();
             }
-            assertSqlState(failure, VendorTestSql.vendorRun() ? "1013" : "57014");
+            assertTrue(VendorTestSql.isStatementTimeout(jdbc, databaseError(failure)),
+                    () -> "문장 시간 초과여야 한다: " + VendorTestSql.describe(databaseError(failure)));
             assertHttpResponse(failure, 503, "S002", "5");
+            // FROM DUAL 은 Oracle 19c 가 요구하고 MySQL·MariaDB 도 받는다. PostgreSQL 만 받지 않는다.
             assertEquals(1, jdbc.queryForObject(VendorTestSql.vendorRun() ? "SELECT 1 FROM DUAL" : "SELECT 1", Integer.class));
         }
     }
@@ -167,12 +216,18 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
         try (Connection connection = openConnection()) {
             JdbcTemplate jdbc = jdbc(connection);
             jdbc.execute("CREATE TABLE response_parent_probe (id integer PRIMARY KEY)");
-            jdbc.execute("CREATE TABLE response_child_probe (parent_id integer REFERENCES response_parent_probe (id))");
+            // 컬럼에 붙인 REFERENCES 는 MySQL 이 읽기만 하고 버린다. 표 수준 FOREIGN KEY 는 모든 벤더가 만든다.
+            jdbc.execute("CREATE TABLE response_child_probe (parent_id integer, FOREIGN KEY (parent_id) REFERENCES response_parent_probe (id))");
             try {
                 jdbc.update("INSERT INTO response_parent_probe (id) VALUES (1)");
                 jdbc.update("INSERT INTO response_child_probe (parent_id) VALUES (1)");
-                DataAccessException failure = queryFailure(jdbc, "DELETE FROM response_parent_probe WHERE id = CAST(? AS INTEGER)", "1");
-                assertSqlState(failure, VendorTestSql.vendorRun() ? "2292" : "23503");
+                DataAccessException failure = queryFailure(jdbc,
+                        VendorTestSql.sql(jdbc, "DELETE FROM response_parent_probe WHERE id = CAST(? AS INTEGER)"), "1");
+                assertSqlState(failure, switch (VendorTestSql.vendor()) {
+                    case POSTGRESQL -> "23503";
+                    case ORACLE -> "2292";
+                    case MARIADB, MYSQL -> "1451";
+                });
                 assertHttpResponse(failure, 409, "C008", null);
             } finally {
                 jdbc.execute("DROP TABLE response_child_probe");
@@ -199,21 +254,25 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
     }
 
     private void assertSqlState(Throwable failure, String... states) {
+        SQLException sql = databaseError(failure);
+        assertTrue(java.util.List.of(states).contains(VendorTestSql.errorIdentity(sql)), () -> "DB 오류 " + VendorTestSql.describe(sql));
+    }
+
+    /** 변환기가 보존한 첫 DB 오류. 없으면 실패한다. */
+    private static SQLException databaseError(Throwable failure) {
         Set<Throwable> visited = Collections.newSetFromMap(new IdentityHashMap<>());
         for (Throwable cause = failure; cause != null && visited.add(cause); cause = cause.getCause()) {
             if (cause instanceof SQLException sql) {
-                assertTrue(java.util.List.of(states).contains(VendorTestSql.vendorRun() ? Integer.toString(sql.getErrorCode()) : sql.getSQLState()),
-                        () -> "DB 오류 " + sql.getErrorCode() + "/" + sql.getSQLState());
-                return;
+                return sql;
             }
         }
-        fail("The database error was not preserved by the exception translator");
+        return fail("The database error was not preserved by the exception translator");
     }
 
     private void assertHttpResponse(RuntimeException failure, int status, String code, String retryAfter)
             throws Exception {
         var mvc = MockMvcBuilders.standaloneSetup(new DatabaseProbeController(failure))
-                .setControllerAdvice(new GlobalExceptionHandler()).build();
+                .setControllerAdvice(new GlobalExceptionHandler(VendorTestSql.errorCodes())).build();
         var response = mvc.perform(post("/database-probe")).andReturn().getResponse();
         assertEquals(status, response.getStatus());
         assertEquals(retryAfter, response.getHeader("Retry-After"));

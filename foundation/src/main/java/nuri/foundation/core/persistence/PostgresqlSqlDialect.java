@@ -106,6 +106,12 @@ public class PostgresqlSqlDialect implements VendorSqlDialect {
         return PRODUCT_NAME;
     }
 
+    /** SQLState 가 위반 종류를 가른다(23514·55P03 등). 드라이버는 오류 번호를 싣지 않는다. */
+    @Override
+    public VendorErrorCodes errorCodes() {
+        return VendorErrorCodes.NONE;
+    }
+
     @Override
     public void permitLedgerDeletion(EntityManager entityManager, LedgerDeletionPermit permit) {
         boolean postgres = entityManager.unwrap(Session.class).doReturningWork(

@@ -318,7 +318,7 @@ class UserSecurityStateConcurrencyIntegrationTest {
     void delayedBootstrapCannotReplaceACommittedAdministratorReset() throws Exception {
         // The bootstrap race requires this class's private disposable database.
         VendorTestSql.assertDisposable(environment, jdbc);
-        if (!VendorTestSql.isOracle(jdbc)) {
+        if (VendorTestSql.isPostgresql(jdbc)) {
             assertThat(environment.getProperty("spring.datasource.url"))
                     .isEqualTo("jdbc:tc:postgresql:17:///egov_user_security_state?currentSchema=public");
         }
