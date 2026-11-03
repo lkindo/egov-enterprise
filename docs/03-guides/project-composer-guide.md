@@ -100,7 +100,7 @@ npm run project:create -- --recipe agency-service.recipe.json
 | 위치 | 내용 |
 |---|---|
 | `build/reusable-base/source/<프로젝트명>-<생성 ID>` | 독립 소스 프로젝트 |
-| `build/reusable-base/composer-<프로젝트명>-<생성 ID>-db` | PostgreSQL baseline·시드·DB lock |
+| `build/reusable-base/composer-<프로젝트명>-<생성 ID>-db` | PostgreSQL baseline·시드·DB lock. 벤더 구성에서는 번역의 기준이고 실행되지 않아 화면이 번역 기준 스키마 폴더라고 부른다 |
 | `build/reusable-base/composer-<프로젝트명>-<생성 ID>-db.vendor-input.json` | 벤더 번역 입력(최종 스키마·함수·시드 행). 번들 밖에 두어 PostgreSQL 산출물은 바뀌지 않는다 |
 | `project-recipe.json`, `project-composition.json` | 사용자 선택과 해석된 구성 |
 | `reusable-base-lock.json` | 원본 commit, 배치, 구성·DB 식별, 제외 및 검증 범위 |

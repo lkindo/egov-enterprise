@@ -4,7 +4,7 @@
  */
 import { ComposerError, JOB_ERROR_CODES, VERIFICATION_JOB_CODES } from './project-composer-errors.mjs';
 import { createLogMasker } from './project-composer-command.mjs';
-import { VERIFICATION_STEP_IDS } from './verify-reusable-artifact.mjs';
+import { VERIFICATION_STEP_IDS, verificationVendor } from './verify-reusable-artifact.mjs';
 import { HISTORY_LIMIT, HISTORY_MIN_RUNS, JOB_STAGES, TIMELINE_STATUSES } from './project-composer-timeline.mjs';
 import { TOOL_MESSAGES, count, dense, files, knownTool, plain, repositoryPath, safeDetails } from './project-composer-server-shape.mjs';
 
@@ -17,6 +17,10 @@ export const FAILED_STAGES = Object.freeze({
   resolve: '구성 확인', database: 'PostgreSQL 스키마와 초기 데이터 생성', source: '소스 구성',
   install: '의존성 준비', verify: '생성 프로젝트 검증',
 });
+// 벤더 구성도 이 단계는 임시 PostgreSQL 에서 기준 스키마를 만든다. 실행될 스키마는 그 번역이라 'PostgreSQL 스키마' 라고 말하면 사실과 다르게 읽힌다.
+export const VENDOR_DATABASE_STAGE = Object.freeze({ running: '번역 기준 스키마와 초기 데이터 생성 중', label: '번역 기준 스키마와 초기 데이터 생성' });
+const vendorJob = job => Boolean(verificationVendor(job?.recipe?.database));
+const stageLabel = (stage, job) => (stage === 'database' && vendorJob(job) ? VENDOR_DATABASE_STAGE.label : FAILED_STAGES[stage]);
 // 원인을 나누지 못한 생성 실패. Docker 를 단정하지 않는다(린트·소스 구성 같은 다른 단계 실패에도 이 문장이 나간다).
 export const GENERATION_FAILED_MESSAGE = '프로젝트 생성을 마치지 못했습니다. 입력은 유지됩니다. 실패 단계와 작업 보고서·실행 로그를 확인한 뒤 다시 시도해 주세요.';
 /*
@@ -61,10 +65,10 @@ const RETRYABLE_STEPS = Object.freeze(['backend', 'build']);
  * 실패한 단계·명령 식별자·종료 코드와 원본 저장소 기준 로그·작업 보고서 위치, 원본 커밋만 넘긴다. 오류 메시지와 자식 출력은
  * 보내지 않는다. 절대 경로·상위 폴더·역슬래시 경로는 이 컴퓨터의 폴더 이름을 흘릴 수 있어 버린다.
  */
-export function safeFailure(failure) {
+export function safeFailure(failure, job) {
   if (!plain(failure)) return undefined;
   const result = {};
-  if (Object.hasOwn(FAILED_STAGES, failure.stage)) { result.stage = failure.stage; result.stageLabel = FAILED_STAGES[failure.stage]; }
+  if (Object.hasOwn(FAILED_STAGES, failure.stage)) { result.stage = failure.stage; result.stageLabel = stageLabel(failure.stage, job); }
   if (typeof failure.commandId === 'string' && /^[A-Za-z0-9][A-Za-z0-9._/-]{0,127}$/.test(failure.commandId)) {
     result.commandId = failure.commandId;
     result.exitCode = Number.isSafeInteger(failure.exitCode) ? failure.exitCode : null;
@@ -141,14 +145,15 @@ function safeCancellation(details) {
   return { database: details.database, staging: details.staging, ...(project ? { project } : {}), ...(schema ? { schema } : {}) };
 }
 /** 취소 문장. 지운 것은 말하지 않고, 지우지 못한 것과 남긴 것만 다음 행동과 함께 말한다. */
-export function cancelledMessage(cancellation) {
+export function cancelledMessage(cancellation, job) {
   if (!cancellation) return '생성을 취소했습니다. 정리 결과는 작업 보고서에서 확인해 주세요.';
   const parts = ['생성을 취소했습니다.'];
   const leftover = [cancellation.database === 'failed' && '임시 DB', cancellation.staging === 'failed' && '만들던 폴더'].filter(Boolean);
   if (leftover.length) parts.push(`${leftover.join('와 ')}를 지우지 못했습니다. 생성기를 다시 시작하면 다시 정리합니다.`);
   else parts.push('임시 DB와 만들던 폴더는 남아 있지 않습니다.');
   if (cancellation.project) {
-    parts.push(`검증을 마치지 않은 프로젝트 폴더${cancellation.schema ? '와 DB 스키마 폴더' : ''}는 남겨 두었습니다. 쓰지 않으려면 직접 지워 주세요.`);
+    const schema = vendorJob(job) ? '와 번역 기준 스키마 폴더' : '와 DB 스키마 폴더';
+    parts.push(`검증을 마치지 않은 프로젝트 폴더${cancellation.schema ? schema : ''}는 남겨 두었습니다. 쓰지 않으려면 직접 지워 주세요.`);
   }
   return parts.join(' ');
 }
@@ -197,6 +202,7 @@ const openItem = item => item.status === 'pending' || item.status === 'running';
 function stageMessage(job) {
   const steps = job.timeline?.steps ?? [];
   const index = steps.findIndex(item => item.status === 'running');
+  if (job.stage === 'database' && vendorJob(job)) return VENDOR_DATABASE_STAGE.running;
   if (job.stage !== 'verify' || index < 0) return STAGES[job.stage];
   return `${STAGES.verify} · ${VERIFY_STEP_LABELS[steps[index].id]} (${index + 1}/${steps.length})`;
 }
@@ -223,10 +229,10 @@ export function succeedJob(job, result, now = Date.now()) {
 }
 /** 작업 실패. 검증 실패만 실패한 단계와 가린 로그 끝부분을 함께 보인다(DEC-OPS-249). 취소를 요청한 작업의 취소는 취소로 끝낸다. */
 export function failJob(job, error, now = Date.now()) {
-  const failure = safeFailure(error?.failure);
+  const failure = safeFailure(error?.failure, job);
   if (job.cancelRequested && error instanceof ComposerError && error.code === 'CANCELLED') {
     const cancellation = safeCancellation(error.details);
-    Object.assign(job, { status: 'cancelled', message: cancelledMessage(cancellation), finishedAtMs: now });
+    Object.assign(job, { status: 'cancelled', message: cancelledMessage(cancellation, job), finishedAtMs: now });
     if (cancellation || failure?.report) job.cancellation = { ...(cancellation ?? {}), ...(failure?.report ? { report: failure.report } : {}) };
     delete job.estimate;
     return;
@@ -250,7 +256,7 @@ export function jobView(job, now = Date.now()) {
   const view = { ...rest, elapsedMs: Math.max(0, end - startedAtMs) };
   if (timeline) {
     // 단계 이름은 서버 문장(실패 단계·검증 단계 이름)과 같은 것을 싣는다. 화면은 순서·상태·시간만 그린다.
-    const item = ({ startedAt, ...value }) => ({ ...value, label: FAILED_STAGES[value.id] ?? VERIFY_STEP_LABELS[value.id],
+    const item = ({ startedAt, ...value }) => ({ ...value, label: stageLabel(value.id, job) ?? VERIFY_STEP_LABELS[value.id],
       ...(startedAt === undefined ? {} : { elapsedMs: Math.max(0, Math.min(end - startedAt, end - startedAtMs)) }) });
     view.timeline = { stages: timeline.stages.map(item), steps: timeline.steps.map(item) };
   }

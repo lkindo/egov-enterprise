@@ -2,6 +2,8 @@
 // 실패 세부(단계·명령·로그 위치)·행동 버튼·접힌 로그 끝부분은 그 밖의 형제 요소에 둔다. 문장은 한 번만 읽히고 버튼은 Tab 으로 닿는다.
 // 지울 때 포커스를 지켜야 하는 영역. '상태 다시 확인' 은 다음 그리기에서 숨겨지므로 함께 본다.
 const FAILURE_PARTS = ['job-failure', 'job-actions', 'job-log-tail', 'retry-status'];
+// 벤더 구성의 이 폴더는 번역의 근거인 PostgreSQL 번들이다. 실행되는 스키마는 프로젝트의 벤더 폴더에 있어 같은 이름으로 부르지 않는다.
+const schemaFolderTitle = (job, plain, vendor) => (job.recipe?.database?.vendor && job.recipe.database.vendor !== 'postgresql' ? vendor : plain);
 const JOB_ACTIONS = Object.freeze({ regenerate: '다시 생성', recheck: '생성 환경 다시 점검', 'copy-diagnostics': '진단 정보 복사' });
 
 /** 걸린 시간을 사람이 읽는 말로. 1초 미만은 0.1초 단위, 1분 미만은 초, 그 위는 분·초(초는 두 자리), 1시간 위는 시간·분. */
@@ -219,7 +221,7 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
   // 취소한 작업의 정리 결과. 남겨 둔 프로젝트 폴더와 작업 보고서 위치(원본 저장소 기준)만 보인다.
   function renderCancelled(job) {
     const container = $('job-cancelled');
-    for (const [key, title] of [['project', '남겨 둔 프로젝트 폴더(검증을 마치지 않음)'], ['schema', '남겨 둔 DB 스키마 폴더'],
+    for (const [key, title] of [['project', '남겨 둔 프로젝트 폴더(검증을 마치지 않음)'], ['schema', schemaFolderTitle(job, '남겨 둔 DB 스키마 폴더', '남겨 둔 번역 기준 PostgreSQL 스키마 폴더')],
       ['report', '작업 보고서(원본 저장소 기준)']]) {
       if (!job.cancellation?.[key]) continue;
       const paragraph = text('p', title, 'font-semibold');
@@ -257,7 +259,7 @@ export function createJobPanel({ $, text, api, state, busy, preview, recipe, val
     } else if (job.status === 'succeeded') {
       $('job-heading').textContent = '프로젝트가 준비되었습니다';
       $('job-result').replaceChildren(); $('job-result').hidden = false;
-      for (const [key, title] of [['projectDirectory', '프로젝트 폴더'], ['databaseDirectory', 'DB 스키마 폴더'], ['reportPath', '검증 보고서']]) {
+      for (const [key, title] of [['projectDirectory', '프로젝트 폴더'], ['databaseDirectory', schemaFolderTitle(job, 'DB 스키마 폴더', '번역 기준 PostgreSQL 스키마 폴더(적용되는 스키마는 프로젝트의 db/vendor 폴더에 있습니다)')], ['reportPath', '검증 보고서']]) {
         if (!job.result?.[key]) continue;
         const paragraph = text('p', title, 'font-semibold');
         paragraph.append(text('code', job.result[key], 'mt-1 block break-all font-mono text-xs font-normal text-muted'));

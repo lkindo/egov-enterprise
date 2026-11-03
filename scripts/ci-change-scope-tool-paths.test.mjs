@@ -395,6 +395,7 @@ const VENDOR_BRANCH = /\bdatabase\??\.vendor\b|\bverificationVendor\b|\bVENDOR_A
 // 표 계약의 도달 집합은 경로를 적기만 한 파일도 세므로, 표지가 있어도 잡이 부르지 않는 파일이 든다.
 const OFF_VENDOR_JOB_PATH = {
   'scripts/project-composer-server.mjs': '생성기 화면 서버다. 잡은 엔진을 직접 부른다.',
+  'scripts/project-composer-server-job.mjs': '화면 서버의 작업 문구다. 서버만 가져오고 잡은 부르지 않는다.',
   'scripts/project-composer-vendor-evidence.mjs': '증거 기록 명령이다. 잡은 부르지 않는다.',
 };
 const vendorInputs = () => vendorEvidenceInputs(repoRoot, JSON.parse(readRepository('config/db-vendors.json')), 'oracle');

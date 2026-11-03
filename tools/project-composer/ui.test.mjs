@@ -2305,6 +2305,59 @@ test('the cancel button stops a running job, keeps focus while it cleans up and 
   assert.deepEqual(pageErrors, []);
 });
 
+// 벤더 구성에서 이 폴더와 단계는 번역의 근거다. PostgreSQL 구성의 문구는 그대로 둔다.
+test('a vendor job names the baseline as a translation source on its progress, result and cancel screens', { timeout: 90_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  let finish;
+  let cancelNext = false;
+  const generate = async (recipe, { onProgress, signal }) => {
+    const started = Date.now();
+    onProgress({ stage: 'database', progress: 10, timeline: timelineOf({ resolve: done.resolve, database: { status: 'running', startedAt: started } }) });
+    if (cancelNext) {
+      await new Promise(resolve => signal.addEventListener('abort', resolve, { once: true }));
+      throw Object.assign(new ComposerError('CANCELLED', {}, 'private-detail cancel'), { details: { database: 'removed', staging: 'none', project: KEPT_PROJECT, schema: KEPT_SCHEMA } });
+    }
+    await new Promise(resolve => { finish = resolve; });
+    return { projectDirectory: KEPT_PROJECT, databaseDirectory: KEPT_SCHEMA, reportPath: 'build/report.json', verified: true };
+  };
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger, generate);
+  const stage = page.getByRole('list', { name: '생성 단계' }).locator(':scope > li[data-id="database"]');
+  const select = page.locator('#database');
+  const choose = async vendor => {
+    await select.selectOption(vendor);
+    await expect.poll(() => planned.at(-1).database.vendor).toBe(vendor);
+    await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  };
+  await choose('oracle');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-message')).toHaveText('번역 기준 스키마와 초기 데이터 생성 중');
+  await expect(stage).toHaveText(/^번역 기준 스키마와 초기 데이터 생성 · 진행 중/);
+  finish();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(page.locator('#job-result')).toContainText('번역 기준 PostgreSQL 스키마 폴더(적용되는 스키마는 프로젝트의 db/vendor 폴더에 있습니다)');
+  await expect(page.locator('#job-result')).not.toContainText('DB 스키마 폴더');
+  // 같은 화면에서 PostgreSQL 로 바꾸면 종전 문구다.
+  await choose('postgresql');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-message')).toHaveText('PostgreSQL 스키마와 초기 데이터 생성 중');
+  await expect(stage).toHaveText(/^PostgreSQL 스키마와 초기 데이터 생성 · 진행 중/);
+  finish();
+  await expect(page.locator('#job-heading')).toHaveText('프로젝트가 준비되었습니다');
+  await expect(page.locator('#job-result')).toContainText('DB 스키마 폴더');
+  await expect(page.locator('#job-result')).not.toContainText('번역 기준');
+  // 취소 화면.
+  cancelNext = true;
+  await choose('oracle');
+  await confirmGenerate(page);
+  await expect(page.locator('#job-cancel')).toBeVisible();
+  await page.locator('#job-cancel').click();
+  await expect(page.getByRole('heading', { name: '생성을 취소했습니다' })).toBeVisible();
+  await expect(page.locator('#job-message')).toContainText('프로젝트 폴더와 번역 기준 스키마 폴더는 남겨 두었습니다');
+  await expect(page.locator('#job-cancelled')).toContainText('남겨 둔 번역 기준 PostgreSQL 스키마 폴더');
+  await expect(page.locator('#job-cancelled')).toContainText(KEPT_SCHEMA);
+  assert.deepEqual(pageErrors, []);
+});
+
 test('a cancel pressed after the status poll failed re-arms polling, and a failed cancel reason does not outlive the job', { timeout: 60_000 }, async t => {
   let release;
   const cleaned = new Promise(resolve => { release = resolve; });
