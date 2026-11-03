@@ -67,7 +67,9 @@ export function createFinalConfirmation({ $, text, api, recipe, label, state, va
     } catch (error) {
       if (stale()) return null;
       $('preflight-status').textContent = error.message;
-      return { reason: '점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.', failed: true };
+      // 코드가 붙은 오류(화면을 연 뒤 고를 수 없게 된 벤더)는 다시 점검해도 같다. 정밀 점검과 같은 행동을 보인다.
+      renderFailureActions($('confirm-actions'), error, { onReload: reloadFromDialog });
+      return { reason: DEEP_FAILURE_REASONS[error.action] ?? '점검을 마치지 못해 생성할 수 없습니다. 다시 점검하세요.', failed: true };
     }
   }
   // 소스 정밀 점검(설계서 10장 plan/deep). 생성기가 걷을 파일과 검증 게이트를 같은 판정으로 미리 센다.

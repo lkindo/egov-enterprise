@@ -251,8 +251,9 @@ export function createComposerServer({ engine, publicDirectory = PUBLIC } = {}) 
             throw new HttpError(400, 'BAD_REQUEST');
           }
           const { sourceCommit, vendor } = input;
-          // 고를 수 없는 벤더는 점검하지 않는다. 판정은 생성 요청과 같은 원장이다.
-          if (vendor !== undefined && !(readSelectableVendors() ?? ['postgresql']).includes(vendor)) throw new HttpError(400, 'BAD_REQUEST');
+          // 고를 수 없는 벤더는 점검하지 않는다. 판정은 생성 요청과 같은 원장이다. 이름이 있는 벤더의 거부는 화면을 연 뒤 원장이 바뀐 것이라
+          // 계획 요청과 같은 코드로 답해 다시 불러오기를 보인다. 원본 변경이 겹쳐도 다시 불러오면 함께 풀린다.
+          if (vendor !== undefined && !(readSelectableVendors() ?? ['postgresql']).includes(vendor)) throw new HttpError(400, typeof vendor === 'string' && vendor ? 'INVALID_RECIPE' : 'BAD_REQUEST');
           const run = JSON.stringify([sourceCommit, vendor ?? null]);
           if (!preflightRuns.has(run)) {
             preflightRuns.set(run, Promise.resolve().then(() => engine.preflight({ sourceCommit, ...(vendor === undefined ? {} : { vendor }) }))

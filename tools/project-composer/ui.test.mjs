@@ -1277,6 +1277,32 @@ test('changing only the ledger makes a vendor selectable through planning, gener
   assert.deepEqual(pageErrors, []);
 });
 
+// 구성 입력을 바꾸지 않고 '프로젝트 생성' 을 누르면 계획을 다시 묻지 않으므로 환경 점검이 첫 거부다. 다시 점검해도 같으니 다시 불러오기를 보인다.
+test('a vendor that can no longer be chosen stops the final check with the way out, not a retry', { timeout: 90_000 }, async t => {
+  let ledger = ledgerWithOracle('certified');
+  const { page, pageErrors, planned } = await vendorPage(t, () => ledger);
+  const select = page.locator('#database');
+  await select.selectOption('oracle');
+  await expect.poll(() => planned.at(-1).database.vendor).toBe('oracle');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  ledger = ledgerWithOracle('preview');
+  await page.getByRole('button', { name: '프로젝트 생성', exact: true }).click();
+  const dialog = page.getByRole('dialog', { name: '이 구성으로 생성할까요?' });
+  await expect(page.locator('#preflight-status')).toContainText('선택한 구성을 지금 원본에서 만들 수 없습니다');
+  const start = dialog.getByRole('button', { name: '생성 시작' });
+  await expect(start).toBeDisabled();
+  await expect(start).toHaveAccessibleDescription('지금 원본으로는 이 구성을 생성할 수 없습니다. 새 원본으로 다시 불러온 뒤 확인하세요.');
+  await expect(page.locator('#deep-status')).toHaveText('생성 환경 점검을 마치지 못해 소스 정밀 점검을 하지 않았습니다.');
+  await dialog.getByRole('button', { name: '새 원본으로 다시 불러오기' }).click();
+  await expect(dialog).toBeHidden();
+  await expect(select).toHaveValue('postgresql');
+  await expect(select.locator('option[value="oracle"]')).toBeDisabled();
+  await expect(page.locator('#plan-status')).toContainText('새 원본에서 고를 수 없는 데이터베이스(Oracle)라 PostgreSQL로 바꿨습니다.');
+  await expect(page.locator('#plan-status')).toContainText('포함 범위를 확인했습니다.');
+  assert.equal(planned.at(-1).database.vendor, 'postgresql');
+  assert.deepEqual(pageErrors, []);
+});
+
 // 승격하면 사용자가 보는 경로다. 실제 엔진에 Oracle 을 올린 원장을 넣어 계획·정밀 점검·확인 창을 잇는다.
 test('choosing a vendor shows its degradations, what is removed and the image notice before generating', { timeout: 180_000 }, async t => {
   const ledger = ledgerWithOracle('certified');

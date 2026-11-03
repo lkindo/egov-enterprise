@@ -854,8 +854,18 @@ test('preflight takes a selectable vendor only, and overlapping requests share a
   const { post } = await fixture(t, { preflight: async options => { asked.push(options); return { checks, blocked: false }; }, selectableVendors: () => ['postgresql', 'oracle'] });
   for (const vendor of ['postgresql', 'oracle']) assert.equal((await post('/api/preflight', { sourceCommit: SCREEN, vendor })).status, 200, vendor);
   assert.deepEqual(asked, [{ sourceCommit: SCREEN, vendor: 'postgresql' }, { sourceCommit: SCREEN, vendor: 'oracle' }]);
-  for (const vendor of ['mysql', 'tibero', '', 'constructor', 42, null, ['oracle']]) {
-    assert.equal((await post('/api/preflight', { sourceCommit: SCREEN, vendor })).status, 400, JSON.stringify(vendor));
+  // 이름이 있는 벤더의 거부는 원장이 바뀐 것이라 다시 불러오기로 풀린다. 형식 오류는 다시 불러와도 같다.
+  for (const vendor of ['mysql', 'tibero', 'constructor']) {
+    const refused = await post('/api/preflight', { sourceCommit: SCREEN, vendor });
+    assert.equal(refused.status, 400, vendor);
+    assert.equal(refused.body.error.code, 'INVALID_RECIPE', vendor);
+    assert.equal(refused.body.error.action, 'reload-source', vendor);
+  }
+  for (const vendor of ['', 42, null, ['oracle']]) {
+    const refused = await post('/api/preflight', { sourceCommit: SCREEN, vendor });
+    assert.equal(refused.status, 400, JSON.stringify(vendor));
+    assert.equal(refused.body.error.code, 'BAD_REQUEST', JSON.stringify(vendor));
+    assert.equal(refused.body.error.action, undefined, JSON.stringify(vendor));
   }
   assert.equal(asked.length, 2, 'rejected vendors never reach the engine');
   // 원장 판정을 못 받는 엔진은 PostgreSQL 만 받는다.
