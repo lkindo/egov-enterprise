@@ -1063,14 +1063,38 @@ test('the README procedure names a command that exists and what it does not cove
   assert.match(readme, /db\/vendor\/oracle/);
   assert.match(readme, /V1_1__/);
   for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스', '제약·인덱스·시퀀스·컬럼·뷰의 저장 표기']) assert.ok(readme.includes(limit), limit);
+  // §6.1 의 Oracle 한계 가운데 도입자가 스키마를 바꿀 때 닿는 둘(설계서 §6.1 이 복구 절차를 이 절로 가리킨다).
+  assert.match(readme, /^4\. Oracle 은 DDL 이 자동 커밋이라 `V` 파일이 중간에 실패하면 .*Flyway 이력의 실패 행이 남고.*`repair`.*`npm run verify:vendor-schema` 로 일회용 DB 에서 먼저 돌린다\.$/m,
+    'DDL 자동 커밋 뒤 반쯤 남은 스키마의 복구를 안내한다');
+  assert.match(readme, /^- CLOB 컬럼의 비교·정렬: .*`=`·`DISTINCT`·`ORDER BY`·`GROUP BY`·인덱스를 쓸 수 없다\./m, 'CLOB 의 비교·정렬 제한을 안내한다');
   assert.match(readme, /인증이 아니다/);
+  // 첫 단계는 거버넌스의 소스 결속 검사다. 벤더 인증 원장의 증거는 생성물에서 판정하지 않는다(vendorEvidenceStaleErrors).
+  assert.match(readme, /소스가 바뀌면 첫 단계\(거버넌스의 원본 소스 결속 검사\)에서 멈추는 것이 정상이고/, '전체 검증이 멈추는 첫 단계를 소스 결속 검사로 말한다');
+  assert.doesNotMatch(readme, /인증 증거가 낡았다고/, '벤더 인증 증거가 생성물에서 낡는다고 읽히면 안 된다');
+
+  // 이미지 안내도 저하 문장처럼 원장에서 온다. 원장 문구만 고쳐도 README 가 따라 바뀌어야 한다.
+  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
+  assert.ok(readme.includes(`\n\n${oracle.notices.image}\n\n`), 'README 의 이미지 안내가 원장 문장이다');
+  const edited = structuredClone(ledger);
+  edited.vendors.find(vendor => vendor.id === 'oracle').notices.image = '원장에서 고친 이미지 안내입니다.';
+  const editedReadme = vendorReadme('oracle', edited);
+  assert.ok(editedReadme.includes('\n\n원장에서 고친 이미지 안내입니다.\n\n') && !editedReadme.includes(oracle.notices.image), '원장 문구를 고치면 README 도 바뀐다');
+
+  // 이 절은 벤더 생성물에만 붙는다. PostgreSQL 생성물의 README 는 원본 그대로다.
+  const project = readFileSync(join(ROOT, 'scripts/project-composer-vendor-project.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.equal(project.match(/\bvendorReadme\(/g)?.length, 2, 'README 절은 정의와 projectVendorSources 안의 한 번에서만 쓴다');
+  assert.match(project.slice(project.indexOf('export function projectVendorSources')), /^ {2}writeFileSync\(readme, `\$\{readFileSync\(readme, 'utf8'\)\.replace\(\/\\s\*\$\/, '\\n'\)\}\$\{vendorReadme\(vendorId, ledger\)\}`, 'utf8'\);$/m);
+  const generator = readFileSync(join(ROOT, 'scripts/generate-reusable-base-source.mjs'), 'utf8').replace(/\r\n/g, '\n');
+  assert.match(generator, /^ {2}const vendorInput = vendorId === 'postgresql' \? null : /m, 'PostgreSQL 구성에는 번역 입력이 없다');
+  assert.deepEqual(generator.match(/\bprojectVendorSources\(/g), ['projectVendorSources('], '생성기는 투영을 한 곳에서만 부른다');
+  assert.match(generator, /^ {2}const vendorProjection = vendorInput && projectVendorSources\(/m, '투영은 번역 입력이 있는 벤더 구성에서만 돈다');
   assert.doesNotMatch(readme, /그쪽에도 맞춰 두어야/, '실행되지 않는 파일에 맞추라는 옛 안내가 돌아오면 안 된다');
   // 본문은 원본 그대로라 PostgreSQL 절차가 남는다. 절의 첫 문단이 어느 쪽을 따를지 말해야 한다.
   assert.equal(readme.split('\n## 데이터베이스\n\n')[1]?.split('\n\n')[0], VENDOR_README_PRECEDENCE, '절 첫머리가 본문보다 우선한다고 말한다');
   assert.match(VENDOR_README_PRECEDENCE, /PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다/);
 });
 
-test('the single-module REUSABLE_BASE lines name the vendor schema check, not the PostgreSQL schema test or the migration tool', () => {
+test('the REUSABLE_BASE layout lines name the vendor schema check and the removed migration module only for a vendor, and keep the PostgreSQL lines byte for byte', () => {
   const postgres = reusableBaseLayoutLines('single-module');
   assert.equal(postgres,
     '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n' +
@@ -1078,7 +1102,11 @@ test('the single-module REUSABLE_BASE lines name the vendor schema check, not th
     '- 전체 테스트: `./gradlew allTests`; 하네스/DB 검사: `./gradlew harnessTest schemaValidationTest`; 오프라인 이관: `npm run verify:migration`.\n' +
     '- 폴더별 `build.gradle`은 원본 출처 자료이며 활성 Gradle 설정은 루트 `build.gradle`과 `settings.gradle`이다.\n',
     'PostgreSQL 단일모듈 문장은 그대로다');
-  assert.equal(reusableBaseLayoutLines('multi-module', { vendor: 'oracle' }), reusableBaseLayoutLines('multi-module'), '멀티모듈 줄은 벤더와 무관하다');
+  assert.equal(reusableBaseLayoutLines('multi-module'), '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n', 'PostgreSQL 멀티모듈 문장은 그대로다');
+  // 벤더 멀티모듈은 settings.gradle 에서 이관 모듈이 빠지므로(projectVendorSettings) '기존 모듈을 유지한다'고 말하면 틀린다.
+  assert.equal(projectVendorSettings("include 'foundation'\ninclude 'migration-tool'\n"), "include 'foundation'\n");
+  assert.equal(reusableBaseLayoutLines('multi-module', { vendor: 'oracle' }), '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n',
+    '벤더 멀티모듈 줄은 빠진 이관 모듈을 말한다');
 
   const vendor = reusableBaseLayoutLines('single-module', { vendor: 'oracle' });
   assert.ok(vendor.includes(`npm run ${VENDOR_SCHEMA_ALIAS}`), '벤더 스키마 검사 명령을 안내한다');

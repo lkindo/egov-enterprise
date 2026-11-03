@@ -196,11 +196,13 @@ export function writeProjectedModules(output, modules, composition, active) {
 }
 
 /**
- * REUSABLE_BASE.md 의 배치 줄. 벤더 프로젝트는 이관 소스 세트와 별칭이 없고 PostgreSQL 스키마 시험을 검증에서 뺀다(설계서 §8·§17).
- * PostgreSQL 문장은 바이트 그대로 둔다.
+ * REUSABLE_BASE.md 의 배치 줄. 벤더 프로젝트는 이관 모듈(멀티모듈은 settings.gradle 의 include, projectVendorSettings)·이관 소스 세트와
+ * 별칭이 없고 PostgreSQL 스키마 시험을 검증에서 뺀다(설계서 §8·§17). PostgreSQL 문장은 바이트 그대로 둔다.
  */
 export function reusableBaseLayoutLines(layout, { vendor = null } = {}) {
-  if (layout !== 'single-module') return '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n';
+  if (layout !== 'single-module') {
+    return vendor ? '- 이관 모듈(migration-tool)을 뺀 나머지 Gradle 모듈과 의존 경계를 유지한다.\n' : '- 기존 Gradle 모듈과 의존 경계를 유지한다.\n';
+  }
   return (vendor
     ? '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원은 별도 source set으로 격리한다.\n'
     : '- Gradle 프로젝트는 루트 하나이며 기존 디렉터리는 논리 소스 영역이다. 테스트 자원과 offline migration 실행은 별도 source set으로 격리한다.\n') +

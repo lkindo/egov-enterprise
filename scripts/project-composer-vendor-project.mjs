@@ -121,20 +121,23 @@ export function projectVendorEnvironment(text, vendorId) {
 /** README 본문은 원본 그대로 두고 이 절을 끝에 덧붙이므로, 본문과 어긋나는 자리에서 어느 쪽을 따를지 첫머리에 말한다. */
 export const VENDOR_README_PRECEDENCE = '위 본문의 PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다.';
 
-export const vendorReadme = (vendorId, ledger) => `
+/** 이미지 안내와 저하 문장은 화면과 같은 원장(notices)에서 가져온다. 원장 문구를 고치면 README 도 따라 바뀐다. */
+export function vendorReadme(vendorId, ledger) {
+  const { notices } = ledger.vendors.find(vendor => vendor.id === vendorId);
+  return `
 ## 데이터베이스
 
 ${VENDOR_README_PRECEDENCE}
 
 이 프로젝트는 ${vendorId} 로 생성했다. Flyway 는 \`${vendorBaselinePaths(vendorId).location.replace('classpath:', '')}\` 폴더만 적용한다(생성 시점에는 번역 기준선 하나). \`db/migration\` 의 PostgreSQL 파일은 번역의 근거이고 실행되지 않는다.
 
-\`docker-compose.yml\` 의 DB 이미지는 개발용이다. 운영 라이선스는 도입 기관이 확보한다.
+${notices.image}
 
 이 프로젝트에는 PostgreSQL 개발 시드(\`db/seed-dev\`)가 적용되지 않아 \`webmaster\` 는 로그인할 수 없는 상태로 시작한다. 개발 스택을 올리기 전에 \`.env\` 의 \`ADMIN_INITIAL_PASSWORD\` 에 비밀번호를 정하면 첫 기동 때 한 번 설정된다. 이미 정한 비밀번호는 덮어쓰지 않는다.
 
 이 데이터베이스에서 달라지는 동작(생성 전 화면의 기능 저하 칸과 같다):
 
-${ledger.vendors.find(vendor => vendor.id === vendorId).notices.degradations.map(row => `- ${row.text}`).join('\n')}
+${notices.degradations.map(row => `- ${row.text}`).join('\n')}
 
 PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger.removedPostgresTools.groups.map(group => group.label).join(', ')}. 엔티티·스키마 정적 린터는 아래 카탈로그 시험이 대신한다. 목록과 사유는 \`config/governance/vendor-removed-assets.json\` 에 있다. \`docs/\` 의 운영 문서는 원본 기준이라 PostgreSQL 절차를 그대로 담고 있다. 백업·복원은 기관이 이 DB 에 맞게 준비한다. 격리 E2E 실행기는 대표 묶음만 돌린다: \`node scripts/run-isolated-e2e.mjs --representative\`. 시험 목록은 \`config/governance/vendor-test-ledger.json\` 이 고정하고, 원장의 기능을 모두 고른 멀티모듈 생성물이 아니면 시작 전에 멈춘다.
 
@@ -143,6 +146,7 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger
 1. 벤더 문법으로 \`${RESOURCES}/db/vendor/${vendorId}\` 에 \`V1_1__설명.sql\` 처럼 기준선(\`V1_0\`)보다 높은 버전의 파일을 더한다. 번역 기준선(\`V1_0__vendor_baseline.sql\`)은 고치지 않는다. 반복 마이그레이션(\`R__\`)은 지원하지 않는다.
 2. \`npm run verify:vendor-schema\` 로 검사한다. 하네스를 돌린 뒤 번역 기준선과 입력을 잠금 해시로 대조하고, 일회용 DB 에 기준선만 적용해 표·컬럼·제약·인덱스·트리거·시퀀스 이름, 키·유니크의 컬럼, 시드 행 수, 식별 컬럼과 시퀀스의 다음 값을 번역 결과와 대조한다(제약 본문과 NOT NULL 은 잠금 해시가 받친다). 그 뒤 나머지 마이그레이션을 적용해 카탈로그 시험과 시나리오 시험을 돌린다. 컨테이너가 필요해 시간이 걸린다.
 3. \`db/migration\` 은 고치지 않는다. 실행되지 않는 번역 근거이고, 명명·유니크 미러 린터는 이 입력만 본다.
+4. Oracle 은 DDL 이 자동 커밋이라 \`V\` 파일이 중간에 실패하면 실패한 문장 앞에서 만든 객체와 Flyway 이력의 실패 행이 남고, 다음 기동은 그 실패 행에서 멈춘다. 남은 객체를 손으로 지우고 실패 행을 정리(Flyway 의 \`repair\`. 이 프로젝트에는 그 명령이 없어 Flyway CLI 등으로 돌린다)한 뒤 다시 적용한다. 운영 DB 에 올리기 전에 \`npm run verify:vendor-schema\` 로 일회용 DB 에서 먼저 돌린다.
 
 카탈로그 시험은 적용된 DB 를 읽는다. 카탈로그 전체에서 PK 전략·숫자 변환·길이 초과를, 기준선 뒤에 생긴 객체에서 표·제약·인덱스·시퀀스 이름(\`tb_\`·\`pk_\`·\`fk_\`·\`uk_\`·\`ck_\`·\`ix_\`·\`sq_\`), 표의 저장 표기(따옴표로 만든 표는 붉다), 새 표의 감사 컬럼, 새 컬럼의 고정 문자형을, 기준선 뒤에 생기거나 다시 만든 유니크의 엔티티 미러(기본키 제외, 일반 인덱스로 집행되는 유니크 제약 포함)를, 기준선 뒤에 바이트 길이가 된 컬럼의 엔티티 길이를, 뷰 이름(\`vw_\`)을 본다. 표·컬럼 부재와 타입 계열은 시나리오 시험을 띄울 때 Hibernate validate 가 본다.
 
@@ -150,7 +154,7 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger
 
 기존 권한의 기본 그룹을 바꾸려면 \`config/governance/permission-catalog.json\` 과 벤더 DB 의 부여를 함께 맞춘다. \`npm run regen\` 은 \`db/migration\` 의 시드만 고치므로 벤더 마이그레이션에 부여 변경을 직접 넣는다. 둘이 어긋나면 카탈로그 시험이 붉다.
 
-이 명령은 인증이 아니다. 생성물 전체 검증(\`npm run verify\`)은 소스가 바뀌면 인증 증거가 낡았다고 첫 단계에서 멈추는 것이 정상이고, 이 명령은 그 단계를 지나지 않는다.
+이 명령은 인증이 아니다. 생성물 전체 검증(\`npm run verify\`)은 소스가 바뀌면 첫 단계(거버넌스의 원본 소스 결속 검사)에서 멈추는 것이 정상이고, 이 명령은 그 단계를 지나지 않는다. 벤더 인증 원장(\`config/db-vendors.json\`)의 증거는 생성물에서 판정하지 않는다.
 
 지원하지 않는 것:
 
@@ -161,10 +165,12 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger
 - 뷰의 정의: 뷰는 이름만 본다. 컬럼과 정의는 시험을 직접 더한다.
 - 도입자가 더한 CHECK·트리거의 의미: 차등 시험은 번역 입력만 보므로 PostgreSQL 과 같은 값으로 대조되지 않는다. 시험을 직접 더한다.
 - 같은 이름의 컬럼 타입 변경: 새 객체가 아니어서 고정 문자형 규칙이 보지 않는다. Oracle 은 Hibernate validate 가 \`VARCHAR2\` 와 CLOB 을 구분하지 못하므로 짧은 컬럼을 CLOB 으로 바꾸지 않았는지 사람이 확인한다.
+- CLOB 컬럼의 비교·정렬: Oracle 의 CLOB 컬럼(기준선에서는 글자 수 1,000 을 넘는 문자열과 \`text\`·\`json\` 컬럼)은 \`=\`·\`DISTINCT\`·\`ORDER BY\`·\`GROUP BY\`·인덱스를 쓸 수 없다. 이 명령은 기존 시나리오 시험이 부르는 쿼리만 돌리므로 새 쿼리가 그런 컬럼을 쓰는지는 사람이 확인한다.
 - 새 권한 코드: 권한 코드는 구성과 정확히 일치해야 해 \`npm run regen\` 이 멈춘다. PostgreSQL 프로젝트와 같다.
 - 새 Java 소스: 생성물의 소스 모집단은 투영 기록과 정확히 일치해야 해 새 엔티티·서비스를 더하면 하네스가 붉다. PostgreSQL 프로젝트와 같다. 기존 엔티티의 필드 변경은 된다.
 - \`scripts/domain-registration-doctor.mjs\` 는 \`db/migration\` 만 읽으므로 벤더 폴더의 새 표를 보지 못한다.
 `;
+}
 
 /** 생성물 트리를 벤더로 투영한다. 소스 생성기가 PostgreSQL 번들을 설치한 뒤 부른다. */
 export function projectVendorSources(output, { vendorId, input, inputText, layout }) {

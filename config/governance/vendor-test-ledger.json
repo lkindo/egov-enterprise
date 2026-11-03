@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). as-is·fixture-port 는 vendorIntegrationTest 가 벤더 DB 에서 돌리고, replacement 는 벤더 번역 대조·차등 시험이 대신한다(다른 수단이 대신하면 그 시험의 reason 에 적는다). postgresqlOnly 는 벤더 실행에서 빼는 시험과 사유다. 2026-11-01 Oracle 실행으로 고쳤다.",
+  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). as-is·fixture-port 는 vendorIntegrationTest 가 벤더 DB 에서 돌리고, replacement 는 벤더 번역 대조·차등 시험이 대신한다(다른 수단이 대신하거나 대체가 없으면 그 시험의 reason 에 적는다). postgresqlOnly 는 벤더 실행에서 빼는 시험과 사유다. 2026-11-01 Oracle 실행으로 고쳤다.",
   "representativeE2e": {
     "description": "설계서 §7 의 대표 E2E. node scripts/run-isolated-e2e.mjs --representative 가 이 목록을 그대로 돌린다. 정리·클렌징·전체 메뉴 계약이 전제하므로 requiredDomains 가 preset 의 기능 목록과 같고 layout 의 생성물에서만 시작한다.",
     "preset": "demo",
