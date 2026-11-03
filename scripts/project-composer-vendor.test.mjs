@@ -280,7 +280,7 @@ test('the MySQL family decides the key limit at the measured boundaries', () => 
   assert.ok(statements(mariadbAdapter, keyModel(764, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a, b)'));
   assert.ok(statements(mariadbAdapter, keyModel(765, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a(700), b)'));
   assert.ok(statements(mariadbAdapter, keyModel(4000, uuid)).includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a, b)'));
-  assert.deepEqual(mariadbAdapter.emitSchema(keyModel(4000, uuid)).degradations, [], 'MariaDB 는 접두 저하가 없다');
+  assert.deepEqual(mariadbAdapter.emitSchema(keyModel(4000, uuid)).degradations.map(row => row.name), ['null-order'], 'MariaDB 는 접두 저하가 없다(엔진 동작 안내만 남는다)');
   // MySQL 의 UUID 는 Hibernate 의 MySQL 기본 매핑인 BINARY(16) 이고 시드 값은 같은 바이트 순서로 바꾼다. CHAR(36) 이면 스키마 검증이 멈췄다(2026-11-04).
   assert.match(statements(mysqlAdapter, keyModel(10, uuid)).join('\n'), /\bb BINARY\(16\)/);
   assert.match(statements(mariadbAdapter, keyModel(10, uuid)).join('\n'), /\bb UUID\b/);
@@ -292,9 +292,9 @@ test('the MySQL family decides the key limit at the measured boundaries', () => 
     constraints: [constraint('t_one', 'pk_t_one', 'p', 'PRIMARY KEY (id)'), constraint('t_one', 'uk_t_one_a', 'u', 'UNIQUE (a)')], indexes: [], triggers: [], sequences: [] },
   extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
   assert.ok(statements(mysqlAdapter, single(768)).includes('ALTER TABLE t_one ADD CONSTRAINT uk_t_one_a UNIQUE (a)'));
-  assert.deepEqual(mysqlAdapter.emitSchema(single(768)).degradations, []);
+  assert.deepEqual(mysqlAdapter.emitSchema(single(768)).degradations.map(row => row.name), ['null-order']);
   assert.ok(statements(mysqlAdapter, single(769)).includes('ALTER TABLE t_one ADD CONSTRAINT uk_t_one_a UNIQUE (a(768))'));
-  assert.deepEqual(mysqlAdapter.emitSchema(single(769)).degradations.map(row => row.name), ['uk_t_one_a:prefix']);
+  assert.deepEqual(mysqlAdapter.emitSchema(single(769)).degradations.map(row => row.name), ['uk_t_one_a:prefix', 'null-order']);
   assert.deepEqual(mysqlAdapter.emitSchema(single(769)).uniqueColumns.get('t_one.uk_t_one_a'), ['a'], '접두 유니크도 컬럼 조회에는 컬럼 이름만 나온다');
   // 해시로 바꿔도 넘는 복합 유니크는 적용 때 1071 로 멈추기 전에 번역을 멈춘다.
   const wide = buildVendorModel({ snapshot: { columns: [column('t_two', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_two', 'a', 1000, { position: 2 }), varchar('t_two', 'b', 1000, { position: 3 })],
@@ -816,6 +816,9 @@ test('every CI vendor shows exactly the degradations its own translation can rea
     assert.deepEqual([...new Set(vendors.flatMap(reached))].sort(), [...declaredDegradationKinds(`scripts/project-composer-vendor-${file}.mjs`)].sort(), file);
   }
   assert.ok(reached('mysql').includes('prefix') && !reached('mariadb').includes('prefix'), 'MariaDB 는 긴 유니크를 엔진 해시로 받는다');
+  // 정렬 순서는 스키마가 아니라 엔진의 동작이라 모델과 상관없이 늘 안내한다(설계서 §5 NULL 순서).
+  for (const vendorId of ['mysql', 'mariadb']) assert.ok(reached(vendorId).includes('null-order'), `${vendorId}: NULL 을 가장 작은 값으로 정렬한다`);
+  assert.ok(!reached('oracle').includes('null-order'), 'Oracle 은 PostgreSQL 과 같은 순서다');
 });
 
 test('certification needs the sentences the screen shows', t => {
