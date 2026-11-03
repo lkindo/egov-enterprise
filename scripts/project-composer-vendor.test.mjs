@@ -468,7 +468,7 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
   // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
-  assert.deepEqual(selectableVendors(ledger), ['postgresql']);
+  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   // 사유는 화면에 그대로 나간다.
   for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, vendor.id);

@@ -164,18 +164,142 @@
     {
       "id": "oracle",
       "label": "Oracle",
-      "status": "preview",
+      "status": "certified",
       "ci": true,
       "engines": [
         {
           "version": "19",
           "engine": "oracle19",
-          "evidence": null
+          "evidence": {
+            "runId": "oracle19-171f45d4262c-66b069e3",
+            "commit": "171f45d4262c5a128fe1c8399a25ec4a9ebd360e",
+            "recordedAt": "2026-11-03T21:30:38.848+09:00",
+            "inputHash": "cc81db81894758e724fecde10b1233d537f00f157fd9462b42c29e14a89a0290",
+            "modelHash": "c15a37de27cf9b7fbf633b59b74aefc0c1f1b27564cabe89bc6588f232c76d12",
+            "image": "fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac",
+            "imageOrigin": "community:fugeritorg",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "44545d289bdbbc73ace99905d708f96046bca16df46aeb54ac986719540aa4c6"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 1554,
+                "degradations": 5
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 399,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1236,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         },
         {
           "version": "23",
           "engine": "oracle",
-          "evidence": null
+          "evidence": {
+            "runId": "oracle-171f45d4262c-c2d91bfb",
+            "commit": "171f45d4262c5a128fe1c8399a25ec4a9ebd360e",
+            "recordedAt": "2026-11-03T20:43:10.035+09:00",
+            "inputHash": "cc81db81894758e724fecde10b1233d537f00f157fd9462b42c29e14a89a0290",
+            "modelHash": "c15a37de27cf9b7fbf633b59b74aefc0c1f1b27564cabe89bc6588f232c76d12",
+            "image": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
+            "imageOrigin": "community:gvenzl",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "44545d289bdbbc73ace99905d708f96046bca16df46aeb54ac986719540aa4c6"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 1554,
+                "degradations": 5
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 399,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1236,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         }
       ],
       "evidenceInputs": [
@@ -214,8 +338,7 @@
           }
         ],
         "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
-      },
-      "reason": "Oracle 23·19c 에서 통합 시험과 대표 화면 시험을 통과했습니다. 인증 증거가 남았습니다."
+      }
     },
     {
       "id": "mariadb",
