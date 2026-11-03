@@ -244,6 +244,8 @@ test('stale evidence: reverting the image BLOB mapping alone turns a certified v
   assert.equal(shown.ok, false);
   assert.match(shown.lines.join('\n'), /\[VENDOR_EVIDENCE_STALE\] oracle 19: 인증 입력이 증거 뒤에 바뀌었다/);
   assert.match(shown.lines.join('\n'), /→ .*project-composer-vendor-evidence\.mjs .*preview 로 내리고 사유를 적는다/);
+  // 내리기만 하면 승격 표시 시험이 계속 붉다. 안내가 그 시험도 가리켜야 한 번에 고친다.
+  assert.match(shown.lines.join('\n'), /→ .*preview 로 내리고 .*project-composer-vendor\.test\.mjs 의 승격 표시/);
   writeFileSync(join(root, DIALECT), dialect);
   assert.deepEqual(vendorEvidenceStaleErrors(root), [], '되돌리면 다시 초록이다');
 

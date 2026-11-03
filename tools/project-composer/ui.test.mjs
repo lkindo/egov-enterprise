@@ -725,7 +725,7 @@ test('a saved recipe file fills the name, selection and structure and is re-chec
   assert.deepEqual(planned.at(-1).selection, { domains: ['mail', 'schedule'] });
   // 불러온 뒤 파일 입력을 비운다 — 브라우저는 같은 파일을 다시 고르면 값이 같아 change 를 내지 않는다.
   assert.equal(await page.locator('#recipe-file').evaluate(input => input.files.length), 0);
-  // 고를 수 있는 데이터베이스면 파일의 데이터베이스를 고른다(지금은 PostgreSQL 하나뿐이라 선택지를 하나 더해 확인한다).
+  // 고를 수 있는 데이터베이스면 파일의 데이터베이스를 고른다(원장 상태에 기대지 않으려고 선택지를 하나 더해 확인한다).
   await page.locator('#database').evaluate(select => { select.append(new Option('다른 DB', 'other-db')); select.value = 'other-db'; });
   await page.locator('#recipe-file').setInputFiles(file(savedRecipe({ selection: { domains: ['mail', 'schedule', 'ghost'] } })));
   await expect(page.locator('#database')).toHaveValue('postgresql');

@@ -56,7 +56,7 @@ const VENDOR_EVIDENCE_PRECHECK = Object.freeze({
   code: 'VENDOR_EVIDENCE_STALE',
   requires: 'scripts/project-composer-vendor-evidence.mjs',
   run: (root, evidence) => evidence.vendorEvidenceStaleErrors(root),
-  fix: '해당 엔진마다 `node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <버전> --artifact <생성물>` 로 증거를 다시 만들거나, 그 벤더를 config/db-vendors.json 에서 preview 로 내리고 사유를 적는다.',
+  fix: '해당 엔진마다 `node scripts/project-composer-vendor-evidence.mjs --vendor <id> --version <버전> --artifact <생성물>` 로 증거를 다시 만들거나, 그 벤더를 config/db-vendors.json 에서 preview 로 내리고 사유를 적는다. 내릴 때는 scripts/project-composer-vendor.test.mjs 의 승격 표시(selectableVendors 기대값)에서도 그 벤더를 뺀다.',
 });
 
 /** 점검 목록. `run(root, 판정 모듈)` 은 위반 문장 배열을 돌려주거나 판정 함수의 예외를 그대로 던진다. */
