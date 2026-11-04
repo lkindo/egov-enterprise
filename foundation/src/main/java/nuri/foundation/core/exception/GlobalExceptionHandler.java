@@ -236,7 +236,7 @@ public class GlobalExceptionHandler {
         int vendorCode = extractVendorCode(e);
         // Oracle 의 길이 초과(72000)·숫자 변환(42000), MySQL·MariaDB 의 CHECK·기본값 없음·형식(HY000·22007)은
         // 무결성 위반으로 번역되지 않아 이 경로로 온다.
-        if (errorCodes.invalidValues().contains(vendorCode)) {
+        if (errorCodes.rejectsValue(vendorCode, extractVendorMessage(e))) {
             log.warn(">>> Rejected database value: {} SQLState={}", e.getClass().getSimpleName(), sqlState);
             return invalidValueResponse();
         }
@@ -288,7 +288,7 @@ public class GlobalExceptionHandler {
         if ("23514".equals(sqlState) || "23502".equals(sqlState)
                 || "22001".equals(sqlState) || "22003".equals(sqlState)
                 || "22007".equals(sqlState) || "22008".equals(sqlState) || "22P02".equals(sqlState)
-                || errorCodes.invalidValues().contains(vendorCode)) {
+                || errorCodes.rejectsValue(vendorCode, extractVendorMessage(e))) {
             return invalidValueResponse();
         }
         // 22 전체를 입력 오류로 취급하면 0으로 나누기·시퀀스 고갈 같은 서버 결함을 감춘다.
@@ -319,6 +319,20 @@ public class GlobalExceptionHandler {
             }
         }
         return 0;
+    }
+
+    /**
+     * 벤더 오류 번호를 낸 예외의 메시지. 번호 하나가 여러 위반을 함께 쓰는 벤더(SQL Server 547)는 메시지의 제약 종류로 가른다.
+     * 메시지는 판정에만 쓰고 기록하지 않는다 — 값이 들어 있을 수 있다.
+     */
+    private static String extractVendorMessage(Throwable cause) {
+        java.util.Set<Throwable> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+        for (Throwable t = cause; t != null && visited.add(t); t = t.getCause()) {
+            if (t instanceof java.sql.SQLException sqlEx && sqlEx.getErrorCode() != 0) {
+                return sqlEx.getMessage();
+            }
+        }
+        return null;
     }
 
     /** Spring/Hibernate 원인 체인의 SQLState를 읽으며 순환한 예외 체인에도 종료한다. */

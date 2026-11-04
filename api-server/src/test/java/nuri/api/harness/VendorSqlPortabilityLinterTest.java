@@ -45,7 +45,7 @@ class VendorSqlPortabilityLinterTest {
             "postgresql-only", "deferred");
     private static final Set<String> TEST_CATEGORIES = Set.of("as-is", "fixture-port", "replacement");
     /** 벤더 실행(vendorIntegrationTest)이 도는 벤더. PostgreSQL 은 schemaValidationTest 가 모든 시험을 돌려 뺄 수 없다. */
-    private static final Set<String> EXCLUDABLE_VENDORS = Set.of("oracle", "mariadb", "mysql");
+    private static final Set<String> EXCLUDABLE_VENDORS = Set.of("oracle", "mariadb", "mysql", "mssql");
 
     private record Rule(String id, Pattern pattern) {
         static Rule of(String id, String regex) {
@@ -62,6 +62,8 @@ class VendorSqlPortabilityLinterTest {
             Rule.of("on-conflict", "(?i)\\bON\\s+CONFLICT\\b"),
             Rule.of("skip-locked", "(?i)\\bSKIP\\s+LOCKED\\b"),
             Rule.of("no-key-update", "(?i)\\bFOR\\s+NO\\s+KEY\\s+UPDATE\\b"),
+            // SQL Server 의 SELECT 에는 잠금 절이 없고 표 힌트로 잠근다(단계 4). 잠금 강도도 벤더마다 달라 포트가 정한다.
+            Rule.of("for-update", "(?i)\\bFOR\\s+UPDATE\\b"),
             Rule.of("set-local", "(?i)\\bSET\\s+LOCAL\\b"),
             Rule.of("date-format", "(?i)\\bto_(char|date|timestamp)\\s*\\("),
             Rule.of("position", "(?i)\\bPOSITION\\s*\\("),
@@ -280,6 +282,8 @@ class VendorSqlPortabilityLinterTest {
         "on-conflict;INSERT INTO t VALUES (1) ON CONFLICT DO NOTHING",
         "skip-locked;SELECT * FROM t FOR UPDATE SKIP LOCKED",
         "no-key-update;SELECT * FROM t FOR NO KEY UPDATE",
+        "for-update;SELECT esntl_id FROM tb_user_info WHERE esntl_id = :esntlId FOR UPDATE",
+        "for-update;select a from t for   update",
         "set-local;SET LOCAL lock_timeout = '2s'",
         "date-format;SELECT TO_CHAR(a, 'YYYY') FROM t",
         "position;WHERE POSITION(:k IN a)>0",
@@ -307,6 +311,8 @@ class VendorSqlPortabilityLinterTest {
         "cast-operator;nuri.Foo::bar",
         "upper-table;DELETE FROM tb_login_log WHERE a = 1",
         "vendor-cast;CAST(a AS bigint)",
+        "for-update;SELECT * FROM t FOR NO KEY UPDATE",
+        "for-update;UPDATE t SET a = 1 WHERE b = 2",
     })
     @DisplayName("이식 가능한 문장에서는 울리지 않는다")
     void rulesStayQuietOnPortableText(String rule, String text) {

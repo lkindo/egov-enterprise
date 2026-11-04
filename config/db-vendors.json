@@ -560,6 +560,7 @@
       "id": "mssql",
       "label": "SQL Server",
       "status": "preview",
+      "ci": true,
       "engines": [
         {
           "version": "2022",
@@ -568,9 +569,49 @@
         }
       ],
       "evidenceInputs": [
-        "scripts/project-composer-vendor-mssql.mjs"
+        "scripts/project-composer-vendor-mssql.mjs",
+        "foundation/src/main/java/nuri/foundation/core/persistence/SqlServerSqlDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriSqlServerDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriSqlServerSqlAstTranslator.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriSqlServerDialectResolver.java",
+        "foundation/src/main/resources/META-INF/services/org.hibernate.engine.jdbc.dialect.spi.DialectResolver"
       ],
-      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다."
+      "notices": {
+        "degradations": [
+          {
+            "kind": "trailing-space",
+            "summary": "뒤 공백만 다른 문자열을 같은 값으로 봄",
+            "text": "문자열 비교와 유일 키가 끝의 공백을 무시합니다. 끝 공백만 다른 값은 같은 값으로 검색되고, 유일 키에서는 중복으로 거부됩니다."
+          },
+          {
+            "kind": "null-order",
+            "summary": "NULL 정렬 순서가 PostgreSQL 과 반대임",
+            "text": "NULL 을 가장 작은 값으로 정렬합니다. NULL 이 들 수 있는 칸으로 정렬하면 오름차순에서는 NULL 이 맨 앞, 내림차순에서는 맨 뒤에 와 PostgreSQL 과 반대입니다."
+          },
+          {
+            "kind": "null",
+            "summary": "참조되는 유일 키에 NULL 은 한 행만 들어감",
+            "text": "다른 표가 참조하는 유일 키는 NULL 이 든 행을 한 행만 받습니다. NULL 이 든 행을 둘 이상 저장하면 중복으로 거부됩니다."
+          },
+          {
+            "kind": "length",
+            "summary": "유일 키 값이 1,700바이트(850자)까지로 제한됨",
+            "text": "인덱스 키가 1,700바이트까지라 긴 문자열로 된 유일 키는 850자를 넘는 값을 저장하지 못하고 거부합니다."
+          },
+          {
+            "kind": "deferrable",
+            "summary": "외래 키를 커밋 때 미뤄 검사하지 못함",
+            "text": "외래 키를 커밋 때까지 미뤄 검사하지 못하고 문장마다 검사합니다. 자기 자신을 참조하는 메뉴처럼 부모와 자식을 한 번에 지울 때는 자식부터 지웁니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스와 긴 URL 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스와 1,700바이트를 넘을 수 있는 URL 칸의 인덱스가 없어 해당 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
+      },
+      "reason": "앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
     },
     {
       "id": "cubrid",

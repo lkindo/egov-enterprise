@@ -18,6 +18,12 @@ public interface UserRepositoryCustom {
     void refreshForUpdate(User user);
 
     /**
+     * 종속 행 정리 중 새 FK 참조를 막는다. PostgreSQL 의 JPA 쓰기 잠금(NO KEY UPDATE)으로는 부족해 자식 FK 입력을 막는 강도로 잠근다.
+     * 잠금 구문은 벤더마다 달라 포트가 만든다(ADR-0047) — SQL Server 에는 {@code FOR UPDATE} 가 없다.
+     */
+    java.util.Optional<String> lockForDeletion(String esntlId);
+
+    /**
      * 담당자 지정용 사용자 검색. 성명(user_nm) 부분일치만 본다.
      *
      * <p>일반 사용자에게 열리는 경로이므로 {@link #getPagedUserList} 와 달리

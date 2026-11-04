@@ -24,7 +24,7 @@ class IsolationMappingDataSourceTest {
     void connect() throws SQLException {
         when(target.getConnection()).thenReturn(physical);
         when(target.getConnection("user", "secret")).thenReturn(physical);
-        connection = new IsolationMappingDataSource(target).getConnection();
+        connection = new IsolationMappingDataSource(target, Connection.TRANSACTION_SERIALIZABLE).getConnection();
     }
 
     @Test
@@ -38,10 +38,19 @@ class IsolationMappingDataSourceTest {
     @Test
     @DisplayName("계정을 지정한 연결도 같은 변환을 탄다")
     void credentialedConnectionsAreMapped() throws SQLException {
-        new IsolationMappingDataSource(target).getConnection("user", "secret")
+        new IsolationMappingDataSource(target, Connection.TRANSACTION_SERIALIZABLE).getConnection("user", "secret")
                 .setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
 
         verify(physical).setTransactionIsolation(Connection.TRANSACTION_SERIALIZABLE);
+    }
+
+    @Test
+    @DisplayName("SQL Server 는 잠금 격리인 REPEATABLE READ 대신 스냅숏 격리로 보낸다")
+    void sqlServerRepeatableReadBecomesSnapshot() throws SQLException {
+        new IsolationMappingDataSource(target, IsolationMappingDataSource.SQL_SERVER_SNAPSHOT).getConnection()
+                .setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+
+        verify(physical).setTransactionIsolation(0x1000);
     }
 
     @Test

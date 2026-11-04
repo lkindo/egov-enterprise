@@ -219,7 +219,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
         assertThat(jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?", java.sql.Timestamp.class, id)).isNull();
         try (var blocker = dataSource.getConnection(); var executor = java.util.concurrent.Executors.newFixedThreadPool(2)) {
             blocker.setAutoCommit(false);
-            try (var lock = blocker.prepareStatement("SELECT memo_rpt_sn FROM tb_memo_rpt_info WHERE memo_rpt_sn=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT memo_rpt_sn FROM tb_memo_rpt_info WHERE memo_rpt_sn=? FOR UPDATE"))) {
                 lock.setLong(1, id);
                 lock.executeQuery().close();
             }

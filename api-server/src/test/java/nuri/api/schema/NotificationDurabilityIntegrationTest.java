@@ -187,7 +187,7 @@ class NotificationDurabilityIntegrationTest {
         String key = jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT job_mng_no FROM tb_sys_job WHERE job_se_nm='NOTIFICATION_DELIVERY' AND job_cn::jsonb->>'receiver'=?"), String.class, receiver);
         return jobs.findByJobMngNo(key).orElseThrow();
     }
-    private void due() { jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=TIMESTAMP '1970-01-01 00:00:00' WHERE job_mng_no=?", job().getJobMngNo()); }
+    private void due() { jdbc.update(VendorTestSql.sql(jdbc, "UPDATE tb_sys_job SET job_prnmnt_dt=TIMESTAMP '1970-01-01 00:00:00' WHERE job_mng_no=?"), job().getJobMngNo()); }
     private NotificationDeliveryWorkHandler handler() { return new NotificationDeliveryWorkHandler(inbox, notificationMapper, transport, mapper); }
     private DurableWorkDispatcher newWorker() { return new DurableWorkDispatcher(jobs, List.of(handler()), manager, false); }
     private void authenticate() {

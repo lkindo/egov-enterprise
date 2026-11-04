@@ -215,11 +215,11 @@ flowchart TD
 | 저장 범위 | 논리 모델에 글자 수와 바이트 용량을 나눠 적는다. 어댑터는 `n × 4` 바이트를 담는 물리 타입을 고른다. Oracle 은 기본 설정에서 n 이 1,000 을 넘는 컬럼 가운데 키가 아닌 것을 CLOB 로 두고 엔티티 매핑을 맞춘다(§14 결정). 기본 `VARCHAR2(4000 CHAR)` 는 4,000바이트를 넘는 값을 **거부**한다(한글 3,900자 입력 실측, 잘라서 저장하지 않는다). SQL Server 는 키가 아닌 컬럼을 `NVARCHAR(2n)`, n 이 2,000 을 넘으면 `NVARCHAR(MAX)` 로 둔다(이모지는 UTF-16 2칸이다). 키에 든 컬럼은 §6 을 따른다. `bytea` 는 BLOB 를 유지하고 RAW(255) 로 줄이지 않는다 | 한글 3,900자, 이모지 100자, 255바이트 초과 이미지 저장·재조회 |
 | 문자열 비교 | MySQL `utf8mb4_0900_bin`, MariaDB `utf8mb4_nopad_bin`, SQL Server 는 컬럼에 `Korean_100_BIN2`(DB 기본은 CI 유지, 메타 식별자가 대소문자를 타지 않게), CUBRID 는 `utf8_bin` | 로그인 ID 대소문자 UNIQUE |
 | 뒤 공백 | SQL Server 만 차이가 남는다. 저하 목록에 올린다 | 프로브 고정 |
-| 공유 행 잠금 | Oracle 에는 `FOR SHARE` 가 없어 Hibernate 가 공유 잠금을 `FOR UPDATE` 로 만든다. 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다 | 동시성 시험 |
+| 공유 행 잠금 | Oracle 에는 `FOR SHARE` 가 없어 Hibernate 가 공유 잠금을 `FOR UPDATE` 로 만든다. SQL Server 의 공유 잠금(S)은 쓰기 잠금(U)과 충돌하지 않아 투표와 설문 편집이 줄을 서지 않으므로 읽기 잠금도 갱신 잠금으로 둔다(`NuriSqlServerDialect`). 두 벤더 모두 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다 | 동시성 시험 |
 | 빈 문자열 | Oracle·Tibero 는 `''` 가 NULL 이다. CHECK 의 `x <> ''` 는 NOT NULL 컬럼에서만 `x IS NOT NULL` 로 번역한다(현재 4개 모두 NOT NULL). NULL 허용 컬럼이면 정상 NULL 까지 거부하므로 그 항은 뺀다. `COALESCE(x, '') ~ p` 는 `x IS NOT NULL AND ...` 로 번역한다. 그냥 지우면 NULL 이 통과한다. 시드는 NULL 로 넣는다. NOT NULL 문자열 컬럼에 `""` 가 오면 400 으로 드러난다 | 통합 시험 |
-| 격리 수준 | MySQL·MariaDB 는 `READ COMMITTED` 를 코드(`VendorSqlConfig`)가 연결 풀에 강제한다. 설정 파일에 두면 시험 문맥과 생성물 설정이 따로 놓쳐 서버 기본(`REPEATABLE READ`)이 된다. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다. Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
-| NULL 순서 | 맞추지 않는다. PostgreSQL·Oracle 은 NULL 을 가장 큰 값으로, MySQL·MariaDB 는 가장 작은 값으로 정렬한다. 처음 적은 `hibernate.order_by.default_null_ordering=last` 는 오름차순만 맞추고 내림차순을 PostgreSQL 과 반대로 만들어 넣지 않았다(2026-11-04 단계 3 결정). §6.1 의 한계로 두고, 생성기 화면과 생성물 README 가 저하 안내(`null-order`)로 알린다 | - |
-| 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. SQLState 로 갈리지 않는 벤더는 오류 번호 표(`VendorSqlDialect.errorCodes()`)로 같은 응답을 낸다. 번호 표는 그 벤더에서만 쓴다 — Oracle 번호(1400·1722 등)가 MySQL·MariaDB 의 다른 오류 번호와 겹친다(단계 3 실측). 드라이버가 SQLState 를 바꿔 올리는 서버 오류(MySQL 의 0 나누기 1365 → 22001)는 번호로 먼저 500 으로 가른다 | 벤더별 위반 시험 |
+| 격리 수준 | MySQL·MariaDB 는 `READ COMMITTED` 를 코드(`VendorSqlConfig`)가 연결 풀에 강제한다. 설정 파일에 두면 시험 문맥과 생성물 설정이 따로 놓쳐 서버 기본(`REPEATABLE READ`)이 된다. SQL Server 는 `READ_COMMITTED_SNAPSHOT`·`ALLOW_SNAPSHOT_ISOLATION` 을 기동 때 확인하고, 잠금 격리인 `REPEATABLE READ` 를 연결에서 스냅숏 격리로 바꾼다(쓰기 충돌 3960). Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
+| NULL 순서 | 맞추지 않는다. PostgreSQL·Oracle 은 NULL 을 가장 큰 값으로, MySQL·MariaDB·SQL Server 는 가장 작은 값으로 정렬한다. 처음 적은 `hibernate.order_by.default_null_ordering=last` 는 오름차순만 맞추고 내림차순을 PostgreSQL 과 반대로 만들어 넣지 않았다(2026-11-04 단계 3 결정). §6.1 의 한계로 두고, 생성기 화면과 생성물 README 가 저하 안내(`null-order`)로 알린다 | - |
+| 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. SQLState 로 갈리지 않는 벤더는 오류 번호 표(`VendorSqlDialect.errorCodes()`)로 같은 응답을 낸다. 번호 표는 그 벤더에서만 쓴다 — Oracle 번호(1400·1722 등)가 MySQL·MariaDB 의 다른 오류 번호와 겹친다(단계 3 실측). 드라이버가 SQLState 를 바꿔 올리는 서버 오류(MySQL 의 0 나누기 1365 → 22001)는 번호로 먼저 500 으로 가른다. SQL Server 는 CHECK 와 FK 위반이 같은 547 이라 메시지의 제약 종류 낱말(` CHECK `)로 가른다 — 서버 메시지 언어가 한국어여도 그 낱말은 영어다(단계 4 실측) | 벤더별 위반 시험 |
 | JSON | Oracle 은 19c 기준 CLOB + `IS JSON` 과 Hibernate 매핑을 맞춘다. 23 계열 기능에 기대지 않는다 | 스키마 검증 |
 | UUID·시각 | 저장 범위가 같으면 DDL 을 Hibernate 벤더 기본 매핑에 맞추고, 다르면 ORM 매핑을 바꾼다. 시각은 시간대 없는 컬럼에 한국 벽시계 값으로 저장하고 엔티티는 `LocalDateTime` 이다(DEC-OPS-396). `Instant` 를 매핑하면 Oracle 드라이버가 읽기를 거부한다(ORA-18716) | 스키마 검증, 재로그인 |
 | CLOB 비교 | Oracle 의 CLOB 은 `<>` 로 비교할 수 없고(ORA-22848) `COALESCE(clob, '')` 도 형이 맞지 않는다(ORA-00932). JPQL 은 `function('text_differs', a, b)` 를 쓰고 `COALESCE` 를 뺀다. 네이티브 조회의 CLOB 은 방언이 문자열로 읽는다 | 콘텐츠 페이지 목록·검색 |
@@ -255,7 +255,7 @@ flowchart TD
 | 접두로 잘라야 하는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | MySQL, MariaDB | 번역을 멈춘다. 접두는 앞부분이 같은 정상 값을 거부하고, 식 인덱스의 번역(함수 키·계산 컬럼)은 유일하지 않다. 유일하지 않은 인덱스는 지금처럼 접두로 둔다(지금 스키마에는 없다) |
 | 1,700바이트를 넘는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | SQL Server | 번역을 멈춘다. 인덱스를 빼거나 긴 컬럼을 INCLUDE 로 옮기면 유일성이 사라진다. 유일하지 않은 인덱스는 지금처럼 빼거나 INCLUDE 로 둔다(지금 스키마에는 없다) |
 | 위 두 줄의 키 바이트 어림 | MySQL, MariaDB | 물리 타입별 크기로 센다(2026-11-04 실측: 문자열 글자당 4, `INT` 4, `BIGINT` 8, `DATE` 3, `DATETIME(p)` 5~8, `DECIMAL` 9자리마다 4, UUID 16). 한계 직전(`VARCHAR(767)` + `INT`)은 그대로 받고 직후는 해시 유니크·접두 인덱스로, 그래도 넘으면 번역을 멈춘다. 복합 접두는 합이 3,072바이트 안에 들게 자른다 |
-| 같은 어림 | SQL Server | 문자열만 실제 크기(2바이트 × 글자 수)로 세고 다른 타입은 모두 8바이트로 센다. 한계 직전의 정상 키(`NVARCHAR(847)` + `INT`)도 멈춘다. 지금 스키마에는 닿는 키가 없다. 승격할 때 물리 타입별 크기로 바꾸고 한계 직전·직후를 실측한다 |
+| 같은 어림 | SQL Server | 물리 타입별 크기로 센다(2026-11-04 실측: `NVARCHAR(n)` 2n, `INT` 4, `BIGINT` 8, `DATE` 3, `DATETIME2(p)` 6~8, `DECIMAL` 5~17, UUID 16). `NVARCHAR(848)` + `INT`·`NVARCHAR(846)` + `DATETIME2(6)` 은 1,700바이트로 들어가고 한 글자 더 길면 1,702바이트로 입력이 거부된다(만들 때는 경고만 낸다) |
 | GIN `ix_tb_web_log_url_trgm` | 전 벤더 | 뺀다. 결과는 같고 URL 부분 검색만 느려진다. 기간 조건과 함께 쓰며 저하로 표시 |
 | DEFERRABLE 자기 참조 FK | Oracle 외 | 시드는 부모 먼저. [MenuService.java:429](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java) 는 자식부터 지우도록 원본을 고친다 |
 | V2_145 동기화 트리거 2개 | 전 벤더 | 번역해 적용·동작 확인. 이행 전용이고 새 프로젝트에는 옛 데이터가 없으므로, Contract 뒤에는 입력에서 사라진다. 어댑터가 모르는 트리거가 생기면 `VENDOR_TRANSLATION_GAP` 으로 멈추는 것이 맞다는 실례다 |
@@ -274,6 +274,12 @@ flowchart TD
 | SQL Server | `=`·UNIQUE 가 뒤 공백을 무시한다 | 표준 패딩 비교. `BIN2` 로도 안 바뀐다 | `abc` 와 `abc ` 가 같은 키다. 키 값은 앱에서 잘라 저장하고 저하로 표시 |
 | SQL Server | 인덱스 키 1,700바이트 | 엔진 상한 | 긴 컬럼 키는 해시·INCLUDE 로 우회 |
 | SQL Server | 필터 유일 인덱스는 FK 대상이 못 된다 | 엔진 규칙 | `domain_name` 은 UNIQUE 유지, NULL 1행 제한 |
+| SQL Server | 세션 시간대가 없다 | DB 의 `SYSDATETIME()`·날짜 기본값이 서버 시계다 | 서버(컨테이너는 `TZ=Asia/Seoul`)가 한국 표준시여야 한다. 앱이 기동할 때 서버 시계가 +09:00 인지 본다 |
+| SQL Server | 잠금 조회 하나에만 대기 상한을 걸 수 없다 | `SET LOCK_TIMEOUT` 은 커밋 뒤에도 세션에 남아 풀로 샌다(실측) | 접속 인자 `lockTimeout=5000` 으로 세션의 모든 행 잠금 대기를 앱의 잠금 조회 상한에 묶는다(MySQL 과 같다). 응용 잠금(`sp_getapplock`)은 자기 상한(10초)을 쓴다 |
+| SQL Server | 스냅숏 두 설정이 DB 에 있어야 한다 | `READ_COMMITTED_SNAPSHOT` 이 꺼지면 읽기가 쓰기를 기다리고, `ALLOW_SNAPSHOT_ISOLATION` 이 꺼지면 일관 조회가 3952 로 실패한다 | 생성물 compose 의 DB 상태 검사가 켜고, 앱이 기동할 때 확인한다. 기관 DB 는 DBA 가 켠다 |
+| SQL Server | NULL 정렬 순서가 다르다 | NULL 을 가장 작은 값으로 본다 | MySQL·MariaDB 와 같다. 고정 저하(`null-order`)로 알린다 |
+| SQL Server | 같은 설문의 투표가 차례로 처리된다 | 공유 잠금이 쓰기 잠금과 충돌하지 않아 읽기 잠금도 갱신 잠금으로 둔다 | Oracle 과 같다. 결과는 같고 동시 처리량만 다르다 |
+| SQL Server | 갓 지운 키의 잠금 조회가 그 키를 잠근다 | 지운 행이 유령 레코드로 남아 잠금 읽기가 그 키에 잠금을 건다(처음부터 없던 키는 잠그지 않는다, 2026-11-04 실측) | 지운 회원을 두 요청이 함께 잠그면 둘째가 첫째를 기다린다. 결과는 더 엄격한 직렬화이고, 기다림이 5초를 넘으면 409 다. 그 순서를 만드는 경합 시험 하나는 원장이 이 사유로 뺀다 |
 | MySQL·MariaDB | FK 를 지연 검사할 수 없다, 부분 인덱스가 없다 | 엔진 기능 부재 | 쓰는 순서를 원본에서 맞춘다. 부분 인덱스는 성능 저하 |
 | MySQL | 앱 계정 트리거 생성에 서버 설정이나 높은 권한이 필요 | 바이너리 로그 안전 규칙(8.4 는 기본으로 켜져 있다) | `log_bin_trust_function_creators=1` 이 없으면 기준선의 트리거가 1419 로 멈춘다. 생성물 README·개발 compose·검증 컨테이너에 둔다 |
 | MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 복구 절차(남은 객체 삭제와 Flyway 실패 행 정리)와 일회용 DB 선행 적용은 벤더 생성물 README 의 '생성 뒤 스키마 변경' 절에 둔다 |

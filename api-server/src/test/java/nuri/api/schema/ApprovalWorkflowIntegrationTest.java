@@ -220,7 +220,7 @@ class ApprovalWorkflowIntegrationTest {
         CountDownLatch ready = new CountDownLatch(2);
         try (var executor = Executors.newFixedThreadPool(2); var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
-            try (var statement = blocker.prepareStatement("SELECT ifml_atrz_sn FROM tb_ifml_atrz_info WHERE ifml_atrz_sn=? FOR UPDATE")) {
+            try (var statement = blocker.prepareStatement(VendorTestSql.rowLock("SELECT ifml_atrz_sn FROM tb_ifml_atrz_info WHERE ifml_atrz_sn=? FOR UPDATE"))) {
                 statement.setLong(1, id);
                 statement.executeQuery().close();
             }

@@ -3,6 +3,7 @@ package nuri.foundation.core.exception;
 import nuri.foundation.core.persistence.MariaDbSqlDialect;
 import nuri.foundation.core.persistence.MySqlSqlDialect;
 import nuri.foundation.core.persistence.OracleSqlDialect;
+import nuri.foundation.core.persistence.SqlServerSqlDialect;
 import nuri.foundation.core.persistence.VendorSqlConfig;
 import nuri.foundation.core.persistence.VendorSqlDialect;
 import nuri.foundation.core.response.ApiResponse;
@@ -36,6 +37,7 @@ class GlobalExceptionHandlerTest {
     private final GlobalExceptionHandler oracle = new GlobalExceptionHandler(new OracleSqlDialect().errorCodes());
     private final GlobalExceptionHandler mariadb = new GlobalExceptionHandler(new MariaDbSqlDialect().errorCodes());
     private final GlobalExceptionHandler mysql = new GlobalExceptionHandler(new MySqlSqlDialect().errorCodes());
+    private final GlobalExceptionHandler sqlServer = new GlobalExceptionHandler(new SqlServerSqlDialect().errorCodes());
 
     @Test
     @DisplayName("[W1-04] 미매핑 경로(NoHandlerFoundException)는 500 이 아니라 404")
@@ -596,6 +598,50 @@ class GlobalExceptionHandlerTest {
         assertDatabaseResponse(other, uncategorized("HY000", 1013), 500, "C004", null);
         assertDatabaseResponse(other, uncategorized("HY000", 60), 500, "C004", null);
         assertDatabaseResponse(other, violation("72000", 1), 500, "C004", null);
+    }
+
+    // 아래 SQLState·번호·메시지는 SQL Server 2022·mssql-jdbc 13.6 이 실제로 올린 값이다(단계 4 실측). CHECK 와 FK 위반이 같은 547 이다.
+
+    private static org.springframework.dao.DataIntegrityViolationException sqlServerViolation(String sqlState, int code, String message) {
+        return new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
+                new java.sql.SQLException(message, sqlState, code));
+    }
+
+    @Test
+    @DisplayName("SQL Server 의 547 은 CHECK 위반이면 400, FK·참조 위반이면 409 다 — 메시지가 한국어여도 제약 종류 낱말로 가른다")
+    void sqlServerCheckAndForeignKeyShareOneNumber() throws Exception {
+        assertDatabaseResponse(sqlServer, sqlServerViolation("23000", 547,
+                "The INSERT statement conflicted with the CHECK constraint \"ck_tb_a_b\"."), 400, "C001", null);
+        assertDatabaseResponse(sqlServer, sqlServerViolation("23000", 547,
+                "INSERT 문이 CHECK 제약 조건 \"ck_tb_a_b\"과(와) 충돌했습니다."), 400, "C001", null);
+        assertDatabaseResponse(sqlServer, sqlServerViolation("23000", 547,
+                "The INSERT statement conflicted with the FOREIGN KEY constraint \"fk_tb_a_b\"."), 409, "C008", null);
+        assertDatabaseResponse(sqlServer, sqlServerViolation("23000", 547,
+                "The DELETE statement conflicted with the REFERENCE constraint \"fk_tb_a_b\"."), 409, "C008", null);
+        assertDatabaseResponse(mysql, sqlServerViolation("23000", 547,
+                "The INSERT statement conflicted with the CHECK constraint \"ck_tb_a_b\"."), 409, "C008", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"23000,515", "S0001,2628", "S0001,241", "S0001,245", "S0002,8115"})
+    @DisplayName("SQL Server 의 NOT NULL·길이 초과·형식·범위는 입력 오류다 — 길이·형식은 SQLState 가 S0001 이라 번호로 가른다")
+    void sqlServerInvalidValuesAreBadRequests(String state, int code) throws Exception {
+        assertDatabaseResponse(sqlServer, violation(state, code), 400, "C001", null);
+        assertDatabaseResponse(sqlServer, uncategorized(state, code), 400, "C001", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"S0051,1222", "40001,1205", "S0002,3960", "S0001,51002"})
+    @DisplayName("SQL Server 의 잠금 대기 초과·교착·스냅숏 갱신 충돌과 잡지 못한 응용 잠금은 409 다")
+    void sqlServerLockFailuresAreConflicts(String state, int code) throws Exception {
+        assertDatabaseResponse(sqlServer, uncategorized(state, code), 409, "C013", null);
+        assertDatabaseResponse(sqlServer, uncategorized("S0001", 51003), 500, "C004", null);
+    }
+
+    @Test
+    @DisplayName("SQL Server 의 0 나누기(8134)는 입력 오류가 아니라 서버 결함이다")
+    void sqlServerDivisionByZeroIsAServerFault() throws Exception {
+        assertDatabaseResponse(sqlServer, uncategorized("S0001", 8134), 500, "C004", null);
     }
 
     @Test

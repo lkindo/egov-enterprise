@@ -170,7 +170,7 @@ class RefreshTokenRotationConcurrencyIntegrationTest {
              var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
             try (var statement = blocker.prepareStatement(
-                    "SELECT user_id FROM tb_auth_rfsh_tk WHERE user_id=? FOR UPDATE")) {
+                    VendorTestSql.rowLock("SELECT user_id FROM tb_auth_rfsh_tk WHERE user_id=? FOR UPDATE"))) {
                 statement.setString(1, ESNTL_ID);
                 statement.executeQuery().close();
             }

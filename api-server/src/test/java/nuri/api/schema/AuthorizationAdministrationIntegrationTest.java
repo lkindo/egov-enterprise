@@ -127,8 +127,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void verifyMultipleGroupsCompleteSnapshotsAndRevocation() {
         service.createGroup(new CreateGroup("T_MULTI_A","테스트 A","\"".repeat(4000)));
         service.createGroup(new CreateGroup("T_MULTI_B","테스트 B",null));
-        assertThat(jdbc.queryForObject("SELECT LENGTH(chg_aftr_cn) FROM tb_authrt_chg_hstry "
-                + "WHERE authrt_cd='T_MULTI_A' AND chg_artcl_nm='authrt_expln'",Integer.class)).isEqualTo(4000);
+        assertThat(jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT LENGTH(chg_aftr_cn) FROM tb_authrt_chg_hstry "
+                + "WHERE authrt_cd='T_MULTI_A' AND chg_artcl_nm='authrt_expln'"),Integer.class)).isEqualTo(4000);
         long menu=jdbc.queryForObject("SELECT min(menu_sn) FROM tb_menu_info WHERE up_menu_sn IS NULL OR up_menu_sn=0",Long.class);
         List<Grant> a=List.of(new Grant("OPERATION","MENU_READ"),new Grant("NAVIGATION",Long.toString(menu)));
         // [2026-10-04 프로그램 목록 퇴역] 두 번째 그룹의 다른 기능 권한 예시를 PROGRAM_READ 에서 ADMCODE_READ 로 옮겼다(권한 스냅샷은 코드 이름순이다).

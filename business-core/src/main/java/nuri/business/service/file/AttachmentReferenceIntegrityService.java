@@ -50,8 +50,10 @@ public class AttachmentReferenceIntegrityService {
                     : "atch_file_sn IS NOT NULL";
             long remaining = maxReferences - checked;
             String references = vendorSql.limit("SELECT " + column + " FROM " + source.table() + " WHERE " + sourceFilter, remaining + 1);
-            String sql = "SELECT COUNT(*) AS checked, COALESCE(SUM(CASE WHEN EXISTS (SELECT 1 FROM tb_file_master m WHERE "
-                    + predicate + ") THEN 0 ELSE 1 END), 0) AS dangling FROM (" + references + ") src";
+            // 행마다 끊긴 참조인지 먼저 표시하고 바깥에서 더한다. SQL Server 는 집계 함수 안의 하위 조회를 받지 않는다(130).
+            String sql = "SELECT COUNT(*) AS checked, COALESCE(SUM(flagged.dangling), 0) AS dangling FROM (SELECT CASE WHEN EXISTS"
+                    + " (SELECT 1 FROM tb_file_master m WHERE " + predicate + ") THEN 0 ELSE 1 END AS dangling FROM (" + references
+                    + ") src) flagged";
             long[] counts = jdbc.queryForObject(sql, (rs, row) -> new long[] {rs.getLong("checked"), rs.getLong("dangling")});
             if (counts == null) throw new IllegalStateException("Reference census returned no aggregate");
             if (counts[0] > remaining) return new Result(checked, dangling, scanned, false);

@@ -85,15 +85,35 @@ function defaultClause(column) {
   }
 }
 
-const columnBytes = (table, name) => {
+/**
+ * 인덱스 키에서 컬럼이 차지하는 바이트. 키에 쓰이는 문자열은 NVARCHAR(n) 이라 2n 이고, 나머지는 물리 타입의 저장 크기다.
+ * NVARCHAR(848)+INT·NVARCHAR(846)+DATETIME2(6) 은 1,700바이트로 들어가고 한 글자 더 길면 1,702바이트로 거부된다(2026-11-04 실측).
+ */
+function columnBytes(table, name) {
   const { type } = table.columns.find(column => column.name === name);
-  return type.kind === 'varchar' ? type.length * 2 : 8;
-};
+  switch (type.kind) {
+    case 'varchar': return type.length * 2;
+    case 'uuid': return 16;
+    case 'timestamp': return type.precision <= 2 ? 6 : type.precision <= 4 ? 7 : 8;
+    case 'date': return 3;
+    case 'bigint': return 8;
+    case 'integer': return 4;
+    case 'numeric': {
+      const precision = type.precision ?? 38;
+      return precision <= 9 ? 5 : precision <= 19 ? 9 : precision <= 28 ? 13 : 17;
+    }
+    default: return gap(`SQL Server 인덱스 키로 쓸 수 없는 타입: ${table.name}.${name} ${type.kind}`);
+  }
+}
 
+/**
+ * 허가는 세션 번호(@@SPID)까지 맞아야 한다. 키만 보면 바깥 트랜잭션이 중단된 채 안쪽이 같은 허가를 넣을 때 바깥의 미커밋 키를 기다린다(실측).
+ * READCOMMITTED 힌트는 READ UNCOMMITTED 세션도 남의 미커밋 허가를 읽지 못하게 한다.
+ */
 const appendOnlyTrigger = (table, trigger) => `CREATE TRIGGER ${trigger.name} ON ${table.name} AFTER UPDATE, DELETE AS BEGIN
   SET NOCOUNT ON;
   IF NOT EXISTS (SELECT 1 FROM deleted) RETURN;
-  IF EXISTS (SELECT 1 FROM inserted) OR NOT EXISTS (SELECT 1 FROM tb_sys_ledger_permit WITH (READCOMMITTED) WHERE permit_key = ${string(trigger.permit)})
+  IF EXISTS (SELECT 1 FROM inserted) OR NOT EXISTS (SELECT 1 FROM tb_sys_ledger_permit WITH (READCOMMITTED) WHERE permit_key = ${string(trigger.permit)} AND permit_conn = @@SPID)
     THROW 51000, 'append-only ${table.name}', 1;
 END`;
 
@@ -126,8 +146,15 @@ function emitUnique(emission, table, unique, foreignKeyTargets) {
       const hash = `${longest}_hash`;
       emission.sql(`ALTER TABLE ${table.name} ADD ${hash} AS CAST(HASHBYTES('SHA2_256', ${longest}) AS BINARY(32)) PERSISTED`);
       emission.expect('columns', table.name, hash);
-      emission.sql(`CREATE UNIQUE INDEX ${unique.name} ON ${table.name} (${unique.columns.map(name => (name === longest ? hash : name)).join(', ')})${where}`);
-    } else emission.sql(`CREATE UNIQUE INDEX ${unique.name} ON ${table.name} (${unique.columns.join(', ')})${where}`);
+      const keyed = unique.columns.map(name => (name === longest ? hash : name));
+      emission.sql(`CREATE UNIQUE INDEX ${unique.name} ON ${table.name} (${keyed.join(', ')})${where}`);
+      emission.expectUnique(table.name, unique.name, keyed);
+    } else {
+      // 컬럼 하나는 해시로 바꿀 짝이 없다. 넘는 값은 NULL 아닌 유일 키처럼 입력이 거부된다(1946).
+      if (bytes > INDEX_KEY_BYTES) emission.degrade(`${unique.name}:length`, `${INDEX_KEY_BYTES}바이트를 넘는 값은 저장이 거부된다. 저장값이 짧다는 전제다`);
+      emission.sql(`CREATE UNIQUE INDEX ${unique.name} ON ${table.name} (${unique.columns.join(', ')})${where}`);
+      emission.expectUnique(table.name, unique.name, unique.columns);
+    }
     emission.expect('indexes', table.name, unique.name);
     emission.cover(unique.name, 'filtered-unique-index');
     return;
@@ -135,6 +162,7 @@ function emitUnique(emission, table, unique, foreignKeyTargets) {
   if (bytes > INDEX_KEY_BYTES) emission.degrade(`${unique.name}:length`, `${INDEX_KEY_BYTES}바이트를 넘는 값은 저장이 거부된다. 저장값이 짧다는 전제다`);
   emission.sql(`ALTER TABLE ${table.name} ADD CONSTRAINT ${unique.name} UNIQUE (${unique.columns.join(', ')})`);
   emission.expect('constraints', table.name, unique.name);
+  emission.expectUnique(table.name, unique.name, unique.columns);
   emission.cover(unique.name, 'unique');
 }
 
@@ -170,7 +198,10 @@ function emitIndex(emission, table, index) {
     const included = index.columns.filter(column => columnBytes(table, column.name) * 2 > INDEX_KEY_BYTES);
     const keyed = index.columns.filter(column => !included.includes(column));
     emission.sql(`CREATE INDEX ${index.name} ON ${table.name} (${keyed.map(render).join(', ')}) INCLUDE (${included.map(column => column.name).join(', ')})${where}`);
-  } else emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${index.columns.map(render).join(', ')})${where}`);
+  } else {
+    emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${index.columns.map(render).join(', ')})${where}`);
+    if (index.unique) emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));
+  }
   emission.expect('indexes', table.name, index.name);
   emission.cover(index.name, 'index');
 }
@@ -193,6 +224,7 @@ function emitSchema(model) {
       lines.push(`  CONSTRAINT ${table.primaryKey.name} PRIMARY KEY${bytes > CLUSTERED_KEY_BYTES ? ' NONCLUSTERED' : ''} (${table.primaryKey.columns.join(', ')})`);
       emission.cover(table.primaryKey.name, 'primary-key');
       emission.expect('constraints', table.name, table.primaryKey.name);
+      emission.expectUnique(table.name, table.primaryKey.name, table.primaryKey.columns);
     }
     emission.sql(`CREATE TABLE ${table.name} (\n${lines.join(',\n')}\n)`);
   }
@@ -212,8 +244,13 @@ function emitSchema(model) {
     }
     for (const index of table.indexes) emitIndex(emission, table, index);
   }
-  emission.sql(`CREATE TABLE tb_sys_ledger_permit (permit_key NVARCHAR(50) COLLATE ${COLLATION} NOT NULL PRIMARY KEY)`);
+  // 응용 잠금은 sp_getapplock 이라 슬롯 표가 없다(SqlServerSqlDialect).
+  emission.sql(`CREATE TABLE tb_sys_ledger_permit (permit_key NVARCHAR(50) COLLATE ${COLLATION} NOT NULL, permit_conn INT NOT NULL,`
+    + ' CONSTRAINT pk_tb_sys_ledger_permit PRIMARY KEY (permit_key, permit_conn))');
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_key');
+  emission.expect('columns', 'tb_sys_ledger_permit', 'permit_conn');
+  emission.expect('constraints', 'tb_sys_ledger_permit', 'pk_tb_sys_ledger_permit');
+  emission.expectUnique('tb_sys_ledger_permit', 'pk_tb_sys_ledger_permit', ['permit_key', 'permit_conn']);
   for (const table of model.tables) {
     for (const trigger of table.triggers) {
       emission.sql(trigger.kind === 'append-only' ? appendOnlyTrigger(table, trigger) : syncPairTrigger(table, trigger), { raw: true });
@@ -222,6 +259,7 @@ function emitSchema(model) {
     }
   }
   emission.degradations.push({ name: 'trailing-space', reason: '= 와 UNIQUE 가 뒤 공백을 무시한다. 키 값은 앱에서 잘라 저장한다' });
+  emission.degradations.push({ name: 'null-order', reason: 'NULL 을 가장 작은 값으로 정렬해 NULL 이 들 수 있는 정렬 키의 순서가 PostgreSQL 과 반대다' });
   return assertCoverage(model, emission);
 }
 

@@ -14,6 +14,32 @@
  */
 const MYSQL_URL_PARAMETERS = "sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin";
 const MARIADB_URL_PARAMETERS = "sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin";
+/**
+ * SQL Server 의 접속 인자. 행 잠금 대기를 앱의 잠금 조회 상한(5초)과 같게 묶는다 — SET LOCK_TIMEOUT 은 커밋 뒤에도 세션에 남아 풀로 새고,
+ * 이 인자가 없으면 대기 상한이 없다(2026-11-04 실측). 번들 DB 는 같은 도커 망이라 암호화를 끈다. 계약 시험이 application.yml 의 상한과 대조한다.
+ */
+const MSSQL_URL_PARAMETERS = 'encrypt=false;lockTimeout=5000';
+
+/** sqlcmd. 이미지의 인증서를 믿는다(-C). 같은 클라이언트로 엔진 준비와 compose 상태 검사를 한다. */
+export const SQLCMD = '/opt/mssql-tools18/bin/sqlcmd -C';
+/** 서버 콜레이션은 N 없는 문자열 리터럴의 코드 페이지다. 표의 문자열 컬럼은 어댑터가 이진 콜레이션으로 따로 둔다. */
+export const MSSQL_SERVER_COLLATION = 'Korean_100_CI_AS';
+
+/**
+ * SQL Server 이미지는 앱 DB 와 계정을 만들지 않는다. 엔진 준비와 생성물 compose 의 DB 상태 검사가 이 문장을 쓴다.
+ * 스냅숏 두 설정이 꺼지면 앱이 기동하지 않는다(SqlServerSqlDialect.assertSession). 상태 검사가 되풀이해 부르므로 이미 된 일은 다시 하지 않는다 —
+ * READ_COMMITTED_SNAPSHOT 을 다시 켜면 ROLLBACK IMMEDIATE 가 앱 연결을 끊는다. 한 배치라 USE 뒤 문장은 동적 SQL 로 그 DB 에서 돈다(2026-11-04 실측).
+ * `password`·`login` 은 셸이 펼칠 변수일 수 있다. 값을 인자에 두지 않는다.
+ */
+export function mssqlInitialization(password, { database, login }) {
+  return [`IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}`,
+    `IF (SELECT is_read_committed_snapshot_on FROM sys.databases WHERE name = '${database}') = 0 ALTER DATABASE ${database} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE`,
+    `IF (SELECT snapshot_isolation_state FROM sys.databases WHERE name = '${database}') = 0 ALTER DATABASE ${database} SET ALLOW_SNAPSHOT_ISOLATION ON`,
+    `IF SUSER_ID('${login}') IS NULL CREATE LOGIN ${login} WITH PASSWORD = N'${password}', CHECK_POLICY = OFF, DEFAULT_DATABASE = ${database}`,
+    `EXEC ('USE ${database}; IF USER_ID(''${login}'') IS NULL CREATE USER ${login} FOR LOGIN ${login}; IF IS_ROLEMEMBER(''db_owner'', ''${login}'') = 0 ALTER ROLE db_owner ADD MEMBER ${login}')`].join('; ');
+}
+
+const MSSQL_IMAGE = 'mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090';
 
 export const VENDOR_SOURCE = Object.freeze({
   oracle: Object.freeze({
@@ -133,5 +159,49 @@ export const VENDOR_SOURCE = Object.freeze({
     composeProd: [[/^(\s*)POSTGRES_USER: (\$\{DB_USERNAME:\?[^\n]*\})$/m, '$1MYSQL_USER: $2'],
       // MYSQL_ROOT_PASSWORD 는 root 비밀번호다. 앱 자격이 새도 관리자 자격까지 번지지 않게 나눈다.
       [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1MYSQL_PASSWORD: $2\n$1MYSQL_ROOT_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}']],
+  }),
+  mssql: Object.freeze({
+    flywayPlugin: 'org.flywaydb:flyway-sqlserver',
+    driverCoordinate: 'com.microsoft.sqlserver:mssql-jdbc:13.6.0.jre11',
+    driverClass: 'com.microsoft.sqlserver.jdbc.SQLServerDriver',
+    urlParameters: MSSQL_URL_PARAMETERS,
+    url: `jdbc:sqlserver://localhost:1433;databaseName=egovdb;${MSSQL_URL_PARAMETERS}`,
+    dialect: 'nuri.foundation.core.persistence.NuriSqlServerDialect',
+    composeUrl: `jdbc:sqlserver://db:1433;databaseName=egovdb;${MSSQL_URL_PARAMETERS}`,
+    composeVolume: 'mssql_data',
+    // 개발용 Developer 에디션이다. 이미지가 앱 DB·계정을 만들지 않아 상태 검사가 만든다(되풀이해도 같은 결과다). 세션 시간대가 없어 서버 TZ 가 DB 시각이다.
+    // sa 비밀번호는 SQL Server 의 복잡도 규칙(대문자·소문자·숫자·기호 중 셋, 8자 이상)을 따라야 서버가 기동한다.
+    composeService: `  db:
+    image: ${MSSQL_IMAGE}
+    container_name: egov-mssql
+    restart: always
+    ports:
+      - "127.0.0.1:1433:1433"
+    environment:
+      TZ: Asia/Seoul
+      ACCEPT_EULA: "Y"
+      MSSQL_PID: Developer
+      MSSQL_COLLATION: ${MSSQL_SERVER_COLLATION}
+      # ⚠ 개발 전용 자격이다. 운영 오버레이가 DB_USERNAME/DB_PASSWORD/DB_ADMIN_PASSWORD 로 덮어쓴다.
+      MSSQL_SA_PASSWORD: Egov_sa123
+      APP_DB_USER: egov
+      APP_DB_PASSWORD: egov123
+    volumes:
+      - mssql_data:/var/opt/mssql
+    healthcheck:
+      # \`$$\` 는 Compose 호스트 치환을 피하고 컨테이너 셸에서 \`$\` 로 전달하기 위한 이스케이프다.
+      test: ["CMD-SHELL", "${SQLCMD} -b -S localhost -U sa -P \\"$\${MSSQL_SA_PASSWORD}\\" -Q \\"${mssqlInitialization('$${APP_DB_PASSWORD}', { database: 'egovdb', login: '$${APP_DB_USER}' })}\\""]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    networks:
+      - egov-net
+
+`,
+    composeProd: [[/^(\s*)POSTGRES_USER: (\$\{DB_USERNAME:\?[^\n]*\})$/m, '$1APP_DB_USER: $2'],
+      // MSSQL_SA_PASSWORD 는 sa 비밀번호다. 앱 자격이 새도 관리자 자격까지 번지지 않게 나눈다. Developer 에디션은 운영에 쓸 수 없어 에디션을 받는다.
+      [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_DB_PASSWORD: $2\n$1MSSQL_SA_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}'
+        + '\n$1MSSQL_PID: ${MSSQL_PID:?운영 SQL Server 에디션(MSSQL_PID: Standard·Enterprise 또는 제품 키)이 필요합니다}']],
   }),
 });

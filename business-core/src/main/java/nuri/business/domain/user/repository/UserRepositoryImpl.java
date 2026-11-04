@@ -24,6 +24,21 @@ public class UserRepositoryImpl implements UserRepositoryCustom {
 
     private final jakarta.persistence.EntityManager entityManager;
 
+    private final nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
+
+    /** 삭제 잠금 문장. 통합 시험이 같은 문장으로 자식 FK 입력이 기다리는지 본다. 바인딩 이름은 {@code esntlId} 다. */
+    public static String lockForDeletionSql(nuri.foundation.core.persistence.VendorSqlDialect vendorSql) {
+        return vendorSql.selectForLock("esntl_id", "tb_user_info", "WHERE esntl_id = :esntlId",
+                nuri.foundation.core.persistence.VendorSqlDialect.RowLock.FOR_UPDATE);
+    }
+
+    @Override
+    public java.util.Optional<String> lockForDeletion(String esntlId) {
+        java.util.List<?> rows = entityManager.createNativeQuery(lockForDeletionSql(vendorSql)).setParameter("esntlId", esntlId)
+                .getResultList();
+        return rows.stream().findFirst().map(String::valueOf);
+    }
+
     /**
      * [2026-10-18] 이미 읽어 둔 사용자 행을 쓰기 잠금으로 다시 읽어 메모리 상태를 DB 의 현재 값으로 덮는다.
      *

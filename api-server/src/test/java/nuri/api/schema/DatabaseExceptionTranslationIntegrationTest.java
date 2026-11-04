@@ -64,6 +64,13 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     arguments("1264", INPUT_PROBE_INSERT + " (decimal_value) VALUES (?)", "40000", 400, "C001"),
                     arguments("1366", INPUT_PROBE_INSERT + " (int_value) VALUES (?)", "private-database-detail", 400, "C001"),
                     arguments("1365", INPUT_PROBE_INSERT + " (int_value) VALUES (1 / CAST(? AS SIGNED))", "0", 500, "C004"));
+            // 범위·형식·날짜 오류는 SQLState 가 S0001·S0002 라 번호로 가른다. 없는 날짜(2월 31일)도 형식 오류(241)다(2026-11-04 실측).
+            case MSSQL -> Stream.of(
+                    arguments("8115", "SELECT CAST(? AS DECIMAL(3,0))", "40000", 400, "C001"),
+                    arguments("241", "SELECT CAST(? AS DATE)", "invalid-date", 400, "C001"),
+                    arguments("241", "SELECT CAST(? AS DATE)", "2026-02-31", 400, "C001"),
+                    arguments("245", "SELECT CAST(? AS INTEGER)", "private-database-detail", 400, "C001"),
+                    arguments("8134", "SELECT 1 / CAST(? AS INTEGER)", "0", 500, "C004"));
         };
     }
 
@@ -78,6 +85,9 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     arguments("1048", null, 400, "C001"), arguments("4025", "-1", 400, "C001"), arguments("1062", "1", 409, "C008"));
             case MYSQL -> Stream.of(
                     arguments("1048", null, 400, "C001"), arguments("3819", "-1", 400, "C001"), arguments("1062", "1", 409, "C008"));
+            // CHECK 는 FK 와 같은 547 이라 처리기가 메시지의 제약 종류로 가른다. FK 쪽은 actualForeignKeyViolationIsAConflict 가 본다.
+            case MSSQL -> Stream.of(
+                    arguments("515", null, 400, "C001"), arguments("547", "-1", 400, "C001"), arguments("2627", "1", 409, "C008"));
         };
     }
 
@@ -115,6 +125,7 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     case POSTGRESQL -> "22001";
                     case ORACLE -> "12899";
                     case MARIADB, MYSQL -> "1406";
+                    case MSSQL -> "2628";
                 });
                 assertHttpResponse(failure, 400, "C001", null);
             } finally {
@@ -153,7 +164,7 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                 owner.setAutoCommit(false);
                 contender.setAutoCommit(false);
                 try {
-                    ownerJdbc.queryForObject("SELECT id FROM response_lock_probe WHERE id=1 FOR UPDATE", Integer.class);
+                    ownerJdbc.queryForObject(VendorTestSql.rowLock("SELECT id FROM response_lock_probe WHERE id=1 FOR UPDATE"), Integer.class);
                     JdbcTemplate contenderJdbc = jdbc(contender);
                     VendorTestSql.boundLockWait(contenderJdbc, "100ms");
                     // 세션 범위 대기 상한이 없는 벤더는 잠금 문장이 대기를 정한다. 이 연결은 시험이 닫는다.
@@ -169,7 +180,7 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                 }
                 // 첫 잠금이 풀린 뒤 같은 요청은 실제로 진행할 수 있다.
                 assertEquals(1, jdbc(contender).queryForObject(
-                        "SELECT id FROM response_lock_probe WHERE id=1 FOR UPDATE NOWAIT", Integer.class));
+                        VendorTestSql.rowLock("SELECT id FROM response_lock_probe WHERE id=1 FOR UPDATE NOWAIT"), Integer.class));
                 contender.rollback();
             } finally {
                 owner.setAutoCommit(true);
@@ -201,13 +212,20 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     failure = queryFailure(jdbc, "SELECT SLEEP(CAST(? AS SIGNED))", "5");
                     jdbc.setQueryTimeout(-1);
                 }
+                // 드라이버가 WAITFOR 를 문장 취소로 끊고 번호 없는 SQLTimeoutException(HY008)으로 올린다(2026-11-04 실측).
+                case MSSQL -> {
+                    jdbc.setQueryTimeout(1);
+                    failure = queryFailure(jdbc, "DECLARE @nuri_wait INT = CAST(? AS INT); WAITFOR DELAY '00:00:05'", "5");
+                    jdbc.setQueryTimeout(-1);
+                }
                 default -> throw new IllegalStateException();
             }
             assertTrue(VendorTestSql.isStatementTimeout(jdbc, databaseError(failure)),
                     () -> "문장 시간 초과여야 한다: " + VendorTestSql.describe(databaseError(failure)));
             assertHttpResponse(failure, 503, "S002", "5");
-            // FROM DUAL 은 Oracle 19c 가 요구하고 MySQL·MariaDB 도 받는다. PostgreSQL 만 받지 않는다.
-            assertEquals(1, jdbc.queryForObject(VendorTestSql.vendorRun() ? "SELECT 1 FROM DUAL" : "SELECT 1", Integer.class));
+            // FROM DUAL 은 Oracle 19c 가 요구하고 MySQL·MariaDB 도 받는다. PostgreSQL 과 SQL Server 는 받지 않는다.
+            boolean dual = VendorTestSql.vendorRun() && VendorTestSql.vendor() != VendorTestSql.Vendor.MSSQL;
+            assertEquals(1, jdbc.queryForObject(dual ? "SELECT 1 FROM DUAL" : "SELECT 1", Integer.class));
         }
     }
 
@@ -227,6 +245,7 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     case POSTGRESQL -> "23503";
                     case ORACLE -> "2292";
                     case MARIADB, MYSQL -> "1451";
+                    case MSSQL -> "547";
                 });
                 assertHttpResponse(failure, 409, "C008", null);
             } finally {
@@ -247,7 +266,14 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                 if (jdbc.getQueryTimeout() > 0) {
                     statement.setQueryTimeout(jdbc.getQueryTimeout());
                 }
-                statement.execute();
+                // 행을 끝까지 읽는다. SQL Server 는 SELECT 식의 오류와 행 잠금 대기 초과를 행을 낼 때 올린다(2026-11-04 실측).
+                if (statement.execute()) {
+                    try (var rows = statement.getResultSet()) {
+                        while (rows.next()) {
+                            rows.getObject(1);
+                        }
+                    }
+                }
             }
             return null;
         }));

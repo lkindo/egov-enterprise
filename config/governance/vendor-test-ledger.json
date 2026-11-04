@@ -56,7 +56,8 @@
           "vendors": {
             "oracle": "읽어 온 바이트를 PostgreSQL 함수로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다",
             "mariadb": "읽어 온 바이트를 PostgreSQL 함수(convert_to)로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다",
-            "mysql": "읽어 온 바이트를 PostgreSQL 함수(convert_to)로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다"
+            "mysql": "읽어 온 바이트를 PostgreSQL 함수(convert_to)로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다",
+            "mssql": "읽어 온 바이트를 PostgreSQL 함수(convert_to)로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다"
           }
         }
       ]
@@ -209,7 +210,15 @@
     {
       "test": "CommunityDecisionConcurrencyIntegrationTest.java",
       "category": "fixture-port",
-      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다"
+      "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다",
+      "vendorExclusions": [
+        {
+          "method": "lateFirstJoinCannotReplaceACommittedApprovalOrCommitAnotherRequest",
+          "vendors": {
+            "mssql": "SQL Server 는 갓 지운 행이 유령 레코드로 남아 그 키의 잠금 조회가 키를 잠근다(2026-11-04 실측). 시험이 먼저 지운 회원 행을 두 가입 요청이 함께 잠그면 둘째가 첫째를 기다려, 시험이 만드는 '늦은 요청이 부재를 본 뒤 다른 요청이 먼저 커밋' 순서가 생기지 않는다. 결과는 더 엄격한 직렬화다(설계서 §6.1)"
+          }
+        }
+      ]
     },
     {
       "test": "CommunityTemplateIntegrityIntegrationTest.java",
@@ -459,7 +468,8 @@
         {
           "method": "concurrentVotersShareThePollLockAndDoNotWaitForEachOther",
           "vendors": {
-            "oracle": "Oracle 에는 공유 행 잠금이 없어 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1)"
+            "oracle": "Oracle 에는 공유 행 잠금이 없어 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1)",
+            "mssql": "SQL Server 의 공유 잠금은 편집의 갱신 잠금과 충돌하지 않아 읽기 잠금도 갱신 잠금으로 둔다(NuriSqlServerDialect). 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1)"
           }
         }
       ]
@@ -704,7 +714,8 @@
           "vendors": {
             "oracle": "PostgreSQL 카탈로그를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다",
             "mariadb": "PostgreSQL 카탈로그(pg_constraint)를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다",
-            "mysql": "PostgreSQL 카탈로그(pg_constraint)를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다"
+            "mysql": "PostgreSQL 카탈로그(pg_constraint)를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다",
+            "mssql": "PostgreSQL 카탈로그(pg_constraint)를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다"
           }
         }
       ]

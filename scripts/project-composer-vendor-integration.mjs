@@ -179,13 +179,17 @@ export function integrationEnvironment(vendorId, integration, { port, password, 
 /** 자식 프로세스의 환경. 벤더 값이 호스트 값을 이긴다. */
 export const childEnvironment = (vendorId, integration, handle, extra = {}, base = process.env) => ({ ...base, ...integrationEnvironment(vendorId, integration, handle), ...extra });
 
+const AUTOCOMMIT_CLIENTS = new Set(['mssql']);
+
 /** 이 실행이 띄운 DB 임을 남긴다. 시험은 이 토큰이 없는 DB 에는 쓰지 않는다. 대조와 카탈로그 시험이 끝난 뒤라 스키마 대조에 섞이지 않는다. */
 function markOwner(handle) {
   const owner = randomBytes(16).toString('hex');
+  // sqlcmd 는 문장마다 자동 커밋이라 열린 트랜잭션이 없고, COMMIT 은 3902 오류다.
+  const commit = AUTOCOMMIT_CLIENTS.has(handle.engine.vendor ?? handle.id) ? [] : [{ sql: 'COMMIT' }];
   const { errors } = runStatements(handle, [
     { sql: 'CREATE TABLE vendor_test_owner (token VARCHAR(64) PRIMARY KEY)' },
     { sql: `INSERT INTO vendor_test_owner (token) VALUES ('${owner}')` },
-    { sql: 'COMMIT' }]);
+    ...commit]);
   if (errors.length) throw new Error(`소유 표시를 남기지 못했다: ${errors[0].error}`);
   return owner;
 }

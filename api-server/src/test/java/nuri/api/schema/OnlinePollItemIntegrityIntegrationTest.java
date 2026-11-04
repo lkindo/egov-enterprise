@@ -214,10 +214,10 @@ class OnlinePollItemIntegrityIntegrationTest {
                 assertThat(waiting).as("delete waits on the editing parent").isTrue();
                 // Waiting only at the final parent DELETE is too late: child locks would deadlock
                 // the editor's eventual flush. A separate connection must still lock both children.
-                assertThat(jdbc.queryForList("""
+                assertThat(jdbc.queryForList(VendorTestSql.rowLock("""
                         SELECT poll_artcl_sn FROM tb_onln_poll_artcl WHERE poll_sn=?
                         ORDER BY poll_artcl_sn FOR UPDATE SKIP LOCKED
-                        """, Long.class, poll)).containsExactly(first, second);
+                        """), Long.class, poll)).containsExactly(first, second);
             } finally {
                 releaseEdit.countDown();
             }
