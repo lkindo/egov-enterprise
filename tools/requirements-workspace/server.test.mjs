@@ -53,6 +53,7 @@ test('reload cookies are independent opaque session handles and reject forged or
   assert.equal(renewed.status, 200);
   assert.ok(renewed.headers.get('set-cookie')?.split(';')[0] !== forged, 'launch proof must issue a fresh handle instead of adopting caller input');
   assert.ok(/; HttpOnly; SameSite=Strict; Path=\/$/.test(renewed.headers.get('set-cookie') ?? ''), 'the handle must remain in an HttpOnly Strict cookie');
+  assert.ok(/; Secure(?:;|$)/.test(renewed.headers.get('set-cookie') ?? ''), 'the session handle must use the default Secure cookie policy');
   assert.equal((await fetch(`${app.url}/api/session`, { headers: { cookie: forged } })).status, 403, 'forged handle must remain invalid after bootstrap');
   assert.equal((await fetch(`${other.url}/api/session`, { headers: { cookie: first.cookie } })).status, 403);
   assert.equal((await fetch(`${app.url}/api/state`, { headers: { cookie: first.cookie } })).status, 403, 'a reload cookie cannot replace the API header token');

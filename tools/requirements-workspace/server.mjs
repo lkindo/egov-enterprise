@@ -82,7 +82,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
         if (!resumedToken) {
           const handle = randomBytes(32).toString('base64url');
           resumeSessions.set(handleHash(handle), token);
-          response.setHeader('Set-Cookie', `${cookieName}=${handle}; HttpOnly; SameSite=Strict; Path=/`);
+          response.setHeader('Set-Cookie', `${cookieName}=${handle}; Secure; HttpOnly; SameSite=Strict; Path=/`);
         }
         json(response, 200, { token }); return;
       }
