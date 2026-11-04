@@ -559,13 +559,75 @@
     {
       "id": "mssql",
       "label": "SQL Server",
-      "status": "preview",
+      "status": "certified",
       "ci": true,
       "engines": [
         {
           "version": "2022",
           "engine": "mssql",
-          "evidence": null
+          "evidence": {
+            "runId": "mssql-c51dc0424f26-09ecca56",
+            "commit": "c51dc0424f262a3f1c09ea73104d2a873fc5e02d",
+            "recordedAt": "2026-11-05T05:13:42.257+09:00",
+            "inputHash": "3fe14d3a5e24eb8ff287064aa549e48478f8d881f71b32995d9c23ca2df8e4da",
+            "modelHash": "417581a94a87404ba81bae0ba1f8bd9bdee92f020c6c5a0d769c590cd5a7bd27",
+            "image": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090",
+            "imageOrigin": "official:mcr",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "2d68343493fabc26582c887ff8831d9801874a79db79fd75fc198dd6544cbba9"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 446,
+                "degradations": 7
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 397,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1068,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         }
       ],
       "evidenceInputs": [
@@ -610,8 +672,7 @@
           }
         ],
         "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
-      },
-      "reason": "앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
+      }
     },
     {
       "id": "cubrid",
