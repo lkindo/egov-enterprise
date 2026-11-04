@@ -316,7 +316,8 @@ test('SQL Server keys its ledger permit by session and decides the key limit at 
   const emission = mssqlAdapter.emitSchema(sample);
   const sql = emission.statements.map(statement => statement.sql);
   // 키만인 허가 표는 바깥 트랜잭션의 미커밋 키를 안쪽이 기다렸다(1222, 2026-11-04 실측). 앱과 트리거가 같은 세션 번호를 쓴다.
-  assert.ok(sql.includes('CREATE TABLE tb_sys_ledger_permit (permit_key NVARCHAR(50) COLLATE Korean_100_BIN2 NOT NULL, permit_conn INT NOT NULL, CONSTRAINT pk_tb_sys_ledger_permit PRIMARY KEY (permit_key, permit_conn))'));
+  assert.ok(sql.includes('CREATE TABLE tb_sys_ledger_permit (permit_key NVARCHAR(50) COLLATE Korean_100_BIN2 NOT NULL, permit_conn INT NOT NULL DEFAULT @@SPID, CONSTRAINT pk_tb_sys_ledger_permit PRIMARY KEY (permit_key, permit_conn))'),
+    '연결 번호를 적지 않은 허가 입력도 자기 세션의 허가다(차등 시험의 트리거 전이)');
   assert.ok(dialect.includes('INSERT INTO tb_sys_ledger_permit (permit_key, permit_conn) VALUES (?1, @@SPID)'), '앱의 허가 입력이 같은 열을 쓴다');
   assert.ok(dialect.includes('DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?1 AND permit_conn = @@SPID'), '앱의 회수가 같은 키 전체로 찾는다');
   assert.ok(sql.some(statement => statement.includes("FROM tb_sys_ledger_permit WITH (READCOMMITTED) WHERE permit_key = N'app.audit_retention' AND permit_conn = @@SPID)")),

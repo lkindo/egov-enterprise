@@ -245,7 +245,8 @@ function emitSchema(model) {
     for (const index of table.indexes) emitIndex(emission, table, index);
   }
   // 응용 잠금은 sp_getapplock 이라 슬롯 표가 없다(SqlServerSqlDialect).
-  emission.sql(`CREATE TABLE tb_sys_ledger_permit (permit_key NVARCHAR(50) COLLATE ${COLLATION} NOT NULL, permit_conn INT NOT NULL,`
+  // 연결 번호를 적지 않은 입력도 자기 세션의 허가가 된다(MySQL 계열의 CONNECTION_ID() 기본값과 같다).
+  emission.sql(`CREATE TABLE tb_sys_ledger_permit (permit_key NVARCHAR(50) COLLATE ${COLLATION} NOT NULL, permit_conn INT NOT NULL DEFAULT @@SPID,`
     + ' CONSTRAINT pk_tb_sys_ledger_permit PRIMARY KEY (permit_key, permit_conn))');
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_key');
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_conn');
