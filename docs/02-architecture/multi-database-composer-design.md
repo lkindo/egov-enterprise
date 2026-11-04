@@ -749,7 +749,7 @@ SQL Server 2022 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `pre
 | 키 바이트 | §6 표 | 물리 타입별로 센다 |
 | upsert | `MERGE ... WITH (HOLDLOCK)` 는 같은 키에 8개 연결이 1,200번 경합해도 오류가 없다 | 그대로 쓴다 |
 | 클라이언트 | `sqlcmd -h -1 -W` 와 `SET NOCOUNT ON` 은 값만 낸다. `-b` 는 첫 오류에서 실패 코드로 끝난다 | 메타 조회를 엄격히 읽는다(따옴표 이름은 멈춘다) |
-| 초기화 | 이미지가 앱 DB·계정을 만들지 않는다. 한 배치에서 `CREATE DATABASE` 뒤 `USE` 는 동적 SQL 이어야 한다. `READ_COMMITTED_SNAPSHOT` 을 다시 켜면 `ROLLBACK IMMEDIATE` 가 연결을 끊는다 | 엔진 준비와 생성물 compose 의 DB 상태 검사가 같은 문장(`mssqlInitialization`)을 쓴다. 이미 된 일은 다시 하지 않는다. 비밀번호는 명령 인자에 두지 않는다 — 관리자는 `SQLCMDPASSWORD`, 앱 계정은 환경에서 받은 sqlcmd 변수이고 작은따옴표는 두 번 쓴다. 앱 계정 이름은 SQL 식별자로 쓰여 영문·숫자·밑줄만 받는다(독립 검토 지적) |
+| 초기화 | 이미지가 앱 DB·계정을 만들지 않는다. 한 배치에서 `CREATE DATABASE` 뒤 `USE` 는 동적 SQL 이어야 한다. `READ_COMMITTED_SNAPSHOT` 을 다시 켜면 `ROLLBACK IMMEDIATE` 가 연결을 끊는다 | 엔진 준비와 생성물 compose 의 DB 상태 검사가 같은 문장(`mssqlInitialization`)을 쓴다. 이미 된 일은 다시 하지 않는다. 비밀번호는 명령 인자에 두지 않는다 — 관리자는 `SQLCMDPASSWORD`, 앱 계정은 환경에서 받은 sqlcmd 변수이고 작은따옴표는 두 번 쓴다. 앱 계정 이름은 대괄호 식별자로 써서 예약어·숫자로 시작하는 이름도 되고, `]`·`'` 가 없게 영문·숫자·밑줄만 받는다(독립 검토 지적) |
 
 ### 통합 시험(원본 저장소, demo 번역 입력)
 

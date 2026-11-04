@@ -34,19 +34,20 @@ export const MSSQL_DATABASE_COLLATION = 'Korean_100_CI_AS';
  * 스냅숏 두 설정이 꺼지면 앱이 기동하지 않는다(SqlServerSqlDialect.assertSession). 상태 검사가 되풀이해 부르므로 이미 된 일은 다시 하지 않는다 —
  * READ_COMMITTED_SNAPSHOT 을 다시 켜면 ROLLBACK IMMEDIATE 가 앱 연결을 끊는다. 한 배치라 USE 뒤 문장은 동적 SQL 로 그 DB 에서 돈다(2026-11-04 실측).
  * 계정 이름과 비밀번호는 sqlcmd 변수 `$(NURI_APP_LOGIN)`·`$(NURI_APP_PASSWORD)` 로 받는다. sqlcmd 는 이 변수를 환경에서 채운다(실측) — 값이 명령행에 오지 않는다.
+ * 계정 이름은 식별자 자리에서 대괄호로 감싼다 — 예약어(`user`·`public`)나 숫자로 시작하는 이름도 PostgreSQL 번들처럼 쓸 수 있다(독립 검토 지적).
  */
 export function mssqlInitialization(database) {
   const login = '$(NURI_APP_LOGIN)';
   return [`IF DB_ID('${database}') IS NULL CREATE DATABASE ${database} COLLATE ${MSSQL_DATABASE_COLLATION}`,
     `IF (SELECT is_read_committed_snapshot_on FROM sys.databases WHERE name = '${database}') = 0 ALTER DATABASE ${database} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE`,
     `IF (SELECT snapshot_isolation_state FROM sys.databases WHERE name = '${database}') = 0 ALTER DATABASE ${database} SET ALLOW_SNAPSHOT_ISOLATION ON`,
-    `IF SUSER_ID('${login}') IS NULL CREATE LOGIN ${login} WITH PASSWORD = N'$(NURI_APP_PASSWORD)', CHECK_POLICY = OFF, DEFAULT_DATABASE = ${database}`,
-    `EXEC ('USE ${database}; IF USER_ID(''${login}'') IS NULL CREATE USER ${login} FOR LOGIN ${login}; IF IS_ROLEMEMBER(''db_owner'', ''${login}'') = 0 ALTER ROLE db_owner ADD MEMBER ${login}')`].join('; ');
+    `IF SUSER_ID('${login}') IS NULL CREATE LOGIN [${login}] WITH PASSWORD = N'$(NURI_APP_PASSWORD)', CHECK_POLICY = OFF, DEFAULT_DATABASE = ${database}`,
+    `EXEC ('USE ${database}; IF USER_ID(''${login}'') IS NULL CREATE USER [${login}] FOR LOGIN [${login}]; IF IS_ROLEMEMBER(''db_owner'', ''${login}'') = 0 ALTER ROLE db_owner ADD MEMBER [${login}]')`].join('; ');
 }
 
 /**
  * 초기화를 돌리는 셸 명령. 비밀은 환경으로만 넘긴다 — sa 비밀번호는 `SQLCMDPASSWORD`, 앱 비밀번호는 sqlcmd 변수다. 인자에 두면 컨테이너의 프로세스 목록에
- * 보인다(독립 검토 지적). 앱 비밀번호의 작은따옴표는 SQL 문자열에 맞게 두 번 쓴다. 계정 이름은 SQL 식별자로 그대로 쓰이므로 영문·숫자·밑줄만 받고 아니면 멈춘다.
+ * 보인다(독립 검토 지적). 앱 비밀번호의 작은따옴표는 SQL 문자열에 맞게 두 번 쓴다. 계정 이름은 대괄호 식별자와 따옴표 문자열 안에 그대로 쓰이므로 `]`·`'` 가 없게 영문·숫자·밑줄만 받고 아니면 멈춘다.
  * 인자는 셸이 펼칠 식(`${APP_DB_USER}` 같은 변수)이나 글자 그대로의 값이다.
  */
 export function mssqlInitializationCommand({ adminPassword, login, password, database }) {

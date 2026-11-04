@@ -368,11 +368,11 @@ test('SQL Server baselines end trigger batches with GO and its project keeps app
   // 비밀은 인자에 두지 않는다 — 셸이 펼친 값이 컨테이너의 프로세스 목록에 보인다(독립 검토 지적). 앱 비밀번호의 작은따옴표는 두 번 쓴다.
   assert.doesNotMatch(healthcheck, / -P /);
   assert.match(healthcheck, /NURI_APP_LOGIN=\\"\$\$\{APP_DB_USER\}\\" NURI_APP_PASSWORD=\\"\$\$\(printf '%s' \\"\$\$\{APP_DB_PASSWORD\}\\" \| sed \\"s\/'\/''\/g\\"\)\\"/);
-  assert.match(healthcheck, /case \\"\$\$\{APP_DB_USER\}\\" in ''\|\*\[!A-Za-z0-9_\]\*\) /, '계정 이름은 SQL 식별자로 쓰여 영문·숫자·밑줄만 받는다');
+  assert.match(healthcheck, /case \\"\$\$\{APP_DB_USER\}\\" in ''\|\*\[!A-Za-z0-9_\]\*\) /, '계정 이름은 대괄호 식별자·따옴표 문자열에 쓰여 ] 와 \' 가 없게 영문·숫자·밑줄만 받는다');
   assert.ok(!healthcheck.split('-Q')[1].includes('APP_DB_PASSWORD'), 'SQL 본문에는 sqlcmd 변수만 있다');
   assert.match(healthcheck, /IF \(SELECT is_read_committed_snapshot_on FROM sys\.databases WHERE name = 'egovdb'\) = 0 ALTER DATABASE egovdb SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE/);
   assert.match(healthcheck, /IF \(SELECT snapshot_isolation_state FROM sys\.databases WHERE name = 'egovdb'\) = 0 ALTER DATABASE egovdb SET ALLOW_SNAPSHOT_ISOLATION ON/);
-  assert.match(healthcheck, /IF SUSER_ID\('\\\\\$\$\(NURI_APP_LOGIN\)'\) IS NULL CREATE LOGIN \\\\\$\$\(NURI_APP_LOGIN\) WITH PASSWORD = N'\\\\\$\$\(NURI_APP_PASSWORD\)'/);
+  assert.match(healthcheck, /IF SUSER_ID\('\\\\\$\$\(NURI_APP_LOGIN\)'\) IS NULL CREATE LOGIN \[\\\\\$\$\(NURI_APP_LOGIN\)\] WITH PASSWORD = N'\\\\\$\$\(NURI_APP_PASSWORD\)'/);
   const prod = projectVendorComposeProd('    environment:\n      POSTGRES_USER: ${DB_USERNAME:?필요}\n      POSTGRES_PASSWORD: ${DB_PASSWORD:?필요}\n      SPRING_FLYWAY_LOCATIONS: classpath:db/migration\n', 'mssql');
   assert.match(prod, /^ {6}APP_DB_USER: \$\{DB_USERNAME/m);
   assert.match(prod, /^ {6}APP_DB_PASSWORD: \$\{DB_PASSWORD/m);
@@ -406,6 +406,8 @@ test('SQL Server integration runs as the generated project does and observes loc
   const seen = [];
   VENDOR_ENGINES.mssql.ready('x', args => { seen.push(args); return { status: 0 }; });
   assert.match(seen[0].at(-1), /CREATE DATABASE vendorcheck COLLATE Korean_100_CI_AS;/);
+  // 계정 이름은 식별자 자리마다 대괄호로 감싼다 — 예약어(user)나 숫자로 시작하는 이름도 문법 오류가 되지 않는다(독립 검토 지적).
+  assert.match(seen[0].at(-1), /CREATE LOGIN \[\\\$\(NURI_APP_LOGIN\)\] WITH .*CREATE USER \[\\\$\(NURI_APP_LOGIN\)\] FOR LOGIN \[\\\$\(NURI_APP_LOGIN\)\];.*ADD MEMBER \[\\\$\(NURI_APP_LOGIN\)\]'\)/);
   assert.match(seen[0].at(-1), /SQLCMDPASSWORD="\$MSSQL_SA_PASSWORD" NURI_APP_LOGIN="vendorcheck" NURI_APP_PASSWORD="\$\(printf '%s' "\$MSSQL_SA_PASSWORD"/, '앱 계정은 실행마다 만든 비밀번호를 환경으로만 받는다');
   assert.doesNotMatch(seen[0].at(-1), / -P /);
   assert.match(VENDOR_ENGINES.mssql.command('/tmp/run.sql'), /^SQLCMDPASSWORD="\$MSSQL_SA_PASSWORD" \S+ -C -x /, '문장 실행도 비밀을 인자에 두지 않고 값 안의 $( 를 치환하지 않는다');
