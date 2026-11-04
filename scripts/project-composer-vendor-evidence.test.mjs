@@ -11,7 +11,7 @@ import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import test from 'node:test';
 import { fileURLToPath } from 'node:url';
-import { asPreviewOracle, certifyVendor, fixtureEvidence } from './project-composer-vendor-evidence.test-helpers.mjs';
+import { asPreviewVendors, certifyVendor, fixtureEvidence } from './project-composer-vendor-evidence.test-helpers.mjs';
 import {
   buildVendorEvidence, parseEvidenceArgs, recordVendorEvidence, vendorEvidenceHash, vendorEvidenceInputs, vendorEvidenceReportDirectory, vendorEvidenceStaleErrors,
 } from './project-composer-vendor-evidence.mjs';
@@ -55,7 +55,8 @@ const change = (root, file, from, to) => {
 /** Oracle 인증 입력을 실제 파일로 옮긴 저장소. 실제 소스의 매핑을 되돌리는 사례에만 쓴다. */
 function inputsCopy(t) {
   const root = scratch(t);
-  const ledger = readLedger(ROOT);
+  // Oracle 입력만 복사한다. 다른 인증 벤더는 승격 전으로 돌려 이 트리에 없는 입력을 읽지 않게 한다.
+  const ledger = asPreviewVendors(readLedger(ROOT));
   for (const path of vendorEvidenceInputs(ROOT, ledger, 'oracle')) {
     mkdirSync(dirname(join(root, path)), { recursive: true });
     cpSync(join(ROOT, path), join(root, path));
@@ -75,7 +76,7 @@ const TINY_ADAPTER = 'scripts/oracle-adapter.mjs';
 const TINY_MODEL_COMMAND = 'scripts/generate-reusable-base-db.mjs';
 function tinySource(t, { certified = false } = {}) {
   const root = scratch(t);
-  const ledger = asPreviewOracle(readLedger(ROOT));
+  const ledger = asPreviewVendors(readLedger(ROOT));
   ledger.evidenceInputs.paths = ['scripts/shared.mjs'];
   ledger.evidenceInputs.excludedModelTools = {};
   const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
@@ -101,7 +102,7 @@ const staleCodes = async root => (await ledgerPrecheck({ root, checks: LEDGER_PR
 /** 실제 원장의 벤더를 바꾼 복사본. 입력 파일은 필요 없다. 적재는 형식만 본다. */
 function ledgerOnly(t, edit) {
   const root = scratch(t);
-  const ledger = asPreviewOracle(readLedger(ROOT));
+  const ledger = asPreviewVendors(readLedger(ROOT));
   edit(id => ledger.vendors.find(vendor => vendor.id === id), ledger);
   put(root, VENDOR_LEDGER_PATH, JSON.stringify(ledger));
   return root;

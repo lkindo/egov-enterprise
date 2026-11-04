@@ -344,13 +344,75 @@
     {
       "id": "mariadb",
       "label": "MariaDB",
-      "status": "preview",
+      "status": "certified",
       "ci": true,
       "engines": [
         {
           "version": "11.4",
           "engine": "mariadb",
-          "evidence": null
+          "evidence": {
+            "runId": "mariadb-2d6d39ba8407-5539b8d3",
+            "commit": "2d6d39ba84075169710828401d79a24090b1ab61",
+            "recordedAt": "2026-11-04T09:54:49.028+09:00",
+            "inputHash": "152e1aad88610238030e5a7c0040232b77eb3669678c94f1cb190905db1bbd91",
+            "modelHash": "451c065cace917b31da0d71ecbf69be306870fba6cb4eb5f19c28826fc2d5413",
+            "image": "mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620",
+            "imageOrigin": "official:docker-library",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "defe212e10c0ba804ada9a2cb06c47c87b03572ecb1bbf529c2a404cd73a056a"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 456,
+                "degradations": 4
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 397,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1284,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         }
       ],
       "evidenceInputs": [
@@ -358,7 +420,6 @@
         "foundation/src/main/java/nuri/foundation/core/persistence/InnoDbSqlDialect.java",
         "foundation/src/main/java/nuri/foundation/core/persistence/MariaDbSqlDialect.java"
       ],
-      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다.",
       "notices": {
         "degradations": [
           {
@@ -388,13 +449,75 @@
     {
       "id": "mysql",
       "label": "MySQL",
-      "status": "preview",
+      "status": "certified",
       "ci": true,
       "engines": [
         {
           "version": "8.4",
           "engine": "mysql",
-          "evidence": null
+          "evidence": {
+            "runId": "mysql-2d6d39ba8407-931193d1",
+            "commit": "2d6d39ba84075169710828401d79a24090b1ab61",
+            "recordedAt": "2026-11-04T09:37:02.731+09:00",
+            "inputHash": "fd742ec7e325943d300dc43dda913fb56db7f82ecffbc5fe423af250c68b0335",
+            "modelHash": "10a28f7029605bf21952d2b30765719949cd2e99df002e92d968961ec6724370",
+            "image": "mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
+            "imageOrigin": "official:docker-library",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "9f7f843dd12fe0aa89d28872bdc918b61beddc14290d6adcf44ffe8ee214fcc1"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 466,
+                "degradations": 5
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 396,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1284,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         }
       ],
       "evidenceInputs": [
@@ -402,7 +525,6 @@
         "foundation/src/main/java/nuri/foundation/core/persistence/InnoDbSqlDialect.java",
         "foundation/src/main/java/nuri/foundation/core/persistence/MySqlSqlDialect.java"
       ],
-      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다.",
       "notices": {
         "degradations": [
           {
