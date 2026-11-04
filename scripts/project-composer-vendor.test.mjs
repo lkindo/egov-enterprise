@@ -29,7 +29,7 @@ import { HARNESS_SCAN_ROOTS, computeHarnessBaselineEntries } from './harness-bas
 import { assertBuildTarget, assertIsolatedRunnerSupportsProject, assertNoDotEnv, awaitChildExit, closedEnvironment, createIsolatedMfaEnvironment, launchIsolatedVendorDatabase, onTermination, parseRepresentativeArguments, provisionRepresentativeAccounts, readRepresentativeBundle, removeVendorDatabase, representativeSelection, resolveVendorEngine, runCleanupSteps, validateLocalRun, vendorDatabaseEnvironment } from './run-isolated-e2e.mjs';
 import { assertIsolatedTarget, assertOwnedVendorDatabase, assertRemovableVendorDatabase, validateIsolationManifest } from './e2e-isolation.mjs';
 import { composerProfile } from './project-composer-source.mjs';
-import { asPreviewOracle, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
+import { asPreviewVendors, certifyVendor } from './project-composer-vendor-evidence.test-helpers.mjs';
 import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, projectVendorSources, renderFlywayMigration, VENDOR_SOURCE,
   VENDOR_README_PRECEDENCE, VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
@@ -280,7 +280,7 @@ test('the MySQL family decides the key limit at the measured boundaries', () => 
   assert.ok(statements(mariadbAdapter, keyModel(764, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a, b)'));
   assert.ok(statements(mariadbAdapter, keyModel(765, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a(700), b)'));
   assert.ok(statements(mariadbAdapter, keyModel(4000, uuid)).includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a, b)'));
-  assert.deepEqual(mariadbAdapter.emitSchema(keyModel(4000, uuid)).degradations, [], 'MariaDB 는 접두 저하가 없다');
+  assert.deepEqual(mariadbAdapter.emitSchema(keyModel(4000, uuid)).degradations.map(row => row.name), ['null-order'], 'MariaDB 는 접두 저하가 없다(엔진 동작 안내만 남는다)');
   // MySQL 의 UUID 는 Hibernate 의 MySQL 기본 매핑인 BINARY(16) 이고 시드 값은 같은 바이트 순서로 바꾼다. CHAR(36) 이면 스키마 검증이 멈췄다(2026-11-04).
   assert.match(statements(mysqlAdapter, keyModel(10, uuid)).join('\n'), /\bb BINARY\(16\)/);
   assert.match(statements(mariadbAdapter, keyModel(10, uuid)).join('\n'), /\bb UUID\b/);
@@ -292,9 +292,9 @@ test('the MySQL family decides the key limit at the measured boundaries', () => 
     constraints: [constraint('t_one', 'pk_t_one', 'p', 'PRIMARY KEY (id)'), constraint('t_one', 'uk_t_one_a', 'u', 'UNIQUE (a)')], indexes: [], triggers: [], sequences: [] },
   extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
   assert.ok(statements(mysqlAdapter, single(768)).includes('ALTER TABLE t_one ADD CONSTRAINT uk_t_one_a UNIQUE (a)'));
-  assert.deepEqual(mysqlAdapter.emitSchema(single(768)).degradations, []);
+  assert.deepEqual(mysqlAdapter.emitSchema(single(768)).degradations.map(row => row.name), ['null-order']);
   assert.ok(statements(mysqlAdapter, single(769)).includes('ALTER TABLE t_one ADD CONSTRAINT uk_t_one_a UNIQUE (a(768))'));
-  assert.deepEqual(mysqlAdapter.emitSchema(single(769)).degradations.map(row => row.name), ['uk_t_one_a:prefix']);
+  assert.deepEqual(mysqlAdapter.emitSchema(single(769)).degradations.map(row => row.name), ['uk_t_one_a:prefix', 'null-order']);
   assert.deepEqual(mysqlAdapter.emitSchema(single(769)).uniqueColumns.get('t_one.uk_t_one_a'), ['a'], '접두 유니크도 컬럼 조회에는 컬럼 이름만 나온다');
   // 해시로 바꿔도 넘는 복합 유니크는 적용 때 1071 로 멈추기 전에 번역을 멈춘다.
   const wide = buildVendorModel({ snapshot: { columns: [column('t_two', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_two', 'a', 1000, { position: 2 }), varchar('t_two', 'b', 1000, { position: 3 })],
@@ -721,7 +721,7 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
   // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
-  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle']);
+  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle', 'mariadb', 'mysql']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   // 사유는 화면에 그대로 나간다.
   for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, `${vendor.id}: 사유는 화면에 나가는 문장이라 '…습니다.' 로 끝낸다`);
@@ -731,7 +731,7 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
 function ledgerCopy(t, change) {
   const directory = mkdtempSync(join(tmpdir(), 'vendor-ledger-'));
   t.after(() => rmSync(directory, { recursive: true, force: true }));
-  const ledger = asPreviewOracle(JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8')));
+  const ledger = asPreviewVendors(JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8')));
   change(id => ledger.vendors.find(vendor => vendor.id === id), ledger);
   mkdirSync(join(directory, 'config'));
   writeFileSync(join(directory, VENDOR_LEDGER_PATH), JSON.stringify(ledger));
@@ -816,6 +816,9 @@ test('every CI vendor shows exactly the degradations its own translation can rea
     assert.deepEqual([...new Set(vendors.flatMap(reached))].sort(), [...declaredDegradationKinds(`scripts/project-composer-vendor-${file}.mjs`)].sort(), file);
   }
   assert.ok(reached('mysql').includes('prefix') && !reached('mariadb').includes('prefix'), 'MariaDB 는 긴 유니크를 엔진 해시로 받는다');
+  // 정렬 순서는 스키마가 아니라 엔진의 동작이라 모델과 상관없이 늘 안내한다(설계서 §5 NULL 순서).
+  for (const vendorId of ['mysql', 'mariadb']) assert.ok(reached(vendorId).includes('null-order'), `${vendorId}: NULL 을 가장 작은 값으로 정렬한다`);
+  assert.ok(!reached('oracle').includes('null-order'), 'Oracle 은 PostgreSQL 과 같은 순서다');
 });
 
 test('certification needs the sentences the screen shows', t => {
@@ -1033,10 +1036,11 @@ test('certifying a vendor in the ledger opens every request entry without a code
   });
 });
 
-test('the preview switch opens the tool path only: the screen path keeps reading the ledger', () => {
+test('the preview switch opens the tool path only: the screen path keeps reading the ledger', t => {
   const catalog = loadProjectComposerCatalog(ROOT);
   const recipe = { schemaVersion: 1, project: { name: 'vendorcheck' }, sourceRef: 'HEAD', selection: { preset: 'core' }, database: { vendor: 'mysql' }, backendLayout: 'multi-module' };
-  const engine = createComposerEngine({ loadCatalog: () => catalog });
+  // 승격 전 원장을 준다. 실제 원장의 MySQL 은 인증돼 있어 스위치 없이도 열린다.
+  const engine = createComposerEngine({ loadCatalog: () => catalog, loadVendors: () => loadVendorLedger(ledgerCopy(t, () => {})) });
   const closed = error => error.code === 'INVALID_RECIPE' && error.details.reason === 'UNSUPPORTED_DATABASE';
   withPreviewEnv(undefined, () => assert.throws(() => engine.plan(recipe), closed));
   withPreviewEnv('mysql', () => {
@@ -1376,7 +1380,7 @@ test('the CI vendor job is a certification condition and only opens a vendor who
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
   const load = mutate => {
-    const copy = asPreviewOracle(JSON.parse(JSON.stringify(ledger)));
+    const copy = asPreviewVendors(JSON.parse(JSON.stringify(ledger)));
     mutate(copy.vendors.find(vendor => vendor.id === certifiedRow.id), copy);
     const root = mkdtempSync(join(tmpdir(), 'vendor-ci-'));
     try {

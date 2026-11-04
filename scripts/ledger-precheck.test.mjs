@@ -18,7 +18,7 @@ import { JAVA_GATE_SCAN_ROOTS, loadGovernanceRegistry } from './governance-gates
 import { GATE_REGISTRY, LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck, main } from './ledger-precheck.mjs';
 import { LEDGER_CHECKS, checkGenerated, checkTasks, main as regenerateMain } from './regenerate.mjs';
 import { VENDOR_LEDGER_PATH } from './project-composer-vendors.mjs';
-import { asPreviewOracle } from './project-composer-vendor-evidence.test-helpers.mjs';
+import { asPreviewVendors } from './project-composer-vendor-evidence.test-helpers.mjs';
 
 const ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const MIGRATIONS = 'api-server/src/main/resources/db/migration';
@@ -57,7 +57,7 @@ function fixture(t) {
   for (const file of ['config/modules', 'config/governance/permission-catalog.json', 'config/governance/permission-bundles.json', MENU_SNAPSHOT, VENDOR_LEDGER_PATH,
     MIGRATIONS, 'api-server/src/main/resources/db/cutover/authorization-contract.sql']) copy(file);
   // 이 트리에는 인증 입력이 없다. 실제 원장의 벤더가 올라가도 처음에는 초록이어야 한다.
-  writeFileSync(join(root, VENDOR_LEDGER_PATH), JSON.stringify(asPreviewOracle(JSON.parse(readFileSync(join(root, VENDOR_LEDGER_PATH), 'utf8')))));
+  writeFileSync(join(root, VENDOR_LEDGER_PATH), JSON.stringify(asPreviewVendors(JSON.parse(readFileSync(join(root, VENDOR_LEDGER_PATH), 'utf8')))));
   for (const scanRoot of JAVA_GATE_SCAN_ROOTS) mkdirSync(join(root, scanRoot), { recursive: true });
   put(root, `${SCHEMA_ROOT}/RegisteredSchemaTest.java`, schemaTest('RegisteredSchemaTest'));
   const real = loadGovernanceRegistry(join(ROOT, GATE_REGISTRY)).gateSets.find(({ id }) => id === 'GATESET-SCHEMA-VALIDATION');

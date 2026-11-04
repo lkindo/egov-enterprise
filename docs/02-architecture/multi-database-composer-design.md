@@ -1,6 +1,6 @@
 # 프로젝트 생성기 다중 DB 설계
 
-- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1·2 완료, 단계 3 진행 중. Oracle(23·19c)을 인증해 고를 수 있다. MariaDB·MySQL 은 벤더 CI 잡에 들어갔고 인증 전이라 아직 고를 수 없다(§16·§17·§18)
+- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1·2·3 완료. Oracle(23·19c)·MariaDB(11.4)·MySQL(8.4)을 인증해 고를 수 있다. 다음은 단계 4(SQL Server)다(§16·§17·§18)
 - 기준 커밋: 첫 실측 `a3a3b182f`, 수정안 실측 `ce06495c7`(V2_146까지 포함).
 - 실측: 2026-10-30~31, 이 기계의 일회용 컨테이너. 저장소 변경 없음.
 - 관련: [생성기 설계](project-composer-design.md) §6·§8 E, ADR-0020, ADR-0008, DEC-OPS-239·262·263
@@ -218,7 +218,7 @@ flowchart TD
 | 공유 행 잠금 | Oracle 에는 `FOR SHARE` 가 없어 Hibernate 가 공유 잠금을 `FOR UPDATE` 로 만든다. 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다 | 동시성 시험 |
 | 빈 문자열 | Oracle·Tibero 는 `''` 가 NULL 이다. CHECK 의 `x <> ''` 는 NOT NULL 컬럼에서만 `x IS NOT NULL` 로 번역한다(현재 4개 모두 NOT NULL). NULL 허용 컬럼이면 정상 NULL 까지 거부하므로 그 항은 뺀다. `COALESCE(x, '') ~ p` 는 `x IS NOT NULL AND ...` 로 번역한다. 그냥 지우면 NULL 이 통과한다. 시드는 NULL 로 넣는다. NOT NULL 문자열 컬럼에 `""` 가 오면 400 으로 드러난다 | 통합 시험 |
 | 격리 수준 | MySQL·MariaDB 는 `READ COMMITTED` 를 코드(`VendorSqlConfig`)가 연결 풀에 강제한다. 설정 파일에 두면 시험 문맥과 생성물 설정이 따로 놓쳐 서버 기본(`REPEATABLE READ`)이 된다. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다. Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
-| NULL 순서 | 맞추지 않는다. PostgreSQL·Oracle 은 NULL 을 가장 큰 값으로, MySQL·MariaDB 는 가장 작은 값으로 정렬한다. 처음 적은 `hibernate.order_by.default_null_ordering=last` 는 오름차순만 맞추고 내림차순을 PostgreSQL 과 반대로 만들어 넣지 않았다(2026-11-04 단계 3 결정). §6.1 의 한계로 둔다 | - |
+| NULL 순서 | 맞추지 않는다. PostgreSQL·Oracle 은 NULL 을 가장 큰 값으로, MySQL·MariaDB 는 가장 작은 값으로 정렬한다. 처음 적은 `hibernate.order_by.default_null_ordering=last` 는 오름차순만 맞추고 내림차순을 PostgreSQL 과 반대로 만들어 넣지 않았다(2026-11-04 단계 3 결정). §6.1 의 한계로 두고, 생성기 화면과 생성물 README 가 저하 안내(`null-order`)로 알린다 | - |
 | 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. SQLState 로 갈리지 않는 벤더는 오류 번호 표(`VendorSqlDialect.errorCodes()`)로 같은 응답을 낸다. 번호 표는 그 벤더에서만 쓴다 — Oracle 번호(1400·1722 등)가 MySQL·MariaDB 의 다른 오류 번호와 겹친다(단계 3 실측). 드라이버가 SQLState 를 바꿔 올리는 서버 오류(MySQL 의 0 나누기 1365 → 22001)는 번호로 먼저 500 으로 가른다 | 벤더별 위반 시험 |
 | JSON | Oracle 은 19c 기준 CLOB + `IS JSON` 과 Hibernate 매핑을 맞춘다. 23 계열 기능에 기대지 않는다 | 스키마 검증 |
 | UUID·시각 | 저장 범위가 같으면 DDL 을 Hibernate 벤더 기본 매핑에 맞추고, 다르면 ORM 매핑을 바꾼다. 시각은 시간대 없는 컬럼에 한국 벽시계 값으로 저장하고 엔티티는 `LocalDateTime` 이다(DEC-OPS-396). `Instant` 를 매핑하면 Oracle 드라이버가 읽기를 거부한다(ORA-18716) | 스키마 검증, 재로그인 |
@@ -277,7 +277,7 @@ flowchart TD
 | MySQL·MariaDB | FK 를 지연 검사할 수 없다, 부분 인덱스가 없다 | 엔진 기능 부재 | 쓰는 순서를 원본에서 맞춘다. 부분 인덱스는 성능 저하 |
 | MySQL | 앱 계정 트리거 생성에 서버 설정이나 높은 권한이 필요 | 바이너리 로그 안전 규칙(8.4 는 기본으로 켜져 있다) | `log_bin_trust_function_creators=1` 이 없으면 기준선의 트리거가 1419 로 멈춘다. 생성물 README·개발 compose·검증 컨테이너에 둔다 |
 | MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 복구 절차(남은 객체 삭제와 Flyway 실패 행 정리)와 일회용 DB 선행 적용은 벤더 생성물 README 의 '생성 뒤 스키마 변경' 절에 둔다 |
-| MySQL·MariaDB | NULL 정렬 순서가 다르다 | NULL 을 가장 작은 값으로 본다 | NULL 이 들 수 있는 정렬 키의 화면 순서가 PostgreSQL 과 다를 수 있다(오름차순 맨 앞). 내림차순까지 맞추는 Hibernate 설정이 없다(§5) |
+| MySQL·MariaDB | NULL 정렬 순서가 다르다 | NULL 을 가장 작은 값으로 본다 | NULL 이 들 수 있는 정렬 키의 화면 순서가 PostgreSQL 과 다를 수 있다(오름차순 맨 앞). 내림차순까지 맞추는 Hibernate 설정이 없다(§5). 어댑터의 고정 저하로 선택 화면에 알린다 |
 | MySQL | 시퀀스가 없다 | 엔진 기능 부재 | Hibernate 와 같은 이름의 `next_val` 표로 흉내 낸다. 컬럼 기본값이 없어 DB 에서 키 없이 넣는 INSERT 는 1364 로 멈춘다. 앱은 Hibernate 가 같은 표에서 키를 받는다 |
 | MySQL | 잠금 조회 하나에만 대기 상한을 걸 수 없다 | Hibernate 의 MySQL 방언이 잠금 조회에 대기를 싣지 못하고, `innodb_lock_wait_timeout` 은 `SET_VAR` 힌트를 받지 않는다 | 접속 인자로 세션의 모든 행 잠금 대기를 앱의 잠금 조회 상한(5초)에 묶는다. PostgreSQL 은 잠금 조회만 묶는다 |
 | MySQL·MariaDB | 세션 시간대가 접속 인자 하나에 기댄다 | 서버 기본이 UTC 일 수 있고, 시간대 이름은 시간대 표가 있어야 한다 | 접속 인자 `time_zone='+09:00'` 로 두고, 앱이 기동할 때 세션 시계가 +09:00 인지와 서버가 설정한 벤더인지 본다 || CUBRID | CHECK 를 엔진이 집행하지 않는다 | 파서만 받고 무시 | 트리거로 대체하되 쓰기마다 평가한다. 시드 18,143행이 21초(트리거 없음, ISO 문자 집합)에서 34~52초가 됐다. 정밀 측정은 아니다 |
@@ -703,4 +703,21 @@ demo 멀티모듈 생성물(대표 구성)의 전체 검증을 두 벤더 모두
 
 운영 코드를 고친 것은 정수 필드의 JDBC 타입, 세션·서버 기동 검사, MySQL 의 세션 잠금 대기, 메뉴 삭제 순서다. 다른 회사 모델의 독립 검토가 MySQL 의 0 나누기가 400 으로 나가는 것을 찾아, 오류 번호로 500 을 가르게 고쳤다.
 
-남은 일: main 의 벤더 잡 통과 확인, 두 벤더의 증거 기록과 승격(다음 PR), NULL 정렬 차이를 화면 문장으로 알릴지 판단.
+### 승격(2026-11-04)
+
+구현 PR(#1039)이 main 에서 두 레이아웃의 벤더 잡을 모두 통과한 뒤, 같은 입력의 demo 멀티모듈 생성물로 증거를 기록해 두 벤더를 `certified` 로 올렸다(DEC-OPS-400). 이 기계에서 생성과 전체 검증은 MySQL 16분·MariaDB 15분, 증거 기록은 각각 15분·17분 걸렸다. PR 의 벤더 잡은 멀티모듈 기준 MySQL 11분·MariaDB 9분이었다.
+
+| 항목 | MariaDB 11.4 | MySQL 8.4 |
+|---|---|---|
+| 스키마·시드 대조 | 표 98개, 문장 456개(저하 4종), 시드 18,143행 | 표 98개, 문장 466개(저하 5종), 시드 18,143행 |
+| Hibernate validate | 문맥 44개 | 문맥 44개 |
+| 통합 시험 | 51개 클래스 397건 | 51개 클래스 396건 |
+| 카탈로그 적합 | 5건 | 5건 |
+| 차등 시험 | CHECK 134개, 값 1,284개, 불일치 0 | 같음 |
+| 대표 E2E | 시험 파일 11개, 66건 통과, flaky 0 | 같음 |
+
+NULL 정렬 차이는 화면 문장으로 알린다. 두 엔진의 정렬 순서는 스키마가 아니라 엔진 동작이라 모델과 상관없이 늘 나오는 고정 저하(`null-order`)로 어댑터에 두었고, 원장의 화면 문장과 양방향으로 대조된다(§5 NULL 순서).
+
+승격하면서 시험 도우미가 실제 원장의 인증 벤더를 모두 승격 전으로 돌리도록 넓혔다. 한 벤더의 입력만 복사한 시험 트리에서 다른 인증 벤더의 입력을 읽지 않게 하기 위해서다. 인증 벤더가 늘어도 같은 판정을 시험한다.
+
+남은 일: 단계 4(SQL Server). 바이너리 로그를 켠 MariaDB 의 트리거 권한과 기관 DB 의 비이진 콜레이션은 재지 않았다(§6.1).

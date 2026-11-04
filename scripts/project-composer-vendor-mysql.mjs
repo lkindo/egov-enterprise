@@ -285,6 +285,8 @@ function emitSchemaFor(vendor, model) {
       emission.cover(trigger.name, trigger.kind);
     }
   }
+  // 두 엔진은 NULL 을 가장 작은 값으로 정렬한다. 내림차순까지 PostgreSQL 과 맞추는 Hibernate 설정이 없어 맞추지 않고 화면에서 알린다(설계서 §5).
+  emission.degradations.push({ name: 'null-order', reason: 'NULL 을 가장 작은 값으로 정렬해 NULL 이 들 수 있는 정렬 키의 순서가 PostgreSQL 과 반대다' });
   return assertCoverage(model, emission);
 }
 

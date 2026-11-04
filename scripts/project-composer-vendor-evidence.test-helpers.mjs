@@ -27,14 +27,15 @@ export const fixtureEvidence = (engineId, inputHash = 'a'.repeat(64)) => ({
 });
 
 /**
- * 실제 원장의 Oracle 을 승격 전 모양(preview·무증거·사유 있음)으로 맞춘다. 원장을 복사해 쓰는 사례는 이 출발점에서 편집하므로,
- * 증거를 기록하거나 승격해도 같은 판정을 시험한다.
+ * 실제 원장에서 인증된 벤더(기준인 PostgreSQL 밖)를 모두 승격 전 모양(preview·무증거·사유 있음)으로 맞춘다. 원장을 복사해 쓰는 사례는
+ * 이 출발점에서 편집하므로, 어느 벤더의 증거를 기록하거나 승격해도 같은 판정을 시험한다.
  */
-export function asPreviewOracle(ledger) {
-  const oracle = ledger.vendors.find(vendor => vendor.id === 'oracle');
-  oracle.status = 'preview';
-  oracle.reason ??= '시험용 사유입니다.';
-  for (const engine of oracle.engines) engine.evidence = null;
+export function asPreviewVendors(ledger) {
+  for (const vendor of ledger.vendors.filter(row => row.id !== 'postgresql' && row.status === 'certified')) {
+    vendor.status = 'preview';
+    vendor.reason ??= '시험용 사유입니다.';
+    for (const engine of vendor.engines) engine.evidence = null;
+  }
   return ledger;
 }
 
