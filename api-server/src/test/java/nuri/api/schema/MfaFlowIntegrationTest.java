@@ -234,7 +234,7 @@ class MfaFlowIntegrationTest {
         String otp = code(enrolled.secret());
         try (var pool = Executors.newFixedThreadPool(2); var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
-            try (var statement = blocker.prepareStatement("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE")) {
+            try (var statement = blocker.prepareStatement(VendorTestSql.rowLock("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE"))) {
                 statement.setString(1, subject);
                 statement.executeQuery().close();
             }
@@ -272,7 +272,7 @@ class MfaFlowIntegrationTest {
             var completion = pool.submit(() -> {
                 try {
                     return new TransactionTemplate(transactions).execute(status -> {
-                        jdbc.queryForObject("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE", String.class, subject);
+                        jdbc.queryForObject(VendorTestSql.rowLock("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE"), String.class, subject);
                         userLocked.complete((long) VendorTestSql.sessionId(jdbc));
                         try {
                             if (!allowCompletion.await(15, TimeUnit.SECONDS)) throw new IllegalStateException("completion coordination timeout");
@@ -411,7 +411,7 @@ class MfaFlowIntegrationTest {
                 .isInstanceOf(IllegalStateException.class).hasMessage("isolated audit failure");
         assertThat(state()).isEqualTo("PENDING");
         assertThat(jdbc.queryForObject("SELECT otp_last_scs_sn FROM tb_auth_otp_cert WHERE user_insd_idntfr=?", Long.class, subject)).isNull();
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_auth_rstr_cd r JOIN tb_auth_otp_cert c USING(otp_cert_sn) WHERE c.user_insd_idntfr=?", Integer.class, subject)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_auth_rstr_cd r JOIN tb_auth_otp_cert c ON c.otp_cert_sn = r.otp_cert_sn WHERE c.user_insd_idntfr=?", Integer.class, subject)).isZero();
         assertThat(jdbc.queryForObject("SELECT rfsh_tkn FROM tb_auth_rfsh_tk WHERE user_id=?", String.class, subject))
                 .isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of(before.getRefreshToken()));
         assertThat(jdbc.queryForObject("SELECT use_dt FROM tb_auth_cert_dmnd WHERE hash_vl=?", java.sql.Timestamp.class,
@@ -433,7 +433,7 @@ class MfaFlowIntegrationTest {
 
         assertThat(state()).isEqualTo("PENDING");
         assertThat(jdbc.queryForObject("SELECT otp_last_scs_sn FROM tb_auth_otp_cert WHERE user_insd_idntfr=?", Long.class, subject)).isNull();
-        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_auth_rstr_cd r JOIN tb_auth_otp_cert c USING(otp_cert_sn) WHERE c.user_insd_idntfr=?", Integer.class, subject)).isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_auth_rstr_cd r JOIN tb_auth_otp_cert c ON c.otp_cert_sn = r.otp_cert_sn WHERE c.user_insd_idntfr=?", Integer.class, subject)).isZero();
         assertThat(jdbc.queryForObject(VendorTestSql.sql(jdbc, "SELECT count(*) FROM tb_sys_adt_log WHERE job_nm='MFA_ENROLL' AND adt_cn::jsonb->>'targetId'=?"), Integer.class, subject)).isZero();
         assertThat(jdbc.queryForObject("SELECT rfsh_tkn FROM tb_auth_rfsh_tk WHERE user_id=?", String.class, subject))
                 .isEqualTo(nuri.business.domain.auth.RefreshTokenDigest.of(before.getRefreshToken()));

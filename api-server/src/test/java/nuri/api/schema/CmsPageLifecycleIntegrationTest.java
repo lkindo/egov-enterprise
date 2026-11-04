@@ -325,7 +325,7 @@ class CmsPageLifecycleIntegrationTest {
             blocker.setAutoCommit(false);
             int blockerPid;
             blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
-            try (var lock = blocker.prepareStatement("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE"))) {
                 lock.setLong(1, image); lock.executeQuery().close();
             }
             var releasing = executor.submit(() -> {

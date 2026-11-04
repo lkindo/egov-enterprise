@@ -188,7 +188,7 @@ class SmsFailureNoticeIntegrationTest {
         enqueue(FIRST, SECOND);
         try (var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
-            try (var lock = blocker.prepareStatement("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE"))) {
                 lock.setLong(1, transmission);
                 lock.setString(2, SECOND);
                 lock.executeQuery().close();
@@ -414,7 +414,7 @@ class SmsFailureNoticeIntegrationTest {
         return UUID.nameUUIDFromBytes(("SMS_DELIVERY:" + transmission).getBytes(java.nio.charset.StandardCharsets.UTF_8)).toString();
     }
     private void due() {
-        jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=TIMESTAMP '1970-01-01 00:00:00' WHERE job_mng_no=?", deliveryKey());
+        jdbc.update(VendorTestSql.sql(jdbc, "UPDATE tb_sys_job SET job_prnmnt_dt=TIMESTAMP '1970-01-01 00:00:00' WHERE job_mng_no=?"), deliveryKey());
     }
     private String code(String phone) {
         return jdbc.queryForObject("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=?", String.class, transmission, phone);

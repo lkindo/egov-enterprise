@@ -286,7 +286,7 @@ class SmsDeliveryStateIntegrationTest {
         try (var blocker = dataSource.getConnection(); var executor = Executors.newSingleThreadExecutor()) {
             blocker.setAutoCommit(false);
             int blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
-            try (var lock = blocker.prepareStatement("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE"))) {
                 lock.setLong(1, transmission);
                 lock.setString(2, PHONE);
                 lock.executeQuery().close();
@@ -313,7 +313,7 @@ class SmsDeliveryStateIntegrationTest {
     @Test void heldRecipientLockTimesOutBeforeAnyPostAndLeavesPendingUntouched() throws Exception {
         try (var blocker = dataSource.getConnection(); var executor = Executors.newSingleThreadExecutor()) {
             blocker.setAutoCommit(false);
-            try (var lock = blocker.prepareStatement("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT rslt_cd FROM tb_sms_rcptn WHERE sms_trsm_sn=? AND rcptn_telno=? FOR UPDATE"))) {
                 lock.setLong(1, transmission);
                 lock.setString(2, PHONE);
                 lock.executeQuery().close();
@@ -343,8 +343,8 @@ class SmsDeliveryStateIntegrationTest {
         recipients.saveAllAndFlush(broken);
         long now = System.currentTimeMillis();
         String valid = SmsReceiptState.claim(now).submitted(SmsGatewayResult.accepted("request-owned"), now).encode();
-        jdbc.update("UPDATE tb_sms_rcptn SET rslt_msg=?,mdfcn_dt=CURRENT_TIMESTAMP + INTERVAL '1' HOUR"
-                + " WHERE sms_trsm_sn=? AND rcptn_telno=?", valid, transmission, PHONE);
+        jdbc.update(VendorTestSql.sql(jdbc, "UPDATE tb_sms_rcptn SET rslt_msg=?,mdfcn_dt=CURRENT_TIMESTAMP + INTERVAL '1' HOUR"
+                + " WHERE sms_trsm_sn=? AND rcptn_telno=?"), valid, transmission, PHONE);
         when(sender.query("request-owned", null, PHONE)).thenReturn(SmsGatewayResult.delivered("request-owned", "message-owned"));
         processor.reconcilePending().get(30, TimeUnit.SECONDS);
         assertThat(code()).isEqualTo("P");

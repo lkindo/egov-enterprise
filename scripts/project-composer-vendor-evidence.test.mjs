@@ -175,7 +175,7 @@ test('certified needs an adapter, an engine, a source projection and evidence pe
   // 원장만 고쳐 열 수 없다. 사유를 지워 다른 검사에 걸리지 않게 한다.
   const open = (vendor, patch = {}) => { Object.assign(vendor, { status: 'certified' }, patch); delete vendor.reason; };
   assert.throws(load(vendor => open(vendor('tibero'), { engines: [{ version: '7', engine: 'oracle', evidence: fixtureEvidence('oracle') }], evidenceInputs: ['x'] })), /^Error: tibero: 어댑터가 없다$/);
-  assert.throws(load(vendor => certifyVendor(vendor('mssql'))), /^Error: mssql: 소스 투영\(VENDOR_SOURCE\)이 없다$/);
+  assert.throws(load(vendor => certifyVendor(vendor('cubrid'))), /^Error: cubrid: 소스 투영\(VENDOR_SOURCE\)이 없다$/);
   assert.throws(load(vendor => { open(vendor('oracle'), { engines: [] }); }), /^Error: oracle: 엔진이 없다$/);
   assert.throws(load(vendor => { open(vendor('oracle'), { evidenceInputs: [] }); }), /^Error: oracle: 증거 입력 목록이 없다$/);
   assert.throws(load((vendor, ledger) => { certifyVendor(vendor('oracle')); delete ledger.evidenceInputs; }), /^Error: oracle: 증거 입력 목록이 없다$/, '공통 입력이 없으면 해시가 말하는 것이 없다');

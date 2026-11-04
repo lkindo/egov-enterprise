@@ -201,7 +201,7 @@ class JdbcAttachmentReferenceResolverTest {
         // 소유 술어가 비면 항상-거짓으로 채워야 한다. 비운 채로 두면 SQL 문법이 깨지고,
         // 참으로 채우면 미인증자에게 소유 근거가 서 버린다.
         assertThat(jdbc.sqlFor(AttachmentSource.NOTE))
-                .contains("WHEN 1 = 0 THEN 1 ELSE 0 END) AS owner_cnt");
+                .contains("WHEN 1 = 0 THEN 1 ELSE 0 END AS owner_flag");
     }
 
     @Test
@@ -281,7 +281,7 @@ class JdbcAttachmentReferenceResolverTest {
                 jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
 
         assertThat(jdbc.sqlFor(AttachmentSource.MEMO_REPORT))
-                .contains("SUM(CASE WHEN (rptr_id = ?) THEN 1 ELSE 0 END) AS reader_cnt");
+                .contains("CASE WHEN (rptr_id = ?) THEN 1 ELSE 0 END AS reader_flag");
         assertThat(jdbc.paramsFor(AttachmentSource.MEMO_REPORT))
                 .as("수신자 판정이 loginId 나 atchFileSn 으로 바인딩되면 남의 메모 첨부가 열리거나 수신자가 잠긴다")
                 .containsExactly(LOGIN_ID, ESNTL_ID, ATCH_FILE_SN);
@@ -300,7 +300,7 @@ class JdbcAttachmentReferenceResolverTest {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, ESNTL_ID);
         assertThat(jdbc.sqlFor(AttachmentSource.WORK_REPORT))
-                .contains("SUM(CASE WHEN 1 = 0 THEN 1 ELSE 0 END) AS reader_cnt");
+                .contains("CASE WHEN 1 = 0 THEN 1 ELSE 0 END AS reader_flag");
         assertThat(jdbc.paramsFor(AttachmentSource.WORK_REPORT)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
     }
 
@@ -310,7 +310,7 @@ class JdbcAttachmentReferenceResolverTest {
         CapturingJdbc jdbc = new CapturingJdbc(0, 0, 0);
         jdbc.resolver().resolve(ATCH_FILE_SN, LOGIN_ID, null);
         assertThat(jdbc.sqlFor(AttachmentSource.MEMO_REPORT))
-                .contains("SUM(CASE WHEN 1 = 0 THEN 1 ELSE 0 END) AS reader_cnt");
+                .contains("CASE WHEN 1 = 0 THEN 1 ELSE 0 END AS reader_flag");
         assertThat(jdbc.paramsFor(AttachmentSource.MEMO_REPORT)).containsExactly(LOGIN_ID, ATCH_FILE_SN);
     }
 

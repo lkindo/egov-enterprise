@@ -29,6 +29,7 @@ import nuri.foundation.core.persistence.MariaDbSqlDialect;
 import nuri.foundation.core.persistence.MySqlSqlDialect;
 import nuri.foundation.core.persistence.OracleSqlDialect;
 import nuri.foundation.core.persistence.PostgresqlSqlDialect;
+import nuri.foundation.core.persistence.SqlServerSqlDialect;
 import nuri.foundation.core.persistence.VendorErrorCodes;
 import nuri.foundation.core.persistence.VendorSqlDialect;
 import org.springframework.core.env.Environment;
@@ -52,7 +53,8 @@ final class VendorTestSql {
         POSTGRESQL("postgresql", "PostgreSQL", null),
         ORACLE("oracle", "Oracle", "jdbc:oracle:thin:@//127.0.0.1:"),
         MARIADB("mariadb", "MariaDB", "jdbc:mariadb://127.0.0.1:"),
-        MYSQL("mysql", "MySQL", "jdbc:mysql://127.0.0.1:");
+        MYSQL("mysql", "MySQL", "jdbc:mysql://127.0.0.1:"),
+        MSSQL("mssql", "Microsoft SQL Server", "jdbc:sqlserver://127.0.0.1:");
 
         private final String id;
         private final String product;
@@ -76,7 +78,13 @@ final class VendorTestSql {
                 case ORACLE -> new OracleSqlDialect();
                 case MARIADB -> new MariaDbSqlDialect();
                 case MYSQL -> new MySqlSqlDialect();
+                case MSSQL -> new SqlServerSqlDialect();
             };
+        }
+
+        /** JDBC 키 조회가 표의 식별 컬럼 값만 돌려주는 벤더. 시퀀스·UUID 기본값 키는 다른 길로 받는다. */
+        boolean identityOnlyKeys() {
+            return innoDb() || this == MSSQL;
         }
     }
 
@@ -101,8 +109,23 @@ final class VendorTestSql {
     private static final long MARIADB_LOCK_VIEW_REFRESH_NANOS = TimeUnit.MILLISECONDS.toNanos(150);
     private static final Object MARIADB_LOCK_VIEW = new Object();
     private static long mariaDbLockViewReadAt = System.nanoTime() - MARIADB_LOCK_VIEW_REFRESH_NANOS;
-    /** MariaDB 는 다른 세션이 읽을 수 있는 세션 이름이 없다. 시험 JVM 이 연결 번호(CONNECTION_ID)마다 붙인 이름을 기억한다. */
+    /**
+     * MariaDB·SQL Server 는 다른 세션이 읽을 수 있는 세션 이름이 없다. 시험 JVM 이 연결 번호(CONNECTION_ID·@@SPID)마다 붙인 이름을 기억한다.
+     * 한 시험 JVM 은 한 DB 만 보므로 두 벤더가 섞이지 않는다.
+     */
     private static final Map<Long, String> MARIADB_SESSION_NAMES = new ConcurrentHashMap<>();
+    /**
+     * 시험의 {@code FOR UPDATE [NOWAIT | SKIP LOCKED]} 잠금 조회. 시험 문장은 PostgreSQL 표기이고 SQL Server 는 표 힌트로 잠근다. 표 별칭은 받지 않는다 —
+     * 힌트가 별칭 앞에 들어가 문법 오류로 드러난다.
+     */
+    private static final Pattern FOR_UPDATE = Pattern.compile("(?is)^(\\s*SELECT\\s+.+?\\s+FROM\\s+\\w+)(\\s.*?)?\\s+FOR\\s+UPDATE(\\s+NOWAIT|\\s+SKIP\\s+LOCKED)?\\s*$");
+    private static final Pattern INSERT_VALUES = Pattern.compile("(?is)^(\\s*INSERT\\s+INTO\\s+\\w+\\s*\\(.*?\\))(\\s*VALUES\\s*\\(.*)$");
+    /** 식별 컬럼 하나만 기본값으로 넣는 입력. SQL Server 는 식별 컬럼에 DEFAULT 를 적지 못하고 DEFAULT VALUES 로 쓴다(339). */
+    private static final Pattern INSERT_ONLY_DEFAULT = Pattern.compile("(?is)^\\s*INSERT\\s+INTO\\s+(\\w+)\\s*\\(\\s*\\w+\\s*\\)\\s*VALUES\\s*\\(\\s*DEFAULT\\s*\\)\\s*$");
+    /** SQL Server 매개변수 문장 앞의 선언. 괄호 한 단계(nvarchar(4000))를 품는다. */
+    private static final Pattern SQL_SERVER_PARAMETERS = Pattern.compile("^\\((?:[^()]|\\([^()]*\\))*\\)");
+    /** 현재 시각에서 정수 간격을 더하고 빼는 표준 식. SQL Server 에는 INTERVAL 이 없다. */
+    private static final Pattern SQL_SERVER_INTERVAL = Pattern.compile("(?i)CURRENT_TIMESTAMP\\s*([-+])\\s*INTERVAL\\s*'(\\d+)'\\s*(SECOND|MINUTE|HOUR|DAY)\\b");
 
     private static final Pattern NEXTVAL = Pattern.compile("nextval\\('(\\w+)'\\)");
     private static final Pattern INSERT_COLUMNS = Pattern.compile("(?is)^(\\s*INSERT\\s+INTO\\s+(\\w+)\\s*\\()(.*?\\)\\s*VALUES\\s*\\()(.*)$");
@@ -232,7 +255,59 @@ final class VendorTestSql {
                 }
                 yield innoDb(statement.replaceAll("(\\w+_id)::text", "BIN_TO_UUID($1)"));
             }
+            case MSSQL -> sqlServer(statement);
         };
+    }
+
+    /**
+     * SQL Server 차이. UUID 는 UNIQUEIDENTIFIER 라 문자열이 대문자다 — PostgreSQL 의 uuid::text 처럼 소문자로 읽는다. CURRENT_DATE 가 없어
+     * 서버 시계(한국 시간, SqlServerSqlDialect.assertSession)의 날짜로 쓴다. 잠금 조회는 dialect 의 FOR_UPDATE 와 같은 표 힌트다.
+     */
+    private static String sqlServer(String statement) {
+        Matcher interval = SQL_SERVER_INTERVAL.matcher(statement);
+        StringBuilder shifted = new StringBuilder();
+        while (interval.find()) {
+            interval.appendReplacement(shifted, "DATEADD(" + interval.group(3).toUpperCase(Locale.ROOT) + ", "
+                    + ("-".equals(interval.group(1)) ? "-" : "") + interval.group(2) + ", SYSDATETIME())");
+        }
+        interval.appendTail(shifted);
+        String translated = shifted.toString()
+                // ANSI 날짜·시각 리터럴이 없다. 문자열은 ISO 형식이라 로캘을 타지 않는다.
+                .replaceAll("(?i)\\bTIMESTAMP\\s+'([0-9: .-]+)'", "CAST('$1' AS DATETIME2)")
+                .replaceAll("(?i)\\bDATE\\s+'([0-9-]+)'", "CAST('$1' AS DATE)")
+                // 글자 수 함수는 LEN 이다. 끝 공백을 세지 않는다(뒤 공백 저하) — 시험 값에는 끝 공백이 없다.
+                .replaceAll("(?i)\\bLENGTH\\(", "LEN(")
+                .replaceAll("(?i)to_char\\(CURRENT_DATE,\\s*'YYYYMMDD'\\)", "CONVERT(NVARCHAR(8), SYSDATETIME(), 112)")
+                .replaceAll("(?i)\\bCURRENT_DATE\\b", "CAST(SYSDATETIME() AS DATE)")
+                .replaceAll("(\\w+)::jsonb->>'(\\w+)'", "JSON_VALUE($1, '\\$.$2')")
+                .replaceAll("nextval\\('(\\w+)'\\)", "NEXT VALUE FOR $1")
+                .replaceAll("(\\w+_id)::text", "LOWER(CONVERT(NVARCHAR(36), $1))")
+                .replaceAll("(\\w+)::text", "CAST($1 AS NVARCHAR(4000))");
+        return sqlServerRowLock(translated);
+    }
+
+    /**
+     * 다른 연결로 행을 잡아 두는 시험의 PostgreSQL 잠금 조회를 이 벤더 문장으로 바꾼다. JdbcTemplate 없이 연결을 직접 쓰는 시험도 부르므로 DB 에 묻지 않는다.
+     * 다른 벤더는 같은 표기를 받는다.
+     */
+    static String rowLock(String forUpdate) {
+        return vendor() == Vendor.MSSQL ? sqlServerRowLock(forUpdate) : forUpdate;
+    }
+
+    /**
+     * 배타 잠금(XLOCK)은 PostgreSQL 의 FOR UPDATE 처럼 다른 잠금 조회와 자식 FK 입력을 막는다(SqlServerSqlDialect 와 같다, 2026-11-04 실측).
+     * NOWAIT 은 같은 이름의 힌트, SKIP LOCKED 는 잠긴 행을 건너뛰는 READPAST 다. 잠금 절이 있는데 모양을 못 읽으면 그대로 보내지 않고 멈춘다.
+     */
+    private static String sqlServerRowLock(String statement) {
+        Matcher lock = FOR_UPDATE.matcher(statement);
+        if (!lock.matches()) {
+            if (Pattern.compile("(?i)\\bFOR\\s+UPDATE\\b").matcher(statement).find()) {
+                throw new IllegalArgumentException("SQL Server 잠금 힌트로 옮길 수 없는 잠금 조회다: " + statement);
+            }
+            return statement;
+        }
+        String mode = lock.group(3) == null ? "" : lock.group(3).trim().toUpperCase(Locale.ROOT).startsWith("NOWAIT") ? ", NOWAIT" : ", READPAST";
+        return lock.group(1) + " WITH (XLOCK, ROWLOCK" + mode + ")" + (lock.group(2) == null ? "" : lock.group(2));
     }
 
     /** MySQL 계열의 공통 차이. MySQL 에는 to_char 가 없어 오늘 날짜는 DATE_FORMAT 으로 쓴다. 세션 시간대가 +09:00 이라 CURRENT_DATE 가 한국 날짜다. */
@@ -254,7 +329,7 @@ final class VendorTestSql {
      * 시험이 만든 UUID 를 키 컬럼에 넣는다.
      */
     static String insertTextKey(JdbcTemplate jdbc, String statement, String keyColumn, Object... arguments) {
-        if (vendor(jdbc).innoDb()) {
+        if (vendor(jdbc).identityOnlyKeys()) {
             Matcher insert = INSERT_COLUMNS.matcher(statement);
             if (!insert.matches()) {
                 throw new IllegalArgumentException("키 컬럼을 더할 INSERT 형태가 아니다: " + statement);
@@ -278,6 +353,9 @@ final class VendorTestSql {
 
     private static Object generatedKey(JdbcTemplate jdbc, String statement, String keyColumn, Object[] arguments) {
         Vendor vendor = vendor(jdbc);
+        if (vendor == Vendor.MSSQL) {
+            return sqlServerInsertedKey(jdbc, statement, keyColumn, arguments);
+        }
         if (vendor.innoDb()) {
             // JDBC 키 조회는 AUTO_INCREMENT 값만 돌려준다. 시퀀스로 키를 정하는 입력은 값을 먼저 받아 넣고 그 값을 키로 돌려준다.
             List<String> sequences = NEXTVAL.matcher(statement).results().map(match -> match.group(1)).toList();
@@ -304,6 +382,31 @@ final class VendorTestSql {
             throw new IllegalStateException("입력이 키를 돌려주지 않았다: " + keyColumn);
         }
         return row.values().iterator().next();
+    }
+
+    /**
+     * SQL Server 의 JDBC 키 조회는 식별 컬럼(SCOPE_IDENTITY)만 돌려준다. 시퀀스·UUID 기본값 키도 받도록 OUTPUT 으로 넣은 행의 키를 읽는다.
+     * 트리거가 있는 표는 INTO 없는 OUTPUT 을 받지 않아 표 변수로 받는다. NOCOUNT 는 결과 앞의 행 수를 없애고, 끝에 되돌려 풀 연결에 남기지 않는다.
+     */
+    private static Object sqlServerInsertedKey(JdbcTemplate jdbc, String statement, String keyColumn, Object[] arguments) {
+        String translated = sql(jdbc, statement);
+        Matcher onlyDefault = INSERT_ONLY_DEFAULT.matcher(translated);
+        Matcher insert = INSERT_VALUES.matcher(translated);
+        String output = " OUTPUT INSERTED." + keyColumn + " INTO @nuri_key";
+        String inserting;
+        if (onlyDefault.matches()) {
+            inserting = "INSERT INTO " + onlyDefault.group(1) + output + " DEFAULT VALUES";
+        } else if (insert.matches()) {
+            inserting = insert.group(1) + output + insert.group(2);
+        } else {
+            throw new IllegalArgumentException("키를 돌려받을 INSERT ... VALUES 형태가 아니다: " + statement);
+        }
+        Object key = jdbc.queryForObject("SET NOCOUNT ON; DECLARE @nuri_key TABLE (k SQL_VARIANT); " + inserting
+                + "; SELECT k FROM @nuri_key; SET NOCOUNT OFF", Object.class, arguments);
+        if (key == null) {
+            throw new IllegalStateException("입력이 키를 돌려주지 않았다: " + keyColumn);
+        }
+        return key;
     }
 
     /** 드라이버는 요청한 컬럼과 상관없이 그 표의 AUTO_INCREMENT 값을 돌려준다. 다른 컬럼을 키로 달라면 엉뚱한 값을 받으므로 멈춘다. */
@@ -343,6 +446,7 @@ final class VendorTestSql {
             case POSTGRESQL -> jdbc.queryForObject("SELECT pg_backend_pid()", Integer.class);
             case ORACLE -> jdbc.queryForObject("SELECT TO_NUMBER(SYS_CONTEXT('USERENV', 'SID')) FROM DUAL", Integer.class);
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT CONNECTION_ID()", Integer.class);
+            case MSSQL -> jdbc.queryForObject("SELECT @@SPID", Integer.class);
         };
     }
 
@@ -357,6 +461,7 @@ final class VendorTestSql {
             case MARIADB -> MARIADB_SESSION_NAMES.put(jdbc.queryForObject("SELECT CONNECTION_ID()", Long.class), name);
             // 다른 세션은 performance_schema.user_variables_by_thread 로 읽는다(2026-11-04 실측).
             case MYSQL -> jdbc.update("SET @egov_session = ?", name);
+            case MSSQL -> MARIADB_SESSION_NAMES.put(jdbc.queryForObject("SELECT CAST(@@SPID AS BIGINT)", Long.class), name);
         }
     }
 
@@ -375,6 +480,7 @@ final class VendorTestSql {
         switch (vendor(dedicated)) {
             case POSTGRESQL -> dedicated.execute("SET lock_timeout = '300ms'");
             case MARIADB, MYSQL -> dedicated.execute("SET SESSION innodb_lock_wait_timeout = 1");
+            case MSSQL -> dedicated.execute("SET LOCK_TIMEOUT 1000");
             case ORACLE -> {
             }
         }
@@ -390,6 +496,11 @@ final class VendorTestSql {
             case ORACLE, MARIADB -> forUpdate + " WAIT " + seconds;
             case MYSQL -> {
                 dedicated.execute("SET SESSION innodb_lock_wait_timeout = " + seconds);
+                yield forUpdate;
+            }
+            // 세션 값이라 커밋 뒤에도 남는다(실측). 연결을 닫는 시험만 쓴다.
+            case MSSQL -> {
+                dedicated.execute("SET LOCK_TIMEOUT " + seconds * 1000);
                 yield forUpdate;
             }
         };
@@ -447,6 +558,26 @@ final class VendorTestSql {
                         collect(bySession, name, session, row.getString("statement"), row.getLong("blocker"));
                     }
                 }));
+                waits.addAll(bySession.values());
+            }
+            // 요청 하나가 막는 세션 하나를 낸다(blocking_session_id). 응용 잠금(sp_getapplock)도 같은 잠금 대기로 보인다. 앱 계정의 VIEW SERVER STATE 가 필요하다.
+            case MSSQL -> {
+                Map<Long, LockWait> bySession = new LinkedHashMap<>();
+                Pattern names = likePattern(sessionPattern);
+                jdbc.query("""
+                        SELECT r.session_id, LOWER(t.text) AS statement, r.blocking_session_id
+                        FROM sys.dm_exec_requests r CROSS APPLY sys.dm_exec_sql_text(r.sql_handle) t
+                        WHERE r.blocking_session_id <> 0 AND r.wait_type LIKE 'LCK[_]%' AND r.database_id = DB_ID()
+                        """, (RowCallbackHandler) row -> {
+                    long session = row.getLong("session_id");
+                    String name = MARIADB_SESSION_NAMES.getOrDefault(session, UNNAMED_SESSION);
+                    if (names.matcher(name).matches()) {
+                        // 매개변수 문장은 앞에 선언이 붙는다: "(@p0 bigint,@p1 nvarchar(4000))delete ...". 다른 벤더처럼 문장부터 둔다.
+                        String statement = row.getString("statement");
+                        collect(bySession, name, session, statement == null ? null : SQL_SERVER_PARAMETERS.matcher(statement).replaceFirst(""),
+                                row.getLong("blocking_session_id"));
+                    }
+                });
                 waits.addAll(bySession.values());
             }
         }
@@ -524,13 +655,30 @@ final class VendorTestSql {
                 : waitersBehind(jdbc, blocker) > 0;
     }
 
-    /** 응용 잠금을 기다리는 세션 수. PostgreSQL 은 advisory 잠금, 나머지는 슬롯 행이다. */
+    /**
+     * 응용 잠금을 기다리는 세션 수. PostgreSQL 은 advisory 잠금, 나머지는 슬롯 행이다. SQL Server 는 sp_getapplock 의 대기를 잠금 관리자에서 읽는다 —
+     * 시스템 프로시저를 도는 요청은 문장 텍스트로 찾을 수 없다.
+     */
     static int waitingOnApplicationLock(JdbcTemplate jdbc, String session) {
         if (isPostgresql(jdbc)) {
             return jdbc.queryForObject("SELECT count(*) FROM pg_stat_activity WHERE datname=current_database() "
                     + "AND application_name=? AND wait_event_type='Lock' AND wait_event='advisory'", Integer.class, session);
         }
+        if (vendor(jdbc) == Vendor.MSSQL) {
+            Pattern names = likePattern(session);
+            return (int) jdbc.queryForList("SELECT CAST(request_session_id AS BIGINT) FROM sys.dm_tran_locks WHERE resource_type = 'APPLICATION'"
+                    + " AND request_status = 'WAIT' AND resource_database_id = DB_ID()", Long.class).stream()
+                    .filter(id -> names.matcher(MARIADB_SESSION_NAMES.getOrDefault(id, UNNAMED_SESSION)).matches()).count();
+        }
         return (int) lockWaits(jdbc, session).stream().filter(wait -> wait.touches("tb_sys_lock_slot")).count();
+    }
+
+    /**
+     * 행 잠금 조회 문장의 표기. 관측한 대기 문장이 잠금 조회인지 볼 때 쓴다. SQL Server 는 잠금 절 대신 표 힌트다(Hibernate 방언·포트 모두,
+     * {@code (@p0 nvarchar(4000))select ... with (updlock,rowlock)}).
+     */
+    static String lockingReadPattern() {
+        return vendor() == Vendor.MSSQL ? "with \\((updlock|xlock)" : "for (no key )?update";
     }
 
     /** 시험을 묶는 문장 대기 상한. 다른 벤더에는 트랜잭션 범위 설정이 없다. */
@@ -555,7 +703,23 @@ final class VendorTestSql {
                     + condition.replaceAll("\\b(NEW|OLD)\\.", ":$1.") + " THEN RAISE_APPLICATION_ERROR(-20099, '" + message + "'); END IF; END;");
             case MARIADB, MYSQL -> jdbc.execute("CREATE TRIGGER " + name + " " + timing + " ON " + table + " FOR EACH ROW BEGIN IF "
                     + condition + " THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '" + message + "'; END IF; END");
+            case MSSQL -> jdbc.execute(sqlServerTrigger(name, timing, table, condition,
+                    "THROW 50099, '" + message + "', 1;"));
         }
+    }
+
+    /**
+     * SQL Server 트리거는 문장 단위의 AFTER 트리거다. BEFORE 가 없어 행이 들어간 뒤 오류로 문장을 되돌리고, 행 조건은 inserted·deleted 를 NEW·OLD
+     * 별칭으로 읽는다. 조건이 둘을 함께 읽는 시험은 없다.
+     */
+    private static String sqlServerTrigger(String name, String timing, String table, String condition, String body) {
+        String event = timing.replaceFirst("(?i)^(BEFORE|AFTER)\\s+", "");
+        String rows = condition.contains("OLD.") ? "deleted AS OLD" : "inserted AS NEW";
+        if (condition.contains("OLD.") && condition.contains("NEW.")) {
+            throw new IllegalArgumentException("NEW·OLD 를 함께 읽는 조건은 지원하지 않는다: " + condition);
+        }
+        return "CREATE TRIGGER " + name + " ON " + table + " AFTER " + event + " AS BEGIN SET NOCOUNT ON; IF EXISTS (SELECT 1 FROM "
+                + rows + " WHERE " + condition + ") BEGIN " + body + " END END";
     }
 
     /**
@@ -573,6 +737,12 @@ final class VendorTestSql {
             case MARIADB, MYSQL -> jdbc.execute("CREATE TRIGGER " + name + " BEFORE DELETE ON " + table + " FOR EACH ROW BEGIN IF "
                     + condition + " THEN SET @" + name + "_n = COALESCE(@" + name + "_n, 0) + 1; IF @" + name
                     + "_n > 1 THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '" + message + "'; END IF; END IF; END");
+            // 문장 단위 트리거라 지운 행 수를 세션 문맥에 쌓는다(MySQL 계열의 사용자 변수와 같다). 한 문장이 둘을 지워도 둘째에서 실패한다.
+            case MSSQL -> jdbc.execute("CREATE TRIGGER " + name + " ON " + table + " AFTER DELETE AS BEGIN SET NOCOUNT ON;"
+                    + " DECLARE @n INT = COALESCE(CAST(SESSION_CONTEXT(N'" + name + "_n') AS INT), 0)"
+                    + " + (SELECT COUNT(*) FROM deleted AS OLD WHERE " + condition + ");"
+                    + " EXEC sp_set_session_context N'" + name + "_n', @n;"
+                    + " IF @n > 1 THROW 50099, '" + message + "', 1; END");
             case POSTGRESQL -> throw new IllegalStateException("PostgreSQL 은 시험이 자기 표를 세는 트리거를 쓴다");
         }
     }
@@ -583,7 +753,7 @@ final class VendorTestSql {
                 jdbc.execute("DROP TRIGGER " + name);
                 jdbc.execute("DROP SEQUENCE " + name + "_n");
             }
-            case MARIADB, MYSQL -> jdbc.execute("DROP TRIGGER IF EXISTS " + name);
+            case MARIADB, MYSQL, MSSQL -> jdbc.execute("DROP TRIGGER IF EXISTS " + name);
             case POSTGRESQL -> throw new IllegalStateException("PostgreSQL 은 시험이 자기 트리거를 지운다");
         }
     }
@@ -601,7 +771,7 @@ final class VendorTestSql {
                     // 없으면 지울 것도 없다.
                 }
             }
-            case MARIADB, MYSQL -> jdbc.execute("DROP TRIGGER IF EXISTS " + name);
+            case MARIADB, MYSQL, MSSQL -> jdbc.execute("DROP TRIGGER IF EXISTS " + name);
         }
     }
 
@@ -611,6 +781,8 @@ final class VendorTestSql {
             case ORACLE -> jdbc.queryForObject("SELECT count(*) FROM user_tables WHERE table_name = UPPER(?)", Integer.class, table) > 0;
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT count(*) FROM information_schema.tables WHERE table_schema = DATABASE()"
                     + " AND table_name = ?", Integer.class, table) > 0;
+            case MSSQL -> jdbc.queryForObject("SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = SCHEMA_NAME()"
+                    + " AND TABLE_NAME = ?", Integer.class, table) > 0;
         };
     }
 
@@ -623,6 +795,9 @@ final class VendorTestSql {
                     + " AND data_type IN ('VARCHAR2', 'CLOB')", Integer.class, table, column) == 1;
             case MARIADB, MYSQL -> List.of("varchar").equals(jdbc.queryForList("SELECT LOWER(data_type) FROM information_schema.columns"
                     + " WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?", String.class, table, column));
+            // 어댑터는 문자열을 NVARCHAR(n)·NVARCHAR(MAX) 로 옮긴다.
+            case MSSQL -> List.of("nvarchar").equals(jdbc.queryForList("SELECT LOWER(DATA_TYPE) FROM INFORMATION_SCHEMA.COLUMNS"
+                    + " WHERE TABLE_SCHEMA = SCHEMA_NAME() AND TABLE_NAME = ? AND COLUMN_NAME = ?", String.class, table, column));
         };
     }
 
@@ -634,6 +809,8 @@ final class VendorTestSql {
                     Integer.class, table, column);
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT datetime_precision FROM information_schema.columns "
                     + "WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?", Integer.class, table, column);
+            case MSSQL -> jdbc.queryForObject("SELECT DATETIME_PRECISION FROM INFORMATION_SCHEMA.COLUMNS "
+                    + "WHERE TABLE_SCHEMA = SCHEMA_NAME() AND TABLE_NAME = ? AND COLUMN_NAME = ?", Integer.class, table, column);
         };
     }
 
@@ -644,6 +821,10 @@ final class VendorTestSql {
             case ORACLE -> jdbc.queryForObject("SELECT count(*) FROM user_constraints WHERE constraint_name = UPPER(?)", Integer.class, constraint);
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT count(*) FROM information_schema.table_constraints WHERE constraint_schema = DATABASE()"
                     + " AND constraint_name = ?", Integer.class, constraint);
+            // NULL 을 허용하는 유일 키는 어댑터가 필터 유일 인덱스로 옮겨 제약 표에 없다. 같은 유일성 집행이라 함께 센다.
+            case MSSQL -> jdbc.queryForObject("SELECT (SELECT count(*) FROM sys.objects WHERE name = ? AND type IN ('PK','UQ','F','C'))"
+                    + " + (SELECT count(*) FROM sys.indexes WHERE name = ? AND is_unique = 1 AND is_primary_key = 0 AND is_unique_constraint = 0)",
+                    Integer.class, constraint, constraint);
         };
     }
 
@@ -668,6 +849,12 @@ final class VendorTestSql {
                     String.class, constraint));
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT constraint_type FROM information_schema.table_constraints"
                     + " WHERE constraint_schema = DATABASE() AND constraint_name = ?", String.class, constraint) != null;
+            // CHECK·FK 는 꺼졌거나(is_disabled) 기존 행을 검사하지 않았으면(is_not_trusted) 검증되지 않은 것이다. 키·유일 인덱스는 만들 때 검사한다.
+            case MSSQL -> jdbc.queryForObject("SELECT CASE WHEN EXISTS (SELECT 1 FROM sys.check_constraints WHERE name = ? AND is_disabled = 0 AND is_not_trusted = 0)"
+                    + " OR EXISTS (SELECT 1 FROM sys.foreign_keys WHERE name = ? AND is_disabled = 0 AND is_not_trusted = 0)"
+                    + " OR EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = ?)"
+                    + " OR EXISTS (SELECT 1 FROM sys.indexes WHERE name = ? AND is_unique = 1 AND is_disabled = 0) THEN 1 ELSE 0 END",
+                    Integer.class, constraint, constraint, constraint, constraint) == 1;
         };
     }
 
@@ -678,6 +865,7 @@ final class VendorTestSql {
             // 인덱스는 컬럼마다 한 행이다. 표 기준으로 센다.
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT count(DISTINCT table_name) FROM information_schema.statistics"
                     + " WHERE table_schema = DATABASE() AND index_name = ?", Integer.class, index);
+            case MSSQL -> jdbc.queryForObject("SELECT count(*) FROM sys.indexes WHERE name = ?", Integer.class, index);
         }) == 1;
     }
 
@@ -699,6 +887,11 @@ final class VendorTestSql {
                     SELECT LOWER(column_name) FROM information_schema.key_column_usage
                     WHERE table_schema = DATABASE() AND table_name = ? AND referenced_table_name IS NOT NULL
                     """, String.class, table);
+            case MSSQL -> jdbc.queryForList("""
+                    SELECT LOWER(c.name) FROM sys.foreign_key_columns k
+                    JOIN sys.columns c ON c.object_id = k.parent_object_id AND c.column_id = k.parent_column_id
+                    WHERE k.parent_object_id = OBJECT_ID(?)
+                    """, String.class, table);
         };
     }
 
@@ -711,16 +904,20 @@ final class VendorTestSql {
                     String.class, table, column);
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT column_default FROM information_schema.columns WHERE table_schema = DATABASE()"
                     + " AND table_name = ? AND column_name = ?", String.class, table, column);
+            case MSSQL -> jdbc.queryForObject("SELECT COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = SCHEMA_NAME()"
+                    + " AND TABLE_NAME = ? AND COLUMN_NAME = ?", String.class, table, column);
         };
     }
 
     /**
-     * 한국 날짜(yyyyMMdd) 기본값의 정의인가. MySQL 계열 어댑터는 시간대 표 없이 UTC 에 9시간을 더한다. 카탈로그가 식을 소문자로 다시 쓰므로
-     * 소문자로 대조한다.
+     * 한국 날짜(yyyyMMdd) 기본값의 정의인가. MySQL 계열 어댑터는 시간대 표 없이 UTC 에 9시간을 더한다. SQL Server 어댑터는 Windows 시간대 이름과
+     * 날짜 스타일 112(yyyyMMdd)다. 카탈로그가 식을 소문자로 다시 쓰므로 소문자로 대조한다.
      */
     static void assertKoreanDateDefault(JdbcTemplate jdbc, String definition) {
         if (vendor(jdbc).innoDb()) {
             assertThat(definition.toLowerCase(Locale.ROOT)).contains("utc_timestamp()", "interval 9 hour", "%y%m%d");
+        } else if (vendor(jdbc) == Vendor.MSSQL) {
+            assertThat(definition.toLowerCase(Locale.ROOT)).contains("korea standard time", "112");
         } else {
             assertThat(definition).contains("Asia/Seoul").contains("YYYYMMDD");
         }
@@ -732,6 +929,7 @@ final class VendorTestSql {
             case POSTGRESQL -> "SELECT to_char((now() AT TIME ZONE 'Asia/Seoul'), 'YYYYMMDD')";
             case ORACLE -> "SELECT TO_CHAR(SYSTIMESTAMP AT TIME ZONE 'Asia/Seoul', 'YYYYMMDD') FROM DUAL";
             case MARIADB, MYSQL -> "SELECT DATE_FORMAT(UTC_TIMESTAMP() + INTERVAL 9 HOUR, '%Y%m%d')";
+            case MSSQL -> "SELECT CONVERT(NVARCHAR(8), SYSDATETIMEOFFSET() AT TIME ZONE 'Korea Standard Time', 112)";
         }, String.class);
     }
 
@@ -748,6 +946,7 @@ final class VendorTestSql {
         return switch (vendor(jdbc)) {
             case POSTGRESQL, ORACLE -> "(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')";
             case MARIADB, MYSQL -> "UTC_TIMESTAMP(6)";
+            case MSSQL -> "SYSUTCDATETIME()";
         };
     }
 
@@ -806,6 +1005,8 @@ final class VendorTestSql {
             case ORACLE -> List.of("61000", "99999").contains(failure.getSQLState());
             case MARIADB -> failure.getErrorCode() == 1205;
             case MYSQL -> failure.getErrorCode() == 1205 || failure.getErrorCode() == 3024;
+            // sp_getapplock 의 -1 을 잠금 문장이 51002 로 올린다(SqlServerSqlDialect).
+            case MSSQL -> failure.getErrorCode() == 51002;
         };
     }
 
@@ -815,6 +1016,7 @@ final class VendorTestSql {
             case POSTGRESQL -> "55P03".equals(failure.getSQLState());
             case ORACLE -> failure.getErrorCode() == 54 || failure.getErrorCode() == 30006;
             case MARIADB, MYSQL -> failure.getErrorCode() == 1205;
+            case MSSQL -> failure.getErrorCode() == 1222;
         };
     }
 
@@ -827,7 +1029,8 @@ final class VendorTestSql {
             case POSTGRESQL -> "57014".equals(failure.getSQLState());
             case ORACLE -> failure.getErrorCode() == 1013;
             case MARIADB -> failure instanceof SQLTimeoutException && failure.getErrorCode() == 1969;
-            case MYSQL -> failure instanceof SQLTimeoutException;
+            // mssql-jdbc 는 시간 초과를 번호 없이 HY008 로 올린다(2026-11-04 실측).
+            case MYSQL, MSSQL -> failure instanceof SQLTimeoutException;
         };
     }
 
@@ -837,22 +1040,22 @@ final class VendorTestSql {
      */
     static String failingQuery(JdbcTemplate jdbc) {
         return switch (vendor(jdbc)) {
-            case POSTGRESQL -> "SELECT 1 / CAST(? AS INTEGER)";
+            case POSTGRESQL, MSSQL -> "SELECT 1 / CAST(? AS INTEGER)";
             case ORACLE -> "SELECT 1 / CAST(? AS INTEGER) FROM DUAL";
             case MARIADB, MYSQL -> "SELECT (SELECT 1 UNION ALL SELECT ?) FROM DUAL";
         };
     }
 
-    /** {@link #failingQuery} 의 SQLState. 0 나누기는 22012, 여러 행 부분 질의는 21000 이다. */
+    /** {@link #failingQuery} 의 SQLState. 0 나누기는 22012 이고 mssql-jdbc 는 S0001(8134)로 올린다(2026-11-04 실측). 여러 행 부분 질의는 21000 이다. */
     static String failingQueryState(JdbcTemplate jdbc) {
-        return vendor(jdbc).innoDb() ? "21000" : "22012";
+        return vendor(jdbc).innoDb() ? "21000" : vendor(jdbc) == Vendor.MSSQL ? "S0001" : "22012";
     }
 
     static boolean isUniqueViolation(DataIntegrityViolationException failure) {
         Throwable cause = failure.getMostSpecificCause();
-        // PostgreSQL 은 23505, MySQL·MariaDB 는 무결성 위반이 모두 23000 이라 중복 번호 1062 로 본다.
+        // PostgreSQL 은 23505, MySQL·MariaDB·SQL Server 는 무결성 위반이 모두 23000 이라 중복 번호(1062, 2627 제약·2601 유일 인덱스)로 본다.
         return cause instanceof SQLException sql && ("23505".equals(sql.getSQLState())
-                        || sql.getErrorCode() == 1062 && "23000".equals(sql.getSQLState()))
+                        || Set.of(1062, 2627, 2601).contains(sql.getErrorCode()) && "23000".equals(sql.getSQLState()))
                 || String.valueOf(cause.getMessage()).contains("ORA-00001");
     }
 
@@ -877,6 +1080,9 @@ final class VendorTestSql {
         switch (vendor(jdbc)) {
             case POSTGRESQL -> assertThat(jdbc.queryForObject("SELECT current_setting('transaction_isolation')", String.class)).isEqualTo("read committed");
             case MARIADB, MYSQL -> assertThat(jdbc.queryForObject("SELECT @@SESSION.transaction_isolation", String.class)).isEqualTo("READ-COMMITTED");
+            // 2 가 READ COMMITTED 다. DB 의 READ_COMMITTED_SNAPSHOT 이 읽기를 스냅숏으로 만든다(SqlServerSqlDialect.assertSession).
+            case MSSQL -> assertThat(jdbc.queryForObject("SELECT CAST(transaction_isolation_level AS INT) FROM sys.dm_exec_sessions"
+                    + " WHERE session_id = @@SPID", Integer.class)).isEqualTo(2);
             case ORACLE -> {
             }
         }
@@ -891,6 +1097,7 @@ final class VendorTestSql {
             case POSTGRESQL -> jdbc.queryForObject("SELECT set_config(?, 'on', true)", String.class, key);
             case ORACLE -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key) VALUES (?)", key);
             case MARIADB, MYSQL -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key, permit_conn) VALUES (?, CONNECTION_ID())", key);
+            case MSSQL -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key, permit_conn) VALUES (?, @@SPID)", key);
         }
     }
 
@@ -900,8 +1107,9 @@ final class VendorTestSql {
             case POSTGRESQL -> {
             }
             case ORACLE -> jdbc.update("DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?", key);
-            case MARIADB, MYSQL -> {
-                int removed = jdbc.update("DELETE FROM tb_sys_ledger_permit WHERE permit_key = ? AND permit_conn = CONNECTION_ID()", key);
+            case MARIADB, MYSQL, MSSQL -> {
+                String connection = vendor(jdbc) == Vendor.MSSQL ? "@@SPID" : "CONNECTION_ID()";
+                int removed = jdbc.update("DELETE FROM tb_sys_ledger_permit WHERE permit_key = ? AND permit_conn = " + connection, key);
                 if (removed != 1) {
                     throw new IllegalStateException("감사 원장 삭제 허가를 회수하지 못했다: " + key + " (" + removed + "행)");
                 }

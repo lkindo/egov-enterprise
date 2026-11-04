@@ -8,7 +8,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { COMPOSER_OWNER_LABEL } from './project-composer-postgres.mjs';
-import { VENDOR_SOURCE } from './project-composer-vendor-source.mjs';
+import { SQLCMD, VENDOR_SOURCE, mssqlInitializationCommand } from './project-composer-vendor-source.mjs';
 
 export const VENDOR_CONTAINER_LABEL = 'egov.composer.vendor';
 const SCHEMA = 'vendorcheck';
@@ -37,6 +37,11 @@ const mysqlBatch = {
   wrap: body => `SET NAMES utf8mb4;\nSET time_zone = '+09:00';\nSET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;\n${body}\nCOMMIT;\n`,
   mark: (index, statement) => (statement.raw ? `SELECT '@@${index}';\nDELIMITER $$\n${statement.sql}$$\nDELIMITER ;` : `SELECT '@@${index}';\n${statement.sql};`),
 };
+
+/** 인덱스의 키 컬럼(포함 컬럼 제외) 조인. 유니크 서명·컬럼 조회가 같이 쓴다. */
+const MSSQL_INDEX_COLUMNS = 'FROM sys.indexes i JOIN sys.tables t ON t.object_id = i.object_id'
+  + ' JOIN sys.index_columns k ON k.object_id = i.object_id AND k.index_id = i.index_id AND k.is_included_column = 0'
+  + ' JOIN sys.columns c ON c.object_id = k.object_id AND c.column_id = k.column_id';
 
 /** 벤더별 기동·실행 방법. image 는 개발용이며 운영 라이선스는 기관 몫이다. */
 /** 통합 시험의 접속 값. 시험이 세션 잠금을 관측하고 실패 주입 트리거를 만들 권한을 준다. */
@@ -130,11 +135,26 @@ export const VENDOR_ENGINES = Object.freeze({
   },
   mssql: {
     version: '2022',
-    image: 'mcr.microsoft.com/mssql/server:2022-latest', maxWaitSeconds: 180, memoryHintBytes: MEMORY_HINT_BYTES,
-    environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer' }),
-    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `/opt/mssql-tools18/bin/sqlcmd -C -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "IF DB_ID('${SCHEMA}') IS NULL CREATE DATABASE ${SCHEMA}; ALTER DATABASE ${SCHEMA} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE"`]).status === 0,
-    command: file => `/opt/mssql-tools18/bin/sqlcmd -C -I -f 65001 -h -1 -W -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d ${SCHEMA} -i ${file}`,
+    image: 'mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090', imageOrigin: 'official:mcr', maxWaitSeconds: 180, memoryHintBytes: MEMORY_HINT_BYTES,
+    // 세션 시간대가 없어 서버 시계가 DB 의 시각이다(TZ, 2026-11-04 실측). 한국어 콜레이션은 서버가 아니라 앱 DB 에 둔다(mssqlInitialization).
+    environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer', TZ: 'Asia/Seoul' }),
+    // 앱 계정도 같은 비밀번호다(다른 벤더와 같다). 이미지가 만들지 않아 준비 확인이 만든다.
+    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', mssqlInitializationCommand({ adminPassword: '$MSSQL_SA_PASSWORD', login: SCHEMA, password: '$MSSQL_SA_PASSWORD', database: SCHEMA })]).status === 0,
+    // sa 비밀번호는 SQLCMDPASSWORD 로 넘긴다. -P 인자로 두면 컨테이너의 프로세스 목록에 보인다. -x 는 값 안의 $( 를 sqlcmd 변수로 읽지 않게 한다.
+    command: file => `SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" ${SQLCMD} -x -I -f 65001 -h -1 -W -S localhost -U sa -d ${SCHEMA} -i ${file}`,
     batch: { errors: /^Msg \d+, Level (1[1-9]|2\d)/, fatal: /^(Sqlcmd: Error|Msg \d+, Level 2\d)/, finish: `PRINT '${COMPLETED}'\nGO`, wrap: body => `SET NOCOUNT ON\nGO\n${body}\n`, mark: (index, statement) => `PRINT '@@${index}'\nGO\n${statement.sql}\nGO` },
+    integration: {
+      port: 1433,
+      url: port => `jdbc:sqlserver://127.0.0.1:${port};databaseName=${SCHEMA};${VENDOR_SOURCE.mssql.urlParameters}`,
+      username: SCHEMA,
+      driver: 'com.microsoft.sqlserver.jdbc.SQLServerDriver',
+      dialect: 'nuri.foundation.core.persistence.NuriSqlServerDialect',
+      administrator: `SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" ${SQLCMD} -x -b -I -f 65001 -S localhost -U sa -d ${SCHEMA}`,
+      // -b 가 첫 오류에서 실패 코드로 끝낸다. 문장마다 배치를 나눠 USE 가 다음 배치에 이어진다.
+      administratorScript: statements => `${statements.map(statement => `${statement}\nGO`).join('\n')}\nEXIT\n`,
+      // 잠금 대기 관측(sys.dm_tran_locks·dm_os_waiting_tasks)은 서버 권한이다. 서버 권한은 master 에서만 줄 수 있다. 일회용 시험 DB 에만 준다.
+      grants: ['USE master', `GRANT VIEW SERVER STATE TO ${SCHEMA}`, `USE ${SCHEMA}`],
+    },
   },
   cubrid: {
     version: '11.4',
@@ -370,6 +390,9 @@ export const VENDOR_UNIQUE_SIGNATURES = Object.freeze({
   // MariaDB 의 긴 유니크(HASH)도 같은 컬럼 목록으로 나온다.
   mariadb: "SELECT CONCAT(LOWER(table_name), '.', LOWER(index_name), '=', GROUP_CONCAT(LOWER(column_name) ORDER BY column_name SEPARATOR '#')) FROM information_schema.statistics"
     + " WHERE table_schema = DATABASE() AND non_unique = 0 GROUP BY table_name, index_name",
+  // 키 컬럼 목록과 필터 유무가 값이다. 필터를 빼거나 더하면 NULL 이 든 행을 받는 수가 달라진다. INCLUDE 컬럼은 유일성에 들지 않는다.
+  mssql: `SELECT LOWER(t.name) + '.' + LOWER(i.name) + '=' + STRING_AGG(LOWER(c.name), '#') WITHIN GROUP (ORDER BY c.name) + CASE WHEN i.has_filter = 1 THEN '$f' ELSE '' END ${MSSQL_INDEX_COLUMNS}`
+    + ' WHERE i.is_unique = 1 GROUP BY t.name, i.name, i.has_filter',
 });
 
 /**
@@ -415,6 +438,12 @@ END;`,
     indexes: NO_ROWS,
     expressions: NO_ROWS,
   },
+  // 이름 없이 만든 기본키(PK__)는 메타 조회도 빼므로 여기서도 뺀다. 계산 컬럼(해시·TRIM)은 그 컬럼 이름으로 나와 어댑터 기대치와 같다.
+  mssql: {
+    constraints: `SELECT LOWER(t.name) + '.' + LOWER(i.name) + '=' + LOWER(c.name) ${MSSQL_INDEX_COLUMNS} WHERE (i.is_primary_key = 1 OR i.is_unique_constraint = 1) AND i.name NOT LIKE 'PK[_][_]%'`,
+    indexes: `SELECT LOWER(t.name) + '.' + LOWER(i.name) + '=' + LOWER(c.name) ${MSSQL_INDEX_COLUMNS} WHERE i.is_unique = 1 AND i.is_primary_key = 0 AND i.is_unique_constraint = 0`,
+    expressions: "SELECT 'none.none=none' WHERE 1 = 0",
+  },
 });
 
 /**
@@ -430,6 +459,8 @@ export const VENDOR_SEQUENCE_NEXT_VALUES = Object.freeze({
     + ' PREPARE nuri_seq FROM @nuri_seq_sql; EXECUTE nuri_seq; DEALLOCATE PREPARE nuri_seq',
   mariadb: "SET @q = (SELECT GROUP_CONCAT(CONCAT('SELECT CONCAT(''', LOWER(table_name), ':'', next_not_cached_value) FROM `', table_name, '`') SEPARATOR ' UNION ALL ')"
     + " FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'SEQUENCE'); EXECUTE IMMEDIATE COALESCE(@q, 'SELECT 1 FROM DUAL WHERE 0')",
+  // 만든 뒤나 RESTART 뒤 한 번도 쓰지 않은 시퀀스는 current_value 가 다음 값이고, 쓴 뒤에는 current_value + increment 다(2026-11-04 실측).
+  mssql: "SELECT LOWER(name) + ':' + CAST(CASE WHEN last_used_value IS NULL THEN CAST(current_value AS BIGINT) ELSE CAST(current_value AS BIGINT) + CAST(increment AS BIGINT) END AS VARCHAR(30)) FROM sys.sequences",
 });
 
 /**
@@ -477,8 +508,8 @@ const NAME_VALUE = /(?:^|[\s:'])([a-z0-9_$#]*\.[a-z0-9_$#]+)'?$/;
 
 const UNIQUE_SIGNATURE_VALUE = /(?:^|[\s:'])([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)'?$/;
 
-/** 머리 줄 없이 값만 내는 배치. sqlplus 와 -N -B 로 부른 mysql·mariadb 클라이언트다. */
-const VALUE_ONLY_BATCHES = new Set(['oracle', 'mysql', 'mariadb']);
+/** 머리 줄 없이 값만 내는 배치. sqlplus 와 -N -B 로 부른 mysql·mariadb 클라이언트, -h -1 -W 와 NOCOUNT 로 부른 sqlcmd 다(2026-11-04 실측). */
+const VALUE_ONLY_BATCHES = new Set(['oracle', 'mysql', 'mariadb', 'mssql']);
 
 /**
  * 줄에서 값을 읽는다. 값만 내는 배치는 줄 전체가 형식에 맞아야 한다. 버리면 따옴표로 만든 이름이 목록에서 사라져 그 이름의 규칙을 통째로

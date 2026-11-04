@@ -182,7 +182,7 @@ class MailDeliveryStateIntegrationTest {
     @Test void exhaustedUnstartedIntentBecomesFailedAndLosesItsCiphertext() {
         long id = accept(ADDRESS, "display");
         DurableJob initial = job(id);
-        jdbc.update("UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='expired',job_prnmnt_dt=CURRENT_TIMESTAMP-INTERVAL '1' SECOND WHERE job_mng_no=?", initial.getJobMngNo());
+        jdbc.update(VendorTestSql.sql(jdbc, "UPDATE tb_sys_job SET prcs_stts_nm='RUNNING',rtry_nmtm=8,job_no='expired',job_prnmnt_dt=CURRENT_TIMESTAMP-INTERVAL '1' SECOND WHERE job_mng_no=?"), initial.getJobMngNo());
         worker().dispatchOne();
         assertThat(code(id)).isEqualTo("F");
         DurableJob finished = jobs.findByJobMngNo(initial.getJobMngNo()).orElseThrow();

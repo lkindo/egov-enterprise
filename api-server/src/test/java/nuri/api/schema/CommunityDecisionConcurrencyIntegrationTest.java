@@ -122,8 +122,17 @@ class CommunityDecisionConcurrencyIntegrationTest {
     @Test
     void lateFirstJoinCannotReplaceACommittedApprovalOrCommitAnotherRequest() throws Exception {
         // This scenario starts before any membership exists. The other tests begin with a request row.
-        assertThat(jdbc.update("DELETE FROM tb_cmnty_user_map WHERE cmnty_sn=? AND user_id=?",
-                community, USER_ID)).isEqualTo(1);
+        // Use a community whose membership key never existed: a just-deleted row can stay behind as a ghost
+        // record that a locking read locks (SQL Server, measured 2026-11-04), which would queue the second
+        // join behind the paused first one instead of letting it commit first.
+        jdbc.update("DELETE FROM tb_cmnty_user_map WHERE cmnty_sn=?", community);
+        jdbc.update("DELETE FROM tb_cmnty_info WHERE cmnty_sn=?", community);
+        community = VendorTestSql.insertKey(jdbc, """
+                INSERT INTO tb_cmnty_info (cmnty_nm, reg_se_cd, use_yn)
+                VALUES ('최초 가입 경합', 'REGC01', 'Y')
+                """, "cmnty_sn");
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_cmnty_user_map WHERE cmnty_sn=?", Integer.class, community))
+                .as("no membership row ever existed for this community").isZero();
         var absent = new CountDownLatch(1);
         var resumeLateJoin = new CountDownLatch(1);
         var id = new CommunityUserId(community, USER_ID);

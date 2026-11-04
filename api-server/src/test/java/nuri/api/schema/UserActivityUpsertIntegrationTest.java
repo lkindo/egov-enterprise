@@ -101,14 +101,8 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
 
     @Test
     @DisplayName("사용자 삭제 잠금은 종속 로그 정리 이후 새 활동 FK 적재를 차단한다")
-    void deletionLockBlocksLateActivityInsert() throws SQLException, ReflectiveOperationException {
+    void deletionLockBlocksLateActivityInsert() throws SQLException {
         migrateThroughAuthorizationCutover();
-
-        var deletionQuery = nuri.business.domain.user.repository.UserRepository.class
-                .getMethod("lockForDeletion", String.class)
-                .getAnnotation(org.springframework.data.jpa.repository.Query.class);
-        assertThat(deletionQuery).isNotNull();
-        assertThat(deletionQuery.nativeQuery()).isTrue();
 
         try (Connection deleting = openConnection();
              Connection logging = openConnection();
@@ -121,8 +115,9 @@ class UserActivityUpsertIntegrationTest extends SharedPostgresMigrationTestSuppo
             }
             deleting.setAutoCommit(false);
             try {
-                try (PreparedStatement lock = deleting.prepareStatement(
-                        deletionQuery.value().replace(":esntlId", "?"))) {
+                // 운영 저장소가 쓰는 문장 그대로다. 잠금 강도는 벤더 포트가 정한다.
+                try (PreparedStatement lock = deleting.prepareStatement(nuri.business.domain.user.repository.UserRepositoryImpl
+                        .lockForDeletionSql(VendorTestSql.dialect(loggingJdbc)).replace(":esntlId", "?"))) {
                     lock.setString(1, esntlId);
                     try (ResultSet row = lock.executeQuery()) {
                         assertThat(row.next()).isTrue();

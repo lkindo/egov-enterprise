@@ -94,7 +94,7 @@ class LockWaitTimeoutIntegrationTest {
         try {
             // 다른 연결이 같은 행을 FOR UPDATE 로 잡고, 시험이 끝날 때까지 놓지 않는다.
             Future<?> holding = holder.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
-                jdbc.queryForObject("SELECT ognz_id FROM tb_ognz_info WHERE ognz_id = ? FOR UPDATE", String.class, department);
+                jdbc.queryForObject(VendorTestSql.rowLock("SELECT ognz_id FROM tb_ognz_info WHERE ognz_id = ? FOR UPDATE"), String.class, department);
                 held.countDown();
                 try {
                     if (!release.await(60, TimeUnit.SECONDS)) throw new IllegalStateException("잠금을 놓으라는 신호가 오지 않았다");

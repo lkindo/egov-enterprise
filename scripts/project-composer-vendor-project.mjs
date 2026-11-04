@@ -37,6 +37,8 @@ const FLYWAY_BLOCK_END = Object.freeze({
   oracle: sql => `${sql}\n/`,
   mysql: sql => `DELIMITER $$\n${sql}$$\nDELIMITER ;`,
   mariadb: sql => `DELIMITER $$\n${sql}$$\nDELIMITER ;`,
+  // CREATE TRIGGER 는 배치의 첫 문장이어야 한다. 앞뒤를 GO 로 끊는다 — 대상 DB 대조의 sqlcmd 배치(문장마다 GO)와 같은 구분자다.
+  mssql: sql => `GO\n${sql}\nGO`,
 });
 
 /**
@@ -103,7 +105,8 @@ export function vendorApplicationDocument(vendorId) {
 /** 개발 스택의 DB 서비스와 앱 접속값을 벤더로 바꾼다. */
 export function projectVendorCompose(text, vendorId) {
   const source = VENDOR_SOURCE[vendorId];
-  const service = replaceRequired(text, /^ {2}db:\n[\s\S]*?(?=^ {2}api:\n)/m, source.composeService, 'compose db 서비스');
+  // 함수로 넣는다. 문자열 치환은 `$$`(Compose 이스케이프)를 `$` 하나로 접어, 상태 검사의 컨테이너 변수가 호스트 변수로 펼쳐진다.
+  const service = replaceRequired(text, /^ {2}db:\n[\s\S]*?(?=^ {2}api:\n)/m, () => source.composeService, 'compose db 서비스');
   const urls = replaceRequired(service, /jdbc:postgresql:\/\/db:5432\/egovdb/g, () => source.composeUrl, 'compose 접속 주소');
   const volume = replaceRequired(urls, /\bpostgres_data\b/g, source.composeVolume, 'compose 볼륨');
   // 환경 변수가 설정 파일을 이긴다. 두면 Oracle 에 PostgreSQL 번들을 적용한다.
@@ -139,12 +142,16 @@ export function projectVendorSettings(text) {
 }
 
 /** 운영 오버레이가 DB_ADMIN_PASSWORD 로 받는 번들 DB 관리자 계정(VENDOR_SOURCE 의 composeProd). */
-const ADMIN_ACCOUNT = Object.freeze({ oracle: 'SYS', mysql: 'root', mariadb: 'root' });
+const ADMIN_ACCOUNT = Object.freeze({ oracle: 'SYS', mysql: 'root', mariadb: 'root', mssql: 'sa' });
+/** 운영 오버레이가 더 요구하는 값. SQL Server 개발 이미지는 운영에 쓸 수 없는 Developer 에디션이다(VENDOR_SOURCE 의 composeProd). */
+const ENVIRONMENT_EXTRA = Object.freeze({
+  mssql: '\n# 운영 번들 DB 의 SQL Server 에디션(Standard·Enterprise 또는 제품 키). 개발 compose 는 Developer 에디션이다.\n# sa 비밀번호(DB_ADMIN_PASSWORD)는 대문자·소문자·숫자·기호 가운데 셋을 담은 8자 이상이어야 DB 가 기동한다.\n# MSSQL_PID=',
+});
 
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
 export function projectVendorEnvironment(text, vendorId) {
   const url = replaceRequired(text, /^DB_URL=jdbc:postgresql:[^\n]*$/m, () => `DB_URL=${VENDOR_SOURCE[vendorId].url}`, '.env.example 접속 주소');
-  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, `$1\n# 운영 번들 DB 의 ${ADMIN_ACCOUNT[vendorId]} 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me\n# 최초 관리자(webmaster) 비밀번호. 개발 시드가 없어 값을 정해야 로그인할 수 있다.\n# ADMIN_INITIAL_PASSWORD=`, '.env.example 비밀번호');
+  return replaceRequired(url, /^(DB_PASSWORD=[^\n]*)$/m, `$1\n# 운영 번들 DB 의 ${ADMIN_ACCOUNT[vendorId]} 비밀번호. 앱 비밀번호와 다르게 둔다.\nDB_ADMIN_PASSWORD=change-me${ENVIRONMENT_EXTRA[vendorId] ?? ''}\n# 최초 관리자(webmaster) 비밀번호. 개발 시드가 없어 값을 정해야 로그인할 수 있다.\n# ADMIN_INITIAL_PASSWORD=`, '.env.example 비밀번호');
 }
 
 /** README 본문은 원본 그대로 두고 이 절을 끝에 덧붙이므로, 본문과 어긋나는 자리에서 어느 쪽을 따를지 첫머리에 말한다. */
@@ -187,7 +194,30 @@ function innoDbReadme(vendorId) {
   };
 }
 
-const README_TEXT = Object.freeze({ oracle: () => ORACLE_README, mysql: () => innoDbReadme('mysql'), mariadb: () => innoDbReadme('mariadb') });
+/**
+ * README 의 SQL Server 문장. 세션 시간대가 없고, 스냅숏 두 설정과 이진 콜레이션·키 바이트·DB 가 지은 이름은 2026-11-04 SQL Server 2022 실측이다.
+ * 유일 제약과 유일 인덱스를 같은 조회(sys.indexes)로 읽어 미러 규칙에 Oracle 같은 예외가 없다.
+ */
+const MSSQL_README = Object.freeze({
+  subject: 'SQL Server 는',
+  mirror: '기준선 뒤에 생기거나 다시 만든 유니크의 엔티티 미러(기본키 제외, 유일 인덱스 포함)를, ',
+  session: [
+    `접속 주소(\`DB_URL\`)의 \`lockTimeout=5000\` 은 행 잠금 대기를 앱의 잠금 조회 상한(\`jakarta.persistence.lock.timeout\`, 5초)과 같게 묶는다. 운영 \`DB_URL\` 에도 그대로 둔다 — 빼면 잠금을 기다리는 요청에 상한이 없다. \`encrypt=false\` 는 같은 도커 망의 번들 DB 용이다. 다른 서버의 DB 에 붙을 때는 \`encrypt=true\` 와 그 서버의 인증서를 쓴다.`,
+    'SQL Server 에는 세션 시간대가 없어 서버 시계가 DB 의 `SYSDATETIME()`·`CURRENT_TIMESTAMP` 와 날짜 기본값이 된다. 서버 시간대가 한국 표준시가 아니면 앱이 기동하지 않는다(컨테이너는 `TZ=Asia/Seoul`). DB 는 `READ_COMMITTED_SNAPSHOT` 과 `ALLOW_SNAPSHOT_ISOLATION` 이 켜져 있어야 하고, 꺼져 있으면 앱이 기동하지 않는다. 앱은 REPEATABLE READ 일관 조회를 스냅숏 격리로 바꿔 쓴다. 개발 compose 의 DB 상태 검사가 DB·앱 계정과 두 설정을 만든다 — 이미지가 만들지 않기 때문이다. 앱 계정 비밀번호는 계정을 처음 만들 때만 반영된다.',
+    '개발 compose 의 DB 이미지는 운영에 쓸 수 없는 Developer 에디션이다. 운영 오버레이는 `MSSQL_PID`(Standard·Enterprise 또는 제품 키)를 요구한다. `DB_ADMIN_PASSWORD`(sa)는 대문자·소문자·숫자·기호 가운데 셋을 담은 8자 이상이어야 DB 가 기동한다.',
+  ],
+  columns: '새 문자열 컬럼은 기준선과 같이 `NVARCHAR(n) COLLATE Korean_100_BIN2` 로 만든다. 콜레이션을 빼면 DB 기본값(대소문자 무시)이 되어 비교와 유일 키가 대소문자를 가리지 않는다. 인덱스 키는 1,700바이트(클러스터 기본키는 900바이트)까지이고 NVARCHAR 는 글자당 2바이트, 이모지는 4바이트다. 넘는 인덱스는 만들 때 경고만 내고 그 값을 넣을 때 오류(1946)로 거부된다. NULL 을 허용하는 유일 키는 `WHERE 컬럼 IS NOT NULL` 필터 유일 인덱스로 만든다 — 그냥 UNIQUE 로 두면 NULL 이 든 행을 한 행만 받는다.',
+  quoted: '- 따옴표로 만든 이름: `[bad-name]`·`"게시판"` 처럼 형식 밖의 이름은 조회를 읽지 못해 멈춘다. 이름은 소문자로 접어 읽어 대문자 표기를 보지 못한다. 대괄호·따옴표와 대문자를 쓰지 않는다.',
+  unnamed: '- 이름 없이 만든 제약: SQL Server 가 지은 이름(`UQ__…`·`FK__…`·`CK__…`)은 조회에 나와 이름 규칙에서 붉다. 이름 없는 기본키(`PK__…`)와 기본값 제약(`DF__…`)은 조회에서 빠져 이름 규칙이 보지 않는다. 제약에는 이름을 붙인다.',
+  typeChange: '',
+  extra: [],
+  failedMigration: 'SQL Server 는 DDL 도 트랜잭션 안에서 돌아 `V` 파일이 중간에 실패하면 그 파일 전체가 되돌려지고 Flyway 이력에도 남지 않는다. 고친 뒤 다시 기동하면 된다. 트랜잭션 안에서 쓸 수 없는 문장(`ALTER DATABASE` 등)은 Flyway 파일에 두지 않고 따로 실행한다.',
+});
+
+const README_TEXT = Object.freeze({ oracle: () => ORACLE_README, mysql: () => innoDbReadme('mysql'), mariadb: () => innoDbReadme('mariadb'), mssql: () => MSSQL_README });
+
+/** 자동 커밋 DDL 벤더의 실패한 마이그레이션 안내. */
+const autoCommitFailure = subject => `${subject} DDL 이 자동 커밋이라 \`V\` 파일이 중간에 실패하면 실패한 문장 앞에서 만든 객체와 Flyway 이력의 실패 행이 남고, 다음 기동은 그 실패 행에서 멈춘다. 남은 객체를 손으로 지우고 실패 행을 정리(Flyway 의 \`repair\`. 이 프로젝트에는 그 명령이 없어 Flyway CLI 등으로 돌린다)한 뒤 다시 적용한다.`;
 
 /** 이미지 안내와 저하 문장은 화면과 같은 원장(notices)에서 가져온다. 원장 문구를 고치면 README 도 따라 바뀐다. 벤더 한계 문장은 README_TEXT 에 있다. */
 export function vendorReadme(vendorId, ledger) {
@@ -215,7 +245,7 @@ PostgreSQL 에서만 동작하는 도구는 이 프로젝트에 없다: ${ledger
 1. 벤더 문법으로 \`${RESOURCES}/db/vendor/${vendorId}\` 에 \`V1_1__설명.sql\` 처럼 기준선(\`V1_0\`)보다 높은 버전의 파일을 더한다. 번역 기준선(\`V1_0__vendor_baseline.sql\`)은 고치지 않는다. 반복 마이그레이션(\`R__\`)은 지원하지 않는다.
 2. \`npm run verify:vendor-schema\` 로 검사한다. 하네스를 돌린 뒤 번역 기준선과 입력을 잠금 해시로 대조하고, 일회용 DB 에 기준선만 적용해 표·컬럼·제약·인덱스·트리거·시퀀스 이름, 키·유니크의 컬럼, 시드 행 수, 식별 컬럼과 시퀀스의 다음 값을 번역 결과와 대조한다(제약 본문과 NOT NULL 은 잠금 해시가 받친다). 그 뒤 나머지 마이그레이션을 적용해 카탈로그 시험과 시나리오 시험을 돌린다. 컨테이너가 필요해 시간이 걸린다.
 3. \`db/migration\` 은 고치지 않는다. 실행되지 않는 번역 근거이고, 명명·유니크 미러 린터는 이 입력만 본다.
-4. ${text.subject} DDL 이 자동 커밋이라 \`V\` 파일이 중간에 실패하면 실패한 문장 앞에서 만든 객체와 Flyway 이력의 실패 행이 남고, 다음 기동은 그 실패 행에서 멈춘다. 남은 객체를 손으로 지우고 실패 행을 정리(Flyway 의 \`repair\`. 이 프로젝트에는 그 명령이 없어 Flyway CLI 등으로 돌린다)한 뒤 다시 적용한다. 운영 DB 에 올리기 전에 \`npm run verify:vendor-schema\` 로 일회용 DB 에서 먼저 돌린다.
+4. ${text.failedMigration ?? autoCommitFailure(text.subject)} 운영 DB 에 올리기 전에 \`npm run verify:vendor-schema\` 로 일회용 DB 에서 먼저 돌린다.
 
 카탈로그 시험은 적용된 DB 를 읽는다. 카탈로그 전체에서 PK 전략·숫자 변환·길이 초과를, 기준선 뒤에 생긴 객체에서 표·제약·인덱스·시퀀스 이름(\`tb_\`·\`pk_\`·\`fk_\`·\`uk_\`·\`ck_\`·\`ix_\`·\`sq_\`), 표의 저장 표기(따옴표로 만든 표는 붉다), 새 표의 감사 컬럼, 새 컬럼의 고정 문자형을, ${text.mirror}뷰 이름(\`vw_\`)을 본다. 표·컬럼 부재와 타입 계열은 시나리오 시험을 띄울 때 Hibernate validate 가 본다.
 

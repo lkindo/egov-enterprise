@@ -231,7 +231,7 @@ class MenuBookmarkConcurrencyIntegrationTest {
         try (var executor = Executors.newVirtualThreadPerTaskExecutor()) {
             var holder = executor.submit(() -> new TransactionTemplate(transactionManager).executeWithoutResult(status -> {
                 holderPid.set(VendorTestSql.sessionId(jdbc));
-                jdbc.queryForObject("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE", String.class, owner);
+                jdbc.queryForObject(VendorTestSql.rowLock("SELECT esntl_id FROM tb_user_info WHERE esntl_id=? FOR UPDATE"), String.class, owner);
                 ownerLocked.countDown();
                 awaitFixtureRelease(releaseOwner);
             }));

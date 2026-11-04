@@ -41,6 +41,27 @@ class VendorSqlConfigTest {
     }
 
     @Test
+    @DisplayName("mssql 은 SQL Server 구현을 고른다")
+    void selectsSqlServer() {
+        assertThat(new VendorSqlConfig().vendorSqlDialect("mssql")).isExactlyInstanceOf(SqlServerSqlDialect.class);
+    }
+
+    @Test
+    @DisplayName("SQL Server 는 REPEATABLE READ 를 스냅숏 격리로 바꾸는 DataSource 로 한 번만 감싼다")
+    void sqlServerMapsRepeatableReadToSnapshotOnce() throws Exception {
+        BeanPostProcessor processor = VendorSqlConfig.sqlServerIsolationMapping();
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        when(source.getConnection()).thenReturn(connection);
+
+        Object wrapped = processor.postProcessAfterInitialization(source, "dataSource");
+        ((DataSource) wrapped).getConnection().setTransactionIsolation(Connection.TRANSACTION_REPEATABLE_READ);
+
+        verify(connection).setTransactionIsolation(IsolationMappingDataSource.SQL_SERVER_SNAPSHOT);
+        assertThat(processor.postProcessAfterInitialization(wrapped, "dataSource")).isSameAs(wrapped);
+    }
+
+    @Test
     @DisplayName("모르는 벤더는 기본값으로 넘기지 않고 기동을 멈춘다")
     void rejectsUnknownVendor() {
         assertThatThrownBy(() -> new VendorSqlConfig().vendorSqlDialect("db2"))
@@ -64,13 +85,14 @@ class VendorSqlConfigTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"postgresql", "oracle", "mariadb", "mysql"})
+    @ValueSource(strings = {"postgresql", "oracle", "mariadb", "mysql", "mssql"})
     @DisplayName("격리 수준 처리는 그 벤더에만 걸린다 — PostgreSQL 은 아무것도 걸지 않는다")
     void isolationHandlingIsVendorScoped(String vendor) {
         new ApplicationContextRunner().withUserConfiguration(VendorSqlConfig.class)
                 .withPropertyValues("app.database.vendor=" + vendor)
                 .run(context -> {
                     assertThat(context.containsBean("oracleIsolationMapping")).isEqualTo("oracle".equals(vendor));
+                    assertThat(context.containsBean("sqlServerIsolationMapping")).isEqualTo("mssql".equals(vendor));
                     assertThat(context.containsBean("mariadbReadCommitted")).isEqualTo("mariadb".equals(vendor));
                     assertThat(context.containsBean("mysqlReadCommitted")).isEqualTo("mysql".equals(vendor));
                 });

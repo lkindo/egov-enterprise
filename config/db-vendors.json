@@ -172,11 +172,11 @@
           "version": "19",
           "engine": "oracle19",
           "evidence": {
-            "runId": "oracle19-c1b65ce2003a-125811dc",
-            "commit": "c1b65ce2003ae5ed685e7b98de1ea1921ae090f1",
-            "recordedAt": "2026-11-04T07:36:06.546+09:00",
-            "inputHash": "99d32417e5b222560a1605076e7d96a6f3e174d3eb2f69dbdfb54eded163f8ab",
-            "modelHash": "f76db68f94850a90d387acdbc381b1ae3cca596e3bb31c985516feb6d5997527",
+            "runId": "oracle19-429e6f92788a-10c7a242",
+            "commit": "429e6f92788a7eb1cb91d8ed6aa73ef0b38e363a",
+            "recordedAt": "2026-11-05T04:16:34.067+09:00",
+            "inputHash": "ab6b0e025fa1c8047b4d3004d3f5d6949bb953565e1f6a0fe244f7f1850d0ea6",
+            "modelHash": "10f3b2d0173ddbe372a9ad2394fea48cd5497245f2c3163ccdf17f5d119c225b",
             "image": "fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac",
             "imageOrigin": "community:fugeritorg",
             "scope": "application-database",
@@ -239,11 +239,11 @@
           "version": "23",
           "engine": "oracle",
           "evidence": {
-            "runId": "oracle-c1b65ce2003a-8f752d7f",
-            "commit": "c1b65ce2003ae5ed685e7b98de1ea1921ae090f1",
-            "recordedAt": "2026-11-04T06:46:05.979+09:00",
-            "inputHash": "99d32417e5b222560a1605076e7d96a6f3e174d3eb2f69dbdfb54eded163f8ab",
-            "modelHash": "f76db68f94850a90d387acdbc381b1ae3cca596e3bb31c985516feb6d5997527",
+            "runId": "oracle-429e6f92788a-e61f7b7c",
+            "commit": "429e6f92788a7eb1cb91d8ed6aa73ef0b38e363a",
+            "recordedAt": "2026-11-04T21:44:26.278+09:00",
+            "inputHash": "ab6b0e025fa1c8047b4d3004d3f5d6949bb953565e1f6a0fe244f7f1850d0ea6",
+            "modelHash": "10f3b2d0173ddbe372a9ad2394fea48cd5497245f2c3163ccdf17f5d119c225b",
             "image": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
             "imageOrigin": "community:gvenzl",
             "scope": "application-database",
@@ -351,11 +351,11 @@
           "version": "11.4",
           "engine": "mariadb",
           "evidence": {
-            "runId": "mariadb-2d6d39ba8407-5539b8d3",
-            "commit": "2d6d39ba84075169710828401d79a24090b1ab61",
-            "recordedAt": "2026-11-04T09:54:49.028+09:00",
-            "inputHash": "152e1aad88610238030e5a7c0040232b77eb3669678c94f1cb190905db1bbd91",
-            "modelHash": "451c065cace917b31da0d71ecbf69be306870fba6cb4eb5f19c28826fc2d5413",
+            "runId": "mariadb-429e6f92788a-3acd2fb2",
+            "commit": "429e6f92788a7eb1cb91d8ed6aa73ef0b38e363a",
+            "recordedAt": "2026-11-05T03:11:40.535+09:00",
+            "inputHash": "5882da2c94044f8f69cd1ba34c4d3aeeb0c751169a2eb82de749811ba1e8504a",
+            "modelHash": "8a1fb0941e20cbb7cdddb7f429fed41f99e92c458ee746ce73d2821ba6fbb683",
             "image": "mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
@@ -456,11 +456,11 @@
           "version": "8.4",
           "engine": "mysql",
           "evidence": {
-            "runId": "mysql-2d6d39ba8407-931193d1",
-            "commit": "2d6d39ba84075169710828401d79a24090b1ab61",
-            "recordedAt": "2026-11-04T09:37:02.731+09:00",
-            "inputHash": "fd742ec7e325943d300dc43dda913fb56db7f82ecffbc5fe423af250c68b0335",
-            "modelHash": "10a28f7029605bf21952d2b30765719949cd2e99df002e92d968961ec6724370",
+            "runId": "mysql-429e6f92788a-3b86f162",
+            "commit": "429e6f92788a7eb1cb91d8ed6aa73ef0b38e363a",
+            "recordedAt": "2026-11-05T03:26:46.516+09:00",
+            "inputHash": "eb83d0370966cd9b2979ae739f7016c249a5c5bad918157940926b400cb16262",
+            "modelHash": "853538735ff122c4d1b154ad54f34e73b77b46452264597c193ac9023cd06987",
             "image": "mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
@@ -560,6 +560,7 @@
       "id": "mssql",
       "label": "SQL Server",
       "status": "preview",
+      "ci": true,
       "engines": [
         {
           "version": "2022",
@@ -568,9 +569,49 @@
         }
       ],
       "evidenceInputs": [
-        "scripts/project-composer-vendor-mssql.mjs"
+        "scripts/project-composer-vendor-mssql.mjs",
+        "foundation/src/main/java/nuri/foundation/core/persistence/SqlServerSqlDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriSqlServerDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriSqlServerSqlAstTranslator.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriSqlServerDialectResolver.java",
+        "foundation/src/main/resources/META-INF/services/org.hibernate.engine.jdbc.dialect.spi.DialectResolver"
       ],
-      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다."
+      "notices": {
+        "degradations": [
+          {
+            "kind": "trailing-space",
+            "summary": "뒤 공백만 다른 문자열을 같은 값으로 봄",
+            "text": "문자열 비교와 유일 키가 끝의 공백을 무시합니다. 끝 공백만 다른 값은 같은 값으로 검색되고, 유일 키에서는 중복으로 거부됩니다."
+          },
+          {
+            "kind": "null-order",
+            "summary": "NULL 정렬 순서가 PostgreSQL 과 반대임",
+            "text": "NULL 을 가장 작은 값으로 정렬합니다. NULL 이 들 수 있는 칸으로 정렬하면 오름차순에서는 NULL 이 맨 앞, 내림차순에서는 맨 뒤에 와 PostgreSQL 과 반대입니다."
+          },
+          {
+            "kind": "null",
+            "summary": "참조되는 유일 키에 NULL 은 한 행만 들어감",
+            "text": "다른 표가 참조하는 유일 키는 NULL 이 든 행을 한 행만 받습니다. NULL 이 든 행을 둘 이상 저장하면 중복으로 거부됩니다."
+          },
+          {
+            "kind": "length",
+            "summary": "유일 키 값이 1,700바이트(850자)까지로 제한됨",
+            "text": "인덱스 키가 1,700바이트까지라 긴 문자열로 된 유일 키는 850자를 넘는 값을 저장하지 못하고 거부합니다."
+          },
+          {
+            "kind": "deferrable",
+            "summary": "외래 키를 커밋 때 미뤄 검사하지 못함",
+            "text": "외래 키를 커밋 때까지 미뤄 검사하지 못하고 문장마다 검사합니다. 자기 자신을 참조하는 메뉴처럼 부모와 자식을 한 번에 지울 때는 자식부터 지웁니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스와 긴 URL 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스와 1,700바이트를 넘을 수 있는 URL 칸의 인덱스가 없어 해당 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
+      },
+      "reason": "앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
     },
     {
       "id": "cubrid",

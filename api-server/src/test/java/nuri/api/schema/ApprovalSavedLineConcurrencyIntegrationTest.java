@@ -301,7 +301,7 @@ class ApprovalSavedLineConcurrencyIntegrationTest {
             Set<Integer> blockers = new HashSet<>();
             for (Wait wait : waits.values()) {
                 assertThat(wait.statement()).as("후행 저장이 기다린 문장은 소유자 사용자 행 잠금 조회다")
-                        .contains("tb_user_info").containsPattern("for (no key )?update");
+                        .contains("tb_user_info").containsPattern(VendorTestSql.lockingReadPattern());
                 blockers.addAll(wait.blockers());
             }
             assertThat(blockers).as("후행 저장을 막은 것은 선행 저장과 앞선 후행 저장뿐이다")

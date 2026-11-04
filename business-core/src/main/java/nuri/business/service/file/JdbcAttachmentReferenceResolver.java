@@ -180,12 +180,15 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
         // 연결 술어는 참조원마다 다르다(POPUP 은 URL 비교라 값이 2개이고 저장 형태로 완성해 넘긴다).
         params.addAll(source.linkageParameters(atchFileSn));
 
-        String sql = "SELECT COUNT(*) AS ref_cnt,"
-                + " SUM(CASE WHEN " + sharedExpr + " THEN 1 ELSE 0 END) AS shared_cnt,"
-                + " SUM(CASE WHEN " + ownerExpr + " THEN 1 ELSE 0 END) AS owner_cnt,"
-                + " SUM(CASE WHEN " + readerExpr + " THEN 1 ELSE 0 END) AS reader_cnt"
+        // 행마다 근거를 먼저 표시하고 바깥에서 센다. 술어에 EXISTS 가 들어 있고, SQL Server 는 집계 함수 안의 하위 조회를 받지 않는다(130).
+        // 자리표시자 순서(공유·소유·열람 술어, 연결 술어)는 그대로다.
+        String sql = "SELECT COUNT(*) AS ref_cnt, SUM(r.shared_flag) AS shared_cnt, SUM(r.owner_flag) AS owner_cnt,"
+                + " SUM(r.reader_flag) AS reader_cnt FROM (SELECT"
+                + " CASE WHEN " + sharedExpr + " THEN 1 ELSE 0 END AS shared_flag,"
+                + " CASE WHEN " + ownerExpr + " THEN 1 ELSE 0 END AS owner_flag,"
+                + " CASE WHEN " + readerExpr + " THEN 1 ELSE 0 END AS reader_flag"
                 + " FROM " + source.table()
-                + " WHERE " + source.linkagePredicate();
+                + " WHERE " + source.linkagePredicate() + ") r";
 
         return jdbcTemplate.queryForObject(sql, (rs, rowNum) -> new SourceHit(
                 rs.getLong("ref_cnt") > 0,

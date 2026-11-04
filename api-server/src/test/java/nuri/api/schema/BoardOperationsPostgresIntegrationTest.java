@@ -253,7 +253,7 @@ class BoardOperationsPostgresIntegrationTest {
                     });
             assertThat(waits).as("후행 고정은 실제 DB 잠금을 기다렸다").isNotEmpty();
             assertThat(waits.getFirst().statement()).as("후행 고정이 기다린 문장은 마스터 행 잠금 조회다")
-                    .contains("tb_bbs_master").containsPattern("for (no key )?update");
+                    .contains("tb_bbs_master").containsPattern(VendorTestSql.lockingReadPattern());
             assertThat(waits.getFirst().blockers()).as("후행을 막은 것은 선행 고정이다").contains(leadingPid.get());
         }
         assertThat(jdbc.queryForList("SELECT pst_ttl FROM tb_bbs_item WHERE bbs_id = ? AND upend_fix_yn = 'Y' ORDER BY pst_ttl",
@@ -352,7 +352,7 @@ class BoardOperationsPostgresIntegrationTest {
             blocker.setAutoCommit(false);
             int blockerPid;
             blockerPid = VendorTestSql.sessionId(VendorTestSql.on(blocker));
-            try (var lock = blocker.prepareStatement("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT atch_file_sn FROM tb_file_master WHERE atch_file_sn=? FOR UPDATE"))) {
                 lock.setLong(1, attachment); lock.executeQuery().close();
             }
             var writing = executor.submit(() -> {
@@ -485,10 +485,10 @@ class BoardOperationsPostgresIntegrationTest {
     @Test
     @DisplayName("게시·이용 일별 집계는 PostgreSQL 에서 일자 문자열과 건수를 돌려주고 끝 경계를 세지 않는다")
     void dailyStatisticsCountHalfOpenRanges() {
-        jdbc.update("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'a', 'Y', TIMESTAMP '2031-03-05 23:59:59')", bbsId);
-        jdbc.update("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'b', 'N', TIMESTAMP '2031-03-05 12:00:00')", bbsId);
-        jdbc.update("INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'c', 'Y', TIMESTAMP '2031-03-06 00:00:00')", bbsId);
-        jdbc.update("INSERT INTO tb_dta_use_stats (bbs_id, file_sn, crt_dt) VALUES (?, 1, TIMESTAMP '2031-03-05 01:00:00')", bbsId);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'a', 'Y', TIMESTAMP '2031-03-05 23:59:59')"), bbsId);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'b', 'N', TIMESTAMP '2031-03-05 12:00:00')"), bbsId);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_bbs_item (bbs_id, pst_ttl, use_yn, crt_dt) VALUES (?, 'c', 'Y', TIMESTAMP '2031-03-06 00:00:00')"), bbsId);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_dta_use_stats (bbs_id, file_sn, crt_dt) VALUES (?, 1, TIMESTAMP '2031-03-05 01:00:00')"), bbsId);
 
         assertSingleDay(boards.countPostsByDate("2031-03-05 00:00:00", "2031-03-06 00:00:00"));
         assertThat(boards.countPostsBetween("2031-03-05 00:00:00", "2031-03-06 00:00:00")).isEqualTo(1);

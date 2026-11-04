@@ -6,7 +6,8 @@
     "foundation/src/main/java/nuri/foundation/core/persistence/MariaDbSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/MySqlSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/OracleSqlDialect.java",
-    "foundation/src/main/java/nuri/foundation/core/persistence/PostgresqlSqlDialect.java"
+    "foundation/src/main/java/nuri/foundation/core/persistence/PostgresqlSqlDialect.java",
+    "foundation/src/main/java/nuri/foundation/core/persistence/SqlServerSqlDialect.java"
   ],
   "locations": [
     {

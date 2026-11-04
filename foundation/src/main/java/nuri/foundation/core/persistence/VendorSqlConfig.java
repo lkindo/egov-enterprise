@@ -18,6 +18,7 @@ public class VendorSqlConfig {
     private static final String ORACLE = "oracle";
     private static final String MARIADB = "mariadb";
     private static final String MYSQL = "mysql";
+    private static final String MSSQL = "mssql";
 
     @Bean
     public VendorSqlDialect vendorSqlDialect(@Value("${app.database.vendor:postgresql}") String vendor) {
@@ -33,17 +34,31 @@ public class VendorSqlConfig {
         if (MYSQL.equals(vendor)) {
             return new MySqlSqlDialect();
         }
+        if (MSSQL.equals(vendor)) {
+            return new SqlServerSqlDialect();
+        }
         throw new IllegalStateException("Unsupported app.database.vendor: " + vendor);
     }
 
     @Bean
     @ConditionalOnProperty(name = "app.database.vendor", havingValue = ORACLE)
     static BeanPostProcessor oracleIsolationMapping() {
+        return repeatableReadAs(Connection.TRANSACTION_SERIALIZABLE);
+    }
+
+    @Bean
+    @ConditionalOnProperty(name = "app.database.vendor", havingValue = MSSQL)
+    static BeanPostProcessor sqlServerIsolationMapping() {
+        return repeatableReadAs(IsolationMappingDataSource.SQL_SERVER_SNAPSHOT);
+    }
+
+    /** 호출부의 REPEATABLE READ(스냅숏 일관 조회)를 같은 뜻의 벤더 격리 수준으로 바꾼다(IsolationMappingDataSource). */
+    static BeanPostProcessor repeatableReadAs(int isolation) {
         return new BeanPostProcessor() {
             @Override
             public Object postProcessAfterInitialization(Object bean, String beanName) {
                 return bean instanceof DataSource dataSource && !(bean instanceof IsolationMappingDataSource)
-                        ? new IsolationMappingDataSource(dataSource) : bean;
+                        ? new IsolationMappingDataSource(dataSource, isolation) : bean;
             }
         };
     }

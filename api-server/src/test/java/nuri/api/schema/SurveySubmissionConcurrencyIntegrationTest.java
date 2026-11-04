@@ -107,7 +107,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         try (var executor = Executors.newFixedThreadPool(2);
              var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
-            try (var statement = blocker.prepareStatement("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE")) {
+            try (var statement = blocker.prepareStatement(VendorTestSql.rowLock("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE"))) {
                 statement.setLong(1, survey);
                 statement.executeQuery().close();
             }
@@ -550,7 +550,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         String application = "survey-cancel-" + survey;
         try (var executor = Executors.newFixedThreadPool(2); var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
-            try (var lock = blocker.prepareStatement("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE"))) {
                 lock.setLong(1, survey);
                 lock.executeQuery().close();
             }
@@ -602,7 +602,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
         String application = "survey-cancel-twice-" + survey;
         try (var executor = Executors.newFixedThreadPool(2); var blocker = dataSource.getConnection()) {
             blocker.setAutoCommit(false);
-            try (var lock = blocker.prepareStatement("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE")) {
+            try (var lock = blocker.prepareStatement(VendorTestSql.rowLock("SELECT srvy_sn FROM tb_srvy_info WHERE srvy_sn=? FOR UPDATE"))) {
                 lock.setLong(1, survey);
                 lock.executeQuery().close();
             }
@@ -636,7 +636,7 @@ class SurveySubmissionConcurrencyIntegrationTest {
     private String cancellationUser(String suffix) {
         String user = "SC" + survey + suffix;
         // 날짜는 ANSI 리터럴로 쓴다. 문자열 '2000-01-01' 의 암묵 변환은 Oracle 세션 지역(JVM 로캘)을 따라 영어 지역에서 ORA-01843 이 난다.
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,crt_dt) VALUES (?,?,'test-only-unusable','동명이인','P',TIMESTAMP '2000-01-01 00:00:00')", user, user);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,crt_dt) VALUES (?,?,'test-only-unusable','동명이인','P',TIMESTAMP '2000-01-01 00:00:00')"), user, user);
         cancellationUsers.add(user);
         return user;
     }

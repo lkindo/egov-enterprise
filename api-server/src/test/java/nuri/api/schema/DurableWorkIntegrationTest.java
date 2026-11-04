@@ -510,7 +510,7 @@ class DurableWorkIntegrationTest {
     }
 
     private void makeDue() {
-        jdbc.update("UPDATE tb_sys_job SET job_prnmnt_dt=CURRENT_TIMESTAMP - INTERVAL '1' SECOND WHERE job_mng_no=?", work.key().toString());
+        jdbc.update(VendorTestSql.sql(jdbc, "UPDATE tb_sys_job SET job_prnmnt_dt=CURRENT_TIMESTAMP - INTERVAL '1' SECOND WHERE job_mng_no=?"), work.key().toString());
     }
 
     private DurableWorkDispatcher dispatcher() {
