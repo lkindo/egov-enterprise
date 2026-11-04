@@ -1,6 +1,6 @@
 # 프로젝트 생성기 다중 DB 설계
 
-- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1·2·3 완료. Oracle(23·19c)·MariaDB(11.4)·MySQL(8.4)을 인증해 고를 수 있다. 다음은 단계 4(SQL Server)다(§16·§17·§18)
+- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1·2·3 완료. Oracle(23·19c)·MariaDB(11.4)·MySQL(8.4)을 인증해 고를 수 있다. 단계 4(SQL Server)는 벤더 CI 잡까지 들어갔고 승격이 남았다(§16·§17·§18·§19)
 - 기준 커밋: 첫 실측 `a3a3b182f`, 수정안 실측 `ce06495c7`(V2_146까지 포함).
 - 실측: 2026-10-30~31, 이 기계의 일회용 컨테이너. 저장소 변경 없음.
 - 관련: [생성기 설계](project-composer-design.md) §6·§8 E, ADR-0020, ADR-0008, DEC-OPS-239·262·263
@@ -726,4 +726,49 @@ NULL 정렬 차이는 화면 문장으로 알린다. 두 엔진의 정렬 순서
 
 승격하면서 시험 도우미가 실제 원장의 인증 벤더를 모두 승격 전으로 돌리도록 넓혔다. 한 벤더의 입력만 복사한 시험 트리에서 다른 인증 벤더의 입력을 읽지 않게 하기 위해서다. 인증 벤더가 늘어도 같은 판정을 시험한다.
 
-남은 일: 단계 4(SQL Server). 바이너리 로그를 켠 MariaDB 의 트리거 권한과 기관 DB 의 비이진 콜레이션은 재지 않았다(§6.1).
+남은 일: 단계 4(SQL Server, §19). 바이너리 로그를 켠 MariaDB 의 트리거 권한과 기관 DB 의 비이진 콜레이션은 재지 않았다(§6.1).
+
+## 19. 단계 4 진행 결과(SQL Server)
+
+SQL Server 2022 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `preview`). 인증은 이 변경이 main 에서 벤더 잡을 통과한 뒤의 PR 이다(DEC-OPS-400). 이미지는 공식 MCR 이미지를 digest 로 고정했다.
+
+### 실측(2026-11-04, 일회용 컨테이너)
+
+구현 전에 SQL Server 2022 CU27·mssql-jdbc 13.6.0 으로 재고, 그 값으로 정했다.
+
+| 주제 | 실측 | 처리 |
+|---|---|---|
+| 오류 번호 | CHECK 와 FK·참조 위반이 같은 547(23000)이다. NOT NULL 515, 중복 2627(제약)·2601(유일 인덱스), 길이 2628(S0001), 형식 241·245(S0001), 범위 8115(S0002), 0 나누기 8134, 잠금 대기 1222(S0051), 교착 1205(40001), 스냅숏 갱신 충돌 3960(S0002). 문장 시간 초과는 번호 없는 HY008 이다. 547 메시지의 제약 종류 낱말은 서버 메시지 언어를 한국어로 바꿔도 영어로 남는다 | 번호 표에 더해 547 은 메시지의 ` CHECK ` 로 가른다(`VendorErrorCodes.invalidValueMessages`) |
+| 잠금 대기 | `SET LOCK_TIMEOUT` 은 커밋·롤백 뒤에도 세션에 남는다. 접속 인자 `lockTimeout` 은 연결마다 건다 | 접속 인자 `lockTimeout=5000`. 트랜잭션 대기 문장은 아무 일도 하지 않는 `DECLARE` 다 |
+| 응용 잠금 | 트랜잭션 소유 `sp_getapplock` 은 트랜잭션이 없으면 -999 다. JDBC 수동 커밋은 암시적 트랜잭션이라 표를 읽어야 열린다. `BEGIN TRANSACTION` 으로 열면 중첩 수가 2가 되어 드라이버의 커밋 뒤에도 잠금이 남는다. 교착 희생(-3)은 트랜잭션을 남긴다 | 시스템 표를 읽는 식으로 트랜잭션을 연 뒤 잠근다. 실패는 문장이 `THROW` 로 올린다 — 51002(대기 초과·취소·교착 희생, 409)·51003(트랜잭션 밖, 500) |
+| 행 잠금 | 갱신 잠금(UPDLOCK)은 자식 FK 입력을 막지 않고 배타 잠금(XLOCK)은 막는다. UPDLOCK 은 처음부터 없던 키를 잠그지 않지만 HOLDLOCK·XLOCK 은 잠근다. 갓 지운 키는 유령 레코드라 UPDLOCK 도 잠근다. 공유 잠금은 UPDLOCK 과 충돌하지 않는다 | 포트의 FOR_UPDATE 는 XLOCK, FOR_NO_KEY_UPDATE 는 UPDLOCK. Hibernate 엔티티 잠금은 기본 `updlock,holdlock` 대신 범위 잠금 없는 `updlock,rowlock`(읽기 잠금 포함)으로 바꾼다(`NuriSqlServerDialect`, `NuriSqlServerSqlAstTranslator` — Hibernate 7.4 는 힌트를 방언이 아니라 SQL AST 번역기가 만든다) |
+| 원장 삭제 허가 | 키만 두면 바깥 트랜잭션이 중단된 채 안쪽이 같은 허가를 넣을 때 바깥의 미커밋 키를 기다린다(1222) | `(permit_key, @@SPID)` 를 키로 두고 트리거·회수가 자기 세션 행만 찾는다. 트리거는 `WITH (READCOMMITTED)` 로 읽어 READ UNCOMMITTED 세션도 남의 허가를 보지 못한다(실측) |
+| 격리 | `REPEATABLE READ` 는 읽은 행에 공유 잠금을 끝까지 쥐는 잠금 격리다 | 연결에서 스냅숏 격리로 바꾼다(`IsolationMappingDataSource`). 기동 때 `READ_COMMITTED_SNAPSHOT`·`ALLOW_SNAPSHOT_ISOLATION` 을 확인한다 |
+| 시간대 | 세션 시간대가 없다. 컨테이너의 `TZ` 가 서버 시계(`SYSDATETIME()`·`CURRENT_TIMESTAMP`)를 바꾼다 | 기동 때 서버 시계가 +09:00 인지 본다. 날짜 기본값은 `AT TIME ZONE 'Korea Standard Time'` 이라 서버 시간대와 무관하다 |
+| 키 바이트 | §6 표 | 물리 타입별로 센다 |
+| upsert | `MERGE ... WITH (HOLDLOCK)` 는 같은 키에 8개 연결이 1,200번 경합해도 오류가 없다 | 그대로 쓴다 |
+| 클라이언트 | `sqlcmd -h -1 -W` 와 `SET NOCOUNT ON` 은 값만 낸다. `-b` 는 첫 오류에서 실패 코드로 끝난다 | 메타 조회를 엄격히 읽는다(따옴표 이름은 멈춘다) |
+| 초기화 | 이미지가 앱 DB·계정을 만들지 않는다. 한 배치에서 `CREATE DATABASE` 뒤 `USE` 는 동적 SQL 이어야 한다. `READ_COMMITTED_SNAPSHOT` 을 다시 켜면 `ROLLBACK IMMEDIATE` 가 연결을 끊는다 | 엔진 준비와 생성물 compose 의 DB 상태 검사가 같은 문장(`mssqlInitialization`)을 쓴다. 이미 된 일은 다시 하지 않는다 |
+
+### 통합 시험(원본 저장소, demo 번역 입력)
+
+첫 실행은 400건 중 93건이 실패했다. 원인과 처리:
+
+| 원인 | 처리 |
+|---|---|
+| 첨부 접근 판정·끊긴 참조 집계가 집계 함수 안에 하위 조회(EXISTS)를 넣어 SQL Server 가 거부했다(130). 해석기는 조회 실패를 fail-closed 로 받아 첨부가 열리지 않았다 | 행마다 근거를 먼저 표시하고 바깥에서 센다(운영 코드, 모든 벤더에서 같은 행·같은 값) |
+| 사용자 삭제 잠금이 SQL Server 에 없는 `FOR UPDATE` 절을 썼다 | 포트(`selectForLock`)로 옮기고 이식성 린터에 `for-update` 규칙을 더했다 |
+| Hibernate 의 `holdlock` 이 없는 키를 잠가 가입 요청이 5초를 기다렸고, 공유 잠금이 쓰기 잠금과 줄을 서지 않았다 | 위 행 잠금 처리 |
+| 시험 SQL 의 표준 구문(`INTERVAL`, `TIMESTAMP '…'`, `LENGTH`, `JOIN … USING`, `VALUES (DEFAULT)`)과 `FOR UPDATE` 고정 장치 | `VendorTestSql` 이 번역한다. `USING` 은 모든 벤더가 받는 `ON` 으로 고쳤다 |
+| 오류 번역 시험이 결과 행을 읽지 않아 SELECT 식의 오류와 행 잠금 대기 초과가 드러나지 않았다 | 행을 끝까지 읽는다 |
+
+원장의 제외는 셋이다. PostgreSQL 함수·카탈로그를 쓰는 2건(MySQL 계열과 같다), 같은 설문 투표의 공유 잠금 시험(Oracle 과 같다), 갓 지운 회원 행을 두 가입 요청이 함께 잠그는 순서를 만드는 경합 시험(유령 레코드 잠금, §6.1)이다.
+
+### 생성과 전체 검증
+
+demo 멀티모듈 생성물(대표 구성)에서 번역 기준선을 Flyway 로 적용하고(트리거 앞뒤를 `GO` 로 끊는다) 카탈로그 적합 5건, Hibernate validate 문맥 44개, 통합 시험 51개 클래스 396건, 차등 시험(CHECK 134개, 값 1,068개, 불일치 0, 트리거 동작 실패 0)을 통과했다. 첫 생성에서 차등 시험의 원장 허가 전이가 실패했다 — 허가 표의 세션 번호에 기본값이 없어 키만 넣는 입력이 거부됐다. MySQL 계열의 `CONNECTION_ID()` 기본값처럼 `DEFAULT @@SPID` 를 두었다.
+
+이 변경은 모든 벤더가 공유하는 인증 입력(포트 공통 파일, 엔진·투영 스크립트, 시험 원장, 첨부 조회 SQL)을 바꿔 Oracle 23·19c·MariaDB·MySQL 증거를 같은 트리로 다시 기록했다.
+
+남은 일: 승격(증거 기록, 화면 선택). 기관 DB 의 서버 시간대·스냅숏 설정과 Windows 서버는 재지 않았다.
+
