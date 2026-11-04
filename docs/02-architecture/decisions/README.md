@@ -56,3 +56,4 @@
 | [ADR-0047](ADR-0047-multi-database-composer-and-vendor-sql-boundary.md) | 프로젝트 생성기의 다중 DB 선택과 벤더 SQL 경계 — PostgreSQL 단일 정본, 벤더 어댑터, 포트·린터, 차등 시험 | Accepted |
 | [ADR-0048](ADR-0048-personal-attachment-deletion-and-uploader-window.md) | 업로더 근거의 범위와 개인 귀속 첨부의 개별 삭제 | Accepted |
 | [ADR-0049](ADR-0049-retire-workflow-demo-screens.md) | 워크플로우 목업 3개 화면 퇴역과 기존 WORKFLOW_READ 배정 호환 | Accepted |
+| [ADR-0050](ADR-0050-local-requirements-workspace.md) | 요구사항 로컬 UI·외부 파일 작업공간·분석 기준선·개발 준비·인수 근거 결속 | Accepted |

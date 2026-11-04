@@ -11,14 +11,14 @@ import { useMenuBookmarkToggle } from '@/hooks/api/use-menu-bookmarks';
  * 늘어놓으면 메뉴 이름보다 별이 먼저 읽힌다. 상태는 aria-pressed 로 말한다.
  */
 export function NavBookmarkToggle({ menuNo, menuNm }: { menuNo: number; menuNm: string }) {
-  const { isBookmarked, togglePending, toggle } = useMenuBookmarkToggle(menuNo, menuNm);
+  const { isBookmarked, toggleReady, togglePending, toggle } = useMenuBookmarkToggle(menuNo, menuNm);
   return (
     <button
       type="button"
       aria-label={`${menuNm} 즐겨찾기`}
       aria-pressed={isBookmarked}
       aria-busy={togglePending || undefined}
-      disabled={togglePending}
+      disabled={!toggleReady || togglePending}
       onClick={() => void toggle()}
       className={cn(
         'absolute right-2 top-1/2 flex min-h-7 min-w-7 -translate-y-1/2 items-center justify-center rounded-md transition-opacity',

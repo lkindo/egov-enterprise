@@ -144,7 +144,7 @@ export function useMenuBookmarkCleanup(ready: boolean) {
 
 /** 메뉴 하나의 즐겨찾기 추가·빼기. 같은 메뉴를 연달아 눌러도 요청은 하나씩 나간다. */
 export function useMenuBookmarkToggle(menuNo: number, menuNm: string) {
-  const { bookmarkedMenuNos } = useMenuBookmarks();
+  const { bookmarkedMenuNos, isSuccess: bookmarksLoaded } = useMenuBookmarks();
   const queryClient = useQueryClient();
   const { toast } = useToast();
   const togglePendingRef = useRef(false);
@@ -157,7 +157,8 @@ export function useMenuBookmarkToggle(menuNo: number, menuNm: string) {
   });
 
   const toggle = useCallback(async () => {
-    if (togglePendingRef.current) return;
+    // 첫 조회의 빈 대체값으로 추가·삭제를 추정하지 않는다. 조회 중 쓰면 초기 GET이 mutation 후 재조회와 합쳐질 수 있다.
+    if (togglePendingRef.current || !bookmarksLoaded) return;
     togglePendingRef.current = true;
     setTogglePending(true);
     const add = !isBookmarked;
@@ -169,7 +170,7 @@ export function useMenuBookmarkToggle(menuNo: number, menuNm: string) {
       togglePendingRef.current = false;
       setTogglePending(false);
     }
-  }, [isBookmarked, menuNm, mutation, toast]);
+  }, [bookmarksLoaded, isBookmarked, menuNm, mutation, toast]);
 
-  return { isBookmarked, togglePending, toggle };
+  return { isBookmarked, toggleReady: bookmarksLoaded, togglePending, toggle };
 }

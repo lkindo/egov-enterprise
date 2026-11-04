@@ -309,6 +309,11 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: frontend
 
+      # The standalone requirements browser checks are part of the same required
+      # Node catalog and use the Playwright version pinned by the frontend lockfile.
+      - name: Install Chromium for requirements workspace browser contracts
+        run: pnpm -C frontend exec playwright install --with-deps chromium
+
       # 우회 가능한 로컬 훅에 의존하지 않도록 저장소 운영 계약을 required CI에서 다시 검증한다.
       - name: Verify repository operational contracts
         env:

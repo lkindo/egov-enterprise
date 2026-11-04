@@ -12,6 +12,7 @@ const mocks = vi.hoisted(() => ({
   addBookmark: vi.fn(),
   removeBookmark: vi.fn(),
   toast: vi.fn(),
+  authUser: vi.fn(),
 }));
 
 vi.mock('@/services/business/user/MenuService', () => ({
@@ -22,7 +23,7 @@ vi.mock('@/services/business/user/MenuService', () => ({
   },
 }));
 vi.mock('@/contexts/AuthContext', () => ({
-  useAuth: () => ({ user: { id: 'staff01', authorizationVersion: 'v1' } }),
+  useAuth: () => ({ user: mocks.authUser() }),
 }));
 vi.mock('@/app/components/ui/toast', () => ({ useToast: () => ({ toast: mocks.toast }) }));
 vi.mock('next/navigation', () => ({
@@ -47,6 +48,7 @@ function menu(overrides: Partial<MenuInfo>): MenuInfo {
 describe('메뉴 즐겨찾기 토글', () => {
   beforeEach(() => {
     Object.values(mocks).forEach((fn) => fn.mockReset());
+    mocks.authUser.mockReturnValue({ id: 'staff01', authorizationVersion: 'v1' });
     mocks.getMyBookmarkStatus.mockResolvedValue({ bookmarks: [{ menuNo: 10, menuNm: '공지' }], unavailableCount: 0 });
     mocks.addBookmark.mockResolvedValue(undefined);
     mocks.removeBookmark.mockResolvedValue(undefined);
@@ -68,6 +70,7 @@ describe('메뉴 즐겨찾기 토글', () => {
     renderWithClient(<NavBookmarkToggle menuNo={20} menuNm="결재함" />);
     const toggle = screen.getByRole('button', { name: '결재함 즐겨찾기' });
     await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(toggle).not.toBeDisabled());
     expect(toggle).toHaveAttribute('aria-pressed', 'false');
 
     await user.click(toggle);
@@ -82,6 +85,7 @@ describe('메뉴 즐겨찾기 토글', () => {
     renderWithClient(<NavBookmarkToggle menuNo={20} menuNm="결재함" />);
     const toggle = screen.getByRole('button', { name: '결재함 즐겨찾기' });
     await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalled());
+    await waitFor(() => expect(toggle).not.toBeDisabled());
 
     await user.click(toggle);
     await waitFor(() => expect(toggle).toHaveAttribute('aria-busy', 'true'));
@@ -102,6 +106,7 @@ describe('메뉴 즐겨찾기 토글', () => {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
     });
     await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.toggleReady).toBe(true));
 
     let first: Promise<void> = Promise.resolve();
     act(() => {
@@ -122,6 +127,7 @@ describe('메뉴 즐겨찾기 토글', () => {
       wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
     });
     await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalled());
+    await waitFor(() => expect(result.current.toggleReady).toBe(true));
     await act(async () => { await result.current.toggle(); });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['menus', 'bookmarks'] });
     expect(invalidate).toHaveBeenCalledWith({ queryKey: ['menus', 'command-center', 'bookmarks'] });
@@ -138,5 +144,88 @@ describe('메뉴 즐겨찾기 토글', () => {
 
     render(<NavItem item={menu({ menuNo: 3, menuNm: '공지' })} />);
     expect(screen.queryByTestId('star-3')).toBeNull();
+  });
+
+  it('첫 상태 조회가 끝나기 전에는 쓰지 않고, 확인한 뒤 추가하면 새 상태를 읽는다', async () => {
+    const user = userEvent.setup();
+    let resolveInitial!: (value: { bookmarks: { menuNo: number; menuNm: string }[]; unavailableCount: number }) => void;
+    mocks.getMyBookmarkStatus.mockImplementationOnce(() => new Promise(resolve => { resolveInitial = resolve; }))
+      .mockResolvedValue({ bookmarks: [{ menuNo: 20, menuNm: '결재함' }], unavailableCount: 0 });
+    renderWithClient(<NavBookmarkToggle menuNo={20} menuNm="결재함" />);
+    const toggle = screen.getByRole('button', { name: '결재함 즐겨찾기' });
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(1));
+    expect(toggle).toBeDisabled();
+    expect(toggle).not.toHaveAttribute('aria-busy', 'true');
+    await user.click(toggle);
+    expect(mocks.addBookmark).not.toHaveBeenCalled();
+    expect(mocks.removeBookmark).not.toHaveBeenCalled();
+
+    await act(async () => { resolveInitial({ bookmarks: [], unavailableCount: 0 }); });
+    await waitFor(() => expect(toggle).not.toBeDisabled());
+    await user.click(toggle);
+    await waitFor(() => expect(mocks.addBookmark).toHaveBeenCalledWith(20));
+    await waitFor(() => expect(toggle).toHaveAttribute('aria-pressed', 'true'));
+    expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(2);
+  });
+
+  it('첫 상태 조회가 실패하면 빈 목록으로 추정해 쓰지 않는다', async () => {
+    mocks.getMyBookmarkStatus.mockRejectedValue(new Error('상태 조회 실패'));
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const { result } = renderHook(() => useMenuBookmarkToggle(20, '결재함'), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await waitFor(() => expect(client.getQueryState(['menus', 'bookmarks', 'staff01', 'v1'])?.status).toBe('error'));
+    expect(result.current.toggleReady).toBe(false);
+    expect(result.current.togglePending).toBe(false);
+    await act(async () => { await result.current.toggle(); });
+    expect(mocks.addBookmark).not.toHaveBeenCalled();
+    expect(mocks.removeBookmark).not.toHaveBeenCalled();
+  });
+
+  it('계정·권한 범위가 바뀌면 새 상태를 확인하기 전의 호출을 거부한다', async () => {
+    let resolveNext!: (value: { bookmarks: { menuNo: number; menuNm: string }[]; unavailableCount: number }) => void;
+    mocks.getMyBookmarkStatus.mockResolvedValueOnce({ bookmarks: [{ menuNo: 20, menuNm: '결재함' }], unavailableCount: 0 })
+      .mockImplementationOnce(() => new Promise(resolve => { resolveNext = resolve; }))
+      .mockResolvedValue({ bookmarks: [{ menuNo: 20, menuNm: '결재함' }], unavailableCount: 0 });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const { result, rerender } = renderHook(() => useMenuBookmarkToggle(20, '결재함'), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    await waitFor(() => expect(result.current.isBookmarked).toBe(true));
+    mocks.authUser.mockReturnValue({ id: 'staff02', authorizationVersion: 'v2' });
+    rerender();
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(2));
+    expect(result.current.toggleReady).toBe(false);
+    expect(result.current.togglePending).toBe(false);
+    await act(async () => { await result.current.toggle(); });
+    expect(mocks.addBookmark).not.toHaveBeenCalled();
+    expect(mocks.removeBookmark).not.toHaveBeenCalled();
+    await act(async () => { resolveNext({ bookmarks: [], unavailableCount: 0 }); });
+    await waitFor(() => expect(result.current.toggleReady).toBe(true));
+    await act(async () => { await result.current.toggle(); });
+    expect(mocks.addBookmark).toHaveBeenCalledWith(20);
+    expect(mocks.removeBookmark).not.toHaveBeenCalled();
+    await waitFor(() => expect(result.current.isBookmarked).toBe(true));
+  });
+
+  it('성공한 캐시의 배경 재조회 중에는 토글을 계속 사용할 수 있다', async () => {
+    let resolveBackground!: (value: { bookmarks: { menuNo: number; menuNm: string }[]; unavailableCount: number }) => void;
+    mocks.getMyBookmarkStatus.mockImplementationOnce(() => new Promise(resolve => { resolveBackground = resolve; }))
+      .mockResolvedValue({ bookmarks: [{ menuNo: 20, menuNm: '결재함' }], unavailableCount: 0 });
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } });
+    const key = ['menus', 'bookmarks', 'staff01', 'v1'];
+    client.setQueryData(key, { bookmarks: [], unavailableCount: 0 });
+    const { result } = renderHook(() => useMenuBookmarkToggle(20, '결재함'), {
+      wrapper: ({ children }) => <QueryClientProvider client={client}>{children}</QueryClientProvider>,
+    });
+    let background!: Promise<void>;
+    act(() => { background = client.invalidateQueries({ queryKey: key }); });
+    await waitFor(() => expect(mocks.getMyBookmarkStatus).toHaveBeenCalledTimes(1));
+    expect(result.current.toggleReady).toBe(true);
+    expect(result.current.togglePending).toBe(false);
+    await act(async () => { await result.current.toggle(); });
+    expect(mocks.addBookmark).toHaveBeenCalledWith(20);
+    await act(async () => { resolveBackground({ bookmarks: [], unavailableCount: 0 }); await background; });
+    await waitFor(() => expect(result.current.isBookmarked).toBe(true));
   });
 });
