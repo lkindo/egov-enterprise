@@ -127,6 +127,7 @@ pnpm dev
 - `npm run base:verify -- --profile core`: 새 격리 PostgreSQL과 소스 산출물을 만들고 산출물의 계약·Java 하네스·실 DB 스키마·프런트 타입·lint·build를 검증한다. [시작 구성](./config/modules/presets.json) 다섯(`core`·`collaboration`·`demo`·`survey`·`approval`)이 같은 경로를 사용한다. [재사용 Base 가이드](./docs/03-guides/reusable-base-guide.md)를 따른다.
 - `npm run verify:migration`: 온라인 UI 없이 독립 이관 모듈의 테스트·bootJar를 검증한다.
 - `npm run migration:export`: 프런트·온라인 모듈 없이 이관 CLI의 독립 소스 제품을 새 디렉터리에 생성한다. 생성 후 해당 제품에서 기술 검증과 기관 검토를 수행한다.
+- `node tools/requirements-workspace/server.mjs --workspace <Git 밖 경로>`: [요구사항 로컬 UI](./docs/03-guides/requirements-workspace-guide.md)에서 자료·조항·요구사항·에픽/스토리·개발 패키지·검수/감리 자료를 관리한다.
 - `npm run review:status` / `review:migration`: 일반 검토 기한 경과와 미검토 상태를 별도 보고한다. 기관 배포·이관 승인은 [검토 수명 가이드](./docs/03-guides/governance-review-lifecycle.md)의 제품·환경별 원장으로 따로 확인한다.
 - `.\gradlew.bat localGate`: Docker 기반 PostgreSQL 스키마 검증, 전 모듈 테스트, JaCoCo, 프론트 단위 검증을 묶은 Gradle 전수 lane. 생성물 신선도·운영 계약·정적 검사·프런트 build 까지 보는 넓은 로컬 검증은 `npm run verify` 다.
 - `npm run verify:ops`: 원격 ruleset 등 네트워크·관리 권한이 필요한 운영 점검.

@@ -1,11 +1,13 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BANNED_CLAIMS } from './export-deliverables.mjs';
+import { BANNED_CLAIMS, backlogDetailSheet, exportDeliverables, loadInputs, projectUatChecklistSheet } from './export-deliverables.mjs';
+import * as deliverablesEngine from './export-deliverables.mjs';
+import * as workspaceEngine from './export-deliverables-workspace.mjs';
 import { readRequirements, requirementSheet } from './export-deliverables-trace.mjs';
 import {
   ACCEPTANCE_DISPOSITIONS,
@@ -46,6 +48,31 @@ import {
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO_ROOT = resolve(HERE, '..');
+
+function readyBacklog(snapshot) {
+  const pack = createSampleBacklogPack(snapshot);
+  pack.sources[0].classification = 'internal';
+  pack.sources[0].fileSha256 = 'a'.repeat(64);
+  pack.sources[1].classification = 'internal';
+  pack.sources[1].fileSha256 = 'b'.repeat(64);
+  pack.sources[1].clauses = [
+    { id: 'CLS-MIN-1', locator: 'line 1', text: '일괄 중지 사유', disposition: 'included', requirementIds: ['REQ-SFR-003'] },
+    { id: 'CLS-MIN-2', locator: 'line 2', text: '단말 연계 제외', disposition: 'excluded', requirementIds: ['REQ-INT-099'], rationale: '차기 사업 합의' },
+  ];
+  const story = pack.workItems.find((item) => item.id === 'US-PROMO-001');
+  story.decisionCards = ['D-1: A1', 'D-2: POPUP_UPDATE', 'D-3: tb_popup_info.popup_sn', 'D-4: 기존 입력 계약', 'D-5: 거부 시험'];
+  pack.acceptanceCriteria.push({ id: 'AC-PROMO-001-R1', workItemId: story.id, requirementIds: story.requirementIds,
+    polarity: 'forbid', given: '비인가 사용자', when: '수정 요청', then: '403 거부', verificationMethod: 'e2e' });
+  return pack;
+}
+
+function acceptAll(pack) {
+  for (const ac of pack.acceptanceCriteria) Object.assign(ac, {
+    acceptanceDisposition: 'accepted', acContentHash: computeAcHash(ac, pack),
+    uatSignedBy: '기관 검수 역할', uatVerifiedAt: '2026-11-04', uatEvidence: '회의록 REF-001', uatBuildRef: 'BUILD-001',
+  });
+  for (const req of pack.businessRequirements) if (req.scopeDisposition === 'included') req.acceptanceDisposition = 'accepted';
+}
 
 const MOCK_INPUTS = {
   moduleFiles: {
@@ -150,6 +177,461 @@ test('buildContextSnapshot skips non-module files, uses module.label, and produc
   assert.equal(snapA.summary.interfaces, 2);
 });
 
+test('Git workspace detection fails closed when git cannot execute', () => {
+  const outside = mkdtempSync(join(tmpdir(), 'req-git-failure-'));
+  const previousPath = process.env.PATH;
+  try {
+    process.env.PATH = '';
+    assert.throws(() => assertWorkspaceOutsideCheckout(REPO_ROOT, outside), /cannot verify.*git|Git workspace verification failed/iu);
+  } finally {
+    process.env.PATH = previousPath;
+    rmSync(outside, { recursive: true, force: true });
+  }
+});
+
+test('UAT binds requirement meaning and AC membership, rejects impossible dates and suppresses stale accepted projections', () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const pack = readyBacklog(snap);
+  acceptAll(pack);
+  assert.equal(validateBacklogPack(pack, snap).valid, true);
+  const changed = structuredClone(pack);
+  changed.businessRequirements[0].description += ' 새 업무 의미';
+  assert.notEqual(computeAcHash(pack.acceptanceCriteria[0], pack), computeAcHash(changed.acceptanceCriteria[0], changed));
+  assert.equal(validateBacklogPack(changed, snap).valid, false);
+  assert.ok(backlogToRtmRows(changed).filter((row) => row.id === pack.businessRequirements[0].id).every((row) => row.acceptanceDisposition === 'pending'));
+  assert.equal(projectUatChecklistSheet(changed).rows.find((row) => row.acId === pack.acceptanceCriteria[0].id).acceptanceDisposition, 'pending');
+  const traceChanged = structuredClone(pack);
+  traceChanged.traceLinks[0].targetId += '-changed';
+  assert.notEqual(computeAcHash(pack.acceptanceCriteria[0], pack), computeAcHash(traceChanged.acceptanceCriteria[0], traceChanged));
+  const contextChanged = structuredClone(pack);
+  contextChanged.contextSnapshotDigest = 'changed';
+  assert.notEqual(computeAcHash(pack.acceptanceCriteria[0], pack), computeAcHash(contextChanged.acceptanceCriteria[0], contextChanged));
+  const reordered = structuredClone(pack);
+  reordered.businessRequirements[0] = Object.fromEntries(Object.entries(reordered.businessRequirements[0]).reverse());
+  assert.equal(computeAcHash(pack.acceptanceCriteria[0], pack), computeAcHash(reordered.acceptanceCriteria[0], reordered), 'JSON key order is not meaning');
+  const shrunk = structuredClone(pack);
+  shrunk.acceptanceCriteria = shrunk.acceptanceCriteria.filter((ac) => ac.id !== 'AC-PROMO-001-R1');
+  assert.equal(validateBacklogPack(shrunk, snap).valid, false, 'removing Red membership must invalidate the old Green signature');
+  for (const date of ['2026-99-99', '2026-02-29', '2026-11-04junk', '2026-11-04T25:00:00Z']) {
+    const invalid = structuredClone(pack);
+    invalid.acceptanceCriteria[0].uatVerifiedAt = date;
+    assert.ok(validateBacklogPack(invalid, snap).errors.some((e) => e.includes('valid date/ISO')), date);
+  }
+  const leap = structuredClone(pack);
+  leap.acceptanceCriteria[0].uatVerifiedAt = '2028-02-29';
+  assert.equal(validateBacklogPack(leap, snap).valid, true);
+});
+
+test('CSV omissions are rejected without deleting rows or promoting acceptance; requirement edits reset UAT', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-review-omission-'));
+  try {
+    const pack = readyBacklog(snap);
+    acceptAll(pack);
+    const pendingRed = pack.acceptanceCriteria.find((ac) => ac.id === 'AC-PROMO-001-R1');
+    pendingRed.acceptanceDisposition = 'pending';
+    pack.businessRequirements[0].acceptanceDisposition = 'pending';
+    const before = JSON.stringify(pack);
+    writeFileSync(join(ws, 'backlog.json'), before);
+    const sheets = await exportReviewSheets(REPO_ROOT, ws, { contextSnapshot: snap });
+    const stories = readFileSync(sheets.storiesCsvPath, 'utf8');
+    writeFileSync(sheets.storiesCsvPath, stories.split('\r\n').filter((line) => !line.includes('AC-PROMO-001-R1')).join('\r\n'));
+    await assert.rejects(importReviewSheets(REPO_ROOT, ws, { contextSnapshot: snap }), /omits existing.*AC|implicit deletion/iu);
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+    writeFileSync(sheets.storiesCsvPath, stories);
+    const reqs = readFileSync(sheets.reqCsvPath, 'utf8');
+    writeFileSync(sheets.reqCsvPath, reqs.split('\r\n').filter((line) => !line.startsWith('REQ-INT-099,')).join('\r\n'));
+    await assert.rejects(importReviewSheets(REPO_ROOT, ws, { contextSnapshot: snap }), /omits existing.*requirement|implicit deletion/iu);
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+    writeFileSync(sheets.reqCsvPath, reqs.replace(pack.businessRequirements[2].description, '새롭게 합의한 일괄 중지 업무 정의'));
+    await importReviewSheets(REPO_ROOT, ws, { contextSnapshot: snap });
+    const updated = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.ok(updated.acceptanceCriteria.filter((ac) => ac.requirementIds.includes('REQ-SFR-003')).every((ac) => ac.acceptanceDisposition === 'pending' && !ac.uatSignedBy));
+  } finally {
+    rmSync(ws, { recursive: true, force: true });
+  }
+});
+
+test('accepted and conditional UAT require nonblank evidence in shared validation and projections', () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  for (const disposition of ['accepted', 'conditional']) {
+    const pack = readyBacklog(snap);
+    acceptAll(pack);
+    pack.acceptanceCriteria[0].acceptanceDisposition = disposition;
+    pack.acceptanceCriteria[0].uatEvidence = '   ';
+    assert.ok(validateBacklogPack(pack, snap).errors.some((message) => message.includes('requires non-empty uatEvidence')));
+    assert.equal(projectUatChecklistSheet(pack).rows.find((row) => row.acId === pack.acceptanceCriteria[0].id).acceptanceDisposition, 'pending');
+    pack.acceptanceCriteria[0].uatEvidence = '회의록 REF-001';
+    delete pack.acceptanceCriteria[0].uatBuildRef;
+    assert.ok(validateBacklogPack(pack, snap).errors.some((message) => message.includes('requires non-empty uatBuildRef')));
+  }
+});
+
+test('per-requirement context binding ignores unrelated catalogs and detects relevant metadata and planned target appearance', () => {
+  assert.equal(typeof workspaceEngine.computeContextBindings, 'function');
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const pack = readyBacklog(snap);
+  pack.contextBindings = workspaceEngine.computeContextBindings(pack, snap);
+  acceptAll(pack);
+  assert.equal(validateBacklogPack(pack, snap).valid, true);
+  const unrelated = structuredClone(snap);
+  unrelated.snapshotDigest = 'b'.repeat(64);
+  unrelated.gates.push({ id: 'unrelated-gate', status: 'partial' });
+  unrelated.modules.push({ id: 'unrelated-module', label: '무관한 모듈' });
+  const refreshed = { ...structuredClone(pack), contextSnapshotDigest: unrelated.snapshotDigest,
+    contextBindings: workspaceEngine.computeContextBindings(pack, unrelated) };
+  assert.deepEqual(refreshed.contextBindings, pack.contextBindings);
+  assert.equal(computeAcHash(pack.acceptanceCriteria[0], pack), computeAcHash(refreshed.acceptanceCriteria[0], refreshed));
+  const relevant = structuredClone(unrelated);
+  relevant.capabilities.find((entry) => entry.id === '/admin/system/banner#promotion.popup-management').status = 'unverified';
+  const changedBindings = workspaceEngine.computeContextBindings(pack, relevant);
+  assert.notEqual(changedBindings['REQ-SFR-001'], pack.contextBindings['REQ-SFR-001']);
+  assert.equal(changedBindings['REQ-SFR-002'], pack.contextBindings['REQ-SFR-002']);
+  assert.equal(changedBindings['REQ-SFR-003'], pack.contextBindings['REQ-SFR-003']);
+  relevant.capabilities.push({ id: '/admin/system/banner#promotion.popup-bulk-disable', status: 'partial' });
+  const plannedLink = pack.traceLinks.find((link) => link.requirementId === 'REQ-SFR-003' && link.linkIntent === 'planned');
+  relevant.capabilities.at(-1).id = plannedLink.targetId;
+  assert.notEqual(workspaceEngine.computeContextBindings(pack, relevant)['REQ-SFR-003'], pack.contextBindings['REQ-SFR-003']);
+  for (const contextBindings of [[], { UNKNOWN: 'a'.repeat(64) }, { 'REQ-SFR-001': 'bad' }]) {
+    assert.equal(validateBacklogPack({ ...pack, contextBindings }, snap).valid, false);
+  }
+});
+
+test('module presentation and aggregate growth preserve context acceptance while dependency semantics still invalidate it', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const pack = readyBacklog(snap);
+  pack.contextBindings = workspaceEngine.computeContextBindings(pack, snap);
+  acceptAll(pack);
+  const grown = structuredClone(snap);
+  grown.snapshotDigest = 'b'.repeat(64);
+  Object.assign(grown.modules.find((entry) => entry.id === 'core'), { label: '새 표시 이름', group: 'new-group', routesCount: 50, tablesCount: 80 });
+  const grownPack = { ...structuredClone(pack), contextSnapshotDigest: grown.snapshotDigest, contextBindings: workspaceEngine.computeContextBindings(pack, grown) };
+  assert.deepEqual(grownPack.contextBindings, pack.contextBindings);
+  const securityAc = pack.acceptanceCriteria.find((ac) => ac.requirementIds.includes('REQ-SFR-002'));
+  assert.equal(computeAcHash(securityAc, grownPack), computeAcHash(securityAc, pack));
+  const ws = mkdtempSync(join(tmpdir(), 'req-module-semantic-binding-'));
+  try {
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    writeFileSync(join(ws, 'context.snapshot.json'), JSON.stringify(snap));
+    await verifyRequirementsWorkspace(REPO_ROOT, ws, { contextSnapshot: grown, refreshContext: true });
+    assert.ok(JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8')).acceptanceCriteria.every((ac) => ac.acceptanceDisposition === 'accepted'));
+    const dependency = structuredClone(grown);
+    dependency.snapshotDigest = 'c'.repeat(64);
+    dependency.modules.find((entry) => entry.id === 'core').requires = ['new-dependency'];
+    assert.notEqual(workspaceEngine.computeContextBindings(pack, dependency)['REQ-SFR-002'], pack.contextBindings['REQ-SFR-002']);
+    await verifyRequirementsWorkspace(REPO_ROOT, ws, { contextSnapshot: dependency, refreshContext: true });
+    const refreshed = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.equal(refreshed.businessRequirements.find((req) => req.id === 'REQ-SFR-002').acceptanceDisposition, 'pending');
+    assert.equal(refreshed.businessRequirements.find((req) => req.id === 'REQ-SFR-001').acceptanceDisposition, 'accepted');
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('UAT export persists the same refreshed context snapshot used by its backlog and checklist', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const next = structuredClone(snap);
+  next.snapshotDigest = 'b'.repeat(64);
+  next.gates.push({ id: 'new-unrelated-gate' });
+  const ws = mkdtempSync(join(tmpdir(), 'req-uat-snapshot-sync-'));
+  try {
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(readyBacklog(snap)));
+    writeFileSync(join(ws, 'context.snapshot.json'), JSON.stringify(snap));
+    await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: next });
+    assert.equal(JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8')).contextSnapshotDigest, next.snapshotDigest);
+    assert.deepEqual(JSON.parse(readFileSync(join(ws, 'context.snapshot.json'), 'utf8')), next);
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('readjudicated conditional and rejected rows use a new global build when the row retains its exported old build', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  for (const disposition of ['conditional', 'rejected']) {
+    const ws = mkdtempSync(join(tmpdir(), 'req-uat-readjudication-'));
+    try {
+      const pack = readyBacklog(snap);
+      pack.contextBindings = workspaceEngine.computeContextBindings(pack, snap);
+      acceptAll(pack);
+      const ac = pack.acceptanceCriteria[0];
+      ac.acceptanceDisposition = disposition;
+      pack.businessRequirements.find((req) => req.id === ac.requirementIds[0]).acceptanceDisposition = disposition;
+      writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+      const { uatCsvPath } = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+      const csv = readFileSync(uatCsvPath, 'utf8');
+      const revised = csv.replace(`,${disposition},기관 검수 역할,2026-11-04,회의록 REF-001,`, ',accepted,기관 검수 역할,2026-11-05,재검수 증적 REF-002,');
+      writeFileSync(uatCsvPath, revised);
+      await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-002' });
+      const first = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+      assert.equal(first.acceptanceCriteria[0].uatBuildRef, 'BUILD-002', disposition);
+      assert.equal(first.acceptanceCriteria[0].uatEvidence, '재검수 증적 REF-002');
+      assert.ok(first.acceptanceCriteria.slice(1).every((item) => item.uatBuildRef === 'BUILD-001'));
+      // An explicit row build differing from the old record wins over the global default.
+      const next = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+      writeFileSync(next.uatCsvPath, readFileSync(next.uatCsvPath, 'utf8').replace('재검수 증적 REF-002', '독립 검수 증적 REF-003').replace('BUILD-002', 'BUILD-EXPLICIT'));
+      await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-003' });
+      assert.equal(JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8')).acceptanceCriteria[0].uatBuildRef, 'BUILD-EXPLICIT');
+    } finally { rmSync(ws, { recursive: true, force: true }); }
+  }
+});
+
+test('unchanged rejected rows preserve absent and padded optional metadata despite a new global build', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  for (const padding of [false, true]) {
+    const ws = mkdtempSync(join(tmpdir(), 'req-rejected-canonical-roundtrip-'));
+    try {
+      const pack = readyBacklog(snap);
+      pack.contextBindings = workspaceEngine.computeContextBindings(pack, snap);
+      acceptAll(pack);
+      const ac = pack.acceptanceCriteria[0];
+      ac.acceptanceDisposition = 'rejected';
+      pack.businessRequirements.find((req) => req.id === ac.requirementIds[0]).acceptanceDisposition = 'rejected';
+      if (padding) Object.assign(ac, { uatSignedBy: '  기관 검수 역할  ', uatVerifiedAt: ' 2026-11-04 ', uatEvidence: '  반려 근거 REF-001  ', uatBuildRef: ' BUILD-001 ' });
+      else for (const key of ['uatSignedBy', 'uatVerifiedAt', 'uatEvidence']) delete ac[key];
+      writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+      await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+      const exported = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+      await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-002' });
+      const imported = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+      assert.deepEqual(imported.acceptanceCriteria, exported.acceptanceCriteria, padding ? 'padding must not produce a new attestation' : 'blank CSV cells must equal absent metadata');
+      assert.equal(imported.acceptanceCriteria[0].uatBuildRef, exported.acceptanceCriteria[0].uatBuildRef);
+      if (!padding) for (const key of ['uatSignedBy', 'uatVerifiedAt', 'uatEvidence']) assert.equal(Object.hasOwn(imported.acceptanceCriteria[0], key), false);
+    } finally { rmSync(ws, { recursive: true, force: true }); }
+  }
+});
+
+test('CLI refresh and UAT export preserve unrelated acceptance and reset only affected context-bound criteria', async () => {
+  assert.equal(typeof workspaceEngine.computeContextBindings, 'function');
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-context-refresh-'));
+  try {
+    const pack = readyBacklog(snap);
+    pack.contextBindings = workspaceEngine.computeContextBindings(pack, snap);
+    acceptAll(pack);
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    writeFileSync(join(ws, 'context.snapshot.json'), JSON.stringify(snap));
+    const unrelated = structuredClone(snap);
+    unrelated.snapshotDigest = 'b'.repeat(64);
+    unrelated.gates.push({ id: 'unrelated-gate' });
+    await verifyRequirementsWorkspace(REPO_ROOT, ws, { contextSnapshot: unrelated, refreshContext: true });
+    const first = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.ok(first.acceptanceCriteria.every((ac) => ac.acceptanceDisposition === 'accepted'));
+    const relevant = structuredClone(unrelated);
+    relevant.snapshotDigest = 'c'.repeat(64);
+    relevant.capabilities.find((entry) => entry.id === '/admin/system/banner#promotion.popup-management').status = 'unverified';
+    await verifyRequirementsWorkspace(REPO_ROOT, ws, { contextSnapshot: relevant, refreshContext: true });
+    const second = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.ok(second.acceptanceCriteria.filter((ac) => ac.requirementIds.includes('REQ-SFR-001')).every((ac) => ac.acceptanceDisposition === 'pending' && !ac.uatSignedBy));
+    assert.ok(second.acceptanceCriteria.filter((ac) => !ac.requirementIds.includes('REQ-SFR-001')).every((ac) => ac.acceptanceDisposition === 'accepted'));
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: relevant });
+    const stamped = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.equal(stamped.contextSnapshotDigest, relevant.snapshotDigest);
+    assert.equal(stamped.businessRequirements.find((req) => req.id === 'REQ-SFR-001').acceptanceDisposition, 'pending');
+    assert.equal(stamped.businessRequirements.find((req) => req.id === 'REQ-SFR-002').acceptanceDisposition, 'accepted');
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('final exporter rejects changed acceptance bindings before creating output and preserves unrelated context changes', async () => {
+  assert.equal(typeof deliverablesEngine.assertCurrentBacklogAcceptance, 'function');
+  const snap = await loadRepositoryContextSnapshot(REPO_ROOT);
+  const pack = readyBacklog(snap);
+  pack.contextBindings = workspaceEngine.computeContextBindings(pack, snap);
+  acceptAll(pack);
+  const unrelated = structuredClone(snap);
+  unrelated.snapshotDigest = 'b'.repeat(64);
+  unrelated.gates.push({ id: 'unrelated-final-export-gate' });
+  await assert.doesNotReject(deliverablesEngine.assertCurrentBacklogAcceptance(pack, unrelated));
+  const relevant = structuredClone(snap);
+  relevant.capabilities.find((entry) => entry.id === '/admin/system/banner#promotion.popup-management').status = 'unverified';
+  await assert.rejects(deliverablesEngine.assertCurrentBacklogAcceptance(pack, relevant), /refresh-context/u);
+  const legacy = structuredClone(pack);
+  delete legacy.contextBindings;
+  await assert.rejects(deliverablesEngine.assertCurrentBacklogAcceptance(legacy, snap), /refresh-context/u);
+  const ws = mkdtempSync(join(tmpdir(), 'req-export-stale-binding-'));
+  try {
+    // Bind to a synthetic changed interpretation, then sign that interpretation.
+    pack.contextBindings = workspaceEngine.computeContextBindings(pack, relevant);
+    acceptAll(pack);
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    const out = join(ws, 'must-not-exist');
+    await assert.rejects(exportDeliverables({ root: REPO_ROOT, allowDirty: true, backlog: join(ws, 'backlog.json'), out }), /refresh-context/u);
+    assert.equal(existsSync(out), false);
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('CLI UAT import refuses unready definitions and requires a build reference before nonpending judgments', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-uat-readiness-'));
+  try {
+    const pack = readyBacklog(snap);
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    const { uatCsvPath } = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+    const signed = readFileSync(uatCsvPath, 'utf8').replace(/,pending,\(값 없음\),\(값 없음\),\(값 없음\),/gu, ',accepted,기관 검수 역할,2026-11-04,회의록 REF-001,');
+    writeFileSync(uatCsvPath, signed);
+    const before = readFileSync(join(ws, 'backlog.json'), 'utf8');
+    await assert.rejects(importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap }), (error) => error.code === 'UAT_IMPORT_INVALID' && error.errors.some((message) => message.includes('buildRef')));
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+    await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-001' });
+    const accepted = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.ok(accepted.acceptanceCriteria.every((ac) => ac.uatBuildRef === 'BUILD-001' && ac.uatEvidence === '회의록 REF-001'));
+    const roundTrip = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+    await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-002' });
+    assert.deepEqual(JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8')).acceptanceCriteria, accepted.acceptanceCriteria, 'an unchanged CSV cannot reattribute an old judgment to the new global build');
+    const revised = readFileSync(roundTrip.uatCsvPath, 'utf8').replace(/BUILD-001/gu, '').replace('회의록 REF-001', '재검수 증적 REF-002');
+    writeFileSync(roundTrip.uatCsvPath, revised);
+    await importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-002' });
+    const updated = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    assert.equal(updated.acceptanceCriteria[0].uatBuildRef, 'BUILD-002');
+    assert.ok(updated.acceptanceCriteria.slice(1).every((ac) => ac.uatBuildRef === 'BUILD-001'));
+    accepted.workItems.find((item) => item.id === 'US-PROMO-001').decisionCards = ['D-1: A1'];
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(accepted));
+    const rejectedBefore = readFileSync(join(ws, 'backlog.json'), 'utf8');
+    await assert.rejects(importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-002' }), (error) => error.code === 'UAT_IMPORT_INVALID' && error.errors.some((message) => /readiness|ready for development/iu.test(message)));
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), rejectedBefore);
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('UAT import rejects missing evidence and omitted AC rows with typed safe diagnostics before writes', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-uat-evidence-'));
+  try {
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(readyBacklog(snap)));
+    const output = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+    const before = readFileSync(join(ws, 'backlog.json'), 'utf8');
+    const csv = readFileSync(output.uatCsvPath, 'utf8');
+    const signedWithoutEvidence = csv.replace(/,pending,\(값 없음\),\(값 없음\),\(값 없음\),/gu, ',accepted,기관 검수 역할,2026-11-04,   ,');
+    writeFileSync(output.uatCsvPath, signedWithoutEvidence);
+    await assert.rejects(importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap, buildRef: 'BUILD-001' }), (error) => {
+      assert.equal(error.code, 'UAT_IMPORT_INVALID');
+      assert.ok(error.errors.some((message) => message.includes('uatEvidence')));
+      return true;
+    });
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+    writeFileSync(output.uatCsvPath, csv.split('\r\n').filter((line) => !line.includes('AC-PROMO-001-R1')).join('\r\n'));
+    await assert.rejects(importUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap }), (error) => error.code === 'UAT_IMPORT_INVALID' && error.errors.some((message) => /omits existing AC/iu.test(message)));
+    assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('CSV and UAT parser failures are typed and mask input diagnostics while filesystem failures retain their code', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-import-errors-'));
+  try {
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(readyBacklog(snap)));
+    const sheets = await exportReviewSheets(REPO_ROOT, ws, { contextSnapshot: snap });
+    const uat = await exportUatChecklist(REPO_ROOT, ws, { contextSnapshot: snap });
+    const marker = ['privacy', 'example.invalid'].join('@');
+    for (const [file, method, code] of [[sheets.reqCsvPath, importReviewSheets, 'CSV_IMPORT_INVALID'], [uat.uatCsvPath, importUatChecklist, 'UAT_IMPORT_INVALID']]) {
+      for (const malformed of [`${marker},${marker}\r\n`, 'id\r\n"unterminated', 'id\r\n\uFFFD']) {
+        writeFileSync(file, malformed);
+        await assert.rejects(method(REPO_ROOT, ws, { contextSnapshot: snap }), (error) => {
+          assert.equal(error.code, code);
+          assert.ok(Array.isArray(error.errors) && error.errors.length);
+          assert.ok(!JSON.stringify([error.message, error.errors]).includes(marker));
+          return true;
+        });
+      }
+    }
+    rmSync(sheets.reqCsvPath);
+    await assert.rejects(importReviewSheets(REPO_ROOT, ws, { contextSnapshot: snap }), (error) => error.code === 'ENOENT');
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('Fit-Gap query guard blocks sensitive input in public matcher and CLI before report persistence', () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const pack = readyBacklog(snap);
+  const marker = ['privacy', 'example.invalid'].join('@');
+  assert.throws(() => matchRequirementsToContext(pack, snap, { query: marker }), (error) => error.code === 'MATCH_QUERY_INVALID' && !error.message.includes(marker));
+  const ws = mkdtempSync(join(tmpdir(), 'req-query-guard-'));
+  try {
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    writeFileSync(join(ws, 'FIT-GAP-MATCHES.md'), 'previous safe report');
+    assert.throws(() => execFileSync(process.execPath, [join(REPO_ROOT, 'scripts/export-deliverables-workspace.mjs'), 'match', '--workspace', ws, '--query', marker], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), (error) => error.status === 1 && !String(error.stderr).includes(marker));
+    assert.equal(readFileSync(join(ws, 'FIT-GAP-MATCHES.md'), 'utf8'), 'previous safe report');
+  } finally { rmSync(ws, { recursive: true, force: true }); }
+});
+
+test('invalid exporter backlog and report never expose raw project code; detail retains source clause provenance', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-export-guard-'));
+  try {
+    const pack = readyBacklog(snap);
+    const marker = ['privacy', 'example.invalid'].join('@');
+    pack.project.code = marker;
+    writeFileSync(join(ws, 'backlog.json'), JSON.stringify(pack));
+    const validation = validateBacklogPack(pack, snap);
+    assert.ok(!renderWorkspaceReport(pack, snap, validation).includes(marker));
+    pack.sources[0].id = marker;
+    pack.sources[0].sourceType = marker;
+    const invalidIdentifiers = validateBacklogPack(pack, snap);
+    assert.ok(!renderWorkspaceReport(pack, snap, invalidIdentifiers).includes(marker), 'validation diagnostics cannot echo a sensitive entity ID or enum value');
+    await assert.rejects(loadInputs(REPO_ROOT, { backlog: join(ws, 'backlog.json') }), /backlog.*validation/iu);
+    const valid = readyBacklog(snap);
+    const detail = backlogDetailSheet(valid);
+    const json = JSON.stringify(detail);
+    for (const value of [valid.sources[0].id, 'CLS-SFR-001', 'p.42 §3.2.1', 'a'.repeat(64), valid.businessRequirements[0].description]) assert.ok(json.includes(value), value);
+  } finally {
+    rmSync(ws, { recursive: true, force: true });
+  }
+});
+
+test('development readiness is separate from draft validity and all plan selectors respect scope and WONT', () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  assert.equal(typeof workspaceEngine.validateDevelopmentReadiness, 'function');
+  const draft = createEmptyBacklogPack(snap);
+  assert.equal(validateBacklogPack(draft, snap).valid, true);
+  assert.equal(workspaceEngine.validateDevelopmentReadiness(draft, snap).valid, false);
+  assert.throws(() => generateWorkPackagePlan(draft, snap), /not ready|readiness/iu);
+  const pack = readyBacklog(snap);
+  assert.equal(workspaceEngine.validateDevelopmentReadiness(pack, snap).valid, true);
+  const broken = structuredClone(pack);
+  delete broken.sources[0].clauses;
+  broken.businessRequirements[0].openQuestions = ['범위 미확정'];
+  broken.workItems.find((w) => w.id === 'US-PROMO-001').decisionCards = ['D-1: A1'];
+  broken.acceptanceCriteria = broken.acceptanceCriteria.filter((ac) => ac.id !== 'AC-PROMO-001-R1');
+  assert.equal(validateBacklogPack(broken, snap).valid, true);
+  assert.equal(workspaceEngine.validateDevelopmentReadiness(broken, snap).valid, false);
+  assert.throws(() => generateWorkPackagePlan(broken, snap), /not ready|readiness/iu);
+  const legacyCards = readyBacklog(snap);
+  legacyCards.workItems.find((w) => w.id === 'US-PROMO-001').decisionCards = { authority: '기존 형태' };
+  assert.equal(workspaceEngine.validateDevelopmentReadiness(legacyCards, snap).valid, false, 'legacy object cards produce a readiness error, never a TypeError');
+  const wont = structuredClone(pack);
+  wont.workItems.find((w) => w.id === 'US-PROMO-001').priority = 'WONT';
+  assert.ok(!generateWorkPackagePlan(wont, snap, { workItemId: 'US-PROMO-001' }).items.length);
+});
+
+test('existing UI writer lock blocks every CLI write entry before any workspace mutation', async () => {
+  const snap = buildContextSnapshot(MOCK_INPUTS);
+  const ws = mkdtempSync(join(tmpdir(), 'req-cli-ui-lock-'));
+  try {
+    await initRequirementsWorkspace(REPO_ROOT, ws, { contextSnapshot: snap, sample: true });
+    const before = readFileSync(join(ws, 'backlog.json'), 'utf8');
+    writeFileSync(join(ws, '.requirements-ui.lock'), '{}');
+    for (const mutate of [initRequirementsWorkspace, verifyRequirementsWorkspace, exportReviewSheets, importReviewSheets, exportUatChecklist, importUatChecklist]) {
+      await assert.rejects(mutate(REPO_ROOT, ws, { contextSnapshot: snap, force: true }), /UI.*lock|workspace.*locked/iu, mutate.name);
+      assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+    }
+    for (const command of ['match', 'plan', 'check-composition', 'export-context']) {
+      assert.throws(() => execFileSync(process.execPath, [join(REPO_ROOT, 'scripts/export-deliverables-workspace.mjs'), command, '--workspace', ws], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'pipe'] }), /workspace.*locked|UI.*lock/iu, command);
+      assert.equal(readFileSync(join(ws, 'backlog.json'), 'utf8'), before);
+    }
+  } finally {
+    rmSync(ws, { recursive: true, force: true });
+  }
+});
+
+test('CLI reserves exclusive writer lock across asynchronous context loading and releases its own lock on failure', async () => {
+  const ws = mkdtempSync(join(tmpdir(), 'req-cli-reservation-'));
+  const root = mkdtempSync(join(tmpdir(), 'req-cli-bad-context-'));
+  try {
+    const mutation = initRequirementsWorkspace(root, ws).then(() => null, (error) => error);
+    assert.ok(readdirSync(ws).includes('.requirements-ui.lock'), 'lock exists before asynchronous context loading completes');
+    await assert.rejects(initRequirementsWorkspace(REPO_ROOT, ws, { contextSnapshot: buildContextSnapshot(MOCK_INPUTS) }), /workspace.*locked|UI.*lock/iu);
+    assert.ok(await mutation instanceof Error);
+    assert.ok(!readdirSync(ws).includes('.requirements-ui.lock'), 'only owned lock is removed on error');
+  } finally {
+    rmSync(ws, { recursive: true, force: true });
+    rmSync(root, { recursive: true, force: true });
+  }
+});
+
 test('loadRepositoryContextSnapshot reads the real repository ledgers with all declared modules, non-empty labels and real commit SHA', async () => {
   const expectedModuleCount = readdirSync(join(REPO_ROOT, 'config/modules'))
     .filter((f) => f.endsWith('.json') && f !== '_schema.json' && f !== 'presets.json').length;
@@ -173,6 +655,50 @@ test('loadRepositoryContextSnapshot reads the real repository ledgers with all d
     ['sample backlog data is loaded (isSample=true); replace with institutional requirements before exporting deliverables'],
     'sample backlog against live repository snapshot must have zero ledger mismatch warnings',
   );
+});
+
+test('context snapshot matches full exporter inputs exactly', async () => {
+  const { inputs } = await loadInputs(REPO_ROOT);
+  const commit = execFileSync('git', ['rev-parse', 'HEAD'], { cwd: REPO_ROOT, encoding: 'utf8' }).trim();
+  assert.deepEqual(await loadRepositoryContextSnapshot(REPO_ROOT), buildContextSnapshot(inputs, { commit }));
+});
+
+test('context snapshot reads only current ledgers without Java/E2E source scans and detects edits at unchanged HEAD', async () => {
+  const root = mkdtempSync(join(tmpdir(), 'req-context-ledgers-'));
+  try {
+    const inputs = [
+      ...readdirSync(join(REPO_ROOT, 'config/modules')).filter((file) => file.endsWith('.json')).map((file) => `config/modules/${file}`),
+      'config/governance/permission-catalog.json', 'config/governance/authorization-policies.json',
+      'config/ui-route-capabilities.json', 'frontend/src/types/generated-screen-registry.ts',
+    ];
+    for (const path of inputs) {
+      mkdirSync(dirname(join(root, path)), { recursive: true });
+      copyFileSync(join(REPO_ROOT, path), join(root, path));
+    }
+    execFileSync('git', ['init'], { cwd: root, stdio: 'ignore' });
+    execFileSync('git', ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '--allow-empty', '-m', 'synthetic context fixture'], { cwd: root, stdio: 'ignore' });
+    // No Java roots, E2E source, OpenAPI, or unrelated deliverable ledgers exist in this fixture.
+    const first = await loadRepositoryContextSnapshot(root);
+    assert.match(first.commit, /^[0-9a-f]{40}$/u);
+    const catalogPath = join(root, 'config/governance/permission-catalog.json');
+    const catalog = JSON.parse(readFileSync(catalogPath, 'utf8'));
+    catalog.permissions.push({ code: 'FIXTURE_CONTEXT_READ', description: '합성 원장 변경' });
+    writeFileSync(catalogPath, JSON.stringify(catalog));
+    writeFileSync(join(root, 'db_columns.json'), JSON.stringify([{ table_name: 'tb_fixture_context' }]));
+    writeFileSync(join(root, 'config/governance/gates.json'), JSON.stringify({ gates: [{ id: 'fixture-context-gate' }] }));
+    const second = await loadRepositoryContextSnapshot(root);
+    assert.equal(second.commit, first.commit);
+    assert.notEqual(second.snapshotDigest, first.snapshotDigest);
+    assert.ok(second.permissions.some((entry) => entry.code === 'FIXTURE_CONTEXT_READ'));
+    assert.ok(second.tables.some((entry) => entry.id === 'tb_fixture_context'));
+    assert.ok(second.gates.some((entry) => entry.id === 'fixture-context-gate'));
+    for (const marker of ['config/governance/upstream-review', 'config/governance/reusable-governance-projection.json', 'reusable-base-lock.json']) {
+      mkdirSync(dirname(join(root, marker)), { recursive: true });
+      writeFileSync(join(root, marker), '{}');
+      await assert.rejects(loadRepositoryContextSnapshot(root), /source repository only|projected-ledger mode/u, marker);
+      rmSync(join(root, marker));
+    }
+  } finally { rmSync(root, { recursive: true, force: true }); }
 });
 
 test('design-to-deliverables-guide.md §7.3 vocabulary matches exported workspace schema constants (C1 parity)', () => {
@@ -561,7 +1087,7 @@ test('Phase 2 & Phase 3 (S1, S2, S3, S4, S5, S6): Fit-Gap matcher, topological p
     await initRequirementsWorkspace(root, ws, { contextSnapshot, sample: true });
 
     // S3: Add table, gate, migration-mapping traceLinks and dependsOn ordering
-    const pack = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
+    const pack = readyBacklog(contextSnapshot);
     pack.workItems.find((w) => w.id === 'US-PROMO-002').dependsOn = ['US-PROMO-001'];
     pack.traceLinks.push(
       { id: 'TRL-TBL', requirementId: 'REQ-SFR-003', workItemId: 'US-PROMO-002', targetKind: 'table', targetId: 'tb_popup_info', linkIntent: 'existing' },
@@ -627,8 +1153,8 @@ test('Phase 2 & Phase 3 (S1, S2, S3, S4, S5, S6): Fit-Gap matcher, topological p
       .replace(/,pending,\(값 없음\),\(값 없음\),\(값 없음\),/gu, ',accepted,홍길동 감독관,2026-11-03,시연 합격,');
     writeFileSync(uatExported.uatCsvPath, uatCsvAccepted, 'utf8');
 
-    const uatImported = await importUatChecklist(root, ws, { contextSnapshot });
-    assert.equal(uatImported.updatedAcs, 6);
+    const uatImported = await importUatChecklist(root, ws, { contextSnapshot, buildRef: 'BUILD-001' });
+    assert.equal(uatImported.updatedAcs, 7);
     assert.ok(uatImported.acceptedRequirements >= 1);
     const packAfterUat = JSON.parse(readFileSync(join(ws, 'backlog.json'), 'utf8'));
     // REQ-SFR-003 has 1 Green AC and 2 Red ACs, all accepted -> requirement rolls up to accepted
@@ -638,8 +1164,8 @@ test('Phase 2 & Phase 3 (S1, S2, S3, S4, S5, S6): Fit-Gap matcher, topological p
     packAfterUat.acceptanceCriteria.find((a) => a.id === 'AC-PROMO-002-G1').then = '선택한 팝업의 노출 여부가 변경된다(사유 기록 조건 임의 삭제)';
     writeFileSync(join(ws, 'backlog.json'), JSON.stringify(packAfterUat, null, 2), 'utf8');
     await assert.rejects(
-      importUatChecklist(root, ws, { contextSnapshot }),
-      /UAT sheet acContentHash .* does not match current AC text/u,
+      importUatChecklist(root, ws, { contextSnapshot, buildRef: 'BUILD-001' }),
+      /acContentHash .* does not match current AC text/u,
     );
 
     // Re-exporting UAT checklist after AC text mutation resets the mutated AC and its parent requirement back to pending!

@@ -915,6 +915,14 @@ test('the area route table shows exactly the path patterns of the routing ledger
   }
 });
 
+test('requirements workspace and its guide have an explicit governance reading route', () => {
+  for (const file of ['tools/requirements-workspace/store.mjs', 'tools/requirements-workspace/public/app.js',
+    'docs/03-guides/requirements-workspace-guide.md']) {
+    assert.deepEqual(decisionRoute(file), { kind: 'areas', areas: ['ci-governance'] }, file);
+  }
+  assert.deepEqual(decisionRoute('tools/requirements-workspacex/server.mjs'), { kind: 'unassigned' });
+});
+
 /*
  * [DEC-OPS-389] fail-closed 를 지키면서 넷 모두로 떨어지는 집합을 고정한다. 어느 원장에도 걸리지 않는 추적 파일의 최상위 이름은
  * UNASSIGNED_TOP_LEVEL 과 같아야 한다 — 새 최상위 디렉터리가 미배정으로 생기면 붉고, 원장의 경로·문서 패턴이 아무 파일에도 맞지

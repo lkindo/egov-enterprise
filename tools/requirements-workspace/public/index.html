@@ -1,0 +1,29 @@
+<!doctype html>
+<html lang="ko" data-brand-theme="premium">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="color-scheme" content="light dark"><title>요구분석 작업공간 · eGov Enterprise</title>
+  <link rel="icon" href="data:,"><link rel="stylesheet" href="/tokens.css"><link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <a class="skip" href="#main">본문으로 이동</a>
+  <div class="app">
+    <aside class="sidebar" aria-label="프로젝트 탐색">
+      <a class="brand" href="#overview" data-page="overview"><span class="brand-mark">e</span><span>eGov Enterprise<small>PROJECT WORKSPACE</small></span></a>
+      <div class="project-label">현재 프로젝트</div>
+      <div class="project-switch"><span class="project-icon">요</span><div><strong id="project-name">연결 중</strong><small>로컬 요구분석 작업공간</small></div></div>
+      <nav id="navigation" aria-label="작업 단계"></nav>
+      <div class="sidebar-bottom"><span class="avatar">분</span><div><strong>요구분석 담당자</strong><small>저장한 변경은 작업공간에 보관됩니다.</small></div></div>
+    </aside>
+    <div class="workspace">
+      <header class="topbar"><div class="breadcrumb">프로젝트 <span>/</span> 요구분석 <span>/</span> <strong id="crumb">연결 중</strong></div><div class="top-actions"><span class="prototype-pill">로컬 작업공간</span><button type="button" class="icon-button" id="theme" aria-label="다크 모드로 전환">◐</button><button type="button" class="button small secondary" id="help">사용 안내</button></div></header>
+      <div class="demo-strip" role="region" aria-label="작업공간 저장 안내"><span class="dot"></span><span><strong>외부 작업공간에 저장</strong> · 개인정보와 비밀을 제거한 자료만 입력하세요. 자료를 외부 AI로 전송하지 않습니다.</span><button type="button" id="refresh">최신 상태 읽기</button></div>
+      <main id="main" tabindex="-1"><div class="empty" role="status">작업공간에 연결하고 있습니다.</div></main>
+      <footer class="page-footer"><span>eGov Enterprise · 요구분석 작업공간</span><span>기술 관측 · 개발 계획 · 기관 검수는 구분하여 기록합니다.</span></footer>
+    </div>
+  </div>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <dialog id="dialog" aria-labelledby="dialog-title"><div id="dialog-content"></div></dialog>
+</body>
+</html>

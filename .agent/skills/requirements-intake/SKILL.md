@@ -96,10 +96,10 @@ flowchart LR
    ```bash
    node scripts/export-deliverables-workspace.mjs verify --workspace ../my-agency-reqs --refresh-context
    ```
-4. Export the UAT checklist CSV (stamping `acContentHash` on every AC) and import institutional UAT sign-off (`uatSignedBy`, `uatVerifiedAt`, `uatEvidence`):
+4. Export the UAT checklist CSV (stamping context-bound `acContentHash` on every AC) and import institutional UAT sign-off (`uatSignedBy`, `uatVerifiedAt`, `uatEvidence`, `uatBuildRef`). Only changed rows create a new record; an unchanged row retains its original build:
    ```bash
    node scripts/export-deliverables-workspace.mjs uat-export --workspace ../my-agency-reqs
-   node scripts/export-deliverables-workspace.mjs uat-import --workspace ../my-agency-reqs
+   node scripts/export-deliverables-workspace.mjs uat-import --workspace ../my-agency-reqs --build-ref BUILD-001
    ```
 
 ### Step 5 (P5): Audit Deliverables Package Export
@@ -107,3 +107,4 @@ flowchart LR
    ```bash
    node scripts/export-deliverables.mjs --backlog ../my-agency-reqs/backlog.json
    ```
+   With `--backlog`, the default output is `<workspace>/deliverables/<commit>` outside Git; an explicit `--out` must be a new absolute external directory. The UI is available with `node tools/requirements-workspace/server.mjs --workspace <external-path>`, described in [the workspace guide](../../../docs/03-guides/requirements-workspace-guide.md).

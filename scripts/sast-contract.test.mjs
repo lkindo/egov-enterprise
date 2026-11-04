@@ -68,7 +68,7 @@ test('all source and policy changes scan; only explicit documentation can skip',
 test('extended queries cover all application roots without rule suppression or baseline', () => {
   assert.match(config, /^queries:\n  - uses: security-extended$/m);
   assert.doesNotMatch(config, /disable-default-queries|query-filters|paths-ignore|baseline/);
-  for (const root of ['frontend/src', 'frontend/scripts', 'scripts', '.agent/scripts',
+  for (const root of ['frontend/src', 'frontend/scripts', 'scripts', '.agent/scripts', 'tools/requirements-workspace',
     ...['foundation', 'business-core', 'business-app', 'api-server', 'migration-tool'].map(m => `${m}/src/main`)]) {
     assert.ok(config.split('\n').includes(`  - ${root}`), root);
   }
