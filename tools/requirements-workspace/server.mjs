@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { createServer } from 'node:http';
-import { randomBytes, timingSafeEqual } from 'node:crypto';
+import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
@@ -50,7 +50,11 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
   const context = await contextProvider();
   const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: validateBacklogPack, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, contextProvider, root });
-  const token = randomBytes(32).toString('base64url'), cookieSecret = randomBytes(32).toString('base64url'), launchSecret = randomBytes(32).toString('base64url');
+  const token = randomBytes(32).toString('base64url'), launchSecret = randomBytes(32).toString('base64url');
+  // The browser stores only an opaque lookup handle. Credentials stay in the
+  // process; the index holds a hash so it cannot itself be replayed as a cookie.
+  const resumeSessions = new Map();
+  const handleHash = value => createHash('sha256').update(value).digest('hex');
   // Cookie name is unique per server, so two workspaces on loopback do not displace each other's reload session.
   const cookieName = `egov_req_${randomBytes(8).toString('hex')}`;
   const assets = new Map();
@@ -73,8 +77,13 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
       if (!url.pathname.startsWith('/api/') || url.search) fail('NOT_FOUND', 404);
       if (url.pathname === '/api/session' && request.method === 'GET') {
         const cookie = (request.headers.cookie ?? '').split(';').map(part => part.trim()).find(part => part.startsWith(`${cookieName}=`))?.slice(cookieName.length + 1);
-        if (!equal(request.headers['x-requirements-launch'], launchSecret) && !equal(cookie, cookieSecret)) fail('LAUNCH_REQUIRED', 403);
-        response.setHeader('Set-Cookie', `${cookieName}=${cookieSecret}; HttpOnly; SameSite=Strict; Path=/`);
+        const resumedToken = typeof cookie === 'string' && /^[A-Za-z0-9_-]{43}$/.test(cookie) ? resumeSessions.get(handleHash(cookie)) : undefined;
+        if (!equal(request.headers['x-requirements-launch'], launchSecret) && !equal(resumedToken, token)) fail('LAUNCH_REQUIRED', 403);
+        if (!resumedToken) {
+          const handle = randomBytes(32).toString('base64url');
+          resumeSessions.set(handleHash(handle), token);
+          response.setHeader('Set-Cookie', `${cookieName}=${handle}; HttpOnly; SameSite=Strict; Path=/`);
+        }
         json(response, 200, { token }); return;
       }
       if (!equal(request.headers['x-workspace-token'], token)) fail('SESSION_REQUIRED', 403);
@@ -103,7 +112,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
   try { await once(server, 'listening'); } catch (error) { store.close(); throw error; }
   const url = `http://127.0.0.1:${server.address().port}`;
   let closed = false;
-  const app = { url, server, engine, store, async close() { if (closed) return; closed = true; server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); store.close(); } };
+  const app = { url, server, engine, store, async close() { if (closed) return; closed = true; server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); resumeSessions.clear(); store.close(); } };
   Object.defineProperties(app, { launchSecret: { value: launchSecret }, launchUrl: { value: `${url}/#launch=${launchSecret}` } });
   return app;
 }

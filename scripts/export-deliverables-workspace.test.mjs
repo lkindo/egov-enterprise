@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
+import { copyFileSync, existsSync, linkSync, mkdirSync, mkdtempSync, readdirSync, readFileSync, rmSync, symlinkSync, unlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join, resolve } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { basename, dirname, join, resolve } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { BANNED_CLAIMS, backlogDetailSheet, exportDeliverables, loadInputs, projectUatChecklistSheet } from './export-deliverables.mjs';
 import * as deliverablesEngine from './export-deliverables.mjs';
 import * as workspaceEngine from './export-deliverables-workspace.mjs';
@@ -629,6 +629,64 @@ test('CLI reserves exclusive writer lock across asynchronous context loading and
   } finally {
     rmSync(ws, { recursive: true, force: true });
     rmSync(root, { recursive: true, force: true });
+  }
+});
+
+test('CLI refuses substituted hard-linked or symbolic writer locks without exposing linked payloads', async () => {
+  for (const kind of ['hardlink', 'symlink']) {
+    const ws = mkdtempSync(join(tmpdir(), 'req-cli-unsafe-lock-'));
+    const root = mkdtempSync(join(tmpdir(), 'req-cli-unsafe-root-'));
+    const outside = mkdtempSync(join(tmpdir(), 'req-cli-lock-payload-'));
+    const payload = 'LOCK-PAYLOAD-SYNTHETIC-DO-NOT-OUTPUT';
+    const source = join(outside, 'payload.txt');
+    try {
+      writeFileSync(source, payload);
+      const mutation = initRequirementsWorkspace(root, ws).then(() => null, (error) => error);
+      const lockPath = join(ws, '.requirements-ui.lock');
+      unlinkSync(lockPath);
+      if (kind === 'hardlink') linkSync(source, lockPath);
+      else symlinkSync(outside, lockPath, process.platform === 'win32' ? 'junction' : 'dir');
+      const error = await mutation;
+      assert.ok(error instanceof Error, `${kind} replacement must fail closed`);
+      assert.ok(error.message === 'workspace writer lock is unsafe or changed' || (error.syscall === 'open' && error.path === lockPath), 'failure must originate from lock opening or descriptor validation');
+      assert.ok(!error.message.includes(payload), 'linked payload must never appear in diagnostics');
+      assert.equal(readFileSync(source, 'utf8'), payload, 'linked target must remain untouched');
+    } finally {
+      for (const [directory, prefix] of [[ws, 'req-cli-unsafe-lock-'], [root, 'req-cli-unsafe-root-'], [outside, 'req-cli-lock-payload-']]) {
+        assert.equal(dirname(directory), resolve(tmpdir()));
+        assert.ok(basename(directory).startsWith(prefix));
+        rmSync(directory, { recursive: true, force: true });
+      }
+    }
+  }
+  if (process.platform !== 'win32') {
+    const ws = mkdtempSync(join(tmpdir(), 'req-cli-fifo-lock-'));
+    const root = mkdtempSync(join(tmpdir(), 'req-cli-fifo-root-'));
+    try {
+      // A timeout in an isolated process makes a blocking open a real failure;
+      // a timer in the same event loop could never interrupt openSync on a FIFO.
+      const script = `
+        import assert from 'node:assert/strict';
+        import { unlinkSync } from 'node:fs';
+        import { execFileSync } from 'node:child_process';
+        import { join } from 'node:path';
+        import { initRequirementsWorkspace } from ${JSON.stringify(pathToFileURL(join(REPO_ROOT, 'scripts/export-deliverables-workspace.mjs')).href)};
+        const mutation = initRequirementsWorkspace(${JSON.stringify(root)}, ${JSON.stringify(ws)}).then(() => null, error => error);
+        const lockPath = join(${JSON.stringify(ws)}, '.requirements-ui.lock');
+        unlinkSync(lockPath);
+        execFileSync('mkfifo', [lockPath]);
+        const failure = await mutation;
+        assert.ok(failure instanceof Error && failure.message === 'workspace writer lock is unsafe or changed', 'FIFO must fail descriptor validation');
+        process.stdout.write('FIFO_REJECTED');
+      `;
+      assert.equal(execFileSync(process.execPath, ['--input-type=module', '-e', script], { encoding: 'utf8', timeout: 10000 }), 'FIFO_REJECTED');
+    } finally {
+      for (const [directory, prefix] of [[ws, 'req-cli-fifo-lock-'], [root, 'req-cli-fifo-root-']]) {
+        assert.equal(dirname(directory), resolve(tmpdir()));
+        assert.ok(basename(directory).startsWith(prefix));
+        rmSync(directory, { recursive: true, force: true });
+      }
+    }
   }
 });
 

@@ -257,12 +257,13 @@ const CLI_WRITER = Symbol('requirements CLI writer');
 const activeWriters = new WeakSet();
 
 function readWriterLock(path) {
-  const stat = lstatSync(path);
-  if (!stat.isFile() || stat.isSymbolicLink() || stat.nlink !== 1 || stat.size > 1024) throw new Error('workspace writer lock is unsafe');
-  const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0));
+  // Nonblocking open lets fstat reject a substituted FIFO without waiting for a writer.
+  const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
   try {
     const opened = fstatSync(fd);
-    if (!opened.isFile() || opened.nlink !== 1 || opened.dev !== stat.dev || opened.ino !== stat.ino || opened.size > 1024) throw new Error('workspace writer lock changed');
+    const stat = lstatSync(path);
+    if (!opened.isFile() || !stat.isFile() || stat.isSymbolicLink() || opened.nlink !== 1 || stat.nlink !== 1
+      || opened.dev !== stat.dev || opened.ino !== stat.ino || opened.size > 1024 || stat.size > 1024) throw new Error('workspace writer lock is unsafe or changed');
     return readFileSync(fd, 'utf8');
   } finally { closeSync(fd); }
 }

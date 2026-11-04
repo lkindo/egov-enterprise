@@ -25,12 +25,37 @@ test('session requires launch proof and supports reload with HttpOnly Strict ses
   assert.equal((await fetch(`${app.url}/api/session`)).status, 403);
   const auth = await session(app);
   const response = await fetch(`${app.url}/api/session`, { headers: { cookie: auth.cookie } });
-  assert.equal((await response.json()).token, auth.token);
+  assert.ok((await response.json()).token === auth.token, 'reload must resolve the same API credential');
   const unauth = await fetch(`${app.url}/api/state`);
   assert.equal(unauth.status, 403);
   const state = await fetch(`${app.url}/api/state`, { headers: { 'x-workspace-token': auth.token } });
   assert.equal(state.status, 200);
   assert.equal((await state.json()).backlog.businessRequirements.length, 0);
+});
+test('reload cookies are independent opaque session handles and reject forged or foreign handles', async t => {
+  const app = await fixture(t), other = await fixture(t);
+  const first = await session(app), second = await session(app);
+  assert.ok(first.cookie !== second.cookie, 'each bootstrap must issue a separate opaque handle');
+  for (const auth of [first, second]) {
+    const value = auth.cookie.slice(auth.cookie.indexOf('=') + 1);
+    assert.ok(/^[A-Za-z0-9_-]{43}$/.test(value), 'handle must use the 32-byte base64url format');
+    assert.ok(value !== auth.token, 'cookie must not contain the API credential');
+    assert.ok(value !== app.launchSecret, 'cookie must not contain the launch proof');
+    const response = await fetch(`${app.url}/api/session`, { headers: { cookie: auth.cookie } });
+    assert.equal(response.status, 200);
+    assert.equal(response.headers.get('set-cookie'), null, 'resuming must retain the existing handle');
+    assert.ok((await response.json()).token === auth.token, 'both independent handles must resolve their API credential');
+  }
+  const name = first.cookie.split('=')[0];
+  const forged = `${name}=${'x'.repeat(43)}`;
+  assert.equal((await fetch(`${app.url}/api/session`, { headers: { cookie: forged } })).status, 403);
+  const renewed = await fetch(`${app.url}/api/session`, { headers: { 'x-requirements-launch': app.launchSecret, cookie: forged } });
+  assert.equal(renewed.status, 200);
+  assert.ok(renewed.headers.get('set-cookie')?.split(';')[0] !== forged, 'launch proof must issue a fresh handle instead of adopting caller input');
+  assert.ok(/; HttpOnly; SameSite=Strict; Path=\/$/.test(renewed.headers.get('set-cookie') ?? ''), 'the handle must remain in an HttpOnly Strict cookie');
+  assert.equal((await fetch(`${app.url}/api/session`, { headers: { cookie: forged } })).status, 403, 'forged handle must remain invalid after bootstrap');
+  assert.equal((await fetch(`${other.url}/api/session`, { headers: { cookie: first.cookie } })).status, 403);
+  assert.equal((await fetch(`${app.url}/api/state`, { headers: { cookie: first.cookie } })).status, 403, 'a reload cookie cannot replace the API header token');
 });
 test('cross-origin writes, host rebinding, forwarded headers, content type and oversized body rejected', async t => {
   const app = await fixture(t), auth = await session(app);
