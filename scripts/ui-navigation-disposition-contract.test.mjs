@@ -619,6 +619,14 @@ test('package and governance bindings fail red when the operational catalog is n
   );
   assert.deepEqual(validateOperationalBinding({ packageJson, registry, governanceTestSource }), []);
 
+  const missingRequirements = clone(packageJson);
+  missingRequirements.scripts['test:operational-contracts'] = missingRequirements.scripts['test:operational-contracts'].replace(' "tools/requirements-workspace/*.test.mjs"', '');
+  assert.match(
+    validateOperationalBinding({ packageJson: missingRequirements, registry, governanceTestSource }).join('\n'),
+    /package operational runner no longer covers/i,
+    'omitting the requirements workspace must still fail closed',
+  );
+
   const narrowedPackage = clone(packageJson);
   narrowedPackage.scripts['test:operational-contracts'] = 'node --test scripts/required-checks-contract.test.mjs';
   assert.match(
