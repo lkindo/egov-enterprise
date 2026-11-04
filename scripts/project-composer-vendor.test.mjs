@@ -324,7 +324,7 @@ test('SQL Server keys its ledger permit by session and decides the key limit at 
     '트리거는 자기 세션의 커밋 안 된 허가만 본다');
   assert.deepEqual(emission.uniqueColumns.get('tb_sys_ledger_permit.pk_tb_sys_ledger_permit'), ['permit_key', 'permit_conn']);
   assert.ok(!sql.some(statement => statement.includes('tb_sys_lock_slot')), '응용 잠금은 sp_getapplock 이라 슬롯 표가 없다');
-  assert.deepEqual(fixedDegradations('mssql'), ['trailing-space', 'null-order']);
+  assert.deepEqual(fixedDegradations('mssql'), ['trailing-space', 'null-order', 'error-language']);
 
   const keyModel = (length, other, { unique = true, index = false } = {}) => buildVendorModel({ snapshot: {
     columns: [column('t_key', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_key', 'a', length, { nullable: false, position: 2 }),
@@ -932,6 +932,8 @@ test('every CI vendor shows exactly the degradations its own translation can rea
   // 정렬 순서는 스키마가 아니라 엔진의 동작이라 모델과 상관없이 늘 안내한다(설계서 §5 NULL 순서).
   for (const vendorId of ['mysql', 'mariadb', 'mssql']) assert.ok(reached(vendorId).includes('null-order'), `${vendorId}: NULL 을 가장 작은 값으로 정렬한다`);
   assert.ok(!reached('oracle').includes('null-order'), 'Oracle 은 PostgreSQL 과 같은 순서다');
+  // CHECK 와 FK 가 한 오류 번호를 나누는 것은 SQL Server 뿐이라, 메시지 언어에 달린 응답 차이도 SQL Server 만 안내한다(설계서 §19 오류 번호).
+  assert.deepEqual(['oracle', 'mysql', 'mariadb', 'mssql'].filter(vendorId => reached(vendorId).includes('error-language')), ['mssql']);
 });
 
 test('certification needs the sentences the screen shows', t => {

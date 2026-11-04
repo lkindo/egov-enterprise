@@ -261,6 +261,8 @@ function emitSchema(model) {
   }
   emission.degradations.push({ name: 'trailing-space', reason: '= 와 UNIQUE 가 뒤 공백을 무시한다. 키 값은 앱에서 잘라 저장한다' });
   emission.degradations.push({ name: 'null-order', reason: 'NULL 을 가장 작은 값으로 정렬해 NULL 이 들 수 있는 정렬 키의 순서가 PostgreSQL 과 반대다' });
+  // CHECK 와 FK 위반이 같은 547 이라 메시지의 제약 종류 낱말로 가른다(SqlServerSqlDialect). 스키마가 아니라 서버 메시지 언어에 달린 동작이라 늘 안내한다.
+  emission.degradations.push({ name: 'error-language', reason: '서버 메시지 언어가 영어·한국어가 아니면 CHECK 위반(547)을 FK 위반과 가르지 못해 400 대신 409 로 응답한다' });
   return assertCoverage(model, emission);
 }
 
