@@ -314,7 +314,7 @@ test('UI/UX foundation contract assets remain present in the required Node catal
   );
   assert.equal(
     operational.selector.packageScript.command,
-    `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs"`,
+    `node -e "require('node:fs').mkdirSync('build/operational-contracts',{recursive:true})" && node --test --test-reporter=spec --test-reporter-destination=stdout --test-reporter=./scripts/node-test-junit-reporter.mjs --test-reporter-destination=build/operational-contracts/junit.xml "scripts/*.test.mjs" ".agent/scripts/*.test.js" "tools/migration-workspace/*.test.mjs" "tools/migration-workspace-prototype/*.test.mjs" "tools/requirements-workspace/*.test.mjs"`,
   );
   assert.ok([
     'config/ui-quality-evidence-policy.json',
@@ -326,6 +326,33 @@ test('UI/UX foundation contract assets remain present in the required Node catal
     'scripts/ui-quality-evidence-durability-contract.test.mjs',
     'scripts/ui-quality-evidence-publication-contract.test.mjs',
   ].every((source) => UI_UX_FOUNDATION_CONTRACT_ASSETS.includes(source)));
+});
+
+test('requirements workspace contracts use the existing required Node runner, ownership and skip prohibition', () => {
+  const registry = loadGovernanceRegistry(registryPath);
+  const operational = registry.gateSets.find(({ id }) => id === 'GATESET-NODE-OPERATIONAL-CONTRACTS');
+  assert.deepEqual(operational.selector.catalogs.find(({ root }) => root === 'tools/requirements-workspace'), {
+    root: 'tools/requirements-workspace', suffixes: ['.test.mjs'], recursive: false,
+  });
+  assert.equal(operational.selector.forbidSkips, true);
+  assert.ok(operational.inputs.includes('tools/requirements-workspace/*.test.mjs'));
+  const packageJson = JSON.parse(readFileSync(path.join(repoRoot, 'package.json'), 'utf8'));
+  assert.equal(packageJson.scripts['requirements:ui'], 'node tools/requirements-workspace/server.mjs');
+  assert.equal(packageJson.scripts['requirements:ui:css'], 'node tools/requirements-workspace/build-styles.mjs');
+  assert.equal(packageJson.scripts['test:requirements-workspace'], 'node --test "tools/requirements-workspace/*.test.mjs"');
+  assert.equal(packageJson.scripts['test:requirements-workspace:browser'], 'node --test tools/requirements-workspace/browser.test.mjs');
+  assert.ok(existsSync(path.join(repoRoot, 'tools/requirements-workspace/browser.test.mjs')), 'the top-level browser test is discovered by the same required Node catalog');
+  const ownership = readFileSync(path.join(repoRoot, '.github/CODEOWNERS'), 'utf8');
+  const rules = ownership.split(/\r?\n/).filter((line) => line.trim() && !line.startsWith('#')).map((line) => line.trim().split(/\s+/));
+  assert.deepEqual(effectiveCodeOwners(rules, 'tools/requirements-workspace/store.test.mjs'), ['@lkindo']);
+  assert.deepEqual(effectiveCodeOwners(rules, 'tools/requirements-workspace/browser.test.mjs'), ['@lkindo']);
+
+  // Remove just this directory's glob: the same registry must reject the narrowed runner.
+  const narrowed = clone(registry);
+  const selector = narrowed.gateSets.find(({ id }) => id === operational.id).selector;
+  selector.packageScript.command = selector.packageScript.command.replace(' "tools/requirements-workspace/*.test.mjs"', '');
+  assert.notEqual(selector.packageScript.command, operational.selector.packageScript.command);
+  assert.match(validate(narrowed).join('\n'), /ghost runner selector package script/i);
 });
 
 test('registry keeps the ten authoritative gate sets and seven runner catalogs', () => {

@@ -7,7 +7,8 @@
  * 도구는 초안만 내고 사람이 확정한다 — 어느 원장에도 쓰지 않는다.
  *
  * 경계(DEC-OPS-382 ②)
- *   · 커밋하지 않는 build/deliverables/ 아래에만 쓴다. regen 사슬·required CI·frontend/public 에 넣지 않는다.
+ *   · 저장소 원장만 쓸 때는 커밋하지 않는 build/deliverables/ 에 쓴다. --backlog 기관 자료는 ADR-0050 에 따라 모든 Git 트리 밖 새 디렉터리에 쓴다.
+ *     regen 사슬·required CI·frontend/public 에 넣지 않는다.
  *   · 실행은 수동 또는 workflow_dispatch(.github/workflows/deliverables.yml — 실행 요약에 다이제스트만 남기고 묶음은 올리지 않는다).
  *   · 금지 입력: 공용 메모리, 보관 기록, ADR 색인, 공유 OCI(.env·DB 접속), 생성물의 메뉴 스냅숏. 생성물(재사용 투영본)에서는
  *     돌지 않는다 — 생성물 모드는 투영 원장의 범위를 따로 정한 뒤에 둔다.
@@ -318,12 +319,12 @@ export function falsePositiveSheet({ review }) {
   };
 }
 
-export function computeAcHash(ac) {
+export function computeAcHash(ac, pack = null) {
   const reqIds = Array.isArray(ac?.requirementIds)
     ? [...ac.requirementIds].map((v) => String(v ?? '').trim()).sort(byText)
     : ac?.requirementId ? [String(ac.requirementId).trim()] : [];
   const norm = (v) => String(v ?? '').trim().replace(/\r\n?/gu, '\n');
-  const payload = JSON.stringify([
+  const definition = [
     norm(ac?.id),
     reqIds,
     norm(ac?.workItemId),
@@ -332,21 +333,56 @@ export function computeAcHash(ac) {
     norm(ac?.when),
     norm(ac?.then),
     norm(ac?.verificationMethod),
-  ]);
+  ];
+  // A sign-off belongs to this interpretation and the complete AC set, not just one sentence.
+  // The no-pack form remains a definition fingerprint; persisted UAT always uses the bound form.
+  const context = pack ? reqIds.map((id) => {
+    const req = (pack.businessRequirements ?? []).find((item) => item.id === id);
+    const { acceptanceDisposition: ignored, ...meaning } = req ?? {};
+    const sources = (pack.sources ?? []).filter((src) => (req?.sourceIds ?? []).includes(src.id))
+      .map((src) => ({ id: src.id, title: src.title, reference: src.reference, locator: src.locator,
+        fileSha256: src.fileSha256, classification: src.classification,
+        clauses: (src.clauses ?? []).filter((clause) => (clause.requirementIds ?? []).includes(id)) }))
+      .sort((a, b) => byText(a.id, b.id));
+    const criteria = (pack.acceptanceCriteria ?? []).filter((item) => (item.requirementIds ?? []).includes(id))
+      .map((item) => [item.id, computeAcHash(item)]).sort(([a], [b]) => byText(a, b));
+    const work = (pack.workItems ?? []).find((item) => item.id === ac?.workItemId);
+    const traces = (pack.traceLinks ?? []).filter((link) => link.requirementId === id
+      && (!link.workItemId || link.workItemId === ac?.workItemId)
+      && (!link.acId || link.acId === ac?.id)).sort((a, b) => byText(a.id, b.id));
+    const binding = pack.contextBindings?.[id] ?? pack.contextSnapshotDigest ?? null;
+    return [id, binding, meaning, sources, criteria, work ?? null, traces];
+  }) : null;
+  const canonical = (value) => Array.isArray(value) ? value.map(canonical)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort(byText).map((key) => [key, canonical(value[key])])) : value;
+  const payload = JSON.stringify(canonical(pack ? ['uat-context-v3', definition, context] : definition));
   return sha256(payload).slice(0, 32);
 }
 
-export function computeRequirementAcceptanceDisposition(req, acsForReq = []) {
+export function isValidUatDate(value) {
+  if (typeof value !== 'string') return false;
+  const text = value.trim();
+  const match = /^(\d{4})-(\d{2})-(\d{2})(?:T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?(?:Z|[+-](?:[01]\d|2[0-3]):[0-5]\d))?$/u.exec(text);
+  if (!match) return false;
+  const date = new Date(`${match[1]}-${match[2]}-${match[3]}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === text.slice(0, 10);
+}
+
+function currentAcDisposition(ac, pack = null) {
+  const disposition = ac?.acceptanceDisposition ?? 'pending';
+  if ((disposition === 'accepted' || disposition === 'conditional')
+    && (!ac?.acContentHash || ac.acContentHash !== computeAcHash(ac, pack)
+      || !String(ac.uatSignedBy ?? '').trim() || !isValidUatDate(ac.uatVerifiedAt)
+      || typeof ac.uatEvidence !== 'string' || !ac.uatEvidence.trim()
+      || typeof ac.uatBuildRef !== 'string' || !ac.uatBuildRef.trim())) return 'pending';
+  return disposition;
+}
+
+export function computeRequirementAcceptanceDisposition(req, acsForReq = [], pack = null) {
   if (!req || req.scopeDisposition !== 'included' || !Array.isArray(acsForReq) || acsForReq.length === 0) {
     return 'pending';
   }
-  const dispositions = acsForReq.map((ac) => {
-    const disp = ac?.acceptanceDisposition ?? 'pending';
-    if ((disp === 'accepted' || disp === 'conditional') && (!ac?.acContentHash || ac.acContentHash !== computeAcHash(ac))) {
-      return 'pending';
-    }
-    return disp;
-  });
+  const dispositions = acsForReq.map((ac) => currentAcDisposition(ac, pack));
   if (dispositions.some((d) => d === 'rejected')) return 'rejected';
   if (dispositions.every((d) => d === 'accepted')) return 'accepted';
   if (dispositions.some((d) => d === 'conditional') && dispositions.every((d) => d === 'accepted' || d === 'conditional')) {
@@ -418,7 +454,7 @@ export function backlogToRtmRows(pack = {}) {
     }
   }
   const reqRollup = new Map(
-    (pack.businessRequirements ?? []).map((r) => [r.id, computeRequirementAcceptanceDisposition(r, acsByReq.get(r.id) ?? [])]),
+    (pack.businessRequirements ?? []).map((r) => [r.id, computeRequirementAcceptanceDisposition(r, acsByReq.get(r.id) ?? [], pack)]),
   );
 
   const linkedReqIds = new Set();
@@ -442,7 +478,7 @@ export function backlogToRtmRows(pack = {}) {
       workItemId: link.workItemId ?? null,
       acId: link.acId ?? null,
       linkIntent: link.linkIntent ?? null,
-      acceptanceDisposition: ac ? (ac.acceptanceDisposition ?? 'pending') : (reqRollup.get(link.requirementId) ?? 'pending'),
+      acceptanceDisposition: ac ? currentAcDisposition(ac, pack) : (reqRollup.get(link.requirementId) ?? 'pending'),
     });
   }
 
@@ -464,7 +500,7 @@ export function backlogToRtmRows(pack = {}) {
         workItemId: ac.workItemId ?? null,
         acId: ac.id,
         linkIntent: null,
-        acceptanceDisposition: ac.acceptanceDisposition ?? 'pending',
+        acceptanceDisposition: currentAcDisposition(ac, pack),
       });
     }
   }
@@ -576,6 +612,7 @@ export function backlogDetailSheet(backlog = {}) {
     if (req.nfrCriteria && typeof req.nfrCriteria === 'object') {
       if (req.nfrCriteria.metric && req.nfrCriteria.threshold) {
         parts.push(`NFR(${req.nfrCriteria.metric}): ${req.nfrCriteria.threshold}`);
+        if (req.nfrCriteria.verificationMethod) parts.push(`NFR 검증: ${req.nfrCriteria.verificationMethod}`);
       } else {
         for (const [k, v] of Object.entries(req.nfrCriteria)) parts.push(`NFR(${k}): ${v}`);
       }
@@ -594,6 +631,11 @@ export function backlogDetailSheet(backlog = {}) {
     const epics = allWorkItems.filter((item) => wiTypeOf(item) === 'epic');
     const itemsToIter = nonEpics.length ? nonEpics : epics.length ? epics : [null];
     const nfrAndQuestions = formatNfrAndQuestions(req);
+    const sourceProvenance = (backlog.sources ?? []).filter((source) => (req.sourceIds ?? []).includes(source.id)).map((source) => ({
+      id: source.id, title: source.title, reference: source.reference ?? null, locator: source.locator ?? null,
+      classification: source.classification ?? null, fileSha256: source.fileSha256 ?? null,
+      clauses: (source.clauses ?? []).filter((clause) => (clause.requirementIds ?? []).includes(req.id)),
+    }));
 
     for (const wi of itemsToIter) {
       const parentId = wiParentOf(wi);
@@ -623,6 +665,8 @@ export function backlogDetailSheet(backlog = {}) {
         rows.push({
           requirementId: req.id,
           requirementTitle: req.title,
+          requirementDescription: req.description ?? null,
+          sourceProvenance: sourceProvenance.length ? JSON.stringify(sourceProvenance) : null,
           requirementType: req.requirementType ?? req.type ?? null,
           solutionDisposition: req.solutionDisposition,
           scopeDisposition: req.scopeDisposition,
@@ -654,6 +698,8 @@ export function backlogDetailSheet(backlog = {}) {
     columns: [
       ['requirementId', '요구사항 ID'],
       ['requirementTitle', '요구사항 명'],
+      ['requirementDescription', '요구사항 정의'],
+      ['sourceProvenance', '원천·조항·위치·분류·SHA-256'],
       ['requirementType', '분류'],
       ['solutionDisposition', '해법 구분'],
       ['scopeDisposition', '범위 결정'],
@@ -679,7 +725,7 @@ export function projectUatChecklistSheet(backlog = {}) {
     .sort((a, b) => byText(a.id, b.id))
     .map((ac) => {
       const reqIds = Array.isArray(ac.requirementIds) ? ac.requirementIds : ac.requirementId ? [ac.requirementId] : [];
-      const expectedHash = computeAcHash(ac);
+      const expectedHash = computeAcHash(ac, backlog);
       const recordedHash = ac.acContentHash ?? null;
       const hashStatus = !recordedHash ? '미기록' : recordedHash === expectedHash ? '일치' : '불일치(조건 변경됨)';
       return {
@@ -691,10 +737,11 @@ export function projectUatChecklistSheet(backlog = {}) {
         when: ac.when,
         then: ac.then,
         verificationMethod: ac.verificationMethod,
-        acceptanceDisposition: ac.acceptanceDisposition ?? 'pending',
+        acceptanceDisposition: currentAcDisposition(ac, backlog),
         uatSignedBy: ac.uatSignedBy ?? null,
         uatVerifiedAt: ac.uatVerifiedAt ?? null,
         uatEvidence: ac.uatEvidence ?? null,
+        uatBuildRef: ac.uatBuildRef ?? null,
         acContentHash: recordedHash,
         currentAcHash: expectedHash,
         hashStatus,
@@ -706,7 +753,7 @@ export function projectUatChecklistSheet(backlog = {}) {
     sources: ['(실행 인자) 기관 요구사항 백로그 JSON'],
     notices: [
       '백로그 인수조건(acceptanceCriteria)별 정상(allow)·거부(forbid) 시나리오와 발주기관 인수 판정(acceptanceDisposition)·점검자·점검 시각·본문 해시(acContentHash)를 기록한 비규범 점검표다.',
-      'acContentHash 는 Given/When/Then·극성·검증 방식 원문의 내용 변경 감지용 다이제스트이며 서명자 신원 인증이나 암호학적 부인방지 수단이 아니다. 인수 조건 문구가 바뀐 뒤 해시가 갱신되지 않은 기존 판정은 불일치(조건 변경됨)로 표시한다.',
+      'acContentHash 는 요구사항·원천 조항·작업 정의·전체 인수조건 집합에 결속한 변경 감지용 다이제스트이며 서명자 신원 인증이나 암호학적 부인방지 수단이 아니다. 이전 본문 전용 해시와 변경된 기준의 판정은 pending 및 불일치(조건 변경됨)로 표시하며 재검수한다.',
     ],
     columns: [
       ['acId', '인수조건 ID'],
@@ -721,6 +768,7 @@ export function projectUatChecklistSheet(backlog = {}) {
       ['uatSignedBy', '점검·서명자'],
       ['uatVerifiedAt', '점검 일시'],
       ['uatEvidence', '점검 증적'],
+      ['uatBuildRef', '검수 대상 빌드'],
       ['acContentHash', '기록된 본문 해시'],
       ['currentAcHash', '현재 계산 해시'],
       ['hashStatus', '해시 정합성'],
@@ -1054,6 +1102,9 @@ export async function loadInputs(root = ROOT, { rtm, compare, backlog } = {}) {
   }
   let backlogPack;
   if (backlog !== undefined) {
+    // Dynamic import keeps the shared validator single-source without a static import cycle.
+    const { assertWorkspaceOutsideCheckout, validateBacklogPack } = await import('./export-deliverables-workspace.mjs');
+    assertWorkspaceOutsideCheckout(root, dirname(realpathSync.native(resolve(backlog))));
     const text = readRequirementFile(root, resolve(backlog), { label: 'requirements backlog JSON', assertAllowed: assertAllowedInput, tracked: isTracked });
     try {
       backlogPack = JSON.parse(text);
@@ -1064,6 +1115,8 @@ export async function loadInputs(root = ROOT, { rtm, compare, backlog } = {}) {
     if (!backlogPack || typeof backlogPack !== 'object' || Array.isArray(backlogPack) || backlogPack.kind !== 'egov-enterprise-requirements-backlog') {
       throw new Error('requirements backlog JSON must be a valid egov-enterprise-requirements-backlog object');
     }
+    const validation = validateBacklogPack(backlogPack);
+    if (!validation.valid) throw new Error(`requirements backlog failed validation (${validation.errors.length} error(s)); validate and redact the external workspace before exporting`);
     io.record('(실행 인자) 기관 요구사항 백로그 JSON', textSha256(text));
     if (requirements === undefined) {
       requirements = backlogToRtmRows(backlogPack);
@@ -1122,13 +1175,40 @@ function git(root, args) {
   return execFileSync('git', args, { cwd: root, encoding: 'utf8' }).trim();
 }
 
-/** 쓰는 곳은 build/deliverables 아래뿐이다 — 공개 경로(frontend/public 등)와 저장소 원장에 쓰지 않는다. */
+/** 기관 백로그 없는 저장소 원장 패키지의 출력 경계. 기관 자료는 chooseBacklogOutput 을 따른다. */
 export function resolveOutput(root, out) {
   const base = resolve(root, OUTPUT_ROOT);
   const target = resolve(root, out);
   const inside = relative(base, target);
   if (inside === '' || inside.startsWith('..') || isAbsolute(inside)) throw new Error(`deliverables must be written under ${OUTPUT_ROOT}/: ${out}`);
   return target;
+}
+
+/** Customer backlog packages stay outside every Git tree and never replace an existing directory. */
+export async function chooseBacklogOutput(root, backlog, { out, commit, cleanTree = true } = {}) {
+  const { assertWorkspaceOutsideCheckout } = await import('./export-deliverables-workspace.mjs');
+  const input = realpathSync.native(resolve(backlog));
+  const workspace = assertWorkspaceOutsideCheckout(root, dirname(input));
+  if (out !== undefined && !isAbsolute(out)) throw new Error('customer backlog --out requires an absolute directory outside any git working tree');
+  const suffix = `${String(commit).slice(0, 12)}${cleanTree ? '' : '-dirty'}`;
+  const target = assertWorkspaceOutsideCheckout(root, out ?? join(workspace, 'deliverables', suffix));
+  const rel = relative(process.platform === 'win32' ? target.toLowerCase() : target, process.platform === 'win32' ? input.toLowerCase() : input);
+  if (rel === '' || (!rel.startsWith(`..${sep}`) && rel !== '..' && !isAbsolute(rel))) throw new Error('customer output directory must not contain the input backlog');
+  if (existsSync(target)) throw new Error('customer output directory already exists; choose a new directory to preserve existing files');
+  return target;
+}
+
+export async function assertCurrentBacklogAcceptance(pack, contextSnapshot) {
+  const { computeContextBindings } = await import('./export-deliverables-workspace.mjs');
+  const current = computeContextBindings(pack, contextSnapshot);
+  const signed = new Set((pack.acceptanceCriteria ?? []).filter((ac) => ['accepted', 'conditional'].includes(ac.acceptanceDisposition))
+    .flatMap((ac) => ac.requirementIds ?? []));
+  for (const req of pack.businessRequirements ?? []) {
+    if (req.scopeDisposition !== 'included' || !signed.has(req.id)) continue;
+    if (!pack.contextBindings?.[req.id] || pack.contextBindings[req.id] !== current[req.id]) {
+      throw new Error('requirements backlog acceptance context changed or uses a legacy binding; run verify --refresh-context, review affected criteria and record UAT again before exporting');
+    }
+  }
 }
 
 export function assertCompareOutsideOutput(targetDir, comparePath) {
@@ -1148,9 +1228,15 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out,
   const commit = git(root, ['rev-parse', 'HEAD']);
   const cleanTree = git(root, ['status', '--porcelain']) === '';
   if (!cleanTree && !allowDirty) throw new Error('working tree is not clean — commit first, or pass --allow-dirty for a preview');
-  const target = resolveOutput(root, out ?? `${OUTPUT_ROOT}/${commit.slice(0, 12)}${cleanTree ? '' : '-dirty'}`);
+  const target = backlog === undefined
+    ? resolveOutput(root, out ?? `${OUTPUT_ROOT}/${commit.slice(0, 12)}${cleanTree ? '' : '-dirty'}`)
+    : await chooseBacklogOutput(root, backlog, { out, commit, cleanTree });
   assertCompareOutsideOutput(target, compare);
   const { inputs, inputList } = await loadInputs(root, { rtm, compare, backlog });
+  if (inputs.backlogPack) {
+    const { loadRepositoryContextSnapshot } = await import('./export-deliverables-workspace.mjs');
+    await assertCurrentBacklogAcceptance(inputs.backlogPack, await loadRepositoryContextSnapshot(root));
+  }
   const sheets = buildSheets(inputs);
   const extras = [];
   let database;
@@ -1174,8 +1260,14 @@ export async function exportDeliverables({ root = ROOT, allowDirty = false, out,
   });
   const { files, digest } = renderPackage(sheets, { commit, cleanTree, ledgerMode: inputs.ledgerMode, toolchain: toolchain(root), inputs: inputList, lockfiles, database,
     requirements: inputs.requirements !== undefined && rtm !== undefined, backlog: inputs.backlogPack !== undefined, baseline: inputs.baseline }, extras);
-  rmSync(target, { recursive: true, force: true });
-  mkdirSync(target, { recursive: true });
+  if (backlog === undefined) {
+    rmSync(target, { recursive: true, force: true });
+    mkdirSync(target, { recursive: true });
+  } else {
+    mkdirSync(dirname(target), { recursive: true });
+    // Exclusive creation closes the existence-check/write race and preserves customer files.
+    mkdirSync(target);
+  }
   for (const [path, text] of files) writeFileSync(join(target, path), text);
   return { target, digest, files: files.size };
 }
@@ -1191,7 +1283,7 @@ if (import.meta.url === pathToFileURL(process.argv[1] ?? '').href) {
     ...(args.includes('--compare') ? ['--compare', compare] : []), ...(args.includes('--backlog') ? ['--backlog', backlog] : [])]);
   if ((args.includes('--out') && !out) || (args.includes('--rtm') && !rtm) || (args.includes('--compare') && !compare)
     || (args.includes('--backlog') && !backlog) || args.some((arg) => !known.has(arg))) {
-    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--backlog <기관 요구사항 백로그 JSON>] [--compare <기준선 manifest.json>] [--allow-dirty] [--out <build/deliverables 아래 디렉터리>]');
+    console.error('사용: node scripts/export-deliverables.mjs [--db] [--rtm <기관 요구사항 추적 CSV>] [--backlog <기관 요구사항 백로그 JSON>] [--compare <기준선 manifest.json>] [--allow-dirty] [--out <원장만: build/deliverables 하위 / --backlog: Git 밖 새 절대 경로>]');
     process.exit(2);
   }
   const result = await exportDeliverables({ allowDirty: args.includes('--allow-dirty'), out, db: args.includes('--db'), rtm, compare, backlog });

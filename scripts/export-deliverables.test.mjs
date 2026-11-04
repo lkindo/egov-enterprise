@@ -1,6 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
+import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { execFileSync } from 'node:child_process';
+import * as deliverablesEngine from './export-deliverables.mjs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
@@ -77,6 +79,32 @@ test('the package is written only under build/deliverables', () => {
   assert.equal(resolveOutput(root, `${OUTPUT_ROOT}/abc`), join(root, OUTPUT_ROOT, 'abc'));
   for (const out of ['frontend/public/deliverables', OUTPUT_ROOT, `${OUTPUT_ROOT}/../elsewhere`, 'config/governance', join(tmpdir(), 'outside')]) {
     assert.throws(() => resolveOutput(root, out), /must be written under build\/deliverables/u, out);
+  }
+});
+
+test('customer backlog output defaults outside Git and refuses checkout, other Git, input ancestors and existing directories', async () => {
+  assert.equal(typeof deliverablesEngine.chooseBacklogOutput, 'function');
+  const workspace = mkdtempSync(join(tmpdir(), 'req-deliverables-output-'));
+  const otherGit = mkdtempSync(join(tmpdir(), 'req-deliverables-other-git-'));
+  const backlog = join(workspace, 'backlog.json');
+  try {
+    writeFileSync(backlog, '{}');
+    const options = { commit: 'a'.repeat(40), cleanTree: true };
+    assert.equal(await deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, options), join(workspace, 'deliverables', 'a'.repeat(12)));
+    assert.equal(await deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, cleanTree: false }), join(workspace, 'deliverables', `${'a'.repeat(12)}-dirty`));
+    const custom = join(workspace, 'custom-package');
+    assert.equal(await deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, out: custom }), custom);
+    await assert.rejects(deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, out: join(process.cwd(), 'build/deliverables/customer') }), /outside.*checkout|outside.*git/iu);
+    execFileSync('git', ['init'], { cwd: otherGit, stdio: 'ignore' });
+    await assert.rejects(deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, out: join(otherGit, 'package') }), /outside.*git/iu);
+    await assert.rejects(deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, out: workspace }), /contain.*backlog|input.*backlog/iu);
+    await assert.rejects(deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, out: 'relative-package' }), /absolute/iu);
+    mkdirSync(custom);
+    writeFileSync(join(custom, 'customer-note.txt'), 'preserve existing data');
+    await assert.rejects(deliverablesEngine.chooseBacklogOutput(process.cwd(), backlog, { ...options, out: custom }), /new.*directory|already exists/iu);
+  } finally {
+    rmSync(workspace, { recursive: true, force: true });
+    rmSync(otherGit, { recursive: true, force: true });
   }
 });
 
@@ -337,7 +365,7 @@ test('backlogDetailSheet, projectUatChecklistSheet, computeAcHash collision immu
       },
     ],
   };
-  sampleBacklog.acceptanceCriteria[0].acContentHash = computeAcHash(sampleBacklog.acceptanceCriteria[0]);
+  sampleBacklog.acceptanceCriteria[0].acContentHash = computeAcHash(sampleBacklog.acceptanceCriteria[0], sampleBacklog);
 
   const detail = backlogDetailSheet(sampleBacklog);
   assert.equal(detail.rows.length, 3);

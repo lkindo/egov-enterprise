@@ -15,13 +15,16 @@
  *    - ④ 기관 인수 층: acceptanceDisposition(pending/accepted/conditional/rejected)
  *    백로그에 수동 status: "implemented" 같은 완료 주장을 적는 것을 스키마 검증에서 거부한다.
  */
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { execFileSync } from 'node:child_process';
-import { mkdirSync, readFileSync, realpathSync, writeFileSync } from 'node:fs';
+import { closeSync, constants, existsSync, fstatSync, fsyncSync, lstatSync, mkdirSync, openSync, readFileSync, realpathSync, unlinkSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { BANNED_CLAIMS, BLANK, backlogDetailSheet, backlogToRtmRows, cellText, computeAcHash, computeRequirementAcceptanceDisposition, extractGateEntries, extractSchemaTableNames, loadInputs, mdCell, projectUatChecklistSheet, toCsv, toMarkdown } from './export-deliverables.mjs';
+import { hostname } from 'node:os';
+import { BANNED_CLAIMS, BLANK, backlogDetailSheet, backlogToRtmRows, cellText, computeAcHash, computeRequirementAcceptanceDisposition, extractGateEntries, extractSchemaTableNames, isValidUatDate, loadInputs, mdCell, projectUatChecklistSheet, toCsv, toMarkdown } from './export-deliverables.mjs';
 import { parseCsv, requirementSheet, routeOwnerResolver } from './export-deliverables-trace.mjs';
+import { loadComposerModules } from './composer-modules.mjs';
+import { readScreenRegistryArtifact } from './screen-registry-model.mjs';
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const ROOT = resolve(HERE, '..');
@@ -59,6 +62,7 @@ export const ALLOWED_PACK_KEYS = Object.freeze([
   'kind',
   'project',
   'contextSnapshotDigest',
+  'contextBindings',
   'isSample',
   'sources',
   'businessRequirements',
@@ -136,6 +140,7 @@ export const ALLOWED_AC_KEYS = Object.freeze([
   'uatSignedBy',
   'uatVerifiedAt',
   'uatEvidence',
+  'uatBuildRef',
   'acContentHash',
 ]);
 
@@ -230,17 +235,79 @@ export function assertWorkspaceOutsideCheckout(root, workspaceDir, options = {})
       gitTopLevel = execFileSync('git', ['rev-parse', '--show-toplevel'], {
         cwd: nearestExistingDir,
         encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
+        stdio: ['ignore', 'pipe', 'pipe'],
         timeout: 3000,
+        env: { ...process.env, LC_ALL: 'C' },
       }).trim();
-    } catch {
-      gitTopLevel = null;
+    } catch (error) {
+      // Only Git's explicit non-repository answer proves an external workspace.
+      // ENOENT, permission, unsafe-directory, timeout and unexpected failures are not proof.
+      if (error.status !== 128 || !/fatal: not a git repository/u.test(String(error.stderr ?? ''))) {
+        throw new Error('Git workspace verification failed; cannot verify that the workspace is outside any git working tree');
+      }
     }
     if (gitTopLevel) {
       throw new Error(`requirements workspace must be outside any git working tree (${gitTopLevel}): ${workspaceDir}`);
     }
   }
   return wsReal;
+}
+
+const CLI_WRITER = Symbol('requirements CLI writer');
+const activeWriters = new WeakSet();
+
+function readWriterLock(path) {
+  // Nonblocking open lets fstat reject a substituted FIFO without waiting for a writer.
+  const fd = openSync(path, constants.O_RDONLY | (constants.O_NOFOLLOW ?? 0) | (constants.O_NONBLOCK ?? 0));
+  try {
+    const opened = fstatSync(fd);
+    const stat = lstatSync(path);
+    if (!opened.isFile() || !stat.isFile() || stat.isSymbolicLink() || opened.nlink !== 1 || stat.nlink !== 1
+      || opened.dev !== stat.dev || opened.ino !== stat.ino || opened.size > 1024 || stat.size > 1024) throw new Error('workspace writer lock is unsafe or changed');
+    return readFileSync(fd, 'utf8');
+  } finally { closeSync(fd); }
+}
+
+function assertWorkspaceWritable(wsPath, options = {}) {
+  const owner = options[CLI_WRITER];
+  if (owner && activeWriters.has(owner) && owner.path === wsPath && readWriterLock(owner.lockPath) === owner.bytes) return;
+  try {
+    lstatSync(join(wsPath, '.requirements-ui.lock'));
+  } catch (error) {
+    if (error.code === 'ENOENT') return;
+    throw new Error('workspace is locked or its UI writer lock cannot be checked');
+  }
+  throw new Error('workspace is locked by the requirements UI; close the UI before using CLI writers');
+}
+
+async function withWorkspaceWriter(root, workspaceDir, options, action, create = false) {
+  const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  const inherited = options[CLI_WRITER];
+  if (inherited && activeWriters.has(inherited) && inherited.path === wsPath) {
+    assertWorkspaceWritable(wsPath, options);
+    return action(root, wsPath, options);
+  }
+  if (create) mkdirSync(wsPath, { recursive: true });
+  const lockPath = join(wsPath, '.requirements-ui.lock');
+  const owner = { path: wsPath, lockPath, bytes: JSON.stringify({ host: hostname(), pid: process.pid, owner: randomUUID() }) };
+  let fd;
+  try { fd = openSync(lockPath, 'wx', 0o600); }
+  catch (error) {
+    if (error.code === 'EEXIST') throw new Error('workspace is locked by the requirements UI or another CLI writer');
+    throw error;
+  }
+  try {
+    writeFileSync(fd, owner.bytes, 'utf8');
+    fsyncSync(fd);
+  } finally { closeSync(fd); }
+  activeWriters.add(owner);
+  try {
+    return await action(root, wsPath, { ...options, [CLI_WRITER]: owner });
+  } finally {
+    activeWriters.delete(owner);
+    // Never remove another process's replacement lock. An unknown leftover is manual recovery.
+    if (readWriterLock(lockPath) === owner.bytes) unlinkSync(lockPath);
+  }
 }
 
 function readRepoCommit(root) {
@@ -437,6 +504,55 @@ export function buildContextSnapshot(inputs, options = {}) {
     gates,
     migrationMappings,
   };
+}
+
+/** Bind each requirement only to the catalog entries that it actually references. */
+export function computeContextBindings(pack, contextSnapshot) {
+  const canonical = (value) => Array.isArray(value) ? value.map(canonical)
+    : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map((key) => [key, canonical(value[key])])) : value;
+  const catalogs = {
+    capability: [contextSnapshot?.capabilities ?? [], 'id'], screen: [contextSnapshot?.screens ?? [], 'route'],
+    interface: [contextSnapshot?.interfaces ?? [], 'id'], table: [contextSnapshot?.tables ?? [], 'id'],
+    gate: [contextSnapshot?.gates ?? [], 'id'], 'migration-mapping': [contextSnapshot?.migrationMappings ?? [], 'id'],
+  };
+  const normalize = (kind, id) => ['table', 'migration-mapping'].includes(kind) ? String(id).toLowerCase() : String(id);
+  return Object.fromEntries((pack?.businessRequirements ?? []).map((req) => {
+    const modules = [...new Set(req.moduleCandidates ?? [])].sort().map((id) => {
+      const entry = (contextSnapshot?.modules ?? []).find((module) => module.id === id);
+      // Presentation and aggregate sizes change as unrelated work lands in the same
+      // module. Only existence, required membership and dependency semantics bind UAT.
+      const semantic = entry ? { id: entry.id, required: Boolean(entry.required),
+        requires: [...(entry.requires ?? [])].sort((a, b) => JSON.stringify(canonical(a)).localeCompare(JSON.stringify(canonical(b)))) } : null;
+      return [id, semantic];
+    });
+    const targetKeys = new Map((pack.traceLinks ?? []).filter((link) => link.requirementId === req.id)
+      .map((link) => [`${link.targetKind}\0${normalize(link.targetKind, link.targetId)}`, [link.targetKind, normalize(link.targetKind, link.targetId)]]));
+    const targets = [...targetKeys.entries()].sort(([a], [b]) => a.localeCompare(b)).map(([, [kind, id]]) => {
+      const [entries, field] = catalogs[kind] ?? [[], 'id'];
+      return [kind, id, entries.find((entry) => normalize(kind, entry[field]) === id) ?? null];
+    });
+    return [req.id, sha256(JSON.stringify(canonical(['requirements-context-v1', modules, targets])))];
+  }));
+}
+
+function refreshBacklogContext(pack, snapshot) {
+  const priorHashes = new Map((pack.acceptanceCriteria ?? []).map((ac) => [ac.id, computeAcHash(ac, pack)]));
+  pack.contextBindings = computeContextBindings(pack, snapshot);
+  pack.contextSnapshotDigest = snapshot.snapshotDigest;
+  for (const ac of pack.acceptanceCriteria ?? []) {
+    const nextHash = computeAcHash(ac, pack);
+    if (priorHashes.get(ac.id) !== nextHash || (ac.acContentHash && ac.acContentHash !== nextHash)) {
+      ac.acceptanceDisposition = 'pending';
+      delete ac.acContentHash;
+      delete ac.uatSignedBy;
+      delete ac.uatVerifiedAt;
+      delete ac.uatEvidence;
+      delete ac.uatBuildRef;
+    }
+  }
+  for (const req of pack.businessRequirements ?? []) req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req,
+    (pack.acceptanceCriteria ?? []).filter((ac) => ac.requirementIds?.includes(req.id)), pack);
+  return pack;
 }
 
 /**
@@ -849,6 +965,41 @@ export function scanBacklogForPiiAndSecrets(pack) {
   return hits;
 }
 
+function safeDiagnostic(message) {
+  let text = String(message);
+  for (const { regex } of PII_SECRET_PATTERNS) text = text.replace(new RegExp(regex.source, `${regex.flags}g`), '[민감정보 가림]');
+  return text;
+}
+
+function safeValidation(result) {
+  return { ...result, errors: result.errors.map(safeDiagnostic), warnings: result.warnings.map(safeDiagnostic), infos: result.infos.map(safeDiagnostic) };
+}
+
+async function withImportDiagnostics(code, action) {
+  try { return await action(); }
+  catch (error) {
+    // Preserve filesystem/lock failures and programmer exceptions. Parse and domain
+    // validation failures are user-correctable input errors with safe diagnostics.
+    if (error?.code || error instanceof TypeError || error instanceof RangeError) throw error;
+    const diagnostics = error instanceof SyntaxError
+      ? ['backlog JSON syntax is invalid; restore a valid UTF-8 workspace before importing']
+      : String(error?.message ?? 'invalid import').split('\n').filter(Boolean).map(safeDiagnostic);
+    const failure = new Error(diagnostics.join('\n'));
+    failure.code = code;
+    failure.errors = diagnostics;
+    throw failure;
+  }
+}
+
+function assertSafeMatchQuery(query) {
+  if (query === undefined || query === null) return;
+  if (typeof query !== 'string' || scanBacklogForPiiAndSecrets({ project: { query } }).length) {
+    const error = new Error('Fit-Gap query is invalid or contains sensitive data; redact it before matching');
+    error.code = 'MATCH_QUERY_INVALID';
+    throw error;
+  }
+}
+
 function checkEntityKeys(entityLabel, entityId, obj, allowedKeys, errors) {
   const allowed = new Set(allowedKeys);
   for (const key of Object.keys(obj ?? {})) {
@@ -869,7 +1020,7 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
   const infos = [];
 
   if (!pack || typeof pack !== 'object' || Array.isArray(pack)) {
-    return { valid: false, errors: ['backlog must be a JSON object'], warnings, infos, stats: null };
+    return safeValidation({ valid: false, errors: ['backlog must be a JSON object'], warnings, infos, stats: null });
   }
   checkEntityKeys('backlog', 'root', pack, ALLOWED_PACK_KEYS, errors);
   if (pack.schemaVersion !== WORKSPACE_SCHEMA_VERSION) {
@@ -893,7 +1044,7 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
 
   if (!sources || !requirements || !workItems || !acceptanceCriteria || !traceLinks) {
     errors.push('sources, businessRequirements, workItems, acceptanceCriteria, and traceLinks must all be arrays');
-    return { valid: false, errors, warnings, infos, stats: null };
+    return safeValidation({ valid: false, errors, warnings, infos, stats: null });
   }
 
   for (const hit of scanBacklogForPiiAndSecrets(pack)) {
@@ -977,6 +1128,16 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
       const hasQuestion = Array.isArray(req.openQuestions) && req.openQuestions.length > 0;
       if (hitTerm && !hasNfr && !hasQuestion) {
         warnings.push(`businessRequirement ${req.id}: contains ambiguous phrasing ("${hitTerm}") without nfrCriteria or openQuestions`);
+      }
+    }
+  }
+
+  if (pack.contextBindings !== undefined) {
+    if (!pack.contextBindings || typeof pack.contextBindings !== 'object' || Array.isArray(pack.contextBindings)) {
+      errors.push('contextBindings must be a requirement ID to SHA-256 object');
+    } else {
+      for (const [id, value] of Object.entries(pack.contextBindings)) {
+        if (!reqMap.has(id) || typeof value !== 'string' || !/^[0-9a-f]{64}$/u.test(value)) errors.push('contextBindings entries must reference known requirements and contain SHA-256 hashes');
       }
     }
   }
@@ -1190,7 +1351,7 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
     if (ac.acceptanceDisposition !== undefined && !ACCEPTANCE_DISPOSITIONS.includes(ac.acceptanceDisposition)) {
       errors.push(`acceptanceCriterion ${ac.id}: invalid acceptanceDisposition "${ac.acceptanceDisposition}"`);
     }
-    const expectedHash = computeAcHash(ac);
+    const expectedHash = computeAcHash(ac, pack);
     if (ac.acceptanceDisposition === 'accepted' || ac.acceptanceDisposition === 'conditional') {
       if (!ac.acContentHash) {
         errors.push(`acceptanceCriterion ${ac.id}: acceptanceDisposition "${ac.acceptanceDisposition}" requires acContentHash from uat-export`);
@@ -1200,8 +1361,14 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
       if (!ac.uatSignedBy || typeof ac.uatSignedBy !== 'string' || !ac.uatSignedBy.trim()) {
         errors.push(`acceptanceCriterion ${ac.id}: acceptanceDisposition "${ac.acceptanceDisposition}" requires non-empty uatSignedBy`);
       }
-      if (!ac.uatVerifiedAt || typeof ac.uatVerifiedAt !== 'string' || !/^\d{4}-\d{2}-\d{2}/u.test(ac.uatVerifiedAt.trim())) {
+      if (!isValidUatDate(ac.uatVerifiedAt)) {
         errors.push(`acceptanceCriterion ${ac.id}: acceptanceDisposition "${ac.acceptanceDisposition}" requires valid date/ISO uatVerifiedAt (YYYY-MM-DD)`);
+      }
+      if (typeof ac.uatEvidence !== 'string' || !ac.uatEvidence.trim()) {
+        errors.push(`acceptanceCriterion ${ac.id}: acceptanceDisposition "${ac.acceptanceDisposition}" requires non-empty uatEvidence`);
+      }
+      if (typeof ac.uatBuildRef !== 'string' || !ac.uatBuildRef.trim()) {
+        errors.push(`acceptanceCriterion ${ac.id}: acceptanceDisposition "${ac.acceptanceDisposition}" requires non-empty uatBuildRef`);
       }
     } else if (ac.acContentHash !== undefined && ac.acContentHash !== expectedHash) {
       warnings.push(`acceptanceCriterion ${ac.id}: acContentHash (${ac.acContentHash}) is stale (current=${expectedHash}); re-run uat-export`);
@@ -1225,7 +1392,7 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
     if (!req?.id) continue;
     const reqAcs = acsByReq.get(req.id) ?? [];
     const actualDisp = req.acceptanceDisposition ?? 'pending';
-    const expectedDisp = computeRequirementAcceptanceDisposition(req, reqAcs);
+    const expectedDisp = computeRequirementAcceptanceDisposition(req, reqAcs, pack);
     if (actualDisp !== expectedDisp) {
       errors.push(
         `businessRequirement ${req.id}: acceptanceDisposition "${actualDisp}" does not match AC rollup "${expectedDisp}" (${reqAcs.length} AC(s))`,
@@ -1391,13 +1558,72 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
     traceLinks: traceLinks.length,
   };
 
-  return {
+  return safeValidation({
     valid: errors.length === 0,
     errors,
     warnings,
     infos,
     stats,
-  };
+  });
+}
+
+/** Draft schema validity is intentionally weaker than a development handoff. */
+export function validateDevelopmentReadiness(pack, contextSnapshot = null) {
+  const structure = validateBacklogPack(pack, contextSnapshot);
+  const errors = [...structure.errors];
+  const warnings = [...structure.warnings];
+  if (!structure.valid) return { valid: false, errors, warnings };
+  const included = pack.businessRequirements.filter((req) => req.scopeDisposition === 'included');
+  if (!included.length) errors.push('development readiness requires at least one included requirement');
+  if (contextSnapshot && pack.contextSnapshotDigest !== contextSnapshot.snapshotDigest) errors.push('development readiness requires a current context snapshot');
+  const label = (value) => /^[A-Za-z0-9_.:-]{1,100}$/u.test(String(value ?? '')) ? value : '(invalid identifier)';
+  const workById = new Map(pack.workItems.map((item) => [item.id, item]));
+  const reqById = new Map(pack.businessRequirements.map((req) => [req.id, req]));
+  const eligible = (item) => item && item.workItemType !== 'epic' && item.priority !== 'WONT'
+    && item.requirementIds.length > 0 && item.requirementIds.every((id) => {
+      const req = reqById.get(id);
+      return req?.scopeDisposition === 'included' && req.solutionDisposition !== 'undecided';
+    });
+  for (const source of pack.sources) {
+    const tag = `source ${label(source.id)}`;
+    if (!SOURCE_CLASSIFICATIONS.includes(source.classification)) errors.push(`${tag}: classify the source before handoff`);
+    if (!Array.isArray(source.clauses) || !source.clauses.length) errors.push(`${tag}: source clause coverage is required`);
+    for (const clause of source.clauses ?? []) {
+      if (!String(clause.locator ?? '').trim() || !String(clause.text ?? '').trim()) errors.push(`${tag} clause ${label(clause.id)}: locator and text are required`);
+      if (clause.disposition === 'question') errors.push(`${tag} clause ${label(clause.id)}: unresolved question prevents handoff`);
+    }
+  }
+  for (const req of pack.businessRequirements) {
+    const tag = `businessRequirement ${label(req.id)}`;
+    if (req.scopeDisposition === 'proposed') errors.push(`${tag}: scope is still proposed`);
+    if (req.scopeDisposition !== 'included') continue;
+    if (req.solutionDisposition === 'undecided') errors.push(`${tag}: solution is undecided`);
+    if (!String(req.description ?? '').trim()) errors.push(`${tag}: a requirement definition is required`);
+    if ((req.openQuestions ?? []).length) errors.push(`${tag}: open questions must be resolved`);
+    if (['non-functional', 'data', 'constraint'].includes(req.requirementType)
+      && !VERIFICATION_METHODS.includes(req.nfrCriteria?.verificationMethod)) errors.push(`${tag}: measurable criteria require a verification method`);
+    if (!pack.workItems.some((item) => item.workItemType !== 'epic' && item.requirementIds.includes(req.id))) errors.push(`${tag}: no executable work decomposition`);
+    if (!pack.traceLinks.some((link) => link.requirementId === req.id && ['planned', 'existing'].includes(link.linkIntent))) errors.push(`${tag}: confirmed planned/existing trace is required`);
+    for (const sourceId of req.sourceIds) {
+      const source = pack.sources.find((item) => item.id === sourceId);
+      if (!(source?.clauses ?? []).some((clause) => ['included', 'merged'].includes(clause.disposition) && (clause.requirementIds ?? []).includes(req.id))) errors.push(`${tag}: an included/merged source clause must cover every source reference`);
+    }
+  }
+  for (const item of pack.workItems.filter(eligible)) {
+    const tag = `workItem ${label(item.id)}`;
+    const parent = workById.get(item.parentEpicId);
+    if (item.requirementIds.some((id) => !parent?.requirementIds.includes(id))) errors.push(`${tag}: parent epic must cover its requirements`);
+    for (const depId of item.dependsOn ?? []) if (!eligible(workById.get(depId))) errors.push(`${tag}: dependency ${label(depId)} is outside executable scope`);
+    const acs = pack.acceptanceCriteria.filter((ac) => ac.workItemId === item.id);
+    if (!acs.length) errors.push(`${tag}: acceptance criteria are required`);
+    if (item.workItemType === 'story') {
+      if (!ARCHETYPE_CATALOG.some((archetype) => archetype.id === item.archetype)) errors.push(`${tag}: a screen archetype is required`);
+      const cards = Array.isArray(item.decisionCards) ? item.decisionCards : [];
+      for (const { id } of DECISION_CARD_AXES) if (!cards.some((card) => new RegExp(`^${id}\\s*:`,'u').test(card) && String(card).split(':').slice(1).join(':').trim())) errors.push(`${tag}: ${id} decision is required`);
+      if (!acs.some((ac) => ac.polarity === 'allow') || !acs.some((ac) => ac.polarity === 'forbid')) errors.push(`${tag}: both Green and Red acceptance criteria are required`);
+    }
+  }
+  return { valid: errors.length === 0, errors, warnings };
 }
 
 export function backlogToRtmCsv(pack) {
@@ -1634,8 +1860,8 @@ export function renderWorkspaceReport(pack, contextSnapshot, validation) {
     '',
     validation.valid
       ? `- 프로젝트: \`${cellText(project.code)}\` — ${cellText(project.name)} (${cellText(project.institution)})`
-      : `- 프로젝트: \`${cellText(project.code)}\` — (검증 실패로 원문 표·민감 문자열 출력 생략)`,
-    `- 기준 프로필: \`${cellText(project.baselineProfile)}\` / 표본 여부: \`${pack?.isSample ? '예(합성 표본)' : '아니오'}\``,
+      : '- 프로젝트: (검증 실패로 원문 표·민감 문자열 출력 생략)',
+    `- 기준 프로필: \`${validation.valid ? cellText(project.baselineProfile) : BLANK}\` / 표본 여부: \`${pack?.isSample ? '예(합성 표본)' : '아니오'}\``,
     `- 스냅숏 다이제스트: \`${contextSnapshot?.snapshotDigest ?? BLANK}\` (커밋 \`${contextSnapshot?.commit ?? 'unknown'}\`)`,
     `- 검증 상태: **${validation.valid ? '유효 (VALID)' : '오류 있음 (INVALID)'}** (오류 ${validation.errors.length}건, 경고 ${validation.warnings.length}건, 참고 ${validation.infos?.length ?? 0}건)`,
     ...(validation.stats ? [
@@ -1665,7 +1891,22 @@ export function renderWorkspaceReport(pack, contextSnapshot, validation) {
 }
 
 export async function loadRepositoryContextSnapshot(root = ROOT) {
-  const { inputs } = await loadInputs(root);
+  // Context does not consume Java/E2E inventories or full audit-package inputs.
+  // Read these exact ledgers on every request, including uncommitted changes.
+  // Generated products retain the exporter's projection/lock validation path.
+  const generated = ['config/governance/upstream-review', 'config/governance/reusable-governance-projection.json', 'reusable-base-lock.json']
+    .some((path) => existsSync(join(root, path)));
+  const json = (path) => JSON.parse(readFileSync(join(root, path), 'utf8'));
+  const optionalJson = (path) => existsSync(join(root, path)) ? json(path) : null;
+  const inputs = generated ? (await loadInputs(root)).inputs : {
+    moduleFiles: loadComposerModules(root).files,
+    catalog: json('config/governance/permission-catalog.json'),
+    policies: json('config/governance/authorization-policies.json'),
+    routes: json('config/ui-route-capabilities.json'),
+    registry: readScreenRegistryArtifact(readFileSync(join(root, 'frontend/src/types/generated-screen-registry.ts'), 'utf8')),
+    dbColumns: optionalJson('db_columns.json'),
+    gates: optionalJson('config/governance/gates.json'),
+  };
   const commit = readRepoCommit(root);
   return buildContextSnapshot(inputs, { commit });
 }
@@ -1827,7 +2068,12 @@ export function diffContextSnapshots(previousSnapshot, nextSnapshot, pack = null
  *   --force 가 아니면 `{ flag: 'wx' }` 로 원자적으로 생성하며 EEXIST 면 기존 파일을 읽는다.
  */
 export async function initRequirementsWorkspace(root, workspaceDir, options = {}) {
+  return withWorkspaceWriter(root, workspaceDir, options, initializeWorkspace, true);
+}
+
+async function initializeWorkspace(root, workspaceDir, options) {
   const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  assertWorkspaceWritable(wsPath, options);
   mkdirSync(wsPath, { recursive: true });
 
   const snapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
@@ -1839,6 +2085,7 @@ export async function initRequirementsWorkspace(root, workspaceDir, options = {}
   writeFileSync(snapshotPath, `${JSON.stringify(snapshot, null, 2)}\n`, 'utf8');
 
   const initialPack = options.sample ? createSampleBacklogPack(snapshot) : createEmptyBacklogPack(snapshot);
+  initialPack.contextBindings = computeContextBindings(initialPack, snapshot);
   let pack;
   if (options.force) {
     pack = initialPack;
@@ -1886,7 +2133,12 @@ export async function initRequirementsWorkspace(root, workspaceDir, options = {}
  * - 유효성 판정을 보고서 렌더보다 먼저 수행하고, 오류가 있어도 WORKSPACE-REPORT.md 에 오류 목록을 남긴 뒤 실패한다.
  */
 export async function verifyRequirementsWorkspace(root, workspaceDir, options = {}) {
+  return withWorkspaceWriter(root, workspaceDir, options, verifyWorkspace);
+}
+
+async function verifyWorkspace(root, workspaceDir, options) {
   const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  assertWorkspaceWritable(wsPath, options);
   const snapshotPath = join(wsPath, 'context.snapshot.json');
   const backlogPath = join(wsPath, 'backlog.json');
   const rtmPath = join(wsPath, 'rtm.csv');
@@ -1913,7 +2165,7 @@ export async function verifyRequirementsWorkspace(root, workspaceDir, options = 
 
   const contextDiff = diffContextSnapshots(savedSnapshot, liveSnapshot, pack);
   const candidatePack = options.refreshContext
-    ? { ...pack, contextSnapshotDigest: liveSnapshot.snapshotDigest }
+    ? refreshBacklogContext(structuredClone(pack), liveSnapshot)
     : (!pack.contextSnapshotDigest && savedSnapshot?.snapshotDigest
       ? { ...pack, contextSnapshotDigest: savedSnapshot.snapshotDigest }
       : pack);
@@ -2003,6 +2255,7 @@ function extractSearchTokens(text) {
  * 요구사항 본문과 후보 모듈을 기반으로 contextSnapshot 의 화면·역량·API·테이블 후보를 점수화해 추천한다(Phase 2 S1).
  */
 export function matchRequirementsToContext(pack, contextSnapshot, options = {}) {
+  assertSafeMatchQuery(options.query);
   const requirements = options.query
     ? [{
       id: 'QUERY',
@@ -2148,6 +2401,8 @@ function sanitizeInlineMarkdown(val) {
  * 백로그의 에픽·작업 항목·결정 카드·Green/Red 인수조건·추적 대상을 에이전트/개발자 실행 작업 패키지(TASK-PACKAGE.md)로 변환한다(Phase 2 S2).
  */
 export function generateWorkPackagePlan(pack, contextSnapshot, options = {}) {
+  const readiness = validateDevelopmentReadiness(pack, contextSnapshot);
+  if (!readiness.valid) throw new Error(`backlog is not ready for development (${readiness.errors.length} readiness error(s)):\n${readiness.errors.join('\n')}`);
   const reqMap = new Map((pack?.businessRequirements ?? []).map((r) => [r.id, r]));
   const workItemsById = new Map((pack?.workItems ?? []).map((w) => [w.id, w]));
   const archetypeMap = new Map(ARCHETYPE_CATALOG.map((a) => [a.id, a]));
@@ -2155,13 +2410,9 @@ export function generateWorkPackagePlan(pack, contextSnapshot, options = {}) {
 
   let candidates = (pack?.workItems ?? []).filter((w) => {
     if (!w || w.workItemType === 'epic') return false;
-    if (options.workItemId === w.id) return true;
     if (w.priority === 'WONT') return false;
     const reqs = (w.requirementIds ?? []).map((id) => reqMap.get(id)).filter(Boolean);
-    if (reqs.length > 0 && reqs.every((r) => r.scopeDisposition === 'excluded' || r.scopeDisposition === 'deferred')) {
-      return false;
-    }
-    return true;
+    return reqs.length > 0 && reqs.every((r) => r.scopeDisposition === 'included' && r.solutionDisposition !== 'undecided');
   });
   if (options.workItemId) {
     candidates = candidates.filter((w) => w.id === options.workItemId);
@@ -2317,7 +2568,12 @@ function splitListCell(value, delimiter = ';') {
  * 비개발자(PM·발주처·감리원) 검토·편집용 양방향 CSV 시트 2종을 `<workspace>/sheets/` 에 내보낸다(Phase 2 S4).
  */
 export async function exportReviewSheets(root, workspaceDir, options = {}) {
+  return withWorkspaceWriter(root, workspaceDir, options, writeReviewSheets);
+}
+
+async function writeReviewSheets(root, workspaceDir, options) {
   const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  assertWorkspaceWritable(wsPath, options);
   const pack = JSON.parse(readFileSync(join(wsPath, 'backlog.json'), 'utf8'));
   const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
   const preValidation = validateBacklogPack(pack, liveSnapshot);
@@ -2475,7 +2731,12 @@ function applyOptionalField(target, key, newVal, prevObj) {
  * 검증 실패 시 `backlog.json` 을 덮어쓰지 않고 오류를 보고한다.
  */
 export async function importReviewSheets(root, workspaceDir, options = {}) {
+  return withWorkspaceWriter(root, workspaceDir, options, (...args) => withImportDiagnostics('CSV_IMPORT_INVALID', () => readReviewSheets(...args)));
+}
+
+async function readReviewSheets(root, workspaceDir, options) {
   const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  assertWorkspaceWritable(wsPath, options);
   const backlogPath = join(wsPath, 'backlog.json');
   const pack = JSON.parse(readFileSync(backlogPath, 'utf8'));
   const sheetsDir = join(wsPath, 'sheets');
@@ -2590,16 +2851,6 @@ export async function importReviewSheets(root, workspaceDir, options = {}) {
         then: row.then,
         verificationMethod: row.verificationMethod,
       };
-      // If AC content changed compared to previously signed/hashed AC, reset UAT disposition to pending
-      if (prevAc.id && computeAcHash(prevAc) !== computeAcHash(nextAc)) {
-        nextAc.acceptanceDisposition = 'pending';
-        delete nextAc.uatSignedBy;
-        delete nextAc.uatVerifiedAt;
-        delete nextAc.uatEvidence;
-        if (nextAc.acContentHash) {
-          nextAc.acContentHash = computeAcHash(nextAc);
-        }
-      }
       updatedAcs.push(nextAc);
     }
   }
@@ -2613,18 +2864,35 @@ export async function importReviewSheets(root, workspaceDir, options = {}) {
       acsByReq.set(reqId, list);
     }
   }
-  for (const req of updatedReqs) {
-    req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? []);
-  }
-
   const candidatePack = {
     ...pack,
     businessRequirements: updatedReqs,
     workItems: [...updatedWiMap.values()],
     acceptanceCriteria: updatedAcs,
   };
-
   const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
+  candidatePack.contextBindings = computeContextBindings(candidatePack, liveSnapshot);
+
+  // CSV is a review interchange, not an implicit delete API. Omitted rows can be accidental
+  // filters and must never shrink the set of conditions used for an acceptance rollup.
+  for (const [label, existing, present] of [
+    ['requirement', existingReqs, seenReqIds], ['workItem', existingWi, new Set(updatedWiMap.keys())], ['AC', existingAc, seenAcIds],
+  ]) {
+    if ([...existing.keys()].some((id) => !present.has(id))) throw new Error(`review CSV omits existing ${label} rows; implicit deletion is forbidden`);
+  }
+  for (const ac of updatedAcs) {
+    const previous = existingAc.get(ac.id);
+    if (previous && computeAcHash(previous, pack) !== computeAcHash(ac, candidatePack)) {
+      ac.acceptanceDisposition = 'pending';
+      delete ac.uatSignedBy;
+      delete ac.uatVerifiedAt;
+      delete ac.uatEvidence;
+      delete ac.uatBuildRef;
+      delete ac.acContentHash;
+    }
+  }
+  for (const req of updatedReqs) req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? [], candidatePack);
+
   const validation = validateBacklogPack(candidatePack, liveSnapshot);
   if (!validation.valid) {
     throw new Error(`imported review sheets failed validation (${validation.errors.length} error(s)):\n${validation.errors.join('\n')}`);
@@ -2642,20 +2910,28 @@ export async function importReviewSheets(root, workspaceDir, options = {}) {
  * 발주기관·감리 검수용 UAT 점검표 CSV 를 `<workspace>/sheets/uat-checklist.csv` 로 내보내고 각 AC 에 `acContentHash` 를 기록한다(Phase 2 S5).
  */
 export async function exportUatChecklist(root, workspaceDir, options = {}) {
+  return withWorkspaceWriter(root, workspaceDir, options, writeUatChecklist);
+}
+
+async function writeUatChecklist(root, workspaceDir, options) {
   const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  assertWorkspaceWritable(wsPath, options);
   const backlogPath = join(wsPath, 'backlog.json');
   const pack = JSON.parse(readFileSync(backlogPath, 'utf8'));
+  const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
+  refreshBacklogContext(pack, liveSnapshot);
   const sheetsDir = join(wsPath, 'sheets');
   mkdirSync(sheetsDir, { recursive: true });
 
   // Reset any AC whose content changed since acContentHash was stamped back to pending before re-stamping
   for (const ac of pack.acceptanceCriteria ?? []) {
-    const nextHash = computeAcHash(ac);
+    const nextHash = computeAcHash(ac, pack);
     if (ac.acContentHash && ac.acContentHash !== nextHash && ac.acceptanceDisposition && ac.acceptanceDisposition !== 'pending') {
       ac.acceptanceDisposition = 'pending';
       delete ac.uatSignedBy;
       delete ac.uatVerifiedAt;
       delete ac.uatEvidence;
+      delete ac.uatBuildRef;
     }
     ac.acContentHash = nextHash;
     if (!ac.acceptanceDisposition) ac.acceptanceDisposition = 'pending';
@@ -2670,16 +2946,16 @@ export async function exportUatChecklist(root, workspaceDir, options = {}) {
     }
   }
   for (const req of pack.businessRequirements ?? []) {
-    req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? []);
+    req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? [], pack);
   }
 
-  const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
   const preValidation = validateBacklogPack(pack, liveSnapshot);
   if (!preValidation.valid) {
     throw new Error(`cannot export UAT checklist from invalid backlog.json (${preValidation.errors.length} error(s)):\n${preValidation.errors.join('\n')}`);
   }
 
   writeFileSync(backlogPath, `${JSON.stringify(pack, null, 2)}\n`, 'utf8');
+  writeFileSync(join(wsPath, 'context.snapshot.json'), `${JSON.stringify(liveSnapshot, null, 2)}\n`, 'utf8');
 
   const sheet = {
     columns: [
@@ -2696,6 +2972,7 @@ export async function exportUatChecklist(root, workspaceDir, options = {}) {
       ['uatVerifiedAt', 'uatVerifiedAt'],
       ['uatEvidence', 'uatEvidence'],
       ['acContentHash', 'acContentHash'],
+      ['uatBuildRef', 'uatBuildRef'],
     ],
     rows: (pack.acceptanceCriteria ?? []).map((ac) => ({
       acId: ac.id,
@@ -2711,6 +2988,7 @@ export async function exportUatChecklist(root, workspaceDir, options = {}) {
       uatVerifiedAt: ac.uatVerifiedAt ?? '',
       uatEvidence: ac.uatEvidence ?? '',
       acContentHash: ac.acContentHash,
+      uatBuildRef: ac.uatBuildRef ?? '',
     })),
   };
 
@@ -2725,7 +3003,12 @@ export async function exportUatChecklist(root, workspaceDir, options = {}) {
  * - 요구사항에 연결된 모든 Green/Red AC 가 `accepted` 일 때만 요구사항의 `acceptanceDisposition` 을 `accepted` 로 승격한다.
  */
 export async function importUatChecklist(root, workspaceDir, options = {}) {
+  return withWorkspaceWriter(root, workspaceDir, options, (...args) => withImportDiagnostics('UAT_IMPORT_INVALID', () => readUatChecklist(...args)));
+}
+
+async function readUatChecklist(root, workspaceDir, options) {
   const wsPath = assertWorkspaceOutsideCheckout(root, workspaceDir, options);
+  assertWorkspaceWritable(wsPath, options);
   const backlogPath = join(wsPath, 'backlog.json');
   const pack = JSON.parse(readFileSync(backlogPath, 'utf8'));
   const uatCsvPath = options.file ? resolve(root, options.file) : join(wsPath, 'sheets', 'uat-checklist.csv');
@@ -2734,6 +3017,18 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
   });
 
   const errors = [];
+  const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
+  const hasJudgments = rows.some((row) => row.acceptanceDisposition && row.acceptanceDisposition !== 'pending');
+  const buildRef = typeof options.buildRef === 'string' ? options.buildRef.trim() : '';
+  if (hasJudgments) {
+    const readiness = validateDevelopmentReadiness(pack, liveSnapshot);
+    if (!readiness.valid) errors.push('backlog is not ready for development/UAT; resolve readiness errors before recording judgments', ...readiness.errors);
+    if (errors.length) throw new Error(errors.join('\n'));
+  }
+  const currentBindings = computeContextBindings(pack, liveSnapshot);
+  // A missing or outdated selective binding needs a freshly exported checklist, not
+  // implicit acceptance of the old interpretation.
+  pack.contextBindings = currentBindings;
   const acById = new Map((pack.acceptanceCriteria ?? []).map((a) => [a.id, a]));
   const rowByAcId = new Map();
   for (const row of rows) {
@@ -2751,6 +3046,7 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
     }
     rowByAcId.set(row.acId, row);
   }
+  if ([...acById.keys()].some((id) => !rowByAcId.has(id))) errors.push('UAT checklist omits existing AC rows; import the complete checklist');
 
   let matchedCount = 0;
   for (const ac of pack.acceptanceCriteria ?? []) {
@@ -2762,7 +3058,20 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
       errors.push(`acceptanceCriterion ${ac.id}: invalid acceptanceDisposition "${nextDisp}" in UAT sheet`);
       continue;
     }
-    const currentHash = computeAcHash(ac);
+    const currentHash = computeAcHash(ac, pack);
+    const canonicalMetadata = (value) => normalizeCsvCell(String(value ?? ''));
+    const rowBuild = canonicalMetadata(row.uatBuildRef);
+    const priorBuild = canonicalMetadata(ac.uatBuildRef);
+    const unchangedJudgment = nextDisp === (ac.acceptanceDisposition ?? 'pending')
+      && ['uatSignedBy', 'uatVerifiedAt', 'uatEvidence'].every((key) => canonicalMetadata(row[key]) === canonicalMetadata(ac[key]))
+      && row.acContentHash === ac.acContentHash && (!rowBuild || rowBuild === priorBuild);
+    const rowOverridesBuild = rowBuild && rowBuild !== priorBuild;
+    const judgmentBuild = unchangedJudgment ? ac.uatBuildRef : (rowOverridesBuild ? rowBuild : (buildRef || rowBuild));
+    if (nextDisp !== 'pending' && (typeof judgmentBuild !== 'string' || !judgmentBuild.trim() || judgmentBuild.length > 200
+      || scanBacklogForPiiAndSecrets({ project: { buildRef: judgmentBuild } }).length)) {
+      errors.push(`acceptanceCriterion ${ac.id}: changed nonpending UAT judgments require a non-sensitive buildRef or uatBuildRef (1..200 characters)`);
+      continue;
+    }
     const csvRowHash = computeAcHash({
       id: row.acId || ac.id,
       requirementIds: row.requirementIds ? splitListCell(row.requirementIds, ';') : ac.requirementIds,
@@ -2772,7 +3081,7 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
       when: row.when || ac.when,
       then: row.then || ac.then,
       verificationMethod: row.verificationMethod || ac.verificationMethod,
-    });
+    }, pack);
     if (nextDisp === 'accepted' || nextDisp === 'conditional') {
       if (!row.acContentHash) {
         errors.push(`acceptanceCriterion ${ac.id}: "${nextDisp}" disposition in UAT sheet requires non-empty acContentHash from uat-export`);
@@ -2788,8 +3097,12 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
         errors.push(`acceptanceCriterion ${ac.id}: "${nextDisp}" disposition in UAT sheet requires non-empty uatSignedBy`);
         continue;
       }
-      if (!row.uatVerifiedAt || !/^\d{4}-\d{2}-\d{2}/u.test(row.uatVerifiedAt.trim())) {
+      if (!isValidUatDate(row.uatVerifiedAt)) {
         errors.push(`acceptanceCriterion ${ac.id}: "${nextDisp}" disposition in UAT sheet requires valid date/ISO uatVerifiedAt (YYYY-MM-DD)`);
+        continue;
+      }
+      if (!row.uatEvidence || !row.uatEvidence.trim()) {
+        errors.push(`acceptanceCriterion ${ac.id}: "${nextDisp}" disposition in UAT sheet requires non-empty uatEvidence`);
         continue;
       }
     }
@@ -2807,12 +3120,16 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
       );
       continue;
     }
+    // Keep the original optional metadata byte-for-byte when CSV normalization is
+    // the only difference; an unchanged row must not create a fresh attestation.
+    if (unchangedJudgment && nextDisp !== 'pending') continue;
     ac.acceptanceDisposition = nextDisp;
     ac.acContentHash = currentHash;
     if (nextDisp === 'pending') {
       delete ac.uatSignedBy;
       delete ac.uatVerifiedAt;
       delete ac.uatEvidence;
+      delete ac.uatBuildRef;
     } else {
       if (row.uatSignedBy) ac.uatSignedBy = row.uatSignedBy;
       else delete ac.uatSignedBy;
@@ -2820,6 +3137,7 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
       else delete ac.uatVerifiedAt;
       if (row.uatEvidence) ac.uatEvidence = row.uatEvidence;
       else delete ac.uatEvidence;
+      ac.uatBuildRef = judgmentBuild;
     }
   }
 
@@ -2837,10 +3155,9 @@ export async function importUatChecklist(root, workspaceDir, options = {}) {
     }
   }
   for (const req of pack.businessRequirements ?? []) {
-    req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? []);
+    req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? [], pack);
   }
 
-  const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
   const validation = validateBacklogPack(pack, liveSnapshot);
   if (!validation.valid) {
     throw new Error(`UAT checklist import failed validation (${validation.errors.length} error(s)):\n${validation.errors.join('\n')}`);
@@ -3035,6 +3352,7 @@ function parseCliArgs(argv) {
   let workItemId = null;
   let batch = null;
   let selection = null;
+  let buildRef = null;
   let force = false;
   let sample = false;
   let refreshContext = false;
@@ -3062,6 +3380,9 @@ function parseCliArgs(argv) {
     } else if (arg === '--selection') {
       selection = argv[++i];
       if (!selection) throw new Error('--selection requires a JSON file path or comma-separated module list');
+    } else if (arg === '--build-ref') {
+      buildRef = argv[++i];
+      if (!buildRef) throw new Error('--build-ref requires a build reference');
     } else if (arg === '--force') {
       force = true;
     } else if (arg === '--sample') {
@@ -3074,11 +3395,19 @@ function parseCliArgs(argv) {
       throw new Error(`unknown argument: ${arg}`);
     }
   }
-  return { command, workspace, out, file, query, workItemId, batch, selection, force, sample, refreshContext, dryRun };
+  return { command, workspace, out, file, query, workItemId, batch, selection, buildRef, force, sample, refreshContext, dryRun };
 }
 
 async function main() {
-  const { command, workspace, out, file, query, workItemId, batch, selection, force, sample, refreshContext, dryRun } = parseCliArgs(process.argv.slice(2));
+  const args = parseCliArgs(process.argv.slice(2));
+  if (['export-context', 'match', 'plan', 'check-composition'].includes(args.command)) {
+    const directory = args.workspace || (args.out ? dirname(resolve(ROOT, args.out)) : null);
+    return withWorkspaceWriter(ROOT, directory, {}, () => runCli(args), args.command === 'export-context');
+  }
+  return runCli(args);
+}
+
+async function runCli({ command, workspace, out, file, query, workItemId, batch, selection, buildRef, force, sample, refreshContext, dryRun }) {
   if (command === 'init') {
     const res = await initRequirementsWorkspace(ROOT, workspace, { force, sample });
     process.stdout.write(`initialized requirements workspace at ${res.workspaceDir} (warnings: ${res.validation.warnings.length})\n`);
@@ -3101,6 +3430,7 @@ async function main() {
     return;
   }
   if (command === 'match') {
+    assertSafeMatchQuery(query);
     const wsPath = assertWorkspaceOutsideCheckout(ROOT, workspace);
     const pack = JSON.parse(readFileSync(join(wsPath, 'backlog.json'), 'utf8'));
     const snapshot = await loadRepositoryContextSnapshot(ROOT);
@@ -3146,7 +3476,7 @@ async function main() {
     return;
   }
   if (command === 'uat-import') {
-    const res = await importUatChecklist(ROOT, workspace, { file, dryRun });
+    const res = await importUatChecklist(ROOT, workspace, { file, dryRun, buildRef });
     process.stdout.write(`imported UAT checklist (${res.updatedAcs} ACs, ${res.acceptedRequirements} accepted reqs)\n`);
     return;
   }
@@ -3175,7 +3505,7 @@ async function main() {
     process.stdout.write(`composition check passed (unsolicited modules: ${res.unsolicitedModules.length})\n`);
     return;
   }
-  throw new Error('usage: node scripts/export-deliverables-workspace.mjs <init|verify|export-context|match|plan|sheets-export|sheets-import|uat-export|uat-import|check-composition> --workspace <dir outside checkout> [--sample] [--force] [--refresh-context]');
+  throw new Error('usage: node scripts/export-deliverables-workspace.mjs <init|verify|export-context|match|plan|sheets-export|sheets-import|uat-export|uat-import|check-composition> --workspace <dir outside checkout> [--sample] [--force] [--refresh-context] [uat-import: --build-ref <target build>]');
 }
 
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

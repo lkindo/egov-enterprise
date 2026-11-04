@@ -1802,6 +1802,37 @@ test('Atlas and backend cross-stack contracts run once, owned by full frontend c
   assert.match(crossStackBindingErrors(conditionalInstall).join('\n'), /install must stay unconditional/i);
 });
 
+test('requirements browser contracts install pinned Chromium and system dependencies before the Node catalog runs', () => {
+  const stepName = 'Install Chromium for requirements workspace browser contracts';
+  const command = 'run: pnpm -C frontend exec playwright install --with-deps chromium';
+  function bootstrapErrors(content) {
+    const job = parseWorkflowJobs(content.replace(/\r\n/g, '\n')).get('secret-scan') ?? '';
+    const install = workflowStep(job, stepName);
+    const dependencies = workflowStep(job, 'Install frontend dependencies for contract execution');
+    const runner = workflowStep(job, 'Verify repository operational contracts');
+    const errors = [];
+    if (!install || !install.split('\n').some(line => line.trim() === command)) errors.push('pinned Chromium and system dependency installation is missing');
+    if (/^\s+(?:if|continue-on-error):/m.test(install)) errors.push('browser installation cannot be conditional or advisory');
+    if (!dependencies || !runner || !install || job.indexOf(install) < job.indexOf(dependencies) || job.indexOf(install) > job.indexOf(runner)) errors.push('browser installation must follow frontend dependencies and precede the Node catalog');
+    if (job.split('\n').filter(line => line.trim() === command).length !== 1) errors.push('the Node contract job installs Chromium exactly once');
+    return errors;
+  }
+  assert.deepEqual(bootstrapErrors(ciContent), []);
+  const job = parseWorkflowJobs(ciContent.replace(/\r\n/g, '\n')).get('secret-scan');
+  const install = workflowStep(job, stepName);
+  for (const mutation of [
+    current => current.replace(install, ''),
+    current => current.replace('--with-deps chromium', 'chromium'),
+    current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        if: false`),
+    current => current.replace(`      - name: ${stepName}`, `      - name: ${stepName}\n        continue-on-error: true`),
+    current => `${current.replace(install, '')}\n${install}`,
+  ]) {
+    const changed = mutateWorkflowJob(ciContent, 'secret-scan', mutation);
+    assert.notEqual(changed, ciContent.replace(/\r\n/g, '\n'), 'the negative fixture must change the workflow');
+    assert.ok(bootstrapErrors(changed).length, 'removed, weakened, skipped or late browser installation must fail');
+  }
+});
+
 test('PR dependency review blocks only newly introduced high-risk runtime dependencies', () => {
   const secretScanJob = ciContent.match(
     /^  secret-scan:\r?\n[\s\S]*?(?=^  [a-z][a-z0-9-]*:\r?$)/m,

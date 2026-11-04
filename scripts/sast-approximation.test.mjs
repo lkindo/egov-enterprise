@@ -19,14 +19,14 @@ const messages = (code, file = 'scripts/synthetic.mjs') => inspectSource(file, c
 test('the approximation reads the CodeQL JavaScript paths and leaves files CodeQL does not scan alone', () => {
   const paths = codeqlPaths();
   // 이관 작업공간(자격 증명·자식 프로세스·ZIP 해제·외부 AI 호출을 다루는 로컬 실행기)과 시안 서버도 CodeQL 범위다 — 빠지면 붉다.
-  for (const expected of ['scripts', 'frontend/src', '.agent/scripts', 'tools/migration-workspace', 'tools/migration-workspace-prototype']) {
+  for (const expected of ['scripts', 'frontend/src', '.agent/scripts', 'tools/migration-workspace', 'tools/migration-workspace-prototype', 'tools/requirements-workspace']) {
     assert.ok(paths.includes(expected), expected);
   }
   const files = approximationFiles();
   assert.ok(files.includes('scripts/restore-drill.mjs'));
   assert.ok(files.includes('scripts/sast-approximation.mjs'));
   assert.ok(files.some((file) => file.startsWith('frontend/src/') && file.endsWith('.tsx')));
-  for (const expected of ['tools/migration-workspace/server.mjs', 'tools/migration-workspace/inputs.mjs', 'tools/migration-workspace-prototype/serve.mjs']) {
+  for (const expected of ['tools/migration-workspace/server.mjs', 'tools/migration-workspace/inputs.mjs', 'tools/migration-workspace-prototype/serve.mjs', 'tools/requirements-workspace/store.mjs']) {
     assert.ok(files.includes(expected), expected);
   }
   // 생성기 화면(tools/project-composer)은 CodeQL 설정 밖이다 — 근사가 따로 막지 않는다.

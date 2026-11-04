@@ -30,7 +30,7 @@
 
 **실행.** 깨끗한 작업 트리에서 `node scripts/export-deliverables.mjs` 를 돌리면 `build/deliverables/<커밋 12자리>/` 에 표마다 `.md`·`.csv`
 와 `README.md`·`manifest.json` 을 쓴다. 변경이 남은 트리는 거부한다 — `--allow-dirty` 는 미리 보기이며 폴더 이름에 `-dirty` 가 붙고
-README 가 제출용이 아니라고 적는다. `--out` 은 `build/deliverables/` 아래만 받는다. GitHub 에서는 Actions → `Deliverables draft`
+README 가 제출용이 아니라고 적는다. 기관 백로그가 없는 기본 명령의 `--out` 은 `build/deliverables/` 아래만 받는다. `--backlog` 사용 시 고객 원문이 포함되므로 출력도 Git 밖 새 디렉터리로 제한한다([요구사항 UI 안내](requirements-workspace-guide.md#파일-교환복구)). GitHub 에서는 Actions → `Deliverables draft`
 (workflow_dispatch)가 같은 커밋에서 DB 표까지 두 번 만들어 내용 다이제스트를 대조하고 실행 요약에 다이제스트와 행 수만 남긴다.
 공개 저장소라 묶음을 artifact 로 올리지 않는다.
 
@@ -110,6 +110,8 @@ xlsx 는 외부 시범 검토 뒤에 정한다(DEC-OPS-382 ⑥).
 
 정보공학(IE)의 표준 사전·단계 기준선·추적표와 애자일의 에픽/스토리·수직 슬라이스·자동 게이트를 전 생명주기로 잇는 실행 순서다(DEC-OPS-397, DEC-OPS-399).
 
+화면에서 진행하려면 [요구사항 작업공간](requirements-workspace-guide.md)을 사용한다: `node tools/requirements-workspace/server.mjs --workspace <Git 밖 경로>`. 자료·조항·요구사항·분석 기준선·에픽/스토리·인수조건·개발 패키지·검수/감리 기록을 같은 외부 백로그로 연결한다. 구조 유효성과 개발 준비는 별도 검사이며, `plan`은 미결 범위·질문·불완전한 작업·결정 카드·Green/Red 인수조건·추적을 개발 준비 오류로 거부한다. CSV의 기존 행 누락은 삭제로 해석하지 않는다. UAT 해시는 요구사항 의미·연결 원문·작업 결정·AC 집합·해당 요구사항의 후보 모듈과 추적 대상 문맥에 결속하며 기존 본문 전용/v2 해시는 재검수한다. 기관 백로그를 포함한 전체 산출물도 Git 밖 새 디렉터리에 만든다.
+
 ### 7.1 이중 계층 분리: 프로젝트 사업 단계(`P0~P5`) vs 에이전트 변경 작업 파이프라인(`SOP Stage 1~4`)
 
 - **프로젝트 사업 단계(`P0~P5` — 사업·도입·릴리스 생명주기)**: 발주기관 원시 근거 수집(`P0`)부터 요구사항 정규화·3축 Fit-Gap 판정(`P1`), 애자일 에픽·작업·인수조건 구조화(`P2`), IE 원장 식별자·표준 용어 바인딩(`P3`), 배치별 수직 슬라이스 구현(`P4`), 산출물 초안·통합 전환·인수 종료(`P5`)까지의 사업 흐름이다. `P0~P3` 의 기관 고유 요구사항과 백로그는 저장소 안에 커밋하지 않고 **어느 Git 작업 트리에도 속하지 않는 checkout 밖 `--workspace` 폴더**에서 관리한다(DEC-OPS-382 ②).
@@ -124,7 +126,7 @@ xlsx 는 외부 시범 검토 뒤에 정한다(DEC-OPS-382 ⑥).
 | **P2. 애자일 백로그 구조화 (Epic / WorkItem / AC)** | 범위 포함(`included`) 요구사항(`fit`·`config`·`gap-dev`·`hybrid`) | 에픽(`epic`) 아래에 사용자 스토리(`story`)뿐 아니라 설정(`configuration`), 비기능·기존 기능 검증(`verification`), 공통 기반(`enabler`)을 나누고 **허용(Green `allow`)·금지(Red `forbid`, H3/H5 부정 시험 후보) 인수조건(`acceptanceCriteria[]`)**을 작성. 비개발자 검토는 `sheets-export` / `sheets-import` 로 왕복 | `backlog.json` 의 `workItems[]`·`acceptanceCriteria[]`, `<workspace>/sheets/*.csv`, `WORKSPACE-REPORT.md` **보기 4 (P2~P3)**(에픽·작업·AC 백로그 보드) | checkout 밖 `--workspace`(PO·아키텍트·QA 검토) |
 | **P3. IE 원장·표준 바인딩 (IE Contract Binding)** | `P2` 작업·AC + `context.snapshot.json` + live `meta_standard_*` 사전 + `/admin/patterns` 시안 | 각 요구사항·작업·AC 를 6종 대상(`capability`·`screen`·`interface`·`table`·`gate`·`migration-mapping`)에 `traceLinks[]`(`candidate`·`planned`·`existing`)로 잇고, 화면 유형(`A1~A7`)·결정 카드(`D-1~D-5`)·표준 용어를 대조한 뒤 `verify` 및 `plan`(`TASK-PACKAGE.md`) 실행 | 검증된 `backlog.json`(`traceLinks[]`), 10열 호환 `rtm.csv`, 상세 정의서(`backlog-detail.*`), 작업 패키지(`TASK-PACKAGE.md`), `WORKSPACE-REPORT.md` **보기 5 (P3~P5)** | `--workspace/rtm.csv` 및 `backlog.json` → 저장소 `export-deliverables.mjs --rtm` / `--backlog` 입력 |
 | **P4. 수직 슬라이스 구현 (Vertical Slice — SOP Stage 1~4)** | `P3` 에서 바인딩된 개별 작업 항목(`TASK-PACKAGE.md`) + 결정 카드(D-n) + Red AC(H5 부정 시험 후보) | [SOP §2~§4](orchestration-protocol.md) 등급(L0~L2) 판정 → [`generate-domain.ps1`](../../scripts/generate-domain.ps1)·Flyway·Entity·Service·Controller·OpenAPI/Zod·프런트 화면 구현 → [`domain-registration-doctor.mjs`](../../scripts/domain-registration-doctor.mjs) → `npm run regen` → H5 부정 시험 red 증명 → PR·required CI 병합 | 원장(`config/governance/*`, `config/ui-route-capabilities.json`)·소스·시험 커밋, 빠진 사람 판정 지점 0개 | 저장소 git 브랜치·PR(에이전트 구현 + 사람 원장·안전 경계 승인) |
-| **P5. 통합 전환 & 최종 종료 (Cutover & Closeout)** | 깨끗한 HEAD, `--workspace/backlog.json`·`rtm.csv`, 이전 단계 기준선(`manifest.json`), 도입 환경 승인 원장 | **UAT 및 산출물 준비(저장소 도구)**: `uat-export` → 발주기관 UAT 서명 후 `uat-import`(`acContentHash` 정합 검증) → `verify --refresh-context` → `node scripts/export-deliverables.mjs --db --backlog <경로/backlog.json> --compare <기준선 manifest.json>` + `npm run review:status`<br>**통합 전환·최종 인수(기관 운영 절차)**: [백업·복원 런북](../04-operations/backup-and-restore-runbook.md) → 원천 동결(`ackSourceFreeze`) → 이관·온라인 `adoption:check` 및 `--execute` 전환([거버넌스 검토 수명 가이드 §3·§4](governance-review-lifecycle.md#3-온라인-제품의-기관-도입)) | `build/deliverables/<커밋>/`(추적·요구사항 조인·상세 정의서·프로젝트 UAT 점검표·예외 현황·기준선 비교 묶음) + 발주기관 UAT 합격·도입 승인 완료 기록 | 산출물 초안은 비규범 파생물이며, 실제 전환·인수 승인은 발주기관·운영 환경 소유 |
+| **P5. 통합 전환 & 최종 종료 (Cutover & Closeout)** | 깨끗한 HEAD, `--workspace/backlog.json`·`rtm.csv`, 이전 단계 기준선(`manifest.json`), 도입 환경 승인 원장 | **UAT 및 산출물 준비(저장소 도구)**: `verify --refresh-context` → `uat-export` → 발주기관 UAT 확인 후 `uat-import --build-ref <빌드>`(`acContentHash` 정합 검증) → `verify --refresh-context` → `node scripts/export-deliverables.mjs --db --backlog <경로/backlog.json> --compare <기준선 manifest.json>` + `npm run review:status`<br>**통합 전환·최종 인수(기관 운영 절차)**: [백업·복원 런북](../04-operations/backup-and-restore-runbook.md) → 원천 동결(`ackSourceFreeze`) → 이관·온라인 `adoption:check` 및 `--execute` 전환([거버넌스 검토 수명 가이드 §3·§4](governance-review-lifecycle.md#3-온라인-제품의-기관-도입)) | `<작업공간>/deliverables/<커밋>/`(추적·요구사항 조인·상세 정의서·프로젝트 UAT 점검표·예외 현황·기준선 비교 묶음) + 발주기관 UAT 합격·도입 승인 완료 기록 | 산출물 초안은 비규범 파생물이며, 실제 전환·인수 승인은 발주기관·운영 환경 소유 |
 
 ### 7.3 3축 Fit-Gap 분류 어휘와 4층 상태 분리 계약
 
@@ -140,7 +142,7 @@ xlsx 는 외부 시범 검토 뒤에 정한다(DEC-OPS-382 ⑥).
    - **① 계획·범위 층**: `solutionDisposition` · `scopeDisposition` · `linkIntent`(`candidate` 후보 탐색 / `planned` 신규 개발 예정 / `existing` 기존 저장소 자산에 연결).
    - **② 도구 관측 층**: `found`(`예` / `아니오`) — 대상 ID 가 현재 저장소 원장(`screens`·`capabilities`·`interfaces`·`tables`·`gates`·`migrationMappings`)에 존재하는지 도구가 계산한 값.
    - **③ 원장 검토 층**: `ledgerStatus`(`partial` / `unverified` / `unavailable` / `demo`)와 `evidenceLevel`(`E0`~`E3`) — 저장소 라우트·역량·인터페이스·게이트 원장의 실제 검토 수준. `found=예` 여도 `unavailable`·`demo`·`unverified`·`E0` 이면 경고를 내고, `partial` 이면 잔여 갭 여부를 확인하도록 안내한다.
-   - **④ 기관 인수 판정 층**: `acceptanceDisposition`(`pending` / `accepted` / `conditional` / `rejected`) — 발주기관 UAT 결과에 따른 인수 판정(`uat-export` 시 기록된 `acContentHash` 와 현재 AC 본문 해시가 일치해야 유효하며, `acContentHash` 는 AC 본문 변경·드리프트 감지용 해시 잠금이지 암호학적 전자서명(Non-repudiation)이 아니므로 법적·행정적 인수 확정은 날인된 공식 검수조서 원본으로 수행한다).
+   - **④ 기관 인수 판정 층**: `acceptanceDisposition`(`pending` / `accepted` / `conditional` / `rejected`) — 발주기관 UAT 결과에 따른 인수 기록. `uatBuildRef`·검증일·담당 역할·근거와 함께 현재의 관련 의미에 결속한 `acContentHash`를 확인한다. 해시는 변경 감지용이며 암호학적 전자서명(Non-repudiation)이 아니므로 법적·행정적 인수 확정은 날인된 공식 검수조서 원본으로 수행한다.
 
 ### 7.4 단계별 실무 작업·에이전트 지시 플레이북 (P0~P5 실전 가이드)
 
@@ -209,7 +211,7 @@ D:\egov-req-workspace\backlog.json 의 US-PROMO-002 (REQ-SFR-003, 팝업 일괄 
 ##### 템플릿 5 — 개발 완료 후 감리·검수 산출물 초안 및 기준선 비교 생성 (`P5`)
 
 ```text
-1. D:\egov-req-workspace 에 대해 uat-import 및 verify --refresh-context 를 실행해서 최신 저장소 원장 기준으로 rtm.csv 와 WORKSPACE-REPORT.md 를 갱신해줘.
+1. D:\egov-req-workspace 에 대해 verify --refresh-context 와 uat-export 를 먼저 실행하고, 실제 검수 빌드·새 표의 해시·근거를 확인한 CSV를 uat-import --build-ref <검수 빌드 식별자>로 반영해 최신 원장 기준 rtm.csv 와 WORKSPACE-REPORT.md 를 갱신해줘.
 2. 갱신된 D:\egov-req-workspace\backlog.json 을 --backlog 인자로 넣어서 export-deliverables.mjs 산출물 초안을 생성하고 추적 결과를 요약해줘.
 ```
 

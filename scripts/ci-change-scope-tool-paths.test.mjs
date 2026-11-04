@@ -489,6 +489,22 @@ test('workspace UI and server changes keep contracts, SAST and reuse checks with
   }
 });
 
+test('requirements workspace selects its Node contracts and SAST without unrelated application lanes', () => {
+  for (const file of ['tools/requirements-workspace/server.mjs', 'tools/requirements-workspace/store.mjs',
+    'tools/requirements-workspace/engine.mjs', 'tools/requirements-workspace/public/app.js',
+    'tools/requirements-workspace/store.test.mjs']) {
+    const result = classifyChangedFiles([file], { event: 'pull_request' });
+    assert.deepEqual(result.unknownFiles, [], file);
+    assert.deepEqual(generatorToolEntry(file), { path: 'tools/requirements-workspace/', axes: [] });
+    for (const axis of ['backend', 'schema', 'e2e', ...HEAVY_UNRELATED, 'docsOnly', 'atlas']) assert.equal(result[axis], false, `${file}: ${axis}`);
+    for (const axis of ['governance', 'secretScan', 'sast', 'reusable', 'reusableCustom']) assert.equal(result[axis], true, `${file}: ${axis}`);
+  }
+  // A prefix lookalike remains unknown and therefore cannot use this narrow selection.
+  const unknown = 'tools/requirements-workspacex/server.mjs';
+  assert.equal(generatorToolEntry(unknown), null);
+  assert.deepEqual(classifyChangedFiles([unknown]).unknownFiles, [unknown]);
+});
+
 test('actual workspace engine inputs select packaged-test and conservative template-reader axes without prefix lookalikes', () => {
   const expectedAxes = ['backend', 'e2e', 'migration', 'mutationMigrationTool'];
   for (const input of ['engine.mjs', 'store.mjs', 'inputs.mjs']) {
