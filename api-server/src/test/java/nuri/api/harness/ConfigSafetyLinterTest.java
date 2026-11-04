@@ -401,7 +401,7 @@ class ConfigSafetyLinterTest {
             Pattern.compile("(?m)^\\s*MSSQL_SA_PASSWORD\\s*:\\s*\\$\\{DB_ADMIN_PASSWORD:\\?");
     private static final Pattern PROD_MSSQL_EDITION_OVERRIDE =
             Pattern.compile("(?m)^\\s*MSSQL_PID\\s*:\\s*\\$\\{MSSQL_PID:\\?");
-    private static final Pattern MSSQL_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*sqlcmd.*\\$\\$\\{MSSQL_SA_PASSWORD\\}.*$");
+    private static final Pattern MSSQL_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*SQLCMDPASSWORD=\\\\\"\\$\\$\\{MSSQL_SA_PASSWORD\\}\\\\\".*sqlcmd.*$");
 
     /** 투영한 생성물의 벤더. 벤더 값은 잠금이 정하고 생성물 거버넌스가 결속한다. 원본은 PostgreSQL 이다. */
     private static final String BUNDLED_DB_VENDOR = ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql");
@@ -637,7 +637,7 @@ class ConfigSafetyLinterTest {
     @DisplayName("SQL Server 로 투영한 번들 DB 는 1433 루프백·운영 비밀번호 둘·에디션·healthcheck 로 통과하고, 하나라도 어긋나면 red")
     void sqlServerBundleIsJudgedByItsOwnRules() {
         // 생성기의 소스 투영(project-composer-vendor-source.mjs)이 만드는 db 블록의 모양이다.
-        String healthcheck = "      test: [\"CMD-SHELL\", \"/opt/mssql-tools18/bin/sqlcmd -C -b -S localhost -U sa -P \\\"$${MSSQL_SA_PASSWORD}\\\" -Q \\\"SELECT 1\\\"\"]";
+        String healthcheck = "      test: [\"CMD-SHELL\", \"SQLCMDPASSWORD=\\\"$${MSSQL_SA_PASSWORD}\\\" /opt/mssql-tools18/bin/sqlcmd -C -b -S localhost -U sa -Q \\\"SELECT 1\\\"\"]";
         String base = String.join("\n", "services:", "  db:", "    ports:", "      - \"127.0.0.1:1433:1433\"",
                 "    environment:", "      MSSQL_PID: Developer", "      MSSQL_SA_PASSWORD: Egov_sa123", "      APP_DB_PASSWORD: egov123",
                 "    healthcheck:", healthcheck, "  api:", "");

@@ -359,12 +359,20 @@ test('SQL Server baselines end trigger batches with GO and its project keeps app
   assert.match(compose, /127\.0\.0\.1:1433:1433/);
   assert.ok(compose.includes(`"url": "${source.composeUrl}"`));
   assert.match(compose, /^ {6}TZ: Asia\/Seoul$/m, '세션 시간대가 없어 서버 시계가 한국 시간이어야 한다');
+  // 서버 콜레이션을 바꾸면 첫 기동의 재색인 중 상태 검사가 접속해 교착으로 서버가 꺼진다(실측). 한국어 콜레이션은 앱 DB 에 준다.
+  assert.doesNotMatch(compose, /MSSQL_COLLATION/);
+  assert.match(compose, /IF DB_ID\('egovdb'\) IS NULL CREATE DATABASE egovdb COLLATE Korean_100_CI_AS;/);
   // 이미지가 앱 DB·계정을 만들지 않아 상태 검사가 만든다. 되풀이해도 연결을 끊지 않게 이미 켠 설정은 다시 켜지 않는다.
   const healthcheck = compose.match(/^ {6}test: (.*)$/m)[1];
-  assert.match(healthcheck, /-P \\"\$\$\{MSSQL_SA_PASSWORD\}\\"/, '운영 sa 비밀번호에서도 동작한다');
+  assert.match(healthcheck, /SQLCMDPASSWORD=\\"\$\$\{MSSQL_SA_PASSWORD\}\\"/, '운영 sa 비밀번호에서도 동작한다');
+  // 비밀은 인자에 두지 않는다 — 셸이 펼친 값이 컨테이너의 프로세스 목록에 보인다(독립 검토 지적). 앱 비밀번호의 작은따옴표는 두 번 쓴다.
+  assert.doesNotMatch(healthcheck, / -P /);
+  assert.match(healthcheck, /NURI_APP_LOGIN=\\"\$\$\{APP_DB_USER\}\\" NURI_APP_PASSWORD=\\"\$\$\(printf '%s' \\"\$\$\{APP_DB_PASSWORD\}\\" \| sed \\"s\/'\/''\/g\\"\)\\"/);
+  assert.match(healthcheck, /case \\"\$\$\{APP_DB_USER\}\\" in ''\|\*\[!A-Za-z0-9_\]\*\) /, '계정 이름은 SQL 식별자로 쓰여 영문·숫자·밑줄만 받는다');
+  assert.ok(!healthcheck.split('-Q')[1].includes('APP_DB_PASSWORD'), 'SQL 본문에는 sqlcmd 변수만 있다');
   assert.match(healthcheck, /IF \(SELECT is_read_committed_snapshot_on FROM sys\.databases WHERE name = 'egovdb'\) = 0 ALTER DATABASE egovdb SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE/);
   assert.match(healthcheck, /IF \(SELECT snapshot_isolation_state FROM sys\.databases WHERE name = 'egovdb'\) = 0 ALTER DATABASE egovdb SET ALLOW_SNAPSHOT_ISOLATION ON/);
-  assert.match(healthcheck, /IF SUSER_ID\('\$\$\{APP_DB_USER\}'\) IS NULL CREATE LOGIN \$\$\{APP_DB_USER\} WITH PASSWORD = N'\$\$\{APP_DB_PASSWORD\}'/);
+  assert.match(healthcheck, /IF SUSER_ID\('\\\\\$\$\(NURI_APP_LOGIN\)'\) IS NULL CREATE LOGIN \\\\\$\$\(NURI_APP_LOGIN\) WITH PASSWORD = N'\\\\\$\$\(NURI_APP_PASSWORD\)'/);
   const prod = projectVendorComposeProd('    environment:\n      POSTGRES_USER: ${DB_USERNAME:?필요}\n      POSTGRES_PASSWORD: ${DB_PASSWORD:?필요}\n      SPRING_FLYWAY_LOCATIONS: classpath:db/migration\n', 'mssql');
   assert.match(prod, /^ {6}APP_DB_USER: \$\{DB_USERNAME/m);
   assert.match(prod, /^ {6}APP_DB_PASSWORD: \$\{DB_PASSWORD/m);
@@ -392,10 +400,15 @@ test('SQL Server integration runs as the generated project does and observes loc
   assert.deepEqual(integration.grants, ['USE master', 'GRANT VIEW SERVER STATE TO vendorcheck', 'USE vendorcheck'], '서버 권한은 master 에서만 줄 수 있다');
   assert.equal(integration.administratorScript(['A', 'B']), 'A\nGO\nB\nGO\nEXIT\n');
   const variables = VENDOR_ENGINES.mssql.environment('p');
-  assert.deepEqual([variables.TZ, variables.MSSQL_COLLATION, variables.MSSQL_SA_PASSWORD], ['Asia/Seoul', 'Korean_100_CI_AS', 'p']);
+  assert.deepEqual([variables.TZ, variables.MSSQL_SA_PASSWORD], ['Asia/Seoul', 'p']);
+  // 서버 콜레이션을 바꾸면 첫 기동의 시스템 DB 재색인과 준비 확인이 교착해 서버가 꺼진다(실측). 한국어 콜레이션은 앱 DB 를 만들 때 준다.
+  assert.equal(variables.MSSQL_COLLATION, undefined);
   const seen = [];
   VENDOR_ENGINES.mssql.ready('x', args => { seen.push(args); return { status: 0 }; });
-  assert.match(seen[0].at(-1), /CREATE LOGIN vendorcheck WITH PASSWORD = N'\$MSSQL_SA_PASSWORD'/, '앱 계정은 실행마다 만든 비밀번호를 환경으로만 받는다');
+  assert.match(seen[0].at(-1), /CREATE DATABASE vendorcheck COLLATE Korean_100_CI_AS;/);
+  assert.match(seen[0].at(-1), /SQLCMDPASSWORD="\$MSSQL_SA_PASSWORD" NURI_APP_LOGIN="vendorcheck" NURI_APP_PASSWORD="\$\(printf '%s' "\$MSSQL_SA_PASSWORD"/, '앱 계정은 실행마다 만든 비밀번호를 환경으로만 받는다');
+  assert.doesNotMatch(seen[0].at(-1), / -P /);
+  assert.match(VENDOR_ENGINES.mssql.command('/tmp/run.sql'), /^SQLCMDPASSWORD="\$MSSQL_SA_PASSWORD" \S+ -C -x /, '문장 실행도 비밀을 인자에 두지 않고 값 안의 $( 를 치환하지 않는다');
   // sqlcmd 를 -h -1 -W 와 NOCOUNT 로 부르면 값만 낸다(2026-11-04 실측). 형식 밖 줄은 따옴표 이름이라 멈춘다.
   assert.throws(() => readCatalog({ id: 'mssql' }, 'mssql', () => ({ errors: [], sections: new Map([[0, ['bad-name']]]) })), /mssql columns 조회의 줄을 해석하지 못했다: bad-name/);
   assert.ok(VENDOR_UNIQUE_SIGNATURES.mssql && VENDOR_UNIQUE_COLUMNS.mssql && VENDOR_SEQUENCE_NEXT_VALUES.mssql);

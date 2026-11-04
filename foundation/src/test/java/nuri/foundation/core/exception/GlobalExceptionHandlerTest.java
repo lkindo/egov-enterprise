@@ -618,6 +618,9 @@ class GlobalExceptionHandlerTest {
                 "The INSERT statement conflicted with the FOREIGN KEY constraint \"fk_tb_a_b\"."), 409, "C008", null);
         assertDatabaseResponse(sqlServer, sqlServerViolation("23000", 547,
                 "The DELETE statement conflicted with the REFERENCE constraint \"fk_tb_a_b\"."), 409, "C008", null);
+        assertDatabaseResponse(sqlServer, sqlServerViolation("23000", 547,
+                "The INSERT statement conflicted with the FOREIGN KEY constraint \"fk_tb_a_b\". The conflict occurred in database"
+                        + " \"agency CHECK archive\", table \"dbo.tb_a\"."), 409, "C008", null);
         assertDatabaseResponse(mysql, sqlServerViolation("23000", 547,
                 "The INSERT statement conflicted with the CHECK constraint \"ck_tb_a_b\"."), 409, "C008", null);
     }

@@ -219,7 +219,7 @@ flowchart TD
 | 빈 문자열 | Oracle·Tibero 는 `''` 가 NULL 이다. CHECK 의 `x <> ''` 는 NOT NULL 컬럼에서만 `x IS NOT NULL` 로 번역한다(현재 4개 모두 NOT NULL). NULL 허용 컬럼이면 정상 NULL 까지 거부하므로 그 항은 뺀다. `COALESCE(x, '') ~ p` 는 `x IS NOT NULL AND ...` 로 번역한다. 그냥 지우면 NULL 이 통과한다. 시드는 NULL 로 넣는다. NOT NULL 문자열 컬럼에 `""` 가 오면 400 으로 드러난다 | 통합 시험 |
 | 격리 수준 | MySQL·MariaDB 는 `READ COMMITTED` 를 코드(`VendorSqlConfig`)가 연결 풀에 강제한다. 설정 파일에 두면 시험 문맥과 생성물 설정이 따로 놓쳐 서버 기본(`REPEATABLE READ`)이 된다. SQL Server 는 `READ_COMMITTED_SNAPSHOT`·`ALLOW_SNAPSHOT_ISOLATION` 을 기동 때 확인하고, 잠금 격리인 `REPEATABLE READ` 를 연결에서 스냅숏 격리로 바꾼다(쓰기 충돌 3960). Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
 | NULL 순서 | 맞추지 않는다. PostgreSQL·Oracle 은 NULL 을 가장 큰 값으로, MySQL·MariaDB·SQL Server 는 가장 작은 값으로 정렬한다. 처음 적은 `hibernate.order_by.default_null_ordering=last` 는 오름차순만 맞추고 내림차순을 PostgreSQL 과 반대로 만들어 넣지 않았다(2026-11-04 단계 3 결정). §6.1 의 한계로 두고, 생성기 화면과 생성물 README 가 저하 안내(`null-order`)로 알린다 | - |
-| 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. SQLState 로 갈리지 않는 벤더는 오류 번호 표(`VendorSqlDialect.errorCodes()`)로 같은 응답을 낸다. 번호 표는 그 벤더에서만 쓴다 — Oracle 번호(1400·1722 등)가 MySQL·MariaDB 의 다른 오류 번호와 겹친다(단계 3 실측). 드라이버가 SQLState 를 바꿔 올리는 서버 오류(MySQL 의 0 나누기 1365 → 22001)는 번호로 먼저 500 으로 가른다. SQL Server 는 CHECK 와 FK 위반이 같은 547 이라 메시지의 제약 종류 낱말(` CHECK `)로 가른다 — 서버 메시지 언어가 한국어여도 그 낱말은 영어다(단계 4 실측) | 벤더별 위반 시험 |
+| 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. SQLState 로 갈리지 않는 벤더는 오류 번호 표(`VendorSqlDialect.errorCodes()`)로 같은 응답을 낸다. 번호 표는 그 벤더에서만 쓴다 — Oracle 번호(1400·1722 등)가 MySQL·MariaDB 의 다른 오류 번호와 겹친다(단계 3 실측). 드라이버가 SQLState 를 바꿔 올리는 서버 오류(MySQL 의 0 나누기 1365 → 22001)는 번호로 먼저 500 으로 가른다. SQL Server 는 CHECK 와 FK 위반이 같은 547 이라 메시지에서 제약 이름 바로 앞의 종류 자리(`CHECK constraint "`·`CHECK 제약 조건 "`)로 가른다 — 서버 메시지 언어가 한국어여도 그 낱말은 영어이고, 자리를 보지 않으면 DB·표 이름에 든 같은 낱말에 걸린다(단계 4 실측·독립 검토) | 벤더별 위반 시험 |
 | JSON | Oracle 은 19c 기준 CLOB + `IS JSON` 과 Hibernate 매핑을 맞춘다. 23 계열 기능에 기대지 않는다 | 스키마 검증 |
 | UUID·시각 | 저장 범위가 같으면 DDL 을 Hibernate 벤더 기본 매핑에 맞추고, 다르면 ORM 매핑을 바꾼다. 시각은 시간대 없는 컬럼에 한국 벽시계 값으로 저장하고 엔티티는 `LocalDateTime` 이다(DEC-OPS-396). `Instant` 를 매핑하면 Oracle 드라이버가 읽기를 거부한다(ORA-18716) | 스키마 검증, 재로그인 |
 | CLOB 비교 | Oracle 의 CLOB 은 `<>` 로 비교할 수 없고(ORA-22848) `COALESCE(clob, '')` 도 형이 맞지 않는다(ORA-00932). JPQL 은 `function('text_differs', a, b)` 를 쓰고 `COALESCE` 를 뺀다. 네이티브 조회의 CLOB 은 방언이 문자열로 읽는다 | 콘텐츠 페이지 목록·검색 |
@@ -279,7 +279,7 @@ flowchart TD
 | SQL Server | 스냅숏 두 설정이 DB 에 있어야 한다 | `READ_COMMITTED_SNAPSHOT` 이 꺼지면 읽기가 쓰기를 기다리고, `ALLOW_SNAPSHOT_ISOLATION` 이 꺼지면 일관 조회가 3952 로 실패한다 | 생성물 compose 의 DB 상태 검사가 켜고, 앱이 기동할 때 확인한다. 기관 DB 는 DBA 가 켠다 |
 | SQL Server | NULL 정렬 순서가 다르다 | NULL 을 가장 작은 값으로 본다 | MySQL·MariaDB 와 같다. 고정 저하(`null-order`)로 알린다 |
 | SQL Server | 같은 설문의 투표가 차례로 처리된다 | 공유 잠금이 쓰기 잠금과 충돌하지 않아 읽기 잠금도 갱신 잠금으로 둔다 | Oracle 과 같다. 결과는 같고 동시 처리량만 다르다 |
-| SQL Server | 갓 지운 키의 잠금 조회가 그 키를 잠근다 | 지운 행이 유령 레코드로 남아 잠금 읽기가 그 키에 잠금을 건다(처음부터 없던 키는 잠그지 않는다, 2026-11-04 실측) | 지운 회원을 두 요청이 함께 잠그면 둘째가 첫째를 기다린다. 결과는 더 엄격한 직렬화이고, 기다림이 5초를 넘으면 409 다. 그 순서를 만드는 경합 시험 하나는 원장이 이 사유로 뺀다 |
+| SQL Server | 갓 지운 키의 잠금 조회가 그 키를 잠근다 | 지운 행이 유령 레코드로 남아 잠금 읽기가 그 키에 잠금을 건다(처음부터 없던 키는 잠그지 않는다, 2026-11-04 실측) | 지운 회원을 두 요청이 함께 잠그면 둘째가 첫째를 기다린다. 결과는 더 엄격한 직렬화이고, 기다림이 5초를 넘으면 409 다. 최초 가입 경합 시험은 회원 행이 한 번도 없던 키로 돌아 벤더 공통으로 남는다 |
 | MySQL·MariaDB | FK 를 지연 검사할 수 없다, 부분 인덱스가 없다 | 엔진 기능 부재 | 쓰는 순서를 원본에서 맞춘다. 부분 인덱스는 성능 저하 |
 | MySQL | 앱 계정 트리거 생성에 서버 설정이나 높은 권한이 필요 | 바이너리 로그 안전 규칙(8.4 는 기본으로 켜져 있다) | `log_bin_trust_function_creators=1` 이 없으면 기준선의 트리거가 1419 로 멈춘다. 생성물 README·개발 compose·검증 컨테이너에 둔다 |
 | MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 복구 절차(남은 객체 삭제와 Flyway 실패 행 정리)와 일회용 DB 선행 적용은 벤더 생성물 README 의 '생성 뒤 스키마 변경' 절에 둔다 |
@@ -738,17 +738,18 @@ SQL Server 2022 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `pre
 
 | 주제 | 실측 | 처리 |
 |---|---|---|
-| 오류 번호 | CHECK 와 FK·참조 위반이 같은 547(23000)이다. NOT NULL 515, 중복 2627(제약)·2601(유일 인덱스), 길이 2628(S0001), 형식 241·245(S0001), 범위 8115(S0002), 0 나누기 8134, 잠금 대기 1222(S0051), 교착 1205(40001), 스냅숏 갱신 충돌 3960(S0002). 문장 시간 초과는 번호 없는 HY008 이다. 547 메시지의 제약 종류 낱말은 서버 메시지 언어를 한국어로 바꿔도 영어로 남는다 | 번호 표에 더해 547 은 메시지의 ` CHECK ` 로 가른다(`VendorErrorCodes.invalidValueMessages`) |
+| 오류 번호 | CHECK 와 FK·참조 위반이 같은 547(23000)이다. NOT NULL 515, 중복 2627(제약)·2601(유일 인덱스), 길이 2628(S0001), 형식 241·245(S0001), 범위 8115(S0002), 0 나누기 8134, 잠금 대기 1222(S0051), 교착 1205(40001), 스냅숏 갱신 충돌 3960(S0002). 문장 시간 초과는 번호 없는 HY008 이다. 547 메시지의 제약 종류 낱말은 서버 메시지 언어를 한국어로 바꿔도 영어로 남는다 | 번호 표에 더해 547 은 메시지의 첫 따옴표(제약 이름) 앞 제약 종류 자리(`CHECK constraint "`·`CHECK 제약 조건 "`)로 가른다 — DB·표 이름에 든 같은 문구에는 걸리지 않는다(`VendorErrorCodes.invalidValueMessages`) |
 | 잠금 대기 | `SET LOCK_TIMEOUT` 은 커밋·롤백 뒤에도 세션에 남는다. 접속 인자 `lockTimeout` 은 연결마다 건다 | 접속 인자 `lockTimeout=5000`. 트랜잭션 대기 문장은 아무 일도 하지 않는 `DECLARE` 다 |
 | 응용 잠금 | 트랜잭션 소유 `sp_getapplock` 은 트랜잭션이 없으면 -999 다. JDBC 수동 커밋은 암시적 트랜잭션이라 표를 읽어야 열린다. `BEGIN TRANSACTION` 으로 열면 중첩 수가 2가 되어 드라이버의 커밋 뒤에도 잠금이 남는다. 교착 희생(-3)은 트랜잭션을 남긴다 | 시스템 표를 읽는 식으로 트랜잭션을 연 뒤 잠근다. 실패는 문장이 `THROW` 로 올린다 — 51002(대기 초과·취소·교착 희생, 409)·51003(트랜잭션 밖, 500) |
 | 행 잠금 | 갱신 잠금(UPDLOCK)은 자식 FK 입력을 막지 않고 배타 잠금(XLOCK)은 막는다. UPDLOCK 은 처음부터 없던 키를 잠그지 않지만 HOLDLOCK·XLOCK 은 잠근다. 갓 지운 키는 유령 레코드라 UPDLOCK 도 잠근다. 공유 잠금은 UPDLOCK 과 충돌하지 않는다 | 포트의 FOR_UPDATE 는 XLOCK, FOR_NO_KEY_UPDATE 는 UPDLOCK. Hibernate 엔티티 잠금은 기본 `updlock,holdlock` 대신 범위 잠금 없는 `updlock,rowlock`(읽기 잠금 포함)으로 바꾼다(`NuriSqlServerDialect`, `NuriSqlServerSqlAstTranslator` — Hibernate 7.4 는 힌트를 방언이 아니라 SQL AST 번역기가 만든다) |
 | 원장 삭제 허가 | 키만 두면 바깥 트랜잭션이 중단된 채 안쪽이 같은 허가를 넣을 때 바깥의 미커밋 키를 기다린다(1222) | `(permit_key, @@SPID)` 를 키로 두고 트리거·회수가 자기 세션 행만 찾는다. 트리거는 `WITH (READCOMMITTED)` 로 읽어 READ UNCOMMITTED 세션도 남의 허가를 보지 못한다(실측) |
 | 격리 | `REPEATABLE READ` 는 읽은 행에 공유 잠금을 끝까지 쥐는 잠금 격리다 | 연결에서 스냅숏 격리로 바꾼다(`IsolationMappingDataSource`). 기동 때 `READ_COMMITTED_SNAPSHOT`·`ALLOW_SNAPSHOT_ISOLATION` 을 확인한다 |
 | 시간대 | 세션 시간대가 없다. 컨테이너의 `TZ` 가 서버 시계(`SYSDATETIME()`·`CURRENT_TIMESTAMP`)를 바꾼다 | 기동 때 서버 시계가 +09:00 인지 본다. 날짜 기본값은 `AT TIME ZONE 'Korea Standard Time'` 이라 서버 시간대와 무관하다 |
+| 콜레이션 | 서버 콜레이션(`MSSQL_COLLATION`)을 바꾸면 첫 기동에서 접속을 받은 뒤 시스템 DB 를 약 4초 동안 다시 색인한다. 그동안 DB 를 만들거나 메타데이터를 조회만 해도 교착으로 서버가 꺼진다(3434). N 없는 문자열 리터럴의 코드 페이지와 표 변수는 DB 콜레이션을 따르고, 임시 표(#)는 서버(tempdb) 콜레이션을 따른다 | 서버 콜레이션은 기본값으로 두고 앱 DB 를 `COLLATE Korean_100_CI_AS` 로 만든다(엔진 준비 4회·compose 상태 검사 실측, 재색인·종료 없음). 임시 표를 쓰는 코드는 없다 |
 | 키 바이트 | §6 표 | 물리 타입별로 센다 |
 | upsert | `MERGE ... WITH (HOLDLOCK)` 는 같은 키에 8개 연결이 1,200번 경합해도 오류가 없다 | 그대로 쓴다 |
 | 클라이언트 | `sqlcmd -h -1 -W` 와 `SET NOCOUNT ON` 은 값만 낸다. `-b` 는 첫 오류에서 실패 코드로 끝난다 | 메타 조회를 엄격히 읽는다(따옴표 이름은 멈춘다) |
-| 초기화 | 이미지가 앱 DB·계정을 만들지 않는다. 한 배치에서 `CREATE DATABASE` 뒤 `USE` 는 동적 SQL 이어야 한다. `READ_COMMITTED_SNAPSHOT` 을 다시 켜면 `ROLLBACK IMMEDIATE` 가 연결을 끊는다 | 엔진 준비와 생성물 compose 의 DB 상태 검사가 같은 문장(`mssqlInitialization`)을 쓴다. 이미 된 일은 다시 하지 않는다 |
+| 초기화 | 이미지가 앱 DB·계정을 만들지 않는다. 한 배치에서 `CREATE DATABASE` 뒤 `USE` 는 동적 SQL 이어야 한다. `READ_COMMITTED_SNAPSHOT` 을 다시 켜면 `ROLLBACK IMMEDIATE` 가 연결을 끊는다 | 엔진 준비와 생성물 compose 의 DB 상태 검사가 같은 문장(`mssqlInitialization`)을 쓴다. 이미 된 일은 다시 하지 않는다. 비밀번호는 명령 인자에 두지 않는다 — 관리자는 `SQLCMDPASSWORD`, 앱 계정은 환경에서 받은 sqlcmd 변수이고 작은따옴표는 두 번 쓴다. 앱 계정 이름은 SQL 식별자로 쓰여 영문·숫자·밑줄만 받는다(독립 검토 지적) |
 
 ### 통합 시험(원본 저장소, demo 번역 입력)
 
@@ -762,11 +763,11 @@ SQL Server 2022 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `pre
 | 시험 SQL 의 표준 구문(`INTERVAL`, `TIMESTAMP '…'`, `LENGTH`, `JOIN … USING`, `VALUES (DEFAULT)`)과 `FOR UPDATE` 고정 장치 | `VendorTestSql` 이 번역한다. `USING` 은 모든 벤더가 받는 `ON` 으로 고쳤다 |
 | 오류 번역 시험이 결과 행을 읽지 않아 SELECT 식의 오류와 행 잠금 대기 초과가 드러나지 않았다 | 행을 끝까지 읽는다 |
 
-원장의 제외는 셋이다. PostgreSQL 함수·카탈로그를 쓰는 2건(MySQL 계열과 같다), 같은 설문 투표의 공유 잠금 시험(Oracle 과 같다), 갓 지운 회원 행을 두 가입 요청이 함께 잠그는 순서를 만드는 경합 시험(유령 레코드 잠금, §6.1)이다.
+원장의 제외는 셋이다. PostgreSQL 함수·카탈로그를 쓰는 2건(MySQL 계열과 같다)과 같은 설문 투표의 공유 잠금 시험(Oracle 과 같다)이다. 최초 가입 경합 시험은 지운 회원 행을 다시 쓰다 유령 레코드 잠금(§6.1)에 걸려, 회원 행이 한 번도 없던 키로 바꿔 모든 벤더에서 돈다(독립 검토 지적).
 
 ### 생성과 전체 검증
 
-demo 멀티모듈 생성물(대표 구성)에서 번역 기준선을 Flyway 로 적용하고(트리거 앞뒤를 `GO` 로 끊는다) 카탈로그 적합 5건, Hibernate validate 문맥 44개, 통합 시험 51개 클래스 396건, 차등 시험(CHECK 134개, 값 1,068개, 불일치 0, 트리거 동작 실패 0)을 통과했다. 첫 생성에서 차등 시험의 원장 허가 전이가 실패했다 — 허가 표의 세션 번호에 기본값이 없어 키만 넣는 입력이 거부됐다. MySQL 계열의 `CONNECTION_ID()` 기본값처럼 `DEFAULT @@SPID` 를 두었다.
+demo 멀티모듈 생성물(대표 구성)에서 번역 기준선을 Flyway 로 적용하고(트리거 앞뒤를 `GO` 로 끊는다) 카탈로그 적합 5건, Hibernate validate 문맥 44개, 통합 시험 51개 클래스 396건, 차등 시험(CHECK 134개, 값 1,068개, 불일치 0, 트리거 동작 실패 0)을 통과했다. 첫 생성에서 차등 시험의 원장 허가 전이가 실패했다 — 허가 표의 세션 번호에 기본값이 없어 키만 넣는 입력이 거부됐다. MySQL 계열의 `CONNECTION_ID()` 기본값처럼 `DEFAULT @@SPID` 를 두었다. 독립 검토 수정 뒤의 재생성에서는 차등 시험의 엔진 준비가 180초 안에 끝나지 않았다. 준비 확인이 서버 콜레이션 재색인 중에 앱 DB 를 만들어 서버가 꺼진 것이다(위 콜레이션 행). 생성물 compose 의 상태 검사에도 같은 경합이 있어 서버 콜레이션 변경을 걷었다.
 
 이 변경은 모든 벤더가 공유하는 인증 입력(포트 공통 파일, 엔진·투영 스크립트, 시험 원장, 첨부 조회 SQL)을 바꿔 Oracle 23·19c·MariaDB·MySQL 증거를 같은 트리로 다시 기록했다.
 

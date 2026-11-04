@@ -51,11 +51,13 @@ public class SqlServerSqlDialect implements VendorSqlDialect {
     /**
      * 무결성 위반은 SQLState 23000 이고, 길이 초과(2628)·형식(241·245)·범위(8115)는 S0001·S0002 라 번호로 갈라야 400 이다.
      * CHECK 와 FK 는 같은 547 이라 번호로는 가를 수 없다. 메시지의 제약 종류 낱말(CHECK·FOREIGN KEY·REFERENCE)은 서버 메시지 언어가
-     * 한국어여도 영어로 남는다(실측). 스냅숏 갱신 충돌(3960)은 S0002, 대기 초과(1222)는 S0051 이다.
+     * 한국어여도 영어로 남는다(실측). 낱말만 찾으면 DB·표 이름에 든 같은 낱말에 걸리므로 첫 따옴표(제약 이름) 앞의 종류 자리만 본다 —
+     * 영어 {@code CHECK constraint "}, 한국어 {@code CHECK 제약 조건 "}. 다른 언어는 FK 와 같은 409 로 남는다.
+     * 스냅숏 갱신 충돌(3960)은 S0002, 대기 초과(1222)는 S0051 이다.
      */
     private static final VendorErrorCodes ERROR_CODES = new VendorErrorCodes(
             Set.of(515, 2628, 8152, 241, 242, 245, 8114, 8115), Set.of(), Set.of(1222, 1205, 3960, APPLICATION_LOCK_NOT_GRANTED),
-            Set.of(), Set.of(), Map.of(547, Pattern.compile(" CHECK ")));
+            Set.of(), Set.of(), Map.of(547, Pattern.compile("^[^\"]*\\bCHECK (?:constraint|제약 조건) \"")));
 
     @Override
     public String paginate(String orderedSelect, long limit, long offset) {

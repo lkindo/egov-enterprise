@@ -233,6 +233,10 @@ class SqlServerSqlDialectTest {
         assertThat(codes.rejectsValue(547, "INSERT 문이 CHECK 제약 조건 \"ck_tb_a_b\"과(와) 충돌했습니다.")).isTrue();
         assertThat(codes.rejectsValue(547, "The INSERT statement conflicted with the FOREIGN KEY constraint \"fk_tb_a_b\".")).isFalse();
         assertThat(codes.rejectsValue(547, "The DELETE statement conflicted with the REFERENCE constraint \"fk_tb_a_b\".")).isFalse();
+        assertThat(codes.rejectsValue(547, "The INSERT statement conflicted with the FOREIGN KEY constraint \"fk_tb_a_b\". The conflict occurred in"
+                + " database \"agency CHECK archive\", table \"dbo.CHECK\", column 'b'.")).as("DB·표 이름의 낱말에는 걸리지 않는다").isFalse();
+        assertThat(codes.rejectsValue(547, "The INSERT statement conflicted with the FOREIGN KEY constraint \"fk_tb_a_b\". The conflict occurred in"
+                + " database \"x CHECK constraint \"y\", table \"dbo.tb_a\".")).as("제약 이름 뒤의 같은 문구에도 걸리지 않는다").isFalse();
         assertThat(codes.rejectsValue(547, null)).isFalse();
         assertThat(codes.rejectsValue(2628, "String or binary data would be truncated")).isTrue();
         assertThat(codes.lockFailures()).contains(1222, 1205, 3960);

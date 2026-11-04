@@ -22,22 +22,41 @@ const MSSQL_URL_PARAMETERS = 'encrypt=false;lockTimeout=5000';
 
 /** sqlcmd. 이미지의 인증서를 믿는다(-C). 같은 클라이언트로 엔진 준비와 compose 상태 검사를 한다. */
 export const SQLCMD = '/opt/mssql-tools18/bin/sqlcmd -C';
-/** 서버 콜레이션은 N 없는 문자열 리터럴의 코드 페이지다. 표의 문자열 컬럼은 어댑터가 이진 콜레이션으로 따로 둔다. */
-export const MSSQL_SERVER_COLLATION = 'Korean_100_CI_AS';
+/**
+ * 앱 DB 의 기본 콜레이션. N 없는 문자열 리터럴의 코드 페이지이고 표 변수도 이것을 따른다(2026-11-04 실측). 표의 문자열 컬럼은 어댑터가 이진 콜레이션으로 따로 둔다.
+ * 서버 콜레이션(MSSQL_COLLATION)은 바꾸지 않는다 — 첫 기동에서 시스템 DB 를 다시 색인하는 동안 접속해 DB 를 만들거나 메타 조회만 해도 교착으로 서버가
+ * 꺼진다(실측). 임시 표(#)는 서버 콜레이션을 따르므로 앱 컬럼과 비교하지 않는다(쓰는 코드가 없다).
+ */
+export const MSSQL_DATABASE_COLLATION = 'Korean_100_CI_AS';
 
 /**
  * SQL Server 이미지는 앱 DB 와 계정을 만들지 않는다. 엔진 준비와 생성물 compose 의 DB 상태 검사가 이 문장을 쓴다.
  * 스냅숏 두 설정이 꺼지면 앱이 기동하지 않는다(SqlServerSqlDialect.assertSession). 상태 검사가 되풀이해 부르므로 이미 된 일은 다시 하지 않는다 —
  * READ_COMMITTED_SNAPSHOT 을 다시 켜면 ROLLBACK IMMEDIATE 가 앱 연결을 끊는다. 한 배치라 USE 뒤 문장은 동적 SQL 로 그 DB 에서 돈다(2026-11-04 실측).
- * `password`·`login` 은 셸이 펼칠 변수일 수 있다. 값을 인자에 두지 않는다.
+ * 계정 이름과 비밀번호는 sqlcmd 변수 `$(NURI_APP_LOGIN)`·`$(NURI_APP_PASSWORD)` 로 받는다. sqlcmd 는 이 변수를 환경에서 채운다(실측) — 값이 명령행에 오지 않는다.
  */
-export function mssqlInitialization(password, { database, login }) {
-  return [`IF DB_ID('${database}') IS NULL CREATE DATABASE ${database}`,
+export function mssqlInitialization(database) {
+  const login = '$(NURI_APP_LOGIN)';
+  return [`IF DB_ID('${database}') IS NULL CREATE DATABASE ${database} COLLATE ${MSSQL_DATABASE_COLLATION}`,
     `IF (SELECT is_read_committed_snapshot_on FROM sys.databases WHERE name = '${database}') = 0 ALTER DATABASE ${database} SET READ_COMMITTED_SNAPSHOT ON WITH ROLLBACK IMMEDIATE`,
     `IF (SELECT snapshot_isolation_state FROM sys.databases WHERE name = '${database}') = 0 ALTER DATABASE ${database} SET ALLOW_SNAPSHOT_ISOLATION ON`,
-    `IF SUSER_ID('${login}') IS NULL CREATE LOGIN ${login} WITH PASSWORD = N'${password}', CHECK_POLICY = OFF, DEFAULT_DATABASE = ${database}`,
+    `IF SUSER_ID('${login}') IS NULL CREATE LOGIN ${login} WITH PASSWORD = N'$(NURI_APP_PASSWORD)', CHECK_POLICY = OFF, DEFAULT_DATABASE = ${database}`,
     `EXEC ('USE ${database}; IF USER_ID(''${login}'') IS NULL CREATE USER ${login} FOR LOGIN ${login}; IF IS_ROLEMEMBER(''db_owner'', ''${login}'') = 0 ALTER ROLE db_owner ADD MEMBER ${login}')`].join('; ');
 }
+
+/**
+ * 초기화를 돌리는 셸 명령. 비밀은 환경으로만 넘긴다 — sa 비밀번호는 `SQLCMDPASSWORD`, 앱 비밀번호는 sqlcmd 변수다. 인자에 두면 컨테이너의 프로세스 목록에
+ * 보인다(독립 검토 지적). 앱 비밀번호의 작은따옴표는 SQL 문자열에 맞게 두 번 쓴다. 계정 이름은 SQL 식별자로 그대로 쓰이므로 영문·숫자·밑줄만 받고 아니면 멈춘다.
+ * 인자는 셸이 펼칠 식(`${APP_DB_USER}` 같은 변수)이나 글자 그대로의 값이다.
+ */
+export function mssqlInitializationCommand({ adminPassword, login, password, database }) {
+  return `case "${login}" in ''|*[!A-Za-z0-9_]*) echo 'app login must use only letters, digits and _' >&2; exit 1;; esac; `
+    + `SQLCMDPASSWORD="${adminPassword}" NURI_APP_LOGIN="${login}" NURI_APP_PASSWORD="$(printf '%s' "${password}" | sed "s/'/''/g")" `
+    + `${SQLCMD} -b -S localhost -U sa -Q "${mssqlInitialization(database).replaceAll('$', '\\$')}"`;
+}
+
+/** compose 의 큰따옴표 문자열 안에 둘 셸 명령. `$` 는 Compose 호스트 치환을 피해 `$$` 로 쓴다. */
+const composeQuoted = command => command.replaceAll('\\', '\\\\').replaceAll('"', '\\"').replaceAll('$', '$$$$');
 
 const MSSQL_IMAGE = 'mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090';
 
@@ -181,7 +200,6 @@ export const VENDOR_SOURCE = Object.freeze({
       TZ: Asia/Seoul
       ACCEPT_EULA: "Y"
       MSSQL_PID: Developer
-      MSSQL_COLLATION: ${MSSQL_SERVER_COLLATION}
       # ⚠ 개발 전용 자격이다. 운영 오버레이가 DB_USERNAME/DB_PASSWORD/DB_ADMIN_PASSWORD 로 덮어쓴다.
       MSSQL_SA_PASSWORD: Egov_sa123
       APP_DB_USER: egov
@@ -189,8 +207,8 @@ export const VENDOR_SOURCE = Object.freeze({
     volumes:
       - mssql_data:/var/opt/mssql
     healthcheck:
-      # \`$$\` 는 Compose 호스트 치환을 피하고 컨테이너 셸에서 \`$\` 로 전달하기 위한 이스케이프다.
-      test: ["CMD-SHELL", "${SQLCMD} -b -S localhost -U sa -P \\"$\${MSSQL_SA_PASSWORD}\\" -Q \\"${mssqlInitialization('$${APP_DB_PASSWORD}', { database: 'egovdb', login: '$${APP_DB_USER}' })}\\""]
+      # \`$$\` 는 Compose 호스트 치환을 피하고 컨테이너 셸에서 \`$\` 로 전달하기 위한 이스케이프다. 비밀은 환경으로만 넘긴다.
+      test: ["CMD-SHELL", "${composeQuoted(mssqlInitializationCommand({ adminPassword: '${MSSQL_SA_PASSWORD}', login: '${APP_DB_USER}', password: '${APP_DB_PASSWORD}', database: 'egovdb' }))}"]
       interval: 10s
       timeout: 10s
       retries: 30

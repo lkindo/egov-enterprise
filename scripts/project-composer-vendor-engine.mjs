@@ -8,7 +8,7 @@ import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { COMPOSER_OWNER_LABEL } from './project-composer-postgres.mjs';
-import { MSSQL_SERVER_COLLATION, SQLCMD, VENDOR_SOURCE, mssqlInitialization } from './project-composer-vendor-source.mjs';
+import { SQLCMD, VENDOR_SOURCE, mssqlInitializationCommand } from './project-composer-vendor-source.mjs';
 
 export const VENDOR_CONTAINER_LABEL = 'egov.composer.vendor';
 const SCHEMA = 'vendorcheck';
@@ -136,11 +136,12 @@ export const VENDOR_ENGINES = Object.freeze({
   mssql: {
     version: '2022',
     image: 'mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090', imageOrigin: 'official:mcr', maxWaitSeconds: 180, memoryHintBytes: MEMORY_HINT_BYTES,
-    // 세션 시간대가 없어 서버 시계가 DB 의 시각이다(TZ, 2026-11-04 실측). 서버 콜레이션은 N 없는 문자열 리터럴의 코드 페이지라 한국어로 둔다.
-    environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer', TZ: 'Asia/Seoul', MSSQL_COLLATION: MSSQL_SERVER_COLLATION }),
+    // 세션 시간대가 없어 서버 시계가 DB 의 시각이다(TZ, 2026-11-04 실측). 한국어 콜레이션은 서버가 아니라 앱 DB 에 둔다(mssqlInitialization).
+    environment: password => ({ ACCEPT_EULA: 'Y', MSSQL_SA_PASSWORD: password, MSSQL_PID: 'Developer', TZ: 'Asia/Seoul' }),
     // 앱 계정도 같은 비밀번호다(다른 벤더와 같다). 이미지가 만들지 않아 준비 확인이 만든다.
-    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', `${SQLCMD} -b -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -Q "${mssqlInitialization('$MSSQL_SA_PASSWORD', { database: SCHEMA, login: SCHEMA })}"`]).status === 0,
-    command: file => `${SQLCMD} -I -f 65001 -h -1 -W -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d ${SCHEMA} -i ${file}`,
+    ready: (name, run = docker) => run(['exec', name, 'sh', '-c', mssqlInitializationCommand({ adminPassword: '$MSSQL_SA_PASSWORD', login: SCHEMA, password: '$MSSQL_SA_PASSWORD', database: SCHEMA })]).status === 0,
+    // sa 비밀번호는 SQLCMDPASSWORD 로 넘긴다. -P 인자로 두면 컨테이너의 프로세스 목록에 보인다. -x 는 값 안의 $( 를 sqlcmd 변수로 읽지 않게 한다.
+    command: file => `SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" ${SQLCMD} -x -I -f 65001 -h -1 -W -S localhost -U sa -d ${SCHEMA} -i ${file}`,
     batch: { errors: /^Msg \d+, Level (1[1-9]|2\d)/, fatal: /^(Sqlcmd: Error|Msg \d+, Level 2\d)/, finish: `PRINT '${COMPLETED}'\nGO`, wrap: body => `SET NOCOUNT ON\nGO\n${body}\n`, mark: (index, statement) => `PRINT '@@${index}'\nGO\n${statement.sql}\nGO` },
     integration: {
       port: 1433,
@@ -148,7 +149,7 @@ export const VENDOR_ENGINES = Object.freeze({
       username: SCHEMA,
       driver: 'com.microsoft.sqlserver.jdbc.SQLServerDriver',
       dialect: 'nuri.foundation.core.persistence.NuriSqlServerDialect',
-      administrator: `${SQLCMD} -b -I -f 65001 -S localhost -U sa -P "$MSSQL_SA_PASSWORD" -d ${SCHEMA}`,
+      administrator: `SQLCMDPASSWORD="$MSSQL_SA_PASSWORD" ${SQLCMD} -x -b -I -f 65001 -S localhost -U sa -d ${SCHEMA}`,
       // -b 가 첫 오류에서 실패 코드로 끝낸다. 문장마다 배치를 나눠 USE 가 다음 배치에 이어진다.
       administratorScript: statements => `${statements.map(statement => `${statement}\nGO`).join('\n')}\nEXIT\n`,
       // 잠금 대기 관측(sys.dm_tran_locks·dm_os_waiting_tasks)은 서버 권한이다. 서버 권한은 master 에서만 줄 수 있다. 일회용 시험 DB 에만 준다.

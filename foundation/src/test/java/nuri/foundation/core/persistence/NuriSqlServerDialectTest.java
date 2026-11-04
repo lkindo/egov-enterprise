@@ -2,6 +2,7 @@ package nuri.foundation.core.persistence;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.CALLS_REAL_METHODS;
+import static org.mockito.Mockito.RETURNS_DEEP_STUBS;
 import static org.mockito.Mockito.doReturn;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
@@ -12,6 +13,11 @@ import org.hibernate.LockOptions;
 import org.hibernate.Timeouts;
 import org.hibernate.engine.jdbc.dialect.spi.DialectResolutionInfo;
 import org.hibernate.engine.jdbc.dialect.spi.DialectResolver;
+import org.hibernate.engine.spi.SessionFactoryImplementor;
+import org.hibernate.sql.ast.SqlAstTranslator;
+import org.hibernate.sql.ast.spi.AbstractSqlAstTranslator;
+import org.hibernate.sql.ast.tree.select.SelectStatement;
+import org.hibernate.sql.exec.spi.JdbcSelect;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
@@ -66,10 +72,20 @@ class NuriSqlServerDialectTest {
     }
 
     @Test
-    @DisplayName("방언은 범위 잠금을 바꾸는 번역기를 쓴다")
+    @DisplayName("방언의 번역기는 덧붙는 기본 잠금 힌트만 범위 잠금 없는 힌트로 바꾸고 다른 조각은 그대로 둔다")
     void dialectUsesTheRangeFreeTranslator() {
-        assertThat(dialect.getSqlAstTranslatorFactory()).isNotNull();
-        assertThat(dialect.getSqlAstTranslatorFactory().getClass().getEnclosingClass()).isEqualTo(NuriSqlServerDialect.class);
+        SessionFactoryImplementor sessionFactory = mock(SessionFactoryImplementor.class, RETURNS_DEEP_STUBS);
+        when(sessionFactory.getJdbcServices().getDialect()).thenReturn(dialect);
+
+        SqlAstTranslator<JdbcSelect> translator =
+                dialect.getSqlAstTranslatorFactory().buildSelectTranslator(sessionFactory, mock(SelectStatement.class));
+
+        assertThat(translator).isInstanceOf(NuriSqlServerSqlAstTranslator.class);
+        AbstractSqlAstTranslator<?> sql = (AbstractSqlAstTranslator<?>) translator;
+        sql.append("select c1_0.user_id from tb_cmnty_user_map c1_0");
+        sql.append(" with (updlock,holdlock,rowlock)");
+        sql.append(" where c1_0.cmmnty_id=?");
+        assertThat(sql.getSql()).isEqualTo("select c1_0.user_id from tb_cmnty_user_map c1_0 with (updlock,rowlock) where c1_0.cmmnty_id=?");
     }
 
     @Test
