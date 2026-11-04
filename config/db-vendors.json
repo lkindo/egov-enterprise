@@ -559,13 +559,75 @@
     {
       "id": "mssql",
       "label": "SQL Server",
-      "status": "preview",
+      "status": "certified",
       "ci": true,
       "engines": [
         {
           "version": "2022",
           "engine": "mssql",
-          "evidence": null
+          "evidence": {
+            "runId": "mssql-b6c5d629ec8b-0c149682",
+            "commit": "b6c5d629ec8bdbf7a4370ccd3cefa5e61f28a842",
+            "recordedAt": "2026-11-05T07:14:30.574+09:00",
+            "inputHash": "6bc7d766c4844ab9fcaaa2ccc358920b0ebf7e590ca846dbf2caa34c60f7cd50",
+            "modelHash": "cf201b53aae138eba959a8be4744fe38a074d66db5fef7d2f512c73cde09efa8",
+            "image": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090",
+            "imageOrigin": "official:mcr",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "2d68343493fabc26582c887ff8831d9801874a79db79fd75fc198dd6544cbba9"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 446,
+                "degradations": 8
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 397,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1068,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         }
       ],
       "evidenceInputs": [
@@ -589,6 +651,11 @@
             "text": "NULL 을 가장 작은 값으로 정렬합니다. NULL 이 들 수 있는 칸으로 정렬하면 오름차순에서는 NULL 이 맨 앞, 내림차순에서는 맨 뒤에 와 PostgreSQL 과 반대입니다."
           },
           {
+            "kind": "error-language",
+            "summary": "영어·한국어 밖의 서버 메시지 언어에서 CHECK 위반이 충돌(409)로 응답됨",
+            "text": "CHECK 제약 위반과 외래 키 위반이 같은 오류 번호(547)라 서버 메시지의 제약 종류 낱말로 가릅니다. 서버 메시지 언어가 영어나 한국어가 아니면 CHECK 위반도 입력 오류(400) 대신 충돌(409)로 응답합니다. 어느 쪽이든 값은 저장되지 않습니다."
+          },
+          {
             "kind": "null",
             "summary": "참조되는 유일 키에 NULL 은 한 행만 들어감",
             "text": "다른 표가 참조하는 유일 키는 NULL 이 든 행을 한 행만 받습니다. NULL 이 든 행을 둘 이상 저장하면 중복으로 거부됩니다."
@@ -610,8 +677,7 @@
           }
         ],
         "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
-      },
-      "reason": "앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
+      }
     },
     {
       "id": "cubrid",
