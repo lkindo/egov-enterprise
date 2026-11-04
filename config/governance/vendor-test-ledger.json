@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). as-is·fixture-port 는 vendorIntegrationTest 가 벤더 DB 에서 돌리고, replacement 는 벤더 번역 대조·차등 시험이 대신한다(다른 수단이 대신하거나 대체가 없으면 그 시험의 reason 에 적는다). postgresqlOnly 는 벤더 실행에서 빼는 시험과 사유다. 2026-11-01 Oracle 실행으로 고쳤다.",
+  "description": "schema-validation 시험의 벤더 이식 분류(ADR-0047). as-is·fixture-port 는 vendorIntegrationTest 가 벤더 DB 에서 돌리고, replacement 는 벤더 번역 대조·차등 시험이 대신한다(다른 수단이 대신하거나 대체가 없으면 그 시험의 reason 에 적는다). vendorExclusions 는 벤더 실행에서 빼는 시험과 그 벤더별 사유다 — 사유를 댈 수 있는 벤더에서만 뺀다. 2026-11-01 Oracle 실행으로 고쳤고 2026-11-04 MySQL·MariaDB 를 더하며 벤더별로 나눴다.",
   "representativeE2e": {
     "description": "설계서 §7 의 대표 E2E. node scripts/run-isolated-e2e.mjs --representative 가 이 목록을 그대로 돌린다. 정리·클렌징·전체 메뉴 계약이 전제하므로 requiredDomains 가 preset 의 기능 목록과 같고 layout 의 생성물에서만 시작한다.",
     "preset": "demo",
@@ -50,10 +50,14 @@
       "test": "ApprovalWorkflowIntegrationTest.java",
       "category": "fixture-port",
       "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다",
-      "postgresqlOnly": [
+      "vendorExclusions": [
         {
           "method": "listProcessMaterializationDoesNotGrowWithPastCycles",
-          "reason": "읽어 온 바이트를 PostgreSQL 함수로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다"
+          "vendors": {
+            "oracle": "읽어 온 바이트를 PostgreSQL 함수로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다",
+            "mariadb": "읽어 온 바이트를 PostgreSQL 함수(convert_to)로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다",
+            "mysql": "읽어 온 바이트를 PostgreSQL 함수(convert_to)로 잰다. 재는 값이 벤더 비용이 아니라 조회 범위라 PostgreSQL 실행으로 충분하다"
+          }
         }
       ]
     },
@@ -451,10 +455,12 @@
       "test": "OnlinePollItemIntegrityIntegrationTest.java",
       "category": "fixture-port",
       "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다",
-      "postgresqlOnly": [
+      "vendorExclusions": [
         {
           "method": "concurrentVotersShareThePollLockAndDoNotWaitForEachOther",
-          "reason": "Oracle 에는 공유 행 잠금이 없어 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1)"
+          "vendors": {
+            "oracle": "Oracle 에는 공유 행 잠금이 없어 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다(설계서 §6.1)"
+          }
         }
       ]
     },
@@ -692,10 +698,14 @@
       "test": "WriteSmokeIntegrationTest.java",
       "category": "fixture-port",
       "reason": "벤더 공통 시나리오다. 벤더마다 다른 픽스처와 세션 관측은 VendorTestSql 이 맡는다",
-      "postgresqlOnly": [
+      "vendorExclusions": [
         {
           "method": "everyBooleanFlagColumnHasCheckConstraint",
-          "reason": "PostgreSQL 카탈로그를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다"
+          "vendors": {
+            "oracle": "PostgreSQL 카탈로그를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다",
+            "mariadb": "PostgreSQL 카탈로그(pg_constraint)를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다",
+            "mysql": "PostgreSQL 카탈로그(pg_constraint)를 읽는다. 벤더 스키마의 CHECK 는 번역 대조와 차등 시험이 본다"
+          }
         }
       ]
     }

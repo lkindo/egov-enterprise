@@ -154,8 +154,8 @@ class MailFailureNotificationIntegrationTest {
         processor.dispatchCommitted(id, queuedAt, "synthetic failure subject", "synthetic private body",
                 "from@example.invalid", ADDRESS, identity.esntlId()).get(10, TimeUnit.SECONDS);
 
-        // The real listener persisted both rows before a real SQLSTATE 22012 aborted its transaction.
-        assertThat(observation.sqlStates).containsExactly("22012");
+        // The real listener persisted both rows before a real database error (22012; 21000 on MySQL/MariaDB) aborted its transaction.
+        assertThat(observation.sqlStates).containsExactly(VendorTestSql.failingQueryState(jdbc));
         assertThat(observation.beforeFailure).containsExactly(new NoticeBoundary("F", 1, 1));
         assertThat(observation.observationFailure.get()).isNull();
         assertThat(observation.completions).containsExactly(TransactionSynchronization.STATUS_ROLLED_BACK);
@@ -473,12 +473,12 @@ class MailFailureNotificationIntegrationTest {
                 throw new IllegalStateException("Synthetic non-database notice failure");
             }
             try {
-                jdbc.queryForObject(VendorTestSql.divisionByZero(jdbc), Integer.class, 0);
+                jdbc.queryForObject(VendorTestSql.failingQuery(jdbc), Integer.class, 0);
             } catch (DataAccessException failure) {
                 recordSqlState(observation, failure);
                 throw failure;
             }
-            throw new AssertionError("Synthetic SQLSTATE 22012 injection did not fail");
+            throw new AssertionError("Synthetic database error injection did not fail");
         }
 
         private void observeCommittedState(NoticeObservation observation, List<NoticeBoundary> destination) {

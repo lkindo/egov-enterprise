@@ -133,6 +133,7 @@
       "config/governance/vendor-removed-assets.json",
       "foundation/src/main/java/nuri/foundation/core/persistence/VendorSqlDialect.java",
       "foundation/src/main/java/nuri/foundation/core/persistence/VendorSqlConfig.java",
+      "foundation/src/main/java/nuri/foundation/core/persistence/VendorErrorCodes.java",
       "foundation/src/main/java/nuri/foundation/core/persistence/VendorFunctionContributor.java",
       "foundation/src/main/java/nuri/foundation/core/persistence/IsolationMappingDataSource.java",
       "foundation/src/main/resources/META-INF/services/org.hibernate.boot.model.FunctionContributor",
@@ -171,11 +172,11 @@
           "version": "19",
           "engine": "oracle19",
           "evidence": {
-            "runId": "oracle19-5954aaa169a6-68039505",
-            "commit": "5954aaa169a6c8a92785ca687ab15d0b0625337e",
-            "recordedAt": "2026-11-04T01:28:19.351+09:00",
-            "inputHash": "7491ddb805038181ab34e170418696ac923ea06f79f60e282a496debf708d22e",
-            "modelHash": "8686873fb2c01fee30661e7d0db3db4a2dd69f898ce36d0761b17a588303cb1a",
+            "runId": "oracle19-c1b65ce2003a-125811dc",
+            "commit": "c1b65ce2003ae5ed685e7b98de1ea1921ae090f1",
+            "recordedAt": "2026-11-04T07:36:06.546+09:00",
+            "inputHash": "99d32417e5b222560a1605076e7d96a6f3e174d3eb2f69dbdfb54eded163f8ab",
+            "modelHash": "f76db68f94850a90d387acdbc381b1ae3cca596e3bb31c985516feb6d5997527",
             "image": "fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac",
             "imageOrigin": "community:fugeritorg",
             "scope": "application-database",
@@ -238,11 +239,11 @@
           "version": "23",
           "engine": "oracle",
           "evidence": {
-            "runId": "oracle-5954aaa169a6-2ba57e44",
-            "commit": "5954aaa169a6c8a92785ca687ab15d0b0625337e",
-            "recordedAt": "2026-11-04T00:17:15.536+09:00",
-            "inputHash": "7491ddb805038181ab34e170418696ac923ea06f79f60e282a496debf708d22e",
-            "modelHash": "8686873fb2c01fee30661e7d0db3db4a2dd69f898ce36d0761b17a588303cb1a",
+            "runId": "oracle-c1b65ce2003a-8f752d7f",
+            "commit": "c1b65ce2003ae5ed685e7b98de1ea1921ae090f1",
+            "recordedAt": "2026-11-04T06:46:05.979+09:00",
+            "inputHash": "99d32417e5b222560a1605076e7d96a6f3e174d3eb2f69dbdfb54eded163f8ab",
+            "modelHash": "f76db68f94850a90d387acdbc381b1ae3cca596e3bb31c985516feb6d5997527",
             "image": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
             "imageOrigin": "community:gvenzl",
             "scope": "application-database",
@@ -344,6 +345,7 @@
       "id": "mariadb",
       "label": "MariaDB",
       "status": "preview",
+      "ci": true,
       "engines": [
         {
           "version": "11.4",
@@ -352,14 +354,37 @@
         }
       ],
       "evidenceInputs": [
-        "scripts/project-composer-vendor-mysql.mjs"
+        "scripts/project-composer-vendor-mysql.mjs",
+        "foundation/src/main/java/nuri/foundation/core/persistence/InnoDbSqlDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/MariaDbSqlDialect.java"
       ],
-      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다."
+      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다.",
+      "notices": {
+        "degradations": [
+          {
+            "kind": "deferrable",
+            "summary": "외래 키를 커밋 때 미뤄 검사하지 못함",
+            "text": "외래 키를 커밋 때까지 미뤄 검사하지 못하고 문장마다 검사합니다. 자기 자신을 참조하는 메뉴처럼 부모와 자식을 한 번에 지울 때는 자식부터 지웁니다."
+          },
+          {
+            "kind": "partial",
+            "summary": "부분 인덱스가 일반 인덱스로 바뀜",
+            "text": "부분 인덱스가 없어 일반 인덱스로 둡니다. 유일성 제약이 아닌 인덱스라 성능만 달라집니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
+      }
     },
     {
       "id": "mysql",
       "label": "MySQL",
       "status": "preview",
+      "ci": true,
       "engines": [
         {
           "version": "8.4",
@@ -368,9 +393,36 @@
         }
       ],
       "evidenceInputs": [
-        "scripts/project-composer-vendor-mysql.mjs"
+        "scripts/project-composer-vendor-mysql.mjs",
+        "foundation/src/main/java/nuri/foundation/core/persistence/InnoDbSqlDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/MySqlSqlDialect.java"
       ],
-      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다."
+      "reason": "스키마 번역과 대상 DB 대조까지입니다. 앱 기동과 통합 시험을 아직 통과하지 않았습니다.",
+      "notices": {
+        "degradations": [
+          {
+            "kind": "prefix",
+            "summary": "긴 문자열 유일 키가 앞 768자만 비교됨",
+            "text": "인덱스 키가 3,072바이트까지라 긴 문자열 한 컬럼으로 된 유일 키는 앞 768자만 비교합니다. 앞 768자가 같은 서로 다른 값은 중복으로 거부됩니다."
+          },
+          {
+            "kind": "deferrable",
+            "summary": "외래 키를 커밋 때 미뤄 검사하지 못함",
+            "text": "외래 키를 커밋 때까지 미뤄 검사하지 못하고 문장마다 검사합니다. 자기 자신을 참조하는 메뉴처럼 부모와 자식을 한 번에 지울 때는 자식부터 지웁니다."
+          },
+          {
+            "kind": "partial",
+            "summary": "부분 인덱스가 일반 인덱스로 바뀜",
+            "text": "부분 인덱스가 없어 일반 인덱스로 둡니다. 유일성 제약이 아닌 인덱스라 성능만 달라집니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 개발용입니다. 운영 라이선스는 도입 기관이 확보합니다."
+      }
     },
     {
       "id": "mssql",

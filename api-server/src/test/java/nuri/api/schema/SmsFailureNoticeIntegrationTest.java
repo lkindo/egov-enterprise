@@ -111,7 +111,7 @@ class SmsFailureNoticeIntegrationTest {
                     assertThat(inboxCount()).isEqualTo(1); // Same connection sees the uncommitted real rows.
                     assertThat(noticeJobCount()).isEqualTo(1);
                     sqlFaults.incrementAndGet();
-                    jdbc.queryForObject(VendorTestSql.divisionByZero(jdbc), Integer.class, 0); // Actual SQLSTATE 22012, no DDL/mock exception.
+                    jdbc.queryForObject(VendorTestSql.failingQuery(jdbc), Integer.class, 0); // Actual database error, no DDL/mock exception.
                 }
                 return result;
             } catch (RuntimeException failure) {
@@ -147,7 +147,7 @@ class SmsFailureNoticeIntegrationTest {
         failNoticeOnce.set(true);
         dispatchOwned();
         assertThat(sqlFaults.get()).isEqualTo(1);
-        assertThat(noticeSqlState.get()).isEqualTo("22012");
+        assertThat(noticeSqlState.get()).isEqualTo(VendorTestSql.failingQueryState(jdbc));
         assertThat(code(FIRST)).isEqualTo("F");
         assertThat(stored(FIRST).stage()).isEqualTo(SmsReceiptState.Stage.REJECTED);
         assertThat(stored(FIRST).requestId()).isNull();
@@ -399,7 +399,7 @@ class SmsFailureNoticeIntegrationTest {
     private void dispatchOwned() {
         // Run this class exclusively. The production dispatcher is global; never let this fixture drain another test's work.
         assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_sys_job WHERE job_se_nm='SMS_DELIVERY' "
-                + "AND prcs_stts_nm IN ('PENDING','RETRY','RUNNING') AND job_prnmnt_dt <= (CURRENT_TIMESTAMP AT TIME ZONE 'UTC') "
+                + "AND prcs_stts_nm IN ('PENDING','RETRY','RUNNING') AND job_prnmnt_dt <= " + VendorTestSql.utcNowExpression(jdbc) + " "
                 + "AND job_mng_no<>?", Long.class, deliveryKey())).isZero();
         assertThat(new DurableWorkDispatcher(jobs, List.of(handler()), manager, false).dispatchOne()).isTrue();
     }

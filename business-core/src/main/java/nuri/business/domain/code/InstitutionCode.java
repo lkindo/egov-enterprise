@@ -5,6 +5,8 @@ import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 import lombok.AccessLevel;
 import lombok.Builder;
 import lombok.Getter;
@@ -36,7 +38,10 @@ public class InstitutionCode extends BaseEntity {
     private String ord;
  
     // 기관차수 — SSOT 도메인 수N2(NUMERIC(2), V2_19 전환). API 계약(String)은 서비스 경계에서 변환.
+    // JDBC 타입을 NUMERIC 으로 밝혀 스키마 검증이 MySQL·MariaDB 의 DECIMAL 을 같은 계열로 본다. 정수로 두면 타입 이름이 numeric 으로
+    // 시작하는 PostgreSQL 과 NUMBER 를 정수와 같게 보는 Oracle 만 통과한다(ADR-0047 단계 3).
     @Column(columnDefinition = "numeric(2)")
+    @JdbcTypeCode(SqlTypes.NUMERIC)
     private Integer instCycl;
  
     @Column(length = 7)

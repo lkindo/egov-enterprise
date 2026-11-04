@@ -103,20 +103,20 @@ class UserSecurityStateConcurrencyIntegrationTest {
         department = prefix + "D";
         String hash = passwords.encode(ORIGINAL_PASSWORD);
         for (String id : List.of(subject, operator)) {
-            jdbc.update("""
+            jdbc.update(VendorTestSql.sql(jdbc, """
                     INSERT INTO tb_user_info
                         (esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,lck_cnt,
                          tmpr_pswd_yn,sbscrb_ymd,crt_dt,frst_rgtr_id)
                     VALUES (?,?,?,'Original Profile','P','N',0,'N',
                             to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,'SYSTEM')
-                    """, id, login(id), hash);
+                    """), id, login(id), hash);
         }
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 INSERT INTO tb_authrt_info
                     (authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id)
                 VALUES (?,'User race fixture',to_char(CURRENT_DATE,'YYYYMMDD'),
                         CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')
-                """, operatorGroup);
+                """), operatorGroup);
         jdbc.update("""
                 INSERT INTO tb_authrt_user_map
                     (scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id)
@@ -318,7 +318,7 @@ class UserSecurityStateConcurrencyIntegrationTest {
     void delayedBootstrapCannotReplaceACommittedAdministratorReset() throws Exception {
         // The bootstrap race requires this class's private disposable database.
         VendorTestSql.assertDisposable(environment, jdbc);
-        if (!VendorTestSql.isOracle(jdbc)) {
+        if (VendorTestSql.isPostgresql(jdbc)) {
             assertThat(environment.getProperty("spring.datasource.url"))
                     .isEqualTo("jdbc:tc:postgresql:17:///egov_user_security_state?currentSchema=public");
         }

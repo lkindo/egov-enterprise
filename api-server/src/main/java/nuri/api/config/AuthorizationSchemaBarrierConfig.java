@@ -55,6 +55,7 @@ public class AuthorizationSchemaBarrierConfig {
         if (product==null || !product.contains(vendorSql.databaseProductName())) {
             throw new IllegalStateException("app.database.vendor does not match the connected database: "+product);
         }
+        vendorSql.assertSession(jdbc);
     }
 
     static void verify(JdbcTemplate jdbc, VendorSqlDialect vendorSql) {

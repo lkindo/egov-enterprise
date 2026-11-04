@@ -3,6 +3,8 @@ package nuri.api.harness;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -367,23 +369,54 @@ class ConfigSafetyLinterTest {
             Pattern.compile("(?m)^\\s*ORACLE_PASSWORD\\s*:\\s*\\$\\{DB_ADMIN_PASSWORD:\\?");
     private static final Pattern ORACLE_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*healthcheck\\.sh.*$");
 
-    /** Oracle 로 투영한 생성물인가. 벤더 값은 잠금이 정하고 생성물 거버넌스가 결속한다. */
-    private static final boolean ORACLE_BUNDLE = "oracle".equals(ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql"));
+    /** MySQL·MariaDB 생성물의 같은 판정. 두 이미지 모두 3306 이고, 앱 비밀번호와 root 비밀번호를 따로 필수로 받는다. */
+    private static final Pattern INNODB_PORT_PUBLISHED_ON_ALL_INTERFACES =
+            Pattern.compile("(?m)^\\s*-\\s*\"?\\d+:3306\"?\\s*$");
+    private static final Pattern INNODB_PORT_PUBLISHED_ON_LOOPBACK =
+            Pattern.compile("(?m)^\\s*-\\s*\"?(127\\.0\\.0\\.1|localhost):\\d+:3306\"?\\s*$");
+    private static final Pattern PROD_MARIADB_APP_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*MARIADB_PASSWORD\\s*:\\s*\\$\\{DB_PASSWORD:\\?");
+    private static final Pattern PROD_MARIADB_ADMIN_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*MARIADB_ROOT_PASSWORD\\s*:\\s*\\$\\{DB_ADMIN_PASSWORD:\\?");
+    private static final Pattern PROD_MYSQL_APP_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*MYSQL_PASSWORD\\s*:\\s*\\$\\{DB_PASSWORD:\\?");
+    private static final Pattern PROD_MYSQL_ADMIN_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*MYSQL_ROOT_PASSWORD\\s*:\\s*\\$\\{DB_ADMIN_PASSWORD:\\?");
+    /** 이미지의 점검 스크립트가 접속까지 본다. 계정은 이미지가 초기화 때 만든 점검용이라 운영 자격을 바꿔도 동작한다. */
+    private static final Pattern MARIADB_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*healthcheck\\.sh.*--connect.*$");
+    /** TCP 로 묻는다 — 초기화 중의 임시 서버는 TCP 를 열지 않는다. ping 은 자격 없이도 서버가 답하면 성공이다. */
+    private static final Pattern MYSQL_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*mysqladmin ping -h 127\\.0\\.0\\.1.*$");
+
+    /** 투영한 생성물의 벤더. 벤더 값은 잠금이 정하고 생성물 거버넌스가 결속한다. 원본은 PostgreSQL 이다. */
+    private static final String BUNDLED_DB_VENDOR = ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql");
 
     /*
      * 번들 DB 의 벤더별 판정. 지키는 것은 같다: 포트는 루프백만, 운영 비밀번호는 필수 환경변수, healthcheck 는 운영 자격에서도 동작한다.
      * 기준선이 이 상수들의 우변을 해시하므로 record 로 묶지 않는다. 묶으면 매핑을 비워도 기준선이 그대로다.
+     * 표에 없는 벤더로 투영하면 판정을 고르지 못한 것 자체가 위반이다 — 새 벤더는 여기에 판정을 더해야 생성물 하네스가 통과한다.
      */
-    private static final String BUNDLED_DB_PORT = ORACLE_BUNDLE ? "1521" : "5432";
-    private static final Pattern BUNDLED_DB_ALL_INTERFACES = ORACLE_BUNDLE ? ORACLE_PORT_PUBLISHED_ON_ALL_INTERFACES : DB_PORT_PUBLISHED_ON_ALL_INTERFACES;
-    private static final Pattern BUNDLED_DB_LOOPBACK = ORACLE_BUNDLE ? ORACLE_PORT_PUBLISHED_ON_LOOPBACK : DB_PORT_PUBLISHED_ON_LOOPBACK;
-    private static final Map<String, Pattern> BUNDLED_DB_PASSWORD_OVERRIDES = ORACLE_BUNDLE
-            ? Map.of("APP_USER_PASSWORD", PROD_ORACLE_APP_PASSWORD_OVERRIDE, "ORACLE_PASSWORD", PROD_ORACLE_ADMIN_PASSWORD_OVERRIDE)
-            : Map.of("POSTGRES_PASSWORD", PROD_DB_PASSWORD_OVERRIDE);
-    private static final Pattern BUNDLED_DB_HEALTHCHECK = ORACLE_BUNDLE ? ORACLE_HEALTHCHECK : DB_HEALTHCHECK_USES_CONTAINER_ENV;
-    private static final String BUNDLED_DB_DEPLOY_URL_CASE = ORACLE_BUNDLE
-            ? "jdbc:oracle:thin:@//db:1521/FREEPDB1)"
-            : "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)";
+    private static final Map<String, String> BUNDLED_DB_PORT = Map.of(
+            "postgresql", "5432", "oracle", "1521", "mariadb", "3306", "mysql", "3306");
+    private static final Map<String, Pattern> BUNDLED_DB_ALL_INTERFACES = Map.of(
+            "postgresql", DB_PORT_PUBLISHED_ON_ALL_INTERFACES, "oracle", ORACLE_PORT_PUBLISHED_ON_ALL_INTERFACES,
+            "mariadb", INNODB_PORT_PUBLISHED_ON_ALL_INTERFACES, "mysql", INNODB_PORT_PUBLISHED_ON_ALL_INTERFACES);
+    private static final Map<String, Pattern> BUNDLED_DB_LOOPBACK = Map.of(
+            "postgresql", DB_PORT_PUBLISHED_ON_LOOPBACK, "oracle", ORACLE_PORT_PUBLISHED_ON_LOOPBACK,
+            "mariadb", INNODB_PORT_PUBLISHED_ON_LOOPBACK, "mysql", INNODB_PORT_PUBLISHED_ON_LOOPBACK);
+    private static final Map<String, Map<String, Pattern>> BUNDLED_DB_PASSWORD_OVERRIDES = Map.of(
+            "postgresql", Map.of("POSTGRES_PASSWORD", PROD_DB_PASSWORD_OVERRIDE),
+            "oracle", Map.of("APP_USER_PASSWORD", PROD_ORACLE_APP_PASSWORD_OVERRIDE, "ORACLE_PASSWORD", PROD_ORACLE_ADMIN_PASSWORD_OVERRIDE),
+            "mariadb", Map.of("MARIADB_PASSWORD", PROD_MARIADB_APP_PASSWORD_OVERRIDE, "MARIADB_ROOT_PASSWORD", PROD_MARIADB_ADMIN_PASSWORD_OVERRIDE),
+            "mysql", Map.of("MYSQL_PASSWORD", PROD_MYSQL_APP_PASSWORD_OVERRIDE, "MYSQL_ROOT_PASSWORD", PROD_MYSQL_ADMIN_PASSWORD_OVERRIDE));
+    private static final Map<String, Pattern> BUNDLED_DB_HEALTHCHECK = Map.of(
+            "postgresql", DB_HEALTHCHECK_USES_CONTAINER_ENV, "oracle", ORACLE_HEALTHCHECK,
+            "mariadb", MARIADB_HEALTHCHECK, "mysql", MYSQL_HEALTHCHECK);
+    /** 배포 스크립트가 받는 번들 DB 주소. MySQL 계열은 접속 인자(세션 시간대·연결 콜레이션)까지 같은 주소만 받고, 셸 문법이 되지 않게 큰따옴표로 감싼다. */
+    private static final Map<String, String> BUNDLED_DB_DEPLOY_URL_CASE = Map.of(
+            "postgresql", "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)",
+            "oracle", "jdbc:oracle:thin:@//db:1521/FREEPDB1)",
+            "mariadb", "\"jdbc:mariadb://db:3306/egovdb?sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin\")",
+            "mysql", "\"jdbc:mysql://db:3306/egovdb?sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin\")");
 
     /** 첨부 실물이 컨테이너 쓰기 계층으로 되돌아가지 않도록 고정하는 api mount. */
     private static final Pattern ATTACHMENT_STORAGE_MOUNT = Pattern.compile(
@@ -410,25 +443,36 @@ class ConfigSafetyLinterTest {
      */
     private void auditBundledDatabaseExposure(String composeBaseSrc, String composeProdSrc,
                                               List<String> violations) {
+        auditBundledDatabaseExposure(BUNDLED_DB_VENDOR, composeBaseSrc, composeProdSrc, violations);
+    }
+
+    /** 벤더를 받아 판정한다. 원본은 PostgreSQL 만 보므로 다른 벤더의 판정은 투영 모양의 fixture 로 따로 증명한다. */
+    static void auditBundledDatabaseExposure(String vendor, String composeBaseSrc, String composeProdSrc,
+                                             List<String> violations) {
         if (!COMPOSE_DB_SERVICE.matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: 'db' 서비스 정의를 찾지 못했습니다 — 번들 DB 노출면 검사가"
                     + " vacuous 해집니다. 서비스명을 바꿨다면 이 린터를 함께 갱신하십시오.");
             return;
         }
+        if (!BUNDLED_DB_PORT.containsKey(vendor)) {
+            violations.add("번들 DB 판정이 없는 벤더(" + vendor + ")로 투영했습니다 — 포트·운영 비밀번호·healthcheck 를 판정하지 못하면"
+                    + " 이 게이트가 무의미해집니다. ConfigSafetyLinterTest 의 BUNDLED_DB_* 표에 그 벤더의 판정을 더하십시오.");
+            return;
+        }
 
-        String port = BUNDLED_DB_PORT;
-        if (BUNDLED_DB_ALL_INTERFACES.matcher(composeBaseSrc).find()) {
+        String port = BUNDLED_DB_PORT.get(vendor);
+        if (BUNDLED_DB_ALL_INTERFACES.get(vendor).matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: db 의 " + port + " 가 모든 인터페이스(0.0.0.0)에 공개돼 있습니다."
                     + " deploy.sh 가 base 를 함께 올리므로 이 공개는 운영 호스트에 그대로 적용됩니다."
                     + " '127.0.0.1:" + port + ":" + port + "' 로 좁히십시오 — 컨테이너 간 통신은 egov-net 을 쓰므로 영향이 없습니다."
                     + " (오버레이로는 닫을 수 없습니다: compose 는 ports 리스트를 이어붙입니다.)");
-        } else if (!BUNDLED_DB_LOOPBACK.matcher(composeBaseSrc).find()) {
+        } else if (!BUNDLED_DB_LOOPBACK.get(vendor).matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: db 의 " + port + " 공개 형태를 판정할 수 없습니다 —"
                     + " 루프백 한정('127.0.0.1:" + port + ":" + port + "')이거나 공개가 아예 없어야 합니다."
                     + " 판정 불가를 통과로 넘기면 이 게이트가 무의미해집니다.");
         }
 
-        BUNDLED_DB_PASSWORD_OVERRIDES.forEach((variable, override) -> {
+        BUNDLED_DB_PASSWORD_OVERRIDES.get(vendor).forEach((variable, override) -> {
             if (!override.matcher(composeProdSrc).find()) {
                 violations.add("docker-compose.prod.yml: 번들 db 의 " + variable + " 를 필수 환경변수로"
                         + " 재정의하지 않았습니다 — base 에 커밋된 개발 비밀번호가 운영 DB 자격이 됩니다."
@@ -436,7 +480,7 @@ class ConfigSafetyLinterTest {
             }
         });
 
-        if (!BUNDLED_DB_HEALTHCHECK.matcher(composeBaseSrc).find()) {
+        if (!BUNDLED_DB_HEALTHCHECK.get(vendor).matcher(composeBaseSrc).find()) {
             violations.add("docker-compose.yml: db healthcheck가 운영 자격을 따르지 않습니다 — prod 오버레이가"
                     + " 사용자를 바꾸면 존재하지 않는 개발 역할을 검사해 DB가 영구 unhealthy가 됩니다."
                     + " Compose 이스케이프 '$${...}'로 실효 값을 전달하십시오.");
@@ -469,7 +513,7 @@ class ConfigSafetyLinterTest {
                 "for v in API_IMAGE_REF FRONTEND_IMAGE_REF",
                 "docker pull \"$ref\"",
                 "case \"$DB_URL\" in",
-                BUNDLED_DB_DEPLOY_URL_CASE,
+                BUNDLED_DB_DEPLOY_URL_CASE.getOrDefault(BUNDLED_DB_VENDOR, "번들 DB 판정이 없는 벤더: " + BUNDLED_DB_VENDOR),
                 "up --no-build -d --wait",
                 "docker image inspect \"$API_IMAGE_REF\"",
                 "docker image inspect \"$FRONTEND_IMAGE_REF\"");
@@ -536,6 +580,53 @@ class ConfigSafetyLinterTest {
                 + "\nMANIFEST_API_IMAGE=$(jq -r '.apiImage' -- \"$RELEASE_MANIFEST\")\n", repeatedRead);
         assertTrue(repeatedRead.stream().anyMatch(message -> message.contains("한 번의 jq 파일 읽기")),
                 repeatedRead.toString());
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @ValueSource(strings = {"mariadb", "mysql"})
+    @DisplayName("MySQL·MariaDB 로 투영한 번들 DB 는 3306 루프백·운영 비밀번호 둘·healthcheck 로 통과하고, 하나라도 어긋나면 red")
+    void innoDbBundlesAreJudgedByTheirOwnRules(String vendor) {
+        // 생성기의 소스 투영(project-composer-vendor-source.mjs)이 만드는 db 블록의 모양이다.
+        String prefix = vendor.toUpperCase(Locale.ROOT);
+        String healthcheck = "mariadb".equals(vendor)
+                ? "      test: [\"CMD\", \"healthcheck.sh\", \"--connect\", \"--innodb_initialized\"]"
+                : "      test: [\"CMD-SHELL\", \"mysqladmin ping -h 127.0.0.1 --silent\"]";
+        String base = String.join("\n", "services:", "  db:", "    ports:", "      - \"127.0.0.1:3306:3306\"",
+                "    environment:", "      " + prefix + "_ROOT_PASSWORD: egov123", "      " + prefix + "_PASSWORD: egov123",
+                "    healthcheck:", healthcheck, "  api:", "");
+        String prod = String.join("\n", "services:", "  db:", "    environment:",
+                "      " + prefix + "_USER: ${DB_USERNAME:?번들 DB의 DB_USERNAME 이 필요합니다}",
+                "      " + prefix + "_PASSWORD: ${DB_PASSWORD:?번들 DB의 DB_PASSWORD 가 필요합니다}",
+                "      " + prefix + "_ROOT_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}", "");
+        assertTrue(bundledDatabaseViolations(vendor, base, prod).isEmpty(), () -> bundledDatabaseViolations(vendor, base, prod).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("모든 인터페이스 공개", bundledDatabaseViolations(vendor, base.replace("127.0.0.1:3306:3306", "3306:3306"), prod));
+        broken.put("다른 벤더의 포트", bundledDatabaseViolations(vendor, base.replace("127.0.0.1:3306:3306", "127.0.0.1:5432:5432"), prod));
+        broken.put("앱 비밀번호 미재정의", bundledDatabaseViolations(vendor, base,
+                prod.replace(prefix + "_PASSWORD: ${DB_PASSWORD:?", prefix + "_PASSWORD: egov123 # ")));
+        broken.put("root 비밀번호 미재정의", bundledDatabaseViolations(vendor, base,
+                prod.replace(prefix + "_ROOT_PASSWORD: ${DB_ADMIN_PASSWORD:?", prefix + "_ROOT_PASSWORD: egov123 # ")));
+        broken.put("healthcheck 없음", bundledDatabaseViolations(vendor, base.replace(healthcheck, "      test: [\"CMD\", \"true\"]"), prod));
+        broken.put("PostgreSQL 판정", bundledDatabaseViolations("postgresql", base, prod));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+    }
+
+    @Test
+    @DisplayName("번들 DB 판정 표는 모두 같은 벤더를 갖고, 표에 없는 벤더로 투영하면 red")
+    void bundledDatabaseRulesCoverTheSameVendors() {
+        for (Map<String, ?> rules : List.<Map<String, ?>>of(BUNDLED_DB_ALL_INTERFACES, BUNDLED_DB_LOOPBACK,
+                BUNDLED_DB_PASSWORD_OVERRIDES, BUNDLED_DB_HEALTHCHECK, BUNDLED_DB_DEPLOY_URL_CASE)) {
+            assertTrue(rules.keySet().equals(BUNDLED_DB_PORT.keySet()), () -> rules.keySet() + " != " + BUNDLED_DB_PORT.keySet());
+        }
+        List<String> unknown = bundledDatabaseViolations("sqlserver", "services:\n  db:\n", "");
+        assertTrue(unknown.stream().anyMatch(message -> message.contains("판정이 없는 벤더")), unknown::toString);
+    }
+
+    private static List<String> bundledDatabaseViolations(String vendor, String base, String prod) {
+        List<String> violations = new ArrayList<>();
+        auditBundledDatabaseExposure(vendor, stripComments(base), stripComments(prod), violations);
+        return violations;
     }
 
     /** JVM에 SIGTERM을 직접 전달하고 세 executor의 60초 drain 예산을 모두 보장한다. */

@@ -144,7 +144,8 @@ class LockWaitTimeoutIntegrationTest {
         Method handler = new ExceptionHandlerMethodResolver(GlobalExceptionHandler.class).resolveMethod(failure);
         assertThat(handler).as("전역 예외 처리기가 이 예외를 처리한다").isNotNull();
         handler.setAccessible(true);
-        return (ResponseEntity<ApiResponse<Void>>) handler.invoke(new GlobalExceptionHandler(), failure);
+        // 운영 문맥처럼 이 벤더의 오류 번호 표를 준다. 벤더 실행에서는 그 표가 있어야 번호로만 가르는 대기 초과가 충돌이 된다.
+        return (ResponseEntity<ApiResponse<Void>>) handler.invoke(new GlobalExceptionHandler(VendorTestSql.errorCodes()), failure);
     }
 
     @Test

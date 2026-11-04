@@ -84,9 +84,12 @@ class MenuHierarchyIntegrityIntegrationTest {
             jdbc.update("DELETE FROM tb_authrt_user_map WHERE scrty_dcsn_trgt_id=?", user);
             jdbc.update("DELETE FROM tb_user_info WHERE esntl_id=?", user);
         }
-        // 구조 저장이 만든 메뉴(이름이 fixtureId 로 시작)와 그 메뉴 표시도 함께 지운다. 한 문장으로 지워 자기 FK(지연 검사)를 지킨다.
+        // 구조 저장이 만든 메뉴(이름이 fixtureId 로 시작)와 그 메뉴 표시도 함께 지운다. 상위 연결을 먼저 끊고 지운다 — MySQL·MariaDB 는
+        // 자기 FK 를 지연 검사하지 못하고 행마다 바로 봐서, 한 문장 삭제도 훑는 순서에 따라 1451 로 실패한다(2026-11-04 실측).
         jdbc.update(VendorTestSql.sql(jdbc, "DELETE FROM tb_authrt_grnt_map WHERE authrt_type_cd='NAVIGATION' AND authrt_grnt_cd IN "
                 + "(SELECT menu_sn::text FROM tb_menu_info WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?)"),
+                id(0), id(1), id(2), id(3), fixtureId + "%");
+        jdbc.update("UPDATE tb_menu_info SET up_menu_sn=NULL WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?",
                 id(0), id(1), id(2), id(3), fixtureId + "%");
         jdbc.update("DELETE FROM tb_menu_info WHERE menu_sn IN (?,?,?,?) OR menu_nm LIKE ?",
                 id(0), id(1), id(2), id(3), fixtureId + "%");
@@ -368,8 +371,8 @@ class MenuHierarchyIntegrityIntegrationTest {
     private String seedActor(String... permissions) {
         String actor = fixtureId + "A";
         String group = seedGroup("G");
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))", actor, actor.toLowerCase(), actor);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"), actor, actor.toLowerCase(), actor);
         ownUsers.add(actor);
         jdbc.update("INSERT INTO tb_authrt_user_map(scrty_dcsn_trgt_id,authrt_cd,mbr_type_cd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
                 + "VALUES(?,?,'USR03',CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", actor, group);
@@ -382,8 +385,8 @@ class MenuHierarchyIntegrityIntegrationTest {
 
     private String seedGroup(String suffix) {
         String group = fixtureId + suffix;
-        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
-                + "VALUES(?,?,to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", group, group + " 그룹");
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,?,to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')"), group, group + " 그룹");
         ownGroups.add(group);
         return group;
     }
@@ -494,7 +497,7 @@ class MenuHierarchyIntegrityIntegrationTest {
         while (System.nanoTime() < deadline && !contender.isDone()) {
             // PostgreSQL keeps the first pg_stat_activity snapshot for this blocker transaction.
             // Refresh it so a contender that starts after the first poll can be observed.
-            if (!VendorTestSql.isOracle(jdbc)) jdbc.execute("SELECT pg_stat_clear_snapshot()");
+            if (VendorTestSql.isPostgresql(jdbc)) jdbc.execute("SELECT pg_stat_clear_snapshot()");
             Boolean observed = VendorTestSql.waitsOn(jdbc, applicationName, blockerPid, null);
             if (Boolean.TRUE.equals(observed)) {
                 blocked = true;

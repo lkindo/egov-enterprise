@@ -74,13 +74,13 @@ class MenuBookmarkConcurrencyIntegrationTest {
     }
 
     private void seedUser(String esntlId, String loginId) {
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'bookmark fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))", esntlId, loginId);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'bookmark fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"), esntlId, loginId);
     }
 
     private void seedGroup(String groupCode) {
-        jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
-                + "VALUES(?,'bookmark fixture',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", groupCode);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                + "VALUES(?,'bookmark fixture',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')"), groupCode);
     }
 
     private void grantNavigation(Long menu) {
@@ -290,22 +290,22 @@ class MenuBookmarkConcurrencyIntegrationTest {
         var request = request(2, List.of());
         // Synthetic identifiers/owner only; this Spring context refuses non-Testcontainers URLs.
         String fixtureFunction = "reject_bookmark_" + owner.toLowerCase(Locale.ROOT);
-        boolean oracle = VendorTestSql.isOracle(jdbc);
-        if (oracle) {
-            VendorTestSql.failingSecondDeleteOnOracle(jdbc, fixtureFunction, "tb_bkmk_menu_mng_rslt",
+        boolean postgresql = VendorTestSql.isPostgresql(jdbc);
+        if (!postgresql) {
+            VendorTestSql.failingSecondDelete(jdbc, fixtureFunction, "tb_bkmk_menu_mng_rslt",
                     "OLD.user_id='" + owner + "'", "fixture bookmark delete failure after one delete");
         } else jdbc.execute("CREATE FUNCTION " + fixtureFunction + "() RETURNS trigger LANGUAGE plpgsql AS $$ "
                 + "BEGIN IF OLD.user_id='" + owner + "' AND (SELECT count(*) FROM tb_bkmk_menu_mng_rslt WHERE user_id='" + owner + "') < 29 "
                 + "THEN RAISE EXCEPTION 'fixture bookmark delete failure after one delete'; END IF; RETURN OLD; END $$");
         try {
-            if (!oracle) jdbc.execute("CREATE TRIGGER " + fixtureFunction + " BEFORE DELETE ON tb_bkmk_menu_mng_rslt "
+            if (postgresql) jdbc.execute("CREATE TRIGGER " + fixtureFunction + " BEFORE DELETE ON tb_bkmk_menu_mng_rslt "
                     + "FOR EACH ROW EXECUTE FUNCTION " + fixtureFunction + "()");
             assertThatThrownBy(() -> service.cleanupUnavailableBookmarks(owner, request))
                     .isInstanceOf(RuntimeException.class).hasStackTraceContaining("fixture bookmark delete failure after one delete");
             assertThat(storedMenus(owner)).containsExactlyElementsOf(before);
         } finally {
-            if (oracle) {
-                VendorTestSql.dropSecondDeleteTriggerOnOracle(jdbc, fixtureFunction);
+            if (!postgresql) {
+                VendorTestSql.dropSecondDeleteTrigger(jdbc, fixtureFunction);
             } else {
                 jdbc.execute("DROP TRIGGER IF EXISTS " + fixtureFunction + " ON tb_bkmk_menu_mng_rslt");
                 jdbc.execute("DROP FUNCTION " + fixtureFunction + "()");

@@ -63,6 +63,15 @@ class AuthorizationSchemaBarrierConfigTest {
     }
 
     @Test
+    void runsTheVendorSessionCheckOnceTheProductMatches() {
+        var dialect=org.mockito.Mockito.mock(nuri.foundation.core.persistence.VendorSqlDialect.class);
+        org.mockito.Mockito.when(dialect.databaseProductName()).thenReturn("H2");
+        org.mockito.Mockito.doThrow(new IllegalStateException("session clock")).when(dialect).assertSession(jdbc);
+        assertThatThrownBy(() -> AuthorizationSchemaBarrierConfig.verifyVendor(jdbc, dialect))
+                .isInstanceOf(IllegalStateException.class).hasMessageContaining("session clock");
+    }
+
+    @Test
     void checksTheVendorBeforeFlywayTouchesTheDatabase() {
         var factory=new DefaultListableBeanFactory();
         var definition=new RootBeanDefinition(Object.class);

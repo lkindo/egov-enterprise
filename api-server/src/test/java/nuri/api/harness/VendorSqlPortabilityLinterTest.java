@@ -44,6 +44,8 @@ class VendorSqlPortabilityLinterTest {
     private static final Set<String> TREATMENTS = Set.of("port", "hibernate", "portable-rewrite", "portable-as-is",
             "postgresql-only", "deferred");
     private static final Set<String> TEST_CATEGORIES = Set.of("as-is", "fixture-port", "replacement");
+    /** 벤더 실행(vendorIntegrationTest)이 도는 벤더. PostgreSQL 은 schemaValidationTest 가 모든 시험을 돌려 뺄 수 없다. */
+    private static final Set<String> EXCLUDABLE_VENDORS = Set.of("oracle", "mariadb", "mysql");
 
     private record Rule(String id, Pattern pattern) {
         static Rule of(String id, String regex) {
@@ -193,21 +195,74 @@ class VendorSqlPortabilityLinterTest {
     }
 
     @Test
-    @DisplayName("벤더 실행에서 빼는 시험은 사유가 있고 벤더에서 도는 클래스의 실제 시험이다")
-    void postgresqlOnlyEntriesPointAtRealTests() throws IOException {
+    @DisplayName("벤더 실행에서 빼는 시험은 뺄 벤더마다 사유가 있고 벤더에서 도는 클래스의 실제 시험이다")
+    void vendorExclusionsPointAtRealTests() throws IOException {
         Path root = HarnessSourceIndex.repoRoot();
-        for (JsonNode entry : readJson(root.resolve(TEST_LEDGER)).path("tests")) {
-            for (JsonNode only : entry.path("postgresqlOnly")) {
-                assertThat(entry.path("category").asString()).as("대체 분류는 벤더에서 돌지 않는다 " + entry).isNotEqualTo("replacement");
-                assertThat(only.path("reason").asString()).as("사유 " + only).isNotBlank();
+        JsonNode tests = readJson(root.resolve(TEST_LEDGER)).path("tests");
+        assertThat(vendorExclusionProblems(tests)).as("벤더 시험 원장의 제외 항목").isEmpty();
+        for (JsonNode entry : tests) {
+            for (JsonNode excluded : entry.path("vendorExclusions")) {
                 Path source = root.resolve("api-server/src/test/java/nuri/api/schema").resolve(entry.path("test").asString());
                 if (ReusableHarnessProfile.current().projected() && !source.toFile().isFile()) {
                     continue;
                 }
-                assertThat(HarnessSourceIndex.read(source)).as("시험 이름 " + only)
-                        .containsPattern("\\bvoid " + Pattern.quote(only.path("method").asString()) + "\\(");
+                assertThat(HarnessSourceIndex.read(source)).as("시험 이름 " + excluded)
+                        .containsPattern("\\bvoid " + Pattern.quote(excluded.path("method").asString()) + "\\(");
             }
         }
+    }
+
+    @ParameterizedTest(name = "{0}")
+    @CsvSource(delimiter = ';', quoteCharacter = '`', value = {
+        "모든 벤더에서 빼던 옛 형식;`{\"test\":\"A.java\",\"category\":\"fixture-port\",\"postgresqlOnly\":[{\"method\":\"m\",\"reason\":\"r\"}]}`",
+        "벤더 없는 제외;`{\"test\":\"A.java\",\"category\":\"fixture-port\",\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{}}]}`",
+        "모르는 벤더;`{\"test\":\"A.java\",\"category\":\"fixture-port\",\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"mysq\":\"r\"}}]}`",
+        "PostgreSQL 에서 빼기;`{\"test\":\"A.java\",\"category\":\"fixture-port\",\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"postgresql\":\"r\"}}]}`",
+        "사유 없는 벤더;`{\"test\":\"A.java\",\"category\":\"fixture-port\",\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"mysql\":\" \"}}]}`",
+        "시험 이름 없음;`{\"test\":\"A.java\",\"category\":\"fixture-port\",\"vendorExclusions\":[{\"vendors\":{\"oracle\":\"r\"}}]}`",
+        "대체 분류에서 빼기;`{\"test\":\"A.java\",\"category\":\"replacement\",\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"oracle\":\"r\"}}]}`",
+    })
+    @DisplayName("제외 항목 판정은 벤더·사유가 빠졌거나 모든 벤더를 한꺼번에 빼는 형식에서 빨갛다")
+    void vendorExclusionRulesFireOnBrokenEntries(String name, String entry) {
+        JsonNode tests = JsonMapper.builder().build().readTree("[" + entry + "]");
+        assertThat(vendorExclusionProblems(tests)).as(name).isNotEmpty();
+        JsonNode valid = JsonMapper.builder().build().readTree("[{\"test\":\"A.java\",\"category\":\"fixture-port\","
+                + "\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"oracle\":\"r\",\"mariadb\":\"r\",\"mysql\":\"r\"}}]}]");
+        assertThat(vendorExclusionProblems(valid)).as("올바른 항목").isEmpty();
+    }
+
+    /**
+     * 제외 항목의 형식 위반. 벤더 작업의 시험 필터는 {@code vendorExclusions} 만 읽으므로 옛 키나 모르는 벤더 이름은 조용히 무시돼 그 시험이 돈다.
+     * 반대로 벤더 이름 없이 빼면 사유를 댈 수 없는 벤더에서도 빠진다 — 그래서 벤더마다 사유를 적는다(H2).
+     */
+    static List<String> vendorExclusionProblems(JsonNode tests) {
+        List<String> problems = new ArrayList<>();
+        for (JsonNode entry : tests) {
+            String test = entry.path("test").asString();
+            if (entry.has("postgresqlOnly")) {
+                problems.add(test + ": postgresqlOnly 는 벤더를 가리지 않아 쓰지 않는다. vendorExclusions 에 뺄 벤더와 사유를 적는다");
+            }
+            for (JsonNode excluded : entry.path("vendorExclusions")) {
+                if (excluded.path("method").asString("").isBlank()) {
+                    problems.add(test + ": 뺄 시험 이름이 없다");
+                }
+                if ("replacement".equals(entry.path("category").asString())) {
+                    problems.add(test + ": 대체 분류는 벤더에서 돌지 않는다");
+                }
+                if (!excluded.path("vendors").isObject() || excluded.path("vendors").isEmpty()) {
+                    problems.add(test + ": 뺄 벤더가 없다 " + excluded);
+                }
+                excluded.path("vendors").properties().forEach(vendor -> {
+                    if (!EXCLUDABLE_VENDORS.contains(vendor.getKey())) {
+                        problems.add(test + ": 벤더 실행이 없는 벤더 " + vendor.getKey());
+                    }
+                    if (vendor.getValue().asString("").isBlank()) {
+                        problems.add(test + ": " + vendor.getKey() + " 에서 빼는 사유가 없다");
+                    }
+                });
+            }
+        }
+        return problems;
     }
 
     @ParameterizedTest(name = "{0}")

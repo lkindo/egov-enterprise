@@ -83,12 +83,12 @@ class ProtectedAccountAdministrationIntegrationTest {
         otherDepartment = fixture + "E";
         originalPassword = passwords.encode("Original-test-482!");
         for (String id : List.of(actor, target, ordinary)) {
-            jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
-                    + "VALUES(?,?,?,'D02 fixture','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))", id, login(id), originalPassword);
+            jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
+                    + "VALUES(?,?,?,'D02 fixture','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"), id, login(id), originalPassword);
         }
         for (String group : List.of(actorGroup, extraGroup, targetGroup)) {
-            jdbc.update("INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
-                    + "VALUES(?,'D02 fixture',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')", group);
+            jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_authrt_info(authrt_cd,authrt_nm,authrt_crt_ymd,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "
+                    + "VALUES(?,'D02 fixture',to_char(CURRENT_DATE,'YYYYMMDD'),CURRENT_TIMESTAMP,CURRENT_TIMESTAMP,'SYSTEM','SYSTEM')"), group);
         }
         for (String id : List.of(department, otherDepartment)) {
             jdbc.update("INSERT INTO tb_ognz_info(ognz_id,ognz_nm,crt_dt,mdfcn_dt,frst_rgtr_id,last_mdfr_id) "

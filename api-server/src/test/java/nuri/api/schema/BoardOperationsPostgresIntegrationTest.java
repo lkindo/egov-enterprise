@@ -103,8 +103,8 @@ class BoardOperationsPostgresIntegrationTest {
         String suffix = UUID.randomUUID().toString().replace("-", "").substring(0, 12).toUpperCase();
         bbsId = "BBSOPS_" + suffix;
         author = "BOS" + suffix;
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'board operations fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,user_nm,pswd,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'board operations fixture','!authentication-disabled!','P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),
                 author, author);
         jdbc.update("INSERT INTO tb_bbs_master (bbs_id, bbs_ttl, bbs_type_cd, bbs_atrb_cd, atch_psblty_file_qty,"
                 + " file_atch_psblty_yn, use_yn) VALUES (?, '운영 질의 검증', 'BBST01', 'BBSA02', 0, 'N', 'Y')", bbsId);
@@ -314,7 +314,7 @@ class BoardOperationsPostgresIntegrationTest {
             assertThat(contenderCount.get()).as("후행 취소는 줄이지 않고 지금 수를 돌려준다").isEqualTo(5);
             assertThat(waits).as("후행 취소는 실제 DB 잠금을 기다렸다").isNotEmpty();
             assertThat(waits.getFirst().statement()).as("후행 취소가 기다린 문장은 추천 이력 DELETE 다")
-                    .contains("delete from tb_bbs_rcmdtn_hstry");
+                    .startsWith("delete ").contains("from tb_bbs_rcmdtn_hstry "); // MySQL 계열 방언은 delete br1_0 from 표 br1_0 꼴로 쓴다
             assertThat(waits.getFirst().blockers()).as("후행을 막은 것은 선행 취소다").contains(leadingPid.get());
         }
         assertThat(jdbc.queryForObject("SELECT like_cnt FROM tb_bbs_item WHERE pst_sn = ?", Integer.class, post))

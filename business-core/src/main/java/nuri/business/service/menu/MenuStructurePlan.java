@@ -49,6 +49,8 @@ final class MenuStructurePlan {
     private final Map<String, MenuGroupGrantChange> grants = new TreeMap<>();
 
     private final Map<Long, Long> finalParents = new HashMap<>();
+    /** 지울 메뉴 → 잠근 행의 상위. 지울 메뉴는 옮길 수 없어 지울 때의 상위와 같다. */
+    private final Map<Long, Long> deletionParents = new HashMap<>();
     private final Map<Long, Long> moved = new TreeMap<>();
     private final Map<Long, String> names = new HashMap<>();
     private final List<String> creationOrder = new ArrayList<>();
@@ -184,6 +186,7 @@ final class MenuStructurePlan {
         });
         properties.keySet().forEach(id -> requireExisting(id.toString(), current));
         deletions.forEach(id -> requireExisting(id.toString(), current));
+        deletions.forEach(id -> deletionParents.put(id, current.get(id)));
         grants.values().forEach(change -> {
             change.navigationAdd().forEach(ref -> requireExisting(ref, current));
             change.navigationRemove().forEach(id -> requireExisting(id.toString(), current));
@@ -315,6 +318,29 @@ final class MenuStructurePlan {
 
     List<Long> deletions() {
         return List.copyOf(deletions);
+    }
+
+    /**
+     * 지울 메뉴를 하위부터 — 삭제 집합 안의 조상이 많은 것부터, 같으면 번호 순이다. 번호 순은 깊이 순이 아니다(옮긴 메뉴는 상위보다
+     * 번호가 작을 수 있다). 잠근 행으로 계산하므로 {@link #resolveAgainst} 뒤에만 부른다.
+     */
+    List<Long> deletionsChildFirst() {
+        if (!deletionParents.keySet().containsAll(deletions)) {
+            throw new IllegalStateException("삭제 순서는 잠근 행을 읽은 뒤에 정한다");
+        }
+        var levels = new HashMap<Long, Integer>();
+        for (Long id : deletions) {
+            int level = 0;
+            var seen = new HashSet<Long>();
+            for (Long parent = deletionParents.get(id); parent != null && deletions.contains(parent) && seen.add(parent);
+                    parent = deletionParents.get(parent)) {
+                level++;
+            }
+            levels.put(id, level);
+        }
+        return deletions.stream()
+                .sorted(Comparator.<Long>comparingInt(levels::get).reversed().thenComparing(Comparator.naturalOrder()))
+                .toList();
     }
 
     boolean hasGrants() {

@@ -1,5 +1,10 @@
 package nuri.foundation.core.exception;
 
+import nuri.foundation.core.persistence.MariaDbSqlDialect;
+import nuri.foundation.core.persistence.MySqlSqlDialect;
+import nuri.foundation.core.persistence.OracleSqlDialect;
+import nuri.foundation.core.persistence.VendorSqlConfig;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import nuri.foundation.core.response.ApiResponse;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -27,6 +32,10 @@ import static org.mockito.Mockito.when;
 class GlobalExceptionHandlerTest {
 
     private final GlobalExceptionHandler handler = new GlobalExceptionHandler();
+    // 오류 번호 표는 활성 벤더 것만 쓴다(ADR-0047). 벤더마다 그 벤더의 처리기로 대조한다.
+    private final GlobalExceptionHandler oracle = new GlobalExceptionHandler(new OracleSqlDialect().errorCodes());
+    private final GlobalExceptionHandler mariadb = new GlobalExceptionHandler(new MariaDbSqlDialect().errorCodes());
+    private final GlobalExceptionHandler mysql = new GlobalExceptionHandler(new MySqlSqlDialect().errorCodes());
 
     @Test
     @DisplayName("[W1-04] 미매핑 경로(NoHandlerFoundException)는 500 이 아니라 404")
@@ -429,20 +438,20 @@ class GlobalExceptionHandlerTest {
     @org.junit.jupiter.params.provider.ValueSource(ints = {2290, 1400, 1407, 12899, 1438, 1722, 1858, 1861})
     @DisplayName("Oracle 은 SQLState 가 23000 으로 같아 오류 번호로 입력 오류를 가른다")
     void oracleInvalidValuesAreBadRequestsThroughMvc(int code) throws Exception {
-        assertDatabaseResponse(oracleViolation(code), 400, "C001", null);
+        assertDatabaseResponse(oracle, oracleViolation(code), 400, "C001", null);
     }
 
     @Test
     @DisplayName("Oracle 길이 초과는 드라이버가 72000 으로 올려 일반 데이터 접근 예외로 오지만 입력 오류다")
     void oracleValueTooLargeThroughTheGenericPathIsABadRequest() throws Exception {
-        assertDatabaseResponse(new org.springframework.orm.jpa.JpaSystemException(new RuntimeException(
+        assertDatabaseResponse(oracle, new org.springframework.orm.jpa.JpaSystemException(new RuntimeException(
                 new java.sql.SQLException("private-database-detail", "72000", 12899))), 400, "C001", null);
     }
 
     @Test
     @DisplayName("Oracle 숫자 변환 실패는 문법 오류 계열(42000)로 오지만 입력 오류다")
     void oracleInvalidNumberThroughTheGrammarPathIsABadRequest() throws Exception {
-        assertDatabaseResponse(new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
+        assertDatabaseResponse(oracle, new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
                 "SELECT 1", new java.sql.SQLSyntaxErrorException("private-database-detail", "42000", 1722)),
                 400, "C001", null);
     }
@@ -450,7 +459,7 @@ class GlobalExceptionHandlerTest {
     @Test
     @DisplayName("Oracle 의 진짜 문법 오류는 입력 오류로 가리지 않는다")
     void oracleBadSqlRemainsAServerError() throws Exception {
-        assertDatabaseResponse(new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
+        assertDatabaseResponse(oracle, new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
                 "SELECT 1", new java.sql.SQLSyntaxErrorException("private-database-detail", "42000", 904)),
                 500, "C004", null);
     }
@@ -459,20 +468,20 @@ class GlobalExceptionHandlerTest {
     @org.junit.jupiter.params.provider.ValueSource(ints = {1, 2291, 2292})
     @DisplayName("Oracle 의 중복·FK 위반은 409 다")
     void oracleDuplicatesAreConflictsThroughMvc(int code) throws Exception {
-        assertDatabaseResponse(oracleViolation(code), 409, "C008", null);
+        assertDatabaseResponse(oracle, oracleViolation(code), 409, "C008", null);
     }
 
     @Test
     @DisplayName("SQLState 가 무결성 계열이 아닌 Oracle 중복도 500 으로 빠지지 않는다")
     void oracleDuplicateWithoutIntegrityStateIsAConflictThroughMvc() throws Exception {
-        assertDatabaseResponse(new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
+        assertDatabaseResponse(oracle, new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
                 new java.sql.SQLException("private-database-detail", "72000", 1)), 409, "C008", null);
     }
 
     @Test
     @DisplayName("Oracle 의 다른 내부 오류는 입력 오류로 가리지 않는다")
     void oracleInternalFailureRemainsAServerErrorThroughMvc() throws Exception {
-        assertDatabaseResponse(new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
+        assertDatabaseResponse(oracle, new org.springframework.dao.DataIntegrityViolationException("private-database-detail",
                 new java.sql.SQLException("private-database-detail", "72000", 600)), 500, "C004", null);
     }
 
@@ -480,15 +489,140 @@ class GlobalExceptionHandlerTest {
     @org.junit.jupiter.params.provider.ValueSource(ints = {54, 30006, 60, 8177})
     @DisplayName("Oracle 의 대기 초과·교착·직렬화 실패는 재시도를 안내하는 409 다")
     void oracleLockFailuresAreConflictsThroughMvc(int code) throws Exception {
-        assertDatabaseResponse(new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null,
+        assertDatabaseResponse(oracle, new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null,
                 new java.sql.SQLException("private-database-detail", "61000", code)), 409, "C013", null);
     }
 
     @Test
     @DisplayName("Oracle 의 문장 취소는 일시 불가다")
     void oracleCancelledStatementIsUnavailableThroughMvc() throws Exception {
-        assertDatabaseResponse(new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null,
+        assertDatabaseResponse(oracle, new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null,
                 new java.sql.SQLException("private-database-detail", "72000", 1013)), 503, "S002", "5");
+    }
+
+    // ── 벤더 오류 번호는 그 벤더에서만 뜻이 있다(ADR-0047) ──────────────────────────────────────────
+    // 아래 SQLState·번호는 MariaDB 11.4·MySQL 8.4 드라이버가 실제로 올린 값이다(단계 3 실측). 드라이버가 SQLState 를 바꾸는
+    // MySQL(1205→40001, 1264→22001)과 HY000 으로 오는 CHECK·잠금 대기 때문에 SQLState 만으로는 PostgreSQL 과 같은 응답이 안 나온다.
+
+    private static java.sql.SQLException vendorFailure(String sqlState, int code) {
+        return new java.sql.SQLException("private-database-detail", sqlState, code);
+    }
+
+    /** JPA 경로 — Hibernate 가 무결성 위반으로 번역한다. */
+    private static org.springframework.dao.DataIntegrityViolationException violation(String sqlState, int code) {
+        return new org.springframework.dao.DataIntegrityViolationException("private-database-detail", vendorFailure(sqlState, code));
+    }
+
+    /** JdbcTemplate 경로 — 기본 변환기가 분류하지 못한 SQLState(HY000 등)는 이 예외로 온다. */
+    private static org.springframework.jdbc.UncategorizedSQLException uncategorized(String sqlState, int code) {
+        return new org.springframework.jdbc.UncategorizedSQLException("private-database-detail", null, vendorFailure(sqlState, code));
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"23000,4025", "23000,1048", "HY000,1364"})
+    @DisplayName("MariaDB 의 CHECK·NOT NULL·기본값 없음은 409·500 이 아니라 입력 오류다")
+    void mariaDbConstraintViolationsAreBadRequests(String state, int code) throws Exception {
+        assertDatabaseResponse(mariadb, violation(state, code), 400, "C001", null);
+        assertDatabaseResponse(mariadb, uncategorized(state, code), 400, "C001", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"HY000,3819", "23000,1048", "HY000,1364", "HY000,1366"})
+    @DisplayName("MySQL 의 CHECK·NOT NULL·기본값 없음·형식은 입력 오류다 — CHECK 는 HY000 이라 SQLState 로는 500 이었다")
+    void mySqlConstraintViolationsAreBadRequests(String state, int code) throws Exception {
+        assertDatabaseResponse(mysql, violation(state, code), 400, "C001", null);
+        assertDatabaseResponse(mysql, uncategorized(state, code), 400, "C001", null);
+    }
+
+    @Test
+    @DisplayName("MySQL 의 0 나누기(1365)는 Connector/J 가 22001 로 올려도 입력 오류가 아니라 서버 결함(500)이다 — 진짜 길이 초과는 400 이다")
+    void mySqlDivisionByZeroIsAServerFaultDespiteTheTruncationState() throws Exception {
+        assertDatabaseResponse(mysql, violation("22001", 1365), 500, "C004", null);
+        assertDatabaseResponse(mysql, violation("22001", 1406), 400, "C001", null);
+        assertDatabaseResponse(handler, violation("22001", 1365), 400, "C001", null);
+    }
+
+    @Test
+    @DisplayName("MariaDB 의 형식 오류(1366)는 문법 오류 계열(22007)로 오지만 입력 오류다")
+    void mariaDbIncorrectValueThroughTheGrammarPathIsABadRequest() throws Exception {
+        assertDatabaseResponse(mariadb, new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
+                "INSERT 1", new java.sql.SQLSyntaxErrorException("private-database-detail", "22007", 1366)), 400, "C001", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"mariadb", "mysql"})
+    @DisplayName("MySQL·MariaDB 의 잠금 대기 초과(1205 HY000)는 JdbcTemplate 이 분류하지 못해도 500 이 아니라 409 다")
+    void innoDbLockWaitTimeoutThroughJdbcTemplateIsAConflict(String vendor) throws Exception {
+        GlobalExceptionHandler innoDb = "mysql".equals(vendor) ? mysql : mariadb;
+        assertDatabaseResponse(innoDb, uncategorized("HY000", 1205), 409, "C013", null);
+        assertDatabaseResponse(innoDb, uncategorized("HY000", 1213), 409, "C013", null);
+        assertDatabaseResponse(handler, uncategorized("HY000", 1205), 500, "C004", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(ints = {3572, 3024})
+    @DisplayName("MySQL 의 NOWAIT 거부와 잠금 문장의 실행 시간 상한은 409 다")
+    void mySqlNoWaitAndLockStatementDeadlineAreConflicts(int code) throws Exception {
+        assertDatabaseResponse(mysql, uncategorized("HY000", code), 409, "C013", null);
+        assertDatabaseResponse(mariadb, uncategorized("HY000", code), 500, "C004", null);
+    }
+
+    @Test
+    @DisplayName("MariaDB 의 문장 시간 초과(1969)는 일시 불가다")
+    void mariaDbStatementTimeoutIsUnavailable() throws Exception {
+        assertDatabaseResponse(mariadb, uncategorized("70100", 1969), 503, "S002", "5");
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.CsvSource({"1062", "1451", "1452"})
+    @DisplayName("MySQL·MariaDB 의 중복·FK 위반은 SQLState 23000 이 그대로 409 로 가른다")
+    void innoDbDuplicatesAndForeignKeysStayConflicts(int code) throws Exception {
+        assertDatabaseResponse(mariadb, violation("23000", code), 409, "C008", null);
+        assertDatabaseResponse(mysql, violation("23000", code), 409, "C008", null);
+    }
+
+    @org.junit.jupiter.params.ParameterizedTest
+    @org.junit.jupiter.params.provider.ValueSource(strings = {"mariadb", "mysql", "postgresql"})
+    @DisplayName("Oracle 의 번호는 다른 벤더에서 입력 오류·잠금·취소로 읽지 않는다 — MySQL·MariaDB 의 1400·1722·1013 은 XA·바이너리 로그·통계 오류다")
+    void oracleNumbersDoNotApplyToOtherVendors(String vendor) throws Exception {
+        GlobalExceptionHandler other = switch (vendor) {
+            case "mariadb" -> mariadb;
+            case "mysql" -> mysql;
+            default -> handler;
+        };
+        assertDatabaseResponse(other, oracleViolation(1400), 409, "C008", null);
+        assertDatabaseResponse(other, new org.springframework.jdbc.BadSqlGrammarException("private-database-detail",
+                "SELECT 1", new java.sql.SQLSyntaxErrorException("private-database-detail", "42000", 1722)), 500, "C004", null);
+        assertDatabaseResponse(other, uncategorized("HY000", 1013), 500, "C004", null);
+        assertDatabaseResponse(other, uncategorized("HY000", 60), 500, "C004", null);
+        assertDatabaseResponse(other, violation("72000", 1), 500, "C004", null);
+    }
+
+    @Test
+    @DisplayName("MySQL 의 번호는 MariaDB 에서, MariaDB 의 번호는 MySQL 에서 쓰지 않는다")
+    void innoDbVendorsDoNotShareTheirOwnNumbers() throws Exception {
+        assertDatabaseResponse(mariadb, violation("HY000", 3819), 500, "C004", null);
+        assertDatabaseResponse(mysql, uncategorized("70100", 1969), 500, "C004", null);
+    }
+
+    @Test
+    @DisplayName("스프링이 만든 처리기는 활성 벤더 포트의 표를 쓰고, 포트가 없는 조각 컨텍스트는 SQLState 로만 가른다")
+    void springWiresTheActiveVendorTable() {
+        new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                .withUserConfiguration(VendorSqlConfig.class)
+                .withBean(GlobalExceptionHandler.class)
+                .withPropertyValues("app.database.vendor=mysql")
+                .run(context -> assertEquals(HttpStatus.BAD_REQUEST, context.getBean(GlobalExceptionHandler.class)
+                        .handleDataIntegrityViolation(violation("HY000", 3819)).getStatusCode()));
+        new org.springframework.boot.test.context.runner.ApplicationContextRunner()
+                .withBean(GlobalExceptionHandler.class)
+                .run(context -> assertEquals(HttpStatus.INTERNAL_SERVER_ERROR, context.getBean(GlobalExceptionHandler.class)
+                        .handleDataIntegrityViolation(violation("HY000", 3819)).getStatusCode()));
+
+        var factory = new org.springframework.beans.factory.support.DefaultListableBeanFactory();
+        factory.registerSingleton("vendorSqlDialect", new MariaDbSqlDialect());
+        var wired = new GlobalExceptionHandler(null, factory.getBeanProvider(VendorSqlDialect.class));
+        assertEquals(HttpStatus.BAD_REQUEST, wired.handleDataIntegrityViolation(violation("23000", 4025)).getStatusCode());
     }
 
     @Test
@@ -520,8 +654,13 @@ class GlobalExceptionHandlerTest {
 
     private void assertDatabaseResponse(RuntimeException failure, int status, String code, String retryAfter)
             throws Exception {
+        assertDatabaseResponse(handler, failure, status, code, retryAfter);
+    }
+
+    private void assertDatabaseResponse(GlobalExceptionHandler advice, RuntimeException failure, int status, String code,
+            String retryAfter) throws Exception {
         var mvc = org.springframework.test.web.servlet.setup.MockMvcBuilders
-                .standaloneSetup(new DatabaseFailureProbeController(failure)).setControllerAdvice(handler).build();
+                .standaloneSetup(new DatabaseFailureProbeController(failure)).setControllerAdvice(advice).build();
         var response = mvc.perform(org.springframework.test.web.servlet.request.MockMvcRequestBuilders
                 .post("/database-probe")).andReturn().getResponse();
         assertEquals(status, response.getStatus());

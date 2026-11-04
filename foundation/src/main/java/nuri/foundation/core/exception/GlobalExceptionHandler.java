@@ -1,9 +1,12 @@
 package nuri.foundation.core.exception;
 
 
+import nuri.foundation.core.persistence.VendorErrorCodes;
+import nuri.foundation.core.persistence.VendorSqlDialect;
 import nuri.foundation.core.response.ApiResponse;
 import nuri.foundation.core.storage.StorageObjectMissingException;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.MessageSource;
 import org.springframework.context.i18n.LocaleContextHolder;
@@ -18,6 +21,7 @@ import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.method.annotation.HandlerMethodValidationException;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 /**
@@ -38,13 +42,23 @@ public class GlobalExceptionHandler {
 
     private final MessageSource messageSource;
 
+    /** 활성 벤더의 오류 번호 표. 번호의 뜻이 벤더마다 달라 다른 벤더의 표는 쓰지 않는다(ADR-0047). */
+    private final VendorErrorCodes errorCodes;
+
     /**
      * 프레임워크(Spring) 기본 생성 경로 — MessageSource(EgovMessageConfig 정의)를 주입받아
      * ErrorCode.code 키로 Accept-Language 기반 로케일 메시지를 해석한다.
+     * 벤더 포트가 없는 조각 컨텍스트(@WebMvcTest 등)는 기본 벤더인 PostgreSQL 처럼 SQLState 로만 가른다.
      */
     @Autowired
+    public GlobalExceptionHandler(MessageSource messageSource, ObjectProvider<VendorSqlDialect> vendorSql) {
+        this(messageSource, Optional.ofNullable(vendorSql.getIfAvailable()).map(VendorSqlDialect::errorCodes)
+                .orElse(VendorErrorCodes.NONE));
+    }
+
+    /** 벤더 표 없이 SQLState 로만 가른다. */
     public GlobalExceptionHandler(MessageSource messageSource) {
-        this.messageSource = messageSource;
+        this(messageSource, VendorErrorCodes.NONE);
     }
 
     /**
@@ -52,7 +66,17 @@ public class GlobalExceptionHandler {
      * 이 경로에서는 i18n 해석을 건너뛰고 ErrorCode 기본 메시지(영문)/기본 문자열로 폴백한다.
      */
     public GlobalExceptionHandler() {
-        this.messageSource = null;
+        this(null, VendorErrorCodes.NONE);
+    }
+
+    /** 벤더 DB 위 standalone 시험이 그 벤더의 표로 응답을 대조할 때 쓴다. */
+    public GlobalExceptionHandler(VendorErrorCodes errorCodes) {
+        this(null, errorCodes);
+    }
+
+    private GlobalExceptionHandler(MessageSource messageSource, VendorErrorCodes errorCodes) {
+        this.messageSource = messageSource;
+        this.errorCodes = java.util.Objects.requireNonNull(errorCodes, "errorCodes");
     }
 
     /**
@@ -205,23 +229,25 @@ public class GlobalExceptionHandler {
         return connectionUnavailableResponse();
     }
 
-    /** JDBC 기본 변환기가 분류하지 않은 PostgreSQL 잠금 실패도 같은 동시성 계약을 따른다. */
+    /** JDBC 기본 변환기가 분류하지 않은 PostgreSQL 잠금 실패와 벤더 번호의 잠금 실패도 같은 동시성 계약을 따른다. */
     @ExceptionHandler(org.springframework.dao.DataAccessException.class)
     protected ResponseEntity<ApiResponse<Void>> handleUnclassifiedDataAccess(org.springframework.dao.DataAccessException e) {
         String sqlState = extractSqlState(e);
-        // Oracle 의 길이 초과(72000)·숫자 변환(42000)은 무결성 위반으로 번역되지 않아 이 경로로 온다.
-        if (ORACLE_INVALID_VALUES.contains(extractVendorCode(e))) {
+        int vendorCode = extractVendorCode(e);
+        // Oracle 의 길이 초과(72000)·숫자 변환(42000), MySQL·MariaDB 의 CHECK·기본값 없음·형식(HY000·22007)은
+        // 무결성 위반으로 번역되지 않아 이 경로로 온다.
+        if (errorCodes.invalidValues().contains(vendorCode)) {
             log.warn(">>> Rejected database value: {} SQLState={}", e.getClass().getSimpleName(), sqlState);
             return invalidValueResponse();
         }
         log.error(">>> Unclassified database failure: {} SQLState={}", e.getClass().getSimpleName(), sqlState);
         if ("55P03".equals(sqlState) || "40001".equals(sqlState) || "40P01".equals(sqlState)
-                || ORACLE_LOCK_FAILURES.contains(extractVendorCode(e))) {
+                || errorCodes.lockFailures().contains(vendorCode)) {
             return ResponseEntity.status(HttpStatus.CONFLICT)
                     .body(ApiResponse.error(CommonErrorCode.CONCURRENT_MODIFICATION,
                             resolve(CommonErrorCode.CONCURRENT_MODIFICATION)));
         }
-        if ("57014".equals(sqlState) || extractVendorCode(e) == ORACLE_CANCELLED) {
+        if ("57014".equals(sqlState) || errorCodes.cancelled().contains(vendorCode)) {
             return connectionUnavailableResponse();
         }
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
@@ -251,14 +277,22 @@ public class GlobalExceptionHandler {
         //   불변식이 DB 에만 있고 API 응답 의미로 전파되지 않던 것(§2.D "불변식이 한 레이어에만 존재").
         //   DTO 56곳에 @Pattern 을 뿌리는 대신(AGENTS.md Evidence guardrails H4 일괄치환 회피) 여기서 SQLState 로 갈라
         //   CHECK/NOT NULL 은 400 으로 정정한다. UNIQUE/FK 는 종전대로 409(의미가 맞다).
+        //   Oracle·MySQL·MariaDB 는 CHECK·NOT NULL 의 SQLState 가 23000·HY000 이라 활성 벤더의 오류 번호로 가른다.
+        int vendorCode = extractVendorCode(e);
+        // 드라이버가 SQLState 를 입력 오류 계열로 바꿔 올리는 서버 계산 오류(MySQL 의 0 나누기 1365 → 22001)는 아래 분기보다 먼저 500 이다.
+        if (errorCodes.serverFaults().contains(vendorCode)) {
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
+                            resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
+        }
         if ("23514".equals(sqlState) || "23502".equals(sqlState)
                 || "22001".equals(sqlState) || "22003".equals(sqlState)
                 || "22007".equals(sqlState) || "22008".equals(sqlState) || "22P02".equals(sqlState)
-                || ORACLE_INVALID_VALUES.contains(extractVendorCode(e))) {
+                || errorCodes.invalidValues().contains(vendorCode)) {
             return invalidValueResponse();
         }
         // 22 전체를 입력 오류로 취급하면 0으로 나누기·시퀀스 고갈 같은 서버 결함을 감춘다.
-        if (sqlState != null && !sqlState.startsWith("23") && !ORACLE_DUPLICATES.contains(extractVendorCode(e))) {
+        if (sqlState != null && !sqlState.startsWith("23") && !errorCodes.duplicates().contains(vendorCode)) {
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.error(CommonErrorCode.INTERNAL_SERVER_ERROR,
                             resolve(CommonErrorCode.INTERNAL_SERVER_ERROR)));
@@ -276,14 +310,7 @@ public class GlobalExceptionHandler {
                         "허용되지 않는 값이 포함되어 있습니다. 입력값을 확인해 주십시오.")));
     }
 
-    /** Oracle 은 무결성 위반의 SQLState 가 모두 23000 이라 오류 번호로 나눈다. CHECK·NOT NULL·길이·형식은 입력 오류다. */
-    private static final java.util.Set<Integer> ORACLE_INVALID_VALUES = java.util.Set.of(2290, 1400, 1407, 12899, 1438, 1722, 1858, 1861);
-    private static final java.util.Set<Integer> ORACLE_DUPLICATES = java.util.Set.of(1, 2291, 2292);
-    /** 대기 초과(54·30006), 교착(60), 직렬화 실패(8177). */
-    private static final java.util.Set<Integer> ORACLE_LOCK_FAILURES = java.util.Set.of(54, 30006, 60, 8177);
-    private static final int ORACLE_CANCELLED = 1013;
-
-    /** 원인 체인의 벤더 오류 번호. 없으면 0 이다. */
+    /** 원인 체인의 벤더 오류 번호. 없으면 0 이다. 어느 표에도 0 은 없다. */
     private static int extractVendorCode(Throwable cause) {
         java.util.Set<Throwable> visited = java.util.Collections.newSetFromMap(new java.util.IdentityHashMap<>());
         for (Throwable t = cause; t != null && visited.add(t); t = t.getCause()) {

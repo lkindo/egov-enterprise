@@ -1,6 +1,6 @@
 # 프로젝트 생성기 다중 DB 설계
 
-- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1·2 완료. Oracle(23·19c)을 인증해 고를 수 있고, 다른 벤더는 아직 고를 수 없다(§16·§17)
+- 상태: 승인([ADR-0047](decisions/ADR-0047-multi-database-composer-and-vendor-sql-boundary.md)). 단계 0·1·2 완료, 단계 3 진행 중. Oracle(23·19c)을 인증해 고를 수 있다. MariaDB·MySQL 은 벤더 CI 잡에 들어갔고 인증 전이라 아직 고를 수 없다(§16·§17·§18)
 - 기준 커밋: 첫 실측 `a3a3b182f`, 수정안 실측 `ce06495c7`(V2_146까지 포함).
 - 실측: 2026-10-30~31, 이 기계의 일회용 컨테이너. 저장소 변경 없음.
 - 관련: [생성기 설계](project-composer-design.md) §6·§8 E, ADR-0020, ADR-0008, DEC-OPS-239·262·263
@@ -217,9 +217,9 @@ flowchart TD
 | 뒤 공백 | SQL Server 만 차이가 남는다. 저하 목록에 올린다 | 프로브 고정 |
 | 공유 행 잠금 | Oracle 에는 `FOR SHARE` 가 없어 Hibernate 가 공유 잠금을 `FOR UPDATE` 로 만든다. 같은 설문의 투표가 차례로 처리된다. 결과는 같고 동시 처리량만 다르다 | 동시성 시험 |
 | 빈 문자열 | Oracle·Tibero 는 `''` 가 NULL 이다. CHECK 의 `x <> ''` 는 NOT NULL 컬럼에서만 `x IS NOT NULL` 로 번역한다(현재 4개 모두 NOT NULL). NULL 허용 컬럼이면 정상 NULL 까지 거부하므로 그 항은 뺀다. `COALESCE(x, '') ~ p` 는 `x IS NOT NULL AND ...` 로 번역한다. 그냥 지우면 NULL 이 통과한다. 시드는 NULL 로 넣는다. NOT NULL 문자열 컬럼에 `""` 가 오면 400 으로 드러난다 | 통합 시험 |
-| 격리 수준 | MySQL·MariaDB 는 Hikari `READ_COMMITTED` 고정. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다. Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
-| NULL 순서 | `hibernate.order_by.default_null_ordering=last` 를 벤더 설정에 넣는다 | 정렬 시험 |
-| 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. 벤더별 표로 같은 응답을 낸다 | 벤더별 위반 시험 |
+| 격리 수준 | MySQL·MariaDB 는 `READ COMMITTED` 를 코드(`VendorSqlConfig`)가 연결 풀에 강제한다. 설정 파일에 두면 시험 문맥과 생성물 설정이 따로 놓쳐 서버 기본(`REPEATABLE READ`)이 된다. SQL Server 는 `READ_COMMITTED_SNAPSHOT ON` 을 기동 때 확인한다. Oracle 은 `REPEATABLE READ` 를 거부하므로 연결에서 `SERIALIZABLE` 로 바꾼다. 둘 다 스냅숏 격리이고 쓰기 충돌은 재시도 오류로 끝난다(40001, ORA-08177) | 동시성 시험 |
+| NULL 순서 | 맞추지 않는다. PostgreSQL·Oracle 은 NULL 을 가장 큰 값으로, MySQL·MariaDB 는 가장 작은 값으로 정렬한다. 처음 적은 `hibernate.order_by.default_null_ordering=last` 는 오름차순만 맞추고 내림차순을 PostgreSQL 과 반대로 만들어 넣지 않았다(2026-11-04 단계 3 결정). §6.1 의 한계로 둔다 | - |
+| 오류 분류 | 409·400 분기가 SQLState 에 묶여 있다. SQLState 로 갈리지 않는 벤더는 오류 번호 표(`VendorSqlDialect.errorCodes()`)로 같은 응답을 낸다. 번호 표는 그 벤더에서만 쓴다 — Oracle 번호(1400·1722 등)가 MySQL·MariaDB 의 다른 오류 번호와 겹친다(단계 3 실측). 드라이버가 SQLState 를 바꿔 올리는 서버 오류(MySQL 의 0 나누기 1365 → 22001)는 번호로 먼저 500 으로 가른다 | 벤더별 위반 시험 |
 | JSON | Oracle 은 19c 기준 CLOB + `IS JSON` 과 Hibernate 매핑을 맞춘다. 23 계열 기능에 기대지 않는다 | 스키마 검증 |
 | UUID·시각 | 저장 범위가 같으면 DDL 을 Hibernate 벤더 기본 매핑에 맞추고, 다르면 ORM 매핑을 바꾼다. 시각은 시간대 없는 컬럼에 한국 벽시계 값으로 저장하고 엔티티는 `LocalDateTime` 이다(DEC-OPS-396). `Instant` 를 매핑하면 Oracle 드라이버가 읽기를 거부한다(ORA-18716) | 스키마 검증, 재로그인 |
 | CLOB 비교 | Oracle 의 CLOB 은 `<>` 로 비교할 수 없고(ORA-22848) `COALESCE(clob, '')` 도 형이 맞지 않는다(ORA-00932). JPQL 은 `function('text_differs', a, b)` 를 쓰고 `COALESCE` 를 뺀다. 네이티브 조회의 CLOB 은 방언이 문자열로 읽는다 | 콘텐츠 페이지 목록·검색 |
@@ -254,7 +254,8 @@ flowchart TD
 | 독립 UNIQUE 인덱스(NULL 허용 키) | SQL Server | 유일 제약처럼 `WHERE … IS NOT NULL` 로 걸러 NULL 이 든 행을 여럿 받는다. 부분 인덱스면 그 조건 뒤에 붙인다(지금 스키마에는 없다. 실측하지 않았다) |
 | 접두로 잘라야 하는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | MySQL, MariaDB | 번역을 멈춘다. 접두는 앞부분이 같은 정상 값을 거부하고, 식 인덱스의 번역(함수 키·계산 컬럼)은 유일하지 않다. 유일하지 않은 인덱스는 지금처럼 접두로 둔다(지금 스키마에는 없다) |
 | 1,700바이트를 넘는 UNIQUE 인덱스, 식 UNIQUE 인덱스 | SQL Server | 번역을 멈춘다. 인덱스를 빼거나 긴 컬럼을 INCLUDE 로 옮기면 유일성이 사라진다. 유일하지 않은 인덱스는 지금처럼 빼거나 INCLUDE 로 둔다(지금 스키마에는 없다) |
-| 위 두 줄의 키 바이트 어림 | MySQL, MariaDB, SQL Server | 문자열만 실제 크기(MySQL 4바이트, SQL Server 2바이트 × 글자 수)로 세고 다른 타입은 모두 8바이트로 센다. 그래서 한계 직전의 정상 키(MySQL `VARCHAR(767)` + `INT`, SQL Server `NVARCHAR(847)` + `INT`)도 멈추고, MySQL 의 `CHAR(36)` UUID 는 적게 센다. 지금 스키마에는 닿는 키가 없다. 각 벤더를 승격할 때 물리 타입별 크기로 바꾸고 한계 직전·직후를 실측한다 |
+| 위 두 줄의 키 바이트 어림 | MySQL, MariaDB | 물리 타입별 크기로 센다(2026-11-04 실측: 문자열 글자당 4, `INT` 4, `BIGINT` 8, `DATE` 3, `DATETIME(p)` 5~8, `DECIMAL` 9자리마다 4, UUID 16). 한계 직전(`VARCHAR(767)` + `INT`)은 그대로 받고 직후는 해시 유니크·접두 인덱스로, 그래도 넘으면 번역을 멈춘다. 복합 접두는 합이 3,072바이트 안에 들게 자른다 |
+| 같은 어림 | SQL Server | 문자열만 실제 크기(2바이트 × 글자 수)로 세고 다른 타입은 모두 8바이트로 센다. 한계 직전의 정상 키(`NVARCHAR(847)` + `INT`)도 멈춘다. 지금 스키마에는 닿는 키가 없다. 승격할 때 물리 타입별 크기로 바꾸고 한계 직전·직후를 실측한다 |
 | GIN `ix_tb_web_log_url_trgm` | 전 벤더 | 뺀다. 결과는 같고 URL 부분 검색만 느려진다. 기간 조건과 함께 쓰며 저하로 표시 |
 | DEFERRABLE 자기 참조 FK | Oracle 외 | 시드는 부모 먼저. [MenuService.java:429](../../business-core/src/main/java/nuri/business/service/menu/MenuService.java) 는 자식부터 지우도록 원본을 고친다 |
 | V2_145 동기화 트리거 2개 | 전 벤더 | 번역해 적용·동작 확인. 이행 전용이고 새 프로젝트에는 옛 데이터가 없으므로, Contract 뒤에는 입력에서 사라진다. 어댑터가 모르는 트리거가 생기면 `VENDOR_TRANSLATION_GAP` 으로 멈추는 것이 맞다는 실례다 |
@@ -274,9 +275,12 @@ flowchart TD
 | SQL Server | 인덱스 키 1,700바이트 | 엔진 상한 | 긴 컬럼 키는 해시·INCLUDE 로 우회 |
 | SQL Server | 필터 유일 인덱스는 FK 대상이 못 된다 | 엔진 규칙 | `domain_name` 은 UNIQUE 유지, NULL 1행 제한 |
 | MySQL·MariaDB | FK 를 지연 검사할 수 없다, 부분 인덱스가 없다 | 엔진 기능 부재 | 쓰는 순서를 원본에서 맞춘다. 부분 인덱스는 성능 저하 |
-| MySQL | 앱 계정 트리거 생성에 서버 설정이나 높은 권한이 필요 | 바이너리 로그 안전 규칙 | 도입 조건으로 문서화 |
-| MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 복구 절차(남은 객체 삭제와 Flyway 실패 행 정리)와 일회용 DB 선행 적용은 벤더 생성물 README 의 '생성 뒤 스키마 변경' 절에 둔다. 소스 투영이 아직 Oracle 에만 있어 그 절도 Oracle 만 적고, MySQL·MariaDB 는 투영을 열 때 더한다 |
-| CUBRID | CHECK 를 엔진이 집행하지 않는다 | 파서만 받고 무시 | 트리거로 대체하되 쓰기마다 평가한다. 시드 18,143행이 21초(트리거 없음, ISO 문자 집합)에서 34~52초가 됐다. 정밀 측정은 아니다 |
+| MySQL | 앱 계정 트리거 생성에 서버 설정이나 높은 권한이 필요 | 바이너리 로그 안전 규칙(8.4 는 기본으로 켜져 있다) | `log_bin_trust_function_creators=1` 이 없으면 기준선의 트리거가 1419 로 멈춘다. 생성물 README·개발 compose·검증 컨테이너에 둔다 |
+| MySQL·MariaDB·Oracle | DDL 이 자동 커밋이다 | 엔진 동작 | 실패한 마이그레이션이 반쯤 남는다. 복구 절차(남은 객체 삭제와 Flyway 실패 행 정리)와 일회용 DB 선행 적용은 벤더 생성물 README 의 '생성 뒤 스키마 변경' 절에 둔다 |
+| MySQL·MariaDB | NULL 정렬 순서가 다르다 | NULL 을 가장 작은 값으로 본다 | NULL 이 들 수 있는 정렬 키의 화면 순서가 PostgreSQL 과 다를 수 있다(오름차순 맨 앞). 내림차순까지 맞추는 Hibernate 설정이 없다(§5) |
+| MySQL | 시퀀스가 없다 | 엔진 기능 부재 | Hibernate 와 같은 이름의 `next_val` 표로 흉내 낸다. 컬럼 기본값이 없어 DB 에서 키 없이 넣는 INSERT 는 1364 로 멈춘다. 앱은 Hibernate 가 같은 표에서 키를 받는다 |
+| MySQL | 잠금 조회 하나에만 대기 상한을 걸 수 없다 | Hibernate 의 MySQL 방언이 잠금 조회에 대기를 싣지 못하고, `innodb_lock_wait_timeout` 은 `SET_VAR` 힌트를 받지 않는다 | 접속 인자로 세션의 모든 행 잠금 대기를 앱의 잠금 조회 상한(5초)에 묶는다. PostgreSQL 은 잠금 조회만 묶는다 |
+| MySQL·MariaDB | 세션 시간대가 접속 인자 하나에 기댄다 | 서버 기본이 UTC 일 수 있고, 시간대 이름은 시간대 표가 있어야 한다 | 접속 인자 `time_zone='+09:00'` 로 두고, 앱이 기동할 때 세션 시계가 +09:00 인지와 서버가 설정한 벤더인지 본다 || CUBRID | CHECK 를 엔진이 집행하지 않는다 | 파서만 받고 무시 | 트리거로 대체하되 쓰기마다 평가한다. 시드 18,143행이 21초(트리거 없음, ISO 문자 집합)에서 34~52초가 됐다. 정밀 측정은 아니다 |
 | CUBRID | 트리거 조건이 NULL 이면 결과가 번갈아 바뀐다 | 같은 입력이 거부·허용·거부로 나왔다 | 모든 조건을 NULL 없는 위반식으로 만든다. `IS FALSE` 는 평가 오류 |
 | CUBRID | JSON 형식을 DB 가 보장하지 못한다 | `JSON` 타입 + UPDATE 트리거는 클라이언트가 종료된다. 트리거 안 JSON 함수는 평가 오류 | `STRING` + 첫 글자 검사. 깨진 JSON 은 앱이 막는다 |
 | CUBRID | 시각이 밀리초다, `SKIP LOCKED` 가 없다, `DEFAULT` 에 UUID·시퀀스를 못 쓴다 | 엔진 기능 부재 | 값은 앱이 채운다. 작업 선점은 상태 CAS 로 처리량이 줄어든다 |
@@ -523,7 +527,7 @@ schema-validation 시험 132개 클래스의 처리는 다음과 같다. Oracle 
 
 | 분류 | 클래스 | 처리 |
 |---|---:|---|
-| 시나리오 시험 | 51 | 시험 399건이 Oracle 23·19c 에서 통과한다. 3건은 원장의 `postgresqlOnly` 로 뺀다 |
+| 시나리오 시험 | 51 | 시험 399건이 Oracle 23·19c 에서 통과한다. 3건은 원장의 벤더별 제외(`vendorExclusions`, 단계 3 전에는 벤더를 가리지 않는 `postgresqlOnly`)로 뺀다 |
 | V2 체인이나 PostgreSQL 카탈로그를 직접 단언하는 시험 | 77 | 벤더 프로젝트는 기준선에서 시작한다. 번역 대조·차등 시험이 대신한다. 이 가운데 `ScrapOwnerUrlUniqueMigrationIntegrationTest` 의 부분 NULL 조건 모양은 어댑터 문장을 고정하는 노드 시험만 보고, 벤더 DB 에 부분 NULL 행을 넣는 시험은 없다 |
 | Flyway 이력과 PostgreSQL 카탈로그를 보는 시험(`SchemaValidationIntegrationTest`) | 1 | 번역 대조가 같은 것을 본다. 엔티티 대조는 모든 시나리오 시험의 문맥 기동(Hibernate validate)이 한다 |
 | PostgreSQL 포트 구현을 PostgreSQL 에서 보는 시험(`VendorSqlPortPostgresIntegrationTest`, 잠금 강도 등) | 1 | 벤더 쪽의 같은 시험은 없다. Oracle 포트 구현은 그것을 부르는 시나리오 시험이 실행한다 |
@@ -652,3 +656,51 @@ Hibernate validate 는 프로필 문자열을 증거로 쓰지 않는다. 실행
 결정: 지원 범위를 줄이지 않는다. Oracle·MariaDB·MySQL·SQL Server 를 정식 목표로 유지한다. CUBRID 는 제한 지원을 유지하되 Hibernate 7.4 방언 동작을 먼저 확인하고, 안 되면 범위에서 뺀다. Tibero 는 라이선스 전까지 보류다.
 
 재지 못한 것: MySQL·MariaDB 의 잠금과 콜레이션, SQL Server 의 동시성 차이는 실행해 봐야 안다. 다음 벤더의 통합 시험 뒤 이 판단을 다시 확인한다.
+
+## 18. 단계 3 진행 결과(MariaDB·MySQL)
+
+MariaDB 11.4 와 MySQL 8.4 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `preview`). 인증은 이 변경이 main 에서 벤더 잡을 통과한 뒤의 PR 이다(DEC-OPS-400). 이미지는 공식 이미지를 digest 로 고정했다.
+
+### 실측(2026-11-04, 일회용 컨테이너)
+
+구현 전에 두 엔진에서 열한 가지를 재고, 그 값으로 정했다. Connector/J 26.10.0·MariaDB Connector/J 3.5.10 기준이다.
+
+| 주제 | 실측 | 처리 |
+|---|---|---|
+| 오류 번호 | Oracle 번호(1400·1722·1438 등)가 두 엔진의 다른 오류 번호와 겹친다. CHECK 는 MariaDB 4025(23000)·MySQL 3819(HY000), NOT NULL 1048, 기본값 없음 1364, 형식 1366 이다. Connector/J 는 잠금 대기 초과 1205 를 40001 로, 0 나누기 1365 를 22001 로 올린다 | 벤더별 번호 표(`VendorSqlDialect.errorCodes()`). 처리기는 활성 벤더의 표만 쓴다 |
+| 잠금 대기 | `SET SESSION innodb_lock_wait_timeout` 은 커밋 뒤에도 남아 풀로 샌다. 문장 단위로 묶이는 것은 MariaDB 의 `FOR UPDATE WAIT n` 과 MySQL 의 `MAX_EXECUTION_TIME` 힌트뿐이다(`SET_VAR` 은 이 변수를 받지 않는다) | 트랜잭션 대기 문장은 `DO 0` 이고 응용 잠금은 슬롯 문장이 묶는다. MySQL 은 Hibernate 가 잠금 조회에 대기를 싣지 못해 50초를 기다렸으므로 접속 인자로 세션 대기를 앱의 잠금 조회 상한(5초)에 맞춘다(§6.1) |
+| 원장 삭제 허가 | 키만인 허가 표는 트리거의 잠금 읽기가 다른 트랜잭션의 미커밋 허가를 기다려, 중첩 트랜잭션이 바깥 허가 뒤에서 1205 로 끝난다 | 키를 `(permit_key, CONNECTION_ID())` 로 두고 트리거와 회수가 자기 연결의 행만 찾는다 |
+| 부모 행 잠금 | InnoDB 의 FK 검사는 부모 행에 공유 잠금을 건다. 부모를 `FOR UPDATE` 로 잡으면 자식 입력이 기다린다(PostgreSQL 과 같고 Oracle 과 다르다). `FOR NO KEY UPDATE` 가 없고 MariaDB 에는 `FOR SHARE` 도 없다 | 두 잠금 강도 모두 `FOR UPDATE` |
+| 자기 참조 FK | 행마다 바로 검사한다. 부모가 먼저 지워지는 순서면 1451 이다 | 메뉴 하위 트리를 깊은 것부터 지운다(`MenuService`) |
+| 키 바이트 | 3,072바이트이고 타입별 바이트를 쟀다(§6) | 어댑터가 물리 타입으로 센다. MariaDB 는 넘는 유니크를 해시로 받는다 |
+| 콜레이션 | 기본 연결 콜레이션(`_ai_ci`)과 `_bin` 표의 비교는 `_bin` 이 이겨 동작한다. 둘 다 이진이 아니면 1267 이다 | 접속 인자 `connectionCollation` 으로 표와 맞춘다 |
+| 시간대 | 컨테이너 기본은 UTC 라 한국 0시~9시의 `CURRENT_DATE` 가 전날이다. 이름(`Asia/Seoul`)은 시간대 표가 있어야 한다 | 접속 인자 `time_zone='+09:00'`. 앱이 기동할 때 세션 시계와 서버 종류를 본다(Connector/J 는 MariaDB 서버에도 제품명을 MySQL 이라 돌려준다) |
+| 트리거 권한 | MySQL 8.4 는 바이너리 로그가 기본으로 켜져 `log_bin_trust_function_creators` 없이 앱 계정의 트리거 생성이 1419 다 | 서버 인자와 README |
+| 관측 권한 | MariaDB 의 잠금 대기 표는 `PROCESS` 가 필요하고 100ms 남짓 캐시된다. MySQL 은 `performance_schema` 표 넷의 SELECT 면 된다 | 시험 전용 일회용 DB 의 앱 계정에만 준다 |
+
+### 통합 시험과 전체 검증
+
+demo 멀티모듈 생성물(대표 구성)의 전체 검증을 두 벤더 모두 처음부터 끝까지 통과했다. 이 기계에서 생성을 포함한 소요는 MySQL 19분, MariaDB 15.6분이다.
+
+| 항목 | MariaDB 11.4 | MySQL 8.4 |
+|---|---|---|
+| 스키마·시드 대조 | 문장 456개, 시드 18,143행 | 문장 466개(저하 4종), 시드 18,143행 |
+| Hibernate validate | 문맥 44개 | 문맥 44개 |
+| 통합 시험 | 51개 클래스 397건 | 51개 클래스 396건(날짜 형식 오류 사례는 MySQL 에서 재지 않아 뺐다) |
+| 카탈로그 적합 | 5건 | 5건 |
+| 차등 시험 | CHECK 134개, 값 1,284개, 불일치 0 | 같음 |
+
+원장의 제외는 벤더를 이름으로 적는다(`vendorExclusions`). Oracle 은 종전 3건 그대로이고, MySQL·MariaDB 는 PostgreSQL 함수·카탈로그를 쓰는 2건만 뺀다. 같은 설문 투표의 공유 잠금 시험은 두 엔진에서 돈다.
+
+첫 실행에서 드러난 것:
+
+| 벤더 | 실패 | 원인과 처리 |
+|---|---|---|
+| MariaDB | 문맥 기동 전부 | 정수 필드 둘(`numeric(2)`)을 스키마 검증이 DECIMAL 과 다르다고 봤다. 엔티티에 NUMERIC JDBC 타입을 밝혔다(PostgreSQL·Oracle 판정은 같다) |
+| MariaDB | 10건 | 시험 코드의 `AT TIME ZONE` 과 방언마다 다른 DELETE 문자열 |
+| MySQL | 문맥 기동 전부 | UUID 가 CHAR(36) 이었다. Hibernate 의 MySQL 기본 매핑(binary(16))에 맞춰 BINARY(16) 으로 번역한다 |
+| MySQL | 14건 | 시퀀스 기본값을 기댄 시험 픽스처 11건(앱은 Hibernate 표 흉내로 키를 받는다), JdbcTemplate 의 CHECK 예외 종류, 잠금 조회의 50초 대기(위 실측), 응용 잠금 대기 초과의 오류 번호 |
+
+운영 코드를 고친 것은 정수 필드의 JDBC 타입, 세션·서버 기동 검사, MySQL 의 세션 잠금 대기, 메뉴 삭제 순서다. 다른 회사 모델의 독립 검토가 MySQL 의 0 나누기가 400 으로 나가는 것을 찾아, 오류 번호로 500 을 가르게 고쳤다.
+
+남은 일: main 의 벤더 잡 통과 확인, 두 벤더의 증거 기록과 승격(다음 PR), NULL 정렬 차이를 화면 문장으로 알릴지 판단.

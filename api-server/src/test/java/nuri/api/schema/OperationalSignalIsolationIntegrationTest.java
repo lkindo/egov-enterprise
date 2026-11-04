@@ -90,14 +90,15 @@ class OperationalSignalIsolationIntegrationTest {
         String prefix = "OS" + UUID.randomUUID().toString().replace("-", "").substring(0, 12);
         fixtureUser = prefix + "U";
         fixtureJob = UUID.randomUUID().toString();
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd)
                 VALUES (?,?,'test-only-unusable','Signal fixture','P','Y',to_char(CURRENT_DATE,'YYYYMMDD'))
-                """, fixtureUser, fixtureUser);
-        jdbc.update("""
-                INSERT INTO tb_sys_job(job_mng_no,job_se_nm,job_cn,prcs_stts_nm,rtry_nmtm,job_prnmnt_dt)
-                VALUES (?,'SIGNAL_TEST_ONLY','{}','FAILED',0,CURRENT_TIMESTAMP)
-                """, fixtureJob);
+                """), fixtureUser, fixtureUser);
+        // 키는 원래 기본값과 같은 시퀀스로 명시한다. MySQL 에는 시퀀스 기본값이 없다(Hibernate 와 같은 표 흉내).
+        VendorTestSql.insertKey(jdbc, """
+                INSERT INTO tb_sys_job(job_sn,job_mng_no,job_se_nm,job_cn,prcs_stts_nm,rtry_nmtm,job_prnmnt_dt)
+                VALUES (nextval('sq_sys_job'),?,'SIGNAL_TEST_ONLY','{}','FAILED',0,CURRENT_TIMESTAMP)
+                """, "job_sn", fixtureJob);
         // Adjacent dates keep the nonzero fixture valid across a midnight boundary. Expected dates use observedAt.
         LocalDate today = LocalDate.now();
         for (int offset = -1; offset <= 1; offset++) {
@@ -217,7 +218,7 @@ class OperationalSignalIsolationIntegrationTest {
     private void assertIsolated(RequestOutcome outcome, Kind failed, List<QueryTrace> requestTraces) {
         assertThat(requestTraces).extracting(QueryTrace::kind).containsExactly(Kind.values());
         assertThat(requestTraces).filteredOn(trace -> trace.kind() == failed)
-                .extracting(QueryTrace::sqlState).containsExactly("22012");
+                .extracting(QueryTrace::sqlState).containsExactly(VendorTestSql.failingQueryState(jdbc));
         assertThat(requestTraces).filteredOn(trace -> trace.kind() != failed)
                 .as("healthy COUNTs must not inherit SQLState 25P02; traces=%s", requestTraces)
                 .allSatisfy(trace -> assertThat(trace.sqlState()).isEqualTo("OK"));
@@ -282,10 +283,10 @@ class OperationalSignalIsolationIntegrationTest {
                             if (kind == Kind.FAILED_REQUESTS_TODAY) {
                                 // The last source has no following COUNT: exercise Hibernate's rollback-only
                                 // state and the service transaction's completion, not just JDBC poisoning.
-                                entityManager.createNativeQuery(VendorTestSql.divisionByZero(jdbc).replace("?", "?1"))
+                                entityManager.createNativeQuery(VendorTestSql.failingQuery(jdbc).replace("?", "?1"))
                                         .setParameter(1, 0).getSingleResult();
                             } else {
-                                jdbc.queryForObject(VendorTestSql.divisionByZero(jdbc), Integer.class, 0);
+                                jdbc.queryForObject(VendorTestSql.failingQuery(jdbc), Integer.class, 0);
                             }
                             throw new AssertionError("PostgreSQL division by zero unexpectedly succeeded");
                         }

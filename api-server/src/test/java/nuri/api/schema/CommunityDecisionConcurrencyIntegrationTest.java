@@ -98,10 +98,10 @@ class CommunityDecisionConcurrencyIntegrationTest {
                 INSERT INTO tb_user_info (esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn)
                 VALUES (?,?,'unused-fixture-password','회원 삭제 검증','P','N')
                 """, deletedMember, deletedMember);
-        jdbc.update("""
+        jdbc.update(VendorTestSql.sql(jdbc, """
                 INSERT INTO tb_cmnty_user_map (cmnty_sn,user_id,mbr_stts_cd,mngr_yn,use_yn,whdwl_ymd)
                 VALUES (?,?,'W','N','N',to_char(CURRENT_DATE,'YYYYMMDD'))
-                """, community, deletedMember);
+                """), community, deletedMember);
         String administrator = jdbc.queryForObject("SELECT user_id FROM tb_user_info WHERE esntl_id=?", String.class, USER_ID);
         var principal = CustomUserDetails.builder().userId(administrator).esntlId(USER_ID)
                 .enabled(true).permissions(List.of("USER_DELETE")).build();

@@ -228,7 +228,8 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
             assertAll(
                     // JdbcTemplate can leave 55P03 uncategorized; the real handler owns SQLState mapping.
                     () -> assertThat(outcome.failure()).isInstanceOf(DataAccessException.class),
-                    () -> assertThat(sqlState(outcome.failure())).isIn(VendorTestSql.lockTimeoutStates(jdbc)),
+                    () -> assertThat(VendorTestSql.isApplicationLockTimeout(jdbc, databaseError(outcome.failure())))
+                            .as("응용 잠금 대기 초과: %s", VendorTestSql.describe(databaseError(outcome.failure()))).isTrue(),
                     () -> assertThat(outcome.waited()).isGreaterThanOrEqualTo(Duration.ofMillis(4_500))
                             .isLessThan(Duration.ofSeconds(15)),
                     () -> assertThat(parentOf(first)).isEqualTo(second),
@@ -368,9 +369,9 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
         }
     }
 
-    private static String sqlState(Throwable failure) {
+    private static SQLException databaseError(Throwable failure) {
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
-            if (cause instanceof SQLException sql) return sql.getSQLState();
+            if (cause instanceof SQLException sql) return sql;
         }
         return null;
     }
@@ -381,7 +382,8 @@ class AdministCodeHierarchyConcurrencyIntegrationTest {
         var handler = new ExceptionHandlerMethodResolver(GlobalExceptionHandler.class).resolveMethod(failure);
         assertThat(handler).isNotNull();
         handler.setAccessible(true);
-        return (ResponseEntity<ApiResponse<Void>>) handler.invoke(new GlobalExceptionHandler(), failure);
+        // 운영 문맥처럼 이 벤더의 오류 번호 표를 준다. MySQL·MariaDB 의 슬롯 대기 초과(3024·1205)는 HY000 이라 번호로만 충돌이 된다.
+        return (ResponseEntity<ApiResponse<Void>>) handler.invoke(new GlobalExceptionHandler(VendorTestSql.errorCodes()), failure);
     }
 
     private record RaceResult(Throwable failure, boolean blockedByLeader) {}

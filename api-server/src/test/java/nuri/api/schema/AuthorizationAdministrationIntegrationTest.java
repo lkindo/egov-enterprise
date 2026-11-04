@@ -383,6 +383,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         } finally {
             service.deleteGroup("T_COPY_ORPHAN",service.group("T_COPY_ORPHAN").version());
             service.deleteGroup("T_COPY_A",service.group("T_COPY_A").version());
+            // MySQL·MariaDB 는 자기 FK 를 행마다 바로 검사해 한 문장 삭제도 순서에 따라 실패한다. 상위 연결을 먼저 끊는다.
+            jdbc.update("UPDATE tb_menu_info SET up_menu_sn=NULL WHERE menu_sn IN (?,?)",root,child);
             jdbc.update("DELETE FROM tb_menu_info WHERE menu_sn IN (?,?)",root,child);
         }
     }
@@ -537,6 +539,7 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         assertThat(jdbc.queryForObject("SELECT up_menu_sn FROM tb_menu_info WHERE menu_sn=?",Long.class,leaf)).isEqualTo(root);
 
         service.deleteGroup(group,service.group(group).version());
+        jdbc.update("UPDATE tb_menu_info SET up_menu_sn=NULL WHERE menu_sn IN (?,?,?)",root,child,leaf);
         jdbc.update("DELETE FROM tb_menu_info WHERE menu_sn IN (?,?,?)",root,child,leaf);
     }
 
@@ -639,8 +642,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
             if (method.getName().equals("equals")) return proxy == args[0];
             if (method.getName().equals("hashCode")) return System.identityHashCode(proxy);
             try {
-                // 운영의 IsolationMappingDataSource 와 같다. Oracle 은 REPEATABLE READ 를 받지 않는다.
-                boolean snapshot=VendorTestSql.vendorRun() && method.getName().equals("setTransactionIsolation")
+                // 운영의 IsolationMappingDataSource 와 같다. Oracle 은 REPEATABLE READ 를 받지 않는다. MySQL·MariaDB 는 그대로 받는다.
+                boolean snapshot=VendorTestSql.vendor()==VendorTestSql.Vendor.ORACLE && method.getName().equals("setTransactionIsolation")
                         && Integer.valueOf(Connection.TRANSACTION_REPEATABLE_READ).equals(args[0]);
                 Object result = method.invoke(delegate,snapshot?new Object[]{Connection.TRANSACTION_SERIALIZABLE}:args);
                 String sql = preparedSql != null ? preparedSql
@@ -737,8 +740,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
     private void insertUser(String id) {
         // The legacy varchar(8) subscription date default is CURRENT_TIMESTAMP; explicit YYYYMMDD
         // follows the physical date format and avoids depending on that incompatible default.
-        jdbc.update("INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
-                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))",id,id,id);
+        jdbc.update(VendorTestSql.sql(jdbc, "INSERT INTO tb_user_info(esntl_id,user_id,pswd,user_nm,user_stts_cd,lck_yn,sbscrb_ymd) "
+                + "VALUES(?,?,'test-only-unusable',?,'P','N',to_char(CURRENT_DATE,'YYYYMMDD'))"),id,id,id);
     }
 
     private void replaceGrants(String group,List<Grant> grants) {

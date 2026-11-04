@@ -11,7 +11,7 @@ import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTrans
 import { assertCatalogParity, assertCoverage, assertUniqueColumns, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
 import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION_KINDS, selectableVendors, translateForAllVendors, unshownDegradations, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices, vendorDegradationNotes } from './project-composer-vendors.mjs';
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
-import { mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
+import { indexPrefixes, keyColumnBytes, mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
 import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
@@ -171,6 +171,161 @@ test('the Oracle lock slots match the range the dialect folds keys into', () => 
   assert.ok(sql.includes(`CONNECT BY LEVEL <= ${slots}`), `슬롯 ${slots}개`);
 });
 
+test('the MySQL family lock slots and ledger permit match the dialect, keyed so a nested transaction never waits', () => {
+  const dialect = readFileSync(resolve(ROOT, 'foundation/src/main/java/nuri/foundation/core/persistence/InnoDbSqlDialect.java'), 'utf8');
+  const slots = Number(dialect.match(/LOCK_SLOTS = ([\d_]+);/)[1].replaceAll('_', ''));
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) {
+    const emission = adapter.emitSchema(model());
+    const sql = emission.statements.map(statement => statement.sql);
+    // 행이 모자라면 잠금 조회가 0행을 받고 아무것도 잠그지 않은 채 지나간다. 재귀 CTE 는 기본 반복 상한(1,000)에서 멈춘다(2026-11-04 실측).
+    const fill = sql.find(statement => statement.startsWith('INSERT INTO tb_sys_lock_slot'));
+    assert.equal((fill.match(/CROSS JOIN/g) ?? []).length, 3, adapter.id);
+    assert.equal(16 ** 4, slots, `${adapter.id}: 슬롯 ${slots}개`);
+    assert.match(fill, /SELECT d0\.n \+ 16 \* d1\.n \+ 256 \* d2\.n \+ 4096 \* d3\.n FROM \(SELECT 0 AS n UNION ALL SELECT 1 .* UNION ALL SELECT 15\) d0/);
+    assert.doesNotMatch(fill, /RECURSIVE/);
+    assert.ok(sql.includes(`CREATE TABLE tb_sys_lock_slot (lock_slot_no INT NOT NULL PRIMARY KEY) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=${adapter.id === 'mariadb' ? 'utf8mb4_nopad_bin' : 'utf8mb4_0900_bin'}`), adapter.id);
+    // 허가는 (키, 연결 번호) 로 찾는다. 키만이나 Oracle 식 토큰 키는 중첩 트랜잭션이 바깥의 미커밋 허가를 기다리다 1205 로 끝났다(2026-11-04 실측).
+    assert.ok(sql.some(statement => statement.startsWith('CREATE TABLE tb_sys_ledger_permit (permit_key VARCHAR(50) NOT NULL, permit_conn BIGINT UNSIGNED NOT NULL DEFAULT (CONNECTION_ID()), PRIMARY KEY (permit_key, permit_conn))')), adapter.id);
+    assert.ok(dialect.includes('INSERT INTO tb_sys_ledger_permit (permit_key, permit_conn) VALUES (?1, CONNECTION_ID())'), '앱의 허가 입력이 같은 열을 쓴다');
+    assert.ok(dialect.includes('DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?1 AND permit_conn = CONNECTION_ID()'), '앱의 회수가 같은 키 전체로 찾는다');
+    for (const [name, columns] of [['tb_sys_ledger_permit.primary', ['permit_key', 'permit_conn']], ['tb_sys_lock_slot.primary', ['lock_slot_no']]]) assert.deepEqual(emission.uniqueColumns.get(name), columns, `${adapter.id}: ${name}`);
+    for (const name of ['tb_sys_ledger_permit.permit_conn', 'tb_sys_lock_slot.lock_slot_no']) assert.ok(emission.expected.columns.includes(name), `${adapter.id}: ${name}`);
+    for (const name of ['tb_sys_ledger_permit.PRIMARY', 'tb_sys_lock_slot.PRIMARY']) assert.ok(emission.expected.constraints.includes(name), `${adapter.id}: ${name}`);
+  }
+  // 캐시를 두면 next_not_cached_value 가 캐시 끝(1001)으로 앞서 다음 값 대조가 늘 통과한다(2026-11-04 MariaDB 실측).
+  assert.ok(mariadbAdapter.emitSchema(model()).statements.some(({ sql }) => sql === 'CREATE SEQUENCE sq_alone START WITH 1 INCREMENT BY 1 NOCACHE'));
+});
+
+test('MySQL family triggers reject with the PostgreSQL SQLSTATE class and read only their own connection permit', () => {
+  // 트리거 의도는 모델이 검토한 함수 본문에서 나온다. 여기서는 그 결과 모양(차등 시험의 의도 표와 같은 꼴)을 모델에 바로 둔다.
+  const sample = model();
+  const parent = sample.tables.find(table => table.name === 't_parent');
+  const child = sample.tables.find(table => table.name === 't_child');
+  child.triggers.push({ name: 'tr_t_child_ledger', kind: 'append-only', permit: 'app.audit_retention' });
+  child.columns.push({ name: 'prcs_tm', type: { kind: 'integer' }, nullable: true, identity: false, default: null, comment: null },
+    { name: 'prcs_req_msec', type: { kind: 'integer' }, nullable: true, identity: false, default: null, comment: null });
+  child.triggers.push({ name: 'tr_t_child_sync', kind: 'sync-pair', legacy: 'prcs_tm', current: 'prcs_req_msec' });
+  // 자동 증가 컬럼을 보는 CHECK 는 트리거로 옮긴다(설계서 §6, 메뉴 자기 부모 금지).
+  parent.checks.push({ name: 'ck_t_parent_not_self', expression: parseExpression('up_id IS NULL OR up_id <> id', parent.columns.map(column => column.name)) });
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) {
+    const sql = adapter.emitSchema(sample).statements.map(statement => statement.sql).join('\n');
+    // 23000 은 드라이버가 무결성 위반 예외로 올려 409 중복으로 읽힌다. 원장 보호는 무결성 밖(55000), CHECK 대체와 쌍 충돌은 원본 ERRCODE 와 같은 23514 다.
+    assert.doesNotMatch(sql, /SQLSTATE '23000'/, adapter.id);
+    assert.ok(sql.includes("CREATE TRIGGER tr_t_child_ledger_u BEFORE UPDATE ON t_child FOR EACH ROW BEGIN SIGNAL SQLSTATE '55000' SET MESSAGE_TEXT = 'append-only t_child'; END"), adapter.id);
+    // 남의 미커밋 허가를 보지 않고 기다리지도 않으려면 자기 연결 번호까지 키 전체로 찾는다(2026-11-04 실측).
+    assert.ok(sql.includes("CREATE TRIGGER tr_t_child_ledger_d BEFORE DELETE ON t_child FOR EACH ROW BEGIN IF NOT EXISTS (SELECT 1 FROM tb_sys_ledger_permit WHERE permit_key = 'app.audit_retention' AND permit_conn = CONNECTION_ID())"
+      + " THEN SIGNAL SQLSTATE '55000' SET MESSAGE_TEXT = 'append-only t_child'; END IF; END"), adapter.id);
+    assert.match(sql, /CREATE TRIGGER ck_t_parent_not_self_i AFTER INSERT ON t_parent FOR EACH ROW BEGIN IF .* THEN SIGNAL SQLSTATE '23514' SET MESSAGE_TEXT = 'ck_t_parent_not_self'; END IF; END/, adapter.id);
+    assert.match(sql, /IF NOT \(NEW\.prcs_req_msec <=> NEW\.prcs_tm\) THEN SIGNAL SQLSTATE '23514' SET MESSAGE_TEXT = 'conflicting pair'; END IF;/, adapter.id);
+  }
+});
+
+test('the MySQL family counts key bytes by physical type, as measured on both engines', () => {
+  const type = (kind, extra = {}) => ({ kind, ...extra });
+  for (const maria of [false, true]) {
+    const bytes = value => keyColumnBytes(value, maria);
+    assert.equal(bytes(type('varchar', { length: 10 })), 40, 'utf8mb4 은 글자당 4바이트');
+    assert.equal(bytes(type('integer')), 4);
+    assert.equal(bytes(type('bigint')), 8);
+    assert.equal(bytes(type('date')), 3);
+    assert.deepEqual([0, 1, 2, 3, 4, 5, 6].map(precision => bytes(type('timestamp', { precision }))), [5, 6, 6, 7, 7, 8, 8], 'DATETIME(0)=5·(3)=7·(6)=8 실측');
+    assert.equal(bytes(type('numeric', { precision: 10, scale: 0 })), 5);
+    assert.equal(bytes(type('numeric', { precision: 19, scale: 0 })), 9);
+    assert.equal(bytes(type('numeric', { precision: 20, scale: 2 })), 9);
+    assert.equal(bytes(type('numeric', { precision: 38, scale: 10 })), 18);
+    assert.equal(bytes(type('numeric', { precision: null, scale: null })), 18, '정밀도 없는 numeric 은 DECIMAL(38,10) 이다');
+    for (const kind of ['text', 'json', 'binary']) assert.equal(bytes(type(kind)), Infinity, `${kind}: 접두 없이 키가 될 수 없다`);
+  }
+  assert.equal(keyColumnBytes(type('uuid'), false), 16, 'MySQL 의 UUID 는 BINARY(16)');
+  assert.equal(keyColumnBytes(type('uuid'), true), 16, 'MariaDB 의 UUID 타입');
+  // 일반 인덱스 접두: 넘지 않으면 자르지 않고, 넘으면 긴 문자열만 잘린 키 전체가 3,072바이트 안에 들게 자른다.
+  assert.deepEqual(indexPrefixes([3068, 4]).prefixes, [null, null], 'VARCHAR(767)+INT 는 그대로');
+  assert.deepEqual(indexPrefixes([3072]).prefixes, [null], 'VARCHAR(768) 단독은 그대로');
+  assert.deepEqual(indexPrefixes([3076]).prefixes, [768], 'VARCHAR(769) 단독은 768자 접두');
+  assert.deepEqual(indexPrefixes([4000, 80]).prefixes, [700, null], '긴 주소와 짧은 컬럼은 700자 접두');
+  // 어댑터가 긴 컬럼마다 700자를 주던 복합 접두는 VARCHAR(4000) 둘에서 5,600바이트라 1071 이었다(2026-11-04 실측). 합이 상한 안에 들게 줄인다.
+  assert.deepEqual(indexPrefixes([16000, 16000]).prefixes, [384, 384]);
+  for (const sizes of [[16000, 16000], [16000, 80], [Infinity, 8, 8], [3076, 4]]) {
+    const { prefixes } = indexPrefixes(sizes);
+    assert.ok(sizes.reduce((total, size, at) => total + (prefixes[at] ? prefixes[at] * 4 : size), 0) <= 3072, String(sizes));
+  }
+  assert.equal(indexPrefixes([1500, 1500, 1500]).prefixes, null, '자를 긴 문자열이 없는데 넘으면 번역을 멈춘다');
+  assert.equal(indexPrefixes([16000, 1536, 1536]).prefixes, null, '자르지 않는 컬럼이 상한을 다 쓰면 멈춘다');
+  assert.deepEqual(indexPrefixes([16000, 1536, 1532]).prefixes, [1, null, null], '한 글자라도 남으면 그만큼 자른다');
+});
+
+test('the MySQL family decides the key limit at the measured boundaries', () => {
+  /** t_key 표에 문자열 a 와 다른 타입 b 로 된 유니크·인덱스를 둔다. */
+  const keyModel = (length, other, { unique = true, index = false } = {}) => buildVendorModel({ snapshot: {
+    columns: [column('t_key', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_key', 'a', length, { nullable: false, position: 2 }),
+      { ...column('t_key', 'b', other.type, { nullable: false, position: 3 }), numeric_precision: other.precision ?? null, numeric_scale: other.scale ?? null, datetime_precision: other.datetime ?? 6 }],
+    constraints: [constraint('t_key', 'pk_t_key', 'p', 'PRIMARY KEY (id)'), ...(unique ? [constraint('t_key', 'uk_t_key_ab', 'u', 'UNIQUE (a, b)')] : [])],
+    indexes: index ? [{ table_name: 't_key', name: 'ix_t_key_ab', definition: 'CREATE INDEX ix_t_key_ab ON public.t_key USING btree (a, b)' }] : [],
+    triggers: [], sequences: [],
+  }, extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
+  const statements = (adapter, sample) => adapter.emitSchema(sample).statements.map(statement => statement.sql);
+  // 2026-11-04 실측 경계: VARCHAR(n)+INT 767, +BIGINT 766, +DATETIME(6) 766, +DECIMAL(10,0) 766, +BINARY(16) UUID 764. 한 자 더하면 1071 이다.
+  for (const [other, fits] of [[{ type: 'integer' }, 767], [{ type: 'bigint' }, 766], [{ type: 'timestamp without time zone', datetime: 6 }, 766],
+    [{ type: 'numeric', precision: 10, scale: 0 }, 766], [{ type: 'uuid' }, 764]]) {
+    assert.ok(statements(mysqlAdapter, keyModel(fits, other)).includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a, b)'), `mysql: VARCHAR(${fits})+${other.type} 는 그대로 받는다`);
+    const over = statements(mysqlAdapter, keyModel(fits + 1, other));
+    assert.ok(over.includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a_hash, b)'), `mysql: VARCHAR(${fits + 1})+${other.type} 는 해시 유니크다`);
+    assert.deepEqual(mysqlAdapter.emitSchema(keyModel(fits + 1, other)).uniqueColumns.get('t_key.uk_t_key_ab'), ['a_hash', 'b'], '컬럼 대조는 DB 에 든 해시 컬럼을 기대한다');
+    // 일반 인덱스도 같은 경계다. 넘으면 긴 문자열만 접두로 자른다.
+    assert.ok(statements(mysqlAdapter, keyModel(fits, other, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a, b)'), `index ${other.type}`);
+    assert.ok(statements(mysqlAdapter, keyModel(fits + 1, other, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a(700), b)'), `index ${other.type}`);
+  }
+  // MariaDB 의 UUID 는 16바이트라 경계가 764 다. 유니크는 넘어도 엔진 해시로 받으므로 그대로 둔다.
+  const uuid = { type: 'uuid' };
+  assert.ok(statements(mariadbAdapter, keyModel(764, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a, b)'));
+  assert.ok(statements(mariadbAdapter, keyModel(765, uuid, { unique: false, index: true })).includes('CREATE INDEX ix_t_key_ab ON t_key (a(700), b)'));
+  assert.ok(statements(mariadbAdapter, keyModel(4000, uuid)).includes('ALTER TABLE t_key ADD CONSTRAINT uk_t_key_ab UNIQUE (a, b)'));
+  assert.deepEqual(mariadbAdapter.emitSchema(keyModel(4000, uuid)).degradations, [], 'MariaDB 는 접두 저하가 없다');
+  // MySQL 의 UUID 는 Hibernate 의 MySQL 기본 매핑인 BINARY(16) 이고 시드 값은 같은 바이트 순서로 바꾼다. CHAR(36) 이면 스키마 검증이 멈췄다(2026-11-04).
+  assert.match(statements(mysqlAdapter, keyModel(10, uuid)).join('\n'), /\bb BINARY\(16\)/);
+  assert.match(statements(mariadbAdapter, keyModel(10, uuid)).join('\n'), /\bb UUID\b/);
+  const uuidValue = '6f1c2d3e-4a5b-4c6d-8e7f-001122334455';
+  assert.equal(mysqlAdapter.literal({ type: { kind: 'uuid' } }, uuidValue), `UUID_TO_BIN('${uuidValue}')`);
+  assert.equal(mariadbAdapter.literal({ type: { kind: 'uuid' } }, uuidValue), `'${uuidValue}'`);
+  // 단일 컬럼은 768자까지 그대로, 넘으면 MySQL 만 접두 유니크(저하)다.
+  const single = length => buildVendorModel({ snapshot: { columns: [column('t_one', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_one', 'a', length, { position: 2 })],
+    constraints: [constraint('t_one', 'pk_t_one', 'p', 'PRIMARY KEY (id)'), constraint('t_one', 'uk_t_one_a', 'u', 'UNIQUE (a)')], indexes: [], triggers: [], sequences: [] },
+  extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
+  assert.ok(statements(mysqlAdapter, single(768)).includes('ALTER TABLE t_one ADD CONSTRAINT uk_t_one_a UNIQUE (a)'));
+  assert.deepEqual(mysqlAdapter.emitSchema(single(768)).degradations, []);
+  assert.ok(statements(mysqlAdapter, single(769)).includes('ALTER TABLE t_one ADD CONSTRAINT uk_t_one_a UNIQUE (a(768))'));
+  assert.deepEqual(mysqlAdapter.emitSchema(single(769)).degradations.map(row => row.name), ['uk_t_one_a:prefix']);
+  assert.deepEqual(mysqlAdapter.emitSchema(single(769)).uniqueColumns.get('t_one.uk_t_one_a'), ['a'], '접두 유니크도 컬럼 조회에는 컬럼 이름만 나온다');
+  // 해시로 바꿔도 넘는 복합 유니크는 적용 때 1071 로 멈추기 전에 번역을 멈춘다.
+  const wide = buildVendorModel({ snapshot: { columns: [column('t_two', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_two', 'a', 1000, { position: 2 }), varchar('t_two', 'b', 1000, { position: 3 })],
+    constraints: [constraint('t_two', 'pk_t_two', 'p', 'PRIMARY KEY (id)'), constraint('t_two', 'uk_t_two_ab', 'u', 'UNIQUE (a, b)')], indexes: [], triggers: [], sequences: [] },
+  extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
+  assert.throws(() => mysqlAdapter.emitSchema(wide), error => isGap(error) && error.message === 'uk_t_two_ab: 가장 긴 컬럼을 해시로 바꿔도 키가 3072바이트를 넘는다');
+  assert.doesNotThrow(() => mariadbAdapter.emitSchema(wide));
+  // 긴 문자열 없이 넘는 일반 인덱스는 자를 컬럼이 없다. 두 엔진 모두 복합 일반 인덱스를 1071 로 거부하므로(실측) 적용 전에 멈춘다.
+  const medium = buildVendorModel({ snapshot: { columns: [column('t_three', 'id', 'bigint', { nullable: false, position: 1 }), ...['a', 'b', 'c'].map((name, at) => varchar('t_three', name, 375, { position: at + 2 }))],
+    constraints: [constraint('t_three', 'pk_t_three', 'p', 'PRIMARY KEY (id)')], indexes: [{ table_name: 't_three', name: 'ix_t_three_abc', definition: 'CREATE INDEX ix_t_three_abc ON public.t_three USING btree (a, b, c)' }], triggers: [], sequences: [] },
+  extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) assert.throws(() => adapter.emitSchema(medium), error => isGap(error) && error.message === 'ix_t_three_abc: 접두로 잘라도 키가 3072바이트를 넘는다', adapter.id);
+});
+
+test('the MySQL family states the columns of every key and unique as the catalog reports them', () => {
+  const sample = model();
+  sample.tables.find(table => table.name === 't_child').indexes.push({ name: 'ix_t_child_owner_parent', method: 'btree', where: null, unique: true, columns: [{ name: 'owner' }, { name: 'parent_id', descending: true }] });
+  for (const adapter of [mysqlAdapter, mariadbAdapter]) {
+    const emission = adapter.emitSchema(sample);
+    // 기본 키 이름은 언제나 PRIMARY 다. 컬럼 조회도 그 이름으로 낸다.
+    for (const table of sample.tables) assert.deepEqual(emission.uniqueColumns.get(`${table.name}.primary`), table.primaryKey.columns, `${adapter.id}: ${table.name}`);
+    assert.deepEqual(emission.uniqueColumns.get('t_parent.uk_t_parent_code'), ['code']);
+    assert.deepEqual(emission.uniqueColumns.get('t_child.uk_t_child_owner_url'), adapter.id === 'mysql' ? ['owner', 'url_hash'] : ['owner', 'url'], `${adapter.id}: 해시 유니크는 해시 컬럼이 든다`);
+    // CREATE UNIQUE INDEX 도 제약 표에 나온다(2026-11-04 실측). 인덱스로 기대하면 대조가 indexes 누락·constraints 초과로 붉다.
+    assert.ok(emission.expected.constraints.includes('t_child.ix_t_child_owner_parent') && !emission.expected.indexes.includes('t_child.ix_t_child_owner_parent'), adapter.id);
+    assert.deepEqual(emission.uniqueColumns.get('t_child.ix_t_child_owner_parent'), ['owner', 'parent_id']);
+    assert.ok(emission.expected.indexes.includes('t_child.ix_t_child_url'), `${adapter.id}: 일반 인덱스는 인덱스로 기대한다`);
+    assert.ok(!emission.uniqueColumns.has('t_child.ix_t_child_url'));
+  }
+});
+
 test('integration tests take every database setting from the engine, never from the PostgreSQL test profile', () => {
   const { integration } = VENDOR_ENGINES.oracle;
   const environment = integrationEnvironment('oracle', integration, { port: 15210, password: 'not-a-secret', owner: 'token' });
@@ -182,10 +337,71 @@ test('integration tests take every database setting from the engine, never from 
   assert.equal(environment.SPRING_FLYWAY_ENABLED, 'false', 'PostgreSQL 마이그레이션을 벤더에 적용하면 안 된다');
   assert.equal(environment.APP_DATABASE_VENDOR, 'oracle');
   assert.match(environment.SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT, /NuriOracleDialect/);
-  assert.throws(() => parseIntegrationArgs(['--input', 'x.json', '--vendor', 'mysql']), /아직 돌릴 수 없는 엔진/);
+  assert.throws(() => parseIntegrationArgs(['--input', 'x.json', '--vendor', 'mssql']), /아직 돌릴 수 없는 엔진/);
   assert.throws(() => parseIntegrationArgs(['--vendor', 'oracle']), /--input/);
   assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--engine', 'oracle19']),
     { input: 'x.json', vendor: 'oracle', engine: 'oracle19' });
+  for (const vendor of ['mysql', 'mariadb']) assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', vendor]), { input: 'x.json', vendor }, vendor);
+});
+
+test('the MySQL family integration connects like the generated project and grants only the schema and the lock views', () => {
+  for (const [vendor, scheme, driver, dialect] of [['mysql', 'mysql', 'com.mysql.cj.jdbc.Driver', 'org.hibernate.dialect.MySQLDialect'],
+    ['mariadb', 'mariadb', 'org.mariadb.jdbc.Driver', 'org.hibernate.dialect.MariaDBDialect']]) {
+    const { integration } = VENDOR_ENGINES[vendor];
+    const environment = integrationEnvironment(vendor, integration, { port: 33060, password: 'not-a-secret', owner: 'token' });
+    // 시간대·콜레이션 인자가 생성물 주소와 갈리면 시험이 앱과 다른 세션을 본다(CURRENT_DATE 가 UTC 날짜가 된다).
+    assert.equal(environment.SPRING_DATASOURCE_URL, `jdbc:${scheme}://127.0.0.1:33060/vendorcheck?${VENDOR_SOURCE[vendor].urlParameters}`, vendor);
+    assert.ok(VENDOR_SOURCE[vendor].url.endsWith(`?${VENDOR_SOURCE[vendor].urlParameters}`) && VENDOR_SOURCE[vendor].composeUrl.endsWith(`?${VENDOR_SOURCE[vendor].urlParameters}`), vendor);
+    assert.equal(environment.SPRING_DATASOURCE_USERNAME, 'vendorcheck');
+    assert.equal(environment.SPRING_DATASOURCE_DRIVER_CLASS_NAME, driver);
+    assert.equal(environment.SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT, dialect);
+    assert.equal(VENDOR_SOURCE[vendor].dialect, dialect, `${vendor}: 생성물과 시험의 방언이 같다`);
+    assert.equal(VENDOR_SOURCE[vendor].driverClass, driver);
+    assert.equal(environment.APP_DATABASE_VENDOR, vendor);
+    assert.equal(integration.grants[0], "GRANT ALL PRIVILEGES ON vendorcheck.* TO 'vendorcheck'@'%'");
+    // 앱 계정은 Flyway 와 격리 E2E 앱이 관리자 문장보다 먼저 붙으므로 이미지의 앱 계정 변수로 초기화 때 만든다.
+    const variables = VENDOR_ENGINES[vendor].environment('p');
+    const prefix = vendor === 'mysql' ? 'MYSQL' : 'MARIADB';
+    assert.deepEqual([variables[`${prefix}_USER`], variables[`${prefix}_PASSWORD`], variables[`${prefix}_DATABASE`], variables[`${prefix}_ROOT_PASSWORD`]], ['vendorcheck', 'p', 'vendorcheck', 'p']);
+    // 클라이언트로 넣은 행의 CURRENT_TIMESTAMP 기본값이 앱 세션과 같은 한국 시계를 쓴다.
+    assert.match(VENDOR_ENGINES[vendor].batch.wrap('SELECT 1;'), /^SET NAMES utf8mb4;\nSET time_zone = '\+09:00';\n/, vendor);
+  }
+  // 2026-11-04 실측 최소 권한. MariaDB 의 INNODB_* 표는 DB 단위가 아닌 PROCESS 를, MySQL 은 performance_schema 표 넷의 SELECT 를 요구한다.
+  assert.deepEqual(VENDOR_SOURCE.mysql.urlParameters, "sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin");
+  // MySQL 의 세션 잠금 대기는 앱의 잠금 조회 상한과 같다. 한쪽만 바꾸면 MySQL 만 다른 상한으로 돈다.
+  const lockTimeoutMillis = Number(readFileSync(join(ROOT, 'api-server/src/main/resources/application.yml'), 'utf8').match(/^\s+lock:\r?\n\s+timeout:\s*(\d+)\s*$/m)?.[1]);
+  assert.equal(Number(VENDOR_SOURCE.mysql.urlParameters.match(/innodb_lock_wait_timeout=(\d+)/)?.[1]) * 1000, lockTimeoutMillis);
+  assert.deepEqual(VENDOR_SOURCE.mariadb.urlParameters, "sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin");
+  assert.deepEqual(VENDOR_ENGINES.mariadb.integration.grants.slice(1), ["GRANT PROCESS ON *.* TO 'vendorcheck'@'%'"]);
+  assert.deepEqual(VENDOR_ENGINES.mysql.integration.grants.slice(1), ['data_lock_waits', 'threads', 'user_variables_by_thread', 'data_locks'].map(table => `GRANT SELECT ON performance_schema.${table} TO 'vendorcheck'@'%'`));
+  // 바이너리 로그가 켜진 8.4 에서 앱 계정의 트리거 생성은 이 인자 없이 1419 로 멈춘다(2026-11-04 실측). 개발 compose 도 같은 인자다.
+  assert.ok(VENDOR_ENGINES.mysql.serverArgs.includes('--log-bin-trust-function-creators=1'));
+  assert.match(VENDOR_SOURCE.mysql.composeService, /--log-bin-trust-function-creators=1/);
+  for (const vendor of ['mysql', 'mariadb']) {
+    assert.match(VENDOR_SOURCE[vendor].composeService, new RegExp(`--collation-server=${VENDOR_SOURCE[vendor].urlParameters.split('connectionCollation=')[1]}`), `${vendor}: 서버와 연결의 콜레이션이 같다`);
+    assert.ok(VENDOR_ENGINES[vendor].serverArgs.includes(`--collation-server=${VENDOR_SOURCE[vendor].urlParameters.split('connectionCollation=')[1]}`), vendor);
+  }
+});
+
+test('the administrator runs its statements in the format that stops its own client at the first error', () => {
+  const seen = [];
+  const capture = (args, options) => { seen.push({ args, input: options.input }); return { status: 0, stdout: '', stderr: '' }; };
+  runAsAdministrator({ id: 'oracle', name: 'c', engine: VENDOR_ENGINES.oracle }, ['GRANT a TO b', 'GRANT c TO d'], capture);
+  // Oracle 스크립트는 고치기 전과 바이트까지 같다.
+  assert.equal(seen[0].input, 'WHENEVER SQLERROR EXIT FAILURE\nGRANT a TO b;\nGRANT c TO d;\nEXIT\n');
+  assert.deepEqual(seen[0].args, ['exec', '-i', 'c', 'sh', '-c', 'sqlplus -S / as sysdba']);
+  for (const vendor of ['mysql', 'mariadb']) {
+    seen.length = 0;
+    runAsAdministrator({ id: vendor, name: 'c', engine: VENDOR_ENGINES[vendor] }, VENDOR_ENGINES[vendor].integration.grants, capture);
+    // sqlplus 명령이 MySQL 클라이언트에 가면 첫 줄에서 문법 오류다. --force 가 있으면 실패한 GRANT 를 건너뛰고 0 으로 끝난다.
+    assert.doesNotMatch(seen[0].input, /WHENEVER|EXIT/, vendor);
+    assert.equal(seen[0].input, `${VENDOR_ENGINES[vendor].integration.grants.map(statement => `${statement};`).join('\n')}\n`);
+    const command = seen[0].args.at(-1);
+    assert.match(command, new RegExp(`^MYSQL_PWD=\\$${vendor === 'mysql' ? 'MYSQL' : 'MARIADB'}_ROOT_PASSWORD ${vendor} -uroot `), vendor);
+    assert.doesNotMatch(command, /--force/, `${vendor}: 첫 오류에서 멈춘다`);
+    assert.throws(() => runAsAdministrator({ id: vendor, name: 'c', engine: VENDOR_ENGINES[vendor] }, ['GRANT x'], () => ({ status: 1, stdout: '', stderr: 'ERROR 1044' })),
+      error => error.code === 'VENDOR_ADMIN_FAILED' && /ERROR 1044/.test(error.message), vendor);
+  }
 });
 
 test('a run passes only when every ledger class left test results', () => {
@@ -365,16 +581,53 @@ test('unique parity reads the column set of constraints, plain unique indexes an
   lines[2] = ['tb_a.uk_fn=CASE  WHEN "A" IS NOT NULL THEN "A" END', 'tb_a.uk_fn=CASE  WHEN "D" IS NOT NULL THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
   assert.doesNotThrow(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), '이 대조는 컬럼 집합만 본다. 조건의 모양은 어댑터 문장을 고정하는 시험(nullable composite uniques) 몫이다');
 
-  assert.equal(readUniqueColumns({}, 'mysql', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
+  assert.equal(readUniqueColumns({}, 'mssql', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
   assert.throws(() => readUniqueColumns({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), error => error.code === 'VENDOR_QUERY_FAILED');
   assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_COLUMNS[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 컬럼 조회가 있어야 한다');
   assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_SEQUENCE_NEXT_VALUES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 시퀀스 다음 값 조회가 있어야 한다');
 });
 
+test('the MySQL family reads every unique, constraint or index, from one query because the catalog cannot tell them apart', () => {
+  // 2026-11-04 MySQL 8.4 실측 줄. 접두 유니크는 컬럼 이름만, CREATE UNIQUE INDEX 도 같은 조회에 나온다.
+  const measured = ['m6_a.primary=id', 'm6_a.uq_m6_a_w=w', 'm6_a.ux_m6_a_zy=z', 'm6_a.ux_m6_a_zy=y', 'm6_b.v=v', '@@COMPLETED', ''];
+  for (const vendor of ['mysql', 'mariadb']) {
+    const statements = [];
+    const found = readUniqueColumns({}, vendor, (_, sql) => {
+      statements.push(...sql);
+      return { errors: [], sections: new Map([[0, measured], [1, []], [2, []]]) };
+    });
+    assert.deepEqual([...found.keys()], ['m6_a.primary', 'm6_a.uq_m6_a_w', 'm6_a.ux_m6_a_zy', 'm6_b.v'], vendor);
+    assert.deepEqual([...found.get('m6_a.ux_m6_a_zy').keys], ['z', 'y']);
+    // 둘째·셋째 조회는 표식 순서만 맞추고 값을 내지 않는다. 제약과 독립 인덱스를 가르려 하면 MySQL 계열에서는 늘 비거나 둘로 나뉘어 붉다.
+    assert.match(statements[1].sql, /WHERE 1 = 0$/, vendor);
+    assert.match(statements[2].sql, /WHERE 1 = 0$/, vendor);
+    assert.ok(statements[2].raw, vendor);
+    // 값만 내는 배치라 형식 밖의 줄은 버리지 않고 멈춘다.
+    assert.throws(() => readUniqueColumns({}, vendor, () => ({ errors: [], sections: new Map([[0, ['m6_a.bad-name=id']], [1, []], [2, []]]) })),
+      error => error.code === 'VENDOR_QUERY_FAILED' && /유니크 컬럼 조회의 줄을 해석하지 못했다: m6_a\.bad-name=id/.test(error.message), vendor);
+  }
+  assert.match(VENDOR_UNIQUE_COLUMNS.mysql.constraints, /information_schema\.statistics s WHERE s\.table_schema = DATABASE\(\) AND s\.non_unique = 0 AND s\.column_name IS NOT NULL/);
+  assert.match(VENDOR_UNIQUE_COLUMNS.mariadb.constraints, /c\.constraint_type IN \('PRIMARY KEY','UNIQUE'\)/);
+  // 카탈로그 조회의 줄도 같은 기준이다. mysql 클라이언트는 -N -B 로 값만 낸다.
+  const kinds = Object.keys(VENDOR_INTROSPECTION.mysql);
+  assert.throws(() => readCatalog({}, 'mysql', () => ({ errors: [], sections: new Map(kinds.map((_, at) => [at, at === 0 ? ['bad-name.id'] : []])) })),
+    error => error.code === 'VENDOR_QUERY_FAILED' && /columns 조회의 줄을 해석하지 못했다: bad-name\.id/.test(error.message));
+  assert.deepEqual(readCatalog({}, 'mariadb', () => ({ errors: [], sections: new Map(kinds.map((_, at) => [at, at === 0 ? ['tb_a.id', '@@COMPLETED'] : []])) })).columns, ['tb_a.id']);
+});
+
 test('sequence next values and byte columns come from strict lines', () => {
   const answer = lines => () => ({ errors: [], sections: new Map([[0, lines]]) });
   assert.deepEqual([...readSequenceNextValues({}, 'oracle', answer(['sq_a:42', '  sq_b:1  ', '@@COMPLETED']))], [['sq_a', 42], ['sq_b', 1]]);
-  assert.equal(readSequenceNextValues({}, 'mysql', answer([])), null);
+  assert.equal(readSequenceNextValues({}, 'mssql', answer([])), null);
+  // 2026-11-04 실측 줄. MySQL 은 Hibernate 표 시퀀스의 next_val, MariaDB 는 NOCACHE 시퀀스의 next_not_cached_value 다.
+  assert.deepEqual([...readSequenceNextValues({}, 'mysql', answer(['m6_seq_a:41', 'm6_seq_b:7', '@@COMPLETED']))], [['m6_seq_a', 41], ['m6_seq_b', 7]]);
+  assert.deepEqual([...readSequenceNextValues({}, 'mariadb', answer(['m6_seq_nocache:103']))], [['m6_seq_nocache', 103]]);
+  assert.deepEqual([...readSequenceNextValues({}, 'mysql', answer([]))], [], '시퀀스가 없으면 표식만 나온다');
+  assert.throws(() => readSequenceNextValues({}, 'mariadb', answer(['m6_seq 103'])), /시퀀스 다음 값 조회의 줄을 해석하지 못했다: m6_seq 103/);
+  // 시퀀스 이름마다 표가 달라 문장을 만들어 돌린다. MariaDB 의 EXECUTE IMMEDIATE 는 부분 조회를 받지 않아(1970) 변수로 나눈다.
+  assert.match(VENDOR_SEQUENCE_NEXT_VALUES.mysql, /next_val\) FROM `', t\.table_name, '`'\).*PREPARE nuri_seq FROM @nuri_seq_sql; EXECUTE nuri_seq; DEALLOCATE PREPARE nuri_seq$/);
+  assert.match(VENDOR_SEQUENCE_NEXT_VALUES.mysql, /^SET SESSION group_concat_max_len = 1048576; /, 'GROUP_CONCAT 기본 상한이 시퀀스 목록을 자르지 않게 한다');
+  assert.match(VENDOR_SEQUENCE_NEXT_VALUES.mariadb, /^SET @q = \(SELECT .*next_not_cached_value.*table_type = 'SEQUENCE'\); EXECUTE IMMEDIATE COALESCE\(@q, 'SELECT 1 FROM DUAL WHERE 0'\)$/);
   assert.throws(() => readSequenceNextValues({}, 'oracle', answer(['sq_a 42'])), error => error.code === 'VENDOR_QUERY_FAILED' && /시퀀스 다음 값 조회의 줄을 해석하지 못했다: sq_a 42/.test(error.message));
   assert.deepEqual(readByteColumns({}, 'oracle', answer(['tb_a.nm=100', 'tb_a.tk=4000'])), ['tb_a.nm=100', 'tb_a.tk=4000']);
   assert.deepEqual(readByteColumns({}, 'mysql', answer(['x'])), [], '바이트 의미가 없는 벤더는 비어 있다');
@@ -531,6 +784,38 @@ test('every degradation an adapter can declare has a sentence in the ledger, in 
       assert.ok(MODEL_DEGRADATION_KINDS.includes(kind) || fixedDegradations(file).includes(kind), `${file}: 모르는 종류 ${kind}`);
     }
   }
+});
+
+/**
+ * 어댑터의 모든 저하 분기를 지나는 시험 모델. 시험 스냅숏에 부분 인덱스(partial)와 긴 단일 문자열 유니크(MySQL prefix, Oracle length)를 더한다.
+ * 지연 FK(deferrable)와 GIN 인덱스(index)는 시험 스냅숏에 이미 있다.
+ */
+function everyDegradationModel() {
+  const value = snapshot();
+  value.indexes.push({ table_name: 't_child', name: 'ix_t_child_owner_live', definition: 'CREATE INDEX ix_t_child_owner_live ON public.t_child USING btree (owner) WHERE (parent_id IS NOT NULL)' });
+  value.constraints.push(constraint('t_parent', 'uk_t_parent_body', 'u', 'UNIQUE (body)'));
+  return buildVendorModel({ snapshot: value, extras });
+}
+
+// 두 벤더가 한 어댑터 파일을 함께 쓰면 파일의 선언 지점은 벤더마다 닿는 것이 다르다(MariaDB 는 긴 유니크를 해시로 받아 접두 저하가 없다).
+// 그래서 문장은 파일이 아니라 벤더가 실제로 낼 수 있는 저하와 양방향으로 맞춘다. 닿지 않는 종류의 문장은 화면에 거짓을 보인다.
+test('every CI vendor shows exactly the degradations its own translation can reach, and the probe model reaches every declaration', () => {
+  const ledger = loadVendorLedger(ROOT);
+  const branches = everyDegradationModel();
+  const reached = vendorId => [...new Set(VENDOR_ADAPTERS[vendorId].emitSchema(branches).degradations.map(row => degradationKind(row.name)))].sort();
+  const ciVendors = ledger.vendors.filter(vendor => vendor.ci);
+  assert.deepEqual(ciVendors.map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql']);
+  for (const vendor of ciVendors) {
+    assert.deepEqual(vendor.notices.degradations.map(row => row.kind).sort(), reached(vendor.id), `${vendor.id}: 표시 문장과 번역이 낼 수 있는 저하가 다르다`);
+    assert.deepEqual(unshownDegradations(vendor, VENDOR_ADAPTERS[vendor.id].emitSchema(branches).degradations), [], vendor.id);
+    for (const row of vendor.notices.degradations) assert.match(row.text, /니다\.$/, `${vendor.id} ${row.kind}: 화면 문장은 '…습니다.' 로 끝낸다`);
+    assert.match(vendor.notices.image, /니다\.$/, vendor.id);
+  }
+  // 시험 모델이 어댑터 소스의 모든 선언 지점에 닿아야 위 대조가 빈틈이 없다. 분기를 더하고 모델에 사례를 더하지 않으면 여기서 붉다.
+  for (const [file, vendors] of [['oracle', ['oracle']], ['mysql', ['mysql', 'mariadb']]]) {
+    assert.deepEqual([...new Set(vendors.flatMap(reached))].sort(), [...declaredDegradationKinds(`scripts/project-composer-vendor-${file}.mjs`)].sort(), file);
+  }
+  assert.ok(reached('mysql').includes('prefix') && !reached('mariadb').includes('prefix'), 'MariaDB 는 긴 유니크를 엔진 해시로 받는다');
 });
 
 test('certification needs the sentences the screen shows', t => {
@@ -763,8 +1048,15 @@ test('the preview switch opens the tool path only: the screen path keeps reading
 });
 
 test('a block statement ends on a slash line and a plain statement on a semicolon', () => {
-  assert.equal(renderFlywayMigration([{ sql: 'CREATE TABLE t (id NUMBER)' }, { sql: 'BEGIN NULL; END;', raw: true }]),
+  assert.equal(renderFlywayMigration([{ sql: 'CREATE TABLE t (id NUMBER)' }, { sql: 'BEGIN NULL; END;', raw: true }], 'oracle'),
     'CREATE TABLE t (id NUMBER);\nBEGIN NULL; END;\n/\n');
+  // MySQL 계열은 슬래시가 문법 오류다. 트리거 본문의 세미콜론이 문장을 끊지 않게 대상 DB 대조의 클라이언트 배치와 같은 구분자로 감싼다.
+  const trigger = "CREATE TRIGGER tr_a BEFORE UPDATE ON t FOR EACH ROW BEGIN SIGNAL SQLSTATE '55000' SET MESSAGE_TEXT = 'append-only t'; END";
+  for (const vendor of ['mysql', 'mariadb']) {
+    assert.equal(renderFlywayMigration([{ sql: 'CREATE TABLE t (id INT)' }, { sql: trigger, raw: true }, { sql: 'INSERT INTO t VALUES (1)' }], vendor),
+      `CREATE TABLE t (id INT);\nDELIMITER $$\n${trigger}$$\nDELIMITER ;\nINSERT INTO t VALUES (1);\n`, vendor);
+  }
+  assert.throws(() => renderFlywayMigration([{ sql: 'x', raw: true }], 'mssql'), /블록 문장을 끝낼 형식이 없는 벤더: mssql/);
 });
 
 test('the build uses the vendor driver and Flyway plugin and keeps the rest', () => {
@@ -782,6 +1074,21 @@ test('the build uses the vendor driver and Flyway plugin and keeps the rest', ()
   assert.doesNotMatch(projected, /postgres/);
   assert.doesNotMatch(projected, /testRuntimeOnly 'com\.oracle/, '런타임 드라이버와 겹치는 시험 줄은 뺀다');
   assert.match(projected, /testImplementation libs\.h2/);
+  // 원본은 벤더마다 시험 드라이버 줄을 둔다. 고른 벤더의 줄은 런타임 드라이버와 겹치고 다른 벤더의 줄은 쓰지 않으므로 모두 뺀다.
+  const allDrivers = build.replace(/(testRuntimeOnly 'com\.oracle[^\n]*\n)/, "$1    testRuntimeOnly 'org.mariadb.jdbc:mariadb-java-client:3.5.11'\n    testRuntimeOnly 'com.mysql:mysql-connector-j:26.10.0'\n");
+  for (const vendor of ['oracle', 'mysql', 'mariadb']) {
+    const result = projectVendorBuild(allDrivers, vendor);
+    assert.doesNotMatch(result, /testRuntimeOnly|vendorIntegrationTest/, vendor);
+    assert.match(result, new RegExp(`^ {4}implementation '${VENDOR_SOURCE[vendor].flywayPlugin}'\\n {4}runtimeOnly '${VENDOR_SOURCE[vendor].driverCoordinate}'\\n {4}testImplementation libs\\.h2\\n`, 'm'), vendor);
+  }
+  assert.equal(VENDOR_SOURCE.mysql.flywayPlugin, 'org.flywaydb:flyway-mysql');
+  assert.equal(VENDOR_SOURCE.mariadb.flywayPlugin, 'org.flywaydb:flyway-mysql');
+  // 시험 드라이버는 원본 빌드 파일에 실제로 있는 그 줄이어야 지울 수 있다. 원본 빌드의 줄은 소스 투영 값과 같은 판이다.
+  const source = readFileSync(join(ROOT, 'api-server/build.gradle'), 'utf8').replace(/\r\n/g, '\n');
+  assert.doesNotMatch(projectVendorBuild(source, 'mysql'), /testRuntimeOnly '(?:com\.oracle|org\.mariadb|com\.mysql)/, '원본 빌드의 벤더 시험 드라이버 줄이 모두 빠진다');
+  for (const line of source.match(/^ *testRuntimeOnly '(?:com\.oracle|org\.mariadb|com\.mysql)[^']*'$/gm) ?? []) {
+    assert.ok(Object.values(VENDOR_SOURCE).some(vendor => line.includes(`'${vendor.driverCoordinate}'`)), `원본 시험 드라이버의 판이 소스 투영 값과 다르다: ${line.trim()}`);
+  }
 });
 
 test('a build without the expected lines stops instead of keeping PostgreSQL', () => {
@@ -1038,13 +1345,33 @@ test('a unique counts as baseline only while its signature is unchanged, and eve
   assert.deepEqual(output, ['tb_a.uk_keep=10', 'tb_a.sys_c0012=11', 'tb_a.uk_on_plain_index=a#b'], '일반 인덱스로 집행되는 제약은 컬럼 목록이 값이다');
   assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['garbage line']]]) })), /유니크 서명 조회의 줄을 해석하지 못했다: garbage line/);
   assert.match(VENDOR_UNIQUE_SIGNATURES.oracle, /constraint_type = 'U' AND i\.uniqueness = 'NONUNIQUE'/, '일반 인덱스로 집행되는 유니크 제약도 서명에 든다');
-  assert.throws(() => readUniqueSignatures({}, 'mysql', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
+  assert.throws(() => readUniqueSignatures({}, 'mssql', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
   assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), /유니크 서명 조회 실패: ORA-00942/);
+});
+
+test('the MySQL family signs a unique with its sorted key list, and its session prefix keeps the marker', () => {
+  const prefixes = [];
+  const answer = lines => (_, statements, options) => { prefixes.push(options.sessionPrefix); return { errors: [], sections: new Map([[0, lines]]) }; };
+  // 2026-11-04 MySQL 8.4 실측 줄: 복합 키는 '#' 로, 접두는 '$' 로, 함수 키 부분은 식의 해시로 나온다.
+  assert.deepEqual(readUniqueSignatures({}, 'mysql', answer(['m6_a.ux_m6_a_zy=y#z', 'm6_a.uq_m6_a_w=w$768', 'm6_a.primary=id', 'm6_a.ux_m6_a_fn=expr_57cfb0cbf690', '@@COMPLETED'])),
+    ['m6_a.ux_m6_a_zy=y#z', 'm6_a.uq_m6_a_w=w$768', 'm6_a.primary=id', 'm6_a.ux_m6_a_fn=expr_57cfb0cbf690']);
+  assert.deepEqual(readUniqueSignatures({}, 'mariadb', answer(['m6_a.ux_m6_a_name=name#other', 'm6_b.ux_m6_b_long=longv'])), ['m6_a.ux_m6_a_name=name#other', 'm6_b.ux_m6_b_long=longv']);
+  // 세미콜론 없는 접두(SET LINESIZE 4000)는 mysql 클라이언트가 다음 표식 줄과 한 문장으로 읽어 표식이 사라진다(2026-11-04 실측 1064).
+  assert.deepEqual(prefixes, [['SET SESSION group_concat_max_len = 1048576;'], ['SET SESSION group_concat_max_len = 1048576;']]);
+  prefixes.length = 0;
+  readUniqueSignatures({}, 'oracle', answer(['tb_a.uk_keep=10']));
+  assert.deepEqual(prefixes, [['SET LINESIZE 4000']], 'Oracle 접두는 그대로다');
+  assert.throws(() => readUniqueSignatures({}, 'mysql', answer(['m6_a.ux=upper(`y`)'])), /유니크 서명 조회의 줄을 해석하지 못했다/);
+  // 인덱스 ID 는 표 재빌드마다 바뀌어(실측) 서명이 아니다. 키 목록·접두·식 해시가 값이다.
+  assert.match(VENDOR_UNIQUE_SIGNATURES.mysql, /IF\(s\.sub_part IS NULL, '', CONCAT\('\$', s\.sub_part\)\)/);
+  assert.match(VENDOR_UNIQUE_SIGNATURES.mysql, /LEFT\(SHA2\(s\.expression, 256\), 12\)/);
+  assert.doesNotMatch(`${VENDOR_UNIQUE_SIGNATURES.mysql}${VENDOR_UNIQUE_SIGNATURES.mariadb}`, /INDEX_ID|INNODB_/i);
 });
 
 test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
   const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
-  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle']);
+  // 단계 3 은 MariaDB·MySQL 의 벤더 잡을 승격 전(preview)에 연다. 승격은 증거를 기록하는 다음 변경이다.
+  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql']);
   const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
@@ -1059,7 +1386,7 @@ test('the CI vendor job is a certification condition and only opens a vendor who
     } finally { rmSync(root, { recursive: true, force: true }); }
   };
   assert.throws(() => load(vendor => { vendor.status = 'certified'; delete vendor.ci; }), /oracle: CI 벤더 잡\(ci\)이 없다/);
-  assert.throws(() => load((_, copy) => { copy.vendors.find(vendor => vendor.id === 'mysql').ci = true; }), /mysql: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
+  assert.throws(() => load((_, copy) => { copy.vendors.find(vendor => vendor.id === 'mssql').ci = true; }), /mssql: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
   assert.throws(() => load(vendor => { vendor.ci = 'yes'; }), /oracle: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
 });
 
@@ -1157,6 +1484,27 @@ test('the README procedure names a command that exists and what it does not cove
   // 본문은 원본 그대로라 PostgreSQL 절차가 남는다. 절의 첫 문단이 어느 쪽을 따를지 말해야 한다.
   assert.equal(readme.split('\n## 데이터베이스\n\n')[1]?.split('\n\n')[0], VENDOR_README_PRECEDENCE, '절 첫머리가 본문보다 우선한다고 말한다');
   assert.match(VENDOR_README_PRECEDENCE, /PostgreSQL 설치·시드·이관·스키마 검증 안내는 이 프로젝트에 맞지 않고 이 절이 우선한다/);
+});
+
+test('the MySQL family README states its own limits and none of the Oracle ones', () => {
+  const ledger = loadVendorLedger(ROOT);
+  for (const [vendor, subject] of [['mysql', 'MySQL 은'], ['mariadb', 'MariaDB 는']]) {
+    const readme = vendorReadme(vendor, ledger);
+    for (const row of ledger.vendors.find(item => item.id === vendor).notices.degradations) assert.ok(readme.includes(`- ${row.text}`), `${vendor}: README 에 저하가 없다: ${row.kind}`);
+    assert.match(readme, new RegExp(`^4\\. ${subject} DDL 이 자동 커밋이라 \`V\` 파일이 중간에 실패하면 .*\`repair\`.*\`npm run verify:vendor-schema\` 로 일회용 DB 에서 먼저 돌린다\\.$`, 'm'), `${vendor}: DDL 자동 커밋 뒤 복구`);
+    assert.match(readme, new RegExp(`db/vendor/${vendor}`));
+    // 운영 DB_URL 에서 인자가 빠지면 서버 시간대가 UTC 일 때 한국 0~9시의 CURRENT_DATE 가 전날이 된다(2026-11-04 실측).
+    for (const parameter of VENDOR_SOURCE[vendor].urlParameters.split('&')) assert.ok(readme.includes(`\`${parameter}\``), `${vendor}: ${parameter}`);
+    assert.match(readme, /READ COMMITTED/);
+    assert.match(readme, /log_bin_trust_function_creators/);
+    assert.match(readme, /3,072바이트/);
+    // Oracle 의 한계는 이 DB 에 없다. 남기면 도입자가 없는 제약을 피해 쓴다.
+    for (const oracleOnly of ['VARCHAR2', 'CLOB', 'SYS_C', '일반 인덱스로 집행되는 유니크 제약', '바이트 길이가 된 컬럼', 'Oracle']) assert.ok(!readme.includes(oracleOnly), `${vendor}: ${oracleOnly}`);
+    for (const limit of ['파괴적 DDL', '명명 예외', 'CHECK·트리거', '새 권한 코드', '새 Java 소스', '이름 없이 만든 제약']) assert.ok(readme.includes(limit), `${vendor}: ${limit}`);
+    assert.equal(readme.split('\n## 데이터베이스\n\n')[1]?.split('\n\n')[0], VENDOR_README_PRECEDENCE);
+  }
+  assert.match(vendorReadme('mysql', ledger), /오류 1419/, 'MySQL 은 바이너리 로그가 기본으로 켜져 있다');
+  assert.match(vendorReadme('mariadb', ledger), /해시 인덱스/, 'MariaDB 는 긴 유니크를 해시로 받는다');
 });
 
 test('the REUSABLE_BASE layout lines name the vendor schema check and the removed migration module only for a vendor, and keep the PostgreSQL lines byte for byte', () => {
@@ -1457,6 +1805,12 @@ test('the runner launches the vendor container with its own labels and closed en
   assert.equal(VENDOR_ENGINES.oracle19.ready('x', cmd => { seen.push(cmd[0]); return { stdout: cmd[0] === 'logs' ? 'DATABASE IS READY TO USE' : 'Grant succeeded', stderr: '' }; }), true);
   for (const id of ['mysql', 'mariadb', 'mssql', 'cubrid']) assert.equal(VENDOR_ENGINES[id].ready('x', cmd => { seen.push(cmd[0]); return { status: 0 }; }), true, id);
   assert.deepEqual(seen, ['logs', 'logs', 'exec', 'exec', 'exec', 'exec', 'exec']);
+  // 초기화 중의 임시 서버는 소켓만 열고 앱 계정은 초기화 끝에 생긴다. 앱 계정의 TCP 접속이 되어야 Flyway 와 시험이 붙을 수 있다.
+  for (const [id, client, variable] of [['mysql', 'mysql', 'MYSQL_PASSWORD'], ['mariadb', 'mariadb', 'MARIADB_PASSWORD']]) {
+    let command = null;
+    assert.equal(VENDOR_ENGINES[id].ready('x', cmd => { command = cmd.at(-1); return { status: 1 }; }), false, `${id}: 접속하지 못하면 준비가 아니다`);
+    assert.equal(command, `MYSQL_PWD=$${variable} ${client} -h127.0.0.1 --protocol=TCP -uvendorcheck -e "select 1" vendorcheck`, id);
+  }
 
   const removed = [];
   const noId = (dockerArgs) => { removed.push(dockerArgs[0]); return { status: 0, stdout: 'not an id', stderr: '' }; };
@@ -1501,8 +1855,14 @@ test('the runner wires the closed Docker environment, one API environment and th
   assert.deepEqual(resolveVendorEngine('oracle', undefined, VENDOR_ENGINES).id, 'oracle');
   assert.deepEqual(resolveVendorEngine('oracle', 'oracle19', VENDOR_ENGINES).id, 'oracle19');
   assert.throws(() => resolveVendorEngine('oracle', 'mysql', VENDOR_ENGINES), /oracle 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/);
-  assert.throws(() => resolveVendorEngine('mysql', undefined, VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/, '통합 값이 없는 엔진은 아직 열지 않는다');
+  assert.throws(() => resolveVendorEngine('mssql', undefined, VENDOR_ENGINES), /mssql 프로젝트의 대표 묶음을 mssql 엔진으로 실행할 수 없다/, '통합 값이 없는 엔진은 아직 열지 않는다');
   assert.throws(() => resolveVendorEngine('mysql', 'oracle19', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 oracle19 엔진으로/);
+  assert.throws(() => resolveVendorEngine('mysql', 'mariadb', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 mariadb 엔진으로/, '같은 어댑터를 써도 다른 벤더의 엔진이다');
+  for (const vendor of ['mysql', 'mariadb']) {
+    assert.equal(resolveVendorEngine(vendor, undefined, VENDOR_ENGINES).id, vendor);
+    assert.deepEqual(vendorDatabaseEnvironment(VENDOR_ENGINES[vendor], '49153', 'secret', '1'),
+      { DB_URL: `jdbc:${vendor}://127.0.0.1:49153/vendorcheck?${VENDOR_SOURCE[vendor].urlParameters}`, DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' }, vendor);
+  }
   assert.throws(() => resolveVendorEngine('oracle', 'nope', VENDOR_ENGINES), /nope 엔진으로/);
 
   const readme = vendorReadme('oracle', loadVendorLedger(ROOT));
@@ -2150,6 +2510,41 @@ esac
   const environment = projectVendorEnvironment('DB_URL=jdbc:postgresql://localhost:5432/egovdb?sslmode=disable\nDB_PASSWORD=egov123\n', 'oracle');
   assert.match(environment, new RegExp(`^DB_URL=${VENDOR_SOURCE.oracle.url}$`, 'm'));
   assert.match(environment, /^DB_ADMIN_PASSWORD=/m);
+  assert.match(environment, /^# 운영 번들 DB 의 SYS 비밀번호\./m);
+});
+
+test('the MySQL family stack keeps the app and root credentials apart and every projected file keeps its connection arguments', () => {
+  const compose = readFileSync(join(ROOT, 'docker-compose.yml'), 'utf8').replace(/\r\n/g, '\n');
+  const deploySource = readFileSync(join(ROOT, 'scripts/deploy.sh'), 'utf8').replace(/\r\n/g, '\n');
+  for (const [vendor, prefix] of [['mysql', 'MYSQL'], ['mariadb', 'MARIADB']]) {
+    const source = VENDOR_SOURCE[vendor];
+    const projected = projectVendorCompose(compose, vendor);
+    assert.ok(projected.includes(`image: ${VENDOR_ENGINES[vendor].image}\n`), `${vendor}: 개발 compose 와 검증 엔진의 이미지가 같다`);
+    assert.match(projected, /127\.0\.0\.1:3306:3306/, '호스트 공개는 루프백으로 좁힌다');
+    assert.ok(projected.includes(`"url": "${source.composeUrl}"`), `${vendor}: 앱이 접속 인자를 가진 주소로 붙는다`);
+    assert.match(projected, new RegExp(`^ {2}${source.composeVolume}:$`, 'm'));
+    assert.doesNotMatch(projected, /postgres/);
+    assert.match(projected, /^ {6}TZ: Asia\/Seoul$/m);
+    // 앱 계정(egov)과 root 를 나눈다. 앱 접속 JSON 의 자격과 같은 앱 계정이 이미지 초기화로 생긴다.
+    assert.match(projected, new RegExp(`^ {6}${prefix}_USER: egov\\n {6}${prefix}_PASSWORD: egov123$`, 'm'));
+    const prod = projectVendorComposeProd('    environment:\n      POSTGRES_USER: ${DB_USERNAME:?필요}\n      POSTGRES_PASSWORD: ${DB_PASSWORD:?필요}\n      SPRING_FLYWAY_LOCATIONS: classpath:db/migration\n', vendor);
+    assert.match(prod, new RegExp(`^ {6}${prefix}_USER: \\$\\{DB_USERNAME`, 'm'));
+    assert.match(prod, new RegExp(`^ {6}${prefix}_PASSWORD: \\$\\{DB_PASSWORD`, 'm'));
+    assert.match(prod, new RegExp(`^ {6}${prefix}_ROOT_PASSWORD: \\$\\{DB_ADMIN_PASSWORD`, 'm'), 'root 비밀번호는 앱 비밀번호와 나눈다');
+    assert.match(prod, new RegExp(`SPRING_FLYWAY_LOCATIONS: classpath:db/vendor/${vendor}`));
+    // 접속 인자의 따옴표와 & 는 셸 문법이다. case 패턴을 큰따옴표로 감싸 글자 그대로 맞춘다.
+    const deploy = projectVendorDeploy(deploySource, vendor);
+    assert.ok(deploy.includes(`    "${source.composeUrl}") ;;\n`), `${vendor}: 배포 스크립트가 접속 인자까지 같은 주소만 받는다`);
+    assert.match(deploy, /DB_PASSWORD DB_ADMIN_PASSWORD/);
+    const environment = projectVendorEnvironment(readFileSync(join(ROOT, '.env.example'), 'utf8').replace(/\r\n/g, '\n'), vendor);
+    assert.ok(environment.includes(`\nDB_URL=${source.url}\n`), vendor);
+    assert.match(environment, /^# 운영 번들 DB 의 root 비밀번호\./m);
+    const profile = projectVendorProfile('    url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}\n    driver-class-name: org.postgresql.Driver\n', vendor);
+    assert.equal(profile, `    url: \${DB_URL:${source.url}}\n    driver-class-name: ${source.driverClass}\n`, `${vendor}: 주소의 따옴표가 치환 기호로 읽히지 않는다`);
+    assert.match(vendorApplicationDocument(vendor), new RegExp(`dialect: ${source.dialect.replaceAll('.', '\\.')}`));
+  }
+  assert.match(VENDOR_SOURCE.mariadb.composeService, /healthcheck\.sh", "--connect", "--innodb_initialized"/);
+  assert.match(VENDOR_SOURCE.mysql.composeService, /mysqladmin ping -h 127\.0\.0\.1/, '초기화 중의 임시 서버는 TCP 를 열지 않는다');
 });
 
 /*

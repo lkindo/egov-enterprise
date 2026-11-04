@@ -3,6 +3,7 @@ package nuri.foundation.core.persistence;
 import jakarta.persistence.EntityManager;
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 import org.springframework.jdbc.core.JdbcOperations;
@@ -27,6 +28,9 @@ public class OracleSqlDialect implements VendorSqlDialect {
     static final int LOCK_WAIT_SECONDS = 10;
     private static final String LOCK_SLOT_SQL =
             "SELECT lock_slot_no FROM tb_sys_lock_slot WHERE lock_slot_no = ? FOR UPDATE WAIT " + LOCK_WAIT_SECONDS;
+    private static final VendorErrorCodes ERROR_CODES = new VendorErrorCodes(
+            Set.of(2290, 1400, 1407, 12899, 1438, 1722, 1858, 1861), Set.of(1, 2291, 2292),
+            Set.of(54, 30006, 60, 8177), Set.of(1013), Set.of());
 
     @Override
     public String paginate(String orderedSelect, long limit, long offset) {
@@ -173,6 +177,15 @@ public class OracleSqlDialect implements VendorSqlDialect {
     @Override
     public String databaseProductName() {
         return "Oracle";
+    }
+
+    /**
+     * 무결성 위반의 SQLState 가 모두 23000 이라 오류 번호로 나눈다. CHECK·NOT NULL·길이·형식은 입력 오류다.
+     * 대기 초과(54·30006), 교착(60), 직렬화 실패(8177)는 잠금 충돌이고 1013 은 문장 취소다.
+     */
+    @Override
+    public VendorErrorCodes errorCodes() {
+        return ERROR_CODES;
     }
 
     @Override
