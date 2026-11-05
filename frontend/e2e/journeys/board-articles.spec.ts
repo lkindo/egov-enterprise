@@ -1,4 +1,5 @@
 import { expect,test } from '../fixtures/browser-test';
+import { trackApiRequests } from '../fixtures/hydration';
 import { getAdminBearerToken } from '../utils/admin-token';
 import { screenYmd } from '../helpers/screen-date';
 test.describe('게시판과 커뮤니티', () => {
@@ -64,8 +65,12 @@ test.describe('게시판과 커뮤니티', () => {
         expect(permissions).not.toContain('NOTICE_EDIT');
         expect(permissions).not.toContain('FAQ_EDIT');
 
+        const listRequests = trackApiRequests(userPage);
         await userPage.goto(`/admin/community/boards/select-board-list?bbsId=${bbsId}`);
         await expect(userPage.getByRole('link', { name: '글쓰기', exact: true })).toHaveCount(0);
+        // 글쓰기 여부는 서버가 그린 목록으로 판정되므로 위 단언은 하이드레이션 전에도 통과한다. 바로 떠나면 늦게 하이드레이션된
+        //   목록이 막 보낸 /api 요청이 이동에 끊긴다(2026-11-05) — 목록의 요청이 끝난 뒤 작성 화면으로 간다.
+        await listRequests.settled(userPage.getByRole('heading', { level: 1 }));
         await userPage.goto(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`);
         await expect(userPage.getByText('이 게시판을 편집할 권한이 없습니다. 필요한 권한은 관리자에게 문의해 주세요.', { exact: true })).toBeVisible();
         await expect(userPage.locator('input[name="pstTtl"]')).toBeDisabled();
