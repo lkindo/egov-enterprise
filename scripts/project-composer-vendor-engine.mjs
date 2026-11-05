@@ -74,6 +74,22 @@ const innoDbIntegration = (vendorId, { driver, dialect, administrator, observati
   grants: [`GRANT ALL PRIVILEGES ON ${SCHEMA}.* TO '${SCHEMA}'@'%'`, ...observation],
 });
 
+/**
+ * Oracle 대상 DB 가 한글을 그대로 담는지 준비 단계에서 본다 — PDB 문자 집합과, 클라이언트를 거친 한글 리터럴 한 글자의 저장 바이트.
+ *
+ * [2026-11-04] Oracle 19c 증거 기록 한 번이 통합 시험에서 한글 리터럴을 '?' 로 저장해 표준 도메인 고유 제약(ORA-00001)에서 늦게
+ *   멈췄다. 같은 생성물의 재현 5회는 모두 통과해 원인을 가리지 못했다. 그 상태의 DB 는 시험 중간이 아니라 준비 때 그 값을 남기고
+ *   바로 멈춘다(대기 루프가 컨테이너 로그를 남기고 지운다).
+ */
+const ORACLE_UNICODE_PROBE = client => `printf "SET HEADING OFF FEEDBACK OFF PAGESIZE 0\\nSELECT 'CHARSET=' || value FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET';\\nSELECT 'HANGUL=' || DUMP('가', 1016) FROM dual;\\nEXIT\\n" | ${client}`;
+export function assertOracleUnicode(engineId, result) {
+  const output = `${result?.stdout ?? ''}${result?.stderr ?? ''}`;
+  const charset = output.match(/CHARSET=(\S+)/)?.[1];
+  const hangul = output.match(/HANGUL=Typ=\d+ Len=\d+ CharacterSet=\S+: ([0-9a-f,]+)/)?.[1];
+  if (charset === 'AL32UTF8' && hangul === 'ea,b0,80') return;
+  fail('VENDOR_ENGINE_NOT_READY', `${engineId} 의 DB 가 한글을 그대로 담지 못한다(NLS_CHARACTERSET=${charset ?? '읽지 못함'}, '가' 저장 바이트=${hangul ?? '읽지 못함'}) — 한글이 '?' 로 바뀐다.`);
+}
+
 /** 앱 계정이 TCP 로 붙어야 준비다. 초기화 중의 임시 서버는 TCP 를 열지 않고 앱 계정은 초기화 끝에 생긴다. */
 const innoDbReady = (client, passwordVariable) => (name, run = docker) => run(['exec', name, 'sh', '-c',
   `MYSQL_PWD=$${passwordVariable} ${client} -h127.0.0.1 --protocol=TCP -u${SCHEMA} -e "select 1" ${SCHEMA}`]).status === 0;
@@ -99,7 +115,9 @@ export const VENDOR_ENGINES = Object.freeze({
     ready: (name, run = docker) => {
       if (!/DATABASE IS READY TO USE/.test(logs(name, run))) return false;
       const result = run(['exec', name, 'sh', '-c', `printf 'CREATE USER ${SCHEMA} IDENTIFIED BY "%s" QUOTA UNLIMITED ON USERS;\\nGRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE TRIGGER TO ${SCHEMA};\\nEXIT\\n' "$ORACLE_PWD" | sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba`]);
-      return /Grant succeeded/.test(`${result.stdout}${result.stderr}`);
+      if (!/Grant succeeded/.test(`${result.stdout}${result.stderr}`)) return false;
+      assertOracleUnicode('oracle19', run(['exec', name, 'sh', '-c', ORACLE_UNICODE_PROBE('NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba')]));
+      return true;
     },
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$ORACLE_PWD"@//localhost/ORCLPDB1 @${file}`,
     batch: oracleBatch,

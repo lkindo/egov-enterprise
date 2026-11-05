@@ -1921,9 +1921,16 @@ test('the runner launches the vendor container with its own labels and closed en
   assert.ok(!args.join(' ').includes('egov.project-composer'), '닫힌 환경에는 작업 토큰도 없다');
   const seen = [];
   assert.equal(VENDOR_ENGINES.oracle.ready('x', cmd => { seen.push(cmd[0]); return { stdout: 'DATABASE IS READY TO USE', stderr: '' }; }), true, '준비 판정도 받은 실행기로 부른다');
-  assert.equal(VENDOR_ENGINES.oracle19.ready('x', cmd => { seen.push(cmd[0]); return { stdout: cmd[0] === 'logs' ? 'DATABASE IS READY TO USE' : 'Grant succeeded', stderr: '' }; }), true);
+  const unicodeOk = 'CHARSET=AL32UTF8\nHANGUL=Typ=96 Len=3 CharacterSet=AL32UTF8: ea,b0,80\n';
+  const oracle19 = probe => cmd => { seen.push(cmd[0]); return { stdout: cmd[0] === 'logs' ? 'DATABASE IS READY TO USE' : cmd.at(-1).includes('NLS_CHARACTERSET') ? probe : 'Grant succeeded', stderr: '' }; };
+  assert.equal(VENDOR_ENGINES.oracle19.ready('x', oracle19(unicodeOk)), true);
   for (const id of ['mysql', 'mariadb', 'mssql', 'cubrid']) assert.equal(VENDOR_ENGINES[id].ready('x', cmd => { seen.push(cmd[0]); return { status: 0 }; }), true, id);
-  assert.deepEqual(seen, ['logs', 'logs', 'exec', 'exec', 'exec', 'exec', 'exec']);
+  assert.deepEqual(seen, ['logs', 'logs', 'exec', 'exec', 'exec', 'exec', 'exec', 'exec']);
+  // [2026-11-04] 한글이 '?' 로 저장된 19c 기록이 시험 중간에 늦게 멈췄다. 유니코드가 아닌 DB 는 준비 때 그 값을 남기고 바로 멈춘다.
+  const notReady = (probe, pattern) => assert.throws(() => VENDOR_ENGINES.oracle19.ready('x', oracle19(probe)), error => error.code === 'VENDOR_ENGINE_NOT_READY' && pattern.test(error.message));
+  notReady('CHARSET=WE8MSWIN1252\nHANGUL=Typ=96 Len=1 CharacterSet=WE8MSWIN1252: 3f\n', /NLS_CHARACTERSET=WE8MSWIN1252, '가' 저장 바이트=3f/);
+  notReady('CHARSET=AL32UTF8\nHANGUL=Typ=96 Len=1 CharacterSet=AL32UTF8: 3f\n', /저장 바이트=3f/);
+  notReady('ORA-01017: invalid username/password\n', /NLS_CHARACTERSET=읽지 못함/);
   // 초기화 중의 임시 서버는 소켓만 열고 앱 계정은 초기화 끝에 생긴다. 앱 계정의 TCP 접속이 되어야 Flyway 와 시험이 붙을 수 있다.
   for (const [id, client, variable] of [['mysql', 'mysql', 'MYSQL_PASSWORD'], ['mariadb', 'mariadb', 'MARIADB_PASSWORD']]) {
     let command = null;
@@ -2046,7 +2053,10 @@ function isolatedVendorDatabase({ engineId = 'oracle', pollsUntilReady = 1, runF
       steps.push(`tail ${args[2]} ${args[3]}`);
       return logFails ? { status: 1, stdout: '', stderr: 'gone' } : { status: 0, stdout: `started with ${started.env.ORACLE_PASSWORD}\n`, stderr: 'ORA-00001 boom\n' };
     }
-    if (args[0] === 'exec') { steps.push('exec'); return { status: 0, stdout: 'Grant succeeded', stderr: '' }; }
+    if (args[0] === 'exec') {
+      steps.push('exec');
+      return { status: 0, stdout: args.at(-1).includes('NLS_CHARACTERSET') ? 'CHARSET=AL32UTF8\nHANGUL=Typ=96 Len=3 CharacterSet=AL32UTF8: ea,b0,80\n' : 'Grant succeeded', stderr: '' };
+    }
     if (args[0] === 'logs') {
       polls += 1;
       steps.push('poll');
@@ -2099,7 +2109,7 @@ test('the 19c readiness writes only after the ownership check and only to the co
   const otherRun = value => { value.Config.Labels['egov.e2e.run'] = 'f'.repeat(24); return value; };
   try {
     await owned.database.waitReady(() => {}, { wait: async () => owned.steps.push('wait') });
-    assert.deepEqual(owned.steps, ['run', owned.inspected, 'poll', 'wait', owned.inspected, 'poll', 'exec'], '쓰기 직전의 준비 판정도 소유 판정 뒤에 돈다');
+    assert.deepEqual(owned.steps, ['run', owned.inspected, 'poll', 'wait', owned.inspected, 'poll', 'exec', 'exec'], '쓰기와 문자 집합 확인도 소유 판정 뒤에 돈다');
     const name = owned.calls[0].args[owned.calls[0].args.indexOf('--name') + 1];
     const targets = owned.calls.filter(({ args }) => args[0] === 'logs' || args[0] === 'exec').map(({ args }) => args[1]);
     assert.deepEqual([...new Set(targets)], [owned.containerId], '대상은 판정한 ID 다');
