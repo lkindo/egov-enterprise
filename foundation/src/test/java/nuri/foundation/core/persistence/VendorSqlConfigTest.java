@@ -62,6 +62,41 @@ class VendorSqlConfigTest {
     }
 
     @Test
+    @DisplayName("cubrid 는 CUBRID 구현을 고른다")
+    void selectsCubrid() {
+        assertThat(new VendorSqlConfig().vendorSqlDialect("cubrid")).isExactlyInstanceOf(CubridSqlDialect.class);
+    }
+
+    @Test
+    @DisplayName("CUBRID 는 시작 전 Hikari 풀이 새 연결마다 세션 잠금 대기 상한을 걸게 한다 — 기본은 무한 대기다")
+    void cubridSetsThePoolSessionLockWait() {
+        try (HikariDataSource pool = new HikariDataSource()) {
+            assertThat(VendorSqlConfig.cubridSessionLockWait().postProcessAfterInitialization(pool, "dataSource")).isSameAs(pool);
+            assertThat(pool.getConnectionInitSql()).isEqualTo("SET TRANSACTION LOCK TIMEOUT 5");
+        }
+    }
+
+    @Test
+    @DisplayName("이미 연 풀과 다른 DataSource 는 연결을 꺼낼 때마다 세션 설정을 걸고, 두 번 감싸지 않는다")
+    void cubridWrapsOtherDataSourcesOnce() throws Exception {
+        BeanPostProcessor processor = VendorSqlConfig.cubridSessionLockWait();
+        DataSource source = mock(DataSource.class);
+        Connection connection = mock(Connection.class);
+        java.sql.Statement statement = mock(java.sql.Statement.class);
+        when(source.getConnection()).thenReturn(connection);
+        when(connection.createStatement()).thenReturn(statement);
+
+        Object wrapped = processor.postProcessAfterInitialization(source, "dataSource");
+
+        assertThat(wrapped).isInstanceOf(SessionInitializingDataSource.class);
+        assertThat(((DataSource) wrapped).getConnection()).isSameAs(connection);
+        verify(statement).execute("SET TRANSACTION LOCK TIMEOUT 5");
+        assertThat(processor.postProcessAfterInitialization(wrapped, "dataSource")).isSameAs(wrapped);
+        Object other = new Object();
+        assertThat(processor.postProcessAfterInitialization(other, "other")).isSameAs(other);
+    }
+
+    @Test
     @DisplayName("모르는 벤더는 기본값으로 넘기지 않고 기동을 멈춘다")
     void rejectsUnknownVendor() {
         assertThatThrownBy(() -> new VendorSqlConfig().vendorSqlDialect("db2"))
@@ -85,7 +120,7 @@ class VendorSqlConfigTest {
     }
 
     @ParameterizedTest
-    @ValueSource(strings = {"postgresql", "oracle", "mariadb", "mysql", "mssql"})
+    @ValueSource(strings = {"postgresql", "oracle", "mariadb", "mysql", "mssql", "cubrid"})
     @DisplayName("격리 수준 처리는 그 벤더에만 걸린다 — PostgreSQL 은 아무것도 걸지 않는다")
     void isolationHandlingIsVendorScoped(String vendor) {
         new ApplicationContextRunner().withUserConfiguration(VendorSqlConfig.class)
@@ -95,6 +130,7 @@ class VendorSqlConfigTest {
                     assertThat(context.containsBean("sqlServerIsolationMapping")).isEqualTo("mssql".equals(vendor));
                     assertThat(context.containsBean("mariadbReadCommitted")).isEqualTo("mariadb".equals(vendor));
                     assertThat(context.containsBean("mysqlReadCommitted")).isEqualTo("mysql".equals(vendor));
+                    assertThat(context.containsBean("cubridSessionLockWait")).isEqualTo("cubrid".equals(vendor));
                 });
     }
 

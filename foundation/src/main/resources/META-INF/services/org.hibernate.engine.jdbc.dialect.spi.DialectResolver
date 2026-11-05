@@ -1,2 +1,3 @@
 nuri.foundation.core.persistence.NuriOracleDialectResolver
 nuri.foundation.core.persistence.NuriSqlServerDialectResolver
+nuri.foundation.core.persistence.NuriCubridDialectResolver

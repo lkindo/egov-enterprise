@@ -235,9 +235,17 @@ function emitSchema(model) {
       emission.cover(index.name, 'index');
     }
   }
-  emission.sql('CREATE TABLE tb_sys_ledger_permit (permit_key VARCHAR(50) PRIMARY KEY)');
+  // 행마다 고유 토큰을 키로 둔다. 바깥 트랜잭션이 중단된 채 안쪽이 같은 허가를 내도 서로의 미커밋 키를 기다리지 않는다(Oracle 과 같다).
+  //   DEFAULT 에 UUID·시퀀스를 쓸 수 없어 토큰은 AUTO_INCREMENT 다. 트리거는 보이는 행(자기 미커밋 행)만 센다(2026-11-06 실측).
+  emission.sql('CREATE TABLE tb_sys_ledger_permit (permit_token BIGINT AUTO_INCREMENT PRIMARY KEY, permit_key VARCHAR(50) NOT NULL)');
+  emission.expect('columns', 'tb_sys_ledger_permit', 'permit_token');
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_key');
-  emission.expect('indexes', 'tb_sys_ledger_permit', 'pk_tb_sys_ledger_permit_permit_key');
+  emission.expect('indexes', 'tb_sys_ledger_permit', 'pk_tb_sys_ledger_permit_permit_token');
+  // 응용 잠금은 슬롯 표의 행 잠금이다(Oracle·MySQL 계열과 같은 수). 재귀 CTE 는 2,000회에서 멈춰 256행을 서로 곱해 채운다(2026-11-06 실측).
+  emission.sql('CREATE TABLE tb_sys_lock_slot (lock_slot_no INT NOT NULL PRIMARY KEY)');
+  emission.expect('columns', 'tb_sys_lock_slot', 'lock_slot_no');
+  emission.expect('indexes', 'tb_sys_lock_slot', 'pk_tb_sys_lock_slot_lock_slot_no');
+  emission.sql('INSERT INTO tb_sys_lock_slot (lock_slot_no) WITH RECURSIVE d (n) AS (SELECT 0 FROM db_root UNION ALL SELECT n + 1 FROM d WHERE n < 255) SELECT a.n * 256 + b.n FROM d a, d b');
   for (const table of model.tables) {
     for (const trigger of table.triggers) {
       if (trigger.kind === 'append-only') appendOnly(emission, table, trigger);
