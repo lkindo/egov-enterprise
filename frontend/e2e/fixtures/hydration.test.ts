@@ -68,6 +68,20 @@ describe('trackApiRequests', () => {
     expect(await resolvedWithin(settled, 1_000)).toBe(true);
   });
 
+  it('요청이 끝난 뒤에도 조용한 시간을 다시 채운다 — 끝난 직후 이어지는 요청을 놓치지 않는다', async () => {
+    // 독립 검토 반례: 요청 종료 때 시각을 갱신하지 않아도 '1초 안에 끝남' 만 보던 시험은 통과했다. 요청이 조용한 시간보다 오래
+    //   걸리면, 갱신이 없을 때 종료 즉시 끝나 버린다 — 응답을 받은 화면이 곧바로 보내는 다음 요청이 그 사이에 끊긴다.
+    const { page, emit } = fakePage();
+    const tracker = trackApiRequests(page);
+    const authMe = request('http://127.0.0.1:3000/api/v1/auth/me');
+    emit('request', authMe);
+    const settled = tracker.settled(hydrated, 150);
+    await new Promise(resolve => setTimeout(resolve, 300));
+    emit('requestfinished', authMe);
+    expect(await resolvedWithin(settled, 80)).toBe(false);
+    expect(await resolvedWithin(settled, 1_000)).toBe(true);
+  });
+
   it('끊긴 요청도 끝난 것으로 센다 — 기다림이 영원히 걸리지 않는다', async () => {
     const { page, emit } = fakePage();
     const tracker = trackApiRequests(page);
