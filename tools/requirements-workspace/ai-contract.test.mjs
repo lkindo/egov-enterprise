@@ -26,6 +26,7 @@ test('grounded AI requirements retain exact citations and cannot claim human rev
   assert.equal(result.requirements[0].scopeDisposition, 'proposed');
   assert.equal(result.requirements[0].acceptanceDisposition, 'pending');
   assert.equal(result.issues[0].severity, 'blocking');
+  assert.ok(result.changes[0].fields.some(field => field.name === 'requirementType'));
 });
 
 test('a forged quote, unknown clause and missing source coverage are rejected', () => {

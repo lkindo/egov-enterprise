@@ -121,7 +121,7 @@ export function validateAnalysisProposal(value, snapshot) {
     decisions.push({ id, kind: 'decision', severity: 'blocking', question: `${req.title}: ${[missingFit ? '기존 기능 활용·추가 개발의 해결 방향' : '', missingCriteria ? '측정 항목·기준값·검증 기준' : ''].filter(Boolean).join('과 ')}이 정해지지 않았습니다. 업무 요구로 포함할지, 개발 전 확인사항으로 보류할지, 제외할지와 필요한 기준을 결정해 주세요.`, options: ['업무 범위에 포함하고 해결 방향·검증 기준 제시', '개발 착수 전 확인사항으로 보류하고 사유 기록', '이번 범위에서 제외하고 사유 기록'], requirementIds: [req.id], citations: structuredClone(req.citations) });
   }
   const result = { ...structuredClone(value), issues: decisions, coverage: [...coverage.values()], relationCorrections, requirements: value.requirements.map(requirement => ({ ...structuredClone(requirement), proposedScope: scopeFor(requirement), scopeDisposition: 'proposed', acceptanceDisposition: 'pending' })) };
-  result.changes = describeChanges(snapshot.backlog.businessRequirements, projectAnalysisBacklog(snapshot, result).businessRequirements, 'requirement', ['title', 'description', 'scopeDisposition', 'solutionDisposition', 'nfrCriteria', 'rationale', 'sourceIds', 'openQuestions']);
+  result.changes = describeChanges(snapshot.backlog.businessRequirements, projectAnalysisBacklog(snapshot, result).businessRequirements, 'requirement', ['title', 'description', 'requirementType', 'moduleCandidates', 'scopeDisposition', 'solutionDisposition', 'nfrCriteria', 'rationale', 'sourceIds', 'openQuestions']);
   if (!decisions.some(issue => issue.severity === 'blocking')) {
     const draft = projectAnalysisBacklog(snapshot, result);
     // Validate proposed meaning without claiming that old institutional

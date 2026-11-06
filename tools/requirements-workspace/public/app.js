@@ -6,8 +6,8 @@ const lines = value => String(value ?? '').split('\n').map(item => item.trim()).
 const clone = value => structuredClone(value);
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const pages = [ ['overview', '현', '진행 현황'], ['sources', '문', '산출물 수집'], ['requirements', '요', '요구사항 검토'], ['baseline', '기', '분석 기준선'], ['work', '작', '에픽·스토리'], ['handoff', '개', '개발 인계'], ['audit', '검', '검수·감리'] ];
-const labels = { proposed: '제안', included: '포함', excluded: '제외', deferred: '보류', question: '질문', merged: '통합', undecided: '미결정', fit: '기존 기능 활용', config: '환경 구성', 'gap-dev': '추가 개발', hybrid: '혼합', pending: '검수 대기', accepted: '인수 기록', conditional: '조건부', rejected: '반려', epic: '에픽', story: '스토리', configuration: '구성', verification: '검증', enabler: '기반 작업', rfp: '제안요청서', interview: '회의록·인터뷰', 'as-is-artifact': '현행 업무 자료', regulation: '법령·지침', 'policy-memo': '정책·결정 메모', other: '기타', public: '공개', internal: '내부', confidential: '기밀', restricted: '제한' };
-let state, token, page = 'overview', busy = false, dialogForm, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch;
+const labels = { proposed: '제안', included: '포함', excluded: '제외', deferred: '보류', question: '질문', merged: '통합', undecided: '미결정', fit: '기존 기능 활용', config: '환경 구성', 'gap-dev': '추가 개발', hybrid: '혼합', pending: '검수 대기', accepted: '인수 기록', conditional: '조건부', rejected: '반려', epic: '에픽', story: '스토리', configuration: '구성', verification: '검증', enabler: '기반 작업', rfp: '제안요청서', interview: '회의록·인터뷰', 'as-is-artifact': '현행 업무 자료', regulation: '법령·지침', 'policy-memo': '정책·결정 메모', other: '기타', public: '공개', internal: '내부', confidential: '기밀', restricted: '제한', functional: '기능', 'non-functional': '비기능', data: '데이터', interface: '연계', constraint: '제약' };
+let state, token, page = 'overview', busy = false, dialogForm, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
 const backlog = () => state.backlog;
 const metadata = () => state.metadata ?? {};
 const badge = (value, color = '') => `<span class="badge ${color}">${esc(labels[value] ?? value)}</span>`;
@@ -104,7 +104,7 @@ function aiPanel() {
 }
 function aiChangePreview(proposal) {
   const changes = proposal?.changes ?? []; if (!changes.length) return '';
-  const names = { added: '추가', changed: '변경', removed: '제외', requirement: '요구사항', workItem: '작업', acceptanceCriterion: '인수조건', traceLink: '추적 연결', title: '제목', description: '정의', scopeDisposition: '업무 범위', solutionDisposition: '해결 방향', nfrCriteria: '측정 기준', rationale: '사유', sourceIds: '근거 자료', openQuestions: '열린 질문', parentEpicId: '상위 에픽', requirementIds: '연결 요구사항', decisionCards: '설계 결정', dependsOn: '선행 작업', workItemId: '연결 작업', acId: '연결 인수조건', targetKind: '대상 종류', targetId: '대상', linkIntent: '연결 의도', given: '사전 조건', when: '수행', then: '기대 결과', polarity: '허용·거부', verificationMethod: '검증 방법', priority: '우선순위', batch: '배치', archetype: '화면 유형', asA: '사용 역할', iWant: '필요한 행동', soThat: '업무 가치', notes: '연결 근거', id: '식별자', workItemType: '작업 유형' };
+  const names = { added: '추가', changed: '변경', removed: '제외', requirement: '요구사항', workItem: '작업', acceptanceCriterion: '인수조건', traceLink: '추적 연결', title: '제목', description: '정의', requirementType: '요구사항 유형', moduleCandidates: '기존 기능 후보', scopeDisposition: '업무 범위', solutionDisposition: '해결 방향', nfrCriteria: '측정 기준', rationale: '사유', sourceIds: '근거 자료', openQuestions: '열린 질문', parentEpicId: '상위 에픽', requirementIds: '연결 요구사항', decisionCards: '설계 결정', dependsOn: '선행 작업', workItemId: '연결 작업', acId: '연결 인수조건', targetKind: '대상 종류', targetId: '대상', linkIntent: '연결 의도', given: '사전 조건', when: '수행', then: '기대 결과', polarity: '허용·거부', verificationMethod: '검증 방법', priority: '우선순위', batch: '배치', archetype: '화면 유형', asA: '사용 역할', iWant: '필요한 행동', soThat: '업무 가치', notes: '연결 근거', id: '식별자', workItemType: '작업 유형' };
   const format = value => value === null ? '없음' : typeof value === 'string' ? labels[value] ?? value : JSON.stringify(value);
   return `<details class="mt-16"><summary>현재 내용과 비교 · 추가 ${changes.filter(item => item.action === 'added').length} · 변경 ${changes.filter(item => item.action === 'changed').length} · 제외 ${changes.filter(item => item.action === 'removed').length}</summary><ul class="help-list">${changes.map(change => `<li><strong>${esc(names[change.action])} · ${esc(names[change.entity])} ${esc(change.title)} (${esc(change.id)})</strong>${change.hasJudgment ? `<p>기존 기관 판정: ${esc(labels[change.judgment])}</p>` : ''}${change.reason ? `<p>제외 사유: ${esc(change.reason)}</p>` : ''}<details><summary>변경 전·후 ${change.fields.length}개 항목</summary>${change.fields.map(field => `<p class="wide-text"><strong>${esc(names[field.name] ?? field.name)}</strong><br>변경 전: ${esc(format(field.before))}<br>변경 후: ${esc(format(field.after))}</p>`).join('')}</details></li>`).join('')}</ul></details>`;
 }
@@ -194,12 +194,13 @@ function scheduleAiPoll() {
     try {
       if (dialogForm || busy) { scheduleAiPoll(); return; }
       const next = await request('/api/state');
+      aiPollErrorReported = false;
       if (next.revision !== state.revision || next.ai?.active !== state.ai?.active || next.imports?.active !== state.imports?.active) {
         const focused = document.activeElement, action = focused?.dataset.action, key = focused?.dataset.key;
         state = next; render();
         if (action) [...document.querySelectorAll('[data-action]')].find(element => element.dataset.action === action && element.dataset.key === key)?.focus();
       } else { state = next; scheduleAiPoll(); }
-    } catch (error) { showError(error); aiPollTimer = setTimeout(scheduleAiPoll, 3000); }
+    } catch (error) { if (!aiPollErrorReported) showError(error); aiPollErrorReported = true; aiPollTimer = setTimeout(scheduleAiPoll, 3000); }
   }, 1500);
 }
 function navigate(destination) { if (!pages.some(item => item[0] === destination)) return; if (dialogForm && !closeDialog()) return; page = destination; render(); $('#main').focus(); }
