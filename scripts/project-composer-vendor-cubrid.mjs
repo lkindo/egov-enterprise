@@ -6,7 +6,9 @@
 import { columnsIn, gap } from './project-composer-vendor-model.mjs';
 import { assertCoverage, createEmission, emitRows, escapeString, nextValues, violationExpression } from './project-composer-vendor-sql.mjs';
 
-const RESERVED = new Set(['role', 'data_type']);
+/** 따옴표로 감싸 만드는 예약어 컬럼. Hibernate 방언(NuriCubridDialect.RESERVED_IDENTIFIERS)이 같은 이름만 따옴표로 낸다 — 벤더 시험이 대조한다. */
+export const CUBRID_RESERVED = Object.freeze(new Set(['role', 'data_type']));
+const RESERVED = CUBRID_RESERVED;
 const identifier = name => (RESERVED.has(name) ? `"${name}"` : name);
 const string = value => `'${escapeString(value)}'`;
 
@@ -16,7 +18,8 @@ function physicalType(column) {
     case 'varchar': return `VARCHAR(${type.length})`;
     case 'text': case 'json': return 'STRING';
     case 'uuid': return 'CHAR(36)';
-    case 'binary': return 'BLOB';
+    // BLOB 은 행 밖 파일(lob-base-path)에 담기는 LOB 이라 DB 백업과 따로 놀고, Hibernate 는 byte[] 에 VARBINARY 를 기대한다(2026-11-06 실측).
+    case 'binary': return 'BIT VARYING';
     case 'timestamp': return 'DATETIME';
     case 'date': return 'DATE';
     case 'bigint': return 'BIGINT';
@@ -31,6 +34,8 @@ function defaultClause(column, emission, table) {
   if (!value) return '';
   switch (value.kind) {
     case 'now': return ' DEFAULT SYS_DATETIME';
+    // 서버 시계는 한국 시간이다(엔진 TZ, 앱 기동 점검이 UTC 차이 540분을 요구). DEFAULT 에 TO_CHAR 식을 받는다(2026-11-06 실측).
+    case 'kst-date': return " DEFAULT TO_CHAR(SYS_DATE, 'YYYYMMDD')";
     case 'number': return ` DEFAULT ${value.value}`;
     case 'string': return ` DEFAULT ${string(value.value)}`;
     default:
@@ -111,6 +116,7 @@ function shadowUnique(emission, table, unique, order) {
   emission.sql(`CREATE TRIGGER ${unique.name}_ku AFTER UPDATE ON ${table.name} IF (NVL(obj.${key}, CHR(30)) <> NVL(CASE WHEN ${whole} THEN ${value} END, CHR(30))) EXECUTE UPDATE ${table.name} SET ${key} = CASE WHEN ${whole} THEN ${value} END WHERE ${where}`);
   emission.expect('columns', table.name, key);
   emission.expect('indexes', table.name, unique.name);
+  emission.expectUnique(table.name, unique.name, [key]);
   emission.expect('triggers', table.name, `${unique.name}_ki`);
   emission.expect('triggers', table.name, `${unique.name}_ku`);
   emission.cover(unique.name, 'shadow-unique');
@@ -163,10 +169,12 @@ function emitSchema(model) {
       emission.cover(primary.name, 'primary-key');
     }
     emission.sql(`CREATE TABLE ${table.name} (\n${lines.join(',\n')}\n)`);
+    if (primary) emission.expectUnique(table.name, primary.name, primary.columns);
     if (swapped) {
       const name = `uk_${table.primaryKey.name}`;
       emission.sql(`ALTER TABLE ${table.name} ADD CONSTRAINT ${name} UNIQUE (${table.primaryKey.columns.map(identifier).join(', ')})`);
       emission.expect('indexes', table.name, name);
+      emission.expectUnique(table.name, name, table.primaryKey.columns);
     }
     emission.expect('indexes', table.name, primary.name);
   }
@@ -175,6 +183,7 @@ function emitSchema(model) {
     emission.sql(`CREATE TABLE ${name} (${column} VARCHAR(${type.length}) PRIMARY KEY)`);
     emission.expect('columns', name, column);
     emission.expect('indexes', name, `pk_${name}_${column}`);
+    emission.expectUnique(name, `pk_${name}_${column}`, [column]);
     emission.sql(`CREATE TRIGGER ${name}_i AFTER INSERT ON ${table.name} EXECUTE INSERT INTO ${name} VALUES (obj.${column})`);
     emission.sql(`CREATE TRIGGER ${name}_d BEFORE DELETE ON ${table.name} EXECUTE DELETE FROM ${name} WHERE ${column} = obj.${column}`);
     emission.sql(`CREATE TRIGGER ${name}_u BEFORE UPDATE ON ${table.name} IF (new.${column} <> obj.${column}) EXECUTE UPDATE ${name} SET ${column} = new.${column} WHERE ${column} = obj.${column}`);
@@ -192,6 +201,7 @@ function emitSchema(model) {
       }
       emission.sql(`ALTER TABLE ${table.name} ADD CONSTRAINT ${unique.name} UNIQUE (${unique.columns.map(identifier).join(', ')})`);
       emission.expect('indexes', table.name, unique.name);
+      emission.expectUnique(table.name, unique.name, unique.columns);
       emission.cover(unique.name, 'unique');
     }
   }
@@ -229,7 +239,10 @@ function emitSchema(model) {
         shadowUnique(emission, table, { name: index.name, columns: index.columns.map(column => column.name) }, shadow);
         continue;
       }
+      // 함수 키 유일 인덱스는 만들 수 없다(CREATE UNIQUE INDEX ... (TRIM(v)) 가 invalid create index, 2026-11-06 실측).
+      if (index.unique && index.columns.some(column => column.expression)) gap(`${index.name}: 식이 든 유일 인덱스는 CUBRID 에서 만들 수 없다`);
       const columns = index.columns.map(column => (column.expression === 'trim' ? `TRIM(${column.name})` : `${identifier(column.name)}${column.descending ? ' DESC' : ''}`));
+      if (index.unique) emission.expectUnique(table.name, index.name, index.columns.map(column => column.name));
       emission.sql(`CREATE ${index.unique ? 'UNIQUE ' : ''}INDEX ${index.name} ON ${table.name} (${columns.join(', ')})`);
       emission.expect('indexes', table.name, index.name);
       emission.cover(index.name, 'index');
@@ -241,10 +254,12 @@ function emitSchema(model) {
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_token');
   emission.expect('columns', 'tb_sys_ledger_permit', 'permit_key');
   emission.expect('indexes', 'tb_sys_ledger_permit', 'pk_tb_sys_ledger_permit_permit_token');
+  emission.expectUnique('tb_sys_ledger_permit', 'pk_tb_sys_ledger_permit_permit_token', ['permit_token']);
   // 응용 잠금은 슬롯 표의 행 잠금이다(Oracle·MySQL 계열과 같은 수). 재귀 CTE 는 2,000회에서 멈춰 256행을 서로 곱해 채운다(2026-11-06 실측).
   emission.sql('CREATE TABLE tb_sys_lock_slot (lock_slot_no INT NOT NULL PRIMARY KEY)');
   emission.expect('columns', 'tb_sys_lock_slot', 'lock_slot_no');
   emission.expect('indexes', 'tb_sys_lock_slot', 'pk_tb_sys_lock_slot_lock_slot_no');
+  emission.expectUnique('tb_sys_lock_slot', 'pk_tb_sys_lock_slot_lock_slot_no', ['lock_slot_no']);
   emission.sql('INSERT INTO tb_sys_lock_slot (lock_slot_no) WITH RECURSIVE d (n) AS (SELECT 0 FROM db_root UNION ALL SELECT n + 1 FROM d WHERE n < 255) SELECT a.n * 256 + b.n FROM d a, d b');
   for (const table of model.tables) {
     for (const trigger of table.triggers) {
@@ -257,6 +272,10 @@ function emitSchema(model) {
   emission.degradations.push({ name: 'json-validity', reason: 'JSON 형식을 DB 가 보장하지 못한다. 첫 글자와 길이만 본다' });
   emission.degradations.push({ name: 'timestamp-precision', reason: '시각이 밀리초까지다' });
   emission.degradations.push({ name: 'skip-locked', reason: 'SKIP LOCKED 가 없어 작업 선점은 상태 비교로 처리량이 줄어든다' });
+  // 오름차순에서 NULL 이 맨 앞이다(2026-11-06 실측). MySQL·SQL Server 와 같은 고정 저하다.
+  emission.degradations.push({ name: 'null-order', reason: 'NULL 을 가장 작은 값으로 정렬해 NULL 이 들 수 있는 정렬 키의 순서가 PostgreSQL 과 반대다' });
+  // 부모 행을 FOR UPDATE 로 잠근 동안 자식 행 갱신이 FK 컬럼을 바꾸지 않아도 기다린다(2026-11-06 실측). 첨부를 덧붙이는 동안 같은 게시글 수정이 기다린다.
+  emission.degradations.push({ name: 'parent-lock-wait', reason: '부모 행이 잠긴 동안 자식 행 갱신이 기다려 동시 수정이 대기 상한 뒤 거절될 수 있다' });
   return assertCoverage(model, emission);
 }
 
@@ -266,7 +285,7 @@ function literal(column, value) {
   if (kind === 'bigint' || kind === 'integer' || kind === 'numeric') return String(value);
   if (kind === 'timestamp') return `DATETIME'${String(value).replace('T', ' ').slice(0, 23)}'`;
   if (kind === 'date') return `DATE'${String(value).slice(0, 10)}'`;
-  if (kind === 'binary') return gap('CUBRID BLOB 시드는 지원하지 않는다');
+  if (kind === 'binary') return `X'${String(value).replace(/^\\x/, '')}'`;
   return string(typeof value === 'object' ? JSON.stringify(value) : String(value));
 }
 

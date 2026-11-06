@@ -788,3 +788,44 @@ demo 멀티모듈 생성물(대표 구성)에서 번역 기준선을 Flyway 로 
 
 남은 일: 단계 5(CUBRID)·6(Tibero, `license.xml` 확보 뒤). 기관 DB 의 서버 시간대·스냅숏 설정과 Windows 서버, 영어·한국어 밖의 서버 메시지 언어(547 이 FK 와 같은 409 로 남는다)는 재지 않았다.
 
+## 20. 단계 5 진행 결과(CUBRID, 제한 지원)
+
+CUBRID 11.4 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `preview`). 인증은 이 변경이 main 에서 벤더 잡을 통과한 뒤의 PR 이다(DEC-OPS-400). 사용자는 2026-11-05 에 아래 저하를 받아들이는 제한 지원과, Maven Central 에 없는 공식 JDBC 드라이버를 CUBRID 저장소에서 `cubrid` 그룹으로만 받는 것을 승인했다(DEC-OPS-401). 이미지는 CUBRID 프로젝트가 올린 Docker Hub 이미지(공식 라이브러리 아님)를 digest 로 고정했다.
+
+| 저하 | 내용 |
+|---|---|
+| CHECK 비용 | 엔진이 CHECK 를 집행하지 않아 BEFORE 트리거(268개)로 옮긴다. 쓰기마다 평가한다 |
+| 시각 정밀도 | DATETIME 은 밀리초까지다 |
+| 작업 선점 | SKIP LOCKED 가 없어 앞 작업을 기다린 뒤 행을 다시 판정해 다음 대기 행을 받는다. 결과는 같고 처리량이 준다 |
+| JSON 유효성 | JSON 타입과 UPDATE 트리거를 함께 쓰면 클라이언트가 끝난다. STRING 으로 두고 첫 글자·길이만 보며, 형식은 앱이 막는다 |
+| NULL 정렬 | NULL 을 가장 작은 값으로 정렬한다(MySQL·SQL Server 와 같은 고정 저하, 구현 중 실측) |
+| 부모 행 잠금 대기 | 부모 행이 `FOR UPDATE` 로 잠긴 동안 자식 행 갱신이 FK 컬럼을 바꾸지 않아도 기다린다. 첨부를 덧붙이는 동안 같은 게시글 수정이 최대 5초 기다린 뒤 충돌로 거절될 수 있다. 값이 덮어써지지는 않는다(구현 중 실측) |
+
+### 실측(2026-11-05~06, 일회용 컨테이너)
+
+구현 전에 CUBRID 11.4.6·cubrid-jdbc 11.3.2.0053·Hibernate 7.4 커뮤니티 방언으로 재고, 그 값으로 정했다.
+
+| 주제 | 실측 | 처리 |
+|---|---|---|
+| 오류 번호 | SQLState 가 없다. NOT NULL -631, 중복 -670, FK 부모 없음 -922, FK 제한 -924, 트리거 거부 -517, 잠금 대기 -75, 교착 -72, 0 나누기 -539(바인딩 값)·-494(리터럴). 바인딩 값의 길이·범위·형식·날짜 오류는 모두 -494 `Semantic: Cannot coerce host var to type …` 이다 | 번호 표에 더해 -494 는 그 문구, -517 은 트리거 이름 접두(`ck_`)로 가른다 — CHECK 트리거의 거부만 입력 오류(400)다 |
+| 비관적 잠금 | 커뮤니티 방언은 `PESSIMISTIC_WRITE` 에도 잠금 절을 붙이지 않는다. `FOR UPDATE` 는 같은 행의 잠금 조회와 자식 FK 입력을 막는다(`FOR NO KEY UPDATE` 가 없다). 없는 키의 `FOR UPDATE` 는 그 키의 입력을 막지 않는다 | 모든 비관적 잠금을 `FOR UPDATE` 로 낸다(`NuriCubridDialect`) |
+| 잠금 대기 | 기본이 무한이다. `SET TRANSACTION LOCK TIMEOUT n` 은 커밋 뒤에도 세션에 남는다. 문장 단위 상한·`NOWAIT`·`SKIP LOCKED` 가 없다 | 연결을 열 때 5초 상한을 건다(`VendorSqlConfig` — 시작 전 Hikari 풀은 풀 설정, 그 밖은 `SessionInitializingDataSource`). 설정 파일 한 줄에 기대면 빠졌을 때 오류 없이 무한히 기다린다 |
+| 작업 선점 | SKIP LOCKED 없이 잠긴 행을 기다리면 앞 트랜잭션이 끝난 뒤 행을 다시 판정해 다음 대기 행을 받는다 | 위 저하 |
+| 응용 잠금 | 행 잠금으로 슬롯을 잡는다. 재귀 CTE 는 2,000회에서 멈춘다 | 65,536 슬롯 표를 256행끼리 곱해 채운다 |
+| 원장 삭제 허가 | MVCC 라 트리거의 COUNT·키 삭제가 남의 미커밋 행을 기다리지 않는다. DEFAULT 에 UUID·시퀀스를 쓸 수 없다 | 행마다 AUTO_INCREMENT 토큰을 키로 둔다(Oracle 과 같은 모양) |
+| upsert | `ON DUPLICATE KEY UPDATE` 는 같은 키에 경합해도 1,200/1,200 이고 `MERGE` 는 -670 을 낸다. ODKU 는 표의 모든 유일 키에 반응한다 | ODKU 로 쓴다 |
+| 시간대 | 서버 시계(`SYS_DATETIME`·`SYS_DATE`)는 컨테이너 `TZ` 를 따른다. `SET TIME ZONE` 은 `CURRENT_DATETIME` 만 바꾸고 새 연결에서 풀린다 | 기동 때 서버 시계와 UTC 의 차이가 540분인지 본다. 한국 날짜 기본값은 `DEFAULT TO_CHAR(SYS_DATE, 'YYYYMMDD')` 다(DEFAULT 가 이 식을 받는다) |
+| 타입 | 커뮤니티 방언은 UUID 를 16비트 BIT, boolean 을 BIT 로 매핑해 값이 깨진다. `CAST(x AS VARCHAR(n))` 은 넘치면 -427 이다 | UUID 는 `CHAR(36)` 이고 방언이 CHAR 로 바인딩한다. 문자열 자르기는 SUBSTRING 뒤 CAST 다 |
+| 생성 키 | 드라이버의 `getGeneratedKeys` 는 OID 를 재사용하는 표(11.x 기본)에서 -983 을 내거나 키 없이 끝난다. 같은 연결의 `LAST_INSERT_ID()` 는 맞다 | 방언의 기본 속성으로 `hibernate.jdbc.use_get_generated_keys=false` 를 두어 Hibernate 가 `last_insert_id()` 로 읽는다. 설정 파일 값이 이 기본값을 덮을 수 있다 |
+| 메타데이터 | 드라이버가 판을 0.0 으로 답하고 `getSchema` 를 지원하지 않는다. 묶음 추출(grouped)은 표를 찾지 못한다 | 방언은 제품명으로 고르고(`NuriCubridDialectResolver`) 스키마 검증은 표마다 추출한다(`individually`, 벤더 설정) |
+| 잠금 관측(시험) | `SHOW TRANSACTION TABLES` 는 DBA 전용이고 대기 여부만 낸다. 막는 세션·문장은 `cubrid tranlist -f` 만 낸다. 드라이버의 CAS 프로세스 번호가 tranlist 의 Process id 와 같다 | 통합 시험이 컨테이너의 tranlist 를 읽는다(`VendorTestSql`). 앱 계정에 줄 권한이 없다 |
+| 클라이언트 | `csql` 은 표준 입력·`-i` 모두 오류 뒤 문장도 돌리고 종료 코드 0 으로 끝난다 | 출력의 `ERROR` 줄로 실패를 낸다 |
+| 드라이버 | Maven Central 에 없다 | 원본은 통합 시험 때만, 생성물은 CUBRID 를 고른 경우에만 `maven.cubrid.org` 를 `cubrid` 그룹으로 좁혀 둔다 |
+| NOT NULL·시간 초과 번호 | BEFORE 트리거가 있는 표(CHECK 트리거 표)의 NOT NULL 위반은 -631 이 아니라 -205 `Attribute "v" cannot be made NULL.` 이다. 문장 시간 초과는 -4 `Has been interrupted.` 이고 같은 연결을 계속 쓸 수 있다 | 둘 다 번호 표에 둔다. -205 는 입력 오류(400), -4 는 취소(503)다 |
+| 제약 위반 분류 | SQLState 가 없어 Hibernate 가 제약 위반·잠금 실패를 가르지 못해 `JpaSystemException` 이 된다. 메시지에 제약 이름이 든다(`INDEX uk_x(`, `foreign key 'fk_x'`) | 방언이 번호로 제약 종류·이름, 잠금 대기 초과, 교착, 문장 시간 초과로 바꾼다. 트리거 거부는 `ck_` 트리거만 CHECK 위반이다 |
+| JDBC 4.1·4.2 | 드라이버는 `setObject` 에 `java.time` 값을 주면 `IllegalArgumentException` 을, `getObject(열, 타입)` 은 어떤 타입이든 예외를 낸다. JdbcTemplate 의 날짜 바인딩과 운영 코드의 타입 지정 조회(첨부 참조 판정)가 걸린다 | 연결을 감싸 바인딩 전에 `java.sql` 값·문자열로 바꾸고, 타입 지정 조회는 표준 접근자로 읽는다(`CubridJdbcDataSource`). 정수로 정확히 담기지 않는 값은 멈춘다 |
+| 예약어 | `role`·`data_type` 은 예약어다. 어댑터는 따옴표로 만들고 Hibernate 는 따옴표 없이 내 그 표의 쓰기가 문법 오류였다 | 방언이 그 두 낱말만 따옴표로 낸다. 어댑터 목록과 같은지 벤더 시험이 대조한다 |
+| SQL 문법 | 하위 조회의 JOIN 조건(ON)에서 바깥 표를 참조하지 못한다. 대량 갱신·삭제는 `UPDATE 표 별칭 SET ...` 을 받는다. 오름차순에서 NULL 이 맨 앞이다. `GROUP_CONCAT` 의 ORDER BY 는 인자와 같은 식이어야 한다. 함수 키 유일 인덱스는 만들 수 없다 | 첨부 참조 조회의 바깥 참조를 WHERE 로 옮겼다(내부 조인이라 모든 벤더에서 같은 결과). 방언은 DML 대상 별칭을 쓴다. NULL 정렬은 MySQL·SQL Server 와 같은 고정 저하로 고지한다. 함수 키 유일 인덱스는 번역을 멈춘다 |
+| 시각 바인딩 | DATETIME 은 밀리초 아래 자리를 버리고 저장한다. 같은 시각을 조건으로 다시 비교하는 갱신(메일 발송 시각으로 차지)은 마이크로초가 남은 값을 받아 맞는 행이 없었다 | 호환 계층이 모든 시각 바인딩을 밀리초로 잘라 저장과 비교가 같은 값을 받게 한다. 메일 작업처럼 실어 간 시각과 읽은 시각을 Java 에서 비교하는 시도 토큰(메일 접수, 메모 첫 열람)은 포트의 `storedTimestamp` 로 이 벤더가 저장하는 정밀도로 만든다 — 그러지 않으면 메일이 대기에 머문 채 발송되지 않았다 |
+| 부모 행 잠금 | 부모 행 `FOR UPDATE` 동안 자식 행의 일반 컬럼 갱신도 -75 로 기다린다(PostgreSQL 은 FK 컬럼을 바꾸지 않으면 부모를 보지 않는다) | 고정 저하로 고지한다. 첨부 덧붙이기 중의 동시 편집 시험은 CUBRID 에서 편집 거절과 앞선 쓰기의 커밋을 단언한다 |
+| 바이너리·시리얼 | `BLOB` 은 행 밖 파일(lob-base-path)에 담기는 LOB 이라 DB 백업과 따로 놀고, Hibernate 는 `byte[]` 에 VARBINARY 를 기대한다. 시리얼은 한 번도 쓰지 않으면(`started=0`) `current_val` 이, 쓴 뒤에는 `current_val + increment_val` 이 다음 값이다 | 바이너리는 `BIT VARYING` 이다. 다음 값 조회는 `started` 로 가른다 |

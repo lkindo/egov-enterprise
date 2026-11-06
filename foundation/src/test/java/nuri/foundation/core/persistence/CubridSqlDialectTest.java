@@ -199,10 +199,20 @@ class CubridSqlDialectTest {
     }
 
     @Test
+    @DisplayName("시각은 밀리초까지 저장한다 — 표준 스키마(다른 벤더)는 마이크로초다")
+    void storesTimestampsToTheMillisecond() {
+        java.time.LocalDateTime value = java.time.LocalDateTime.of(2026, 11, 6, 12, 53, 26, 132_101_999);
+        assertThat(dialect.storedTimestamp(value)).isEqualTo(java.time.LocalDateTime.of(2026, 11, 6, 12, 53, 26, 132_000_000));
+        assertThat(new PostgresqlSqlDialect().storedTimestamp(value)).isEqualTo(java.time.LocalDateTime.of(2026, 11, 6, 12, 53, 26, 132_101_000));
+    }
+
+    @Test
     @DisplayName("SQLState 가 비어 와서 번호로 가른다. -494 는 바인딩 값 변환 실패만, -517 은 CHECK 트리거(ck_) 거부만 입력 오류다")
     void errorCodesSplitSharedNumbersByMessage() {
         VendorErrorCodes codes = dialect.errorCodes();
         assertThat(codes.rejectsValue(-631, "SQL statement violated NOT NULL constraint.")).isTrue();
+        assertThat(codes.rejectsValue(-205, "Execute: Putting value 'NULL' into attribute 'v' returned: Attribute \"v\" cannot be made NULL.")).as("트리거가 있는 표의 NOT NULL 위반").isTrue();
+        assertThat(codes.cancelled()).as("문장 시간 초과(Has been interrupted.)").containsExactly(-4);
         assertThat(codes.rejectsValue(-494, "Semantic: Cannot coerce host var to type char varying. [CAS INFO-127.0.0.1:33000,1,52]")).isTrue();
         assertThat(codes.rejectsValue(-494, "Semantic: before ' FROM t' Attempt to divide by zero.")).as("같은 번호의 SQL 결함은 입력 오류가 아니다").isFalse();
         assertThat(codes.rejectsValue(-494, "Semantic: Unknown class \"egov.tb_x\". Cannot coerce host var to type x")).as("문장 머리만 본다").isFalse();

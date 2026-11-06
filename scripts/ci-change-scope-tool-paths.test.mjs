@@ -443,9 +443,9 @@ test('the vendor job is bound to its output, reaches the vendor code it verifies
   // 표지를 든 생성기 코드가 잡을 켜지 않으면 붉다.
   const branch = 'scripts/project-composer-generate.mjs';
   assert.deepEqual(vendorAxisMismatches({ files: repositoryFiles, read: readRepository, inputs: [], selects: file => file !== branch && selects(file) }), [`벤더 분기를 담은 생성기 코드가 벤더 잡을 켜지 않는다: ${branch}`]);
-  // 벤더 어댑터와 생성기 화면 코드를 고친 변경은 입력이 아니면 잡을 켜지 않는다. MySQL 어댑터는 ci 를 연 MariaDB·MySQL 의 입력이다.
-  for (const file of ['scripts/project-composer-vendor-cubrid.mjs', 'scripts/project-composer-server.mjs']) assert.equal(selects(file), false, file);
-  assert.equal(selects('scripts/project-composer-vendor-mysql.mjs'), true);
+  // 생성기 화면 코드를 고친 변경은 입력이 아니면 잡을 켜지 않는다. 어댑터는 ci 를 연 벤더의 입력이다 — MySQL 어댑터는 MariaDB·MySQL, CUBRID 어댑터는 CUBRID(단계 5-1).
+  assert.equal(selects('scripts/project-composer-server.mjs'), false);
+  for (const file of ['scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-vendor-cubrid.mjs']) assert.equal(selects(file), true, file);
 });
 
 test('the table cannot declare the vendor axis: certification inputs select that job, not path prefixes', () => {

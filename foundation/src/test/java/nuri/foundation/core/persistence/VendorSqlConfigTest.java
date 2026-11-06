@@ -68,10 +68,13 @@ class VendorSqlConfigTest {
     }
 
     @Test
-    @DisplayName("CUBRID 는 시작 전 Hikari 풀이 새 연결마다 세션 잠금 대기 상한을 걸게 한다 — 기본은 무한 대기다")
-    void cubridSetsThePoolSessionLockWait() {
+    @DisplayName("CUBRID 는 시작 전 Hikari 풀이 새 연결마다 세션 잠금 대기 상한을 걸게 하고, 그 풀을 JDBC 호환 계층으로 한 번 감싼다 — 기본은 무한 대기다")
+    void cubridSetsThePoolSessionLockWait() throws Exception {
         try (HikariDataSource pool = new HikariDataSource()) {
-            assertThat(VendorSqlConfig.cubridSessionLockWait().postProcessAfterInitialization(pool, "dataSource")).isSameAs(pool);
+            Object wrapped = VendorSqlConfig.cubridConnections().postProcessAfterInitialization(pool, "dataSource");
+
+            assertThat(wrapped).isInstanceOf(CubridJdbcDataSource.class);
+            assertThat(((DataSource) wrapped).unwrap(HikariDataSource.class)).isSameAs(pool);
             assertThat(pool.getConnectionInitSql()).isEqualTo("SET TRANSACTION LOCK TIMEOUT 5");
         }
     }
@@ -79,7 +82,7 @@ class VendorSqlConfigTest {
     @Test
     @DisplayName("이미 연 풀과 다른 DataSource 는 연결을 꺼낼 때마다 세션 설정을 걸고, 두 번 감싸지 않는다")
     void cubridWrapsOtherDataSourcesOnce() throws Exception {
-        BeanPostProcessor processor = VendorSqlConfig.cubridSessionLockWait();
+        BeanPostProcessor processor = VendorSqlConfig.cubridConnections();
         DataSource source = mock(DataSource.class);
         Connection connection = mock(Connection.class);
         java.sql.Statement statement = mock(java.sql.Statement.class);
@@ -88,8 +91,10 @@ class VendorSqlConfigTest {
 
         Object wrapped = processor.postProcessAfterInitialization(source, "dataSource");
 
-        assertThat(wrapped).isInstanceOf(SessionInitializingDataSource.class);
-        assertThat(((DataSource) wrapped).getConnection()).isSameAs(connection);
+        assertThat(wrapped).isInstanceOf(CubridJdbcDataSource.class);
+        assertThat(((CubridJdbcDataSource) wrapped).getTargetDataSource()).isInstanceOf(SessionInitializingDataSource.class);
+        ((DataSource) wrapped).getConnection().getAutoCommit();
+        verify(connection).getAutoCommit();
         verify(statement).execute("SET TRANSACTION LOCK TIMEOUT 5");
         assertThat(processor.postProcessAfterInitialization(wrapped, "dataSource")).isSameAs(wrapped);
         Object other = new Object();
@@ -130,7 +135,7 @@ class VendorSqlConfigTest {
                     assertThat(context.containsBean("sqlServerIsolationMapping")).isEqualTo("mssql".equals(vendor));
                     assertThat(context.containsBean("mariadbReadCommitted")).isEqualTo("mariadb".equals(vendor));
                     assertThat(context.containsBean("mysqlReadCommitted")).isEqualTo("mysql".equals(vendor));
-                    assertThat(context.containsBean("cubridSessionLockWait")).isEqualTo("cubrid".equals(vendor));
+                    assertThat(context.containsBean("cubridConnections")).isEqualTo("cubrid".equals(vendor));
                 });
     }
 

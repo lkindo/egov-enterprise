@@ -323,7 +323,7 @@ class OperationalSignalIsolationIntegrationTest {
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
             if (cause instanceof SQLException sql) {
                 for (SQLException next = sql; next != null; next = next.getNextException()) {
-                    if (next.getSQLState() != null) return next.getSQLState();
+                    if (VendorTestSql.observedState(next) != null) return VendorTestSql.observedState(next);
                 }
             }
         }

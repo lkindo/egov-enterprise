@@ -45,7 +45,7 @@ class VendorSqlPortabilityLinterTest {
             "postgresql-only", "deferred");
     private static final Set<String> TEST_CATEGORIES = Set.of("as-is", "fixture-port", "replacement");
     /** 벤더 실행(vendorIntegrationTest)이 도는 벤더. PostgreSQL 은 schemaValidationTest 가 모든 시험을 돌려 뺄 수 없다. */
-    private static final Set<String> EXCLUDABLE_VENDORS = Set.of("oracle", "mariadb", "mysql", "mssql");
+    private static final Set<String> EXCLUDABLE_VENDORS = Set.of("oracle", "mariadb", "mysql", "mssql", "cubrid");
 
     private record Rule(String id, Pattern pattern) {
         static Rule of(String id, String regex) {
@@ -229,7 +229,7 @@ class VendorSqlPortabilityLinterTest {
         JsonNode tests = JsonMapper.builder().build().readTree("[" + entry + "]");
         assertThat(vendorExclusionProblems(tests)).as(name).isNotEmpty();
         JsonNode valid = JsonMapper.builder().build().readTree("[{\"test\":\"A.java\",\"category\":\"fixture-port\","
-                + "\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"oracle\":\"r\",\"mariadb\":\"r\",\"mysql\":\"r\"}}]}]");
+                + "\"vendorExclusions\":[{\"method\":\"m\",\"vendors\":{\"oracle\":\"r\",\"mariadb\":\"r\",\"mysql\":\"r\",\"mssql\":\"r\",\"cubrid\":\"r\"}}]}]");
         assertThat(vendorExclusionProblems(valid)).as("올바른 항목").isEmpty();
     }
 

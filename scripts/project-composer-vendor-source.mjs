@@ -61,6 +61,40 @@ const composeQuoted = command => command.replaceAll('\\', '\\\\').replaceAll('"'
 
 const MSSQL_IMAGE = 'mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090';
 
+/** CUBRID 의 접속 인자. 접속 주소와 통합 시험 주소가 같은 값을 쓴다. 행 잠금 대기 상한은 주소가 아니라 앱이 연결마다 건다(CubridSqlDialect). */
+const CUBRID_URL_PARAMETERS = 'charset=utf-8';
+/**
+ * CUBRID 공식 JDBC 드라이버의 저장소. Maven Central 에 없어 cubrid 그룹만 이 저장소에서 받는다(2026-11-05 사용자 결정).
+ * 원본 빌드는 벤더 통합 시험 블록에만 두고, 생성물은 CUBRID 를 고른 경우에만 최상위 저장소로 둔다(projectVendorBuild).
+ */
+const CUBRID_REPOSITORY = Object.freeze({ url: 'https://maven.cubrid.org', group: 'cubrid' });
+const CUBRID_IMAGE = 'cubrid/cubrid:11.4@sha256:1248b77ad39888df9e064655937188ab99fe056ed7e35b57d06155a015dc1791';
+/** csql 은 이미지의 진입점과 검증 엔진처럼 cubrid 사용자로 돌린다. compose 상태 검사는 실행 사용자를 고를 수 없어 gosu 로 바꾼다. */
+const CUBRID_CSQL = 'gosu cubrid csql';
+/** SQL 문자열 안에 둘 셸 값. 작은따옴표를 두 번 쓴다. */
+const sqlStringOf = expression => `$(printf '%s' "${expression}" | sed "s/'/''/g")`;
+
+/**
+ * CUBRID 번들 DB 의 상태 검사. 이미지는 앱 계정을 만들지 않고 dba 를 비밀번호 없이 둔다 — 검증 엔진의 준비 확인처럼 dba 가 앱 계정을 만들고(CREATE USER),
+ * 준비 판정은 앱 계정의 실제 접속이다(project-composer-vendor-engine.mjs 의 cubrid.ready, 2026-11-06 실측).
+ * dba 가 비밀번호 없이 접속되는 동안은 준비로 보지 않는다. 앱 계정이 만들어져 접속되면 dba 에 관리자 비밀번호를 걸고, 다음 검사부터 앱 계정만 본다.
+ * 두 비밀번호는 처음 만들 때만 반영된다. 비밀번호가 csql 인자에 실린다 — 검증 엔진과 같다(csql 은 환경에서 비밀번호를 읽지 않는다).
+ * dba 비밀번호를 거는 단계와 gosu 실행은 실측하지 않았다.
+ * 계정 이름은 SQL 식별자와 따옴표 없는 인자에 쓰이므로 영문·숫자·밑줄만 받고, 이미지가 따로 다루는 dba·public 은 거부한다.
+ * 인자는 셸이 펼칠 식(`${APP_DB_USER}` 같은 변수)이나 글자 그대로의 값이다.
+ */
+export function cubridHealthcheckCommand({ user, password, dbaPassword, database }) {
+  const target = `${database}@localhost`;
+  const quiet = '</dev/null >/dev/null 2>&1';
+  const appLogin = `${CUBRID_CSQL} -u "${user}" -p "${password}" -c "select 1 from db_root" ${target}`;
+  return `case "${user}" in ''|*[!A-Za-z0-9_]*|[Dd][Bb][Aa]|[Pp][Uu][Bb][Ll][Ii][Cc]) echo 'app user must use only letters, digits and _ and must not be dba or public' >&2; exit 1;; esac; `
+    + `if [ -z "${dbaPassword}" ]; then echo 'dba password is required' >&2; exit 1; fi; `
+    + `if ${CUBRID_CSQL} -u dba -c "select 1 from db_root" ${target} ${quiet}; then `
+    + `${CUBRID_CSQL} -u dba -c "CREATE USER ${user} PASSWORD '${sqlStringOf(password)}'" ${target} ${quiet}; `
+    + `${appLogin} ${quiet} && ${CUBRID_CSQL} -u dba -c "ALTER USER dba PASSWORD '${sqlStringOf(dbaPassword)}'" ${target} ${quiet}; exit 1; fi; `
+    + `${appLogin} </dev/null`;
+}
+
 export const VENDOR_SOURCE = Object.freeze({
   oracle: Object.freeze({
     flywayPlugin: 'org.flywaydb:flyway-database-oracle',
@@ -222,5 +256,52 @@ export const VENDOR_SOURCE = Object.freeze({
       // MSSQL_SA_PASSWORD 는 sa 비밀번호다. 앱 자격이 새도 관리자 자격까지 번지지 않게 나눈다. Developer 에디션은 운영에 쓸 수 없어 에디션을 받는다.
       [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_DB_PASSWORD: $2\n$1MSSQL_SA_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}'
         + '\n$1MSSQL_PID: ${MSSQL_PID:?운영 SQL Server 에디션(MSSQL_PID: Standard·Enterprise 또는 제품 키)이 필요합니다}']],
+  }),
+  cubrid: Object.freeze({
+    // Central 의 flyway-database-cubrid 는 10.26.0 에서 멈췄다(설계서). 다른 플러그인처럼 Flyway BOM 판에 맡기지 않고 판을 적는다.
+    flywayPlugin: 'org.flywaydb:flyway-database-cubrid:10.26.0',
+    driverCoordinate: 'cubrid:cubrid-jdbc:11.3.2.0053',
+    driverRepository: CUBRID_REPOSITORY,
+    driverClass: 'cubrid.jdbc.driver.CUBRIDDriver',
+    urlParameters: CUBRID_URL_PARAMETERS,
+    url: `jdbc:cubrid:localhost:33000:egovdb:::?${CUBRID_URL_PARAMETERS}`,
+    dialect: 'nuri.foundation.core.persistence.NuriCubridDialect',
+    // 표를 한꺼번에 읽는 기본 방식(grouped)은 CUBRID 드라이버 메타데이터에서 표를 찾지 못해 Hibernate validate 가 멈춘다(실측). UUID 매핑은 방언이 맡는다.
+    hibernateProperties: Object.freeze([['hbm2ddl', 'jdbc_metadata_extraction_strategy', 'individually']]),
+    composeUrl: `jdbc:cubrid:db:33000:egovdb:::?${CUBRID_URL_PARAMETERS}`,
+    composeVolume: 'cubrid_data',
+    // CUBRID 프로젝트가 Docker Hub 에 올린 개발용 이미지다(공식 라이브러리 아님). 검증 엔진과 같은 판·로캘이다. 서버 시계(SYS_DATETIME)는 컨테이너 TZ 를 따른다.
+    //   볼륨 경로는 이미지 Dockerfile 의 VOLUME($CUBRID_DATABASES)이다.
+    composeService: `  db:
+    image: ${CUBRID_IMAGE}
+    container_name: egov-cubrid
+    restart: always
+    ports:
+      - "127.0.0.1:33000:33000"
+    environment:
+      TZ: Asia/Seoul
+      CUBRID_DB: egovdb
+      CUBRID_LOCALE: ko_KR.utf8
+      CUBRID_VOLUME_SIZE: 512M
+      # ⚠ 개발 전용 자격이다. 운영 오버레이가 DB_USERNAME/DB_PASSWORD/DB_ADMIN_PASSWORD 로 덮어쓴다.
+      DBA_PASSWORD: egov123
+      APP_DB_USER: egov
+      APP_DB_PASSWORD: egov123
+    volumes:
+      - cubrid_data:/home/cubrid/CUBRID/databases
+    healthcheck:
+      # \`$$\` 는 Compose 호스트 치환을 피하고 컨테이너 셸에서 \`$\` 로 전달하기 위한 이스케이프다. 첫 기동에 앱 계정을 만들고 dba 에 비밀번호를 건다.
+      test: ["CMD-SHELL", "${composeQuoted(cubridHealthcheckCommand({ user: '${APP_DB_USER}', password: '${APP_DB_PASSWORD}', dbaPassword: '${DBA_PASSWORD}', database: 'egovdb' }))}"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    networks:
+      - egov-net
+
+`,
+    composeProd: [[/^(\s*)POSTGRES_USER: (\$\{DB_USERNAME:\?[^\n]*\})$/m, '$1APP_DB_USER: $2'],
+      // DBA_PASSWORD 는 dba 비밀번호다. 앱 자격이 새도 관리자 자격까지 번지지 않게 나눈다.
+      [/^(\s*)POSTGRES_PASSWORD: (\$\{DB_PASSWORD:\?[^\n]*\})$/m, '$1APP_DB_PASSWORD: $2\n$1DBA_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}']],
   }),
 });

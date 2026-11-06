@@ -234,7 +234,7 @@ class SentMailRepositoryTest {
 
     private MailService searchService() {
         return new MailService(sentMailRepository, mock(nuri.foundation.core.job.DurableWorkPort.class), mock(UserContactService.class),
-                mock(EmailSender.class));
+                mock(EmailSender.class), new nuri.foundation.core.persistence.PostgresqlSqlDialect());
     }
 
     /** 격리된 테스트 DB의 가상 메일만 만든다. 저장 감사값을 바꿔 서로 다른 발신자를 표현한다. */

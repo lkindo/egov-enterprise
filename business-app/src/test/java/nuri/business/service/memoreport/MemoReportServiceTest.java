@@ -61,6 +61,10 @@ class MemoReportServiceTest {
     @org.mockito.Spy
     nuri.business.service.memoreport.dto.MemoReportMapper memoReportMapper = new nuri.business.service.memoreport.dto.MemoReportMapperImpl();
 
+    /** 시도 토큰 시각의 저장 정밀도. 표준 스키마(마이크로초)를 쓴다. */
+    @org.mockito.Spy
+    private nuri.foundation.core.persistence.VendorSqlDialect vendorSql = new nuri.foundation.core.persistence.PostgresqlSqlDialect();
+
     @InjectMocks
     private MemoReportService memoReportService;
 

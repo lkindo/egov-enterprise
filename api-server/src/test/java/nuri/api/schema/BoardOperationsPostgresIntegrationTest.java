@@ -330,7 +330,10 @@ class BoardOperationsPostgresIntegrationTest {
     @ParameterizedTest
     @ValueSource(strings = {"commit", "rollback", "optimistic-conflict"})
     void actualMultipartAppendWaitsOnFileMasterAndCommitOrRollbackKeepsRowsAndStorageConsistent(String outcome) throws Exception {
-        boolean rollback = !outcome.equals("commit");
+        // CUBRID 는 게시글(첨부 원장의 자식) 행 갱신이 첨부 원장 행 잠금을 기다린다. 쓰기가 기다리는 동안 다른 편집이 끼어들 수 없어 낙관적 충돌 대신
+        // 그 편집이 대기 상한 뒤 거절되고 앞선 쓰기가 커밋된다 — 갱신 유실은 어느 쪽에도 없다(원장의 parent-lock-wait 저하).
+        boolean editWaitsForAttachmentLock = outcome.equals("optimistic-conflict") && VendorTestSql.childUpdateWaitsForParentLock();
+        boolean rollback = !outcome.equals("commit") && !editWaitsForAttachmentLock;
         var principal = CustomUserDetails.builder().userId(author).esntlId(author).enabled(true)
                 .groups(List.of()).permissions(List.of("BOARD_UPDATE")).build();
         var authentication = new UsernamePasswordAuthenticationToken(principal, null, principal.getAuthorities());
@@ -385,12 +388,20 @@ class BoardOperationsPostgresIntegrationTest {
                 } while (!waiting && System.nanoTime() < deadline);
                 assertThat(waiting).as("actual BoardService multipart append waits before adding file metadata").isTrue();
                 assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_file_detail WHERE atch_file_sn=?", Long.class, attachment)).isEqualTo(1);
-                if (outcome.equals("optimistic-conflict")) {
+                if (editWaitsForAttachmentLock) {
+                    // 앞선 쓰기도 같은 잠금을 기다린다. 편집의 대기를 짧게 묶어 앞선 쓰기의 대기 상한(5초) 안에 끝낸다. 세션 설정이라 시험이 닫는 연결에서만 건다.
+                    try (var editor = VendorTestSql.openVendorConnection()) {
+                        JdbcTemplate editing = VendorTestSql.on(editor);
+                        VendorTestSql.boundSessionLockWait(editing);
+                        assertThatThrownBy(() -> editing.update("UPDATE tb_bbs_item SET version=version+1, pst_ttl='concurrent title' WHERE pst_sn=?", post))
+                                .isInstanceOf(org.springframework.dao.CannotAcquireLockException.class);
+                    }
+                } else if (outcome.equals("optimistic-conflict")) {
                     jdbc.update("UPDATE tb_bbs_item SET version=version+1, pst_ttl='concurrent title' WHERE pst_sn=?", post);
                     expectedRow.set(jdbc.queryForMap("SELECT * FROM tb_bbs_item WHERE pst_sn=?", post));
                 }
             } finally { blocker.rollback(); }
-            if (outcome.equals("optimistic-conflict")) {
+            if (outcome.equals("optimistic-conflict") && !editWaitsForAttachmentLock) {
                 assertThatThrownBy(() -> writing.get(20, TimeUnit.SECONDS))
                         .hasCauseInstanceOf(org.springframework.orm.ObjectOptimisticLockingFailureException.class);
             } else {

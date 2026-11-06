@@ -2,9 +2,11 @@
   "schemaVersion": 1,
   "description": "벤더 의존 SQL 의 위치·처리 방식·대응 시험(ADR-0047). frozen 은 그 파일에 남은 벤더 구문의 규칙별 개수이며 VendorSqlPortabilityLinterTest 가 정확히 대조한다.",
   "portImplementations": [
+    "foundation/src/main/java/nuri/foundation/core/persistence/CubridSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/InnoDbSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/MariaDbSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/MySqlSqlDialect.java",
+    "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/OracleSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/PostgresqlSqlDialect.java",
     "foundation/src/main/java/nuri/foundation/core/persistence/SqlServerSqlDialect.java"

@@ -71,6 +71,13 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     arguments("241", "SELECT CAST(? AS DATE)", "2026-02-31", 400, "C001"),
                     arguments("245", "SELECT CAST(? AS INTEGER)", "private-database-detail", 400, "C001"),
                     arguments("8134", "SELECT 1 / CAST(? AS INTEGER)", "0", 500, "C004"));
+            // 바인딩 값의 범위·형식·날짜 오류는 모두 -494(호스트 변수 변환 실패)이고 SQLState 가 없다. 처리기가 문구로 가른다(2026-11-05 실측).
+            case CUBRID -> Stream.of(
+                    arguments("-494", "SELECT CAST(? AS NUMERIC(3,0)) FROM db_root", "40000", 400, "C001"),
+                    arguments("-494", "SELECT CAST(? AS DATE) FROM db_root", "invalid-date", 400, "C001"),
+                    arguments("-494", "SELECT CAST(? AS DATE) FROM db_root", "2026-02-31", 400, "C001"),
+                    arguments("-494", "SELECT CAST(? AS INTEGER) FROM db_root", "private-database-detail", 400, "C001"),
+                    arguments("-539", "SELECT 1 / CAST(? AS INTEGER) FROM db_root", "0", 500, "C004"));
         };
     }
 
@@ -88,6 +95,10 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
             // CHECK 는 FK 와 같은 547 이라 처리기가 메시지의 제약 종류로 가른다. FK 쪽은 actualForeignKeyViolationIsAConflict 가 본다.
             case MSSQL -> Stream.of(
                     arguments("515", null, 400, "C001"), arguments("547", "-1", 400, "C001"), arguments("2627", "1", 409, "C008"));
+            // CHECK 는 엔진이 집행하지 않아 어댑터처럼 ck_ 트리거로 둔다. 거부(-517)를 처리기가 트리거 이름으로 CHECK 위반으로 가른다.
+            case CUBRID -> Stream.of(
+                    // BEFORE 트리거가 있는 표의 NOT NULL 위반은 -631 이 아니라 -205 다(2026-11-06 실측). 운영 스키마의 CHECK 트리거 표가 그렇다.
+                    arguments("-205", null, 400, "C001"), arguments("-517", "-1", 400, "C001"), arguments("-670", "1", 409, "C008"));
         };
     }
 
@@ -126,6 +137,7 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     case ORACLE -> "12899";
                     case MARIADB, MYSQL -> "1406";
                     case MSSQL -> "2628";
+                    case CUBRID -> "-494";
                 });
                 assertHttpResponse(failure, 400, "C001", null);
             } finally {
@@ -141,6 +153,10 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
         try (Connection connection = openConnection()) {
             JdbcTemplate jdbc = jdbc(connection);
             jdbc.execute("CREATE TABLE response_constraint_probe (probe_value integer NOT NULL UNIQUE CHECK (probe_value > 0))");
+            if (VendorTestSql.vendor() == VendorTestSql.Vendor.CUBRID) {
+                jdbc.execute("CREATE TRIGGER ck_response_constraint_probe_i BEFORE INSERT ON response_constraint_probe"
+                        + " IF (new.probe_value IS NOT NULL AND new.probe_value <= 0) EXECUTE REJECT");
+            }
             try {
                 jdbc.update("INSERT INTO response_constraint_probe(probe_value) VALUES (1)");
                 DataAccessException failure = queryFailure(jdbc, VendorTestSql.sql(jdbc,
@@ -218,13 +234,21 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     failure = queryFailure(jdbc, "DECLARE @nuri_wait INT = CAST(? AS INT); WAITFOR DELAY '00:00:05'", "5");
                     jdbc.setQueryTimeout(-1);
                 }
+                // SLEEP 이 없어 Oracle 처럼 오래 도는 질의를 드라이버의 문장 시간 초과로 끊는다.
+                case CUBRID -> {
+                    jdbc.setQueryTimeout(1);
+                    failure = queryFailure(jdbc, "SELECT COUNT(*) FROM db_attribute a, db_attribute b, db_attribute c "
+                            + "WHERE a.def_order + b.def_order + c.def_order > CAST(? AS INTEGER)", "5");
+                    jdbc.setQueryTimeout(-1);
+                }
                 default -> throw new IllegalStateException();
             }
             assertTrue(VendorTestSql.isStatementTimeout(jdbc, databaseError(failure)),
                     () -> "문장 시간 초과여야 한다: " + VendorTestSql.describe(databaseError(failure)));
             assertHttpResponse(failure, 503, "S002", "5");
             // FROM DUAL 은 Oracle 19c 가 요구하고 MySQL·MariaDB 도 받는다. PostgreSQL 과 SQL Server 는 받지 않는다.
-            boolean dual = VendorTestSql.vendorRun() && VendorTestSql.vendor() != VendorTestSql.Vendor.MSSQL;
+            boolean dual = VendorTestSql.vendorRun() && VendorTestSql.vendor() != VendorTestSql.Vendor.MSSQL
+                    && VendorTestSql.vendor() != VendorTestSql.Vendor.CUBRID;
             assertEquals(1, jdbc.queryForObject(dual ? "SELECT 1 FROM DUAL" : "SELECT 1", Integer.class));
         }
     }
@@ -246,6 +270,7 @@ class DatabaseExceptionTranslationIntegrationTest extends SharedPostgresMigratio
                     case ORACLE -> "2292";
                     case MARIADB, MYSQL -> "1451";
                     case MSSQL -> "547";
+                    case CUBRID -> "-924";
                 });
                 assertHttpResponse(failure, 409, "C008", null);
             } finally {

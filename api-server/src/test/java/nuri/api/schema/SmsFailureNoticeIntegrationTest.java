@@ -447,7 +447,7 @@ class SmsFailureNoticeIntegrationTest {
     }
     private static String sqlState(Throwable failure) {
         for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
-            if (cause instanceof java.sql.SQLException sql) return sql.getSQLState();
+            if (cause instanceof java.sql.SQLException sql) return VendorTestSql.observedState(sql);
         }
         return null;
     }

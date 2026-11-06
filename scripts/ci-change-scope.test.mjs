@@ -843,7 +843,7 @@ test('GitHub outputs are explicit strings for job conditions', () => {
     reusable: 'false',
     reusable_custom: 'false',
     reusable_vendor: 'false',
-    reusable_vendor_matrix: JSON.stringify({ include: ['oracle', 'mariadb', 'mysql', 'mssql'].flatMap(vendor => ['multi-module', 'single-module'].map(layout => ({ vendor, layout }))) }),
+    reusable_vendor_matrix: JSON.stringify({ include: ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid'].flatMap(vendor => ['multi-module', 'single-module'].map(layout => ({ vendor, layout }))) }),
     reusable_matrix: JSON.stringify({
       include: [
         { profile: 'core', layout: 'multi-module' },
@@ -893,7 +893,7 @@ test('a standalone export without the reusable generator has no presets, while a
 // 벤더 잡(ADR-0047 D-14). 입력 목록은 증거 판정과 같은 계산이다.
 const PR = { event: 'pull_request' };
 // ci 를 연 벤더. 원장 순서대로 matrix 에 든다. 원장에서 읽지 않고 적어 두어 원장이 벤더를 빼면 이 시험이 붉다.
-const CI_VENDORS = ['oracle', 'mariadb', 'mysql', 'mssql'];
+const CI_VENDORS = ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid'];
 const vendorMatrix = (vendors, layouts = ['multi-module']) => ({ include: vendors.flatMap(vendor => layouts.map(layout => ({ vendor, layout }))) });
 const ORACLE_MULTI = vendorMatrix(['oracle']);
 const ORACLE_BOTH = vendorMatrix(['oracle'], ['multi-module', 'single-module']);
@@ -932,7 +932,9 @@ test('every certification input and CI-only path selects the vendor job on the r
   // 두 벤더가 함께 쓰는 MySQL 어댑터·InnoDB 포트는 둘만, 벤더 하나의 포트는 그 벤더만 고른다. Oracle 입력이 아니어서 Oracle 증거도 낡지 않는다.
   for (const [file, matrix] of [['scripts/project-composer-vendor-mysql.mjs', INNODB_MULTI], [`${PERSISTENCE}/InnoDbSqlDialect.java`, INNODB_MULTI],
     [`${PERSISTENCE}/MariaDbSqlDialect.java`, vendorMatrix(['mariadb'])], [`${PERSISTENCE}/MySqlSqlDialect.java`, vendorMatrix(['mysql'])], [ORACLE_PORT, ORACLE_MULTI],
-    ['scripts/project-composer-vendor-mssql.mjs', vendorMatrix(['mssql'])], [`${PERSISTENCE}/SqlServerSqlDialect.java`, vendorMatrix(['mssql'])], [`${PERSISTENCE}/NuriSqlServerDialect.java`, vendorMatrix(['mssql'])]]) {
+    ['scripts/project-composer-vendor-mssql.mjs', vendorMatrix(['mssql'])], [`${PERSISTENCE}/SqlServerSqlDialect.java`, vendorMatrix(['mssql'])], [`${PERSISTENCE}/NuriSqlServerDialect.java`, vendorMatrix(['mssql'])],
+    ['scripts/project-composer-vendor-cubrid.mjs', vendorMatrix(['cubrid'])], [`${PERSISTENCE}/CubridSqlDialect.java`, vendorMatrix(['cubrid'])], [`${PERSISTENCE}/NuriCubridDialect.java`, vendorMatrix(['cubrid'])],
+    [`${PERSISTENCE}/NuriCubridDialectResolver.java`, vendorMatrix(['cubrid'])], [`${PERSISTENCE}/SessionInitializingDataSource.java`, vendorMatrix(['cubrid'])]]) {
     assert.deepEqual(vendorFields(classifyChangedFiles([file], { ...PR, readSource: () => 'class Port implements VendorSqlDialect {}' })), { reusableVendor: true, reusableVendorMatrix: matrix }, file);
     assert.equal(inputs.oracle.has(file), file === ORACLE_PORT, file);
   }
@@ -973,7 +975,7 @@ test('JPQL, QueryDSL and lock files select the vendor job, but a derived query o
 });
 
 test('a change outside the certification inputs leaves the vendor job off, including another vendor and PostgreSQL itself', () => {
-  for (const file of [POSTGRES_PORT, 'scripts/project-composer-vendor-cubrid.mjs',
+  for (const file of [POSTGRES_PORT,
     'scripts/project-composer-server.mjs', 'scripts/project-composer-vendor-evidence.mjs', 'scripts/reusable-page-survival.mjs', 'tools/project-composer/public/app.js', 'frontend/src/app/layout.tsx', 'docs/README.md']) {
     const result = classifyChangedFiles([file], PR);
     assert.deepEqual(result.unknownFiles, [], file);
@@ -1021,7 +1023,7 @@ test('a pull request runs one layout, everything else both, and only the selecti
 test('deleting an input fails closed to every layout even on a pull request', () => {
   const deleted = (file, options = {}) => vendorFields(classifyChangedFiles([file], { ...PR, readSource: () => null, ...options }));
   const closed = { reusableVendor: true, reusableVendorMatrix: ALL_BOTH };
-  for (const file of ['api-server/src/main/resources/db/migration/V2_1__gone.sql', 'scripts/project-composer-vendor-oracle.mjs', 'scripts/project-composer-vendor-mysql.mjs', ORACLE_PORT, 'config/modules/board.json',
+  for (const file of ['api-server/src/main/resources/db/migration/V2_1__gone.sql', 'scripts/project-composer-vendor-oracle.mjs', 'scripts/project-composer-vendor-mysql.mjs', 'scripts/project-composer-vendor-cubrid.mjs', ORACLE_PORT, 'config/modules/board.json',
     'api-server/src/test/java/nuri/api/schema/GoneIntegrationTest.java', 'gradle/libs.versions.toml', 'scripts/project-composer-db.mjs', 'scripts/reusable-a-model-tool-that-only-the-base-tree-imported.mjs']) {
     assert.deepEqual(deleted(file), closed, file);
   }
@@ -1032,7 +1034,7 @@ test('deleting an input fails closed to every layout even on a pull request', ()
   // 제거 원장이 가리키는 자산이 사라지면 벤더 생성만 멈춘다.
   for (const file of ['docker-compose.authz-e2e.yml', 'db_columns.json', 'scripts/ReleaseSmokeProbe.java']) assert.deepEqual(deleted(file), closed, file);
   // 다른 벤더의 입력, 시험, 원장이 이유와 함께 뺀 도구는 지워도 입력이 아니다.
-  for (const file of [POSTGRES_PORT, 'scripts/project-composer-vendor-cubrid.mjs', 'scripts/project-composer-old-thing.test.mjs', 'scripts/project-composer-reasons.mjs', 'frontend/src/app/gone/page.tsx', 'docs/gone.md', 'migration-tool/src/main/java/nuri/migration/Gone.java', 'scripts/ReleaseSmokeProbe.txt']) {
+  for (const file of [POSTGRES_PORT, 'scripts/project-composer-old-thing.test.mjs', 'scripts/project-composer-reasons.mjs', 'frontend/src/app/gone/page.tsx', 'docs/gone.md', 'migration-tool/src/main/java/nuri/migration/Gone.java', 'scripts/ReleaseSmokeProbe.txt']) {
     assert.equal(deleted(file).reusableVendor, false, file);
   }
   // 미지 경로와 겹쳐도 전수다.

@@ -683,6 +683,7 @@
       "id": "cubrid",
       "label": "CUBRID",
       "status": "preview",
+      "ci": true,
       "engines": [
         {
           "version": "11.4",
@@ -691,9 +692,76 @@
         }
       ],
       "evidenceInputs": [
-        "scripts/project-composer-vendor-cubrid.mjs"
+        "scripts/project-composer-vendor-cubrid.mjs",
+        "foundation/src/main/java/nuri/foundation/core/persistence/CubridSqlDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridSqlAstTranslator.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/CubridJdbcDataSource.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridDialectResolver.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/SessionInitializingDataSource.java",
+        "foundation/src/main/resources/META-INF/services/org.hibernate.engine.jdbc.dialect.spi.DialectResolver"
       ],
-      "reason": "제한 지원 대상입니다. 스키마 번역과 대상 DB 대조까지이고 앱 기동을 아직 통과하지 않았습니다."
+      "notices": {
+        "degradations": [
+          {
+            "kind": "check-cost",
+            "summary": "CHECK 제약을 트리거로 검사해 쓰기가 느려짐",
+            "text": "CUBRID 는 CHECK 제약을 집행하지 않아 같은 조건을 입력·수정 전 트리거로 검사합니다. 쓰기마다 조건을 평가해 쓰기가 느려집니다. 조건을 어긴 값은 저장되지 않습니다."
+          },
+          {
+            "kind": "timestamp-precision",
+            "summary": "시각이 밀리초까지만 저장됨",
+            "text": "시각을 밀리초까지만 저장합니다. 밀리초보다 작은 단위는 저장되지 않습니다."
+          },
+          {
+            "kind": "skip-locked",
+            "summary": "후속 작업을 집을 때 잠긴 행을 기다려 처리량이 줄어듦",
+            "text": "잠긴 행을 건너뛰는 조회(SKIP LOCKED)가 없어, 후속 작업을 집을 때 다른 처리기가 잠근 행이 풀릴 때까지 기다린 뒤 다음 행을 집습니다. 처리기가 여럿이면 처리량이 줄어듭니다."
+          },
+          {
+            "kind": "json-validity",
+            "summary": "JSON 형식을 DB 가 검사하지 못함",
+            "text": "JSON 칸을 문자열로 저장해 DB 는 첫 글자와 크기만 검사합니다. JSON 형식은 앱이 검사하므로 앱을 거치지 않고 넣은 깨진 JSON 은 막지 못합니다."
+          },
+          {
+            "kind": "null-order",
+            "summary": "NULL 정렬 순서가 PostgreSQL 과 반대임",
+            "text": "NULL 을 가장 작은 값으로 정렬합니다. NULL 이 들 수 있는 칸으로 정렬하면 오름차순에서는 NULL 이 맨 앞, 내림차순에서는 맨 뒤에 와 PostgreSQL 과 반대입니다."
+          },
+          {
+            "kind": "parent-lock-wait",
+            "summary": "부모 행이 잠긴 동안 자식 행 수정이 기다림",
+            "text": "부모 행이 잠겨 있는 동안 그 자식 행을 고치면, 참조 컬럼을 바꾸지 않아도 잠금이 풀릴 때까지 기다립니다. 첨부 파일을 덧붙이는 동안 같은 게시글을 고치면 최대 5초 기다린 뒤 충돌로 거절될 수 있습니다. 값이 덮어써지지는 않습니다."
+          },
+          {
+            "kind": "default",
+            "summary": "시퀀스·UUID 기본값을 DB 가 채우지 못함",
+            "text": "DB 기본값에 시퀀스·UUID 를 쓸 수 없어 그 칸에는 DB 기본값이 없습니다. 앱을 거치지 않고 행을 넣을 때는 그 칸의 값을 직접 넣어야 합니다."
+          },
+          {
+            "kind": "not-null",
+            "summary": "참조되는 유일 키가 기본키가 되어 NULL 을 받지 않음",
+            "text": "외래 키가 기본키만 참조할 수 있어, 다른 표가 참조하는 유일 키를 그 표의 기본키와 맞바꿉니다. 그 칸은 원본과 달리 NULL 을 저장하지 못하고 거부합니다."
+          },
+          {
+            "kind": "deferrable",
+            "summary": "외래 키를 커밋 때 미뤄 검사하지 못함",
+            "text": "외래 키를 커밋 때까지 미뤄 검사하지 못하고 문장마다 검사합니다. 자기 자신을 참조하는 메뉴처럼 부모와 자식을 한 번에 지울 때는 자식부터 지웁니다."
+          },
+          {
+            "kind": "partial",
+            "summary": "부분 인덱스가 일반 인덱스로 바뀜",
+            "text": "부분 인덱스가 없어 일반 인덱스로 둡니다. 유일성 제약이 아닌 인덱스라 성능만 달라집니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 CUBRID 프로젝트가 Docker Hub 에 올린 개발용 이미지입니다. 운영 DB 와 그 지원은 도입 기관이 준비합니다."
+      },
+      "reason": "제한 지원 대상입니다. 앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
     },
     {
       "id": "tibero",

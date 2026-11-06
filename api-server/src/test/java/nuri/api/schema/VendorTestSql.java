@@ -25,6 +25,7 @@ import java.util.concurrent.locks.LockSupport;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import nuri.foundation.core.persistence.CubridSqlDialect;
 import nuri.foundation.core.persistence.MariaDbSqlDialect;
 import nuri.foundation.core.persistence.MySqlSqlDialect;
 import nuri.foundation.core.persistence.OracleSqlDialect;
@@ -54,7 +55,8 @@ final class VendorTestSql {
         ORACLE("oracle", "Oracle", "jdbc:oracle:thin:@//127.0.0.1:"),
         MARIADB("mariadb", "MariaDB", "jdbc:mariadb://127.0.0.1:"),
         MYSQL("mysql", "MySQL", "jdbc:mysql://127.0.0.1:"),
-        MSSQL("mssql", "Microsoft SQL Server", "jdbc:sqlserver://127.0.0.1:");
+        MSSQL("mssql", "Microsoft SQL Server", "jdbc:sqlserver://127.0.0.1:"),
+        CUBRID("cubrid", "CUBRID", "jdbc:cubrid:127.0.0.1:");
 
         private final String id;
         private final String product;
@@ -79,12 +81,13 @@ final class VendorTestSql {
                 case MARIADB -> new MariaDbSqlDialect();
                 case MYSQL -> new MySqlSqlDialect();
                 case MSSQL -> new SqlServerSqlDialect();
+                case CUBRID -> new CubridSqlDialect();
             };
         }
 
         /** JDBC 키 조회가 표의 식별 컬럼 값만 돌려주는 벤더. 시퀀스·UUID 기본값 키는 다른 길로 받는다. */
         boolean identityOnlyKeys() {
-            return innoDb() || this == MSSQL;
+            return innoDb() || this == MSSQL || this == CUBRID;
         }
     }
 
@@ -180,6 +183,12 @@ final class VendorTestSql {
         if (vendor().innoDb()) {
             connection.setTransactionIsolation(Connection.TRANSACTION_READ_COMMITTED);
         }
+        // CUBRID 의 잠금 대기는 기본이 무한이다. 앱이 연결마다 거는 세션 상한을 같게 건다(VendorSqlConfig).
+        if (vendor() == Vendor.CUBRID) {
+            try (var statement = connection.createStatement()) {
+                statement.execute(CubridSqlDialect.SESSION_LOCK_WAIT_SQL);
+            }
+        }
         return connection;
     }
 
@@ -192,6 +201,9 @@ final class VendorTestSql {
         pool.setMaximumPoolSize(6);
         if (vendor().innoDb()) {
             pool.setTransactionIsolation("TRANSACTION_READ_COMMITTED");
+        }
+        if (vendor() == Vendor.CUBRID) {
+            pool.setConnectionInitSql(CubridSqlDialect.SESSION_LOCK_WAIT_SQL);
         }
         return pool;
     }
@@ -256,7 +268,31 @@ final class VendorTestSql {
                 yield innoDb(statement.replaceAll("(\\w+_id)::text", "BIN_TO_UUID($1)"));
             }
             case MSSQL -> sqlServer(statement);
+            case CUBRID -> cubrid(statement);
         };
+    }
+
+    /**
+     * CUBRID 차이. UUID 는 CHAR(36) 문자열이라 그대로 읽는다. CURRENT_TIMESTAMP 는 초 단위 TIMESTAMP 라 서버 시계(한국 시간, 밀리초)인
+     * SYS_DATETIME 으로 쓴다 — 앱의 현재 시각(CubridSqlDialect)과 같다. 간격 덧셈 식이 없어 DATE_ADD 다. JSON 은 STRING 이고 JSON_VALUE 가 없다
+     * (2026-11-06 실측).
+     */
+    private static String cubrid(String statement) {
+        Matcher interval = SQL_SERVER_INTERVAL.matcher(statement);
+        StringBuilder shifted = new StringBuilder();
+        while (interval.find()) {
+            interval.appendReplacement(shifted, "DATE_ADD(SYS_DATETIME, INTERVAL " + ("-".equals(interval.group(1)) ? "-" : "") + interval.group(2) + " "
+                    + interval.group(3).toUpperCase(Locale.ROOT) + ")");
+        }
+        interval.appendTail(shifted);
+        return shifted.toString()
+                .replaceAll("(?i)\\bTIMESTAMP\\s+'([0-9: .-]+)'", "DATETIME'$1'")
+                .replaceAll("(?i)\\bCURRENT_TIMESTAMP\\b", "SYS_DATETIME")
+                .replaceAll("(\\w+)::jsonb->>'(\\w+)'", "JSON_UNQUOTE(JSON_EXTRACT($1, '\\$.$2'))")
+                .replaceAll("nextval\\('(\\w+)'\\)", "$1.NEXT_VALUE")
+                .replaceAll("(\\w+_id)::text", "$1")
+                .replaceAll("(\\w+)::text", "CAST($1 AS VARCHAR)")
+                .transform(VendorTestSql::cubridRowLock);
     }
 
     /**
@@ -291,7 +327,19 @@ final class VendorTestSql {
      * 다른 벤더는 같은 표기를 받는다.
      */
     static String rowLock(String forUpdate) {
-        return vendor() == Vendor.MSSQL ? sqlServerRowLock(forUpdate) : forUpdate;
+        return switch (vendor()) {
+            case MSSQL -> sqlServerRowLock(forUpdate);
+            case CUBRID -> cubridRowLock(forUpdate);
+            default -> forUpdate;
+        };
+    }
+
+    /**
+     * CUBRID 에는 NOWAIT·SKIP LOCKED 가 없다(문법 오류, 2026-11-06 실측). 수식어를 떼고 세션 대기 상한(5초)에 맡긴다 — 행이 비어 있으면 같은 결과이고,
+     * 잠겨 있으면 건너뛰거나 바로 실패하는 대신 상한 뒤 -75 로 실패한다. 잠긴 행을 건너뛰기를 기대하는 시험은 이 벤더에서 붉다.
+     */
+    private static String cubridRowLock(String statement) {
+        return statement.replaceAll("(?i)\\bFOR\\s+UPDATE\\s+(NOWAIT|SKIP\\s+LOCKED)\\b", "FOR UPDATE");
     }
 
     /**
@@ -356,7 +404,7 @@ final class VendorTestSql {
         if (vendor == Vendor.MSSQL) {
             return sqlServerInsertedKey(jdbc, statement, keyColumn, arguments);
         }
-        if (vendor.innoDb()) {
+        if (vendor.innoDb() || vendor == Vendor.CUBRID) {
             // JDBC 키 조회는 AUTO_INCREMENT 값만 돌려준다. 시퀀스로 키를 정하는 입력은 값을 먼저 받아 넣고 그 값을 키로 돌려준다.
             List<String> sequences = NEXTVAL.matcher(statement).results().map(match -> match.group(1)).toList();
             if (sequences.size() > 1) {
@@ -368,6 +416,9 @@ final class VendorTestSql {
                 return value;
             }
             assertAutoIncrement(jdbc, statement, keyColumn);
+            if (vendor == Vendor.CUBRID) {
+                return cubridInsertedKey(jdbc, sql(jdbc, statement), arguments);
+            }
         }
         String column = vendor == Vendor.ORACLE ? keyColumn.toUpperCase(Locale.ROOT) : keyColumn;
         var keys = new GeneratedKeyHolder();
@@ -409,13 +460,35 @@ final class VendorTestSql {
         return key;
     }
 
+    /**
+     * CUBRID 드라이버의 getGeneratedKeys 는 OID 를 재사용하는 표에서 -983 을 내거나 키 없이 끝난다(2026-11-06 실측). 같은 연결에서 입력한 뒤
+     * LAST_INSERT_ID() 를 읽는다 — 앱(NuriCubridDialect)도 같은 길로 받는다.
+     */
+    private static long cubridInsertedKey(JdbcTemplate jdbc, String translated, Object[] arguments) {
+        return jdbc.execute((ConnectionCallback<Long>) connection -> {
+            try (PreparedStatement insert = connection.prepareStatement(translated)) {
+                new ArgumentPreparedStatementSetter(arguments).setValues(insert);
+                insert.executeUpdate();
+            }
+            try (var read = connection.createStatement(); ResultSet key = read.executeQuery("SELECT LAST_INSERT_ID() FROM db_root")) {
+                if (!key.next() || key.getObject(1) == null) {
+                    throw new IllegalStateException("입력이 키를 돌려주지 않았다: " + translated);
+                }
+                return key.getLong(1);
+            }
+        });
+    }
+
     /** 드라이버는 요청한 컬럼과 상관없이 그 표의 AUTO_INCREMENT 값을 돌려준다. 다른 컬럼을 키로 달라면 엉뚱한 값을 받으므로 멈춘다. */
     private static void assertAutoIncrement(JdbcTemplate jdbc, String statement, String keyColumn) {
         Matcher insert = INSERT_COLUMNS.matcher(statement);
         if (!insert.matches()) {
             throw new IllegalArgumentException("키를 돌려받을 INSERT 형태가 아니다: " + statement);
         }
-        Integer automatic = jdbc.queryForObject("SELECT count(*) FROM information_schema.columns WHERE table_schema = DATABASE()"
+        // CUBRID 의 AUTO_INCREMENT 는 그 컬럼에 매인 시리얼이다(db_serial 의 class_name·attr_name).
+        Integer automatic = vendor(jdbc) == Vendor.CUBRID
+                ? jdbc.queryForObject("SELECT count(*) FROM db_serial WHERE class_name = ? AND attr_name = ?", Integer.class, insert.group(2), keyColumn)
+                : jdbc.queryForObject("SELECT count(*) FROM information_schema.columns WHERE table_schema = DATABASE()"
                 + " AND table_name = ? AND column_name = ? AND extra LIKE '%auto_increment%'", Integer.class, insert.group(2), keyColumn);
         if (automatic == null || automatic != 1) {
             throw new IllegalStateException(insert.group(2) + "." + keyColumn + " 은 AUTO_INCREMENT 가 아니라 JDBC 키 조회로 받을 수 없다");
@@ -429,6 +502,9 @@ final class VendorTestSql {
     private static long nextSequenceValue(JdbcTemplate jdbc, Vendor vendor, String sequence) {
         if (vendor == Vendor.MARIADB) {
             return jdbc.queryForObject("SELECT NEXTVAL(" + sequence + ")", Long.class);
+        }
+        if (vendor == Vendor.CUBRID) {
+            return jdbc.queryForObject("SELECT " + sequence + ".NEXT_VALUE FROM db_root", Long.class);
         }
         return jdbc.execute((ConnectionCallback<Long>) connection -> {
             try (var update = connection.createStatement()) {
@@ -447,7 +523,24 @@ final class VendorTestSql {
             case ORACLE -> jdbc.queryForObject("SELECT TO_NUMBER(SYS_CONTEXT('USERENV', 'SID')) FROM DUAL", Integer.class);
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT CONNECTION_ID()", Integer.class);
             case MSSQL -> jdbc.queryForObject("SELECT @@SPID", Integer.class);
+            case CUBRID -> jdbc.execute((ConnectionCallback<Integer>) VendorTestSql::cubridProcess);
         };
+    }
+
+    /**
+     * CUBRID 에는 SQL 로 읽는 세션 번호가 없다. 이 연결을 맡은 브로커 CAS 프로세스 번호를 드라이버에서 읽는다 — tranlist 의 Process id 와 같은
+     * 값이다(2026-11-06 실측). 드라이버는 실행 중인 연결의 이 값을 문장이 끝날 때까지 내주지 않으므로 기다리기 전에 읽는다. 드라이버는 시험 실행 때만
+     * 경로에 있어 반사로 읽는다.
+     */
+    private static int cubridProcess(Connection connection) throws SQLException {
+        try {
+            Class<?> type = Class.forName("cubrid.jdbc.driver.CUBRIDConnection");
+            Object cubrid = connection.unwrap(type);
+            Object session = type.getMethod("getUConnection").invoke(cubrid);
+            return session.getClass().getField("casProcessId").getInt(session);
+        } catch (ReflectiveOperationException failure) {
+            throw new IllegalStateException("CUBRID 연결의 CAS 번호를 읽지 못했다", failure);
+        }
     }
 
     /**
@@ -462,6 +555,7 @@ final class VendorTestSql {
             // 다른 세션은 performance_schema.user_variables_by_thread 로 읽는다(2026-11-04 실측).
             case MYSQL -> jdbc.update("SET @egov_session = ?", name);
             case MSSQL -> MARIADB_SESSION_NAMES.put(jdbc.queryForObject("SELECT CAST(@@SPID AS BIGINT)", Long.class), name);
+            case CUBRID -> MARIADB_SESSION_NAMES.put((long) sessionId(jdbc), name);
         }
     }
 
@@ -481,6 +575,7 @@ final class VendorTestSql {
             case POSTGRESQL -> dedicated.execute("SET lock_timeout = '300ms'");
             case MARIADB, MYSQL -> dedicated.execute("SET SESSION innodb_lock_wait_timeout = 1");
             case MSSQL -> dedicated.execute("SET LOCK_TIMEOUT 1000");
+            case CUBRID -> dedicated.execute("SET TRANSACTION LOCK TIMEOUT 1");
             case ORACLE -> {
             }
         }
@@ -501,6 +596,11 @@ final class VendorTestSql {
             // 세션 값이라 커밋 뒤에도 남는다(실측). 연결을 닫는 시험만 쓴다.
             case MSSQL -> {
                 dedicated.execute("SET LOCK_TIMEOUT " + seconds * 1000);
+                yield forUpdate;
+            }
+            // 세션 값이라 커밋 뒤에도 남는다(실측). 연결을 닫는 시험만 쓴다.
+            case CUBRID -> {
+                dedicated.execute("SET TRANSACTION LOCK TIMEOUT " + seconds);
                 yield forUpdate;
             }
         };
@@ -580,8 +680,121 @@ final class VendorTestSql {
                 });
                 waits.addAll(bySession.values());
             }
+            // SQL 로는 막는 세션·문장을 볼 수 없다(SHOW TRANSACTION TABLES 는 DBA 전용이고 대기 여부만 낸다). tranlist 가 둘을 낸다.
+            case CUBRID -> {
+                Pattern names = likePattern(sessionPattern);
+                Map<Integer, CubridTransaction> transactions = cubridTransactions();
+                for (CubridTransaction transaction : transactions.values()) {
+                    String name = MARIADB_SESSION_NAMES.getOrDefault((long) transaction.process(), UNNAMED_SESSION);
+                    if (transaction.holders().isEmpty() || !names.matcher(name).matches()) {
+                        continue;
+                    }
+                    Set<Long> blockers = transaction.holders().stream().map(transactions::get).filter(java.util.Objects::nonNull)
+                            .map(holder -> (long) holder.process()).collect(Collectors.toSet());
+                    waits.add(new LockWait(name, transaction.process(), transaction.statement(), blockers));
+                }
+            }
         }
         return waits;
+    }
+
+    /** tranlist 의 한 트랜잭션. {@code holders} 는 이 트랜잭션이 기다리는 트랜잭션 번호이고, {@code statement} 는 소문자 문장이다. */
+    record CubridTransaction(int index, int process, List<Integer> holders, String statement) {
+    }
+
+    /**
+     * {@code Tran index  User name  Host name  Process id  Program name  Query time  Tran time  Wait for lock holder  SQL_ID  SQL Text} 의 행.
+     * 기다리지 않으면 대기 칸이 -1 이다. 문장 전체는 아래 SQL_ID 절에 따로 나온다(2026-11-06 실측).
+     */
+    private static final Pattern CUBRID_TRANSACTION_ROW = Pattern.compile(
+            "^\\s*(\\d+)\\(\\w+\\)\\s+\\S+\\s+\\S+\\s+(\\d+)\\s+\\S+\\s+-?[\\d.]+\\s+-?[\\d.]+\\s+(-1|\\d+(?:\\s*[,|]\\s*\\d+)*)\\s+(\\*\\*\\* empty \\*\\*\\*|\\S+)(.*)$");
+    private static final Pattern CUBRID_TRANSACTION_START = Pattern.compile("^\\s*\\d+\\(");
+    private static final Pattern CUBRID_SQL_INDEX = Pattern.compile("^Tran index\\s*:\\s*([\\d,\\s]+)$");
+
+    /**
+     * 실행 도구가 띄운 컨테이너의 {@code cubrid tranlist -f} 를 읽는다. 시험 JVM 에서 docker 로 부른다 — 한 번에 약 0.2초다. 모르는 모양의 행은
+     * 건너뛰지 않고 멈춘다. 건너뛰면 대기를 보지 못한 채 "기다리지 않는다" 로 판정된다.
+     */
+    static Map<Integer, CubridTransaction> cubridTransactions() {
+        String container = System.getenv("VENDOR_TEST_CONTAINER");
+        if (container == null || container.isBlank()) {
+            throw new IllegalStateException("CUBRID 잠금 관측은 실행 도구가 준 VENDOR_TEST_CONTAINER 가 필요하다");
+        }
+        // jdbc:cubrid:<호스트>:<포트>:<DB>:::?...
+        String database = System.getenv("VENDOR_TEST_URL").split(":")[4];
+        String output;
+        try {
+            Process process = new ProcessBuilder("docker", "exec", "-u", "cubrid", container, "cubrid", "tranlist", "-f", database)
+                    .redirectErrorStream(true).start();
+            output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
+            if (!process.waitFor(30, TimeUnit.SECONDS) || process.exitValue() != 0) {
+                throw new IllegalStateException("cubrid tranlist 실패: " + output.strip());
+            }
+        } catch (java.io.IOException failure) {
+            throw new IllegalStateException("cubrid tranlist 를 부르지 못했다", failure);
+        } catch (InterruptedException interrupted) {
+            Thread.currentThread().interrupt();
+            throw new IllegalStateException("cubrid tranlist 를 기다리다 중단됐다", interrupted);
+        }
+        return parseCubridTransactions(output);
+    }
+
+    static Map<Integer, CubridTransaction> parseCubridTransactions(String output) {
+        Map<Integer, int[]> rows = new LinkedHashMap<>();
+        Map<Integer, List<Integer>> holders = new LinkedHashMap<>();
+        Map<Integer, String> rowText = new LinkedHashMap<>();
+        Map<Integer, StringBuilder> fullText = new LinkedHashMap<>();
+        List<StringBuilder> current = new ArrayList<>();
+        boolean rowsDone = false;
+        int dashes = 0;
+        for (String line : output.split("\\R")) {
+            if (line.startsWith("----")) {
+                dashes++;
+                rowsDone = dashes >= 2;
+                current.clear();
+                continue;
+            }
+            if (!rowsDone && dashes == 1) {
+                if (!CUBRID_TRANSACTION_START.matcher(line).find()) {
+                    continue;
+                }
+                Matcher row = CUBRID_TRANSACTION_ROW.matcher(line);
+                if (!row.matches()) {
+                    throw new IllegalStateException("tranlist 행을 읽지 못했다: " + line);
+                }
+                int index = Integer.parseInt(row.group(1));
+                rows.put(index, new int[] {Integer.parseInt(row.group(2))});
+                holders.put(index, "-1".equals(row.group(3)) ? List.of()
+                        : Arrays.stream(row.group(3).split("[,|]")).map(String::trim).map(Integer::valueOf).toList());
+                rowText.put(index, row.group(5).strip());
+                continue;
+            }
+            if (rowsDone) {
+                if (line.startsWith("SQL_ID:")) {
+                    current.clear();
+                    continue;
+                }
+                Matcher indexes = CUBRID_SQL_INDEX.matcher(line.strip());
+                if (current.isEmpty() && indexes.matches()) {
+                    for (String item : indexes.group(1).split(",")) {
+                        if (!item.isBlank()) {
+                            current.add(fullText.computeIfAbsent(Integer.valueOf(item.trim()), key -> new StringBuilder()));
+                        }
+                    }
+                    continue;
+                }
+                for (StringBuilder text : current) {
+                    text.append(text.isEmpty() ? "" : "\n").append(line);
+                }
+            }
+        }
+        Map<Integer, CubridTransaction> transactions = new LinkedHashMap<>();
+        rows.forEach((index, row) -> {
+            String text = fullText.containsKey(index) ? fullText.get(index).toString().strip() : rowText.get(index);
+            String statement = text == null || text.isEmpty() || "*** empty ***".equals(text) ? null : text.toLowerCase(Locale.ROOT);
+            transactions.put(index, new CubridTransaction(index, row[0], holders.get(index), statement));
+        });
+        return transactions;
     }
 
     private static void collect(Map<Long, LockWait> bySession, String name, long session, String statement, long blocker) {
@@ -705,6 +918,55 @@ final class VendorTestSql {
                     + condition + " THEN SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = '" + message + "'; END IF; END");
             case MSSQL -> jdbc.execute(sqlServerTrigger(name, timing, table, condition,
                     "THROW 50099, '" + message + "', 1;"));
+            case CUBRID -> jdbc.execute(cubridRejectTrigger(name, timing, table, condition));
+        }
+    }
+
+    /**
+     * 감사 원장 보호 트리거(tr_<표>_chg_prhb)의 거부가 메시지에 남기는 글자. 다른 벤더는 PostgreSQL 과 같은 append-only 문구를 낸다. CUBRID 트리거는 문구를
+     * 정할 수 없고 메시지에 트리거 이름({@code tr_<표>_chg_prhb_u}·{@code _d})이 든다(2026-11-06 실측).
+     */
+    static String appendOnlyRejection() {
+        return vendor() == Vendor.CUBRID ? "_chg_prhb_" : "append-only";
+    }
+
+    /** 이 벤더가 저장하는 시각. CUBRID 는 밀리초 아래 자리를 버린다(CubridJdbcDataSource 가 바인딩에서 자른다). */
+    static java.time.LocalDateTime storedTime(java.time.LocalDateTime value) {
+        return vendor() == Vendor.CUBRID && value != null ? value.truncatedTo(java.time.temporal.ChronoUnit.MILLIS) : value;
+    }
+
+    /** CUBRID 의 DATETIME 은 밀리초(3자리)다. PostgreSQL 정밀도 {@code requested} 를 그 벤더가 담는 자리수로 돌려준다(원장의 시각 정밀도 저하). */
+    static int storedTimestampPrecision(int requested) {
+        return vendor() == Vendor.CUBRID ? Math.min(requested, 3) : requested;
+    }
+
+    /**
+     * {@link #failingTrigger} 의 실패가 오류 메시지에 남기는 글자. CUBRID 는 문구를 정할 수 없고 메시지에 트리거 이름이 든다
+     * ({@code The operation has been rejected by trigger "<owner>.<name>"}, 2026-11-06 실측).
+     */
+    static String failingTriggerText(JdbcTemplate jdbc, String name, String message) {
+        return vendor(jdbc) == Vendor.CUBRID ? name : message;
+    }
+
+    /**
+     * CUBRID 트리거의 동작은 SQL 한 문장이고 오류 문구를 정할 수 없다 — REJECT 가 -517 로 문장을 되돌린다. 이름이 ck_ 로 시작하지 않아 CHECK 위반으로
+     * 읽히지 않는 사용자 오류다(CubridSqlDialect). REJECT 는 BEFORE 트리거에서만 쓴다. BEFORE 의 새 행은 new, 바뀌기 전 행은 obj 다.
+     */
+    private static String cubridRejectTrigger(String name, String timing, String table, String condition) {
+        String event = timing.replaceFirst("(?i)^(BEFORE|AFTER)\\s+", "").toUpperCase(Locale.ROOT);
+        return "CREATE TRIGGER " + name + " BEFORE " + event + " ON " + table + " IF (" + cubridRows(condition) + ") EXECUTE REJECT";
+    }
+
+    private static String cubridRows(String condition) {
+        return condition.replaceAll("\\bNEW\\.", "new.").replaceAll("\\bOLD\\.", "obj.");
+    }
+
+    /** 없으면 지울 것도 없다. CUBRID 에는 DROP TRIGGER IF EXISTS 가 없다(2026-11-06 실측). */
+    private static void dropQuietly(JdbcTemplate jdbc, String statement) {
+        try {
+            jdbc.execute(statement);
+        } catch (org.springframework.dao.DataAccessException absent) {
+            // 없으면 지울 것도 없다.
         }
     }
 
@@ -743,6 +1005,14 @@ final class VendorTestSql {
                     + " + (SELECT COUNT(*) FROM deleted AS OLD WHERE " + condition + ");"
                     + " EXEC sp_set_session_context N'" + name + "_n', @n;"
                     + " IF @n > 1 THROW 50099, '" + message + "', 1; END");
+            // AFTER DELETE 트리거는 지운 행을 읽지 못한다(old 미정의, 2026-11-06 실측). 지우기 전에 계수 표에 한 행을 넣고, 계수 표의 입력 트리거가
+            // 둘째 행을 거부한다 — 그 거부가 삭제 문장을 되돌린다. 계수 표는 트랜잭션과 함께 되돌려진다.
+            case CUBRID -> {
+                jdbc.execute("CREATE TABLE " + name + "_n (n INT)");
+                jdbc.execute("CREATE TRIGGER " + name + "_n BEFORE INSERT ON " + name + "_n IF ((SELECT COUNT(*) FROM " + name + "_n) > 0) EXECUTE REJECT");
+                jdbc.execute("CREATE TRIGGER " + name + " BEFORE DELETE ON " + table + " IF (" + cubridRows(condition) + ") EXECUTE INSERT INTO "
+                        + name + "_n VALUES (1)");
+            }
             case POSTGRESQL -> throw new IllegalStateException("PostgreSQL 은 시험이 자기 표를 세는 트리거를 쓴다");
         }
     }
@@ -754,6 +1024,11 @@ final class VendorTestSql {
                 jdbc.execute("DROP SEQUENCE " + name + "_n");
             }
             case MARIADB, MYSQL, MSSQL -> jdbc.execute("DROP TRIGGER IF EXISTS " + name);
+            case CUBRID -> {
+                dropQuietly(jdbc, "DROP TRIGGER " + name);
+                dropQuietly(jdbc, "DROP TRIGGER " + name + "_n");
+                dropQuietly(jdbc, "DROP TABLE IF EXISTS " + name + "_n");
+            }
             case POSTGRESQL -> throw new IllegalStateException("PostgreSQL 은 시험이 자기 트리거를 지운다");
         }
     }
@@ -772,6 +1047,7 @@ final class VendorTestSql {
                 }
             }
             case MARIADB, MYSQL, MSSQL -> jdbc.execute("DROP TRIGGER IF EXISTS " + name);
+            case CUBRID -> dropQuietly(jdbc, "DROP TRIGGER " + name);
         }
     }
 
@@ -783,6 +1059,8 @@ final class VendorTestSql {
                     + " AND table_name = ?", Integer.class, table) > 0;
             case MSSQL -> jdbc.queryForObject("SELECT count(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_SCHEMA = SCHEMA_NAME()"
                     + " AND TABLE_NAME = ?", Integer.class, table) > 0;
+            case CUBRID -> jdbc.queryForObject("SELECT count(*) FROM db_class WHERE class_name = ? AND owner_name = CURRENT_USER",
+                    Integer.class, table) > 0;
         };
     }
 
@@ -798,6 +1076,9 @@ final class VendorTestSql {
             // 어댑터는 문자열을 NVARCHAR(n)·NVARCHAR(MAX) 로 옮긴다.
             case MSSQL -> List.of("nvarchar").equals(jdbc.queryForList("SELECT LOWER(DATA_TYPE) FROM INFORMATION_SCHEMA.COLUMNS"
                     + " WHERE TABLE_SCHEMA = SCHEMA_NAME() AND TABLE_NAME = ? AND COLUMN_NAME = ?", String.class, table, column));
+            // VARCHAR(n)·STRING 은 카탈로그에서 모두 STRING 이다.
+            case CUBRID -> List.of("STRING").equals(jdbc.queryForList("SELECT data_type FROM db_attribute WHERE class_name = ? AND attr_name = ?",
+                    String.class, table, column));
         };
     }
 
@@ -811,6 +1092,8 @@ final class VendorTestSql {
                     + "WHERE table_schema = DATABASE() AND table_name = ? AND column_name = ?", Integer.class, table, column);
             case MSSQL -> jdbc.queryForObject("SELECT DATETIME_PRECISION FROM INFORMATION_SCHEMA.COLUMNS "
                     + "WHERE TABLE_SCHEMA = SCHEMA_NAME() AND TABLE_NAME = ? AND COLUMN_NAME = ?", Integer.class, table, column);
+            // DATETIME 은 밀리초(소수 3자리)다.
+            case CUBRID -> jdbc.queryForObject("SELECT scale FROM db_attribute WHERE class_name = ? AND attr_name = ?", Integer.class, table, column);
         };
     }
 
@@ -825,6 +1108,10 @@ final class VendorTestSql {
             case MSSQL -> jdbc.queryForObject("SELECT (SELECT count(*) FROM sys.objects WHERE name = ? AND type IN ('PK','UQ','F','C'))"
                     + " + (SELECT count(*) FROM sys.indexes WHERE name = ? AND is_unique = 1 AND is_primary_key = 0 AND is_unique_constraint = 0)",
                     Integer.class, constraint, constraint);
+            // 키·FK 는 인덱스 이름이다. CHECK 는 어댑터가 <이름>_i·_u 트리거 한 쌍으로 옮긴다 — 둘이 다 있어야 한 제약이다.
+            case CUBRID -> jdbc.queryForObject("SELECT (SELECT count(*) FROM db_index WHERE index_name = ?)"
+                    + " + (SELECT CASE WHEN count(*) = 2 THEN 1 ELSE 0 END FROM db_trig WHERE trigger_name IN (? || '_i', ? || '_u'))"
+                    + " FROM db_root", Integer.class, constraint, constraint, constraint);
         };
     }
 
@@ -833,6 +1120,10 @@ final class VendorTestSql {
      * 고르지 못하고 그 표의 모든 유일 키에 반응하므로 표의 유일 키 전부를 돌려준다. 기본 키 이름이 늘 PRIMARY 라 그 이름은 {@code primaryKey} 로 읽는다.
      */
     static List<String> upsertConflictKeys(JdbcTemplate jdbc, String table, String primaryKey) {
+        // CUBRID 의 ON DUPLICATE KEY UPDATE 도 표의 모든 유일 키에 반응한다. 기본 키 이름은 정의한 이름 그대로다.
+        if (vendor(jdbc) == Vendor.CUBRID) {
+            return jdbc.queryForList("SELECT index_name FROM db_index WHERE class_name = ? AND is_unique = 'YES' ORDER BY index_name", String.class, table);
+        }
         if (!vendor(jdbc).innoDb()) {
             return constraintCount(jdbc, primaryKey) == 1 ? List.of(primaryKey) : List.of();
         }
@@ -855,6 +1146,8 @@ final class VendorTestSql {
                     + " OR EXISTS (SELECT 1 FROM sys.key_constraints WHERE name = ?)"
                     + " OR EXISTS (SELECT 1 FROM sys.indexes WHERE name = ? AND is_unique = 1 AND is_disabled = 0) THEN 1 ELSE 0 END",
                     Integer.class, constraint, constraint, constraint, constraint) == 1;
+            // 키·FK 는 만들 때 기존 행을 검사한다. CHECK 트리거는 기존 행을 보지 않지만 번역 기준선은 빈 표에 만든다.
+            case CUBRID -> constraintCount(jdbc, constraint) == 1;
         };
     }
 
@@ -866,6 +1159,7 @@ final class VendorTestSql {
             case MARIADB, MYSQL -> jdbc.queryForObject("SELECT count(DISTINCT table_name) FROM information_schema.statistics"
                     + " WHERE table_schema = DATABASE() AND index_name = ?", Integer.class, index);
             case MSSQL -> jdbc.queryForObject("SELECT count(*) FROM sys.indexes WHERE name = ?", Integer.class, index);
+            case CUBRID -> jdbc.queryForObject("SELECT count(DISTINCT class_name) FROM db_index WHERE index_name = ?", Integer.class, index);
         }) == 1;
     }
 
@@ -892,6 +1186,11 @@ final class VendorTestSql {
                     JOIN sys.columns c ON c.object_id = k.parent_object_id AND c.column_id = k.parent_column_id
                     WHERE k.parent_object_id = OBJECT_ID(?)
                     """, String.class, table);
+            case CUBRID -> jdbc.queryForList("""
+                    SELECT LOWER(k.key_attr_name) FROM db_index i
+                    JOIN db_index_key k ON k.index_name = i.index_name AND k.class_name = i.class_name
+                    WHERE i.class_name = ? AND i.is_foreign_key = 'YES'
+                    """, String.class, table);
         };
     }
 
@@ -906,6 +1205,7 @@ final class VendorTestSql {
                     + " AND table_name = ? AND column_name = ?", String.class, table, column);
             case MSSQL -> jdbc.queryForObject("SELECT COLUMN_DEFAULT FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_SCHEMA = SCHEMA_NAME()"
                     + " AND TABLE_NAME = ? AND COLUMN_NAME = ?", String.class, table, column);
+            case CUBRID -> jdbc.queryForObject("SELECT default_value FROM db_attribute WHERE class_name = ? AND attr_name = ?", String.class, table, column);
         };
     }
 
@@ -918,6 +1218,9 @@ final class VendorTestSql {
             assertThat(definition.toLowerCase(Locale.ROOT)).contains("utc_timestamp()", "interval 9 hour", "%y%m%d");
         } else if (vendor(jdbc) == Vendor.MSSQL) {
             assertThat(definition.toLowerCase(Locale.ROOT)).contains("korea standard time", "112");
+        } else if (vendor(jdbc) == Vendor.CUBRID) {
+            // 서버 시계가 한국 시간이다(CubridSqlDialect.assertSession 이 기동 때 UTC 차이를 본다).
+            assertThat(definition.toLowerCase(Locale.ROOT)).contains("sys_date", "yyyymmdd");
         } else {
             assertThat(definition).contains("Asia/Seoul").contains("YYYYMMDD");
         }
@@ -930,6 +1233,7 @@ final class VendorTestSql {
             case ORACLE -> "SELECT TO_CHAR(SYSTIMESTAMP AT TIME ZONE 'Asia/Seoul', 'YYYYMMDD') FROM DUAL";
             case MARIADB, MYSQL -> "SELECT DATE_FORMAT(UTC_TIMESTAMP() + INTERVAL 9 HOUR, '%Y%m%d')";
             case MSSQL -> "SELECT CONVERT(NVARCHAR(8), SYSDATETIMEOFFSET() AT TIME ZONE 'Korea Standard Time', 112)";
+            case CUBRID -> "SELECT TO_CHAR(SYS_DATE, 'YYYYMMDD') FROM db_root";
         }, String.class);
     }
 
@@ -938,7 +1242,9 @@ final class VendorTestSql {
      * GlobalExceptionHandler 의 벤더 번호 표가 400 으로 맞춘다.
      */
     static Class<? extends org.springframework.dao.DataAccessException> jdbcCheckViolation(JdbcTemplate jdbc) {
-        return vendor(jdbc) == Vendor.MYSQL ? org.springframework.jdbc.UncategorizedSQLException.class : DataIntegrityViolationException.class;
+        // CUBRID 의 CHECK 트리거 거부(-517)는 SQLState 가 없어 분류되지 않는다(2026-11-06 실측).
+        return vendor(jdbc) == Vendor.MYSQL || vendor(jdbc) == Vendor.CUBRID
+                ? org.springframework.jdbc.UncategorizedSQLException.class : DataIntegrityViolationException.class;
     }
 
     /** 시간대 없는 UTC 현재 시각 식. MySQL 계열에는 {@code AT TIME ZONE} 이 없다. */
@@ -947,6 +1253,8 @@ final class VendorTestSql {
             case POSTGRESQL, ORACLE -> "(CURRENT_TIMESTAMP AT TIME ZONE 'UTC')";
             case MARIADB, MYSQL -> "UTC_TIMESTAMP(6)";
             case MSSQL -> "SYSUTCDATETIME()";
+            // UTC_TIMESTAMP() 는 초 단위다. 서버 시계(한국 시간, 밀리초)에서 9시간을 뺀다 — 한국은 일광 절약 시간이 없다.
+            case CUBRID -> "DATE_ADD(SYS_DATETIME, INTERVAL -9 HOUR)";
         };
     }
 
@@ -973,13 +1281,30 @@ final class VendorTestSql {
 
     /** 외래 키 위반의 SQLState. Oracle·MySQL·MariaDB 는 무결성 위반이 모두 23000 이다. */
     static String foreignKeyState(JdbcTemplate jdbc) {
-        return isPostgresql(jdbc) ? "23503" : "23000";
+        // CUBRID 는 SQLState 가 없어 번호다(observedState). 부모 없는 자식 입력은 -922 다(2026-11-05 실측).
+        return vendor(jdbc) == Vendor.CUBRID ? "-922" : isPostgresql(jdbc) ? "23503" : "23000";
+    }
+
+    /**
+     * 시험이 실제 DB 오류였음을 대조할 때 쓰는 값. SQLState 이고, SQLState 를 주지 않는 CUBRID 는 오류 번호다 — 비어 있는 값끼리 대조하면 아무 오류나
+     * 통과한다.
+     */
+    static String observedState(SQLException failure) {
+        return vendor() == Vendor.CUBRID ? Integer.toString(failure.getErrorCode()) : failure.getSQLState();
     }
 
     /**
      * 부모 행을 잠근 트랜잭션이 있으면 자식의 FK 입력이 기다리는가. PostgreSQL 과 InnoDB 는 FK 검사가 부모 행에 공유 잠금을 걸어 기다린다
      * (2026-11-04 MySQL·MariaDB 실측). Oracle 은 기다리지 않는다(설계서 §6.1).
      */
+    /**
+     * 부모 행을 FOR UPDATE 로 잠근 트랜잭션이 있으면 자식 행의 갱신이 FK 컬럼을 바꾸지 않아도 기다리는가. CUBRID 는 기다린다(2026-11-06 실측,
+     * 원장의 parent-lock-wait 저하). PostgreSQL 은 FK 컬럼을 바꾸지 않는 갱신에서 부모를 보지 않는다.
+     */
+    static boolean childUpdateWaitsForParentLock() {
+        return vendor() == Vendor.CUBRID;
+    }
+
     static boolean foreignKeyCheckWaitsForParentLock(JdbcTemplate jdbc) {
         return vendor(jdbc) != Vendor.ORACLE;
     }
@@ -1007,6 +1332,8 @@ final class VendorTestSql {
             case MYSQL -> failure.getErrorCode() == 1205 || failure.getErrorCode() == 3024;
             // sp_getapplock 의 -1 을 잠금 문장이 51002 로 올린다(SqlServerSqlDialect).
             case MSSQL -> failure.getErrorCode() == 51002;
+            // 슬롯 행 잠금이 세션 상한(SET TRANSACTION LOCK TIMEOUT)에 걸린다.
+            case CUBRID -> failure.getErrorCode() == -75;
         };
     }
 
@@ -1017,6 +1344,7 @@ final class VendorTestSql {
             case ORACLE -> failure.getErrorCode() == 54 || failure.getErrorCode() == 30006;
             case MARIADB, MYSQL -> failure.getErrorCode() == 1205;
             case MSSQL -> failure.getErrorCode() == 1222;
+            case CUBRID -> failure.getErrorCode() == -75;
         };
     }
 
@@ -1031,6 +1359,8 @@ final class VendorTestSql {
             case MARIADB -> failure instanceof SQLTimeoutException && failure.getErrorCode() == 1969;
             // mssql-jdbc 는 시간 초과를 번호 없이 HY008 로 올린다(2026-11-04 실측).
             case MYSQL, MSSQL -> failure instanceof SQLTimeoutException;
+            // 드라이버의 문장 시간 초과는 -4 Has been interrupted. 다(2026-11-06 실측).
+            case CUBRID -> failure.getErrorCode() == -4;
         };
     }
 
@@ -1043,19 +1373,23 @@ final class VendorTestSql {
             case POSTGRESQL, MSSQL -> "SELECT 1 / CAST(? AS INTEGER)";
             case ORACLE -> "SELECT 1 / CAST(? AS INTEGER) FROM DUAL";
             case MARIADB, MYSQL -> "SELECT (SELECT 1 UNION ALL SELECT ?) FROM DUAL";
+            case CUBRID -> "SELECT 1 / CAST(? AS INTEGER) FROM db_root";
         };
     }
 
     /** {@link #failingQuery} 의 SQLState. 0 나누기는 22012 이고 mssql-jdbc 는 S0001(8134)로 올린다(2026-11-04 실측). 여러 행 부분 질의는 21000 이다. */
     static String failingQueryState(JdbcTemplate jdbc) {
-        return vendor(jdbc).innoDb() ? "21000" : vendor(jdbc) == Vendor.MSSQL ? "S0001" : "22012";
+        // CUBRID 의 0 나누기는 -539 이고 SQLState 가 없어 번호로 대조한다(observedState, 2026-11-06 실측).
+        return vendor(jdbc) == Vendor.CUBRID ? "-539" : vendor(jdbc).innoDb() ? "21000" : vendor(jdbc) == Vendor.MSSQL ? "S0001" : "22012";
     }
 
     static boolean isUniqueViolation(DataIntegrityViolationException failure) {
         Throwable cause = failure.getMostSpecificCause();
         // PostgreSQL 은 23505, MySQL·MariaDB·SQL Server 는 무결성 위반이 모두 23000 이라 중복 번호(1062, 2627 제약·2601 유일 인덱스)로 본다.
+        // CUBRID 는 SQLState 없이 -670 이다.
         return cause instanceof SQLException sql && ("23505".equals(sql.getSQLState())
-                        || Set.of(1062, 2627, 2601).contains(sql.getErrorCode()) && "23000".equals(sql.getSQLState()))
+                        || Set.of(1062, 2627, 2601).contains(sql.getErrorCode()) && "23000".equals(sql.getSQLState())
+                        || vendor() == Vendor.CUBRID && sql.getErrorCode() == -670)
                 || String.valueOf(cause.getMessage()).contains("ORA-00001");
     }
 
@@ -1083,6 +1417,9 @@ final class VendorTestSql {
             // 2 가 READ COMMITTED 다. DB 의 READ_COMMITTED_SNAPSHOT 이 읽기를 스냅숏으로 만든다(SqlServerSqlDialect.assertSession).
             case MSSQL -> assertThat(jdbc.queryForObject("SELECT CAST(transaction_isolation_level AS INT) FROM sys.dm_exec_sessions"
                     + " WHERE session_id = @@SPID", Integer.class)).isEqualTo(2);
+            // 앱이 정한 값을 드라이버가 기억한다. CUBRID 의 기본도 READ COMMITTED 다(2026-11-05 실측).
+            case CUBRID -> assertThat(jdbc.execute((ConnectionCallback<Integer>) Connection::getTransactionIsolation))
+                    .isEqualTo(Connection.TRANSACTION_READ_COMMITTED);
             case ORACLE -> {
             }
         }
@@ -1095,7 +1432,8 @@ final class VendorTestSql {
     static void permitLedgerDeletion(JdbcTemplate jdbc, String key) {
         switch (vendor(jdbc)) {
             case POSTGRESQL -> jdbc.queryForObject("SELECT set_config(?, 'on', true)", String.class, key);
-            case ORACLE -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key) VALUES (?)", key);
+            // 행마다 고유 토큰(AUTO_INCREMENT)이 키다 — 트리거는 보이는 행만 센다(CubridSqlDialect, Oracle 과 같다).
+            case ORACLE, CUBRID -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key) VALUES (?)", key);
             case MARIADB, MYSQL -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key, permit_conn) VALUES (?, CONNECTION_ID())", key);
             case MSSQL -> jdbc.update("INSERT INTO tb_sys_ledger_permit (permit_key, permit_conn) VALUES (?, @@SPID)", key);
         }
@@ -1106,7 +1444,7 @@ final class VendorTestSql {
         switch (vendor(jdbc)) {
             case POSTGRESQL -> {
             }
-            case ORACLE -> jdbc.update("DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?", key);
+            case ORACLE, CUBRID -> jdbc.update("DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?", key);
             case MARIADB, MYSQL, MSSQL -> {
                 String connection = vendor(jdbc) == Vendor.MSSQL ? "@@SPID" : "CONNECTION_ID()";
                 int removed = jdbc.update("DELETE FROM tb_sys_ledger_permit WHERE permit_key = ? AND permit_conn = " + connection, key);

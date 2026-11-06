@@ -403,6 +403,21 @@ class ConfigSafetyLinterTest {
             Pattern.compile("(?m)^\\s*MSSQL_PID\\s*:\\s*\\$\\{MSSQL_PID:\\?");
     private static final Pattern MSSQL_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*SQLCMDPASSWORD=\\\\\"\\$\\$\\{MSSQL_SA_PASSWORD\\}\\\\\".*sqlcmd.*$");
 
+    /**
+     * CUBRID 생성물의 같은 판정. 브로커 포트는 33000 이다. 이미지가 앱 계정을 만들지 않고 dba 를 비밀번호 없이 두어 healthcheck 가 앱 계정을 만들고
+     * dba 에 관리자 비밀번호를 건다 — 앱·dba 비밀번호를 따로 필수로 받고, 준비 판정은 컨테이너의 실효 앱 자격으로 한 접속이라 운영 자격에서도 동작한다.
+     */
+    private static final Pattern CUBRID_PORT_PUBLISHED_ON_ALL_INTERFACES =
+            Pattern.compile("(?m)^\\s*-\\s*\"?\\d+:33000\"?\\s*$");
+    private static final Pattern CUBRID_PORT_PUBLISHED_ON_LOOPBACK =
+            Pattern.compile("(?m)^\\s*-\\s*\"?(127\\.0\\.0\\.1|localhost):\\d+:33000\"?\\s*$");
+    private static final Pattern PROD_CUBRID_APP_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*APP_DB_PASSWORD\\s*:\\s*\\$\\{DB_PASSWORD:\\?");
+    private static final Pattern PROD_CUBRID_DBA_PASSWORD_OVERRIDE =
+            Pattern.compile("(?m)^\\s*DBA_PASSWORD\\s*:\\s*\\$\\{DB_ADMIN_PASSWORD:\\?");
+    private static final Pattern CUBRID_HEALTHCHECK = Pattern.compile("(?m)^\\s*test\\s*:.*\\$\\$\\{DBA_PASSWORD\\}"
+            + ".*csql -u \\\\\"\\$\\$\\{APP_DB_USER\\}\\\\\" -p \\\\\"\\$\\$\\{APP_DB_PASSWORD\\}\\\\\" .*$");
+
     /** 투영한 생성물의 벤더. 벤더 값은 잠금이 정하고 생성물 거버넌스가 결속한다. 원본은 PostgreSQL 이다. */
     private static final String BUNDLED_DB_VENDOR = ReusableHarnessProfile.vendorProjectionValue("vendor", "postgresql");
 
@@ -412,32 +427,34 @@ class ConfigSafetyLinterTest {
      * 표에 없는 벤더로 투영하면 판정을 고르지 못한 것 자체가 위반이다 — 새 벤더는 여기에 판정을 더해야 생성물 하네스가 통과한다.
      */
     private static final Map<String, String> BUNDLED_DB_PORT = Map.of(
-            "postgresql", "5432", "oracle", "1521", "mariadb", "3306", "mysql", "3306", "mssql", "1433");
+            "postgresql", "5432", "oracle", "1521", "mariadb", "3306", "mysql", "3306", "mssql", "1433", "cubrid", "33000");
     private static final Map<String, Pattern> BUNDLED_DB_ALL_INTERFACES = Map.of(
             "postgresql", DB_PORT_PUBLISHED_ON_ALL_INTERFACES, "oracle", ORACLE_PORT_PUBLISHED_ON_ALL_INTERFACES,
             "mariadb", INNODB_PORT_PUBLISHED_ON_ALL_INTERFACES, "mysql", INNODB_PORT_PUBLISHED_ON_ALL_INTERFACES,
-            "mssql", MSSQL_PORT_PUBLISHED_ON_ALL_INTERFACES);
+            "mssql", MSSQL_PORT_PUBLISHED_ON_ALL_INTERFACES, "cubrid", CUBRID_PORT_PUBLISHED_ON_ALL_INTERFACES);
     private static final Map<String, Pattern> BUNDLED_DB_LOOPBACK = Map.of(
             "postgresql", DB_PORT_PUBLISHED_ON_LOOPBACK, "oracle", ORACLE_PORT_PUBLISHED_ON_LOOPBACK,
             "mariadb", INNODB_PORT_PUBLISHED_ON_LOOPBACK, "mysql", INNODB_PORT_PUBLISHED_ON_LOOPBACK,
-            "mssql", MSSQL_PORT_PUBLISHED_ON_LOOPBACK);
+            "mssql", MSSQL_PORT_PUBLISHED_ON_LOOPBACK, "cubrid", CUBRID_PORT_PUBLISHED_ON_LOOPBACK);
     private static final Map<String, Map<String, Pattern>> BUNDLED_DB_PASSWORD_OVERRIDES = Map.of(
             "postgresql", Map.of("POSTGRES_PASSWORD", PROD_DB_PASSWORD_OVERRIDE),
             "oracle", Map.of("APP_USER_PASSWORD", PROD_ORACLE_APP_PASSWORD_OVERRIDE, "ORACLE_PASSWORD", PROD_ORACLE_ADMIN_PASSWORD_OVERRIDE),
             "mariadb", Map.of("MARIADB_PASSWORD", PROD_MARIADB_APP_PASSWORD_OVERRIDE, "MARIADB_ROOT_PASSWORD", PROD_MARIADB_ADMIN_PASSWORD_OVERRIDE),
             "mysql", Map.of("MYSQL_PASSWORD", PROD_MYSQL_APP_PASSWORD_OVERRIDE, "MYSQL_ROOT_PASSWORD", PROD_MYSQL_ADMIN_PASSWORD_OVERRIDE),
             "mssql", Map.of("APP_DB_PASSWORD", PROD_MSSQL_APP_PASSWORD_OVERRIDE, "MSSQL_SA_PASSWORD", PROD_MSSQL_ADMIN_PASSWORD_OVERRIDE,
-                    "MSSQL_PID", PROD_MSSQL_EDITION_OVERRIDE));
+                    "MSSQL_PID", PROD_MSSQL_EDITION_OVERRIDE),
+            "cubrid", Map.of("APP_DB_PASSWORD", PROD_CUBRID_APP_PASSWORD_OVERRIDE, "DBA_PASSWORD", PROD_CUBRID_DBA_PASSWORD_OVERRIDE));
     private static final Map<String, Pattern> BUNDLED_DB_HEALTHCHECK = Map.of(
             "postgresql", DB_HEALTHCHECK_USES_CONTAINER_ENV, "oracle", ORACLE_HEALTHCHECK,
-            "mariadb", MARIADB_HEALTHCHECK, "mysql", MYSQL_HEALTHCHECK, "mssql", MSSQL_HEALTHCHECK);
+            "mariadb", MARIADB_HEALTHCHECK, "mysql", MYSQL_HEALTHCHECK, "mssql", MSSQL_HEALTHCHECK, "cubrid", CUBRID_HEALTHCHECK);
     /** 배포 스크립트가 받는 번들 DB 주소. MySQL 계열은 접속 인자(세션 시간대·연결 콜레이션)까지 같은 주소만 받고, 셸 문법이 되지 않게 큰따옴표로 감싼다. */
     private static final Map<String, String> BUNDLED_DB_DEPLOY_URL_CASE = Map.of(
             "postgresql", "jdbc:postgresql://db:5432/egovdb|jdbc:postgresql://db:5432/egovdb\\?*)",
             "oracle", "jdbc:oracle:thin:@//db:1521/FREEPDB1)",
             "mariadb", "\"jdbc:mariadb://db:3306/egovdb?sessionVariables=time_zone='+09:00'&connectionCollation=utf8mb4_nopad_bin\")",
             "mysql", "\"jdbc:mysql://db:3306/egovdb?sessionVariables=time_zone='%2B09:00',innodb_lock_wait_timeout=5&connectionCollation=utf8mb4_0900_bin\")",
-            "mssql", "\"jdbc:sqlserver://db:1433;databaseName=egovdb;encrypt=false;lockTimeout=5000\")");
+            "mssql", "\"jdbc:sqlserver://db:1433;databaseName=egovdb;encrypt=false;lockTimeout=5000\")",
+            "cubrid", "\"jdbc:cubrid:db:33000:egovdb:::?charset=utf-8\")");
 
     /** 첨부 실물이 컨테이너 쓰기 계층으로 되돌아가지 않도록 고정하는 api mount. */
     private static final Pattern ATTACHMENT_STORAGE_MOUNT = Pattern.compile(
@@ -657,6 +674,37 @@ class ConfigSafetyLinterTest {
                 prod.replace("MSSQL_SA_PASSWORD: ${DB_ADMIN_PASSWORD:?", "MSSQL_SA_PASSWORD: Egov_sa123 # ")));
         broken.put("Developer 에디션 그대로", bundledDatabaseViolations("mssql", base, prod.replace("MSSQL_PID: ${MSSQL_PID:?", "MSSQL_PID: Developer # ")));
         broken.put("개발 sa 비밀번호 고정 healthcheck", bundledDatabaseViolations("mssql", base.replace("$${MSSQL_SA_PASSWORD}", "Egov_sa123"), prod));
+        broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
+    }
+
+    @Test
+    @DisplayName("CUBRID 로 투영한 번들 DB 는 33000 루프백·운영 비밀번호 둘·dba 를 잠그는 healthcheck 로 통과하고, 하나라도 어긋나면 red")
+    void cubridBundleIsJudgedByItsOwnRules() {
+        // 생성기의 소스 투영(project-composer-vendor-source.mjs 의 cubridHealthcheckCommand)이 만드는 db 블록의 모양을 줄였다.
+        String healthcheck = "      test: [\"CMD-SHELL\", \"if gosu cubrid csql -u dba -c \\\"select 1 from db_root\\\" egovdb@localhost </dev/null >/dev/null 2>&1;"
+                + " then gosu cubrid csql -u dba -c \\\"ALTER USER dba PASSWORD '$${DBA_PASSWORD}'\\\" egovdb@localhost; exit 1; fi;"
+                + " gosu cubrid csql -u \\\"$${APP_DB_USER}\\\" -p \\\"$${APP_DB_PASSWORD}\\\" -c \\\"select 1 from db_root\\\" egovdb@localhost </dev/null\"]";
+        String base = String.join("\n", "services:", "  db:", "    ports:", "      - \"127.0.0.1:33000:33000\"",
+                "    environment:", "      CUBRID_DB: egovdb", "      DBA_PASSWORD: egov123", "      APP_DB_USER: egov", "      APP_DB_PASSWORD: egov123",
+                "    healthcheck:", healthcheck, "  api:", "");
+        String prod = String.join("\n", "services:", "  db:", "    environment:",
+                "      APP_DB_USER: ${DB_USERNAME:?번들 DB의 DB_USERNAME 이 필요합니다}",
+                "      APP_DB_PASSWORD: ${DB_PASSWORD:?번들 DB의 DB_PASSWORD 가 필요합니다}",
+                "      DBA_PASSWORD: ${DB_ADMIN_PASSWORD:?번들 DB의 DB_ADMIN_PASSWORD 가 필요합니다}", "");
+        assertTrue(bundledDatabaseViolations("cubrid", base, prod).isEmpty(), () -> bundledDatabaseViolations("cubrid", base, prod).toString());
+
+        Map<String, List<String>> broken = new LinkedHashMap<>();
+        broken.put("모든 인터페이스 공개", bundledDatabaseViolations("cubrid", base.replace("127.0.0.1:33000:33000", "33000:33000"), prod));
+        broken.put("다른 벤더의 포트", bundledDatabaseViolations("cubrid", base.replace("127.0.0.1:33000:33000", "127.0.0.1:3306:3306"), prod));
+        broken.put("앱 비밀번호 미재정의", bundledDatabaseViolations("cubrid", base,
+                prod.replace("APP_DB_PASSWORD: ${DB_PASSWORD:?", "APP_DB_PASSWORD: egov123 # ")));
+        broken.put("dba 비밀번호 미재정의", bundledDatabaseViolations("cubrid", base,
+                prod.replace("DBA_PASSWORD: ${DB_ADMIN_PASSWORD:?", "DBA_PASSWORD: egov123 # ")));
+        broken.put("개발 앱 비밀번호 고정 healthcheck", bundledDatabaseViolations("cubrid",
+                base.replace("-p \\\"$${APP_DB_PASSWORD}\\\"", "-p \\\"egov123\\\""), prod));
+        broken.put("dba 를 잠그지 않는 healthcheck", bundledDatabaseViolations("cubrid",
+                base.replace(" then gosu cubrid csql -u dba -c \\\"ALTER USER dba PASSWORD '$${DBA_PASSWORD}'\\\" egovdb@localhost; exit 1;", " then exit 1;"), prod));
+        broken.put("PostgreSQL 판정", bundledDatabaseViolations("postgresql", base, prod));
         broken.forEach((name, violations) -> assertFalse(violations.isEmpty(), name));
     }
 

@@ -44,10 +44,23 @@ public class VendorSqlConfig {
         throw new IllegalStateException("Unsupported app.database.vendor: " + vendor);
     }
 
+    /**
+     * CUBRID 연결. 세션 잠금 대기 상한을 건 뒤 드라이버가 구현하지 않은 JDBC 4.1·4.2 동작을 감싼다(CubridJdbcDataSource). 한 처리기가 둘을 이 순서로
+     * 한다 — 감싼 뒤에는 Hikari 풀이 보이지 않아, 따로 두면 처리기 순서에 따라 풀 설정 대신 꺼낼 때마다 세션 설정을 건다.
+     */
     @Bean
     @ConditionalOnProperty(name = "app.database.vendor", havingValue = CUBRID)
-    static BeanPostProcessor cubridSessionLockWait() {
-        return sessionInitializedWith(CubridSqlDialect.SESSION_LOCK_WAIT_SQL);
+    static BeanPostProcessor cubridConnections() {
+        BeanPostProcessor session = sessionInitializedWith(CubridSqlDialect.SESSION_LOCK_WAIT_SQL);
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                if (!(bean instanceof DataSource) || bean instanceof CubridJdbcDataSource) {
+                    return bean;
+                }
+                return new CubridJdbcDataSource((DataSource) session.postProcessAfterInitialization(bean, beanName));
+            }
+        };
     }
 
     /**

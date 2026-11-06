@@ -44,15 +44,16 @@ public class CubridSqlDialect implements VendorSqlDialect {
     private static final int KOREAN_OFFSET_MINUTES = 540;
     private static final DateTimeFormatter CLOCK = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     /**
-     * SQLState 가 비어 오는 드라이버라 번호로만 가른다. NOT NULL 은 -631, 중복은 -670, FK 부모 없음은 -922, FK 삭제·수정 제한은 -924,
-     * 대기 초과는 -75, 교착 희생은 -72, 0 나누기는 -539 다.
+     * SQLState 가 비어 오는 드라이버라 번호로만 가른다. NOT NULL 은 -631 이고 BEFORE 트리거(CHECK 트리거)가 있는 표에서는 -205 다. 중복은 -670,
+     * FK 부모 없음은 -922, FK 삭제·수정 제한은 -924, 대기 초과는 -75, 교착 희생은 -72, 문장 시간 초과는 -4({@code Has been interrupted.}),
+     * 0 나누기는 -539 다(2026-11-06 실측).
      *
      * <p>두 번호는 메시지로 가른다. 바인딩 값의 길이·범위·날짜 형식 위반은 일반 의미 오류 -494 이고 메시지가
      * {@code Cannot coerce host var to type} 이다 — 같은 번호가 SQL 결함에도 쓰여 번호만으로 400 이 될 수 없다. CHECK 는 엔진이 집행하지
      * 않아 트리거 거부(-517)로 옮겼고(벤더 어댑터), 원장 보호 트리거도 같은 번호라 트리거 이름이 CHECK 제약 이름({@code ck_})일 때만 입력 오류다.
      */
     private static final VendorErrorCodes ERROR_CODES = new VendorErrorCodes(
-            Set.of(-631), Set.of(-670, -922, -924), Set.of(-75, -72), Set.of(), Set.of(-539),
+            Set.of(-631, -205), Set.of(-670, -922, -924), Set.of(-75, -72), Set.of(-4), Set.of(-539),
             Map.of(-494, Pattern.compile("^Semantic: Cannot coerce host var to type "),
                     -517, Pattern.compile("^The operation has been rejected by trigger \"[^\".]+\\.ck_")));
 
@@ -201,6 +202,12 @@ public class CubridSqlDialect implements VendorSqlDialect {
     @Override
     public String databaseProductName() {
         return "CUBRID";
+    }
+
+    /** DATETIME 은 밀리초까지 저장한다(원장의 시각 정밀도 저하). */
+    @Override
+    public java.time.LocalDateTime storedTimestamp(java.time.LocalDateTime value) {
+        return value.truncatedTo(java.time.temporal.ChronoUnit.MILLIS);
     }
 
     @Override

@@ -104,9 +104,9 @@ export function vendorDegradationNotes(ledger, composition) {
  * certified 가 지는 조건. 원장만 고쳐 어댑터 없는 벤더나 빈 증거로 열지 못하게 한다. 입력 해시 대조는 여기서 하지 않는다 —
  * 생성 작업마다 도는 함수이고, 생성물에는 입력이 투영돼 있다.
  */
-function certificationProblems(vendor, ledger) {
-  if (!VENDOR_ADAPTERS[vendor.id]) return ['어댑터가 없다'];
-  if (!VENDOR_SOURCE[vendor.id]) return ['소스 투영(VENDOR_SOURCE)이 없다'];
+export function certificationProblems(vendor, ledger, { adapters = VENDOR_ADAPTERS, sources = VENDOR_SOURCE } = {}) {
+  if (!adapters[vendor.id]) return ['어댑터가 없다'];
+  if (!sources[vendor.id]) return ['소스 투영(VENDOR_SOURCE)이 없다'];
   // required 안의 CI 경로가 없으면 입력 변경이 그 벤더를 돌리지 않는다(D-14).
   if (vendor.ci !== true) return ['CI 벤더 잡(ci)이 없다'];
   if (!vendor.engines?.length) return ['엔진이 없다'];
