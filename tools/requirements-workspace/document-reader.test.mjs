@@ -41,7 +41,7 @@ test('reading cancellation stops later chunks and sensitive model output is reje
   const units = Array.from({ length: 12 }, (_, index) => ({ ...visual, id: `U-${index + 1}`, locator: `페이지 ${index + 1}` }));
   await assert.rejects(readDocument(input, { signal: controller.signal, prepare: preparation(units), execute: async ({ request }) => { calls++; controller.abort(); return { output: output(request.data.units) }; } }), { code: 'AI_CANCELLED' });
   assert.equal(calls, 1);
-  await assert.rejects(readDocument(input, { prepare: preparation([native]), execute: async () => ({ output: output([native], { summary: '연락처 010-1234-5678로 회신한다.' }) }) }), { code: 'AI_DOCUMENT_OUTPUT_INVALID' });
+  await assert.rejects(readDocument(input, { prepare: preparation([native]), execute: async () => ({ output: output([native], { summary: '연락처 010-1234-5678로 회신한다.' }) }) }), { code: 'AI_DOCUMENT_SENSITIVE_OUTPUT' });
 });
 
 test('AI detected document roles select the relevant instructions for following parts of a mixed or unknown document', async () => {
@@ -85,4 +85,17 @@ test('supplemental layout images do not duplicate the preserved native document 
   } });
   assert.equal(result.segments.length, 1); assert.equal(result.segments[0].text, native.text);
   assert.equal(result.reading.provenance[1].kind, 'visual-context');
+});
+
+test('native PDF critical facts independently flag a confident wrong transcription and keep a reference hash', async () => {
+  const page = { ...visual, nativeReference: '처리기간은 3일이며 타인 자료 열람은 불가하다.' };
+  const result = await readDocument(input, { prepare: preparation([page]), execute: async () => ({ output: output([page], { blocks: [{ ...output([page]).blocks[0], text: '처리기간은 8일이며 타인 자료 열람은 가능하다.' }] }) }) });
+  assert.equal(result.needsReview, true); assert.equal(result.reading.blocks[0].certainty, 'uncertain');
+  assert.equal(result.reading.referenceChecks[0].status, 'mismatch'); assert.match(result.reading.referenceChecks[0].sha256, /^[a-f0-9]{64}$/);
+});
+
+test('native PDF content cannot be silently accepted as a clear blank page', async () => {
+  const page = { ...visual, nativeReference: '담당자는 본인 소유 접수 목록만 조회할 수 있다.' };
+  const result = await readDocument(input, { prepare: preparation([native, page]), execute: async () => ({ output: output([native], { blocks: [...output([native]).blocks, { inputId: page.id, heading: '빈 쪽', kind: 'blank', text: null, certainty: 'clear', note: '본문이 없다.' }] }) }) });
+  assert.equal(result.needsReview, true); assert.ok(result.reading.unreadable.some(item => item.inputId === page.id));
 });

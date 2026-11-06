@@ -171,7 +171,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         const run = async args => {
           if (!await isCurrent()) fail('AI_STALE_INPUT');
           if (modelCalls >= 256) fail('AI_CALL_CAPACITY');
-          if (Buffer.byteLength(JSON.stringify(args.request)) > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
+          if (Buffer.byteLength(JSON.stringify(args.request)) > (job.fullPipeline ? 768 * 1024 : 1024 ** 2)) fail('AI_INPUT_TOO_LARGE');
           if (job.fullPipeline) {
             const prompt = { version: PROMPT_VERSION, stage: args.request.phase, instructions: args.request.instructions, schema: args.schema };
             const sha256 = hash(prompt);

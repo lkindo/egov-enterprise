@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
-import { mkdtempSync, rmSync } from 'node:fs';
+import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { createRequirementsStore } from './store.mjs';
@@ -72,6 +72,45 @@ test('manually changed evidence invalidates a reading cache and re-reading prese
   assert.equal(calls, 2); assert.equal(state.backlog.sources.length, 1);
   const job = state.imports.jobs.at(-1); assert.ok(job.previousSourceRef);
   assert.match(app.engine.artifact(job.previousSourceRef.id).content, /사람이 수정한/);
+  assert.equal(state.backlog.sources[0].clauses[0].text, '담당자는 사람이 수정한 접수 업무 근거를 확인한다.');
+  assert.equal(job.keptExistingClauses, true);
+  assert.equal(JSON.parse(app.engine.artifact(job.readingRef.id).content).clauseInputs, undefined);
+});
+
+test('human exclusion and rationale on an unlinked local source survive AI re-reading', async t => {
+  const app = setup(t, successfulReader), input = { ...upload(), filename: 'background.txt', readWithAI: false };
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  const saved = (await app.engine.state()).backlog.sources[0];
+  const clauses = saved.clauses.map(clause => ({ ...clause, disposition: 'excluded', rationale: '사용자가 배경 자료로 제외했다.' }));
+  await app.act('source.save', { ...saved, clauses });
+  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, redacted: true, model: AI_MODEL }); await app.engine.waitForImports();
+  const state = await app.engine.state(); assert.deepEqual(state.backlog.sources[0].clauses, clauses); assert.equal(state.imports.jobs.at(-1).keptExistingClauses, true);
+});
+
+test('legacy evidence without an edit fingerprint is retained while new AI clauses remain available', async t => {
+  const app = setup(t, successfulReader), input = { ...upload(), filename: 'legacy.txt', readWithAI: false };
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  app.store.transact(app.store.read().revision, next => { delete next.metadata.imports.at(-1).sourceStateDigest; next.backlog.sources[0].clauses[0].text = '구형 자동 판독이 남긴 미검토 접수 업무 문장이다.'; });
+  const saved = (await app.engine.state()).backlog.sources[0];
+  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, redacted: true, model: AI_MODEL }); await app.engine.waitForImports();
+  const state = await app.engine.state(), current = state.backlog.sources[0];
+  assert.deepEqual(current.clauses.slice(0, saved.clauses.length), saved.clauses);
+  assert.ok(current.clauses.some(clause => clause.id.startsWith('C-AI-')));
+});
+
+test('an identical ordered legacy transcription does not add another canonical copy', async t => {
+  const app = setup(t, successfulReader), input = { ...upload(), filename: 'same-legacy.txt', readWithAI: false };
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  const saved = (await app.engine.state()).backlog.sources[0];
+  app.store.transact(app.store.read().revision, next => { delete next.metadata.imports.at(-1).sourceStateDigest; });
+  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, redacted: true, model: AI_MODEL }); await app.engine.waitForImports();
+  assert.deepEqual((await app.engine.state()).backlog.sources[0].clauses, saved.clauses);
+});
+
+test('sensitive AI reading output cannot leave a newly archived original behind', async t => {
+  const app = setup(t, (input, options) => readDocument(input, { ...options, execute: async ({ request }) => ({ output: { documentTypes: ['other'], summary: '연락처 010-1234-5678로 회신한다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '합성 이미지', kind: 'paragraph', text: '담당자는 본인 접수 목록을 조회한다.', certainty: 'clear', note: '합성 판독' })), unreadable: [] } }) }));
+  await app.act('source.ingest', { ...upload(), filename: 'receipt.png', base64: readFileSync(new URL('./test-fixtures/receipt.png', import.meta.url)).toString('base64') }); await app.engine.waitForImports();
+  const state = await app.engine.state(); assert.equal(state.imports.jobs[0].status, 'failed'); assert.equal(state.imports.jobs[0].errorCode, 'AI_DOCUMENT_SENSITIVE_OUTPUT'); assert.equal(state.imports.jobs[0].originalRef, undefined); assert.equal(state.backlog.sources.length, 0);
 });
 
 test('changing the document scenario invalidates an otherwise identical original reading cache', async t => {

@@ -8,11 +8,12 @@ import { createRequirementsStore } from './store.mjs';
 import { createRequirementsEngine, initialRequirementsMetadata, validateRequirementsMetadata } from './engine.mjs';
 import { context, source, analysis, decomposition, envelope } from './test-fixtures/ai.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
+import { readDocument } from './document-reader.mjs';
 
-async function setup(t, runner) {
+async function setup(t, runner, documentReader) {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-full-ai-'));
   const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validateBacklogPack(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
-  const engine = createRequirementsEngine({ store, root: process.cwd(), contextProvider: async () => context, aiRunner: runner });
+  const engine = createRequirementsEngine({ store, root: process.cwd(), contextProvider: async () => context, aiRunner: runner, documentReader });
   t.after(async () => { await engine.close(); store.close(); rmSync(workspace, { recursive: true, force: true }); });
   const act = (name, payload) => engine.action(store.read().revision, name, payload);
   await act('project.save', { code: 'SYNTHETIC', name: '합성 통합 업무', institution: '합성 기관', baselineProfile: '' });
@@ -70,6 +71,21 @@ test('unresolved policy decisions pause automatic planning and preserve the prev
   assert.equal(phases.includes('decomposition'), false);
   assert.equal(state.metadata.baselines.length, 0); assert.equal(state.backlog.businessRequirements.length, 0);
   await assert.rejects(app.act('ai.confirm', { jobId: state.ai.current.id }), { code: 'AI_DECISIONS_REQUIRED' });
+});
+
+test('an independently detected PDF transcription mismatch blocks planning even when every model review claims no issues', async t => {
+  const phases = [];
+  const reader = (input, options) => readDocument(input, { ...options,
+    prepare: async () => ({ format: 'pdf', warningCodes: [], units: [{ id: 'U-1', locator: 'PDF 1쪽', text: null, nativeReference: '처리기간은 3일이며 타인 자료 열람은 불가하다.', attachment: null }] }),
+    execute: async () => envelope({ documentTypes: ['other'], summary: '처리기간과 열람 범위를 설명한다.', blocks: [{ inputId: 'U-1', heading: '업무 규칙', kind: 'paragraph', text: '처리기간은 8일이며 타인 자료 열람은 가능하다.', certainty: 'clear', note: '모델이 확신한 합성 오판독' }], unreadable: [] }),
+  });
+  const app = await setup(t, async ({ request }) => { phases.push(request.phase); return envelope(reply(request)); }, reader);
+  await app.act('source.ingest', { requestId: crypto.randomUUID(), filename: 'synthetic-reference.custom', base64: Buffer.from('처리기간은 3일이며 타인 자료 열람은 불가하다.').toString('base64'), sourceType: 'other', classification: 'internal', redacted: true, consent: true, model: 'claude-opus-5-5', readWithAI: true });
+  await app.engine.waitForImports(); assert.equal((await app.engine.state()).imports.jobs.at(-1).needsReview, true);
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'needs-decisions'); assert.equal(phases.includes('decomposition'), false);
+  assert.ok(state.ai.proposal.issues.some(issue => issue.id.startsWith('DOC-') && issue.severity === 'blocking'));
+  assert.equal(state.backlog.businessRequirements.length, 0); assert.equal(state.metadata.baselines.length, 0);
 });
 
 test('multiple planning batches retain every requirement, shared epic, AC and trace through final confirmation', async t => {

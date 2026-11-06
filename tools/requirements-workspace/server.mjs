@@ -68,6 +68,7 @@ const messages = {
   FILE_DOCUMENT_CAPACITY: '문서의 페이지·이미지·판독 본문 처리 한도를 넘었습니다. 원본을 보존하고 페이지 구간을 나눠 등록해 주세요.',
   FILE_SOURCE_CHANGED: '등록한 원본의 해시와 현재 자료가 다릅니다. 올바른 원본을 다시 등록해 주세요.',
   AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독의 내용·위치·원문 근거를 검증하지 못했습니다. 원본을 확인하고 다시 판독해 주세요.',
+  AI_DOCUMENT_SENSITIVE_OUTPUT: 'AI 판독 결과에서 민감정보가 검출되어 이번 원본 보관과 등록을 중단했습니다. 비식별 사본으로 다시 등록해 주세요.',
   AI_DOCUMENT_UNREADABLE: '원본에서 판독 가능한 본문을 확보하지 못했습니다. 더 선명한 사본이나 변환한 PDF를 등록해 주세요.',
   AI_DOCUMENT_READING_REQUIRED: '기존 원본을 새 AI 판독 단계로 처리해야 합니다. AI 전체 분석에서 원본 판독을 진행해 주세요.',
   AI_CHECKPOINT_INVALID: '이전 완료 단계의 입력·지시문 결속을 확인하지 못했습니다. 재사용을 해제하고 다시 시작해 주세요.',

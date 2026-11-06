@@ -22,15 +22,16 @@ const readingRecordProperties = {
   usage: object({ inputTokens: integer(0, Number.MAX_SAFE_INTEGER), outputTokens: integer(0, Number.MAX_SAFE_INTEGER) }),
   prompts: array(object({ stage: { type: 'string', enum: ['reading'] }, version: string(64), sha256: { ...string(64), pattern: '^[a-f0-9]{64}$' }, instructions: string(20000) }), 64),
   clauseInputs: array(object({ clauseId: string(100), inputId: string(100) }), 3000),
+  referenceChecks: array(object({ inputId: string(100), sha256: { ...string(64), pattern: '^[a-f0-9]{64}$' }, status: { type: 'string', enum: ['matched', 'mismatch'] } }), 200),
 };
-const READING_RECORD_SCHEMA = { ...object(readingRecordProperties), required: Object.keys(readingRecordProperties).filter(key => key !== 'clauseInputs') };
+const READING_RECORD_SCHEMA = { ...object(readingRecordProperties), required: Object.keys(readingRecordProperties).filter(key => !['clauseInputs', 'referenceChecks'].includes(key)) };
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export const readingOmissions = codes => (codes ?? []).filter(code => !['DOCUMENT_LAYOUT_APPROXIMATE', 'DOCUMENT_NATIVE_HINT_OMITTED', 'DOCUMENT_REGISTERED_TEXT_ONLY'].includes(code));
 export function validateReadingRecord(value, originalSha256) {
   try { validateAiValue(value, READING_RECORD_SCHEMA, { maxBytes: 8 * 1024 ** 2 }); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
   if (originalSha256 && value.originalSha256 !== originalSha256) fail('AI_DOCUMENT_OUTPUT_INVALID');
   const units = new Set(value.provenance.map(item => item.inputId));
-  if (units.size !== value.provenance.length || [...value.blocks, ...value.unreadable, ...(value.clauseInputs ?? [])].some(item => !units.has(item.inputId))) fail('AI_DOCUMENT_OUTPUT_INVALID');
+  if (units.size !== value.provenance.length || [...value.blocks, ...value.unreadable, ...(value.clauseInputs ?? []), ...(value.referenceChecks ?? [])].some(item => !units.has(item.inputId))) fail('AI_DOCUMENT_OUTPUT_INVALID');
   for (const prompt of value.prompts) if (prompt.version !== value.promptVersion || createHash('sha256').update(prompt.instructions).digest('hex') !== prompt.sha256) fail('AI_DOCUMENT_OUTPUT_INVALID');
   return value;
 }
@@ -49,7 +50,7 @@ export function documentReadingBatches(units) {
 }
 
 function validateReading(value, units) {
-  try { validateAiValue(value, DOCUMENT_READING_SCHEMA); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
+  try { validateAiValue(value, DOCUMENT_READING_SCHEMA); } catch (error) { fail(error.details?.some(detail => detail.kind === 'sensitive-output') ? 'AI_DOCUMENT_SENSITIVE_OUTPUT' : 'AI_DOCUMENT_OUTPUT_INVALID'); }
   const byId = new Map(units.map(unit => [unit.id, unit])), covered = new Set(), unreadable = new Set();
   for (const block of value.blocks) {
     const unit = byId.get(block.inputId);
@@ -62,6 +63,34 @@ function validateReading(value, units) {
   }
   if (covered.size !== units.length) fail('AI_DOCUMENT_OUTPUT_INVALID');
   return value;
+}
+
+function criticalTokens(text) {
+  const normalized = text.normalize('NFKC').toLowerCase().replaceAll('−', '-'), compact = normalized.replace(/\s+/gu, ''), tokens = [];
+  for (const match of compact.matchAll(/[+-]?\d+(?:[.,:/-]\d+)*/g)) {
+    const number = match[0].replace(/,(?=\d{3}(?:\D|$))/g, ''); tokens.push(`number:${number}`);
+    const unit = /^(?:개월|시간|천원|만원|분|초|일|월|년|원|건|명|회|개|%|ms|mb|gb)/.exec(compact.slice(match.index + match[0].length));
+    if (unit) tokens.push(`quantity:${number}${unit[0]}`);
+  }
+  for (const match of compact.matchAll(/불가능|불가|금지|허용|거부|제외|필수|선택|초과|이상|이하|미만|않|없|못|가능/gu)) tokens.push(`rule:${match[0]}`);
+  for (const match of normalized.matchAll(/\b(?:not|no|never|without|cannot|prohibited|must|may|shall|only|except|required|optional|allowed|allow|deny|denied)\b/g)) tokens.push(`rule:${match[0]}`);
+  const counts = new Map(); for (const token of tokens) counts.set(token, (counts.get(token) ?? 0) + 1); return counts;
+}
+function compareNativeReferences(value, units) {
+  const checks = [];
+  for (const unit of units.filter(unit => unit.nativeReference?.trim())) {
+    const blocks = value.blocks.filter(block => block.inputId === unit.id), text = blocks.map(block => block.text ?? '').join('\n');
+    const expected = criticalTokens(unit.nativeReference), actual = criticalTokens(text);
+    // A PDF text layer can be incomplete or misordered. Extra visible content
+    // is allowed; a missing/conflicting native critical fact requires review.
+    const mismatch = !text.trim() || [...expected].some(([token, count]) => (actual.get(token) ?? 0) < count);
+    checks.push({ inputId: unit.id, sha256: createHash('sha256').update(unit.nativeReference).digest('hex'), status: mismatch ? 'mismatch' : 'matched' });
+    if (!mismatch) continue;
+    const note = 'PDF 텍스트 보조정보와 시각 판독이 다릅니다. 원본의 숫자·단위·부정어와 누락 여부를 대조해 주세요.';
+    for (const block of blocks) { block.certainty = 'uncertain'; block.note = `${note} ${block.note}`.slice(0, 1000); }
+    if (!text.trim() && !value.unreadable.some(item => item.inputId === unit.id)) value.unreadable.push({ inputId: unit.id, reason: note });
+  }
+  return checks;
 }
 
 function sourceSegments(units, blocks) {
@@ -87,7 +116,7 @@ export async function readDocument(input, { cwd, signal, sourceType = 'other', e
   const cancelled = () => { if (signal?.aborted) fail('AI_CANCELLED'); };
   cancelled();
   const prepared = await prepare(input, { cwd, signal }); cancelled();
-  const batches = documentReadingBatches(prepared.units), blocks = [], unreadable = [], summaries = [], prompts = new Map(), documentTypes = new Set();
+  const batches = documentReadingBatches(prepared.units), blocks = [], unreadable = [], summaries = [], referenceChecks = [], prompts = new Map(), documentTypes = new Set();
   const usage = { inputTokens: 0, outputTokens: 0 };
   let lastSummary = '';
   for (const [index, units] of batches.entries()) {
@@ -102,14 +131,15 @@ export async function readDocument(input, { cwd, signal, sourceType = 'other', e
     prompts.set(promptHash, { stage: 'reading', version: PROMPT_VERSION, sha256: promptHash, instructions: request.instructions });
     const response = await execute({ request, schema: DOCUMENT_READING_SCHEMA, attachments, cwd, signal }); cancelled();
     if (response.model !== undefined && response.model !== AI_MODEL || response.effort !== undefined && response.effort !== AI_EFFORT) fail('AI_MODEL_MISMATCH');
-    const value = validateReading(response.output, units);
+    const value = structuredClone(validateReading(response.output, units));
+    referenceChecks.push(...compareNativeReferences(value, units));
     for (const type of value.documentTypes) documentTypes.add(type);
     blocks.push(...value.blocks); unreadable.push(...value.unreadable); summaries.push(value.summary); lastSummary = value.summary;
     usage.inputTokens += response.usage?.inputTokens ?? 0; usage.outputTokens += response.usage?.outputTokens ?? 0;
     onProgress({ stage: 'reading', completed: index + 1, total: batches.length });
   }
   const segments = sourceSegments(prepared.units, blocks), sha256 = createHash('sha256').update(input.bytes).digest('hex');
-  const reading = { version: 1, promptVersion: PROMPT_VERSION, originalSha256: sha256, summary: lastSummary, summaries, blocks, unreadable, warningCodes: prepared.warningCodes,
+  const reading = { version: 1, promptVersion: PROMPT_VERSION, originalSha256: sha256, summary: lastSummary, summaries, blocks, unreadable, warningCodes: prepared.warningCodes, referenceChecks,
     provenance: prepared.units.map(unit => {
       const content = blocks.filter(block => block.inputId === unit.id), transcribed = content.some(block => block.text), interpreted = content.some(block => block.kind === 'figure' && block.text === null);
       return { inputId: unit.id, locator: unit.locator, kind: unit.text ? 'native-text' : unit.purpose === 'layout-context' ? 'visual-context' : transcribed && interpreted ? 'ai-mixed' : transcribed ? 'ai-transcription' : interpreted ? 'ai-visual-interpretation' : unreadable.some(item => item.inputId === unit.id) ? 'unreadable' : 'blank' };
