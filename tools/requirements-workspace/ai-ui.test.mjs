@@ -13,6 +13,7 @@ test('stopping while the browser reads a file prevents a later upload and does n
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true });
   t.after(() => dom.window.close());
   const { window } = dom, { document } = window;
+  window.structuredClone = structuredClone;
   window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   window.HTMLDialogElement.prototype.close = function () { this.open = false; };
   const pack = createEmptyBacklogPack(context); pack.project = { code: 'SYNTHETIC', name: '합성 업무' };
@@ -24,9 +25,10 @@ test('stopping while the browser reads a file prevents a later upload and does n
     return { ok: true, json: async () => url === '/api/session' ? { token: 'synthetic-token' } : state };
   };
   await window.eval(`(async () => { ${script}\n })()`);
-  button(document, '산출물 파일 등록').click();
+  button(document, 'AI로 산출물 등록').click();
   Object.defineProperty(document.querySelector('#artifact-files'), 'files', { value: [new window.File(['합성 문서'], 'synthetic.txt', { type: 'text/plain' })] });
   document.querySelector('input[name="redacted"]').checked = true;
+  document.querySelector('input[name="ai-consent"]').checked = true;
   document.querySelector('#editor').dispatchEvent(new window.Event('submit', { bubbles: true, cancelable: true }));
   await new Promise(resolve => setImmediate(resolve)); assert.ok(reader);
   button(document, '등록 중단').click(); await new Promise(resolve => setImmediate(resolve));
@@ -38,6 +40,7 @@ test('AI start is visible, discloses remote processing and requires an explicit 
   const dom = new JSDOM(markup, { url: 'http://127.0.0.1:8792/', runScripts: 'outside-only', pretendToBeVisual: true });
   t.after(() => dom.window.close());
   const { window } = dom, { document } = window;
+  window.structuredClone = structuredClone;
   window.HTMLDialogElement.prototype.showModal = function () { this.open = true; };
   window.HTMLDialogElement.prototype.close = function () { this.open = false; };
   const pack = createEmptyBacklogPack(context); pack.sources = [source]; pack.project = { code: 'SYNTHETIC', name: '합성 업무' };
@@ -49,7 +52,7 @@ test('AI start is visible, discloses remote processing and requires an explicit 
   };
   await window.eval(`(async () => { ${script}\n })()`);
   const start = button(document, 'AI 요구사항 생성'); assert.ok(start, 'primary AI workflow must be discoverable');
-  const files = button(document, '산출물 파일 등록'); assert.ok(files, 'upload is a primary workflow, without manual clause authoring');
+  const files = button(document, 'AI로 산출물 등록'); assert.ok(files, 'AI upload is the primary workflow, without manual clause authoring');
   start.click();
   const consent = document.querySelector('#editor input[type="checkbox"]'); assert.ok(consent);
   const mode = document.querySelector('#editor select[name="visualMode"]'); assert.ok(mode);

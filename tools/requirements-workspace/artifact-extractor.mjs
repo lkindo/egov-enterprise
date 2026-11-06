@@ -9,7 +9,7 @@ const require = createRequire(new URL('../../frontend/package.json', import.meta
 export const MAX_ARTIFACT_BYTES = 20 * 1024 ** 2;
 export const ARTIFACT_EXTENSIONS = ['txt', 'md', 'html', 'htm', 'hwp', 'hwpx', 'docx', 'xlsx', 'xls', 'pdf', 'pptx', 'png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'];
 const error = code => Object.assign(new Error(code), { code });
-function validateInput({ filename, bytes }) {
+export function validateArtifactInput({ filename, bytes }) {
   if (typeof filename !== 'string' || filename.length > 200 || filename.trim() !== filename || /[\u0000-\u001f/\\:]/.test(filename) || !filename.trim()) throw error('FILE_NAME_INVALID');
   const format = extname(filename).slice(1).toLowerCase();
   if (!ARTIFACT_EXTENSIONS.includes(format)) throw error('FILE_TYPE_UNSUPPORTED');
@@ -20,7 +20,7 @@ function validateInput({ filename, bytes }) {
   if (signature && !signature.test(hex)) throw error('FILE_SIGNATURE_INVALID');
   return format;
 }
-export function extractTextUnits(bytes, format) {
+export function extractTextUnits(bytes, format, { onWarning = () => {} } = {}) {
   let text;
   try {
     if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) text = new TextDecoder('utf-16le', { fatal: true }).decode(bytes);
@@ -34,7 +34,16 @@ export function extractTextUnits(bytes, format) {
     const dom = new JSDOM(text);
     try {
       const document = dom.window.document;
+      if (document.querySelector('img,svg,canvas,video,input[type="image"]')) onWarning('DOCUMENT_HTML_VISUAL_UNAVAILABLE');
       document.querySelectorAll('script,style,head,iframe,object,embed,template,noscript,[hidden],[aria-hidden="true"]').forEach(element => element.remove());
+      document.querySelectorAll('img[alt]').forEach(element => element.replaceWith(document.createTextNode(`\n[이미지 대체 텍스트] ${element.getAttribute('alt')}\n`)));
+      [...document.querySelectorAll('table')].reverse().forEach((table, index) => {
+        const rows = [...table.querySelectorAll('tr')].filter(row => row.closest('table') === table).map(row => '| ' + [...row.children].filter(cell => ['TD', 'TH'].includes(cell.tagName)).map(cell => {
+          const spans = `${cell.rowSpan !== 1 ? `[rowspan=${cell.rowSpan}] ` : ''}${cell.colSpan !== 1 ? `[colspan=${cell.colSpan}] ` : ''}`;
+          return spans + cell.textContent.trim().replaceAll('|', '\\|').replace(/\s*\n\s*/g, ' ');
+        }).join(' | ') + ' |');
+        table.replaceWith(document.createTextNode(`\n\n[HTML 표 ${index + 1}]\n${rows.join('\n')}\n\n`));
+      });
       document.querySelectorAll('p,div,section,li,tr,h1,h2,h3,h4,h5,h6,br').forEach(element => element.after(document.createTextNode('\n\n')));
       text = document.body.textContent.replace(/\n{3,}/g, '\n\n').trim();
     } finally { dom.window.close(); }
@@ -61,7 +70,7 @@ function segments(filename, units) {
   if (!result.length) throw error('FILE_NO_TEXT');
   return result;
 }
-function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs }) {
+export function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs = 180000, documentInput = false }) {
   if (!cwd) throw error('FILE_WORKSPACE_REQUIRED');
   assertExternalWorkspace(cwd);
   if (signal?.aborted) throw error('FILE_CANCELLED');
@@ -73,11 +82,12 @@ function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs }) {
     const stop = code => { reason ??= code; child?.kill('SIGTERM'); forceTimer ??= setTimeout(() => { if (child?.exitCode === null) child.kill('SIGKILL'); }, 1000); forceTimer.unref(); };
     const abort = () => stop('FILE_CANCELLED');
     const timer = setTimeout(() => stop('FILE_TIMEOUT'), timeoutMs); timer.unref();
-    try { child = spawn(process.execPath, ['--max-old-space-size=384', fileURLToPath(new URL('./artifact-worker.mjs', import.meta.url))], { cwd, shell: false, windowsHide: true, env, stdio: ['pipe', 'pipe', 'pipe'] }); }
+    const maxBytes = documentInput ? 32 * 1024 ** 2 : 2 * 1024 ** 2;
+    try { child = spawn(process.execPath, ['--max-old-space-size=384', fileURLToPath(new URL(documentInput ? './document-input-worker.mjs' : './artifact-worker.mjs', import.meta.url))], { cwd, shell: false, windowsHide: true, env, stdio: ['pipe', 'pipe', 'pipe'] }); }
     catch { finish('FILE_EXTRACTION_FAILED'); return; }
     signal?.addEventListener('abort', abort, { once: true }); if (signal?.aborted) abort();
-    child.stdout.on('data', chunk => { count += chunk.length; if (count > 2 * 1024 ** 2) stop('FILE_TEXT_TOO_LARGE'); else if (!reason) chunks.push(chunk); });
-    child.stderr.on('data', chunk => { count += chunk.length; if (count > 2 * 1024 ** 2) stop('FILE_TEXT_TOO_LARGE'); });
+    child.stdout.on('data', chunk => { count += chunk.length; if (count > maxBytes) stop('FILE_TEXT_TOO_LARGE'); else if (!reason) chunks.push(chunk); });
+    child.stderr.on('data', chunk => { count += chunk.length; if (count > maxBytes) stop('FILE_TEXT_TOO_LARGE'); });
     child.on('error', () => finish('FILE_EXTRACTION_FAILED'));
     child.on('close', code => {
       if (reason || code !== 0) { finish(reason ?? 'FILE_EXTRACTION_FAILED'); return; }
@@ -92,7 +102,7 @@ function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs }) {
   });
 }
 export async function extractArtifact(input, { cwd, ocr = true, signal, timeoutMs = 180000 } = {}) {
-  const format = validateInput(input);
+  const format = validateArtifactInput(input);
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 10 * 60 * 1000) throw error('FILE_CONFIGURATION_INVALID');
   if (signal?.aborted) throw error('FILE_CANCELLED');
   const plain = ['txt', 'md'].includes(format);

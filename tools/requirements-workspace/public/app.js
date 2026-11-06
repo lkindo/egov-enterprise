@@ -4,6 +4,25 @@ const text = value => typeof value === 'string' ? value : value?.message ?? valu
 const list = value => String(value ?? '').split(/[\n,]/).map(item => item.trim()).filter(Boolean);
 const lines = value => String(value ?? '').split('\n').map(item => item.trim()).filter(Boolean);
 const clone = value => structuredClone(value);
+const ordered = value => Array.isArray(value) ? value.map(ordered) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, ordered(value[key])])) : value;
+const sameData = (a, b) => JSON.stringify(ordered(a)) === JSON.stringify(ordered(b));
+const consentScope = () => ({ backlog: clone(backlog()), context: state.context?.snapshotDigest });
+function consentChanged() { throw new Error('동의한 자료 범위가 변경되었습니다. 변경된 자료를 확인한 뒤 실행 화면을 다시 열어 주세요.'); }
+function assertConsentScope(scope) { if (scope.context !== state.context?.snapshotDigest || !sameData(scope.backlog, backlog())) consentChanged(); }
+async function acceptConsentSource(scope, job) {
+  if (sameData(scope.backlog, backlog())) { assertConsentScope(scope); return; }
+  const accepted = clone(backlog());
+  const source = backlog().sources.find(source => source.id === job.sourceId), before = scope.backlog.sources.find(source => source.id === job.sourceId);
+  const rest = pack => { const { contextBindings, ...value } = pack; return { ...value, sources: value.sources.filter(source => source.id !== job.sourceId) }; };
+  if (!source || scope.context !== state.context?.snapshotDigest || !sameData(rest(scope.backlog), rest(backlog()))) consentChanged();
+  const fixed = value => { const { summary, clauses, ...fields } = value; return fields; };
+  if (before && !sameData(fixed(before), fixed(source))) consentChanged();
+  if (!job.sourceStateDigest) consentChanged();
+  const hash = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(JSON.stringify(ordered(source))));
+  const digest = [...new Uint8Array(hash)].map(byte => byte.toString(16).padStart(2, '0')).join('');
+  if (digest !== job.sourceStateDigest || !sameData(accepted, backlog())) consentChanged();
+  scope.backlog = accepted;
+}
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const pages = [ ['overview', '현', '진행 현황'], ['sources', '문', '산출물 수집'], ['requirements', '요', '요구사항 검토'], ['baseline', '기', '분석 기준선'], ['work', '작', '에픽·스토리'], ['handoff', '개', '개발 인계'], ['audit', '검', '검수·감리'] ];
 const labels = { proposed: '제안', included: '포함', excluded: '제외', deferred: '보류', question: '질문', merged: '통합', undecided: '미결정', fit: '기존 기능 활용', config: '환경 구성', 'gap-dev': '추가 개발', hybrid: '혼합', pending: '검수 대기', accepted: '인수 기록', conditional: '조건부', rejected: '반려', epic: '에픽', story: '스토리', configuration: '구성', verification: '검증', enabler: '기반 작업', rfp: '제안요청서', interview: '회의록·인터뷰', 'as-is-artifact': '현행 업무 자료', regulation: '법령·지침', 'policy-memo': '정책·결정 메모', other: '기타', public: '공개', internal: '내부', confidential: '기밀', restricted: '제한', functional: '기능', 'non-functional': '비기능', data: '데이터', interface: '연계', constraint: '제약' };
@@ -86,21 +105,47 @@ function aiPanel() {
   const ai = state.ai; if (!ai) return '';
   const job = ai.current, proposal = ai.proposal;
   const names = { running: 'AI가 자료를 처리하고 있습니다', ready: '생성한 초안을 확인해 주세요', 'needs-decisions': '의사결정이 필요합니다', stale: '입력이 바뀌어 재분석이 필요합니다', failed: 'AI 실행을 완료하지 못했습니다', unavailable: '보관된 AI 결과를 읽을 수 없습니다', cancelled: 'AI 실행을 취소했습니다', interrupted: '중단된 실행입니다. 다시 시작할 수 있습니다', applied: '확인한 생성 결과를 반영했습니다' };
-  const fileButton = `<button type="button" class="button secondary" data-action="artifact-import" ${ai.active || state.imports?.active || state.readOnly ? 'disabled' : ''}>산출물 파일 등록</button>`;
+  const blocked = ai.active || state.imports?.active || state.readOnly;
+  const fileButton = `<button type="button" class="button" data-action="artifact-import-ai" ${blocked || !ai.available ? 'disabled' : ''}>AI로 산출물 등록</button><button type="button" class="button secondary" data-action="artifact-import" ${blocked ? 'disabled' : ''}>로컬 자료 등록(보완용)</button>`;
   let actions = '';
   if (ai.active) actions = button('AI 실행 취소', 'ai-cancel', '', true);
   else {
-    actions = `<button type="button" class="button" data-action="ai-start" data-key="analysis" ${!ai.available || !backlog().sources.length || state.imports?.active || state.readOnly ? 'disabled' : ''}>AI 요구사항 생성</button>`;
+    actions = `<button type="button" class="button" data-action="ai-full" ${!ai.available || !backlog().sources.length || state.imports?.active || state.readOnly ? 'disabled' : ''}>AI 전체 분석</button><button type="button" class="button secondary" data-action="ai-start" data-key="analysis" ${!ai.available || !backlog().sources.length || state.imports?.active || state.readOnly ? 'disabled' : ''}>AI 요구사항 생성</button>`;
     if (['ready', 'needs-decisions'].includes(job?.status) && proposal?.issues.length) actions += button('답변하고 계속', 'ai-answer', '', true);
-    if (job?.status === 'ready') actions += button(job.phase === 'analysis' ? '요구사항 확정하고 에픽 생성' : '에픽·스토리 반영', 'ai-confirm');
+    if (job?.status === 'ready') actions += button(job.fullPipeline ? '전체 초안 확인·반영' : job.phase === 'analysis' ? '요구사항 확정하고 에픽 생성' : '에픽·스토리 반영', 'ai-confirm');
     if (state.baselineCurrent && job?.status !== 'ready') actions += button('AI 에픽·스토리 생성', 'ai-start', 'decomposition', true);
   }
   const issues = proposal?.issues?.length ? `<section><h3>AI가 확인을 요청한 사항</h3><ul class="help-list">${proposal.issues.map(issue => `<li><strong>${esc(issue.question)}</strong> ${badge(issue.severity === 'blocking' ? '결정 필요' : '참고', 'amber')}<p>${esc(issue.options.join(' / '))}</p></li>`).join('')}</ul></section>` : '';
   const citations = values => `<details><summary>원문 근거 ${values.length}건</summary>${values.map(cite => `<p class="wide-text"><strong>${esc(backlog().sources.find(source => source.id === cite.sourceId)?.title ?? cite.sourceId)} · ${esc(cite.clauseId)}</strong><br>“${esc(cite.quote)}”</p>`).join('')}</details>`;
-  const preview = proposal?.requirements ? `<details ${job?.status === 'ready' ? 'open' : ''}><summary>AI 요구사항 초안 ${proposal.requirements.length}건</summary>${proposal.requirements.map(req => `<article class="panel panel-body mt-16"><h3>${esc(req.title)}</h3><p>${esc(req.description)}</p><small>${esc(req.id)} · ${esc(labels[req.proposedScope] ?? req.proposedScope)} · ${esc(labels[req.solutionDisposition])}</small>${citations(req.citations)}</article>`).join('')}</details>` : proposal?.workItems ? `<details open><summary>AI 에픽·스토리 ${proposal.workItems.length}건 · 인수조건 ${proposal.acceptanceCriteria.length}건</summary>${proposal.workItems.map(item => `<article class="panel panel-body mt-16"><h3>${esc(item.title)}</h3><p>${esc(labels[item.workItemType])} · ${esc(item.id)}</p><p>${esc(item.description ?? item.iWant ?? '')}</p>${proposal.acceptanceCriteria.filter(ac => ac.workItemId === item.id).map(ac => `<p class="wide-text"><strong>${esc(ac.polarity === 'allow' ? '허용' : '거부')}</strong> ${esc(ac.given)} → ${esc(ac.when)} → ${esc(ac.then)}</p>`).join('')}</article>`).join('')}</details>` : '';
+  const preview = (proposal?.requirements ? `<details ${job?.status === 'ready' ? 'open' : ''}><summary>AI 요구사항 초안 ${proposal.requirements.length}건</summary>${proposal.requirements.map(req => `<article class="panel panel-body mt-16"><h3>${esc(req.title)}</h3><p class="ai-analysis-copy">${esc(req.description)}</p><small>${esc(req.id)} · ${esc(labels[req.proposedScope] ?? req.proposedScope)} · ${esc(labels[req.solutionDisposition])}</small>${citations(req.citations)}</article>`).join('')}</details>` : '') + (proposal?.workItems ? aiPlanPreview(proposal) : '');
   const history = ai.history?.length ? `<details class="mt-16"><summary>AI 실행 기록 ${ai.history.length}건</summary><ul class="help-list">${ai.history.map(item => `<li>${esc(item.phase === 'analysis' ? '요구사항 분석' : '에픽·스토리 생성')} · ${esc(names[item.status] ?? item.status)}${item.resultRef ? ` ${button('생성 기록 다운로드', 'download', item.id, true)}` : ''}</li>`).join('')}</ul></details>` : '';
   const errorMessage = job?.errorCode === 'AI_ATTACHMENT_INVALID' ? '시각 자료의 형식·페이지 수·원본 무결성 또는 합계 20MiB/100개 한도를 확인하세요. 추출 본문만 선택하여 다시 분석할 수도 있습니다.' : 'CLI 로그인·사용 한도·자료 크기를 확인한 뒤 다시 실행하세요.';
-  return `<section class="panel mb-20" aria-label="AI 요구사항 진행"><div class="panel-head"><div><h2>${job ? esc(names[job.status] ?? job.status) : '자료에서 AI가 요구사항을 만듭니다'}</h2><p class="muted">자료 등록 → AI 요구사항 → 쟁점 답변 → 요구사항 확정 → AI 에픽·스토리</p></div></div><div class="panel-body"><p>${esc(ai.model)} · ${esc(ai.effort)} · 이 PC의 Claude CLI</p>${job?.batches ? `<p role="status">자료 ${job.batches.completed}/${job.batches.total}묶음 분석 완료${job.status === 'running' ? ' · 전체 검증 후 결과를 제안합니다.' : ''}</p>` : ''}${!ai.available ? '<p class="field-error">Claude CLI를 설치하고 로그인한 뒤 실행기를 다시 시작하세요.</p>' : ''}${!backlog().sources.length ? '<p>분석할 산출물을 먼저 등록하세요.</p>' : ''}${job?.errorCode ? `<p role="alert">실행 오류: ${esc(job.errorCode)}. 원본 자료는 유지했습니다. ${esc(errorMessage)}</p>` : ''}${job?.status === 'stale' ? '<p role="alert">아래 결과는 변경 전 자료를 바탕으로 합니다. 현재 요구사항에 적용할 수 없습니다.</p>' : ''}${job?.attempts === 2 ? '<p role="status">구조 오류에 대한 자동 보정을 한 번 요청했습니다.</p>' : ''}<div class="row-actions mt-16">${fileButton}${actions}</div>${job?.status === 'applied' ? '' : issues + aiChangePreview(proposal) + aiBatchAudit(proposal) + preview}${history}</div></section>`;
+  return `<section class="panel mb-20" aria-label="AI 요구사항 진행"><div class="panel-head"><div><h2>${job ? esc(names[job.status] ?? job.status) : 'AI가 원본에서 개발 계획까지 정리합니다'}</h2><p class="muted">원본 판독 → 문서 통합 → 요구사항·품질 검토 → 에픽·인수조건·개발 계획 → 최종 확인</p></div></div><div class="panel-body"><p>${esc(ai.model)} · ${esc(ai.effort)} · 이 PC의 Claude CLI</p>${aiStageProgress(job)}${job?.batches ? `<p role="status">자료 ${job.batches.completed}/${job.batches.total}묶음 분석 완료${job.status === 'running' ? ' · 전체 검증 후 결과를 제안합니다.' : ''}</p>` : ''}${!ai.available ? '<p class="field-error">Claude CLI를 설치하고 로그인한 뒤 실행기를 다시 시작하세요.</p>' : ''}${!backlog().sources.length ? '<p>AI로 산출물을 등록하면 판독과 전체 분석이 이어집니다.</p>' : ''}${job?.errorCode ? `<p role="alert">실행 오류: ${esc(job.errorCode)}. 원본 자료는 유지했습니다. ${esc(errorMessage)}</p>` : ''}${job?.status === 'stale' ? '<p role="alert">아래 결과는 변경 전 자료를 바탕으로 합니다. 현재 요구사항에 적용할 수 없습니다.</p>' : ''}${job?.attempts === 2 ? '<p role="status">구조 오류에 대한 자동 보정을 한 번 요청했습니다.</p>' : ''}<div class="row-actions mt-16">${fileButton}${actions}${button('단계별 AI 지시문 보기', 'ai-prompts', '', true)}</div>${job?.status === 'applied' ? '' : issues + aiBusinessPreview(proposal) + aiChangePreview(proposal) + aiBatchAudit(proposal) + preview}${job?.promptRefs?.length ? `<details class="mt-16"><summary>이번 실행에 사용한 지시문 ${job.promptRefs.length}종</summary>${job.promptRefs.map(item => `<p>${esc(aiStageName(item.stage))} ${button('실제 지시문 보기', 'ai-run-prompt', item.ref.id, true)}</p>`).join('')}</details>` : ''}${history}</div></section>`;
+}
+const aiStages = [['reading', '원본 판독'], ['synthesis', '문서 통합'], ['analysis', '요구사항 작성'], ['review-requirements', '요구사항 품질 검토'], ['decomposition', '에픽·스토리 생성'], ['review-plan', '개발 계획 품질 검토']];
+const aiStageName = key => aiStages.find(([stage]) => stage === key)?.[1] ?? key;
+function aiStageProgress(job) {
+  if (!job?.fullPipeline) return '';
+  const current = aiStages.findIndex(([key]) => key === job.stage);
+  return `<ol class="ai-stage-list">${aiStages.map(([key, label], index) => `<li${job.status === 'running' && key === job.stage ? ' aria-current="step"' : ''}>${index + 1}. ${esc(label)}${job.status === 'ready' || job.status === 'applied' || index < current ? ' · 완료' : key === job.stage ? ` · ${job.stageProgress?.completed ?? 0}/${job.stageProgress?.total ?? 1}` : ''}</li>`).join('')}</ol><p role="status">분석 실행의 모델 호출 ${job.modelCalls ?? 0}회${job.reusedStages?.length ? ` · 완료 단계 ${job.reusedStages.length}개 재사용` : ''}. 원본 판독 진행은 파일 등록 이력에서 별도로 확인합니다.</p>`;
+}
+function aiPlanPreview(proposal) {
+  return `<details open><summary>AI 에픽·스토리 ${proposal.workItems.length}건 · 인수조건 ${proposal.acceptanceCriteria.length}건</summary>${proposal.workItems.map(item => `<article class="panel panel-body mt-16"><h3>${esc(item.title)}</h3><p>${esc(labels[item.workItemType])} · ${esc(item.id)}</p><p class="ai-analysis-copy">${esc(item.description ?? item.iWant ?? '')}</p>${proposal.acceptanceCriteria.filter(ac => ac.workItemId === item.id).map(ac => `<p class="wide-text"><strong>${esc(ac.polarity === 'allow' ? '허용' : '거부')}</strong> ${esc(ac.given)} → ${esc(ac.when)} → ${esc(ac.then)}</p>`).join('')}</article>`).join('')}</details>${proposal.taskPreview ? `<details class="mt-16"><summary>개발 작업계획 미리보기</summary><pre class="data-preview">${esc(proposal.taskPreview)}</pre></details>` : ''}`;
+}
+function aiBusinessPreview(proposal) {
+  const model = proposal?.businessModel; if (!model) return '';
+  return `<details class="mt-16"><summary>통합 업무 흐름</summary><p class="ai-analysis-copy">${esc(model.summary)}</p><h3>업무 역할</h3><ul class="help-list">${model.actors.map(actor => `<li><strong>${esc(actor.name)}</strong> · ${esc(actor.responsibility)}</li>`).join('')}</ul>${model.processes.map(process => `<article class="panel panel-body mt-16"><h3>${esc(process.name)}</h3><p>시작: ${esc(process.trigger)}</p><ol>${process.steps.map(step => `<li>${esc(step)}</li>`).join('')}</ol>${process.exceptions.length ? `<p>예외: ${esc(process.exceptions.join(' / '))}</p>` : ''}${process.rules.length ? `<p>업무 규칙: ${esc(process.rules.join(' / '))}</p>` : ''}<p>입출력: ${esc(process.data.join(' / '))}</p></article>`).join('')}${model.terms.length ? `<h3>업무 용어</h3><ul>${model.terms.map(term => `<li>${esc(term.term)}: ${esc(term.meaning)}</li>`).join('')}</ul>` : ''}<h3>문서별 해석</h3>${(proposal.documents ?? []).map(doc => `<details><summary>${esc(doc.title)}</summary><p class="ai-analysis-copy">${esc(doc.summary)}</p><p>AI 판별: ${esc((doc.documentTypes ?? []).map(type => labels[type] ?? type).join(' / '))}</p><p>구조: ${esc(doc.sections.join(' / '))}</p><p>전체 ${doc.clauseCount}조항 · 대표 근거 ${doc.anchors.length}개. 요구사항 작성에는 전체 조항을 사용합니다.</p></details>`).join('')}</details>`;
+}
+function aiPromptForm() {
+  openForm('단계별 AI 작업 지시', '<p>현재 자료의 유형에 맞춘 지시입니다. 실행할 때 출력 계약과 묶음 정보가 추가되며, 실제 사용한 지시문은 각 실행 기록에서 확인할 수 있습니다.</p>' + (state.prompts ?? []).map(item => `<details><summary>${esc(aiStageName(item.stage))}</summary><p>버전 ${esc(item.version)} · SHA-256 ${esc(item.sha256)}</p><pre class="data-preview">${esc(item.instructions)}</pre></details>`).join(''), () => true);
+  dialogForm.querySelector('[type="submit"]').textContent = '닫고 돌아가기';
+}
+async function aiStoredPromptForm(key) {
+  try {
+    const file = await request(`/api/artifacts/${encodeURIComponent(key)}`), value = JSON.parse(file.content);
+    openForm('실행에 사용한 AI 지시문', `<p>${esc(aiStageName(value.stage))} · 버전 ${esc(value.version)}</p><pre class="data-preview">${esc(value.instructions)}</pre><details><summary>출력 형식 계약</summary><pre class="data-preview">${esc(JSON.stringify(value.schema, null, 2))}</pre></details>`, () => true);
+    dialogForm.querySelector('[type="submit"]').textContent = '닫고 돌아가기';
+  } catch (error) { showError(error); }
 }
 function aiBatchAudit(proposal) {
   const entries = proposal?.batchAudit ?? []; if (!entries.length) return '';
@@ -116,8 +161,16 @@ function aiConsent(label, required = true, name = 'ai-consent', checked = false)
 function visualModeChoice() { return select('AI 분석 자료', 'visualMode', [['all', '본문 + 이미지·PDF 시각 자료'], ['text', '추출 본문만']], state.ai.current?.includeVisuals === false ? 'text' : 'all'); }
 function importPanel() {
   const jobs = state.imports?.jobs ?? []; if (!jobs.length) return '';
+  const messages = { AI_DOCUMENT_SENSITIVE_OUTPUT: 'AI 판독에서 민감정보가 검출되어 이번 원본 보관과 등록을 중단했습니다. 비식별 사본을 등록하세요.', FILE_SENSITIVE_INPUT: '본문·속성에서 민감정보가 검출되어 등록하지 않았습니다. 비식별 사본을 등록하세요.', AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독의 내용·위치·근거를 검증하지 못했습니다. 원본을 대조하고 다시 판독하세요.' };
   const labels = { extracting: '문서 판독 중', ready: '등록 완료', failed: '등록 실패', cancelled: '등록 취소', interrupted: '중단됨 · 다시 등록', stale: '프로젝트 변경 · 다시 등록' };
-  return panel('등록한 산출물 파일', `<ul class="help-list">${jobs.slice(-10).map(job => `<li><strong>${esc(job.filename)}</strong> · ${esc(labels[job.status])}${job.duplicateOf ? ' · 이미 등록된 자료 재사용' : ''}${job.method === 'local-ocr' ? ' · 로컬 OCR 판독' : ''}${job.needsReview ? '<p>판독 결과를 원본과 대조해 주세요.</p>' : ''}${job.errorCode ? `<p role="alert">${esc(job.errorCode)} · 파일 내용을 확인한 후 다시 등록하세요.</p>` : ''}${job.sourceId ? button('원본 다운로드', 'download', job.sourceId, true) : ''}${job.status === 'extracting' ? button('파일 처리 취소', 'import-cancel', job.requestId, true) : ''}</li>`).join('')}</ul>`);
+  return panel('등록한 산출물 파일', `<ul class="help-list">${jobs.slice(-10).map(job => `<li><strong>${esc(job.filename)}</strong> · ${esc(labels[job.status])}${job.duplicateOf ? ' · 이미 등록된 자료 재사용' : ''}${job.method === 'ai-document' ? ' · AI 판독·구조 정리' : job.method === 'local-ocr' ? ' · 로컬 OCR 판독' : ''}${job.readingProgress && job.status === 'extracting' ? `<p role="status">${job.readingProgress.stage === 'preparing' ? '판독용 자료 준비' : 'AI 판독'} ${job.readingProgress.completed}/${job.readingProgress.total}구간</p>` : ''}${job.needsReview ? '<p>판독이 불확실한 부분을 원본과 대조해 주세요.</p>' : ''}${job.errorCode ? `<p role="alert">${esc(messages[job.errorCode] ?? `${job.errorCode} · 파일 내용을 확인한 후 다시 등록하세요.`)}</p>` : ''}${job.sourceId ? button('원본 다운로드', 'download', job.sourceId, true) : job.originalRef ? button('보관 원본 다운로드', 'download', job.requestId, true) : ''}${job.readingRef ? button('AI 판독 기록', 'ai-reading', job.readingRef.id, true) : ''}${job.previousSourceRef ? button('변경 전 판독문', 'download', job.previousSourceRef.id, true) : ''}${job.status === 'extracting' ? button('파일 처리 취소', 'import-cancel', job.requestId, true) : ''}</li>`).join('')}</ul>`);
+}
+async function aiReadingForm(key) {
+  try {
+    const file = await request(`/api/artifacts/${encodeURIComponent(key)}`), reading = JSON.parse(file.content);
+    openForm('AI 원본 판독 기록', `<p class="ai-analysis-copy">${esc(reading.summary)}</p><p>AI 문서 유형: ${esc(reading.documentTypes.map(type => labels[type] ?? type).join(' / '))} · 지시문 ${esc(reading.promptVersion)}</p><p>원본에서 얻은 텍스트와 AI가 이미지에서 전사한 내용은 구분합니다. AI 전사가 원본과 독립적으로 일치 검증됐다는 뜻은 아닙니다.</p><ul class="help-list">${reading.provenance.map(item => `<li>${esc(item.locator)} · ${esc(item.kind === 'native-text' ? '원본 텍스트 보존' : ({ 'ai-visual-interpretation': 'AI 시각 해석 · 원문 전사 아님', 'ai-mixed': 'AI 전사·시각 해석 혼합 · 블록별 확인', blank: '빈 입력 단위', unreadable: '판독 불가', 'visual-context': '원본 시각 참고 · 네이티브 본문과 별도 대조' }[item.kind] ?? 'AI 시각 전사'))}</li>`).join('')}</ul>${reading.warningCodes?.length ? `<h3>변환·판독 참고 사항</h3><ul>${reading.warningCodes.map(code => `<li>${esc(code)}</li>`).join('')}</ul>` : ''}${reading.referenceChecks?.length ? `<h3>PDF 텍스트 보조정보 대조</h3><p>일부 핵심값을 점검한 결과이며 모든 글자·업무 의미의 일치를 보장하지 않습니다.</p><ul>${reading.referenceChecks.map(check => `<li>${esc(check.inputId)} · ${check.status === 'mismatch' ? '불일치·누락 확인 필요' : '점검한 핵심값 일치'} · SHA-256 ${esc(check.sha256)}</li>`).join('')}</ul>` : ''}${reading.unreadable.length ? `<h3>판독 확인 필요</h3><ul>${reading.unreadable.map(item => `<li>${esc(item.inputId)} · ${esc(item.reason)}</li>`).join('')}</ul>` : ''}${reading.blocks.map(block => `<details><summary>${esc(block.heading)} · ${esc(block.inputId)}${block.certainty === 'uncertain' ? ' · 확인 필요' : ''}</summary>${block.text ? `<pre class="data-preview">${esc(block.text)}</pre>` : `<p>${block.kind === 'figure' ? '아래 내용은 AI 시각 해석이며 원문 전사가 아닙니다.' : block.kind === 'blank' ? '빈 입력 단위입니다.' : '네이티브 원문은 자료의 근거 본문에 보존했습니다.'}</p>`}<p>${esc(block.note)}</p></details>`).join('')}<h3>판독에 사용한 지시문</h3>${reading.prompts.map(prompt => `<details><summary>버전 ${esc(prompt.version)} · SHA-256 ${esc(prompt.sha256)}</summary><pre class="data-preview">${esc(prompt.instructions)}</pre></details>`).join('')}`, () => true);
+    dialogForm.querySelector('[type="submit"]').textContent = '닫고 돌아가기';
+  } catch (error) { showError(error); }
 }
 function fileBase64(file) {
   return new Promise((resolve, reject) => { const reader = new FileReader(); reader.onerror = () => reject(new Error('선택한 파일을 읽지 못했습니다.')); reader.onload = () => resolve(String(reader.result).slice(String(reader.result).indexOf(',') + 1)); reader.readAsDataURL(file); });
@@ -133,10 +186,16 @@ async function cancelImport(requestId, batch = importBatch) {
   if (batch) batch.cancelling = operation;
   try { await operation; } finally { if (batch) batch.cancelling = undefined; }
 }
-function artifactImportForm() {
+function artifactImportForm(withAI = false) {
   const requests = new Map();
-  openForm('산출물 파일 등록', '<label class="field"><span>등록할 산출물 파일</span><input type="file" id="artifact-files" name="files" multiple required accept=".hwp,.hwpx,.pdf,.docx,.xlsx,.xls,.pptx,.txt,.md,.html,.htm,.png,.jpg,.jpeg,.webp,.tif,.tiff"><small>HWP/HWPX, PDF, Word(DOCX), Excel(XLS/XLSX), PPTX, 텍스트·Markdown·HTML, 이미지. 파일당 20MiB, 추출 본문 512KiB. 암호·보호 문서는 보호 해제 사본을 사용하세요.</small></label>' + select('자료 유형', 'sourceType', ['rfp', 'interview', 'as-is-artifact', 'regulation', 'policy-memo', 'other'], 'interview') + select('자료 분류', 'classification', ['public', 'internal', 'confidential', 'restricted'], 'internal') + visualModeChoice() + aiConsent('본문·이미지·문서 속성의 개인정보와 비밀을 제거한 자료임을 확인했습니다.', true, 'redacted') + '<p>문서 추출·OCR은 로컬에서 수행합니다. OCR 모델이 없으면 첫 실행에 검증된 공개 모델을 내려받습니다. 판독된 본문과 원본 해시·원본 파일은 작업공간에 보관합니다.</p>' + aiConsent('등록 후 기존 자료와 선택한 파일의 추출 본문·이미지 시각 사본·PDF 원본을 CLI 모델 서비스로 보내 AI 요구사항 생성을 이어갑니다. 대용량 자료는 여러 묶음으로 나누어 CLI를 여러 번 호출하며 기존 CLI 요금이 적용됩니다.', false) + '<p id="import-progress" role="status" aria-live="polite"></p><button type="button" class="button secondary" data-action="import-stop" hidden>등록 중단</button>', async (data, form) => {
+  const scope = consentScope();
+  const accept = withAI ? '' : ' accept=".hwp,.hwpx,.pdf,.docx,.xlsx,.xls,.pptx,.txt,.md,.html,.htm,.png,.jpg,.jpeg,.webp,.tif,.tiff"';
+  const explanation = withAI ? '파일 형식에 맞춰 읽을 수 있는 본문과 페이지 이미지를 준비하고 AI가 본문·표·지원되는 이미지와 불확실성을 정리합니다. Office의 벡터 도형·차트·복잡한 배치는 PDF 사본을 함께 등록해 주세요. 형식을 읽지 못하면 사유를 표시합니다. 파일당 20MiB, 판독 본문 512KiB이며 암호 문서는 보호 해제 사본이 필요합니다.' : 'HWP/HWPX, PDF, DOCX, XLS/XLSX, PPTX, 텍스트·Markdown·HTML, 이미지. 로컬 추출·OCR만 사용하는 보완 경로입니다. 파일당 20MiB, 추출 본문 512KiB.';
+  const consent = withAI ? '선택한 파일과 아래 기존 등록 자료 전체의 비식별 본문·판독용 페이지 이미지·프로젝트 문맥을 CLI 모델 서비스에 보내 원본 판독부터 문서 통합·요구사항·에픽·개발 작업계획까지 AI로 처리하는 데 동의합니다. 여러 차례 호출하며 기존 CLI 요금이 적용됩니다.' : '등록 후 기존 자료와 선택한 파일의 추출 본문·이미지 시각 사본·PDF 원본을 CLI 모델 서비스로 보내 AI 요구사항 생성을 이어갑니다. 대용량 자료는 여러 묶음으로 나누어 호출하며 기존 CLI 요금이 적용됩니다.';
+  const existingScope = withAI ? '<p>선택할 파일과 함께 아래 기존 자료 전체도 AI 재판독·통합 분석 대상으로 전송합니다. 로컬 보완 경로로만 등록했던 원본도 포함됩니다.</p><ul class="help-list">' + scope.backlog.sources.map(source => `<li>${esc(source.title)} · ${esc(labels[source.classification] ?? source.classification)}</li>`).join('') + '</ul>' : '';
+  openForm(withAI ? 'AI 산출물 판독·전체 분석' : '산출물 파일 등록', existingScope + `<label class="field"><span>등록할 산출물 파일</span><input type="file" id="artifact-files" name="files" multiple required${accept}><small>${esc(explanation)}</small></label>` + select('자료 유형 참고 정보', 'sourceType', ['rfp', 'interview', 'as-is-artifact', 'regulation', 'policy-memo', 'other'], withAI ? 'other' : 'interview') + (withAI ? '<p>유형을 모르면 기타로 두세요. AI가 실제 내용에서 문서의 역할과 혼합 구성을 판별합니다.</p>' : '') + select('자료 분류', 'classification', ['public', 'internal', 'confidential', 'restricted'], 'internal') + (withAI ? '' : visualModeChoice()) + aiConsent('본문·이미지·문서 속성의 개인정보와 비밀을 제거한 자료임을 확인했습니다.', true, 'redacted') + aiConsent(consent, withAI) + '<p>기관의 자료 반출 허용 여부를 확인하세요. CLI를 사용해도 모델 서비스로 전송됩니다. 최종 검토 전에는 생성한 요구사항과 계획을 확정하지 않습니다.</p><p id="import-progress" role="status" aria-live="polite"></p><button type="button" class="button secondary" data-action="import-stop" hidden>등록 중단</button>', async (data, form) => {
     const files = [...form.querySelector('#artifact-files').files]; if (!files.length) return false;
+    if (withAI && (!data.has('ai-consent') || !data.has('redacted'))) { showError(new Error('비식별 확인과 모델 서비스 전송 동의가 필요합니다.')); return false; }
     if (data.has('ai-consent') && (!backlog().project.code || !backlog().project.name)) { showError(new Error('AI 분석 전에 프로젝트 정보를 등록해 주세요.')); return false; }
     busy = true;
     const batch = { cancelled: false, current: null }; importBatch = batch;
@@ -147,6 +206,7 @@ function artifactImportForm() {
         if (file.size > 20 * 1024 ** 2) throw new Error(`${file.name}: 파일당 20MiB까지 등록할 수 있습니다.`);
         form.querySelector('#import-progress').textContent = `${index + 1}/${files.length} · ${file.name} 판독 중`;
         state = await request('/api/state');
+        if (data.has('ai-consent')) assertConsentScope(scope);
         if (batch.cancelled) break;
         let requestId = requests.get(file), previous = state.imports.jobs.find(job => job.requestId === requestId);
         if (previous?.status === 'ready') continue;
@@ -154,13 +214,16 @@ function artifactImportForm() {
         batch.current = requestId;
         const base64 = await fileBase64(file);
         if (batch.cancelled) break;
-        state = await request('/api/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action: 'source.ingest', payload: { requestId, filename: file.name, base64, classification: data.get('classification'), sourceType: data.get('sourceType'), redacted: data.has('redacted') } }) });
+        state = await request('/api/ingest', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action: 'source.ingest', payload: { requestId, filename: file.name, base64, classification: data.get('classification'), sourceType: data.get('sourceType'), redacted: data.has('redacted'), ...(withAI ? { readWithAI: true, consent: data.has('ai-consent'), model: state.ai.model } : {}) } }) });
         if (batch.cancelled) await cancelImport(requestId, batch);
-        while (state.imports.jobs.find(job => job.requestId === requestId)?.status === 'extracting') { await new Promise(resolve => setTimeout(resolve, 1000)); state = await request('/api/state'); }
+        while (state.imports.jobs.find(job => job.requestId === requestId)?.status === 'extracting') { const progress = state.imports.jobs.find(job => job.requestId === requestId).readingProgress; if (progress) form.querySelector('#import-progress').textContent = `${index + 1}/${files.length} · ${file.name} · AI 판독 ${progress.completed}/${progress.total}구간`; await new Promise(resolve => setTimeout(resolve, 1000)); state = await request('/api/state'); }
         const job = state.imports.jobs.find(job => job.requestId === requestId);
         if (job?.status !== 'ready' && !batch.cancelled) throw new Error(`${file.name}: ${job?.errorCode ?? '문서 판독을 완료하지 못했습니다.'}`);
+        if (job?.status === 'ready' && data.has('ai-consent')) await acceptConsentSource(scope, job);
       }
-      if (!batch.cancelled && data.has('ai-consent')) state = await request('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action: 'ai.start', payload: { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: state.ai.model, consent: true, includeVisuals: data.get('visualMode') !== 'text' } }) });
+      if (!batch.cancelled && withAI && data.has('ai-consent')) await ensureOriginalReadings(data, form, batch, '#import-progress', scope);
+      if (!batch.cancelled && data.has('ai-consent')) assertConsentScope(scope);
+      if (!batch.cancelled && data.has('ai-consent')) state = await request('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action: 'ai.start', payload: { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, model: state.ai.model, consent: true, includeVisuals: withAI || data.get('visualMode') !== 'text', ...(withAI ? { fullPipeline: true } : {}) } }) });
       if (batch.cancelled) form.querySelector('#import-progress').textContent = '등록을 중단했습니다. 이미 등록 완료된 파일은 작업공간에 유지됩니다.';
       render(); return !batch.cancelled;
     } catch (error) { showError(error); return false; }
@@ -168,8 +231,47 @@ function artifactImportForm() {
   });
   dialogForm.querySelector('[type="submit"]').textContent = '등록하고 계속';
 }
+async function ensureOriginalReadings(data, form, batch, progressSelector, scope) {
+  state = await request('/api/state');
+  assertConsentScope(scope);
+  const originals = backlog().sources.filter(source => metadata().imports?.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef));
+  for (const [index, source] of originals.entries()) {
+    if (batch.cancelled) break;
+    state = await request('/api/state'); const requestId = crypto.randomUUID(); batch.current = requestId;
+    assertConsentScope(scope);
+    form.querySelector(progressSelector).textContent = `${index + 1}/${originals.length} · ${source.title} 원본 확인·AI 판독`;
+    state = await request('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action: 'source.reingest', payload: { sourceId: source.id, requestId, consent: data.has('ai-consent'), redacted: data.has('redacted'), model: state.ai.model } }) });
+    if (batch.cancelled) await cancelImport(requestId, batch);
+    while (state.imports.jobs.find(job => job.requestId === requestId)?.status === 'extracting') { const progress = state.imports.jobs.find(job => job.requestId === requestId).readingProgress; if (progress) form.querySelector(progressSelector).textContent = `${index + 1}/${originals.length} · ${source.title} · AI 판독 ${progress.completed}/${progress.total}구간`; await new Promise(resolve => setTimeout(resolve, 1000)); state = await request('/api/state'); }
+    const job = state.imports.jobs.find(job => job.requestId === requestId) ?? (state.imports.reused?.requestId === requestId ? state.imports.jobs.find(job => job.requestId === state.imports.reused.jobId) : null);
+    if (job?.status !== 'ready' && !batch.cancelled) throw new Error(`${source.title}: ${job?.errorCode ?? '원본 판독을 완료하지 못했습니다.'}`);
+    if (job?.status === 'ready') await acceptConsentSource(scope, job);
+  }
+}
+function aiFullForm() {
+  const scope = consentScope();
+  const originals = backlog().sources.filter(source => metadata().imports?.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef));
+  openForm('원본에서 개발 작업계획까지 AI 처리', `<p>원본 파일 ${originals.length}건은 먼저 AI로 판독합니다. 직접 등록한 본문은 그 내용으로 분석합니다. 문서 통합 → 요구사항·품질 검토 → 에픽·스토리·인수조건·개발 계획을 자동으로 이어갑니다.</p><p>같은 원본과 지시문으로 검증한 판독은 재사용합니다. 새 판독에서는 사람의 보정·처분·근거 연결을 보존합니다. 변경 기록이 없는 구형 자료는 이전 근거를 유지하고 새 AI 근거를 별도로 더하며, 전체 판독문이 같으면 중복 추가하지 않습니다. 변경 없는 미검토 AI 초안만 이전 사본 보관 후 갱신합니다. 중요한 질문이 나오면 답변을 기다리고 최종 확인 전에는 요구사항·기준선·계획을 확정하지 않습니다.</p><p>현재 요구사항 분석은 약 ${state.ai.analysisPlan?.batches ?? '?'}묶음이며 통합·검토·계획 호출이 추가됩니다. 원본 판독은 문서당 최대 128구간, 이후 분석 실행은 최대 256회 호출로 제한합니다. 자료량과 결과에 따라 실제 호출 수가 달라지며 기존 CLI 요금이 적용됩니다.</p><ul class="help-list">${backlog().sources.map(source => `<li>${esc(source.title)} · ${esc(labels[source.classification] ?? source.classification)}</li>`).join('')}</ul>${aiConsent('완료된 분석 단계도 입력·지시문이 일치하면 재사용합니다.', false, 'reuse', true)}${aiConsent('등록된 원본의 본문·이미지·속성에서 개인정보와 비밀을 제거했음을 확인했습니다.', true, 'redacted')}${aiConsent('위 자료의 본문과 판독용 페이지 이미지를 CLI 모델 서비스에 보내 전체 AI 처리를 진행하는 데 동의합니다.')}<p id="full-progress" role="status" aria-live="polite"></p><button type="button" class="button secondary" data-action="import-stop" hidden>처리 중단</button>`, async (data, form) => {
+    if (!data.has('ai-consent') || !data.has('redacted')) { showError(new Error('비식별 확인과 모델 서비스 전송 동의가 필요합니다.')); return false; }
+    busy = true; document.body.setAttribute('aria-busy', 'true');
+    const batch = { cancelled: false, current: null }; importBatch = batch;
+    const submit = form.querySelector('[type="submit"]'), stop = form.querySelector('[data-action="import-stop"]'); submit.disabled = true; stop.hidden = false;
+    try {
+      await ensureOriginalReadings(data, form, batch, '#full-progress', scope);
+      if (!batch.cancelled) {
+        state = await request('/api/state');
+        assertConsentScope(scope);
+        state = await request('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action: 'ai.start', payload: { phase: 'analysis', fullPipeline: true, reuseCheckpoints: data.has('reuse'), inputDigest: state.ai.inputDigests.analysis, model: state.ai.model, consent: data.has('ai-consent') && data.has('redacted'), includeVisuals: true } }) });
+      }
+      render(); return !batch.cancelled;
+    } catch (error) { showError(error); return false; }
+    finally { busy = false; document.body.removeAttribute('aria-busy'); submit.disabled = false; stop.hidden = true; if (importBatch === batch) importBatch = undefined; scheduleAiPoll(); }
+  });
+  dialogForm.querySelector('[type="submit"]').textContent = '동의하고 전체 AI 처리 시작';
+}
 function aiStartForm(phase) {
-  openForm('AI 분석 실행 확인', `<p>선택 모델: <strong>${esc(state.ai.model)} · ${esc(state.ai.effort)}</strong></p><p>이 PC의 CLI를 통해 모델 서비스로 아래에서 선택한 자료 범위와 프로젝트 문맥을 보냅니다. 기존 CLI의 로그인·과금 설정이 적용됩니다. 구조 오류는 한 번 자동 보정하며 추가 호출이 발생할 수 있습니다. 대용량 자료는 자동으로 나누어 순서대로 분석하므로 여러 번의 CLI 호출과 요금이 발생할 수 있습니다. 실패·취소 후 재실행은 첫 묶음부터 다시 시작합니다. 시각 자료는 이미지 사본과 PDF 원본입니다. Office 문서의 비문자 도표는 별도 이미지나 PDF로 등록해 주세요.</p>${phase === 'analysis' && state.ai.analysisPlan?.batches > 1 ? `<p role="status">현재 자료는 ${state.ai.analysisPlan.batches}묶음으로 나누어 분석합니다. 중간 결과를 합쳐 검증한 뒤 제안하며, 취소하면 다음 묶음을 전송하지 않습니다.</p>` : ''}${phase === 'analysis' && state.ai.analysisPlan?.errorCode ? `<p class="field-error" role="alert">자료의 비식별 상태와 기존 요구사항의 원문 연결·분석 범위를 먼저 검토해 주세요. (${esc(state.ai.analysisPlan.errorCode)})</p>` : ''}<ul class="help-list">${backlog().sources.map(source => `<li>${esc(source.title)} · ${esc(source.classification)} · ${(source.clauses ?? []).length}개 조항</li>`).join('')}</ul>${visualModeChoice()}${aiConsent('등록된 비식별 자료를 선택한 CLI의 모델 서비스로 보내 분석하는 데 동의합니다.')}`, data => act('ai.start', { phase, inputDigest: state.ai.inputDigests[phase], consent: data.has('ai-consent'), model: state.ai.model, includeVisuals: data.get('visualMode') !== 'text' }));
+  const scope = consentScope(), inputDigest = state.ai.inputDigests[phase];
+  openForm('AI 분석 실행 확인', `<p>선택 모델: <strong>${esc(state.ai.model)} · ${esc(state.ai.effort)}</strong></p><p>이 PC의 CLI를 통해 모델 서비스로 아래에서 선택한 자료 범위와 프로젝트 문맥을 보냅니다. 기존 CLI의 로그인·과금 설정이 적용됩니다. 구조 오류는 한 번 자동 보정하며 추가 호출이 발생할 수 있습니다. 대용량 자료는 자동으로 나누어 순서대로 분석하므로 여러 번의 CLI 호출과 요금이 발생할 수 있습니다. 실패·취소 후 재실행은 첫 묶음부터 다시 시작합니다. 시각 자료는 이미지 사본과 PDF 원본입니다. Office 문서의 비문자 도표는 별도 이미지나 PDF로 등록해 주세요.</p>${phase === 'analysis' && state.ai.analysisPlan?.batches > 1 ? `<p role="status">현재 자료는 ${state.ai.analysisPlan.batches}묶음으로 나누어 분석합니다. 중간 결과를 합쳐 검증한 뒤 제안하며, 취소하면 다음 묶음을 전송하지 않습니다.</p>` : ''}${phase === 'analysis' && state.ai.analysisPlan?.errorCode ? `<p class="field-error" role="alert">자료의 비식별 상태와 기존 요구사항의 원문 연결·분석 범위를 먼저 검토해 주세요. (${esc(state.ai.analysisPlan.errorCode)})</p>` : ''}<ul class="help-list">${backlog().sources.map(source => `<li>${esc(source.title)} · ${esc(source.classification)} · ${(source.clauses ?? []).length}개 조항</li>`).join('')}</ul>${visualModeChoice()}${aiConsent('등록된 비식별 자료를 선택한 CLI의 모델 서비스로 보내 분석하는 데 동의합니다.')}`, async data => { state = await request('/api/state'); assertConsentScope(scope); return act('ai.start', { phase, inputDigest, consent: data.has('ai-consent'), model: state.ai.model, includeVisuals: data.get('visualMode') !== 'text' }); });
   dialogForm.querySelector('[type="submit"]').textContent = '동의하고 AI 분석 시작';
 }
 function aiAnswerForm() {
@@ -180,16 +282,17 @@ function aiAnswerForm() {
 }
 function aiConfirmForm() {
   const job = state.ai.current, analysis = job.phase === 'analysis', proposal = state.ai.proposal;
-  const label = analysis ? 'AI가 생성한 요구사항과 원문 근거를 검토했습니다.' : '생성된 작업과 인수조건의 변경 내용을 검토했습니다.';
+  const full = proposal.fullPipeline === true;
+  const label = full ? '문서 해석·요구사항·원문 근거·에픽·인수조건·개발 작업계획을 검토했습니다.' : analysis ? 'AI가 생성한 요구사항과 원문 근거를 검토했습니다.' : '생성된 작업과 인수조건의 변경 내용을 검토했습니다.';
   const scopeChanges = (proposal.changes ?? []).filter(change => change.requiresScopeReview), retirements = proposal.retirements ?? [];
   const acknowledgments = scopeChanges.map(change => aiConsent(`${change.id}: 기존 업무 범위 변경 (${labels[change.fields.find(field => field.name === 'scopeDisposition').before]} → ${labels[change.fields.find(field => field.name === 'scopeDisposition').after]})에 동의합니다.`, true, `scope-${change.id}`)).join('') + retirements.map(item => {
     const change = proposal.changes.find(change => change.entity === item.entity && change.id === item.id);
     return aiConsent(`${item.id}을 현재 계획에서 제외합니다. 사유: ${item.reason}${change?.hasJudgment ? ` · 기존 기관 판정: ${labels[change.judgment]}` : ''}. 변경 전 계획과 판정 근거는 실행 기록에 보관됩니다.`, true, `retire-${item.entity}:${item.id}`);
   }).join('');
-  const details = analysis ? `요구사항 ${proposal.requirements.length}건을 검토한 기준선으로 확정합니다. 다음 단계 자동 생성을 선택하면 모델 서비스에 전달해 에픽·스토리·인수조건 생성을 이어갑니다. 대규모 에픽 생성은 아직 한 요청으로 처리하며 시간·용량 한도에 걸려도 확정 기준선은 유지됩니다. 선택을 해제하면 요구사항만 확정하고 직접 보완할 수 있습니다.` : `현재 작업 ${backlog().workItems.length}건과 인수조건 ${backlog().acceptanceCriteria.length}건을 제안한 작업 ${proposal.workItems.length}건과 인수조건 ${proposal.acceptanceCriteria.length}건으로 갱신합니다. 변경 전 입력과 생성 결과는 작업공간의 실행 기록에 보관합니다.`;
-  openForm(analysis ? '요구사항 확정 및 다음 단계' : '생성한 작업 검토', `<p>${esc(details)}</p>${aiChangePreview(proposal)}${acknowledgments}${aiConsent(label)}${analysis ? aiConsent('다음 단계에서 AI 에픽·스토리를 자동 생성합니다.', false, 'continue-ai', true) : ''}`, data => data.has('ai-consent') && act('ai.confirm', { jobId: job.id, confirmedScopeChanges: scopeChanges.filter(change => data.has(`scope-${change.id}`)).map(change => change.id), confirmedRetirements: retirements.filter(item => data.has(`retire-${item.entity}:${item.id}`)).map(item => `${item.entity}:${item.id}`), ...(analysis ? { continueWithAI: data.has('continue-ai') } : {}) }));
-  dialogForm.querySelector('[type="submit"]').textContent = analysis ? '확정하고 에픽·스토리 생성' : '검토한 작업 반영';
-  if (analysis) dialogForm.querySelector('[name="continue-ai"]').addEventListener('change', event => { dialogForm.querySelector('[type="submit"]').textContent = event.target.checked ? '확정하고 에픽·스토리 생성' : '요구사항만 확정'; });
+  const details = full ? `검토한 요구사항 ${proposal.requirements.length}건과 작업 ${proposal.workItems.length}건·인수조건 ${proposal.acceptanceCriteria.length}건을 함께 반영하고 분석 기준선과 개발 작업 패키지를 만듭니다. 기관 인수·실제 시험 완료를 의미하지 않습니다.` : analysis ? `요구사항 ${proposal.requirements.length}건을 검토한 기준선으로 확정합니다. 다음 단계 자동 생성을 선택하면 모델 서비스에 전달해 에픽·스토리·인수조건 생성을 이어갑니다. 대규모 에픽 생성은 아직 한 요청으로 처리하며 시간·용량 한도에 걸려도 확정 기준선은 유지됩니다. 선택을 해제하면 요구사항만 확정하고 직접 보완할 수 있습니다.` : `현재 작업 ${backlog().workItems.length}건과 인수조건 ${backlog().acceptanceCriteria.length}건을 제안한 작업 ${proposal.workItems.length}건과 인수조건 ${proposal.acceptanceCriteria.length}건으로 갱신합니다. 변경 전 입력과 생성 결과는 작업공간의 실행 기록에 보관합니다.`;
+  openForm(full ? '전체 AI 초안 최종 확인' : analysis ? '요구사항 확정 및 다음 단계' : '생성한 작업 검토', `<p>${esc(details)}</p>${aiChangePreview(proposal)}${acknowledgments}${aiConsent(label)}${analysis && !full ? aiConsent('다음 단계에서 AI 에픽·스토리를 자동 생성합니다.', false, 'continue-ai', true) : ''}`, data => data.has('ai-consent') && act('ai.confirm', { jobId: job.id, confirmedScopeChanges: scopeChanges.filter(change => data.has(`scope-${change.id}`)).map(change => change.id), confirmedRetirements: retirements.filter(item => data.has(`retire-${item.entity}:${item.id}`)).map(item => `${item.entity}:${item.id}`), ...(analysis && !full ? { continueWithAI: data.has('continue-ai') } : {}) }));
+  dialogForm.querySelector('[type="submit"]').textContent = full ? '검토한 전체 결과 반영' : analysis ? '확정하고 에픽·스토리 생성' : '검토한 작업 반영';
+  if (analysis && !full) dialogForm.querySelector('[name="continue-ai"]').addEventListener('change', event => { dialogForm.querySelector('[type="submit"]').textContent = event.target.checked ? '확정하고 에픽·스토리 생성' : '요구사항만 확정'; });
 }
 function scheduleAiPoll() {
   clearTimeout(aiPollTimer);
@@ -209,14 +312,18 @@ function scheduleAiPoll() {
 }
 function navigate(destination) { if (!pages.some(item => item[0] === destination)) return; if (dialogForm && !closeDialog()) return; page = destination; render(); $('#main').focus(); }
 function overview() {
+  const fullReady = state.ai?.proposal?.fullPipeline && state.ai?.current?.status === 'ready';
   const counts = [ ['근거 자료', backlog().sources.length, '원문 조항과 위치를 함께 기록'], ['요구사항', backlog().businessRequirements.length, '범위·해결 방향을 각각 판정'], ['개발 작업', backlog().workItems.filter(item => item.workItemType !== 'epic').length, '에픽에서 실행 가능한 작업으로'], ['인수조건', backlog().acceptanceCriteria.length, '허용과 거부 동작의 검증 기준'] ];
   return heading('프로젝트 진행 현황', '고객 산출물에서 개발 인계와 검수 근거까지, 같은 요구사항을 따라갑니다.', button('프로젝트 정보', 'project', '', true)) + `<div class="stats">${counts.map(([label, count, caption]) => `<div class="panel stat"><div class="stat-label">${label}</div><div class="stat-value">${count}<small>건</small></div><div class="stat-caption">${caption}</div></div>`).join('')}</div>` +
-    `<div class="callout"><span class="callout-icon">!</span><div><strong>${state.contextChanged ? '저장소 기준이 바뀌었습니다.' : state.baselineCurrent ? '분석 기준선이 현재 요구사항과 일치합니다.' : '분석 내용을 검토하고 기준선을 확정하세요.'}</strong><p>${state.contextChanged ? '변경 영향을 확인한 후 기준 정보를 갱신하세요.' : '자료 수집 → 요구사항 검토 → 기준선 → 작업 상세화 → 개발 인계 → 검수·감리'}</p></div>${button('기준선 확인', 'navigate', 'baseline', true)}</div>` +
+    `<div class="callout"><span class="callout-icon">!</span><div><strong>${state.contextChanged ? '저장소 기준이 바뀌었습니다.' : fullReady ? '문서 해석과 요구사항·개발 계획을 함께 확인하세요.' : state.baselineCurrent ? '분석 기준선이 현재 요구사항과 일치합니다.' : '자료를 등록하고 AI 전체 분석을 시작하세요.'}</strong><p>${state.contextChanged ? '변경 영향을 확인한 후 기준 정보를 갱신하세요.' : 'AI 원본 판독 → 문서 통합 → 요구사항 → 에픽·스토리·개발 계획 → 최종 확인 → 개발 인계'}</p></div>${fullReady ? '' : button('기준선 확인', 'navigate', 'baseline', true)}</div>` +
     panel('다음 작업', `<div class="task-row"><span class="task-number">1</span><div class="task-copy"><strong>고객 자료와 원문 조항 수집</strong><p>산출물 파일을 등록하면 본문·원문 위치를 추출하고 AI가 요구사항을 생성합니다.</p></div>${button('자료 열기', 'navigate', 'sources', true)}</div><div class="task-row"><span class="task-number">2</span><div class="task-copy"><strong>요구사항의 범위와 질문 해결</strong><p>AI가 찾은 충돌·누락·정책 질문에 답하고 원문 근거와 요구사항을 확인하세요.</p></div>${button('검토하기', 'navigate', 'requirements', true)}</div><div class="task-row"><span class="task-number">3</span><div class="task-copy"><strong>개발 준비 상태 확인</strong><p>현재 ${state.readiness?.errors?.length ?? 0}건의 확인 항목이 있습니다.</p></div>${button('인계 확인', 'navigate', 'handoff', true)}</div>`) + `<div class="section-title"><h2>상태를 읽는 방법</h2></div><div class="grid-2">${panel('계획과 기술 근거', '<p>범위·해결 방향은 사람의 계획입니다. 원장에서 찾았다는 관측과 기술 검토 수준은 개발 완료를 뜻하지 않습니다.</p>')}${panel('기관 검수와 감리', '<p>실제 시험 근거와 검수 기록을 입력합니다. 이 도구의 기록은 기관의 공식 결재나 전자서명을 대신하지 않습니다.</p>')}</div>`;
 }
 function sources() {
-  const rows = backlog().sources.map(source => `<article class="panel mb-20"><div class="panel-head"><div><h2>${esc(source.title)}</h2><small>${esc(source.id)} · ${esc(source.sourceType)} · ${esc(source.classification ?? '미분류')}</small></div>${button('자료 편집', 'source', source.id, true)}</div><div class="panel-body"><p class="wide-text">${esc(source.summary)}</p><p class="source-footer">${esc(source.reference)} · ${esc(source.locator)}${source.fileSha256 ? ` · SHA-256 ${esc(source.fileSha256)}` : ''}</p>${(source.clauses ?? []).map(clause => `<div class="clause"><small>${esc(clause.id)} · ${esc(clause.locator)}</small><p class="wide-text">${esc(clause.text)}</p><div class="status-detail">${badge(clause.disposition)}<span>${esc((clause.requirementIds ?? []).join(', '))}</span><span>${esc(clause.rationale)}</span></div></div>`).join('')}</div></article>`).join('');
-  return heading('산출물 수집', '자료의 위치·해시·원문 조항과 처리 결정을 연결합니다.', button('자료 추가', 'source')) + `<div class="inline-note mb-20">산출물 파일 등록에서 비식별 문서·이미지를 올리세요. 로컬 추출·OCR 후 AI 분석으로 이어집니다. 직접 조항을 보완하려면 자료 추가·편집을 사용하세요.</div>${rows || empty('등록한 자료가 없습니다. 고객이 제공한 비식별 자료를 추가하세요.')}`;
+  const rows = backlog().sources.map(source => {
+    const reading = metadata().imports?.findLast(job => job.sourceId === source.id && job.status === 'ready' && job.readingRef);
+    return `<article class="panel mb-20"><div class="panel-head"><div><h2>${esc(source.title)}</h2><small>${esc(labels[source.sourceType] ?? source.sourceType)} · ${esc(labels[source.classification] ?? source.classification ?? '미분류')}</small></div><div class="row-actions">${reading ? button('AI 판독 기록', 'ai-reading', reading.readingRef.id, true) : ''}${button('자료 편집', 'source', source.id, true)}</div></div><div class="panel-body"><p class="ai-analysis-copy">${esc(source.summary)}</p>${reading?.detectedTypes ? `<p>AI가 확인한 문서 유형: ${esc(reading.detectedTypes.map(type => labels[type] ?? type).join(' / '))}</p>` : ''}${reading?.keptExistingClauses ? '<p>기존 근거의 보정·처분·사유는 보존했습니다. 이전 판독의 변경 이력이 없으면 새 AI 근거를 별도 조항으로 추가하며, 판독 기록과 함께 대조할 수 있습니다.</p>' : ''}<details><summary>근거 본문과 처리 상태 ${(source.clauses ?? []).length}개 조항</summary><p class="source-footer">${esc(source.id)} · ${esc(source.locator)}${source.fileSha256 ? ` · SHA-256 ${esc(source.fileSha256)}` : ''}</p>${(source.clauses ?? []).map(clause => `<div class="clause"><small>${esc(clause.id)} · ${esc(clause.locator)}</small><p class="ai-analysis-copy">${esc(clause.text)}</p><div class="status-detail">${badge(clause.disposition)}<span>${esc((clause.requirementIds ?? []).join(', '))}</span><span>${esc(clause.rationale)}</span></div></div>`).join('')}</details></div></article>`;
+  }).join('');
+  return heading('산출물 수집', 'AI가 원본을 판독하고 문서의 구조·핵심 내용·불확실성을 정리합니다.', button('자료 직접 추가', 'source', '', true)) + `<div class="inline-note mb-20">AI로 산출물 등록에서 문서·사진·스캔·표·장표를 올리면 문서 유형을 판별하고 전체 분석으로 이어갑니다. 근거 본문은 보존하며 판독이 불확실한 곳은 원본과 대조할 수 있습니다.</div>${rows || empty('등록한 자료가 없습니다. 고객이 제공한 비식별 자료를 추가하세요.')}`;
 }
 function recommendationCards() {
   const groups = [['modules', '모듈'], ['capabilities', '업무 역량'], ['screens', '화면'], ['interfaces', 'API'], ['tables', 'DB 표']];
@@ -393,7 +500,12 @@ document.addEventListener('click', async event => {
     return;
   }
   if (busy) return;
-  if (action === 'artifact-import') { artifactImportForm(); return; }
+  if (action === 'artifact-import') { artifactImportForm(false); return; }
+  if (action === 'artifact-import-ai') { artifactImportForm(true); return; }
+  if (action === 'ai-full') { aiFullForm(); return; }
+  if (action === 'ai-prompts') { aiPromptForm(); return; }
+  if (action === 'ai-run-prompt') { await aiStoredPromptForm(key); return; }
+  if (action === 'ai-reading') { await aiReadingForm(key); return; }
   if (action === 'ai-start') { aiStartForm(key); return; }
   if (action === 'ai-answer') { aiAnswerForm(); return; }
   if (action === 'ai-confirm') { aiConfirmForm(); return; }
@@ -420,7 +532,7 @@ $('#dialog').addEventListener('cancel', event => { event.preventDefault(); close
 window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
 $('#theme').addEventListener('click', () => { const dark = document.documentElement.classList.toggle('dark'); $('#theme').setAttribute('aria-label', dark ? '라이트 모드로 전환' : '다크 모드로 전환'); });
 $('#help').addEventListener('click', () => {
-  openForm('작업공간 사용 안내', '<ol class="help-list"><li>프로젝트 정보와 비식별 자료를 등록합니다.</li><li>모델 서비스 전송 범위를 확인하고 동의하면 AI가 요구사항·원문 근거·질문을 생성합니다.</li><li>중요한 질문에 답하고 재분석한 요구사항을 검토하여 분석 기준선으로 확정합니다.</li><li>AI가 에픽·하위 작업·D-1~D-5·Green/Red 인수조건과 추적 링크를 생성합니다. 검토 후 반영합니다.</li><li>개발 준비 확인 후 작업 패키지를 생성합니다.</li><li>개발 담당자의 실제 시험 결과와 기관 검수 근거·감리 조치를 기록합니다.</li></ol><p>저장 시 작업공간의 revision을 대조합니다. 충돌하면 작성 중 입력을 보존하고 최신 상태를 다시 읽으세요. 삭제는 지원하지 않으며 제외·보류 사유를 기록합니다.</p>', async () => true);
+  openForm('작업공간 사용 안내', '<ol class="help-list"><li>프로젝트 정보와 비식별 자료를 등록합니다.</li><li>모델 서비스 전송 범위를 확인하고 동의하면 AI가 요구사항·원문 근거·질문을 생성합니다.</li><li>중요한 질문에 답하면 AI가 요구사항·에픽·하위 작업·D-1~D-5·Green/Red 인수조건과 추적 링크를 이어서 생성합니다.</li><li>문서 해석과 요구사항·개발 작업계획을 함께 검토하고 최종 확인하면 분석 기준선과 작업 패키지를 저장합니다.</li><li>개발 준비 확인 후 작업 패키지를 생성합니다.</li><li>개발 담당자의 실제 시험 결과와 기관 검수 근거·감리 조치를 기록합니다.</li></ol><p>저장 시 작업공간의 revision을 대조합니다. 충돌하면 작성 중 입력을 보존하고 최신 상태를 다시 읽으세요. 삭제는 지원하지 않으며 제외·보류 사유를 기록합니다.</p>', async () => true);
   dialogForm.querySelector('[type="submit"]').hidden = true; dialogForm.querySelector('[data-action="cancel"]').textContent = '닫기';
 });
 $('#refresh').addEventListener('click', async () => { if (dialogForm && !closeDialog()) return; try { state = await request('/api/state'); render(); toast('최신 상태를 읽었습니다.'); } catch (error) { showError(error); } });

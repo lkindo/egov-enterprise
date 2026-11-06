@@ -1,4 +1,5 @@
 import test from 'node:test';
+import { PROMPT_VERSION } from './ai-prompts.mjs';
 import assert from 'node:assert/strict';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
 import { validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
@@ -13,6 +14,19 @@ function snapshot() {
   return { backlog, metadata: { context, baselines: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [], exports: [] } };
 }
 const citation = () => ({ sourceId: 'SRC-1', clauseId: 'C-1', quote: '담당자는 접수 목록을 조회한다.' });
+test('actual requirement requests select the versioned business-analysis prompt for the supplied documents', () => {
+  const state = snapshot();
+  const request = buildAiRequest(state, 'analysis');
+  assert.match(request.instructions, new RegExp(PROMPT_VERSION.replaceAll('.', '\\.')));
+  assert.match(request.instructions, /발언자의 확정 결정/);
+  assert.match(request.instructions, /예외 흐름/);
+  assert.match(request.instructions, /좋은 예/);
+  assert.doesNotMatch(request.instructions, /D-1/);
+  state.backlog.sources[0].sourceType = 'regulation';
+  const revised = buildAiRequest(state, 'analysis');
+  assert.match(revised.instructions, /법령의 적용/);
+  assert.doesNotMatch(revised.instructions, /발언자의 확정 결정/);
+});
 function proposal() {
   return {
     requirements: [{ id: 'REQ-1', title: '접수 목록 조회', description: '담당자가 접수 목록을 조회한다.', requirementType: 'functional', solutionDisposition: 'gap-dev', moduleCandidates: [], rationale: '회의록의 명시 요구', nfrCriteria: null, citations: [citation()] }],
