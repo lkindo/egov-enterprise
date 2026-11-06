@@ -13,7 +13,7 @@ import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { indexPrefixes, keyColumnBytes, mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
-import { CUBRID_RESERVED, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
+import { batchSeedInserts, CUBRID_RESERVED, CUBRID_SEED_ROWS_PER_INSERT, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
@@ -892,6 +892,31 @@ test('seed rows follow foreign keys, self references and the next value contract
   assert.deepEqual(identities.find(item => item.table === 't_parent'), { table: 't_parent', column: 'id', next: 3 });
   assert.equal(sequences.find(item => item.name === 'sq_alone').next, 42);
   assert.throws(() => emitRows(sample, { t_parent: [{ id: 1, code: 'A', use_yn: 'Y', hash_vl: null, body: null, up_id: null, stray: 1 }] }, mysqlAdapter), isGap);
+});
+
+// 한 행씩 넣으면 CUBRID 앱 첫 기동의 Flyway 가 시드에 2~5분을 썼다(2026-11-07 대표 E2E 의 브로커 SQL 로그, 행당 약 10ms).
+test('CUBRID batches consecutive seed inserts per table without reordering rows or batching self references', () => {
+  const sample = model();
+  const parents = [{ id: 2, code: 'B', use_yn: 'Y', hash_vl: null, body: null, up_id: 1 }, { id: 1, code: 'A', use_yn: 'Y', hash_vl: null, body: null, up_id: null }];
+  const children = Array.from({ length: 5 }, (_, index) => ({ id: index + 10, parent_id: 1, url: `u(${index});`, owner: index === 0 ? "o'x" : 'o' }));
+  const rows = { t_child: children, t_parent: parents };
+  const single = emitRows(sample, rows, cubridAdapter);
+  const batched = cubridAdapter.emitSeed(sample, rows);
+  const of = (statements, table) => statements.filter(statement => statement.startsWith(`INSERT INTO ${table} `));
+  // 자기 참조 표는 부모를 먼저 넣는 한 행 문장 그대로다.
+  assert.deepEqual(of(batched, 't_parent'), of(single, 't_parent'));
+  // 나머지 표는 한 문장이 같은 행을 같은 순서로 넣는다. 값 속의 괄호·쌍반점·따옴표는 행 경계가 아니다.
+  const tuple = statement => statement.slice(statement.indexOf(' VALUES ') + ' VALUES '.length);
+  const prefix = of(single, 't_child')[0].slice(0, of(single, 't_child')[0].indexOf(' VALUES ') + ' VALUES '.length);
+  assert.deepEqual(of(batched, 't_child'), [`${prefix}${of(single, 't_child').map(tuple).join(', ')}`]);
+  assert.ok(batched.indexOf(of(batched, 't_child')[0]) > batched.indexOf(of(batched, 't_parent').at(-1)), 'FK 부모 표가 먼저다');
+  // 행 수·글자 수 상한에서 끊고, 다른 문장이나 다른 컬럼 목록을 넘어 묶지 않는다.
+  const tuples = statement => (statement.match(/\), \(/g) ?? []).length + 1;
+  assert.deepEqual(of(batchSeedInserts(sample, single, 2), 't_child').map(tuples), [2, 2, 1]);
+  assert.deepEqual(of(batchSeedInserts(sample, single, 100, tuple(of(single, 't_child')[0]).length * 2), 't_child').map(tuples), [2, 2, 1]);
+  const mixed = ['INSERT INTO t_child (id) VALUES (1)', 'ALTER TABLE t_child AUTO_INCREMENT = 2', 'INSERT INTO t_child (id) VALUES (2)', 'INSERT INTO t_child (id, url) VALUES (3, \'x\')'];
+  assert.deepEqual(batchSeedInserts(sample, mixed), mixed);
+  assert.ok(CUBRID_SEED_ROWS_PER_INSERT > 1);
 });
 
 test('a foreign key cycle matters only between tables that have rows', () => {
