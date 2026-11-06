@@ -32,6 +32,25 @@ test('artifact upload creates actual traceable sources and a verifiable original
   assert.equal(state.backlog.sources.length, 1);
   assert.equal(state.imports.jobs.length, 1);
 });
+
+test('uploading the same bytes again reuses the source while different classification or type remains separate', async t => {
+  let extractions = 0;
+  const app = setup(t, async (...args) => { extractions++; return extractArtifact(...args); });
+  const input = upload();
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  await app.act('source.ingest', { ...input, requestId: randomUUID(), filename: 'meeting-copy.txt' }); await app.engine.waitForImports();
+  let state = await app.engine.state();
+  assert.equal(state.backlog.sources.length, 1);
+  assert.equal(extractions, 1);
+  assert.equal(state.imports.jobs[1].duplicateOf, input.requestId);
+  assert.equal(state.imports.jobs[1].sourceId, state.imports.jobs[0].sourceId);
+  assert.equal(app.engine.sourceFile(state.backlog.sources[0].id).base64, input.base64);
+  await app.act('source.ingest', { ...input, requestId: randomUUID(), classification: 'confidential' }); await app.engine.waitForImports();
+  await app.act('source.ingest', { ...input, requestId: randomUUID(), sourceType: 'policy-memo' }); await app.engine.waitForImports();
+  state = await app.engine.state();
+  assert.equal(state.backlog.sources.length, 3);
+  assert.equal(extractions, 3);
+});
 test('an extraction failure or detected sensitive text never creates a source or original-file archive', async t => {
   for (const text of ['person@example.invalid', '']) {
     const app = setup(t);

@@ -18,6 +18,17 @@ test('only registered original images are normalized, stripped of metadata and e
   assert.equal(Buffer.from(result.attachments[0].base64, 'base64').subarray(0, 2).toString('hex'), 'ffd8');
 });
 
+test('reused upload history sends one visual copy per source and honours the current batch source scope', async () => {
+  const state = snapshot();
+  state.metadata.imports.push({ ...state.metadata.imports[0] });
+  state.metadata.imports.push({ status: 'ready', sourceId: 'SRC-OTHER', format: 'png' });
+  let reads = 0;
+  const result = await prepareVisualAttachments(state, () => { reads++; return sourceFile(); });
+  assert.equal(result.attachments.length, 1);
+  assert.equal(reads, 1);
+  assert.deepEqual(result.sources.map(item => item.sourceId), ['SRC-IMAGE']);
+});
+
 test('actual JPEG/WebP/TIFF visual copies strip attached metadata and stay bound to their original hash', async () => {
   for (const format of ['jpeg', 'webp', 'tiff']) {
     const original = await sharp(bytes).withMetadata({ exif: { IFD0: { Artist: 'SYNTHETIC-METADATA' } } }).toFormat(format).toBuffer();

@@ -8,6 +8,8 @@ import { createEmptyBacklogPack, validateBacklogPack } from '../../scripts/expor
 import { createRequirementsStore } from './store.mjs';
 import { createRequirementsEngine, initialRequirementsMetadata, validateRequirementsMetadata } from './engine.mjs';
 import { context, source, analysis, decomposition, envelope } from './test-fixtures/ai.mjs';
+import { planAnalysisBatches } from './ai-analysis-batches.mjs';
+import { buildAiRequest, validateAnalysisBatchProposal, validateAnalysisProposal } from './ai-contract.mjs';
 
 async function fixture(t, aiRunner, artifactExtractor) {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-ai-workflow-'));
@@ -20,6 +22,139 @@ async function fixture(t, aiRunner, artifactExtractor) {
   const start = async (options = {}) => { const state = await engine.state(); return act('ai.start', { phase: 'analysis', inputDigest: state.ai.inputDigests.analysis, consent: true, model: 'claude-opus-5-5', ...options }); };
   return { engine, store, act, start };
 }
+
+test('multi-megabyte registered sources fit bounded batches and retain complete coverage without partial writes', async t => {
+  let release, received, started;
+  const entered = new Promise(resolve => { started = resolve; });
+  const app = await fixture(t, ({ request, signal }) => new Promise(resolve => { received = request; release = () => resolve(envelope({})); signal.addEventListener('abort', release, { once: true }); started(); }));
+  const output = request => {
+    const first = request.data.sources[0], clause = first.clauses[0];
+    return { requirements: [], issues: request.data.analysisBatch.index === 1 ? [{ id: 'ISSUE-LARGE', kind: 'decision', severity: 'blocking', question: '합성 자료의 업무 범위를 확인해 주세요.', options: ['담당자 확인'], requirementIds: [], citations: [{ sourceId: first.id, clauseId: clause.id, quote: clause.text.slice(0, 60) }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', requirementIds: [], rationale: '합성 설명 조항이며 업무 범위는 담당자가 결정한다.' }))) };
+  };
+  const sources = Array.from({ length: 40 }, (_, index) => ({ ...structuredClone(source), id: `SRC-LARGE-${index}`, clauses: Array.from({ length: 60 }, (_, part) => ({ ...structuredClone(source.clauses[0]), id: `C-${part}`, text: '합성 업무를 검토하는 원문이다. '.repeat(25) })) }));
+  app.store.transact(app.store.read().revision, next => { next.backlog.sources = sources; });
+  assert.ok(Buffer.byteLength(JSON.stringify(sources)) > 2 * 1024 ** 2);
+  const snapshot = app.store.read(), batches = planAnalysisBatches(snapshot), keys = [];
+  let previous;
+  for (const [index, sources] of batches.entries()) {
+    const request = buildAiRequest(snapshot, 'analysis', [], { sources, batch: { index: index + 1, total: batches.length }, previousAnalysis: previous });
+    assert.ok(Buffer.byteLength(JSON.stringify(request)) <= 768 * 1024);
+    keys.push(...sources.flatMap(src => src.clauses.map(part => `${src.id}/${part.id}`)));
+    previous = validateAnalysisBatchProposal(output(request), snapshot, sources, previous);
+  }
+  assert.ok(batches.length > 1);
+  assert.equal(keys.length, 2400);
+  assert.equal(new Set(keys).size, 2400, 'every original clause is analysed exactly once');
+  assert.equal(validateAnalysisProposal(previous, snapshot).coverage.length, 2400);
+  await app.start({ includeVisuals: false });
+  await entered;
+  assert.ok(Buffer.byteLength(JSON.stringify(received)) <= 768 * 1024);
+  let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'running');
+  assert.equal(state.backlog.businessRequirements.length, 0, 'a partial batch never becomes a human baseline');
+  await app.act('ai.cancel', { jobId: state.ai.current.id }); release(); await app.engine.waitForAi();
+  state = await app.engine.state();
+  assert.deepEqual(state.backlog.sources, sources);
+  assert.equal(state.ai.current.status, 'cancelled');
+  assert.equal(state.ai.current.resultRef, undefined);
+});
+
+test('cancellation or an input change stops a multi-batch run before it transmits the next batch', async t => {
+  for (const cancel of [true, false]) {
+    let release, calls = 0;
+    const app = await fixture(t, () => { calls++; if (calls > 1) throw Error('unexpected next batch'); return new Promise(resolve => { release = () => resolve(envelope({})); }); });
+    app.store.transact(app.store.read().revision, next => { next.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}` })); });
+    await app.start({ includeVisuals: false });
+    const state = await app.engine.state();
+    assert.deepEqual(state.ai.current.batches, { completed: 0, total: 2 });
+    if (cancel) await app.act('ai.cancel', { jobId: state.ai.current.id });
+    else await app.act('source.save', { ...state.backlog.sources[0], title: '변경한 합성 자료' });
+    release(); await app.engine.waitForAi();
+    const after = await app.engine.state();
+    assert.equal(after.ai.current.status, cancel ? 'cancelled' : 'stale');
+    assert.equal(calls, 1);
+    assert.equal(after.ai.current.resultRef, undefined);
+    assert.equal(after.backlog.businessRequirements.length, 0);
+  }
+});
+
+test('the final whole-proposal validation shares the single correction budget with batch validation', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    calls++;
+    const src = request.data.sources[0], part = src.clauses[0];
+    return envelope({ requirements: [], issues: calls === 3 ? [{ id: 'ISSUE-FINAL', kind: 'decision', severity: 'blocking', question: '분석된 합성 자료의 업무 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: part.id, quote: part.text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', requirementIds: [], rationale: '합성 설명 조항' }))) });
+  });
+  app.store.transact(app.store.read().revision, next => { next.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}` })); });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.current.attempts, 2);
+  assert.equal(calls, 3);
+  assert.equal(state.ai.proposal.coverage.length, 33);
+});
+
+test('automatic decomposition attaches visuals only from its confirmed requirement source scope', async t => {
+  const attachmentsByPhase = [];
+  const app = await fixture(t, async ({ request, attachments }) => {
+    attachmentsByPhase.push([request.phase, attachments.length]);
+    if (request.phase === 'decomposition') return envelope(decomposition());
+    const value = analysis(request, { question: false });
+    value.requirements[0].citations = value.requirements[0].citations.filter(cite => cite.sourceId === source.id);
+    for (const entry of value.coverage) if (entry.sourceId !== source.id) { entry.disposition = 'excluded'; entry.requirementIds = []; entry.rationale = '이번 합성 업무 범위에 포함하지 않는 참고 자료'; }
+    return envelope(value);
+  });
+  await app.act('source.ingest', { requestId: randomUUID(), filename: 'background.pdf', base64: readFileSync(new URL('./test-fixtures/receipt.pdf', import.meta.url)).toString('base64'), classification: 'internal', sourceType: 'other', redacted: true });
+  await app.engine.waitForImports();
+  await app.start(); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready');
+  await app.act('ai.confirm', { jobId: state.ai.current.id, continueWithAI: true }); await app.engine.waitForAi();
+  assert.equal((await app.engine.state()).ai.current.status, 'ready');
+  assert.deepEqual(attachmentsByPhase, [['analysis', 1], ['decomposition', 0]]);
+});
+
+test('multi-batch reanalysis starts with existing human requirements and accepts empty unchanged deltas', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    calls++;
+    return envelope({ requirements: [], issues: [], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: part.requirementIds.length ? 'included' : 'excluded', requirementIds: part.requirementIds, rationale: part.requirementIds.length ? '사람이 연결한 기존 요구사항' : '합성 참고 문단' }))) });
+  });
+  app.store.transact(app.store.read().revision, next => { next.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}` })); });
+  for (const [id, clause] of [['HUMAN-1', 'C-0'], ['HUMAN-2', 'C-32']]) await app.act('requirement.save', { requirement: { id, title: `사람 요구사항 ${id}`, description: '담당자가 본인 접수 목록을 조회한다.', sourceIds: [source.id], requirementType: 'functional', solutionDisposition: 'gap-dev', scopeDisposition: 'included', rationale: '담당자의 원문 검토', moduleCandidates: [], nfrCriteria: null, openQuestions: [], acceptanceDisposition: 'pending' }, clauseIds: [`${source.id}/${clause}`], reviewed: true });
+  const before = structuredClone(app.store.read().backlog.businessRequirements);
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.notEqual(state.ai.current.status, 'failed', state.ai.current.errorCode);
+  assert.equal(calls, 2);
+  assert.equal(state.ai.current.attempts, 1);
+  assert.deepEqual(state.ai.proposal.requirements.map(req => req.id), ['HUMAN-1', 'HUMAN-2']);
+  assert.deepEqual(state.backlog.businessRequirements, before);
+});
+
+test('explicit batch updates and relinked draft reasons remain reviewable in the final archive', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    calls++;
+    const src = request.data.sources[0], part = src.clauses[0];
+    if (calls === 1) return envelope({ requirements: [], issues: [{ id: 'QUESTION', kind: 'decision', severity: 'blocking', question: '담당자 확인이 필요합니다.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: part.id, quote: part.text }] }], coverage: src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'deferred', rationale: '이전 초안의 확인 대기 사유', requirementIds: [] })) });
+    const old = request.data.previousAnalysis.issues[0].citations[0];
+    const value = analysis({ data: { ...request.data, sources: [{ ...src, clauses: [part] }] } }, { question: false });
+    value.requirements[0].id = `${request.data.analysisBatch.idPrefix}REQ-1`;
+    value.requirements[0].citations.push(old);
+    value.coverage[0].requirementIds = [value.requirements[0].id];
+    return envelope(value);
+  });
+  app.store.transact(app.store.read().revision, next => { next.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}` })); });
+  await app.start({ includeVisuals: false }); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'needs-decisions', state.ai.current.errorCode);
+  assert.equal(state.ai.proposal.batchAudit[0].batch, 2);
+  assert.equal(state.ai.proposal.batchAudit[0].coverageChanges[0].beforeRationale, '이전 초안의 확인 대기 사유');
+  assert.equal(state.ai.proposal.batchAudit[0].coverageChanges[0].afterDisposition, 'merged');
+  assert.deepEqual(JSON.parse(app.store.readArchive(state.ai.current.resultRef)).batchAudit, state.ai.proposal.batchAudit);
+  assert.equal(state.ai.current.usage.inputTokens, 2);
+});
 
 test('artifacts -> AI issues -> human answers -> confirmed baseline -> automatic epic generation -> task package', async t => {
   const phases = [];
