@@ -2650,7 +2650,9 @@ test('the shared isolation checks the vendor runner relies on stay covered in a 
 
 const ADMIN_GROUP = () => ({ code: 'ROLE_ADMIN', complete: true, version: 'a'.repeat(64), grants: [{ type: 'NAVIGATION', code: '100' }, { type: 'OPERATION', code: 'USER_READ' }] });
 
-function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, group = ADMIN_GROUP(), reread } = {}) {
+const FULL_CATALOG = () => ({ operations: ['USER_READ', 'NOTICE_EDIT', 'FAQ_EDIT'].map(code => ({ code, domain: 'x', action: 'y', name: code })), navigation: [], catalogVersion: 'v' });
+
+function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, group = ADMIN_GROUP(), reread, catalog = FULL_CATALOG(), catalogStatus = 200 } = {}) {
   const log = [];
   let failures = loginFailures;
   let current = group;
@@ -2664,6 +2666,7 @@ function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, grou
       return reply(200, { data: { accessToken: 'token' } });
     }
     if (target === '/admin/system/users') return reply(userStatus, { code: 'USER_EXISTS' });
+    if (target === '/admin/authorization/catalog') return reply(catalogStatus, { data: catalog, code: 'FORBIDDEN' });
     if (init.method === 'GET') {
       if (log.filter(entry => entry.step === 'PUT /admin/authorization/groups/ROLE_ADMIN/grants').length && reread) return reply(200, { data: reread });
       return reply(200, { data: current });
@@ -2683,7 +2686,7 @@ async function provision(api, verifyOwner = () => api.log.push({ step: 'owner' }
 test('the fixture proves ownership before every write and adds only the missing grants to the full list', async () => {
   const api = fixtureApi();
   await provision(api);
-  assert.deepEqual(api.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'owner', 'POST /admin/system/users', 'GET /admin/authorization/groups/ROLE_ADMIN',
+  assert.deepEqual(api.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'owner', 'POST /admin/system/users', 'GET /admin/authorization/catalog', 'GET /admin/authorization/groups/ROLE_ADMIN',
     'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
   const user = api.log.find(entry => entry.step === 'POST /admin/system/users');
   assert.deepEqual(user.body, { userId: 'TEST1', pswd: 'E2e1!strong', userNm: '일반사용자', role: 'USER' });
@@ -2698,9 +2701,17 @@ test('the fixture proves ownership before every write and adds only the missing 
   const seeded = fixtureApi();
   await provisionRepresentativeAccounts({ apiUrl: 'http://127.0.0.1:18080/api/v1', admin: { id: 'webmaster', password: '1' },
     verifyOwner: () => seeded.log.push({ step: 'owner' }), request: seeded.request, wait: async () => {} });
-  assert.deepEqual(seeded.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'GET /admin/authorization/groups/ROLE_ADMIN',
+  assert.deepEqual(seeded.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'GET /admin/authorization/catalog', 'GET /admin/authorization/groups/ROLE_ADMIN',
     'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
   assert.deepEqual(seeded.log.find(entry => entry.step.startsWith('PUT')).body.grants, put.body.grants);
+
+  // 게시판이 없는 구성의 카탈로그에는 공지·FAQ 권한이 없다. 리허설(contentEditorPermissions)처럼 그룹을 건드리지 않는다.
+  const boardless = fixtureApi({ catalog: { ...FULL_CATALOG(), operations: [{ code: 'USER_READ', domain: 'x', action: 'y', name: 'USER_READ' }] } });
+  await provision(boardless);
+  assert.ok(!boardless.log.some(entry => entry.step.includes('/admin/authorization/groups/')), '없는 권한을 넣으려다 400 으로 멈추지 않는다');
+  const partial = fixtureApi({ catalog: { ...FULL_CATALOG(), operations: [{ code: 'FAQ_EDIT', domain: 'x', action: 'y', name: 'FAQ_EDIT' }] } });
+  await provision(partial);
+  assert.deepEqual(partial.log.find(entry => entry.step.startsWith('PUT')).body.grants, [...ADMIN_GROUP().grants, { type: 'OPERATION', code: 'FAQ_EDIT' }], '카탈로그에 있는 것만 준다');
 
   const held = fixtureApi({ group: { ...ADMIN_GROUP(), grants: [{ type: 'OPERATION', code: 'NOTICE_EDIT' }] } });
   await provision(held);
@@ -2725,6 +2736,8 @@ test('the fixture retries the login below the lockout threshold and stops on any
   await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), complete: false } })), /전체 목록이 아니다/);
   await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), version: 'short' } })), /전체 목록이 아니다/);
   await assert.rejects(provision(fixtureApi({ reread: ADMIN_GROUP() })), /관리자 권한이 반영되지 않았다/);
+  await assert.rejects(provision(fixtureApi({ catalogStatus: 403 })), /권한 카탈로그 조회 실패\(HTTP 403, FORBIDDEN\)/);
+  await assert.rejects(provision(fixtureApi({ catalog: { operations: null } })), /권한 카탈로그 응답이 목록이 아니다/);
 
   let verified = 0;
   const lost = fixtureApi();

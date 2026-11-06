@@ -175,8 +175,11 @@ const MIGRATION_DIRECTORIES = Object.freeze(['api-server/src/main/resources/db/m
  * 않으면 멈춘다 — V2 체인에서 V2_99 가 사라졌을 때 리허설이 조용히 꺼지지 않게 한다.
  */
 export function rehearsesAuthorizationContract(projectRoot) {
-  const directory = MIGRATION_DIRECTORIES.map(relative => path.join(projectRoot, relative)).find(candidate => existsSync(candidate));
-  if (!directory) throw fail('Flyway 마이그레이션 폴더를 찾지 못했다.');
+  const directories = MIGRATION_DIRECTORIES.map(relative => path.join(projectRoot, relative)).filter(candidate => existsSync(candidate));
+  if (!directories.length) throw fail('Flyway 마이그레이션 폴더를 찾지 못했다.');
+  // 두 배치가 함께 있으면 어느 쪽이 앱의 체인인지 정할 수 없다 — 한쪽만 보고 다른 쪽의 V2 체인을 놓치지 않는다.
+  if (directories.length > 1) throw fail('Flyway 마이그레이션 폴더가 둘이다(멀티모듈·단일모듈 배치가 함께 있다).');
+  const [directory] = directories;
   const names = readdirSync(directory);
   const contract = names.some(name => /^V2_99__.+\.sql$/.test(name));
   const bundle = names.some(name => /^V1_0__.+\.sql$/.test(name));
@@ -344,18 +347,25 @@ export async function provisionRepresentativeAccounts({ apiUrl, admin, user = nu
     verifyOwner();
     expectStatus(await call('POST', '/admin/system/users', { token, body: { userId: user.id, pswd: user.password, userNm: '일반사용자', role: 'USER' } }), 201, '대표 묶음 픽스처: 일반 계정 생성');
   }
+  // 리허설(contentEditorPermissions)처럼 이 구성의 권한 카탈로그에 있는 것만 준다 — 게시판이 없는 구성에는 공지·FAQ 권한이 없다.
+  const catalog = await call('GET', '/admin/authorization/catalog', { token });
+  expectStatus(catalog, 200, '대표 묶음 픽스처: 권한 카탈로그 조회');
+  const operations = catalog.envelope?.data?.operations;
+  if (!Array.isArray(operations) || !operations.every(operation => typeof operation?.code === 'string')) throw fail('대표 묶음 픽스처: 권한 카탈로그 응답이 목록이 아니다.');
+  const wanted = REPRESENTATIVE_ADMIN_GRANTS.filter(code => operations.some(operation => operation.code === code));
+  if (!wanted.length) return;
   const groupUrl = '/admin/authorization/groups/ROLE_ADMIN';
   const before = await call('GET', groupUrl, { token });
   expectStatus(before, 200, '대표 묶음 픽스처: 관리자 그룹 조회');
   const snapshot = before.envelope?.data;
   if (snapshot?.complete !== true || !/^[a-f0-9]{64}$/.test(snapshot?.version ?? '') || !Array.isArray(snapshot?.grants)) throw fail('대표 묶음 픽스처: 관리자 그룹 응답이 전체 목록이 아니다.');
   const holds = (grants, code) => grants.some(grant => grant.type === 'OPERATION' && grant.code === code);
-  const grants = [...snapshot.grants, ...REPRESENTATIVE_ADMIN_GRANTS.filter(code => !holds(snapshot.grants, code)).map(code => ({ type: 'OPERATION', code }))];
+  const grants = [...snapshot.grants, ...wanted.filter(code => !holds(snapshot.grants, code)).map(code => ({ type: 'OPERATION', code }))];
   verifyOwner();
   expectStatus(await call('PUT', `${groupUrl}/grants`, { token, body: { grants, version: snapshot.version, complete: true } }), 200, '대표 묶음 픽스처: 관리자 권한 변경');
   const after = await call('GET', groupUrl, { token });
   expectStatus(after, 200, '대표 묶음 픽스처: 관리자 그룹 재조회');
-  if (!REPRESENTATIVE_ADMIN_GRANTS.every(code => holds(after.envelope?.data?.grants ?? [], code))) throw fail('대표 묶음 픽스처: 관리자 권한이 반영되지 않았다.');
+  if (!wanted.every(code => holds(after.envelope?.data?.grants ?? [], code))) throw fail('대표 묶음 픽스처: 관리자 권한이 반영되지 않았다.');
 }
 
 /** 대표 묶음은 원장이 계획이다. 발견 결과로 계획을 만들면 사라진 spec 이 계획에서도 빠져 붉어지지 않는다. */

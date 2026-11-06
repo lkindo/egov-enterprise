@@ -904,6 +904,7 @@ test('the authorization rehearsal runs only on the V2 chain, stays off for a bas
   assert.throws(() => rehearsesAuthorizationContract(project({ [multi]: ['V2_0__baseline.sql', 'V2_98__expand.sql'] })), /정하지 못했다\(V2_99 없음, V1_0 기준선 없음\)/);
   assert.throws(() => rehearsesAuthorizationContract(project({ [multi]: ['V1_0__baseline.sql', 'V2_99__seed.sql'] })), /정하지 못했다\(V2_99 있음, V1_0 기준선 있음\)/);
   assert.throws(() => rehearsesAuthorizationContract(project({})), /마이그레이션 폴더를 찾지 못했다/);
+  assert.throws(() => rehearsesAuthorizationContract(project({ [multi]: ['V1_0__baseline.sql'], 'src/main/resources/db/migration': ['V2_99__seed.sql'] })), /마이그레이션 폴더가 둘이다/, '한쪽 배치만 보고 다른 쪽 V2 체인을 놓치지 않는다');
   // 원본 저장소는 V2 체인이라 리허설을 켠다.
   assert.equal(rehearsesAuthorizationContract(process.cwd()), true);
 });

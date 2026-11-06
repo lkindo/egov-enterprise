@@ -10,9 +10,12 @@ import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
+import java.sql.JDBCType;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLType;
 import java.sql.Timestamp;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -93,19 +96,28 @@ class CubridJdbcDataSourceTest {
     }
 
     @Test
-    @DisplayName("저장 프로시저도 이름 바인딩을 바꾸고 출력 매개변수의 타입 지정 조회를 같은 뜻의 값으로 읽는다")
+    @DisplayName("저장 프로시저는 번호 바인딩을 바꾸고 출력 매개변수의 타입 지정 조회를 같은 뜻의 값으로 읽으며, 드라이버에 없는 이름 조회는 멈춘다")
     void convertsCallableStatements() throws Exception {
         CallableStatement call = mock(CallableStatement.class);
+        ResultSet cursor = mock(ResultSet.class);
         when(target.getConnection()).thenReturn(connection);
         when(connection.prepareCall("c")).thenReturn(call);
         when(call.getObject(1)).thenReturn(Timestamp.valueOf("2026-11-07 01:02:03.456"));
-        when(call.getObject("cnt")).thenReturn(new BigDecimal("1.5"));
+        when(call.getObject(2)).thenReturn(new BigDecimal("1.5"));
+        when(call.getObject(3)).thenReturn(cursor);
+        when(cursor.getObject(1)).thenReturn(Timestamp.valueOf("2026-11-07 04:05:06.789"));
         CallableStatement wrapped = new CubridJdbcDataSource(target).getConnection().prepareCall("c");
 
-        wrapped.setObject("bgnde", LocalDate.of(2026, 11, 7));
-        verify(call).setObject("bgnde", java.sql.Date.valueOf("2026-11-07"));
+        wrapped.setObject(4, LocalDate.of(2026, 11, 7));
+        verify(call).setObject(4, java.sql.Date.valueOf("2026-11-07"));
         assertThat(wrapped.getObject(1, LocalDateTime.class)).isEqualTo(LocalDateTime.of(2026, 11, 7, 1, 2, 3, 456_000_000));
-        assertThatThrownBy(() -> wrapped.getObject("cnt", Long.class)).isInstanceOf(SQLException.class).hasMessageContaining("정확히 담기지 않는다");
+        assertThatThrownBy(() -> wrapped.getObject(2, Long.class)).isInstanceOf(SQLException.class).hasMessageContaining("정확히 담기지 않는다");
+        // 커서 출력 매개변수도 감싼다 — 감싸지 않으면 그 커서의 타입 지정 조회를 드라이버가 거부한다.
+        ResultSet out = wrapped.getObject(3, ResultSet.class);
+        assertThat(out).isNotSameAs(cursor);
+        assertThat(out.getObject(1, LocalDateTime.class)).isEqualTo(LocalDateTime.of(2026, 11, 7, 4, 5, 6, 789_000_000));
+        // 드라이버(11.3.2)는 이름 매개변수를 구현하지 않는다. 이름 조회를 흉내 내지 않고 멈춘다.
+        assertThatThrownBy(() -> wrapped.getObject("cnt", Long.class)).isInstanceOf(SQLFeatureNotSupportedException.class).hasMessageContaining("번호로 읽는다");
     }
 
     @Test
@@ -120,6 +132,29 @@ class CubridJdbcDataSourceTest {
         verify(rows).updateObject(1, Timestamp.valueOf("2026-01-02 03:04:05.123"));
         verify(rows).updateObject("atch_file_id", "6f1c3f0e-1b2a-4c3d-9e8f-0a1b2c3d4e5f", java.sql.Types.CHAR);
         verify(rows).updateTimestamp(3, Timestamp.valueOf("2026-01-02 03:04:05.123"));
+    }
+
+    @Test
+    @DisplayName("SQLType 을 받는 쓰기는 드라이버가 구현한 같은 뜻의 메서드로 옮긴다 — 바인딩은 타입 번호로, 갱신은 타입 힌트를 빼고")
+    void translatesSqlTypeWriters() throws Exception {
+        PreparedStatement prepared = open().prepareStatement("q");
+        ResultSet read = prepared.executeQuery();
+
+        prepared.setObject(1, LocalDate.of(2026, 11, 7), JDBCType.DATE);
+        prepared.setObject(2, new BigDecimal("1.25"), JDBCType.DECIMAL, 2);
+        read.updateObject(3, LocalDateTime.of(2026, 1, 2, 3, 4, 5, 123_456_789), JDBCType.TIMESTAMP);
+        read.updateObject("rcvr_nm", "가나다", JDBCType.VARCHAR, 3);
+
+        verify(statement).setObject(1, java.sql.Date.valueOf("2026-11-07"), java.sql.Types.DATE);
+        verify(statement).setObject(2, new BigDecimal("1.25"), java.sql.Types.DECIMAL, 2);
+        verify(rows).updateObject(3, Timestamp.valueOf("2026-01-02 03:04:05.123"));
+        verify(rows).updateObject("rcvr_nm", "가나다", 3);
+        SQLType numberless = new SQLType() {
+            @Override public String getName() { return "VENDOR_ONLY"; }
+            @Override public String getVendor() { return "x"; }
+            @Override public Integer getVendorTypeNumber() { return null; }
+        };
+        assertThatThrownBy(() -> prepared.setObject(3, "v", numberless)).isInstanceOf(SQLFeatureNotSupportedException.class).hasMessageContaining("VENDOR_ONLY");
     }
 
     @Test
