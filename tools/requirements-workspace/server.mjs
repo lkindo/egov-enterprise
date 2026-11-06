@@ -21,9 +21,8 @@ const json = (response, status, value) => { response.writeHead(status, { 'Conten
 function secureHeaders(response) {
   for (const [name, value] of Object.entries({ 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', 'Referrer-Policy': 'no-referrer', 'X-Frame-Options': 'DENY', 'Cross-Origin-Resource-Policy': 'same-origin', 'Content-Security-Policy': "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; font-src 'self'; img-src 'self' data:; base-uri 'none'; object-src 'none'; frame-ancestors 'none'; form-action 'self'" })) response.setHeader(name, value);
 }
-async function readBody(request) {
+async function readBody(request, maximum = 4 * 1024 ** 2) {
   if (!/^application\/json(?:;\s*charset=utf-8)?$/i.test(request.headers['content-type'] ?? '')) fail('CONTENT_TYPE_REQUIRED', 415);
-  const maximum = 4 * 1024 ** 2;
   if (request.headers['content-encoding'] || Number(request.headers['content-length'] ?? 0) > maximum) { request.resume(); fail('BODY_TOO_LARGE', 413); }
   let bytes = 0; const chunks = [];
   for await (const chunk of request) { bytes += chunk.length; if (bytes > maximum) fail('BODY_TOO_LARGE', 413); chunks.push(chunk); }
@@ -39,17 +38,47 @@ const messages = {
   SOURCE_CLAUSE_INVALID: '자료와 조항 연결을 확인해 주세요.', ACCEPTANCE_READ_ONLY: '인수 판정은 근거 기록 또는 인수 CSV 가져오기로 변경해 주세요.',
   CSV_IMPORT_INVALID: '검토 CSV의 헤더·누락 행·연결 관계를 확인해 주세요. 기존 자료는 변경하지 않았습니다.',
   UAT_IMPORT_INVALID: '검수 CSV의 행·해시·검증일·근거를 확인해 주세요. 기존 판정은 변경하지 않았습니다.',
+  AI_CONSENT_REQUIRED: '전송 대상 자료와 CLI 모델 서비스를 확인하고 실행에 동의해 주세요.',
+  AI_STALE_INPUT: '등록 자료가 바뀌었습니다. 최신 자료를 확인하고 AI 분석을 다시 시작하세요.',
+  AI_STALE_RESULT: '생성 중 입력이 바뀐 결과입니다. 현재 자료로 AI를 다시 실행하세요.',
+  AI_BUSY: 'AI 작업을 실행 중입니다. 완료를 기다리거나 현재 작업을 취소하세요.',
+  AI_CLI_UNAVAILABLE: 'Claude CLI 실행 파일을 찾지 못했습니다. 이 PC에 CLI를 설치하고 로그인 상태를 확인하세요.',
+  AI_CLI_FAILED: 'CLI 실행이 완료되지 않았습니다. 터미널에서 Claude 로그인·사용 한도를 확인한 후 다시 시도하세요.',
+  AI_MODEL_MISMATCH: '선택한 모델과 실제 실행 모델이 달라 결과를 적용하지 않았습니다.',
+  AI_OUTPUT_INVALID: 'AI 결과의 형식·원문 근거·연결 관계를 검증하지 못했습니다. 원본은 유지했으며 다시 실행할 수 있습니다.',
+  AI_ATTACHMENT_INVALID: '시각 자료를 준비하지 못했습니다. 이미지 크기·페이지 수·원본 무결성과 합계 20MiB/100개 한도를 확인하거나 추출 본문만 선택하세요.',
+  AI_RECORD_UNAVAILABLE: '보관한 AI 결과의 무결성을 확인하지 못했습니다. 작업공간 원본을 보존하고 다시 분석하세요.',
+  AI_INPUT_TOO_LARGE: '한 번에 분석할 수 있는 자료의 크기를 넘었습니다. 자료를 나누거나 본문을 정리해 주세요.',
+  AI_TIMEOUT: 'AI 실행 시간이 초과되었습니다. 기존 자료를 유지했으며 다시 실행할 수 있습니다.',
+  AI_DECISIONS_REQUIRED: '중요한 미결정 사항에 답변하고 AI 재분석을 완료한 뒤 확정하세요.',
+  AI_CHANGE_REVIEW_REQUIRED: '기존 업무 범위 변경과 작업·인수조건·추적 제외를 항목별로 확인해 주세요. 기존 내용은 유지했습니다.',
+  AI_ANSWERS_REQUIRED: 'AI가 확인을 요청한 중요한 질문에 답변해 주세요.',
+  AI_SOURCES_REQUIRED: '프로젝트 정보와 분석할 자료를 먼저 등록해 주세요.',
+  AI_SOURCE_METADATA_REQUIRED: '자료 분류·자료 위치·원문 조항과 위치를 먼저 보완해 주세요. AI로 전송하지 않았습니다.',
+  AI_DOCUMENTS_PROCESSING: '산출물을 읽고 있습니다. 파일 처리가 끝난 뒤 AI 분석을 시작하세요.',
+  FILE_REDACTION_REQUIRED: '본문·이미지·문서 속성의 개인정보와 비밀을 제거했는지 확인해 주세요.',
+  FILE_SENSITIVE_INPUT: '본문이나 문서 속성에서 개인정보·비밀 패턴을 발견했습니다. 비식별 사본을 등록하세요.',
+  FILE_REQUEST_CONFLICT: '같은 등록 요청의 자료가 달라졌습니다. 최신 상태를 확인하고 새 요청으로 등록하세요.',
+  FILE_TOO_LARGE: '파일 한 개는 20MiB까지 등록할 수 있습니다. 원문을 나누어 주세요.',
+  FILE_ENCODING_INVALID: '파일 인코딩을 읽지 못했습니다. 텍스트는 UTF-8 또는 BOM이 있는 UTF-16으로 저장해 주세요.',
+  FILE_TYPE_UNSUPPORTED: '지원하지 않는 형식입니다. Word는 DOCX를 사용하고 이미지·문서 지원 형식을 확인하세요.',
+  FILE_NO_TEXT: '읽을 수 있는 본문이 없습니다. 스캔·이미지의 판독 결과와 문서 내용을 확인해 주세요.',
+  FILE_EXTRACTION_FAILED: '문서 판독을 완료하지 못했습니다. 파일 손상·지원 형식과 로컬 OCR 준비 상태를 확인하세요.',
+  FILE_TEXT_TOO_LARGE: '추출 본문이 처리 한도를 넘었습니다. 파일을 나누어 등록해 주세요.',
+  FILE_ENCRYPTED: '암호화되었거나 보호된 문서입니다. 비식별된 보호 해제 사본을 등록해 주세요.',
+  FILE_TIMEOUT: '문서 판독 시간이 초과되었습니다. 파일을 나누거나 OCR 모델 준비 상태를 확인하세요.',
+  FILE_BUSY: '다른 파일을 처리 중입니다. 완료 후 다음 파일을 등록하세요.',
   REQUIREMENTS_EXTERNAL_CHANGE: '외부에서 파일이 변경되었습니다. 작성 중 입력을 보존하고 실행기를 종료한 뒤 원본과 변경본을 비교해 주세요.',
   REQUIREMENTS_LOCK_LOST: '작업공간 잠금이 변경되었습니다. 입력을 보존하고 다른 실행기의 사용 여부를 확인해 주세요.',
   REQUIREMENTS_RECOVERY_REQUIRED: '중단된 저장의 확인이 필요합니다. 파일과 저널을 보존하고 실행기를 재시작해 복구 결과를 확인해 주세요.',
   REQUIREMENTS_CONTEXT_CONFLICT: 'CLI와 UI의 문맥이 다릅니다. 차이를 검토한 뒤 기준 정보를 갱신해 주세요.',
 };
 
-export async function startRequirementsServer({ workspace, root = ROOT, port = 8792, host = '127.0.0.1', contextProvider = () => loadRepositoryContextSnapshot(root), staticAssets } = {}) {
+export async function startRequirementsServer({ workspace, root = ROOT, port = 8792, host = '127.0.0.1', contextProvider = () => loadRepositoryContextSnapshot(root), staticAssets, aiRunner } = {}) {
   if (host !== '127.0.0.1' || !Number.isInteger(port) || port < 0 || port > 65535) fail('LOOPBACK_REQUIRED');
   const context = await contextProvider();
   const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: validateBacklogPack, validateMetadata: validateRequirementsMetadata });
-  const engine = createRequirementsEngine({ store, contextProvider, root });
+  const engine = createRequirementsEngine({ store, contextProvider, root, aiRunner });
   const token = randomBytes(32).toString('base64url'), launchSecret = randomBytes(32).toString('base64url');
   // The browser stores only an opaque lookup handle. Credentials stay in the
   // process; the index holds a hash so it cannot itself be replayed as a cookie.
@@ -90,13 +119,14 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
       if (request.method === 'GET' && url.pathname === '/api/state') { json(response, 200, await engine.state()); return; }
       const artifact = url.pathname.match(/^\/api\/artifacts\/([a-zA-Z0-9-]+)$/);
       if (request.method === 'GET' && artifact) { json(response, 200, engine.artifact(artifact[1])); return; }
-      if (url.pathname !== '/api/action') fail('NOT_FOUND', 404);
+      if (!['/api/action', '/api/ingest'].includes(url.pathname)) fail('NOT_FOUND', 404);
       if (request.method !== 'POST') fail('METHOD_NOT_ALLOWED', 405);
       if (busy) { request.resume(); fail('WORKSPACE_BUSY', 409); }
       busy = true;
       try {
-        const input = await readBody(request);
+        const input = await readBody(request, url.pathname === '/api/ingest' ? 29 * 1024 ** 2 : undefined);
         if (!input || Array.isArray(input) || Object.keys(input).some(key => !['revision', 'action', 'payload'].includes(key)) || typeof input.revision !== 'string') fail('INVALID_REQUEST');
+        if ((url.pathname === '/api/ingest') !== (input.action === 'source.ingest')) fail('INVALID_REQUEST');
         json(response, 200, await engine.action(input.revision, input.action, input.payload));
       } finally { busy = false; }
     } catch (error) {
@@ -112,7 +142,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
   try { await once(server, 'listening'); } catch (error) { store.close(); throw error; }
   const url = `http://127.0.0.1:${server.address().port}`;
   let closed = false;
-  const app = { url, server, engine, store, async close() { if (closed) return; closed = true; server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); resumeSessions.clear(); store.close(); } };
+  const app = { url, server, engine, store, async close() { if (closed) return; closed = true; server.closeAllConnections(); await new Promise(resolveClose => server.close(resolveClose)); await engine.close(); resumeSessions.clear(); store.close(); } };
   Object.defineProperties(app, { launchSecret: { value: launchSecret }, launchUrl: { value: `${url}/#launch=${launchSecret}` } });
   return app;
 }

@@ -4,6 +4,9 @@ import { resolve, join, relative, isAbsolute } from 'node:path';
 import { assertExternalWorkspace } from './store.mjs';
 import * as shared from '../../scripts/export-deliverables-workspace.mjs';
 import { backlogDetailSheet, projectUatChecklistSheet, computeAcHash, computeRequirementAcceptanceDisposition, toMarkdown } from '../../scripts/export-deliverables.mjs';
+import { createAiWorkflow, validateAiMetadata } from './ai-workflow.mjs';
+import { createArtifactImports, validateImportMetadata } from './artifact-imports.mjs';
+import { projectAnalysisBacklog } from './ai-contract.mjs';
 
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const digest = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(canonical(value))).digest('hex');
@@ -33,7 +36,9 @@ function validateArchiveRef(ref, kind) {
   if (!/^[a-f0-9-]{36}$/.test(ref.id ?? '') || ref.kind !== kind || !/^[a-f0-9]{64}$/.test(ref.sha256 ?? '') || !Number.isSafeInteger(ref.bytes) || ref.bytes < 0 || ref.bytes > 8 * 1024 ** 2) fail('INVALID_ARCHIVE');
 }
 export function validateRequirementsMetadata(metadata) {
-  exact(metadata, ['context', 'baselines', 'reviewedRequirements', 'uatRecords', 'uatHistoryRefs', 'auditFindings', 'exports', 'composition']);
+  exact(metadata, ['context', 'baselines', 'reviewedRequirements', 'uatRecords', 'uatHistoryRefs', 'auditFindings', 'exports', 'composition', 'ai', 'imports']);
+  validateAiMetadata(metadata.ai);
+  validateImportMetadata(metadata.imports);
   if (!metadata.context || !Array.isArray(metadata.baselines) || !Array.isArray(metadata.uatRecords) || !Array.isArray(metadata.auditFindings) || !Array.isArray(metadata.exports) || !metadata.reviewedRequirements || Array.isArray(metadata.reviewedRequirements)) fail('INVALID_METADATA');
   sensitive(metadata);
   for (const [id, hash] of Object.entries(metadata.reviewedRequirements)) if (!idValid(id) || !/^[a-f0-9]{64}$/.test(hash)) fail('INVALID_METADATA');
@@ -100,12 +105,39 @@ function validDate(value) {
 }
 
 /** Domain actions share CLI contracts. Customer content never becomes shell arguments. */
-export function createRequirementsEngine({ store, contextProvider, root, now = () => new Date().toISOString() }) {
+export function createRequirementsEngine({ store, contextProvider, root, aiRunner, artifactExtractor, now = () => new Date().toISOString() }) {
   const validate = pack => {
     const result = shared.validateBacklogPack(pack);
     if (!result.valid) fail('BACKLOG_INVALID', result.errors);
   };
   const baselineCurrent = snapshot => snapshot.metadata.baselines.at(-1)?.analysisHash === sourceMeaning(snapshot.backlog) && analysisReadiness(snapshot).valid;
+  function commitMutation(revision, mutate) {
+    const previous = store.read();
+    if (previous.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');
+    const next = structuredClone(previous); mutate(next); persist(previous, next, 'ai.update');
+  }
+  const imports = createArtifactImports({ store, commit: commitMutation, extractor: artifactExtractor, now });
+  const workflow = createAiWorkflow({ store, contextProvider, runner: aiRunner, sourceFile: imports.sourceFile, now, baselineCurrent,
+    commit: commitMutation,
+    confirmAnalysis(next, proposal) {
+      next.backlog = projectAnalysisBacklog(next, proposal);
+      for (const req of next.backlog.businessRequirements) next.metadata.reviewedRequirements[req.id] = reqMeaning(req, next.backlog);
+      const readiness = analysisReadiness(next);
+      if (!readiness.valid) fail('ANALYSIS_NOT_READY', readiness.errors);
+      next.metadata.baselines.push({ id: `BL-${next.metadata.baselines.length + 1}`, label: `AI 요구사항 확인 ${now()}`, createdAt: now(), analysisHash: sourceMeaning(next.backlog), contextDigest: next.backlog.contextSnapshotDigest, backlog: structuredClone(next.backlog) });
+    },
+    applyDecomposition(next, proposal) {
+      const before = structuredClone(next.backlog), previous = new Map(before.acceptanceCriteria.map(ac => [ac.id, ac]));
+      next.backlog.workItems = proposal.workItems;
+      next.backlog.acceptanceCriteria = proposal.acceptanceCriteria;
+      next.backlog.traceLinks = proposal.traceLinks;
+      for (const ac of next.backlog.acceptanceCriteria) {
+        const old = previous.get(ac.id);
+        if (!old?.acContentHash || computeAcHash(old, before) !== old.acContentHash || computeAcHash(ac, next.backlog) !== old.acContentHash) continue;
+        for (const field of ['acceptanceDisposition', 'uatSignedBy', 'uatVerifiedAt', 'uatEvidence', 'uatBuildRef', 'acContentHash']) if (old[field] !== undefined) ac[field] = old[field];
+      }
+    },
+  });
   function readSnapshot() {
     try { return store.read(); }
     catch (error) {
@@ -121,7 +153,7 @@ export function createRequirementsEngine({ store, contextProvider, root, now = (
     if (contextChanged) { ready.valid = false; ready.errors.push('저장소 원장이 변경되었습니다. 문맥 차이를 검토하고 갱신하세요.'); }
     if (store.readOnly) { ready.valid = false; ready.errors.push('마지막으로 확인한 자료를 읽기 전용으로 표시합니다. 원본과 잠금 상태를 확인한 뒤 실행기를 다시 여세요.'); }
     const metadata = { ...snapshot.metadata, exports: snapshot.metadata.exports.map(entry => ({ ...entry, stale: entry.inputBacklogHash !== digest(snapshot.backlog) || contextChanged })) };
-    return { ...snapshot, metadata, context: snapshot.metadata.context, analysisReadiness: analysis, readiness: ready, contextChanged, contextDiff: shared.diffContextSnapshots(snapshot.metadata.context, current, snapshot.backlog), baselineCurrent: baselineCurrent(snapshot), reviewedRequirementsCurrent: Object.fromEntries(snapshot.backlog.businessRequirements.map(req => [req.id, snapshot.metadata.reviewedRequirements[req.id] === reqMeaning(req, snapshot.backlog)])), composition: snapshot.metadata.composition, matches: shared.matchRequirementsToContext(snapshot.backlog, snapshot.metadata.context), readOnly: Boolean(store.readonly ?? store.readOnly), reason: store.reason };
+    return { ...snapshot, metadata, ai: workflow.view(snapshot), imports: imports.view(snapshot), context: snapshot.metadata.context, analysisReadiness: analysis, readiness: ready, contextChanged, contextDiff: shared.diffContextSnapshots(snapshot.metadata.context, current, snapshot.backlog), baselineCurrent: baselineCurrent(snapshot), reviewedRequirementsCurrent: Object.fromEntries(snapshot.backlog.businessRequirements.map(req => [req.id, snapshot.metadata.reviewedRequirements[req.id] === reqMeaning(req, snapshot.backlog)])), composition: snapshot.metadata.composition, matches: shared.matchRequirementsToContext(snapshot.backlog, snapshot.metadata.context), readOnly: Boolean(store.readonly ?? store.readOnly), reason: store.reason };
   }
   async function scratch(snapshot, run) {
     // Existing CLI writers run only in an isolated copy; the checked CAS commit owns the real workspace.
@@ -143,6 +175,12 @@ export function createRequirementsEngine({ store, contextProvider, root, now = (
   }
   function artifact(id) {
     const meta = readSnapshot().metadata;
+    if (meta.imports?.some(job => job.sourceId === id && job.status === 'ready')) return { ...imports.sourceFile(id), type: 'application/octet-stream' };
+    const aiJob = meta.ai?.jobs.find(job => job.id === id && job.resultRef);
+    if (aiJob) {
+      const content = JSON.stringify({ job: aiJob, inputBacklog: JSON.parse(store.readArchive(aiJob.inputRef)), inputContext: JSON.parse(store.readArchive(aiJob.contextRef)), result: JSON.parse(store.readArchive(aiJob.resultRef)) }, null, 2);
+      sensitive({ content }); return { filename: `AI-${aiJob.phase}-${aiJob.id}.json`, content, type: 'application/json;charset=utf-8', sha256: digest(content) };
+    }
     const entry = meta.exports.find(item => item.id === id);
     if (entry) {
       const content = entry.contentRef ? store.readArchive(entry.contentRef) : entry.content;
@@ -157,7 +195,10 @@ export function createRequirementsEngine({ store, contextProvider, root, now = (
   }
   async function action(revision, actionName, payload) {
     if (typeof actionName !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload)) fail('INVALID_REQUEST');
-    sensitive(payload);
+    if (actionName === 'source.ingest') { const { base64, ...labels } = payload; sensitive(labels); }
+    else sensitive(payload);
+    if (actionName.startsWith('source.ingest')) { await imports.action(revision, actionName, payload); return state(); }
+    if (actionName.startsWith('ai.')) { if (actionName === 'ai.start' && imports.active) fail('AI_DOCUMENTS_PROCESSING'); await workflow.action(revision, actionName, payload); return state(); }
     const previous = store.read();
     if (previous.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');
     const next = structuredClone(previous), pack = next.backlog, meta = next.metadata;
@@ -310,6 +351,11 @@ export function createRequirementsEngine({ store, contextProvider, root, now = (
       default: fail('ACTION_UNSUPPORTED');
     }
     function packFrom(value) { next.backlog = value; }
+    persist(previous, next, actionName);
+    return state();
+  }
+  function persist(previous, next, actionName) {
+    const meta = next.metadata;
     next.backlog.contextBindings = shared.computeContextBindings(next.backlog, meta.context);
     if (!['uat.record', 'uat.import'].includes(actionName)) clearStaleAcceptance(next.backlog, previous.backlog);
     else for (const req of next.backlog.businessRequirements) req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, next.backlog.acceptanceCriteria.filter(ac => ac.requirementIds.includes(req.id)), next.backlog);
@@ -322,8 +368,7 @@ export function createRequirementsEngine({ store, contextProvider, root, now = (
     meta.uatHistoryRefs ??= [];
     while (meta.uatRecords.length > 500) meta.uatHistoryRefs.push(archive('history', JSON.stringify(meta.uatRecords.splice(0, 500))));
     validateRequirementsMetadata(meta);
-    store.transact(revision, draft => { draft.backlog = next.backlog; draft.metadata = meta; }, { refreshContext: actionName === 'context.refresh' });
-    return state();
+    store.transact(previous.revision, draft => { draft.backlog = next.backlog; draft.metadata = meta; }, { refreshContext: actionName === 'context.refresh' });
   }
-  return { state, action, artifact };
+  return { state, action, artifact, sourceFile: imports.sourceFile, waitForAi: workflow.waitForIdle, waitForImports: imports.waitForIdle, async close() { await imports.close(); await workflow.close(); } };
 }
