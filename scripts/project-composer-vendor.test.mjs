@@ -955,7 +955,7 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
   // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
-  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle', 'mariadb', 'mysql', 'mssql']);
+  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   // 사유는 화면에 그대로 나간다.
   for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, `${vendor.id}: 사유는 화면에 나가는 문장이라 '…습니다.' 로 끝낸다`);
@@ -1681,9 +1681,9 @@ test('the MySQL family signs a unique with its sorted key list, and its session 
 
 test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
   const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
-  // 단계 5-1 은 CUBRID 의 벤더 잡을 승격 전(preview)에 연다. 승격은 증거를 기록하는 다음 변경이다.
+  // 단계 5-1 은 CUBRID 의 벤더 잡을 승격 전(preview)에 열었고, 5-2 가 main 의 벤더 잡 통과 뒤 증거를 기록해 올렸다(DEC-OPS-400·402).
   assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
-  assert.equal(ledger.vendors.find(vendor => vendor.id === 'cubrid').status, 'preview');
+  assert.equal(ledger.vendors.find(vendor => vendor.id === 'cubrid').status, 'certified');
   const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
