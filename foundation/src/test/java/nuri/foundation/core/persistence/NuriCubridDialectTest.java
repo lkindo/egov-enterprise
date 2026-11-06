@@ -95,6 +95,29 @@ class NuriCubridDialectTest {
     }
 
     @Test
+    @DisplayName("방언의 번역기는 대량 갱신·삭제의 대상 표 뒤에 별칭을 내고, 입력 대상에는 달지 않는다")
+    void dmlTargetsCarryTheirAlias() {
+        NuriCubridDialect dialect = new NuriCubridDialect();
+        org.hibernate.engine.spi.SessionFactoryImplementor sessionFactory =
+                mock(org.hibernate.engine.spi.SessionFactoryImplementor.class, org.mockito.Mockito.RETURNS_DEEP_STUBS);
+        when(sessionFactory.getJdbcServices().getDialect()).thenReturn(dialect);
+
+        var translator = dialect.getSqlAstTranslatorFactory()
+                .buildSelectTranslator(sessionFactory, mock(org.hibernate.sql.ast.tree.select.SelectStatement.class));
+
+        assertThat(translator).isInstanceOf(NuriCubridSqlAstTranslator.class);
+        NuriCubridSqlAstTranslator<?> sql = (NuriCubridSqlAstTranslator<?>) translator;
+        sql.getCurrentClauseStack().push(org.hibernate.sql.ast.Clause.UPDATE);
+        sql.renderDmlTargetTableExpression(new org.hibernate.sql.ast.tree.from.NamedTableReference("tb_bbs_item", "b1_0"));
+        sql.getCurrentClauseStack().pop();
+        sql.append(" | ");
+        sql.getCurrentClauseStack().push(org.hibernate.sql.ast.Clause.INSERT);
+        sql.renderDmlTargetTableExpression(new org.hibernate.sql.ast.tree.from.NamedTableReference("tb_bbs_item", "b1_0"));
+        assertThat(sql.getSql()).isEqualTo("tb_bbs_item b1_0 | tb_bbs_item");
+        assertThat(dialect.getDmlTargetColumnQualifierSupport()).isEqualTo(org.hibernate.dialect.DmlTargetColumnQualifierSupport.TABLE_ALIAS);
+    }
+
+    @Test
     @DisplayName("제품명이 CUBRID 이면 판을 읽지 못해도 이 방언을 고르고, 다른 제품은 표준 해석에 넘긴다")
     void resolvesByProductName() {
         DialectResolutionInfo cubrid = mock(DialectResolutionInfo.class);
