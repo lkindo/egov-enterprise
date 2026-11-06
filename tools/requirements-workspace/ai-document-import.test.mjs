@@ -107,6 +107,36 @@ test('an identical ordered legacy transcription does not add another canonical c
   assert.deepEqual((await app.engine.state()).backlog.sources[0].clauses, saved.clauses);
 });
 
+test('duplicate history cannot hide a human summary correction from evidence retention', async t => {
+  const app = setup(t, successfulReader), input = upload();
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  await app.act('source.ingest', { ...input, requestId: randomUUID() }); await app.engine.waitForImports();
+  const saved = (await app.engine.state()).backlog.sources[0];
+  await app.act('source.save', { ...saved, sourceType: 'regulation', summary: '사람이 원본을 대조하여 보정한 업무 설명이다.' });
+  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, redacted: true, model: AI_MODEL }); await app.engine.waitForImports();
+  assert.equal((await app.engine.state()).backlog.sources[0].summary, '사람이 원본을 대조하여 보정한 업무 설명이다.');
+});
+
+test('unknown reader errors do not opt an original into recoverable archival', async t => {
+  const app = setup(t, async () => { throw Object.assign(new Error('AI_READER_REFUSED'), { code: 'AI_READER_REFUSED' }); });
+  await app.act('source.ingest', upload()); await app.engine.waitForImports();
+  assert.equal((await app.engine.state()).imports.jobs[0].originalRef, undefined);
+});
+
+test('an untouched unlinked AI draft can be replaced after a reader-profile upgrade', async t => {
+  let calls = 0;
+  const app = setup(t, (input, options) => readDocument(input, { ...options,
+    prepare: async () => ({ format: 'png', warningCodes: [], units: [{ id: 'U-1', locator: '1쪽', text: null, attachment: null }] }),
+    execute: async () => ({ output: { documentTypes: ['other'], summary: '접수 처리기간에 관한 합성 판독이다.', blocks: [{ inputId: 'U-1', heading: '처리기간', kind: 'paragraph', text: ++calls === 1 ? '접수 처리기간은 3일이다.' : '접수 처리기간은 8일이다.', certainty: 'clear', note: '미검토 AI 초안' }], unreadable: [] } }),
+  }));
+  const input = { ...upload(), filename: 'receipt.png', base64: readFileSync(new URL('./test-fixtures/receipt.png', import.meta.url)).toString('base64') };
+  await app.act('source.ingest', input); await app.engine.waitForImports(); const saved = (await app.engine.state()).backlog.sources[0];
+  app.store.transact(app.store.read().revision, next => { next.metadata.imports[0].readingProfile = '0'.repeat(64); });
+  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, redacted: true, model: AI_MODEL }); await app.engine.waitForImports();
+  const state = await app.engine.state(); assert.equal(calls, 2); assert.equal(state.backlog.sources[0].clauses.length, 1); assert.match(state.backlog.sources[0].clauses[0].text, /8일/);
+  assert.equal(state.imports.jobs.at(-1).keptExistingClauses, false);
+});
+
 test('sensitive AI reading output cannot leave a newly archived original behind', async t => {
   const app = setup(t, (input, options) => readDocument(input, { ...options, execute: async ({ request }) => ({ output: { documentTypes: ['other'], summary: '연락처 010-1234-5678로 회신한다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '합성 이미지', kind: 'paragraph', text: '담당자는 본인 접수 목록을 조회한다.', certainty: 'clear', note: '합성 판독' })), unreadable: [] } }) }));
   await app.act('source.ingest', { ...upload(), filename: 'receipt.png', base64: readFileSync(new URL('./test-fixtures/receipt.png', import.meta.url)).toString('base64') }); await app.engine.waitForImports();

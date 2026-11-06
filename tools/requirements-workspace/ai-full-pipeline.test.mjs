@@ -86,6 +86,11 @@ test('an independently detected PDF transcription mismatch blocks planning even 
   assert.equal(state.ai.current.status, 'needs-decisions'); assert.equal(phases.includes('decomposition'), false);
   assert.ok(state.ai.proposal.issues.some(issue => issue.id.startsWith('DOC-') && issue.severity === 'blocking'));
   assert.equal(state.backlog.businessRequirements.length, 0); assert.equal(state.metadata.baselines.length, 0);
+  const issue = state.ai.proposal.issues.find(issue => issue.id.startsWith('DOC-'));
+  await app.act('ai.answer', { jobId: state.ai.current.id, answers: [{ issueId: issue.id, answer: '원본을 확인했다. 처리기간은 3일이고 타인 자료 열람은 불가하다.' }], continueWithAI: true });
+  await app.engine.waitForAi(); const resumed = await app.engine.state();
+  assert.equal(resumed.ai.current.status, 'ready'); assert.equal(resumed.ai.proposal.issues.some(item => item.id === issue.id), false);
+  assert.equal(phases.includes('decomposition'), true); assert.equal(resumed.metadata.baselines.length, 0);
 });
 
 test('multiple planning batches retain every requirement, shared epic, AC and trace through final confirmation', async t => {

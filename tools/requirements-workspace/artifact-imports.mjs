@@ -14,9 +14,10 @@ const canonical = value => Array.isArray(value) ? value.map(canonical) : value &
 export const sourceEvidenceDigest = source => sha(JSON.stringify((source.clauses ?? []).map(clause => ({ id: clause.id, text: clause.text, locator: clause.locator }))));
 export const sourceStateDigest = source => sha(JSON.stringify(canonical(source)));
 export const documentReadingProfile = (sourceType, classification) => sha(JSON.stringify({ sourceType, classification, promptVersion: PROMPT_VERSION, model: AI_MODEL, effort: AI_EFFORT }));
+const recoverableOriginalErrors = new Set(['FILE_TYPE_UNSUPPORTED', 'FILE_ENCRYPTED', 'FILE_ENCODING_INVALID', 'FILE_EXTRACTION_FAILED', 'FILE_DOCUMENT_CAPACITY', 'FILE_TEXT_TOO_LARGE', 'FILE_NO_TEXT', 'FILE_TIMEOUT', 'AI_DOCUMENT_UNREADABLE', 'AI_TIMEOUT']);
 function evidenceRetention(snapshot, source) {
   if (!source) return { preserve: false, appendLegacy: false };
-  const previous = snapshot.metadata.imports?.findLast(job => job.status === 'ready' && job.sourceId === source.id);
+  const previous = snapshot.metadata.imports?.findLast(job => job.status === 'ready' && job.sourceId === source.id && !job.duplicateOf);
   const unknownLegacy = !previous?.sourceDigest && !previous?.sourceStateDigest;
   const judged = source.clauses.some(clause => clause.disposition !== 'question' || (clause.requirementIds ?? []).length || clause.rationale !== 'AI 요구사항 정리 대상');
   const changed = previous?.sourceDigest && previous.sourceDigest !== sourceEvidenceDigest(source) || previous?.sourceStateDigest && previous.sourceStateDigest !== sourceStateDigest(source);
@@ -148,7 +149,7 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
           catch (error) {
             // An unreadable original remains recoverable after the user's raw
             // document attestation. Detectable sensitive content is never archived.
-            if (!controller.signal.aborted && !closed && /^FILE_/.test(error.code ?? '') && !['FILE_SENSITIVE_INPUT', 'FILE_NAME_INVALID', 'FILE_SIGNATURE_INVALID'].includes(error.code)) {
+            if (!controller.signal.aborted && !closed && recoverableOriginalErrors.has(error.code)) {
               const originalRef = archiveOriginal(payload.filename, bytes); mark(job.requestId, item => { if (item.status === 'extracting') item.originalRef = originalRef; });
             }
             throw error;
@@ -183,8 +184,7 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
     }).catch(error => {
       try { mark(job.requestId, item => {
         if (item.status !== 'extracting') return;
-        const unsafe = ['FILE_SENSITIVE_INPUT', 'SENSITIVE_INPUT', 'AI_DOCUMENT_SENSITIVE_OUTPUT', 'AI_DOCUMENT_OUTPUT_INVALID', 'AI_OUTPUT_INVALID', 'FILE_NAME_INVALID', 'FILE_SIGNATURE_INVALID'].includes(error.code);
-        if (withAI && !item.originalRef && !controller.signal.aborted && !closed && !unsafe && /^(?:FILE_|AI_)/.test(error.code ?? '')) item.originalRef = archiveOriginal(payload.filename, bytes);
+        if (withAI && !item.originalRef && !controller.signal.aborted && !closed && recoverableOriginalErrors.has(error.code)) item.originalRef = archiveOriginal(payload.filename, bytes);
         item.status = controller.signal.aborted ? 'cancelled' : 'failed'; item.completedAt = now(); item.errorCode = /^(FILE_[A-Z_]{2,70}|AI_[A-Z_]{2,70}|SENSITIVE_INPUT)$/.test(error.code ?? '') ? error.code : 'FILE_EXTRACTION_FAILED';
       }); }
       catch { /* Do not overwrite foreign changes or an unowned workspace. */ }

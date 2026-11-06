@@ -67,10 +67,10 @@ function validateReading(value, units) {
 
 function criticalTokens(text) {
   const normalized = text.normalize('NFKC').toLowerCase().replaceAll('−', '-'), compact = normalized.replace(/\s+/gu, ''), tokens = [];
-  for (const match of compact.matchAll(/[+-]?\d+(?:[.,:/-]\d+)*/g)) {
+  for (const match of normalized.matchAll(/[+-]?\d+(?:[.,:/-]\d+)*/g)) {
     const number = match[0].replace(/,(?=\d{3}(?:\D|$))/g, ''); tokens.push(`number:${number}`);
-    const unit = /^(?:개월|시간|천원|만원|분|초|일|월|년|원|건|명|회|개|%|ms|mb|gb)/.exec(compact.slice(match.index + match[0].length));
-    if (unit) tokens.push(`quantity:${number}${unit[0]}`);
+    const unit = /^\s*(개월|시간|천원|만원|분|초|일|월|년|원|건|명|회|개|%|ms|mb|gb)/.exec(normalized.slice(match.index + match[0].length));
+    if (unit) tokens.push(`quantity:${number}${unit[1]}`);
   }
   for (const match of compact.matchAll(/불가능|불가|금지|허용|거부|제외|필수|선택|초과|이상|이하|미만|않|없|못|가능/gu)) tokens.push(`rule:${match[0]}`);
   for (const match of normalized.matchAll(/\b(?:not|no|never|without|cannot|prohibited|must|may|shall|only|except|required|optional|allowed|allow|deny|denied)\b/g)) tokens.push(`rule:${match[0]}`);
@@ -78,12 +78,14 @@ function criticalTokens(text) {
 }
 function compareNativeReferences(value, units) {
   const checks = [];
-  for (const unit of units.filter(unit => unit.nativeReference?.trim())) {
+  const negativeRules = new Set(['불가능', '불가', '금지', '거부', '제외', '않', '없', '못', 'not', 'no', 'never', 'without', 'cannot', 'prohibited', 'deny', 'denied']);
+  for (const unit of units.filter(unit => unit.nativeReference?.trim() && unit.purpose !== 'layout-context')) {
     const blocks = value.blocks.filter(block => block.inputId === unit.id), text = blocks.map(block => block.text ?? '').join('\n');
     const expected = criticalTokens(unit.nativeReference), actual = criticalTokens(text);
     // A PDF text layer can be incomplete or misordered. Extra visible content
     // is allowed; a missing/conflicting native critical fact requires review.
-    const mismatch = !text.trim() || [...expected].some(([token, count]) => (actual.get(token) ?? 0) < count);
+    const addedNegation = [...actual].some(([token, count]) => token.startsWith('rule:') && negativeRules.has(token.slice(5)) && count > (expected.get(token) ?? 0));
+    const mismatch = !text.trim() || addedNegation || [...expected].some(([token, count]) => (actual.get(token) ?? 0) < count);
     checks.push({ inputId: unit.id, sha256: createHash('sha256').update(unit.nativeReference).digest('hex'), status: mismatch ? 'mismatch' : 'matched' });
     if (!mismatch) continue;
     const note = 'PDF 텍스트 보조정보와 시각 판독이 다릅니다. 원본의 숫자·단위·부정어와 누락 여부를 대조해 주세요.';

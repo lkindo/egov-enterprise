@@ -77,7 +77,7 @@ test('mixed, blank and unreadable visual inputs do not masquerade as a uniform s
 });
 
 test('supplemental layout images do not duplicate the preserved native document text', async () => {
-  const layout = { ...visual, purpose: 'layout-context' };
+  const layout = { ...visual, purpose: 'layout-context', nativeReference: native.text };
   const result = await readDocument(input, { prepare: preparation([native, layout]), execute: async ({ request }) => {
     assert.match(request.instructions, /do not transcribe it again/);
     assert.equal(request.data.units[1].purpose, 'layout-context');
@@ -85,6 +85,7 @@ test('supplemental layout images do not duplicate the preserved native document 
   } });
   assert.equal(result.segments.length, 1); assert.equal(result.segments[0].text, native.text);
   assert.equal(result.reading.provenance[1].kind, 'visual-context');
+  assert.equal(result.needsReview, false);
 });
 
 test('native PDF critical facts independently flag a confident wrong transcription and keep a reference hash', async () => {
@@ -98,4 +99,18 @@ test('native PDF content cannot be silently accepted as a clear blank page', asy
   const page = { ...visual, nativeReference: '담당자는 본인 소유 접수 목록만 조회할 수 있다.' };
   const result = await readDocument(input, { prepare: preparation([native, page]), execute: async () => ({ output: output([native], { blocks: [...output([native]).blocks, { inputId: page.id, heading: '빈 쪽', kind: 'blank', text: null, certainty: 'clear', note: '본문이 없다.' }] }) }) });
   assert.equal(result.needsReview, true); assert.ok(result.reading.unreadable.some(item => item.inputId === page.id));
+});
+
+test('separate PDF table numbers do not get concatenated into a false native mismatch', async () => {
+  const page = { ...visual, nativeReference: '수량 10 20' };
+  const result = await readDocument(input, { prepare: preparation([page]), execute: async () => ({ output: output([page], { blocks: [{ ...output([page]).blocks[0], kind: 'table', text: '| 수량 | 10 | 20 |' }] }) }) });
+  assert.equal(result.needsReview, false); assert.equal(result.reading.referenceChecks[0].status, 'matched');
+});
+
+test('new negation in a confident PDF transcription is independently flagged', async () => {
+  for (const [reference, transcription] of [['담당자는 접수 자료를 열람할 수 있다.', '담당자는 접수 자료를 열람할 수 없다.'], ['담당자의 자료 열람을 허용한다.', '담당자의 자료 열람을 허용하지 않는다.']]) {
+    const page = { ...visual, nativeReference: reference };
+    const result = await readDocument(input, { prepare: preparation([page]), execute: async () => ({ output: output([page], { blocks: [{ ...output([page]).blocks[0], text: transcription }] }) }) });
+    assert.equal(result.needsReview, true); assert.equal(result.reading.blocks[0].certainty, 'uncertain');
+  }
 });
