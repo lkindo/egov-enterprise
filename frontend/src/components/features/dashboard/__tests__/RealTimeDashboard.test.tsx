@@ -131,6 +131,20 @@ describe('RealTimeDashboard', () => {
     expect(screen.getAllByText('—')).toHaveLength(3);
   });
 
+  // 연결 상태 확인과 SUBSCRIBE 사이에 서버가 소켓을 닫으면 stompjs 가 던진다. effect 에서 던지면 화면 오류로 남는다(2026-11-07 CUBRID 대표 E2E).
+  it('구독하는 순간 연결이 끊겨 있으면 던지지 않고 건너뛰며, 정리도 던지지 않는다', () => {
+    subscribe.mockImplementationOnce(() => {
+      throw new TypeError('There is no underlying STOMP connection');
+    });
+
+    const view = render(<RealTimeDashboard />);
+
+    expect(subscribe).toHaveBeenCalledTimes(1);
+    expect(screen.getByRole('status')).toHaveTextContent('실시간 연결됨');
+    expect(() => view.unmount()).not.toThrow();
+    expect(unsubscribe).not.toHaveBeenCalled();
+  });
+
   it('연결이 끊기면 연결 상태만 말하고 대기 문구를 덧붙이지 않는다', () => {
     connection.isConnected = false;
     render(<RealTimeDashboard />);

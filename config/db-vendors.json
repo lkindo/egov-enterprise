@@ -682,13 +682,75 @@
     {
       "id": "cubrid",
       "label": "CUBRID",
-      "status": "preview",
+      "status": "certified",
       "ci": true,
       "engines": [
         {
           "version": "11.4",
           "engine": "cubrid",
-          "evidence": null
+          "evidence": {
+            "runId": "cubrid-bd1ee56d1442-9f4a007c",
+            "commit": "bd1ee56d1442ee0c36dbe98da0e2c80badf9bb2b",
+            "recordedAt": "2026-11-07T02:12:23.549+09:00",
+            "inputHash": "ac086f589fc90fb8e8a9be7c54a2e961d2bcf0c3e6d32138bd26d44e92af13a5",
+            "modelHash": "486eb7183487372a0beb209977f5f63cd41a959a68b1e4d49bbf00e2491a3ec9",
+            "image": "cubrid/cubrid:11.4@sha256:1248b77ad39888df9e064655937188ab99fe056ed7e35b57d06155a015dc1791",
+            "imageOrigin": "community:cubrid",
+            "scope": "application-database",
+            "composition": {
+              "profile": "demo",
+              "layout": "multi-module",
+              "compositionHash": "96a1fb2346c823df4653ddfdc1c3862801908a0a25a3bca5e3c0129775af27db"
+            },
+            "steps": {
+              "verification": {
+                "result": "passed"
+              },
+              "schemaParity": {
+                "tables": 98,
+                "statements": 614,
+                "degradations": 18
+              },
+              "seedParity": {
+                "tables": 98,
+                "rows": 18143
+              },
+              "hibernateValidate": {
+                "ddlAuto": "validate",
+                "contexts": 44
+              },
+              "integration": {
+                "classes": 51,
+                "tests": 397,
+                "failures": 0,
+                "errors": 0,
+                "skipped": 0
+              },
+              "conformance": {
+                "catalog": {
+                  "classes": 1,
+                  "tests": 5,
+                  "failures": 0,
+                  "errors": 0,
+                  "skipped": 0
+                },
+                "differential": {
+                  "checks": 134,
+                  "rows": 1284,
+                  "differences": 0,
+                  "unbalanced": 0,
+                  "intentFailures": 0
+                }
+              },
+              "representativeE2e": {
+                "specs": 11,
+                "expected": 66,
+                "unexpected": 0,
+                "flaky": 0,
+                "skipped": 0
+              }
+            }
+          }
         }
       ],
       "evidenceInputs": [
@@ -760,8 +822,7 @@
           }
         ],
         "image": "docker-compose.yml 의 DB 이미지는 CUBRID 프로젝트가 Docker Hub 에 올린 개발용 이미지입니다. 운영 DB 와 그 지원은 도입 기관이 준비합니다."
-      },
-      "reason": "제한 지원 대상입니다. 앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
+      }
     },
     {
       "id": "tibero",

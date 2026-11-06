@@ -65,14 +65,20 @@ export function RealTimeDashboard() {
   useEffect(() => {
     if (!client || !isConnected) return;
 
-    // 실시간 통계 구독 (인증 사용자 전용)
-    const statsSubscription = client.subscribe('/topic/dashboard/stats', (message) => {
-      const data = parseStats(message.body);
-      if (data) handleStatsUpdate(data);
-    });
+    // 실시간 통계 구독 (인증 사용자 전용). 연결 상태 확인과 SUBSCRIBE 사이에 서버가 소켓을 닫을 수 있다 — 그때 stompjs 는 던진다.
+    // 머리글 알림(use-notifications.ts)과 같이 구독을 건너뛰고, 다시 연결되면 연결 상태가 바뀌어 이 effect 가 다시 구독한다.
+    let statsSubscription: { unsubscribe: () => void } | null = null;
+    try {
+      statsSubscription = client.subscribe('/topic/dashboard/stats', (message) => {
+        const data = parseStats(message.body);
+        if (data) handleStatsUpdate(data);
+      });
+    } catch {
+      statsSubscription = null;
+    }
 
     return () => {
-      statsSubscription.unsubscribe();
+      statsSubscription?.unsubscribe();
     };
   }, [client, isConnected, handleStatsUpdate]);
 

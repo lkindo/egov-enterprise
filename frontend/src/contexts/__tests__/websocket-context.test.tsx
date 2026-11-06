@@ -35,6 +35,7 @@ type ClientStub = {
   onConnect?: () => void;
   onStompError?: (f: unknown) => void;
   onDisconnect?: () => void;
+  onWebSocketClose?: () => void;
   config: Record<string, unknown>;
 };
 const created: ClientStub[] = [];
@@ -208,6 +209,23 @@ describe('WebSocketProvider', () => {
 
       expect(view.value.isConnected).toBe(false);
       expect(view.value.client).toBeNull();
+    });
+
+    // 서버가 소켓을 닫으면(권한이 바뀐 세션의 정책 위반 종료) stompjs 는 onDisconnect 없이 onWebSocketClose 만 부른다. 연결됨으로 남으면
+    // 소비자의 subscribe 가 'There is no underlying STOMP connection' 으로 던진다(2026-11-07 CUBRID 대표 E2E).
+    it('서버가 소켓을 닫으면 연결 해제 상태로 되돌리고, 다시 연결되면 소비자에게 새로 알린다', () => {
+      const view = renderProvider();
+      act(() => { created[0].onConnect?.(); });
+      expect(view.value.isConnected).toBe(true);
+
+      act(() => { created[0].onWebSocketClose?.(); });
+      expect(view.value.isConnected).toBe(false);
+      expect(view.value.client).toBeNull();
+
+      // stompjs 의 자동 재연결은 같은 클라이언트로 onConnect 를 다시 부른다. 소비자는 연결 상태가 바뀐 것을 보고 다시 구독한다.
+      act(() => { created[0].onConnect?.(); });
+      expect(view.value.isConnected).toBe(true);
+      expect(view.value.client).toBe(created[0]);
     });
 
     it('재연결 간격과 하트비트를 설정한다', () => {

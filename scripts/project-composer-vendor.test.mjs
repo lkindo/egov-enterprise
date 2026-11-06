@@ -13,7 +13,7 @@ import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { indexPrefixes, keyColumnBytes, mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
-import { CUBRID_RESERVED, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
+import { batchSeedInserts, CUBRID_RESERVED, CUBRID_SEED_ROWS_PER_INSERT, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
@@ -894,6 +894,31 @@ test('seed rows follow foreign keys, self references and the next value contract
   assert.throws(() => emitRows(sample, { t_parent: [{ id: 1, code: 'A', use_yn: 'Y', hash_vl: null, body: null, up_id: null, stray: 1 }] }, mysqlAdapter), isGap);
 });
 
+// 한 행씩 넣으면 CUBRID 앱 첫 기동의 Flyway 가 시드에 2~5분을 썼다(2026-11-07 대표 E2E 의 브로커 SQL 로그, 행당 약 10ms).
+test('CUBRID batches consecutive seed inserts per table without reordering rows or batching self references', () => {
+  const sample = model();
+  const parents = [{ id: 2, code: 'B', use_yn: 'Y', hash_vl: null, body: null, up_id: 1 }, { id: 1, code: 'A', use_yn: 'Y', hash_vl: null, body: null, up_id: null }];
+  const children = Array.from({ length: 5 }, (_, index) => ({ id: index + 10, parent_id: 1, url: `u(${index});`, owner: index === 0 ? "o'x" : 'o' }));
+  const rows = { t_child: children, t_parent: parents };
+  const single = emitRows(sample, rows, cubridAdapter);
+  const batched = cubridAdapter.emitSeed(sample, rows);
+  const of = (statements, table) => statements.filter(statement => statement.startsWith(`INSERT INTO ${table} `));
+  // 자기 참조 표는 부모를 먼저 넣는 한 행 문장 그대로다.
+  assert.deepEqual(of(batched, 't_parent'), of(single, 't_parent'));
+  // 나머지 표는 한 문장이 같은 행을 같은 순서로 넣는다. 값 속의 괄호·쌍반점·따옴표는 행 경계가 아니다.
+  const tuple = statement => statement.slice(statement.indexOf(' VALUES ') + ' VALUES '.length);
+  const prefix = of(single, 't_child')[0].slice(0, of(single, 't_child')[0].indexOf(' VALUES ') + ' VALUES '.length);
+  assert.deepEqual(of(batched, 't_child'), [`${prefix}${of(single, 't_child').map(tuple).join(', ')}`]);
+  assert.ok(batched.indexOf(of(batched, 't_child')[0]) > batched.indexOf(of(batched, 't_parent').at(-1)), 'FK 부모 표가 먼저다');
+  // 행 수·글자 수 상한에서 끊고, 다른 문장이나 다른 컬럼 목록을 넘어 묶지 않는다.
+  const tuples = statement => (statement.match(/\), \(/g) ?? []).length + 1;
+  assert.deepEqual(of(batchSeedInserts(sample, single, 2), 't_child').map(tuples), [2, 2, 1]);
+  assert.deepEqual(of(batchSeedInserts(sample, single, 100, tuple(of(single, 't_child')[0]).length * 2), 't_child').map(tuples), [2, 2, 1]);
+  const mixed = ['INSERT INTO t_child (id) VALUES (1)', 'ALTER TABLE t_child AUTO_INCREMENT = 2', 'INSERT INTO t_child (id) VALUES (2)', 'INSERT INTO t_child (id, url) VALUES (3, \'x\')'];
+  assert.deepEqual(batchSeedInserts(sample, mixed), mixed);
+  assert.ok(CUBRID_SEED_ROWS_PER_INSERT > 1);
+});
+
 test('a foreign key cycle matters only between tables that have rows', () => {
   const table = (name, parent) => ({ name, foreignKeys: [{ name: `fk_${name}`, parentTable: parent }] });
   const cyclic = { tables: [table('a', 'b'), table('b', 'a'), { name: 'c', foreignKeys: [] }] };
@@ -930,7 +955,7 @@ test('only certified vendors can be chosen and the ledger names every vendor', (
   const ledger = loadVendorLedger(ROOT);
   assert.deepEqual(ledger.vendors.map(vendor => vendor.id).sort(), [...VENDOR_IDS].sort());
   // 승격 표시다. 벤더를 올리는 변경이 이 줄을 함께 고친다(설계서 §17). 원장과 대조하면 selectableVendors 를 그 자신과 비교하게 된다.
-  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle', 'mariadb', 'mysql', 'mssql']);
+  assert.deepEqual(selectableVendors(ledger), ['postgresql', 'oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
   for (const id of Object.keys(VENDOR_ADAPTERS)) assert.ok(ledger.vendors.some(vendor => vendor.id === id));
   // 사유는 화면에 그대로 나간다.
   for (const vendor of ledger.vendors.filter(row => row.status !== 'certified')) assert.match(vendor.reason, /습니다\.$/, `${vendor.id}: 사유는 화면에 나가는 문장이라 '…습니다.' 로 끝낸다`);
@@ -1656,9 +1681,9 @@ test('the MySQL family signs a unique with its sorted key list, and its session 
 
 test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
   const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
-  // 단계 5-1 은 CUBRID 의 벤더 잡을 승격 전(preview)에 연다. 승격은 증거를 기록하는 다음 변경이다.
+  // 단계 5-1 은 CUBRID 의 벤더 잡을 승격 전(preview)에 열었고, 5-2 가 main 의 벤더 잡 통과 뒤 증거를 기록해 올렸다(DEC-OPS-400·402).
   assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
-  assert.equal(ledger.vendors.find(vendor => vendor.id === 'cubrid').status, 'preview');
+  assert.equal(ledger.vendors.find(vendor => vendor.id === 'cubrid').status, 'certified');
   const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
