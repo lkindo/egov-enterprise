@@ -683,8 +683,8 @@ final class VendorTestSql {
             // SQL 로는 막는 세션·문장을 볼 수 없다(SHOW TRANSACTION TABLES 는 DBA 전용이고 대기 여부만 낸다). tranlist 가 둘을 낸다.
             case CUBRID -> {
                 Pattern names = likePattern(sessionPattern);
-                Map<Integer, CubridTransaction> transactions = cubridTransactions();
-                for (CubridTransaction transaction : transactions.values()) {
+                Map<Integer, CubridTranlist.Transaction> transactions = cubridTransactions();
+                for (CubridTranlist.Transaction transaction : transactions.values()) {
                     String name = MARIADB_SESSION_NAMES.getOrDefault((long) transaction.process(), UNNAMED_SESSION);
                     if (transaction.holders().isEmpty() || !names.matcher(name).matches()) {
                         continue;
@@ -698,24 +698,11 @@ final class VendorTestSql {
         return waits;
     }
 
-    /** tranlist 의 한 트랜잭션. {@code holders} 는 이 트랜잭션이 기다리는 트랜잭션 번호이고, {@code statement} 는 소문자 문장이다. */
-    record CubridTransaction(int index, int process, List<Integer> holders, String statement) {
-    }
-
-    /**
-     * {@code Tran index  User name  Host name  Process id  Program name  Query time  Tran time  Wait for lock holder  SQL_ID  SQL Text} 의 행.
-     * 기다리지 않으면 대기 칸이 -1 이다. 문장 전체는 아래 SQL_ID 절에 따로 나온다(2026-11-06 실측).
-     */
-    private static final Pattern CUBRID_TRANSACTION_ROW = Pattern.compile(
-            "^\\s*(\\d+)\\(\\w+\\)\\s+\\S+\\s+\\S+\\s+(\\d+)\\s+\\S+\\s+-?[\\d.]+\\s+-?[\\d.]+\\s+(-1|\\d+(?:\\s*[,|]\\s*\\d+)*)\\s+(\\*\\*\\* empty \\*\\*\\*|\\S+)(.*)$");
-    private static final Pattern CUBRID_TRANSACTION_START = Pattern.compile("^\\s*\\d+\\(");
-    private static final Pattern CUBRID_SQL_INDEX = Pattern.compile("^Tran index\\s*:\\s*([\\d,\\s]+)$");
-
     /**
      * 실행 도구가 띄운 컨테이너의 {@code cubrid tranlist -f} 를 읽는다. 시험 JVM 에서 docker 로 부른다 — 한 번에 약 0.2초다. 모르는 모양의 행은
      * 건너뛰지 않고 멈춘다. 건너뛰면 대기를 보지 못한 채 "기다리지 않는다" 로 판정된다.
      */
-    static Map<Integer, CubridTransaction> cubridTransactions() {
+    static Map<Integer, CubridTranlist.Transaction> cubridTransactions() {
         String container = System.getenv("VENDOR_TEST_CONTAINER");
         if (container == null || container.isBlank()) {
             throw new IllegalStateException("CUBRID 잠금 관측은 실행 도구가 준 VENDOR_TEST_CONTAINER 가 필요하다");
@@ -747,78 +734,7 @@ final class VendorTestSql {
                 capture.toFile().delete();
             }
         }
-        return parseCubridTransactions(output);
-    }
-
-    /** 머리글. 이 줄과 표의 위아래 선이 없으면 출력이 잘렸거나 모양이 바뀐 것이다. */
-    private static final Pattern CUBRID_TRANSACTION_HEADER = Pattern.compile("^\\s*Tran index\\s+User name\\s.*\\bWait for lock holder\\b.*$");
-
-    static Map<Integer, CubridTransaction> parseCubridTransactions(String output) {
-        Map<Integer, int[]> rows = new LinkedHashMap<>();
-        Map<Integer, List<Integer>> holders = new LinkedHashMap<>();
-        Map<Integer, String> rowText = new LinkedHashMap<>();
-        Map<Integer, StringBuilder> fullText = new LinkedHashMap<>();
-        List<StringBuilder> current = new ArrayList<>();
-        boolean rowsDone = false;
-        boolean header = false;
-        int dashes = 0;
-        for (String line : output.split("\\R")) {
-            if (dashes == 0 && CUBRID_TRANSACTION_HEADER.matcher(line).matches()) {
-                header = true;
-                continue;
-            }
-            if (line.startsWith("----")) {
-                dashes++;
-                rowsDone = dashes >= 2;
-                current.clear();
-                continue;
-            }
-            if (!rowsDone && dashes == 1) {
-                if (!CUBRID_TRANSACTION_START.matcher(line).find()) {
-                    continue;
-                }
-                Matcher row = CUBRID_TRANSACTION_ROW.matcher(line);
-                if (!row.matches()) {
-                    throw new IllegalStateException("tranlist 행을 읽지 못했다: " + line);
-                }
-                int index = Integer.parseInt(row.group(1));
-                rows.put(index, new int[] {Integer.parseInt(row.group(2))});
-                holders.put(index, "-1".equals(row.group(3)) ? List.of()
-                        : Arrays.stream(row.group(3).split("[,|]")).map(String::trim).map(Integer::valueOf).toList());
-                rowText.put(index, row.group(5).strip());
-                continue;
-            }
-            if (rowsDone) {
-                if (line.startsWith("SQL_ID:")) {
-                    current.clear();
-                    continue;
-                }
-                Matcher indexes = CUBRID_SQL_INDEX.matcher(line.strip());
-                if (current.isEmpty() && indexes.matches()) {
-                    for (String item : indexes.group(1).split(",")) {
-                        if (!item.isBlank()) {
-                            current.add(fullText.computeIfAbsent(Integer.valueOf(item.trim()), key -> new StringBuilder()));
-                        }
-                    }
-                    continue;
-                }
-                for (StringBuilder text : current) {
-                    text.append(text.isEmpty() ? "" : "\n").append(line);
-                }
-            }
-        }
-        // 빈 출력·잘린 출력을 "트랜잭션이 없다(아무도 기다리지 않는다)" 로 읽으면 대기를 보지 못한 채 통과한다.
-        if (!header || dashes < 2) {
-            throw new IllegalStateException("tranlist 표를 찾지 못했다(머리글 " + header + ", 선 " + dashes + "): "
-                    + output.strip().lines().limit(3).collect(Collectors.joining(" / ")));
-        }
-        Map<Integer, CubridTransaction> transactions = new LinkedHashMap<>();
-        rows.forEach((index, row) -> {
-            String text = fullText.containsKey(index) ? fullText.get(index).toString().strip() : rowText.get(index);
-            String statement = text == null || text.isEmpty() || "*** empty ***".equals(text) ? null : text.toLowerCase(Locale.ROOT);
-            transactions.put(index, new CubridTransaction(index, row[0], holders.get(index), statement));
-        });
-        return transactions;
+        return CubridTranlist.parse(output);
     }
 
     private static void collect(Map<Long, LockWait> bySession, String name, long session, String statement, long blocker) {

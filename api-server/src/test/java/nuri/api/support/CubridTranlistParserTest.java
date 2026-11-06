@@ -1,14 +1,18 @@
-package nuri.api.schema;
+package nuri.api.support;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 import java.util.List;
 import java.util.Map;
+import nuri.api.schema.CubridTranlist;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
-/** CUBRID 잠금 관측(VendorTestSql)이 읽는 {@code cubrid tranlist -f} 출력의 해석. 표본은 CUBRID 11.4.6 실측(2026-11-06)이다. */
+/**
+ * CUBRID 잠금 관측(VendorTestSql)이 읽는 {@code cubrid tranlist -f} 출력의 해석. 표본은 CUBRID 11.4.6 실측(2026-11-06)이다. schema 폴더의
+ * {@code *Test.java} 는 벤더 시나리오 시험으로 원장에 분류되므로 단위 시험은 여기에 둔다.
+ */
 class CubridTranlistParserTest {
 
     private static final String SAMPLE = """
@@ -28,7 +32,7 @@ class CubridTranlistParserTest {
     @Test
     @DisplayName("기다리는 트랜잭션의 프로세스 번호·막는 트랜잭션·문장 전체를 읽는다")
     void readsWaitsWithTheirFullStatement() {
-        Map<Integer, VendorTestSql.CubridTransaction> transactions = VendorTestSql.parseCubridTransactions(SAMPLE);
+        Map<Integer, CubridTranlist.Transaction> transactions = CubridTranlist.parse(SAMPLE);
 
         assertThat(transactions.keySet()).containsExactly(1, 2);
         assertThat(transactions.get(1).holders()).isEmpty();
@@ -41,13 +45,13 @@ class CubridTranlistParserTest {
     @Test
     @DisplayName("빈 출력이나 표가 잘린 출력은 '아무도 기다리지 않는다' 로 읽지 않고 멈춘다")
     void refusesOutputWithoutTheTable() {
-        assertThatThrownBy(() -> VendorTestSql.parseCubridTransactions("")).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> CubridTranlist.parse("")).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("tranlist 표를 찾지 못했다");
         String truncated = SAMPLE.substring(0, SAMPLE.indexOf("   1(ACTIVE)"));
-        assertThatThrownBy(() -> VendorTestSql.parseCubridTransactions(truncated)).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> CubridTranlist.parse(truncated)).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("tranlist 표를 찾지 못했다");
         String headless = SAMPLE.substring(SAMPLE.indexOf("-----"));
-        assertThatThrownBy(() -> VendorTestSql.parseCubridTransactions(headless)).isInstanceOf(IllegalStateException.class)
+        assertThatThrownBy(() -> CubridTranlist.parse(headless)).isInstanceOf(IllegalStateException.class)
                 .hasMessageContaining("tranlist 표를 찾지 못했다");
     }
 }
