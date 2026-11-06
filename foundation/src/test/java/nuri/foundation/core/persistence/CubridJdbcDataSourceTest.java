@@ -7,7 +7,9 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import java.math.BigDecimal;
+import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
@@ -88,6 +90,54 @@ class CubridJdbcDataSourceTest {
         verify(statement).setObject(1, java.sql.Time.valueOf("12:34:56"));
         assertThatThrownBy(() -> prepared.setObject(2, java.time.LocalTime.parse("12:34:56.789"))).isInstanceOf(SQLException.class)
                 .hasMessageContaining("초까지 담는다");
+    }
+
+    @Test
+    @DisplayName("저장 프로시저도 이름 바인딩을 바꾸고 출력 매개변수의 타입 지정 조회를 같은 뜻의 값으로 읽는다")
+    void convertsCallableStatements() throws Exception {
+        CallableStatement call = mock(CallableStatement.class);
+        when(target.getConnection()).thenReturn(connection);
+        when(connection.prepareCall("c")).thenReturn(call);
+        when(call.getObject(1)).thenReturn(Timestamp.valueOf("2026-11-07 01:02:03.456"));
+        when(call.getObject("cnt")).thenReturn(new BigDecimal("1.5"));
+        CallableStatement wrapped = new CubridJdbcDataSource(target).getConnection().prepareCall("c");
+
+        wrapped.setObject("bgnde", LocalDate.of(2026, 11, 7));
+        verify(call).setObject("bgnde", java.sql.Date.valueOf("2026-11-07"));
+        assertThat(wrapped.getObject(1, LocalDateTime.class)).isEqualTo(LocalDateTime.of(2026, 11, 7, 1, 2, 3, 456_000_000));
+        assertThatThrownBy(() -> wrapped.getObject("cnt", Long.class)).isInstanceOf(SQLException.class).hasMessageContaining("정확히 담기지 않는다");
+    }
+
+    @Test
+    @DisplayName("갱신 가능한 결과 집합의 값 쓰기도 바인딩과 같은 값으로 바꾼다")
+    void convertsResultSetUpdates() throws Exception {
+        ResultSet read = open().prepareStatement("q").executeQuery();
+
+        read.updateObject(1, LocalDateTime.of(2026, 1, 2, 3, 4, 5, 123_456_789));
+        read.updateObject("atch_file_id", UUID.fromString("6f1c3f0e-1b2a-4c3d-9e8f-0a1b2c3d4e5f"), java.sql.Types.CHAR);
+        read.updateTimestamp(3, Timestamp.valueOf("2026-01-02 03:04:05.123456"));
+
+        verify(rows).updateObject(1, Timestamp.valueOf("2026-01-02 03:04:05.123"));
+        verify(rows).updateObject("atch_file_id", "6f1c3f0e-1b2a-4c3d-9e8f-0a1b2c3d4e5f", java.sql.Types.CHAR);
+        verify(rows).updateTimestamp(3, Timestamp.valueOf("2026-01-02 03:04:05.123"));
+    }
+
+    @Test
+    @DisplayName("메타데이터는 감싼 연결을 돌려주고 그 결과 집합도 타입 지정 조회를 옮긴다 — 원래 연결로 새는 길이 없다")
+    void wrapsMetadata() throws Exception {
+        DatabaseMetaData metadata = mock(DatabaseMetaData.class);
+        ResultSet tables = mock(ResultSet.class);
+        when(target.getConnection()).thenReturn(connection);
+        when(connection.getMetaData()).thenReturn(metadata);
+        when(metadata.getTables(null, null, "%", null)).thenReturn(tables);
+        when(tables.getObject("ordinal")).thenReturn(7);
+        Connection wrapped = new CubridJdbcDataSource(target).getConnection();
+
+        DatabaseMetaData read = wrapped.getMetaData();
+        assertThat(read.getConnection()).isSameAs(wrapped);
+        ResultSet rowsOfTables = read.getTables(null, null, "%", null);
+        assertThat(rowsOfTables.getObject("ordinal", Long.class)).isEqualTo(7L);
+        assertThat(rowsOfTables.getStatement()).isNull();
     }
 
     @Test

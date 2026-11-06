@@ -166,6 +166,25 @@ export function assertIsolatedRunnerSupportsProject(projectRoot, { representativ
   return vendor;
 }
 
+const MIGRATION_DIRECTORIES = Object.freeze(['api-server/src/main/resources/db/migration', 'src/main/resources/db/migration']);
+
+/**
+ * 권한 전환 리허설(IsolatedAuthorizationRehearsalConfig)은 V2 체인의 Contract 를 target 2.99 로 일회용 DB 에서 재연한다. 재사용 생성물은 V2 체인 대신
+ * 전환을 마친 기준선 번들(V1_0)로 시작해 그 버전이 없다 — 리허설을 켜면 'No migration with a target version 2.99' 로 기동이 멈췄다(GAP-COMPOSE-003).
+ * 그런 프로젝트는 리허설 없이 띄운다. 권한 스키마 경계 검사(AuthorizationSchemaBarrierConfig)는 일반 기동에서 그대로 돈다. 둘 중 하나로 정해지지
+ * 않으면 멈춘다 — V2 체인에서 V2_99 가 사라졌을 때 리허설이 조용히 꺼지지 않게 한다.
+ */
+export function rehearsesAuthorizationContract(projectRoot) {
+  const directory = MIGRATION_DIRECTORIES.map(relative => path.join(projectRoot, relative)).find(candidate => existsSync(candidate));
+  if (!directory) throw fail('Flyway 마이그레이션 폴더를 찾지 못했다.');
+  const names = readdirSync(directory);
+  const contract = names.some(name => /^V2_99__.+\.sql$/.test(name));
+  const bundle = names.some(name => /^V1_0__.+\.sql$/.test(name));
+  if (contract && !bundle) return true;
+  if (bundle && !contract) return false;
+  throw fail(`권한 전환 리허설을 켤지 정하지 못했다(V2_99 ${contract ? '있음' : '없음'}, V1_0 기준선 ${bundle ? '있음' : '없음'}).`);
+}
+
 export function resolveVendorEngine(vendor, requested, engines) {
   const id = requested ?? vendor;
   const engine = engines[id];
@@ -492,6 +511,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
         const databasePort = await database.waitReady(assertActive);
         databaseEnvironment = vendorDatabaseEnvironment(vendorRuntime.engine, databasePort, database.password, vendorRuntime.admin.password);
       } else {
+        // 컨테이너를 만들기 전에 정한다 — 정하지 못하면 아무것도 띄우지 않고 멈춘다.
+        const rehearsal = rehearsesAuthorizationContract(root);
         const password = randomBytes(24).toString('hex');
         // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
         manifest.databaseId = execFileSync('docker', ['run', '-d', '--rm', '--name', databaseName,
@@ -509,7 +530,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
           catch { if (Date.now() > deadline) throw fail('database readiness deadline exceeded.'); await pause(500); }
         }
         databaseEnvironment = { DB_URL: `jdbc:postgresql://127.0.0.1:${databasePort}/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,
-          NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' };
+          ...(rehearsal ? { NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' } : {}) };
       }
       apiPort = await freePort();
       jwtSecret = randomBytes(48).toString('hex');

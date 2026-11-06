@@ -91,8 +91,9 @@ export function applyVendor(handle, input, vendorId) {
     if (seeded.errors.length) throw stageFailure('시드 적용', seeded.errors);
     const synced = runStatements(handle, sync);
     if (synced.errors.length) throw stageFailure('다음 값 맞춤', synced.errors);
-    assertVendorApplied(handle, input, vendorId);
-    return { statements: emission.statements.length, seedRows: seed.length, degradations: emission.degradations };
+    // 시드 행 수는 DB 에서 센 값이다. 시드 문장 수는 행 수가 아니다 — CUBRID 는 여러 행을 한 문장에 묶는다.
+    const applied = assertVendorApplied(handle, input, vendorId);
+    return { statements: emission.statements.length, seedRows: applied.seedRows, degradations: emission.degradations };
   }
 }
 

@@ -293,18 +293,21 @@ function literal(column, value) {
  * 시드는 같은 표의 연속 INSERT 를 여러 행 INSERT 하나로 묶는다. 드라이버는 문장마다 브로커를 세 번 오가고(prepare·execute·close) 서버도 문장마다
  * 해석한다 — 한 행씩 넣으면 시드 18,000여 행이 앱 첫 기동의 Flyway 를 2~5분 붙잡았다(2026-11-07 대표 E2E 의 브로커 SQL 로그: 행당 약 10ms,
  * meta_standard_terms 13,246행에 서버만 77초). 넣는 행과 순서는 같고 행 단위 트리거도 행마다 돈다. 자기 참조 FK 가 있는 표는 부모를 먼저 넣는
- * 순서가 뜻을 가지므로 묶지 않는다. 문장이 너무 커지지 않게 행 수와 글자 수로 끊는다.
+ * 순서가 뜻을 가지므로 묶지 않는다. 문장은 100행, 그리고 문장 전체(머리·구분자 포함)의 UTF-8 128 KiB 를 넘기기 전에 끊는다 — 한 행이 그보다 크면
+ * 그 행만 한 문장이다(묶지 않을 때와 같다).
  */
 export const CUBRID_SEED_ROWS_PER_INSERT = 100;
-const CUBRID_SEED_CHARS_PER_INSERT = 128 * 1024;
+export const CUBRID_SEED_BYTES_PER_INSERT = 128 * 1024;
 const SINGLE_ROW_INSERT = /^(INSERT INTO (\S+) \([^)]*\) VALUES )(\(.*\))$/s;
+const SEPARATOR = ', ';
+const utf8 = text => Buffer.byteLength(text, 'utf8');
 
-export function batchSeedInserts(model, statements, rowsPerInsert = CUBRID_SEED_ROWS_PER_INSERT, charsPerInsert = CUBRID_SEED_CHARS_PER_INSERT) {
+export function batchSeedInserts(model, statements, rowsPerInsert = CUBRID_SEED_ROWS_PER_INSERT, bytesPerInsert = CUBRID_SEED_BYTES_PER_INSERT) {
   const selfReferencing = new Set(model.tables.filter(table => table.foreignKeys.some(key => key.parentTable === table.name)).map(table => table.name));
   const batched = [];
   let head = null, values = [], size = 0;
   const flush = () => {
-    if (head) batched.push(`${head}${values.join(', ')}`);
+    if (head) batched.push(`${head}${values.join(SEPARATOR)}`);
     head = null; values = []; size = 0;
   };
   for (const statement of statements) {
@@ -315,10 +318,16 @@ export function batchSeedInserts(model, statements, rowsPerInsert = CUBRID_SEED_
       continue;
     }
     const [, prefix, , row] = match;
-    if (head !== prefix || values.length >= rowsPerInsert || size + row.length > charsPerInsert) flush();
-    head = prefix;
+    const rowBytes = utf8(row);
+    if (head !== prefix || values.length >= rowsPerInsert || size + utf8(SEPARATOR) + rowBytes > bytesPerInsert) flush();
+    if (head === null) {
+      head = prefix;
+      size = utf8(prefix);
+    } else {
+      size += utf8(SEPARATOR);
+    }
     values.push(row);
-    size += row.length;
+    size += rowBytes;
   }
   flush();
   return batched;
