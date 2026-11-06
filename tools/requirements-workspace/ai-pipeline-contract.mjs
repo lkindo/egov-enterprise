@@ -5,7 +5,7 @@ const array = (items, maxItems = 100) => ({ type: 'array', items, minItems: 0, m
 const object = properties => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
 const sources = { ...array(string(100), 100), minItems: 1 };
 const issueArray = ANALYSIS_SCHEMA.properties.issues;
-const DOCUMENT_SUMMARY_SCHEMA = object({ sourceId: string(100), title: string(300), sourceType: string(100), documentTypes: array(string(100), 6), summary: string(4000), sections: array(string(300), 4000), warningCodes: array(string(100), 100), unreadable: array(object({ inputId: string(100), reason: string(1000) }), 200), uncertain: array(object({ inputId: string(100), note: string(1000) }), 4000), clauseCount: { type: 'integer', minimum: 1, maximum: 3000 }, anchorScope: string(300), anchors: array(object({ sourceId: string(100), clauseId: string(100), quote: string(180) }), 32) });
+const DOCUMENT_SUMMARY_SCHEMA = object({ sourceId: string(100), title: string(300), sourceType: string(100), documentTypes: array(string(100), 6), summary: string(4000), sections: array(string(300), 4000), warningCodes: array(string(100), 100), unreadable: array(object({ inputId: string(100), reason: string(1000) }), 200), uncertain: array(object({ inputId: string(100), note: string(1000) }), 4000), clauseCount: { type: 'integer', minimum: 1, maximum: 3000 }, anchorScope: string(300), anchors: array(object({ sourceId: string(100), clauseId: string(100), quote: string(360) }), 32) });
 export function validateDocumentSummaries(documents, snapshot) {
   validateAiValue(documents, array(DOCUMENT_SUMMARY_SCHEMA, 100), { maxBytes: 8 * 1024 ** 2 });
   const sourcesById = new Map(snapshot.backlog.sources.map(source => [source.id, source]));

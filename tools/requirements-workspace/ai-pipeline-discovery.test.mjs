@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import { prepareBusinessModel, reviewRequirements } from './ai-pipeline.mjs';
 import { source, context, envelope, analysis } from './test-fixtures/ai.mjs';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
+import { validateDocumentSummaries } from './ai-pipeline-contract.mjs';
 const snapshot = () => ({ backlog: { ...createEmptyBacklogPack(context), project: { code: 'SYNTHETIC', name: '합성 검토', institution: '합성 기관', baselineProfile: '' }, sources: [structuredClone(source)] }, metadata: { context } });
 const reading = () => ({ summary: '담당자의 접수 조회 책임과 열람 범위에 관한 문서다.', blocks: [{ heading: '접수 조회', certainty: 'clear', inputId: 'C-1', note: '담당자의 업무' }], unreadable: [] });
 const response = request => envelope({ summary: '접수 조회 업무를 통합한다.', actors: [], processes: [], terms: [], issues: [], sourceCoverage: request.data.documents.map(doc => ({ sourceId: doc.sourceId, role: 'business', rationale: '조회 업무의 근거' })) });
@@ -59,4 +60,24 @@ test('manual sources with more than 200 short clauses are packed before any read
     return envelope({ documentTypes: ['interview'], summary: '접수 조회 범위를 반복 설명한 합성 자료다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '접수 조회', kind: 'paragraph', text: null, certainty: 'clear', note: '네이티브 원문 보존' })), unreadable: [] });
   } });
   assert.equal(readingCalls, 1); assert.equal(result.documents[0].clauseCount, 201);
+});
+
+test('quality review sees prior decisions, reuse evidence and computed validation questions without freezing resolved system questions', async () => {
+  const state = snapshot(); state.metadata.ai = { decisions: [{ issueId: 'POLICY', question: '구현 방향', answer: '신규 추가 개발로 진행한다.' }] };
+  state.metadata.context = { ...context, modules: [{ id: 'receipt', label: '접수' }] };
+  const proposal = analysis({ data: { sources: state.backlog.sources, decisions: [] } }, { question: false }); proposal.requirements[0].solutionDisposition = 'undecided';
+  const result = await reviewRequirements(proposal, null, state, { run: async ({ request }) => {
+    assert.deepEqual(request.data.decisions, state.metadata.ai.decisions);
+    assert.equal(request.data.modules[0].id, 'receipt'); assert.ok(request.data.repositoryMatches.results.length);
+    assert.ok(request.data.validationIssues.some(issue => issue.severity === 'blocking'));
+    return envelope({ issues: [], revisions: [{ ...proposal.requirements[0], solutionDisposition: 'gap-dev' }] });
+  } });
+  assert.equal(result.requirements[0].solutionDisposition, 'gap-dev');
+  assert.equal(result.issues.some(issue => issue.id.startsWith('SYS-')), false);
+});
+
+test('document anchors preserve Unicode code points without rejecting valid supplementary characters', async () => {
+  const state = snapshot(); state.backlog.sources[0].clauses[0].text = '🌐'.repeat(160) + '담당자는본인소유접수목록만조회할수있다.';
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request }) => response(request) });
+  assert.doesNotThrow(() => validateDocumentSummaries(result.documents, state));
 });

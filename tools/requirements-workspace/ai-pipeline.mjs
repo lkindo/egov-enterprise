@@ -3,7 +3,7 @@ import { readDocument, readingOmissions } from './document-reader.mjs';
 import { prepareDocumentInputs } from './document-inputs.mjs';
 import { BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
 import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog } from './ai-contract.mjs';
-import { generateWorkPackagePlan } from '../../scripts/export-deliverables-workspace.mjs';
+import { generateWorkPackagePlan, matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
 import { createHash } from 'node:crypto';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
@@ -30,6 +30,17 @@ function request(stage, data, snapshot) {
 function evidence(snapshot, requirements) {
   const refs = new Set(requirements.flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)));
   return snapshot.backlog.sources.flatMap(source => { const clauses = source.clauses.filter(clause => refs.has(`${source.id}/${clause.id}`)); return clauses.length ? [{ ...source, clauses }] : []; });
+}
+function reviewContext(snapshot, requirements, links = []) {
+  const context = snapshot.metadata.context;
+  const fields = { capability: 'capabilities', screen: 'screens', interface: 'interfaces', table: 'tables', gate: 'gates', 'migration-mapping': 'migrationMappings' };
+  const unique = new Map(links.map(link => [`${link.targetKind}/${link.targetId}`, link]));
+  const observedTargets = [...unique.values()].map(link => {
+    const normalize = id => ['table', 'migration-mapping'].includes(link.targetKind) ? String(id).toLowerCase() : id;
+    const entry = (context[fields[link.targetKind]] ?? []).find(target => normalize(link.targetKind === 'screen' ? target.route : target.id) === normalize(link.targetId)) ?? null;
+    return { targetKind: link.targetKind, targetId: link.targetId, entry };
+  });
+  return { project: snapshot.backlog.project, decisions: snapshot.metadata.ai?.decisions ?? [], modules: context.modules ?? [], repositoryMatches: matchRequirementsToContext({ businessRequirements: requirements }, context), observedTargets, contextRule: 'Repository matches are bounded candidates, not approval or exhaustive proof. observedTargets are exact observations in this supplied snapshot only; null does not prove global absence. Planned targets remain future work. Respect supplied human decisions; do not ask again about explicitly delegated implementation verification.' };
 }
 export function buildTaskPreview(pack, context, issues) {
   return issues.some(issue => issue.severity === 'blocking') ? '' : `> AI 검토 초안 — 사람의 최종 확인 전이며 기관 승인·개발 완료가 아닙니다.\n\n${generateWorkPackagePlan(pack, context).markdown}`;
@@ -92,7 +103,9 @@ export async function reviewRequirements(output, businessModel, snapshot, { run,
     const batch = entry.requirements;
     onStage('review-requirements', index, batches.length);
     const ids = new Set(batch.map(req => req.id));
-    const response = await run({ request: request('review-requirements', { businessModel, requirements: batch, sources: entry.sources, coverage: output.coverage.filter(item => entry.sources.some(source => source.id === item.sourceId && source.clauses.some(clause => clause.id === item.clauseId))), existingIssues: result.issues, reviewContract: 'Return issues and revisions. Revisions are complete replacements for current requirement IDs only, never new requirements or scope changes. A batch with no requirements independently reviews uncited source clauses and their excluded/deferred coverage: report missing business requirements or unjustified exclusions as source-cited issues; do not silently accept the earlier coverage rationale. Fix wording/structure only when fully supported; policy ambiguity needs a blocking issue. Retain all verified citations. Do not return coverage or a self-awarded pass.' }, snapshot), schema: REQUIREMENT_REVIEW_SCHEMA, cwd, signal });
+    const declaredIssues = new Set(result.issues.map(issue => issue.id));
+    const validationIssues = validateAnalysisProposal(result, snapshot).issues.filter(issue => !declaredIssues.has(issue.id));
+    const response = await run({ request: request('review-requirements', { ...reviewContext(snapshot, batch), businessModel, requirements: batch, sources: entry.sources, coverage: output.coverage.filter(item => entry.sources.some(source => source.id === item.sourceId && source.clauses.some(clause => clause.id === item.clauseId))), existingIssues: result.issues, validationIssues, reviewContract: 'Return issues and revisions. Revisions are complete replacements for current requirement IDs only, never new requirements or scope changes. Use supplied decisions and repository evidence to check solutionDisposition; undecided blocks executable planning. For non-functional/data/constraint requirements, nfrCriteria needs a source-supported metric, threshold and verificationMethod; qualitative allow/deny criteria are valid and do not require invented numeric SLAs. validationIssues are recomputed application checks: repair their causes only when supported, never copy a resolved system question into issues. A batch with no requirements independently reviews uncited source clauses and their excluded/deferred coverage: report missing business requirements or unjustified exclusions as source-cited issues; do not silently accept the earlier coverage rationale. Fix wording/structure only when fully supported; policy ambiguity needs a blocking issue. Retain all verified citations. Do not return coverage or a self-awarded pass.' }, snapshot), schema: REQUIREMENT_REVIEW_SCHEMA, cwd, signal });
     if (response.output.revisions?.some(req => !ids.has(req.id))) fail('AI_OUTPUT_INVALID');
     result = validateRequirementReview(response.output, result, snapshot);
     validateAnalysisProposal(result, snapshot);
@@ -166,7 +179,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     onStage('review-plan', index, reviewBatches.length);
     const workIds = new Set(children.map(item => item.id)), reqIds = new Set(children.flatMap(item => item.requirementIds));
     const requirements = output.requirements.filter(req => reqIds.has(req.id));
-    const response = await run({ request: request('review-plan', { businessModel, requirements, sources: evidence(snapshot, requirements), workItems: plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)), acceptanceCriteria: plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)), traceLinks: plan.traceLinks.filter(link => reqIds.has(link.requirementId)), existingIssues: plan.issues, reviewContract: 'Return issues, workItemUpdates, acceptanceUpdates and traceUpdates. These are updates of known current-batch IDs only, never new entries or implicit removals. Preserve the complete original requirement set of shared epics and ACs; never reduce it to the current review subset. Preserve work types, parent relationships and required original evidence. Only repair concrete supported defects; missing policy stays a blocking question. Do not manufacture completed tests or human approval.' }, snapshot), schema: PLAN_REVIEW_SCHEMA, cwd, signal });
+    const response = await run({ request: request('review-plan', { ...reviewContext(snapshot, requirements, plan.traceLinks.filter(link => reqIds.has(link.requirementId))), businessModel, requirements, sources: evidence(snapshot, requirements), workItems: plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)), acceptanceCriteria: plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)), traceLinks: plan.traceLinks.filter(link => reqIds.has(link.requirementId)), existingIssues: plan.issues, reviewContract: 'Return issues, workItemUpdates, acceptanceUpdates and traceUpdates. These are updates of known current-batch IDs only, never new entries or implicit removals. Preserve the complete original requirement set of shared epics and ACs; never reduce it to the current review subset. Preserve work types, parent relationships and required original evidence. Only repair concrete supported defects; missing policy stays a blocking question. Do not manufacture completed tests or human approval.' }, snapshot), schema: PLAN_REVIEW_SCHEMA, cwd, signal });
     const allowed = { workItems: new Set(plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)).map(item => item.id)), acceptanceCriteria: new Set(plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)).map(ac => ac.id)), traceLinks: new Set(plan.traceLinks.filter(link => workIds.has(link.workItemId)).map(link => link.id)) };
     plan = validatePlanReview(response.output, plan, draft, allowed); validateDecompositionProposal(plan, draft);
     onStage('review-plan', index + 1, reviewBatches.length);
