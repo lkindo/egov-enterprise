@@ -19,6 +19,97 @@ async function audit(page, label) {
   }
 }
 
+test('multi-batch analysis shows its cost and progress and cancellation stops the following work', async () => {
+  const workspace = mkdtempSync(join(tmpdir(), 'synthetic-batch-browser-'));
+  let app, browser, release, calls = 0;
+  try {
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => {
+      calls++;
+      if (calls === 2) return new Promise(resolve => { release = () => resolve(envelope({})); });
+      const src = request.data.sources[0], part = src.clauses[0];
+      return envelope({ requirements: [], issues: [{ id: 'ISSUE-BATCH', kind: 'decision', severity: 'blocking', question: '합성 자료의 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: src.id, clauseId: part.id, quote: part.text }] }], coverage: request.data.sources.flatMap(src => src.clauses.map(part => ({ sourceId: src.id, clauseId: part.id, disposition: 'excluded', rationale: '합성 배경 설명', requirementIds: [] }))) });
+    } });
+    const act = (action, payload) => app.engine.action(app.store.read().revision, action, payload);
+    await act('project.save', { code: 'SYNTHETIC', name: '합성 분할 분석', institution: '합성 기관', baselineProfile: '' });
+    await act('source.save', { ...structuredClone(source), clauses: Array.from({ length: 33 }, (_, index) => ({ ...structuredClone(source.clauses[0]), id: `C-${index}` })) });
+    browser = await chromium.launch({ headless: true });
+    const browserContext = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+    const page = await browserContext.newPage();
+    await page.goto(app.launchUrl);
+    await page.getByRole('button', { name: 'AI 요구사항 생성', exact: true }).click();
+    await page.getByText('현재 자료는 2묶음으로 나누어 분석합니다.', { exact: false }).waitFor();
+    await audit(page, 'ai-batch-consent');
+    await page.locator('[name="ai-consent"]').check();
+    await page.getByRole('button', { name: '동의하고 AI 분석 시작', exact: true }).click();
+    await page.getByText('자료 1/2묶음 분석 완료', { exact: false }).waitFor();
+    await audit(page, 'ai-batch-progress');
+    await page.getByRole('button', { name: 'AI 실행 취소', exact: true }).click();
+    release(); release = undefined;
+    await app.engine.waitForAi();
+    assert.equal((await app.engine.state()).ai.current.status, 'cancelled');
+    assert.equal(calls, 2);
+    await page.getByRole('heading', { name: 'AI 실행을 취소했습니다', exact: true }).waitFor();
+    assert.equal(await page.getByText('전체 검증 후 결과를 제안합니다.', { exact: false }).count(), 0);
+  } catch (error) {
+    const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]'));
+    throw safe;
+  } finally { release?.(); await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
+});
+
+test('batch audit displays prior reasons and update IDs as inert, wrapping text', async () => {
+  const workspace = mkdtempSync(join(tmpdir(), 'synthetic-audit-browser-'));
+  let app, browser;
+  try {
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => envelope(analysis(request, { question: false })) });
+    const act = (action, payload) => app.engine.action(app.store.read().revision, action, payload);
+    await act('project.save', { code: 'SYNTHETIC', name: '합성 갱신 이력', institution: '합성 기관', baselineProfile: '' });
+    await act('source.save', source);
+    const initial = await app.engine.state();
+    await act('ai.start', { phase: 'analysis', inputDigest: initial.ai.inputDigests.analysis, consent: true, model: initial.ai.model, includeVisuals: false }); await app.engine.waitForAi();
+    browser = await chromium.launch({ headless: true });
+    const browserContext = await browser.newContext({ viewport: { width: 390, height: 844 } });
+    const page = await browserContext.newPage();
+    const marker = '<script>window.auditInjected=true</script>';
+    await page.route('**/api/state', async route => { const response = await route.fetch(), state = await response.json(); state.ai.proposal.batchAudit = [{ batch: 2, requirementIds: ['REQ-1'], coverageChanges: [{ sourceId: source.id, clauseId: source.clauses[0].id, beforeDisposition: 'deferred', beforeRationale: marker, afterDisposition: 'merged', afterRationale: '후속 인용으로 연결' }] }]; await route.fulfill({ response, json: state }); });
+    await page.goto(app.launchUrl);
+    await page.getByText('묶음 간 갱신 기록 1건', { exact: true }).click();
+    await page.getByText(`${source.id}/${source.clauses[0].id} · 원문 연결 변경`, { exact: true }).click();
+    await page.getByText(`변경 전: 보류 · ${marker}`, { exact: true }).waitFor();
+    assert.equal(await page.evaluate(() => window.auditInjected), undefined);
+    assert.equal(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), true);
+    await audit(page, 'ai-batch-audit-mobile');
+  } catch (error) { throw new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); }
+  finally { await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
+});
+
+test('duplicate upload UI reuses the existing source and identifies the reused registration', async () => {
+  const workspace = mkdtempSync(join(tmpdir(), 'synthetic-dedup-browser-'));
+  let app, browser;
+  try {
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context });
+    await app.engine.action(app.store.read().revision, 'project.save', { code: 'SYNTHETIC', name: '합성 중복 등록', institution: '합성 기관', baselineProfile: '' });
+    browser = await chromium.launch({ headless: true });
+    const browserContext = await browser.newContext();
+    const page = await browserContext.newPage();
+    await page.goto(app.launchUrl);
+    await page.getByRole('button', { name: '산출물 파일 등록', exact: true }).click();
+    const buffer = Buffer.from('담당자는 본인 접수 목록을 조회한다.');
+    await page.locator('#artifact-files').setInputFiles([{ name: 'meeting.txt', mimeType: 'text/plain', buffer }, { name: 'meeting-copy.txt', mimeType: 'text/plain', buffer }]);
+    await page.locator('[name="redacted"]').check();
+    await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
+    await page.getByRole('dialog').waitFor({ state: 'hidden' });
+    await page.getByText('이미 등록된 자료 재사용', { exact: false }).waitFor();
+    const state = await app.engine.state();
+    assert.equal(state.backlog.sources.length, 1);
+    assert.equal(state.imports.jobs.length, 2);
+    assert.ok(state.imports.jobs[1].duplicateOf);
+    await audit(page, 'ai-duplicate-reused');
+  } catch (error) {
+    const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]'));
+    throw safe;
+  } finally { await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
+});
+
 test('a changed human scope is visible and needs separate acknowledgement in the actual confirmation UI', async () => {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-scope-browser-'));
   let app, browser;

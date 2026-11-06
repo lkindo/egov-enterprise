@@ -14,7 +14,7 @@ export function validateImportMetadata(jobs) {
   if (!Array.isArray(jobs)) fail('FILE_METADATA_INVALID');
   const ids = new Set();
   for (const job of jobs) {
-    exact(job, ['requestId', 'requestDigest', 'filename', 'status', 'startedAt', 'completedAt', 'sourceId', 'sha256', 'originalRef', 'method', 'format', 'warningCodes', 'needsReview', 'errorCode']);
+    exact(job, ['requestId', 'requestDigest', 'filename', 'status', 'startedAt', 'completedAt', 'sourceId', 'sha256', 'originalRef', 'method', 'format', 'warningCodes', 'needsReview', 'errorCode', 'duplicateOf']);
     if (!uuid(job.requestId) || ids.has(job.requestId) || !['extracting', 'ready', 'failed', 'cancelled', 'interrupted', 'stale'].includes(job.status) || typeof job.filename !== 'string' || !job.filename.trim() || job.filename.length > 200 || /[\u0000-\u001f/\\:]/.test(job.filename) || !Number.isFinite(Date.parse(job.startedAt))) fail('FILE_METADATA_INVALID');
     ids.add(job.requestId);
     if (!/^[a-f0-9]{64}$/.test(job.requestDigest ?? '') || job.sha256 !== undefined && !/^[a-f0-9]{64}$/.test(job.sha256)) fail('FILE_METADATA_INVALID');
@@ -23,6 +23,7 @@ export function validateImportMetadata(jobs) {
     if (job.completedAt !== undefined && !Number.isFinite(Date.parse(job.completedAt))) fail('FILE_METADATA_INVALID');
     if (job.errorCode !== undefined && !/^[A-Z][A-Z0-9_]{2,80}$/.test(job.errorCode)) fail('FILE_METADATA_INVALID');
     if (job.warningCodes !== undefined && (!Array.isArray(job.warningCodes) || job.warningCodes.some(code => !/^[A-Z][A-Z0-9_]{1,80}$/.test(code)))) fail('FILE_METADATA_INVALID');
+    if (job.duplicateOf !== undefined && (!uuid(job.duplicateOf) || job.duplicateOf === job.requestId || job.status !== 'ready' || !jobs.some(parent => parent.requestId === job.duplicateOf && parent.status === 'ready' && parent.sourceId === job.sourceId && parent.sha256 === job.sha256))) fail('FILE_METADATA_INVALID');
   }
 }
 export function createArtifactImports({ store, commit, extractor = extractArtifact, now = () => new Date().toISOString() }) {
@@ -74,6 +75,14 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
       return;
     }
     if (active) fail('FILE_BUSY');
+    if (scanBacklogForPiiAndSecrets({ project: { filename: payload.filename } }).length) fail('SENSITIVE_INPUT');
+    const duplicate = snapshot.metadata.imports?.find(job => job.status === 'ready' && job.sha256 === sha(bytes) && snapshot.backlog.sources.some(source => source.id === job.sourceId && source.fileSha256 === job.sha256 && source.classification === payload.classification && source.sourceType === payload.sourceType));
+    if (duplicate) {
+      commit(revision, next => {
+        next.metadata.imports.push({ requestId: payload.requestId, requestDigest, filename: payload.filename, status: 'ready', startedAt: now(), completedAt: now(), sourceId: duplicate.sourceId, sha256: duplicate.sha256, originalRef: duplicate.originalRef, method: duplicate.method, format: duplicate.format, warningCodes: duplicate.warningCodes, needsReview: duplicate.needsReview, duplicateOf: duplicate.requestId });
+      });
+      return;
+    }
     const project = JSON.stringify(snapshot.backlog.project);
     const job = { requestId: payload.requestId, requestDigest, sha256: sha(bytes), filename: payload.filename, status: 'extracting', startedAt: now() };
     commit(revision, next => { next.metadata.imports ??= []; next.metadata.imports.push(job); });

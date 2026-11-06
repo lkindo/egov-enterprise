@@ -1,7 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
-import { validateAnalysisProposal, validateDecompositionProposal, aiInputDigest, buildAiRequest, projectAnalysisBacklog } from './ai-contract.mjs';
+import { validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, seedAnalysis, aiInputDigest, buildAiRequest, buildCorrectionRequest, projectAnalysisBacklog } from './ai-contract.mjs';
+import { planAnalysisBatches } from './ai-analysis-batches.mjs';
 
 const context = { snapshotDigest: 'synthetic-context', commit: 'synthetic', capabilities: [], screens: [], interfaces: [], tables: [], gates: [], modules: [], presets: [], permissions: [] };
 const original = '담당자는 접수 목록을 조회한다. 열람 범위는 다음 회의에서 결정한다.';
@@ -19,6 +20,153 @@ function proposal() {
     coverage: [{ sourceId: 'SRC-1', clauseId: 'C-1', disposition: 'included', requirementIds: ['REQ-1'], rationale: '접수 조회 요구와 범위 결정 질문' }],
   };
 }
+
+test('decomposition sends confirmed quotation evidence instead of resending multi-megabyte source bodies', () => {
+  const state = snapshot(), evidence = proposal();
+  state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(evidence, state));
+  state.backlog.sources[0].clauses[0].text += ' 합성 배경 설명이다.'.repeat(20000);
+  state.backlog.sources[0].clauses.push(...Array.from({ length: 500 }, (_, index) => ({ id: `BOILERPLATE-${index}`, text: '합성 참고 설명이다. '.repeat(100), locator: '참고 문단', disposition: 'excluded', rationale: '업무 요구 아님', requirementIds: [] })));
+  assert.ok(Buffer.byteLength(JSON.stringify(state.backlog.sources)) > 1024 ** 2);
+  const request = buildAiRequest(state, 'decomposition', [], { analysisEvidence: evidence });
+  assert.ok(Buffer.byteLength(JSON.stringify(request)) < 100 * 1024);
+  assert.equal(request.data.sources[0].clauses.length, 1);
+  assert.equal(request.data.sources[0].clauses[0].text, citation().quote);
+  assert.equal(request.data.sources[0].clauses[0].citationEvidence, true);
+  assert.equal(state.backlog.sources[0].clauses.length, 501, 'original sources are unchanged');
+});
+
+test('later batches preserve earlier citations, requirements and blocking decisions and cannot cite unseen sources', () => {
+  const state = snapshot();
+  state.backlog.sources.push({ ...structuredClone(state.backlog.sources[0]), id: 'SRC-2', clauses: [{ ...structuredClone(state.backlog.sources[0].clauses[0]), text: '담당자는 후속 자료의 접수 업무를 조회하고 검토한다.' }] });
+  const previous = validateAnalysisBatchProposal(proposal(), state, [state.backlog.sources[0]]);
+  const value = proposal();
+  value.requirements[0].citations = [{ sourceId: 'SRC-2', clauseId: 'C-1', quote: state.backlog.sources[1].clauses[0].text }];
+  value.issues = [];
+  value.updatedRequirementIds = ['REQ-1'];
+  value.coverage[0].sourceId = 'SRC-2';
+  const result = validateAnalysisBatchProposal(value, state, [state.backlog.sources[1]], previous);
+  assert.equal(result.requirements[0].citations.length, 2);
+  assert.equal(result.issues[0].severity, 'blocking');
+  assert.equal(result.coverage.length, 2);
+  assert.equal(validateAnalysisProposal(result, state).coverage.length, 2);
+  const unseen = structuredClone(value); unseen.requirements[0].scope = 'deferred'; unseen.coverage[0] = { ...unseen.coverage[0], sourceId: 'SRC-1', disposition: 'excluded', requirementIds: [] };
+  delete unseen.updatedRequirementIds;
+  assert.throws(() => validateAnalysisBatchProposal(unseen, state, [state.backlog.sources[0]]), error => error.details?.[0].kind === 'batch-unseen-citation');
+  const missing = structuredClone(value); missing.requirements = [];
+  delete missing.updatedRequirementIds;
+  missing.coverage[0].disposition = 'excluded'; missing.coverage[0].requirementIds = [];
+  const unchanged = validateAnalysisBatchProposal(missing, state, [state.backlog.sources[1]], previous);
+  assert.deepEqual(unchanged.requirements, previous.requirements, 'an unchanged prior requirement need not be generated again');
+  assert.deepEqual(unchanged.issues, previous.issues);
+  const downgraded = structuredClone(value); downgraded.issues = [{ ...previous.issues[0], severity: 'observation' }];
+  const collision = validateAnalysisBatchProposal(downgraded, state, [state.backlog.sources[1]], previous);
+  assert.equal(collision.issues.find(issue => issue.id === previous.issues[0].id).severity, 'blocking');
+  assert.equal(new Set(collision.issues.map(issue => issue.id)).size, 2);
+  const repeated = structuredClone(value); repeated.coverage.push(previous.coverage[0]);
+  assert.throws(() => validateAnalysisBatchProposal(repeated, state, [state.backlog.sources[1]], previous), error => error.details?.[0].kind === 'coverage-source');
+});
+
+test('cross-batch citations update earlier draft coverage and inconsistent current coverage is rejected immediately', () => {
+  const state = snapshot();
+  state.backlog.sources.push({ ...structuredClone(state.backlog.sources[0]), id: 'SRC-2', clauses: [{ ...structuredClone(state.backlog.sources[0].clauses[0]), text: '담당자는 후속 자료의 접수 업무를 조회하고 검토한다.' }] });
+  const first = proposal(); first.requirements = []; first.issues[0].requirementIds = []; first.coverage[0].disposition = 'deferred'; first.coverage[0].requirementIds = [];
+  const previous = validateAnalysisBatchProposal(first, state, [state.backlog.sources[0]]);
+  const next = proposal(); next.issues = []; next.requirements[0].citations.push({ sourceId: 'SRC-2', clauseId: 'C-1', quote: state.backlog.sources[1].clauses[0].text }); next.coverage[0].sourceId = 'SRC-2';
+  const result = validateAnalysisBatchProposal(next, state, [state.backlog.sources[1]], previous);
+  assert.equal(result.coverage[0].disposition, 'merged');
+  assert.deepEqual(result.coverage[0].requirementIds, ['REQ-1']);
+  assert.equal(validateAnalysisProposal(result, state).requirements.length, 1);
+  const inconsistent = proposal(); inconsistent.coverage[0].disposition = 'excluded';
+  assert.throws(() => validateAnalysisBatchProposal(inconsistent, snapshot(), snapshot().backlog.sources), error => error.details?.[0].kind === 'coverage-scope');
+});
+
+test('decision clauses appear in either current coverage or policy references, never both', () => {
+  const state = snapshot();
+  const decision = { ...structuredClone(state.backlog.sources[0]), id: 'DEC-SYNTHETIC', sourceType: 'policy-memo' };
+  state.backlog.sources.push(decision);
+  const earlier = buildAiRequest(state, 'analysis', [], { sources: [state.backlog.sources[0]], batch: { index: 1, total: 2 } });
+  assert.equal(earlier.data.policySources.length, 1);
+  const last = buildAiRequest(state, 'analysis', [], { sources: [decision], batch: { index: 2, total: 2 } });
+  assert.equal(last.data.policySources.length, 0);
+});
+
+test('cross-batch replacement requires explicit update intent and new requirement IDs use the current batch prefix', () => {
+  const state = snapshot();
+  state.backlog.sources.push({ ...structuredClone(state.backlog.sources[0]), id: 'SRC-2', clauses: [{ ...structuredClone(state.backlog.sources[0].clauses[0]), text: '관리자는 별도 업무 자료의 보관 정책을 검토하고 결정한다.' }] });
+  const previous = validateAnalysisBatchProposal(proposal(), state, [state.backlog.sources[0]]);
+  const value = proposal(); value.issues = []; value.coverage[0].sourceId = 'SRC-2'; value.requirements[0].description = '관리자가 별도 업무 자료를 보관한다.'; value.requirements[0].citations = [{ sourceId: 'SRC-2', clauseId: 'C-1', quote: state.backlog.sources[1].clauses[0].text }];
+  assert.throws(() => validateAnalysisBatchProposal(value, state, [state.backlog.sources[1]], previous, { idPrefix: 'B02-' }), error => error.details?.[0].kind === 'batch-update-intent');
+  value.requirements[0].id = 'NEW-UNPREFIXED'; value.coverage[0].requirementIds = ['NEW-UNPREFIXED'];
+  assert.throws(() => validateAnalysisBatchProposal(value, state, [state.backlog.sources[1]], previous, { idPrefix: 'B02-' }), error => error.details?.[0].kind === 'batch-new-id');
+});
+
+test('human evidence is seeded from actual reverse links and unlinked legacy requirements fail before calls', () => {
+  const state = snapshot();
+  state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(proposal(), state));
+  assert.equal(seedAnalysis(state).requirements[0].id, 'REQ-1');
+  assert.equal(seedAnalysis(state).requirements[0].citations[0].quote, original);
+  state.backlog.sources[0].clauses[0].requirementIds = [];
+  assert.throws(() => seedAnalysis(state), { code: 'AI_EXISTING_REQUIREMENT_REVIEW_REQUIRED' });
+});
+
+test('unchanged optional human fields keep their stored representation during analysis projection', () => {
+  const state = snapshot(), value = proposal(); value.issues = [];
+  state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(value, state));
+  delete state.backlog.businessRequirements[0].nfrCriteria;
+  delete state.backlog.businessRequirements[0].moduleCandidates;
+  const projected = projectAnalysisBacklog(state, validateAnalysisProposal(value, state));
+  assert.deepEqual(projected.businessRequirements, state.backlog.businessRequirements);
+});
+
+test('batches communicate remaining capacity and citation overflow can use one bounded delta correction', () => {
+  const state = snapshot();
+  state.backlog.sources[0].clauses = Array.from({ length: 31 }, (_, index) => ({ ...structuredClone(state.backlog.sources[0].clauses[0]), id: `C-${index}` }));
+  const previous = proposal(); previous.issues = []; previous.requirements[0].citations = state.backlog.sources[0].clauses.slice(0, 30).map(clause => ({ sourceId: 'SRC-1', clauseId: clause.id, quote: original })); previous.coverage = [];
+  const current = [{ ...state.backlog.sources[0], clauses: [state.backlog.sources[0].clauses[30]] }];
+  const request = buildAiRequest(state, 'analysis', [], { sources: current, batch: { index: 2, total: 2, idPrefix: 'B02-' }, previousAnalysis: previous });
+  assert.equal(request.data.analysisBatch.capacity.requirementsRemaining, 149);
+  assert.equal(request.data.analysisBatch.capacity.citationCounts['REQ-1'], 30);
+  const value = proposal(); value.issues = []; value.updatedRequirementIds = ['REQ-1']; value.requirements[0].citations[0].clauseId = 'C-30'; value.coverage[0].clauseId = 'C-30';
+  let failure;
+  try { validateAnalysisBatchProposal(value, state, current, previous, { idPrefix: 'B02-' }); } catch (error) { failure = error; }
+  assert.equal(failure?.code, 'AI_OUTPUT_INVALID');
+  assert.equal(failure.details[0].kind, 'citation-capacity');
+  assert.equal(failure.details[0].requirementId, 'REQ-1');
+  const corrected = buildCorrectionRequest(request, value, failure.details);
+  assert.equal(corrected.data.correction.violations[0].requirementId, 'REQ-1');
+  assert.match(corrected.instructions, /CURRENT batch delta/);
+});
+
+test('unrecoverable cumulative capacity is reported before spending the correction budget', () => {
+  const state = snapshot(), seed = proposal(); seed.issues = []; seed.coverage = [];
+  seed.requirements = Array.from({ length: 100 }, (_, index) => ({ ...structuredClone(proposal().requirements[0]), id: `OLD-${index}`, description: 'x'.repeat(4400) }));
+  const value = proposal(); value.requirements = [];
+  value.issues = Array.from({ length: 100 }, (_, index) => ({ ...structuredClone(proposal().issues[0]), id: `QUESTION-${index}`, question: `확인 ${index} ${'합'.repeat(1980)}`, requirementIds: [] }));
+  value.coverage[0].requirementIds = seed.requirements.map(req => req.id);
+  assert.throws(() => validateAnalysisBatchProposal(value, state, state.backlog.sources, seed), { code: 'AI_PROPOSAL_CAPACITY' });
+  seed.requirements = Array.from({ length: 150 }, (_, index) => ({ ...structuredClone(proposal().requirements[0]), id: `OLD-${index}` }));
+  const extra = proposal(); extra.issues = [];
+  assert.throws(() => validateAnalysisBatchProposal(extra, state, state.backlog.sources, seed), { code: 'AI_REQUIREMENT_CAPACITY' });
+});
+
+test('batch planning checks all sources before any transfer and keeps finite analysis capacity', () => {
+  const state = snapshot();
+  state.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...state.backlog.sources[0].clauses[0], id: `C-${index}` }));
+  assert.deepEqual(planAnalysisBatches(state).map(batch => batch.flatMap(source => source.clauses).length), [32, 1]);
+  state.backlog.sources[0].clauses[32].text = 'person@example.invalid';
+  assert.throws(() => planAnalysisBatches(state), { code: 'SENSITIVE_INPUT' });
+  state.backlog.sources[0].clauses = Array.from({ length: 3001 }, (_, index) => ({ id: `C-${index}`, text: original }));
+  assert.throws(() => planAnalysisBatches(state), { code: 'AI_ANALYSIS_CAPACITY' });
+});
+
+test('human-edited requirement meaning uses original linked clauses rather than stale reviewed excerpts', () => {
+  const state = snapshot(), evidence = proposal();
+  state.backlog = projectAnalysisBacklog(state, validateAnalysisProposal(evidence, state));
+  state.backlog.businessRequirements[0].description = '사람이 열람 범위를 변경했다.';
+  const request = buildAiRequest(state, 'decomposition', [], { analysisEvidence: evidence });
+  assert.equal(request.data.sources[0].clauses[0].citationEvidence, undefined);
+  assert.equal(request.data.sources[0].clauses[0].text, original);
+});
 
 test('grounded AI requirements retain exact citations and cannot claim human review or acceptance', () => {
   const result = validateAnalysisProposal(proposal(), snapshot());

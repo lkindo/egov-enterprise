@@ -1,7 +1,8 @@
 import { randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
-import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, validateAnalysisProposal, validateDecompositionProposal } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal } from './ai-contract.mjs';
+import { planAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
 import { AI_MODEL, AI_EFFORT, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
@@ -19,11 +20,12 @@ export function validateAiMetadata(value) {
   if (value.version !== 1 || !Array.isArray(value.jobs) || !Array.isArray(value.decisions)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const job of value.jobs) {
-    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage']);
+    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage']);
     if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || job.effort !== AI_EFFORT) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
     if (job.includeVisuals !== undefined && typeof job.includeVisuals !== 'boolean') fail('AI_METADATA_INVALID');
     if (job.attempts !== undefined && ![1, 2].includes(job.attempts)) fail('AI_METADATA_INVALID');
+    if (job.batches !== undefined) { exact(job.batches, ['completed', 'total']); if (job.phase !== 'analysis' || !Number.isSafeInteger(job.batches.total) || job.batches.total < 1 || job.batches.total > MAX_ANALYSIS_BATCHES || !Number.isSafeInteger(job.batches.completed) || job.batches.completed < 0 || job.batches.completed > job.batches.total) fail('AI_METADATA_INVALID'); }
     if (job.resultRef) reference(job.resultRef, 'ai');
     if (['ready', 'needs-decisions', 'applied'].includes(job.status) && !job.resultRef) fail('AI_METADATA_INVALID');
     for (const key of ['completedAt', 'appliedAt']) if (job[key] !== undefined && !Number.isFinite(Date.parse(job[key]))) fail('AI_METADATA_INVALID');
@@ -39,15 +41,19 @@ const empty = () => ({ version: 1, jobs: [], decisions: [] });
 
 export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecomposition, baselineCurrent, contextProvider, runner, sourceFile, now = () => new Date().toISOString() }) {
   const execute = runner ?? createCliRunner();
-  let active, closed = false;
+  let active, closed = false, planCache;
   const ai = snapshot => snapshot.metadata.ai ?? empty();
   const current = snapshot => ai(snapshot).jobs.at(-1);
   const readJson = ref => JSON.parse(store.readArchive(ref));
   function proposal(job) {
     if (!job?.resultRef) return null;
     const input = { backlog: readJson(job.inputRef), metadata: { context: readJson(job.contextRef) } };
-    const output = readJson(job.resultRef).output;
-    return job.phase === 'analysis' ? validateAnalysisProposal(output, input) : validateDecompositionProposal(output, input);
+    const record = readJson(job.resultRef), output = record.output;
+    const result = job.phase === 'analysis' ? validateAnalysisProposal(output, input) : validateDecompositionProposal(output, input);
+    const audit = record.batchAudit ?? [], ids = new Set(result.requirements?.map(req => req.id) ?? []), clauses = new Set(input.backlog.sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
+    const shape = (value, keys) => value && typeof value === 'object' && !Array.isArray(value) && Object.keys(value).length === keys.length && Object.keys(value).every(key => keys.includes(key));
+    if (!Array.isArray(audit) || audit.length > MAX_ANALYSIS_BATCHES || audit.some((entry, index) => !shape(entry, ['batch', 'requirementIds', 'coverageChanges']) || !Number.isInteger(entry.batch) || entry.batch < 1 || entry.batch > MAX_ANALYSIS_BATCHES || index && audit[index - 1].batch >= entry.batch || !Array.isArray(entry.requirementIds) || new Set(entry.requirementIds).size !== entry.requirementIds.length || entry.requirementIds.some(id => !ids.has(id)) || !Array.isArray(entry.coverageChanges) || entry.coverageChanges.length > 3000 || entry.coverageChanges.some(change => !shape(change, ['sourceId', 'clauseId', 'beforeDisposition', 'beforeRationale', 'afterDisposition', 'afterRationale']) || !clauses.has(`${change.sourceId}/${change.clauseId}`) || !['included', 'merged', 'excluded', 'deferred'].includes(change.beforeDisposition) || !['included', 'merged', 'excluded', 'deferred'].includes(change.afterDisposition) || ['beforeRationale', 'afterRationale'].some(key => typeof change[key] !== 'string' || !change[key].trim() || change[key].length > 2000)))) fail('AI_OUTPUT_INVALID');
+    return { ...result, batchAudit: audit };
   }
   function view(snapshot) {
     let available = true;
@@ -60,7 +66,12 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       unavailable = true; result = null;
     }
     const visible = unavailable ? { ...job, status: 'unavailable', errorCode: 'AI_RECORD_UNAVAILABLE' } : job && ['ready', 'needs-decisions'].includes(job.status) && aiInputDigest(snapshot, job.phase, workflow.decisions) !== job.inputDigest ? { ...job, status: 'stale' } : job?.status === 'ready' && result?.issues.some(issue => issue.severity === 'blocking') ? { ...job, status: 'needs-decisions' } : job;
-    return { available, model: AI_MODEL, effort: AI_EFFORT, current: visible ?? null, active: Boolean(active), proposal: result, decisions: workflow.decisions, history: workflow.jobs.slice(-10), inputDigests: { analysis: aiInputDigest(snapshot, 'analysis', workflow.decisions), decomposition: aiInputDigest(snapshot, 'decomposition', workflow.decisions) } };
+    const inputDigests = { analysis: aiInputDigest(snapshot, 'analysis', workflow.decisions), decomposition: aiInputDigest(snapshot, 'decomposition', workflow.decisions) };
+    if (planCache?.digest !== inputDigests.analysis) {
+      try { const batches = planAnalysisBatches(snapshot, workflow.decisions); if (batches.length > 1) seedAnalysis(snapshot); planCache = { digest: inputDigests.analysis, value: { batches: batches.length } }; }
+      catch (error) { planCache = { digest: inputDigests.analysis, value: { errorCode: /^[A-Z][A-Z_]+$/.test(error.code ?? '') ? error.code : 'AI_RUN_FAILED' } }; }
+    }
+    return { available, model: AI_MODEL, effort: AI_EFFORT, current: visible ?? null, active: Boolean(active), proposal: result, decisions: workflow.decisions, history: workflow.jobs.slice(-10), analysisPlan: planCache.value, inputDigests };
   }
   function mark(id, mutate) {
     const snapshot = store.read();
@@ -81,10 +92,19 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
     if (payload.phase === 'decomposition' && !baselineCurrent(snapshot)) fail('BASELINE_REQUIRED');
     const context = await contextProvider();
     if (context.snapshotDigest !== snapshot.metadata.context.snapshotDigest) fail('CONTEXT_CHANGED');
-    const request = buildAiRequest(snapshot, payload.phase, workflow.decisions);
+    const batches = payload.phase === 'analysis' ? planAnalysisBatches(snapshot, workflow.decisions) : null;
+    const initialAnalysis = batches?.length > 1 ? seedAnalysis(snapshot) : undefined;
+    const jobId = randomUUID();
+    const batchOptions = index => batches?.length > 1 ? { sources: batches[index], batch: { index: index + 1, total: batches.length, idPrefix: `B${jobId.slice(0, 8)}-${index + 1}-` } } : {};
+    let analysisEvidence;
+    if (payload.phase === 'decomposition') {
+      const reviewed = workflow.jobs.findLast(job => job.phase === 'analysis' && job.status === 'applied');
+      try { analysisEvidence = proposal(reviewed); } catch (error) { if (!/^REQUIREMENTS_/.test(error.code ?? '') && error.code !== 'AI_OUTPUT_INVALID' && !(error instanceof SyntaxError)) throw error; }
+    }
+    const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence });
     if (!runner) findClaudeExecutable();
-    const job = { id: randomUUID(), phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_EFFORT, includeVisuals: payload.includeVisuals !== false,
-      inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
+    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_EFFORT, includeVisuals: payload.includeVisuals !== false,
+      ...(batches?.length > 1 ? { batches: { completed: 0, total: batches.length } } : {}), inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
     commit(revision, next => { next.metadata.ai ??= empty(); next.metadata.ai.jobs.push(job); });
     const controller = new AbortController();
     const operation = { id: job.id, controller };
@@ -93,27 +113,58 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       const scratchRoot = assertExternalWorkspace(join(store.directory, '.scratch')); mkdirSync(scratchRoot, { recursive: true, mode: 0o700 });
       const cwd = mkdtempSync(join(scratchRoot, 'ai-'));
       try {
-        const visuals = job.includeVisuals ? await prepareVisualAttachments(snapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
-        request.data.visualSources = visuals.sources;
-        let response, validated, attemptRequest = request;
-        for (let attempt = 1; attempt <= 2; attempt++) {
-          mark(job.id, stored => { stored.attempts = attempt; });
-          response = await execute({ request: attemptRequest, attachments: visuals.attachments, schema: job.phase === 'analysis' ? ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA, cwd, signal: controller.signal });
-          if (controller.signal.aborted || closed) return;
-          if (response.model !== AI_MODEL || response.effort !== AI_EFFORT) fail('AI_MODEL_MISMATCH');
-          try { validated = job.phase === 'analysis' ? validateAnalysisProposal(response.output, snapshot) : validateDecompositionProposal(response.output, snapshot); break; }
-          catch (error) {
-            if (error.code !== 'AI_OUTPUT_INVALID' || attempt === 2) throw error;
-            const live = await contextProvider();
-            if (live.snapshotDigest !== snapshot.metadata.context.snapshotDigest || aiInputDigest(store.read(), job.phase, ai(store.read()).decisions) !== inputDigest) { mark(job.id, stored => { stored.status = 'stale'; stored.completedAt = now(); }); return; }
-            attemptRequest = buildCorrectionRequest(request, response.output, error.details);
+        let corrected = false, validated, output = initialAnalysis;
+        const batchAudit = [];
+        const usage = { inputTokens: 0, outputTokens: 0 };
+        const isCurrent = async () => {
+          if (controller.signal.aborted || closed) return false;
+          const live = await contextProvider();
+          if (controller.signal.aborted || closed) return false;
+          const state = store.read();
+          if (live.snapshotDigest === snapshot.metadata.context.snapshotDigest && aiInputDigest(state, job.phase, ai(state).decisions) === inputDigest) return true;
+          mark(job.id, stored => { if (stored.status === 'running') { stored.status = 'stale'; stored.completedAt = now(); } }); return false;
+        };
+        for (let index = 0; index < (batches?.length ?? 1); index++) {
+          if (!await isCurrent()) return;
+          const currentRequest = index === 0 ? request : buildAiRequest(snapshot, job.phase, workflow.decisions, { ...batchOptions(index), previousAnalysis: output });
+          const batchSnapshot = { ...snapshot, backlog: { ...snapshot.backlog, sources: currentRequest.data.sources } };
+          const visuals = job.includeVisuals ? await prepareVisualAttachments(batchSnapshot, sourceFile, { signal: controller.signal }) : { attachments: [], sources: [] };
+          currentRequest.data.visualSources = visuals.sources;
+          let attemptRequest = currentRequest, next, delta;
+          for (;;) {
+            if (!await isCurrent()) return;
+            if (current(store.read()).attempts !== (corrected ? 2 : 1)) mark(job.id, stored => { stored.attempts = corrected ? 2 : 1; });
+            if (controller.signal.aborted || closed) return;
+            const response = await execute({ request: attemptRequest, attachments: visuals.attachments, schema: job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA, cwd, signal: controller.signal });
+            if (!await isCurrent()) return;
+            if (response.model !== AI_MODEL || response.effort !== AI_EFFORT) fail('AI_MODEL_MISMATCH');
+            usage.inputTokens += response.usage?.inputTokens ?? 0; usage.outputTokens += response.usage?.outputTokens ?? 0;
+            operation.usage = { ...usage };
+            delta = response.output;
+            try {
+              next = batches?.length > 1 ? validateAnalysisBatchProposal(response.output, snapshot, batches[index], output, { idPrefix: currentRequest.data.analysisBatch.idPrefix }) : response.output;
+              if (!(batches?.length > 1) || index === batches.length - 1) validated = job.phase === 'analysis' ? validateAnalysisProposal(next, snapshot) : validateDecompositionProposal(next, snapshot);
+              break;
+            } catch (error) {
+              if (error.code !== 'AI_OUTPUT_INVALID' || corrected) throw error;
+              attemptRequest = buildCorrectionRequest(currentRequest, response.output, error.details); corrected = true;
+            }
           }
+          if (batches?.length > 1) {
+            const before = new Map((output?.coverage ?? []).map(entry => [`${entry.sourceId}/${entry.clauseId}`, entry]));
+            const coverageChanges = next.coverage.flatMap(entry => { const old = before.get(`${entry.sourceId}/${entry.clauseId}`); return old && old.disposition !== entry.disposition ? [{ sourceId: entry.sourceId, clauseId: entry.clauseId, beforeDisposition: old.disposition, beforeRationale: old.rationale, afterDisposition: entry.disposition, afterRationale: entry.rationale }] : []; });
+            if (delta.updatedRequirementIds?.length || coverageChanges.length) batchAudit.push({ batch: index + 1, requirementIds: [...(delta.updatedRequirementIds ?? [])], coverageChanges });
+          }
+          output = next;
+          if (batches?.length > 1) mark(job.id, stored => { if (stored.status === 'running') { stored.batches.completed = index + 1; stored.usage = { ...usage }; } });
         }
-        const resultRef = store.writeArchive('ai', JSON.stringify({ output: response.output }));
+        const record = JSON.stringify({ output, ...(batchAudit.length ? { batchAudit } : {}) });
+        if (Buffer.byteLength(record) > 8 * 1024 ** 2) fail('AI_AUDIT_CAPACITY');
+        const resultRef = store.writeArchive('ai', record);
         const live = await contextProvider();
         mark(job.id, (stored, next) => {
           if (stored.status !== 'running') return;
-          stored.resultRef = resultRef; stored.completedAt = now(); stored.usage = response.usage;
+          stored.resultRef = resultRef; stored.completedAt = now(); stored.usage = usage;
           stored.status = live.snapshotDigest !== snapshot.metadata.context.snapshotDigest || aiInputDigest(next, job.phase, ai(next).decisions) !== inputDigest ? 'stale' : validated.issues.some(issue => issue.severity === 'blocking') ? 'needs-decisions' : 'ready';
         });
       } finally {
@@ -122,7 +173,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         assertExternalWorkspace(cwd); rmSync(cwd, { recursive: true, force: true });
       }
     }).catch(error => {
-      try { mark(job.id, stored => { if (stored.status !== 'running') return; stored.status = controller.signal.aborted ? 'cancelled' : 'failed'; stored.completedAt = now(); stored.errorCode = /^AI_[A-Z_]{2,70}$/.test(error.code ?? '') ? error.code : 'AI_RUN_FAILED'; }); }
+      try { mark(job.id, stored => { if (stored.status !== 'running') return; stored.status = controller.signal.aborted ? 'cancelled' : 'failed'; stored.completedAt = now(); stored.errorCode = /^AI_[A-Z_]{2,70}$/.test(error.code ?? '') ? error.code : 'AI_RUN_FAILED'; if (operation.usage) stored.usage = operation.usage; }); }
       catch { /* A foreign edit/lock loss must never be overwritten to save status. */ }
     }).finally(() => { if (active === operation) active = undefined; });
   }

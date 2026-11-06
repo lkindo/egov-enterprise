@@ -3,11 +3,13 @@ import sharp from 'sharp';
 const images = new Set(['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff']);
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export async function prepareVisualAttachments(snapshot, sourceFile, { signal } = {}) {
-  const attachments = [], sources = []; let total = 0;
+  const attachments = [], sources = [], seen = new Set(); let total = 0;
   if (signal?.aborted) fail('AI_CANCELLED');
   for (const job of snapshot.metadata.imports ?? []) {
     if (job.status !== 'ready' || (!images.has(job.format) && job.format !== 'pdf')) continue;
     const source = snapshot.backlog.sources.find(source => source.id === job.sourceId); if (!source) continue;
+    if (seen.has(source.id)) continue;
+    seen.add(source.id);
     if (signal?.aborted) fail('AI_CANCELLED');
     if (attachments.length >= 100 || typeof sourceFile !== 'function') fail('AI_ATTACHMENT_INVALID');
     const original = sourceFile(job.sourceId);
