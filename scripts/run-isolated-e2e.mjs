@@ -314,10 +314,12 @@ const REPRESENTATIVE_ADMIN_GRANTS = Object.freeze(['NOTICE_EDIT', 'FAQ_EDIT']);
 
 /**
  * 벤더 프로젝트에는 개발 시드가 없다. 시드가 주던 일반 계정과 관리자의 공지·FAQ 권한을 시험 대상 API 로 만든다.
+ * 기준선 번들로 시작하는 PostgreSQL 생성물은 개발 시드로 계정이 있지만, 원본에서 관리자의 공지·FAQ 권한을 주던 권한 전환 리허설을 돌지 않는다 —
+ * 그때는 일반 계정({@code user})을 넘기지 않고 관리자 권한만 같은 길로 준다(GAP-COMPOSE-003).
  * 쿠키를 싣지 않으면 CSRF 대상이 아니다. 관리자 비밀번호는 health 뒤의 ApplicationReady 에서 설정되므로 로그인은 횟수를 제한해 다시 시도한다.
  * 통제 서버가 뜨기 전이라 쓰기마다 직접 소유를 증명한다.
  */
-export async function provisionRepresentativeAccounts({ apiUrl, admin, user, verifyOwner, request = fetch, wait = pause }) {
+export async function provisionRepresentativeAccounts({ apiUrl, admin, user = null, verifyOwner, request = fetch, wait = pause }) {
   assertLoopbackUrl(apiUrl, '/api/v1');
   const call = async (method, target, { token, body } = {}) => {
     const response = await request(`${apiUrl}${target}`, { method, redirect: 'error', signal: AbortSignal.timeout(30000),
@@ -338,8 +340,10 @@ export async function provisionRepresentativeAccounts({ apiUrl, admin, user, ver
     if (!token && attempt < ADMIN_LOGIN_ATTEMPTS) await wait(ADMIN_LOGIN_RETRY_MS);
   }
   if (!token) throw fail(`대표 묶음 픽스처: 관리자 로그인이 ${ADMIN_LOGIN_ATTEMPTS}회 모두 실패했다.`);
-  verifyOwner();
-  expectStatus(await call('POST', '/admin/system/users', { token, body: { userId: user.id, pswd: user.password, userNm: '일반사용자', role: 'USER' } }), 201, '대표 묶음 픽스처: 일반 계정 생성');
+  if (user) {
+    verifyOwner();
+    expectStatus(await call('POST', '/admin/system/users', { token, body: { userId: user.id, pswd: user.password, userNm: '일반사용자', role: 'USER' } }), 201, '대표 묶음 픽스처: 일반 계정 생성');
+  }
   const groupUrl = '/admin/authorization/groups/ROLE_ADMIN';
   const before = await call('GET', groupUrl, { token });
   expectStatus(before, 200, '대표 묶음 픽스처: 관리자 그룹 조회');
@@ -418,6 +422,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
   const databaseName = `egov-e2e-${runId}`;
   let ownedDatabase = false;
   let cleanUpVendorDatabase;
+  // 로컬 PostgreSQL 실행에서만 정한다(true/false). compose·벤더 실행에서는 정하지 않는다(undefined).
+  let rehearsal;
   let api;
   let web;
   let control;
@@ -512,7 +518,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
         databaseEnvironment = vendorDatabaseEnvironment(vendorRuntime.engine, databasePort, database.password, vendorRuntime.admin.password);
       } else {
         // 컨테이너를 만들기 전에 정한다 — 정하지 못하면 아무것도 띄우지 않고 멈춘다.
-        const rehearsal = rehearsesAuthorizationContract(root);
+        rehearsal = rehearsesAuthorizationContract(root);
         const password = randomBytes(24).toString('hex');
         // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
         manifest.databaseId = execFileSync('docker', ['run', '-d', '--rm', '--name', databaseName,
@@ -549,6 +555,10 @@ export async function main(arguments_ = process.argv.slice(2)) {
     await waitReady(`http://127.0.0.1:${apiPort}/actuator/health`, api, vendorRuntime ? vendorRuntime.engine.maxWaitSeconds * 1000 : undefined);
     if (vendorRuntime) {
       await provisionRepresentativeAccounts({ apiUrl, admin: vendorRuntime.admin, user: vendorRuntime.user,
+        verifyOwner: () => { assertActive(); verifyRuntime(); } });
+    } else if (rehearsal === false) {
+      const { TEST_CREDENTIALS } = await import('../frontend/e2e/synthetic-test-credentials.mjs');
+      await provisionRepresentativeAccounts({ apiUrl, admin: TEST_CREDENTIALS.admin,
         verifyOwner: () => { assertActive(); verifyRuntime(); } });
     }
     // Next 빌드와 서버는 이 값을 받지 않는다.

@@ -2191,8 +2191,10 @@ test('the runner wires the closed Docker environment, one API environment and th
   assert.deepEqual(oracleEnvironment, { DB_URL: 'jdbc:oracle:thin:@//127.0.0.1:49153/FREEPDB1', DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' });
   assert.match(runner, /databaseEnvironment = \{ DB_URL: `jdbc:postgresql:\/\/127\.0\.0\.1:\$\{databasePort\}\/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,\n\s+\.\.\.\(rehearsal \? \{ NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' \} : \{\}\) \};/, 'PostgreSQL 값은 그대로다');
   // 리허설 여부(GAP-COMPOSE-003)는 PostgreSQL 컨테이너를 만들기 전에 정한다. 원본 저장소에서 켜지는지는 e2e-isolation.test.mjs 가 본다.
-  assert.ok(runner.indexOf('const rehearsal = rehearsesAuthorizationContract(root);') > 0
-    && runner.indexOf('const rehearsal = rehearsesAuthorizationContract(root);') < runner.indexOf("'postgres:17-alpine'"), '리허설 판정이 DB 컨테이너보다 먼저다');
+  assert.ok(runner.indexOf('rehearsal = rehearsesAuthorizationContract(root);') > 0
+    && runner.indexOf('rehearsal = rehearsesAuthorizationContract(root);') < runner.indexOf("'postgres:17-alpine'"), '리허설 판정이 DB 컨테이너보다 먼저다');
+  // 리허설을 돌지 않는 PostgreSQL 생성물도 관리자의 공지·FAQ 권한은 같은 픽스처로 받는다. 일반 계정은 개발 시드에 있어 만들지 않는다.
+  assert.match(runner, /\} else if \(rehearsal === false\) \{\n\s+const \{ TEST_CREDENTIALS \} = await import\('\.\.\/frontend\/e2e\/synthetic-test-credentials\.mjs'\);\n\s+await provisionRepresentativeAccounts\(\{ apiUrl, admin: TEST_CREDENTIALS\.admin,\n/);
 
   assert.deepEqual(resolveVendorEngine('oracle', undefined, VENDOR_ENGINES).id, 'oracle');
   assert.deepEqual(resolveVendorEngine('oracle', 'oracle19', VENDOR_ENGINES).id, 'oracle19');
@@ -2691,6 +2693,14 @@ test('the fixture proves ownership before every write and adds only the missing 
   assert.equal(put.body.complete, true);
   assert.equal(put.body.version, 'a'.repeat(64));
   assert.deepEqual(put.body.grants, [...ADMIN_GROUP().grants, { type: 'OPERATION', code: 'NOTICE_EDIT' }, { type: 'OPERATION', code: 'FAQ_EDIT' }], '기존 목록을 잃지 않는다');
+
+  // 기준선 번들 PostgreSQL 생성물(GAP-COMPOSE-003)은 일반 계정을 넘기지 않는다 — 계정을 만들지 않고 관리자 권한만 같은 길로 준다.
+  const seeded = fixtureApi();
+  await provisionRepresentativeAccounts({ apiUrl: 'http://127.0.0.1:18080/api/v1', admin: { id: 'webmaster', password: '1' },
+    verifyOwner: () => seeded.log.push({ step: 'owner' }), request: seeded.request, wait: async () => {} });
+  assert.deepEqual(seeded.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'GET /admin/authorization/groups/ROLE_ADMIN',
+    'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
+  assert.deepEqual(seeded.log.find(entry => entry.step.startsWith('PUT')).body.grants, put.body.grants);
 
   const held = fixtureApi({ group: { ...ADMIN_GROUP(), grants: [{ type: 'OPERATION', code: 'NOTICE_EDIT' }] } });
   await provision(held);
