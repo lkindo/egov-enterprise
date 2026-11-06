@@ -13,7 +13,7 @@ const MAX_JOURNAL_BYTES = MAX_BYTES * 7;
 const FILES = [['backlog', BACKLOG], ['metadata', METADATA], ['context', CONTEXT]];
 const READ_ONLY_ERRORS = new Set(['REQUIREMENTS_EXTERNAL_CHANGE', 'REQUIREMENTS_LOCK_LOST', 'REQUIREMENTS_RECOVERY_REQUIRED', 'REQUIREMENTS_RECOVERY_CONFLICT', 'REQUIREMENTS_IO_ERROR', 'REQUIREMENTS_UNSAFE_PATH', 'REQUIREMENTS_CORRUPT_JSON']);
 const WAIT = new Int32Array(new SharedArrayBuffer(4));
-const ARCHIVE_KINDS = new Set(['baseline', 'export', 'history']);
+const ARCHIVE_KINDS = new Set(['baseline', 'export', 'history', 'ai', 'source']);
 const ARCHIVE_UUID = /^[a-f0-9]{8}-[a-f0-9]{4}-4[a-f0-9]{3}-[89ab][a-f0-9]{3}-[a-f0-9]{12}$/;
 
 export class RequirementsStoreError extends Error {

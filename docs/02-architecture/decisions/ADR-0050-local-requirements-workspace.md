@@ -4,6 +4,7 @@
 - 결정일: 2026-11-04
 - 승인: 사용자가 요구사항 UI 시안을 검토한 뒤 “화면시안은 잘만들어진것 같아 작업을 진행하자”라고 구현을 승인했다. 구현 검토는 Gemini 아르곤 high, Claude Opus 5.5 xhigh 순서로 진행한다.
 - 관련: DEC-OPS-382·399의 외부 작업공간과 4층 상태 분리, [ADR-0018](ADR-0018-governance-review-lifecycle-and-adoption.md)의 기술 검증·기관 승인 분리.
+- 후속: 입력·OCR·AI 자동 해석과 상세화는 [ADR-0051](ADR-0051-ai-first-requirements-workflow.md)이 대체한다. 아래 내용은 최초 구현 경계를 기록한다.
 
 ## 배경
 
