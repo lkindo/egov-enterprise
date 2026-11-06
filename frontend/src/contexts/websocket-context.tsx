@@ -87,6 +87,13 @@ export function WebSocketProvider({ children }: { children: React.ReactNode }) {
       if (store.get()?.client === client) store.set(null);
     };
 
+    // 서버가 소켓을 닫으면(권한이 바뀐 세션을 정책 위반으로 끊는 경우 등) stompjs 는 onDisconnect 가 아니라 이것만 부른다 — onDisconnect 는
+    // DISCONNECT 응답을 받을 때만 온다. 연결됨으로 남기면 소비자의 subscribe 가 'There is no underlying STOMP connection' 으로 던지고,
+    // 재연결 뒤에도 같은 클라이언트라 소비자가 다시 구독하지 않는다(2026-11-07 CUBRID 대표 E2E 에서 재현).
+    client.onWebSocketClose = () => {
+      if (store.get()?.client === client) store.set(null);
+    };
+
     client.activate();
 
     return () => {
