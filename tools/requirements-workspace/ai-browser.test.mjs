@@ -92,7 +92,7 @@ test('duplicate upload UI reuses the existing source and identifies the reused r
     const browserContext = await browser.newContext();
     const page = await browserContext.newPage();
     await page.goto(app.launchUrl);
-    await page.getByRole('button', { name: '산출물 파일 등록', exact: true }).click();
+    await page.getByRole('button', { name: '로컬 자료 등록(보완용)', exact: true }).click();
     const buffer = Buffer.from('담당자는 본인 접수 목록을 조회한다.');
     await page.locator('#artifact-files').setInputFiles([{ name: 'meeting.txt', mimeType: 'text/plain', buffer }, { name: 'meeting-copy.txt', mimeType: 'text/plain', buffer }]);
     await page.locator('[name="redacted"]').check();
@@ -153,7 +153,7 @@ test('the file upload UI registers real multi-format documents and continues int
     const page = await browserContext.newPage();
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${app.url}/#launch=${app.launchSecret}`);
-    await page.getByRole('button', { name: '산출물 파일 등록', exact: true }).click();
+    await page.getByRole('button', { name: '로컬 자료 등록(보완용)', exact: true }).click();
     assert.equal(await page.locator('[data-action="import-stop"]').isVisible(), false, 'stop is shown only while a registration is active');
     const checkboxBox = await page.locator('[name="redacted"]').boundingBox();
     assert.ok(checkboxBox.width <= 24 && checkboxBox.height <= 24, 'checkbox is not stretched by text-field styling');
@@ -183,7 +183,7 @@ test('real UI runs AI analysis, resolves decisions, confirms requirements and au
   try {
     let releaseInitial, initial = true, failPoll = false, pollFailed = false;
     const initialAnalysis = new Promise(resolve => { releaseInitial = resolve; });
-    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { if (initial) { initial = false; await initialAnalysis; } return envelope(request.phase === 'analysis' ? analysis(request) : decomposition()); } });
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { if (initial) { initial = false; failPoll = true; await initialAnalysis; } return envelope(request.phase === 'analysis' ? analysis(request) : decomposition()); } });
     const act = (name, payload) => app.engine.action(app.store.read().revision, name, payload);
     await act('project.save', { code: 'SYNTHETIC', name: '합성 접수 업무', institution: '합성 기관', baselineProfile: '' });
     await act('source.save', source);
@@ -198,7 +198,6 @@ test('real UI runs AI analysis, resolves decisions, confirms requirements and au
     await page.goto(`${app.url}/#launch=${app.launchSecret}`);
     await page.getByRole('button', { name: 'AI 요구사항 생성', exact: true }).click({ timeout: 5000 });
     await page.getByLabel('등록된 비식별 자료를 선택한 CLI의 모델 서비스로 보내 분석하는 데 동의합니다.', { exact: true }).check();
-    failPoll = true;
     await page.getByRole('button', { name: '동의하고 AI 분석 시작', exact: true }).click();
     await page.getByRole('heading', { name: 'AI가 확인을 요청한 사항', exact: true }).waitFor({ timeout: 12000 });
     assert.equal(pollFailed, true, 'a transient background fetch failure was actually injected');
