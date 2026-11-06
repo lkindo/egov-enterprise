@@ -723,11 +723,18 @@ final class VendorTestSql {
         // jdbc:cubrid:<호스트>:<포트>:<DB>:::?...
         String database = System.getenv("VENDOR_TEST_URL").split(":")[4];
         String output;
+        java.nio.file.Path capture = null;
         try {
+            // 출력은 파일로 받는다. 파이프를 끝까지 읽고 나서 기다리면 docker 가 출력을 연 채 멈췄을 때 시간 제한에 닿지 못한다.
+            capture = java.nio.file.Files.createTempFile("cubrid-tranlist-", ".txt");
             Process process = new ProcessBuilder("docker", "exec", "-u", "cubrid", container, "cubrid", "tranlist", "-f", database)
-                    .redirectErrorStream(true).start();
-            output = new String(process.getInputStream().readAllBytes(), java.nio.charset.StandardCharsets.UTF_8);
-            if (!process.waitFor(30, TimeUnit.SECONDS) || process.exitValue() != 0) {
+                    .redirectErrorStream(true).redirectOutput(capture.toFile()).start();
+            if (!process.waitFor(30, TimeUnit.SECONDS)) {
+                process.destroyForcibly();
+                throw new IllegalStateException("cubrid tranlist 가 30초 안에 끝나지 않았다");
+            }
+            output = java.nio.file.Files.readString(capture, java.nio.charset.StandardCharsets.UTF_8);
+            if (process.exitValue() != 0) {
                 throw new IllegalStateException("cubrid tranlist 실패: " + output.strip());
             }
         } catch (java.io.IOException failure) {
@@ -735,9 +742,16 @@ final class VendorTestSql {
         } catch (InterruptedException interrupted) {
             Thread.currentThread().interrupt();
             throw new IllegalStateException("cubrid tranlist 를 기다리다 중단됐다", interrupted);
+        } finally {
+            if (capture != null) {
+                capture.toFile().delete();
+            }
         }
         return parseCubridTransactions(output);
     }
+
+    /** 머리글. 이 줄과 표의 위아래 선이 없으면 출력이 잘렸거나 모양이 바뀐 것이다. */
+    private static final Pattern CUBRID_TRANSACTION_HEADER = Pattern.compile("^\\s*Tran index\\s+User name\\s.*\\bWait for lock holder\\b.*$");
 
     static Map<Integer, CubridTransaction> parseCubridTransactions(String output) {
         Map<Integer, int[]> rows = new LinkedHashMap<>();
@@ -746,8 +760,13 @@ final class VendorTestSql {
         Map<Integer, StringBuilder> fullText = new LinkedHashMap<>();
         List<StringBuilder> current = new ArrayList<>();
         boolean rowsDone = false;
+        boolean header = false;
         int dashes = 0;
         for (String line : output.split("\\R")) {
+            if (dashes == 0 && CUBRID_TRANSACTION_HEADER.matcher(line).matches()) {
+                header = true;
+                continue;
+            }
             if (line.startsWith("----")) {
                 dashes++;
                 rowsDone = dashes >= 2;
@@ -787,6 +806,11 @@ final class VendorTestSql {
                     text.append(text.isEmpty() ? "" : "\n").append(line);
                 }
             }
+        }
+        // 빈 출력·잘린 출력을 "트랜잭션이 없다(아무도 기다리지 않는다)" 로 읽으면 대기를 보지 못한 채 통과한다.
+        if (!header || dashes < 2) {
+            throw new IllegalStateException("tranlist 표를 찾지 못했다(머리글 " + header + ", 선 " + dashes + "): "
+                    + output.strip().lines().limit(3).collect(Collectors.joining(" / ")));
         }
         Map<Integer, CubridTransaction> transactions = new LinkedHashMap<>();
         rows.forEach((index, row) -> {

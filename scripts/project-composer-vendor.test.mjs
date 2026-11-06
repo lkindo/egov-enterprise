@@ -2889,6 +2889,10 @@ test('the CUBRID stack runs the engine image, keeps the app and dba credentials 
   assert.match(branch, /-c "select 1 from db_root" db@localhost <\/dev\/null >\/dev\/null 2>&1 && gosu cubrid csql -u dba -c "ALTER USER dba/);
   assert.ok(branch.endsWith('2>&1; exit 1; fi;'), '비밀번호 없는 dba 를 찾은 회차는 늘 준비가 아니다');
   assert.match(command, /^case "APP" in .*; if \[ -z "DBA" \]; then echo 'dba password is required' >&2; exit 1; fi; /, '빈 dba 비밀번호는 잠그지 못하므로 멈춘다');
+  // 명령 치환이 끝 줄바꿈을 지워 만든 비밀번호와 알려진 비밀번호가 달라진다. 첫 csql 앞에서 두 비밀번호를 모두 거른다.
+  assert.match(command, /; if ! \[ "\$\(printf '%s' "PW" \| tr -d '\\r\\n'\)" = "PW" \] \|\| ! \[ "\$\(printf '%s' "DBA" \| tr -d '\\r\\n'\)" = "DBA" \]; then echo 'passwords must not contain line breaks' >&2; exit 1; fi; if gosu cubrid csql -u dba /,
+    '줄바꿈이 든 비밀번호는 계정을 만들기 전에 멈춘다');
+  assert.match(healthcheck, /tr -d '\\\\r\\\\n'/, 'compose 문자열에서는 역슬래시를 한 번 더 이스케이프해 셸에 \\r\\n 으로 닿는다');
   assert.ok(command.endsWith('; gosu cubrid csql -u "APP" -p "PW" -c "select 1 from db_root" db@localhost </dev/null'));
   // 비밀번호 없는 dba 의 접속 시도는 입력을 닫는다. 비밀번호를 건 뒤에 묻는 입력을 기다리지 않는다.
   for (const call of command.split('gosu cubrid csql -u dba').slice(1)) assert.match(call, /^ -c "[^"]*(?:"[^"]*"[^"]*)*" db@localhost <\/dev\/null /, call);

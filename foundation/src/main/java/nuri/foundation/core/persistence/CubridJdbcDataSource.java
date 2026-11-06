@@ -93,12 +93,12 @@ final class CubridJdbcDataSource extends DelegatingDataSource {
     }
 
     /** 드라이버가 받는 값으로 바꾼다. 다른 값은 그대로 넘긴다. */
-    static Object bindable(Object value) {
+    static Object bindable(Object value) throws SQLException {
         return switch (value) {
             case Timestamp timestamp -> millis(timestamp);
             case LocalDateTime local -> millis(Timestamp.valueOf(local));
             case LocalDate date -> java.sql.Date.valueOf(date);
-            case LocalTime time -> java.sql.Time.valueOf(time);
+            case LocalTime time -> seconds(time);
             case Instant instant -> millis(Timestamp.from(instant));
             case OffsetDateTime offset -> millis(Timestamp.from(offset.toInstant()));
             case ZonedDateTime zoned -> millis(Timestamp.from(zoned.toInstant()));
@@ -108,6 +108,17 @@ final class CubridJdbcDataSource extends DelegatingDataSource {
             case Character character -> character.toString();
             case null, default -> value;
         };
+    }
+
+    /**
+     * CUBRID 의 TIME 은 초까지 담고, {@code Time.valueOf} 는 소수초를 모두 버린다. 승인한 저하는 시각(DATETIME)의 밀리초 절사뿐이라 소수초가 있는 시각은
+     * 조용히 자르지 않고 멈춘다.
+     */
+    static java.sql.Time seconds(LocalTime time) throws SQLException {
+        if (time.getNano() != 0) {
+            throw new SQLException("CUBRID TIME 은 초까지 담는다 — 소수초가 있는 시각 " + time + " 은 바인딩하지 않는다");
+        }
+        return java.sql.Time.valueOf(time);
     }
 
     /** 밀리초 아래 자리를 버린 같은 시각. 원래 값은 바꾸지 않는다. */

@@ -80,6 +80,17 @@ class CubridJdbcDataSourceTest {
     }
 
     @Test
+    @DisplayName("TIME 은 초까지 담는다 — 초 단위 시각은 바인딩하고 소수초가 있는 시각은 자르지 않고 멈춘다")
+    void refusesFractionalTimes() throws Exception {
+        PreparedStatement prepared = open().prepareStatement("q");
+
+        prepared.setObject(1, java.time.LocalTime.of(12, 34, 56));
+        verify(statement).setObject(1, java.sql.Time.valueOf("12:34:56"));
+        assertThatThrownBy(() -> prepared.setObject(2, java.time.LocalTime.parse("12:34:56.789"))).isInstanceOf(SQLException.class)
+                .hasMessageContaining("초까지 담는다");
+    }
+
+    @Test
     @DisplayName("드라이버 고유 객체를 찾는 unwrap 은 원래 연결에 묻고, 문장은 감싼 연결을 돌려준다")
     void unwrapReachesTheDriver() throws Exception {
         Connection wrapped = open();

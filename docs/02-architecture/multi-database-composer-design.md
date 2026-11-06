@@ -790,7 +790,7 @@ demo 멀티모듈 생성물(대표 구성)에서 번역 기준선을 Flyway 로 
 
 ## 20. 단계 5 진행 결과(CUBRID, 제한 지원)
 
-CUBRID 11.4 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `preview`). 인증은 이 변경이 main 에서 벤더 잡을 통과한 뒤의 PR 이다(DEC-OPS-400). 사용자는 2026-11-05 에 아래 저하를 받아들이는 제한 지원과, Maven Central 에 없는 공식 JDBC 드라이버를 CUBRID 저장소에서 `cubrid` 그룹으로만 받는 것을 승인했다(DEC-OPS-401). 이미지는 CUBRID 프로젝트가 올린 Docker Hub 이미지(공식 라이브러리 아님)를 digest 로 고정했다.
+CUBRID 11.4 를 벤더 CI 잡에 넣었다(원장 `ci: true`, 상태는 `preview`). 인증은 이 변경이 main 에서 벤더 잡을 통과한 뒤의 PR 이다(DEC-OPS-400). 사용자는 2026-11-05 에 아래 저하 가운데 앞의 넷을 받아들이는 제한 지원과, Maven Central 에 없는 공식 JDBC 드라이버를 CUBRID 저장소에서 `cubrid` 그룹으로만 받는 것을 승인했다(DEC-OPS-401). 뒤의 둘(NULL 정렬, 부모 행 잠금 대기)은 구현 중 실측해 더한 것으로 사용자 확인 전이다 — 확인 전에는 인증으로 올리지 않는다. 이미지는 CUBRID 프로젝트가 올린 Docker Hub 이미지(공식 라이브러리 아님)를 digest 로 고정했다.
 
 | 저하 | 내용 |
 |---|---|

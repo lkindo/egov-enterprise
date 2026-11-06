@@ -79,16 +79,20 @@ const sqlStringOf = expression => `$(printf '%s' "${expression}" | sed "s/'/''/g
  * 준비 판정은 앱 계정의 실제 접속이다(project-composer-vendor-engine.mjs 의 cubrid.ready, 2026-11-06 실측).
  * dba 가 비밀번호 없이 접속되는 동안은 준비로 보지 않는다. 앱 계정이 만들어져 접속되면 dba 에 관리자 비밀번호를 걸고, 다음 검사부터 앱 계정만 본다.
  * 두 비밀번호는 처음 만들 때만 반영된다. 비밀번호가 csql 인자에 실린다 — 검증 엔진과 같다(csql 은 환경에서 비밀번호를 읽지 않는다).
- * dba 비밀번호를 거는 단계와 gosu 실행은 실측하지 않았다.
+ * 생성물 compose 로 실측했다(2026-11-06, 작은따옴표가 든 비밀번호): 첫 기동에 앱 계정이 생기고 dba 에 비밀번호가 걸린 뒤 healthy, dba 는 비밀번호 없이
+ * 접속하지 못하고 재기동 뒤에도 healthy 다.
  * 계정 이름은 SQL 식별자와 따옴표 없는 인자에 쓰이므로 영문·숫자·밑줄만 받고, 이미지가 따로 다루는 dba·public 은 거부한다.
+ * 비밀번호는 셸 명령 치환을 거쳐 SQL 에 들어가는데 명령 치환은 끝 줄바꿈을 지운다 — 줄바꿈이 든 비밀번호는 만든 값과 알려진 값이 달라지므로 받지 않는다.
  * 인자는 셸이 펼칠 식(`${APP_DB_USER}` 같은 변수)이나 글자 그대로의 값이다.
  */
 export function cubridHealthcheckCommand({ user, password, dbaPassword, database }) {
   const target = `${database}@localhost`;
   const quiet = '</dev/null >/dev/null 2>&1';
   const appLogin = `${CUBRID_CSQL} -u "${user}" -p "${password}" -c "select 1 from db_root" ${target}`;
+  const singleLine = value => `[ "$(printf '%s' "${value}" | tr -d '\\r\\n')" = "${value}" ]`;
   return `case "${user}" in ''|*[!A-Za-z0-9_]*|[Dd][Bb][Aa]|[Pp][Uu][Bb][Ll][Ii][Cc]) echo 'app user must use only letters, digits and _ and must not be dba or public' >&2; exit 1;; esac; `
     + `if [ -z "${dbaPassword}" ]; then echo 'dba password is required' >&2; exit 1; fi; `
+    + `if ! ${singleLine(password)} || ! ${singleLine(dbaPassword)}; then echo 'passwords must not contain line breaks' >&2; exit 1; fi; `
     + `if ${CUBRID_CSQL} -u dba -c "select 1 from db_root" ${target} ${quiet}; then `
     + `${CUBRID_CSQL} -u dba -c "CREATE USER ${user} PASSWORD '${sqlStringOf(password)}'" ${target} ${quiet}; `
     + `${appLogin} ${quiet} && ${CUBRID_CSQL} -u dba -c "ALTER USER dba PASSWORD '${sqlStringOf(dbaPassword)}'" ${target} ${quiet}; exit 1; fi; `
