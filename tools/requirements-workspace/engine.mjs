@@ -5,8 +5,10 @@ import { assertExternalWorkspace } from './store.mjs';
 import * as shared from '../../scripts/export-deliverables-workspace.mjs';
 import { backlogDetailSheet, projectUatChecklistSheet, computeAcHash, computeRequirementAcceptanceDisposition, toMarkdown } from '../../scripts/export-deliverables.mjs';
 import { createAiWorkflow, validateAiMetadata } from './ai-workflow.mjs';
-import { createArtifactImports, validateImportMetadata } from './artifact-imports.mjs';
+import { createArtifactImports, validateImportMetadata, documentReadingProfile, sourceEvidenceDigest } from './artifact-imports.mjs';
 import { projectAnalysisBacklog } from './ai-contract.mjs';
+import { PROMPT_VERSION, promptManifest } from './ai-prompts.mjs';
+import { validateReadingRecord } from './document-reader.mjs';
 
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 const digest = value => createHash('sha256').update(typeof value === 'string' ? value : JSON.stringify(canonical(value))).digest('hex');
@@ -105,7 +107,7 @@ function validDate(value) {
 }
 
 /** Domain actions share CLI contracts. Customer content never becomes shell arguments. */
-export function createRequirementsEngine({ store, contextProvider, root, aiRunner, artifactExtractor, now = () => new Date().toISOString() }) {
+export function createRequirementsEngine({ store, contextProvider, root, aiRunner, artifactExtractor, documentReader, now = () => new Date().toISOString() }) {
   const validate = pack => {
     const result = shared.validateBacklogPack(pack);
     if (!result.valid) fail('BACKLOG_INVALID', result.errors);
@@ -116,9 +118,22 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     if (previous.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');
     const next = structuredClone(previous); mutate(next); persist(previous, next, 'ai.update');
   }
-  const imports = createArtifactImports({ store, commit: commitMutation, extractor: artifactExtractor, now });
+  const imports = createArtifactImports({ store, commit: commitMutation, extractor: artifactExtractor, documentReader, aiRunner, now });
   const workflow = createAiWorkflow({ store, contextProvider, runner: aiRunner, sourceFile: imports.sourceFile, now, baselineCurrent,
     commit: commitMutation,
+    sourceReading(sourceId) {
+      const snapshot = store.read(), source = snapshot.backlog.sources.find(source => source.id === sourceId);
+      const job = snapshot.metadata.imports?.findLast(job => job.sourceId === sourceId && job.status === 'ready' && job.readingRef && job.promptVersion === PROMPT_VERSION && job.sha256 === source?.fileSha256 && job.readingProfile === documentReadingProfile(source.sourceType, source.classification) && job.sourceDigest === sourceEvidenceDigest(source));
+      if (!job) return null;
+      const reading = JSON.parse(store.readArchive(job.readingRef));
+      if (reading.promptVersion !== job.promptVersion) fail('AI_DOCUMENT_OUTPUT_INVALID');
+      return validateReadingRecord(reading, job.sha256);
+    },
+    completePipeline(next) {
+      next.backlog.contextBindings = shared.computeContextBindings(next.backlog, next.metadata.context);
+      const content = shared.generateWorkPackagePlan(next.backlog, next.metadata.context).markdown;
+      next.metadata.exports.push({ id: randomUUID(), kind: 'task', filename: 'TASK-PACKAGE.md', content, sha256: digest(content), createdAt: now(), inputRevision: store.read().revision, analysisHash: sourceMeaning(next.backlog) });
+    },
     confirmAnalysis(next, proposal) {
       next.backlog = projectAnalysisBacklog(next, proposal);
       for (const req of next.backlog.businessRequirements) next.metadata.reviewedRequirements[req.id] = reqMeaning(req, next.backlog);
@@ -153,7 +168,8 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     if (contextChanged) { ready.valid = false; ready.errors.push('저장소 원장이 변경되었습니다. 문맥 차이를 검토하고 갱신하세요.'); }
     if (store.readOnly) { ready.valid = false; ready.errors.push('마지막으로 확인한 자료를 읽기 전용으로 표시합니다. 원본과 잠금 상태를 확인한 뒤 실행기를 다시 여세요.'); }
     const metadata = { ...snapshot.metadata, exports: snapshot.metadata.exports.map(entry => ({ ...entry, stale: entry.inputBacklogHash !== digest(snapshot.backlog) || contextChanged })) };
-    return { ...snapshot, metadata, ai: workflow.view(snapshot), imports: imports.view(snapshot), context: snapshot.metadata.context, analysisReadiness: analysis, readiness: ready, contextChanged, contextDiff: shared.diffContextSnapshots(snapshot.metadata.context, current, snapshot.backlog), baselineCurrent: baselineCurrent(snapshot), reviewedRequirementsCurrent: Object.fromEntries(snapshot.backlog.businessRequirements.map(req => [req.id, snapshot.metadata.reviewedRequirements[req.id] === reqMeaning(req, snapshot.backlog)])), composition: snapshot.metadata.composition, matches: shared.matchRequirementsToContext(snapshot.backlog, snapshot.metadata.context), readOnly: Boolean(store.readonly ?? store.readOnly), reason: store.reason };
+    const prompts = promptManifest({ sourceTypes: [...snapshot.backlog.sources.map(source => source.sourceType), ...(snapshot.metadata.imports ?? []).filter(job => job.status === 'ready').flatMap(job => job.detectedTypes ?? [])], formats: (snapshot.metadata.imports ?? []).filter(job => job.status === 'ready').map(job => job.format), hasExisting: snapshot.backlog.businessRequirements.length > 0, hasDecisions: Boolean(snapshot.metadata.ai?.decisions.length) });
+    return { ...snapshot, metadata, prompts, ai: workflow.view(snapshot), imports: imports.view(snapshot), context: snapshot.metadata.context, analysisReadiness: analysis, readiness: ready, contextChanged, contextDiff: shared.diffContextSnapshots(snapshot.metadata.context, current, snapshot.backlog), baselineCurrent: baselineCurrent(snapshot), reviewedRequirementsCurrent: Object.fromEntries(snapshot.backlog.businessRequirements.map(req => [req.id, snapshot.metadata.reviewedRequirements[req.id] === reqMeaning(req, snapshot.backlog)])), composition: snapshot.metadata.composition, matches: shared.matchRequirementsToContext(snapshot.backlog, snapshot.metadata.context), readOnly: Boolean(store.readonly ?? store.readOnly), reason: store.reason };
   }
   async function scratch(snapshot, run) {
     // Existing CLI writers run only in an isolated copy; the checked CAS commit owns the real workspace.
@@ -175,6 +191,23 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
   }
   function artifact(id) {
     const meta = readSnapshot().metadata;
+    const previousSource = meta.imports?.find(job => job.previousSourceRef?.id === id);
+    if (previousSource) {
+      const content = store.readArchive(previousSource.previousSourceRef); sensitive({ content });
+      return { filename: `BEFORE-AI-${previousSource.sourceId}.json`, content, type: 'application/json;charset=utf-8', sha256: digest(content) };
+    }
+    const readingJob = meta.imports?.find(job => job.status === 'ready' && job.readingRef?.id === id);
+    if (readingJob) {
+      const reading = validateReadingRecord(JSON.parse(store.readArchive(readingJob.readingRef)), readingJob.sha256), content = JSON.stringify(reading, null, 2);
+      return { filename: `AI-READING-${readingJob.sourceId}.json`, content, type: 'application/json;charset=utf-8', sha256: digest(content) };
+    }
+    const prompt = meta.ai?.jobs.flatMap(job => job.promptRefs ?? []).find(item => item.ref.id === id);
+    if (prompt) {
+      const content = store.readArchive(prompt.ref), value = JSON.parse(content);
+      if (value.stage !== prompt.stage || createHash('sha256').update(JSON.stringify(value)).digest('hex') !== prompt.sha256 || typeof value.instructions !== 'string') fail('AI_OUTPUT_INVALID');
+      sensitive(value); return { filename: `AI-PROMPT-${prompt.stage}.json`, content, type: 'application/json;charset=utf-8', sha256: digest(content) };
+    }
+    if (meta.imports?.some(job => job.requestId === id && job.originalRef)) return { ...imports.originalFile(id), type: 'application/octet-stream' };
     if (meta.imports?.some(job => job.sourceId === id && job.status === 'ready')) return { ...imports.sourceFile(id), type: 'application/octet-stream' };
     const aiJob = meta.ai?.jobs.find(job => job.id === id && job.resultRef);
     if (aiJob) {
@@ -197,7 +230,7 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     if (typeof actionName !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload)) fail('INVALID_REQUEST');
     if (actionName === 'source.ingest') { const { base64, ...labels } = payload; sensitive(labels); }
     else sensitive(payload);
-    if (actionName.startsWith('source.ingest')) { await imports.action(revision, actionName, payload); return state(); }
+    if (actionName.startsWith('source.ingest') || actionName === 'source.reingest') { await imports.action(revision, actionName, payload); return state(); }
     if (actionName.startsWith('ai.')) { if (actionName === 'ai.start' && imports.active) fail('AI_DOCUMENTS_PROCESSING'); await workflow.action(revision, actionName, payload); return state(); }
     const previous = store.read();
     if (previous.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');

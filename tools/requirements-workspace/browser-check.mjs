@@ -20,7 +20,7 @@ export async function runBrowserChecks({ url, launch = '', screenshots }) {
     await page.getByRole('heading', { name: '프로젝트 진행 현황', exact: true }).waitFor();
     assert.equal(new URL(page.url()).hash, '', 'launch fragment removed after exchange');
     await page.getByRole('link', { name: /산출물 수집/ }).click();
-    await page.getByRole('button', { name: '자료 추가', exact: true }).click();
+    await page.getByRole('button', { name: '자료 직접 추가', exact: true }).click();
     await page.getByLabel('자료 제목', { exact: true }).fill('브라우저 합성 요구사항');
     assert.match(await page.getByLabel('자료 ID', { exact: true }).inputValue(), /^SRC-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i, 'new entity uses a complete UUID');
     await page.getByLabel('자료 위치', { exact: true }).fill('§1');
@@ -42,7 +42,7 @@ export async function runBrowserChecks({ url, launch = '', screenshots }) {
     await page.getByRole('button', { name: '저장', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
     assert.equal(await page.evaluate(() => window.__xss), undefined, 'source content never executes');
-    await page.getByRole('button', { name: '자료 추가', exact: true }).click();
+    await page.getByRole('button', { name: '자료 직접 추가', exact: true }).click();
     await page.getByLabel('자료 제목', { exact: true }).fill('가져오기 전용 합성 자료');
     await page.locator('#source-file').setInputFiles({ name: 'fresh.md', mimeType: 'text/markdown', buffer: Buffer.from('가져온 첫 조항\n\n가져온 셋째 줄 조항', 'utf8') });
     await page.getByLabel('조항 본문', { exact: true }).last().waitFor();
