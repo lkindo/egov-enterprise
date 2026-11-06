@@ -268,6 +268,8 @@ export const VENDOR_SOURCE = Object.freeze({
     dialect: 'nuri.foundation.core.persistence.NuriCubridDialect',
     // 표를 한꺼번에 읽는 기본 방식(grouped)은 CUBRID 드라이버 메타데이터에서 표를 찾지 못해 Hibernate validate 가 멈춘다(실측). UUID 매핑은 방언이 맡는다.
     hibernateProperties: Object.freeze([['hbm2ddl', 'jdbc_metadata_extraction_strategy', 'individually']]),
+    // 드라이버가 현재 스키마(getSchema)를 답하지 않아 Flyway 가 이력 표의 스키마를 정하지 못한다(2026-11-06 생성물 검증). CUBRID 의 스키마는 접속 계정이다.
+    flywayDefaultSchema: '${spring.datasource.username}',
     composeUrl: `jdbc:cubrid:db:33000:egovdb:::?${CUBRID_URL_PARAMETERS}`,
     composeVolume: 'cubrid_data',
     // CUBRID 프로젝트가 Docker Hub 에 올린 개발용 이미지다(공식 라이브러리 아님). 검증 엔진과 같은 판·로캘이다. 서버 시계(SYS_DATETIME)는 컨테이너 TZ 를 따른다.

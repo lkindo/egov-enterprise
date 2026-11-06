@@ -1392,6 +1392,10 @@ test('the vendor document selects the SQL port and dialect and turns off Flyway 
   assert.match(cubrid, /^ {4}vendor: cubrid$/m);
   assert.doesNotMatch(cubrid, /uuid|use_get_generated_keys/i);
   for (const vendor of ['oracle', 'mysql', 'mariadb', 'mssql']) assert.doesNotMatch(vendorApplicationDocument(vendor), /hbm2ddl|extraction_strategy/, vendor);
+  // 드라이버가 현재 스키마를 답하지 않아 Flyway 이력 표의 스키마를 접속 계정으로 준다. 시험의 Flyway 적용도 같은 값이다(엔진 환경).
+  assert.match(cubrid, /^ {2}flyway:\n(?: {4}.+\n)* {4}default-schema: \$\{spring\.datasource\.username\}$/m);
+  assert.equal(VENDOR_ENGINES.cubrid.integration.environment.VENDOR_FLYWAY_DEFAULT_SCHEMA, VENDOR_ENGINES.cubrid.integration.username);
+  for (const vendor of ['oracle', 'mysql', 'mariadb', 'mssql']) assert.doesNotMatch(vendorApplicationDocument(vendor), /default-schema/, vendor);
   // 통합 시험도 같은 값으로 돈다(엔진의 SPRING_APPLICATION_JSON).
   const [[group, key, value]] = VENDOR_SOURCE.cubrid.hibernateProperties;
   assert.equal(JSON.parse(VENDOR_ENGINES.cubrid.integration.environment.SPRING_APPLICATION_JSON)[`spring.jpa.properties.hibernate.${group}.${key}`], value);

@@ -167,6 +167,21 @@ class VendorCatalogConformanceTest {
         return values;
     }
 
+    /**
+     * 메타 조회의 스키마. CUBRID 드라이버는 Connection.getSchema 를 지원하지 않는다(UnsupportedOperationException 을 감싼 SQLException).
+     * CUBRID 의 스키마는 접속 계정이고 메타의 TABLE_SCHEM 도 그 이름이다(2026-11-06 실측).
+     */
+    private static String schema(Connection connection) throws SQLException {
+        try {
+            return connection.getSchema();
+        } catch (SQLException unsupported) {
+            if (unsupported.getCause() instanceof UnsupportedOperationException) {
+                return connection.getMetaData().getUserName();
+            }
+            throw unsupported;
+        }
+    }
+
     private static String lower(String name) {
         return name.toLowerCase(Locale.ROOT);
     }
@@ -176,14 +191,14 @@ class VendorCatalogConformanceTest {
      * {@code storedTables} 는 드라이버가 답한 표 이름 그대로다 — {@code stored} 의 키는 소문자로 접어 TB_A 와 "tb_a" 가 겹친다.
      */
     private static Map<String, Map<String, String>> readColumns(Connection connection, DatabaseMetaData metadata, Map<String, String> stored, Set<String> storedTables) throws SQLException {
-        try (ResultSet tables = metadata.getTables(connection.getCatalog(), connection.getSchema(), "%", new String[] {"TABLE"})) {
+        try (ResultSet tables = metadata.getTables(connection.getCatalog(), schema(connection), "%", new String[] {"TABLE"})) {
             while (tables.next()) {
                 stored.put(lower(tables.getString("TABLE_NAME")), tables.getString("TABLE_NAME"));
                 storedTables.add(tables.getString("TABLE_NAME"));
             }
         }
         Map<String, Map<String, String>> columns = new TreeMap<>();
-        try (ResultSet rows = metadata.getColumns(connection.getCatalog(), connection.getSchema(), "%", "%")) {
+        try (ResultSet rows = metadata.getColumns(connection.getCatalog(), schema(connection), "%", "%")) {
             while (rows.next()) {
                 String table = lower(rows.getString("TABLE_NAME"));
                 if (stored.containsKey(table)) {
@@ -197,7 +212,7 @@ class VendorCatalogConformanceTest {
 
     private static Set<String> readViews(Connection connection, DatabaseMetaData metadata) throws SQLException {
         Set<String> names = new TreeSet<>();
-        try (ResultSet rows = metadata.getTables(connection.getCatalog(), connection.getSchema(), "%", new String[] {"VIEW"})) {
+        try (ResultSet rows = metadata.getTables(connection.getCatalog(), schema(connection), "%", new String[] {"VIEW"})) {
             while (rows.next()) {
                 names.add(lower(rows.getString("TABLE_NAME")));
             }
@@ -208,7 +223,7 @@ class VendorCatalogConformanceTest {
     private static Map<String, Set<String>> readPrimaryKeys(Connection connection, DatabaseMetaData metadata, Map<String, String> stored) throws SQLException {
         Map<String, Set<String>> keys = new HashMap<>();
         for (Map.Entry<String, String> table : stored.entrySet()) {
-            try (ResultSet rows = metadata.getPrimaryKeys(connection.getCatalog(), connection.getSchema(), table.getValue())) {
+            try (ResultSet rows = metadata.getPrimaryKeys(connection.getCatalog(), schema(connection), table.getValue())) {
                 while (rows.next()) {
                     keys.computeIfAbsent(table.getKey(), key -> new TreeSet<>()).add(lower(rows.getString("COLUMN_NAME")));
                 }
@@ -221,7 +236,7 @@ class VendorCatalogConformanceTest {
     private static Map<String, Map<String, Set<String>>> readUniques(Connection connection, DatabaseMetaData metadata, Map<String, String> stored) throws SQLException {
         Map<String, Map<String, Set<String>>> uniques = new HashMap<>();
         for (Map.Entry<String, String> table : stored.entrySet()) {
-            try (ResultSet rows = metadata.getIndexInfo(connection.getCatalog(), connection.getSchema(), table.getValue(), true, true)) {
+            try (ResultSet rows = metadata.getIndexInfo(connection.getCatalog(), schema(connection), table.getValue(), true, true)) {
                 while (rows.next()) {
                     String index = rows.getString("INDEX_NAME");
                     String column = rows.getString("COLUMN_NAME");

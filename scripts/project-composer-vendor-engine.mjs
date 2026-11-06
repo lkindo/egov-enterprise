@@ -205,7 +205,9 @@ export const VENDOR_ENGINES = Object.freeze({
       grants: [],
       lockObservation: 'tranlist',
       // 묶음 추출(grouped)은 CUBRID 드라이버 메타데이터에서 표를 찾지 못한다(2026-11-05 실측). 이름에 밑줄이 있어 환경 변수 이름으로는 넘길 수 없다.
-      environment: { SPRING_APPLICATION_JSON: JSON.stringify({ 'spring.jpa.properties.hibernate.hbm2ddl.jdbc_metadata_extraction_strategy': 'individually' }) },
+      // Flyway 이력 표의 스키마는 생성물 설정(spring.flyway.default-schema = 접속 계정)과 같게 준다. 드라이버가 현재 스키마를 답하지 않는다.
+      environment: { SPRING_APPLICATION_JSON: JSON.stringify({ 'spring.jpa.properties.hibernate.hbm2ddl.jdbc_metadata_extraction_strategy': 'individually' }),
+        VENDOR_FLYWAY_DEFAULT_SCHEMA: SCHEMA },
     },
   },
 });

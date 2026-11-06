@@ -122,10 +122,12 @@ export function projectVendorProfile(text, vendorId) {
  * 벤더가 더 요구하는 Hibernate 설정(VENDOR_SOURCE 의 hibernateProperties: [묶음, 키, 값])은 방언 아래에 둔다.
  */
 export function vendorApplicationDocument(vendorId) {
-  const { dialect, hibernateProperties = [] } = VENDOR_SOURCE[vendorId];
+  const { dialect, hibernateProperties = [], flywayDefaultSchema } = VENDOR_SOURCE[vendorId];
   const extra = hibernateProperties.flatMap(([group, key, value]) => [`        ${group}:`, `          ${key}: ${value}`]);
+  // 현재 스키마를 답하지 않는 드라이버는 Flyway 이력 표의 스키마를 정해 준다(VENDOR_SOURCE 의 flywayDefaultSchema).
+  const schema = flywayDefaultSchema ? [`    default-schema: ${flywayDefaultSchema}`] : [];
   return ['---', '# 생성기가 벤더 값으로 투영했다(ADR-0047).', 'app:', '  database:', `    vendor: ${vendorId}`, 'spring:', '  flyway:',
-    `    locations: classpath:${vendorMigrationLocation(vendorId)}`, '    placeholder-replacement: false', '  jpa:', '    properties:', '      hibernate:', `        dialect: ${dialect}`, ...extra, ''].join('\n');
+    `    locations: classpath:${vendorMigrationLocation(vendorId)}`, '    placeholder-replacement: false', ...schema, '  jpa:', '    properties:', '      hibernate:', `        dialect: ${dialect}`, ...extra, ''].join('\n');
 }
 
 /** 개발 스택의 DB 서비스와 앱 접속값을 벤더로 바꾼다. */
