@@ -122,11 +122,11 @@ class CmsContentMigrationIntegrationTest extends SharedPostgresMigrationTestSupp
                     + " VALUES (" + revision + ", " + file + ", " + first + ", 'editor', now())");
 
             assertThatThrownBy(() -> statement.executeUpdate("UPDATE tb_cms_conts_rvsn SET conts_ttl = '바꿈' WHERE conts_rvsn_sn = " + revision))
-                    .isInstanceOf(SQLException.class).hasMessageContaining("append-only");
+                    .isInstanceOf(SQLException.class).hasMessageContaining(VendorTestSql.appendOnlyRejection());
             assertThatThrownBy(() -> statement.executeUpdate("DELETE FROM tb_cms_conts_rvsn WHERE conts_rvsn_sn = " + revision))
-                    .isInstanceOf(SQLException.class).hasMessageContaining("append-only");
+                    .isInstanceOf(SQLException.class).hasMessageContaining(VendorTestSql.appendOnlyRejection());
             assertThatThrownBy(() -> statement.executeUpdate("DELETE FROM tb_cms_conts_rvsn_file WHERE conts_rvsn_sn = " + revision))
-                    .isInstanceOf(SQLException.class).hasMessageContaining("append-only");
+                    .isInstanceOf(SQLException.class).hasMessageContaining(VendorTestSql.appendOnlyRejection());
 
             assertThatThrownBy(() -> statement.executeUpdate("UPDATE tb_cms_conts SET conts_rvsn_sn = " + revision
                     + " WHERE conts_sn = " + second))

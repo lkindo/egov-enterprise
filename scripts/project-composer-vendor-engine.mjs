@@ -82,11 +82,16 @@ const innoDbIntegration = (vendorId, { driver, dialect, administrator, observati
  *   바로 멈춘다(대기 루프가 컨테이너 로그를 남기고 지운다).
  */
 const ORACLE_UNICODE_PROBE = client => `printf "SET HEADING OFF FEEDBACK OFF PAGESIZE 0\\nSELECT 'CHARSET=' || value FROM nls_database_parameters WHERE parameter = 'NLS_CHARACTERSET';\\nSELECT 'HANGUL=' || DUMP('가', 1016) FROM dual;\\nEXIT\\n" | ${client}`;
+/**
+ * 둘 다 맞게 읽으면 true 다. 읽은 값이 하나라도 다르면 멈춘다 — 기다려도 바뀌지 않는다. 출력을 읽지 못하면(접속 실패·리스너 재시작 등) 아직 준비 전으로
+ * 보고 false 를 돌려 준비 대기가 다시 묻는다. 끝내 읽지 못하면 준비 대기의 시간 상한이 멈춘다.
+ */
 export function assertOracleUnicode(engineId, result) {
   const output = `${result?.stdout ?? ''}${result?.stderr ?? ''}`;
   const charset = output.match(/CHARSET=(\S+)/)?.[1];
   const hangul = output.match(/HANGUL=Typ=\d+ Len=\d+ CharacterSet=\S+: ([0-9a-f,]+)/)?.[1];
-  if (charset === 'AL32UTF8' && hangul === 'ea,b0,80') return;
+  if (charset === 'AL32UTF8' && hangul === 'ea,b0,80') return true;
+  if ((charset ?? 'AL32UTF8') === 'AL32UTF8' && (hangul ?? 'ea,b0,80') === 'ea,b0,80') return false;
   fail('VENDOR_ENGINE_NOT_READY', `${engineId} 의 DB 가 한글을 그대로 담지 못한다(NLS_CHARACTERSET=${charset ?? '읽지 못함'}, '가' 저장 바이트=${hangul ?? '읽지 못함'}) — 한글이 '?' 로 바뀐다.`);
 }
 
@@ -116,8 +121,7 @@ export const VENDOR_ENGINES = Object.freeze({
       if (!/DATABASE IS READY TO USE/.test(logs(name, run))) return false;
       const result = run(['exec', name, 'sh', '-c', `printf 'CREATE USER ${SCHEMA} IDENTIFIED BY "%s" QUOTA UNLIMITED ON USERS;\\nGRANT CONNECT, RESOURCE, CREATE VIEW, CREATE SEQUENCE, CREATE TRIGGER TO ${SCHEMA};\\nEXIT\\n' "$ORACLE_PWD" | sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba`]);
       if (!/Grant succeeded/.test(`${result.stdout}${result.stderr}`)) return false;
-      assertOracleUnicode('oracle19', run(['exec', name, 'sh', '-c', ORACLE_UNICODE_PROBE('NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba')]));
-      return true;
+      return assertOracleUnicode('oracle19', run(['exec', name, 'sh', '-c', ORACLE_UNICODE_PROBE('NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S sys/"$ORACLE_PWD"@//localhost/ORCLPDB1 as sysdba')]));
     },
     command: file => `NLS_LANG=AMERICAN_AMERICA.AL32UTF8 sqlplus -S ${SCHEMA}/"$ORACLE_PWD"@//localhost/ORCLPDB1 @${file}`,
     batch: oracleBatch,
@@ -176,11 +180,35 @@ export const VENDOR_ENGINES = Object.freeze({
   },
   cubrid: {
     version: '11.4',
-    image: 'cubrid/cubrid:latest', maxWaitSeconds: 120, user: 'cubrid',
-    environment: () => ({ CUBRID_DB: SCHEMA, CUBRID_LOCALE: 'ko_KR.utf8', CUBRID_VOLUME_SIZE: '512M' }),
-    ready: (name, run = docker) => run(['exec', '-u', 'cubrid', name, 'sh', '-c', `csql -u dba -c "select 1 from db_root" ${SCHEMA}@localhost`]).status === 0,
-    command: file => `csql -u dba -e -l -i ${file} ${SCHEMA}@localhost`,
+    // CUBRID 프로젝트가 올린 Docker Hub 이미지다(공식 라이브러리 아님). 11.4 태그의 2026-09-10 빌드(11.4.6.1963)로 고정한다.
+    image: 'cubrid/cubrid:11.4@sha256:1248b77ad39888df9e064655937188ab99fe056ed7e35b57d06155a015dc1791', imageOrigin: 'community:cubrid', maxWaitSeconds: 120, user: 'cubrid',
+    // 서버 시계(SYS_DATETIME)는 컨테이너 TZ 를 따르고 세션 시간대 설정으로는 바뀌지 않는다(2026-11-06 실측). 앱 계정 비밀번호는 준비 확인이 계정을 만들 때만 쓴다.
+    environment: password => ({ CUBRID_DB: SCHEMA, CUBRID_LOCALE: 'ko_KR.utf8', CUBRID_VOLUME_SIZE: '512M', TZ: 'Asia/Seoul', CUBRID_APP_PASSWORD: password }),
+    // 이미지가 앱 계정을 만들지 않는다. 표를 앱 계정이 가져야 Hibernate 검증과 표 수 조회가 앱의 스키마를 본다. 만들기는 이미 있으면 실패하므로
+    //   결과를 보지 않고, 앱 계정으로 실제 접속되는지로 판정한다.
+    ready: (name, run = docker) => run(['exec', '-u', 'cubrid', name, 'sh', '-c', `csql -u dba -c "select 1 from db_root" ${SCHEMA}@localhost`
+      + ` && { csql -u dba -c "CREATE USER ${SCHEMA} PASSWORD '$CUBRID_APP_PASSWORD'" ${SCHEMA}@localhost >/dev/null 2>&1; true; }`
+      + ` && csql -u ${SCHEMA} -p "$CUBRID_APP_PASSWORD" -c "select 1 from db_root" ${SCHEMA}@localhost`]).status === 0,
+    command: file => `csql -u ${SCHEMA} -p "$CUBRID_APP_PASSWORD" -e -l -i ${file} ${SCHEMA}@localhost`,
     batch: { errors: /^(ERROR:|Execute:.*error)/i, fatal: /(Failed to connect|Server .* is not running|connection (has been )?(lost|closed|aborted))/i, finish: `SELECT '${COMPLETED}' AS m FROM db_root;`, wrap: body => `${body}\nCOMMIT;\n`, mark: (index, statement) => `SELECT '@@${index}' AS m FROM db_root;\n${statement.sql};` },
+    integration: {
+      port: 33000,
+      url: port => `jdbc:cubrid:127.0.0.1:${port}:${SCHEMA}:::?charset=utf-8`,
+      username: SCHEMA,
+      driver: 'cubrid.jdbc.driver.CUBRIDDriver',
+      dialect: 'nuri.foundation.core.persistence.NuriCubridDialect',
+      // csql 은 오류 뒤 문장도 돌리고 종료 코드 0 으로 끝난다(표준 입력·-i 모두, 2026-11-06 실측). 출력의 ERROR 줄로 실패를 낸다.
+      administrator: `cat > /tmp/admin.sql && csql -u dba -e -i /tmp/admin.sql ${SCHEMA}@localhost > /tmp/admin.out 2>&1; s=$?; cat /tmp/admin.out; [ "$s" -eq 0 ] && ! grep -qE '^ERROR' /tmp/admin.out`,
+      administratorScript: statements => `${statements.map(statement => `${statement};`).join('\n')}\n`,
+      // 시험은 앱 계정으로 돈다. 잠금 대기 관측은 SQL 로 볼 수 없어(SHOW 는 DBA 전용이고 막는 세션·문장이 없다) 시험 JVM 이 이 컨테이너의
+      //   cubrid tranlist 를 읽는다(VendorTestSql). 그래서 줄 권한이 없다.
+      grants: [],
+      lockObservation: 'tranlist',
+      // 묶음 추출(grouped)은 CUBRID 드라이버 메타데이터에서 표를 찾지 못한다(2026-11-05 실측). 이름에 밑줄이 있어 환경 변수 이름으로는 넘길 수 없다.
+      // Flyway 이력 표의 스키마는 생성물 설정(spring.flyway.default-schema = 접속 계정)과 같게 준다. 드라이버가 현재 스키마를 답하지 않는다.
+      environment: { SPRING_APPLICATION_JSON: JSON.stringify({ 'spring.jpa.properties.hibernate.hbm2ddl.jdbc_metadata_extraction_strategy': 'individually' }),
+        VENDOR_FLYWAY_DEFAULT_SCHEMA: SCHEMA },
+    },
   },
 });
 
@@ -411,6 +439,10 @@ export const VENDOR_UNIQUE_SIGNATURES = Object.freeze({
   // 키 컬럼 목록과 필터 유무가 값이다. 필터를 빼거나 더하면 NULL 이 든 행을 받는 수가 달라진다. INCLUDE 컬럼은 유일성에 들지 않는다.
   mssql: `SELECT LOWER(t.name) + '.' + LOWER(i.name) + '=' + STRING_AGG(LOWER(c.name), '#') WITHIN GROUP (ORDER BY c.name) + CASE WHEN i.has_filter = 1 THEN '$f' ELSE '' END ${MSSQL_INDEX_COLUMNS}`
     + ' WHERE i.is_unique = 1 GROUP BY t.name, i.name, i.has_filter',
+  // 정렬한 키 목록(함수 키는 식)이 값이다. GROUP_CONCAT 의 ORDER BY 는 인자와 같은 식이어야 한다(2026-11-06 실측).
+  cubrid: "SELECT LOWER(i.class_name) || '.' || LOWER(i.index_name) || '=' || GROUP_CONCAT(COALESCE(LOWER(k.key_attr_name), k.func) ORDER BY COALESCE(LOWER(k.key_attr_name), k.func) SEPARATOR '#')"
+    + " FROM db_index i JOIN db_index_key k ON k.index_name = i.index_name AND k.class_name = i.class_name WHERE i.is_unique = 'YES'"
+    + " AND i.class_name NOT IN (SELECT class_name FROM db_class WHERE is_system_class = 'YES') GROUP BY i.class_name, i.index_name",
 });
 
 /**
@@ -430,6 +462,9 @@ const NO_ROWS = "SELECT 'none.none=none' FROM DUAL WHERE 1 = 0";
  * 키와 유니크의 컬럼을 줄마다 `표.이름=컬럼` 으로 낸다. 함수 인덱스는 `표.이름=식` 이다. 이름 대조는 컬럼이 달라져도 통과하므로 기준선 단계에서 어댑터 기대치와 맞춘다.
  * 식 컬럼(user_ind_expressions)은 LONG 이라 문자열로 이을 수 없어 PL/SQL 로 읽는다. 통합 시험을 여는 벤더는 여기에도 더한다.
  */
+const CUBRID_UNIQUE_KEYS = "FROM db_index i JOIN db_index_key k ON k.index_name = i.index_name AND k.class_name = i.class_name WHERE i.is_unique = 'YES'"
+  + " AND i.class_name NOT IN (SELECT class_name FROM db_class WHERE is_system_class = 'YES')";
+
 export const VENDOR_UNIQUE_COLUMNS = Object.freeze({
   oracle: {
     prefix: ['SET LINESIZE 4000', 'SET SERVEROUTPUT ON SIZE UNLIMITED'],
@@ -462,6 +497,13 @@ END;`,
     indexes: `SELECT LOWER(t.name) + '.' + LOWER(i.name) + '=' + LOWER(c.name) ${MSSQL_INDEX_COLUMNS} WHERE i.is_unique = 1 AND i.is_primary_key = 0 AND i.is_unique_constraint = 0`,
     expressions: "SELECT 'none.none=none' WHERE 1 = 0",
   },
+  // CUBRID 도 유일 제약과 유일 인덱스가 같은 db_index 행이라 가를 수 없다(MySQL 계열과 같다). 함수 키는 func 칸에 식이 든다(2026-11-06 실측).
+  cubrid: {
+    constraints: `SELECT LOWER(i.class_name) || '.' || LOWER(i.index_name) || '=' || LOWER(k.key_attr_name) ${CUBRID_UNIQUE_KEYS}`,
+    indexes: "SELECT 'none.none=none' FROM db_root WHERE 1 = 0",
+    // 함수 키 유일 인덱스는 만들 수 없다(CREATE UNIQUE INDEX ... (TRIM(v)) 가 invalid create index, 2026-11-06 실측).
+    expressions: "SELECT 'none.none=none' FROM db_root WHERE 1 = 0",
+  },
 });
 
 /**
@@ -469,6 +511,12 @@ END;`,
  * MySQL 은 Hibernate 표 시퀀스(next_val 컬럼 하나인 표)를 읽는다. MariaDB 는 시퀀스의 next_not_cached_value 다 — 어댑터가 NOCACHE 로 만들어 정확한 다음 값이다.
  * MariaDB 의 EXECUTE IMMEDIATE 는 부분 조회를 받지 않아 사용자 변수로 나눈다.
  */
+/**
+ * CUBRID 시리얼의 다음 값. 만든 뒤나 START WITH 로 되돌린 뒤 한 번도 쓰지 않으면(started=0) current_val 이 다음 값이고, 쓴 뒤에는 current_val + increment_val 이다.
+ * AUTO_INCREMENT 도 그 컬럼에 매인 시리얼이라 같다(2026-11-06 실측).
+ */
+const CUBRID_SERIAL_NEXT = 'CAST(CASE WHEN started = 1 THEN current_val + increment_val ELSE current_val END AS VARCHAR(40))';
+
 export const VENDOR_SEQUENCE_NEXT_VALUES = Object.freeze({
   oracle: "SELECT LOWER(sequence_name) || ':' || last_number FROM user_sequences WHERE sequence_name NOT LIKE 'ISEQ$$%'",
   mysql: "SET SESSION group_concat_max_len = 1048576; SET @nuri_seq_sql = COALESCE((SELECT GROUP_CONCAT(CONCAT('SELECT CONCAT(''', LOWER(t.table_name), ':'', next_val) FROM `', t.table_name, '`') SEPARATOR ' UNION ALL ')"
@@ -479,6 +527,7 @@ export const VENDOR_SEQUENCE_NEXT_VALUES = Object.freeze({
     + " FROM information_schema.tables WHERE table_schema = DATABASE() AND table_type = 'SEQUENCE'); EXECUTE IMMEDIATE COALESCE(@q, 'SELECT 1 FROM DUAL WHERE 0')",
   // 만든 뒤나 RESTART 뒤 한 번도 쓰지 않은 시퀀스는 current_value 가 다음 값이고, 쓴 뒤에는 current_value + increment 다(2026-11-04 실측).
   mssql: "SELECT LOWER(name) + ':' + CAST(CASE WHEN last_used_value IS NULL THEN CAST(current_value AS BIGINT) ELSE CAST(current_value AS BIGINT) + CAST(increment AS BIGINT) END AS VARCHAR(30)) FROM sys.sequences",
+  cubrid: `SELECT LOWER(name) || ':' || ${CUBRID_SERIAL_NEXT} FROM db_serial WHERE class_name IS NULL`,
 });
 
 /**
@@ -495,7 +544,7 @@ const VENDOR_NEXT_VALUES = Object.freeze({
   mysql: { prefix: ['SET SESSION information_schema_stats_expiry = 0;'], sql: "SELECT CONCAT(LOWER(table_name), ':', auto_increment) FROM information_schema.tables WHERE table_schema = DATABASE() AND auto_increment IS NOT NULL" },
   mariadb: { sql: "SELECT CONCAT(LOWER(table_name), ':', auto_increment) FROM information_schema.tables WHERE table_schema = DATABASE() AND auto_increment IS NOT NULL" },
   mssql: { sql: "SELECT LOWER(OBJECT_NAME(object_id)) + ':' + CAST(last_value AS VARCHAR(30)) FROM sys.identity_columns WHERE last_value IS NOT NULL AND OBJECTPROPERTY(object_id, 'IsUserTable') = 1", inclusive: true },
-  cubrid: { sql: "SELECT LOWER(class_name) || ':' || CAST(current_val AS VARCHAR(40)) FROM db_serial WHERE class_name IS NOT NULL" },
+  cubrid: { sql: `SELECT LOWER(class_name) || ':' || ${CUBRID_SERIAL_NEXT} FROM db_serial WHERE class_name IS NOT NULL` },
 });
 
 export function readNextValues(handle, vendorId, run = runStatements) {
@@ -561,7 +610,8 @@ export function readByteColumns(handle, vendorId, run = runStatements) {
   return readValues(sections.get(0), vendorId, BYTE_COLUMN_VALUE, '바이트 컬럼');
 }
 
-const UNIQUE_COLUMN_LINE = /^([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)$/;
+// csql 은 값 줄을 `<00001> 식: '값'` 으로 낸다(CUBRID). 줄 전체가 값이어야 하는 벤더는 readValues 가 따로 본다.
+const UNIQUE_COLUMN_LINE = /(?:^|[\s:'])([a-z0-9_$#]+\.[a-z0-9_$#]+=[a-z0-9_$#]+)'?$/;
 const UNIQUE_EXPRESSION_LINE = /^([a-z0-9_$#]+\.[a-z0-9_$#]+=.+)$/;
 
 /**
@@ -595,7 +645,7 @@ export function readUniqueColumns(handle, vendorId, run = runStatements) {
   return found;
 }
 
-const SEQUENCE_VALUE = /^([a-z0-9_$#]+:\d+)$/;
+const SEQUENCE_VALUE = /(?:^|[\s:'])([a-z0-9_$#]+:\d+)'?$/;
 
 /** 독립 시퀀스의 다음 값. 조회가 없는 벤더는 null 이다. */
 export function readSequenceNextValues(handle, vendorId, run = runStatements) {

@@ -172,18 +172,18 @@
           "version": "19",
           "engine": "oracle19",
           "evidence": {
-            "runId": "oracle19-fe18faa5c034-506d71b8",
-            "commit": "fe18faa5c0343ed8bf61bb0f3c97992f94adb3ab",
-            "recordedAt": "2026-11-05T14:06:59.267+09:00",
-            "inputHash": "a6c0a0b8f1bce8cc189705ce31b0096e113cf57cc79dec5d34d3e95cb1ee2bcf",
-            "modelHash": "d0be9e95ae8684c91d85471fd9b04aa9ea21272b1e72cb55fb86b132b4ce1da0",
+            "runId": "oracle19-17495e5011b8-fe172438",
+            "commit": "17495e5011b85878480290d3b8b029df79e2e9f3",
+            "recordedAt": "2026-11-06T20:23:44.960+09:00",
+            "inputHash": "8d954c38a232eb96d36a13d262a986fe410b4d32d5f0f62ecf1ad4a274a5eb79",
+            "modelHash": "36c7d982ff0f546b19a91e47a5a63062c8a55ef84f86e51187e80870074c4835",
             "image": "fugeritorg/oracle-19.3.0-ee:2025.0@sha256:6a29a3c7924de980b9cf10ef8c7e6120fe2db8e3fc32b2087aa59a845e4c63ac",
             "imageOrigin": "community:fugeritorg",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "44545d289bdbbc73ace99905d708f96046bca16df46aeb54ac986719540aa4c6"
+              "compositionHash": "0052d7b31cb94a7e4fc9b5c3cc877a1222d52caaa17da5c849dc58ca561ded68"
             },
             "steps": {
               "verification": {
@@ -239,18 +239,18 @@
           "version": "23",
           "engine": "oracle",
           "evidence": {
-            "runId": "oracle-fe18faa5c034-65a87010",
-            "commit": "fe18faa5c0343ed8bf61bb0f3c97992f94adb3ab",
-            "recordedAt": "2026-11-05T13:16:35.051+09:00",
-            "inputHash": "a6c0a0b8f1bce8cc189705ce31b0096e113cf57cc79dec5d34d3e95cb1ee2bcf",
-            "modelHash": "d0be9e95ae8684c91d85471fd9b04aa9ea21272b1e72cb55fb86b132b4ce1da0",
+            "runId": "oracle-17495e5011b8-e388542b",
+            "commit": "17495e5011b85878480290d3b8b029df79e2e9f3",
+            "recordedAt": "2026-11-06T19:38:32.155+09:00",
+            "inputHash": "8d954c38a232eb96d36a13d262a986fe410b4d32d5f0f62ecf1ad4a274a5eb79",
+            "modelHash": "36c7d982ff0f546b19a91e47a5a63062c8a55ef84f86e51187e80870074c4835",
             "image": "gvenzl/oracle-free:23-slim-faststart@sha256:f5ff19033860d662c821cb04eb10483fa94f14f78eae252d054291ea07028093",
             "imageOrigin": "community:gvenzl",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "44545d289bdbbc73ace99905d708f96046bca16df46aeb54ac986719540aa4c6"
+              "compositionHash": "0052d7b31cb94a7e4fc9b5c3cc877a1222d52caaa17da5c849dc58ca561ded68"
             },
             "steps": {
               "verification": {
@@ -351,18 +351,18 @@
           "version": "11.4",
           "engine": "mariadb",
           "evidence": {
-            "runId": "mariadb-fe18faa5c034-8f32eb81",
-            "commit": "fe18faa5c0343ed8bf61bb0f3c97992f94adb3ab",
-            "recordedAt": "2026-11-05T12:21:49.612+09:00",
-            "inputHash": "dd01f921fd631b842fbf1d6b0f0eabd50f325d4266044878f044cf81d34e2ebf",
-            "modelHash": "13eebb589d705f0071b4d95378b4df2a3d0e178799f3833986fbeab4843429dc",
+            "runId": "mariadb-17495e5011b8-fd96c283",
+            "commit": "17495e5011b85878480290d3b8b029df79e2e9f3",
+            "recordedAt": "2026-11-06T19:00:26.838+09:00",
+            "inputHash": "01e9aecf63c06b073e931c9bc238c4dfff3f468567a90786a56ef5243e8ffba0",
+            "modelHash": "8eca9b22867619169fb5ee68955da97c3e459175936f84d4b9753c98d7bdb94c",
             "image": "mariadb:11.4@sha256:d1891ede5a559f1086f55053bb8cc1569b0298338c4d72d71725a7f74f6ba620",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "defe212e10c0ba804ada9a2cb06c47c87b03572ecb1bbf529c2a404cd73a056a"
+              "compositionHash": "32ec47d546fc8920cd706c6a4775ce2d95f3b0eecf28384fd8c815ccb74ff9cb"
             },
             "steps": {
               "verification": {
@@ -456,18 +456,18 @@
           "version": "8.4",
           "engine": "mysql",
           "evidence": {
-            "runId": "mysql-fe18faa5c034-0c6da96a",
-            "commit": "fe18faa5c0343ed8bf61bb0f3c97992f94adb3ab",
-            "recordedAt": "2026-11-05T12:39:57.329+09:00",
-            "inputHash": "0c6acfeab4e9fb2b6c6d373b5183ac0fd37d7a726a7764e9ceebdfcaefad4f0b",
-            "modelHash": "d829d3d3514b7ddc3821d9919376a2334472a475f3491957585b903501fdadf0",
+            "runId": "mysql-17495e5011b8-4e6e81e4",
+            "commit": "17495e5011b85878480290d3b8b029df79e2e9f3",
+            "recordedAt": "2026-11-06T19:13:02.104+09:00",
+            "inputHash": "61c1f7af04aec99e7bf704ea51c6800d3c9d7a19211c54844ddf32813451b862",
+            "modelHash": "1751383f4b6f5cfd08fafdcda850ea723d41d78bdcb95b2ee4887e9be147b55d",
             "image": "mysql:8.4@sha256:a81d043930e51745522bd5c430961cf8286f0a23f0a9a2a6e0108f7ea71b0902",
             "imageOrigin": "official:docker-library",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "9f7f843dd12fe0aa89d28872bdc918b61beddc14290d6adcf44ffe8ee214fcc1"
+              "compositionHash": "6050a8a63b2215942d39174696af36a515de32b2e367543b666fa2d0b6885cc3"
             },
             "steps": {
               "verification": {
@@ -566,18 +566,18 @@
           "version": "2022",
           "engine": "mssql",
           "evidence": {
-            "runId": "mssql-fe18faa5c034-97fb4905",
-            "commit": "fe18faa5c0343ed8bf61bb0f3c97992f94adb3ab",
-            "recordedAt": "2026-11-05T12:56:41.431+09:00",
-            "inputHash": "a4db3df3af5cdc3bdf932337be63e1848a262ca5728a2b29fe6f5ed1f3a9534a",
-            "modelHash": "c19527b01b1a696f2968b523ddf1a7c5ea539487411c6fa8f1d1ba8c88f9f947",
+            "runId": "mssql-17495e5011b8-ca3185ad",
+            "commit": "17495e5011b85878480290d3b8b029df79e2e9f3",
+            "recordedAt": "2026-11-06T19:24:39.772+09:00",
+            "inputHash": "609d03081837b46fb68dbfc6ac4551622e2098db258150a02b01ad3d8608df1d",
+            "modelHash": "dfdc7ca99fdee7376d064432a1661b064831a0120a41a1feec37e8fd8be144b4",
             "image": "mcr.microsoft.com/mssql/server:2022-latest@sha256:4402d880dd4c34bfa7d8705e56a86cd6c88da80a1f6bbbe741f999e76264a090",
             "imageOrigin": "official:mcr",
             "scope": "application-database",
             "composition": {
               "profile": "demo",
               "layout": "multi-module",
-              "compositionHash": "2d68343493fabc26582c887ff8831d9801874a79db79fd75fc198dd6544cbba9"
+              "compositionHash": "f44e6925b746d3465a9b3ecff1f8af42436321d6d8fdfe4d53d6bb22a3bfcfcc"
             },
             "steps": {
               "verification": {
@@ -683,6 +683,7 @@
       "id": "cubrid",
       "label": "CUBRID",
       "status": "preview",
+      "ci": true,
       "engines": [
         {
           "version": "11.4",
@@ -691,9 +692,76 @@
         }
       ],
       "evidenceInputs": [
-        "scripts/project-composer-vendor-cubrid.mjs"
+        "scripts/project-composer-vendor-cubrid.mjs",
+        "foundation/src/main/java/nuri/foundation/core/persistence/CubridSqlDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridDialect.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridSqlAstTranslator.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/CubridJdbcDataSource.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridDialectResolver.java",
+        "foundation/src/main/java/nuri/foundation/core/persistence/SessionInitializingDataSource.java",
+        "foundation/src/main/resources/META-INF/services/org.hibernate.engine.jdbc.dialect.spi.DialectResolver"
       ],
-      "reason": "제한 지원 대상입니다. 스키마 번역과 대상 DB 대조까지이고 앱 기동을 아직 통과하지 않았습니다."
+      "notices": {
+        "degradations": [
+          {
+            "kind": "check-cost",
+            "summary": "CHECK 제약을 트리거로 검사해 쓰기가 느려짐",
+            "text": "CUBRID 는 CHECK 제약을 집행하지 않아 같은 조건을 입력·수정 전 트리거로 검사합니다. 쓰기마다 조건을 평가해 쓰기가 느려집니다. 조건을 어긴 값은 저장되지 않습니다."
+          },
+          {
+            "kind": "timestamp-precision",
+            "summary": "시각이 밀리초까지만 저장됨",
+            "text": "시각을 밀리초까지만 저장합니다. 밀리초보다 작은 단위는 저장되지 않습니다."
+          },
+          {
+            "kind": "skip-locked",
+            "summary": "후속 작업을 집을 때 잠긴 행을 기다려 처리량이 줄어듦",
+            "text": "잠긴 행을 건너뛰는 조회(SKIP LOCKED)가 없어, 후속 작업을 집을 때 다른 처리기가 잠근 행이 풀릴 때까지 기다린 뒤 다음 행을 집습니다. 처리기가 여럿이면 처리량이 줄어듭니다."
+          },
+          {
+            "kind": "json-validity",
+            "summary": "JSON 형식을 DB 가 검사하지 못함",
+            "text": "JSON 칸을 문자열로 저장해 DB 는 첫 글자와 크기만 검사합니다. JSON 형식은 앱이 검사하므로 앱을 거치지 않고 넣은 깨진 JSON 은 막지 못합니다."
+          },
+          {
+            "kind": "null-order",
+            "summary": "NULL 정렬 순서가 PostgreSQL 과 반대임",
+            "text": "NULL 을 가장 작은 값으로 정렬합니다. NULL 이 들 수 있는 칸으로 정렬하면 오름차순에서는 NULL 이 맨 앞, 내림차순에서는 맨 뒤에 와 PostgreSQL 과 반대입니다."
+          },
+          {
+            "kind": "parent-lock-wait",
+            "summary": "부모 행이 잠긴 동안 자식 행 수정이 기다림",
+            "text": "부모 행이 잠겨 있는 동안 그 자식 행을 고치면, 참조 컬럼을 바꾸지 않아도 잠금이 풀릴 때까지 기다립니다. 첨부 파일을 덧붙이는 동안 같은 게시글을 고치면 최대 5초 기다린 뒤 충돌로 거절될 수 있습니다. 값이 덮어써지지는 않습니다."
+          },
+          {
+            "kind": "default",
+            "summary": "시퀀스·UUID 기본값을 DB 가 채우지 못함",
+            "text": "DB 기본값에 시퀀스·UUID 를 쓸 수 없어 그 칸에는 DB 기본값이 없습니다. 앱을 거치지 않고 행을 넣을 때는 그 칸의 값을 직접 넣어야 합니다."
+          },
+          {
+            "kind": "not-null",
+            "summary": "참조되는 유일 키가 기본키가 되어 NULL 을 받지 않음",
+            "text": "외래 키가 기본키만 참조할 수 있어, 다른 표가 참조하는 유일 키를 그 표의 기본키와 맞바꿉니다. 그 칸은 원본과 달리 NULL 을 저장하지 못하고 거부합니다."
+          },
+          {
+            "kind": "deferrable",
+            "summary": "외래 키를 커밋 때 미뤄 검사하지 못함",
+            "text": "외래 키를 커밋 때까지 미뤄 검사하지 못하고 문장마다 검사합니다. 자기 자신을 참조하는 메뉴처럼 부모와 자식을 한 번에 지울 때는 자식부터 지웁니다."
+          },
+          {
+            "kind": "partial",
+            "summary": "부분 인덱스가 일반 인덱스로 바뀜",
+            "text": "부분 인덱스가 없어 일반 인덱스로 둡니다. 유일성 제약이 아닌 인덱스라 성능만 달라집니다."
+          },
+          {
+            "kind": "index",
+            "summary": "URL 부분 검색 인덱스가 없음",
+            "text": "부분 문자열 검색 인덱스가 없어 URL 부분 검색이 느려집니다. 결과는 같습니다."
+          }
+        ],
+        "image": "docker-compose.yml 의 DB 이미지는 CUBRID 프로젝트가 Docker Hub 에 올린 개발용 이미지입니다. 운영 DB 와 그 지원은 도입 기관이 준비합니다."
+      },
+      "reason": "제한 지원 대상입니다. 앱 기동과 통합 시험을 벤더 CI 로 돌리는 중입니다. 인증 증거를 아직 기록하지 않았습니다."
     },
     {
       "id": "tibero",

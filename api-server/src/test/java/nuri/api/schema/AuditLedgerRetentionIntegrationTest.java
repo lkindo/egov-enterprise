@@ -67,13 +67,13 @@ class AuditLedgerRetentionIntegrationTest {
     @DisplayName("앱 계정의 임의 수정·삭제는 거부된다")
     void adHocModificationIsRejected() {
         assertThatThrownBy(() -> jdbc.update("UPDATE tb_privacy_log SET inq_info = 'tampered' WHERE dmnd_id = ?", "RC" + suffix))
-                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("append-only");
+                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining(VendorTestSql.appendOnlyRejection());
         assertThatThrownBy(() -> jdbc.update("DELETE FROM tb_privacy_log WHERE dmnd_id = ?", "RC" + suffix))
-                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("append-only");
+                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining(VendorTestSql.appendOnlyRejection());
         assertThatThrownBy(() -> jdbc.update("UPDATE tb_sys_adt_log SET adt_cn = 'tampered' WHERE dmnd_idntfr = ?", "RC" + suffix))
-                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("append-only");
+                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining(VendorTestSql.appendOnlyRejection());
         assertThatThrownBy(() -> jdbc.update("DELETE FROM tb_sys_adt_log WHERE dmnd_idntfr = ?", "RC" + suffix))
-                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("append-only");
+                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining(VendorTestSql.appendOnlyRejection());
         assertThat(privacyRows("RC" + suffix)).isEqualTo(1);
         assertThat(auditRows("RC" + suffix)).isEqualTo(1);
     }
@@ -92,7 +92,7 @@ class AuditLedgerRetentionIntegrationTest {
 
         assertThatThrownBy(() -> jdbc.update("DELETE FROM tb_privacy_log WHERE dmnd_id = ?", "RC" + suffix))
                 .as("정리 트랜잭션의 삭제 선언이 연결 풀을 타고 다른 요청에 남았다")
-                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining("append-only");
+                .isInstanceOf(DataAccessException.class).rootCause().hasMessageContaining(VendorTestSql.appendOnlyRejection());
     }
 
     private long privacyRows(String dmndId) {

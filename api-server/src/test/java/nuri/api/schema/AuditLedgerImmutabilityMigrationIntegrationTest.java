@@ -48,17 +48,17 @@ class AuditLedgerImmutabilityMigrationIntegrationTest extends SharedPostgresMigr
                 assertThatThrownBy(() -> statement.executeUpdate(ledger.update()))
                         .as("%s 의 수정이 통과했다", ledger.table())
                         .isInstanceOf(SQLException.class)
-                        .hasMessageContaining("append-only");
+                        .hasMessageContaining(VendorTestSql.appendOnlyRejection());
                 assertThatThrownBy(() -> statement.executeUpdate(ledger.delete()))
                         .as("%s 의 선언 없는 삭제가 통과했다", ledger.table())
                         .isInstanceOf(SQLException.class)
-                        .hasMessageContaining("append-only");
+                        .hasMessageContaining(VendorTestSql.appendOnlyRejection());
                 assertThat(number(statement, ledger.count())).as("%s 행이 남아야 한다", ledger.table()).isEqualTo(1);
             }
             try (var connection = openConnection()) {
                 assertThatThrownBy(() -> inTransaction(connection, true, ledger.update()))
                         .as("%s 는 보존 정리 선언이 있어도 수정은 받지 않는다", ledger.table())
-                        .isInstanceOf(SQLException.class).hasMessageContaining("append-only");
+                        .isInstanceOf(SQLException.class).hasMessageContaining(VendorTestSql.appendOnlyRejection());
                 assertThat(inTransaction(connection, true, ledger.delete()))
                         .as("%s 의 보존 정리 삭제는 같은 트랜잭션에서 선언하면 지워져야 한다", ledger.table()).isEqualTo(1);
                 try (var statement = connection.createStatement()) {
@@ -66,7 +66,7 @@ class AuditLedgerImmutabilityMigrationIntegrationTest extends SharedPostgresMigr
                     statement.executeUpdate(ledger.reseed());
                     assertThatThrownBy(() -> statement.executeUpdate(ledger.delete()))
                             .as("%s — 선언이 커밋 뒤 같은 연결에 남아 다음 삭제를 열었다", ledger.table())
-                            .isInstanceOf(SQLException.class).hasMessageContaining("append-only");
+                            .isInstanceOf(SQLException.class).hasMessageContaining(VendorTestSql.appendOnlyRejection());
                 }
             }
         }

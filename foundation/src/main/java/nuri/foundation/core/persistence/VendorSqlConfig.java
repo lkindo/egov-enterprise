@@ -19,6 +19,7 @@ public class VendorSqlConfig {
     private static final String MARIADB = "mariadb";
     private static final String MYSQL = "mysql";
     private static final String MSSQL = "mssql";
+    private static final String CUBRID = "cubrid";
 
     @Bean
     public VendorSqlDialect vendorSqlDialect(@Value("${app.database.vendor:postgresql}") String vendor) {
@@ -37,7 +38,51 @@ public class VendorSqlConfig {
         if (MSSQL.equals(vendor)) {
             return new SqlServerSqlDialect();
         }
+        if (CUBRID.equals(vendor)) {
+            return new CubridSqlDialect();
+        }
         throw new IllegalStateException("Unsupported app.database.vendor: " + vendor);
+    }
+
+    /**
+     * CUBRID 연결. 세션 잠금 대기 상한을 건 뒤 드라이버가 구현하지 않은 JDBC 4.1·4.2 동작을 감싼다(CubridJdbcDataSource). 한 처리기가 둘을 이 순서로
+     * 한다 — 감싼 뒤에는 Hikari 풀이 보이지 않아, 따로 두면 처리기 순서에 따라 풀 설정 대신 꺼낼 때마다 세션 설정을 건다.
+     */
+    @Bean
+    @ConditionalOnProperty(name = "app.database.vendor", havingValue = CUBRID)
+    static BeanPostProcessor cubridConnections() {
+        BeanPostProcessor session = sessionInitializedWith(CubridSqlDialect.SESSION_LOCK_WAIT_SQL);
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                if (!(bean instanceof DataSource) || bean instanceof CubridJdbcDataSource) {
+                    return bean;
+                }
+                return new CubridJdbcDataSource((DataSource) session.postProcessAfterInitialization(bean, beanName));
+            }
+        };
+    }
+
+    /**
+     * 연결을 열 때 세션 설정 하나를 건다. CUBRID 의 행 잠금 대기는 기본이 무한이고 세션 설정으로만 묶인다(CubridSqlDialect). 설정 파일 한 줄에
+     * 기대면 빠졌을 때 오류 없이 무한히 기다리므로 코드가 건다.
+     *
+     * <p>시작 전의 Hikari 풀은 풀 설정으로 건다(새 연결마다 한 번). 그 밖의 DataSource 는 연결을 꺼낼 때마다 건다.
+     */
+    static BeanPostProcessor sessionInitializedWith(String sql) {
+        return new BeanPostProcessor() {
+            @Override
+            public Object postProcessAfterInitialization(Object bean, String beanName) {
+                if (bean instanceof HikariDataSource pool && !pool.isRunning()) {
+                    pool.setConnectionInitSql(sql);
+                    return pool;
+                }
+                if (bean instanceof DataSource dataSource && !(bean instanceof SessionInitializingDataSource)) {
+                    return new SessionInitializingDataSource(dataSource, sql);
+                }
+                return bean;
+            }
+        };
     }
 
     @Bean

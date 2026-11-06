@@ -389,15 +389,15 @@ class CmsPageLifecycleIntegrationTest {
 
         assertThatThrownBy(() -> transaction.executeWithoutResult(status ->
                 jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)))
-                .hasMessageContaining("append-only");
+                .hasMessageContaining(VendorTestSql.appendOnlyRejection());
         assertThatThrownBy(() -> transaction.executeWithoutResult(status -> {
             VendorTestSql.permitLedgerDeletion(jdbc, "nuri.cms_purge");
             jdbc.update("UPDATE tb_cms_conts_rvsn SET conts_ttl = '바꿈' WHERE conts_sn = ?", page);
-        })).hasMessageContaining("append-only");
+        })).hasMessageContaining(VendorTestSql.appendOnlyRejection());
         // 표시는 트랜잭션이 끝나면 풀린다 — 앞 트랜잭션의 표시가 다음 트랜잭션으로 새지 않는다.
         assertThatThrownBy(() -> transaction.executeWithoutResult(status ->
                 jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)))
-                .hasMessageContaining("append-only");
+                .hasMessageContaining(VendorTestSql.appendOnlyRejection());
         transaction.executeWithoutResult(status -> {
             VendorTestSql.permitLedgerDeletion(jdbc, "nuri.cms_purge");
             assertThat(jdbc.update("DELETE FROM tb_cms_conts_rvsn WHERE conts_sn = ?", page)).isEqualTo(1);

@@ -300,9 +300,8 @@ public class JdbcAttachmentReferenceResolver implements AttachmentReferenceResol
     private SourceHit queryCmsPage(Long fileId) {
         List<Boolean> published = jdbcTemplate.query("""
                 SELECT CASE WHEN EXISTS (SELECT 1 FROM tb_cms_conts c
-                                 JOIN tb_cms_conts_rvsn_file rf
-                                   ON rf.conts_rvsn_sn = c.conts_rvsn_sn AND rf.conts_file_sn = f.conts_file_sn
-                                WHERE c.conts_sn = f.conts_sn AND c.kpng_yn = 'N')
+                                 JOIN tb_cms_conts_rvsn_file rf ON rf.conts_rvsn_sn = c.conts_rvsn_sn
+                                WHERE c.conts_sn = f.conts_sn AND c.kpng_yn = 'N' AND rf.conts_file_sn = f.conts_file_sn)
                        AND NOT EXISTS (SELECT 1 FROM tb_file_detail d
                                         WHERE d.atch_file_sn = f.atch_file_sn AND d.atch_file_seq <> f.atch_file_seq)
                        THEN 1 ELSE 0 END AS published

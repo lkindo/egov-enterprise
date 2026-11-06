@@ -159,9 +159,12 @@ function assertVendorMigrationNames(location) {
 }
 
 /** 시험 JVM 에 넘길 환경. 시험 프로필의 일회용 PostgreSQL 설정을 벤더 값으로 덮는다. 비밀번호는 환경으로만 넘긴다. */
-export function integrationEnvironment(vendorId, integration, { port, password, owner }) {
+export function integrationEnvironment(vendorId, integration, { port, password, owner, name }) {
   const url = integration.url(port);
   return {
+    ...integration.environment,
+    // 잠금 대기를 SQL 로 볼 수 없는 엔진은 시험이 컨테이너의 관리 명령으로 본다(VendorTestSql).
+    ...(integration.lockObservation ? { VENDOR_TEST_CONTAINER: name } : {}),
     SPRING_DATASOURCE_URL: url,
     VENDOR_TEST_URL: url,
     VENDOR_TEST_OWNER: owner,

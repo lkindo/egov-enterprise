@@ -301,7 +301,8 @@ class MenuBookmarkConcurrencyIntegrationTest {
             if (postgresql) jdbc.execute("CREATE TRIGGER " + fixtureFunction + " BEFORE DELETE ON tb_bkmk_menu_mng_rslt "
                     + "FOR EACH ROW EXECUTE FUNCTION " + fixtureFunction + "()");
             assertThatThrownBy(() -> service.cleanupUnavailableBookmarks(owner, request))
-                    .isInstanceOf(RuntimeException.class).hasStackTraceContaining("fixture bookmark delete failure after one delete");
+                    .isInstanceOf(RuntimeException.class).hasStackTraceContaining(VendorTestSql.failingTriggerText(jdbc, fixtureFunction,
+                            "fixture bookmark delete failure after one delete"));
             assertThat(storedMenus(owner)).containsExactlyElementsOf(before);
         } finally {
             if (!postgresql) {

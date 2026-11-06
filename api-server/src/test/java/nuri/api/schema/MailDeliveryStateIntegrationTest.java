@@ -173,7 +173,7 @@ class MailDeliveryStateIntegrationTest {
         assertThat(tx().<Integer>execute(status -> mails.recordResult(id, mail.getDsptchDt(), "F"))).isZero();
         assertThat(tx().<Integer>execute(status -> mails.failQueued(id, mail.getDsptchDt()))).isZero();
         assertThat(tx().<Integer>execute(status -> mails.claimQueued(id, mail.getDsptchDt()))).isZero();
-        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(next);
+        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(VendorTestSql.storedTime(next));
         processor.dispatchCommitted(id, next, "subject", "body", "from@example.invalid", ADDRESS, null).get(10, TimeUnit.SECONDS);
         assertThat(code(id)).isEqualTo("S");
         verify(sender, times(2)).send(anyString(), anyString(), anyString(), anyString());

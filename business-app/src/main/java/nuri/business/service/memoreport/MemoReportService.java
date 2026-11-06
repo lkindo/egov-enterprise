@@ -45,6 +45,7 @@ public class MemoReportService {
     private final AttachmentAssignmentPolicy attachmentAssignmentPolicy;
     private final FileService fileService;
     private final org.springframework.context.ApplicationEventPublisher eventPublisher;
+    private final nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
 
     /**
      * 알림의 목적지. 쿼리를 싣지 않는다 — 승인된 URL 키 없이 딥링크를 만들지 않는다(DIP F1). 수신자는 화면의 기본 탭이
@@ -180,7 +181,7 @@ public class MemoReportService {
         FileReadSnapshot snapshot = participant && canReadAttachments(entity) ? readAttachments(entity, false) : null;
         if (recipient && entity.getRptrInqDt() == null) {
             // PostgreSQL timestamp(6)에 저장되는 정밀도로 응답도 맞춘다. 첫 응답과 재조회가 같은 최초 시각이다.
-            entity.updateInqireDt(java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS));
+            entity.updateInqireDt(vendorSql.storedTimestamp(java.time.LocalDateTime.now()));
         }
         MemoReportDto dto = toDtoWithPermission(entity, participantNames(List.of(entity)));
         if (snapshot == null) dto.setInstructable(false);

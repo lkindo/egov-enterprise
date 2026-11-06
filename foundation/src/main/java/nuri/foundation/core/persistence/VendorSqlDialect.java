@@ -103,4 +103,12 @@ public interface VendorSqlDialect {
     /** 불변 원장 삭제 허가가 커밋된 채 남지 않았는지 기동 때 본다. 트랜잭션 지역 설정을 쓰는 벤더는 남을 수 없다. */
     default void assertNoOpenLedgerPermit(JdbcOperations jdbc) {
     }
+
+    /**
+     * 이 벤더가 저장하는 시각. 앱이 만든 시각을 토큰으로 저장한 뒤 다시 읽어 Java 에서 같은지 보는 곳(메일 접수 시각, 메모 첫 열람 시각)은 이 값을 만든다 —
+     * 아래 자리를 버리고 저장하는 벤더에서는 메모리의 값과 읽은 값이 달라 같은 시도를 다른 시도로 본다. 표준 스키마는 마이크로초({@code timestamp(6)})다.
+     */
+    default java.time.LocalDateTime storedTimestamp(java.time.LocalDateTime value) {
+        return value.truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    }
 }

@@ -18,7 +18,7 @@ import {
 import { VENDOR_ENGINES } from './project-composer-vendor-engine.mjs';
 import { appliedHibernateCheck, parseIntegrationArgs, summarizeTestResults } from './project-composer-vendor-integration.mjs';
 import { VENDOR_SOURCE } from './project-composer-vendor-project.mjs';
-import { VENDOR_ADAPTERS, VENDOR_LEDGER_PATH, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
+import { VENDOR_ADAPTERS, VENDOR_LEDGER_PATH, certificationProblems, loadVendorLedger, vendorEvidenceProblems } from './project-composer-vendors.mjs';
 import { composerSourceFingerprint } from './project-composer.mjs';
 import { LEDGER_PRECHECKS, formatPrecheck, ledgerPrecheck } from './ledger-precheck.mjs';
 import { writeRepresentativeReport } from './run-isolated-e2e.mjs';
@@ -175,7 +175,12 @@ test('certified needs an adapter, an engine, a source projection and evidence pe
   // 원장만 고쳐 열 수 없다. 사유를 지워 다른 검사에 걸리지 않게 한다.
   const open = (vendor, patch = {}) => { Object.assign(vendor, { status: 'certified' }, patch); delete vendor.reason; };
   assert.throws(load(vendor => open(vendor('tibero'), { engines: [{ version: '7', engine: 'oracle', evidence: fixtureEvidence('oracle') }], evidenceInputs: ['x'] })), /^Error: tibero: 어댑터가 없다$/);
-  assert.throws(load(vendor => certifyVendor(vendor('cubrid'))), /^Error: cubrid: 소스 투영\(VENDOR_SOURCE\)이 없다$/);
+  // 어댑터·엔진은 있고 소스 투영이 없는 벤더는 이제 원장에 없다. 투영 표에서 그 벤더를 빼고 같은 판정을 본다.
+  const cubrid = JSON.parse(readFileSync(join(ROOT, VENDOR_LEDGER_PATH), 'utf8')).vendors.find(vendor => vendor.id === 'cubrid');
+  certifyVendor(cubrid);
+  const sharedInputs = { evidenceInputs: { paths: ['x'] } };
+  assert.deepEqual(certificationProblems(cubrid, sharedInputs, { sources: {} }), ['소스 투영(VENDOR_SOURCE)이 없다']);
+  assert.deepEqual(certificationProblems(cubrid, sharedInputs, { adapters: {} }), ['어댑터가 없다']);
   assert.throws(load(vendor => { open(vendor('oracle'), { engines: [] }); }), /^Error: oracle: 엔진이 없다$/);
   assert.throws(load(vendor => { open(vendor('oracle'), { evidenceInputs: [] }); }), /^Error: oracle: 증거 입력 목록이 없다$/);
   assert.throws(load((vendor, ledger) => { certifyVendor(vendor('oracle')); delete ledger.evidenceInputs; }), /^Error: oracle: 증거 입력 목록이 없다$/, '공통 입력이 없으면 해시가 말하는 것이 없다');

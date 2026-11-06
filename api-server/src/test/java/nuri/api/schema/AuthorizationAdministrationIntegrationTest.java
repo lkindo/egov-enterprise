@@ -444,7 +444,8 @@ class AuthorizationAdministrationIntegrationTest extends SharedPostgresMigration
         try {
             assertThatThrownBy(() -> service.replaceGrants("T_AUDIT",new ReplaceGrants(
                     List.of(new Grant("OPERATION","MENU_READ")),before.version(),true)))
-                    .isInstanceOf(DataAccessException.class).hasMessageContaining("intentional audit failure");
+                    .isInstanceOf(DataAccessException.class).hasMessageContaining(VendorTestSql.failingTriggerText(jdbc,
+                            "reject_authorization_test_audit", "intentional audit failure"));
             assertThat(service.group("T_AUDIT")).isEqualTo(before);
             assertThat(jdbc.queryForObject("SELECT count(*) FROM tb_authrt_grnt_map WHERE authrt_cd='T_AUDIT'",Long.class)).isZero();
         } finally {

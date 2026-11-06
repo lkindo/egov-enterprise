@@ -22,6 +22,11 @@ public final class VendorFlywayMigrate {
                 .dataSource(System.getenv("VENDOR_TEST_URL"), System.getenv("SPRING_DATASOURCE_USERNAME"), System.getenv("SPRING_DATASOURCE_PASSWORD"))
                 .locations(System.getenv("VENDOR_FLYWAY_LOCATION"))
                 .placeholderReplacement(false);
+        // 현재 스키마를 답하지 않는 드라이버(CUBRID)는 이력 표의 스키마를 실행 도구가 준다. 운영 설정의 spring.flyway.default-schema 와 같은 값이다.
+        String schema = System.getenv("VENDOR_FLYWAY_DEFAULT_SCHEMA");
+        if (schema != null && !schema.isBlank()) {
+            configuration.defaultSchema(schema);
+        }
         String target = System.getenv("VENDOR_FLYWAY_TARGET");
         if (target == null) {
             Flyway flyway = configuration.load();

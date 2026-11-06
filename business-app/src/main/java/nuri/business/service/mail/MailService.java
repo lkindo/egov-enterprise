@@ -38,6 +38,7 @@ public class MailService {
     private final UserContactService userContactService;
     /** 현재 배포의 발송 구현. 발송 가능 상태를 알리는 데만 쓴다 — 발송은 {@link MailAsyncProcessor} 가 한다. */
     private final EmailSender emailSender;
+    private final nuri.foundation.core.persistence.VendorSqlDialect vendorSql;
 
     /**
      * 대기('P')에 이 시간보다 오래 멈춘 메일은 재발송할 수 있다(2026-09-26 DIP B5 F7). 비동기 발송은 재시도를 포함해도
@@ -373,8 +374,9 @@ public class MailService {
         return new ArrayList<>(byAddress.values());
     }
 
-    private static java.time.LocalDateTime acceptanceTime() {
-        return java.time.LocalDateTime.now().truncatedTo(java.time.temporal.ChronoUnit.MICROS);
+    /** 접수 시각은 시도 토큰이다. 작업이 실어 간 값과 저장된 값을 Java 에서 비교하므로 이 벤더가 저장하는 정밀도로 만든다(VendorSqlDialect). */
+    private java.time.LocalDateTime acceptanceTime() {
+        return vendorSql.storedTimestamp(java.time.LocalDateTime.now());
     }
 
     private static boolean isRecordedDirectAddress(String recorded) {

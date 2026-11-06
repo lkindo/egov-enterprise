@@ -115,6 +115,9 @@ tasks.named('check') {
 // 벤더 DB 에서 도는 통합 시험(ADR-0047 D-10). scripts/project-composer-vendor-integration.mjs 가 DB 를 준비해 부른다.
 // 돌릴 시험은 벤더 시험 원장이 정하고 접속 값은 시험 프로필을 덮는 환경 변수로 받는다. 평소 빌드에는 이 작업이 없어 커버리지 집계에 끼지 않는다.
 if (project.hasProperty('vendorIntegration')) {
+    // CUBRID 공식 JDBC 드라이버는 Maven Central 에 없다. cubrid 그룹만 CUBRID 저장소에서 받고, 평소 빌드는 이 저장소를 보지 않는다(2026-11-05 사용자 결정).
+    repositories { maven { url = uri('https://maven.cubrid.org'); content { includeGroup 'cubrid' } } }
+    dependencies { testRuntimeOnly 'cubrid:cubrid-jdbc:11.3.2.0053' }
     // 생성물의 번역 기준선을 운영과 같은 Flyway 로 적용한다. 실행 도구가 시험 앞에 부른다.
     tasks.register('vendorFlywayMigrate', JavaExec) {
         description = '번역 기준선을 Flyway 로 벤더 일회용 DB 에 적용한다'

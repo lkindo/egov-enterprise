@@ -210,7 +210,7 @@ class MailFailureNotificationIntegrationTest {
         }
         first.get(10, TimeUnit.SECONDS);
         assertThat(code(id)).isEqualTo("Q");
-        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(next);
+        assertThat(mails.findById(id).orElseThrow().getDsptchDt()).isEqualTo(VendorTestSql.storedTime(next));
         assertThat(observation.events).isEmpty();
         assertThat(notificationCount(jdbc, identity.esntlId())).isZero();
         assertThat(notificationIntentCount(jdbc, identity.esntlId())).isZero();
@@ -498,7 +498,7 @@ class MailFailureNotificationIntegrationTest {
         private static void recordSqlState(NoticeObservation observation, Throwable failure) {
             for (Throwable cause = failure; cause != null; cause = cause.getCause()) {
                 if (cause instanceof SQLException sql) {
-                    observation.sqlStates.add(sql.getSQLState());
+                    observation.sqlStates.add(VendorTestSql.observedState(sql));
                     return;
                 }
             }

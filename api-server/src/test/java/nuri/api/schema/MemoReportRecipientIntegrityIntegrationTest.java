@@ -212,7 +212,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
 
     @Test
     void concurrentRecipientReadsPreserveExactlyTheFirstReadTime() throws Exception {
-        assertThat(VendorTestSql.timestampPrecision(jdbc, "tb_memo_rpt_info", "rptr_inq_dt")).isEqualTo(6);
+        assertThat(VendorTestSql.timestampPrecision(jdbc, "tb_memo_rpt_info", "rptr_inq_dt")).isEqualTo(VendorTestSql.storedTimestampPrecision(6));
         long id = memoReportService.createMemoReport(sender, memo(active));
         // 작성자가 확인해도 수신자 읽음은 생기지 않는다.
         memoReportService.getMemoReport(id);
@@ -236,7 +236,7 @@ class MemoReportRecipientIntegrityIntegrationTest {
                         java.sql.Timestamp stored = jdbc.queryForObject("SELECT rptr_inq_dt FROM tb_memo_rpt_info WHERE memo_rpt_sn=?",
                                 java.sql.Timestamp.class, id);
                         assertThat(stored).isNotNull();
-                        assertThat(response.getRptrInqDt()).isEqualTo(stored.toLocalDateTime());
+                        assertThat(VendorTestSql.storedTime(response.getRptrInqDt())).isEqualTo(stored.toLocalDateTime());
                         return stored;
                     });
                 } finally { SecurityContextHolder.clearContext(); }
@@ -551,7 +551,8 @@ class MemoReportRecipientIntegrityIntegrationTest {
                     return result;
                 });
         FileService observedFiles = new FileService(masters, intercepted, storageService, fileAccessPolicy, durableWork, objectMapper);
-        MemoReportService observedMemo = new MemoReportService(reports, users, mapper, names, assignment, observedFiles, publisher);
+        MemoReportService observedMemo = new MemoReportService(reports, users, mapper, names, assignment, observedFiles, publisher,
+                VendorTestSql.dialect(jdbc));
         try (var executor = Executors.newFixedThreadPool(2)) {
             Future<MemoReportDto> reading = executor.submit(() -> {
                 authenticate(active);

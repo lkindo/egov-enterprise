@@ -9,11 +9,11 @@ import test from 'node:test';
 import { fileURLToPath } from 'node:url';
 import { buildVendorModel, parseExpression, tablesInDependencyOrder, VendorTranslationGap } from './project-composer-vendor-model.mjs';
 import { assertCatalogParity, assertCoverage, assertUniqueColumns, createEmission, emitRows, exactNumber, nextValues, renderExpression, violationExpression } from './project-composer-vendor-sql.mjs';
-import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION_KINDS, selectableVendors, translateForAllVendors, unshownDegradations, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices, vendorDegradationNotes } from './project-composer-vendors.mjs';
+import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION_KINDS, selectableVendors, translateForAllVendors, unshownDegradations, VENDOR_ADAPTERS, VENDOR_IDS, VENDOR_LEDGER_PATH, vendorChoices, vendorDegradationNotes, vendorNoticeProblems } from './project-composer-vendors.mjs';
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { indexPrefixes, keyColumnBytes, mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
-import { cubridAdapter } from './project-composer-vendor-cubrid.mjs';
+import { CUBRID_RESERVED, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
@@ -34,6 +34,7 @@ import { loadComposerModules } from './composer-modules.mjs';
 import { projectVendorBuild, projectVendorCompose, projectVendorComposeProd, projectVendorDeploy, projectVendorDockerfile, projectVendorEnvironment, projectVendorSettings, projectVendorProfile, projectVendorSources, renderFlywayMigration, VENDOR_SOURCE,
   VENDOR_README_PRECEDENCE, VENDOR_SCHEMA_ALIAS, vendorApplicationDocument, vendorMigrationLocation, vendorReadme } from './project-composer-vendor-project.mjs';
 import { reusableBaseLayoutLines } from './generate-reusable-base-source.mjs';
+import { cubridHealthcheckCommand } from './project-composer-vendor-source.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { assertVendorRequestable, resolveGeneratorComposition, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { artifactTextSha256, vendorBaselinePaths, vendorProjectionErrors } from './reusable-governance-integrity.mjs';
@@ -346,6 +347,68 @@ test('SQL Server keys its ledger permit by session and decides the key limit at 
     '넘는 일반 복합 인덱스는 긴 컬럼을 포함 컬럼으로 옮긴다');
 });
 
+test('the CUBRID reserved column names are the ones Hibernate quotes', () => {
+  const dialect = readFileSync(resolve(ROOT, 'foundation/src/main/java/nuri/foundation/core/persistence/NuriCubridDialect.java'), 'utf8');
+  const listed = dialect.match(/RESERVED_IDENTIFIERS = Set.of(([^)]*))/)?.[1];
+  assert.ok(listed, '방언의 따옴표 목록을 찾지 못했다');
+  // 어댑터가 따옴표로 만든 컬럼을 Hibernate 가 따옴표 없이 내면 예약어 문법 오류로 그 표의 모든 쓰기가 실패한다(2026-11-06 원본 통합 실행, tb_user_info.role).
+  assert.deepEqual([...listed.matchAll(/"([^"]+)"/g)].map(match => match[1]).sort(), [...CUBRID_RESERVED].sort());
+  assert.equal(cubridAdapter.identifier('role'), '"role"');
+  assert.equal(cubridAdapter.identifier('user_nm'), 'user_nm');
+});
+
+test('the CUBRID lock slots, ledger permit and CHECK trigger names match the port, and the baseline needs no block statements', () => {
+  const dialect = readFileSync(resolve(ROOT, 'foundation/src/main/java/nuri/foundation/core/persistence/CubridSqlDialect.java'), 'utf8');
+  const javaString = name => dialect.match(new RegExp(`\\b${name} =\\s*"([^"]*)";`))?.[1];
+  const sample = model();
+  sample.tables.find(table => table.name === 't_child').triggers.push({ name: 'tr_t_child_ledger', kind: 'append-only', permit: 'app.audit_retention' });
+  const emission = cubridAdapter.emitSchema(sample);
+  const sql = emission.statements.map(statement => statement.sql);
+
+  // 행이 모자라면 잠금 조회가 0행을 받는다. 포트는 그때 멈추지만(lockSlot) 슬롯 수와 접는 식이 어긋나면 잠금이 늘 실패한다.
+  const slots = Number(dialect.match(/LOCK_SLOTS = ([\d_]+);/)[1].replaceAll('_', ''));
+  assert.ok(dialect.includes('Math.floorMod(Long.hashCode(key), LOCK_SLOTS)') && dialect.includes('Math.floorMod(31 * namespace + key, LOCK_SLOTS)'), '키를 슬롯 수로 접는다');
+  assert.ok(sql.includes('CREATE TABLE tb_sys_lock_slot (lock_slot_no INT NOT NULL PRIMARY KEY)'));
+  assert.equal(javaString('LOCK_SLOT_SQL'), 'SELECT lock_slot_no FROM tb_sys_lock_slot WHERE lock_slot_no = ? FOR UPDATE', '앱의 잠금 조회가 같은 표·열을 쓴다');
+  const fill = sql.find(statement => statement.startsWith('INSERT INTO tb_sys_lock_slot'));
+  // 재귀 CTE 는 2,000회에서 멈춰(2026-11-06 실측) 0..255 두 벌을 곱한다. 0 부터 slots-1 까지 빈틈 없이 한 번씩이다.
+  const [, last, width] = fill.match(/^INSERT INTO tb_sys_lock_slot \(lock_slot_no\) WITH RECURSIVE d \(n\) AS \(SELECT 0 FROM db_root UNION ALL SELECT n \+ 1 FROM d WHERE n < (\d+)\) SELECT a\.n \* (\d+) \+ b\.n FROM d a, d b$/).map(Number);
+  assert.equal(last + 1, width, '한 자리의 값 수와 곱하는 수가 같아야 겹치지도 비지도 않는다');
+  assert.equal(width ** 2, slots, `슬롯 ${slots}개`);
+  assert.ok(last < 2000, '재귀 상한 안이다');
+
+  // 허가는 행마다 고유 토큰을 키로 둔다. 앱은 키 값만 넣고 지우며, 트리거는 자기 트랜잭션에 보이는 허가만 센다(2026-11-06 실측).
+  assert.ok(sql.includes('CREATE TABLE tb_sys_ledger_permit (permit_token BIGINT AUTO_INCREMENT PRIMARY KEY, permit_key VARCHAR(50) NOT NULL)'));
+  assert.equal(javaString('INSERT_PERMIT'), 'INSERT INTO tb_sys_ledger_permit (permit_key) VALUES (?1)');
+  assert.equal(javaString('DELETE_PERMIT'), 'DELETE FROM tb_sys_ledger_permit WHERE permit_key = ?1');
+  assert.ok(dialect.includes('"SELECT count(*) FROM tb_sys_ledger_permit"'), '기동 점검이 같은 표를 본다');
+  assert.ok(sql.includes("CREATE TRIGGER tr_t_child_ledger_d BEFORE DELETE ON t_child IF ((SELECT COUNT(*) FROM tb_sys_ledger_permit WHERE permit_key = 'app.audit_retention') = 0) EXECUTE REJECT"));
+  assert.ok(sql.includes('CREATE TRIGGER tr_t_child_ledger_u BEFORE UPDATE ON t_child EXECUTE REJECT'));
+  for (const name of ['tb_sys_ledger_permit.permit_token', 'tb_sys_ledger_permit.permit_key', 'tb_sys_lock_slot.lock_slot_no']) assert.ok(emission.expected.columns.includes(name), name);
+  for (const name of ['tb_sys_ledger_permit.pk_tb_sys_ledger_permit_permit_token', 'tb_sys_lock_slot.pk_tb_sys_lock_slot_lock_slot_no']) assert.ok(emission.expected.indexes.includes(name), name);
+
+  // CHECK 는 트리거 거부(-517)로 옮긴다. 포트는 트리거 이름이 ck_ 로 시작할 때만 입력 오류(400)로 읽고, 원장 보호 트리거는 같은 번호라도 입력 오류가 아니다.
+  assert.match(dialect, /-517, Pattern\.compile\("\^The operation has been rejected by trigger \\"\[\^\\"\.\]\+\\\\\.ck_"\)/);
+  const checkTriggers = sql.filter(statement => / EXECUTE REJECT$/.test(statement) && /^CREATE TRIGGER \S+ BEFORE (?:INSERT|UPDATE) ON \S+ IF \(/.test(statement) && !statement.includes('tb_sys_ledger_permit'));
+  assert.equal(checkTriggers.length, sample.tables.reduce((total, table) => total + table.checks.length, 0) * 2, '입력·수정 트리거 둘씩');
+  for (const statement of checkTriggers) assert.match(statement, /^CREATE TRIGGER ck_/, statement);
+  assert.ok(!sql.some(statement => /^CREATE TRIGGER ck_/.test(statement) && statement.includes('tb_sys_ledger_permit')));
+
+  // 블록 문장이 없어 Flyway 파일의 문장은 모두 세미콜론으로 끝난다. 블록 문장을 내기 시작하면 끝낼 형식을 정할 때까지 멈춘다.
+  assert.ok(emission.statements.every(statement => !statement.raw));
+  assert.equal(renderFlywayMigration([{ sql: 'CREATE TABLE t (id INT)' }, { sql: 'CREATE TRIGGER ck_t_i BEFORE INSERT ON t IF (new.id < 0) EXECUTE REJECT' }], 'cubrid'),
+    'CREATE TABLE t (id INT);\nCREATE TRIGGER ck_t_i BEFORE INSERT ON t IF (new.id < 0) EXECUTE REJECT;\n');
+  assert.deepEqual(fixedDegradations('cubrid'), ['check-cost', 'json-validity', 'timestamp-precision', 'skip-locked', 'null-order', 'parent-lock-wait']);
+
+  // 행 잠금 대기는 주소가 아니라 앱이 연결마다 건다. 상한은 앱의 잠금 조회 상한과 같고, README 가 같은 문장을 말한다.
+  const lockTimeoutMillis = Number(readFileSync(join(ROOT, 'api-server/src/main/resources/application.yml'), 'utf8').match(/^\s+lock:\r?\n\s+timeout:\s*(\d+)\s*$/m)?.[1]);
+  const seconds = Number(dialect.match(/LOCK_WAIT_SECONDS = (\d+);/)[1]);
+  assert.equal(seconds * 1000, lockTimeoutMillis);
+  assert.match(dialect, /SESSION_LOCK_WAIT_SQL = "SET TRANSACTION LOCK TIMEOUT " \+ LOCK_WAIT_SECONDS;/);
+  assert.ok(vendorReadme('cubrid', loadVendorLedger(ROOT)).includes(`\`SET TRANSACTION LOCK TIMEOUT ${seconds}\``));
+  assert.doesNotMatch(VENDOR_SOURCE.cubrid.url, /lock/i, '주소에 잠금 인자를 두지 않는다');
+});
+
 test('SQL Server baselines end trigger batches with GO and its project keeps app, sa and edition apart', () => {
   // CREATE TRIGGER 는 배치의 첫 문장이어야 한다. Flyway 의 SQL Server 파서는 GO 로 배치를 나눈다.
   assert.equal(renderFlywayMigration([{ sql: 'CREATE TABLE t (id INT)' }, { sql: 'CREATE TRIGGER tr ON t AFTER DELETE AS BEGIN SET NOCOUNT ON; END', raw: true }, { sql: 'INSERT INTO t VALUES (1)' }], 'mssql'),
@@ -445,11 +508,44 @@ test('integration tests take every database setting from the engine, never from 
   assert.equal(environment.SPRING_FLYWAY_ENABLED, 'false', 'PostgreSQL 마이그레이션을 벤더에 적용하면 안 된다');
   assert.equal(environment.APP_DATABASE_VENDOR, 'oracle');
   assert.match(environment.SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT, /NuriOracleDialect/);
-  assert.throws(() => parseIntegrationArgs(['--input', 'x.json', '--vendor', 'cubrid']), /아직 돌릴 수 없는 엔진/);
+  // 어댑터가 있는 벤더는 모두 통합 엔진을 연다. 통합 값이 없는 엔진 이름은 그대로 멈춘다.
+  assert.throws(() => parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--engine', 'nope']), /아직 돌릴 수 없는 엔진: nope/);
   assert.throws(() => parseIntegrationArgs(['--vendor', 'oracle']), /--input/);
   assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', 'oracle', '--engine', 'oracle19']),
     { input: 'x.json', vendor: 'oracle', engine: 'oracle19' });
-  for (const vendor of ['mysql', 'mariadb']) assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', vendor]), { input: 'x.json', vendor }, vendor);
+  for (const vendor of ['mysql', 'mariadb', 'mssql', 'cubrid']) assert.deepEqual(parseIntegrationArgs(['--input', 'x.json', '--vendor', vendor]), { input: 'x.json', vendor }, vendor);
+});
+
+test('CUBRID integration connects like the generated project and alone adds the lock observation container and the metadata strategy', () => {
+  const { integration } = VENDOR_ENGINES.cubrid;
+  const source = VENDOR_SOURCE.cubrid;
+  const environment = integrationEnvironment('cubrid', integration, { port: 33000, password: 'not-a-secret', owner: 'token', name: 'egov-vendor-cubrid-x' });
+  // 접속 인자·드라이버·방언이 생성물과 갈리면 시험이 앱과 다른 세션을 본다.
+  assert.equal(environment.SPRING_DATASOURCE_URL, `jdbc:cubrid:127.0.0.1:33000:vendorcheck:::?${source.urlParameters}`);
+  assert.ok(source.url.endsWith(`:::?${source.urlParameters}`) && source.composeUrl.endsWith(`:::?${source.urlParameters}`));
+  assert.equal(environment.SPRING_DATASOURCE_DRIVER_CLASS_NAME, source.driverClass);
+  assert.equal(environment.SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT, source.dialect);
+  assert.equal(environment.APP_DATABASE_VENDOR, 'cubrid');
+  // 잠금 대기는 SQL 로 볼 수 없어 시험이 그 컨테이너의 관리 명령으로 본다(VendorTestSql).
+  assert.equal(environment.VENDOR_TEST_CONTAINER, 'egov-vendor-cubrid-x');
+  // 묶음 추출(grouped)은 표를 찾지 못한다. 키 이름에 밑줄이 있어 환경 변수 이름이 아니라 JSON 으로 넘긴다. 생성물은 같은 값을 벤더 문서에 둔다.
+  const json = JSON.parse(environment.SPRING_APPLICATION_JSON);
+  const [[group, key, value]] = source.hibernateProperties;
+  assert.deepEqual(json, { [`spring.jpa.properties.hibernate.${group}.${key}`]: value });
+  assert.equal(value, 'individually');
+  // 다른 벤더는 SQL 로 잠금을 보고 기본 추출 방식을 쓴다.
+  for (const vendor of ['oracle', 'mysql', 'mariadb', 'mssql']) {
+    const other = integrationEnvironment(vendor, VENDOR_ENGINES[vendor].integration, { port: 1, password: 'not-a-secret', owner: 'token', name: 'egov-vendor-x' });
+    assert.ok(!('VENDOR_TEST_CONTAINER' in other) && !('SPRING_APPLICATION_JSON' in other), vendor);
+  }
+  // 앱 계정이 표를 가져야 Hibernate 검증과 표 수 조회가 앱의 스키마를 본다. 관리자 문장은 dba 로 돌고 첫 오류에서 실패로 끝난다.
+  assert.equal(integration.username, 'vendorcheck');
+  assert.deepEqual(integration.grants, []);
+  assert.equal(integration.administratorScript(['A', 'B']), 'A;\nB;\n');
+  assert.match(integration.administrator, /grep -qE '\^ERROR'/);
+  // 개발 compose 와 검증 엔진은 같은 이미지·로캘·서버 시계다.
+  const variables = VENDOR_ENGINES.cubrid.environment('p');
+  assert.deepEqual([variables.CUBRID_LOCALE, variables.TZ], ['ko_KR.utf8', 'Asia/Seoul']);
 });
 
 test('the MySQL family integration connects like the generated project and grants only the schema and the lock views', () => {
@@ -691,7 +787,7 @@ test('unique parity reads the column set of constraints, plain unique indexes an
   lines[2] = ['tb_a.uk_fn=CASE  WHEN "A" IS NOT NULL THEN "A" END', 'tb_a.uk_fn=CASE  WHEN "D" IS NOT NULL THEN "D" END', 'tb_a.uk_trim=TRIM("E")', 'tb_a.uk_idx=UPPER("F")'];
   assert.doesNotThrow(() => assertUniqueColumns(emission(matching), read(), { ignoreTables }), '이 대조는 컬럼 집합만 본다. 조건의 모양은 어댑터 문장을 고정하는 시험(nullable composite uniques) 몫이다');
 
-  assert.equal(readUniqueColumns({}, 'cubrid', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
+  assert.equal(readUniqueColumns({}, 'tibero', () => { throw new Error('부르지 않는다'); }), null, '조회가 없는 벤더는 대조를 건너뛴다');
   assert.throws(() => readUniqueColumns({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), error => error.code === 'VENDOR_QUERY_FAILED');
   assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_UNIQUE_COLUMNS[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 유니크 컬럼 조회가 있어야 한다');
   assert.deepEqual(Object.entries(VENDOR_ENGINES).filter(([id, engine]) => engine.integration && !VENDOR_SEQUENCE_NEXT_VALUES[id.replace(/\d+$/, '')]).map(([id]) => id), [], '통합 시험을 여는 벤더는 시퀀스 다음 값 조회가 있어야 한다');
@@ -728,7 +824,10 @@ test('the MySQL family reads every unique, constraint or index, from one query b
 test('sequence next values and byte columns come from strict lines', () => {
   const answer = lines => () => ({ errors: [], sections: new Map([[0, lines]]) });
   assert.deepEqual([...readSequenceNextValues({}, 'oracle', answer(['sq_a:42', '  sq_b:1  ', '@@COMPLETED']))], [['sq_a', 42], ['sq_b', 1]]);
-  assert.equal(readSequenceNextValues({}, 'cubrid', answer([])), null);
+  assert.equal(readSequenceNextValues({}, 'tibero', answer([])), null);
+  // csql 은 값 줄을 `<00001> 식: '값'` 으로 낸다(2026-11-06 실측). 시험의 첫 판은 이 모양을 받지 못해 원본 통합 실행에서 다음 값이 비었다.
+  assert.deepEqual([...readSequenceNextValues({}, 'cubrid', answer(["<00001> lower(name)||':'||cast(...): 'sq_a:5'", 'sq_b:7', '@@COMPLETED']))], [['sq_a', 5], ['sq_b', 7]]);
+  assert.match(VENDOR_SEQUENCE_NEXT_VALUES.cubrid, /CASE WHEN started = 1 THEN current_val \+ increment_val ELSE current_val END/, '쓰기 전 시리얼은 current_val 이 다음 값이다');
   // 2026-11-04 실측 줄. MySQL 은 Hibernate 표 시퀀스의 next_val, MariaDB 는 NOCACHE 시퀀스의 next_not_cached_value 다.
   assert.deepEqual([...readSequenceNextValues({}, 'mysql', answer(['m6_seq_a:41', 'm6_seq_b:7', '@@COMPLETED']))], [['m6_seq_a', 41], ['m6_seq_b', 7]]);
   assert.deepEqual([...readSequenceNextValues({}, 'mariadb', answer(['m6_seq_nocache:103']))], [['m6_seq_nocache', 103]]);
@@ -907,6 +1006,12 @@ function everyDegradationModel() {
   // FK 가 참조하는 NULL 허용 유일 키. SQL Server 의 필터 유일 인덱스는 FK 대상이 못 돼 NULL 한 행 제한이 남는다.
   value.constraints.push(constraint('t_parent', 'uk_t_parent_hash', 'u', 'UNIQUE (hash_vl)'),
     constraint('t_child', 'fk_t_child_owner_hash', 'f', 'FOREIGN KEY (owner) REFERENCES t_parent(hash_vl)', 't_parent'));
+  // 시퀀스 기본값. CUBRID 는 DEFAULT 에 시퀀스를 쓸 수 없다(default). 다른 벤더는 그대로 옮긴다.
+  value.columns.push(column('t_child', 'seq_no', 'bigint', { position: 5, default: "nextval('sq_alone'::regclass)" }));
+  // 기본키를 아무도 참조하지 않는 표의 NULL 허용 유일 키를 FK 가 참조한다. CUBRID 는 둘을 맞바꿔 그 칸이 NOT NULL 이 된다(not-null).
+  value.columns.push(column('t_code', 'id', 'bigint', { nullable: false, position: 1 }), varchar('t_code', 'code', 20, { position: 2 }), varchar('t_child', 'code_ref', 20, { position: 6 }));
+  value.constraints.push(constraint('t_code', 'pk_t_code', 'p', 'PRIMARY KEY (id)'), constraint('t_code', 'uk_t_code_code', 'u', 'UNIQUE (code)'),
+    constraint('t_child', 'fk_t_child_code', 'f', 'FOREIGN KEY (code_ref) REFERENCES t_code(code)', 't_code'));
   return buildVendorModel({ snapshot: value, extras });
 }
 
@@ -917,17 +1022,27 @@ test('every CI vendor shows exactly the degradations its own translation can rea
   const branches = everyDegradationModel();
   const reached = vendorId => [...new Set(VENDOR_ADAPTERS[vendorId].emitSchema(branches).degradations.map(row => degradationKind(row.name)))].sort();
   const ciVendors = ledger.vendors.filter(vendor => vendor.ci);
-  assert.deepEqual(ciVendors.map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql']);
+  assert.deepEqual(ciVendors.map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
   for (const vendor of ciVendors) {
     assert.deepEqual(vendor.notices.degradations.map(row => row.kind).sort(), reached(vendor.id), `${vendor.id}: 표시 문장과 번역이 낼 수 있는 저하가 다르다`);
     assert.deepEqual(unshownDegradations(vendor, VENDOR_ADAPTERS[vendor.id].emitSchema(branches).degradations), [], vendor.id);
+    // 승격 전(preview)에도 생성할 수 있으므로 인증 조건의 문장 대조를 지금 지난다.
+    assert.deepEqual(vendorNoticeProblems(vendor), [], vendor.id);
     for (const row of vendor.notices.degradations) assert.match(row.text, /니다\.$/, `${vendor.id} ${row.kind}: 화면 문장은 '…습니다.' 로 끝낸다`);
     assert.match(vendor.notices.image, /니다\.$/, vendor.id);
   }
   // 시험 모델이 어댑터 소스의 모든 선언 지점에 닿아야 위 대조가 빈틈이 없다. 분기를 더하고 모델에 사례를 더하지 않으면 여기서 붉다.
-  for (const [file, vendors] of [['oracle', ['oracle']], ['mysql', ['mysql', 'mariadb']], ['mssql', ['mssql']]]) {
+  for (const [file, vendors] of [['oracle', ['oracle']], ['mysql', ['mysql', 'mariadb']], ['mssql', ['mssql']], ['cubrid', ['cubrid']]]) {
     assert.deepEqual([...new Set(vendors.flatMap(reached))].sort(), [...declaredDegradationKinds(`scripts/project-composer-vendor-${file}.mjs`)].sort(), file);
   }
+  // CUBRID 의 고정 저하 넷(2026-11-05 사용자 승인 제한 지원)은 모델과 상관없이 늘 안내한다. 한국 날짜 기본값은 옮겨져 저하가 아니다(2026-11-06 실측).
+  const cubridKinds = ledger.vendors.find(vendor => vendor.id === 'cubrid').notices.degradations.map(row => row.kind);
+  for (const kind of ['check-cost', 'timestamp-precision', 'skip-locked', 'json-validity']) assert.ok(cubridKinds.includes(kind), kind);
+  const kstDate = buildVendorModel({ snapshot: { columns: [column('t_day', 'id', 'bigint', { nullable: false, position: 1 }),
+    varchar('t_day', 'ymd', 8, { position: 2, default: "to_char((now() AT TIME ZONE 'Asia/Seoul'::text), 'YYYYMMDD'::text)" })],
+  constraints: [constraint('t_day', 'pk_t_day', 'p', 'PRIMARY KEY (id)')], indexes: [], triggers: [], sequences: [] }, extras: { functions: [], comments: [], identitySequences: [], sequenceValues: [] } });
+  assert.ok(!cubridAdapter.emitSchema(kstDate).degradations.some(row => degradationKind(row.name) === 'default'), '한국 날짜 기본값은 DB 가 채운다');
+  assert.ok(!/한국 날짜/.test(ledger.vendors.find(vendor => vendor.id === 'cubrid').notices.degradations.find(row => row.kind === 'default').text), '옮겨진 기본값을 저하로 말하지 않는다');
   assert.ok(reached('mysql').includes('prefix') && !reached('mariadb').includes('prefix'), 'MariaDB 는 긴 유니크를 엔진 해시로 받는다');
   // 정렬 순서는 스키마가 아니라 엔진의 동작이라 모델과 상관없이 늘 안내한다(설계서 §5 NULL 순서).
   for (const vendorId of ['mysql', 'mariadb', 'mssql']) assert.ok(reached(vendorId).includes('null-order'), `${vendorId}: NULL 을 가장 작은 값으로 정렬한다`);
@@ -1210,6 +1325,45 @@ test('the build uses the vendor driver and Flyway plugin and keeps the rest', ()
   }
 });
 
+test('the CUBRID driver repository reaches only a CUBRID project, as a top-level repository for the runtime driver', () => {
+  const cubrid = VENDOR_SOURCE.cubrid;
+  const repository = `maven { url = uri('${cubrid.driverRepository.url}'); content { includeGroup '${cubrid.driverRepository.group}' } }`;
+  assert.deepEqual(cubrid.driverRepository, { url: 'https://maven.cubrid.org', group: 'cubrid' }, 'Central 밖 저장소는 cubrid 그룹으로 좁힌다(2026-11-05 사용자 결정)');
+  assert.equal(cubrid.driverCoordinate.split(':')[0], cubrid.driverRepository.group);
+  assert.equal(cubrid.flywayPlugin, 'org.flywaydb:flyway-database-cubrid:10.26.0');
+  // 원본은 벤더 통합 시험 블록 안에만 저장소와 시험 드라이버를 둔다. 그 줄이 투영이 지우는 모양이고 판이 소스 투영 값과 같아야 지운 뒤 같은 드라이버가 된다.
+  const source = readFileSync(join(ROOT, 'api-server/build.gradle'), 'utf8').replace(/\r\n/g, '\n');
+  const integrationBlock = source.slice(source.indexOf("if (project.hasProperty('vendorIntegration'))"));
+  assert.ok(integrationBlock.includes(`\n    repositories { ${repository} }\n    dependencies { testRuntimeOnly '${cubrid.driverCoordinate}' }\n`), '원본의 CUBRID 줄이 투영이 아는 모양과 판이다');
+  assert.equal(source.split('maven.cubrid.org').length - 1, 1, '원본의 CUBRID 저장소는 통합 시험 블록의 한 줄뿐이다');
+
+  for (const vendor of Object.keys(VENDOR_SOURCE)) {
+    const projected = projectVendorBuild(source, vendor);
+    assert.doesNotMatch(projected, /testRuntimeOnly 'cubrid:/, `${vendor}: 시험 드라이버 줄은 남지 않는다`);
+    assert.doesNotMatch(projected, /Maven Central 에 없다\. cubrid 그룹만/, `${vendor}: 지운 줄의 주석도 남지 않는다`);
+    assert.match(projected, /if \(project\.hasProperty\('vendorIntegration'\)\) \{\n {4}\/\/ 생성물의 번역 기준선을/, `${vendor}: 통합 시험 블록의 나머지는 그대로다`);
+    if (vendor !== 'cubrid') {
+      assert.doesNotMatch(projected, /maven\.cubrid\.org|cubrid:cubrid-jdbc/, `${vendor}: 다른 벤더 프로젝트에는 CUBRID 저장소·드라이버가 없다`);
+      continue;
+    }
+    // CUBRID 프로젝트는 운영 드라이버를 받아야 하므로 저장소를 최상위에 둔다. 통합 시험 블록 안의 저장소는 평소 빌드에 보이지 않는다.
+    assert.match(projected, new RegExp(`^ {4}runtimeOnly '${cubrid.driverCoordinate.replaceAll('.', '\\.')}'$`, 'm'), '운영 드라이버로 바뀐다');
+    assert.match(projected, new RegExp(`^ {4}implementation '${cubrid.flywayPlugin.replaceAll('.', '\\.')}'$`, 'm'));
+    assert.match(projected, /^plugins \{\n[\s\S]*?^\}\n\n\/\/ cubrid JDBC 드라이버는 Maven Central 에 없다\. 그 그룹만 이 저장소에서 받는다\.\nrepositories \{\n {4}maven \{ url = uri\('https:\/\/maven\.cubrid\.org'\); content \{ includeGroup 'cubrid' \} \}\n\}\n\ndependencies \{/m);
+    assert.equal(projected.split('maven.cubrid.org').length - 1, 1);
+    assert.doesNotMatch(projected, /flyway-database-postgresql|libs\.postgresql\b/, 'PostgreSQL 드라이버·플러그인이 남지 않는다');
+  }
+  // 단일모듈은 루트 빌드 파일이다. buildscript 뒤의 plugins 블록 다음에 둔다.
+  const single = "buildscript {\n    dependencies {\n    }\n}\n\nplugins {\n    id 'java'\n}\n\nallprojects {\n    repositories {\n        mavenCentral()\n    }\n}\n"
+    + "// Dependencies originally declared by api-server.\ndependencies {\n    implementation 'org.flywaydb:flyway-database-postgresql'\n    implementation libs.postgresql\n}\n";
+  assert.equal(projectVendorBuild(single, 'cubrid'), single.replace("    id 'java'\n}\n", `    id 'java'\n}\n\n// cubrid JDBC 드라이버는 Maven Central 에 없다. 그 그룹만 이 저장소에서 받는다.\nrepositories {\n    ${repository}\n}\n`)
+    .replace("implementation 'org.flywaydb:flyway-database-postgresql'", `implementation '${cubrid.flywayPlugin}'`).replace('implementation libs.postgresql', `runtimeOnly '${cubrid.driverCoordinate}'`));
+  // 지울 자리를 못 찾으면(원본 줄 모양이 바뀌면) 다른 벤더 프로젝트에 저장소가 새지 않게 멈춘다. 둘 자리가 없어도 멈춘다.
+  const reshaped = source.replace(`    repositories { ${repository} }\n`, `    repositories {\n        ${repository}\n    }\n`);
+  assert.throws(() => projectVendorBuild(reshaped, 'oracle'), /maven\.cubrid\.org 저장소 줄 1개/);
+  assert.throws(() => projectVendorBuild(source.replace(/^plugins \{/m, 'plugins  {'), 'cubrid'), /JDBC 드라이버 저장소/);
+});
+
 test('a build without the expected lines stops instead of keeping PostgreSQL', () => {
   assert.throws(() => projectVendorBuild("implementation libs.postgresql\n", 'oracle'), /Flyway 플러그인/);
   assert.throws(() => projectVendorBuild("implementation 'org.flywaydb:flyway-database-postgresql'\n", 'oracle'), /JDBC 드라이버/);
@@ -1232,6 +1386,19 @@ test('the vendor document selects the SQL port and dialect and turns off Flyway 
   assert.match(document, /vendor: oracle/);
   assert.match(document, /placeholder-replacement: false/);
   assert.match(document, new RegExp(`dialect: ${VENDOR_SOURCE.oracle.dialect.replaceAll('.', '\\.')}`));
+  // CUBRID 는 표 메타를 표마다 읽어야 Hibernate validate 가 표를 찾는다. UUID 매핑과 생성 키는 방언이 맡아 설정에 두지 않는다.
+  const cubrid = vendorApplicationDocument('cubrid');
+  assert.ok(cubrid.endsWith('      hibernate:\n        dialect: nuri.foundation.core.persistence.NuriCubridDialect\n        hbm2ddl:\n          jdbc_metadata_extraction_strategy: individually\n'), cubrid);
+  assert.match(cubrid, /^ {4}vendor: cubrid$/m);
+  assert.doesNotMatch(cubrid, /uuid|use_get_generated_keys/i);
+  for (const vendor of ['oracle', 'mysql', 'mariadb', 'mssql']) assert.doesNotMatch(vendorApplicationDocument(vendor), /hbm2ddl|extraction_strategy/, vendor);
+  // 드라이버가 현재 스키마를 답하지 않아 Flyway 이력 표의 스키마를 접속 계정으로 준다. 시험의 Flyway 적용도 같은 값이다(엔진 환경).
+  assert.match(cubrid, /^ {2}flyway:\n(?: {4}.+\n)* {4}default-schema: \$\{spring\.datasource\.username\}$/m);
+  assert.equal(VENDOR_ENGINES.cubrid.integration.environment.VENDOR_FLYWAY_DEFAULT_SCHEMA, VENDOR_ENGINES.cubrid.integration.username);
+  for (const vendor of ['oracle', 'mysql', 'mariadb', 'mssql']) assert.doesNotMatch(vendorApplicationDocument(vendor), /default-schema/, vendor);
+  // 통합 시험도 같은 값으로 돈다(엔진의 SPRING_APPLICATION_JSON).
+  const [[group, key, value]] = VENDOR_SOURCE.cubrid.hibernateProperties;
+  assert.equal(JSON.parse(VENDOR_ENGINES.cubrid.integration.environment.SPRING_APPLICATION_JSON)[`spring.jpa.properties.hibernate.${group}.${key}`], value);
 });
 
 test('a new request needs certification or a tool run, but a stored composition stays valid in any shell', () => {
@@ -1464,7 +1631,7 @@ test('a unique counts as baseline only while its signature is unchanged, and eve
   assert.deepEqual(output, ['tb_a.uk_keep=10', 'tb_a.sys_c0012=11', 'tb_a.uk_on_plain_index=a#b'], '일반 인덱스로 집행되는 제약은 컬럼 목록이 값이다');
   assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [], sections: new Map([[0, ['garbage line']]]) })), /유니크 서명 조회의 줄을 해석하지 못했다: garbage line/);
   assert.match(VENDOR_UNIQUE_SIGNATURES.oracle, /constraint_type = 'U' AND i\.uniqueness = 'NONUNIQUE'/, '일반 인덱스로 집행되는 유니크 제약도 서명에 든다');
-  assert.throws(() => readUniqueSignatures({}, 'cubrid', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
+  assert.throws(() => readUniqueSignatures({}, 'tibero', () => ({ errors: [], sections: new Map() })), /유니크 서명 조회가 없다/);
   assert.throws(() => readUniqueSignatures({}, 'oracle', () => ({ errors: [{ error: 'ORA-00942' }], sections: new Map() })), /유니크 서명 조회 실패: ORA-00942/);
 });
 
@@ -1489,8 +1656,9 @@ test('the MySQL family signs a unique with its sorted key list, and its session 
 
 test('the CI vendor job is a certification condition and only opens a vendor whose integration engine exists', () => {
   const ledger = JSON.parse(readFileSync(join(ROOT, 'config/db-vendors.json'), 'utf8'));
-  // 단계 4 는 SQL Server 의 벤더 잡을 승격 전(preview)에 연다. 승격은 증거를 기록하는 다음 변경이다.
-  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql']);
+  // 단계 5-1 은 CUBRID 의 벤더 잡을 승격 전(preview)에 연다. 승격은 증거를 기록하는 다음 변경이다.
+  assert.deepEqual(ledger.vendors.filter(vendor => vendor.ci).map(vendor => vendor.id), ['oracle', 'mariadb', 'mysql', 'mssql', 'cubrid']);
+  assert.equal(ledger.vendors.find(vendor => vendor.id === 'cubrid').status, 'preview');
   const gate = JSON.parse(readFileSync(join(ROOT, 'config/governance/gates.json'), 'utf8')).gateSets.find(set => set.id === 'GATESET-VENDOR-CONFORMANCE');
   assert.equal(gate.requiredCiContext, 'backend-build', '카탈로그 게이트가 required 잡에서 돌아야 승격할 수 있다');
   const certifiedRow = ledger.vendors.find(vendor => vendor.id === 'oracle');
@@ -1505,7 +1673,8 @@ test('the CI vendor job is a certification condition and only opens a vendor who
     } finally { rmSync(root, { recursive: true, force: true }); }
   };
   assert.throws(() => load(vendor => { vendor.status = 'certified'; delete vendor.ci; }), /oracle: CI 벤더 잡\(ci\)이 없다/);
-  assert.throws(() => load((_, copy) => { copy.vendors.find(vendor => vendor.id === 'cubrid').ci = true; }), /cubrid: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
+  // 어댑터가 있는 벤더는 모두 통합 엔진을 연다. 엔진이 없는 벤더(Tibero)를 켜면 잡이 늘 실패한다.
+  assert.throws(() => load((_, copy) => { copy.vendors.find(vendor => vendor.id === 'tibero').ci = true; }), /tibero: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
   assert.throws(() => load(vendor => { vendor.ci = 'yes'; }), /oracle: ci 는 통합 시험 엔진이 있는 벤더의 true 만 쓴다/);
 });
 
@@ -1927,10 +2096,19 @@ test('the runner launches the vendor container with its own labels and closed en
   for (const id of ['mysql', 'mariadb', 'mssql', 'cubrid']) assert.equal(VENDOR_ENGINES[id].ready('x', cmd => { seen.push(cmd[0]); return { status: 0 }; }), true, id);
   assert.deepEqual(seen, ['logs', 'logs', 'exec', 'exec', 'exec', 'exec', 'exec', 'exec']);
   // [2026-11-04] 한글이 '?' 로 저장된 19c 기록이 시험 중간에 늦게 멈췄다. 유니코드가 아닌 DB 는 준비 때 그 값을 남기고 바로 멈춘다.
-  const notReady = (probe, pattern) => assert.throws(() => VENDOR_ENGINES.oracle19.ready('x', oracle19(probe)), error => error.code === 'VENDOR_ENGINE_NOT_READY' && pattern.test(error.message));
-  notReady('CHARSET=WE8MSWIN1252\nHANGUL=Typ=96 Len=1 CharacterSet=WE8MSWIN1252: 3f\n', /NLS_CHARACTERSET=WE8MSWIN1252, '가' 저장 바이트=3f/);
-  notReady('CHARSET=AL32UTF8\nHANGUL=Typ=96 Len=1 CharacterSet=AL32UTF8: 3f\n', /저장 바이트=3f/);
-  notReady('ORA-01017: invalid username/password\n', /NLS_CHARACTERSET=읽지 못함/);
+  //   읽은 값이 하나라도 다르면 던지고, 읽지 못한 값은 아직 모르는 것이라 준비 대기가 다시 묻는다(false). 읽지 못함을 실패로 보면 접속 직후의 일시 오류에도 멈춘다.
+  const notReady = (probe, pattern) => assert.throws(() => VENDOR_ENGINES.oracle19.ready('x', oracle19(probe)), error => error.code === 'VENDOR_ENGINE_NOT_READY' && pattern.test(error.message), probe);
+  const askAgain = probe => assert.equal(VENDOR_ENGINES.oracle19.ready('x', oracle19(probe)), false, probe);
+  const hangul = bytes => `HANGUL=Typ=96 Len=3 CharacterSet=AL32UTF8: ${bytes}\n`;
+  notReady(`CHARSET=WE8MSWIN1252\n${hangul('3f')}`, /NLS_CHARACTERSET=WE8MSWIN1252, '가' 저장 바이트=3f/);
+  notReady(`CHARSET=AL32UTF8\n${hangul('3f')}`, /NLS_CHARACTERSET=AL32UTF8, '가' 저장 바이트=3f/);
+  notReady('CHARSET=WE8MSWIN1252\n', /NLS_CHARACTERSET=WE8MSWIN1252, '가' 저장 바이트=읽지 못함/);
+  notReady(`CHARSET=WE8MSWIN1252\n${hangul('ea,b0,80')}`, /NLS_CHARACTERSET=WE8MSWIN1252, '가' 저장 바이트=ea,b0,80/);
+  notReady(hangul('3f'), /NLS_CHARACTERSET=읽지 못함, '가' 저장 바이트=3f/);
+  askAgain('ORA-01017: invalid username/password\n');
+  askAgain('');
+  askAgain('CHARSET=AL32UTF8\n');
+  askAgain(hangul('ea,b0,80'));
   // 초기화 중의 임시 서버는 소켓만 열고 앱 계정은 초기화 끝에 생긴다. 앱 계정의 TCP 접속이 되어야 Flyway 와 시험이 붙을 수 있다.
   for (const [id, client, variable] of [['mysql', 'mysql', 'MYSQL_PASSWORD'], ['mariadb', 'mariadb', 'MARIADB_PASSWORD']]) {
     let command = null;
@@ -1981,7 +2159,11 @@ test('the runner wires the closed Docker environment, one API environment and th
   assert.deepEqual(resolveVendorEngine('oracle', undefined, VENDOR_ENGINES).id, 'oracle');
   assert.deepEqual(resolveVendorEngine('oracle', 'oracle19', VENDOR_ENGINES).id, 'oracle19');
   assert.throws(() => resolveVendorEngine('oracle', 'mysql', VENDOR_ENGINES), /oracle 프로젝트의 대표 묶음을 mysql 엔진으로 실행할 수 없다/);
-  assert.throws(() => resolveVendorEngine('cubrid', undefined, VENDOR_ENGINES), /cubrid 프로젝트의 대표 묶음을 cubrid 엔진으로 실행할 수 없다/, '통합 값이 없는 엔진은 아직 열지 않는다');
+  const withoutIntegration = { ...VENDOR_ENGINES, cubrid: { ...VENDOR_ENGINES.cubrid, integration: undefined } };
+  assert.throws(() => resolveVendorEngine('cubrid', undefined, withoutIntegration), /cubrid 프로젝트의 대표 묶음을 cubrid 엔진으로 실행할 수 없다/, '통합 값이 없는 엔진은 열지 않는다');
+  assert.equal(resolveVendorEngine('cubrid', undefined, VENDOR_ENGINES).id, 'cubrid');
+  assert.deepEqual(vendorDatabaseEnvironment(VENDOR_ENGINES.cubrid, '49153', 'secret', '1'),
+    { DB_URL: `jdbc:cubrid:127.0.0.1:49153:vendorcheck:::?${VENDOR_SOURCE.cubrid.urlParameters}`, DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' });
   assert.throws(() => resolveVendorEngine('mysql', 'oracle19', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 oracle19 엔진으로/);
   assert.throws(() => resolveVendorEngine('mysql', 'mariadb', VENDOR_ENGINES), /mysql 프로젝트의 대표 묶음을 mariadb 엔진으로/, '같은 어댑터를 써도 다른 벤더의 엔진이다');
   for (const vendor of ['mysql', 'mariadb']) {
@@ -2674,6 +2856,72 @@ test('the MySQL family stack keeps the app and root credentials apart and every 
   }
   assert.match(VENDOR_SOURCE.mariadb.composeService, /healthcheck\.sh", "--connect", "--innodb_initialized"/);
   assert.match(VENDOR_SOURCE.mysql.composeService, /mysqladmin ping -h 127\.0\.0\.1/, '초기화 중의 임시 서버는 TCP 를 열지 않는다');
+});
+
+test('the CUBRID stack runs the engine image, keeps the app and dba credentials apart and is ready only on the app account with dba locked', () => {
+  const source = VENDOR_SOURCE.cubrid;
+  const compose = projectVendorCompose(readFileSync(join(ROOT, 'docker-compose.yml'), 'utf8').replace(/\r\n/g, '\n'), 'cubrid');
+  assert.ok(compose.includes(`image: ${VENDOR_ENGINES.cubrid.image}\n`), '개발 compose 와 검증 엔진의 이미지가 같다');
+  assert.match(compose, /^ {6}- "127\.0\.0\.1:33000:33000"$/m, '브로커 포트를 루프백에만 연다');
+  assert.ok(compose.includes(`"url": "${source.composeUrl}"`));
+  assert.equal(source.composeUrl, 'jdbc:cubrid:db:33000:egovdb:::?charset=utf-8');
+  assert.doesNotMatch(compose, /postgres/);
+  // 서버 시계가 한국 시간이어야 앱이 기동한다(CubridSqlDialect.assertSession). 로캘이 다르면 한글을 바이트로 센다. 검증 엔진과 같은 값이다.
+  const engine = VENDOR_ENGINES.cubrid.environment('p');
+  for (const name of ['TZ', 'CUBRID_LOCALE', 'CUBRID_VOLUME_SIZE']) assert.match(compose, new RegExp(`^ {6}${name}: ${engine[name].replaceAll('.', '\\.')}$`, 'm'), name);
+  assert.match(compose, /^ {6}CUBRID_DB: egovdb$/m);
+  assert.match(compose, /^ {6}- cubrid_data:\/home\/cubrid\/CUBRID\/databases$/m);
+  assert.match(compose, /^ {2}cubrid_data:$/m);
+  // 앱 접속 JSON 의 자격과 같은 앱 계정을 상태 검사가 만든다.
+  assert.match(compose, /^ {6}APP_DB_USER: egov\n {6}APP_DB_PASSWORD: egov123$/m);
+  const healthcheck = compose.match(/^ {6}test: (.*)$/m)[1];
+  // 준비 판정은 컨테이너의 실효 앱 자격으로 한 실제 접속이다. 개발 값을 글자로 박으면 운영 자격에서 영구 unhealthy 가 된다.
+  assert.ok(healthcheck.endsWith('gosu cubrid csql -u \\"$${APP_DB_USER}\\" -p \\"$${APP_DB_PASSWORD}\\" -c \\"select 1 from db_root\\" egovdb@localhost </dev/null"]'), healthcheck);
+  assert.doesNotMatch(healthcheck, /egov123/);
+  assert.match(healthcheck, /CREATE USER \$\$\{APP_DB_USER\} PASSWORD '\$\$\(printf '%s' \\"\$\$\{APP_DB_PASSWORD\}\\" \| sed \\"s\/'\/''\/g\\"\)'/, '앱 비밀번호의 작은따옴표는 두 번 쓴다');
+  assert.match(healthcheck, /ALTER USER dba PASSWORD '\$\$\(printf '%s' \\"\$\$\{DBA_PASSWORD\}\\" \| sed/);
+  assert.match(healthcheck, /case \\"\$\$\{APP_DB_USER\}\\" in ''\|\*\[!A-Za-z0-9_\]\*\|\[Dd\]\[Bb\]\[Aa\]\|\[Pp\]\[Uu\]\[Bb\]\[Ll\]\[Ii\]\[Cc\]\) /, '계정 이름은 따옴표 없는 식별자라 영문·숫자·밑줄만, dba·public 은 거부한다');
+  // dba 가 비밀번호 없이 접속되는 동안은 준비가 아니다. dba 잠금은 앱 계정 접속이 된 뒤에만 건다 — 거꾸로면 앱 계정을 만들 수 없게 된다.
+  const command = cubridHealthcheckCommand({ user: 'APP', password: 'PW', dbaPassword: 'DBA', database: 'db' });
+  const start = command.indexOf('if gosu cubrid csql -u dba -c "select 1 from db_root" db@localhost');
+  const branch = start < 0 ? '' : command.slice(start, command.indexOf('exit 1; fi;', start) + 'exit 1; fi;'.length);
+  assert.ok(branch.length > 0 && branch.indexOf('CREATE USER APP') < branch.indexOf('-u "APP" -p "PW"') && branch.indexOf('-u "APP" -p "PW"') < branch.indexOf('ALTER USER dba'), branch);
+  assert.match(branch, /-c "select 1 from db_root" db@localhost <\/dev\/null >\/dev\/null 2>&1 && gosu cubrid csql -u dba -c "ALTER USER dba/);
+  assert.ok(branch.endsWith('2>&1; exit 1; fi;'), '비밀번호 없는 dba 를 찾은 회차는 늘 준비가 아니다');
+  assert.match(command, /^case "APP" in .*; if \[ -z "DBA" \]; then echo 'dba password is required' >&2; exit 1; fi; /, '빈 dba 비밀번호는 잠그지 못하므로 멈춘다');
+  // 명령 치환이 끝 줄바꿈을 지워 만든 비밀번호와 알려진 비밀번호가 달라진다. 첫 csql 앞에서 두 비밀번호를 모두 거른다.
+  assert.match(command, /; if ! \[ "\$\(printf '%s' "PW" \| tr -d '\\r\\n'\)" = "PW" \] \|\| ! \[ "\$\(printf '%s' "DBA" \| tr -d '\\r\\n'\)" = "DBA" \]; then echo 'passwords must not contain line breaks' >&2; exit 1; fi; if gosu cubrid csql -u dba /,
+    '줄바꿈이 든 비밀번호는 계정을 만들기 전에 멈춘다');
+  assert.match(healthcheck, /tr -d '\\\\r\\\\n'/, 'compose 문자열에서는 역슬래시를 한 번 더 이스케이프해 셸에 \\r\\n 으로 닿는다');
+  assert.ok(command.endsWith('; gosu cubrid csql -u "APP" -p "PW" -c "select 1 from db_root" db@localhost </dev/null'));
+  // 비밀번호 없는 dba 의 접속 시도는 입력을 닫는다. 비밀번호를 건 뒤에 묻는 입력을 기다리지 않는다.
+  for (const call of command.split('gosu cubrid csql -u dba').slice(1)) assert.match(call, /^ -c "[^"]*(?:"[^"]*"[^"]*)*" db@localhost <\/dev\/null /, call);
+
+  // 운영 오버레이는 앱 자격과 dba 비밀번호를 따로 필수로 받는다.
+  const prod = projectVendorComposeProd('    environment:\n      POSTGRES_USER: ${DB_USERNAME:?필요}\n      POSTGRES_PASSWORD: ${DB_PASSWORD:?필요}\n      SPRING_FLYWAY_LOCATIONS: classpath:db/migration\n', 'cubrid');
+  assert.match(prod, /^ {6}APP_DB_USER: \$\{DB_USERNAME/m);
+  assert.match(prod, /^ {6}APP_DB_PASSWORD: \$\{DB_PASSWORD/m);
+  assert.match(prod, /^ {6}DBA_PASSWORD: \$\{DB_ADMIN_PASSWORD:\?/m, 'dba 비밀번호는 앱 비밀번호와 나눈다');
+  assert.match(prod, /SPRING_FLYWAY_LOCATIONS: classpath:db\/vendor\/cubrid/);
+  // 주소의 ? 는 case 패턴의 글자 하나 대응이라 큰따옴표로 감싸 글자 그대로 맞춘다.
+  const deploy = projectVendorDeploy(readFileSync(join(ROOT, 'scripts/deploy.sh'), 'utf8').replace(/\r\n/g, '\n'), 'cubrid');
+  assert.ok(deploy.includes(`    "${source.composeUrl}") ;;\n`));
+  assert.match(deploy, /DB_PASSWORD DB_ADMIN_PASSWORD/);
+  const environment = projectVendorEnvironment(readFileSync(join(ROOT, '.env.example'), 'utf8').replace(/\r\n/g, '\n'), 'cubrid');
+  assert.ok(environment.includes(`\nDB_URL=${source.url}\n`));
+  assert.match(environment, /^# 운영 번들 DB 의 dba 비밀번호\./m);
+  assert.match(environment, /^# dba 비밀번호\(DB_ADMIN_PASSWORD\)는 DB 상태 검사가 앱 계정을 만든 뒤 처음 한 번 건다\./m);
+  const profile = projectVendorProfile('    url: ${DB_URL:jdbc:postgresql://localhost:5432/egovdb?currentSchema=public&prepareThreshold=0}\n    driver-class-name: org.postgresql.Driver\n', 'cubrid');
+  assert.equal(profile, `    url: \${DB_URL:${source.url}}\n    driver-class-name: ${source.driverClass}\n`);
+
+  // README 는 CUBRID 의 한계를 말하고 다른 벤더의 문장을 싣지 않는다. 재지 않은 것은 재지 않았다고 말한다.
+  const ledger = loadVendorLedger(ROOT);
+  const readme = vendorReadme('cubrid', ledger);
+  for (const row of ledger.vendors.find(vendor => vendor.id === 'cubrid').notices.degradations) assert.ok(readme.includes(`- ${row.text}`), row.kind);
+  assert.ok(readme.includes(`\`${source.urlParameters}\``));
+  for (const phrase of ['SYS_DATETIME', 'ko_KR.utf8', 'EXECUTE REJECT', '`ck_`', '기본키만 참조', '그림자 키', 'DB_ADMIN_PASSWORD', '이름 없이 만든 제약', 'db/vendor/cubrid']) assert.ok(readme.includes(phrase), phrase);
+  assert.match(readme, /^4\. CUBRID 에서 `V` 파일이 중간에 실패했을 때 .*재지 않았다\. .*`npm run verify:vendor-schema` 로 일회용 DB 에서 먼저 돌린다\.$/m);
+  for (const other of ['VARCHAR2', 'CLOB', 'SYS_C', 'NVARCHAR', 'utf8mb4', 'Oracle', 'SQL Server', 'MySQL', '자동 커밋이라', '유니크의 엔티티 미러']) assert.ok(!readme.includes(other), other);
 });
 
 /*

@@ -43,11 +43,12 @@ const FLYWAY_BLOCK_END = Object.freeze({
 
 /**
  * 어댑터 문장을 Flyway SQL 파일로 쓴다. 일반 문장은 세미콜론으로, 블록 문장은 벤더의 블록 끝으로 끝낸다.
- * 문장 안의 세미콜론은 Flyway 파서가 문자열로 건너뛴다.
+ * 문장 안의 세미콜론은 Flyway 파서가 문자열로 건너뛴다. CUBRID 어댑터는 블록 문장을 내지 않아(트리거도 한 문장이다) 블록 끝이 없다 —
+ * 그런 벤더가 블록 문장을 내면 끝낼 형식을 정할 때까지 멈춘다.
  */
 export function renderFlywayMigration(statements, vendorId) {
   const block = FLYWAY_BLOCK_END[vendorId];
-  if (!block) throw new Error(`블록 문장을 끝낼 형식이 없는 벤더: ${vendorId}`);
+  if (!block && statements.some(({ raw }) => raw)) throw new Error(`블록 문장을 끝낼 형식이 없는 벤더: ${vendorId}`);
   return `${statements.map(({ sql, raw }) => (raw ? block(sql) : `${sql};`)).join('\n')}\n`;
 }
 
@@ -72,15 +73,36 @@ const escapeRegExp = value => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 const VENDOR_TEST_DRIVER_LINES = new RegExp(String.raw`^[ \t]*\/\/ vendorIntegrationTest 가 벤더 DB 에 붙는 드라이버.*\r?\n(?:[ \t]*testRuntimeOnly '(?:`
   + Object.values(VENDOR_SOURCE).map(source => escapeRegExp(source.driverCoordinate.replace(/:[^:]+$/, ''))).join('|') + String.raw`):[^']*'\r?\n)+`, 'm');
 
+/** Maven Central 밖 드라이버의 저장소 선언. 그 드라이버 그룹만 이 저장소에서 받는다. */
+const repositoryDeclaration = ({ url, group }) => `maven { url = uri('${url}'); content { includeGroup '${group}' } }`;
+const SEPARATE_REPOSITORY_SOURCES = Object.values(VENDOR_SOURCE).filter(source => source.driverRepository);
+/**
+ * 원본의 벤더 통합 시험 블록에서 Central 밖 드라이버를 받는 줄(저장소 한 줄과 시험 드라이버 한 줄, 바로 앞의 주석 줄). 그 블록 안에만 있어 평소 빌드는 저장소를 보지 않는다.
+ */
+const VENDOR_TEST_REPOSITORY_LINES = new RegExp(String.raw`(?:^[ \t]*\/\/[^\n]*\r?\n)*^[ \t]*repositories \{ (?:`
+  + SEPARATE_REPOSITORY_SOURCES.map(source => escapeRegExp(repositoryDeclaration(source.driverRepository))).join('|')
+  + String.raw`) \}\r?\n[ \t]*dependencies \{ testRuntimeOnly '(?:`
+  + SEPARATE_REPOSITORY_SOURCES.map(source => escapeRegExp(source.driverCoordinate.replace(/:[^:]+$/, ''))).join('|') + String.raw`):[^']*' \}\r?\n`, 'gm');
+
 /**
  * 빌드 파일의 드라이버와 Flyway 플러그인을 바꾼다. 원본의 통합 시험용 벤더 드라이버 줄은 모두 뺀다 — 그 벤더의 줄은 런타임 드라이버와 겹치고,
- * 다른 벤더의 줄은 이 프로젝트가 쓰지 않는다.
+ * 다른 벤더의 줄은 이 프로젝트가 쓰지 않는다. Central 밖 드라이버(CUBRID)는 그 벤더를 고른 경우에만 저장소를 최상위에 둔다 — 런타임 드라이버를 받아야 하고,
+ * 다른 벤더의 프로젝트는 그 저장소를 볼 이유가 없다. 남거나 빠진 저장소 줄은 자리를 못 찾은 것이라 멈춘다.
  */
 export function projectVendorBuild(text, vendorId) {
   const source = VENDOR_SOURCE[vendorId];
   let projected = replaceRequired(text, /implementation 'org\.flywaydb:flyway-database-postgresql'/, `implementation '${source.flywayPlugin}'`, 'Flyway 플러그인');
   projected = replaceRequired(projected, /implementation libs\.postgresql\b/, `runtimeOnly '${source.driverCoordinate}'`, 'JDBC 드라이버');
-  return projected.replace(VENDOR_TEST_DRIVER_LINES, '');
+  projected = projected.replace(VENDOR_TEST_DRIVER_LINES, '').replace(VENDOR_TEST_REPOSITORY_LINES, '');
+  if (source.driverRepository) {
+    projected = replaceRequired(projected, /^plugins \{\r?\n[\s\S]*?^\}\r?\n/m, block => `${block}\n// ${source.driverCoordinate.split(':')[0]} JDBC 드라이버는 Maven Central 에 없다. 그 그룹만 이 저장소에서 받는다.\n`
+      + `repositories {\n    ${repositoryDeclaration(source.driverRepository)}\n}\n`, 'JDBC 드라이버 저장소');
+  }
+  for (const other of SEPARATE_REPOSITORY_SOURCES) {
+    const count = projected.split(`uri('${other.driverRepository.url}')`).length - 1;
+    if (count !== (other === source ? 1 : 0)) throw new Error(`벤더 투영 자리를 찾지 못했다: ${other.driverRepository.url} 저장소 줄 ${count}개`);
+  }
+  return projected;
 }
 
 /**
@@ -95,11 +117,17 @@ export function projectVendorProfile(text, vendorId) {
     .replace(/^(\s*locations:\s*).*classpath:db\/migration.*$/gm, `$1classpath:${vendorMigrationLocation(vendorId)}`);
 }
 
-/** 공통 설정 뒤에 붙는 벤더 문서. 뒤 문서가 앞 문서의 같은 키를 이긴다. 시드에 `${` 가 있을 수 있어 Flyway 치환을 끈다. */
+/**
+ * 공통 설정 뒤에 붙는 벤더 문서. 뒤 문서가 앞 문서의 같은 키를 이긴다. 시드에 `${` 가 있을 수 있어 Flyway 치환을 끈다.
+ * 벤더가 더 요구하는 Hibernate 설정(VENDOR_SOURCE 의 hibernateProperties: [묶음, 키, 값])은 방언 아래에 둔다.
+ */
 export function vendorApplicationDocument(vendorId) {
-  const { dialect } = VENDOR_SOURCE[vendorId];
+  const { dialect, hibernateProperties = [], flywayDefaultSchema } = VENDOR_SOURCE[vendorId];
+  const extra = hibernateProperties.flatMap(([group, key, value]) => [`        ${group}:`, `          ${key}: ${value}`]);
+  // 현재 스키마를 답하지 않는 드라이버는 Flyway 이력 표의 스키마를 정해 준다(VENDOR_SOURCE 의 flywayDefaultSchema).
+  const schema = flywayDefaultSchema ? [`    default-schema: ${flywayDefaultSchema}`] : [];
   return ['---', '# 생성기가 벤더 값으로 투영했다(ADR-0047).', 'app:', '  database:', `    vendor: ${vendorId}`, 'spring:', '  flyway:',
-    `    locations: classpath:${vendorMigrationLocation(vendorId)}`, '    placeholder-replacement: false', '  jpa:', '    properties:', '      hibernate:', `        dialect: ${dialect}`, ''].join('\n');
+    `    locations: classpath:${vendorMigrationLocation(vendorId)}`, '    placeholder-replacement: false', ...schema, '  jpa:', '    properties:', '      hibernate:', `        dialect: ${dialect}`, ...extra, ''].join('\n');
 }
 
 /** 개발 스택의 DB 서비스와 앱 접속값을 벤더로 바꾼다. */
@@ -142,10 +170,14 @@ export function projectVendorSettings(text) {
 }
 
 /** 운영 오버레이가 DB_ADMIN_PASSWORD 로 받는 번들 DB 관리자 계정(VENDOR_SOURCE 의 composeProd). */
-const ADMIN_ACCOUNT = Object.freeze({ oracle: 'SYS', mysql: 'root', mariadb: 'root', mssql: 'sa' });
-/** 운영 오버레이가 더 요구하는 값. SQL Server 개발 이미지는 운영에 쓸 수 없는 Developer 에디션이다(VENDOR_SOURCE 의 composeProd). */
+const ADMIN_ACCOUNT = Object.freeze({ oracle: 'SYS', mysql: 'root', mariadb: 'root', mssql: 'sa', cubrid: 'dba' });
+/**
+ * 운영 오버레이가 더 요구하는 값과 관리자 비밀번호의 안내. SQL Server 개발 이미지는 운영에 쓸 수 없는 Developer 에디션이다(VENDOR_SOURCE 의 composeProd).
+ * CUBRID 이미지는 dba 를 비밀번호 없이 두어 DB 상태 검사가 건다(cubridHealthcheckCommand).
+ */
 const ENVIRONMENT_EXTRA = Object.freeze({
   mssql: '\n# 운영 번들 DB 의 SQL Server 에디션(Standard·Enterprise 또는 제품 키). 개발 compose 는 Developer 에디션이다.\n# sa 비밀번호(DB_ADMIN_PASSWORD)는 대문자·소문자·숫자·기호 가운데 셋을 담은 8자 이상이어야 DB 가 기동한다.\n# MSSQL_PID=',
+  cubrid: '\n# dba 비밀번호(DB_ADMIN_PASSWORD)는 DB 상태 검사가 앱 계정을 만든 뒤 처음 한 번 건다. 그 뒤 값을 바꿔도 DB 에 반영되지 않는다.',
 });
 
 /** 예시 환경 파일의 접속 주소를 바꾼다. */
@@ -214,7 +246,27 @@ const MSSQL_README = Object.freeze({
   failedMigration: 'SQL Server 는 DDL 도 트랜잭션 안에서 돌아 `V` 파일이 중간에 실패하면 그 파일 전체가 되돌려지고 Flyway 이력에도 남지 않는다. 고친 뒤 다시 기동하면 된다. 트랜잭션 안에서 쓸 수 없는 문장(`ALTER DATABASE` 등)은 Flyway 파일에 두지 않고 따로 실행한다.',
 });
 
-const README_TEXT = Object.freeze({ oracle: () => ORACLE_README, mysql: () => innoDbReadme('mysql'), mariadb: () => innoDbReadme('mariadb'), mssql: () => MSSQL_README });
+/**
+ * README 의 CUBRID 문장. 서버 시계·잠금 대기·로캘·CHECK 미집행·FK 대상·복합 유일 키는 2026-11-05~06 CUBRID 11.4 실측(CubridSqlDialect, 설계서)이고,
+ * 이름 읽기는 검증 엔진의 조회 코드다. 미러 규칙은 CUBRID 유니크 서명 조회가 없어 말하지 않는다. 실패한 마이그레이션과 DB 가 짓는 제약 이름은 재지 않아 그렇게 적는다.
+ */
+const CUBRID_README = Object.freeze({
+  subject: 'CUBRID 는',
+  mirror: '',
+  session: [
+    `접속 주소(\`DB_URL\`)의 \`${VENDOR_SOURCE.cubrid.urlParameters}\` 는 드라이버가 문자열을 UTF-8 로 주고받게 한다. 운영 \`DB_URL\` 에도 그대로 둔다. 행 잠금 대기는 CUBRID 기본이 무한이라 앱이 연결을 열 때마다 \`SET TRANSACTION LOCK TIMEOUT 5\` 로 앱의 잠금 조회 상한(\`jakarta.persistence.lock.timeout\`, 5초)에 묶는다. 앱 밖의 클라이언트(\`csql\` 등)는 이 상한 없이 기다린다.`,
+    'CUBRID 는 세션 시간대 설정이 DB 가 채우는 시각(`SYS_DATETIME`)을 바꾸지 않아 서버 시계가 DB 의 시각과 날짜 기본값이 된다. 서버 시간대가 한국 표준시가 아니면 앱이 기동하지 않는다(컨테이너는 `TZ=Asia/Seoul`). DB 는 `ko_KR.utf8` 로캘로 만든다 — 다른 로캘(이미지 기본값 포함)로 만든 DB 는 한글 한 글자를 여러 글자로 세어 길이 제한이 어긋난다.',
+    '이미지는 앱 계정을 만들지 않고 `dba` 를 비밀번호 없이 둔다. 개발 compose 의 DB 상태 검사가 첫 기동 때 `dba` 로 앱 계정을 만들고, 앱 계정으로 접속되면 `dba` 에 관리자 비밀번호(운영은 `DB_ADMIN_PASSWORD`)를 건다. `dba` 가 비밀번호 없이 접속되는 동안은 DB 가 준비되지 않은 것으로 본다. 두 비밀번호는 처음 만들 때만 반영된다. 상태 검사의 비밀번호는 `csql` 인자로 넘어가 컨테이너의 프로세스 목록에 잠깐 보인다.',
+  ],
+  columns: '새 문자열 컬럼은 기준선과 같이 `VARCHAR(n)`(글자 수)으로 만든다. CUBRID 는 CHECK 제약을 문법만 받고 집행하지 않는다. 새 CHECK 는 기준선처럼 위반 조건을 `BEFORE INSERT`·`BEFORE UPDATE` 트리거의 `EXECUTE REJECT` 로 옮기고, 조건은 NULL 이 되지 않게 쓴다(NULL 이면 결과가 흔들린다). 트리거 이름이 `ck_` 로 시작해야 앱이 위반을 입력 오류(400)로 응답한다. 외래 키는 부모의 기본키만 참조할 수 있다. NULL 을 허용하는 복합 유일 키는 일부 컬럼이 NULL 인 행도 중복으로 거부한다 — 기준선은 모든 키가 찼을 때만 값을 갖는 그림자 키 컬럼과 트리거로 옮겼다.',
+  quoted: '- 따옴표로 만든 이름: `"bad-name"`·`"게시판"` 처럼 형식 밖의 이름은 조회 결과에서 읽히지 않아 이름 규칙이 보지 못한다. 이름은 소문자로 접어 읽어 대문자 표기도 보지 못한다. 따옴표와 대문자를 쓰지 않는다.',
+  unnamed: '- 이름 없이 만든 제약: CUBRID 가 짓는 이름과 그 이름이 조회에 나오는지는 재지 않았다. 제약에는 이름을 붙인다.',
+  typeChange: '',
+  extra: ['- JSON 칸의 형식: JSON 칸은 `STRING` 이고 DB 는 첫 글자와 크기만 본다. 새 JSON 칸도 깨진 JSON 은 앱이 막아야 한다.'],
+  failedMigration: 'CUBRID 에서 `V` 파일이 중간에 실패했을 때 앞 문장이 만든 객체와 Flyway 이력이 어떻게 남는지는 재지 않았다. 실패하면 남은 객체와 Flyway 이력의 실패 행을 직접 확인해 정리한 뒤 다시 적용한다.',
+});
+
+const README_TEXT = Object.freeze({ oracle: () => ORACLE_README, mysql: () => innoDbReadme('mysql'), mariadb: () => innoDbReadme('mariadb'), mssql: () => MSSQL_README, cubrid: () => CUBRID_README });
 
 /** 자동 커밋 DDL 벤더의 실패한 마이그레이션 안내. */
 const autoCommitFailure = subject => `${subject} DDL 이 자동 커밋이라 \`V\` 파일이 중간에 실패하면 실패한 문장 앞에서 만든 객체와 Flyway 이력의 실패 행이 남고, 다음 기동은 그 실패 행에서 멈춘다. 남은 객체를 손으로 지우고 실패 행을 정리(Flyway 의 \`repair\`. 이 프로젝트에는 그 명령이 없어 Flyway CLI 등으로 돌린다)한 뒤 다시 적용한다.`;
