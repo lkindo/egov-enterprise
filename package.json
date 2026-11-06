@@ -84,7 +84,9 @@
   },
   "dependencies": {
     "cross-env": "^7.0.3",
-    "pg": "^8.23.1"
+    "kordoc": "4.24.46",
+    "pg": "^8.23.1",
+    "sharp": "0.35.5"
   },
   "devDependencies": {
     "ajv": "8.20.0"
