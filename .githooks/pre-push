@@ -139,7 +139,8 @@ trap 'record_finish $?' 0
 trap 'RECORD_SIGNAL=SIGINT; exit 130' 2
 trap 'RECORD_SIGNAL=SIGTERM; exit 143' 15
 
-# Node 운영 계약 catalog는 전체 범위를 유지한다(로컬 약 11분 — 이 훅에서 가장 비싼 검사다).
+# Node 운영 계약 catalog는 전체 범위를 유지한다(로컬 약 19분, 2026-11-07 실측 — 이 훅에서 가장 비싼 검사다. 고르지 않는 이유는
+# DEC-OPS-364 와 readiness-followups 「운영 계약 비용 재측정 (2026-11-07)」).
 # 문서 전용이면 연결·메모리·생성물 계약을 확인하고 끝난다. 소스 변경이면 컴파일·타입·lint·폼 census 같은 정적 검사와
 # 불변식·원문 계약·cross-stack Vitest·하네스가 먼저 실패를 알린 뒤 맨 끝에 실행한다(fail-fast). 두 경로 모두 정확히 한 번 돈다(삭제 전용 push 는 그 전에 끝난다).
 run_operational_contracts() {
