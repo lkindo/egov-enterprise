@@ -2,6 +2,7 @@
 
 import type { ReactNode } from 'react';
 import { StandardModal } from '@/app/components/ui/standard-modal';
+import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import type { UserManage } from '@/types/foundation/user';
 import type { UserStatusCode } from '@/services/foundation/system/UserAdminService';
@@ -63,10 +64,13 @@ export function BulkUserStatusDialog({
 }
 
 export function BulkUserDepartmentDialog({
-  isOpen, users, isSaving, onClose, footer, departments, isLoading, departmentId, onDepartmentChange,
+  isOpen, users, isSaving, onClose, footer, departments, isLoading, isError, onRetry, departmentId, onDepartmentChange,
 }: BulkDialogProps & {
   departments: FlattenedDept[];
   isLoading: boolean;
+  /** 부서 조회가 실패했다 — 빈 목록을 '부서 없음' 으로 말하지 않는다. */
+  isError: boolean;
+  onRetry: () => void;
   departmentId: string;
   onDepartmentChange: (departmentId: string) => void;
 }) {
@@ -77,7 +81,14 @@ export function BulkUserDepartmentDialog({
         <div className="space-y-2">
           <p id="bulk-dept-label" className="text-[length:var(--font-size-body)] font-semibold text-foreground">이동할 대상 부서 선택</p>
           <div role="radiogroup" aria-labelledby="bulk-dept-label" className="max-h-[320px] overflow-y-auto rounded-md border border-border bg-muted/20 p-2">
-            {departments.length === 0 && (
+            {/* [2026-11-07] 조회 실패를 '이동할 수 있는 부서가 없습니다' 로 보였다 — 실패는 실패로 말하고 다시 부를 길을 준다. */}
+            {departments.length === 0 && isError && (
+              <div role="alert" className="flex flex-col items-center gap-2 py-6 text-center">
+                <p className="text-[length:var(--font-size-body)] text-destructive-emphasis">부서 목록을 불러오지 못했습니다. 고른 사용자는 그대로입니다.</p>
+                <Button type="button" variant="outline" size="sm" disabled={isSaving} onClick={onRetry}>부서 목록 다시 불러오기</Button>
+              </div>
+            )}
+            {departments.length === 0 && !isError && (
               <p className="py-8 text-center text-[length:var(--font-size-body)] text-muted-foreground">
                 {isLoading ? '부서 목록을 불러오는 중입니다...' : '이동할 수 있는 부서가 없습니다.'}
               </p>

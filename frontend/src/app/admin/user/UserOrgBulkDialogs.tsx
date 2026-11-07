@@ -56,7 +56,7 @@ export function UserOrgBulkStatusDialog({ isOpen, users, locked, applyBusy, onCl
 }
 
 export function UserOrgBulkMoveDialog({
-  isOpen, users, locked, moveBusy, onClose, departments, isLoading, departmentId, onDepartmentChange, handleBulkDeptMove,
+  isOpen, users, locked, moveBusy, onClose, departments, isLoading, isError, onRetry, departmentId, onDepartmentChange, handleBulkDeptMove,
 }: {
   isOpen: boolean;
   users: UserManage[];
@@ -67,6 +67,8 @@ export function UserOrgBulkMoveDialog({
   onClose: () => void;
   departments: ReturnType<typeof useDeptTree>['flattenedDepts'];
   isLoading: boolean;
+  isError: boolean;
+  onRetry: () => void;
   departmentId: string;
   onDepartmentChange: (departmentId: string) => void;
   handleBulkDeptMove: () => Promise<void>;
@@ -79,6 +81,8 @@ export function UserOrgBulkMoveDialog({
         onClose={onClose}
         departments={departments}
         isLoading={isLoading}
+        isError={isError}
+        onRetry={onRetry}
         departmentId={departmentId}
         onDepartmentChange={onDepartmentChange}
         footer={

@@ -1018,4 +1018,21 @@ describe('UserOrgHubClient CRUD 배선 (m-2)', () => {
     expect(screen.queryByRole('button', { name: /조직 계층 저장/ })).not.toBeInTheDocument();
     expect(screen.queryByRole('button', { name: /순서 이동 핸들/ })).not.toBeInTheDocument();
   });
+
+  // [2026-11-07 화면 용어 원장 검토] 빈 부서 목록이 권한과 관계없이 '오른쪽 위 부서 등록으로 첫 부서를 만듭니다' 라고
+  //   안내했다 — 그 단추는 DEPT_CREATE 가 있을 때만 그린다(first-use-empty 의 mustNotImply).
+  it('부서가 없을 때 첫 부서 등록 안내는 부서 등록 권한이 있을 때만 한다', async () => {
+    vi.mocked(deptAdminService.getDeptTree).mockResolvedValue([]);
+    auth.permissions = READ_ONLY_PERMISSIONS;
+    const view = renderHub('DEPTS');
+
+    expect(await screen.findByText('등록된 부서가 없습니다.')).toBeInTheDocument();
+    expect(screen.queryByText(/부서 등록으로 첫 부서를 만듭니다/)).not.toBeInTheDocument();
+    view.unmount();
+
+    auth.permissions = FULL_PERMISSIONS;
+    renderHub('DEPTS');
+    expect(await screen.findByText('등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '부서 등록' })).toBeInTheDocument();
+  });
 });

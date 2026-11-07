@@ -121,7 +121,7 @@ export function BoardPostPeriodDialog({ bbsId, post, reservationClosed, onClose,
     } catch (error: unknown) {
       if (isConflictError(error)) {
         // 덮어쓰지 않았다 — 목록을 다시 읽어 지금 값과 다시 비교하게 한다(결정 10). 입력은 그대로 둔다.
-        setServerError('다른 사용자가 먼저 이 글을 고쳐 저장하지 않았습니다. 지금 값을 다시 불러왔으니 비교한 뒤 다시 저장하세요.');
+        setServerError('다른 사용자가 먼저 이 글을 고쳐 저장해서, 이 변경은 저장하지 않았습니다. 지금 값을 다시 불러왔으니 비교한 뒤 다시 저장하세요.');
         onConflict();
         return;
       }

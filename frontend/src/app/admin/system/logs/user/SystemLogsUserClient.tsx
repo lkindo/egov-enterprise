@@ -160,7 +160,7 @@ const SystemLogsUserClient = () => {
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '사용자 로그' }]}
             filterStateKey="system-logs-user"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
-            totalCount={error ? undefined : totalCount}
+            totalCount={error || isLoading ? undefined : totalCount}
             toolbarActions={
                 /* 전체 결과 xlsx — 서버 스트리밍 export. 조건 일치 전량이라 현재 페이지 반출과 다르다. */
                 <button

@@ -249,7 +249,7 @@ export default function ScheduleCalendarClient({ initialYmd }: ScheduleCalendarC
       breadcrumbItems={[{ label: '나의 업무' }, { label: '일정' }]}
       filterStateKey="work-hub"
       /* 일정은 월 단위 조회라 서버 총계가 없다 — 현재 월 건수임을 툴바 문구가 밝힌다. */
-      totalCount={isScheduleError ? undefined : schedules.length}
+      totalCount={isScheduleError || isScheduleLoading ? undefined : schedules.length}
       actions={
         <div className="flex flex-wrap items-center gap-2">
           {tabs.strip}

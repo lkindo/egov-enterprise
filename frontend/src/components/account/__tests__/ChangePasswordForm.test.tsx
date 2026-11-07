@@ -1,6 +1,7 @@
 import { fireEvent, render, screen, waitFor } from '@testing-library/react';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { ChangePasswordForm } from '../ChangePasswordForm';
+import { PASSWORD_MAX_LENGTH, PASSWORD_RULE_HELP } from '@/lib/validations/password-policy';
 
 /**
  * 🔑 본인 비밀번호 변경 폼 계약.
@@ -143,5 +144,15 @@ describe('ChangePasswordForm', () => {
     expect(screen.getByLabelText('현재 비밀번호')).toHaveAttribute('autocomplete', 'current-password');
     expect(screen.getByLabelText('새 비밀번호')).toHaveAttribute('autocomplete', 'new-password');
     expect(screen.getByLabelText('현재 비밀번호')).toHaveAttribute('type', 'password');
+  });
+
+  // [2026-11-07 화면 용어 원장 검토] 규칙이 8~20자에서 8~64자로 바뀐 뒤(2026-09-25) 두 칸만 20자로 남아,
+  //   21자 이상 비밀번호가 두 칸에서 똑같이 잘려 일치 검사를 통과하고 앞 20자만 저장됐다. 로그인 칸은
+  //   길이를 자르지 않으므로 원래 비밀번호로는 다시 로그인할 수 없었다.
+  it('새 비밀번호 두 칸은 안내한 정책 최대 길이까지 받는다', () => {
+    renderForm();
+    expect(screen.getByLabelText('새 비밀번호')).toHaveAttribute('maxLength', String(PASSWORD_MAX_LENGTH));
+    expect(screen.getByLabelText('새 비밀번호 확인')).toHaveAttribute('maxLength', String(PASSWORD_MAX_LENGTH));
+    expect(PASSWORD_RULE_HELP).toContain(`~${PASSWORD_MAX_LENGTH}자`);
   });
 });

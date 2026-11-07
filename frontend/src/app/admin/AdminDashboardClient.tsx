@@ -35,6 +35,7 @@ import {
 
 import { VisualAuditTimeline, AuditLog as UIAuditLog } from '@/app/components/ui/visual-audit-timeline';
 import { toDisplayYmd, toSeoulDisplayDateTime } from '@/lib/format-date';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 import { useAuth } from '@/contexts/AuthContext';
 import { canOpenPage } from '@/lib/auth/page-access';
 import { canPermission } from '@/lib/auth/permissions';
@@ -110,6 +111,7 @@ export default function AdminDashboardClient() {
     retry: 1,
     retryDelay: 5000,
   });
+  const auditReason = userFacingErrorMessage(auditError);
 
   const {
     data: usersData,
@@ -213,7 +215,8 @@ export default function AdminDashboardClient() {
                   isAuditError && '실패 요청 기록',
                   isSignalsError && '운영 신호',
                 ].filter(Boolean).join(' · ')} 조회에 실패했습니다.
-                {auditError instanceof Error ? ` (${auditError.message})` : ''}
+                {/* 서버가 준 사유만 붙인다 — axios 의 전송 원문(Network Error 등)은 안내가 아니다(safe-error-log). */}
+                {auditReason ? ` (${auditReason})` : ''}
               </p>
             </div>
           </div>

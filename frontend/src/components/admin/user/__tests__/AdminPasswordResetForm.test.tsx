@@ -9,6 +9,7 @@ vi.mock('@/app/components/ui/toast', () => ({
 }));
 
 import { AdminPasswordResetForm } from '../AdminPasswordResetForm';
+import { PASSWORD_MAX_LENGTH } from '@/lib/validations/password-policy';
 
 function deferred<T>() {
   let resolve: (value: T) => void = () => undefined;
@@ -110,5 +111,13 @@ describe('AdminPasswordResetForm', () => {
     renderForm({ externalBusy: true });
     expect(screen.getByRole('button', { name: '비밀번호 초기화' })).toBeDisabled();
     expect(screen.getByRole('button', { name: '취소' })).toBeDisabled();
+  });
+
+  // [2026-11-07 화면 용어 원장 검토] 두 칸만 20자로 남아 21자 이상 비밀번호가 잘린 채 저장됐다 —
+  //   관리자가 사용자에게 알려 준 값으로는 로그인할 수 없었다.
+  it('새 비밀번호 두 칸은 안내한 정책 최대 길이까지 받는다', () => {
+    renderForm();
+    expect(screen.getByLabelText('새 비밀번호')).toHaveAttribute('maxLength', String(PASSWORD_MAX_LENGTH));
+    expect(screen.getByLabelText('새 비밀번호 확인')).toHaveAttribute('maxLength', String(PASSWORD_MAX_LENGTH));
   });
 });

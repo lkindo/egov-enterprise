@@ -1005,6 +1005,7 @@ export default function UserOrgHubClient({
 
             {isDeptTab ? (
               <UserOrgDeptMaster
+                canCreateDept={canCreateDept}
                 canUpdateDept={canUpdateDept}
                 locked={isSaving}
                 saveBusy={activeWriteOperation === 'dept-hierarchy'}
@@ -1151,6 +1152,8 @@ export default function UserOrgHubClient({
         onClose={dialogs.handleCloseBulkMoveModal}
         departments={flattenedDepts}
         isLoading={isDeptsLoading}
+        isError={isDeptsError}
+        onRetry={() => { void refetchDepts(); }}
         departmentId={dialogs.targetDeptId}
         onDepartmentChange={dialogs.setTargetDeptId}
         handleBulkDeptMove={handleBulkDeptMove}

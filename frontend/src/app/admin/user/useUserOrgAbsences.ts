@@ -44,9 +44,13 @@ export function useUserOrgAbsences(enabled: boolean) {
     return map;
   }, [absenceRecords]);
 
-  /** 조회가 실패했으면 '전원 정상' 이라고 말하지 않는다 — 모르는 것과 정상인 것은 다르다. */
+  /**
+   * 조회가 실패했으면 '전원 정상' 이라고 말하지 않는다 — 모르는 것과 정상인 것은 다르다.
+   * [2026-11-07] 결과가 아직 없을 때(첫 조회 중·재시도 대기)도 같다. 종전에는 실패만 걸러, 조회가 끝나기 전 모든 행이
+   * '정상' 이고 '부재 처리' 단추가 켜져 있었다.
+   */
   const absenceOf = (user: UserManage): string | null => {
-    if (isAbsencesError) return null;
+    if (isAbsencesError || absenceRecords === undefined) return null;
     if (!user?.esntlId) return null;
     return absenceByEsntlId.get(user.esntlId) === ABSENT ? ABSENT : PRESENT;
   };

@@ -228,7 +228,8 @@ export function VisualAuditTimeline({ logs, className, title = "시스템 로그
    slice(0, 5) 한 최근 5건이다. '데이터 무결성 검증 완료' 역시 그런 검증을 수행하는 코드가
    없다. 세는 대상을 그대로 말한다.
  */}
-          최근 감사 이력 {logs?.length || 0}건
+          {/* [2026-11-07] 대상은 제목(title)이 이미 부른다 — 관리자 홈의 목록은 감사 이력이 아니라 실패 요청이다. */}
+          최근 {logs?.length || 0}건
         </p>
       </div>
     </div>

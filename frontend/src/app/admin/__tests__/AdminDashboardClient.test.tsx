@@ -98,7 +98,7 @@ describe('관리자 홈 — 권한에 맞는 조회와 원천에 맞는 이름',
     expect(screen.getByRole('link', { name: '전체 보기' })).toHaveAttribute('href', '/admin/system/logs/system');
     expect(screen.getByRole('link', { name: '실패 요청 로그' })).toHaveAttribute('href', '/admin/system/logs/system');
     // 이름은 원천과 같다 — 보안 감사가 아니고, 리다이렉트 스텁으로 가지 않는다.
-    expect(document.body.textContent).not.toMatch(/보안 감사|감사 로그 건수/);
+    expect(document.body.textContent).not.toMatch(/보안 감사|감사 로그 건수|감사 이력/);
     expect(document.querySelector('a[href="/admin/system/audit"]')).toBeNull();
     expect(screen.queryByRole('alert')).toBeNull();
   });
@@ -159,6 +159,30 @@ describe('관리자 홈 — 권한에 맞는 조회와 원천에 맞는 이름',
     expect(alert).toHaveTextContent('운영 신호 조회에 실패했습니다.');
     expect(alert).not.toHaveTextContent('사용자 수');
     await waitFor(() => expect(screen.getByText('3개 그룹')).toBeInTheDocument());
+  });
+
+  // [2026-11-07 화면 용어 원장 검토] 경고 끝에 axios 의 message 를 그대로 붙여 '(Network Error)' 같은 전송 원문이 보였다.
+  it('실패 요청 기록 조회 실패는 서버가 준 사유만 덧붙이고 전송 원문은 보이지 않는다', { timeout: 15000 }, async () => {
+    signIn(ADMIN);
+    api.getAuditLogs.mockRejectedValue(Object.assign(new Error('Network Error'), { isAxiosError: true }));
+    renderHome();
+
+    const alert = await screen.findByRole('alert', undefined, { timeout: 8000 });
+    expect(alert).toHaveTextContent('실패 요청 기록 조회에 실패했습니다.');
+    expect(alert).not.toHaveTextContent('Network Error');
+    expect(alert.textContent).not.toMatch(/\(\s*\)/);
+  });
+
+  it('서버가 사유를 주면 실패 요청 기록 경고에 그 사유를 덧붙인다', { timeout: 15000 }, async () => {
+    signIn(ADMIN);
+    api.getAuditLogs.mockRejectedValue(Object.assign(new Error('Request failed with status code 503'), {
+      isAxiosError: true, response: { status: 503, data: { message: '로그 저장소를 점검하고 있습니다.' } },
+    }));
+    renderHome();
+
+    const alert = await screen.findByRole('alert', undefined, { timeout: 8000 });
+    expect(alert).toHaveTextContent('실패 요청 기록 조회에 실패했습니다. (로그 저장소를 점검하고 있습니다.)');
+    expect(alert).not.toHaveTextContent('status code');
   });
 
   it('서버 미리 채우기는 화면과 같은 조회 권한을 쓴다', () => {

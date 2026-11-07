@@ -28,6 +28,7 @@ type DeptTree = ReturnType<typeof useDeptTree>;
  * 있다)이고 saveBusy 는 그 쓰기가 조직 계층 저장인가다 — 폼 검증 census 가 넘겨받은 처리기와 단추를 이 이름으로 잇는다.
  */
 export function UserOrgDeptMaster({
+  canCreateDept,
   canUpdateDept,
   locked,
   saveBusy,
@@ -39,6 +40,8 @@ export function UserOrgDeptMaster({
   selectedItemId,
   onSelectDept,
 }: {
+  /** 첫 부서 안내는 부서 등록 단추가 보일 때만 그 단추를 가리킨다. */
+  canCreateDept: boolean;
   canUpdateDept: boolean;
   /** 진행 중인 쓰기가 있다(허브의 쓰기 잠금). */
   locked: boolean;
@@ -164,7 +167,10 @@ export function UserOrgDeptMaster({
                               ? '부서를 불러오는 중…'
                               : deptKeyword
                                 ? `'${deptKeyword}' 에 해당하는 부서가 없습니다.`
-                                : '등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.'}
+                                // [2026-11-07] 등록 단추는 DEPT_CREATE 가 있을 때만 그린다 — 없는 사람에게 그 단추를 안내하지 않는다.
+                                : canCreateDept
+                                  ? '등록된 부서가 없습니다. 오른쪽 위 부서 등록으로 첫 부서를 만듭니다.'
+                                  : '등록된 부서가 없습니다.'}
                           </p>
                       )}
                     </>

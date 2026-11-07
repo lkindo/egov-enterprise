@@ -895,11 +895,13 @@ export function BoardRegistClient({ initialData, bbsId, pstSn }: BoardRegistClie
               >
                 취소
               </Button>
+              {/* [2026-11-07] 고정 aria-label 이 보이는 '게시글 저장 중…' 을 덮어 보조기술이 대기 상태를 듣지 못했다 — 보이는
+                  글자가 이름이고, 저장 중에는 aria-busy 를 단다(actionRules.pending-action). */}
               <Button
                 type="submit"
                 disabled={isSubmitting}
+                aria-busy={isSubmitting}
                 className="flex-1 gap-2 sm:flex-none"
-                aria-label={pstSn ? '게시글 수정' : '게시글 등록'}
               >
                 {isSubmitting ? (
                   <>

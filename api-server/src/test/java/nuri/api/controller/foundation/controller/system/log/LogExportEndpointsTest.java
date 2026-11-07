@@ -159,7 +159,7 @@ class LogExportEndpointsTest {
                 "/api/v1/admin/system/logs/user/export.xlsx", "user-logs.xlsx");
 
         // 출력 건수는 측정되지 않는다 — 값이 실려 와도 머리글이 미측정을 밝히고 칸은 비운다(0 으로 쓰지 않는다).
-        assertThat(rowValues(body, 0, 11)).containsExactly("발생일자", "요청자 ID", "성명", "서비스명", "메서드명",
+        assertThat(rowValues(body, 0, 11)).containsExactly("발생일자", "요청자 고유 ID", "성명", "서비스명", "메서드명",
                 "등록", "수정", "조회", "삭제", "출력(미측정)", "오류");
         assertThat(firstDataRow(body, 11)).containsExactly("20260826", "userA", "홍길동", "UserService", "select",
                 "1", "0", "2", "0", "", "0");

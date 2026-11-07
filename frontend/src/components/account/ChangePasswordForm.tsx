@@ -8,7 +8,7 @@ import { FormErrorSummary } from '@/components/ui/form';
 import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
-import { PASSWORD_RULE_HELP, passwordRuleSchema } from '@/lib/validations/password-policy';
+import { PASSWORD_MAX_LENGTH, PASSWORD_RULE_HELP, passwordRuleSchema } from '@/lib/validations/password-policy';
 import { PasswordChangeRequestSchema } from '@/types/generated-zod';
 
 const LABELS = {
@@ -152,7 +152,7 @@ export function ChangePasswordForm({ onSubmit, onCancel, isPending = false, canc
           ref={newPasswordRef}
           type="password"
           autoComplete="new-password"
-          maxLength={20}
+          maxLength={PASSWORD_MAX_LENGTH}
           value={newPassword}
           onChange={(event) => {
             validation.clearError('newPassword');
@@ -177,7 +177,7 @@ export function ChangePasswordForm({ onSubmit, onCancel, isPending = false, canc
           ref={confirmPasswordRef}
           type="password"
           autoComplete="new-password"
-          maxLength={20}
+          maxLength={PASSWORD_MAX_LENGTH}
           value={confirmPassword}
           onChange={(event) => {
             validation.clearError('confirmPassword');
