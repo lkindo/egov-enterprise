@@ -35,7 +35,7 @@ class MariaDbMetadataIntegrationTest extends MariaDbPostgresTestSupport {
             var metadata = connection.getMetaData();
             assertThat(metadata.getDatabaseProductName()).isEqualTo("MariaDB");
             assertThat(metadata.getDatabaseProductVersion()).isEqualTo("11.4.13-MariaDB-ubu2404");
-            assertThat(metadata.getDriverVersion()).isEqualTo("3.5.10");
+            assertThat(metadata.getDriverVersion()).isEqualTo("3.5.11");
             assertThat(connection.getCatalog()).isEqualTo(expectedCatalog);
             assertThat(connection.getSchema()).isEqualTo(expectedSchema);
             System.out.printf("MariaDB catalog probe: mode=%s; catalogMatchesExpected=%s; schemaPresent=%s; catalogTerm=%s; schemaTerm=%s%n",

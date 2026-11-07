@@ -313,10 +313,12 @@ export const GRADLE_CACHE_READ_ONLY = Object.freeze({
   소유하고, 같은 저장소의 다른 단계는 아래 한 커밋 규칙이 그 명세에 묶는다.
 */
 export const REVIEWED_ACTION_PINS = Object.freeze({
-  // v6.4.0 — 현재 GitHub 캐시 서비스와 맞는 캐시 클라이언트다. v6 기본 제공자는 별도 라이선스의 enhanced 라 단계마다
-  // cache-provider: basic 을 따로 요구한다(아래). 쓰기 권한 publisher 의 dependency-submission 도 같은 저장소다
-  // (dependency-submission-contract.mjs). 올릴 때 캐시 클라이언트 호환과 기본 제공자를 다시 확인한다.
-  'gradle/actions': '3f5f9adaf7d9fecd50b5935e54106014257a94e6',
+  // v6.4.1 — 현재 GitHub 캐시 서비스와 맞는 캐시 클라이언트다(@actions/cache 6.3.0). v6 기본 제공자는 별도 라이선스의
+  // enhanced 라 단계마다 cache-provider: basic 을 따로 요구한다(아래). 쓰기 권한 publisher 의 dependency-submission 도 같은
+  // 저장소다(dependency-submission-contract.mjs). v6.4.1 은 그 publisher 가 쓰는 download-and-submit 모드에서 포크 PR 의
+  // 산출물이 요청 옵션을 끼워 GITHUB_TOKEN 을 얻던 결함(GHSA-chpw-2mqm-95cc)을 고친다. 올릴 때 캐시 클라이언트 호환과
+  // 기본 제공자를 다시 확인한다.
+  'gradle/actions': '8da46b539cd8fe6ab27ca75128919a18d757604c',
 });
 
 /** `owner/repo/path@ref` 의 저장소(`owner/repo`). Dependabot 은 저장소 단위로 핀을 올린다. */
