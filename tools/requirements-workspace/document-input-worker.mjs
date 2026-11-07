@@ -43,7 +43,8 @@ try {
         units.push({ locator: `페이지 ${index}`, text: null, ...(nativeReference ? { nativeReference } : {}), attachment: await image(canvas.toBuffer('image/png')) });
         page.cleanup();
       }
-    } finally { await document?.destroy(); await task.destroy(); }
+    // pdfjs 5 부터 문서 정리는 로딩 작업이 맡는다(PDFDocumentProxy.destroy 는 6 에서 없어졌다) — task.destroy 가 문서까지 닫는다.
+    } finally { await task.destroy(); }
   } else {
     const parsers = await import('kordoc');
     const method = ({ hwp: 'parse', hwpx: 'parseHwpx', docx: 'parseDocx', xlsx: 'parseXlsx', xls: 'parseXls', pptx: 'parsePptx' })[format];

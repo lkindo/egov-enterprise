@@ -83,10 +83,10 @@
     "test:e2e:enterprise-task-lab": "node scripts/run-isolated-e2e.mjs -- --config=playwright.enterprise-task-lab.config.ts --project=full-suite --workers=1"
   },
   "dependencies": {
-    "@napi-rs/canvas": "0.1.100",
+    "@napi-rs/canvas": "1.1.0",
     "cross-env": "^7.0.3",
     "kordoc": "4.24.46",
-    "pdfjs-dist": "4.10.38",
+    "pdfjs-dist": "6.5.438",
     "pg": "^8.23.1",
     "sharp": "0.35.5"
   },
