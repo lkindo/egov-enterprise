@@ -7,9 +7,12 @@ import java.lang.reflect.Proxy;
 import java.math.BigDecimal;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.DatabaseMetaData;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
+import java.sql.SQLType;
 import java.sql.Statement;
 import java.sql.Timestamp;
 import java.time.Instant;
@@ -19,6 +22,9 @@ import java.time.LocalTime;
 import java.time.OffsetDateTime;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.UUID;
 import javax.sql.DataSource;
 import org.springframework.jdbc.datasource.DelegatingDataSource;
@@ -59,6 +65,7 @@ final class CubridJdbcDataSource extends DelegatingDataSource {
                 case CallableStatement statement -> statement(CallableStatement.class, statement, proxy);
                 case PreparedStatement statement -> statement(PreparedStatement.class, statement, proxy);
                 case Statement statement -> statement(Statement.class, statement, proxy);
+                case DatabaseMetaData metadata -> metadata(metadata, proxy);
                 case null, default -> result;
             };
         });
@@ -66,30 +73,99 @@ final class CubridJdbcDataSource extends DelegatingDataSource {
 
     private static <S extends Statement> S statement(Class<S> type, S target, Object connection) {
         return proxy(type, target, (proxy, method, args) -> {
-            if (method.getName().equals("setObject") && args != null && args.length >= 2) {
-                args[1] = bindable(args[1]);
+            convertWrittenValue("setObject", "setTimestamp", method, args);
+            if (method.getName().equals("getConnection") && args == null) {
+                return connection;
             }
-            if (method.getName().equals("setTimestamp") && args != null && args[1] instanceof Timestamp timestamp) {
-                args[1] = millis(timestamp);
+            // 저장 프로시저 출력 매개변수의 타입 지정 조회도 결과 집합과 같이 드라이버가 거부한다. 같은 뜻의 표준 접근자로 번호로 읽는다.
+            // 드라이버는 이름으로 부르는 매개변수를 지원하지 않는다(11.3.2 바이트코드 확인) — 이름 조회는 흉내 내지 않고 멈춘다.
+            if (target instanceof CallableStatement callable && typedRead(method, args) instanceof Class<?> wanted) {
+                if (!(args[0] instanceof Integer index)) {
+                    throw new SQLFeatureNotSupportedException("CUBRID 드라이버는 이름으로 부르는 저장 프로시저 매개변수를 지원하지 않는다 — 번호로 읽는다: " + args[0]);
+                }
+                return wrapped(convert(wanted, callable.getObject(index)), proxy);
             }
+            Object result = withoutSqlType(target, method, args);
+            return wrapped(result, proxy);
+        });
+    }
+
+    /** 결과 집합(커서 출력 매개변수 포함)은 감싸서 돌려준다. */
+    private static Object wrapped(Object value, Object statement) {
+        return value instanceof ResultSet rows ? resultSet(rows, statement) : value;
+    }
+
+    /**
+     * JDBC 4.2 의 {@code SQLType} 을 받는 쓰기 메서드는 드라이버가 구현하지 않아 JDBC 기본 구현이 거부한다. 같은 뜻의 드라이버 메서드로 옮긴다 —
+     * 바인딩은 타입 번호({@code getVendorTypeNumber})를, 결과 집합 갱신은 타입 힌트를 뺀 같은 메서드를 쓴다(갱신의 정수 인자는 타입이 아니라
+     * 소수 자릿수·길이다). 타입 번호가 없는 타입은 멈춘다. 다른 호출은 그대로 넘긴다.
+     */
+    private static Object withoutSqlType(Object target, Method method, Object[] args) throws Throwable {
+        if (args == null || args.length < 3 || !(args[2] instanceof SQLType sqlType)
+                || !(method.getName().equals("setObject") || method.getName().equals("updateObject"))) {
+            return call(target, method, args);
+        }
+        List<Class<?>> types = new ArrayList<>(Arrays.asList(method.getParameterTypes()));
+        List<Object> values = new ArrayList<>(Arrays.asList(args));
+        if (method.getName().equals("setObject")) {
+            Integer number = sqlType.getVendorTypeNumber();
+            if (number == null) {
+                throw new SQLFeatureNotSupportedException("CUBRID 바인딩은 타입 번호가 없는 SQLType 을 받지 않는다: " + sqlType.getName());
+            }
+            types.set(2, int.class);
+            values.set(2, number);
+        } else {
+            types.remove(2);
+            values.remove(2);
+        }
+        Method plain = method.getDeclaringClass().getMethod(method.getName(), types.toArray(Class<?>[]::new));
+        return call(target, plain, values.toArray());
+    }
+
+    /**
+     * 메타데이터가 돌려주는 연결은 감싼 연결이고, 메타데이터의 결과 집합도 타입 지정 조회를 옮긴다. 감싸지 않으면 메타데이터를 거쳐 원래 연결을 얻어
+     * java.time 값을 드라이버에 그대로 보내는 길이 남는다.
+     */
+    private static DatabaseMetaData metadata(DatabaseMetaData target, Object connection) {
+        return proxy(DatabaseMetaData.class, target, (proxy, method, args) -> {
             if (method.getName().equals("getConnection") && args == null) {
                 return connection;
             }
             Object result = call(target, method, args);
-            return result instanceof ResultSet rows ? resultSet(rows, proxy) : result;
+            return result instanceof ResultSet rows ? resultSet(rows, null) : result;
         });
     }
 
+    /** {@code statement} 가 없으면(메타데이터의 결과 집합) getStatement 는 드라이버의 답을 그대로 준다 — JDBC 는 그 경우 null 을 허용한다. */
     private static ResultSet resultSet(ResultSet target, Object statement) {
         return proxy(ResultSet.class, target, (proxy, method, args) -> {
-            if (method.getName().equals("getObject") && args != null && args.length == 2 && args[1] instanceof Class<?> type) {
-                return args[0] instanceof Integer column ? read(target, column, type) : read(target, (String) args[0], type);
+            if (typedRead(method, args) instanceof Class<?> type) {
+                return wrapped(args[0] instanceof Integer column ? read(target, column, type) : read(target, (String) args[0], type), statement);
             }
-            if (method.getName().equals("getStatement") && args == null) {
+            // 갱신 가능한 결과 집합의 값 쓰기도 바인딩과 같은 값을 받는다.
+            convertWrittenValue("updateObject", "updateTimestamp", method, args);
+            if (statement != null && method.getName().equals("getStatement") && args == null) {
                 return statement;
             }
-            return call(target, method, args);
+            return withoutSqlType(target, method, args);
         });
+    }
+
+    /** {@code getObject(열, 타입)} 이면 그 타입을, 아니면 null 을 준다. */
+    private static Class<?> typedRead(Method method, Object[] args) {
+        return method.getName().equals("getObject") && args != null && args.length == 2 && args[1] instanceof Class<?> type ? type : null;
+    }
+
+    /** 값을 쓰는 메서드(바인딩·결과 집합 갱신)의 두 번째 인자를 드라이버가 받는 값으로 바꾼다. */
+    private static void convertWrittenValue(String objectWriter, String timestampWriter, Method method, Object[] args) throws SQLException {
+        if (args == null || args.length < 2) {
+            return;
+        }
+        if (method.getName().equals(objectWriter)) {
+            args[1] = bindable(args[1]);
+        } else if (method.getName().equals(timestampWriter) && args[1] instanceof Timestamp timestamp) {
+            args[1] = millis(timestamp);
+        }
     }
 
     /** 드라이버가 받는 값으로 바꾼다. 다른 값은 그대로 넘긴다. */

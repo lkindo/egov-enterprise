@@ -11,7 +11,7 @@ import { syncBuiltinESMExports } from 'node:module';
 import { execFileSync } from 'node:child_process';
 import { validateIsolationManifest, assertOwnedDatabase, assertOwnedComposeRuntime, assertIsolatedTarget, validateComposePlan } from './e2e-isolation.mjs';
 import { closedEnvironment, createIsolatedMfaEnvironment, assertNoDotEnv, assertBuildTarget, discoveryArguments,
-  isEnterpriseTaskLabSelection, createEnterpriseTaskLabBuildReceipt, safeInputHash } from './run-isolated-e2e.mjs';
+  isEnterpriseTaskLabSelection, createEnterpriseTaskLabBuildReceipt, safeInputHash, rehearsesAuthorizationContract } from './run-isolated-e2e.mjs';
 import { TASKS, TASK_SEEDS, compareEnterpriseTaskRuns, readEnterpriseTaskRun } from './compare-enterprise-task-lab.mjs';
 
 function withPathReplacementBeforeRead(target, replacement, action) {
@@ -883,4 +883,28 @@ test('both CI launchers execute Compose preflight before application startup', (
     assert.throws(() => verifyOrder(source.replace('node scripts/e2e-compose-preflight.mjs', 'echo node scripts/e2e-compose-preflight.mjs')));
     assert.throws(() => verifyOrder(source.replace('node scripts/e2e-compose-preflight.mjs', '# node scripts/e2e-compose-preflight.mjs')));
   }
+});
+
+// GAP-COMPOSE-003: 재사용 생성물은 V2 체인 대신 전환을 마친 V1_0 기준선 번들로 시작해, 리허설(target 2.99)을 켜면 기동이 멈췄다.
+test('the authorization rehearsal runs only on the V2 chain, stays off for a baseline bundle and stops when it cannot tell', t => {
+  const project = files => {
+    const root = mkdtempSync(path.join(tmpdir(), 'rehearsal-'));
+    t.after(() => rmSync(root, { recursive: true, force: true }));
+    for (const [directory, names] of Object.entries(files)) {
+      mkdirSync(path.join(root, directory), { recursive: true });
+      for (const name of names) writeFileSync(path.join(root, directory, name), '');
+    }
+    return root;
+  };
+  const multi = 'api-server/src/main/resources/db/migration';
+  assert.equal(rehearsesAuthorizationContract(project({ [multi]: ['V2_0__baseline.sql', 'V2_98__expand.sql', 'V2_99__seed.sql', 'R__seed_demo.sql'] })), true);
+  assert.equal(rehearsesAuthorizationContract(project({ [multi]: ['V1_0__baseline.sql', 'V1_1__seed_meta_standard.sql', 'R__seed_framework.sql'] })), false);
+  assert.equal(rehearsesAuthorizationContract(project({ 'src/main/resources/db/migration': ['V1_0__baseline.sql'] })), false, '단일모듈 배치');
+  // V2 체인에서 V2_99 가 사라지면 리허설을 조용히 끄지 않고 멈춘다. 둘 다 있어도 정할 수 없다.
+  assert.throws(() => rehearsesAuthorizationContract(project({ [multi]: ['V2_0__baseline.sql', 'V2_98__expand.sql'] })), /정하지 못했다\(V2_99 없음, V1_0 기준선 없음\)/);
+  assert.throws(() => rehearsesAuthorizationContract(project({ [multi]: ['V1_0__baseline.sql', 'V2_99__seed.sql'] })), /정하지 못했다\(V2_99 있음, V1_0 기준선 있음\)/);
+  assert.throws(() => rehearsesAuthorizationContract(project({})), /마이그레이션 폴더를 찾지 못했다/);
+  assert.throws(() => rehearsesAuthorizationContract(project({ [multi]: ['V1_0__baseline.sql'], 'src/main/resources/db/migration': ['V2_99__seed.sql'] })), /마이그레이션 폴더가 둘이다/, '한쪽 배치만 보고 다른 쪽 V2 체인을 놓치지 않는다');
+  // 원본 저장소는 V2 체인이라 리허설을 켠다.
+  assert.equal(rehearsesAuthorizationContract(process.cwd()), true);
 });

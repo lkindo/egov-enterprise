@@ -166,6 +166,28 @@ export function assertIsolatedRunnerSupportsProject(projectRoot, { representativ
   return vendor;
 }
 
+const MIGRATION_DIRECTORIES = Object.freeze(['api-server/src/main/resources/db/migration', 'src/main/resources/db/migration']);
+
+/**
+ * 권한 전환 리허설(IsolatedAuthorizationRehearsalConfig)은 V2 체인의 Contract 를 target 2.99 로 일회용 DB 에서 재연한다. 재사용 생성물은 V2 체인 대신
+ * 전환을 마친 기준선 번들(V1_0)로 시작해 그 버전이 없다 — 리허설을 켜면 'No migration with a target version 2.99' 로 기동이 멈췄다(GAP-COMPOSE-003).
+ * 그런 프로젝트는 리허설 없이 띄운다. 권한 스키마 경계 검사(AuthorizationSchemaBarrierConfig)는 일반 기동에서 그대로 돈다. 둘 중 하나로 정해지지
+ * 않으면 멈춘다 — V2 체인에서 V2_99 가 사라졌을 때 리허설이 조용히 꺼지지 않게 한다.
+ */
+export function rehearsesAuthorizationContract(projectRoot) {
+  const directories = MIGRATION_DIRECTORIES.map(relative => path.join(projectRoot, relative)).filter(candidate => existsSync(candidate));
+  if (!directories.length) throw fail('Flyway 마이그레이션 폴더를 찾지 못했다.');
+  // 두 배치가 함께 있으면 어느 쪽이 앱의 체인인지 정할 수 없다 — 한쪽만 보고 다른 쪽의 V2 체인을 놓치지 않는다.
+  if (directories.length > 1) throw fail('Flyway 마이그레이션 폴더가 둘이다(멀티모듈·단일모듈 배치가 함께 있다).');
+  const [directory] = directories;
+  const names = readdirSync(directory);
+  const contract = names.some(name => /^V2_99__.+\.sql$/.test(name));
+  const bundle = names.some(name => /^V1_0__.+\.sql$/.test(name));
+  if (contract && !bundle) return true;
+  if (bundle && !contract) return false;
+  throw fail(`권한 전환 리허설을 켤지 정하지 못했다(V2_99 ${contract ? '있음' : '없음'}, V1_0 기준선 ${bundle ? '있음' : '없음'}).`);
+}
+
 export function resolveVendorEngine(vendor, requested, engines) {
   const id = requested ?? vendor;
   const engine = engines[id];
@@ -295,10 +317,12 @@ const REPRESENTATIVE_ADMIN_GRANTS = Object.freeze(['NOTICE_EDIT', 'FAQ_EDIT']);
 
 /**
  * 벤더 프로젝트에는 개발 시드가 없다. 시드가 주던 일반 계정과 관리자의 공지·FAQ 권한을 시험 대상 API 로 만든다.
+ * 기준선 번들로 시작하는 PostgreSQL 생성물은 개발 시드로 계정이 있지만, 원본에서 관리자의 공지·FAQ 권한을 주던 권한 전환 리허설을 돌지 않는다 —
+ * 그때는 일반 계정({@code user})을 넘기지 않고 관리자 권한만 같은 길로 준다(GAP-COMPOSE-003).
  * 쿠키를 싣지 않으면 CSRF 대상이 아니다. 관리자 비밀번호는 health 뒤의 ApplicationReady 에서 설정되므로 로그인은 횟수를 제한해 다시 시도한다.
  * 통제 서버가 뜨기 전이라 쓰기마다 직접 소유를 증명한다.
  */
-export async function provisionRepresentativeAccounts({ apiUrl, admin, user, verifyOwner, request = fetch, wait = pause }) {
+export async function provisionRepresentativeAccounts({ apiUrl, admin, user = null, verifyOwner, request = fetch, wait = pause }) {
   assertLoopbackUrl(apiUrl, '/api/v1');
   const call = async (method, target, { token, body } = {}) => {
     const response = await request(`${apiUrl}${target}`, { method, redirect: 'error', signal: AbortSignal.timeout(30000),
@@ -319,20 +343,29 @@ export async function provisionRepresentativeAccounts({ apiUrl, admin, user, ver
     if (!token && attempt < ADMIN_LOGIN_ATTEMPTS) await wait(ADMIN_LOGIN_RETRY_MS);
   }
   if (!token) throw fail(`대표 묶음 픽스처: 관리자 로그인이 ${ADMIN_LOGIN_ATTEMPTS}회 모두 실패했다.`);
-  verifyOwner();
-  expectStatus(await call('POST', '/admin/system/users', { token, body: { userId: user.id, pswd: user.password, userNm: '일반사용자', role: 'USER' } }), 201, '대표 묶음 픽스처: 일반 계정 생성');
+  if (user) {
+    verifyOwner();
+    expectStatus(await call('POST', '/admin/system/users', { token, body: { userId: user.id, pswd: user.password, userNm: '일반사용자', role: 'USER' } }), 201, '대표 묶음 픽스처: 일반 계정 생성');
+  }
+  // 리허설(contentEditorPermissions)처럼 이 구성의 권한 카탈로그에 있는 것만 준다 — 게시판이 없는 구성에는 공지·FAQ 권한이 없다.
+  const catalog = await call('GET', '/admin/authorization/catalog', { token });
+  expectStatus(catalog, 200, '대표 묶음 픽스처: 권한 카탈로그 조회');
+  const operations = catalog.envelope?.data?.operations;
+  if (!Array.isArray(operations) || !operations.every(operation => typeof operation?.code === 'string')) throw fail('대표 묶음 픽스처: 권한 카탈로그 응답이 목록이 아니다.');
+  const wanted = REPRESENTATIVE_ADMIN_GRANTS.filter(code => operations.some(operation => operation.code === code));
+  if (!wanted.length) return;
   const groupUrl = '/admin/authorization/groups/ROLE_ADMIN';
   const before = await call('GET', groupUrl, { token });
   expectStatus(before, 200, '대표 묶음 픽스처: 관리자 그룹 조회');
   const snapshot = before.envelope?.data;
   if (snapshot?.complete !== true || !/^[a-f0-9]{64}$/.test(snapshot?.version ?? '') || !Array.isArray(snapshot?.grants)) throw fail('대표 묶음 픽스처: 관리자 그룹 응답이 전체 목록이 아니다.');
   const holds = (grants, code) => grants.some(grant => grant.type === 'OPERATION' && grant.code === code);
-  const grants = [...snapshot.grants, ...REPRESENTATIVE_ADMIN_GRANTS.filter(code => !holds(snapshot.grants, code)).map(code => ({ type: 'OPERATION', code }))];
+  const grants = [...snapshot.grants, ...wanted.filter(code => !holds(snapshot.grants, code)).map(code => ({ type: 'OPERATION', code }))];
   verifyOwner();
   expectStatus(await call('PUT', `${groupUrl}/grants`, { token, body: { grants, version: snapshot.version, complete: true } }), 200, '대표 묶음 픽스처: 관리자 권한 변경');
   const after = await call('GET', groupUrl, { token });
   expectStatus(after, 200, '대표 묶음 픽스처: 관리자 그룹 재조회');
-  if (!REPRESENTATIVE_ADMIN_GRANTS.every(code => holds(after.envelope?.data?.grants ?? [], code))) throw fail('대표 묶음 픽스처: 관리자 권한이 반영되지 않았다.');
+  if (!wanted.every(code => holds(after.envelope?.data?.grants ?? [], code))) throw fail('대표 묶음 픽스처: 관리자 권한이 반영되지 않았다.');
 }
 
 /** 대표 묶음은 원장이 계획이다. 발견 결과로 계획을 만들면 사라진 spec 이 계획에서도 빠져 붉어지지 않는다. */
@@ -399,6 +432,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
   const databaseName = `egov-e2e-${runId}`;
   let ownedDatabase = false;
   let cleanUpVendorDatabase;
+  // 로컬 PostgreSQL 실행에서만 정한다(true/false). compose·벤더 실행에서는 정하지 않는다(undefined).
+  let rehearsal;
   let api;
   let web;
   let control;
@@ -492,6 +527,8 @@ export async function main(arguments_ = process.argv.slice(2)) {
         const databasePort = await database.waitReady(assertActive);
         databaseEnvironment = vendorDatabaseEnvironment(vendorRuntime.engine, databasePort, database.password, vendorRuntime.admin.password);
       } else {
+        // 컨테이너를 만들기 전에 정한다 — 정하지 못하면 아무것도 띄우지 않고 멈춘다.
+        rehearsal = rehearsesAuthorizationContract(root);
         const password = randomBytes(24).toString('hex');
         // Only a brand-new container with tmpfs storage; no existing name/volume is reused.
         manifest.databaseId = execFileSync('docker', ['run', '-d', '--rm', '--name', databaseName,
@@ -509,7 +546,7 @@ export async function main(arguments_ = process.argv.slice(2)) {
           catch { if (Date.now() > deadline) throw fail('database readiness deadline exceeded.'); await pause(500); }
         }
         databaseEnvironment = { DB_URL: `jdbc:postgresql://127.0.0.1:${databasePort}/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,
-          NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' };
+          ...(rehearsal ? { NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' } : {}) };
       }
       apiPort = await freePort();
       jwtSecret = randomBytes(48).toString('hex');
@@ -528,6 +565,10 @@ export async function main(arguments_ = process.argv.slice(2)) {
     await waitReady(`http://127.0.0.1:${apiPort}/actuator/health`, api, vendorRuntime ? vendorRuntime.engine.maxWaitSeconds * 1000 : undefined);
     if (vendorRuntime) {
       await provisionRepresentativeAccounts({ apiUrl, admin: vendorRuntime.admin, user: vendorRuntime.user,
+        verifyOwner: () => { assertActive(); verifyRuntime(); } });
+    } else if (rehearsal === false) {
+      const { TEST_CREDENTIALS } = await import('../frontend/e2e/synthetic-test-credentials.mjs');
+      await provisionRepresentativeAccounts({ apiUrl, admin: TEST_CREDENTIALS.admin,
         verifyOwner: () => { assertActive(); verifyRuntime(); } });
     }
     // Next 빌드와 서버는 이 값을 받지 않는다.

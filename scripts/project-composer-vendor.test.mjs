@@ -13,7 +13,7 @@ import { degradationKind, fixedDegradations, loadVendorLedger, MODEL_DEGRADATION
 import { clobLiteral, oracleAdapter } from './project-composer-vendor-oracle.mjs';
 import { indexPrefixes, keyColumnBytes, mariadbAdapter, mysqlAdapter } from './project-composer-vendor-mysql.mjs';
 import { mssqlAdapter } from './project-composer-vendor-mssql.mjs';
-import { batchSeedInserts, CUBRID_RESERVED, CUBRID_SEED_ROWS_PER_INSERT, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
+import { batchSeedInserts, CUBRID_RESERVED, CUBRID_SEED_BYTES_PER_INSERT, CUBRID_SEED_ROWS_PER_INSERT, cubridAdapter } from './project-composer-vendor-cubrid.mjs';
 import { differentialExitCode, intentFailures, probeRows, withDisposablePostgres } from './project-composer-vendor-differential.mjs';
 import { rowCounts } from './project-composer-vendor-verify.mjs';
 import { VENDOR_EXIT_CODES, vendorExitCode } from './project-composer-errors.mjs';
@@ -913,7 +913,17 @@ test('CUBRID batches consecutive seed inserts per table without reordering rows 
   // 행 수·글자 수 상한에서 끊고, 다른 문장이나 다른 컬럼 목록을 넘어 묶지 않는다.
   const tuples = statement => (statement.match(/\), \(/g) ?? []).length + 1;
   assert.deepEqual(of(batchSeedInserts(sample, single, 2), 't_child').map(tuples), [2, 2, 1]);
-  assert.deepEqual(of(batchSeedInserts(sample, single, 100, tuple(of(single, 't_child')[0]).length * 2), 't_child').map(tuples), [2, 2, 1]);
+  // 크기 상한은 문장 전체(머리·구분자 포함)의 UTF-8 바이트다. 첫 두 행이 꼭 맞는 상한이면 두 행씩 끊기고, 어느 문장도 상한을 넘지 않는다.
+  const twoRows = Buffer.byteLength(`${prefix}${of(single, 't_child').slice(0, 2).map(tuple).join(', ')}`, 'utf8');
+  const capped = of(batchSeedInserts(sample, single, 100, twoRows), 't_child');
+  assert.deepEqual(capped.map(tuples), [2, 2, 1]);
+  for (const statement of capped) assert.ok(Buffer.byteLength(statement, 'utf8') <= twoRows, statement);
+  // 한글은 글자 하나가 3바이트다. 글자 수로 세면 넘는 문장이 생긴다. 상한보다 큰 한 행은 그 행만 한 문장이다.
+  const hangul = emitRows(sample, { t_child: [1, 2, 3].map(id => ({ id, parent_id: null, url: '가'.repeat(300), owner: 'o' })) }, cubridAdapter);
+  const hangulLimit = Buffer.byteLength(`${prefix}${hangul.slice(0, 2).map(tuple).join(', ')}`, 'utf8');
+  assert.deepEqual(of(batchSeedInserts(sample, hangul, 100, hangulLimit), 't_child').map(tuples), [2, 1]);
+  assert.deepEqual(of(batchSeedInserts(sample, hangul, 100, 10), 't_child').map(tuples), [1, 1, 1]);
+  assert.equal(CUBRID_SEED_BYTES_PER_INSERT, 128 * 1024);
   const mixed = ['INSERT INTO t_child (id) VALUES (1)', 'ALTER TABLE t_child AUTO_INCREMENT = 2', 'INSERT INTO t_child (id) VALUES (2)', 'INSERT INTO t_child (id, url) VALUES (3, \'x\')'];
   assert.deepEqual(batchSeedInserts(sample, mixed), mixed);
   assert.ok(CUBRID_SEED_ROWS_PER_INSERT > 1);
@@ -2179,7 +2189,12 @@ test('the runner wires the closed Docker environment, one API environment and th
 
   const oracleEnvironment = vendorDatabaseEnvironment(VENDOR_ENGINES.oracle, '49153', 'secret', '1');
   assert.deepEqual(oracleEnvironment, { DB_URL: 'jdbc:oracle:thin:@//127.0.0.1:49153/FREEPDB1', DB_USERNAME: 'vendorcheck', DB_PASSWORD: 'secret', ADMIN_INITIAL_PASSWORD: '1' });
-  assert.match(runner, /databaseEnvironment = \{ DB_URL: `jdbc:postgresql:\/\/127\.0\.0\.1:\$\{databasePort\}\/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,\n\s+NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' \};/, 'PostgreSQL 값은 그대로다');
+  assert.match(runner, /databaseEnvironment = \{ DB_URL: `jdbc:postgresql:\/\/127\.0\.0\.1:\$\{databasePort\}\/authz_e2e`, DB_USERNAME: 'egov', DB_PASSWORD: password,\n\s+\.\.\.\(rehearsal \? \{ NURI_AUTHORIZATION_ISOLATED_CUTOVER: 'true', NURI_AUTHORIZATION_DISPOSABLE_DATABASE_ACK: 'CONFIRMED_DISPOSABLE_AUTHZ_DATABASE' \} : \{\}\) \};/, 'PostgreSQL 값은 그대로다');
+  // 리허설 여부(GAP-COMPOSE-003)는 PostgreSQL 컨테이너를 만들기 전에 정한다. 원본 저장소에서 켜지는지는 e2e-isolation.test.mjs 가 본다.
+  assert.ok(runner.indexOf('rehearsal = rehearsesAuthorizationContract(root);') > 0
+    && runner.indexOf('rehearsal = rehearsesAuthorizationContract(root);') < runner.indexOf("'postgres:17-alpine'"), '리허설 판정이 DB 컨테이너보다 먼저다');
+  // 리허설을 돌지 않는 PostgreSQL 생성물도 관리자의 공지·FAQ 권한은 같은 픽스처로 받는다. 일반 계정은 개발 시드에 있어 만들지 않는다.
+  assert.match(runner, /\} else if \(rehearsal === false\) \{\n\s+const \{ TEST_CREDENTIALS \} = await import\('\.\.\/frontend\/e2e\/synthetic-test-credentials\.mjs'\);\n\s+await provisionRepresentativeAccounts\(\{ apiUrl, admin: TEST_CREDENTIALS\.admin,\n/);
 
   assert.deepEqual(resolveVendorEngine('oracle', undefined, VENDOR_ENGINES).id, 'oracle');
   assert.deepEqual(resolveVendorEngine('oracle', 'oracle19', VENDOR_ENGINES).id, 'oracle19');
@@ -2635,7 +2650,9 @@ test('the shared isolation checks the vendor runner relies on stay covered in a 
 
 const ADMIN_GROUP = () => ({ code: 'ROLE_ADMIN', complete: true, version: 'a'.repeat(64), grants: [{ type: 'NAVIGATION', code: '100' }, { type: 'OPERATION', code: 'USER_READ' }] });
 
-function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, group = ADMIN_GROUP(), reread } = {}) {
+const FULL_CATALOG = () => ({ operations: ['USER_READ', 'NOTICE_EDIT', 'FAQ_EDIT'].map(code => ({ code, domain: 'x', action: 'y', name: code })), navigation: [], catalogVersion: 'v' });
+
+function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, group = ADMIN_GROUP(), reread, catalog = FULL_CATALOG(), catalogStatus = 200 } = {}) {
   const log = [];
   let failures = loginFailures;
   let current = group;
@@ -2649,6 +2666,7 @@ function fixtureApi({ loginFailures = 0, userStatus = 201, putStatus = 200, grou
       return reply(200, { data: { accessToken: 'token' } });
     }
     if (target === '/admin/system/users') return reply(userStatus, { code: 'USER_EXISTS' });
+    if (target === '/admin/authorization/catalog') return reply(catalogStatus, { data: catalog, code: 'FORBIDDEN' });
     if (init.method === 'GET') {
       if (log.filter(entry => entry.step === 'PUT /admin/authorization/groups/ROLE_ADMIN/grants').length && reread) return reply(200, { data: reread });
       return reply(200, { data: current });
@@ -2668,7 +2686,7 @@ async function provision(api, verifyOwner = () => api.log.push({ step: 'owner' }
 test('the fixture proves ownership before every write and adds only the missing grants to the full list', async () => {
   const api = fixtureApi();
   await provision(api);
-  assert.deepEqual(api.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'owner', 'POST /admin/system/users', 'GET /admin/authorization/groups/ROLE_ADMIN',
+  assert.deepEqual(api.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'owner', 'POST /admin/system/users', 'GET /admin/authorization/catalog', 'GET /admin/authorization/groups/ROLE_ADMIN',
     'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
   const user = api.log.find(entry => entry.step === 'POST /admin/system/users');
   assert.deepEqual(user.body, { userId: 'TEST1', pswd: 'E2e1!strong', userNm: '일반사용자', role: 'USER' });
@@ -2678,6 +2696,22 @@ test('the fixture proves ownership before every write and adds only the missing 
   assert.equal(put.body.complete, true);
   assert.equal(put.body.version, 'a'.repeat(64));
   assert.deepEqual(put.body.grants, [...ADMIN_GROUP().grants, { type: 'OPERATION', code: 'NOTICE_EDIT' }, { type: 'OPERATION', code: 'FAQ_EDIT' }], '기존 목록을 잃지 않는다');
+
+  // 기준선 번들 PostgreSQL 생성물(GAP-COMPOSE-003)은 일반 계정을 넘기지 않는다 — 계정을 만들지 않고 관리자 권한만 같은 길로 준다.
+  const seeded = fixtureApi();
+  await provisionRepresentativeAccounts({ apiUrl: 'http://127.0.0.1:18080/api/v1', admin: { id: 'webmaster', password: '1' },
+    verifyOwner: () => seeded.log.push({ step: 'owner' }), request: seeded.request, wait: async () => {} });
+  assert.deepEqual(seeded.log.map(entry => entry.step), ['owner', 'POST /auth/login', 'GET /admin/authorization/catalog', 'GET /admin/authorization/groups/ROLE_ADMIN',
+    'owner', 'PUT /admin/authorization/groups/ROLE_ADMIN/grants', 'GET /admin/authorization/groups/ROLE_ADMIN']);
+  assert.deepEqual(seeded.log.find(entry => entry.step.startsWith('PUT')).body.grants, put.body.grants);
+
+  // 게시판이 없는 구성의 카탈로그에는 공지·FAQ 권한이 없다. 리허설(contentEditorPermissions)처럼 그룹을 건드리지 않는다.
+  const boardless = fixtureApi({ catalog: { ...FULL_CATALOG(), operations: [{ code: 'USER_READ', domain: 'x', action: 'y', name: 'USER_READ' }] } });
+  await provision(boardless);
+  assert.ok(!boardless.log.some(entry => entry.step.includes('/admin/authorization/groups/')), '없는 권한을 넣으려다 400 으로 멈추지 않는다');
+  const partial = fixtureApi({ catalog: { ...FULL_CATALOG(), operations: [{ code: 'FAQ_EDIT', domain: 'x', action: 'y', name: 'FAQ_EDIT' }] } });
+  await provision(partial);
+  assert.deepEqual(partial.log.find(entry => entry.step.startsWith('PUT')).body.grants, [...ADMIN_GROUP().grants, { type: 'OPERATION', code: 'FAQ_EDIT' }], '카탈로그에 있는 것만 준다');
 
   const held = fixtureApi({ group: { ...ADMIN_GROUP(), grants: [{ type: 'OPERATION', code: 'NOTICE_EDIT' }] } });
   await provision(held);
@@ -2702,6 +2736,8 @@ test('the fixture retries the login below the lockout threshold and stops on any
   await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), complete: false } })), /전체 목록이 아니다/);
   await assert.rejects(provision(fixtureApi({ group: { ...ADMIN_GROUP(), version: 'short' } })), /전체 목록이 아니다/);
   await assert.rejects(provision(fixtureApi({ reread: ADMIN_GROUP() })), /관리자 권한이 반영되지 않았다/);
+  await assert.rejects(provision(fixtureApi({ catalogStatus: 403 })), /권한 카탈로그 조회 실패\(HTTP 403, FORBIDDEN\)/);
+  await assert.rejects(provision(fixtureApi({ catalog: { operations: null } })), /권한 카탈로그 응답이 목록이 아니다/);
 
   let verified = 0;
   const lost = fixtureApi();

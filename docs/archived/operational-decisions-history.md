@@ -2522,3 +2522,7 @@ GAP-CONTRACT-001의 2026-09-06 보강은 길이·필수 제약에 더해 Memo/Wo
 ### GAP-MIG-003
 
 `GAP-MIG-003`(독립 이관 제품의 원본 Git 이력 의존)은 2026-10-29 수정했다. [제품 계약](../../scripts/migration-product-contract.test.mjs)은 export를 원본 밖의 새 Git 저장소로 옮기고 원본 커밋이 없음을 확인한 뒤 내부 계약을 실제 실행한다. 생성 전 원본의 커밋 존재·조상 관계 검사는 유지하고, 생성 제품은 검증 기록·profile digest·생성 계약의 결속을 대조한다. 원본의 Git 부재·없는 커밋·비조상·얕은 이력과 생성물의 profile/lock 누락·변조·동시 변조가 실패하는 회귀 시험을 포함한다. 이 기록은 외부 발행자 인증을 뜻하지 않는다. 검증 경계와 기관 갱신 책임은 [독립 도입 가이드](../03-guides/governance-review-lifecycle.md#4-독립-migration-tool-도입)에 둔다.
+
+### GAP-COMPOSE-003
+
+`GAP-COMPOSE-003`(PostgreSQL 생성물에서 격리 E2E 실행기가 권한 전환 리허설의 Flyway target 2.99 를 찾지 못해 앱 기동에서 멈춤)은 2026-11-07 수정했다. [격리 실행기](../../scripts/run-isolated-e2e.mjs)가 V2 체인(V2_99 있음, V1_0 번들 없음)에서만 리허설을 켜고, 전환을 마친 V1_0 기준선 번들로 시작하는 생성물에서는 끄며, 둘 중 하나로 정해지지 않으면 DB 컨테이너를 만들기 전에 멈춘다. 리허설이 주던 관리자의 공지·FAQ 편집 권한은 벤더 생성물과 같은 대표 픽스처가 준다(일반 계정은 개발 시드에 있어 만들지 않는다). 권한 스키마 경계 검사는 일반 기동에서 그대로 돈다. demo 멀티모듈 PostgreSQL 생성물의 대표 묶음 66건이 통과했다(첫 수정 뒤에는 공지·FAQ 권한이 빠져 62건이었다). 판정·픽스처는 [격리 계약](../../scripts/e2e-isolation.test.mjs)과 [벤더 계약](../../scripts/project-composer-vendor.test.mjs)이 고정한다.

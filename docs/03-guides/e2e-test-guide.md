@@ -64,7 +64,7 @@ node scripts/run-isolated-e2e.mjs --representative
 node scripts/run-isolated-e2e.mjs --representative --vendor-engine=oracle19
 ```
 
-PostgreSQL 생성물에서는 이 실행기가 앱 기동에서 멈춘다. 실행기가 켜는 권한 전환 리허설이 Flyway target 2.99 를 먼저 적용하는데 생성물의 `V1_0` 번들에는 그 버전이 없다([GAP-COMPOSE-003](../04-operations/known-gaps-detail.md#composer)). 벤더 생성물의 대표 묶음과 대조할 PostgreSQL 실행은 원본 저장소에서 `node scripts/run-isolated-e2e.mjs --representative` 로 돌린다. 원본에는 생성물 잠금이 없어 PostgreSQL 로 뜨고, 원장 목록을 계획과 전체 발견 대조에 함께 넘겨 파일이 빠지거나 이름이 바뀌면 붉다. 시험 파일을 손으로 나열하면 발견과 실행이 함께 좁아져 초록으로 끝날 수 있으므로 쓰지 않는다. 이 명령을 원본 저장소에서 돌린 기록은 아직 없다.
+PostgreSQL 생성물은 전환을 마친 `V1_0` 기준선 번들로 시작하므로 실행기가 권한 전환 리허설(Flyway target 2.99)을 켜지 않고, 리허설이 주던 관리자의 공지·FAQ 편집 권한은 대표 픽스처가 준다. 원본 저장소(V2 체인)에서는 리허설을 켠다 — 어느 쪽인지 정해지지 않으면 실행기는 DB 를 띄우기 전에 멈춘다. 그래서 벤더 생성물의 대표 묶음과 대조할 PostgreSQL 실행은 같은 구성의 PostgreSQL 생성물에서도, 원본 저장소에서도 `node scripts/run-isolated-e2e.mjs --representative` 로 돌린다(2026-11-07 demo 멀티모듈 생성물에서 66건 통과). 원본에는 생성물 잠금이 없어 PostgreSQL 로 뜨고, 원장 목록을 계획과 전체 발견 대조에 함께 넘겨 파일이 빠지거나 이름이 바뀌면 붉다. 시험 파일을 손으로 나열하면 발견과 실행이 함께 좁아져 초록으로 끝날 수 있으므로 쓰지 않는다. 이 명령을 원본 저장소에서 돌린 기록은 아직 없다.
 
 ### 3. 실행 설정 (`playwright.config.ts`)
 
