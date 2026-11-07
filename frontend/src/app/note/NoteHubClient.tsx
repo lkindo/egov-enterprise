@@ -344,6 +344,9 @@ export default function NoteHubClient() {
     }
   };
 
+  // 이 보기의 목록 응답을 받기 전(불러오는 중)이나 실패했으면 총 건수를 0 으로 말하지 않는다 — 표도 그동안 비운다.
+  const knownTotal = loading || listError ? undefined : total;
+
   const columns = [
     /*
       [2026-08-29] '상태'(읽음/안읽음) 열은 **받은 쪽지함에만** 둔다.
@@ -425,7 +428,7 @@ export default function NoteHubClient() {
       title="쪽지함"
       description="받은 쪽지와 보낸 쪽지를 조회하고 새 쪽지를 보냅니다."
       breadcrumbItems={[{ label: '협업지원' }, { label: '쪽지관리' }]}
-      totalCount={total}
+      totalCount={knownTotal}
       filter={
         <KeywordFilter
           label="제목·내용"
@@ -445,7 +448,7 @@ export default function NoteHubClient() {
               onClick={() => handleTabChange('received')}
               icon={<Inbox size={16} aria-hidden="true" />}
               label="받은 쪽지함"
-              count={tab === 'received' ? total : undefined}
+              count={tab === 'received' ? knownTotal : undefined}
             />
             <TabButton
               id={noteTabId('sent')}
@@ -453,7 +456,7 @@ export default function NoteHubClient() {
               onClick={() => handleTabChange('sent')}
               icon={<Send size={16} aria-hidden="true" />}
               label="보낸 쪽지함"
-              count={tab === 'sent' ? total : undefined}
+              count={tab === 'sent' ? knownTotal : undefined}
             />
           </TabList>
           {/* [2026-09-26 DIP V3] 받은 쪽지 미읽음 수. tablist 에는 탭만 두므로 바깥에 둔다. 조회 실패(null)는 0 으로 말하지 않는다. */}

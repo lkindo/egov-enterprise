@@ -78,6 +78,8 @@ export default function PolicyAdminClient() {
   const policyRequestRef = useRef(0);
   // 조회 실패를 "등록된 정책 없음"으로 위장하지 않기 위해 실패 사유를 목록 영역에 그대로 노출한다.
   const [error, setError] = useState<Error | null>(null);
+  // [2026-11-08 화면 용어 원장 후속] 목록 응답을 받았는가. 받기 전·실패 뒤에는 총 건수를 0 으로 말하지 않고, 다시 조회하는 동안에는 마지막으로 받은 수를 둔다.
+  const [policiesReceived, setPoliciesReceived] = useState(false);
   const [selectedPolicy, setSelectedPolicy] = useState<SystemPolicy | null>(null);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
 
@@ -102,10 +104,12 @@ export default function PolicyAdminClient() {
       const data = await policyAdminService.getPolicies();
       if (requestId !== policyRequestRef.current) return;
       setPolicies(data);
+      setPoliciesReceived(true);
     } catch (err) {
       if (requestId !== policyRequestRef.current) return;
       setError(toError(err));
       setPolicies([]);
+      setPoliciesReceived(false);
       toast('정책 목록을 불러오는 데 실패했습니다.', 'error');
     } finally {
       if (requestId === policyRequestRef.current) setLoading(false);
@@ -210,7 +214,7 @@ export default function PolicyAdminClient() {
       title="시스템 정책 관리"
       description="정책을 등록·수정합니다. 열람에는 기존 정책 조회 권한이 필요합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '정책 관리' }]}
-      totalCount={error ? undefined : policies.length}
+      totalCount={error || !policiesReceived ? undefined : policies.length}
       actions={
         <div className="flex gap-2">
           {canWrite && <Button type="button" onClick={handleCreate}>새 정책 등록</Button>}

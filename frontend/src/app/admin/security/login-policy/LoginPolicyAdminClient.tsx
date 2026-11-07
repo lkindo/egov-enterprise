@@ -168,6 +168,8 @@ export default function LoginPolicyAdminClient() {
   const data: LoginPolicy[] = pageData?.list || [];
   const totalPage = pageData?.totalPage || 1;
   const total = pageData?.total || 0;
+  // [2026-11-08 화면 용어 원장 후속] 받은 목록이 없으면(조회 중·오프라인 일시 정지·오류) 건수를 0 으로 말하지 않는다.
+  const countsKnown = !error && pageData !== undefined;
 
   const handleEdit = (policy: LoginPolicy) => {
     setSelectedPolicy(policy);
@@ -360,7 +362,7 @@ export default function LoginPolicyAdminClient() {
       title="로그인 보안 정책 관리"
       description="사용자별 접속 IP·허용 시간대·접속 제한을 설정합니다. 2단계 인증(OTP)은 아직 제공하지 않습니다. 목록은 전체 사용자이며 정책이 설정된 계정만 해제할 수 있습니다."
       breadcrumbItems={[{ label: '권한 보안' }, { label: '로그인 정책 관리' }]}
-      totalCount={error ? undefined : total}
+      totalCount={countsKnown ? total : undefined}
       filter={(
         // ⚠ 이 접근 이름은 e2e(security-administration)가 셀렉터로 쓴다 — 보이는 라벨과 같게 둔다(WCAG 2.5.3).
         <KeywordFilter
@@ -377,9 +379,11 @@ export default function LoginPolicyAdminClient() {
             총 건수가 이미 말하므로 중복이고, 나머지 둘은 **현재 페이지에서만** 셀 수 있는 값이라
             그 범위를 문구로 함께 말한다(종전에는 배지로 말했다 — 사실은 그대로 보존한다).
           */}
+          {countsKnown && (
           <span className="text-[length:var(--font-size-body)] text-muted-foreground tabular-nums">
             현재 페이지 · 2단계 인증 {otpEnabledCount}건 · 접속 제한 {restrictedCount}건
           </span>
+          )}
           <Button
             type="button"
             onClick={() => refetch()}

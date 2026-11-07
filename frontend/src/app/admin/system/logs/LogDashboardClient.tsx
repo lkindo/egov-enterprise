@@ -270,7 +270,7 @@ export default function LogDashboardClient({
       description="보안·접속·행동·웹 요청 로그를 한 화면에서 조회합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }]}
       filterStateKey="system-logs-dashboard"
-      totalCount={error || isLoading ? undefined : totalCount}
+      totalCount={error || data === undefined ? undefined : totalCount}
       actions={
         <>
           <TabList

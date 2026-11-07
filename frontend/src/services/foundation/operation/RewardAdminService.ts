@@ -41,8 +41,3 @@ class RewardAdminService extends ApiService {
 }
 
 export const rewardAdminService = new RewardAdminService();
-
-/** 빈 페이지 응답 (초기 로드 실패 시 안전 폴백) */
-export function emptyPage<T>(size = 10): PageResponse<T> {
-  return { list: [], total: 0, page: 1, size, totalPage: 0 };
-}

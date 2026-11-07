@@ -109,6 +109,9 @@ export default function OnlinePollAdminClient() {
 
   const polls: OnlinePollDto[] = data?.list || [];
   const totalCount = data?.total || 0;
+  // [2026-11-08 화면 용어 원장 후속] 받은 목록이 없으면(첫 조회 중·오프라인 멈춤·실패) 총 건수도 진행중·조회된 건수도 0 이 아니라 '알 수 없음'이다.
+  //   isLoading 이 아니라 data 로 본다 — 오프라인으로 멈춘 조회는 isLoading 이 false 다.
+  const listCountsUnknown = isError || data === undefined;
   // 진행률 막대의 분모. 종전에는 '/100' 이라는 근거 없는 상수를 써서 101표부터 100% 로 고정됐다(P1-5).
   const maxVotesOnPage = polls.reduce((max, poll) => Math.max(max, totalVotesOf(poll)), 0);
 
@@ -253,7 +256,7 @@ export default function OnlinePollAdminClient() {
       description="항목 하나를 고르는 온라인 투표를 조회·등록하고 참여 현황을 확인합니다. 문항형 설문조사는 설문 허브에서 관리합니다."
       breadcrumbItems={[{ label: '설문조사' }, { label: '온라인 투표 관리' }]}
       filterStateKey="survey-polls"
-      totalCount={isError ? undefined : totalCount}
+      totalCount={listCountsUnknown ? undefined : totalCount}
       actions={
         <>
           <Button
@@ -289,11 +292,13 @@ export default function OnlinePollAdminClient() {
         /* 지표는 서버가 준 값만 남긴다. 카드 2장(180px 배경 아이콘·hover scale)을 한 줄로 수렴한다.
            삭제 이력: '분석 노드'(현재 페이지 길이를 다른 의미로 표기한 거짓 지표),
            'SYSTEM STATUS: NOMINAL'(근거 없는 상태 배지) — 감사 P1-5. */
+        listCountsUnknown ? undefined : (
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           진행중 <span className="font-bold text-foreground">
             {todayYmd ? polls.filter(p => getPollStatus(p, todayYmd) === 'active').length : 0}
           </span>건 · 조회된 {polls.length}건 기준
         </span>
+        )
       }
     >
       <StandardDataTable

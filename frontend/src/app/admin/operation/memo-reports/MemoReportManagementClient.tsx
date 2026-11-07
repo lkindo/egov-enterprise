@@ -547,6 +547,9 @@ export default function MemoReportManagementClient() {
   const totalItems = reportsData?.total ?? 0;
   const totalPages = Math.ceil(totalItems / pageSize);
   const unreadOnPage = displayItems.filter((r) => !r.rptrInqDt).length;
+  // [2026-11-08 화면 용어 원장 후속] 받은 목록이 없으면(첫 조회 중·오프라인 멈춤·실패) 총 건수도 미열람 수도 0 이 아니라 '알 수 없음'이다.
+  //   isLoading 이 아니라 data 로 본다 — 오프라인으로 멈춘 조회는 isLoading 이 false 다.
+  const listCountsUnknown = isError || reportsData === undefined;
 
   const columns: Column<MemoReportInfo>[] = [
     {
@@ -626,8 +629,8 @@ export default function MemoReportManagementClient() {
       description="보고를 작성하고, 수신·발신한 보고와 지시사항을 확인합니다."
       breadcrumbItems={[{ label: '운영지원' }, { label: '메모보고' }]}
       filterStateKey="operation-memo-reports"
-      // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
-      totalCount={isError ? undefined : totalItems}
+      // 조회 실패나 받은 값이 없을 때의 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={listCountsUnknown ? undefined : totalItems}
       actions={
         <>
         {/* [2026-08-28] 보고 작성 경로. 종전에는 목록만 있어 '내 보고' 가 영원히 비어 있었다. */}
@@ -666,12 +669,12 @@ export default function MemoReportManagementClient() {
           onSearch={handleSearchChange}
         />
       }
-      toolbarActions={
+      toolbarActions={listCountsUnknown ? undefined : (
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
           현재 페이지 미열람 <span className="font-bold text-foreground">{unreadOnPage}</span>건
           <span className="ml-2 text-xs">(수신자가 처음 열람한 시각을 기록합니다)</span>
         </span>
-      }
+      )}
     >
       <TabPanel id="memo-report-tabpanel" aria-labelledby={`memo-report-tab-${activeTab}`}>
         <StandardDataTable

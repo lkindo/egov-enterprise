@@ -120,7 +120,8 @@ export default function DurableJobsClient() {
       title="후속 작업 상태"
       description="알림 전달·첨부 파일 삭제처럼 업무 처리 뒤에 이어지는 작업의 상태를 최신순으로 표시합니다. 여러 번 시도해도 실패한 작업은 다시 처리할 수 있습니다. 수신 주소를 지운 메일 발송은 다시 처리할 수 없어 메일 이력에서 새로 보내야 합니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '후속 작업 상태' }]}
-      totalCount={error ? undefined : total}
+      // 받은 값이 없거나 조회가 실패하면 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={error || data === undefined ? undefined : total}
     >
       <StandardDataTable
         accessibleLabel="후속 작업 목록"

@@ -122,6 +122,8 @@ export function BoardMasterListClient() {
   const totalPages = boardData?.totalPage ?? Math.max(1, Math.ceil(totalCount / size));
   const activeCount = boardList.filter((b) => b.useYn === 'Y').length;
   const standbyCount = boardList.filter((b) => b.useYn !== 'Y').length;
+  // 받은 목록이 없으면(첫 조회 중·오프라인 멈춤·실패) 이 페이지의 수를 0 으로 말하지 않는다 — isLoading 은 오프라인 멈춤에서 false 다.
+  const listUnknown = isError || boardData === undefined;
 
   // 두 원천이 모두 확정된 뒤에 판정한다 — 그룹을 불러오는 중에 '그룹 확인 불가'로 먼저 보이지 않는다.
   const menuSourcesPending = menuSource === null || groupSource === null;
@@ -368,7 +370,7 @@ export function BoardMasterListClient() {
       description="게시판의 사용 여부와 메뉴 연결을 조회하고, 운영 화면에서 설정·메뉴·접근을 관리합니다."
       breadcrumbItems={[{ label: '관리 센터' }, { label: '콘텐츠 운영' }, { label: '게시판 관리' }]}
       filterStateKey="community-board-master"
-      totalCount={isError ? undefined : totalCount}
+      totalCount={listUnknown ? undefined : totalCount}
       actions={
         // 생성 기능권한과 마법사 라우트 진입을 함께 본다(DIP B4 P1 — 라우트 게이트와 같은 판정).
         canPermission(user, 'BBS_MST_CREATE') && canOpenPage(user, '/admin/community/boards/maker') && (
@@ -423,8 +425,8 @@ export function BoardMasterListClient() {
       toolbarActions={
         /* 값은 모두 서버 응답에서 파생된다. 페이지로 나눠 받으므로 사용·사용 안 함 수는 이 페이지의 행만 센다. */
         <span className="text-[length:var(--font-size-body)] text-muted-foreground">
-          이 페이지: 사용 <span className="font-bold text-foreground">{isLoading ? '—' : activeCount.toLocaleString()}</span>건 ·
-          사용 안 함 <span className="font-bold text-foreground">{isLoading ? '—' : standbyCount.toLocaleString()}</span>건
+          이 페이지: 사용 <span className="font-bold text-foreground">{listUnknown ? '—' : activeCount.toLocaleString()}</span>건 ·
+          사용 안 함 <span className="font-bold text-foreground">{listUnknown ? '—' : standbyCount.toLocaleString()}</span>건
           {dataUpdatedAt > 0 && <> · 조회 시각 {toDisplayDateTime(dataUpdatedAt)}</>}
         </span>
       }
@@ -433,7 +435,7 @@ export function BoardMasterListClient() {
           메뉴가 보인다고 게시판을 쓸 수 있는 것은 아닙니다. 게시글 권한은 모든 게시판에 함께 적용됩니다.
         </p>
         {/* [ADR-0043, G4] 메뉴 연결 조건의 범위 고지 — 서버가 나눠 준 이 페이지 안에서만 거른다(다른 페이지의 게시판을 '없음'으로 말하지 않는다). */}
-        {menuFilter !== '' && !menuFilterUnavailable && !isLoading && !isError && (
+        {menuFilter !== '' && !menuFilterUnavailable && !listUnknown && (
           <p role="status" className="mb-3 rounded-md border border-border bg-muted/40 px-3 py-2 text-[length:var(--font-size-body)] text-foreground">
             {menuSourcesPending
               ? '메뉴 연결을 확인하는 중이라 아직 거르지 않았습니다.'

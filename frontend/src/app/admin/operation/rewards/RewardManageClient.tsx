@@ -84,7 +84,7 @@ const EMPTY_FORM: RewardFormValues = {
   pblenCn: '',
 };
 
-export default function RewardManageClient({ initialPage }: { initialPage: PageResponse<Reward> }) {
+export default function RewardManageClient({ initialPage }: { initialPage: PageResponse<Reward> | null }) {
   const queryClient = useQueryClient();
   const { toast } = useToast();
   // [2026-10-01] 쓰기 버튼은 그 동작의 기능 권한으로 보인다 — 조회 권한(REWARD_READ)만으로 들어온 사람은 종전에 눌러 본 뒤에야 403 을 만났다(표시 판정일 뿐, 서버 인가는 그대로다).
@@ -182,7 +182,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
       size
     }),
     // SSR 프리페치 결과는 검색어 없는 1페이지에 한해서만 초기값으로 사용한다
-    initialData: (!searchKeyword && page === 1) ? initialPage : undefined,
+    initialData: (!searchKeyword && page === 1 && initialPage) ? initialPage : undefined,
   });
 
   const rewards = data?.list || [];
@@ -315,14 +315,14 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     },
   ];
 
-  // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
+  // 조회 실패나 받은 값이 없을 때(다른 페이지·검색어의 첫 조회 중·오프라인 멈춤)의 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
   return (
     <WorkListPage
       title="포상 기록 관리"
       description="조직 내 성과 및 공헌에 대한 포상 기록을 조회·등록합니다."
       breadcrumbItems={[{ label: '관리 센터' }, { label: '업무지원' }, { label: '포상 기록 관리' }]}
       filterStateKey="operation-rewards"
-      totalCount={isError ? undefined : totalItems}
+      totalCount={isError || data === undefined ? undefined : totalItems}
       actions={
         <>
           <Button

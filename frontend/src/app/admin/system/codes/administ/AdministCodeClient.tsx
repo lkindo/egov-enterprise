@@ -308,7 +308,8 @@ export default function AdministCodeClient({
  description="법정동·행정동 코드 체계를 조회·등록하고 정정합니다."
  breadcrumbItems={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '행정 구역' }]}
  filterStateKey="system-codes-administ"
- totalCount={error ? undefined : total}
+ // 받은 값(서버 첫 페이지 자리표시자 포함)이 없거나 조회가 실패하면 총 건수는 0 이 아니라 '알 수 없음'이다.
+ totalCount={error || pageData === undefined ? undefined : total}
  actions={
  <>
  <Button
