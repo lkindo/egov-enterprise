@@ -655,9 +655,22 @@ function parseArgs(argv) {
     else if (value === '--full') options.forceFull = true;
     else if (value === '--verify-push-base-run') options.verifyPushBaseRun = true;
     else if (value === '--field') options.field = argv[++index] ?? '';
+    // [2026-11-07] pre-push 는 다섯 필드를 한 번에 묻는다 — 이 CLI 의 기동이 Windows 에서 약 1.6초라 필드마다 부르면 push 마다 약 8초,
+    //   훅을 수십 번 돌리는 자기 검사 계약(pre-push-ref-contract)에서는 수백 초가 된다.
+    else if (value === '--fields') options.fields = (argv[++index] ?? '').split(',').filter(Boolean);
     else throw new Error(`unknown argument: ${value}`);
   }
+  if (options.field && options.fields) throw new Error('--field and --fields cannot be combined');
+  if (options.fields && options.fields.length === 0) throw new Error('--fields needs at least one field');
   return options;
+}
+
+/** `--fields` 의 출력: 요청한 순서대로 한 줄에 `이름=true|false`. 모르는 이름이나 boolean 이 아닌 필드는 던진다(훅이 실패로 멈춘다). */
+export function formatScopeFields(result, fields) {
+  return fields.map(field => {
+    if (!Object.hasOwn(result, field) || typeof result[field] !== 'boolean') throw new Error(`unsupported boolean field: ${field}`);
+    return `${field}=${result[field] ? 'true' : 'false'}`;
+  }).join('\n') + '\n';
 }
 
 /** 검증되지 않은 push base 는 diff 범위를 쓰지 않고 전수로 바꾼다. 판정기를 주입해 CLI 경로를 네트워크 없이 검사한다. */
@@ -686,6 +699,10 @@ async function main() {
       throw new Error(`unsupported boolean field: ${options.field}`);
     }
     process.stdout.write(`${bool(result[options.field])}\n`);
+    return;
+  }
+  if (options.fields) {
+    process.stdout.write(formatScopeFields(result, options.fields));
     return;
   }
 

@@ -83,11 +83,24 @@ unset GIT_LOCAL_ENV_VARS GIT_LOCAL_ENV_VAR
 # CI와 동일한 fail-closed 분류기를 fast-pass 판정에도 사용한다. 확장자만
 # 보는 별도 allowlist를 두면 헌법 Markdown, 실행 가능한 docs 파일, rename의
 # 이전 경로가 CI와 로컬에서 서로 다르게 분류될 수 있다.
-SCOPE_DOCS_ONLY=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field docsOnly)
-SCOPE_BACKEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field backend)
-SCOPE_MIGRATION=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field migration)
-SCOPE_FRONTEND=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field frontend)
-SCOPE_ATLAS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --field atlas)
+# 다섯 필드를 한 번에 묻는다(2026-11-07) — 분류기 기동이 Windows 에서 약 1.6초라 필드마다 부르면 push 마다 약 8초다. 값을 하나라도
+# 읽지 못하면 멈춘다: 빈 값은 backend·frontend 검사를 건너뛰는 쪽으로 읽히므로 안전측이 아니다.
+SCOPE_FIELDS=$(printf '%s\n' "$CHANGED_FILES" | node scripts/ci-change-scope.mjs --stdin --fields docsOnly,backend,migration,frontend,atlas)
+scope_field() {
+  printf '%s\n' "$SCOPE_FIELDS" | sed -n "s/^$1=//p"
+}
+SCOPE_DOCS_ONLY=$(scope_field docsOnly)
+SCOPE_BACKEND=$(scope_field backend)
+SCOPE_MIGRATION=$(scope_field migration)
+SCOPE_FRONTEND=$(scope_field frontend)
+SCOPE_ATLAS=$(scope_field atlas)
+for SCOPE_VALUE in "$SCOPE_DOCS_ONLY" "$SCOPE_BACKEND" "$SCOPE_MIGRATION" "$SCOPE_FRONTEND" "$SCOPE_ATLAS"; do
+  case "$SCOPE_VALUE" in
+    true|false) ;;
+    *) echo "❌ 변경 범위 분류 결과를 읽지 못했습니다 — 어떤 검사도 안전하게 생략할 수 없어 멈춥니다" >&2; exit 1 ;;
+  esac
+done
+unset SCOPE_VALUE
 echo "  → scope: docsOnly=$SCOPE_DOCS_ONLY / backend=$SCOPE_BACKEND / migration=$SCOPE_MIGRATION / frontend=$SCOPE_FRONTEND"
 
 # 관측 전용 기록: 명령/인자/환경/출력은 저장하지 않는다. 기록 실패는 검사 결과를 바꾸지 않는다.

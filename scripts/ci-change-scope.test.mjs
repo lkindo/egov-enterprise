@@ -132,7 +132,8 @@ test('Atlas source and generator inputs select Atlas contracts without weakening
     assert.equal(classifyChangedFiles([catalogInput]).atlas, true, `${catalogInput} must select the atlas axis`);
   }
   const hook = fs.readFileSync(path.join(repoRoot, '.githooks/pre-push'), 'utf8');
-  assert.match(hook, /--stdin --field atlas/);
+  assert.ok(hook.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'), 'pre-push must ask the classifier for the atlas axis');
+  assert.ok(hook.includes('SCOPE_ATLAS=$(scope_field atlas)'), 'SCOPE_ATLAS must come from the one classifier call');
   assert.match(hook, /if \[ "\$SCOPE_ATLAS" = "true" \]; then/);
 });
 
@@ -1189,16 +1190,40 @@ test('stdin boolean field mode is safe for local hook scope selection', () => {
     });
   assert.equal(migration.status, 0, migration.stderr);
   assert.equal(migration.stdout, 'true\n');
+
+  // [2026-11-07] 훅이 쓰는 한 번 호출 형태 — 요청한 순서대로 이름=값, 모르는 필드는 실패한다.
+  const fields = spawnSync(process.execPath,
+    ['scripts/ci-change-scope.mjs', '--stdin', '--fields', 'docsOnly,backend,frontend'], {
+      cwd: repoRoot,
+      input: 'frontend/src/app/page.tsx\n',
+      encoding: 'utf8',
+    });
+  assert.equal(fields.status, 0, fields.stderr);
+  assert.equal(fields.stdout, 'docsOnly=false\nbackend=false\nfrontend=true\n');
+  const unknown = spawnSync(process.execPath,
+    ['scripts/ci-change-scope.mjs', '--stdin', '--fields', 'docsOnly,notAField'], {
+      cwd: repoRoot,
+      input: 'docs/README.md\n',
+      encoding: 'utf8',
+    });
+  assert.notEqual(unknown.status, 0);
+  assert.equal(unknown.stdout, '');
+  assert.match(unknown.stderr, /unsupported boolean field: notAField/);
 });
 
 test('pre-push consumes the shared fail-closed classifier before its documentation fast path', () => {
   const hook = fs.readFileSync(path.join(repoRoot, '.githooks', 'pre-push'), 'utf8');
   assert.match(hook, /--no-renames --name-only --diff-filter=ACMRD/);
-  assert.match(hook, /--stdin --field docsOnly/);
-  assert.match(hook, /--stdin --field backend/);
-  assert.match(hook, /--stdin --field frontend/);
+  // [2026-11-07] 다섯 필드를 한 번에 묻고, 하나라도 true|false 가 아니면 멈춘다(빈 값은 검사를 건너뛰는 쪽으로 읽힌다).
+  assert.ok(hook.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'), 'pre-push must classify all scope fields in one call');
+  for (const [variable, field] of [['SCOPE_DOCS_ONLY', 'docsOnly'], ['SCOPE_BACKEND', 'backend'], ['SCOPE_MIGRATION', 'migration'],
+    ['SCOPE_FRONTEND', 'frontend'], ['SCOPE_ATLAS', 'atlas']]) {
+    assert.ok(hook.includes(`${variable}=$(scope_field ${field})`), `${variable} must come from the one classifier call`);
+  }
+  assert.ok(hook.includes('    true|false) ;;'), 'scope values must be checked');
+  assert.ok(hook.includes('*) echo "❌ 변경 범위 분류 결과를 읽지 못했습니다'), 'an unreadable scope value must stop the push');
   assert.ok(
-    hook.indexOf('--stdin --field docsOnly') < hook.indexOf('if [ "$SCOPE_DOCS_ONLY" = "true" ]'),
+    hook.indexOf('--stdin --fields docsOnly,backend,migration,frontend,atlas') < hook.indexOf('if [ "$SCOPE_DOCS_ONLY" = "true" ]'),
     'docsOnly must be classified before the fast-pass exit',
   );
   assert.doesNotMatch(hook, /CODE_CHANGES=/);
