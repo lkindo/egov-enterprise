@@ -86,7 +86,7 @@
     "@napi-rs/canvas": "0.1.100",
     "cross-env": "^7.0.3",
     "kordoc": "4.24.46",
-    "pdfjs-dist": "4.10.38",
+    "pdfjs-dist": "6.5.438",
     "pg": "^8.23.1",
     "sharp": "0.35.5"
   },
