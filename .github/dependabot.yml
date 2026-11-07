@@ -99,6 +99,8 @@ updates:
       #   (MariaDbMetadataIntegrationTest 의 3.5.10, OraclePostgresTestSupport 의 23.26.3.0.0) — #990·#992(MariaDB 4.0.0)가
       #   그 단언과 이관 시험 샤드를 붉게 했다. testRuntimeOnly 라 실행 산출물에는 들어가지 않는다. 재개 조건: 새 판으로
       #   재실측해 단언을 바꿀 때 이 규칙을 같은 변경에서 걷는다. ignore 는 보안 업데이트에도 걸리므로 드라이버 보안 공지는 따로 본다.
+      # [2026-11-07] MariaDB 는 보안 경고 4건(3.5.10, 수정 3.5.11)을 받아 3.5.11 로 재실측하고 단언을 바꿨다. 단언이 여전히
+      #   정확한 판이라 제외는 그대로 둔다 — 걷으면 4.x 제안이 다시 같은 단언을 붉게 한다. 보안 경고는 ignore 와 별개로 계속 온다.
       - dependency-name: "org.mariadb.jdbc:mariadb-java-client"
       - dependency-name: "com.oracle.database.jdbc:ojdbc11"
     groups:

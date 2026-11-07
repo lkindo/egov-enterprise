@@ -66,7 +66,7 @@ class MariaDbPackagedCliIntegrationTest extends MariaDbPostgresTestSupport {
         assertThat(snapshot.database().productName()).isEqualTo("MariaDB");
         assertThat(snapshot.database().productVersion()).startsWith("11.4.");
         assertThat(snapshot.database().driverName()).isEqualTo("MariaDB Connector/J");
-        assertThat(snapshot.database().driverVersion()).isEqualTo("3.5.10");
+        assertThat(snapshot.database().driverVersion()).isEqualTo("3.5.11");
         assertThat(snapshot.visibilityFindings()).isEmpty();
         assertThat(snapshot.objects()).anyMatch(object -> object.kind() == ObjectKind.TABLE && object.name().equals(fixture.name()));
         SourceDriverEvidence expected = SourceDriverEvidence.isolated(MARIADB_DRIVER, List.of(sha256(driver)));
