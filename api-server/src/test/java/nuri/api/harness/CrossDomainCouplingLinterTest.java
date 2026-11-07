@@ -7,6 +7,7 @@ import tools.jackson.databind.json.JsonMapper;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -102,8 +103,7 @@ class CrossDomainCouplingLinterTest {
 
     @Test
     @DisplayName("red proof: 주입 필드가 아닌 import/signature/event 및 inline FQN 결합도 탐지한다")
-    void detectsImportedAndInlineTypeReferencesOutsideInjectedFields() throws IOException {
-        Path fixture = Files.createTempDirectory("cross-domain-coupling-fixture");
+    void detectsImportedAndInlineTypeReferencesOutsideInjectedFields(@TempDir Path fixture) throws IOException {
         stub(fixture, "business-app", "nuri.business.service.approvalx.event.StatusChangedEvent");
         stub(fixture, "business-app", "nuri.business.domain.alertx.AlertRepository");
         stub(fixture, "business-core", "nuri.business.service.accountx.AccountService");

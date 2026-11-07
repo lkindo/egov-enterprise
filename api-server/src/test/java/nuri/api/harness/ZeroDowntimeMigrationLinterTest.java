@@ -955,8 +955,8 @@ class ZeroDowntimeMigrationLinterTest {
      */
     @Test
     @DisplayName("Contract waiver는 선행 Expand 마이그레이션을 지목해야 한다")
-    void contractWaiverRequiresPrecedingExpand() throws IOException {
-        Path sandbox = Files.createTempDirectory("zdm-expand-rule").toAbsolutePath().normalize();
+    void contractWaiverRequiresPrecedingExpand(@TempDir Path root) throws IOException {
+        Path sandbox = root.toAbsolutePath().normalize();
         Path migrationDir = sandbox.resolve("db").resolve("migration");
         Files.createDirectories(migrationDir);
         Files.createDirectories(sandbox.resolve("docs"));
@@ -994,11 +994,13 @@ class ZeroDowntimeMigrationLinterTest {
         assertThat(expandViolations(sandbox, migrationDir, additive, null)).isEmpty();
     }
 
-    /** 격리 sandbox 픽스처 기록 — 저장소를 건드리지 않고 JVM 종료 시 함께 사라진다. */
+    /**
+     * 격리 sandbox 픽스처 기록 — 저장소를 건드리지 않는다. sandbox 는 {@code @TempDir} 라 시험이 끝나면 폴더째 지워진다
+     * (예전 {@code deleteOnExit} 는 파일만 지워 실행마다 빈 폴더 트리가 임시 폴더에 쌓였다).
+     */
     private static void writeFixture(Path sandbox, String relativePath, String sql) throws IOException {
         Path target = sandbox.resolve(relativePath);
         Files.writeString(target, sql + System.lineSeparator(), StandardCharsets.UTF_8);
-        target.toFile().deleteOnExit();
     }
 
     /** 버전 비교가 자릿수에 속지 않는지 — 문자열 비교면 V2_9 가 V2_72 보다 뒤로 판정된다. */
@@ -1022,8 +1024,8 @@ class ZeroDowntimeMigrationLinterTest {
      */
     @Test
     @DisplayName("Contract waiver는 선행 Expand의 배포와 7일 관측을 기록으로 증명해야 한다")
-    void contractWaiverRequiresObservedExpandRelease() throws IOException {
-        Path sandbox = Files.createTempDirectory("zdm-observation").toAbsolutePath().normalize();
+    void contractWaiverRequiresObservedExpandRelease(@TempDir Path root) throws IOException {
+        Path sandbox = root.toAbsolutePath().normalize();
         Path migrationDir = sandbox.resolve("db").resolve("migration");
         Files.createDirectories(migrationDir);
         Files.createDirectories(sandbox.resolve("docs"));
