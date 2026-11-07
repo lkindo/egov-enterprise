@@ -1209,6 +1209,23 @@ test('stdin boolean field mode is safe for local hook scope selection', () => {
   assert.notEqual(unknown.status, 0);
   assert.equal(unknown.stdout, '');
   assert.match(unknown.stderr, /unsupported boolean field: notAField/);
+  // 값 없는 옵션·빈 이름·두 옵션을 함께 주면 거부한다(독립 검토 반례: `--fields docsOnly --field` 가 통과했다).
+  for (const [args, message] of [
+    [['--fields', 'docsOnly', '--field'], /--field needs a field name/],
+    [['--fields', 'docsOnly', '--field', 'backend'], /--field and --fields cannot be combined/],
+    [['--fields'], /--fields needs a comma-separated field list/],
+    [['--fields', 'docsOnly,,backend'], /--fields cannot contain an empty field name/],
+    [['--field'], /--field needs a field name/],
+  ]) {
+    const rejected = spawnSync(process.execPath, ['scripts/ci-change-scope.mjs', '--stdin', ...args], {
+      cwd: repoRoot,
+      input: 'docs/README.md\n',
+      encoding: 'utf8',
+    });
+    assert.notEqual(rejected.status, 0, args.join(' '));
+    assert.equal(rejected.stdout, '', args.join(' '));
+    assert.match(rejected.stderr, message, args.join(' '));
+  }
 });
 
 test('pre-push consumes the shared fail-closed classifier before its documentation fast path', () => {

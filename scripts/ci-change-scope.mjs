@@ -644,6 +644,7 @@ export async function listMainPushRuns({ sha, repository, token, workflow = 'ci.
 function parseArgs(argv) {
   const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '', forceFull: false,
     verifyPushBaseRun: false, event: '' };
+  const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--file') options.files.push(argv[++index] ?? '');
@@ -654,14 +655,24 @@ function parseArgs(argv) {
     else if (value === '--stdin') options.stdin = true;
     else if (value === '--full') options.forceFull = true;
     else if (value === '--verify-push-base-run') options.verifyPushBaseRun = true;
-    else if (value === '--field') options.field = argv[++index] ?? '';
+    else if (value === '--field') {
+      // 값이 없는 --field 를 빈 이름으로 받아 넘기지 않는다 — 옵션이 나온 것 자체를 기록하고 값은 따로 검사한다.
+      seen.add('--field');
+      options.field = argv[++index] ?? '';
+      if (!options.field || options.field.startsWith('--')) throw new Error('--field needs a field name');
+    }
     // [2026-11-07] pre-push 는 다섯 필드를 한 번에 묻는다 — 이 CLI 의 기동이 Windows 에서 약 1.6초라 필드마다 부르면 push 마다 약 8초,
     //   훅을 수십 번 돌리는 자기 검사 계약(pre-push-ref-contract)에서는 수백 초가 된다.
-    else if (value === '--fields') options.fields = (argv[++index] ?? '').split(',').filter(Boolean);
+    else if (value === '--fields') {
+      seen.add('--fields');
+      const list = argv[++index] ?? '';
+      if (!list || list.startsWith('--')) throw new Error('--fields needs a comma-separated field list');
+      options.fields = list.split(',');
+      if (options.fields.some(field => !field)) throw new Error('--fields cannot contain an empty field name');
+    }
     else throw new Error(`unknown argument: ${value}`);
   }
-  if (options.field && options.fields) throw new Error('--field and --fields cannot be combined');
-  if (options.fields && options.fields.length === 0) throw new Error('--fields needs at least one field');
+  if (seen.has('--field') && seen.has('--fields')) throw new Error('--field and --fields cannot be combined');
   return options;
 }
 
