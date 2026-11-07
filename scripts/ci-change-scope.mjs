@@ -644,6 +644,7 @@ export async function listMainPushRuns({ sha, repository, token, workflow = 'ci.
 function parseArgs(argv) {
   const options = { files: [], base: '', head: 'HEAD', githubOutput: '', stdin: false, field: '', forceFull: false,
     verifyPushBaseRun: false, event: '' };
+  const seen = new Set();
   for (let index = 0; index < argv.length; index += 1) {
     const value = argv[index];
     if (value === '--file') options.files.push(argv[++index] ?? '');
@@ -654,10 +655,33 @@ function parseArgs(argv) {
     else if (value === '--stdin') options.stdin = true;
     else if (value === '--full') options.forceFull = true;
     else if (value === '--verify-push-base-run') options.verifyPushBaseRun = true;
-    else if (value === '--field') options.field = argv[++index] ?? '';
+    else if (value === '--field') {
+      // 값이 없는 --field 를 빈 이름으로 받아 넘기지 않는다 — 옵션이 나온 것 자체를 기록하고 값은 따로 검사한다.
+      seen.add('--field');
+      options.field = argv[++index] ?? '';
+      if (!options.field || options.field.startsWith('--')) throw new Error('--field needs a field name');
+    }
+    // [2026-11-07] pre-push 는 다섯 필드를 한 번에 묻는다 — 이 CLI 의 기동이 Windows 에서 약 1.6초라 필드마다 부르면 push 마다 약 8초,
+    //   훅을 수십 번 돌리는 자기 검사 계약(pre-push-ref-contract)에서는 수백 초가 된다.
+    else if (value === '--fields') {
+      seen.add('--fields');
+      const list = argv[++index] ?? '';
+      if (!list || list.startsWith('--')) throw new Error('--fields needs a comma-separated field list');
+      options.fields = list.split(',');
+      if (options.fields.some(field => !field)) throw new Error('--fields cannot contain an empty field name');
+    }
     else throw new Error(`unknown argument: ${value}`);
   }
+  if (seen.has('--field') && seen.has('--fields')) throw new Error('--field and --fields cannot be combined');
   return options;
+}
+
+/** `--fields` 의 출력: 요청한 순서대로 한 줄에 `이름=true|false`. 모르는 이름이나 boolean 이 아닌 필드는 던진다(훅이 실패로 멈춘다). */
+export function formatScopeFields(result, fields) {
+  return fields.map(field => {
+    if (!Object.hasOwn(result, field) || typeof result[field] !== 'boolean') throw new Error(`unsupported boolean field: ${field}`);
+    return `${field}=${result[field] ? 'true' : 'false'}`;
+  }).join('\n') + '\n';
 }
 
 /** 검증되지 않은 push base 는 diff 범위를 쓰지 않고 전수로 바꾼다. 판정기를 주입해 CLI 경로를 네트워크 없이 검사한다. */
@@ -686,6 +710,10 @@ async function main() {
       throw new Error(`unsupported boolean field: ${options.field}`);
     }
     process.stdout.write(`${bool(result[options.field])}\n`);
+    return;
+  }
+  if (options.fields) {
+    process.stdout.write(formatScopeFields(result, options.fields));
     return;
   }
 

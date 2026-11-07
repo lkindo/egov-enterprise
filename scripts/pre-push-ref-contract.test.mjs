@@ -112,6 +112,13 @@ node() {
         printf '%s\\n' '11111111-1111-4111-8111-111111111111'
       fi
       ;;
+    scripts/ci-change-scope.mjs)
+      if [ "$HOOK_SCOPE_OUTPUT_SET" = "true" ]; then
+        printf '%s' "$HOOK_SCOPE_OUTPUT"
+        return "$HOOK_SCOPE_STATUS"
+      fi
+      command node "$@"
+      ;;
     *) command node "$@" ;;
   esac
 }
@@ -120,7 +127,8 @@ node() {
 }
 
 function runHook(input, source = hookSource, { files = ['docs/README.md'], failCommand = '',
-  realRecords = false, recordFailure = false, failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '' } = {}) {
+  realRecords = false, recordFailure = false, failDiffRange = '', failedDiffOutput = [], emptyDiffRange = '',
+  scopeOutput = undefined, scopeStatus = 0 } = {}) {
   const fixtureRoot = mkdtempSync(path.join(tmpdir(), 'pre-push-ref-contract-'));
   const gitLog = path.join(fixtureRoot, 'git.log');
   const npmLog = path.join(fixtureRoot, 'npm.log');
@@ -148,6 +156,9 @@ function runHook(input, source = hookSource, { files = ['docs/README.md'], failC
       HOOK_RECORD_FAIL: String(recordFailure),
       HOOK_RECORD_ROOT: shellPath(fixtureRoot),
       HOOK_SOURCE_CONTRACTS: SOURCE_CONTRACT_FILES.join('\n'),
+      HOOK_SCOPE_OUTPUT_SET: String(scopeOutput !== undefined),
+      HOOK_SCOPE_OUTPUT: scopeOutput ?? '',
+      HOOK_SCOPE_STATUS: String(scopeStatus),
     },
   });
 
@@ -190,6 +201,32 @@ test('branch and tag deletion-only pushes skip every local verification command'
     assert.deepEqual(result.gitCalls, []);
     assert.deepEqual(result.npmCalls, []);
   }
+});
+
+// [2026-11-07] 훅은 다섯 범위 필드를 분류기 한 번 호출로 읽는다. 값을 하나라도 true|false 로 읽지 못하거나 분류기가 실패하면
+//   어떤 검사도 돌리기 전에 멈춘다 — 빈 값은 backend·frontend 검사를 건너뛰는 쪽으로 읽혀 안전측이 아니다.
+test('pre-push stops before any check when the one classifier call yields an unreadable scope value', () => {
+  const input = `${pushLine('refs/heads/feature', LOCAL_OID, 'refs/heads/feature', REMOTE_OID)}\n`;
+  const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
+  const complete = 'docsOnly=false\nbackend=true\nmigration=false\nfrontend=true\natlas=false\n';
+  const proceeds = runHook(input, hookSource, { files, scopeOutput: complete });
+  assertSuccessful(proceeds);
+  assert.ok(proceeds.commands.length > 0, 'a readable classification must run the selected checks');
+  const broken = [
+    ...['docsOnly', 'backend', 'migration', 'frontend', 'atlas'].map(field =>
+      [`${field} empty`, complete.replace(new RegExp(`^${field}=.*$`, 'm'), `${field}=`)]),
+    ['backend missing', complete.replace(/^backend=.*\n/m, '')],
+    ['frontend invalid', complete.replace(/^frontend=.*$/m, 'frontend=yes')],
+  ];
+  for (const [label, output] of broken) {
+    const result = runHook(input, hookSource, { files, scopeOutput: output });
+    assert.notEqual(result.status, 0, `${label} must stop the push`);
+    assert.match(result.stderr, /변경 범위 분류 결과를 읽지 못했습니다/u, label);
+    assert.deepEqual(result.commands, [], `${label} must not run any check`);
+  }
+  const failed = runHook(input, hookSource, { files, scopeOutput: '', scopeStatus: 1 });
+  assert.notEqual(failed.status, 0, 'a failing classifier must stop the push');
+  assert.deepEqual(failed.commands, [], 'a failing classifier must not run any check');
 });
 
 test('mixed deletion and update verifies only the object-bearing update range', () => {

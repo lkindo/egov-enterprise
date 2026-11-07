@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { test, after } from 'node:test';
 import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, existsSync, linkSync, symlinkSync, unlinkSync, statSync, readdirSync, rmSync } from 'node:fs';
 import { createHash } from 'node:crypto';
 import { tmpdir } from 'node:os';
@@ -7,13 +7,26 @@ import { basename, dirname, join, resolve } from 'node:path';
 import { spawnSync } from 'node:child_process';
 import { pathToFileURL } from 'node:url';
 
+// [2026-11-07] 이 파일이 만든 임시 폴더는 모든 시험이 끝난 뒤 지운다 — 지우지 않아 %TEMP% 에 수만 개가 쌓였다(pre-push 지연 실측). 저장소를 닫는 시험별 정리(t.after)가 먼저 끝난 뒤라 Windows 에서도 지울 수 있다. 다른 프로세스가 아직 쥐고 있어 지우지 못하면 시험을 실패시키지 않고 남긴다(정리는 최선 노력이다).
+const temporaryRoots = [];
+function temporaryDirectory(prefix) {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+after(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    try { rmSync(root, { recursive: true, force: true, maxRetries: 3 }); } catch { /* 최선 노력 */ }
+  }
+});
+
 const api = await import('./store.mjs').catch((error) => {
   if (error.code === 'ERR_MODULE_NOT_FOUND') return {};
   throw error;
 });
 function fixture(t, options = {}) {
   assert.equal(typeof api.createRequirementsStore, 'function');
-  const directory = mkdtempSync(join(tmpdir(), 'egov-requirements-store-'));
+  const directory = temporaryDirectory('egov-requirements-store-');
   const workspace = join(directory, 'workspace');
   const store = api.createRequirementsStore({ workspace, initialBacklog: { project: { code: 'SYNTHETIC' }, requirements: [] }, ...options });
   t.after(() => store.close());
@@ -76,7 +89,7 @@ test('foreign file changes cannot be overwritten even with the last known revisi
 
 test('Git checkout and linked-worktree paths are rejected before creating directories', () => {
   assert.equal(typeof api.createRequirementsStore, 'function');
-  const directory = mkdtempSync(join(tmpdir(), 'egov-requirements-git-'));
+  const directory = temporaryDirectory('egov-requirements-git-');
   writeFileSync(join(directory, '.git'), 'gitdir: missing-linked-worktree');
   const workspace = join(directory, 'must-not-exist', 'workspace');
   assert.throws(() => api.createRequirementsStore({ workspace, initialBacklog: {} }), { code: 'REQUIREMENTS_GIT_WORKSPACE' });
@@ -96,7 +109,7 @@ test('hardlinks are rejected without modifying the other link', (t) => {
 
 test('directory links are rejected before persisting customer content', () => {
   assert.equal(typeof api.createRequirementsStore, 'function');
-  const directory = mkdtempSync(join(tmpdir(), 'egov-requirements-link-'));
+  const directory = temporaryDirectory('egov-requirements-link-');
   const target = join(directory, 'target');
   mkdirSync(target);
   const linked = join(directory, 'linked');
@@ -168,7 +181,7 @@ test('malformed UTF-8 is rejected rather than silently replacing customer text',
 
 test('opening an existing CLI backlog preserves its bytes and supplies only the UI sidecar', (t) => {
   assert.equal(typeof api.createRequirementsStore, 'function');
-  const workspace = mkdtempSync(join(tmpdir(), 'egov-requirements-import-'));
+  const workspace = temporaryDirectory('egov-requirements-import-');
   const original = '{ "project": {"code":"CLI"}, "requirements": [] }\n';
   writeFileSync(join(workspace, 'backlog.json'), original);
   const store = api.createRequirementsStore({ workspace, initialMetadata: { imported: true } });
@@ -218,7 +231,7 @@ test('UI creation and context refresh atomically maintain the CLI context exchan
 });
 
 test('first UI open adopts matching CLI context bytes instead of overwriting them with the latest repository', (t) => {
-  const workspace = mkdtempSync(join(tmpdir(), 'egov-requirements-cli-context-'));
+  const workspace = temporaryDirectory('egov-requirements-cli-context-');
   const context = { snapshotDigest: 'cli-context', modules: [], screens: [] };
   const bytes = `{ "snapshotDigest": "cli-context", "modules": [], "screens": [] }\n`;
   writeFileSync(join(workspace, 'backlog.json'), JSON.stringify({ project: { code: 'CLI' }, contextSnapshotDigest: 'cli-context' }));
@@ -270,7 +283,7 @@ test('a changed context exchange file participates in CAS and keeps a read-only 
 });
 
 test('an unmatched first-open CLI context is rejected without creating a UI sidecar', () => {
-  const workspace = mkdtempSync(join(tmpdir(), 'egov-requirements-context-mismatch-'));
+  const workspace = temporaryDirectory('egov-requirements-context-mismatch-');
   const bytes = '{"snapshotDigest":"foreign-context"}\n';
   writeFileSync(join(workspace, 'backlog.json'), '{"contextSnapshotDigest":"expected-context"}\n');
   writeFileSync(join(workspace, 'context.snapshot.json'), bytes);

@@ -7,9 +7,18 @@ import { tmpdir } from 'node:os';
 import { basename, join } from 'node:path';
 import { PassThrough } from 'node:stream';
 import { setTimeout as delay } from 'node:timers/promises';
-import { test } from 'node:test';
+import { after, test } from 'node:test';
+import { rmSync } from 'node:fs';
 import { buildJdbcProfile, createEngine } from './engine.mjs';
 import { openWorkspace } from './store.mjs';
+
+// [2026-11-07] 이 파일이 만든 임시 폴더는 모든 시험이 끝난 뒤 지운다 — 지우지 않아 %TEMP% 에 수만 개가 쌓였다(pre-push 지연 실측). 저장소를 닫는 시험별 정리(t.after)가 먼저 끝난 뒤라 Windows 에서도 지울 수 있다. 다른 프로세스가 아직 쥐고 있어 지우지 못하면 시험을 실패시키지 않고 남긴다(정리는 최선 노력이다).
+const temporaryRoots = [];
+after(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    try { rmSync(root, { recursive: true, force: true, maxRetries: 3 }); } catch { /* 최선 노력 */ }
+  }
+});
 
 const hash = value => createHash('sha256').update(value).digest('hex');
 // configure() 의 기본 세션 비밀번호와 같은 값이다. 산출물에 섞이면 엔진이 SENSITIVE_CONTENT 로 거부해야 한다.
@@ -82,6 +91,7 @@ function fakeCli({ hold = false, noArtifact = false, badDigest = false, failure 
 }
 async function fixture(t, fakeOptions) {
   const root = await mkdtemp(join(tmpdir(), 'migration-engine-'));
+  temporaryRoots.push(root);
   const directory = join(root, 'workspace');
   const jarPath = join(root, 'migration.jar'), javaPath = join(root, 'java.exe'), gitPath = join(root, 'git.exe');
   await writeFile(jarPath, 'PK synthetic test jar'); await writeFile(javaPath, 'synthetic executable'); await writeFile(gitPath, 'synthetic executable');

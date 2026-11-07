@@ -3,8 +3,21 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { evaluateSarif, sanitizeSarif, policy, repoRoot, reviewedExceptions } from './sast-policy.mjs';
+
+// [2026-11-07] 이 파일이 만든 임시 폴더는 모든 시험이 끝난 뒤 지운다 — 지우지 않아 %TEMP% 에 수만 개가 쌓였다(pre-push 지연 실측). 저장소를 닫는 시험별 정리(t.after)가 먼저 끝난 뒤라 Windows 에서도 지울 수 있다. 다른 프로세스가 아직 쥐고 있어 지우지 못하면 시험을 실패시키지 않고 남긴다(정리는 최선 노력이다).
+const temporaryRoots = [];
+function temporaryDirectory(prefix) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+after(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    try { fs.rmSync(root, { recursive: true, force: true, maxRetries: 3 }); } catch { /* 최선 노력 */ }
+  }
+});
 
 function report(score = '7.0', results = true) {
   return { version: '2.1.0', runs: [{
@@ -78,7 +91,7 @@ test('shared SARIF keeps locations and rules without source text or derived mess
 });
 
 test('real CLI exits 0 for reviewed, 1 for high, and 2 for incomplete or invalid reports', () => {
-  const directory = fs.mkdtempSync(path.join(os.tmpdir(), 'sast-policy-'));
+  const directory = temporaryDirectory('sast-policy-');
   const file = path.join(directory, 'result.sarif');
   const command = path.join(repoRoot, 'scripts/sast-policy.mjs');
   const incremental = report();

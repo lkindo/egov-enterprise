@@ -1456,7 +1456,7 @@ test('one operational-contract catalog runs in required CI and before the docs f
     'operational contracts must run before docs-only fast-pass');
   assert.ok(atlasGate >= 0 && atlasGate < fastPassExit,
     'Atlas contract must run before its HTML fast-pass');
-  assert.match(prePush, /--stdin --field docsOnly/);
+  assert.ok(prePush.includes('--stdin --fields docsOnly,backend,migration,frontend,atlas'));
 });
 
 test('required operational-contract step is exact and cannot be converted into a decoy', () => {
