@@ -186,7 +186,7 @@ const SystemLogsLoginClient = () => {
             breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '로그인 로그' }]}
             filterStateKey="system-logs-login"
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
-            totalCount={error ? undefined : totalCount}
+            totalCount={error || data === undefined ? undefined : totalCount}
             filter={
                 <KeywordFilter
                     label="사용자ID · 접속IP"

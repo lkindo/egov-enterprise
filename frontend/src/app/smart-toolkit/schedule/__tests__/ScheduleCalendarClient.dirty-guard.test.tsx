@@ -25,6 +25,8 @@ const mocks = vi.hoisted(() => ({
   push: vi.fn(),
   scheduleRows: [] as Array<Record<string, unknown>>,
   scheduleLoading: false,
+  /** 조회가 멈춰(오프라인) 불러오는 중은 아니지만 받은 값도 없는 상태. */
+  schedulePaused: false,
   permissions: [] as string[],
 }));
 
@@ -35,7 +37,7 @@ vi.mock('next/navigation', () => ({
 vi.mock('@tanstack/react-query', () => ({
   useQueryClient: () => ({ invalidateQueries: mocks.invalidateQueries }),
   useQuery: () => ({
-    data: mocks.scheduleLoading ? undefined : mocks.scheduleRows,
+    data: mocks.scheduleLoading || mocks.schedulePaused ? undefined : mocks.scheduleRows,
     isLoading: mocks.scheduleLoading,
     isError: false,
     error: null,
@@ -121,6 +123,7 @@ describe('ScheduleCalendarClient 모달 기본 일자와 미저장 이탈 보호
     mocks.deleteSchedule.mockResolvedValue(undefined);
     mocks.scheduleRows = [];
     mocks.scheduleLoading = false;
+    mocks.schedulePaused = false;
     mocks.permissions = [];
   });
 
@@ -135,6 +138,13 @@ describe('ScheduleCalendarClient 모달 기본 일자와 미저장 이탈 보호
     mocks.scheduleRows = [{ schdlSn: 1, schdlNm: '워크숍', schdlBgngYmd: '20260909', schdlEndYmd: '20260909' }];
     view.rerender(<ScheduleCalendarClient initialYmd={TODAY_YMD} />);
     expect(screen.getByTestId('shell-total-count')).toHaveTextContent('1');
+  });
+
+  // 독립 검토 반례: 오프라인에서 처음 여는 달은 조회가 멈춰 isLoading 이 false 인데 받은 값이 없다 — 0건이 아니다.
+  it('조회가 멈춰 받은 값이 없는 달은 불러오는 중이 아니어도 총 건수를 내지 않는다', () => {
+    mocks.schedulePaused = true;
+    render(<ScheduleCalendarClient initialYmd={TODAY_YMD} />);
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
   });
 
   it('여러 날에 걸친 일정은 달력의 모든 날짜에 표시된다 (DIP C8)', () => {

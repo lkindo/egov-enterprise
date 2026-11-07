@@ -1,6 +1,6 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react-query';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 /**
@@ -55,6 +55,19 @@ describe('사용자 로그 — 셸 툴바의 총 건수', () => {
 
     await waitFor(() => expect(mocks.getUserLogs).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
+  });
+
+  // 독립 검토 반례: 오프라인이면 TanStack v5 는 조회를 멈추고(fetchStatus 'paused') isLoading 이 false 다 — 받은 값이 없으면 0건이 아니다.
+  it('오프라인으로 조회가 멈춰 받은 값이 없을 때도 총 건수를 내지 않는다', async () => {
+    mocks.getUserLogs.mockResolvedValue({ list: [], total: 7, totalPage: 1 });
+    onlineManager.setOnline(false);
+    try {
+      renderList();
+      await waitFor(() => expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음'));
+      expect(mocks.getUserLogs).not.toHaveBeenCalled();
+    } finally {
+      onlineManager.setOnline(true);
+    }
   });
 
   it('조회가 끝나면 서버가 센 총 건수를 낸다', async () => {
