@@ -10,7 +10,7 @@ import { useManualFormValidation } from '@/hooks/useManualFormValidation';
 import { useToast } from '@/app/components/ui/toast';
 import { extractErrorMessage, extractFieldErrors } from '@/app/actions/actionUtils';
 import { AdminPasswordChangeRequestSchema } from '@/types/generated-zod';
-import { PASSWORD_RULE_HELP, passwordRuleSchema } from '@/lib/validations/password-policy';
+import { PASSWORD_MAX_LENGTH, PASSWORD_RULE_HELP, passwordRuleSchema } from '@/lib/validations/password-policy';
 
 const LABELS = {
   newPassword: '새 비밀번호',
@@ -125,7 +125,7 @@ export function AdminPasswordResetForm({
           type="password"
           autoComplete="new-password"
           value={newPassword}
-          maxLength={20}
+          maxLength={PASSWORD_MAX_LENGTH}
           onChange={(event) => {
             validation.clearError('newPassword');
             setNewPassword(event.target.value);
@@ -149,7 +149,7 @@ export function AdminPasswordResetForm({
           type="password"
           autoComplete="new-password"
           value={confirmPassword}
-          maxLength={20}
+          maxLength={PASSWORD_MAX_LENGTH}
           onChange={(event) => {
             validation.clearError('confirmPassword');
             setConfirmPassword(event.target.value);

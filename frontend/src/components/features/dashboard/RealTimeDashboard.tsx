@@ -55,6 +55,11 @@ function parseStats(body: string): RealTimeStats | null {
 export function RealTimeDashboard() {
   const { client, isConnected } = useWebSocket();
   const [stats, setStats] = useState<RealTimeStats | null>(null);
+  // [2026-11-07 화면 용어 원장 검토] 연결 객체는 첫 연결 전에도 없다. 종전에는 그때도 '연결 끊김' 이라 말해, 연결을 여는
+  //   중인 첫 화면이 끊긴 것처럼 보였다. 이 구역에서 한 번이라도 연결된 뒤에만 끊겼다고 말한다(렌더 중 파생 상태 갱신).
+  const [hasConnected, setHasConnected] = useState(isConnected);
+  if (isConnected && !hasConnected) setHasConnected(true);
+  const connectionLabel = isConnected ? '실시간 연결됨' : hasConnected ? '연결 끊김' : '실시간 연결 중…';
 
   // 실시간 통계 업데이트
   const handleStatsUpdate = useCallback((data: RealTimeStats) => {
@@ -99,7 +104,7 @@ export function RealTimeDashboard() {
           isConnected ? "bg-green-500 animate-pulse" : "bg-gray-300"
         )} />
         <span className="text-sm font-bold text-muted-foreground" role="status" aria-live="polite">
-          {isConnected ? '실시간 연결됨' : '연결 끊김'}
+          {connectionLabel}
         </span>
         {isConnected && !stats && (
           <span className="text-sm text-muted-foreground">· 통계 수신 대기 중</span>

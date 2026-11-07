@@ -48,8 +48,11 @@ vi.mock('@/app/components/ui/confirm-modal', () => ({
 
 
 vi.mock('@/app/components/patterns/work-list-page', () => ({
-  WorkListPage: ({ actions, filter, children }: { actions?: ReactNode; filter?: ReactNode; children?: ReactNode }) => (
-    <main>{actions}{filter}{children}</main>
+  WorkListPage: ({ actions, filter, totalCount, children }: { actions?: ReactNode; filter?: ReactNode; totalCount?: number; children?: ReactNode }) => (
+    <main>
+      <output data-testid="shell-total-count">{totalCount === undefined ? '없음' : String(totalCount)}</output>
+      {actions}{filter}{children}
+    </main>
   ),
 }));
 
@@ -109,6 +112,29 @@ async function enterValidEvent(user: ReturnType<typeof userEvent.setup>) {
   fireEvent.change(fields.capacity, { target: { value: '20' } });
   return fields;
 }
+
+// [2026-11-07 화면 용어 원장 검토·독립 검토] 총계를 `eventsData?.total ?? 0` 으로 만들고 오류일 때만 비워, 조회가 끝나기 전
+//   셸 툴바가 '총 0건' 을 보이고 읽어 줬다. 받은 값이 없으면(조회 중·오프라인 일시 정지) 비운다.
+describe('EventManagementClient 셸 툴바의 총 건수', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('행사 목록을 받기 전에는 총 건수를 내지 않는다', async () => {
+    mocks.getEvents.mockReturnValue(new Promise(() => undefined));
+    renderClient();
+
+    await waitFor(() => expect(mocks.getEvents).toHaveBeenCalled());
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
+  });
+
+  it('행사 목록을 받으면 서버가 센 총 건수를 낸다', async () => {
+    mocks.getEvents.mockResolvedValue({ list: [], total: 3 });
+    renderClient();
+
+    await waitFor(() => expect(screen.getByTestId('shell-total-count')).toHaveTextContent('3'));
+  });
+});
 
 describe('EventManagementClient create validation', () => {
   beforeEach(() => {

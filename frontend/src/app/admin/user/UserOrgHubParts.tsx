@@ -27,6 +27,7 @@ import type { UserManage } from '@/types/foundation/user';
 import type { Department } from '@/services/foundation/system/DeptAdminService';
 import type { Column } from '@/app/components/ui/standard-data-table';
 import { toDisplayYmd } from '@/lib/format-date';
+import { userFacingErrorMessage } from '@/lib/safe-error-log';
 import type { FlattenedDept } from './departments/treeUtils';
 import { DeptPlacementControls } from './DeptPlacementControls';
 import { useAuth } from '@/contexts/AuthContext';
@@ -252,7 +253,8 @@ export function AbsenceStatusNotice({
         <Info size={14} className="shrink-0 text-destructive-emphasis" aria-hidden="true" />
         <p className="min-w-0 flex-1 text-[length:var(--font-size-body)] text-destructive-emphasis">
           부재 상태를 불러오지 못했습니다. 아래 목록의 부재 여부는 <strong>알 수 없음</strong>이며 정상이라는 뜻이 아닙니다.
-          {error instanceof Error ? ` (${error.message})` : ''}
+          {/* 서버가 준 사유만 붙인다 — axios 의 전송 원문은 안내가 아니다(safe-error-log). */}
+          {userFacingErrorMessage(error) ? ` (${userFacingErrorMessage(error)})` : ''}
         </p>
         <Button variant="outline" size="sm" onClick={onRetry} className="shrink-0 gap-1.5">
           <RefreshCcw size={14} aria-hidden="true" /> 다시 시도

@@ -430,7 +430,7 @@ export default function EventManagementClient() {
       breadcrumbItems={[{ label: '운영지원' }, { label: '행사관리' }]}
       filterStateKey="operation-events"
       // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
-      totalCount={isError ? undefined : totalItems}
+      totalCount={isError || eventsData === undefined ? undefined : totalItems}
       actions={canCreateEvent ? (
         <Button size="sm" onClick={handleOpenCreate} className="gap-2">
           <Plus size={16} aria-hidden="true" /> 행사 등록

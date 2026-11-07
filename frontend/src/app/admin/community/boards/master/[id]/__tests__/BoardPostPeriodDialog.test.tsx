@@ -97,7 +97,7 @@ describe('BoardPostPeriodDialog', () => {
     const { onConflict, onClose, onSaved } = renderDialog();
     fireEvent.change(end(), { target: { value: '2027-01-31' } });
     fireEvent.click(save());
-    expect(await screen.findByRole('alert')).toHaveTextContent('다른 사용자가 먼저 이 글을 고쳐 저장하지 않았습니다');
+    expect(await screen.findByRole('alert')).toHaveTextContent('다른 사용자가 먼저 이 글을 고쳐 저장해서, 이 변경은 저장하지 않았습니다.');
     expect(onConflict).toHaveBeenCalled();
     expect(onClose).not.toHaveBeenCalled();
     expect(onSaved).not.toHaveBeenCalled();

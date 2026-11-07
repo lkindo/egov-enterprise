@@ -147,6 +147,23 @@ describe('BoardRegistClient attachment contract', () => {
     expect((files[0] as File).name).toBe('evidence.txt');
   });
 
+  // [2026-11-07 화면 용어 원장 검토] 고정 aria-label('게시글 등록')이 보이는 '게시글 저장 중…' 을 덮었고 aria-busy 도 없어,
+  //   보조기술 사용자는 저장이 진행 중인지 듣지 못했다(actionRules.pending-action).
+  it('저장하는 동안 제출 단추는 보이는 대기 문구가 이름이고 aria-busy 를 단다', async () => {
+    let finish: (value: { success: boolean; redirect: string }) => void = () => undefined;
+    mocks.saveBoardArticle.mockReturnValue(new Promise((resolve) => { finish = resolve; }));
+    const user = userEvent.setup();
+    renderSubject();
+    fillRequiredFields();
+
+    await user.click(screen.getByRole('button', { name: '게시글 등록' }));
+
+    const pending = await screen.findByRole('button', { name: '게시글 저장 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    finish({ success: true, redirect: '/boards' });
+  });
+
   it('첨부가 없으면 files 항목을 싣지 않는다 (빈 업로드 회귀 방어)', async () => {
     const user = userEvent.setup();
     renderSubject();

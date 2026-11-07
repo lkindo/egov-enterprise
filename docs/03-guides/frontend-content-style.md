@@ -3,9 +3,9 @@
 - **Status:** Draft — 콘텐츠 소유자 승인 전 `blocked-input`
 - **Owner:** content-design — 담당자 미지정
 - **Reviewers:** product/UX, domain owner, accessibility, security/privacy — 담당자 미지정
-- **Review by:** 2026-12-15
-- **Last evidence review:** 2026-09-15
-- **Last norm review:** 2026-09-15 — 계약 수준 규범 전체(상태·action·형식·용어·규범 원천·승인 경계), [DEC-OPS-100](../../.agent/memory/decisions.md)
+- **Review by:** 2027-02-05
+- **Last evidence review:** 2026-11-07 — 파일럿 8개 route 의 정적 소스 재검토(결함 14건 수정, 열린 지적 1건)
+- **Last norm review:** 2026-11-07 — 규범 원천(이 가이드·업무 화면 문법 카탈로그·헌법·ADR)의 2026-09-15 이후 변경과 원장의 상태·action·형식·용어 대조, 바뀐 규범 없음. 직전: 2026-09-15 계약 수준 규범 전체, [DEC-OPS-100](../../.agent/memory/decisions.md)
 - **URL-state policy review:** 2026-09-05 — [ADR-0009](../02-architecture/decisions/ADR-0009-controlled-url-search-state.md)
 - **Structured inventory:** [`config/frontend-visible-terms.json`](../../config/frontend-visible-terms.json)
 

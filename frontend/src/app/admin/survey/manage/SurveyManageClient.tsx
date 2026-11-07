@@ -149,7 +149,7 @@ export default function SurveyManageClient({ embedded = false }: { embedded?: bo
       description="조직 내 의견 수렴·투표를 조회하고 등록합니다."
       breadcrumbItems={[{ label: '설문관리' }, { label: '여론조사' }]}
       filterStateKey="survey-manage"
-      totalCount={isError ? undefined : total}
+      totalCount={isError || data === undefined ? undefined : total}
       actions={
         <>
           {/* 종전에는 setParams(prev => ({...prev})) 로 동일 내용 객체만 새로 만들었다.

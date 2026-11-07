@@ -94,8 +94,10 @@ public class UserLogApiController {
         // [2026-09-15 DEC-OPS-099] 출력 건수는 측정되지 않는다 — ProcessTypeCode 가 채우지 않아 otpt_cnt 는 늘 0 이다.
         //   화면은 미측정으로 고지하는데 엑셀만 숫자를 쓰면 "출력이 한 번도 없었다" 로 읽힌다(화면 용어 원장의
         //   unknownAsZero 금지). 머리글이 미측정을 밝히고 칸은 비운다. 측정이 생기면 둘을 함께 되돌린다.
+        // [2026-11-07 화면 용어 원장 검토] 요청자 칸은 사용자 고유 ID(tb_user_log.dmnd_user_id → tb_user_info.esntl_id)다.
+        //   웹·시스템 로그 내보내기의 같은 머리글 '요청자 ID' 는 로그인 ID 라, 같은 이름이 다른 식별자를 가리켰다.
         return XlsxExport.attachment("user-logs.xlsx", "user-logs",
-                new String[]{"발생일자", "요청자 ID", "성명", "서비스명", "메서드명", "등록", "수정", "조회", "삭제", "출력(미측정)", "오류"},
+                new String[]{"발생일자", "요청자 고유 ID", "성명", "서비스명", "메서드명", "등록", "수정", "조회", "삭제", "출력(미측정)", "오류"},
                 rows,
                 (row, dto) -> {
                     row.createCell(0).setCellValue(XlsxExport.nullSafe(dto.ocrnYmd()));

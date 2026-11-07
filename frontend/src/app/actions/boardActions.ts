@@ -42,7 +42,7 @@ function describeSaveFailure(error: unknown): ActionResponse {
   if (status === 409) {
     // [2026-10-23 ADR-0040 결정 10] 게시글 수정은 읽은 버전을 싣는다 — 그 사이 다른 사람이 고쳤으면 덮어쓰지 않는다.
     //   서버 안내('다시 시도')는 같은 버전으로 다시 보내면 또 거부되므로 다음 행동을 이 화면의 말로 바꾼다.
-    return { success: false, message: '다른 사용자가 먼저 이 글을 고쳐 저장하지 않았습니다. 글을 다시 열어 최신 내용을 확인한 뒤 고쳐 주세요.' };
+    return { success: false, message: '다른 사용자가 먼저 이 글을 고쳐 저장해서, 이 변경은 저장하지 않았습니다. 글을 다시 열어 최신 내용을 확인한 뒤 고쳐 주세요.' };
   }
   if (status === 413) {
     return { success: false, message: '첨부 파일이 허용 크기를 넘습니다. 파일 크기를 줄여 다시 시도해 주세요.' };

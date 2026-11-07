@@ -249,6 +249,32 @@ describe('UserOrgHubClient 부재 관리 배선', () => {
     expect(within(rowOf('김부재')).queryByRole('button')).toBeNull();
   });
 
+  // [2026-11-07 화면 용어 원장 검토] 실패만 걸러, 조회가 끝나기 전에는 모든 행이 '정상' 이고 '부재 처리' 단추가 켜져 있었다.
+  it('부재 조회가 끝나기 전에는 정상이라고 말하지 않고 조치 단추도 내지 않는다', async () => {
+    vi.mocked(userAbsenceAdminService.getAbsences).mockReturnValue(new Promise(() => undefined) as never);
+    renderAbsenceTab();
+
+    await screen.findByText('김부재');
+    await waitFor(() => expect(userAbsenceAdminService.getAbsences).toHaveBeenCalledTimes(1));
+    for (const name of ['김부재', '이복귀', '박무기록']) {
+      expect(within(rowOf(name)).getByText('알 수 없음')).toBeInTheDocument();
+      expect(within(rowOf(name)).queryByText('정상')).toBeNull();
+      expect(within(rowOf(name)).queryByRole('button')).toBeNull();
+    }
+  });
+
+  it('조회 실패 경고는 axios 의 전송 원문을 덧붙이지 않는다', async () => {
+    vi.mocked(userAbsenceAdminService.getAbsences).mockRejectedValue(
+      Object.assign(new Error('Request failed with status code 502'), { isAxiosError: true, response: { status: 502, data: {} } }),
+    );
+    renderAbsenceTab();
+
+    const alert = await screen.findByRole('alert');
+    expect(alert).toHaveTextContent(/부재 상태를 불러오지 못했습니다/);
+    expect(alert).not.toHaveTextContent('status code');
+    expect(alert.textContent).not.toMatch(/\(\s*\)/);
+  });
+
   it('부재 표시는 반대 값으로 한 번만 부르고, pending 동안 잠기며(aria-busy), 실패는 토스트로 드러낸다', async () => {
     const user = userEvent.setup();
     const gate = deferred<void>();

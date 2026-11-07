@@ -481,8 +481,11 @@ describe('BoardRegistClient 본문 미디어 저장', () => {
     expect(editor()).toHaveProperty('readOnly', true);
     expect(screen.getByLabelText('본문 미디어 선택')).toBeDisabled();
     expect(screen.getByLabelText('일반 첨부 선택')).toBeDisabled();
-    expect(screen.getByRole('button', { name: '게시글 등록' })).toBeDisabled();
-    submit();
+    // [2026-11-07] 저장 중에는 보이는 대기 문구가 단추 이름이다(고정 aria-label 을 걷었다) — 이름으로 대기 상태를 듣는다.
+    const pending = screen.getByRole('button', { name: '게시글 저장 중…' });
+    expect(pending).toBeDisabled();
+    expect(pending).toHaveAttribute('aria-busy', 'true');
+    fireEvent.submit(pending.closest('form')!);
     expect(mocks.saveBoardArticle).toHaveBeenCalledTimes(1);
     expect(editor()).toHaveValue(content);
     await act(async () => finish({ success: true, redirect: '/boards' }));

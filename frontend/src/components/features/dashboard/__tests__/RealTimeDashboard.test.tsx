@@ -146,11 +146,25 @@ describe('RealTimeDashboard', () => {
   });
 
   it('연결이 끊기면 연결 상태만 말하고 대기 문구를 덧붙이지 않는다', () => {
+    const view = render(<RealTimeDashboard />);
+    expect(screen.getByRole('status')).toHaveTextContent('실시간 연결됨');
+    subscribe.mockClear();
+
     connection.isConnected = false;
-    render(<RealTimeDashboard />);
+    view.rerender(<RealTimeDashboard />);
 
     expect(screen.getByRole('status')).toHaveTextContent('연결 끊김');
     expect(screen.queryByText('· 통계 수신 대기 중')).not.toBeInTheDocument();
+    expect(subscribe).not.toHaveBeenCalled();
+  });
+
+  // [2026-11-07 화면 용어 원장 검토] 첫 연결 전에도 '연결 끊김' 이라 말했다 — 연결을 여는 중이지 끊긴 것이 아니다.
+  it('첫 연결 전에는 끊겼다고 말하지 않고 연결 중이라고 말한다', () => {
+    connection.isConnected = false;
+    render(<RealTimeDashboard />);
+
+    expect(screen.getByRole('status')).toHaveTextContent(/^실시간 연결 중…$/);
+    expect(screen.queryByText('연결 끊김')).not.toBeInTheDocument();
     expect(subscribe).not.toHaveBeenCalled();
   });
 
