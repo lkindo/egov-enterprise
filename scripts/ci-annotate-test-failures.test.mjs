@@ -1,4 +1,4 @@
-import test from 'node:test';
+import test, { after } from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -14,11 +14,24 @@ import {
   extractDetail,
 } from './ci-annotate-test-failures.mjs';
 
+// [2026-11-07] 이 파일이 만든 임시 폴더는 모든 시험이 끝난 뒤 지운다 — 지우지 않아 %TEMP% 에 수만 개가 쌓였다(pre-push 지연 실측). 저장소를 닫는 시험별 정리(t.after)가 먼저 끝난 뒤라 Windows 에서도 지울 수 있다. 다른 프로세스가 아직 쥐고 있어 지우지 못하면 시험을 실패시키지 않고 남긴다(정리는 최선 노력이다).
+const temporaryRoots = [];
+function temporaryDirectory(prefix) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+after(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    try { fs.rmSync(root, { recursive: true, force: true, maxRetries: 3 }); } catch { /* 최선 노력 */ }
+  }
+});
+
 const REPO_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const CI_WORKFLOW = path.join(REPO_ROOT, '.github', 'workflows', 'ci.yml');
 
 function withResults(files) {
-  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'ci-annotate-'));
+  const root = temporaryDirectory('ci-annotate-');
   for (const [relative, content] of Object.entries(files)) {
     const target = path.join(root, relative);
     fs.mkdirSync(path.dirname(target), { recursive: true });

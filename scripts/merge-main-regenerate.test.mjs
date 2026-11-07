@@ -3,7 +3,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
-import test from 'node:test';
+import test, { after } from 'node:test';
 
 import {
   GENERATORS,
@@ -24,6 +24,19 @@ import { DECISION_AREA_INDEXES, GAP_DETAIL, GAP_INDEX } from './decision-indexes
 import { SCREEN_REGISTRY_INPUTS, SCREEN_REGISTRY_OUTPUT } from './generate-screen-registry.mjs';
 import { slotRegistryOutputs } from './slot-registry.mjs';
 import { approvalCensusSha256 } from './ui-url-state-approval-binding.mjs';
+
+// [2026-11-07] 이 파일이 만든 임시 폴더는 모든 시험이 끝난 뒤 지운다 — 지우지 않아 %TEMP% 에 수만 개가 쌓였다(pre-push 지연 실측). 저장소를 닫는 시험별 정리(t.after)가 먼저 끝난 뒤라 Windows 에서도 지울 수 있다. 다른 프로세스가 아직 쥐고 있어 지우지 못하면 시험을 실패시키지 않고 남긴다(정리는 최선 노력이다).
+const temporaryRoots = [];
+function temporaryDirectory(prefix) {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+after(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    try { fs.rmSync(root, { recursive: true, force: true, maxRetries: 3 }); } catch { /* 최선 노력 */ }
+  }
+});
 
 const row = (id, text = id) => `| ${id} | accepted | ${text} |`;
 const conflict = ({ ours, base, theirs }) => [
@@ -162,7 +175,7 @@ test('the screen-registry step reads every input the generator declares and writ
 // ------------------------------------------------------------------ 실제 git 병합
 
 function repo() {
-  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'merge-main-regenerate-'));
+  const dir = temporaryDirectory('merge-main-regenerate-');
   const git = (...args) => {
     const result = spawnSync('git', args, { cwd: dir, encoding: 'utf8' });
     assert.equal(result.status, 0, `${args.join(' ')}\n${result.stderr}`);

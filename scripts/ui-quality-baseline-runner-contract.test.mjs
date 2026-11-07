@@ -13,7 +13,7 @@ import {
 import { spawnSync } from 'node:child_process';
 import { dirname, join, resolve } from 'node:path';
 import { tmpdir } from 'node:os';
-import test from 'node:test';
+import test, { after } from 'node:test';
 import { fileURLToPath } from 'node:url';
 
 import * as baselineCore from '../frontend/scripts/ui-quality-baseline-core.mjs';
@@ -81,6 +81,19 @@ import {
   readBaselineBuildAttestationFile,
   validateExecutionPreflight as validateRunnerExecutionPreflight,
 } from '../frontend/scripts/ui-quality-baseline-runner.mjs';
+
+// [2026-11-07] 이 파일이 만든 임시 폴더는 모든 시험이 끝난 뒤 지운다 — 지우지 않아 %TEMP% 에 수만 개가 쌓였다(pre-push 지연 실측). 저장소를 닫는 시험별 정리(t.after)가 먼저 끝난 뒤라 Windows 에서도 지울 수 있다. 다른 프로세스가 아직 쥐고 있어 지우지 못하면 시험을 실패시키지 않고 남긴다(정리는 최선 노력이다).
+const temporaryRoots = [];
+function temporaryDirectory(prefix) {
+  const root = mkdtempSync(join(tmpdir(), prefix));
+  temporaryRoots.push(root);
+  return root;
+}
+after(() => {
+  for (const root of temporaryRoots.splice(0)) {
+    try { rmSync(root, { recursive: true, force: true, maxRetries: 3 }); } catch { /* 최선 노력 */ }
+  }
+});
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const manifest = JSON.parse(readFileSync(join(repoRoot, 'config', 'ui-quality-scenarios.json'), 'utf8'));
@@ -306,7 +319,7 @@ function assertExactBoundLfAttributes(source) {
     assert.ok(attributes.includes('eol=lf'), `${relativePath} must force LF`);
   }
 
-  const fixtureRoot = mkdtempSync(join(tmpdir(), 'uiq-gitattributes-'));
+  const fixtureRoot = temporaryDirectory('uiq-gitattributes-');
   const initialized = spawnSync('git', ['init', '--quiet'], {
     cwd: fixtureRoot,
     encoding: 'utf8',
@@ -334,7 +347,7 @@ function assertExactBoundLfAttributes(source) {
 }
 
 function createPublicationFixture(label) {
-  const root = mkdtempSync(join(tmpdir(), `uiq-${label}-`));
+  const root = temporaryDirectory(`uiq-${label}-`);
   const canonicalRoot = join(root, 'ui-quality-baseline');
   const stagingRoot = join(root, '.staging-attempt');
   const historyRoot = join(root, 'ui-quality-baseline-history', 'pre-attempt-current');
@@ -2064,7 +2077,7 @@ test('production snapshot selects explicit build inputs and rejects private, sec
 });
 
 test('committed source capture reads a binary Git blob larger than 1 MiB without truncation', (t) => {
-  const fixtureRoot = mkdtempSync(join(tmpdir(), 'uiq-committed-blob-'));
+  const fixtureRoot = temporaryDirectory('uiq-committed-blob-');
   assert.equal(dirname(fixtureRoot), resolve(tmpdir()));
   t.after(() => rmSync(fixtureRoot, { recursive: true, force: true }));
   const git = (args, input) => {
@@ -2224,7 +2237,7 @@ test('build attestation binds canonical envelope bytes to source and exact image
 
 test('build attestation file reader allows only bounded regular non-symlink files outside the repository', () => {
   const fixture = baselineBuildAttestationFixture();
-  const boundaryRoot = mkdtempSync(join(tmpdir(), 'uiq-build-attestation-'));
+  const boundaryRoot = temporaryDirectory('uiq-build-attestation-');
   const repositoryRoot = join(boundaryRoot, 'repository');
   const attestationPath = join(boundaryRoot, 'build-attestation.json');
   mkdirSync(repositoryRoot);
@@ -2980,7 +2993,7 @@ test('full-run finalization leaves the historical root untouched when finish ver
 });
 
 test('run workspace creation is physically bounded to normal repository directories', () => {
-  const boundaryRoot = mkdtempSync(join(tmpdir(), 'uiq-workspace-safe-'));
+  const boundaryRoot = temporaryDirectory('uiq-workspace-safe-');
   const artifactRoot = join(boundaryRoot, 'build', 'reports', 'ui-quality-baseline');
   const executionId = '00000000-0000-4000-8000-000000000013';
 
@@ -3002,8 +3015,8 @@ test('run workspace creation is physically bounded to normal repository director
 test('run workspace rejects path escape, non-directory ancestors, and actual junction or directory symlink ancestors', () => {
   const executionId = '00000000-0000-4000-8000-000000000013';
 
-  const escapedBoundary = mkdtempSync(join(tmpdir(), 'uiq-workspace-escape-boundary-'));
-  const escapedTarget = mkdtempSync(join(tmpdir(), 'uiq-workspace-escape-target-'));
+  const escapedBoundary = temporaryDirectory('uiq-workspace-escape-boundary-');
+  const escapedTarget = temporaryDirectory('uiq-workspace-escape-target-');
   assertArtifactBoundaryFailure(() => baselineCore.createRunWorkspace({
     boundaryRoot: escapedBoundary,
     artifactRoot: join(escapedTarget, 'ui-quality-baseline'),
@@ -3012,7 +3025,7 @@ test('run workspace rejects path escape, non-directory ancestors, and actual jun
   }));
   assert.deepEqual(readdirSync(escapedTarget), []);
 
-  const fileBoundary = mkdtempSync(join(tmpdir(), 'uiq-workspace-file-'));
+  const fileBoundary = temporaryDirectory('uiq-workspace-file-');
   writeFileSync(join(fileBoundary, 'build'), 'not-a-directory\n', 'utf8');
   assertArtifactBoundaryFailure(() => baselineCore.createRunWorkspace({
     boundaryRoot: fileBoundary,
@@ -3021,8 +3034,8 @@ test('run workspace rejects path escape, non-directory ancestors, and actual jun
     diagnostic: false,
   }));
 
-  const linkedBoundary = mkdtempSync(join(tmpdir(), 'uiq-workspace-link-boundary-'));
-  const linkedTarget = mkdtempSync(join(tmpdir(), 'uiq-workspace-link-target-'));
+  const linkedBoundary = temporaryDirectory('uiq-workspace-link-boundary-');
+  const linkedTarget = temporaryDirectory('uiq-workspace-link-target-');
   mkdirSync(join(linkedBoundary, 'build'));
   createDirectoryLink(linkedTarget, join(linkedBoundary, 'build', 'reports'));
   assertArtifactBoundaryFailure(() => baselineCore.createRunWorkspace({
@@ -3035,8 +3048,8 @@ test('run workspace rejects path escape, non-directory ancestors, and actual jun
 });
 
 test('finalization rejects an actual linked ancestor before callbacks or outside publication', () => {
-  const boundaryRoot = mkdtempSync(join(tmpdir(), 'uiq-finalize-link-boundary-'));
-  const linkedTarget = mkdtempSync(join(tmpdir(), 'uiq-finalize-link-target-'));
+  const boundaryRoot = temporaryDirectory('uiq-finalize-link-boundary-');
+  const linkedTarget = temporaryDirectory('uiq-finalize-link-target-');
   mkdirSync(join(boundaryRoot, 'build'));
   mkdirSync(join(linkedTarget, '.staging-attempt'));
   writeFileSync(join(linkedTarget, '.staging-attempt', 'staged-marker.json'), '{}\n', 'utf8');
@@ -3062,10 +3075,10 @@ test('finalization rejects an actual linked ancestor before callbacks or outside
 });
 
 test('finalization revalidates the physical boundary after marker preparation to close TOCTOU replacement', () => {
-  const boundaryRoot = mkdtempSync(join(tmpdir(), 'uiq-finalize-toctou-boundary-'));
+  const boundaryRoot = temporaryDirectory('uiq-finalize-toctou-boundary-');
   const reportRoot = join(boundaryRoot, 'build', 'reports');
   const displacedReportRoot = join(boundaryRoot, 'displaced-reports');
-  const linkedTarget = mkdtempSync(join(tmpdir(), 'uiq-finalize-toctou-target-'));
+  const linkedTarget = temporaryDirectory('uiq-finalize-toctou-target-');
   const stagingRoot = join(reportRoot, '.staging-attempt');
   const publishedRoot = join(reportRoot, 'ui-quality-baseline');
   const historyRoot = join(reportRoot, 'ui-quality-baseline-history', 'pre-attempt-current');
