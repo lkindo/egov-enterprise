@@ -289,6 +289,23 @@ function isWave6Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+/*
+  웨이브 7(2026-11-08, DEC-OPS-407): 결재 기안은 독립 기안 진입을 지켜 정본 유지(retain-canonical)로 처분을 바꿨다 — 통합하면
+  결재함에 새 주소 키가 필요하다. 함께 남았던 Q&A 옛 경로의 통합은 기존 진입을 정확히 보존할 수 없어 보류했다(proposed).
+*/
+const WAVE7_APPROVED_ROUTES = ['/approvals/draft'];
+const WAVE7_DISPOSITIONS = { '/approvals/draft': 'retain-canonical' };
+const WAVE7_REVIEWER = 'lkindo (2026-11-08 사용자 승인 · DEC-OPS-407)';
+
+function isWave7Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE7_REVIEWER
+    && approval.reviewedAt === '2026-11-08'
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 const APPROVED_ROUTES = [
   ...WAVE1_APPROVED_ROUTES,
   ...WAVE2_APPROVED_ROUTES,
@@ -296,6 +313,7 @@ const APPROVED_ROUTES = [
   ...WAVE4_APPROVED_ROUTES,
   ...WAVE5_APPROVED_ROUTES,
   ...WAVE6_APPROVED_ROUTES,
+  ...WAVE7_APPROVED_ROUTES,
 ].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
@@ -399,6 +417,18 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         && record.capabilityReview === 'verified'
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave4Approval);
+    }
+    if (WAVE7_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.disposition === WAVE7_DISPOSITIONS[record.route]
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && record.effectiveMenuExposureReview === 'verified'
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave7Approval)
+        && record.approvals.securityPrivacy.evidence.some((entry) => entry.includes('처분 변경분'));
     }
     if (WAVE6_APPROVED_ROUTES.includes(record.route)) {
       return shared
