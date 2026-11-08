@@ -607,6 +607,12 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   // ③ 시연 밖에서 지워지는 시험 파일만 적거나, 기여에 시험 파일을 섞으면 허용하지 않는다(Codex 20차 반례).
   assert.match(errorsWith((sample) => { sample.evidence = [DEMO_ONLY_TEST]; }), leak(HUB));
   assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, DEMO_ONLY_TEST]; }), leak(HUB));
+  //   대소문자만 바꾼 시험 경로도 같다 — 대소문자를 가리지 않는 디스크에서는 그 표기로 파일이 열린다(Codex 23차).
+  assert.match(errorsWith((sample) => {
+    sample.evidence = [CONTRIBUTION, 'frontend/src/app/admin/patterns/__TESTS__/pattern-gallery.TEST.tsx'];
+  }), leak(HUB));
+  //   시연 경로 안에서 대소문자만 다른 표기는 투영 판정을 통과하므로 디스크의 실제 이름과 대조해 막는다.
+  assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, CONTRIBUTION.replace('hub-tabs-monitoring', 'Hub-Tabs-Monitoring')]; }), leak(HUB));
   // ④ 같은 기여를 그 슬롯 소비자를 싣지 않는 화면에 적으면 그 화면에는 붙지 않는다.
   const POLICIES = '/admin/system/policies';
   assert.match(errorsWith((sample, copy) => {
@@ -626,8 +632,9 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   assert.match(errorsWith(() => {}, generated), leak(HUB));
 });
 
-// 화면이 슬롯 소비자를 '싣는다'는 판정은 모듈을 싣는 참조만 센다 — 타입 전용·require.resolve 는 싣지 않는다(Codex 22차).
-test('a page loads a slot consumer only through a static import, re-export or literal dynamic import', (t) => {
+// 화면이 슬롯 소비자를 '싣는다'는 판정은 바인딩이 있는 정적 값 import 만 센다 — 타입 전용(재수출 포함)·require.resolve·실행 여부를 알 수
+//   없는 동적 import·바인딩 없는 import 는 화면이 그 모듈을 그린다는 근거가 아니다(Codex 22·23차).
+test('a page loads a slot consumer only through a bound static value import', (t) => {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'route-page-loads-'));
   t.after(() => fs.rmSync(repoRoot, { recursive: true, force: true }));
   const page = 'frontend/src/app/sample/page.tsx';
@@ -640,9 +647,16 @@ test('a page loads a slot consumer only through a static import, re-export or li
   };
   assert.equal(loads("import SampleShell from './SampleShell';\n"), true);
   assert.equal(loads("import SampleShell from '@/app/sample/SampleShell';\n"), true);
-  assert.equal(loads("export { default } from './SampleShell';\n"), true);
-  assert.equal(loads("const SampleShell = dynamic(() => import('./SampleShell'));\n"), true);
+  assert.equal(loads("import {\n  default as SampleShell,\n} from './SampleShell';\n"), true);
+  assert.equal(loads("export { default } from './SampleShell';\n"), false);
+  assert.equal(loads("export { type default as SampleShell } from './SampleShell';\n"), false);
+  assert.equal(loads("const SampleShell = dynamic(() => import('./SampleShell'));\n"), false);
+  assert.equal(loads("if (false) { void import('./SampleShell'); }\n"), false);
+  // 줄 머리가 다른 모듈의 정적 import 여도 그 줄의 동적 import 는 세지 않는다(참조 종류로 가른다).
+  assert.equal(loads("import Other from './Other'; if (false) { void import('./SampleShell'); }\n"), false);
+  assert.equal(loads("import './SampleShell';\n"), false);
   assert.equal(loads("import type { Props } from './SampleShell';\n"), false);
+  assert.equal(loads("import { type Props } from './SampleShell';\n"), false);
   assert.equal(loads("const where = require.resolve('./SampleShell');\n"), false);
   assert.equal(loads("const SampleShell = require('./SampleShell');\n"), false);
   assert.equal(loads("import Other from './Other';\n"), false);

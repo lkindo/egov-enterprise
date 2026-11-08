@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
 import { compositionProfiles, presetIds } from './composition-profiles.mjs';
 import { parseModuleReferences } from './frontend-module-graph.mjs';
-import { candidatePaths } from './frontend-module-resolver.mjs';
+import { candidatePaths, repositoryFileLookup } from './frontend-module-resolver.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
 import { slotConsumerFiles, slotPathKind } from './slot-registry.mjs';
@@ -681,9 +681,10 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
   }
 }
 
-const TEST_SOURCE = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
-// 모듈을 싣는 참조만 센다. 타입 전용·require.resolve 처럼 싣지 않는 참조와 CommonJS require 는 화면이 그 모듈을 그린다는 근거가 아니다.
-const LOADING_REFERENCE_KINDS = new Set(['static-import', 're-export', 'dynamic-import']);
+// 대소문자를 가리지 않는다 — 대소문자를 가리지 않는 디스크에서 `__TESTS__`·`.TEST.tsx` 로 시험 파일을 숨기지 못하게 한다(Codex 23차).
+const TEST_SOURCE = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/i;
+// 바인딩이 있는 정적 값 import 의 첫 줄. 바인딩 없는 `import './x'` 는 모듈을 실행만 하고 화면에 그리지 않는다.
+const BOUND_IMPORT_LINE = /^\s*import\s+(?!['"])/;
 
 /** 저장소 기준 정규 경로인가 — 역슬래시·빈 조각·`.`·`..` 가 없다. 경로 판정(투영·슬롯)이 원문 접두사를 보므로 우회 표기를 막는다. */
 function isCanonicalRepositoryPath(file) {
@@ -691,18 +692,25 @@ function isCanonicalRepositoryPath(file) {
     && file.split('/').every((segment) => segment !== '' && segment !== '.' && segment !== '..');
 }
 
-/** 화면 page 소스가 모듈을 싣는 참조(정적 import·re-export·동적 import)로 직접 싣는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다. */
+/**
+ * 화면 page 소스가 바인딩이 있는 정적 값 import 로 직접 싣는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다. 그 밖의 참조 —
+ * 타입 전용(재수출의 `{ type … }` 포함)·re-export·동적 import(실행 여부를 알 수 없다)·require·require.resolve·바인딩 없는 import — 는
+ * 화면이 그 모듈을 그린다는 근거로 세지 않는다(Codex 22·23차). 판정할 수 없으면 허용하지 않는 쪽이다.
+ */
 export function pageLoadsModule(repoRoot, pageSource, target) {
   const importer = path.join(repoRoot, pageSource);
   const wanted = path.resolve(repoRoot, target);
+  let source;
   let references;
   try {
-    ({ references } = parseModuleReferences(fs.readFileSync(importer, 'utf8'), pageSource));
+    source = fs.readFileSync(importer, 'utf8');
+    ({ references } = parseModuleReferences(source, pageSource));
   } catch {
     return false;
   }
-  return references.some(({ kind, specifier, typeOnly }) => {
-    if (typeOnly || !LOADING_REFERENCE_KINDS.has(kind)) return false;
+  const lines = source.split(/\r?\n/);
+  return references.some(({ kind, specifier, typeOnly, line }) => {
+    if (typeOnly || kind !== 'static-import' || !BOUND_IMPORT_LINE.test(lines[line - 1] ?? '')) return false;
     const base = specifier.startsWith('@/') ? path.join(repoRoot, 'frontend', 'src', specifier.slice(2))
       : specifier.startsWith('./') || specifier.startsWith('../') ? path.resolve(path.dirname(importer), specifier) : null;
     return base !== null && candidatePaths(base).includes(wanted);
@@ -714,8 +722,9 @@ export function pageLoadsModule(repoRoot, pageSource, target) {
  * 붙일 때뿐이다. 원본 저장소(모든 시작 구성의 투영을 아는 곳)에서 다음을 모두 만족해야 한다.
  * - 역량의 증거가 모두 정규 경로의, 시험이 아닌 frontend/src 파일이고, 시연은 싣지만 시연 밖의 어떤 시작 구성도 싣지 않는다(화면 제외
  *   경로로 계산한다). 공통 파일(허브 셸·배지)을 적으면 허용하지 않는다 — 표본이 공통 파일에 있으면 실제로 실린다(2026-11-08 허브 승인
- *   철회). `showcase/../../app/…` 처럼 시연 경로를 거쳐 공통 파일을 가리키는 표기도 거부한다(Codex 22차).
- * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 모듈을 싣는 참조로 직접 싣는다.
+ *   철회). `showcase/../../app/…` 처럼 시연 경로를 거쳐 공통 파일을 가리키는 표기도, 디스크의 이름과 대소문자가 다른 표기도 거부한다
+ *   (Codex 22·23차).
+ * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 정적 값 import 로 직접 싣는다.
  *   지워지는 시험 파일이나 다른 화면 슬롯의 기여만으로는 이 화면에 무엇이 붙는지 말하지 않는다(Codex 20차 반례).
  * 생성물은 자기 구성 하나만 알아 판정할 수 없으므로 허용하지 않는다 — 생성물의 소유는 UNVERIFIED 라 이 가드에 걸리지도 않는다.
  */
@@ -729,8 +738,10 @@ function demoContributionRemovedOutsideDemo(capability, entry, repository, nonDe
     const shipping = directProjectionProfiles(file, projections);
     return shipping.includes('demo') && !shipping.some((profile) => nonDemoPresets.includes(profile));
   };
+  // 디스크의 실제 이름과 대소문자까지 같은 파일만 받는다(대소문자를 가리지 않는 디스크에서도 같은 판정).
+  const exactFile = repositoryFileLookup(repository.repoRoot);
   if (!evidence.every((file) => isNonemptyString(file) && isCanonicalRepositoryPath(file) && file.startsWith('frontend/src/')
-    && !TEST_SOURCE.test(file) && isFile(path.join(repository.repoRoot, file)) && shipsOnlyInDemo(file))) return false;
+    && !TEST_SOURCE.test(file) && exactFile(path.resolve(repository.repoRoot, file)) === 'exact' && shipsOnlyInDemo(file))) return false;
   return evidence.some((file) => {
     let kind;
     try {
