@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "ca2e1b7cccf900a4bf4254cb1f63eb83ba914c1c42671a59dc2aead8f57db062"
+    "sha256": "efce6263702f4c5a7b1ddd3a3c0716aac37416f752da5982aedf373737b94905"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -3669,20 +3669,48 @@
     },
     {
       "route": "/admin/system/monitoring/hub",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-09 사용자 승인 · DEC-OPS-409)",
+          "reviewedAt": "2026-11-09",
+          "evidence": [
+            "frontend/src/app/admin/system/monitoring/hub/page.tsx — MonitoringHubClient 를 렌더하는 로그·상태 허브다. 메뉴 3개(9040310·9040320·9040330)가 ?tab=security|system|observability 로 가리킨다(config/project-composer-menus.json)",
+            "config/ui-route-capabilities.json routes[/admin/system/monitoring/hub] — 화면은 다섯 구성 모두에 남는다(directProjectionProfiles). profileOwners 를 다섯 구성으로 정했다 — 기능이 탭·패널을 기여하는 허브 셸 선례(/admin/collaboration, /admin/stats)와 같다",
+            "monitoring.sample-widgets(status demo)는 시연 기능(config/modules/showcase.json owns.frontend)의 HarnessAtlasPanels.tsx 와 hub-tabs-monitoring 기여에만 있다 — 2026-11-09 공통 가동 상태 탭(MonitoringHubClient)의 고정 배열 표본(추세·다차원 상태)을 하네스 탭으로 옮겼다. 증거가 시험이 아닌 시연 전용 파일이고 그 기여의 슬롯 소비자를 이 화면 page 가 import 하는지 계약이 매번 계산한다(scripts/ui-route-capabilities-contract.mjs demoContributionRemovedOutsideDemo)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-09 사용자 승인 · DEC-OPS-409)",
+          "reviewedAt": "2026-11-09",
+          "evidence": [
+            "docs/01-product/information-architecture.md §8.2 retain-canonical — 운영 현황·감사 조사 과업(journeys operations-status, audit-privacy-investigation)의 terminal route 이고 approved nav node(메뉴 3개)가 있다",
+            "처분은 그대로(retain-canonical)이고, 남아 있던 시작 구성 소유 미확인만 정했다(DEC-OPS-404·408 보류 → DEC-OPS-409). 표본을 시연 기여로 옮겨 시연 밖 구성의 가동 상태 탭에는 표본이 없다(frontend/src/app/admin/system/monitoring/__tests__/MonitoringHubClient.test.tsx)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-09 사용자 승인 · DEC-OPS-409)",
+          "reviewedAt": "2026-11-09",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/monitoring/hub]=OPS_READ·SYS_LOG_READ·WEB_LOG_READ·LOGIN_LOG_READ — 화면 진입과 탭 권한을 바꾸지 않는다(AGENTS H3)",
+            "개인정보 검토 범위는 처분 변경분이다 — 옮긴 표본은 서버를 조회하지 않는 고정 배열이고(레이더의 가용성도 health 응답 대신 고정값이다) 개인정보를 다루지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-09 사용자 승인 · DEC-OPS-409)",
+          "reviewedAt": "2026-11-09",
+          "evidence": [
+            "옮긴 표본은 같은 제목(h4 '추세 · 다차원 상태(미연동)')·샘플 배지·차트 구성을 하네스 탭 안에서 유지하고, 가동 상태 탭은 그 블록만 빠진다. 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {

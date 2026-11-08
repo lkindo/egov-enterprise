@@ -8508,7 +8508,11 @@
         "view-status"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8601,13 +8605,10 @@
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-11-09",
           "owner": "product/UX + domain owner",
           "evidence": [
-            "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
             "frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx",
-            "frontend/src/app/admin/system/monitoring/components/MonitoringPanels.tsx",
-            "frontend/src/app/admin/system/monitoring/hub/page.tsx",
             "frontend/src/extensions/showcase/hub-tabs-monitoring.ts"
           ]
         }
@@ -8618,14 +8619,7 @@
         "frontend/src/app/admin/system/monitoring/hub/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "profileOwners"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining field (profileOwners): the sample widgets (monitoring.sample-widgets) come from the demo-only showcase feature and do not ship in non-demo presets, but the ledger has one row per route and cannot record feature-level ownership, so the owner held it on 2026-11-08 (DEC-OPS-404). roles and journeys were confirmed the same day."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/policies",

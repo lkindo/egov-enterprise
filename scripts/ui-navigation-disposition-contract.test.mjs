@@ -309,7 +309,7 @@ function isWave7Approval(approval) {
 /*
   웨이브 8(2026-11-08, DEC-OPS-408): 옛 camelCase 별칭 넷을 퇴역 후보로 승인했다(소유자의 외부 공개·운영 배포 없음 확인, 삭제는 재기록
   묶음). 모니터링 허브는 표본 위젯 일부가 공통 허브 화면에 있어 모든 구성에 실리므로 소유 미확인·보류를 유지한다. 나머지 보류 행의
-  방향(메뉴·권한 원장과 함께 승인할 일곱, 보류를 유지할 넷)은 DEC-OPS-408 보관 원문에 있다.
+  방향(메뉴·권한 원장과 함께 승인할 일곱, 보류를 유지할 넷)은 DEC-OPS-408 보관 원문에 있다. 모니터링 허브는 웨이브 9 가 정했다.
 */
 const WAVE8_DISPOSITIONS = {
   '/cop/sms/selectSmsList': 'retire-candidate',
@@ -329,6 +329,23 @@ function isWave8Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+/*
+  웨이브 9(2026-11-09, DEC-OPS-409): 감시 허브의 고정 배열 표본(추세·다차원 상태)을 공통 가동 상태 탭에서 시연 기능의 하네스 탭 기여로
+  옮긴 뒤 시작 구성 소유를 다섯 구성으로 정하고 처분(retain-canonical)을 승인했다. 시연 역량이 공통 화면에 남는 조건은 라우트 계약이 본다.
+*/
+const WAVE9_DISPOSITIONS = { '/admin/system/monitoring/hub': 'retain-canonical' };
+const WAVE9_APPROVED_ROUTES = Object.keys(WAVE9_DISPOSITIONS);
+const WAVE9_REVIEWER = 'lkindo (2026-11-09 사용자 승인 · DEC-OPS-409)';
+
+function isWave9Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE9_REVIEWER
+    && approval.reviewedAt === '2026-11-09'
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 const APPROVED_ROUTES = [
   ...WAVE1_APPROVED_ROUTES,
   ...WAVE2_APPROVED_ROUTES,
@@ -338,6 +355,7 @@ const APPROVED_ROUTES = [
   ...WAVE6_APPROVED_ROUTES,
   ...WAVE7_APPROVED_ROUTES,
   ...WAVE8_APPROVED_ROUTES,
+  ...WAVE9_APPROVED_ROUTES,
 ].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
@@ -469,6 +487,20 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         // 퇴역 후보는 삭제 승인이 아니다 — 소유자의 외부 계약 확인과 삭제 시점·rollback 을 근거에 남긴다(IA §8.2).
         && (!retiring || (record.approvals.productIa.evidence.some((entry) => entry.includes('소유자가 2026-11-08'))
           && record.approvals.productIa.evidence.some((entry) => entry.includes('재기록 묶음') && entry.includes('rollback'))));
+    }
+    if (WAVE9_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.disposition === WAVE9_DISPOSITIONS[record.route]
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && record.effectiveMenuExposureReview === 'verified'
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave9Approval)
+        && record.approvals.securityPrivacy.evidence.some((entry) => entry.includes('처분 변경분'))
+        // 소유를 정한 근거는 표본이 시연 기여로만 붙는다는 계약 판정이다 — 근거에서 빠지면 공통 화면의 표본 누수를 다시 승인하는 셈이다.
+        && record.approvals.domain.evidence.some((entry) => entry.includes('demoContributionRemovedOutsideDemo'));
     }
     if (WAVE6_APPROVED_ROUTES.includes(record.route)) {
       return shared

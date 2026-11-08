@@ -37,14 +37,6 @@ const GaugeChart = dynamic(() => import('@/app/components/ui/observability-chart
   ssr: false,
   loading: () => <Skeleton className="h-[240px] w-full rounded-lg" />
 });
-const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[110px] w-full rounded-lg" />
-});
-const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.SystemStatusRadar), {
-  ssr: false,
-  loading: () => <Skeleton className="h-[420px] w-full rounded-lg" />
-});
 
 import { StandardModal } from '@/app/components/ui/standard-modal';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
@@ -516,41 +508,10 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
       </div>
 
       {/*
-        [P1-5] 아래 스파크라인 2종과 레이더 차트는 실측 소스가 없는 고정 배열이다.
-        삭제 대신 '샘플 데이터' 배지를 명시해 운영 판단 근거로 오인되지 않게 한다(원칙 (c)).
-        실제 배선 시 actuator 의 http.server.requests / hikaricp.connections 등으로 교체할 것.
+        [2026-11-09 DEC-OPS-409] 실측 소스가 없는 고정 배열 표본(추세 · 다차원 상태 — 스파크라인 2종·레이더)은 시연 기능의
+        하네스 아틀라스 탭(HarnessAtlasPanels)으로 옮겼다. 이 탭은 모든 시작 구성에 실리므로 여기 두면 운영 구성에도 가짜 숫자가 남는다.
+        실제 배선 시 actuator 의 http.server.requests / hikaricp.connections 등 실측 지표로 이 자리에 다시 둔다.
       */}
-      <div className="space-y-3 rounded-md border border-dashed border-warning/50 p-4">
-        <div className="flex items-center justify-between gap-4 flex-wrap">
-          <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">추세 · 다차원 상태(미연동)</h4>
-          <SampleDataBadge />
-        </div>
-
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-           <RealtimeSparkline
-              label="NETWORK_TRAFFIC (PPS)"
-              data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]}
-              color={chartColors.series[2]}
-           />
-           <RealtimeSparkline
-              label="DB_LATENCY (MS)"
-              data={[ {value: 12}, {value: 15}, {value: 14}, {value: 18}, {value: 15}, {value: 13}, {value: 15} ]}
-              color={chartColors.series[3]}
-           />
-        </div>
-
-        <SystemStatusRadar
-           title="HEURISTIC_SYSTEM_HEALTH (샘플)"
-           data={[
-              { subject: '가용성', A: healthData?.status === 'UP' ? 100 : 0 },
-              { subject: '보안성', A: 95 },
-              { subject: '응답속도', A: 88 },
-              { subject: '무결성', A: 100 },
-              { subject: '확장성', A: 75 },
-              { subject: '안정성', A: 92 },
-           ]}
-        />
-      </div>
 
       <div className="rounded-md border border-surface-inverse-border bg-surface-inverse p-4 text-surface-inverse-foreground">
         <div className="space-y-4">

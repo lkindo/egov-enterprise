@@ -564,6 +564,61 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
   );
 });
 
+/*
+  [2026-11-09 DEC-OPS-409] 시연 역량이 시연 밖 구성이 싣는 화면에 있어도 되는 경우는 시연 기능만 싣는 슬롯 기여로 붙을 때뿐이다. 감시 허브의
+  표본(추세·다차원 상태)을 공통 가동 상태 탭에서 하네스 탭 기여로 옮기고 허브 소유를 다섯 구성으로 정했다. 허용 조건이 풀리는 반례마다 누수
+  가드가 다시 붉어야 한다 — 2026-11-08 의 첫 허용 조건은 지워지는 시험 파일만 적어도 통과했다(Codex 20차).
+*/
+test('a demo capability sits on a shared screen only as a demo-only slot contribution that the page renders', () => {
+  const { manifest } = currentAnalysis();
+  const HUB = '/admin/system/monitoring/hub';
+  const SAMPLE = 'monitoring.sample-widgets';
+  const SHELL = 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx';
+  const PANEL = 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx';
+  const CONTRIBUTION = 'frontend/src/extensions/showcase/hub-tabs-monitoring.ts';
+  const DEMO_ONLY_TEST = 'frontend/src/app/admin/patterns/__tests__/pattern-gallery.test.tsx';
+  const leak = (route) => new RegExp(`route ${route.replace(/[/[\]]/g, '\\$&')}: demo capability leaks into a non-demo profile owner`);
+
+  const hub = manifest.routes.find(({ route }) => route === HUB);
+  assert.deepEqual(hub.profileOwners, ['approval', 'collaboration', 'core', 'demo', 'survey']);
+  assert.deepEqual(hub.capabilities.find(({ id }) => id === SAMPLE), {
+    ...hub.capabilities.find(({ id }) => id === SAMPLE), status: 'demo', evidence: [PANEL, CONTRIBUTION],
+  });
+  assert.deepEqual(directProjectionProfiles(DEMO_ONLY_TEST, repository.profileProjections), ['demo']);
+  assert.doesNotMatch(validateRouteCapabilities(manifest, repository).errors.join('\n'), leak(HUB));
+
+  const errorsWith = (mutate, inspected = repository) => {
+    const copy = structuredClone(manifest);
+    const route = copy.routes.find((row) => row.route === HUB);
+    mutate(route.capabilities.find(({ id }) => id === SAMPLE), copy);
+    return validateRouteCapabilities(copy, inspected).errors.join('\n');
+  };
+  // ① 모든 구성에 실리는 허브 셸을 증거에 적으면 표본이 그 파일에 있다는 말이다 — 실제로 실리므로 누수다(2026-11-08 철회 사유).
+  assert.match(errorsWith((sample) => sample.evidence.push(SHELL)), leak(HUB));
+  // ② 슬롯 기여 없이 시연 소유 패널만 적으면 화면이 그 패널을 어떻게 싣는지 말하지 않는다.
+  assert.match(errorsWith((sample) => { sample.evidence = [PANEL]; }), leak(HUB));
+  // ③ 시연 밖에서 지워지는 시험 파일만 적거나, 기여에 시험 파일을 섞으면 허용하지 않는다(Codex 20차 반례).
+  assert.match(errorsWith((sample) => { sample.evidence = [DEMO_ONLY_TEST]; }), leak(HUB));
+  assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, DEMO_ONLY_TEST]; }), leak(HUB));
+  // ④ 같은 기여를 그 슬롯 소비자를 싣지 않는 화면에 적으면 그 화면에는 붙지 않는다.
+  const POLICIES = '/admin/system/policies';
+  assert.match(errorsWith((sample, copy) => {
+    const policies = copy.routes.find(({ route }) => route === POLICIES);
+    assert.ok(policies.profileOwners.includes('core'));
+    policies.capabilities.push(structuredClone(sample));
+  }), leak(POLICIES));
+  // ⑤ 시연 밖 구성 하나라도 기여를 싣는 투영이면 누수다.
+  const shipped = structuredClone(repository);
+  const approval = shipped.profileProjections.profiles.find(({ profile }) => profile === 'approval');
+  assert.ok(approval.removePaths.includes('src/extensions/showcase'));
+  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/extensions/showcase');
+  assert.match(errorsWith(() => {}, shipped), leak(HUB));
+  // ⑥ 자기 구성 하나만 아는 생성물 투영에서는 판정할 수 없으므로 허용하지 않는다.
+  const generated = structuredClone(repository);
+  generated.profileProjections.projection = true;
+  assert.match(errorsWith(() => {}, generated), leak(HUB));
+});
+
 test('route review records reject impossible dates and missing review accountability', () => {
   const { manifest } = currentAnalysis();
   for (const target of ['route', 'menuSnapshot']) {

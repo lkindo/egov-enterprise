@@ -422,6 +422,23 @@ describe('MonitoringHubClient', () => {
     expect(await screen.findByText('시스템 상태: 점검 필요 (health 응답: DOWN)')).toBeInTheDocument();
   });
 
+  // [2026-11-09 DEC-OPS-409] 고정 배열 표본(추세 · 다차원 상태)은 시연 기능의 하네스 탭으로 옮겼다. 가동 상태 탭은 모든 시작 구성에
+  //   실리므로 표본도 샘플 배지도 두지 않는다 — 다시 들어오면 운영 구성에 가짜 숫자가 실린다.
+  it('가동 상태 탭에는 고정 배열 표본과 샘플 배지가 없다', async () => {
+    renderHub('tab=observability');
+
+    await screen.findByText((text) => text.startsWith('시스템 상태: 정상'));
+    expect(screen.queryByText('추세 · 다차원 상태(미연동)')).toBeNull();
+    expect(screen.queryByText('샘플 데이터')).toBeNull();
+  });
+
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('추세 · 다차원 상태 표본은 하네스 탭에 샘플 배지와 함께 있다', () => {
+    renderHub('tab=harness');
+
+    const heading = screen.getByRole('heading', { name: '추세 · 다차원 상태(미연동)' });
+    expect(within(heading.parentElement as HTMLElement).getByText('샘플 데이터')).toBeInTheDocument();
+  });
+
   it('실제 로그 기록의 상세에는 샘플 데이터 고지를 붙이지 않는다', async () => {
     renderHub('tab=system');
     fireEvent.click((await screen.findAllByRole('button', { name: /상세 열기/ }))[0]);

@@ -6,8 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
 import { compositionProfiles, presetIds } from './composition-profiles.mjs';
+import { parseModuleReferences } from './frontend-module-graph.mjs';
+import { candidatePaths } from './frontend-module-resolver.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { slotConsumerFiles, slotPathKind } from './slot-registry.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
@@ -678,6 +681,59 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
   }
 }
 
+const TEST_SOURCE = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
+
+/** 화면 page 소스가 타입 전용이 아닌 import 로 직접 싣는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다. */
+function pageImportsFile(repoRoot, pageSource, target) {
+  const importer = path.join(repoRoot, pageSource);
+  const wanted = path.resolve(repoRoot, target);
+  let references;
+  try {
+    ({ references } = parseModuleReferences(fs.readFileSync(importer, 'utf8'), pageSource));
+  } catch {
+    return false;
+  }
+  return references.some(({ specifier, typeOnly }) => {
+    if (typeOnly) return false;
+    const base = specifier.startsWith('@/') ? path.join(repoRoot, 'frontend', 'src', specifier.slice(2))
+      : specifier.startsWith('./') || specifier.startsWith('../') ? path.resolve(path.dirname(importer), specifier) : null;
+    return base !== null && candidatePaths(base).includes(wanted);
+  });
+}
+
+/**
+ * 시연 역량이 시연 밖 구성이 싣는 화면에 있어도 되는가(2026-11-09 DEC-OPS-409) — 화면은 여러 구성에 남고 시연 기능이 슬롯 기여로 패널만
+ * 붙일 때뿐이다. 원본 저장소(모든 시작 구성의 투영을 아는 곳)에서 다음을 모두 만족해야 한다.
+ * - 역량의 증거가 모두 시험이 아닌 frontend/src 파일이고, 시연은 싣지만 시연 밖의 어떤 시작 구성도 싣지 않는다(화면 제외 경로로 계산한다).
+ *   공통 파일(허브 셸·배지)을 적으면 허용하지 않는다 — 표본이 공통 파일에 있으면 실제로 실린다(2026-11-08 허브 승인 철회).
+ * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 직접 import 한다.
+ *   지워지는 시험 파일이나 다른 화면 슬롯의 기여만으로는 이 화면에 무엇이 붙는지 말하지 않는다(Codex 20차 반례).
+ * 생성물은 자기 구성 하나만 알아 판정할 수 없으므로 허용하지 않는다 — 생성물의 소유는 UNVERIFIED 라 이 가드에 걸리지도 않는다.
+ */
+function demoContributionRemovedOutsideDemo(capability, entry, repository, nonDemoPresets) {
+  const projections = repository?.profileProjections;
+  if (projections?.projection !== false || !Array.isArray(projections.profiles)) return false;
+  if (!nonDemoPresets.every((preset) => projections.profiles.some(({ profile }) => profile === preset))) return false;
+  const evidence = capability?.evidence;
+  if (!Array.isArray(evidence) || evidence.length === 0) return false;
+  const shipsOnlyInDemo = (file) => {
+    const shipping = directProjectionProfiles(file, projections);
+    return shipping.includes('demo') && !shipping.some((profile) => nonDemoPresets.includes(profile));
+  };
+  if (!evidence.every((file) => isNonemptyString(file) && file.startsWith('frontend/src/') && !TEST_SOURCE.test(file)
+    && isFile(path.join(repository.repoRoot, file)) && shipsOnlyInDemo(file))) return false;
+  return evidence.some((file) => {
+    let kind;
+    try {
+      kind = slotPathKind(file);
+    } catch {
+      return false;
+    }
+    return kind?.kind === 'contribution'
+      && slotConsumerFiles(kind.slot).some((consumer) => pageImportsFile(repository.repoRoot, entry.source, consumer));
+  });
+}
+
 export function validateRouteCapabilities(manifest, repository) {
   // 원본 시연 프로필의 소유 기록은 기능을 직접 선택한 생성물에서도 유효하다.
   const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
@@ -970,7 +1026,8 @@ export function validateRouteCapabilities(manifest, repository) {
     if (declaredUnverified.length > 0) validateReview(entry.review, label, manifest?.asOf, errors);
     else if (entry.review !== undefined) warnings.push(`${label}: review metadata exists without unverifiedFields`);
 
-    if (entry.capabilities?.some(({ status }) => status === 'demo')
+    if (entry.capabilities?.some((capability) => capability?.status === 'demo'
+        && !demoContributionRemovedOutsideDemo(capability, entry, repository, nonDemoPresets))
       && entry.profileOwners.some((profile) => nonDemoPresets.includes(profile))) {
       errors.push(`${label}: demo capability leaks into a non-demo profile owner`);
     }
