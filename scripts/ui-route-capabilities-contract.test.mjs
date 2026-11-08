@@ -144,13 +144,26 @@ test('page helper cannot change unknown denial or shadow exact static pages with
     ["from '@/types/generated-permissions'", "from '@/types/unreviewed-permissions'"],
     // 게이트 편입 판정 — 인증만 요구하는 화면까지 넣거나, 대소문자 흉내를 빼거나, 하나만 맞아도 되는 판정을 바꾸면 막는다.
     ['if (required.length === 0) return false;', ''],
-    ["const segments = pathname.replace(/\\/$/, '').toLowerCase().split('/');", "const segments = pathname.replace(/\\/$/, '').split('/');"],
+    ["const segments = normalizedPath.toLowerCase().split('/');", "const segments = normalizedPath.split('/');"],
     ['return Object.entries(PAGE_PERMISSIONS).some(([route, required]) => {', 'return Object.entries(PAGE_PERMISSIONS).every(([route, required]) => {'],
+    // 정확한 등록을 먼저 보지 않으면 인증 전용 정적 화면이 동적 형제의 권한 조회에 묶인다. 경로 비교식도 결속한다(Codex 13차).
+    ['if (registered) return registered.length > 0;', ''],
   ]) {
     assert.ok(pageHelperSource.includes(before), `red probe target missing: ${before}`);
     assert.notDeepEqual(validatePageAuthorizationBinding(proxySource, pageHelperSource.replace(before, after)), [], before);
   }
-  const syntheticRules = { pagePermissions: { '/zz-ops/report': ['SURVEY_RSP_READ'], '/zz-ops/report/[id]': ['SURVEY_RSP_READ'], '/zz-open': [] } };
+  // 경로 비교식 — 같은 식이 registeredPageEntry 에도 있어, 파일 뒤쪽 requiresRegisteredPermission 의 것을 바꾼다.
+  const comparison = 'return routeSegments.length === segments.length && routeSegments.every';
+  const comparisonAt = pageHelperSource.lastIndexOf(comparison);
+  assert.ok(comparisonAt > pageHelperSource.indexOf('export function requiresRegisteredPermission'), 'red probe target missing: gate comparison');
+  const brokenComparison = `${pageHelperSource.slice(0, comparisonAt)}${comparison.replace('===', '!==')}${pageHelperSource.slice(comparisonAt + comparison.length)}`;
+  assert.notDeepEqual(validatePageAuthorizationBinding(proxySource, brokenComparison), [], 'gate comparison');
+  const syntheticRules = { pagePermissions: {
+    '/zz-ops/report': ['SURVEY_RSP_READ'], '/zz-ops/report/[id]': ['SURVEY_RSP_READ'], '/zz-open': [],
+    '/zz-ops/[id]': ['SURVEY_RSP_READ'], '/zz-ops/new': [],
+  } };
+  assert.equal(expectedShellAccess('/zz-ops/new', syntheticRules), 'authenticated');
+  assert.equal(expectedShellAccess('/zz-ops/9', syntheticRules), 'admin-system');
   assert.equal(expectedShellAccess('/zz-ops/report', syntheticRules), 'admin-system');
   assert.equal(expectedShellAccess('/zz-ops/report/7', syntheticRules), 'admin-system');
   assert.equal(expectedShellAccess('/ZZ-ops/Report', syntheticRules), 'admin-system');

@@ -272,10 +272,13 @@ export function validatePageAuthorizationBinding(proxySource, helperSource) {
     errors.push('page helper must consume generated PAGE_PERMISSIONS, prefer exact routes, and deny unregistered pages');
   }
   // 게이트 편입 판정 — 권한이 등록된 경로 모양과 대소문자를 가리지 않고 맞추며, 권한이 빈 배열인 화면은 넣지 않는다.
-  if (!helper.includes('exportfunctionrequiresRegisteredPermission(pathname:string):boolean{')
-    || !helper.includes(`constsegments=pathname.replace(/\\/$/,${literalToken('')}).toLowerCase().split(${literalToken('/')});`)
-    || !helper.includes('returnObject.entries(PAGE_PERMISSIONS).some(([route,required])=>{if(required.length===0)returnfalse;')
-    || !helper.includes(`constrouteSegments=route.replace(/\\/$/,${literalToken('')}).toLowerCase().split(${literalToken('/')});`)) {
+  if (!helper.includes('exportfunctionrequiresRegisteredPermission(pathname:string):boolean{'
+      + `constnormalizedPath=pathname.replace(/\\/$/,${literalToken('')});constregistered=PAGE_PERMISSIONS[normalizedPath];if(registered)returnregistered.length>0;`
+      + `constsegments=normalizedPath.toLowerCase().split(${literalToken('/')});`
+      + 'returnObject.entries(PAGE_PERMISSIONS).some(([route,required])=>{if(required.length===0)returnfalse;'
+      + `constrouteSegments=route.replace(/\\/$/,${literalToken('')}).toLowerCase().split(${literalToken('/')});`
+      + 'returnrouteSegments.length===segments.length&&routeSegments.every((segment,index)=>'
+      + '/^\\[[^.[\\]]+\\]$/.test(segment)?segments[index].length>0:segment===segments[index],);});}')) {
     errors.push('page helper must gate every page with registered permissions, case-insensitively and never pages that only require sign-in');
   }
   return errors;
@@ -338,6 +341,9 @@ export function expectedShellAccess(route, proxyRules) {
   const pages = proxyRules.pagePermissions ?? {};
   if (!matchesPrefix(route.toLowerCase(), '/admin')) {
     // [2026-11-08] /admin 밖이라도 기능권한이 등록된 화면은 proxy 가 같은 분기로 막는다(requiresRegisteredPermission).
+    //   정확히 등록된 화면은 그 등록이 정한다 — 동적 형제의 권한이 인증만 요구하는 정적 화면을 게이트에 넣지 않는다.
+    const exactRequired = pages[route.replace(/\/$/, '')];
+    if (Array.isArray(exactRequired)) return exactRequired.length > 0 ? 'admin-system' : 'authenticated';
     const lowerSegments = route.replace(/\/$/, '').toLowerCase().split('/');
     const gated = Object.entries(pages).some(([candidate, required]) => {
       if (!Array.isArray(required) || required.length === 0) return false;

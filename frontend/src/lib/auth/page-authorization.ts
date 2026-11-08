@@ -36,11 +36,14 @@ export function registeredPageEntry(pathname: string): readonly [string, readonl
  *
  * 게이트에 넣을지만 정한다 — 들어갈 수 있는지는 canEnterRegisteredPage(대소문자 그대로, 정확한 경로 우선)가 정한다.
  * 그래서 대소문자를 가리지 않고 권한이 등록된 경로 모양과 맞으면 넣는다: `/Survey/Response` 같은 흉내는 게이트에 들어가
- * 등록되지 않은 경로로 거부된다(`/admin` 분기와 같은 원칙). 동적 형제가 정적 화면을 가려 더 넣어도, 그 화면의 정확한 등록이
- * 허용을 정하므로 막히지 않는다.
+ * 등록되지 않은 경로로 거부된다(`/admin` 분기와 같은 원칙). 정확히 등록된 화면은 그 등록이 정한다 — 인증만 요구하는 정적 화면을
+ * 같은 깊이의 동적 형제(권한 있음) 때문에 권한 조회에 묶으면, 조회가 실패할 때 정상 사용자가 막힌다(2026-11-08 Codex 13차).
  */
 export function requiresRegisteredPermission(pathname: string): boolean {
-  const segments = pathname.replace(/\/$/, '').toLowerCase().split('/');
+  const normalizedPath = pathname.replace(/\/$/, '');
+  const registered = PAGE_PERMISSIONS[normalizedPath];
+  if (registered) return registered.length > 0;
+  const segments = normalizedPath.toLowerCase().split('/');
   return Object.entries(PAGE_PERMISSIONS).some(([route, required]) => {
     if (required.length === 0) return false;
     const routeSegments = route.replace(/\/$/, '').toLowerCase().split('/');

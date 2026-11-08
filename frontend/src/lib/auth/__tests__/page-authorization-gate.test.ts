@@ -41,8 +41,11 @@ describe('requiresRegisteredPermission', () => {
     expect(requiresRegisteredPermission('/zz-ops/report/42/extra')).toBe(false);
   });
 
-  it('동적 형제 때문에 게이트에 들어가도, 정적 화면의 정확한 등록이 허용을 정한다', () => {
-    expect(requiresRegisteredPermission('/zz-ops/new')).toBe(true);
+  it('정확히 등록된 정적 화면은 그 등록이 정한다 — 동적 형제의 권한 때문에 권한 조회에 묶이지 않는다', () => {
+    // 묶이면 권한 조회가 실패할 때 인증만 요구하는 화면까지 막힌다(2026-11-08 Codex 13차).
+    expect(requiresRegisteredPermission('/zz-ops/new')).toBe(false);
+    expect(requiresRegisteredPermission('/zz-ops/new/')).toBe(false);
+    expect(requiresRegisteredPermission('/zz-ops/7')).toBe(true);
     expect(canEnterRegisteredPage('/zz-ops/new', subject([]))).toBe(true);
     expect(canEnterRegisteredPage('/zz-ops/7', subject([]))).toBe(false);
   });
