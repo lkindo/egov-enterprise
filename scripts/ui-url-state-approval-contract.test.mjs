@@ -348,6 +348,15 @@ test('이름으로 고르던 승인 부류도 기록 ID 로 묶인다 — 같은
   for (const item of newcomer.stateItems) {
     assert.equal(isUrlStateItemApproved(newcomer, item, selectors), false, `새 기록의 ${item.name} 가 이름만으로 승인됐다`);
   }
+  // 묶인 기록의 URL 상태가 바뀌어 ID 가 사라지면 승인 전체가 무효다. 그때 오류는 다른 부류의 증상이 아니라 원인(부류·ID)을 먼저 말한다
+  //   (독립 검토 반례: 종전에는 변하지 않은 검색어 기록 5건의 허용 목록 위반만 보였다).
+  const drifted = structuredClone(census);
+  const goneId = overlay.classes.find((row) => row.classId === 'resource-identifier').selector.recordIds[0];
+  drifted.records.find((record) => record.id === goneId).id = 'URL-REPLACED00000';
+  const errors = validateUrlStateCensus(drifted, { approvalOverlay: overlay });
+  const staleAt = errors.findIndex((error) => error.includes(`approval class 'resource-identifier' pins ${goneId}, which is no longer in the census`));
+  assert.ok(staleAt >= 0, errors.slice(0, 5).join('\n'));
+  assert.ok(errors.slice(0, staleAt).every((error) => !error.includes('search')), '원인보다 검색어 경계 증상이 먼저 보고됐다');
   // 묶인 기록은 그대로 승인이다 — 고정이 기존 승인을 줄이지 않는다.
   const pinnedId = overlay.classes.find((row) => row.classId === 'presentation-state').selector.recordIds[0];
   const pinned = census.records.find((record) => record.id === pinnedId);

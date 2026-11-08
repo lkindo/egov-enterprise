@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "a30162d74b3b9e62025e9a7c10b6324a12916903ca60caa3fab0c7a31b18e9cc"
+    "inventoryHash": "ea4e7c3ad4b95566f5636fb884513adb84442dec9122cbda8390435c1a205b57"
   },
   "summary": {
-    "records": 472,
-    "syntaxOccurrences": 575,
-    "ambiguousRecords": 424,
-    "unverifiedRecords": 472,
+    "records": 471,
+    "syntaxOccurrences": 574,
+    "ambiguousRecords": 423,
+    "unverifiedRecords": 471,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 13,
@@ -50,11 +50,11 @@
       "query-consumer": 58,
       "query-producer": 45,
       "request-query-producer": 3,
-      "url-observer": 7
+      "url-observer": 6
     },
     "bySurface": {
       "navigation": 462,
-      "request-telemetry": 10
+      "request-telemetry": 9
     }
   },
   "requiredNegativeCases": [
@@ -15397,57 +15397,6 @@
       "evidence": {
         "source": "frontend/src/app/components/ui/smart-notification-hub.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-A8AB6A6F35E04D",
-      "surface": "request-telemetry",
-      "kind": "url-observer",
-      "operation": "read",
-      "source": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<raw-url-or-component>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Runtime reads location.search; propagation into logs or telemetry requires data-flow review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved",
-        "url-observation-purpose-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-        "detector": "url-observer",
         "occurrenceCount": 1
       }
     },

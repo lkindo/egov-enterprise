@@ -1415,6 +1415,22 @@ export function approvedStateItemSelectors(overlay, census) {
   return selectors;
 }
 
+/**
+ * 승인 부류가 묶은 기록 ID 가운데 census 에서 사라진 것. 하나라도 있으면 승인 선택자 전체가 비어(fail-closed) 다른 부류의
+ * 오류(예: 검색어 허용 목록)로 번져 보이므로, 원인을 먼저 이름으로 알리는 데 쓴다(2026-11-08 DEC-OPS-403).
+ */
+export function stalePinnedApprovalRecords(overlay, census) {
+  const censusRecordIds = new Set((census?.records ?? []).map((record) => record?.id));
+  const stale = [];
+  for (const cls of overlay?.classes ?? []) {
+    if (cls?.reviewState !== 'approved' || !Array.isArray(cls?.selector?.recordIds)) continue;
+    for (const recordId of cls.selector.recordIds) {
+      if (!censusRecordIds.has(recordId)) stale.push({ classId: cls.classId, recordId });
+    }
+  }
+  return stale;
+}
+
 export function isUrlStateItemApproved(record, item, selectors) {
   return selectors.some((selector) => selector.stateItemNames.has(item?.name)
     && (selector.recordIds === null || selector.recordIds.has(record?.id)));
@@ -1491,6 +1507,11 @@ export function validateUrlStateCensus(census, options = {}) {
         sha256: approvalCensusSha256(census),
       },
     }, census).filter(({ classId }) => classId === 'search-input');
+  // 묶은 기록이 사라지면 승인이 통째로 무효가 되어 아래 검색어 경계가 엉뚱한 기록을 위반으로 보고한다 — 원인을 먼저 적는다.
+  for (const { classId, recordId } of approvalOverlay === null ? [] : stalePinnedApprovalRecords(approvalOverlay, census)) {
+    errors.push(`approval class '${classId}' pins ${recordId}, which is no longer in the census — the URL state it approved changed; `
+      + 'review the replacing record and edit selector.recordIds in config/ui-url-state-approval.json (re-binding the hash does not approve it)');
+  }
   if (census?.schemaVersion !== 1) errors.push('schemaVersion must be 1');
   if (census?.authority !== CENSUS_AUTHORITY) errors.push('authority must remain generated evidence, not policy');
   if (census?.decision?.searchPolicyAcceptedRef !== URL_STATE_DECISION_REF

@@ -5,7 +5,7 @@
   "scope": "frontend/src/app/**/page.{js,jsx,ts,tsx}",
   "notes": [
     "shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.",
-    "roles describe the intended users in the default installation (persona, ADR-0016 default groups); they are not an authorization rule — access is decided by explicit OPERATION/NAVIGATION grants, ALL/ANY page modes, excluded groups and object conditions.",
+    "roles and capability actorScope describe the intended users in the default installation (persona, ADR-0016 default groups); they are not an authorization rule — a custom group holding the permission can use the route, and access is decided by explicit OPERATION/NAVIGATION grants, ALL/ANY page modes, excluded groups and object conditions.",
     "admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.",
     "directProjectionProfiles is a direct feature-removal observation (the preset composition frontend.removePaths), not positive semantic profile ownership and not a full transitive artifact proof.",
     "unverified values are bounded review exceptions and keep G1 gateReady=false.",

@@ -120,8 +120,8 @@ const KNOWN_ROUTE_CAPABILITIES = {
       evidenceLevel: 'E2', evidence: ['frontend/src/app/search/SearchClient.tsx', 'frontend/src/services/business/user/MenuService.ts'],
     },
     {
-      // [2026-11-08] 원본 원장은 게시글 검색을 partial 로 적는다(2026-09-02 부터 실제 검색). 이 초기값은 게시판 기능 표지 안의 탭이라
-      //   게시판 없는 생성물에서 사라지므로, 기능별 판정이 생기기 전까지 보수적으로 미지원을 둔다.
+      // [2026-11-08] 게시글 탭은 2026-09-02 부터 실제 검색이지만 게시판 기능 표지 안이라 게시판 없는 구성(core·survey·approval)에는
+      //   없다. 원장과 이 기대값은 같아야 하므로 둘 다 아직 미지원으로 두고, 기능별 판정을 만들 때 함께 고친다(정기 검토 2차).
       id: 'search.articles', status: 'unavailable', dataSource: 'none', actions: [],
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '게시글 (미지원)', primaryTask: false,
       evidenceLevel: 'E1', evidence: ['frontend/src/app/search/SearchClient.tsx'],
@@ -559,7 +559,7 @@ export function buildUnreviewedBaselineManifest(
     scope: 'frontend/src/app/**/page.{js,jsx,ts,tsx}',
     notes: [
       'shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.',
-      'roles describe the intended users in the default installation (persona, ADR-0016 default groups); they are not an authorization rule — access is decided by explicit OPERATION/NAVIGATION grants, ALL/ANY page modes, excluded groups and object conditions.',
+      'roles and capability actorScope describe the intended users in the default installation (persona, ADR-0016 default groups); they are not an authorization rule — a custom group holding the permission can use the route, and access is decided by explicit OPERATION/NAVIGATION grants, ALL/ANY page modes, excluded groups and object conditions.',
       'admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.',
       'directProjectionProfiles is a direct feature-removal observation (the preset composition frontend.removePaths), not positive semantic profile ownership and not a full transitive artifact proof.',
       'unverified values are bounded review exceptions and keep G1 gateReady=false.',

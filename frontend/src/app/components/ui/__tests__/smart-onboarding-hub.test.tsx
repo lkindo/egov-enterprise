@@ -34,6 +34,24 @@ describe('SmartOnboardingHub', () => {
     vi.useRealTimers();
   });
 
+  // [2026-11-08] 주소의 시험 플래그로는 숨지 않는다 — 운영 코드의 시험 전용 우회를 걷었다. 숨기는 것은 본 표시뿐이다.
+  it('주소에 e2e=true 를 붙여도 배너가 숨지 않고, 본 표시가 있을 때만 숨는다', async () => {
+    window.history.replaceState(null, '', '/admin/work-hub?e2e=true');
+    try {
+      const first = render(<SmartOnboardingHub />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(screen.getByRole('region', { name: '사용 안내' })).toBeInTheDocument();
+      first.unmount();
+
+      localStorage.setItem('egov_smart_tour_v1', 'true');
+      render(<SmartOnboardingHub />);
+      await act(async () => { await vi.advanceTimersByTimeAsync(0); });
+      expect(screen.queryByRole('region', { name: '사용 안내' })).not.toBeInTheDocument();
+    } finally {
+      window.history.replaceState(null, '', '/');
+    }
+  });
+
   it('첫 방문에도 모달을 저절로 열지 않고 포커스를 가져가지 않는 배너만 보인다', async () => {
     render(
       <>
