@@ -13,6 +13,7 @@ import {
   expectedRouting,
   expectedShellAccess,
   inspectRouteRepository,
+  pageLoadsModule,
   parsePageAuthorizationSources,
   parseConfigRedirectsSource,
   profileProjections,
@@ -594,7 +595,13 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
     return validateRouteCapabilities(copy, inspected).errors.join('\n');
   };
   // ① 모든 구성에 실리는 허브 셸을 증거에 적으면 표본이 그 파일에 있다는 말이다 — 실제로 실리므로 누수다(2026-11-08 철회 사유).
+  //   시연 경로를 거쳐 같은 셸을 가리키는 비정규 표기도 같다 — 투영 판정이 원문 접두사를 보므로 시연 전용으로 오판한다(Codex 22차).
   assert.match(errorsWith((sample) => sample.evidence.push(SHELL)), leak(HUB));
+  const TRAVERSAL = 'frontend/src/extensions/showcase/../../app/admin/system/monitoring/MonitoringHubClient.tsx';
+  assert.deepEqual(directProjectionProfiles(TRAVERSAL, repository.profileProjections), ['demo']);
+  assert.ok(fs.statSync(path.join(ROOT, TRAVERSAL)).isFile());
+  assert.match(errorsWith((sample) => sample.evidence.push(TRAVERSAL)), leak(HUB));
+  assert.match(errorsWith((sample) => sample.evidence.push(SHELL.replaceAll('/', '\\'))), leak(HUB));
   // ② 슬롯 기여 없이 시연 소유 패널만 적으면 화면이 그 패널을 어떻게 싣는지 말하지 않는다.
   assert.match(errorsWith((sample) => { sample.evidence = [PANEL]; }), leak(HUB));
   // ③ 시연 밖에서 지워지는 시험 파일만 적거나, 기여에 시험 파일을 섞으면 허용하지 않는다(Codex 20차 반례).
@@ -617,6 +624,29 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   const generated = structuredClone(repository);
   generated.profileProjections.projection = true;
   assert.match(errorsWith(() => {}, generated), leak(HUB));
+});
+
+// 화면이 슬롯 소비자를 '싣는다'는 판정은 모듈을 싣는 참조만 센다 — 타입 전용·require.resolve 는 싣지 않는다(Codex 22차).
+test('a page loads a slot consumer only through a static import, re-export or literal dynamic import', (t) => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'route-page-loads-'));
+  t.after(() => fs.rmSync(repoRoot, { recursive: true, force: true }));
+  const page = 'frontend/src/app/sample/page.tsx';
+  const shell = 'frontend/src/app/sample/SampleShell.tsx';
+  fs.mkdirSync(path.join(repoRoot, 'frontend/src/app/sample'), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, shell), 'export default function SampleShell() { return null; }\n');
+  const loads = (source) => {
+    fs.writeFileSync(path.join(repoRoot, page), source);
+    return pageLoadsModule(repoRoot, page, shell);
+  };
+  assert.equal(loads("import SampleShell from './SampleShell';\n"), true);
+  assert.equal(loads("import SampleShell from '@/app/sample/SampleShell';\n"), true);
+  assert.equal(loads("export { default } from './SampleShell';\n"), true);
+  assert.equal(loads("const SampleShell = dynamic(() => import('./SampleShell'));\n"), true);
+  assert.equal(loads("import type { Props } from './SampleShell';\n"), false);
+  assert.equal(loads("const where = require.resolve('./SampleShell');\n"), false);
+  assert.equal(loads("const SampleShell = require('./SampleShell');\n"), false);
+  assert.equal(loads("import Other from './Other';\n"), false);
+  assert.equal(loads("// import SampleShell from './SampleShell';\n"), false);
 });
 
 test('route review records reject impossible dates and missing review accountability', () => {

@@ -682,9 +682,17 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 }
 
 const TEST_SOURCE = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/;
+// 모듈을 싣는 참조만 센다. 타입 전용·require.resolve 처럼 싣지 않는 참조와 CommonJS require 는 화면이 그 모듈을 그린다는 근거가 아니다.
+const LOADING_REFERENCE_KINDS = new Set(['static-import', 're-export', 'dynamic-import']);
 
-/** 화면 page 소스가 타입 전용이 아닌 import 로 직접 싣는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다. */
-function pageImportsFile(repoRoot, pageSource, target) {
+/** 저장소 기준 정규 경로인가 — 역슬래시·빈 조각·`.`·`..` 가 없다. 경로 판정(투영·슬롯)이 원문 접두사를 보므로 우회 표기를 막는다. */
+function isCanonicalRepositoryPath(file) {
+  return !file.includes('\\') && path.posix.normalize(file) === file
+    && file.split('/').every((segment) => segment !== '' && segment !== '.' && segment !== '..');
+}
+
+/** 화면 page 소스가 모듈을 싣는 참조(정적 import·re-export·동적 import)로 직접 싣는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다. */
+export function pageLoadsModule(repoRoot, pageSource, target) {
   const importer = path.join(repoRoot, pageSource);
   const wanted = path.resolve(repoRoot, target);
   let references;
@@ -693,8 +701,8 @@ function pageImportsFile(repoRoot, pageSource, target) {
   } catch {
     return false;
   }
-  return references.some(({ specifier, typeOnly }) => {
-    if (typeOnly) return false;
+  return references.some(({ kind, specifier, typeOnly }) => {
+    if (typeOnly || !LOADING_REFERENCE_KINDS.has(kind)) return false;
     const base = specifier.startsWith('@/') ? path.join(repoRoot, 'frontend', 'src', specifier.slice(2))
       : specifier.startsWith('./') || specifier.startsWith('../') ? path.resolve(path.dirname(importer), specifier) : null;
     return base !== null && candidatePaths(base).includes(wanted);
@@ -704,9 +712,10 @@ function pageImportsFile(repoRoot, pageSource, target) {
 /**
  * 시연 역량이 시연 밖 구성이 싣는 화면에 있어도 되는가(2026-11-09 DEC-OPS-409) — 화면은 여러 구성에 남고 시연 기능이 슬롯 기여로 패널만
  * 붙일 때뿐이다. 원본 저장소(모든 시작 구성의 투영을 아는 곳)에서 다음을 모두 만족해야 한다.
- * - 역량의 증거가 모두 시험이 아닌 frontend/src 파일이고, 시연은 싣지만 시연 밖의 어떤 시작 구성도 싣지 않는다(화면 제외 경로로 계산한다).
- *   공통 파일(허브 셸·배지)을 적으면 허용하지 않는다 — 표본이 공통 파일에 있으면 실제로 실린다(2026-11-08 허브 승인 철회).
- * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 직접 import 한다.
+ * - 역량의 증거가 모두 정규 경로의, 시험이 아닌 frontend/src 파일이고, 시연은 싣지만 시연 밖의 어떤 시작 구성도 싣지 않는다(화면 제외
+ *   경로로 계산한다). 공통 파일(허브 셸·배지)을 적으면 허용하지 않는다 — 표본이 공통 파일에 있으면 실제로 실린다(2026-11-08 허브 승인
+ *   철회). `showcase/../../app/…` 처럼 시연 경로를 거쳐 공통 파일을 가리키는 표기도 거부한다(Codex 22차).
+ * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 모듈을 싣는 참조로 직접 싣는다.
  *   지워지는 시험 파일이나 다른 화면 슬롯의 기여만으로는 이 화면에 무엇이 붙는지 말하지 않는다(Codex 20차 반례).
  * 생성물은 자기 구성 하나만 알아 판정할 수 없으므로 허용하지 않는다 — 생성물의 소유는 UNVERIFIED 라 이 가드에 걸리지도 않는다.
  */
@@ -720,8 +729,8 @@ function demoContributionRemovedOutsideDemo(capability, entry, repository, nonDe
     const shipping = directProjectionProfiles(file, projections);
     return shipping.includes('demo') && !shipping.some((profile) => nonDemoPresets.includes(profile));
   };
-  if (!evidence.every((file) => isNonemptyString(file) && file.startsWith('frontend/src/') && !TEST_SOURCE.test(file)
-    && isFile(path.join(repository.repoRoot, file)) && shipsOnlyInDemo(file))) return false;
+  if (!evidence.every((file) => isNonemptyString(file) && isCanonicalRepositoryPath(file) && file.startsWith('frontend/src/')
+    && !TEST_SOURCE.test(file) && isFile(path.join(repository.repoRoot, file)) && shipsOnlyInDemo(file))) return false;
   return evidence.some((file) => {
     let kind;
     try {
@@ -730,7 +739,7 @@ function demoContributionRemovedOutsideDemo(capability, entry, repository, nonDe
       return false;
     }
     return kind?.kind === 'contribution'
-      && slotConsumerFiles(kind.slot).some((consumer) => pageImportsFile(repository.repoRoot, entry.source, consumer));
+      && slotConsumerFiles(kind.slot).some((consumer) => pageLoadsModule(repository.repoRoot, entry.source, consumer));
   });
 }
 

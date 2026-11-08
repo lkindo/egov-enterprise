@@ -30,9 +30,10 @@ vi.mock('next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(mocks.query),
 }));
 
+// 차트 대역은 받은 라벨·제목·점 수를 data 속성으로 남긴다 — 탭마다 어떤 차트가 그려지는지 본다(DEC-OPS-409, Codex 22차).
 vi.mock('next/dynamic', () => ({
-  default: () => function DynamicPanel() {
-    return <div data-testid="dynamic-panel">동적 관측 패널</div>;
+  default: () => function DynamicPanel({ label, title, data }: { label?: string; title?: string; data?: unknown[] }) {
+    return <div data-testid="dynamic-panel" data-chart={label ?? title} data-points={data?.length}>동적 관측 패널</div>;
   },
 }));
 
@@ -430,13 +431,21 @@ describe('MonitoringHubClient', () => {
     await screen.findByText((text) => text.startsWith('시스템 상태: 정상'));
     expect(screen.queryByText('추세 · 다차원 상태(미연동)')).toBeNull();
     expect(screen.queryByText('샘플 데이터')).toBeNull();
+    // 이 탭의 차트는 실측 게이지 둘뿐이다.
+    expect(screen.getAllByTestId('dynamic-panel').map((chart) => chart.dataset.chart)).toEqual(['CPU_LOAD', 'MEMORY_ALLOC']);
   });
 
-  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('추세 · 다차원 상태 표본은 하네스 탭에 샘플 배지와 함께 있다', () => {
+  if (inProjection('frontend/src/extensions/showcase/hub-tabs-monitoring.ts')) it('추세 · 다차원 상태 표본은 하네스 탭에 샘플 배지·차트 셋과 함께 있다', () => {
     renderHub('tab=harness');
 
     const heading = screen.getByRole('heading', { name: '추세 · 다차원 상태(미연동)' });
     expect(within(heading.parentElement as HTMLElement).getByText('샘플 데이터')).toBeInTheDocument();
+    const section = heading.parentElement?.parentElement as HTMLElement;
+    expect(within(section).getAllByTestId('dynamic-panel').map((chart) => [chart.dataset.chart, chart.dataset.points])).toEqual([
+      ['NETWORK_TRAFFIC (PPS)', '7'],
+      ['DB_LATENCY (MS)', '7'],
+      ['HEURISTIC_SYSTEM_HEALTH (샘플)', '6'],
+    ]);
   });
 
   it('실제 로그 기록의 상세에는 샘플 데이터 고지를 붙이지 않는다', async () => {
