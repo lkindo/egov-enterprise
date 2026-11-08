@@ -238,10 +238,12 @@ test('temporary fixtures prove malformed or unbounded unknown evidence turns red
   }).join('\n');
   assert.match(widenedPolicy, /maxReviewDays must remain exactly 90/);
 
+  // 재검토일 상수와 다른 asOf 는 붉다 — 날짜는 상수에서 계산해, 정기 재검토가 상수를 옮겨도 이 부정 사례가 살아 있다.
+  const dayAfterReview = new Date(Date.parse(`${REVIEWED_ON}T00:00:00Z`) + 86_400_000).toISOString().slice(0, 10);
   const silentlyRenewed = validateTemporaryFixture((fixture) => {
-    fixture.asOf = '2026-09-09';
+    fixture.asOf = dayAfterReview;
   }).join('\n');
-  assert.match(silentlyRenewed, /asOf must be the reviewed date 2026-09-08/);
+  assert.match(silentlyRenewed, new RegExp(`asOf must be the reviewed date ${REVIEWED_ON}`));
 });
 
 test('temporary fixtures prove missing evidence paths and privacy-forbidden keys turn red', () => {
