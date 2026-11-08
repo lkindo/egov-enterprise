@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "fac487ed8066912ae474710e969fc448a5d581af8d8563c72a6522e8de0aa114"
+    "sha256": "ca2e1b7cccf900a4bf4254cb1f63eb83ba914c1c42671a59dc2aead8f57db062"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -74,20 +74,47 @@
   "routes": [
     {
       "route": "/",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=sign-in-return, daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -110,20 +137,47 @@
     },
     {
       "route": "/admin/collaboration",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/collaboration] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/collaboration]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -228,74 +282,182 @@
     },
     {
       "route": "/admin/collaboration/address-book/select-address-book-detail/[id]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/addressbook 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/collaboration/address-book/select-address-book-detail/[id]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/collaboration/address-book/select-address-book-detail/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/collaboration/address-book/select-address-book-list",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/addressbook 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/collaboration/address-book/select-address-book-list] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/collaboration/address-book/select-address-book-list]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/collaboration/mail-history",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/mail 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/collaboration/mail-history] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/collaboration/mail-history]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/collaboration/mail-send",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/mail 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/collaboration/mail-send] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/collaboration/mail-send]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -418,20 +580,47 @@
     },
     {
       "route": "/admin/collaboration/scraps/selectScrapList",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/scrap 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/collaboration/scraps/selectScrapList] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/collaboration/scraps/selectScrapList]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -639,110 +828,272 @@
     },
     {
       "route": "/admin/community/boards/detail",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/boards/detail] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/detail]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 9건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/community/boards/insert-board-article",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/boards/insert-board-article] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/insert-board-article]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 3건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/community/boards/maker",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/boards/maker] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/maker]=BBS_MST_CREATE+BBS_MST_UPDATE (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/community/boards/master",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/boards/master] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/master]=BBS_MST_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/community/boards/master/[id]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/boards/master/[id]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/master/[id]]=BBS_MST_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 11건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/community/boards/select-board-list",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/boards/select-board-list] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/select-board-list]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 19건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -792,38 +1143,92 @@
     },
     {
       "route": "/admin/community/templates",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/template 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/community/templates] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/community/templates]=TEMPLATE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/help",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/help] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read, content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/help]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 9건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -864,20 +1269,47 @@
     },
     {
       "route": "/admin/notifications",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/notification 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/notifications] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work, collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/notifications]=NOTI_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=USER·ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -927,110 +1359,272 @@
     },
     {
       "route": "/admin/operation/events",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/event 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/operation/events] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/operation/events]=EVENT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/operation/external-hr",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/event 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/operation/external-hr] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/operation/external-hr]=EXT_HR_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/operation/memo-reports",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/memoreport 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/operation/memo-reports] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/operation/memo-reports]=MEMO_RPT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=USER·ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 8건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/operation/rewards",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/reward 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/operation/rewards] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/operation/rewards]=REWARD_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/operation/rough-map",
-      "reviewState": "proposed",
-      "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "unavailable-hidden",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/event 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 unavailable-hidden: 주 기능이 unavailable 이고 메뉴·진입 링크가 없어 미지원 화면을 숨긴다(선례 /admin/survey/polls/manage). 재개 조건은 데이터 원천 연동이다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/operation/rough-map] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/operation/rough-map]=EVENT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/patterns",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "demo-isolated",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/showcase 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 demo-isolated: 시연 구성만 싣는다(directProjectionProfiles=demo)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/patterns] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/patterns]=OPS_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1080,74 +1674,182 @@
     },
     {
       "route": "/admin/security/authority",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/security/authority] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/security/authority]=AUTHRT_READ+AUTHRT_AUDIT (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/security/dept-authority",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/security/dept-authority] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/security/dept-authority]=AUTHRT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/security/group",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/security/group] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/security/group]=CLASS_GRP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/security/login-policy",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/security/login-policy] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/security/login-policy]=LOGIN_POL_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1202,38 +1904,92 @@
     },
     {
       "route": "/admin/stats",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/stats] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=operations-status — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/stats]=STATS_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/stats/board",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/board 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/stats/board] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=operations-status — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/stats/board]=STATS_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1256,38 +2012,92 @@
     },
     {
       "route": "/admin/stats/screen",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/stats/screen] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=operations-status — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/stats/screen]=STATS_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/stats/user",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/stats/user] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=operations-status — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/stats/user]=STATS_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1342,20 +2152,47 @@
     },
     {
       "route": "/admin/survey/hub",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/survey/hub] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/survey/hub]=SURVEY_READ_ALL+SURVEY_RSP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 6건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1460,20 +2297,47 @@
     },
     {
       "route": "/admin/survey/manage/[id]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/survey/manage/[id]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/survey/manage/[id]]=SURVEY_READ_ALL (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1528,20 +2392,47 @@
     },
     {
       "route": "/admin/survey/polls",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/survey/polls] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/survey/polls]=POLL_READ+POLL_READ_ALL (ALL) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1592,20 +2483,47 @@
     },
     {
       "route": "/admin/survey/polls/participate",
-      "reviewState": "proposed",
-      "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "retain-canonical",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 활성 메뉴 2010800 의 직접 목적지라 메뉴 밖 하위가 아니라 정본이다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/survey/polls/participate] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=survey-respond — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/survey/polls/participate]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -1805,164 +2723,407 @@
     },
     {
       "route": "/admin/system/banner",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/promotion 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/banner] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/banner]=BANNER_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 9건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/codes/administ",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/codes/administ] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/codes/administ]=ADMCODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/codes/institution",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/codes/institution] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/codes/institution]=INST_CODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/comments",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/comment 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/comments] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/comments]=COMMENT_READ_ALL (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 14건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/common-code",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/common-code] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/common-code]=CODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 6건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/common-code/codes",
-      "reviewState": "proposed",
-      "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "consolidate-to-canonical",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 consolidate-to-canonical: 정본 /admin/system/common-code 로 서버 리다이렉트한다(진입 권한 CODE_READ 가 같다). 종전 클라이언트 router.replace 를 서버 redirect 로 바꿨다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/common-code/codes] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/common-code/codes]=CODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "정본 화면으로 서버 리다이렉트만 남는다 — 화면 접근성은 정본 화면의 것을 따른다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/content-pages",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/cms 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/content-pages] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/content-pages]=CMS_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/durable-jobs",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/durable-jobs] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=operations-status — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/durable-jobs]=DWORK_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=UNVERIFIED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/hpcm",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/help 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/hpcm] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/hpcm]=HELP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2058,164 +3219,407 @@
     },
     {
       "route": "/admin/system/logs",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs]=LOGIN_LOG_READ+SYS_LOG_READ+USER_LOG_READ+WEB_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 3건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/logs/audit",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs/audit] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs/audit]=ADT_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=UNVERIFIED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/logs/login",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs/login] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs/login]=LOGIN_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/logs/privacy",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs/privacy] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs/privacy]=PRIVACY_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/logs/system",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs/system] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs/system]=SYS_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/logs/user",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs/user] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs/user]=USER_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/logs/web",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/logs/web] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=audit-privacy-investigation — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/logs/web]=WEB_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/menus",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/menus] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/menus]=MENU_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/menus/by-authority",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/menus/by-authority] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/menus/by-authority]=AUTHRT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2283,92 +3687,227 @@
     },
     {
       "route": "/admin/system/policies",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/policies] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=operations-status — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/policies]=POLICY_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/system/programs",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/system/programs] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=없음(IA §4 과업 표에 해당 과업이 없다) — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/system/programs]=MENU_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/user/absences",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/user/absences] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/user/absences]=ABSENCE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/user/departments",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/user/departments] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/user/departments]=DEPT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/user/indvdl-info-policy",
-      "reviewState": "proposed",
-      "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "reviewState": "approved",
+      "disposition": "non-menu-child",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 조직 정책 화면에서 여는 하위 화면이며 메뉴가 없다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/user/indvdl-info-policy] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/user/indvdl-info-policy]=LOGIN_POL_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2418,56 +3957,137 @@
     },
     {
       "route": "/admin/user/manage",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/user/manage] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=user-administration — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/user/manage]=USER_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/uss/ion/sms",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/sms 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/uss/ion/sms] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/uss/ion/sms]=SMS_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/admin/uss/olh/online-manual",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/help 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/admin/uss/olh/online-manual] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-participation-admin — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/admin/uss/olh/online-manual]=HELP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2490,20 +4110,47 @@
     },
     {
       "route": "/approvals",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/informalsanction 소유 → 구성 approval,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/approvals] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=approval-request — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/approvals]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2526,38 +4173,92 @@
     },
     {
       "route": "/cop/cmy/selectCommunityDetail/[id]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/community 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/cop/cmy/selectCommunityDetail/[id]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/cop/cmy/selectCommunityDetail/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/cop/cmy/selectCommunityList",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/community 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/cop/cmy/selectCommunityList] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/cop/cmy/selectCommunityList]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2580,20 +4281,47 @@
     },
     {
       "route": "/help",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/help 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/help] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/help]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2616,146 +4344,362 @@
     },
     {
       "route": "/login",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/login] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=sign-in-return — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/login]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ANONYMOUS 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/note",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/note 소유 → 구성 collaboration,demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/note] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=collaboration-delivery — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/note]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/pages",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/cms 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/pages] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/pages]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/pages/[slug]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-12-31",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/cms 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/pages/[slug]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=content-publish-read — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/pages/[slug]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/search",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/search] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=unified-search — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/search]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/smart-toolkit/dept-job",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/smart-toolkit/dept-job] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/smart-toolkit/dept-job]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/smart-toolkit/dept-job/[id]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/smart-toolkit/dept-job/[id]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/smart-toolkit/dept-job/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/smart-toolkit/dept-job/create",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "기능 선언 밖(공통 기반) → 모든 구성 approval,collaboration,core,demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/smart-toolkit/dept-job/create] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/smart-toolkit/dept-job/create]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2814,20 +4758,47 @@
     },
     {
       "route": "/smart-toolkit/schedule",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/schedule 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/smart-toolkit/schedule] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/smart-toolkit/schedule]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2850,56 +4821,137 @@
     },
     {
       "route": "/smart-toolkit/work-report",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/report 소유 → 구성 demo — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/smart-toolkit/work-report] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=daily-work — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/smart-toolkit/work-report]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/survey",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/survey] menuExposure=visible — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=survey-respond — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/survey]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
       "route": "/survey/[id]",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "non-menu-child",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 non-menu-child: 메뉴 없이 상위 화면에서 여는 하위 화면이다(menuExposure=not-menued)"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/survey/[id]] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=survey-respond — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/survey/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     },
     {
@@ -2940,20 +4992,47 @@
     },
     {
       "route": "/survey/stats",
-      "reviewState": "proposed",
+      "reviewState": "approved",
       "disposition": "retain-canonical",
-      "authorizationReview": "unverified",
-      "privacyReview": "unverified",
-      "effectiveMenuExposureReview": "unverified",
-      "capabilityReview": "unverified",
-      "profileOwnershipReview": "unverified",
+      "authorizationReview": "verified",
+      "privacyReview": "verified",
+      "effectiveMenuExposureReview": "verified",
+      "capabilityReview": "verified",
+      "profileOwnershipReview": "verified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": null,
-        "productIa": null,
-        "securityPrivacy": null,
-        "accessibility": null
+        "domain": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/modules/survey 소유 → 구성 demo,survey — 생성기와 같은 제거 계획으로 계산한 정적 생존과 같다(scripts/frontend-reachability-census.mjs)",
+            "처분 retain-canonical: 현재 정본 화면을 그대로 둔다"
+          ]
+        },
+        "productIa": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/ui-route-capabilities.json routes[/survey/stats] menuExposure=not-menued — config/project-composer-menus.json 메뉴 스냅숏과 대조했다",
+            "journeys=survey-respond — IA §4 과업에 붙인 여정 ID(DEC-OPS-404)"
+          ]
+        },
+        "securityPrivacy": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "config/governance/permission-catalog.json pagePermissions[/survey/stats]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+          ]
+        },
+        "accessibility": {
+          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)",
+          "reviewedAt": "2026-11-08",
+          "evidence": [
+            "처분은 화면 구조·제목·키보드 흐름을 바꾸지 않는다 — 화면 접근성 측정은 UI 품질 원장(config/ui-quality-scenarios.json, GAP-UIQ-001)이 따로 추적한다"
+          ]
+        }
       }
     }
   ],

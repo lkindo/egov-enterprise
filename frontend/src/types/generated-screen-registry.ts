@@ -769,18 +769,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
-    "route": "/admin/system/common-code/codes",
-    "label": "공통코드 관리",
-    "labelSource": "route-ledger",
-    "shellAccess": "admin-system",
-    "dynamic": false,
-    "demo": false,
-    "entry": {"permissions":["CODE_READ"],"mode":"ANY"},
-    "permissions": [
-      {"code":"CODE_READ","action":"READ","source":"entry"}
-    ]
-  },
-  {
     "route": "/admin/system/content-pages",
     "label": "콘텐츠 페이지",
     "labelSource": "menu",
@@ -1438,6 +1426,7 @@ const GENERATED_ALIASES: readonly ScreenAlias[] = [
   {"route":"/admin/survey/stats","target":"/admin/survey/hub?tab=stats","kind":"config-redirect"},
   {"route":"/admin/survey/templates","target":"/admin/survey/hub?tab=templates","kind":"config-redirect"},
   {"route":"/admin/system/audit","target":"/admin/system/monitoring/hub?tab=system","kind":"config-redirect"},
+  {"route":"/admin/system/common-code/codes","target":"/admin/system/common-code","kind":"page-redirect"},
   {"route":"/admin/system/ism","target":"/approvals","kind":"page-redirect"},
   {"route":"/admin/system/monitoring","target":"/admin/system/monitoring/hub","kind":"page-redirect"},
   {"route":"/admin/user/login-policy","target":"/admin/user/indvdl-info-policy","kind":"config-redirect"},
@@ -1746,7 +1735,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/system/codes/administ",
       "/admin/system/codes/institution",
       "/admin/system/common-code",
-      "/admin/system/common-code/codes",
       "/admin/system/menus",
       "/admin/system/policies",
       "/admin/system/programs"
