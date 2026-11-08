@@ -2926,19 +2926,9 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "partial",
-      "dataSource": "mixed",
-      "supportedActions": [
-        "open-create-form",
-        "paginate",
-        "refresh",
-        "search",
-        "sort",
-        "tab-filter",
-        "view-detail",
-        "view-list",
-        "view-summary"
-      ],
+      "status": "unverified",
+      "dataSource": "unverified",
+      "supportedActions": [],
       "profileOwners": [
         "collaboration",
         "demo"
@@ -2950,96 +2940,33 @@
       "journeys": [
         "content-publish-read"
       ],
-      "visibleLabel": "질의응답(Q&A)",
+      "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/help?tab=${tab}"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/help?tab=${tab}"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "knowledge.document-list",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "boards-api",
-          "actions": [
-            "open-create-form",
-            "paginate",
-            "refresh",
-            "search",
-            "sort",
-            "tab-filter",
-            "view-detail",
-            "view-list"
-          ],
+          "id": "route-capability-review",
+          "status": "unverified",
+          "dataSource": "unverified",
+          "actions": [],
           "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
-          "visibleLabel": "질의응답(Q&A)",
+          "actorScope": "UNVERIFIED",
+          "visibleLabel": "unverified",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E0",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner",
           "evidence": [
-            "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
-            "api-server/src/test/java/nuri/api/controller/business/board/BoardApiControllerTest.java",
-            "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-            "frontend/src/app/admin/help/__tests__/KnowledgeHubClient.pagination.test.tsx",
-            "frontend/src/app/admin/help/qna/page.tsx",
-            "frontend/src/services/business/knowledge/__tests__/knowledgeService.test.ts",
-            "frontend/src/services/business/knowledge/knowledgeService.ts"
-          ]
-        },
-        {
-          "id": "knowledge.popular-recent",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "boards-api",
-          "actions": [
-            "view-detail",
-            "view-list"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
-          "visibleLabel": "인기 문서 · 최근 활동",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
-            "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-            "frontend/src/app/admin/help/qna/page.tsx",
-            "frontend/src/services/business/knowledge/__tests__/knowledgeService.test.ts",
-            "frontend/src/services/business/knowledge/knowledgeService.ts"
-          ]
-        },
-        {
-          "id": "knowledge.board-stats",
-          "status": "partial",
-          "candidateStatus": "live",
-          "dataSource": "board-stats-api",
-          "actions": [
-            "view-summary"
-          ],
-          "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
-          "visibleLabel": "게시판 이용 현황",
-          "primaryTask": false,
-          "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
-          "owner": "product/UX + domain owner",
-          "evidence": [
-            "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
-            "api-server/src/test/java/nuri/api/controller/business/board/BoardApiControllerTest.java",
-            "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
-            "frontend/src/app/admin/help/__tests__/KnowledgeHubClient.accessibility.test.tsx",
-            "frontend/src/app/admin/help/qna/page.tsx",
-            "frontend/src/services/business/knowledge/__tests__/knowledgeService.test.ts"
+            "frontend/src/app/admin/help/qna/page.tsx"
           ]
         }
       ],
@@ -3049,7 +2976,17 @@
         "frontend/src/app/admin/help/qna/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": []
+      "unverifiedFields": [
+        "dataSource",
+        "status",
+        "supportedActions",
+        "visibleLabel"
+      ],
+      "review": {
+        "owner": "product/UX + domain owner",
+        "reviewBy": "2026-11-30",
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel): this route is a server redirect alias to the knowledge hub since 2026-11-08 (DEC-OPS-407), so its capabilities belong to the destination /admin/help; the page keeps a hub shell tab or a contributed tab present in this composition and otherwise opens QNA, and forwards no other key."
+      }
     },
     {
       "route": "/admin/notifications",

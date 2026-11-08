@@ -358,6 +358,15 @@ describe('app shell accessibility source contract', () => {
     }
   });
 
+  // [2026-11-08 DEC-OPS-407] Q&A 옛 경로도 지식 허브로 서버 리다이렉트만 남긴다 — 제목·로딩 화면은 정본 허브가 갖는다.
+  it('정본으로 통합한 Q&A 옛 경로는 지식 허브로 서버 리다이렉트만 남긴다', () => {
+    for (const pathParts of presentParts([['admin', 'help', 'qna', 'page.tsx']])) {
+      const source = readAppSource(...pathParts);
+      expect(source, `${pathParts.join('/')}: 지식 허브로 바로 보내지 않습니다`).toContain('redirect(`/admin/help?tab=${tab}`)');
+      expect(source, `${pathParts.join('/')}: 통합한 화면이 되살아났습니다`).not.toMatch(/<h1\b|<KnowledgeHubClient\b|<Suspense\b|'use client'/);
+    }
+  });
+
   it('PageHeader가 없는 standalone HubHeader route만 명시적으로 h1을 소유한다', () => {
     const standaloneHubSources = [
       ['admin', 'AdminDashboardClient.tsx'],
@@ -465,7 +474,7 @@ describe('app shell accessibility source contract', () => {
       ['admin', 'community', 'templates', 'page.tsx'],
       ['admin', 'help', 'page.tsx'],
       ['admin', 'help', 'faq', 'page.tsx'],
-      ['admin', 'help', 'qna', 'page.tsx'],
+      // [2026-11-08 DEC-OPS-407] admin/help/qna/page.tsx 는 지식 허브로의 서버 리다이렉트가 되어 route-local fallback 이 없다 — 아래 '정본 통합' 검사로 옮겼다.
       // [2026-09-06 DEC-OPS-038] admin/notifications/page.tsx 는 목록에서 뺐다 — ?view= 상태가 사라져 useSearchParams 도
       //   route-local Suspense 도 없어졌고, h1 은 PageHeader 가 최종 화면에서 그린다(fallback 자체가 존재하지 않는다).
       ['admin', 'operation', 'events', 'page.tsx'],

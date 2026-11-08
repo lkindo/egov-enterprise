@@ -369,24 +369,6 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     ]
   },
   {
-    "route": "/admin/help/qna",
-    "label": "질의응답(Q&A)",
-    "labelSource": "route-ledger",
-    "shellAccess": "authenticated",
-    "dynamic": false,
-    "demo": false,
-    "entry": {"permissions":[],"mode":"ANY"},
-    "permissions": [
-      {"code":"BOARD_CREATE","action":"CREATE","source":"display"},
-      {"code":"COMMUNITY_APPROVE","action":"APPROVE","source":"write"},
-      {"code":"COMMUNITY_CREATE_ALL","action":"CREATE_ALL","source":"write"},
-      {"code":"COMMUNITY_DELETE_ALL","action":"DELETE_ALL","source":"write"},
-      {"code":"COMMUNITY_READ_ALL","action":"READ_ALL","source":"display"},
-      {"code":"COMMUNITY_REJECT","action":"REJECT","source":"write"},
-      {"code":"COMMUNITY_UPDATE_ALL","action":"UPDATE_ALL","source":"write"}
-    ]
-  },
-  {
     "route": "/admin/notifications",
     "label": "알림 센터",
     "labelSource": "menu",
@@ -1415,6 +1397,7 @@ const GENERATED_ALIASES: readonly ScreenAlias[] = [
   {"route":"/admin/community/boards/insertBoardArticle","target":"/admin/community/boards/insert-board-article","kind":"config-redirect"},
   {"route":"/admin/community/boards/selectBoardList","target":"/admin/community/boards/select-board-list","kind":"config-redirect"},
   {"route":"/admin/community/boards/write","target":"/admin/community/boards/insert-board-article","kind":"page-redirect"},
+  {"route":"/admin/help/qna","target":"/admin/help?tab=${tab}","kind":"page-redirect"},
   {"route":"/admin/observability","target":"/admin/system/monitoring/hub?tab=observability","kind":"config-redirect"},
   {"route":"/admin/security/audit","target":"/admin/system/monitoring/hub?tab=security","kind":"config-redirect"},
   {"route":"/admin/security/role","target":"/admin/security/authority","kind":"page-redirect"},
@@ -1598,7 +1581,6 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/community/boards/detail",
       "/admin/help",
       "/admin/help/faq",
-      "/admin/help/qna",
       "/help"
     ]
   },

@@ -2443,6 +2443,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-406 | accepted | URL 상태 승인의 소급 확인. 9/5 승인 뒤 이름(`stateItemNames`)만으로 `presentation-state`·`resource-identifier` 에 들어온 고유 기록 55개(부류별 56건, 생산 파일 31개)를 기록마다 다시 확인하고 승인을 유지한다. 근거는 묶음별 값의 출처(서버 데이터·코드 상수·형식 검사한 주소 입력·관리자 직접 입력)·소비 검증·재발행 범위·서버 권한이며, 근거 문서 §2.7 에 둔다. 같은 변경에서 고쳤다 — 메모 보고·모니터링 허브는 바꾸지 않는 키도 해석한 값으로 다시 싣는다, 커뮤니티 게시판·게시글 상세는 주소의 게시판 ID 를 형식 검사하고 인코딩한다, 댓글 관리는 글 번호의 입력 검사를 주소 읽기 검사(안전 정수)와 같게 한다. 모니터링 허브의 새 쓰기·지우기 기록 4개는 이 수정의 것이라 `presentation-state` 에 묶었다. `resource-identifier` 부류 설명과 과거 근거의 두 문장(page 정수 보장, 목록에서만 나온다)은 날짜를 붙여 정정한다. | 9차 Codex 검토가 이름 기반 자동 편입을 확인했고, 11차·14차 검토가 같은 이름이 같은 뜻이라는 가정을 반례(메모 보고 tab 원값 재발행, 댓글 관리 글 번호 직접 입력, 안전 정수 경계)로 막았다. 미해석·미검증 원값을 복사하던 재구성 호출이 둘뿐이라(댓글 관리의 `bbsId` 는 형식 검사한 주소 입력을 다시 싣는다) 공용 함수에 검증기를 의무화하지 않고 호출부를 고쳤다(가장 작은 변경). 게시판 목록 화면의 같은 재발행은 55건 밖이다. | [근거 문서 §2.7](../04-operations/url-state-class-approval-evidence.md), [URL 승인](../../config/ui-url-state-approval.json), [값 규칙](../../frontend/src/lib/navigation/url-state-values.ts) | 2026-11-08 | - |
 
+## DEC-OPS-407
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-407 | accepted | 구현이 먼저였던 IA 통합 2건. ① `/admin/help/qna` 를 지식 허브(`/admin/help`)로의 서버 리다이렉트로 바꾸고 정본 통합(consolidate-to-canonical)으로 승인한다. tab 은 지식 허브 고유 탭(WIKI·FAQ·QNA)이나 기여할 수 있는 탭(`TAB_HUB.contributable`)이면 그대로, 없거나 그 밖이면 QNA(종전 기본 탭)로 보낸다. 그 밖의 키는 넘기지 않는다. 새 URL 기록 2개는 `presentation-state` 에 묶는다. ② `/approvals/draft` 는 화면을 그대로 두고 처분을 정본 유지(retain-canonical)로 바꿔 승인한다. | 11차 Codex 검토가 단순 리다이렉트는 기존 진입(Q&A 기본 탭, 기안 창 자동 열기·권한 안내)을 보존하지 못한다고 했다. 16차 검토가 Q&A 화면 안에서 탭을 누르면 `/admin/help/qna?tab=COMMUNITY` 같은 주소가 만들어진다는 반례로 기여 탭 보존을 요구했고, 결재 기안은 상위 화면에서 들어오는 경로가 없어 메뉴 밖 하위보다 정본 유지가 맞다고 했다. 기여 탭은 허브 탭 슬롯의 소비자를 허브 셸 하나로 두는 불변식을 지키려고 등록 파일 대신 정적 선언으로 판정한다 — 기여 탭 주소는 그 구성의 허브가 그 탭을 보일 때만 만들어진다. 결재 기안을 통합하면 결재함에 기안 창을 여는 새 주소 키(URL 승인 대상)와 history 처리가 필요한데, 앱 안에 그 경로로 가는 링크가 없다. | [Q&A 리다이렉트](../../frontend/src/app/admin/help/qna/page.tsx), [처분 원장](../../config/ui-navigation-disposition-proposal.json), [IA §8](../01-product/information-architecture.md) | 2026-11-08 | DEC-OPS-302 가운데 결재 기안을 정본 통합으로 다시 제안한 부분 |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.

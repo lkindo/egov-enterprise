@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "76a028758051cb467a7b755c0efe02f7ff801c066d0f1fc641555d269b1d76c3"
+    "sha256": "0e04474f534ea4978cecd1e1753ae891208bf6544ace9fc718e26e6c6c32158d"
   },
   "classes": [
     {
@@ -22,6 +22,8 @@
         "recordIds": [
           "URL-04108431ABBB39",
           "URL-08E6422AC2BFB6",
+          "URL-0B2A9233A7F461",
+          "URL-0CA511C561E121",
           "URL-0CE59D1935E9DE",
           "URL-0EAC82D8D40634",
           "URL-0FE1B58B5495BA",
