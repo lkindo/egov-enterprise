@@ -577,7 +577,7 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   const PANEL = 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx';
   const CONTRIBUTION = 'frontend/src/extensions/showcase/hub-tabs-monitoring.ts';
   const DEMO_ONLY_TEST = 'frontend/src/app/admin/patterns/__tests__/pattern-gallery.test.tsx';
-  const leak = (route) => new RegExp(`route ${route.replace(/[/[\]]/g, '\\$&')}: demo capability leaks into a non-demo profile owner`);
+  const leak = (route) => new RegExp(`route ${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}: demo capability leaks into a non-demo profile owner`);
 
   const hub = manifest.routes.find(({ route }) => route === HUB);
   assert.deepEqual(hub.profileOwners, ['approval', 'collaboration', 'core', 'demo', 'survey']);
