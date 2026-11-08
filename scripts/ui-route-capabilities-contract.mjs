@@ -682,7 +682,10 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 }
 
 // 대소문자를 가리지 않는다 — 대소문자를 가리지 않는 디스크에서 `__TESTS__`·`.TEST.tsx` 로 시험 파일을 숨기지 못하게 한다(Codex 23차).
-const TEST_SOURCE = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/i;
+// 폴더 조각과 파일 이름을 따로 본다 — 한 정규식의 갈래에 고정점을 섞으면 CodeQL 이 막는다(js/regex/missing-regexp-anchor).
+const TEST_DIRECTORY = /(?:^|\/)__tests__\//i;
+const TEST_FILE_NAME = /\.(?:test|spec)\.[cm]?[jt]sx?$/i;
+const isTestSource = (file) => TEST_DIRECTORY.test(file) || TEST_FILE_NAME.test(file);
 // 한 줄에 하나뿐인 기본 바인딩 import(`import Name from '지정자';`). 바인딩 없는 import·빈 `{}`·이름 import·한 줄 여러 import 는
 // 받지 않는다 — 판정할 수 없는 형태는 허용하지 않는 쪽이다(Codex 24차: `import  './x'` 처럼 공백만 늘린 부수효과 import).
 const DEFAULT_IMPORT_LINE = /^\s*import\s+([A-Za-z_$][\w$]*)\s+from\s+(['"])([^'"\r\n]+)\2\s*;?\s*$/;
@@ -749,7 +752,7 @@ function demoContributionRemovedOutsideDemo(capability, entry, repository, nonDe
   // 디스크의 실제 이름과 대소문자까지 같은 파일만 받는다(대소문자를 가리지 않는 디스크에서도 같은 판정).
   const exactFile = repositoryFileLookup(repository.repoRoot);
   if (!evidence.every((file) => isNonemptyString(file) && isCanonicalRepositoryPath(file) && file.startsWith('frontend/src/')
-    && !TEST_SOURCE.test(file) && exactFile(path.resolve(repository.repoRoot, file)) === 'exact' && shipsOnlyInDemo(file))) return false;
+    && !isTestSource(file) && exactFile(path.resolve(repository.repoRoot, file)) === 'exact' && shipsOnlyInDemo(file))) return false;
   return evidence.some((file) => {
     let kind;
     try {
