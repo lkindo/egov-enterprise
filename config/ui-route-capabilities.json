@@ -5,6 +5,7 @@
   "scope": "frontend/src/app/**/page.{js,jsx,ts,tsx}",
   "notes": [
     "shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.",
+    "roles describe the intended users in the default installation (persona, ADR-0016 default groups); they are not an authorization rule — access is decided by explicit OPERATION/NAVIGATION grants, ALL/ANY page modes, excluded groups and object conditions.",
     "admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.",
     "directProjectionProfiles is a direct feature-removal observation (the preset composition frontend.removePaths), not positive semantic profile ownership and not a full transitive artifact proof.",
     "unverified values are bounded review exceptions and keep G1 gateReady=false.",
@@ -3206,7 +3207,7 @@
             "refresh",
             "row-options"
           ],
-          "actorScope": "ADMIN|SYSTEM",
+          "actorScope": "AUTHENTICATED",
           "visibleLabel": "알림 스트림",
           "primaryTask": true,
           "evidenceLevel": "E3",
@@ -3218,7 +3219,7 @@
             "frontend/src/lib/hooks/use-notifications.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner"
         },
         {
@@ -3241,24 +3242,6 @@
             "frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx",
             "frontend/src/app/admin/notifications/page.tsx",
             "frontend/src/services/foundation/system/NotificationAdminService.ts"
-          ],
-          "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
-          "owner": "product/UX + domain owner"
-        },
-        {
-          "id": "notifications.health-metrics",
-          "status": "demo",
-          "dataSource": "hardcoded-metrics",
-          "actions": [],
-          "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN|SYSTEM",
-          "visibleLabel": "98.2% / ACTIVE",
-          "primaryTask": false,
-          "evidenceLevel": "E1",
-          "evidence": [
-            "frontend/src/app/admin/notifications/page.tsx",
-            "frontend/src/app/components/ui/smart-notification-hub.tsx"
           ],
           "decisionSafe": false,
           "lastVerifiedAt": "2026-08-21",
@@ -5479,12 +5462,12 @@
             "view-list"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
+          "actorScope": "ADMIN|SYSTEM",
           "visibleLabel": "결과 통계",
           "primaryTask": false,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/poll/PollApiController.java",
@@ -5724,12 +5707,12 @@
             "view-detail"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
+          "actorScope": "ADMIN|SYSTEM",
           "visibleLabel": "설문 상세 · 응답 선택지",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/poll/PollApiController.java",
@@ -5920,12 +5903,12 @@
             "view-list"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "AUTHENTICATED",
+          "actorScope": "ADMIN|SYSTEM",
           "visibleLabel": "온라인 투표 관리",
           "primaryTask": true,
           "decisionSafe": false,
           "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner",
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/poll/PollApiController.java",
@@ -9270,8 +9253,8 @@
         "UNVERIFIED"
       ],
       "surface": "admin-console",
-      "status": "demo",
-      "dataSource": "static-mock",
+      "status": "partial",
+      "dataSource": "page-permission-filtered-links",
       "supportedActions": [
         "navigate"
       ],
@@ -9297,8 +9280,8 @@
       "capabilities": [
         {
           "id": "org-policy.navigation-panel",
-          "status": "demo",
-          "dataSource": "static-mock",
+          "status": "partial",
+          "dataSource": "page-permission-filtered-links",
           "actions": [
             "navigate"
           ],
@@ -9307,8 +9290,8 @@
           "visibleLabel": "조직 정책",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E2",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/user/UserOrgHubClient.tsx",
@@ -10985,8 +10968,8 @@
         },
         {
           "id": "search.menu-shortcuts",
-          "status": "demo",
-          "dataSource": "hardcoded-static-list",
+          "status": "partial",
+          "dataSource": "head-menus-api",
           "actions": [
             "navigate"
           ],
@@ -10994,13 +10977,14 @@
           "actorScope": "AUTHENTICATED",
           "visibleLabel": "메뉴 바로가기",
           "primaryTask": false,
-          "evidenceLevel": "E1",
+          "evidenceLevel": "E2",
           "evidence": [
             "frontend/src/app/search/SearchClient.tsx",
-            "frontend/src/app/search/page.tsx"
+            "frontend/src/app/search/page.tsx",
+            "frontend/src/services/business/user/MenuService.ts"
           ],
           "decisionSafe": false,
-          "lastVerifiedAt": "2026-08-21",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner"
         },
         {

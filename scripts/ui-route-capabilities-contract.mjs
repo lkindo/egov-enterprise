@@ -34,7 +34,8 @@ const KNOWN_ROUTE_CAPABILITIES = {
   '/admin/notifications': [
     {
       id: 'notifications.stream', status: 'partial', candidateStatus: 'live', dataSource: 'notifications-api+websocket', actions: ['local-search', 'tab-filter'],
-      unsupportedVisibleActions: ['refresh', 'row-options'], actorScope: 'ADMIN|SYSTEM', visibleLabel: '알림 스트림', primaryTask: true,
+      // [2026-11-08] 진입 권한 NOTI_READ 의 기본 그룹에 ROLE_USER 가 있다 — 기본 설치에서 인증 사용자가 쓴다.
+      unsupportedVisibleActions: ['refresh', 'row-options'], actorScope: 'AUTHENTICATED', visibleLabel: '알림 스트림', primaryTask: true,
       evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationsClient.tsx', 'frontend/src/app/components/ui/smart-notification-hub.tsx', 'frontend/src/lib/hooks/use-notifications.ts', 'frontend/e2e/journeys/notifications.spec.ts'],
     },
     {
@@ -44,11 +45,7 @@ const KNOWN_ROUTE_CAPABILITIES = {
       unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '알림 보내기', primaryTask: false,
       evidenceLevel: 'E3', evidence: ['frontend/src/app/admin/notifications/NotificationDispatchDialog.tsx', 'frontend/src/app/admin/notifications/__tests__/NotificationDispatchDialog.test.tsx', 'frontend/src/services/foundation/system/NotificationAdminService.ts', 'api-server/src/main/java/nuri/api/controller/business/notification/NotificationAdminApiController.java', 'api-server/src/test/java/nuri/api/controller/business/notification/NotificationAdminApiControllerTest.java'],
     },
-    {
-      id: 'notifications.health-metrics', status: 'demo', dataSource: 'hardcoded-metrics', actions: [],
-      unsupportedVisibleActions: [], actorScope: 'ADMIN|SYSTEM', visibleLabel: '98.2% / ACTIVE', primaryTask: false,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/components/ui/smart-notification-hub.tsx'],
-    },
+    // [2026-11-08] notifications.health-metrics('98.2% / ACTIVE')는 화면에 없다(코드 검색 0건) — 원장과 함께 걷었다.
     // [2026-09-23] notifications.dispatch-preview 는 DEC-OPS-038(2026-09-06)이 데모 발송 뷰와 함께
     //   걷었고 원장에서도 사라졌는데 이 동결 목록에만 남아 있었다. 종전에는 동결과 커밋본을
     //   대조하지 않아 그 드리프트가 보이지 않았다 — 아래 프런트 라우트 검증이 이제 양방향으로 본다.
@@ -117,11 +114,14 @@ const KNOWN_ROUTE_CAPABILITIES = {
       evidenceLevel: 'E3', evidence: ['frontend/src/app/search/SearchClient.tsx', 'frontend/src/app/search/__tests__/SearchClient.contract.test.tsx', 'frontend/src/services/business/user/UserSearchService.ts', 'api-server/src/main/java/nuri/api/controller/UserApiController.java'],
     },
     {
-      id: 'search.menu-shortcuts', status: 'demo', dataSource: 'hardcoded-static-list', actions: ['navigate'],
+      // [2026-11-08] 고정 목록이 아니라 메뉴 API(menuService.getHeadMenus)의 트리를 검색어로 거른다. 왕복 산출물이 없어 partial 이다.
+      id: 'search.menu-shortcuts', status: 'partial', dataSource: 'head-menus-api', actions: ['navigate'],
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '메뉴 바로가기', primaryTask: false,
-      evidenceLevel: 'E1', evidence: ['frontend/src/app/search/SearchClient.tsx'],
+      evidenceLevel: 'E2', evidence: ['frontend/src/app/search/SearchClient.tsx', 'frontend/src/services/business/user/MenuService.ts'],
     },
     {
+      // [2026-11-08] 원본 원장은 게시글 검색을 partial 로 적는다(2026-09-02 부터 실제 검색). 이 초기값은 게시판 기능 표지 안의 탭이라
+      //   게시판 없는 생성물에서 사라지므로, 기능별 판정이 생기기 전까지 보수적으로 미지원을 둔다.
       id: 'search.articles', status: 'unavailable', dataSource: 'none', actions: [],
       unsupportedVisibleActions: [], actorScope: 'AUTHENTICATED', visibleLabel: '게시글 (미지원)', primaryTask: false,
       evidenceLevel: 'E1', evidence: ['frontend/src/app/search/SearchClient.tsx'],
@@ -559,6 +559,7 @@ export function buildUnreviewedBaselineManifest(
     scope: 'frontend/src/app/**/page.{js,jsx,ts,tsx}',
     notes: [
       'shellAccess is a proxy UI-shell admission class, not a domain capability authorization claim.',
+      'roles describe the intended users in the default installation (persona, ADR-0016 default groups); they are not an authorization rule — access is decided by explicit OPERATION/NAVIGATION grants, ALL/ANY page modes, excluded groups and object conditions.',
       'admin-system is a compatibility label for an explicit OPERATION-gated admin shell, not an ADMIN/SYSTEM role restriction; unregistered admin paths are denied. NAVIGATION controls menu display separately.',
       'directProjectionProfiles is a direct feature-removal observation (the preset composition frontend.removePaths), not positive semantic profile ownership and not a full transitive artifact proof.',
       'unverified values are bounded review exceptions and keep G1 gateReady=false.',

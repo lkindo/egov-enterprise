@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "d0ace1b6aa4462fe2c093fded7e4aaee8672cd56bad0952646569dcfa8de2ff7"
+    "sha256": "305a608653403b11d428cc36041a9a22dc5ff5fc50941ec8c0e8e9eb25404f6d"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
