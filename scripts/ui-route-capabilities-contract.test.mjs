@@ -199,10 +199,47 @@ test('proxy shell access is measured separately from unresolved capability roles
     { sourceShellAccess: legacySms.sourceShellAccess, shellAccess: legacySms.shellAccess },
     { sourceShellAccess: 'authenticated', shellAccess: 'admin-system' },
   );
+  // [2026-11-08 DEC-OPS-404] 셸 입장은 역할이 아니다. 확정한 roles 는 기본 설치 페르소나 — 페이지 권한의 기본 그룹(ANY 는 합,
+  //   ALL 은 교집합, 권한이 없으면 AUTHENTICATED, 리다이렉트는 목적지, 공개 셸은 ANONYMOUS)과 같아야 한다. 셸 값을 그대로
+  //   옮기면 관리자 셸의 일반 사용자 화면(메모 보고 등)에서 어긋난다. 기본 그룹이 없는 권한의 화면은 UNVERIFIED 로 남는다.
+  const catalog = JSON.parse(fs.readFileSync(path.join(ROOT, 'config', 'governance', 'permission-catalog.json'), 'utf8'));
+  const defaultGroups = new Map(catalog.permissions.map((permission) => [permission.code, permission.defaultGroups]));
+  const GROUP_ROLE = { ROLE_USER: 'USER', ROLE_ADMIN: 'ADMIN', ROLE_SYSTEM: 'SYSTEM' };
+  const ROLE_ORDER = ['USER', 'ADMIN', 'SYSTEM'];
+  const resolveTarget = (target) => {
+    const segments = (target.split(/[?#]/u)[0].replace(/\/$/u, '') || '/').split('/');
+    return analysis.manifest.routes.find(({ route }) => {
+      const parts = route.split('/');
+      return parts.length === segments.length && parts.every((part, index) => part === segments[index] || /^\[.+\]$/u.test(part));
+    });
+  };
+  const persona = (entry, depth = 0) => {
+    if (entry.routing.kind !== 'page' && depth < 3) {
+      const destination = resolveTarget(entry.routing.target);
+      if (destination) return persona(destination, depth + 1);
+    }
+    if (entry.shellAccess === 'public') return ['ANONYMOUS'];
+    const required = catalog.pagePermissions[entry.route];
+    if (!Array.isArray(required)) return null;
+    if (required.length === 0) return ['AUTHENTICATED'];
+    const sets = required.map((code) => new Set((defaultGroups.get(code) ?? []).map((group) => GROUP_ROLE[group])));
+    const roles = catalog.pagePermissionModes[entry.route] === 'ALL'
+      ? [...sets[0]].filter((role) => sets.every((set) => set.has(role)))
+      : [...new Set(sets.flatMap((set) => [...set]))];
+    return roles.length ? roles.sort((left, right) => ROLE_ORDER.indexOf(left) - ROLE_ORDER.indexOf(right)) : [];
+  };
+  for (const entry of analysis.manifest.routes) {
+    const expected = persona(entry);
+    if (expected?.length === 0) {
+      assert.deepEqual(entry.roles, ['UNVERIFIED'], `${entry.route}: no default group opens the page, so no default persona may be asserted`);
+      assert.match(entry.review?.reason ?? '', /no default group/u, `${entry.route}: the unresolved persona needs its reason`);
+      continue;
+    }
+    if (entry.roles.includes('UNVERIFIED')) continue;
+    assert.deepEqual(entry.roles, expected, `${entry.route}: roles must equal the default-installation persona, not the shell admission`);
+  }
   assert.ok(
-    analysis.manifest.routes.some(
-      ({ shellAccess, roles }) => shellAccess === 'authenticated' && roles.includes('UNVERIFIED'),
-    ),
+    analysis.manifest.routes.some(({ shellAccess, roles }) => shellAccess === 'admin-system' && roles.includes('USER')),
     'proxy shell admission must not be promoted to a domain capability role',
   );
 });

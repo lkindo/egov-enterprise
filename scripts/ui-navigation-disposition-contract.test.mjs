@@ -32,6 +32,17 @@ function clone(value) {
   return structuredClone(value);
 }
 
+// 처분 기한이 실제 달력 날짜인지 본다 — 형식만 보면 2026-02-30 도 통과한다(2026-11-08 Codex 12차).
+function isCalendarDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+// 라우트 원장 검토가 끝난 행의 처분 기한은 비교할 원장 값이 없다. 기한을 조용히 미루지 못하게 지금 쓰는 가장 늦은 기한을 고정한다 —
+//   다시 검토해 기한을 옮길 때는 이 값과 함께 바꾸고 사유를 변경 설명에 남긴다.
+const LATEST_DISPOSITION_REVIEW_BY = '2026-12-31';
+
 function validate(candidate, options = {}) {
   return validateDispositionContract({
     manifest: options.manifest ?? manifest,
@@ -182,12 +193,109 @@ function isWave5Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+/*
+  웨이브 6(2026-11-08, DEC-OPS-404): 정기 검토 2차 행별 승인. 정본 유지 62·메뉴 밖 하위 10·시연 격리 1 을 그대로,
+  4건은 처분을 바꿔 승인했다(약도 미지원 숨김, 투표 참여 정본 유지, 공통코드 하위 정본 통합, 개인정보 정책 메뉴 밖 하위).
+  개인정보 검토는 처분 변경분만 본 것이다 — 승인 근거가 그 범위를 밝혀야 한다(화면 전체 검토 완료로 읽히지 않게).
+*/
+const WAVE6_APPROVED_ROUTES = [
+  '/',
+  '/admin/collaboration',
+  '/admin/collaboration/address-book/select-address-book-detail/[id]',
+  '/admin/collaboration/address-book/select-address-book-list',
+  '/admin/collaboration/mail-history',
+  '/admin/collaboration/mail-send',
+  '/admin/collaboration/scraps/selectScrapList',
+  '/admin/community/boards/detail',
+  '/admin/community/boards/insert-board-article',
+  '/admin/community/boards/maker',
+  '/admin/community/boards/master',
+  '/admin/community/boards/master/[id]',
+  '/admin/community/boards/select-board-list',
+  '/admin/community/templates',
+  '/admin/help',
+  '/admin/notifications',
+  '/admin/operation/events',
+  '/admin/operation/external-hr',
+  '/admin/operation/memo-reports',
+  '/admin/operation/rewards',
+  '/admin/operation/rough-map',
+  '/admin/patterns',
+  '/admin/security/authority',
+  '/admin/security/dept-authority',
+  '/admin/security/group',
+  '/admin/security/login-policy',
+  '/admin/stats',
+  '/admin/stats/board',
+  '/admin/stats/screen',
+  '/admin/stats/user',
+  '/admin/survey/hub',
+  '/admin/survey/manage/[id]',
+  '/admin/survey/polls',
+  '/admin/survey/polls/participate',
+  '/admin/system/banner',
+  '/admin/system/codes/administ',
+  '/admin/system/codes/institution',
+  '/admin/system/comments',
+  '/admin/system/common-code',
+  '/admin/system/common-code/codes',
+  '/admin/system/content-pages',
+  '/admin/system/durable-jobs',
+  '/admin/system/hpcm',
+  '/admin/system/logs',
+  '/admin/system/logs/audit',
+  '/admin/system/logs/login',
+  '/admin/system/logs/privacy',
+  '/admin/system/logs/system',
+  '/admin/system/logs/user',
+  '/admin/system/logs/web',
+  '/admin/system/menus',
+  '/admin/system/menus/by-authority',
+  '/admin/system/policies',
+  '/admin/system/programs',
+  '/admin/user/absences',
+  '/admin/user/departments',
+  '/admin/user/indvdl-info-policy',
+  '/admin/user/manage',
+  '/admin/uss/ion/sms',
+  '/admin/uss/olh/online-manual',
+  '/approvals',
+  '/cop/cmy/selectCommunityDetail/[id]',
+  '/cop/cmy/selectCommunityList',
+  '/help',
+  '/login',
+  '/note',
+  '/pages',
+  '/pages/[slug]',
+  '/search',
+  '/smart-toolkit/dept-job',
+  '/smart-toolkit/dept-job/[id]',
+  '/smart-toolkit/dept-job/create',
+  '/smart-toolkit/schedule',
+  '/smart-toolkit/work-report',
+  '/survey',
+  '/survey/[id]',
+  '/survey/stats',
+];
+const WAVE6_REVIEWER = 'lkindo (2026-11-08 사용자 승인 · DEC-OPS-404)';
+const WAVE6_REVIEWED_AT = '2026-11-08';
+
+function isWave6Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE6_REVIEWER
+    && approval.reviewedAt === WAVE6_REVIEWED_AT
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 const APPROVED_ROUTES = [
   ...WAVE1_APPROVED_ROUTES,
   ...WAVE2_APPROVED_ROUTES,
   ...WAVE3_APPROVED_ROUTES,
   ...WAVE4_APPROVED_ROUTES,
   ...WAVE5_APPROVED_ROUTES,
+  ...WAVE6_APPROVED_ROUTES,
 ].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
@@ -244,9 +352,14 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
   assert.equal(overlay.routes.length, FILESYSTEM_ROUTE_COUNT);
   assert.equal(overlay.externalAliases.length, 2);
   assert.ok(overlay.routes.every((record, index) => {
+    // 라우트 원장에 남은 미확인 필드가 있으면 그 검토의 담당자·기한을 처분이 그대로 쓴다. 원장 검토가 끝나 검토 메타가
+    // 없어진 행(2026-11-08 DEC-OPS-404 부터)은 라우트 담당자와 같고 처분 기한이 날짜여야 한다.
+    const ledgerReview = manifest.routes[index].review;
     const shared = record.disposition !== 'blocked-review'
-      && record.owner === manifest.routes[index].review.owner
-      && record.reviewBy === manifest.routes[index].review.reviewBy;
+      && (ledgerReview
+        ? record.owner === ledgerReview.owner && record.reviewBy === ledgerReview.reviewBy
+        : record.owner === manifest.routes[index].owner && isCalendarDate(record.reviewBy)
+          && record.reviewBy <= LATEST_DISPOSITION_REVIEW_BY);
     if (WAVE1_APPROVED_ROUTES.includes(record.route)) {
       return shared
         && record.reviewState === 'approved'
@@ -286,6 +399,17 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         && record.capabilityReview === 'verified'
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave4Approval);
+    }
+    if (WAVE6_APPROVED_ROUTES.includes(record.route)) {
+      return shared
+        && record.reviewState === 'approved'
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && record.effectiveMenuExposureReview === 'verified'
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave6Approval)
+        && record.approvals.securityPrivacy.evidence.some((entry) => entry.includes('처분 변경분'));
     }
     if (WAVE5_APPROVED_ROUTES.includes(record.route)) {
       return shared
@@ -540,20 +664,23 @@ test('the provisional direction cannot erase evidence blockers or drift from its
 });
 
 test('unverified authorization/privacy and missing approvals cannot impersonate accepted state', () => {
+  // 아직 제안 상태인 첫 행으로 본다 — 승인된 행을 다시 'approved' 로 적으면 아무것도 바꾸지 않는다(2026-11-08 부터 routes[0] 은 승인됐다).
+  const index = overlay.routes.findIndex(({ reviewState }) => reviewState === 'proposed');
+  assert.ok(index >= 0, 'a proposed route remains to exercise the guard');
+  const at = (field) => new RegExp(`routes\\[${index}\\]\\.${field}`, 'i');
   const falseRouteApproval = clone(overlay);
-  falseRouteApproval.routes[0].reviewState = 'approved';
-  assert.match(
-    validate(falseRouteApproval).errors.join('\n'),
-    /approved route review is incomplete: routes\[0\]\.authorizationReview remains unverified/i,
-  );
+  falseRouteApproval.routes[index].reviewState = 'approved';
+  const routeErrors = validate(falseRouteApproval).errors.join('\n');
+  assert.match(routeErrors, /approved route review is incomplete: /i);
+  assert.match(routeErrors, at('authorizationReview remains unverified'));
 
   const falseAccepted = clone(overlay);
   falseAccepted.state = 'accepted';
   const errors = validate(falseAccepted).errors.join('\n');
   assert.match(errors, /accepted transition blocked: acceptedDecision is blocked-input/i);
-  assert.match(errors, /accepted transition blocked: routes\[0\]\.authorizationReview remains unverified/i);
-  assert.match(errors, /accepted transition blocked: routes\[0\]\.privacyReview remains unverified/i);
-  assert.match(errors, /accepted transition blocked: routes\[0\]\.approvals\.domain is blocked-input/i);
+  for (const field of ['authorizationReview remains unverified', 'privacyReview remains unverified', 'approvals\\.domain is blocked-input']) {
+    assert.match(errors, new RegExp(`accepted transition blocked: routes\\[${index}\\]\\.${field}`, 'i'));
+  }
 });
 
 test('proposed consumers unlock only through the ADR-0007 gates and stay fail-closed otherwise', () => {

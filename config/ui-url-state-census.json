@@ -27,25 +27,25 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "ea4e7c3ad4b95566f5636fb884513adb84442dec9122cbda8390435c1a205b57"
+    "inventoryHash": "7343a39eb0b98db9c6ebd2f0a748028510b746ff0b2c4668e7cf3a65349ce7f4"
   },
   "summary": {
-    "records": 471,
-    "syntaxOccurrences": 574,
+    "records": 472,
+    "syntaxOccurrences": 575,
     "ambiguousRecords": 423,
-    "unverifiedRecords": 471,
+    "unverifiedRecords": 472,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 13,
       "configRedirects": 12,
-      "pageRedirects": 17
+      "pageRedirects": 18
     },
     "byKind": {
       "config-redirect": 12,
       "dynamic-segment": 13,
       "form-producer": 62,
       "navigation-producer": 230,
-      "page-redirect": 17,
+      "page-redirect": 18,
       "query-builder": 25,
       "query-consumer": 58,
       "query-producer": 45,
@@ -53,7 +53,7 @@
       "url-observer": 6
     },
     "bySurface": {
-      "navigation": 462,
+      "navigation": 463,
       "request-telemetry": 9
     }
   },
@@ -10825,12 +10825,12 @@
       }
     },
     {
-      "id": "URL-49162424F78AA1",
+      "id": "URL-32D89D1A036315",
       "surface": "navigation",
       "kind": "navigation-producer",
-      "operation": "router.replace",
-      "source": "frontend/src/app/admin/system/common-code/codes/CommonCodeCodesClient.tsx",
-      "producerFile": "frontend/src/app/admin/system/common-code/codes/CommonCodeCodesClient.tsx",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/common-code/codes/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/common-code/codes/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/system/common-code/codes",
       "targetCandidate": "/admin/system/common-code",
@@ -10857,8 +10857,46 @@
         "reviewBy": "2026-12-31"
       },
       "evidence": {
-        "source": "frontend/src/app/admin/system/common-code/codes/CommonCodeCodesClient.tsx",
-        "detector": "router-navigation",
+        "source": "frontend/src/app/admin/system/common-code/codes/page.tsx",
+        "detector": "server-redirect-call",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-9BE68B565F00AC",
+      "surface": "navigation",
+      "kind": "page-redirect",
+      "operation": "redirect",
+      "source": "frontend/src/app/admin/system/common-code/codes/page.tsx",
+      "producerFile": "frontend/src/app/admin/system/common-code/codes/page.tsx",
+      "consumerFile": "frontend/src/app/admin/system/common-code/codes/page.tsx",
+      "routePattern": "/admin/system/common-code/codes",
+      "targetCandidate": "/admin/system/common-code",
+      "stateItems": [],
+      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
+      "riskSignals": [
+        "source-query-policy-unverified"
+      ],
+      "ambiguityReasons": [],
+      "resolutionStatus": "identified",
+      "canonical": {
+        "routeCandidate": "/admin/system/common-code",
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/common-code/codes/page.tsx",
+        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },

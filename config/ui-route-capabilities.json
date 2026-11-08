@@ -69,7 +69,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -80,7 +80,11 @@
         "view-stats"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -89,7 +93,10 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "sign-in-return",
+        "daily-work"
+      ],
       "visibleLabel": "업무 홈",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -201,16 +208,7 @@
         "frontend/src/app/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin",
@@ -218,7 +216,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -229,7 +228,11 @@
         "view-stats"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -238,7 +241,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "관리자 업무 현황",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -344,16 +349,7 @@
         "frontend/src/app/admin/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration",
@@ -361,7 +357,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -374,7 +370,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -383,7 +383,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "협업 및 네트워크 허브",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -461,16 +463,7 @@
         "frontend/src/app/admin/collaboration/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/address-book",
@@ -478,19 +471,21 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -529,9 +524,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -539,7 +531,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -548,19 +540,21 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -599,9 +593,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -609,7 +600,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -618,7 +609,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -629,12 +620,14 @@
         "view-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "주소록 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -720,16 +713,7 @@
         "frontend/src/app/admin/collaboration/address-book/select-address-book-detail/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/address-book/select-address-book-list",
@@ -737,7 +721,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -751,12 +735,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "통합 주소록 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -849,16 +835,7 @@
         "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/mail-history",
@@ -866,7 +843,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -879,13 +856,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "메일 발신 이력 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -955,16 +935,7 @@
         "frontend/src/app/admin/collaboration/mail-history/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/mail-send",
@@ -972,7 +943,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -983,13 +954,16 @@
         "send"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "메일 작성",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -1058,16 +1032,7 @@
         "frontend/src/app/admin/collaboration/mail-send/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/scraps",
@@ -1075,7 +1040,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -1088,13 +1053,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "협업 및 네트워크 허브",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -1172,16 +1140,7 @@
         "frontend/src/app/admin/collaboration/scraps/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/scraps/insertScrap",
@@ -1189,20 +1148,23 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1241,9 +1203,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -1251,7 +1210,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -1260,20 +1219,23 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1312,9 +1274,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -1322,7 +1281,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -1331,7 +1290,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -1344,13 +1303,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "스크랩 목록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1442,16 +1404,7 @@
         "frontend/src/app/admin/collaboration/scraps/selectScrapList/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community",
@@ -1459,19 +1412,22 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read",
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1510,9 +1466,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -1520,7 +1473,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -1529,19 +1482,21 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1580,9 +1535,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -1590,7 +1542,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 this route became a page-redirect to the canonical community detail (DEC-OPS-130); menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot)."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 this route became a page-redirect to the canonical community detail (DEC-OPS-130); menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot). roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -1599,7 +1551,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -1611,13 +1563,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "게시글 모아보기",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1663,16 +1618,7 @@
         "frontend/src/app/admin/community/board/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards",
@@ -1680,19 +1626,22 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read",
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1731,9 +1680,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -1741,7 +1687,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -1750,20 +1696,23 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1802,9 +1751,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -1812,7 +1758,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -1821,7 +1767,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -1833,13 +1779,16 @@
         "view-comments"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "게시글 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -1904,16 +1853,7 @@
         "frontend/src/app/admin/community/boards/detail/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/insert-board-article",
@@ -1921,7 +1861,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -1934,13 +1874,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "새 게시글 작성",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -2014,16 +1957,7 @@
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/maker",
@@ -2031,7 +1965,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -2042,13 +1977,16 @@
         "preview-template"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "게시판 만들기",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -2088,7 +2026,7 @@
         },
         {
           "id": "board.template-preview",
-          "status": "demo",
+          "status": "partial",
           "dataSource": "static-mock",
           "actions": [
             "preview-template"
@@ -2098,8 +2036,8 @@
           "visibleLabel": "레이아웃 미리보기 · 예시 데이터",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E1",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E2",
+          "lastVerifiedAt": "2026-11-08",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
@@ -2114,16 +2052,7 @@
         "frontend/src/app/admin/community/boards/maker/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/master",
@@ -2131,7 +2060,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -2145,13 +2075,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "게시판 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -2221,16 +2154,7 @@
         "frontend/src/app/admin/community/boards/master/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/master/[id]",
@@ -2238,7 +2162,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -2262,13 +2187,16 @@
         "view-status"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "게시판 운영",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -2427,16 +2355,7 @@
         "frontend/src/app/admin/community/boards/master/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. The board operations screen (ADR-0040 decision 2) was added on 2026-10-23; tab states were read from code and unit tests. B1 (2026-10-23) added the server posting status, posts filters and the posting-period quick edit and bulk end-date actions. B2 (2026-10-23) added the pinned filter and column, the single-post pin dialog and the bulk pin/unpin actions."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/select-board-list",
@@ -2444,7 +2363,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -2458,13 +2377,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "게시글 목록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -2543,16 +2465,7 @@
         "frontend/src/app/admin/community/boards/select-board-list/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-23 (ADR-0040 decision 6) board.post-like gained unlike: the cancel toggle lives on the post detail screen (BoardDetailClient, cancelLikePost) because the detail route capability set is frozen (plan D-20); the list only shows the count when likes are closed (no BOARD_LIKE, unused board, or recommendations off)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/write",
@@ -2560,20 +2473,23 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -2612,9 +2528,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -2622,7 +2535,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -2631,7 +2544,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -2644,12 +2558,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "템플릿 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -2718,16 +2634,7 @@
         "frontend/src/app/admin/community/templates/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/help",
@@ -2735,7 +2642,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -2755,13 +2662,17 @@
         "withdraw"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read",
+        "content-participation-admin"
+      ],
       "visibleLabel": "위키",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -2870,16 +2781,7 @@
         "frontend/src/app/admin/help/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/help/faq",
@@ -2887,7 +2789,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -2904,13 +2806,16 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "자주 묻는 질문",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -3010,16 +2915,7 @@
         "frontend/src/app/admin/help/faq/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/help/qna",
@@ -3027,7 +2923,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -3044,13 +2940,16 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "질의응답(Q&A)",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -3150,16 +3049,7 @@
         "frontend/src/app/admin/help/qna/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/notifications",
@@ -3167,7 +3057,9 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "USER",
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -3178,13 +3070,17 @@
         "tab-filter"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work",
+        "collaboration-delivery"
+      ],
       "visibleLabel": "알림 센터",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -3254,16 +3150,7 @@
         "frontend/src/app/admin/notifications/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/observability",
@@ -3271,14 +3158,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -3287,7 +3179,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -3327,9 +3221,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -3337,7 +3228,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -3346,7 +3237,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -3360,7 +3252,7 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -3439,16 +3331,7 @@
         "frontend/src/app/admin/operation/events/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/operation/external-hr",
@@ -3456,7 +3339,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -3471,7 +3355,7 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -3548,16 +3432,7 @@
         "frontend/src/app/admin/operation/external-hr/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/operation/memo-reports",
@@ -3565,7 +3440,9 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "USER",
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -3582,12 +3459,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "메모 보고 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -3705,16 +3584,7 @@
         "frontend/src/app/admin/operation/memo-reports/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/operation/rewards",
@@ -3722,7 +3592,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -3737,7 +3608,7 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -3814,16 +3685,7 @@
         "frontend/src/app/admin/operation/rewards/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/operation/rough-map",
@@ -3831,14 +3693,15 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unavailable",
       "dataSource": "none",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -3879,16 +3742,7 @@
         "frontend/src/app/admin/operation/rough-map/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/patterns",
@@ -3896,7 +3750,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "demo",
@@ -3914,7 +3769,7 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -4009,16 +3864,7 @@
         "frontend/src/app/admin/patterns/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/security/audit",
@@ -4026,14 +3872,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4042,7 +3893,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -4082,9 +3935,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -4092,7 +3942,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -4101,7 +3951,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -4121,7 +3972,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4130,7 +3985,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "권한 그룹 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -4353,16 +4210,7 @@
         "frontend/src/app/admin/security/authority/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/security/dept-authority",
@@ -4370,7 +4218,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -4385,7 +4234,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4394,7 +4247,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "부서별 그룹 배정",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -4464,16 +4319,7 @@
         "frontend/src/app/admin/security/dept-authority/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/security/group",
@@ -4481,7 +4327,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -4497,7 +4344,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4506,7 +4357,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "사용자 분류 그룹",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -4579,16 +4432,7 @@
         "frontend/src/app/admin/security/group/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/security/login-policy",
@@ -4596,7 +4440,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -4612,7 +4457,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4621,7 +4470,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "로그인 보안 정책 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -4694,16 +4545,7 @@
         "frontend/src/app/admin/security/login-policy/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/security/role",
@@ -4711,14 +4553,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4727,7 +4574,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -4766,9 +4615,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -4776,7 +4622,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -4785,7 +4631,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -4799,7 +4646,11 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -4808,7 +4659,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "관리자 통계",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -4882,16 +4735,7 @@
         "frontend/src/app/admin/stats/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/stats/board",
@@ -4899,7 +4743,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -4913,13 +4758,16 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "콘텐츠 지표 분석",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -4996,16 +4844,7 @@
         "frontend/src/app/admin/stats/board/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/stats/data-usage",
@@ -5013,7 +4852,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -5023,13 +4863,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "자료이용현황 분석",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -5099,16 +4942,7 @@
         "frontend/src/app/admin/stats/data-usage/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/stats/screen",
@@ -5116,7 +4950,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -5129,7 +4964,11 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -5138,7 +4977,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "시스템 활성 지표",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -5184,16 +5025,7 @@
         "frontend/src/app/admin/stats/screen/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/stats/user",
@@ -5201,7 +5033,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -5214,7 +5047,11 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -5223,7 +5060,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "사용자 통계 분석",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -5271,16 +5110,7 @@
         "frontend/src/app/admin/stats/user/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey",
@@ -5288,20 +5118,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -5340,9 +5174,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -5350,7 +5181,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -5359,7 +5190,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -5375,13 +5207,16 @@
         "view-summary"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "여론조사 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -5510,16 +5345,7 @@
         "frontend/src/app/admin/survey/hub/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/items",
@@ -5527,20 +5353,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -5580,9 +5410,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -5590,7 +5417,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -5599,20 +5426,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -5650,9 +5481,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -5660,7 +5488,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -5669,7 +5497,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -5681,13 +5510,16 @@
         "view-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "설문 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -5776,16 +5608,7 @@
         "frontend/src/app/admin/survey/manage/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/manage/create",
@@ -5793,20 +5616,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -5845,9 +5672,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -5855,7 +5679,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -5864,7 +5688,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -5876,13 +5701,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "온라인 투표 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -5950,16 +5778,7 @@
         "frontend/src/app/admin/survey/polls/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/polls/manage",
@@ -5967,20 +5786,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unavailable",
       "dataSource": "none",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "설문 여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -6014,16 +5837,7 @@
         "frontend/src/app/admin/survey/polls/manage/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/polls/participate",
@@ -6031,7 +5845,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -6043,13 +5857,16 @@
         "vote"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "survey-respond"
+      ],
       "visibleLabel": "투표 참여",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -6095,16 +5912,7 @@
         "frontend/src/app/admin/survey/polls/participate/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/questions",
@@ -6112,20 +5920,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -6165,9 +5977,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -6175,7 +5984,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -6184,20 +5993,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -6235,9 +6048,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -6245,7 +6055,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -6254,20 +6064,24 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -6307,9 +6121,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -6317,7 +6128,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -6326,14 +6137,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -6342,7 +6158,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -6382,9 +6200,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -6392,7 +6207,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -6401,7 +6216,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -6414,12 +6230,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "배너/팝업 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -6504,16 +6322,7 @@
         "frontend/src/app/admin/system/banner/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/codes/administ",
@@ -6521,7 +6330,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -6535,7 +6345,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -6616,16 +6430,7 @@
         "frontend/src/app/admin/system/codes/administ/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/codes/institution",
@@ -6633,7 +6438,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -6645,7 +6451,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -6728,16 +6538,7 @@
         "frontend/src/app/admin/system/codes/institution/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/comments",
@@ -6745,7 +6546,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -6758,13 +6560,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "댓글 및 평가 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -6834,16 +6639,7 @@
         "frontend/src/app/admin/system/comments/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/common-code",
@@ -6851,7 +6647,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -6869,7 +6666,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7014,16 +6815,7 @@
         "frontend/src/app/admin/system/common-code/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/common-code/codes",
@@ -7031,14 +6823,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7052,9 +6849,12 @@
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
-        "kind": "page"
+        "kind": "page-redirect",
+        "target": "/admin/system/common-code"
       },
-      "observedPageRedirectCalls": [],
+      "observedPageRedirectCalls": [
+        "/admin/system/common-code"
+      ],
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
@@ -7083,16 +6883,13 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions"
       ],
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -7101,7 +6898,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -7120,12 +6918,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "콘텐츠 페이지",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -7242,16 +7042,7 @@
         "frontend/src/app/admin/system/content-pages/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-12-31",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-10-22 the route, menu row (V2_137 snapshot), page heading and capability states were read from code added for ADR-0039; no live deployment was measured."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/durable-jobs",
@@ -7270,7 +7061,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7279,7 +7074,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "후속 작업 상태",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -7299,7 +7096,7 @@
             "view-list"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN",
+          "actorScope": "EXPLICIT_GRANT_ONLY",
           "visibleLabel": "후속 작업 목록",
           "primaryTask": true,
           "decisionSafe": false,
@@ -7324,7 +7121,7 @@
             "retry"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN",
+          "actorScope": "EXPLICIT_GRANT_ONLY",
           "visibleLabel": "다시 처리",
           "primaryTask": false,
           "decisionSafe": false,
@@ -7348,14 +7145,12 @@
         "frontend/src/proxy.ts"
       ],
       "unverifiedFields": [
-        "journeys",
-        "profileOwners",
         "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. Added 2026-10-01 (decision 19) with capability states read from code; the page is not menued and is reached from the integrated log screen only when the dedicated permission is held."
+        "reason": "Remaining field (roles): the page permission has no default group by design (DEC-OPS-181, DEC-OPS-202), so no default-installation persona opens this page until an institution grants the permission explicitly. profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -7364,7 +7159,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -7378,12 +7174,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "도움말 콘텐츠 관리(HPCM)",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -7452,16 +7250,7 @@
         "frontend/src/app/admin/system/hpcm/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/ism",
@@ -7469,20 +7258,23 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "demo"
       ],
       "directProjectionProfiles": [
         "approval",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "approval-request"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -7521,9 +7313,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -7531,7 +7320,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -7540,7 +7329,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "demo",
@@ -7552,7 +7342,7 @@
         "save"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -7617,16 +7407,7 @@
         "frontend/src/app/admin/system/layout/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/logs",
@@ -7634,7 +7415,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -7647,7 +7429,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7656,7 +7442,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "로그 통합 조회",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -7733,16 +7521,7 @@
         "frontend/src/app/admin/system/logs/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/logs/audit",
@@ -7762,7 +7541,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7771,7 +7554,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "민감 작업 감사 원장",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -7792,7 +7577,7 @@
             "view-list"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN",
+          "actorScope": "EXPLICIT_GRANT_ONLY",
           "visibleLabel": "민감 작업 감사 원장 목록",
           "primaryTask": true,
           "decisionSafe": false,
@@ -7818,7 +7603,7 @@
             "export"
           ],
           "unsupportedVisibleActions": [],
-          "actorScope": "ADMIN",
+          "actorScope": "EXPLICIT_GRANT_ONLY",
           "visibleLabel": "전체 결과 내보내기",
           "primaryTask": false,
           "decisionSafe": false,
@@ -7843,14 +7628,12 @@
         "frontend/src/proxy.ts"
       ],
       "unverifiedFields": [
-        "journeys",
-        "profileOwners",
         "roles"
       ],
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. Added 2026-10-01 (decision 19) with capability states read from code; the page is not menued and is reached from the integrated log screen only when the dedicated permission is held."
+        "reason": "Remaining field (roles): the page permission has no default group by design (DEC-OPS-181, DEC-OPS-202), so no default-installation persona opens this page until an institution grants the permission explicitly. profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -7859,7 +7642,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -7873,7 +7657,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7882,7 +7670,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "로그인 로그",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -7952,16 +7742,7 @@
         "frontend/src/app/admin/system/logs/login/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/logs/privacy",
@@ -7969,7 +7750,7 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -7981,7 +7762,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -7990,7 +7775,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "개인정보 접근 로그",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8060,16 +7847,7 @@
         "frontend/src/app/admin/system/logs/privacy/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/logs/system",
@@ -8077,7 +7855,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8089,7 +7868,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8098,7 +7881,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "시스템 로그",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8166,16 +7951,7 @@
         "frontend/src/app/admin/system/logs/system/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/logs/user",
@@ -8183,7 +7959,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8195,7 +7972,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8204,7 +7985,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "사용자 로그",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8272,16 +8055,7 @@
         "frontend/src/app/admin/system/logs/user/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/logs/web",
@@ -8289,7 +8063,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8301,7 +8076,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8310,7 +8089,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "웹 로그",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8378,16 +8159,7 @@
         "frontend/src/app/admin/system/logs/web/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/menus",
@@ -8395,7 +8167,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8414,7 +8187,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8423,7 +8200,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "시스템 메뉴 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8544,16 +8323,7 @@
         "frontend/src/app/admin/system/menus/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/menus/by-authority",
@@ -8561,7 +8331,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8572,7 +8343,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8581,7 +8356,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "그룹별 메뉴 현황",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8626,16 +8403,7 @@
         "frontend/src/app/admin/system/menus/by-authority/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/monitoring",
@@ -8643,14 +8411,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8659,7 +8432,10 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status",
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -8698,9 +8474,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -8708,7 +8481,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -8717,7 +8490,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8743,7 +8517,10 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status",
+        "audit-privacy-investigation"
+      ],
       "visibleLabel": "시스템 로그(감사 보기)",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8842,14 +8619,12 @@
         "frontend/src/proxy.ts"
       ],
       "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
+        "profileOwners"
       ],
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining field (profileOwners): the sample widgets (monitoring.sample-widgets) come from the demo-only showcase feature and do not ship in non-demo presets, but the ledger has one row per route and cannot record feature-level ownership, so the owner held it on 2026-11-08 (DEC-OPS-404). roles and journeys were confirmed the same day."
       }
     },
     {
@@ -8858,7 +8633,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8869,7 +8645,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -8878,7 +8658,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "operations-status"
+      ],
       "visibleLabel": "시스템 정책 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -8922,16 +8704,7 @@
         "frontend/src/app/admin/system/policies/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/programs",
@@ -8939,7 +8712,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -8953,7 +8727,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9015,16 +8793,7 @@
         "frontend/src/app/admin/system/programs/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/user/absences",
@@ -9032,7 +8801,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -9044,7 +8814,11 @@
         "view-users"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9053,7 +8827,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "부재 상태 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9115,16 +8891,7 @@
         "frontend/src/app/admin/user/absences/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/user/departments",
@@ -9132,7 +8899,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -9149,7 +8917,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9158,7 +8930,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "부서 및 조직 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9233,16 +9007,7 @@
         "frontend/src/app/admin/user/departments/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/user/indvdl-info-policy",
@@ -9250,7 +9015,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -9259,7 +9025,11 @@
         "navigate"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9268,7 +9038,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "조직 정책",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -9306,16 +9078,7 @@
         "frontend/src/app/admin/user/indvdl-info-policy/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/user/login-policy",
@@ -9323,14 +9086,19 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9339,7 +9107,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -9377,9 +9147,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -9387,7 +9154,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -9396,7 +9163,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -9415,7 +9183,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9424,7 +9196,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "user-administration"
+      ],
       "visibleLabel": "계정 및 사용자 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9522,16 +9296,7 @@
         "frontend/src/app/admin/user/manage/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/uss/ion/sms",
@@ -9539,7 +9304,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -9553,13 +9319,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "문자 메시지 발송 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9629,16 +9398,7 @@
         "frontend/src/app/admin/uss/ion/sms/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/uss/olh/online-manual",
@@ -9646,7 +9406,8 @@
       "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "partial",
@@ -9660,12 +9421,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "온라인 매뉴얼 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9712,16 +9475,7 @@
         "frontend/src/app/admin/uss/olh/online-manual/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/work-hub",
@@ -9729,7 +9483,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -9744,7 +9498,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -9753,7 +9511,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "업무 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9828,16 +9588,7 @@
         "frontend/src/app/admin/work-hub/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/approvals",
@@ -9845,7 +9596,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -9868,7 +9619,9 @@
         "approval",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "approval-request"
+      ],
       "visibleLabel": "결재 허브",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -9918,15 +9671,7 @@
         "frontend/src/app/approvals/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 only the visualization-metrics (demo) and unsupported server-search verdicts were re-read from code; the rest of the action list was not re-verified and is not exhaustive (the hub also withdraws, reminds, replaces approvers, requests and answers supplements, adds references and resubmits). profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/approvals/draft",
@@ -9934,7 +9679,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -9951,7 +9696,9 @@
         "approval",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "approval-request"
+      ],
       "visibleLabel": "새 결재 기안",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -9995,15 +9742,7 @@
         "frontend/src/app/approvals/draft/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. On 2026-10-13 only the mock verdicts (form catalog demo, submit unavailable) were re-read from code and replaced by draft.compose; its action list was not re-verified and is not exhaustive (the draft dialog also saves and deletes temporary drafts). profileOwners was taken from the informalsanction feature declaration (config/modules/informalsanction.json, DEC-OPS-302)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/cop/cmy/selectCommunityDetail/[id]",
@@ -10011,7 +9750,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10024,12 +9763,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "커뮤니티 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10124,16 +9865,7 @@
         "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/cop/cmy/selectCommunityList",
@@ -10141,7 +9873,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10154,12 +9886,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "커뮤니티 목록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10226,16 +9960,7 @@
         "frontend/src/app/cop/cmy/selectCommunityList/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/cop/sms/selectSmsList",
@@ -10243,20 +9968,24 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "admin-system",
       "roles": [
-        "UNVERIFIED"
+        "ADMIN",
+        "SYSTEM"
       ],
       "surface": "admin-console",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10294,9 +10023,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -10304,7 +10030,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -10313,7 +10039,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10325,12 +10051,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "도움말 센터",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10459,16 +10187,7 @@
         "frontend/src/app/help/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/help/policies/[type]",
@@ -10476,7 +10195,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10485,7 +10204,7 @@
         "view-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
@@ -10532,16 +10251,7 @@
         "frontend/src/app/help/policies/[type]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/login",
@@ -10549,7 +10259,7 @@
       "sourceShellAccess": "public",
       "shellAccess": "public",
       "roles": [
-        "UNVERIFIED"
+        "ANONYMOUS"
       ],
       "surface": "authentication",
       "status": "partial",
@@ -10558,7 +10268,11 @@
         "login"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -10567,7 +10281,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "sign-in-return"
+      ],
       "visibleLabel": "엔터프라이즈",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10611,16 +10327,7 @@
         "frontend/src/app/login/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/note",
@@ -10628,7 +10335,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10643,13 +10350,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "collaboration",
+        "demo"
       ],
       "directProjectionProfiles": [
         "collaboration",
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "collaboration-delivery"
+      ],
       "visibleLabel": "쪽지함",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -10746,16 +10456,7 @@
         "frontend/src/app/note/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/pages",
@@ -10763,7 +10464,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10775,12 +10476,14 @@
         "paginate"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "안내 페이지",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10824,16 +10527,7 @@
         "frontend/src/app/pages/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-12-31",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-10-26 the route, footer and header shell links, page heading and capability states were read from code added for ADR-0042; the list is not a menu row (menu rows were not changed) and no live deployment was measured."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/pages/[slug]",
@@ -10841,7 +10535,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10850,12 +10544,14 @@
         "view-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-publish-read"
+      ],
       "visibleLabel": "콘텐츠 페이지",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -10896,16 +10592,7 @@
         "frontend/src/app/pages/[slug]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-12-31",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-10-22 the route, menu row (V2_137 snapshot), page heading and capability states were read from code added for ADR-0039; no live deployment was measured."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/search",
@@ -10913,7 +10600,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -10923,7 +10610,11 @@
         "navigate"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -10932,7 +10623,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "unified-search"
+      ],
       "visibleLabel": "통합 검색",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -11012,16 +10705,7 @@
         "frontend/src/app/search/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/dept-job",
@@ -11029,7 +10713,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11044,7 +10728,11 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -11053,7 +10741,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "업무 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -11174,16 +10864,7 @@
         "frontend/src/app/smart-toolkit/dept-job/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/dept-job/[id]",
@@ -11191,7 +10872,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11202,7 +10883,11 @@
         "view-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -11211,7 +10896,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "부서 업무 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -11279,16 +10966,7 @@
         "frontend/src/app/smart-toolkit/dept-job/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/dept-job/create",
@@ -11296,7 +10974,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11306,7 +10984,11 @@
         "search-users"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -11315,7 +10997,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "부서 업무 등록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -11360,16 +11044,7 @@
         "frontend/src/app/smart-toolkit/dept-job/create/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/dept-job/insertDeptJob",
@@ -11377,14 +11052,18 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -11393,7 +11072,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -11432,9 +11113,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -11442,7 +11120,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -11451,14 +11129,18 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -11467,7 +11149,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -11506,9 +11190,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -11516,7 +11197,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -11525,14 +11206,18 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "unverified",
       "dataSource": "unverified",
       "supportedActions": [],
       "profileOwners": [
-        "UNVERIFIED"
+        "approval",
+        "collaboration",
+        "core",
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "approval",
@@ -11541,7 +11226,9 @@
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "unverified",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -11580,9 +11267,6 @@
       ],
       "unverifiedFields": [
         "dataSource",
-        "journeys",
-        "profileOwners",
-        "roles",
         "status",
         "supportedActions",
         "visibleLabel"
@@ -11590,7 +11274,7 @@
       "review": {
         "owner": "product/UX + domain owner",
         "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, journeys, profileOwners, roles, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
+        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
       }
     },
     {
@@ -11599,7 +11283,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11612,12 +11296,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "일정",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -11710,16 +11396,7 @@
         "frontend/src/app/smart-toolkit/schedule/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/schedule/dept",
@@ -11727,7 +11404,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11740,12 +11417,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "부서 일정 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -11837,16 +11516,7 @@
         "frontend/src/app/smart-toolkit/schedule/dept/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/work-report",
@@ -11854,7 +11524,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11867,12 +11537,14 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo"
       ],
       "directProjectionProfiles": [
         "demo"
       ],
-      "journeys": [],
+      "journeys": [
+        "daily-work"
+      ],
       "visibleLabel": "업무 보고",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -11965,16 +11637,7 @@
         "frontend/src/app/smart-toolkit/work-report/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/survey",
@@ -11982,7 +11645,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -11992,13 +11655,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "survey-respond"
+      ],
       "visibleLabel": "온라인 설문 조사",
       "menuExposure": "visible",
       "decisionSafe": false,
@@ -12042,16 +11708,7 @@
         "frontend/src/app/survey/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/survey/[id]",
@@ -12059,7 +11716,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -12070,13 +11727,16 @@
         "view-stats"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "survey-respond"
+      ],
       "visibleLabel": "설문 응답",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -12145,16 +11805,7 @@
         "frontend/src/app/survey/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/survey/response",
@@ -12162,7 +11813,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -12175,13 +11826,16 @@
         "view-list"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "설문조사 응답 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -12251,16 +11905,7 @@
         "frontend/src/app/survey/response/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/survey/response/[id]",
@@ -12268,7 +11913,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -12277,13 +11922,16 @@
         "view-detail"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "content-participation-admin"
+      ],
       "visibleLabel": "설문 응답 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -12325,16 +11973,7 @@
         "frontend/src/app/survey/response/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/survey/stats",
@@ -12342,7 +11981,7 @@
       "sourceShellAccess": "authenticated",
       "shellAccess": "authenticated",
       "roles": [
-        "UNVERIFIED"
+        "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
       "status": "partial",
@@ -12354,13 +11993,16 @@
         "view-stats"
       ],
       "profileOwners": [
-        "UNVERIFIED"
+        "demo",
+        "survey"
       ],
       "directProjectionProfiles": [
         "demo",
         "survey"
       ],
-      "journeys": [],
+      "journeys": [
+        "survey-respond"
+      ],
       "visibleLabel": "설문 결과 통계",
       "menuExposure": "not-menued",
       "decisionSafe": false,
@@ -12431,16 +12073,7 @@
         "frontend/src/app/survey/stats/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "journeys",
-        "profileOwners",
-        "roles"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (journeys, profileOwners, roles) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them."
-      }
+      "unverifiedFields": []
     }
   ]
 }

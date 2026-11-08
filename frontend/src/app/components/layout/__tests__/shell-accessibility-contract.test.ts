@@ -286,7 +286,7 @@ describe('app shell accessibility source contract', () => {
       // 제목 소유 계약은 아래 '모달 이행' 검사로 옮겼다(지운 것이 아니다).
       ['admin', 'community', 'boards', 'select-board-list', 'BoardListClient.tsx'],
       ['admin', 'survey', 'manage', '[id]', 'SurveyManageDetailClient.tsx'],
-      ['admin', 'system', 'common-code', 'codes', 'CommonCodeCodesClient.tsx'],
+      // [2026-11-08 DEC-OPS-404] 공통코드 하위 화면(CommonCodeCodesClient)은 서버 리다이렉트로 바꿨다 — 아래 '정본 통합' 검사로 옮겼다.
       ['smart-toolkit', 'dept-job', 'create', 'DeptJobCreateClient.tsx'],
       ['smart-toolkit', 'dept-job', '[id]', 'DeptJobDetailClient.tsx'],
       ['smart-toolkit', 'schedule', 'dept', 'ScheduleDeptClient.tsx'],
@@ -345,6 +345,16 @@ describe('app shell accessibility source contract', () => {
         .toMatch(/\btitle=(?:\{|")\S/);
       expect(source, `${pathParts.join('/')}: 모달 안에서 페이지 제목(h1)을 사칭합니다`)
         .not.toMatch(/<h1\b/);
+    }
+  });
+
+  // [2026-11-08 DEC-OPS-404] 정본으로 통합한 옛 화면은 서버 리다이렉트만 남긴다 — 제목은 정본 화면이 갖는다.
+  //   종전에는 클라이언트 화면이 sr-only 제목을 그린 뒤 router.replace 로 넘겼다.
+  it('정본으로 통합한 공통코드 하위 화면은 서버 리다이렉트만 남긴다', () => {
+    for (const pathParts of presentParts([['admin', 'system', 'common-code', 'codes', 'page.tsx']])) {
+      const source = readAppSource(...pathParts);
+      expect(source, `${pathParts.join('/')}: 정본으로 바로 보내지 않습니다`).toContain("redirect('/admin/system/common-code')");
+      expect(source, `${pathParts.join('/')}: 통합한 화면이 되살아났습니다`).not.toMatch(/<h1\b|router\.replace|'use client'/);
     }
   });
 
