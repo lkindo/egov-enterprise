@@ -683,8 +683,10 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
 
 // 대소문자를 가리지 않는다 — 대소문자를 가리지 않는 디스크에서 `__TESTS__`·`.TEST.tsx` 로 시험 파일을 숨기지 못하게 한다(Codex 23차).
 const TEST_SOURCE = /(?:^|\/)__tests__\/|\.(?:test|spec)\.[cm]?[jt]sx?$/i;
-// 바인딩이 있는 정적 값 import 의 첫 줄. 바인딩 없는 `import './x'` 는 모듈을 실행만 하고 화면에 그리지 않는다.
-const BOUND_IMPORT_LINE = /^\s*import\s+(?!['"])/;
+// 한 줄에 하나뿐인 기본 바인딩 import(`import Name from '지정자';`). 바인딩 없는 import·빈 `{}`·이름 import·한 줄 여러 import 는
+// 받지 않는다 — 판정할 수 없는 형태는 허용하지 않는 쪽이다(Codex 24차: `import  './x'` 처럼 공백만 늘린 부수효과 import).
+const DEFAULT_IMPORT_LINE = /^\s*import\s+([A-Za-z_$][\w$]*)\s+from\s+(['"])([^'"\r\n]+)\2\s*;?\s*$/;
+const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\r\n]*/g, '');
 
 /** 저장소 기준 정규 경로인가 — 역슬래시·빈 조각·`.`·`..` 가 없다. 경로 판정(투영·슬롯)이 원문 접두사를 보므로 우회 표기를 막는다. */
 function isCanonicalRepositoryPath(file) {
@@ -693,9 +695,11 @@ function isCanonicalRepositoryPath(file) {
 }
 
 /**
- * 화면 page 소스가 바인딩이 있는 정적 값 import 로 직접 싣는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다. 그 밖의 참조 —
- * 타입 전용(재수출의 `{ type … }` 포함)·re-export·동적 import(실행 여부를 알 수 없다)·require·require.resolve·바인딩 없는 import — 는
- * 화면이 그 모듈을 그린다는 근거로 세지 않는다(Codex 22·23차). 판정할 수 없으면 허용하지 않는 쪽이다.
+ * 화면 page 소스가 기본 바인딩 import 로 직접 싣고 JSX 로 그리는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다.
+ * 세 가지가 모두 맞아야 한다 — 파서가 그 줄을 타입 전용이 아닌 정적 import 로 읽고, 그 줄이 한 줄짜리 기본 바인딩 import 이며 같은
+ * 지정자를 가리키고, 주석을 뺀 소스가 그 바인딩을 `<이름` 으로 그린다. 그 밖의 참조 — 타입 전용(재수출의 `{ type … }` 포함)·re-export·
+ * 동적 import(실행 여부를 알 수 없다)·require·require.resolve·바인딩 없는 import·쓰지 않는 바인딩 — 는 화면이 그 모듈을 그린다는 근거로
+ * 세지 않는다(Codex 22·23·24차). 판정할 수 없으면 허용하지 않는 쪽이다.
  */
 export function pageLoadsModule(repoRoot, pageSource, target) {
   const importer = path.join(repoRoot, pageSource);
@@ -709,8 +713,11 @@ export function pageLoadsModule(repoRoot, pageSource, target) {
     return false;
   }
   const lines = source.split(/\r?\n/);
+  const rendered = new Set([...stripComments(source).matchAll(/<([A-Za-z_$][\w$]*)[\s/>]/g)].map((match) => match[1]));
   return references.some(({ kind, specifier, typeOnly, line }) => {
-    if (typeOnly || kind !== 'static-import' || !BOUND_IMPORT_LINE.test(lines[line - 1] ?? '')) return false;
+    if (typeOnly || kind !== 'static-import') return false;
+    const statement = DEFAULT_IMPORT_LINE.exec(lines[line - 1] ?? '');
+    if (!statement || statement[3] !== specifier || !rendered.has(statement[1])) return false;
     const base = specifier.startsWith('@/') ? path.join(repoRoot, 'frontend', 'src', specifier.slice(2))
       : specifier.startsWith('./') || specifier.startsWith('../') ? path.resolve(path.dirname(importer), specifier) : null;
     return base !== null && candidatePaths(base).includes(wanted);
@@ -724,7 +731,8 @@ export function pageLoadsModule(repoRoot, pageSource, target) {
  *   경로로 계산한다). 공통 파일(허브 셸·배지)을 적으면 허용하지 않는다 — 표본이 공통 파일에 있으면 실제로 실린다(2026-11-08 허브 승인
  *   철회). `showcase/../../app/…` 처럼 시연 경로를 거쳐 공통 파일을 가리키는 표기도, 디스크의 이름과 대소문자가 다른 표기도 거부한다
  *   (Codex 22·23차).
- * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 정적 값 import 로 직접 싣는다.
+ * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 기본 바인딩 import 로 직접 싣고
+ *   JSX 로 그린다(pageLoadsModule).
  *   지워지는 시험 파일이나 다른 화면 슬롯의 기여만으로는 이 화면에 무엇이 붙는지 말하지 않는다(Codex 20차 반례).
  * 생성물은 자기 구성 하나만 알아 판정할 수 없으므로 허용하지 않는다 — 생성물의 소유는 UNVERIFIED 라 이 가드에 걸리지도 않는다.
  */

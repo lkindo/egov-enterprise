@@ -632,9 +632,10 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   assert.match(errorsWith(() => {}, generated), leak(HUB));
 });
 
-// 화면이 슬롯 소비자를 '싣는다'는 판정은 바인딩이 있는 정적 값 import 만 센다 — 타입 전용(재수출 포함)·require.resolve·실행 여부를 알 수
-//   없는 동적 import·바인딩 없는 import 는 화면이 그 모듈을 그린다는 근거가 아니다(Codex 22·23차).
-test('a page loads a slot consumer only through a bound static value import', (t) => {
+// 화면이 슬롯 소비자를 '싣는다'는 판정은 한 줄짜리 기본 바인딩 import 와 그 바인딩의 JSX 사용이 함께 있을 때만이다 — 타입 전용(재수출
+//   포함)·require.resolve·실행 여부를 알 수 없는 동적 import·바인딩 없는 import·쓰지 않는 바인딩은 화면이 그 모듈을 그린다는 근거가
+//   아니다(Codex 22·23·24차). 판정할 수 없는 형태(이름 import 등)는 허용하지 않는 쪽이다.
+test('a page loads a slot consumer only through a bound default import that it renders', (t) => {
   const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'route-page-loads-'));
   t.after(() => fs.rmSync(repoRoot, { recursive: true, force: true }));
   const page = 'frontend/src/app/sample/page.tsx';
@@ -645,22 +646,32 @@ test('a page loads a slot consumer only through a bound static value import', (t
     fs.writeFileSync(path.join(repoRoot, page), source);
     return pageLoadsModule(repoRoot, page, shell);
   };
-  assert.equal(loads("import SampleShell from './SampleShell';\n"), true);
-  assert.equal(loads("import SampleShell from '@/app/sample/SampleShell';\n"), true);
-  assert.equal(loads("import {\n  default as SampleShell,\n} from './SampleShell';\n"), true);
-  assert.equal(loads("export { default } from './SampleShell';\n"), false);
-  assert.equal(loads("export { type default as SampleShell } from './SampleShell';\n"), false);
-  assert.equal(loads("const SampleShell = dynamic(() => import('./SampleShell'));\n"), false);
-  assert.equal(loads("if (false) { void import('./SampleShell'); }\n"), false);
-  // 줄 머리가 다른 모듈의 정적 import 여도 그 줄의 동적 import 는 세지 않는다(참조 종류로 가른다).
-  assert.equal(loads("import Other from './Other'; if (false) { void import('./SampleShell'); }\n"), false);
-  assert.equal(loads("import './SampleShell';\n"), false);
-  assert.equal(loads("import type { Props } from './SampleShell';\n"), false);
-  assert.equal(loads("import { type Props } from './SampleShell';\n"), false);
-  assert.equal(loads("const where = require.resolve('./SampleShell');\n"), false);
-  assert.equal(loads("const SampleShell = require('./SampleShell');\n"), false);
-  assert.equal(loads("import Other from './Other';\n"), false);
-  assert.equal(loads("// import SampleShell from './SampleShell';\n"), false);
+  const RENDER = 'export default function Page() { return <SampleShell />; }\n';
+  assert.equal(loads(`import SampleShell from './SampleShell';\n${RENDER}`), true);
+  assert.equal(loads(`import SampleShell from "@/app/sample/SampleShell"\n${RENDER}`), true);
+  // 공백만 늘린 부수효과 import, 빈 바인딩, 한 줄 여러 import, 이름 import(판정하지 않는 형태)
+  assert.equal(loads(`import  './SampleShell';\n${RENDER}`), false);
+  // 쓰지 않는 바인딩, 주석 속에서만 그리는 바인딩
+  assert.equal(loads("import SampleShell from './SampleShell';\n"), false);
+  assert.equal(loads("import SampleShell from './SampleShell';\n// <SampleShell />\n"), false);
+  assert.equal(loads(`import {} from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import Other from './Other'; import './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import {\n  default as SampleShell,\n} from './SampleShell';\n${RENDER}`), false);
+  // 다른 모듈을 같은 이름으로 들이면 그 모듈이다
+  assert.equal(loads(`import SampleShell from './Other';\n${RENDER}`), false);
+  // 아래는 모두 화면이 SampleShell 을 그리는 소스다 — 거짓이 되는 이유는 그 모듈을 싣는 형태여야 한다.
+  assert.equal(loads(`export { default } from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`export { type default as SampleShell } from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`const SampleShell = dynamic(() => import('./SampleShell'));\n${RENDER}`), false);
+  assert.equal(loads(`if (false) { void import('./SampleShell'); }\n${RENDER}`), false);
+  assert.equal(loads(`import Other from './Other'; if (false) { void import('./SampleShell'); }\n${RENDER}`), false);
+  assert.equal(loads(`import './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import type SampleShell from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import { type Props } from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`const where = require.resolve('./SampleShell');\n${RENDER}`), false);
+  assert.equal(loads(`const SampleShell = require('./SampleShell');\n${RENDER}`), false);
+  assert.equal(loads(`// import SampleShell from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`/*\nimport SampleShell from './SampleShell';\n*/\n${RENDER}`), false);
 });
 
 test('route review records reject impossible dates and missing review accountability', () => {
