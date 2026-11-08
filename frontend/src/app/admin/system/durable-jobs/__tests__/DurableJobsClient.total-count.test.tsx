@@ -29,7 +29,10 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
     </main>
   ),
 }));
-vi.mock('@/app/components/ui/standard-data-table', () => ({ StandardDataTable: () => <div /> }));
+// 실패 사례가 실패 상태에 닿은 뒤에 보게, 표가 받은 오류를 드러낸다(대기 중에도 총 건수는 '없음' 이라 그것만으로는 통과해 버린다).
+vi.mock('@/app/components/ui/standard-data-table', () => ({
+  StandardDataTable: ({ error }: { error?: unknown }) => <div>{error ? '표 오류' : null}</div>,
+}));
 
 function renderList() {
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -78,6 +81,7 @@ describe('후속 작업 상태 — 셸 툴바의 총 건수', () => {
     renderList();
 
     await waitFor(() => expect(mocks.getDurableJobs).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음'));
+    expect(await screen.findByText('표 오류')).toBeInTheDocument();
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
   });
 });

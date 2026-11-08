@@ -48,7 +48,7 @@ export default function InstitutionCodeClient({
   initialData,
   embedded = false,
 }: {
-  initialData?: Partial<PageResponse<InstitutionCode>>;
+  initialData?: Partial<PageResponse<InstitutionCode>> | null;
   embedded?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<InstitutionTab>('list');
@@ -64,7 +64,8 @@ export default function InstitutionCodeClient({
 
   /** SSR 초기 목록. 1페이지·무검색 첫 진입에서만 자리표시자로 쓴다. */
   const seedList: InstitutionCode[] = initialData?.list ?? [];
-  const hasSeed = seedList.length > 0;
+  // 서버가 받은 첫 페이지면 비어 있어도 쓴다(확인된 0건) — 선조회 실패는 null 이다.
+  const hasSeed = initialData != null;
 
   const listQuery = useQuery({
     queryKey: ['institution-codes', keyword, page, pageSize],

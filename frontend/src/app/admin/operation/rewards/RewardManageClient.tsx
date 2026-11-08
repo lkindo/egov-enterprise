@@ -315,7 +315,7 @@ export default function RewardManageClient({ initialPage }: { initialPage: PageR
     },
   ];
 
-  // 조회 실패나 받은 값이 없을 때(다른 페이지·검색어의 첫 조회 중·오프라인 멈춤)의 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
+  // 조회 실패나 받은 값이 없을 때(선채움이 없는 첫 조회 중·오프라인 멈춤)의 총 건수는 0 이 아니라 '알 수 없음' 이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
   return (
     <WorkListPage
       title="포상 기록 관리"

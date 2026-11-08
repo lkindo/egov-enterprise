@@ -4,14 +4,16 @@ import { QueryClient, QueryClientProvider, onlineManager } from '@tanstack/react
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Reward } from '@/services/foundation/operation/RewardAdminService';
 import type { PageResponse } from '@/types/foundation/system';
+import { keepPreviousPageData } from '@/lib/query/list-query-defaults';
 import RewardManageClient from '../RewardManageClient';
 
 /**
  * 포상 목록이 셸 툴바에 넘기는 총 건수.
  *
- * [2026-11-08 화면 용어 원장 후속] 총계를 `data?.total || 0` 으로 만들고 오류일 때만 비워, 서버가 미리 채운 1페이지 밖
- * (다른 페이지·검색어)의 첫 응답 전에는 툴바가 "총 0건" 을 보이고 읽어 줬다(불러오는 중을 '데이터 없음' 으로 말한다).
- * 받은 값이 없으면 비우고, 서버가 미리 채운 값은 그대로 보인다.
+ * [2026-11-08 화면 용어 원장 후속] 총계를 `data?.total || 0` 으로 만들고 오류일 때만 비워, 받은 값이 하나도 없는 첫 응답 전
+ * (서버 선조회 실패 등)에는 툴바가 "총 0건" 을 보이고 읽어 줬다(불러오는 중을 '데이터 없음' 으로 말한다).
+ * 받은 값이 없으면 비우고, 서버가 미리 채운 값과 이전 페이지(앱 목록 기본값 keepPreviousPageData)는 그대로 보인다.
+ * 시험의 QueryClient 도 앱과 같은 이전 페이지 유지 규칙으로 만든다 — 빼면 실제 앱에 없는 동작을 고정한다(독립 검토 반례).
  */
 type Pagination = { onPageChange: (page: number) => void };
 const mocks = vi.hoisted(() => ({
@@ -49,7 +51,7 @@ const REWARD: Reward = { rwrdSn: 7, rwardNm: '모범 사원상', rwardwnrId: 'US
 const PREFILLED: PageResponse<Reward> = { list: [REWARD], total: 12, page: 1, size: 10, totalPage: 2 };
 
 function renderList(initialPage: PageResponse<Reward> | null = PREFILLED) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false, placeholderData: keepPreviousPageData } } });
   return render(
     <QueryClientProvider client={client}>
       <RewardManageClient initialPage={initialPage} />
@@ -82,17 +84,17 @@ describe('포상 — 셸 툴바의 총 건수', () => {
     expect(screen.getByTestId('shell-total-count')).toHaveTextContent('12');
   });
 
-  it('다른 페이지의 조회가 끝나기 전에는 총 건수를 내지 않는다 — 0건이라고 말하지 않는다', async () => {
+  it('다른 페이지를 불러오는 동안에는 이전 페이지에서 받은 총 건수를 그대로 낸다 — 0건이라고 말하지 않는다', async () => {
     listByPage(() => new Promise(() => undefined));
     renderList();
     await goToSecondPage();
 
     await waitFor(() => expect(mocks.getRewardList).toHaveBeenCalledWith(expect.objectContaining({ page: 2 })));
-    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('12');
   });
 
   // 오프라인이면 TanStack v5 는 조회를 멈추고(fetchStatus 'paused') isLoading 이 false 다 — 받은 값이 없으면 0건이 아니다.
-  it('오프라인으로 다른 페이지의 조회가 멈춰 받은 값이 없을 때도 총 건수를 내지 않는다', async () => {
+  it('오프라인으로 다른 페이지의 조회가 멈추면 이전 페이지에서 받은 총 건수를 유지한다 — 0건이라고 말하지 않는다', async () => {
     listByPage(() => Promise.resolve({ ...PREFILLED, list: [], page: 2 }));
     onlineManager.setOnline(false);
     try {
@@ -101,7 +103,7 @@ describe('포상 — 셸 툴바의 총 건수', () => {
       expect(screen.getByTestId('shell-total-count')).toHaveTextContent('12');
       await goToSecondPage();
 
-      await waitFor(() => expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음'));
+      await waitFor(() => expect(screen.getByTestId('shell-total-count')).toHaveTextContent('12'));
       expect(mocks.getRewardList).not.toHaveBeenCalledWith(expect.objectContaining({ page: 2 }));
     } finally {
       onlineManager.setOnline(true);

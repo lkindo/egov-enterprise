@@ -72,7 +72,7 @@ export default function AdministCodeClient({
  initialData,
  embedded = false,
 }: {
- initialData?: Partial<PageResponse<AdministCode>>;
+ initialData?: Partial<PageResponse<AdministCode>> | null;
  embedded?: boolean;
 }) {
  const [isModalOpen, setIsModalOpen] = useState(false);
@@ -139,7 +139,8 @@ export default function AdministCodeClient({
  size: pageSize,
  }),
  placeholderData: (prev) => prev ?? (
- pageNumber === 1 && appliedSearch === '' && seedList.length > 0
+ // 서버가 받은 첫 페이지면 비어 있어도 쓴다(확인된 0건) — 선조회 실패는 null 이다.
+ pageNumber === 1 && appliedSearch === '' && initialData != null
  ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: pageSize, totalPage: 1 }
  : undefined
  ),

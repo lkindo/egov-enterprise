@@ -30,7 +30,10 @@ vi.mock('@/app/components/patterns/work-list-page', () => ({
     </main>
   ),
 }));
-vi.mock('@/app/components/ui/standard-data-table', () => ({ StandardDataTable: () => <div /> }));
+// 실패 사례가 실패 상태에 닿은 뒤에 보게, 표가 받은 오류를 드러낸다(대기 중에도 총 건수는 '없음' 이라 그것만으로는 통과해 버린다).
+vi.mock('@/app/components/ui/standard-data-table', () => ({
+  StandardDataTable: ({ error }: { error?: unknown }) => <div>{error ? '표 오류' : null}</div>,
+}));
 
 const SEOUL = { admdstCd: '1100000000', admdstSeCd: '1', admdstZoneNm: '서울특별시', upAdmdstCd: '', useYn: 'Y' };
 
@@ -81,7 +84,8 @@ describe('행정 구역 코드 — 셸 툴바의 총 건수', () => {
     renderList();
 
     await waitFor(() => expect(mocks.getAdministCodeList).toHaveBeenCalledTimes(1));
-    await waitFor(() => expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음'));
+    expect(await screen.findByText('표 오류')).toBeInTheDocument();
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
   });
 
   // 서버가 내려준 첫 페이지는 받은 값이다 — 응답을 기다리는 동안에도 그 총 건수(목록 길이가 아니라 서버 총계)를 보인다.
@@ -91,5 +95,18 @@ describe('행정 구역 코드 — 셸 툴바의 총 건수', () => {
 
     await waitFor(() => expect(mocks.getAdministCodeList).toHaveBeenCalledTimes(1));
     expect(screen.getByTestId('shell-total-count')).toHaveTextContent('42');
+  });
+
+  // 독립 검토 반례: 서버가 빈 첫 페이지를 정상으로 돌려줬으면 확인된 0건이다 — 선조회 실패(page.tsx 가 넘기는 null)와 가른다.
+  it('서버가 빈 첫 페이지를 정상으로 내려줬으면 응답 전에도 확인된 0건을 보이고, 선조회가 실패했으면 비운다', async () => {
+    mocks.getAdministCodeList.mockReturnValue(new Promise(() => undefined));
+    const confirmed = renderList({ list: [], total: 0, page: 1, size: 10, totalPage: 0 });
+    await waitFor(() => expect(mocks.getAdministCodeList).toHaveBeenCalledTimes(1));
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('0');
+    confirmed.unmount();
+
+    renderList(null);
+    await waitFor(() => expect(mocks.getAdministCodeList).toHaveBeenCalledTimes(2));
+    expect(screen.getByTestId('shell-total-count')).toHaveTextContent('없음');
   });
 });

@@ -22,8 +22,9 @@ export default async function AdministCodePage() {
    * [P1-1] 실패를 빈 배열로 삼켜 '0건'으로 굳히지 않는다.
    * 클라이언트가 마운트 직후 같은 엔드포인트를 useQuery 로 재조회하고,
    * 실패하면 StandardDataTable 의 error/onRetry 로 화면에 드러난다.
+   * [2026-11-08] 실패는 null 로 넘긴다 — 빈 배열을 넘기면 성공한 빈 첫 페이지(확인된 0건)와 가를 수 없었다.
    */
-  let initialData: Partial<PageResponse<AdministCode>> = { list: [], total: 0 };
+  let initialData: Partial<PageResponse<AdministCode>> | null = null;
   try {
     // 서버가 읽는 키는 page(1부터)·size 다(ADR-0036).
     initialData = await codeAdminService.getAdministCodeList({ page: 1, size: 10 }, axiosConfig);
