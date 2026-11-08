@@ -581,7 +581,9 @@ test('a demo capability sits on a shared screen only as a demo-only slot contrib
   const leak = (route) => new RegExp(`route ${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}: demo capability leaks into a non-demo profile owner`);
 
   const hub = manifest.routes.find(({ route }) => route === HUB);
-  assert.deepEqual(hub.profileOwners, ['approval', 'collaboration', 'core', 'demo', 'survey']);
+  // 소유는 화면을 싣는 시작 구성 전부이고, 그 가운데 시연 밖 구성이 있어야 허용 조건이 실제로 쓰인다(구성 이름은 열거하지 않는다 — ADR-0028).
+  assert.deepEqual(hub.profileOwners, hub.directProjectionProfiles);
+  assert.ok(hub.profileOwners.some((profile) => profile !== 'demo'));
   assert.deepEqual(hub.capabilities.find(({ id }) => id === SAMPLE), {
     ...hub.capabilities.find(({ id }) => id === SAMPLE), status: 'demo', evidence: [PANEL, CONTRIBUTION],
   });
