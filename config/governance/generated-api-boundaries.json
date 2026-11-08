@@ -597,7 +597,7 @@
       "file": "frontend/src/lib/auth/page-authorization.ts",
       "owner": "loadPageAuthorization",
       "ordinal": 1,
-      "line": 68,
+      "line": 71,
       "column": 24,
       "classification": "generated",
       "transport": "generated-executor",
