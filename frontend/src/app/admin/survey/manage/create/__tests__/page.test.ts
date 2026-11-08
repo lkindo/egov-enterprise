@@ -1,5 +1,5 @@
 // @vitest-environment node
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 /**
  * 설문 등록 옛 경로는 2단 연쇄 없이 최종 목적지로 바로 보낸다(2026-11-08, IA §9.4).
