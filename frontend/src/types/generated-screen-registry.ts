@@ -1433,7 +1433,7 @@ const GENERATED_ALIASES: readonly ScreenAlias[] = [
   {"route":"/admin/survey","target":"/admin/survey/hub","kind":"page-redirect"},
   {"route":"/admin/survey/items","target":"/admin/survey/hub?tab=questions","kind":"config-redirect"},
   {"route":"/admin/survey/manage","target":"/admin/survey/hub?tab=manage","kind":"config-redirect"},
-  {"route":"/admin/survey/manage/create","target":"/admin/survey/manage","kind":"page-redirect"},
+  {"route":"/admin/survey/manage/create","target":"/admin/survey/hub?tab=manage","kind":"page-redirect"},
   {"route":"/admin/survey/questions","target":"/admin/survey/hub?tab=questions","kind":"config-redirect"},
   {"route":"/admin/survey/stats","target":"/admin/survey/hub?tab=stats","kind":"config-redirect"},
   {"route":"/admin/survey/templates","target":"/admin/survey/hub?tab=templates","kind":"config-redirect"},

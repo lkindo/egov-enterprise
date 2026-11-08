@@ -5812,10 +5812,10 @@
       "decisionSafe": false,
       "routing": {
         "kind": "page-redirect",
-        "target": "/admin/survey/manage"
+        "target": "/admin/survey/hub?tab=manage"
       },
       "observedPageRedirectCalls": [
-        "/admin/survey/manage"
+        "/admin/survey/hub?tab=manage"
       ],
       "owner": "product/UX + domain owner",
       "capabilities": [

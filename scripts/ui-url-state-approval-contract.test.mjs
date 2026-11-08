@@ -330,6 +330,31 @@ test('합성 승인으로 전체 승인과 미승인 항목 혼재를 구별한�
 // 충족된 뒤다. 이 배열을 늘리는 diff 가 "무엇을 새로 승인했는가" 를 드러낸다.
 const APPROVED_AS_OF_2026_09_05 = ['presentation-state', 'control-flag', 'resource-identifier', 'search-input'];
 
+/*
+  [2026-11-08 1차 승인 B1] 이름으로만 고르던 승인 부류(표현 상태·리소스 식별자·제어 플래그)는 같은 이름을 쓰는 새 화면을 사람 검토
+  없이 승인에 넣었고, `npm run regen` 이 해시를 다시 묶어 그대로 통과했다(9/5 승인 이후 이름만으로 들어온 기록 33·23건).
+  이제 세 부류도 검색어 부류처럼 기록 ID 로 묶는다. 기록 ID 는 원본 파일·경로·대상·상태 이름의 해시라 그 가운데 하나가 바뀌면
+  새 ID 가 되어 승인에서 빠지고, 묶인 ID 가 사라지면 승인 전체가 무효다(fail-closed). 해시 재결속은 새 기록을 승인하지 않는다 —
+  승인은 이 파일의 recordIds 를 사람이 늘리는 diff 다. ID 가 같아도 검증·인가 의미가 달라지면 그 기록을 다시 검토한다.
+*/
+test('이름으로 고르던 승인 부류도 기록 ID 로 묶인다 — 같은 이름의 새 기록은 승인에 자동으로 들어가지 않는다', () => {
+  for (const classId of ['presentation-state', 'resource-identifier', 'control-flag']) {
+    const cls = overlay.classes.find((row) => row.classId === classId);
+    assert.ok(Array.isArray(cls?.selector?.recordIds) && cls.selector.recordIds.length > 0,
+      `${classId}: recordIds 가 없으면 같은 이름을 쓰는 새 화면이 검토 없이 승인된다`);
+  }
+  const selectors = approvedStateItemSelectors(overlay, census);
+  const newcomer = { id: 'URL-NEWCOMER00000', stateItems: ['tab', 'page', 'bbsId', 'expired'].map((name) => ({ name })) };
+  for (const item of newcomer.stateItems) {
+    assert.equal(isUrlStateItemApproved(newcomer, item, selectors), false, `새 기록의 ${item.name} 가 이름만으로 승인됐다`);
+  }
+  // 묶인 기록은 그대로 승인이다 — 고정이 기존 승인을 줄이지 않는다.
+  const pinnedId = overlay.classes.find((row) => row.classId === 'presentation-state').selector.recordIds[0];
+  const pinned = census.records.find((record) => record.id === pinnedId);
+  const presentationItem = pinned.stateItems.find((item) => ['endDate', 'orderBy', 'page', 'startDate', 'tab'].includes(item.name));
+  assert.equal(isUrlStateItemApproved(pinned, presentationItem, selectors), true);
+});
+
 test('승인된 부류는 명시 목록과 정확히 일치한다 — 조용히 늘지 않는다', () => {
   const approved = overlay.classes
     .filter((cls) => cls.reviewState === 'approved')
