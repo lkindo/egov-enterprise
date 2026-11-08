@@ -29,7 +29,8 @@ const TITLES: Record<string, string> = {
   copyright: '저작권 정책',
 };
 
-const titleFor = (type: string) => TITLES[type] ?? '약관 및 정책';
+// [2026-11-08] 바닥글은 정책 PK 그대로 대문자(/help/policies/PRIVACY)로 연결한다 — 대소문자를 가리지 않고 찾아야 대체 제목이 쓰인다.
+const titleFor = (type: string) => TITLES[type.toLowerCase()] ?? '약관 및 정책';
 
 export default async function PolicyViewPage({
   params,

@@ -250,7 +250,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/community/boards/maker",
-    "label": "게시판 생성 마법사",
+    "label": "게시판 만들기",
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
@@ -305,7 +305,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/community/boards/select-board-list",
-    "label": "전체 게시글",
+    "label": "게시글 목록",
     "labelSource": "route-ledger",
     "shellAccess": "authenticated",
     "dynamic": false,
@@ -957,7 +957,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
   },
   {
     "route": "/admin/system/monitoring/hub",
-    "label": "보안 감사 로그",
+    "label": "시스템 로그(감사 보기)",
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,

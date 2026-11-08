@@ -9,7 +9,7 @@ const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 //   auth-login·admin-shell-hub 가 'r12 이후 무변경' 으로 잘못 읽히고 있었다 — 매니페스트에서 보강했다.
 //   ⚠ 이 상수와 매니페스트의 asOf 는 반드시 함께 바뀐다. 날짜만 조용히 미는 것을 막는 장치다.
 // [2026-11-08 정기 재검토] 같은 28건을 다시 확인했다 — 단계 상태 16건은 라우트 원장과 같고, 새 실행·수동 증거는 없으며,
-//   근거 목록이 빠뜨린 화면 부품 29개를 보강했다. 상태는 그대로이고 사용자가 보류 유지를 승인해 asOf 를 옮겼다.
+//   근거 목록이 빠뜨린 화면 부품 38개를 보강했다. 상태는 그대로이고 사용자가 보류 유지를 승인해 asOf 를 옮겼다.
 export const REVIEWED_ON = '2026-11-08';
 const EXPECTED_CASE_FIELDS = ['route', 'role', 'state', 'brandTheme', 'colorMode', 'viewport'];
 const EXPECTED_TASK_METRICS = [
