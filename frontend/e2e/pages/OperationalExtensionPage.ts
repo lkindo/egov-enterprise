@@ -91,8 +91,9 @@ export class OperationalExtensionPage {
     // SMS Service
     async gotoSms() {
         console.log('>>> Navigating to SMS Service');
-        // /cop/sms/selectSmsList -> (next.config redirect) -> /admin/uss/ion/sms (SmsAdminClient)
-        await this.page.goto('/cop/sms/selectSmsList');
+        // [2026-11-08 DEC-OPS-408] 정본 경로로 바로 들어간다. 옛 경로 /cop/sms/selectSmsList(next.config 리다이렉트)는 퇴역 후보이고
+        // 재기록 묶음에서 지운다 — 이 E2E 가 그 별칭의 마지막 소비자였다.
+        await this.page.goto('/admin/uss/ion/sms');
         // [2026-08-24 A1 이행] 마케팅 제목('메시지 오케스트레이션')을 업무 제목으로 바꿨다(G14).
         await expect(this.page.getByRole('heading', { name: '문자 메시지 발송 관리', exact: true })).toBeVisible();
     }

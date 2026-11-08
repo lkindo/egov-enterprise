@@ -528,6 +528,43 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
     /demo capability leaks into a non-demo profile owner/,
   );
 
+  // [2026-11-08 DEC-OPS-408] 모든 구성에 남는 화면에 시연 기능이 패널만 기여하면(모니터링 허브), 그 패널을 싣는 파일
+  //   (contributionSources)을 시연 밖 시작 구성이 모두 지울 때만 시연 밖 소유가 허용된다. 적지 않거나, 시연 밖에도 남는 파일을 섞거나,
+  //   evidence 밖 파일을 적거나, 시연 밖 구성 하나가 그 파일을 남기면 누수다.
+  const HUB = '/admin/system/monitoring/hub';
+  const sampleOf = (manifest) => manifest.routes.find(({ route }) => route === HUB)
+    .capabilities.find(({ id }) => id === 'monitoring.sample-widgets');
+  assert.ok(analysis.manifest.routes.find(({ route }) => route === HUB).profileOwners.includes('core'), 'the hub ships in every preset');
+  assert.equal(sampleOf(analysis.manifest).status, 'demo');
+  assert.ok(!validateRouteCapabilities(analysis.manifest, repository).errors.some((error) => error.includes(HUB)));
+  const LEAK = /route \/admin\/system\/monitoring\/hub: demo capability leaks into a non-demo profile owner/;
+
+  const undeclared = structuredClone(analysis.manifest);
+  delete sampleOf(undeclared).contributionSources;
+  assert.match(validateRouteCapabilities(undeclared, repository).errors.join('\n'), LEAK);
+
+  const coreSource = structuredClone(analysis.manifest);
+  sampleOf(coreSource).contributionSources.push('frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx');
+  assert.ok(sampleOf(coreSource).evidence.includes('frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx'));
+  assert.match(validateRouteCapabilities(coreSource, repository).errors.join('\n'), LEAK);
+
+  const outsideEvidence = structuredClone(analysis.manifest);
+  sampleOf(outsideEvidence).contributionSources = ['frontend/src/app/admin/patterns/page.tsx'];
+  const outsideErrors = validateRouteCapabilities(outsideEvidence, repository).errors.join('\n');
+  assert.match(outsideErrors, /monitoring\.sample-widgets: contributionSources must be listed in evidence/);
+  assert.match(outsideErrors, LEAK);
+
+  const keptByCore = structuredClone(repository);
+  const coreProjection = keptByCore.profileProjections.profiles.find(({ profile }) => profile === 'core');
+  coreProjection.removePaths = coreProjection.removePaths
+    .filter((removal) => removal !== 'src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx');
+  assert.match(validateRouteCapabilities(analysis.manifest, keptByCore).errors.join('\n'), LEAK);
+
+  const unknownProjection = structuredClone(repository);
+  unknownProjection.profileProjections.profiles = unknownProjection.profileProjections.profiles
+    .filter(({ profile }) => profile !== 'survey');
+  assert.match(validateRouteCapabilities(analysis.manifest, unknownProjection).errors.join('\n'), LEAK);
+
   // 소유 누락과 시연 누수의 부정 시험은 남아 있는 패턴 갤러리로 유지한다(ADR-0049).
   // 결재 시작 구성이 갤러리를 지우지 않는 투영을 만들어, 원장의 소유 누락을 잡는지 본다.
   const shipped = structuredClone(repository);
