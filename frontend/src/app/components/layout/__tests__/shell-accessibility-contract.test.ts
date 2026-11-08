@@ -319,7 +319,8 @@ describe('app shell accessibility source contract', () => {
         '/admin/collaboration/scraps/selectScrapList'],
       [['admin', 'collaboration', 'scraps', 'selectScrapDetail', '[id]', 'page.tsx'],
         '/admin/collaboration/scraps/selectScrapList'],
-      [['admin', 'survey', 'manage', 'create', 'page.tsx'], '/admin/survey/manage'],
+      // [2026-11-08] 목록(/admin/survey/manage)을 거치는 2단 연쇄 대신 허브의 관리 탭으로 바로 보낸다(IA §9.4).
+      [['admin', 'survey', 'manage', 'create', 'page.tsx'], '/admin/survey/hub?tab=manage'],
       [['admin', 'collaboration', 'address-book', 'insert-address-book', 'page.tsx'],
         '/admin/collaboration/address-book/select-address-book-list'],
     ];
