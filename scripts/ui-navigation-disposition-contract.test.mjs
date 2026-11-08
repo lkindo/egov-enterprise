@@ -32,6 +32,17 @@ function clone(value) {
   return structuredClone(value);
 }
 
+// 처분 기한이 실제 달력 날짜인지 본다 — 형식만 보면 2026-02-30 도 통과한다(2026-11-08 Codex 12차).
+function isCalendarDate(value) {
+  if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/u.test(value)) return false;
+  const [year, month, day] = value.split('-').map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day));
+  return date.getUTCFullYear() === year && date.getUTCMonth() === month - 1 && date.getUTCDate() === day;
+}
+// 라우트 원장 검토가 끝난 행의 처분 기한은 비교할 원장 값이 없다. 기한을 조용히 미루지 못하게 지금 쓰는 가장 늦은 기한을 고정한다 —
+//   다시 검토해 기한을 옮길 때는 이 값과 함께 바꾸고 사유를 변경 설명에 남긴다.
+const LATEST_DISPOSITION_REVIEW_BY = '2026-12-31';
+
 function validate(candidate, options = {}) {
   return validateDispositionContract({
     manifest: options.manifest ?? manifest,
@@ -347,7 +358,8 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
     const shared = record.disposition !== 'blocked-review'
       && (ledgerReview
         ? record.owner === ledgerReview.owner && record.reviewBy === ledgerReview.reviewBy
-        : record.owner === manifest.routes[index].owner && /^\d{4}-\d{2}-\d{2}$/u.test(record.reviewBy ?? ''));
+        : record.owner === manifest.routes[index].owner && isCalendarDate(record.reviewBy)
+          && record.reviewBy <= LATEST_DISPOSITION_REVIEW_BY);
     if (WAVE1_APPROVED_ROUTES.includes(record.route)) {
       return shared
         && record.reviewState === 'approved'

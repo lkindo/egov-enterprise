@@ -105,7 +105,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
@@ -168,7 +168,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/collaboration]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -313,7 +313,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/collaboration/address-book/select-address-book-detail/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
@@ -859,7 +859,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/detail]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 9건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -904,7 +904,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/insert-board-article]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 3건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -994,7 +994,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/master]=BBS_MST_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
@@ -1039,7 +1039,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/master/[id]]=BBS_MST_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 11건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 11건이 있다"
           ]
         },
         "accessibility": {
@@ -1084,7 +1084,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/community/boards/select-board-list]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 19건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 3건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -1219,7 +1219,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/help]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 9건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 3건이 있다"
           ]
         },
         "accessibility": {
@@ -1390,7 +1390,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/operation/events]=EVENT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -1435,7 +1435,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/operation/external-hr]=EXT_HR_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -1480,7 +1480,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/operation/memo-reports]=MEMO_RPT_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=USER·ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 8건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 2건이 있다"
           ]
         },
         "accessibility": {
@@ -1935,7 +1935,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/stats]=STATS_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -2183,7 +2183,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/survey/hub]=SURVEY_READ_ALL+SURVEY_RSP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 6건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 3건이 있다"
           ]
         },
         "accessibility": {
@@ -2328,7 +2328,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/survey/manage/[id]]=SURVEY_READ_ALL (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
@@ -2423,7 +2423,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/survey/polls]=POLL_READ+POLL_READ_ALL (ALL) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -2754,7 +2754,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/banner]=BANNER_ADMIN_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 9건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 2건(config/ui-url-state-approval.json 판정)은 그대로 남는다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 2건이 있다"
           ]
         },
         "accessibility": {
@@ -2799,7 +2799,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/codes/administ]=ADMCODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -2844,7 +2844,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/codes/institution]=INST_CODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -2889,7 +2889,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/comments]=COMMENT_READ_ALL (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 14건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 14건이 있다"
           ]
         },
         "accessibility": {
@@ -2934,7 +2934,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/common-code]=CODE_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 6건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -3114,7 +3114,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/hpcm]=HELP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -3250,7 +3250,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/system/logs]=LOGIN_LOG_READ+SYS_LOG_READ+USER_LOG_READ+WEB_LOG_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 3건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 3건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -4033,7 +4033,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/uss/ion/sms]=SMS_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -4078,7 +4078,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/admin/uss/olh/online-manual]=HELP_READ (ANY) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ADMIN·SYSTEM 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -4204,7 +4204,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/cop/cmy/selectCommunityDetail/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 이름으로 승인에 들어와 소급 확인을 기다리는 항목 1건이 있다"
           ]
         },
         "accessibility": {
@@ -4375,7 +4375,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/login]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=ANONYMOUS 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -4510,7 +4510,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/pages/[slug]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -4555,7 +4555,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/search]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 4건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 상태 항목 1건(config/ui-url-state-approval.json 판정)은 그대로 남는다"
           ]
         },
         "accessibility": {
@@ -4645,7 +4645,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/smart-toolkit/dept-job/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
@@ -4942,7 +4942,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/survey/[id]]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 1건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
@@ -5023,7 +5023,7 @@
           "reviewedAt": "2026-11-08",
           "evidence": [
             "config/governance/permission-catalog.json pagePermissions[/survey/stats]=[] (로그인만) — 처분은 이 진입 경계를 넓히지 않는다(AGENTS H3). roles=AUTHENTICATED 는 기본 설치 페르소나다",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다. 미승인 URL 항목 2건(config/ui-url-state-census.json)은 그대로 남는다"
+            "개인정보 검토 범위는 처분 변경분이다 — 화면을 새로 만들지 않고 인가·개인정보 경계를 넓히지 않는다. 화면 전체의 개인정보 검토 완료가 아니다"
           ]
         },
         "accessibility": {
