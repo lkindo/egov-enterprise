@@ -307,12 +307,11 @@ function isWave7Approval(approval) {
 }
 
 /*
-  웨이브 8(2026-11-08, DEC-OPS-408): 보류 행 가운데 지금 정할 수 있는 다섯을 승인했다. 모니터링 허브는 시작 구성 소유를 다섯 구성으로
-  정하고(시연 패널은 화면 안의 기여 — 라우트 원장 contributionSources) 정본 유지, 옛 camelCase 별칭 넷은 퇴역 후보다(삭제는 재기록 묶음).
-  나머지 보류 행의 방향(메뉴·권한 원장과 함께 승인할 여섯, 보류를 유지할 셋)은 DEC-OPS-408 보관 원문에 있다.
+  웨이브 8(2026-11-08, DEC-OPS-408): 옛 camelCase 별칭 넷을 퇴역 후보로 승인했다(소유자의 외부 공개·운영 배포 없음 확인, 삭제는 재기록
+  묶음). 모니터링 허브는 표본 위젯 일부가 공통 허브 화면에 있어 모든 구성에 실리므로 소유 미확인·보류를 유지한다. 나머지 보류 행의
+  방향(메뉴·권한 원장과 함께 승인할 일곱, 보류를 유지할 넷)은 DEC-OPS-408 보관 원문에 있다.
 */
 const WAVE8_DISPOSITIONS = {
-  '/admin/system/monitoring/hub': 'retain-canonical',
   '/cop/sms/selectSmsList': 'retire-candidate',
   '/smart-toolkit/dept-job/insertDeptJob': 'retire-candidate',
   '/smart-toolkit/dept-job/selectDeptJobDetail/[id]': 'retire-candidate',

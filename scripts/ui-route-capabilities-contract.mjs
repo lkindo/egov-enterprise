@@ -678,20 +678,6 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
   }
 }
 
-/**
- * 시연 역량이 시연 밖 구성의 화면에 있어도 되는가(2026-11-08 DEC-OPS-408) — 화면은 모든 구성에 남고 시연 기능이 그 화면에 패널만
- * 기여할 때다. 그 패널을 싣는 파일(contributionSources, evidence 안)을 시연 밖의 모든 시작 구성이 직접 지울 때만 허용한다. 투영을 모르거나
- * 시연 밖 구성 하나라도 투영에 없으면(생성물 등) 허용하지 않는다 — 종전처럼 누수다.
- */
-function demoContributionRemovedOutsideDemo(capability, repository, nonDemoPresets) {
-  const sources = capability?.contributionSources;
-  const profiles = repository?.profileProjections?.profiles;
-  if (!Array.isArray(sources) || sources.length === 0 || !Array.isArray(profiles)) return false;
-  if (!nonDemoPresets.every((preset) => profiles.some(({ profile }) => profile === preset))) return false;
-  return sources.every((source) => isNonemptyString(source) && capability.evidence?.includes(source)
-    && directProjectionProfiles(source, repository.profileProjections).every((profile) => !nonDemoPresets.includes(profile)));
-}
-
 export function validateRouteCapabilities(manifest, repository) {
   // 원본 시연 프로필의 소유 기록은 기능을 직접 선택한 생성물에서도 유효하다.
   const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
@@ -852,15 +838,6 @@ export function validateRouteCapabilities(manifest, repository) {
         if (capability?.status === 'demo' && capability?.decisionSafe !== false) {
           errors.push(`${capabilityLabel}: demo capability cannot be operational-decision safe`);
         }
-        if (capability?.contributionSources !== undefined) {
-          const sources = capability.contributionSources;
-          if (!Array.isArray(sources) || sources.length === 0 || sources.some((source) => !isNonemptyString(source))
-            || new Set(sources).size !== sources.length) {
-            errors.push(`${capabilityLabel}: contributionSources must be a non-empty unique string array`);
-          } else if (sources.some((source) => !capability.evidence?.includes(source))) {
-            errors.push(`${capabilityLabel}: contributionSources must be listed in evidence`);
-          }
-        }
         if (capability?.status === 'unavailable' && capability.actions?.length > 0) {
           errors.push(`${capabilityLabel}: unavailable capability cannot claim supported actions`);
         }
@@ -993,8 +970,7 @@ export function validateRouteCapabilities(manifest, repository) {
     if (declaredUnverified.length > 0) validateReview(entry.review, label, manifest?.asOf, errors);
     else if (entry.review !== undefined) warnings.push(`${label}: review metadata exists without unverifiedFields`);
 
-    if (entry.capabilities?.some((capability) => capability?.status === 'demo'
-        && !demoContributionRemovedOutsideDemo(capability, repository, nonDemoPresets))
+    if (entry.capabilities?.some(({ status }) => status === 'demo')
       && entry.profileOwners.some((profile) => nonDemoPresets.includes(profile))) {
       errors.push(`${label}: demo capability leaks into a non-demo profile owner`);
     }
