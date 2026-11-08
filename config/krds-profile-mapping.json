@@ -67,7 +67,7 @@
       "maximumClaimWithoutReleaseEvidence": "target",
       "identityElements": "blocked-input",
       "identityOwner": "product-institution-owner",
-      "reviewBy": "2026-11-21",
+      "reviewBy": "2027-01-21",
       "requirements": [
         "official-service eligibility",
         "pinned standard-style mapping",
@@ -83,7 +83,7 @@
       "maximumClaimWithoutReleaseEvidence": "target",
       "identityElements": "off-by-default",
       "identityOwner": "product-institution-owner",
-      "reviewBy": "2026-11-21",
+      "reviewBy": "2027-01-21",
       "requirements": [
         "documented adaptation and deviation",
         "semantic token and interaction parity",
@@ -98,7 +98,7 @@
       "maximumClaimWithoutReleaseEvidence": "no-krds-claim",
       "identityElements": "forbidden",
       "identityOwner": "product-owner",
-      "reviewBy": "2026-11-21",
+      "reviewBy": "2027-01-21",
       "requirements": [
         "same semantic, state, interaction and accessibility floor",
         "no official-government impersonation",
@@ -255,7 +255,7 @@
       "upstream": "https://www.krds.go.kr/html/site/component/component_02_01.html",
       "reason": "This repository is a reference implementation and has no approved official-service eligibility or institution content.",
       "owner": "product-institution-owner",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "IDENTITY-MASTHEAD-NONSTANDARD",
@@ -275,7 +275,7 @@
       "upstream": "https://www.krds.go.kr/html/site/component/component_02_04.html",
       "reason": "Generic shell components exist, but institution identity, policy links, contact details and exact KRDS ordering are unapproved. The pinned upstream is the KRDS footer page; header guidance is a separate page (component_02_03.html) that this entry does not pin yet.",
       "owner": "product-institution-owner",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "COMPONENT-SKIP-LINK",
@@ -398,7 +398,7 @@
       "upstream": "https://www.krds.go.kr/html/site/global/global_01.html",
       "reason": "Field-level purpose, minimization, masking, retention and analytics rules require domain and privacy-owner approval.",
       "owner": "security-privacy",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "SERVICE-LOGIN",
@@ -434,7 +434,7 @@
       "upstream": "https://www.krds.go.kr/html/site/service/service_04_01.html",
       "reason": "No product owner has selected an application journey as an applicable public-service pilot; generic wizard styling cannot establish applicability.",
       "owner": "product-ux",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "SERVICE-POLICY-INFORMATION",
@@ -445,7 +445,7 @@
       "upstream": "https://www.krds.go.kr/html/site/service/service_05_03.html",
       "reason": "Help and policy routes exist, but current content ownership, freshness and direct-detail journey evidence are unapproved.",
       "owner": "content-product-owner",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     },
     {
       "id": "VERIFICATION-SELF-CHECKLIST",
@@ -456,7 +456,7 @@
       "upstream": "https://www.krds.go.kr/html/site/community/community_04_01.html?nttId=2",
       "reason": "The official checklist has not been executed against an approved profile-route-state population.",
       "owner": "quality-accessibility",
-      "reviewBy": "2026-11-21"
+      "reviewBy": "2027-01-21"
     }
   ],
   "refreshTriggers": [

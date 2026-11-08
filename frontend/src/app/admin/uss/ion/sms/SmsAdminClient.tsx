@@ -425,7 +425,7 @@ export default function SmsAdminClient({
         description="시스템 알림·인증 문자 발송 이력을 조회하고 새 메시지를 발송합니다."
         breadcrumbItems={[{ label: '부가서비스' }, { label: '문자 메시지' }]}
         filterStateKey="uss-sms"
-        totalCount={isError ? undefined : totalCount}
+        totalCount={isError || data === undefined ? undefined : totalCount}
         actions={
           <>
             <Button variant="outline" size="sm" onClick={() => refetch()} className="gap-2">

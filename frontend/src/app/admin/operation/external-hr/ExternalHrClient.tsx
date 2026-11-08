@@ -436,8 +436,8 @@ export default function ExternalHrClient({ initialPage }: { initialPage: PageRes
       description="행사에 참여하는 외부 인사의 연락처와 연결된 행사 정보를 관리합니다."
       breadcrumbItems={[{ label: '관리 센터' }, { label: '업무지원' }, { label: '행사 외부인사 관리' }]}
       filterStateKey="operation-external-hr"
-      // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다.
-      totalCount={isError ? undefined : totalItems}
+      // 조회 실패나 받은 값이 없을 때(첫 조회 중·오프라인 멈춤)의 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={isError || data === undefined ? undefined : totalItems}
       actions={
         <>
           <Button

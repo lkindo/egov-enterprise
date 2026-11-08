@@ -217,7 +217,8 @@ const ScrapListClient = () => {
             title="스크랩 목록"
             description="나중에 다시 볼 중요한 페이지와 정보를 관리합니다."
             // 조회 실패 시 총 건수는 0 이 아니라 '알 수 없음'이다 — 숫자를 찍으면 빈 결과와 구분되지 않는다.
-            totalCount={isError ? undefined : totalCount}
+            // 받은 값이 없을 때(첫 조회 중·오프라인 멈춤)도 같다 — isLoading 은 오프라인 멈춤에서 false 다.
+            totalCount={isError || data === undefined ? undefined : totalCount}
             actions={
                 <>
                     <Button

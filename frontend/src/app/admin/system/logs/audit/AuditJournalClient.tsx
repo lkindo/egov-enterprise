@@ -197,9 +197,11 @@ export default function AuditJournalClient() {
       description="비밀번호 초기화·권한 변경·개인정보 조회 같은 민감 작업을 요청 단계별로 최신순 표시합니다. 이 화면의 열람과 내보내기도 원장에 남습니다."
       breadcrumbItems={[{ label: '시스템관리' }, { label: '로그관리' }, { label: '민감 작업 감사 원장' }]}
       filterStateKey="system-logs-audit"
-      totalCount={error ? undefined : total}
+      // 받은 값이 없거나 조회가 실패하면 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={error || data === undefined ? undefined : total}
       actions={
-        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={openExport} disabled={Boolean(error) || isLoading}>
+        /* 받은 총 건수가 없으면(오프라인으로 멈춘 조회 포함) 상한 검사와 대화상자의 'N건' 이 0 으로 돌지 않게 잠근다. */
+        <Button type="button" variant="outline" size="sm" className="gap-2" onClick={openExport} disabled={Boolean(error) || data === undefined}>
           <Download size={16} aria-hidden="true" /> 전체 결과 내보내기
         </Button>
       }

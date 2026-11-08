@@ -48,7 +48,7 @@ export default function InstitutionCodeClient({
   initialData,
   embedded = false,
 }: {
-  initialData?: Partial<PageResponse<InstitutionCode>>;
+  initialData?: Partial<PageResponse<InstitutionCode>> | null;
   embedded?: boolean;
 }) {
   const [activeTab, setActiveTab] = useState<InstitutionTab>('list');
@@ -64,7 +64,8 @@ export default function InstitutionCodeClient({
 
   /** SSR 초기 목록. 1페이지·무검색 첫 진입에서만 자리표시자로 쓴다. */
   const seedList: InstitutionCode[] = initialData?.list ?? [];
-  const hasSeed = seedList.length > 0;
+  // 서버가 받은 첫 페이지면 비어 있어도 쓴다(확인된 0건) — 선조회 실패는 null 이다.
+  const hasSeed = initialData != null;
 
   const listQuery = useQuery({
     queryKey: ['institution-codes', keyword, page, pageSize],
@@ -101,6 +102,7 @@ export default function InstitutionCodeClient({
   const listData: InstitutionCode[] = listQuery.data?.list ?? [];
   const receptionData: InstitutionCodeRecptn[] = receptionQuery.data?.list ?? [];
   const total = (activeTab === 'list' ? listQuery.data?.total : receptionQuery.data?.total) ?? 0;
+  const activeQuery = activeTab === 'list' ? listQuery : receptionQuery;
 
   /** [P1-8] 검색어가 바뀌면 페이지를 1로 되돌린다(3페이지에서 검색하면 빈 화면이 되던 결함). */
   const handleKeywordChange = useCallback((value: string) => {
@@ -293,7 +295,8 @@ export default function InstitutionCodeClient({
       description={activeTab === 'list' ? '공공기관 코드 목록을 조회합니다.' : '기관코드 변동 수신 이력을 조회합니다.'}
       breadcrumbItems={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '기관 코드' }]}
       filterStateKey="system-codes-institution"
-      totalCount={total}
+      // 지금 탭의 조회가 받은 값(자리표시자 포함)이 없거나 실패하면 총 건수는 0 이 아니라 '알 수 없음'이다.
+      totalCount={activeQuery.error || activeQuery.data === undefined ? undefined : total}
       actions={
         /* 탭은 조회 조건이 아니라 조회 대상 전환이라 헤더에 둔다. */
         <TabList aria-label="기관코드 화면 전환" className="flex rounded-md border border-border p-0.5">

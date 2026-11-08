@@ -452,7 +452,8 @@ export function BoardPostsTab({ detail }: { detail: BoardMasterDetail }) {
           </Link>
         </Button>
       ) : undefined}
-      totalCount={posts.isError ? undefined : total}
+      // 받은 값이 없으면(첫 조회 중·오프라인 멈춤·실패) 총 건수를 0 으로 말하지 않는다. 이전 쪽을 보이는 동안은 받은 총계를 유지한다.
+      totalCount={posts.isError || posts.data === undefined ? undefined : total}
       filter={
         <KeywordFilter
           label="검색어"

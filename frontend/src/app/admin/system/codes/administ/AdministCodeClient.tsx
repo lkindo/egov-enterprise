@@ -72,7 +72,7 @@ export default function AdministCodeClient({
  initialData,
  embedded = false,
 }: {
- initialData?: Partial<PageResponse<AdministCode>>;
+ initialData?: Partial<PageResponse<AdministCode>> | null;
  embedded?: boolean;
 }) {
  const [isModalOpen, setIsModalOpen] = useState(false);
@@ -139,7 +139,8 @@ export default function AdministCodeClient({
  size: pageSize,
  }),
  placeholderData: (prev) => prev ?? (
- pageNumber === 1 && appliedSearch === '' && seedList.length > 0
+ // 서버가 받은 첫 페이지면 비어 있어도 쓴다(확인된 0건) — 선조회 실패는 null 이다.
+ pageNumber === 1 && appliedSearch === '' && initialData != null
  ? { list: seedList, total: initialData?.total ?? seedList.length, page: 1, size: pageSize, totalPage: 1 }
  : undefined
  ),
@@ -308,7 +309,8 @@ export default function AdministCodeClient({
  description="법정동·행정동 코드 체계를 조회·등록하고 정정합니다."
  breadcrumbItems={[{ label: '시스템 관리' }, { label: '코드 관리' }, { label: '행정 구역' }]}
  filterStateKey="system-codes-administ"
- totalCount={error ? undefined : total}
+ // 받은 값(서버 첫 페이지 자리표시자 포함)이 없거나 조회가 실패하면 총 건수는 0 이 아니라 '알 수 없음'이다.
+ totalCount={error || pageData === undefined ? undefined : total}
  actions={
  <>
  <Button

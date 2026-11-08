@@ -2048,7 +2048,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "게시판 생성 마법사",
+      "visibleLabel": "게시판 만들기",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -2464,7 +2464,7 @@
         "demo"
       ],
       "journeys": [],
-      "visibleLabel": "전체 게시글",
+      "visibleLabel": "게시글 목록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -8761,7 +8761,7 @@
         "survey"
       ],
       "journeys": [],
-      "visibleLabel": "보안 감사 로그",
+      "visibleLabel": "시스템 로그(감사 보기)",
       "menuExposure": "visible",
       "decisionSafe": false,
       "routing": {

@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "asOf": "2026-09-08",
+  "asOf": "2026-11-08",
   "authority": "baseline-input-not-results",
   "protocol": "docs/04-operations/ui-ux-baseline-protocol.md",
   "routeTruthSource": "config/ui-route-capabilities.json",
@@ -28,7 +28,7 @@
         "status": "unverified",
         "description": "현재 렌더 기본값을 식별하기 위한 baseline label이며 승인된 기관 브랜드 profile이 아니다.",
         "owner": "design-system + product/UX",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       }
     ],
     "colorModes": [
@@ -256,23 +256,23 @@
     {
       "id": "baseline-runtime-evidence",
       "status": "unmeasured",
-      "reason": "current authoritative r12는 exact 8개 scenario·96/96 state·48/48 performance를 invalid 0으로 완료했고, synthetic mutation task evidence 36건도 case-bound 실행·authoritative readback·rollback·cleanup·active residue 0으로 닫았다. r12 automated-only durable publication은 UA-04에서 완료됐지만 execution-captured protocol hash와 manual evidence 48건이 없어 8개 scenario 모두 partial-automated-evidence다. ⚠ 2026-09-08 재검토: 8개 시나리오 전부 r12 이후 화면이 바뀌었다(2~10건). 실행 시점 protocol hash 부재와 무관하게 r12 자동 증거는 더 이상 현재 화면의 baseline 이 아니며, 새 authoritative run 선행 결론이 강화된다.",
+      "reason": "current authoritative r12는 exact 8개 scenario·96/96 state·48/48 performance를 invalid 0으로 완료했고, synthetic mutation task evidence 36건도 case-bound 실행·authoritative readback·rollback·cleanup·active residue 0으로 닫았다. r12 automated-only durable publication은 UA-04에서 완료됐지만 execution-captured protocol hash와 manual evidence 48건이 없어 8개 scenario 모두 partial-automated-evidence다. ⚠ 2026-09-08 재검토: 8개 시나리오 전부 r12 이후 화면이 바뀌었다(2~10건). 실행 시점 protocol hash 부재와 무관하게 r12 자동 증거는 더 이상 현재 화면의 baseline 이 아니며, 새 authoritative run 선행 결론이 강화된다. ⚠ 2026-11-08 재검토: 9/8 이후에도 8개 시나리오 모두 근거 파일이 다시 바뀌었고(시나리오마다 커밋 7~59개, 보강 전 목록 기준) 새 authoritative run 은 없다(ui-quality-baseline 색인은 r12 요약 하나). 근거 목록이 빠뜨린 화면 부품 38개(사용자 관리 허브 17·FAQ 흐름 10 등)를 보강했다 — 화면을 직접 그리는 부품만 넣고 서버 액션·조회 옵션·확장 슬롯·공용 부품은 넣지 않았다.",
       "owner": "quality engineering",
-      "reviewBy": "2026-12-07"
+      "reviewBy": "2027-02-06"
     },
     {
       "id": "baseline-artifact-durability",
       "status": "unmeasured",
       "reason": "r12 automated-only summary는 사람 redaction review 8/8을 거쳐 canonical digest e7822b6a31dcf9ff5e129238e42cce7be29d5f126554e8ea400cf249c69af8e4와 tracked index 첫 entry로 발행됐다. clean-checkout committed Git blob identity readback, PR #434 required CI와 merge commit f39ba9930df973710318088ccb00a2800643d9a3의 post-merge CI가 모두 통과해 UA-04 durable publication은 완료됐지만, r12는 execution-captured protocol hash와 manual evidence 부재로 measured 승격 대상이 아니다. ⚠ 2026-09-08 재검토: durable publication 사실에 변화 없음. r12 는 protocol hash 부재로 계속 승격 대상이 아니다.",
       "owner": "quality engineering + repository governance",
-      "reviewBy": "2026-12-07"
+      "reviewBy": "2027-02-06"
     },
     {
       "id": "manual-at-evidence",
       "status": "blocked-external",
       "reason": "r12 manual evidence 48건 중 40건은 전문가 검토가 필요하고 NVDA/Chrome 8건은 외부 차단 상태다. 실제 Windows 접근성 설정을 사용하는 지정 평가자, 격리 계정과 기록 승인 없이는 수동 결과를 만들 수 없다. ⚠ 2026-09-08 재검토: 지정 평가자·승인된 Windows 기록 환경이 여전히 확보되지 않았다. blocked-external 유지.",
       "owner": "accessibility owner",
-      "reviewBy": "2026-12-07"
+      "reviewBy": "2027-02-06"
     }
   ],
   "scenarios": [
@@ -296,7 +296,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + auth domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -313,7 +313,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + auth domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -330,13 +330,15 @@
         "reason": "r12 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 4건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/auth-login/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/login/LoginClient.tsx",
         "frontend/src/app/login/page.tsx",
         "frontend/e2e/quality/login-accessibility.spec.ts",
-        "frontend/e2e/journeys/authentication.spec.ts"
+        "frontend/e2e/journeys/authentication.spec.ts",
+        "frontend/src/app/login/login-form-validation.ts",
+        "frontend/src/components/account/MfaChallengePanel.tsx"
       ]
     },
     {
@@ -358,7 +360,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + admin-shell owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -375,7 +377,7 @@
         "reason": "r12 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 2건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/admin-shell-hub/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/AdminDashboardClient.tsx",
@@ -383,7 +385,8 @@
         "frontend/e2e/journeys/application-shell.spec.ts",
         "frontend/e2e/quality/admin-accessibility.spec.ts",
         "frontend/e2e/quality/responsive-shell.spec.ts",
-        "frontend/e2e/quality/visual-baselines.spec.ts"
+        "frontend/e2e/quality/visual-baselines.spec.ts",
+        "frontend/src/app/admin/admin-dashboard-queries.ts"
       ]
     },
     {
@@ -405,7 +408,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + logging domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -421,7 +424,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + logging domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -437,7 +440,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + logging domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -454,11 +457,12 @@
         "reason": "r12 dense-list 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 8건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/dense-user-logs/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/system/logs/user/page.tsx",
-        "frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx"
+        "frontend/src/app/admin/system/logs/user/SystemLogsUserClient.tsx",
+        "frontend/src/app/admin/system/logs/use-log-url-state.ts"
       ]
     },
     {
@@ -481,7 +485,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + user domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -498,7 +502,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + user domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -515,14 +519,31 @@
         "reason": "r12 synthetic user mutation task evidence 12건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 10건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/user-management-hub/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/user/manage/page.tsx",
         "frontend/src/app/admin/user/UserOrgHubClient.tsx",
         "frontend/src/app/admin/user/UserOrgHubParts.tsx",
         "frontend/src/app/admin/user/useDeptTree.ts",
-        "frontend/e2e/journeys/user-administration.spec.ts"
+        "frontend/e2e/journeys/user-administration.spec.ts",
+        "frontend/src/app/admin/user/UserOrgHubPage.tsx",
+        "frontend/src/app/admin/user/user-org-prefetch.ts",
+        "frontend/src/app/admin/user/user-org-hub-model.ts",
+        "frontend/src/app/admin/user/useUserOrgAbsences.ts",
+        "frontend/src/app/admin/user/useUserOrgDialogs.ts",
+        "frontend/src/app/admin/user/useUserOrgSelection.ts",
+        "frontend/src/app/admin/user/UserOrgDetailActions.tsx",
+        "frontend/src/app/admin/user/UserOrgToolbarActions.tsx",
+        "frontend/src/app/admin/user/UserOrgDeptMaster.tsx",
+        "frontend/src/app/admin/user/UserOrgBulkDialogs.tsx",
+        "frontend/src/app/admin/user/departments/treeUtils.ts",
+        "frontend/src/app/admin/user/DeptPlacementControls.tsx",
+        "frontend/src/app/admin/user/load-user-org-prefetch.ts",
+        "frontend/src/app/admin/user/UserBulkActionDialogs.tsx",
+        "frontend/src/components/admin/user/UserManageForm.tsx",
+        "frontend/src/components/admin/user/AdminPasswordResetForm.tsx",
+        "frontend/src/components/admin/user/DepartmentForm.tsx"
       ]
     },
     {
@@ -545,7 +566,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -562,7 +583,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -579,13 +600,14 @@
         "reason": "r12 composer 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 7건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/board-article-composer/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
         "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
         "frontend/e2e/journeys/board-articles.spec.ts",
-        "frontend/e2e/quality/board-draft-recovery.spec.ts"
+        "frontend/e2e/quality/board-draft-recovery.spec.ts",
+        "frontend/src/app/admin/community/boards/insert-board-article/BoardWritePicker.tsx"
       ]
     },
     {
@@ -609,7 +631,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + help/board domain owners",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -626,7 +648,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + help domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -643,7 +665,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + help domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -660,7 +682,7 @@
         "reason": "r12 synthetic FAQ mutation task evidence 18건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 3건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/faq-admin-user-lifecycle/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/insert-board-article/page.tsx",
@@ -668,7 +690,17 @@
         "frontend/src/app/help/page.tsx",
         "frontend/e2e/journeys/help-content.spec.ts",
         "frontend/e2e/pages/KnowledgePage.ts",
-        "frontend/e2e/pages/SupportPage.ts"
+        "frontend/e2e/pages/SupportPage.ts",
+        "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
+        "frontend/src/app/admin/community/boards/insert-board-article/BoardWritePicker.tsx",
+        "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
+        "frontend/src/app/help/HelpClient.tsx",
+        "frontend/src/app/admin/help/knowledge-tabs.ts",
+        "frontend/src/app/admin/help/knowledge-tab-boards.ts",
+        "frontend/src/app/help/HelpGuideList.tsx",
+        "frontend/src/app/admin/community/boards/components/PostingStatusBadge.tsx",
+        "frontend/src/app/admin/community/boards/select-board-list/components/BoardTemplates.tsx",
+        "frontend/src/app/admin/community/boards/select-board-list/components/HighlightText.tsx"
       ]
     },
     {
@@ -691,7 +723,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         },
         {
@@ -707,7 +739,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + board domain owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -724,13 +756,16 @@
         "reason": "r12 synthetic board deploy task evidence 6건과 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 5건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/board-maker-wizard/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/community/boards/maker/page.tsx",
         "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
         "frontend/e2e/journeys/board-masters.spec.ts",
-        "frontend/e2e/pages/BoardMasterPage.ts"
+        "frontend/e2e/pages/BoardMasterPage.ts",
+        "frontend/src/app/admin/community/boards/maker/components/BoardPreview.tsx",
+        "frontend/src/app/admin/community/boards/master/board-operations-tabs.ts",
+        "frontend/src/app/admin/community/boards/master/board-pin-count.ts"
       ]
     },
     {
@@ -752,7 +787,7 @@
           "truth": {
             "status": "partial",
             "owner": "product/UX + onboarding owner",
-            "reviewBy": "2026-12-07"
+            "reviewBy": "2027-02-06"
           }
         }
       ],
@@ -769,14 +804,17 @@
         "reason": "r12 first-use 자동 state·performance artifact와 automated-only durable publication은 완료됐지만, execution-captured protocol hash와 수동 48건이 없어 measured 승격 조건을 충족하지 않는다. ⚠ 2026-09-08 재검토(owner 확인): r12 실행 이후 이 시나리오의 화면 소스가 2건 변경됐다 — r12 자동 증거는 현재 화면을 대표하지 않으므로 protocol hash·수동 48건과 별개로 unmeasured 가 유지된다.",
         "artifactPath": "build/reports/ui-quality-baseline/first-use-onboarding/baseline-result.json",
         "owner": "UX research + quality engineering",
-        "reviewBy": "2026-12-07"
+        "reviewBy": "2027-02-06"
       },
       "sourceEvidence": [
         "frontend/src/app/admin/AdminDashboardClient.tsx",
         "frontend/src/app/admin/page.tsx",
         "frontend/src/app/providers.tsx",
         "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-        "frontend/src/app/components/ui/__tests__/smart-onboarding-hub.test.tsx"
+        "frontend/src/app/components/ui/__tests__/smart-onboarding-hub.test.tsx",
+        "frontend/src/app/admin/admin-dashboard-queries.ts",
+        "frontend/src/components/account/PasswordChangeGate.tsx",
+        "frontend/src/components/account/ChangePasswordForm.tsx"
       ]
     }
   ]
