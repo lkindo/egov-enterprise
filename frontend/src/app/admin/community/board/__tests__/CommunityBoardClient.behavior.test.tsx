@@ -93,6 +93,16 @@ describe('게시글 모아보기 동등성', () => {
     expect((screen.getByLabelText('게시판 선택') as HTMLSelectElement).value).toBe('BBSMSTR_CCCCCCCCCCCC');
   });
 
+  // [2026-11-08 URL 상태 소급 확인] 주소의 게시판 ID 가 형식이 아니면 쓰지 않는다 — `&` 를 넣어 이동할 화면에 다른 쿼리 키를 끼우지 못한다.
+  it('형식이 아닌 ?bbsId= 는 기본 게시판으로 시작하고, 새 게시글 주소에도 다른 키를 싣지 않는다', async () => {
+    mocks.params.set('bbsId', 'BBSMSTR_CCCCCCCCCCCC&tab=arbitrary');
+    renderScreen();
+    await screen.findByText('첫 공지');
+    expect(mocks.getPosts.mock.calls.every(([bbsId]) => bbsId === 'BBSMSTR_AAAAAAAAAAAA')).toBe(true);
+    fireEvent.click(screen.getByRole('button', { name: /새 게시글/ }));
+    expect(mocks.push).toHaveBeenCalledWith('/admin/community/boards/insert-board-article?bbsId=BBSMSTR_AAAAAAAAAAAA');
+  });
+
   it('게시판을 바꾸면 그 게시판의 1페이지를 조회한다', async () => {
     renderScreen();
     await screen.findByText('첫 공지');

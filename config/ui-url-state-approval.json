@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-url-state-approval.schema.json",
   "manifestRef": {
     "path": "config/ui-url-state-census.json",
-    "sha256": "d28699e4eface68309fb503a7a12b1467856363ecf04ad38757843b63e9f6f62"
+    "sha256": "76a028758051cb467a7b755c0efe02f7ff801c066d0f1fc641555d269b1d76c3"
   },
   "classes": [
     {
@@ -27,6 +27,7 @@
           "URL-0FE1B58B5495BA",
           "URL-15DB0874938E16",
           "URL-17721323D97E71",
+          "URL-17F01F08ED6277",
           "URL-1DA6B965259539",
           "URL-1F4408E8370231",
           "URL-1F7B86FBA43CDE",
@@ -46,6 +47,7 @@
           "URL-3909BEDC33B43B",
           "URL-3C31375125592B",
           "URL-3CE038F93A91C6",
+          "URL-3DE7161B61E86C",
           "URL-40362C3F8366DB",
           "URL-42EE4D074E1A4A",
           "URL-43B904A88ED91F",
@@ -74,6 +76,7 @@
           "URL-76E7F2683C1560",
           "URL-7E8D14D2F5DF1C",
           "URL-7ECADF8132247E",
+          "URL-81DCEC8990B1E8",
           "URL-8742496FE842B5",
           "URL-89B6AC96F1ECD2",
           "URL-8E5EE9FDE0F71B",
@@ -92,6 +95,7 @@
           "URL-B0E19F9AAD66DE",
           "URL-B0EA93E4216CE1",
           "URL-B13EFF20DF9737",
+          "URL-B1768F8A2EE8BE",
           "URL-B3368273723808",
           "URL-B4B2DA64692CD8",
           "URL-B918D0B2980F77",
@@ -154,7 +158,7 @@
     },
     {
       "classId": "resource-identifier",
-      "description": "서버가 발급한 리소스 식별자와 라우트 세그먼트. 값은 목록·검색 결과에서 나오며 접근 통제는 서비스 계층이 별도로 한다.",
+      "description": "서버가 발급한 리소스 식별자와 라우트 세그먼트. 값은 목록·검색 결과·코드 상수에서 나오거나, 관리자가 직접 입력한 값을 형식 검사한 뒤 쓴다(2026-11-08 소급 확인, 근거 문서 §2.7). 접근 통제는 서비스 계층이 별도로 한다.",
       "selector": {
         "stateItemNames": [
           "[id]",

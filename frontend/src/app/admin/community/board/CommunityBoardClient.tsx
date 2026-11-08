@@ -19,6 +19,7 @@ import { hubContainerVariants, hubItemVariants } from '@/lib/hub-animations';
 import { HubListSkeleton } from '@/components/ui/hub/HubSkeleton';
 import { NOTICE_BOARD_ID } from '@/config/board-ids';
 import { useBoardOptions } from '@/hooks/api/use-board-options';
+import { normalizeRouteKey } from '@/lib/navigation/url-state-values';
 
 const DEFAULT_BBS_ID = NOTICE_BOARD_ID; // 공지사항 기본값
 
@@ -29,7 +30,8 @@ function CommunityBoardContent() {
   const searchParams = useSearchParams();
 
   const [searchWrd, setSearchWrd] = useState('');
-  const [bbsId, setBbsId] = useState(searchParams.get('bbsId') || DEFAULT_BBS_ID);
+  // [2026-11-08] 주소의 게시판 ID 는 형식이 맞을 때만 쓰고, 다시 실을 때는 인코딩한다(URL 상태 소급 확인).
+  const [bbsId, setBbsId] = useState(normalizeRouteKey(searchParams.get('bbsId')) ?? DEFAULT_BBS_ID);
   // 선택지는 서버의 사용자 선택지 API 에서 채운다(ADR-0040 결정 11 — 사용 중이고 내가 열 수 있는 게시판만). 하드코딩 목록에는
   // 시드에 없는 게시판이 섞여 있었고 라벨도 실제 게시판명과 어긋나 있었다(같은 ID 를 '갤러리 게시판'/'업무게시판' 으로 각각 표기).
   const {
@@ -57,7 +59,7 @@ function CommunityBoardContent() {
   const totalCount = boardData?.total || 0;
 
   const handleRowClick = (item: BoardPost) => {
-    router.push(`/admin/community/boards/detail?bbsId=${item.bbsId || bbsId}&pstSn=${item.pstSn}`);
+    router.push(`/admin/community/boards/detail?bbsId=${encodeURIComponent(item.bbsId || bbsId)}&pstSn=${item.pstSn}`);
   };
 
   return (
@@ -79,7 +81,7 @@ function CommunityBoardContent() {
         </div>
         <div className="flex items-center gap-4">
           <button
-            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}`)}
+            onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${encodeURIComponent(bbsId)}`)}
             className="h-[var(--control-h)] px-10 rounded-lg bg-surface-inverse text-surface-inverse-foreground font-bold tracking-widest text-xs hover:scale-105 active:scale-95 transition-all shadow-2xl flex items-center gap-3 group"
           >
             <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform" aria-hidden="true" /> 새 게시글

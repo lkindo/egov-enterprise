@@ -39,6 +39,7 @@ import { qnaCategoryLabel, qnaStatusLabel } from '@/lib/board/qna-status';
 import { boardMasterKeys } from '@/queries/board-master-query-options';
 import { commentKeys } from '@/queries/comment-query-options';
 import { PinnedBadge, PostingStatusBadge } from '../components/PostingStatusBadge';
+import { normalizeRouteKey } from '@/lib/navigation/url-state-values';
 
 /**
  * 게시글 상세로 들어오는 목록 화면들. 여기서 왔으면 뒤로 가서 목록의 조건·스크롤을 살린다.
@@ -103,7 +104,9 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
   const { toast } = useToast();
   const confirm = useConfirm();
   const searchParams = useSearchParams();
-  const bbsId = searchParams.get('bbsId');
+  // [2026-11-08] 주소의 게시판 ID 는 형식(영문·숫자·_·-, 1~40자)이 맞을 때만 쓴다 — 아니면 없는 것으로 본다. 다시 실을 때는 인코딩해
+  //   `&` 같은 구분자로 다른 쿼리 키를 끼우지 못하게 한다(URL 상태 소급 확인).
+  const bbsId = normalizeRouteKey(searchParams.get('bbsId'));
   // [2026-10-01] '목록으로' — 게시판 목록·지식 허브·커뮤니티·통합 검색에서 왔으면 뒤로 가 조건을 살리고,
   //   딥링크·새 탭이면 이 글의 게시판 목록으로 간다. 방문 기록 밖으로 나가는 router.back() 을 직접 부르지 않는다.
   const listFallback = bbsId ? `/admin/community/boards/select-board-list?bbsId=${encodeURIComponent(bbsId)}` : '/admin/help';
@@ -257,7 +260,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
         pstSn,
         title: article.pstTtl ?? '',
         boardTitle: masterInfo?.bbsTtl ?? '',
-        canonicalPath: `/admin/community/boards/detail?bbsId=${bbsId}&pstSn=${pstSn}`,
+        canonicalPath: `/admin/community/boards/detail?bbsId=${encodeURIComponent(bbsId ?? '')}&pstSn=${pstSn}`,
         queryClient,
       });
       if (action.oncePerVisit) setCompletedActions((previous) => new Set(previous).add(action.id));
@@ -410,7 +413,7 @@ export function BoardDetailClient({ dataPromise }: BoardDetailClientProps) {
             <Button
               variant="outline"
               size="sm"
-              onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${bbsId}&pstSn=${pstSn}`)}
+              onClick={() => router.push(`/admin/community/boards/insert-board-article?bbsId=${encodeURIComponent(bbsId ?? '')}&pstSn=${pstSn}`)}
               className="gap-1.5"
               aria-label="게시글 수정"
             >

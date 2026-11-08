@@ -35,6 +35,7 @@ import {
   FormErrorSummary,
 } from '@/components/ui/form';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { parsePositivePage } from '@/lib/navigation/url-state-values';
 import { MEMO_REPORT_TABS as TABS, parseMemoReportTab, type MemoReportTab as ReportTab } from './memo-report-tabs';
 import { Tab, TabList, TabPanel } from '@/app/components/ui/standard-tabs';
 
@@ -502,21 +503,21 @@ export default function MemoReportManagementClient() {
   // ADR-0009는 URL 사용을 의무화하지 않는다. 이 화면은 검색어를 로컬 상태로 유지한다.
   const requestedTab = parseMemoReportTab(searchParams.get('tab')) ?? 'RECEIVED';
   const activeTab: ReportTab = requestedTab === 'ALL' && !isAdmin ? 'RECEIVED' : requestedTab;
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const page = parsePositivePage(searchParams.get('page'));
 
+  // [2026-11-08] 바꾸지 않는 키도 화면이 실제로 쓰는 값(권한을 반영한 탭·1 이상의 정수 쪽)으로 다시 싣는다. 종전에는 페이지만 바꾸면
+  //   주소의 원래 tab(형식이 아니거나 일반 사용자의 ALL)을 그대로 옮겨, 화면은 '받은 보고'를 보이는데 주소는 다른 값을 실었다.
   const updateUrl = useCallback((next: { tab?: ReportTab; page?: number }) => {
     const params = pickAllowedParams(searchParams, LIST_PARAM_KEYS);
-    if (next.tab !== undefined) {
-      if (next.tab === 'RECEIVED') params.delete('tab');
-      else params.set('tab', next.tab);
-    }
-    if (next.page !== undefined) {
-      if (next.page <= 1) params.delete('page');
-      else params.set('page', String(next.page));
-    }
+    const tab = next.tab ?? activeTab;
+    if (tab === 'RECEIVED') params.delete('tab');
+    else params.set('tab', tab);
+    const nextPage = next.page ?? page;
+    if (nextPage <= 1) params.delete('page');
+    else params.set('page', String(nextPage));
     const qs = params.toString();
     router.replace(qs ? `${pathname}?${qs}` : pathname, { scroll: false });
-  }, [router, pathname, searchParams]);
+  }, [router, pathname, searchParams, activeTab, page]);
 
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   // [2026-09-26 DIP C9] 검색어는 `조회`/Enter 로 적용된 값이다(카탈로그 G2). 종전에는 타이핑을 디바운스해 조회했다.

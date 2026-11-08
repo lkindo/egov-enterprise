@@ -138,6 +138,15 @@ describe('BoardDetailClient 복귀·삭제·표기 (ADR-0043 1차)', () => {
     }
   });
 
+  // [2026-11-08 URL 상태 소급 확인] 주소의 게시판 ID 가 형식이 아니면 없는 것으로 본다 — 그 값을 이어 붙여 목록 주소에 다른 키를 끼우지 않고
+  //   지식 허브로 간다.
+  it('형식이 아닌 게시판 ID 로 들어왔으면 목록으로는 지식 허브로 가고 다른 쿼리 키를 싣지 않는다', async () => {
+    mocks.searchParams.set('bbsId', `${BBS_ID}&tab=arbitrary`);
+    await renderDetail(detail());
+    fireEvent.click(screen.getByRole('button', { name: '목록으로' }));
+    expect(mocks.push).toHaveBeenCalledWith('/admin/help');
+  });
+
   it('목록이 아닌 곳에서 와 삭제하면 게시판 목록으로 바꿔 끼운다 — 지운 글의 상세를 방문 기록에 남기지 않는다', async () => {
     await renderDetail(detail());
     fireEvent.click(screen.getByRole('button', { name: '게시글 삭제' }));
