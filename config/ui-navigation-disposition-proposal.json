@@ -5,7 +5,7 @@
   "schemaRef": "config/ui-navigation-disposition.schema.json",
   "manifestRef": {
     "path": "config/ui-route-capabilities.json",
-    "sha256": "7972e3674946d83e86b6ce548851fa1bd18d7df38ef60015829a442391f673aa"
+    "sha256": "ca2e1b7cccf900a4bf4254cb1f63eb83ba914c1c42671a59dc2aead8f57db062"
   },
   "provisionalDirection": {
     "status": "accepted-provisional-direction",
@@ -1251,47 +1251,20 @@
     },
     {
       "route": "/admin/help/qna",
-      "reviewState": "approved",
+      "reviewState": "proposed",
       "disposition": "consolidate-to-canonical",
-      "authorizationReview": "verified",
-      "privacyReview": "verified",
-      "effectiveMenuExposureReview": "verified",
-      "capabilityReview": "verified",
-      "profileOwnershipReview": "verified",
+      "authorizationReview": "unverified",
+      "privacyReview": "unverified",
+      "effectiveMenuExposureReview": "unverified",
+      "capabilityReview": "unverified",
+      "profileOwnershipReview": "unverified",
       "owner": "product/UX + domain owner",
       "reviewBy": "2026-11-30",
       "approvals": {
-        "domain": {
-          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-407)",
-          "reviewedAt": "2026-11-08",
-          "evidence": [
-            "frontend/src/app/admin/help/qna/page.tsx — 지식 허브(/admin/help)로 서버 redirect, 기본은 Q&A 탭. 종전 화면은 KnowledgeHubClient defaultTab=\"QNA\" 를 그린 같은 허브였다",
-            "쿼리 대응 — tab: 허브 고유 탭(WIKI·FAQ·QNA)이나 기여할 수 있는 탭(frontend/src/app/admin/help/knowledge-tabs.ts TAB_HUB.contributable)이면 그대로 — 기여 탭 주소는 그 구성의 허브가 그 탭을 보일 때만 만들어진다, 없거나 그 밖이면 QNA(종전 기본 탭). 이 화면에서 탭을 누르면 허브가 /admin/help/qna?tab=COMMUNITY 같은 주소를 만들었으므로 그 주소도 같은 탭에 닿는다. bbsId 등 그 밖의 키는 넘기지 않는다 — 앱이 이 옛 주소에 붙여 만들지 않고 허브도 탭을 바꿀 때 bbsId 를 버린다(frontend/src/app/admin/help/qna/__tests__/page.test.ts)"
-          ]
-        },
-        "productIa": {
-          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-407)",
-          "reviewedAt": "2026-11-08",
-          "evidence": [
-            "config/project-composer-menus.json — 이 경로를 가리키는 메뉴가 없다. 도움말 센터(frontend/src/app/help/HelpClient.tsx)가 이 경로로 링크한다 — 리다이렉트로 Q&A 탭에 닿는다",
-            "서버 redirect 라 북마크는 같은 탭에 닿는다. 방문 기록·뒤로 가기의 실제 동작은 E2E 로 확인하지 않았다"
-          ]
-        },
-        "securityPrivacy": {
-          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-407)",
-          "reviewedAt": "2026-11-08",
-          "evidence": [
-            "config/governance/permission-catalog.json pagePermissions[/admin/help/qna]=[] 와 정본 [/admin/help]=[] 가 같다 — 처분이 진입 경계를 바꾸지 않는다(AGENTS H3)",
-            "개인정보 검토 범위는 처분 변경분이다 — 화면 전체의 개인정보 검토 완료가 아니다. 넘기는 값은 닫힌 탭 이름 하나뿐이다"
-          ]
-        },
-        "accessibility": {
-          "reviewer": "lkindo (2026-11-08 사용자 승인 · DEC-OPS-407)",
-          "reviewedAt": "2026-11-08",
-          "evidence": [
-            "정본 화면으로 서버 리다이렉트만 남는다 — 화면 접근성은 정본(지식 허브)의 것을 따른다"
-          ]
-        }
+        "domain": null,
+        "productIa": null,
+        "securityPrivacy": null,
+        "accessibility": null
       }
     },
     {

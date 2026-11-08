@@ -290,11 +290,11 @@ function isWave6Approval(approval) {
 }
 
 /*
-  웨이브 7(2026-11-08, DEC-OPS-407): 구현이 먼저였던 통합 2건. Q&A 옛 경로는 지식 허브로 서버 리다이렉트(정본 통합)하고,
-  결재 기안은 독립 기안 진입을 지켜 정본 유지(retain-canonical)로 처분을 바꿨다 — 통합하면 결재함에 새 주소 키가 필요하다.
+  웨이브 7(2026-11-08, DEC-OPS-407): 결재 기안은 독립 기안 진입을 지켜 정본 유지(retain-canonical)로 처분을 바꿨다 — 통합하면
+  결재함에 새 주소 키가 필요하다. 함께 남았던 Q&A 옛 경로의 통합은 기존 진입을 정확히 보존할 수 없어 보류했다(proposed).
 */
-const WAVE7_APPROVED_ROUTES = ['/admin/help/qna', '/approvals/draft'];
-const WAVE7_DISPOSITIONS = { '/admin/help/qna': 'consolidate-to-canonical', '/approvals/draft': 'retain-canonical' };
+const WAVE7_APPROVED_ROUTES = ['/approvals/draft'];
+const WAVE7_DISPOSITIONS = { '/approvals/draft': 'retain-canonical' };
 const WAVE7_REVIEWER = 'lkindo (2026-11-08 사용자 승인 · DEC-OPS-407)';
 
 function isWave7Approval(approval) {

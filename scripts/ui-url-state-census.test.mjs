@@ -56,8 +56,7 @@ test('current URL-state census exactly covers critical route and URL producer po
     dynamicRoutePatterns: 13,
     configRedirects: 12, // ADR-0049 removes the retired workflow alias and its query passthrough surface.
     // DEC-OPS-404: the common-code child page now redirects on the server instead of a client router.replace (same target, no query).
-    // DEC-OPS-407: the Q&A child page now redirects to the knowledge hub on the server (tab kept, otherwise QNA).
-    pageRedirects: 19,
+    pageRedirects: 18,
   });
   assert.equal(actual.summary.records, actual.records.length);
   // 훑은 파일 수는 싣지 않는다 — 소비자가 없는데 URL 상태가 없는 파일 하나에도 census 재생성을 요구했다.

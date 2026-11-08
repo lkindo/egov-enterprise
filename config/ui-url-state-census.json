@@ -27,25 +27,25 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "29f8a4d10a0905232c7528cae7f587330473fc0f0b583837e12f297398a53110"
+    "inventoryHash": "f1fce3e3c3c3ec30d979fad66ebe6b3a0eaf0a4781e89954722147fc446d59a4"
   },
   "summary": {
-    "records": 478,
-    "syntaxOccurrences": 581,
-    "ambiguousRecords": 428,
-    "unverifiedRecords": 478,
+    "records": 476,
+    "syntaxOccurrences": 579,
+    "ambiguousRecords": 427,
+    "unverifiedRecords": 476,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 13,
       "configRedirects": 12,
-      "pageRedirects": 19
+      "pageRedirects": 18
     },
     "byKind": {
       "config-redirect": 12,
       "dynamic-segment": 13,
       "form-producer": 62,
-      "navigation-producer": 231,
-      "page-redirect": 19,
+      "navigation-producer": 230,
+      "page-redirect": 18,
       "query-builder": 25,
       "query-consumer": 58,
       "query-producer": 49,
@@ -53,7 +53,7 @@
       "url-observer": 6
     },
     "bySurface": {
-      "navigation": 469,
+      "navigation": 467,
       "request-telemetry": 9
     }
   },
@@ -6688,102 +6688,6 @@
       "evidence": {
         "source": "frontend/src/app/admin/help/KnowledgeHubClient.tsx",
         "detector": "url-search-param-method",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-0CA511C561E121",
-      "surface": "navigation",
-      "kind": "navigation-producer",
-      "operation": "redirect",
-      "source": "frontend/src/app/admin/help/qna/page.tsx",
-      "producerFile": "frontend/src/app/admin/help/qna/page.tsx",
-      "consumerFile": null,
-      "routePattern": "/admin/help/qna",
-      "targetCandidate": "/admin/help?tab=[computed]",
-      "stateItems": [
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Navigation target is computed and cannot be dispositioned from syntax alone.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "computed-navigation-target",
-        "producer-consumer-join-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": "/admin/help",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/help/qna/page.tsx",
-        "detector": "server-redirect-call",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-0B2A9233A7F461",
-      "surface": "navigation",
-      "kind": "page-redirect",
-      "operation": "redirect",
-      "source": "frontend/src/app/admin/help/qna/page.tsx",
-      "producerFile": "frontend/src/app/admin/help/qna/page.tsx",
-      "consumerFile": "frontend/src/app/admin/help/qna/page.tsx",
-      "routePattern": "/admin/help/qna",
-      "targetCandidate": "/admin/help?tab=[tab]",
-      "stateItems": [
-        {
-          "name": "tab",
-          "dataClass": "unverified",
-          "recommendation": "candidate-allow",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": []
-        }
-      ],
-      "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
-      "riskSignals": [
-        "dynamic-segment-encoding-unverified",
-        "source-query-policy-unverified"
-      ],
-      "ambiguityReasons": [],
-      "resolutionStatus": "identified",
-      "canonical": {
-        "routeCandidate": "/admin/help",
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "authenticated",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/admin/help/qna/page.tsx",
-        "detector": "page-redirect-parser",
         "occurrenceCount": 1
       }
     },
