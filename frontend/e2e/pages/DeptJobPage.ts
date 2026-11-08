@@ -22,15 +22,14 @@ export class DeptJobPage {
     // ─────────────────────────────────────────────────────────────────────────
     // 이동
     //
-    // e2e=true 는 SmartOnboardingHub 투어를 억제하는 프로젝트 표준 플래그다
-    // (smart-onboarding-hub.tsx 가 window.location.search 에서 직접 읽는다).
-    // 이 투어는 z-[10000] 전면 오버레이라 붙이지 않으면 클릭이 가로막힌다.
+    // SmartOnboardingHub 안내는 E2E 인증 상태가 저장한 본 표시(egov_smart_tour_v1, fixtures/auth-state.mjs)로 숨는다.
+    // [2026-11-08] 주소의 e2e=true 로 숨기던 운영 코드 우회는 걷었다 — 투어는 사용자가 열 때만 뜬다.
     // ─────────────────────────────────────────────────────────────────────────
 
     /** 부서 업무(워크플로우) 탭. */
     async gotoJobList() {
         console.log('>>> Navigating to Dept Job list (work-hub job tab)');
-        await this.page.goto('/smart-toolkit/dept-job?e2e=true');
+        await this.page.goto('/smart-toolkit/dept-job');
         // 화면 제목과 선택된 업무 탭이 현재 영역을 나타낸다.
         await expect(this.page.getByRole('tab', { name: '업무 관리', exact: true }))
             .toHaveAttribute('aria-selected', 'true', { timeout: 30000 });
@@ -39,7 +38,7 @@ export class DeptJobPage {
     /** 업무 보고 탭. */
     async gotoReportList() {
         console.log('>>> Navigating to Work Report list (work-hub report tab)');
-        await this.page.goto('/smart-toolkit/work-report?e2e=true');
+        await this.page.goto('/smart-toolkit/work-report');
         await expect(this.page.getByRole('tab', { name: '업무 보고' }))
             .toHaveAttribute('aria-selected', 'true', { timeout: 30000 });
     }
@@ -47,14 +46,14 @@ export class DeptJobPage {
     /** 부서 업무 등록 화면(전용 라우트). */
     async gotoJobCreate() {
         console.log('>>> Navigating to Dept Job create form');
-        await this.page.goto('/smart-toolkit/dept-job/create?e2e=true');
+        await this.page.goto('/smart-toolkit/dept-job/create');
         await expect(this.page.getByText('부서 업무 등록').first()).toBeVisible({ timeout: 30000 });
     }
 
     /** 부서 업무 상세·수정 화면. */
     async gotoJobDetail(deptTaskSn: number) {
         console.log(`>>> Navigating to Dept Job detail: ${deptTaskSn}`);
-        await this.page.goto(`/smart-toolkit/dept-job/${deptTaskSn}?e2e=true`);
+        await this.page.goto(`/smart-toolkit/dept-job/${deptTaskSn}`);
     }
 
     // ─────────────────────────────────────────────────────────────────────────

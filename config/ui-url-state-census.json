@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "8ddd5496b5a94bcbdb8f614a839f2e1cfa02ba689f4f0d83c669a452c6557160"
+    "inventoryHash": "ea4e7c3ad4b95566f5636fb884513adb84442dec9122cbda8390435c1a205b57"
   },
   "summary": {
-    "records": 472,
-    "syntaxOccurrences": 575,
-    "ambiguousRecords": 424,
-    "unverifiedRecords": 472,
+    "records": 471,
+    "syntaxOccurrences": 574,
+    "ambiguousRecords": 423,
+    "unverifiedRecords": 471,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 13,
@@ -50,11 +50,11 @@
       "query-consumer": 58,
       "query-producer": 45,
       "request-query-producer": 3,
-      "url-observer": 7
+      "url-observer": 6
     },
     "bySurface": {
       "navigation": 462,
-      "request-telemetry": 10
+      "request-telemetry": 9
     }
   },
   "requiredNegativeCases": [
@@ -8997,7 +8997,7 @@
       }
     },
     {
-      "id": "URL-16EAE272409695",
+      "id": "URL-08E6422AC2BFB6",
       "surface": "navigation",
       "kind": "navigation-producer",
       "operation": "redirect",
@@ -9005,8 +9005,17 @@
       "producerFile": "frontend/src/app/admin/survey/manage/create/page.tsx",
       "consumerFile": null,
       "routePattern": "/admin/survey/manage/create",
-      "targetCandidate": "/admin/survey/manage",
-      "stateItems": [],
+      "targetCandidate": "/admin/survey/hub?tab=manage",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
       "currentBehavior": "Navigation emits the observed literal or template target.",
       "riskSignals": [],
       "ambiguityReasons": [
@@ -9014,7 +9023,7 @@
       ],
       "resolutionStatus": "ambiguous",
       "canonical": {
-        "routeCandidate": "/admin/survey/manage",
+        "routeCandidate": "/admin/survey/hub",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -9035,7 +9044,7 @@
       }
     },
     {
-      "id": "URL-7CF2BA809039A4",
+      "id": "URL-0CE59D1935E9DE",
       "surface": "navigation",
       "kind": "page-redirect",
       "operation": "redirect",
@@ -9043,8 +9052,17 @@
       "producerFile": "frontend/src/app/admin/survey/manage/create/page.tsx",
       "consumerFile": "frontend/src/app/admin/survey/manage/create/page.tsx",
       "routePattern": "/admin/survey/manage/create",
-      "targetCandidate": "/admin/survey/manage",
-      "stateItems": [],
+      "targetCandidate": "/admin/survey/hub?tab=manage",
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
       "currentBehavior": "Page-only redirect emits the observed literal/template destination; source-query and encoding policy remain unreviewed.",
       "riskSignals": [
         "source-query-policy-unverified"
@@ -9052,7 +9070,7 @@
       "ambiguityReasons": [],
       "resolutionStatus": "identified",
       "canonical": {
-        "routeCandidate": "/admin/survey/manage",
+        "routeCandidate": "/admin/survey/hub",
         "status": "unverified"
       },
       "authorizationBoundary": {
@@ -15379,57 +15397,6 @@
       "evidence": {
         "source": "frontend/src/app/components/ui/smart-notification-hub.tsx",
         "detector": "router-navigation",
-        "occurrenceCount": 1
-      }
-    },
-    {
-      "id": "URL-A8AB6A6F35E04D",
-      "surface": "request-telemetry",
-      "kind": "url-observer",
-      "operation": "read",
-      "source": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-      "producerFile": null,
-      "consumerFile": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-      "routePattern": "unresolved",
-      "targetCandidate": null,
-      "stateItems": [
-        {
-          "name": "<raw-url-or-component>",
-          "dataClass": "unverified",
-          "recommendation": "deny-until-reviewed",
-          "approvalStatus": "unverified",
-          "exception": "none-proposed",
-          "riskSignals": [
-            "computed-or-aggregate-state"
-          ]
-        }
-      ],
-      "currentBehavior": "Runtime reads location.search; propagation into logs or telemetry requires data-flow review.",
-      "riskSignals": [],
-      "ambiguityReasons": [
-        "producer-consumer-join-unresolved",
-        "route-context-unresolved",
-        "url-observation-purpose-unresolved"
-      ],
-      "resolutionStatus": "ambiguous",
-      "canonical": {
-        "routeCandidate": null,
-        "status": "unverified"
-      },
-      "authorizationBoundary": {
-        "shellAccessEvidence": "unverified",
-        "capabilityRoles": "unverified",
-        "objectAuthorization": "unverified"
-      },
-      "review": {
-        "status": "unverified",
-        "decisionSafe": false,
-        "owner": "security/privacy + FE/domain owner",
-        "reviewBy": "2026-12-31"
-      },
-      "evidence": {
-        "source": "frontend/src/app/components/ui/smart-onboarding-hub.tsx",
-        "detector": "url-observer",
         "occurrenceCount": 1
       }
     },

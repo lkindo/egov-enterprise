@@ -64,10 +64,9 @@ test.describe('캘린더 조작', () => {
             });
             const schdlSn = (await res.json()).data as number;
             try {
-                // e2e=true 는 SmartOnboardingHub 가 투어를 띄우지 않게 하는 프로젝트 표준 플래그다.
-                // 이 투어는 z-[10000] 전면 오버레이라 붙이지 않으면 캘린더를 덮어 검증이 불가능하다.
+                // SmartOnboardingHub 안내는 E2E 인증 상태의 본 표시로 숨는다(fixtures/auth-state.mjs) — 주소 우회는 2026-11-08 걷었다.
                 // [업무 허브 분해 W1] 나의 업무의 옛 탭 주소(?tab=calendar) 호환을 걷었다 — 일정은 자기 경로의 화면이다.
-                await page.goto('/smart-toolkit/schedule?e2e=true');
+                await page.goto('/smart-toolkit/schedule');
                 await expect(page.getByRole('heading', { level: 1, name: '일정', exact: true })).toBeVisible({ timeout: 15000 });
                 // 캘린더 섹션이 렌더되어야 한다. (그리드 셀 자체는 react-day-picker 내부 구조라
                 //  단언 대상으로 삼지 않는다 — 라이브러리 업그레이드에 취약하다.)

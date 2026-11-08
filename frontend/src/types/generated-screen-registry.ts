@@ -1051,7 +1051,7 @@ const GENERATED_SCREENS: readonly ScreenRegistryEntry[] = [
     "labelSource": "route-ledger",
     "shellAccess": "admin-system",
     "dynamic": false,
-    "demo": true,
+    "demo": false,
     "entry": {"permissions":["LOGIN_POL_READ"],"mode":"ANY"},
     "permissions": [
       {"code":"ABSENCE_UPDATE","action":"UPDATE","source":"write"},
@@ -1433,7 +1433,7 @@ const GENERATED_ALIASES: readonly ScreenAlias[] = [
   {"route":"/admin/survey","target":"/admin/survey/hub","kind":"page-redirect"},
   {"route":"/admin/survey/items","target":"/admin/survey/hub?tab=questions","kind":"config-redirect"},
   {"route":"/admin/survey/manage","target":"/admin/survey/hub?tab=manage","kind":"config-redirect"},
-  {"route":"/admin/survey/manage/create","target":"/admin/survey/manage","kind":"page-redirect"},
+  {"route":"/admin/survey/manage/create","target":"/admin/survey/hub?tab=manage","kind":"page-redirect"},
   {"route":"/admin/survey/questions","target":"/admin/survey/hub?tab=questions","kind":"config-redirect"},
   {"route":"/admin/survey/stats","target":"/admin/survey/hub?tab=stats","kind":"config-redirect"},
   {"route":"/admin/survey/templates","target":"/admin/survey/hub?tab=templates","kind":"config-redirect"},
@@ -1711,6 +1711,7 @@ const GENERATED_BUNDLES: readonly PermissionBundle[] = [
       "/admin/security/login-policy",
       "/admin/user/absences",
       "/admin/user/departments",
+      "/admin/user/indvdl-info-policy",
       "/admin/user/manage"
     ],
     "relatedScreens": [

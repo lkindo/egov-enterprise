@@ -55,9 +55,10 @@ export function SmartOnboardingHub() {
   // 서버 렌더·하이드레이션에서는 본 것으로 간주해 배너를 그리지 않는다.
   const hasSeenTour = useSyncExternalStore(subscribeSeen, readSeen, () => true);
   // E2E 테스트 환경과 인증 화면에서는 배너를 두지 않는다.
+  // [2026-11-08] 주소의 `?e2e=true` 로 숨기던 운영 코드 우회를 걷었다 — 누구나 붙일 수 있는 시험 전용 분기였다. E2E 인증 상태는
+  //   본 표시(egov_smart_tour_v1)를 이미 저장하고(frontend/e2e/fixtures/auth-state.mjs), 투어는 사용자가 열 때만 뜬다.
   const suppressed = process.env.NEXT_PUBLIC_APP_ENV === 'test'
-    || (pathname || '').startsWith('/login')
-    || (typeof window !== 'undefined' && window.location.search.includes('e2e=true'));
+    || (pathname || '').startsWith('/login');
 
   const openTour = () => {
     previousFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;

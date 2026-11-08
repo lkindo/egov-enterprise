@@ -10,7 +10,10 @@ import { redirect } from 'next/navigation';
  *
  * 라우트를 지우지 않고 보내는 이유는 DEC-OPS-034 선례와 같다 — 문자열 URL 참조는 정적 분석으로
  * 잡히지 않아 물리 삭제에 오삭제 전례가 있다(V2_30).
+ *
+ * [2026-11-08] 최종 목적지로 바로 보낸다 — 종전에는 '/admin/survey/manage' 로 보내고 그 경로를 next.config 가 다시
+ * 허브로 보내는 2단 연쇄였다(IA §9.4 는 2단 이상 연쇄를 금한다).
  */
 export default function SurveyManageCreateRedirectPage() {
-  redirect('/admin/survey/manage');
+  redirect('/admin/survey/hub?tab=manage');
 }
