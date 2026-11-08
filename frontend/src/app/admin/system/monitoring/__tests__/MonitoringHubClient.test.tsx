@@ -252,6 +252,33 @@ describe('MonitoringHubClient', () => {
     expect(screen.getByRole('tab', { name: '시스템 로그(감사 보기)' })).toHaveAttribute('aria-selected', 'true');
   });
 
+  // [2026-11-08 URL 상태 소급 확인] 페이지를 바꿔도 주소의 원래 tab·page 를 옮기지 않는다 — 화면이 연 탭(기본 탭이면 지운다)과
+  //   1 이상의 정수 쪽으로 싣는다. 종전에는 `?tab=bogus` 를 그대로 다시 실었다.
+  it.each([
+    ['tab=bogus&page=2.5', 'page=2'],
+    ['tab=SYSTEM', 'page=2&tab=system'],
+    ['tab=security', 'page=2'],
+  ])('페이지를 바꿀 때 주소에는 화면이 연 탭만 싣는다 (%s)', async (query, expected) => {
+    renderHub(query);
+    fireEvent.click(await screen.findByRole('button', { name: '다음 페이지' }));
+    const target = new URL(String(mocks.replace.mock.calls.at(-1)?.[0]), 'http://localhost');
+    expect(target.pathname).toBe('/admin/system/monitoring');
+    expect([...target.searchParams].sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => `${key}=${value}`).join('&')).toBe(expected);
+  });
+
+  it('기본 탭으로 바꾸면 주소에서 tab 과 page 를 모두 지운다', async () => {
+    renderHub('tab=system&page=3');
+    fireEvent.click(await screen.findByRole('tab', { name: '시스템 로그(감사 보기)' }));
+    expect(mocks.replace.mock.calls.at(-1)?.[0]).toBe('/admin/system/monitoring');
+  });
+
+  // 표 대역은 늘 2쪽을 넘기므로, 화면이 주소의 page 를 정수로 읽는지는 첫 조회의 쪽 번호로 본다(Codex 15차).
+  it.each(['2.5', 'Infinity', '1e3'])('형식이 아닌 page(%s)로 들어오면 1쪽을 조회한다', async (value) => {
+    renderHub(`page=${value}`);
+    await waitFor(() => expect(mocks.audit).toHaveBeenCalled());
+    expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }));
+  });
+
   it('shows honest actuator failure state and retries health collection', async () => {
     mocks.health.mockRejectedValueOnce(new Error('actuator unavailable'));
     renderHub('tab=observability');

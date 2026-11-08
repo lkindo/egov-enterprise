@@ -27,13 +27,13 @@
       "external analytics configuration"
     ],
     "generator": "scripts/ui-url-state-census.mjs --check",
-    "inventoryHash": "7343a39eb0b98db9c6ebd2f0a748028510b746ff0b2c4668e7cf3a65349ce7f4"
+    "inventoryHash": "f1fce3e3c3c3ec30d979fad66ebe6b3a0eaf0a4781e89954722147fc446d59a4"
   },
   "summary": {
-    "records": 472,
-    "syntaxOccurrences": 575,
-    "ambiguousRecords": 423,
-    "unverifiedRecords": 472,
+    "records": 476,
+    "syntaxOccurrences": 579,
+    "ambiguousRecords": 427,
+    "unverifiedRecords": 476,
     "exactPopulations": {
       "filesystemRoutes": 119,
       "dynamicRoutePatterns": 13,
@@ -48,12 +48,12 @@
       "page-redirect": 18,
       "query-builder": 25,
       "query-consumer": 58,
-      "query-producer": 45,
+      "query-producer": 49,
       "request-query-producer": 3,
       "url-observer": 6
     },
     "bySurface": {
-      "navigation": 463,
+      "navigation": 467,
       "request-telemetry": 9
     }
   },
@@ -12603,6 +12603,100 @@
       }
     },
     {
+      "id": "URL-81DCEC8990B1E8",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "delete",
+      "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with delete().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-17F01F08ED6277",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "delete",
+      "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with delete().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
       "id": "URL-80716A57183DF0",
       "surface": "navigation",
       "kind": "query-producer",
@@ -12628,6 +12722,100 @@
       "riskSignals": [],
       "ambiguityReasons": [
         "computed-query-key",
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-3DE7161B61E86C",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "set",
+      "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "page",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with set().",
+      "riskSignals": [],
+      "ambiguityReasons": [
+        "producer-consumer-join-unresolved"
+      ],
+      "resolutionStatus": "ambiguous",
+      "canonical": {
+        "routeCandidate": null,
+        "status": "unverified"
+      },
+      "authorizationBoundary": {
+        "shellAccessEvidence": "admin-system",
+        "capabilityRoles": "unverified",
+        "objectAuthorization": "unverified"
+      },
+      "review": {
+        "status": "unverified",
+        "decisionSafe": false,
+        "owner": "security/privacy + FE/domain owner",
+        "reviewBy": "2026-12-31"
+      },
+      "evidence": {
+        "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+        "detector": "url-search-param-method",
+        "occurrenceCount": 1
+      }
+    },
+    {
+      "id": "URL-B1768F8A2EE8BE",
+      "surface": "navigation",
+      "kind": "query-producer",
+      "operation": "set",
+      "source": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "producerFile": "frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx",
+      "consumerFile": null,
+      "routePattern": "/admin/system/monitoring",
+      "targetCandidate": null,
+      "stateItems": [
+        {
+          "name": "tab",
+          "dataClass": "unverified",
+          "recommendation": "candidate-allow",
+          "approvalStatus": "unverified",
+          "exception": "none-proposed",
+          "riskSignals": []
+        }
+      ],
+      "currentBehavior": "URL search parameter is mutated with set().",
+      "riskSignals": [],
+      "ambiguityReasons": [
         "producer-consumer-join-unresolved"
       ],
       "resolutionStatus": "ambiguous",

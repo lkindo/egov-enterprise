@@ -19,6 +19,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { canPermission } from '@/lib/auth/permissions';
 import { commentMutationOptions, commentQueryOptions } from '@/queries/comment-query-options';
 import { boardMasterQueryOptions } from '@/queries/board-master-query-options';
+import { isPositiveIntegerText, normalizeRouteKey, parsePositivePage } from '@/lib/navigation/url-state-values';
 import type { CommentDetail } from '@/services/foundation/system/CommentAdminService';
 
 /**
@@ -48,10 +49,6 @@ const DEFAULT_PAGE_SIZE = 50;
 /** 이 화면의 목록 이름 — 행 동작의 접근 이름과 반출 안내가 같은 이름을 쓴다. */
 const LIST_LABEL = '댓글';
 
-/** 게시판 ID 형식(영문·숫자·`_`·`-`). 주소에서 읽은 값이 이 꼴이 아니면 조건으로 쓰지 않는다. */
-const BOARD_ID_PATTERN = /^[A-Za-z0-9_-]{1,40}$/;
-/** 글 번호 형식(양의 정수). */
-const POST_NUMBER_PATTERN = /^[1-9]\d{0,17}$/;
 
 /** CSV 반출 컬럼 매핑 — 백엔드 CommentDetail 의 실제 필드명을 따른다. */
 const COMMENT_EXPORT_HEADERS = [
@@ -82,12 +79,13 @@ export default function CommentModerationClient() {
   const searchParams = useSearchParams();
   const { user } = useAuth();
 
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const page = parsePositivePage(searchParams.get('page'));
   // 주소의 조건은 형식이 맞을 때만 쓴다 — 손으로 고친 값을 그대로 서버에 보내지 않는다.
   const rawBoardId = searchParams.get('bbsId') ?? '';
-  const boardId = BOARD_ID_PATTERN.test(rawBoardId) ? rawBoardId : '';
+  // 게시판 ID·글 번호의 형식 규칙은 입력·주소 읽기·다시 싣기가 같은 함수를 쓴다(lib/navigation/url-state-values, 2026-11-08).
+  const boardId = normalizeRouteKey(rawBoardId) ?? '';
   const rawPostNumber = searchParams.get('pstSn') ?? '';
-  const postNumber = POST_NUMBER_PATTERN.test(rawPostNumber) && Number.isSafeInteger(Number(rawPostNumber)) ? rawPostNumber : '';
+  const postNumber = isPositiveIntegerText(rawPostNumber) ? rawPostNumber : '';
   const [isPending, startTransition] = useTransition();
   const [pageSize, setPageSize] = useState(DEFAULT_PAGE_SIZE);
   const [selectedItemId, setSelectedItemId] = useState<number | null>(null);
@@ -269,7 +267,9 @@ export default function CommentModerationClient() {
             placeholder="글 번호(숫자)"
             value={postNumber}
             onSearch={(keyword) => {
-              if (keyword !== '' && !POST_NUMBER_PATTERN.test(keyword)) {
+              // 입력도 주소를 읽을 때와 같은 검사다 — 형식은 맞지만 안전 정수를 넘는 값(9007199254740992)이 주소에 실린 뒤
+              //   읽을 때 버려져 글 번호 조건이 조용히 빠지던 것을 막는다. 거부하면 기존 조회 조건을 그대로 둔다.
+              if (keyword !== '' && !isPositiveIntegerText(keyword)) {
                 setPostNumberError('글 번호는 1 이상의 숫자로 입력하세요. 조회 조건은 바뀌지 않았습니다.');
                 return;
               }

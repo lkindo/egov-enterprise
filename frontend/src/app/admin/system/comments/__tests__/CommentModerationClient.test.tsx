@@ -216,6 +216,25 @@ describe('댓글 및 평가 관리', () => {
     expect(mocks.replace).not.toHaveBeenCalled();
   });
 
+  // [2026-11-08 URL 상태 소급 확인] 입력 검사는 주소를 읽을 때의 검사와 같다. 형식은 맞지만 안전 정수를 넘는 값이 주소에 실린 뒤
+  //   읽을 때 버려지면, 글 번호 조건이 조용히 빠진 채 게시판 전체 댓글을 조회했다.
+  it.each([['9007199254740992'], ['007']])('안전 정수가 아니거나 0 으로 시작하는 글 번호(%s)는 주소에 싣지 않는다', async (value) => {
+    renderScreen('bbsId=BBSMSTR_AAAAAAAAAAAA&pstSn=7');
+    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: '글 번호' }), { target: { value } });
+    fireEvent.submit(screen.getByRole('search'));
+    expect(await screen.findByRole('alert')).toHaveTextContent('조회 조건은 바뀌지 않았습니다.');
+    expect(mocks.replace).not.toHaveBeenCalled();
+  });
+
+  it('안전 정수의 끝값은 주소에 싣고 그대로 조회한다', async () => {
+    renderScreen();
+    expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();
+    fireEvent.change(screen.getByRole('textbox', { name: '글 번호' }), { target: { value: '9007199254740991' } });
+    fireEvent.submit(screen.getByRole('search'));
+    await waitFor(() => expect(mocks.replace).toHaveBeenCalledWith('/admin/system/comments?pstSn=9007199254740991', { scroll: false }));
+  });
+
   it('초기화하면 게시판·글 조건과 쪽을 모두 지운다', async () => {
     renderScreen('bbsId=BBSMSTR_AAAAAAAAAAAA&pstSn=7&page=2');
     expect(await screen.findByText('삭제할 댓글')).toBeInTheDocument();

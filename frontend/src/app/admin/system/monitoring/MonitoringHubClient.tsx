@@ -52,6 +52,7 @@ import { SampleDataBadge, NavButton, StatusIndicator } from './components/Monito
 import { toDisplayDateTime } from '@/lib/format-date';
 import { LOGIN_LOG_EXPORT_HEADERS } from './log-export-headers';
 import { pickAllowedParams } from '@/lib/navigation/allowlist-params';
+import { parsePositivePage } from '@/lib/navigation/url-state-values';
 import { MONITORING_TABS, parseMonitoringTab, type MonitoringTab } from './monitoring-tabs';
 import { useAuth } from '@/contexts/AuthContext';
 import { useChartColors } from '@/lib/hooks/useChartColors';
@@ -139,12 +140,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
   const { user } = useAuth();
   const chartColors = useChartColors();
   const contributedTabs = useMemo(() => visibleEntries(user, hubTabsMonitoring), [user]);
-  const activeTab = parseMonitoringTab(searchParams.get('tab'), contributedTabs.map((tab) => tab.id))
-    ?? (MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY');
+  const fallbackTab = MONITORING_TABS.includes(defaultTab) ? defaultTab : 'SECURITY';
+  const activeTab = parseMonitoringTab(searchParams.get('tab'), contributedTabs.map((tab) => tab.id)) ?? fallbackTab;
 
   // [P1-7] 페이지도 URL 파생값으로 둔다 → 공유·새로고침·뒤로가기가 조회 위치까지 복원한다.
   //        ADR-0009는 URL 사용을 의무화하지 않으므로 검색어는 이 화면의 로컬 상태로 유지한다.
-  const page = Math.max(1, Number(searchParams.get('page')) || 1);
+  const page = parsePositivePage(searchParams.get('page'));
 
   const [isPending, startTransition] = useTransition();
   const [searchKeyword, setSearchKeyword] = useState('');
@@ -164,6 +165,12 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
    */
   const updateQuery = (updates: Record<string, string | null>) => {
     const params = pickAllowedParams(searchParams, HUB_PARAM_KEYS);
+    // [2026-11-08] 바꾸지 않는 키도 화면이 실제로 쓰는 값으로 다시 싣는다 — 보이는 탭(숨긴 기여 탭·별칭·모르는 값은 해석한 탭)과
+    //   1 이상의 정수 쪽. 종전에는 페이지만 바꾸면 주소의 원래 tab 을 그대로 옮겼다(URL 상태 소급 확인).
+    if (activeTab === fallbackTab) params.delete('tab');
+    else params.set('tab', activeTab.toLowerCase());
+    if (page <= 1) params.delete('page');
+    else params.set('page', String(page));
     Object.entries(updates).forEach(([key, value]) => {
       if (value === null) params.delete(key);
       else params.set(key, value);
@@ -178,7 +185,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     setSelectedItemId(null);
     setSearchKeyword('');
     setPeriod(EMPTY_PERIOD);
-    updateQuery({ tab: tab.toLowerCase(), page: null });
+    // 기본 탭은 주소에 싣지 않는다 — 바꾸지 않는 키를 정리한 뒤에 덮어쓰므로 여기서 지워야 기본값 삭제가 지켜진다(Codex 15차).
+    updateQuery({ tab: tab.toUpperCase() === fallbackTab ? null : tab.toLowerCase(), page: null });
   };
 
   const setPage = (nextPage: number) => {

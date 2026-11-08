@@ -2437,6 +2437,12 @@
 |---|---|---|---|---|---|---|
 | DEC-OPS-405 | accepted | 페이지 게이트의 범위를 등록된 권한으로 정한다. proxy 는 `/admin` 전체와 함께 `/admin` 밖이라도 기능권한이 등록된 화면을 같은 분기(현재 권한 조회 → canEnterRegisteredPage)로 막는다. 링크 노출 `canOpenPage` 도 같은 범위를 쓴다. 게이트 편입(`requiresRegisteredPermission`)은 정확히 등록된 화면이면 그 등록이 정하고(인증 전용 정적 화면을 동적 형제의 권한 조회에 묶지 않는다), 아니면 대소문자를 가리지 않고 권한이 등록된 경로 모양과 맞으면 참이다. 권한이 빈 배열인 화면은 넣지 않는다. 허용은 종전대로 대소문자 그대로·정확한 경로 우선으로 판정한다. 설문 응답 목록·상세(`/survey/response`, `/survey/response/[id]`)에 SURVEY_RSP_READ 를 등록하는 것은 Boot 4.1.3 재기록 묶음에서 한다. | 설문 응답 관리 화면은 `/admin` 밖이라 화면이 먼저 열리고 데이터 API 만 SURVEY_RSP_READ 로 막는 비대칭이었다(9차 Codex 검토 B3). proxy 의 개별 권한 검사가 `/admin` 접두에만 걸려 있어, 원장에 권한을 적어도 집행되지 않았다. 권한 원장은 인증 벤더 6개의 증거 입력이라 지금 등록하면 증거를 모두 다시 기록해야 해서, 사용자가 게이트 확장만 먼저 병합하기로 했다. 지금은 `/admin` 밖에서 권한이 등록된 화면이 SMS 옛 경로뿐이고(Codex 재계산으로 119개 중 신규 편입 1개 확인), 그마저 next.config 리다이렉트가 먼저 돌아 직접 접근 결과는 같다. 다만 그 옛 경로의 링크 노출 판정(`canOpenPage`)은 SMS_READ 가 없으면 거짓이 된다 — 지금 메뉴 스냅숏에는 그 경로가 없다. | [proxy](../../frontend/src/proxy.ts), [판정](../../frontend/src/lib/auth/page-authorization.ts), [라우트 계약](../../scripts/ui-route-capabilities-contract.mjs), [게이트 시험](../../frontend/src/lib/auth/__tests__/page-authorization-gate.test.ts) | 2026-11-08 | - |
 
+## DEC-OPS-406
+
+| ID | 상태 | 결정 | 이유 | 정본 | 시행일 | supersedes |
+|---|---|---|---|---|---|---|
+| DEC-OPS-406 | accepted | URL 상태 승인의 소급 확인. 9/5 승인 뒤 이름(`stateItemNames`)만으로 `presentation-state`·`resource-identifier` 에 들어온 고유 기록 55개(부류별 56건, 생산 파일 31개)를 기록마다 다시 확인하고 승인을 유지한다. 근거는 묶음별 값의 출처(서버 데이터·코드 상수·형식 검사한 주소 입력·관리자 직접 입력)·소비 검증·재발행 범위·서버 권한이며, 근거 문서 §2.7 에 둔다. 같은 변경에서 고쳤다 — 메모 보고·모니터링 허브는 바꾸지 않는 키도 해석한 값으로 다시 싣는다, 커뮤니티 게시판·게시글 상세는 주소의 게시판 ID 를 형식 검사하고 인코딩한다, 댓글 관리는 글 번호의 입력 검사를 주소 읽기 검사(안전 정수)와 같게 한다. 모니터링 허브의 새 쓰기·지우기 기록 4개는 이 수정의 것이라 `presentation-state` 에 묶었다. `resource-identifier` 부류 설명과 과거 근거의 두 문장(page 정수 보장, 목록에서만 나온다)은 날짜를 붙여 정정한다. | 9차 Codex 검토가 이름 기반 자동 편입을 확인했고, 11차·14차 검토가 같은 이름이 같은 뜻이라는 가정을 반례(메모 보고 tab 원값 재발행, 댓글 관리 글 번호 직접 입력, 안전 정수 경계)로 막았다. 미해석·미검증 원값을 복사하던 재구성 호출이 둘뿐이라(댓글 관리의 `bbsId` 는 형식 검사한 주소 입력을 다시 싣는다) 공용 함수에 검증기를 의무화하지 않고 호출부를 고쳤다(가장 작은 변경). 게시판 목록 화면의 같은 재발행은 55건 밖이다. | [근거 문서 §2.7](../04-operations/url-state-class-approval-evidence.md), [URL 승인](../../config/ui-url-state-approval.json), [값 규칙](../../frontend/src/lib/navigation/url-state-values.ts) | 2026-11-08 | - |
+
 ## 종료·이전 Gap 기록
 
 아래 문단은 이전 시점의 기록이다. 남은 위험·재개 조건은 현재 Gap 인덱스에서 확인한다.
