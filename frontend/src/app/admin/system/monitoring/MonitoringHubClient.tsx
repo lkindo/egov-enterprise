@@ -185,7 +185,8 @@ export default function MonitoringHubClient({ defaultTab = 'SECURITY' }: { defau
     setSelectedItemId(null);
     setSearchKeyword('');
     setPeriod(EMPTY_PERIOD);
-    updateQuery({ tab: tab.toLowerCase(), page: null });
+    // 기본 탭은 주소에 싣지 않는다 — 바꾸지 않는 키를 정리한 뒤에 덮어쓰므로 여기서 지워야 기본값 삭제가 지켜진다(Codex 15차).
+    updateQuery({ tab: tab.toUpperCase() === fallbackTab ? null : tab.toLowerCase(), page: null });
   };
 
   const setPage = (nextPage: number) => {

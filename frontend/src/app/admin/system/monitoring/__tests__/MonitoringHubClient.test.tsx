@@ -266,6 +266,19 @@ describe('MonitoringHubClient', () => {
     expect([...target.searchParams].sort(([a], [b]) => a.localeCompare(b)).map(([key, value]) => `${key}=${value}`).join('&')).toBe(expected);
   });
 
+  it('기본 탭으로 바꾸면 주소에서 tab 과 page 를 모두 지운다', async () => {
+    renderHub('tab=system&page=3');
+    fireEvent.click(await screen.findByRole('tab', { name: '시스템 로그(감사 보기)' }));
+    expect(mocks.replace.mock.calls.at(-1)?.[0]).toBe('/admin/system/monitoring');
+  });
+
+  // 표 대역은 늘 2쪽을 넘기므로, 화면이 주소의 page 를 정수로 읽는지는 첫 조회의 쪽 번호로 본다(Codex 15차).
+  it.each(['2.5', 'Infinity', '1e3'])('형식이 아닌 page(%s)로 들어오면 1쪽을 조회한다', async (value) => {
+    renderHub(`page=${value}`);
+    await waitFor(() => expect(mocks.audit).toHaveBeenCalled());
+    expect(mocks.audit).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }));
+  });
+
   it('shows honest actuator failure state and retries health collection', async () => {
     mocks.health.mockRejectedValueOnce(new Error('actuator unavailable'));
     renderHub('tab=observability');

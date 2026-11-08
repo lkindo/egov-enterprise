@@ -49,7 +49,7 @@ vi.mock('@/app/components/ui/standard-data-table', () => ({
   ),
 }));
 
-function renderList(query: string, permissions: string[] = ['MEMO_RPT_READ']) {
+function mountList(query: string, permissions: string[] = ['MEMO_RPT_READ']) {
   mocks.query = query;
   mocks.permissions = permissions;
   const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
@@ -58,6 +58,10 @@ function renderList(query: string, permissions: string[] = ['MEMO_RPT_READ']) {
       <MemoReportManagementClient />
     </QueryClientProvider>,
   );
+}
+
+function renderList(query: string, permissions: string[] = ['MEMO_RPT_READ']) {
+  mountList(query, permissions);
   fireEvent.click(screen.getByRole('button', { name: '3쪽으로' }));
   // 키 순서는 의미가 없다(원래 주소의 순서를 따른다) — 경로와 정렬한 키·값으로 비교한다.
   const target = new URL(String(mocks.replace.mock.calls.at(-1)?.[0]), 'http://localhost');
@@ -81,6 +85,13 @@ describe('메모 보고 — 페이지를 바꿀 때 주소에 싣는 값', () =>
 
   it('권한이 있으면 ALL 을 그대로 싣는다', () => {
     expect(renderList('tab=ALL', ['MEMO_RPT_READ', 'MEMO_RPT_READ_ALL'])).toBe('/admin/operation/memo-reports?page=3&tab=ALL');
+  });
+
+  // 표 대역은 늘 3쪽을 넘기므로, 화면이 주소의 page 를 정수로 읽는지는 첫 조회의 쪽 번호로 본다(Codex 15차).
+  it.each(['2.5', 'Infinity', '1e3'])('형식이 아닌 page(%s)로 들어오면 1쪽을 조회한다', async (value) => {
+    mountList(`page=${value}`);
+    await vi.waitFor(() => expect(mocks.getReceivedReports).toHaveBeenCalled());
+    expect(mocks.getReceivedReports).toHaveBeenCalledWith(expect.objectContaining({ page: 1 }));
   });
 
   it('정상 tab 은 유지하고, 형식이 아닌 page 는 다시 싣지 않는다', () => {
