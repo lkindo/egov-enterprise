@@ -306,6 +306,29 @@ function isWave7Approval(approval) {
     && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
 }
 
+/*
+  웨이브 8(2026-11-08, DEC-OPS-408): 옛 camelCase 별칭 넷을 퇴역 후보로 승인했다(소유자의 외부 공개·운영 배포 없음 확인, 삭제는 재기록
+  묶음). 모니터링 허브는 표본 위젯 일부가 공통 허브 화면에 있어 모든 구성에 실리므로 소유 미확인·보류를 유지한다. 나머지 보류 행의
+  방향(메뉴·권한 원장과 함께 승인할 일곱, 보류를 유지할 넷)은 DEC-OPS-408 보관 원문에 있다.
+*/
+const WAVE8_DISPOSITIONS = {
+  '/cop/sms/selectSmsList': 'retire-candidate',
+  '/smart-toolkit/dept-job/insertDeptJob': 'retire-candidate',
+  '/smart-toolkit/dept-job/selectDeptJobDetail/[id]': 'retire-candidate',
+  '/smart-toolkit/dept-job/selectDeptJobList': 'retire-candidate',
+};
+const WAVE8_APPROVED_ROUTES = Object.keys(WAVE8_DISPOSITIONS);
+const WAVE8_REVIEWER = 'lkindo (2026-11-08 사용자 승인 · DEC-OPS-408)';
+
+function isWave8Approval(approval) {
+  return approval !== null
+    && approval.reviewer === WAVE8_REVIEWER
+    && approval.reviewedAt === '2026-11-08'
+    && Array.isArray(approval.evidence)
+    && approval.evidence.length > 0
+    && approval.evidence.every((entry) => typeof entry === 'string' && entry.trim() !== '');
+}
+
 const APPROVED_ROUTES = [
   ...WAVE1_APPROVED_ROUTES,
   ...WAVE2_APPROVED_ROUTES,
@@ -314,6 +337,7 @@ const APPROVED_ROUTES = [
   ...WAVE5_APPROVED_ROUTES,
   ...WAVE6_APPROVED_ROUTES,
   ...WAVE7_APPROVED_ROUTES,
+  ...WAVE8_APPROVED_ROUTES,
 ].sort();
 
 test('the recommended hybrid is selected only as a bounded provisional direction', () => {
@@ -429,6 +453,22 @@ test('the proposed overlay drafts dispositions over the discovered pages and ext
         && record.profileOwnershipReview === 'verified'
         && Object.values(record.approvals).every(isWave7Approval)
         && record.approvals.securityPrivacy.evidence.some((entry) => entry.includes('처분 변경분'));
+    }
+    if (WAVE8_APPROVED_ROUTES.includes(record.route)) {
+      const retiring = WAVE8_DISPOSITIONS[record.route] === 'retire-candidate';
+      return shared
+        && record.reviewState === 'approved'
+        && record.disposition === WAVE8_DISPOSITIONS[record.route]
+        && record.authorizationReview === 'verified'
+        && record.privacyReview === 'verified'
+        && record.effectiveMenuExposureReview === 'verified'
+        && record.capabilityReview === 'verified'
+        && record.profileOwnershipReview === 'verified'
+        && Object.values(record.approvals).every(isWave8Approval)
+        && record.approvals.securityPrivacy.evidence.some((entry) => entry.includes('처분 변경분'))
+        // 퇴역 후보는 삭제 승인이 아니다 — 소유자의 외부 계약 확인과 삭제 시점·rollback 을 근거에 남긴다(IA §8.2).
+        && (!retiring || (record.approvals.productIa.evidence.some((entry) => entry.includes('소유자가 2026-11-08'))
+          && record.approvals.productIa.evidence.some((entry) => entry.includes('재기록 묶음') && entry.includes('rollback'))));
     }
     if (WAVE6_APPROVED_ROUTES.includes(record.route)) {
       return shared
