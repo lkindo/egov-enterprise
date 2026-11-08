@@ -1,4 +1,4 @@
-import { canEnterRegisteredPage, registeredPageEntry } from '@/lib/auth/page-authorization';
+import { canEnterRegisteredPage, registeredPageEntry, requiresRegisteredPermission } from '@/lib/auth/page-authorization';
 
 /**
  * 화면의 링크·버튼 노출 판정 — 라우트 게이트(proxy.ts)와 같은 함수(canEnterRegisteredPage)를 쓴다.
@@ -30,16 +30,19 @@ function pathOf(href: string): string {
   return href.split(/[?#]/, 1)[0];
 }
 
-/** proxy.ts 와 같은 경계: 소문자로 비교하되 세그먼트 경계를 지킨다(/administrators 는 대상이 아니다). */
+/**
+ * proxy.ts 와 같은 경계: `/admin` 은 소문자로 비교하되 세그먼트 경계를 지킨다(/administrators 는 대상이 아니다).
+ * `/admin` 밖이라도 기능권한이 등록된 화면은 게이트 대상이다(2026-11-08, 설문 응답 관리).
+ */
 function isGatedPath(path: string): boolean {
   const lower = path.toLowerCase();
-  return lower === '/admin' || lower.startsWith('/admin/');
+  return lower === '/admin' || lower.startsWith('/admin/') || requiresRegisteredPermission(path);
 }
 
 /**
  * 링크·버튼을 보여 줄지 판정한다. 라우트 게이트가 통과시킬 곳만 true 다.
  *
- * `/admin` 밖은 페이지 게이트가 없으므로 true 다(인증은 별도 경계). 판정은 노출일 뿐 인가가 아니다 —
+ * 게이트 밖(`/admin` 밖이면서 기능권한이 등록되지 않은 화면)은 true 다(인증은 별도 경계). 판정은 노출일 뿐 인가가 아니다 —
  * 서버 권한은 이 함수와 무관하게 그대로 집행된다(H3).
  */
 export function canOpenPage(subject: PageAccessSubject | null | undefined, href: string): boolean {

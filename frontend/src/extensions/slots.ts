@@ -20,7 +20,7 @@ import type { RecipientAddressBookSource } from '@/types/recipient-address-book'
  * 노출 술어(데이터). 라우트 게이트·기능권한과 같은 함수로 판정한다. 노출일 뿐 인가가 아니다 — 서버 권한은 그대로 집행된다(H3).
  * - always: 판정하지 않는다. 왜 늘 보이는지 사유 문장을 적는다(빈 문자열은 경계 계약이 거부한다).
  * - permissions: 적은 기능권한을 모두 가진 사람에게 보인다.
- * - page: 그 화면에 들어갈 수 있는 사람에게 보인다. /admin 밖 경로는 페이지 게이트가 없어 늘 참이다 — 그때 실제 보장은 기여 파일이
+ * - page: 그 화면에 들어갈 수 있는 사람에게 보인다. /admin 밖이면서 기능권한이 등록되지 않은 경로는 페이지 게이트가 없어 늘 참이다 — 그때 실제 보장은 기여 파일이
  *   기능과 함께 직접 지워지는 것이다.
  */
 export type SlotVisibility =

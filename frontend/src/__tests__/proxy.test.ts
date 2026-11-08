@@ -314,6 +314,36 @@ describe('proxy 인증 게이트', () => {
     expect(allowed.status).toBe(200);
   });
 
+  // [2026-11-08] /admin 밖이라도 기능권한이 등록된 화면은 같은 분기로 막는다(requiresRegisteredPermission). 실제 원장에서는 SMS 옛 경로가
+  //   그런 화면이다 — 실서비스에서는 next.config 리다이렉트가 먼저 돌지만, proxy 에 직접 닿으면 같은 판정을 받는다. sms 기능이 빠진
+  //   생성물에는 그 화면 파일과 등록이 함께 없어 사례를 뺀다. 권한이 비어 있는 /admin 밖 화면은 권한 조회 없이 그대로 통과한다.
+  const SMS_LEGACY = '/cop/sms/selectSmsList';
+  if (pageInProjection(SMS_LEGACY)) it('gates a page outside /admin when the catalog registers a permission for it', async () => {
+    expect((PAGE_PERMISSIONS as Record<string, readonly string[]>)[SMS_LEGACY]?.length).toBeGreaterThan(0);
+    const token = signToken({ sub: SUBJECT, role: 'ADMIN', exp: futureExp() }, SECRET);
+    const denied = await proxy(requestWith(token, SMS_LEGACY));
+    expect(denied.headers.get('x-mw-auth')).toContain('deny=permission');
+    expect(new URL(denied.headers.get('location')!).searchParams.get('auth_error')).toBe('unauthorized');
+    const mimicked = await proxy(requestWith(token, SMS_LEGACY.toUpperCase()));
+    expect(mimicked.headers.get('x-mw-auth')).toContain('deny=permission');
+
+    fetchMock.mockResolvedValueOnce(new Response(JSON.stringify({ success: true, code: 'S000', message: '성공', data: {
+      id: 'webmaster', esntlId: SUBJECT, groups: ['SMS_OPERATOR'],
+      permissions: [...(PAGE_PERMISSIONS as Record<string, readonly string[]>)[SMS_LEGACY]], authorizationVersion: 'v2',
+    } })));
+    const allowed = await proxy(requestWith(signToken({ sub: SUBJECT, role: 'USER', exp: futureExp() }, SECRET), SMS_LEGACY));
+    expect(allowed.status).toBe(200);
+    expect(allowed.headers.get('location')).toBeNull();
+  });
+
+  it('does not load authorization for a page outside /admin that only requires sign-in', async () => {
+    expect(PAGE_PERMISSIONS['/']).toEqual([]);
+    const response = await proxy(requestWith(signToken({ sub: SUBJECT, exp: futureExp() }, SECRET), '/'));
+    expect(response.status).toBe(200);
+    expect(response.headers.get('location')).toBeNull();
+    expect(fetchMock).not.toHaveBeenCalled();
+  });
+
   it('a current functional grant opens its page without an administrator role claim', async () => {
     const permissions = PAGE_PERMISSIONS['/admin/system/menus'];
     expect(permissions.length).toBeGreaterThan(0);

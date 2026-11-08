@@ -9965,7 +9965,7 @@
     {
       "route": "/cop/sms/selectSmsList",
       "source": "frontend/src/app/cop/sms/selectSmsList/page.tsx",
-      "sourceShellAccess": "authenticated",
+      "sourceShellAccess": "admin-system",
       "shellAccess": "admin-system",
       "roles": [
         "ADMIN",

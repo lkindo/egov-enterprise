@@ -41,7 +41,8 @@ describe('canOpenPage', () => {
     expect(canOpenPage(subject(['MEMO_RPT_READ']), '/admin/operation/memo-reports/unregistered')).toBe(false);
   });
 
-  it('관리 경로 밖은 페이지 게이트가 없다(세그먼트 경계를 지킨다)', () => {
+  // [2026-11-08] /admin 밖이라도 기능권한이 등록된 화면은 게이트 대상이다 — 규칙은 page-authorization-gate.test.ts 가 합성 원장으로 본다.
+  it('권한이 등록되지 않은 관리 경로 밖 화면은 페이지 게이트가 없다(세그먼트 경계를 지킨다)', () => {
     expect(canOpenPage(null, '/approvals')).toBe(true);
     expect(canOpenPage(null, '/administrators')).toBe(true);
     // 대소문자를 흉내낸 관리 경로는 게이트 대상이며 등록된 경로가 아니므로 거부한다(proxy 와 같다).
