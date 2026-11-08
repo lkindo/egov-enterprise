@@ -84,10 +84,13 @@ describe('resolveMenuScreen', () => {
     }
   });
 
-  if (pageInProjection('/admin/survey/manage/create')) it('별칭은 한 번만 따라간다 — 목적지가 또 별칭이면 판정하지 않는다', () => {
-    expect(alias('/admin/survey/manage/create').target).toBe('/admin/survey/manage');
-    expect(alias('/admin/survey/manage').kind).toBe('config-redirect');
-    expect(resolveMenuScreen('/admin/survey/manage/create')).toBeNull();
+  // 별칭을 한 번만 따라가는 규칙은 연쇄 별칭을 주입해 menu-screen-resolution-alias-chain.test.ts 가 본다 — 실제 별칭에는
+  //   2026-11-08 부터 연쇄가 없다(설문 등록 옛 경로가 목록을 거치지 않고 허브로 바로 넘긴다, IA §9.4).
+  if (pageInProjection('/admin/survey/manage/create')) it('설문 등록 옛 경로는 허브로 바로 넘기는 별칭이라 허브 화면으로 센다', () => {
+    expect(alias('/admin/survey/manage/create').target).toBe('/admin/survey/hub?tab=manage');
+    expect(resolveMenuScreen('/admin/survey/manage/create')).toStrictEqual({
+      screen: screen('/admin/survey/hub'), viaAlias: '/admin/survey/manage/create',
+    });
   });
 
   it('라우트가 없거나 사이드바가 열지 않는 경로는 어떤 화면도 열지 않는다', () => {
