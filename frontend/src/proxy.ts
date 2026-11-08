@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { canEnterRegisteredPage, loadPageAuthorization } from '@/lib/auth/page-authorization';
+import { canEnterRegisteredPage, loadPageAuthorization, requiresRegisteredPermission } from '@/lib/auth/page-authorization';
 import { loginReturnPath } from '@/lib/auth/login-return-path';
 import { shouldUseSecureSessionCookie } from '@/lib/auth/session-cookie-policy';
 import { isTrustedEdgeProxyEnabled } from '@/lib/api/forwarded-client-ip';
@@ -188,7 +188,7 @@ async function verifyAndExtractSubject(token: string): Promise<VerifyVerdict> {
   }
 }
 
-// /admin 화면은 생성된 PAGE_PERMISSIONS의 정확한 등록과 현재 기능 권한으로 판단한다.
+// /admin 화면과, /admin 밖이라도 기능권한이 등록된 화면은 생성된 PAGE_PERMISSIONS의 정확한 등록과 현재 기능 권한으로 판단한다.
 // 메뉴 표시나 상위 화면의 인증 전용 선언은 하위 화면 접근을 부여하지 않는다.
 // 자료 조회·변경의 최종 인가는 백엔드의 기능 권한과 소유권·공개 범위 검사가 수행한다.
 
@@ -502,11 +502,12 @@ export async function proxy(request: NextRequest) {
     return redirect;
   }
 
-  // 4. /admin 접근 통제 — 모든 화면을 등록된 개별 정책과 서버의 현재 기능 권한으로 판단한다.
+  // 4. 페이지 접근 통제 — /admin 의 모든 화면과, /admin 밖이라도 기능권한이 등록된 화면(설문 응답 관리 등)을
+  //    등록된 개별 정책과 서버의 현재 기능 권한으로 판단한다. 권한이 빈 배열인 /admin 밖 화면은 인증만으로 열린다.
   //    라우트 대소문자를 흉내낸 우회(/Admin/system)와 접두사 오매칭(/administrators)을 모두 막기 위해
   //    소문자로 정규화한 뒤 세그먼트 경계로 비교한다.
   const normalizedPath = pathname.toLowerCase();
-  if (matchesPrefix(normalizedPath, '/admin')) {
+  if (matchesPrefix(normalizedPath, '/admin') || requiresRegisteredPermission(pathname)) {
     const authorization = accessToken ? await loadPageAuthorization(accessToken, userSubject) : null;
     // Next 라우트의 대소문자는 보존한다. insertScrap 같은 등록된 경로를 소문자로 바꾸지 않는다.
     if (!authorization || !canEnterRegisteredPage(pathname, authorization)) {

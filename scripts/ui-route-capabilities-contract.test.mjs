@@ -109,8 +109,9 @@ const generatedPageSource = fs.readFileSync(path.join(ROOT, 'frontend/src/types/
 test('page shell evidence binds the complete source registry, generated map and actual proxy admission branch', () => {
   assert.deepEqual(repository.proxy.bindingErrors, []);
   assert.deepEqual(Object.keys(repository.proxy.pagePermissions).sort(), repository.pages.map(({ route }) => route).sort());
+  // [2026-11-08] /admin 밖도 같은 규칙이다 — 기능권한이 등록된 화면은 proxy 가 막는다(requiresRegisteredPermission).
   for (const [route, required] of Object.entries(pageCatalog.pagePermissions)) {
-    if (!route.startsWith('/admin/') && route !== '/admin') continue;
+    if (route === '/login') continue;
     assert.equal(expectedShellAccess(route, repository.proxy), required.length === 0 ? 'authenticated' : 'admin-system', route);
   }
 });
@@ -122,6 +123,9 @@ test('page admission binding rejects old prefix bypass, wrong casing input, disa
     ['canEnterRegisteredPage(pathname, authorization)', 'canEnterRegisteredPage(normalizedPath, authorization)'],
     ['return denied;', 'return nextWithCsp();'],
     ['await loadPageAuthorization(accessToken, userSubject)', 'cachedAuthorization'],
+    // [2026-11-08] /admin 밖의 권한 등록 화면을 게이트에서 빼거나, 편입 판정을 가져오지 않으면 막는다.
+    [' || requiresRegisteredPermission(pathname)', ''],
+    ['loadPageAuthorization, requiresRegisteredPermission }', 'loadPageAuthorization }'],
   ];
   for (const [before, after] of mutationPairs) {
     assert.ok(proxySource.includes(before), `red probe target missing: ${before}`);
@@ -138,10 +142,20 @@ test('page helper cannot change unknown denial or shadow exact static pages with
     ['required.every(permission => canPermission(subject, permission))', 'required.some(permission => canPermission(subject, permission))'],
     ["PAGE_PERMISSION_MODES[entry[0]] === 'ALL'", "PAGE_PERMISSION_MODES[entry[0]] === 'NEVER'"],
     ["from '@/types/generated-permissions'", "from '@/types/unreviewed-permissions'"],
+    // 게이트 편입 판정 — 인증만 요구하는 화면까지 넣거나, 대소문자 흉내를 빼거나, 하나만 맞아도 되는 판정을 바꾸면 막는다.
+    ['if (required.length === 0) return false;', ''],
+    ["const segments = pathname.replace(/\\/$/, '').toLowerCase().split('/');", "const segments = pathname.replace(/\\/$/, '').split('/');"],
+    ['return Object.entries(PAGE_PERMISSIONS).some(([route, required]) => {', 'return Object.entries(PAGE_PERMISSIONS).every(([route, required]) => {'],
   ]) {
     assert.ok(pageHelperSource.includes(before), `red probe target missing: ${before}`);
     assert.notDeepEqual(validatePageAuthorizationBinding(proxySource, pageHelperSource.replace(before, after)), [], before);
   }
+  const syntheticRules = { pagePermissions: { '/zz-ops/report': ['SURVEY_RSP_READ'], '/zz-ops/report/[id]': ['SURVEY_RSP_READ'], '/zz-open': [] } };
+  assert.equal(expectedShellAccess('/zz-ops/report', syntheticRules), 'admin-system');
+  assert.equal(expectedShellAccess('/zz-ops/report/7', syntheticRules), 'admin-system');
+  assert.equal(expectedShellAccess('/ZZ-ops/Report', syntheticRules), 'admin-system');
+  assert.equal(expectedShellAccess('/zz-open', syntheticRules), 'authenticated');
+  assert.equal(expectedShellAccess('/zz-unregistered', syntheticRules), 'authenticated');
   assert.equal(expectedShellAccess('/admin/work-hub/unregistered-child', repository.proxy), 'admin-system');
   assert.equal(expectedShellAccess('/admin/community/boards/master', repository.proxy), 'admin-system');
   assert.equal(expectedShellAccess('/admin/community/boards/fixture-id', repository.proxy), 'authenticated');
@@ -194,11 +208,16 @@ test('proxy shell access is measured separately from unresolved capability roles
   assert.equal(analysis.result.summary.effectiveAliases, evidence.filter(({ alias }) => alias).length);
   assert.equal(analysis.manifest.externalAliases.length, analysis.result.summary.externalAliases);
   assert.ok(analysis.result.summary.externalAliases > 0, 'config redirects to external aliases are measured');
+  // [2026-11-08] SMS 옛 경로는 원 경로도 SMS_READ 로 등록돼 proxy 의 게이트 안이다(실서비스에서는 next.config 리다이렉트가 먼저 돈다).
+  //   원 셸과 실효 셸을 따로 재는 것은 등록되지 않은 /admin 밖 원 경로가 관리 화면으로 넘어가는 합성 사례로 본다.
   const legacySms = analysis.manifest.routes.find(({ route }) => route === '/cop/sms/selectSmsList');
   assert.deepEqual(
     { sourceShellAccess: legacySms.sourceShellAccess, shellAccess: legacySms.shellAccess },
-    { sourceShellAccess: 'authenticated', shellAccess: 'admin-system' },
+    { sourceShellAccess: 'admin-system', shellAccess: 'admin-system' },
   );
+  const redirectRules = { pagePermissions: { '/admin/zz-target': ['SMS_READ'] } };
+  assert.equal(expectedShellAccess('/zz-legacy/source', redirectRules), 'authenticated');
+  assert.equal(expectedEffectiveShellAccess('/zz-legacy/source', { kind: 'config-redirect', target: '/admin/zz-target?tab=a' }, redirectRules), 'admin-system');
   // [2026-11-08 DEC-OPS-404] 셸 입장은 역할이 아니다. 확정한 roles 는 기본 설치 페르소나 — 페이지 권한의 기본 그룹(ANY 는 합,
   //   ALL 은 교집합, 권한이 없으면 AUTHENTICATED, 리다이렉트는 목적지, 공개 셸은 ANONYMOUS)과 같아야 한다. 셸 값을 그대로
   //   옮기면 관리자 셸의 일반 사용자 화면(메모 보고 등)에서 어긋난다. 기본 그룹이 없는 권한의 화면은 UNVERIFIED 로 남는다.

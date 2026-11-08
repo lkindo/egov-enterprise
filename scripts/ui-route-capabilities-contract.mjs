@@ -250,10 +250,11 @@ export function validatePageAuthorizationBinding(proxySource, helperSource) {
   const proxy = bindingCode(proxySource);
   const helper = bindingCode(helperSource);
   const errors = [];
-  if (!proxy.includes(`import{canEnterRegisteredPage,loadPageAuthorization}from${literalToken('@/lib/auth/page-authorization')};`)) {
+  if (!proxy.includes(`import{canEnterRegisteredPage,loadPageAuthorization,requiresRegisteredPermission}from${literalToken('@/lib/auth/page-authorization')};`)) {
     errors.push('proxy must import the registered page authorization implementation');
   }
-  const guardedBranch = `constnormalizedPath=pathname.toLowerCase();if(matchesPrefix(normalizedPath,${literalToken('/admin')})){`
+  // [2026-11-08] /admin 전체와, /admin 밖이라도 기능권한이 등록된 화면(설문 응답 관리)을 같은 분기로 막는다.
+  const guardedBranch = `constnormalizedPath=pathname.toLowerCase();if(matchesPrefix(normalizedPath,${literalToken('/admin')})||requiresRegisteredPermission(pathname)){`
     + 'constauthorization=accessToken?awaitloadPageAuthorization(accessToken,userSubject):null;'
     + 'if(!authorization||!canEnterRegisteredPage(pathname,authorization)){'
     + `constfallbackUrl=newURL(${literalToken('/')},request.url);`
@@ -269,6 +270,13 @@ export function validatePageAuthorizationBinding(proxySource, helperSource) {
       + `if(PAGE_PERMISSION_MODES[entry[0]]===${literalToken('ALL')})returnrequired.length>0&&required.every(permission=>canPermission(subject,permission));`
       + 'returnrequired.length===0||canAnyPermission(subject,required);')) {
     errors.push('page helper must consume generated PAGE_PERMISSIONS, prefer exact routes, and deny unregistered pages');
+  }
+  // 게이트 편입 판정 — 권한이 등록된 경로 모양과 대소문자를 가리지 않고 맞추며, 권한이 빈 배열인 화면은 넣지 않는다.
+  if (!helper.includes('exportfunctionrequiresRegisteredPermission(pathname:string):boolean{')
+    || !helper.includes(`constsegments=pathname.replace(/\\/$/,${literalToken('')}).toLowerCase().split(${literalToken('/')});`)
+    || !helper.includes('returnObject.entries(PAGE_PERMISSIONS).some(([route,required])=>{if(required.length===0)returnfalse;')
+    || !helper.includes(`constrouteSegments=route.replace(/\\/$/,${literalToken('')}).toLowerCase().split(${literalToken('/')});`)) {
+    errors.push('page helper must gate every page with registered permissions, case-insensitively and never pages that only require sign-in');
   }
   return errors;
 }
@@ -327,9 +335,19 @@ function matchesPrefix(route, prefix) {
 
 export function expectedShellAccess(route, proxyRules) {
   if (route === '/login') return 'public';
-  if (!matchesPrefix(route.toLowerCase(), '/admin')) return 'authenticated';
-  const normalized = route.replace(/\/$/, '');
   const pages = proxyRules.pagePermissions ?? {};
+  if (!matchesPrefix(route.toLowerCase(), '/admin')) {
+    // [2026-11-08] /admin 밖이라도 기능권한이 등록된 화면은 proxy 가 같은 분기로 막는다(requiresRegisteredPermission).
+    const lowerSegments = route.replace(/\/$/, '').toLowerCase().split('/');
+    const gated = Object.entries(pages).some(([candidate, required]) => {
+      if (!Array.isArray(required) || required.length === 0) return false;
+      const candidates = candidate.replace(/\/$/, '').toLowerCase().split('/');
+      return candidates.length === lowerSegments.length && candidates.every((part, index) =>
+        /^\[[^.[\]]+\]$/.test(part) ? lowerSegments[index].length > 0 : part === lowerSegments[index]);
+    });
+    return gated ? 'admin-system' : 'authenticated';
+  }
+  const normalized = route.replace(/\/$/, '');
   const exact = pages[normalized];
   const segments = normalized.split('/');
   const required = exact ?? Object.entries(pages).find(([candidate]) => {

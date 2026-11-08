@@ -29,6 +29,27 @@ export function registeredPageEntry(pathname: string): readonly [string, readonl
   return entry ?? null;
 }
 
+/**
+ * 기능권한이 등록된 화면인가 — 라우트 게이트(proxy.ts)와 링크 노출(page-access.ts)은 `/admin` 전체와 함께 이런 화면을 막는다.
+ * [2026-11-08] `/admin` 밖의 관리 조회 화면(설문 응답 목록·상세, SURVEY_RSP_READ)은 화면이 먼저 열린 뒤 데이터 API 가 403 으로
+ * 막는 비대칭이었다. 권한이 빈 배열인 화면(인증만 요구)과 등록되지 않은 `/admin` 밖 화면은 대상이 아니다.
+ *
+ * 게이트에 넣을지만 정한다 — 들어갈 수 있는지는 canEnterRegisteredPage(대소문자 그대로, 정확한 경로 우선)가 정한다.
+ * 그래서 대소문자를 가리지 않고 권한이 등록된 경로 모양과 맞으면 넣는다: `/Survey/Response` 같은 흉내는 게이트에 들어가
+ * 등록되지 않은 경로로 거부된다(`/admin` 분기와 같은 원칙). 동적 형제가 정적 화면을 가려 더 넣어도, 그 화면의 정확한 등록이
+ * 허용을 정하므로 막히지 않는다.
+ */
+export function requiresRegisteredPermission(pathname: string): boolean {
+  const segments = pathname.replace(/\/$/, '').toLowerCase().split('/');
+  return Object.entries(PAGE_PERMISSIONS).some(([route, required]) => {
+    if (required.length === 0) return false;
+    const routeSegments = route.replace(/\/$/, '').toLowerCase().split('/');
+    return routeSegments.length === segments.length && routeSegments.every((segment, index) =>
+      /^\[[^.[\]]+\]$/.test(segment) ? segments[index].length > 0 : segment === segments[index],
+    );
+  });
+}
+
 /** Exact page ownership: an authenticated parent shell never opens unregistered children. */
 export function canEnterRegisteredPage(pathname: string, subject: PageAccessSubject | null | undefined): boolean {
   const entry = registeredPageEntry(pathname);
