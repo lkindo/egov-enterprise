@@ -188,6 +188,8 @@ test.describe('콘텐츠 페이지', () => {
         });
         await test.step('User: 메뉴가 없어도 안내 페이지 목록에서 찾는다', async () => {
             await userPage.goto('/pages');
+            // Wait for the initial list before submitting another query; otherwise its in-flight API request is cancelled.
+            await expect(userPage.getByRole('link', { name: title, exact: true })).toBeVisible();
             const search = userPage.getByRole('search', { name: '안내 페이지 찾기' });
             await search.getByRole('textbox', { name: '제목·요약' }).fill(title);
             await search.getByRole('button', { name: '조회' }).click();
