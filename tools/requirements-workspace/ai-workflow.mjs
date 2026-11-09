@@ -215,7 +215,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             try { validateDocumentSummaries(pipeline.documents, snapshot); }
             catch (error) {
               if (error.code !== 'AI_OUTPUT_INVALID' || !error.details?.some(detail => detail.kind === 'citation-quote')) throw error;
-              pipeline = { ...pipeline, documents: pipeline.documents.map(doc => ({ ...doc, anchors: documentAnchors(snapshot.backlog.sources.find(source => source.id === doc.sourceId)) })) };
+              pipeline = { ...pipeline, documents: pipeline.documents.map(doc => {
+                const source = snapshot.backlog.sources.find(source => source.id === doc.sourceId);
+                return source ? { ...doc, anchors: documentAnchors(source) } : doc;
+              }) };
               validateDocumentSummaries(pipeline.documents, snapshot); refreshedAnchors = true;
             }
             if (!restoreCheckpointWarnings('discovery')) { onValidated('reading', pipeline.documents); onValidated('synthesis', pipeline.businessModel); }
