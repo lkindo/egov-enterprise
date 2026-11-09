@@ -399,7 +399,7 @@ test('verification steps carry stable ids and still produce the exact command gr
     ['node', ['--test', 'scripts/reusable-artifact-entrypoints-contract.test.mjs']]];
   const backend = prefix => ['gradle', ['compileJava', 'compileTestJava', `${prefix}harnessTest`, `${prefix}schemaValidationTest`,
     '--no-daemon', '--warning-mode', 'fail', '--console=plain', '-Dfile.encoding=UTF-8']];
-  const frontend = [['pnpm', ['-C', 'frontend', 'exec', 'tsc', '--noEmit']], ['pnpm', ['-C', 'frontend', 'run', 'lint']],
+  const frontend = [['pnpm', ['-C', 'frontend', 'run', 'type-check']], ['pnpm', ['-C', 'frontend', 'run', 'lint']],
     ['pnpm', ['-C', 'frontend', 'run', 'build']]];
   for (const [layout, prefix] of [['multi-module', ':api-server:'], ['single-module', '']]) {
     assert.deepEqual(verificationCommands('full', layout), [...common, backend(prefix), ...frontend], layout);

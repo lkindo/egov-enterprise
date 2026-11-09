@@ -3,6 +3,7 @@
 // Runs current Next routes/proxy/rewrites against a synthetic loopback backend. No DB or real credentials.
 import { spawn } from 'node:child_process';
 import { randomBytes } from 'node:crypto';
+import { existsSync } from 'node:fs';
 import { cp, mkdir, mkdtemp, readFile, symlink } from 'node:fs/promises';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
@@ -97,7 +98,10 @@ const backend = createServer(async (request, response) => {
 let child;
 let fixtureRoot;
 let startupLog = '';
-const originalNextEnv = await readFile(join(frontend, 'next-env.d.ts'), 'utf8');
+// next-env.d.ts 는 Next 가 dev·typegen·build 때 쓰는 추적하지 않는 파일이다 — 없을 수 있다. 있으면 그대로 두는지 끝에 대조한다.
+const nextEnvPath = join(frontend, 'next-env.d.ts');
+const readNextEnv = async () => (existsSync(nextEnvPath) ? readFile(nextEnvPath, 'utf8') : null);
+const originalNextEnv = await readNextEnv();
 try {
   const backendPort = await listen(backend);
   const webPort = await unusedPort();
@@ -109,7 +113,7 @@ try {
   const fixtureFrontend = join(fixtureRoot, 'frontend');
   await mkdir(fixtureFrontend);
   // Copy current disk source, excluding environment files and generated build/cache artifacts.
-  for (const name of ['src', 'scripts', 'next.config.ts', 'tsconfig.json', 'next-env.d.ts', 'package.json']) {
+  for (const name of ['src', 'scripts', 'next.config.ts', 'tsconfig.json', 'next-env.d.ts', 'package.json'].filter(name => name !== 'next-env.d.ts' || originalNextEnv !== null)) {
     await cp(join(frontend, name), join(fixtureFrontend, name), {
       recursive: true, filter: source => !withoutAliases || !aliasFiles.has(source),
     });
@@ -201,7 +205,7 @@ try {
     decodeDiagnostics.push({ route: path, status: response.status, tokenExposed: body.includes(syntheticToken), upstream: backendPaths.slice(before) });
     check(!body.includes(syntheticToken), `${path}: one-decode fixture does not expose a token`);
   }
-  check(await readFile(join(frontend, 'next-env.d.ts'), 'utf8') === originalNextEnv, 'original next-env WIP preserved');
+  check(await readNextEnv() === originalNextEnv, 'original next-env WIP preserved');
   console.log(JSON.stringify({ checks, failures, fixtureRoot, withoutAliases, encodedAliasProbe, decodeDiagnostics }));
   if (failures.length) process.exitCode = 1;
 } catch (error) {
