@@ -98,7 +98,7 @@ export function selectImpactTests(changed, repository) {
   };
   // 클래스 이름은 낱말 단위로만 맞춘다 — LedgerFixtures 가 AuditLedgerFixtures 안에서 걸리지 않게 한다.
   const javaTestsNaming = (name) => {
-    const word = new RegExp(`(?<![\\w$])${name.replace(/\$/gu, '\\$')}(?![\\w$])`, 'u');
+    const word = new RegExp(`(?<![\\w$])${name.replace(/[.*+?^${}()|[\]\\]/gu, '\\$&')}(?![\\w$])`, 'u');
     return repository.mentions(name)
       .filter((candidate) => candidate.endsWith('.java') && TEST_SOURCE.test(candidate) && word.test(repository.read(candidate)));
   };
