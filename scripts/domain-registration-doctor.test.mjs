@@ -187,11 +187,12 @@ test('제안 id 는 게이트 원장의 규칙 id 형식이고 기존 id 와 겹
   for (const id of ['DB-APPROVAL-SAVED-LINE-CONCURRENCY', 'DB-PROBE-2']) assert.match(id, /^[A-Z][A-Z0-9]*(?:-[A-Z0-9]+)+$/u);
 });
 
-test('실제 저장소의 schema-validation 시험은 모두 게이트 원장에 있다(점검기가 태그를 거버넌스 계약과 같게 읽는다)', () => {
+// [2026-11-10] 종전에는 여기서 실제 저장소의 태그된 schema-validation 시험이 모두 원장에 있는지도 단언했다. 같은 판정 함수(hasClassAnnotation)로
+//   같은 root 를 읽는 거버넌스 계약(governance-gates-contract 의 taggedGateRegistrationErrors)이 그것을 양방향으로, 모든 태그 세트에 대해 이미
+//   보고 같은 운영 계약 경로에서 돈다 — 위 머리말의 '같은 불변식을 두 번 검사하지 않는다'에 맞춰 걷었다. 점검기 자신이 태그된 시험을 찾는지만 남긴다.
+test('점검기가 실제 저장소의 태그된 schema-validation 시험을 찾는다', () => {
   const { schemaValidation } = loadRegistrationInputs('scrap');
   assert.ok(schemaValidation.tagged.length > 0, 'the doctor finds tagged schema tests');
-  const registered = new Set(schemaValidation.rules.map(({ source }) => source));
-  assert.deepEqual(schemaValidation.tagged.filter((source) => !registered.has(source)), []);
 });
 
 test('페이지 화면에 구체 역량이 없거나 자리표시(route-capability-review / E0 unverified)만 있으면 사람 검토로 알리고, 구체 역량이 있으면 ok 로 판정한다', () => {
