@@ -53,7 +53,9 @@ export function verificationSteps(scope = 'full', layout = 'multi-module', { ven
     ] : []),
   );
   if (['frontend', 'full'].includes(scope)) steps.push(
-    { id: 'typecheck', command: 'pnpm', args: ['-C', 'frontend', 'exec', 'tsc', '--noEmit'] },
+    // next typegen 이 라우트 타입과 next-env.d.ts 를 운영판으로 만든 뒤 tsc 를 돈다 — next-env.d.ts 는 추적하지 않는 Next 생성 파일이라 생성물에
+    // 들어가지 않는다(2026-11-09, frontend/.gitignore). 원본 pre-push·verify·CI 와 같은 스크립트다.
+    { id: 'typecheck', command: 'pnpm', args: ['-C', 'frontend', 'run', 'type-check'] },
     { id: 'lint', command: 'pnpm', args: ['-C', 'frontend', 'run', 'lint'] },
     { id: 'build', command: 'pnpm', args: ['-C', 'frontend', 'run', 'build'] },
   );

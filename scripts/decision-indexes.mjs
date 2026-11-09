@@ -102,7 +102,7 @@ export const DECISION_AREA_ROUTES = Object.freeze({
   product: Object.freeze({
     paths: Object.freeze([
       'foundation/**', 'business-core/**', 'business-app/**', 'api-server/src/main/**', 'api-server/src/test/**', 'api-server/Dockerfile',
-      'frontend/src/**', 'frontend/public/**', 'frontend/next.config.*', 'frontend/next-env.d.ts', 'frontend/components.json',
+      'frontend/src/**', 'frontend/public/**', 'frontend/next.config.*', 'frontend/components.json',
       'frontend/Dockerfile', 'frontend/.dockerignore', 'frontend/.env.example', 'frontend/README.md', 'frontend/AGENTS.md',
       'frontend/CLAUDE.md', '.agent/knowledge/**', 'lombok.config', 'db_columns.json',
       'config/governance/permission-catalog.json', 'config/governance/authorization-policies.json',

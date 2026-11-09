@@ -129,7 +129,8 @@ jobs:
       - name: Frontend type gate
         run: |
           pnpm -C frontend install --frozen-lockfile
-          pnpm -C frontend exec tsc --noEmit
+          # next typegen 이 라우트 타입과 next-env.d.ts(추적하지 않는 Next 생성 파일)를 만든 뒤 tsc 를 돈다.
+          pnpm -C frontend run type-check
 
   build-and-push:
     needs: verify
