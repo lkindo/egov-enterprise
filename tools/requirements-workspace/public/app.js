@@ -26,7 +26,7 @@ async function acceptConsentSource(scope, job) {
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const pages = [ ['overview', '현', '진행 현황'], ['sources', '문', '산출물 수집'], ['requirements', '요', '요구사항 검토'], ['baseline', '기', '분석 기준선'], ['work', '작', '에픽·스토리'], ['handoff', '개', '개발 인계'], ['audit', '검', '검수·감리'] ];
 const labels = { proposed: '제안', included: '포함', excluded: '제외', deferred: '보류', question: '질문', merged: '통합', undecided: '미결정', fit: '기존 기능 활용', config: '환경 구성', 'gap-dev': '추가 개발', hybrid: '혼합', pending: '검수 대기', accepted: '인수 기록', conditional: '조건부', rejected: '반려', epic: '에픽', story: '스토리', configuration: '구성', verification: '검증', enabler: '기반 작업', rfp: '제안요청서', interview: '회의록·인터뷰', 'as-is-artifact': '현행 업무 자료', regulation: '법령·지침', 'policy-memo': '정책·결정 메모', other: '기타', public: '공개', internal: '내부', confidential: '기밀', restricted: '제한', functional: '기능', 'non-functional': '비기능', data: '데이터', interface: '연계', constraint: '제약' };
-let state, token, page = 'overview', busy = false, dialogForm, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
+let state, token, workspaceId, page = 'overview', busy = false, dialogForm, dialogRevision, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
 const backlog = () => state.backlog;
 const metadata = () => state.metadata ?? {};
 const badge = (value, color = '') => `<span class="badge ${color}">${esc(labels[value] ?? value)}</span>`;
@@ -43,7 +43,9 @@ const mapChoices = entities => entities.map(item => [item.id, item.title]);
 const problemList = (problems, destination = 'requirements') => problems?.length ? `<ul class="problem-list">${problems.map(problem => `<li><button type="button" class="text-button wide-text" data-action="problem" data-key="${destination}">${esc(text(problem))}</button></li>`).join('')}</ul>` : '<p class="status-text">확인이 필요한 항목이 없습니다.</p>';
 function toast(message) { const container = $('#toast'); container.replaceChildren(document.createTextNode(message)); const close = document.createElement('button'); close.type = 'button'; close.setAttribute('aria-label', '알림 닫기'); close.textContent = '×'; close.addEventListener('click', () => container.replaceChildren()); container.append(close); }
 async function request(url, options = {}) {
-  const response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { ...(token ? { 'x-workspace-token': token } : {}), ...options.headers } });
+  let response;
+  try { response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { ...(token ? { 'x-workspace-token': token } : {}), ...options.headers } }); }
+  catch { throw Object.assign(new Error('실행기와 연결이 끊겼습니다. 실행기를 다시 시작한 뒤 전체 주소로 다시 연결해 주세요.'), { code: 'CONNECTION_LOST' }); }
   let result;
   try { result = await response.json(); } catch { throw new Error('서버 응답을 읽지 못했습니다. 연결 상태를 확인하고 다시 시도하세요.'); }
   if (!response.ok) { const error = new Error(result.message ?? `요청을 처리하지 못했습니다 (${result.code ?? response.status}).`); error.errors = result.errors; error.code = result.code; error.status = response.status; throw error; }
@@ -55,7 +57,7 @@ async function act(action, payload) {
   busy = true; document.body.setAttribute('aria-busy', 'true');
   const submit = dialogForm?.querySelector('[type="submit"]'); if (submit) submit.disabled = true;
   try {
-    state = await request('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: state.revision, action, payload }) });
+    state = await request('/api/action', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: dialogForm && !action.startsWith('ai.') ? dialogRevision : state.revision, action, payload }) });
     render(); return true;
   } catch (error) {
     showError(error); return false;
@@ -63,7 +65,7 @@ async function act(action, payload) {
 }
 function showError(error) {
   const target = dialogForm?.querySelector('.form-errors') ?? $('#page-errors');
-  if (target) { target.replaceChildren(); const message = document.createElement('p'); message.textContent = error.message; target.append(message); for (const item of error.errors ?? []) { const row = document.createElement('p'); row.textContent = text(item); target.append(row); } target.hidden = false; target.focus(); }
+  if (target) { target.replaceChildren(); const message = document.createElement('p'); message.textContent = error.message; target.append(message); for (const item of error.errors ?? []) { const row = document.createElement('p'); row.textContent = text(item); target.append(row); } if (['SESSION_REQUIRED', 'LAUNCH_REQUIRED', 'CONNECTION_LOST'].includes(error.code)) target.insertAdjacentHTML('beforeend', button('실행기 주소로 다시 연결', 'reconnect', '', true)); target.hidden = false; target.focus(); }
   else toast(error.message);
 }
 function formValue(form) { return JSON.stringify([...new FormData(form).entries()]); }
@@ -71,21 +73,23 @@ function dirty() { return dialogForm && formValue(dialogForm) !== dialogOriginal
 function closeDialog(force = false) {
   if (busy) return false;
   if (!force && dirty() && !confirm('저장하지 않은 입력이 있습니다. 입력을 버리고 닫을까요?')) return false;
-  $('#dialog').close(); dialogForm = undefined; dialogSave = undefined;
+  $('#dialog').close(); dialogForm = undefined; dialogRevision = undefined; dialogSave = undefined;
+  scheduleAiPoll(0);
   const focusTarget = returnFocus?.isConnected ? returnFocus : [...document.querySelectorAll('[data-action]')].find(element => element.dataset.action === returnFocus?.dataset.action && element.dataset.key === returnFocus?.dataset.key);
   if (focusTarget) focusTarget.focus(); else $('#main').focus();
   return true;
 }
-function openForm(title, content, save, help = '') {
+function openForm(title, content, save, help = '', successMessage = '작업공간에 저장했습니다.') {
   if (dialogForm && !closeDialog()) return;
   returnFocus = document.activeElement;
   $('#dialog-content').innerHTML = `<form id="editor"><div class="dialog-head"><h2 id="dialog-title">${esc(title)}</h2><button type="button" class="icon-button" data-action="cancel" aria-label="창 닫기">×</button></div><div class="dialog-body">${help ? `<p>${esc(help)}</p>` : ''}<div class="form-errors field-error" tabindex="-1" role="alert" hidden></div>${content}</div><div class="dialog-footer"><button type="button" class="button secondary" data-action="cancel">취소</button><button type="submit" class="button">저장</button></div></form>`;
-  dialogForm = $('#editor'); dialogOriginal = formValue(dialogForm); dialogSave = save;
+  dialogForm = $('#editor'); dialogRevision = state?.revision; dialogOriginal = formValue(dialogForm); dialogSave = save;
+  dialogForm.querySelector('#import-progress,#full-progress')?.insertAdjacentHTML('afterend', `<p id="server-reading-status" data-reading-status role="status" aria-live="polite">${esc(readingStatusText(state))}</p>`);
   dialogForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (!dirty()) { closeDialog(true); toast('변경한 내용이 없습니다.'); return; }
     const data = new FormData(dialogForm); const successful = await dialogSave(data, dialogForm);
-    if (successful) { closeDialog(true); toast('작업공간에 저장했습니다.'); }
+    if (successful) { closeDialog(true); toast(successMessage); }
   });
   $('#dialog').showModal();
   const first = dialogForm.querySelector('input:not([readonly]),select,textarea'); first?.focus();
@@ -98,7 +102,8 @@ function sensitivityDetails(warnings, title = '민감정보 감지 위치') {
 function sensitivityNotice() {
   const warnings = state.sensitivityWarnings ?? [];
   if (!warnings.length) return '';
-  const jobs = [...new Map((state.imports?.jobs ?? []).filter(job => job.originalRef || job.status === 'ready').map(job => [job.sourceId ?? job.requestId, job])).values()].filter(job => job.sensitivityWarnings?.length);
+  const noticeJobs = (state.imports?.jobs ?? []).filter(job => job.originalRef || ['ready', 'extracting'].includes(job.status));
+  const jobs = [...new Set([...new Map(noticeJobs.filter(job => job.status === 'ready').map(job => [job.sourceId ?? job.requestId, job])).values(), ...new Map(noticeJobs.map(job => [job.sourceId ?? job.requestId, job])).values()])].filter(job => job.sensitivityWarnings?.length);
   const files = jobs.map(job => { const index = backlog().sources.findIndex(source => source.id === job.sourceId); return `<li><strong>${index >= 0 ? `등록 자료 ${index + 1}` : '보관 원본'}</strong>${sensitivityDetails(job.sensitivityWarnings)}${index >= 0 ? button(`등록 자료 ${index + 1} 확인`, 'privacy-source', String(index), true) : button('보관 원본 확인', 'download', job.requestId, true)}</li>`; }).join('');
   return `<aside class="panel panel-body mb-20" role="note" aria-label="민감정보 감지 안내"><h2>민감정보 패턴 감지 안내</h2><p>패턴 감지는 분석을 중단하지 않습니다. 원문과 분석 결과는 이 비공개 작업공간에 보관합니다. 아래에는 실제 값 없이 감지 종류·단계·위치를 표시합니다. 공유할 자료는 별도로 확인해 주세요.</p><p>건수는 항목 단위 패턴 감지 횟수입니다. 같은 내용이 여러 검사·단계에서 반복 집계될 수 있으며 사람 수나 고유 정보 수를 뜻하지 않습니다. 위치는 최대 20개씩 표시합니다.</p>${sensitivityDetails(warnings, '전체 감지 내역')}${files ? `<details><summary>자료별 감지 내역</summary><ul class="help-list">${files}</ul></details>` : ''}</aside>`;
 }
@@ -111,7 +116,7 @@ function render() {
   const pageHeading = $('#main .page-heading') ?? $('#page-errors');
   if (['overview', 'sources', 'requirements', 'work'].includes(page)) pageHeading.insertAdjacentHTML('afterend', aiPanel());
   pageHeading.insertAdjacentHTML('afterend', sensitivityNotice());
-  if (['overview', 'sources'].includes(page)) pageHeading.insertAdjacentHTML('afterend', importPanel());
+  if (['overview', 'sources'].includes(page)) { pageHeading.insertAdjacentHTML('afterend', importPanel()); pageHeading.insertAdjacentHTML('afterend', readingPanel()); }
   scheduleAiPoll();
 }
 function aiPanel() {
@@ -172,6 +177,36 @@ function aiChangePreview(proposal) {
 }
 function aiConsent(label, required = true, name = 'ai-consent', checked = false) { return `<label class="checkbox-field"><input type="checkbox" name="${name}" ${required ? 'required' : ''} ${checked ? 'checked' : ''}><span>${esc(label)}</span></label>`; }
 function visualModeChoice() { return select('AI 분석 자료', 'visualMode', [['all', '본문 + 이미지·PDF 시각 자료'], ['text', '추출 본문만']], state.ai.current?.includeVisuals === false ? 'text' : 'all'); }
+function unfinishedImports() {
+  return [...new Map((state.imports?.jobs ?? []).filter(job => ['failed', 'cancelled', 'interrupted'].includes(job.status) && !backlog().sources.some(source => source.fileSha256 && source.fileSha256 === job.sha256)).map(job => [job.sha256 ?? job.requestId, job])).values()];
+}
+function readingStatusText(snapshot) {
+  const jobs = snapshot.imports?.jobs ?? [], sources = snapshot.backlog.sources;
+  const originals = sources.filter(source => jobs.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef));
+  const completed = originals.filter(source => jobs.some(job => job.status === 'ready' && job.sourceId === source.id && job.method === 'ai-document' && job.readingRef)).length;
+  const active = jobs.findLast(job => job.status === 'extracting'), latest = active ?? jobs.findLast(job => job.readWithAI || job.method === 'ai-document');
+  const matching = latest?.sourceId ? originals.filter(source => source.id === latest.sourceId) : originals.filter(source => source.fileSha256 === latest?.sha256);
+  const position = matching.length === 1 ? originals.findIndex(source => source.id === matching[0].id) + 1 : 0;
+  const current = position ? `${position}/${originals.length}번째 자료` : '새 자료';
+  const progress = active?.readingProgress;
+  const detail = active ? ` · ${current} ${active.readWithAI ? 'AI 판독' : '등록'} 중${progress ? ` · ${progress.completed}/${progress.total}구간` : ''}` : ['failed', 'cancelled', 'interrupted', 'stale'].includes(latest?.status) ? ` · ${current} 판독 중단${latest.errorCode ? ` (${latest.errorCode})` : ''}` : snapshot.ai?.active ? ' · AI 요구사항·개발 계획 분석 중' : '';
+  return `실제 저장 진행: 등록된 원본 ${originals.length}건 · AI 판독 완료 기록 ${completed}/${originals.length}건${detail}`;
+}
+function updateReadingStatus(snapshot) {
+  const message = readingStatusText(snapshot);
+  document.querySelectorAll('[data-reading-status]').forEach(element => { if (element.textContent !== message) element.textContent = message; });
+  const previous = dialogForm?.querySelector('#import-progress,#full-progress');
+  if (previous?.textContent && !busy && !importBatch && !previous.textContent.startsWith('이 창의 마지막 요청: ')) previous.textContent = `이 창의 마지막 요청: ${previous.textContent}`;
+}
+function readingPanel() {
+  const jobs = state.imports?.jobs ?? [];
+  const originals = backlog().sources.filter(source => jobs.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef));
+  const unfinished = unfinishedImports();
+  if (!originals.length && !unfinished.length) return '';
+  const active = jobs.findLast(job => job.status === 'extracting');
+  const blocked = state.imports?.active || state.ai?.active || state.readOnly || !state.ai?.available;
+  return `<section class="panel mb-20" role="region" aria-label="AI 판독 진행"><div class="panel-head"><h2>${active ? 'AI 원본 판독 진행 중' : 'AI 원본 판독과 이어서 진행'}</h2></div><div class="panel-body"><p data-reading-status role="status">${esc(readingStatusText(state))}</p><p>${active ? '판독이 진행 중입니다. 이 화면은 진행 상태를 자동으로 갱신합니다. 다른 창에서 시작한 판독이 끝날 때까지 중복 실행할 수 없습니다.' : '이어서 진행하면 등록된 원본의 완료 판독을 원본·지시문과 대조해 재사용하고 남은 판독과 요구사항·개발 계획 분석을 이어갑니다.'}</p>${unfinished.length ? `<p role="alert">등록을 완료하지 못한 파일 ${unfinished.length}건이 있습니다. 남은 파일 추가에서 원래 선택한 파일 목록을 다시 선택하고 자료 유형·보안 분류를 확인하세요.</p>` : ''}<p>여러 파일을 순서대로 보내는 실행 창은 유지하세요. 닫힌 창에서 아직 전송하지 않은 파일 목록은 보관되지 않습니다. 등록되지 않은 파일은 아래 이어서 진행에 포함되지 않으므로 남은 파일 추가를 사용하세요. 동일한 자료 유형·보안 분류의 완료 파일은 중복 검증 후 재사용합니다.</p><div class="row-actions"><button type="button" class="button" data-action="ai-full" ${blocked || !originals.length ? 'disabled' : ''}>AI 판독 이어서 진행</button><button type="button" class="button secondary" data-action="artifact-import-ai" ${blocked ? 'disabled' : ''}>남은 파일 추가</button></div></div></section>`;
+}
 function importPanel() {
   const jobs = state.imports?.jobs ?? []; if (!jobs.length) return '';
   const messages = { AI_DOCUMENT_SENSITIVE_OUTPUT: '이전 버전에서 민감정보 감지로 중단된 기록입니다. 다시 판독하면 분석을 진행하고 별도 안내합니다.', FILE_SENSITIVE_INPUT: '이전 버전에서 민감정보 감지로 중단된 기록입니다. 다시 등록하면 분석을 진행하고 별도 안내합니다.', AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독의 내용·위치·근거를 검증하지 못했습니다. 원본을 대조하고 다시 판독하세요.' };
@@ -247,6 +282,7 @@ function artifactImportForm(withAI = false) {
 async function ensureOriginalReadings(data, form, batch, progressSelector, scope) {
   state = await request('/api/state');
   assertConsentScope(scope);
+  if (state.imports?.active || state.ai?.active) throw new Error('다른 창에서 AI 판독 또는 분석이 진행 중입니다. 현재 처리가 끝난 뒤 이어서 진행하세요.');
   const originals = backlog().sources.filter(source => metadata().imports?.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef));
   for (const [index, source] of originals.entries()) {
     if (batch.cancelled) break;
@@ -307,21 +343,24 @@ function aiConfirmForm() {
   dialogForm.querySelector('[type="submit"]').textContent = full ? '검토한 전체 결과 반영' : analysis ? '확정하고 에픽·스토리 생성' : '검토한 작업 반영';
   if (analysis && !full) dialogForm.querySelector('[name="continue-ai"]').addEventListener('change', event => { dialogForm.querySelector('[type="submit"]').textContent = event.target.checked ? '확정하고 에픽·스토리 생성' : '요구사항만 확정'; });
 }
-function scheduleAiPoll() {
+function scheduleAiPoll(delay) {
   clearTimeout(aiPollTimer);
-  if (!state?.ai?.active && state?.ai?.current?.status !== 'running' && !state?.imports?.active) return;
+  if (!state) return;
   aiPollTimer = setTimeout(async () => {
     try {
-      if (dialogForm || busy) { scheduleAiPoll(); return; }
+      const revision = state.revision;
       const next = await request('/api/state');
       aiPollErrorReported = false;
+      if (state.revision !== revision) { updateReadingStatus(state); scheduleAiPoll(); return; }
+      updateReadingStatus(next);
+      if (dialogForm || busy) { scheduleAiPoll(); return; }
       if (next.revision !== state.revision || next.ai?.active !== state.ai?.active || next.imports?.active !== state.imports?.active) {
         const focused = document.activeElement, action = focused?.dataset.action, key = focused?.dataset.key;
         state = next; render();
         if (action) [...document.querySelectorAll('[data-action]')].find(element => element.dataset.action === action && element.dataset.key === key)?.focus();
       } else { state = next; scheduleAiPoll(); }
-    } catch (error) { if (!aiPollErrorReported) showError(error); aiPollErrorReported = true; aiPollTimer = setTimeout(scheduleAiPoll, 3000); }
-  }, 1500);
+    } catch (error) { const code = error.code ?? 'UNKNOWN'; const progress = $('#server-reading-status'); if (progress) progress.textContent = error.message; if (aiPollErrorReported !== code && !dialogForm?.querySelector('[name="launcherAddress"]')) showError(error); aiPollErrorReported = code; aiPollTimer = setTimeout(scheduleAiPoll, 3000); }
+  }, delay ?? (state.ai?.active || state.imports?.active ? 1500 : 5000));
 }
 function navigate(destination) { if (!pages.some(item => item[0] === destination)) return; if (dialogForm && !closeDialog()) return; page = destination; render(); $('#main').focus(); }
 function overview() {
@@ -514,9 +553,17 @@ document.addEventListener('click', async event => {
     return;
   }
   if (busy) return;
+  if (action === 'reconnect') { reconnectForm(); return; }
+  if (action === 'reconnect-submit') {
+    const form = dialogForm, submit = form.querySelector('[type="submit"]'); busy = true; submit.disabled = true; target.disabled = true;
+    try { const input = form.querySelector('[name="launcherAddress"]'); if (!input.reportValidity()) return; await reconnectAddress(input.value); }
+    catch (error) { const message = form.querySelector('.connection-error'); message.textContent = error.message; message.hidden = false; }
+    finally { busy = false; submit.disabled = false; target.disabled = false; }
+    return;
+  }
   if (action === 'artifact-import') { artifactImportForm(false); return; }
   if (action === 'artifact-import-ai') { artifactImportForm(true); return; }
-  if (action === 'ai-full') { aiFullForm(); return; }
+  if (action === 'ai-full') { try { state = await request('/api/state'); aiFullForm(); } catch (error) { showError(error); } return; }
   if (action === 'ai-prompts') { aiPromptForm(); return; }
   if (action === 'ai-run-prompt') { await aiStoredPromptForm(key); return; }
   if (action === 'privacy-source') { const source = backlog().sources[Number(key)]; if (source) sourceForm(source.id); return; }
@@ -547,27 +594,69 @@ $('#dialog').addEventListener('cancel', event => { event.preventDefault(); close
 window.addEventListener('beforeunload', event => { if (dirty()) { event.preventDefault(); event.returnValue = ''; } });
 $('#theme').addEventListener('click', () => { const dark = document.documentElement.classList.toggle('dark'); $('#theme').setAttribute('aria-label', dark ? '라이트 모드로 전환' : '다크 모드로 전환'); });
 $('#help').addEventListener('click', () => {
-  openForm('작업공간 사용 안내', '<ol class="help-list"><li>프로젝트 정보와 비식별 자료를 등록합니다.</li><li>모델 서비스 전송 범위를 확인하고 동의하면 AI가 요구사항·원문 근거·질문을 생성합니다.</li><li>중요한 질문에 답하면 AI가 요구사항·에픽·하위 작업·D-1~D-5·Green/Red 인수조건과 추적 링크를 이어서 생성합니다.</li><li>문서 해석과 요구사항·개발 작업계획을 함께 검토하고 최종 확인하면 분석 기준선과 작업 패키지를 저장합니다.</li><li>개발 준비 확인 후 작업 패키지를 생성합니다.</li><li>개발 담당자의 실제 시험 결과와 기관 검수 근거·감리 조치를 기록합니다.</li></ol><p>저장 시 작업공간의 revision을 대조합니다. 충돌하면 작성 중 입력을 보존하고 최신 상태를 다시 읽으세요. 삭제는 지원하지 않으며 제외·보류 사유를 기록합니다.</p>', async () => true);
+  openForm('작업공간 사용 안내', '<ol class="help-list"><li>프로젝트 정보와 원문 자료를 등록합니다.</li><li>모델 서비스 전송 범위를 확인하고 동의하면 AI가 요구사항·원문 근거·질문을 생성합니다.</li><li>중요한 질문에 답하면 AI가 요구사항·에픽·하위 작업·D-1~D-5·Green/Red 인수조건과 추적 링크를 이어서 생성합니다.</li><li>문서 해석과 요구사항·개발 작업계획을 함께 검토하고 최종 확인하면 분석 기준선과 작업 패키지를 저장합니다.</li><li>개발 준비 확인 후 작업 패키지를 생성합니다.</li><li>개발 담당자의 실제 시험 결과와 기관 검수 근거·감리 조치를 기록합니다.</li></ol><p>저장 시 작업공간의 revision을 대조합니다. 충돌하면 작성 중 입력을 보존하고 최신 상태를 다시 읽으세요. 삭제는 지원하지 않으며 제외·보류 사유를 기록합니다.</p>', async () => true);
   dialogForm.querySelector('[type="submit"]').hidden = true; dialogForm.querySelector('[data-action="cancel"]').textContent = '닫기';
 });
 $('#refresh').addEventListener('click', async () => { if (dialogForm && !closeDialog()) return; try { state = await request('/api/state'); render(); toast('최신 상태를 읽었습니다.'); } catch (error) { showError(error); } });
-async function connect() {
+const reconnectFields = (inline = false) => `<label class="field"><span>실행기 전체 주소</span><input aria-label="실행기 전체 주소" name="launcherAddress" ${inline ? 'form="launcher-credentials"' : ''} type="password" autocomplete="off" spellcheck="false" required><small>현재 실행기 터미널의 #launch= 부분을 포함한 주소를 붙여 넣으세요.</small></label>`;
+async function reconnectAddress(value) {
+  let url;
+  try { url = new URL(String(value ?? '').trim()); } catch { /* Report a safe, value-free validation message below. */ }
+  if (!url || url.origin !== location.origin || !['/', '/index.html'].includes(url.pathname) || url.search || url.username || url.password || !/^#launch=[A-Za-z0-9_-]{43}$/.test(url.hash)) throw new Error('현재 실행기의 전체 주소를 #launch= 부분까지 입력해 주세요.');
+  return connect(url.hash.slice('#launch='.length), { preserveForm: Boolean(dialogForm) });
+}
+function reconnectForm() {
+  if (dialogForm) {
+    const errors = dialogForm.querySelector('.form-errors');
+    const existing = dialogForm.querySelector('[name="launcherAddress"]'); if (existing) { existing.focus(); return; }
+    errors.insertAdjacentHTML('beforeend', `<div class="reconnect-inline">${reconnectFields(true)}<p class="connection-error" role="alert" hidden></p><button type="button" class="button secondary" data-action="reconnect-submit">다시 연결</button></div>`);
+    for (const type of ['input', 'change']) errors.querySelector('.reconnect-inline').addEventListener(type, event => event.stopPropagation());
+    errors.hidden = false; errors.querySelector('[name="launcherAddress"]').focus(); return;
+  }
+  openForm('실행기 주소로 다시 연결', reconnectFields(), async data => {
+    try { return await reconnectAddress(data.get('launcherAddress')); } catch (error) { showError(error); return false; }
+  }, '', '연결을 복구했습니다.');
+  dialogForm.querySelector('[type="submit"]').textContent = '다시 연결';
+}
+async function connect(launchValue, { preserveForm = false } = {}) {
+  const launch = launchValue ?? new URLSearchParams(location.hash.slice(1)).get('launch');
+  if (new URLSearchParams(location.hash.slice(1)).has('launch')) history.replaceState(null, '', location.pathname);
   try {
-    const launch = new URLSearchParams(location.hash.slice(1)).get('launch');
     const session = await request('/api/session', { headers: launch ? { 'x-requirements-launch': launch } : {} });
+    if (workspaceId && session.workspaceId !== workspaceId) throw Object.assign(new Error('다른 작업공간의 실행기입니다. 현재 입력을 보존하고 해당 작업공간은 새 창에서 열어 주세요.'), { code: 'WORKSPACE_CHANGED' });
     token = session.token;
+    workspaceId = session.workspaceId;
+    state = await request('/api/state');
+    if (preserveForm && dialogForm) { const errors = dialogForm.querySelector('.form-errors'); errors.replaceChildren(document.createTextNode('연결을 복구했습니다. 현재 입력을 확인하고 다시 실행하세요.')); errors.hidden = false; }
+    dialogForm?.querySelectorAll('[name="launcherAddress"]').forEach(input => { input.value = ''; });
     history.replaceState(null, '', location.pathname);
-    state = await request('/api/state'); render();
+    render(); return true;
   } catch (error) {
+    if (preserveForm) throw error;
     const advice = {
       REQUIREMENTS_EXTERNAL_CHANGE: ['외부 파일 변경을 확인해야 합니다.', '작업공간 파일과 작성 중 입력을 보존하세요. 이 실행기를 종료하고 외부 변경 내용을 대조한 뒤 같은 작업공간으로 다시 시작하세요.'],
       REQUIREMENTS_LOCK_LOST: ['작업공간 잠금이 변경되었습니다.', '이 실행기를 종료하고 같은 작업공간을 사용하는 실행기를 확인하세요. 사용 중인 잠금 파일을 임의로 지우지 마세요.'],
       REQUIREMENTS_RECOVERY_REQUIRED: ['중단된 저장을 복구해야 합니다.', '작업공간 파일과 거래 기록을 보존하고 실행기를 종료한 뒤 같은 경로로 다시 시작하세요. 복구 충돌이 남으면 실행기 진단과 파일 변경 내용을 확인하세요.'],
       LAUNCH_REQUIRED: ['작업공간 연결 주소를 확인하세요.', '실행기 터미널에 표시된 주소를 #launch= 부분까지 다시 열어주세요.'],
       SESSION_REQUIRED: ['작업공간 연결이 만료되었습니다.', '실행기 터미널에 표시된 주소를 #launch= 부분까지 다시 열어주세요.'],
+      WORKSPACE_CHANGED: ['다른 작업공간의 실행기입니다.', '작성 중인 입력을 보존하세요. 해당 작업공간은 새 창에서 전체 실행기 주소로 열어 주세요.'],
+      CONNECTION_LOST: ['실행기와 연결이 끊겼습니다.', '실행기를 다시 시작한 뒤 터미널의 전체 주소로 다시 연결하세요.'],
     };
     const [title, description] = advice[error.code] ?? (error.status === 403 ? ['작업공간 연결 권한을 확인하세요.', '같은 컴퓨터의 실행기 터미널에 표시된 전체 주소로 다시 연결하세요.'] : ['작업공간에 연결하지 못했습니다.', '실행기가 동작 중인지 확인하세요. 파일을 보존하고 실행기 진단의 오류 코드를 확인한 뒤 다시 시도하세요.']);
-    $('#main').innerHTML = heading(title, description) + `<div class="panel panel-body field-error" role="alert">${esc(error.message)}${error.code ? `<p>오류 코드: ${esc(error.code)}</p>` : ''}</div>`;
+    const disconnected = ['LAUNCH_REQUIRED', 'SESSION_REQUIRED', 'CONNECTION_LOST'].includes(error.code);
+    $('#main').innerHTML = heading(title, description) + `<div class="panel panel-body field-error" role="alert">${esc(error.message)}${error.code ? `<p>오류 코드: ${esc(error.code)}</p>` : ''}</div>${disconnected ? `<form id="reconnect" class="panel panel-body">${reconnectFields()}<p class="field-error connection-error" role="alert" hidden></p><button type="submit" class="button">다시 연결</button></form>` : ''}`;
+    $('#reconnect')?.addEventListener('submit', async event => {
+      event.preventDefault(); const form = event.currentTarget, submit = form.querySelector('[type="submit"]'); submit.disabled = true;
+      try { await reconnectAddress(new FormData(form).get('launcherAddress')); } catch (error) { const target = form.querySelector('.connection-error'); target.textContent = error.message; target.hidden = false; }
+      finally { submit.disabled = false; }
+    });
+    return false;
   }
 }
+window.addEventListener('hashchange', async () => {
+  const launch = new URLSearchParams(location.hash.slice(1)).get('launch'); if (!launch) return;
+  history.replaceState(null, '', location.pathname);
+  if (busy) { toast('실행 중인 작업이 있습니다. 연결이 만료되었다면 작업이 멈춘 뒤 주소로 다시 연결하세요.'); return; }
+  try { await connect(launch, { preserveForm: Boolean(dialogForm) }); } catch (error) { showError(error); }
+});
 await connect();

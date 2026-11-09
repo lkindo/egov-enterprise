@@ -2,7 +2,7 @@
 import { validatePrivateBacklog } from './private-validation.mjs';
 import { createServer } from 'node:http';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { once } from 'node:events';
@@ -100,6 +100,8 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
   const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: validatePrivateBacklog, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, contextProvider, root, aiRunner });
   const token = randomBytes(32).toString('base64url'), launchSecret = randomBytes(32).toString('base64url');
+  const workspacePath = await realpath(workspace);
+  const workspaceId = createHash('sha256').update(process.platform === 'win32' ? workspacePath.toLowerCase() : workspacePath).digest('hex');
   // The browser stores only an opaque lookup handle. Credentials stay in the
   // process; the index holds a hash so it cannot itself be replayed as a cookie.
   const resumeSessions = new Map();
@@ -133,7 +135,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
           resumeSessions.set(handleHash(handle), token);
           response.setHeader('Set-Cookie', `${cookieName}=${handle}; Secure; HttpOnly; SameSite=Strict; Path=/`);
         }
-        json(response, 200, { token }); return;
+        json(response, 200, { token, workspaceId }); return;
       }
       if (!equal(request.headers['x-workspace-token'], token)) fail('SESSION_REQUIRED', 403);
       if (request.method === 'GET' && url.pathname === '/api/state') { json(response, 200, await engine.state()); return; }

@@ -23,6 +23,34 @@ function setup(t, documentReader) {
 const upload = () => ({ requestId: randomUUID(), filename: 'source.custom', base64: Buffer.from('담당자는 본인 접수 목록을 조회한다.').toString('base64'), classification: 'internal', sourceType: 'interview', redacted: true, readWithAI: true, consent: true, model: AI_MODEL });
 const successfulReader = (input, options) => readDocument(input, { ...options, prepare: async () => ({ format: 'txt', units: [{ id: 'U-1', locator: '본문', text: Buffer.from(input.bytes).toString(), attachment: null }], warningCodes: [] }), execute: async () => ({ output: { documentTypes: ['interview'], summary: '담당자의 접수 열람 업무와 본인 범위 정책을 설명한다.', blocks: [{ inputId: 'U-1', heading: '담당 범위', kind: 'paragraph', text: null, certainty: 'clear', note: '조회 책임과 범위가 명시되어 있다.' }], unreadable: [] } }) });
 
+test('a cached original cannot bypass the active document-reading guard', async t => {
+  let calls = 0, release;
+  const app = setup(t, async (...args) => { if (++calls === 2) await new Promise(resolve => { release = resolve; }); return successfulReader(...args); });
+  const first = upload(); await app.act('source.ingest', first); await app.engine.waitForImports();
+  const sourceId = app.store.read().backlog.sources[0].id;
+  await app.act('source.ingest', { ...upload(), filename: 'second.txt', base64: Buffer.from('빈 접수 목록은 빈 결과로 표시한다.').toString('base64') });
+  try {
+    await assert.rejects(app.act('source.reingest', { sourceId, requestId: randomUUID(), consent: true, sensitivityAcknowledged: true, model: AI_MODEL }), { code: 'FILE_BUSY' });
+    assert.equal((await app.engine.state()).imports.reused, undefined);
+  } finally {
+    while (!release) await new Promise(resolve => setTimeout(resolve, 10)); release(); await app.engine.waitForImports();
+  }
+});
+
+test('re-reading retains the last completed original notices until a newer reading succeeds', async t => {
+  let calls = 0, release;
+  const app = setup(t, async (...args) => { if (++calls === 2) await new Promise(resolve => { release = resolve; }); return successfulReader(...args); });
+  await app.act('source.ingest', upload()); await app.engine.waitForImports();
+  app.store.transact(app.store.read().revision, next => { next.metadata.imports[0].sensitivityWarnings = [{ kind: 'email-address', stage: 'input', count: 1, paths: ['project.metadata'] }]; });
+  const source = app.store.read().backlog.sources[0]; await app.act('source.save', { ...source, classification: 'confidential' });
+  await app.act('source.reingest', { sourceId: source.id, requestId: randomUUID(), consent: true, sensitivityAcknowledged: true, model: AI_MODEL });
+  try {
+    while (!release) await new Promise(resolve => setTimeout(resolve, 10));
+    assert.ok((await app.engine.state()).sensitivityWarnings.some(warning => warning.kind === 'email-address' && warning.stage === 'input'));
+  } finally { release?.(); await app.engine.waitForImports(); }
+  assert.equal((await app.engine.state()).sensitivityWarnings.some(warning => warning.kind === 'email-address' && warning.stage === 'input'), false);
+});
+
 test('a malformed cached reading cannot be reused through the duplicate upload shortcut', async t => {
   for (const route of ['source.reingest', 'source.ingest']) {
   let calls = 0;

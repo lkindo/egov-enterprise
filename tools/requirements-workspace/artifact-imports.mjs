@@ -102,6 +102,8 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
     const snapshot = store.read();
     if (snapshot.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');
     if (name === 'source.reingest') {
+      if (closed) fail('FILE_CLOSED');
+      if (active) fail('FILE_BUSY');
       exact(payload, ['sourceId', 'requestId', 'consent', 'model', 'redacted', 'sensitivityAcknowledged']);
       if (payload.consent !== true || payload.model !== AI_MODEL) fail('FILE_AI_CONSENT_REQUIRED');
       if (payload.redacted !== true && payload.sensitivityAcknowledged !== true) fail('FILE_REDACTION_REQUIRED');
@@ -149,7 +151,7 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
     const project = JSON.stringify(snapshot.backlog.project);
     const initialSource = withAI ? snapshot.backlog.sources.find(source => source.fileSha256 === sha(bytes) && source.classification === payload.classification && source.sourceType === payload.sourceType) : null;
     const initialSourceDigest = initialSource ? sourceStateDigest(initialSource) : null;
-    const job = { requestId: payload.requestId, requestDigest, sha256: sha(bytes), filename: payload.filename, status: 'extracting', startedAt: now(), sensitivityWarnings: collectSensitivityWarnings({ filename: payload.filename }), ...(withAI ? { readWithAI: true, promptVersion: PROMPT_VERSION, readingProgress: { stage: 'preparing', completed: 0, total: 1 } } : {}) };
+    const job = { requestId: payload.requestId, requestDigest, sha256: sha(bytes), filename: payload.filename, status: 'extracting', startedAt: now(), sensitivityWarnings: collectSensitivityWarnings({ filename: payload.filename }), ...(initialSource ? { sourceId: initialSource.id } : {}), ...(withAI ? { readWithAI: true, promptVersion: PROMPT_VERSION, readingProgress: { stage: 'preparing', completed: 0, total: 1 } } : {}) };
     commit(revision, next => { next.metadata.imports ??= []; next.metadata.imports.push(job); });
     const controller = new AbortController(), operation = { id: job.requestId, controller }; active = operation;
     operation.promise = Promise.resolve().then(async () => {
