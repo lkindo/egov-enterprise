@@ -24,6 +24,7 @@ ID가 보관 원문의 앵커다: 운영 결정 행의 전문·이유·승인 �
 | ADR-0050 | accepted | 요구사항은 독립 로컬 UI와 Git 밖 파일 작업공간에서 분석 기준선·개발 준비·인수 근거를 분리해 관리한다. 공유 CLI 검증·단일 작성자·해시 결속을 지키고 기관 승인과 구분한다. | 2026-11-04 | - |
 | ADR-0051 | accepted | [AI 요구사항 흐름](../02-architecture/decisions/ADR-0051-ai-first-requirements-workflow.md)은 로컬 추출·OCR 뒤 설치 CLI로 초안을 생성한다. 자료 범위·전송 동의, 원문 검증·미결정 차단과 사람의 기준선·계획 검토를 요구한다. | 2026-11-06 | - |
 | ADR-0052 | accepted | [AI 원본 판독·통합 계획](../02-architecture/decisions/ADR-0052-ai-document-to-development-plan.md)은 상황별 지시·판독 근거·검증된 단계 재사용으로 개발 계획 초안까지 이어가고 마지막에 사람이 함께 확인한다. | 2026-11-06 | ADR-0051 결정 1·2·6·7의 기본 판독·중간 확정·시각 자료 경로 |
+| ADR-0053 | accepted | 비공개 원문 분석은 민감정보 패턴을 별도 안내하고 완료하며 기본 공유·CLI 검증은 유지한다. | 2026-11-09 | ADR-0051·0052의 비공개 분석 비식별 확인·차단 부분 |
 | DEC-OPS-003 | accepted | 프론트 도구체인은 Node 22+와 pnpm 9를 단일 축으로 사용하고 계약 생성은 offline-first로 한다. | 2026-08-18 | - |
 | DEC-OPS-006 | accepted | 하네스의 논리 규칙 ID는 유지하되 발견·실행·품질 하한은 중앙 `gates.json`과 소수 runner/task로 통합한다. | 2026-08-19 | - |
 | DEC-OPS-008 | accepted | 조건부 heavy job은 내부 `*-scope`로 두고 브랜치 보호에는 항상 완료되는 안정 aggregate context만 노출한다. | 2026-08-19 | - |

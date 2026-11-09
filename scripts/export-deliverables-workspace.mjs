@@ -917,6 +917,7 @@ const PII_SECRET_PATTERNS = Object.freeze([
     regex: /\b(?:10\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3})\.(?:[1-9]\d*(?:\/\d{1,2})?|0(?!\/(?:[89]|[12]\d|30)\b))\b/u,
   },
 ]);
+export const PII_SECRET_KINDS = Object.freeze(PII_SECRET_PATTERNS.map(({ kind }) => kind.split(' ')[0]));
 
 const AMBIGUOUS_TERMS = Object.freeze(['적절히', '신속히', '충분히', '편리하게', '가능한 한', '등 기타']);
 const NON_PERMISSION_UPPER_TOKENS = new Set([
@@ -1014,7 +1015,8 @@ function checkEntityKeys(entityLabel, entityId, obj, allowedKeys, errors) {
 /**
  * 백로그 패키지의 스키마·참조 무결성·4층 상태 분리 규칙을 검증한다.
  */
-export function validateBacklogPack(pack, contextSnapshot = null) {
+export function validateBacklogPack(pack, contextSnapshot = null, { sensitiveData = 'error' } = {}) {
+  if (!['error', 'warning'].includes(sensitiveData)) throw new TypeError('Sensitivity validation policy');
   const errors = [];
   const warnings = [];
   const infos = [];
@@ -1048,7 +1050,7 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
   }
 
   for (const hit of scanBacklogForPiiAndSecrets(pack)) {
-    errors.push(`PII/secret guard violation at ${hit.path}: detected ${hit.kind} (redact or mask before saving to backlog.json)`);
+    (sensitiveData === 'warning' ? warnings : errors).push(sensitiveData === 'warning' ? `PII/secret pattern detected (${hit.kind}); private analysis continues` : `PII/secret guard violation at ${hit.path}: detected ${hit.kind} (redact or mask before saving to backlog.json)`);
   }
 
   const sourceMap = new Map();
@@ -1568,8 +1570,8 @@ export function validateBacklogPack(pack, contextSnapshot = null) {
 }
 
 /** Draft schema validity is intentionally weaker than a development handoff. */
-export function validateDevelopmentReadiness(pack, contextSnapshot = null) {
-  const structure = validateBacklogPack(pack, contextSnapshot);
+export function validateDevelopmentReadiness(pack, contextSnapshot = null, options = {}) {
+  const structure = validateBacklogPack(pack, contextSnapshot, options);
   const errors = [...structure.errors];
   const warnings = [...structure.warnings];
   if (!structure.valid) return { valid: false, errors, warnings };
@@ -2170,7 +2172,7 @@ async function verifyWorkspace(root, workspaceDir, options) {
       ? { ...pack, contextSnapshotDigest: savedSnapshot.snapshotDigest }
       : pack);
 
-  const validation = validateBacklogPack(candidatePack, liveSnapshot);
+  const validation = validateBacklogPack(candidatePack, liveSnapshot, options);
   if (!options.refreshContext && contextDiff.changed && contextDiff.impactedLinks.length > 0) {
     validation.warnings.push(
       `context snapshot drift impacts ${contextDiff.impactedLinks.length} traceLink(s): ${contextDiff.impactedLinks.map((l) => `${l.linkId}(${l.targetId}: ${l.impact})`).join(', ')}`,
@@ -2401,7 +2403,7 @@ function sanitizeInlineMarkdown(val) {
  * 백로그의 에픽·작업 항목·결정 카드·Green/Red 인수조건·추적 대상을 에이전트/개발자 실행 작업 패키지(TASK-PACKAGE.md)로 변환한다(Phase 2 S2).
  */
 export function generateWorkPackagePlan(pack, contextSnapshot, options = {}) {
-  const readiness = validateDevelopmentReadiness(pack, contextSnapshot);
+  const readiness = validateDevelopmentReadiness(pack, contextSnapshot, options);
   if (!readiness.valid) throw new Error(`backlog is not ready for development (${readiness.errors.length} readiness error(s)):\n${readiness.errors.join('\n')}`);
   const reqMap = new Map((pack?.businessRequirements ?? []).map((r) => [r.id, r]));
   const workItemsById = new Map((pack?.workItems ?? []).map((w) => [w.id, w]));
@@ -2576,7 +2578,7 @@ async function writeReviewSheets(root, workspaceDir, options) {
   assertWorkspaceWritable(wsPath, options);
   const pack = JSON.parse(readFileSync(join(wsPath, 'backlog.json'), 'utf8'));
   const liveSnapshot = options.contextSnapshot ?? await loadRepositoryContextSnapshot(root);
-  const preValidation = validateBacklogPack(pack, liveSnapshot);
+  const preValidation = validateBacklogPack(pack, liveSnapshot, options);
   if (!preValidation.valid) {
     throw new Error(`cannot export review sheets from invalid backlog.json (${preValidation.errors.length} error(s)):\n${preValidation.errors.join('\n')}`);
   }
@@ -2893,7 +2895,7 @@ async function readReviewSheets(root, workspaceDir, options) {
   }
   for (const req of updatedReqs) req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? [], candidatePack);
 
-  const validation = validateBacklogPack(candidatePack, liveSnapshot);
+  const validation = validateBacklogPack(candidatePack, liveSnapshot, options);
   if (!validation.valid) {
     throw new Error(`imported review sheets failed validation (${validation.errors.length} error(s)):\n${validation.errors.join('\n')}`);
   }
@@ -2949,7 +2951,7 @@ async function writeUatChecklist(root, workspaceDir, options) {
     req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? [], pack);
   }
 
-  const preValidation = validateBacklogPack(pack, liveSnapshot);
+  const preValidation = validateBacklogPack(pack, liveSnapshot, options);
   if (!preValidation.valid) {
     throw new Error(`cannot export UAT checklist from invalid backlog.json (${preValidation.errors.length} error(s)):\n${preValidation.errors.join('\n')}`);
   }
@@ -3021,7 +3023,7 @@ async function readUatChecklist(root, workspaceDir, options) {
   const hasJudgments = rows.some((row) => row.acceptanceDisposition && row.acceptanceDisposition !== 'pending');
   const buildRef = typeof options.buildRef === 'string' ? options.buildRef.trim() : '';
   if (hasJudgments) {
-    const readiness = validateDevelopmentReadiness(pack, liveSnapshot);
+    const readiness = validateDevelopmentReadiness(pack, liveSnapshot, options);
     if (!readiness.valid) errors.push('backlog is not ready for development/UAT; resolve readiness errors before recording judgments', ...readiness.errors);
     if (errors.length) throw new Error(errors.join('\n'));
   }
@@ -3158,7 +3160,7 @@ async function readUatChecklist(root, workspaceDir, options) {
     req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, acsByReq.get(req.id) ?? [], pack);
   }
 
-  const validation = validateBacklogPack(pack, liveSnapshot);
+  const validation = validateBacklogPack(pack, liveSnapshot, options);
   if (!validation.valid) {
     throw new Error(`UAT checklist import failed validation (${validation.errors.length} error(s)):\n${validation.errors.join('\n')}`);
   }

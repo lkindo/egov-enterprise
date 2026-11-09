@@ -40,6 +40,7 @@ test('multi-batch analysis shows its cost and progress and cancellation stops th
     await page.getByText('현재 자료는 2묶음으로 나누어 분석합니다.', { exact: false }).waitFor();
     await audit(page, 'ai-batch-consent');
     await page.locator('[name="ai-consent"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check();
     await page.getByRole('button', { name: '동의하고 AI 분석 시작', exact: true }).click();
     await page.getByText('자료 1/2묶음 분석 완료', { exact: false }).waitFor();
     await audit(page, 'ai-batch-progress');
@@ -95,7 +96,7 @@ test('duplicate upload UI reuses the existing source and identifies the reused r
     await page.getByRole('button', { name: '로컬 자료 등록(보완용)', exact: true }).click();
     const buffer = Buffer.from('담당자는 본인 접수 목록을 조회한다.');
     await page.locator('#artifact-files').setInputFiles([{ name: 'meeting.txt', mimeType: 'text/plain', buffer }, { name: 'meeting-copy.txt', mimeType: 'text/plain', buffer }]);
-    await page.locator('[name="redacted"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check();
     await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden' });
     await page.getByText('이미 등록된 자료 재사용', { exact: false }).waitFor();
@@ -125,6 +126,7 @@ test('a changed human scope is visible and needs separate acknowledgement in the
     await page.goto(`${app.url}/#launch=${app.launchSecret}`);
     await page.getByRole('button', { name: 'AI 요구사항 생성', exact: true }).click();
     await page.locator('[name="ai-consent"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check();
     await page.getByRole('button', { name: '동의하고 AI 분석 시작', exact: true }).click();
     await page.getByRole('button', { name: '요구사항 확정하고 에픽 생성', exact: true }).click();
     await page.locator('[name="continue-ai"]').uncheck();
@@ -155,12 +157,12 @@ test('the file upload UI registers real multi-format documents and continues int
     await page.goto(`${app.url}/#launch=${app.launchSecret}`);
     await page.getByRole('button', { name: '로컬 자료 등록(보완용)', exact: true }).click();
     assert.equal(await page.locator('[data-action="import-stop"]').isVisible(), false, 'stop is shown only while a registration is active');
-    const checkboxBox = await page.locator('[name="redacted"]').boundingBox();
+    const checkboxBox = await page.locator('[name="sensitivityAcknowledged"]').boundingBox();
     assert.ok(checkboxBox.width <= 24 && checkboxBox.height <= 24, 'checkbox is not stretched by text-field styling');
     await audit(page, 'ai-upload-dialog');
     const filenames = ['receipt.hwp', 'receipt.hwpx', 'receipt.docx', 'receipt.xlsx', 'receipt.pdf', 'receipt.png', 'scanned-receipt.pdf'];
     await page.locator('#artifact-files').setInputFiles(filenames.map(filename => fileURLToPath(new URL(`./test-fixtures/${filename}`, import.meta.url))));
-    await page.locator('[name="redacted"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check();
     await page.locator('[name="ai-consent"]').check();
     await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 90000 });
@@ -197,7 +199,8 @@ test('real UI runs AI analysis, resolves decisions, confirms requirements and au
     const errors = []; page.on('pageerror', error => errors.push(error.message));
     await page.goto(`${app.url}/#launch=${app.launchSecret}`);
     await page.getByRole('button', { name: 'AI 요구사항 생성', exact: true }).click({ timeout: 5000 });
-    await page.getByLabel('등록된 비식별 자료를 선택한 CLI의 모델 서비스로 보내 분석하는 데 동의합니다.', { exact: true }).check();
+    await page.getByLabel('등록된 원문 자료를 선택한 CLI의 모델 서비스로 보내 분석하는 데 동의합니다.', { exact: true }).check();
+    await page.locator('[name="sensitivityAcknowledged"]').check();
     await page.getByRole('button', { name: '동의하고 AI 분석 시작', exact: true }).click();
     await page.getByRole('heading', { name: 'AI가 확인을 요청한 사항', exact: true }).waitFor({ timeout: 12000 });
     assert.equal(pollFailed, true, 'a transient background fetch failure was actually injected');

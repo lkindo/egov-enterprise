@@ -1,7 +1,7 @@
 import { extname } from 'node:path';
 import { createHash } from 'node:crypto';
 import { ARTIFACT_EXTENSIONS, validateArtifactInput, extractTextUnits, parseInChild } from './artifact-extractor.mjs';
-import { scanBacklogForPiiAndSecrets } from '../../scripts/export-deliverables-workspace.mjs';
+import { collectSensitivityWarnings, mergeSensitivityWarnings, PRIVATE_ANALYSIS_VALIDATION } from './privacy-warnings.mjs';
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const executable = /^(?:4d5a|7f454c46|cafebabe|feedface|feedfacf)/i;
 const forbidden = new Set(['exe', 'dll', 'com', 'bat', 'cmd', 'ps1', 'sh', 'msi', 'scr', 'jar']);
@@ -13,16 +13,15 @@ export function documentFormat(input) {
   validateArtifactInput({ ...input, filename: 'document.txt' });
   // Unknown text containers can still be read. Unknown binary formats need a
   // converter; a renamed binary must never be claimed as readable text.
-  try { extractTextUnits(input.bytes, 'txt'); } catch (error) { if (error.code === 'FILE_SENSITIVE_INPUT') throw error; fail('FILE_TYPE_UNSUPPORTED'); }
+  try { extractTextUnits(input.bytes, 'txt', PRIVATE_ANALYSIS_VALIDATION); } catch { fail('FILE_TYPE_UNSUPPORTED'); }
   return 'txt';
 }
 export async function prepareDocumentInputs(input, options = {}) {
   if (options.signal?.aborted) fail('AI_CANCELLED');
   const format = documentFormat(input);
-  if (scanBacklogForPiiAndSecrets({ project: { filename: input.filename } }).length) fail('FILE_SENSITIVE_INPUT');
   const raw = ['txt', 'md'].includes(format)
-    ? { units: extractTextUnits(input.bytes, format).map(unit => ({ ...unit, attachment: null })), warningCodes: [], method: 'local-text' }
-    : await parseInChild(input.bytes, format, { ...options, documentInput: true });
+    ? { units: extractTextUnits(input.bytes, format, PRIVATE_ANALYSIS_VALIDATION).map(unit => ({ ...unit, attachment: null })), warningCodes: [], method: 'local-text' }
+    : await parseInChild(input.bytes, format, { ...options, ...PRIVATE_ANALYSIS_VALIDATION, documentInput: true });
   if (options.signal?.aborted) fail('AI_CANCELLED');
   if (raw.units.length > 200 || !raw.units.length) fail('FILE_DOCUMENT_CAPACITY');
   let textBytes = 0, visualBytes = 0;
@@ -50,6 +49,6 @@ export async function prepareDocumentInputs(input, options = {}) {
     if (unit.purpose !== undefined && unit.purpose !== 'layout-context') fail('FILE_EXTRACTION_FAILED');
     return { id: `U-${index + 1}`, locator: unit.locator, text: unit.text?.trim() ? unit.text : null, ...(unit.purpose ? { purpose: unit.purpose } : {}), ...(unit.nativeReference ? { nativeReference: unit.nativeReference } : {}), attachment: unit.attachment ?? null };
   });
-  if (scanBacklogForPiiAndSecrets({ project: { units: units.map(({ attachment, ...unit }) => unit) } }).length) fail('FILE_SENSITIVE_INPUT');
-  return { format, sha256: createHash('sha256').update(input.bytes).digest('hex'), units, warningCodes: raw.warningCodes };
+  const sensitivityWarnings = mergeSensitivityWarnings(raw.sensitivityWarnings, collectSensitivityWarnings({ filename: input.filename, units: units.map(({ attachment, ...unit }) => unit) }));
+  return { format, sha256: createHash('sha256').update(input.bytes).digest('hex'), units, warningCodes: raw.warningCodes, sensitivityWarnings };
 }

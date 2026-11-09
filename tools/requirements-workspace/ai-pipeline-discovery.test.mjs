@@ -3,10 +3,173 @@ import assert from 'node:assert/strict';
 import { prepareBusinessModel, reviewRequirements } from './ai-pipeline.mjs';
 import { source, context, envelope, analysis } from './test-fixtures/ai.mjs';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
-import { validateDocumentSummaries } from './ai-pipeline-contract.mjs';
+import { BUSINESS_MODEL_MAX_BYTES, BUSINESS_MODEL_SCHEMA, validateBusinessModel, validateDocumentSummaries } from './ai-pipeline-contract.mjs';
+import { validatePrivateAiValue } from './ai-contract.mjs';
 const snapshot = () => ({ backlog: { ...createEmptyBacklogPack(context), project: { code: 'SYNTHETIC', name: '합성 검토', institution: '합성 기관', baselineProfile: '' }, sources: [structuredClone(source)] }, metadata: { context } });
 const reading = () => ({ summary: '담당자의 접수 조회 책임과 열람 범위에 관한 문서다.', blocks: [{ heading: '접수 조회', certainty: 'clear', inputId: 'C-1', note: '담당자의 업무' }], unreadable: [] });
 const response = request => envelope({ summary: '접수 조회 업무를 통합한다.', actors: [], processes: [], terms: [], issues: [], sourceCoverage: request.data.documents.map(doc => ({ sourceId: doc.sourceId, role: 'business', rationale: '조회 업무의 근거' })) });
+const citation = request => ({ evidenceIndex: request.data.documents[0].anchors[0].evidenceIndex });
+const referenceSchema = maximum => ({ type: 'object', properties: { evidenceIndex: { type: 'integer', minimum: 0, maximum } }, required: ['evidenceIndex'], additionalProperties: false });
+
+test('synthesis with no registered requirements constrains corrective regeneration without discarding source-grounded questions', async () => {
+  const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA), originals = structuredClone(state.backlog.sources);
+  let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request, schema }) => {
+    calls++;
+    assert.equal(schema.properties.issues.items.properties.requirementIds.maxItems, 0);
+    assert.ok(JSON.stringify(schema).length <= 20_000);
+    const value = response(request).output;
+    value.actors.push({ name: '담당자', responsibility: '접수 조회', sourceIds: [source.id] });
+    const issue = { id: 'QUESTION-SCOPE', kind: 'decision', severity: 'blocking', question: '담당자의 접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [citation(request)] };
+    value.issues.push(issue);
+    assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
+    assert.throws(() => validatePrivateAiValue({ ...value, issues: [{ ...issue, requirementIds: ['UNREGISTERED'] }] }, schema), { code: 'AI_OUTPUT_INVALID' });
+    if (calls === 1) value.actors[0].sourceIds = ['UNKNOWN-SOURCE'];
+    else {
+      assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-source', path: '$' }]);
+      assert.deepEqual(request.data.correction.budget, { reason: 'target', limitBytes: request.data.discoveryBudget.targetMergedBytesForBatch, hardLimitBytes: request.data.discoveryBudget.maxMergedBytesForBatch });
+    }
+    return envelope(value);
+  } });
+  assert.equal(calls, 2); assert.equal(result.businessModel.issues.length, 1);
+  assert.deepEqual(result.businessModel.issues[0].requirementIds, []);
+  assert.equal(result.businessModel.issues[0].severity, 'blocking');
+  assert.deepEqual(state.backlog.sources, originals); assert.deepEqual(BUSINESS_MODEL_SCHEMA, template);
+});
+
+test('synthesis keeps registered requirement references valid without polluting the shared schema', async () => {
+  const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA);
+  state.backlog.businessRequirements = [{ id: 'REQ-EXISTING' }];
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request, schema }) => {
+    const expected = structuredClone(template.properties.issues); expected.items.properties.citations.items = referenceSchema(0);
+    assert.deepEqual(schema.properties.issues, expected);
+    assert.equal(schema.properties.summary.maxLength, 2000);
+    assert.doesNotMatch(schema.description, /No project requirements are registered yet/);
+    const value = response(request).output;
+    value.issues.push({ id: 'QUESTION-EXISTING', kind: 'decision', severity: 'blocking', question: '기존 접수 요구사항의 열람 범위를 확인해 주세요.', options: [], requirementIds: ['REQ-EXISTING'], citations: [citation(request)] });
+    assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
+    return envelope(value);
+  } });
+  assert.deepEqual(result.businessModel.issues[0].requirementIds, ['REQ-EXISTING']);
+  const forged = structuredClone(result.businessModel); forged.issues[0].requirementIds = ['UNREGISTERED'];
+  assert.throws(() => validateBusinessModel(forged, state), error => error.code === 'AI_OUTPUT_INVALID' && error.details.some(detail => detail.kind === 'issue-reference'));
+  assert.deepEqual(BUSINESS_MODEL_SCHEMA, template);
+});
+
+test('discovery generates a bounded outline while retaining original clauses and unresolved evidence', async () => {
+  const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA);
+  state.backlog.sources = Array.from({ length: 37 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` }));
+  const originals = structuredClone(state.backlog.sources);
+  let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request, schema }) => {
+    calls++;
+    assert.equal(schema.properties.summary.maxLength, 2000);
+    assert.equal(schema.properties.actors.items.properties.responsibility.maxLength, 240);
+    assert.equal(schema.properties.terms.items.properties.meaning.maxLength, 240);
+    assert.equal(schema.properties.sourceCoverage.items.properties.rationale.maxLength, 240);
+    const fields = schema.properties.processes.items.properties;
+    assert.equal(fields.trigger.maxLength, 240);
+    for (const field of ['steps', 'exceptions', 'rules', 'data']) {
+      assert.equal(fields[field].maxItems, 6);
+      assert.equal(fields[field].items.maxLength, field === 'data' ? 180 : 240);
+    }
+    const expectedIssues = structuredClone(template.properties.issues);
+    expectedIssues.items.properties.requirementIds.maxItems = 0;
+    expectedIssues.items.properties.citations.items = referenceSchema(36);
+    assert.deepEqual(schema.properties.issues, expectedIssues);
+    const { maxMergedBytesForBatch, ...budget } = request.data.discoveryBudget;
+    assert.deepEqual(budget, { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: 12288, targetMergedBytesForBatch: 12288 * calls, readingIssueBytes: 0, readingIssueCount: 0, maxIssues: 100, previousModelBytes: request.data.previousModel ? Buffer.byteLength(JSON.stringify(request.data.previousModel)) : 0, batch: calls, batches: 10 });
+    assert.ok(maxMergedBytesForBatch > budget.targetMergedBytesForBatch && maxMergedBytesForBatch <= BUSINESS_MODEL_MAX_BYTES);
+    if (calls === 10) assert.equal(maxMergedBytesForBatch, BUSINESS_MODEL_MAX_BYTES);
+    assert.match(schema.description, /전체 원문 조항/);
+    assert.match(schema.description, /변경 없는 기존 항목은 반환에서 생략/);
+    assert.ok(JSON.stringify(schema).length <= 20_000);
+    const value = response(request).output;
+    value.processes.push({ name: '접수', trigger: '접수 요청', steps: Array(7).fill('담당자가 접수를 조회한다.'), exceptions: [], rules: [], data: [], sourceIds: [request.data.documents[0].sourceId] });
+    assert.throws(() => validatePrivateAiValue(value, schema), { code: 'AI_OUTPUT_INVALID' });
+    assert.doesNotThrow(() => validateBusinessModel(value, state, request.data.documents.map(doc => doc.sourceId)));
+    const description = (calls === 2 ? '나' : '가').repeat(240), sourceIds = request.data.documents.map(doc => doc.sourceId);
+    value.actors.push({ name: '담당자', responsibility: description, sourceIds });
+    value.terms.push({ term: '접수', meaning: description, sourceIds });
+    value.processes = [{ name: '접수', trigger: description, steps: calls <= 2 ? Array.from({ length: 6 }, (_, index) => `${calls}차 접수 확인 ${index + 1}`) : [], exceptions: [], rules: [], data: [], sourceIds }];
+    if (calls === 1) value.issues.push({ id: 'QUESTION-RETAINED', kind: 'decision', severity: 'blocking', question: '접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [citation(request)] });
+    assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
+    return envelope(value);
+  } });
+  assert.equal(calls, 10); assert.equal(result.documents.length, 37);
+  assert.equal(result.businessModel.sourceCoverage.length, 37);
+  for (const [items, field] of [[result.businessModel.actors, 'responsibility'], [result.businessModel.terms, 'meaning'], [result.businessModel.processes, 'trigger']]) {
+    assert.equal(items[0][field], `${'가'.repeat(240)}\n${'나'.repeat(240)}`);
+    assert.equal(items[0].sourceIds.length, 37);
+  }
+  assert.equal(result.businessModel.processes[0].steps.length, 12);
+  assert.equal(result.businessModel.issues[0].id, 'QUESTION-RETAINED');
+  assert.equal(result.businessModel.issues[0].severity, 'blocking');
+  assert.deepEqual(state.backlog.sources, originals); assert.deepEqual(BUSINESS_MODEL_SCHEMA, template);
+});
+
+test('synthesis validates real runner responses against outline bounds before publishing', async () => {
+  let calls = 0, published = 0;
+  const result = await prepareBusinessModel(snapshot(), { sourceReading: reading, onValidated: stage => { if (stage === 'synthesis') published++; }, run: async ({ request }) => {
+    calls++;
+    const value = response(request).output;
+    if (calls === 1) value.processes.push({ name: '접수', trigger: '접수 요청', steps: Array(7).fill('담당자가 접수를 확인한다.'), exceptions: [], rules: [], data: [], sourceIds: [source.id] });
+    else assert.equal(request.data.correction.violations[0].kind, 'schema');
+    return envelope(value);
+  } });
+  assert.equal(calls, 2); assert.equal(published, 1);
+  assert.deepEqual(result.businessModel.processes, []);
+});
+
+test('synthesis corrects runner schema rejections once without forwarding their message', async () => {
+  for (const fault of ['missing', 'unsafe', 'array']) {
+    const alwaysInvalid = fault === 'unsafe';
+    let calls = 0;
+    const operation = prepareBusinessModel(snapshot(), { sourceReading: reading, run: async ({ request }) => {
+      calls++;
+      if (calls === 2) {
+        assert.deepEqual(request.data.correction.violations, [{ kind: 'schema', path: '$' }]);
+        assert.equal(JSON.stringify(request).includes('SYNTHETIC_REJECTED_BODY'), false);
+      }
+      if (calls === 1 || alwaysInvalid) throw Object.assign(Error('SYNTHETIC_REJECTED_BODY'), { code: 'AI_OUTPUT_INVALID', ...(fault === 'unsafe' ? { details: [{ kind: 'SYNTHETIC_REJECTED_BODY', path: '$."SYNTHETIC_REJECTED_BODY"' }] } : fault === 'array' ? { details: [{ kind: ['output-size'], path: ['$.actors'] }] } : {}) });
+      return response(request);
+    } });
+    if (alwaysInvalid) await assert.rejects(operation, { code: 'AI_OUTPUT_INVALID' });
+    else await operation;
+    assert.equal(calls, 2);
+  }
+});
+
+test('synthesis never retries transport limits or a real model capacity failure', async () => {
+  for (const code of ['AI_TIMEOUT', 'AI_OUTPUT_TOO_LARGE', 'AI_MODEL_MISMATCH', 'AI_INPUT_TOO_LARGE', 'AI_OUTPUT_INVALID', 'AI_BUSINESS_MODEL_CAPACITY']) {
+    let calls = 0;
+    await assert.rejects(prepareBusinessModel(snapshot(), { sourceReading: reading, run: async ({ request }) => {
+      calls++;
+      if (code !== 'AI_BUSINESS_MODEL_CAPACITY') throw Object.assign(Error(code), { code, ...(code === 'AI_OUTPUT_INVALID' ? { details: [{ kind: 'output-size', path: '$' }] } : {}) });
+      const value = response(request).output;
+      value.actors = Array.from({ length: 30 }, (_, index) => ({ name: `담당자${index}`, responsibility: '가'.repeat(1900), sourceIds: [source.id] }));
+      return envelope(value);
+    } }), { code });
+    assert.equal(calls, 1);
+  }
+});
+
+test('synthesis preserves cancellation when a runner rejects after abort', async () => {
+  const controller = new AbortController(); let calls = 0;
+  await assert.rejects(prepareBusinessModel(snapshot(), { sourceReading: reading, signal: controller.signal, run: async () => {
+    calls++; controller.abort(); throw Object.assign(Error('SYNTHETIC_REJECTED_BODY'), { code: 'AI_OUTPUT_INVALID' });
+  } }), { code: 'AI_CANCELLED' });
+  assert.equal(calls, 1);
+});
+
+test('discovery byte guidance reserves the known source-reading questions', async () => {
+  let budget;
+  const result = await prepareBusinessModel(snapshot(), { sourceReading: () => ({ ...reading(), unreadable: [{ inputId: 'C-1', reason: '처리기간을 원본과 대조해야 한다.' }] }), run: async ({ request }) => { budget = request.data.discoveryBudget; return response(request); } });
+  const bytes = Buffer.byteLength(JSON.stringify(result.businessModel.issues));
+  assert.ok(bytes > 0); assert.equal(budget.readingIssueBytes, bytes);
+  assert.equal(budget.targetBatchBytes, Math.floor((BUSINESS_MODEL_MAX_BYTES - bytes) * 0.75));
+  assert.equal(budget.absoluteMaxBytes, BUSINESS_MODEL_MAX_BYTES);
+});
 
 test('large documents provide bounded representative anchors with honest full clause counts', async () => {
   const state = snapshot(); state.backlog.sources[0].clauses = Array.from({ length: 1000 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` }));
@@ -57,7 +220,7 @@ test('manual sources with more than 200 short clauses are packed before any read
   const result = await prepareBusinessModel(state, { run: async ({ request }) => {
     if (request.phase !== 'reading') return response(request);
     readingCalls++;
-    return envelope({ documentTypes: ['interview'], summary: '접수 조회 범위를 반복 설명한 합성 자료다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '접수 조회', kind: 'paragraph', text: null, certainty: 'clear', note: '네이티브 원문 보존' })), unreadable: [] });
+    return envelope({ documentTypes: ['interview'], summary: '접수 조회 범위를 반복 설명한 합성 자료다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '접수 조회', kind: 'paragraph', text: null, certainty: 'clear', note: '네이티브 원문 보존' })), unreadable: [] }, 'reading');
   } });
   assert.equal(readingCalls, 1); assert.equal(result.documents[0].clauseCount, 201);
 });

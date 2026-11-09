@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
+import { PRIVATE_ANALYSIS_VALIDATION } from './privacy-warnings.mjs';
 import { REQUIREMENT_TYPES, SOLUTION_DISPOSITIONS, WORK_ITEM_TYPES, PRIORITIES, VERIFICATION_METHODS, TARGET_KINDS, DECISION_CARD_AXES, ARCHETYPE_CATALOG, scanBacklogForPiiAndSecrets, validateBacklogPack, validateDevelopmentReadiness, matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
 
 const invalid = (kind = 'schema', path = '$', requirementId) => { throw Object.assign(new Error('AI_OUTPUT_INVALID'), { code: 'AI_OUTPUT_INVALID', details: [{ kind, path, ...(requirementId ? { requirementId } : {}) }] }); };
@@ -49,19 +50,33 @@ function check(value, schema, depth = 0, path = '$') {
   }
   if (schema.required.some(key => !Object.hasOwn(value, key))) invalid();
 }
-export function validateAiValue(value, schema, { maxBytes = 1024 ** 2 } = {}) {
+export function validateAiValue(value, schema, { maxBytes = 1024 ** 2, sensitiveData = 'error' } = {}) {
+  if (!['error', 'warning'].includes(sensitiveData)) throw new TypeError('Sensitivity validation policy');
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 8 * 1024 ** 2) throw new TypeError('AI validation size configuration');
   check(value, schema);
   if (Buffer.byteLength(JSON.stringify(value)) > maxBytes) invalid('output-size');
-  if (scanBacklogForPiiAndSecrets({ project: value }).length) invalid('sensitive-output');
+  if (sensitiveData === 'error' && scanBacklogForPiiAndSecrets({ project: value }).length) invalid('sensitive-output');
 }
-const safe = validateAiValue;
+export const validatePrivateAiValue = (value, schema, options = {}) => validateAiValue(value, schema, { ...options, ...PRIVATE_ANALYSIS_VALIDATION });
+const privateValue = validatePrivateAiValue;
 const unique = items => { const ids = items.map(item => item.id); if (new Set(ids).size !== ids.length) invalid('duplicate-id'); return new Set(ids); };
 const clauseMap = snapshot => new Map(snapshot.backlog.sources.flatMap(source => (source.clauses ?? []).map(clause => [`${source.id}/${clause.id}`, clause])));
+const meaningful = text => (text.match(/[\p{L}\p{N}]/gu) ?? []).length;
+export function selectEvidenceQuote(text) {
+  const chars = Array.from(text), counts = chars.map(character => meaningful(character));
+  const required = Math.min(12, counts.reduce((sum, count) => sum + count, 0));
+  if (!required) return null;
+  let count = 0;
+  for (let end = 0; end < chars.length; end++) {
+    count += counts[end];
+    if (end >= 180) count -= counts[end - 180];
+    if (count >= required) { let start = Math.max(0, end - 179); while (!counts[start]) start++; return chars.slice(start, start + 180).join(''); }
+  }
+  return null;
+}
 function citations(items, clauses) {
   for (const [index, item] of items.entries()) for (const [citationIndex, citation] of item.citations.entries()) {
     const original = clauses.get(`${citation.sourceId}/${citation.clauseId}`);
-    const meaningful = text => (text.match(/[\p{L}\p{N}]/gu) ?? []).length;
     if (!original?.text.includes(citation.quote) || !meaningful(citation.quote) || meaningful(citation.quote) < Math.min(12, meaningful(original.text))) invalid('citation-quote', `items[${index}].citations[${citationIndex}]`);
   }
 }
@@ -85,7 +100,7 @@ export function seedAnalysis(snapshot) {
   return { requirements, issues: [], coverage: [] };
 }
 export function validateAnalysisBatchProposal(value, snapshot, sources, previous, { idPrefix } = {}) {
-  safe(value, BATCH_ANALYSIS_SCHEMA);
+  privateValue(value, BATCH_ANALYSIS_SCHEMA);
   unique(value.requirements);
   unique(value.issues);
   const oldIds = new Set((previous?.requirements ?? []).map(req => req.id)), updates = new Set(value.updatedRequirementIds ?? []);
@@ -121,7 +136,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   if (result.issues.length > 100) capacity('AI_ISSUE_CAPACITY');
   for (const req of result.requirements) if (req.citations.length > 30) invalid('citation-capacity', 'requirements', req.id);
   if (Buffer.byteLength(JSON.stringify(result)) > 1024 ** 2) capacity('AI_PROPOSAL_CAPACITY');
-  safe(result, ANALYSIS_SCHEMA);
+  privateValue(result, ANALYSIS_SCHEMA);
   const clauses = clauseMap(snapshot), current = new Set(sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
   const allowed = new Set([...current, ...(previous?.requirements ?? []).flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...(previous?.issues ?? []).flatMap(issue => issue.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => source.id.startsWith('DEC-') && source.sourceType === 'policy-memo' || clause.requirementIds?.some(id => snapshot.backlog.businessRequirements.some(req => req.id === id))).map(clause => `${source.id}/${clause.id}`))]);
   citations(result.requirements, clauses); issues(result.issues, ids, clauses);
@@ -158,7 +173,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   return accumulated;
 }
 export function validateAnalysisProposal(value, snapshot) {
-  safe(value, ANALYSIS_SCHEMA);
+  privateValue(value, ANALYSIS_SCHEMA);
   const ids = unique(value.requirements), clauses = clauseMap(snapshot), coverage = new Map();
   const scopeFor = req => req.scope ?? snapshot.backlog.businessRequirements.find(previous => previous.id === req.id && ['included', 'excluded', 'deferred'].includes(previous.scopeDisposition))?.scopeDisposition ?? 'included';
   let relationCorrections = 0;
@@ -221,7 +236,7 @@ export function validateAnalysisProposal(value, snapshot) {
     // judgments approve it. The live judgments are untouched until confirmation.
     for (const req of draft.businessRequirements) req.acceptanceDisposition = 'pending';
     for (const ac of draft.acceptanceCriteria) ac.acceptanceDisposition = 'pending';
-    if (!validateBacklogPack(draft, snapshot.metadata.context).valid) invalid('analysis-backlog-structure', 'requirements');
+    if (!validateBacklogPack(draft, snapshot.metadata.context, PRIVATE_ANALYSIS_VALIDATION).valid) invalid('analysis-backlog-structure', 'requirements');
   }
   return result;
 }
@@ -242,7 +257,7 @@ export function projectAnalysisBacklog(snapshot, proposal) {
   return pack;
 }
 export function validateDecompositionProposal(value, snapshot) {
-  safe(value, DECOMPOSITION_SCHEMA);
+  privateValue(value, DECOMPOSITION_SCHEMA);
   unique(value.workItems); unique(value.acceptanceCriteria); unique(value.traceLinks);
   const included = new Set(snapshot.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included').map(req => req.id));
   const groups = [['workItem', 'workItems', Object.keys(workSchema.properties)], ['acceptanceCriterion', 'acceptanceCriteria', Object.keys(acSchema.properties)], ['traceLink', 'traceLinks', Object.keys(traceSchema.properties)]];
@@ -275,13 +290,13 @@ export function validateDecompositionProposal(value, snapshot) {
   pack.workItems = value.workItems;
   pack.acceptanceCriteria = value.acceptanceCriteria.map(ac => ({ ...ac, acceptanceDisposition: 'pending' }));
   pack.traceLinks = value.traceLinks;
-  if (!validateBacklogPack(pack, snapshot.metadata.context).valid) invalid('backlog-structure', 'workItems');
+  if (!validateBacklogPack(pack, snapshot.metadata.context, PRIVATE_ANALYSIS_VALIDATION).valid) invalid('backlog-structure', 'workItems');
   for (const reqId of included) {
     const children = value.workItems.filter(item => item.workItemType !== 'epic' && item.requirementIds.includes(reqId));
     if (!children.length) invalid();
     for (const child of children) if (!['allow', 'forbid'].every(polarity => value.acceptanceCriteria.some(ac => ac.workItemId === child.id && ac.requirementIds.includes(reqId) && ac.polarity === polarity))) invalid();
   }
-  if (!value.issues.some(issue => issue.severity === 'blocking') && !validateDevelopmentReadiness(pack, snapshot.metadata.context).valid) invalid('development-readiness', 'workItems');
+  if (!value.issues.some(issue => issue.severity === 'blocking') && !validateDevelopmentReadiness(pack, snapshot.metadata.context, PRIVATE_ANALYSIS_VALIDATION).valid) invalid('development-readiness', 'workItems');
   return { ...structuredClone(value), acceptanceCriteria: pack.acceptanceCriteria, retirements, changes: groups.flatMap(([entity, field, keys]) => describeChanges(snapshot.backlog[field], value[field], entity, keys).map(change => ({ ...change, ...(change.action === 'removed' ? { reason: retirements.find(item => item.entity === entity && item.id === change.id).reason } : {}) }))) };
 }
 function describeChanges(previous, next, entity, keys) {
@@ -347,15 +362,14 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
   if (phase === 'decomposition') request.instructions += ' Plan from the confirmed requirements. Sources contain their linked clauses and explicit policy decisions, not unrelated background. A clause marked citationEvidence contains only exact previously reviewed quotations, separated by newlines; those are evidence excerpts, not a complete source paragraph. Quote a single supplied verbatim excerpt, never invent text across omitted sections. Human-edited requirements fall back to their linked original clauses.';
   if (batch) request.instructions += ' This is a sequential batch of ONE analysis. Cover exactly the clauses under data.sources in coverage, not previous batches or policySources. Return ONLY new or changed requirements and new issues for this batch; the application retains unchanged previousAnalysis requirements, citations and unresolved issues automatically. Reuse an existing requirement ID when meaning matches. To link a current clause to an existing requirement, return the updated requirement with its new exact citation. Never reprint all unchanged requirements or issues. Keep descriptions concrete and coverage rationales concise. Add only requirements grounded in this batch or previous citations. Existing human previousRequirements must all be represented in the accumulated result; propose explicit scopes instead of dropping them. Do not replace or downgrade an earlier issue. policySources contains explicit human answers applicable to every batch. Previous citations are verified verbatim evidence; do not invent text for a previous source. Other document parts may appear in attached PDFs but are not this batch coverage.';
   if (batch) request.instructions += ' New requirement IDs MUST start with analysisBatch.idPrefix. An existing ID may be changed ONLY when explicitly listed in updatedRequirementIds; include only changed existing IDs that actually appear in this delta. Never reuse an old ID for unrelated meaning. Human requirements are already seeded in previousAnalysis, so unchanged human requirements do not need to be returned. Observe analysisBatch.capacity including existing citation counts; earlier verified citations cannot be removed. If a genuinely new fact cannot fit the remaining capacity, preserve it as deferred coverage with a blocking decision issue rather than silently dropping it, inventing a split, or exceeding capacity. When an included requirement cites a processed source, that source needs at least one included/merged clause linked by a verified citation. Extra policySources are reference-only for this call and receive their own coverage when they appear under data.sources.';
-  if (scanBacklogForPiiAndSecrets({ project: request.data }).length) throw Object.assign(new Error('SENSITIVE_INPUT'), { code: 'SENSITIVE_INPUT' });
   if (Buffer.byteLength(JSON.stringify(request)) > 768 * 1024) capacity(phase === 'decomposition' ? 'AI_DECOMPOSITION_INPUT_TOO_LARGE' : 'AI_INPUT_TOO_LARGE');
   return request;
 }
 
 export function buildCorrectionRequest(request, output, details = []) {
-  // Never retransmit malformed/sensitive output. Only a schema-valid draft can
+  // Never retransmit malformed output. Only a schema-valid private draft can
   // be returned as untrusted data for one structural correction.
-  safe(output, request.phase === 'analysis' ? request.data.analysisBatch ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA);
+  privateValue(output, request.phase === 'analysis' ? request.data.analysisBatch ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA);
   const next = structuredClone(request);
   next.instructions += request.data.analysisBatch ? ' Correct the CURRENT batch delta using the listed failures, whose requirementId may refer to previousAnalysis. Return one complete JSON object for this batch, not the entire accumulated analysis: current coverage only, new/changed requirements, explicit updatedRequirementIds and new issues. Unchanged earlier entries remain preserved. Never drop prior citations to fit capacity; defer redundant/new current evidence and raise a blocking capacity decision when appropriate. Preserve human policy decisions.' : ' Correct the previous untrusted draft using the listed invariant failures and the original source/confirmed requirements. Return a complete corrected JSON. Preserve policy decisions; never fabricate approvals or facts to pass validation. Each trace acId must belong to its workItemId and explicitly cover its requirementId. Deferred/excluded requirements may appear in issues but must not be executable work.';
   next.data.correction = { previousOutput: structuredClone(output), violations: structuredClone(details) };

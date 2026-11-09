@@ -20,13 +20,14 @@ function setup(t) {
 const source = { id: 'SRC-1', title: '요구 협의', sourceType: 'interview', classification: 'internal', locator: '회의 1쪽', clauses: [{ id: 'C-1', text: '목록을 조회한다', locator: '1행', disposition: 'question', requirementIds: [], rationale: '열람 범위를 다음 협의에서 확인' }] };
 const requirement = { id: 'REQ-1', sourceIds: ['SRC-1'], title: '목록 조회', description: '목록을 조회한다', requirementType: 'functional', solutionDisposition: 'undecided', scopeDisposition: 'proposed', moduleCandidates: [], rationale: '', openQuestions: ['열람 범위 확인'], acceptanceDisposition: 'pending' };
 
-test('source and requirement actions persist drafts; unknown actions and PII do not mutate', async t => {
-  const { store, act } = setup(t);
+test('private source patterns persist as advisories; unknown actions do not mutate', async t => {
+  const { store, act, engine } = setup(t);
   await act('source.save', source);
   await act('requirement.save', { requirement, reviewed: false, clauseIds: ['SRC-1/C-1'] });
   assert.equal(store.read().backlog.businessRequirements[0].title, requirement.title);
+  await act('source.save', { ...store.read().backlog.sources[0], title: 'person@example.invalid' });
+  assert.ok((await engine.state()).sensitivityWarnings.length);
   const revision = store.read().revision;
-  await assert.rejects(act('source.save', { ...source, title: 'person@example.invalid' }), /SENSITIVE_INPUT/);
   await assert.rejects(act('run.shell', { command: 'anything' }), /ACTION_UNSUPPORTED/);
   assert.equal(store.read().revision, revision);
 });
@@ -62,11 +63,11 @@ test('audit exports are immutable identified drafts with digest and recoverable 
   assert.throws(() => engine.artifact('../backlog.json'), /ARTIFACT_NOT_FOUND/);
 });
 
-test('metadata cannot smuggle sensitive artifact content or malformed historical records', t => {
+test('private artifact content permits patterns while malformed historical records remain invalid', t => {
   const metadata = setup(t).store.read().metadata;
   const content = 'person@example.invalid';
   metadata.exports.push({ id: 'EX-1', kind: 'audit', filename: 'AUDIT-REVIEW.md', content, sha256: createHash('sha256').update(content).digest('hex') });
-  assert.throws(() => validateRequirementsMetadata(metadata), /SENSITIVE_INPUT/);
+  assert.doesNotThrow(() => validateRequirementsMetadata(metadata));
   metadata.exports = []; metadata.auditFindings = [{ title: '필수 필드가 없는 기록' }];
   assert.throws(() => validateRequirementsMetadata(metadata), /INVALID_METADATA/);
 });

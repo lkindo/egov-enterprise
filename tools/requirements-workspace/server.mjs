@@ -1,13 +1,14 @@
 #!/usr/bin/env node
+import { validatePrivateBacklog } from './private-validation.mjs';
 import { createServer } from 'node:http';
 import { createHash, randomBytes, timingSafeEqual } from 'node:crypto';
-import { readFile } from 'node:fs/promises';
+import { readFile, realpath } from 'node:fs/promises';
 import { resolve } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 import { once } from 'node:events';
 import { createRequirementsStore } from './store.mjs';
 import { createRequirementsEngine, initialRequirementsMetadata, validateRequirementsMetadata } from './engine.mjs';
-import { createEmptyBacklogPack, loadRepositoryContextSnapshot, validateBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
+import { createEmptyBacklogPack, loadRepositoryContextSnapshot } from '../../scripts/export-deliverables-workspace.mjs';
 
 const ROOT = fileURLToPath(new URL('../../', import.meta.url));
 const STATIC = {
@@ -46,6 +47,7 @@ const messages = {
   AI_CLI_FAILED: 'CLI 실행이 완료되지 않았습니다. 터미널에서 Claude 로그인·사용 한도를 확인한 후 다시 시도하세요.',
   AI_MODEL_MISMATCH: '선택한 모델과 실제 실행 모델이 달라 결과를 적용하지 않았습니다.',
   AI_OUTPUT_INVALID: 'AI 결과의 형식·원문 근거·연결 관계를 검증하지 못했습니다. 원본은 유지했으며 다시 실행할 수 있습니다.',
+  AI_DOCUMENT_INPUT_INVALID: '문서 통합에 필요한 입력을 검증하지 못했습니다. 등록 자료와 판독 기록을 확인해 주세요. 원본은 보존했습니다.',
   AI_ATTACHMENT_INVALID: '시각 자료를 준비하지 못했습니다. 이미지 크기·페이지 수·원본 무결성과 합계 20MiB/100개 한도를 확인하거나 추출 본문만 선택하세요.',
   AI_RECORD_UNAVAILABLE: '보관한 AI 결과의 무결성을 확인하지 못했습니다. 작업공간 원본을 보존하고 다시 분석하세요.',
   AI_INPUT_TOO_LARGE: '누적 요구사항·결정 요약이 한 번에 처리할 수 있는 크기를 넘었습니다. 업무 범위를 나누어 별도 작업공간에서 분석해 주세요.',
@@ -68,15 +70,15 @@ const messages = {
   FILE_DOCUMENT_CAPACITY: '문서의 페이지·이미지·판독 본문 처리 한도를 넘었습니다. 원본을 보존하고 페이지 구간을 나눠 등록해 주세요.',
   FILE_SOURCE_CHANGED: '등록한 원본의 해시와 현재 자료가 다릅니다. 올바른 원본을 다시 등록해 주세요.',
   AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독의 내용·위치·원문 근거를 검증하지 못했습니다. 원본을 확인하고 다시 판독해 주세요.',
-  AI_DOCUMENT_SENSITIVE_OUTPUT: 'AI 판독 결과에서 민감정보가 검출되어 이번 원본 보관과 등록을 중단했습니다. 비식별 사본으로 다시 등록해 주세요.',
+  AI_DOCUMENT_SENSITIVE_OUTPUT: '이전 버전에서 민감정보 감지로 중단된 기록입니다. 새 실행기에서 다시 판독하면 분석을 진행하고 별도 안내합니다.',
   AI_DOCUMENT_UNREADABLE: '원본에서 판독 가능한 본문을 확보하지 못했습니다. 더 선명한 사본이나 변환한 PDF를 등록해 주세요.',
   AI_DOCUMENT_READING_REQUIRED: '기존 원본을 새 AI 판독 단계로 처리해야 합니다. AI 전체 분석에서 원본 판독을 진행해 주세요.',
   AI_CHECKPOINT_INVALID: '이전 완료 단계의 입력·지시문 결속을 확인하지 못했습니다. 재사용을 해제하고 다시 시작해 주세요.',
   AI_CALL_CAPACITY: '이번 분석의 호출 상한에 도달했습니다. 완료된 단계 재사용을 선택해 다시 시작할 수 있습니다.',
   AI_BUSINESS_MODEL_CAPACITY: '누적 업무 모델이 처리 한도를 넘었습니다. 업무 영역을 나누어 분석해 주세요.',
   AI_NO_EXECUTABLE_REQUIREMENTS: '개발 범위에 포함된 요구사항이 없습니다. 사업 범위와 원본 자료를 검토해 주세요.',
-  FILE_REDACTION_REQUIRED: '본문·이미지·문서 속성의 개인정보와 비밀을 제거했는지 확인해 주세요.',
-  FILE_SENSITIVE_INPUT: '본문이나 문서 속성에서 개인정보·비밀 패턴을 발견했습니다. 비식별 사본을 등록하세요.',
+  FILE_REDACTION_REQUIRED: '민감정보가 포함될 수 있는 원문을 비공개 작업공간에서 분석·보관하고 별도 안내하는 방식임을 확인해 주세요.',
+  FILE_SENSITIVE_INPUT: '이전 버전의 민감정보 차단 기록입니다. 새 실행기에서 다시 등록하면 분석을 진행하고 별도 안내합니다.',
   FILE_REQUEST_CONFLICT: '같은 등록 요청의 자료가 달라졌습니다. 최신 상태를 확인하고 새 요청으로 등록하세요.',
   FILE_TOO_LARGE: '파일 한 개는 20MiB까지 등록할 수 있습니다. 원문을 나누어 주세요.',
   FILE_ENCODING_INVALID: '파일 인코딩을 읽지 못했습니다. 텍스트는 UTF-8 또는 BOM이 있는 UTF-16으로 저장해 주세요.',
@@ -96,9 +98,11 @@ const messages = {
 export async function startRequirementsServer({ workspace, root = ROOT, port = 8792, host = '127.0.0.1', contextProvider = () => loadRepositoryContextSnapshot(root), staticAssets, aiRunner } = {}) {
   if (host !== '127.0.0.1' || !Number.isInteger(port) || port < 0 || port > 65535) fail('LOOPBACK_REQUIRED');
   const context = await contextProvider();
-  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: validateBacklogPack, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: validatePrivateBacklog, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, contextProvider, root, aiRunner });
   const token = randomBytes(32).toString('base64url'), launchSecret = randomBytes(32).toString('base64url');
+  const workspacePath = await realpath(workspace);
+  const workspaceId = createHash('sha256').update(process.platform === 'win32' ? workspacePath.toLowerCase() : workspacePath).digest('hex');
   // The browser stores only an opaque lookup handle. Credentials stay in the
   // process; the index holds a hash so it cannot itself be replayed as a cookie.
   const resumeSessions = new Map();
@@ -132,7 +136,7 @@ export async function startRequirementsServer({ workspace, root = ROOT, port = 8
           resumeSessions.set(handleHash(handle), token);
           response.setHeader('Set-Cookie', `${cookieName}=${handle}; Secure; HttpOnly; SameSite=Strict; Path=/`);
         }
-        json(response, 200, { token }); return;
+        json(response, 200, { token, workspaceId }); return;
       }
       if (!equal(request.headers['x-workspace-token'], token)) fail('SESSION_REQUIRED', 403);
       if (request.method === 'GET' && url.pathname === '/api/state') { json(response, 200, await engine.state()); return; }
