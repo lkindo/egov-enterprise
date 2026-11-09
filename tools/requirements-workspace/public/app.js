@@ -26,7 +26,7 @@ async function acceptConsentSource(scope, job) {
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const pages = [ ['overview', '현', '진행 현황'], ['sources', '문', '산출물 수집'], ['requirements', '요', '요구사항 검토'], ['baseline', '기', '분석 기준선'], ['work', '작', '에픽·스토리'], ['handoff', '개', '개발 인계'], ['audit', '검', '검수·감리'] ];
 const labels = { proposed: '제안', included: '포함', excluded: '제외', deferred: '보류', question: '질문', merged: '통합', undecided: '미결정', fit: '기존 기능 활용', config: '환경 구성', 'gap-dev': '추가 개발', hybrid: '혼합', pending: '검수 대기', accepted: '인수 기록', conditional: '조건부', rejected: '반려', epic: '에픽', story: '스토리', configuration: '구성', verification: '검증', enabler: '기반 작업', rfp: '제안요청서', interview: '회의록·인터뷰', 'as-is-artifact': '현행 업무 자료', regulation: '법령·지침', 'policy-memo': '정책·결정 메모', other: '기타', public: '공개', internal: '내부', confidential: '기밀', restricted: '제한', functional: '기능', 'non-functional': '비기능', data: '데이터', interface: '연계', constraint: '제약' };
-let state, token, workspaceId, readingView, page = 'overview', busy = false, dialogForm, dialogRevision, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
+let state, token, workspaceId, readingView, renderedVersion, page = 'overview', busy = false, dialogForm, dialogRevision, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
 const backlog = () => state.backlog;
 const metadata = () => state.metadata ?? {};
 const badge = (value, color = '') => `<span class="badge ${color}">${esc(labels[value] ?? value)}</span>`;
@@ -76,10 +76,11 @@ function closeDialog(force = false) {
   if (busy) return false;
   if (!force && dirty() && !confirm('저장하지 않은 입력이 있습니다. 입력을 버리고 닫을까요?')) return false;
   $('#dialog').close(); dialogForm = undefined; dialogRevision = undefined; dialogSave = undefined;
-  if (state) render();
+  if (state && renderedVersion !== renderVersion()) render();
+  aiPollErrorReported = false;
   scheduleAiPoll(0);
   const focusTarget = returnFocus?.isConnected ? returnFocus : [...document.querySelectorAll('[data-action]')].find(element => element.dataset.action === returnFocus?.dataset.action && element.dataset.key === returnFocus?.dataset.key);
-  if (focusTarget) focusTarget.focus(); else $('#main').focus();
+  if (focusTarget && !focusTarget.disabled) focusTarget.focus(); else $('#main').focus();
   return true;
 }
 function openForm(title, content, save, help = '', successMessage = '작업공간에 저장했습니다.') {
@@ -110,6 +111,7 @@ function sensitivityNotice() {
   const files = jobs.map(job => { const index = backlog().sources.findIndex(source => source.id === job.sourceId); return `<li><strong>${index >= 0 ? `등록 자료 ${index + 1}` : '보관 원본'}</strong>${sensitivityDetails(job.sensitivityWarnings)}${index >= 0 ? button(`등록 자료 ${index + 1} 확인`, 'privacy-source', String(index), true) : button('보관 원본 확인', 'download', job.requestId, true)}</li>`; }).join('');
   return `<aside class="panel panel-body mb-20" role="note" aria-label="민감정보 감지 안내"><h2>민감정보 패턴 감지 안내</h2><p>패턴 감지는 분석을 중단하지 않습니다. 원문과 분석 결과는 이 비공개 작업공간에 보관합니다. 아래에는 실제 값 없이 감지 종류·단계·위치를 표시합니다. 공유할 자료는 별도로 확인해 주세요.</p><p>건수는 항목 단위 패턴 감지 횟수입니다. 같은 내용이 여러 검사·단계에서 반복 집계될 수 있으며 사람 수나 고유 정보 수를 뜻하지 않습니다. 위치는 최대 20개씩 표시합니다.</p>${sensitivityDetails(warnings, '전체 감지 내역')}${files ? `<details><summary>자료별 감지 내역</summary><ul class="help-list">${files}</ul></details>` : ''}</aside>`;
 }
+function renderVersion() { return JSON.stringify([page, state?.revision, state?.readOnly, state?.contextChanged, state?.ai?.active, state?.ai?.available, state?.ai?.current?.status, state?.imports?.active, readingView]); }
 function render() {
   if (!state) return;
   $('#project-name').textContent = backlog().project.name ?? backlog().project.title ?? '프로젝트';
@@ -120,6 +122,7 @@ function render() {
   if (['overview', 'sources', 'requirements', 'work'].includes(page)) pageHeading.insertAdjacentHTML('afterend', aiPanel());
   pageHeading.insertAdjacentHTML('afterend', sensitivityNotice());
   if (['overview', 'sources'].includes(page)) { pageHeading.insertAdjacentHTML('afterend', importPanel()); pageHeading.insertAdjacentHTML('afterend', readingPanel()); }
+  renderedVersion = renderVersion(); aiPollErrorReported = false;
   scheduleAiPoll();
 }
 function aiPanel() {

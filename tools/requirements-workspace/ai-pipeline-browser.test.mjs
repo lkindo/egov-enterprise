@@ -189,8 +189,10 @@ test('an open failed analysis dialog follows actual server progress without losi
     release(); release = undefined; await app.engine.waitForImports();
     await page.waitForFunction(() => document.querySelector('#server-reading-status')?.textContent.includes('완료 기록 2/2건'));
     await page.context().setOffline(true);
+    await page.waitForFunction(() => document.querySelector('#server-reading-status')?.textContent.includes('실행기와 연결이 끊겼습니다.'));
     page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: '취소', exact: true }).click();
     assert.match(await page.getByRole('region', { name: 'AI 판독 진행', exact: true }).textContent(), /완료 기록 2\/2건/);
+    await page.locator('#page-errors').getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).waitFor();
     await page.context().setOffline(false);
     await page.getByRole('button', { name: 'AI 판독 이어서 진행', exact: true }).click();
     await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
@@ -219,6 +221,11 @@ test('closing a failed first upload in the same window exposes resume and remain
     await page.waitForFunction(() => [...document.querySelectorAll('button')].some(button => button.textContent === 'AI 판독 이어서 진행' && !button.disabled));
     assert.equal(await page.getByRole('button', { name: '남은 파일 추가', exact: true }).isVisible(), true);
     assert.equal((await app.engine.state()).backlog.sources.length, 1);
+    await page.getByRole('link', { name: '산출물 수집', exact: true }).click();
+    const details = page.locator('#main details').first(); await details.locator('summary').click();
+    assert.equal(await details.evaluate(element => element.open), true);
+    await page.locator('#help').click(); await page.getByRole('dialog').getByRole('button', { name: '창 닫기', exact: true }).click();
+    assert.equal(await page.locator('#main details').first().evaluate(element => element.open), true);
   } catch (error) {
     const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); throw safe;
   } finally { await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
