@@ -26,7 +26,7 @@ async function acceptConsentSource(scope, job) {
 const id = prefix => `${prefix}-${crypto.randomUUID()}`;
 const pages = [ ['overview', '현', '진행 현황'], ['sources', '문', '산출물 수집'], ['requirements', '요', '요구사항 검토'], ['baseline', '기', '분석 기준선'], ['work', '작', '에픽·스토리'], ['handoff', '개', '개발 인계'], ['audit', '검', '검수·감리'] ];
 const labels = { proposed: '제안', included: '포함', excluded: '제외', deferred: '보류', question: '질문', merged: '통합', undecided: '미결정', fit: '기존 기능 활용', config: '환경 구성', 'gap-dev': '추가 개발', hybrid: '혼합', pending: '검수 대기', accepted: '인수 기록', conditional: '조건부', rejected: '반려', epic: '에픽', story: '스토리', configuration: '구성', verification: '검증', enabler: '기반 작업', rfp: '제안요청서', interview: '회의록·인터뷰', 'as-is-artifact': '현행 업무 자료', regulation: '법령·지침', 'policy-memo': '정책·결정 메모', other: '기타', public: '공개', internal: '내부', confidential: '기밀', restricted: '제한', functional: '기능', 'non-functional': '비기능', data: '데이터', interface: '연계', constraint: '제약' };
-let state, token, workspaceId, page = 'overview', busy = false, dialogForm, dialogRevision, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
+let state, token, workspaceId, readingView, page = 'overview', busy = false, dialogForm, dialogRevision, dialogOriginal = '', dialogSave, returnFocus, aiPollTimer, importBatch, aiPollErrorReported = false;
 const backlog = () => state.backlog;
 const metadata = () => state.metadata ?? {};
 const badge = (value, color = '') => `<span class="badge ${color}">${esc(labels[value] ?? value)}</span>`;
@@ -43,12 +43,14 @@ const mapChoices = entities => entities.map(item => [item.id, item.title]);
 const problemList = (problems, destination = 'requirements') => problems?.length ? `<ul class="problem-list">${problems.map(problem => `<li><button type="button" class="text-button wide-text" data-action="problem" data-key="${destination}">${esc(text(problem))}</button></li>`).join('')}</ul>` : '<p class="status-text">확인이 필요한 항목이 없습니다.</p>';
 function toast(message) { const container = $('#toast'); container.replaceChildren(document.createTextNode(message)); const close = document.createElement('button'); close.type = 'button'; close.setAttribute('aria-label', '알림 닫기'); close.textContent = '×'; close.addEventListener('click', () => container.replaceChildren()); container.append(close); }
 async function request(url, options = {}) {
+  const { progressOnly = false, ...fetchOptions } = options;
   let response;
-  try { response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...options, headers: { ...(token ? { 'x-workspace-token': token } : {}), ...options.headers } }); }
+  try { response = await fetch(url, { credentials: 'same-origin', cache: 'no-store', ...fetchOptions, headers: { ...(token ? { 'x-workspace-token': token } : {}), ...fetchOptions.headers } }); }
   catch { throw Object.assign(new Error('실행기와 연결이 끊겼습니다. 실행기를 다시 시작한 뒤 전체 주소로 다시 연결해 주세요.'), { code: 'CONNECTION_LOST' }); }
   let result;
   try { result = await response.json(); } catch { throw new Error('서버 응답을 읽지 못했습니다. 연결 상태를 확인하고 다시 시도하세요.'); }
   if (!response.ok) { const error = new Error(result.message ?? `요청을 처리하지 못했습니다 (${result.code ?? response.status}).`); error.errors = result.errors; error.code = result.code; error.status = response.status; throw error; }
+  if (!progressOnly && result.backlog && result.imports) captureReadingView(result);
   return result;
 }
 async function act(action, payload) {
@@ -74,6 +76,7 @@ function closeDialog(force = false) {
   if (busy) return false;
   if (!force && dirty() && !confirm('저장하지 않은 입력이 있습니다. 입력을 버리고 닫을까요?')) return false;
   $('#dialog').close(); dialogForm = undefined; dialogRevision = undefined; dialogSave = undefined;
+  if (state) render();
   scheduleAiPoll(0);
   const focusTarget = returnFocus?.isConnected ? returnFocus : [...document.querySelectorAll('[data-action]')].find(element => element.dataset.action === returnFocus?.dataset.action && element.dataset.key === returnFocus?.dataset.key);
   if (focusTarget) focusTarget.focus(); else $('#main').focus();
@@ -84,7 +87,7 @@ function openForm(title, content, save, help = '', successMessage = '작업공�
   returnFocus = document.activeElement;
   $('#dialog-content').innerHTML = `<form id="editor"><div class="dialog-head"><h2 id="dialog-title">${esc(title)}</h2><button type="button" class="icon-button" data-action="cancel" aria-label="창 닫기">×</button></div><div class="dialog-body">${help ? `<p>${esc(help)}</p>` : ''}<div class="form-errors field-error" tabindex="-1" role="alert" hidden></div>${content}</div><div class="dialog-footer"><button type="button" class="button secondary" data-action="cancel">취소</button><button type="submit" class="button">저장</button></div></form>`;
   dialogForm = $('#editor'); dialogRevision = state?.revision; dialogOriginal = formValue(dialogForm); dialogSave = save;
-  dialogForm.querySelector('#import-progress,#full-progress')?.insertAdjacentHTML('afterend', `<p id="server-reading-status" data-reading-status role="status" aria-live="polite">${esc(readingStatusText(state))}</p>`);
+  dialogForm.querySelector('#import-progress,#full-progress')?.insertAdjacentHTML('afterend', `<p id="server-reading-status" data-reading-status role="status" aria-live="polite">${esc(readingView?.message ?? readingStatusText(state))}</p>`);
   dialogForm.addEventListener('submit', async event => {
     event.preventDefault();
     if (!dirty()) { closeDialog(true); toast('변경한 내용이 없습니다.'); return; }
@@ -193,19 +196,24 @@ function readingStatusText(snapshot) {
   return `실제 저장 진행: 등록된 원본 ${originals.length}건 · AI 판독 완료 기록 ${completed}/${originals.length}건${detail}`;
 }
 function updateReadingStatus(snapshot) {
-  const message = readingStatusText(snapshot);
+  captureReadingView(snapshot);
+  const message = readingView.message;
   document.querySelectorAll('[data-reading-status]').forEach(element => { if (element.textContent !== message) element.textContent = message; });
   const previous = dialogForm?.querySelector('#import-progress,#full-progress');
   if (previous?.textContent && !busy && !importBatch && !previous.textContent.startsWith('이 창의 마지막 요청: ')) previous.textContent = `이 창의 마지막 요청: ${previous.textContent}`;
+}
+function captureReadingView(snapshot) {
+  const jobs = snapshot.imports?.jobs ?? [];
+  readingView = { message: readingStatusText(snapshot), hasOriginals: snapshot.backlog.sources.some(source => jobs.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef)), importsActive: Boolean(snapshot.imports?.active), aiActive: Boolean(snapshot.ai?.active), readOnly: Boolean(snapshot.readOnly) };
 }
 function readingPanel() {
   const jobs = state.imports?.jobs ?? [];
   const originals = backlog().sources.filter(source => jobs.some(job => job.status === 'ready' && job.sourceId === source.id && job.originalRef));
   const unfinished = unfinishedImports();
-  if (!originals.length && !unfinished.length) return '';
+  if (!originals.length && !unfinished.length && !readingView?.hasOriginals) return '';
   const active = jobs.findLast(job => job.status === 'extracting');
-  const blocked = state.imports?.active || state.ai?.active || state.readOnly || !state.ai?.available;
-  return `<section class="panel mb-20" role="region" aria-label="AI 판독 진행"><div class="panel-head"><h2>${active ? 'AI 원본 판독 진행 중' : 'AI 원본 판독과 이어서 진행'}</h2></div><div class="panel-body"><p data-reading-status role="status">${esc(readingStatusText(state))}</p><p>${active ? '판독이 진행 중입니다. 이 화면은 진행 상태를 자동으로 갱신합니다. 다른 창에서 시작한 판독이 끝날 때까지 중복 실행할 수 없습니다.' : '이어서 진행하면 등록된 원본의 완료 판독을 원본·지시문과 대조해 재사용하고 남은 판독과 요구사항·개발 계획 분석을 이어갑니다.'}</p>${unfinished.length ? `<p role="alert">등록을 완료하지 못한 파일 ${unfinished.length}건이 있습니다. 남은 파일 추가에서 원래 선택한 파일 목록을 다시 선택하고 자료 유형·보안 분류를 확인하세요.</p>` : ''}<p>여러 파일을 순서대로 보내는 실행 창은 유지하세요. 닫힌 창에서 아직 전송하지 않은 파일 목록은 보관되지 않습니다. 등록되지 않은 파일은 아래 이어서 진행에 포함되지 않으므로 남은 파일 추가를 사용하세요. 동일한 자료 유형·보안 분류의 완료 파일은 중복 검증 후 재사용합니다.</p><div class="row-actions"><button type="button" class="button" data-action="ai-full" ${blocked || !originals.length ? 'disabled' : ''}>AI 판독 이어서 진행</button><button type="button" class="button secondary" data-action="artifact-import-ai" ${blocked ? 'disabled' : ''}>남은 파일 추가</button></div></div></section>`;
+  const blocked = (readingView ? readingView.importsActive || readingView.aiActive || readingView.readOnly : state.imports?.active || state.ai?.active || state.readOnly) || !state.ai?.available;
+  return `<section class="panel mb-20" role="region" aria-label="AI 판독 진행"><div class="panel-head"><h2>${active ? 'AI 원본 판독 진행 중' : 'AI 원본 판독과 이어서 진행'}</h2></div><div class="panel-body"><p data-reading-status role="status">${esc(readingView?.message ?? readingStatusText(state))}</p><p>${active ? '판독이 진행 중입니다. 이 화면은 진행 상태를 자동으로 갱신합니다. 다른 창에서 시작한 판독이 끝날 때까지 중복 실행할 수 없습니다.' : '이어서 진행하면 등록된 원본의 완료 판독을 원본·지시문과 대조해 재사용하고 남은 판독과 요구사항·개발 계획 분석을 이어갑니다.'}</p>${unfinished.length ? `<p role="alert">등록을 완료하지 못한 파일 ${unfinished.length}건이 있습니다. 남은 파일 추가에서 원래 선택한 파일 목록을 다시 선택하고 자료 유형·보안 분류를 확인하세요.</p>` : ''}<p>여러 파일을 순서대로 보내는 실행 창은 유지하세요. 닫힌 창에서 아직 전송하지 않은 파일 목록은 보관되지 않습니다. 등록되지 않은 파일은 아래 이어서 진행에 포함되지 않으므로 남은 파일 추가를 사용하세요. 동일한 자료 유형·보안 분류의 완료 파일은 중복 검증 후 재사용합니다.</p><div class="row-actions"><button type="button" class="button" data-action="ai-full" ${blocked || !originals.length && !readingView?.hasOriginals ? 'disabled' : ''}>AI 판독 이어서 진행</button><button type="button" class="button secondary" data-action="artifact-import-ai" ${blocked ? 'disabled' : ''}>남은 파일 추가</button></div></div></section>`;
 }
 function importPanel() {
   const jobs = state.imports?.jobs ?? []; if (!jobs.length) return '';
@@ -347,9 +355,11 @@ function scheduleAiPoll(delay) {
   clearTimeout(aiPollTimer);
   if (!state) return;
   aiPollTimer = setTimeout(async () => {
+    const requestToken = token;
     try {
       const revision = state.revision;
-      const next = await request('/api/state');
+      const next = await request('/api/state', { progressOnly: true });
+      if (token !== requestToken) { scheduleAiPoll(); return; }
       aiPollErrorReported = false;
       if (state.revision !== revision) { updateReadingStatus(state); scheduleAiPoll(); return; }
       updateReadingStatus(next);
@@ -359,7 +369,7 @@ function scheduleAiPoll(delay) {
         state = next; render();
         if (action) [...document.querySelectorAll('[data-action]')].find(element => element.dataset.action === action && element.dataset.key === key)?.focus();
       } else { state = next; scheduleAiPoll(); }
-    } catch (error) { const code = error.code ?? 'UNKNOWN'; const progress = $('#server-reading-status'); if (progress) progress.textContent = error.message; if (aiPollErrorReported !== code && !dialogForm?.querySelector('[name="launcherAddress"]')) showError(error); aiPollErrorReported = code; aiPollTimer = setTimeout(scheduleAiPoll, 3000); }
+    } catch (error) { if (token !== requestToken) { scheduleAiPoll(); return; } const code = error.code ?? 'UNKNOWN'; const progress = $('#server-reading-status'); if (progress) progress.textContent = error.message; if (aiPollErrorReported !== code && !dialogForm?.querySelector('[name="launcherAddress"]')) showError(error); aiPollErrorReported = code; aiPollTimer = setTimeout(scheduleAiPoll, 3000); }
   }, delay ?? (state.ai?.active || state.imports?.active ? 1500 : 5000));
 }
 function navigate(destination) { if (!pages.some(item => item[0] === destination)) return; if (dialogForm && !closeDialog()) return; page = destination; render(); $('#main').focus(); }
@@ -627,6 +637,7 @@ async function connect(launchValue, { preserveForm = false } = {}) {
     token = session.token;
     workspaceId = session.workspaceId;
     state = await request('/api/state');
+    aiPollErrorReported = false;
     if (preserveForm && dialogForm) { const errors = dialogForm.querySelector('.form-errors'); errors.replaceChildren(document.createTextNode('연결을 복구했습니다. 현재 입력을 확인하고 다시 실행하세요.')); errors.hidden = false; }
     dialogForm?.querySelectorAll('[name="launcherAddress"]').forEach(input => { input.value = ''; });
     history.replaceState(null, '', location.pathname);

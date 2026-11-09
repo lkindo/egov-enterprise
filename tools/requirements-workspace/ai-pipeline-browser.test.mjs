@@ -135,12 +135,18 @@ test('a server restart during a selected upload batch preserves the files and re
     await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
     await secondStarted; const port = Number(new URL(app.url).port); await app.close();
     await page.getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).waitFor();
-    await page.getByRole('dialog').getByText('실행기와 연결이 끊겼습니다. 실행기를 다시 시작한 뒤 전체 주소로 다시 연결해 주세요.', { exact: true }).waitFor();
+    await page.getByRole('dialog').locator('.form-errors').getByText('실행기와 연결이 끊겼습니다. 실행기를 다시 시작한 뒤 전체 주소로 다시 연결해 주세요.', { exact: true }).waitFor();
+    await page.waitForFunction(() => document.querySelector('#server-reading-status')?.textContent.includes('실행기와 연결이 끊겼습니다.'));
     app = await startRequirementsServer({ workspace, port, contextProvider: async () => context, aiRunner: runner });
     const viewer = await browser.newPage(); viewer.setDefaultTimeout(10000); await viewer.goto(app.launchUrl);
     assert.match(await viewer.getByRole('region', { name: 'AI 판독 진행' }).textContent(), /등록을 완료하지 못한 파일 1건/);
     await viewer.getByRole('button', { name: '남은 파일 추가', exact: true }).waitFor();
     await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
+    await page.getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).click(); await page.getByLabel('실행기 전체 주소', { exact: true }).fill(app.launchUrl); await page.getByRole('button', { name: '다시 연결', exact: true }).click();
+    await page.getByRole('dialog').getByText('연결을 복구했습니다. 현재 입력을 확인하고 다시 실행하세요.', { exact: true }).waitFor();
+    await app.close();
+    await page.getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).waitFor();
+    app = await startRequirementsServer({ workspace, port, contextProvider: async () => context, aiRunner: runner });
     await page.getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).click(); await page.getByLabel('실행기 전체 주소', { exact: true }).fill(app.launchUrl); await page.getByRole('button', { name: '다시 연결', exact: true }).click();
     assert.equal(await page.locator('#artifact-files').evaluate(input => input.files.length), 3);
     assert.equal(await page.locator('[name="ai-consent"]').isChecked(), true);
@@ -182,7 +188,10 @@ test('an open failed analysis dialog follows actual server progress without losi
     assert.equal(await page.locator('[name="ai-consent"]').isChecked(), true);
     release(); release = undefined; await app.engine.waitForImports();
     await page.waitForFunction(() => document.querySelector('#server-reading-status')?.textContent.includes('완료 기록 2/2건'));
+    await page.context().setOffline(true);
     page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: '취소', exact: true }).click();
+    assert.match(await page.getByRole('region', { name: 'AI 판독 진행', exact: true }).textContent(), /완료 기록 2\/2건/);
+    await page.context().setOffline(false);
     await page.getByRole('button', { name: 'AI 판독 이어서 진행', exact: true }).click();
     await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
     await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 });
@@ -190,6 +199,29 @@ test('an open failed analysis dialog follows actual server progress without losi
   } catch (error) {
     const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); throw safe;
   } finally { release?.(); await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
+});
+
+test('closing a failed first upload in the same window exposes resume and remaining-file actions', async () => {
+  const workspace = mkdtempSync(join(tmpdir(), 'synthetic-close-failed-upload-')); let app, browser, readings = 0;
+  try {
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => {
+      if (request.phase === 'reading' && ++readings === 2) throw Object.assign(new Error('Synthetic invalid second reading'), { code: 'AI_DOCUMENT_OUTPUT_INVALID' });
+      return envelope(pipelineReply(request));
+    } });
+    browser = await chromium.launch({ headless: true }); const page = await browser.newPage(); page.setDefaultTimeout(15000);
+    await page.goto(app.launchUrl); await page.getByRole('button', { name: 'AI로 산출물 등록', exact: true }).click();
+    await page.locator('#artifact-files').setInputFiles(['담당자는 본인 접수 목록만 조회한다.', '빈 접수 목록은 빈 결과로 표시한다.'].map((text, index) => ({ name: `source-${index + 1}.txt`, mimeType: 'text/plain', buffer: Buffer.from(text) })));
+    await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
+    await page.locator('.form-errors').filter({ hasText: 'AI_DOCUMENT_OUTPUT_INVALID' }).waitFor();
+    page.once('dialog', dialog => dialog.accept()); await page.getByRole('button', { name: '취소', exact: true }).click();
+    await page.getByRole('region', { name: 'AI 판독 진행', exact: true }).waitFor();
+    assert.match(await page.getByRole('region', { name: 'AI 판독 진행', exact: true }).textContent(), /등록을 완료하지 못한 파일 1건/);
+    await page.waitForFunction(() => [...document.querySelectorAll('button')].some(button => button.textContent === 'AI 판독 이어서 진행' && !button.disabled));
+    assert.equal(await page.getByRole('button', { name: '남은 파일 추가', exact: true }).isVisible(), true);
+    assert.equal((await app.engine.state()).backlog.sources.length, 1);
+  } catch (error) {
+    const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); throw safe;
+  } finally { await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
 });
 
 test('the default UI reads uploaded material with AI, shows real prompts and the full draft, then applies one reviewed plan', async () => {

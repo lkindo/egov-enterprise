@@ -5,14 +5,17 @@ export const MAX_ANALYSIS_BATCHES = 128;
 export function planAnalysisBatches(snapshot, decisions = []) {
   const { sources } = snapshot.backlog;
   if (sources.reduce((count, source) => count + source.clauses.length, 0) > 3000) fail('AI_ANALYSIS_CAPACITY');
-  const batches = []; let batch = [], bytes = 0, count = 0;
+  // Count the serialized array and commas; each grouped source header occurs once.
+  const batches = []; let batch = [], bytes = 2, count = 0;
   for (const source of sources) for (const clause of source.clauses) {
-    const size = Buffer.byteLength(JSON.stringify(clause)) + Buffer.byteLength(JSON.stringify({ ...source, clauses: [] }));
-    if (size > 40 * 1024) fail('AI_SOURCE_CLAUSE_TOO_LARGE');
-    if (count && (bytes + size > 40 * 1024 || count >= 32)) { batches.push(batch); batch = []; bytes = 0; count = 0; }
+    const clauseBytes = Buffer.byteLength(JSON.stringify(clause)), headerBytes = Buffer.byteLength(JSON.stringify({ ...source, clauses: [] }));
+    if (2 + headerBytes + clauseBytes > 40 * 1024) fail('AI_SOURCE_CLAUSE_TOO_LARGE');
+    const additionalBytes = batch.at(-1)?.id === source.id ? 1 + clauseBytes : (batch.length ? 1 : 0) + headerBytes + clauseBytes;
+    if (count && (bytes + additionalBytes > 40 * 1024 || count >= 32)) { batches.push(batch); batch = []; bytes = 2; count = 0; }
     let target = batch.at(-1);
-    if (target?.id !== source.id) { target = { ...source, clauses: [] }; batch.push(target); }
-    target.clauses.push(clause); bytes += size; count++;
+    if (target?.id !== source.id) { bytes += (batch.length ? 1 : 0) + headerBytes; target = { ...source, clauses: [] }; batch.push(target); }
+    bytes += (target.clauses.length ? 1 : 0) + clauseBytes;
+    target.clauses.push(clause); count++;
   }
   if (count) batches.push(batch);
   if (batches.length > MAX_ANALYSIS_BATCHES) fail('AI_ANALYSIS_CAPACITY');
