@@ -13,6 +13,8 @@ import {
   expectedRouting,
   expectedShellAccess,
   inspectRouteRepository,
+  journeyNetworkStubSources,
+  journeyTestDeclarations,
   pageLoadsModule,
   parsePageAuthorizationSources,
   parseConfigRedirectsSource,
@@ -869,4 +871,49 @@ test('E4 is exactly a reviewed journey roundtrip binding that covers every actio
     capability.evidence = capability.evidence.filter((file) => file !== SPEC);
     capability.roundtrips = [{ spec: SPEC, test: TITLE, actions: ['create'] }];
   }), /event\.mutations: roundtrip spec must be listed in evidence/);
+});
+
+/*
+  [2026-11-10 Codex 32차] 가리킨 시험을 주석 처리해도 정규식은 제목을 찾아 E4 가 남았다. 이제 토큰으로 실제 test(...) 호출만 센다.
+  가로채기는 spec 이 불러오는 frontend/e2e 의 fixture·helper 까지 주석을 지우고 본다.
+*/
+test('journey roundtrip titles count only real test() calls, not comments, strings, skip or describe', () => {
+  const source = [
+    "import { test } from '../fixtures/browser-test';",
+    "test.describe('묶음', () => {",
+    "  test('실제 시험', async () => {});",
+    "  // test('주석 처리한 시험', async () => {});",
+    "  /* test('블록 주석 시험', async () => {}); */",
+    "  const note = \"test('문자열 속 시험', async () => {});\";",
+    "  test.skip('건너뛴 시험', async () => {});",
+    "  test.fixme('고칠 시험', async () => {});",
+    "  obj.test('점 호출', async () => {});",
+    "  describe('다른 함수', () => {});",
+    '  test(`템플릿 제목`, async () => {});',
+    "  test('두 번', async () => {});",
+    "  test('두 번', async () => {});",
+    '});',
+  ].join('\n');
+  const declarations = journeyTestDeclarations(source, 'frontend/e2e/journeys/sample.spec.ts');
+  assert.deepEqual(Object.fromEntries(declarations), { '실제 시험': 1, '템플릿 제목': 1, '두 번': 2 });
+});
+
+test('a journey that stubs the network through an imported fixture is not a server roundtrip', (t) => {
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), 'journey-stub-'));
+  t.after(() => fs.rmSync(root, { recursive: true, force: true }));
+  const write = (relative, text) => {
+    fs.mkdirSync(path.dirname(path.join(root, relative)), { recursive: true });
+    fs.writeFileSync(path.join(root, relative), text);
+  };
+  write('frontend/e2e/journeys/clean.spec.ts', "import { test } from '../fixtures/clean';\ntest('a', async () => {});\n");
+  write('frontend/e2e/fixtures/clean.ts', "// page.route('**/api/**', route => route.fulfill({}));\nexport { test } from '@playwright/test';\n");
+  write('frontend/e2e/journeys/nested.spec.ts', "import { test } from '../helpers/chain';\ntest('a', async () => {});\n");
+  write('frontend/e2e/helpers/chain.ts', "export { test } from '../fixtures/stubbed';\n");
+  write('frontend/e2e/fixtures/stubbed.ts', "export const test = base.extend({ page: async ({ page }, use) => { await page.route('**/api/**', r => r.fulfill({ body: '{}' })); await use(page); } });\n");
+  write('frontend/e2e/journeys/typed.spec.ts', "import type { Stub } from '../fixtures/stubbed';\ntest('a', async () => {});\n");
+  assert.deepEqual(journeyNetworkStubSources(root, 'frontend/e2e/journeys/clean.spec.ts'), []);
+  assert.deepEqual(journeyNetworkStubSources(root, 'frontend/e2e/journeys/nested.spec.ts'), ['frontend/e2e/fixtures/stubbed.ts']);
+  assert.deepEqual(journeyNetworkStubSources(root, 'frontend/e2e/journeys/typed.spec.ts'), []);
+  assert.deepEqual(journeyNetworkStubSources(ROOT, 'frontend/e2e/journeys/authentication.spec.ts'),
+    ['frontend/e2e/journeys/authentication.spec.ts']);
 });
