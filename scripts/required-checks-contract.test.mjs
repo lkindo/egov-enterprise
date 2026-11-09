@@ -1992,7 +1992,8 @@ test('secret scanning verifies the gitleaks tarball against a pinned SHA-256 bef
   const pin = /^SHA256=[0-9a-f]{64}$/m;
   const check = /^echo "\$\{SHA256\} {2}\$\{ARCHIVE\}" \| sha256sum -c -$/m;
   const extract = /^tar -xzf "\$ARCHIVE" gitleaks$/m;
-  const download = /^curl -sSfL -o "\$ARCHIVE" (\S+)$/m;
+  // 내려받기 옵션(제한 재시도 등)은 -o 앞에 온다 — 확인 대상은 -o 로 쓴 파일이다(DEC-OPS-410).
+  const download = /^curl ((?:\S+ )+)-o "\$ARCHIVE" (\S+)$/m;
   for (const [label, from, to, detail] of [
     ['former pipe', /^SHA256=[\s\S]*^tar -xzf "\$ARCHIVE" gitleaks$/m,
       'curl -sSL "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz" \\\n  | tar -xz gitleaks',
@@ -2002,7 +2003,7 @@ test('secret scanning verifies the gitleaks tarball against a pinned SHA-256 bef
     ['extract before check', /^(echo "\$\{SHA256\}.*)\n(tar -xzf .*)$/m, '$2\n$1', /tar runs before the checksum check/],
     ['other file checked', check, 'echo "${SHA256}  ${RUNNER_TEMP}/other.tar.gz" | sha256sum -c -', /cover the file curl wrote/],
     ['other file extracted', extract, 'tar -xzf "${RUNNER_TEMP}/other.tar.gz" gitleaks', /extract the verified file/],
-    ['download not checked', download, 'curl -sSfL -o "${RUNNER_TEMP}/fresh.tar.gz" $1', /cover the file curl wrote/],
+    ['download not checked', download, 'curl $1-o "${RUNNER_TEMP}/fresh.tar.gz" $2', /cover the file curl wrote/],
   ]) {
     const errors = validateStaticContract(withScanRun(from, to));
     assert.ok(!errors.some(error => /manifest command exactly/.test(error)), `${label}: the exact-run binding must stay green so only the integrity check decides`);

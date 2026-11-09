@@ -138,6 +138,24 @@ jobs:
           java-version: ${{ env.JAVA_VERSION }}
           distribution: temurin
 
+      # Gradle 배포본 확보만 제한 재시도한다(DEC-OPS-410 — 2026-11 PR 에서 배포판 내려받기 10초 시간 초과가 이 잡을 두 번 막았다).
+      # CodeQL 추적을 켜기 전에 끝내 내려받기가 추적되지 않게 하고, 아래 추적 컴파일은 한 번만 실행해 실패 신호를 보존한다.
+      - name: Provision Gradle distribution with bounded retry
+        if: matrix.language == 'java'
+        run: |
+          for attempt in 1 2 3; do
+            if ./gradlew --version; then
+              exit 0
+            fi
+            if [ "$attempt" -eq 3 ]; then
+              echo "::error::Gradle 배포본을 3회 시도 후에도 확보하지 못했습니다."
+              exit 1
+            fi
+            delay=$((attempt * 15))
+            echo "::warning::Gradle 배포본 확보 실패(${attempt}/3), ${delay}초 후 재시도합니다."
+            sleep "$delay"
+          done
+
       - name: Initialize CodeQL security analysis
         id: codeql
         uses: github/codeql-action/init@33d7b85da1a04171e211befe2c739303b9a4c066  # v4
@@ -236,7 +254,9 @@ jobs:
           # 받은 파일을 이 값으로 확인한 뒤에만 풀고 실행한다(일치하지 않으면 sha256sum 이 실패해 단계가 멈춘다).
           SHA256=a65b5253807a68ac0cafa4414031fd740aeb55f54fb7e55f386acb52e6a840eb
           ARCHIVE="${RUNNER_TEMP}/gitleaks.tar.gz"
-          curl -sSfL -o "$ARCHIVE" "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz"
+          # 릴리스 내려받기만 제한 재시도한다(curl 의 일시 오류 — 연결 실패·시간 초과·408·429·5xx). 받은 파일의 SHA-256 확인과 스캔은
+          # 한 번만 돈다. 2026-11 PR 에서 GitHub 릴리스 504 가 이 잡을 네 번 연속 막았다(DEC-OPS-410).
+          curl -sSfL --retry 4 --retry-delay 10 --retry-connrefused --connect-timeout 30 -o "$ARCHIVE" "https://github.com/gitleaks/gitleaks/releases/download/v${VERSION}/gitleaks_${VERSION}_linux_x64.tar.gz"
           echo "${SHA256}  ${ARCHIVE}" | sha256sum -c -
           tar -xzf "$ARCHIVE" gitleaks
 
