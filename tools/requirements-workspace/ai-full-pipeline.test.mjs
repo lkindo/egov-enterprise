@@ -9,10 +9,11 @@ import { createRequirementsEngine, initialRequirementsMetadata, validateRequirem
 import { context, source, analysis, decomposition, envelope } from './test-fixtures/ai.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import { readDocument } from './document-reader.mjs';
+import { validatePrivateBacklog } from './private-validation.mjs';
 
 async function setup(t, runner, documentReader) {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-full-ai-'));
-  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validateBacklogPack(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validatePrivateBacklog(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, root: process.cwd(), contextProvider: async () => context, aiRunner: runner, documentReader });
   t.after(async () => { await engine.close(); store.close(); rmSync(workspace, { recursive: true, force: true }); });
   const act = (name, payload) => engine.action(store.read().revision, name, payload);
@@ -32,9 +33,60 @@ function reply(request, { blocking = false } = {}) {
   }
 }
 
+test('patterns in original evidence and six-stage results remain private advisories through final task confirmation', async t => {
+  const phases = [];
+  const app = await setup(t, async ({ request }) => {
+    phases.push(request.phase);
+    const result = reply(request);
+    if (request.phase === 'reading') result.blocks[0].note += ' 연락처 010-1234-5678';
+    else if (result.summary) result.summary += ' 연락처 010-1234-5678';
+    if (result.requirements) result.requirements[0].description += ' 연락처 010-1234-5678';
+    if (result.workItems) result.workItems[0].description = '연락처 010-1234-5678';
+    if (result.acceptanceCriteria) result.acceptanceCriteria[0].then += ' 연락처 010-1234-5678';
+    return envelope(result, request.phase);
+  });
+  const current = app.store.read().backlog.sources[0];
+  await app.act('source.save', { ...current, summary: '원문 담당 연락처 010-1234-5678' });
+  await app.start(); await app.engine.waitForAi();
+  let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.equal(phases.length, 6);
+  assert.ok(state.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+  assert.doesNotMatch(JSON.stringify(state.sensitivityWarnings), /010-1234/);
+  assert.equal(state.metadata.baselines.length, 0);
+  await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.equal(phases.length, 6, 'unchanged completed pipeline reuses all checkpoints');
+  for (const stage of ['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan']) assert.ok(state.ai.current.sensitivityWarnings.some(warning => warning.stage === stage), `reused ${stage} warning`);
+  await app.act('ai.confirm', { jobId: state.ai.current.id });
+  state = await app.engine.state();
+  assert.equal(state.baselineCurrent, true);
+  assert.equal(state.metadata.exports.at(-1).kind, 'task');
+  assert.equal(validateBacklogPack(state.backlog).valid, false, 'repository export policy remains strict');
+  const exported = state.metadata.exports.at(-1), artifact = app.engine.artifact(exported.id);
+  assert.ok(exported.sensitivityWarnings.some(warning => warning.stage === 'export'));
+  assert.match(artifact.content, /^> 민감정보 패턴 감지/);
+  assert.doesNotMatch(JSON.stringify(exported.sensitivityWarnings), /010-1234/);
+  await app.act('export.create', { kind: 'sheets' });
+  state = await app.engine.state();
+  const requirementSheet = state.metadata.exports.findLast(entry => entry.filename === 'requirements-review.csv');
+  const workSheet = state.metadata.exports.findLast(entry => entry.filename === 'stories-ac-review.csv');
+  assert.ok(workSheet.sensitivityWarnings.length);
+  await app.act('sheets.import', { requirements: app.engine.artifact(requirementSheet.id).content, workItems: app.engine.artifact(workSheet.id).content });
+  await app.act('export.create', { kind: 'uat' });
+  state = await app.engine.state(); const uatSheet = state.metadata.exports.at(-1);
+  assert.ok(uatSheet.sensitivityWarnings.length);
+  await app.act('uat.import', { csv: app.engine.artifact(uatSheet.id).content, buildRef: 'SYNTHETIC-BUILD' });
+  await app.act('export.create', { kind: 'audit' });
+  state = await app.engine.state();
+  assert.ok(state.metadata.exports.at(-1).sensitivityWarnings.length);
+  assert.match(app.engine.artifact(state.metadata.exports.at(-1).id).content, /^> 민감정보 패턴 감지/);
+  await app.act('composition.check', { selection: [] });
+  assert.ok((await app.engine.state()).composition);
+});
+
 test('one full AI run produces a document model, reviewed requirements, reviewed work and task preview without fabricating human confirmation', async t => {
   const phases = [], prompts = [];
-  const app = await setup(t, async ({ request }) => { phases.push(request.phase); prompts.push(request.instructions); return envelope(reply(request)); });
+  const app = await setup(t, async ({ request }) => { phases.push(request.phase); prompts.push(request.instructions); return envelope(reply(request), request.phase); });
   await app.start(); await app.engine.waitForAi();
   let state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready');
@@ -62,9 +114,28 @@ test('one full AI run produces a document model, reviewed requirements, reviewed
   assert.equal(state.backlog.businessRequirements[0].acceptanceDisposition, 'pending');
 });
 
+test('old xhigh analysis checkpoints are not relabeled as a new high analysis', async t => {
+  const phases = [];
+  const app = await setup(t, async ({ request }) => { phases.push(request.phase); return envelope(reply(request), request.phase); });
+  await app.start(); await app.engine.waitForAi();
+  let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready');
+  const sources = structuredClone(state.backlog.sources), previousDiscovery = state.ai.current.checkpoints.discovery.id;
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).effort = 'xhigh'; });
+  phases.length = 0;
+  await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.deepEqual(phases, ['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan']);
+  assert.equal(state.ai.current.effort, 'high'); assert.equal(state.ai.current.resumeFrom, undefined);
+  assert.deepEqual(state.ai.current.reusedStages, []);
+  assert.notEqual(state.ai.current.checkpoints.discovery.id, previousDiscovery);
+  assert.equal(state.metadata.ai.jobs.at(-2).effort, 'xhigh');
+  assert.deepEqual(state.backlog.sources, sources); assert.equal(state.metadata.baselines.length, 0);
+});
+
 test('unresolved policy decisions pause automatic planning and preserve the previous live workspace', async t => {
   const phases = [];
-  const app = await setup(t, async ({ request }) => { phases.push(request.phase); return envelope(reply(request, { blocking: true })); });
+  const app = await setup(t, async ({ request }) => { phases.push(request.phase); return envelope(reply(request, { blocking: true }), request.phase); });
   await app.start(); await app.engine.waitForAi();
   const state = await app.engine.state();
   assert.equal(state.ai.current.status, 'needs-decisions');
@@ -77,9 +148,9 @@ test('an independently detected PDF transcription mismatch blocks planning even 
   const phases = [];
   const reader = (input, options) => readDocument(input, { ...options,
     prepare: async () => ({ format: 'pdf', warningCodes: [], units: [{ id: 'U-1', locator: 'PDF 1쪽', text: null, nativeReference: '처리기간은 3일이며 타인 자료 열람은 불가하다.', attachment: null }] }),
-    execute: async () => envelope({ documentTypes: ['other'], summary: '처리기간과 열람 범위를 설명한다.', blocks: [{ inputId: 'U-1', heading: '업무 규칙', kind: 'paragraph', text: '처리기간은 8일이며 타인 자료 열람은 가능하다.', certainty: 'clear', note: '모델이 확신한 합성 오판독' }], unreadable: [] }),
+    execute: async () => envelope({ documentTypes: ['other'], summary: '처리기간과 열람 범위를 설명한다.', blocks: [{ inputId: 'U-1', heading: '업무 규칙', kind: 'paragraph', text: '처리기간은 8일이며 타인 자료 열람은 가능하다.', certainty: 'clear', note: '모델이 확신한 합성 오판독' }], unreadable: [] }, 'reading'),
   });
-  const app = await setup(t, async ({ request }) => { phases.push(request.phase); return envelope(reply(request)); }, reader);
+  const app = await setup(t, async ({ request }) => { phases.push(request.phase); return envelope(reply(request), request.phase); }, reader);
   await app.act('source.ingest', { requestId: crypto.randomUUID(), filename: 'synthetic-reference.custom', base64: Buffer.from('처리기간은 3일이며 타인 자료 열람은 불가하다.').toString('base64'), sourceType: 'other', classification: 'internal', redacted: true, consent: true, model: 'claude-opus-5-5', readWithAI: true });
   await app.engine.waitForImports(); assert.equal((await app.engine.state()).imports.jobs.at(-1).needsReview, true);
   await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
@@ -96,18 +167,18 @@ test('an independently detected PDF transcription mismatch blocks planning even 
 test('multiple planning batches retain every requirement, shared epic, AC and trace through final confirmation', async t => {
   let expanded = false; const epicId = 'EPIC-1', batches = [];
   const app = await setup(t, async ({ request }) => {
-    if (!expanded) return envelope(reply(request));
+    if (!expanded) return envelope(reply(request), request.phase);
     if (request.phase === 'analysis') {
       const value = analysis(request, { question: false }), first = value.requirements[0];
       value.requirements = Array.from({ length: 5 }, (_, index) => ({ ...first, id: `REQ-${index + 1}`, title: `조회 규칙 ${index + 1}` }));
-      value.coverage[0].requirementIds = value.requirements.map(req => req.id); return envelope(value);
+      value.coverage[0].requirementIds = value.requirements.map(req => req.id); return envelope(value, request.phase);
     }
     if (request.phase === 'decomposition') {
       const batch = request.data.planningBatch, ids = batch.requirementIds, base = decomposition(); batches.push(ids);
       const first = batch.index === 1, child = first ? 'STORY-1' : `${batch.idPrefix}STORY`, allow = first ? 'AC-ALLOW' : `${batch.idPrefix}ALLOW`, forbid = first ? 'AC-FORBID' : `${batch.idPrefix}FORBID`;
       return envelope({ workItems: [{ ...base.workItems[0], id: epicId, requirementIds: ids }, { ...base.workItems[1], id: child, parentEpicId: epicId, requirementIds: ids }], acceptanceCriteria: base.acceptanceCriteria.map(ac => ({ ...ac, id: ac.polarity === 'allow' ? allow : forbid, workItemId: child, requirementIds: ids })), traceLinks: ids.map((id, index) => ({ ...base.traceLinks[0], id: id === 'REQ-1' ? 'TRACE-1' : `${batch.idPrefix}TRACE-${index}`, requirementId: id, workItemId: child, acId: allow })), issues: [] });
     }
-    return envelope(reply(request));
+    return envelope(reply(request), request.phase);
   });
   await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready'); await app.act('ai.confirm', { jobId: state.ai.current.id }); expanded = true;
@@ -120,7 +191,7 @@ test('multiple planning batches retain every requirement, shared epic, AC and tr
 });
 
 test('corrupt stored document structure cannot be rendered or confirmed as a valid proposal', async t => {
-  const app = await setup(t, async ({ request }) => envelope(reply(request)));
+  const app = await setup(t, async ({ request }) => envelope(reply(request), request.phase));
   await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
   const record = JSON.parse(app.store.readArchive(state.ai.current.resultRef)); record.pipeline.documents[0].sections = 'untrusted wrong shape';
   const ref = app.store.writeArchive('ai', JSON.stringify(record));
@@ -130,12 +201,59 @@ test('corrupt stored document structure cannot be rendered or confirmed as a val
   assert.equal(app.store.read().backlog.businessRequirements.length, 0);
 });
 
+test('a checkpoint cannot inject notices from an unrelated phase into a resumed analysis', async t => {
+  const app = await setup(t, async ({ request }) => envelope(reply(request), request.phase));
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  const checkpoint = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.discovery));
+  checkpoint.sensitivityWarnings = [{ kind: 'mobile-phone', stage: 'export', count: 1, paths: ['project'] }];
+  const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint));
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).checkpoints.discovery = ref; });
+  await app.start(); await app.engine.waitForAi();
+  assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID');
+});
+
+test('legacy representative anchors are rebuilt from canonical originals without re-calling models or trusting forged model/source data', async t => {
+  for (const fault of ['anchors-only', 'forged-model', 'source-metadata', 'later-title', 'later-source-id']) {
+    const phases = [];
+    const app = await setup(t, async ({ request }) => {
+      phases.push(request.phase); const value = reply(request);
+      if (request.phase === 'synthesis') value.summary += ' 연락처 010-1234-5678';
+      if (request.phase === 'analysis') {
+        value.requirements[0].citations = value.requirements[0].citations.filter(cite => cite.clauseId !== 'C-DEC');
+        const decoration = value.coverage.find(entry => entry.clauseId === 'C-DEC'); decoration.disposition = 'excluded'; decoration.requirementIds = []; decoration.rationale = '장식선은 기능 요구의 근거가 아니다';
+      }
+      return envelope(value, request.phase);
+    });
+    await app.act('source.save', { ...structuredClone(source), clauses: [{ ...source.clauses[0], text: source.clauses[0].text + ' 연락처 010-1234-5678' }, { ...source.clauses[0], id: 'C-DEC', text: '─'.repeat(30) }] });
+    if (fault.startsWith('later-')) await app.act('source.save', { ...structuredClone(source), id: 'SRC-2', title: '합성 두 번째 자료' });
+    const originals = structuredClone(app.store.read().backlog.sources);
+    await app.start(); await app.engine.waitForAi(); let state = await app.engine.state(); assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+    const completedCalls = phases.length;
+    assert.equal(phases.filter(phase => phase === 'reading').length, originals.length); assert.equal(phases.filter(phase => phase === 'synthesis').length, 1);
+    const checkpoint = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.discovery));
+    assert.ok(checkpoint.sensitivityWarnings.some(warning => warning.stage === 'synthesis' && warning.kind === 'mobile-phone'));
+    checkpoint.output.documents[0].anchors.push({ sourceId: source.id, clauseId: 'C-DEC', quote: '─'.repeat(30) });
+    if (fault === 'forged-model') checkpoint.output.businessModel.issues.push({ id: 'Q-FORGED', kind: 'risk', severity: 'blocking', question: '합성 검증 질문', options: [], requirementIds: [], citations: [{ sourceId: source.id, clauseId: source.clauses[0].id, quote: 'INVENTED-UNTRUSTED-CITATION' }] });
+    if (fault === 'source-metadata') checkpoint.output.documents[0].title = 'FORGED-TITLE';
+    if (fault === 'later-title') checkpoint.output.documents[1].title = 'FORGED-TITLE';
+    if (fault === 'later-source-id') checkpoint.output.documents[1].sourceId = 'UNKNOWN';
+    const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint));
+    app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).checkpoints.discovery = ref; });
+    await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+    assert.equal(phases.length, completedCalls, `no original reading or model execution repeats: ${fault} ${phases.join(',')}`);
+    assert.deepEqual(state.backlog.sources, originals); assert.equal(state.metadata.baselines.length, 0);
+    if (fault === 'anchors-only') { assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode); assert.notEqual(state.ai.current.checkpoints.discovery.id, ref.id); const refreshed = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.discovery)); assert.equal(refreshed.output.documents[0].anchors.length, 1); assert.deepEqual(refreshed.output.businessModel, checkpoint.output.businessModel); assert.deepEqual(refreshed.sensitivityWarnings, checkpoint.sensitivityWarnings); }
+    else { assert.equal(state.ai.current.status, 'failed'); assert.equal(state.ai.current.errorCode, 'AI_OUTPUT_INVALID'); }
+    assert.equal(JSON.parse(app.store.readArchive(ref)).output.documents[0].anchors.length, 2, 'old immutable history is retained');
+  }
+});
+
 test('no executable scope asks a concrete scope question instead of failing in the planning stage', async t => {
   const phases = [];
   const app = await setup(t, async ({ request }) => {
     phases.push(request.phase); const value = reply(request);
     if (request.phase === 'analysis') { value.requirements[0].scope = 'excluded'; value.coverage[0].disposition = 'excluded'; }
-    return envelope(value);
+    return envelope(value, request.phase);
   });
   await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
   assert.equal(state.ai.current.status, 'needs-decisions');
@@ -149,7 +267,7 @@ test('regenerating a narrower scope removes old epic coverage only with explicit
     if (request.phase === 'analysis') {
       const value = analysis(request, { question: false });
       value.requirements.push({ ...value.requirements[0], id: 'REQ-2', title: '접수 보조 조회', ...(narrowed ? { scope: 'excluded' } : {}) });
-      value.coverage[0].requirementIds = ['REQ-1', 'REQ-2']; return envelope(value);
+      value.coverage[0].requirementIds = ['REQ-1', 'REQ-2']; return envelope(value, request.phase);
     }
     if (request.phase === 'decomposition') {
       const value = decomposition(), ids = narrowed ? ['REQ-1'] : ['REQ-1', 'REQ-2'];
@@ -157,9 +275,9 @@ test('regenerating a narrower scope removes old epic coverage only with explicit
       if (!narrowed) value.traceLinks.push({ ...value.traceLinks[0], id: 'TRACE-2', requirementId: 'REQ-2' });
       else value.retirements = [{ entity: 'traceLink', id: 'TRACE-2', reason: '합성 후속 결정으로 보조 조회를 범위에서 제외한다.' }];
       if (narrowed) value.workItems = value.workItems.filter(item => item.workItemType !== 'epic');
-      return envelope(value);
+      return envelope(value, request.phase);
     }
-    return envelope(reply(request));
+    return envelope(reply(request), request.phase);
   });
   await app.start(); await app.engine.waitForAi(); let state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready'); await app.act('ai.confirm', { jobId: state.ai.current.id });
@@ -179,16 +297,21 @@ test('an explicitly restarted unchanged pipeline reuses validated checkpoints, a
   const app = await setup(t, async ({ request }) => {
     phases.push(request.phase);
     if (request.phase === 'review-requirements' && rejectReview) { rejectReview = false; throw Object.assign(new Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); }
-    return envelope(reply(request));
+    const result = reply(request);
+    if (result.summary) result.summary += ' 연락처 010-1234-5678';
+    if (result.requirements) result.requirements[0].description += ' 연락처 010-1234-5678';
+    return envelope(result, request.phase);
   });
   await app.start(); await app.engine.waitForAi();
   let state = await app.engine.state(); assert.equal(state.ai.current.status, 'failed');
+  assert.deepEqual(state.sensitivityWarnings, [], 'failed unpublished results do not pollute the workspace advisory');
   assert.ok(state.ai.current.checkpoints.analysis); assert.ok(state.ai.current.checkpoints.discovery);
   phases.length = 0;
   await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready');
   assert.deepEqual(phases, ['review-requirements', 'decomposition', 'review-plan']);
   assert.ok(state.ai.current.reusedStages.includes('analysis'));
+  for (const stage of ['reading', 'synthesis', 'analysis']) assert.ok(state.ai.current.sensitivityWarnings.some(warning => warning.stage === stage && warning.kind === 'mobile-phone'), `reused ${stage} warning must be retained in this job`);
   await app.act('source.save', { ...source, clauses: [{ ...source.clauses[0], text: `${source.clauses[0].text} 빈 목록은 빈 결과로 안내한다.` }] });
   phases.length = 0;
   await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
@@ -198,7 +321,7 @@ test('an explicitly restarted unchanged pipeline reuses validated checkpoints, a
 test('a failed later analysis batch resumes after validated prior coverage without losing its decision question', async t => {
   let failSecond = true; const indices = [];
   const app = await setup(t, async ({ request }) => {
-    if (request.phase !== 'analysis') return envelope(reply(request));
+    if (request.phase !== 'analysis') return envelope(reply(request), request.phase);
     const batch = request.data.analysisBatch; indices.push(batch.index);
     if (batch.index === 2 && failSecond) { failSecond = false; throw Object.assign(new Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); }
     return envelope({ requirements: [], issues: batch.index === 1 ? [{ id: 'POLICY', kind: 'decision', severity: 'blocking', question: '접수 업무의 적용 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [{ sourceId: 'SRC-1', clauseId: request.data.sources[0].clauses[0].id, quote: source.clauses[0].text }] }] : [], coverage: request.data.sources.flatMap(src => src.clauses.map(clause => ({ sourceId: src.id, clauseId: clause.id, disposition: 'excluded', rationale: '업무 배경이며 적용 범위 결정이 필요하다.' }))) });

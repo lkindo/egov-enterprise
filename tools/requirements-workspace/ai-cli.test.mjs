@@ -32,6 +32,15 @@ test('nonzero exit, model errors, malformed JSON and unavailable structured outp
     await assert.rejects(runner()({ request: {}, schema: {}, cwd }), error => error.code === 'AI_CLI_FAILED' && !error.message.includes('PRIVATE'));
   }
 });
+
+test('document analysis uses high while original reading and independent reviews retain xhigh', async t => {
+  const { cwd, runner } = fixture(t, `let data='';for await(const chunk of process.stdin)data+=chunk;process.stdout.write(JSON.stringify({type:'result',subtype:'success',is_error:false,structured_output:{args:process.argv.slice(2)},modelUsage:{'claude-opus-5-5':{inputTokens:1,outputTokens:1}}}));`);
+  for (const [phase, expected] of [['reading', 'xhigh'], ['synthesis', 'high'], ['analysis', 'high'], ['review-requirements', 'high'], ['decomposition', 'high'], ['review-plan', 'high'], [undefined, 'xhigh']]) {
+    const result = await runner()({ request: { ...(phase ? { phase } : {}), data: {} }, schema: { type: 'object' }, cwd });
+    assert.equal(result.output.args[result.output.args.indexOf('--effort') + 1], expected, phase ?? 'independent code review');
+    assert.equal(result.effort, expected);
+  }
+});
 test('oversized output, timeout and cancellation terminate the owned child', async t => {
   const large = fixture(t, `process.stdout.write('X'.repeat(8192));setInterval(()=>{},1000);`);
   await assert.rejects(large.runner({ maxOutputBytes: 2048 })({ request: {}, schema: {}, cwd: large.cwd }), { code: 'AI_OUTPUT_TOO_LARGE' });

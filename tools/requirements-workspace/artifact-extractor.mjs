@@ -5,6 +5,7 @@ import { extname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { assertExternalWorkspace } from './store.mjs';
 import { scanBacklogForPiiAndSecrets } from '../../scripts/export-deliverables-workspace.mjs';
+import { collectSensitivityWarnings } from './privacy-warnings.mjs';
 const require = createRequire(new URL('../../frontend/package.json', import.meta.url));
 export const MAX_ARTIFACT_BYTES = 20 * 1024 ** 2;
 export const ARTIFACT_EXTENSIONS = ['txt', 'md', 'html', 'htm', 'hwp', 'hwpx', 'docx', 'xlsx', 'xls', 'pdf', 'pptx', 'png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'];
@@ -20,7 +21,7 @@ export function validateArtifactInput({ filename, bytes }) {
   if (signature && !signature.test(hex)) throw error('FILE_SIGNATURE_INVALID');
   return format;
 }
-export function extractTextUnits(bytes, format, { onWarning = () => {} } = {}) {
+export function extractTextUnits(bytes, format, { onWarning = () => {}, sensitiveData = 'error', onSensitivity = () => {} } = {}) {
   let text;
   try {
     if (bytes.length >= 2 && bytes[0] === 0xff && bytes[1] === 0xfe) text = new TextDecoder('utf-16le', { fatal: true }).decode(bytes);
@@ -28,7 +29,10 @@ export function extractTextUnits(bytes, format, { onWarning = () => {} } = {}) {
     else text = new TextDecoder('utf-8', { fatal: true }).decode(bytes);
   } catch { throw error('FILE_ENCODING_INVALID'); }
   if (text.includes('\0')) throw error('FILE_ENCODING_INVALID');
-  if (scanBacklogForPiiAndSecrets({ project: { rawDocument: text } }).length) throw error('FILE_SENSITIVE_INPUT');
+  if (scanBacklogForPiiAndSecrets({ project: { rawDocument: text } }).length) {
+    if (sensitiveData !== 'warning') throw error('FILE_SENSITIVE_INPUT');
+    onSensitivity(text);
+  }
   if (['html', 'htm'].includes(format)) {
     const { JSDOM } = require('jsdom');
     const dom = new JSDOM(text);
@@ -70,7 +74,7 @@ function segments(filename, units) {
   if (!result.length) throw error('FILE_NO_TEXT');
   return result;
 }
-export function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs = 180000, documentInput = false }) {
+export function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs = 180000, documentInput = false, sensitiveData = 'error' }) {
   if (!cwd) throw error('FILE_WORKSPACE_REQUIRED');
   assertExternalWorkspace(cwd);
   if (signal?.aborted) throw error('FILE_CANCELLED');
@@ -98,14 +102,15 @@ export function parseInChild(bytes, format, { cwd, ocr, signal, timeoutMs = 1800
         finish(null, value);
       } catch { finish('FILE_EXTRACTION_FAILED'); }
     });
-    child.stdin.on('error', () => {}); child.stdin.end(JSON.stringify({ format, base64: bytes.toString('base64'), ocr: ocr === true }));
+    child.stdin.on('error', () => {}); child.stdin.end(JSON.stringify({ format, base64: bytes.toString('base64'), ocr: ocr === true, sensitiveData }));
   });
 }
-export async function extractArtifact(input, { cwd, ocr = true, signal, timeoutMs = 180000 } = {}) {
+export async function extractArtifact(input, { cwd, ocr = true, signal, timeoutMs = 180000, sensitiveData = 'error' } = {}) {
   const format = validateArtifactInput(input);
   if (!Number.isSafeInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 10 * 60 * 1000) throw error('FILE_CONFIGURATION_INVALID');
   if (signal?.aborted) throw error('FILE_CANCELLED');
   const plain = ['txt', 'md'].includes(format);
-  const parsed = plain ? { units: extractTextUnits(input.bytes, format), warningCodes: [], method: 'local-text', needsReview: false } : await parseInChild(input.bytes, format, { cwd, ocr, signal, timeoutMs });
-  return { filename: input.filename, format, sha256: createHash('sha256').update(input.bytes).digest('hex'), segments: segments(input.filename, parsed.units), method: parsed.method, warningCodes: parsed.warningCodes, needsReview: parsed.needsReview === true };
+  let sensitivityWarnings = [];
+  const parsed = plain ? { units: extractTextUnits(input.bytes, format, { sensitiveData, onSensitivity: text => { sensitivityWarnings = collectSensitivityWarnings({ text }); } }), sensitivityWarnings, warningCodes: [], method: 'local-text', needsReview: false } : await parseInChild(input.bytes, format, { cwd, ocr, signal, timeoutMs, sensitiveData });
+  return { filename: input.filename, format, sha256: createHash('sha256').update(input.bytes).digest('hex'), segments: segments(input.filename, parsed.units), method: parsed.method, warningCodes: parsed.warningCodes, sensitivityWarnings: parsed.sensitivityWarnings ?? [], needsReview: parsed.needsReview === true };
 }

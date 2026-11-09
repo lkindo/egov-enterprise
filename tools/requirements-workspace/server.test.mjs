@@ -20,6 +20,16 @@ async function session(app) {
   assert.equal(response.status, 200);
   return { token: (await response.json()).token, cookie: response.headers.get('set-cookie').split(';')[0] };
 }
+test('authenticated private input persists patterns with safe notices; unauthenticated state remains denied', async t => {
+  const app = await fixture(t), auth = await session(app);
+  const response = await fetch(`${app.url}/api/action`, { method: 'POST', headers: { 'x-workspace-token': auth.token, 'Content-Type': 'application/json' }, body: JSON.stringify({ revision: app.store.read().revision, action: 'project.save', payload: { code: 'SYNTHETIC', name: '연락처 person@example.invalid', institution: '합성 기관', baselineProfile: '' } }) });
+  assert.equal(response.status, 200);
+  const state = await response.json();
+  assert.match(state.backlog.project.name, /person@example.invalid/);
+  assert.ok(state.sensitivityWarnings.some(warning => warning.kind === 'email-address'));
+  assert.doesNotMatch(JSON.stringify(state.sensitivityWarnings), /person@/);
+  assert.equal((await fetch(`${app.url}/api/state`)).status, 403);
+});
 test('session requires launch proof and supports reload with HttpOnly Strict session cookie', async t => {
   const app = await fixture(t);
   assert.equal((await fetch(`${app.url}/api/session`)).status, 403);
@@ -96,8 +106,8 @@ test('validation and CSV diagnostics reach the UI as safe 400 errors without dis
   assert.equal((await app.engine.state()).revision, state.revision);
   const sensitive = await post('source.save', { id: 'SRC-1', title: '비식별 전 자료', sourceType: 'interview', clauses: [{ id: 'C-1', text: 'person@example.invalid' }] });
   const hints = await sensitive.json();
-  assert.equal(hints.code, 'SENSITIVE_INPUT');
-  assert.match(JSON.stringify(hints.errors), /clauses\[0\]\.text/);
+  assert.equal(hints.code, 'BACKLOG_INVALID', 'sensitive content cannot bypass missing source metadata');
+  assert.ok(hints.errors.length);
   assert.doesNotMatch(JSON.stringify(hints), /person@example/);
 });
 

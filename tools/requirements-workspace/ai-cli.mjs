@@ -5,6 +5,8 @@ import { assertExternalWorkspace } from './store.mjs';
 
 export const AI_MODEL = 'claude-opus-5-5';
 export const AI_EFFORT = 'xhigh';
+export const AI_ANALYSIS_EFFORT = 'high';
+export const aiEffortForPhase = phase => ['synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan'].includes(phase) ? AI_ANALYSIS_EFFORT : AI_EFFORT;
 const failure = code => Object.assign(new Error(code), { code });
 
 export function findClaudeExecutable({ path = process.env.PATH ?? process.env.Path ?? '' } = {}) {
@@ -45,10 +47,11 @@ export function createCliRunner({ launch, timeoutMs = 15 * 60 * 1000, maxOutputB
       const bytes = Buffer.from(attachment.base64, 'base64'); attachmentBytes += bytes.length;
       if (bytes.toString('base64') !== attachment.base64 || attachmentBytes > 20 * 1024 ** 2) throw failure('AI_ATTACHMENT_INVALID');
     }
+    const effort = aiEffortForPhase(request.phase);
     const requestText = JSON.stringify(request), schemaText = JSON.stringify(schema);
     if (Buffer.byteLength(requestText) > 1024 ** 2 || schemaText.length > 20000) throw failure('AI_INPUT_TOO_LARGE');
     const input = attachments.length ? `${JSON.stringify({ type: 'user', message: { role: 'user', content: [{ type: 'text', text: requestText }, ...attachments.map(attachment => ({ type: attachment.mediaType === 'application/pdf' ? 'document' : 'image', source: { type: 'base64', media_type: attachment.mediaType, data: attachment.base64 } }))] } })}\n` : requestText;
-    const args = [...executable.args, '-p', '--model', AI_MODEL, '--effort', AI_EFFORT, '--output-format', attachments.length ? 'stream-json' : 'json', '--json-schema', schemaText,
+    const args = [...executable.args, '-p', '--model', AI_MODEL, '--effort', effort, '--output-format', attachments.length ? 'stream-json' : 'json', '--json-schema', schemaText,
       '--tools', '', '--restricted', '--safe-mode', '--strict-mcp-config', '--mcp-config', '{"mcpServers":{}}', '--no-session-persistence', '--disable-slash-commands', '--max-turns', '2'];
     if (attachments.length) args.push('--input-format', 'stream-json', '--verbose');
     return await new Promise((resolve, reject) => {
@@ -88,7 +91,7 @@ export function createCliRunner({ launch, timeoutMs = 15 * 60 * 1000, maxOutputB
           const models = Object.keys(envelope.modelUsage ?? {});
           if (models.length !== 1 || models[0] !== AI_MODEL) throw failure('AI_MODEL_MISMATCH');
           const usage = envelope.modelUsage[AI_MODEL];
-          finish(null, { output: envelope.structured_output, model: AI_MODEL, effort: AI_EFFORT, usage: { inputTokens: Number.isSafeInteger(usage.inputTokens) ? usage.inputTokens : 0, outputTokens: Number.isSafeInteger(usage.outputTokens) ? usage.outputTokens : 0 } });
+          finish(null, { output: envelope.structured_output, model: AI_MODEL, effort, usage: { inputTokens: Number.isSafeInteger(usage.inputTokens) ? usage.inputTokens : 0, outputTokens: Number.isSafeInteger(usage.outputTokens) ? usage.outputTokens : 0 } });
         } catch (error) { finish(failure(error.code === 'AI_MODEL_MISMATCH' ? error.code : 'AI_CLI_FAILED')); }
       });
       child.stdin.on('error', () => { /* An early CLI failure is handled by close. */ });

@@ -168,9 +168,28 @@ test('batch planning checks all sources before any transfer and keeps finite ana
   state.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...state.backlog.sources[0].clauses[0], id: `C-${index}` }));
   assert.deepEqual(planAnalysisBatches(state).map(batch => batch.flatMap(source => source.clauses).length), [32, 1]);
   state.backlog.sources[0].clauses[32].text = 'person@example.invalid';
-  assert.throws(() => planAnalysisBatches(state), { code: 'SENSITIVE_INPUT' });
+  assert.deepEqual(planAnalysisBatches(state).map(batch => batch.flatMap(source => source.clauses).length), [32, 1]);
   state.backlog.sources[0].clauses = Array.from({ length: 3001 }, (_, index) => ({ id: `C-${index}`, text: original }));
   assert.throws(() => planAnalysisBatches(state), { code: 'AI_ANALYSIS_CAPACITY' });
+});
+
+test('batch planning charges each source header once per serialized batch without dropping clauses', () => {
+  const state = snapshot(), source = state.backlog.sources[0];
+  source.summary = '업무 구조와 예외 처리에 관한 합성 설명이다. '.repeat(140).slice(0, 3900);
+  source.clauses = Array.from({ length: 1000 }, (_, index) => ({ ...source.clauses[0], id: `C-${index}`, text: `합성 업무 규칙 ${index}: 담당자는 본인 접수 목록을 조회한다.` }));
+  const batches = planAnalysisBatches(state);
+  assert.equal(batches.length, 32);
+  assert.deepEqual(batches.flatMap(batch => batch.flatMap(item => item.clauses)), source.clauses);
+  assert.ok(batches.every(batch => Buffer.byteLength(JSON.stringify(batch)) <= 40 * 1024));
+  assert.ok(batches.every(batch => batch.flatMap(item => item.clauses).length <= 32));
+});
+
+test('serialized byte and batch-count limits still reject real oversized analysis input', () => {
+  const state = snapshot(), template = state.backlog.sources[0];
+  state.backlog.sources = Array.from({ length: 258 }, (_, index) => ({ ...structuredClone(template), id: `SRC-${index}`, summary: '한'.repeat(3900), clauses: [{ ...template.clauses[0], id: `C-${index}`, text: '가'.repeat(1800) }] }));
+  assert.throws(() => planAnalysisBatches(state), { code: 'AI_ANALYSIS_CAPACITY' });
+  state.backlog.sources = [{ ...structuredClone(template), clauses: [{ ...template.clauses[0], text: '가'.repeat(14000) }] }];
+  assert.throws(() => planAnalysisBatches(state), { code: 'AI_SOURCE_CLAUSE_TOO_LARGE' });
 });
 
 test('human-edited requirement meaning uses original linked clauses rather than stale reviewed excerpts', () => {
@@ -231,9 +250,9 @@ test('duplicate identifiers, unrelated issue links and AI-invented approval fiel
   }
 });
 
-test('sensitive model output and unsafe object keys are rejected without echoing their values', () => {
+test('schema-valid sensitive proposals are permitted privately while unsafe object keys remain rejected', () => {
   const pii = proposal(); pii.issues[0].question = 'person@example.invalid';
-  assert.throws(() => validateAnalysisProposal(pii, snapshot()), error => error.code === 'AI_OUTPUT_INVALID' && !error.message.includes('person@'));
+  assert.doesNotThrow(() => validateAnalysisProposal(pii, snapshot()));
   const poisoned = JSON.parse(JSON.stringify(proposal()).replace('"requirements":', '"__proto__":{"polluted":true},"requirements":'));
   assert.throws(() => validateAnalysisProposal(poisoned, snapshot()), { code: 'AI_OUTPUT_INVALID' });
   assert.equal({}.polluted, undefined);
