@@ -2435,8 +2435,8 @@
         "rule": "local-theme/enforce-design-tokens"
       },
       "executionProfile": "EXEC-FRONTEND-LINT",
-      "current": "warn",
-      "baseline": "warn",
+      "current": "error",
+      "baseline": "error",
       "direction": "minimum-severity",
       "tier": [
         "pre-push",

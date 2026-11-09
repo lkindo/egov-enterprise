@@ -125,17 +125,17 @@
 - **양방향 래칫**: 증가뿐 아니라 감소 후 baseline 미갱신도 실패한다. 개선분을 다음 변경의 여유분으로 남기지 않는다.
 - **치환 지침**: green·emerald → `success`, amber·yellow·orange → `warning`, red·rose → `destructive`(강조는 `-emphasis`), 정보성 blue → `info`(기존 가드 소관).
 
-#### ESLint 자문 규칙과의 경계
+#### ESLint 규칙과의 경계
 
-`eslint.config.mjs`의 `local-theme/enforce-design-tokens`는 빠른 작성 피드백을 위한 `warn` 규칙이다. 현재 구현은 JSX의 정적 `className` 문자열과 template literal의 정적 조각에서 다음 항목만 찾는다.
+`eslint.config.mjs`의 `local-theme/enforce-design-tokens`는 `error` 규칙이다(2026-11-10, 게이트 원장 `QUALITY-FRONTEND-DESIGN-TOKEN-SEVERITY` 의 기준도 `error`). 잡은 위반은 한 건이라도 lint 를 실패시킨다. 현재 구현은 JSX의 정적 `className` 문자열과 template literal의 정적 조각에서 다음 항목만 찾는다.
 
 - `bg|text|border|ring` + `red|blue|green|yellow|orange|purple|pink|indigo|teal` + `100`~`900`
 - 투명도 접미사가 없는 불투명 `bg-white` (`bg-white/80` 등은 제외)
 
-동적 클래스 조합, 위 목록 밖의 utility·variant·팔레트는 이 규칙만으로 증명할 수 없다. 또한 warning 수를 허용하거나 `lint`가 종료 코드 0을 반환했다고 해서 색상 계약이 통과한 것은 아니다. 전 팔레트 회귀의 하드 차단은 위 두 exact-match Vitest 래칫이 소유한다.
+동적 클래스 조합(`cn(...)`·다른 prop 으로 넘긴 색), 위 목록 밖의 utility·variant·팔레트는 이 규칙만으로 증명할 수 없다. 그래서 `lint`가 종료 코드 0을 반환했다고 해서 색상 계약이 통과한 것은 아니다. 전 팔레트 회귀의 하드 차단은 위 두 exact-match Vitest 래칫이 소유한다.
 
 ```bash
-# 빠른 자문 피드백
+# 빠른 피드백(정적 className 위반은 오류로 막는다)
 pnpm -C frontend run lint
 
 # 팔레트 리터럴 하드 차단 계약
