@@ -31,13 +31,14 @@ function fixture(t, files, untracked = []) {
 }
 
 const FILES = {
-  'scripts/release-images.test.mjs': "import { fixture } from './historical-release-fixture.mjs';\n",
+  // 고정물 소스의 import 는 큰따옴표로 적는다 — 벤더 제거 원장 시험(project-composer-vendor)이 scripts 의 원문에서 from './x' 를 찾아 import 로 센다.
+  'scripts/release-images.test.mjs': 'import { fixture } from "./historical-release-fixture.mjs";\n',
   'scripts/historical-release-fixture.mjs': "import { select } from '../frontend/scripts/ui-quality-baseline-core.mjs';\nexport const fixture = select;\n",
   'frontend/scripts/ui-quality-baseline-core.mjs': 'export const select = () => [];\n',
-  'scripts/unrelated.test.mjs': "import { other } from './other.mjs';\n",
+  'scripts/unrelated.test.mjs': 'import { other } from "./other.mjs";\n',
   'scripts/other.mjs': 'export const other = 1;\n',
   // 같은 폴더의 상대 경로라 저장소 경로 글자가 없다 — 타입 전용 import 를 따라가지 않는지만 본다.
-  'frontend/scripts/typed.test.mjs': "import type { Select } from './ui-quality-baseline-core.mjs';\n",
+  'frontend/scripts/typed.test.mjs': 'import type { Select } from "./ui-quality-baseline-core.mjs";\n',
   'scripts/verify-reusable-artifact.mjs': "export const steps = [['pnpm', ['-C', 'frontend', 'run', 'type-check']]];\n",
   'api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java':
     '@Tag("governance-harness")\nclass WorkflowManifestLinterTest { String runner = "scripts/verify-reusable-artifact.mjs"; @Test void pins() {} }\n',
