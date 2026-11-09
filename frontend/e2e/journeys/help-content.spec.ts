@@ -192,7 +192,15 @@ test.describe('콘텐츠 페이지', () => {
             await expect(userPage.getByRole('link', { name: title, exact: true })).toBeVisible();
             const search = userPage.getByRole('search', { name: '안내 페이지 찾기' });
             await search.getByRole('textbox', { name: '제목·요약' }).fill(title);
-            await search.getByRole('button', { name: '조회' }).click();
+            const [filteredResponse] = await Promise.all([
+                userPage.waitForResponse(response => {
+                    const url = new URL(response.url());
+                    return response.request().method() === 'GET' && url.pathname === '/api/v1/content-pages' && url.searchParams.get('keyword') === title;
+                }),
+                search.getByRole('button', { name: '조회' }).click(),
+            ]);
+            expect(filteredResponse.ok()).toBeTruthy();
+            await expect(userPage.getByText(`"${title}" 검색 결과 1건`, { exact: true })).toBeVisible();
             await expect(userPage.getByRole('link', { name: title })).toBeVisible();
         });
         await test.step('Admin: 게시를 멈추고 보관하면 사용자에게 없는 페이지다', async () => {

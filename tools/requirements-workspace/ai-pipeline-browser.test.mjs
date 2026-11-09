@@ -211,8 +211,12 @@ test('an open failed analysis dialog follows actual server progress without losi
     await page.locator('#page-errors').getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).waitFor();
     await page.context().setOffline(false);
     const consentScopeGate = new Promise(resolve => { releaseConsentScope = resolve; });
-    await page.route('**/api/state', async route => { await consentScopeGate; await route.continue(); });
+    let markConsentScopeArrived;
+    const consentScopeArrival = new Promise(resolve => { markConsentScopeArrived = resolve; });
+    await page.route('**/api/state', async route => { markConsentScopeArrived(); await consentScopeGate; await route.continue(); });
+    const consentScopeRequest = page.waitForRequest('**/api/state');
     await page.getByRole('button', { name: 'AI 판독 이어서 진행', exact: true }).click();
+    await consentScopeRequest; await consentScopeArrival;
     assert.equal(await page.locator('#dialog').isVisible(), false, 'fresh consent waits for the current source scope');
     releaseConsentScope();
     const resumedDialog = page.getByRole('dialog', { name: '원본에서 개발 작업계획까지 AI 처리', exact: true });
