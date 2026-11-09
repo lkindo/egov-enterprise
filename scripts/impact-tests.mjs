@@ -33,8 +33,8 @@ const JAVA_MAIN = /^([^/]+)\/src\/main\/java\/.+\/([A-Za-z_$][\w$]*)\.java$/u;
 const JAVA_TAG_TASKS = Object.freeze({
   'governance-harness': 'harnessTest',
   'schema-validation': 'schemaValidationTest',
-  'vendor-conformance': 'vendorConformanceTest',
 });
+const VENDOR_TAG = 'vendor-conformance';
 
 /** 상대 import 폐포를 계산하는 판독기 — 파일마다 한 번만 읽고 해석한다. */
 export function importClosureReader(root, { read = (file) => fs.readFileSync(path.join(root, file), 'utf8'),
@@ -83,18 +83,20 @@ export function importClosureReader(root, { read = (file) => fs.readFileSync(pat
  * 바꾼 파일을 읽는 시험을 고른다.
  * @param {string[]} changed 바꾼 파일(저장소 상대 경로)
  * @param {{ tracked: string[], importChain: (test: string, changed: Set<string>) => string[] | null,
- *   mentions: (needle: string) => string[], read: (file: string) => string }} repository
+ *   mentions: (needle: string) => string[], read: (file: string) => string, exists: (file: string) => boolean }} repository
  */
 export function selectImpactTests(changed, repository) {
   const changedSet = new Set(changed);
   const reasons = new Map();
+  // 지운 시험은 돌릴 수 없다 — 지운 경로는 그것을 읽는 다른 시험을 찾는 데만 쓴다.
   const add = (test, reason) => {
+    if (!repository.exists(test)) return;
     if (!reasons.has(test)) reasons.set(test, []);
     reasons.get(test).push(reason);
   };
-  // 아직 추적하지 않은 새 시험도 바꾼 파일이다 — ls-files 만 보면 빠진다.
-  for (const test of [...new Set([...repository.tracked, ...changed])].filter((file) => NODE_TEST.test(file))) {
-    if (changedSet.has(test)) add(test, '바꾼 시험');
+  // 바꾼 시험은 그 자체로 고른다(Java·node·프런트·E2E). 아직 추적하지 않은 새 시험도 바꾼 파일이다 — ls-files 만 보면 빠진다.
+  for (const file of changed) if (TEST_SOURCE.test(file)) add(file, '바꾼 시험');
+  for (const test of repository.tracked.filter((file) => NODE_TEST.test(file) && !changedSet.has(file))) {
     const chain = repository.importChain(test, changedSet);
     if (chain) add(test, `import: ${chain.join(' → ')}`);
   }
@@ -115,15 +117,21 @@ export function selectImpactTests(changed, repository) {
   const e2e = tests.filter((test) => test.startsWith('frontend/e2e/') && !NODE_TEST.test(test));
   const frontendUnit = tests.filter((test) => test.startsWith('frontend/src/'));
   const javaTasks = new Map();
+  const vendor = [];
   for (const test of java) {
     const module = test.split('/')[0];
     const tag = /@Tag\("([a-z-]+)"\)/u.exec(repository.read(test))?.[1];
+    // 벤더 적합성 시험은 -PvendorIntegration 과 준비된 벤더 DB 가 있어야 등록·실행된다 — 원본 저장소의 Gradle 명령으로 추천하지 않는다.
+    if (tag === VENDOR_TAG) {
+      vendor.push(test);
+      continue;
+    }
     const task = `:${module}:${JAVA_TAG_TASKS[tag] ?? 'test'}`;
     const name = path.basename(test, '.java');
     if (!javaTasks.has(task)) javaTasks.set(task, []);
     javaTasks.get(task).push(name);
   }
-  const frontendChanged = changed.filter((file) => FRONTEND_SOURCE.test(file));
+  const frontendChanged = changed.filter((file) => FRONTEND_SOURCE.test(file) && repository.exists(file));
   const commands = [];
   if (node.length) commands.push(`node --test ${node.join(' ')}`);
   for (const [task, names] of javaTasks) commands.push(`./gradlew ${task} ${names.map((name) => `--tests '*${name}'`).join(' ')}`);
@@ -135,8 +143,14 @@ export function selectImpactTests(changed, repository) {
     changed,
     tests: tests.map((test) => ({ test, reasons: reasons.get(test) })),
     e2e,
+    vendor,
     commands,
   };
+}
+
+/** 명령줄의 경로(`.\a\b`, `./a/b`, 하위 폴더에서 준 상대 경로, 절대 경로)를 저장소 상대 경로로 맞춘다. */
+export function toRepositoryPath(root, input, cwd = process.cwd()) {
+  return path.relative(root, path.resolve(cwd, input)).split(path.sep).join('/');
 }
 
 function render(result) {
@@ -144,6 +158,10 @@ function render(result) {
   for (const { test, reasons } of result.tests) lines.push(`- ${test}`, ...reasons.map((reason) => `    ${reason}`));
   if (result.commands.length) lines.push('', 'push 전에 돌릴 명령:', ...result.commands.map((command) => `  ${command}`));
   if (result.e2e.length) lines.push('', `E2E 시험 ${result.e2e.length}개도 바꾼 파일을 적는다 — 격리 E2E 나 CI 에서 확인한다.`);
+  if (result.vendor.length) {
+    lines.push('', `벤더 적합성 시험 ${result.vendor.length}개도 고른다 — 원본 저장소에서 Gradle 로 돌리지 않는다. 생성한 벤더 프로젝트의 검증`
+      + '(scripts/project-composer-vendor-integration.mjs)이나 CI 의 reusable-vendor 잡이 돌며, 인증 입력이면 증거를 다시 기록한다.');
+  }
   lines.push('', '추천이다. 경로를 조각으로 잇거나 디렉터리를 훑는 시험은 못 찾는다 — post-push·required CI 를 대신하지 않는다.');
   return lines.join('\n');
 }
@@ -156,7 +174,7 @@ async function main(argv) {
   const args = argv.filter((arg) => arg !== '--json');
   let changed;
   if (args[0] === '--for' && args.length > 1) {
-    changed = args.slice(1).map((file) => (path.isAbsolute(file) ? path.relative(root, file) : file).split(path.sep).join('/'));
+    changed = args.slice(1).map((file) => toRepositoryPath(root, file));
   } else if (args[0] === '--diff' && args.length === 2) {
     const base = git('merge-base', args[1], 'HEAD')[0];
     changed = [...new Set([...git('diff', '--name-only', base), ...git('ls-files', '--others', '--exclude-standard')])];
@@ -177,6 +195,7 @@ async function main(argv) {
     importChain: importClosureReader(root),
     mentions,
     read: (file) => fs.readFileSync(path.join(root, file), 'utf8'),
+    exists: (file) => fs.existsSync(path.join(root, file)),
   });
   process.stdout.write(`${json ? JSON.stringify(result, null, 2) : render(result)}\n`);
 }

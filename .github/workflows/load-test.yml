@@ -200,11 +200,12 @@ jobs:
         run: |
           if [ ! -f backend.log ]; then echo "backend.log not found"; exit 0; fi
           echo "=== API pressure during the load test ==="
-          echo "rate-limit 429 (login bucket): $(grep -c 'RATE-LIMIT.*bucket=login' backend.log || true)"
-          echo "rate-limit 429 (all bucket):   $(grep -c 'RATE-LIMIT.*bucket=all' backend.log || true)"
-          echo "DB pool wait timeouts:          $(grep -c 'Connection is not available' backend.log || true)"
+          # 로그 줄 수다 — 예외 하나가 메시지와 원인 스택으로 여러 줄에 나올 수 있어 발생 건수와 같지 않다.
+          echo "rate-limit 429 log lines (login bucket): $(grep -c 'RATE-LIMIT.*bucket=login' backend.log || true)"
+          echo "rate-limit 429 log lines (all bucket):   $(grep -c 'RATE-LIMIT.*bucket=all' backend.log || true)"
+          echo "DB pool timeout log lines:               $(grep -c 'Connection is not available' backend.log || true)"
           WAIT=$(grep -o -E 'waiting=[0-9]+' backend.log | cut -d= -f2 | sort -n | tail -1 || true)
-          echo "DB pool max waiting:            ${WAIT:-0}"
+          echo "DB pool max waiting seen in logs:        ${WAIT:-not observed}"
 
       - name: Upload Test Results
         if: always()
