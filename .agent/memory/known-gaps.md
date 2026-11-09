@@ -67,6 +67,7 @@ refresh_triggers:
 - `GAP-DOMAIN-001`: 추천 이력이 없던 기존 `like_cnt` 값은 유지한다. `GAP-BOARD-001`: 쓰지 않는 게시글 비밀번호 컬럼의 제거는 별도 스키마 승인이다([기존 집계](../../docs/archived/operational-decisions-history.md#gap-domain-001), [컬럼 경계](../../docs/archived/operational-decisions-history.md#gap-board-001)).
 - `GAP-DEP-002`: spring-retry 유지 판단·재개 조건은 [후속 결정](../../docs/archived/operational-decisions-history.md#dec-ops-125)과 [정리 기록](../../docs/04-operations/readiness-followups.md#후속-정리-2026-09-24)을 따른다. 당시 기록한 Boot 4.1 지원 종료는 2027-07-31이며 다음 minor 결정 때 재확인한다.
 - `GAP-POLL-001`·`GAP-POLICY-001`: 다른 도입 환경의 기존 NULL 분포는 기관이 읽기 집계로 확인한다. `GAP-API-001`: 내부 확장 Map과 추가 JSON 필드 호환성은 남으며 binary/stream 전송까지 타입화한 결과가 아니다([기존 데이터](../../docs/archived/operational-decisions-history.md#gap-poll-001), [타입 경계](../../docs/archived/operational-decisions-history.md#gap-api-001)).
+- `GAP-ARCH-001`: `business-app` 서비스 계층의 기능 간 결합은 포트·이벤트로 모두 역전했다. 결합 원장이 남은 공통 핵심 참조와 함께 edge 정확 집합으로 감시하며, 새 기능 간 edge 는 원장 등재와 사유가 있어야 통과한다. 감시 범위는 서비스 계층 type 참조다 — 엔티티는 `DomainIsolationTest` 가 보며 게시판↔댓글·스크랩→게시판·포상→결재의 기존 엔티티 결합은 허용 예외로 남는다(그 기능을 따로 지워야 하면 그때 분리한다). 프런트 기능 간 import 는 투영 tsc(GAP-PACK-001)가 본다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-arch-001)).
 
 ## 재검증 대기
 
@@ -89,7 +90,6 @@ refresh_triggers:
 | GAP-ID | 우선순위 | 상태 | 영역 | 한 줄 요약 | 상세 |
 |---|---|---|---|---|---|
 | GAP-UIF-001 | P3 | open | font token scope | Next/font 변수 범위는 고쳤고 OS·브라우저별 렌더링 차이와 재생성한 시각 기준선의 사람 검토가 남았다 — Linux CI 결과를 다른 OS·브라우저의 증거로 쓰지 않는다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
-| GAP-ARCH-001 | P2 | open | module boundaries | `business-app` 서비스 계층의 교차 도메인 참조는 결합 원장이 edge 정확 집합으로 동결한다 — 새 app→app 결합은 만들지 않고 foundation 포트·이벤트로 역전한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-CONTRACT-001 | P2 | open | API/DTO | 입력 계약 원장 표적의 제약을 게이트가 검사하고 `@Valid` 없는 제약 DTO 도 막는다 — 원장 밖 요청 본문은 저장 경로가 생기면 다시 판정한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-FE-001 | P3 | accepted-risk | frontend security | `style-src` 의 `unsafe-inline` 은 sonner 가 nonce 를 지원하거나 교체될 때까지 받아들인 위험이다 — 세분화하면 `csp-policy` 계약이 붉다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |
 | GAP-CODE-001 | P3 | accepted-risk | institution code | 기관코드 원장·수신 로그에는 앱 쓰기 경로가 없고 수신 확인은 `procSe` 만 바꾼다 — 쓰기 경로와 그 권한은 공급처 명세가 확정된 뒤에 설계한다. | [상세](../../docs/04-operations/known-gaps-detail.md#product) |

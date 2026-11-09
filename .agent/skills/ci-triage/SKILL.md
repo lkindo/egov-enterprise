@@ -17,7 +17,8 @@ description: PR·main CI 나 정기 워크플로가 붉을 때 쓴다 — 기반
 
 - PR CI 를 기다릴 때는 `node scripts/pr-checks-wait.mjs --pr <PR> --sha <검증한 커밋>` 을 백그라운드로 실행하고 **종료 코드로만**
   판정한다: 0 통과 · 1 required 실패·누락 · 2 조회·도구 오류(통과 아님) · 3 head 불일치·이동·PR 닫힘(새 head 로 다시 기다린다) ·
-  4 시간 초과.
+  4 시간 초과 · 5 required 는 통과했지만 같은 커밋의 유효한 `verify:post-push` 기록 없음(DEC-OPS-410 — 그 커밋의 깨끗한 트리에서 단독으로
+  돌린 뒤 다시 기다린다).
 - 이 도구는 required 목록을 [.github/required-checks.json](../../../.github/required-checks.json)에서 읽고, 그 커밋의 ci.yml 실행이
   끝나고 required 가 모두 등록돼야 정착으로 본다 — required 집계 체크는 소스 잡이 끝난 뒤에야 **등록**되므로 pending 0 은 정착이 아니다.
 - 폴링 루프를 새로 짜거나 `gh pr checks --watch` 로 기다리지 않는다(가드가 막는다). 한 번 볼 때만 `gh pr checks <PR> --required` 를 쓴다.

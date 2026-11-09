@@ -4,7 +4,8 @@ import { basename, join, resolve } from 'node:path';
 import test from 'node:test';
 
 import {
-  EXIT, ToolError, evaluateSnapshot, main, manifestBinding, parseGhJson, requiredContexts, runGh, waitForRequiredChecks,
+  EXIT, POST_PUSH_AUTHORITY, POST_PUSH_STAGE, ToolError, evaluateLocalEvidence, evaluateSnapshot, main, manifestBinding, parseGhJson,
+  postPushRecordProblems, requiredContexts, runGh, waitForRequiredChecks,
 } from './pr-checks-wait.mjs';
 
 const repoRoot = resolve(import.meta.dirname, '..');
@@ -94,7 +95,7 @@ const callNames = (calls) => calls.map((args) => (args[0] === 'pr' ? 'pr view' :
 const snap = (runs, checkRuns, manifest = BOUND) => evaluateSnapshot({ manifest, sha: SHA, pullRequest: PR_BINDING, runs, checkRuns });
 
 test('종료 코드 표: 0 은 pass 하나뿐이다', () => {
-  assert.deepEqual({ ...EXIT }, { pass: 0, fail: 1, error: 2, 'head-moved': 3, timeout: 4 });
+  assert.deepEqual({ ...EXIT }, { pass: 0, fail: 1, error: 2, 'head-moved': 3, timeout: 4, 'local-missing': 5 });
   assert.deepEqual(Object.entries(EXIT).filter(([, code]) => code === 0).map(([name]) => name), ['pass']);
 });
 
@@ -329,14 +330,93 @@ test('ⓛ main(): 실제 원장 파일로 판정하고, 예상 밖 예외도 2 �
   const clock = fakeClock();
   const ok = fakeGh([{ runs: [running()] }, { runs: [ciRun()], checks: allGreen() }]);
   const lines = [];
-  const code = await main(['--pr', '77', '--sha', SHA, '--interval-seconds', '5'], { gh: ok.gh, log: (line) => lines.push(line), ...clock });
+  const seen = [];
+  const localEvidence = (sha) => { seen.push(sha); return { ok: true, file: 'build/verification-runs/x.jsonl' }; };
+  const code = await main(['--pr', '77', '--sha', SHA, '--interval-seconds', '5'], { gh: ok.gh, log: (line) => lines.push(line), ...clock, localEvidence });
   assert.equal(code, 0);
+  assert.deepEqual(seen, [SHA], 'main() 은 통과 직전에 고정 SHA 의 로컬 기록을 본다');
   assert.equal(lines.at(-1), `RESULT=pass pr=77 sha=${SHA} required=${CONTEXTS.length}/${CONTEXTS.length}`);
 
   const thrown = [];
   const boom = await main(['--pr', '77'], { gh: () => { throw new Error('boom'); }, log: (line) => thrown.push(line), ...fakeClock() });
   assert.equal(boom, 2);
   assert.match(thrown.at(-1), /^RESULT=error pr=77 /u);
+});
+
+/*
+  [2026-11-09 DEC-OPS-410] 작업 브랜치 push 는 운영 계약을 push 뒤 로컬 실행으로 미룬다. required CI(Ubuntu)는 그 계약의 Windows 분기를 돌지
+  않으므로 통과는 같은 SHA 의 유효한 Windows 로컬 기록이 있어야 낸다. 기록의 조건이 하나라도 어긋나거나 판정할 수 없으면 증거가 아니다.
+*/
+const postPushRecord = (over = {}) => {
+  const git = { head: SHA, trackedDirty: false, untrackedCount: 0 };
+  const start = { schemaVersion: 1, event: 'run-start', runId: 'r', authority: POST_PUSH_AUTHORITY, entrypoint: 'verify', scope: 'post-push',
+    git, environment: { node: '22', os: 'win32', timezone: 'Asia/Seoul' }, concurrentKinds: [], ...over.start };
+  const steps = over.steps ?? [
+    { event: 'step-start', runId: 'r', stageId: POST_PUSH_STAGE, concurrentKinds: [] },
+    { event: 'step-end', runId: 'r', stageId: POST_PUSH_STAGE, result: 'passed', exitCode: 0 },
+  ];
+  const end = { event: 'run-end', runId: 'r', result: 'passed', recordComplete: true, openStageCount: 0, git,
+    inputChanged: false, concurrentSuspected: false, concurrentKinds: [], ...over.end };
+  return over.noEnd ? [start, ...steps] : [start, ...steps, end];
+};
+
+test('로컬 운영 계약 기록: 조건을 모두 만족한 post-push 기록만 증거다', () => {
+  assert.deepEqual(postPushRecordProblems(postPushRecord(), SHA), []);
+  const cases = [
+    ['다른 진입점', { start: { entrypoint: 'pre-push', scope: 'source', authority: 'diagnostic-only' } }, 'not-post-push'],
+    ['진단 전용 권한', { start: { authority: 'diagnostic-only' } }, 'not-post-push'],
+    ['Windows 밖', { start: { environment: { os: 'linux' } } }, 'not-windows'],
+    ['OS 미상', { start: { environment: {} } }, 'not-windows'],
+    ['시작 오염', { start: { git: { head: SHA, trackedDirty: true, untrackedCount: 0 } } }, 'start-not-clean-at-head'],
+    ['시작 미추적', { start: { git: { head: SHA, trackedDirty: false, untrackedCount: 2 } } }, 'start-not-clean-at-head'],
+    ['끝에 HEAD 이동', { end: { git: { head: NEW_SHA, trackedDirty: false, untrackedCount: 0 } } }, 'end-not-clean-at-head'],
+    ['끝 오염 미상', { end: { git: { head: SHA, trackedDirty: null, untrackedCount: null } } }, 'end-not-clean-at-head'],
+    ['미완결', { noEnd: true }, 'incomplete'],
+    ['실패', { end: { result: 'failed' } }, 'not-passed'],
+    ['열린 단계', { end: { recordComplete: false } }, 'not-passed'],
+    ['실행 중 입력 변경', { end: { inputChanged: true } }, 'input-changed-or-unknown'],
+    ['입력 변경 미상', { end: { inputChanged: null } }, 'input-changed-or-unknown'],
+    ['겹친 실행', { end: { concurrentSuspected: true } }, 'overlap-or-unknown'],
+    ['겹침 미상', { end: { concurrentSuspected: null } }, 'overlap-or-unknown'],
+    ['계약 단계 없음', { steps: [] }, 'stage-not-passed'],
+    ['계약 단계 실패', { steps: [{ event: 'step-end', stageId: POST_PUSH_STAGE, result: 'failed' }] }, 'stage-not-passed'],
+    ['계약 단계 두 번', { steps: [{ event: 'step-end', stageId: POST_PUSH_STAGE, result: 'passed' }, { event: 'step-end', stageId: POST_PUSH_STAGE, result: 'passed' }] }, 'stage-not-passed'],
+  ];
+  for (const [label, over, problem] of cases) {
+    assert.ok(postPushRecordProblems(postPushRecord(over), SHA).includes(problem), label);
+  }
+  assert.deepEqual(postPushRecordProblems(null, SHA), ['unreadable']);
+});
+
+test('로컬 운영 계약 기록: 같은 SHA 의 유효한 기록이 하나라도 있으면 증거이고, 없으면 그 이유를 말한다', () => {
+  const good = { file: 'a.jsonl', events: postPushRecord() };
+  const dirty = { file: 'b.jsonl', events: postPushRecord({ end: { inputChanged: true } }) };
+  const otherSha = { file: 'c.jsonl', events: postPushRecord({ start: { git: { head: NEW_SHA, trackedDirty: false, untrackedCount: 0 } } }) };
+  const prePush = { file: 'd.jsonl', events: postPushRecord({ start: { entrypoint: 'pre-push', scope: 'source', authority: 'diagnostic-only' } }) };
+  assert.deepEqual(evaluateLocalEvidence([dirty, good], SHA), { ok: true, file: 'a.jsonl' });
+  assert.deepEqual(evaluateLocalEvidence([otherSha, prePush, { file: 'e.jsonl', events: null }], SHA), { ok: false, reason: 'no-record' });
+  assert.deepEqual(evaluateLocalEvidence([dirty], SHA), { ok: false, reason: 'input-changed-or-unknown' });
+});
+
+test('로컬 운영 계약 기록이 없으면 required 가 모두 통과해도 5(local-missing)이고, 있으면 통과다', async () => {
+  const polls = [{ runs: [ciRun()], checks: allGreen() }];
+  const missing = await wait(polls, { localEvidence: () => ({ ok: false, reason: 'no-record' }) });
+  assert.equal(missing.outcome.result, 'local-missing');
+  assert.equal(missing.outcome.code, 5);
+  assert.ok(missing.lines.some((line) => line.includes("'npm run verify:post-push'") && line.includes('no-record')));
+  assert.equal(missing.last, `RESULT=local-missing pr=77 sha=${SHA} required=${CONTEXTS.length}/${CONTEXTS.length}`);
+  for (const context of CONTEXTS) {
+    assert.ok(missing.lines.some((line) => line.startsWith(`${context}\tsuccess\t`)), `CI 결과는 그대로 싣는다: ${context}`);
+  }
+  const present = await wait(polls, { localEvidence: () => ({ ok: true, file: 'D:/x/build/verification-runs/a.jsonl' }) });
+  assert.equal(present.outcome.code, 0);
+  assert.equal(present.last, `RESULT=pass pr=77 sha=${SHA} required=${CONTEXTS.length}/${CONTEXTS.length}`);
+  // CI 가 실패하면 로컬 기록을 보지 않고 그대로 실패다.
+  let asked = false;
+  const failing = await wait([{ runs: [ciRun({ conclusion: 'failure' })], checks: allGreen().map((entry) => (entry.name === TARGET ? { ...entry, conclusion: 'failure' } : entry)) }],
+    { localEvidence: () => { asked = true; return { ok: true }; } });
+  assert.equal(failing.outcome.result, 'fail');
+  assert.equal(asked, false);
 });
 
 test('ⓛ runGh 는 셸 메타 문자·공백이 든 인자를 실행하지 않는다', () => {

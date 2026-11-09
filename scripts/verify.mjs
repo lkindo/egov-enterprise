@@ -18,7 +18,8 @@
  *
  * integrate 는 여러 갈래를 한 브랜치로 합친 뒤 푸시 전에 돈다(오케스트레이션 프로토콜 §6.4): Flyway 충돌 → 생성물 재생성 →
  * 폼 census·전체 vitest·:api-server:test·전체 하네스·닿는 schema-validation·생성기 화면 시험·바뀐 E2E.
- * 폼·하네스는 통합 실패를 일찍 알리기 위해 포함하며 pre-push는 그대로 유지한다. 운영 계약은 pre-push가 맡는다.
+ * 폼·하네스는 통합 실패를 일찍 알리기 위해 포함하며 pre-push는 그대로 유지한다. 운영 계약은 pre-push(main·태그 push)나 push 뒤의
+ * post-push(작업 브랜치 push, DEC-OPS-410)가 맡는다.
  * 선별은 scripts/integration-precheck.mjs 가 한다.
  */
 import { execSync } from 'node:child_process';
@@ -30,7 +31,7 @@ const isWin = platform() === 'win32';
 const gradlew = isWin ? '.\\gradlew.bat' : './gradlew';
 const requestedScope = (process.argv[2] || 'full').toLowerCase();
 const scope = requestedScope === 'all' ? 'full' : requestedScope;
-const allowedScopes = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops', 'migration', 'integrate']);
+const allowedScopes = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops', 'migration', 'integrate', 'post-push']);
 
 if (!allowedScopes.has(scope)) {
   console.error(`알 수 없는 범위 '${requestedScope}' — ${[...allowedScopes].join('|')} 중 하나여야 합니다.`);
@@ -200,6 +201,11 @@ try {
     run('pnpm -C frontend exec vitest run');
     run(`${gradlew} :api-server:test :api-server:harnessTest --console=plain -Dfile.encoding=UTF-8`);
     run('node scripts/integration-precheck.mjs --run-selected');
+  } else if (scope === 'post-push') {
+    // [DEC-OPS-410] 작업 브랜치 push 가 미룬 운영 계약을 push 한 커밋의 깨끗한 트리에서 전체 범위로 한 번 돈다(CI 와 동시에). 병합 대기
+    // 도구(scripts/pr-checks-wait.mjs)는 이 범위의 실행 기록만 병합 증거로 읽는다 — 시작·끝의 HEAD 가 PR head 와 같고 깨끗하며, 실행 중
+    // 입력 변경과 다른 무거운 실행과의 겹침이 없고, Windows 에서 이 단계가 통과했어야 한다. 이 범위는 운영 계약 밖의 검사를 하지 않는다.
+    runOperationalContracts();
   } else if (scope === 'ops') {
     run('node scripts/verify-branch-protection.mjs');
   } else if (scope === 'migration') {

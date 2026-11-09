@@ -1,6 +1,9 @@
 #!/usr/bin/env node
 
 // Diagnostic events only. This module neither runs verification commands nor grants reuse/skip authority.
+// [DEC-OPS-410] One exception of use, not of behavior: records of `verify post-push` carry authority 'post-push-merge-evidence'. The merge
+// wait tool (scripts/pr-checks-wait.mjs) reads only those, and only when the record itself shows a clean, unchanged, non-overlapping
+// Windows run of the operational contracts at the PR head. Every other record stays diagnostic-only and is never read as evidence.
 import { execFileSync } from 'node:child_process';
 import { createHash, randomUUID } from 'node:crypto';
 import { appendFileSync, closeSync, constants as fsConstants, fstatSync, lstatSync, mkdirSync, openSync, readFileSync,
@@ -14,7 +17,7 @@ const RUN_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]
 const SAFE_ID = /^[a-z][a-z0-9._-]{0,63}$/;
 const ENTRYPOINTS = new Set(['verify', 'pre-push']);
 const SCOPES = new Set(['docs', 'fast', 'push', 'full', 'be', 'fe', 'e2e', 'ops', 'migration', 'integrate',
-  'source', 'unknown', 'delete-only']);
+  'source', 'unknown', 'delete-only', 'post-push']);
 const SIGNALS = new Set([...Object.keys(constants.signals), 'SIGBREAK']);
 const GIT_LOCAL_ENV = ['GIT_DIR', 'GIT_WORK_TREE', 'GIT_INDEX_FILE', 'GIT_COMMON_DIR', 'GIT_OBJECT_DIRECTORY',
   'GIT_ALTERNATE_OBJECT_DIRECTORIES', 'GIT_PREFIX', 'GIT_CONFIG', 'GIT_CONFIG_PARAMETERS', 'GIT_CONFIG_COUNT',
@@ -331,7 +334,7 @@ export function createRun(options = {}) {
     const descriptor = openSync(file, 'wx', 0o600);
     try {
       writeFileSync(descriptor, `${JSON.stringify({ schemaVersion: 1, event: 'run-start', runId, parentRunId,
-        authority: 'diagnostic-only', entrypoint, scope, ...instant(), git,
+        authority: entrypoint === 'verify' && scope === 'post-push' ? 'post-push-merge-evidence' : 'diagnostic-only', entrypoint, scope, ...instant(), git,
         ...(git.head ? inputDigests(root) : { inputDigest: null, anchorDigest: null }),
         concurrentKinds, environment: environment(timezone) })}\n`);
     } finally { closeSync(descriptor); }
