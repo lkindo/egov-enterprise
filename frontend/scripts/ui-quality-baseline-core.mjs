@@ -58,7 +58,7 @@ export const PRODUCTION_BUILD_INPUT_PATHS = Object.freeze([
   'frontend/.dockerignore',
   'frontend/package.json',
   'frontend/pnpm-lock.yaml',
-  'frontend/next-env.d.ts',
+  // frontend/next-env.d.ts 는 추적하지 않는 Next 생성 파일이라 운영 빌드 입력이 아니다 — next build 가 만든다(2026-11-09).
   'frontend/next.config.ts',
   'frontend/postcss.config.mjs',
   'frontend/tsconfig.json',

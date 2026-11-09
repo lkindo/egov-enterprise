@@ -74,7 +74,7 @@ const FILE_NAME_RULES = Object.freeze([
     names: ['.env', 'application-local.properties', 'application-local.yml', 'application-dev.properties', 'application-dev.yml',
       'application-prod.properties', 'application-prod.yml'],
   },
-  { reason: '도구가 만드는 파일(JRebel rebel.xml, Snyk .snyk, Next.js next-env.d.ts — 마지막은 강제 추적한다)', names: ['rebel.xml', '.snyk', 'next-env.d.ts'] },
+  { reason: '도구가 만드는 파일(JRebel rebel.xml, Snyk .snyk, Next.js next-env.d.ts)', names: ['rebel.xml', '.snyk', 'next-env.d.ts'] },
   {
     reason: '일회성 출력·점검 스크립트 이름 — 재생성 방지',
     names: ['auth_error.txt', 'tests_output.txt', 'tests_debug.txt', 'coverage_output.txt', 'check_db_menus.py', 'check_menus.py',
@@ -310,6 +310,14 @@ test('ⓑ 실제 출력 위치는 계속 무시된다', () => {
   const ignored = ignoringRules(outputs);
   assert.deepEqual(outputs.filter((path) => !ignored.has(path)), [],
     '출력이 추적 대상으로 드러납니다 — 앵커를 지웠거나 새 Gradle 모듈의 출력 줄(bin·logs·storage/uploads)을 .gitignore 에 더하지 않았습니다.');
+});
+
+// [2026-11-09] next-env.d.ts 는 Next 가 dev(개발판 경로)·typegen·build(운영판 경로) 때마다 다시 쓰는 파일이다. 추적하면 개발 서버를 켤 때마다
+//   변경으로 보이고 개발판이 실수로 커밋됐다(#1016 → #1032 되돌림). 추적하지 않고 무시하며, 타입 검사(type-check = next typegen && tsc)·
+//   build 가 쓰기 전에 다시 만든다. 다시 추적하면(git add -f) 붉다.
+test('ⓑ Next 가 다시 쓰는 frontend/next-env.d.ts 는 추적하지 않고 무시된다', () => {
+  assert.equal(trackedFiles.includes('frontend/next-env.d.ts'), false, 'next-env.d.ts 가 추적됩니다 — git rm --cached frontend/next-env.d.ts');
+  assert.ok(ignoringRules(['frontend/next-env.d.ts']).has('frontend/next-env.d.ts'), 'next-env.d.ts 가 무시되지 않습니다 — frontend/.gitignore 에 둡니다.');
 });
 
 test('ⓑ dotenv 파일(.env·.env.<무엇>)은 루트·Gradle 모듈·frontend 어디서든 무시된다', () => {

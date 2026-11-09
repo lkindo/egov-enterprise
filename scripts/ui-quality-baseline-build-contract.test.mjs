@@ -129,6 +129,7 @@ function createGitFixture() {
 **/src/main/generated/
 **/build/
 **/target/
+frontend/next-env.d.ts
 `);
   writeFixtureFile(root, '.dockerignore', ROOT_DOCKERIGNORE);
   writeFixtureFile(root, 'build.gradle', '// fixture\n');
@@ -154,7 +155,6 @@ function createGitFixture() {
   writeFixtureFile(root, 'frontend/Dockerfile', 'FROM scratch\n');
   writeFixtureFile(root, 'frontend/package.json', '{"scripts":{"build":"true"}}\n');
   writeFixtureFile(root, 'frontend/pnpm-lock.yaml', 'lockfileVersion: 9\n');
-  writeFixtureFile(root, 'frontend/next-env.d.ts', 'export {};\n');
   writeFixtureFile(root, 'frontend/next.config.ts', 'export default {};\n');
   writeFixtureFile(root, 'frontend/postcss.config.mjs', 'export default {};\n');
   writeFixtureFile(root, 'frontend/tsconfig.json', '{}\n');
@@ -184,6 +184,8 @@ function createGitFixture() {
     'business-app/generated-sources/Generated.java',
     'business-app/build/generated/Generated.java',
     'frontend/src/main/generated/generated.ts',
+    // [2026-11-09] next-env.d.ts 는 추적하지 않는 Next 생성 파일이다(frontend/.gitignore) — 있어도 묶음에 들어가지 않는다.
+    'frontend/next-env.d.ts',
   ];
   for (const relativePath of ignoredPaths) {
     writeFixtureFile(root, relativePath, `ignored fixture: ${relativePath}\n`);
@@ -439,6 +441,10 @@ test('committed baseline archives and clean autocrlf smoke use one production in
   assert.equal(captured.dirty, false);
   assert.equal(captured.sourceTreeSha256, contexts.buildInputTreeHash);
   assert.ok(tarEntryNames(contexts.frontendArchivePath).includes('scripts/validate-api-build-urls.mjs'));
+  // Next 가 dev·build 때 다시 쓰는 무시된 next-env.d.ts 는 운영 입력 식별을 바꾸지 않는다(2026-11-09).
+  writeFixtureFile(root, 'frontend/next-env.d.ts', 'import "./.next/dev/types/routes.d.ts";\n');
+  assert.equal(git(root, ['status', '--porcelain']).trim(), '');
+  assert.equal(captureReleaseSmokeSource(root).sourceTreeSha256, contexts.buildInputTreeHash);
 });
 
 test('a copied preflight change invalidates both old attestation and release image labels', () => {
