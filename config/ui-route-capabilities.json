@@ -11,6 +11,8 @@
     "unverified values are bounded review exceptions and keep G1 gateReady=false.",
     "Capability evidence levels are E0 entry, E1 reachable code, E2 authoritative source/policy, E3 executable contract definition, E4 current UI-to-server roundtrip artifact, and E5 deployed provenance/owner confirmation.",
     "candidateStatus records a hypothesis only; it never upgrades the asserted status without current E4 evidence.",
+    "E4 is machine-bound: a capability is E4 exactly when its roundtrips name browser journey tests (frontend/e2e/journeys; no network stubbing in the spec or the frontend/e2e fixtures and helpers it imports; one real test() call with that literal title, so commented-out, skipped or describe calls do not count) whose actions together cover every capability action. Required CI runs every journey whenever a change that the E2E selection (ADR-0023) picks lands on main and counts a retry pass as a failure; after a change the selection judges unrelated, the previous full run remains the evidence. Whether a test really performs an action is a reviewed claim. E4 and E5 never transfer to a generated project.",
+    "A redirect alias follows its destination (DEC-OPS-404): its single redirect-destination capability takes the destination page status, dataSource, supportedActions, visibleLabel, combined actorScope and lowest evidence level, resolved by path (query and tab do not split a route).",
     "menuExposure is structural: visible when a menu row and all its ancestors are active (use_yn=Y, del_yn!=Y) and its modern_route path or redirect-resolved page is this route; hidden when only inactive menus point to it; not-menued otherwise. It does not measure which groups see the menu (NAVIGATION grants)."
   ],
   "sources": {
@@ -474,9 +476,16 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "address-books-api",
+      "supportedActions": [
+        "create",
+        "delete",
+        "export",
+        "refresh",
+        "search",
+        "view-list"
+      ],
       "profileOwners": [
         "demo"
       ],
@@ -486,7 +495,7 @@
       "journeys": [
         "collaboration-delivery"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "통합 주소록 관리",
       "menuExposure": "visible",
       "decisionSafe": false,
       "routing": {
@@ -499,17 +508,24 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "address-books-api",
+          "actions": [
+            "create",
+            "delete",
+            "export",
+            "refresh",
+            "search",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|SYSTEM|owner",
+          "visibleLabel": "통합 주소록 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/collaboration/address-book/page.tsx"
@@ -522,17 +538,7 @@
         "frontend/src/app/admin/collaboration/address-book/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/address-book/insert-address-book",
@@ -543,9 +549,16 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "address-books-api",
+      "supportedActions": [
+        "create",
+        "delete",
+        "export",
+        "refresh",
+        "search",
+        "view-list"
+      ],
       "profileOwners": [
         "demo"
       ],
@@ -555,7 +568,7 @@
       "journeys": [
         "collaboration-delivery"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "통합 주소록 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -568,17 +581,24 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "address-books-api",
+          "actions": [
+            "create",
+            "delete",
+            "export",
+            "refresh",
+            "search",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|SYSTEM|owner",
+          "visibleLabel": "통합 주소록 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx"
@@ -591,17 +611,7 @@
         "frontend/src/app/admin/collaboration/address-book/insert-address-book/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/address-book/select-address-book-detail/[id]",
@@ -783,8 +793,7 @@
         },
         {
           "id": "addressbook.create",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "address-books-api",
           "actions": [
             "create"
@@ -794,11 +803,21 @@
           "visibleLabel": "주소록 등록",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/address-book.spec.ts",
+              "test": "협업 허브에서 주소록 등록 dialog를 열고 등록한 연락처를 검색한다",
+              "actions": [
+                "create"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/addressbook/AddressBookApiController.java",
+            "frontend/e2e/journeys/address-book.spec.ts",
             "frontend/src/app/admin/collaboration/address-book/AddressBookCreateDialog.tsx",
             "frontend/src/app/admin/collaboration/address-book/__tests__/AddressBookFormValidation.test.tsx",
             "frontend/src/app/admin/collaboration/address-book/select-address-book-list/page.tsx"
@@ -975,8 +994,7 @@
       "capabilities": [
         {
           "id": "mail.compose-send",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "mails-api",
           "actions": [
             "send"
@@ -986,12 +1004,22 @@
           "visibleLabel": "메일 발송",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/mail.spec.ts",
+              "test": "should preserve a 256-character mail subject in history",
+              "actions": [
+                "send"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/mail/MailApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/mail/MailApiControllerTest.java",
+            "frontend/e2e/journeys/mail.spec.ts",
             "frontend/src/app/admin/collaboration/mail-send/MailSendHubClient.tsx",
             "frontend/src/app/admin/collaboration/mail-send/__tests__/MailSendHubClient.test.tsx",
             "frontend/src/app/admin/collaboration/mail-send/page.tsx",
@@ -1151,9 +1179,15 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "scraps-api",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "view-list"
+      ],
       "profileOwners": [
         "collaboration",
         "demo"
@@ -1165,7 +1199,7 @@
       "journeys": [
         "collaboration-delivery"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "스크랩 목록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1178,17 +1212,23 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "scraps-api",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|AUTHENTICATED / owner|SYSTEM|owner",
+          "visibleLabel": "스크랩 목록",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx"
@@ -1201,17 +1241,7 @@
         "frontend/src/app/admin/collaboration/scraps/insertScrap/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/scraps/selectScrapDetail/[id]",
@@ -1222,9 +1252,15 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "scraps-api",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "view-list"
+      ],
       "profileOwners": [
         "collaboration",
         "demo"
@@ -1236,7 +1272,7 @@
       "journeys": [
         "collaboration-delivery"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "스크랩 목록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1249,17 +1285,23 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "scraps-api",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|AUTHENTICATED / owner|SYSTEM|owner",
+          "visibleLabel": "스크랩 목록",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx"
@@ -1272,17 +1314,7 @@
         "frontend/src/app/admin/collaboration/scraps/selectScrapDetail/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/collaboration/scraps/selectScrapList",
@@ -1415,9 +1447,22 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "approve",
+        "close",
+        "create",
+        "edit",
+        "filter",
+        "refresh",
+        "reject",
+        "search",
+        "sort",
+        "view-list",
+        "view-stats",
+        "withdraw"
+      ],
       "profileOwners": [
         "demo"
       ],
@@ -1428,7 +1473,7 @@
         "content-publish-read",
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "위키",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1441,17 +1486,30 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "approve",
+            "close",
+            "create",
+            "edit",
+            "filter",
+            "refresh",
+            "reject",
+            "search",
+            "sort",
+            "view-list",
+            "view-stats",
+            "withdraw"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|SYSTEM",
+          "visibleLabel": "위키",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/community/page.tsx"
@@ -1464,17 +1522,7 @@
         "frontend/src/app/admin/community/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/[id]",
@@ -1485,9 +1533,15 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "live",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "join",
+        "leave",
+        "navigate",
+        "view-detail",
+        "view-list"
+      ],
       "profileOwners": [
         "demo"
       ],
@@ -1497,7 +1551,7 @@
       "journeys": [
         "content-publish-read"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "커뮤니티 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1510,17 +1564,23 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "live",
+          "dataSource": "mixed",
+          "actions": [
+            "join",
+            "leave",
+            "navigate",
+            "view-detail",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "AUTHENTICATED|PARTICIPANT_OR_ADMIN",
+          "visibleLabel": "커뮤니티 상세",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/community/[id]/page.tsx"
@@ -1533,17 +1593,7 @@
         "frontend/src/app/admin/community/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 this route became a page-redirect to the canonical community detail (DEC-OPS-130); menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot). roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/board",
@@ -1629,9 +1679,22 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "approve",
+        "close",
+        "create",
+        "edit",
+        "filter",
+        "refresh",
+        "reject",
+        "search",
+        "sort",
+        "view-list",
+        "view-stats",
+        "withdraw"
+      ],
       "profileOwners": [
         "demo"
       ],
@@ -1642,7 +1705,7 @@
         "content-publish-read",
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "위키",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1655,17 +1718,30 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "approve",
+            "close",
+            "create",
+            "edit",
+            "filter",
+            "refresh",
+            "reject",
+            "search",
+            "sort",
+            "view-list",
+            "view-stats",
+            "withdraw"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|SYSTEM",
+          "visibleLabel": "위키",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/community/boards/page.tsx"
@@ -1678,17 +1754,7 @@
         "frontend/src/app/admin/community/boards/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/[id]",
@@ -1699,9 +1765,15 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "upload",
+        "view-list"
+      ],
       "profileOwners": [
         "collaboration",
         "demo"
@@ -1713,7 +1785,7 @@
       "journeys": [
         "content-publish-read"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "새 게시글 작성",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -1726,17 +1798,23 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "upload",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / owner|REACHABILITY_WITH_PRIVACY|SYSTEM",
+          "visibleLabel": "새 게시글 작성",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/community/boards/[id]/page.tsx"
@@ -1749,17 +1827,7 @@
         "frontend/src/app/admin/community/boards/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/boards/detail",
@@ -1895,8 +1963,7 @@
       "capabilities": [
         {
           "id": "board.article-write",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "boards-api",
           "actions": [
             "create",
@@ -1908,12 +1975,24 @@
           "visibleLabel": "새 게시글 작성·게시글 수정",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/board-articles.spec.ts",
+              "test": "본문 이미지·영상·표는 저장과 재수정 후 실제 첨부로 표시된다",
+              "actions": [
+                "create",
+                "edit",
+                "upload"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/board/BoardApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/board/BoardApiControllerTest.java",
+            "frontend/e2e/journeys/board-articles.spec.ts",
             "frontend/src/app/actions/__tests__/boardActions.test.ts",
             "frontend/src/app/actions/boardActions.ts",
             "frontend/src/app/admin/community/boards/insert-board-article/BoardRegistClient.tsx",
@@ -1998,8 +2077,7 @@
       "capabilities": [
         {
           "id": "board.master-create-wizard",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "board-masters+communities-api",
           "actions": [
             "create",
@@ -2010,18 +2088,29 @@
           "visibleLabel": "게시판 만들기·사용 전환·메뉴에 붙이기",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-26",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/board-masters.spec.ts",
+              "test": "게시판 만들기(사용 안 함·메뉴 없음) → 운영 화면 설정 저장 → 목록에서 사용 안 함으로 바꾸기",
+              "actions": [
+                "create",
+                "navigate"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/admin/content/board/BoardMasterApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/admin/content/board/BoardMasterApiControllerTest.java",
+            "frontend/e2e/journeys/board-masters.spec.ts",
             "frontend/src/app/admin/community/boards/maker/components/BoardMakerWizard.tsx",
             "frontend/src/app/admin/community/boards/maker/components/__tests__/BoardMakerWizard.validation.test.tsx",
             "frontend/src/app/admin/community/boards/maker/page.tsx",
+            "frontend/src/lib/navigation/target-handoff.ts",
             "frontend/src/services/business/user/community/CommunityUserService.ts",
-            "frontend/src/services/foundation/system/BoardAdminService.ts",
-            "frontend/src/lib/navigation/target-handoff.ts"
+            "frontend/src/services/foundation/system/BoardAdminService.ts"
           ]
         },
         {
@@ -2476,9 +2565,15 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "upload",
+        "view-list"
+      ],
       "profileOwners": [
         "collaboration",
         "demo"
@@ -2490,7 +2585,7 @@
       "journeys": [
         "content-publish-read"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "새 게시글 작성",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -2503,17 +2598,23 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "upload",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / owner|REACHABILITY_WITH_PRIVACY|SYSTEM",
+          "visibleLabel": "새 게시글 작성",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/community/boards/write/page.tsx"
@@ -2526,17 +2627,7 @@
         "frontend/src/app/admin/community/boards/write/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/community/templates",
@@ -3162,9 +3253,19 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "export",
+        "filter",
+        "refresh",
+        "scan",
+        "search",
+        "select-sample-item",
+        "view-detail",
+        "view-list",
+        "view-status"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -3182,7 +3283,7 @@
       "journeys": [
         "operations-status"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "시스템 로그(감사 보기)",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -3196,19 +3297,30 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "export",
+            "filter",
+            "refresh",
+            "scan",
+            "search",
+            "select-sample-item",
+            "view-detail",
+            "view-list",
+            "view-status"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "시스템 로그(감사 보기)",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E1",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/observability/page.tsx"
           ]
         }
@@ -3219,17 +3331,7 @@
         "frontend/src/app/admin/observability/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/operation/events",
@@ -3529,8 +3631,7 @@
         },
         {
           "id": "memo-report.detail-instruction",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "memo-reports-api",
           "actions": [
             "instruct",
@@ -3541,12 +3642,23 @@
           "visibleLabel": "보고 상세 · 지시사항",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/operations-navigation.spec.ts",
+              "test": "메모 작성자의 정정은 수신자를 유지하고 수신자의 첫 열람만 기록한다",
+              "actions": [
+                "instruct",
+                "view-detail"
+              ]
+            }
+          ],
           "evidence": [
             "business-app/src/main/java/nuri/business/service/memoreport/MemoReportService.java",
             "business-app/src/test/java/nuri/business/service/memoreport/MemoReportServiceTest.java",
+            "frontend/e2e/journeys/operations-navigation.spec.ts",
             "frontend/src/app/admin/operation/memo-reports/MemoReportManagementClient.tsx",
             "frontend/src/app/admin/operation/memo-reports/__tests__/MemoReportDetail.test.tsx",
             "frontend/src/app/admin/operation/memo-reports/page.tsx"
@@ -3876,9 +3988,19 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "export",
+        "filter",
+        "refresh",
+        "scan",
+        "search",
+        "select-sample-item",
+        "view-detail",
+        "view-list",
+        "view-status"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -3896,7 +4018,7 @@
       "journeys": [
         "audit-privacy-investigation"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "시스템 로그(감사 보기)",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -3910,19 +4032,30 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "export",
+            "filter",
+            "refresh",
+            "scan",
+            "search",
+            "select-sample-item",
+            "view-detail",
+            "view-list",
+            "view-status"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "시스템 로그(감사 보기)",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E1",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/security/audit/page.tsx"
           ]
         }
@@ -3933,17 +4066,7 @@
         "frontend/src/app/admin/security/audit/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/security/authority",
@@ -4129,8 +4252,7 @@
         },
         {
           "id": "authorization.group-copy",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-authorization-api",
           "actions": [
             "create"
@@ -4140,11 +4262,21 @@
           "visibleLabel": "이 그룹으로 새 그룹 만들기",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-02",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/security-administration.spec.ts",
+              "test": "구성원 추가·회수는 권한 초안을 흔들지 않고, 복제한 그룹은 원본 권한과 사유를 남긴다",
+              "actions": [
+                "create"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/AuthorizationApiController.java",
+            "frontend/e2e/journeys/security-administration.spec.ts",
             "frontend/src/app/admin/security/authority/SecurityHubClient.tsx",
             "frontend/src/app/admin/security/authority/__tests__/GroupCopyDialog.test.tsx",
             "frontend/src/app/admin/security/authority/components/GroupCopyDialog.tsx"
@@ -4557,9 +4689,22 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "admin-authorization-api",
+      "supportedActions": [
+        "assign",
+        "create",
+        "delete",
+        "edit",
+        "filter",
+        "paginate",
+        "preview",
+        "revoke",
+        "save",
+        "search",
+        "view-detail",
+        "view-list"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -4577,7 +4722,7 @@
       "journeys": [
         "user-administration"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "권한 그룹 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -4590,17 +4735,30 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "admin-authorization-api",
+          "actions": [
+            "assign",
+            "create",
+            "delete",
+            "edit",
+            "filter",
+            "paginate",
+            "preview",
+            "revoke",
+            "save",
+            "search",
+            "view-detail",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "권한 그룹 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/security/role/page.tsx"
@@ -4613,17 +4771,7 @@
         "frontend/src/app/admin/security/role/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/stats",
@@ -5122,9 +5270,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -5136,7 +5293,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -5149,17 +5306,26 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/survey/page.tsx"
@@ -5172,17 +5338,7 @@
         "frontend/src/app/admin/survey/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/hub",
@@ -5357,9 +5513,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -5371,7 +5536,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -5385,19 +5550,29 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/survey/items/page.tsx"
           ]
         }
@@ -5408,17 +5583,7 @@
         "frontend/src/app/admin/survey/items/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/manage",
@@ -5430,9 +5595,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -5444,7 +5618,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -5456,19 +5630,29 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/survey/manage/page.tsx"
           ]
         }
@@ -5479,17 +5663,7 @@
         "frontend/src/app/admin/survey/manage/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/manage/[id]",
@@ -5620,9 +5794,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -5634,7 +5817,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -5647,17 +5830,26 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/survey/manage/create/page.tsx"
@@ -5670,17 +5862,7 @@
         "frontend/src/app/admin/survey/manage/create/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/polls",
@@ -5924,9 +6106,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -5938,7 +6129,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -5952,19 +6143,29 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/survey/questions/page.tsx"
           ]
         }
@@ -5975,17 +6176,7 @@
         "frontend/src/app/admin/survey/questions/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/stats",
@@ -5997,9 +6188,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -6011,7 +6211,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -6023,19 +6223,29 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/survey/stats/page.tsx"
           ]
         }
@@ -6046,17 +6256,7 @@
         "frontend/src/app/admin/survey/stats/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/survey/templates",
@@ -6068,9 +6268,18 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "refresh",
+        "search",
+        "view-detail",
+        "view-list",
+        "view-summary"
+      ],
       "profileOwners": [
         "demo",
         "survey"
@@ -6082,7 +6291,7 @@
       "journeys": [
         "content-participation-admin"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "여론조사 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -6096,19 +6305,29 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "refresh",
+            "search",
+            "view-detail",
+            "view-list",
+            "view-summary"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED / ADMIN|SYSTEM",
+          "visibleLabel": "여론조사 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/survey/templates/page.tsx"
           ]
         }
@@ -6119,17 +6338,7 @@
         "frontend/src/app/admin/survey/templates/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/audit",
@@ -6141,9 +6350,19 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "export",
+        "filter",
+        "refresh",
+        "scan",
+        "search",
+        "select-sample-item",
+        "view-detail",
+        "view-list",
+        "view-status"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -6161,7 +6380,7 @@
       "journeys": [
         "audit-privacy-investigation"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "시스템 로그(감사 보기)",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -6175,19 +6394,30 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "export",
+            "filter",
+            "refresh",
+            "scan",
+            "search",
+            "select-sample-item",
+            "view-detail",
+            "view-list",
+            "view-status"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "시스템 로그(감사 보기)",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E1",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/system/audit/page.tsx"
           ]
         }
@@ -6198,17 +6428,7 @@
         "frontend/src/app/admin/system/audit/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/banner",
@@ -6827,9 +7047,20 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "export",
+        "mark-processed",
+        "refresh",
+        "reorder",
+        "save",
+        "search",
+        "view-list"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -6845,7 +7076,7 @@
         "survey"
       ],
       "journeys": [],
-      "visibleLabel": "공통코드 관리",
+      "visibleLabel": "코드 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -6858,17 +7089,28 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "export",
+            "mark-processed",
+            "refresh",
+            "reorder",
+            "save",
+            "search",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "코드 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/common-code/codes/page.tsx"
@@ -6881,16 +7123,7 @@
         "frontend/src/app/admin/system/common-code/codes/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/content-pages",
@@ -7261,9 +7494,18 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "approvals-api",
+      "supportedActions": [
+        "confirm",
+        "create",
+        "filter",
+        "list",
+        "refresh",
+        "reject",
+        "search",
+        "select-detail"
+      ],
       "profileOwners": [
         "approval",
         "demo"
@@ -7275,7 +7517,7 @@
       "journeys": [
         "approval-request"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "결재 허브",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -7288,17 +7530,26 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "approvals-api",
+          "actions": [
+            "confirm",
+            "create",
+            "filter",
+            "list",
+            "refresh",
+            "reject",
+            "search",
+            "select-detail"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "결재 허브",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/ism/page.tsx"
@@ -7311,17 +7562,7 @@
         "frontend/src/app/admin/system/ism/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/layout",
@@ -7532,7 +7773,7 @@
         "UNVERIFIED"
       ],
       "surface": "admin-console",
-      "status": "partial",
+      "status": "live",
       "dataSource": "admin-audit-journal-api",
       "supportedActions": [
         "export",
@@ -7568,8 +7809,7 @@
       "capabilities": [
         {
           "id": "audit-journal.list-search",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-audit-journal-api",
           "actions": [
             "filter",
@@ -7581,13 +7821,25 @@
           "visibleLabel": "민감 작업 감사 원장 목록",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-01",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/audit-log.spec.ts",
+              "test": "사용자 상세 조회는 개인정보 조회 기록과 감사 원장에 남고, 감사 원장을 조건으로 찾아 사유와 함께 내보낸다",
+              "actions": [
+                "filter",
+                "search",
+                "view-list"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiController.java",
             "business-core/src/main/java/nuri/business/service/log/SensitiveAuditQueryService.java",
             "business-core/src/test/java/nuri/business/service/log/SensitiveAuditQueryServiceTest.java",
+            "frontend/e2e/journeys/audit-log.spec.ts",
             "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
             "frontend/src/app/admin/system/logs/audit/__tests__/AuditJournalClient.test.tsx",
             "frontend/src/app/admin/system/logs/audit/page.tsx",
@@ -7596,8 +7848,7 @@
         },
         {
           "id": "audit-journal.full-export",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-audit-journal-api",
           "actions": [
             "export"
@@ -7607,14 +7858,24 @@
           "visibleLabel": "전체 결과 내보내기",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-20",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/audit-log.spec.ts",
+              "test": "사용자 상세 조회는 개인정보 조회 기록과 감사 원장에 남고, 감사 원장을 조건으로 찾아 사유와 함께 내보낸다",
+              "actions": [
+                "export"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiController.java",
             "api-server/src/main/java/nuri/api/interceptor/SensitiveAuditInterceptor.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/log/AuditJournalApiControllerTest.java",
             "api-server/src/test/java/nuri/api/interceptor/PrivacyAccessReasonTest.java",
+            "frontend/e2e/journeys/audit-log.spec.ts",
             "frontend/src/app/admin/system/logs/audit/AuditJournalClient.tsx",
             "frontend/src/app/admin/system/logs/audit/__tests__/AuditJournalClient.test.tsx",
             "frontend/src/app/admin/system/logs/audit/page.tsx"
@@ -7922,8 +8183,7 @@
         },
         {
           "id": "system-log.export",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-system-logs-api",
           "actions": [
             "export"
@@ -7933,11 +8193,21 @@
           "visibleLabel": "현재 페이지 엑셀 내보내기 · 전체 결과 엑셀 다운로드",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/audit-log.spec.ts",
+              "test": "권한 없는 요청은 실패 요청(시스템) 로그에 그 경로와 응답 코드로 남는다",
+              "actions": [
+                "export"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/log/LogExportEndpointsTest.java",
+            "frontend/e2e/journeys/audit-log.spec.ts",
             "frontend/src/app/admin/system/logs/__tests__/log-clients.contract.test.tsx",
             "frontend/src/app/admin/system/logs/system/SystemLogsSystemClient.tsx",
             "frontend/src/app/admin/system/logs/system/page.tsx",
@@ -8415,9 +8685,19 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "export",
+        "filter",
+        "refresh",
+        "scan",
+        "search",
+        "select-sample-item",
+        "view-detail",
+        "view-list",
+        "view-status"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -8436,7 +8716,7 @@
         "operations-status",
         "audit-privacy-investigation"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "시스템 로그(감사 보기)",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -8449,17 +8729,27 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "export",
+            "filter",
+            "refresh",
+            "scan",
+            "search",
+            "select-sample-item",
+            "view-detail",
+            "view-list",
+            "view-status"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "시스템 로그(감사 보기)",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E1",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/admin/system/monitoring/page.tsx"
@@ -8472,17 +8762,7 @@
         "frontend/src/app/admin/system/monitoring/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/system/monitoring/hub",
@@ -8970,8 +9250,7 @@
         },
         {
           "id": "dept.hierarchy-save",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-departments-api",
           "actions": [
             "reorder",
@@ -8982,11 +9261,22 @@
           "visibleLabel": "조직 계층 저장",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/department-hierarchy.spec.ts",
+              "test": "Dept Hierarchy D&D — 가로 드래그가 상위 부서를 실제로 바꾸고 저장된다",
+              "actions": [
+                "reorder",
+                "save"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/system/DeptApiController.java",
+            "frontend/e2e/journeys/department-hierarchy.spec.ts",
             "frontend/src/app/actions/deptActions.ts",
             "frontend/src/app/admin/user/UserOrgHubClient.tsx",
             "frontend/src/app/admin/user/__tests__/UserOrgHubClient.crud.test.tsx",
@@ -9084,9 +9374,11 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "page-permission-filtered-links",
+      "supportedActions": [
+        "navigate"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -9104,7 +9396,7 @@
       "journeys": [
         "user-administration"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "조직 정책",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -9116,19 +9408,22 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "page-permission-filtered-links",
+          "actions": [
+            "navigate"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "조직 정책",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E2",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/admin/user/login-policy/page.tsx"
           ]
         }
@@ -9139,17 +9434,7 @@
         "frontend/src/app/admin/user/login-policy/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/admin/user/manage",
@@ -9747,7 +10032,7 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "partial",
+      "status": "live",
       "dataSource": "mixed",
       "supportedActions": [
         "join",
@@ -9776,8 +10061,7 @@
       "capabilities": [
         {
           "id": "community.detail-read",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "communities-api",
           "actions": [
             "view-detail"
@@ -9787,12 +10071,22 @@
           "visibleLabel": "커뮤니티 소개",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/community-navigation.spec.ts",
+              "test": "신규 사용자는 가입 신청·관리자 승인 뒤 게시판을 보고 탈퇴하면 접근이 끊긴다",
+              "actions": [
+                "view-detail"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
+            "frontend/e2e/journeys/community-navigation.spec.ts",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
@@ -9801,8 +10095,7 @@
         },
         {
           "id": "community.join",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "communities-api",
           "actions": [
             "join",
@@ -9813,12 +10106,23 @@
           "visibleLabel": "커뮤니티 가입 신청 · 탈퇴",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/community-navigation.spec.ts",
+              "test": "신규 사용자는 가입 신청·관리자 승인 뒤 게시판을 보고 탈퇴하면 접근이 끊긴다",
+              "actions": [
+                "join",
+                "leave"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
+            "frontend/e2e/journeys/community-navigation.spec.ts",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
@@ -9827,8 +10131,7 @@
         },
         {
           "id": "community.member-boards",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "community-boards-api",
           "actions": [
             "navigate",
@@ -9839,13 +10142,24 @@
           "visibleLabel": "커뮤니티 게시판",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/community-navigation.spec.ts",
+              "test": "신규 사용자는 가입 신청·관리자 승인 뒤 게시판을 보고 탈퇴하면 접근이 끊긴다",
+              "actions": [
+                "navigate",
+                "view-list"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/community/CommunityUserApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/community/CommunityUserApiControllerTest.java",
             "business-app/src/main/java/nuri/business/service/board/BoardMasterService.java",
+            "frontend/e2e/journeys/community-navigation.spec.ts",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.pending.test.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/CommunityDetailHubClient.tsx",
             "frontend/src/app/cop/cmy/selectCommunityDetail/[id]/page.tsx",
@@ -9966,9 +10280,16 @@
         "SYSTEM"
       ],
       "surface": "admin-console",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "admin-sms-api",
+      "supportedActions": [
+        "filter",
+        "refresh",
+        "search",
+        "send",
+        "view-detail",
+        "view-list"
+      ],
       "profileOwners": [
         "collaboration",
         "demo"
@@ -9980,7 +10301,7 @@
       "journeys": [
         "collaboration-delivery"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "문자 메시지 발송 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -9992,19 +10313,27 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "admin-sms-api",
+          "actions": [
+            "filter",
+            "refresh",
+            "search",
+            "send",
+            "view-detail",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|SYSTEM",
+          "visibleLabel": "문자 메시지 발송 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
+            "frontend/next.config.ts",
             "frontend/src/app/cop/sms/selectSmsList/page.tsx"
           ]
         }
@@ -10015,17 +10344,7 @@
         "frontend/src/app/cop/sms/selectSmsList/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/help",
@@ -10120,8 +10439,7 @@
         },
         {
           "id": "help.guide-read",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "help-public-hpcm-api",
           "actions": [
             "search",
@@ -10132,12 +10450,23 @@
           "visibleLabel": "도움말",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-19",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/help-content.spec.ts",
+              "test": "도움말·온라인 매뉴얼 등록 → 일반 사용자 도움말 센터에서 읽는다",
+              "actions": [
+                "search",
+                "view-list"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
+            "frontend/e2e/journeys/help-content.spec.ts",
             "frontend/src/app/help/HelpClient.tsx",
             "frontend/src/app/help/HelpGuideList.tsx",
             "frontend/src/app/help/__tests__/HelpClient.guides.test.tsx",
@@ -10148,8 +10477,7 @@
         },
         {
           "id": "help.manual-read",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "help-public-manuals-api",
           "actions": [
             "search",
@@ -10160,12 +10488,23 @@
           "visibleLabel": "온라인 매뉴얼",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-19",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/help-content.spec.ts",
+              "test": "도움말·온라인 매뉴얼 등록 → 일반 사용자 도움말 센터에서 읽는다",
+              "actions": [
+                "search",
+                "view-list"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/help/HelpApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/help/HelpApiControllerTest.java",
+            "frontend/e2e/journeys/help-content.spec.ts",
             "frontend/src/app/help/HelpClient.tsx",
             "frontend/src/app/help/HelpGuideList.tsx",
             "frontend/src/app/help/__tests__/HelpClient.guides.test.tsx",
@@ -10532,7 +10871,7 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "partial",
+      "status": "live",
       "dataSource": "cms-published-page-api",
       "supportedActions": [
         "view-detail"
@@ -10557,8 +10896,7 @@
       "capabilities": [
         {
           "id": "cms.published-page",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "cms-published-page-api",
           "actions": [
             "view-detail"
@@ -10568,11 +10906,21 @@
           "visibleLabel": "게시된 콘텐츠 페이지",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-10-22",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/help-content.spec.ts",
+              "test": "콘텐츠 페이지 작성·게시 → 일반 사용자가 주소로 읽고, 게시를 멈추면 없는 페이지다",
+              "actions": [
+                "view-detail"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/cms/CmsPageApiController.java",
+            "frontend/e2e/journeys/help-content.spec.ts",
             "frontend/src/app/pages/[slug]/page.tsx",
             "frontend/src/components/cms/CmsDocumentView.tsx",
             "frontend/src/components/cms/__tests__/CmsDocumentView.test.tsx",
@@ -10826,8 +11174,7 @@
         },
         {
           "id": "dept-job.box-management",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "dept-job-boxes-api",
           "actions": [
             "create",
@@ -10840,12 +11187,25 @@
           "visibleLabel": "업무함 관리",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/department-work.spec.ts",
+              "test": "업무함 관리: 부서 전량 조회 → 부서 지정 등록 → 수정 → 삭제",
+              "actions": [
+                "create",
+                "delete",
+                "edit",
+                "view-list"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/DeptJobApiControllerTest.java",
+            "frontend/e2e/journeys/department-work.spec.ts",
             "frontend/src/app/smart-toolkit/dept-job/page.tsx",
             "frontend/src/components/business/deptJob/DeptJobBoxManageDialog.tsx",
             "frontend/src/components/business/deptJob/__tests__/DeptJobBoxManageDialog.test.tsx"
@@ -10869,7 +11229,7 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "partial",
+      "status": "live",
       "dataSource": "dept-jobs-api",
       "supportedActions": [
         "delete",
@@ -10904,8 +11264,7 @@
       "capabilities": [
         {
           "id": "dept-job.detail-read",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "dept-jobs-api",
           "actions": [
             "view-detail"
@@ -10915,12 +11274,22 @@
           "visibleLabel": "업무 상세",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/department-work.spec.ts",
+              "test": "부서 업무 상세에서 수정·삭제할 수 있다",
+              "actions": [
+                "view-detail"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/DeptJobApiControllerTest.java",
+            "frontend/e2e/journeys/department-work.spec.ts",
             "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
             "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx",
             "frontend/src/app/smart-toolkit/dept-job/[id]/page.tsx",
@@ -10929,8 +11298,7 @@
         },
         {
           "id": "dept-job.modify",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "dept-jobs-api",
           "actions": [
             "delete",
@@ -10941,13 +11309,24 @@
           "visibleLabel": "업무 수정·삭제",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/department-work.spec.ts",
+              "test": "부서 업무 상세에서 수정·삭제할 수 있다",
+              "actions": [
+                "delete",
+                "edit"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/smarttoolkit/DeptJobApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/smarttoolkit/DeptJobApiControllerTest.java",
             "business-core/src/main/java/nuri/business/service/deptjob/DeptJobService.java",
+            "frontend/e2e/journeys/department-work.spec.ts",
             "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.tsx",
             "frontend/src/app/smart-toolkit/dept-job/[id]/DeptJobDetailClient.validation.test.tsx",
             "frontend/src/app/smart-toolkit/dept-job/[id]/page.tsx"
@@ -11049,9 +11428,12 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "dept-jobs-api",
+      "supportedActions": [
+        "create",
+        "search-users"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -11069,7 +11451,7 @@
       "journeys": [
         "daily-work"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "부서 업무 등록",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -11082,17 +11464,20 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "dept-jobs-api",
+          "actions": [
+            "create",
+            "search-users"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "AUTHENTICATED",
+          "visibleLabel": "부서 업무 등록",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/smart-toolkit/dept-job/insertDeptJob/page.tsx"
@@ -11105,17 +11490,7 @@
         "frontend/src/app/smart-toolkit/dept-job/insertDeptJob/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/dept-job/selectDeptJobDetail/[id]",
@@ -11126,9 +11501,13 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "live",
+      "dataSource": "dept-jobs-api",
+      "supportedActions": [
+        "delete",
+        "edit",
+        "view-detail"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -11146,7 +11525,7 @@
       "journeys": [
         "daily-work"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "부서 업무 상세",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -11159,17 +11538,21 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "live",
+          "dataSource": "dept-jobs-api",
+          "actions": [
+            "delete",
+            "edit",
+            "view-detail"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|SYSTEM|owner",
+          "visibleLabel": "부서 업무 상세",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/smart-toolkit/dept-job/selectDeptJobDetail/[id]/page.tsx"
@@ -11182,17 +11565,7 @@
         "frontend/src/app/smart-toolkit/dept-job/selectDeptJobDetail/[id]/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/dept-job/selectDeptJobList",
@@ -11203,9 +11576,17 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "unverified",
-      "dataSource": "unverified",
-      "supportedActions": [],
+      "status": "partial",
+      "dataSource": "mixed",
+      "supportedActions": [
+        "create",
+        "delete",
+        "edit",
+        "filter",
+        "navigate",
+        "search",
+        "view-list"
+      ],
       "profileOwners": [
         "approval",
         "collaboration",
@@ -11223,7 +11604,7 @@
       "journeys": [
         "daily-work"
       ],
-      "visibleLabel": "unverified",
+      "visibleLabel": "업무 관리",
       "menuExposure": "not-menued",
       "decisionSafe": false,
       "routing": {
@@ -11236,17 +11617,25 @@
       "owner": "product/UX + domain owner",
       "capabilities": [
         {
-          "id": "route-capability-review",
-          "status": "unverified",
-          "dataSource": "unverified",
-          "actions": [],
+          "id": "redirect-destination",
+          "status": "partial",
+          "dataSource": "mixed",
+          "actions": [
+            "create",
+            "delete",
+            "edit",
+            "filter",
+            "navigate",
+            "search",
+            "view-list"
+          ],
           "unsupportedVisibleActions": [],
-          "actorScope": "UNVERIFIED",
-          "visibleLabel": "unverified",
-          "primaryTask": true,
+          "actorScope": "ADMIN|AUTHENTICATED|AUTHENTICATED / ADMIN|SYSTEM|owner",
+          "visibleLabel": "업무 관리",
+          "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E0",
-          "lastVerifiedAt": "2026-08-21",
+          "evidenceLevel": "E3",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
           "evidence": [
             "frontend/src/app/smart-toolkit/dept-job/selectDeptJobList/page.tsx"
@@ -11259,17 +11648,7 @@
         "frontend/src/app/smart-toolkit/dept-job/selectDeptJobList/page.tsx",
         "frontend/src/proxy.ts"
       ],
-      "unverifiedFields": [
-        "dataSource",
-        "status",
-        "supportedActions",
-        "visibleLabel"
-      ],
-      "review": {
-        "owner": "product/UX + domain owner",
-        "reviewBy": "2026-11-30",
-        "reason": "Remaining fields (dataSource, status, supportedActions, visibleLabel) need product/UX and domain owner review. On 2026-09-25 menu exposure was measured from tb_menu_info (OCI rows identical to the Flyway menu snapshot), and the page heading and capability states were re-read from code where the verifier could confirm them. roles, profileOwners and journeys were confirmed on 2026-11-08 (DEC-OPS-404)."
-      }
+      "unverifiedFields": []
     },
     {
       "route": "/smart-toolkit/schedule",
@@ -11550,8 +11929,7 @@
       "capabilities": [
         {
           "id": "work-report.list",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "work-reports-api",
           "actions": [
             "search",
@@ -11562,13 +11940,24 @@
           "visibleLabel": "업무 보고",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/work-reports.spec.ts",
+              "test": "행의 수정·삭제가 살아 있다 (종전엔 死버튼)",
+              "actions": [
+                "search",
+                "view-list"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/report/WorkReportApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/report/WorkReportApiControllerTest.java",
             "business-app/src/main/java/nuri/business/service/report/WorkReportService.java",
+            "frontend/e2e/journeys/work-reports.spec.ts",
             "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
             "frontend/src/app/smart-toolkit/work-report/page.tsx",
             "frontend/src/services/business/user/ReportService.ts",
@@ -11601,8 +11990,7 @@
         },
         {
           "id": "work-report.modify",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "work-reports-api",
           "actions": [
             "delete",
@@ -11613,12 +12001,23 @@
           "visibleLabel": "보고 수정·삭제",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/work-reports.spec.ts",
+              "test": "행의 수정·삭제가 살아 있다 (종전엔 死버튼)",
+              "actions": [
+                "delete",
+                "edit"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/business/report/WorkReportApiController.java",
             "api-server/src/test/java/nuri/api/controller/business/report/WorkReportApiControllerTest.java",
+            "frontend/e2e/journeys/work-reports.spec.ts",
             "frontend/src/app/smart-toolkit/work-report/WorkReportClient.tsx",
             "frontend/src/app/smart-toolkit/work-report/__tests__/WorkReportClient.errors.test.tsx",
             "frontend/src/app/smart-toolkit/work-report/page.tsx"
@@ -11742,8 +12141,7 @@
       "capabilities": [
         {
           "id": "survey.response-submit",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "surveys-api",
           "actions": [
             "submit",
@@ -11754,13 +12152,24 @@
           "visibleLabel": "문항",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/public-navigation.spec.ts",
+              "test": "설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시",
+              "actions": [
+                "submit",
+                "view-detail"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyApiController.java",
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveySubmissionApiControllerTest.java",
+            "frontend/e2e/journeys/public-navigation.spec.ts",
             "frontend/src/app/survey/[id]/SurveyDetailClient.tsx",
             "frontend/src/app/survey/[id]/page.tsx",
             "frontend/src/app/survey/__tests__/SurveyDetailClient.response.test.tsx",
@@ -11870,8 +12279,7 @@
         },
         {
           "id": "survey-response.delete",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-survey-responses-api",
           "actions": [
             "delete"
@@ -11881,12 +12289,22 @@
           "visibleLabel": "응답 삭제",
           "primaryTask": false,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/public-navigation.spec.ts",
+              "test": "설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시",
+              "actions": [
+                "delete"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAdminApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAuthorizationTest.java",
+            "frontend/e2e/journeys/public-navigation.spec.ts",
             "frontend/src/app/survey/response/SurveyResponseClient.tsx",
             "frontend/src/app/survey/response/__tests__/SurveyResponseClient.test.tsx",
             "frontend/src/app/survey/response/page.tsx"
@@ -11910,7 +12328,7 @@
         "AUTHENTICATED"
       ],
       "surface": "authenticated-workspace",
-      "status": "partial",
+      "status": "live",
       "dataSource": "admin-survey-responses-api",
       "supportedActions": [
         "view-detail"
@@ -11937,8 +12355,7 @@
       "capabilities": [
         {
           "id": "survey-response.detail-read",
-          "status": "partial",
-          "candidateStatus": "live",
+          "status": "live",
           "dataSource": "admin-survey-responses-api",
           "actions": [
             "view-detail"
@@ -11948,12 +12365,22 @@
           "visibleLabel": "설문 답변 내용",
           "primaryTask": true,
           "decisionSafe": false,
-          "evidenceLevel": "E3",
-          "lastVerifiedAt": "2026-09-25",
+          "evidenceLevel": "E4",
+          "lastVerifiedAt": "2026-11-10",
           "owner": "product/UX + domain owner",
+          "roundtrips": [
+            {
+              "spec": "frontend/e2e/journeys/public-navigation.spec.ts",
+              "test": "설문 생성·참여·선택답 확인: 기간 등록·수정과 관리자 목록·상세 표시",
+              "actions": [
+                "view-detail"
+              ]
+            }
+          ],
           "evidence": [
             "api-server/src/main/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAdminApiController.java",
             "api-server/src/test/java/nuri/api/controller/foundation/controller/system/service/survey/SurveyResponseAuthorizationTest.java",
+            "frontend/e2e/journeys/public-navigation.spec.ts",
             "frontend/src/app/survey/response/[id]/SurveyResponseDetailClient.tsx",
             "frontend/src/app/survey/response/[id]/page.tsx",
             "frontend/src/lib/api/__tests__/survey.generated-contract.test.ts",

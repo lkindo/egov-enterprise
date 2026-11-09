@@ -5,6 +5,7 @@ import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 // build-atlas.mjs renders the Atlas HTML in-memory without writing to disk
+import { buildAtlasCatalog } from '../../../../scripts/atlas-catalog.mjs';
 import { renderAtlas } from '../../../../scripts/build-atlas.mjs';
 
 const REPO_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '..', '..', '..');
@@ -582,14 +583,22 @@ describe('Governance Atlas rendered source and interaction contract', () => {
     deletedCard.remove();
     expect(catalogFailures(damaged, current)).not.toEqual([]);
     cardParent.insertBefore(deletedCard, cardNext);
-    const route = current.catalogs.routes.find(record => /unverified/i.test(record.status));
+    // [2026-11-10] 실제 라우트 원장에 미확인 행이 없어졌다(DEC-OPS-411 — 리다이렉트 별칭이 목적지를 따른다). 렌더러의 미확인 표시와
+    //   거짓 승격 탐지는 라우트 하나를 미확인으로 바꾼 카탈로그를 같은 렌더러로 그려서 본다.
+    const seededCatalog = buildAtlasCatalog(REPO_DIR) as CatalogData;
+    seededCatalog.catalogs.routes[0].status = 'unverified';
+    const seededHtml = renderAtlas(REPO_DIR, seededCatalog);
+    const seeded = embedded(seededHtml);
+    const seededDocument = (await openAtlas(seededHtml)).dom.window.document;
+    const route = seeded.catalogs.routes.find(record => /^unverified$/i.test(record.status));
     expect(route).toBeDefined();
-    damaged.getElementById(cardId('routes', route!.id))!.dataset.recordStatus = 'VERIFIED';
-    expect(catalogFailures(damaged, current)).toContain(`${route!.id}: status differs`);
-    damaged.getElementById(cardId('routes', route!.id))!.dataset.recordStatus = route!.status;
-    damaged.getElementById(cardId('routes', route!.id))!.querySelector('.badge')!.textContent = 'VERIFIED';
-    expect(catalogFailures(damaged, current)).toContain(`${route!.id}: unverified label differs`);
-  });
+    expect(catalogFailures(seededDocument, seeded)).toEqual([]);
+    seededDocument.getElementById(cardId('routes', route!.id))!.dataset.recordStatus = 'VERIFIED';
+    expect(catalogFailures(seededDocument, seeded)).toContain(`${route!.id}: status differs`);
+    seededDocument.getElementById(cardId('routes', route!.id))!.dataset.recordStatus = route!.status;
+    seededDocument.getElementById(cardId('routes', route!.id))!.querySelector('.badge')!.textContent = 'VERIFIED';
+    expect(catalogFailures(seededDocument, seeded)).toContain(`${route!.id}: unverified label differs`);
+  }, 60000);
 
   it('rejects an altered duplicate fact even while another correct occurrence remains', () => {
     const copy = new browser.window.DOMParser().parseFromString(HTML, 'text/html');
