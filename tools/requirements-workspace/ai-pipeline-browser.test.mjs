@@ -177,17 +177,19 @@ test('an open failed analysis dialog follows actual server progress without losi
       await act('source.ingest', { requestId: randomUUID(), filename: `source-${index + 1}.txt`, base64: Buffer.from(text).toString('base64'), classification: 'internal', sourceType: 'interview', sensitivityAcknowledged: true, readWithAI: false }); await app.engine.waitForImports();
     }
     browser = await chromium.launch({ headless: true }); const page = await browser.newPage(); page.setDefaultTimeout(15000);
-    const browserErrors = [], requests = [];
+    const browserErrors = [], requests = [], requestRecords = new WeakMap();
     page.on('pageerror', error => { if (browserErrors.length < 10) browserErrors.push(error.message); });
     page.on('request', request => {
       const path = new URL(request.url()).pathname; if (!path.startsWith('/api/')) return;
       let action; try { action = JSON.parse(request.postData() ?? '{}').action; } catch { /* No body for state reads. */ }
-      requests.push({ method: request.method(), path, ...(action ? { action } : {}) });
+      const record = { method: request.method(), path, ...(action ? { action } : {}) }; requests.push(record); requestRecords.set(request, record);
     });
+    page.on('response', response => { const record = requestRecords.get(response.request()); if (record) record.status = response.status(); });
+    page.on('requestfailed', request => { const record = requestRecords.get(request); if (record) record.failed = request.failure()?.errorText ?? 'NETWORK_FAILED'; });
     await page.addInitScript(() => {
       window.__recoveryEvents = [];
       const record = event => { if (window.__recoveryEvents.length < 30) window.__recoveryEvents.push(event); };
-      document.addEventListener('submit', event => record({ type: 'submit', form: event.target.id }), true);
+      document.addEventListener('submit', event => { record({ type: 'submit', form: event.target.id }); queueMicrotask(() => record({ type: 'submit-complete', prevented: event.defaultPrevented, busy: document.body.getAttribute('aria-busy') })); }, true);
       document.addEventListener('invalid', event => record({ type: 'invalid', name: event.target.name }), true);
       document.addEventListener('click', event => { const button = event.target.closest('button'); if (button) record({ type: 'click', action: button.dataset.action ?? null, button: button.textContent.trim().slice(0, 50) }); }, true);
     });
