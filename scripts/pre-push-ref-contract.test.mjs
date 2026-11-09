@@ -428,12 +428,16 @@ test('verify profiles run static checks before the operational contracts and sto
     full: [SAST_APPROXIMATION, REGEN_CHECK, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
     e2e: [REGEN_CHECK, 'pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
     integrate: VERIFY_INTEGRATE,
+    // [2026-11-09 DEC-OPS-410] 작업 브랜치 push 가 미룬 운영 계약을 push 뒤에 한 번 돈다 — 운영 계약 밖의 검사는 하지 않는다.
+    'post-push': [CONTRACTS],
   };
   for (const [scope, commands] of Object.entries(expected)) {
     const observed = observeVerification(scope);
     assert.deepEqual(observed.commands, commands, scope);
     assert.deepEqual(observed.exits, [], `${scope}: the success path must not exit early`);
   }
+  // post-push 는 계약 실패를 그대로 전한다 — 병합 대기 도구는 그 실행 기록의 결과를 읽는다.
+  assert.deepEqual(observeVerification('post-push', { failCommand: CONTRACTS }).exits, [1], 'post-push must propagate a contract failure');
   // ops·migration 은 운영 계약을 부르지 않고 자기 검사만 돈다(README·verify.mjs 의 '운영 계약을 부르는 범위').
   for (const scope of ['ops', 'migration']) {
     const observed = observeVerification(scope);
