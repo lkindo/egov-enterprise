@@ -6,8 +6,11 @@ import { fileURLToPath } from 'node:url';
 
 import { MODULES_DIRECTORY, PRESETS_FILE, detectGeneratedComposition } from './composer-modules.mjs';
 import { compositionProfiles, presetIds } from './composition-profiles.mjs';
+import { parseModuleReferences } from './frontend-module-graph.mjs';
+import { candidatePaths, repositoryFileLookup } from './frontend-module-resolver.mjs';
 import { loadProjectComposerCatalog } from './project-composer-catalog.mjs';
 import { COMPOSER_SELECTION_PATH, resolveProjectRecipe } from './project-composer-recipe.mjs';
+import { slotConsumerFiles, slotPathKind } from './slot-registry.mjs';
 
 const SCRIPT_PATH = fileURLToPath(import.meta.url);
 const ROOT = path.resolve(path.dirname(SCRIPT_PATH), '..');
@@ -678,6 +681,90 @@ function validateMenuSnapshot(snapshot, asOf, errors) {
   }
 }
 
+// 대소문자를 가리지 않는다 — 대소문자를 가리지 않는 디스크에서 `__TESTS__`·`.TEST.tsx` 로 시험 파일을 숨기지 못하게 한다(Codex 23차).
+// 폴더 조각과 파일 이름을 따로 본다 — 한 정규식의 갈래에 고정점을 섞으면 CodeQL 이 막는다(js/regex/missing-regexp-anchor).
+const TEST_DIRECTORY = /(?:^|\/)__tests__\//i;
+const TEST_FILE_NAME = /\.(?:test|spec)\.[cm]?[jt]sx?$/i;
+const isTestSource = (file) => TEST_DIRECTORY.test(file) || TEST_FILE_NAME.test(file);
+// 한 줄에 하나뿐인 기본 바인딩 import(`import Name from '지정자';`). 바인딩 없는 import·빈 `{}`·이름 import·한 줄 여러 import 는
+// 받지 않는다 — 판정할 수 없는 형태는 허용하지 않는 쪽이다(Codex 24차: `import  './x'` 처럼 공백만 늘린 부수효과 import).
+const DEFAULT_IMPORT_LINE = /^\s*import\s+([A-Za-z_$][\w$]*)\s+from\s+(['"])([^'"\r\n]+)\2\s*;?\s*$/;
+const stripComments = (text) => text.replace(/\/\*[\s\S]*?\*\//g, '').replace(/\/\/[^\r\n]*/g, '');
+
+/** 저장소 기준 정규 경로인가 — 역슬래시·빈 조각·`.`·`..` 가 없다. 경로 판정(투영·슬롯)이 원문 접두사를 보므로 우회 표기를 막는다. */
+function isCanonicalRepositoryPath(file) {
+  return !file.includes('\\') && path.posix.normalize(file) === file
+    && file.split('/').every((segment) => segment !== '' && segment !== '.' && segment !== '..');
+}
+
+/**
+ * 화면 page 소스가 기본 바인딩 import 로 직접 싣고 JSX 로 그리는 파일인가. 지정자는 상대 경로와 `@/`(frontend/src)만 푼다.
+ * 세 가지가 모두 맞아야 한다 — 파서가 그 줄을 타입 전용이 아닌 정적 import 로 읽고, 그 줄이 한 줄짜리 기본 바인딩 import 이며 같은
+ * 지정자를 가리키고, 주석을 뺀 소스가 그 바인딩을 `<이름` 으로 그린다. 그 밖의 참조 — 타입 전용(재수출의 `{ type … }` 포함)·re-export·
+ * 동적 import(실행 여부를 알 수 없다)·require·require.resolve·바인딩 없는 import·쓰지 않는 바인딩 — 는 화면이 그 모듈을 그린다는 근거로
+ * 세지 않는다(Codex 22·23·24차). 판정할 수 없으면 허용하지 않는 쪽이다.
+ */
+export function pageLoadsModule(repoRoot, pageSource, target) {
+  const importer = path.join(repoRoot, pageSource);
+  const wanted = path.resolve(repoRoot, target);
+  let source;
+  let references;
+  try {
+    source = fs.readFileSync(importer, 'utf8');
+    ({ references } = parseModuleReferences(source, pageSource));
+  } catch {
+    return false;
+  }
+  const lines = source.split(/\r?\n/);
+  const rendered = new Set([...stripComments(source).matchAll(/<([A-Za-z_$][\w$]*)[\s/>]/g)].map((match) => match[1]));
+  return references.some(({ kind, specifier, typeOnly, line }) => {
+    if (typeOnly || kind !== 'static-import') return false;
+    const statement = DEFAULT_IMPORT_LINE.exec(lines[line - 1] ?? '');
+    if (!statement || statement[3] !== specifier || !rendered.has(statement[1])) return false;
+    const base = specifier.startsWith('@/') ? path.join(repoRoot, 'frontend', 'src', specifier.slice(2))
+      : specifier.startsWith('./') || specifier.startsWith('../') ? path.resolve(path.dirname(importer), specifier) : null;
+    return base !== null && candidatePaths(base).includes(wanted);
+  });
+}
+
+/**
+ * 시연 역량이 시연 밖 구성이 싣는 화면에 있어도 되는가(2026-11-09 DEC-OPS-409) — 화면은 여러 구성에 남고 시연 기능이 슬롯 기여로 패널만
+ * 붙일 때뿐이다. 원본 저장소(모든 시작 구성의 투영을 아는 곳)에서 다음을 모두 만족해야 한다.
+ * - 역량의 증거가 모두 정규 경로의, 시험이 아닌 frontend/src 파일이고, 시연은 싣지만 시연 밖의 어떤 시작 구성도 싣지 않는다(화면 제외
+ *   경로로 계산한다). 공통 파일(허브 셸·배지)을 적으면 허용하지 않는다 — 표본이 공통 파일에 있으면 실제로 실린다(2026-11-08 허브 승인
+ *   철회). `showcase/../../app/…` 처럼 시연 경로를 거쳐 공통 파일을 가리키는 표기도, 디스크의 이름과 대소문자가 다른 표기도 거부한다
+ *   (Codex 22·23차).
+ * - 그 가운데 하나 이상이 슬롯 기여(src/extensions/<기능>/<슬롯>.ts)이고, 그 슬롯의 소비자를 이 화면의 page 가 기본 바인딩 import 로 직접 싣고
+ *   JSX 로 그린다(pageLoadsModule).
+ *   지워지는 시험 파일이나 다른 화면 슬롯의 기여만으로는 이 화면에 무엇이 붙는지 말하지 않는다(Codex 20차 반례).
+ * 생성물은 자기 구성 하나만 알아 판정할 수 없으므로 허용하지 않는다 — 생성물의 소유는 UNVERIFIED 라 이 가드에 걸리지도 않는다.
+ */
+function demoContributionRemovedOutsideDemo(capability, entry, repository, nonDemoPresets) {
+  const projections = repository?.profileProjections;
+  if (projections?.projection !== false || !Array.isArray(projections.profiles)) return false;
+  if (!nonDemoPresets.every((preset) => projections.profiles.some(({ profile }) => profile === preset))) return false;
+  const evidence = capability?.evidence;
+  if (!Array.isArray(evidence) || evidence.length === 0) return false;
+  const shipsOnlyInDemo = (file) => {
+    const shipping = directProjectionProfiles(file, projections);
+    return shipping.includes('demo') && !shipping.some((profile) => nonDemoPresets.includes(profile));
+  };
+  // 디스크의 실제 이름과 대소문자까지 같은 파일만 받는다(대소문자를 가리지 않는 디스크에서도 같은 판정).
+  const exactFile = repositoryFileLookup(repository.repoRoot);
+  if (!evidence.every((file) => isNonemptyString(file) && isCanonicalRepositoryPath(file) && file.startsWith('frontend/src/')
+    && !isTestSource(file) && exactFile(path.resolve(repository.repoRoot, file)) === 'exact' && shipsOnlyInDemo(file))) return false;
+  return evidence.some((file) => {
+    let kind;
+    try {
+      kind = slotPathKind(file);
+    } catch {
+      return false;
+    }
+    return kind?.kind === 'contribution'
+      && slotConsumerFiles(kind.slot).some((consumer) => pageLoadsModule(repository.repoRoot, entry.source, consumer));
+  });
+}
+
 export function validateRouteCapabilities(manifest, repository) {
   // 원본 시연 프로필의 소유 기록은 기능을 직접 선택한 생성물에서도 유효하다.
   const knownProfiles = new Set([...compositionProfiles(), 'demo', 'UNVERIFIED']);
@@ -970,7 +1057,8 @@ export function validateRouteCapabilities(manifest, repository) {
     if (declaredUnverified.length > 0) validateReview(entry.review, label, manifest?.asOf, errors);
     else if (entry.review !== undefined) warnings.push(`${label}: review metadata exists without unverifiedFields`);
 
-    if (entry.capabilities?.some(({ status }) => status === 'demo')
+    if (entry.capabilities?.some((capability) => capability?.status === 'demo'
+        && !demoContributionRemovedOutsideDemo(capability, entry, repository, nonDemoPresets))
       && entry.profileOwners.some((profile) => nonDemoPresets.includes(profile))) {
       errors.push(`${label}: demo capability leaks into a non-demo profile owner`);
     }

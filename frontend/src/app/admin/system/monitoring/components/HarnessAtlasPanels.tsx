@@ -1,17 +1,31 @@
 'use client';
 
 import React from 'react';
+import dynamic from 'next/dynamic';
 import { CheckCircle2, Cpu, ShieldCheck, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useChartColors } from '@/lib/hooks/useChartColors';
 import type { HubTabViews } from '@/extensions/slots';
 import { SampleDataBadge } from './MonitoringPanels';
+
+// dynamic fallback 은 실제 차트와 동일 높이를 잡아 청크 도착 시 레이아웃 시프트(CLS)를 없앤다.
+const RealtimeSparkline = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.RealtimeSparkline), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[110px] w-full rounded-lg" />
+});
+const SystemStatusRadar = dynamic(() => import('@/app/components/ui/observability-charts').then(mod => mod.SystemStatusRadar), {
+  ssr: false,
+  loading: () => <Skeleton className="h-[420px] w-full rounded-lg" />
+});
 
 /**
  * 모니터링 허브의 '하네스 아틀라스' 탭(2026-09-27 DIP B5 F11 — demo pack 소유).
  *
- * 이 탭은 실측이 아니라 저장소의 스킬 목록을 옮긴 정적 카탈로그와 예시 계측 로그다(화면도 '샘플' 배지로 밝힌다).
- * 운영 제품의 모니터링 기능이 아니므로 시연 기능(showcase)이 소유한다 — 허브에는 hub-tabs-monitoring 기여(src/extensions/showcase)로
- * 붙는다(허브 분해 H3). 시연이 빠진 구성에서는 이 파일과 기여가 함께 지워지고, 허브는 로그·가동 상태 탭만 남는다.
+ * 이 탭은 실측이 아니라 저장소의 스킬 목록을 옮긴 정적 카탈로그와 예시 계측 로그, 고정 배열의 추세·다차원 상태 표본이다(화면도 '샘플'
+ * 배지로 밝힌다). 운영 제품의 모니터링 기능이 아니므로 시연 기능(showcase)이 소유한다 — 허브에는 hub-tabs-monitoring
+ * 기여(src/extensions/showcase)로 붙는다(허브 분해 H3). 시연이 빠진 구성에서는 이 파일과 기여가 함께 지워지고, 허브는 로그·가동 상태
+ * 탭만 남는다.
  */
 
 /**
@@ -176,6 +190,51 @@ export function HarnessAtlasTab({ selectedItemId, onSelect }: {
           </div>
         </div>
       </div>
+
+      {/* --- Section 3: 추세 · 다차원 상태 표본 --- */}
+      <TrendSamplePanel />
+    </div>
+  );
+}
+
+/**
+ * [P1-5] 스파크라인 2종과 레이더 차트는 실측 소스가 없는 고정 배열이다. 삭제 대신 '샘플 데이터' 배지를 명시해 운영 판단 근거로
+ * 오인되지 않게 한다(원칙 (c)). [2026-11-09 DEC-OPS-409] 공통 가동 상태 탭에 있으면 운영 구성에도 실려 이 시연 탭으로 옮겼다.
+ * 이 탭은 서버를 조회하지 않으므로 레이더의 가용성도 고정값이다(종전에는 health 응답 하나만 실측이었다).
+ */
+function TrendSamplePanel() {
+  const chartColors = useChartColors();
+  return (
+    <div className="space-y-3 rounded-md border border-dashed border-warning/50 p-4">
+      <div className="flex items-center justify-between gap-4 flex-wrap">
+        <h4 className="text-[length:var(--font-size-body)] font-semibold text-foreground">추세 · 다차원 상태(미연동)</h4>
+        <SampleDataBadge />
+      </div>
+
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <RealtimeSparkline
+          label="NETWORK_TRAFFIC (PPS)"
+          data={[ {value: 30}, {value: 45}, {value: 32}, {value: 67}, {value: 55}, {value: 89}, {value: 24} ]}
+          color={chartColors.series[2]}
+        />
+        <RealtimeSparkline
+          label="DB_LATENCY (MS)"
+          data={[ {value: 12}, {value: 15}, {value: 14}, {value: 18}, {value: 15}, {value: 13}, {value: 15} ]}
+          color={chartColors.series[3]}
+        />
+      </div>
+
+      <SystemStatusRadar
+        title="HEURISTIC_SYSTEM_HEALTH (샘플)"
+        data={[
+          { subject: '가용성', A: 100 },
+          { subject: '보안성', A: 95 },
+          { subject: '응답속도', A: 88 },
+          { subject: '무결성', A: 100 },
+          { subject: '확장성', A: 75 },
+          { subject: '안정성', A: 92 },
+        ]}
+      />
     </div>
   );
 }

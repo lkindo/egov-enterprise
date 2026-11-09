@@ -13,6 +13,7 @@ import {
   expectedRouting,
   expectedShellAccess,
   inspectRouteRepository,
+  pageLoadsModule,
   parsePageAuthorizationSources,
   parseConfigRedirectsSource,
   profileProjections,
@@ -562,6 +563,117 @@ test('unverified fields require a bounded review and demo cannot leak to core pr
     validateRouteCapabilities(falseLive, repository).errors.join('\n'),
     /notifications\.dispatch: live requires current E4 or E5 evidence/,
   );
+});
+
+/*
+  [2026-11-09 DEC-OPS-409] 시연 역량이 시연 밖 구성이 싣는 화면에 있어도 되는 경우는 시연 기능만 싣는 슬롯 기여로 붙을 때뿐이다. 감시 허브의
+  표본(추세·다차원 상태)을 공통 가동 상태 탭에서 하네스 탭 기여로 옮기고 허브 소유를 다섯 구성으로 정했다. 허용 조건이 풀리는 반례마다 누수
+  가드가 다시 붉어야 한다 — 2026-11-08 의 첫 허용 조건은 지워지는 시험 파일만 적어도 통과했다(Codex 20차).
+*/
+test('a demo capability sits on a shared screen only as a demo-only slot contribution that the page renders', () => {
+  const { manifest } = currentAnalysis();
+  const HUB = '/admin/system/monitoring/hub';
+  const SAMPLE = 'monitoring.sample-widgets';
+  const SHELL = 'frontend/src/app/admin/system/monitoring/MonitoringHubClient.tsx';
+  const PANEL = 'frontend/src/app/admin/system/monitoring/components/HarnessAtlasPanels.tsx';
+  const CONTRIBUTION = 'frontend/src/extensions/showcase/hub-tabs-monitoring.ts';
+  const DEMO_ONLY_TEST = 'frontend/src/app/admin/patterns/__tests__/pattern-gallery.test.tsx';
+  const leak = (route) => new RegExp(`route ${route.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}: demo capability leaks into a non-demo profile owner`);
+
+  const hub = manifest.routes.find(({ route }) => route === HUB);
+  // 소유는 화면을 싣는 시작 구성 전부이고, 그 가운데 시연 밖 구성이 있어야 허용 조건이 실제로 쓰인다(구성 이름은 열거하지 않는다 — ADR-0028).
+  assert.deepEqual(hub.profileOwners, hub.directProjectionProfiles);
+  assert.ok(hub.profileOwners.some((profile) => profile !== 'demo'));
+  assert.deepEqual(hub.capabilities.find(({ id }) => id === SAMPLE), {
+    ...hub.capabilities.find(({ id }) => id === SAMPLE), status: 'demo', evidence: [PANEL, CONTRIBUTION],
+  });
+  assert.deepEqual(directProjectionProfiles(DEMO_ONLY_TEST, repository.profileProjections), ['demo']);
+  assert.doesNotMatch(validateRouteCapabilities(manifest, repository).errors.join('\n'), leak(HUB));
+
+  const errorsWith = (mutate, inspected = repository) => {
+    const copy = structuredClone(manifest);
+    const route = copy.routes.find((row) => row.route === HUB);
+    mutate(route.capabilities.find(({ id }) => id === SAMPLE), copy);
+    return validateRouteCapabilities(copy, inspected).errors.join('\n');
+  };
+  // ① 모든 구성에 실리는 허브 셸을 증거에 적으면 표본이 그 파일에 있다는 말이다 — 실제로 실리므로 누수다(2026-11-08 철회 사유).
+  //   시연 경로를 거쳐 같은 셸을 가리키는 비정규 표기도 같다 — 투영 판정이 원문 접두사를 보므로 시연 전용으로 오판한다(Codex 22차).
+  assert.match(errorsWith((sample) => sample.evidence.push(SHELL)), leak(HUB));
+  const TRAVERSAL = 'frontend/src/extensions/showcase/../../app/admin/system/monitoring/MonitoringHubClient.tsx';
+  assert.deepEqual(directProjectionProfiles(TRAVERSAL, repository.profileProjections), ['demo']);
+  assert.ok(fs.statSync(path.join(ROOT, TRAVERSAL)).isFile());
+  assert.match(errorsWith((sample) => sample.evidence.push(TRAVERSAL)), leak(HUB));
+  assert.match(errorsWith((sample) => sample.evidence.push(SHELL.replaceAll('/', '\\'))), leak(HUB));
+  // ② 슬롯 기여 없이 시연 소유 패널만 적으면 화면이 그 패널을 어떻게 싣는지 말하지 않는다.
+  assert.match(errorsWith((sample) => { sample.evidence = [PANEL]; }), leak(HUB));
+  // ③ 시연 밖에서 지워지는 시험 파일만 적거나, 기여에 시험 파일을 섞으면 허용하지 않는다(Codex 20차 반례).
+  assert.match(errorsWith((sample) => { sample.evidence = [DEMO_ONLY_TEST]; }), leak(HUB));
+  assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, DEMO_ONLY_TEST]; }), leak(HUB));
+  //   대소문자만 바꾼 시험 경로도 같다 — 대소문자를 가리지 않는 디스크에서는 그 표기로 파일이 열린다(Codex 23차).
+  assert.match(errorsWith((sample) => {
+    sample.evidence = [CONTRIBUTION, 'frontend/src/app/admin/patterns/__TESTS__/pattern-gallery.TEST.tsx'];
+  }), leak(HUB));
+  //   시연 경로 안에서 대소문자만 다른 표기는 투영 판정을 통과하므로 디스크의 실제 이름과 대조해 막는다.
+  assert.match(errorsWith((sample) => { sample.evidence = [CONTRIBUTION, CONTRIBUTION.replace('hub-tabs-monitoring', 'Hub-Tabs-Monitoring')]; }), leak(HUB));
+  // ④ 같은 기여를 그 슬롯 소비자를 싣지 않는 화면에 적으면 그 화면에는 붙지 않는다.
+  const POLICIES = '/admin/system/policies';
+  assert.match(errorsWith((sample, copy) => {
+    const policies = copy.routes.find(({ route }) => route === POLICIES);
+    assert.ok(policies.profileOwners.includes('core'));
+    policies.capabilities.push(structuredClone(sample));
+  }), leak(POLICIES));
+  // ⑤ 시연 밖 구성 하나라도 기여를 싣는 투영이면 누수다.
+  const shipped = structuredClone(repository);
+  const approval = shipped.profileProjections.profiles.find(({ profile }) => profile === 'approval');
+  assert.ok(approval.removePaths.includes('src/extensions/showcase'));
+  approval.removePaths = approval.removePaths.filter((removal) => removal !== 'src/extensions/showcase');
+  assert.match(errorsWith(() => {}, shipped), leak(HUB));
+  // ⑥ 자기 구성 하나만 아는 생성물 투영에서는 판정할 수 없으므로 허용하지 않는다.
+  const generated = structuredClone(repository);
+  generated.profileProjections.projection = true;
+  assert.match(errorsWith(() => {}, generated), leak(HUB));
+});
+
+// 화면이 슬롯 소비자를 '싣는다'는 판정은 한 줄짜리 기본 바인딩 import 와 그 바인딩의 JSX 사용이 함께 있을 때만이다 — 타입 전용(재수출
+//   포함)·require.resolve·실행 여부를 알 수 없는 동적 import·바인딩 없는 import·쓰지 않는 바인딩은 화면이 그 모듈을 그린다는 근거가
+//   아니다(Codex 22·23·24차). 판정할 수 없는 형태(이름 import 등)는 허용하지 않는 쪽이다.
+test('a page loads a slot consumer only through a bound default import that it renders', (t) => {
+  const repoRoot = fs.mkdtempSync(path.join(os.tmpdir(), 'route-page-loads-'));
+  t.after(() => fs.rmSync(repoRoot, { recursive: true, force: true }));
+  const page = 'frontend/src/app/sample/page.tsx';
+  const shell = 'frontend/src/app/sample/SampleShell.tsx';
+  fs.mkdirSync(path.join(repoRoot, 'frontend/src/app/sample'), { recursive: true });
+  fs.writeFileSync(path.join(repoRoot, shell), 'export default function SampleShell() { return null; }\n');
+  const loads = (source) => {
+    fs.writeFileSync(path.join(repoRoot, page), source);
+    return pageLoadsModule(repoRoot, page, shell);
+  };
+  const RENDER = 'export default function Page() { return <SampleShell />; }\n';
+  assert.equal(loads(`import SampleShell from './SampleShell';\n${RENDER}`), true);
+  assert.equal(loads(`import SampleShell from "@/app/sample/SampleShell"\n${RENDER}`), true);
+  // 공백만 늘린 부수효과 import, 빈 바인딩, 한 줄 여러 import, 이름 import(판정하지 않는 형태)
+  assert.equal(loads(`import  './SampleShell';\n${RENDER}`), false);
+  // 쓰지 않는 바인딩, 주석 속에서만 그리는 바인딩
+  assert.equal(loads("import SampleShell from './SampleShell';\n"), false);
+  assert.equal(loads("import SampleShell from './SampleShell';\n// <SampleShell />\n"), false);
+  assert.equal(loads(`import {} from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import Other from './Other'; import './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import {\n  default as SampleShell,\n} from './SampleShell';\n${RENDER}`), false);
+  // 다른 모듈을 같은 이름으로 들이면 그 모듈이다
+  assert.equal(loads(`import SampleShell from './Other';\n${RENDER}`), false);
+  // 아래는 모두 화면이 SampleShell 을 그리는 소스다 — 거짓이 되는 이유는 그 모듈을 싣는 형태여야 한다.
+  assert.equal(loads(`export { default } from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`export { type default as SampleShell } from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`const SampleShell = dynamic(() => import('./SampleShell'));\n${RENDER}`), false);
+  assert.equal(loads(`if (false) { void import('./SampleShell'); }\n${RENDER}`), false);
+  assert.equal(loads(`import Other from './Other'; if (false) { void import('./SampleShell'); }\n${RENDER}`), false);
+  assert.equal(loads(`import './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import type SampleShell from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`import { type Props } from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`const where = require.resolve('./SampleShell');\n${RENDER}`), false);
+  assert.equal(loads(`const SampleShell = require('./SampleShell');\n${RENDER}`), false);
+  assert.equal(loads(`// import SampleShell from './SampleShell';\n${RENDER}`), false);
+  assert.equal(loads(`/*\nimport SampleShell from './SampleShell';\n*/\n${RENDER}`), false);
 });
 
 test('route review records reject impossible dates and missing review accountability', () => {
