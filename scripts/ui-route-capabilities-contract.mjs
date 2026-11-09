@@ -178,6 +178,114 @@ function aggregateDataSource(capabilities) {
   return sources.length === 1 ? sources[0] : sources.length > 1 ? 'mixed' : 'unverified';
 }
 
+/*
+ * [2026-11-09] E4 를 기계로 확인한다. 종전에는 'E4' 라고 적기만 하면 됐고 무엇이 왕복 산출물인지 아무것도 보지 않았다.
+ *
+ * E4 는 기능의 roundtrips 가 가리키는 브라우저 업무 흐름 시험(frontend/e2e/journeys, full-suite 프로젝트)이 그 기능의 동작을
+ * 모두 덮는다는 뜻이다. 시험은 네트워크를 가로채지 않아야 하고(실제 서버 왕복), 제목이 그 파일에 test('<제목>') 으로 정확히 한 번
+ * 있어야 한다. 'current' 는 required CI 가 main 의 커밋마다 업무 흐름 전체를 돌리고 재시도 통과도 실패로 치는 것으로 성립한다 —
+ * 통과한 main 실행이 그 커밋의 왕복 산출물이다. 시험이 그 동작을 실제로 하는지는 사람이 검토해 roundtrips 에 적는다.
+ * 시험 파일은 고치지 않고 가리키기만 한다 — 일부 업무 흐름 시험은 DB 벤더 인증 증거의 입력이다.
+ */
+const EVIDENCE_ORDER = ['E0', 'E1', 'E2', 'E3', 'E4', 'E5'];
+const JOURNEY_SPEC_PREFIX = 'frontend/e2e/journeys/';
+const NETWORK_STUB_PATTERN = /\b(?:page|context)\s*\.\s*route\s*\(|\brouteFromHAR\s*\(|\.fulfill\s*\(/;
+// [2026-11-09] 리다이렉트 별칭은 의미가 목적지를 따른다(DEC-OPS-404) — 상태·출처·동작·이름을 목적지 화면 행에서 가져온다.
+export const REDIRECT_CAPABILITY_ID = 'redirect-destination';
+const REDIRECT_DERIVED_FIELDS = ['status', 'dataSource', 'supportedActions', 'visibleLabel'];
+
+function escapeRegExp(value) {
+  return value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+function testDeclarationCount(text, title) {
+  const pattern = new RegExp(`(?<![\\w.$])test\\s*\\(\\s*(['"\`])${escapeRegExp(title)}\\1\\s*,`, 'g');
+  return [...text.matchAll(pattern)].length;
+}
+
+function lowestEvidenceLevel(capabilities) {
+  const levels = (capabilities ?? []).map(({ evidenceLevel }) => EVIDENCE_ORDER.indexOf(evidenceLevel));
+  return levels.length > 0 && levels.every((level) => level >= 0) ? EVIDENCE_ORDER[Math.min(...levels)] : 'E0';
+}
+
+function scopeUnion(capabilities) {
+  return uniqueSorted((capabilities ?? []).flatMap(({ actorScope }) => String(actorScope ?? '').split('|')).filter(Boolean)).join('|');
+}
+
+/** 별칭의 기능 한 개를 목적지 화면 행에서 만든다. 날짜·소유자·증거 경로는 호출자가 정한다. */
+export function redirectDestinationCapability(destination, { lastVerifiedAt, owner, evidence }) {
+  return {
+    id: REDIRECT_CAPABILITY_ID,
+    status: destination.status,
+    dataSource: destination.dataSource,
+    actions: uniqueSorted(destination.supportedActions ?? []),
+    unsupportedVisibleActions: [],
+    actorScope: scopeUnion(destination.capabilities),
+    visibleLabel: destination.visibleLabel,
+    primaryTask: false,
+    decisionSafe: false,
+    evidenceLevel: lowestEvidenceLevel(destination.capabilities),
+    lastVerifiedAt,
+    owner,
+    evidence: uniqueSorted(evidence),
+  };
+}
+
+function readJourneySpec(repoRoot, spec, cache) {
+  if (!cache.has(spec)) {
+    const target = path.join(repoRoot, spec);
+    cache.set(spec, isFile(target) ? fs.readFileSync(target, 'utf8') : null);
+  }
+  return cache.get(spec);
+}
+
+/** roundtrips 를 검사하고 덮은 동작을 돌려준다. */
+function validateRoundtrips(capability, capabilityLabel, repoRoot, specCache, errors) {
+  if (capability?.roundtrips === undefined) return [];
+  if (!Array.isArray(capability.roundtrips) || capability.roundtrips.length === 0) {
+    errors.push(`${capabilityLabel}: roundtrips must be a non-empty array when present`);
+    return [];
+  }
+  const covered = [];
+  const declared = new Set();
+  for (const roundtrip of capability.roundtrips) {
+    const spec = roundtrip?.spec;
+    const title = roundtrip?.test;
+    const key = `${spec}\0${title}`;
+    if (declared.has(key)) errors.push(`${capabilityLabel}: roundtrip is listed twice: ${spec} / ${title}`);
+    declared.add(key);
+    if (!isNonemptyString(spec) || !spec.startsWith(JOURNEY_SPEC_PREFIX) || !spec.endsWith('.spec.ts')
+      || spec.includes('..') || spec.includes('\\')) {
+      errors.push(`${capabilityLabel}: roundtrip spec must be a browser journey under ${JOURNEY_SPEC_PREFIX}: ${spec}`);
+      continue;
+    }
+    const text = readJourneySpec(repoRoot, spec, specCache);
+    if (text === null) {
+      errors.push(`${capabilityLabel}: roundtrip spec does not exist: ${spec}`);
+      continue;
+    }
+    if (NETWORK_STUB_PATTERN.test(text)) {
+      errors.push(`${capabilityLabel}: roundtrip spec stubs the network, so it is not a server roundtrip: ${spec}`);
+    }
+    if (!isNonemptyString(title) || title.includes('${')) {
+      errors.push(`${capabilityLabel}: roundtrip test must be a literal test title: ${spec}`);
+    } else if (testDeclarationCount(text, title) !== 1) {
+      errors.push(`${capabilityLabel}: roundtrip test must be declared exactly once as test('<title>', ...) in ${spec}: ${title}`);
+    }
+    if (!Array.isArray(roundtrip?.actions) || roundtrip.actions.length === 0
+      || new Set(roundtrip.actions).size !== roundtrip.actions.length
+      || roundtrip.actions.some((action) => !capability.actions?.includes(action))) {
+      errors.push(`${capabilityLabel}: roundtrip actions must be a non-empty unique subset of the capability actions: ${spec} / ${title}`);
+    } else {
+      covered.push(...roundtrip.actions);
+    }
+    if (!capability.evidence?.includes(spec)) {
+      errors.push(`${capabilityLabel}: roundtrip spec must be listed in evidence: ${spec}`);
+    }
+  }
+  return uniqueSorted(covered);
+}
+
 function aggregateActions(capabilities) {
   return uniqueSorted((capabilities ?? []).flatMap(({ actions }) => actions ?? []));
 }
@@ -592,6 +700,8 @@ export function buildUnreviewedBaselineManifest(
       'unverified values are bounded review exceptions and keep G1 gateReady=false.',
       'Capability evidence levels are E0 entry, E1 reachable code, E2 authoritative source/policy, E3 executable contract definition, E4 current UI-to-server roundtrip artifact, and E5 deployed provenance/owner confirmation.',
       'candidateStatus records a hypothesis only; it never upgrades the asserted status without current E4 evidence.',
+      'E4 is machine-bound: a capability is E4 exactly when its roundtrips name browser journey tests (frontend/e2e/journeys, no network stubbing, a literal test title declared once) whose actions together cover every capability action. Required CI runs every journey on each main commit and counts a retry pass as a failure, so the passing main run is the current roundtrip artifact. Whether a test really performs an action is a reviewed claim. E4 and E5 never transfer to a generated project.',
+      'A redirect alias follows its destination (DEC-OPS-404): its single redirect-destination capability takes the destination page status, dataSource, supportedActions, visibleLabel, combined actorScope and lowest evidence level, resolved by path (query and tab do not split a route).',
     ],
     sources: {
       pages: 'frontend/src/app/**/page.{js,jsx,ts,tsx}',
@@ -823,6 +933,7 @@ export function validateRouteCapabilities(manifest, repository) {
   }
 
   const actualByRoute = new Map();
+  const journeySpecs = new Map();
   for (const entry of entries) {
     const label = `route ${entry?.route ?? '(missing)'}`;
     if (!isNonemptyString(entry?.route) || !entry.route.startsWith('/')) {
@@ -888,6 +999,24 @@ export function validateRouteCapabilities(manifest, repository) {
         }
         if (capability?.candidateStatus === 'live' && capability?.status !== 'partial') {
           errors.push(`${capabilityLabel}: a live candidate must remain partial until current E4 evidence exists`);
+        }
+        // 별칭의 기능은 목적지에서 가져오므로 증거 등급도 목적지 것이다 — 아래 별칭 대조가 본다.
+        const derivedRedirect = expectedRouteRouting.kind !== 'page' && capability?.id === REDIRECT_CAPABILITY_ID;
+        if (!derivedRedirect) {
+          const covered = validateRoundtrips(capability, capabilityLabel, repository.repoRoot, journeySpecs, errors);
+          const allActions = uniqueSorted(capability?.actions ?? []);
+          const fullyCovered = allActions.length > 0 && exactArray(covered, allActions);
+          if (capability?.evidenceLevel === 'E4' && !fullyCovered) {
+            errors.push(`${capabilityLabel}: E4 requires journey roundtrips that together cover every action`);
+          }
+          if (fullyCovered && !['E4', 'E5'].includes(capability?.evidenceLevel)) {
+            errors.push(`${capabilityLabel}: journey roundtrips cover every action, so evidenceLevel must be E4`);
+          }
+          if (['E4', 'E5'].includes(capability?.evidenceLevel) && capability?.candidateStatus === 'live') {
+            errors.push(`${capabilityLabel}: current E4 evidence promotes the live candidate — set status live and drop candidateStatus`);
+          }
+        } else if (capability?.roundtrips !== undefined) {
+          errors.push(`${capabilityLabel}: a redirect alias takes its evidence from the destination and cannot declare roundtrips`);
         }
         if (!isNonemptyString(capability?.dataSource)) errors.push(`${capabilityLabel}: dataSource is required`);
         if (!Array.isArray(capability?.actions)
@@ -1064,6 +1193,53 @@ export function validateRouteCapabilities(manifest, repository) {
     }
     if (entry.status === 'demo' && entry.decisionSafe !== false) {
       errors.push(`${label}: demo capability cannot be operational-decision safe`);
+    }
+  }
+
+  /*
+   * [2026-11-09] 리다이렉트 별칭은 목적지를 따른다(DEC-OPS-404 — 의미는 목적지). 별칭 행의 상태·출처·동작·이름은 최종 목적지 화면 행과
+   * 같아야 하고, 기능은 목적지에서 만든 redirect-destination 하나다. 별칭이나 목적지가 그 필드를 아직 미확인으로 두면 대조하지 않는다 —
+   * 생성물에서 목적지가 원본 증거를 잃어 미확인이 되면, 별칭은 다른 복사된 행처럼 원본 관찰을 그대로 들고 있다.
+   * 목적지는 경로 단위로 푼다(쿼리·탭은 화면 행을 나누지 않는다).
+   */
+  for (const entry of entries) {
+    const routing = expectedRoutingBySource.get(entry?.route);
+    if (!routing || routing.kind === 'page' || !actualByRoute.has(entry.route)) continue;
+    const label = `route ${entry.route}`;
+    const visited = new Set([entry.route]);
+    let destination = actualByRoute.get(normalizedRoutingTarget(routing.target));
+    while (destination && expectedRoutingBySource.get(destination.route)?.kind !== 'page' && !visited.has(destination.route)) {
+      visited.add(destination.route);
+      destination = actualByRoute.get(normalizedRoutingTarget(expectedRoutingBySource.get(destination.route)?.target));
+    }
+    if (!destination || expectedRoutingBySource.get(destination.route)?.kind !== 'page') continue;
+    const aliasOpen = (entry.unverifiedFields ?? []).some((field) => REDIRECT_DERIVED_FIELDS.includes(field));
+    const destinationOpen = destination.status === 'unverified'
+      || (destination.unverifiedFields ?? []).some((field) => REDIRECT_DERIVED_FIELDS.includes(field));
+    if (aliasOpen || destinationOpen) continue;
+    if (entry.visibleLabel !== destination.visibleLabel) {
+      errors.push(`${label}: redirect alias visibleLabel must follow its destination ${destination.route}`);
+    }
+    const expected = redirectDestinationCapability(destination, { lastVerifiedAt: '', owner: '', evidence: [] });
+    const [capability, ...extra] = entry.capabilities ?? [];
+    if (extra.length > 0 || capability?.id !== REDIRECT_CAPABILITY_ID) {
+      errors.push(`${label}: a redirect alias has exactly one ${REDIRECT_CAPABILITY_ID} capability`);
+      continue;
+    }
+    for (const field of ['status', 'dataSource', 'actorScope', 'visibleLabel', 'primaryTask', 'evidenceLevel']) {
+      if (capability[field] !== expected[field]) {
+        errors.push(`${label}: redirect alias ${field} must follow its destination ${destination.route} (${JSON.stringify(expected[field])})`);
+      }
+    }
+    for (const field of ['actions', 'unsupportedVisibleActions']) {
+      if (!exactArray(capability[field] ?? [], expected[field])) {
+        errors.push(`${label}: redirect alias ${field} must follow its destination ${destination.route}`);
+      }
+    }
+    if (capability.candidateStatus !== undefined) errors.push(`${label}: a redirect alias has no candidateStatus`);
+    const ownEvidence = routing.kind === 'config-redirect' ? [entry.source, repository.configRedirects.source] : [entry.source];
+    if (ownEvidence.some((source) => !capability.evidence?.includes(source))) {
+      errors.push(`${label}: redirect alias evidence must include its redirect source(s): ${ownEvidence.join(', ')}`);
     }
   }
 

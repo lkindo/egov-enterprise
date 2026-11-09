@@ -772,3 +772,101 @@ test('route ledger profile projections follow the preset compositions and fail c
   assert.throws(() => profileProjections(tree('unbound', marked, { composition: { profile: 'demo', frontend: { removePaths: [] } } })),
     /composer selection snapshot does not describe the generated composition: core/);
 });
+
+/*
+  [2026-11-09] 리다이렉트 별칭은 목적지를 따른다(DEC-OPS-404). 별칭의 상태·출처·동작·이름이 목적지 화면 행과 어긋나면 붉고, 목적지가 아직
+  미확인이면(생성물에서 원본 증거를 잃은 경우) 대조하지 않는다.
+*/
+test('a redirect alias follows its destination page and fails when it drifts', () => {
+  const { manifest, result } = currentAnalysis();
+  assert.deepEqual(result.errors, []);
+  const aliases = manifest.routes.filter(({ routing }) => routing.kind !== 'page');
+  assert.ok(aliases.length >= 20, 'the redirect alias population must not collapse');
+  for (const alias of aliases) {
+    assert.deepEqual(alias.capabilities.map(({ id }) => id), ['redirect-destination'], alias.route);
+    assert.deepEqual(alias.unverifiedFields, [], alias.route);
+  }
+  const ALIAS = '/admin/security/role';
+  const DESTINATION = '/admin/security/authority';
+  const mutate = (change) => {
+    const copy = structuredClone(manifest);
+    change(copy.routes.find(({ route }) => route === ALIAS), copy.routes.find(({ route }) => route === DESTINATION), copy);
+    return validateRouteCapabilities(copy, repository).errors.join('\n');
+  };
+  assert.match(mutate((alias) => { alias.visibleLabel = '다른 이름'; }),
+    /\/admin\/security\/role: redirect alias visibleLabel must follow its destination/);
+  assert.match(mutate((alias) => { alias.capabilities[0].evidenceLevel = 'E4'; }),
+    /\/admin\/security\/role: redirect alias evidenceLevel must follow its destination/);
+  assert.match(mutate((alias) => { alias.capabilities[0].actions = ['view-list']; alias.supportedActions = ['view-list']; }),
+    /\/admin\/security\/role: redirect alias actions must follow its destination/);
+  assert.match(mutate((alias) => { alias.capabilities.push({ ...structuredClone(alias.capabilities[0]), id: 'extra' }); }),
+    /\/admin\/security\/role: a redirect alias has exactly one redirect-destination capability/);
+  assert.match(mutate((alias) => { alias.capabilities[0].evidence = []; }),
+    /\/admin\/security\/role: redirect alias evidence must include its redirect source/);
+  const configAlias = manifest.routes.find(({ routing }) => routing.kind === 'config-redirect');
+  const withoutConfig = structuredClone(manifest);
+  const configRow = withoutConfig.routes.find(({ route }) => route === configAlias.route);
+  configRow.capabilities[0].evidence = configRow.capabilities[0].evidence.filter((file) => file !== 'frontend/next.config.ts');
+  assert.match(validateRouteCapabilities(withoutConfig, repository).errors.join('\n'),
+    /redirect alias evidence must include its redirect source\(s\): .*frontend\/next\.config\.ts/);
+  // 목적지가 미확인이면 대조하지 않는다 — 생성물에서 목적지만 원본 증거를 잃은 경우다.
+  const open = mutate((alias, destination) => {
+    destination.unverifiedFields = ['status'];
+    destination.review = { owner: 'adopter', reviewBy: '2026-12-31', reason: 'projected' };
+    alias.visibleLabel = '원본 관찰';
+  });
+  assert.doesNotMatch(open, /redirect alias/);
+});
+
+/*
+  [2026-11-09] E4 는 기계로 묶인다 — roundtrips 가 가리키는 업무 흐름 시험이 기능의 동작을 모두 덮을 때만 E4 이고, 덮으면 반드시 E4 다.
+  가짜 네트워크·없는 제목·업무 흐름 밖 시험·증거에 없는 시험·덮지 않은 동작은 각각 붉어야 한다.
+*/
+test('E4 is exactly a reviewed journey roundtrip binding that covers every action', () => {
+  const { manifest } = currentAnalysis();
+  const ROUTE = '/admin/operation/events';
+  const SPEC = 'frontend/e2e/journeys/event-administration.spec.ts';
+  const TITLE = 'Event Operations: Full Event Lifecycle';
+  const scenario = (change) => {
+    const copy = structuredClone(manifest);
+    const route = copy.routes.find((row) => row.route === ROUTE);
+    const capability = route.capabilities.find(({ id }) => id === 'event.mutations');
+    delete capability.roundtrips;
+    capability.status = 'partial';
+    capability.candidateStatus = 'live';
+    capability.evidenceLevel = 'E3';
+    capability.evidence = [...new Set([...capability.evidence, SPEC])].sort();
+    change(capability, route);
+    route.status = route.capabilities.some(({ status }) => status !== route.capabilities[0].status) ? 'partial' : route.capabilities[0].status;
+    return validateRouteCapabilities(copy, repository).errors.filter((error) => error.includes('event.mutations')).join('\n');
+  };
+  const full = [{ spec: SPEC, test: TITLE, actions: ['create', 'delete', 'edit'] }];
+  assert.match(scenario((capability) => { capability.evidenceLevel = 'E4'; }),
+    /event\.mutations: E4 requires journey roundtrips that together cover every action/);
+  assert.match(scenario((capability) => { capability.roundtrips = full; }),
+    /event\.mutations: journey roundtrips cover every action, so evidenceLevel must be E4/);
+  assert.match(scenario((capability) => { capability.roundtrips = full; capability.evidenceLevel = 'E4'; }),
+    /event\.mutations: current E4 evidence promotes the live candidate/);
+  assert.equal(scenario((capability) => {
+    capability.roundtrips = full; capability.evidenceLevel = 'E4'; capability.status = 'live'; delete capability.candidateStatus;
+  }).replace(/^.*drifted from the frozen expectation.*$/gm, '').trim(), '');
+  assert.match(scenario((capability) => {
+    capability.roundtrips = [{ spec: SPEC, test: TITLE, actions: ['create', 'edit'] }]; capability.evidenceLevel = 'E4';
+  }), /event\.mutations: E4 requires journey roundtrips that together cover every action/);
+  assert.match(scenario((capability) => { capability.roundtrips = [{ spec: SPEC, test: `${TITLE} (없음)`, actions: ['create'] }]; }),
+    /event\.mutations: roundtrip test must be declared exactly once/);
+  assert.match(scenario((capability) => { capability.roundtrips = [{ spec: SPEC, test: TITLE, actions: ['create', 'publish'] }]; }),
+    /event\.mutations: roundtrip actions must be a non-empty unique subset of the capability actions/);
+  const AUTH = 'frontend/e2e/journeys/authentication.spec.ts';
+  assert.match(scenario((capability) => {
+    capability.evidence = [...capability.evidence, AUTH].sort();
+    capability.roundtrips = [{ spec: AUTH, test: 'Logout Redirection and Session Cleanup', actions: ['create'] }];
+  }), /event\.mutations: roundtrip spec stubs the network, so it is not a server roundtrip/);
+  assert.match(scenario((capability) => {
+    capability.roundtrips = [{ spec: 'frontend/e2e/contracts/api-contract.spec.ts', test: TITLE, actions: ['create'] }];
+  }), /event\.mutations: roundtrip spec must be a browser journey under frontend\/e2e\/journeys\//);
+  assert.match(scenario((capability) => {
+    capability.evidence = capability.evidence.filter((file) => file !== SPEC);
+    capability.roundtrips = [{ spec: SPEC, test: TITLE, actions: ['create'] }];
+  }), /event\.mutations: roundtrip spec must be listed in evidence/);
+});
