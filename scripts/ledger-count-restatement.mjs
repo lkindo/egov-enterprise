@@ -38,8 +38,10 @@ import { stripComments } from './project-composer-integrations.mjs';
  * 입력 계약 원장(GAP-CONTRACT-001)의 라벨은 '길이'·'날짜' 처럼 다른 행에서도 원장과 무관한 수(컬럼 길이, 인덱스 수, ADR 의 표준 길이 수)
  * 곁에 쓰이는 일반 낱말이라 rowOnly 로 그 gap 행 안에서만 본다. 원장 이름이 고유한 라벨(app→core·unwired 등)은 모든 메모리 행에서 본다.
  */
+// closed 는 종료한 gap 이다(2026-11-09 GAP-ARCH-001). 행·원장 링크는 요구하지 않고, 행이 활성 표에 다시 남으면 붉다(다시 열면 closed 를
+// 지운다). 원장 라벨의 수치 재진술 검출은 그대로 둔다 — 행이 없어도 다른 메모리 행이 그 원장의 수를 다시 적으면 같은 방식으로 낡는다.
 export const LEDGER_MEMORY_BINDINGS = Object.freeze([
-  Object.freeze({ id: 'GAP-ARCH-001', ledger: 'config/governance/cross-domain-coupling-census.json', labels: Object.freeze(['app→app', 'app→core']) }),
+  Object.freeze({ id: 'GAP-ARCH-001', ledger: 'config/governance/cross-domain-coupling-census.json', labels: Object.freeze(['app→app', 'app→core']), closed: true }),
   Object.freeze({ id: 'GAP-WIRING-001', ledger: 'config/governance/operation-consumer-census.json', labels: Object.freeze(['operation', 'unwired', '화면 고아']) }),
   Object.freeze({ id: 'GAP-CONTRACT-001', ledger: 'config/governance/input-contract-mirror-census.json', rowOnly: true,
     labels: Object.freeze(['길이', '필수', '읽기 전용', 'enum', '중첩 검증', '날짜']) }),
@@ -74,7 +76,12 @@ export function ledgerMemoryViolations(files) {
   const violations = [];
   const gapRows = GAP_FILES.flatMap((file) => (files[file] ?? '').split(/\r?\n/))
     .filter((line) => tableCellCount(line) === GAP_ROW_CELLS);
-  for (const { id, ledger } of LEDGER_MEMORY_BINDINGS) {
+  for (const { id, ledger, closed } of LEDGER_MEMORY_BINDINGS) {
+    if (closed) {
+      const reopened = GAP_FILES.some((file) => (files[file] ?? '').split(/\r?\n/).some((line) => line.startsWith(`| ${id} |`)));
+      if (reopened) violations.push(`${id}: 종료한 gap 의 행이 활성 표에 남아 있습니다 — 다시 열면 결속의 closed 를 지웁니다.`);
+      continue;
+    }
     const row = gapRows.find((line) => line.startsWith(`| ${id} |`));
     if (!row) {
       violations.push(`${id}: 활성 gap 행이 필요합니다.`);

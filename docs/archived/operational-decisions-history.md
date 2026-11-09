@@ -2568,3 +2568,9 @@ GAP-CONTRACT-001의 2026-09-06 보강은 길이·필수 제약에 더해 Memo/Wo
 ### GAP-COMPOSE-003
 
 `GAP-COMPOSE-003`(PostgreSQL 생성물에서 격리 E2E 실행기가 권한 전환 리허설의 Flyway target 2.99 를 찾지 못해 앱 기동에서 멈춤)은 2026-11-07 수정했다. [격리 실행기](../../scripts/run-isolated-e2e.mjs)가 V2 체인(V2_99 있음, V1_0 번들 없음)에서만 리허설을 켜고, 전환을 마친 V1_0 기준선 번들로 시작하는 생성물에서는 끄며, 둘 중 하나로 정해지지 않으면 DB 컨테이너를 만들기 전에 멈춘다. 리허설이 주던 관리자의 공지·FAQ 편집 권한은 벤더 생성물과 같은 대표 픽스처가 준다(일반 계정은 개발 시드에 있어 만들지 않는다). 권한 스키마 경계 검사는 일반 기동에서 그대로 돈다. demo 멀티모듈 PostgreSQL 생성물의 대표 묶음 66건이 통과했다(첫 수정 뒤에는 공지·FAQ 권한이 빠져 62건이었다). 판정·픽스처는 [격리 계약](../../scripts/e2e-isolation.test.mjs)과 [벤더 계약](../../scripts/project-composer-vendor.test.mjs)이 고정한다.
+
+### GAP-ARCH-001
+
+`GAP-ARCH-001`(`business-app` 서비스 계층의 교차 도메인 결합)은 2026-11-09 종료했다. 2026-09-15 마지막 기능 간 결합을 foundation 포트·이벤트로 역전한 뒤로 [결합 원장](../../config/governance/cross-domain-coupling-census.json)에 기능 간 edge 가 없고, 남은 edge 는 모든 구성에 들어가는 공통 핵심(사용자·첨부·공통코드)을 가리키는 허용 방향이다. 그 뒤로 이 행은 부채가 아니라 감시 장치를 설명했는데, 열린 P2 로 남아 아직 결합을 동결만 해 둔 것처럼 읽혔다(2026-11-09 프로젝트 평가가 실제로 그렇게 읽었다).
+
+감시는 그대로다. [CrossDomainCouplingLinterTest](../../api-server/src/test/java/nuri/api/harness/CrossDomainCouplingLinterTest.java)가 코드와 원장의 edge 를 정확 집합으로 대조한다 — 2026-11-09 쪽지 서비스에 메일 기능 타입의 import 를 넣자 "원장에 없는 edge: note->mail" 로 붉었다. 공용 메모리가 원장의 수를 다시 적지 못하게 하는 검출(DEC-OPS-340)도 종료한 gap 의 원장 라벨로 남긴다([재진술 검출](../../scripts/ledger-count-restatement.mjs)). 기능 사이에 남은 강한 의존은 업무 사실이며 기능 선언(`config/modules` 의 dependsOn·requires)이 적는다 — 게시판↔댓글, 도움말·커뮤니티·스크랩→게시판, 포상→결재.
