@@ -13,6 +13,10 @@ ZERO_OID="0000000000000000000000000000000000000000"
 DELETION_REFS=0
 OBJECT_REFS=0
 RANGES=""
+# [DEC-OPS-410] 작업 브랜치만 push 하면 운영 계약을 push 뒤로 미룬다(아래 run_operational_contracts). PR 을 거치는 ref 라 required CI
+# (secret-scan)가 병합 전에 같은 계약을 돌고, 병합 대기 도구가 같은 SHA 의 Windows 로컬 기록을 요구한다. CI 가 미리 막지 않는 ref
+# (main·master·태그·refs/heads 밖)나 ref 를 모르는 push(stdin 없음)가 하나라도 있으면 지금처럼 여기서 돈다.
+CONTRACTS_DEFERRABLE=1
 while read local_ref local_sha remote_ref remote_sha; do
   if [ "$local_sha" = "$ZERO_OID" ]; then
     DELETION_REFS=$((DELETION_REFS + 1))
@@ -20,6 +24,11 @@ while read local_ref local_sha remote_ref remote_sha; do
   fi
 
   OBJECT_REFS=$((OBJECT_REFS + 1))
+  case "$remote_ref" in
+    refs/heads/main|refs/heads/master) CONTRACTS_DEFERRABLE=0 ;;
+    refs/heads/?*) ;;
+    *) CONTRACTS_DEFERRABLE=0 ;;
+  esac
   if [ "$remote_sha" = "$ZERO_OID" ]; then
     RANGES="$RANGES origin/main..$local_sha"
   else
@@ -31,6 +40,8 @@ if [ "$DELETION_REFS" -gt 0 ] && [ "$OBJECT_REFS" -eq 0 ]; then
   echo "[pre-push] remote branch/tag 삭제만 감지됨 — 전송할 object가 없어 로컬 검증을 생략합니다."
   exit 0
 fi
+# stdin 에 ref 가 없으면(IDE·GUI) 무엇을 push 하는지 모르므로 미루지 않는다.
+[ "$OBJECT_REFS" -gt 0 ] || CONTRACTS_DEFERRABLE=0
 
 # IDE/GUI처럼 stdin 범위가 없는 경우 upstream 또는 origin/main 전체 차이를 사용한다.
 # 불확실하면 fast-pass를 포기하는 방향으로만 폴백한다.
@@ -139,11 +150,19 @@ trap 'record_finish $?' 0
 trap 'RECORD_SIGNAL=SIGINT; exit 130' 2
 trap 'RECORD_SIGNAL=SIGTERM; exit 143' 15
 
-# Node 운영 계약 catalog는 전체 범위를 유지한다(로컬 약 19분, 2026-11-07 실측 — 이 훅에서 가장 비싼 검사다. 고르지 않는 이유는
+# Node 운영 계약 catalog는 전체 범위를 유지한다(로컬 약 14~16분, 2026-11-09 실측 — 이 훅에서 가장 비싼 검사다. 고르지 않는 이유는
 # DEC-OPS-364 와 readiness-followups 「운영 계약 비용 재측정 (2026-11-07)」).
 # 문서 전용이면 연결·메모리·생성물 계약을 확인하고 끝난다. 소스 변경이면 컴파일·타입·lint·폼 census 같은 정적 검사와
 # 불변식·원문 계약·cross-stack Vitest·하네스가 먼저 실패를 알린 뒤 맨 끝에 실행한다(fail-fast). 두 경로 모두 정확히 한 번 돈다(삭제 전용 push 는 그 전에 끝난다).
+# [DEC-OPS-410] 작업 브랜치만 push 하면(CONTRACTS_DEFERRABLE) 여기서 돌지 않고 push 뒤 'npm run verify:post-push' 가 같은 커밋의 깨끗한
+# 트리에서 전체 범위를 한 번 돈다 — 범위는 줄지 않고 시점만 옮긴다. 미룬 사실은 실행 기록에 남기고, 병합 대기 도구가 그 커밋의 기록을 요구한다.
 run_operational_contracts() {
+  if [ "$CONTRACTS_DEFERRABLE" = "1" ]; then
+    echo "  → governance: 운영 계약은 push 뒤로 미룬다(DEC-OPS-410) — push 가 끝나면 이 커밋의 깨끗한 트리에서 'npm run verify:post-push' 를 돌린다"
+    echo "     (병합 대기 도구 scripts/pr-checks-wait.mjs 가 같은 SHA 의 통과 기록을 요구한다. required CI 의 secret-scan 도 같은 계약을 돈다)"
+    [ -z "$RECORD_ID" ] || node "$RECORD_SCRIPT" --root "$RECORD_ROOT" skip "$RECORD_ID" operational-contracts post-push-deferred || :
+    return 0
+  fi
   echo "  → governance: npm run test:operational-contracts"
   record_start operational-contracts
   npm run test:operational-contracts \

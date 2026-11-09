@@ -21,13 +21,18 @@
  * 병합 권위는 required CI 이고 이 도구는 그 결과를 읽기만 한다(게이트가 아니다). required 목록·workflow·앱은 원장에서 읽고
  * 여기에 다시 적지 않는다. gh 는 셸 없이 검증한 인자로만 부르고, 저장소는 gh api 의 `{owner}/{repo}` 자리표시자로 이 checkout 에서 푼다.
  *
+ * 로컬 운영 계약 기록(DEC-OPS-410): 작업 브랜치 push 는 운영 계약을 push 뒤 로컬 실행(`npm run verify:post-push`)으로 미룬다. required CI
+ * (Ubuntu)는 운영 계약의 Windows 분기(junction·드라이브 문자·Windows 프로세스 트리 등)를 돌지 않으므로, required 가 모두 통과해도 같은 SHA 의
+ * 유효한 Windows 로컬 기록이 없으면 통과를 내지 않는다(local-missing). 기록의 조건은 evaluateLocalEvidence 에 있다.
+ *
  * 사용: node scripts/pr-checks-wait.mjs --pr <번호> [--sha <40자리 커밋>] [--interval-seconds 30] [--timeout-minutes 90]
  *       [--start-timeout-minutes 15]
- * 종료 코드: 0 통과 · 1 required 실패·누락 · 2 사용법·조회 오류(통과 아님) · 3 head 불일치·이동·PR 닫힘 · 4 시간 초과.
- * 0 을 내는 경로는 통과 하나뿐이다. 마지막 줄은 `RESULT=<pass|fail|error|head-moved|timeout> pr=<n> sha=<sha> required=<k>/<n>` 이다.
+ * 종료 코드: 0 통과 · 1 required 실패·누락 · 2 사용법·조회 오류(통과 아님) · 3 head 불일치·이동·PR 닫힘 · 4 시간 초과 ·
+ * 5 required 는 통과했지만 같은 SHA 의 유효한 로컬 운영 계약 기록이 없음.
+ * 0 을 내는 경로는 통과 하나뿐이다. 마지막 줄은 `RESULT=<pass|fail|error|head-moved|timeout|local-missing> pr=<n> sha=<sha> required=<k>/<n>` 이다.
  */
 import { spawnSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { basename, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -35,7 +40,84 @@ const REPO_ROOT = resolve(fileURLToPath(new URL('..', import.meta.url)));
 export const MANIFEST_PATH = '.github/required-checks.json';
 
 /** 결과 이름과 종료 코드. 0 은 pass 하나뿐이다. */
-export const EXIT = Object.freeze({ pass: 0, fail: 1, error: 2, 'head-moved': 3, timeout: 4 });
+export const EXIT = Object.freeze({ pass: 0, fail: 1, error: 2, 'head-moved': 3, timeout: 4, 'local-missing': 5 });
+
+// ─── 로컬 운영 계약 기록(DEC-OPS-410) ─────────────────────────────────────────────────────────────────────────────────
+
+export const POST_PUSH_STAGE = 'operational-contracts';
+export const POST_PUSH_AUTHORITY = 'post-push-merge-evidence';
+
+/**
+ * 실행 기록 하나(사건 배열)가 head SHA 의 병합 증거가 될 수 없는 이유들. 빈 배열이면 증거다. 판정할 수 없는 값(null·누락)은 증거가 아니다.
+ * - 처음은 `verify post-push` 의 run-start 이고 병합 증거 권한을 싣는다.
+ * - Windows 에서 돌았다(CI 가 돌지 않는 분기를 덮는 것이 이 기록의 몫이다).
+ * - 시작과 끝 모두 HEAD 가 그 SHA 이고 추적 변경·미추적 파일이 없다.
+ * - run-end 가 있고 결과가 passed 이며 열린 단계가 없다(완결).
+ * - 실행 중 입력 변경이 없었고(inputChanged === false), 다른 무거운 실행과 겹친 표본이 없었다(concurrentSuspected === false) — SOP §6.3.
+ * - 운영 계약 단계가 정확히 한 번 끝났고 passed 다.
+ */
+export function postPushRecordProblems(events, sha) {
+  if (!Array.isArray(events) || events.length === 0) return ['unreadable'];
+  const start = events[0];
+  const end = events.find((event) => event?.event === 'run-end');
+  const problems = [];
+  if (start?.event !== 'run-start' || start.entrypoint !== 'verify' || start.scope !== 'post-push' || start.authority !== POST_PUSH_AUTHORITY) {
+    problems.push('not-post-push');
+  }
+  if (start?.environment?.os !== 'win32') problems.push('not-windows');
+  const cleanAtHead = (git) => git?.head === sha && git.trackedDirty === false && git.untrackedCount === 0;
+  if (!cleanAtHead(start?.git)) problems.push('start-not-clean-at-head');
+  if (!end) return [...problems, 'incomplete'];
+  if (!cleanAtHead(end.git)) problems.push('end-not-clean-at-head');
+  if (end.result !== 'passed' || end.recordComplete !== true) problems.push('not-passed');
+  if (end.inputChanged !== false) problems.push('input-changed-or-unknown');
+  if (end.concurrentSuspected !== false) problems.push('overlap-or-unknown');
+  const stageEnds = events.filter((event) => event?.event === 'step-end' && event.stageId === POST_PUSH_STAGE);
+  if (stageEnds.length !== 1 || stageEnds[0].result !== 'passed') problems.push('stage-not-passed');
+  return problems;
+}
+
+/**
+ * 기록 목록에서 head SHA 의 병합 증거를 찾는다. 하나라도 문제가 없으면 ok 다. 없으면 그 SHA 로 시작한 post-push 기록의 문제를,
+ * 그런 기록이 없으면 no-record 를 돌려준다.
+ */
+export function evaluateLocalEvidence(records, sha) {
+  const candidates = records.filter(({ events }) => Array.isArray(events) && events[0]?.event === 'run-start'
+    && events[0].scope === 'post-push' && events[0].git?.head === sha);
+  if (candidates.length === 0) return { ok: false, reason: 'no-record' };
+  const judged = candidates.map(({ file, events }) => ({ file, problems: postPushRecordProblems(events, sha) }));
+  const valid = judged.find(({ problems }) => problems.length === 0);
+  if (valid) return { ok: true, file: valid.file };
+  return { ok: false, reason: judged.map(({ problems }) => problems.join('+')).join(', ') };
+}
+
+/** 이 저장소의 모든 작업 트리 경로(같은 PC 의 다른 트리에서 돈 기록도 같은 SHA 면 증거다). git 을 못 부르면 이 checkout 하나다. */
+export function worktreeRoots(root = REPO_ROOT) {
+  const listed = spawnSync('git', ['worktree', 'list', '--porcelain'], { cwd: root, encoding: 'utf8', shell: false });
+  if (listed.status !== 0 || typeof listed.stdout !== 'string') return [root];
+  const roots = listed.stdout.split(/\r?\n/).filter((line) => line.startsWith('worktree ')).map((line) => line.slice('worktree '.length));
+  return roots.length ? roots : [root];
+}
+
+/** 작업 트리들의 build/verification-runs/*.jsonl 을 읽는다. 읽거나 해석할 수 없는 파일은 사건 없음(null)으로 둔다 — 증거가 되지 않는다. */
+export function readLocalRecords(roots) {
+  const records = [];
+  for (const root of roots) {
+    const directory = join(root, 'build', 'verification-runs');
+    if (!existsSync(directory)) continue;
+    let names = [];
+    try { names = readdirSync(directory).filter((name) => name.endsWith('.jsonl')); } catch { continue; }
+    for (const name of names) {
+      const file = join(directory, name);
+      let events = null;
+      try { events = readFileSync(file, 'utf8').trim().split(/\r?\n/).map((line) => JSON.parse(line)); } catch { events = null; }
+      records.push({ file, events });
+    }
+  }
+  return records;
+}
+
+const localEvidenceFromDisk = (sha) => evaluateLocalEvidence(readLocalRecords(worktreeRoots()), sha);
 
 const PR_PATTERN = /^[1-9]\d{0,9}$/;
 const SHA_PATTERN = /^[0-9a-f]{40}$/i;
@@ -307,15 +389,27 @@ function jobsLine(snapshot) {
  * 돌려주는 값: { result, code, sha, passed, total }. 예외를 던지지 않는다 — 예상 밖 오류도 error(2)다.
  */
 export async function waitForRequiredChecks({ pr, sha = null, manifest, gh, sleep, now, log,
-  intervalMs = 30_000, timeoutMs = 90 * 60_000, startTimeoutMs = 15 * 60_000 }) {
+  intervalMs = 30_000, timeoutMs = 90 * 60_000, startTimeoutMs = 15 * 60_000, localEvidence = null }) {
   let pinned = sha ? sha.toLowerCase() : null;
   let snapshot = null;
   let mergeState = 'UNKNOWN';
   let total = 0;
-  const finish = (result, lines = []) => {
+  const finish = (outcome, lines = []) => {
+    let result = outcome;
     for (const line of lines) log(line);
+    // [DEC-OPS-410] required 가 모두 통과해도 같은 SHA 의 유효한 Windows 로컬 운영 계약 기록이 없으면 통과가 아니다.
+    if (result === 'pass' && localEvidence) {
+      const evidence = localEvidence(pinned);
+      if (!evidence?.ok) {
+        result = 'local-missing';
+        log(`required CI 는 통과했지만 이 커밋의 로컬 운영 계약 기록이 없다(${evidence?.reason ?? 'unknown'}) — push 한 커밋 ${pinned} 의`
+          + ` 깨끗한 트리에서 'npm run verify:post-push' 를 다른 무거운 실행과 겹치지 않게 돌린 뒤 다시 기다린다(DEC-OPS-410).`);
+      } else {
+        log(`로컬 운영 계약 기록: ${basename(evidence.file ?? '')}`);
+      }
+    }
     // head 이동·오류 뒤의 지난 조회는 고정 SHA 의 최종 상태가 아니라 싣지 않는다.
-    if (snapshot && ['pass', 'fail', 'timeout'].includes(result)) {
+    if (snapshot && ['pass', 'fail', 'timeout', 'local-missing'].includes(result)) {
       for (const entry of snapshot.required) log(`${entry.context}\t${entry.outcome}\t${entry.url}`);
       log(jobsLine(snapshot));
     }
@@ -452,6 +546,7 @@ export async function main(argv = process.argv.slice(2), deps = {}) {
     const manifest = deps.manifest ?? JSON.parse(readFileSync(join(REPO_ROOT, MANIFEST_PATH), 'utf8'));
     const outcome = await waitForRequiredChecks({
       ...options, manifest, gh: deps.gh ?? runGh, sleep: deps.sleep ?? delay, now: deps.now ?? Date.now, log,
+      localEvidence: deps.localEvidence ?? localEvidenceFromDisk,
     });
     return outcome.code === 0 && outcome.result === 'pass' ? 0 : (outcome.code || EXIT.error);
   } catch (error) {

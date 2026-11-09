@@ -4,7 +4,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ALLOWED_TIERS = new Set(['pre-push', 'local-full', 'local-e2e', 'local-vendor', 'ci']);
+// local-post-push 는 작업 브랜치 push 가 미룬 검사를 push 뒤에 같은 커밋으로 도는 verify 범위다(DEC-OPS-410, verify:post-push).
+const ALLOWED_TIERS = new Set(['pre-push', 'local-full', 'local-e2e', 'local-post-push', 'local-vendor', 'ci']);
 /** local-vendor 는 벤더로 생성한 프로젝트의 검증 실행기에서만 돈다는 뜻이다. verify.mjs 범위가 아니므로 local-full 로 적으면 거짓 주장이다. */
 const LOCAL_VENDOR_TIER = 'local-vendor';
 const VENDOR_VERIFY_RUNNER = 'scripts/verify-reusable-artifact.mjs';
@@ -769,7 +770,7 @@ function validateWorkflowBindingContext({ binding, content, setLabel, errors }) 
  */
 const VERIFY_RUNNER_SOURCE = 'scripts/verify.mjs';
 /** 로컬 tier 가 뜻하는 verify.mjs 범위 분기(DEC-OPS-027 ②: local-full = verify:full). */
-const VERIFY_TIER_SCOPES = new Map([['local-full', 'full'], ['local-e2e', 'e2e']]);
+const VERIFY_TIER_SCOPES = new Map([['local-full', 'full'], ['local-e2e', 'e2e'], ['local-post-push', 'post-push']]);
 const CONDITIONAL_PREFIX = /(?<![\w$])(?:if|else|for|while|do|switch|case|catch)(?![\w$])|&&|\|\||\?|=>/;
 const IDENTIFIER = /[A-Za-z_$][\w$]*/y;
 
