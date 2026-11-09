@@ -67,7 +67,7 @@ refresh_triggers:
 - `GAP-DOMAIN-001`: 추천 이력이 없던 기존 `like_cnt` 값은 유지한다. `GAP-BOARD-001`: 쓰지 않는 게시글 비밀번호 컬럼의 제거는 별도 스키마 승인이다([기존 집계](../../docs/archived/operational-decisions-history.md#gap-domain-001), [컬럼 경계](../../docs/archived/operational-decisions-history.md#gap-board-001)).
 - `GAP-DEP-002`: spring-retry 유지 판단·재개 조건은 [후속 결정](../../docs/archived/operational-decisions-history.md#dec-ops-125)과 [정리 기록](../../docs/04-operations/readiness-followups.md#후속-정리-2026-09-24)을 따른다. 당시 기록한 Boot 4.1 지원 종료는 2027-07-31이며 다음 minor 결정 때 재확인한다.
 - `GAP-POLL-001`·`GAP-POLICY-001`: 다른 도입 환경의 기존 NULL 분포는 기관이 읽기 집계로 확인한다. `GAP-API-001`: 내부 확장 Map과 추가 JSON 필드 호환성은 남으며 binary/stream 전송까지 타입화한 결과가 아니다([기존 데이터](../../docs/archived/operational-decisions-history.md#gap-poll-001), [타입 경계](../../docs/archived/operational-decisions-history.md#gap-api-001)).
-- `GAP-ARCH-001`: `business-app` 서비스 계층의 기능 간 결합은 포트·이벤트로 모두 역전했다. 결합 원장이 남은 공통 핵심 참조와 함께 edge 정확 집합으로 감시하며, 새 기능 간 edge 는 원장 등재와 사유가 있어야 통과한다. 감시 범위는 서비스 계층 type 참조다 — 엔티티는 `DomainIsolationTest`, 프런트 기능 간 import 는 투영 tsc(GAP-PACK-001)가 본다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-arch-001)).
+- `GAP-ARCH-001`: `business-app` 서비스 계층의 기능 간 결합은 포트·이벤트로 모두 역전했다. 결합 원장이 남은 공통 핵심 참조와 함께 edge 정확 집합으로 감시하며, 새 기능 간 edge 는 원장 등재와 사유가 있어야 통과한다. 감시 범위는 서비스 계층 type 참조다 — 엔티티는 `DomainIsolationTest` 가 보며 게시판↔댓글·스크랩→게시판·포상→결재의 기존 엔티티 결합은 허용 예외로 남는다(그 기능을 따로 지워야 하면 그때 분리한다). 프런트 기능 간 import 는 투영 tsc(GAP-PACK-001)가 본다([종료 근거](../../docs/archived/operational-decisions-history.md#gap-arch-001)).
 
 ## 재검증 대기
 
