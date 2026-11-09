@@ -57,7 +57,7 @@ test('manual sources with more than 200 short clauses are packed before any read
   const result = await prepareBusinessModel(state, { run: async ({ request }) => {
     if (request.phase !== 'reading') return response(request);
     readingCalls++;
-    return envelope({ documentTypes: ['interview'], summary: '접수 조회 범위를 반복 설명한 합성 자료다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '접수 조회', kind: 'paragraph', text: null, certainty: 'clear', note: '네이티브 원문 보존' })), unreadable: [] });
+    return envelope({ documentTypes: ['interview'], summary: '접수 조회 범위를 반복 설명한 합성 자료다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '접수 조회', kind: 'paragraph', text: null, certainty: 'clear', note: '네이티브 원문 보존' })), unreadable: [] }, 'reading');
   } });
   assert.equal(readingCalls, 1); assert.equal(result.documents[0].clauseCount, 201);
 });

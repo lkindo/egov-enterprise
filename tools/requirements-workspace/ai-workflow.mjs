@@ -3,7 +3,7 @@ import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join } from 'node:path';
 import { ANALYSIS_SCHEMA, BATCH_ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, aiInputDigest, buildAiRequest, buildCorrectionRequest, seedAnalysis, validateAnalysisProposal, validateAnalysisBatchProposal, validateDecompositionProposal, projectAnalysisBacklog } from './ai-contract.mjs';
 import { planAnalysisBatches, MAX_ANALYSIS_BATCHES } from './ai-analysis-batches.mjs';
-import { AI_MODEL, AI_EFFORT, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
+import { AI_MODEL, AI_EFFORT, AI_ANALYSIS_EFFORT, aiEffortForPhase, createCliRunner, findClaudeExecutable } from './ai-cli.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
@@ -28,7 +28,7 @@ export function validateAiMetadata(value) {
   for (const job of value.jobs) {
     exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings']);
     try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('AI_METADATA_INVALID'); }
-    if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || job.effort !== AI_EFFORT) fail('AI_METADATA_INVALID');
+    if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || ![AI_EFFORT, AI_ANALYSIS_EFFORT].includes(job.effort)) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
     if (job.includeVisuals !== undefined && typeof job.includeVisuals !== 'boolean') fail('AI_METADATA_INVALID');
     if (job.fullPipeline !== undefined && typeof job.fullPipeline !== 'boolean' || job.fullPipeline && job.phase !== 'analysis' || job.promptVersion !== undefined && !/^[A-Za-z0-9_.-]{1,64}$/.test(job.promptVersion)) fail('AI_METADATA_INVALID');
@@ -98,7 +98,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
       try { const batches = planAnalysisBatches(snapshot, workflow.decisions); if (batches.length > 1) seedAnalysis(snapshot); planCache = { digest: inputDigests.analysis, value: { batches: batches.length } }; }
       catch (error) { planCache = { digest: inputDigests.analysis, value: { errorCode: /^[A-Z][A-Z_]+$/.test(error.code ?? '') ? error.code : 'AI_RUN_FAILED' } }; }
     }
-    return { available, model: AI_MODEL, effort: AI_EFFORT, current: visible ?? null, active: Boolean(active), proposal: result, decisions: workflow.decisions, history: workflow.jobs.slice(-10), analysisPlan: planCache.value, inputDigests };
+    return { available, model: AI_MODEL, effort: AI_ANALYSIS_EFFORT, readingEffort: AI_EFFORT, current: visible ?? null, active: Boolean(active), proposal: result, decisions: workflow.decisions, history: workflow.jobs.slice(-10), analysisPlan: planCache.value, inputDigests };
   }
   function mark(id, mutate) {
     const snapshot = store.read();
@@ -132,8 +132,8 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
     }
     const request = buildAiRequest(snapshot, payload.phase, workflow.decisions, { ...batchOptions(0), previousAnalysis: initialAnalysis, analysisEvidence });
     if (!runner) findClaudeExecutable();
-    const resumable = payload.fullPipeline && payload.reuseCheckpoints !== false && workflow.jobs.findLast(job => job.fullPipeline && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && job.checkpoints && Object.keys(job.checkpoints).length);
-    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_EFFORT, includeVisuals: payload.includeVisuals !== false, promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true, stage: 'reading', modelCalls: 0, promptRefs: [], checkpoints: structuredClone(resumable?.checkpoints ?? {}), reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}) } : {}),
+    const resumable = payload.fullPipeline && payload.reuseCheckpoints !== false && workflow.jobs.findLast(job => job.fullPipeline && job.effort === AI_ANALYSIS_EFFORT && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && job.checkpoints && Object.keys(job.checkpoints).length);
+    const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_ANALYSIS_EFFORT, includeVisuals: payload.includeVisuals !== false, promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true, stage: 'reading', modelCalls: 0, promptRefs: [], checkpoints: structuredClone(resumable?.checkpoints ?? {}), reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}) } : {}),
       ...(batches?.length > 1 ? { batches: { completed: 0, total: batches.length } } : {}), sensitivityWarnings: collectSensitivityWarnings({ backlog: snapshot.backlog, decisions: workflow.decisions }), inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
     commit(revision, next => { next.metadata.ai ??= empty(); next.metadata.ai.jobs.push(job); });
     const controller = new AbortController();
@@ -202,7 +202,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           }
           if (job.fullPipeline) mark(job.id, stored => { if (stored.status === 'running') stored.modelCalls = ++modelCalls; });
           const response = await execute(args);
-          if (response.model !== AI_MODEL || response.effort !== AI_EFFORT) fail('AI_MODEL_MISMATCH');
+          if (response.model !== AI_MODEL || response.effort !== aiEffortForPhase(args.request.phase)) fail('AI_MODEL_MISMATCH');
           usage.inputTokens += response.usage?.inputTokens ?? 0; usage.outputTokens += response.usage?.outputTokens ?? 0; operation.usage = { ...usage };
           if (!await isCurrent()) fail('AI_STALE_INPUT');
           return response;
@@ -260,7 +260,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (controller.signal.aborted || closed) return;
             const response = await run({ request: attemptRequest, attachments: visuals.attachments, schema: job.phase === 'analysis' ? batches?.length > 1 ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA, cwd, signal: controller.signal });
             if (!await isCurrent()) return;
-            if (response.model !== AI_MODEL || response.effort !== AI_EFFORT) fail('AI_MODEL_MISMATCH');
+            if (response.model !== AI_MODEL || response.effort !== aiEffortForPhase(attemptRequest.phase)) fail('AI_MODEL_MISMATCH');
             delta = response.output;
             try {
               next = batches?.length > 1 ? validateAnalysisBatchProposal(response.output, snapshot, batches[index], output, { idPrefix: currentRequest.data.analysisBatch.idPrefix }) : response.output;

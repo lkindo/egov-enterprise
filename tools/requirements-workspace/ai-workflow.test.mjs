@@ -24,6 +24,29 @@ async function fixture(t, aiRunner, artifactExtractor) {
   return { engine, store, act, start };
 }
 
+test('high analysis preserves legacy xhigh history and rejects unsupported history efforts', async t => {
+  const app = await fixture(t, async ({ request }) => ({ ...envelope(analysis(request, { question: false })), effort: 'high' }));
+  await app.start(); await app.engine.waitForAi();
+  let state = await app.engine.state();
+  assert.equal(state.ai.effort, 'high'); assert.equal(state.ai.readingEffort, 'xhigh');
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.equal(state.ai.current.effort, 'high');
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs[0].effort = 'xhigh'; });
+  state = await app.engine.state();
+  assert.equal(state.metadata.ai.jobs[0].effort, 'xhigh');
+  const invalid = structuredClone(state.metadata); invalid.ai.jobs[0].effort = 'low';
+  assert.throws(() => validateRequirementsMetadata(invalid), { code: 'AI_METADATA_INVALID' });
+  assert.throws(() => app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs[0].effort = 'low'; }), { code: 'REQUIREMENTS_INVALID_METADATA' });
+});
+
+test('a runner returning xhigh for a new high analysis is rejected instead of mislabeled', async t => {
+  const app = await fixture(t, async ({ request }) => ({ ...envelope(analysis(request, { question: false })), effort: 'xhigh' }));
+  await app.start(); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'failed');
+  assert.equal(state.ai.current.errorCode, 'AI_MODEL_MISMATCH');
+});
+
 test('multi-megabyte registered sources fit bounded batches and retain complete coverage without partial writes', async t => {
   let release, received, started;
   const entered = new Promise(resolve => { started = resolve; });

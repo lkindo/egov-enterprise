@@ -20,7 +20,7 @@ test('an interrupted original-reading queue can resume visibly without re-readin
   try {
     app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => {
       if (request.phase === 'reading' && ++readings === 2) await new Promise(resolve => { releaseReading = resolve; });
-      return envelope(pipelineReply(request));
+      return envelope(pipelineReply(request), request.phase);
     } });
     const upload = (filename, text) => app.engine.action(app.store.read().revision, 'source.ingest', { requestId: randomUUID(), filename, base64: Buffer.from(text).toString('base64'), classification: 'internal', sourceType: 'interview', sensitivityAcknowledged: true, readWithAI: true, consent: true, model: AI_MODEL });
     await upload('first.txt', '담당자는 본인 접수 목록만 조회한다.'); await app.engine.waitForImports();
@@ -125,7 +125,7 @@ test('a server restart during a selected upload batch preserves the files and re
   const secondStarted = new Promise(resolve => { started = resolve; }); let readings = 0;
   const runner = async ({ request, signal }) => {
     if (request.phase === 'reading' && ++readings === 2) { started(); await new Promise((resolve, reject) => signal.addEventListener('abort', () => reject(Object.assign(new Error('Synthetic interrupted reading'), { code: 'AI_CANCELLED' })), { once: true })); }
-    return envelope(pipelineReply(request));
+    return envelope(pipelineReply(request), request.phase);
   };
   try {
     app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: runner });
@@ -170,7 +170,7 @@ test('an open failed analysis dialog follows actual server progress without losi
         if (readings === 1) throw Object.assign(new Error('Synthetic invalid reading'), { code: 'AI_DOCUMENT_OUTPUT_INVALID' });
         if (readings === 3) await new Promise(resolve => { release = resolve; });
       }
-      return envelope(pipelineReply(request));
+      return envelope(pipelineReply(request), request.phase);
     } });
     const act = (name, payload) => app.engine.action(app.store.read().revision, name, payload);
     for (const [index, text] of ['담당자는 본인 접수 목록만 조회한다.', '빈 목록은 빈 결과로 표시한다.'].entries()) {
@@ -249,7 +249,7 @@ test('closing a failed first upload in the same window exposes resume and remain
   try {
     app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => {
       if (request.phase === 'reading' && ++readings === 2) throw Object.assign(new Error('Synthetic invalid second reading'), { code: 'AI_DOCUMENT_OUTPUT_INVALID' });
-      return envelope(pipelineReply(request));
+      return envelope(pipelineReply(request), request.phase);
     } });
     browser = await chromium.launch({ headless: true }); const page = await browser.newPage(); page.setDefaultTimeout(15000);
     await page.goto(app.launchUrl); await page.getByRole('button', { name: 'AI로 산출물 등록', exact: true }).click();
@@ -282,7 +282,7 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
       if (request.phase === 'analysis') assert.equal(attachments.length, 0, 'already read originals are not resent in every requirement batch');
       const value = pipelineReply(request); if (request.phase === 'synthesis') value.summary += injection;
       if (request.phase === 'reading') value.summary += ' 연락처 010-1234-5678';
-      return envelope(value);
+      return envelope(value, request.phase);
     } });
     await app.engine.action(app.store.read().revision, 'project.save', { code: 'SYNTHETIC', name: '합성 AI 문서 흐름', institution: '합성 기관', baselineProfile: '' });
     browser = await chromium.launch({ headless: true });
@@ -340,7 +340,7 @@ test('a changed source list after the consent screen opens is stopped before any
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-consent-scope-browser-')); let app, browser;
   try {
     let calls = 0;
-    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { calls++; return envelope(pipelineReply(request)); } });
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { calls++; return envelope(pipelineReply(request), request.phase); } });
     const act = (name, payload) => app.engine.action(app.store.read().revision, name, payload);
     await act('project.save', { code: 'SYNTHETIC', name: '합성 동의 범위', institution: '합성 기관', baselineProfile: '' }); await act('source.save', source);
     browser = await chromium.launch({ headless: true }); const browserContext = await browser.newContext(); const page = await browserContext.newPage();
@@ -362,7 +362,7 @@ test('AI upload discloses all existing material and a synthetic submit cannot by
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-existing-consent-')); let app, browser;
   try {
     let calls = 0;
-    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { calls++; return envelope(pipelineReply(request)); } });
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { calls++; return envelope(pipelineReply(request), request.phase); } });
     const act = (name, payload) => app.engine.action(app.store.read().revision, name, payload);
     await act('project.save', { code: 'SYNTHETIC', name: '합성 기존 자료 동의', institution: '합성 기관', baselineProfile: '' }); await act('source.save', source);
     browser = await chromium.launch({ headless: true }); const browserContext = await browser.newContext(); const page = await browserContext.newPage();
@@ -384,7 +384,7 @@ test('a source added while an uploaded-source digest is awaited cannot widen the
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-digest-scope-browser-')); let app, browser;
   try {
     const phases = [];
-    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { phases.push(request.phase); return envelope(pipelineReply(request)); } });
+    app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => { phases.push(request.phase); return envelope(pipelineReply(request), request.phase); } });
     const act = (name, payload) => app.engine.action(app.store.read().revision, name, payload);
     await act('project.save', { code: 'SYNTHETIC', name: '합성 비동기 동의 범위', institution: '합성 기관', baselineProfile: '' });
     browser = await chromium.launch({ headless: true }); const browserContext = await browser.newContext(); const page = await browserContext.newPage();

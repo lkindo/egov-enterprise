@@ -4,7 +4,9 @@
 
 ## 시작
 
-Node 22 이상과 루트·frontend 의존성을 준비한다(`npm ci`, `pnpm -C frontend install --frozen-lockfile`). AI 실행에는 이 PC의 Claude CLI 설치·로그인과 `claude-opus-5-5` 사용 권한이 필요하다. 모델은 `xhigh`로 실행하며 CLI의 기존 인증·요금 조건이 적용된다. 고객 작업공간은 이 저장소뿐 아니라 다른 Git 작업 트리에도 속하면 안 된다.
+Node 22 이상과 루트·frontend 의존성을 준비한다(`npm ci`, `pnpm -C frontend install --frozen-lockfile`). AI 실행에는 이 PC의 Claude CLI 설치·로그인과 `claude-opus-5-5` 사용 권한이 필요하다. 문서 통합·요구사항·품질 검토·에픽·스토리·작업계획은 `high`로 실행한다. 원본 판독은 기존 `xhigh` 프로필을 유지해 검증된 완료 판독을 재사용하며, 독립 코드 리뷰도 `xhigh`를 유지한다. 과거 `xhigh` 분석 이력은 보존한다. CLI의 기존 인증·요금 조건이 적용된다. 고객 작업공간은 이 저장소뿐 아니라 다른 Git 작업 트리에도 속하면 안 된다.
+
+실행 기록의 추론 수준은 문서 분석 단계를 뜻한다. 같은 실행에서 직접 등록한 본문을 먼저 판독하는 경우에도 판독은 별도 `xhigh`로 실행하고 토큰 사용량은 합산한다. 단계 체크포인트는 같은 분석 수준끼리만 재사용하므로 과거 `xhigh` 분석 결과는 새 `high` 실행에서 다시 생성한다. 업로드한 원본의 판독 캐시는 별도로 검증해 계속 재사용한다. 직접 등록한 본문의 파이프라인 판독은 분석 수준을 전환할 때 한 번 다시 실행한다.
 
 ```powershell
 node tools/requirements-workspace/server.mjs --workspace D:\agency-workspaces\project-001
