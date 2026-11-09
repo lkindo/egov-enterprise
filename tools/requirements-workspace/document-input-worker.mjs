@@ -55,16 +55,16 @@ try {
     if (!result.success) fail(/PASSWORD|ENCRYPT/i.test(result.code ?? '') ? 'FILE_ENCRYPTED' : 'FILE_EXTRACTION_FAILED');
     // Include parser metadata in the sensitive-input check, but never serialize
     // arbitrary binary image buffers into that text scan.
-    const strings = []; let decodedBytes = 0;
-    function collect(value, depth = 0) {
+    const strings = { metadata: [], memos: [], blocks: [] }; let decodedBytes = 0;
+    function collect(value, bucket, depth = 0) {
       if (depth > 64) fail('FILE_EXTRACTION_FAILED');
-      if (typeof value === 'string') { decodedBytes += Buffer.byteLength(value); if (decodedBytes > 4 * 1024 ** 2) fail('FILE_TEXT_TOO_LARGE'); strings.push(value); }
-      else if (value && typeof value === 'object' && !ArrayBuffer.isView(value) && !(value instanceof ArrayBuffer)) for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) if (descriptor.enumerable && 'value' in descriptor) collect(descriptor.value, depth + 1);
+      if (typeof value === 'string') { decodedBytes += Buffer.byteLength(value); if (decodedBytes > 4 * 1024 ** 2) fail('FILE_TEXT_TOO_LARGE'); bucket.push(value); }
+      else if (value && typeof value === 'object' && !ArrayBuffer.isView(value) && !(value instanceof ArrayBuffer)) for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) if (descriptor.enumerable && 'value' in descriptor) collect(descriptor.value, bucket, depth + 1);
     }
-    collect(result.metadata); collect(result.memos); collect(result.blocks);
-    if (scanBacklogForPiiAndSecrets({ project: { strings } }).length) {
+    collect(result.metadata, strings.metadata); collect(result.memos, strings.memos); collect(result.blocks, strings.blocks);
+    if (scanBacklogForPiiAndSecrets({ project: strings }).length) {
       if (sensitiveData !== 'warning') fail('FILE_SENSITIVE_INPUT');
-      sensitivityWarnings = mergeSensitivityWarnings(sensitivityWarnings, collectSensitivityWarnings({ units: strings }));
+      sensitivityWarnings = mergeSensitivityWarnings(sensitivityWarnings, collectSensitivityWarnings(strings));
     }
     const native = result.pages?.length ? result.pages.map(page => ({ locator: `${['xlsx', 'xls'].includes(format) ? '시트' : result.metadata?.pageMode === 'section' ? '섹션' : '페이지'} ${page.pageNumber}`, text: page.markdown || null, attachment: null })) : [{ locator: '문서 본문', text: result.markdown || null, attachment: null }];
     units.push(...native);

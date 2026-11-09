@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { prepareDocumentInputs } from './document-inputs.mjs';
 import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
-import { validatePrivateAiValue as validateAiValue } from './ai-contract.mjs';
+import { validatePrivateAiValue } from './ai-contract.mjs';
 import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 import { AI_MODEL, AI_EFFORT, createCliRunner } from './ai-cli.mjs';
 
@@ -30,7 +30,7 @@ const READING_RECORD_SCHEMA = { ...object(readingRecordProperties), required: Ob
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export const readingOmissions = codes => (codes ?? []).filter(code => !['DOCUMENT_LAYOUT_APPROXIMATE', 'DOCUMENT_NATIVE_HINT_OMITTED', 'DOCUMENT_REGISTERED_TEXT_ONLY'].includes(code));
 export function validateReadingRecord(value, originalSha256) {
-  try { validateAiValue(value, READING_RECORD_SCHEMA, { maxBytes: 8 * 1024 ** 2 }); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
+  try { validatePrivateAiValue(value, READING_RECORD_SCHEMA, { maxBytes: 8 * 1024 ** 2 }); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
   try { validateSensitivityWarnings(value.sensitivityWarnings ?? []); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
   if (originalSha256 && value.originalSha256 !== originalSha256) fail('AI_DOCUMENT_OUTPUT_INVALID');
   const units = new Set(value.provenance.map(item => item.inputId));
@@ -53,7 +53,7 @@ export function documentReadingBatches(units) {
 }
 
 function validateReading(value, units) {
-  try { validateAiValue(value, DOCUMENT_READING_SCHEMA); } catch (error) { fail(error.details?.some(detail => detail.kind === 'sensitive-output') ? 'AI_DOCUMENT_SENSITIVE_OUTPUT' : 'AI_DOCUMENT_OUTPUT_INVALID'); }
+  try { validatePrivateAiValue(value, DOCUMENT_READING_SCHEMA); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
   const byId = new Map(units.map(unit => [unit.id, unit])), covered = new Set(), unreadable = new Set();
   for (const block of value.blocks) {
     const unit = byId.get(block.inputId);

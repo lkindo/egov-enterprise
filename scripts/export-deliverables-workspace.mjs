@@ -917,6 +917,7 @@ const PII_SECRET_PATTERNS = Object.freeze([
     regex: /\b(?:10\.\d{1,3}\.\d{1,3}|192\.168\.\d{1,3}|172\.(?:1[6-9]|2\d|3[01])\.\d{1,3})\.(?:[1-9]\d*(?:\/\d{1,2})?|0(?!\/(?:[89]|[12]\d|30)\b))\b/u,
   },
 ]);
+export const PII_SECRET_KINDS = Object.freeze(PII_SECRET_PATTERNS.map(({ kind }) => kind.split(' ')[0]));
 
 const AMBIGUOUS_TERMS = Object.freeze(['적절히', '신속히', '충분히', '편리하게', '가능한 한', '등 기타']);
 const NON_PERMISSION_UPPER_TOKENS = new Set([
@@ -2171,7 +2172,7 @@ async function verifyWorkspace(root, workspaceDir, options) {
       ? { ...pack, contextSnapshotDigest: savedSnapshot.snapshotDigest }
       : pack);
 
-  const validation = validateBacklogPack(candidatePack, liveSnapshot);
+  const validation = validateBacklogPack(candidatePack, liveSnapshot, options);
   if (!options.refreshContext && contextDiff.changed && contextDiff.impactedLinks.length > 0) {
     validation.warnings.push(
       `context snapshot drift impacts ${contextDiff.impactedLinks.length} traceLink(s): ${contextDiff.impactedLinks.map((l) => `${l.linkId}(${l.targetId}: ${l.impact})`).join(', ')}`,

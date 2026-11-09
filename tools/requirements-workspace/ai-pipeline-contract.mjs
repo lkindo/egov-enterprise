@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, validatePrivateAiValue as validateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, validatePrivateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
 const string = (maxLength = 2000) => ({ type: 'string', minLength: 1, maxLength });
 const array = (items, maxItems = 100) => ({ type: 'array', items, minItems: 0, maxItems });
 const object = properties => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
@@ -7,7 +7,7 @@ const sources = { ...array(string(100), 100), minItems: 1 };
 const issueArray = ANALYSIS_SCHEMA.properties.issues;
 const DOCUMENT_SUMMARY_SCHEMA = object({ sourceId: string(100), title: string(300), sourceType: string(100), documentTypes: array(string(100), 6), summary: string(4000), sections: array(string(300), 4000), warningCodes: array(string(100), 100), unreadable: array(object({ inputId: string(100), reason: string(1000) }), 200), uncertain: array(object({ inputId: string(100), note: string(1000) }), 4000), clauseCount: { type: 'integer', minimum: 1, maximum: 3000 }, anchorScope: string(300), anchors: array(object({ sourceId: string(100), clauseId: string(100), quote: string(360) }), 32) });
 export function validateDocumentSummaries(documents, snapshot) {
-  validateAiValue(documents, array(DOCUMENT_SUMMARY_SCHEMA, 100), { maxBytes: 8 * 1024 ** 2 });
+  validatePrivateAiValue(documents, array(DOCUMENT_SUMMARY_SCHEMA, 100), { maxBytes: 8 * 1024 ** 2 });
   const sourcesById = new Map(snapshot.backlog.sources.map(source => [source.id, source]));
   if (documents.length !== sourcesById.size || new Set(documents.map(doc => doc.sourceId)).size !== sourcesById.size) invalid('document-source');
   for (const doc of documents) {
@@ -48,7 +48,7 @@ export function mergeIssues(previous, incoming) {
   return result;
 }
 export function validateBusinessModel(value, snapshot, expectedSources) {
-  validateAiValue(value, BUSINESS_MODEL_SCHEMA);
+  validatePrivateAiValue(value, BUSINESS_MODEL_SCHEMA);
   const known = new Set(snapshot.backlog.sources.map(source => source.id));
   for (const item of [...value.actors, ...value.processes, ...value.terms]) if (new Set(item.sourceIds).size !== item.sourceIds.length || item.sourceIds.some(id => !known.has(id))) invalid('business-model-source');
   const coverage = new Set();
@@ -78,7 +78,7 @@ export function mergeBusinessModels(previous, next, snapshot) {
   return validateBusinessModel({ summary: next.summary, actors: merge(previous.actors, next.actors, 'name'), processes: merge(previous.processes, next.processes, 'name'), terms: merge(previous.terms, next.terms, 'term'), sourceCoverage: [...cover.values()], issues: mergeIssues(previous.issues, next.issues) }, snapshot);
 }
 export function validateRequirementReview(value, proposal, snapshot) {
-  validateAiValue(value, REQUIREMENT_REVIEW_SCHEMA); unique(value.revisions);
+  validatePrivateAiValue(value, REQUIREMENT_REVIEW_SCHEMA); unique(value.revisions);
   const requirements = new Map(proposal.requirements.map(req => [req.id, structuredClone(req)]));
   validIssues(value.issues, snapshot, new Set(requirements.keys())); validateEvidenceCitations(value.revisions, snapshot);
   for (const revision of value.revisions) {
@@ -91,7 +91,7 @@ export function validateRequirementReview(value, proposal, snapshot) {
   return { ...structuredClone(proposal), requirements: [...requirements.values()], issues: mergeIssues(proposal.issues, value.issues) };
 }
 export function validatePlanReview(value, proposal, snapshot, allowed) {
-  validateAiValue(value, PLAN_REVIEW_SCHEMA);
+  validatePrivateAiValue(value, PLAN_REVIEW_SCHEMA);
   const known = new Set(snapshot.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included').map(req => req.id));
   validIssues(value.issues, snapshot, new Set(snapshot.backlog.businessRequirements.map(req => req.id)));
   for (const item of [...value.workItemUpdates, ...value.acceptanceUpdates]) if (item.requirementIds.some(id => !known.has(id))) invalid('plan-review-requirement');

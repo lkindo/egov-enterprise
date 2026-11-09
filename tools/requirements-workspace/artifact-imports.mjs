@@ -5,7 +5,7 @@ import { SOURCE_TYPES, SOURCE_CLASSIFICATIONS } from '../../scripts/export-deliv
 import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings, PRIVATE_ANALYSIS_VALIDATION } from './privacy-warnings.mjs';
 import { ARTIFACT_EXTENSIONS, MAX_ARTIFACT_BYTES, extractArtifact } from './artifact-extractor.mjs';
 import { assertExternalWorkspace } from './store.mjs';
-import { readDocument, validateReadingRecord } from './document-reader.mjs';
+import { readDocument, validateReadingRecord, readingOmissions } from './document-reader.mjs';
 import { AI_MODEL, AI_EFFORT, createCliRunner } from './ai-cli.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import { prepareDocumentInputs } from './document-inputs.mjs';
@@ -18,6 +18,7 @@ export const documentReadingProfile = (sourceType, classification, promptVersion
 // The previous prompt was stricter about sensitivity. Its verified evidence is
 // reusable after this advisory-only policy change; no other version is accepted.
 export const isReusableDocumentReading = (job, source) => Boolean(source && job.status === 'ready' && job.method === 'ai-document' && [PROMPT_VERSION, '2026-11-07.1'].includes(job.promptVersion) && job.sha256 === source.fileSha256 && job.readingProfile === documentReadingProfile(source.sourceType, source.classification, job.promptVersion) && job.sourceDigest === sourceEvidenceDigest(source));
+export const isReadingPolicyCompatible = record => record.promptVersion === PROMPT_VERSION || record.promptVersion === '2026-11-07.1' && !record.unreadable.length && !readingOmissions(record.warningCodes).length && record.provenance.length > 0 && record.provenance.every(unit => unit.kind === 'native-text');
 const recoverableOriginalErrors = new Set(['FILE_TYPE_UNSUPPORTED', 'FILE_ENCRYPTED', 'FILE_ENCODING_INVALID', 'FILE_EXTRACTION_FAILED', 'FILE_DOCUMENT_CAPACITY', 'FILE_TEXT_TOO_LARGE', 'FILE_NO_TEXT', 'FILE_TIMEOUT', 'AI_DOCUMENT_UNREADABLE', 'AI_TIMEOUT']);
 function evidenceRetention(snapshot, source) {
   if (!source) return { preserve: false, appendLegacy: false };
@@ -62,7 +63,7 @@ export function validateImportMetadata(jobs) {
 export function createArtifactImports({ store, commit, extractor = extractArtifact, documentReader = readDocument, aiRunner = createCliRunner(), now = () => new Date().toISOString() }) {
   let active, closed = false, reused;
   function verifiedReading(job) {
-    try { const record = validateReadingRecord(JSON.parse(store.readArchive(job.readingRef)), job.sha256); originalFile(job); return record.promptVersion === job.promptVersion; }
+    try { const record = validateReadingRecord(JSON.parse(store.readArchive(job.readingRef)), job.sha256); originalFile(job); return record.promptVersion === job.promptVersion && isReadingPolicyCompatible(record); }
     catch (error) {
       if (error instanceof SyntaxError || ['AI_DOCUMENT_OUTPUT_INVALID', 'FILE_ARCHIVE_INVALID', 'REQUIREMENTS_ARCHIVE_NOT_FOUND', 'REQUIREMENTS_ARCHIVE_INTEGRITY'].includes(error.code)) return false;
       throw error;

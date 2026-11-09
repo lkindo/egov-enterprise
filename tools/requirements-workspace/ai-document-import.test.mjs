@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { randomUUID } from 'node:crypto';
+import { randomUUID, createHash } from 'node:crypto';
+import { documentReadingProfile } from './artifact-imports.mjs';
 import { mkdtempSync, rmSync, readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
@@ -23,16 +24,35 @@ const upload = () => ({ requestId: randomUUID(), filename: 'source.custom', base
 const successfulReader = (input, options) => readDocument(input, { ...options, prepare: async () => ({ format: 'txt', units: [{ id: 'U-1', locator: '본문', text: Buffer.from(input.bytes).toString(), attachment: null }], warningCodes: [] }), execute: async () => ({ output: { documentTypes: ['interview'], summary: '담당자의 접수 열람 업무와 본인 범위 정책을 설명한다.', blocks: [{ inputId: 'U-1', heading: '담당 범위', kind: 'paragraph', text: null, certainty: 'clear', note: '조회 책임과 범위가 명시되어 있다.' }], unreadable: [] } }) });
 
 test('a malformed cached reading cannot be reused through the duplicate upload shortcut', async t => {
+  for (const route of ['source.reingest', 'source.ingest']) {
   let calls = 0;
   const app = setup(t, async (...args) => { calls++; return successfulReader(...args); });
-  await app.act('source.ingest', upload()); await app.engine.waitForImports();
+  const input = upload(); await app.act('source.ingest', input); await app.engine.waitForImports();
   const saved = app.store.read().backlog.sources[0];
   const ref = app.store.writeArchive('ai', JSON.stringify({ invalid: true }));
   app.store.transact(app.store.read().revision, next => { next.metadata.imports[0].readingRef = ref; });
-  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, sensitivityAcknowledged: true, model: AI_MODEL });
+  await app.act(route, route === 'source.ingest' ? { ...input, requestId: randomUUID() } : { sourceId: saved.id, requestId: randomUUID(), consent: true, sensitivityAcknowledged: true, model: AI_MODEL });
   await app.engine.waitForImports();
   assert.equal(calls, 2);
   assert.equal((await app.engine.state()).imports.jobs.at(-1).status, 'ready');
+  }
+});
+
+test('previous privacy prompts reuse literal native evidence but re-read visual transcriptions', async t => {
+  for (const kind of ['native-text', 'ai-transcription']) {
+    let calls = 0;
+    const reader = kind === 'native-text' ? successfulReader : (input, options) => readDocument(input, { ...options, execute: async ({ request }) => ({ output: { documentTypes: ['other'], summary: '합성 시각 자료 판독', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '합성 시각 자료', kind: 'paragraph', text: '담당자는 본인 접수 목록을 조회한다.', certainty: 'clear', note: '합성 판독' })), unreadable: [] } }) });
+    const app = setup(t, (...args) => { calls++; return reader(...args); });
+    const input = kind === 'native-text' ? upload() : { ...upload(), filename: 'receipt.png', base64: readFileSync(new URL('./test-fixtures/receipt.png', import.meta.url)).toString('base64') };
+    await app.act('source.ingest', input); await app.engine.waitForImports();
+    const before = app.store.read(), job = before.metadata.imports[0], record = JSON.parse(app.store.readArchive(job.readingRef));
+    record.promptVersion = '2026-11-07.1';
+    for (const prompt of record.prompts) { prompt.version = record.promptVersion; prompt.instructions = prompt.instructions.replace(/2026-11-09\.1/g, record.promptVersion); prompt.sha256 = createHash('sha256').update(prompt.instructions).digest('hex'); }
+    const ref = app.store.writeArchive('ai', JSON.stringify(record));
+    app.store.transact(before.revision, next => { Object.assign(next.metadata.imports[0], { promptVersion: record.promptVersion, readingRef: ref, readingProfile: documentReadingProfile('interview', 'internal', record.promptVersion) }); });
+    await app.act('source.reingest', { sourceId: job.sourceId, requestId: randomUUID(), consent: true, sensitivityAcknowledged: true, model: AI_MODEL }); await app.engine.waitForImports();
+    assert.equal(calls, kind === 'native-text' ? 1 : 2, `${kind} compatibility`);
+  }
 });
 
 test('AI document reading needs explicit transmission consent and preserves original/evidence/structured reading independently', async t => {

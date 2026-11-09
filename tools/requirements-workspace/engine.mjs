@@ -3,10 +3,10 @@ import { mkdtempSync, mkdirSync, readFileSync, writeFileSync, rmSync } from 'nod
 import { resolve, join, relative, isAbsolute } from 'node:path';
 import { assertExternalWorkspace } from './store.mjs';
 import { privateWorkspaceContracts as shared } from './private-validation.mjs';
-import { collectSensitivityWarnings, mergeSensitivityWarnings } from './privacy-warnings.mjs';
+import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 import { backlogDetailSheet, projectUatChecklistSheet, computeAcHash, computeRequirementAcceptanceDisposition, toMarkdown } from '../../scripts/export-deliverables.mjs';
 import { createAiWorkflow, validateAiMetadata } from './ai-workflow.mjs';
-import { createArtifactImports, validateImportMetadata, isReusableDocumentReading } from './artifact-imports.mjs';
+import { createArtifactImports, validateImportMetadata, isReusableDocumentReading, isReadingPolicyCompatible } from './artifact-imports.mjs';
 import { projectAnalysisBacklog } from './ai-contract.mjs';
 import { promptManifest } from './ai-prompts.mjs';
 import { validateReadingRecord } from './document-reader.mjs';
@@ -55,6 +55,7 @@ export function validateRequirementsMetadata(metadata) {
     if (!idValid(record.id) || !idValid(record.acId) || !['accepted', 'conditional', 'rejected'].includes(record.disposition) || !text(record.signer, 100) || !validDate(record.date) || !text(record.evidence) || !text(record.buildRef, 200) || !/^[a-f0-9]{32}$/.test(record.acHash)) fail('INVALID_METADATA');
   }
   for (const entry of metadata.exports) {
+    try { validateSensitivityWarnings(entry.sensitivityWarnings ?? []); } catch { fail('INVALID_ARTIFACT'); }
     if (!idValid(entry.id) || !['task', 'audit', 'sheets', 'uat'].includes(entry.kind) || !text(entry.filename, 150)) fail('INVALID_ARTIFACT');
     if (entry.contentRef) { validateArchiveRef(entry.contentRef, 'export'); if (entry.sha256 !== entry.contentRef.sha256) fail('INVALID_ARTIFACT'); }
     else if (typeof entry.content !== 'string' || entry.content.length > 8 * 1024 ** 2 || digest(entry.content) !== entry.sha256) fail('INVALID_ARTIFACT');
@@ -123,7 +124,8 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
       if (!job) return null;
       const reading = JSON.parse(store.readArchive(job.readingRef));
       if (reading.promptVersion !== job.promptVersion) fail('AI_DOCUMENT_OUTPUT_INVALID');
-      return validateReadingRecord(reading, job.sha256);
+      validateReadingRecord(reading, job.sha256);
+      return isReadingPolicyCompatible(reading) ? reading : null;
     },
     completePipeline(next) {
       next.backlog.contextBindings = shared.computeContextBindings(next.backlog, next.metadata.context);
@@ -165,7 +167,10 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     if (store.readOnly) { ready.valid = false; ready.errors.push('마지막으로 확인한 자료를 읽기 전용으로 표시합니다. 원본과 잠금 상태를 확인한 뒤 실행기를 다시 여세요.'); }
     const metadata = { ...snapshot.metadata, exports: snapshot.metadata.exports.map(entry => ({ ...entry, stale: entry.inputBacklogHash !== digest(snapshot.backlog) || contextChanged })) };
     const prompts = promptManifest({ sourceTypes: [...snapshot.backlog.sources.map(source => source.sourceType), ...(snapshot.metadata.imports ?? []).filter(job => job.status === 'ready').flatMap(job => job.detectedTypes ?? [])], formats: (snapshot.metadata.imports ?? []).filter(job => job.status === 'ready').map(job => job.format), hasExisting: snapshot.backlog.businessRequirements.length > 0, hasDecisions: Boolean(snapshot.metadata.ai?.decisions.length) });
-    const sensitivityWarnings = mergeSensitivityWarnings(collectSensitivityWarnings({ backlog: snapshot.backlog, metadata: { ...metadata, ai: undefined, imports: undefined } }), ...(metadata.imports ?? []).filter(job => job.originalRef || job.status === 'extracting').map(job => job.sensitivityWarnings), ...(metadata.ai?.jobs ?? []).filter(job => ['running', 'ready', 'needs-decisions', 'applied'].includes(job.status)).map(job => job.sensitivityWarnings));
+    const latestImports = [...new Map((metadata.imports ?? []).filter(job => job.originalRef || job.status === 'extracting').map(job => [job.sourceId ?? job.requestId, job])).values()];
+    const latestAi = metadata.ai?.jobs.at(-1);
+    const latestExports = [...new Map(metadata.exports.map(entry => [entry.filename, entry])).values()];
+    const sensitivityWarnings = mergeSensitivityWarnings(collectSensitivityWarnings({ backlog: snapshot.backlog, metadata: { ...metadata, ai: undefined, imports: undefined } }, 'workspace'), ...latestImports.map(job => job.sensitivityWarnings), ...(latestAi && ['running', 'ready', 'needs-decisions', 'applied'].includes(latestAi.status) ? [latestAi.sensitivityWarnings] : []), ...latestExports.map(entry => entry.sensitivityWarnings));
     return { ...snapshot, metadata, prompts, sensitivityWarnings, ai: workflow.view(snapshot), imports: imports.view(snapshot), context: snapshot.metadata.context, analysisReadiness: analysis, readiness: ready, contextChanged, contextDiff: shared.diffContextSnapshots(snapshot.metadata.context, current, snapshot.backlog), baselineCurrent: baselineCurrent(snapshot), reviewedRequirementsCurrent: Object.fromEntries(snapshot.backlog.businessRequirements.map(req => [req.id, snapshot.metadata.reviewedRequirements[req.id] === reqMeaning(req, snapshot.backlog)])), composition: snapshot.metadata.composition, matches: shared.matchRequirementsToContext(snapshot.backlog, snapshot.metadata.context), readOnly: Boolean(store.readonly ?? store.readOnly), reason: store.reason };
   }
   async function scratch(snapshot, run) {
@@ -186,7 +191,7 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
       if (rel && !rel.startsWith('..') && !isAbsolute(rel)) { assertExternalWorkspace(folder); rmSync(folder, { recursive: true, force: true }); }
     }
   }
-  function artifact(id) {
+  function readArtifact(id) {
     const meta = readSnapshot().metadata;
     const previousSource = meta.imports?.find(job => job.previousSourceRef?.id === id);
     if (previousSource) {
@@ -215,12 +220,16 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     if (entry) {
       const content = entry.contentRef ? store.readArchive(entry.contentRef) : entry.content;
       if (digest(content) !== entry.sha256) fail('ARTIFACT_NOT_FOUND');
-      return { filename: entry.filename, content, type: entry.filename.endsWith('.csv') ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8', sha256: entry.sha256 };
+      return { filename: entry.filename, content, sensitivityWarnings: entry.sensitivityWarnings ?? collectSensitivityWarnings({ text: content }, 'export'), type: entry.filename.endsWith('.csv') ? 'text/csv;charset=utf-8' : 'text/markdown;charset=utf-8', sha256: entry.sha256 };
     }
     const ref = (meta.uatHistoryRefs ?? []).find(item => item.id === id) ?? meta.baselines.find(item => item.backlogRef?.id === id)?.backlogRef;
     if (!ref) fail('ARTIFACT_NOT_FOUND');
     const content = store.readArchive(ref);
     return { filename: `${ref.kind}-${ref.id}.json`, content, type: 'application/json;charset=utf-8', sha256: ref.sha256 };
+  }
+  function artifact(id) {
+    const result = readArtifact(id);
+    return { ...result, sensitivityWarnings: result.sensitivityWarnings ?? collectSensitivityWarnings({ filename: result.filename, text: result.content }, 'export') };
   }
   async function action(revision, actionName, payload) {
     if (typeof actionName !== 'string' || !payload || typeof payload !== 'object' || Array.isArray(payload)) fail('INVALID_REQUEST');
@@ -387,7 +396,14 @@ export function createRequirementsEngine({ store, contextProvider, root, aiRunne
     if (!['uat.record', 'uat.import'].includes(actionName)) clearStaleAcceptance(next.backlog, previous.backlog);
     else for (const req of next.backlog.businessRequirements) req.acceptanceDisposition = computeRequirementAcceptanceDisposition(req, next.backlog.acceptanceCriteria.filter(ac => ac.requirementIds.includes(req.id)), next.backlog);
     const previousArtifacts = new Set(previous.metadata.exports.map(entry => entry.id));
-    for (const entry of meta.exports) if (!previousArtifacts.has(entry.id)) entry.inputBacklogHash = digest(next.backlog);
+    for (const entry of meta.exports) if (!previousArtifacts.has(entry.id)) {
+      entry.sensitivityWarnings = collectSensitivityWarnings({ text: entry.content }, 'export');
+      if (entry.sensitivityWarnings.length && entry.filename.endsWith('.md')) {
+        entry.content = '> 민감정보 패턴 감지 — 비공개 분석 산출물입니다. 공유·저장소 반영 전 내용을 확인해 주세요.\n\n' + entry.content;
+        entry.sha256 = digest(entry.content);
+      }
+      entry.inputBacklogHash = digest(next.backlog);
+    }
     validate(next.backlog); validateRequirementsMetadata(meta);
     const archive = (kind, content) => store.writeArchive(kind, content);
     for (const baseline of meta.baselines) if (baseline.backlog) { baseline.backlogRef = archive('baseline', JSON.stringify(baseline.backlog)); delete baseline.backlog; }

@@ -20,6 +20,8 @@ test('stopping while the browser reads a file prevents a later upload and does n
   const state = { revision: 'synthetic', backlog: pack, metadata: { baselines: [], exports: [], reviewedRequirements: {}, uatRecords: [], auditFindings: [] }, context, imports: { active: false, jobs: [] }, analysisReadiness: { valid: false, errors: [] }, readiness: { valid: false, errors: [] }, matches: { results: [] }, ai: { available: true, model: 'claude-opus-5-5', effort: 'xhigh', active: false, current: null, proposal: null, inputDigests: {} } };
   const mutations = []; let reader;
   state.sensitivityWarnings = [{ kind: 'mobile-phone', stage: 'reading', count: 1, paths: ['project.blocks[0].text'] }];
+  pack.sources = [structuredClone(source)];
+  state.imports.jobs = [{ requestId: '00000000-0000-4000-8000-000000000001', sourceId: source.id, filename: 'synthetic.docx', status: 'ready', sensitivityWarnings: [{ kind: 'email-address', stage: 'input', count: 1, paths: ['project.metadata[0]'] }] }];
   window.FileReader = class { readAsDataURL() { reader = this; } };
   window.fetch = async (url, options = {}) => {
     if (options.method === 'POST') mutations.push({ url, body: JSON.parse(options.body) });
@@ -32,6 +34,10 @@ test('stopping while the browser reads a file prevents a later upload and does n
   assert.match(advisory.textContent, /휴대전화번호/);
   assert.match(advisory.textContent, /project.blocks\[0\].text/);
   assert.equal(advisory.querySelector('[role="alert"]'), null);
+  assert.match(advisory.textContent, /자료별 감지 내역/);
+  assert.match(advisory.textContent, /등록 자료 1/);
+  assert.match(advisory.textContent, /project.metadata\[0\]/);
+  assert.equal(advisory.querySelector('[data-action="privacy-source"]').dataset.key, '0');
   button(document, 'AI로 산출물 등록').click();
   Object.defineProperty(document.querySelector('#artifact-files'), 'files', { value: [new window.File(['합성 문서'], 'synthetic.txt', { type: 'text/plain' })] });
   document.querySelector('input[name="sensitivityAcknowledged"]').checked = true;

@@ -5,6 +5,14 @@ import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 import { prepareDocumentInputs } from './document-inputs.mjs';
 
+test('AI document preparation reports hidden Office metadata separately from native body units', async t => {
+  const cwd = mkdtempSync(join(tmpdir(), 'synthetic-sensitive-metadata-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
+  const result = await prepareDocumentInputs({ filename: 'negative-metadata.docx', bytes: readFileSync(new URL('./test-fixtures/negative-metadata.docx', import.meta.url)) }, { cwd });
+  assert.ok(result.units.length);
+  assert.ok(result.sensitivityWarnings.some(warning => warning.paths.some(path => path.startsWith('project.metadata'))));
+  assert.doesNotMatch(JSON.stringify(result.sensitivityWarnings), /@/);
+});
+
 test('scanned PDF and image inputs reach the vision stage with page identity even without local OCR text', async t => {
   const cwd = mkdtempSync(join(tmpdir(), 'synthetic-ai-inputs-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
   for (const filename of ['scanned-receipt.pdf', 'receipt.png']) {

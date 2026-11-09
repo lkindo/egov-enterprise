@@ -38,9 +38,11 @@ test('patterns in original evidence and six-stage results remain private advisor
   const app = await setup(t, async ({ request }) => {
     phases.push(request.phase);
     const result = reply(request);
-    if (result.summary) result.summary += ' 연락처 010-1234-5678';
+    if (request.phase === 'reading') result.blocks[0].note += ' 연락처 010-1234-5678';
+    else if (result.summary) result.summary += ' 연락처 010-1234-5678';
     if (result.requirements) result.requirements[0].description += ' 연락처 010-1234-5678';
     if (result.workItems) result.workItems[0].description = '연락처 010-1234-5678';
+    if (result.acceptanceCriteria) result.acceptanceCriteria[0].then += ' 연락처 010-1234-5678';
     return envelope(result);
   });
   const current = app.store.read().backlog.sources[0];
@@ -52,12 +54,34 @@ test('patterns in original evidence and six-stage results remain private advisor
   assert.ok(state.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
   assert.doesNotMatch(JSON.stringify(state.sensitivityWarnings), /010-1234/);
   assert.equal(state.metadata.baselines.length, 0);
+  await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+  assert.equal(phases.length, 6, 'unchanged completed pipeline reuses all checkpoints');
+  for (const stage of ['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan']) assert.ok(state.ai.current.sensitivityWarnings.some(warning => warning.stage === stage), `reused ${stage} warning`);
   await app.act('ai.confirm', { jobId: state.ai.current.id });
   state = await app.engine.state();
   assert.equal(state.baselineCurrent, true);
   assert.equal(state.metadata.exports.at(-1).kind, 'task');
   assert.equal(validateBacklogPack(state.backlog).valid, false, 'repository export policy remains strict');
-  assert.ok(app.engine.artifact(state.metadata.exports.at(-1).id).content);
+  const exported = state.metadata.exports.at(-1), artifact = app.engine.artifact(exported.id);
+  assert.ok(exported.sensitivityWarnings.some(warning => warning.stage === 'export'));
+  assert.match(artifact.content, /^> 민감정보 패턴 감지/);
+  assert.doesNotMatch(JSON.stringify(exported.sensitivityWarnings), /010-1234/);
+  await app.act('export.create', { kind: 'sheets' });
+  state = await app.engine.state();
+  const requirementSheet = state.metadata.exports.findLast(entry => entry.filename === 'requirements-review.csv');
+  const workSheet = state.metadata.exports.findLast(entry => entry.filename === 'stories-ac-review.csv');
+  assert.ok(workSheet.sensitivityWarnings.length);
+  await app.act('sheets.import', { requirements: app.engine.artifact(requirementSheet.id).content, workItems: app.engine.artifact(workSheet.id).content });
+  await app.act('export.create', { kind: 'uat' });
+  state = await app.engine.state(); const uatSheet = state.metadata.exports.at(-1);
+  assert.ok(uatSheet.sensitivityWarnings.length);
+  await app.act('uat.import', { csv: app.engine.artifact(uatSheet.id).content, buildRef: 'SYNTHETIC-BUILD' });
+  await app.act('export.create', { kind: 'audit' });
+  state = await app.engine.state();
+  assert.ok(state.metadata.exports.at(-1).sensitivityWarnings.length);
+  assert.match(app.engine.artifact(state.metadata.exports.at(-1).id).content, /^> 민감정보 패턴 감지/);
+  await app.act('composition.check', { selection: [] });
+  assert.ok((await app.engine.state()).composition);
 });
 
 test('one full AI run produces a document model, reviewed requirements, reviewed work and task preview without fabricating human confirmation', async t => {
@@ -156,6 +180,17 @@ test('corrupt stored document structure cannot be rendered or confirmed as a val
   assert.equal((await app.engine.state()).ai.current.status, 'unavailable');
   await assert.rejects(app.act('ai.confirm', { jobId: state.ai.current.id }), { code: 'AI_OUTPUT_INVALID' });
   assert.equal(app.store.read().backlog.businessRequirements.length, 0);
+});
+
+test('a checkpoint cannot inject notices from an unrelated phase into a resumed analysis', async t => {
+  const app = await setup(t, async ({ request }) => envelope(reply(request)));
+  await app.start(); await app.engine.waitForAi(); const state = await app.engine.state();
+  const checkpoint = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.discovery));
+  checkpoint.sensitivityWarnings = [{ kind: 'mobile-phone', stage: 'export', count: 1, paths: ['project'] }];
+  const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint));
+  app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).checkpoints.discovery = ref; });
+  await app.start(); await app.engine.waitForAi();
+  assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID');
 });
 
 test('no executable scope asks a concrete scope question instead of failing in the planning stage', async t => {

@@ -90,20 +90,27 @@ function openForm(title, content, save, help = '') {
   $('#dialog').showModal();
   const first = dialogForm.querySelector('input:not([readonly]),select,textarea'); first?.focus();
 }
+const sensitivityNames = { 'resident-registration-number': '주민·외국인등록번호', 'mobile-phone': '휴대전화번호', 'email-address': '이메일 주소', 'secret-or-credential': '비밀번호·키·토큰', 'private-ip-literal': '내부 IP 주소' };
+const sensitivityStage = stage => ({ input: '등록 자료', workspace: '현재 작업공간', export: '내보내기' })[stage] ?? aiStageName(stage);
+function sensitivityDetails(warnings, title = '민감정보 감지 위치') {
+  return warnings?.length ? `<details><summary>${esc(title)}</summary><ul class="help-list">${warnings.map(warning => `<li><strong>${esc(sensitivityNames[warning.kind] ?? warning.kind)}</strong> · ${esc(sensitivityStage(warning.stage))} · ${esc(warning.count)}회 감지<p class="wide-text">${warning.paths.map(esc).join(' · ')}</p></li>`).join('')}</ul></details>` : '';
+}
 function sensitivityNotice() {
   const warnings = state.sensitivityWarnings ?? [];
   if (!warnings.length) return '';
-  const names = { 'resident-registration-number': '주민·외국인등록번호', 'mobile-phone': '휴대전화번호', 'email-address': '이메일 주소', 'secret-or-credential': '비밀번호·키·토큰', 'private-ip-literal': '내부 IP 주소' };
-  return `<aside class="panel panel-body mb-20" role="note" aria-label="민감정보 감지 안내"><h2>민감정보 패턴 감지 안내</h2><p>패턴 감지는 분석을 중단하지 않습니다. 원문과 분석 결과는 이 비공개 작업공간에 보관합니다. 아래에는 실제 값 없이 감지 종류·단계·위치를 표시합니다. 공유할 자료는 별도로 확인해 주세요.</p><details><summary>감지 내역 보기</summary><p>건수는 항목 단위 패턴 감지 횟수입니다. 같은 내용이 여러 검사·단계·재실행에서 반복 집계될 수 있으며 사람 수나 고유 정보 수를 뜻하지 않습니다. 위치는 최대 20개씩 표시합니다.</p><ul class="help-list">${warnings.map(warning => `<li><strong>${esc(names[warning.kind] ?? warning.kind)}</strong> · ${esc(warning.stage === 'input' ? '등록 자료' : aiStageName(warning.stage))} · ${esc(warning.count)}회 감지<p class="wide-text">${warning.paths.map(esc).join(' · ')}</p></li>`).join('')}</ul></details></aside>`;
+  const jobs = [...new Map((state.imports?.jobs ?? []).filter(job => job.originalRef || job.status === 'ready').map(job => [job.sourceId ?? job.requestId, job])).values()].filter(job => job.sensitivityWarnings?.length);
+  const files = jobs.map(job => { const index = backlog().sources.findIndex(source => source.id === job.sourceId); return `<li><strong>${index >= 0 ? `등록 자료 ${index + 1}` : '보관 원본'}</strong>${sensitivityDetails(job.sensitivityWarnings)}${index >= 0 ? button(`등록 자료 ${index + 1} 확인`, 'privacy-source', String(index), true) : button('보관 원본 확인', 'download', job.requestId, true)}</li>`; }).join('');
+  return `<aside class="panel panel-body mb-20" role="note" aria-label="민감정보 감지 안내"><h2>민감정보 패턴 감지 안내</h2><p>패턴 감지는 분석을 중단하지 않습니다. 원문과 분석 결과는 이 비공개 작업공간에 보관합니다. 아래에는 실제 값 없이 감지 종류·단계·위치를 표시합니다. 공유할 자료는 별도로 확인해 주세요.</p><p>건수는 항목 단위 패턴 감지 횟수입니다. 같은 내용이 여러 검사·단계에서 반복 집계될 수 있으며 사람 수나 고유 정보 수를 뜻하지 않습니다. 위치는 최대 20개씩 표시합니다.</p>${sensitivityDetails(warnings, '전체 감지 내역')}${files ? `<details><summary>자료별 감지 내역</summary><ul class="help-list">${files}</ul></details>` : ''}</aside>`;
 }
 function render() {
   if (!state) return;
   $('#project-name').textContent = backlog().project.name ?? backlog().project.title ?? '프로젝트';
   $('#crumb').textContent = pages.find(item => item[0] === page)?.[2] ?? '';
   $('#navigation').innerHTML = pages.map(([key, icon, label]) => `<a class="nav-link ${page === key ? 'active' : ''}" ${page === key ? 'aria-current="page"' : ''} href="#${key}" data-page="${key}"><span class="nav-icon" aria-hidden="true">${icon}</span><span>${label}</span></a>`).join('');
-  $('#main').innerHTML = `${state.readOnly ? '<div class="callout"><div><strong>읽기 전용 상태입니다.</strong><p>다른 작성자 또는 복구가 필요한 파일이 있어 저장을 중단했습니다. 실행기 진단을 확인하세요.</p></div></div>' : ''}<div id="page-errors" class="field-error" tabindex="-1" role="alert" hidden></div>${sensitivityNotice()}${({ overview: overview, sources: sources, requirements: requirements, baseline: baseline, work: work, handoff: handoff, audit: audit })[page]()}`;
+  $('#main').innerHTML = `${state.readOnly ? '<div class="callout"><div><strong>읽기 전용 상태입니다.</strong><p>다른 작성자 또는 복구가 필요한 파일이 있어 저장을 중단했습니다. 실행기 진단을 확인하세요.</p></div></div>' : ''}<div id="page-errors" class="field-error" tabindex="-1" role="alert" hidden></div>${({ overview: overview, sources: sources, requirements: requirements, baseline: baseline, work: work, handoff: handoff, audit: audit })[page]()}`;
   const pageHeading = $('#main .page-heading') ?? $('#page-errors');
   if (['overview', 'sources', 'requirements', 'work'].includes(page)) pageHeading.insertAdjacentHTML('afterend', aiPanel());
+  pageHeading.insertAdjacentHTML('afterend', sensitivityNotice());
   if (['overview', 'sources'].includes(page)) pageHeading.insertAdjacentHTML('afterend', importPanel());
   scheduleAiPoll();
 }
@@ -169,7 +176,7 @@ function importPanel() {
   const jobs = state.imports?.jobs ?? []; if (!jobs.length) return '';
   const messages = { AI_DOCUMENT_SENSITIVE_OUTPUT: '이전 버전에서 민감정보 감지로 중단된 기록입니다. 다시 판독하면 분석을 진행하고 별도 안내합니다.', FILE_SENSITIVE_INPUT: '이전 버전에서 민감정보 감지로 중단된 기록입니다. 다시 등록하면 분석을 진행하고 별도 안내합니다.', AI_DOCUMENT_OUTPUT_INVALID: 'AI 판독의 내용·위치·근거를 검증하지 못했습니다. 원본을 대조하고 다시 판독하세요.' };
   const labels = { extracting: '문서 판독 중', ready: '등록 완료', failed: '등록 실패', cancelled: '등록 취소', interrupted: '중단됨 · 다시 등록', stale: '프로젝트 변경 · 다시 등록' };
-  return panel('등록한 산출물 파일', `<ul class="help-list">${jobs.slice(-10).map(job => `<li><strong>${esc(job.filename)}</strong> · ${esc(labels[job.status])}${job.duplicateOf ? ' · 이미 등록된 자료 재사용' : ''}${job.method === 'ai-document' ? ' · AI 판독·구조 정리' : job.method === 'local-ocr' ? ' · 로컬 OCR 판독' : ''}${job.readingProgress && job.status === 'extracting' ? `<p role="status">${job.readingProgress.stage === 'preparing' ? '판독용 자료 준비' : 'AI 판독'} ${job.readingProgress.completed}/${job.readingProgress.total}구간</p>` : ''}${job.needsReview ? '<p>판독이 불확실한 부분을 원본과 대조해 주세요.</p>' : ''}${job.errorCode ? `<p role="alert">${esc(messages[job.errorCode] ?? `${job.errorCode} · 파일 내용을 확인한 후 다시 등록하세요.`)}</p>` : ''}${job.sourceId ? button('원본 다운로드', 'download', job.sourceId, true) : job.originalRef ? button('보관 원본 다운로드', 'download', job.requestId, true) : ''}${job.readingRef ? button('AI 판독 기록', 'ai-reading', job.readingRef.id, true) : ''}${job.previousSourceRef ? button('변경 전 판독문', 'download', job.previousSourceRef.id, true) : ''}${job.status === 'extracting' ? button('파일 처리 취소', 'import-cancel', job.requestId, true) : ''}</li>`).join('')}</ul>`);
+  return panel('등록한 산출물 파일', `<ul class="help-list">${jobs.slice(-10).map(job => `<li><strong>${esc(job.filename)}</strong> · ${esc(labels[job.status])}${job.duplicateOf ? ' · 이미 등록된 자료 재사용' : ''}${job.method === 'ai-document' ? ' · AI 판독·구조 정리' : job.method === 'local-ocr' ? ' · 로컬 OCR 판독' : ''}${job.readingProgress && job.status === 'extracting' ? `<p role="status">${job.readingProgress.stage === 'preparing' ? '판독용 자료 준비' : 'AI 판독'} ${job.readingProgress.completed}/${job.readingProgress.total}구간</p>` : ''}${job.needsReview ? '<p>판독이 불확실한 부분을 원본과 대조해 주세요.</p>' : ''}${sensitivityDetails(job.sensitivityWarnings)}${job.errorCode ? `<p role="alert">${esc(messages[job.errorCode] ?? `${job.errorCode} · 파일 내용을 확인한 후 다시 등록하세요.`)}</p>` : ''}${job.sourceId ? button('원본 다운로드', 'download', job.sourceId, true) : job.originalRef ? button('보관 원본 다운로드', 'download', job.requestId, true) : ''}${job.readingRef ? button('AI 판독 기록', 'ai-reading', job.readingRef.id, true) : ''}${job.previousSourceRef ? button('변경 전 판독문', 'download', job.previousSourceRef.id, true) : ''}${job.status === 'extracting' ? button('파일 처리 취소', 'import-cancel', job.requestId, true) : ''}</li>`).join('')}</ul>`);
 }
 async function aiReadingForm(key) {
   try {
@@ -358,7 +365,7 @@ function work() {
   const traces = backlog().traceLinks.map(item => `<div class="check-row"><div class="check-copy"><strong class="wide-text">${esc(item.targetKind)} · ${esc(item.targetId)}</strong><p>${esc(item.requirementId)} → ${esc(item.workItemId)} → ${esc(item.acId)} · ${esc(item.linkIntent)}</p></div>${button('편집', 'trace', item.id, true)}</div>`).join('');
   return heading('에픽·스토리', '요구사항을 작업·의사결정 카드·허용/거부 인수조건으로 상세화합니다.', button('작업 추가', 'work')) + board + `<div class="section-title"><h2>허용·거부 인수조건</h2>${button('인수조건 추가', 'ac', '', true)}</div>${panel('인수조건', ac || empty('작업을 만든 뒤 Green·Red 인수조건을 각각 등록하세요.'))}<div class="section-title"><h2>근거 추적</h2>${button('추적 링크 추가', 'trace', '', true)}</div>${panel('화면·역량·API·표·게이트·이관 매핑', traces || empty('개발 대상과 근거의 추적 링크를 연결하세요.'))}`;
 }
-function artifactRows() { return (metadata().exports ?? []).map(item => `<div class="check-row"><div class="check-copy"><strong>${esc(item.filename ?? item.kind)}</strong> ${item.stale ? badge('이전 입력의 자료 · 다시 생성 필요', 'amber') : badge('현재 입력의 자료', 'green')}<p>${esc(item.kind)} · ${esc(item.createdAt ?? item.at)}</p><small class="wide-text">입력 버전 ${esc(item.inputRevision ?? '')} · SHA-256 ${esc(item.sha256 ?? '')}</small></div>${button('내려받기', 'download', item.id, true)}</div>`).join(''); }
+function artifactRows() { return (metadata().exports ?? []).map(item => `<div class="check-row"><div class="check-copy"><strong>${esc(item.filename ?? item.kind)}</strong> ${item.stale ? badge('이전 입력의 자료 · 다시 생성 필요', 'amber') : badge('현재 입력의 자료', 'green')}<p>${esc(item.kind)} · ${esc(item.createdAt ?? item.at)}</p><small class="wide-text">입력 버전 ${esc(item.inputRevision ?? '')} · SHA-256 ${esc(item.sha256 ?? '')}</small></div>${item.sensitivityWarnings?.length ? `<div>${badge('민감정보 감지 · 공유 전 확인', 'amber')}${sensitivityDetails(item.sensitivityWarnings)}</div>` : ''}${button('내려받기', 'download', item.id, true)}</div>`).join(''); }
 function handoff() {
   const controlledSources = backlog().sources.filter(source => ['confidential', 'restricted'].includes(source.classification)).length;
   const transferHint = `${controlledSources ? `기밀·제한 자료 ${controlledSources}건이 있습니다. ` : ''}기밀·제한 자료를 외부 AI에 전달할 때는 기관이 승인한 공급자와 자료 범위를 먼저 확인하세요. 이 화면의 패키지 생성은 로컬에서 수행합니다. AI 초안 생성 시에는 동의한 자료를 CLI 모델 서비스로 전송합니다.`;
@@ -488,6 +495,7 @@ function csvForm(uatOnly = false) {
 async function download(key) {
   try {
     const result = await request(`/api/artifacts/${encodeURIComponent(key)}`);
+    if (result.sensitivityWarnings?.length) toast('민감정보 패턴이 감지된 비공개 산출물입니다. 공유·저장소 반영 전 내용을 확인해 주세요.');
     const content = result.base64 ? Uint8Array.from(atob(result.base64), character => character.charCodeAt(0)) : result.content;
     const url = URL.createObjectURL(new Blob([content], { type: result.type ?? 'text/plain;charset=utf-8' }));
     const link = document.createElement('a'); link.href = url; link.download = result.filename ?? 'requirements-artifact.txt'; document.body.append(link); link.click(); link.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -511,6 +519,7 @@ document.addEventListener('click', async event => {
   if (action === 'ai-full') { aiFullForm(); return; }
   if (action === 'ai-prompts') { aiPromptForm(); return; }
   if (action === 'ai-run-prompt') { await aiStoredPromptForm(key); return; }
+  if (action === 'privacy-source') { const source = backlog().sources[Number(key)]; if (source) sourceForm(source.id); return; }
   if (action === 'ai-reading') { await aiReadingForm(key); return; }
   if (action === 'ai-start') { aiStartForm(key); return; }
   if (action === 'ai-answer') { aiAnswerForm(); return; }

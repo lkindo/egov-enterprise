@@ -1,11 +1,11 @@
-import { scanBacklogForPiiAndSecrets } from '../../scripts/export-deliverables-workspace.mjs';
+import { scanBacklogForPiiAndSecrets, PII_SECRET_KINDS } from '../../scripts/export-deliverables-workspace.mjs';
 
 // Only the authenticated, Git-external requirements workspace opts into this
 // policy. Repository/public deliverable validators retain their strict default.
 export const PRIVATE_ANALYSIS_VALIDATION = Object.freeze({ sensitiveData: 'warning' });
-const kinds = ['resident-registration-number', 'mobile-phone', 'email-address', 'secret-or-credential', 'private-ip-literal'];
-const stages = ['input', 'reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan'];
-const fields = ['field', 'project', 'backlog', 'metadata', 'id', 'sourceId', 'inputId', 'clauseId', 'sources', 'clauses', 'text', 'title', 'summary', 'summaries', 'units', 'filename', 'locator', 'nativeReference', 'blocks', 'heading', 'note', 'unreadable', 'reason', 'businessRequirements', 'requirements', 'description', 'rationale', 'citations', 'quote', 'issues', 'question', 'options', 'workItems', 'acceptanceCriteria', 'traceLinks', 'given', 'when', 'then', 'notes', 'decisions', 'documents', 'businessModel', 'actors', 'processes', 'terms', 'revisions', 'workItemUpdates', 'acceptanceUpdates', 'traceUpdates', 'steps', 'exceptions', 'rules', 'data', 'meaning', 'responsibility', 'openQuestions', 'auditFindings', 'name', 'trigger', 'sourceCoverage', 'role'];
+const kinds = PII_SECRET_KINDS;
+const stages = ['input', 'workspace', 'export', 'reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan'];
+const fields = ['field', 'project', 'backlog', 'metadata', 'memos', 'provenance', 'id', 'sourceId', 'inputId', 'clauseId', 'sources', 'clauses', 'text', 'title', 'summary', 'summaries', 'units', 'filename', 'locator', 'nativeReference', 'blocks', 'heading', 'note', 'unreadable', 'reason', 'businessRequirements', 'requirements', 'description', 'rationale', 'citations', 'quote', 'issues', 'question', 'options', 'workItems', 'acceptanceCriteria', 'traceLinks', 'given', 'when', 'then', 'notes', 'decisions', 'documents', 'businessModel', 'actors', 'processes', 'terms', 'revisions', 'workItemUpdates', 'acceptanceUpdates', 'traceUpdates', 'steps', 'exceptions', 'rules', 'data', 'meaning', 'responsibility', 'openQuestions', 'auditFindings', 'name', 'trigger', 'sourceCoverage', 'role'];
 const pathPattern = new RegExp(`^project(?:(?:\\.(?:${fields.join('|')}))|(?:\\[\\d+\\]))*$`);
 const safePath = path => {
   if (!/^project(?:\.[A-Za-z_][A-Za-z0-9_]*|\[\d+\])*$/.test(path)) return 'project';

@@ -59,6 +59,8 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
     assert.equal(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth), false);
     const axe = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21aa']).analyze();
     assert.deepEqual(axe.violations.map(item => ({ id: item.id, targets: item.nodes.map(node => node.target) })), []);
+    const headings = await new AxeBuilder({ page }).withRules(['heading-order']).analyze();
+    assert.deepEqual(headings.violations.map(item => item.id), []);
     if (process.env.REQUIREMENTS_TEST_SCREENSHOTS) { mkdirSync(process.env.REQUIREMENTS_TEST_SCREENSHOTS, { recursive: true }); await page.screenshot({ path: join(process.env.REQUIREMENTS_TEST_SCREENSHOTS, 'ai-full-pipeline-mobile.png'), fullPage: true }); }
     await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).click();
     await page.locator('[name="ai-consent"]').check();

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings, PRIVATE_ANALYSIS_VALIDATION } from './privacy-warnings.mjs';
-import { createEmptyBacklogPack, validateBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
+import { createEmptyBacklogPack, validateBacklogPack, PII_SECRET_KINDS } from '../../scripts/export-deliverables-workspace.mjs';
 import { validateAiValue, validatePrivateAiValue } from './ai-contract.mjs';
 import { documentReadingProfile, isReusableDocumentReading, sourceEvidenceDigest } from './artifact-imports.mjs';
 
@@ -13,6 +13,11 @@ test('private analysis reports patterns without retaining values or untrusted ob
   validateSensitivityWarnings(warnings);
   assert.deepEqual(mergeSensitivityWarnings(warnings, []), warnings);
   assert.throws(() => validateSensitivityWarnings([{ ...warnings[0], paths: ['person@example.test'] }]));
+});
+
+test('warning kinds use the same scanner catalog and reject invented notice types', () => {
+  for (const kind of PII_SECRET_KINDS) assert.doesNotThrow(() => validateSensitivityWarnings([{ kind, stage: 'workspace', count: 1, paths: ['project'] }]));
+  assert.throws(() => validateSensitivityWarnings([{ kind: 'invented', stage: 'workspace', count: 1, paths: ['project'] }]));
 });
 
 test('private AI validation permits patterns but still rejects malformed structures and public validation stays strict', () => {

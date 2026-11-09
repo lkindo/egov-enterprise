@@ -21,18 +21,18 @@ try {
   if (!parser) throw new Error('FILE_TYPE_UNSUPPORTED');
   const result = await parsers[parser](buffer, { ocr: input.ocr === true, ocrLines: true, ocrDet: 'mobile', plain: true, removeHeaderFooter: false, memos: false });
   if (!result.success) throw new Error(/PASSWORD|ENCRYPT/i.test(result.code ?? '') ? 'FILE_ENCRYPTED' : 'FILE_EXTRACTION_FAILED');
-  const decoded = []; let decodedBytes = 0; const seen = new Set();
-  function collect(value, depth = 0) {
+  const decoded = { metadata: [], memos: [], blocks: [] }; let decodedBytes = 0; const seen = new Set();
+  function collect(value, bucket, depth = 0) {
     if (depth > 64) throw new Error('FILE_EXTRACTION_FAILED');
-    if (typeof value === 'string') { decodedBytes += Buffer.byteLength(value); if (decodedBytes > 4 * 1024 ** 2) throw new Error('FILE_TEXT_TOO_LARGE'); decoded.push(value); return; }
+    if (typeof value === 'string') { decodedBytes += Buffer.byteLength(value); if (decodedBytes > 4 * 1024 ** 2) throw new Error('FILE_TEXT_TOO_LARGE'); bucket.push(value); return; }
     if (!value || typeof value !== 'object' || ArrayBuffer.isView(value) || value instanceof ArrayBuffer || seen.has(value)) return;
     seen.add(value);
-    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) if (descriptor.enumerable && 'value' in descriptor) collect(descriptor.value, depth + 1);
+    for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) if (descriptor.enumerable && 'value' in descriptor) collect(descriptor.value, bucket, depth + 1);
   }
-  collect(result.metadata); collect(result.memos); collect(result.blocks);
-  if (scanBacklogForPiiAndSecrets({ project: { decoded } }).length) {
+  collect(result.metadata, decoded.metadata); collect(result.memos, decoded.memos); collect(result.blocks, decoded.blocks);
+  if (scanBacklogForPiiAndSecrets({ project: decoded }).length) {
     if (input.sensitiveData !== 'warning') throw new Error('FILE_SENSITIVE_INPUT');
-    sensitivityWarnings = mergeSensitivityWarnings(sensitivityWarnings, collectSensitivityWarnings({ units: decoded }));
+    sensitivityWarnings = mergeSensitivityWarnings(sensitivityWarnings, collectSensitivityWarnings(decoded));
   }
   const units = result.pages?.length ? result.pages.map(page => ({ locator: `${result.metadata?.pageMode === 'section' ? '섹션' : ['xlsx', 'xls'].includes(input.format) ? '시트' : '페이지'} ${page.pageNumber}`, text: page.markdown })) : [{ locator: '문서 본문', text: result.markdown }];
   const warningCodes = [...new Set((result.warnings ?? []).map(warning => /^[A-Z][A-Z0-9_]{1,80}$/.test(warning.code ?? '') ? warning.code : 'EXTRACTION_NOTICE'))];

@@ -1,14 +1,16 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+
+import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { extractArtifact } from './artifact-extractor.mjs';
+
 test('direct private plain-text extraction returns value-free sensitivity notices', async () => {
   const result = await extractArtifact({ filename: 'private.txt', bytes: Buffer.from('연락처 010-1234-5678') }, { sensitiveData: 'warning' });
   assert.ok(result.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
   assert.doesNotMatch(JSON.stringify(result.sensitivityWarnings), /010-1234/);
 });
-import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
-import { extractArtifact } from './artifact-extractor.mjs';
 
 test('UTF-8 text and Markdown preserve original hash and explicit source locations without truncation', async () => {
   const bytes = Buffer.from('담당자는 본인 접수를 조회한다.\n\n승인자는 접수를 검토한다.', 'utf8');

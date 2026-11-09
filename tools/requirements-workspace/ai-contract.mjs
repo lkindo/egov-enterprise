@@ -58,7 +58,7 @@ export function validateAiValue(value, schema, { maxBytes = 1024 ** 2, sensitive
   if (sensitiveData === 'error' && scanBacklogForPiiAndSecrets({ project: value }).length) invalid('sensitive-output');
 }
 export const validatePrivateAiValue = (value, schema, options = {}) => validateAiValue(value, schema, { ...options, ...PRIVATE_ANALYSIS_VALIDATION });
-const safe = validatePrivateAiValue;
+const privateValue = validatePrivateAiValue;
 const unique = items => { const ids = items.map(item => item.id); if (new Set(ids).size !== ids.length) invalid('duplicate-id'); return new Set(ids); };
 const clauseMap = snapshot => new Map(snapshot.backlog.sources.flatMap(source => (source.clauses ?? []).map(clause => [`${source.id}/${clause.id}`, clause])));
 function citations(items, clauses) {
@@ -88,7 +88,7 @@ export function seedAnalysis(snapshot) {
   return { requirements, issues: [], coverage: [] };
 }
 export function validateAnalysisBatchProposal(value, snapshot, sources, previous, { idPrefix } = {}) {
-  safe(value, BATCH_ANALYSIS_SCHEMA);
+  privateValue(value, BATCH_ANALYSIS_SCHEMA);
   unique(value.requirements);
   unique(value.issues);
   const oldIds = new Set((previous?.requirements ?? []).map(req => req.id)), updates = new Set(value.updatedRequirementIds ?? []);
@@ -124,7 +124,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   if (result.issues.length > 100) capacity('AI_ISSUE_CAPACITY');
   for (const req of result.requirements) if (req.citations.length > 30) invalid('citation-capacity', 'requirements', req.id);
   if (Buffer.byteLength(JSON.stringify(result)) > 1024 ** 2) capacity('AI_PROPOSAL_CAPACITY');
-  safe(result, ANALYSIS_SCHEMA);
+  privateValue(result, ANALYSIS_SCHEMA);
   const clauses = clauseMap(snapshot), current = new Set(sources.flatMap(source => source.clauses.map(clause => `${source.id}/${clause.id}`)));
   const allowed = new Set([...current, ...(previous?.requirements ?? []).flatMap(req => req.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...(previous?.issues ?? []).flatMap(issue => issue.citations.map(cite => `${cite.sourceId}/${cite.clauseId}`)), ...snapshot.backlog.sources.flatMap(source => source.clauses.filter(clause => source.id.startsWith('DEC-') && source.sourceType === 'policy-memo' || clause.requirementIds?.some(id => snapshot.backlog.businessRequirements.some(req => req.id === id))).map(clause => `${source.id}/${clause.id}`))]);
   citations(result.requirements, clauses); issues(result.issues, ids, clauses);
@@ -161,7 +161,7 @@ export function validateAnalysisBatchProposal(value, snapshot, sources, previous
   return accumulated;
 }
 export function validateAnalysisProposal(value, snapshot) {
-  safe(value, ANALYSIS_SCHEMA);
+  privateValue(value, ANALYSIS_SCHEMA);
   const ids = unique(value.requirements), clauses = clauseMap(snapshot), coverage = new Map();
   const scopeFor = req => req.scope ?? snapshot.backlog.businessRequirements.find(previous => previous.id === req.id && ['included', 'excluded', 'deferred'].includes(previous.scopeDisposition))?.scopeDisposition ?? 'included';
   let relationCorrections = 0;
@@ -245,7 +245,7 @@ export function projectAnalysisBacklog(snapshot, proposal) {
   return pack;
 }
 export function validateDecompositionProposal(value, snapshot) {
-  safe(value, DECOMPOSITION_SCHEMA);
+  privateValue(value, DECOMPOSITION_SCHEMA);
   unique(value.workItems); unique(value.acceptanceCriteria); unique(value.traceLinks);
   const included = new Set(snapshot.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included').map(req => req.id));
   const groups = [['workItem', 'workItems', Object.keys(workSchema.properties)], ['acceptanceCriterion', 'acceptanceCriteria', Object.keys(acSchema.properties)], ['traceLink', 'traceLinks', Object.keys(traceSchema.properties)]];
@@ -357,7 +357,7 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
 export function buildCorrectionRequest(request, output, details = []) {
   // Never retransmit malformed output. Only a schema-valid private draft can
   // be returned as untrusted data for one structural correction.
-  safe(output, request.phase === 'analysis' ? request.data.analysisBatch ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA);
+  privateValue(output, request.phase === 'analysis' ? request.data.analysisBatch ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA);
   const next = structuredClone(request);
   next.instructions += request.data.analysisBatch ? ' Correct the CURRENT batch delta using the listed failures, whose requirementId may refer to previousAnalysis. Return one complete JSON object for this batch, not the entire accumulated analysis: current coverage only, new/changed requirements, explicit updatedRequirementIds and new issues. Unchanged earlier entries remain preserved. Never drop prior citations to fit capacity; defer redundant/new current evidence and raise a blocking capacity decision when appropriate. Preserve human policy decisions.' : ' Correct the previous untrusted draft using the listed invariant failures and the original source/confirmed requirements. Return a complete corrected JSON. Preserve policy decisions; never fabricate approvals or facts to pass validation. Each trace acId must belong to its workItemId and explicitly cover its requirementId. Deferred/excluded requirements may appear in issues but must not be executable work.';
   next.data.correction = { previousOutput: structuredClone(output), violations: structuredClone(details) };
