@@ -3,10 +3,50 @@ import assert from 'node:assert/strict';
 import { prepareBusinessModel, reviewRequirements } from './ai-pipeline.mjs';
 import { source, context, envelope, analysis } from './test-fixtures/ai.mjs';
 import { createEmptyBacklogPack } from '../../scripts/export-deliverables-workspace.mjs';
-import { validateDocumentSummaries } from './ai-pipeline-contract.mjs';
+import { BUSINESS_MODEL_SCHEMA, validateBusinessModel, validateDocumentSummaries } from './ai-pipeline-contract.mjs';
+import { validatePrivateAiValue } from './ai-contract.mjs';
 const snapshot = () => ({ backlog: { ...createEmptyBacklogPack(context), project: { code: 'SYNTHETIC', name: '합성 검토', institution: '합성 기관', baselineProfile: '' }, sources: [structuredClone(source)] }, metadata: { context } });
 const reading = () => ({ summary: '담당자의 접수 조회 책임과 열람 범위에 관한 문서다.', blocks: [{ heading: '접수 조회', certainty: 'clear', inputId: 'C-1', note: '담당자의 업무' }], unreadable: [] });
 const response = request => envelope({ summary: '접수 조회 업무를 통합한다.', actors: [], processes: [], terms: [], issues: [], sourceCoverage: request.data.documents.map(doc => ({ sourceId: doc.sourceId, role: 'business', rationale: '조회 업무의 근거' })) });
+
+test('synthesis with no registered requirements constrains corrective regeneration without discarding source-grounded questions', async () => {
+  const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA), originals = structuredClone(state.backlog.sources);
+  let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request, schema }) => {
+    calls++;
+    assert.equal(schema.properties.issues.items.properties.requirementIds.maxItems, 0);
+    assert.ok(JSON.stringify(schema).length <= 20_000);
+    const value = response(request).output;
+    value.actors.push({ name: '담당자', responsibility: '접수 조회', sourceIds: [source.id] });
+    const issue = { id: 'QUESTION-SCOPE', kind: 'decision', severity: 'blocking', question: '담당자의 접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [request.data.documents[0].anchors[0]] };
+    value.issues.push(issue);
+    assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
+    assert.throws(() => validatePrivateAiValue({ ...value, issues: [{ ...issue, requirementIds: ['UNREGISTERED'] }] }, schema), { code: 'AI_OUTPUT_INVALID' });
+    if (calls === 1) value.actors[0].sourceIds = ['UNKNOWN-SOURCE'];
+    else assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-source', path: '$' }]);
+    return envelope(value);
+  } });
+  assert.equal(calls, 2); assert.equal(result.businessModel.issues.length, 1);
+  assert.deepEqual(result.businessModel.issues[0].requirementIds, []);
+  assert.equal(result.businessModel.issues[0].severity, 'blocking');
+  assert.deepEqual(state.backlog.sources, originals); assert.deepEqual(BUSINESS_MODEL_SCHEMA, template);
+});
+
+test('synthesis keeps registered requirement references valid without polluting the shared schema', async () => {
+  const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA);
+  state.backlog.businessRequirements = [{ id: 'REQ-EXISTING' }];
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request, schema }) => {
+    assert.deepEqual(schema, template);
+    const value = response(request).output;
+    value.issues.push({ id: 'QUESTION-EXISTING', kind: 'decision', severity: 'blocking', question: '기존 접수 요구사항의 열람 범위를 확인해 주세요.', options: [], requirementIds: ['REQ-EXISTING'], citations: [request.data.documents[0].anchors[0]] });
+    assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
+    return envelope(value);
+  } });
+  assert.deepEqual(result.businessModel.issues[0].requirementIds, ['REQ-EXISTING']);
+  const forged = structuredClone(result.businessModel); forged.issues[0].requirementIds = ['UNREGISTERED'];
+  assert.throws(() => validateBusinessModel(forged, state), error => error.code === 'AI_OUTPUT_INVALID' && error.details.some(detail => detail.kind === 'issue-reference'));
+  assert.deepEqual(BUSINESS_MODEL_SCHEMA, template);
+});
 
 test('large documents provide bounded representative anchors with honest full clause counts', async () => {
   const state = snapshot(); state.backlog.sources[0].clauses = Array.from({ length: 1000 }, (_, index) => ({ ...source.clauses[0], id: `C-${index + 1}` }));

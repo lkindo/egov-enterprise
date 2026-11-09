@@ -85,13 +85,18 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     readingIssues.push({ id, kind: 'missing', severity: 'blocking', question: `${doc.title}: 판독 불확실 구간을 원본과 대조해 주세요. ${details}`.slice(0, 1900), options: ['원본 대조 후 정확한 내용 답변', '판독 가능한 사본을 등록한 후 다시 분석'], requirementIds: [], citations: [anchor] });
   }
   let model;
+  const synthesisSchema = structuredClone(BUSINESS_MODEL_SCHEMA);
+  if (!snapshot.backlog.businessRequirements.length) {
+    synthesisSchema.properties.issues.items.properties.requirementIds.maxItems = 0;
+    synthesisSchema.description += ' No project requirements are registered yet: every issue.requirementIds must be []. Keep questions and cite sourceId/clauseId evidence; source document labels are not registered project requirement IDs.';
+  }
   const batches = groups(documents, 4);
   for (const [index, batch] of batches.entries()) {
     onStage('synthesis', index, batches.length);
     let data = { documents: batch, previousModel: model ?? null, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Use only the supplied anchors as verbatim issue citations.' };
     for (let attempt = 0; attempt < 2; attempt++) {
       if (signal?.aborted) fail('AI_CANCELLED');
-      const response = await run({ request: request('synthesis', data, snapshot), schema: BUSINESS_MODEL_SCHEMA, cwd, signal });
+      const response = await run({ request: request('synthesis', data, snapshot), schema: synthesisSchema, cwd, signal });
       if (signal?.aborted) fail('AI_CANCELLED');
       try {
         const delta = validateBusinessModel(response.output, snapshot, batch.map(doc => doc.sourceId));

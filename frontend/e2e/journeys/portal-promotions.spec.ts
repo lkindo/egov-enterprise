@@ -151,10 +151,13 @@ test.describe('Public Engagement & Experience', () => {
                 await expect(popupDialog).toHaveAttribute('aria-modal', 'true');
                 await expect(popupDialog.getByRole('heading', { name: popupTitle })).toBeFocused();
                 // 넓은 화면에서는 저장한 좌표·크기(100, 100, 400×400)를 그대로 쓴다 — 화면 안에 들어오는 값이다.
-                const desktopBox = await popupDialog.getByTestId('notice-popup-panel').boundingBox();
-                expect(desktopBox, '팝업 패널이 보인다').not.toBeNull();
-                expect(Math.abs(desktopBox!.x - 100)).toBeLessThanOrEqual(1);
-                expect(Math.abs(desktopBox!.width - 400)).toBeLessThanOrEqual(1);
+                // 휴대폰과 같이 열림 애니메이션이 자리 잡은 뒤 측정한다(허용치는 그대로 1px).
+                await expect(async () => {
+                    const desktopBox = await popupDialog.getByTestId('notice-popup-panel').boundingBox();
+                    expect(desktopBox, '팝업 패널이 보인다').not.toBeNull();
+                    expect(Math.abs(desktopBox!.x - 100)).toBeLessThanOrEqual(1);
+                    expect(Math.abs(desktopBox!.width - 400)).toBeLessThanOrEqual(1);
+                }).toPass({ timeout: 5_000 });
                 await userPage.keyboard.press('Escape');
                 await expect(popupDialog).toBeHidden();
 
