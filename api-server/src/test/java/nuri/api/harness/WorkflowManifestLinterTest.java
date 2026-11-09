@@ -555,7 +555,7 @@ class WorkflowManifestLinterTest {
                   "--console=plain", "-Dfile.encoding=UTF-8"]]
                 """);
         JsonNode frontend = mapper.readTree("""
-                [["pnpm", ["-C", "frontend", "exec", "tsc", "--noEmit"]],
+                [["pnpm", ["-C", "frontend", "run", "type-check"]],
                  ["pnpm", ["-C", "frontend", "run", "lint"]],
                  ["pnpm", ["-C", "frontend", "run", "build"]]]
                 """);
