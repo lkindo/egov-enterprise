@@ -1,8 +1,8 @@
 import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
 import { readDocument, readingOmissions } from './document-reader.mjs';
 import { prepareDocumentInputs } from './document-inputs.mjs';
-import { BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
-import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog } from './ai-contract.mjs';
+import { BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateDocumentSummaries, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
+import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog, selectEvidenceQuote } from './ai-contract.mjs';
 import { matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
 import { privateWorkspaceContracts } from './private-validation.mjs';
 const { generateWorkPackagePlan } = privateWorkspaceContracts;
@@ -26,6 +26,7 @@ export function planningGroups(requirements, priorWork) {
 }
 function request(stage, data, snapshot) {
   const value = { phase: stage, promptVersion: PROMPT_VERSION, instructions: buildStagePrompt(stage, { sourceTypes: [...snapshot.backlog.sources.map(source => source.sourceType), ...(snapshot.metadata.imports ?? []).flatMap(job => job.detectedTypes ?? []), ...(data.documents ?? []).flatMap(doc => doc.documentTypes ?? [])], formats: (snapshot.metadata.imports ?? []).map(job => job.format), hasExisting: snapshot.backlog.businessRequirements.length > 0, hasDecisions: Boolean(snapshot.metadata.ai?.decisions.length) }), data };
+  if (stage === 'synthesis' && data.correction) value.instructions += ' Regenerate the current synthesis once using the supplied invariant failures and original documents. The rejected draft is not supplied. Use exact provided source IDs and verbatim anchors, preserve prior business evidence and human decisions, and never invent facts or approvals to pass validation.';
   if (Buffer.byteLength(JSON.stringify(value)) > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
   return value;
 }
@@ -48,6 +49,10 @@ export function buildTaskPreview(pack, context, issues) {
   return issues.some(issue => issue.severity === 'blocking') ? '' : `> AI 검토 초안 — 사람의 최종 확인 전이며 기관 승인·개발 완료가 아닙니다.\n\n${generateWorkPackagePlan(pack, context).markdown}`;
 }
 
+export function documentAnchors(source) {
+  const quotable = source.clauses.flatMap(clause => { const quote = selectEvidenceQuote(clause.text); return quote ? [{ sourceId: source.id, clauseId: clause.id, quote }] : []; });
+  return quotable.length <= 32 ? quotable : Array.from({ length: 32 }, (_, at) => quotable[Math.round(at * (quotable.length - 1) / 31)]);
+}
 export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceReading = () => null, onStage = () => {}, onValidated = () => {} }) {
   const documents = [];
   for (const [index, source] of snapshot.backlog.sources.entries()) {
@@ -61,21 +66,12 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
       reading = result.reading;
     }
     onValidated('reading', reading);
-    const sampled = source.clauses.length <= 32 ? source.clauses : Array.from({ length: 32 }, (_, at) => source.clauses[Math.round(at * (source.clauses.length - 1) / 31)]);
-    const anchors = sampled.map(clause => ({ sourceId: source.id, clauseId: clause.id, quote: Array.from(clause.text).slice(0, 180).join('') }));
+    const anchors = documentAnchors(source);
     documents.push({ sourceId: source.id, title: source.title, sourceType: source.sourceType, documentTypes: reading.documentTypes ?? [source.sourceType], summary: reading.summary, sections: [...new Set(reading.blocks.map(block => block.heading))], warningCodes: reading.warningCodes ?? [], unreadable: reading.unreadable, uncertain: reading.blocks.filter(block => block.certainty === 'uncertain').map(block => ({ inputId: block.inputId, note: block.note })), clauseCount: source.clauses.length, anchorScope: 'Representative quotations only; all original clauses remain available to requirement analysis.', anchors });
   }
   onStage('reading', documents.length, documents.length);
-  let model;
-  const batches = groups(documents, 4);
-  for (const [index, batch] of batches.entries()) {
-    onStage('synthesis', index, batches.length);
-    const response = await run({ request: request('synthesis', { documents: batch, previousModel: model ?? null, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Use only the supplied anchors as verbatim issue citations.' }, snapshot), schema: BUSINESS_MODEL_SCHEMA, cwd, signal });
-    const delta = validateBusinessModel(response.output, snapshot, batch.map(doc => doc.sourceId));
-    model = mergeBusinessModels(model, delta, snapshot);
-    onValidated('synthesis', model);
-    onStage('synthesis', index + 1, batches.length);
-  }
+  try { validateDocumentSummaries(documents, snapshot); }
+  catch (error) { if (error.code === 'AI_OUTPUT_INVALID') fail('AI_DOCUMENT_INPUT_INVALID'); throw error; }
   const readingIssues = [];
   for (const doc of documents) {
     const omissions = readingOmissions(doc.warningCodes);
@@ -83,13 +79,35 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     const original = snapshot.backlog.sources.find(source => source.id === doc.sourceId);
     const id = `DOC-${createHash('sha256').update(JSON.stringify([original.id, original.fileSha256 ?? original.clauses, PROMPT_VERSION, doc.unreadable, doc.uncertain, omissions])).digest('hex').slice(0, 24)}`;
     if (snapshot.metadata.ai?.decisions.some(decision => decision.issueId === id)) continue;
-    const clause = original.clauses.find(clause => /[\p{L}\p{N}]/u.test(clause.text));
-    if (!clause) fail('AI_DOCUMENT_UNREADABLE');
+    const anchor = doc.anchors[0];
+    if (!anchor) fail('AI_DOCUMENT_UNREADABLE');
     const details = [...doc.unreadable.map(item => item.reason), ...doc.uncertain.map(item => item.note), ...omissions].join(' / ');
-    readingIssues.push({ id, kind: 'missing', severity: 'blocking', question: `${doc.title}: 판독 불확실 구간을 원본과 대조해 주세요. ${details}`.slice(0, 1900), options: ['원본 대조 후 정확한 내용 답변', '판독 가능한 사본을 등록한 후 다시 분석'], requirementIds: [], citations: [{ sourceId: original.id, clauseId: clause.id, quote: Array.from(clause.text).slice(0, 180).join('') }] });
+    readingIssues.push({ id, kind: 'missing', severity: 'blocking', question: `${doc.title}: 판독 불확실 구간을 원본과 대조해 주세요. ${details}`.slice(0, 1900), options: ['원본 대조 후 정확한 내용 답변', '판독 가능한 사본을 등록한 후 다시 분석'], requirementIds: [], citations: [anchor] });
+  }
+  let model;
+  const batches = groups(documents, 4);
+  for (const [index, batch] of batches.entries()) {
+    onStage('synthesis', index, batches.length);
+    let data = { documents: batch, previousModel: model ?? null, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Use only the supplied anchors as verbatim issue citations.' };
+    for (let attempt = 0; attempt < 2; attempt++) {
+      if (signal?.aborted) fail('AI_CANCELLED');
+      const response = await run({ request: request('synthesis', data, snapshot), schema: BUSINESS_MODEL_SCHEMA, cwd, signal });
+      if (signal?.aborted) fail('AI_CANCELLED');
+      try {
+        const delta = validateBusinessModel(response.output, snapshot, batch.map(doc => doc.sourceId));
+        try { model = mergeBusinessModels(model, delta, snapshot); }
+        catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'schema')) fail('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
+        break;
+      } catch (error) {
+        if (error.code !== 'AI_OUTPUT_INVALID' || attempt === 1) throw error;
+        data = { ...data, correction: { violations: error.details.map(({ kind, path }) => ({ kind, path })) } };
+      }
+    }
+    onStage('synthesis', index + 1, batches.length);
   }
   model.issues = mergeIssues(model.issues, readingIssues);
   validateBusinessModel(model, snapshot, snapshot.backlog.sources.map(source => source.id));
+  onValidated('synthesis', model);
   return { documents, businessModel: model };
 }
 

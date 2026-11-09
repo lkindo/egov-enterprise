@@ -193,6 +193,37 @@ test('a checkpoint cannot inject notices from an unrelated phase into a resumed 
   assert.equal((await app.engine.state()).ai.current.errorCode, 'AI_CHECKPOINT_INVALID');
 });
 
+test('legacy representative anchors are rebuilt from canonical originals without re-calling models or trusting forged model/source data', async t => {
+  for (const fault of ['anchors-only', 'forged-model', 'source-metadata']) {
+    const phases = [];
+    const app = await setup(t, async ({ request }) => {
+      phases.push(request.phase); const value = reply(request);
+      if (request.phase === 'analysis') {
+        value.requirements[0].citations = value.requirements[0].citations.filter(cite => cite.clauseId !== 'C-DEC');
+        const decoration = value.coverage.find(entry => entry.clauseId === 'C-DEC'); decoration.disposition = 'excluded'; decoration.requirementIds = []; decoration.rationale = '장식선은 기능 요구의 근거가 아니다';
+      }
+      return envelope(value);
+    });
+    await app.act('source.save', { ...structuredClone(source), clauses: [...structuredClone(source.clauses), { ...source.clauses[0], id: 'C-DEC', text: '─'.repeat(30) }] });
+    const originals = structuredClone(app.store.read().backlog.sources);
+    await app.start(); await app.engine.waitForAi(); let state = await app.engine.state(); assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+    const completedCalls = phases.length;
+    assert.equal(phases.filter(phase => phase === 'reading').length, 1); assert.equal(phases.filter(phase => phase === 'synthesis').length, 1);
+    const checkpoint = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.discovery));
+    checkpoint.output.documents[0].anchors.push({ sourceId: source.id, clauseId: 'C-DEC', quote: '─'.repeat(30) });
+    if (fault === 'forged-model') checkpoint.output.businessModel.issues.push({ id: 'Q-FORGED', kind: 'risk', severity: 'blocking', question: '합성 검증 질문', options: [], requirementIds: [], citations: [{ sourceId: source.id, clauseId: source.clauses[0].id, quote: 'INVENTED-UNTRUSTED-CITATION' }] });
+    if (fault === 'source-metadata') checkpoint.output.documents[0].title = 'FORGED-TITLE';
+    const ref = app.store.writeArchive('ai', JSON.stringify(checkpoint));
+    app.store.transact(app.store.read().revision, next => { next.metadata.ai.jobs.at(-1).checkpoints.discovery = ref; });
+    await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
+    assert.equal(phases.length, completedCalls, `no original reading or model execution repeats: ${fault} ${phases.join(',')}`);
+    assert.deepEqual(state.backlog.sources, originals); assert.equal(state.metadata.baselines.length, 0);
+    if (fault === 'anchors-only') { assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode); assert.notEqual(state.ai.current.checkpoints.discovery.id, ref.id); const refreshed = JSON.parse(app.store.readArchive(state.ai.current.checkpoints.discovery)); assert.equal(refreshed.output.documents[0].anchors.length, 1); assert.deepEqual(refreshed.output.businessModel, checkpoint.output.businessModel); }
+    else { assert.equal(state.ai.current.status, 'failed'); assert.equal(state.ai.current.errorCode, 'AI_OUTPUT_INVALID'); }
+    assert.equal(JSON.parse(app.store.readArchive(ref)).output.documents[0].anchors.length, 2, 'old immutable history is retained');
+  }
+});
+
 test('no executable scope asks a concrete scope question instead of failing in the planning stage', async t => {
   const phases = [];
   const app = await setup(t, async ({ request }) => {

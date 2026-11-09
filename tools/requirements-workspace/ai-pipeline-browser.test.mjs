@@ -196,7 +196,12 @@ test('an open failed analysis dialog follows actual server progress without losi
     await page.context().setOffline(false);
     await page.getByRole('button', { name: 'AI 판독 이어서 진행', exact: true }).click();
     await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
-    await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 });
+    try { await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 }); }
+    catch (error) {
+      const view = await app.engine.state().catch(() => null);
+      error.message += '\nSynthetic recovery state: ' + JSON.stringify({ aiStatus: view?.ai.current?.status ?? null, aiError: view?.ai.current?.errorCode ?? null, stage: view?.ai.current?.stage ?? null, importsActive: view?.imports.active ?? null, readings, dialogOpen: await page.locator('#dialog').evaluate(element => element.open, undefined, { timeout: 1000 }).catch(() => null), dialogError: await page.locator('#editor .form-errors').textContent({ timeout: 1000 }).catch(() => null), pageError: await page.locator('#page-errors').textContent({ timeout: 1000 }).catch(() => null) });
+      throw error;
+    }
     assert.equal(readings, 3); assert.equal((await app.engine.state()).metadata.baselines.length, 0);
   } catch (error) {
     const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); throw safe;

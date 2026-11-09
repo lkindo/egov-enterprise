@@ -7,7 +7,7 @@ import { AI_MODEL, AI_EFFORT, createCliRunner, findClaudeExecutable } from './ai
 import { assertExternalWorkspace } from './store.mjs';
 import { prepareVisualAttachments } from './ai-attachments.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
-import { prepareBusinessModel, reviewRequirements, planAndReview, buildTaskPreview } from './ai-pipeline.mjs';
+import { prepareBusinessModel, documentAnchors, reviewRequirements, planAndReview, buildTaskPreview } from './ai-pipeline.mjs';
 import { validateBusinessModel, validateDocumentSummaries, mergeIssues } from './ai-pipeline-contract.mjs';
 import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 
@@ -209,7 +209,18 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         };
         if (job.fullPipeline) {
           pipeline = readCheckpoint('discovery', inputDigest);
-          if (pipeline) { validateDocumentSummaries(pipeline.documents, snapshot); validateBusinessModel(pipeline.businessModel, snapshot, snapshot.backlog.sources.map(source => source.id)); if (!restoreCheckpointWarnings('discovery')) { onValidated('reading', pipeline.documents); onValidated('synthesis', pipeline.businessModel); } }
+          if (pipeline) {
+            validateBusinessModel(pipeline.businessModel, snapshot, snapshot.backlog.sources.map(source => source.id));
+            let refreshedAnchors = false;
+            try { validateDocumentSummaries(pipeline.documents, snapshot); }
+            catch (error) {
+              if (error.code !== 'AI_OUTPUT_INVALID' || !error.details?.some(detail => detail.kind === 'citation-quote')) throw error;
+              pipeline = { ...pipeline, documents: pipeline.documents.map(doc => ({ ...doc, anchors: documentAnchors(snapshot.backlog.sources.find(source => source.id === doc.sourceId)) })) };
+              validateDocumentSummaries(pipeline.documents, snapshot); refreshedAnchors = true;
+            }
+            if (!restoreCheckpointWarnings('discovery')) { onValidated('reading', pipeline.documents); onValidated('synthesis', pipeline.businessModel); }
+            if (refreshedAnchors) saveCheckpoint('discovery', inputDigest, pipeline);
+          }
           else { pipeline = await prepareBusinessModel(snapshot, { run, cwd, signal: controller.signal, sourceReading, onStage, onValidated }); saveCheckpoint('discovery', inputDigest, pipeline); }
         }
         let startIndex = 0;

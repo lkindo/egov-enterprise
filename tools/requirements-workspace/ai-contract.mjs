@@ -61,10 +61,22 @@ export const validatePrivateAiValue = (value, schema, options = {}) => validateA
 const privateValue = validatePrivateAiValue;
 const unique = items => { const ids = items.map(item => item.id); if (new Set(ids).size !== ids.length) invalid('duplicate-id'); return new Set(ids); };
 const clauseMap = snapshot => new Map(snapshot.backlog.sources.flatMap(source => (source.clauses ?? []).map(clause => [`${source.id}/${clause.id}`, clause])));
+const meaningful = text => (text.match(/[\p{L}\p{N}]/gu) ?? []).length;
+export function selectEvidenceQuote(text) {
+  const chars = Array.from(text), counts = chars.map(character => meaningful(character));
+  const required = Math.min(12, counts.reduce((sum, count) => sum + count, 0));
+  if (!required) return null;
+  let count = 0;
+  for (let end = 0; end < chars.length; end++) {
+    count += counts[end];
+    if (end >= 180) count -= counts[end - 180];
+    if (count >= required) { let start = Math.max(0, end - 179); while (!counts[start]) start++; return chars.slice(start, start + 180).join(''); }
+  }
+  return null;
+}
 function citations(items, clauses) {
   for (const [index, item] of items.entries()) for (const [citationIndex, citation] of item.citations.entries()) {
     const original = clauses.get(`${citation.sourceId}/${citation.clauseId}`);
-    const meaningful = text => (text.match(/[\p{L}\p{N}]/gu) ?? []).length;
     if (!original?.text.includes(citation.quote) || !meaningful(citation.quote) || meaningful(citation.quote) < Math.min(12, meaningful(original.text))) invalid('citation-quote', `items[${index}].citations[${citationIndex}]`);
   }
 }
