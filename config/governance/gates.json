@@ -1435,7 +1435,8 @@
             "fragment": "run('npm run test:operational-contracts');",
             "tiers": [
               "local-full",
-              "local-e2e"
+              "local-e2e",
+              "local-post-push"
             ]
           },
           {
@@ -1452,6 +1453,7 @@
         "pre-push",
         "local-full",
         "local-e2e",
+        "local-post-push",
         "ci"
       ],
       "task": "npm run test:operational-contracts",

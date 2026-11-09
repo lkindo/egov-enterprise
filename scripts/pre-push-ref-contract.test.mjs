@@ -249,11 +249,14 @@ test('empty stdin and a new ref retain their fail-closed verification paths', ()
   assert.deepEqual(emptyInput.npmCalls, ['run regen -- --check', 'run test:operational-contracts']);
   assert.ok(emptyInput.gitCalls.some((call) => call.includes('origin/main..HEAD')));
 
+  // 새 작업 브랜치의 첫 push 는 origin/main 과의 전체 차이를 본다. 운영 계약은 작업 브랜치 push 라 push 뒤로 미룬다(DEC-OPS-410 —
+  //   아래 'a branch-only push defers …' 시험이 미루기 규칙 전체를 본다).
   const newRef = runHook(
     `${pushLine('refs/heads/new-branch', LOCAL_OID, 'refs/heads/new-branch', ZERO_OID)}\n`,
   );
   assertSuccessful(newRef);
-  assert.deepEqual(newRef.npmCalls, ['run regen -- --check', 'run test:operational-contracts']);
+  assert.deepEqual(newRef.npmCalls, ['run regen -- --check']);
+  assert.match(newRef.stdout, /운영 계약은 push 뒤로 미룬다/);
   assert.ok(newRef.gitCalls.some((call) => call.includes(`origin/main..${LOCAL_OID}`)));
 });
 
@@ -425,12 +428,16 @@ test('verify profiles run static checks before the operational contracts and sto
     full: [SAST_APPROXIMATION, REGEN_CHECK, ...VERIFY_STATIC, CONTRACTS, VERIFY_BACKEND_SUITE, ...VERIFY_PACKAGING],
     e2e: [REGEN_CHECK, 'pnpm -C frontend run type-check:e2e', CONTRACTS, 'node scripts/run-isolated-e2e.mjs'],
     integrate: VERIFY_INTEGRATE,
+    // [2026-11-09 DEC-OPS-410] 작업 브랜치 push 가 미룬 운영 계약을 push 뒤에 한 번 돈다 — 운영 계약 밖의 검사는 하지 않는다.
+    'post-push': [CONTRACTS],
   };
   for (const [scope, commands] of Object.entries(expected)) {
     const observed = observeVerification(scope);
     assert.deepEqual(observed.commands, commands, scope);
     assert.deepEqual(observed.exits, [], `${scope}: the success path must not exit early`);
   }
+  // post-push 는 계약 실패를 그대로 전한다 — 병합 대기 도구는 그 실행 기록의 결과를 읽는다.
+  assert.deepEqual(observeVerification('post-push', { failCommand: CONTRACTS }).exits, [1], 'post-push must propagate a contract failure');
   // ops·migration 은 운영 계약을 부르지 않고 자기 검사만 돈다(README·verify.mjs 의 '운영 계약을 부르는 범위').
   for (const scope of ['ops', 'migration']) {
     const observed = observeVerification(scope);
@@ -683,9 +690,10 @@ test('pre-push discards every partial diff result and runs the full gates when a
     pushLine('refs/heads/second', secondLocal, 'refs/heads/second', secondRemote),
   ].join('\n') + '\n';
   const ranges = [`${REMOTE_OID}..${LOCAL_OID}`, `${secondRemote}..${secondLocal}`];
+  // 두 ref 모두 작업 브랜치라 운영 계약은 push 뒤로 미룬다(DEC-OPS-410) — 그 밖의 소스 경로 전체가 돈다.
   const assertFullFallback = result => {
     assertSuccessful(result);
-    assert.deepEqual(result.commands, PRE_PUSH_SOURCE_ORDER,
+    assert.deepEqual(result.commands, PRE_PUSH_SOURCE_ORDER.filter(command => command !== CONTRACTS),
       'a missing ref must not retain a documentation fast-pass from any successful or partial diff');
     assert.match(result.stdout, /docsOnly=false \/ backend=true \/ migration=true \/ frontend=true/);
     assert.doesNotMatch(result.stdout, /Fast-pass/);
@@ -886,6 +894,60 @@ test('pre-push blocks the push when the operational contracts fail on the docume
   const swallowed = hookSource.replace('실행 경로가 불일치합니다"; exit 1; }', '실행 경로가 불일치합니다"; }');
   assert.notEqual(swallowed, hookSource);
   assert.ok(blocks(swallowed).every(({ status }) => status === 0));
+});
+
+/*
+  [2026-11-09 DEC-OPS-410] 작업 브랜치만 push 하면 운영 계약을 push 뒤 로컬 실행(npm run verify:post-push)으로 미룬다 — PR 을 거치는 ref 라
+  required CI 가 병합 전에 같은 계약을 돌고, 병합 대기 도구가 같은 SHA 의 Windows 기록을 요구한다. CI 가 미리 막지 않는 ref(main·master·
+  태그·refs/heads 밖)나 ref 를 모르는 push 가 하나라도 있으면 지금처럼 여기서 돈다. 미룬 사실은 실행 기록에 skip 으로 남긴다.
+*/
+test('a branch-only push defers the operational contracts; main, master, tags, other refs and unknown pushes run them', () => {
+  const line = (ref) => pushLine(ref, LOCAL_OID, ref, REMOTE_OID);
+  const runs = (input, source = hookSource) => runHook(input, source, { files: ['docs/README.md'] }).npmCalls.includes('run test:operational-contracts');
+  const deferredInputs = [
+    `${line('refs/heads/feature')}\n`,
+    `${line('refs/heads/fix/a')}\n${line('refs/heads/chore/b')}\n`,
+    // 삭제는 object 를 보내지 않으므로 판정에 들지 않는다.
+    `${line('refs/heads/feature')}\n${pushLine('(delete)', ZERO_OID, 'refs/heads/main', REMOTE_OID)}\n`,
+  ];
+  const runningInputs = [
+    `${line('refs/heads/main')}\n`,
+    `${line('refs/heads/master')}\n`,
+    `${line('refs/tags/v1.0.0')}\n`,
+    `${line('refs/notes/commits')}\n`,
+    `${line('refs/heads/feature')}\n${line('refs/heads/main')}\n`,
+    `${line('refs/heads/feature')}\n${line('refs/tags/v1.0.0')}\n`,
+    '',
+  ];
+  for (const input of deferredInputs) assert.equal(runs(input), false, `deferred: ${JSON.stringify(input)}`);
+  for (const input of runningInputs) assert.equal(runs(input), true, `runs: ${JSON.stringify(input)}`);
+
+  // 소스 경로도 같다 — 미뤄도 그 밖의 단계는 모두 돈다.
+  const files = ['api-server/src/main/java/nuri/api/Example.java', 'frontend/src/example.ts'];
+  const source = runHook(`${line('refs/heads/feature')}\n`, hookSource, { files });
+  assertSuccessful(source);
+  assert.deepEqual(source.commands, PRE_PUSH_SOURCE_ORDER.filter(command => command !== CONTRACTS));
+  assert.match(source.stdout, /npm run verify:post-push/);
+
+  // 미룬 사실은 실행 기록에 남는다(실제 기록기). main push 는 계약 단계를 그대로 기록한다.
+  const recorded = runHook(`${line('refs/heads/feature')}\n`, hookSource, { realRecords: true });
+  assertSuccessful(recorded);
+  assert.deepEqual(recorded.records.filter(event => event.event === 'step-skipped').map(event => [event.stageId, event.reasonCode]),
+    [['operational-contracts', 'post-push-deferred']]);
+  assert.equal(recorded.records.at(-1).result, 'passed');
+  const onMain = runHook(`${line('refs/heads/main')}\n`, hookSource, { realRecords: true });
+  assert.ok(onMain.records.some(event => event.event === 'step-end' && event.stageId === 'operational-contracts'));
+  assert.equal(onMain.records.some(event => event.event === 'step-skipped'), false);
+
+  // red 재현: 늘 미루는 훅은 main push 에서, main·master 판정을 걷은 훅은 main 에서, ref 를 모르는 push 를 미루는 훅은 빈 입력에서 붉다.
+  const lf = hookSource.replace(/\r\n/g, '\n');
+  const alwaysDefer = lf.replace('  if [ "$CONTRACTS_DEFERRABLE" = "1" ]; then', '  if true; then');
+  const ignoresMain = lf.replace('    refs/heads/main|refs/heads/master) CONTRACTS_DEFERRABLE=0 ;;\n', '');
+  const defersUnknown = lf.replace('[ "$OBJECT_REFS" -gt 0 ] || CONTRACTS_DEFERRABLE=0\n', '');
+  for (const mutant of [alwaysDefer, ignoresMain, defersUnknown]) assert.notEqual(mutant, lf);
+  assert.equal(runs(`${line('refs/heads/main')}\n`, alwaysDefer), false);
+  assert.equal(runs(`${line('refs/heads/main')}\n`, ignoresMain), false);
+  assert.equal(runs('', defersUnknown), false);
 });
 
 // [2026-10-24] src/__tests__ 밖에서 저장소 파일을 직접 읽는 시험(원문 계약)은 CI 전체 vitest 에서만 돌아, 그 원문을 바꾸면 CI 에서야

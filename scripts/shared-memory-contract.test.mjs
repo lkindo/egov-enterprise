@@ -411,10 +411,33 @@ function fullGapRow(files, id) {
   return holders[0];
 }
 
+/*
+  [2026-11-09] 종료한 gap 의 원장 결속(closed)은 행을 요구하지 않는다. 그래도 원장의 수를 메모리에 다시 적으면 붉고, 종료한 행이 활성 표에
+  다시 남아도 붉다 — 종료 뒤 감시가 조용히 풀리지도, 종료한 행이 열린 위험처럼 남지도 않게 한다(GAP-ARCH-001).
+*/
+test('a closed gap binding keeps the restatement guard, needs no row and is red when its row stays', () => {
+  const files = { ...memoryFiles(), ...gapDetailFiles() };
+  const closed = LEDGER_MEMORY_BINDINGS.filter(({ closed: isClosed }) => isClosed);
+  assert.ok(closed.length > 0, '종료한 결속이 없으면 이 시험은 아무것도 증명하지 않는다');
+  assert.deepEqual(ledgerMemoryViolations(files), []);
+  for (const { id, labels } of closed) {
+    assert.ok(!GAP_FILES.some((file) => (files[file] ?? '').split(/\r?\n/).some((line) => line.startsWith(`| ${id} |`))),
+      `${id}: 종료한 gap 의 행이 남아 있다`);
+    for (const label of labels) {
+      const restated = `${files['known-gaps.md']}\n- 종료 메모: ${label} **10개**\n`;
+      assert.ok(ledgerMemoryViolations({ ...files, 'known-gaps.md': restated }).some((message) => message.includes(`'${label}' 수를 다시 적었습니다`)),
+        `${id}: 종료한 원장의 '${label}' 재진술이 red 가 아니다`);
+    }
+    const reopened = `${files['known-gaps-detail.md']}\n| ${id} | P2 | open | 영역 | 요약 | 근거 | 다음 행동 | 결정권자 | 2099-01-01 |\n`;
+    assert.ok(ledgerMemoryViolations({ ...files, 'known-gaps-detail.md': reopened }).some((message) => message.startsWith(`${id}: 종료한 gap 의 행`)),
+      `${id}: 종료한 행이 다시 남아도 red 가 아니다`);
+  }
+});
+
 test('ledger memory bindings are red for restated counts, a missing link and a missing row', () => {
   const files = { ...memoryFiles(), ...gapDetailFiles() };
   const gaps = files['known-gaps.md'];
-  for (const { id, ledger, labels } of LEDGER_MEMORY_BINDINGS) {
+  for (const { id, ledger, labels } of LEDGER_MEMORY_BINDINGS.filter(({ closed }) => !closed)) {
     // 행이 자동 로드 표에 있든 영역 상세로 옮겼든 같은 검출을 받는다.
     const [holder, row] = fullGapRow(files, id);
     const text = files[holder];
@@ -449,7 +472,7 @@ test('ledger memory bindings are red for restated counts, a missing link and a m
         `${id}: 레지스트리 줄의 재진술이 red 가 아닙니다.`);
     }
   }
-  assert.ok(LEDGER_MEMORY_BINDINGS.some(({ id }) => fullGapRow(files, id)[0] !== 'known-gaps.md'),
+  assert.ok(LEDGER_MEMORY_BINDINGS.filter(({ closed }) => !closed).some(({ id }) => fullGapRow(files, id)[0] !== 'known-gaps.md'),
     '영역 상세로 옮긴 원장 결속 행이 하나 이상 있어야 이 시험이 상세 쪽 검출을 증명한다.');
   // 다른 메모리 파일의 행에 같은 수를 옮겨 적어도 red 다.
   const elsewhere = `${files['project-context.md']}\n| CTX-999 | unwired **10개** · app→core **10건** | [원장](../../config/governance/operation-consumer-census.json) | 2099-01-01 |\n`;

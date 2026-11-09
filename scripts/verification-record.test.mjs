@@ -82,6 +82,22 @@ test('records step outcomes, explicit skips and diagnostic Git changes without e
   }
 });
 
+// [2026-11-09 DEC-OPS-410] verify post-push 의 기록만 병합 증거 권한을 싣는다 — 병합 대기 도구는 그 권한의 기록만 읽는다. 같은 범위 이름을
+//   pre-push 진입점이 써도, 다른 범위를 verify 가 써도 진단 전용이다.
+test('only a verify post-push record carries the post-push merge evidence authority', t => {
+  const root = fixture(t, { git: true });
+  const authorityOf = (entrypoint, scope) => {
+    const run = createRun({ root, entrypoint, scope, timezone: 'Asia/Seoul' });
+    assert.ok(run.runId, `${entrypoint}/${scope} 기록이 열린다`);
+    run.finish({ exitCode: 0 });
+    return records(root, run.runId)[0].authority;
+  };
+  assert.equal(authorityOf('verify', 'post-push'), 'post-push-merge-evidence');
+  assert.equal(authorityOf('pre-push', 'post-push'), 'diagnostic-only');
+  assert.equal(authorityOf('verify', 'push'), 'diagnostic-only');
+  assert.equal(authorityOf('pre-push', 'source'), 'diagnostic-only');
+});
+
 test('records nonzero, signal, unknown, incomplete and inconsistent outcomes without inventing unobserved steps', t => {
   const root = fixture(t);
   const cases = [
