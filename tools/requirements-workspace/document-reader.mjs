@@ -1,7 +1,8 @@
 import { createHash } from 'node:crypto';
 import { prepareDocumentInputs } from './document-inputs.mjs';
 import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
-import { validateAiValue } from './ai-contract.mjs';
+import { validatePrivateAiValue as validateAiValue } from './ai-contract.mjs';
+import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 import { AI_MODEL, AI_EFFORT, createCliRunner } from './ai-cli.mjs';
 
 const string = maxLength => ({ type: 'string', minLength: 1, maxLength });
@@ -23,12 +24,14 @@ const readingRecordProperties = {
   prompts: array(object({ stage: { type: 'string', enum: ['reading'] }, version: string(64), sha256: { ...string(64), pattern: '^[a-f0-9]{64}$' }, instructions: string(20000) }), 64),
   clauseInputs: array(object({ clauseId: string(100), inputId: string(100) }), 3000),
   referenceChecks: array(object({ inputId: string(100), sha256: { ...string(64), pattern: '^[a-f0-9]{64}$' }, status: { type: 'string', enum: ['matched', 'mismatch'] } }), 200),
+  sensitivityWarnings: array(object({ kind: string(64), stage: string(64), count: integer(1, Number.MAX_SAFE_INTEGER), paths: array(string(300), 20) }), 35),
 };
-const READING_RECORD_SCHEMA = { ...object(readingRecordProperties), required: Object.keys(readingRecordProperties).filter(key => !['clauseInputs', 'referenceChecks'].includes(key)) };
+const READING_RECORD_SCHEMA = { ...object(readingRecordProperties), required: Object.keys(readingRecordProperties).filter(key => !['clauseInputs', 'referenceChecks', 'sensitivityWarnings'].includes(key)) };
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export const readingOmissions = codes => (codes ?? []).filter(code => !['DOCUMENT_LAYOUT_APPROXIMATE', 'DOCUMENT_NATIVE_HINT_OMITTED', 'DOCUMENT_REGISTERED_TEXT_ONLY'].includes(code));
 export function validateReadingRecord(value, originalSha256) {
   try { validateAiValue(value, READING_RECORD_SCHEMA, { maxBytes: 8 * 1024 ** 2 }); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
+  try { validateSensitivityWarnings(value.sensitivityWarnings ?? []); } catch { fail('AI_DOCUMENT_OUTPUT_INVALID'); }
   if (originalSha256 && value.originalSha256 !== originalSha256) fail('AI_DOCUMENT_OUTPUT_INVALID');
   const units = new Set(value.provenance.map(item => item.inputId));
   if (units.size !== value.provenance.length || [...value.blocks, ...value.unreadable, ...(value.clauseInputs ?? []), ...(value.referenceChecks ?? [])].some(item => !units.has(item.inputId))) fail('AI_DOCUMENT_OUTPUT_INVALID');
@@ -120,6 +123,7 @@ export async function readDocument(input, { cwd, signal, sourceType = 'other', e
   const prepared = await prepare(input, { cwd, signal }); cancelled();
   const batches = documentReadingBatches(prepared.units), blocks = [], unreadable = [], summaries = [], referenceChecks = [], prompts = new Map(), documentTypes = new Set();
   const usage = { inputTokens: 0, outputTokens: 0 };
+  let sensitivityWarnings = mergeSensitivityWarnings(prepared.sensitivityWarnings ?? collectSensitivityWarnings({ filename: input.filename, units: prepared.units.map(({ attachment, ...unit }) => unit) }, 'input'));
   let lastSummary = '';
   for (const [index, units] of batches.entries()) {
     cancelled(); onProgress({ stage: 'reading', completed: index, total: batches.length });
@@ -134,6 +138,7 @@ export async function readDocument(input, { cwd, signal, sourceType = 'other', e
     const response = await execute({ request, schema: DOCUMENT_READING_SCHEMA, attachments, cwd, signal }); cancelled();
     if (response.model !== undefined && response.model !== AI_MODEL || response.effort !== undefined && response.effort !== AI_EFFORT) fail('AI_MODEL_MISMATCH');
     const value = structuredClone(validateReading(response.output, units));
+    sensitivityWarnings = mergeSensitivityWarnings(sensitivityWarnings, collectSensitivityWarnings(value, 'reading'));
     referenceChecks.push(...compareNativeReferences(value, units));
     for (const type of value.documentTypes) documentTypes.add(type);
     blocks.push(...value.blocks); unreadable.push(...value.unreadable); summaries.push(value.summary); lastSummary = value.summary;
@@ -141,11 +146,11 @@ export async function readDocument(input, { cwd, signal, sourceType = 'other', e
     onProgress({ stage: 'reading', completed: index + 1, total: batches.length });
   }
   const segments = sourceSegments(prepared.units, blocks), sha256 = createHash('sha256').update(input.bytes).digest('hex');
-  const reading = { version: 1, promptVersion: PROMPT_VERSION, originalSha256: sha256, summary: lastSummary, summaries, blocks, unreadable, warningCodes: prepared.warningCodes, referenceChecks,
+  const reading = { version: 1, promptVersion: PROMPT_VERSION, originalSha256: sha256, summary: lastSummary, summaries, blocks, unreadable, warningCodes: prepared.warningCodes, referenceChecks, sensitivityWarnings,
     provenance: prepared.units.map(unit => {
       const content = blocks.filter(block => block.inputId === unit.id), transcribed = content.some(block => block.text), interpreted = content.some(block => block.kind === 'figure' && block.text === null);
       return { inputId: unit.id, locator: unit.locator, kind: unit.text ? 'native-text' : unit.purpose === 'layout-context' ? 'visual-context' : transcribed && interpreted ? 'ai-mixed' : transcribed ? 'ai-transcription' : interpreted ? 'ai-visual-interpretation' : unreadable.some(item => item.inputId === unit.id) ? 'unreadable' : 'blank' };
     }), usage, prompts: [...prompts.values()], documentTypes: [...documentTypes] };
   validateReadingRecord(reading, sha256);
-  return { filename: input.filename, sha256, format: prepared.format, method: 'ai-document', summary: lastSummary, segments, reading, warningCodes: prepared.warningCodes, needsReview: readingOmissions(prepared.warningCodes).length > 0 || unreadable.length > 0 || blocks.some(block => block.certainty === 'uncertain'), usage };
+  return { filename: input.filename, sha256, format: prepared.format, method: 'ai-document', summary: lastSummary, segments, reading, sensitivityWarnings, warningCodes: prepared.warningCodes, needsReview: readingOmissions(prepared.warningCodes).length > 0 || unreadable.length > 0 || blocks.some(block => block.certainty === 'uncertain'), usage };
 }

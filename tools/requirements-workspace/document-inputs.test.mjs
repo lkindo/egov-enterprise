@@ -30,11 +30,13 @@ test('Office/native content preserves exact text as evidence and unknown text ex
   assert.ok(large.units.every(unit => Buffer.byteLength(unit.text) <= 16 * 1024));
 });
 
-test('executables, corrupt declared documents, sensitive native input and pre-cancelled preparation do not reach model input', async () => {
+test('executables, corrupt declared documents and pre-cancelled preparation do not reach model input; sensitivity is advisory', async () => {
   await assert.rejects(prepareDocumentInputs({ filename: 'document.pdf', bytes: Buffer.from('MZ executable') }), { code: 'FILE_SIGNATURE_INVALID' });
   await assert.rejects(prepareDocumentInputs({ filename: 'payload.exe', bytes: Buffer.from('MZ executable') }), { code: 'FILE_TYPE_UNSUPPORTED' });
   await assert.rejects(prepareDocumentInputs({ filename: '../memo.custom', bytes: Buffer.from('합성 자료') }), { code: 'FILE_NAME_INVALID' });
-  await assert.rejects(prepareDocumentInputs({ filename: 'memo.txt', bytes: Buffer.from('연락처 010-1234-5678') }), { code: 'FILE_SENSITIVE_INPUT' });
+  const prepared = await prepareDocumentInputs({ filename: 'memo.txt', bytes: Buffer.from('연락처 010-1234-5678') });
+  assert.equal(prepared.units[0].text, '연락처 010-1234-5678');
+  assert.ok(prepared.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
   const controller = new AbortController(); controller.abort();
   await assert.rejects(prepareDocumentInputs({ filename: 'memo.txt', bytes: Buffer.from('합성 업무 자료') }, { signal: controller.signal }), { code: 'AI_CANCELLED' });
 });

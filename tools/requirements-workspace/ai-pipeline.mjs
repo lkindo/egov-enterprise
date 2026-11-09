@@ -3,7 +3,9 @@ import { readDocument, readingOmissions } from './document-reader.mjs';
 import { prepareDocumentInputs } from './document-inputs.mjs';
 import { BUSINESS_MODEL_SCHEMA, REQUIREMENT_REVIEW_SCHEMA, PLAN_REVIEW_SCHEMA, validateBusinessModel, mergeBusinessModels, validateRequirementReview, validatePlanReview, mergeIssues } from './ai-pipeline-contract.mjs';
 import { buildAiRequest, DECOMPOSITION_SCHEMA, validateAnalysisProposal, validateDecompositionProposal, projectAnalysisBacklog } from './ai-contract.mjs';
-import { generateWorkPackagePlan, matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
+import { matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
+import { privateWorkspaceContracts } from './private-validation.mjs';
+const { generateWorkPackagePlan } = privateWorkspaceContracts;
 import { createHash } from 'node:crypto';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
@@ -46,7 +48,7 @@ export function buildTaskPreview(pack, context, issues) {
   return issues.some(issue => issue.severity === 'blocking') ? '' : `> AI 검토 초안 — 사람의 최종 확인 전이며 기관 승인·개발 완료가 아닙니다.\n\n${generateWorkPackagePlan(pack, context).markdown}`;
 }
 
-export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceReading = () => null, onStage = () => {} }) {
+export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceReading = () => null, onStage = () => {}, onValidated = () => {} }) {
   const documents = [];
   for (const [index, source] of snapshot.backlog.sources.entries()) {
     onStage('reading', index, snapshot.backlog.sources.length);
@@ -58,6 +60,7 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
         prepare: async () => ({ ...await prepareDocumentInputs({ filename: `${source.id}.txt`, bytes }, { cwd, signal }), warningCodes: ['DOCUMENT_REGISTERED_TEXT_ONLY'] }) });
       reading = result.reading;
     }
+    onValidated('reading', reading);
     const sampled = source.clauses.length <= 32 ? source.clauses : Array.from({ length: 32 }, (_, at) => source.clauses[Math.round(at * (source.clauses.length - 1) / 31)]);
     const anchors = sampled.map(clause => ({ sourceId: source.id, clauseId: clause.id, quote: Array.from(clause.text).slice(0, 180).join('') }));
     documents.push({ sourceId: source.id, title: source.title, sourceType: source.sourceType, documentTypes: reading.documentTypes ?? [source.sourceType], summary: reading.summary, sections: [...new Set(reading.blocks.map(block => block.heading))], warningCodes: reading.warningCodes ?? [], unreadable: reading.unreadable, uncertain: reading.blocks.filter(block => block.certainty === 'uncertain').map(block => ({ inputId: block.inputId, note: block.note })), clauseCount: source.clauses.length, anchorScope: 'Representative quotations only; all original clauses remain available to requirement analysis.', anchors });
@@ -70,6 +73,7 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     const response = await run({ request: request('synthesis', { documents: batch, previousModel: model ?? null, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Use only the supplied anchors as verbatim issue citations.' }, snapshot), schema: BUSINESS_MODEL_SCHEMA, cwd, signal });
     const delta = validateBusinessModel(response.output, snapshot, batch.map(doc => doc.sourceId));
     model = mergeBusinessModels(model, delta, snapshot);
+    onValidated('synthesis', model);
     onStage('synthesis', index + 1, batches.length);
   }
   const readingIssues = [];
@@ -114,7 +118,7 @@ export async function reviewRequirements(output, businessModel, snapshot, { run,
   return result;
 }
 
-export async function planAndReview(output, businessModel, snapshot, decisions, { run, cwd, signal, onStage = () => {}, idPrefix = 'PLAN-' }) {
+export async function planAndReview(output, businessModel, snapshot, decisions, { run, cwd, signal, onStage = () => {}, onValidated = () => {}, idPrefix = 'PLAN-' }) {
   const analysis = validateAnalysisProposal(output, snapshot), draft = { ...snapshot, backlog: projectAnalysisBacklog(snapshot, analysis) };
   const included = draft.backlog.businessRequirements.filter(req => req.scopeDisposition === 'included');
   if (!included.length) fail('AI_NO_EXECUTABLE_REQUIREMENTS');
@@ -135,7 +139,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     const delta = response.output;
     // Check the delta vocabulary before merging; the full structural contract
     // is checked below against the complete projected requirement scope.
-    const { validateAiValue } = await import('./ai-contract.mjs'); validateAiValue(delta, DECOMPOSITION_SCHEMA);
+    const { validatePrivateAiValue } = await import('./ai-contract.mjs'); validatePrivateAiValue(delta, DECOMPOSITION_SCHEMA);
     for (const [field, items] of [['workItems', delta.workItems], ['acceptanceCriteria', delta.acceptanceCriteria], ['traceLinks', delta.traceLinks]]) {
       for (const item of items) {
         const old = plan[field].find(value => value.id === item.id), itemReqs = item.requirementIds ?? [item.requirementId];
@@ -174,6 +178,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     if (covered.length) epic.requirementIds = covered;
   }
   validateDecompositionProposal(plan, draft);
+  onValidated('decomposition', plan);
   const reviewBatches = groups(plan.workItems.filter(item => item.workItemType !== 'epic'), 8);
   for (const [index, children] of reviewBatches.entries()) {
     onStage('review-plan', index, reviewBatches.length);
@@ -182,6 +187,7 @@ export async function planAndReview(output, businessModel, snapshot, decisions, 
     const response = await run({ request: request('review-plan', { ...reviewContext(snapshot, requirements, plan.traceLinks.filter(link => reqIds.has(link.requirementId))), businessModel, requirements, sources: evidence(snapshot, requirements), workItems: plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)), acceptanceCriteria: plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)), traceLinks: plan.traceLinks.filter(link => reqIds.has(link.requirementId)), existingIssues: plan.issues, reviewContract: 'Return issues, workItemUpdates, acceptanceUpdates and traceUpdates. These are updates of known current-batch IDs only, never new entries or implicit removals. Preserve the complete original requirement set of shared epics and ACs; never reduce it to the current review subset. Preserve work types, parent relationships and required original evidence. Only repair concrete supported defects; missing policy stays a blocking question. Do not manufacture completed tests or human approval.' }, snapshot), schema: PLAN_REVIEW_SCHEMA, cwd, signal });
     const allowed = { workItems: new Set(plan.workItems.filter(item => workIds.has(item.id) || children.some(child => child.parentEpicId === item.id)).map(item => item.id)), acceptanceCriteria: new Set(plan.acceptanceCriteria.filter(ac => workIds.has(ac.workItemId)).map(ac => ac.id)), traceLinks: new Set(plan.traceLinks.filter(link => workIds.has(link.workItemId)).map(link => link.id)) };
     plan = validatePlanReview(response.output, plan, draft, allowed); validateDecompositionProposal(plan, draft);
+    onValidated('review-plan', plan);
     onStage('review-plan', index + 1, reviewBatches.length);
   }
   const validatedPlan = validateDecompositionProposal(plan, draft), taskBacklog = { ...draft.backlog, workItems: plan.workItems, acceptanceCriteria: plan.acceptanceCriteria, traceLinks: plan.traceLinks };

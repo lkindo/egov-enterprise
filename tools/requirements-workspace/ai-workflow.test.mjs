@@ -1,3 +1,4 @@
+import { validatePrivateBacklog } from './private-validation.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs';
@@ -13,7 +14,7 @@ import { buildAiRequest, validateAnalysisBatchProposal, validateAnalysisProposal
 
 async function fixture(t, aiRunner, artifactExtractor) {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-ai-workflow-'));
-  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { if (!validateBacklogPack(pack).valid) throw new Error('INVALID'); }, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { if (!validatePrivateBacklog(pack).valid) throw new Error('INVALID'); }, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, root: process.cwd(), contextProvider: async () => context, aiRunner, artifactExtractor });
   t.after(async () => { await engine.close?.(); store.close(); rmSync(workspace, { recursive: true, force: true }); });
   const act = (action, payload) => engine.action(store.read().revision, action, payload);
@@ -231,7 +232,7 @@ test('one bounded correction can repair structural AI links without storing the 
   assert.doesNotMatch(app.store.readArchive(state.ai.current.resultRef), /UNKNOWN/);
 });
 
-test('correction is bounded and sensitive or malformed output is never sent back for correction', async t => {
+test('correction is bounded; schema-valid sensitive output completes as a private advisory', async t => {
   for (const sensitive of [false, true]) {
     let count = 0;
     const app = await fixture(t, async ({ request }) => {
@@ -243,11 +244,26 @@ test('correction is bounded and sensitive or malformed output is never sent back
     });
     await app.start(); await app.engine.waitForAi();
     const state = await app.engine.state();
-    assert.equal(state.ai.current.status, 'failed');
+    assert.equal(state.ai.current.status, sensitive ? 'ready' : 'failed');
     assert.equal(count, sensitive ? 1 : 2);
-    assert.equal(state.ai.current.resultRef, undefined);
+    assert.equal(Boolean(state.ai.current.resultRef), sensitive);
+    if (sensitive) { assert.ok(state.ai.current.sensitivityWarnings.length); assert.doesNotMatch(JSON.stringify(state.ai.current.sensitivityWarnings), /person@/); }
     assert.equal(state.backlog.businessRequirements.length, 0);
   }
+});
+
+test('discarded invalid citation output cannot leave a false sensitive notice after correction', async t => {
+  let calls = 0;
+  const app = await fixture(t, async ({ request }) => {
+    const output = analysis(request, { question: false });
+    if (++calls === 1) { output.requirements[0].description = 'person@example.invalid'; output.requirements[0].citations[0].quote = '원문에 없는 가짜 인용문'; }
+    return envelope(output);
+  });
+  await app.start(); await app.engine.waitForAi();
+  const state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready'); assert.equal(calls, 2);
+  assert.deepEqual(state.ai.current.sensitivityWarnings, []);
+  assert.deepEqual(state.sensitivityWarnings, []);
 });
 
 test('cancellation stops only the current AI operation and late success cannot become an applicable proposal', async t => {
@@ -420,7 +436,7 @@ test('reopening persisted running AI and extraction jobs marks them interrupted 
   });
   await app.engine.close(); app.store.close();
   let calls = 0;
-  const store = createRequirementsStore({ workspace: app.store.directory, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { if (!validateBacklogPack(pack).valid) throw Error('INVALID'); }, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace: app.store.directory, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { if (!validatePrivateBacklog(pack).valid) throw Error('INVALID'); }, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, root: process.cwd(), contextProvider: async () => context, aiRunner: async () => { calls++; throw Error('MUST-NOT-REPLAY'); }, artifactExtractor: async () => { calls++; throw Error('MUST-NOT-REPLAY'); } });
   try {
     const state = await engine.state();

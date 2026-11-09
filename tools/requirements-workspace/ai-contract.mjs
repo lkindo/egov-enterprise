@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto';
 import { buildStagePrompt, PROMPT_VERSION } from './ai-prompts.mjs';
+import { PRIVATE_ANALYSIS_VALIDATION } from './privacy-warnings.mjs';
 import { REQUIREMENT_TYPES, SOLUTION_DISPOSITIONS, WORK_ITEM_TYPES, PRIORITIES, VERIFICATION_METHODS, TARGET_KINDS, DECISION_CARD_AXES, ARCHETYPE_CATALOG, scanBacklogForPiiAndSecrets, validateBacklogPack, validateDevelopmentReadiness, matchRequirementsToContext } from '../../scripts/export-deliverables-workspace.mjs';
 
 const invalid = (kind = 'schema', path = '$', requirementId) => { throw Object.assign(new Error('AI_OUTPUT_INVALID'), { code: 'AI_OUTPUT_INVALID', details: [{ kind, path, ...(requirementId ? { requirementId } : {}) }] }); };
@@ -49,13 +50,15 @@ function check(value, schema, depth = 0, path = '$') {
   }
   if (schema.required.some(key => !Object.hasOwn(value, key))) invalid();
 }
-export function validateAiValue(value, schema, { maxBytes = 1024 ** 2 } = {}) {
+export function validateAiValue(value, schema, { maxBytes = 1024 ** 2, sensitiveData = 'error' } = {}) {
+  if (!['error', 'warning'].includes(sensitiveData)) throw new TypeError('Sensitivity validation policy');
   if (!Number.isSafeInteger(maxBytes) || maxBytes < 1 || maxBytes > 8 * 1024 ** 2) throw new TypeError('AI validation size configuration');
   check(value, schema);
   if (Buffer.byteLength(JSON.stringify(value)) > maxBytes) invalid('output-size');
-  if (scanBacklogForPiiAndSecrets({ project: value }).length) invalid('sensitive-output');
+  if (sensitiveData === 'error' && scanBacklogForPiiAndSecrets({ project: value }).length) invalid('sensitive-output');
 }
-const safe = validateAiValue;
+export const validatePrivateAiValue = (value, schema, options = {}) => validateAiValue(value, schema, { ...options, ...PRIVATE_ANALYSIS_VALIDATION });
+const safe = validatePrivateAiValue;
 const unique = items => { const ids = items.map(item => item.id); if (new Set(ids).size !== ids.length) invalid('duplicate-id'); return new Set(ids); };
 const clauseMap = snapshot => new Map(snapshot.backlog.sources.flatMap(source => (source.clauses ?? []).map(clause => [`${source.id}/${clause.id}`, clause])));
 function citations(items, clauses) {
@@ -221,7 +224,7 @@ export function validateAnalysisProposal(value, snapshot) {
     // judgments approve it. The live judgments are untouched until confirmation.
     for (const req of draft.businessRequirements) req.acceptanceDisposition = 'pending';
     for (const ac of draft.acceptanceCriteria) ac.acceptanceDisposition = 'pending';
-    if (!validateBacklogPack(draft, snapshot.metadata.context).valid) invalid('analysis-backlog-structure', 'requirements');
+    if (!validateBacklogPack(draft, snapshot.metadata.context, PRIVATE_ANALYSIS_VALIDATION).valid) invalid('analysis-backlog-structure', 'requirements');
   }
   return result;
 }
@@ -275,13 +278,13 @@ export function validateDecompositionProposal(value, snapshot) {
   pack.workItems = value.workItems;
   pack.acceptanceCriteria = value.acceptanceCriteria.map(ac => ({ ...ac, acceptanceDisposition: 'pending' }));
   pack.traceLinks = value.traceLinks;
-  if (!validateBacklogPack(pack, snapshot.metadata.context).valid) invalid('backlog-structure', 'workItems');
+  if (!validateBacklogPack(pack, snapshot.metadata.context, PRIVATE_ANALYSIS_VALIDATION).valid) invalid('backlog-structure', 'workItems');
   for (const reqId of included) {
     const children = value.workItems.filter(item => item.workItemType !== 'epic' && item.requirementIds.includes(reqId));
     if (!children.length) invalid();
     for (const child of children) if (!['allow', 'forbid'].every(polarity => value.acceptanceCriteria.some(ac => ac.workItemId === child.id && ac.requirementIds.includes(reqId) && ac.polarity === polarity))) invalid();
   }
-  if (!value.issues.some(issue => issue.severity === 'blocking') && !validateDevelopmentReadiness(pack, snapshot.metadata.context).valid) invalid('development-readiness', 'workItems');
+  if (!value.issues.some(issue => issue.severity === 'blocking') && !validateDevelopmentReadiness(pack, snapshot.metadata.context, PRIVATE_ANALYSIS_VALIDATION).valid) invalid('development-readiness', 'workItems');
   return { ...structuredClone(value), acceptanceCriteria: pack.acceptanceCriteria, retirements, changes: groups.flatMap(([entity, field, keys]) => describeChanges(snapshot.backlog[field], value[field], entity, keys).map(change => ({ ...change, ...(change.action === 'removed' ? { reason: retirements.find(item => item.entity === entity && item.id === change.id).reason } : {}) }))) };
 }
 function describeChanges(previous, next, entity, keys) {
@@ -347,13 +350,12 @@ export function buildAiRequest(snapshot, phase, decisions = [], { sources = snap
   if (phase === 'decomposition') request.instructions += ' Plan from the confirmed requirements. Sources contain their linked clauses and explicit policy decisions, not unrelated background. A clause marked citationEvidence contains only exact previously reviewed quotations, separated by newlines; those are evidence excerpts, not a complete source paragraph. Quote a single supplied verbatim excerpt, never invent text across omitted sections. Human-edited requirements fall back to their linked original clauses.';
   if (batch) request.instructions += ' This is a sequential batch of ONE analysis. Cover exactly the clauses under data.sources in coverage, not previous batches or policySources. Return ONLY new or changed requirements and new issues for this batch; the application retains unchanged previousAnalysis requirements, citations and unresolved issues automatically. Reuse an existing requirement ID when meaning matches. To link a current clause to an existing requirement, return the updated requirement with its new exact citation. Never reprint all unchanged requirements or issues. Keep descriptions concrete and coverage rationales concise. Add only requirements grounded in this batch or previous citations. Existing human previousRequirements must all be represented in the accumulated result; propose explicit scopes instead of dropping them. Do not replace or downgrade an earlier issue. policySources contains explicit human answers applicable to every batch. Previous citations are verified verbatim evidence; do not invent text for a previous source. Other document parts may appear in attached PDFs but are not this batch coverage.';
   if (batch) request.instructions += ' New requirement IDs MUST start with analysisBatch.idPrefix. An existing ID may be changed ONLY when explicitly listed in updatedRequirementIds; include only changed existing IDs that actually appear in this delta. Never reuse an old ID for unrelated meaning. Human requirements are already seeded in previousAnalysis, so unchanged human requirements do not need to be returned. Observe analysisBatch.capacity including existing citation counts; earlier verified citations cannot be removed. If a genuinely new fact cannot fit the remaining capacity, preserve it as deferred coverage with a blocking decision issue rather than silently dropping it, inventing a split, or exceeding capacity. When an included requirement cites a processed source, that source needs at least one included/merged clause linked by a verified citation. Extra policySources are reference-only for this call and receive their own coverage when they appear under data.sources.';
-  if (scanBacklogForPiiAndSecrets({ project: request.data }).length) throw Object.assign(new Error('SENSITIVE_INPUT'), { code: 'SENSITIVE_INPUT' });
   if (Buffer.byteLength(JSON.stringify(request)) > 768 * 1024) capacity(phase === 'decomposition' ? 'AI_DECOMPOSITION_INPUT_TOO_LARGE' : 'AI_INPUT_TOO_LARGE');
   return request;
 }
 
 export function buildCorrectionRequest(request, output, details = []) {
-  // Never retransmit malformed/sensitive output. Only a schema-valid draft can
+  // Never retransmit malformed output. Only a schema-valid private draft can
   // be returned as untrusted data for one structural correction.
   safe(output, request.phase === 'analysis' ? request.data.analysisBatch ? BATCH_ANALYSIS_SCHEMA : ANALYSIS_SCHEMA : DECOMPOSITION_SCHEMA);
   const next = structuredClone(request);

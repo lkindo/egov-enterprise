@@ -9,10 +9,11 @@ import { createRequirementsEngine, initialRequirementsMetadata, validateRequirem
 import { context, source, analysis, decomposition, envelope } from './test-fixtures/ai.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import { readDocument } from './document-reader.mjs';
+import { validatePrivateBacklog } from './private-validation.mjs';
 
 async function setup(t, runner, documentReader) {
   const workspace = mkdtempSync(join(tmpdir(), 'synthetic-full-ai-'));
-  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validateBacklogPack(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validatePrivateBacklog(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, root: process.cwd(), contextProvider: async () => context, aiRunner: runner, documentReader });
   t.after(async () => { await engine.close(); store.close(); rmSync(workspace, { recursive: true, force: true }); });
   const act = (name, payload) => engine.action(store.read().revision, name, payload);
@@ -31,6 +32,33 @@ function reply(request, { blocking = false } = {}) {
     default: throw Error(`Unexpected phase ${request.phase}`);
   }
 }
+
+test('patterns in original evidence and six-stage results remain private advisories through final task confirmation', async t => {
+  const phases = [];
+  const app = await setup(t, async ({ request }) => {
+    phases.push(request.phase);
+    const result = reply(request);
+    if (result.summary) result.summary += ' 연락처 010-1234-5678';
+    if (result.requirements) result.requirements[0].description += ' 연락처 010-1234-5678';
+    if (result.workItems) result.workItems[0].description = '연락처 010-1234-5678';
+    return envelope(result);
+  });
+  const current = app.store.read().backlog.sources[0];
+  await app.act('source.save', { ...current, summary: '원문 담당 연락처 010-1234-5678' });
+  await app.start(); await app.engine.waitForAi();
+  let state = await app.engine.state();
+  assert.equal(state.ai.current.status, 'ready', state.ai.current.errorCode);
+  assert.equal(phases.length, 6);
+  assert.ok(state.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+  assert.doesNotMatch(JSON.stringify(state.sensitivityWarnings), /010-1234/);
+  assert.equal(state.metadata.baselines.length, 0);
+  await app.act('ai.confirm', { jobId: state.ai.current.id });
+  state = await app.engine.state();
+  assert.equal(state.baselineCurrent, true);
+  assert.equal(state.metadata.exports.at(-1).kind, 'task');
+  assert.equal(validateBacklogPack(state.backlog).valid, false, 'repository export policy remains strict');
+  assert.ok(app.engine.artifact(state.metadata.exports.at(-1).id).content);
+});
 
 test('one full AI run produces a document model, reviewed requirements, reviewed work and task preview without fabricating human confirmation', async t => {
   const phases = [], prompts = [];
@@ -179,16 +207,21 @@ test('an explicitly restarted unchanged pipeline reuses validated checkpoints, a
   const app = await setup(t, async ({ request }) => {
     phases.push(request.phase);
     if (request.phase === 'review-requirements' && rejectReview) { rejectReview = false; throw Object.assign(new Error('AI_CLI_FAILED'), { code: 'AI_CLI_FAILED' }); }
-    return envelope(reply(request));
+    const result = reply(request);
+    if (result.summary) result.summary += ' 연락처 010-1234-5678';
+    if (result.requirements) result.requirements[0].description += ' 연락처 010-1234-5678';
+    return envelope(result);
   });
   await app.start(); await app.engine.waitForAi();
   let state = await app.engine.state(); assert.equal(state.ai.current.status, 'failed');
+  assert.deepEqual(state.sensitivityWarnings, [], 'failed unpublished results do not pollute the workspace advisory');
   assert.ok(state.ai.current.checkpoints.analysis); assert.ok(state.ai.current.checkpoints.discovery);
   phases.length = 0;
   await app.start(); await app.engine.waitForAi(); state = await app.engine.state();
   assert.equal(state.ai.current.status, 'ready');
   assert.deepEqual(phases, ['review-requirements', 'decomposition', 'review-plan']);
   assert.ok(state.ai.current.reusedStages.includes('analysis'));
+  for (const stage of ['reading', 'synthesis', 'analysis']) assert.ok(state.ai.current.sensitivityWarnings.some(warning => warning.stage === stage && warning.kind === 'mobile-phone'), `reused ${stage} warning must be retained in this job`);
   await app.act('source.save', { ...source, clauses: [{ ...source.clauses[0], text: `${source.clauses[0].text} 빈 목록은 빈 결과로 안내한다.` }] });
   phases.length = 0;
   await app.start(); await app.engine.waitForAi(); state = await app.engine.state();

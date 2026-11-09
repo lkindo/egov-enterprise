@@ -1,7 +1,8 @@
 import { createHash, randomUUID } from 'node:crypto';
 import { mkdirSync, mkdtempSync, rmSync } from 'node:fs';
 import { join, extname } from 'node:path';
-import { SOURCE_TYPES, SOURCE_CLASSIFICATIONS, scanBacklogForPiiAndSecrets } from '../../scripts/export-deliverables-workspace.mjs';
+import { SOURCE_TYPES, SOURCE_CLASSIFICATIONS } from '../../scripts/export-deliverables-workspace.mjs';
+import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings, PRIVATE_ANALYSIS_VALIDATION } from './privacy-warnings.mjs';
 import { ARTIFACT_EXTENSIONS, MAX_ARTIFACT_BYTES, extractArtifact } from './artifact-extractor.mjs';
 import { assertExternalWorkspace } from './store.mjs';
 import { readDocument, validateReadingRecord } from './document-reader.mjs';
@@ -13,7 +14,10 @@ const sha = bytes => createHash('sha256').update(bytes).digest('hex');
 const canonical = value => Array.isArray(value) ? value.map(canonical) : value && typeof value === 'object' ? Object.fromEntries(Object.keys(value).sort().map(key => [key, canonical(value[key])])) : value;
 export const sourceEvidenceDigest = source => sha(JSON.stringify((source.clauses ?? []).map(clause => ({ id: clause.id, text: clause.text, locator: clause.locator }))));
 export const sourceStateDigest = source => sha(JSON.stringify(canonical(source)));
-export const documentReadingProfile = (sourceType, classification) => sha(JSON.stringify({ sourceType, classification, promptVersion: PROMPT_VERSION, model: AI_MODEL, effort: AI_EFFORT }));
+export const documentReadingProfile = (sourceType, classification, promptVersion = PROMPT_VERSION) => sha(JSON.stringify({ sourceType, classification, promptVersion, model: AI_MODEL, effort: AI_EFFORT }));
+// The previous prompt was stricter about sensitivity. Its verified evidence is
+// reusable after this advisory-only policy change; no other version is accepted.
+export const isReusableDocumentReading = (job, source) => Boolean(source && job.status === 'ready' && job.method === 'ai-document' && [PROMPT_VERSION, '2026-11-07.1'].includes(job.promptVersion) && job.sha256 === source.fileSha256 && job.readingProfile === documentReadingProfile(source.sourceType, source.classification, job.promptVersion) && job.sourceDigest === sourceEvidenceDigest(source));
 const recoverableOriginalErrors = new Set(['FILE_TYPE_UNSUPPORTED', 'FILE_ENCRYPTED', 'FILE_ENCODING_INVALID', 'FILE_EXTRACTION_FAILED', 'FILE_DOCUMENT_CAPACITY', 'FILE_TEXT_TOO_LARGE', 'FILE_NO_TEXT', 'FILE_TIMEOUT', 'AI_DOCUMENT_UNREADABLE', 'AI_TIMEOUT']);
 function evidenceRetention(snapshot, source) {
   if (!source) return { preserve: false, appendLegacy: false };
@@ -33,7 +37,8 @@ export function validateImportMetadata(jobs) {
   if (!Array.isArray(jobs)) fail('FILE_METADATA_INVALID');
   const ids = new Set();
   for (const job of jobs) {
-    exact(job, ['requestId', 'requestDigest', 'filename', 'status', 'startedAt', 'completedAt', 'sourceId', 'sha256', 'originalRef', 'method', 'format', 'warningCodes', 'needsReview', 'errorCode', 'duplicateOf', 'readWithAI', 'promptVersion', 'readingRef', 'readingProgress', 'keptExistingClauses', 'sourceDigest', 'previousSourceRef', 'readingProfile', 'detectedTypes', 'sourceStateDigest']);
+    exact(job, ['requestId', 'requestDigest', 'filename', 'status', 'startedAt', 'completedAt', 'sourceId', 'sha256', 'originalRef', 'method', 'format', 'warningCodes', 'needsReview', 'errorCode', 'duplicateOf', 'readWithAI', 'promptVersion', 'readingRef', 'readingProgress', 'keptExistingClauses', 'sourceDigest', 'previousSourceRef', 'readingProfile', 'detectedTypes', 'sourceStateDigest', 'sensitivityWarnings']);
+    try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('FILE_METADATA_INVALID'); }
     if (!uuid(job.requestId) || ids.has(job.requestId) || !['extracting', 'ready', 'failed', 'cancelled', 'interrupted', 'stale'].includes(job.status) || typeof job.filename !== 'string' || !job.filename.trim() || job.filename.length > 200 || /[\u0000-\u001f/\\:]/.test(job.filename) || !Number.isFinite(Date.parse(job.startedAt))) fail('FILE_METADATA_INVALID');
     ids.add(job.requestId);
     if (!/^[a-f0-9]{64}$/.test(job.requestDigest ?? '') || job.sha256 !== undefined && !/^[a-f0-9]{64}$/.test(job.sha256)) fail('FILE_METADATA_INVALID');
@@ -56,6 +61,13 @@ export function validateImportMetadata(jobs) {
 }
 export function createArtifactImports({ store, commit, extractor = extractArtifact, documentReader = readDocument, aiRunner = createCliRunner(), now = () => new Date().toISOString() }) {
   let active, closed = false, reused;
+  function verifiedReading(job) {
+    try { const record = validateReadingRecord(JSON.parse(store.readArchive(job.readingRef)), job.sha256); originalFile(job); return record.promptVersion === job.promptVersion; }
+    catch (error) {
+      if (error instanceof SyntaxError || ['AI_DOCUMENT_OUTPUT_INVALID', 'FILE_ARCHIVE_INVALID', 'REQUIREMENTS_ARCHIVE_NOT_FOUND', 'REQUIREMENTS_ARCHIVE_INTEGRITY'].includes(error.code)) return false;
+      throw error;
+    }
+  }
   function mark(id, mutate) { const snapshot = store.read(); commit(snapshot.revision, next => { const job = next.metadata.imports?.find(job => job.requestId === id); if (job) mutate(job, next); }); }
   function archiveOriginal(filename, bytes) {
     const chunks = [];
@@ -63,14 +75,16 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
     return store.writeArchive('source', JSON.stringify({ version: 1, filename, bytes: bytes.length, sha256: sha(bytes), chunks }));
   }
   function sourceFile(sourceId) {
-    const job = store.read().metadata.imports?.find(job => job.sourceId === sourceId && job.status === 'ready');
+    const job = store.read().metadata.imports?.findLast(job => job.sourceId === sourceId && job.status === 'ready');
     return originalFile(job);
   }
   function originalFile(job) {
     if (!job?.originalRef) fail('SOURCE_FILE_NOT_FOUND');
+    const originalJob = job.duplicateOf ? store.read().metadata.imports?.find(item => !item.duplicateOf && item.originalRef?.id === job.originalRef.id && item.sha256 === job.sha256) : job;
+    if (!originalJob) fail('FILE_ARCHIVE_INVALID');
     const manifest = JSON.parse(store.readArchive(job.originalRef));
     exact(manifest, ['version', 'filename', 'bytes', 'sha256', 'chunks']);
-    if (manifest.version !== 1 || manifest.filename !== job.filename || manifest.sha256 !== job.sha256 || !Number.isSafeInteger(manifest.bytes) || manifest.bytes < 1 || manifest.bytes > MAX_ARTIFACT_BYTES || !Array.isArray(manifest.chunks) || manifest.chunks.length > 8) fail('FILE_ARCHIVE_INVALID');
+    if (manifest.version !== 1 || manifest.filename !== originalJob.filename || manifest.sha256 !== job.sha256 || !Number.isSafeInteger(manifest.bytes) || manifest.bytes < 1 || manifest.bytes > MAX_ARTIFACT_BYTES || !Array.isArray(manifest.chunks) || manifest.chunks.length > 8) fail('FILE_ARCHIVE_INVALID');
     const chunks = []; let size = 0;
     for (const ref of manifest.chunks) {
       reference(ref); const encoded = store.readArchive(ref);
@@ -87,19 +101,18 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
     const snapshot = store.read();
     if (snapshot.revision !== revision) fail('WORKSPACE_REVISION_CONFLICT');
     if (name === 'source.reingest') {
-      exact(payload, ['sourceId', 'requestId', 'consent', 'model', 'redacted']);
+      exact(payload, ['sourceId', 'requestId', 'consent', 'model', 'redacted', 'sensitivityAcknowledged']);
       if (payload.consent !== true || payload.model !== AI_MODEL) fail('FILE_AI_CONSENT_REQUIRED');
-      if (payload.redacted !== true) fail('FILE_REDACTION_REQUIRED');
+      if (payload.redacted !== true && payload.sensitivityAcknowledged !== true) fail('FILE_REDACTION_REQUIRED');
       const source = snapshot.backlog.sources.find(source => source.id === payload.sourceId); if (!source) fail('SOURCE_FILE_NOT_FOUND');
       if (!uuid(payload.requestId)) fail('FILE_METADATA_INVALID');
-      const cached = snapshot.metadata.imports?.findLast(job => job.status === 'ready' && job.sourceId === source.id && job.method === 'ai-document' && job.sha256 === source.fileSha256 && job.promptVersion === PROMPT_VERSION && job.readingProfile === documentReadingProfile(source.sourceType, source.classification) && job.sourceDigest === sourceEvidenceDigest(source));
+      const cached = snapshot.metadata.imports?.findLast(job => job.sourceId === source.id && isReusableDocumentReading(job, source) && verifiedReading(job));
       if (cached) {
-        try { validateReadingRecord(JSON.parse(store.readArchive(cached.readingRef)), cached.sha256); reused = { requestId: payload.requestId, sourceId: source.id, jobId: cached.requestId }; return; }
-        catch (error) { if (!(error instanceof SyntaxError) && !['AI_DOCUMENT_OUTPUT_INVALID', 'REQUIREMENTS_ARCHIVE_NOT_FOUND', 'REQUIREMENTS_ARCHIVE_INTEGRITY'].includes(error.code)) throw error; }
+        reused = { requestId: payload.requestId, sourceId: source.id, jobId: cached.requestId }; return;
       }
       const original = sourceFile(source.id);
       if (source.fileSha256 !== original.sha256) fail('FILE_SOURCE_CHANGED');
-      return action(revision, 'source.ingest', { requestId: payload.requestId, filename: original.filename, base64: original.base64, classification: source.classification, sourceType: source.sourceType, redacted: true, readWithAI: true, consent: true, model: AI_MODEL });
+      return action(revision, 'source.ingest', { requestId: payload.requestId, filename: original.filename, base64: original.base64, classification: source.classification, sourceType: source.sourceType, sensitivityAcknowledged: true, readWithAI: true, consent: true, model: AI_MODEL });
     }
     if (name === 'source.ingest.cancel') {
       exact(payload, ['requestId']);
@@ -107,12 +120,12 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
       active.controller.abort(); mark(active.id, job => { job.status = 'cancelled'; job.completedAt = now(); }); return;
     }
     if (name !== 'source.ingest') fail('ACTION_UNSUPPORTED');
-    exact(payload, ['requestId', 'filename', 'base64', 'classification', 'sourceType', 'redacted', 'readWithAI', 'consent', 'model']);
+    exact(payload, ['requestId', 'filename', 'base64', 'classification', 'sourceType', 'redacted', 'sensitivityAcknowledged', 'readWithAI', 'consent', 'model']);
     if (closed) fail('FILE_CLOSED');
     if (payload.readWithAI !== undefined && typeof payload.readWithAI !== 'boolean') fail('FILE_METADATA_INVALID');
     const withAI = payload.readWithAI === true;
     if (withAI && (payload.consent !== true || payload.model !== AI_MODEL)) fail('FILE_AI_CONSENT_REQUIRED');
-    if (payload.redacted !== true) fail('FILE_REDACTION_REQUIRED');
+    if (payload.redacted !== true && payload.sensitivityAcknowledged !== true) fail('FILE_REDACTION_REQUIRED');
     if (!uuid(payload.requestId) || typeof payload.filename !== 'string' || !payload.filename.trim() || payload.filename.length > 200 || payload.filename.trim() !== payload.filename || /[\u0000-\u001f/\\:]/.test(payload.filename) || (!withAI && !ARTIFACT_EXTENSIONS.includes(extname(payload.filename).slice(1).toLowerCase())) || /\.(exe|dll|com|bat|cmd|ps1|sh|msi|scr|jar)$/i.test(payload.filename) || !SOURCE_TYPES.includes(payload.sourceType) || !SOURCE_CLASSIFICATIONS.includes(payload.classification)) fail('FILE_METADATA_INVALID');
     if (typeof payload.base64 !== 'string' || !payload.base64.length || payload.base64.length > Math.ceil(MAX_ARTIFACT_BYTES / 3) * 4 || !/^[A-Za-z0-9+/]*={0,2}$/.test(payload.base64) || payload.base64.length % 4) fail('FILE_ENCODING_INVALID');
     const bytes = Buffer.from(payload.base64, 'base64');
@@ -125,18 +138,17 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
       return;
     }
     if (active) fail('FILE_BUSY');
-    if (scanBacklogForPiiAndSecrets({ project: { filename: payload.filename } }).length) fail('SENSITIVE_INPUT');
-    const duplicate = snapshot.metadata.imports?.find(job => job.status === 'ready' && job.sha256 === sha(bytes) && (!withAI || job.method === 'ai-document' && job.promptVersion === PROMPT_VERSION && job.readingProfile === documentReadingProfile(payload.sourceType, payload.classification)) && snapshot.backlog.sources.some(source => source.id === job.sourceId && source.fileSha256 === job.sha256 && source.classification === payload.classification && source.sourceType === payload.sourceType && (!withAI || job.sourceDigest === sourceEvidenceDigest(source))));
+    const duplicate = snapshot.metadata.imports?.findLast(job => job.status === 'ready' && job.sha256 === sha(bytes) && snapshot.backlog.sources.some(source => source.id === job.sourceId && source.fileSha256 === job.sha256 && source.classification === payload.classification && source.sourceType === payload.sourceType && (!withAI || isReusableDocumentReading(job, source) && verifiedReading(job))));
     if (duplicate) {
       commit(revision, next => {
-        next.metadata.imports.push({ requestId: payload.requestId, requestDigest, filename: payload.filename, status: 'ready', startedAt: now(), completedAt: now(), sourceId: duplicate.sourceId, sha256: duplicate.sha256, originalRef: duplicate.originalRef, method: duplicate.method, format: duplicate.format, warningCodes: duplicate.warningCodes, needsReview: duplicate.needsReview, duplicateOf: duplicate.requestId, ...(duplicate.readingRef ? { readingRef: duplicate.readingRef, readWithAI: true, promptVersion: duplicate.promptVersion, keptExistingClauses: duplicate.keptExistingClauses, sourceDigest: duplicate.sourceDigest, readingProfile: duplicate.readingProfile, detectedTypes: duplicate.detectedTypes } : {}) });
+        next.metadata.imports.push({ requestId: payload.requestId, requestDigest, filename: payload.filename, status: 'ready', startedAt: now(), completedAt: now(), sourceId: duplicate.sourceId, sha256: duplicate.sha256, originalRef: duplicate.originalRef, method: duplicate.method, format: duplicate.format, warningCodes: duplicate.warningCodes, needsReview: duplicate.needsReview, sensitivityWarnings: mergeSensitivityWarnings(duplicate.sensitivityWarnings, collectSensitivityWarnings({ filename: payload.filename })), duplicateOf: duplicate.requestId, ...(duplicate.readingRef ? { readingRef: duplicate.readingRef, readWithAI: true, promptVersion: duplicate.promptVersion, keptExistingClauses: duplicate.keptExistingClauses, sourceDigest: duplicate.sourceDigest, readingProfile: duplicate.readingProfile, detectedTypes: duplicate.detectedTypes } : {}) });
       });
       return;
     }
     const project = JSON.stringify(snapshot.backlog.project);
     const initialSource = withAI ? snapshot.backlog.sources.find(source => source.fileSha256 === sha(bytes) && source.classification === payload.classification && source.sourceType === payload.sourceType) : null;
     const initialSourceDigest = initialSource ? sourceStateDigest(initialSource) : null;
-    const job = { requestId: payload.requestId, requestDigest, sha256: sha(bytes), filename: payload.filename, status: 'extracting', startedAt: now(), ...(withAI ? { readWithAI: true, promptVersion: PROMPT_VERSION, readingProgress: { stage: 'preparing', completed: 0, total: 1 } } : {}) };
+    const job = { requestId: payload.requestId, requestDigest, sha256: sha(bytes), filename: payload.filename, status: 'extracting', startedAt: now(), sensitivityWarnings: collectSensitivityWarnings({ filename: payload.filename }), ...(withAI ? { readWithAI: true, promptVersion: PROMPT_VERSION, readingProgress: { stage: 'preparing', completed: 0, total: 1 } } : {}) };
     commit(revision, next => { next.metadata.imports ??= []; next.metadata.imports.push(job); });
     const controller = new AbortController(), operation = { id: job.requestId, controller }; active = operation;
     operation.promise = Promise.resolve().then(async () => {
@@ -148,18 +160,19 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
           try { prepared = await prepareDocumentInputs({ filename: payload.filename, bytes }, { cwd, signal: controller.signal }); }
           catch (error) {
             // An unreadable original remains recoverable after the user's raw
-            // document attestation. Detectable sensitive content is never archived.
+            // document acknowledgement. Sensitive patterns remain private advisories.
             if (!controller.signal.aborted && !closed && recoverableOriginalErrors.has(error.code)) {
               const originalRef = archiveOriginal(payload.filename, bytes); mark(job.requestId, item => { if (item.status === 'extracting') item.originalRef = originalRef; });
             }
             throw error;
           }
           if (controller.signal.aborted || closed) return;
+          mark(job.requestId, item => { if (item.status === 'extracting') item.sensitivityWarnings = mergeSensitivityWarnings(item.sensitivityWarnings, prepared.sensitivityWarnings); });
         }
-        const result = withAI ? await documentReader({ filename: payload.filename, bytes }, { cwd, sourceType: payload.sourceType, signal: controller.signal, execute: aiRunner, prepare: async () => prepared, onProgress(progress) { if (!controller.signal.aborted && !closed) mark(job.requestId, item => { if (item.status === 'extracting') item.readingProgress = progress; }); } }) : await extractor({ filename: payload.filename, bytes }, { cwd, ocr: true, signal: controller.signal });
+        const result = withAI ? await documentReader({ filename: payload.filename, bytes }, { cwd, sourceType: payload.sourceType, signal: controller.signal, execute: aiRunner, prepare: async () => prepared, onProgress(progress) { if (!controller.signal.aborted && !closed) mark(job.requestId, item => { if (item.status === 'extracting') item.readingProgress = progress; }); } }) : await extractor({ filename: payload.filename, bytes }, { cwd, ocr: true, signal: controller.signal, ...PRIVATE_ANALYSIS_VALIDATION });
         if (controller.signal.aborted || closed) return;
         if (result.sha256 !== sha(bytes) || result.filename !== payload.filename || !Array.isArray(result.segments) || !result.segments.length || result.segments.some(segment => typeof segment.text !== 'string' || !segment.text.trim() || segment.text.length > 1800 || typeof segment.locator !== 'string' || !segment.locator.trim())) fail('FILE_EXTRACTION_FAILED');
-        if (scanBacklogForPiiAndSecrets({ project: result }).length) fail('SENSITIVE_INPUT');
+        const sensitivityWarnings = mergeSensitivityWarnings(result.sensitivityWarnings, collectSensitivityWarnings({ filename: payload.filename, summary: result.summary, units: result.segments }));
         const live = store.read();
         if (JSON.stringify(live.backlog.project) !== project) { mark(job.requestId, item => { item.status = 'stale'; item.completedAt = now(); }); return; }
         const liveSource = withAI ? live.backlog.sources.find(source => source.fileSha256 === sha(bytes) && source.classification === payload.classification && source.sourceType === payload.sourceType) : null;
@@ -178,7 +191,7 @@ export function createArtifactImports({ store, commit, extractor = extractArtifa
           if (existing) { item.previousSourceRef = store.writeArchive('baseline', JSON.stringify(existing)); if (!retention.protectedEvidence) existing.summary = result.summary; if (!keptExistingClauses || retention.appendLegacy) existing.clauses = clauses; }
           else next.backlog.sources.push({ id: sourceId, title: payload.filename, sourceType: payload.sourceType, classification: payload.classification, locator: payload.filename, fileSha256: result.sha256, summary: withAI ? result.summary : `${result.method === 'local-ocr' ? '로컬 OCR 판독' : '로컬 문서 추출'}${result.needsReview ? ' · 판독 결과를 원본과 대조하세요.' : ''}`, clauses });
           const savedSource = existing ?? next.backlog.sources.find(source => source.id === sourceId);
-          Object.assign(item, { status: 'ready', completedAt: now(), sourceId: savedSource.id, sha256: result.sha256, originalRef, method: result.method, format: result.format, warningCodes: result.warningCodes, needsReview: result.needsReview, sourceStateDigest: sourceStateDigest(savedSource), ...(withAI ? { readingRef, keptExistingClauses, sourceDigest: sourceEvidenceDigest(savedSource), readingProfile: documentReadingProfile(payload.sourceType, payload.classification), detectedTypes: result.reading.documentTypes } : {}) });
+          Object.assign(item, { status: 'ready', completedAt: now(), sourceId: savedSource.id, sha256: result.sha256, originalRef, method: result.method, format: result.format, warningCodes: result.warningCodes, sensitivityWarnings, needsReview: result.needsReview, sourceStateDigest: sourceStateDigest(savedSource), ...(withAI ? { readingRef, keptExistingClauses, sourceDigest: sourceEvidenceDigest(savedSource), readingProfile: documentReadingProfile(payload.sourceType, payload.classification), detectedTypes: result.reading.documentTypes } : {}) });
         });
       } finally { assertExternalWorkspace(cwd); rmSync(cwd, { recursive: true, force: true }); }
     }).catch(error => {

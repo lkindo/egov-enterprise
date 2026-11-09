@@ -1,5 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+test('direct private plain-text extraction returns value-free sensitivity notices', async () => {
+  const result = await extractArtifact({ filename: 'private.txt', bytes: Buffer.from('연락처 010-1234-5678') }, { sensitiveData: 'warning' });
+  assert.ok(result.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+  assert.doesNotMatch(JSON.stringify(result.sensitivityWarnings), /010-1234/);
+});
 import { readFileSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -64,6 +69,10 @@ test('decoded document properties are scanned before original Office bytes can b
   const cwd = mkdtempSync(join(tmpdir(), 'synthetic-metadata-test-')); t.after(() => rmSync(cwd, { recursive: true, force: true }));
   const bytes = readFileSync(new URL('./test-fixtures/negative-metadata.docx', import.meta.url));
   await assert.rejects(extractArtifact({ filename: 'negative-metadata.docx', bytes }, { cwd, ocr: false }), { code: 'FILE_SENSITIVE_INPUT' });
+  const privateResult = await extractArtifact({ filename: 'negative-metadata.docx', bytes }, { cwd, ocr: false, sensitiveData: 'warning' });
+  assert.ok(privateResult.segments.length);
+  assert.ok(privateResult.sensitivityWarnings.length, 'hidden document metadata remains an advisory even when absent from visible extracted text');
+  assert.ok(privateResult.sensitivityWarnings.every(warning => warning.paths.every(path => /^project[.\w\[\]]*$/.test(path))));
 });
 
 test('actual local Korean OCR reads an image and a scanned PDF with traceable text', async t => {

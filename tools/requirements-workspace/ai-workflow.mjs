@@ -9,6 +9,7 @@ import { prepareVisualAttachments } from './ai-attachments.mjs';
 import { PROMPT_VERSION } from './ai-prompts.mjs';
 import { prepareBusinessModel, reviewRequirements, planAndReview, buildTaskPreview } from './ai-pipeline.mjs';
 import { validateBusinessModel, validateDocumentSummaries, mergeIssues } from './ai-pipeline-contract.mjs';
+import { collectSensitivityWarnings, mergeSensitivityWarnings, validateSensitivityWarnings } from './privacy-warnings.mjs';
 
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 const statuses = ['running', 'ready', 'needs-decisions', 'failed', 'stale', 'cancelled', 'interrupted', 'applied'];
@@ -24,7 +25,8 @@ export function validateAiMetadata(value) {
   if (value.version !== 1 || !Array.isArray(value.jobs) || !Array.isArray(value.decisions)) fail('AI_METADATA_INVALID');
   const ids = new Set();
   for (const job of value.jobs) {
-    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs']);
+    exact(job, ['id', 'phase', 'status', 'inputDigest', 'startedAt', 'completedAt', 'appliedAt', 'model', 'effort', 'includeVisuals', 'attempts', 'batches', 'inputRef', 'contextRef', 'resultRef', 'errorCode', 'usage', 'fullPipeline', 'promptVersion', 'stage', 'stageProgress', 'modelCalls', 'checkpoints', 'reusedStages', 'resumeFrom', 'promptRefs', 'sensitivityWarnings']);
+    try { validateSensitivityWarnings(job.sensitivityWarnings ?? []); } catch { fail('AI_METADATA_INVALID'); }
     if (!/^[a-f0-9-]{36}$/.test(job.id ?? '') || ids.has(job.id) || !['analysis', 'decomposition'].includes(job.phase) || !statuses.includes(job.status) || !/^[a-f0-9]{64}$/.test(job.inputDigest ?? '') || !Number.isFinite(Date.parse(job.startedAt)) || job.model !== AI_MODEL || job.effort !== AI_EFFORT) fail('AI_METADATA_INVALID');
     ids.add(job.id); reference(job.inputRef, 'baseline'); reference(job.contextRef, 'ai');
     if (job.includeVisuals !== undefined && typeof job.includeVisuals !== 'boolean') fail('AI_METADATA_INVALID');
@@ -131,7 +133,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
     if (!runner) findClaudeExecutable();
     const resumable = payload.fullPipeline && payload.reuseCheckpoints !== false && workflow.jobs.findLast(job => job.fullPipeline && job.promptVersion === PROMPT_VERSION && job.inputDigest === inputDigest && job.checkpoints && Object.keys(job.checkpoints).length);
     const job = { id: jobId, phase: payload.phase, status: 'running', inputDigest, startedAt: now(), model: AI_MODEL, effort: AI_EFFORT, includeVisuals: payload.includeVisuals !== false, promptVersion: PROMPT_VERSION, ...(payload.fullPipeline ? { fullPipeline: true, stage: 'reading', modelCalls: 0, promptRefs: [], checkpoints: structuredClone(resumable?.checkpoints ?? {}), reusedStages: [], ...(resumable ? { resumeFrom: resumable.id } : {}) } : {}),
-      ...(batches?.length > 1 ? { batches: { completed: 0, total: batches.length } } : {}), inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
+      ...(batches?.length > 1 ? { batches: { completed: 0, total: batches.length } } : {}), sensitivityWarnings: collectSensitivityWarnings({ backlog: snapshot.backlog, decisions: workflow.decisions }), inputRef: store.writeArchive('baseline', JSON.stringify(snapshot.backlog)), contextRef: store.writeArchive('ai', JSON.stringify(snapshot.metadata.context)) };
     commit(revision, next => { next.metadata.ai ??= empty(); next.metadata.ai.jobs.push(job); });
     const controller = new AbortController();
     const operation = { id: job.id, controller };
@@ -152,6 +154,10 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           mark(job.id, stored => { if (stored.status === 'running') { stored.status = 'stale'; stored.completedAt = now(); } }); return false;
         };
         const onStage = (stage, completed, total) => mark(job.id, stored => { if (stored.status === 'running') { stored.stage = stage; stored.stageProgress = { completed, total }; } });
+        const onValidated = (stage, value) => {
+          const warnings = collectSensitivityWarnings(value, stage);
+          if (warnings.length) mark(job.id, stored => { if (stored.status === 'running') stored.sensitivityWarnings = mergeSensitivityWarnings(stored.sensitivityWarnings, warnings); });
+        };
         const hash = value => createHash('sha256').update(JSON.stringify(value)).digest('hex');
         const readCheckpoint = (stage, upstream) => {
           const ref = job.checkpoints?.[stage]; if (!ref) return null;
@@ -190,8 +196,8 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
         };
         if (job.fullPipeline) {
           pipeline = readCheckpoint('discovery', inputDigest);
-          if (pipeline) { validateDocumentSummaries(pipeline.documents, snapshot); validateBusinessModel(pipeline.businessModel, snapshot, snapshot.backlog.sources.map(source => source.id)); }
-          else { pipeline = await prepareBusinessModel(snapshot, { run, cwd, signal: controller.signal, sourceReading, onStage }); saveCheckpoint('discovery', inputDigest, pipeline); }
+          if (pipeline) { validateDocumentSummaries(pipeline.documents, snapshot); validateBusinessModel(pipeline.businessModel, snapshot, snapshot.backlog.sources.map(source => source.id)); onValidated('reading', pipeline.documents); onValidated('synthesis', pipeline.businessModel); }
+          else { pipeline = await prepareBusinessModel(snapshot, { run, cwd, signal: controller.signal, sourceReading, onStage, onValidated }); saveCheckpoint('discovery', inputDigest, pipeline); }
         }
         let startIndex = 0;
         const analysisUpstream = pipeline?.businessModel;
@@ -208,6 +214,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
               validateAnalysisBatchProposal({ ...cached.output, updatedRequirementIds: updates }, snapshot, [...processed.values()], initialAnalysis);
             }
             output = cached.output; startIndex = cached.completed; corrected = cached.corrected; batchAudit.push(...cached.batchAudit);
+            onValidated('analysis', output);
             if (batches?.length > 1) mark(job.id, stored => { if (stored.status === 'running') stored.batches.completed = startIndex; });
             onStage('analysis', startIndex, total);
           }
@@ -243,6 +250,7 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
             if (delta.updatedRequirementIds?.length || coverageChanges.length) batchAudit.push({ batch: index + 1, requirementIds: [...(delta.updatedRequirementIds ?? [])], coverageChanges });
           }
           output = next;
+          onValidated(job.phase, output);
           if (batches?.length > 1) mark(job.id, stored => { if (stored.status === 'running') { stored.batches.completed = index + 1; stored.usage = { ...usage }; } });
           if (pipeline) saveCheckpoint('analysis', analysisUpstream, { completed: index + 1, total: batches?.length ?? 1, corrected, output, batchAudit });
         }
@@ -252,11 +260,12 @@ export function createAiWorkflow({ store, commit, confirmAnalysis, applyDecompos
           if (reviewed) output = reviewed;
           else { output = await reviewRequirements(output, pipeline.businessModel, snapshot, { run, cwd, signal: controller.signal, onStage }); saveCheckpoint('review', reviewUpstream, output); }
           validated = validateAnalysisProposal(output, snapshot);
+          onValidated('review-requirements', output);
           if (!validated.issues.some(issue => issue.severity === 'blocking')) {
             const planningUpstream = { output, businessModel: pipeline.businessModel };
             let plan = readCheckpoint('planning', planningUpstream);
-            if (plan) plan.validatedPlan = validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) });
-            else { plan = await planAndReview(output, pipeline.businessModel, snapshot, workflow.decisions, { run, cwd, signal: controller.signal, onStage, idPrefix: `P${jobId.slice(0, 8)}-` }); saveCheckpoint('planning', planningUpstream, { planningOutput: plan.planningOutput, taskPreview: plan.taskPreview }); }
+            if (plan) { plan.validatedPlan = validateDecompositionProposal(plan.planningOutput, { ...snapshot, backlog: projectAnalysisBacklog(snapshot, validated) }); onValidated('review-plan', plan.planningOutput); }
+            else { plan = await planAndReview(output, pipeline.businessModel, snapshot, workflow.decisions, { run, cwd, signal: controller.signal, onStage, onValidated, idPrefix: `P${jobId.slice(0, 8)}-` }); saveCheckpoint('planning', planningUpstream, { planningOutput: plan.planningOutput, taskPreview: plan.taskPreview }); }
             pipeline = { ...pipeline, planningOutput: plan.planningOutput, taskPreview: plan.taskPreview };
             validated.issues = mergeIssues(validated.issues, plan.validatedPlan.issues);
           }

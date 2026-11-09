@@ -21,6 +21,7 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
       phases.push(request.phase);
       if (request.phase === 'analysis') assert.equal(attachments.length, 0, 'already read originals are not resent in every requirement batch');
       const value = pipelineReply(request); if (request.phase === 'synthesis') value.summary += injection;
+      if (request.phase === 'reading') value.summary += ' 연락처 010-1234-5678';
       return envelope(value);
     } });
     await app.engine.action(app.store.read().revision, 'project.save', { code: 'SYNTHETIC', name: '합성 AI 문서 흐름', institution: '합성 기관', baselineProfile: '' });
@@ -37,11 +38,14 @@ test('the default UI reads uploaded material with AI, shows real prompts and the
     await page.getByRole('button', { name: '닫고 돌아가기', exact: true }).click();
     await page.getByRole('button', { name: 'AI로 산출물 등록', exact: true }).click();
     await page.locator('#artifact-files').setInputFiles({ name: 'meeting.custom', mimeType: 'text/plain', buffer: Buffer.from('담당자는 본인 접수 목록만 조회한다. 빈 목록은 빈 결과로 표시한다.') });
-    await page.locator('[name="redacted"]').check(); await page.locator('[name="ai-consent"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check();
     await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
     await page.getByRole('dialog').waitFor({ state: 'hidden', timeout: 90000 });
     await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 });
     const before = await app.engine.state();
+    await page.getByRole('note', { name: '민감정보 감지 안내' }).waitFor();
+    assert.ok(before.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+    assert.doesNotMatch(JSON.stringify(before.sensitivityWarnings), /010-1234/);
     assert.deepEqual(phases, ['reading', 'synthesis', 'analysis', 'review-requirements', 'decomposition', 'review-plan']);
     assert.equal(before.backlog.businessRequirements.length, 0); assert.equal(before.metadata.baselines.length, 0);
     assert.equal(await page.locator('[data-pipeline-probe]').count(), 0);
@@ -80,7 +84,7 @@ test('a changed source list after the consent screen opens is stopped before any
     browser = await chromium.launch({ headless: true }); const browserContext = await browser.newContext(); const page = await browserContext.newPage();
     await page.goto(`${app.url}/#launch=${app.launchSecret}`); await page.getByRole('button', { name: 'AI 전체 분석', exact: true }).click();
     await act('source.save', { ...source, id: 'SRC-NEW', title: '동의 화면에 없던 추가 자료' });
-    await page.locator('[name="redacted"]').check(); await page.locator('[name="ai-consent"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check();
     await page.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
     await page.waitForFunction(() => !document.querySelector('#dialog').open || document.querySelector('.form-errors:not([hidden])'));
     assert.equal(await page.getByRole('dialog').isVisible(), true);
@@ -105,9 +109,9 @@ test('AI upload discloses all existing material and a synthetic submit cannot by
     assert.match(await page.getByRole('dialog').textContent(), new RegExp(source.title));
     await page.getByRole('button', { name: '취소', exact: true }).click();
     await page.getByRole('button', { name: 'AI 전체 분석', exact: true }).click();
-    await page.locator('[name="redacted"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check();
     await page.locator('#editor').evaluate(form => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
-    await page.getByText('비식별 확인과 모델 서비스 전송 동의가 필요합니다.', { exact: true }).waitFor();
+    await page.getByText('원문 분석 방식 확인과 모델 서비스 전송 동의가 필요합니다.', { exact: true }).waitFor();
     assert.equal(calls, 0); assert.equal((await app.engine.state()).ai.current, null);
   } catch (error) {
     const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); throw safe;
@@ -128,7 +132,7 @@ test('a source added while an uploaded-source digest is awaited cannot widen the
     await page.evaluate(() => { const digest = crypto.subtle.digest.bind(crypto.subtle); crypto.subtle.digest = async (...args) => { await window.__addSourceDuringDigest(); return digest(...args); }; });
     await page.getByRole('button', { name: 'AI로 산출물 등록', exact: true }).click();
     await page.locator('#artifact-files').setInputFiles({ name: 'meeting.txt', mimeType: 'text/plain', buffer: Buffer.from('담당자는 본인 접수 목록만 조회한다.') });
-    await page.locator('[name="redacted"]').check(); await page.locator('[name="ai-consent"]').check();
+    await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check();
     await page.getByRole('button', { name: '등록하고 계속', exact: true }).click();
     await page.waitForFunction(() => !document.querySelector('#dialog').open || document.querySelector('.form-errors:not([hidden])'));
     assert.equal(await page.getByRole('dialog').isVisible(), true);

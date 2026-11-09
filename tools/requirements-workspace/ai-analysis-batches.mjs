@@ -1,12 +1,9 @@
-import { scanBacklogForPiiAndSecrets } from '../../scripts/export-deliverables-workspace.mjs';
-
 const fail = code => { throw Object.assign(new Error(code), { code }); };
 export const MAX_ANALYSIS_BATCHES = 128;
 // Bound both input and coverage output per call. The final proposal retains the
 // existing 150-requirement / 3,000-clause contract; no source is silently cut.
 export function planAnalysisBatches(snapshot, decisions = []) {
-  const { project, sources, businessRequirements } = snapshot.backlog;
-  if (scanBacklogForPiiAndSecrets({ project: { project, sources, businessRequirements, decisions } }).length) fail('SENSITIVE_INPUT');
+  const { sources } = snapshot.backlog;
   if (sources.reduce((count, source) => count + source.clauses.length, 0) > 3000) fail('AI_ANALYSIS_CAPACITY');
   const batches = []; let batch = [], bytes = 0, count = 0;
   for (const source of sources) for (const clause of source.clauses) {

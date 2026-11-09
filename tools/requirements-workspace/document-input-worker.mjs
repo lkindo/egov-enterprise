@@ -2,6 +2,7 @@
 import sharp from 'sharp';
 import { extractTextUnits } from './artifact-extractor.mjs';
 import { scanBacklogForPiiAndSecrets } from '../../scripts/export-deliverables-workspace.mjs';
+import { collectSensitivityWarnings, mergeSensitivityWarnings } from './privacy-warnings.mjs';
 const fail = code => { throw new Error(code); };
 const chunks = []; let inputBytes = 0, imageBytes = 0;
 console.log = console.info = console.warn = console.error = () => {};
@@ -13,10 +14,11 @@ async function image(bytes, options = {}) {
 }
 try {
   for await (const chunk of process.stdin) { inputBytes += chunk.length; if (inputBytes > 29 * 1024 ** 2) fail('FILE_TOO_LARGE'); chunks.push(chunk); }
-  const { format, base64 } = JSON.parse(Buffer.concat(chunks).toString('utf8'));
+  const { format, base64, sensitiveData } = JSON.parse(Buffer.concat(chunks).toString('utf8'));
   const bytes = Buffer.from(base64, 'base64'), units = [], warningCodes = [];
+  let sensitivityWarnings = [];
   if (['html', 'htm'].includes(format)) {
-    units.push(...extractTextUnits(bytes, format, { onWarning: code => warningCodes.push(code) }).map(unit => ({ ...unit, attachment: null })));
+    units.push(...extractTextUnits(bytes, format, { sensitiveData, onSensitivity: text => { sensitivityWarnings = collectSensitivityWarnings({ text }); }, onWarning: code => warningCodes.push(code) }).map(unit => ({ ...unit, attachment: null })));
   } else if (['png', 'jpg', 'jpeg', 'webp', 'tif', 'tiff'].includes(format)) {
     const metadata = await sharp(bytes, { failOn: 'error', limitInputPixels: 40_000_000 }).metadata();
     const pages = metadata.pages ?? 1; if (pages > 100) fail('FILE_DOCUMENT_CAPACITY');
@@ -60,7 +62,10 @@ try {
       else if (value && typeof value === 'object' && !ArrayBuffer.isView(value) && !(value instanceof ArrayBuffer)) for (const descriptor of Object.values(Object.getOwnPropertyDescriptors(value))) if (descriptor.enumerable && 'value' in descriptor) collect(descriptor.value, depth + 1);
     }
     collect(result.metadata); collect(result.memos); collect(result.blocks);
-    if (scanBacklogForPiiAndSecrets({ project: { strings } }).length) fail('FILE_SENSITIVE_INPUT');
+    if (scanBacklogForPiiAndSecrets({ project: { strings } }).length) {
+      if (sensitiveData !== 'warning') fail('FILE_SENSITIVE_INPUT');
+      sensitivityWarnings = mergeSensitivityWarnings(sensitivityWarnings, collectSensitivityWarnings({ units: strings }));
+    }
     const native = result.pages?.length ? result.pages.map(page => ({ locator: `${['xlsx', 'xls'].includes(format) ? '시트' : result.metadata?.pageMode === 'section' ? '섹션' : '페이지'} ${page.pageNumber}`, text: page.markdown || null, attachment: null })) : [{ locator: '문서 본문', text: result.markdown || null, attachment: null }];
     units.push(...native);
     warningCodes.push(...(result.warnings ?? []).map(warning => /^[A-Z][A-Z0-9_]{1,80}$/.test(warning.code ?? '') ? warning.code : 'EXTRACTION_NOTICE'));
@@ -83,7 +88,7 @@ try {
     }
   }
   if (units.length > 200 || units.reduce((count, unit) => count + Buffer.byteLength(unit.text ?? ''), 0) > 512 * 1024) fail('FILE_DOCUMENT_CAPACITY');
-  const result = JSON.stringify({ units, warningCodes: [...new Set(warningCodes)], method: 'local-document' });
+  const result = JSON.stringify({ units, warningCodes: [...new Set(warningCodes)], method: 'local-document', sensitivityWarnings });
   if (Buffer.byteLength(result) > 32 * 1024 ** 2) fail('FILE_DOCUMENT_CAPACITY');
   process.stdout.write(result, () => process.exit(0));
 } catch (error) {

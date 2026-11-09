@@ -10,16 +10,30 @@ import { createEmptyBacklogPack, validateBacklogPack } from '../../scripts/expor
 import { AI_MODEL } from './ai-cli.mjs';
 import { readDocument } from './document-reader.mjs';
 import { context } from './test-fixtures/ai.mjs';
+import { validatePrivateBacklog } from './private-validation.mjs';
 
 function setup(t, documentReader) {
   const directory = mkdtempSync(join(tmpdir(), 'synthetic-ai-reading-import-'));
-  const store = createRequirementsStore({ workspace: directory, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validateBacklogPack(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace: directory, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { assert.equal(validatePrivateBacklog(pack).valid, true); }, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, contextProvider: async () => context, root: process.cwd(), documentReader });
   t.after(async () => { await engine.close(); store.close(); rmSync(directory, { recursive: true, force: true }); });
   return { engine, store, act: (name, payload) => engine.action(store.read().revision, name, payload) };
 }
 const upload = () => ({ requestId: randomUUID(), filename: 'source.custom', base64: Buffer.from('담당자는 본인 접수 목록을 조회한다.').toString('base64'), classification: 'internal', sourceType: 'interview', redacted: true, readWithAI: true, consent: true, model: AI_MODEL });
 const successfulReader = (input, options) => readDocument(input, { ...options, prepare: async () => ({ format: 'txt', units: [{ id: 'U-1', locator: '본문', text: Buffer.from(input.bytes).toString(), attachment: null }], warningCodes: [] }), execute: async () => ({ output: { documentTypes: ['interview'], summary: '담당자의 접수 열람 업무와 본인 범위 정책을 설명한다.', blocks: [{ inputId: 'U-1', heading: '담당 범위', kind: 'paragraph', text: null, certainty: 'clear', note: '조회 책임과 범위가 명시되어 있다.' }], unreadable: [] } }) });
+
+test('a malformed cached reading cannot be reused through the duplicate upload shortcut', async t => {
+  let calls = 0;
+  const app = setup(t, async (...args) => { calls++; return successfulReader(...args); });
+  await app.act('source.ingest', upload()); await app.engine.waitForImports();
+  const saved = app.store.read().backlog.sources[0];
+  const ref = app.store.writeArchive('ai', JSON.stringify({ invalid: true }));
+  app.store.transact(app.store.read().revision, next => { next.metadata.imports[0].readingRef = ref; });
+  await app.act('source.reingest', { sourceId: saved.id, requestId: randomUUID(), consent: true, sensitivityAcknowledged: true, model: AI_MODEL });
+  await app.engine.waitForImports();
+  assert.equal(calls, 2);
+  assert.equal((await app.engine.state()).imports.jobs.at(-1).status, 'ready');
+});
 
 test('AI document reading needs explicit transmission consent and preserves original/evidence/structured reading independently', async t => {
   let calls = 0;
@@ -37,6 +51,7 @@ test('AI document reading needs explicit transmission consent and preserves orig
   await app.act('source.ingest', { ...input, requestId: randomUUID(), filename: 'copy.custom' }); await app.engine.waitForImports();
   state = await app.engine.state(); assert.equal(calls, 1); assert.equal(state.backlog.sources.length, 1);
   assert.deepEqual(state.imports.jobs[1].readingRef, job.readingRef);
+  assert.equal(app.engine.sourceFile(job.sourceId).base64, input.base64, 'renamed duplicate labels retain the canonical original manifest identity');
   await app.act('source.reingest', { sourceId: job.sourceId, requestId: randomUUID(), consent: true, redacted: true, model: AI_MODEL }); await app.engine.waitForImports();
   assert.equal(calls, 1);
   state = await app.engine.state(); assert.equal(state.imports.jobs.length, 2, 'ensuring an already valid reading does not create another duplicate registration');
@@ -52,13 +67,28 @@ test('unreadable documents retain originals for recovery and do not manufacture 
   assert.equal(app.engine.artifact(job.requestId).base64, input.base64);
 });
 
-test('detectable sensitive text is rejected before an original archive or model request is created', async t => {
-  const app = setup(t, readDocument);
-  await app.act('source.ingest', { ...upload(), filename: 'sensitive.txt', base64: Buffer.from('연락처 010-1234-5678로 회신한다.').toString('base64') }); await app.engine.waitForImports();
+test('a retained original after AI timeout keeps already detected input notices', async t => {
+  const app = setup(t, async () => { throw Object.assign(new Error('AI_TIMEOUT'), { code: 'AI_TIMEOUT' }); });
+  const input = { ...upload(), filename: 'sensitive.txt', base64: Buffer.from('연락처 010-1234-5678로 회신한다.').toString('base64') };
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  const state = await app.engine.state(), job = state.imports.jobs.at(-1);
+  assert.equal(job.status, 'failed'); assert.ok(job.originalRef);
+  assert.ok(job.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+  assert.ok(state.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+  assert.doesNotMatch(JSON.stringify(state.sensitivityWarnings), /010-1234/);
+});
+
+test('sensitive original text is analyzed and archived privately with separate safe notices', async t => {
+  const app = setup(t, successfulReader);
+  const input = { ...upload(), redacted: undefined, sensitivityAcknowledged: true, filename: 'sensitive.txt', base64: Buffer.from('연락처 010-1234-5678로 회신한다.').toString('base64') };
+  await assert.rejects(app.act('source.ingest', { ...input, sensitivityAcknowledged: false }), { code: 'FILE_REDACTION_REQUIRED' });
+  await app.act('source.ingest', input); await app.engine.waitForImports();
   const state = await app.engine.state(), job = state.imports.jobs[0];
-  assert.equal(job.status, 'failed');
-  assert.equal(job.originalRef, undefined);
-  assert.equal(state.backlog.sources.length, 0);
+  assert.equal(job.status, 'ready');
+  assert.equal(app.engine.sourceFile(job.sourceId).base64, input.base64);
+  assert.match(state.backlog.sources[0].clauses[0].text, /010-1234-5678/);
+  assert.ok(job.sensitivityWarnings.length); assert.ok(state.sensitivityWarnings.length);
+  assert.doesNotMatch(JSON.stringify(job.sensitivityWarnings), /010-1234/);
 });
 
 test('manually changed evidence invalidates a reading cache and re-reading preserves its previous version for comparison', async t => {
@@ -137,10 +167,12 @@ test('an untouched unlinked AI draft can be replaced after a reader-profile upgr
   assert.equal(state.imports.jobs.at(-1).keptExistingClauses, false);
 });
 
-test('sensitive AI reading output cannot leave a newly archived original behind', async t => {
+test('sensitive AI reading output finishes without losing the original or blocking the source', async t => {
   const app = setup(t, (input, options) => readDocument(input, { ...options, execute: async ({ request }) => ({ output: { documentTypes: ['other'], summary: '연락처 010-1234-5678로 회신한다.', blocks: request.data.units.map(unit => ({ inputId: unit.id, heading: '합성 이미지', kind: 'paragraph', text: '담당자는 본인 접수 목록을 조회한다.', certainty: 'clear', note: '합성 판독' })), unreadable: [] } }) }));
   await app.act('source.ingest', { ...upload(), filename: 'receipt.png', base64: readFileSync(new URL('./test-fixtures/receipt.png', import.meta.url)).toString('base64') }); await app.engine.waitForImports();
-  const state = await app.engine.state(); assert.equal(state.imports.jobs[0].status, 'failed'); assert.equal(state.imports.jobs[0].errorCode, 'AI_DOCUMENT_SENSITIVE_OUTPUT'); assert.equal(state.imports.jobs[0].originalRef, undefined); assert.equal(state.backlog.sources.length, 0);
+  const state = await app.engine.state(); assert.equal(state.imports.jobs[0].status, 'ready'); assert.ok(state.imports.jobs[0].originalRef); assert.equal(state.backlog.sources.length, 1);
+  assert.equal(state.imports.jobs[0].needsReview, false);
+  assert.ok(state.imports.jobs[0].sensitivityWarnings.some(warning => warning.stage === 'reading'));
 });
 
 test('changing the document scenario invalidates an otherwise identical original reading cache', async t => {

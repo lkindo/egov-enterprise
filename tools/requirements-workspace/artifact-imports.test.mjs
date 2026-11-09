@@ -1,3 +1,4 @@
+import { validatePrivateBacklog } from './private-validation.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { randomUUID } from 'node:crypto';
@@ -13,7 +14,7 @@ import { startRequirementsServer } from './server.mjs';
 
 function setup(t, artifactExtractor = extractArtifact) {
   const directory = mkdtempSync(join(tmpdir(), 'synthetic-file-import-'));
-  const store = createRequirementsStore({ workspace: directory, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { if (!validateBacklogPack(pack).valid) throw Error('INVALID'); }, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace: directory, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => { if (!validatePrivateBacklog(pack).valid) throw Error('INVALID'); }, validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, contextProvider: async () => context, root: process.cwd(), artifactExtractor, aiRunner: async ({ request }) => envelope(analysis(request)) });
   t.after(async () => { await engine.close(); store.close(); rmSync(directory, { recursive: true, force: true }); });
   const act = (name, payload) => engine.action(store.read().revision, name, payload);
@@ -51,8 +52,8 @@ test('uploading the same bytes again reuses the source while different classific
   assert.equal(state.backlog.sources.length, 3);
   assert.equal(extractions, 3);
 });
-test('an extraction failure or detected sensitive text never creates a source or original-file archive', async t => {
-  for (const text of ['person@example.invalid', '']) {
+test('an extraction failure never creates a source or original-file archive', async t => {
+  for (const text of ['']) {
     const app = setup(t);
     await app.act('source.ingest', { ...upload(), base64: Buffer.from(text || '\0').toString('base64') });
     await app.engine.waitForImports(); const state = await app.engine.state();
@@ -61,6 +62,15 @@ test('an extraction failure or detected sensitive text never creates a source or
     assert.equal(state.imports.jobs[0].originalRef, undefined);
     assert.equal(JSON.stringify(state).includes('person@'), false);
   }
+});
+test('local private extraction retains sensitive text with separate notices and original bytes', async t => {
+  const app = setup(t), input = { ...upload(), base64: Buffer.from('person@example.invalid').toString('base64') };
+  await app.act('source.ingest', input); await app.engine.waitForImports();
+  const state = await app.engine.state(), job = state.imports.jobs[0];
+  assert.equal(job.status, 'ready'); assert.equal(job.needsReview, false);
+  assert.equal(app.engine.sourceFile(job.sourceId).base64, input.base64);
+  assert.ok(job.sensitivityWarnings.length);
+  assert.doesNotMatch(JSON.stringify(job.sensitivityWarnings), /person@/);
 });
 test('pending imports block AI analysis; cancelling an import cannot register its late completion', async t => {
   let release;

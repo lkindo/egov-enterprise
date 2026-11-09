@@ -36,12 +36,21 @@ test('unreadable visual regions remain review findings and a wholly unreadable d
   await assert.rejects(readDocument(input, { prepare: preparation([visual]), execute: async () => ({ output: output([], { unreadable: [{ inputId: 'U-2', reason: '본문을 읽을 수 없다.' }] }) }) }), { code: 'AI_DOCUMENT_UNREADABLE' });
 });
 
-test('reading cancellation stops later chunks and sensitive model output is rejected', async () => {
+test('reading cancellation stops later chunks', async () => {
   const controller = new AbortController(); let calls = 0;
   const units = Array.from({ length: 12 }, (_, index) => ({ ...visual, id: `U-${index + 1}`, locator: `페이지 ${index + 1}` }));
   await assert.rejects(readDocument(input, { signal: controller.signal, prepare: preparation(units), execute: async ({ request }) => { calls++; controller.abort(); return { output: output(request.data.units) }; } }), { code: 'AI_CANCELLED' });
   assert.equal(calls, 1);
-  await assert.rejects(readDocument(input, { prepare: preparation([native]), execute: async () => ({ output: output([native], { summary: '연락처 010-1234-5678로 회신한다.' }) }) }), { code: 'AI_DOCUMENT_SENSITIVE_OUTPUT' });
+});
+
+test('sensitive native text and AI output finish reading with separate value-free advisory notices', async () => {
+  const unit = { ...native, text: '연락처 010-1234-5678로 회신한다.' };
+  const result = await readDocument(input, { prepare: preparation([unit]), execute: async () => ({ output: output([unit], { summary: unit.text }) }) });
+  assert.equal(result.segments[0].text, unit.text);
+  assert.equal(result.summary, unit.text);
+  assert.equal(result.needsReview, false, 'a sensitivity pattern alone is not an unreadable document');
+  assert.ok(result.sensitivityWarnings.some(warning => warning.kind === 'mobile-phone'));
+  assert.doesNotMatch(JSON.stringify(result.sensitivityWarnings), /010-1234/);
 });
 
 test('AI detected document roles select the relevant instructions for following parts of a mixed or unknown document', async () => {

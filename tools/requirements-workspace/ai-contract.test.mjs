@@ -168,7 +168,7 @@ test('batch planning checks all sources before any transfer and keeps finite ana
   state.backlog.sources[0].clauses = Array.from({ length: 33 }, (_, index) => ({ ...state.backlog.sources[0].clauses[0], id: `C-${index}` }));
   assert.deepEqual(planAnalysisBatches(state).map(batch => batch.flatMap(source => source.clauses).length), [32, 1]);
   state.backlog.sources[0].clauses[32].text = 'person@example.invalid';
-  assert.throws(() => planAnalysisBatches(state), { code: 'SENSITIVE_INPUT' });
+  assert.deepEqual(planAnalysisBatches(state).map(batch => batch.flatMap(source => source.clauses).length), [32, 1]);
   state.backlog.sources[0].clauses = Array.from({ length: 3001 }, (_, index) => ({ id: `C-${index}`, text: original }));
   assert.throws(() => planAnalysisBatches(state), { code: 'AI_ANALYSIS_CAPACITY' });
 });
@@ -231,9 +231,9 @@ test('duplicate identifiers, unrelated issue links and AI-invented approval fiel
   }
 });
 
-test('sensitive model output and unsafe object keys are rejected without echoing their values', () => {
+test('schema-valid sensitive proposals are permitted privately while unsafe object keys remain rejected', () => {
   const pii = proposal(); pii.issues[0].question = 'person@example.invalid';
-  assert.throws(() => validateAnalysisProposal(pii, snapshot()), error => error.code === 'AI_OUTPUT_INVALID' && !error.message.includes('person@'));
+  assert.doesNotThrow(() => validateAnalysisProposal(pii, snapshot()));
   const poisoned = JSON.parse(JSON.stringify(proposal()).replace('"requirements":', '"__proto__":{"polluted":true},"requirements":'));
   assert.throws(() => validateAnalysisProposal(poisoned, snapshot()), { code: 'AI_OUTPUT_INVALID' });
   assert.equal({}.polluted, undefined);

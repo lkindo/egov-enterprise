@@ -75,7 +75,7 @@ const messages = {
   AI_CALL_CAPACITY: '이번 분석의 호출 상한에 도달했습니다. 완료된 단계 재사용을 선택해 다시 시작할 수 있습니다.',
   AI_BUSINESS_MODEL_CAPACITY: '누적 업무 모델이 처리 한도를 넘었습니다. 업무 영역을 나누어 분석해 주세요.',
   AI_NO_EXECUTABLE_REQUIREMENTS: '개발 범위에 포함된 요구사항이 없습니다. 사업 범위와 원본 자료를 검토해 주세요.',
-  FILE_REDACTION_REQUIRED: '본문·이미지·문서 속성의 개인정보와 비밀을 제거했는지 확인해 주세요.',
+  FILE_REDACTION_REQUIRED: '민감정보가 포함될 수 있는 원문을 비공개 작업공간에서 분석·보관하고 별도 안내하는 방식임을 확인해 주세요.',
   FILE_SENSITIVE_INPUT: '본문이나 문서 속성에서 개인정보·비밀 패턴을 발견했습니다. 비식별 사본을 등록하세요.',
   FILE_REQUEST_CONFLICT: '같은 등록 요청의 자료가 달라졌습니다. 최신 상태를 확인하고 새 요청으로 등록하세요.',
   FILE_TOO_LARGE: '파일 한 개는 20MiB까지 등록할 수 있습니다. 원문을 나누어 주세요.',
@@ -96,7 +96,7 @@ const messages = {
 export async function startRequirementsServer({ workspace, root = ROOT, port = 8792, host = '127.0.0.1', contextProvider = () => loadRepositoryContextSnapshot(root), staticAssets, aiRunner } = {}) {
   if (host !== '127.0.0.1' || !Number.isInteger(port) || port < 0 || port > 65535) fail('LOOPBACK_REQUIRED');
   const context = await contextProvider();
-  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: validateBacklogPack, validateMetadata: validateRequirementsMetadata });
+  const store = createRequirementsStore({ workspace, initialBacklog: createEmptyBacklogPack(context), initialMetadata: initialRequirementsMetadata(context), validateBacklog: pack => validateBacklogPack(pack, null, { sensitiveData: 'warning' }), validateMetadata: validateRequirementsMetadata });
   const engine = createRequirementsEngine({ store, contextProvider, root, aiRunner });
   const token = randomBytes(32).toString('base64url'), launchSecret = randomBytes(32).toString('base64url');
   // The browser stores only an opaque lookup handle. Credentials stay in the

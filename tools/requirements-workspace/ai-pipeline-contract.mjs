@@ -1,5 +1,5 @@
 import { createHash } from 'node:crypto';
-import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, validateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
+import { ANALYSIS_SCHEMA, DECOMPOSITION_SCHEMA, validatePrivateAiValue as validateAiValue, validateEvidenceCitations } from './ai-contract.mjs';
 const string = (maxLength = 2000) => ({ type: 'string', minLength: 1, maxLength });
 const array = (items, maxItems = 100) => ({ type: 'array', items, minItems: 0, maxItems });
 const object = properties => ({ type: 'object', properties, required: Object.keys(properties), additionalProperties: false });
