@@ -35,6 +35,7 @@ const JAVA_TAG_TASKS = Object.freeze({
   'schema-validation': 'schemaValidationTest',
 });
 const VENDOR_TAG = 'vendor-conformance';
+const JAVA_TEST_ANNOTATION = /@(?:Test|ParameterizedTest|RepeatedTest|TestFactory|TestTemplate)\b/u;
 
 /** 상대 import 폐포를 계산하는 판독기 — 파일마다 한 번만 읽고 해석한다. */
 export function importClosureReader(root, { read = (file) => fs.readFileSync(path.join(root, file), 'utf8'),
@@ -88,11 +89,18 @@ export function importClosureReader(root, { read = (file) => fs.readFileSync(pat
 export function selectImpactTests(changed, repository) {
   const changedSet = new Set(changed);
   const reasons = new Map();
+  const helpers = new Set();
   // 지운 시험은 돌릴 수 없다 — 지운 경로는 그것을 읽는 다른 시험을 찾는 데만 쓴다.
   const add = (test, reason) => {
-    if (!repository.exists(test)) return;
+    if (!repository.exists(test) || helpers.has(test)) return;
     if (!reasons.has(test)) reasons.set(test, []);
     reasons.get(test).push(reason);
+  };
+  // 클래스 이름은 낱말 단위로만 맞춘다 — LedgerFixtures 가 AuditLedgerFixtures 안에서 걸리지 않게 한다.
+  const javaTestsNaming = (name) => {
+    const word = new RegExp(`(?<![\\w$])${name.replace(/\$/gu, '\\$')}(?![\\w$])`, 'u');
+    return repository.mentions(name)
+      .filter((candidate) => candidate.endsWith('.java') && TEST_SOURCE.test(candidate) && word.test(repository.read(candidate)));
   };
   // 바꾼 시험은 그 자체로 고른다(Java·node·프런트·E2E). 아직 추적하지 않은 새 시험도 바꾼 파일이다 — ls-files 만 보면 빠진다.
   for (const file of changed) if (TEST_SOURCE.test(file)) add(file, '바꾼 시험');
@@ -106,10 +114,25 @@ export function selectImpactTests(changed, repository) {
     }
     const javaClass = JAVA_MAIN.exec(file)?.[2];
     if (javaClass) {
-      for (const test of repository.mentions(javaClass).filter((candidate) => candidate.endsWith('.java') && TEST_SOURCE.test(candidate))) {
-        add(test, `클래스를 적음: ${javaClass}`);
+      for (const test of javaTestsNaming(javaClass)) add(test, `클래스를 적음: ${javaClass}`);
+    }
+  }
+  // 시험 메서드가 없는 Java 시험 소스(고정물·도우미)는 돌릴 수 없다 — 그 클래스 이름을 적은 Java 시험으로 넘긴다(도우미가 도우미를 쓰면 이어 간다).
+  const runnableJava = (file) => JAVA_TEST_ANNOTATION.test(repository.read(file));
+  let pending = [...reasons.keys()].filter((file) => file.endsWith('.java') && !runnableJava(file));
+  while (pending.length > 0) {
+    const next = [];
+    for (const helper of pending) {
+      if (helpers.has(helper)) continue;
+      helpers.add(helper);
+      reasons.delete(helper);
+      const name = path.basename(helper, '.java');
+      for (const test of javaTestsNaming(name)) {
+        add(test, `도우미를 적음: ${name}`);
+        if (reasons.has(test) && !runnableJava(test)) next.push(test);
       }
     }
+    pending = next;
   }
   const tests = [...reasons.keys()].sort();
   const node = tests.filter((test) => NODE_TEST.test(test));
@@ -144,8 +167,15 @@ export function selectImpactTests(changed, repository) {
     tests: tests.map((test) => ({ test, reasons: reasons.get(test) })),
     e2e,
     vendor,
+    helpers: [...helpers].sort(),
     commands,
   };
+}
+
+/** 대소문자만 다른 입력(Windows 에서 유효하다)을 Git 이 추적하는 실제 표기로 맞춘다 — import 사슬·경로 문자열은 실제 표기로 적혀 있다. */
+export function canonicalPaths(paths, tracked) {
+  const byLowerCase = new Map(tracked.map((file) => [file.toLowerCase(), file]));
+  return paths.map((file) => byLowerCase.get(file.toLowerCase()) ?? file);
 }
 
 /** 명령줄의 경로(`.\a\b`, `./a/b`, 하위 폴더에서 준 상대 경로, 절대 경로)를 저장소 상대 경로로 맞춘다. */
@@ -162,6 +192,9 @@ function render(result) {
     lines.push('', `벤더 적합성 시험 ${result.vendor.length}개도 고른다 — 원본 저장소에서 Gradle 로 돌리지 않는다. 생성한 벤더 프로젝트의 검증`
       + '(scripts/project-composer-vendor-integration.mjs)이나 CI 의 reusable-vendor 잡이 돌며, 인증 입력이면 증거를 다시 기록한다.');
   }
+  if (result.helpers.length) {
+    lines.push('', `시험 메서드가 없는 Java 도우미 ${result.helpers.length}개는 돌리지 않고 그 이름을 적은 시험으로 넘겼다: ${result.helpers.join(', ')}`);
+  }
   lines.push('', '추천이다. 경로를 조각으로 잇거나 디렉터리를 훑는 시험은 못 찾는다 — post-push·required CI 를 대신하지 않는다.');
   return lines.join('\n');
 }
@@ -173,8 +206,9 @@ async function main(argv) {
   const json = argv.includes('--json');
   const args = argv.filter((arg) => arg !== '--json');
   let changed;
+  const tracked = git('ls-files');
   if (args[0] === '--for' && args.length > 1) {
-    changed = args.slice(1).map((file) => toRepositoryPath(root, file));
+    changed = canonicalPaths(args.slice(1).map((file) => toRepositoryPath(root, file)), tracked);
   } else if (args[0] === '--diff' && args.length === 2) {
     const base = git('merge-base', args[1], 'HEAD')[0];
     changed = [...new Set([...git('diff', '--name-only', base), ...git('ls-files', '--others', '--exclude-standard')])];
@@ -191,7 +225,7 @@ async function main(argv) {
     }
   };
   const result = selectImpactTests(changed, {
-    tracked: git('ls-files'),
+    tracked,
     importChain: importClosureReader(root),
     mentions,
     read: (file) => fs.readFileSync(path.join(root, file), 'utf8'),

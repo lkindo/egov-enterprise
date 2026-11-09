@@ -198,6 +198,11 @@ jobs:
       - name: Summarize API pressure
         if: always()
         run: |
+          # 외부 대상(LOAD_TEST_BASE_URL)이면 이 로컬 compose 로그는 k6 가 친 서버가 아니다 — 0 을 그 대상의 상태로 읽지 않게 한다.
+          case "${BASE_URL:-http://localhost:8080}" in
+            http://localhost*|http://127.0.0.1*) ;;
+            *) echo "external target: this summary reads only the local compose API log, so the target's pressure was not observed"; exit 0 ;;
+          esac
           if [ ! -f backend.log ]; then echo "backend.log not found"; exit 0; fi
           echo "=== API pressure during the load test ==="
           # 로그 줄 수다 — 예외 하나가 메시지와 원인 스택으로 여러 줄에 나올 수 있어 발생 건수와 같지 않다.

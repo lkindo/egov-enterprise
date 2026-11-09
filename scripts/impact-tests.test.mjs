@@ -4,7 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import test from 'node:test';
 
-import { importClosureReader, selectImpactTests, toRepositoryPath } from './impact-tests.mjs';
+import { canonicalPaths, importClosureReader, selectImpactTests, toRepositoryPath } from './impact-tests.mjs';
 
 /*
   [2026-11-10] #1072 에서 로컬 표적 시험이 놓친 두 연결 — 두 단계 건너 import 한 node 시험과, 바꾼 스크립트 경로를 문자열로 적은 Java
@@ -40,15 +40,21 @@ const FILES = {
   'frontend/scripts/typed.test.mjs': "import type { Select } from './ui-quality-baseline-core.mjs';\n",
   'scripts/verify-reusable-artifact.mjs': "export const steps = [['pnpm', ['-C', 'frontend', 'run', 'type-check']]];\n",
   'api-server/src/test/java/nuri/api/harness/WorkflowManifestLinterTest.java':
-    '@Tag("governance-harness")\nclass WorkflowManifestLinterTest { String runner = "scripts/verify-reusable-artifact.mjs"; }\n',
+    '@Tag("governance-harness")\nclass WorkflowManifestLinterTest { String runner = "scripts/verify-reusable-artifact.mjs"; @Test void pins() {} }\n',
   'api-server/src/test/java/nuri/api/schema/SchemaCheckTest.java':
-    '@Tag("schema-validation")\nclass SchemaCheckTest { BoardService service; }\n',
-  'api-server/src/test/java/nuri/api/service/BoardServiceTest.java': 'class BoardServiceTest { BoardService service; }\n',
+    '@Tag("schema-validation")\nclass SchemaCheckTest { BoardService service; @Test void reads() {} }\n',
+  'api-server/src/test/java/nuri/api/service/BoardServiceTest.java': 'class BoardServiceTest { BoardService service; @Test void saves() {} }\n',
   'business-app/src/main/java/nuri/business/service/board/BoardService.java': 'class BoardService {}\n',
   'api-server/src/test/java/nuri/api/schema/VendorCatalogConformanceTest.java':
-    '@Tag("vendor-conformance")\nclass VendorCatalogConformanceTest { String catalog = "config/governance/permission-catalog.json"; }\n',
+    '@Tag("vendor-conformance")\nclass VendorCatalogConformanceTest { String catalog = "config/governance/permission-catalog.json"; @Test void conforms() {} }\n',
   'scripts/brand-new.test.mjs': "import assert from 'node:assert/strict';\n",
   'frontend/src/app/page.tsx': 'export default function Page() { return null; }\n',
+  'migration-tool/src/test/java/nuri/migration/LedgerFixtures.java': 'final class LedgerFixtures { static String ledger() { return ""; } }\n',
+  'migration-tool/src/test/java/nuri/migration/MigrationWorkflowRunnerTest.java':
+    'class MigrationWorkflowRunnerTest { @Test void runs() { LedgerFixtures.ledger(); } }\n',
+  // 이름에 LedgerFixtures 를 품은 다른 도우미를 쓰는 시험 — 낱말 단위로 맞추지 않으면 걸린다.
+  'api-server/src/test/java/nuri/api/schema/AuditRetentionTest.java':
+    'class AuditRetentionTest { @Test void keeps() { AuditLedgerFixtures.seed(); } }\n',
 };
 
 test('a node test that reaches the changed module through imports is selected with its chain', (t) => {
@@ -112,4 +118,17 @@ test('command-line paths resolve against the working directory into repository p
   assert.equal(toRepositoryPath(root, path.join('.', 'frontend', 'scripts', 'ui-quality-baseline-core.mjs'), root), expected);
   assert.equal(toRepositoryPath(root, path.join('..', 'frontend', 'scripts', 'ui-quality-baseline-core.mjs'), path.join(root, 'scripts')), expected);
   assert.equal(toRepositoryPath(root, path.join(root, 'frontend', 'scripts', 'ui-quality-baseline-core.mjs'), os.tmpdir()), expected);
+});
+
+test('a Java helper without test methods is not a command; the tests that name it are', (t) => {
+  const { repository } = fixture(t, FILES);
+  const result = selectImpactTests(['migration-tool/src/test/java/nuri/migration/LedgerFixtures.java'], repository);
+  assert.deepEqual(result.helpers, ['migration-tool/src/test/java/nuri/migration/LedgerFixtures.java']);
+  assert.deepEqual(result.commands, ["./gradlew :migration-tool:test --tests '*MigrationWorkflowRunnerTest'"]);
+});
+
+test('a path that differs only in letter case takes the tracked spelling', () => {
+  const tracked = ['frontend/scripts/ui-quality-baseline-core.mjs', 'docs/README.md'];
+  assert.deepEqual(canonicalPaths(['Frontend/Scripts/UI-quality-baseline-core.mjs', 'docs/new.md'], tracked),
+    ['frontend/scripts/ui-quality-baseline-core.mjs', 'docs/new.md']);
 });
