@@ -26,7 +26,7 @@ export function planningGroups(requirements, priorWork) {
 }
 function request(stage, data, snapshot) {
   const value = { phase: stage, promptVersion: PROMPT_VERSION, instructions: buildStagePrompt(stage, { sourceTypes: [...snapshot.backlog.sources.map(source => source.sourceType), ...(snapshot.metadata.imports ?? []).flatMap(job => job.detectedTypes ?? []), ...(data.documents ?? []).flatMap(doc => doc.documentTypes ?? [])], formats: (snapshot.metadata.imports ?? []).map(job => job.format), hasExisting: snapshot.backlog.businessRequirements.length > 0, hasDecisions: Boolean(snapshot.metadata.ai?.decisions.length) }), data };
-  if (stage === 'synthesis' && data.correction) value.instructions += ' Regenerate the current synthesis once using the supplied invariant failures and original documents. The rejected draft is not supplied. Use exact provided source IDs and verbatim anchors, preserve prior business evidence and human decisions, and never invent facts or approvals to pass validation.';
+  if (stage === 'synthesis' && data.correction) value.instructions += ' Regenerate the current synthesis once using the supplied invariant failures and original documents. The rejected draft is not supplied. Use exact provided source IDs for business entities and choose supplied evidenceIndex references for issue citations; the application restores verbatim source quotes. Preserve prior business evidence and human decisions, and never invent facts or approvals to pass validation.';
   if (Buffer.byteLength(JSON.stringify(value)) > 768 * 1024) fail('AI_INPUT_TOO_LARGE');
   return value;
 }
@@ -53,7 +53,33 @@ export function documentAnchors(source) {
   const quotable = source.clauses.flatMap(clause => { const quote = selectEvidenceQuote(clause.text); return quote ? [{ sourceId: source.id, clauseId: clause.id, quote }] : []; });
   return quotable.length <= 32 ? quotable : Array.from({ length: 32 }, (_, at) => quotable[Math.round(at * (quotable.length - 1) / 31)]);
 }
+function discoveryEvidence(batch, previousModel) {
+  const citations = [], indexes = new Map();
+  const indexFor = citation => {
+    const value = { sourceId: citation.sourceId, clauseId: citation.clauseId, quote: citation.quote };
+    const key = JSON.stringify(value);
+    if (!indexes.has(key)) { indexes.set(key, citations.length); citations.push(value); }
+    return indexes.get(key);
+  };
+  const documents = batch.map(document => ({ ...structuredClone(document), anchors: document.anchors.map(anchor => ({ ...anchor, evidenceIndex: indexFor(anchor) })) }));
+  const previousIssueEvidence = (previousModel?.issues ?? []).map(issue => ({ issueId: issue.id, evidenceIndexes: issue.citations.map(indexFor) }));
+  return { documents, previousIssueEvidence, citations };
+}
+function resolveDiscoveryEvidence(output, citations) {
+  const value = structuredClone(output);
+  for (const [issueIndex, issue] of value.issues.entries()) {
+    const selectedIndexes = new Set();
+    issue.citations = issue.citations.map(({ evidenceIndex }, citationIndex) => {
+      if (!Number.isSafeInteger(evidenceIndex) || evidenceIndex < 0 || evidenceIndex >= citations.length || selectedIndexes.has(evidenceIndex)) throw Object.assign(new Error('AI_OUTPUT_INVALID'), { code: 'AI_OUTPUT_INVALID', details: [{ kind: 'citation-reference', path: `$.issues[${issueIndex}].citations[${citationIndex}]` }] });
+      selectedIndexes.add(evidenceIndex);
+      return structuredClone(citations[evidenceIndex]);
+    });
+  }
+  return value;
+}
 export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceReading = () => null, onStage = () => {}, onValidated = () => {} }) {
+  const anchorsBySource = new Map(snapshot.backlog.sources.map(source => [source.id, documentAnchors(source)]));
+  if ([...anchorsBySource.values()].some(anchors => !anchors.length)) fail('AI_DOCUMENT_UNREADABLE');
   const documents = [];
   for (const [index, source] of snapshot.backlog.sources.entries()) {
     onStage('reading', index, snapshot.backlog.sources.length);
@@ -66,7 +92,7 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
       reading = result.reading;
     }
     onValidated('reading', reading);
-    const anchors = documentAnchors(source);
+    const anchors = anchorsBySource.get(source.id);
     documents.push({ sourceId: source.id, title: source.title, sourceType: source.sourceType, documentTypes: reading.documentTypes ?? [source.sourceType], summary: reading.summary, sections: [...new Set(reading.blocks.map(block => block.heading))], warningCodes: reading.warningCodes ?? [], unreadable: reading.unreadable, uncertain: reading.blocks.filter(block => block.certainty === 'uncertain').map(block => ({ inputId: block.inputId, note: block.note })), clauseCount: source.clauses.length, anchorScope: 'Representative quotations only; all original clauses remain available to requirement analysis.', anchors });
   }
   onStage('reading', documents.length, documents.length);
@@ -80,7 +106,6 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     const id = `DOC-${createHash('sha256').update(JSON.stringify([original.id, original.fileSha256 ?? original.clauses, PROMPT_VERSION, doc.unreadable, doc.uncertain, omissions])).digest('hex').slice(0, 24)}`;
     if (snapshot.metadata.ai?.decisions.some(decision => decision.issueId === id)) continue;
     const anchor = doc.anchors[0];
-    if (!anchor) fail('AI_DOCUMENT_UNREADABLE');
     const details = [...doc.unreadable.map(item => item.reason), ...doc.uncertain.map(item => item.note), ...omissions].join(' / ');
     readingIssues.push({ id, kind: 'missing', severity: 'blocking', question: `${doc.title}: 판독 불확실 구간을 원본과 대조해 주세요. ${details}`.slice(0, 1900), options: ['원본 대조 후 정확한 내용 답변', '판독 가능한 사본을 등록한 후 다시 분석'], requirementIds: [], citations: [anchor] });
   }
@@ -99,21 +124,33 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
   synthesisSchema.description += ' 중간 업무 지도는 행위자·업무 흐름·용어를 찾는 간결한 색인이다. 문서 통합의 구체성은 이 형식 상한과 색인 지시 안에서 충족한다. discoveryBudget.targetBatchBytes는 이번 묶음의 새 actors/processes/terms 설명에 권장하는 UTF-8 예산이다. summary는 교체되고 sourceCoverage와 issues는 누적된다. 이들은 권장 설명 예산에서 제외하지만 실제 누적 상한에 포함되므로 sourceCoverage의 rationale도 짧게 쓴다. 알려진 판독 질문의 크기(readingIssueBytes)를 미리 고려한다. 이전 모델도 계속 남으므로 각 묶음마다 전체 상한을 쓰지 않는다. 흐름은 상위 단계로, 규칙·데이터는 짧은 식별 문장으로 정리한다. 세부 조건·필드·인수 기준은 다음 단계에서 전체 원문 조항을 읽어 요구사항으로 만든다. 변경 없는 기존 항목은 반환에서 생략한다. 기존 항목의 갱신에는 새로 확인된 사실·배열 원소만 추가하며 이전 설명 전체를 바꿔 쓰거나 반복하지 않는다. 새 근거 문서만 연결할 때는 기존 설명에 포함된 짧은 문구를 그대로 재사용하고 새 배열 원소가 없으면 빈 배열을 반환한다. 병합은 기존 설명·배열·출처를 보존하므로 누적된 긴 설명을 더 짧은 문구로 교체하려 하지 않는다. 서로 다른 업무를 억지로 합치거나 미해결 질문·상충 근거·원문을 삭제하여 줄이지 않는다. 질문과 근거는 예산 목표보다 우선하며 실제 전체 상한을 넘으면 성공으로 꾸미지 않는다.';
   if (!snapshot.backlog.businessRequirements.length) {
     synthesisSchema.properties.issues.items.properties.requirementIds.maxItems = 0;
-    synthesisSchema.description += ' No project requirements are registered yet: every issue.requirementIds must be []. Keep questions and cite sourceId/clauseId evidence; source document labels are not registered project requirement IDs.';
+    synthesisSchema.description += ' No project requirements are registered yet: every issue.requirementIds must be []. Keep questions and choose evidenceIndex references for citations; source document labels are not registered project requirement IDs.';
   }
   const batches = groups(documents, 4);
+  const maximumEvidenceIndex = Math.max(0, documents.reduce((count, document) => count + document.anchors.length, 0) - 1);
   const readingIssueBytes = readingIssues.length ? Buffer.byteLength(JSON.stringify(readingIssues)) : 0;
   for (const [index, batch] of batches.entries()) {
     onStage('synthesis', index, batches.length);
-    let data = { documents: batch, previousModel: model ?? null, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Use only the supplied anchors as verbatim issue citations.' };
+    const evidence = discoveryEvidence(batch, model);
+    const reference = { type: 'object', properties: { evidenceIndex: { type: 'integer' } }, required: ['evidenceIndex'], additionalProperties: false };
+    const nativeSchema = structuredClone(synthesisSchema), transportSchema = structuredClone(BUSINESS_MODEL_SCHEMA);
+    for (const schema of [nativeSchema, transportSchema]) schema.properties.issues.items.properties.citations.items = structuredClone(reference);
+    // Keep the archived generation schema stable across batches; the local
+    // resolver enforces this call's smaller, exact evidence range.
+    nativeSchema.properties.issues.items.properties.citations.items.properties.evidenceIndex.minimum = 0;
+    nativeSchema.properties.issues.items.properties.citations.items.properties.evidenceIndex.maximum = maximumEvidenceIndex;
+    nativeSchema.description += ' 인용 출력은 { evidenceIndex: 정수 }만 사용한다. 실제 선택 범위는 0 이상 evidenceCount 미만이며 이번 documents[].anchors[].evidenceIndex 또는 previousIssueEvidence의 evidenceIndexes에서 질문에 실제로 관련된 근거 번호만 선택한다. 한 질문 안에서 같은 근거 번호를 중복 선택하지 않는다. previousIssueEvidence는 같은 issueId의 이전 citations 순서와 대응한다. 출처·조항 ID나 인용문을 새로 작성하거나 덧붙이지 않는다. 프로그램이 선택한 번호의 검증된 원문 인용을 그대로 연결한다. 번호를 짧게 반환해도 연결된 인용문 전체가 실제 누적 용량에 포함되므로 필요한 근거만 선택한다. 이전 질문을 생략해도 병합에서 유지된다.';
+    let data = { documents: evidence.documents, previousModel: model ? structuredClone(model) : null, previousIssueEvidence: evidence.previousIssueEvidence, evidenceCount: evidence.citations.length, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Choose supplied evidenceIndex references for issue citations; the application resolves them to immutable source quotations.' };
     data.discoveryBudget = { maxMergedBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: Math.max(0, Math.floor((BUSINESS_MODEL_MAX_BYTES - readingIssueBytes) * 0.75 / batches.length)), readingIssueBytes, previousModelBytes: model ? Buffer.byteLength(JSON.stringify(model)) : 0, batch: index + 1, batches: batches.length };
     for (let attempt = 0; attempt < 2; attempt++) {
       if (signal?.aborted) fail('AI_CANCELLED');
       try {
-        const response = await run({ request: request('synthesis', data, snapshot), schema: synthesisSchema, cwd, signal });
+        const response = await run({ request: request('synthesis', structuredClone(data), snapshot), schema: structuredClone(nativeSchema), cwd, signal });
         if (signal?.aborted) fail('AI_CANCELLED');
-        const delta = validateBusinessModel(response.output, snapshot, batch.map(doc => doc.sourceId));
-        validatePrivateAiValue(delta, synthesisSchema, { maxBytes: BUSINESS_MODEL_MAX_BYTES });
+        try { validatePrivateAiValue(response.output, transportSchema, { maxBytes: BUSINESS_MODEL_MAX_BYTES }); }
+        catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'output-size')) fail('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
+        const delta = validateBusinessModel(resolveDiscoveryEvidence(response.output, evidence.citations), snapshot, batch.map(doc => doc.sourceId));
+        validatePrivateAiValue(response.output, nativeSchema, { maxBytes: BUSINESS_MODEL_MAX_BYTES });
         try { model = mergeBusinessModels(model, delta, snapshot); }
         catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'schema')) fail('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
         break;

@@ -8,6 +8,8 @@ import { validatePrivateAiValue } from './ai-contract.mjs';
 const snapshot = () => ({ backlog: { ...createEmptyBacklogPack(context), project: { code: 'SYNTHETIC', name: '합성 검토', institution: '합성 기관', baselineProfile: '' }, sources: [structuredClone(source)] }, metadata: { context } });
 const reading = () => ({ summary: '담당자의 접수 조회 책임과 열람 범위에 관한 문서다.', blocks: [{ heading: '접수 조회', certainty: 'clear', inputId: 'C-1', note: '담당자의 업무' }], unreadable: [] });
 const response = request => envelope({ summary: '접수 조회 업무를 통합한다.', actors: [], processes: [], terms: [], issues: [], sourceCoverage: request.data.documents.map(doc => ({ sourceId: doc.sourceId, role: 'business', rationale: '조회 업무의 근거' })) });
+const citation = request => ({ evidenceIndex: request.data.documents[0].anchors[0].evidenceIndex });
+const referenceSchema = maximum => ({ type: 'object', properties: { evidenceIndex: { type: 'integer', minimum: 0, maximum } }, required: ['evidenceIndex'], additionalProperties: false });
 
 test('synthesis with no registered requirements constrains corrective regeneration without discarding source-grounded questions', async () => {
   const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA), originals = structuredClone(state.backlog.sources);
@@ -18,7 +20,7 @@ test('synthesis with no registered requirements constrains corrective regenerati
     assert.ok(JSON.stringify(schema).length <= 20_000);
     const value = response(request).output;
     value.actors.push({ name: '담당자', responsibility: '접수 조회', sourceIds: [source.id] });
-    const issue = { id: 'QUESTION-SCOPE', kind: 'decision', severity: 'blocking', question: '담당자의 접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [request.data.documents[0].anchors[0]] };
+    const issue = { id: 'QUESTION-SCOPE', kind: 'decision', severity: 'blocking', question: '담당자의 접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [citation(request)] };
     value.issues.push(issue);
     assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
     assert.throws(() => validatePrivateAiValue({ ...value, issues: [{ ...issue, requirementIds: ['UNREGISTERED'] }] }, schema), { code: 'AI_OUTPUT_INVALID' });
@@ -36,11 +38,12 @@ test('synthesis keeps registered requirement references valid without polluting 
   const state = snapshot(), template = structuredClone(BUSINESS_MODEL_SCHEMA);
   state.backlog.businessRequirements = [{ id: 'REQ-EXISTING' }];
   const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request, schema }) => {
-    assert.deepEqual(schema.properties.issues, template.properties.issues);
+    const expected = structuredClone(template.properties.issues); expected.items.properties.citations.items = referenceSchema(0);
+    assert.deepEqual(schema.properties.issues, expected);
     assert.equal(schema.properties.summary.maxLength, 2000);
     assert.doesNotMatch(schema.description, /No project requirements are registered yet/);
     const value = response(request).output;
-    value.issues.push({ id: 'QUESTION-EXISTING', kind: 'decision', severity: 'blocking', question: '기존 접수 요구사항의 열람 범위를 확인해 주세요.', options: [], requirementIds: ['REQ-EXISTING'], citations: [request.data.documents[0].anchors[0]] });
+    value.issues.push({ id: 'QUESTION-EXISTING', kind: 'decision', severity: 'blocking', question: '기존 접수 요구사항의 열람 범위를 확인해 주세요.', options: [], requirementIds: ['REQ-EXISTING'], citations: [citation(request)] });
     assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
     return envelope(value);
   } });
@@ -69,6 +72,7 @@ test('discovery generates a bounded outline while retaining original clauses and
     }
     const expectedIssues = structuredClone(template.properties.issues);
     expectedIssues.items.properties.requirementIds.maxItems = 0;
+    expectedIssues.items.properties.citations.items = referenceSchema(36);
     assert.deepEqual(schema.properties.issues, expectedIssues);
     assert.deepEqual(request.data.discoveryBudget, { maxMergedBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: 12288, readingIssueBytes: 0, previousModelBytes: request.data.previousModel ? Buffer.byteLength(JSON.stringify(request.data.previousModel)) : 0, batch: calls, batches: 10 });
     assert.match(schema.description, /전체 원문 조항/);
@@ -82,7 +86,7 @@ test('discovery generates a bounded outline while retaining original clauses and
     value.actors.push({ name: '담당자', responsibility: description, sourceIds });
     value.terms.push({ term: '접수', meaning: description, sourceIds });
     value.processes = [{ name: '접수', trigger: description, steps: calls <= 2 ? Array.from({ length: 6 }, (_, index) => `${calls}차 접수 확인 ${index + 1}`) : [], exceptions: [], rules: [], data: [], sourceIds }];
-    if (calls === 1) value.issues.push({ id: 'QUESTION-RETAINED', kind: 'decision', severity: 'blocking', question: '접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [request.data.documents[0].anchors[0]] });
+    if (calls === 1) value.issues.push({ id: 'QUESTION-RETAINED', kind: 'decision', severity: 'blocking', question: '접수 열람 범위를 확인해 주세요.', options: [], requirementIds: [], citations: [citation(request)] });
     assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
     return envelope(value);
   } });
