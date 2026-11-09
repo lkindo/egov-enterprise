@@ -203,6 +203,9 @@
 
 ### 6.2 검증은 한 커밋에 한 번
 - 작업 중에는 영향 테스트만 실행한다.
+  - 영향 테스트는 `node scripts/impact-tests.mjs --diff origin/main`(또는 `--for <경로…>`)으로 고를 수 있다.
+  - 이 도구는 바꾼 파일을 import 사슬로 읽는 node 시험과, 바꾼 파일의 경로·클래스 이름을 적은 Java·프런트 시험을 찾는다. 그리고 태그에 맞는 Gradle 작업(`harnessTest` 등)과 `vitest related` 명령을 알려 준다.
+  - 추천이지 게이트가 아니다. 경로를 조각으로 잇거나 디렉터리를 훑는 시험은 찾지 못한다.
 - 다음 재실행은 중복이 아니다: 위임 산출물에 대한 메인 에이전트의 독립 재검증(§2.3), 게이트·계약의 red 증명(green → 위반 주입 → red → 원복 → green), 이번에 바꾼 계약·게이트의 대상 테스트 실행. "미리 돌리지 않는다"는 pre-push가 곧 돌릴 묶음 전체를 같은 커밋에서 한 번 더 돌리는 경우에만 적용한다.
 - §6.4의 `verify:integrate`는 폼 census·전체 하네스의 통합 실패를 푸시 전에 드러내기 위해 이 둘을 먼저 실행한다. 이 명시적 중복은 pre-push의 같은 검사나 required CI를 생략할 근거가 아니다.
 - 넓은 로컬 검증은 최신 main을 합치고 §6.4대로 다시 만든 뒤, 푸시 직전에 한 번 한다. pre-push가 곧 실행할 묶음(운영 계약 — 작업 브랜치 push 는 push 뒤 `verify:post-push` 가 돈다, 범위별 compile·tsc·lint·폼 census·codegen 검사, `src/__tests__` Vitest, `harnessTest` — [.githooks/README.md](../../.githooks/README.md))은 같은 커밋에서 미리 돌리지 않는다 — `npm run verify`(기본 `full`)와 `verify:docs`·`fast`·`push`·`be`·`fe`·`e2e` 도 맨 앞에서 생성물 신선도와 운영 계약을(`fast`·`push`·`fe`·`full` 은 정적 검사도) 돌리므로 push 직전에 그대로 돌리면 이 묶음이 같은 커밋에서 다시 돈다. 대신 훅이 보지 않는 검사 가운데 변경이 요구하는 것을 고른다: 화면 파일을 지우거나 옮기거나 화면 문자열을 바꾸면 전체 Vitest, `foundation`·`business-*`에 클래스를 더하거나 고치면 그 모듈의 `check`(클래스별 커버리지), 엔티티·DDL을 바꾸면 `schemaValidationTest`, RSC 경계·의존성을 바꾸면 `pnpm -C frontend build`와 `bundle:check`, 컨트롤러·DTO를 바꾸면 `api-docs.json` 추출(§6.4). 해당하는 검사가 하나도 없을 때만 넓은 로컬 검증을 생략한다. required CI가 같은 범위를 돈다는 사실은 생략 사유가 아니다.
