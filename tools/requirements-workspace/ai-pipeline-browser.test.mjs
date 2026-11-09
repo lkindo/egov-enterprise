@@ -161,7 +161,7 @@ test('a server restart during a selected upload batch preserves the files and re
 });
 
 test('an open failed analysis dialog follows actual server progress without losing consent or re-reading completed files', async () => {
-  const workspace = mkdtempSync(join(tmpdir(), 'synthetic-dialog-live-progress-')); let app, browser, release;
+  const workspace = mkdtempSync(join(tmpdir(), 'synthetic-dialog-live-progress-')); let app, browser, release, releaseConsentScope;
   let readings = 0;
   try {
     app = await startRequirementsServer({ workspace, port: 0, contextProvider: async () => context, aiRunner: async ({ request }) => {
@@ -210,8 +210,21 @@ test('an open failed analysis dialog follows actual server progress without losi
     assert.match(await page.getByRole('region', { name: 'AI 판독 진행', exact: true }).textContent(), /완료 기록 2\/2건/);
     await page.locator('#page-errors').getByRole('button', { name: '실행기 주소로 다시 연결', exact: true }).waitFor();
     await page.context().setOffline(false);
+    const consentScopeGate = new Promise(resolve => { releaseConsentScope = resolve; });
+    await page.route('**/api/state', async route => { await consentScopeGate; await route.continue(); });
     await page.getByRole('button', { name: 'AI 판독 이어서 진행', exact: true }).click();
-    await page.locator('[name="sensitivityAcknowledged"]').check(); await page.locator('[name="ai-consent"]').check(); await page.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
+    assert.equal(await page.locator('#dialog').isVisible(), false, 'fresh consent waits for the current source scope');
+    releaseConsentScope();
+    const resumedDialog = page.getByRole('dialog', { name: '원본에서 개발 작업계획까지 AI 처리', exact: true });
+    await resumedDialog.waitFor();
+    await page.unroute('**/api/state');
+    // A checked control in the closed old form lets Playwright check() return before the new form opens.
+    for (const name of ['sensitivityAcknowledged', 'ai-consent']) {
+      const checkbox = resumedDialog.locator(`[name="${name}"]`);
+      assert.equal(await checkbox.isChecked(), false, 'each new run requires fresh visible consent');
+      await checkbox.check();
+    }
+    await resumedDialog.getByRole('button', { name: '동의하고 전체 AI 처리 시작', exact: true }).click();
     try { await page.getByRole('button', { name: '전체 초안 확인·반영', exact: true }).waitFor({ timeout: 90000 }); }
     catch (error) {
       const view = await app.engine.state().catch(() => null);
@@ -224,7 +237,7 @@ test('an open failed analysis dialog follows actual server progress without losi
     assert.equal(readings, 3); assert.equal((await app.engine.state()).metadata.baselines.length, 0);
   } catch (error) {
     const safe = new Error(String(error.message).replaceAll(app?.launchSecret ?? '\0', '[redacted]').replace(/#launch=[A-Za-z0-9_%.-]+/g, '#launch=[redacted]')); throw safe;
-  } finally { release?.(); await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
+  } finally { releaseConsentScope?.(); release?.(); await browser?.close(); await app?.close(); rmSync(workspace, { recursive: true, force: true }); }
 });
 
 test('closing a failed first upload in the same window exposes resume and remaining-file actions', async () => {
