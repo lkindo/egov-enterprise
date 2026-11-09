@@ -77,6 +77,9 @@ function resolveDiscoveryEvidence(output, citations) {
   }
   return value;
 }
+function invalidDiscoveryBudget() {
+  throw Object.assign(new Error('AI_OUTPUT_INVALID'), { code: 'AI_OUTPUT_INVALID', details: [{ kind: 'business-model-budget', path: '$' }] });
+}
 export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceReading = () => null, onStage = () => {}, onValidated = () => {} }) {
   const anchorsBySource = new Map(snapshot.backlog.sources.map(source => [source.id, documentAnchors(source)]));
   if ([...anchorsBySource.values()].some(anchors => !anchors.length)) fail('AI_DOCUMENT_UNREADABLE');
@@ -121,7 +124,7 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     processFields[field].maxItems = 6;
     processFields[field].items.maxLength = field === 'data' ? 180 : 240;
   }
-  synthesisSchema.description += ' 중간 업무 지도는 행위자·업무 흐름·용어를 찾는 간결한 색인이다. 문서 통합의 구체성은 이 형식 상한과 색인 지시 안에서 충족한다. discoveryBudget.targetBatchBytes는 이번 묶음의 새 actors/processes/terms 설명에 권장하는 UTF-8 예산이다. summary는 교체되고 sourceCoverage와 issues는 누적된다. 이들은 권장 설명 예산에서 제외하지만 실제 누적 상한에 포함되므로 sourceCoverage의 rationale도 짧게 쓴다. 알려진 판독 질문의 크기(readingIssueBytes)를 미리 고려한다. 이전 모델도 계속 남으므로 각 묶음마다 전체 상한을 쓰지 않는다. 흐름은 상위 단계로, 규칙·데이터는 짧은 식별 문장으로 정리한다. 세부 조건·필드·인수 기준은 다음 단계에서 전체 원문 조항을 읽어 요구사항으로 만든다. 변경 없는 기존 항목은 반환에서 생략한다. 기존 항목의 갱신에는 새로 확인된 사실·배열 원소만 추가하며 이전 설명 전체를 바꿔 쓰거나 반복하지 않는다. 새 근거 문서만 연결할 때는 기존 설명에 포함된 짧은 문구를 그대로 재사용하고 새 배열 원소가 없으면 빈 배열을 반환한다. 병합은 기존 설명·배열·출처를 보존하므로 누적된 긴 설명을 더 짧은 문구로 교체하려 하지 않는다. 서로 다른 업무를 억지로 합치거나 미해결 질문·상충 근거·원문을 삭제하여 줄이지 않는다. 질문과 근거는 예산 목표보다 우선하며 실제 전체 상한을 넘으면 성공으로 꾸미지 않는다.';
+  synthesisSchema.description += ' 중간 업무 지도는 행위자·업무 흐름·용어를 찾는 간결한 색인이다. 문서 통합의 구체성은 이 형식 상한과 색인 지시 안에서 충족한다. discoveryBudget.absoluteMaxBytes는 판독 질문까지 합친 최종 전체 UTF-8 상한이다. targetBatchBytes와 targetMergedBytesForBatch는 판독 질문 공간을 예약한 뒤 남은 공간의 75%를 묶음 수에 따라 나눈 간결성 목표다. 첫 응답이 목표를 넘으면 한 번 보정한다. maxMergedBytesForBatch는 판독 질문과 아직 처리하지 않은 문서의 최소 출처 색인 공간을 예약한 실제 수용 상한이다. 보정 후 필요한 근거·질문이 목표보다 크더라도 실제 수용 상한 이내면 보존한다. 마지막 묶음도 첫 응답은 목표 기준으로 확인하며, 보정 후 실제 상한까지 사용할 수 있다. readingIssueCount개의 판독 질문도 보존하므로 업무 지도 질문과 합친 전체 질문 개수가 maxIssues를 넘지 않게 한다. previousModelBytes와 비교해 남은 용량을 사용한다. correction.budget의 reason과 실제/허용 바이트를 보고 해당 원인만 보정한다. 요약·행위자·흐름·용어·sourceCoverage·issues·선택한 원문 인용 전체를 계산한다. summary는 교체되지만 나머지 항목과 미해결 질문은 누적되므로 처음부터 전체 공간을 소비하지 않는다. 흐름·규칙·데이터와 질문은 짧고 명확한 식별 문장으로 정리한다. 세부 조건·필드·인수 기준은 다음 단계에서 전체 원문 조항을 읽어 요구사항으로 만든다. 변경 없는 기존 항목은 반환에서 생략한다. 기존 항목에는 새 사실·배열 원소만 추가하며 이전 설명을 바꿔 쓰거나 반복하지 않는다. 새 근거 문서만 연결할 때는 기존 설명의 짧은 문구를 그대로 쓰고 새 배열 원소가 없으면 빈 배열을 반환한다. 병합은 기존 설명·배열·출처를 보존한다. 같은 결정과 근거의 질문만 통합하고 질문마다 실제로 필요한 인용을 선택한다. 서로 다른 업무·정책을 합치거나 미해결 질문·상충 근거·원문을 삭제하여 줄이지 않는다. 필요한 질문을 숨기거나 없는 정책으로 용량을 맞추지 않는다.';
   if (!snapshot.backlog.businessRequirements.length) {
     synthesisSchema.properties.issues.items.properties.requirementIds.maxItems = 0;
     synthesisSchema.description += ' No project requirements are registered yet: every issue.requirementIds must be []. Keep questions and choose evidenceIndex references for citations; source document labels are not registered project requirement IDs.';
@@ -129,6 +132,11 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
   const batches = groups(documents, 4);
   const maximumEvidenceIndex = Math.max(0, documents.reduce((count, document) => count + document.anchors.length, 0) - 1);
   const readingIssueBytes = readingIssues.length ? Buffer.byteLength(JSON.stringify(readingIssues)) : 0;
+  const targetBatchBytes = Math.max(0, Math.floor((BUSINESS_MODEL_MAX_BYTES - readingIssueBytes) * 0.75 / batches.length));
+  const minimumCoverage = documents.map(doc => ({ sourceId: doc.sourceId, role: 'business', rationale: 'x' }));
+  const minimum = { summary: 'x', actors: [], processes: [], terms: [], sourceCoverage: minimumCoverage, issues: [] };
+  const availableModelBytes = BUSINESS_MODEL_MAX_BYTES - readingIssueBytes;
+  if (Buffer.byteLength(JSON.stringify(minimum)) > availableModelBytes) fail('AI_BUSINESS_MODEL_CAPACITY');
   for (const [index, batch] of batches.entries()) {
     onStage('synthesis', index, batches.length);
     const evidence = discoveryEvidence(batch, model);
@@ -141,9 +149,12 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
     nativeSchema.properties.issues.items.properties.citations.items.properties.evidenceIndex.maximum = maximumEvidenceIndex;
     nativeSchema.description += ' 인용 출력은 { evidenceIndex: 정수 }만 사용한다. 실제 선택 범위는 0 이상 evidenceCount 미만이며 이번 documents[].anchors[].evidenceIndex 또는 previousIssueEvidence의 evidenceIndexes에서 질문에 실제로 관련된 근거 번호만 선택한다. 한 질문 안에서 같은 근거 번호를 중복 선택하지 않는다. previousIssueEvidence는 같은 issueId의 이전 citations 순서와 대응한다. 출처·조항 ID나 인용문을 새로 작성하거나 덧붙이지 않는다. 프로그램이 선택한 번호의 검증된 원문 인용을 그대로 연결한다. 번호를 짧게 반환해도 연결된 인용문 전체가 실제 누적 용량에 포함되므로 필요한 근거만 선택한다. 이전 질문을 생략해도 병합에서 유지된다.';
     let data = { documents: evidence.documents, previousModel: model ? structuredClone(model) : null, previousIssueEvidence: evidence.previousIssueEvidence, evidenceCount: evidence.citations.length, decisions: snapshot.metadata.ai?.decisions ?? [], coverageRule: 'sourceCoverage must contain exactly the current documents. Return additions/updates for actors/processes/terms; the application retains omitted earlier entries and all unresolved issues. summary integrates previousModel. Choose supplied evidenceIndex references for issue citations; the application resolves them to immutable source quotations.' };
-    data.discoveryBudget = { maxMergedBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: Math.max(0, Math.floor((BUSINESS_MODEL_MAX_BYTES - readingIssueBytes) * 0.75 / batches.length)), readingIssueBytes, previousModelBytes: model ? Buffer.byteLength(JSON.stringify(model)) : 0, batch: index + 1, batches: batches.length };
+    const remainingCoverage = minimumCoverage.slice((index + 1) * 4);
+    const remainingCoverageBytes = remainingCoverage.length ? Buffer.byteLength(JSON.stringify(remainingCoverage)) - 1 : 0;
+    data.discoveryBudget = { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes, targetMergedBytesForBatch: targetBatchBytes * (index + 1), maxMergedBytesForBatch: availableModelBytes - remainingCoverageBytes, readingIssueBytes, readingIssueCount: readingIssues.length, maxIssues: BUSINESS_MODEL_SCHEMA.properties.issues.maxItems, previousModelBytes: model ? Buffer.byteLength(JSON.stringify(model)) : 0, batch: index + 1, batches: batches.length };
     for (let attempt = 0; attempt < 2; attempt++) {
       if (signal?.aborted) fail('AI_CANCELLED');
+      let budgetFeedback;
       try {
         const response = await run({ request: request('synthesis', structuredClone(data), snapshot), schema: structuredClone(nativeSchema), cwd, signal });
         if (signal?.aborted) fail('AI_CANCELLED');
@@ -151,8 +162,24 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
         catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'output-size')) fail('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
         const delta = validateBusinessModel(resolveDiscoveryEvidence(response.output, evidence.citations), snapshot, batch.map(doc => doc.sourceId));
         validatePrivateAiValue(response.output, nativeSchema, { maxBytes: BUSINESS_MODEL_MAX_BYTES });
-        try { model = mergeBusinessModels(model, delta, snapshot); }
-        catch (error) { if (error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'schema')) fail('AI_BUSINESS_MODEL_CAPACITY'); throw error; }
+        let candidate;
+        try { candidate = mergeBusinessModels(model, delta, snapshot); mergeIssues(candidate.issues, readingIssues); }
+        catch (error) {
+          const mergedSchemaCapacity = error.code === 'AI_OUTPUT_INVALID' && error.details?.some(detail => detail.kind === 'schema');
+          if (attempt === 0 && (mergedSchemaCapacity || ['AI_BUSINESS_MODEL_CAPACITY', 'AI_ISSUE_CAPACITY'].includes(error.code))) {
+            budgetFeedback = { reason: error.code === 'AI_ISSUE_CAPACITY' ? 'issues' : mergedSchemaCapacity ? 'merged-schema' : 'merged-bytes', maxIssues: data.discoveryBudget.maxIssues, readingIssueCount: readingIssues.length };
+            invalidDiscoveryBudget();
+          }
+          if (mergedSchemaCapacity) fail('AI_BUSINESS_MODEL_CAPACITY');
+          throw error;
+        }
+        const candidateBytes = Buffer.byteLength(JSON.stringify(candidate)), hardLimitBytes = data.discoveryBudget.maxMergedBytesForBatch;
+        if (candidateBytes > hardLimitBytes || (attempt === 0 && candidateBytes > data.discoveryBudget.targetMergedBytesForBatch)) {
+          if (attempt === 1) fail('AI_BUSINESS_MODEL_CAPACITY');
+          budgetFeedback = { reason: 'bytes', actualBytes: candidateBytes, limitBytes: Math.min(hardLimitBytes, data.discoveryBudget.targetMergedBytesForBatch), hardLimitBytes };
+          invalidDiscoveryBudget();
+        }
+        model = candidate;
         break;
       } catch (error) {
         if (signal?.aborted) fail('AI_CANCELLED');
@@ -160,7 +187,7 @@ export async function prepareBusinessModel(snapshot, { run, cwd, signal, sourceR
         const details = Array.isArray(error.details) && error.details.length ? error.details : [{ kind: 'schema', path: '$' }];
         const violations = details.map(detail => ({ kind: typeof detail?.kind === 'string' && /^[a-z-]{1,80}$/.test(detail.kind) ? detail.kind : 'schema', path: typeof detail?.path === 'string' && /^[a-zA-Z0-9_$.\[\]-]{1,200}$/.test(detail.path) ? detail.path : '$' }));
         if (violations.some(detail => detail.kind === 'output-size')) throw error;
-        data = { ...data, correction: { violations } };
+        data = { ...data, correction: { violations, budget: budgetFeedback ?? { reason: 'target', limitBytes: data.discoveryBudget.targetMergedBytesForBatch, hardLimitBytes: data.discoveryBudget.maxMergedBytesForBatch } } };
       }
     }
     onStage('synthesis', index + 1, batches.length);

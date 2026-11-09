@@ -164,3 +164,112 @@ test('a rejected runner cannot mutate human decisions, evidence input or validat
   assert.equal(calls, 2); assert.deepEqual(state.metadata.ai.decisions, decisions);
   assert.deepEqual(result.businessModel.issues[0].citations, [expected]);
 });
+
+test('reading questions reserve real capacity and an oversized intermediate map is corrected before exhausting later batches', async () => {
+  const state = snapshot(); state.backlog.sources = Array.from({ length: 24 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` }));
+  let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: () => ({ ...reading(), blocks: [{ heading: '원본 대조', certainty: 'uncertain', inputId: 'C-1', note: '표의 조건을 원본과 대조해야 한다. '.repeat(40) }] }), run: async ({ request }) => {
+    calls++; const value = model(request), budget = request.data.discoveryBudget;
+    if (calls === 1) value.actors = Array.from({ length: 80 }, (_, index) => ({ name: `담당자-${index}`, responsibility: '접수 내역과 업무 책임을 원문 기준으로 확인한다. '.repeat(6).slice(0, 240), sourceIds: [request.data.documents[0].sourceId] }));
+    if (calls === 2) {
+      assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-budget', path: '$' }]);
+      assert.ok(budget.readingIssueBytes > 30_000); assert.equal(budget.targetMergedBytesForBatch, budget.targetBatchBytes);
+      assert.equal(request.data.previousModel, null);
+    }
+    return envelope(value);
+  } });
+  assert.equal(calls, 7); assert.equal(result.businessModel.actors.length, 0);
+  assert.equal(result.businessModel.issues.length, 24); assert.equal(result.businessModel.sourceCoverage.length, 24);
+  assert.ok(Buffer.byteLength(JSON.stringify(result.businessModel)) <= BUSINESS_MODEL_MAX_BYTES);
+});
+
+for (const termCount of [100, 160]) test(`cumulative rejection of ${termCount} terms preserves the earlier map and allows one correction`, async () => {
+  const state = snapshot(); state.backlog.sources = Array.from({ length: 8 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` }));
+  let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request }) => {
+    calls++; const value = model(request);
+    if (calls === 1) value.actors = Array.from({ length: 70 }, (_, index) => ({ name: `담당자-${index}`, responsibility: '가'.repeat(240), sourceIds: [request.data.documents[0].sourceId] }));
+    if (calls === 2) value.terms = Array.from({ length: termCount }, (_, index) => ({ term: `업무 용어-${index}`, meaning: '나'.repeat(240), sourceIds: [request.data.documents[0].sourceId] }));
+    if (calls === 3) {
+      assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-budget', path: '$' }]);
+      assert.equal(request.data.correction.budget.reason, termCount === 100 ? 'bytes' : 'merged-bytes');
+      assert.equal(request.data.previousModel.actors.length, 70); assert.equal(request.data.previousModel.terms.length, 0);
+      value.terms = [{ term: '접수', meaning: '원본의 접수 업무', sourceIds: [request.data.documents[0].sourceId] }];
+    }
+    return envelope(value);
+  } });
+  assert.equal(calls, 3); assert.equal(result.businessModel.actors.length, 70); assert.equal(result.businessModel.terms.length, 1);
+  assert.equal(result.businessModel.sourceCoverage.length, 8);
+});
+
+test('reading questions reserve issue slots before accepting model questions', async () => {
+  const state = snapshot(); let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: () => ({ ...reading(), unreadable: [{ inputId: 'C-1', reason: '원본의 처리기간을 대조해야 한다.' }] }), run: async ({ request }) => {
+    calls++;
+    if (calls === 2) {
+      assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-budget', path: '$' }]);
+      assert.equal(request.data.correction.budget.reason, 'issues'); assert.equal(request.data.correction.budget.readingIssueCount, 1);
+    }
+    return envelope({ ...model(request), issues: Array.from({ length: calls === 1 ? 100 : 1 }, (_, index) => question(`Q-SLOT-${index}`, [{ evidenceIndex: 0 }])) });
+  } });
+  assert.equal(calls, 2); assert.equal(result.businessModel.issues.length, 2);
+  assert.ok(result.businessModel.issues.some(issue => issue.id.startsWith('DOC-')));
+});
+
+test('an impossible reading-question reserve fails before any synthesis call', async () => {
+  const state = snapshot(); state.backlog.sources = Array.from({ length: 100 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` })); let calls = 0;
+  await assert.rejects(prepareBusinessModel(state, { sourceReading: () => ({ ...reading(), blocks: [{ heading: '원본 대조', certainty: 'uncertain', inputId: 'C-1', note: '가'.repeat(900) }] }), run: async ({ request }) => { calls++; return envelope(model(request)); } }), { code: 'AI_BUSINESS_MODEL_CAPACITY' });
+  assert.equal(calls, 0);
+});
+
+test('a necessary early summary and questions may exceed a small linear target after one correction when the real project capacity permits them', async () => {
+  const state = snapshot(); state.backlog.sources = Array.from({ length: 100 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` })); let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request }) => {
+    calls++; const value = model(request);
+    if (calls <= 2) {
+      value.summary = '가'.repeat(2000);
+      value.issues = Array.from({ length: 5 }, (_, index) => ({ ...question(`Q-EARLY-${index}`, [{ evidenceIndex: 0 }]), question: `${index + 1}번 원문의 열람 정책을 확인해 주세요.` }));
+    }
+    if (calls === 2) assert.equal(request.data.correction.budget.reason, 'bytes');
+    return envelope(value);
+  } });
+  assert.equal(calls, 26); assert.equal(result.businessModel.issues.length, 5); assert.equal(result.businessModel.sourceCoverage.length, 100);
+});
+
+test('the final real byte ceiling remains available after compacting once instead of imposing an unused quarter-capacity restriction', async () => {
+  const state = snapshot(); let calls = 0;
+  const result = await prepareBusinessModel(state, { sourceReading: reading, run: async ({ request }) => {
+    calls++; const value = { ...model(request), terms: Array.from({ length: 200 }, (_, index) => ({ term: `용어-${index}`, meaning: '가'.repeat(190), sourceIds: [source.id] })) };
+    const bytes = Buffer.byteLength(JSON.stringify(value)); assert.ok(bytes > BUSINESS_MODEL_MAX_BYTES * 0.75 && bytes < BUSINESS_MODEL_MAX_BYTES);
+    if (calls === 2) assert.equal(request.data.discoveryBudget.maxMergedBytesForBatch, BUSINESS_MODEL_MAX_BYTES);
+    return envelope(value);
+  } });
+  assert.equal(calls, 2); assert.equal(result.businessModel.terms.length, 200);
+});
+
+test('two real reserved-capacity overruns fail with capacity after two calls and never publish a synthesis', async () => {
+  const state = snapshot(); state.backlog.sources = Array.from({ length: 24 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` })); let calls = 0, published = 0;
+  await assert.rejects(prepareBusinessModel(state, { sourceReading: () => ({ ...reading(), blocks: [{ heading: '원본 대조', certainty: 'uncertain', inputId: 'C-1', note: '표의 조건을 원본과 대조해야 한다. '.repeat(40) }] }), onValidated: stage => { if (stage === 'synthesis') published++; }, run: async ({ request }) => {
+    calls++; const value = { ...model(request), actors: Array.from({ length: 80 }, (_, index) => ({ name: `담당자-${index}`, responsibility: '가'.repeat(240), sourceIds: [request.data.documents[0].sourceId] })), terms: Array.from({ length: 60 }, (_, index) => ({ term: `용어-${index}`, meaning: '가'.repeat(240), sourceIds: [request.data.documents[0].sourceId] })) };
+    assert.ok(Buffer.byteLength(JSON.stringify(value)) < BUSINESS_MODEL_MAX_BYTES);
+    return envelope(value);
+  } }), { code: 'AI_BUSINESS_MODEL_CAPACITY' });
+  assert.equal(calls, 2); assert.equal(published, 0);
+});
+
+test('remaining source coverage is reserved before accepting a near-full first map', async () => {
+  const state = snapshot(); state.backlog.sources = Array.from({ length: 8 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` })); let calls = 0;
+  await assert.rejects(prepareBusinessModel(state, { sourceReading: reading, run: async ({ request }) => {
+    calls++; const value = { ...model(request), summary: '가', actors: Array.from({ length: 80 }, (_, index) => ({ name: `담당자-${index}`, responsibility: '가'.repeat(240), sourceIds: [request.data.documents[0].sourceId] })) };
+    const desiredBytes = BUSINESS_MODEL_MAX_BYTES - 100; value.terms = [];
+    for (let index = 0; index < 200; index++) {
+      value.terms.push({ term: `용어-${index}`, meaning: '가'.repeat(240), sourceIds: [request.data.documents[0].sourceId] });
+      const base = Buffer.byteLength(JSON.stringify(value));
+      if (base >= desiredBytes - 5997 && base <= desiredBytes) { value.summary = '가'.repeat(1 + Math.floor((desiredBytes - base) / 3)); break; }
+    }
+    const bytes = Buffer.byteLength(JSON.stringify(value));
+    assert.ok(value.summary.length <= 2000 && bytes < BUSINESS_MODEL_MAX_BYTES && bytes > BUSINESS_MODEL_MAX_BYTES - 200);
+    return envelope(value);
+  } }), { code: 'AI_BUSINESS_MODEL_CAPACITY' });
+  assert.equal(calls, 2);
+});

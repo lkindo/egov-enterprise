@@ -31,7 +31,7 @@ for (const fault of ['source-reference', 'schema']) test(`synthesis retries an i
   }, onValidated: (stage, value) => { if (stage === 'synthesis') validated.push(value); } });
   assert.equal(requests.length, 2); assert.equal(validated.length, 1); assert.deepEqual(result.businessModel, model());
   assert.deepEqual(requests[1].data.documents, requests[0].data.documents);
-  assert.deepEqual(requests[1].data.correction, { violations: [{ kind: fault === 'source-reference' ? 'business-model-source' : 'schema', path: '$' }] });
+  assert.deepEqual(requests[1].data.correction, { violations: [{ kind: fault === 'source-reference' ? 'business-model-source' : 'schema', path: '$' }], budget: { reason: 'target', limitBytes: requests[1].data.discoveryBudget.targetMergedBytesForBatch, hardLimitBytes: requests[1].data.discoveryBudget.maxMergedBytesForBatch } });
   assert.equal(JSON.stringify(requests[1]).includes('UNKNOWN-UNTRUSTED-DRAFT'), false);
 });
 
@@ -84,20 +84,21 @@ test('unquotable uncertain readings fail before synthesis and only a complete di
   }
 });
 
-test('synthesis merge overflow never regenerates and a second-batch correction retains the prior validated model', async () => {
+test('synthesis merge overflow regenerates once and a second-batch correction retains the prior validated model', async () => {
   for (const fault of ['merged-text', 'merged-actors', 'correctable-source']) {
     const state = snapshot(); state.backlog.sources = Array.from({ length: fault === 'merged-text' ? 33 : 5 }, (_, index) => ({ ...structuredClone(source), id: `SRC-${index + 1}` }));
     let calls = 0, prior;
     const pending = prepareBusinessModel(state, { sourceReading: () => ({ summary: '담당자의 접수 정책', blocks: [{ heading: '조회', certainty: 'clear' }], unreadable: [] }), run: async ({ request }) => {
       calls++; const ids = request.data.documents.map(doc => doc.sourceId);
       if (fault === 'correctable-source' && calls === 3) assert.deepEqual(request.data.previousModel, prior);
+      if (fault === 'merged-actors' && calls === 3) assert.equal(request.data.correction.budget.reason, 'merged-schema');
       const output = { ...model(), processes: [], actors: fault === 'merged-actors' ? Array.from({ length: calls === 1 ? 80 : 1 }, (_, index) => ({ name: `actor-${calls}-${index}`, responsibility: '접수 조회', sourceIds: ids })) : [{ name: '담당자', responsibility: fault === 'merged-text' ? String.fromCharCode(96 + calls).repeat(240) : '접수 조회', sourceIds: ids }], sourceCoverage: ids.map(sourceId => ({ sourceId, role: 'business', rationale: '접수 업무' })) };
       if (calls === 1) prior = structuredClone(output);
       if (fault === 'correctable-source' && calls === 2) output.actors[0].sourceIds = ['UNKNOWN'];
       return { output };
     } });
     if (fault === 'correctable-source') { const result = await pending; assert.equal(calls, 3); assert.deepEqual(result.businessModel.actors[0].sourceIds, state.backlog.sources.map(source => source.id)); }
-    else { await assert.rejects(pending, { code: 'AI_BUSINESS_MODEL_CAPACITY' }); assert.equal(calls, fault === 'merged-text' ? 9 : 2); }
+    else { await assert.rejects(pending, { code: 'AI_BUSINESS_MODEL_CAPACITY' }); assert.equal(calls, fault === 'merged-text' ? 10 : 3); }
   }
 });
 

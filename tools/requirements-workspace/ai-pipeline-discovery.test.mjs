@@ -25,7 +25,10 @@ test('synthesis with no registered requirements constrains corrective regenerati
     assert.doesNotThrow(() => validatePrivateAiValue(value, schema));
     assert.throws(() => validatePrivateAiValue({ ...value, issues: [{ ...issue, requirementIds: ['UNREGISTERED'] }] }, schema), { code: 'AI_OUTPUT_INVALID' });
     if (calls === 1) value.actors[0].sourceIds = ['UNKNOWN-SOURCE'];
-    else assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-source', path: '$' }]);
+    else {
+      assert.deepEqual(request.data.correction.violations, [{ kind: 'business-model-source', path: '$' }]);
+      assert.deepEqual(request.data.correction.budget, { reason: 'target', limitBytes: request.data.discoveryBudget.targetMergedBytesForBatch, hardLimitBytes: request.data.discoveryBudget.maxMergedBytesForBatch });
+    }
     return envelope(value);
   } });
   assert.equal(calls, 2); assert.equal(result.businessModel.issues.length, 1);
@@ -74,7 +77,10 @@ test('discovery generates a bounded outline while retaining original clauses and
     expectedIssues.items.properties.requirementIds.maxItems = 0;
     expectedIssues.items.properties.citations.items = referenceSchema(36);
     assert.deepEqual(schema.properties.issues, expectedIssues);
-    assert.deepEqual(request.data.discoveryBudget, { maxMergedBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: 12288, readingIssueBytes: 0, previousModelBytes: request.data.previousModel ? Buffer.byteLength(JSON.stringify(request.data.previousModel)) : 0, batch: calls, batches: 10 });
+    const { maxMergedBytesForBatch, ...budget } = request.data.discoveryBudget;
+    assert.deepEqual(budget, { absoluteMaxBytes: BUSINESS_MODEL_MAX_BYTES, targetBatchBytes: 12288, targetMergedBytesForBatch: 12288 * calls, readingIssueBytes: 0, readingIssueCount: 0, maxIssues: 100, previousModelBytes: request.data.previousModel ? Buffer.byteLength(JSON.stringify(request.data.previousModel)) : 0, batch: calls, batches: 10 });
+    assert.ok(maxMergedBytesForBatch > budget.targetMergedBytesForBatch && maxMergedBytesForBatch <= BUSINESS_MODEL_MAX_BYTES);
+    if (calls === 10) assert.equal(maxMergedBytesForBatch, BUSINESS_MODEL_MAX_BYTES);
     assert.match(schema.description, /전체 원문 조항/);
     assert.match(schema.description, /변경 없는 기존 항목은 반환에서 생략/);
     assert.ok(JSON.stringify(schema).length <= 20_000);
@@ -162,7 +168,7 @@ test('discovery byte guidance reserves the known source-reading questions', asyn
   const bytes = Buffer.byteLength(JSON.stringify(result.businessModel.issues));
   assert.ok(bytes > 0); assert.equal(budget.readingIssueBytes, bytes);
   assert.equal(budget.targetBatchBytes, Math.floor((BUSINESS_MODEL_MAX_BYTES - bytes) * 0.75));
-  assert.equal(budget.maxMergedBytes, BUSINESS_MODEL_MAX_BYTES);
+  assert.equal(budget.absoluteMaxBytes, BUSINESS_MODEL_MAX_BYTES);
 });
 
 test('large documents provide bounded representative anchors with honest full clause counts', async () => {
